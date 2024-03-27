@@ -15,7 +15,7 @@ expected values to check for integrity.
 Supported Boards
 ****************
 - esp32_devkitc_wrover
-- esp32s2_saola
+- esp32s2_saola/esp32s2
 - esp32s3_devkitm
 
 Building and Running

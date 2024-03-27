@@ -158,7 +158,7 @@ More information about STM32P157C can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32mp157c_dk2 board configuration supports the following hardware
+The Zephyr stm32mp157c_dk2/stm32mp157cxx board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -179,7 +179,7 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/st/stm32mp157c_dk2/stm32mp157c_dk2_defconfig`
+:zephyr_file:`boards/st/stm32mp157c_dk2/stm32mp157c_dk2_stm32mp157cxx_defconfig`
 
 
 Connections and IOs
@@ -212,7 +212,7 @@ The Zephyr console output is assigned by default to the RAM console to be dumped
 by the Linux Remoteproc Framework on Cortex®-A7 core. In order to keep the UART7
 free for future serial interactions with Arduino shield, the Zephyr UART console
 output is USART3 and is disabled by default. UART console can be enable through
-board's devicetree and stm32mp157c_dk2_defconfig board file (or prj.conf
+board's devicetree and stm32mp157c_dk2_stm32mp157cxx_defconfig board file (or prj.conf
 project files), and will disable existing RAM console output. Default UART
 console settings are 115200 8N1.
 
@@ -256,7 +256,7 @@ Principle is to attach to the firmware already loaded by the Linux.
 
 .. code-block:: console
 
-  west build -b stm32mp157c_dk2 samples/hello_world
+  west build -b stm32mp157c_dk2/stm32mp157cxx samples/hello_world
 
 - Copy the firmware on the target filesystem, load it and start it (`stm32mp157c boot Cortex-M4 firmware`_).
 - Attach to the target:

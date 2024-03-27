@@ -25,11 +25,11 @@ This application can be built and executed on :ref:`native_sim <native_sim>` as 
 .. zephyr-app-commands::
    :zephyr-app: samples/kernel/condition_variables/condvar
    :host-os: unix
-   :board: native_sim
+   :board: native_sim/native
    :goals: run
    :compact:
 
-To build for another board, change ``native_sim`` above to that board's name.
+To build for another board, change ``native_sim/native`` above to that board's name.
 
 Sample Output
 =============

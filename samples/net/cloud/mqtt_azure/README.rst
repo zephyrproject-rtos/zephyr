@@ -61,7 +61,7 @@ of this sample application (i.e., :zephyr_file:`samples/net/cloud/mqtt_azure`) a
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/cloud/mqtt_azure
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :conf: "prj.conf <overlay.conf>"
    :goals: build flash
    :compact:

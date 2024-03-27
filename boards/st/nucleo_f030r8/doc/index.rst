@@ -71,7 +71,7 @@ More information about STM32F030R8 can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f030r8 board configuration supports the following hardware features:
+The Zephyr nucleo_f030r8/stm32f030x8 board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -99,7 +99,7 @@ The Zephyr nucleo_f030r8 board configuration supports the following hardware fea
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f030r8/nucleo_f030r8_defconfig`
+:zephyr_file:`boards/st/nucleo_f030r8/nucleo_f030r8_stm32f030x8_defconfig`
 
 Connections and IOs
 ===================
@@ -134,7 +134,7 @@ For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_f030r8`` board configuration can be built and
+Applications for the ``nucleo_f030r8/stm32f030x8`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -153,7 +153,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nucleo_f030r8
+   :board: nucleo_f030r8/stm32f030x8
    :goals: build flash
 
 You will see the LED blinking every second.
@@ -173,7 +173,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nucleo_f030r8
+   :board: nucleo_f030r8/stm32f030x8
    :maybe-skip-config:
    :goals: debug
 

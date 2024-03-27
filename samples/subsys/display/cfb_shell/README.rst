@@ -16,7 +16,7 @@ Build the sample app by choosing the target board, for example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/cfb_shell
-   :board: reel_board
+   :board: reel_board/nrf52840
    :goals: build
 
 

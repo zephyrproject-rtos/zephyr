@@ -33,7 +33,7 @@ The following commands build and flash TCP server sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/modbus/tcp_server
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :goals: build flash
    :compact:
 

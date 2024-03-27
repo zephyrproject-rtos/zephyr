@@ -6,19 +6,19 @@ tests:
       - drivers
       - dma
     platform_allow:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
       - mimxrt595_evk/mimxrt595s/cm33
-      - mimxrt1050_evk
-      - mimxrt1060_evk
-      - mimxrt1064_evk
+      - mimxrt1050_evk/mimxrt1052
+      - mimxrt1060_evk/mimxrt1062
+      - mimxrt1064_evk/mimxrt1064
       - mimxrt1160_evk/mimxrt1166/cm7
       - mimxrt1170_evk/mimxrt1176/cm7
-      - mimxrt1024_evk
+      - mimxrt1024_evk/mimxrt1024
       - lpcxpresso55s69/lpc55s69/cpu0
-      - lpcxpresso55s36
-      - native_sim
+      - lpcxpresso55s36/lpc55s36
+      - native_sim/native
       - native_sim/native/64
     integration_platforms:
-      - frdm_k64f
-      - native_sim
+      - frdm_k64f/mk64f12
+      - native_sim/native
       - native_sim/native/64

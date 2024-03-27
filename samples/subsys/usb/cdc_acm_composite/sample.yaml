@@ -7,8 +7,8 @@ tests:
     depends_on: usb_device
     tags: usb
     platform_exclude:
-      - nucleo_f429zi
-      - nucleo_f207zg
+      - nucleo_f429zi/stm32f429xx
+      - nucleo_f207zg/stm32f207xx
     arch_exclude: posix
     harness: console
     harness_config:

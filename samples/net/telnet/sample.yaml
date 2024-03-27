@@ -8,5 +8,5 @@ tests:
       - net
       - telnet
     platform_exclude:
-      - native_posix
+      - native_posix/native
       - native_posix/native/64

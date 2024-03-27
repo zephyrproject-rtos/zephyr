@@ -60,7 +60,7 @@ The efm32hg_slstk3400 board configuration supports the following hardware featur
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/efm32hg_slstk3400a/efm32hg_slstk3400a_defconfig`
+:zephyr_file:`boards/silabs/efm32hg_slstk3400a/efm32hg_slstk3400a_efm32hg322f64_defconfig`
 
 Other hardware features are currently not supported by the port.
 
@@ -130,7 +130,7 @@ Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efm32hg_slstk3400a
+   :board: efm32hg_slstk3400a/efm32hg322f64
    :goals: build
 
 Connect the EFM32HG-SLSTK3400A to your host computer using the USB port and

@@ -21,7 +21,7 @@ Run exemplary test shell application by Twister:
   cd ${ZEPHYR_BASE}
 
   # native_sim & QEMU
-  ./scripts/twister -p native_sim -p qemu_x86 -T samples/subsys/testsuite/pytest/shell
+  ./scripts/twister -p native_sim/native -p qemu_x86/atom -T samples/subsys/testsuite/pytest/shell
 
   # hardware
   ./scripts/twister -p nrf52840dk/nrf52840 --device-testing --device-serial /dev/ttyACM0 -T samples/subsys/testsuite/pytest/shell
@@ -35,11 +35,11 @@ or build shell application by west and call pytest directly:
   cd ${ZEPHYR_BASE}/samples/subsys/testsuite/pytest/shell
 
   # native_sim
-  west build -p -b native_sim -- -DCONFIG_NATIVE_UART_0_ON_STDINOUT=y
+  west build -p -b native_sim/native -- -DCONFIG_NATIVE_UART_0_ON_STDINOUT=y
   pytest --twister-harness --device-type=native --build-dir=build -p twister_harness.plugin
 
   # QEMU
-  west build -p -b qemu_x86 -- -DQEMU_PIPE=qemu-fifo
+  west build -p -b qemu_x86/atom -- -DQEMU_PIPE=qemu-fifo
   pytest --twister-harness --device-type=qemu --build-dir=build -p twister_harness.plugin
 
   # hardware

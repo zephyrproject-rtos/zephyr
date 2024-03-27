@@ -13,7 +13,7 @@ common:
       - "Position = (.*) degrees"
 tests:
   sample.sensor.qdec_sensor:
-    platform_allow: nucleo_f401re
+    platform_allow: nucleo_f401re/stm32f401xe
     harness_config:
       fixture: fixture_mech_encoder
   sample.sensor.nrf_qdec_sensor:

@@ -31,7 +31,7 @@ configurations. They all target the :ref:`reel_board` (Arm Aarch32 architecture)
   .. zephyr-app-commands::
      :zephyr-app: samples/basic/minimal
      :host-os: unix
-     :board: reel_board
+     :board: reel_board/nrf52840
      :build-dir: reel_board/mt/
      :conf: "common.conf mt.conf arm.conf"
      :goals: rom_report
@@ -44,7 +44,7 @@ configurations. They all target the :ref:`reel_board` (Arm Aarch32 architecture)
   .. zephyr-app-commands::
      :zephyr-app: samples/basic/minimal
      :host-os: unix
-     :board: reel_board
+     :board: reel_board/nrf52840
      :build-dir: reel_board/mt-no-preempt/
      :conf: "common.conf mt.conf no-preempt.conf arm.conf"
      :goals: rom_report
@@ -57,7 +57,7 @@ configurations. They all target the :ref:`reel_board` (Arm Aarch32 architecture)
   .. zephyr-app-commands::
      :zephyr-app: samples/basic/minimal
      :host-os: unix
-     :board: reel_board
+     :board: reel_board/nrf52840
      :build-dir: reel_board/mt-no-preempt-no-timers/
      :conf: "common.conf mt.conf no-preempt.conf no-timers.conf arm.conf"
      :goals: rom_report
@@ -70,7 +70,7 @@ configurations. They all target the :ref:`reel_board` (Arm Aarch32 architecture)
   .. zephyr-app-commands::
      :zephyr-app: samples/basic/minimal
      :host-os: unix
-     :board: reel_board
+     :board: reel_board/nrf52840
      :build-dir: reel_board/no-mt/
      :conf: "common.conf no-mt.conf arm.conf"
      :goals: rom_report
@@ -83,7 +83,7 @@ configurations. They all target the :ref:`reel_board` (Arm Aarch32 architecture)
   .. zephyr-app-commands::
      :zephyr-app: samples/basic/minimal
      :host-os: unix
-     :board: reel_board
+     :board: reel_board/nrf52840
      :build-dir: reel_board/no-mt-no-timers/
      :conf: "common.conf no-mt.conf no-timers.conf arm.conf"
      :goals: rom_report

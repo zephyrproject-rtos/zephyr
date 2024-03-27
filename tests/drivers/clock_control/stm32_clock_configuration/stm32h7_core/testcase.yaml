@@ -5,44 +5,44 @@ common:
 tests:
   drivers.clock.stm32_clock_configuration.h7_core.sysclksrc_pll_hse_96:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse_96.overlay"
-    platform_allow: nucleo_h743zi
+    platform_allow: nucleo_h743zi/stm32h743xx
     integration_platforms:
-      - nucleo_h743zi
+      - nucleo_h743zi/stm32h743xx
   drivers.clock.stm32_clock_configuration.h7_core.sysclksrc_pll_hsi_96:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hsi_96.overlay"
-    platform_allow: nucleo_h743zi
+    platform_allow: nucleo_h743zi/stm32h743xx
     integration_platforms:
-      - nucleo_h743zi
+      - nucleo_h743zi/stm32h743xx
   drivers.clock.stm32_clock_configuration.h7_core.sysclksrc_hsi_64:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_64.overlay"
-    platform_allow: nucleo_h743zi
+    platform_allow: nucleo_h743zi/stm32h743xx
     integration_platforms:
-      - nucleo_h743zi
+      - nucleo_h743zi/stm32h743xx
   drivers.clock.stm32_clock_configuration.h7_core.sysclksrc_csi_4:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/csi_4.overlay"
-    platform_allow: nucleo_h743zi
+    platform_allow: nucleo_h743zi/stm32h743xx
     integration_platforms:
-      - nucleo_h743zi
+      - nucleo_h743zi/stm32h743xx
   drivers.clock.stm32_clock_configuration.h7_core.sysclksrc_hse_8:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hse_8.overlay"
-    platform_allow: nucleo_h743zi
+    platform_allow: nucleo_h743zi/stm32h743xx
     integration_platforms:
-      - nucleo_h743zi
+      - nucleo_h743zi/stm32h743xx
   drivers.clock.stm32_clock_configuration.h7_core.sysclksrc_hse_8_css:
     extra_args:
       DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hse_8.overlay;boards/hse_css.overlay"
-    platform_allow: nucleo_h743zi
+    platform_allow: nucleo_h743zi/stm32h743xx
     integration_platforms:
-      - nucleo_h743zi
+      - nucleo_h743zi/stm32h743xx
   drivers.clock.stm32_clock_configuration.h7_core.sysclksrc_pll_csi_96:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_csi_96.overlay"
-    platform_allow: nucleo_h743zi
+    platform_allow: nucleo_h743zi/stm32h743xx
     integration_platforms:
-      - nucleo_h743zi
+      - nucleo_h743zi/stm32h743xx
   drivers.clock.stm32_clock_configuration.h7_core.sysclksrc_pll_hse_550:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse_550.overlay"
     platform_allow:
-      - nucleo_h723zg
-      - stm32h735g_disco
+      - nucleo_h723zg/stm32h723xx
+      - stm32h735g_disco/stm32h735xx
     integration_platforms:
-      - nucleo_h723zg
+      - nucleo_h723zg/stm32h723xx

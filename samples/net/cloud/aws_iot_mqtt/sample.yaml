@@ -9,6 +9,6 @@ common:
 tests:
   sample.net.cloud.aws_iot_mqtt:
     depends_on: netif
-    platform_allow: qemu_x86 nucleo_f429zi
+    platform_allow: qemu_x86/atom nucleo_f429zi/stm32f429xx
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

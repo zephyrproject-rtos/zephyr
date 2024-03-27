@@ -4,4 +4,4 @@ tests:
     min_flash: 34
     tags: json
     integration_platforms:
-      - native_sim
+      - native_sim/native

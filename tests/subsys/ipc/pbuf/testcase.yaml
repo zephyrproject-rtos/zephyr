@@ -1,5 +1,5 @@
 tests:
   ipc.icmsg_pbuf:
     integration_platforms:
-      - native_sim
+      - native_sim/native
     timeout: 120

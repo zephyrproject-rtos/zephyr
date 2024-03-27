@@ -1116,11 +1116,11 @@ boards:
   - name: ple1
     vendor: zephyr
     socs:
-      - name: unit_testing
+      - name: unit_testing/unit_testing
   - name: ple2
     vendor: zephyr
     socs:
-      - name: unit_testing
+      - name: unit_testing/unit_testing
 """
     p1e1_yamlfile = tmp_p1_dir / 'board.yml'
     p1e1_yamlfile.write_text(p1e1_bs_yaml)
@@ -1159,11 +1159,11 @@ boards:
   - name: p2
     vendor: zephyr
     socs:
-      - name: unit_testing
+      - name: unit_testing/unit_testing
   - name: p2_2
     vendor: zephyr
     socs:
-      - name: unit_testing
+      - name: unit_testing/unit_testing
 """
     p2_yamlfile = tmp_p2_dir / 'board.yml'
     p2_yamlfile.write_text(p2_bs_yaml)
@@ -1212,7 +1212,7 @@ boards:
   - name: p3
     vendor: zephyr
     socs:
-      - name: unit_testing
+      - name: unit_testing/unit_testing
 """
     p3_yamlfile = tmp_p3_dir / 'board.yml'
     p3_yamlfile.write_text(p3_bs_yaml)

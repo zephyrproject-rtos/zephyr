@@ -45,7 +45,7 @@ has frequency up to 2.0GHz. Zephyr OS is ported to run on it.
 Supported Features
 ==================
 
-The Zephyr roc_rk3568_pc board configuration supports the following hardware
+The Zephyr roc_rk3568_pc/rk3568 board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -87,7 +87,7 @@ for example, with the :zephyr:code-sample:`synchronization` sample:
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: roc_rk3568_pc
+   :board: roc_rk3568_pc/rk3568
    :goals: run
 
 This will build an image with the synchronization sample app, boot it and

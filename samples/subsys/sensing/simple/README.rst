@@ -31,7 +31,7 @@ This application can be built and executed on :ref:`native_sim <native_sim>` as 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/sensing/simple
    :host-os: unix
-   :board: native_sim
+   :board: native_sim/native
    :goals: run
    :compact:
 

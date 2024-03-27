@@ -24,7 +24,7 @@ Building and Running
 ********************
 
  This project outputs sensor data to the console. It requires a VL53L0X
- sensor, which is present on the disco_l475_iot1 board.
+ sensor, which is present on the disco_l475_iot1/stm32l475xx board.
 
  .. zephyr-app-commands::
     :app: samples/sensor/vl53l0x/

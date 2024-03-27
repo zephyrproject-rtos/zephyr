@@ -20,7 +20,7 @@ can be found :ref:`here <integration_with_pytest>`.
 Requirements
 ************
 
-Board (hardware, ``native_sim`` or ``QEMU``) with UART console.
+Board (hardware, ``native_sim/native`` or ``QEMU``) with UART console.
 
 Building and Running
 ********************
@@ -29,7 +29,7 @@ Build and run sample by Twister:
 
 .. code-block:: console
 
-   $ ./scripts/twister -vv --platform native_sim -T samples/subsys/testsuite/pytest/shell
+   $ ./scripts/twister -vv --platform native_sim/native -T samples/subsys/testsuite/pytest/shell
 
 
 Sample Output

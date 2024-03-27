@@ -1,10 +1,10 @@
 tests:
   settings.functional.nvs:
     platform_allow:
-      - qemu_x86
-      - native_posix
+      - qemu_x86/atom
+      - native_posix/native
       - native_posix/native/64
-      - native_sim
+      - native_sim/native
       - native_sim/native/64
     tags:
       - settings
@@ -12,9 +12,9 @@ tests:
   settings.functional.nvs.chosen:
     extra_args: DTC_OVERLAY_FILE=./chosen.overlay
     platform_allow:
-      - native_posix
+      - native_posix/native
       - native_posix/native/64
-      - native_sim
+      - native_sim/native
       - native_sim/native/64
     tags:
       - settings

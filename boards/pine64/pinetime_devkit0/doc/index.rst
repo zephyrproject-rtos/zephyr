@@ -120,7 +120,7 @@ basic button sample:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/button
-   :board: pinetime_devkit0
+   :board: pinetime_devkit0/nrf52832
    :goals: build
 
 Programming and Debugging

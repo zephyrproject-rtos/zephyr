@@ -123,13 +123,21 @@ set(DTS_CMAKE                   ${PROJECT_BINARY_DIR}/dts.cmake)
 set(VENDOR_PREFIXES             dts/bindings/vendor-prefixes.txt)
 
 if(NOT DEFINED DTS_SOURCE)
-  zephyr_build_string(dts_board_string BOARD ${BOARD} BOARD_QUALIFIERS ${BOARD_QUALIFIERS} MERGE)
+  zephyr_build_string(dts_board_string BOARD ${BOARD} BOARD_QUALIFIERS ${BOARD_QUALIFIERS} MERGE
+                      DEPRECATED deprecated_file_names)
   foreach(str ${dts_board_string})
     if(EXISTS ${BOARD_DIR}/${str}.dts)
+      if("${str}" IN_LIST deprecated_file_names)
+        message(DEPRECATION
+                "Devicetree files (${str}.dts) without the SoC name are deprecated"
+                " after Zephyr 3.6, you should use <board>_<soc>.dts instead")
+      endif()
+
       set(DTS_SOURCE ${BOARD_DIR}/${str}.dts)
       break()
     endif()
   endforeach()
+
 endif()
 
 if(EXISTS ${DTS_SOURCE})

@@ -5,4 +5,4 @@ common:
   harness: ztest
 tests:
   drivers.uart.emul.polling:
-    platform_allow: qemu_x86
+    platform_allow: qemu_x86/atom

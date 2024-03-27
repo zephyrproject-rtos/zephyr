@@ -1,42 +1,42 @@
 tests:
   libraries.spsc_pbuf:
     integration_platforms:
-      - native_sim
+      - native_sim/native
     # Exclude platform which does not link with cache functions
-    platform_exclude: ast1030_evb
+    platform_exclude: ast1030_evb/ast1030
     timeout: 120
 
   libraries.spsc_pbuf.cache:
     integration_platforms:
-      - native_sim
+      - native_sim/native
     # Exclude platform which does not link with cache functions
-    platform_exclude: ast1030_evb
+    platform_exclude: ast1030_evb/ast1030
     timeout: 120
     extra_configs:
       - CONFIG_SPSC_PBUF_CACHE_ALWAYS=y
 
   libraries.spsc_pbuf.nocache.:
     integration_platforms:
-      - native_sim
+      - native_sim/native
     # Exclude platform which does not link with cache functions
-    platform_exclude: ast1030_evb
+    platform_exclude: ast1030_evb/ast1030
     timeout: 120
     extra_configs:
       - CONFIG_SPSC_PBUF_CACHE_NEVER=y
 
   libraries.spsc_pbuf.utilization:
     integration_platforms:
-      - native_sim
+      - native_sim/native
     # Exclude platform which does not link with cache functions
-    platform_exclude: ast1030_evb
+    platform_exclude: ast1030_evb/ast1030
     timeout: 120
     extra_configs:
       - CONFIG_SPSC_PBUF_UTILIZATION=y
 
   libraries.spsc_pbuf.stress:
-    platform_allow: qemu_x86
+    platform_allow: qemu_x86/atom
     timeout: 120
     extra_configs:
       - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100000
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

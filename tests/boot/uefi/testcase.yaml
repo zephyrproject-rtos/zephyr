@@ -1,5 +1,5 @@
 common:
-  platform_allow: qemu_x86_64
+  platform_allow: qemu_x86_64/atom
   harness: console
   harness_config:
     type: one_line

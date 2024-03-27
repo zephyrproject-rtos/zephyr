@@ -5,12 +5,12 @@ common:
     - isr_table
 tests:
   arch.interrupt.gen_isr_table.arm_baseline: &arm-baseline
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3/ti_lm3s6965
     filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV6_M_ARMV8_M_BASELINE
     extra_configs:
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
   arch.interrupt.gen_isr_table.arm_baseline.linker_generator: &arm-baseline-linker-generator
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3/ti_lm3s6965
     filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV6_M_ARMV8_M_BASELINE
     tags:
       - linker_generator
@@ -18,24 +18,24 @@ tests:
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
       - CONFIG_CMAKE_LINKER_GENERATOR=y
   arch.interrupt.gen_isr_table.arm_mainline: &arm-mainline
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3/ti_lm3s6965
     platform_exclude:
       - stmf103_mini
-      - nucleo_f103rb
-      - olimexino_stm32
-      - stm32_min_dev@black
-      - stm32_min_dev@blue
-      - usb_kw24d512
-      - v2m_beetle
-      - cc1352r1_launchxl
-      - cc26x2r1_launchxl
-      - olimex_stm32_h103
-      - cc1352r_sensortag
+      - nucleo_f103rb/stm32f103xb
+      - olimexino_stm32/stm32f103xb
+      - stm32_min_dev@black/stm32f103xb
+      - stm32_min_dev@blue/stm32f103xb
+      - usb_kw24d512/mkw24d5
+      - v2m_beetle/beetle_r0
+      - cc1352r1_launchxl/cc1352r
+      - cc26x2r1_launchxl/cc2652r
+      - olimex_stm32_h103/stm32f103xb
+      - cc1352r_sensortag/cc1352r
     filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV7_M_ARMV8_M_MAINLINE
     extra_configs:
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
   arch.interrupt.gen_isr_table.disabled:
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3/ti_lm3s6965
     extra_configs:
       - CONFIG_GEN_ISR_TABLES=n
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
@@ -70,25 +70,25 @@ tests:
   arch.interrupt.gen_isr_table.riscv_direct:
     arch_allow: riscv
     platform_exclude:
-      - m2gl025_miv
+      - m2gl025_miv/miv
       - adp_xc7k/ae350
     filter: CONFIG_RISCV_PRIVILEGED
     extra_configs:
       - CONFIG_GEN_IRQ_VECTOR_TABLE=y
   arch.interrupt.gen_isr_table.riscv_no_direct:
-    platform_exclude: m2gl025_miv
+    platform_exclude: m2gl025_miv/miv
     arch_allow: riscv
     filter: CONFIG_RISCV_PRIVILEGED
     extra_configs:
       - CONFIG_GEN_IRQ_VECTOR_TABLE=n
   arch.interrupt.gen_isr_table.bit_shift_2nd_level:
-    platform_allow: qemu_riscv32
+    platform_allow: qemu_riscv32/qemu_virt_riscv32
     filter: CONFIG_RISCV_PRIVILEGED
     extra_configs:
       - CONFIG_1ST_LEVEL_INTERRUPT_BITS=7
       - CONFIG_2ND_LEVEL_INTERRUPT_BITS=9
   arch.interrupt.gen_isr_table.bit_shift_3rd_level:
-    platform_allow: qemu_riscv32
+    platform_allow: qemu_riscv32/qemu_virt_riscv32
     filter: CONFIG_RISCV_PRIVILEGED
     extra_configs:
       - CONFIG_MULTI_LEVEL_INTERRUPTS=y

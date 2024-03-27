@@ -35,7 +35,7 @@ Hardware
 Supported Features
 ==================
 
-The samr34_xpro board configuration supports the following hardware
+The samr34_xpro/samr34j18b board configuration supports the following hardware
 features:
 
 .. list-table::
@@ -91,7 +91,7 @@ supported by the SOC:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam0/samr34_xpro/samr34_xpro_defconfig`.
+:zephyr_file:`boards/atmel/sam0/samr34_xpro/samr34_xpro_samr34j18b_defconfig`.
 
 Pin Mapping
 ===========
@@ -168,7 +168,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: samr34_xpro
+      :board: samr34_xpro/samr34j18b
       :goals: build
       :compact:
 
@@ -191,7 +191,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: samr34_xpro
+      :board: samr34_xpro/samr34j18b
       :goals: flash
       :compact:
 

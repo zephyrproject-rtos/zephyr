@@ -2,7 +2,7 @@ sample:
   name: CMSIS_RTOS_V1 Dining Philosophers
 common:
   integration_platforms:
-    - native_sim
+    - native_sim/native
   extra_args: DEBUG_PRINTF=1
   tags: cmsis_rtos
   min_ram: 32

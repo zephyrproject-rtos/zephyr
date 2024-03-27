@@ -5,7 +5,7 @@ common:
     - interrupt
     - nmi
   integration_platforms:
-    - qemu_x86_64
+    - qemu_x86_64/atom
 tests:
   arch.interrupt.nmi:
     extra_configs:

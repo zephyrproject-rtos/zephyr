@@ -8,11 +8,11 @@ sample:
   name: SHT3XD Sensor Sample
 common:
   platform_allow:
-    - efr32mg_sltb004a
-    - frdm_k64f
-    - nrf51_ble400
+    - efr32mg_sltb004a/efr32mg12p332f1024gl125
+    - frdm_k64f/mk64f12
+    - nrf51_ble400/nrf51822
     - nrf52840dk/nrf52840
-    - nucleo_l476rg
+    - nucleo_l476rg/stm32l476xx
   integration_platforms:
     - nrf52840dk/nrf52840
   tags: sensors

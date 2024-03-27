@@ -15,11 +15,11 @@ Building and Running
 This sample application uses the sensor connected to the i2c stated in the
 app.overlay file.
 Flash the binary to a board of choice with a sensor connected.
-For example build for a nucleo_f446re board:
+For example build for a nucleo_f446re/stm32f446xx board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/ens210
-   :board: nucleo_f446re
+   :board: nucleo_f446re/stm32f446xx
    :goals: build flash
    :compact:
 

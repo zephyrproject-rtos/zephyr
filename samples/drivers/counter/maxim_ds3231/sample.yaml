@@ -6,10 +6,10 @@ tests:
   sample.basic.maxim_ds3231:
     build_only: true
     platform_allow:
-      - efr32mg_sltb004a
-      - frdm_k64f
+      - efr32mg_sltb004a/efr32mg12p332f1024gl125
+      - frdm_k64f/mk64f12
       - nrf51dk/nrf51822
-      - nucleo_l476rg
-      - particle_xenon
+      - nucleo_l476rg/stm32l476xx
+      - particle_xenon/nrf52840
     integration_platforms:
-      - efr32mg_sltb004a
+      - efr32mg_sltb004a/efr32mg12p332f1024gl125

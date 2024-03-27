@@ -1,0 +1,8 @@
+identifier: scobc_module1/designstart_fpga_cortex_m3
+name: Space Cubics OBC module 1
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - uart

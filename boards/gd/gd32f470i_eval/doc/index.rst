@@ -15,7 +15,7 @@ SRAM and 140 GPIOs.
 
 .. image:: img/gd32f470i_eval.jpg
      :align: center
-     :alt: gd32f470i_eval
+     :alt: gd32f470i_eval/gd32f470
 
 
 Hardware
@@ -115,7 +115,7 @@ allows flash programming and debugging over USB. There is also a JTAG header
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f470i_eval
+      :board: gd32f470i_eval/gd32f470
       :goals: build
       :compact:
 
@@ -138,7 +138,7 @@ allows flash programming and debugging over USB. There is also a JTAG header
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f470i_eval
+      :board: gd32f470i_eval/gd32f470
       :goals: flash
       :compact:
 
@@ -148,7 +148,7 @@ allows flash programming and debugging over USB. There is also a JTAG header
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f470i_eval
+      :board: gd32f470i_eval/gd32f470
       :goals: debug
       :compact:
 

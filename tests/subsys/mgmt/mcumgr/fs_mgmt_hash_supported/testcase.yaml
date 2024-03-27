@@ -9,7 +9,7 @@ common:
     - mcumgr
     - fs_mgmt_hash_supported
   integration_platforms:
-    - native_sim
+    - native_sim/native
 tests:
   mgmt.mcumgr.fs.mgmt.hash.supported.crc32:
     extra_args: >
@@ -17,7 +17,7 @@ tests:
     platform_exclude:
       - arduino_giga_r1/stm32h747xx/m4
       - arduino_portenta_h7/stm32h747xx/m4
-      - lpcxpresso51u68
+      - lpcxpresso51u68/lpc51u68
       - nucleo_h745zi_q/stm32h745xx/m4
       - stm32h747i_disco/stm32h747xx/m4
   mgmt.mcumgr.fs.mgmt.hash.supported.sha256:
@@ -26,7 +26,7 @@ tests:
     platform_exclude:
       - arduino_giga_r1/stm32h747xx/m4
       - arduino_portenta_h7/stm32h747xx/m4
-      - lpcxpresso51u68
+      - lpcxpresso51u68/lpc51u68
       - nucleo_h745zi_q/stm32h745xx/m4
       - stm32h747i_disco/stm32h747xx/m4
   mgmt.mcumgr.fs.mgmt.hash.supported.all:
@@ -35,6 +35,6 @@ tests:
     platform_exclude:
       - arduino_giga_r1/stm32h747xx/m4
       - arduino_portenta_h7/stm32h747xx/m4
-      - lpcxpresso51u68
+      - lpcxpresso51u68/lpc51u68
       - nucleo_h745zi_q/stm32h745xx/m4
       - stm32h747i_disco/stm32h747xx/m4

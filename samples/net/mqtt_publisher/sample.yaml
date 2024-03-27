@@ -9,21 +9,21 @@ common:
 tests:
   sample.net.mqtt_publisher:
     platform_allow:
-      - frdm_k64f
-      - qemu_x86
-      - pinnacle_100_dvk
-      - mg100
+      - frdm_k64f/mk64f12
+      - qemu_x86/atom
+      - pinnacle_100_dvk/nrf52840
+      - mg100/nrf52840
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   sample.net.mqtt_publisher.userspace:
     platform_allow:
-      - frdm_k64f
-      - qemu_x86
+      - frdm_k64f/mk64f12
+      - qemu_x86/atom
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
     extra_args: CONFIG_USERSPACE=y
   sample.net.mqtt_publisher.bt:
-    platform_allow: 96b_nitrogen
+    platform_allow: 96b_nitrogen/nrf52832
     tags:
       - net
       - mqtt

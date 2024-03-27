@@ -41,7 +41,7 @@ The following commands build and flash RTU client sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/modbus/rtu_client
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :goals: build flash
    :compact:
 

@@ -17,11 +17,11 @@ tests:
       fixture: npm6001_ek_to_adc
   drivers.regulator.voltage.nxp:
     platform_allow:
-      - mimxrt685_evk
-      - lpcxpresso55s36
+      - mimxrt685_evk/mimxrt685s
+      - lpcxpresso55s36/lpc55s36
     harness_config:
       fixture: gpio_loopback
   drivers.regulator.voltage.rpi_pico_vreg:
-    platform_allow: rpi_pico
+    platform_allow: rpi_pico/rp2040
     harness_config:
       fixture: rpi_pico_connect_vreg_out_to_adc

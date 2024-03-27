@@ -129,7 +129,7 @@ To build the sample application using sysbuild use the command:
 .. zephyr-app-commands::
    :tool: west
    :app: samples/hello_world
-   :board: esp32c3_devkitm
+   :board: esp32c3_devkitm/esp32c3
    :goals: build
    :west-args: --sysbuild
    :compact:
@@ -178,16 +178,16 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32c3_devkitm
+   :board: esp32c3_devkitm/esp32c3
    :goals: build
 
-The usual ``flash`` target will work with the ``esp32c3_devkitm`` board
+The usual ``flash`` target will work with the ``esp32c3_devkitm/esp32c3`` board
 configuration. Here is an example for the :ref:`hello_world`
 application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32c3_devkitm
+   :board: esp32c3_devkitm/esp32c3
    :goals: flash
 
 Open the serial monitor using the following command:
@@ -202,7 +202,7 @@ message in the monitor:
 .. code-block:: console
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! esp32c3_devkitm
+   Hello World! esp32c3_devkitm/esp32c3
 
 Debugging
 *********
@@ -219,7 +219,7 @@ Here is an example for building the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32c3_devkitm
+   :board: esp32c3_devkitm/esp32c3
    :goals: build flash
    :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
@@ -227,7 +227,7 @@ You can debug an application in the usual way. Here is an example for the :ref:`
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32c3_devkitm
+   :board: esp32c3_devkitm/esp32c3
    :goals: debug
 
 .. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases

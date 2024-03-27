@@ -18,7 +18,7 @@ The tail ``0`` is the sensor number.  This sample support up to 16 sensors.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/soc_voltage
-   :board: nucleo_g071rb
+   :board: nucleo_g071rb/stm32g071xx
    :goals: build
    :compact:
 

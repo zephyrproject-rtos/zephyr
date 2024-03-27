@@ -27,7 +27,7 @@ Sample can be built and executed for the FRDM-K64F as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/fxos8700
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :goals: build flash
    :compact:
 
@@ -35,7 +35,7 @@ Example building for the FRDM-K64F with motion detection support:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/fxos8700
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :conf: "prj.conf overlay-motion.conf"
    :goals: build flash
    :compact:
@@ -47,7 +47,7 @@ Sample can be built and executed for the FRDM-K22F as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/fxos8700
-   :board: frdm_k22f
+   :board: frdm_k22f/mk22f51212
    :goals: build flash
    :compact:
 
@@ -55,7 +55,7 @@ Example building for the FRDM-K22F with motion detection support:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/fxos8700
-   :board: frdm_k22f
+   :board: frdm_k22f/mk22f51212
    :conf: "prj.conf overlay-motion.conf"
    :goals: build flash
    :compact:
@@ -70,7 +70,7 @@ Sample can be built and executed for the TWR-KE18F as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/fxos8700
-   :board: twr_ke18f
+   :board: twr_ke18f/mke18f16
    :goals: build flash
    :compact:
 
@@ -81,7 +81,7 @@ Sample can be built and executed for the FRDM-KL25Z as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/fxos8700
-   :board: frdm_kl25z
+   :board: frdm_kl25z/mkl25z4
    :conf: "prj_accel.conf"
    :goals: build flash
    :compact:
@@ -93,7 +93,7 @@ Sample can be built and executed for the Micro Bit as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/fxos8700
-   :board: bbc_microbit
+   :board: bbc_microbit/nrf51822
    :conf: "prj_accel.conf"
    :goals: build flash
    :compact:
@@ -105,7 +105,7 @@ Sample can be built and executed for the reel board as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/fxos8700
-   :board: reel_board
+   :board: reel_board/nrf52840
    :conf: "prj_accel.conf"
    :goals: build flash
    :compact:
@@ -117,7 +117,7 @@ Sample can be built and executed for the MIMXRT685-EVK as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/fxos8700
-   :board: mimxrt685_evk
+   :board: mimxrt685_evk/mimxrt685s
    :goals: build flash
    :compact:
 

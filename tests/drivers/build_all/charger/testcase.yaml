@@ -8,5 +8,5 @@ tests:
       - charger
     build_only: true
     platform_allow:
-      - native_posix
-      - native_sim
+      - native_posix/native
+      - native_sim/native

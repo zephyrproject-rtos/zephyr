@@ -4,13 +4,13 @@ common:
     - net
     - ipv4_autoconf
   platform_allow:
-    - qemu_x86
-    - native_posix
+    - qemu_x86/atom
+    - native_posix/native
     - native_posix/native/64
-    - native_sim
+    - native_sim/native
     - native_sim/native/64
   integration_platforms:
-    - native_sim
+    - native_sim/native
 sample:
   description: Test IPv4 autoconf functionality
   name: IPv4 autoconf sample app

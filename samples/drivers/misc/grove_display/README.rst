@@ -43,7 +43,7 @@ described below:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/misc/grove_display
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :goals: flash
    :compact:
 

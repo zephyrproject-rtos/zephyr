@@ -42,7 +42,7 @@ To build the sample you can use following command:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/shields/x_nucleo_iks02a1/microphone/
-   :board: nucleo_f411re
+   :board: nucleo_f411re/stm32f411xe
    :goals: build
    :compact:
 
@@ -50,7 +50,7 @@ To build the sample you can use following command:
 
    In case a different board is used, one of the things that must be verified before
    building the sample is the I2S output clock frequency configuration. For example,
-   for nucleo_f411re board, we have the following file that configures the I2SPLL and
+   for nucleo_f411re/stm32f411xe board, we have the following file that configures the I2SPLL and
    have a dependency on HSE/HSI:
    :zephyr_file:`boards/shields/x_nucleo_iks02a1/boards/nucleo_f411re.overlay`
 

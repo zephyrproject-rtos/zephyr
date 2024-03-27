@@ -6,6 +6,6 @@ tests:
     tags: auxdisplay
     harness_config:
       fixture: fixture_auxdisplay
-    platform_allow: nucleo_f746zg
+    platform_allow: nucleo_f746zg/stm32f746xx
     integration_platforms:
-      - nucleo_f746zg
+      - nucleo_f746zg/stm32f746xx

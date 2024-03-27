@@ -8,13 +8,13 @@ tests:
       - arduino_i2c
       - arduino_spi
     platform_exclude:
-      - reel_board
-      - reel_board@2
+      - reel_board/nrf52840
+      - reel_board@2/nrf52840
       - ubx_evkannab1/nrf52832
-      - stm32f769i_disco
-      - pan1781_evb
-      - pan1782_evb
-      - mimxrt1010_evk
+      - stm32f769i_disco/stm32f769xx
+      - pan1781_evb/nrf52820
+      - pan1782_evb/nrf52833
+      - mimxrt1010_evk/mimxrt1011
     extra_args: SHIELD=adafruit_2_8_tft_touch_v2
     tags:
       - display
@@ -89,7 +89,7 @@ tests:
     harness_config:
       fixture: fixture_display
   sample.display.mcux_elcdif:
-    platform_allow: mimxrt1050_evk
+    platform_allow: mimxrt1050_evk/mimxrt1052
     tags: display
     harness: console
     harness_config:
@@ -109,7 +109,7 @@ tests:
     tags: display
   sample.display.mipi_dbi:
     platform_allow:
-      - da1469x_dk_pro
+      - da1469x_dk_pro/da14699
     extra_args: DTC_OVERLAY_FILE="da1469x_dk_pro_mipi_dbi.overlay"
     tags:
       - display
@@ -119,8 +119,8 @@ tests:
       fixture: fixture_display
   sample.display.dummy:
     platform_allow:
-      - native_posix
-      - native_sim
+      - native_posix/native
+      - native_sim/native
     extra_args: DTC_OVERLAY_FILE="dummy_dc.overlay"
     extra_configs:
       - CONFIG_DUMMY_DISPLAY=y

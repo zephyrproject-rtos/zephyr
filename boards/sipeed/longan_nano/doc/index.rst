@@ -5,7 +5,7 @@ Sipeed Longan Nano
 
 .. image:: img/longan_nano.jpg
      :align: center
-     :alt: longan_nano
+     :alt: longan_nano/gd32vf103
 
 Overview
 ********
@@ -91,7 +91,7 @@ Here is an example for building the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: longan_nano
+   :board: longan_nano/gd32vf103
    :goals: build flash
 
 When using a custom toolchain it should be enough to have the downloaded
@@ -112,6 +112,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: longan_nano
+   :board: longan_nano/gd32vf103
    :maybe-skip-config:
    :goals: debug

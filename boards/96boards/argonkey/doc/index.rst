@@ -51,7 +51,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr 96b_argonkey board configuration supports the following hardware
+The Zephyr 96b_argonkey/stm32f412cx board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -78,7 +78,7 @@ More information about the board can be found at the
 `ARGONKEY website`_.
 
 The default board configuration can be found in
-:zephyr_file:`boards/96boards/argonkey/96b_argonkey_defconfig`
+:zephyr_file:`boards/96boards/argonkey/96b_argonkey_stm32f412cx_defconfig`
 
 Connections and IOs
 ===================
@@ -149,7 +149,7 @@ Here is an example for building the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: 96b_argonkey
+   :board: 96b_argonkey/stm32f412cx
    :goals: build
 
 Flashing

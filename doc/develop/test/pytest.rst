@@ -93,7 +93,7 @@ There are two ways for passing extra arguments to the called pytest subprocess:
 
    .. code-block:: console
 
-      $ ./scripts/twister --platform native_sim -T samples/subsys/testsuite/pytest/shell \
+      $ ./scripts/twister --platform native_sim/native -T samples/subsys/testsuite/pytest/shell \
       -s samples/subsys/testsuite/pytest/shell/sample.pytest.shell \
       --pytest-args='-k test_shell_print_version'
 

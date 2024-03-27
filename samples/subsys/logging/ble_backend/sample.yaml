@@ -5,8 +5,8 @@ tests:
   sample.logging.ble_backend.nrf52833:
     harness: bluetooth
     platform_allow:
-      - qemu_cortex_m3
-      - qemu_x86
+      - qemu_cortex_m3/ti_lm3s6965
+      - qemu_x86/atom
     integration_platforms:
-      - qemu_cortex_m3
+      - qemu_cortex_m3/ti_lm3s6965
     tags: bluetooth

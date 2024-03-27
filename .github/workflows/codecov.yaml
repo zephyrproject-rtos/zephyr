@@ -19,16 +19,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: ["mps2/an385", "native_sim", "qemu_x86", "unit_testing"]
+        platform: ["mps2/an385", "native_sim/native", "qemu_x86/atom", "unit_testing/unit_testing"]
         include:
           - platform: 'mps2/an385'
             normalized: 'mps2_an385'
-          - platform: 'native_sim'
-            normalized: 'native_sim'
-          - platform: 'qemu_x86'
-            normalized: 'qemu_x86'
-          - platform: 'unit_testing'
-            normalized: 'unit_testing'
+          - platform: 'native_sim/native'
+            normalized: 'native_sim_native'
+          - platform: 'qemu_x86/atom'
+            normalized: 'qemu_x86_atom'
+          - platform: 'unit_testing/unit_testing'
+            normalized: 'unit_testing_unit_testing'
     env:
       CCACHE_DIR: /node-cache/ccache-zephyr
       CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"

@@ -5,17 +5,17 @@ tests:
       - gpio
     depends_on: gpio
     platform_allow:
-      - native_sim
+      - native_sim/native
       - native_sim/native/64
-      - frdm_k64f
+      - frdm_k64f/mk64f12
       - nrf52840dk/nrf52840
-      - nucleo_g474re
-      - nrf52_bsim
-      - mr_canhubk3
+      - nucleo_g474re/stm32g474xx
+      - nrf52_bsim/nrf52833
+      - mr_canhubk3/s32k344
       - s32z2xxdc2/s32z270/rtu0
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
     integration_platforms:
-      - native_sim
+      - native_sim/native
       - native_sim/native/64

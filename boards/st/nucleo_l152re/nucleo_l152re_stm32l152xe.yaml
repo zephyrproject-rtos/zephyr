@@ -1,0 +1,26 @@
+identifier: nucleo_l152re/stm32l152xe
+name: ST Nucleo L152RE
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 80
+flash: 512
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - eeprom
+  - gpio
+  - spi
+  - i2c
+  - uart
+  - watchdog
+  - counter
+  - adc
+  - dac
+  - pwm
+  - dma
+  - nvs
+vendor: st

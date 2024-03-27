@@ -3,9 +3,9 @@ sample:
 tests:
   sample.sensor.shell:
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
     # TODO Remove once #63414 is resolved
-    platform_exclude: gd32l233r_eval
+    platform_exclude: gd32l233r_eval/gd32l233
     filter: ( CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_INTERRUPT )
     tags: shell
     harness: keyboard

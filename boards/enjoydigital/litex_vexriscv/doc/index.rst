@@ -14,7 +14,7 @@ The bitstream (FPGA configuration file) can be obtained using both
 vendor-specific and open-source tools, including the
 `F4PGA toolchain <https://f4pga.org/>`_.
 
-The ``litex_vexriscv`` board configuration in Zephyr is meant for the
+The ``litex_vexriscv/litex_vexriscv`` board configuration in Zephyr is meant for the
 LiteX VexRiscv SoC implementation generated for the
 `Digilent Arty A7-35T or A7-100T Development Boards
 <https://store.digilentinc.com/arty-a7-artix-7-fpga-development-board-for-makers-and-hobbyists>`_
@@ -153,16 +153,16 @@ Programming and booting
 Building
 ========
 
-Applications for the ``litex_vexriscv`` board configuration can be built as usual
+Applications for the ``litex_vexriscv/litex_vexriscv`` board configuration can be built as usual
 (see :ref:`build_an_application`).
-In order to build the application for ``litex_vexriscv``, set the ``BOARD`` variable
-to ``litex_vexriscv``.
+In order to build the application for ``litex_vexriscv/litex_vexriscv``, set the ``BOARD`` variable
+to ``litex_vexriscv/litex_vexriscv``.
 
 If you were generating bitstream with the official LiteX SoC builder you need to pass an additional argument:
 
 .. code-block:: bash
 
-   west build -b litex_vexriscv path/to/app -DDTC_OVERLAY_FILE=path/to/overlay.dts
+   west build -b litex_vexriscv/litex_vexriscv path/to/app -DDTC_OVERLAY_FILE=path/to/overlay.dts
 
 Booting
 =======

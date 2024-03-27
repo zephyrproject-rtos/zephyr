@@ -52,7 +52,7 @@ For more information about the SOC please see the `MEC152x Reference Manual`_
 Supported Features
 ==================
 
-The mec1501modular_assy6885 board configuration supports the following hardware
+The mec1501modular_assy6885/mec1501_hsz board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -88,7 +88,7 @@ features:
 Other hardware features are not currently supported by Zephyr (at the moment)
 
 The default configuration can be found in the
-:zephyr_file:`boards/microchip/mec1501modular_assy6885/mec1501modular_assy6885_defconfig`
+:zephyr_file:`boards/microchip/mec1501modular_assy6885/mec1501modular_assy6885_mec1501_hsz_defconfig`
 Kconfig file.
 
 Connections and IOs

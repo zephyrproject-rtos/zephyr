@@ -39,7 +39,7 @@ following commands:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/tmp116
-   :board: nucleo_f401re
+   :board: nucleo_f401re/stm32f401xe
    :goals: build flash
    :compact:
 

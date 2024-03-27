@@ -3,6 +3,6 @@ sample:
 tests:
   sample.board.bbc_microbit.sound:
     platform_allow:
-      - bbc_microbit
-      - bbc_microbit_v2
+      - bbc_microbit/nrf51822
+      - bbc_microbit_v2/nrf52833
     tags: sound

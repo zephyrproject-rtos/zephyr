@@ -32,7 +32,7 @@ hardware features:
 Other hardware features have not been enabled yet for this board.
 
 The default configuration can be found in (NON-SMP)
-:zephyr_file:`boards/khadas/edgev/khadas_edgev_defconfig`
+:zephyr_file:`boards/khadas/edgev/khadas_edgev_rk3399_defconfig`
 
 There are multiple serial ports on the board: Zephyr is using
 uart2 as serial console.
@@ -48,7 +48,7 @@ kernel tests on Khadas Edge-V board. For example, with the :ref:`hello_world`:
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :host-os: unix
-   :board: khadas_edgev
+   :board: khadas_edgev/rk3399
    :goals: build
 
 This will build an image with the synchronization sample app.
@@ -70,7 +70,7 @@ It will display the following console output:
 .. code-block:: console
 
 	*** Booting Zephyr OS build XXXXXXXXXXXX  ***
-	Hello World! khadas_edgev
+	Hello World! khadas_edgev/rk3399
 
 Flashing
 ========

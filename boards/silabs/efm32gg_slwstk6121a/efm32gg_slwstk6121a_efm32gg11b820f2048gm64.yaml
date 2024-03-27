@@ -1,0 +1,21 @@
+identifier: efm32gg_slwstk6121a/efm32gg11b820f2048gm64
+name: EFM32GG-SLWSTK6121A
+type: mcu
+arch: arm
+ram: 512
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+  - i2c
+  - gpio
+  - netif:eth
+  - nvs
+  - uart
+testing:
+  ignore_tags:
+    - bluetooth
+vendor: silabs

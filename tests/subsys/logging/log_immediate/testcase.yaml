@@ -1,6 +1,6 @@
 common:
   integration_platforms:
-    - native_sim
+    - native_sim/native
 
 tests:
   logging.immediate:
@@ -9,10 +9,10 @@ tests:
       - logging
     timeout: 80
     platform_exclude:
-      - nucleo_l053r8
-      - nucleo_f030r8
-      - stm32f0_disco
-      - nrf52_bsim
+      - nucleo_l053r8/stm32l053xx
+      - nucleo_f030r8/stm32f030x8
+      - stm32f0_disco/stm32f051x8
+      - nrf52_bsim/nrf52833
   logging.immediate.clean_output:
     extra_args: CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT=y
     tags:
@@ -20,7 +20,7 @@ tests:
       - logging
     timeout: 80
     platform_exclude:
-      - nucleo_l053r8
-      - nucleo_f030r8
-      - stm32f0_disco
-      - nrf52_bsim
+      - nucleo_l053r8/stm32l053xx
+      - nucleo_f030r8/stm32f030x8
+      - stm32f0_disco/stm32f051x8
+      - nrf52_bsim/nrf52833

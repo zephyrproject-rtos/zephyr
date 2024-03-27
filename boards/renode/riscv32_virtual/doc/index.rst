@@ -17,11 +17,11 @@ Programming and debugging
 Building
 ========
 
-Applications for the ``riscv32_virtual`` board configuration can be built as usual
+Applications for the ``riscv32_virtual/riscv_virtual_renode`` board configuration can be built as usual
 (see :ref:`build_an_application`):
 
 .. zephyr-app-commands::
-   :board: riscv32_virtual
+   :board: riscv32_virtual/riscv_virtual_renode
    :goals: build
 
 Flashing
@@ -34,7 +34,7 @@ emulated environment. For example, with the :zephyr:code-sample:`synchronization
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: riscv32_virtual
+   :board: riscv32_virtual/riscv_virtual_renode
    :goals: run
 
 This will build an image with the synchronization sample app, boot it using

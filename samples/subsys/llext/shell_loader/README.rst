@@ -20,7 +20,7 @@ Building
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/llext/shell_loader
-   :board: robokit1
+   :board: robokit1/same70q21b
    :goals: build
    :compact:
 

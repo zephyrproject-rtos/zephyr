@@ -27,7 +27,7 @@ MH-Z19B CO2 sensor and power the sensor according to the datasheet.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/mhz19b
-   :board: nucleo_g0b1re
+   :board: nucleo_g0b1re/stm32g0b1xx
    :goals: build
    :compact:
 

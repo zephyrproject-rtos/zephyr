@@ -3,10 +3,10 @@ common:
   # native_sim uses if_*() from the native libc
   filter: not CONFIG_NATIVE_LIBC
   integration_platforms:
-    - qemu_x86
+    - qemu_x86/atom
   min_ram: 16
   platform_allow:
-    - qemu_x86
+    - qemu_x86/atom
   tags:
     - iface
     - net

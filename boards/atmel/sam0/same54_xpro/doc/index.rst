@@ -43,7 +43,7 @@ Hardware
 Supported Features
 ==================
 
-The same54_xpro board configuration supports the following hardware
+The same54_xpro/same54p20a board configuration supports the following hardware
 features:
 
 +---------------+------------+----------------------------+
@@ -97,7 +97,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam0/same54_xpro/same54_xpro_defconfig`.
+:zephyr_file:`boards/atmel/sam0/same54_xpro/same54_xpro_same54p20a_defconfig`.
 
 Pin Mapping
 ===========
@@ -183,7 +183,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: same54_xpro
+      :board: same54_xpro/same54p20a
       :goals: build
       :compact:
 
@@ -209,7 +209,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: same54_xpro
+      :board: same54_xpro/same54p20a
       :goals: flash
       :compact:
 

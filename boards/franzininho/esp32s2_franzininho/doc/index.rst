@@ -91,7 +91,7 @@ To build the sample application using sysbuild use the command:
 .. zephyr-app-commands::
    :tool: west
    :app: samples/hello_world
-   :board: esp32s2_franzininho
+   :board: esp32s2_franzininho/esp32s2
    :goals: build
    :west-args: --sysbuild
    :compact:
@@ -140,16 +140,16 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32s2_franzininho
+   :board: esp32s2_franzininho/esp32s2
    :goals: build
 
-The usual ``flash`` target will work with the ``esp32s2_franzininho`` board
+The usual ``flash`` target will work with the ``esp32s2_franzininho/esp32s2`` board
 configuration. Here is an example for the :ref:`hello_world`
 application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32s2_franzininho
+   :board: esp32s2_franzininho/esp32s2
    :goals: flash
 
 Open the serial monitor using the following command:
@@ -164,7 +164,7 @@ message in the monitor:
 .. code-block:: console
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! esp32s2_franzininho
+   Hello World! esp32s2_franzininho/esp32s2
 
 References
 **********

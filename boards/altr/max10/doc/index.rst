@@ -121,7 +121,7 @@ JTAG UART
 ---------
 
 You can also have it send its console output to the JTAG UART.
-Enable ``jtag_uart`` node in :file:`altera_max10.dts` or overlay file:
+Enable ``jtag_uart`` node in :file:`altera_max10_zephyr_nios2f.dts` or overlay file:
 
 .. code-block:: devicetree
 
@@ -146,13 +146,13 @@ Flashing
 Flashing Kernel into UFM
 ------------------------
 
-The usual ``flash`` target will work with the ``altera_max10`` board
+The usual ``flash`` target will work with the ``altera_max10/zephyr_nios2f`` board
 configuration. Here is an example for the :ref:`hello_world`
 application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: altera_max10
+   :board: altera_max10/zephyr_nios2f
    :goals: flash
 
 Refer to :ref:`build_an_application` and :ref:`application_run` for
@@ -203,7 +203,7 @@ You can debug an application in the usual way.  Here is an example.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: altera_max10
+   :board: altera_max10/zephyr_nios2f
    :goals: debug
 
 You will see output similar to the following:

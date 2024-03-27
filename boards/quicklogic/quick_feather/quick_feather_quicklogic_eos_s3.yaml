@@ -1,0 +1,13 @@
+identifier: quick_feather/quicklogic_eos_s3
+name: QuickLogic Quick Feather
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: quicklogic

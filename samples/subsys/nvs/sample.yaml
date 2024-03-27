@@ -5,7 +5,7 @@ tests:
   sample.nvs.basic:
     tags: nvs
     depends_on: nvs
-    platform_exclude: qemu_x86
+    platform_exclude: qemu_x86/atom
     integration_platforms:
       - nrf52dk/nrf52832
     harness: console

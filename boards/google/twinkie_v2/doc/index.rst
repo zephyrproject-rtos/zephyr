@@ -32,7 +32,7 @@ The following features are supported:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/google/twinkie_v2/google_twinkie_v2_defconfig`
+:zephyr_file:`boards/google/twinkie_v2/google_twinkie_v2_stm32g0b1xx_defconfig`
 
 Pin Mapping
 ===========
@@ -48,7 +48,7 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
-Build application as usual for the ``google_twinkie_v2`` board, and flash
+Build application as usual for the ``google_twinkie_v2/stm32g0b1xx`` board, and flash
 using dfu-util or J-Link.
 
 Debugging

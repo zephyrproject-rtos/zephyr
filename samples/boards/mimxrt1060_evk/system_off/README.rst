@@ -25,7 +25,7 @@ Building, Flashing and Running
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/mimxrt1060_evk/system_off
-   :board: mimxrt1060_evk
+   :board: mimxrt1060_evk/mimxrt1062
    :goals: build flash
    :compact:
 
@@ -48,7 +48,7 @@ MIMXRT1060_EVK core output
 
    *** Booting Zephyr OS build zephyr-v3.0.0-2733-ged206aca47cc  ***
 
-   mimxrt1060_evkb system off demo
+   mimxrt1060_evkb/mimxrt1062 system off demo
    Busy-wait 2 s
    Sleep 2 s
    RTC Alarm set for 10 seconds to wake from soft-off.

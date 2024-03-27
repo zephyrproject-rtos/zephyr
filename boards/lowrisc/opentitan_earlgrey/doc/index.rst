@@ -29,7 +29,7 @@ Detailed specification is on the `OpenTitan Earl Grey Chip Datasheet`_.
 Supported Features
 ==================
 
-The ``opentitan_earlgrey`` board configuration is designed and tested to run on
+The ``opentitan_earlgrey/opentitan`` board configuration is designed and tested to run on
 the Earl Grey chip simulated in Verilator, a cycle-accurate HDL simulation tool.
 
 +-----------+------------+-------------------------------------+
@@ -62,7 +62,7 @@ following steps were tested on OpenTitan master branch @ 6a3c2e98.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: opentitan_earlgrey
+   :board: opentitan_earlgrey/opentitan
    :goals: build
 
 The OpenTitan Vchip_sim_tb tool can take the Zephyr .elf as input and place it
@@ -84,7 +84,7 @@ UART output:
    I00000 test_rom.c:135] Version: earlgrey_silver_release_v5-9599-g6a3c2e988, Build Date: 2023-01-17 16:02:09
    I00001 test_rom.c:237] Test ROM complete, jumping to flash (addr: 20000384)!
    *** Booting Zephyr OS build zephyr-v3.2.0-3494-gf0729b494b98 ***
-   Hello World! opentitan_earlgrey
+   Hello World! opentitan_earlgrey/opentitan
 
 References
 **********

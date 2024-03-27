@@ -43,7 +43,7 @@ and will use the same drivers as the nrf52 dk targets for these.
 For more information on what is modelled to which level of detail,
 check the `HW models implementation status`_.
 
-Note that unlike a real nrf52 device, the nrf52_bsim has unlimited RAM and flash for code.
+Note that unlike a real nrf52 device, the nrf52_bsim/native has unlimited RAM and flash for code.
 
 .. _BabbleSim:
    https://BabbleSim.github.io
@@ -101,7 +101,7 @@ You're now ready to build applications targeting this board, for example:
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :host-os: unix
-   :board: nrf52_bsim
+   :board: nrf52_bsim/native
    :goals: build
    :compact:
 
@@ -128,7 +128,7 @@ executable to the simulator bin folder with a sensible name:
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/central_hr
    :host-os: unix
-   :board: nrf52_bsim
+   :board: nrf52_bsim/native
    :goals: build
    :compact:
 
@@ -142,7 +142,7 @@ Do the same for the ``peripheral`` sample app:
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/peripheral
    :host-os: unix
-   :board: nrf52_bsim
+   :board: nrf52_bsim/native
    :goals: build
    :compact:
 

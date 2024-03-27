@@ -101,7 +101,7 @@ More information about STM32H7B3 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32h7b3i_dk board configuration supports the following hardware features:
+The current Zephyr stm32h7b3i_dk/stm32h7b3xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -136,7 +136,7 @@ The current Zephyr stm32h7b3i_dk board configuration supports the following hard
 Other hardware features have not been enabled yet for this board.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32h7b3i_dk/stm32h7b3i_dk_defconfig`
+:zephyr_file:`boards/st/stm32h7b3i_dk/stm32h7b3i_dk_stm32h7b3xx_defconfig`
 
 Pin Mapping
 ===========
@@ -219,7 +219,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32h7b3i_dk
+   :board: stm32h7b3i_dk/stm32h7b3xx
    :goals: build flash
 
 Run a serial host program to connect with your board:
@@ -242,7 +242,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32h7b3i_dk
+   :board: stm32h7b3i_dk/stm32h7b3xx
    :goals: debug
 
 

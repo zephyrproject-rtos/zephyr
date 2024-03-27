@@ -31,7 +31,7 @@ board, are not yet supported.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/gsm_modem
-   :board: reel_board
+   :board: reel_board/nrf52840
    :goals: build flash
    :gen-args: -DCONFIG_MODEM_GSM_APN=\"internet\"
    :compact:

@@ -9,4 +9,4 @@ tests:
     depends_on: gpio
     harness: led
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12

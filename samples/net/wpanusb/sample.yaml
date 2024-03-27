@@ -5,7 +5,7 @@ common:
   depends_on: usb_device
   tags: net ieee802154 usb
   harness: net
-  platform_exclude: pinnacle_100_dvk
+  platform_exclude: pinnacle_100_dvk/nrf52840
 tests:
   sample.net.wpanusb:
     filter: dt_chosen_enabled("zephyr,ieee802154")
@@ -13,4 +13,4 @@ tests:
                       raytac_mdbt53_db_40/nrf5340/cpuapp
   sample.net.wpanusb_frdm_cr20a:
     extra_args: SHIELD=frdm_cr20a
-    platform_allow: frdm_k64f
+    platform_allow: frdm_k64f/mk64f12

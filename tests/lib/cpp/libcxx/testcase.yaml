@@ -48,5 +48,5 @@ tests:
       - CONFIG_EXTERNAL_LIBCPP=y
       - CONFIG_CPP_EXCEPTIONS=y
     integration_platforms:
-      - native_sim
+      - native_sim/native
       - native_sim/native/64

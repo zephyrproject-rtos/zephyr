@@ -12,4 +12,4 @@ tests:
     tags:
       - drivers
       - counter
-    platform_allow: mimxrt1064_evk
+    platform_allow: mimxrt1064_evk/mimxrt1064

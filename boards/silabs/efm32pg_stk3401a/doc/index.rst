@@ -37,7 +37,7 @@ For more information about the EFM32PG SoC and EFM32PG-STK3401A board:
 Supported Features
 ==================
 
-The efm32pg_stk3401a board configuration supports the following hardware features:
+The efm32pg_stk3401a/efm32pg1b200f256gm48 board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -63,7 +63,7 @@ The efm32pg_stk3401a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/efm32pg_stk3401a/efm32pg_stk3401a_defconfig`
+:zephyr_file:`boards/silabs/efm32pg_stk3401a/efm32pg_stk3401a_efm32pg1b200f256gm48_defconfig`
 
 Other hardware features are currently not supported by the port.
 
@@ -141,7 +141,7 @@ Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efm32pg_stk3401a
+   :board: efm32pg_stk3401a/efm32pg1b200f256gm48
    :goals: build
 
 Connect the EFM32PG-STK3401A to your host computer using the USB port and you

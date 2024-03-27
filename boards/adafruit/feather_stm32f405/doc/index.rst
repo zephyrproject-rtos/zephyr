@@ -104,7 +104,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/blinky
-      :board: adafruit_feather_stm32f405
+      :board: adafruit_feather_stm32f405/stm32f405xx
       :goals: build
       :compact:
 
@@ -115,7 +115,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/blinky
-      :board: adafruit_feather_stm32f405
+      :board: adafruit_feather_stm32f405/stm32f405xx
       :goals: flash
       :compact:
 

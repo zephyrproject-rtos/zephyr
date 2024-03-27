@@ -10,4 +10,4 @@ tests:
     depends_on: pwm
     harness: led
     integration_platforms:
-      - nrf52840_mdk
+      - nrf52840_mdk/nrf52840

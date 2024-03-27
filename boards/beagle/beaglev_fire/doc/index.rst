@@ -17,16 +17,16 @@ hobbyists, and researchers to explore and experiment with RISC-V technology.
 
 .. image:: img/BeagleV-Fire-Front-Annotated-768x432.webp
      :align: center
-     :alt: beaglev_fire
+     :alt: beaglev_fire/polarfire
 
 Building
 ========
 
-Applications for the ``beaglev_fire`` board configuration can be built as usual:
+Applications for the ``beaglev_fire/polarfire`` board configuration can be built as usual:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: beaglev_fire
+   :board: beaglev_fire/polarfire
    :goals: build
 
 Debugging
@@ -47,7 +47,7 @@ are connected properly you can press the Reset button which will show you a prog
 
 .. image:: img/board-booting.png
      :align: center
-     :alt: beaglev_fire
+     :alt: beaglev_fire/polarfire
 
 Once you see that progress bar on your screen you can start pressing any button (0-9/a-z) which
 will interrupt the Hart Software Services from booting its payload.

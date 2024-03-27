@@ -1,7 +1,7 @@
 .. _niosv_g:
 
 INTEL FPGA niosv_g
-####################
+##################
 
 Overview
 ********
@@ -63,4 +63,4 @@ Similar message shown below should be appeared in the JTAG UART terminal when us
 .. code-block:: console
 
 	*** Booting Zephyr OS build zephyr-vn.n.nn  ***
-	Hello World! niosv_g
+	Hello World! niosv_g/niosv_g

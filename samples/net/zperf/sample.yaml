@@ -4,7 +4,7 @@ common:
     - zperf
   # TODO: Does not work properly with native_posix, need more TLC
   platform_exclude:
-    - native_posix
+    - native_posix/native
     - native_posix/native/64
     - sam_e70_xplained/same70q21
   min_ram: 64
@@ -14,7 +14,7 @@ sample:
 tests:
   sample.net.zperf:
     harness: net
-    platform_allow: qemu_x86
+    platform_allow: qemu_x86/atom
   sample.net.zperf_st:
     harness: console
     harness_config:
@@ -22,16 +22,16 @@ tests:
       regex:
         - "coming up"
     platform_allow:
-      - nucleo_h563zi
-      - nucleo_h743zi
-      - nucleo_f429zi
-      - nucleo_f746zg
-      - stm32h573i_dk
+      - nucleo_h563zi/stm32h563xx
+      - nucleo_h743zi/stm32h743xx
+      - nucleo_f429zi/stm32f429xx
+      - nucleo_f746zg/stm32f746xx
+      - stm32h573i_dk/stm32h573xx
   sample.net.zperf_no_shell:
     harness: net
     extra_configs:
       - CONFIG_NET_SHELL=n
-    platform_allow: qemu_x86
+    platform_allow: qemu_x86/atom
   sample.net.zperf.netusb_ecm:
     harness: net
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
@@ -44,7 +44,7 @@ tests:
     harness: net
     extra_args: OVERLAY_CONFIG="overlay-usbd_next_ecm.conf"
                 DTC_OVERLAY_FILE="usbd_next_ecm.overlay"
-    platform_allow: nrf52840dk/nrf52840 frdm_k64f
+    platform_allow: nrf52840dk/nrf52840 frdm_k64f/mk64f12
     tags: usb net zperf
     depends_on: usb_device
   sample.net.zperf.netusb_eem:
@@ -71,7 +71,7 @@ tests:
     depends_on: usb_device
   sample.net.zperf.shield:
     harness: net
-    platform_allow: reel_board
+    platform_allow: reel_board/nrf52840
     extra_args: SHIELD=link_board_eth
     tags:
       - shield
@@ -86,10 +86,10 @@ tests:
       - net
       - zperf
     platform_allow:
-      - mimxrt1050_evk
-      - mimxrt1060_evk
-      - mimxrt1064_evk
-      - mimxrt1024_evk
-      - frdm_k64f
+      - mimxrt1050_evk/mimxrt1052
+      - mimxrt1060_evk/mimxrt1062
+      - mimxrt1064_evk/mimxrt1064
+      - mimxrt1024_evk/mimxrt1024
+      - frdm_k64f/mk64f12
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1160_evk/mimxrt1166/cm7

@@ -37,7 +37,7 @@ Hardware
 Supported Features
 ==================
 
-The adafruit_kb2040 board configuration supports the following
+The adafruit_kb2040/rp2040 board configuration supports the following
 hardware features:
 
 .. list-table::

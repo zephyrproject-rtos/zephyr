@@ -26,7 +26,7 @@ LP3943 driver included.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/led_lp3943
-   :board: 96b_neonkey
+   :board: 96b_neonkey/stm32f411xe
    :goals: build
    :compact:
 

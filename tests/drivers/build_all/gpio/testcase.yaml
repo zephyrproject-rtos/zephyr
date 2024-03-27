@@ -6,7 +6,7 @@ common:
 tests:
   drivers.gpio.build:
     min_ram: 32
-    platform_exclude: serpente
+    platform_exclude: serpente/samd21e18a
     depends_on:
       - gpio
       - spi
@@ -14,13 +14,13 @@ tests:
 
   drivers.gpio.build.efinix_sapphire:
     min_ram: 32
-    platform_allow: titanium_ti60_f225
+    platform_allow: titanium_ti60_f225/efinix_sapphire
     depends_on: gpio
     extra_args: DTC_OVERLAY_FILE="efinix_sapphire.overlay"
 
   drivers.gpio.build.altera_pio:
     min_ram: 32
-    platform_allow: niosv_m niosv_g
+    platform_allow: niosv_m/niosv_m niosv_g/niosv_g
     depends_on: gpio
     extra_args: DTC_OVERLAY_FILE="altera.overlay"
 

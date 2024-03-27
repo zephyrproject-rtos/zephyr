@@ -29,7 +29,7 @@ The sample can be built and executed for the
 
 .. zephyr-app-commands::
 	:zephyr-app: samples/drivers/watchdog
-	:board: nucleo_f091rc
+	:board: nucleo_f091rc/stm32f091xc
 	:goals: build flash
 	:compact:
 

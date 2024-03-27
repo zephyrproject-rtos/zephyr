@@ -14,7 +14,7 @@ tests:
       - mips
       - posix
     platform_exclude:
-      - qemu_kvm_arm64
+      - qemu_kvm_arm64/qemu_virt_arm64
   mgmt.mcumgr.smp.version_no_legacy:
     tags:
       - smp_version
@@ -27,4 +27,4 @@ tests:
       - mips
       - posix
     platform_exclude:
-      - qemu_kvm_arm64
+      - qemu_kvm_arm64/qemu_virt_arm64

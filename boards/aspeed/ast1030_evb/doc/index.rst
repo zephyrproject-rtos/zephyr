@@ -47,7 +47,7 @@ The following features are supported:
 Other hardware features are not currently supported by Zephyr (at the moment)
 
 The default configuration can be found in
-:zephyr_file:`boards/aspeed/ast1030_evb/ast1030_evb_defconfig`
+:zephyr_file:`boards/aspeed/ast1030_evb/ast1030_evb_ast1030_defconfig`
 
 
 Connections and IOs
@@ -75,7 +75,7 @@ This board comes with a JTAG port which facilitates debugging using a single phy
 Flashing
 ========
 
-Build application as usual for the ``ast1030_evb`` board, and flash
+Build application as usual for the ``ast1030_evb/ast1030`` board, and flash
 using SF100 SPI Flash programmer. See the
 `Aspeed Zephyr SDK User Guide`_ for more information.
 

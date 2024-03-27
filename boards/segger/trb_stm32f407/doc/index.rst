@@ -113,7 +113,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: segger_trb_stm32f407
+   :board: segger_trb_stm32f407/stm32f407xx
    :goals: build flash
 
 After resetting the board, you should see LED0 blink with a 1 second interval.
@@ -125,7 +125,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: segger_trb_stm32f407
+   :board: segger_trb_stm32f407/stm32f407xx
    :maybe-skip-config:
    :goals: debug
 

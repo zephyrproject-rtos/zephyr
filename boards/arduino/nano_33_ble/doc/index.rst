@@ -117,7 +117,7 @@ Attach the board to your computer using the USB cable, and then
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/blinky
-      :board: arduino_nano_33_ble
+      :board: arduino_nano_33_ble/nrf52840
       :goals: build
       :compact:
 
@@ -148,7 +148,7 @@ Type the following command will start debugging.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: arduino_nano_33_ble
+   :board: arduino_nano_33_ble/nrf52840
    :maybe-skip-config:
    :goals: debug
 
@@ -177,7 +177,7 @@ Required to run the GDB server before launching TRACE32 with the following comma
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: arduino_nano_33_ble
+   :board: arduino_nano_33_ble/nrf52840
    :goals: debugserver
    :compact:
 

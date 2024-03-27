@@ -69,7 +69,7 @@ QEMU emulated environment, for example, with the :zephyr:code-sample:`synchroniz
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: qemu_cortex_r5
+   :board: qemu_cortex_r5/zynqmp_rpu
    :goals: run
 
 This will build an image with the synchronization sample app, boot it using

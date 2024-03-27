@@ -6,7 +6,7 @@ tests:
     tags: modem_chat
     harness: ztest
     platform_allow:
-      - native_posix
-      - native_sim
+      - native_posix/native
+      - native_sim/native
     integration_platforms:
-      - native_sim
+      - native_sim/native

@@ -117,12 +117,12 @@ To enable advanced features, extra arguments should be passed accordingly:
 - TCompactProtocol: ``-DCONFIG_THRIFT_COMPACT_PROTOCOL=y``
 - TSSLSocket: ``-DCONF_FILE="prj.conf ../overlay-tls.conf"``
 
-For example, to build for ``qemu_x86_64`` with TSSLSocket support:
+For example, to build for ``qemu_x86_64/atom`` with TSSLSocket support:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/thrift/hello/server
    :host-os: unix
-   :board: qemu_x86_64
+   :board: qemu_x86_64/atom
    :conf: "prj.conf ../overlay-tls.conf"
    :goals: run
    :compact:
@@ -186,7 +186,7 @@ Then, in annother terminal, run the corresponding ``hello/client`` sample:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/thrift/hello/client
-   :board: qemu_x86_64
+   :board: qemu_x86_64/atom
    :goals: run
    :compact:
 

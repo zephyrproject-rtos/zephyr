@@ -55,10 +55,10 @@ Building and Running
 The sample has a devicetree overlay for the :ref:`bbc_microbit`.
 
 This sample can be built for multiple boards, in this example we will build it
-for the bbc_microbit board:
+for the bbc_microbit/nrf51822 board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/servo_motor
-   :board: bbc_microbit
+   :board: bbc_microbit/nrf51822
    :goals: build flash
    :compact:

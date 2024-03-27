@@ -5,8 +5,8 @@ common:
 tests:
   drivers.flash.stm32.f4:
     platform_allow:
-      - nucleo_f429zi
-      - google_dragonclaw
+      - nucleo_f429zi/stm32f429xx
+      - google_dragonclaw/stm32f412zx
     extra_configs:
       - CONFIG_FLASH_STM32_WRITE_PROTECT=y
       - CONFIG_FLASH_STM32_READOUT_PROTECTION=y
@@ -15,14 +15,14 @@ tests:
   drivers.flash.stm32.l4:
     platform_allow:
       - nucleo_l452re/stm32l452xx/p
-      - disco_l475_iot1
+      - disco_l475_iot1/stm32l475xx
     extra_configs:
       - CONFIG_FLASH_STM32_READOUT_PROTECTION=y
     filter: dt_compat_enabled("st,stm32l4-flash-controller") and
             dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
   drivers.flash.stm32.g4:
     platform_allow:
-      - nucleo_g474re
+      - nucleo_g474re/stm32g474xx
     extra_configs:
       - CONFIG_FLASH_STM32_READOUT_PROTECTION=y
     filter: dt_compat_enabled("st,stm32g4-flash-controller") and

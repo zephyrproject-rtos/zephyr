@@ -51,7 +51,7 @@ Hardware
 Supported Features
 ==================
 
-The mm_feather board configuration supports the following hardware
+The mm_feather/mimxrt1062 board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -201,7 +201,7 @@ Connect a DAPLink debugger from your PC to corresponding SWD pins of SwiftIO Fea
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mm_feather
+   :board: mm_feather/mimxrt1062
    :goals: flash
 
 Open a serial terminal, reset the board (press the "reset" button), and you should
@@ -210,7 +210,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build v2.6.0-rc1-301-gd9c666a5abf8  ***
-   Hello World! mm_feather
+   Hello World! mm_feather/mimxrt1062
 
 Debugging
 =========
@@ -219,7 +219,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mm_feather
+   :board: mm_feather/mimxrt1062
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -228,7 +228,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build v2.6.0-rc1-301-gd9c666a5abf8  ***
-   Hello World! mm_feather
+   Hello World! mm_feather/mimxrt1062
 
 
 .. _MadMachine Homepage:

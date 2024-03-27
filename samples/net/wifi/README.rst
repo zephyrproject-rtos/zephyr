@@ -17,11 +17,11 @@ Building and Running
 
 Verify the board and chip you are targeting provide Wi-Fi support.
 
-For instance you can use TI's CC3220 by selecting the cc3220sf_launchxl board.
+For instance you can use TI's CC3220 by selecting the cc3220sf_launchxl/cc3220sf board.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi
-   :board: cc3220sf_launchxl
+   :board: cc3220sf_launchxl/cc3220sf
    :goals: build
    :compact:
 

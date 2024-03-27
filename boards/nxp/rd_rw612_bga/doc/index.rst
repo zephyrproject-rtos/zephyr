@@ -57,9 +57,8 @@ Supported Features
 +-----------+------------+-----------------------------------+
 
 
-The default configuration can be found in the defconfig file:
-
-   :zephyr_file:`boards/nxp/rd_rw612_bga/rd_rw612_bga_defconfig/`
+The default configuration can be found in
+:zephyr_file:`boards/nxp/rd_rw612_bga/rd_rw612_bga_rw612_defconfig`
 
 Other hardware features are not currently supported
 
@@ -94,7 +93,7 @@ Here is an example for the :ref:`hello_world` application. This example uses the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: rd_rw612_bga
+   :board: rd_rw612_bga/rw612
    :goals: flash
 
 Open a serial terminal, reset the board (press the RESET button), and you should
@@ -103,7 +102,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v3.4.0 *****
-   Hello World! rd_rw612_bga
+   Hello World! rd_rw612_bga/rw612
 
 Debugging
 =========
@@ -113,7 +112,7 @@ Here is an example for the :ref:`hello_world` application. This example uses the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: rd_rw612_bga
+   :board: rd_rw612_bga/rw612
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -122,7 +121,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS zephyr-v3.6.0 *****
-   Hello World! rd_rw612_bga
+   Hello World! rd_rw612_bga/rw612
 
 
 Resources

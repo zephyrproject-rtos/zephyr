@@ -33,8 +33,8 @@ tests:
     filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
       and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
     integration_platforms:
-      - qemu_x86
-      - mimxrt1060_evk
+      - qemu_x86/atom
+      - mimxrt1060_evk/mimxrt1062
   drivers.flash.common.tfm_ns:
     build_only: true
     filter: (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE
@@ -43,23 +43,23 @@ tests:
       - nrf9161dk/nrf9161/ns
   drivers.flash.common.stm32:
     platform_allow:
-      - nucleo_f103rb
-      - nucleo_f207zg
-      - stm32f3_disco
-      - nucleo_f429zi
-      - stm32f746g_disco
-      - nucleo_f767zi
-      - nucleo_g0b1re
-      - nucleo_g474re
-      - nucleo_h743zi
-      - nucleo_l152re
-      - disco_l475_iot1
-      - nucleo_wb55rg
-      - nucleo_wl55jc
-      - stm32l562e_dk
+      - nucleo_f103rb/stm32f103xb
+      - nucleo_f207zg/stm32f207xx
+      - stm32f3_disco/stm32f303xc
+      - nucleo_f429zi/stm32f429xx
+      - stm32f746g_disco/stm32f746xx
+      - nucleo_f767zi/stm32f767xx
+      - nucleo_g0b1re/stm32g0b1xx
+      - nucleo_g474re/stm32g474xx
+      - nucleo_h743zi/stm32h743xx
+      - nucleo_l152re/stm32l152xe
+      - disco_l475_iot1/stm32l475xx
+      - nucleo_wb55rg/stm32wb55xx
+      - nucleo_wl55jc/stm32wl55xx
+      - stm32l562e_dk/stm32l562xx
       - stm32l562e_dk/stm32l562xx/ns
     integration_platforms:
-      - nucleo_f103rb
+      - nucleo_f103rb/stm32f103xb
     filter: (dt_compat_enabled("st,stm32-flash-controller") or
              dt_compat_enabled("st,stm32h7-flash-controller")) and
              dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
@@ -71,7 +71,7 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
   drivers.flash.common.mr_canhubk3_sfdp_runtime:
-    platform_allow: mr_canhubk3
+    platform_allow: mr_canhubk3/s32k344
     extra_configs:
       - CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME=y
   drivers.flash.common.spi_nor:
@@ -90,11 +90,11 @@ tests:
       fixture: external_flash_mx25v1635f
   drivers.flash.common.sam0:
     platform_allow:
-      - samd20_xpro
-      - samr21_xpro
-      - same54_xpro
+      - samd20_xpro/samd20j18
+      - samr21_xpro/samr21g18a
+      - same54_xpro/same54p20a
   drivers.flash.common.gd32:
     platform_allow:
-      - gd32vf103v_eval
-      - gd32a503v_eval
-      - gd32f470i_eval
+      - gd32vf103v_eval/gd32vf103
+      - gd32a503v_eval/gd32a503
+      - gd32f470i_eval/gd32f470

@@ -1,7 +1,7 @@
 tests:
   sample.kernel.cond_var.simple:
     integration_platforms:
-      - native_sim
+      - native_sim/native
     tags:
       - kernel
       - condition_variables

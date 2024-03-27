@@ -84,7 +84,7 @@ To build the test:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/fs/littlefs
-   :board: nucleo_h743zi
+   :board: nucleo_h743zi/stm32h743xx
    :goals: build flash
    :gen-args: -DCONF_FILE=prj_blk.conf
    :compact:
@@ -124,6 +124,6 @@ flash memory.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/fs/littlefs
-   :board: particle_xenon
+   :board: particle_xenon/nrf52840
    :goals: build
    :compact:

@@ -49,7 +49,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr 96b_neonkey board configuration supports the following hardware
+The Zephyr 96b_neonkey/stm32f411xe board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -75,7 +75,7 @@ features:
 More details about the board can be found at `96Boards website`_.
 
 The default board configuration can be found in
-:zephyr_file:`boards/96boards/neonkey/96b_neonkey_defconfig`
+:zephyr_file:`boards/96boards/neonkey/96b_neonkey_stm32f411xe_defconfig`
 
 Connections and IOs
 ===================
@@ -139,7 +139,7 @@ Here is an example for building the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: 96b_neonkey
+   :board: 96b_neonkey/stm32f411xe
    :goals: build
 
 Flashing

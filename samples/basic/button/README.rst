@@ -95,11 +95,11 @@ Building and Running
 ********************
 
 This sample can be built for multiple boards, in this example we will build it
-for the nucleo_f103rb board:
+for the nucleo_f103rb/stm32f103xb board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/button
-   :board: nucleo_f103rb
+   :board: nucleo_f103rb/stm32f103xb
    :goals: build
    :compact:
 

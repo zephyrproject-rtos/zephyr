@@ -4,8 +4,8 @@ common:
     - arm
     - xtensa
   platform_exclude:
-    - numaker_pfm_m487 # See #63167
-    - qemu_cortex_r5 # unsupported relocations
+    - numaker_pfm_m487/m487 # See #63167
+    - qemu_cortex_r5/zynqmp_rpu # unsupported relocations
 
 tests:
   # add_llext_target() supports a fairly limited number of
@@ -49,7 +49,7 @@ tests:
       - simulation
       - arch
     platform_exclude:
-      - qemu_cortex_a9 # MMU
+      - qemu_cortex_a9/xc7z007s # MMU
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
       - CONFIG_MODULES=y
@@ -62,7 +62,7 @@ tests:
       - simulation
       - arch
     platform_exclude:
-      - qemu_cortex_a9 # MMU
+      - qemu_cortex_a9/xc7z007s # MMU
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
       - CONFIG_MODULES=y

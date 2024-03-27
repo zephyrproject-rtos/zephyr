@@ -46,7 +46,7 @@ for the :ref:`blackpill_f411ce` board.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/sgp40_sht4x
-   :board: blackpill_f411ce
+   :board: blackpill_f411ce/stm32f411xe
    :goals: build flash
 
 

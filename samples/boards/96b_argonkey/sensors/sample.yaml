@@ -4,7 +4,7 @@ sample:
 tests:
   sample.board.96b_argonkey.sensors:
     harness: sensor
-    platform_allow: 96b_argonkey
+    platform_allow: 96b_argonkey/stm32f412cx
     tags: sensors
     depends_on:
       - i2c

@@ -24,7 +24,7 @@ tests:
     depends_on: usb_device
     platform_allow:
       - nrf52840dk/nrf52840
-      - frdm_k64f
+      - frdm_k64f/mk64f12
     extra_args:
       - CONF_FILE="usbd_next_prj.conf"
       - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"

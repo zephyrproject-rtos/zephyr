@@ -28,7 +28,7 @@ on Synopsys ARC HSDK board as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/arch/smp/pi
    :host-os: unix
-   :board: qemu_x86_64
+   :board: qemu_x86_64/atom
    :goals: run
    :compact:
 

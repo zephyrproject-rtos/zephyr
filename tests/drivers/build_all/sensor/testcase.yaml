@@ -3,10 +3,10 @@ common:
     - drivers
     - sensors
   platform_allow:
-    - native_posix
-    - native_sim
+    - native_posix/native
+    - native_sim/native
   integration_platforms:
-    - native_sim
+    - native_sim/native
   build_only: true
 tests:
   sensors.build.sensorhub:

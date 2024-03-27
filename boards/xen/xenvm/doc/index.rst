@@ -35,7 +35,7 @@ The kernel currently does not support other hardware features on this platform.
 The default configuration for this board can be found in these files:
 
 - :zephyr_file:`boards/xen/xenvm/Kconfig.defconfig`
-- :zephyr_file:`boards/xen/xenvm/xenvm_defconfig`
+- :zephyr_file:`boards/xen/xenvm/xenvm_xenvm_defconfig`
 
 Devices
 ========
@@ -58,8 +58,8 @@ Interrupt Controller
 Depending on the version of the GIC on your hardware, you may choose one of the
 following board configuration variants:
 
-- ``xenvm`` selects GICv2
-- ``xenvm//gicv3`` selects GICv3
+- ``xenvm/xenvm`` selects GICv2
+- ``xenvm/xenvm/gicv3`` selects GICv3
 
 CPU Core type
 -------------
@@ -99,13 +99,13 @@ guest, for example, with the :zephyr:code-sample:`synchronization` sample:
 
 .. code-block::
 
-   $ west build -b xenvm samples/synchronization
+   $ west build -b xenvm/xenvm samples/synchronization
 
 - if your hardware is based on GICv3:
 
 .. code-block::
 
-   $ west build -b xenvm//gicv3 samples/synchronization
+   $ west build -b xenvm/xenvm/gicv3 samples/synchronization
 
 This will build an image with the synchronization sample app. Next, you need to
 create guest configuration file :code:`zephyr.conf`. There is example:
@@ -119,7 +119,7 @@ create guest configuration file :code:`zephyr.conf`. There is example:
    gic_version="v2"
    on_crash="preserve"
 
-When using ``xenvm//gicv3`` configuration, you need to remove the ``gic_version``
+When using ``xenvm/xenvm/gicv3`` configuration, you need to remove the ``gic_version``
 parameter or set it to ``"v3"``.
 
 You need to upload both :code:`zephyr.bin` and :code:`zephyr.conf` to your Dom0
@@ -164,7 +164,7 @@ almost any ARMv8 host running in aarch64 mode, there is no guarantee, that Xen
 will not change some values (like RAM base address) in the future.
 
 Also, frequency of system timer is board specific and should be updated when running
-Zephyr xenvm image on new hardware.
+Zephyr xenvm/xenvm image on new hardware.
 
 One can make Xen to dump generated DTB by using :code:`LIBXL_DEBUG_DUMP_DTB`
 environment variable, like so:
@@ -176,7 +176,7 @@ environment variable, like so:
 Then, generated "domu-libxl.dtb" file can be de-compiled using "dtc" tool.
 
 Use information from de-compiled DTB file to update all related entries in
-provided "xenvm.dts" file. If memory layout is also changed, you may need to
+provided "xenvm_xenvm.dts" file. If memory layout is also changed, you may need to
 update :code:`CONFIG_SRAM_BASE_ADDRESS` as well.
 
 References

@@ -48,7 +48,7 @@ Build Zephyr application
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: intel_adl_crb
+      :board: intel_adl_crb/alder_lake
       :goals: build
 
    .. note::

@@ -8,10 +8,10 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
       ) or CONFIG_ARCH_POSIX
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
       - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
-      - native_sim
+      - native_sim/native
     tags: cmsis-dsp
     min_flash: 128
     min_ram: 64
@@ -37,10 +37,10 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
       ) or CONFIG_ARCH_POSIX
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
       - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
-      - native_sim
+      - native_sim/native
     tags: cmsis-dsp
     min_flash: 128
     min_ram: 64
@@ -66,10 +66,10 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
       ) or CONFIG_ARCH_POSIX
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
       - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
-      - native_sim
+      - native_sim/native
     tags: cmsis-dsp
     min_flash: 128
     min_ram: 64
@@ -95,7 +95,7 @@ tests:
     filter: (CONFIG_CMSIS_DSP_FLOAT16 and (CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M)
       and CONFIG_FULL_LIBC_SUPPORTED)
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
       - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
     tags: cmsis-dsp
@@ -123,10 +123,10 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
       ) or CONFIG_ARCH_POSIX
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
       - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
-      - native_sim
+      - native_sim/native
     tags: cmsis-dsp
     min_flash: 128
     min_ram: 64
@@ -152,10 +152,10 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
       ) or CONFIG_ARCH_POSIX
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
       - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
-      - native_sim
+      - native_sim/native
     tags: cmsis-dsp
     min_flash: 128
     min_ram: 72
@@ -181,12 +181,12 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
       ) or CONFIG_ARCH_POSIX
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
       - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
-      - native_sim
+      - native_sim/native
     tags: cmsis-dsp
-    platform_exclude: frdm_kw41z
+    platform_exclude: frdm_kw41z/mkw41z4
     min_flash: 128
     min_ram: 128
     extra_args: CONF_FILE=prj_base.conf
@@ -201,7 +201,7 @@ tests:
     tags:
       - cmsis-dsp
       - fpu
-    platform_exclude: frdm_kw41z
+    platform_exclude: frdm_kw41z/mkw41z4
     min_flash: 128
     min_ram: 128
     extra_args: CONF_FILE=prj_base.conf
@@ -212,12 +212,12 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
       ) or CONFIG_ARCH_POSIX
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
       - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
-      - native_sim
+      - native_sim/native
     tags: cmsis-dsp
-    platform_exclude: frdm_kw41z
+    platform_exclude: frdm_kw41z/mkw41z4
     min_flash: 128
     min_ram: 144
     extra_args: CONF_FILE=prj_base.conf
@@ -232,7 +232,7 @@ tests:
     tags:
       - cmsis-dsp
       - fpu
-    platform_exclude: frdm_kw41z
+    platform_exclude: frdm_kw41z/mkw41z4
     min_flash: 128
     min_ram: 144
     extra_args: CONF_FILE=prj_base.conf
@@ -243,12 +243,12 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
       ) or CONFIG_ARCH_POSIX
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
       - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
-      - native_sim
+      - native_sim/native
     tags: cmsis-dsp
-    platform_exclude: frdm_kw41z
+    platform_exclude: frdm_kw41z/mkw41z4
     min_flash: 128
     min_ram: 128
     extra_args: CONF_FILE=prj_base.conf
@@ -263,7 +263,7 @@ tests:
     tags:
       - cmsis-dsp
       - fpu
-    platform_exclude: frdm_kw41z
+    platform_exclude: frdm_kw41z/mkw41z4
     min_flash: 128
     min_ram: 128
     extra_args: CONF_FILE=prj_base.conf
@@ -274,7 +274,7 @@ tests:
     filter: (CONFIG_CMSIS_DSP_FLOAT16 and (CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M)
       and CONFIG_FULL_LIBC_SUPPORTED)
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
       - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
     tags: cmsis-dsp
@@ -302,12 +302,12 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
       ) or CONFIG_ARCH_POSIX
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
       - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
-      - native_sim
+      - native_sim/native
     tags: cmsis-dsp
-    platform_exclude: frdm_kw41z
+    platform_exclude: frdm_kw41z/mkw41z4
     min_flash: 128
     min_ram: 128
     extra_args: CONF_FILE=prj_base.conf
@@ -322,7 +322,7 @@ tests:
     tags:
       - cmsis-dsp
       - fpu
-    platform_exclude: frdm_kw41z
+    platform_exclude: frdm_kw41z/mkw41z4
     min_flash: 128
     min_ram: 128
     extra_args: CONF_FILE=prj_base.conf
@@ -333,12 +333,12 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
       ) or CONFIG_ARCH_POSIX
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
       - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
-      - native_sim
+      - native_sim/native
     tags: cmsis-dsp
-    platform_exclude: frdm_kw41z
+    platform_exclude: frdm_kw41z/mkw41z4
     min_flash: 128
     min_ram: 128
     extra_args: CONF_FILE=prj_base.conf
@@ -353,7 +353,7 @@ tests:
     tags:
       - cmsis-dsp
       - fpu
-    platform_exclude: frdm_kw41z
+    platform_exclude: frdm_kw41z/mkw41z4
     min_flash: 128
     min_ram: 128
     extra_args: CONF_FILE=prj_base.conf

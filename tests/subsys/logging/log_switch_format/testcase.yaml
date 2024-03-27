@@ -14,7 +14,7 @@ tests:
   logging.format.switch.deferred:
     integration_platforms:
       - mps2/an385
-      - qemu_x86
+      - qemu_x86/atom
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     # "CONFIG_FULL_LIBC_SUPPORTED" filter was applied
     # because of following chain of dependencies:
@@ -29,7 +29,7 @@ tests:
     extra_args: OVERLAY_CONFIG=overlay_immediate.conf
     integration_platforms:
       - mps2/an385
-      - qemu_x86
+      - qemu_x86/atom
     filter: CONFIG_FULL_LIBC_SUPPORTED
     extra_configs:
       - CONFIG_REQUIRES_FULL_LIBC=y
@@ -37,7 +37,7 @@ tests:
     extra_args: OVERLAY_CONFIG=overlay_custom_output.conf
     integration_platforms:
       - mps2/an385
-      - qemu_x86
+      - qemu_x86/atom
     filter: CONFIG_FULL_LIBC_SUPPORTED
     extra_configs:
       - CONFIG_REQUIRES_FULL_LIBC=y

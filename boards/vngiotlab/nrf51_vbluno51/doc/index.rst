@@ -6,20 +6,20 @@ nRF51-VBLUno51
 Overview
 ********
 
-Zephyr uses the nrf51_vbluno51 board configuration to run on the VBLUno51 board,
+Zephyr uses the nrf51_vbluno51/nrf51822 board configuration to run on the VBLUno51 board,
 a VNG Bluetooth Low Energy UNO using an nRF51822 ARM processor.
 
 .. figure:: img/nrf51_vbluno51.jpg
      :align: center
      :alt: nRF51_VBLUno51
 
-     nrf51_vbluno51 Top
+     nrf51_vbluno51/nrf51822 Top
 
 .. figure:: img/nrf51_vbluno51_bot.jpg
      :align: center
      :alt: nRF51_VBLUno51 Bottom
 
-     nrf51_vbluno51 Bottom
+     nrf51_vbluno51/nrf51822 Bottom
 
 More information about the board can be found at the
 `VBLUno51 wiki page`_.
@@ -84,18 +84,18 @@ More details
      :align: center
      :alt: nRF51_VBLUno51 Pinout
 
-     nrf51_vbluno51 Pinout
+     nrf51_vbluno51/nrf51822 Pinout
 
 .. figure:: img/vbluno51_frizting.jpg
      :align: center
      :alt: nRF51_VBLUno51 Fritzing part
 
-     nrf51_vbluno51 Fritzing part
+     nrf51_vbluno51/nrf51822 Fritzing part
 
 Programming and Debugging
 *************************
 
-Applications for the ``nrf51_vbluno51`` board configuration can be
+Applications for the ``nrf51_vbluno51/nrf51822`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details).
 
@@ -114,7 +114,7 @@ the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nrf51_vbluno51
+   :board: nrf51_vbluno51/nrf51822
    :goals: build flash
 
 Debugging
@@ -125,7 +125,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nrf51_vbluno51
+   :board: nrf51_vbluno51/nrf51822
    :maybe-skip-config:
    :goals: debug
 

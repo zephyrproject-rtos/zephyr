@@ -34,11 +34,11 @@ normally would, selecting an appropriate board:
 
     .. code-block:: console
 
-        west build -b acrn_ehl_crb samples/hello_world
+        west build -b acrn_ehl_crb/elkhart_lake samples/hello_world
 
 In this tutorial, we will use the Intel Elkhart Lake Reference Board
 (`EHL`_ CRB) since it is one of the suggested platforms for this
-type of scenario. Use ``acrn_ehl_crb`` as the target board parameter.
+type of scenario. Use ``acrn_ehl_crb/elkhart_lake`` as the target board parameter.
 
 Note the kconfig output in ``build/zephyr/.config``, you will need to
 reference that to configure ACRN later.
@@ -296,7 +296,7 @@ command:
 
         ----- Entering VM 0 Shell -----
         *** Booting Zephyr OS build v2.6.0-rc1-324-g1a03783861ad  ***
-        Hello World! acrn
+        Hello World! acrn/atom
 
 
 .. _EHL: https://www.intel.com/content/www/us/en/products/docs/processors/embedded/enhanced-for-iot-platform-brief.html

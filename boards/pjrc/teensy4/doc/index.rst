@@ -47,7 +47,7 @@ See the `Teensy 4.0 Website`_ for a complete hardware description.
 Supported Features
 ==================
 
-The teensy40 board configuration supports the following hardware
+The teensy40/mimxrt1062 board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -68,9 +68,9 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/pjrc/teensy4/teensy40_defconfig`
+:zephyr_file:`boards/pjrc/teensy4/teensy40_mimxrt1062_defconfig`
 
-The teensy41 board configuration supports additional hardware
+The teensy41/mimxrt1062 board configuration supports additional hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -82,7 +82,7 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/pjrc/teensy4/teensy41_defconfig`
+:zephyr_file:`boards/pjrc/teensy4/teensy41_mimxrt1062_defconfig`
 
 Other hardware features are not currently supported by the port.
 

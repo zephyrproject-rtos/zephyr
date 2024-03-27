@@ -75,6 +75,6 @@ Building for a simulated nrf52_bsim
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/broadcast_audio_sink/
-   :board: nrf52_bsim
+   :board: nrf52_bsim/native
    :goals: build
    :gen-args: -DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf

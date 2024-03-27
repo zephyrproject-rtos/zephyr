@@ -7,13 +7,13 @@ tests:
     platform_exclude:
       - adp_xc7k/ae350
       - bcm958402m2/bcm58402/m7
-      - bcm958401m2
+      - bcm958401m2/bcm58400
     integration_platforms:
-      - qemu_xtensa
-      - qemu_cortex_a53
+      - qemu_xtensa/dc233c
+      - qemu_cortex_a53/qemu_cortex_a53
       - nsim/nsim_em
-      - qemu_x86
-      - qemu_x86_64
+      - qemu_x86/atom
+      - qemu_x86_64/atom
   kernel.cache.api.minimallibc:
     tags:
       - kernel
@@ -23,12 +23,12 @@ tests:
     platform_exclude:
       - adp_xc7k/ae350
       - bcm958402m2/bcm58402/m7
-      - bcm958401m2
+      - bcm958401m2/bcm58400
     integration_platforms:
-      - qemu_xtensa
-      - qemu_cortex_a53
+      - qemu_xtensa/dc233c
+      - qemu_cortex_a53/qemu_cortex_a53
       - nsim/nsim_em
-      - qemu_x86
-      - qemu_x86_64
+      - qemu_x86/atom
+      - qemu_x86_64/atom
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y

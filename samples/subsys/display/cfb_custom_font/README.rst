@@ -30,11 +30,11 @@ directory:
   on the reel_board.
 
 
-Example building for the reel_board with SSD16XX display support:
+Example building for the reel_board/nrf52840 with SSD16XX display support:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/cfb_custom_font
    :host-os: unix
-   :board: reel_board
+   :board: reel_board/nrf52840
    :goals: flash
    :compact:

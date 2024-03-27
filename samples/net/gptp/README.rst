@@ -51,7 +51,7 @@ Setting up Linux Host
 If you need VLAN support in your network, then the
 :zephyr_file:`samples/net/vlan/vlan-setup-linux.sh` provides a script that can be
 executed on the Linux host. It creates two VLANs on the Linux host and creates
-routes to Zephyr. If you are using native_sim board, then
+routes to Zephyr. If you are using native_sim/native board, then
 the ``net-setup.sh`` will create VLAN setup automatically with this command:
 
 .. code-block:: console
@@ -63,7 +63,7 @@ daemon that can be run in Linux host and which can act as a grandmaster for
 the IEEE 801.1AS network. Note that OpenAVNU will not work with
 native_sim board as that board only supports software timestamping and
 OpenAVNU only supports hardware timestamping. See instructions at the end
-of this chapter how to run linuxptp daemon with native_sim board.
+of this chapter how to run linuxptp daemon with native_sim/native board.
 
 Get OpenAvnu/gPTP project sources
 
@@ -126,7 +126,7 @@ By default gPTP in Zephyr will not print any gPTP debug messages to console.
 One can enable debug prints by setting
 :kconfig:option:`CONFIG_NET_GPTP_LOG_LEVEL_DBG` in the config file.
 
-For native_sim board, use ``linuxptp`` project as that supports
+For native_sim/native board, use ``linuxptp`` project as that supports
 software timestamping.
 
 Get linuxptp project sources
@@ -150,7 +150,7 @@ Multiport Setup
 
 If you set :kconfig:option:`CONFIG_NET_GPTP_NUM_PORTS` larger than 1, then gPTP sample
 will create multiple TSN ports. This configuration is currently only supported
-in native_sim board.
+in native_sim/native board.
 
 You need to enable the ports in the net-tools. If the number of ports is set
 to 2, then give following commands to create the network interfaces in host
@@ -175,7 +175,7 @@ Compile Zephyr application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/gptp
-   :board: native_sim
+   :board: native_sim/native
    :goals: build
    :compact:
 

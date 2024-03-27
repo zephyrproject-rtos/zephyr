@@ -5,7 +5,7 @@ common:
   min_ram: 21
   depends_on: netif
   integration_platforms:
-    - native_sim
+    - native_sim/native
 tests:
   net.dns.cache:
     build_only: false

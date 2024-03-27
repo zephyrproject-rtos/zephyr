@@ -17,13 +17,13 @@ tests:
       - memc
     depends_on: memc
     filter: dt_compat_enabled("atmel,sam-smc")
-    platform_allow: sam4s_xplained
+    platform_allow: sam4s_xplained/sam4s16c
     integration_platforms:
-      - sam4s_xplained
+      - sam4s_xplained/sam4s16c
   drivers.memc.sifive_ddr:
     simulation_exclude:
       - renode
     tags:
       - drivers
       - memc
-    platform_allow: hifive_unmatched
+    platform_allow: hifive_unmatched/fu740

@@ -1,4 +1,4 @@
 tests:
   bluetooth.df.conection_cte_req:
-    platform_allow: nrf52_bsim
+    platform_allow: nrf52_bsim/nrf52833
     tags: bluetooth

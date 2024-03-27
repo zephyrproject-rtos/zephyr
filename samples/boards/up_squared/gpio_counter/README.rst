@@ -52,7 +52,7 @@ Build the sample in the following way:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/up_squared/gpio_counter
-   :board: up_squared
+   :board: up_squared/apollo_lake
    :goals: build
 
 Prepare the boot device (USB storage drive) as described for the :ref:`UP Squared <up_squared>`

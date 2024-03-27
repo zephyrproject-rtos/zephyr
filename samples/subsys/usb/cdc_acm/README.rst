@@ -31,7 +31,7 @@ attach it to the USB to TTL Serial cable. Build and flash the project:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/cdc_acm
-   :board: reel_board
+   :board: reel_board/nrf52840
    :goals: flash
    :compact:
 

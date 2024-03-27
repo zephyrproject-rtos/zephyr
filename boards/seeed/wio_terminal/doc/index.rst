@@ -41,7 +41,7 @@ Hardware
 Supported Features
 ==================
 
-The wio_terminal board configuration supports the following hardware features:
+The wio_terminal/samd51p19a board configuration supports the following hardware features:
 
 .. list-table::
     :header-rows: 1
@@ -92,7 +92,7 @@ The wio_terminal board configuration supports the following hardware features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/seeed/wio_terminal/wio_terminal_defconfig`.
+:zephyr_file:`boards/seeed/wio_terminal/wio_terminal_samd51p19a_defconfig`.
 
 Zephyr can use the default Cortex-M SYSTICK timer or the SAM0 specific RTC.
 To use the RTC, set :kconfig:option:`CONFIG_CORTEX_M_SYSTICK=n` and set
@@ -143,7 +143,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
-      :board: wio_terminal
+      :board: wio_terminal/samd51p19a
       :goals: build
       :compact:
 
@@ -153,7 +153,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
-      :board: wio_terminal
+      :board: wio_terminal/samd51p19a
       :goals: flash
       :compact:
 
@@ -179,7 +179,7 @@ debugged using an SWD probe such as the Segger J-Link.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
-      :board: wio_terminal
+      :board: wio_terminal/samd51p19a
       :goals: flash
       :flash-args: -r openocd
       :compact:
@@ -188,7 +188,7 @@ debugged using an SWD probe such as the Segger J-Link.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
-      :board: wio_terminal
+      :board: wio_terminal/samd51p19a
       :goals: debug
       :compact:
 

@@ -6,4 +6,4 @@ tests:
     harness: sensor
     integration_platforms:
       - nrf52840dk/nrf52840
-    platform_allow: nrf52840dk/nrf52840 frdm_k22f
+    platform_allow: nrf52840dk/nrf52840 frdm_k22f/mk22f51212

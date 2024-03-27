@@ -2,4 +2,4 @@ tests:
   pm.states.api.dts:
     tags: pm
     platform_allow:
-      - native_sim
+      - native_sim/native

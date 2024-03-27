@@ -8,7 +8,7 @@ common:
     - uart
   filter: CONFIG_UART_CONSOLE
   integration_platforms:
-    - qemu_x86
+    - qemu_x86/atom
 tests:
   logging.backend.uart.single:
     extra_args: DTC_OVERLAY_FILE="./single.overlay"

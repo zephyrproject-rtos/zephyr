@@ -107,7 +107,7 @@ Push buttons
 Programming and Debugging
 *************************
 
-Applications for the ``bl653_dvk`` board configuration can be built, flashed,
+Applications for the ``bl653_dvk/nrf52833`` board configuration can be built, flashed,
 and debugged in the usual way. See :ref:`build_an_application` and
 :ref:`application_run` for more details on building and running.
 
@@ -137,7 +137,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: bl653_dvk
+   :board: bl653_dvk/nrf52833
    :goals: build flash
 
 Debugging
@@ -167,7 +167,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/lairdconnect/bl653_dvk/bl653_dvk.dts`.
+:zephyr_file:`boards/lairdconnect/bl653_dvk/bl653_dvk_nrf52833.dts`.
 
 Using UART1
 ***********

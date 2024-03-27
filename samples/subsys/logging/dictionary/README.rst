@@ -27,7 +27,7 @@ This application can be built and executed on QEMU as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/logging/dictionary
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :goals: run
    :compact:
 
@@ -63,7 +63,7 @@ Running the Log Parser
    .. code-block:: none
 
       *** Booting Zephyr OS build zephyr-v2.5.0-2471-g09b9eaf333e6  ***
-      Hello World! qemu_x86
+      Hello World! qemu_x86/atom
       [     77820] <err> hello_world: error string
       [     86332] <dbg> hello_world: main: debug string
       [     96275] <inf> hello_world: info string

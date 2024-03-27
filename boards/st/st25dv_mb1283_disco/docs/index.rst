@@ -83,7 +83,7 @@ Default communication settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-Applications for the ``st25dv_mb1283_disco`` board configuration can be built and
+Applications for the ``st25dv_mb1283_disco/stm32f405xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -105,7 +105,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: st25dv_mb1283_disco
+   :board: st25dv_mb1283_disco/stm32f405xx
    :goals: build flash
 
 Run a serial host program to connect with your board:
@@ -118,7 +118,7 @@ You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! st25dv_mb1283_disco
+   Hello World! st25dv_mb1283_disco/stm32f405xx
 
 Debugging
 =========
@@ -128,7 +128,7 @@ You can debug an application in the usual way. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: st25dv_mb1283_disco
+   :board: st25dv_mb1283_disco/stm32f405xx
    :goals: debug
 
 

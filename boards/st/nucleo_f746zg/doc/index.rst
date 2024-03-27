@@ -88,7 +88,7 @@ Nucleo F746ZG provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_f746zg board configuration supports the following hardware
+The Zephyr nucleo_f746zg/stm32f746xx board configuration supports the following hardware
 features:
 
 +-------------+------------+-------------------------------------+
@@ -126,7 +126,7 @@ features:
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f746zg/nucleo_f746zg_defconfig`
+:zephyr_file:`boards/st/nucleo_f746zg/nucleo_f746zg_stm32f746xx_defconfig`
 
 For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 
@@ -177,7 +177,7 @@ do it by removing ``SB156`` jumper on the back side of the board.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_f746zg`` board configuration can be built and
+Applications for the ``nucleo_f746zg/stm32f746xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -201,14 +201,14 @@ Build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_f746zg
+   :board: nucleo_f746zg/stm32f746xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   $ Hello World! nucleo_f746zg
+   $ Hello World! nucleo_f746zg/stm32f746xx
 
 Debugging
 =========
@@ -218,7 +218,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_f746zg
+   :board: nucleo_f746zg/stm32f746xx
    :maybe-skip-config:
    :goals: debug
 

@@ -3,9 +3,9 @@ sample:
   name: smbus sample
 common:
   platform_allow:
-    - qemu_x86_64
-    - intel_ehl_crb
-    - intel_rpl_s_crb
+    - qemu_x86_64/atom
+    - intel_ehl_crb/elkhart_lake
+    - intel_rpl_s_crb/raptor_lake
   harness: console
   harness_config:
     type: one_line

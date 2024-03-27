@@ -175,7 +175,7 @@ More information about STM32U5A5ZJ can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_u5a5zj_q board configuration supports the following hardware features:
+The Zephyr nucleo_u5a5zj_q/stm32u5a5xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -210,7 +210,7 @@ The Zephyr nucleo_u5a5zj_q board configuration supports the following hardware f
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_u5a5zj_q/nucleo_u5a5zj_q_defconfig`
+:zephyr_file:`boards/st/nucleo_u5a5zj_q/nucleo_u5a5zj_q_stm32u5a5xx_defconfig`
 
 
 Connections and IOs
@@ -310,7 +310,7 @@ Then build and flash the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_u5a5zj_q
+   :board: nucleo_u5a5zj_q/stm32u5a5xx
    :goals: build flash
 
 You should see the following message on the console:
@@ -327,7 +327,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nucleo_u5a5zj_q
+   :board: nucleo_u5a5zj_q/stm32u5a5xx
    :goals: debug
 
 Note: Check the ``build/tfm`` directory to ensure that the commands required by these scripts

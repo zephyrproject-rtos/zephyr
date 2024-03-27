@@ -6,11 +6,11 @@ common:
 tests:
   drivers.video.build:
     platform_allow:
-      - native_posix
-      - native_sim
+      - native_posix/native
+      - native_sim/native
     min_ram: 32
     depends_on:
       - gpio
       - i2c
   drivers.video.mcux_csi.build:
-    platform_allow: mimxrt1064_evk
+    platform_allow: mimxrt1064_evk/mimxrt1064

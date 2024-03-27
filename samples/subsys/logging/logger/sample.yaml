@@ -4,7 +4,7 @@ sample:
 tests:
   sample.logger.basic:
     integration_platforms:
-      - native_sim
+      - native_sim/native
     tags: logging
     harness: console
     harness_config:
@@ -19,7 +19,7 @@ tests:
 
   sample.logger.rtt:
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
     tags: logging
     filter: CONFIG_HAS_SEGGER_RTT
     arch_exclude:
@@ -48,11 +48,11 @@ tests:
     integration_platforms:
       - mps2/an385
     platform_exclude:
-      - ip_k66f
-      - bl652_dvk
-      - bl654_dvk
-      - decawave_dwm1001_dev
-      - segger_trb_stm32f407
+      - ip_k66f/mk66f18
+      - bl652_dvk/nrf52832
+      - bl654_dvk/nrf52840
+      - decawave_dwm1001_dev/nrf52832
+      - segger_trb_stm32f407/stm32f407xx
     arch_exclude:
       - posix
     tags:

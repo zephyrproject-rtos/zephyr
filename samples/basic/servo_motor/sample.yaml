@@ -9,4 +9,4 @@ tests:
     harness: motor
     filter: dt_compat_enabled("pwm-servo")
     integration_platforms:
-      - bbc_microbit
+      - bbc_microbit/nrf51822

@@ -116,7 +116,7 @@ To build shield with specific overlay:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi
-   :board: sam4e_xpro
+   :board: sam4e_xpro/sam4e16e
    :shield: esp_8266
    :goals: build flash
 
@@ -124,7 +124,7 @@ To build shield with standard headers:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi
-   :board: [disco_l475_iot1 | frdm_k64f | lpcxpresso55s69_ns | nucleo_f767zi]
+   :board: [disco_l475_iot1/stm32l475xx | frdm_k64f/mk64f12 | lpcxpresso55s69/lpc55s69/cpu0/ns | nucleo_f767zi/stm32f767xx]
    :shield: [esp_8266_arduino | esp_8266_mikrobus]
    :goals: build flash
 

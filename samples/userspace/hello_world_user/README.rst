@@ -24,7 +24,7 @@ It can be built and executed on QEMU as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/userspace/hello_world_user
    :host-os: unix
-   :board: qemu_riscv32
+   :board: qemu_riscv32/qemu_virt_riscv32
    :goals: run
    :compact:
 
@@ -33,6 +33,6 @@ Sample Output
 
 .. code-block:: console
 
-    Hello World from UserSpace! qemu_riscv32
+    Hello World from UserSpace! qemu_riscv32/qemu_virt_riscv32
 
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.

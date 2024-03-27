@@ -47,7 +47,7 @@ Hardware
 Supported Features
 ==================
 
-The rpi_pico board configuration supports the following
+The rpi_pico/rp2040 board configuration supports the following
 hardware features:
 
 .. list-table::
@@ -162,14 +162,14 @@ Flashing
 Using SEGGER JLink
 ------------------
 
-You can Flash the rpi_pico with a SEGGER JLink debug probe as described in
+You can Flash the rpi_pico/rp2040 with a SEGGER JLink debug probe as described in
 :ref:`Building, Flashing and Debugging <west-flashing>`.
 
 Here is an example of building and flashing the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: rpi_pico
+   :board: rpi_pico/rp2040
    :goals: build
 
 .. code-block:: bash
@@ -204,7 +204,7 @@ Here is an example of building and flashing the :zephyr:code-sample:`blinky` app
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: rpi_pico
+   :board: rpi_pico/rp2040
    :goals: build flash
    :gen-args: -DOPENOCD=/usr/local/bin/openocd -DOPENOCD_DEFAULT_PATH=/usr/local/share/openocd/scripts -DRPI_PICO_DEBUG_ADAPTER=picoprobe
 
@@ -264,7 +264,7 @@ Here is an example for debugging the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: rpi_pico
+   :board: rpi_pico/rp2040
    :maybe-skip-config:
    :goals: debug
    :gen-args: -DOPENOCD=/usr/local/bin/openocd -DOPENOCD_DEFAULT_PATH=/usr/local/share/openocd/scripts -DRPI_PICO_DEBUG_ADAPTER=raspberrypi-swd

@@ -4,9 +4,9 @@ tests:
   init.check_init_priorities:
     build_only: true
     platform_allow:
-      - native_sim
+      - native_sim/native
       - native_sim/native/64
-      - native_posix
+      - native_posix/native
     integration_platforms:
-      - native_sim
-      - native_sim
+      - native_sim/native
+      - native_sim/native

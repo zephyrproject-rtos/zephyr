@@ -3,17 +3,17 @@ tests:
     tags:
       - kernel
       - smp
-    platform_allow: intel_adsp/cavs25 qemu_x86_64
+    platform_allow: intel_adsp/cavs25 qemu_x86_64/atom
     integration_platforms:
-      - qemu_x86_64
+      - qemu_x86_64/atom
   kernel.multiprocessing.smp_boot_delay.minimallibc:
     filter: CONFIG_MINIMAL_LIBC_SUPPORTED
     tags:
       - kernel
       - smp
       - libc
-    platform_allow: intel_adsp/cavs25 qemu_x86_64
+    platform_allow: intel_adsp/cavs25 qemu_x86_64/atom
     integration_platforms:
-      - qemu_x86_64
+      - qemu_x86_64/atom
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y

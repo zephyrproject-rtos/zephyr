@@ -179,7 +179,7 @@ using 115200 8N1.
 Programming and Debugging
 *************************
 
-The ``nucleo_f722ze`` can be flashed and debugged in the typical manner.
+The ``nucleo_f722ze/stm32f722xx`` can be flashed and debugged in the typical manner.
 The Nucleo F722ZE board includes an ST-LINK V2-1 debugger, which can be used
 with the OpenOCD version provided with the Zephyr SDK. Refer to
 :ref:`build_an_application` and :ref:`application_run` for detailed
@@ -193,7 +193,7 @@ ST-LINK interface:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_f722ze
+   :board: nucleo_f722ze/stm32f722xx
    :goals: build flash
 
 Debugging
@@ -201,7 +201,7 @@ Debugging
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_f722ze
+   :board: nucleo_f722ze/stm32f722xx
    :maybe-skip-config:
    :goals: debug
 

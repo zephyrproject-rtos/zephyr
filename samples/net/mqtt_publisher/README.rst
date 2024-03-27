@@ -93,7 +93,7 @@ of this sample application (i.e., :zephyr_file:`samples/net/mqtt_publisher`) and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/mqtt_publisher
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :goals: build flash
    :compact:
 
@@ -177,7 +177,7 @@ broker or uses a different port number, modify the following values:
 Running on cc3220sf_launchxl
 ============================
 
-Offloading on cc3220sf_launchxl also provides DHCP services, so the sample
+Offloading on cc3220sf_launchxl/cc3220sf also provides DHCP services, so the sample
 uses dynamic IP addresses on this board.
 
 By default, the sample is set up to connect to the broker at the address

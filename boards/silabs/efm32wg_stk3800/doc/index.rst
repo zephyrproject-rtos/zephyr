@@ -40,7 +40,7 @@ For more information about the EFM32WG SoC and EFM32WG-STK3800 board:
 Supported Features
 ==================
 
-The efm32wg_stk3800 board configuration supports the following hardware features:
+The efm32wg_stk3800/efm32wg990f256 board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -60,7 +60,7 @@ The efm32wg_stk3800 board configuration supports the following hardware features
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/efm32wg_stk3800/efm32wg_stk3800_defconfig`
+:zephyr_file:`boards/silabs/efm32wg_stk3800/efm32wg_stk3800_efm32wg990f256_defconfig`
 
 Other hardware features are currently not supported by the port.
 
@@ -130,7 +130,7 @@ Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efm32wg_stk3800
+   :board: efm32wg_stk3800/efm32wg990f256
    :goals: build
 
 Connect the EFM32WG-STK3800 to your host computer using the USB port and you

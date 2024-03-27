@@ -411,7 +411,7 @@ Busy waits
 ==========
 
 Busy waits work thanks to provided board functionality.
-This does not need to be the same for all boards, but both native_sim and the
+This does not need to be the same for all boards, but both native_sim/native and the
 nrf52_bsim board work similarly thru the combination of a board specific
 `arch_busy_wait()` and a special fake HW timer (provided by the board).
 

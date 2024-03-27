@@ -67,5 +67,5 @@ tests:
   sample.zbus.dyn_channel:
     tags: zbus
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
       - mps2/an521/cpu0

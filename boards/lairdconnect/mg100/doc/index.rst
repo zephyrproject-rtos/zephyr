@@ -158,7 +158,7 @@ SPI MISO = P0.12
 Programming and Debugging
 *************************
 
-Applications for the ``mg100`` board configuration can be
+Applications for the ``mg100/nrf52840`` board configuration can be
 built and flashed in the usual way. (see :ref:`build_an_application`
 and :ref:`application_run` for more details)
 
@@ -192,7 +192,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mg100
+   :board: mg100/nrf52840
    :goals: build flash
 
 Debugging
@@ -231,7 +231,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/lairdconnect/mg100/mg100.dts`.
+:zephyr_file:`boards/lairdconnect/mg100/mg100_nrf52840.dts`.
 
 References
 **********

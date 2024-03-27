@@ -79,15 +79,15 @@ The label on the ribbon cable can help to distinguish the displays.
 According to the display type, the correct designation must be
 used for building an application.
 
-+--------------+--------------------+----------------------+-------------------+
-| Display      | Ribbon Cable Label | Controller / Driver  | Board Designation |
-+==============+====================+======================+===================+
-| Good Display | HINK-E0213         | SSD1673 /            | reel_board        |
-| GDEH0213B1   |                    | ssd16xx              |                   |
-+--------------+--------------------+----------------------+-------------------+
-| Good Display | HINK-E0213A22      | SSD1675A /           | reel_board@2      |
-| GDEH0213B72  |                    | ssd16xx              |                   |
-+--------------+--------------------+----------------------+-------------------+
++--------------+--------------------+----------------------+-----------------------+
+| Display      | Ribbon Cable Label | Controller / Driver  | Board Target          |
++==============+====================+======================+=======================+
+| Good Display | HINK-E0213         | SSD1673 /            | reel_board/nrf52840   |
+| GDEH0213B1   |                    | ssd16xx              |                       |
++--------------+--------------------+----------------------+-----------------------+
+| Good Display | HINK-E0213A22      | SSD1675A /           | reel_board@2/nrf52840 |
+| GDEH0213B72  |                    | ssd16xx              |                       |
++--------------+--------------------+----------------------+-----------------------+
 
 Power supply
 ============
@@ -114,7 +114,7 @@ The mode is controlled by MODE pin (P1.00).
 Supported Features
 ==================
 
-The reel_board board configuration supports the following
+The reel_board/nrf52840 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -471,7 +471,7 @@ Meaning of the Power Source Switch positions:
 Programming and Debugging
 *************************
 
-Applications for the ``reel_board`` board configuration can be
+Applications for the ``reel_board/nrf52840`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details).
 
@@ -512,16 +512,16 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: reel_board
+   :board: reel_board/nrf52840
    :goals: build flash
 
 .. note::
-   Please use reel_board@2 to build a application for the board equipped with
+   Please use reel_board@2/nrf52840 to build a application for the board equipped with
    the GDEH0213B72, see :ref:`reel_board_display`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: reel_board@2
+   :board: reel_board@2/nrf52840
    :goals: build flash
 
 Debugging
@@ -532,7 +532,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: reel_board
+   :board: reel_board/nrf52840
    :maybe-skip-config:
    :goals: debug
 

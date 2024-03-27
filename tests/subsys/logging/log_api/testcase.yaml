@@ -9,7 +9,7 @@ common:
     - arch
     - simulation
   integration_platforms:
-    - native_sim
+    - native_sim/native
   min_ram: 32
 tests:
   logging.deferred.api.overflow_rt_filter:
@@ -57,10 +57,10 @@ tests:
     # Testing on selected platforms as it enables all logs in the application
     # and it cannot be handled on many platforms.
     platform_allow:
-      - qemu_cortex_m3
-      - qemu_cortex_a9
-      - native_posix
-      - native_sim
+      - qemu_cortex_m3/ti_lm3s6965
+      - qemu_cortex_a9/xc7z007s
+      - native_posix/native
+      - native_sim/native
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_OVERRIDE_LEVEL=4
@@ -123,10 +123,10 @@ tests:
     # Testing on selected platforms as it enables all logs in the application
     # and it cannot be handled on many platforms.
     platform_allow:
-      - qemu_cortex_m3
-      - qemu_cortex_a9
-      - native_posix
-      - native_sim
+      - qemu_cortex_m3/ti_lm3s6965
+      - qemu_cortex_a9/xc7z007s
+      - native_posix/native
+      - native_sim/native
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_MODE_IMMEDIATE=y
@@ -136,10 +136,10 @@ tests:
     # Testing on selected platforms as it enables all logs in the application
     # and it cannot be handled on many platforms.
     platform_allow:
-      - qemu_cortex_m3
-      - qemu_cortex_a9
-      - native_posix
-      - native_sim
+      - qemu_cortex_m3/ti_lm3s6965
+      - qemu_cortex_a9/xc7z007s
+      - native_posix/native
+      - native_sim/native
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_RUNTIME_FILTERING=y
@@ -343,10 +343,10 @@ tests:
     # Testing on selected platforms as it enables all logs in the application
     # and it cannot be handled on many platforms.
     platform_allow:
-      - qemu_cortex_m3
-      - qemu_cortex_a9
-      - native_posix
-      - native_sim
+      - qemu_cortex_m3/ti_lm3s6965
+      - qemu_cortex_a9/xc7z007s
+      - native_posix/native
+      - native_sim/native
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -357,10 +357,10 @@ tests:
     # Testing on selected platforms as it enables all logs in the application
     # and it cannot be handled on many platforms.
     platform_allow:
-      - qemu_cortex_m3
-      - qemu_cortex_a9
-      - native_posix
-      - native_sim
+      - qemu_cortex_m3/ti_lm3s6965
+      - qemu_cortex_a9/xc7z007s
+      - native_posix/native
+      - native_sim/native
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y

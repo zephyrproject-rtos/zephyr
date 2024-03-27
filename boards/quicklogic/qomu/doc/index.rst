@@ -42,7 +42,7 @@ Below are steps to run Qomu sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/boards/qomu
-      :board: qomu
+      :board: qomu/quicklogic_eos_s3
       :goals: build
 
 #. Remove Qomu board from USB port.

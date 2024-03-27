@@ -3,7 +3,7 @@ common:
   arch_exclude:
     - nios2
   platform_exclude:
-    - native_posix
+    - native_posix/native
     - native_posix/native/64
   tags:
     - posix
@@ -17,7 +17,7 @@ tests:
     extra_configs:
       - CONFIG_NEWLIB_LIBC=n
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   portability.posix.fs.newlib:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     arch_exclude:
@@ -25,14 +25,14 @@ tests:
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   portability.posix.fs.tls:
     filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
     extra_configs:
       - CONFIG_NEWLIB_LIBC=n
       - CONFIG_THREAD_LOCAL_STORAGE=y
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   portability.posix.fs.tls.newlib:
     filter: TOOLCHAIN_HAS_NEWLIB == 1 and CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and
       CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
@@ -42,18 +42,18 @@ tests:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_THREAD_LOCAL_STORAGE=y
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   portability.posix.fs.picolibc:
     tags: picolibc
     filter: CONFIG_PICOLIBC_SUPPORTED
     extra_configs:
       - CONFIG_PICOLIBC=y
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   portability.posix.fs.tls.picolibc:
     tags: picolibc
     filter: CONFIG_PICOLIBC_SUPPORTED
     extra_configs:
       - CONFIG_PICOLIBC=y
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

@@ -92,7 +92,7 @@ Building
 
 .. code-block:: none
 
-  west build -b litex_vexriscv zephyr/samples/drivers/clock_control
+  west build -b litex_vexriscv/litex_vexriscv zephyr/samples/drivers/clock_control
 
 Drivers prints a lot of useful debugging information to the log. It is highly recommended to enable logging and synchronous processing of log messages and set log level to ``Info``.
 

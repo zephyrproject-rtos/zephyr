@@ -16,4 +16,4 @@ tests:
     arch_exclude:
       - posix
     platform_exclude:
-      - ucans32k1sic
+      - ucans32k1sic/s32k146

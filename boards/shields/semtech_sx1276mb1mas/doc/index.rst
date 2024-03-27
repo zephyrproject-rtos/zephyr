@@ -63,7 +63,7 @@ example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/lorawan/class_a
-   :board: nucleo_l073rz
+   :board: nucleo_l073rz/stm32l073xx
    :shield: semtech_sx1276mb1mas
    :goals: build
 

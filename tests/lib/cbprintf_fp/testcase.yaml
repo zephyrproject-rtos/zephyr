@@ -3,8 +3,8 @@ common:
   arch_exclude: posix
   tags: cbprintf
   integration_platforms:
-    - qemu_x86
-    - qemu_x86_64
+    - qemu_x86/atom
+    - qemu_x86_64/atom
   filter: CONFIG_CONSOLE_HAS_DRIVER
 tests:
   libraries.cbprintf.fp.printk:

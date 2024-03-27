@@ -48,7 +48,7 @@ The following features are supported:
 Other features (such as I2C) are not available in Zephyr.
 
 The default configuration can be found in
-:zephyr_file:`boards/google/kukui/google_kukui_defconfig`
+:zephyr_file:`boards/google/kukui/google_kukui_stm32f098xx_defconfig`
 
 Connections and IOs
 ===================
@@ -70,7 +70,7 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
-Build application as usual for the ``google_kukui`` board, and flash
+Build application as usual for the ``google_kukui/stm32f098xx`` board, and flash
 using Servo V2, μServo, or Servo V4 (CCD). See the
 `Chromium EC Flashing Documentation`_ for more information.
 

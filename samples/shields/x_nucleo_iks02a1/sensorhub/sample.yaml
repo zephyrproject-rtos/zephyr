@@ -8,9 +8,9 @@ tests:
       - arduino_i2c
       - arduino_gpio
     platform_exclude:
-      - disco_l475_iot1
-      - lpcxpresso55s16
-      - stm32mp157c_dk2
-      - pan1781_evb
-      - pan1782_evb
-      - mimxrt1010_evk
+      - disco_l475_iot1/stm32l475xx
+      - lpcxpresso55s16/lpc55s16
+      - stm32mp157c_dk2/stm32mp157cxx
+      - pan1781_evb/nrf52820
+      - pan1782_evb/nrf52833
+      - mimxrt1010_evk/mimxrt1011

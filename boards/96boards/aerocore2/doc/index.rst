@@ -48,7 +48,7 @@ More information about STM32F427VIT6 can be found here:
 Supported Features
 ==================
 
-The Zephyr 96b_aerocore2 board configuration supports the following hardware
+The Zephyr 96b_aerocore2/stm32f427xx board configuration supports the following hardware
 features:
 
 +------------+------------+-------------------------------------+
@@ -80,7 +80,7 @@ features:
 More details about the board can be found at `96Boards website`_.
 
 The default configuration can be found in
-:zephyr_file:`boards/96boards/aerocore2/96b_aerocore2_defconfig`
+:zephyr_file:`boards/96boards/aerocore2/96b_aerocore2_stm32f427xx_defconfig`
 
 Connections and IOs
 ===================
@@ -315,7 +315,7 @@ Then build and flash an application. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: 96b_aerocore2
+   :board: 96b_aerocore2/stm32f427xx
    :goals: build flash
 
 Connect a USB-TTL dongle to the UART_7 header port and to your computer.

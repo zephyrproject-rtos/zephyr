@@ -7,11 +7,11 @@ tests:
       pytest_dut_scope: module
       pytest_args: []
     integration_platforms:
-      - native_sim
+      - native_sim/native
     platform_allow:
-      - native_sim
-      - qemu_cortex_m3
-      - qemu_x86
+      - native_sim/native
+      - qemu_cortex_m3/ti_lm3s6965
+      - qemu_x86/atom
     tags:
       - testing
       - pytest

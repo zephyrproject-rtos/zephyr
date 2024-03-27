@@ -45,7 +45,7 @@ custom value of 20 Hz):
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/lvgl/accelerometer_chart
    :host-os: unix
-   :board: native_sim
+   :board: native_sim/native
    :gen-args: -DCONFIG_SAMPLE_ACCEL_SAMPLING_RATE=20
    :goals: run
    :compact:

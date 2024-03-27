@@ -90,7 +90,7 @@ tests:
         - "^.*?I: From subscriber bar_sub2 -> Acc x=3, y=30, z=300"
     tags: zbus
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   sample.zbus.msg_subscriber_static:
     harness: console
     extra_configs:
@@ -180,4 +180,4 @@ tests:
         - "^.*?I: From subscriber bar_sub2 -> Acc x=3, y=30, z=300"
     tags: zbus
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

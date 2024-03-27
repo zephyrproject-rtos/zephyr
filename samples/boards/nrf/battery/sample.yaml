@@ -4,8 +4,8 @@ tests:
   sample.boards.nrf.battery:
     build_only: true
     platform_allow:
-      - particle_xenon
+      - particle_xenon/nrf52840
       - thingy52/nrf52832
     tags: battery
     integration_platforms:
-      - particle_xenon
+      - particle_xenon/nrf52840

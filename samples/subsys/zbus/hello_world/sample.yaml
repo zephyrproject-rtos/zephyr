@@ -26,7 +26,7 @@ tests:
         - "I: From listener -> Acc x=2, y=2, z=2"
         - "I: Pub a valid value to a channel with validator successfully."
         - "I: Pub an invalid value to a channel with validator successfully."
-    platform_exclude: qemu_leon3
+    platform_exclude: qemu_leon3/leon3
     tags: zbus
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

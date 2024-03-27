@@ -75,7 +75,7 @@ run a serial host program to connect with your board. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: numaker_pfm_m467
+   :board: numaker_pfm_m467/m467
    :goals: flash
 
 Debugging
@@ -85,7 +85,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: numaker_pfm_m467
+   :board: numaker_pfm_m467/m467
    :goals: debug
 
 Step through the application in your debugger.

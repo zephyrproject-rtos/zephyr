@@ -4,10 +4,10 @@ sample:
 tests:
   sample.application_development.code_relocation_nocopy:
     platform_allow:
-      - qemu_cortex_m3
+      - qemu_cortex_m3/ti_lm3s6965
       - nrf5340dk/nrf5340/cpuapp
     integration_platforms:
-      - qemu_cortex_m3
+      - qemu_cortex_m3/ti_lm3s6965
     tags: linker
     harness: console
     harness_config:

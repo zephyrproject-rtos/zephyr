@@ -22,7 +22,7 @@ class TestCoverage:
     TESTDATA_1 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             [
                 'coverage.log', 'coverage.json',
                 'coverage'
@@ -32,7 +32,7 @@ class TestCoverage:
     TESTDATA_2 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             [
                 'GCOV_COVERAGE_DUMP_START', 'GCOV_COVERAGE_DUMP_END'
             ],
@@ -41,7 +41,7 @@ class TestCoverage:
     TESTDATA_3 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic', 'group2'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             [
                 'coverage.log', 'coverage.json',
                 'coverage'
@@ -119,13 +119,13 @@ class TestCoverage:
     TESTDATA_5 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic', 'group2'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             'gcovr',
             'Running gcovr -r'
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic', 'group2'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             'lcov',
             'Running lcov --gcov-tool'
         )
@@ -263,7 +263,7 @@ class TestCoverage:
     )
     def test_coverage_format(self, capfd, out_path, cov_tool, file_name, cov_format):
         test_path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic', 'group2')
-        test_platforms = ['qemu_x86']
+        test_platforms = ['qemu_x86/atom']
         args = ['--outdir', out_path,'-i', '-T', test_path] + \
                ['--coverage', '--coverage-tool', cov_tool, '--coverage-formats', cov_format, '-v'] + \
                [val for pair in zip(

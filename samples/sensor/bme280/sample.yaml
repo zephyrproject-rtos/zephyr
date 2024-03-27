@@ -5,10 +5,10 @@ tests:
     harness: console
     tags: sensors
     platform_allow:
-      - adafruit_feather_m0_basic_proto
-      - rpi_pico
+      - adafruit_feather_m0_basic_proto/samd21g18a
+      - rpi_pico/rp2040
     integration_platforms:
-      - adafruit_feather_m0_basic_proto
+      - adafruit_feather_m0_basic_proto/samd21g18a
     harness_config:
       type: one_line
       regex:
@@ -29,9 +29,9 @@ tests:
   sample.sensor.bme280.rpi_pico.pio:
     harness: console
     tags: sensors
-    platform_allow: rpi_pico
+    platform_allow: rpi_pico/rp2040
     integration_platforms:
-      - rpi_pico
+      - rpi_pico/rp2040
     extra_args: "DTC_OVERLAY_FILE=rpi_pico_spi_pio.overlay"
     harness_config:
       type: one_line

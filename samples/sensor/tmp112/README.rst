@@ -21,6 +21,6 @@ To build and flash the sample for the :ref:`frdm_k64f`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/tmp112
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :goals: build flash
    :compact:

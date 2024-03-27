@@ -152,7 +152,7 @@ When using the PAN1780 evaluation board the build invocation looks like this:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/amg88xx
-   :board: pan1780_evb
+   :board: pan1780_evb/nrf52840
    :shield: amg88xx_grid_eye_eval_shield
    :goals: build
 

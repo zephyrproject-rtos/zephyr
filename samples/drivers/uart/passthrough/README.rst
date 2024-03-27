@@ -26,12 +26,12 @@ Requirements
 Building and Running
 ********************
 
-Build and flash the sample as follows, changing ``nucleo_l476rg`` for your
+Build and flash the sample as follows, changing ``nucleo_l476rg/stm32l476xx`` for your
 board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/uart/passthrough
-   :board: nucleo_l476rg
+   :board: nucleo_l476rg/stm32l476xx
    :goals: build flash
    :compact:
 

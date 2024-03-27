@@ -151,7 +151,7 @@ Once your tag is connected to the DEVKIT and connected to your PC, build and fla
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: ruuvi_ruuvitag
+   :board: ruuvi_ruuvitag/nrf52832
    :goals: build flash
 
 Advanced users may want to program the RuuviTag without the DEVKIT, this can be achieved via the SWDIO and SWDCLK pins located on the back of the RuuviTag.
@@ -172,7 +172,7 @@ the board are working properly with Zephyr:
 * :zephyr:code-sample:`button`
 
 You can build and flash the examples to make sure Zephyr is running correctly on
-your board. The button and LED definitions can be found in :file:`boards/ruuvi//ruuvi_ruuvitag/ruuvi_ruuvitag.dts`.
+your board. The button and LED definitions can be found in :file:`boards/ruuvi//ruuvi_ruuvitag/ruuvi_ruuvitag_nrf52832.dts`.
 
 References
 **********

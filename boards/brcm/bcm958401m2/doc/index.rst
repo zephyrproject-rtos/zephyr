@@ -32,7 +32,7 @@ features:
 Other hardware features have not been enabled yet for this board.
 
 The default configuration can be found in
-:zephyr_file:`boards/brcm/bcm958401m2/bcm958401m2_defconfig`
+:zephyr_file:`boards/brcm/bcm958401m2/bcm958401m2_bcm58400_defconfig`
 
 Connections and IOs
 ===================
@@ -49,7 +49,7 @@ Board is booted over PCIe interface.
 
 Debugging
 =========
-The bcm958401m2 board includes pads for soldering a JTAG connector.
+The bcm958401m2/bcm58400 board includes pads for soldering a JTAG connector.
 Zephyr applications running on the M7 core can also be tested by observing UART console output.
 
 

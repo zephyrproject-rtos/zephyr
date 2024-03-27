@@ -4,7 +4,7 @@ tests:
   sample.usbd.shell:
     platform_allow:
       - nrf52840dk/nrf52840
-      - frdm_k64f
+      - frdm_k64f/mk64f12
     depends_on: usb_device
     harness: keyboard
     tags: usb
@@ -18,10 +18,10 @@ tests:
       - SHIELD="sparkfun_max3421e"
     platform_allow:
       - nrf52840dk/nrf52840
-      - frdm_k64f
+      - frdm_k64f/mk64f12
     build_only: true
   sample.usbh.shell.virtual:
     tags: usb
     extra_args: CONF_FILE="device_and_host_prj.conf"
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3/ti_lm3s6965
     build_only: true

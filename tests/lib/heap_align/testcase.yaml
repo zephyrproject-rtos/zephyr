@@ -4,5 +4,5 @@ tests:
       - heap
       - heap_align
     integration_platforms:
-      - native_sim
+      - native_sim/native
       - mps2/an521/cpu0

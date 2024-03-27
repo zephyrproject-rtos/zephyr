@@ -5,7 +5,7 @@ tests:
   sample.board.esp32.flash_memory_mapped:
     platform_allow:
       - esp32_devkitc_wroom/esp32/procpu
-      - esp32c3_devkitm
+      - esp32c3_devkitm/esp32c3
       - esp32s3_devkitm/esp32s3/procpu
     harness: console
     harness_config:

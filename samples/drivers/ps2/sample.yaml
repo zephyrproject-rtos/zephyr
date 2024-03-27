@@ -6,7 +6,7 @@ tests:
       - drivers
       - ps2
     integration_platforms:
-      - mec172xmodular_assy6930
+      - mec172xmodular_assy6930/mec172x_nsz
     harness: console
     harness_config:
       type: multi_line

@@ -15,7 +15,7 @@ SRAM and 55 GPIOs.
 
 .. image:: img/gd32f350r_eval.webp
      :align: center
-     :alt: gd32f350r_eval
+     :alt: gd32f350r_eval/gd32f350
 
 Hardware
 ********
@@ -91,7 +91,7 @@ allows flash programming and debugging over USB. There is also a SWD header
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f350r_eval
+      :board: gd32f350r_eval/gd32f350
       :goals: build
       :compact:
 
@@ -114,7 +114,7 @@ allows flash programming and debugging over USB. There is also a SWD header
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f350r_eval
+      :board: gd32f350r_eval/gd32f350
       :goals: flash
       :compact:
 
@@ -124,7 +124,7 @@ allows flash programming and debugging over USB. There is also a SWD header
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f350r_eval
+      :board: gd32f350r_eval/gd32f350
       :goals: debug
       :compact:
 

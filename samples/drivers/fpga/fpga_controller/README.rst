@@ -25,7 +25,7 @@ For building on QuickLogic QuickFeather board:
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/fpga/fpga_controller
    :host-os: unix
-   :board: quick_feather
+   :board: quick_feather/quicklogic_eos_s3
    :goals: build
 
 
@@ -35,7 +35,7 @@ configuration file prj_shell.conf:
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/fpga/fpga_controller
    :host-os: unix
-   :board: quick_feather
+   :board: quick_feather/quicklogic_eos_s3
    :conf: prj_shell.conf
    :goals: build
    :compact:

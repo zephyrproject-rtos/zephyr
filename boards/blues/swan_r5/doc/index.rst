@@ -121,7 +121,7 @@ hardware features:
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/blues/swan_r5/swan_r5_defconfig`
+:zephyr_file:`boards/blues/swan_r5/swan_r5_stm32l4r5xx_defconfig`
 
 
 Connections and IOs
@@ -210,7 +210,7 @@ Then build and flash the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: swan_r5
+   :board: swan_r5/stm32l4r5xx
    :goals: build flash
 
 You should see the following message on the console:

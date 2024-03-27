@@ -19,7 +19,7 @@ This sample application uses an APDS9960 sensor connected to a board
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/apds9960
-   :board: reel_board
+   :board: reel_board/nrf52840
    :goals: flash
    :compact:
 

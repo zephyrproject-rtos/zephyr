@@ -45,7 +45,7 @@ Set ``-DSHIELD=lmp90100_evb`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/shields/lmp90100_evb/rtd
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :shield: lmp90100_evb
    :goals: build
 

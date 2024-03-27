@@ -4,10 +4,10 @@ tests:
   sample.net.mdns_responder:
     harness: net
     platform_allow:
-      - qemu_x86
-      - qemu_cortex_m3
+      - qemu_x86/atom
+      - qemu_cortex_m3/ti_lm3s6965
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
     tags:
       - net
       - mdns

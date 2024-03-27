@@ -99,7 +99,7 @@ Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efr32bg27_brd2602a
+   :board: efr32bg27_brd2602a/efr32bg27c140f768im40
    :goals: build
 
 Connect your device to your host computer using the USB port and you
@@ -117,7 +117,7 @@ the following message:
 
 .. code-block:: console
 
-   Hello World! efr32bg27_brd2602a
+   Hello World! efr32bg27_brd2602a/efr32bg27c140f768im40
 
 .. _picocom:
    https://github.com/npat-efault/picocom

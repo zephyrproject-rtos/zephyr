@@ -17,7 +17,7 @@ Building
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/qomu
    :host-os: unix
-   :board: qomu
+   :board: qomu/quicklogic_eos_s3
    :goals: build
    :compact:
 

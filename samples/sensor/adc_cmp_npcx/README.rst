@@ -22,6 +22,6 @@ will be printed.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/adc_cmp_npcx
-   :board: npcx9m6f_evb
+   :board: npcx9m6f_evb/npcx9m6f
    :goals: flash
    :compact:

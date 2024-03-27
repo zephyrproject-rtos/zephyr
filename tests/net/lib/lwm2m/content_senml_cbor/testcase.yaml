@@ -6,4 +6,4 @@ tests:
       - lwm2m
       - net
     integration_platforms:
-      - native_sim
+      - native_sim/native

@@ -8,7 +8,7 @@ Overview
 ********
 
 This application demonstrates how to use IVSHMEM Ethernet to communicate with
-another "cell" in the Jailhouse hypervisor. Currently only the qemu_cortex_a53
+another "cell" in the Jailhouse hypervisor. Currently only the qemu_cortex_a53/qemu_cortex_a53
 board is supported.
 
 Building Jailhouse Linux for QEMU
@@ -50,7 +50,7 @@ Build the Zephyr sample
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/ethernet/eth_ivshmem
-   :board: qemu_cortex_a53
+   :board: qemu_cortex_a53/qemu_cortex_a53
    :goals: build
 
 Running the sample

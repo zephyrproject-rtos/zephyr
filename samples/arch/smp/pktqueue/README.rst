@@ -66,7 +66,7 @@ It can be built and executed on QEMU as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/arch/smp/pktqueue
    :host-os: unix
-   :board: qemu_x86_64
+   :board: qemu_x86_64/atom
    :goals: run
    :compact:
 

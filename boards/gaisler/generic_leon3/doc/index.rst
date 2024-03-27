@@ -23,10 +23,10 @@ Programming and Debugging
 Building
 ========
 
-Applications for the ``generic_leon3`` board configuration can be built as usual
+Applications for the ``generic_leon3/leon3`` board configuration can be built as usual
 (see :ref:`build_an_application`).
-In order to build the application for ``generic_leon3``, set the ``BOARD`` variable
-to ``generic_leon3``.
+In order to build the application for ``generic_leon3/leon3``, set the ``BOARD`` variable
+to ``generic_leon3/leon3``.
 
 Running on hardware
 ===================
@@ -78,7 +78,7 @@ the Terasic DE2-115 Cyclone IV FPGA board.
 
     grmon3> run
     *** Booting Zephyr OS build zephyr-v2.4.0-30-ga124c31ec4cf  ***
-    Hello World! generic_leon3
+    Hello World! generic_leon3/leon3
 
 
 Running in simulation
@@ -115,7 +115,7 @@ The same application binary can be simulated with the TSIM3 LEON3 simulator.
     tsim> run
       Initializing and starting from 0x40000000
     *** Booting Zephyr OS build zephyr-v2.4.0-30-ga124c31ec4cf  ***
-    Hello World! generic_leon3
+    Hello World! generic_leon3/leon3
 
 References
 **********

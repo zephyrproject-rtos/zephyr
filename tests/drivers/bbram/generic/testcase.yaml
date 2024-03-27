@@ -7,4 +7,4 @@ tests:
       - drivers
       - bbram
     platform_allow:
-      - native_sim
+      - native_sim/native

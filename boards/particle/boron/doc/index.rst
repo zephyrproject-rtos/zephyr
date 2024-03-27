@@ -46,7 +46,7 @@ It contains circuitry for LIPO usage and can be charged via the USB port.
 Supported Features
 ==================
 
-The particle_boron board configuration supports the following
+The particle_boron/nrf52840 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -123,7 +123,7 @@ UART
 Programming and Debugging
 *************************
 
-Applications for the ``particle_boron`` board configuration can be
+Applications for the ``particle_boron/nrf52840`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details).
 
@@ -134,7 +134,7 @@ Build and flash an application in the usual way, for example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: particle_boron
+   :board: particle_boron/nrf52840
    :goals: build flash
 
 Debugging
@@ -145,7 +145,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: particle_boron
+   :board: particle_boron/nrf52840
    :maybe-skip-config:
    :goals: debug
 

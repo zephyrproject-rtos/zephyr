@@ -11,11 +11,11 @@ Native simulator - native_sim
 Overview
 ********
 
-The ``native_sim`` board is a :ref:`POSIX architecture<Posix arch>` based board.
+The ``native_sim/native`` board is a :ref:`POSIX architecture<Posix arch>` based board.
 With it, a Zephyr application can be compiled together with
 the Zephyr kernel, and libraries, creating a normal Linux executable.
 
-``native_sim`` is based on the
+``native_sim/native`` is based on the
 `native simulator <https://github.com/BabbleSim/native_simulator/>`_
 and the :ref:`POSIX architecture<Posix arch>`.
 
@@ -26,9 +26,9 @@ See `Peripherals`_ for more information.
 
 .. note::
 
-   | ``native_sim`` is an evolution of the older :ref:`native_posix<native_posix>`.
-   | Some components, code, options names, and documentation will still use the old native_posix
-     names. But all components which worked with native_posix will work with native_sim.
+   | ``native_sim/native`` is an evolution of the older :ref:`native_posix<native_posix>`.
+   | Some components, code, options names, and documentation will still use the old native_posix/native
+     names. But all components which worked with native_posix/native will work with native_sim.
 
 Host system dependencies
 ************************
@@ -41,7 +41,7 @@ Please check the
 Important limitations and unsupported features
 **********************************************
 
-``native_sim`` is based on the :ref:`POSIX architecture<Posix arch>`, and therefore
+``native_sim/native`` is based on the :ref:`POSIX architecture<Posix arch>`, and therefore
 :ref:`its limitations <posix_arch_limitations>` and considerations apply to it.
 
 Similarly, it inherits the POSIX architecture
@@ -58,12 +58,12 @@ How to use it
 Compiling
 =========
 
-To build, simply specify the ``native_sim`` board as target:
+To build, simply specify the ``native_sim/native`` board as target:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :host-os: unix
-   :board: native_sim
+   :board: native_sim/native
    :goals: build
    :compact:
 
@@ -157,7 +157,7 @@ See
 =====================
 
 native_sim comes with two targets: A 32 bit and 64 bit version.
-The 32 bit version, ``native_sim``, is the default target, which will compile
+The 32 bit version, ``native_sim/native``, is the default target, which will compile
 your code for the ILP32 ABI (i386 in a x86 or x86_64 system) where pointers
 and longs are 32 bits.
 This mimics the ABI of most embedded systems Zephyr targets,
@@ -193,7 +193,7 @@ difficult, and you will have a limited choice of
 Rationale for this port and comparison with other options
 *********************************************************
 
-The native_sim board shares the overall
+The native_sim/native board shares the overall
 :ref:`intent of the POSIX architecture<posix_arch_rationale>`,
 while being a HW agnostic test platform which in some cases utilizes the host
 OS peripherals.
@@ -238,7 +238,7 @@ simulated time.
 The only link between the simulated time and the real/host time, if any,
 is created by the clock and timer model.
 
-This model can be configured to slow down the execution of native_sim to
+This model can be configured to slow down the execution of native_sim/native to
 real time.
 You can do this with the ``--rt`` and ``--no-rt`` options from the command line.
 The default behavior is set with
@@ -246,7 +246,7 @@ The default behavior is set with
 
 Note that all this model does is wait before raising the
 next system tick interrupt until the corresponding real/host time.
-If, for some reason, native_sim runs slower than real time, all this
+If, for some reason, native_sim/native runs slower than real time, all this
 model can do is "catch up" as soon as possible by not delaying the
 following ticks.
 So if the host load is too high, or you are running in a debugger, you will
@@ -348,7 +348,7 @@ The following peripherals are currently provided with this board:
     this value will be a couple of hundredths of microseconds ahead of the
     simulated time, depending on the host execution speed.
     This clock source should be used with care, as depending on the actual
-    execution speed of native_sim and the host load,
+    execution speed of native_sim/native and the host load,
     it may return a value considerably ahead of the simulated time.
 
   Note this device does not yet have an :ref:`RTC API compatible driver <rtc_api>`.
@@ -418,7 +418,7 @@ The following peripherals are currently provided with this board:
 **USB controller**
   It's possible to use the Virtual USB controller working over USB/IP
   protocol. More information can be found in
-  :ref:`Testing USB over USP/IP in native_sim <testing_USB_native_sim>`.
+  :ref:`Testing USB over USP/IP in native_sim/native <testing_USB_native_sim>`.
 
 .. _nsim_per_disp_sdl:
 
@@ -456,7 +456,7 @@ The following peripherals are currently provided with this board:
 **Flash simulator**
   The flash simulator can also be used in the native targets. In this you have the option to keep
   the flash content in a binary file on the host file system or in RAM. The behavior of the flash
-  device can be configured through the native_sim board devicetree or Kconfig settings under
+  device can be configured through the native_sim/native board devicetree or Kconfig settings under
   :kconfig:option:`CONFIG_FLASH_SIMULATOR`.
 
   By default the binary data is located in the file :file:`flash.bin` in the current
@@ -597,7 +597,7 @@ It has runtime configuration support, but no line control support.
 Subsystems backends
 *******************
 
-Apart from its own peripherals, the native_sim board also has some dedicated
+Apart from its own peripherals, the native_sim/native board also has some dedicated
 backends for some of Zephyr's subsystems. These backends are designed to ease
 development by integrating more seamlessly with the host operating system:
 
@@ -656,10 +656,10 @@ system partitions with normal operating system commands such as ``cd``,
 By default the partitions are exposed through the directory :file:`flash/` in the
 current working directory. This directory can be changed via the command line
 option ``--flash-mount``. As this directory operates as a mount point for FUSE
-you have to ensure that it exists before starting the native_sim board.
+you have to ensure that it exists before starting the native_sim/native board.
 
-On exit, the native_sim board application will take care of unmounting the
-directory. In the unfortunate case that the native_sim board application
+On exit, the native_sim/native board application will take care of unmounting the
+directory. In the unfortunate case that the native_sim/native board application
 crashes, you can cleanup the stale mount point by using the program
 ``fusermount``:
 
@@ -687,7 +687,7 @@ these commands:
 Peripherals and backends C library compatibility
 ************************************************
 
-Today, some native_sim peripherals and backends are, so far, only available when compiling with the
+Today, some native_sim/native peripherals and backends are, so far, only available when compiling with the
 host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
 
 .. csv-table:: Drivers/backends vs libC choice
@@ -701,7 +701,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
      Entropy, :ref:`Native posix entropy <nsim_per_entr>`, :kconfig:option:`CONFIG_FAKE_ENTROPY_NATIVE_POSIX`, All
      EEPROM, EEPROM simulator, :kconfig:option:`CONFIG_EEPROM_SIMULATOR`, Host libC
      EEPROM, EEPROM emulator, :kconfig:option:`CONFIG_EEPROM_EMULATOR`, All
-     Ethernet, :ref:`Eth native_posix <nsim_per_ethe>`, :kconfig:option:`CONFIG_ETH_NATIVE_POSIX`, All
+     Ethernet, :ref:`Eth native_posix/native <nsim_per_ethe>`, :kconfig:option:`CONFIG_ETH_NATIVE_POSIX`, All
      Flash, :ref:`Flash simulator <nsim_per_flash_simu>`, :kconfig:option:`CONFIG_FLASH_SIMULATOR`, All
      Flash, :ref:`Host based flash access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, Host libC
      GPIO, GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL`, All

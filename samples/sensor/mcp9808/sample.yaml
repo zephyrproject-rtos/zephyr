@@ -6,6 +6,6 @@ tests:
     tags: sensors
     depends_on: i2c
     filter: dt_compat_enabled("microchip,mcp9808")
-    platform_allow: nucleo_l053r8
+    platform_allow: nucleo_l053r8/stm32l053xx
     integration_platforms:
-      - nucleo_l053r8
+      - nucleo_l053r8/stm32l053xx

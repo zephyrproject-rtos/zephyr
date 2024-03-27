@@ -33,7 +33,7 @@ Hardware
 Supported Features
 ==================
 
-The samd21_xpro board configuration supports the following hardware
+The samd21_xpro/samd21j18a board configuration supports the following hardware
 features:
 
 .. list-table::
@@ -79,7 +79,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam0/samd21_xpro/samd21_xpro_defconfig`.
+:zephyr_file:`boards/atmel/sam0/samd21_xpro/samd21_xpro_samd21j18a_defconfig`.
 
 Pin Mapping
 ===========
@@ -155,7 +155,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: samd21_xpro
+      :board: samd21_xpro/samd21j18a
       :goals: build
       :compact:
 
@@ -181,7 +181,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: samd21_xpro
+      :board: samd21_xpro/samd21j18a
       :goals: flash
       :compact:
 

@@ -9,9 +9,9 @@ common:
 tests:
   sample.devmem_load.polled:
     integration_platforms:
-      - native_sim
+      - native_sim/native
     extra_args: OVERLAY_CONFIG="prj_poll.conf"
   sample.devmem_load.uart.interrupt:
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT

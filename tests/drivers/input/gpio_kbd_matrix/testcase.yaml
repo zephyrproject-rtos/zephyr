@@ -2,12 +2,12 @@
 
 common:
   platform_allow:
-    - native_sim
+    - native_sim/native
     - native_sim/native/64
   tags:
     - drivers
     - input
   integration_platforms:
-    - native_sim
+    - native_sim/native
 tests:
   input.input_gpio_kbd_matrix: {}

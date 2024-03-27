@@ -18,7 +18,7 @@ This project outputs to the console. It can be built and executed on QEMU as fol
 .. zephyr-app-commands::
    :zephyr-app: samples/posix/uname
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :goals: run
    :compact:
 
@@ -45,8 +45,8 @@ Sample Output
 
 
     uart:~$ uname -a
-    Zephyr zephyr 3.5.99 zephyr-v3.5.0-3515-g10156f5f1d9c Jan  9 2024 22:23:04 x86 qemu_x86
+    Zephyr zephyr 3.5.99 zephyr-v3.5.0-3515-g10156f5f1d9c Jan  9 2024 22:23:04 x86 qemu_x86/atom
     uart:~$ uname -smi
-    Zephyr x86 qemu_x86
+    Zephyr x86 qemu_x86/atom
 
 .. _uname(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/uname.html

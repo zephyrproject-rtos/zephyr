@@ -10,11 +10,11 @@ common:
       - "thread_b: Hello World from (.*)!"
 tests:
   sample.tracing.user:
-    extra_args: CONF_FILE="prj_user.conf"
+    extra_args: EXTRA_CONF_FILE="prj_user.conf"
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
     platform_exclude:
-      - mr_canhubk3
+      - mr_canhubk3/s32k344
     harness_config:
       type: multi_line
       regex:
@@ -24,8 +24,8 @@ tests:
   sample.tracing.format.sysview:
     platform_allow:
       - nrf52840dk/nrf52840
-      - mimxrt1050_evk
-      - mimxrt1064_evk
+      - mimxrt1050_evk/mimxrt1052
+      - mimxrt1064_evk/mimxrt1064
     integration_platforms:
       - nrf52840dk/nrf52840
     extra_args: CONF_FILE="prj_sysview.conf"
@@ -33,15 +33,15 @@ tests:
     arch_exclude:
       - posix
       - xtensa
-    platform_exclude: qemu_x86_64
+    platform_exclude: qemu_x86_64/atom
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
   sample.tracing.transport.uart:
     platform_allow:
-      - qemu_x86
-      - qemu_x86_64
+      - qemu_x86/atom
+      - qemu_x86_64/atom
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
     extra_args: CONF_FILE="prj_uart.conf"
     filter: dt_chosen_enabled("zephyr,tracing-uart")
   sample.tracing.transport.usb:
@@ -50,10 +50,10 @@ tests:
     extra_args: CONF_FILE="prj_usb.conf"
   sample.tracing.transport.uart.ctf:
     platform_allow:
-      - qemu_x86
-      - qemu_x86_64
+      - qemu_x86/atom
+      - qemu_x86_64/atom
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
     extra_args: CONF_FILE="prj_uart_ctf.conf"
     filter: dt_chosen_enabled("zephyr,tracing-uart")
   sample.tracing.transport.usb.ctf:
@@ -62,19 +62,19 @@ tests:
     extra_args: CONF_FILE="prj_usb_ctf.conf"
   sample.tracing.transport.native:
     platform_allow:
-      - native_posix
-      - native_sim
+      - native_posix/native
+      - native_sim/native
     integration_platforms:
-      - native_sim
+      - native_sim/native
   sample.tracing.transport.native.ctf:
     platform_allow:
-      - native_posix
-      - native_sim
+      - native_posix/native
+      - native_sim/native
     integration_platforms:
-      - native_sim
+      - native_sim/native
     extra_args: CONF_FILE="prj_native_ctf.conf"
   sample.tracing.percepio:
-    platform_allow: frdm_k64f
+    platform_allow: frdm_k64f/mk64f12
     extra_args: CONF_FILE="prj_percepio.conf"
     modules:
       - percepio

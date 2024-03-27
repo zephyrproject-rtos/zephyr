@@ -5,6 +5,6 @@ tests:
   sample.board.esp32.deep_sleep:
     platform_allow:
       - esp32_devkitc_wroom/esp32/procpu
-      - esp32c3_devkitm
+      - esp32c3_devkitm/esp32c3
     tags: esp32
     build_only: true

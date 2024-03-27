@@ -105,7 +105,7 @@ MSP-EXP432P401R LaunchXL:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: msp_exp432p401r_launchxl
+   :board: msp_exp432p401r_launchxl/msp432p401r
    :goals: flash
 
 This will load the image into flash.
@@ -126,7 +126,7 @@ build target:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: msp_exp432p401r_launchxl
+   :board: msp_exp432p401r_launchxl/msp432p401r
    :maybe-skip-config:
    :goals: debug
 

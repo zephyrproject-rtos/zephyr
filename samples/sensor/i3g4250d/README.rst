@@ -14,7 +14,7 @@ Requirements
 ************
 
 This sample application uses the I3G4250D sensor connected via
-SPI interface. This is the case for example for stm32f3_disco@E
+SPI interface. This is the case for example for stm32f3_disco@E/stm32f303xc
 board devicetree.
 
 Building and Running
@@ -26,7 +26,7 @@ Here STM32F3 discovery board is used.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/i3g4250d
-   :board: stm32f3_disco@E
+   :board: stm32f3_disco@E/stm32f303xc
    :goals: build flash
 
 Sample Output

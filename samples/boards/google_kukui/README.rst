@@ -16,7 +16,7 @@ The sample can be built as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/google_kukui
-   :board: google_kukui
+   :board: google_kukui/stm32f098xx
    :goals: build
    :compact:
 

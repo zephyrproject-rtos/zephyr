@@ -151,7 +151,7 @@ More information about STM32WBA series can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_wba55cg board configuration supports the following hardware features:
+The Zephyr nucleo_wba55cg/stm32wba55xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -181,7 +181,7 @@ The Zephyr nucleo_wba55cg board configuration supports the following hardware fe
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_wba55cg/nucleo_wba55cg_defconfig`
+:zephyr_file:`boards/st/nucleo_wba55cg/nucleo_wba55cg_stm32wba55xx_defconfig`
 
 Bluetooh support
 ----------------
@@ -249,7 +249,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nucleo_wba55cg
+   :board: nucleo_wba55cg/stm32wba55xx
    :goals: build flash
 
 You will see the LED blinking every second.
@@ -265,7 +265,7 @@ You can debug an application in the usual way using OpenOCD. Here is an example 
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nucleo_wba55cg
+   :board: nucleo_wba55cg/stm32wba55xx
    :maybe-skip-config:
    :goals: debug
 

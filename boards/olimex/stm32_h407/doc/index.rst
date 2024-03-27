@@ -26,7 +26,7 @@ information and the datasheet.
 Supported Features
 ==================
 
-The olimex_stm32_h407 board configuration supports the following
+The olimex_stm32_h407/stm32f407xx board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -322,7 +322,7 @@ interface. You will need to use ST tools or an external JTAG probe.
 In the following examples the Olimex ARM-USB-OCD-H is used.
 
 If you have an external JTAG probe compliant with the default Zephyr OpenOCD
-configuration, however, then applications for the ``olimex_stm32_h407`` board
+configuration, however, then applications for the ``olimex_stm32_h407/stm32f407xx`` board
 configuration can be built and flashed in the usual way (see
 :ref:`build_an_application` and :ref:`application_run` for more details).
 
@@ -336,7 +336,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: olimex_stm32_h407
+   :board: olimex_stm32_h407/stm32f407xx
    :goals: build flash
 
 Run a serial host program to connect with your board:
@@ -361,7 +361,7 @@ way.  Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: olimex_stm32_h407
+   :board: olimex_stm32_h407/stm32f407xx
    :maybe-skip-config:
    :goals: debug
 

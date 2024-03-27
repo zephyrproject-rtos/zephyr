@@ -127,7 +127,7 @@ example:
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/ina219
    :tool: all
-   :board: rpi_pico
+   :board: rpi_pico/rp2040
    :shield: waveshare_pico_ups_b
    :goals: build flash
 

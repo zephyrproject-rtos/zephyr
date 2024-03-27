@@ -74,7 +74,7 @@ More information about STM32G070RB can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_g070rb board configuration supports the following hardware features:
+The Zephyr nucleo_g070rb/stm32g070xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -112,7 +112,7 @@ The Zephyr nucleo_g070rb board configuration supports the following hardware fea
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_g070rb/nucleo_g070rb_defconfig`
+:zephyr_file:`boards/st/nucleo_g070rb/nucleo_g070rb_stm32g070xx_defconfig`
 
 Connections and IOs
 ===================
@@ -143,7 +143,7 @@ For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_g070rb`` board configuration can be built and
+Applications for the ``nucleo_g070rb/stm32g070xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -159,7 +159,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nucleo_g070rb
+   :board: nucleo_g070rb/stm32g070xx
    :goals: build flash
 
 You will see the LED blinking every second.
@@ -172,7 +172,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_g070rb
+   :board: nucleo_g070rb/stm32g070xx
    :maybe-skip-config:
    :goals: debug
 

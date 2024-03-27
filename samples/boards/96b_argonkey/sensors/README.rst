@@ -48,7 +48,7 @@ Building and Running
 .. zephyr-app-commands::
     :zephyr-app: samples/boards/96b_argonkey/sensors
     :host-os: unix
-    :board: 96b_argonkey
+    :board: 96b_argonkey/stm32f412cx
     :goals: run
     :compact:
 

@@ -55,7 +55,7 @@ https://wiki.analog.com/resources/eval/user-guides/eval-adin2111ebz-user-guide
 Supported Features
 ==================
 
-The ADI adi_eval_adin2111ebz board configuration supports the
+The ADI adi_eval_adin2111ebz/stm32l4s5xx board configuration supports the
 following hardware features:
 
 +--------------+------------+-------------------------------------+
@@ -86,7 +86,7 @@ following hardware features:
 
 The default configuration can be found in the defconfig file:
 
-	:zephyr_file:`boards/adi/eval_adin2111ebz/adi_eval_adin2111ebz_defconfig`
+	:zephyr_file:`boards/adi/eval_adin2111ebz/adi_eval_adin2111ebz_stm32l4s5xx_defconfig`
 
 
 Connections and IOs
@@ -150,14 +150,14 @@ Then, build and flash in the usual way. Here is an example for the :ref:`hello_w
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: adi_eval_adin2111ebz
+   :board: adi_eval_adin2111ebz/stm32l4s5xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! adi_eval_adin2111ebz
+   Hello World! adi_eval_adin2111ebz/stm32l4s5xx
 
 Debugging
 =========
@@ -167,7 +167,7 @@ application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: adi_eval_adin2111ebz
+   :board: adi_eval_adin2111ebz/stm32l4s5xx
    :maybe-skip-config:
    :goals: debug
 

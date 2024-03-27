@@ -57,7 +57,7 @@ is 16MHz.
 Supported Features
 ==================
 
-The rm1xx_dvk board configuration supports the following
+The rm1xx_dvk/nrf51822 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -158,7 +158,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: rm1xx_dvk
+   :board: rm1xx_dvk/nrf51822
    :goals: build flash
 
 Debugging

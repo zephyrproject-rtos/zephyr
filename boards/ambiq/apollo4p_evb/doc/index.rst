@@ -54,7 +54,7 @@ The Apollo4P EVB board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/ambiq/apollo4p_evb/apollo4p_evb_defconfig`
+:zephyr_file:`boards/ambiq/apollo4p_evb/apollo4p_evb_apollo4p_defconfig`
 
 Programming and Debugging
 =========================
@@ -68,7 +68,7 @@ Build the Zephyr kernel and application, then flash it to the device:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: apollo4p_evb
+   :board: apollo4p_evb/apollo4p
    :goals: flash
 
 .. note::
@@ -87,7 +87,7 @@ the following message:
 
 .. code-block:: console
 
-   Hello World! apollo4p_evb
+   Hello World! apollo4p_evb/apollo4p
 
 .. _Apollo4 Plus Website:
    https://ambiq.com/apollo4-plus/

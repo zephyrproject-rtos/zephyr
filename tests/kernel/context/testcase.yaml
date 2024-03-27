@@ -12,7 +12,7 @@ tests:
       - CONFIG_MINIMAL_LIBC=y
     min_ram: 16
   linker.linker_generator:
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3/ti_lm3s6965
     tags:
       - kernel
       - linker_generator

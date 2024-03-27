@@ -2,7 +2,7 @@ common:
   tags:
     - clib
   integration_platforms:
-    - qemu_x86
+    - qemu_x86/atom
 tests:
   libraries.libc.strerror.minimal.strerror_table:
     filter: CONFIG_MINIMAL_LIBC_SUPPORTED

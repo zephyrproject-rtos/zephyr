@@ -59,10 +59,10 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32s2_lolin_mini
+   :board: esp32s2_lolin_mini/esp32s2
    :goals: build
 
-The usual ``flash`` target will work with the ``esp32s2_lolin_mini`` board
+The usual ``flash`` target will work with the ``esp32s2_lolin_mini/esp32s2`` board
 configuration after putting the board into bootloader mode by holding the '0'
 button then pressing 'RST' and releasing the 'RST' button.
 
@@ -71,7 +71,7 @@ application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32s2_lolin_mini
+   :board: esp32s2_lolin_mini/esp32s2
    :goals: flash
 
 Open a serial port using e.g. screen
@@ -86,7 +86,7 @@ message in the monitor:
 .. code-block:: console
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! esp32s2_lolin_mini
+   Hello World! esp32s2_lolin_mini/esp32s2
 
 References
 **********

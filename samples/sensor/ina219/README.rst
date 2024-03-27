@@ -26,7 +26,7 @@ Building and Running
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/ina219
-   :board: blackpill_f411ce
+   :board: blackpill_f411ce/stm32f411xe
    :goals: build flash
 
 Sample Output

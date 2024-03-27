@@ -46,7 +46,7 @@ Arduino connector. For this example, we use a :ref:`nucleo_f401re_board` board.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/shields/x_nucleo_iks01a2/sensorhub
-   :board: nucleo_f401re
+   :board: nucleo_f401re/stm32f401xe
    :goals: build
    :compact:
 

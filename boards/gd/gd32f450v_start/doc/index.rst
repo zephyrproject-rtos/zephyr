@@ -15,7 +15,7 @@ SRAM and 82 GPIOs.
 
 .. image:: img/gd32f450v_start.webp
      :align: center
-     :alt: gd32f450v_start
+     :alt: gd32f450v_start/gd32f450
 
 Hardware
 ********
@@ -93,7 +93,7 @@ allows flash programming and debugging over USB. There is also a SWD header
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f450v_start
+      :board: gd32f450v_start/gd32f450
       :goals: build
       :compact:
 
@@ -116,7 +116,7 @@ allows flash programming and debugging over USB. There is also a SWD header
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f450v_start
+      :board: gd32f450v_start/gd32f450
       :goals: flash
       :compact:
 
@@ -126,7 +126,7 @@ allows flash programming and debugging over USB. There is also a SWD header
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32f450v_start
+      :board: gd32f450v_start/gd32f450
       :goals: debug
       :compact:
 

@@ -7,7 +7,7 @@ common:
     - kernel
   integration_platforms:
     - mps2/an385
-    - qemu_x86
+    - qemu_x86/atom
   harness: console
   harness_config:
     type: one_line

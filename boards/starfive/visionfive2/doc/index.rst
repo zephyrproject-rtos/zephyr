@@ -19,11 +19,11 @@ Programming and debugging
 Building
 ========
 
-Applications for the ``visionfive2`` board configuration can be built
+Applications for the ``visionfive2/jh7110`` board configuration can be built
 as usual (see :ref:`build_an_application`) using the corresponding board name:
 
 .. zephyr-app-commands::
-   :board: visionfive2
+   :board: visionfive2/jh7110
    :goals: build
 
 `spl_tool <https://github.com/starfive-tech/Tools/tree/master/spl_tool/>`_
@@ -75,4 +75,4 @@ Flash the ``zephyr.bin.normal.out`` using this command:
    Port /dev/ttyUSB0, 14:59:24
    Press CTRL-A Z for help on special keys
    6*** Booting Zephyr OS build v3.6.0-rc3 ***
-   Hello World! visionfive2
+   Hello World! visionfive2/jh7110

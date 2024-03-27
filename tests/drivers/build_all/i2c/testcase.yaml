@@ -6,5 +6,5 @@ common:
 tests:
   drivers.i2c.build:
     # will cover drivers without in-tree boards
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3/ti_lm3s6965
     extra_args: "CONFIG_I2C=y"

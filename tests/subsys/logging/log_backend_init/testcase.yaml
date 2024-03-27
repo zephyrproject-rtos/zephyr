@@ -1,7 +1,7 @@
 tests:
   logging.backend.initialization:
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
     tags:
       - log_core
       - logging

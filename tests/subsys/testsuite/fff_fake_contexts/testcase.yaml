@@ -7,11 +7,11 @@ tests:
     type: unit
   testing.testsuite.fff_fake_contexts:
     integration_platforms:
-      - qemu_cortex_m3
+      - qemu_cortex_m3/ti_lm3s6965
       - native_sim/native/64
     tags: test_framework
     platform_allow:
-      - qemu_cortex_m3
+      - qemu_cortex_m3/ti_lm3s6965
       - native_posix/native/64
       - native_sim/native/64
-      - native_sim
+      - native_sim/native

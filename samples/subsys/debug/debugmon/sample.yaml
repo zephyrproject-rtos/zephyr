@@ -3,5 +3,5 @@ sample:
 tests:
   sample.debug.debugmon:
     build_only: true
-    platform_allow: reel_board
+    platform_allow: reel_board/nrf52840
     tags: debug

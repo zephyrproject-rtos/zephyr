@@ -2,5 +2,5 @@ sample:
   name: CCM usages example
 tests:
   sample.board.stm32.ccm:
-    platform_allow: olimex_stm32_e407
+    platform_allow: olimex_stm32_e407/stm32f407xx
     tags: board

@@ -68,7 +68,7 @@ Build the lwm2m-client sample application like this:
    :compact:
 
 The easiest way to setup this sample application is to build and run it
-as a native_sim application or as a QEMU target using the default configuration :file:`prj.conf`.
+as a native_sim/native application or as a QEMU target using the default configuration :file:`prj.conf`.
 This requires a small amount of setup described in :ref:`networking_with_eth_qemu`, :ref:`networking_with_qemu` and :ref:`networking_with_native_sim`.
 
 Download and run the latest build of the Leshan Demo Server:
@@ -86,7 +86,7 @@ Build the lwm2m-client sample application for QEMU like this:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/lwm2m_client
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :goals: run
    :compact:
 
@@ -107,7 +107,7 @@ To build the lwm2m-client sample for QEMU with DTLS support do the following:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/lwm2m_client
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :conf: "prj.conf overlay-dtls.conf"
    :goals: run
    :compact:
@@ -119,7 +119,7 @@ Setup DTLS security in Leshan Demo Server:
 #. Click on "Add new client security configuration"
 #. Enter the following data:
 
-    * Client endpoint: qemu_x86
+    * Client endpoint: qemu_x86/atom
     * Security mode: Pre-Shared Key
     * Identity: Client_identity
     * Key: 000102030405060708090a0b0c0d0e0f
@@ -147,7 +147,7 @@ Configure the lwm2m-client sample in the Demo Bootstrap Server:
 1. Click on "Add new client bootstrap configuration"
 #. Enter the following data:
 
-    * Client endpoint: qemu_x86
+    * Client endpoint: qemu_x86/atom
 
 #. In the ``LWM2M Server`` tab, enter the following data:
 
@@ -163,7 +163,7 @@ following:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/lwm2m_client
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :conf: "prj.conf overlay-bootstrap.conf"
    :goals: run
    :compact:
@@ -200,7 +200,7 @@ commands (requires Bluetooth for networking):
 .. zephyr-app-commands::
    :zephyr-app: samples/net/lwm2m_client
    :host-os: unix
-   :board: nrf52_blenano2
+   :board: nrf52_blenano2/nrf52832
    :conf: "prj.conf overlay-bt.conf overlay-dtls.conf"
    :goals: build
    :compact:
@@ -310,7 +310,7 @@ sent to the server where the endpoint is initialized.
     [lib/lwm2m_engine] [DBG] lwm2m_engine_create_obj_inst: path:3303/0
     [ipso_temp_sensor] [DBG] temp_sensor_create: Create IPSO Temperature Sensor instance: 0
     [lib/lwm2m_engine] [DBG] lwm2m_engine_set: path:3303/0/5700, value:0x0041a3b8, len:8
-    [lib/lwm2m_rd_client] [INF] lwm2m_rd_client_start: LWM2M Client: qemu_x86
+    [lib/lwm2m_rd_client] [INF] lwm2m_rd_client_start: LWM2M Client: qemu_x86/atom
     [lib/lwm2m_rd_client] [INF] sm_do_init: RD Client started with endpoint 'qemu_x86' and client lifetime 0
     [lib/lwm2m_rd_client] [DBG] sm_send_registration: registration sent [2001:db8::2]
     [lib/lwm2m_engine] [DBG] lwm2m_udp_receive: checking for reply from [2001:db8::2]

@@ -75,7 +75,7 @@ emulated environment, for example, with the :zephyr:code-sample:`synchronization
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: qemu_cortex_m3
+   :board: qemu_cortex_m3/ti_lm3s6965
    :goals: run
 
 This will build an image with the synchronization sample app, boot it using

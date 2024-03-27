@@ -18,17 +18,17 @@ tests:
     filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
       and dt_chosen_enabled("zephyr,flash-controller") and CONFIG_FLASH_HAS_DRIVER_ENABLED
     platform_exclude:
-      - nucleo_h723zg
-      - nucleo_h743zi
+      - nucleo_h723zg/stm32h723xx
+      - nucleo_h743zi/stm32h743xx
       - nucleo_h745zi_q/stm32h745xx/m7
-      - nucleo_h753zi
+      - nucleo_h753zi/stm32h753xx
   sample.modules.canopennode.program_download:
     sysbuild: true
     platform_allow:
-      - frdm_k64f
-      - twr_ke18f
+      - frdm_k64f/mk64f12
+      - twr_ke18f/mke18f16
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
     extra_args: canopennode_CONF_FILE=prj_img_mgmt.conf
   sample.modules.canopennode.no_storage:
     extra_args: CONF_FILE=prj_no_storage.conf

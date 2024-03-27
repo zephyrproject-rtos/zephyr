@@ -22,7 +22,7 @@ The following commands build and flash the sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/lorawan/class_a
-   :board: nucleo_wl55jc
+   :board: nucleo_wl55jc/stm32wl55xx
    :goals: build flash
    :compact:
 
@@ -38,7 +38,7 @@ enabled.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/lorawan/class_a
-   :board: nucleo_wl55jc
+   :board: nucleo_wl55jc/stm32wl55xx
    :goals: build flash
    :gen-args: -DEXTRA_CONF_FILE=overlay-clock-sync.conf
    :compact:
@@ -48,7 +48,7 @@ enabled.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/lorawan/class_a
-   :board: nucleo_wl55jc
+   :board: nucleo_wl55jc/stm32wl55xx
    :goals: build flash
    :gen-args: -DEXTRA_CONF_FILE=overlay-multicast.conf
    :compact:

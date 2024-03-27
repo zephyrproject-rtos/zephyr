@@ -95,7 +95,7 @@ More information about STM32G431RB can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_g431rb board configuration supports the following hardware features:
+The Zephyr nucleo_g431rb/stm32g431xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -125,7 +125,7 @@ The Zephyr nucleo_g431rb board configuration supports the following hardware fea
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_g431rb/nucleo_g431rb_defconfig`
+:zephyr_file:`boards/st/nucleo_g431rb/nucleo_g431rb_stm32g431xx_defconfig`
 
 
 Connections and IOs
@@ -184,7 +184,7 @@ low power mode.
 Programming and Debugging
 *************************
 
-Applications for the ``nucleo_g431rb`` board configuration can be built and
+Applications for the ``nucleo_g431rb/stm32g431xx`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -228,7 +228,7 @@ Now build and flash an application. Here is an example for
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_g431rb
+   :board: nucleo_g431rb/stm32g431xx
    :goals: build flash
 
 You should see the following message on the console:
@@ -246,7 +246,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_g431rb
+   :board: nucleo_g431rb/stm32g431xx
    :maybe-skip-config:
    :goals: debug
 

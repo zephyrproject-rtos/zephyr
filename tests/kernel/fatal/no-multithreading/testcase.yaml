@@ -1,12 +1,12 @@
 common:
   platform_allow:
-    - qemu_cortex_m3
+    - qemu_cortex_m3/ti_lm3s6965
     - qemu_arc/qemu_arc_em
     - qemu_arc/qemu_arc_hs
     - qemu_arc/qemu_arc_hs6x
-    - qemu_riscv32
-    - qemu_riscv32e
-    - qemu_riscv64
+    - qemu_riscv32/qemu_virt_riscv32
+    - qemu_riscv32e/qemu_virt_riscv32e
+    - qemu_riscv64/qemu_virt_riscv64
     - nsim/nsim_em
     - nsim/nsim_em7d_v22
     - nsim/nsim_hs
@@ -14,7 +14,7 @@ common:
     - nsim/nsim_hs5x
     - nsim/nsim_hs6x
   integration_platforms:
-    - qemu_cortex_m3
+    - qemu_cortex_m3/ti_lm3s6965
     - nsim/nsim_em
   tags:
     - kernel

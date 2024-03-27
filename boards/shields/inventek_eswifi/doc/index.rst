@@ -121,18 +121,18 @@ details).
 Tested Boards
 =============
 
-+------------------------------+------------------------------+-----------+
-| Board                        | Disabled Interface           | Variation |
-+==============================+==============================+===========+
-| ATMEL sam_v71_xult/samv71q21 | Ethernet                     |   2 , 3   |
-+------------------------------+------------------------------+-----------+
-| ST nucleo_f767zi             | Ethernet                     |   2 , 3   |
-+------------------------------+------------------------------+-----------+
-| ST disco_l475_iot1           |                              |     -     |
-+------------------------------+------------------------------+-----------+
++--------------------------------+------------------------------+-----------+
+| Board target                   | Disabled Interface           | Variation |
++================================+==============================+===========+
+| ATMEL sam_v71_xult/samv71q21   | Ethernet                     |   2 , 3   |
++--------------------------------+------------------------------+-----------+
+| ST nucleo_f767zi/stm32f767xx   | Ethernet                     |   2 , 3   |
++--------------------------------+------------------------------+-----------+
+| ST disco_l475_iot1/stm32l475xx |                              |     -     |
++--------------------------------+------------------------------+-----------+
 
 .. note::
-	ST disco_l475_iot1 already have an ISM43362 module with IWIN SPI
+	ST disco_l475_iot1/stm32l475xx already have an ISM43362 module with IWIN SPI
 	firmware.  It doesn't need this shield to expose es-WIFI.  It is only
 	used here as reference to demonstrate how configure an on-board
 	module.
@@ -168,7 +168,7 @@ Set ``-DSHIELD=<shield designator>`` when you invoke ``west build``.
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi
    :host-os: unix
-   :board: disco_l475_iot1
+   :board: disco_l475_iot1/stm32l475xx
    :goals: build flash
    :compact:
 

@@ -16,27 +16,27 @@ sample:
 tests:
   sample.net.cloud.tagoio_http_post:
     platform_allow:
-      - frdm_k64f
-      - nucleo_f767zi
+      - frdm_k64f/mk64f12
+      - nucleo_f767zi/stm32f767xx
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
   sample.net.cloud.tagoio_http_post.wifi:
     extra_args: OVERLAY_CONFIG="overlay-wifi.conf"
-    platform_allow: disco_l475_iot1
+    platform_allow: disco_l475_iot1/stm32l475xx
   sample.net.cloud.tagoio_http_post.wifi.esp:
     extra_args:
       - SHIELD=esp_8266_arduino
       - OVERLAY_CONFIG="overlay-wifi.conf"
     platform_allow:
-      - frdm_k64f
-      - nucleo_f767zi
+      - frdm_k64f/mk64f12
+      - nucleo_f767zi/stm32f767xx
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
   sample.net.cloud.tagoio_http_post.modem:
     extra_args: OVERLAY_CONFIG="overlay-modem.conf"
-    platform_allow: sam4e_xpro
+    platform_allow: sam4e_xpro/sam4e16e
   sample.net.cloud.tagoio_http_post.modem.arduino:
     extra_args:
       - OVERLAY_CONFIG="overlay-modem.conf"
       - DTC_OVERLAY_FILE="arduino.overlay"
-    platform_allow: frdm_k64f
+    platform_allow: frdm_k64f/mk64f12

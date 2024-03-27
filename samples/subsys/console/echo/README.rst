@@ -19,14 +19,14 @@ UART console is required to run this sample.
 Building and Running
 ********************
 
-Build and flash the sample as follows, changing ``nucleo_f401re`` for your
+Build and flash the sample as follows, changing ``nucleo_f401re/stm32f401xe`` for your
 board. Alternatively you can run this using QEMU, as described in
 :zephyr:code-sample:`console_getchar`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/console/echo
    :host-os: unix
-   :board: nucleo_f401re
+   :board: nucleo_f401re/stm32f401xe
    :goals: build flash
    :compact:
 

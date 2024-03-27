@@ -34,7 +34,7 @@ For more information about the WGM160P and SLTB009A board:
 Supported Features
 ==================
 
-The efm32gg_sltb009a board configuration supports the following hardware
+The efm32gg_sltb009a/efm32gg12b810f1024gm64 board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -57,7 +57,7 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/efm32gg_sltb009a/efm32gg_sltb009a_defconfig`
+:zephyr_file:`boards/silabs/efm32gg_sltb009a/efm32gg_sltb009a_efm32gg12b810f1024gm64_defconfig`
 
 Connections and IOs
 ===================
@@ -144,7 +144,7 @@ terminal session:
 
 .. code-block:: console
 
-   Hello World! efm32gg_sltb009a
+   Hello World! efm32gg_sltb009a/efm32gg12b810f1024gm64
 
 .. _SLTB009A Website:
    https://www.silabs.com/development-tools/thunderboard/thunderboard-gg12-kit

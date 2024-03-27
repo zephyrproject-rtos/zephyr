@@ -26,85 +26,85 @@ tests:
     extra_args: DTC_OVERLAY_FILE=boards/stm32_wwdg.overlay
     filter: dt_compat_enabled("st,stm32-window-watchdog")
     platform_allow:
-      - b_u585i_iot02a
-      - nucleo_c031c6
-      - nucleo_f091rc
-      - nucleo_f103rb
-      - nucleo_f207zg
-      - nucleo_f429zi
-      - nucleo_f746zg
-      - nucleo_g071rb
-      - nucleo_g474re
-      - nucleo_l073rz
-      - nucleo_l152re
-      - nucleo_wb55rg
-      - nucleo_wl55jc
-      - stm32f3_disco
-      - stm32l562e_dk
-      - disco_l475_iot1
-      - stm32h573i_dk
+      - b_u585i_iot02a/stm32u585xx
+      - nucleo_c031c6/stm32c031xx
+      - nucleo_f091rc/stm32f091xc
+      - nucleo_f103rb/stm32f103xb
+      - nucleo_f207zg/stm32f207xx
+      - nucleo_f429zi/stm32f429xx
+      - nucleo_f746zg/stm32f746xx
+      - nucleo_g071rb/stm32g071xx
+      - nucleo_g474re/stm32g474xx
+      - nucleo_l073rz/stm32l073xx
+      - nucleo_l152re/stm32l152xe
+      - nucleo_wb55rg/stm32wb55xx
+      - nucleo_wl55jc/stm32wl55xx
+      - stm32f3_disco/stm32f303xc
+      - stm32l562e_dk/stm32l562xx
+      - disco_l475_iot1/stm32l475xx
+      - stm32h573i_dk/stm32h573xx
     integration_platforms:
-      - nucleo_f103rb
+      - nucleo_f103rb/stm32f103xb
   sample.drivers.watchdog.stm32h7_wwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32h7_wwdg.overlay
     filter: dt_compat_enabled("st,stm32-window-watchdog")
-    platform_allow: nucleo_h743zi
+    platform_allow: nucleo_h743zi/stm32h743xx
   sample.drivers.watchdog.stm32_iwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32_iwdg.overlay
     filter: dt_compat_enabled("st,stm32-watchdog")
     platform_allow:
-      - b_u585i_iot02a
-      - nucleo_c031c6
-      - nucleo_f091rc
-      - nucleo_f103rb
-      - nucleo_f207zg
-      - nucleo_f429zi
-      - nucleo_f746zg
-      - nucleo_g071rb
-      - nucleo_g474re
-      - nucleo_h743zi
-      - nucleo_l073rz
-      - nucleo_l152re
-      - nucleo_wb55rg
-      - nucleo_wl55jc
-      - stm32f3_disco
-      - stm32l562e_dk
-      - disco_l475_iot1
-      - stm32h573i_dk
+      - b_u585i_iot02a/stm32u585xx
+      - nucleo_c031c6/stm32c031xx
+      - nucleo_f091rc/stm32f091xc
+      - nucleo_f103rb/stm32f103xb
+      - nucleo_f207zg/stm32f207xx
+      - nucleo_f429zi/stm32f429xx
+      - nucleo_f746zg/stm32f746xx
+      - nucleo_g071rb/stm32g071xx
+      - nucleo_g474re/stm32g474xx
+      - nucleo_h743zi/stm32h743xx
+      - nucleo_l073rz/stm32l073xx
+      - nucleo_l152re/stm32l152xe
+      - nucleo_wb55rg/stm32wb55xx
+      - nucleo_wl55jc/stm32wl55xx
+      - stm32f3_disco/stm32f303xc
+      - stm32l562e_dk/stm32l562xx
+      - disco_l475_iot1/stm32l475xx
+      - stm32h573i_dk/stm32h573xx
     integration_platforms:
-      - nucleo_f103rb
+      - nucleo_f103rb/stm32f103xb
   sample.drivers.watchdog.gd32_fwdgt:
     filter: dt_compat_enabled("gd,gd32-fwdgt")
     extra_args: DTC_OVERLAY_FILE=boards/gd32_fwdgt.overlay
     platform_allow:
-      - gd32e103v_eval
-      - gd32e507v_start
-      - gd32f350r_eval
-      - gd32f403z_eval
-      - gd32f450i_eval
-      - gd32f450z_eval
-      - gd32f470i_eval
-      - gd32vf103c_starter
-      - gd32vf103v_eval
-      - longan_nano
+      - gd32e103v_eval/gd32e103
+      - gd32e507v_start/gd32e507
+      - gd32f350r_eval/gd32f350
+      - gd32f403z_eval/gd32f403
+      - gd32f450i_eval/gd32f450
+      - gd32f450z_eval/gd32f450
+      - gd32f470i_eval/gd32f470
+      - gd32vf103c_starter/gd32vf103
+      - gd32vf103v_eval/gd32vf103
+      - longan_nano/gd32vf103
     integration_platforms:
-      - gd32e103v_eval
+      - gd32e103v_eval/gd32e103
   sample.drivers.watchdog.gd32_wwdgt:
     filter: dt_compat_enabled("gd,gd32-wwdgt")
     extra_args: DTC_OVERLAY_FILE=boards/gd32_wwdgt.overlay
     platform_allow:
-      - gd32e103v_eval
-      - gd32e507v_start
-      - gd32f350r_eval
-      - gd32f403z_eval
-      - gd32f450i_eval
-      - gd32f450z_eval
-      - gd32f470i_eval
-      - gd32vf103c_starter
-      - gd32vf103v_eval
-      - longan_nano
+      - gd32e103v_eval/gd32e103
+      - gd32e507v_start/gd32e507
+      - gd32f350r_eval/gd32f350
+      - gd32f403z_eval/gd32f403
+      - gd32f450i_eval/gd32f450
+      - gd32f450z_eval/gd32f450
+      - gd32f470i_eval/gd32f470
+      - gd32vf103c_starter/gd32vf103
+      - gd32vf103v_eval/gd32vf103
+      - longan_nano/gd32vf103
     integration_platforms:
-      - gd32e103v_eval
+      - gd32e103v_eval/gd32e103
   sample.drivers.watchdog.s32z270dc2_r52:
     build_only: true
     platform_allow:

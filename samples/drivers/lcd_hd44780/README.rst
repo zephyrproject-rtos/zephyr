@@ -18,7 +18,7 @@ This project can be built and executed on as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/lcd_hd44780
    :host-os: unix
-   :board: arduino_due
+   :board: arduino_due/sam3x8e
    :goals: flash
    :compact:
 

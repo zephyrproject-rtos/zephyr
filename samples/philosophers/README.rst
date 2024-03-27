@@ -46,7 +46,7 @@ on QEMU as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/philosophers
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :goals: run
    :compact:
 

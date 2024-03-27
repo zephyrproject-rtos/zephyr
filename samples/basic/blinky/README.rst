@@ -32,11 +32,11 @@ Your board must:
 Building and Running
 ********************
 
-Build and flash Blinky as follows, changing ``reel_board`` for your board:
+Build and flash Blinky as follows, changing ``reel_board/nrf52840`` for your board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: reel_board
+   :board: reel_board/nrf52840
    :goals: build flash
    :compact:
 

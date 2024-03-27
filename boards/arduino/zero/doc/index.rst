@@ -28,7 +28,7 @@ Hardware
 Supported Features
 ==================
 
-The arduino_zero board configuration supports the following hardware
+The arduino_zero/samd21g18a board configuration supports the following hardware
 features:
 
 +-----------+------------+------------------------------------------+
@@ -58,7 +58,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arduino/zero/arduino_zero_defconfig`.
+:zephyr_file:`boards/arduino/zero/arduino_zero_samd21g18a_defconfig`.
 
 Connections and IOs
 ===================
@@ -122,7 +122,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: arduino_zero
+      :board: arduino_zero/samd21g18a
       :goals: build
       :compact:
 
@@ -148,7 +148,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: arduino_zero
+      :board: arduino_zero/samd21g18a
       :goals: flash
       :compact:
 

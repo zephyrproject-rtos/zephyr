@@ -9,15 +9,15 @@ common:
 tests:
   sample.filesystem.shell:
     platform_allow:
-      - reel_board
-      - mimxrt1060_evk
-      - mr_canhubk3
-      - native_sim
+      - reel_board/nrf52840
+      - mimxrt1060_evk/mimxrt1062
+      - mr_canhubk3/s32k344
+      - native_sim/native
     integration_platforms:
-      - reel_board
+      - reel_board/nrf52840
   sample.filesystem.shell.fuse:
     platform_allow:
-      - native_sim
+      - native_sim/native
     extra_configs:
       - CONFIG_FUSE_FS_ACCESS=y
     # This test cannot be run in CI as we lack the fuse library

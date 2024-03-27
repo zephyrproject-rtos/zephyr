@@ -38,7 +38,7 @@ Sample Criteria
       tests:
         sample.kernel.cond_var:
           integration_platforms:
-            - native_sim
+            - native_sim/native
           tags: kernel condition_variables
           harness: console
           harness_config:

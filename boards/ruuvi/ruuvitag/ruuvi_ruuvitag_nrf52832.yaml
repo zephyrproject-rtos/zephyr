@@ -1,0 +1,19 @@
+identifier: ruuvi_ruuvitag/nrf52832
+name: Ruuvi-RuuviTag
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 512
+supported:
+  - ble
+  - adc
+  - gpio
+  - spi
+  - counter
+  - nvs
+  - watchdog
+vendor: ruuvi

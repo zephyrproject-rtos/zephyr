@@ -20,7 +20,7 @@ sample can be built without further ado. This applies for example to the
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/eeprom
    :host-os: unix
-   :board: native_sim
+   :board: native_sim/native
    :goals: run
    :compact:
 
@@ -40,7 +40,7 @@ Then the sample can be built and executed for the  as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/eeprom
-   :board: gd32f450i_eval
+   :board: gd32f450i_eval/gd32f450
    :goals: build flash
    :compact:
 

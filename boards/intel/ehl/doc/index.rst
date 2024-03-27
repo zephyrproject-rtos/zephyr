@@ -44,7 +44,7 @@ Build Zephyr application
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: intel_ehl_crb
+      :board: intel_ehl_crb/elkhart_lake
       :goals: build
 
    .. note::

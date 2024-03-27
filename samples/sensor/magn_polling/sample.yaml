@@ -6,8 +6,8 @@ tests:
     tags: sensors
     filter: dt_alias_exists("magn0")
     integration_platforms:
-      - frdm_k64f               # fxos8700
-      - thingy53/nrf5340/cpuapp # bmm150
-      - sensortile_box          # lis2mdl
-      - stm32f411e_disco        # lsm303agr_magn
-      - stm32f3_disco           # lsm303dlhc_magn
+      - frdm_k64f/mk64f12              # fxos8700
+      - thingy53/nrf5340/cpuapp        # bmm150
+      - sensortile_box/stm32l4r9xx     # lis2mdl
+      - stm32f411e_disco/stm32f411xe   # lsm303agr_magn
+      - stm32f3_disco/stm32f303xc      # lsm303dlhc_magn

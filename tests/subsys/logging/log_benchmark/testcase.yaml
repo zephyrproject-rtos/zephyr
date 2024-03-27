@@ -1,6 +1,6 @@
 common:
   integration_platforms:
-    - native_sim
+    - native_sim/native
   tags: logging
 tests:
   logging.benchmark:
@@ -14,11 +14,11 @@ tests:
       - CONFIG_LOG_SPEED=y
   logging.benchmark_user:
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom
     platform_allow:
-      - qemu_x86
-      - native_posix
-      - native_sim
+      - qemu_x86/atom
+      - native_posix/native
+      - native_sim/native
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_CBPRINTF_COMPLETE=y

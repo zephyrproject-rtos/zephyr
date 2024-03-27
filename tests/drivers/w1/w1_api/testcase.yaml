@@ -5,7 +5,7 @@ common:
     - userspace
   harness: ztest
   platform_allow:
-    - nucleo_g0b1re
+    - nucleo_g0b1re/stm32g0b1xx
     - nrf52840dk/nrf52840
   integration_platforms:
     - nrf52840dk/nrf52840

@@ -38,7 +38,7 @@ More information can be found here:
 Supported Features
 ==================
 
-The lpcxpresso51u68 support the following features:
+The lpcxpresso51u68/lpc51u68 support the following features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -137,13 +137,13 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: lpcxpresso51u68
+   :board: lpcxpresso51u68/lpc51u68
    :goals: flash
 
 .. code-block:: console
 
    ***** Booting Zephyr OS build zephyr-v2.6.0-934-g4c438c0c7d13 *****
-   Hello World! lpcxpresso51u68
+   Hello World! lpcxpresso51u68/lpc51u68
 
 Debugging
 =========
@@ -152,7 +152,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: lpcxpresso51u68
+   :board: lpcxpresso51u68/lpc51u68
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -161,7 +161,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS build zephyr-v2.6.0-934-g4c438c0c7d13 *****
-   Hello World! lpcxpresso51u68
+   Hello World! lpcxpresso51u68/lpc51u68
 
 .. _LPC51U68 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/high-performance-power-efficient-and-cost-sensitive-arm-cortex-m0-plus-mcus:LPC51U68

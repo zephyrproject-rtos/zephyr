@@ -62,7 +62,7 @@ The following features are supported:
 Other hardware features are not currently supported by Zephyr (at the moment)
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/nuvoton/npcx4m8f_evb/npcx4m8f_evb_defconfig`
+:zephyr_file:`boards/nuvoton/npcx4m8f_evb/npcx4m8f_evb_npcx4m8f_defconfig`
 
 
 Connections and IOs
@@ -115,7 +115,7 @@ The openocd from Zephyr SDK 0.16.1 doesn't include npcx4 support, so build openo
 Build and flash the blinky sample.::
 
   west build -t clean && \
-    west build -c -p auto -b npcx4m8f_evb samples/basic/blinky && \
+    west build -c -p auto -b npcx4m8f_evb/npcx4m8f samples/basic/blinky && \
     west flash --openocd /usr/local/bin/openocd
 
 Debugging

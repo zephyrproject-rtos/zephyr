@@ -14,12 +14,12 @@ Building and Running
 ********************
 
 This project outputs to the console. It can be built and executed
-on native_sim as follows:
+on native_sim/native as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/zbus/uart_bridge
    :host-os: unix
-   :board: native_sim
+   :board: native_sim/native
    :goals: run
 
 Sample Output

@@ -74,7 +74,7 @@ More information about STM32F469NI can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f469i_disco board configuration supports the following hardware features:
+The Zephyr stm32f469i_disco/stm32f469xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -90,7 +90,7 @@ The Zephyr stm32f469i_disco board configuration supports the following hardware 
 Other hardware features are not yet supported on Zephyr porting.
 
 The default configuration can be found in
-:zephyr_file:`boards/adi/sdp_k1/adi_sdp_k1_defconfig`
+:zephyr_file:`boards/adi/sdp_k1/adi_sdp_k1_stm32f469xx_defconfig`
 
 Pin Mapping
 ===========
@@ -155,14 +155,14 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: adi_sdp_k1
+   :board: adi_sdp_k1/stm32f469xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! adi_sdp_k1
+   Hello World! adi_sdp_k1/stm32f469xx
 
 Debugging
 =========

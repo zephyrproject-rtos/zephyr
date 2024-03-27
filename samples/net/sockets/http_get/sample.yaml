@@ -19,13 +19,13 @@ tests:
     filter: not CONFIG_NET_SOCKETS_OFFLOAD and not CONFIG_NATIVE_LIBC
     harness: net
     platform_exclude:
-      - cc3220sf_launchxl
-      - cc3235sf_launchxl
+      - cc3220sf_launchxl/cc3220sf
+      - cc3235sf_launchxl/cc3235sf
     extra_configs:
       - CONFIG_NET_SOCKETS_POSIX_NAMES=n
       - CONFIG_POSIX_API=y
   sample.net.sockets.http_get.offload.simplelink:
-    platform_allow: cc3220sf_launchxl
+    platform_allow: cc3220sf_launchxl/cc3220sf
     harness: net
     tags:
       - net
@@ -42,7 +42,7 @@ tests:
         - "The document has moved"
         - "(.*)</BODY>(.*)"
     platform_allow:
-      - native_sim
+      - native_sim/native
       - native_sim/native/64
     extra_args: OVERLAY_CONFIG="overlay-nsos.conf"
   sample.get.sockets.http_get.nsos.https:
@@ -55,6 +55,6 @@ tests:
         - "The document has moved"
         - "(.*)</BODY>(.*)"
     platform_allow:
-      - native_sim
+      - native_sim/native
       - native_sim/native/64
     extra_args: OVERLAY_CONFIG="overlay-nsos.conf;overlay-tls.conf"

@@ -9,5 +9,5 @@ tests:
   arch.arm.irq_vector_table:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
     platform_exclude:
-      - mr_canhubk3
-      - arduino_uno_r4_minima
+      - mr_canhubk3/s32k344
+      - arduino_uno_r4_minima/r7fa4m1ab3cfm

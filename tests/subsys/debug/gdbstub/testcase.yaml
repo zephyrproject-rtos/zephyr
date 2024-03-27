@@ -7,7 +7,7 @@
 tests:
   # Connect to Zephyr gdbstub and run a simple GDB script
   debug.gdbstub.breakpoints:
-    platform_allow: qemu_x86
+    platform_allow: qemu_x86/atom
     harness: pytest
     harness_config:
       pytest_root:
@@ -33,7 +33,7 @@ tests:
   # Use non-default QEMU gdbstub port 1235 for this test to avoid conflicts
   # with some other test on QEMU running in parallel.
   debug.gdbstub_qemu.breakpoints:
-    platform_allow: qemu_x86
+    platform_allow: qemu_x86/atom
     harness: pytest
     harness_config:
       pytest_root:

@@ -48,7 +48,7 @@ The following features are supported:
 Other hardware features are not currently supported by Zephyr (at the moment)
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/nuvoton/npcx7m6fb_evb/npcx7m6fb_evb_defconfig`
+:zephyr_file:`boards/nuvoton/npcx7m6fb_evb/npcx7m6fb_evb_npcx7m6fb_defconfig`
 
 
 Connections and IOs
@@ -90,7 +90,7 @@ SEGGER J-link's drivers are at https://www.segger.com/downloads/jlink/
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: npcx7m6fb_evb
+   :board: npcx7m6fb_evb/npcx7m6fb
    :maybe-skip-config:
    :goals: build flash
 

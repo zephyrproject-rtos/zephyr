@@ -50,7 +50,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr 96b_nitrogen board configuration supports the following hardware
+The Zephyr 96b_nitrogen/nrf52832 board configuration supports the following hardware
 features:
 
 +-----------+------------+--------------------------------------+
@@ -76,7 +76,7 @@ See `Nordic Semiconductor Infocenter`_ for a complete list of nRF52-based
 board hardware features.
 
 The default configuration can be found in
-:zephyr_file:`boards/96boards/nitrogen/96b_nitrogen_defconfig`
+:zephyr_file:`boards/96boards/nitrogen/96b_nitrogen_nrf52832_defconfig`
 
 Pin Mapping
 ===========
@@ -278,7 +278,7 @@ requires installing the :ref:`pyocd-debug-host-tools`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: 96b_nitrogen
+   :board: 96b_nitrogen/nrf52832
    :goals: build flash
 
 Run your favorite terminal program to listen for output.
@@ -306,7 +306,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: 96b_nitrogen
+   :board: 96b_nitrogen/nrf52832
    :maybe-skip-config:
    :goals: debug
 

@@ -74,12 +74,12 @@ Example building for the nrf52840dk/nrf52840 with OpenThread support:
    :goals: run
    :compact:
 
-Example building for the samr21_xpro with RF2XX driver support:
+Example building for the samr21_xpro/samr21g18a with RF2XX driver support:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
-   :board: [samr21_xpro | sam4e_xpro | sam_v71_xult/samv71q21]
+   :board: [ samr21_xpro/samr21g18a | sam4e_xpro/sam4e16e | sam_v71_xult/samv71q21 ]
    :gen-args: -DEXTRA_CONF_FILE=overlay-802154.conf
    :goals: build flash
    :compact:
@@ -98,7 +98,7 @@ Enable TLS support in the sample by building the project with the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_server
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :conf: "prj.conf overlay-tls.conf"
    :goals: build
    :compact:
@@ -124,7 +124,7 @@ Run echo-server application in QEMU:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :goals: run
    :compact:
 

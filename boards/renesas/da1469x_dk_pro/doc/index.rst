@@ -79,7 +79,7 @@ The pin connections are as follows:
 Programming and Debugging
 *************************
 
-Applications for the ``da1469x_dk_pro`` board configuration can be
+Applications for the ``da1469x_dk_pro/da14699`` board configuration can be
 built, flashed, and debugged in the usual way. See
 :ref:`build_an_application` and :ref:`application_run` for more details on
 building and running.
@@ -96,7 +96,7 @@ usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: da1469x_dk_pro
+   :board: da1469x_dk_pro/da14699
    :goals: build flash
 
 Debugging

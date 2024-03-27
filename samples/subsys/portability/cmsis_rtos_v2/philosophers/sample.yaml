@@ -2,14 +2,14 @@ sample:
   name: CMSIS_RTOS_V2 Dining Philosophers
 common:
   integration_platforms:
-    - native_sim
+    - native_sim/native
   extra_args: DEBUG_PRINTF=1
   tags: cmsis_rtos
   min_ram: 32
   min_flash: 34
   platform_exclude:
-    - qemu_xtensa
-    - qemu_x86_64
+    - qemu_xtensa/dc233c
+    - qemu_x86_64/atom
   harness: console
   harness_config:
     type: multi_line

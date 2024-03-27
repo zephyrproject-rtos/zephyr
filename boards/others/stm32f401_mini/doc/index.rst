@@ -42,7 +42,7 @@ hardware components:
 Supported Features
 ==================
 
-The Zephyr stm32f401_mini board configuration supports the following
+The Zephyr stm32f401_mini/stm32f401xc board configuration supports the following
 hardware features:
 
 +------------+------------+-------------------------------------+
@@ -70,7 +70,7 @@ hardware features:
 +------------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/others/stm32f401_mini/stm32f401_mini_defconfig`
+:zephyr_file:`boards/others/stm32f401_mini/stm32f401_mini_stm32f401xc_defconfig`
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -125,7 +125,7 @@ tested easily.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32f401_mini
+   :board: stm32f401_mini/stm32f401xc
    :goals: build flash
 
 Debugging

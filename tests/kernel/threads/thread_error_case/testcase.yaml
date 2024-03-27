@@ -7,4 +7,4 @@ tests:
     filter: CONFIG_USERSPACE
     ignore_faults: true
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

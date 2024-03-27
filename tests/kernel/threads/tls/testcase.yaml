@@ -1,6 +1,6 @@
 common:
   integration_platforms:
-    - qemu_x86
+    - qemu_x86/atom
 tests:
   kernel.threads.tls:
     tags:
@@ -17,7 +17,7 @@ tests:
     arch_exclude:
       - posix
     platform_exclude:
-      - ucans32k1sic
+      - ucans32k1sic/s32k146
     # ARCMWDT can't handle THREAD_LOCAL_STORAGE with USERSPACE, see #52570 for details
     toolchain_exclude: arcmwdt
     extra_configs:

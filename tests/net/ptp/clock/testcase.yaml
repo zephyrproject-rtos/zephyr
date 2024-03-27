@@ -2,12 +2,12 @@ common:
   depends_on: netif
   # We can only run this in platforms that support PTP clock
   platform_allow:
-    - frdm_k64f
+    - frdm_k64f/mk64f12
     - sam_e70_xplained/same70q21
-    - native_posix
-    - native_sim
+    - native_posix/native
+    - native_sim/native
   integration_platforms:
-    - native_sim
+    - native_sim/native
 tests:
   net.ptp.clock:
     min_ram: 32

@@ -25,7 +25,7 @@ The sample can be built and executed for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: nucleo_l073rz
+   :board: nucleo_l073rz/stm32l073xx
    :goals: build flash
    :compact:
 
@@ -36,7 +36,7 @@ The sample can be built and executed for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: nucleo_l152re
+   :board: nucleo_l152re/stm32l152xe
    :goals: build flash
    :compact:
 
@@ -47,7 +47,7 @@ The sample can be built and executed for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: nucleo_f767zi
+   :board: nucleo_f767zi/stm32f767xx
    :goals: build flash
    :compact:
 
@@ -58,7 +58,7 @@ The sample can be built and executed for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: stm32f3_disco
+   :board: stm32f3_disco/stm32f303xc
    :goals: build flash
    :compact:
 
@@ -69,7 +69,7 @@ The sample can be built and executed for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: nucleo_f429zi
+   :board: nucleo_f429zi/stm32f429xx
    :goals: build flash
    :compact:
 
@@ -80,7 +80,7 @@ The sample can be built and executed for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: stm32l562e_dk
+   :board: stm32l562e_dk/stm32l562xx
    :goals: build flash
    :compact:
 
@@ -91,7 +91,7 @@ The sample can be built and executed for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: nucleo_l552ze_q
+   :board: nucleo_l552ze_q/stm32l552xx
    :goals: build flash
    :compact:
 
@@ -102,7 +102,7 @@ follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: twr_ke18f
+   :board: twr_ke18f/mke18f16
    :goals: build flash
    :compact:
 
@@ -116,7 +116,7 @@ follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: frdm_k64f
+   :board: frdm_k64f/mk64f12
    :goals: build flash
    :compact:
 
@@ -130,7 +130,7 @@ executed for the :ref:`bl652_dvk` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: bl652_dvk
+   :board: bl652_dvk/nrf52832
    :goals: build flash
    :compact:
 
@@ -144,7 +144,7 @@ executed for the :ref:`bl653_dvk` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: bl653_dvk
+   :board: bl653_dvk/nrf52833
    :goals: build flash
    :compact:
 
@@ -158,7 +158,7 @@ executed for the :ref:`bl654_dvk` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: bl654_dvk
+   :board: bl654_dvk/nrf52840
    :goals: build flash
    :compact:
 
@@ -184,7 +184,7 @@ The sample can be built and executed for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: gd32f450i_eval
+   :board: gd32f450i_eval/gd32f450
    :goals: build flash
    :compact:
 
@@ -197,7 +197,7 @@ The sample can be built and executed for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: longan_nano
+   :board: longan_nano/gd32vf103
    :goals: build flash
    :compact:
 
@@ -217,7 +217,7 @@ follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
-   :board: lpcxpresso55s36
+   :board: lpcxpresso55s36/lpc55s36
    :goals: build flash
    :compact:
 

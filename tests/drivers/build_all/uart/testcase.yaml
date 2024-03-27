@@ -6,6 +6,6 @@ common:
 tests:
   drivers.uart.build:
     # will cover drivers without in-tree boards
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3/ti_lm3s6965
     extra_configs:
       - CONFIG_SERIAL=y

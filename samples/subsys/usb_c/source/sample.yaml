@@ -4,7 +4,7 @@ tests:
   sample.usbc.source:
     depends_on: tcpc
     tags: usbc
-    platform_allow: stm32g081b_eval
+    platform_allow: stm32g081b_eval/stm32g081xx
     harness: console
     harness_config:
       type: one_line

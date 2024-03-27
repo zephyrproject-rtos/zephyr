@@ -107,7 +107,7 @@ More information about STM32L476VG can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32l476g_disco board configuration supports the following hardware features:
+The Zephyr stm32l476g_disco/stm32l476xx board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -126,7 +126,7 @@ Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
 
-	:zephyr_file:`boards/st/stm32l476g_disco/stm32l476g_disco_defconfig`
+	:zephyr_file:`boards/st/stm32l476g_disco/stm32l476g_disco_stm32l476xx_defconfig`
 
 
 Connections and IOs
@@ -184,7 +184,7 @@ Then, build and flash in the usual way. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32l476g_disco
+   :board: stm32l476g_disco/stm32l476xx
    :goals: build flash
 
 You should see the following message on the console:
@@ -201,7 +201,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32l476g_disco
+   :board: stm32l476g_disco/stm32l476xx
    :maybe-skip-config:
    :goals: debug
 

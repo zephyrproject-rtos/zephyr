@@ -5,4 +5,4 @@ tests:
   benchmark.crypto.mbedtls:
     filter: CONFIG_TEST_RANDOM_GENERATOR
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

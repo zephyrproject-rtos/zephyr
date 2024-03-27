@@ -6,7 +6,7 @@ Electronut Labs Papyr
 Overview
 ********
 
-Zephyr applications use the nrf52840_papyr board configuration
+Zephyr applications use the nrf52840_papyr/nrf52840 board configuration
 to run on Electronut Labs Papyr hardware. It provides
 support for the Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and
 the following devices:
@@ -45,7 +45,7 @@ is 32 MHz.
 Supported Features
 ==================
 
-The nrf52840_papyr board configuration supports the following
+The nrf52840_papyr/nrf52840 board configuration supports the following
 hardware features currently:
 
 +-----------+------------+----------------------+
@@ -132,7 +132,7 @@ Other pins used by the e-paper display are:
 Programming and Debugging
 *************************
 
-Applications for the ``nrf52840_papyr`` board configuration can be
+Applications for the ``nrf52840_papyr/nrf52840`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details); Black Magic
 Probe debugger presents itself as two USB-serial ports. On Linux,
@@ -166,7 +166,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf52840_papyr
+   :board: nrf52840_papyr/nrf52840
    :goals: build flash
 
 Debugging

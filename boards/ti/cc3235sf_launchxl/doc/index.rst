@@ -173,7 +173,7 @@ To build and flash an application, execute the following commands for <my_app>:
 
 .. zephyr-app-commands::
    :zephyr-app: <my_app>
-   :board: cc3235sf_launchxl
+   :board: cc3235sf_launchxl/cc3235sf
    :goals: flash
 
 This will load the image into flash.
@@ -200,7 +200,7 @@ build target:
 
 .. zephyr-app-commands::
    :zephyr-app: <my_app>
-   :board: cc3235sf_launchxl
+   :board: cc3235sf_launchxl/cc3235sf
    :maybe-skip-config:
    :goals: debug
 
@@ -218,7 +218,7 @@ Usage:
 
 Set :kconfig:option:`CONFIG_WIFI_SIMPLELINK` and :kconfig:option:`CONFIG_WIFI` to ``y``
 to enable Wi-Fi.
-See :zephyr_file:`samples/net/wifi/boards/cc3235sf_launchxl.conf`.
+See :zephyr_file:`samples/net/wifi/boards/cc3235sf_launchxl_cc3235sf.conf`.
 
 Provisioning:
 =============
@@ -226,7 +226,7 @@ Provisioning:
 SimpleLink provides a few rather sophisticated Wi-Fi provisioning methods.
 To keep it simple for Zephyr development and demos, the SimpleLink
 "Fast Connect" policy is enabled, with one-shot scanning.
-This enables the cc3235sf_launchxl to automatically reconnect to the last
+This enables the cc3235sf_launchxl/cc3235sf to automatically reconnect to the last
 good known access point (AP), without having to restart a scan, and
 re-specify the SSID and password.
 
@@ -257,8 +257,8 @@ and enabled by:
   Root-Certificate Catalog.
 
 See :zephyr:code-sample:`sockets-http-get` and
-:zephyr_file:`samples/net/sockets/http_get/boards/cc3235sf_launchxl.conf` for an
-example.
+:zephyr_file:`samples/net/sockets/http_get/boards/cc3235sf_launchxl_cc3235sf.conf`
+for an example.
 
 See the document `Simplelink Wi-Fi Certificates Handling`_ for details on
 using the TI UniFlash tool for certificate programming.

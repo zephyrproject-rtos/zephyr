@@ -26,7 +26,7 @@ provided for the NUCLEO-F030R8 board.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/max6675
-   :board: nucleo_f030r8
+   :board: nucleo_f030r8/stm32f030x8
    :goals: build
    :compact:
 

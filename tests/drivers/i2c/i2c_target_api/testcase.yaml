@@ -10,24 +10,24 @@ common:
 tests:
   drivers.i2c.target_api.dual_role:
     platform_allow:
-      - b_u585i_iot02a
-      - nucleo_f746zg
-      - nucleo_g474re
-      - nucleo_f091rc
-      - stm32f072b_disco
-      - stm32f3_disco
-      - nucleo_g071rb
-      - nucleo_f207zg
-      - nucleo_f401re
-      - nucleo_f429zi
-      - nucleo_wl55jc
-      - nucleo_l073rz
-      - nucleo_l152re
-      - nucleo_wb55rg
-      - rpi_pico
-      - efr32bg22_brd4184a
-      - mr_canhubk3
+      - b_u585i_iot02a/stm32u585xx
+      - nucleo_f746zg/stm32f746xx
+      - nucleo_g474re/stm32g474xx
+      - nucleo_f091rc/stm32f091xc
+      - stm32f072b_disco/stm32f072xb
+      - stm32f3_disco/stm32f303xc
+      - nucleo_g071rb/stm32g071xx
+      - nucleo_f207zg/stm32f207xx
+      - nucleo_f401re/stm32f401xe
+      - nucleo_f429zi/stm32f429xx
+      - nucleo_wl55jc/stm32wl55xx
+      - nucleo_l073rz/stm32l073xx
+      - nucleo_l152re/stm32l152xe
+      - nucleo_wb55rg/stm32wb55xx
+      - rpi_pico/rp2040
+      - efr32bg22_brd4184a/efr32bg22c224f512im40
+      - mr_canhubk3/s32k344
     integration_platforms:
-      - nucleo_f091rc
+      - nucleo_f091rc/stm32f091xc
     extra_configs:
       - CONFIG_APP_DUAL_ROLE_I2C=y

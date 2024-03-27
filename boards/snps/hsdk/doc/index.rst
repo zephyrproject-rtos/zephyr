@@ -396,11 +396,11 @@ Configuring
 
 You may need to write a prj_arc.conf file if the sample doesn't have one.
 Next, you can use the menuconfig rule to configure the target. By specifying
-``hsdk`` as the board configuration, you can select the ARC HS Development
+``hsdk/arc_hsdk`` as the board configuration, you can select the ARC HS Development
 Kit board support for Zephyr.
 
 .. zephyr-app-commands::
-   :board: hsdk
+   :board: hsdk/arc_hsdk
    :zephyr-app: samples/hello_world
    :goals: menuconfig
 
@@ -413,7 +413,7 @@ You can build an application in the usual way.  Refer to
 :ref:`hello_world`.
 
 .. zephyr-app-commands::
-   :board: hsdk
+   :board: hsdk/arc_hsdk
    :zephyr-app: samples/hello_world
    :maybe-skip-config:
    :goals: build
@@ -452,7 +452,7 @@ One option is to build and debug the application using the usual
 Zephyr build system commands.
 
 .. zephyr-app-commands::
-   :board: hsdk
+   :board: hsdk/arc_hsdk
    :app: <my app>
    :goals: debug
 
@@ -462,7 +462,7 @@ At this point you can do your normal debug session. Set breakpoints and then
 The other option is to launch a debug server, as follows.
 
 .. zephyr-app-commands::
-   :board: hsdk
+   :board: hsdk/arc_hsdk
    :app: <my app>
    :goals: debugserver
 
@@ -485,7 +485,7 @@ If you just want to download the application to the HS Development Kit's DDR
 and run, you can do so in the usual way.
 
 .. zephyr-app-commands::
-   :board: hsdk
+   :board: hsdk/arc_hsdk
    :app: <my app>
    :goals: flash
 

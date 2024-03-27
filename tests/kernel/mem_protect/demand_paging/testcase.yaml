@@ -6,7 +6,7 @@ tests:
       - kernel
       - mmu
       - demand_paging
-    platform_allow: qemu_x86_tiny
+    platform_allow: qemu_x86_tiny/atom
     extra_configs:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
   kernel.demand_paging.timing_funcs:
@@ -14,7 +14,7 @@ tests:
       - kernel
       - mmu
       - demand_paging
-    platform_allow: qemu_x86_tiny
+    platform_allow: qemu_x86_tiny/atom
     extra_configs:
       - CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS=y
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0

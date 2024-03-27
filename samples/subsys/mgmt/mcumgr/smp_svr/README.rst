@@ -102,7 +102,7 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
       .. code-block:: console
 
          west build \
-            -b frdm_k64f \
+            -b frdm_k64f/mk64f12 \
             samples/subsys/mgmt/mcumgr/smp_svr \
             -- \
             -DEXTRA_CONF_FILE='overlay-serial.conf;overlay-fs.conf;overlay-shell-mgmt.conf'
@@ -127,7 +127,7 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
       .. code-block:: console
 
          west build \
-            -b frdm_k64f \
+            -b frdm_k64f/mk64f12 \
             samples/subsys/mgmt/mcumgr/smp_svr \
             -- \
             -DEXTRA_CONF_FILE='overlay-shell.conf'
@@ -143,7 +143,7 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
       .. code-block:: console
 
          west build \
-            -b frdm_k64f \
+            -b frdm_k64f/mk64f12 \
             samples/subsys/mgmt/mcumgr/smp_svr \
             -- \
             -DEXTRA_CONF_FILE=overlay-udp.conf

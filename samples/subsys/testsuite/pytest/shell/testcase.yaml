@@ -6,8 +6,8 @@ tests:
     extra_configs:
       - arch:posix:CONFIG_NATIVE_UART_0_ON_STDINOUT=y
     integration_platforms:
-      - native_sim
-      - qemu_cortex_m3
+      - native_sim/native
+      - qemu_cortex_m3/ti_lm3s6965
     tags:
       - test_framework
       - pytest

@@ -31,7 +31,7 @@ To build the sample use the following west command:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/chre
-   :board: native_sim
+   :board: native_sim/native
    :goals: build
 
 Once built and run, the sample application should:

@@ -102,7 +102,7 @@ System Clock
 The TLSR9518ADK80D board is configured to use the 24 MHz external crystal oscillator
 with the on-chip PLL/DIV generating the 48 MHz system clock.
 The following values also could be assigned to the system clock in the board DTS file
-:zephyr_file:`boards/telink/tlsr9518adk80d/tlsr9518adk80d.dts`:
+:zephyr_file:`boards/telink/tlsr9518adk80d/tlsr9518adk80d_tlsr9518.dts`:
 
 - 16000000
 - 24000000
@@ -127,7 +127,7 @@ currently enabled (PORT_B for LEDs control and PORT_C for buttons) in the board 
 - Key Matrix SW0: PC2_PC3, SW1: PC2_PC1, SW2: PC0_PC3, SW3: PC0_PC1
 
 Peripheral's pins on the SoC are mapped to the following GPIO pins in the
-:zephyr_file:`boards/telink/tlsr9518adk80d/tlsr9518adk80d.dts` file:
+:zephyr_file:`boards/telink/tlsr9518adk80d/tlsr9518adk80d_tlsr9518.dts` file:
 
 - UART0 TX: PB2, RX: PB3
 - UART1 TX: PC6, RX: PC7
@@ -159,10 +159,10 @@ Here is an example for the "hello_world" application.
 .. code-block:: console
 
    # From the root of the zephyr repository
-   west build -b tlsr9518adk80d samples/hello_world
+   west build -b tlsr9518adk80d/tlsr9518 samples/hello_world
 
 To use `Telink RISC-V Linux Toolchain`_, ``ZEPHYR_TOOLCHAIN_VARIANT`` and ``CROSS_COMPILE`` variables need to be set.
-In addition ``CONFIG_FPU=y`` must be selected in :zephyr_file:`boards/telink/tlsr9518adk80d/tlsr9518adk80d_defconfig` file since this
+In addition ``CONFIG_FPU=y`` must be selected in :zephyr_file:`boards/telink/tlsr9518adk80d/tlsr9518adk80d_tlsr9518_defconfig` file since this
 toolchain is compatible only with the float point unit usage.
 
 .. code-block:: console
@@ -172,7 +172,7 @@ toolchain is compatible only with the float point unit usage.
    # Specify the Telink RISC-V Toolchain location
    export CROSS_COMPILE=~/toolchains/nds32le-elf-mculib-v5f/bin/riscv32-elf-
    # From the root of the zephyr repository
-   west build -b tlsr9518adk80d samples/hello_world
+   west build -b tlsr9518adk80d/tlsr9518 samples/hello_world
 
 `Telink RISC-V Linux Toolchain`_ is available on the `Burning and Debugging Tools for TLSR9 Series in Linux`_ page.
 
@@ -189,7 +189,7 @@ serial port:
 .. code-block:: console
 
    *** Booting Zephyr OS version 2.5.0  ***
-   Hello World! tlsr9518adk80d
+   Hello World! tlsr9518adk80d/tlsr9518
 
 
 Flashing

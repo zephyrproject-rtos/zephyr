@@ -6,7 +6,7 @@ Arduino Due
 Overview
 ********
 
-The arduino_due board configuration is used by Zephyr applications
+The arduino_due/sam3x8e board configuration is used by Zephyr applications
 that run on the Arduino Due board. It provides support for the Atmel
 SAM3X8E ARM Cortex-M3 CPU and the following devices:
 
@@ -32,7 +32,7 @@ Hardware
 Supported Features
 ==================
 
-The arduino_due board configuration supports the following hardware features:
+The arduino_due/sam3x8e board configuration supports the following hardware features:
 
 +-----------+------------+----------------------+
 | Interface | Controller | Driver/Component     |
@@ -56,7 +56,7 @@ See `Arduino Due website`_ and `Atmel SAM3X8E Datasheet`_ for a complete
 list of Arduino Due board hardware features.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arduino/due/arduino_due_defconfig`.
+:zephyr_file:`boards/arduino/due/arduino_due_sam3x8e_defconfig`.
 
 .. note::
    For I2C, pull-up resistors are required for using SCL1 and SDA1 (near IO13).
@@ -171,7 +171,7 @@ To build the bossa tool, follow these steps:
 Flashing an Application to Arduino Due
 --------------------------------------
 
-Applications for the ``arduino_due`` board configuration can be built
+Applications for the ``arduino_due/sam3x8e`` board configuration can be built
 and flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -182,7 +182,7 @@ be prepared to receive the new program.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: arduino_due
+   :board: arduino_due/sam3x8e
    :goals: build flash
 
 After flashing the application, run your favorite terminal program to

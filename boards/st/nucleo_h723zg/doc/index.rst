@@ -87,7 +87,7 @@ Nucleo H723ZG provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_h723zg board configuration supports the following hardware
+The Zephyr nucleo_h723zg/stm32h723xx board configuration supports the following hardware
 features:
 
 +-------------+------------+-------------------------------------+
@@ -119,7 +119,7 @@ features:
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig files:
-:zephyr_file:`boards/st/nucleo_h723zg/nucleo_h723zg_defconfig`
+:zephyr_file:`boards/st/nucleo_h723zg/nucleo_h723zg_stm32h723xx_defconfig`
 
 For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 
@@ -159,7 +159,7 @@ do it by removing ``SB52`` jumper on the back side of the board.
 Programming and Debugging
 *************************
 
-Currently the ``nucleo_h723zg`` board supports stm32cubeprogrammer (default), OpenOCD and J-Link debuggers.
+Currently the ``nucleo_h723zg/stm32h723xx`` board supports stm32cubeprogrammer (default), OpenOCD and J-Link debuggers.
 
 .. note::
 
@@ -198,20 +198,20 @@ Build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_h723zg
+   :board: nucleo_h723zg/stm32h723xx
    :goals: build flash
 
 You should see the following message on the console:
 
 .. code-block:: console
 
-   $ Hello World! nucleo_h723zg
+   $ Hello World! nucleo_h723zg/stm32h723xx
 
 Blinky example can also be used:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nucleo_h723zg
+   :board: nucleo_h723zg/stm32h723xx
    :goals: build flash
 
 Debugging
@@ -222,7 +222,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_h723zg
+   :board: nucleo_h723zg/stm32h723xx
    :maybe-skip-config:
    :goals: debug
 

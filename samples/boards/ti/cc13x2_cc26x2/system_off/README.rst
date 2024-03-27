@@ -29,7 +29,7 @@ Building, Flashing and Running
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/ti/cc13x2_cc26x2/system_off
-   :board: cc1352r1_launchxl
+   :board: cc1352r1_launchxl/cc1352r
    :goals: build flash
    :compact:
 
@@ -56,7 +56,7 @@ cc1352rl_launchxl output
 
         *** Booting Zephyr OS build zephyr-v2.2.0-664-gd774727cc66e  ***
 
-        cc1352r1_launchxl system off demo
+        cc1352r1_launchxl/cc1352r system off demo
         Busy-wait 5 s
         Sleep 2000 us (IDLE)
         Sleep 3 s (STANDBY)

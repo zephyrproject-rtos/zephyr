@@ -9,10 +9,10 @@ common:
 tests:
   sample.net.mqtt_publisher.sn:
     platform_allow:
-      - frdm_k64f
-      - qemu_x86
-      - pinnacle_100_dvk
-      - mg100
+      - frdm_k64f/mk64f12
+      - qemu_x86/atom
+      - pinnacle_100_dvk/nrf52840
+      - mg100/nrf52840
       - native_sim/native/64
     integration_platforms:
-      - qemu_x86
+      - qemu_x86/atom

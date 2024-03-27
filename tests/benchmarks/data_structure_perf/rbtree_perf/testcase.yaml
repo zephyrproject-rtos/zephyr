@@ -5,4 +5,4 @@ tests:
       - rbtree
       - kernel
     integration_platforms:
-      - native_sim
+      - native_sim/native

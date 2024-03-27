@@ -31,14 +31,14 @@ tests:
     extra_configs:
       - CONFIG_SPI_RTIO=y
     platform_allow:
-      - robokit1
+      - robokit1/same70q21b
       - mimxrt1170_evk/mimxrt1176/cm7
       - vmu_rt1170/mimxrt1176/cm7
   drivers.spi.mcux_dspi_dma.loopback:
     extra_args:
       - OVERLAY_CONFIG="overlay-mcux-dspi-dma.conf"
       - DTC_OVERLAY_FILE="overlay-mcux-dspi-dma.overlay"
-    platform_allow: frdm_k64f
+    platform_allow: frdm_k64f/mk64f12
   drivers.spi.sam_spi_dma.loopback:
     extra_args:
       - OVERLAY_CONFIG="overlay-sam-spi-dma.conf"
@@ -46,7 +46,7 @@ tests:
     platform_allow:
       - sam_e70_xplained/same70q21
       - sam_v71_xult/samv71q21
-      - robokit1
+      - robokit1/same70q21b
     integration_platforms:
       - sam_e70_xplained/same70q21
   drivers.spi.stm32_spi_16bits_frames.loopback:
@@ -54,112 +54,112 @@ tests:
       - OVERLAY_CONFIG="overlay-stm32-spi-16bits.conf"
       - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
     platform_allow:
-      - nucleo_h743zi
-      - nucleo_h753zi
+      - nucleo_h743zi/stm32h743xx
+      - nucleo_h753zi/stm32h753xx
   drivers.spi.stm32_spi_dma.loopback:
     extra_args: OVERLAY_CONFIG="overlay-stm32-spi-dma.conf"
     filter: CONFIG_SOC_FAMILY_STM32
     platform_allow:
-      - nucleo_g474re
-      - nucleo_f207zg
-      - nucleo_f429zi
-      - nucleo_f746zg
-      - nucleo_wb55rg
-      - nucleo_l152re
-      - nucleo_wl55jc
-      - nucleo_h743zi
-      - nucleo_h753zi
-      - stm32h573i_dk
+      - nucleo_g474re/stm32g474xx
+      - nucleo_f207zg/stm32f207xx
+      - nucleo_f429zi/stm32f429xx
+      - nucleo_f746zg/stm32f746xx
+      - nucleo_wb55rg/stm32wb55xx
+      - nucleo_l152re/stm32l152xe
+      - nucleo_wl55jc/stm32wl55xx
+      - nucleo_h743zi/stm32h743xx
+      - nucleo_h753zi/stm32h753xx
+      - stm32h573i_dk/stm32h573xx
     integration_platforms:
-      - nucleo_g474re
+      - nucleo_g474re/stm32g474xx
   drivers.spi.stm32_spi_dma_no_nocache.loopback:
     extra_args:
       - OVERLAY_CONFIG="overlay-stm32-spi-dma-no-nocache.conf"
     filter: CONFIG_SOC_FAMILY_STM32
     platform_allow:
-      - nucleo_h743zi
-      - nucleo_h753zi
+      - nucleo_h743zi/stm32h743xx
+      - nucleo_h753zi/stm32h753xx
   drivers.spi.stm32_spi_16bits_frames_dma.loopback:
     extra_args:
       - OVERLAY_CONFIG="overlay-stm32-spi-16bits-dma.conf"
       - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
     filter: CONFIG_SOC_FAMILY_STM32
     platform_allow:
-      - nucleo_h743zi
-      - nucleo_h753zi
+      - nucleo_h743zi/stm32h743xx
+      - nucleo_h753zi/stm32h753xx
   drivers.spi.stm32_spi_16bits_frames_dma_no_nocache.loopback:
     extra_args:
       - OVERLAY_CONFIG="overlay-stm32-spi-16bits-dma-no-nocache.conf"
       - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
     filter: CONFIG_SOC_FAMILY_STM32
     platform_allow:
-      - nucleo_h743zi
-      - nucleo_h753zi
+      - nucleo_h743zi/stm32h743xx
+      - nucleo_h753zi/stm32h753xx
   drivers.spi.stm32_spi_interrupt.loopback:
     extra_args: OVERLAY_CONFIG="overlay-stm32-spi-interrupt.conf"
     filter: CONFIG_SOC_FAMILY_STM32
     platform_allow:
-      - nucleo_h743zi
-      - nucleo_h753zi
+      - nucleo_h743zi/stm32h743xx
+      - nucleo_h753zi/stm32h753xx
   drivers.spi.gd32_spi_interrupt.loopback:
     extra_args: OVERLAY_CONFIG="overlay-gd32-spi-interrupt.conf"
     platform_allow:
-      - gd32f403z_eval
-      - gd32f407v_start
-      - gd32f450i_eval
-      - gd32f450v_start
-      - gd32f450z_eval
-      - gd32f470i_eval
-      - gd32vf103c_starter
-      - gd32vf103v_eval
-      - longan_nano
+      - gd32f403z_eval/gd32f403
+      - gd32f407v_start/gd32f407
+      - gd32f450i_eval/gd32f450
+      - gd32f450v_start/gd32f450
+      - gd32f450z_eval/gd32f450
+      - gd32f470i_eval/gd32f470
+      - gd32vf103c_starter/gd32vf103
+      - gd32vf103v_eval/gd32vf103
+      - longan_nano/gd32vf103
       - longan_nano/gd32vf103/lite
   drivers.spi.gd32_spi_dma.loopback:
     extra_args: OVERLAY_CONFIG="overlay-gd32-spi-dma.conf"
     platform_allow:
-      - gd32f403z_eval
-      - gd32f407v_start
-      - gd32f450i_eval
-      - gd32f450v_start
-      - gd32f450z_eval
-      - gd32f470i_eval
-      - gd32vf103c_starter
-      - gd32vf103v_eval
-      - longan_nano
+      - gd32f403z_eval/gd32f403
+      - gd32f407v_start/gd32f407
+      - gd32f450i_eval/gd32f450
+      - gd32f450v_start/gd32f450
+      - gd32f450z_eval/gd32f450
+      - gd32f470i_eval/gd32f470
+      - gd32vf103c_starter/gd32vf103
+      - gd32vf103v_eval/gd32vf103
+      - longan_nano/gd32vf103
       - longan_nano/gd32vf103/lite
   drivers.spi.pl022_spi_interrupt.loopback:
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=n
-    platform_allow: rpi_pico
+    platform_allow: rpi_pico/rp2040
   drivers.spi.pl022_spi_dma.loopback:
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=n
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
-    platform_allow: rpi_pico
+    platform_allow: rpi_pico/rp2040
   drivers.spi.pl022_spi_dma_and_interrupt.loopback:
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
-    platform_allow: rpi_pico
+    platform_allow: rpi_pico/rp2040
   drivers.spi.pl022_spi_dma_no_dma_props.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_delete_dma_props.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=n
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
-    platform_allow: rpi_pico
+    platform_allow: rpi_pico/rp2040
   drivers.spi.pl022_spi_dma_and_interrupt_no_dma_props.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_delete_dma_props.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
-    platform_allow: rpi_pico
+    platform_allow: rpi_pico/rp2040
   drivers.spi.mcux_flexio_spi.loopback:
     extra_args: DTC_OVERLAY_FILE="overlay-mcux-flexio-spi.overlay"
     filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
             CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
-    platform_allow: mimxrt1064_evk
+    platform_allow: mimxrt1064_evk/mimxrt1064

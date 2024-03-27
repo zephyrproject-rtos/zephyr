@@ -70,7 +70,7 @@ on the other terminal window do the same, that is it ``-d path/to/instance_2``
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/ipm/ipm_ivshmem
-   :board: qemu_cortex_a53
+   :board: qemu_cortex_a53/qemu_cortex_a53
    :goals: build
    :compact:
 
@@ -80,7 +80,7 @@ terminal window, using the run target:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/ipm/ipm_ivshmem
-   :board: qemu_cortex_a53
+   :board: qemu_cortex_a53/qemu_cortex_a53
    :goals: run
    :compact:
 

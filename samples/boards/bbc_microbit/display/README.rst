@@ -16,7 +16,7 @@ be built as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/bbc_microbit/display
-   :board: bbc_microbit
+   :board: bbc_microbit/nrf51822
    :goals: build
    :compact:
 

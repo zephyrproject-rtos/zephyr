@@ -24,8 +24,8 @@ common:
 tests:
   sample.task_wdt:
     integration_platforms:
-      - nucleo_g474re
+      - nucleo_g474re/stm32g474xx
   sample.task_wdt.no_hw_fallback:
     extra_args: CONF_FILE="prj_no_hw_fallback.conf"
     platform_allow:
-      - mr_canhubk3
+      - mr_canhubk3/s32k344

@@ -5,7 +5,7 @@ common:
     - xtensa
   filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
   platform_exclude:
-    - numaker_pfm_m487 # See #63167
+    - numaker_pfm_m487/m487 # See #63167
 sample:
   description: Loadable extensions with shell sample
   name: Extension loader shell

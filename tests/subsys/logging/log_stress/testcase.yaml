@@ -4,7 +4,7 @@ common:
     - log_api
     - logging
   integration_platforms:
-    - qemu_x86
+    - qemu_x86/atom
 tests:
   logging.stress.light:
     extra_configs:
@@ -20,15 +20,15 @@ tests:
       - CONFIG_LOG_MODE_OVERFLOW=y
       - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100000
     platform_allow:
-      - qemu_x86
-      - qemu_cortex_a9
-      - qemu_x86_64
+      - qemu_x86/atom
+      - qemu_cortex_a9/xc7z007s
+      - qemu_x86_64/atom
   logging.stress.no_overflow:
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=n
       - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100000
     platform_allow:
-      - qemu_x86
-      - qemu_cortex_a9
-      - qemu_x86_64
+      - qemu_x86/atom
+      - qemu_cortex_a9/xc7z007s
+      - qemu_x86_64/atom

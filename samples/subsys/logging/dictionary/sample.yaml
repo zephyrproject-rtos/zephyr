@@ -6,8 +6,8 @@ tests:
     build_only: true
     tags: logging
     integration_platforms:
-      - qemu_x86
-      - qemu_x86_64
+      - qemu_x86/atom
+      - qemu_x86_64/atom
   sample.logger.basic.dictionary.fpu:
     build_only: true
     tags: logging
@@ -15,8 +15,8 @@ tests:
     extra_configs:
       - CONFIG_FPU=y
     integration_platforms:
-      - qemu_x86
-      - qemu_x86_64
+      - qemu_x86/atom
+      - qemu_x86_64/atom
   sample.logger.basic.dictionary.fpu.long_double:
     build_only: true
     tags: logging
@@ -25,8 +25,8 @@ tests:
       - CONFIG_FPU=y
       - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
     integration_platforms:
-      - qemu_x86
-      - qemu_x86_64
+      - qemu_x86/atom
+      - qemu_x86_64/atom
   sample.logger.basic.dictionary.uart_async_frontend:
     build_only: true
     tags: logging
@@ -62,8 +62,8 @@ tests:
     tags: logging
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT and CONFIG_UART_CONSOLE
     integration_platforms:
-      - qemu_x86
-      - qemu_x86_64
+      - qemu_x86/atom
+      - qemu_x86_64/atom
     extra_configs:
       - CONFIG_LOG_BACKEND_UART=n
       - CONFIG_LOG_BACKEND_RTT=n

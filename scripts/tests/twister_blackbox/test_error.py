@@ -67,7 +67,7 @@ class TestError:
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_test(self, out_path, testroot, test, expected_exception):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86/atom', 'frdm_k64f/mk64f12']
         args = []
         if testroot:
             args = ['-T', testroot]

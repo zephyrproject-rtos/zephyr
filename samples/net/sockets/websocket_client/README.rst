@@ -42,7 +42,7 @@ Enable TLS support in the sample by building the project with the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/websocket_client
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :conf: "prj.conf overlay-tls.conf"
    :goals: build
    :compact:
@@ -81,7 +81,7 @@ Run ``websocket-client`` application in QEMU:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/websocket_client
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :conf: prj.conf
    :goals: run
    :compact:

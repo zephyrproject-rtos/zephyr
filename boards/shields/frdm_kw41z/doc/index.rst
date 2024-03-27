@@ -60,8 +60,8 @@ host controller interface (HCI):
 
    .. zephyr-app-commands::
       :zephyr-app: samples/bluetooth/peripheral_hr
-      :board: frdm_k64f
-      :shield: frdm_kw41z
+      :board: frdm_k64f/mk64f12
+      :shield: frdm_kw41z/mkw41z4
       :goals: build
 
 References

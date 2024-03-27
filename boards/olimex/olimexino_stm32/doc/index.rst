@@ -23,7 +23,7 @@ information and the datasheet.
 Supported Features
 ==================
 
-The olimexino_stm32 board configuration supports the following
+The olimexino_stm32/stm32f103xb board configuration supports the following
 hardware features:
 
 +-----------+------------+-------------------------+
@@ -427,7 +427,7 @@ serial adapter is required. This tutorial uses the
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
-      :board: olimexino_stm32
+      :board: olimexino_stm32/stm32f103xb
       :goals: flash
 
 #. Run your favorite terminal program to listen for output.

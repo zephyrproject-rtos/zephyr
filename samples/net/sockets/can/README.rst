@@ -45,6 +45,6 @@ Example building for the nucleo_l432kc:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/can
    :host-os: unix
-   :board: nucleo_l432kc
+   :board: nucleo_l432kc/stm32l432xx
    :goals: run
    :compact:

@@ -3,7 +3,7 @@ sample:
   name: Example of using GPIOs on UP Squared board
 tests:
   sample.board.up_squared.gpio_counter:
-    platform_allow: up_squared
+    platform_allow: up_squared/apollo_lake
     tags: gpio
     integration_platforms:
-      - up_squared
+      - up_squared/apollo_lake

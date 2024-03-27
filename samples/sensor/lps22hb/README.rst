@@ -23,11 +23,11 @@ Building and Running
 ********************
 
 This project outputs sensor data to the console. It requires an LPS22HB
-sensor, which is present on the disco_l475_iot1 board.
+sensor, which is present on the disco_l475_iot1/stm32l475xx board.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/lps22hb
-   :board: disco_l475_iot1
+   :board: disco_l475_iot1/stm32l475xx
    :goals: build
    :compact:
 

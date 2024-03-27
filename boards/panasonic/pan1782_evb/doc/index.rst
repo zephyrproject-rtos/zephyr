@@ -47,7 +47,7 @@ The schematics for the PAN1782 Evaluation Board are available in the
 Programming and Debugging
 *************************
 
-Please use the ``pan1782_evb`` board configuration when
+Please use the ``pan1782_evb/nrf52833`` board configuration when
 :ref:`build_an_application` and :ref:`application_run`.
 
 .. target-notes::

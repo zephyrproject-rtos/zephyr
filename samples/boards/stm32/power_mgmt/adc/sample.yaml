@@ -14,4 +14,4 @@ tests:
             dt_compat_enabled("st,stm32-adc") and
             dt_compat_enabled("st,stm32-lptim")
     extra_args: "CONFIG_DEBUG=y"
-    platform_allow: nucleo_wb55rg
+    platform_allow: nucleo_wb55rg/stm32wb55xx

@@ -1,0 +1,22 @@
+identifier: nucleo_f401re/stm32f401xe
+name: ST Nucleo F401RE
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - pwm
+  - counter
+  - gpio
+  - i2c
+  - spi
+  - adc
+  - watchdog
+ram: 96
+flash: 512
+vendor: st

@@ -48,7 +48,7 @@ The micro:bit has the following physical features:
 Supported Features
 ==================
 
-The bbc_microbit board configuration supports the following nRF51
+The bbc_microbit/nrf51822 board configuration supports the following nRF51
 hardware features:
 
 +-----------+------------+----------------------+
@@ -92,7 +92,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: bbc_microbit
+   :board: bbc_microbit/nrf51822
    :goals: build flash
 
 

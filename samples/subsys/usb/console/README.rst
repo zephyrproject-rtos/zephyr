@@ -19,11 +19,11 @@ Building and Running
 ********************
 
 This sample can be built for multiple boards, in this example we will build it
-for the reel_board board:
+for the reel_board/nrf52840 board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/console
-   :board: reel_board
+   :board: reel_board/nrf52840
    :goals: flash
    :compact:
 

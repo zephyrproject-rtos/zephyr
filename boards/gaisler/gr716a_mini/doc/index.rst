@@ -38,10 +38,10 @@ Programming and Debugging
 Building
 ========
 
-Applications for the ``gr716a_mini`` board configuration can be built
+Applications for the ``gr716a_mini/gr716a`` board configuration can be built
 as usual (see :ref:`build_an_application`).
-In order to build the application for ``gr716a_mini``, set the ``BOARD``
-variable to ``gr716a_mini``.
+In order to build the application for ``gr716a_mini/gr716a``, set the ``BOARD``
+variable to ``gr716a_mini/gr716a``.
 
 The application is linked to the on-chip tightly coupled memory by
 default.
@@ -165,7 +165,7 @@ Connect with GRMON, then load and run the application.
 
     grmon3> run
     *** Booting Zephyr OS build zephyr-v2.4.0-788-gc82a8736a65e  ***
-    Hello World! gr716a_mini
+    Hello World! gr716a_mini/gr716a
 
 
 Running in simulation
@@ -205,7 +205,7 @@ The same application binary can be simulated with the TSIM3 LEON3 simulator.
     tsim> run
       Initializing and starting from 0x31000000
     *** Booting Zephyr OS build zephyr-v2.4.0-788-gc82a8736a65e  ***
-    Hello World! gr716a_mini
+    Hello World! gr716a_mini/gr716a
 
 
 References

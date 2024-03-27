@@ -70,7 +70,7 @@ The following platform features are unsupported:
 Programming and Debugging
 *************************
 
-Applications for the ``qemu_x86`` board configuration can be built and run in
+Applications for the ``qemu_x86/atom`` board configuration can be built and run in
 the usual way for emulated boards (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -84,7 +84,7 @@ emulated environment. For example, with the :zephyr:code-sample:`synchronization
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: qemu_x86
+   :board: qemu_x86/atom
    :goals: run
 
 This will build an image with the synchronization sample app, boot it using
@@ -106,7 +106,7 @@ QEMU, and display the following console output:
 
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 
-For qemu_x86_64 platform, it also supports to use UEFI bootable method
+For qemu_x86_64/atom platform, it also supports to use UEFI bootable method
 to run Zephyr applications and kernel tests, but you need to set up
 some environment configurations as follows:
 
@@ -137,7 +137,7 @@ Now you can build application, for example UEFI boot test sample found under
 .. zephyr-app-commands::
    :zephyr-app: tests/boot/uefi
    :host-os: unix
-   :board: qemu_x86_64
+   :board: qemu_x86_64/atom
    :goals: run
 
 This will build an image with the uefi boot test app, boot it on
@@ -162,7 +162,7 @@ qemu_x86_64 using UEFI, and display the following console output:
         Copying 540416 data bytes to 0x185100 from image offset 53248
         Jumping to Entry Point: 0x112b (48 31 c0 48 31 d2 48)
         *** Booting Zephyr OS build zephyr-v2.6.0-1472-g61810ec36d28  ***
-        Hello World! qemu_x86_64
+        Hello World! qemu_x86_64/atom
 
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 

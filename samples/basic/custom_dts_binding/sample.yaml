@@ -5,9 +5,9 @@ tests:
     tags:
       - gpio
       - devicetree
-    platform_allow: nucleo_l073rz
+    platform_allow: nucleo_l073rz/stm32l073xx
     integration_platforms:
-      - nucleo_l073rz
+      - nucleo_l073rz/stm32l073xx
     depends_on: gpio
     harness: console
     harness_config:

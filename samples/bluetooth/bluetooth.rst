@@ -12,7 +12,7 @@ for further details.
 
 Several of the bluetooth samples will build a Zephyr-based Controller that can
 then be used with any external Host (including Zephyr running natively or with
-QEMU or ``native_sim``), those are named accordingly with an "HCI" prefix in the
+QEMU or ``native_sim/native``), those are named accordingly with an "HCI" prefix in the
 documentation and are prefixed with :literal:`hci_` in their folder names.
 
 .. note::

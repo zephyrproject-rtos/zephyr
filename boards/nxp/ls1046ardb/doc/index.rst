@@ -91,7 +91,7 @@ kernel tests on LS1046A RDB board. For example, with the :zephyr:code-sample:`sy
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: ls1046ardb
+   :board: ls1046ardb/ls1046a
    :goals: build
 
 This will build an image with the synchronization sample app.

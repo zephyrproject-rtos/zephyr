@@ -31,7 +31,7 @@ considered reserved for USB-C and not available for other applications.
 Supported Features
 ==================
 
-The Zephyr weact_stm32g431_core board configuration supports the following hardware
+The Zephyr weact_stm32g431_core/stm32g431xx board configuration supports the following hardware
 features:
 
 +------------+------------+-------------------------------------+
@@ -52,7 +52,7 @@ features:
 
 The default configuration can be found in the defconfig file:
 
-:zephyr_file:`boards/weact/stm32g431_core/weact_stm32g431_core_defconfig`
+:zephyr_file:`boards/weact/stm32g431_core/weact_stm32g431_core_stm32g431xx_defconfig`
 
 Pin Mapping
 ===========
@@ -122,7 +122,7 @@ easily.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: weact_stm32g431_core
+   :board: weact_stm32g431_core/stm32g431xx
    :goals: build flash
 
 Debugging

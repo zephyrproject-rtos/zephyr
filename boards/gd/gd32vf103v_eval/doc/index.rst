@@ -15,7 +15,7 @@ SRAM and 80 GPIOs.
 
 .. image:: img/gd32vf103v_eval.jpg
      :align: center
-     :alt: gd32vf103v_eval
+     :alt: gd32vf103v_eval/gd32vf103
 
 Hardware
 ********
@@ -97,7 +97,7 @@ allows flash programming and debugging over USB. There is also a JTAG header
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32vf103v_eval
+      :board: gd32vf103v_eval/gd32vf103
       :goals: build
       :compact:
 
@@ -120,7 +120,7 @@ allows flash programming and debugging over USB. There is also a JTAG header
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32vf103v_eval
+      :board: gd32vf103v_eval/gd32vf103
       :goals: flash
       :compact:
 
@@ -130,7 +130,7 @@ allows flash programming and debugging over USB. There is also a JTAG header
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: gd32vf103v_eval
+      :board: gd32vf103v_eval/gd32vf103
       :goals: debug
       :compact:
 

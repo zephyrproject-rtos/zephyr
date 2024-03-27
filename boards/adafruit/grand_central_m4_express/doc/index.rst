@@ -31,7 +31,7 @@ Hardware
 Supported Features
 ==================
 
-The adafruit_grand_central_m4_express board configuration supports the following
+The adafruit_grand_central_m4_express/samd51p20a board configuration supports the following
 hardware features:
 
 +-----------+------------+------------------------------------------+
@@ -61,7 +61,7 @@ hardware features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/adafruit/grand_central_m4_express/adafruit_grand_central_m4_express_defconfig`.
+:zephyr_file:`boards/adafruit/grand_central_m4_express/adafruit_grand_central_m4_express_samd51p20a_defconfig`.
 
 Connections and IOs
 ===================
@@ -115,7 +115,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: adafruit_grand_central_m4_express
+      :board: adafruit_grand_central_m4_express/samd51p20a
       :goals: build
       :compact:
 
@@ -146,7 +146,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: adafruit_grand_central_m4_express
+      :board: adafruit_grand_central_m4_express/samd51p20a
       :goals: flash
       :compact:
 
@@ -164,7 +164,7 @@ debugged using a SWD probe such as the Segger J-Link.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: adafruit_grand_central_m4_express
+      :board: adafruit_grand_central_m4_express/samd51p20a
       :goals: flash
       :flash-args: -r openocd
       :compact:
@@ -173,7 +173,7 @@ debugged using a SWD probe such as the Segger J-Link.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: adafruit_grand_central_m4_express
+      :board: adafruit_grand_central_m4_express/samd51p20a
       :goals: debug
       :compact:
 

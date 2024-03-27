@@ -13,7 +13,7 @@ are two variants of the board:
 - Blue Pill Board
 - Black Pill Board
 
-Zephyr applications can use the stm32_min_dev@blue or stm32_min_dev@black board
+Zephyr applications can use the stm32_min_dev@blue/stm32f103xb or stm32_min_dev@black/stm32f103xb board
 configuration to use these boards.
 
 .. figure:: img/stm32_min_dev.jpg

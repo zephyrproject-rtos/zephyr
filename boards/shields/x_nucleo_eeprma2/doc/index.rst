@@ -62,7 +62,7 @@ Set ``-DSHIELD=x_nucleo_eeprma2`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/eeprom/
-   :board: nucleo_g0b1re
+   :board: nucleo_g0b1re/stm32g0b1xx
    :shield: x_nucleo_eeprma2
    :goals: build
 

@@ -38,7 +38,7 @@ Arduino connector. For this example, we use a :ref:`nucleo_f429zi_board` board.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/shields/x_nucleo_iks01a1
-   :board: nucleo_f429zi
+   :board: nucleo_f429zi/stm32f429xx
    :goals: build
    :compact:
 

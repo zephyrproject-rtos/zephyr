@@ -39,7 +39,7 @@ Build applications as usual (see :ref:`build_an_application` and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: titanium_ti60_f225
+   :board: titanium_ti60_f225/efinix_sapphire
    :goals: build
 
 Flashing

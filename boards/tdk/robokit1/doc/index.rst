@@ -107,7 +107,7 @@ features:
      - N/A
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/tdk/robokit1/robokit1_defconfig`.
+:zephyr_file:`boards/tdk/robokit1/robokit1_same70q21b_defconfig`.
 
 Connections and IOs
 ===================
@@ -157,7 +157,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: robokit1
+      :board: robokit1/same70q21b
       :goals: build flash
 
    You should see "Hello World! robokit1" in your terminal.
@@ -170,7 +170,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: robokit1
+   :board: robokit1/same70q21b
    :maybe-skip-config:
    :goals: debug
 

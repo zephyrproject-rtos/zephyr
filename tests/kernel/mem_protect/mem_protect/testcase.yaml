@@ -10,8 +10,8 @@ tests:
     arch_exclude:
       - posix
     platform_exclude:
-      - twr_ke18f
-      - ucans32k1sic
+      - twr_ke18f/mke18f16
+      - ucans32k1sic/s32k146
     extra_args:
       - CONFIG_TEST_HW_STACK_PROTECTION=n
       - CONFIG_MINIMAL_LIBC=y

@@ -35,7 +35,7 @@ board is also supported and can be built as follows;
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/display
-   :board: native_sim
+   :board: native_sim/native
    :goals: build
    :compact:
 

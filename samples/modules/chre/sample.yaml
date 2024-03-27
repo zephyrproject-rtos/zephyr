@@ -6,7 +6,7 @@ tests:
     tags:
       - introduction
       - chre
-    platform_exclude: qemu_leon3
+    platform_exclude: qemu_leon3/leon3
     modules:
       - chre
     harness: console
@@ -24,5 +24,5 @@ tests:
         - "EchoApp::nanoappEnd\\(\\)"
         - "I: Exiting EventLoop.*"
     integration_platforms:
-      - native_sim
+      - native_sim/native
     filter: CONFIG_FULL_LIBC_SUPPORTED

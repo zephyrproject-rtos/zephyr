@@ -1,0 +1,11 @@
+identifier: google_dragonclaw/stm32f412zx
+name: Google Dragonclaw Development Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 256
+flash: 1024
+vendor: google
