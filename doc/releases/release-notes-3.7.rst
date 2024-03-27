@@ -120,6 +120,11 @@ Drivers and Sensors
 
 * Entropy
 
+* eSPI
+
+  * Renamed eSPI virtual wire direction macros and enum values to match the new terminology in
+    eSPI 1.5 specification.
+
 * Ethernet
 
 * Flash
