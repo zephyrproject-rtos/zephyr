@@ -97,7 +97,7 @@ int http_server_init(struct http_server_ctx *ctx)
 
 	HTTP_SERVICE_FOREACH(svc) {
 		/* set the default address (in6addr_any / INADDR_ANY are all 0) */
-		memset(&addr_storage, sizeof(struct sockaddr_storage), 0);
+		memset(&addr_storage, 0, sizeof(struct sockaddr_storage));
 
 		/* Set up the server address struct according to address family */
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
