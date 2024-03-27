@@ -115,6 +115,7 @@ enum dai_type {
 	DAI_INTEL_DMIC_NHLT,	/**< nhlt ssp */
 	DAI_INTEL_HDA_NHLT,	/**< nhlt Intel HD/A */
 	DAI_INTEL_ALH_NHLT,	/**< nhlt Intel ALH */
+	DAI_INTEL_UAOL,		/**< Intel UAOL */
 };
 
 /**
@@ -328,6 +329,8 @@ __subsystem struct dai_driver_api {
 	int (*ts_stop)(const struct device *dev, struct dai_ts_cfg *cfg);
 	int (*ts_get)(const struct device *dev, struct dai_ts_cfg *cfg,
 		      struct dai_ts_data *tsd);
+	int (*ioctl)(const struct device *dev, const void *data, size_t data_size,
+		     void *resp, size_t *resp_size);
 };
 
 /**
@@ -536,6 +539,35 @@ static inline int dai_ts_get(const struct device *dev, struct dai_ts_cfg *cfg,
 		return -EINVAL;
 
 	return api->ts_get(dev, cfg, tsd);
+}
+
+/**
+ * @brief Generic ioctl function for DAI-specific bi-directional data sending.
+ *
+ * It may be used eg. for SNDW-specific operations such as command sending to the codec,
+ * changing ownership, handling clock stop, or UAOL getting HW capabilities that
+ * are requested by OED driver
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param data Buffer with input data
+ * @param data_size input buffer size in bytes
+ * @param resp Buffer for output data
+ * @param resp_size Inout parameter - caller write output buffer size,
+ *        DAI overwrite response data size
+ *
+ * Optional method.
+ *
+ * @retval 0 If successful.
+ */
+static inline int dai_ioctl(const struct device *dev, const void *data, size_t data_size,
+							void *resp, size_t *resp_size)
+{
+	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
+
+	if (!api->ioctl)
+		return -EINVAL;
+
+	return api->ioctl(dev, data, data_size, resp, resp_size);
 }
 
 /**

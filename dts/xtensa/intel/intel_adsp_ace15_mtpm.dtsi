@@ -337,6 +337,20 @@
 			status = "okay";
 		};
 
+		uaolshim: uaol-shim@70000 {
+			compatible = "intel,uaol-shim";
+			reg = <0x70000 0x80>;
+			status = "okay";
+		};
+
+		uaollink0: uaol-link@70080 {
+			compatible = "intel,uaol-link";
+			reg = <0x70080 0x100>;
+			link = <0>;
+			shim = <&uaolshim>;
+			status = "okay";
+		};
+
 		mem_window0: mem_window@70200 {
 			compatible = "intel,adsp-mem-window";
 			reg = <0x70200 0x8>;
@@ -687,6 +701,66 @@
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <0x12>;
+		};
+	};
+
+	uaols {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		uaol13: uaol@d {
+			compatible = "intel,uaol-dai";
+			reg = <0x0d>;
+			link = <0>;
+			stream = <0>;
+			alh-stream = <13>;
+			dma-handshake = <26>;
+			status = "okay";
+		};
+		uaol14: uaol@e {
+			compatible = "intel,uaol-dai";
+			reg = <0x0e>;
+			link = <0>;
+			stream = <1>;
+			alh-stream = <14>;
+			dma-handshake = <27>;
+			status = "okay";
+		};
+		uaol15: uaol@f {
+			compatible = "intel,uaol-dai";
+			reg = <0x0f>;
+			link = <0>;
+			stream = <2>;
+			alh-stream = <15>;
+			dma-handshake = <36>;
+			status = "okay";
+		};
+		uaol16: uaol@10 {
+			compatible = "intel,uaol-dai";
+			reg = <0x10>;
+			link = <0>;
+			stream = <3>;
+			alh-stream = <16>;
+			dma-handshake = <37>;
+			status = "okay";
+		};
+		uaol29: uaol@1d {
+			compatible = "intel,uaol-dai";
+			reg = <0x1d>;
+			link = <0>;
+			stream = <4>;
+			alh-stream = <29>;
+			dma-handshake = <46>;
+			status = "okay";
+		};
+		uaol30: uaol@1e {
+			compatible = "intel,uaol-dai";
+			reg = <0x1e>;
+			link = <0>;
+			stream = <5>;
+			alh-stream = <30>;
+			dma-handshake = <47>;
+			status = "okay";
 		};
 	};
 };
