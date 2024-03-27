@@ -3,7 +3,7 @@
 
 menuconfig HAWKBIT
 	bool "Hawkbit Firmware Over-the-Air support"
-	depends on NVS
+	depends on SETTINGS
 	depends on FLASH
 	depends on REBOOT
 	depends on HWINFO
@@ -45,10 +45,15 @@ config HAWKBIT_SERVER
 	  Configure the hawkbit server address.
 
 config HAWKBIT_PORT
-	string "Port address for the hawkbit server"
-	default "8080"
+	int "Port number for the hawkbit server"
+	default 8080
 	help
 	  Configure the hawkbit port number.
+
+config HAWKBIT_SET_SETTINGS_RUNTIME
+	bool "Set hawkbit settings at runtime"
+	help
+	  Enable to set hawkbit settings at runtime.
 
 choice HAWKBIT_DDI_SECURITY
 	prompt "Hawkbit DDI API authentication modes"
