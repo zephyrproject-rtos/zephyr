@@ -107,7 +107,7 @@
 			vw-reg = <0x04 SMVW 0 3>;
 			status = "okay";
 		};
-		vw_slave_boot_done: vw_slave_boot_done {
+		vw_target_boot_done: vw_target_boot_done {
 			vw-reg = <0x05 SMVW 1 0>;
 			status = "okay";
 		};
@@ -119,7 +119,7 @@
 			vw-reg = <0x05 SMVW 1 2>;
 			status = "okay";
 		};
-		vw_slave_boot_status: vw_slave_boot_status {
+		vw_target_boot_status: vw_target_boot_status {
 			vw-reg = <0x05 SMVW 1 3>;
 			status = "okay";
 		};
