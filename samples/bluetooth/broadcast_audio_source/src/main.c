@@ -9,6 +9,9 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 
+BUILD_ASSERT(strlen(CONFIG_BROADCAST_CODE) <= BT_AUDIO_BROADCAST_CODE_SIZE,
+	     "Invalid broadcast code");
+
 /* Zephyr Controller works best while Extended Advertising interval to be a multiple
  * of the ISO Interval minus 10 ms (max. advertising random delay). This is
  * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
@@ -384,7 +387,7 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 		stream_params[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 	struct bt_bap_broadcast_source_subgroup_param
 		subgroup_param[CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
-	struct bt_bap_broadcast_source_param create_param;
+	struct bt_bap_broadcast_source_param create_param = {0};
 	const size_t streams_per_subgroup = ARRAY_SIZE(stream_params) / ARRAY_SIZE(subgroup_param);
 	uint8_t left[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 			  BT_BYTES_LIST_LE32(BT_AUDIO_LOCATION_FRONT_LEFT))};
@@ -408,8 +411,13 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	create_param.params_count = ARRAY_SIZE(subgroup_param);
 	create_param.params = subgroup_param;
 	create_param.qos = &preset_active.qos;
-	create_param.encryption = false;
+	create_param.encryption = strlen(CONFIG_BROADCAST_CODE) > 0;
 	create_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+
+	if (create_param.encryption) {
+		memcpy(create_param.broadcast_code, CONFIG_BROADCAST_CODE,
+		       strlen(CONFIG_BROADCAST_CODE));
+	}
 
 	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
 	       ARRAY_SIZE(subgroup_param),
