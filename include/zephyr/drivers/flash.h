@@ -59,6 +59,7 @@ struct flash_pages_layout {
 struct flash_parameters {
 	const size_t write_block_size;
 	uint8_t erase_value; /* Byte value of erased flash */
+	bool no_erase;
 };
 
 /**

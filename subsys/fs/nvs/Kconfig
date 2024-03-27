@@ -27,6 +27,19 @@ config NVS_LOOKUP_CACHE_SIZE
 	  Number of entries in Non-volatile Storage lookup cache.
 	  It is recommended that it be a power of 2.
 
+config NVS_OVERWRITE
+	bool "flash devices without erase function"
+	help
+	  Enable support for flash devices that do not have an erase function
+
+config NVS_ERASE
+	bool "flash devices with erase function" if NVS_OVERWRITE
+	default y
+	help
+	  Enable support for flash devices that have an erase function.
+	  This option could disabled only if the NVS_OVERWRITE config
+	  is enabled
+
 module = NVS
 module-str = nvs
 source "subsys/logging/Kconfig.template.log_config"

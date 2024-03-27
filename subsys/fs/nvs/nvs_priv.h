@@ -20,6 +20,7 @@ extern "C" {
 #define ADDR_SECT_MASK 0xFFFF0000
 #define ADDR_SECT_SHIFT 16
 #define ADDR_OFFS_MASK 0x0000FFFF
+#define SECTOR_NUM(x) (((x) & ADDR_SECT_MASK) >> ADDR_SECT_SHIFT)
 
 /*
  * Status return values
@@ -30,12 +31,21 @@ extern "C" {
 
 #define NVS_LOOKUP_CACHE_NO_ADDR 0xFFFFFFFF
 
+/*
+ * MACRO to optimize code instruction size
+ */
+#if defined(CONFIG_NVS_OVERWRITE) && defined(CONFIG_NVS_ERASE)
+#define NVS_DEVICE_HAS_NO_ERASE(fs) ((fs)->flash_parameters->no_erase)
+#else
+#define NVS_DEVICE_HAS_NO_ERASE(fs) IS_ENABLED(CONFIG_NVS_OVERWRITE)
+#endif
+
 /* Allocation Table Entry */
 struct nvs_ate {
 	uint16_t id;	/* data id */
 	uint16_t offset;	/* data offset within sector */
 	uint16_t len;	/* data len within sector */
-	uint8_t part;	/* part of a multipart data - future extension */
+	uint8_t cycle_cnt;	/* cycle counter for non erasable devices */
 	uint8_t crc8;	/* crc8 check of the entry */
 } __packed;
 

@@ -18,6 +18,11 @@ LOG_MODULE_REGISTER(fs_nvs, CONFIG_NVS_LOG_LEVEL);
 
 static int nvs_prev_ate(struct nvs_fs *fs, uint32_t *addr, struct nvs_ate *ate);
 static int nvs_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry);
+static int nvs_get_sector_cycle(struct nvs_fs *fs, uint32_t addr, uint8_t *cycle_cnt);
+static int nvs_get_sector_header(struct nvs_fs *fs, uint32_t addr,
+				 struct nvs_ate *empty_ate, struct nvs_ate *close_ate);
+static int nvs_ate_valid_different_sector(struct nvs_fs *fs, const struct nvs_ate *entry,
+					  uint8_t cycle_cnt);
 
 #ifdef CONFIG_NVS_LOOKUP_CACHE
 
@@ -38,9 +43,10 @@ static inline size_t nvs_lookup_cache_pos(uint16_t id)
 
 static int nvs_lookup_cache_rebuild(struct nvs_fs *fs)
 {
-	int rc;
+	int rc, previous_sector_num = -1;
 	uint32_t addr, ate_addr;
 	uint32_t *cache_entry;
+	uint8_t current_cycle;
 	struct nvs_ate ate;
 
 	memset(fs->lookup_cache, 0xff, sizeof(fs->lookup_cache));
@@ -57,9 +63,25 @@ static int nvs_lookup_cache_rebuild(struct nvs_fs *fs)
 
 		cache_entry = &fs->lookup_cache[nvs_lookup_cache_pos(ate.id)];
 
-		if (ate.id != 0xFFFF && *cache_entry == NVS_LOOKUP_CACHE_NO_ADDR &&
-		    nvs_ate_valid(fs, &ate)) {
-			*cache_entry = ate_addr;
+		if (ate.id != 0xFFFF && *cache_entry == NVS_LOOKUP_CACHE_NO_ADDR) {
+			if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+				/* read the ate cycle only when we change the sector
+				 * or if it is the first read
+				 */
+				if ((SECTOR_NUM(ate_addr) != previous_sector_num) ||
+				    (previous_sector_num == -1)) {
+					rc = nvs_get_sector_cycle(fs, ate_addr, &current_cycle);
+					if (rc) {
+						return rc;
+					}
+				}
+				if (nvs_ate_valid_different_sector(fs, &ate, current_cycle)) {
+					*cache_entry = ate_addr;
+				}
+				previous_sector_num = SECTOR_NUM(ate_addr);
+			} else if (nvs_ate_valid(fs, &ate)) {
+				*cache_entry = ate_addr;
+			}
 		}
 
 		if (addr == fs->ate_wra) {
@@ -374,11 +396,54 @@ static int nvs_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry)
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 
 	if ((nvs_ate_crc8_check(entry)) ||
-	    (entry->offset >= (fs->sector_size - ate_size))) {
+	    (entry->offset >= (fs->sector_size - ate_size)) ||
+	    ((NVS_DEVICE_HAS_NO_ERASE(fs)) &&
+	    (fs->sector_cycle != entry->cycle_cnt))) {
 		return 0;
 	}
 
 	return 1;
+}
+
+/* nvs_ate_valid_different_sector validates an ate that is in a different
+ * sector than the active one. It takes as argument the cycle_cnt of the
+ * sector where the ATE to be validated is stored
+ *     return 1 if crc8 , offset and cycle_cnt are valid,
+ *            0 otherwise
+ */
+static int nvs_ate_valid_different_sector(struct nvs_fs *fs, const struct nvs_ate *entry,
+					  uint8_t cycle_cnt)
+{
+	size_t ate_size;
+
+	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
+
+	if ((nvs_ate_crc8_check(entry)) ||
+	    (entry->offset >= (fs->sector_size - ate_size)) ||
+	    (cycle_cnt != entry->cycle_cnt)) {
+		return 0;
+	}
+
+	return 1;
+}
+
+static inline int nvs_get_cycle_on_sector_change(struct nvs_fs *fs, uint32_t addr,
+						 int previous_sector_num, uint8_t *cycle_cnt)
+{
+	int rc;
+
+	/* read the ate cycle only when we change the sector
+	 * or if it is the first read
+	 */
+	if ((SECTOR_NUM(addr) != previous_sector_num) ||
+	    (previous_sector_num == -1)) {
+		rc = nvs_get_sector_cycle(fs, addr, cycle_cnt);
+		if (rc) {
+			return rc;
+		}
+	}
+
+	return 0;
 }
 
 /* nvs_close_ate_valid validates an sector close ate: a valid sector close ate:
@@ -391,13 +456,35 @@ static int nvs_close_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry)
 {
 	size_t ate_size;
 
-	if ((!nvs_ate_valid(fs, entry)) || (entry->len != 0U) ||
-	    (entry->id != 0xFFFF)) {
-		return 0;
+	if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+		if ((!nvs_ate_valid_different_sector(fs, entry, entry->cycle_cnt)) ||
+		    (entry->len != 0U) || (entry->id != 0xFFFF)) {
+			return 0;
+		}
+	} else {
+		if ((!nvs_ate_valid(fs, entry)) || (entry->len != 0U) ||
+		    (entry->id != 0xFFFF)) {
+			return 0;
+		}
 	}
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 	if ((fs->sector_size - entry->offset) % ate_size) {
+		return 0;
+	}
+
+	return 1;
+}
+
+/* nvs_empty_ate_valid validates an sector empty ate: a valid sector empty ate:
+ * - valid ate
+ * - len = 0xffff and id = 0xffff
+ * return 1 if valid, 0 otherwise
+ */
+static int nvs_empty_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry)
+{
+	if ((!nvs_ate_valid_different_sector(fs, entry, entry->cycle_cnt)) ||
+	    (entry->len != 0xffff) || (entry->id != 0xffff)) {
 		return 0;
 	}
 
@@ -414,7 +501,11 @@ static int nvs_flash_wrt_entry(struct nvs_fs *fs, uint16_t id, const void *data,
 	entry.id = id;
 	entry.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
 	entry.len = (uint16_t)len;
-	entry.part = 0xff;
+	if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+		entry.cycle_cnt = fs->sector_cycle;
+	} else {
+		entry.cycle_cnt = 0xff;
+	}
 
 	nvs_ate_crc8_update(&entry);
 
@@ -429,6 +520,7 @@ static int nvs_flash_wrt_entry(struct nvs_fs *fs, uint16_t id, const void *data,
 
 	return 0;
 }
+
 /* end of flash routines */
 
 /* If the closing ate is invalid, its offset cannot be trusted and
@@ -450,7 +542,11 @@ static int nvs_recover_last_ate(struct nvs_fs *fs, uint32_t *addr)
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 
-	*addr -= ate_size;
+	if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+		*addr -= 2 * ate_size;
+	} else {
+		*addr -= ate_size;
+	}
 	ate_end_addr = *addr;
 	data_end_addr = *addr & ADDR_SECT_MASK;
 	while (ate_end_addr > data_end_addr) {
@@ -470,13 +566,53 @@ static int nvs_recover_last_ate(struct nvs_fs *fs, uint32_t *addr)
 	return 0;
 }
 
+/* Something is wrong with the close ATE:
+ * fix it using information from empty ATE
+ */
+static int nvs_fix_close_ate(struct nvs_fs *fs, uint8_t cycle_cnt)
+{
+	struct nvs_ate close_ate;
+	uint32_t offset = fs->ate_wra;
+
+	close_ate.id = 0xffff;
+	close_ate.len = 0U;
+
+	/* close offset cannot be trusted, let's find the latest valid ATE */
+	nvs_recover_last_ate(fs, &offset);
+	close_ate.offset = (uint16_t)(offset & ADDR_OFFS_MASK);
+
+	/* fix cycle counter */
+	close_ate.cycle_cnt = cycle_cnt;
+	nvs_ate_crc8_update(&close_ate);
+
+	return nvs_flash_ate_wrt(fs, &close_ate);
+}
+
+/* Something is wrong with the empty ATE:
+ * fix it using information from close ATE
+ */
+static int nvs_fix_empty_ate(struct nvs_fs *fs, uint8_t cycle_cnt)
+{
+	struct nvs_ate empty_ate;
+
+	empty_ate.id = 0xffff;
+	empty_ate.len = 0xffff;
+	empty_ate.offset = 0U;
+
+	/* increase cycle counter */
+	empty_ate.cycle_cnt = (cycle_cnt + 1) % BIT(8);
+	nvs_ate_crc8_update(&empty_ate);
+
+	return nvs_flash_ate_wrt(fs, &empty_ate);
+}
+
 /* walking through allocation entry list, from newest to oldest entries
  * read ate from addr, modify addr to the previous ate
  */
 static int nvs_prev_ate(struct nvs_fs *fs, uint32_t *addr, struct nvs_ate *ate)
 {
 	int rc;
-	struct nvs_ate close_ate;
+	struct nvs_ate empty_ate, close_ate;
 	size_t ate_size;
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
@@ -487,7 +623,11 @@ static int nvs_prev_ate(struct nvs_fs *fs, uint32_t *addr, struct nvs_ate *ate)
 	}
 
 	*addr += ate_size;
-	if (((*addr) & ADDR_OFFS_MASK) != (fs->sector_size - ate_size)) {
+	if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+		if (((*addr) & ADDR_OFFS_MASK) != (fs->sector_size - 2 * ate_size)) {
+			return 0;
+		}
+	} else if (((*addr) & ADDR_OFFS_MASK) != (fs->sector_size - ate_size)) {
 		return 0;
 	}
 
@@ -498,23 +638,41 @@ static int nvs_prev_ate(struct nvs_fs *fs, uint32_t *addr, struct nvs_ate *ate)
 		*addr -= (1 << ADDR_SECT_SHIFT);
 	}
 
-	rc = nvs_flash_ate_rd(fs, *addr, &close_ate);
-	if (rc) {
-		return rc;
-	}
+	if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+		/* read the first and second ate */
+		rc = nvs_get_sector_header(fs, *addr + ate_size, &empty_ate, &close_ate);
+		if (rc) {
+			return rc;
+		}
 
-	rc = nvs_ate_cmp_const(&close_ate, fs->flash_parameters->erase_value);
-	/* at the end of filesystem */
-	if (!rc) {
-		*addr = fs->ate_wra;
-		return 0;
+		if ((nvs_empty_ate_valid(fs, &empty_ate) &&
+		    (empty_ate.cycle_cnt == ((close_ate.cycle_cnt + 1) % BIT(8)))) ||
+		    (!nvs_close_ate_valid(fs, &close_ate))) {
+			/* at the end of filesystem */
+			*addr = fs->ate_wra;
+			return 0;
+		}
+	} else {
+		rc = nvs_flash_ate_rd(fs, *addr, &close_ate);
+		if (rc) {
+			return rc;
+		}
+		rc = nvs_ate_cmp_const(&close_ate, fs->flash_parameters->erase_value);
+		/* at the end of filesystem */
+		if (!rc) {
+			*addr = fs->ate_wra;
+			return 0;
+		}
 	}
 
 	/* Update the address if the close ate is valid.
 	 */
 	if (nvs_close_ate_valid(fs, &close_ate)) {
-		(*addr) &= ADDR_SECT_MASK;
-		(*addr) += close_ate.offset;
+		if (!NVS_DEVICE_HAS_NO_ERASE(fs) ||
+		    (close_ate.cycle_cnt == empty_ate.cycle_cnt)) {
+			(*addr) &= ADDR_SECT_MASK;
+			(*addr) += close_ate.offset;
+		}
 		return 0;
 	}
 
@@ -541,7 +699,8 @@ static void nvs_sector_advance(struct nvs_fs *fs, uint32_t *addr)
  */
 static int nvs_sector_close(struct nvs_fs *fs)
 {
-	struct nvs_ate close_ate;
+	int rc;
+	struct nvs_ate close_ate, garbage_ate;
 	size_t ate_size;
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
@@ -549,8 +708,31 @@ static int nvs_sector_close(struct nvs_fs *fs)
 	close_ate.id = 0xFFFF;
 	close_ate.len = 0U;
 	close_ate.offset = (uint16_t)((fs->ate_wra + ate_size) & ADDR_OFFS_MASK);
-	close_ate.part = 0xff;
-
+	if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+		/* in the case of non erasable devices, when we close the sector,
+		 * we must write all non used ATE with a non valid (Junk) ATE.
+		 * this is needed to avoid some corner cases where some ATEs are
+		 * not overwritten and become valid when the cycle counter wrap again
+		 * to the same cycle counter of the old ATE.
+		 * Example :
+		 * - An ATE.cycl_cnt == 0 is written as last ATE of the sector
+		   - This ATE was never overwritten in the next 255 cycles because of
+		     large data size
+		   - Next 256th cycle the leading cycle_cnt is 0, this ATE becomes
+		     valid even if it is not the case.
+		 */
+		close_ate.cycle_cnt = fs->sector_cycle;
+		memset(&garbage_ate, fs->flash_parameters->erase_value,
+			sizeof(garbage_ate));
+		while (fs->ate_wra >= (fs->data_wra + ate_size)) {
+			rc = nvs_flash_ate_wrt(fs, &garbage_ate);
+			if (rc) {
+				return rc;
+			}
+		}
+	} else {
+		close_ate.cycle_cnt = 0xff;
+	}
 	fs->ate_wra &= ADDR_SECT_MASK;
 	fs->ate_wra += (fs->sector_size - ate_size);
 
@@ -558,7 +740,18 @@ static int nvs_sector_close(struct nvs_fs *fs)
 
 	(void)nvs_flash_ate_wrt(fs, &close_ate);
 
+	if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+		/* skip the empty ATE */
+		fs->ate_wra -= ate_size;
+	}
 	nvs_sector_advance(fs, &fs->ate_wra);
+
+	if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+		rc = nvs_get_sector_cycle(fs, fs->ate_wra, &fs->sector_cycle);
+		if (rc) {
+			return rc;
+		}
+	}
 
 	fs->data_wra = fs->ate_wra & ADDR_SECT_MASK;
 
@@ -572,11 +765,91 @@ static int nvs_add_gc_done_ate(struct nvs_fs *fs)
 	LOG_DBG("Adding gc done ate at %x", fs->ate_wra & ADDR_OFFS_MASK);
 	gc_done_ate.id = 0xffff;
 	gc_done_ate.len = 0U;
-	gc_done_ate.part = 0xff;
 	gc_done_ate.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
+	if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+		gc_done_ate.cycle_cnt = fs->sector_cycle;
+	} else {
+		gc_done_ate.cycle_cnt = 0xff;
+	}
 	nvs_ate_crc8_update(&gc_done_ate);
 
 	return nvs_flash_ate_wrt(fs, &gc_done_ate);
+}
+
+static int nvs_add_empty_ate(struct nvs_fs *fs, uint32_t addr)
+{
+	struct nvs_ate empty_ate;
+	size_t ate_size;
+	uint8_t cycle_cnt;
+	int rc = 0;
+
+	addr &= ADDR_SECT_MASK;
+
+	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
+
+	LOG_DBG("Adding empty ate at %x", (uint32_t)(addr + fs->sector_size - 2 * ate_size));
+	empty_ate.id = 0xffff;
+	empty_ate.len = 0xffff;
+	empty_ate.offset = 0U;
+	rc = nvs_get_sector_cycle(fs, addr, &cycle_cnt);
+	if (rc) {
+		return rc;
+	}
+	/* increase cycle counter */
+	empty_ate.cycle_cnt = (cycle_cnt + 1) % BIT(8);
+	nvs_ate_crc8_update(&empty_ate);
+	fs->ate_wra = addr + fs->sector_size - (2 * ate_size);
+
+	return nvs_flash_ate_wrt(fs, &empty_ate);
+}
+
+static int nvs_get_sector_cycle(struct nvs_fs *fs, uint32_t addr, uint8_t *cycle_cnt)
+{
+	int rc;
+	size_t ate_size;
+	struct nvs_ate empty_ate;
+	uint32_t empty_addr;
+
+	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
+
+	empty_addr = addr & ADDR_SECT_MASK;
+	empty_addr += fs->sector_size - 2 * ate_size;
+
+	/* read the cycle counter of the current sector */
+	rc = nvs_flash_ate_rd(fs, empty_addr, &empty_ate);
+	if (rc < 0) {
+		/* flash error */
+		return rc;
+	}
+
+	*cycle_cnt = empty_ate.cycle_cnt;
+
+	return 0;
+}
+
+static int nvs_get_sector_header(struct nvs_fs *fs, uint32_t addr,
+				 struct nvs_ate *empty_ate,
+				 struct nvs_ate *close_ate)
+{
+	int rc;
+	size_t ate_size;
+
+	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
+
+	LOG_DBG("Getting sector header ATEs at %x", addr);
+	/* read the first ate in the sector to get the close ATE */
+	rc = nvs_flash_ate_rd(fs, addr, close_ate);
+	if (rc) {
+		return rc;
+	}
+
+	/* read the second ate in the sector to get the empty ATE */
+	rc = nvs_flash_ate_rd(fs, addr - ate_size, empty_ate);
+	if (rc) {
+		return rc;
+	}
+
+	return 0;
 }
 
 /* garbage collection: the address ate_wra has been updated to the new sector
@@ -585,13 +858,23 @@ static int nvs_add_gc_done_ate(struct nvs_fs *fs)
  */
 static int nvs_gc(struct nvs_fs *fs)
 {
-	int rc;
-	struct nvs_ate close_ate, gc_ate, wlk_ate;
+	int rc, previous_sector_num = -1;
+	struct nvs_ate close_ate, gc_ate, wlk_ate, empty_ate;
 	uint32_t sec_addr, gc_addr, gc_prev_addr, wlk_addr, wlk_prev_addr,
-	      data_addr, stop_addr;
+		 data_addr, stop_addr, previous_ate_wra;
+	uint8_t current_cycle, previous_cycle = 0;
 	size_t ate_size;
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
+
+	if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+		rc = nvs_get_sector_cycle(fs, fs->ate_wra, &fs->sector_cycle);
+		if (rc < 0) {
+			/* flash error */
+			return rc;
+		}
+		previous_cycle = fs->sector_cycle;
+	}
 
 	sec_addr = (fs->ate_wra & ADDR_SECT_MASK);
 	nvs_sector_advance(fs, &sec_addr);
@@ -604,20 +887,64 @@ static int nvs_gc(struct nvs_fs *fs)
 		return rc;
 	}
 
-	rc = nvs_ate_cmp_const(&close_ate, fs->flash_parameters->erase_value);
-	if (!rc) {
-		goto gc_done;
-	}
+	if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+		stop_addr = gc_addr - 2 * ate_size;
 
-	stop_addr = gc_addr - ate_size;
-
-	if (nvs_close_ate_valid(fs, &close_ate)) {
-		gc_addr &= ADDR_SECT_MASK;
-		gc_addr += close_ate.offset;
-	} else {
-		rc = nvs_recover_last_ate(fs, &gc_addr);
-		if (rc) {
+		rc = nvs_flash_ate_rd(fs, gc_addr - ate_size, &empty_ate);
+		if (rc < 0) {
+			/* flash error */
 			return rc;
+		}
+
+		if (!nvs_empty_ate_valid(fs, &empty_ate)) {
+			/* something went wrong when trying to erase the sector
+			 * don't do the GC here
+			 */
+			goto gc_done;
+		}
+
+		/* update sector_cycle */
+		fs->sector_cycle = empty_ate.cycle_cnt;
+
+		/* if we are here it means that empty is valid
+		 * Let's check the close ATE
+		 */
+		if (!nvs_close_ate_valid(fs, &close_ate)) {
+			/* something went wrong when trying to close the sector
+			 * Let's fix it
+			 */
+			rc = nvs_fix_close_ate(fs, empty_ate.cycle_cnt);
+			if (rc) {
+				return rc;
+			}
+		}
+		/* At this step empty & close ATEs are valid.
+		 * Let's check the cycle counter
+		 */
+
+		if (close_ate.cycle_cnt == empty_ate.cycle_cnt) {
+			gc_addr &= ADDR_SECT_MASK;
+			gc_addr += close_ate.offset;
+		} else {
+			/* this is an erased sector, don't do GC */
+			goto gc_done;
+		}
+	} else {
+		stop_addr = gc_addr - ate_size;
+
+		rc = nvs_ate_cmp_const(&close_ate, fs->flash_parameters->erase_value);
+		if (!rc) {
+			goto gc_done;
+		}
+
+		if (nvs_close_ate_valid(fs, &close_ate)) {
+			gc_addr &= ADDR_SECT_MASK;
+			gc_addr += close_ate.offset;
+		} else {
+			rc = nvs_recover_last_ate(fs, &gc_addr);
+			if (rc) {
+				return rc;
+			}
 		}
 	}
 
@@ -641,6 +968,12 @@ static int nvs_gc(struct nvs_fs *fs)
 #else
 		wlk_addr = fs->ate_wra;
 #endif
+		if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+			/* initialize the previous_sector_num to an impossible value
+			 * to read the sector cycle in the first loop
+			 */
+			previous_sector_num = -1;
+		}
 		do {
 			wlk_prev_addr = wlk_addr;
 			rc = nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
@@ -652,9 +985,25 @@ static int nvs_gc(struct nvs_fs *fs)
 			 * have been written that has the same ate but is
 			 * invalid, don't consider these as a match.
 			 */
-			if ((wlk_ate.id == gc_ate.id) &&
-			    (nvs_ate_valid(fs, &wlk_ate))) {
-				break;
+			if (wlk_ate.id == gc_ate.id) {
+				if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+					/* read the ate cycle only when we change the sector
+					 * or if it is the first read
+					 */
+					rc = nvs_get_cycle_on_sector_change(fs, wlk_prev_addr,
+									    previous_sector_num,
+									    &current_cycle);
+					if (rc) {
+						return rc;
+					}
+					if (nvs_ate_valid_different_sector(fs, &wlk_ate,
+									   current_cycle)) {
+						break;
+					}
+					previous_sector_num = SECTOR_NUM(wlk_prev_addr);
+				} else if (nvs_ate_valid(fs, &wlk_ate)) {
+					break;
+				}
 			}
 		} while (wlk_addr != fs->ate_wra);
 
@@ -669,6 +1018,9 @@ static int nvs_gc(struct nvs_fs *fs)
 			data_addr += gc_ate.offset;
 
 			gc_ate.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
+			if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+				gc_ate.cycle_cnt = previous_cycle;
+			}
 			nvs_ate_crc8_update(&gc_ate);
 
 			rc = nvs_flash_block_move(fs, data_addr, gc_ate.len);
@@ -685,6 +1037,11 @@ static int nvs_gc(struct nvs_fs *fs)
 
 gc_done:
 
+	/* restore the previous sector_cycle */
+	if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+		fs->sector_cycle = previous_cycle;
+	}
+
 	/* Make it possible to detect that gc has finished by writing a
 	 * gc done ate to the sector. In the field we might have nvs systems
 	 * that do not have sufficient space to add this ate, so for these
@@ -699,10 +1056,23 @@ gc_done:
 	}
 
 	/* Erase the gc'ed sector */
-	rc = nvs_flash_erase_sector(fs, sec_addr);
+	if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+		/* Adding empty ate to the gc'ed sector increments fs->ate_wra
+		 * Restore the ate_wra of the current sector after this
+		 */
+		previous_ate_wra = fs->ate_wra;
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+		nvs_lookup_cache_invalidate(fs, sec_addr >> ADDR_SECT_SHIFT);
+#endif
+		rc = nvs_add_empty_ate(fs, sec_addr);
+		fs->ate_wra = previous_ate_wra;
+	} else {
+		rc = nvs_flash_erase_sector(fs, sec_addr);
+	}
 	if (rc) {
 		return rc;
 	}
+
 	return 0;
 }
 
@@ -951,6 +1321,248 @@ int nvs_clear(struct nvs_fs *fs)
 	return 0;
 }
 
+static int nvs_startup_noerase(struct nvs_fs *fs)
+{
+	int rc;
+	struct nvs_ate last_ate, close_ate, empty_ate, first_ate;
+	size_t ate_size;
+	/* Initialize addr to 0 for the case fs->sector_count == 0. This
+	 * should never happen as this is verified in nvs_mount() but both
+	 * Coverity and GCC believe the contrary.
+	 */
+	uint32_t addr = 0U;
+	uint16_t i, closed_sectors = 0;
+
+	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
+
+	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
+	/* step through the sectors to find a open sector following
+	 * a closed sector, this is where NVS can write.
+	 */
+
+	for (i = 0; i < fs->sector_count; i++) {
+		addr = (i << ADDR_SECT_SHIFT) +
+		       (uint16_t)(fs->sector_size - ate_size);
+
+		 /* read the first and second ate to find out if sector is
+		  * open/close
+		  */
+		rc = nvs_get_sector_header(fs, addr, &empty_ate, &close_ate);
+		if (rc) {
+			goto end;
+		}
+
+		/* update cycle count */
+		fs->sector_cycle = empty_ate.cycle_cnt;
+
+		if (nvs_close_ate_valid(fs, &close_ate) &&
+		    nvs_empty_ate_valid(fs, &empty_ate) &&
+		    (close_ate.cycle_cnt == empty_ate.cycle_cnt)) {
+			/* closed sector */
+			closed_sectors++;
+			nvs_sector_advance(fs, &addr);
+			/* addr is pointing to the close ATE */
+			rc = nvs_get_sector_header(fs, addr, &empty_ate, &close_ate);
+			if (rc) {
+				goto end;
+			}
+			/* update cycle count */
+			fs->sector_cycle = empty_ate.cycle_cnt;
+			if (nvs_close_ate_valid(fs, &close_ate) &&
+			    nvs_empty_ate_valid(fs, &empty_ate) &&
+			    (((close_ate.cycle_cnt + 1) % BIT(8)) == empty_ate.cycle_cnt)) {
+				/* open sector */
+				break;
+			}
+
+			/* we have to check if the close_ate or
+			 * the empty_ate is valid.
+			 * If one of them is valid it means that
+			 * something wrong happened and either
+			 * the close_ate or empty_ate write failed
+			 * Let's fix the wrong ATE
+			 */
+			if (nvs_close_ate_valid(fs, &close_ate)) {
+				/* update ate_wra to point to the address
+				 * of empty ATE
+				 */
+				fs->ate_wra = addr - ate_size;
+				rc = nvs_fix_empty_ate(fs, close_ate.cycle_cnt);
+				if (rc) {
+					goto end;
+				}
+				break;
+			}
+
+			/* At this step the close ATE is not valid.
+			 * Update ate_wra to point to the address
+			 * of close ATE
+			 */
+			fs->ate_wra = addr;
+			rc = nvs_fix_close_ate(fs, empty_ate.cycle_cnt);
+			if (rc) {
+				goto end;
+			}
+		}
+	}
+	/* all sectors are closed, this is not a nvs fs */
+	if (closed_sectors == fs->sector_count) {
+		rc = -EDEADLK;
+		goto end;
+	}
+
+	if (i == fs->sector_count) {
+		/* none of the sectors where closed, in most cases we can set
+		 * the address to the first sector, except when there are only
+		 * two sectors. Then we can only set it to the first sector if
+		 * the last sector contains no ate's. So we check this first
+		 */
+		rc = nvs_flash_ate_rd(fs, addr - 2 * ate_size, &first_ate);
+		if (rc) {
+			goto end;
+		}
+		if (!nvs_ate_valid(fs, &first_ate)) {
+			/* empty location */
+			nvs_sector_advance(fs, &addr);
+			rc = nvs_get_sector_cycle(fs, addr, &fs->sector_cycle);
+		}
+	}
+
+	/* addr contains address of closing ate in the most recent sector,
+	 * search for the last valid ate using the recover_last_ate routine
+	 */
+
+	rc = nvs_recover_last_ate(fs, &addr);
+	if (rc) {
+		goto end;
+	}
+
+	/* addr contains address of the last valid ate in the most recent sector
+	 * search for the first ate containing all cells erased, in the process
+	 * also update fs->data_wra.
+	 */
+	fs->ate_wra = addr;
+	fs->data_wra = addr & ADDR_SECT_MASK;
+
+	while (fs->ate_wra >= fs->data_wra) {
+		rc = nvs_flash_ate_rd(fs, fs->ate_wra, &last_ate);
+		if (rc) {
+			goto end;
+		}
+
+		if (!nvs_ate_valid(fs, &last_ate)) {
+			/* found empty location */
+			break;
+		}
+
+		/* ATE is valid: complete write of ate was performed */
+		fs->data_wra = addr & ADDR_SECT_MASK;
+		/* Align the data write address to the current
+		 * write block size so that it is possible to write to
+		 * the sector even if the block size has changed after
+		 * a software upgrade (unless the physical ATE size
+		 * will change)."
+		 */
+		fs->data_wra += nvs_al_size(fs, last_ate.offset + last_ate.len);
+
+		/* ate on the last position within the sector is
+		 * reserved for deletion an entry
+		 */
+		if (fs->ate_wra == fs->data_wra && last_ate.len) {
+			/* not a delete ate */
+			rc = -ESPIPE;
+			goto end;
+		}
+
+		fs->ate_wra -= ate_size;
+	}
+
+	/* if the sector after the write sector is not empty gc was interrupted
+	 * we might need to restart gc if it has not yet finished. Otherwise
+	 * just erase the sector.
+	 * When gc needs to be restarted, first erase the sector otherwise the
+	 * data might not fit into the sector.
+	 */
+	addr = fs->ate_wra & ADDR_SECT_MASK;
+	addr += fs->sector_size - ate_size;
+	nvs_sector_advance(fs, &addr);
+	/* read the first and second ate to verify that the sector is empty */
+	rc = nvs_get_sector_header(fs, addr, &empty_ate, &close_ate);
+	if (rc) {
+		goto end;
+	}
+
+	if (!nvs_empty_ate_valid(fs, &empty_ate) || (empty_ate.cycle_cnt == close_ate.cycle_cnt)) {
+		/* the sector after fs->ate_wrt is not empty, look for a marker
+		 * (gc_done_ate) that indicates that gc was finished.
+		 */
+		bool gc_done_marker = false;
+		struct nvs_ate gc_done_ate;
+
+		fs->sector_cycle = empty_ate.cycle_cnt;
+		addr = fs->ate_wra + ate_size;
+		while ((addr & ADDR_OFFS_MASK) < (fs->sector_size - 2 * ate_size)) {
+			rc = nvs_flash_ate_rd(fs, addr, &gc_done_ate);
+			if (rc) {
+				goto end;
+			}
+			if (nvs_ate_valid(fs, &gc_done_ate) &&
+			    (gc_done_ate.id == 0xffff) &&
+			    (gc_done_ate.len == 0U)) {
+				gc_done_marker = true;
+				break;
+			}
+			addr += ate_size;
+		}
+
+		if (gc_done_marker) {
+			/* erase the next sector */
+			LOG_INF("GC Done marker found");
+			addr = fs->ate_wra & ADDR_SECT_MASK;
+			nvs_sector_advance(fs, &addr);
+			rc = nvs_add_empty_ate(fs, addr);
+			goto end;
+		}
+		LOG_INF("No GC Done marker found: restarting gc");
+		rc = nvs_add_empty_ate(fs, fs->ate_wra);
+		if (rc) {
+			goto end;
+		}
+		fs->ate_wra &= ADDR_SECT_MASK;
+		fs->ate_wra += (fs->sector_size - 3 * ate_size);
+		fs->data_wra = (fs->ate_wra & ADDR_SECT_MASK);
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+		/**
+		 * At this point, the lookup cache wasn't built but the gc function need to use it.
+		 * So, temporarily, we set the lookup cache to the end of the fs.
+		 * The cache will be rebuilt afterwards
+		 **/
+		for (i = 0; i < CONFIG_NVS_LOOKUP_CACHE_SIZE; i++) {
+			fs->lookup_cache[i] = fs->ate_wra;
+		}
+#endif
+		rc = nvs_gc(fs);
+		goto end;
+	}
+
+end:
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+	if (!rc) {
+		rc = nvs_lookup_cache_rebuild(fs);
+	}
+#endif
+	/* If the sector is empty add a gc done ate to avoid having insufficient
+	 * space when doing gc.
+	 */
+	if ((!rc) && ((fs->ate_wra & ADDR_OFFS_MASK) ==
+		      (fs->sector_size - 3 * ate_size))) {
+
+		rc = nvs_add_gc_done_ate(fs);
+	}
+	k_mutex_unlock(&fs->nvs_lock);
+	return rc;
+}
+
 int nvs_mount(struct nvs_fs *fs)
 {
 
@@ -991,7 +1603,12 @@ int nvs_mount(struct nvs_fs *fs)
 		return -EINVAL;
 	}
 
-	rc = nvs_startup(fs);
+	if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+		rc = nvs_startup_noerase(fs);
+	} else {
+		rc = nvs_startup(fs);
+	}
+
 	if (rc) {
 		return rc;
 	}
@@ -1012,10 +1629,11 @@ int nvs_mount(struct nvs_fs *fs)
 
 ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 {
-	int rc, gc_count;
+	int rc, gc_count, previous_sector_num = -1;
 	size_t ate_size, data_size;
 	struct nvs_ate wlk_ate;
 	uint32_t wlk_addr, rd_addr;
+	uint8_t current_cycle;
 	uint16_t required_space = 0U; /* no space, appropriate for delete ate */
 	bool prev_found = false;
 
@@ -1027,13 +1645,24 @@ ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 	data_size = nvs_al_size(fs, len);
 
-	/* The maximum data size is sector size - 4 ate
-	 * where: 1 ate for data, 1 ate for sector close, 1 ate for gc done,
-	 * and 1 ate to always allow a delete.
-	 */
-	if ((len > (fs->sector_size - 4 * ate_size)) ||
-	    ((len > 0) && (data == NULL))) {
-		return -EINVAL;
+	if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+		/* The maximum data size is sector size - 5 ate
+		 * where: 1 ate for data, 1 ate for sector close, 1 ate for empty,
+		 * 1 ate for gc done, and 1 ate to always allow a delete.
+		 */
+		if ((len > (fs->sector_size - 5 * ate_size)) ||
+		    ((len > 0) && (data == NULL))) {
+			return -EINVAL;
+		}
+	} else {
+		/* The maximum data size is sector size - 4 ate
+		 * where: 1 ate for data, 1 ate for sector close, 1 ate for gc_done,
+		 * and 1 ate to always allow a delete.
+		 */
+		if ((len > (fs->sector_size - 4 * ate_size)) ||
+		    ((len > 0) && (data == NULL))) {
+			return -EINVAL;
+		}
 	}
 
 	/* find latest entry with same id */
@@ -1054,10 +1683,30 @@ ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 		if (rc) {
 			return rc;
 		}
-		if ((wlk_ate.id == id) && (nvs_ate_valid(fs, &wlk_ate))) {
-			prev_found = true;
-			break;
+		if (wlk_ate.id == id) {
+			if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+				/* read the ate cycle only when we change the sector
+				 * or if it is the first read
+				 */
+				rc = nvs_get_cycle_on_sector_change(fs, rd_addr,
+								    previous_sector_num,
+								    &current_cycle);
+				if (rc) {
+					return rc;
+				}
+				if (nvs_ate_valid_different_sector(fs, &wlk_ate, current_cycle)) {
+					prev_found = true;
+					break;
+				}
+				previous_sector_num = SECTOR_NUM(rd_addr);
+			} else {
+				if (nvs_ate_valid(fs, &wlk_ate)) {
+					prev_found = true;
+					break;
+				}
+			}
 		}
+
 		if (wlk_addr == fs->ate_wra) {
 			break;
 		}
@@ -1122,7 +1771,6 @@ no_cached_entry:
 			break;
 		}
 
-
 		rc = nvs_sector_close(fs);
 		if (rc) {
 			goto end;
@@ -1148,8 +1796,9 @@ int nvs_delete(struct nvs_fs *fs, uint16_t id)
 ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
 		      uint16_t cnt)
 {
-	int rc;
+	int rc, previous_sector_num = -1;
 	uint32_t wlk_addr, rd_addr;
+	uint8_t current_cycle;
 	uint16_t cnt_his;
 	struct nvs_ate wlk_ate;
 	size_t ate_size;
@@ -1185,8 +1834,24 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
 		if (rc) {
 			goto err;
 		}
-		if ((wlk_ate.id == id) &&  (nvs_ate_valid(fs, &wlk_ate))) {
-			cnt_his++;
+		if (wlk_ate.id == id) {
+			if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+				/* read the ate cycle only when we change the sector
+				 * or if it is the first read
+				 */
+				rc = nvs_get_cycle_on_sector_change(fs, rd_addr,
+								    previous_sector_num,
+								    &current_cycle);
+				if (rc) {
+					return rc;
+				}
+				if (nvs_ate_valid_different_sector(fs, &wlk_ate, current_cycle)) {
+					cnt_his++;
+				}
+				previous_sector_num = SECTOR_NUM(rd_addr);
+			} else if (nvs_ate_valid(fs, &wlk_ate)) {
+				cnt_his++;
+			}
 		}
 		if (wlk_addr == fs->ate_wra) {
 			break;
@@ -1222,9 +1887,10 @@ ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len)
 ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 {
 
-	int rc;
+	int rc, previous_sector_num = -1;
 	struct nvs_ate step_ate, wlk_ate;
 	uint32_t step_addr, wlk_addr;
+	uint8_t current_cycle;
 	size_t ate_size, free_space;
 
 	if (!fs->ready) {
@@ -1260,11 +1926,28 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 			}
 		}
 
-		if ((wlk_addr == step_addr) && step_ate.len &&
-		    (nvs_ate_valid(fs, &step_ate))) {
-			/* count needed */
-			free_space -= nvs_al_size(fs, step_ate.len);
-			free_space -= ate_size;
+		if ((wlk_addr == step_addr) && step_ate.len) {
+			if (NVS_DEVICE_HAS_NO_ERASE(fs)) {
+				/* read the ate cycle only when we change the sector
+				 * or if it is the first read
+				 */
+				rc = nvs_get_cycle_on_sector_change(fs, step_addr,
+								    previous_sector_num,
+								    &current_cycle);
+				if (rc) {
+					return rc;
+				}
+				if (nvs_ate_valid_different_sector(fs, &wlk_ate, current_cycle)) {
+					/* count needed */
+					free_space -= nvs_al_size(fs, step_ate.len);
+					free_space -= ate_size;
+				}
+				previous_sector_num = SECTOR_NUM(step_addr);
+			} else if (nvs_ate_valid(fs, &step_ate)) {
+				/* count needed */
+				free_space -= nvs_al_size(fs, step_ate.len);
+				free_space -= ate_size;
+			}
 		}
 
 		if (step_addr == fs->ate_wra) {
