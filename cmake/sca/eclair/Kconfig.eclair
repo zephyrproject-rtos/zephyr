@@ -1,0 +1,126 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023, BUGSENG Srl
+
+mainmenu "ECLAIR Configurations"
+
+menu "ECLAIR env configurations"
+
+choice ECLAIR_RULES_SET
+	prompt "Specify the ruleset"
+	default first_analysis
+
+config ECLAIR_RULES_SET_first_analysis
+	bool "first_analysis"
+	help
+	  a tiny selection of rules to verify that everything is correctly working
+
+config ECLAIR_RULES_SET_STU
+	bool "STU"
+	help
+	  selection of MISRA guidelines that can be verified by analysing the single translation units independently
+
+config ECLAIR_RULES_SET_STU_heavy
+	bool "STU_heavy"
+	help
+	  selection of MISRA guidelines that can be verified by analysing the single translation units independently
+
+config ECLAIR_RULES_SET_WP
+	bool "WP"
+	help
+	  all whole program guidelines of your selection ("system" in MISRA's parlance)
+
+config ECLAIR_RULES_SET_std_lib
+	bool "std_lib"
+	help
+	  guidelines about the C Standard Library
+
+endchoice
+
+endmenu
+
+menu "ECLAIR report generation configurations"
+
+config ECLAIR_metrics_tab
+	bool "Enable/disable the production of metrics in spreadsheet format"
+	default n
+	help
+	  Metrics in a spreadsheet format
+
+config ECLAIR_reports_tab
+	bool "Enable/disable the production of findings in spreadsheet format"
+	default n
+	help
+	  Findings in a spreadsheet format
+
+config ECLAIR_summary_txt
+	bool "Enable/disable the production of summary report in plain textual format"
+	default n
+	help
+	  Plain textual summary format
+
+config ECLAIR_summary_doc
+	bool "Enable/disable the production of summary report in DOC format"
+	default n
+	help
+	  DOC summary format
+
+config ECLAIR_summary_odt
+	bool "Enable/disable the production of summary report in ODT format"
+	default n
+	help
+	  ODT summary format
+
+config ECLAIR_full_txt
+	bool "Enable/disable the production of rich/detailed report in plain textual format"
+	default n
+	help
+	  Detailed plain textual format
+
+config ECLAIR_full_doc
+	bool "Enable/disable the production of rich/detailed report in DOC format"
+	default n
+	help
+	  Detailed DOC format
+
+config ECLAIR_full_odt
+	bool "Enable/disable the production of rich/detailed report in ODT format"
+	default n
+	help
+	  Detailed ODT format
+
+choice ECLAIR_full_doc_areas
+	prompt "Detail level of full DOC/ODT reports"
+	depends on (ECLAIR_full_doc || ECLAIR_full_odt)
+	default ECLAIR_full_doc_areas_FIRST_AREA
+
+config ECLAIR_full_doc_areas_AREAS
+	bool "areas"
+	help
+	  Show all areas
+
+config ECLAIR_full_doc_areas_FIRST_AREA
+	bool "first area"
+	help
+	  Show only the first area
+
+endchoice
+
+choice ECLAIR_full_txt_areas
+	prompt "Detail level of full txt reports"
+	depends on ECLAIR_full_txt
+	default ECLAIR_full_txt_areas_FIRST_AREAS
+
+config ECLAIR_full_txt_areas_AREAS
+	bool "areas"
+	help
+	  Show all areas
+
+config ECLAIR_full_txt_areas_FIRST_AREA
+	bool "first area"
+	help
+	  Show only the first area
+
+endchoice
+
+endmenu
