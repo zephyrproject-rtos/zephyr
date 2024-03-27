@@ -10,6 +10,8 @@
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/linear_range.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/device.h>
 #include <DA1469xAB.h>
 
 LOG_MODULE_REGISTER(regulator_da1469x, CONFIG_REGULATOR_LOG_LEVEL);
@@ -77,6 +79,16 @@ enum da1469x_rail {
 	V30,
 };
 
+struct dcdc_regs {
+	uint32_t v18;
+	uint32_t v18p;
+	uint32_t vdd;
+	uint32_t v14;
+	uint32_t ctrl1;
+};
+
+static struct dcdc_regs dcdc_state;
+
 struct regulator_da1469x_desc {
 	const struct linear_range *voltage_ranges;
 	const struct linear_range *current_ranges;
@@ -85,6 +97,7 @@ struct regulator_da1469x_desc {
 	uint32_t enable_mask;
 	uint32_t voltage_idx_mask;
 	volatile uint32_t *dcdc_register;
+	uint32_t *dcdc_register_shadow;
 };
 
 static const struct regulator_da1469x_desc vdd_desc = {
@@ -94,6 +107,7 @@ static const struct regulator_da1469x_desc vdd_desc = {
 	.enable_mask = CRG_TOP_POWER_CTRL_REG_LDO_CORE_ENABLE_Msk,
 	.voltage_idx_mask = CRG_TOP_POWER_CTRL_REG_VDD_LEVEL_Msk,
 	.dcdc_register = &DCDC->DCDC_VDD_REG,
+	.dcdc_register_shadow = &dcdc_state.vdd,
 };
 
 static const struct regulator_da1469x_desc vdd_sleep_desc = {
@@ -117,6 +131,7 @@ static const struct regulator_da1469x_desc v14_desc = {
 	.enable_mask = CRG_TOP_POWER_CTRL_REG_LDO_RADIO_ENABLE_Msk,
 	.voltage_idx_mask = CRG_TOP_POWER_CTRL_REG_V14_LEVEL_Msk,
 	.dcdc_register = &DCDC->DCDC_V14_REG,
+	.dcdc_register_shadow = &dcdc_state.v14,
 };
 
 static const struct regulator_da1469x_desc v18_desc = {
@@ -127,6 +142,7 @@ static const struct regulator_da1469x_desc v18_desc = {
 		       CRG_TOP_POWER_CTRL_REG_LDO_1V8_RET_ENABLE_SLEEP_Msk,
 	.voltage_idx_mask = CRG_TOP_POWER_CTRL_REG_V18_LEVEL_Msk,
 	.dcdc_register = &DCDC->DCDC_V18_REG,
+	.dcdc_register_shadow = &dcdc_state.v18,
 };
 
 static const struct regulator_da1469x_desc v18p_desc = {
@@ -137,6 +153,7 @@ static const struct regulator_da1469x_desc v18p_desc = {
 		       CRG_TOP_POWER_CTRL_REG_LDO_1V8P_RET_ENABLE_SLEEP_Msk,
 	.voltage_idx_mask = 0,
 	.dcdc_register = &DCDC->DCDC_V18P_REG,
+	.dcdc_register_shadow = &dcdc_state.v18p,
 };
 
 static const struct regulator_da1469x_desc v30_desc = {
@@ -183,6 +200,7 @@ static int regulator_da1469x_enable(const struct device *dev)
 			  ~(DCDC_DCDC_V14_REG_DCDC_V14_ENABLE_HV_Msk |
 			    DCDC_DCDC_V14_REG_DCDC_V14_ENABLE_LV_Msk);
 		reg_val |= config->dcdc_bits;
+		*config->desc->dcdc_register_shadow = reg_val;
 		*config->desc->dcdc_register = reg_val;
 	}
 
@@ -196,6 +214,7 @@ static int regulator_da1469x_enable(const struct device *dev)
 	    (CRG_TOP->ANA_STATUS_REG & CRG_TOP_ANA_STATUS_REG_COMP_VBAT_HIGH_Msk) &&
 	    config->dcdc_bits & DCDC_REQUESTED) {
 		DCDC->DCDC_CTRL1_REG |= DCDC_DCDC_CTRL1_REG_DCDC_ENABLE_Msk;
+		dcdc_state.ctrl1 = DCDC->DCDC_CTRL1_REG;
 	}
 
 	return 0;
@@ -214,6 +233,7 @@ static int regulator_da1469x_disable(const struct device *dev)
 		reg_val = *config->desc->dcdc_register &
 			  ~(DCDC_DCDC_V14_REG_DCDC_V14_ENABLE_HV_Msk |
 			    DCDC_DCDC_V14_REG_DCDC_V14_ENABLE_LV_Msk);
+		*config->desc->dcdc_register_shadow = reg_val;
 		*config->desc->dcdc_register = reg_val;
 	}
 
@@ -224,6 +244,7 @@ static int regulator_da1469x_disable(const struct device *dev)
 	    (DCDC->DCDC_V18_REG & DCDC_REQUESTED) == 0 &&
 	    (DCDC->DCDC_V18P_REG & DCDC_REQUESTED) == 0) {
 		DCDC->DCDC_CTRL1_REG &= ~DCDC_DCDC_CTRL1_REG_DCDC_ENABLE_Msk;
+		dcdc_state.ctrl1 = DCDC->DCDC_CTRL1_REG;
 	}
 
 	return 0;
@@ -321,7 +342,7 @@ static int regulator_da1469x_set_current_limit(const struct device *dev,
 	reg_val |= FIELD_PREP(DCDC_DCDC_V14_REG_DCDC_V14_CUR_LIM_MAX_HV_Msk, idx);
 	reg_val |= FIELD_PREP(DCDC_DCDC_V14_REG_DCDC_V14_CUR_LIM_MAX_LV_Msk, idx);
 	reg_val |= FIELD_PREP(DCDC_DCDC_V14_REG_DCDC_V14_CUR_LIM_MIN_Msk, idx);
-
+	*config->desc->dcdc_register_shadow = reg_val;
 	*config->desc->dcdc_register = reg_val;
 
 	return ret;
@@ -369,6 +390,37 @@ static int regulator_da1469x_init(const struct device *dev)
 	return regulator_common_init(dev, 0);
 }
 
+#if IS_ENABLED(CONFIG_PM_DEVICE)
+static int regulator_da1469x_pm_action(const struct device *dev,
+				       enum pm_device_action action)
+{
+	const struct regulator_da1469x_config *config = dev->config;
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		if (config->desc->dcdc_register) {
+			*config->desc->dcdc_register = *config->desc->dcdc_register_shadow;
+			if ((CRG_TOP->ANA_STATUS_REG & CRG_TOP_ANA_STATUS_REG_COMP_VBAT_HIGH_Msk) &&
+			    (*config->desc->dcdc_register_shadow & DCDC_REQUESTED)) {
+				DCDC->DCDC_CTRL1_REG = dcdc_state.ctrl1;
+			}
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/*
+		 * Shadow register is saved on each regulator API call, there is no need
+		 * to save it here.
+		 */
+		break;
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif
+
 #define REGULATOR_DA1469X_DEFINE(node, id, rail_id)                            \
 	static struct regulator_da1469x_data data_##id;                        \
                                                                                \
@@ -392,7 +444,10 @@ static int regulator_da1469x_init(const struct device *dev)
 			(DT_PROP(node, renesas_regulator_dcdc_vbat_low) *      \
 			DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_LV_Msk)              \
 	};                                                                     \
-	DEVICE_DT_DEFINE(node, regulator_da1469x_init, NULL, &data_##id,       \
+	PM_DEVICE_DT_DEFINE(node, regulator_da1469x_pm_action);                \
+	DEVICE_DT_DEFINE(node, regulator_da1469x_init,                         \
+			 PM_DEVICE_DT_GET(node),                               \
+			 &data_##id,                                           \
 			 &config_##id, PRE_KERNEL_1,                           \
 			 CONFIG_REGULATOR_DA1469X_INIT_PRIORITY,               \
 			 &regulator_da1469x_api);

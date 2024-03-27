@@ -28,6 +28,16 @@
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
 			clock-frequency = <32000000>;
+			cpu-power-states = <&standby>;
+		};
+
+		power-states {
+			standby: standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <500>;
+				exit-latency-us = <100>;
+			};
 		};
 	};
 

@@ -4,6 +4,7 @@
 config REGULATOR_DA1469X
 	bool "DA1469X regulators driver"
 	default y
+	select PM_DEVICE if PM
 	depends on DT_HAS_RENESAS_SMARTBOND_REGULATOR_ENABLED
 	help
 	  Enable support for the Smartbond DA1469x regulators.
