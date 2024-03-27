@@ -40,6 +40,8 @@
 
 #define FLASH_SIMULATOR_ERASE_VALUE \
 		DT_PROP(DT_PARENT(SOC_NV_FLASH_NODE), erase_value)
+#define FLASH_SIMULATOR_SKIP_ERASE \
+		DT_PROP(DT_PARENT(SOC_NV_FLASH_NODE), skip_erase)
 
 #define FLASH_SIMULATOR_PAGE_COUNT (FLASH_SIMULATOR_FLASH_SIZE / \
 				    FLASH_SIMULATOR_ERASE_UNIT)
@@ -162,7 +164,8 @@ static const struct flash_driver_api flash_sim_api;
 
 static const struct flash_parameters flash_sim_parameters = {
 	.write_block_size = FLASH_SIMULATOR_PROG_UNIT,
-	.erase_value = FLASH_SIMULATOR_ERASE_VALUE
+	.erase_value = FLASH_SIMULATOR_ERASE_VALUE,
+	.skip_erase = FLASH_SIMULATOR_SKIP_ERASE
 };
 
 static int flash_range_is_valid(const struct device *dev, off_t offset,
@@ -228,6 +231,7 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 
 	/* check if any unit has been already programmed */
 	memset(buf, FLASH_SIMULATOR_ERASE_VALUE, sizeof(buf));
+#if !FLASH_SIMULATOR_SKIP_ERASE
 	for (uint32_t i = 0; i < len; i += FLASH_SIMULATOR_PROG_UNIT) {
 		if (memcmp(buf, MOCK_FLASH(offset + i), sizeof(buf))) {
 			FLASH_SIM_STATS_INC(flash_sim_stats, double_writes);
@@ -236,7 +240,7 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 #endif
 		}
 	}
-
+#endif /* !FLASH_SIMULATOR_SKIP_ERASE */
 #ifdef CONFIG_FLASH_SIMULATOR_STATS
 	bool data_part_ignored = false;
 
@@ -264,8 +268,9 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 		}
 #endif /* CONFIG_FLASH_SIMULATOR_STATS */
 
+
 		/* only pull bits to zero */
-#if FLASH_SIMULATOR_ERASE_VALUE == 0xFF
+#if ((FLASH_SIMULATOR_ERASE_VALUE == 0xFF) && (!FLASH_SIMULATOR_SKIP_ERASE))
 		*(MOCK_FLASH(offset + i)) &= *((uint8_t *)data + i);
 #else
 		*(MOCK_FLASH(offset + i)) = *((uint8_t *)data + i);
