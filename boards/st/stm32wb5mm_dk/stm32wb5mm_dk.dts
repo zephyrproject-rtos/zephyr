@@ -22,11 +22,19 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 	};
+
+	rgb_led_strip: rgb_strip {
+		compatible = "ti,tlc59731";
+		gpios = <&gpioa 7 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		status = "disabled";
+	};
+
 	aliases {
 		watchdog0 = &iwdg;
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
+		led-strip = &rgb_led_strip;
 	};
 };
 
@@ -133,6 +141,15 @@ zephyr_udc0: &usb {
 			reg = <0x000d8000 DT_SIZE_K(8)>;
 		};
 
+	};
+};
+
+&gpioh {
+	rgb_cs: rgb_cs {
+		gpios = <1 GPIO_ACTIVE_HIGH>;
+		gpio-hog;
+		output-high;
+		status = "disabled";
 	};
 };
 
