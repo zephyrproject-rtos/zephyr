@@ -729,6 +729,54 @@ int net_route_foreach(net_route_cb_t cb, void *user_data)
 static
 struct net_route_entry_mcast route_mcast_entries[CONFIG_NET_MAX_MCAST_ROUTES];
 
+static int mcast_route_iface_lookup(struct net_route_entry_mcast *entry, struct net_if *iface) {
+	for (int i = 0; i < CONFIG_NET_MCAST_ROUTE_MAX_IFACES; ++i) {
+		if (entry->ifaces[i] == iface) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+bool net_route_mcast_iface_add(struct net_route_entry_mcast *entry, struct net_if *iface)
+{
+	if (!net_if_flag_is_set(iface, NET_IF_FORWARD_MULTICASTS)) {
+		return false;
+	}
+
+	if (mcast_route_iface_lookup(entry, iface) >= 0) {
+		/* Interface is already added */
+		return true;
+	}
+
+	for (int i = 0; i < CONFIG_NET_MCAST_ROUTE_MAX_IFACES; ++i) {
+		if (entry->ifaces[i] == NULL) {
+			entry->ifaces[i] = iface;
+
+			return true;
+		}
+	}
+
+	/* There are no empty slots */
+	return false;
+}
+
+bool net_route_mcast_iface_del(struct net_route_entry_mcast *entry,
+			      struct net_if *iface)
+{
+	int pos = mcast_route_iface_lookup(entry, iface);
+
+	if (pos < 0) {
+		return false;
+	}
+
+	entry->ifaces[pos] = NULL;
+
+	return true;
+}
+
+
 int net_route_mcast_forward_packet(struct net_pkt *pkt,
 				   const struct net_ipv6_hdr *hdr)
 {
@@ -738,34 +786,34 @@ int net_route_mcast_forward_packet(struct net_pkt *pkt,
 		struct net_route_entry_mcast *route = &route_mcast_entries[i];
 		struct net_pkt *pkt_cpy = NULL;
 
-		if (!route->is_used) {
+		if (!route->is_used ||
+			!net_ipv6_is_prefix(hdr->dst,route->group.s6_addr, route->prefix_len)) {
 			continue;
 		}
 
-		if (!net_if_flag_is_set(route->iface,
-					NET_IF_FORWARD_MULTICASTS) ||
-		    !net_ipv6_is_prefix(hdr->dst,
-					route->group.s6_addr,
-					route->prefix_len)         ||
-		    (pkt->iface == route->iface)) {
-			continue;
-		}
+		for (int j = 0; j < CONFIG_NET_MCAST_ROUTE_MAX_IFACES; ++j) {
+			if (!route->ifaces[j] || pkt->iface == route->ifaces[j] ||
+			    !net_if_flag_is_set(route->ifaces[j], NET_IF_FORWARD_MULTICASTS)) {
+				continue;
+			}
 
-		pkt_cpy = net_pkt_shallow_clone(pkt, K_NO_WAIT);
+			pkt_cpy = net_pkt_shallow_clone(pkt, K_NO_WAIT);
 
-		if (pkt_cpy == NULL) {
-			err--;
-			continue;
-		}
+			if (pkt_cpy == NULL) {
+				err--;
+				continue;
+			}
 
-		net_pkt_set_forwarding(pkt_cpy, true);
-		net_pkt_set_iface(pkt_cpy, route->iface);
+			net_pkt_set_forwarding(pkt_cpy, true);
+			net_pkt_set_orig_iface(pkt_cpy, pkt->iface);
+			net_pkt_set_iface(pkt_cpy, route->ifaces[j]);
 
-		if (net_send_data(pkt_cpy) >= 0) {
-			++ret;
-		} else {
-			net_pkt_unref(pkt_cpy);
-			--err;
+			if (net_send_data(pkt_cpy) >= 0) {
+				++ret;
+			} else {
+				net_pkt_unref(pkt_cpy);
+				--err;
+			}
 		}
 	}
 
@@ -818,6 +866,10 @@ struct net_route_entry_mcast *net_route_mcast_add(struct net_if *iface,
 
 		if (!route->is_used) {
 			net_ipaddr_copy(&route->group, group);
+
+			for (int j = 0; j < CONFIG_NET_MCAST_ROUTE_MAX_IFACES; ++j) {
+				route->ifaces[j] = NULL;
+			}
 
 			route->prefix_len = prefix_len;
 			route->iface = iface;
@@ -1027,5 +1079,8 @@ void net_route_init(void)
 	NET_DBG("Allocated %d nexthop entries (%zu bytes)",
 		CONFIG_NET_MAX_NEXTHOPS, sizeof(net_route_nexthop_pool));
 
+#if defined(CONFIG_NET_ROUTE_MCAST)
+	memset(route_mcast_entries, 0, sizeof(route_mcast_entries));
+#endif
 	k_work_init_delayable(&route_lifetime_timer, route_lifetime_timeout);
 }
