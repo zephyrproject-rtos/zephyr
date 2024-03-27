@@ -8,6 +8,6 @@
 
 /* 2MB psram */
 &psram0 {
-	reg = <0x3c000000 DT_SIZE_M(2)>;
+	reg = <0x3c000040 DT_SIZE_M(2)>;
 	status = "okay";
 };

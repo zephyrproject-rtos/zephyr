@@ -8,9 +8,20 @@
 #include <soc.h>
 #include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
+#include <soc/ext_mem_defs.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa/corebits.h>
+#include <esp_private/spi_flash_os.h>
+#include <esp_private/esp_mmu_map_private.h>
+#include <esp_private/mspi_timing_tuning.h>
+#include <esp_flash_internal.h>
+#include <sdkconfig.h>
+
+#if CONFIG_ESP_SPIRAM
+#include <esp_psram.h>
+#include <esp_private/esp_psram_extram.h>
+#endif
 
 #include <zephyr/kernel_structs.h>
 #include <string.h>
@@ -20,21 +31,19 @@
 #include <kernel_internal.h>
 #include <zephyr/sys/util.h>
 
-#include "esp_private/system_internal.h"
-#include "esp32s3/rom/cache.h"
-#include "esp32s3/rom/rtc.h"
-#include "soc/syscon_reg.h"
-#include "hal/soc_ll.h"
-#include "hal/wdt_hal.h"
-#include "soc/cpu.h"
-#include "soc/gpio_periph.h"
-#include "esp_spi_flash.h"
-#include "esp_err.h"
-#include "esp_timer.h"
-#include "esp_app_format.h"
-#include "esp_clk_internal.h"
-
-#include "esp32s3/spiram.h"
+#include <esp_private/system_internal.h>
+#include <esp32s3/rom/cache.h>
+#include <esp32s3/rom/rtc.h>
+#include <soc/syscon_reg.h>
+#include <hal/soc_hal.h>
+#include <hal/wdt_hal.h>
+#include <hal/cpu_hal.h>
+#include <esp_cpu.h>
+#include <soc/gpio_periph.h>
+#include <esp_err.h>
+#include <esp_timer.h>
+#include <esp_clk_internal.h>
+#include <esp_app_format.h>
 
 #ifdef CONFIG_MCUBOOT
 #include "bootloader_init.h"
@@ -49,7 +58,7 @@ extern int _ext_ram_bss_end;
 extern void z_cstart(void);
 extern void esp_reset_reason_init(void);
 
-#if CONFIG_SOC_ENABLE_APPCPU
+#ifdef CONFIG_SOC_ENABLE_APPCPU
 extern const unsigned char esp32s3_appcpu_fw_array[];
 
 void IRAM_ATTR esp_start_appcpu(void)
@@ -86,7 +95,7 @@ void IRAM_ATTR esp_start_appcpu(void)
 
 	esp_appcpu_start((void *)entry_addr);
 }
-#endif /* CONFIG_SOC_ENABLE_APPCPU */
+#endif /* CONFIG_SOC_ENABLE_APPCPU*/
 
 #ifndef CONFIG_MCUBOOT
 /*
@@ -148,32 +157,40 @@ void IRAM_ATTR __esp_platform_start(void)
 	 */
 	esp_config_data_cache_mode();
 
-	/* Apply SoC patches */
-	esp_errata();
+	esp_mspi_pin_init();
+
+	spi_flash_init_chip_state();
+
+	mspi_timing_flash_tuning();
+
+	esp_mmu_map_init();
 
 #if CONFIG_ESP_SPIRAM
-	esp_err_t err = esp_spiram_init();
+	esp_err_t err = esp_psram_init();
 
 	if (err != ESP_OK) {
 		printk("Failed to Initialize external RAM, aborting.\n");
 		abort();
 	}
 
-	esp_spiram_init_cache();
-	if (esp_spiram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
+	if (esp_psram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
 		printk("External RAM size is less than configured, aborting.\n");
 		abort();
 	}
 
-	if (!esp_spiram_test()) {
-		printk("External RAM failed memory test!\n");
-		abort();
+	if (esp_psram_is_initialized()) {
+		if (!esp_psram_extram_test()) {
+			printk("External RAM failed memory test!");
+			abort();
+		}
 	}
 
 	memset(&_ext_ram_bss_start, 0,
 	       (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
 
 #endif /* CONFIG_ESP_SPIRAM */
+	/* Apply SoC patches */
+	esp_errata();
 
 	/* ESP-IDF/MCUboot 2nd stage bootloader enables RTC WDT to check on startup sequence
 	 * related issues in application. Hence disable that as we are about to start
@@ -222,101 +239,4 @@ int IRAM_ATTR arch_printk_char_out(int c)
 void sys_arch_reboot(int type)
 {
 	esp_restart_noos();
-}
-
-void IRAM_ATTR esp_restart_noos(void)
-{
-	/* disable interrupts */
-	z_xt_ints_off(0xFFFFFFFF);
-
-	/* enable RTC watchdog for 1 second */
-	wdt_hal_context_t wdt_ctx;
-	uint32_t timeout_ticks = (uint32_t)(1000ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
-
-	wdt_hal_init(&wdt_ctx, WDT_RWDT, 0, false);
-	wdt_hal_write_protect_disable(&wdt_ctx);
-	wdt_hal_config_stage(&wdt_ctx, WDT_STAGE0, timeout_ticks, WDT_STAGE_ACTION_RESET_SYSTEM);
-	wdt_hal_config_stage(&wdt_ctx, WDT_STAGE1, timeout_ticks, WDT_STAGE_ACTION_RESET_RTC);
-
-	/* enable flash boot mode so that flash booting after restart is protected by the RTC WDT */
-	wdt_hal_set_flashboot_en(&wdt_ctx, true);
-	wdt_hal_write_protect_enable(&wdt_ctx);
-
-	/* disable TG0/TG1 watchdogs */
-	wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
-
-	wdt_hal_write_protect_disable(&wdt0_context);
-	wdt_hal_disable(&wdt0_context);
-	wdt_hal_write_protect_enable(&wdt0_context);
-
-	wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
-
-	wdt_hal_write_protect_disable(&wdt1_context);
-	wdt_hal_disable(&wdt1_context);
-	wdt_hal_write_protect_enable(&wdt1_context);
-
-	/* Flush any data left in UART FIFOs */
-	esp_rom_uart_tx_wait_idle(0);
-	esp_rom_uart_tx_wait_idle(1);
-	esp_rom_uart_tx_wait_idle(2);
-
-	/* Disable cache */
-	Cache_Disable_ICache();
-	Cache_Disable_DCache();
-
-	const uint32_t core_id = cpu_hal_get_core_id();
-#if CONFIG_SMP
-	const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
-
-	soc_ll_reset_core(other_core_id);
-	soc_ll_stall_core(other_core_id);
-#endif
-
-	/* 2nd stage bootloader reconfigures SPI flash signals. */
-	/* Reset them to the defaults expected by ROM */
-	WRITE_PERI_REG(GPIO_FUNC0_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC1_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC2_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC3_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC4_IN_SEL_CFG_REG, 0x30);
-	WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
-
-	/* Reset wifi/bluetooth/ethernet/sdio (bb/mac) */
-	SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
-			  SYSTEM_BB_RST | SYSTEM_FE_RST | SYSTEM_MAC_RST | SYSTEM_BT_RST |
-				  SYSTEM_BTMAC_RST | SYSTEM_SDIO_RST | SYSTEM_SDIO_HOST_RST |
-				  SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST | SYSTEM_RW_BTMAC_RST |
-				  SYSTEM_RW_BTLP_RST | SYSTEM_BLE_REG_RST | SYSTEM_PWR_REG_RST);
-	REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
-
-	/* Reset timer/spi/uart */
-	SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG, SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST |
-							    SYSTEM_UART_RST | SYSTEM_SYSTIMER_RST);
-	REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
-
-	/* Reset DMA */
-	SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);
-	REG_WRITE(SYSTEM_PERIP_RST_EN1_REG, 0);
-
-	SET_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
-	CLEAR_PERI_REG_MASK(SYSTEM_EDMA_CTRL_REG, SYSTEM_EDMA_RESET);
-
-	rtc_clk_cpu_freq_set_xtal();
-
-	/* Reset CPUs */
-	if (core_id == 0) {
-		/* Running on PRO CPU: APP CPU is stalled. Can reset both CPUs. */
-		soc_ll_reset_core(1);
-		soc_ll_reset_core(0);
-	} else {
-		/* Running on APP CPU: need to reset PRO CPU and unstall it, */
-		/* then reset APP CPU */
-		soc_ll_reset_core(0);
-		soc_ll_stall_core(0);
-		soc_ll_reset_core(1);
-	}
-
-	while (true) {
-		;
-	}
 }
