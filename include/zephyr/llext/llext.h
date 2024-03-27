@@ -222,10 +222,11 @@ ssize_t llext_find_section(struct llext_loader *loader, const char *search_name)
  * @param[in] loader Extension loader data and context
  * @param[in] ext Extension to call function in
  * @param[in] rel Relocation data provided by elf
+ * @param[in] sym Corresponding symbol table entry
  * @param[in] got_offset Offset within a relocation table
  */
 void arch_elf_relocate_local(struct llext_loader *loader, struct llext *ext,
-			     elf_rela_t *rel, size_t got_offset);
+			     const elf_rela_t *rel, const elf_sym_t *sym, size_t got_offset);
 
 /**
  * @}
