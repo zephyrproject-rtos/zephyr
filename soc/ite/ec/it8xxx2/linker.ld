@@ -65,10 +65,6 @@
 	#define MPU_ALIGN(region_size) . = ALIGN(4)
 #endif
 
-#ifdef CONFIG_SOC_IT8XXX2_SHA256_HW_ACCELERATE
-#define SHA256_BLOCK_SIZE 0x200
-#endif
-
 #include <zephyr/linker/linker-devnull.h>
 
 MEMORY
@@ -161,7 +157,7 @@ SECTIONS
 		/* Pad to match allocation of block in RAM,
 		 * maintaining code alignment against ILM */
 		__sha256_pad_block_start = .;
-		. = . + SHA256_BLOCK_SIZE;
+		. = . + CONFIG_SOC_IT8XXX2_SHA256_BLOCK_SIZE;
 #endif
 		/* Specially-tagged functions in SoC sources */
 		KEEP(*(.__ram_code))
@@ -249,10 +245,11 @@ SECTIONS
 		__sha256_ram_block_size = \
 			ABSOLUTE(. - __sha256_ram_block_start);
 		__sha256_ram_block_end = .;
-		ASSERT((__sha256_ram_block_size == SHA256_BLOCK_SIZE), \
-			"We need 512bytes for HW sha256 module");
+
+		ASSERT((__sha256_ram_block_size == CONFIG_SOC_IT8XXX2_SHA256_BLOCK_SIZE), \
+			"Not compatible ram size for HW sha256 module");
 		ASSERT((__sha256_ram_block_end < (RAM_BASE + 0x1000)), \
-			"512bytes must in SRAM first 4kbytes");
+			"sha256 ram block must in SRAM first 4kbytes");
 		ASSERT(((ABSOLUTE(__sha256_ram_block_start) & 0xfff) == \
 			(ABSOLUTE(__sha256_pad_block_start) & 0xfff)), \
 			"sha256 ram block needs the same offset with sha256 rom block");
