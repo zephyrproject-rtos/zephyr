@@ -123,11 +123,12 @@ static void bap_broadcast_assistant_recv_state_cb(
 		bad_code, sizeof(bad_code));
 
 	is_bad_code = state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE;
-	shell_print(
-		ctx_shell,
-		"BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, encrypt_state %u%s%s",
-		state->src_id, le_addr, state->adv_sid, state->pa_sync_state, state->encrypt_state,
-		is_bad_code ? ", bad code" : "", is_bad_code ? bad_code : "");
+	shell_print(ctx_shell,
+		    "BASS recv state: src_id %u, addr %s, sid %u, broadcast_id 0x%06X, sync_state "
+		    "%u, encrypt_state %u%s%s",
+		    state->src_id, le_addr, state->adv_sid, state->broadcast_id,
+		    state->pa_sync_state, state->encrypt_state, is_bad_code ? ", bad code" : "",
+		    is_bad_code ? bad_code : "");
 
 	for (int i = 0; i < state->num_subgroups; i++) {
 		const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
@@ -147,10 +148,11 @@ static void bap_broadcast_assistant_recv_state_cb(
 		struct bt_le_ext_adv *ext_adv = NULL;
 
 		/* Lookup matching PA sync */
-		for (int i = 0; i < ARRAY_SIZE(per_adv_syncs); i++) {
-			if (per_adv_syncs[i] &&
+		for (size_t i = 0U; i < ARRAY_SIZE(per_adv_syncs); i++) {
+			if (per_adv_syncs[i] != NULL &&
 			    bt_addr_le_eq(&per_adv_syncs[i]->addr, &state->addr)) {
 				per_adv_sync = per_adv_syncs[i];
+				shell_print(ctx_shell, "Found matching PA sync [%zu]", i);
 				break;
 			}
 		}
