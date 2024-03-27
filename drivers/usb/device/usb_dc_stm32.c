@@ -446,7 +446,7 @@ static int usb_dc_stm32_init(void)
 #else /* USB_OTG_FS */
 
 	/* TODO: make this dynamic (depending usage) */
-	HAL_PCDEx_SetRxFiFo(&usb_dc_stm32_state.pcd, USB_FIFO_RX_MIN);
+	HAL_PCDEx_SetRxFiFo(&usb_dc_stm32_state.pcd, USB_FIFO_RX_MIN / 4);
 	for (i = 0U; i < USB_NUM_BIDIR_ENDPOINTS; i++) {
 		if (i == 0) {
 			/* first endpoint need only 64 byte for EP_TYPE_CTRL */
