@@ -3,6 +3,7 @@
 /*
  * Copyright (c) 2019 Bose Corporation
  * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,17 +35,21 @@ LOG_MODULE_REGISTER(bt_bap_broadcast_assistant, CONFIG_BT_BAP_BROADCAST_ASSISTAN
 
 #define MINIMUM_RECV_STATE_LEN          15
 
+struct bap_broadcast_assistant_recv_state_info {
+	uint8_t src_id;
+	bt_addr_le_t addr;
+	uint8_t adv_sid;
+	uint32_t broadcast_id;
+
+	/** Cached PAST available */
+	bool past_avail;
+};
+
 struct bap_broadcast_assistant_instance {
 	struct bt_conn *conn;
 	bool scanning;
 	uint8_t pa_sync;
 	uint8_t recv_state_cnt;
-	/* Source ID cache so that we can notify application about
-	 * which source ID was removed
-	 */
-	uint8_t src_ids[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
-	/** Cached PAST available */
-	bool past_avail[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
 
 	uint16_t start_handle;
 	uint16_t end_handle;
@@ -62,6 +67,9 @@ struct bap_broadcast_assistant_instance {
 
 	struct k_work_delayable bap_read_work;
 	uint16_t long_read_handle;
+
+	struct bap_broadcast_assistant_recv_state_info recv_states
+		[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
 };
 
 static sys_slist_t broadcast_assistant_cbs = SYS_SLIST_STATIC_INIT(&broadcast_assistant_cbs);
@@ -273,10 +281,10 @@ static uint8_t parse_and_send_recv_state(struct bt_conn *conn, uint16_t handle,
 		return BT_GATT_ITER_STOP;
 	}
 
-	broadcast_assistant.src_ids[index] = recv_state->src_id;
-	broadcast_assistant.past_avail[index] = past_available(conn,
-							       &recv_state->addr,
-							       recv_state->adv_sid);
+	broadcast_assistant.recv_states[index].src_id = recv_state->src_id;
+	broadcast_assistant.recv_states[index].past_avail = past_available(conn,
+									   &recv_state->addr,
+									   recv_state->adv_sid);
 
 	bap_broadcast_assistant_recv_state_changed(conn, 0, recv_state);
 
@@ -434,9 +442,9 @@ static uint8_t notify_handler(struct bt_conn *conn,
 			return parse_and_send_recv_state(conn, handle, data, length, &recv_state);
 		}
 	} else {
-		broadcast_assistant.past_avail[index] = false;
+		broadcast_assistant.recv_states[index].past_avail = false;
 		bap_broadcast_assistant_recv_state_removed(conn, 0,
-							   broadcast_assistant.src_ids[index]);
+							   broadcast_assistant.recv_states[index].src_id);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -471,8 +479,14 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 			if (cb_err != 0) {
 				LOG_DBG("Invalid receive state");
 			} else {
-				broadcast_assistant.src_ids[index] = recv_state.src_id;
-				broadcast_assistant.past_avail[index] =
+				struct bap_broadcast_assistant_recv_state_info *stored_state =
+					&broadcast_assistant.recv_states[index];
+
+				stored_state->src_id = recv_state.src_id;
+				stored_state->adv_sid = recv_state.adv_sid;
+				stored_state->broadcast_id = recv_state.broadcast_id;
+				bt_addr_le_copy(&stored_state->addr, &recv_state.addr);
+				broadcast_assistant.recv_states[index].past_avail =
 					past_available(conn, &recv_state.addr,
 						       recv_state.adv_sid);
 			}
@@ -782,8 +796,9 @@ static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *in
 	(void)k_work_cancel_delayable(&inst->bap_read_work);
 
 	for (int i = 0U; i < CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT; i++) {
-		inst->src_ids[i] = 0U;
-		inst->past_avail[i] = false;
+		memset(&inst->recv_states[i], 0,
+		       sizeof(struct bap_broadcast_assistant_recv_state_info));
+		inst->recv_states[i].past_avail = false;
 		inst->recv_state_handles[i] = 0U;
 	}
 
@@ -998,6 +1013,7 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 				       const struct bt_bap_broadcast_assistant_add_src_param *param)
 {
 	struct bt_bap_bass_cp_add_src *cp;
+	struct bap_broadcast_assistant_recv_state_info *state;
 
 	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
@@ -1011,6 +1027,21 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 		LOG_DBG("instance busy");
 
 		return -EBUSY;
+	}
+
+	/* Check if this operation would result in a duplicate before proceeding */
+	for (size_t i = 0; i < ARRAY_SIZE(broadcast_assistant.recv_states); i++) {
+		state = &broadcast_assistant.recv_states[i];
+
+		if (param->addr.type == state->addr.type && param->adv_sid == state->adv_sid &&
+		    param->broadcast_id == state->broadcast_id) {
+			LOG_DBG("recv_state using broadcast_id=0x%06X, adv_sid=0x%02X, and "
+				"addr.type=0x%02X already exists with src_id=0x%02X",
+				param->broadcast_id, param->adv_sid, param->addr.type,
+				state->src_id);
+
+			return -EINVAL;
+		}
 	}
 
 	/* Reset buffer before using */
@@ -1108,10 +1139,10 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 	 */
 	known_recv_state = false;
 	past_avail = false;
-	for (size_t i = 0; i < ARRAY_SIZE(broadcast_assistant.src_ids); i++) {
-		if (broadcast_assistant.src_ids[i] == param->src_id) {
+	for (size_t i = 0; i < ARRAY_SIZE(broadcast_assistant.recv_states); i++) {
+		if (broadcast_assistant.recv_states[i].src_id == param->src_id) {
 			known_recv_state = true;
-			past_avail = broadcast_assistant.past_avail[i];
+			past_avail = broadcast_assistant.recv_states[i].past_avail;
 			break;
 		}
 	}
