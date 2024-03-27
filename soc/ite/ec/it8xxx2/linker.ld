@@ -256,8 +256,10 @@ SECTIONS
 		ASSERT(((ABSOLUTE(__sha256_ram_block_start) & 0xfff) == \
 			(ABSOLUTE(__sha256_pad_block_start) & 0xfff)), \
 			"sha256 ram block needs the same offset with sha256 rom block");
+#else
+		__sha256_ram_block_size = 0;
 #endif
-		. += __ilm_flash_end - __ilm_flash_start;
+		. += __ilm_flash_end - __ilm_flash_start - __sha256_ram_block_size;
 		__ilm_ram_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
