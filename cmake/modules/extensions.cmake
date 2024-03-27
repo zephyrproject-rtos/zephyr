@@ -35,6 +35,8 @@ include(CheckCXXCompilerFlag)
 # 5.1. zephyr_linker*
 # 6 Function helper macros
 # 7 Linkable loadable extensions (llext)
+# 7.1 llext_* configuration functions
+# 7.2 add_llext_* build control functions
 
 ########################################################
 # 1. Zephyr-aware extensions
@@ -5099,6 +5101,44 @@ endmacro()
 # loadable extensions (llexts).
 #
 
+# 7.1 Configuration functions
+#
+# The following functions simplify access to the compilation/link stage
+# properties of an llext using the same API of the target_* functions.
+#
+
+function(llext_compile_definitions target_name)
+  target_compile_definitions(${target_name}_llext_lib PRIVATE ${ARGN})
+endfunction()
+
+function(llext_compile_features target_name)
+  target_compile_features(${target_name}_llext_lib PRIVATE ${ARGN})
+endfunction()
+
+function(llext_compile_options target_name)
+  target_compile_options(${target_name}_llext_lib PRIVATE ${ARGN})
+endfunction()
+
+function(llext_include_directories target_name)
+  target_include_directories(${target_name}_llext_lib PRIVATE ${ARGN})
+endfunction()
+
+function(llext_link_options target_name)
+  target_link_options(${target_name}_llext_lib PRIVATE ${ARGN})
+endfunction()
+
+# 7.2 Build control functions
+#
+# The following functions add targets and subcommands to the build system
+# to compile and link an llext.
+#
+
+# Usage:
+#   add_llext_target(<target_name>
+#                    OUTPUT  <output_file>
+#                    SOURCES <source_file>
+#   )
+#
 # Add a custom target that compiles a single source file to a .llext file.
 #
 # Output and source files must be specified using the OUTPUT and SOURCES
@@ -5108,22 +5148,27 @@ endmacro()
 # in the Zephyr build, but with some important modifications. The list of
 # flags to remove and flags to append is controlled respectively by the
 # LLEXT_REMOVE_FLAGS and LLEXT_APPEND_FLAGS global variables.
-
-# The C_FLAGS argument can be used to pass additional compiler flags to the
-# compilation of this particular llext.
+#
+# The following custom properties of <target_name> are defined and can be
+# retrieved using the get_target_property() function:
+#
+# - lib_target  Target name for the source compilation and/or link step.
+# - lib_output  The binary file resulting from compilation and/or
+#               linking steps.
+# - pkg_input   The file to be used as input for the packaging step.
+# - pkg_output  The final .llext file.
 #
 # Example usage:
 #   add_llext_target(hello_world
 #     OUTPUT  ${PROJECT_BINARY_DIR}/hello_world.llext
 #     SOURCES ${PROJECT_SOURCE_DIR}/src/llext/hello_world.c
-#     C_FLAGS -Werror
 #   )
 # will compile the source file src/llext/hello_world.c to a file
-# ${PROJECT_BINARY_DIR}/hello_world.llext, adding -Werror to the compilation.
+# named "${PROJECT_BINARY_DIR}/hello_world.llext".
 #
 function(add_llext_target target_name)
   set(single_args OUTPUT)
-  set(multi_args SOURCES;C_FLAGS)
+  set(multi_args SOURCES)
   cmake_parse_arguments(PARSE_ARGV 1 LLEXT "${options}" "${single_args}" "${multi_args}")
 
   # Check that the llext subsystem is enabled for this build
@@ -5131,10 +5176,8 @@ function(add_llext_target target_name)
     message(FATAL_ERROR "add_llext_target: CONFIG_LLEXT must be enabled")
   endif()
 
-  # Output file must be provided
-  if(NOT LLEXT_OUTPUT)
-    message(FATAL_ERROR "add_llext_target: OUTPUT argument must be provided")
-  endif()
+  # Source and output files must be provided
+  zephyr_check_arguments_required_all("add_llext_target" LLEXT OUTPUT SOURCES)
 
   # Source list length must currently be 1
   list(LENGTH LLEXT_SOURCES source_count)
@@ -5142,15 +5185,8 @@ function(add_llext_target target_name)
     message(FATAL_ERROR "add_llext_target: only one source file is supported")
   endif()
 
-  set(output_file ${LLEXT_OUTPUT})
+  set(llext_pkg_output ${LLEXT_OUTPUT})
   set(source_file ${LLEXT_SOURCES})
-  get_filename_component(output_name ${output_file} NAME)
-
-  # Add user-visible target and dependency
-  add_custom_target(${target_name}
-    COMMENT "Compiling ${output_name}"
-    DEPENDS ${output_file}
-  )
 
   # Convert the LLEXT_REMOVE_FLAGS list to a regular expression, and use it to
   # filter out these flags from the Zephyr target settings
@@ -5166,62 +5202,189 @@ function(add_llext_target target_name)
       "$<FILTER:${zephyr_flags},EXCLUDE,${llext_remove_flags_regexp}>"
   )
 
-  # Compile the source file to an object file using current Zephyr settings
-  # but a different set of flags
-  add_library(${target_name}_lib OBJECT ${source_file})
-  target_compile_definitions(${target_name}_lib PRIVATE
+  # Compile the source file using current Zephyr settings but a different
+  # set of flags.
+  # This is currently arch-specific since the ARM loader for .llext files
+  # expects object file format, while the Xtensa one uses shared libraries.
+  set(llext_lib_target ${target_name}_llext_lib)
+  if(CONFIG_ARM)
+
+    # Create an object library to compile the source file
+    add_library(${llext_lib_target} OBJECT ${source_file})
+    set(llext_lib_output $<TARGET_OBJECTS:${llext_lib_target}>)
+
+  elseif(CONFIG_XTENSA)
+
+    # Create a shared library
+    add_library(${llext_lib_target} SHARED ${source_file})
+    set(llext_lib_output $<TARGET_FILE:${llext_lib_target}>)
+
+    # Add the llext flags to the linking step as well
+    target_link_options(${llext_lib_target} PRIVATE
+      ${LLEXT_APPEND_FLAGS}
+    )
+
+  endif()
+
+  target_compile_definitions(${llext_lib_target} PRIVATE
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>
   )
-  target_compile_options(${target_name}_lib PRIVATE
+  target_compile_options(${llext_lib_target} PRIVATE
     ${zephyr_filtered_flags}
     ${LLEXT_APPEND_FLAGS}
-    ${LLEXT_C_FLAGS}
   )
-  target_include_directories(${target_name}_lib PRIVATE
+  target_include_directories(${llext_lib_target} PRIVATE
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>
   )
-  target_include_directories(${target_name}_lib SYSTEM PUBLIC
+  target_include_directories(${llext_lib_target} SYSTEM PUBLIC
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>
   )
-  add_dependencies(${target_name}_lib
+  add_dependencies(${llext_lib_target}
     zephyr_interface
     zephyr_generated_headers
   )
 
-  # Arch-specific conversion of the object file to an llext
+  # Set up an intermediate processing step between compilation and packaging
+  # to be used to support POST_BUILD commands on targets that do not use a
+  # dynamic library.
+  set(llext_proc_target ${target_name}_llext_proc)
+  set(llext_pkg_input ${PROJECT_BINARY_DIR}/${target_name}.llext.pkg_input)
+  add_custom_target(${llext_proc_target} DEPENDS ${llext_pkg_input})
+  set_property(TARGET ${llext_proc_target} PROPERTY has_post_build_cmds 0)
+
+  # By default this target must copy the `lib_output` binary file to the
+  # expected `pkg_input` location. If actual POST_BUILD commands are defined,
+  # they will take care of this and the default copy is replaced by a no-op.
+  set(has_post_build_cmds "$<TARGET_PROPERTY:${llext_proc_target},has_post_build_cmds>")
+  set(noop_cmd ${CMAKE_COMMAND} -E true)
+  set(copy_cmd ${CMAKE_COMMAND} -E copy ${llext_lib_output} ${llext_pkg_input})
+  add_custom_command(
+    OUTPUT ${llext_pkg_input}
+    COMMAND "$<IF:${has_post_build_cmds},${noop_cmd},${copy_cmd}>"
+    DEPENDS ${llext_lib_target} ${llext_lib_output}
+    COMMAND_EXPAND_LISTS
+  )
+
+  # Arch-specific packaging of the built binary file into an .llext file
   if(CONFIG_ARM)
 
-    # No conversion required, simply copy the object file
+    # No packaging required, simply copy the object file
     add_custom_command(
-      OUTPUT ${output_file}
-      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_OBJECTS:${target_name}_lib> ${output_file}
-      DEPENDS ${target_name}_lib $<TARGET_OBJECTS:${target_name}_lib>
+      OUTPUT ${llext_pkg_output}
+      COMMAND ${CMAKE_COMMAND} -E copy ${llext_pkg_input} ${llext_pkg_output}
+      DEPENDS ${llext_proc_target} ${llext_pkg_input}
     )
 
   elseif(CONFIG_XTENSA)
 
-    # Generate an intermediate file name
-    get_filename_component(output_dir ${output_file} DIRECTORY)
-    get_filename_component(output_name_we ${output_file} NAME_WE)
-    set(pre_output_file ${output_dir}/${output_name_we}.pre.llext)
-
-    # Need to convert the object file to a shared library, then strip some sections
+    # Need to strip the shared library of some sections
     add_custom_command(
-      OUTPUT ${output_file}
-      BYPRODUCTS ${pre_output_file}
-      COMMAND ${CMAKE_C_COMPILER} ${LLEXT_APPEND_FLAGS}
-              -o ${pre_output_file}
-              $<TARGET_OBJECTS:${target_name}_lib>
+      OUTPUT ${llext_pkg_output}
       COMMAND $<TARGET_PROPERTY:bintools,strip_command>
               $<TARGET_PROPERTY:bintools,strip_flag>
               $<TARGET_PROPERTY:bintools,strip_flag_remove_section>.xt.*
-              $<TARGET_PROPERTY:bintools,strip_flag_infile>${pre_output_file}
-              $<TARGET_PROPERTY:bintools,strip_flag_outfile>${output_file}
+              $<TARGET_PROPERTY:bintools,strip_flag_infile>${llext_pkg_input}
+              $<TARGET_PROPERTY:bintools,strip_flag_outfile>${llext_pkg_output}
               $<TARGET_PROPERTY:bintools,strip_flag_final>
-      DEPENDS ${target_name}_lib $<TARGET_OBJECTS:${target_name}_lib>
+      DEPENDS ${llext_proc_target} ${llext_pkg_input}
     )
 
   else()
     message(FATAL_ERROR "add_llext_target: unsupported architecture")
   endif()
+
+  # Add user-visible target and dependency, and fill in properties
+  get_filename_component(output_name ${llext_pkg_output} NAME)
+  add_custom_target(${target_name}
+    COMMENT "Generating ${output_name}"
+    DEPENDS ${llext_pkg_output}
+  )
+  set_target_properties(${target_name} PROPERTIES
+    lib_target ${llext_lib_target}
+    lib_output ${llext_lib_output}
+    pkg_input  ${llext_pkg_input}
+    pkg_output ${llext_pkg_output}
+  )
+endfunction()
+
+# Usage:
+#   add_llext_command(
+#     TARGET <target_name>
+#     PRE_BUILD | POST_BUILD | POST_PKG
+#     COMMAND <command> [...]
+#   )
+#
+# Add a custom command to an llext target that will be executed during
+# the build. The command will be executed at the specified build step and
+# can refer to <target>'s properties for build-specific details.
+#
+# The differrent build steps are:
+# - PRE_BUILD:  Before the llext code is linked, if the architecture uses
+#               dynamic libraries. This step can access `lib_target` and
+#               its own properties.
+# - POST_BUILD: After the llext code is built, but before packaging
+#               it in an .llext file. This step is expected to create a
+#               `pkg_input` file by reading the contents of `lib_output`.
+# - POST_PKG:   After the .llext file has been created. This can operate on
+#               the final llext file `pkg_output`.
+#
+# Anything else after COMMAND will be passed to add_custom_command() as-is
+# (including multiple commands and other options).
+function(add_llext_command)
+  set(options     PRE_BUILD POST_BUILD POST_PKG)
+  set(single_args TARGET)
+  # COMMAND and other options are passed to add_custom_command() as-is
+
+  cmake_parse_arguments(PARSE_ARGV 0 LLEXT "${options}" "${single_args}" "${multi_args}")
+  zephyr_check_arguments_required_all("add_llext_command" LLEXT TARGET)
+
+  # Check the target exists and refers to an llext target
+  set(target_name ${LLEXT_TARGET})
+  set(llext_lib_target  ${target_name}_llext_lib)
+  set(llext_proc_target ${target_name}_llext_proc)
+  if(NOT TARGET ${llext_lib_target})
+    message(FATAL_ERROR "add_llext_command: not an llext target: ${target_name}")
+  endif()
+
+  # ARM uses an object file representation so there is no link step.
+  if(CONFIG_ARM AND LLEXT_PRE_BUILD)
+    message(FATAL_ERROR
+	    "add_llext_command: PRE_BUILD not supported on this arch")
+  endif()
+
+  # Determine the build step and the target to attach the command to
+  # based on the provided options
+  if(LLEXT_PRE_BUILD)
+    # > before the object files are linked:
+    #   - execute user command(s) before the lib target's link step.
+    set(cmd_target ${llext_lib_target})
+    set(build_step PRE_LINK)
+  elseif(LLEXT_POST_BUILD)
+    # > after linking, but before llext packaging:
+    #   - stop default file copy to prevent user files from being clobbered;
+    #   - execute user command(s) after the (now empty) `llext_proc_target`.
+    set_property(TARGET ${llext_proc_target} PROPERTY has_post_build_cmds 1)
+    set(cmd_target ${llext_proc_target})
+    set(build_step POST_BUILD)
+  elseif(LLEXT_POST_PKG)
+    # > after the final llext binary is ready:
+    #   - execute user command(s) after the main target is done.
+    set(cmd_target ${target_name})
+    set(build_step POST_BUILD)
+  else()
+    message(FATAL_ERROR "add_llext_command: build step must be provided")
+  endif()
+
+  # Check that the first unparsed argument is the word COMMAND
+  list(GET LLEXT_UNPARSED_ARGUMENTS 0 command_str)
+  if(NOT command_str STREQUAL "COMMAND")
+    message(FATAL_ERROR "add_llext_command: COMMAND argument must be provided")
+  endif()
+
+  # Add the actual command(s) to the target
+  add_custom_command(
+    TARGET ${cmd_target} ${build_step}
+    ${LLEXT_UNPARSED_ARGUMENTS}
+    COMMAND_EXPAND_LISTS
+  )
 endfunction()

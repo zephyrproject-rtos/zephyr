@@ -31,7 +31,8 @@ endif()
 set(CMAKE_C_COMPILER_FORCED   1)
 set(CMAKE_CXX_COMPILER_FORCED 1)
 
-# No official documentation exists for the "Generic" value, except their wiki.
+# https://cmake.org/cmake/help/latest/variable/CMAKE_SYSTEM_NAME.html:
+#   The name of the operating system for which CMake is to build.
 #
 # https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/CrossCompiling:
 #   CMAKE_SYSTEM_NAME : this one is mandatory, it is the name of the target
@@ -40,7 +41,10 @@ set(CMAKE_CXX_COMPILER_FORCED 1)
 #   variable is used for constructing the file names of the platform files
 #   like Linux.cmake or Windows-gcc.cmake. If your target is an embedded
 #   system without OS set CMAKE_SYSTEM_NAME to "Generic".
-set(CMAKE_SYSTEM_NAME Generic)
+#
+# This will force CMake to load cmake/modules/Platform/Zephyr.cmake,
+# allowing Zephyr-specific embedded system features to be enabled.
+set(CMAKE_SYSTEM_NAME Zephyr)
 
 # https://cmake.org/cmake/help/latest/variable/CMAKE_SYSTEM_PROCESSOR.html:
 #   The name of the CPU CMake is building for.
@@ -74,7 +78,7 @@ else()
   set(CMAKE_CXX_BYTE_ORDER LITTLE_ENDIAN)
 endif()
 
-# We are not building dynamically loadable libraries
+# Do not build dynamically loadable libraries by default
 set(BUILD_SHARED_LIBS OFF)
 
 # Custom targets for compiler and linker flags.

@@ -17,5 +17,4 @@ set(LLEXT_APPEND_FLAGS
   -fPIC
   -nostdlib
   -nodefaultlibs
-  -shared
 )
