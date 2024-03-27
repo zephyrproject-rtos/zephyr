@@ -86,7 +86,7 @@ The CAP initiator also supports broadcast audio as a source.
                       (default 1)] [conns (<cnt> | all) (default 1)]
      unicast_list    :Unicast list streams
      unicast_update  :Unicast Update <all | stream [stream [stream...]]>
-     unicast_stop    :Unicast stop streams <all | stream [stream [stream...]]>
+     unicast_stop    :Unicast stop streams [stream [stream [stream...]]] (all by default)
      unicast_cancel  :Unicast cancel current procedure
 
 Before being able to perform any stream operation, the device must also perform the
