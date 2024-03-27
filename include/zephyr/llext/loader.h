@@ -68,6 +68,9 @@ struct llext_loader {
 	 */
 	void *(*peek)(struct llext_loader *ldr, size_t pos);
 
+	/** Total calculated .data size for relocatable extensions */
+	size_t prog_data_size;
+
 	/** @cond ignore */
 	elf_ehdr_t hdr;
 	elf_shdr_t sects[LLEXT_MEM_COUNT];
