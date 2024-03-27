@@ -78,6 +78,7 @@ void ptp_port_init(struct net_if *iface, void *user_data)
 	port->socket[0] = -1;
 	port->socket[1] = -1;
 
+	port->state_machine = dds->time_receiver_only ? ptp_tr_state_machine : ptp_state_machine;
 	port_ds_init(port);
 
 	port_timer_init(&port->timers.delay, port_timer_to_handler, port);

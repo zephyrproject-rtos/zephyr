@@ -72,6 +72,19 @@ enum ptp_port_state ptp_state_machine(enum ptp_port_state state,
 				      enum ptp_port_event event,
 				      bool tt_diff);
 
+/**
+ * @brief Finite State Machine for PTP Port that is configured as TimeReceiver-Only instance.
+ *
+ * @param[in] state   A current state of the Port
+ * @param[in] event   An event that occurred for the port
+ * @param[in] tt_diff True if Time Transmitter Clock has changed
+ *
+ * @return A new PTP Port state
+ */
+enum ptp_port_state ptp_tr_state_machine(enum ptp_port_state state,
+					 enum ptp_port_event event,
+					 bool tt_diff);
+
 #ifdef __cplusplus
 }
 #endif
