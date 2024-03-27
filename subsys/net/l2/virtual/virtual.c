@@ -84,6 +84,12 @@ static int virtual_send(struct net_if *iface, struct net_pkt *pkt)
 		return -ENOENT;
 	}
 
+	if (!net_if_is_up(iface)) {
+		NET_DBG("Interface %d is down.",
+			net_if_get_by_iface(iface));
+		return -ENETDOWN;
+	}
+
 	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
 		pkt_len = net_pkt_get_len(pkt);
 	}
