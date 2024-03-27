@@ -1,5 +1,5 @@
 .. zephyr:code-sample:: led-strip
-   :name: LED strip sample
+   :name: LED strip
    :relevant-api: led_strip_interface
 
    Control an LED strip example.
