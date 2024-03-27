@@ -493,15 +493,20 @@ static int pa_sync_term_request(struct bt_conn *conn,
 	return err;
 }
 
-static bool bass_source_is_duplicate(uint32_t broadcast_id, uint8_t adv_sid, bt_addr_le_t addr)
+/* BAP 6.5.4 states that the Broadcast Assistant shall not initiate the Add Source operation
+ * if the operation would result in duplicate values for the combined Source_Address_Type,
+ * Source_Adv_SID, and Broadcast_ID fields of any Broadcast Receive State characteristic exposed
+ * by the Scan Delegator.
+ */
+static bool bass_source_is_duplicate(uint32_t broadcast_id, uint8_t adv_sid, uint8_t addr_type)
 {
 	struct bass_recv_state_internal *state;
 
 	for (size_t i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
 		state = &scan_delegator.recv_states[i];
 
-		if (state != NULL && state->state.broadcast_id == broadcast_id
-		    && state->state.adv_sid == adv_sid && state->state.addr.type == addr.type) {
+		if (state != NULL && state->state.broadcast_id == broadcast_id &&
+			state->state.adv_sid == adv_sid && state->state.addr.type == addr_type) {
 			LOG_DBG("recv_state already exists at src_id=0x%02X", state->state.src_id);
 
 			return true;
@@ -556,7 +561,7 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 
 	broadcast_id = net_buf_simple_pull_le24(buf);
 
-	if (bass_source_is_duplicate(broadcast_id, state->adv_sid, state->addr)) {
+	if (bass_source_is_duplicate(broadcast_id, state->adv_sid, state->addr.type)) {
 		LOG_DBG("Adding broadcast_id=0x%06X, adv_sid=0x%02X, and addr.type=0x%02X would "
 			"result in duplication", state->broadcast_id, state->adv_sid,
 			state->addr.type);
@@ -664,6 +669,7 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 
 	if (pa_sync != BT_BAP_BASS_PA_REQ_NO_SYNC) {
 		int err;
+
 		err = pa_sync_request(conn, state, pa_sync, pa_interval);
 
 		if (err != 0) {
@@ -1137,11 +1143,10 @@ static ssize_t read_recv_state(struct bt_conn *conn,
 		k_sem_give(&read_buf_sem);
 
 		return ret_val;
-	} else {
-		LOG_DBG("Index %u: Not active", idx);
-
-		return bt_gatt_attr_read(conn, attr, buf, len, offset, NULL, 0);
 	}
+	LOG_DBG("Index %u: Not active", idx);
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, NULL, 0);
+
 }
 
 #define RECEIVE_STATE_CHARACTERISTIC(idx) \
