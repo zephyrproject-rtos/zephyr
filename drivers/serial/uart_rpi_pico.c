@@ -191,7 +191,6 @@ static int uart_rpi_init(const struct device *dev)
 	data->uart_config.parity = UART_CFG_PARITY_NONE;
 	data->uart_config.stop_bits = UART_CFG_STOP_BITS_1;
 	uart_rpi_set_format(dev, &data->uart_config);
-	hw_clear_bits(&uart_hw->lcr_h, UART_UARTLCR_H_FEN_BITS);
 	uart_hw->dr = 0U;
 
 	if (data->uart_config.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
