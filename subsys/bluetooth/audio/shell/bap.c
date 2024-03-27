@@ -2338,12 +2338,20 @@ static void audio_recv(struct bt_bap_stream *stream,
 
 	sh_stream->rx_cnt++;
 
-	if (info->ts == sh_stream->last_info.ts) {
-		sh_stream->dup_ts++;
-	}
+	if ((info->flags & BT_ISO_FLAGS_VALID) != 0) {
+		/* For valid ISO packets we check if they are invalid in other ways */
 
-	if (info->seq_num == sh_stream->last_info.seq_num) {
-		sh_stream->dup_psn++;
+		if (info->ts == sh_stream->last_info.ts) {
+			sh_stream->dup_ts++;
+		}
+
+		if (info->seq_num == sh_stream->last_info.seq_num) {
+			sh_stream->dup_psn++;
+		}
+
+		if (buf->len == 0U) {
+			sh_stream->empty_sdu_pkts++;
+		}
 	}
 
 	if (info->flags & BT_ISO_FLAGS_ERROR) {
@@ -2355,12 +2363,13 @@ static void audio_recv(struct bt_bap_stream *stream,
 	}
 
 	if ((sh_stream->rx_cnt % recv_stats_interval) == 0) {
-		shell_print(ctx_shell,
-			    "[%zu]: Incoming audio on stream %p len %u ts %u seq_num %u flags %u "
-			    "(dup ts %zu; dup psn %zu, err_pkts %zu, lost_pkts %zu)",
-			    sh_stream->rx_cnt, stream, buf->len, info->ts, info->seq_num,
-			    info->flags, sh_stream->dup_ts, sh_stream->dup_psn, sh_stream->err_pkts,
-			    sh_stream->lost_pkts);
+		shell_print(
+			ctx_shell,
+			"[%zu]: Incoming audio on stream %p len %u ts %u seq_num %u flags %u "
+			"(dup ts %zu; dup psn %zu, err_pkts %zu, lost_pkts %zu, empty SDUs %zu)",
+			sh_stream->rx_cnt, stream, buf->len, info->ts, info->seq_num, info->flags,
+			sh_stream->dup_ts, sh_stream->dup_psn, sh_stream->err_pkts,
+			sh_stream->lost_pkts, sh_stream->empty_sdu_pkts);
 	}
 
 	(void)memcpy(&sh_stream->last_info, info, sizeof(sh_stream->last_info));
@@ -2421,6 +2430,7 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 	printk("Stream %p started\n", bap_stream);
 
 #if defined(CONFIG_BT_AUDIO_RX)
+	sh_stream->empty_sdu_pkts = 0U;
 	sh_stream->lost_pkts = 0U;
 	sh_stream->err_pkts = 0U;
 	sh_stream->dup_psn = 0U;

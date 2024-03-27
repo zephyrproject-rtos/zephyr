@@ -85,6 +85,7 @@ struct shell_stream {
 #endif /* CONFIG_BT_AUDIO_TX */
 #if defined(CONFIG_BT_AUDIO_RX)
 	struct bt_iso_recv_info last_info;
+	size_t empty_sdu_pkts;
 	size_t lost_pkts;
 	size_t err_pkts;
 	size_t dup_psn;
