@@ -36,7 +36,7 @@ static inline int slice_time(struct k_thread *thread)
 	return ret;
 }
 
-bool sliceable(struct k_thread *thread)
+bool thread_is_sliceable(struct k_thread *thread)
 {
 	bool ret = is_preempt(thread)
 		&& slice_time(thread) != 0
@@ -72,7 +72,7 @@ void z_reset_time_slice(struct k_thread *thread)
 
 	z_abort_timeout(&slice_timeouts[cpu]);
 	slice_expired[cpu] = false;
-	if (sliceable(thread)) {
+	if (thread_is_sliceable(thread)) {
 		z_add_timeout(&slice_timeouts[cpu], slice_timeout,
 			      K_TICKS(slice_time(thread) - 1));
 	}
@@ -114,7 +114,7 @@ void z_time_slice(void)
 	pending_current = NULL;
 #endif
 
-	if (slice_expired[_current_cpu->id] && sliceable(curr)) {
+	if (slice_expired[_current_cpu->id] && thread_is_sliceable(curr)) {
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 		if (curr->base.slice_expired) {
 			k_spin_unlock(&_sched_spinlock, key);
