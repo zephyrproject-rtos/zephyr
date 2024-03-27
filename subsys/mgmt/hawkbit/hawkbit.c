@@ -97,6 +97,10 @@ static union {
 	struct hawkbit_cancel cancel;
 } hawkbit_results;
 
+static void after_update_default_cb(void);
+
+static hawkbit_after_update_cb_handler_t hawkbit_after_update_cb_handler = after_update_default_cb;
+
 static struct k_work_delayable hawkbit_work_handle;
 
 static struct k_sem probe_sem;
@@ -1196,6 +1200,29 @@ error:
 	return hb_context.code_status;
 }
 
+#ifdef CONFIG_HAWKBIT_AFTER_UPDATE_CUSTOM
+int hawkbit_set_after_update_cb(hawkbit_after_update_cb_handler_t cb)
+{
+	if (cb == NULL) {
+		LOG_ERR("Invalid callback");
+		return -EINVAL;
+	}
+
+	hawkbit_after_update_cb_handler = cb;
+
+	return 0;
+}
+#endif /* CONFIG_HAWKBIT_AFTER_UPDATE_CUSTOM */
+
+static void after_update_default_cb(void)
+{
+	if (IS_ENABLED(CONFIG_HAWKBIT_AFTER_UPDATE_REBOOT)) {
+		LOG_INF("Rebooting to the updated image");
+		k_sleep(K_SECONDS(10));
+		sys_reboot(SYS_REBOOT_WARM);
+	}
+}
+
 static void autohandler(struct k_work *work)
 {
 	switch (hawkbit_probe()) {
@@ -1221,7 +1248,11 @@ static void autohandler(struct k_work *work)
 		break;
 
 	case HAWKBIT_UPDATE_INSTALLED:
-		LOG_INF("Update installed, please reboot");
+		LOG_INF("Update installed");
+		if (!IS_ENABLED(CONFIG_HAWKBIT_AFTER_UPDATE_DO_NOTHING)) {
+			hawkbit_after_update_cb_handler();
+		}
+		LOG_INF("Please reboot");
 		break;
 
 	case HAWKBIT_DOWNLOAD_ERROR:

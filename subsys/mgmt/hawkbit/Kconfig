@@ -79,6 +79,29 @@ config HAWKBIT_DDI_SECURITY_TOKEN
 	  Authentication security token for the configured Hawkbit DDI
 	  authentication mode.
 
+choice HAWKBIT_AFTER_UPDATE
+	prompt "Action to be performed after a successful hawkBit update"
+	default HAWKBIT_AFTER_UPDATE_REBOOT
+	help
+	  Select the action to be performed after the update is completed.
+
+config HAWKBIT_AFTER_UPDATE_DO_NOTHING
+	bool "Do nothing after update is completed"
+	help
+	  Do nothing after the update is completed.
+
+config HAWKBIT_AFTER_UPDATE_REBOOT
+	bool "Reboot after update is completed"
+	help
+	  Reboot after the update is completed.
+
+config HAWKBIT_AFTER_UPDATE_CUSTOM
+	bool "Custom action after update is completed"
+	help
+	  Custom action after the update is completed.
+
+endchoice
+
 module = HAWKBIT
 module-str = Log Level for hawkbit
 module-help = Enables logging for Hawkbit code.

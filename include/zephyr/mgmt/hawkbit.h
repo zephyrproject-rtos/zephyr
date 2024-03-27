@@ -64,6 +64,22 @@ void hawkbit_autohandler(void);
 enum hawkbit_response hawkbit_probe(void);
 
 /**
+ * @brief Callback to perform an action after the update.
+ */
+typedef void (*hawkbit_after_update_cb_handler_t)(void);
+
+#ifdef CONFIG_HAWKBIT_AFTER_UPDATE_CUSTOM
+/**
+ * @brief Set the custom callback to perform an action after the update.
+ *
+ * @param cb The callback function.
+ * @retval 0 on success
+ * @retval -EINVAL if cb is NULL
+ */
+int hawkbit_set_after_update_cb(hawkbit_after_update_cb_handler_t cb);
+#endif /* CONFIG_HAWKBIT_AFTER_UPDATE_CUSTOM */
+
+/**
  * @}
  */
 
