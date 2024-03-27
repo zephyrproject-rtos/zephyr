@@ -1,0 +1,18 @@
+identifier: cortex_r8_virtual
+name: Cortex R8 Virtual Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 131072
+simulation: renode
+simulation_exec: renode
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+  renode:
+    uart: sysbus.uart0
+    resc: boards/renode/cortex_r8_virtual/support/cortex_r8_virtual.resc
+supported:
+  - uart
