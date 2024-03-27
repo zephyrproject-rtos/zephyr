@@ -160,6 +160,18 @@ int boot_read_bank_header(uint8_t area_id,
 			  size_t header_size);
 
 /**
+ * @brief Read the MCUboot header for the currently running image
+ *
+ * @param header On success, the returned header information is available
+ *               in this structure.
+ * @param header_size Size of the header structure passed by the caller.
+ *                    If this is not large enough to contain all of the
+ *                    necessary information, an error is returned.
+ * @return Zero on success, a negative value on error.
+ */
+int boot_read_img_header(struct mcuboot_img_header *header, size_t header_size);
+
+/**
  * @brief Check if the currently running image is confirmed as OK.
  *
  * MCUboot can perform "test" upgrades. When these occur, a new
