@@ -683,7 +683,8 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 		case 'a':
 			val = atoi(state->optarg);
 
-			if ((val < 5) || (val > 1000)) {
+			if ((val < WIFI_MGMT_SCAN_MIN_DWELL_TIME_ACTIVE) ||
+			    (val > WIFI_MGMT_SCAN_MAX_DWELL_TIME_ACTIVE)) {
 				PR_ERROR("Invalid dwell_time_active val\n");
 				return -ENOEXEC;
 			}
@@ -694,7 +695,8 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 		case 'p':
 			val = atoi(state->optarg);
 
-			if ((val < 10) || (val > 1000)) {
+			if ((val < WIFI_MGMT_SCAN_MIN_DWELL_TIME_PASSIVE) ||
+			    (val > WIFI_MGMT_SCAN_MAX_DWELL_TIME_PASSIVE)) {
 				PR_ERROR("Invalid dwell_time_passive val\n");
 				return -ENOEXEC;
 			}
@@ -715,7 +717,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 		case 'm':
 			val = atoi(state->optarg);
 
-			if ((val < 0) || (val > 65535)) {
+			if ((val < 0) || (val > WIFI_MGMT_SCAN_MAX_BSS_CNT)) {
 				PR_ERROR("Invalid max_bss val\n");
 				return -ENOEXEC;
 			}
@@ -752,7 +754,10 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 static int cmd_wifi_scan(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
-	struct wifi_scan_params params = { .dwell_time_active = 50, .dwell_time_passive = 130, };
+	struct wifi_scan_params params = { .dwell_time_active =
+					    WIFI_MGMT_SCAN_DEFAULT_DWELL_TIME_ACTIVE,
+					   .dwell_time_passive =
+					    WIFI_MGMT_SCAN_DEFAULT_DWELL_TIME_PASSIVE, };
 	bool do_scan = true;
 	int opt_num;
 
