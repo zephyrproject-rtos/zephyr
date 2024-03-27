@@ -105,9 +105,14 @@ It is important to emphasize that this method has drawbacks (see above) and
 
 .. note::
 
-    When using this method of device power management, the CPU will enter
-    a low power state only if no devices are in the middle of a hardware
-    transaction that cannot be interrupted.
+    When using this method of device power management, the CPU will not
+    enter a low-power state if a device cannot be suspended. For example,
+    if a device returns an error such as ``-EBUSY`` in response to the
+    ``PM_DEVICE_ACTION_SUSPEND`` action, indicating it is in the middle of
+    a transaction that cannot be interrupted. Another condition that
+    prevents the CPU from entering a low-power state is if the option
+    :kconfig:option:`CONFIG_PM_NEED_ALL_DEVICES_IDLE` is set and a device
+    is marked as busy.
 
 .. note::
 
