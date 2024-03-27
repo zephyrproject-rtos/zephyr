@@ -41,4 +41,6 @@ source "drivers/video/Kconfig.ov7725"
 
 source "drivers/video/Kconfig.ov2640"
 
+source "drivers/video/Kconfig.arducam_mega"
+
 endif # VIDEO
