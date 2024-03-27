@@ -1,0 +1,61 @@
+#
+# Copyright (c) 2024 Bert Outtier
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Texas Instruments ADCXX1C I2C Voltage sensor
+
+compatible: "ti,adcxx1c"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  alert-gpios:
+    type: phandle-array
+    description: |
+      ALERT pin.
+
+      This pin signals active high when produced by the sensor. The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.
+
+  resolution:
+    type: int
+    description: |
+      ADC resolution. This property takes precedence over the
+      variant property.
+    enum:
+      - 8
+      - 10
+      - 12
+
+  variant:
+    type: string
+    description: |
+      Variant of the ADC.
+
+      This property should be set to one of the following values:
+
+      - "ADC081C"
+      - "ADC101C"
+      - "ADC121C"
+    enum:
+      - "ADC081C"
+      - "ADC101C"
+      - "ADC121C"
+
+  cycle:
+    type: int
+    default: 0
+    description: |
+      Conversion interval configuration value
+    enum:
+      - 0
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1024
+      - 2048

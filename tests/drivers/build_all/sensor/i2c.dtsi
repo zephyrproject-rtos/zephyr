@@ -1030,3 +1030,13 @@ test_i2c_iis328dq: iis328dq@8a {
 	int2-gpios = <&test_gpio 0 0>;
 	threshold-int-pad = <2>;
 };
+
+test_i2c_adcxx1c: adcxx1c@54 {
+	compatible = "ti,adcxx1c";
+	status = "okay";
+	reg = <0x54>;
+	alert-gpios = <&test_gpio 0 0>;
+	variant = "ADC081C";
+	resolution = <8>;
+	cycle = <2048>;
+};

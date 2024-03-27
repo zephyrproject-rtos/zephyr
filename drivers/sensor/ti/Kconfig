@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # zephyr-keep-sorted-start
+source "drivers/sensor/ti/adcxx1c/Kconfig"
 source "drivers/sensor/ti/bq274xx/Kconfig"
 source "drivers/sensor/ti/fdc2x1x/Kconfig"
 source "drivers/sensor/ti/ina219/Kconfig"
