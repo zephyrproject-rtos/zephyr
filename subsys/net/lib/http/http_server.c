@@ -249,6 +249,8 @@ int http_server_start(struct http_server_ctx *ctx)
 	bool found_slot;
 	int new_socket;
 	int ret, i, j;
+	int sock_error;
+	socklen_t optlen = sizeof(int);
 
 	value = 0;
 
@@ -271,14 +273,26 @@ int http_server_start(struct http_server_ctx *ctx)
 			return 0;
 		}
 
-		for (i = 0; i < ARRAY_SIZE(ctx->fds); i++) {
+		for (i = 1; i < ARRAY_SIZE(ctx->fds); i++) {
 			if (ctx->fds[i].fd < 0) {
 				continue;
 			}
 
 			if (ctx->fds[i].revents & POLLERR) {
-				LOG_DBG("Error on fd %d", ctx->fds[i].fd);
-				continue;
+				(void)zsock_getsockopt(ctx->fds[i].fd, SOL_SOCKET,
+						       SO_ERROR, &sock_error, &optlen);
+				LOG_DBG("Error on fd %d %d", ctx->fds[i].fd, sock_error);
+
+				if (i >= ctx->listen_fds) {
+					client = &ctx->clients[i - ctx->listen_fds];
+					close_client_connection(ctx, client);
+					continue;
+				}
+
+				/* Listening socket error, abort. */
+				LOG_ERR("Listening socket error, aborting.");
+				return -sock_error;
+
 			}
 
 			if (ctx->fds[i].revents & POLLHUP) {
