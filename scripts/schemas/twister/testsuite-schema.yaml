@@ -207,6 +207,21 @@ schema;scenario-schema:
     "sysbuild":
       type: bool
       required: false
+    "extra_script":
+      type: map
+      required: false
+      mapping:
+        "platforms":
+          type: seq
+          required: false
+          sequence:
+            - type: str
+        "script_type":
+          type: seq
+          required: false
+          sequence:
+            - type: str
+              enum: ["pre_script", "post_flash_script", "post_script"]
 
 type: map
 mapping:
