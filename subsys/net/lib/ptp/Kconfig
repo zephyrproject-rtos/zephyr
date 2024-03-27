@@ -156,6 +156,13 @@ config PTP_PRIORITY2
 	default 128
 	range 0 255
 
+config PTP_TIME_RECEIVER_ONLY
+	bool "Configure Clock as timeReceiver PTP Instance"
+	depends on PTP_ORDINARY_CLOCK
+	help
+	  An Oridinary Clock may be designed to ba a timeReceiver PTP Instnace. In that state
+	  the instance can never enter the TIME_TRANSMITTER state.
+
 config PTP_ANNOUNCE_RECV_TIMEOUT
 	int "Number of announce intervals to wait"
 	default 3
