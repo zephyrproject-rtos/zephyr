@@ -122,6 +122,7 @@ static int sreq_set_address(struct usbd_contex *const uds_ctx)
 static int sreq_set_configuration(struct usbd_contex *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
+	const enum usbd_speed speed = usbd_bus_speed(uds_ctx);
 	int ret;
 
 	LOG_INF("Set Configuration Request value %u", setup->wValue);
@@ -142,7 +143,7 @@ static int sreq_set_configuration(struct usbd_contex *const uds_ctx)
 		return 0;
 	}
 
-	if (setup->wValue && !usbd_config_exist(uds_ctx, setup->wValue)) {
+	if (setup->wValue && !usbd_config_exist(uds_ctx, speed, setup->wValue)) {
 		errno = -EPERM;
 		return 0;
 	}
@@ -211,7 +212,7 @@ static void sreq_feature_halt_notify(struct usbd_contex *const uds_ctx,
 	struct usbd_class_node *c_nd = usbd_class_get_by_ep(uds_ctx, ep);
 
 	if (c_nd != NULL) {
-		usbd_class_feature_halt(c_nd, ep, halted);
+		usbd_class_feature_halt(c_nd->c_data, ep, halted);
 	}
 }
 
@@ -440,33 +441,78 @@ static int sreq_get_status(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
+/*
+ * This function handles configuration and USB2.0 other-speed-configuration
+ * descriptor type requests.
+ */
 static int sreq_get_desc_cfg(struct usbd_contex *const uds_ctx,
 			     struct net_buf *const buf,
-			     const uint8_t idx)
+			     const uint8_t idx,
+			     const bool other_cfg)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
+	enum usbd_speed speed = usbd_bus_speed(uds_ctx);
+	struct usb_cfg_descriptor other_desc;
 	struct usb_cfg_descriptor *cfg_desc;
 	struct usbd_config_node *cfg_nd;
+	enum usbd_speed get_desc_speed;
 	struct usbd_class_node *c_nd;
 	uint16_t len;
 
-	cfg_nd = usbd_config_get(uds_ctx, idx + 1);
+	/*
+	 * If the other-speed-configuration-descriptor is requested and the
+	 * controller does not support high speed, respond with an error.
+	 */
+	if (other_cfg && usbd_caps_speed(uds_ctx) != USBD_SPEED_HS) {
+		errno = -ENOTSUP;
+		return 0;
+	}
+
+	if (other_cfg) {
+		if (speed == USBD_SPEED_FS) {
+			get_desc_speed = USBD_SPEED_HS;
+		} else {
+			get_desc_speed = USBD_SPEED_FS;
+		}
+	} else {
+		get_desc_speed = speed;
+	}
+
+	cfg_nd = usbd_config_get(uds_ctx, get_desc_speed, idx + 1);
 	if (cfg_nd == NULL) {
 		LOG_ERR("Configuration descriptor %u not found", idx + 1);
 		errno = -ENOTSUP;
 		return 0;
 	}
 
-	cfg_desc = cfg_nd->desc;
-	len = MIN(setup->wLength, net_buf_tailroom(buf));
-	net_buf_add_mem(buf, cfg_desc, MIN(len, cfg_desc->bLength));
+	if (other_cfg) {
+		/* Copy the configuration descriptor and update the type */
+		memcpy(&other_desc, cfg_nd->desc, sizeof(other_desc));
+		other_desc.bDescriptorType = USB_DESC_OTHER_SPEED;
+		cfg_desc = &other_desc;
+	} else {
+		cfg_desc = cfg_nd->desc;
+	}
+
+	net_buf_add_mem(buf, cfg_desc, MIN(net_buf_tailroom(buf), cfg_desc->bLength));
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
-		struct usb_desc_header *head = c_nd->data->desc;
-		size_t desc_len = usbd_class_desc_len(c_nd);
+		struct usb_desc_header **dhp;
 
-		len = MIN(setup->wLength, net_buf_tailroom(buf));
-		net_buf_add_mem(buf, head, MIN(len, desc_len));
+		dhp = usbd_class_get_desc(c_nd->c_data, get_desc_speed);
+		if (dhp == NULL) {
+			continue;
+		}
+
+		while (*dhp != NULL && (*dhp)->bLength != 0) {
+			len = MIN(net_buf_tailroom(buf), (*dhp)->bLength);
+			net_buf_add_mem(buf, *dhp, len);
+			dhp++;
+		}
+	}
+
+	if (buf->len > setup->wLength) {
+		net_buf_remove_mem(buf, buf->len - setup->wLength);
 	}
 
 	LOG_DBG("Get Configuration descriptor %u, len %u", idx, buf->len);
@@ -483,7 +529,17 @@ static int sreq_get_desc(struct usbd_contex *const uds_ctx,
 	size_t len;
 
 	if (type == USB_DESC_DEVICE) {
-		head = uds_ctx->desc;
+		switch (usbd_bus_speed(uds_ctx)) {
+		case USBD_SPEED_FS:
+			head = uds_ctx->fs_desc;
+			break;
+		case USBD_SPEED_HS:
+			head = uds_ctx->hs_desc;
+			break;
+		default:
+			errno = -ENOTSUP;
+			return 0;
+		}
 	} else {
 		head = usbd_get_descriptor(uds_ctx, type, idx);
 	}
@@ -495,6 +551,43 @@ static int sreq_get_desc(struct usbd_contex *const uds_ctx,
 
 	len = MIN(setup->wLength, net_buf_tailroom(buf));
 	net_buf_add_mem(buf, head, MIN(len, head->bLength));
+
+	return 0;
+}
+
+static int sreq_get_dev_qualifier(struct usbd_contex *const uds_ctx,
+				  struct net_buf *const buf)
+{
+	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
+	/* At Full-Speed we want High-Speed descriptor and vice versa */
+	struct usb_device_descriptor *d_desc =
+		usbd_bus_speed(uds_ctx) == USBD_SPEED_FS ?
+		uds_ctx->hs_desc : uds_ctx->fs_desc;
+	struct usb_device_qualifier_descriptor q_desc = {
+		.bLength = sizeof(struct usb_device_qualifier_descriptor),
+		.bDescriptorType = USB_DESC_DEVICE_QUALIFIER,
+		.bcdUSB = d_desc->bcdUSB,
+		.bDeviceClass = d_desc->bDeviceClass,
+		.bDeviceSubClass = d_desc->bDeviceSubClass,
+		.bDeviceProtocol = d_desc->bDeviceProtocol,
+		.bMaxPacketSize0 = d_desc->bMaxPacketSize0,
+		.bNumConfigurations = d_desc->bNumConfigurations,
+		.bReserved = 0U,
+	};
+	size_t len;
+
+	/*
+	 * If the Device Qualifier descriptor is requested and the controller
+	 * does not support high speed, respond with an error.
+	 */
+	if (usbd_caps_speed(uds_ctx) != USBD_SPEED_HS) {
+		errno = -ENOTSUP;
+		return 0;
+	}
+
+	LOG_DBG("Get Device Qualifier");
+	len = MIN(setup->wLength, net_buf_tailroom(buf));
+	net_buf_add_mem(buf, &q_desc, MIN(len, q_desc.bLength));
 
 	return 0;
 }
@@ -513,12 +606,15 @@ static int sreq_get_descriptor(struct usbd_contex *const uds_ctx,
 	case USB_DESC_DEVICE:
 		return sreq_get_desc(uds_ctx, buf, USB_DESC_DEVICE, 0);
 	case USB_DESC_CONFIGURATION:
-		return sreq_get_desc_cfg(uds_ctx, buf, desc_idx);
+		return sreq_get_desc_cfg(uds_ctx, buf, desc_idx, false);
+	case USB_DESC_OTHER_SPEED:
+		return sreq_get_desc_cfg(uds_ctx, buf, desc_idx, true);
 	case USB_DESC_STRING:
 		return sreq_get_desc(uds_ctx, buf, USB_DESC_STRING, desc_idx);
+	case USB_DESC_DEVICE_QUALIFIER:
+		return sreq_get_dev_qualifier(uds_ctx, buf);
 	case USB_DESC_INTERFACE:
 	case USB_DESC_ENDPOINT:
-	case USB_DESC_OTHER_SPEED:
 	default:
 		break;
 	}
@@ -651,9 +747,9 @@ static int nonstd_request(struct usbd_contex *const uds_ctx,
 
 	if (c_nd != NULL) {
 		if (reqtype_is_to_device(setup)) {
-			ret = usbd_class_control_to_dev(c_nd, setup, dbuf);
+			ret = usbd_class_control_to_dev(c_nd->c_data, setup, dbuf);
 		} else {
-			ret = usbd_class_control_to_host(c_nd, setup, dbuf);
+			ret = usbd_class_control_to_host(c_nd->c_data, setup, dbuf);
 		}
 	} else {
 		errno = -ENOTSUP;
