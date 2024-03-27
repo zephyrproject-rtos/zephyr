@@ -1,0 +1,83 @@
+# Copyright (c) 2024 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config OCPP
+	bool "Open Charge Point Protocol [EXPERIMENTAL]"
+	depends on JSONC
+	depends on WEBSOCKET_CLIENT
+	select EXPERIMENTAL
+	help
+	  This option enables the open charge point protocol library
+
+if OCPP
+
+module=OCPP
+module-dep=NET_LOG
+module-str=Log level for OCPP
+module-help=Enables ocpp debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config OCPP_INT_THREAD_STACKSIZE
+	int "OCPP internal thread stacksize"
+	default 4096
+	help
+	   OCPP internal thread stacksize
+
+config OCPP_WSREADER_THREAD_STACKSIZE
+	int "OCPP websocket reader thread stacksize"
+	default 4096
+	help
+	   OCPP websocket reader thread stacksize
+
+config OCPP_RECV_BUFFER_SIZE
+	int "OCPP websocket recive buffer size"
+	default 2048
+	help
+	   OCPP websocket recive buffer size
+
+config OCPP_INTERNAL_MSGQ_CNT
+	int "OCPP internal message queue count"
+	default 10
+	help
+	   Messages communication between websocket reader and internal
+	   process thread
+
+config OCPP_MSG_JSON
+	bool "PDU message format as JSON"
+	default y
+	help
+	   If enabled y, then the Charge Point and Central System PDU message
+	   format as JSON
+
+config OCPP_PROFILE_SMART_CHARGE
+	bool "OCPP profile smart charging"
+	help
+	  Enables the OCPP library to support the Smart Charging profile
+	  functionality. Charge Point may support this profile as optional.
+
+config OCPP_PROFILE_REMOTE_TRIG
+	bool "OCPP profile remote trigger"
+	help
+	  Enables the OCPP library to support the Remote Trigger
+	  functionality. Charge Point may support this profile as optional.
+
+config OCPP_PROFILE_RESERVATION
+	bool "OCPP profile reservation"
+	help
+	  Enables the OCPP library to support the Profile Reservation
+	  functionality. Charge Point may support this profile as optional.
+
+config OCPP_PROFILE_LOCAL_AUTH_LIST
+	bool "OCPP profile local authorization list"
+	help
+	  Enables the OCPP library to support the Local Authorization List
+	  functionality. Stores IdTag and its validity information in the
+	  persistent stroage. Charge Point may support this as optional.
+
+config OCPP_PROFILE_FIRMWARE_MGNT
+	bool "OCPP profile firmware management"
+	help
+	  Enables the OCPP library to support the Firmware Management of
+	  Charge Point as optional profile.
+
+endif # OCPP

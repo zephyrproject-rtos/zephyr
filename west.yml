@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: linumiz
+      url-base: https://github.com/linumiz
 
   group-filter: [-babblesim, -optional]
 
@@ -337,6 +339,10 @@ manifest:
     - name: zcbor
       revision: 75d088037eb237b18e7ec1f47c9ce494b9b95aab
       path: modules/lib/zcbor
+    - name: json-c
+      remote: linumiz
+      path: modules/lib/json-c
+      revision: dev/zephyr
 
   self:
     path: zephyr

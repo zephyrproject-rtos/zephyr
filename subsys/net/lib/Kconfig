@@ -23,6 +23,8 @@ source "subsys/net/lib/socks/Kconfig"
 
 source "subsys/net/lib/sntp/Kconfig"
 
+source "subsys/net/lib/ocpp/Kconfig"
+
 endmenu
 
 menu "Network Libraries"

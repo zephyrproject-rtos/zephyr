@@ -2550,6 +2550,7 @@ Networking:
   files-exclude:
     - doc/connectivity/networking/api/gptp.rst
     - doc/connectivity/networking/api/ieee802154.rst
+    - doc/connectivity/networking/api/ocpp.rst
     - doc/connectivity/networking/api/wifi.rst
     - include/zephyr/net/gptp.h
     - include/zephyr/net/ieee802154*.h
@@ -2559,6 +2560,7 @@ Networking:
     - samples/net/gptp/
     - samples/net/sockets/coap_*/
     - samples/net/lwm2m_client/
+    - samples/net/ocpp/
     - samples/net/wifi/
     - samples/net/dhcpv4_client/
     - subsys/net/buf*.c
@@ -2568,10 +2570,12 @@ Networking:
     - subsys/net/lib/coap/
     - subsys/net/lib/config/ieee802154*
     - subsys/net/lib/lwm2m/
+    - subsys/net/lib/ocpp/
     - subsys/net/lib/tls_credentials/
     - subsys/net/lib/dhcpv4/
     - tests/net/dhcpv4/
     - tests/net/ieee802154/
+    - tests/net/lib/ocpp/
     - tests/net/wifi/
   labels:
     - "area: Networking"
@@ -2740,6 +2744,17 @@ Networking:
     - "area: IEEE 802.15.4"
   tests:
     - net.ieee802154
+
+"Networking: OCPP":
+  status: maintained
+  maintainers:
+    - ssekar15
+  files:
+    - samples/net/ocpp/
+    - subsys/net/lib/ocpp/
+    - tests/net/lib/ocpp/
+  labels:
+    - "area: OCPP"
 
 "Networking: OpenThread":
   status: maintained
@@ -4798,3 +4813,12 @@ zbus:
     - "area: Linkable Loadable Extensions"
   tests:
     - llext
+
+"West project: json-c":
+  status: maintained
+  maintainers:
+    - parthitce
+  files:
+    - modules/json-c/
+  labels:
+    - "area: JSON"
