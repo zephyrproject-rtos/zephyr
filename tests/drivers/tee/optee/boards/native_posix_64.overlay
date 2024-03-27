@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2023 EPAM Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+ / {
+	firmware {
+		 optee {
+			compatible = "linaro,optee-tz";
+			method = "smc";
+			status = "okay";
+		 };
+	};
+};
