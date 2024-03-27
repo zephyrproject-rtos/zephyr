@@ -55,6 +55,8 @@ struct lll_sync_iso {
 
 	uint8_t stream_curr:5;
 
+	uint8_t establish_events:3;
+
 	uint8_t next_chan_use;
 
 	/* Encryption */
