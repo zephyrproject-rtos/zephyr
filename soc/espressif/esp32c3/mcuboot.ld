@@ -295,6 +295,7 @@ SECTIONS
   .flash.text : ALIGN(IROM_SEG_ALIGN)
   {
     _stext = .;
+    __text_region_start = .;
     _text_start = ABSOLUTE(.);
 
     *(.literal .text .literal.* .text.*)
@@ -312,6 +313,7 @@ SECTIONS
     . += 16;
 
     _text_end = ABSOLUTE(.);
+    __text_region_end = .;
     _etext = .;
 
     /* Similar to _iram_start, this symbol goes here so it is
