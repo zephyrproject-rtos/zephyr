@@ -7,14 +7,6 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 60
 
-# In the LPC55XXX Family, this is currently being used to set the
-# core clock value at it's highest frequency which clocks at 150MHz.
-# Note that flash programming operations are limited to 100MHz, and
-# this PLL should not be used as the core clock in those cases.
-config INIT_PLL1
-	default "y"
-	depends on !(SOC_LPC55S06 || FLASH || BUILD_WITH_TFM)
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 144000000 if INIT_PLL1
 	default 96000000
