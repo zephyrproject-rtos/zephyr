@@ -1,0 +1,17 @@
+sample:
+  name: X-NUCLEO-NFC04A1 shield
+common:
+  min_ram: 16
+tests:
+  sample.shields.x_nucleo_nfc04a1.standard:
+    harness: shield
+    tags: shield
+    depends_on:
+      - arduino_i2c
+      - arduino_gpio
+    platform_exclude:
+      - hifive1
+      - mimxrt1010_evk
+      - hifive1_revb
+      - rv32m1_vega_zero_riscy
+      - rv32m1_vega_ri5cy

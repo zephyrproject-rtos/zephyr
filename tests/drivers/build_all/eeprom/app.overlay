@@ -51,6 +51,12 @@
 				wp-gpios = <&test_gpio 0 0>;
 				/* read-only; */
 			};
+
+			test_i2c_st25dv: st25dv@2 {
+				compatible = "st,st25dv";
+				reg = <0x2>;
+				size = <32768>;
+			};
 		};
 
 		test_spi: spi@33334444 {

@@ -1,0 +1,17 @@
+# Copyright (c) 2023 Kickmaker
+# Copyright (c) 2021 Martin Schröder <info@swedishembedded.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST25DV NFC as EEPROM
+
+compatible: "st,st25dv"
+
+include: eeprom-base.yaml
+
+properties:
+  reg:
+    required: true
+  size:
+    required: true
+  i2c-transfer-is-limited:
+    type: boolean

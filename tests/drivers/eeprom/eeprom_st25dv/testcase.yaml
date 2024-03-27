@@ -1,0 +1,17 @@
+common:
+  tags:
+    - drivers
+tests:
+  drivers.eeprom.eeprom_st25dv:
+    # Tests overwrite EEPROM content, only run on select boards
+    platform_allow:
+      - nucleo_g0b1re
+    extra_args: SHIELD=x_nucleo_nfc04a1
+    harness_config:
+      fixture: fixture_shield_x_nucleo_nfc04a1
+  drivers.eeprom.eeprom_st25dv.build:
+    # Build-only test for boards with EEPROMs
+    build_only: true
+    platform_allow:
+      - nucleo_g0b1re
+    extra_args: SHIELD=x_nucleo_nfc04a1
