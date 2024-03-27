@@ -111,6 +111,7 @@ broadmobi	Shanghai Broadmobi Communication Technology Co.,Ltd.
 bticino	Bticino International
 buffalo	Buffalo, Inc.
 bur	B&R Industrial Automation GmbH
+bytesatwork	bytesatwork AG
 calaosystems	CALAO Systems SAS
 calxeda	Calxeda
 canaan	Canaan, Inc.

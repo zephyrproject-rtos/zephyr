@@ -1,0 +1,151 @@
+/*
+ * Copyrigtt (c) 2024 bytesatwork AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf52832_qfaa.dtsi>
+#include "bytesensi_l_pinctrl.dtsi"
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "bytesatwork BLE/LORA sensor board";
+	compatible = "bytesatwork,bytesensi-l";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		/* Alias for lora samples */
+		lora0 = &lora;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x32000>;
+		};
+		slot1_partition: partition@3e000 {
+			label = "image-1";
+			reg = <0x0003E000 0x32000>;
+		};
+		scratch_partition: partition@70000 {
+			label = "image-scratch";
+			reg = <0x00070000 0xa000>;
+		};
+		storage_partition: partition@7a000 {
+			label = "storage";
+			reg = <0x0007a000 0x00005000>;
+		};
+	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+
+	/* Enable 1-wire to enable i2c bus as well */
+	one-wire-gpio {
+		gpio-hog;
+		gpios = <7 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	light_sensor: apds9960@39 {
+		status = "okay";
+		compatible = "avago,apds9960";
+		reg = <0x39>;
+		int-gpios = <&gpio0 25 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	};
+
+	temperature_sensor: tmp116@4a {
+		status = "okay";
+		compatible = "ti,tmp116";
+		reg = <0x4a>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		eeprom: ti_tmp116_eeprom@0 {
+			compatible = "ti,tmp116-eeprom";
+			reg = <0x0>;
+			read-only;
+		};
+	};
+
+	gas_sensor: ccs811@5a {
+		status = "okay";
+		compatible = "ams,ccs811";
+		reg = <0x5a>;
+		irq-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+		wake-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+	};
+
+	pressure_sensor: lps22hb-press@5c {
+		status = "okay";
+		compatible = "st,lps22hb-press";
+		reg = <0x5c>;
+	};
+};
+
+&spi1 {
+	status = "okay";
+	compatible = "nordic,nrf-spi";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
+	cs-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>,
+		   <&gpio0 5 GPIO_ACTIVE_LOW>;
+
+	lora: lora@0 {
+		status = "okay";
+		compatible = "semtech,sx1276";
+		reg = <0>;
+		reset-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+		dio-gpios =
+			<&gpio0 19 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			<&gpio0 20 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			<&gpio0 22 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			<&gpio0 23 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		spi-max-frequency = <1000000>;
+		power-amplifier-output = "pa-boost";
+	};
+
+	nor_flash: mx25r6435f@1 {
+		status = "okay";
+		compatible ="jedec,spi-nor";
+		size = <0x4000000>;
+		reg = <1>;
+		spi-max-frequency = <8000000>;
+		status = "okay";
+		jedec-id = [c2 28 17];
+	};
+};
