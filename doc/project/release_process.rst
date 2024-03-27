@@ -172,13 +172,6 @@ The following syntax should be used for releases and tags in Git:
 
   - v[Major].[Minor].[Patch Level]-rc[RC Number]
   - v[Major].[Minor].[Patch Level]
-  - v[Major].[Minor].99 - A tag applied to main branch to signify that work on
-    v[Major].[Minor+1] has started. For example, v1.7.99 will be tagged at the
-    start of v1.8 process. The tag corresponds to
-    VERSION_MAJOR/VERSION_MINOR/PATCHLEVEL macros as defined for a
-    work-in-progress main branch version. Presence of this tag allows generation of
-    sensible output for "git describe" on main branch, as typically used for
-    automated builds and CI tools.
 
 
 .. figure:: release_flow.png
