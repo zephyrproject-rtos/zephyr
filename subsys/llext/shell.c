@@ -5,6 +5,9 @@
  *
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include <zephyr/sys/slist.h>
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
