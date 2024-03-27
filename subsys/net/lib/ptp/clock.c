@@ -217,6 +217,27 @@ const struct ptp_parent_ds *ptp_clock_parent_ds(void)
 	return &clock.parent_ds;
 }
 
+const struct ptp_dataset *ptp_clock_ds(void)
+{
+	struct ptp_dataset *ds = &clock.dataset;
+
+	ds->priority1		 = clock.default_ds.priority1;
+	ds->clk_quality		 = clock.default_ds.clk_quality;
+	ds->priority2		 = clock.default_ds.priority2;
+	ds->steps_rm		 = 0;
+	ds->sender.port_number	 = 0;
+	ds->receiver.port_number = 0;
+	memcpy(&ds->clk_id, &clock.default_ds.clk_id, sizeof(ptp_clk_id));
+	memcpy(&ds->sender.clk_id, &clock.default_ds.clk_id, sizeof(ptp_clk_id));
+	memcpy(&ds->receiver.clk_id, &clock.default_ds.clk_id, sizeof(ptp_clk_id));
+	return ds;
+}
+
+const struct ptp_dataset *ptp_clock_best_foreign_ds(void)
+{
+	return clock.best ? &clock.best->dataset : NULL;
+}
+
 void ptp_clock_pollfd_invalidate(void)
 {
 	clock.pollfd_valid = false;
