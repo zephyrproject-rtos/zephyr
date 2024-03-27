@@ -263,11 +263,9 @@ Your board directory should look like this:
    │   └── index.rst
    ├── Kconfig.plank
    ├── Kconfig.defconfig
-   ├── plank_defconfig
    ├── plank_<qualifiers>_defconfig
-   ├── plank.dts
    ├── plank_<qualifiers>.dts
-   └── plank.yaml
+   └── plank_<qualifiers>.yaml
 
 Replace ``plank`` with your board's name, of course.
 
@@ -278,10 +276,9 @@ The mandatory files are:
    CPU clusters for multi-core SoCs are not described in this file as they are
    inherited from the SoC's YAML description.
 
-#. :file:`plank.dts` or :file:`plank_<qualifiers>.dts`: a hardware description
-   in :ref:`devicetree <dt-guide>` format. This declares your SoC, connectors,
-   and any other hardware components such as LEDs, buttons, sensors, or
-   communication peripherals (USB, BLE controller, etc).
+#. :file:`plank_<qualifiers>.dts`: a hardware description in :ref:`devicetree <dt-guide>`
+   format. This declares your SoC, connectors, and any other hardware components such as
+   LEDs, buttons, sensors, or communication peripherals (USB, BLE controller, etc).
 
 #. :file:`Kconfig.plank`: the base software configuration for selecting SoC and
    other board and SoC related settings. Kconfig settings outside of the board
@@ -294,15 +291,14 @@ The optional files are:
 - :file:`Kconfig`, :file:`Kconfig.defconfig` software configuration in
   :ref:`kconfig` formats. This provides default settings for software features
   and peripheral drivers.
-- :file:`plank_defconfig` and :file:`plank_<qualifiers>_defconfig`: software
-  configuration in Kconfig ``.conf`` format.
+- :file:`plank_<qualifiers>_defconfig`: software configuration in Kconfig ``.conf`` format.
 - :file:`board.cmake`: used for :ref:`flash-and-debug-support`
 - :file:`CMakeLists.txt`: if you need to add additional source files to
   your build.
 - :file:`doc/index.rst`, :file:`doc/plank.png`: documentation for and a picture
   of your board. You only need this if you're :ref:`contributing-your-board` to
   Zephyr.
-- :file:`plank.yaml`: a YAML file with miscellaneous metadata used by the
+- :file:`plank_<qualifiers>.yaml`: a YAML file with miscellaneous metadata used by the
   :ref:`twister_script`.
 
 Board qualifiers of the form ``<soc>/<cpucluster>/<variant>`` are normalized so
@@ -367,12 +363,12 @@ If multiple boards are placed in the same board folder, then the file
 Write your devicetree
 *********************
 
-The devicetree file :file:`boards/<vendor>/plank/plank.dts` or
-:file:`boards/<vendor>/plank/plank_<qualifiers>.dts` describes your board
-hardware in the Devicetree Source (DTS) format (as usual, change ``plank`` to
-your board's name). If you're new to devicetree, see :ref:`devicetree-intro`.
+The devicetree file :file:`boards/<vendor>/plank/plank_<qualifiers>.dts`
+describes your board hardware in the Devicetree Source (DTS) format (as usual,
+change ``plank`` to your board's name). If you're new to devicetree, see
+:ref:`devicetree-intro`.
 
-In general, :file:`plank.dts` should look like this:
+In general, :file:`plank_<qualifiers>.dts` should look like this:
 
 .. code-block:: devicetree
 
@@ -422,16 +418,7 @@ In general, :file:`plank.dts` should look like this:
            status = "okay";
    };
 
-Only one ``.dts`` file will be used, and the most specific file which exists
-will be used.
-
-This means that if both :file:`plank.dts` and :file:`plank_soc1_foo.dts` exist,
-then when building for ``plank`` / ``plank/soc1``, then :file:`plank.dts` is
-used. When building for ``plank//foo`` / ``plank/soc1/foo`` the
-:file:`plank_soc1_foo.dts` is used.
-
-This allows board maintainers to write a base devicetree file for the board
-or write specific devicetree files for a given board's SoC or variant.
+Only one ``.dts`` file will be used.
 
 If you're in a hurry, simple hardware can usually be supported by copy/paste
 followed by trial and error. If you want to understand details, you will need
@@ -450,18 +437,18 @@ This section contains concrete examples related to writing your board's
 devicetree.
 
 The FRDM-K64F and Hexiwear K64 board devicetrees are defined in
-:zephyr_file:`frdm_k64fs.dts <boards/nxp/frdm_k64f/frdm_k64f.dts>` and
-:zephyr_file:`hexiwear_k64.dts <boards/nxp/hexiwear/hexiwear_mk64f12.dts>`
+:zephyr_file:`frdm_k64f_mk64f12.dts <boards/nxp/frdm_k64f/frdm_k64f_mk64f12.dts>` and
+:zephyr_file:`hexiwear_mk64f12.dts <boards/nxp/hexiwear/hexiwear_mk64f12.dts>`
 respectively. Both boards have NXP SoCs from the same Kinetis SoC family, the
 K6X.
 
 Common devicetree definitions for K6X are stored in :zephyr_file:`nxp_k6x.dtsi
 <dts/arm/nxp/nxp_k6x.dtsi>`, which is included by both board :file:`.dts`
-files. :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/nxp_k6x.dtsi>` in turn includes
-:zephyr_file:`armv7-m.dtsi<dts/arm/armv7-m.dtsi>`, which has common definitions
-for Arm v7-M cores.
+files. :zephyr_file:`nxp_k6x.dtsi <dts/arm/nxp/nxp_k6x.dtsi>` in turn includes
+:zephyr_file:`armv7-m.dtsi <dts/arm/armv7-m.dtsi>`, which has common definitions
+for ARM v7-M cores.
 
-Since :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/nxp_k6x.dtsi>` is meant to be
+Since :zephyr_file:`nxp_k6x.dtsi <dts/arm/nxp/nxp_k6x.dtsi>` is meant to be
 generic across K6X-based boards, it leaves many devices disabled by default
 using ``status`` properties.  For example, there is a CAN controller defined as
 follows (with unimportant parts skipped):
@@ -517,7 +504,6 @@ files for a board named ``plank``:
    ├── Kconfig
    ├── Kconfig.plank
    ├── Kconfig.defconfig
-   ├── plank_defconfig
    └── plank_<qualifiers>_defconfig
 
 :file:`Kconfig.plank`
@@ -587,17 +573,9 @@ files for a board named ``plank``:
 
      endif # BOARD_PLANK
 
-:file:`plank_defconfig` / :file:`plank_<qualifiers>_defconfig`
+:file:`plank_<qualifiers>_defconfig`
   A Kconfig fragment that is merged as-is into the final build directory
   :file:`.config` whenever an application is compiled for your board.
-
-  If both the common :file:`plank_defconfig` file and one or more board
-  qualifiers specific :file:`plank_<qualifiers>_defconfig` files exist, then
-  all matching files will be used.
-  This allows you to place configuration which is common for all board SoCs,
-  CPU clusters, and board variants in the base :file:`plank_defconfig` and only
-  place the adjustments specific for a given SoC or board variant in the
-  :file:`plank_<qualifiers>_defconfig`.
 
   The ``_defconfig`` should contain mandatory settings for your system clock,
   console, etc. The results are architecture-specific, but typically look
@@ -608,7 +586,7 @@ files for a board named ``plank``:
      CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=120000000  # set up your clock, etc
      CONFIG_SERIAL=y
 
-:file:`plank_x_y_z_defconfig` / :file:`plank_<qualifiers>_x_y_z_defconfig`
+:file:`plank_<qualifiers>_x_y_z_defconfig`
   A Kconfig fragment that is merged as-is into the final build directory
   :file:`.config` whenever an application is compiled for your board revision
   ``x.y.z``.
@@ -822,8 +800,7 @@ adjustments to the board's normal configuration.
 
 As described in the :ref:`default_board_configuration` and
 :ref:`board_kconfig_files` sections the board default configuration is created
-from the files :file:`<board>.dts` / :file:`<board>_<qualifiers>.dts` and
-:file:`<board>_defconfig` / :file:`<board>_<qualifiers>_defconfig`.
+from the file :file:`<board>_<qualifiers>.dts` and :file:`<board>_<qualifiers>_defconfig`.
 When building for a specific board revision, the above files are used as a
 starting point and the following board files will be used in addition:
 
@@ -831,20 +808,9 @@ starting point and the following board files will be used in addition:
   defconfig which is only used for the board and SOC / variants identified by
   ``<board>_<qualifiers>``.
 
-- :file:`<board>_<revision>_defconfig`: a specific revision defconfig which is
-  used for the board regardless of the SOC / variants.
-
 - :file:`<board>_<qualifiers>_<revision>.overlay`: a specific revision dts
   overlay which is only used for the board and SOC / variants identified by
   ``<board>_<qualifiers>``.
-
-- :file:`<board>_<revision>.overlay`: a specific revision dts overlay which is
-  used for the board regardless of the SOC / variants.
-
-This split allows boards with multiple SoCs, multi-core SoCs, or variants to
-place common revision adjustments which apply to all SoCs and variants in a
-single file, while still providing the ability to place SoC or variant specific
-adjustments in a dedicated revision file.
 
 Using the ``plank`` board from previous sections, then we could have the following
 revision adjustments:
@@ -852,8 +818,6 @@ revision adjustments:
 .. code-block:: none
 
    boards/zephyr/plank
-   ├── plank_0_5_0_defconfig          # Kconfig adjustment for all plank board qualifiers on revision 0.5.0
-   ├── plank_0_5_0.overlay            # DTS overlay for all plank board qualifiers on revision 0.5.0
    └── plank_soc1_foo_1_5_0_defconfig # Kconfig adjustment for plank board when building for soc1 variant foo on revision 1.5.0
 
 Custom revision.cmake files
