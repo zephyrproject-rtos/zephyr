@@ -25,3 +25,4 @@ config SOC_JH7110
 	select RISCV_ISA_EXT_C
 	select RISCV_ISA_EXT_ZICSR
 	select RISCV_ISA_EXT_ZIFENCEI
+	select 64BIT
