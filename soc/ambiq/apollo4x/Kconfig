@@ -13,5 +13,6 @@ config SOC_SERIES_APOLLO4X
 	select AMBIQ_HAL
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
+	select HAS_PM
 	help
 	  Enable support for Apollo4 MCU series

@@ -6,4 +6,7 @@ if SOC_SERIES_APOLLO4X
 
 rsource "Kconfig.defconfig.apollo4*"
 
+config PM
+	default y
+
 endif # SOC_SERIES_APOLLO4X
