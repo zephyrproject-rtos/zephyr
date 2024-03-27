@@ -8,6 +8,7 @@ menu "POSIX Options"
 config POSIX_API
 	depends on !NATIVE_APPLICATION
 	bool "POSIX APIs"
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Enable mostly-standards-compliant implementations of
 	  various POSIX (IEEE 1003.1) APIs.
