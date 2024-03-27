@@ -94,6 +94,17 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
         else:
             raise RuntimeError(f'Invalid operation: {op_type}')
 
+        # Make sure the device is in the expected family
+        try:
+            output = self.check_output(['nrfjprog', '--deviceversion', '--snr', self.dev_id])
+            if families[self.family] not in output.decode("ASCII"):
+                raise RuntimeError(f'Family mismatch: {families[self.family]} expected, but got {output.decode("ASCII")}')
+        except subprocess.CalledProcessError as cpe:
+            if cpe.returncode == UnavailableOperationBecauseProtectionError:
+                cpe.returncode = ErrNotAvailableBecauseProtection
+            raise cpe
+
+        # Execute the flash command
         try:
             self.check_call(cmd + ['-f', families[self.family]] + core_opt +
                             ['--snr', self.dev_id] + self.tool_opt)

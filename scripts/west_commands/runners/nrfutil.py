@@ -91,6 +91,20 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         self._ops.append(op)
 
     def _exec_batch(self):
+        # Make sure nrfutil is recent enough
+        out = self._exec(['--version'])
+        version = tuple(int(x) for x in out[0]['data']['version'].split('.'))
+        if version < (2, 1, 1):
+            raise RuntimeError('nrfutil version 2.1.1 or later required, run `nrfutil upgrade`.')
+
+        # Make sure the device is in the expected family
+        out = self._exec(['device-info', '--serial-number', f'{self.dev_id}'])
+        for entry in out:
+            if entry['type'] == 'info':
+                detected_family = entry['data']['devices'][0]['deviceInfo']['jlink']['deviceFamily']
+                if entry['data']['devices'][0]['deviceInfo']['jlink']['deviceFamily'] != self.family:
+                    raise RuntimeError(f'Family mismatch: {self.family} expected, but got {detected_family}')
+
         # prepare the dictionary and convert to JSON
         batch = json.dumps({'family': f'{self.family}',
                             'operations': [op for op in self._ops]},
