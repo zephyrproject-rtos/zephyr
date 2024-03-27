@@ -104,6 +104,16 @@ enum ptp_port_state ptp_port_state(struct ptp_port *port);
 bool ptp_port_id_eq(const struct ptp_port_id *p1, const struct ptp_port_id *p2);
 
 /**
+ * @brief Function for getting a common dataset for the port's best foreign timeTransmitter clock.
+ *
+ * @param[in] port Pointer to the PTP Port structure.
+ *
+ * @return NULL if the port doesn't have best foreign timeTransmitter clock or
+ *  pointer to the ptp_dataset of the best foreign timeTransmitter clock.
+ */
+struct ptp_dataset *ptp_port_best_foreign_ds(struct ptp_port *port);
+
+/**
  * @brief Function adding foreign TimeTransmitter Clock for the PTP Port based on specified message.
  *
  * @param[in] port Pointer to the PTP Port.

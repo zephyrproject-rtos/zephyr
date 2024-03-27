@@ -119,6 +119,21 @@ const struct ptp_default_ds *ptp_clock_default_ds(void);
 const struct ptp_parent_ds *ptp_clock_parent_ds(void);
 
 /**
+ * @brief Function for getting a common dataset for the clock's default dataset.
+ *
+ * @return Pointer to the common dataset that contain data from ptp_default_ds structure.
+ */
+const struct ptp_dataset *ptp_clock_ds(void);
+
+/**
+ * @brief Function for getting a common dataset for the clock's best foreign timeTransmitter clock.
+ *
+ * @return NULL if the clock doesn't have best foreign timeTransmitter clock or
+ * pointer to the ptp_dataset of the best foreign timeTransmitter clock.
+ */
+const struct ptp_dataset *ptp_clock_best_foreign_ds(void);
+
+/**
  * @brief Function invalidating PTP Clock's array of file descriptors used for sockets.
  */
 void ptp_clock_pollfd_invalidate(void);

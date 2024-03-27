@@ -475,6 +475,11 @@ bool ptp_port_id_eq(const struct ptp_port_id *p1, const struct ptp_port_id *p2)
 	return memcmp(p1, p2, sizeof(struct ptp_port_id)) == 0;
 }
 
+struct ptp_dataset *ptp_port_best_foreign_ds(struct ptp_port *port)
+{
+	return port->best ? &port->best->dataset : NULL;
+}
+
 int ptp_port_add_foreign_tt(struct ptp_port *port, struct ptp_msg *msg)
 {
 	struct ptp_foreign_tt_clock *foreign;
