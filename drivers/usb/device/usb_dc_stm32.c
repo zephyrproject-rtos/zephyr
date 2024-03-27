@@ -131,7 +131,7 @@ static const struct gpio_dt_spec ulpi_reset =
 #define TX_FIFO_NUM USB_NUM_BIDIR_ENDPOINTS
 
 /* We need a minimum size for RX FIFO */
-#define USB_FIFO_RX_MIN 160
+#define USB_FIFO_RX_MIN 120
 
 /* 4-byte words TX FIFO */
 #define TX_FIFO_WORDS ((USB_RAM_SIZE - USB_FIFO_RX_MIN - 64) / 4)
