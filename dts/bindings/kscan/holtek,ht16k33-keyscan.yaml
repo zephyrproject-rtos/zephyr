@@ -1,7 +1,0 @@
-description: Holtek HT16K33 keyscan
-
-compatible: "holtek,ht16k33-keyscan"
-
-include: base.yaml
-
-on-bus: ht16k33
