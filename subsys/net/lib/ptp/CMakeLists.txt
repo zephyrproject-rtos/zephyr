@@ -3,6 +3,7 @@
 zephyr_library()
 
 zephyr_library_sources(
+  btca.c
   clock.c
   msg.c
   port.c
