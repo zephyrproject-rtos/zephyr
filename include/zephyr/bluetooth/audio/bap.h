@@ -2242,7 +2242,7 @@ struct bt_bap_broadcast_assistant_add_src_param {
 	uint8_t num_subgroups;
 
 	/** Pointer to array of subgroups */
-	struct bt_bap_bass_subgroup *subgroups;
+	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
 /**
@@ -2275,7 +2275,7 @@ struct bt_bap_broadcast_assistant_mod_src_param {
 	uint8_t num_subgroups;
 
 	/** Pointer to array of subgroups */
-	struct bt_bap_bass_subgroup *subgroups;
+	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
 /** @brief Modify a source on the server.

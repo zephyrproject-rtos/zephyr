@@ -32,8 +32,6 @@ static const uint32_t bis_index_mask = BIT_MASK(CONFIG_BT_BAP_BROADCAST_SNK_STRE
 #define INVALID_BROADCAST_ID      (BT_AUDIO_BROADCAST_ID_MAX + 1)
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP              5
-static struct bt_bap_bass_subgroup
-	delegator_subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 
 static inline struct btp_bap_broadcast_stream *stream_bap_to_broadcast(struct bt_bap_stream *stream)
 {
@@ -1385,18 +1383,16 @@ uint8_t btp_bap_broadcast_assistant_add_src(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	memset(delegator_subgroups, 0, sizeof(delegator_subgroups));
 	bt_addr_le_copy(&param.addr, &cp->broadcaster_address);
 	param.adv_sid = cp->advertiser_sid;
 	param.pa_sync = cp->padv_sync > 0 ? true : false;
 	param.broadcast_id = sys_get_le24(cp->broadcast_id);
 	param.pa_interval = sys_le16_to_cpu(cp->padv_interval);
 	param.num_subgroups = MIN(cp->num_subgroups, CONFIG_BT_BAP_BASS_MAX_SUBGROUPS);
-	param.subgroups = delegator_subgroups;
 
 	ptr = cp->subgroups;
 	for (uint8_t i = 0; i < param.num_subgroups; i++) {
-		struct bt_bap_bass_subgroup *subgroup = &delegator_subgroups[i];
+		struct bt_bap_bass_subgroup *subgroup = &param.subgroups[i];
 
 		subgroup->bis_sync = sys_get_le32(ptr);
 		if (subgroup->bis_sync != BT_BAP_BIS_SYNC_NO_PREF) {
@@ -1458,16 +1454,14 @@ uint8_t btp_bap_broadcast_assistant_modify_src(const void *cmd, uint16_t cmd_len
 		return BTP_STATUS_FAILED;
 	}
 
-	memset(delegator_subgroups, 0, sizeof(delegator_subgroups));
 	param.src_id = cp->src_id;
 	param.pa_sync = cp->padv_sync > 0 ? true : false;
 	param.pa_interval = sys_le16_to_cpu(cp->padv_interval);
 	param.num_subgroups = MIN(cp->num_subgroups, CONFIG_BT_BAP_BASS_MAX_SUBGROUPS);
-	param.subgroups = delegator_subgroups;
 
 	ptr = cp->subgroups;
 	for (uint8_t i = 0; i < param.num_subgroups; i++) {
-		struct bt_bap_bass_subgroup *subgroup = &delegator_subgroups[i];
+		struct bt_bap_bass_subgroup *subgroup = &param.subgroups[i];
 
 		subgroup->bis_sync = sys_get_le32(ptr);
 		if (subgroup->bis_sync != BT_BAP_BIS_SYNC_NO_PREF) {
