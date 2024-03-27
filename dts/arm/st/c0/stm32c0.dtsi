@@ -64,6 +64,16 @@
 			clock-frequency = <DT_FREQ_K(32)>;
 			status = "disabled";
 		};
+
+		clk_mco: clk-mco {
+			compatible = "st,stm32-mco-clock";
+			status = "disabled";
+		};
+
+		clk_mco2: clk-mco2 {
+			compatible = "st,stm32-mco-clock";
+			status = "disabled";
+		};
 	};
 
 	soc {

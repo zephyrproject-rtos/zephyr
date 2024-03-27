@@ -57,6 +57,9 @@
 	 (((mask) & STM32_CLOCK_MASK_MASK) << STM32_CLOCK_MASK_SHIFT) |		\
 	 (((val) & STM32_CLOCK_VAL_MASK) << STM32_CLOCK_VAL_SHIFT))
 
+/** @brief RCC_CFGRR register offset */
+#define CFGR_REG		0x08
+
 /** @brief RCC_CCIPR register offset */
 #define CCIPR_REG		0x54
 
@@ -64,6 +67,11 @@
 #define CSR1_REG		0x5C
 
 /** @brief Device domain clocks selection helpers */
+/** CFGR devices */
+#define MCO_SEL(val)		STM32_CLOCK(val, 3, 24, CFGR_REG)
+#define MCO_DIV(val)		STM32_CLOCK(val, 3, 28, CFGR_REG)
+#define MCO2_SEL(val)		STM32_CLOCK(val, 3, 16, CFGR_REG)
+#define MCO2_DIV(val)		STM32_CLOCK(val, 3, 20, CFGR_REG)
 /** CCIPR devices */
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR_REG)
 #define I2C1_SEL(val)		STM32_CLOCK(val, 3, 12, CCIPR_REG)
