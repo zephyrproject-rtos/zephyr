@@ -75,7 +75,7 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 		tmp_cfg.operation &= ~SPI_WORD_SIZE_MASK;
 		tmp_cfg.operation |= SPI_WORD_SET(9);
 		buffer.buf = &data->spi_byte;
-		buffer.len = 1;
+		buffer.len = 2;
 
 		/* Send command */
 		if (cmd_present) {

@@ -19,19 +19,19 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/display.h>
+#include <zephyr/drivers/mipi_dbi.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_st7735r, CONFIG_DISPLAY_LOG_LEVEL);
 
-#define ST7735R_RESET_TIME              K_MSEC(1)
+#define ST7735R_RESET_TIME      1
 #define ST7735R_EXIT_SLEEP_TIME K_MSEC(120)
 
 #define ST7735R_PIXEL_SIZE 2u
 
 struct st7735r_config {
-	struct spi_dt_spec bus;
-	struct gpio_dt_spec cmd_data;
-	struct gpio_dt_spec reset;
+	const struct device *mipi_dev;
+	struct mipi_dbi_config dbi_config;
 	uint16_t height;
 	uint16_t width;
 	uint8_t madctl;
@@ -59,8 +59,7 @@ struct st7735r_data {
 	uint16_t y_offset;
 };
 
-static void st7735r_set_lcd_margins(const struct device *dev,
-				    uint16_t x_offset, uint16_t y_offset)
+static void st7735r_set_lcd_margins(const struct device *dev, uint16_t x_offset, uint16_t y_offset)
 {
 	struct st7735r_data *data = dev->data;
 
@@ -68,48 +67,26 @@ static void st7735r_set_lcd_margins(const struct device *dev,
 	data->y_offset = y_offset;
 }
 
-static void st7735r_set_cmd(const struct device *dev, int is_cmd)
+static int st7735r_transmit_hold(const struct device *dev, uint8_t cmd, const uint8_t *tx_data,
+				 size_t tx_count)
 {
 	const struct st7735r_config *config = dev->config;
-
-	gpio_pin_set_dt(&config->cmd_data, is_cmd);
-}
-
-static int st7735r_transmit_hold(const struct device *dev, uint8_t cmd,
-				 const uint8_t *tx_data, size_t tx_count)
-{
-	const struct st7735r_config *config = dev->config;
-	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
-	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1 };
 	int ret;
 
-	st7735r_set_cmd(dev, 1);
-	ret = spi_write_dt(&config->bus, &tx_bufs);
-	if (ret < 0) {
-		return ret;
-	}
+	ret = mipi_dbi_command_write(config->mipi_dev, &config->dbi_config, cmd, tx_data, tx_count);
 
-	if (tx_data != NULL) {
-		tx_buf.buf = (void *)tx_data;
-		tx_buf.len = tx_count;
-		st7735r_set_cmd(dev, 0);
-		ret = spi_write_dt(&config->bus, &tx_bufs);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	return 0;
+	return ret;
 }
 
-static int st7735r_transmit(const struct device *dev, uint8_t cmd,
-			    const uint8_t *tx_data, size_t tx_count)
+static int st7735r_transmit(const struct device *dev, uint8_t cmd, const uint8_t *tx_data,
+			    size_t tx_count)
 {
-	const struct st7735r_config *config = dev->config;
 	int ret;
 
 	ret = st7735r_transmit_hold(dev, cmd, tx_data, tx_count);
-	spi_release_dt(&config->bus);
+
+	/* TODO: How should this be handled with MIPI driver */
+	/* spi_release_dt(&config->bus); */
 	return ret;
 }
 
@@ -133,11 +110,8 @@ static int st7735r_reset_display(const struct device *dev)
 	int ret;
 
 	LOG_DBG("Resetting display");
-	if (config->reset.port != NULL) {
-		gpio_pin_set_dt(&config->reset, 1);
-		k_sleep(ST7735R_RESET_TIME);
-		gpio_pin_set_dt(&config->reset, 0);
-	} else {
+	ret = mipi_dbi_reset(config->mipi_dev, ST7735R_RESET_TIME);
+	if (ret == ENOTSUP) {
 		ret = st7735r_transmit(dev, ST7735R_CMD_SW_RESET, NULL, 0);
 		if (ret < 0) {
 			return ret;
@@ -159,8 +133,7 @@ static int st7735r_blanking_off(const struct device *dev)
 	return st7735r_transmit(dev, ST7735R_CMD_DISP_ON, NULL, 0);
 }
 
-static int st7735r_set_mem_area(const struct device *dev,
-				const uint16_t x, const uint16_t y,
+static int st7735r_set_mem_area(const struct device *dev, const uint16_t x, const uint16_t y,
 				const uint16_t w, const uint16_t h)
 {
 	const struct st7735r_config *config = dev->config;
@@ -196,27 +169,22 @@ static int st7735r_set_mem_area(const struct device *dev,
 	return 0;
 }
 
-static int st7735r_write(const struct device *dev,
-			 const uint16_t x,
-			 const uint16_t y,
-			 const struct display_buffer_descriptor *desc,
-			 const void *buf)
+static int st7735r_write(const struct device *dev, const uint16_t x, const uint16_t y,
+			 const struct display_buffer_descriptor *desc, const void *buf)
 {
 	const struct st7735r_config *config = dev->config;
-	const uint8_t *write_data_start = (uint8_t *) buf;
-	struct spi_buf tx_buf;
-	struct spi_buf_set tx_bufs;
+	const uint8_t *write_data_start = (uint8_t *)buf;
 	uint16_t write_cnt;
 	uint16_t nbr_of_writes;
 	uint16_t write_h;
 	int ret;
+	size_t tx_len;
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
-	__ASSERT((desc->pitch * ST7735R_PIXEL_SIZE * desc->height)
-		 <= desc->buf_size, "Input buffer too small");
+	__ASSERT((desc->pitch * ST7735R_PIXEL_SIZE * desc->height) <= desc->buf_size,
+		 "Input buffer too small");
 
-	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)",
-		desc->width, desc->height, x, y);
+	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height, x, y);
 	ret = st7735r_set_mem_area(dev, x, y, desc->width, desc->height);
 	if (ret < 0) {
 		goto out;
@@ -230,21 +198,20 @@ static int st7735r_write(const struct device *dev,
 		nbr_of_writes = 1U;
 	}
 
-	ret = st7735r_transmit_hold(dev, ST7735R_CMD_RAMWR,
-				    (void *) write_data_start,
-				    desc->width * ST7735R_PIXEL_SIZE * write_h);
+	tx_len = desc->width * ST7735R_PIXEL_SIZE * write_h;
+	ret = st7735r_transmit_hold(dev, ST7735R_CMD_RAMWR, (void *)write_data_start, tx_len);
 	if (ret < 0) {
 		goto out;
 	}
 
-	tx_bufs.buffers = &tx_buf;
-	tx_bufs.count = 1;
-
 	write_data_start += (desc->pitch * ST7735R_PIXEL_SIZE);
 	for (write_cnt = 1U; write_cnt < nbr_of_writes; ++write_cnt) {
-		tx_buf.buf = (void *)write_data_start;
-		tx_buf.len = desc->width * ST7735R_PIXEL_SIZE * write_h;
-		ret = spi_write_dt(&config->bus, &tx_bufs);
+		struct display_buffer_descriptor mipi_desc;
+
+		mipi_desc.buf_size = tx_len;
+
+		ret = mipi_dbi_write_display(config->mipi_dev, &config->dbi_config,
+					     write_data_start, &mipi_desc, PIXEL_FORMAT_RGB_565);
 		if (ret < 0) {
 			goto out;
 		}
@@ -254,7 +221,8 @@ static int st7735r_write(const struct device *dev,
 
 	ret = 0;
 out:
-	spi_release_dt(&config->bus);
+	/* TODO: How should this be handled with MIPI driver */
+	/* spi_release_dt(&config->bus); */
 	return ret;
 }
 
@@ -291,13 +259,11 @@ static int st7735r_set_pixel_format(const struct device *dev,
 {
 	const struct st7735r_config *config = dev->config;
 
-	if ((pixel_format == PIXEL_FORMAT_RGB_565) &&
-	    (~config->madctl & ST7735R_MADCTL_BGR)) {
+	if ((pixel_format == PIXEL_FORMAT_RGB_565) && (~config->madctl & ST7735R_MADCTL_BGR)) {
 		return 0;
 	}
 
-	if ((pixel_format == PIXEL_FORMAT_BGR_565) &&
-	    (config->madctl & ST7735R_MADCTL_BGR)) {
+	if ((pixel_format == PIXEL_FORMAT_BGR_565) && (config->madctl & ST7735R_MADCTL_BGR)) {
 		return 0;
 	}
 
@@ -326,20 +292,17 @@ static int st7735r_lcd_init(const struct device *dev)
 
 	st7735r_set_lcd_margins(dev, data->x_offset, data->y_offset);
 
-	ret = st7735r_transmit(dev, ST7735R_CMD_FRMCTR1, config->frmctr1,
-			       sizeof(config->frmctr1));
+	ret = st7735r_transmit(dev, ST7735R_CMD_FRMCTR1, config->frmctr1, sizeof(config->frmctr1));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7735r_transmit(dev, ST7735R_CMD_FRMCTR2, config->frmctr2,
-			       sizeof(config->frmctr2));
+	ret = st7735r_transmit(dev, ST7735R_CMD_FRMCTR2, config->frmctr2, sizeof(config->frmctr2));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7735r_transmit(dev, ST7735R_CMD_FRMCTR3, config->frmctr3,
-			       sizeof(config->frmctr3));
+	ret = st7735r_transmit(dev, ST7735R_CMD_FRMCTR3, config->frmctr3, sizeof(config->frmctr3));
 	if (ret < 0) {
 		return ret;
 	}
@@ -349,32 +312,27 @@ static int st7735r_lcd_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = st7735r_transmit(dev, ST7735R_CMD_PWCTR1, config->pwctr1,
-			       sizeof(config->pwctr1));
+	ret = st7735r_transmit(dev, ST7735R_CMD_PWCTR1, config->pwctr1, sizeof(config->pwctr1));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7735r_transmit(dev, ST7735R_CMD_PWCTR2, config->pwctr2,
-			       sizeof(config->pwctr2));
+	ret = st7735r_transmit(dev, ST7735R_CMD_PWCTR2, config->pwctr2, sizeof(config->pwctr2));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7735r_transmit(dev, ST7735R_CMD_PWCTR3, config->pwctr3,
-			       sizeof(config->pwctr3));
+	ret = st7735r_transmit(dev, ST7735R_CMD_PWCTR3, config->pwctr3, sizeof(config->pwctr3));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7735r_transmit(dev, ST7735R_CMD_PWCTR4, config->pwctr4,
-			       sizeof(config->pwctr4));
+	ret = st7735r_transmit(dev, ST7735R_CMD_PWCTR4, config->pwctr4, sizeof(config->pwctr4));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7735r_transmit(dev, ST7735R_CMD_PWCTR5, config->pwctr5,
-			       sizeof(config->pwctr5));
+	ret = st7735r_transmit(dev, ST7735R_CMD_PWCTR5, config->pwctr5, sizeof(config->pwctr5));
 	if (ret < 0) {
 		return ret;
 	}
@@ -403,14 +361,12 @@ static int st7735r_lcd_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = st7735r_transmit(dev, ST7735R_CMD_CASET, config->caset,
-			       sizeof(config->caset));
+	ret = st7735r_transmit(dev, ST7735R_CMD_CASET, config->caset, sizeof(config->caset));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7735r_transmit(dev, ST7735R_CMD_RASET, config->raset,
-			       sizeof(config->raset));
+	ret = st7735r_transmit(dev, ST7735R_CMD_RASET, config->raset, sizeof(config->raset));
 	if (ret < 0) {
 		return ret;
 	}
@@ -445,34 +401,9 @@ static int st7735r_init(const struct device *dev)
 	const struct st7735r_config *config = dev->config;
 	int ret;
 
-	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+	if (!device_is_ready(config->mipi_dev)) {
+		LOG_ERR("MIPI DBI device is not ready");
 		return -ENODEV;
-	}
-
-	if (config->reset.port != NULL) {
-		if (!gpio_is_ready_dt(&config->reset)) {
-			LOG_ERR("Reset GPIO port for display not ready");
-			return -ENODEV;
-		}
-
-		ret = gpio_pin_configure_dt(&config->reset,
-					    GPIO_OUTPUT_INACTIVE);
-		if (ret) {
-			LOG_ERR("Couldn't configure reset pin");
-			return ret;
-		}
-	}
-
-	if (!gpio_is_ready_dt(&config->cmd_data)) {
-		LOG_ERR("cmd/DATA GPIO port not ready");
-		return -ENODEV;
-	}
-
-	ret = gpio_pin_configure_dt(&config->cmd_data, GPIO_OUTPUT);
-	if (ret) {
-		LOG_ERR("Couldn't configure cmd/DATA pin");
-		return ret;
 	}
 
 	ret = st7735r_reset_display(dev);
@@ -497,8 +428,7 @@ static int st7735r_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int st7735r_pm_action(const struct device *dev,
-			     enum pm_device_action action)
+static int st7735r_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret = 0;
 
@@ -527,46 +457,54 @@ static const struct display_driver_api st7735r_api = {
 	.set_orientation = st7735r_set_orientation,
 };
 
+#define ST7735R_WORD_SIZE(inst) COND_CODE_1(IS_ENABLED(CONFIG_MIPI_DBI_SPI_3WIRE), (9), (8))
 
-#define ST7735R_INIT(inst)							\
-	const static struct st7735r_config st7735r_config_ ## inst = {		\
-		.bus = SPI_DT_SPEC_INST_GET(					\
-			inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |		\
-			SPI_HOLD_ON_CS | SPI_LOCK_ON, 0),			\
-		.cmd_data = GPIO_DT_SPEC_INST_GET(inst, cmd_data_gpios),	\
-		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),	\
-		.width = DT_INST_PROP(inst, width),				\
-		.height = DT_INST_PROP(inst, height),				\
-		.madctl = DT_INST_PROP(inst, madctl),				\
-		.colmod = DT_INST_PROP(inst, colmod),				\
-		.caset = DT_INST_PROP(inst, caset),				\
-		.raset = DT_INST_PROP(inst, raset),				\
-		.vmctr1 = DT_INST_PROP(inst, vmctr1),				\
-		.invctr = DT_INST_PROP(inst, invctr),				\
-		.pwctr1 = DT_INST_PROP(inst, pwctr1),				\
-		.pwctr2 = DT_INST_PROP(inst, pwctr2),				\
-		.pwctr3 = DT_INST_PROP(inst, pwctr3),				\
-		.pwctr4 = DT_INST_PROP(inst, pwctr4),				\
-		.pwctr5 = DT_INST_PROP(inst, pwctr5),				\
-		.frmctr1 = DT_INST_PROP(inst, frmctr1),				\
-		.frmctr2 = DT_INST_PROP(inst, frmctr2),				\
-		.frmctr3 = DT_INST_PROP(inst, frmctr3),				\
-		.gamctrp1 = DT_INST_PROP(inst, gamctrp1),			\
-		.gamctrn1 = DT_INST_PROP(inst, gamctrn1),			\
-		.inversion_on = DT_INST_PROP(inst, inversion_on),		\
-		.rgb_is_inverted = DT_INST_PROP(inst, rgb_is_inverted),		\
-	};									\
-										\
-	static struct st7735r_data st7735r_data_ ## inst = {			\
-		.x_offset = DT_INST_PROP(inst, x_offset),			\
-		.y_offset = DT_INST_PROP(inst, y_offset),			\
-	};									\
-										\
-	PM_DEVICE_DT_INST_DEFINE(inst, st7735r_pm_action);			\
-										\
-	DEVICE_DT_INST_DEFINE(inst, st7735r_init, PM_DEVICE_DT_INST_GET(inst),	\
-			      &st7735r_data_ ## inst, &st7735r_config_ ## inst,	\
-			      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,	\
-			      &st7735r_api);
+#define ST7735R_INIT(inst)                                                                         \
+	const static struct st7735r_config st7735r_config_##inst = {                               \
+		.mipi_dev = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                           \
+		.dbi_config =                                                                      \
+			{                                                                          \
+				.mode = (IS_ENABLED(CONFIG_MIPI_DBI_SPI_3WIRE)                     \
+						 ? MIPI_DBI_MODE_SPI_3WIRE                         \
+						 : MIPI_DBI_MODE_SPI_4WIRE),                       \
+				.config = MIPI_DBI_SPI_CONFIG_DT(                                  \
+					DT_DRV_INST(inst),                                         \
+					SPI_OP_MODE_MASTER |                                       \
+						SPI_WORD_SET(ST7735R_WORD_SIZE(inst)) |            \
+						SPI_HOLD_ON_CS | SPI_LOCK_ON,                      \
+					0),                                                        \
+			},                                                                         \
+		.width = DT_INST_PROP(inst, width),                                                \
+		.height = DT_INST_PROP(inst, height),                                              \
+		.madctl = DT_INST_PROP(inst, madctl),                                              \
+		.colmod = DT_INST_PROP(inst, colmod),                                              \
+		.caset = DT_INST_PROP(inst, caset),                                                \
+		.raset = DT_INST_PROP(inst, raset),                                                \
+		.vmctr1 = DT_INST_PROP(inst, vmctr1),                                              \
+		.invctr = DT_INST_PROP(inst, invctr),                                              \
+		.pwctr1 = DT_INST_PROP(inst, pwctr1),                                              \
+		.pwctr2 = DT_INST_PROP(inst, pwctr2),                                              \
+		.pwctr3 = DT_INST_PROP(inst, pwctr3),                                              \
+		.pwctr4 = DT_INST_PROP(inst, pwctr4),                                              \
+		.pwctr5 = DT_INST_PROP(inst, pwctr5),                                              \
+		.frmctr1 = DT_INST_PROP(inst, frmctr1),                                            \
+		.frmctr2 = DT_INST_PROP(inst, frmctr2),                                            \
+		.frmctr3 = DT_INST_PROP(inst, frmctr3),                                            \
+		.gamctrp1 = DT_INST_PROP(inst, gamctrp1),                                          \
+		.gamctrn1 = DT_INST_PROP(inst, gamctrn1),                                          \
+		.inversion_on = DT_INST_PROP(inst, inversion_on),                                  \
+		.rgb_is_inverted = DT_INST_PROP(inst, rgb_is_inverted),                            \
+	};                                                                                         \
+                                                                                                   \
+	static struct st7735r_data st7735r_data_##inst = {                                         \
+		.x_offset = DT_INST_PROP(inst, x_offset),                                          \
+		.y_offset = DT_INST_PROP(inst, y_offset),                                          \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, st7735r_pm_action);                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, st7735r_init, PM_DEVICE_DT_INST_GET(inst),                     \
+			      &st7735r_data_##inst, &st7735r_config_##inst, POST_KERNEL,           \
+			      CONFIG_DISPLAY_INIT_PRIORITY, &st7735r_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ST7735R_INIT)
