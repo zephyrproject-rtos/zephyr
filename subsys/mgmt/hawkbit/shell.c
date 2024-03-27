@@ -19,48 +19,7 @@ static void cmd_run(const struct shell *sh, size_t argc, char **argv)
 	ARG_UNUSED(argv);
 
 	shell_fprintf(sh, SHELL_INFO, "Starting Hawkbit run...\n");
-	switch (hawkbit_probe()) {
-	case HAWKBIT_UNCONFIRMED_IMAGE:
-		shell_fprintf(
-			sh, SHELL_ERROR,
-			"Image is unconfirmed."
-			"Rebooting to revert back to previous confirmed image\n");
-		sys_reboot(SYS_REBOOT_WARM);
-		break;
-
-	case HAWKBIT_CANCEL_UPDATE:
-		shell_fprintf(sh, SHELL_INFO,
-			      "Hawkbit update Cancelled from server\n");
-		break;
-
-	case HAWKBIT_NO_UPDATE:
-		shell_fprintf(sh, SHELL_INFO, "No update found\n");
-		break;
-
-	case HAWKBIT_OK:
-		shell_fprintf(sh, SHELL_INFO, "Image Already updated\n");
-		break;
-
-	case HAWKBIT_UPDATE_INSTALLED:
-		shell_fprintf(sh, SHELL_INFO, "Update Installed\n");
-		break;
-
-	case HAWKBIT_DOWNLOAD_ERROR:
-		shell_fprintf(sh, SHELL_INFO, "Download Error\n");
-		break;
-
-	case HAWKBIT_NETWORKING_ERROR:
-		shell_fprintf(sh, SHELL_INFO, "Networking Error\n");
-		break;
-
-	case HAWKBIT_METADATA_ERROR:
-		shell_fprintf(sh, SHELL_INFO, "Metadata Error\n");
-		break;
-
-	default:
-		shell_fprintf(sh, SHELL_ERROR, "Invalid response\n");
-		break;
-	}
+	hawkbit_run_once();
 	k_sleep(K_MSEC(1));
 }
 

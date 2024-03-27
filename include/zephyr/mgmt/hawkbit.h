@@ -64,6 +64,11 @@ void hawkbit_autohandler(void);
 enum hawkbit_response hawkbit_probe(void);
 
 /**
+ * @brief Runs hawkBit probe and hawkBit update once.
+ */
+void hawkbit_run_once(void);
+
+/**
  * @}
  */
 
