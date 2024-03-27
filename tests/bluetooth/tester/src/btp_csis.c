@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #define BTP_STATUS_VAL(err) (err) ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS
 
 static struct bt_csip_set_member_svc_inst *csis_svc_inst;
+static bool enc_sirk;
 
 static uint8_t csis_supported_commands(const void *cmd, uint16_t cmd_len,
 				       void *rsp, uint16_t *rsp_len)
@@ -27,6 +28,7 @@ static uint8_t csis_supported_commands(const void *cmd, uint16_t cmd_len,
 	tester_set_bit(rp->data, BTP_CSIS_READ_SUPPORTED_COMMANDS);
 	tester_set_bit(rp->data, BTP_CSIS_SET_MEMBER_LOCK);
 	tester_set_bit(rp->data, BTP_CSIS_GET_MEMBER_RSI);
+	tester_set_bit(rp->data, BTP_CSIS_ENC_SIRK_TYPE);
 
 	*rsp_len = sizeof(*rp) + 1;
 
@@ -61,6 +63,18 @@ static uint8_t csis_get_member_rsi(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_VAL(err);
 }
 
+static uint8_t csis_set_sirk_type(const void *cmd, uint16_t cmd_len, void *rsp,
+				  uint16_t *rsp_len)
+{
+	const struct btp_csis_set_sirk_type_cmd *cp = cmd;
+
+	enc_sirk = cp->encrypted != 0U;
+
+	LOG_DBG("Set SIRK type: %s", enc_sirk ? "encrypted" : "plain text");
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static const struct btp_handler csis_handlers[] = {
 	{
 		.opcode = BTP_CSIS_READ_SUPPORTED_COMMANDS,
@@ -77,7 +91,32 @@ static const struct btp_handler csis_handlers[] = {
 		.opcode = BTP_CSIS_GET_MEMBER_RSI,
 		.expect_len = sizeof(struct btp_csis_get_member_rsi_cmd),
 		.func = csis_get_member_rsi
+	},
+	{
+		.opcode = BTP_CSIS_ENC_SIRK_TYPE,
+		.expect_len = sizeof(struct btp_csis_set_sirk_type_cmd),
+		.func = csis_set_sirk_type,
+	},
+};
+
+static void lock_changed_cb(struct bt_conn *conn, struct bt_csip_set_member_svc_inst *svc_inst,
+			    bool locked)
+{
+	LOG_DBG("%s", locked ? "locked" : "unlocked");
+}
+
+static uint8_t sirk_read_cb(struct bt_conn *conn, struct bt_csip_set_member_svc_inst *svc_inst)
+{
+	if (enc_sirk) {
+		return BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT_ENC;
+	} else {
+		return BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
 	}
+}
+
+static struct bt_csip_set_member_cb csis_cb = {
+	.lock_changed = lock_changed_cb,
+	.sirk_read_req = sirk_read_cb,
 };
 
 uint8_t tester_init_csis(void)
@@ -88,7 +127,7 @@ uint8_t tester_init_csis(void)
 			      0x5A, 0x41, 0xF1, 0x53, 0x05, 0x68, 0x8E, 0x83 },
 		.lockable = true,
 		.rank = 1,
-		.cb = NULL
+		.cb = &csis_cb,
 	};
 	int err = bt_csip_set_member_register(&register_params, &csis_svc_inst);
 

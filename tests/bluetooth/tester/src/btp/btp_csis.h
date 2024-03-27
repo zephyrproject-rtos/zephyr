@@ -28,3 +28,8 @@ struct btp_csis_get_member_rsi_cmd {
 struct btp_csis_get_member_rsi_rp {
 	uint8_t rsi[BT_CSIP_RSI_SIZE];
 } __packed;
+
+#define BTP_CSIS_ENC_SIRK_TYPE			0x04
+struct btp_csis_set_sirk_type_cmd {
+	uint8_t encrypted;
+} __packed;
