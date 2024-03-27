@@ -57,11 +57,17 @@ config SUPPORT_MINIMAL_LIBC
 	help
 	  Legacy symbol that selects MINIMAL_LIBC_SUPPORTED
 
+config NATIVE_LIBC_INCOMPATIBLE
+	bool
+	help
+	  Other Kconfig options can select this, if they are not compatible with the
+	  native/host libC, and should only be compiled with an embedded libC
+
 menu "C Library"
 
 choice LIBC_IMPLEMENTATION
 	prompt "C Library Implementation"
-	default EXTERNAL_LIBC if NATIVE_BUILD && !(NATIVE_LIBRARY && POSIX_API)
+	default EXTERNAL_LIBC if NATIVE_BUILD && !(NATIVE_LIBRARY && NATIVE_LIBC_INCOMPATIBLE)
 	default PICOLIBC
 	default NEWLIB_LIBC if REQUIRES_FULL_LIBC
 	default MINIMAL_LIBC
