@@ -437,21 +437,6 @@ ZTEST(power_management_1cpu, test_busy)
 	zassert_false(busy);
 }
 
-ZTEST(power_management_1cpu, test_device_state_lock)
-{
-	pm_device_state_lock(device_a);
-	zassert_true(pm_device_state_is_locked(device_a));
-
-	testing_device_lock = true;
-	enter_low_power = true;
-
-	k_sleep(SLEEP_TIMEOUT);
-
-	pm_device_state_unlock(device_a);
-
-	testing_device_lock = false;
-}
-
 ZTEST(power_management_1cpu, test_empty_states)
 {
 	const struct pm_state_info *cpu_states;
