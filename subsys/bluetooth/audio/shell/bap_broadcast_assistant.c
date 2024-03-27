@@ -694,24 +694,27 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 	}
 
 	if (argc > 3) {
-		unsigned long pa_interval;
+		if (strcmp(argv[3], "unknown") == 0) {
+			param.pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
+		} else {
+			unsigned long pa_interval;
 
-		pa_interval = shell_strtoul(argv[3], 0, &result);
-		if (result) {
-			shell_error(sh, "Could not parse pa_interval: %d", result);
+			pa_interval = shell_strtoul(argv[3], 0, &result);
+			if (result) {
+				shell_error(sh, "Could not parse pa_interval: %d", result);
 
-			return -ENOEXEC;
+				return -ENOEXEC;
+			}
+
+			if (!IN_RANGE(pa_interval, BT_GAP_PER_ADV_MIN_INTERVAL,
+				      BT_GAP_PER_ADV_MAX_INTERVAL)) {
+				shell_error(sh, "Invalid pa_interval: %lu", pa_interval);
+
+				return -ENOEXEC;
+			}
+
+			param.pa_interval = pa_interval;
 		}
-
-		if (!IN_RANGE(pa_interval,
-			      BT_GAP_PER_ADV_MIN_INTERVAL,
-			      BT_GAP_PER_ADV_MAX_INTERVAL)) {
-			shell_error(sh, "Invalid pa_interval: %lu", pa_interval);
-
-			return -ENOEXEC;
-		}
-
-		param.pa_interval = pa_interval;
 	} else {
 		param.pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
 	}
@@ -1038,7 +1041,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "[bis_index [bis_index [bix_index [...]]]]>",
 		      cmd_bap_broadcast_assistant_add_pa_sync, 3, BT_ISO_MAX_GROUP_ISO_COUNT),
 	SHELL_CMD_ARG(mod_src, NULL,
-		      "Set sync <src_id> <sync_pa> [<pa_interval>] "
+		      "Set sync <src_id> <sync_pa> [<pa_interval> | \"unknown\"] "
 		      "[<sync_bis>] [<metadata>]",
 		      cmd_bap_broadcast_assistant_mod_src, 3, 2),
 	SHELL_CMD_ARG(broadcast_code, NULL,
