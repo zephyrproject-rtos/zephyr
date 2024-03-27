@@ -185,6 +185,7 @@ config SHELL_BACKEND_RTT
 	bool "RTT backend"
 	select CONSOLE
 	select RTT_CONSOLE
+	select SEGGER_RTT_CUSTOM_LOCKING
 	depends on USE_SEGGER_RTT
 	help
 	  Enable RTT backend.
@@ -205,6 +206,23 @@ config SHELL_BACKEND_RTT_BUFFER
 	help
 	  Select index of up-buffer used for shell output, by default it uses
 	  terminal up-buffer and its settings.
+
+config SHELL_BACKEND_RTT_RETRY_CNT
+	int "Number of retries"
+	default 4
+	help
+	  Number of TX retries before dropping the data and assuming that
+	  RTT session is inactive.
+
+config SHELL_BACKEND_RTT_RETRY_DELAY_MS
+	int "Delay between TX retries in milliseconds"
+	default 5
+	help
+	  Sleep period between TX retry attempts. During RTT session, host pulls
+	  data periodically. Period starts from 1-2 milliseconds and can be
+	  increased if traffic on RTT increases (also from host to device). In
+	  case of heavy traffic data can be lost and it may be necessary to
+	  increase delay or number of retries.
 
 config SHELL_RTT_RX_POLL_PERIOD
 	int "RX polling period (in milliseconds)"
