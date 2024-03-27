@@ -12,14 +12,6 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
-	aliases {
-		watchdog0 = &wdog;
-	};
-
-	chosen {
-		zephyr,flash-controller = &nvmctrl;
-		zephyr,entropy = &trng;
-	};
 
 	cpus {
 		#address-cells = <1>;
@@ -32,11 +24,6 @@
 		};
 	};
 
-	sram0: memory@20000000 {
-		compatible = "mmio-sram";
-		reg = <0x20000000 0x8000>;
-	};
-
 	id: device_id@80a00c {
 		compatible = "atmel,sam0-id";
 		reg =	<0x0080A00C 0x4>,
@@ -46,6 +33,7 @@
 	};
 
 	soc {
+
 		nvmctrl: nvmctrl@41004000  {
 			compatible = "atmel,sam0-nvmctrl";
 			reg = <0x41004000 0x22>;
@@ -57,146 +45,45 @@
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				reg = <0 0x40000>;
 				write-block-size = <4>;
 			};
 		};
 
-		pm: pm@40000400 {
-			compatible = "atmel,saml2x-pm";
-			reg = <0x40000400 0x400>;
-			interrupts = <0 0>;
-			#clock-cells = <2>;
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 0x8000>;
 		};
 
-		mclk: mclk@40000400 {
-			compatible = "atmel,saml2x-mclk";
-			reg = <0x40000400 0x400>;
-			#clock-cells = <2>;
-		};
-
-		gclk: gclk@40001800 {
-			compatible = "atmel,saml2x-gclk";
-			reg = <0x40001800 0x400>;
-			#clock-cells = <1>;
-		};
-
-		dmac: dmac@44000400 {
-			compatible = "atmel,sam0-dmac";
-			reg = <0x44000400 0x400>;
-			interrupts = <5 0>;
-			#dma-cells = <2>;
-		};
-
-		eic: eic@40002400 {
-			compatible = "atmel,sam0-eic";
-			reg = <0x40002400 0x24>;
-			interrupts = <3 0>;
-		};
-
-		wdog: watchdog@40001c00 {
-			compatible = "atmel,sam0-watchdog";
-			reg = <0x40001c00 0x0c>;
-			interrupts = <1 0>;
-		};
-
-		sercom0: sercom@42000000 {
-			compatible = "atmel,sam0-sercom";
-			reg = <0x42000000 0x40>;
+		usb0: usb@41000000 {
+			compatible = "atmel,sam0-usb";
 			status = "disabled";
+			reg = <0x41000000 0x1000>;
+			interrupts = <6 0>;
+			num-bidir-endpoints = <8>;
 		};
 
-		sercom1: sercom@42000400 {
-			compatible = "atmel,sam0-sercom";
-			reg = <0x42000400 0x40>;
-			status = "disabled";
-		};
-
-		sercom2: sercom@42000800 {
-			compatible = "atmel,sam0-sercom";
-			reg = <0x42000800 0x40>;
-			status = "disabled";
-		};
-
-		sercom3: sercom@42000c00 {
-			compatible = "atmel,sam0-sercom";
-			reg = <0x42000C00 0x40>;
-			status = "disabled";
-		};
-
-		sercom4: sercom@42001000 {
-			compatible = "atmel,sam0-sercom";
-			reg = <0x42001000 0x40>;
-			status = "disabled";
-		};
-
-		sercom5: sercom@43000400 {
-			compatible = "atmel,sam0-sercom";
-			reg = <0x43000400 0x40>;
-			status = "disabled";
-		};
-
-		tc4: tc@43000800 {
+		tc0: tc@42002000 {
 			compatible = "atmel,sam0-tc32";
-			reg = <0x43000800 0x34>;
+			reg = <0x42002000 0x32>;
+			interrupts = <17 0>;
 		};
 
-		pinctrl: pinctrl@40002800 {
-			compatible = "atmel,sam0-pinctrl";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x40002800 0x40002800 0x100>;
-
-			porta: gpio@40002800 {
-				compatible = "atmel,sam0-gpio";
-				reg = <0x40002800 0x80>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				#atmel,pin-cells = <2>;
-
-			};
-
-			portb: gpio@40002880 {
-				compatible = "atmel,sam0-gpio";
-				reg = <0x40002880 0x80>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				#atmel,pin-cells = <2>;
-			};
+		tc1: tc@42002400 {
+			compatible = "atmel,sam0-tc32";
+			reg = <0x42002400 0x32>;
+			interrupts = <18 0>;
 		};
 
-		rtc: rtc@40002000 {
-			compatible = "atmel,sam0-rtc";
-			reg = <0x40002000 0x1c>;
-			interrupts = <2 0>;
-			clock-generator = <0>;
-			status = "disabled";
+		tc2: tc@42002800 {
+			compatible = "atmel,sam0-tc32";
+			reg = <0x42002800 0x32>;
+			interrupts = <19 0>;
 		};
 
-		adc: adc@43000c00 {
-			compatible = "atmel,sam0-adc";
-			reg = <0x43000c00 0x30>;
-
-			/*
-			 * 16 MHz max, so clock it with the
-			 * 48 MHz DFLL / 2 / 2 = 12 MHz
-			 */
-			gclk = <3>;
-			prescaler = <2>;
-			#io-channel-cells = <1>;
-		};
-
-		dac: dac@42003000 {
-			compatible = "atmel,sam0-dac";
-			status = "disabled";
-			reg = <0x42003000 0x1a>;
-			#io-channel-cells = <0>;
-		};
-
-		trng: random@42003800 {
-			compatible = "atmel,sam-trng";
-			reg = <0x42003800 0x24>;
-			interrupts = <27 0>;
+		tc3: tc@42002c00 {
+			compatible = "atmel,sam0-tc32";
+			reg = <0x42002c00  0x32>;
+			interrupts = <20 0>;
 		};
 	};
 };
