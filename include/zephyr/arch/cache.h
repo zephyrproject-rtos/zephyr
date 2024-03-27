@@ -23,6 +23,8 @@
 #include <zephyr/arch/arm64/cache.h>
 #elif defined(CONFIG_XTENSA)
 #include <zephyr/arch/xtensa/cache.h>
+#elif defined(CONFIG_RISCV)
+#include <zephyr/arch/riscv/cache.h>
 #endif
 
 #if defined(CONFIG_DCACHE) || defined(__DOXYGEN__)

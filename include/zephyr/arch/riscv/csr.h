@@ -234,3 +234,18 @@
 })
 
 #endif /* CSR_H_ */
+
+#define cbo_flush(addr)						\
+({								\
+	__asm__ volatile("cbo.flush 0(%0);":: "r" (addr):);	\
+})
+
+#define cbo_clean(addr)						\
+({								\
+	__asm__ volatile("cbo.clean 0(%0);":: "r" (addr):);	\
+})
+
+#define cbo_inval(addr)						\
+({								\
+	__asm__ volatile("cbo.inval 0(%0);":: "r" (addr):);	\
+})
