@@ -50,12 +50,17 @@ properties:
     required: true
     enum:
       - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 64
+      - 128
+      - 256
+      - 512
     description: |
-        D1 Domain, CPU1 clock prescaler. Sets a HCLK frequency (feeding Cortex-M Systick)
-        lower than SYSCLK frequency (actual core frequency).
-        Zephyr doesn't make a difference today between these two clocks.
-        Changing this prescaler is not allowed until it is made possible to
-        use them independently in Zephyr clock subsystem.
+        D1 Domain, CPU1 clock prescaler. The frequency of the CPU clock
+        and the Systick clock are the same.
 
   hpre:
     type: int
