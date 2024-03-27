@@ -55,6 +55,7 @@
 		led0 = &green_led;
 		watchdog0 = &iwdg;
 		spi-flash0 = &mx25r6435f;
+		ambient-temp0 = &adt7420;
 	};
 
 	soc {
@@ -181,7 +182,7 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	adt7420@48 {
+	adt7420: adt7420@48 {
 		compatible = "adi,adt7420";
 		reg = <0x48>;
 	};
