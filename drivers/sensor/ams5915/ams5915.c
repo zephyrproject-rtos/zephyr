@@ -38,7 +38,7 @@ struct ams5915_config {
 };
 
 struct ams5915_data {
-	float temp_c;	/* temperature in degree Celsius */
+	float temp_c;           /* temperature in degree Celsius */
 	float press_kilopascal; /* pressure in kilopascal */
 };
 
@@ -46,7 +46,7 @@ static void ams5915_adc2temp(const struct device *dev, uint16_t adc_temp)
 {
 	struct ams5915_data *data = dev->data;
 
-	// get degree Celsius
+	/* get degree Celsius */
 	float temp = (float)(adc_temp * 200) / 2048.0f - 50.0f;
 
 	if (temp > AMS5915_AMBIENT_TEMP_MAX) {
@@ -69,7 +69,8 @@ static void ams5915_adc2press(const struct device *dev, uint16_t adc_press)
 		      (config->limits.press_max * 0.1f - config->limits.press_min * 0.1f);
 
 	/* get milli bar */
-	Sensp = (float)(adc_press - AMS5915_DIGPOUT_P_MIN) / Sensp + config->limits.press_min * 0.1f;
+	Sensp = (float)(adc_press - AMS5915_DIGPOUT_P_MIN) / Sensp +
+		config->limits.press_min * 0.1f;
 
 	/* get kilopascal */
 	Sensp = 10.0f * Sensp;
@@ -79,7 +80,7 @@ static void ams5915_adc2press(const struct device *dev, uint16_t adc_press)
 	} else {
 		LOG_ERR("Pressure out of range!");
 
-		// pressure outside sepcified limits
+		/* pressure outside sepcified limits */
 		data->press_kilopascal = NAN;
 	}
 }
@@ -119,7 +120,6 @@ static int ams5915_sample_fetch(const struct device *dev, enum sensor_channel ch
 	default:
 		LOG_ERR("Unsupported Sensor Channel!");
 		return -ENOTSUP;
-		break;
 	}
 
 	/* check result */
@@ -150,7 +150,6 @@ static int ams5915_sample_fetch(const struct device *dev, enum sensor_channel ch
 	default:
 		LOG_ERR("Unsupported Sensor Channel!");
 		return -ENOTSUP;
-		break;
 	}
 
 	/* check results */
@@ -186,7 +185,6 @@ static int ams5915_channel_get(const struct device *dev, enum sensor_channel cha
 	default:
 		LOG_ERR("Unsupported Sensor Channel!");
 		return -ENOTSUP;
-		break;
 	}
 
 	return 0;
@@ -205,7 +203,7 @@ int ams5915_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	// invalidate data
+	/* invalidate data */
 	data->press_kilopascal = NAN;
 	data->temp_c = NAN;
 
@@ -216,8 +214,8 @@ int ams5915_init(const struct device *dev)
 	static struct ams5915_data ams5915_data_##inst;                                            \
 	static const struct ams5915_config ams5915_config_##inst = {                               \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.limits.press_min = DT_INST_PROP(inst, lower_limit_press),                              \
-		.limits.press_max = DT_INST_PROP(inst, upper_limit_press)};                             \
+		.limits.press_min = DT_INST_PROP(inst, lower_limit_press),                         \
+		.limits.press_max = DT_INST_PROP(inst, upper_limit_press)};                        \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, ams5915_init, NULL, &ams5915_data_##inst,               \
 				     &ams5915_config_##inst, POST_KERNEL,                          \
