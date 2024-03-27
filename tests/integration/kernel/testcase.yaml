@@ -1,0 +1,5 @@
+tests:
+  integration.kernel:
+    platform_exclude: qemu_x86_tiny@768
+    tags:
+      - kernel
