@@ -326,6 +326,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 {
 	struct add_network_resp resp = {0};
 	char *chan_list = NULL;
+	struct net_eth_addr mac = {0};
 	int ret = 0;
 
 	if (!wpa_cli_cmd_v("remove_network all")) {
@@ -484,6 +485,28 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 					   resp.network_id, freq)) {
 				goto out;
 			}
+		}
+	}
+
+	memcpy((void *)&mac, params->bssid, WIFI_MAC_ADDR_LEN);
+	if (net_eth_is_addr_broadcast(&mac) ||
+	    net_eth_is_addr_multicast(&mac)) {
+		wpa_printf(MSG_ERROR, "Invalid BSSID. Configuration "
+			   "of multicast or broadcast MAC is not allowed.");
+		ret =  -EINVAL;
+		goto rem_net;
+	}
+
+	if (!net_eth_is_addr_unspecified(&mac)) {
+		char bssid_str[MAC_STR_LEN] = {0};
+
+		snprintf(bssid_str, MAC_STR_LEN, "%02x:%02x:%02x:%02x:%02x:%02x",
+			params->bssid[0], params->bssid[1], params->bssid[2],
+			params->bssid[3], params->bssid[4], params->bssid[5]);
+
+		if (!wpa_cli_cmd_v("set_network %d bssid %s",
+				   resp.network_id, bssid_str)) {
+			goto out;
 		}
 	}
 
