@@ -206,4 +206,24 @@ config PTP_MIN_PDELAY_REQ_LOG_INTERVAL
 	  Specifies minimum permitted mean time interval between successive Pdelay_Req messages.
 	  The value is the converted to nanoseconds as follow: nanoseconds = (10^9) * 2^(value)
 
+config PTP_DISABLED_PRESENT
+	bool
+	default y
+
+config PTP_FAULTY_PRESENT
+	bool
+	default y
+
+config PTP_LISTENING_PRESENT
+	bool
+	default y
+
+config PTP_PRE_TIME_TRANSMITTER_PRESENT
+	bool
+	default y
+
+config PTP_UNCALIBRATED_PRESENT
+	bool
+	default n
+
 endif # PTP
