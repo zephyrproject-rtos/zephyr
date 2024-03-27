@@ -5,6 +5,7 @@ choice LOG_MODE
 	prompt "Mode"
 	depends on !LOG_FRONTEND_ONLY
 	default LOG_MODE_MINIMAL if LOG_DEFAULT_MINIMAL
+	default LOG_MODE_IMMEDIATE if LOG_DEFAULT_IMMEDIATE
 	default LOG_MODE_DEFERRED
 
 config LOG_MODE_DEFERRED
@@ -69,6 +70,13 @@ config LOG_CUSTOM_HEADER
 
 config LOG_DEFAULT_MINIMAL
 	bool
+	help
+	  Can be used to select or imply minimal mode by other Kconfig option.
+
+config LOG_DEFAULT_IMMEDIATE
+	bool
+	help
+	  Can be used to select or imply immediate mode by other Kconfig option.
 
 config LOG_MULTIDOMAIN
 	bool "Multi-domain logger"
