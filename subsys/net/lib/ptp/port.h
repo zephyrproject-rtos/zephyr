@@ -55,6 +55,10 @@ struct ptp_port {
 		uint16_t       signaling;
 		uint16_t       sync;
 	} seq_id;
+	/** Pointer to finite state machine. */
+	enum ptp_port_state    (*state_machine)(enum ptp_port_state state,
+						enum ptp_port_event event,
+						bool tt_diff);
 };
 
 /**

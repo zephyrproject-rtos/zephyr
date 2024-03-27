@@ -201,3 +201,113 @@ enum ptp_port_state ptp_state_machine(enum ptp_port_state state,
 
 	return new_state;
 }
+
+enum ptp_port_state ptp_tr_state_machine(enum ptp_port_state state,
+					 enum ptp_port_event event,
+					 bool tt_diff)
+{
+	enum ptp_port_state new_state = state;
+
+	if (event == PTP_EVT_INITIALIZE || event == PTP_EVT_POWERUP) {
+		/* initialize port data sets, HW and communication facilities */
+		return PTP_PS_INITIALIZING;
+	}
+
+	switch (state) {
+	case PTP_PS_INITIALIZING:
+		switch (event) {
+		case PTP_EVT_FAULT_DETECTED:
+			new_state = PTP_PS_FAULTY;
+			break;
+		case PTP_EVT_INIT_COMPLETE:
+			new_state = PTP_PS_LISTENING;
+			break;
+		default:
+			break;
+		}
+		break;
+	case PTP_PS_FAULTY:
+		switch (event) {
+		case PTP_EVT_DESIGNATED_DISABLED:
+			new_state = PTP_PS_DISABLED;
+			break;
+		case PTP_EVT_FAULT_CLEARED:
+			new_state = PTP_PS_INITIALIZING;
+			break;
+		default:
+			break;
+		}
+		break;
+	case PTP_PS_DISABLED:
+		if (event == PTP_EVT_DESIGNATED_ENABLED) {
+			new_state = PTP_PS_INITIALIZING;
+		}
+		break;
+	case PTP_PS_LISTENING:
+		switch (event) {
+		case PTP_EVT_DESIGNATED_DISABLED:
+			new_state = PTP_PS_DISABLED;
+			break;
+		case PTP_EVT_FAULT_DETECTED:
+			new_state = PTP_PS_FAULTY;
+			break;
+		case PTP_EVT_RS_TIME_RECEIVER:
+			new_state = PTP_PS_UNCALIBRATED;
+			break;
+		default:
+			break;
+		}
+		break;
+	case PTP_PS_UNCALIBRATED:
+		switch (event) {
+		case PTP_EVT_DESIGNATED_DISABLED:
+			new_state = PTP_PS_DISABLED;
+			break;
+		case PTP_EVT_FAULT_DETECTED:
+			new_state = PTP_PS_FAULTY;
+			break;
+		case PTP_EVT_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES:
+			__fallthrough;
+		case PTP_EVT_RS_TIME_TRANSMITTER:
+			__fallthrough;
+		case PTP_EVT_RS_GRAND_MASTER:
+			__fallthrough;
+		case PTP_EVT_RS_PASSIVE:
+			new_state = PTP_PS_LISTENING;
+			break;
+		case PTP_EVT_TIME_TRANSMITTER_CLOCK_SELECTED:
+			new_state = PTP_PS_TIME_RECEIVER;
+		default:
+			break;
+		}
+		break;
+	case PTP_PS_TIME_RECEIVER:
+		case PTP_EVT_DESIGNATED_DISABLED:
+			break;
+		case PTP_EVT_SYNCHRONIZATION_FAULT:
+			new_state = PTP_PS_UNCALIBRATED;
+			break;
+		case PTP_EVT_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES:
+			__fallthrough;
+		case PTP_EVT_RS_TIME_TRANSMITTER:
+			__fallthrough;
+		case PTP_EVT_RS_GRAND_MASTER:
+			__fallthrough;
+		case PTP_EVT_RS_PASSIVE:
+			new_state = PTP_PS_LISTENING;
+			break;
+		case PTP_EVT_RS_TIME_RECEIVER:
+			if (tt_diff) {
+				new_state = PTP_PS_UNCALIBRATED;
+			}
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return new_state;
+}
