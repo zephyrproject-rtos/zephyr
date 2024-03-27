@@ -105,6 +105,7 @@ BUILD_ASSERT(ARRAY_SIZE(foos) == 5, "expected 5 elements");
 /* Check that SYS_INIT() compiles. */
 static int test_init(void)
 {
+	(void)foos;
 	return 0;
 }
 
