@@ -2,36 +2,62 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} COMPONENTS unittest)
 project(zephyr_get_test)
-target_sources(app PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
 
-if(SYSBUILD)
-  get_property(IMAGE_NAME TARGET sysbuild_cache PROPERTY SYSBUILD_NAME)
-else()
-  set(IMAGE_NAME "no_sysbuild")
+add_custom_target(sysbuild_cache)
+if(NOT TARGET snippets_scope)
+  zephyr_create_scope(snippets)
 endif()
 
 # Usage:
 #   - run_suite(<test-1> [<test-2> ...])
 #
-# Run tests and count assert failures. An error report will be shown
-# at the end, either here or in sysbuild.cmake.
+# Run a collection of tests with different sysbuild image mocks.
+# The "no_sysbuild" image represents a test run without sysbuild.
+# Show a summary of assert failures at the end.
 #
 macro(run_suite)
-  set(ASSERT_FAIL_COUNT 0 CACHE INTERNAL "")
+  set(failures "")
 
-  foreach(TEST_NAME ${ARGV})
-    cmake_language(CALL ${TEST_NAME})
+  foreach(IMAGE_NAME no_sysbuild zephyr_get zephyr_get_2nd zephyr_get_3rd)
+    if(NOT IMAGE_NAME STREQUAL "no_sysbuild")
+      if(IMAGE_NAME STREQUAL "zephyr_get")
+        set(SYSBUILD_MAIN_APP TRUE)
+      endif()
+      set(SYSBUILD TRUE CACHE BOOL "" FORCE)
+      set_target_properties(sysbuild_cache PROPERTIES
+        SYSBUILD_NAME                    "${IMAGE_NAME}"
+        SYSBUILD_MAIN_APP                "${SYSBUILD_MAIN_APP}"
+        TESTCASE_VARIABLE                "sysbuild.main"
+        zephyr_get_2nd_TESTCASE_VARIABLE "sysbuild.2nd"
+        ALL_PREFIX_TEST                  "sysbuild.main"
+        zephyr_get_2nd_ALL_PREFIX_TEST   "sysbuild.2nd"
+        all_ALL_PREFIX_TEST              "sysbuild.all"
+      )
+    endif()
+
+    message(STATUS
+      "\n   *"
+      "\n   * Running tests for ${IMAGE_NAME}"
+      "\n   *\n"
+    )
+    set(${IMAGE_NAME}_ASSERT_FAILS 0 CACHE INTERNAL "")
+    foreach(TEST_NAME ${ARGV})
+      cmake_language(CALL ${TEST_NAME})
+    endforeach()
+    if(${IMAGE_NAME}_ASSERT_FAILS GREATER 0)
+      set(failures
+        "${failures}\n  - ${IMAGE_NAME}: ${${IMAGE_NAME}_ASSERT_FAILS} assertion(s) failed"
+      )
+    endif()
+
+    unset(SYSBUILD_MAIN_APP)
+    unset(SYSBUILD CACHE)
   endforeach()
 
-  if($CACHE{ASSERT_FAIL_COUNT} GREATER 0)
-    if(NOT SYSBUILD)
-      set(mode FATAL_ERROR)
-    else()
-      set(mode WARNING)
-    endif()
-    message(${mode} "$CACHE{ASSERT_FAIL_COUNT} assertion(s) failed")
+  if(failures)
+    message(FATAL_ERROR "Test failures per image: ${failures}\n")
   endif()
 endmacro()
 
@@ -77,8 +103,8 @@ function(assert_equal variable expected_value)
     message("PASS: ${info}")
   else()
     message("FAIL: ${info}\n      expected '${expected_value}'")
-    math(EXPR ASSERT_FAIL_COUNT "$CACHE{ASSERT_FAIL_COUNT} + 1")
-    set(ASSERT_FAIL_COUNT ${ASSERT_FAIL_COUNT} CACHE INTERNAL "")
+    math(EXPR increment "$CACHE{${IMAGE_NAME}_ASSERT_FAILS} + 1")
+    set(${IMAGE_NAME}_ASSERT_FAILS ${increment} CACHE INTERNAL "")
   endif()
 endfunction()
 
@@ -490,10 +516,6 @@ endfunction()
 
 
 function(test_snippets_scope)
-  if(NOT TARGET snippets_scope)
-    zephyr_create_scope(snippets)
-  endif()
-
   zephyr_set(VARIABLE_1 "snippet 1" SCOPE snippets)
   zephyr_set(VARIABLE_2 "snippet 2" SCOPE snippets)
   zephyr_set(VARIABLE_3 "snippet 3" SCOPE snippets)
@@ -573,6 +595,60 @@ function(test_snippets_scope)
   unset(VARIABLE_1 CACHE)
   zephyr_get(VARIABLE_1)
   assert_equal(VARIABLE_1 "snippet 1")
+
+  foreach(var VARIABLE_1 VARIABLE_2 VARIABLE_3 TESTCASE_VARIABLE)
+    zephyr_set(${var} SCOPE snippets)
+  endforeach()
+endfunction()
+
+
+function(test_all_prefix)
+  set(ALL_PREFIX_TEST "cmake cache" CACHE INTERNAL "")
+
+  zephyr_get(ALL_PREFIX_TEST SYSBUILD GLOBAL)
+  assert_equal(ALL_PREFIX_TEST
+    IMAGE no_sysbuild    "cmake cache"
+    # Provided -DALL_PREFIX_TEST=<...> serves as the
+    # LOCAL sysbuild-defined value for this primary image.
+    IMAGE zephyr_get     "sysbuild.main"
+    # Provided -Dzephyr_get_2nd_ALL_PREFIX_TEST=<...> serves as
+    # the LOCAL sysbuild-defined value for this secondary image.
+    IMAGE zephyr_get_2nd "sysbuild.2nd"
+    # Provided -Dall_ALL_PREFIX_TEST=<...> serves as the
+    # GLOBAL sysbuild-defined value for this tertiary image;
+    # it has no LOCAL value of its own.
+    IMAGE zephyr_get_3rd "sysbuild.all"
+  )
+
+  # Both SYSBUILD GLOBAL AND SYSBUILD LOCAL recognize the 'all_' prefix.
+  # Compare this part with 'test_precedence_with_sysbuild'.
+
+  zephyr_get(ALL_PREFIX_TEST SYSBUILD LOCAL)
+  assert_equal(ALL_PREFIX_TEST
+    IMAGE no_sysbuild    "cmake cache"
+    IMAGE zephyr_get     "sysbuild.main"
+    IMAGE zephyr_get_2nd "sysbuild.2nd"
+    # Provided -Dall_ALL_PREFIX_TEST=<...> still applies here.
+    IMAGE zephyr_get_3rd "sysbuild.all"
+  )
+
+  # ALL_PREFIX_TEST unconditionally belongs in the sysbuild global scope.
+  # (unlike TESTCASE_VARIABLE)
+
+  zephyr_get(ALL_PREFIX_TEST MERGE REVERSE SYSBUILD LOCAL)
+  assert_equal(ALL_PREFIX_TEST
+    IMAGE no_sysbuild    "cmake cache"
+    IMAGE zephyr_get     "cmake cache;sysbuild.all;sysbuild.main"
+    IMAGE zephyr_get_2nd "cmake cache;sysbuild.all;sysbuild.2nd"
+    IMAGE zephyr_get_3rd "cmake cache;sysbuild.all"
+  )
+  zephyr_get(RESULT MERGE VAR ALL_PREFIX_TEST)
+  assert_equal(RESULT
+    IMAGE no_sysbuild    "cmake cache"
+    IMAGE zephyr_get     "sysbuild.main;sysbuild.all;cmake cache"
+    IMAGE zephyr_get_2nd "sysbuild.2nd;sysbuild.all;cmake cache"
+    IMAGE zephyr_get_3rd "sysbuild.all;cmake cache"
+  )
 endfunction()
 
 run_suite(
@@ -582,4 +658,5 @@ run_suite(
   test_multivar
   test_merge_reverse
   test_snippets_scope
+  test_all_prefix
 )

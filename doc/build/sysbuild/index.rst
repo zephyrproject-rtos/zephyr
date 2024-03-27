@@ -154,8 +154,8 @@ build system.
 However, when sysbuild combines multiple Zephyr build systems, there could be
 Kconfig settings exclusive to sysbuild (and not used by any of the applications).
 To handle this, sysbuild has namespaces for configuration variables. You can use these
-namespaces to direct settings either to sysbuild itself or to a specific Zephyr
-application managed by sysbuild using the information in these sections.
+namespaces to direct settings either to sysbuild itself or to Zephyr
+applications managed by sysbuild, using the information in these sections.
 
 The following example shows how to build :ref:`hello_world` with MCUboot enabled,
 applying to both images debug optimizations:
@@ -197,13 +197,14 @@ command line. You can also set Kconfig options via CMake as
 Since sysbuild is the entry point for the build system, and sysbuild is written
 in CMake, all CMake variables are first processed by sysbuild.
 
-Sysbuild creates a namespace for each domain. The namespace prefix is the
-domain's application name. See :ref:`sysbuild_zephyr_application` for more
-information.
-
 To set the variable ``<var>`` in the namespace ``<namespace>``, use this syntax::
 
   -D<namespace>_<var>=<value>
+
+Sysbuild manages several namespaces by which you can control where different
+CMake variables should be propagated. For starters, there is a namespace for
+each individual domain, where the namespace prefix is the domain's application
+name; see :ref:`sysbuild_zephyr_application` for more information.
 
 For example, to set the CMake variable ``FOO`` in the ``my_sample`` application
 build system to the value ``BAR``, run the following commands:
@@ -222,6 +223,34 @@ build system to the value ``BAR``, run the following commands:
 
          cmake -Dmy_sample_FOO=BAR ...
 
+Naturally, if you are configuring additional applications in sysbuild, named
+e.g. ``sample_a``, ``sample_b``, and ``sample_c``, then you can set a different
+value of ``FOO`` in each of them using::
+
+  -Dsample_a_FOO=FOO -Dsample_b_FOO=BAR -Dsample_c_FOO=BAZ
+
+On the other hand, suppose you want to set ``FOO`` to the same value in all of
+these samples. Then, instead of repeating yourself, you can simply pass::
+
+  -Dall_FOO=BAR
+
+The ``all`` namespace is shared by all domains in a given multi-image build.
+It can be used to simplify global configuration of images.
+
+.. note::
+
+   CMake variables processed by sysbuild are not automatically accessible in
+   Zephyr build systems. Rather than initializing each domain's CMake cache,
+   sysbuild generates a separate cache file, which is then loaded inside
+   ``find_package(Zephyr)``. Therefore, when using sysbuild, common variables
+   like ``BOARD`` will not be populated before that point.
+
+   The ``zephyr_get()`` CMake function is used to read domain-specific values
+   from the sysbuild cache (among other sources).
+
+Finally, there are variables used for configuring sysbuild itself, which are
+prefixed with ``SB``. Typically, they are not forwarded to any domains directly.
+
 .. _sysbuild_kconfig_namespacing:
 
 Kconfig namespacing
@@ -238,8 +267,8 @@ To set a Zephyr application's Kconfig option instead, use this syntax::
 
   -D<namespace>_CONFIG_<var>=<value>
 
-In the previous example, ``<namespace>`` is the application name discussed above in
-:ref:`sysbuild_cmake_namespace`.
+In the previous example, ``<namespace>`` can be an application name, or
+it can be ``all``, as discussed above in :ref:`sysbuild_cmake_namespace`.
 
 For example, to set the Kconfig option ``FOO`` in the ``my_sample`` application
 build system to the value ``BAR``, run the following commands:
@@ -264,6 +293,8 @@ build system to the value ``BAR``, run the following commands:
 
    This means that passing ``-DCONFIG_<var>=<value>`` and
    ``-Dmy_sample_CONFIG_<var>=<value>`` are equivalent.
+   However, if both are specified, then the latter form
+   will take precedence.
 
    This allows you to build the same application with or without sysbuild using
    the same syntax for setting Kconfig values at CMake time.
