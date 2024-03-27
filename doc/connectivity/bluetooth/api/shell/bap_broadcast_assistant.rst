@@ -41,7 +41,7 @@ subscribe to all notifications.
                         [bis_index [bis_index [bix_index [...]]]]>
    mod_src           : Set sync <src_id> <sync_pa> [<pa_interval>] [<sync_bis>]
                         [<metadata>]
-   broadcast_code    : Send a space separated broadcast code of up to 16 bytes
+   broadcast_code    : Send a string-based broadcast code of up to 16 bytes
                         <src_id> <broadcast code>
    rem_src           : Remove a source <src_id>
    read_state        : Remove a source <index>
@@ -115,3 +115,13 @@ Modifying a receive state:
    BASS recv state: src_id 0, addr 1E:4D:0A:AA:6E:49 (random), sid 0, sync_state 2, encrypt_state 0
          [0]: BIS sync 0x0001, metadata_len 4
                   Metadata length 2, type 2, data: 0100
+
+Supplying a broadcast code:
+---------------------------
+
+.. code-block:: console
+
+   uart:~$ bap_broadcast_assistant broadcast_code 0 secretCode
+   Sending broadcast code:
+   00000000: 73 65 63 72 65 74 43 6f 64 65 00 00 00 00 00 00 |secretCo de....|
+   uart:~$ BASS broadcast code successful

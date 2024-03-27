@@ -1042,7 +1042,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "[<sync_bis>] [<metadata>]",
 		      cmd_bap_broadcast_assistant_mod_src, 3, 2),
 	SHELL_CMD_ARG(broadcast_code, NULL,
-		      "Send a space separated broadcast code of up to 16 bytes "
+		      "Send a string-based broadcast code of up to 16 bytes "
 		      "<src_id> <broadcast code>",
 		      cmd_bap_broadcast_assistant_broadcast_code, 3, 0),
 	SHELL_CMD_ARG(rem_src, NULL, "Remove a source <src_id>",
