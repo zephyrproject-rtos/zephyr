@@ -22,6 +22,7 @@ int fdetach(const char *path);
 int fattach(int fildes, const char *path);
 int getmsg(int fildes, struct strbuf *ctlptr, struct strbuf *dataptr, int *flagsp);
 int getpmsg(int fildes, struct strbuf *ctlptr, struct strbuf *dataptr, int *bandp, int *flagsp);
+int isastream(int fildes);
 
 #ifdef __cplusplus
 }
