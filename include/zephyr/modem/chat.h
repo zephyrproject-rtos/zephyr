@@ -353,6 +353,156 @@ void modem_chat_script_abort(struct modem_chat *chat);
  */
 void modem_chat_release(struct modem_chat *chat);
 
+/**
+ * @brief Initialize modem chat match
+ * @param chat_match Modem chat match instance
+ */
+void modem_chat_match_init(struct modem_chat_match *chat_match);
+
+/**
+ * @brief Set match of modem chat match instance
+ * @param chat_match Modem chat match instance
+ * @param match Match to set
+ * @note The lifetime of match must match or exceed the lifetime of chat_match
+ * @warning Always call this API after match is modified
+ *
+ * @retval 0 if successful
+ * @retval -ENOMEM if strlen of match exceeds UINT8_MAX
+ */
+int modem_chat_match_set_match(struct modem_chat_match *chat_match, const char *match);
+
+/**
+ * @brief Set separators of modem chat match instance
+ * @param chat_match Modem chat match instance
+ * @param separators Separators to set
+ * @note The lifetime of separators must match or exceed the lifetime of chat_match
+ * @warning Always call this API after separators is modified
+ *
+ * @retval 0 if successful
+ * @retval -ENOMEM if strlen of separators exceeds UINT8_MAX
+ */
+int modem_chat_match_set_separators(struct modem_chat_match *chat_match, const char *separators);
+
+/**
+ * @brief Set modem chat match callback
+ * @param chat_match Modem chat match instance
+ * @param callback Callback to set
+ */
+void modem_chat_match_set_callback(struct modem_chat_match *chat_match,
+				   modem_chat_match_callback callback);
+
+/**
+ * @brief Set modem chat match partial flag
+ * @param chat_match Modem chat match instance
+ * @param partial Partial flag to set
+ */
+void modem_chat_match_set_partial(struct modem_chat_match *chat_match, bool partial);
+
+/**
+ * @brief Set modem chat match wildcards flag
+ * @param chat_match Modem chat match instance
+ * @param wildcards Wildcards flag to set
+ */
+void modem_chat_match_set_wildcards(struct modem_chat_match *chat_match, bool wildcards);
+
+/**
+ * @brief Initialize modem chat script chat
+ * @param script_chat Modem chat script chat instance
+ */
+void modem_chat_script_chat_init(struct modem_chat_script_chat *script_chat);
+
+/**
+ * @brief Set request of modem chat script chat instance
+ * @param script_chat Modem chat script chat instance
+ * @param request Request to set
+ * @note The lifetime of request must match or exceed the lifetime of script_chat
+ * @warning Always call this API after Request is modified
+ *
+ * @retval 0 if successful
+ * @retval -ENOMEM if strlen of request exceeds UINT16_MAX
+ */
+int modem_chat_script_chat_set_request(struct modem_chat_script_chat *script_chat,
+				       const char *request);
+
+/**
+ * @brief Set modem chat script chat matches
+ * @param script_chat Modem chat script chat instance
+ * @param response_matches Response match array to set
+ * @param response_matches_size Size of response match array
+ * @note The lifetime of response_matches must match or exceed the lifetime of script_chat
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if response_matches_size > 0 and response_matches == NULL
+ */
+int modem_chat_script_chat_set_matches(struct modem_chat_script_chat *script_chat,
+				       const struct modem_chat_match *response_matches,
+				       uint16_t response_matches_size);
+
+/**
+ * @brief Set modem chat script chat matches
+ * @param script_chat Modem chat script chat instance
+ * @param timeout Timeout in milliseconds
+ */
+void modem_chat_script_chat_set_timeout(struct modem_chat_script_chat *script_chat,
+					uint16_t timeout);
+
+/**
+ * @brief Initialize modem chat script
+ * @param script Modem chat script instance
+ */
+void modem_chat_script_init(struct modem_chat_script *script);
+
+/**
+ * @brief Set modem chat script name
+ * @param script Modem chat script instance
+ * @param name Name to set
+ * @note The lifetime of name must match or exceed the lifetime of script
+ */
+void modem_chat_script_set_name(struct modem_chat_script *script, const char *name);
+
+/**
+ * @brief Set modem chat script chats
+ * @param script Modem chat script instance
+ * @param script_chats Chat script array to set
+ * @param script_chats_size Size of chat script array
+ * @note The lifetime of script_chats must match or exceed the lifetime of script
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if script_chats_size > 0 and script_chats == NULL
+ */
+int modem_chat_script_set_chats(struct modem_chat_script *script,
+				const struct modem_chat_script_chat *script_chats,
+				uint16_t script_chats_size);
+
+/**
+ * @brief Set modem chat script abort matches
+ * @param script Modem chat script instance
+ * @param abort_matches Abort match array to set
+ * @param abort_matches_size Size of abort match array
+ * @note The lifetime of abort_matches must match or exceed the lifetime of script
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if abort_matches_size > 0 and abort_matches == NULL
+ */
+int modem_chat_script_set_matches(struct modem_chat_script *script,
+				  const struct modem_chat_match *abort_matches,
+				  uint16_t abort_matches_size);
+
+/**
+ * @brief Set modem chat script callback
+ * @param script Modem chat script instance
+ * @param callback Callback to set
+ */
+void modem_chat_script_set_callback(struct modem_chat_script *script,
+				    modem_chat_script_callback callback);
+
+/**
+ * @brief Set modem chat script timeout
+ * @param script Modem chat script instance
+ * @param timeout Timeout in seconds
+ */
+void modem_chat_script_set_timeout(struct modem_chat_script *script, uint32_t timeout);
+
 #ifdef __cplusplus
 }
 #endif
