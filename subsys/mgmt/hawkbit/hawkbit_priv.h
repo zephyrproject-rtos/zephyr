@@ -81,15 +81,11 @@ struct hawkbit_ctl_res {
 
 struct hawkbit_cfg_data {
 	const char *VIN;
-	const char *hwRevision;
 };
 
 struct hawkbit_cfg {
 	const char *mode;
 	struct hawkbit_cfg_data data;
-	const char *id;
-	const char *time;
-	struct hawkbit_status status;
 };
 
 struct hawkbit_close {

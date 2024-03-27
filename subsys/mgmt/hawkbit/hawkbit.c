@@ -44,7 +44,6 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #define RECV_BUFFER_SIZE 640
 #define URL_BUFFER_SIZE 300
 #define SHA256_HASH_SIZE 32
-#define STATUS_BUFFER_SIZE 200
 #define DOWNLOAD_HTTP_SIZE 200
 #define DEPLOYMENT_BASE_SIZE 50
 #define RESPONSE_BUFFER_SIZE 1100
@@ -85,7 +84,7 @@ static struct hawkbit_context {
 	struct http_request http_req;
 	struct flash_img_context flash_ctx;
 	uint8_t url_buffer[URL_BUFFER_SIZE];
-	uint8_t status_buffer[STATUS_BUFFER_SIZE];
+	uint8_t status_buffer[CONFIG_HAWKBIT_STATUS_BUFFER_SIZE];
 	uint8_t recv_buf_tcp[RECV_BUFFER_SIZE];
 	enum hawkbit_response code_status;
 	bool final_data_received;
@@ -96,6 +95,12 @@ static union {
 	struct hawkbit_ctl_res base;
 	struct hawkbit_cancel cancel;
 } hawkbit_results;
+
+int hawkbit_default_config_data_cb(const char *device_id, uint8_t *buffer,
+			      const size_t buffer_size);
+
+static hawkbit_config_device_data_cb_handler_t hawkbit_config_device_data_cb_handler =
+	hawkbit_default_config_data_cb;
 
 static struct k_work_delayable hawkbit_work_handle;
 
@@ -135,15 +140,11 @@ static const struct json_obj_descr json_ctl_res_descr[] = {
 
 static const struct json_obj_descr json_cfg_data_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct hawkbit_cfg_data, VIN, JSON_TOK_STRING),
-	JSON_OBJ_DESCR_PRIM(struct hawkbit_cfg_data, hwRevision, JSON_TOK_STRING),
 };
 
 static const struct json_obj_descr json_cfg_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct hawkbit_cfg, mode, JSON_TOK_STRING),
 	JSON_OBJ_DESCR_OBJECT(struct hawkbit_cfg, data, json_cfg_data_descr),
-	JSON_OBJ_DESCR_PRIM(struct hawkbit_cfg, id, JSON_TOK_STRING),
-	JSON_OBJ_DESCR_PRIM(struct hawkbit_cfg, time, JSON_TOK_STRING),
-	JSON_OBJ_DESCR_OBJECT(struct hawkbit_cfg, status, json_status_descr),
 };
 
 static const struct json_obj_descr json_close_descr[] = {
@@ -565,6 +566,31 @@ static void hawkbit_dump_deployment(struct hawkbit_dep_res *d)
 	LOG_DBG("%s=%s", "md5sum-http", l->md5sum_http.href);
 }
 
+#ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTES
+int hawkbit_set_custom_data_cb(hawkbit_config_device_data_cb_handler_t cb)
+{
+	if (cb == NULL) {
+		LOG_ERR("Invalid callback");
+		return -EINVAL;
+	}
+
+	hawkbit_config_device_data_cb_handler = cb;
+
+	return 0;
+}
+#endif /* CONFIG_HAWKBIT_CUSTOM_ATTRIBUTES */
+
+int hawkbit_default_config_data_cb(const char *device_id, uint8_t *buffer, const size_t buffer_size)
+{
+	struct hawkbit_cfg cfg = {0};
+
+	cfg.mode = "merge";
+	cfg.data.VIN = device_id;
+
+	return json_obj_encode_buf(json_cfg_descr, ARRAY_SIZE(json_cfg_descr), &cfg, buffer,
+				   buffer_size - 1);
+}
+
 int hawkbit_init(void)
 {
 	bool image_ok;
@@ -792,7 +818,6 @@ static bool send_request(enum http_method method, enum hawkbit_http_request type
 {
 	int ret = 0;
 
-	struct hawkbit_cfg cfg;
 	struct hawkbit_close close;
 	struct hawkbit_dep_fbk feedback;
 	char acid[11];
@@ -841,18 +866,8 @@ static bool send_request(enum http_method method, enum hawkbit_http_request type
 		break;
 
 	case HAWKBIT_CONFIG_DEVICE:
-		memset(&cfg, 0, sizeof(cfg));
-		cfg.mode = "merge";
-		cfg.data.VIN = device_id;
-		cfg.data.hwRevision = "3";
-		cfg.id = "";
-		cfg.time = "";
-		cfg.status.execution = exec;
-		cfg.status.result.finished = fini;
-
-		ret = json_obj_encode_buf(json_cfg_descr, ARRAY_SIZE(json_cfg_descr), &cfg,
-					  hb_context.status_buffer,
-					  sizeof(hb_context.status_buffer));
+		ret = hawkbit_config_device_data_cb_handler(device_id, hb_context.status_buffer,
+							    sizeof(hb_context.status_buffer));
 		if (ret) {
 			LOG_ERR("Can't encode the JSON script (%s): %d", "HAWKBIT_CONFIG_DEVICE",
 				ret);
