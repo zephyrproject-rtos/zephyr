@@ -17,6 +17,11 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_sources_ifdef(
+  CONFIG_I3C_SHELL
+  i3c_shell.c
+)
+
+zephyr_library_sources_ifdef(
   CONFIG_I3C_IBI_WORKQUEUE
   i3c_ibi_workq.c
 )

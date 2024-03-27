@@ -15,6 +15,15 @@ module = I3C
 module-str = i3c
 source "subsys/logging/Kconfig.template.log_config"
 
+config I3C_SHELL
+	bool "I3C Shell"
+	depends on SHELL
+	help
+	  Enable I3C Shell.
+
+	  The I3C shell supports info, bus recovery, CCC, I3C read and
+	  write operations.
+
 config I3C_USE_GROUP_ADDR
 	bool "Use Group Addresses"
 	default y
