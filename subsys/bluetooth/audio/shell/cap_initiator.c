@@ -1459,6 +1459,8 @@ ssize_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_
 		NET_BUF_SIMPLE_DEFINE_STATIC(base_buf, UINT8_MAX);
 		int err;
 
+		net_buf_simple_reset(&base_buf);
+
 		err = bt_cap_initiator_broadcast_get_base(default_source.cap_source, &base_buf);
 		if (err != 0) {
 			printk("Unable to get BASE: %d\n", err);

@@ -48,6 +48,8 @@ size_t pbp_ad_data_add(struct bt_data data[], size_t data_size)
 {
 	int err;
 
+	net_buf_simple_reset(&pbp_ad_buf);
+
 	err = bt_pbp_get_announcement(pba_metadata,
 				      ARRAY_SIZE(pba_metadata),
 				      pbp_features,
