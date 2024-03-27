@@ -52,7 +52,7 @@ void z_sched_ipi(void)
 #endif /* CONFIG_TRACE_SCHED_IPI */
 
 #ifdef CONFIG_TIMESLICING
-	if (sliceable(_current)) {
+	if (thread_is_sliceable(_current)) {
 		z_time_slice();
 	}
 #endif /* CONFIG_TIMESLICING */
