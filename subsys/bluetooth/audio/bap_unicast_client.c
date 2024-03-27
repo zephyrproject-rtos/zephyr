@@ -2529,24 +2529,24 @@ static int stream_param_check(const struct bt_bap_unicast_group_stream_param *pa
 {
 	CHECKIF(param->stream == NULL)
 	{
-		LOG_ERR("param->stream is NULL");
+		LOG_DBG("param->stream is NULL");
 		return -EINVAL;
 	}
 
 	CHECKIF(param->qos == NULL)
 	{
-		LOG_ERR("param->qos is NULL");
+		LOG_DBG("param->qos is NULL");
 		return -EINVAL;
 	}
 
 	if (param->stream != NULL && param->stream->group != NULL) {
-		LOG_WRN("stream %p already part of group %p", param->stream, param->stream->group);
+		LOG_DBG("stream %p already part of group %p", param->stream, param->stream->group);
 		return -EALREADY;
 	}
 
 	CHECKIF(bt_audio_verify_qos(param->qos) != BT_BAP_ASCS_REASON_NONE)
 	{
-		LOG_ERR("Invalid QoS");
+		LOG_DBG("Invalid QoS");
 		return -EINVAL;
 	}
 
@@ -3998,7 +3998,7 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn,
 	int err;
 
 	if (attr == NULL) {
-		LOG_ERR("Unable to find %s PAC", bt_audio_dir_str(client->dir));
+		LOG_DBG("Unable to find %s PAC", bt_audio_dir_str(client->dir));
 
 		discover_cb(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
 
