@@ -24,13 +24,13 @@
 	timer {
 		compatible = "arm,armv8-timer";
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
-					  IRQ_DEFAULT_PRIORITY>,
-					 <GIC_PPI 14 IRQ_TYPE_LEVEL
-					  IRQ_DEFAULT_PRIORITY>,
-					 <GIC_PPI 11 IRQ_TYPE_LEVEL
-					  IRQ_DEFAULT_PRIORITY>,
-					 <GIC_PPI 10 IRQ_TYPE_LEVEL
-					  IRQ_DEFAULT_PRIORITY>;
+		              IRQ_DEFAULT_PRIORITY>,
+		             <GIC_PPI 14 IRQ_TYPE_LEVEL
+		              IRQ_DEFAULT_PRIORITY>,
+		             <GIC_PPI 11 IRQ_TYPE_LEVEL
+		              IRQ_DEFAULT_PRIORITY>,
+		             <GIC_PPI 10 IRQ_TYPE_LEVEL
+		              IRQ_DEFAULT_PRIORITY>;
 	};
 
 	soc {
@@ -46,7 +46,7 @@
 		gic: interrupt-controller@107fff9000 {
 			compatible = "arm,gic-v2", "arm,gic";
 			reg = <0x10 0x7fff9000 0x1000>,
-				  <0x10 0x7fffa000 0x2000>;
+			      <0x10 0x7fffa000 0x2000>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
 			status = "okay";
@@ -66,6 +66,24 @@
 				ngpios = <17>;
 				status = "disabled";
 			};
+		};
+
+		uart10: serial@107d001000 {
+			compatible = "arm,pl011";
+			reg = <0x10 0x7d001000 0x200>;
+			interrupts = <GIC_SPI 121 IRQ_TYPE_LEVEL
+			              IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clk_uart>;
+			status = "disabled";
+		};
+
+	};
+
+	clocks {
+		clk_uart: clk_uart {
+			compatible = "fixed-clock";
+			clock-frequency = <44236800>;
+			#clock-cells = <0>;
 		};
 	};
 };

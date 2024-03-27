@@ -34,15 +34,19 @@ Supported Features
 
 The Raspberry Pi 5 board configuration supports the following hardware features:
 
-+-----------+----------------+--------------------------+
-| Interface | Kconfig        | Devicetree compatible    |
-+===========+================+==========================+
-| GIC-400   | N/A            | arm,gic-v2               |
-+-----------+----------------+--------------------------+
-| GPIO      | CONFIG_GPIO    | brcm,brcmstb-gpio        |
-+-----------+----------------+--------------------------+
++-----------+---------------------+--------------------------+
+| Interface | Kconfig             | Devicetree compatible    |
++===========+=====================+==========================+
+| GIC-400   | N/A                 | arm,gic-v2               |
++-----------+---------------------+--------------------------+
+| GPIO      | CONFIG_GPIO         | brcm,brcmstb-gpio        |
++-----------+---------------------+--------------------------+
+| SERIAL    | CONFIG_SERIAL       | arm,pl011                |
+|           | CONFIG_CONSOLE      |                          |
+|           | CONFIG_UART_CONSOLE |                          |
++-----------+---------------------+--------------------------+
 
-There are many hardware fatures of Raspberry Pi 5. But now, only `GPIO` feautre has been implemented for Raspberry Pi 5.
+There are many hardware fatures of Raspberry Pi 5. But now, `GPIO` and `SERIAL` feautres have been implemented for Raspberry Pi 5.
 
 Other hardware features are not currently supported by the port. See the `Raspberry Pi hardware`_ for a complete list of MPS3 AN547 board hardware features.
 
@@ -56,12 +60,12 @@ Flashing
 ========
 
 In brief,
-    1. Format your TF card with MBR and FAT32.
+    1. Format your Micro SD card with MBR and FAT32.
     2. Save three files below in the root directory.
         * config.txt
         * zephyr.bin
         * `bcm2712-rpi-5.dtb`_
-    3. Insert the TF card and power on the Raspberry Pi 5.
+    3. Insert the Micro SD card and power on the Raspberry Pi 5.
 
 then, You will see the Raspberry Pi 5 running the `zephyr.bin`.
 
@@ -84,9 +88,65 @@ Build an app `samples/basic/blinky`
    :board: rpi_5
    :goals: build
 
-Copy `zephyr.bin` from `build/zephyr` directory to the root directory of the TF card.
+Copy `zephyr.bin` from `build/zephyr` directory to the root directory of the Micro SD card.
 
-Insert the TF card and power on the Raspberry Pi 5. And then, the STAT LED will start to blink.
+Insert the Micro SD card and power on the Raspberry Pi 5. And then, the STAT LED will start to blink.
+
+
+Serial Communication
+====================
+
+wiring
+------
+
+you will need to prepare the following items:
+   * `Raspberry Pi Debug Probe`_
+   * JST cable: 3-pin JST connector to 3-pin JST connector cable
+   * USB cable: USB A male - Micro USB B male
+
+Use a JST cable to connect the Raspberry Pi Debug Probe UART port and the Raspberry Pi 5 UART port between the HDMI ports.
+
+Then connect the Raspberry Pi Debug Probe and your computer with a USB cable.
+
+
+config.txt
+----------
+
+.. code-block:: text
+
+   kernel=zephyr.bin
+   arm_64bit=1
+   enable_uart=1
+   uart_2ndstage=1
+
+
+zephyr.bin
+----------
+
+Build an app `samples/hello_world`
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: rpi_5
+   :goals: build
+
+Copy `zephyr.bin` from `build/zephyr` directory to the root directory of the Micro SD card.
+
+Insert the Micro SD card into your Raspberry Pi 5.
+
+
+serial terminal emulator
+------------------------
+
+Set the baud rate to `115200` and the serial device(or line) to `/dev/ttyACM0`.
+
+When you power on the Raspberry Pi 5, you will see the following output in the serial console:
+
+.. code-block:: console
+
+   *** Booting Zephyr OS build XXXXXXXXXXXX  ***
+   Hello World! rpi_5/bcm2712
+
 
 .. _Raspberry Pi 5 product-brief:
    https://datasheets.raspberrypi.com/rpi5/raspberry-pi-5-product-brief.pdf
@@ -96,3 +156,6 @@ Insert the TF card and power on the Raspberry Pi 5. And then, the STAT LED will 
 
 .. _bcm2712-rpi-5.dtb:
    https://github.com/raspberrypi/firmware/raw/master/boot/bcm2712-rpi-5-b.dtb
+
+.. _Raspberry Pi Debug Probe:
+   https://www.raspberrypi.com/products/debug-probe/
