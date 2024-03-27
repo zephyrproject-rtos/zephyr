@@ -8,6 +8,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pwm.h>
 #include <lvgl.h>
 #include <stdio.h>
 #include <string.h>
@@ -19,6 +20,10 @@
 LOG_MODULE_REGISTER(app);
 
 static uint32_t count;
+
+#if DT_NODE_EXISTS(DT_ALIAS(pwm_lcd0))
+static const struct pwm_dt_spec pwm_lcd0 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_lcd0));
+#endif
 
 #ifdef CONFIG_GPIO
 static struct gpio_dt_spec button_gpio = GPIO_DT_SPEC_GET_OR(
@@ -66,6 +71,13 @@ int main(void)
 		LOG_ERR("Device not ready, aborting test");
 		return 0;
 	}
+
+#if DT_NODE_EXISTS(DT_ALIAS(pwm_lcd0))
+	if (!pwm_is_ready_dt(&pwm_lcd0)) {
+		LOG_ERR("PWM not ready, aborting test");
+		return 0;
+	}
+#endif
 
 #ifdef CONFIG_GPIO
 	if (gpio_is_ready_dt(&button_gpio)) {
@@ -143,6 +155,13 @@ int main(void)
 
 	lv_task_handler();
 	display_blanking_off(display_dev);
+
+#if DT_NODE_EXISTS(DT_ALIAS(pwm_lcd0))
+	if (pwm_set_pulse_dt(&pwm_lcd0, pwm_lcd0.period)) {
+		LOG_ERR("PWM failed to set pulse width");
+		return 0;
+	}
+#endif
 
 	while (1) {
 		if ((count % 100) == 0U) {
