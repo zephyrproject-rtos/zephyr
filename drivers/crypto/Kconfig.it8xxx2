@@ -11,3 +11,14 @@ config CRYPTO_IT8XXX2_SHA
 	  This driver supports SHA256 hardware accelerator of the it8xxx2 series.
 	  It requires 256 + 256 bytes in the RAM's first 4k-bytes to calculate
 	  SHA256 hash.
+
+config CRYPTO_IT8XXX2_SHA_V2
+	bool "ITE IT8XXX2 SHA V2 driver"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_SHA_V2_ENABLED
+	select SOC_IT8XXX2_SHA256_HW_ACCELERATE
+	help
+	  Enable ITE IT8XXX2 SHA V2 driver.
+	  This driver supports SHA256 hardware accelerator of the it82xx2 series.
+	  It requires 1024 + 256 bytes in the RAM's first 4k-bytes to calculate
+	  SHA256 hash.

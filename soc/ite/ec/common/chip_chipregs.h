@@ -1633,6 +1633,8 @@ struct gctrl_it8xxx2_regs {
 /* 0x06: Reset Status */
 #define IT8XXX2_GCTRL_LRS		(BIT(1) | BIT(0))
 #define IT8XXX2_GCTRL_IWDTR		BIT(1)
+/* 0x0B: Wait Next 65K Rising */
+#define IT8XXX2_GCTRL_WN65K		0x00
 /* 0x10: Reset Control DMM */
 #define IT8XXX2_GCTRL_UART1SD		BIT(3)
 #define IT8XXX2_GCTRL_UART2SD		BIT(2)
@@ -1652,6 +1654,7 @@ struct gctrl_it8xxx2_regs {
 #define IT8XXX2_GCTRL_EPLR_ENABLE	BIT(0)
 /* 0x46: Pin Multi-function Enable 3 */
 #define IT8XXX2_GCTRL_SMB3PSEL		BIT(6)
+#define IT8XXX2_GCTRL_SRAM_CRYPTO_USED	BIT(5)
 /* 0x4B: ETWD and UART Control */
 #define IT8XXX2_GCTRL_ETWD_HW_RST_EN	BIT(0)
 /* 0x5D: RISCV ILM Configuration 0 */
