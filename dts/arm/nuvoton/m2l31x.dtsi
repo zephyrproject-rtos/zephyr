@@ -213,6 +213,50 @@
 			status = "disabled";
 			interrupts = <21 2>;
 		};
+
+		spi0: spi@40061000 {
+			compatible = "nuvoton,numaker-spi";
+			reg = <0x40061000 0x6c>;
+			interrupts = <23 0>;
+			resets = <&rst NUMAKER_SPI0_RST>;
+			clocks = <&pcc NUMAKER_SPI0_MODULE NUMAKER_CLK_CLKSEL2_SPI0SEL_HIRC 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40062000 {
+			compatible = "nuvoton,numaker-spi";
+			reg = <0x40062000 0x6c>;
+			interrupts = <51 0>;
+			resets = <&rst NUMAKER_SPI1_RST>;
+			clocks = <&pcc NUMAKER_SPI1_MODULE NUMAKER_CLK_CLKSEL2_SPI1SEL_HIRC 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi2: spi@40063000 {
+			compatible = "nuvoton,numaker-spi";
+			reg = <0x40063000 0x6c>;
+			interrupts = <52 0>;
+			resets = <&rst NUMAKER_SPI2_RST>;
+			clocks = <&pcc NUMAKER_SPI2_MODULE NUMAKER_CLK_CLKSEL3_SPI2SEL_HIRC 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi3: spi@40064000 {
+			compatible = "nuvoton,numaker-spi";
+			reg = <0x40064000 0x6c>;
+			interrupts = <62 0>;
+			resets = <&rst NUMAKER_SPI3_RST>;
+			clocks = <&pcc NUMAKER_SPI3_MODULE NUMAKER_CLK_CLKSEL3_SPI3SEL_HIRC 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 
