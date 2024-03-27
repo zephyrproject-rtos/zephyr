@@ -140,6 +140,10 @@ Glossary of Terms
       A number of different :term:`SoCs <SoC>` that share similar characteristics and
       features, and that the vendor typically names and markets together.
 
+   software component
+      A software component is a self-contained, modular, and replaceable part of the Zephyr source
+      code. A driver or subsystem is an example of a software component present in Zephyr.
+
    system power state
       System power states describe the power consumption of the system as a
       whole. System power states are represented by :c:enum:`pm_state`.
