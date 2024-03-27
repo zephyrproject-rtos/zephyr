@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pcie/pcie.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include "gpio_common.dtsi"
 
 / {
 	cpus {
@@ -43,6 +44,92 @@
 		interrupt-controller;
 		#interrupt-cells = <3>;
 		#address-cells = <1>;
+	};
+
+	acpi {
+		gpio_a: gpio_a {
+			acpi-hid = "INTC1057";
+			acpi-uid = "2";
+			group-index = <0x02>;
+			status = "okay";
+		};
+
+		gpio_b: gpio_b {
+			acpi-hid = "INTC1057";
+			acpi-uid = "0";
+			group-index = <0x0>;
+			status = "okay";
+		};
+
+		gpio_c: gpio_c {
+			acpi-hid = "INTC1057";
+			acpi-uid = "0";
+			group-index = <0x0B>;
+			status = "okay";
+		};
+
+		gpio_d: gpio_d {
+			acpi-hid = "INTC1057";
+			acpi-uid = "0";
+			group-index = <0x8>;
+			status = "okay";
+		};
+
+		gpio_e: gpio_e {
+			acpi-hid = "INTC1057";
+			acpi-uid = "0";
+			group-index = <0xE>;
+			status = "okay";
+		};
+
+		gpio_f: gpio_f {
+			acpi-hid = "INTC1057";
+			acpi-uid = "0";
+			group-index = <0xC>;
+			status = "okay";
+		};
+
+		gpio_h: gpio_h {
+			acpi-hid = "INTC1057";
+			acpi-uid = "0";
+			group-index = <0x7>;
+			status = "okay";
+		};
+
+		gpio_i: gpio_i {
+			acpi-hid = "INTC1057";
+			acpi-uid = "0";
+			group-index = <0x9>;
+			status = "okay";
+		};
+
+		gpio_s: gpio_s {
+			acpi-hid = "INTC1057";
+			acpi-uid = "0";
+			group-index = <0x6>;
+			status = "okay";
+		};
+
+		gpio_r: gpio_r {
+			acpi-hid = "INTC1057";
+			acpi-uid = "0";
+			group-index = <0x3>;
+			status = "okay";
+		};
+
+		gpio_t: gpio_t {
+			acpi-hid = "INTC1057";
+			acpi-uid = "0";
+			group-index = <0x1>;
+			status = "okay";
+		};
+
+		gpio_v: gpio_v {
+			acpi-hid = "INTC1057";
+			acpi-uid = "0";
+			group-index = <0xA>;
+			status = "okay";
+		};
 	};
 
 	pcie0: pcie0 {
@@ -207,7 +294,7 @@
 			pw,cs-mode = <0>;
 			pw,cs-output = <0>;
 			pw,fifo-depth = <64>;
-			cs-gpios = <&gpio_4_e 10 GPIO_ACTIVE_LOW>;
+			cs-gpios = <&gpio_e 10 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -223,7 +310,7 @@
 			pw,cs-mode = <0>;
 			pw,cs-output = <0>;
 			pw,fifo-depth = <64>;
-			cs-gpios = <&gpio_4_f 16 GPIO_ACTIVE_LOW>;
+			cs-gpios = <&gpio_f 16 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -239,7 +326,7 @@
 			pw,cs-mode = <0>;
 			pw,cs-output = <0>;
 			pw,fifo-depth = <64>;
-			cs-gpios = <&gpio_1_d 9 GPIO_ACTIVE_LOW>;
+			cs-gpios = <&gpio_d 9 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -289,167 +376,6 @@
 			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 			reg-shift = <0>;
-			status = "okay";
-		};
-
-		gpio_0_b: gpio@fd6e0700 {
-			compatible = "intel,gpio";
-			reg = <0xfd6e0700 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-
-			group-index = <0x0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-
-			ngpios = <24>;
-			pin-offset = <0>;
-
-			status = "okay";
-		};
-
-		gpio_0_a: gpio@fd6e09a0 {
-			compatible = "intel,gpio";
-			reg = <0xfd6e09a0 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-
-			group-index = <0x2>;
-			gpio-controller;
-			#gpio-cells = <2>;
-
-			ngpios = <24>;
-			pin-offset = <41>;
-
-			status = "okay";
-		};
-
-		gpio_1_s: gpio@fd6d0700 {
-			compatible = "intel,gpio";
-			reg = <0xfd6d0700 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-
-			group-index = <0x0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-
-			ngpios = <8>;
-			pin-offset = <0>;
-
-			status = "okay";
-		};
-
-		gpio_1_i: gpio@fd6d0780 {
-			compatible = "intel,gpio";
-			reg = <0xfd6d0780 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-
-			group-index = <0x1>;
-			gpio-controller;
-			#gpio-cells = <2>;
-
-			ngpios = <19>;
-			pin-offset = <8>;
-
-			status = "okay";
-		};
-
-
-		gpio_1_h: gpio@fd6d08c0 {
-			compatible = "intel,gpio";
-			reg = <0xfd6d08c0 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-
-			group-index = <0x2>;
-			gpio-controller;
-			#gpio-cells = <2>;
-
-			ngpios = <24>;
-			pin-offset = <25>;
-
-			status = "okay";
-		};
-
-		gpio_1_d: gpio@fd6d0a40 {
-			compatible = "intel,gpio";
-			reg = <0xfd6d0a40 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-
-			group-index = <0x3>;
-			gpio-controller;
-			#gpio-cells = <2>;
-
-			ngpios = <20>;
-			pin-offset = <49>;
-
-			status = "okay";
-		};
-
-		gpio_4_c: gpio@fd6a0700 {
-			compatible = "intel,gpio";
-			reg = <0xfd6a0700 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-
-			group-index = <0x0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-
-			ngpios = <8>;
-			pin-offset = <0>;
-
-			status = "okay";
-		};
-
-		gpio_4_f: gpio@fd6a0880 {
-			compatible = "intel,gpio";
-			reg = <0xfd6a0880 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-
-			group-index = <0x1>;
-			gpio-controller;
-			#gpio-cells = <2>;
-
-			ngpios = <24>;
-			pin-offset = <24>;
-
-			status = "okay";
-		};
-
-		gpio_4_e: gpio@fd6a0a70 {
-			compatible = "intel,gpio";
-			reg = <0xfd6a0a70 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-
-			group-index = <0x3>;
-			gpio-controller;
-			#gpio-cells = <2>;
-
-			ngpios = <24>;
-			pin-offset = <57>;
-
-			status = "okay";
-		};
-
-		gpio_5_r: gpio@fd690700 {
-			compatible = "intel,gpio";
-			reg = <0xfd690700 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-
-			group-index = <0x0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-
-			ngpios = <8>;
-			pin-offset = <0>;
-
 			status = "okay";
 		};
 
