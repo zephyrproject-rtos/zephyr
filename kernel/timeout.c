@@ -135,7 +135,7 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 			sys_dlist_append(&timeout_list, &to->node);
 		}
 
-		if (to == first()) {
+		if (to == first() && announce_remaining == 0) {
 			sys_clock_set_timeout(next_timeout(), false);
 		}
 	}
