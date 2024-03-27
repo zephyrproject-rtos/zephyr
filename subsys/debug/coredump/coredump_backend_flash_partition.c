@@ -358,9 +358,9 @@ static int erase_coredump_header(void)
 	ret = partition_open();
 	if (ret == 0) {
 		/* Erase header block */
-		ret = flash_area_erase(backend_ctx.flash_area, 0,
-				       ROUND_UP(sizeof(struct flash_hdr_t),
-						FLASH_ERASE_SIZE));
+		ret = flash_area_flatten(backend_ctx.flash_area, 0,
+					 ROUND_UP(sizeof(struct flash_hdr_t),
+					 FLASH_ERASE_SIZE));
 	}
 
 	partition_close();
@@ -382,8 +382,8 @@ static int erase_flash_partition(void)
 	ret = partition_open();
 	if (ret == 0) {
 		/* Erase whole flash partition */
-		ret = flash_area_erase(backend_ctx.flash_area, 0,
-				       backend_ctx.flash_area->fa_size);
+		ret = flash_area_flatten(backend_ctx.flash_area, 0,
+					 backend_ctx.flash_area->fa_size);
 	}
 
 	partition_close();
@@ -406,8 +406,8 @@ static void coredump_flash_backend_start(void)
 
 	if (ret == 0) {
 		/* Erase whole flash partition */
-		ret = flash_area_erase(backend_ctx.flash_area, 0,
-				       backend_ctx.flash_area->fa_size);
+		ret = flash_area_flatten(backend_ctx.flash_area, 0,
+					 backend_ctx.flash_area->fa_size);
 	}
 
 	if (ret == 0) {

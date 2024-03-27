@@ -30,6 +30,9 @@ struct k_work fm_work;
 static const struct flash_parameters flash_stm32_parameters = {
 	.write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
 	.erase_value = 0xff,
+	.caps = {
+		.explicit_erase = true,
+	},
 };
 
 K_SEM_DEFINE(flash_busy, 0, 1);

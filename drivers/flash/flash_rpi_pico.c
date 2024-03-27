@@ -37,6 +37,9 @@ LOG_MODULE_REGISTER(flash_rpi_pico, CONFIG_FLASH_LOG_LEVEL);
 static const struct flash_parameters flash_rpi_parameters = {
 	.write_block_size = 1,
 	.erase_value = ERASE_VALUE,
+	.caps = {
+		.explicit_erase = true,
+	},
 };
 
 /**

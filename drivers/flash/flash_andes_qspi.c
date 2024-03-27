@@ -939,6 +939,9 @@ static const struct flash_driver_api flash_andes_qspi_api = {
 			.parameters = {					\
 				.write_block_size = 1,			\
 				.erase_value = 0xff			\
+				.caps = {				\
+					.explicit_erase = false,	\
+				},					\
 			},						\
 			.xip = QSPI_ROM_CFG_XIP(DT_DRV_INST(n)),	\
 			ANDES_QSPI_SFDP_DEVICETREE_PROP(n)		\

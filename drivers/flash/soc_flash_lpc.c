@@ -41,6 +41,9 @@ static const struct flash_parameters flash_lpc_parameters = {
 	.write_block_size = FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE,
 #endif
 	.erase_value = 0xff,
+	.caps = {
+		.explicit_erase = true,
+	},
 };
 
 static inline void prepare_erase_write(off_t offset, size_t len,

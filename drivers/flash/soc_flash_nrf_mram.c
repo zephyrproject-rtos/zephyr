@@ -26,8 +26,6 @@ LOG_MODULE_REGISTER(flash_nrf_mram, CONFIG_FLASH_LOG_LEVEL);
 #define ERASE_VALUE 0xff
 
 BUILD_ASSERT(MRAM_START > 0, "nordic,mram: start address expected to be non-zero");
-BUILD_ASSERT((ERASE_BLOCK_SIZE % WRITE_BLOCK_SIZE) == 0,
-	     "erase-block-size expected to be a multiple of write-block-size");
 
 /**
  * @param[in,out] offset      Relative offset into memory, from the driver API.
@@ -117,24 +115,6 @@ static int nrf_mram_write(const struct device *dev, off_t offset, const void *da
 	return 0;
 }
 
-static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
-{
-	ARG_UNUSED(dev);
-
-	const uintptr_t addr = validate_and_map_addr(offset, size, true);
-
-	if (!addr) {
-		return -EINVAL;
-	}
-
-	LOG_DBG("erase: %p:%zu", (void *)addr, size);
-
-	memset((void *)addr, ERASE_VALUE, size);
-	commit_changes(addr + size);
-
-	return 0;
-}
-
 static const struct flash_parameters *nrf_mram_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -142,6 +122,9 @@ static const struct flash_parameters *nrf_mram_get_parameters(const struct devic
 	static const struct flash_parameters parameters = {
 		.write_block_size = WRITE_BLOCK_SIZE,
 		.erase_value = ERASE_VALUE,
+		.caps = {
+			.explicit_erase,
+		},
 	};
 
 	return &parameters;
@@ -166,7 +149,6 @@ static void nrf_mram_page_layout(const struct device *dev, const struct flash_pa
 static const struct flash_driver_api nrf_mram_api = {
 	.read = nrf_mram_read,
 	.write = nrf_mram_write,
-	.erase = nrf_mram_erase,
 	.get_parameters = nrf_mram_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = nrf_mram_page_layout,

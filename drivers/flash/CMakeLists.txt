@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_library_sources(flash_util.c)
+
 zephyr_syscall_header_ifdef(
   CONFIG_FLASH_SIMULATOR
   ${ZEPHYR_BASE}/include/zephyr/drivers/flash/flash_simulator.h

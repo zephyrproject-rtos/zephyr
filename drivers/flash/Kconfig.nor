@@ -1,4 +1,6 @@
 # Copyright (c) 2018 Savoir-Faire Linux.
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SPI_NOR
@@ -6,6 +8,7 @@ menuconfig SPI_NOR
 	default y
 	depends on DT_HAS_JEDEC_SPI_NOR_ENABLED
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_JESD216
 	select FLASH_HAS_EX_OP
