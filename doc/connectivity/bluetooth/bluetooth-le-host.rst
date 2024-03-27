@@ -153,6 +153,119 @@ an application comes in direct contact with it only when using it in the
 so-called Connection-oriented Channels (CoC) mode. More information on
 this can be found in the :ref:`L2CAP API section <bt_l2cap>`.
 
+Terminology
+-----------
+
+The definitions are from the Core Specification version 5.4, volume 3, part A
+1.4.
+
+.. list-table::
+  :header-rows: 1
+
+  * - Term
+    - Description
+
+  * - Upper layer
+    - Layer above L2CAP, it exchanges data in form of SDUs. It may be an
+      application or a higher level protocol.
+
+  * - Lower layer
+    - Layer below L2CAP, it exchanges data in form of PDUs (or fragments). It is
+      usually the HCI.
+
+  * - Service Data Unit (SDU)
+    - Packet of data that L2CAP exchanges with the upper layer.
+
+      This term is relevant only in Enhanced Retransmission mode, Streaming
+      mode, Retransmission mode and Flow Control Mode, not in Basic L2CAP mode.
+
+  * - Protocol Data Unit (PDU)
+    - Packet of data containing L2CAP data. PDUs always start with Basic L2CAP
+      header.
+
+      Types of PDUs for LE: :ref:`B-frames <bluetooth_l2cap_b_frame>` and
+      :ref:`K-frames <bluetooth_l2cap_k_frame>`.
+
+      Types of PDUs for BR/EDR: I-frames, S-frames, C-frames and G-frames.
+
+  * - Maximum Transmission Unit (MTU)
+    - Maximum size of an SDU that the upper layer is capable of accepting.
+
+  * - Maximum Payload Size (MPS)
+    - Maximum payload size that the L2CAP layer is capable of accepting.
+
+      In Basic L2CAP mode, the MTU size is equal to MPS. In credit-based
+      channels without segmentation, the MTU is MPS minus 2.
+
+  * - Basic L2CAP header
+    - Present at the beginning of each PDU. It contains two fields, the PDU
+      length and the Channel Identifier (CID).
+
+PDU Types
+---------
+
+.. _bluetooth_l2cap_b_frame:
+
+B-frame: Basic information frame
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+PDU used in Basic L2CAP mode. It contains the payload received from the upper
+layer or delivered to the upper layer as its payload.
+
+.. image:: img/l2cap_b_frame.drawio.svg
+  :align: center
+  :width: 45%
+  :alt: Representation of a B-frame PDU. The PDU is split into two rectangles,
+        the first one being the L2CAP header, its size is 4 octets and its made
+        of the PDU length and the channel ID. The second rectangle represents
+        the information payload and its size is less or equal to MPS.
+
+.. _bluetooth_l2cap_k_frame:
+
+K-frame: Credit-based frame
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+PDU used in LE Credit Based Flow Control mode and Enhanced Credit Based Flow
+Control mode. It contains a SDU segment and additional protocol information.
+
+.. image:: img/l2cap_k_frame_1.drawio.svg
+  :width: 45%
+  :alt: Representation of a starting K-frame PDU. The PDU is split into three
+        rectangles, the first one being the L2CAP header, its size is 4 octets
+        and its made of the PDU length and the channel ID. The second rectangle
+        represents the L2CAP SDU length, its size is 2 octets. The third
+        rectangle represents the information payload and its size is less or
+        equal to MPS minus 2 octets. The information payload contains the L2CAP
+        SDU.
+
+.. image:: img/l2cap_k_frame.drawio.svg
+  :align: right
+  :width: 45%
+  :alt: Representation of K-frames PDUs after the starting one. The PDU is split
+        into two rectangles, the first one being the L2CAP header, its size is 4
+        octets and its made of the PDU length and the channel ID. The second
+        rectangle represents the information payload and its size is less or
+        equal to MPS. The information payload contains the L2CAP SDU.
+
+Relevant Kconfig
+----------------
+
+.. list-table::
+  :header-rows: 1
+
+  * - Kconfig symbol
+    - Description
+
+  * - :kconfig:option:`CONFIG_BT_BUF_ACL_RX_SIZE`
+    - Represents the MPS
+
+  * - :kconfig:option:`CONFIG_BT_L2CAP_TX_MTU`
+    - Represents the L2CAP MTU
+
+  * - :kconfig:option:`CONFIG_BT_L2CAP_DYNAMIC_CHANNEL`
+    - Enables LE Credit Based Flow Control and thus the stack may use
+      :ref:`K-frame <bluetooth_l2cap_k_frame>` PDUs
+
 GATT
 ====
 
