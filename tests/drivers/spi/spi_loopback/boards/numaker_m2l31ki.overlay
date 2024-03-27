@@ -1,0 +1,33 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&pinctrl {
+/* EVB's NU5: SS/CLK/MISO/MOSI */
+	spi0_default: spi0_default {
+		group0 {
+			pinmux = <PD3MFP_SPI0_SS>,
+				 <PD2MFP_SPI0_CLK>,
+				 <PD1MFP_SPI0_MISO>,
+				 <PD0MFP_SPI0_MOSI>;
+		};
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&spi0 {
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+};
