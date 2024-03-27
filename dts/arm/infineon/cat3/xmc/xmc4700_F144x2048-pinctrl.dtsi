@@ -1,0 +1,1267 @@
+/*
+ * Copyright (c) 2023 Schlumberger
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <infineon/cat3/xmc/xmc4xxx.dtsi>
+#include <zephyr/dt-bindings/pinctrl/xmc4xxx-pinctrl.h>
+
+&pinctrl {
+	/omit-if-no-ref/ uart_tx_p0_1_u1c1: uart_tx_p0_1_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 1, 2)>;
+	};
+	/omit-if-no-ref/ uart_tx_p0_5_u1c0: uart_tx_p0_5_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 5, 2)>;
+	};
+	/omit-if-no-ref/ uart_tx_p1_5_u0c0: uart_tx_p1_5_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 2)>;
+	};
+	/omit-if-no-ref/ uart_tx_p1_7_u0c0: uart_tx_p1_7_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 7, 2)>;
+	};
+	/omit-if-no-ref/ uart_tx_p1_9_u1c1: uart_tx_p1_9_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 9, 4)>;
+	};
+	/omit-if-no-ref/ uart_tx_p1_15_u1c0: uart_tx_p1_15_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 15, 4)>;
+	};
+	/omit-if-no-ref/ uart_tx_p2_5_u0c1: uart_tx_p2_5_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 2)>;
+	};
+	/omit-if-no-ref/ uart_tx_p2_14_u1c0: uart_tx_p2_14_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 14, 2)>;
+	};
+	/omit-if-no-ref/ uart_tx_p3_5_u2c1: uart_tx_p3_5_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 1)>;
+	};
+	/omit-if-no-ref/ uart_tx_p3_5_u0c1: uart_tx_p3_5_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 4)>;
+	};
+	/omit-if-no-ref/ uart_tx_p3_8_u2c0: uart_tx_p3_8_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 8, 1)>;
+	};
+	/omit-if-no-ref/ uart_tx_p3_11_u2c1: uart_tx_p3_11_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 11, 1)>;
+	};
+	/omit-if-no-ref/ uart_tx_p3_13_u0c1: uart_tx_p3_13_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 13, 2)>;
+	};
+	/omit-if-no-ref/ uart_tx_p3_15_u1c1: uart_tx_p3_15_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 15, 2)>;
+	};
+	/omit-if-no-ref/ uart_tx_p4_2_u1c1: uart_tx_p4_2_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 2, 2)>;
+	};
+	/omit-if-no-ref/ uart_tx_p4_7_u2c1: uart_tx_p4_7_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 7, 1)>;
+	};
+	/omit-if-no-ref/ uart_tx_p5_0_u2c0: uart_tx_p5_0_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 1)>;
+	};
+	/omit-if-no-ref/ uart_tx_p5_1_u0c0: uart_tx_p5_1_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 1, 1)>;
+	};
+	/omit-if-no-ref/ uart_tx_p6_4_u0c1: uart_tx_p6_4_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 4, 2)>;
+	};
+	/omit-if-no-ref/ uart_tx_p6_6_u2c0: uart_tx_p6_6_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 6, 1)>;
+	};
+
+	/omit-if-no-ref/ uart_rx_p1_4_u0c0: uart_rx_p1_4_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 4, 0)>;	/* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ uart_rx_p1_5_u0c0: uart_rx_p1_5_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 0)>;	/* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ uart_rx_p4_7_u0c0: uart_rx_p4_7_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 7, 0)>;	/* USIC input src = DX0C */
+	};
+	/omit-if-no-ref/ uart_rx_p5_0_u0c0: uart_rx_p5_0_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 0)>;	/* USIC input src = DX0D */
+	};
+	/omit-if-no-ref/ uart_rx_p2_2_u0c1: uart_rx_p2_2_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 2, 0)>;	/* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ uart_rx_p2_5_u0c1: uart_rx_p2_5_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 0)>;	/* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ uart_rx_p3_13_u0c1: uart_rx_p3_13_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 13, 0)>; /* USIC input src = DX0D */
+	};
+	/omit-if-no-ref/ uart_rx_p4_0_u0c1: uart_rx_p4_0_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 0, 0)>;	/* USIC input src = DX0E */
+	};
+	/omit-if-no-ref/ uart_rx_p6_3_u0c1: uart_rx_p6_3_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 3, 0)>;	/* USIC input src = DX0C */
+	};
+	/omit-if-no-ref/ uart_rx_p0_4_u1c0: uart_rx_p0_4_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 4, 0)>;	/* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ uart_rx_p0_5_u1c0: uart_rx_p0_5_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 5, 0)>;	/* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ uart_rx_p1_14_u1c0: uart_rx_p1_14_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 14, 0)>; /* USIC input src = DX0E */
+	};
+	/omit-if-no-ref/ uart_rx_p2_14_u1c0: uart_rx_p2_14_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 14, 0)>; /* USIC input src = DX0D */
+	};
+	/omit-if-no-ref/ uart_rx_p2_15_u1c0: uart_rx_p2_15_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 15, 0)>; /* USIC input src = DX0C */
+	};
+	/omit-if-no-ref/ uart_rx_p0_0_u1c1: uart_rx_p0_0_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 0, 0)>;	/* USIC input src = DX0D */
+	};
+	/omit-if-no-ref/ uart_rx_p3_14_u1c1: uart_rx_p3_14_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 14, 0)>; /* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ uart_rx_p3_15_u1c1: uart_rx_p3_15_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 15, 0)>; /* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ uart_rx_p4_2_u1c1: uart_rx_p4_2_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 2, 0)>;	/* USIC input src = DX0C */
+	};
+	/omit-if-no-ref/ uart_rx_p3_7_u2c0: uart_rx_p3_7_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 7, 0)>;	/* USIC input src = DX0C */
+	};
+	/omit-if-no-ref/ uart_rx_p5_0_u2c0: uart_rx_p5_0_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 0)>;	/* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ uart_rx_p5_1_u2c0: uart_rx_p5_1_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 1, 0)>;	/* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ uart_rx_p6_5_u2c0: uart_rx_p6_5_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 5, 0)>;	/* USIC input src = DX0D */
+	};
+	/omit-if-no-ref/ uart_rx_p3_12_u2c1: uart_rx_p3_12_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 12, 0)>; /* USIC input src = DX0D */
+	};
+	/omit-if-no-ref/ uart_rx_p3_4_u2c1: uart_rx_p3_4_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 4, 0)>;	/* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ uart_rx_p3_5_u2c1: uart_rx_p3_5_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 0)>;	/* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ uart_rx_p4_0_u2c1: uart_rx_p4_0_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 0, 0)>;	/* USIC input src = DX0C */
+	};
+	/omit-if-no-ref/ uart_rx_p4_6_u2c1: uart_rx_p4_6_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 6, 0)>;	/* USIC input src = DX0E */
+	};
+
+	/omit-if-no-ref/ spi_mosi_p0_1_u1c1: spi_mosi_p0_1_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 1, 2)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p0_5_u1c0: spi_mosi_p0_5_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 5, 2)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p1_5_u0c0: spi_mosi_p1_5_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 2)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p1_7_u0c0: spi_mosi_p1_7_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 7, 2)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p1_9_u1c1: spi_mosi_p1_9_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 9, 4)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p1_15_u1c0: spi_mosi_p1_15_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 15, 4)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p2_5_u0c1: spi_mosi_p2_5_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 2)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p2_14_u1c0: spi_mosi_p2_14_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 14, 2)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p3_5_u2c1: spi_mosi_p3_5_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 1)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p3_5_u0c1: spi_mosi_p3_5_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 4)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p3_8_u2c0: spi_mosi_p3_8_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 8, 1)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p3_11_u2c1: spi_mosi_p3_11_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 11, 1)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p3_13_u0c1: spi_mosi_p3_13_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 13, 2)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p3_15_u1c1: spi_mosi_p3_15_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 15, 2)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p4_2_u1c1: spi_mosi_p4_2_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 2, 2)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p4_7_u2c1: spi_mosi_p4_7_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 7, 1)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p5_0_u2c0: spi_mosi_p5_0_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 1)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p5_1_u0c0: spi_mosi_p5_1_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 1, 1)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p6_4_u0c1: spi_mosi_p6_4_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 4, 2)>;
+	};
+	/omit-if-no-ref/ spi_mosi_p6_6_u2c0: spi_mosi_p6_6_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 6, 1)>;
+	};
+
+	/omit-if-no-ref/ spi_miso_p1_4_u0c0: spi_miso_p1_4_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 4, 0)>;	/* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ spi_miso_p1_5_u0c0: spi_miso_p1_5_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 0)>;	/* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ spi_miso_p4_7_u0c0: spi_miso_p4_7_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 7, 0)>;	/* USIC input src = DX0C */
+	};
+	/omit-if-no-ref/ spi_miso_p5_0_u0c0: spi_miso_p5_0_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 0)>;	/* USIC input src = DX0D */
+	};
+	/omit-if-no-ref/ spi_miso_p2_2_u0c1: spi_miso_p2_2_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 2, 0)>;	/* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ spi_miso_p2_5_u0c1: spi_miso_p2_5_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 0)>;	/* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ spi_miso_p3_13_u0c1: spi_miso_p3_13_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 13, 0)>; /* USIC input src = DX0D */
+	};
+	/omit-if-no-ref/ spi_miso_p4_0_u0c1: spi_miso_p4_0_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 0, 0)>;	/* USIC input src = DX0E */
+	};
+	/omit-if-no-ref/ spi_miso_p6_3_u0c1: spi_miso_p6_3_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 3, 0)>;	/* USIC input src = DX0C */
+	};
+	/omit-if-no-ref/ spi_miso_p0_4_u1c0: spi_miso_p0_4_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 4, 0)>;	/* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ spi_miso_p0_5_u1c0: spi_miso_p0_5_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 5, 0)>;	/* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ spi_miso_p1_14_u1c0: spi_miso_p1_14_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 14, 0)>; /* USIC input src = DX0E */
+	};
+	/omit-if-no-ref/ spi_miso_p2_14_u1c0: spi_miso_p2_14_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 14, 0)>; /* USIC input src = DX0D */
+	};
+	/omit-if-no-ref/ spi_miso_p2_15_u1c0: spi_miso_p2_15_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 15, 0)>; /* USIC input src = DX0C */
+	};
+	/omit-if-no-ref/ spi_miso_p0_0_u1c1: spi_miso_p0_0_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 0, 0)>;	/* USIC input src = DX0D */
+	};
+	/omit-if-no-ref/ spi_miso_p3_14_u1c1: spi_miso_p3_14_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 14, 0)>; /* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ spi_miso_p3_15_u1c1: spi_miso_p3_15_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 15, 0)>; /* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ spi_miso_p4_2_u1c1: spi_miso_p4_2_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 2, 0)>;	/* USIC input src = DX0C */
+	};
+	/omit-if-no-ref/ spi_miso_p3_7_u2c0: spi_miso_p3_7_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 7, 0)>;	/* USIC input src = DX0C */
+	};
+	/omit-if-no-ref/ spi_miso_p5_0_u2c0: spi_miso_p5_0_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 0)>;	/* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ spi_miso_p5_1_u2c0: spi_miso_p5_1_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 1, 0)>;	/* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ spi_miso_p6_5_u2c0: spi_miso_p6_5_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 5, 0)>;	/* USIC input src = DX0D */
+	};
+	/omit-if-no-ref/ spi_miso_p3_12_u2c1: spi_miso_p3_12_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 12, 0)>; /* USIC input src = DX0D */
+	};
+	/omit-if-no-ref/ spi_miso_p3_4_u2c1: spi_miso_p3_4_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 4, 0)>;	/* USIC input src = DX0B */
+	};
+	/omit-if-no-ref/ spi_miso_p3_5_u2c1: spi_miso_p3_5_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 0)>;	/* USIC input src = DX0A */
+	};
+	/omit-if-no-ref/ spi_miso_p4_0_u2c1: spi_miso_p4_0_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 0, 0)>;	/* USIC input src = DX0C */
+	};
+	/omit-if-no-ref/ spi_miso_p4_6_u2c1: spi_miso_p4_6_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 6, 0)>;	/* USIC input src = DX0E */
+	};
+	/omit-if-no-ref/ spi_sclk_p0_8_u0c0: spi_sclk_p0_8_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 8, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p0_10_u1c1: spi_sclk_p0_10_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 10, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p0_11_u1c0: spi_sclk_p0_11_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 11, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p0_13_u1c1: spi_sclk_p0_13_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 13, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p1_1_u0c0: spi_sclk_p1_1_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 1, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p1_6_u0c0: spi_sclk_p1_6_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 6, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p1_8_u1c1: spi_sclk_p1_8_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 8, 4)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p1_9_u0c0: spi_sclk_p1_9_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 9, 1)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p1_10_u0c0: spi_sclk_p1_10_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 10, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p2_4_u0c1: spi_sclk_p2_4_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 4, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p3_0_u0c1: spi_sclk_p3_0_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 0, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p3_6_u2c1: spi_sclk_p3_6_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 6, 1)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p3_6_u0c1: spi_sclk_p3_6_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 6, 4)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p3_9_u2c0: spi_sclk_p3_9_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 9, 1)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p3_13_u2c1: spi_sclk_p3_13_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 13, 1)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p4_0_u1c0: spi_sclk_p4_0_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 0, 4)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p4_2_u2c1: spi_sclk_p4_2_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 2, 4)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p5_2_u2c0: spi_sclk_p5_2_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 2, 1)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p5_8_u1c0: spi_sclk_p5_8_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 8, 2)>;
+	};
+	/omit-if-no-ref/ spi_sclk_p6_2_u0c1: spi_sclk_p6_2_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 2, 2)>;
+	};
+
+	/omit-if-no-ref/ ebu_p0_2_ad0: ebu_p0_2_ad0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 2, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p0_3_ad1: ebu_p0_3_ad1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 3, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p0_4_ad2: ebu_p0_4_ad2 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 4, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p0_5_ad3: ebu_p0_5_ad3 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 5, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p0_6_adv: ebu_p0_6_adv {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 6, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p0_7_ad6: ebu_p0_7_ad6 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 7, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p0_8_ad7: ebu_p0_8_ad7 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 8, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p0_9_cs1: ebu_p0_9_cs1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 9, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p0_11_breq: ebu_p0_11_breq {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 11, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p0_12_hlda_out: ebu_p0_12_hlda_out {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 12, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p1_2_ad14: ebu_p1_2_ad14 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 2, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p1_3_ad15: ebu_p1_3_ad15 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 3, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p1_6_ad10: ebu_p1_6_ad10 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 6, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p1_7_ad11: ebu_p1_7_ad11 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 7, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p1_8_ad12: ebu_p1_8_ad12 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 8, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p1_9_ad13: ebu_p1_9_ad13 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 9, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p1_12_ad16: ebu_p1_12_ad16 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 12, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p1_13_ad17: ebu_p1_13_ad17 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 13, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p1_14_ad18: ebu_p1_14_ad18 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 14, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p1_15_ad19: ebu_p1_15_ad19 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 15, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p2_0_ad20: ebu_p2_0_ad20 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 0, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p2_1_ad21: ebu_p2_1_ad21 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 1, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p2_2_ad22: ebu_p2_2_ad22 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 2, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p2_3_ad23: ebu_p2_3_ad23 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 3, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p2_4_ad24: ebu_p2_4_ad24 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 4, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p2_5_ad25: ebu_p2_5_ad25 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p2_8_ad26: ebu_p2_8_ad26 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 8, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p2_9_ad27: ebu_p2_9_ad27 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 9, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p2_10_ad28: ebu_p2_10_ad28 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 10, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p2_11_ad29: ebu_p2_11_ad29 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 11, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p2_12_ad30: ebu_p2_12_ad30 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 12, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p2_13_ad31: ebu_p2_13_ad31 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 13, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p2_14_bc0: ebu_p2_14_bc0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 14, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p2_15_bc1: ebu_p2_15_bc1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 15, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p3_0_rd: ebu_p3_0_rd {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 0, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p3_1_rd_nwr: ebu_p3_1_rd_nwr {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 1, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p3_2_cs0: ebu_p3_2_cs0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 2, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p3_5_ad4: ebu_p3_5_ad4 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p3_6_ad5: ebu_p3_6_ad5 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 6, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p4_0_ad8: ebu_p4_0_ad8 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 0, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p4_1_ad9: ebu_p4_1_ad9 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 1, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p5_3_cke: ebu_p5_3_cke {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 3, 0)>;
+		hwctrl = "periph1";
+	};
+	/omit-if-no-ref/ ebu_p5_3_a20: ebu_p5_3_a20 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 3, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p5_4_ras: ebu_p5_4_ras {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 4, 0)>;
+		hwctrl = "periph1";
+	};
+	/omit-if-no-ref/ ebu_p5_4_a21: ebu_p5_4_a21 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 4, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p5_5_cas: ebu_p5_5_cas {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 5, 0)>;
+		hwctrl = "periph1";
+	};
+	/omit-if-no-ref/ ebu_p5_5_a22: ebu_p5_5_a22 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 5, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p5_6_bfclko: ebu_p5_6_bfclko {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 6, 0)>;
+		hwctrl = "periph1";
+	};
+	/omit-if-no-ref/ ebu_p5_6_a23: ebu_p5_6_a23 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 6, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p5_8_sdclko: ebu_p5_8_sdclko {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 8, 0)>;
+		hwctrl = "periph1";
+	};
+	/omit-if-no-ref/ ebu_p5_8_cs2: ebu_p5_8_cs2 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 8, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p5_9_bfclko: ebu_p5_9_bfclko {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 9, 0)>;
+		hwctrl = "periph1";
+	};
+	/omit-if-no-ref/ ebu_p5_9_cs3: ebu_p5_9_cs3 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 9, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p6_0_a16: ebu_p6_0_a16 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 0, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p6_1_a17: ebu_p6_1_a17 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 1, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p6_2_a18: ebu_p6_2_a18 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 2, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p6_4_sdclko: ebu_p6_4_sdclko {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 4, 0)>;
+		hwctrl = "periph1";
+	};
+	/omit-if-no-ref/ ebu_p6_4_a19: ebu_p6_4_a19 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 4, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p6_5_bc2: ebu_p6_5_bc2 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 5, 0)>;
+		hwctrl = "periph2";
+	};
+	/omit-if-no-ref/ ebu_p6_6_bc3: ebu_p6_6_bc3 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 6, 0)>;
+		hwctrl = "periph2";
+	};
+
+	/omit-if-no-ref/ i2c_sda_p4_7_u2c1: i2c_sda_p4_7_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 7, 1)>; /* USIC sda-src = DX0C */
+	};
+	/omit-if-no-ref/ i2c_sda_p5_1_u0c0: i2c_sda_p5_1_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 1, 1)>; /* USIC sda-src = DX0A */
+	};
+	/omit-if-no-ref/ i2c_sda_p3_13_u0c1: i2c_sda_p3_13_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 13, 2)>; /* USIC sda-src = DX0D */
+	};
+	/omit-if-no-ref/ i2c_sda_p3_5_u0c1: i2c_sda_p3_5_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 4)>; /* USIC sda-src = DX0A */
+	};
+	/omit-if-no-ref/ i2c_sda_p2_14_u1c0: i2c_sda_p2_14_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 14, 2)>; /* USIC sda-src = DX0D */
+	};
+	/omit-if-no-ref/ i2c_sda_p0_5_u1c0: i2c_sda_p0_5_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 5, 2)>; /* USIC sda-src = DX0B */
+	};
+	/omit-if-no-ref/ i2c_sda_p4_2_u1c1: i2c_sda_p4_2_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 2, 2)>; /* USIC sda-src = DX0C */
+	};
+	/omit-if-no-ref/ i2c_sda_p5_0_u2c0: i2c_sda_p5_0_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 1)>; /* USIC sda-src = DX0B */
+	};
+	/omit-if-no-ref/ i2c_sda_p1_5_u0c0: i2c_sda_p1_5_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 2)>; /* USIC sda-src = DX0A */
+	};
+	/omit-if-no-ref/ i2c_sda_p2_5_u0c1: i2c_sda_p2_5_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 2)>; /* USIC sda-src = DX0B */
+	};
+	/omit-if-no-ref/ i2c_sda_p3_15_u1c1: i2c_sda_p3_15_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 15, 2)>; /* USIC sda-src = DX0A */
+	};
+
+	/omit-if-no-ref/ i2c_scl_p5_2_u2c0: i2c_scl_p5_2_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 2, 1)>; /* USIC scl-src = DX1A */
+	};
+	/omit-if-no-ref/ i2c_scl_p3_6_u0c1: i2c_scl_p3_6_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 6, 4)>; /* USIC scl-src = DX1B */
+	};
+	/omit-if-no-ref/ i2c_scl_p6_2_u0c1: i2c_scl_p6_2_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 2, 2)>; /* USIC scl-src = DX1C */
+	};
+	/omit-if-no-ref/ i2c_scl_p1_1_u0c0: i2c_scl_p1_1_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 1, 2)>; /* USIC scl-src = DX1A */
+	};
+	/omit-if-no-ref/ i2c_scl_p3_0_u0c1: i2c_scl_p3_0_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 0, 2)>; /* USIC scl-src = DX1B */
+	};
+	/omit-if-no-ref/ i2c_scl_p5_8_u1c0: i2c_scl_p5_8_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 8, 2)>; /* USIC scl-src = DX1B */
+	};
+	/omit-if-no-ref/ i2c_scl_p4_0_u1c0: i2c_scl_p4_0_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 0, 4)>; /* USIC scl-src = DX1C */
+	};
+	/omit-if-no-ref/ i2c_scl_p2_4_u0c1: i2c_scl_p2_4_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 4, 2)>; /* USIC scl-src = DX1A */
+	};
+	/omit-if-no-ref/ i2c_scl_p0_11_u1c0: i2c_scl_p0_11_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 11, 2)>; /* USIC scl-src = DX1A */
+	};
+	/omit-if-no-ref/ i2c_scl_p0_13_u1c1: i2c_scl_p0_13_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 13, 2)>; /* USIC scl-src = DX1B */
+	};
+	/omit-if-no-ref/ i2c_scl_p0_10_u1c1: i2c_scl_p0_10_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 10, 2)>; /* USIC scl-src = DX1A */
+	};
+	/omit-if-no-ref/ i2c_scl_p4_2_u2c1: i2c_scl_p4_2_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 2, 4)>; /* USIC scl-src = DX1A */
+	};
+	/omit-if-no-ref/ i2c_scl_p0_8_u0c0: i2c_scl_p0_8_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 8, 2)>; /* USIC scl-src = DX1B */
+	};
+
+	/omit-if-no-ref/ pwm_out_p0_12_ccu40_ch3: pwm_out_p0_12_ccu40_ch3 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 12, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_13_ccu40_ch2: pwm_out_p0_13_ccu40_ch2 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 13, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_14_ccu40_ch1: pwm_out_p0_14_ccu40_ch1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 14, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_15_ccu40_ch0: pwm_out_p0_15_ccu40_ch0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 15, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_0_ccu40_ch3: pwm_out_p1_0_ccu40_ch3 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 0, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_1_ccu40_ch2: pwm_out_p1_1_ccu40_ch2 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 1, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_2_ccu40_ch1: pwm_out_p1_2_ccu40_ch1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 2, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_3_ccu40_ch0: pwm_out_p1_3_ccu40_ch0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 3, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_2_ccu41_ch3: pwm_out_p2_2_ccu41_ch3 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 2, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_3_ccu41_ch2: pwm_out_p2_3_ccu41_ch2 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 3, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_4_ccu41_ch1: pwm_out_p2_4_ccu41_ch1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 4, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_5_ccu41_ch0: pwm_out_p2_5_ccu41_ch0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_0_ccu42_ch0: pwm_out_p3_0_ccu42_ch0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 0, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_3_ccu42_ch3: pwm_out_p3_3_ccu42_ch3 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 3, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_4_ccu42_ch2: pwm_out_p3_4_ccu42_ch2 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 4, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_5_ccu42_ch1: pwm_out_p3_5_ccu42_ch1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_6_ccu42_ch0: pwm_out_p3_6_ccu42_ch0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 6, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_7_ccu41_ch3: pwm_out_p3_7_ccu41_ch3 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 7, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_8_ccu41_ch2: pwm_out_p3_8_ccu41_ch2 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 8, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_9_ccu41_ch1: pwm_out_p3_9_ccu41_ch1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 9, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_10_ccu41_ch0: pwm_out_p3_10_ccu41_ch0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 10, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_11_ccu42_ch3: pwm_out_p3_11_ccu42_ch3 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 11, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_12_ccu42_ch2: pwm_out_p3_12_ccu42_ch2 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 12, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p3_13_ccu42_ch1: pwm_out_p3_13_ccu42_ch1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 13, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p4_3_ccu43_ch3: pwm_out_p4_3_ccu43_ch3 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 3, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p4_4_ccu43_ch2: pwm_out_p4_4_ccu43_ch2 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 4, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p4_5_ccu43_ch1: pwm_out_p4_5_ccu43_ch1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 5, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p4_6_ccu43_ch0: pwm_out_p4_6_ccu43_ch0 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 6, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p6_2_ccu43_ch3: pwm_out_p6_2_ccu43_ch3 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 2, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p6_3_ccu43_ch2: pwm_out_p6_3_ccu43_ch2 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 3, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p6_4_ccu43_ch1: pwm_out_p6_4_ccu43_ch1 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 4, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p6_5_ccu43_ch0: pwm_out_p6_5_ccu43_ch0 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 5, 3)>;
+	};
+
+	/omit-if-no-ref/ pwm_out_p0_0_ccu80_ch4_low: pwm_out_p0_0_ccu80_ch4_low {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 0, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_1_ccu80_ch2_low: pwm_out_p0_1_ccu80_ch2_low {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 1, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_2_ccu80_ch0_low: pwm_out_p0_2_ccu80_ch0_low {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 2, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_3_ccu80_ch4_high: pwm_out_p0_3_ccu80_ch4_high {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 3, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_4_ccu80_ch2_high: pwm_out_p0_4_ccu80_ch2_high {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 4, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_5_ccu80_ch0_high: pwm_out_p0_5_ccu80_ch0_high {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 5, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_6_ccu80_ch6_high: pwm_out_p0_6_ccu80_ch6_high {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 6, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_9_ccu80_ch3_high: pwm_out_p0_9_ccu80_ch3_high {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 9, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_10_ccu80_ch1_high: pwm_out_p0_10_ccu80_ch1_high {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 10, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p0_11_ccu80_ch6_low: pwm_out_p0_11_ccu80_ch6_low {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 11, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_4_ccu80_ch7_low: pwm_out_p1_4_ccu80_ch7_low {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 4, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_4_ccu81_ch4_high: pwm_out_p1_4_ccu81_ch4_high {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 4, 4)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_5_ccu80_ch5_low: pwm_out_p1_5_ccu80_ch5_low {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_5_ccu81_ch2_high: pwm_out_p1_5_ccu81_ch2_high {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 4)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_10_ccu81_ch4_low: pwm_out_p1_10_ccu81_ch4_low {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 10, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_11_ccu81_ch2_low: pwm_out_p1_11_ccu81_ch2_low {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 11, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_12_ccu81_ch0_low: pwm_out_p1_12_ccu81_ch0_low {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 12, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_13_ccu81_ch4_high: pwm_out_p1_13_ccu81_ch4_high {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 13, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_14_ccu81_ch2_high: pwm_out_p1_14_ccu81_ch2_high {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 14, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p1_15_ccu81_ch0_high: pwm_out_p1_15_ccu81_ch0_high {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 15, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_0_ccu81_ch4_low: pwm_out_p2_0_ccu81_ch4_low {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 0, 2)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_1_ccu81_ch2_low: pwm_out_p2_1_ccu81_ch2_low {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 1, 2)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_2_ccu81_ch0_low: pwm_out_p2_2_ccu81_ch0_low {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 2, 2)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_6_ccu80_ch3_low: pwm_out_p2_6_ccu80_ch3_low {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 6, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_7_ccu80_ch1_low: pwm_out_p2_7_ccu80_ch1_low {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 7, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_8_ccu80_ch7_high: pwm_out_p2_8_ccu80_ch7_high {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 8, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_9_ccu80_ch5_high: pwm_out_p2_9_ccu80_ch5_high {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 9, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_11_ccu80_ch5_high: pwm_out_p2_11_ccu80_ch5_high {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 11, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_12_ccu81_ch7_low: pwm_out_p2_12_ccu81_ch7_low {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 12, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_14_ccu80_ch4_low: pwm_out_p2_14_ccu80_ch4_low {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 14, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p2_15_ccu80_ch2_low: pwm_out_p2_15_ccu80_ch2_low {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 15, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p5_0_ccu81_ch7_low: pwm_out_p5_0_ccu81_ch7_low {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p5_1_ccu81_ch7_high: pwm_out_p5_1_ccu81_ch7_high {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 1, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p5_2_ccu81_ch5_low: pwm_out_p5_2_ccu81_ch5_low {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 2, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p5_3_ccu81_ch5_high: pwm_out_p5_3_ccu81_ch5_high {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 3, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p5_4_ccu81_ch3_low: pwm_out_p5_4_ccu81_ch3_low {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 4, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p5_5_ccu81_ch3_high: pwm_out_p5_5_ccu81_ch3_high {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 5, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p5_6_ccu81_ch1_low: pwm_out_p5_6_ccu81_ch1_low {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 6, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p5_7_ccu81_ch1_high: pwm_out_p5_7_ccu81_ch1_high {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 7, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p5_8_ccu80_ch0_low: pwm_out_p5_8_ccu80_ch0_low {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 8, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p5_9_ccu80_ch4_high: pwm_out_p5_9_ccu80_ch4_high {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 9, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p5_10_ccu80_ch2_high: pwm_out_p5_10_ccu80_ch2_high {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 10, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p5_11_ccu80_ch0_high: pwm_out_p5_11_ccu80_ch0_high {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 11, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p6_0_ccu81_ch6_low: pwm_out_p6_0_ccu81_ch6_low {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 0, 3)>;
+	};
+	/omit-if-no-ref/ pwm_out_p6_1_ccu81_ch6_high: pwm_out_p6_1_ccu81_ch6_high {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 1, 3)>;
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p3_12_u2c1: i2c_sda_dx0_p3_12_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 12, 0)>; /* USIC sda-src = DX0D */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p4_0_u2c1: i2c_sda_dx0_p4_0_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 0, 0)>; /* USIC sda-src = DX0C */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p0_0_u1c1: i2c_sda_dx0_p0_0_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 0, 0)>; /* USIC sda-src = DX0D */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p4_6_u2c1: i2c_sda_dx0_p4_6_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 6, 0)>; /* USIC sda-src = DX0E */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p2_2_u0c1: i2c_sda_dx0_p2_2_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 2, 0)>; /* USIC sda-src = DX0A */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p6_3_u0c1: i2c_sda_dx0_p6_3_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 3, 0)>; /* USIC sda-src = DX0C */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p3_7_u2c0: i2c_sda_dx0_p3_7_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 7, 0)>; /* USIC sda-src = DX0C */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p3_14_u1c1: i2c_sda_dx0_p3_14_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 14, 0)>; /* USIC sda-src = DX0B */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p2_15_u1c0: i2c_sda_dx0_p2_15_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 15, 0)>; /* USIC sda-src = DX0C */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p0_4_u1c0: i2c_sda_dx0_p0_4_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 4, 0)>; /* USIC sda-src = DX0A */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p6_5_u2c0: i2c_sda_dx0_p6_5_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 5, 0)>; /* USIC sda-src = DX0D */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p1_14_u1c0: i2c_sda_dx0_p1_14_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 14, 0)>; /* USIC sda-src = DX0E */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p3_4_u2c1: i2c_sda_dx0_p3_4_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 4, 0)>; /* USIC sda-src = DX0B */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p1_4_u0c0: i2c_sda_dx0_p1_4_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 4, 0)>; /* USIC sda-src = DX0B */
+	};
+
+	/omit-if-no-ref/ i2c_sda_dout0_p3_8_u2c0: i2c_sda_dout0_p3_8_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 8, 1)>;
+	};
+	/omit-if-no-ref/ i2c_sda_dout0_p1_9_u1c1: i2c_sda_dout0_p1_9_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 9, 4)>;
+	};
+	/omit-if-no-ref/ i2c_sda_dout0_p6_4_u0c1: i2c_sda_dout0_p6_4_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 4, 2)>;
+	};
+	/omit-if-no-ref/ i2c_sda_dout0_p1_15_u1c0: i2c_sda_dout0_p1_15_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 15, 4)>;
+	};
+	/omit-if-no-ref/ i2c_sda_dout0_p3_11_u2c1: i2c_sda_dout0_p3_11_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 11, 1)>;
+	};
+	/omit-if-no-ref/ i2c_sda_dout0_p0_1_u1c1: i2c_sda_dout0_p0_1_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 1, 2)>;
+	};
+	/omit-if-no-ref/ i2c_sda_dout0_p1_7_u0c0: i2c_sda_dout0_p1_7_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 7, 2)>;
+	};
+	/omit-if-no-ref/ i2c_sda_dout0_p6_6_u2c0: i2c_sda_dout0_p6_6_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 6, 1)>;
+	};
+	/omit-if-no-ref/ i2c_scl_dout1_p1_8_u1c1: i2c_scl_dout1_p1_8_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 8, 4)>;
+	};
+	/omit-if-no-ref/ i2c_scl_dout1_p3_13_u2c1: i2c_scl_dout1_p3_13_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 13, 1)>;
+	};
+	/omit-if-no-ref/ i2c_scl_dout1_p1_6_u0c0: i2c_scl_dout1_p1_6_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 6, 2)>;
+	};
+	/omit-if-no-ref/ i2c_scl_dout1_p1_9_u0c0: i2c_scl_dout1_p1_9_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 9, 1)>;
+	};
+	/omit-if-no-ref/ i2c_scl_dout1_p1_10_u0c0: i2c_scl_dout1_p1_10_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 10, 2)>;
+	};
+	/omit-if-no-ref/ i2c_scl_dout1_p3_9_u2c0: i2c_scl_dout1_p3_9_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 9, 1)>;
+	};
+
+	/omit-if-no-ref/ eth_p0_9_mdo: eth_p0_9_mdo {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 9, 0)>;
+		hwctrl = "periph1";
+	};
+	/omit-if-no-ref/ eth_p1_11_mdo: eth_p1_11_mdo {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 11, 0)>;
+		hwctrl = "periph1";
+	};
+	/omit-if-no-ref/ eth_p2_0_mdo: eth_p2_0_mdo {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 0, 0)>;
+		hwctrl = "periph1";
+	};
+
+	/omit-if-no-ref/ eth_p0_9_mdio: eth_p0_9_mdio {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 9, 0)>;
+	};
+	/omit-if-no-ref/ eth_p2_0_mdio: eth_p2_0_mdio {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 0, 0)>;
+	};
+	/omit-if-no-ref/ eth_p1_11_mdio: eth_p1_11_mdio {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 11, 0)>;
+	};
+
+	/omit-if-no-ref/ eth_p0_4_tx_en: eth_p0_4_tx_en {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 4, 1)>;
+	};
+	/omit-if-no-ref/ eth_p0_5_txd0: eth_p0_5_txd0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 5, 1)>;
+	};
+	/omit-if-no-ref/ eth_p0_6_txd1: eth_p0_6_txd1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 6, 1)>;
+	};
+	/omit-if-no-ref/ eth_p0_10_mdc: eth_p0_10_mdc {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 10, 1)>;
+	};
+	/omit-if-no-ref/ eth_p1_10_mdc: eth_p1_10_mdc {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 10, 1)>;
+	};
+	/omit-if-no-ref/ eth_p1_12_tx_en: eth_p1_12_tx_en {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 12, 1)>;
+	};
+	/omit-if-no-ref/ eth_p1_13_txd0: eth_p1_13_txd0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 13, 1)>;
+	};
+	/omit-if-no-ref/ eth_p1_14_txd1: eth_p1_14_txd1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 14, 1)>;
+	};
+	/omit-if-no-ref/ eth_p2_5_tx_en: eth_p2_5_tx_en {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 1)>;
+	};
+	/omit-if-no-ref/ eth_p2_7_mdc: eth_p2_7_mdc {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 7, 1)>;
+	};
+	/omit-if-no-ref/ eth_p2_8_txd0: eth_p2_8_txd0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 8, 1)>;
+	};
+	/omit-if-no-ref/ eth_p2_9_txd1: eth_p2_9_txd1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 9, 1)>;
+	};
+	/omit-if-no-ref/ eth_p2_11_txer: eth_p2_11_txer {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 11, 1)>;
+	};
+	/omit-if-no-ref/ eth_p2_12_txd2: eth_p2_12_txd2 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 12, 1)>;
+	};
+	/omit-if-no-ref/ eth_p2_12_txd0: eth_p2_12_txd0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 12, 4)>;
+	};
+	/omit-if-no-ref/ eth_p2_13_txd3: eth_p2_13_txd3 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 13, 1)>;
+	};
+	/omit-if-no-ref/ eth_p2_13_txd1: eth_p2_13_txd1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 13, 4)>;
+	};
+	/omit-if-no-ref/ eth_p5_9_tx_en: eth_p5_9_tx_en {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 9, 4)>;
+	};
+	/omit-if-no-ref/ eth_p6_0_txd2: eth_p6_0_txd2 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 0, 1)>;
+	};
+	/omit-if-no-ref/ eth_p6_1_txd3: eth_p6_1_txd3 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 1, 1)>;
+	};
+	/omit-if-no-ref/ eth_p6_2_txer: eth_p6_2_txer {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 2, 1)>;
+	};
+
+	/omit-if-no-ref/ eth_p2_2_rxd0: eth_p2_2_rxd0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 2, 0)>;
+	};
+	/omit-if-no-ref/ eth_p0_2_rxd0: eth_p0_2_rxd0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 2, 0)>;
+	};
+	/omit-if-no-ref/ eth_p14_8_rxd0: eth_p14_8_rxd0 {
+		pinmux = <XMC4XXX_PINMUX_SET(14, 8, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_0_rxd0: eth_p5_0_rxd0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 0)>;
+	};
+	/omit-if-no-ref/ eth_p2_3_rxd1: eth_p2_3_rxd1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 3, 0)>;
+	};
+	/omit-if-no-ref/ eth_p0_3_rxd1: eth_p0_3_rxd1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 3, 0)>;
+	};
+	/omit-if-no-ref/ eth_p14_9_rxd1: eth_p14_9_rxd1 {
+		pinmux = <XMC4XXX_PINMUX_SET(14, 9, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_1_rxd1: eth_p5_1_rxd1 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 1, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_8_rxd2: eth_p5_8_rxd2 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 8, 0)>;
+	};
+	/omit-if-no-ref/ eth_p6_4_rxd2: eth_p6_4_rxd2 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 4, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_9_rxd3: eth_p5_9_rxd3 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 9, 0)>;
+	};
+	/omit-if-no-ref/ eth_p6_3_rxd3: eth_p6_3_rxd3 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 3, 0)>;
+	};
+	/omit-if-no-ref/ eth_p2_1_clk_rmii: eth_p2_1_clk_rmii {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 1, 0)>;
+	};
+	/omit-if-no-ref/ eth_p0_0_clk_rmii: eth_p0_0_clk_rmii {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 0, 0)>;
+	};
+	/omit-if-no-ref/ eth_p15_8_clk_rmii: eth_p15_8_clk_rmii {
+		pinmux = <XMC4XXX_PINMUX_SET(15, 8, 0)>;
+	};
+	/omit-if-no-ref/ eth_p6_5_clk_rmii: eth_p6_5_clk_rmii {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 5, 0)>;
+	};
+	/omit-if-no-ref/ eth_p2_5_crs_dv: eth_p2_5_crs_dv {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 0)>;
+	};
+	/omit-if-no-ref/ eth_p0_1_crs_dv: eth_p0_1_crs_dv {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 1, 0)>;
+	};
+	/omit-if-no-ref/ eth_p15_9_crs_dv: eth_p15_9_crs_dv {
+		pinmux = <XMC4XXX_PINMUX_SET(15, 9, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_2_crs_dv: eth_p5_2_crs_dv {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 2, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_11_crs: eth_p5_11_crs {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 11, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_4_crs: eth_p5_4_crs {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 4, 0)>;
+	};
+	/omit-if-no-ref/ eth_p2_4_rxer: eth_p2_4_rxer {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 4, 0)>;
+	};
+	/omit-if-no-ref/ eth_p0_11_rxer: eth_p0_11_rxer {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 11, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_3_rxer: eth_p5_3_rxer {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 3, 0)>;
+	};
+	/omit-if-no-ref/ eth_p2_15_col: eth_p2_15_col {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 15, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_5_col: eth_p5_5_col {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 5, 0)>;
+	};
+	/omit-if-no-ref/ eth_p5_10_clk_tx: eth_p5_10_clk_tx {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 10, 0)>;
+	};
+	/omit-if-no-ref/ eth_p6_6_clk_tx: eth_p6_6_clk_tx {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 6, 0)>;
+	};
+
+	/omit-if-no-ref/ can_tx_p0_0_node0: can_tx_p0_0_node0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 0, 2)>;
+	};
+	/omit-if-no-ref/ can_tx_p1_4_node0: can_tx_p1_4_node0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 4, 2)>;
+	};
+	/omit-if-no-ref/ can_tx_p1_5_node1: can_tx_p1_5_node1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 1)>;
+	};
+	/omit-if-no-ref/ can_tx_p1_9_node2: can_tx_p1_9_node2 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 9, 2)>;
+	};
+	/omit-if-no-ref/ can_tx_p1_12_node1: can_tx_p1_12_node1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 12, 2)>;
+	};
+	/omit-if-no-ref/ can_tx_p2_0_node0: can_tx_p2_0_node0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 0, 1)>;
+	};
+	/omit-if-no-ref/ can_tx_p2_1_node5: can_tx_p2_1_node5 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 1, 1)>;
+	};
+	/omit-if-no-ref/ can_tx_p2_7_node1: can_tx_p2_7_node1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 7, 2)>;
+	};
+	/omit-if-no-ref/ can_tx_p2_14_node4: can_tx_p2_14_node4 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 14, 4)>;
+	};
+	/omit-if-no-ref/ can_tx_p3_2_node0: can_tx_p3_2_node0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 2, 2)>;
+	};
+	/omit-if-no-ref/ can_tx_p3_7_node2: can_tx_p3_7_node2 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 7, 2)>;
+	};
+	/omit-if-no-ref/ can_tx_p3_9_node1: can_tx_p3_9_node1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 9, 2)>;
+	};
+	/omit-if-no-ref/ can_tx_p3_10_node0: can_tx_p3_10_node0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 10, 2)>;
+	};
+	/omit-if-no-ref/ can_tx_p4_0_node3: can_tx_p4_0_node3 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 0, 1)>;
+	};
+	/omit-if-no-ref/ can_tx_p4_7_node2: can_tx_p4_7_node2 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 7, 2)>;
+	};
+	/omit-if-no-ref/ can_tx_p5_8_node4: can_tx_p5_8_node4 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 8, 4)>;
+	};
+	/omit-if-no-ref/ can_tx_p5_11_node5: can_tx_p5_11_node5 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 11, 4)>;
+	};
+	/omit-if-no-ref/ can_tx_p6_5_node3: can_tx_p6_5_node3 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 5, 1)>;
+	};
+
+	/omit-if-no-ref/ can_rx_p1_5_node0: can_rx_p1_5_node0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 0)>;	/* CAN input src = RXDA */
+	};
+	/omit-if-no-ref/ can_rx_p14_3_node0: can_rx_p14_3_node0 {
+		pinmux = <XMC4XXX_PINMUX_SET(14, 3, 0)>;	/* CAN input src = RXDB */
+	};
+	/omit-if-no-ref/ can_rx_p3_12_node0: can_rx_p3_12_node0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 12, 0)>;	/* CAN input src = RXDC */
+	};
+	/omit-if-no-ref/ can_rx_p2_6_node1: can_rx_p2_6_node1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 6, 0)>;	/* CAN input src = RXDA */
+	};
+	/omit-if-no-ref/ can_rx_p3_11_node1: can_rx_p3_11_node1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 11, 0)>;	/* CAN input src = RXDB */
+	};
+	/omit-if-no-ref/ can_rx_p1_13_node1: can_rx_p1_13_node1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 13, 0)>;	/* CAN input src = RXDC */
+	};
+	/omit-if-no-ref/ can_rx_p1_4_node1: can_rx_p1_4_node1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 4, 0)>;	/* CAN input src = RXDD */
+	};
+	/omit-if-no-ref/ can_rx_p1_8_node2: can_rx_p1_8_node2 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 8, 0)>;	/* CAN input src = RXDA */
+	};
+	/omit-if-no-ref/ can_rx_p3_8_node2: can_rx_p3_8_node2 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 8, 0)>;	/* CAN input src = RXDB */
+	};
+	/omit-if-no-ref/ can_rx_p4_6_node2: can_rx_p4_6_node2 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 6, 0)>;	/* CAN input src = RXDC */
+	};
+	/omit-if-no-ref/ can_rx_p0_8_node3: can_rx_p0_8_node3 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 8, 0)>;	/* CAN input src = RXDA */
+	};
+	/omit-if-no-ref/ can_rx_p6_6_node3: can_rx_p6_6_node3 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 6, 0)>;	/* CAN input src = RXDB */
+	};
+	/omit-if-no-ref/ can_rx_p2_15_node4: can_rx_p2_15_node4 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 15, 0)>;	/* CAN input src = RXDA */
+	};
+	/omit-if-no-ref/ can_rx_p14_4_node4: can_rx_p14_4_node4 {
+		pinmux = <XMC4XXX_PINMUX_SET(14, 4, 0)>;	/* CAN input src = RXDB */
+	};
+	/omit-if-no-ref/ can_rx_p5_10_node5: can_rx_p5_10_node5 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 10, 0)>;	/* CAN input src = RXDA */
+	};
+	/omit-if-no-ref/ can_rx_p2_6_node5: can_rx_p2_6_node5 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 6, 0)>;	/* CAN input src = RXDB */
+	};
+};

@@ -8,8 +8,8 @@
 
 /dts-v1/;
 
-#include <infineon/xmc4500_F100x1024.dtsi>
-#include <infineon/xmc4500_F100x1024-intc.dtsi>
+#include <infineon/cat3/xmc/xmc4500_F100x1024.dtsi>
+#include <infineon/cat3/xmc/xmc4500_F100x1024-intc.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include "xmc45_relax_kit-pinctrl.dtsi"
 
