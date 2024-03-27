@@ -1,0 +1,16 @@
+# Non-volatile circular buffer
+# Copyright (c) 2024 Laczen
+# SPDX-License-Identifier: Apache-2.0
+
+config NVCB
+	bool "Non-volatile circular buffer"
+	help
+	  Enable support of Non-volatile circular buffers.
+
+if NVCB
+
+module = NVCB
+module-str = nvcb
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # NVCB
