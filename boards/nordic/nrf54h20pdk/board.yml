@@ -1,5 +1,0 @@
-board:
-  name: nrf54h20pdk
-  vendor: nordic
-  socs:
-  - name: nrf54h20

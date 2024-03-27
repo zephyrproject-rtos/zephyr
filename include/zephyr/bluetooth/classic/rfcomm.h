@@ -62,6 +62,14 @@ struct bt_rfcomm_dlc_ops {
 	 *  @param buf Buffer containing incoming data.
 	 */
 	void (*recv)(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
+
+	/** DLC sent callback
+	 *
+	 *  @param dlc The dlc which has sent data.
+	 *  @param buf Buffer containing data has been sent.
+	 *  @param err Sent result.
+	 */
+	void (*sent)(struct bt_rfcomm_dlc *dlc, struct net_buf *buf, int err);
 };
 
 /** @brief Role of RFCOMM session and dlc. Used only by internal APIs

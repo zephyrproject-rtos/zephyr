@@ -14,15 +14,15 @@
 #define BANNER_POSTFIX " (delayed boot " DELAY_STR "ms)"
 #else
 #define BANNER_POSTFIX ""
-#endif
+#endif /* defined(CONFIG_BOOT_DELAY) && (CONFIG_BOOT_DELAY > 0) */
 
 #ifndef BANNER_VERSION
 #ifdef BUILD_VERSION
 #define BANNER_VERSION STRINGIFY(BUILD_VERSION)
 #else
 #define BANNER_VERSION KERNEL_VERSION_STRING
-#endif
-#endif
+#endif /* BUILD_VERSION */
+#endif /* !BANNER_VERSION */
 
 void boot_banner(void)
 {

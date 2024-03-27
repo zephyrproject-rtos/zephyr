@@ -23,4 +23,5 @@ supported:
   - can
   - usb_device
   - usb
+  - i2c
 vendor: st

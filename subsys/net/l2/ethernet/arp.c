@@ -416,6 +416,13 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 			NET_DBG("Resending ARP %p", req);
 		}
 
+		if (!req && entry) {
+			/* Add the arp entry back to arp_free_entries, to avoid the
+			 * arp entry is leak due to ARP packet allocated failed.
+			 */
+			sys_slist_prepend(&arp_free_entries, &entry->node);
+		}
+
 		k_mutex_unlock(&arp_mutex);
 		return req;
 	}

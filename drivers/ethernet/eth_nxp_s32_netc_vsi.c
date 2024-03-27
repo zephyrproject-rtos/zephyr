@@ -37,11 +37,6 @@ static void nxp_s32_eth_iface_init(struct net_if *iface)
 	struct nxp_s32_eth_data *ctx = dev->data;
 	const struct nxp_s32_eth_config *cfg = dev->config;
 	const struct nxp_s32_eth_msix *msix;
-#if defined(CONFIG_NET_IPV6)
-	static struct net_if_mcast_monitor mon;
-
-	net_if_mcast_mon_register(&mon, iface, nxp_s32_eth_mcast_cb);
-#endif /* CONFIG_NET_IPV6 */
 
 	/*
 	 * For VLAN, this value is only used to get the correct L2 driver.

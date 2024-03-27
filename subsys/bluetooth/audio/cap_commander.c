@@ -8,6 +8,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/bluetooth/audio/micp.h>
 #include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/bluetooth/audio/vocs.h>
 #include "cap_internal.h"
@@ -123,6 +124,15 @@ static void cap_commander_unicast_audio_proc_complete(void)
 		break;
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
+#if defined(CONFIG_BT_MICP_MIC_CTLR)
+#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
+	case BT_CAP_COMMON_PROC_TYPE_MICROPHONE_GAIN_CHANGE:
+		if (cap_cb->microphone_gain_changed != NULL) {
+			cap_cb->microphone_gain_changed(failed_conn, err);
+		}
+		break;
+#endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
+#endif /* CONFIG_BT_MICP_MIC_CTLR */
 	case BT_CAP_COMMON_PROC_TYPE_NONE:
 	default:
 		__ASSERT(false, "Invalid proc_type: %u", proc_type);
@@ -724,15 +734,236 @@ int bt_cap_commander_change_volume_offset(
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
 
+#if defined(CONFIG_BT_MICP_MIC_CTLR)
+static struct bt_micp_mic_ctlr_cb mic_ctlr_cb;
+static bool micp_callbacks_registered;
+
+static int cap_commander_register_micp_callbacks(void)
+{
+	int err;
+
+	err = bt_micp_mic_ctlr_cb_register(&mic_ctlr_cb);
+	if (err != 0) {
+		LOG_DBG("Failed to register MICP callbacks: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	micp_callbacks_registered = true;
+
+	return 0;
+}
+
 int bt_cap_commander_change_microphone_mute_state(
 	const struct bt_cap_commander_change_microphone_mute_state_param *param)
 {
+	if (!micp_callbacks_registered && cap_commander_register_micp_callbacks() != 0) {
+		LOG_DBG("Failed to register MICP callbacks");
+
+		return -ENOEXEC;
+	}
+
 	return -ENOSYS;
+}
+
+#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
+static bool valid_change_microphone_gain_param(
+	const struct bt_cap_commander_change_microphone_gain_setting_param *param)
+{
+	CHECKIF(param == NULL) {
+		LOG_DBG("param is NULL");
+		return false;
+	}
+
+	CHECKIF(param->count == 0) {
+		LOG_DBG("Invalid param->count: %u", param->count);
+		return false;
+	}
+
+	CHECKIF(param->param == NULL) {
+		LOG_DBG("param->param is NULL");
+		return false;
+	}
+
+	CHECKIF(param->count > CONFIG_BT_MAX_CONN) {
+		LOG_DBG("param->count (%zu) is larger than CONFIG_BT_MAX_CONN (%d)", param->count,
+			CONFIG_BT_MAX_CONN);
+		return false;
+	}
+
+	for (size_t i = 0U; i < param->count; i++) {
+		const union bt_cap_set_member *member = &param->param[i].member;
+		const struct bt_cap_common_client *client =
+			bt_cap_common_get_client(param->type, member);
+		struct bt_micp_mic_ctlr *mic_ctlr;
+		struct bt_micp_included included;
+		int err;
+
+		if (client == NULL) {
+			LOG_DBG("Invalid param->param[%zu].member", i);
+			return false;
+		}
+
+		mic_ctlr = bt_micp_mic_ctlr_get_by_conn(client->conn);
+		if (mic_ctlr == NULL) {
+			LOG_DBG("Microphone control not available for param->param[%zu].member", i);
+			return false;
+		}
+
+		err = bt_micp_mic_ctlr_included_get(mic_ctlr, &included);
+		if (err != 0 || included.aics_cnt == 0) {
+			LOG_DBG("Microphone audio input control not available for "
+				"param->param[%zu].member",
+				i);
+			return -ENOEXEC;
+		}
+
+		for (size_t j = 0U; j < i; j++) {
+			const union bt_cap_set_member *other = &param->param[j].member;
+
+			if (other == member) {
+				LOG_DBG("param->param[%zu].member (%p) is duplicated by "
+					"param->param[%zu].member (%p)",
+					j, other, i, member);
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+static void cap_commander_micp_gain_set_cb(struct bt_aics *inst, int err)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+	struct bt_conn *conn;
+	int micp_err;
+
+	LOG_DBG("bt_aics %p", (void *)inst);
+
+	micp_err = bt_aics_client_conn_get(inst, &conn);
+	if (micp_err != 0) {
+		LOG_ERR("Failed to get conn by aics: %d", micp_err);
+		return;
+	}
+
+	LOG_DBG("conn %p", (void *)conn);
+	if (!bt_cap_common_conn_in_active_proc(conn)) {
+		/* State change happened outside of a procedure; ignore */
+		return;
+	}
+
+	if (err != 0) {
+		LOG_DBG("Failed to set gain: %d", err);
+		bt_cap_common_abort_proc(conn, err);
+	} else {
+		active_proc->proc_done_cnt++;
+
+		LOG_DBG("Conn %p gain updated (%zu/%zu streams done)", (void *)conn,
+			active_proc->proc_done_cnt, active_proc->proc_cnt);
+	}
+
+	if (bt_cap_common_proc_is_aborted()) {
+		LOG_DBG("Proc is aborted");
+		if (bt_cap_common_proc_all_handled()) {
+			LOG_DBG("All handled");
+			cap_commander_unicast_audio_proc_complete();
+		}
+
+		return;
+	}
+
+	if (!bt_cap_common_proc_is_done()) {
+		const struct bt_cap_commander_proc_param *proc_param;
+
+		proc_param = &active_proc->proc_param.commander[active_proc->proc_done_cnt];
+		conn = proc_param->conn;
+		active_proc->proc_initiated_cnt++;
+		err = bt_aics_gain_set(proc_param->change_gain.aics, proc_param->change_gain.gain);
+		if (err != 0) {
+			LOG_DBG("Failed to set gain for conn %p: %d", (void *)conn, err);
+			bt_cap_common_abort_proc(conn, err);
+			cap_commander_unicast_audio_proc_complete();
+		}
+	} else {
+		cap_commander_unicast_audio_proc_complete();
+	}
 }
 
 int bt_cap_commander_change_microphone_gain_setting(
 	const struct bt_cap_commander_change_microphone_gain_setting_param *param)
 {
+	const struct bt_cap_commander_proc_param *proc_param;
+	struct bt_cap_common_proc *active_proc;
+	struct bt_conn *conn;
+	int err;
 
-	return -ENOSYS;
+	if (bt_cap_common_proc_is_active()) {
+		LOG_DBG("A CAP procedure is already in progress");
+
+		return -EBUSY;
+	}
+
+	if (!valid_change_microphone_gain_param(param)) {
+		return -EINVAL;
+	}
+
+	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_MICROPHONE_GAIN_CHANGE, param->count);
+
+	mic_ctlr_cb.aics_cb.set_gain = cap_commander_micp_gain_set_cb;
+	if (!micp_callbacks_registered && cap_commander_register_micp_callbacks() != 0) {
+		LOG_DBG("Failed to register MICP callbacks");
+
+		return -ENOEXEC;
+	}
+
+	active_proc = bt_cap_common_get_active_proc();
+
+	for (size_t i = 0U; i < param->count; i++) {
+		const union bt_cap_set_member *member = &param->param[i].member;
+		struct bt_conn *member_conn = bt_cap_common_get_member_conn(param->type, member);
+		struct bt_micp_mic_ctlr *mic_ctlr;
+		struct bt_micp_included included;
+
+		if (member_conn == NULL) {
+			LOG_DBG("Invalid param->param[%zu].member", i);
+			return -EINVAL;
+		}
+
+		mic_ctlr = bt_micp_mic_ctlr_get_by_conn(member_conn);
+		if (mic_ctlr == NULL) {
+			LOG_DBG("Invalid param->param[%zu].member mic_ctlr", i);
+			return -EINVAL;
+		}
+
+		err = bt_micp_mic_ctlr_included_get(mic_ctlr, &included);
+		if (err != 0 || included.aics_cnt == 0) {
+			LOG_DBG("Invalid param->param[%zu].member aics", i);
+			return -EINVAL;
+		}
+
+		/* Store the necessary parameters as we cannot assume that the supplied parameters
+		 * are kept valid
+		 */
+		active_proc->proc_param.commander[i].conn = member_conn;
+		active_proc->proc_param.commander[i].change_gain.gain = param->param[i].gain;
+		/* TODO: For now we just use the first AICS instance
+		 * - How should we handle multiple?
+		 */
+		active_proc->proc_param.commander[i].change_gain.aics = included.aics[0];
+	}
+
+	proc_param = &active_proc->proc_param.commander[0];
+	conn = proc_param->conn;
+	active_proc->proc_initiated_cnt++;
+
+	err = bt_aics_gain_set(proc_param->change_gain.aics, proc_param->change_gain.gain);
+	if (err != 0) {
+		LOG_DBG("Failed to set gain for conn %p: %d", (void *)conn, err);
+		return -ENOEXEC;
+	}
+
+	return 0;
 }
+#endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
+#endif /* CONFIG_BT_MICP_MIC_CTLR */

@@ -88,14 +88,8 @@ Flashing
 ========
 
 The STM32G0316-DISCO board includes an ST-LINK/V2-1 embedded debug tool
-interface. This interface is not yet supported by the openocd version included in
-the Zephyr SDK. Instead, support can be enabled on pyocd by adding "pack" support with
-the following pyocd command:
-
-.. code-block:: console
-
-   $ pyocd pack --update
-   $ pyocd pack --install stm32g031j6
+interface.
+This interface is supported by the openocd version included in the Zephyr SDK.
 
 Flashing an application to the STM32G0316-DISCO
 -----------------------------------------------

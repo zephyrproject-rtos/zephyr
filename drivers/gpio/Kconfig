@@ -236,6 +236,8 @@ source "drivers/gpio/Kconfig.bcm2711"
 
 source "drivers/gpio/Kconfig.renesas_ra"
 
+source "drivers/gpio/Kconfig.ene"
+
 source "drivers/gpio/Kconfig.rzt2m"
 
 source "drivers/gpio/Kconfig.ambiq"

@@ -168,7 +168,7 @@ const struct can_driver_api can_kvaser_pci_driver_api = {
 	static const struct can_sja1000_config can_sja1000_config_##inst =                         \
 		CAN_SJA1000_DT_CONFIG_INST_GET(inst, &can_kvaser_pci_config_##inst,                \
 					       can_kvaser_pci_read_reg, can_kvaser_pci_write_reg,  \
-					       CAN_KVASER_PCI_OCR, CAN_KVASER_PCI_CDR);            \
+					       CAN_KVASER_PCI_OCR, CAN_KVASER_PCI_CDR, 0);         \
                                                                                                    \
 	static struct can_kvaser_pci_data can_kvaser_pci_data_##inst;                              \
                                                                                                    \

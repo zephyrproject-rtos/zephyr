@@ -1,4 +1,4 @@
-identifier: nrf5340bsim_nrf5340_cpuapp
+identifier: nrf5340bsim/nrf5340/cpuapp
 name: NRF53 BabbleSim - Application Core target
 type: native
 arch: posix

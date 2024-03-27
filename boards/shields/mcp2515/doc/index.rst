@@ -374,7 +374,7 @@ example:
    https://www.microchip.com/en-us/product/MCP2515
 
 .. _Keyestudio Website:
-   https://www.keyestudio.com/products/2019new-keyestudio-can-bus-shield-mcp2551-chip-with-sd-socket-for-arduino-uno-r3
+   https://www.keyestudio.com/2019new-keyestudio-can-bus-shield-mcp2551-chip-with-sd-socket-for-arduino-uno-r3-p0543.html
 
 .. _Keyestudio Wiki:
    https://wiki.keyestudio.com/KS0411_keyestudio_CAN-BUS_Shield

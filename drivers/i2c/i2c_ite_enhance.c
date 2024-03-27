@@ -1045,10 +1045,6 @@ static void target_i2c_isr_dma(const struct device *dev,
 
 	/* Write clear the peripheral status */
 	IT8XXX2_I2C_IRQ_ST(base) = interrupt_status;
-	if (interrupt_status & IT8XXX2_I2C_INT_ANY) {
-		/* Hardware reset */
-		IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_HALT;
-	}
 }
 
 static int target_i2c_isr_pio(const struct device *dev,
@@ -1272,9 +1268,9 @@ static int i2c_enhance_recover_bus(const struct device *dev)
 	int i, status;
 
 	/* Set SCL of I2C as GPIO pin */
-	gpio_pin_configure_dt(&config->scl_gpios, GPIO_OUTPUT);
+	gpio_pin_configure_dt(&config->scl_gpios, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 	/* Set SDA of I2C as GPIO pin */
-	gpio_pin_configure_dt(&config->sda_gpios, GPIO_OUTPUT);
+	gpio_pin_configure_dt(&config->sda_gpios, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 
 	/*
 	 * In I2C recovery bus, 1ms sleep interval for bitbanging i2c

@@ -217,7 +217,7 @@ static bool input_kbd_matrix_check_key_events(const struct device *dev)
 	key_pressed = input_kbd_matrix_scan(dev);
 
 	for (int c = 0; c < cfg->col_size; c++) {
-		LOG_DBG("c=%2d u=" PRIkbdrow " p=" PRIkbdrow " n=" PRIkbdrow,
+		LOG_DBG("c=%2d u=%" PRIkbdrow " p=%" PRIkbdrow " n=%" PRIkbdrow,
 			c,
 			cfg->matrix_unstable_state[c],
 			cfg->matrix_previous_state[c],

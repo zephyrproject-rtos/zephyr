@@ -29,8 +29,8 @@ struct analog_axis_calibration {
 	int16_t in_min;
 	/** Input value that corresponds to the maximum output value. */
 	int16_t in_max;
-	/** Output value deadzone relative to the output range. */
-	uint16_t out_deadzone;
+	/** Input value center deadzone. */
+	uint16_t in_deadzone;
 };
 
 /**

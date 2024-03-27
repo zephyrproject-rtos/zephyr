@@ -31,6 +31,29 @@ int fattach(int fildes, const char *path)
 {
 	ARG_UNUSED(fildes);
 	ARG_UNUSED(path);
+	errno = ENOSYS;
+
+	return -1;
+}
+
+int getmsg(int fildes, struct strbuf *ctlptr, struct strbuf *dataptr, int *flagsp)
+{
+	ARG_UNUSED(fildes);
+	ARG_UNUSED(ctlptr);
+	ARG_UNUSED(dataptr);
+	ARG_UNUSED(flagsp);
+
+	errno = ENOSYS;
+	return -1;
+}
+
+int getpmsg(int fildes, struct strbuf *ctlptr, struct strbuf *dataptr, int *bandp, int *flagsp)
+{
+	ARG_UNUSED(fildes);
+	ARG_UNUSED(ctlptr);
+	ARG_UNUSED(dataptr);
+	ARG_UNUSED(bandp);
+	ARG_UNUSED(flagsp);
 
 	errno = ENOSYS;
 	return -1;

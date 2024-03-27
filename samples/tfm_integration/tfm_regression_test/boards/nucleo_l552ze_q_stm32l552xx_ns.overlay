@@ -13,9 +13,13 @@
 
 / {
 	chosen {
-		zephyr,code-partition = &slot1_partition;
+		zephyr,code-partition = &slot0_ns_partition;
 	};
 };
+
+
+/delete-node/ &slot1_partition;
+/delete-node/ &slot1_ns_partition;
 
 &flash0 {
 

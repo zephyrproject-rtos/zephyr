@@ -38,6 +38,8 @@ extern "C" {
 
 /**
  * @defgroup sys-util Utility Functions
+ * @since 2.4
+ * @version 0.1.0
  * @ingroup utilities
  * @{
  */

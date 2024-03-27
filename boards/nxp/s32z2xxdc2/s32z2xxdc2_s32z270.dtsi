@@ -35,9 +35,7 @@
 	pinctrl-0 = <&can0_default>;
 	pinctrl-names = "default";
 	bus-speed = <125000>;
-	sample-point = <875>;
 	bus-speed-data = <1000000>;
-	sample-point-data = <875>;
 	status = "okay";
 };
 
@@ -45,7 +43,5 @@
 	pinctrl-0 = <&can1_default>;
 	pinctrl-names = "default";
 	bus-speed = <125000>;
-	sample-point = <875>;
 	bus-speed-data = <1000000>;
-	sample-point-data = <875>;
 };

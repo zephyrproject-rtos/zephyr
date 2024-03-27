@@ -317,18 +317,17 @@ config SCHED_MULTIQ
 	depends on !SCHED_DEADLINE
 	help
 	  When selected, the scheduler ready queue will be implemented
-	  as the classic/textbook array of lists, one per priority
-	  (max 32 priorities).  This corresponds to the scheduler
-	  algorithm used in Zephyr versions prior to 1.12.  It incurs
-	  only a tiny code size overhead vs. the "dumb" scheduler and
-	  runs in O(1) time in almost all circumstances with very low
-	  constant factor.  But it requires a fairly large RAM budget
-	  to store those list heads, and the limited features make it
-	  incompatible with features like deadline scheduling that
-	  need to sort threads more finely, and SMP affinity which
-	  need to traverse the list of threads.  Typical applications
-	  with small numbers of runnable threads probably want the
-	  DUMB scheduler.
+	  as the classic/textbook array of lists, one per priority.
+	  This corresponds to the scheduler algorithm used in Zephyr
+	  versions prior to 1.12.  It incurs only a tiny code size
+	  overhead vs. the "dumb" scheduler and runs in O(1) time
+	  in almost all circumstances with very low constant factor.
+	  But it requires a fairly large RAM budget to store those list
+	  heads, and the limited features make it incompatible with
+	  features like deadline scheduling that need to sort threads
+	  more finely, and SMP affinity which need to traverse the list
+	  of threads.  Typical applications with small numbers of runnable
+	  threads probably want the DUMB scheduler.
 
 endchoice # SCHED_ALGORITHM
 

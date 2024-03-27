@@ -14,3 +14,6 @@ cbor>=1.0.0
 
 # use for twister
 psutil
+
+# Artifacts package creation
+bz

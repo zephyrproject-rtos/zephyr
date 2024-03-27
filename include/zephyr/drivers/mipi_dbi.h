@@ -24,6 +24,8 @@
 /**
  * @brief MIPI-DBI driver APIs
  * @defgroup mipi_dbi_interface MIPI-DBI driver APIs
+ * @since 3.6
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  */

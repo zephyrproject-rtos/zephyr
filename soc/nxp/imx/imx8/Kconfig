@@ -10,6 +10,7 @@ config SOC_MIMX8QM_ADSP
 	select GEN_ISR_TABLES
 	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
 	select HAS_MCUX
+	select CPU_HAS_DCACHE
 
 config MCUX_CORE_SUFFIX
 	default "_dsp" if SOC_MIMX8QM_ADSP

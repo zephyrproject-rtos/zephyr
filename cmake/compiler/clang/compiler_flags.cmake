@@ -10,8 +10,8 @@ set_compiler_property(PROPERTY security_fortify_run_time)
 # No printf-return-value optimizations in clang
 set_compiler_property(PROPERTY no_printf_return_value)
 
-# No property flag, this is used by the native_posix, clang has problems
-# compiling the native_posix with -fno-freestanding.
+# No property flag, this is used by the POSIX arch based targets when building with the host libC,
+# But clang has problems compiling these with -fno-freestanding.
 check_set_compiler_property(PROPERTY hosted)
 
 # clang flags for coverage generation

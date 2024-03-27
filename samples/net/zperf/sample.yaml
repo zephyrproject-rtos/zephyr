@@ -5,7 +5,7 @@ common:
   # TODO: Does not work properly with native_posix, need more TLC
   platform_exclude:
     - native_posix
-    - native_posix_64
+    - native_posix/native/64
     - sam_e70_xplained/same70q21
   min_ram: 64
 sample:

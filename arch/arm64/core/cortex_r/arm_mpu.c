@@ -735,7 +735,7 @@ out:
 	atomic_clear(&thread->arch.flushing);
 	return ret < 0 ? ret : 0;
 }
-#endif /* defined(CONFIG_USERSPACE) || defined(CONFIG_HW_STACK_PROTECTION) */
+#endif /* defined(CONFIG_USERSPACE) || defined(CONFIG_ARM64_STACK_PROTECTION) */
 
 #if defined(CONFIG_USERSPACE)
 int arch_mem_domain_max_partitions_get(void)

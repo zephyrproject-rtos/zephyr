@@ -435,7 +435,6 @@ Bluetooth Audio:
     - Casper-Bonde-Bose
     - MariuszSkamra
     - sjanc
-    - szymon-czapracki
     - asbjornsabo
     - fredrikdanebjer
     - kruithofa
@@ -557,6 +556,7 @@ C library:
   maintainers:
     - stephanosio
   collaborators:
+    - aescolar
     - nashif
     - keith-packard
     - cfriedt
@@ -2177,6 +2177,7 @@ Kernel:
     - dcpleung
     - cfriedt
     - npitre
+    - TaiJuWu
   files:
     - doc/kernel/
     - include/zephyr/kernel*.h
@@ -2442,6 +2443,8 @@ Modem:
   status: maintained
   maintainers:
     - bjarki-trackunit
+  collaborators:
+    - tomi-font
   files:
     - subsys/modem/
     - include/zephyr/modem/
@@ -2474,6 +2477,7 @@ hawkBit:
   status: odd fixes
   collaborators:
     - ycsin
+    - maass-hamburg
   files:
     - subsys/mgmt/hawkbit/
     - include/zephyr/mgmt/hawkbit.h
@@ -2551,10 +2555,12 @@ Networking:
     - include/zephyr/net/ieee802154*.h
     - include/zephyr/net/wifi*.h
     - include/zephyr/net/buf.h
+    - include/zephyr/net/dhcpv4*.h
     - samples/net/gptp/
     - samples/net/sockets/coap_*/
     - samples/net/lwm2m_client/
     - samples/net/wifi/
+    - samples/net/dhcpv4_client/
     - subsys/net/buf*.c
     - subsys/net/l2/ethernet/gptp/
     - subsys/net/l2/ieee802154/
@@ -2563,6 +2569,8 @@ Networking:
     - subsys/net/lib/config/ieee802154*
     - subsys/net/lib/lwm2m/
     - subsys/net/lib/tls_credentials/
+    - subsys/net/lib/dhcpv4/
+    - tests/net/dhcpv4/
     - tests/net/ieee802154/
     - tests/net/wifi/
   labels:
@@ -2571,8 +2579,8 @@ Networking:
     - net
 
 "Networking: BSD sockets":
-  status: odd fixes
-  collaborators:
+  status: maintained
+  maintainers:
     - rlubos
     - jukkar
   files:
@@ -2580,6 +2588,7 @@ Networking:
     - subsys/net/lib/sockets/
     - tests/net/socket/
   labels:
+    - "area: Networking"
     - "area: Sockets"
   tests:
     - net.socket
@@ -2633,6 +2642,24 @@ Networking:
     - "area: Networking"
   tests:
     - net.coap
+
+"Networking: DHCPv4":
+  status: maintained
+  maintainers:
+    - rlubos
+    - jukkar
+  collaborators:
+    - maass-hamburg
+  files:
+    - subsys/net/lib/dhcpv4/
+    - samples/net/dhcpv4_client/
+    - tests/net/dhcpv4/
+    - include/zephyr/net/dhcpv4*.h
+  labels:
+    - "area: Networking"
+  tests:
+    - net.dhcpv4_client
+    - net.dhcpv4_server
 
 "Networking: gPTP":
   status: maintained
@@ -2780,8 +2807,11 @@ nRF BSIM:
     - boards/native/nrf_bsim/
     - tests/boards/nrf52_bsim/
     - tests/bsim/
-  files-exclude:
-    - tests/bsim/*/
+    - doc/develop/test/bsim.rst
+    - .github/workflows/bsim-tests*
+  files-regex-exclude:
+    - tests\/bsim\/.*\/.*\.([ch]|conf)
+    - tests\/bsim\/.*\/(CMakeLists|Kconfig).*
   labels:
     - "platform: nRF BSIM"
   tests:
@@ -2861,12 +2891,14 @@ RISCV arch:
     - boards/qemu/riscv*/
     - boards/sifive/
     - boards/sparkfun/red_v_things_plus/
+    - boards/starfive/
     - dts/bindings/riscv/
     - dts/riscv/
     - include/zephyr/arch/riscv/
     - soc/common/riscv-privileged/
     - soc/sifive/
-    - soc/riscv/
+    - soc/starfive/
+    - soc/qemu/virt_riscv/
     - tests/arch/riscv/
     - doc/hardware/arch/risc-v.rst
     - drivers/interrupt_controller/intc_plic.c
@@ -2931,12 +2963,13 @@ Twister:
   maintainers:
     - nashif
   collaborators:
-    - galak
     - PerMac
     - hakehuang
     - gopiotr
     - golowanow
     - gchwier
+    - LukaszMrugala
+    - KamilxPaszkiet
   files:
     - scripts/twister
     - scripts/schemas/twister/
@@ -3098,8 +3131,8 @@ Synopsys Platforms:
     - evgeniy-paltsev
     - IRISZZW
   files:
-    - soc/synopsys/
-    - boards/synopsys/
+    - soc/snps/
+    - boards/snps/
     - samples/boards/arc_secure_services/
   labels:
     - "platform: Synopsys"
@@ -3303,9 +3336,12 @@ NXP Platforms (MCU):
     - boards/nxp/lpcxpress*/
     - boards/nxp/twr_*/
     - boards/nxp/vmu*/
+    - boards/nxp/*rw*/
     - soc/nxp/imxrt/
     - soc/nxp/kinetis/
     - soc/nxp/lpc/
+    - soc/nxp/rw/
+    - soc/nxp/mcx/
     - dts/arm/nxp/
     - samples/boards/nxp*/
   files-regex-exclude:
@@ -3343,15 +3379,16 @@ NXP Platforms (S32):
 NXP Platforms (MPU):
   status: maintained
   maintainers:
-    - dleach02
-  collaborators:
     - JiafeiPan
+  collaborators:
+    - dleach02
     - dbaluta
     - iuliana-prodan
     - danieldegrasse
     - decsny
     - yvanderv
   files:
+    - dts/arm64/nxp/
     - soc/nxp/imx/
     - soc/nxp/layerscape/
   files-regex:
@@ -3730,6 +3767,18 @@ Task Watchdog:
     - tests/drivers/syscon/
   tests:
     - drivers.syscon
+
+TDK Sensors:
+  status: maintained
+  maintainers:
+    - teburd
+    - MaureenHelm
+  files:
+    - drivers/sensor/tdk/
+  labels:
+    - "area: Sensors"
+  tests:
+    - drivers.sensors
 
 "Drivers: Time Aware GPIO":
   status: maintained

@@ -53,7 +53,6 @@
 &radio {
 	/* These features are not yet supported by the RADIO model */
 	/delete-property/ dfe-supported;
-	/delete-property/ ble-coded-phy-supported;
 };
 
 &ieee802154 {

@@ -12,15 +12,15 @@ config LV_Z_BITS_PER_PIXEL
 
 # LCDC imposes display buffer's stride be word aligned
 config LV_Z_AREA_X_ALIGNMENT_WIDTH
-	default 2
+	default 2 if MIPI_DBI_SMARTBOND
 
 config LV_Z_FLUSH_THREAD
-	default y
+	default y if DISPLAY_RENESAS_LCDC
 
 # Use double buffering to avoid visual artifacts as long as
 # the DMA is copying data into driver's frame buffer.
 config LV_Z_DOUBLE_VDB
-	default y
+	default y if DISPLAY_RENESAS_LCDC
 
 endif # LVGL
 

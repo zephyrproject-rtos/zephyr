@@ -18,6 +18,7 @@ tests:
       - stm32f3_disco
       - nucleo_g071rb
       - nucleo_f207zg
+      - nucleo_f401re
       - nucleo_f429zi
       - nucleo_wl55jc
       - nucleo_l073rz

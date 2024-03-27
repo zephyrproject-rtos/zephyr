@@ -1681,7 +1681,7 @@ static const struct can_driver_api mcp251xfd_api_funcs = {
 		.int_thread_stack = mcp251xfd_int_stack_##inst,                                    \
 	};                                                                                         \
 	static const struct mcp251xfd_config mcp251xfd_config_##inst = {                           \
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 8000000),                            \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 8000000),                         \
 		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
 		.int_gpio_dt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                             \
                                                                                                    \

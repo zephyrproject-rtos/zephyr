@@ -35,14 +35,20 @@ Sample Output
 
 .. code-block:: console
 
-*** Booting Zephyr OS build zephyr-v3.2.0-2686-gd52d828c2bdc ***
-Writing to memory region with base 0x38000000, size 0x800000
+  *** Booting Zephyr OS build zephyr-v3.2.0-2686-gd52d828c2bdc ***
+  Writing to memory region with base 0x38000000, size 0x800000
 
-First 1KB of Data in memory:
-\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=
-00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f
-10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
-20 21 22 23 24 25 26 27 28 29 2a 2b 2c 2d 2e 2f
-....
+  Check (0/8191) passed!
+  Check (1/8191) passed!
+  ...
+  Check (8190/8191) passed!
+  Check (8191/8191) passed!
 
-Read data matches written data
+  First 1KB of Data in memory:
+  \=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=
+  00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f
+  10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
+  20 21 22 23 24 25 26 27 28 29 2a 2b 2c 2d 2e 2f
+  ....
+
+  Read data matches written data

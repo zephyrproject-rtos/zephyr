@@ -26,12 +26,12 @@ LOG_MODULE_REGISTER(modem_cellular, CONFIG_MODEM_LOG_LEVEL);
 #define MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT \
 	K_MSEC(CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS)
 
-#define MODEM_CELLULAR_DATA_IMEI_LEN         (15)
-#define MODEM_CELLULAR_DATA_MODEL_ID_LEN     (64)
-#define MODEM_CELLULAR_DATA_IMSI_LEN         (22)
+#define MODEM_CELLULAR_DATA_IMEI_LEN         (16)
+#define MODEM_CELLULAR_DATA_MODEL_ID_LEN     (65)
+#define MODEM_CELLULAR_DATA_IMSI_LEN         (23)
 #define MODEM_CELLULAR_DATA_ICCID_LEN        (22)
-#define MODEM_CELLULAR_DATA_MANUFACTURER_LEN (64)
-#define MODEM_CELLULAR_DATA_FW_VERSION_LEN   (64)
+#define MODEM_CELLULAR_DATA_MANUFACTURER_LEN (65)
+#define MODEM_CELLULAR_DATA_FW_VERSION_LEN   (65)
 
 /* Magic constants */
 #define CSQ_RSSI_UNKNOWN		     (99)
@@ -102,9 +102,9 @@ struct modem_cellular_data {
 	uint8_t *chat_argv[32];
 
 	/* Status */
-	uint8_t registration_status_gsm;
-	uint8_t registration_status_gprs;
-	uint8_t registration_status_lte;
+	enum cellular_registration_status registration_status_gsm;
+	enum cellular_registration_status registration_status_gprs;
+	enum cellular_registration_status registration_status_lte;
 	uint8_t rssi;
 	uint8_t rsrp;
 	uint8_t rsrq;
@@ -366,32 +366,45 @@ static void modem_cellular_chat_on_cesq(struct modem_chat *chat, char **argv, ui
 	data->rsrp = (uint8_t)atoi(argv[6]);
 }
 
+static void modem_cellular_chat_on_iccid(struct modem_chat *chat, char **argv, uint16_t argc,
+					void *user_data)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+
+	if (argc != 2) {
+		return;
+	}
+
+	strncpy(data->iccid, argv[1], sizeof(data->iccid) - 1);
+}
+
 static void modem_cellular_chat_on_imsi(struct modem_chat *chat, char **argv, uint16_t argc,
 					void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+
+	if (argc != 2) {
+		return;
+	}
 
 	strncpy(data->imsi, argv[1], sizeof(data->imsi) - 1);
 }
 
 static bool modem_cellular_is_registered(struct modem_cellular_data *data)
 {
-	return (data->registration_status_gsm == 1)
-		|| (data->registration_status_gsm == 5)
-		|| (data->registration_status_gprs == 1)
-		|| (data->registration_status_gprs == 5)
-		|| (data->registration_status_lte == 1)
-		|| (data->registration_status_lte == 5);
+	return (data->registration_status_gsm == CELLULAR_REGISTRATION_REGISTERED_HOME)
+		|| (data->registration_status_gsm == CELLULAR_REGISTRATION_REGISTERED_ROAMING)
+		|| (data->registration_status_gprs == CELLULAR_REGISTRATION_REGISTERED_HOME)
+		|| (data->registration_status_gprs == CELLULAR_REGISTRATION_REGISTERED_ROAMING)
+		|| (data->registration_status_lte == CELLULAR_REGISTRATION_REGISTERED_HOME)
+		|| (data->registration_status_lte == CELLULAR_REGISTRATION_REGISTERED_ROAMING);
 }
 
 static void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc,
 					void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
-	uint8_t registration_status;
-	bool is_registered;
-
-	is_registered = modem_cellular_is_registered(data);
+	enum cellular_registration_status registration_status = 0;
 
 	if (argc == 2) {
 		registration_status = atoi(argv[1]);
@@ -425,6 +438,8 @@ MODEM_CHAT_MATCH_DEFINE(imei_match, "", "", modem_cellular_chat_on_imei);
 MODEM_CHAT_MATCH_DEFINE(cgmm_match, "", "", modem_cellular_chat_on_cgmm);
 MODEM_CHAT_MATCH_DEFINE(csq_match, "+CSQ: ", ",", modem_cellular_chat_on_csq);
 MODEM_CHAT_MATCH_DEFINE(cesq_match, "+CESQ: ", ",", modem_cellular_chat_on_cesq);
+MODEM_CHAT_MATCH_DEFINE(qccid_match __maybe_unused, "+QCCID: ", "", modem_cellular_chat_on_iccid);
+MODEM_CHAT_MATCH_DEFINE(iccid_match __maybe_unused, "+ICCID: ", "", modem_cellular_chat_on_iccid);
 MODEM_CHAT_MATCH_DEFINE(cimi_match __maybe_unused, "", "", modem_cellular_chat_on_imsi);
 MODEM_CHAT_MATCH_DEFINE(cgmi_match __maybe_unused, "", "", modem_cellular_chat_on_cgmi);
 MODEM_CHAT_MATCH_DEFINE(cgmr_match __maybe_unused, "", "", modem_cellular_chat_on_cgmr);
@@ -442,6 +457,10 @@ MODEM_CHAT_MATCHES_DEFINE(dial_abort_matches,
 			  MODEM_CHAT_MATCH("NO ANSWER", "", NULL),
 			  MODEM_CHAT_MATCH("NO CARRIER", "", NULL),
 			  MODEM_CHAT_MATCH("NO DIALTONE", "", NULL));
+
+#if DT_HAS_COMPAT_STATUS_OKAY(swir_hl7800)
+MODEM_CHAT_MATCH_DEFINE(connect_match, "CONNECT", "", NULL);
+#endif
 
 static void modem_cellular_log_state_changed(enum modem_cellular_state last_state,
 					     enum modem_cellular_state new_state)
@@ -1399,6 +1418,38 @@ static int modem_cellular_get_modem_info(const struct device *dev,
 	case CELLULAR_MODEM_INFO_MODEL_ID:
 		strncpy(info, &data->model_id[0], MIN(size, sizeof(data->model_id)));
 		break;
+	case CELLULAR_MODEM_INFO_SIM_ICCID:
+		strncpy(info, &data->iccid[0], MIN(size, sizeof(data->iccid)));
+		break;
+	default:
+		ret = -ENODATA;
+		break;
+	}
+
+	return ret;
+}
+static int modem_cellular_get_registration_status(const struct device *dev,
+						  enum cellular_access_technology tech,
+						  enum cellular_registration_status *status)
+{
+	int ret = 0;
+	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
+
+	switch (tech) {
+	case CELLULAR_ACCESS_TECHNOLOGY_GSM:
+		*status = data->registration_status_gsm;
+		break;
+	case CELLULAR_ACCESS_TECHNOLOGY_GPRS:
+	case CELLULAR_ACCESS_TECHNOLOGY_UMTS:
+	case CELLULAR_ACCESS_TECHNOLOGY_EDGE:
+		*status = data->registration_status_gprs;
+		break;
+	case CELLULAR_ACCESS_TECHNOLOGY_LTE:
+	case CELLULAR_ACCESS_TECHNOLOGY_LTE_CAT_M1:
+	case CELLULAR_ACCESS_TECHNOLOGY_LTE_CAT_M2:
+	case CELLULAR_ACCESS_TECHNOLOGY_NB_IOT:
+		*status = data->registration_status_lte;
+		break;
 	default:
 		ret = -ENODATA;
 		break;
@@ -1410,6 +1461,7 @@ static int modem_cellular_get_modem_info(const struct device *dev,
 const static struct cellular_driver_api modem_cellular_api = {
 	.get_signal = modem_cellular_get_signal,
 	.get_modem_info = modem_cellular_get_modem_info,
+	.get_registration_status = modem_cellular_get_registration_status,
 };
 
 #ifdef CONFIG_PM_DEVICE
@@ -1569,6 +1621,8 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg95_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", cgmr_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+QCCID", qccid_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127", 300));
 
@@ -1854,6 +1908,13 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(swir_hl7800_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", cgmi_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", cgmr_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127", 0));
 
 MODEM_CHAT_SCRIPT_DEFINE(swir_hl7800_init_chat_script, swir_hl7800_init_chat_script_cmds,
@@ -1867,8 +1928,9 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(swir_hl7800_dial_chat_script_cmds,
 							 CONFIG_MODEM_CELLULAR_APN
 							 "\",,,\"IPV4\"",
 							 ok_match),
+				  MODEM_CHAT_SCRIPT_CMD_RESP("AT+WPPP=0", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0));
+			      MODEM_CHAT_SCRIPT_CMD_RESP("ATD*99***1#", connect_match));
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(swir_hl7800_periodic_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
@@ -1889,6 +1951,10 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(telit_me910g1_init_chat_script_cmds,
 				  MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
 				  MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
 				  MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+				  MODEM_CHAT_SCRIPT_CMD_RESP("AT+ICCID", iccid_match),
+				  MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+				  MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match),
+				  MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 				  /* The Telit me910g1 often has an error trying
 				   * to set the PDP context. The radio must be on to set
 				   * the context, and this step must be successful.
@@ -1908,6 +1974,10 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(telit_me910g1_init_chat_script_cmds,
 				  MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match),
 				  MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 				  MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
+				  MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+				  MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", cgmi_match),
+				  MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+				  MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", cgmr_match),
 				  MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 				  MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
 				  MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127,10,3,30,10,2",

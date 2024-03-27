@@ -92,11 +92,11 @@ Reference CPU
 =============
 
 A reference CPU design of a Nios II/f core is included in the Zephyr tree
-in the :zephyr_file:`soc/altera/zephyr_nios2f/cpu` directory.
+in the :zephyr_file:`soc/altr/zephyr_nios2f/cpu` directory.
 
 Flash this CPU using the ``nios2-configure-sof`` SDK tool with the FPGA
 configuration file
-:zephyr_file:`soc/altera/zephyr_nios2f/cpu/ghrd_10m50da.sof`:
+:zephyr_file:`soc/altr/zephyr_nios2f/cpu/ghrd_10m50da.sof`:
 
 .. code-block:: console
 

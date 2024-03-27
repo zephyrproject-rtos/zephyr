@@ -801,8 +801,6 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>;
 			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
-			sample-point = <875>;
-			sample-point-data = <875>;
 			status = "disabled";
 		};
 

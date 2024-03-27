@@ -28,4 +28,4 @@ config EMUL_BMA4XX
 	depends on EMUL
 	help
 	  Enable the hardware emulator for the BMA4XX. Doing so allows exercising
-	  sensor APIs for this sensor in native_posix and qemu.
+	  sensor APIs for this sensor in native_sim and qemu.

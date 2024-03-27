@@ -7,13 +7,12 @@ cmake_minimum_required(VERSION 3.20.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
-if(("${BOARD}" STREQUAL "mimxrt1170_evkb") OR
-  ("${BOARD}" STREQUAL "mimxrt1170_evk") OR
-  ("${BOARD}" STREQUAL "mimxrt1160_evk") OR
-  ("${BOARD}" STREQUAL "lpcxpresso55s69"))
-  message(STATUS "${BOARD} compile as remote in this sample")
+if(CONFIG_BOARD_MIMXRT1170_EVK_MIMXRT1176_CM4 OR
+   CONFIG_BOARD_MIMXRT1160_EVK_MIMXRT1166_CM4 OR
+   CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU1)
+  message(STATUS "${BOARD}${BOARD_QUALIFIERS} compile as remote in this sample")
 else()
-  message(FATAL_ERROR "${BOARD} is not supported for this sample")
+  message(FATAL_ERROR "${BOARD}${BOARD_QUALIFIERS} is not supported for this sample")
 endif()
 
 project(mbox_data_ipc_remote)

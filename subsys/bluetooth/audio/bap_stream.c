@@ -99,7 +99,21 @@ void bt_bap_stream_cb_register(struct bt_bap_stream *stream,
 
 int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 {
-	enum bt_audio_dir dir = ep->dir;
+	enum bt_audio_dir dir;
+
+	CHECKIF(ep == NULL) {
+		LOG_DBG("ep is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(info == NULL) {
+		LOG_DBG("info is NULL");
+
+		return -EINVAL;
+	}
+
+	dir = ep->dir;
 
 	info->id = ep->status.id;
 	info->state = ep->status.state;

@@ -12,12 +12,6 @@
 #define RANGE_DISTANCE 1000 /* meters */
 #define RANGE_DELAY_US (2 * RANGE_DISTANCE * 4 / 1000)
 
-/* This is a compensation of delay between PPI task START and timer start counting.
- * HCTO is a timer used to stop Radio peripheral in receive mode if packet address was not
- * received.
- */
-#define HCTO_START_DELAY_US 1U
-
 static inline uint32_t addr_us_get(uint8_t phy)
 {
 	switch (phy) {

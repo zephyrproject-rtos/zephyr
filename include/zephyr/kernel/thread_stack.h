@@ -92,7 +92,7 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define K_KERNEL_STACK_RESERVED	((size_t)ARCH_KERNEL_STACK_RESERVED)
 #else
 #define K_KERNEL_STACK_RESERVED	((size_t)0)
-#endif
+#endif /* ARCH_KERNEL_STACK_RESERVED */
 
 #define Z_KERNEL_STACK_SIZE_ADJUST(size) (ROUND_UP(size, \
 						   ARCH_STACK_PTR_ALIGN) + \
@@ -102,7 +102,7 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define Z_KERNEL_STACK_OBJ_ALIGN	ARCH_KERNEL_STACK_OBJ_ALIGN
 #else
 #define Z_KERNEL_STACK_OBJ_ALIGN	ARCH_STACK_PTR_ALIGN
-#endif
+#endif /* ARCH_KERNEL_STACK_OBJ_ALIGN */
 
 #define Z_KERNEL_STACK_LEN(size) \
 	ROUND_UP(Z_KERNEL_STACK_SIZE_ADJUST(size), Z_KERNEL_STACK_OBJ_ALIGN)
@@ -232,7 +232,7 @@ static inline char *z_stack_ptr_align(char *ptr)
 #else
 #define K_KERNEL_PINNED_STACK_DEFINE(sym, size) \
 	Z_KERNEL_STACK_DEFINE_IN(sym, size, __kstackmem)
-#endif
+#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 /**
  * @brief Define a toplevel array of kernel stack memory regions
@@ -265,7 +265,7 @@ static inline char *z_stack_ptr_align(char *ptr)
 #else
 #define K_KERNEL_PINNED_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __kstackmem)
-#endif
+#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 /**
  * @brief Define an embedded stack memory region
@@ -320,7 +320,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #define K_THREAD_STACK_RESERVED		((size_t)(ARCH_THREAD_STACK_RESERVED))
 #else
 #define K_THREAD_STACK_RESERVED		((size_t)0U)
-#endif
+#endif /* ARCH_THREAD_STACK_RESERVED */
 
 /**
  * @brief Properly align the lowest address of a stack object
@@ -553,7 +553,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #else
 #define K_THREAD_PINNED_STACK_DEFINE(sym, size) \
 	K_THREAD_STACK_DEFINE(sym, size)
-#endif
+#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 /**
  * @brief Calculate size of stacks to be allocated in a stack array
@@ -611,7 +611,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #else
 #define K_THREAD_PINNED_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size)
-#endif
+#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 /**
  * @brief Define an embedded stack memory region

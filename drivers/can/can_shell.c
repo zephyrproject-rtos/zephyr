@@ -28,14 +28,15 @@ struct can_shell_mode_mapping {
 #define CAN_SHELL_MODE_MAPPING(_name, _mode) { .name = _name, .mode = _mode }
 
 static const struct can_shell_mode_mapping can_shell_mode_map[] = {
-	/* Array sorted alphabetically based on name */
+	/* zephyr-keep-sorted-start */
 	CAN_SHELL_MODE_MAPPING("fd",              CAN_MODE_FD),
 	CAN_SHELL_MODE_MAPPING("listen-only",     CAN_MODE_LISTENONLY),
 	CAN_SHELL_MODE_MAPPING("loopback",        CAN_MODE_LOOPBACK),
+	CAN_SHELL_MODE_MAPPING("manual-recovery", CAN_MODE_MANUAL_RECOVERY),
 	CAN_SHELL_MODE_MAPPING("normal",          CAN_MODE_NORMAL),
 	CAN_SHELL_MODE_MAPPING("one-shot",        CAN_MODE_ONE_SHOT),
 	CAN_SHELL_MODE_MAPPING("triple-sampling", CAN_MODE_3_SAMPLES),
-	CAN_SHELL_MODE_MAPPING("manual-recovery", CAN_MODE_MANUAL_RECOVERY),
+	/* zephyr-keep-sorted-stop */
 };
 
 K_MSGQ_DEFINE(can_shell_tx_msgq, sizeof(struct can_shell_tx_event),

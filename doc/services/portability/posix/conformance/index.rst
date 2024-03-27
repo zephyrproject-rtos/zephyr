@@ -64,7 +64,7 @@ POSIX System Interfaces
     :ref:`_POSIX_CLOCK_SELECTION<posix_option_group_clock_selection>`, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
     _POSIX_MAPPED_FILES, -1, :ref:`†<posix_undefined_behaviour>`
     _POSIX_MEMORY_PROTECTION, -1, :ref:`†<posix_undefined_behaviour>`
-    :ref:`_POSIX_READER_WRITER_LOCKS<posix_option_reader_writer_locks>`, -1, :kconfig:option:`CONFIG_PTHREAD_IPC`
+    :ref:`_POSIX_READER_WRITER_LOCKS<posix_option_reader_writer_locks>`, 200809L, :kconfig:option:`CONFIG_PTHREAD_IPC`
     _POSIX_REALTIME_SIGNALS, -1, :ref:`†<posix_undefined_behaviour>`
     :ref:`_POSIX_SEMAPHORES<posix_option_group_semaphores>`, 200809L, :kconfig:option:`CONFIG_PTHREAD_IPC`
     :ref:`_POSIX_SPIN_LOCKS<posix_option_group_spin_locks>`, 200809L, :kconfig:option:`CONFIG_PTHREAD_SPINLOCK`
@@ -79,7 +79,7 @@ POSIX System Interfaces
    :widths: 50, 10, 50
 
     _POSIX_ADVISORY_INFO, -1,
-    _POSIX_CPUTIME, -1,
+    _POSIX_CPUTIME, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
     _POSIX_FSYNC, -1,
     _POSIX_IPV6, 200809L, :kconfig:option:`CONFIG_NET_IPV6`
     _POSIX_MEMLOCK, -1,
@@ -109,7 +109,7 @@ POSIX System Interfaces
     _XOPEN_CRYPT, -1,
     _XOPEN_REALTIME, -1,
     _XOPEN_REALTIME_THREADS, -1,
-    :ref:`_XOPEN_STREAMS<posix_option_xopen_streams>`, -1, :kconfig:option:`CONFIG_NET_SOCKETS`
+    :ref:`_XOPEN_STREAMS<posix_option_xopen_streams>`, -1, :ref:`†<posix_undefined_behaviour>`
     _XOPEN_UNIX, -1,
 
 POSIX Shell and Utilities

@@ -122,7 +122,7 @@
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
-	hl7800 {
+	hl7800: hl7800 {
 		compatible = "swir,hl7800";
 		status = "okay";
 		mdm-reset-gpios = <&gpio1 15 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;

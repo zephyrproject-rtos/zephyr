@@ -1,0 +1,6 @@
+/ {
+    aliases {
+        modem-uart = &uart1;
+        modem = &hl7800;
+    };
+};

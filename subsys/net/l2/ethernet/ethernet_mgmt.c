@@ -207,6 +207,13 @@ static int ethernet_set_config(uint32_t mgmt_request,
 
 		config.txinjection_mode = params->txinjection_mode;
 		type = ETHERNET_CONFIG_TYPE_TXINJECTION_MODE;
+	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_MAC_FILTER) {
+		if (!is_hw_caps_supported(dev, ETHERNET_HW_FILTERING)) {
+			return -ENOTSUP;
+		}
+
+		memcpy(&config.filter, &params->filter, sizeof(struct ethernet_filter));
+		type = ETHERNET_CONFIG_TYPE_FILTER;
 	} else {
 		return -EINVAL;
 	}
@@ -245,6 +252,9 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_T1S_PARAM,
 				  ethernet_set_config);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_TXINJECTION_MODE,
+				  ethernet_set_config);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_MAC_FILTER,
 				  ethernet_set_config);
 
 static int ethernet_get_config(uint32_t mgmt_request,

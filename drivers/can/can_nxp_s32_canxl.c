@@ -1151,7 +1151,7 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 				(Canexcel_Ip_RxFifoFilterID_ADDR *)&rx_fifo_filter##n,))\
 	};										\
 	static struct can_nxp_s32_config can_nxp_s32_config_##n = {			\
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(n, CAN_NXP_S32_MAX_BITRATE),	\
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(n, 0, CAN_NXP_S32_MAX_BITRATE),	\
 		.base_sic = (CANXL_SIC_Type *)DT_INST_REG_ADDR_BY_NAME(n, sic),		\
 		IF_ENABLED(CONFIG_CAN_NXP_S32_RX_FIFO,					\
 			(.base_rx_fifo = (CANXL_RXFIFO_Type *)				\

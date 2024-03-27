@@ -332,6 +332,51 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		*rate = CLOCK_GetFreq(kCLOCK_PerClk);
 		break;
 #endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio1), okay) && CONFIG_MCUX_FLEXIO
+	case IMX_CCM_FLEXIO1_CLK:
+	{
+		uint32_t flexio_mux = CLOCK_GetMux(kCLOCK_Flexio1Mux);
+		uint32_t source_clk_freq = 0;
+
+		if (flexio_mux == 0) {
+			source_clk_freq = CLOCK_GetPllFreq(kCLOCK_PllAudio);
+		} else if (flexio_mux == 1) {
+			source_clk_freq = CLOCK_GetUsb1PfdFreq(kCLOCK_Pfd2);
+	#ifdef PLL_VIDEO_OFFSET /* fsl_clock.h */
+		} else if (flexio_mux == 2) {
+			source_clk_freq = CLOCK_GetPllFreq(kCLOCK_PllVideo);
+	#endif
+		} else {
+			source_clk_freq = CLOCK_GetPllFreq(kCLOCK_PllUsb1);
+		}
+
+		*rate = source_clk_freq / (CLOCK_GetDiv(kCLOCK_Flexio1PreDiv) + 1)
+					/ (CLOCK_GetDiv(kCLOCK_Flexio1Div) + 1);
+	} break;
+#endif
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(flexio2), okay) \
+		 || DT_NODE_HAS_STATUS(DT_NODELABEL(flexio3), okay)) && CONFIG_MCUX_FLEXIO
+	case IMX_CCM_FLEXIO2_3_CLK:
+	{
+		uint32_t flexio_mux = CLOCK_GetMux(kCLOCK_Flexio2Mux);
+		uint32_t source_clk_freq = 0;
+
+		if (flexio_mux == 0) {
+			source_clk_freq = CLOCK_GetPllFreq(kCLOCK_PllAudio);
+		} else if (flexio_mux == 1) {
+			source_clk_freq = CLOCK_GetUsb1PfdFreq(kCLOCK_Pfd2);
+	#ifdef PLL_VIDEO_OFFSET /* fsl_clock.h */
+		} else if (flexio_mux == 2) {
+			source_clk_freq = CLOCK_GetPllFreq(kCLOCK_PllVideo);
+	#endif
+		} else {
+			source_clk_freq = CLOCK_GetPllFreq(kCLOCK_PllUsb1);
+		}
+
+		*rate = source_clk_freq / (CLOCK_GetDiv(kCLOCK_Flexio2PreDiv) + 1)
+					/ (CLOCK_GetDiv(kCLOCK_Flexio2Div) + 1);
+	} break;
+#endif
 	}
 
 	return 0;

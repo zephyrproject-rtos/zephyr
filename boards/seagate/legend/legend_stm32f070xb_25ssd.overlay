@@ -7,10 +7,6 @@
 / {
 	model = "Seagate Legend 2.5 SSD board";
 	compatible = "legend25_ssd", "seagate,legend25_ssd";
-
-	aliases {
-		led-strip = &led_strip_spi;
-	};
 };
 
 &clk_hse {

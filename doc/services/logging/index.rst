@@ -46,7 +46,7 @@ There are four severity levels available in the system: error, warning, info
 and debug. For each severity level the logging API (:zephyr_file:`include/zephyr/logging/log.h`)
 has set of dedicated macros. Logger API also has macros for logging data.
 
-For each level following set of macros are available:
+For each level the following set of macros are available:
 
 - ``LOG_X`` for standard printf-like messages, e.g. :c:macro:`LOG_ERR`.
 - ``LOG_HEXDUMP_X`` for dumping data, e.g. :c:macro:`LOG_HEXDUMP_WRN`.
@@ -54,6 +54,10 @@ For each level following set of macros are available:
   particular instance, e.g. :c:macro:`LOG_INST_INF`.
 - ``LOG_INST_HEXDUMP_X`` for dumping data associated with the particular
   instance, e.g. :c:macro:`LOG_HEXDUMP_INST_DBG`
+
+The warning level also exposes the following additional macro:
+
+- :c:macro:`LOG_WRN_ONCE` for warnings where only the first occurrence is of interest.
 
 There are two configuration categories: configurations per module and global
 configuration. When logging is enabled globally, it works for modules. However,

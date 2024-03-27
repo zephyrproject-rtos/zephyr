@@ -125,6 +125,16 @@ void xtensa_init_paging(uint32_t *l1_page)
 {
 	extern char z_xt_init_pc; /* defined in asm below */
 	struct tlb_regs regs;
+	unsigned int initial_rasid;
+
+	/* The initial rasid after hardware initialization is 0x04030201.
+	 * 1 is hardwired to ring 0, other slots must be different
+	 * from each other and must not be 0.
+	 *
+	 * For our initial implementation we just set the 4th slot (ring 3),
+	 * to use the ASID value used for memory that is shared with all threads.
+	 */
+	initial_rasid = 0xff030201;
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
 	/* The incoherent cache can get into terrible trouble if it's
@@ -161,7 +171,7 @@ void xtensa_init_paging(uint32_t *l1_page)
 			 "isync\n"
 			 "iitlb %8\n" /* invalidate pc */
 			 "isync\n" /* <--- traps a ITLB miss */
-			 :: "r"(regs.ptevaddr), "r"(regs.rasid),
+			 :: "r"(regs.ptevaddr), "r"(initial_rasid),
 			    "r"(regs.ptepin_at), "r"(regs.ptepin_as),
 			    "r"(regs.vecpin_at), "r"(regs.vecpin_as),
 			    "r"(idtlb_pte), "r"(idtlb_stk), "r"(iitlb_pc));

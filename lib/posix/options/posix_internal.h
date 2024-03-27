@@ -29,6 +29,7 @@ struct posix_thread_attr {
 	uint16_t guardsize : CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS;
 	int8_t priority;
 	uint8_t schedpolicy: 2;
+	bool contentionscope: 1;
 	union {
 		bool caller_destroys: 1;
 		bool initialized: 1;

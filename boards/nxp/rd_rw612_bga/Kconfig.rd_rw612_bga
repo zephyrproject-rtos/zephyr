@@ -1,0 +1,5 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RD_RW612_BGA
+	select SOC_PART_NUMBER_RW612ETA1I

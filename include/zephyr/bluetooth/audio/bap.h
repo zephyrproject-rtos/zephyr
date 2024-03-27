@@ -415,7 +415,8 @@ struct bt_bap_ep_info {
  * @param ep   The audio stream endpoint object.
  * @param info The structure object to be filled with the info.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 in case of success
+ * @retval -EINVAL if @p ep or @p info are NULL
  */
 int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info);
 

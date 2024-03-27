@@ -1,0 +1,45 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic IPCT (Interprocessor Communication Transceiver)
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  channels:
+    type: int
+    required: true
+    description: Number of channels implemented by the IPCT instance.
+
+  source-channel-links:
+    type: array
+    description: |
+      Mapping of IPCT channels that are mapped between two IPCT instances on
+      separate domains, in which a channel on this IPCT node is considered
+      the source. This array is then comprised of a 3-integer-wide "unit"
+      that defines one connection of the mapping. The format of this unit
+      is <source_channel sink_domain_id sink_channel>. Units are sequential
+      in the array, therefore requiring the length of this property to be
+      a factor of 3.
+
+      For example, if channel 2 is to be mapped to Radio Core (ID: 3) IPCT
+      channel 4, then the array "unit" would be <2 NRF_DOMAIN_ID_RADIOCORE 4>
+      or <2 3 4>.
+
+  sink-channel-links:
+    type: array
+    description: |
+      Mapping of IPCT channels that are mapped between two IPCT instances on
+      separate domains, in which a channel on this IPCT node is considered
+      the sink. This array is then comprised of a 3-integer-wide "unit"
+      that defines one connection of the mapping. The format of this unit
+      is <sink_channel source_domain_id source_channel>. Units are sequential
+      in the array, therefore requiring the length of this property to be
+      a factor of 3.
+
+      For example, if channel 2 is to be mapped to Radio Core (ID: 3) IPCT
+      channel 4, then the array "unit" would be <2 NRF_DOMAIN_ID_RADIOCORE 4>
+      or <2 3 4>.

@@ -14,6 +14,8 @@
 /**
  * @brief Time-aware GPIO Interface
  * @defgroup tgpio_interface Time-aware GPIO Interface
+ * @since 3.5
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  */

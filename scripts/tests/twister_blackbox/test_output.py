@@ -20,6 +20,11 @@ from twisterlib.testplan import TestPlan
 
 @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
 class TestOutput:
+    TESTDATA_1 = [
+    (
+        os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
+    ),
+]
     @classmethod
     def setup_class(cls):
         apath = os.path.join(ZEPHYR_BASE, 'scripts', 'twister')
@@ -123,3 +128,68 @@ class TestOutput:
         split_build_log = build_log.split('\n')
         for r in split_build_log:
             assert r in inline_twister_log
+
+    def _get_matches(self, err, regex_line):
+        matches = []
+        for line in err.split('\n'):
+            columns = line.split()
+            if len(columns) == 8:
+                for i in range(8):
+                    match = re.fullmatch(regex_line[i], columns[i])
+                    if match:
+                        matches.append(match)
+                if len(matches) == 8:
+                    return matches
+                else:
+                    matches = []
+        return matches
+
+    @pytest.mark.parametrize(
+        'test_path',
+        TESTDATA_1,
+        ids=[
+            'single_v',
+        ]
+    )
+    def test_single_v(self, capfd, out_path, test_path):
+        args = ['--outdir', out_path, '-T', test_path, '-v']
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+            pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+        regex_line = [r'INFO', r'-', r'\d+/\d+', r'\S+', r'\S+', r'[A-Z]+', r'\(\w+', r'[\d.]+s\)']
+        matches = self._get_matches(err, regex_line)
+        print(matches)
+        assert str(sys_exit.value) == '0'
+        assert len(matches) > 0
+
+    @pytest.mark.parametrize(
+        'test_path',
+        TESTDATA_1,
+        ids=[
+            'double_v',
+        ]
+    )
+    def test_double_v(self, capfd, out_path, test_path):
+        args = ['--outdir', out_path, '-T', test_path, '-vv']
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+            pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+        regex_line = [r'INFO', r'-', r'\d+/\d+', r'\S+', r'\S+', r'[A-Z]+', r'\(\w+', r'[\d.]+s\)']
+        matches = self._get_matches(err, regex_line)
+        booting_zephyr_regex = re.compile(r'^DEBUG\s+-\s+([^*]+)\*\*\*\s+Booting\s+Zephyr\s+OS\s+build.*$', re.MULTILINE)
+        info_debug_line_regex = r'^\s*(INFO|DEBUG)'
+
+        assert str(sys_exit.value) == '0'
+        assert re.search(booting_zephyr_regex, err) is not None
+        assert re.search(info_debug_line_regex, err) is not None
+        assert len(matches) > 0

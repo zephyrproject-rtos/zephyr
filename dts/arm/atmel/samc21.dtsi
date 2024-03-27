@@ -53,8 +53,6 @@
 			clock-names = "GCLK", "MCLK";
 			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
 			divider = <12>;
-			sample-point = <875>;
-			sample-point-data = <875>;
 			status = "disabled";
 		};
 
@@ -67,8 +65,6 @@
 			clock-names = "GCLK", "MCLK";
 			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
 			divider = <12>;
-			sample-point = <875>;
-			sample-point-data = <875>;
 			status = "disabled";
 		};
 	};

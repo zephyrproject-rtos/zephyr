@@ -23,6 +23,16 @@
     status = "okay";
 };
 
+&pinctrl {
+    i2c2_default: i2c2_default {
+        group1 {
+            pinmux = <SMARTBOND_PINMUX(I2C2_SDA, 0, 19)>,
+                <SMARTBOND_PINMUX(I2C2_SCL, 0, 18)>;
+            bias-pull-up;
+        };
+    };
+};
+
 &i2c2 {
     clock-frequency = <400000>;
 

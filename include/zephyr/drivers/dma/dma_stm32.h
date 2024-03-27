@@ -33,7 +33,7 @@
 /* macro for dma slot (only for dma-v1 or dma-v2 types) */
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2bis)
 #define STM32_DMA_SLOT(id, dir, slot) 0
-#define STM32_DMA_SLOT_BY_IDX(id, idx, slot)
+#define STM32_DMA_SLOT_BY_IDX(id, idx, slot) 0
 #else
 #define STM32_DMA_SLOT(id, dir, slot) DT_INST_DMAS_CELL_BY_NAME(id, dir, slot)
 #define STM32_DMA_SLOT_BY_IDX(id, idx, slot) DT_INST_DMAS_CELL_BY_IDX(id, idx, slot)

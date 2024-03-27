@@ -15,6 +15,16 @@ tests:
     integration_platforms:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
+  sample.mcumgr.smp_svr.bt_static_svc:
+    extra_args: OVERLAY_CONFIG="overlay-bt.conf"
+    extra_configs:
+      - CONFIG_MCUMGR_TRANSPORT_BT_DYNAMIC_SVC_REGISTRATION=n
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - pinnacle_100_dvk
+      - mg100
+    integration_platforms:
+      - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.udp:
     extra_args: OVERLAY_CONFIG="overlay-udp.conf"
     platform_allow: frdm_k64f

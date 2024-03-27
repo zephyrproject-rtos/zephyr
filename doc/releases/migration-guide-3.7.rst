@@ -74,6 +74,15 @@ Analog-to-Digital Converter (ADC)
 Bluetooth HCI
 =============
 
+Charger
+=======
+
+* Dropped ``constant-charge-current-max-microamp`` property in ``charger_max20335`` driver because
+  it did not reflect real chip functionality.
+
+* Added enum key to ``constant-charge-voltage-max-microvolt`` property in ``maxim,max20335-charger``
+  binding to indicate invalid devicetree values at build time.
+
 Controller Area Network (CAN)
 =============================
 
@@ -120,6 +129,12 @@ General Purpose I/O (GPIO)
 Input
 =====
 
+* The ``analog-axis`` deadzone calibration value has been changed to be
+  relative to the raw ADC values, similarly to min and max. The data structures
+  and properties have been renamed to reflect that (from ``out-deadzone`` to
+  ``in-deadzone``) and when migrating to the new definition the value should be
+  scaled accordingly.
+
 Interrupt Controller
 ====================
 
@@ -143,6 +158,11 @@ Bluetooth
 
 Bluetooth Mesh
 ==============
+
+* The model metadata pointer declaration of :c:struct:`bt_mesh_model` has been changed
+  to add ``const`` qualifiers. The data pointer of :c:struct:`bt_mesh_models_metadata_entry`
+  got ``const`` qualifier too. The model's metadata structure and metadata raw value
+  can be declared as permanent constants in the non-volatile memory. (:github:`69679`)
 
 Bluetooth Audio
 ===============
@@ -170,6 +190,18 @@ Networking
   one IPv4 address / network interface, the netmask must be specified
   for each IPv4 address separately. (:github:`68419`)
 
+* Virtual network interface API no longer has the `input` callback. The input callback was
+  used to read the inner IPv4/IPv6 packets in an IP tunnel. This incoming tunnel read is now
+  implemented in `recv` callback. (:github:`70549`)
+
+* Modified the ``wifi connect`` command to use key-value format for the arguments. In the
+  previous implementation, we were identifying an option using its position in the argument string.
+  This made it difficult to deal with optional arguments or extending the support
+  for other options. Having this key-value format makes it easier to extend the options that
+  can be passed to the connect command.
+  ``wifi -h`` will give more information about the usage of connect command.
+  (:github:`70024`)
+
 Other Subsystems
 ****************
 
@@ -178,6 +210,12 @@ LoRaWAN
 
 MCUmgr
 ======
+
+Modem
+=====
+
+* The ``CONFIG_MODEM_CHAT_LOG_BUFFER`` Kconfig option was
+  renamed to :kconfig:option:`MODEM_CHAT_LOG_BUFFER_SIZE`.
 
 Shell
 =====
@@ -190,6 +228,8 @@ Userspace
 
 Architectures
 *************
+
+* Function :c:func:`arch_start_cpu` has been renamed to :c:func:`arch_cpu_start`.
 
 * x86
 

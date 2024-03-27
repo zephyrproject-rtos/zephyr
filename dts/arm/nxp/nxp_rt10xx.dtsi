@@ -872,7 +872,6 @@
 			interrupt-names = "common";
 			clocks = <&ccm IMX_CCM_CAN_CLK 0x68 14>;
 			clk-source = <2>;
-			sample-point = <875>;
 			status = "disabled";
 		};
 
@@ -883,7 +882,6 @@
 			interrupt-names = "common";
 			clocks = <&ccm IMX_CCM_CAN_CLK 0x68 18>;
 			clk-source = <2>;
-			sample-point = <875>;
 			status = "disabled";
 		};
 
@@ -894,8 +892,6 @@
 			interrupt-names = "common";
 			clocks = <&ccm IMX_CCM_CAN_CLK 0x84 6>;
 			clk-source = <2>;
-			sample-point = <875>;
-			sample-point-data = <875>;
 			status = "disabled";
 		};
 
@@ -1121,6 +1117,14 @@
 				reg = <3>;
 				status = "disabled";
 			};
+		};
+
+		flexio1: flexio@401ac000 {
+			compatible = "nxp,flexio";
+			reg = <0x401ac000 0x4000>;
+			status = "disabled";
+			interrupts = <90 0>;
+			clocks = <&ccm IMX_CCM_FLEXIO1_CLK 0 0>;
 		};
 	};
 };

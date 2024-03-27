@@ -51,12 +51,10 @@ set(LLEXT_REMOVE_FLAGS
   -fdata-sections
   -g.*
   -Os
-  -mcpu=.*
 )
 
 # Flags to be added to llext code compilation
 set(LLEXT_APPEND_FLAGS
   -mlong-calls
   -mthumb
-  -mcpu=cortex-m33+nodsp
 )

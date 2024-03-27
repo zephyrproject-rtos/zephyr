@@ -48,10 +48,70 @@ LOG_MODULE_REGISTER(eth_adin2111, CONFIG_ETHERNET_LOG_LEVEL);
 #define ADIN2111_UNICAST_P1_ADDR_SLOT		2U
 /* MAC Address Rule and DA Filter Port 2 slot/idx */
 #define ADIN2111_UNICAST_P2_ADDR_SLOT		3U
+/* Free slots for further filtering */
+#define ADIN2111_FILTER_FIRST_SLOT		4U
+#define ADIN2111_FILTER_SLOTS			16U
+
 /* As per RM rev. A table 3, t3 >= 50ms, delay for SPI interface to be ready */
 #define ADIN2111_SPI_ACTIVE_DELAY_MS		50U
-/* As per RM rev. A page 20: approximately 10 ms (maximum) for internal logic to be ready */
+/* As per RM rev. A page 20: approximately 10 ms (maximum) for internal logic to be ready. */
 #define ADIN2111_SW_RESET_DELAY_MS		10U
+
+int eth_adin2111_mac_reset(const struct device *dev)
+{
+	uint32_t val;
+	int ret;
+
+	ret = eth_adin2111_reg_write(dev, ADIN2111_SOFT_RST_REG, ADIN2111_SWRESET_KEY1);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = eth_adin2111_reg_write(dev, ADIN2111_SOFT_RST_REG, ADIN2111_SWRESET_KEY2);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = eth_adin2111_reg_write(dev, ADIN2111_SOFT_RST_REG, ADIN2111_SWRELEASE_KEY1);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = eth_adin2111_reg_write(dev, ADIN2111_SOFT_RST_REG, ADIN2111_SWRELEASE_KEY2);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = eth_adin2111_reg_read(dev, ADIN1110_MAC_RST_STATUS_REG, &val);
+	if (ret < 0) {
+		return ret;
+	}
+	if (val == 0) {
+		return -EBUSY;
+	}
+
+	return 0;
+}
+
+int eth_adin2111_reg_update(const struct device *dev, const uint16_t reg,
+			    uint32_t mask,  uint32_t data)
+{
+	uint32_t val;
+	int ret;
+
+	ret = eth_adin2111_reg_read(dev, reg, &val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	val &= ~mask;
+	val |= mask & data;
+
+	return eth_adin2111_reg_write(dev, reg, val);
+}
+
+struct net_if *eth_adin2111_get_iface(const struct device *dev, const uint16_t port_idx)
+{
+	struct adin2111_data *ctx = dev->data;
+
+	return ((struct adin2111_port_data *)ctx->port[port_idx]->data)->iface;
+}
 
 int eth_adin2111_lock(const struct device *dev, k_timeout_t timeout)
 {
@@ -187,10 +247,10 @@ static int eth_adin2111_reg_write_oa(const struct device *dev, const uint16_t re
 	return 0;
 }
 
-int eth_adin2111_oa_data_read(const struct device *dev, int port)
+int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 {
 	struct adin2111_data *ctx = dev->data;
-	struct net_if *iface = ((struct adin2111_port_data *)ctx->port[port]->data)->iface;
+	struct net_if *iface = ((struct adin2111_port_data *)ctx->port[port_idx]->data)->iface;
 	struct net_pkt *pkt;
 	uint32_t hdr, ftr;
 	int i, len, rx_pos, ret, rca, swo;
@@ -270,7 +330,7 @@ int eth_adin2111_oa_data_read(const struct device *dev, int port)
 			if (ret < 0) {
 				net_pkt_unref(pkt);
 				LOG_ERR("Port %u failed to enqueue frame to RX queue, %d",
-					port, ret);
+					port_idx, ret);
 				return ret;
 			}
 		}
@@ -284,7 +344,8 @@ update_pos:
 /*
  * Setting up for a single dma transfer.
  */
-static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *pkt, int port)
+static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *pkt,
+				      const uint16_t port_idx)
 {
 	struct adin2111_data *ctx = dev->data;
 	uint16_t clen, len = net_pkt_get_len(pkt);
@@ -313,7 +374,7 @@ static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *
 	for (i = 1, cur = 0; i <= chunks; i++) {
 		hdr = ADIN2111_OA_DATA_HDR_DNC | ADIN2111_OA_DATA_HDR_DV |
 			ADIN2111_OA_DATA_HDR_NORX;
-		hdr |= (!!port << ADIN2111_OA_DATA_HDR_VS);
+		hdr |= (!!port_idx << ADIN2111_OA_DATA_HDR_VS);
 		if (i == 1) {
 			hdr |= ADIN2111_OA_DATA_HDR_SV;
 		}
@@ -466,14 +527,14 @@ int eth_adin2111_reg_write(const struct device *dev, const uint16_t reg,
 	return rval;
 }
 
-static int adin2111_read_fifo(const struct device *dev, const uint8_t port)
+static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 {
 	const struct adin2111_config *cfg = dev->config;
 	struct adin2111_data *ctx = dev->data;
 	struct net_if *iface;
 	struct net_pkt *pkt;
-	uint16_t fsize_reg = ((port == 0U) ? ADIN2111_P1_RX_FSIZE : ADIN2111_P2_RX_FSIZE);
-	uint16_t rx_reg = ((port == 0U) ? ADIN2111_P1_RX : ADIN2111_P2_RX);
+	uint16_t fsize_reg = ((port_idx == 0U) ? ADIN2111_P1_RX_FSIZE : ADIN2111_P2_RX_FSIZE);
+	uint16_t rx_reg = ((port_idx == 0U) ? ADIN2111_P1_RX : ADIN2111_P2_RX);
 	uint32_t fsize;
 	uint32_t fsize_real;
 	uint32_t padding_len;
@@ -484,13 +545,13 @@ static int adin2111_read_fifo(const struct device *dev, const uint8_t port)
 #endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
 	int ret;
 
-	iface = ((struct adin2111_port_data *)ctx->port[port]->data)->iface;
+	iface = ((struct adin2111_port_data *)ctx->port[port_idx]->data)->iface;
 
 	/* get received frame size in bytes */
 	ret = eth_adin2111_reg_read(dev, fsize_reg, &fsize);
 	if (ret < 0) {
 		eth_stats_update_errors_rx(iface);
-		LOG_ERR("Port %u failed to read RX FSIZE, %d", port, ret);
+		LOG_ERR("Port %u failed to read RX FSIZE, %d", port_idx, ret);
 		return ret;
 	}
 
@@ -525,7 +586,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint8_t port)
 	ret = spi_transceive_dt(&cfg->spi, &tx, &rx);
 	if (ret < 0) {
 		eth_stats_update_errors_rx(iface);
-		LOG_ERR("Port %u failed to read RX FIFO, %d", port, ret);
+		LOG_ERR("Port %u failed to read RX FIFO, %d", port_idx, ret);
 		return ret;
 	}
 
@@ -534,7 +595,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint8_t port)
 	if (!pkt) {
 		eth_stats_update_errors_rx(iface);
 		LOG_ERR("Port %u failed to alloc frame RX buffer, %u bytes",
-			port, fsize_real);
+			port_idx, fsize_real);
 		return -ENOMEM;
 	}
 
@@ -542,7 +603,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint8_t port)
 	if (ret < 0) {
 		eth_stats_update_errors_rx(iface);
 		net_pkt_unref(pkt);
-		LOG_ERR("Port %u failed to fill RX frame, %d", port, ret);
+		LOG_ERR("Port %u failed to fill RX frame, %d", port_idx, ret);
 		return ret;
 	}
 
@@ -551,7 +612,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint8_t port)
 		eth_stats_update_errors_rx(iface);
 		net_pkt_unref(pkt);
 		LOG_ERR("Port %u failed to enqueue frame to RX queue, %d",
-			port, ret);
+			port_idx, ret);
 		return ret;
 	}
 
@@ -935,13 +996,14 @@ static int adin2111_filter_multicast(const struct device *dev)
 {
 	const struct adin2111_config *cfg = dev->config;
 	bool is_adin2111 = (cfg->id == ADIN2111_MAC);
-	uint8_t mm[6] = {BIT(0), 0U,  0U, 0U, 0U, 0U};
+	uint8_t mm[NET_ETH_ADDR_LEN] = {BIT(0), 0U, 0U, 0U, 0U, 0U};
+	uint8_t mmask[NET_ETH_ADDR_LEN] = {0xFFU, 0U, 0U, 0U, 0U, 0U};
 	uint32_t rules = ADIN2111_ADDR_APPLY2PORT1 |
 			 (is_adin2111 ? ADIN2111_ADDR_APPLY2PORT2 : 0) |
 			 ADIN2111_ADDR_TO_HOST |
 			 ADIN2111_ADDR_TO_OTHER_PORT;
 
-	return adin2111_write_filter_address(dev, mm, mm, rules,
+	return adin2111_write_filter_address(dev, mm, mmask, rules,
 					     ADIN2111_MULTICAST_ADDR_SLOT);
 }
 
@@ -949,7 +1011,7 @@ static int adin2111_filter_broadcast(const struct device *dev)
 {
 	const struct adin2111_config *cfg = dev->config;
 	bool is_adin2111 = (cfg->id == ADIN2111_MAC);
-	uint8_t mac[] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
+	uint8_t mac[NET_ETH_ADDR_LEN] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
 	uint32_t rules = ADIN2111_ADDR_APPLY2PORT1 |
 			 (is_adin2111 ? ADIN2111_ADDR_APPLY2PORT2 : 0) |
 			 ADIN2111_ADDR_TO_HOST |
@@ -960,7 +1022,7 @@ static int adin2111_filter_broadcast(const struct device *dev)
 }
 
 static int adin2111_filter_unicast(const struct device *dev, uint8_t *addr,
-				   uint8_t port_idx)
+				   const uint16_t port_idx)
 {
 	uint32_t rules = (port_idx == 0 ? ADIN2111_ADDR_APPLY2PORT1
 					: ADIN2111_ADDR_APPLY2PORT2)
@@ -970,6 +1032,115 @@ static int adin2111_filter_unicast(const struct device *dev, uint8_t *addr,
 
 	return adin2111_write_filter_address(dev, addr, NULL, rules, slot);
 }
+
+int eth_adin2111_broadcast_filter(const struct device *dev, bool enable)
+{
+	if (!enable) {
+		/* Clean up */
+		uint8_t mac[NET_ETH_ADDR_LEN] = {0};
+
+		return adin2111_write_filter_address(dev, mac, mac, 0,
+						     ADIN2111_BROADCAST_ADDR_SLOT);
+	}
+
+	return adin2111_filter_broadcast(dev);
+}
+
+/*
+ * Check if a filter exists already.
+ */
+static int eth_adin2111_find_filter(const struct device *dev, uint8_t *mac, const uint16_t port_idx)
+{
+	int i, offset, reg, ret;
+
+	for (i = ADIN2111_FILTER_FIRST_SLOT; i < ADIN2111_FILTER_SLOTS; i++) {
+		offset = i << 1;
+		ret = eth_adin2111_reg_read(dev, ADIN2111_ADDR_FILT_UPR + offset, &reg);
+		if (ret < 0) {
+			return ret;
+		}
+		if ((reg & UINT16_MAX) == sys_get_be16(&mac[0])) {
+			if ((port_idx == 0 && !(reg & ADIN2111_ADDR_APPLY2PORT1)) ||
+			    (port_idx == 1 && !(reg & ADIN2111_ADDR_APPLY2PORT2)))
+				continue;
+
+			ret = eth_adin2111_reg_read(dev, ADIN2111_ADDR_FILT_LWR + offset, &reg);
+			if (ret < 0) {
+				return ret;
+			}
+			if (reg == sys_get_be32(&mac[2])) {
+				return i;
+			}
+		}
+	}
+
+	return -ENOENT;
+}
+
+static int eth_adin2111_set_mac_filter(const struct device *dev, uint8_t *mac,
+				       const uint16_t port_idx)
+{
+	int i, ret, offset;
+	uint32_t reg;
+
+	ret = eth_adin2111_find_filter(dev, mac, port_idx);
+	if (ret >= 0) {
+		LOG_WRN("MAC filter already set at pos %d, not setting it.", ret);
+		return ret;
+	}
+	if (ret != -ENOENT) {
+		return ret;
+	}
+
+	for (i = ADIN2111_FILTER_FIRST_SLOT; i < ADIN2111_FILTER_SLOTS; i++) {
+		offset = i << 1;
+		ret = eth_adin2111_reg_read(dev, ADIN2111_ADDR_FILT_UPR + offset, &reg);
+		if (ret < 0) {
+			return ret;
+		}
+		if (reg == 0) {
+			uint32_t rules = (port_idx == 0 ? ADIN2111_ADDR_APPLY2PORT1
+					: ADIN2111_ADDR_APPLY2PORT2)
+					| ADIN2111_ADDR_TO_HOST;
+
+			return adin2111_write_filter_address(dev, mac, NULL, rules, i);
+		}
+	}
+
+	return -ENOSPC;
+}
+
+static int eth_adin2111_clear_mac_filter(const struct device *dev, uint8_t *mac,
+					 const uint16_t port_idx)
+{
+	int i;
+	uint8_t cmac[NET_ETH_ADDR_LEN] = {0};
+
+	i = eth_adin2111_find_filter(dev, mac, port_idx);
+	if (i < 0) {
+		return i;
+	}
+
+	return adin2111_write_filter_address(dev, cmac, cmac, 0, i);
+}
+
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+static int eth_adin2111_set_promiscuous(const struct device *dev, const uint16_t port_idx,
+					bool enable)
+{
+	const struct adin2111_config *cfg = dev->config;
+	bool is_adin2111 = (cfg->id == ADIN2111_MAC);
+	uint32_t fwd_mask;
+
+	if ((!is_adin2111 && port_idx > 0) || (is_adin2111 && port_idx > 1)) {
+		return -EINVAL;
+	}
+
+	fwd_mask = port_idx ? ADIN2111_CONFIG2_P2_FWD_UNK2HOST : ADIN2111_CONFIG2_P1_FWD_UNK2HOST;
+
+	return eth_adin2111_reg_update(dev, ADIN2111_CONFIG2, fwd_mask, enable ? fwd_mask : 0);
+}
+#endif
 
 static void adin2111_port_iface_init(struct net_if *iface)
 {
@@ -1043,11 +1214,12 @@ static void adin2111_port_iface_init(struct net_if *iface)
 static enum ethernet_hw_caps adin2111_port_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	return ETHERNET_LINK_10BASE_T
+	return ETHERNET_LINK_10BASE_T |
+		ETHERNET_HW_FILTERING
 #if defined(CONFIG_NET_LLDP)
 		| ETHERNET_LLDP
 #endif
-		;
+		| ETHERNET_PROMISC_MODE;
 }
 
 static int adin2111_port_set_config(const struct device *dev,
@@ -1073,6 +1245,25 @@ static int adin2111_port_set_config(const struct device *dev,
 		(void)net_if_set_link_addr(data->iface, data->mac_addr, sizeof(data->mac_addr),
 					   NET_LINK_ETHERNET);
 	}
+
+	if (type == ETHERNET_CONFIG_TYPE_FILTER) {
+		/* Filtering for DA only */
+		if (config->filter.type & ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS) {
+			uint8_t *mac = (uint8_t *)config->filter.mac_address.addr;
+
+			if (config->filter.set) {
+				ret = eth_adin2111_set_mac_filter(adin, mac, cfg->port_idx);
+			} else {
+				ret = eth_adin2111_clear_mac_filter(adin, mac, cfg->port_idx);
+			}
+		}
+	}
+
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	if (type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
+		ret = eth_adin2111_set_promiscuous(adin, cfg->port_idx, config->promisc_mode);
+	}
+#endif
 
 end_unlock:
 	(void)eth_adin2111_unlock(adin);
@@ -1135,6 +1326,26 @@ static int adin2111_await_device(const struct device *dev)
 			ret = -ETIMEDOUT;
 		}
 		k_sleep(K_USEC(ADIN2111_RESETC_AWAIT_DELAY_POLL_US));
+	}
+
+	return ret;
+}
+
+int eth_adin2111_sw_reset(const struct device *dev, uint16_t delay)
+{
+	int ret;
+
+	ret = eth_adin2111_reg_write(dev, ADIN2111_RESET, ADIN2111_RESET_SWRESET);
+	if (ret < 0) {
+		return ret;
+	}
+
+	k_msleep(delay);
+
+	ret = adin2111_await_device(dev);
+	if (ret < 0) {
+		LOG_ERR("ADIN did't come out of the reset, %d", ret);
+		return ret;
 	}
 
 	return ret;
@@ -1209,17 +1420,9 @@ static int adin2111_init(const struct device *dev)
 	}
 
 	/* perform MACPHY soft reset */
-	ret = eth_adin2111_reg_write(dev, ADIN2111_RESET, ADIN2111_RESET_SWRESET);
+	ret = eth_adin2111_sw_reset(dev, ADIN2111_SW_RESET_DELAY_MS);
 	if (ret < 0) {
 		LOG_ERR("MACPHY software reset failed, %d", ret);
-		return ret;
-	}
-
-	k_msleep(ADIN2111_SW_RESET_DELAY_MS);
-
-	ret = adin2111_await_device(dev);
-	if (ret < 0) {
-		LOG_ERR("ADIN did't come out of the reset, %d", ret);
 		return ret;
 	}
 
@@ -1328,11 +1531,10 @@ static const struct ethernet_api adin2111_port_api = {
 		.port_idx = port_n,								\
 		.phy_addr = phy_n,								\
 	};											\
-	NET_DEVICE_INIT_INSTANCE(name##_port_##port_n, "port_" ADIN2111_XSTR(port_n), port_n,	\
-				 NULL, NULL, &name##_port_data_##port_n,			\
-				 &name##_port_config_##port_n, CONFIG_ETH_INIT_PRIORITY,	\
-				 &adin2111_port_api, ETHERNET_L2,				\
-				 NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
+	ETH_NET_DEVICE_INIT_INSTANCE(name##_port_##port_n, "port_" ADIN2111_XSTR(port_n),	\
+				     port_n, NULL, NULL, &name##_port_data_##port_n,		\
+				     &name##_port_config_##port_n, CONFIG_ETH_INIT_PRIORITY,	\
+				     &adin2111_port_api, NET_ETH_MTU);
 
 #define ADIN2111_SPI_OPERATION ((uint16_t)(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)))
 #define ADIN2111_MAC_INITIALIZE(inst, dev_id, ifaces, name)					\

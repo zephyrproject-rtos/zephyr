@@ -14,18 +14,6 @@ config BOARD_NATIVE_POSIX
 	  An interrupt controller, timer (system tick), and redirects kernel prints to
 	  stdout.
 
-config BOARD_NATIVE_POSIX_64
-	bool
-	select BOARD_NATIVE_POSIX
-	select 64BIT
-	help
-	  Native POSIX - 64 bit version
-	  Will produce a console Linux process which can be executed natively
-	  as a 64-bit executable.
-	  It provides some minimal needed models:
-	  An interrupt controller, timer (system tick), and redirects kernel prints to
-	  stdout.
-
 if BOARD_NATIVE_POSIX
 
 comment "Native POSIX options"

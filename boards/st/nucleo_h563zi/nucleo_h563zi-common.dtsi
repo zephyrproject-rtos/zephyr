@@ -72,11 +72,17 @@
 	status = "okay";
 };
 
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(240)>;
 	ahb-prescaler = <1>;
-	apb1-prescaler = <1>;
+	apb1-prescaler = <2>;
 	apb2-prescaler = <1>;
 	apb3-prescaler = <1>;
 };

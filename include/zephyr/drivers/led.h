@@ -15,6 +15,8 @@
 /**
  * @brief LED Interface
  * @defgroup led_interface LED Interface
+ * @since 1.12
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -36,9 +38,9 @@ extern "C" {
 struct led_info {
 	/** LED label */
 	const char *label;
-	/** Number of colors per LED */
-	uint32_t index;
 	/** Index of the LED on the controller */
+	uint32_t index;
+	/** Number of colors per LED */
 	uint8_t num_colors;
 	/** Mapping of the LED colors */
 	const uint8_t *color_mapping;

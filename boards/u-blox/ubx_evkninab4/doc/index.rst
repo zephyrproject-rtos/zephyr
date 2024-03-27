@@ -153,7 +153,7 @@ and LEDs on the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running
 correctly on your board. The button and LED definitions can be found in
-:zephyr_file:`boards/ublox/ubx_evkninab4/ubx_evkninab4_nrf52833.dts`.
+:zephyr_file:`boards/u-blox/ubx_evkninab4/ubx_evkninab4_nrf52833.dts`.
 
 Note that the buttons on the EVK-NINA-B4 are marked SW1 and SW2, which
 are named sw0 and sw1 in the dts file.

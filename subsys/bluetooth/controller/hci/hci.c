@@ -887,8 +887,10 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	 */
 	rp->commands[38] |= BIT(3) | BIT(4) | BIT(5) | BIT(6);
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST */
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	/* LE Set PA Receive Enable */
 	rp->commands[40] |= BIT(5);
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	/* LE BIG Create Sync, LE BIG Terminate Sync */
 	rp->commands[43] |= BIT(0) | BIT(1);
@@ -3418,6 +3420,7 @@ static void le_set_ext_adv_param(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
+	evt_prop = sys_le16_to_cpu(cmd->props);
 	min_interval = sys_get_le24(cmd->prim_min_interval);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
@@ -3428,9 +3431,11 @@ static void le_set_ext_adv_param(struct net_buf *buf, struct net_buf **evt)
 		 * supported advertising interval maximum value defined in the
 		 * Kconfig CONFIG_BT_CTLR_ADV_INTERVAL_MAX.
 		 */
-		if ((min_interval > max_interval) ||
-		    (min_interval < BT_HCI_LE_PRIM_ADV_INTERVAL_MIN) ||
-		    (max_interval > CONFIG_BT_CTLR_ADV_INTERVAL_MAX)) {
+		if ((!(evt_prop & BT_HCI_LE_ADV_PROP_LEGACY) ||
+		     !(evt_prop & BT_HCI_LE_ADV_PROP_HI_DC_CONN)) &&
+		    ((min_interval > max_interval) ||
+		     (min_interval < BT_HCI_LE_PRIM_ADV_INTERVAL_MIN) ||
+		     (max_interval > CONFIG_BT_CTLR_ADV_INTERVAL_MAX))) {
 			*evt = cmd_complete_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 			return;
 		}
@@ -3442,7 +3447,6 @@ static void le_set_ext_adv_param(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
-	evt_prop = sys_le16_to_cpu(cmd->props);
 	tx_pwr = cmd->tx_power;
 	phy_p = BIT(cmd->prim_adv_phy - 1);
 	phy_s = BIT(cmd->sec_adv_phy - 1);
@@ -7747,6 +7751,7 @@ no_ext_hdr:
 		struct bt_hci_evt_le_biginfo_adv_report *sep;
 		struct pdu_big_info *bi;
 		uint8_t bi_size;
+		uint8_t phy;
 
 		/* FIXME: Parse and find the BIGInfo */
 		if (acad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] != BT_DATA_BIG_INFO) {
@@ -7755,6 +7760,14 @@ no_ext_hdr:
 
 		bi_size = acad[PDU_ADV_DATA_HEADER_LEN_OFFSET];
 		bi = (void *)&acad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
+
+		/* Do not report if phy is invalid or unsupported */
+		phy = (bi->chm_phy[4] >> 5);
+		if ((phy > EXT_ADV_AUX_PHY_LE_CODED) ||
+			(!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
+			 (phy == EXT_ADV_AUX_PHY_LE_CODED))) {
+			return;
+		}
 
 		/* Allocate new event buffer if periodic advertising report was
 		 * constructed with the caller supplied buffer.
@@ -7772,19 +7785,23 @@ no_ext_hdr:
 
 		sep->sync_handle = sys_cpu_to_le16(node_rx->hdr.handle);
 
-		/* NOTE: both sep and bi struct store little-endian values,
-		 *       explicit endian-ness conversion not required.
+		/* NOTE: both sep and bi struct store little-endian values.
+		 *       Multi-byte variables extracted using
+		 *       PDU_BIG_INFO_ISO_*_GET macros, which return
+		 *       value in host-endianness, require conversion.
 		 */
-		sep->num_bis = bi->num_bis;
-		sep->nse = bi->nse;
-		sep->iso_interval = bi->iso_interval;
-		sep->bn = bi->bn;
-		sep->pto = bi->pto;
-		sep->irc = bi->irc;
-		sep->max_pdu = bi->max_pdu;
-		sys_put_le24(sys_le24_to_cpu(bi->sdu_interval),
-			     sep->sdu_interval);
-		sep->max_sdu = bi->max_sdu;
+		sep->num_bis = PDU_BIG_INFO_NUM_BIS_GET(bi);
+		sep->nse = PDU_BIG_INFO_NSE_GET(bi);
+		sep->iso_interval =
+			sys_cpu_to_le16(PDU_BIG_INFO_ISO_INTERVAL_GET(bi));
+		sep->bn = PDU_BIG_INFO_BN_GET(bi);
+		sep->pto = PDU_BIG_INFO_PTO_GET(bi);
+		sep->irc = PDU_BIG_INFO_IRC_GET(bi);
+
+		sep->max_pdu = sys_cpu_to_le16(bi->max_pdu);
+		sys_put_le24(PDU_BIG_INFO_SDU_INTERVAL_GET(bi),
+			sep->sdu_interval);
+		sep->max_sdu = sys_cpu_to_le16(PDU_BIG_INFO_MAX_SDU_GET(bi));
 		sep->phy = HCI_AUX_PHY_TO_HCI_PHY(bi->chm_phy[4] >> 5);
 		sep->framing = (bi->payload_count_framing[4] >> 7) & 0x01;
 		if (bi_size == (PDU_BIG_INFO_ENCRYPTED_SIZE + 1)) {
@@ -7833,7 +7850,7 @@ static void le_big_sync_established(struct pdu_data *pdu,
 	evt_size = sizeof(*sep) + (lll->num_bis * sizeof(uint16_t));
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_SYNC_ESTABLISHED, evt_size);
-	sep->big_handle = sys_cpu_to_le16(node_rx->hdr.handle);
+	sep->big_handle = (uint8_t)node_rx->hdr.handle;
 
 	/* Check for pdu field being aligned before accessing ISO sync
 	 * established event.
@@ -7879,7 +7896,7 @@ static void le_big_sync_lost(struct pdu_data *pdu,
 	}
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_SYNC_LOST, sizeof(*sep));
-	sep->big_handle = sys_cpu_to_le16(node_rx->hdr.handle);
+	sep->big_handle = (uint8_t)node_rx->hdr.handle;
 	sep->reason = *((uint8_t *)pdu);
 }
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
@@ -7927,7 +7944,7 @@ static void le_big_complete(struct pdu_data *pdu_data,
 	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_COMPLETE, evt_size);
 
 	sep->status = BT_HCI_ERR_SUCCESS;
-	sep->big_handle = sys_cpu_to_le16(node_rx->hdr.handle);
+	sep->big_handle = (uint8_t)node_rx->hdr.handle;
 
 	if (sep->status) {
 		return;
@@ -7966,7 +7983,7 @@ static void le_big_terminate(struct pdu_data *pdu,
 	}
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_TERMINATE, sizeof(*sep));
-	sep->big_handle = sys_cpu_to_le16(node_rx->hdr.handle);
+	sep->big_handle = (uint8_t)node_rx->hdr.handle;
 	sep->reason = *((uint8_t *)pdu);
 }
 #endif /* CONFIG_BT_CTLR_ADV_ISO */

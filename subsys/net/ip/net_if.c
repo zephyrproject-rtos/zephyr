@@ -994,7 +994,7 @@ void net_if_mcast_monitor(struct net_if *iface,
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&mcast_monitor_callbacks,
 					  mon, tmp, node) {
-		if (iface == mon->iface) {
+		if (iface == mon->iface || mon->iface == NULL) {
 			mon->cb(iface, addr, is_joined);
 		}
 	}
@@ -5130,6 +5130,18 @@ int net_if_set_name(struct net_if *iface, const char *buf)
 		return -ENAMETOOLONG;
 	}
 
+	STRUCT_SECTION_FOREACH(net_if, iface_check) {
+		if (iface_check == iface) {
+			continue;
+		}
+
+		if (memcmp(net_if_get_config(iface_check)->name,
+			   buf,
+			   name_len + 1) == 0) {
+			return -EALREADY;
+		}
+	}
+
 	/* Copy string and null terminator */
 	memcpy(net_if_get_config(iface)->name, buf, name_len + 1);
 
@@ -5244,14 +5256,20 @@ void net_if_init(void)
 	net_tc_tx_init();
 
 	STRUCT_SECTION_FOREACH(net_if, iface) {
+#if defined(CONFIG_NET_INTERFACE_NAME)
+		memset(net_if_get_config(iface)->name, 0,
+		       sizeof(iface->config.name));
+#endif
 
 		init_iface(iface);
 
 #if defined(CONFIG_NET_INTERFACE_NAME)
-		memset(net_if_get_config(iface)->name, 0,
-		       sizeof(iface->config.name));
-
-		set_default_name(iface);
+		/* If the driver did not set the name, then set
+		 * a default name for the network interface.
+		 */
+		if (net_if_get_config(iface)->name[0] == '\0') {
+			set_default_name(iface);
+		}
 #endif
 
 		if_count++;

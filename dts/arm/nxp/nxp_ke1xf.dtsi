@@ -405,7 +405,6 @@
 					  "mb-0-15";
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 			clk-source = <1>;
-			sample-point = <875>;
 			status = "disabled";
 		};
 
@@ -417,7 +416,6 @@
 					  "mb-0-15";
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 			clk-source = <1>;
-			sample-point = <875>;
 			status = "disabled";
 		};
 
@@ -595,6 +593,14 @@
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 			status = "disabled";
 			#io-channel-cells = <2>;
+		};
+
+		flexio1: flexio@4005a000 {
+			compatible = "nxp,flexio";
+			reg = <0x4005a000 0x1000>;
+			status = "disabled";
+			interrupts = <69 0>;
+			clocks = <&pcc 0x168 KINETIS_PCC_SRC_FIRC_ASYNC>;
 		};
 	};
 };

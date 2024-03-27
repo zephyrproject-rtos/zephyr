@@ -24,7 +24,7 @@ jobs:
         python-version: [3.8, 3.9, '3.10', '3.11', '3.12']
         os: [ubuntu-22.04]
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.7
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.9
 
     steps:
     - name: Apply Container Owner Mismatch Workaround

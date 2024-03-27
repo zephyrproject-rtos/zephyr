@@ -72,6 +72,10 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #ifdef CONFIG_XTENSA_MMU
 	xtensa_mmu_init();
 #endif
+
+#ifdef CONFIG_XTENSA_MPU
+	xtensa_mpu_init();
+#endif
 }
 
 void xtensa_switch(void *switch_to, void **switched_from);

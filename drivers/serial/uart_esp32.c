@@ -71,7 +71,6 @@ struct uart_esp32_config {
 	const struct device *dma_dev;
 	uint8_t tx_dma_channel;
 	uint8_t rx_dma_channel;
-	bool uart_id;
 #endif
 };
 
@@ -923,7 +922,7 @@ static int uart_esp32_init(const struct device *dev)
 		clock_control_on(config->clock_dev, (clock_control_subsys_t)ESP32_UHCI0_MODULE);
 		uhci_ll_init(data->uhci_dev);
 		uhci_ll_set_eof_mode(data->uhci_dev, UHCI_RX_IDLE_EOF | UHCI_RX_LEN_EOF);
-		uhci_ll_attach_uart_port(data->uhci_dev, config->uart_id);
+		uhci_ll_attach_uart_port(data->uhci_dev, uart_hal_get_port_num(&data->hal));
 		data->uart_dev = dev;
 
 		k_work_init_delayable(&data->async.tx_timeout_work, uart_esp32_async_tx_timeout);
@@ -971,8 +970,7 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 #define ESP_UART_DMA_INIT(n)                                                                       \
 	.dma_dev = ESP32_DT_INST_DMA_CTLR(n, tx),                                                  \
 	.tx_dma_channel = ESP32_DT_INST_DMA_CELL(n, tx, channel),                                  \
-	.rx_dma_channel = ESP32_DT_INST_DMA_CELL(n, rx, channel),                                  \
-	.uart_id = (DEVICE_DT_GET(DT_NODELABEL(uart0)) != DEVICE_DT_INST_GET(n)),
+	.rx_dma_channel = ESP32_DT_INST_DMA_CELL(n, rx, channel)
 
 #define ESP_UART_UHCI_INIT(n)                                                                      \
 	.uhci_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas), (&UHCI0), (NULL))

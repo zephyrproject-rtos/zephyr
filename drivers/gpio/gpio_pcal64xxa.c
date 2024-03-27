@@ -54,17 +54,29 @@ enum pcal6416a_register {
 	PCAL6416A_REG_OUTPUT_PORT_CONFIGURATION = 0x4F,
 };
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_pcal6416a)
+typedef uint16_t pcal64xxa_data_t;
+#define PCAL64XXA_INIT_HIGH UINT16_MAX
+#define PRIpcal_data "04" PRIx16
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_pcal6408a)
+typedef uint8_t pcal64xxa_data_t;
+#define PCAL64XXA_INIT_HIGH UINT8_MAX
+#define PRIpcal_data "02" PRIx8
+#else
+#error "Cannot determine the internal data type size"
+#endif
+
 struct pcal64xxa_pins_cfg {
-	uint16_t configured_as_inputs;
-	uint16_t outputs_high;
-	uint16_t pull_ups_selected;
-	uint16_t pulls_enabled;
+	pcal64xxa_data_t configured_as_inputs;
+	pcal64xxa_data_t outputs_high;
+	pcal64xxa_data_t pull_ups_selected;
+	pcal64xxa_data_t pulls_enabled;
 };
 
 struct pcal64xxa_triggers {
-	uint16_t masked;
-	uint16_t dual_edge;
-	uint16_t on_low;
+	pcal64xxa_data_t masked;
+	pcal64xxa_data_t dual_edge;
+	pcal64xxa_data_t on_low;
 };
 
 struct pcal64xxa_drv_data {
@@ -78,7 +90,7 @@ struct pcal64xxa_drv_data {
 	struct gpio_callback int_gpio_cb;
 	struct pcal64xxa_pins_cfg pins_cfg;
 	struct pcal64xxa_triggers triggers;
-	uint16_t input_port_last;
+	pcal64xxa_data_t input_port_last;
 };
 
 typedef int (*pcal64xxa_pins_cfg_apply)(const struct i2c_dt_spec *i2c,
@@ -86,9 +98,9 @@ typedef int (*pcal64xxa_pins_cfg_apply)(const struct i2c_dt_spec *i2c,
 typedef int (*pcal64xxa_triggers_apply)(const struct i2c_dt_spec *i2c,
 					const struct pcal64xxa_triggers *triggers);
 typedef int (*pcal64xxa_reset_state_apply)(const struct i2c_dt_spec *i2c);
-typedef int (*pcal64xxa_inputs_read)(const struct i2c_dt_spec *i2c, uint16_t *int_sources,
-				     uint16_t *input_port);
-typedef int (*pcal64xxa_outputs_write)(const struct i2c_dt_spec *i2c, uint16_t outputs);
+typedef int (*pcal64xxa_inputs_read)(const struct i2c_dt_spec *i2c, pcal64xxa_data_t *int_sources,
+				     pcal64xxa_data_t *input_port);
+typedef int (*pcal64xxa_outputs_write)(const struct i2c_dt_spec *i2c, pcal64xxa_data_t outputs);
 
 struct pcal64xxa_chip_api {
 	pcal64xxa_pins_cfg_apply pins_cfg_apply;
@@ -183,8 +195,8 @@ static int pcal64xxa_process_input(const struct device *dev, gpio_port_value_t *
 	const struct pcal64xxa_drv_cfg *drv_cfg = dev->config;
 	struct pcal64xxa_drv_data *drv_data = dev->data;
 	int rc;
-	uint16_t int_sources;
-	uint16_t input_port;
+	pcal64xxa_data_t int_sources;
+	pcal64xxa_data_t input_port;
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
@@ -211,9 +223,10 @@ static int pcal64xxa_process_input(const struct device *dev, gpio_port_value_t *
 	drv_data->input_port_last = input_port;
 
 	if (int_sources) {
-		uint16_t dual_edge_triggers = drv_data->triggers.dual_edge;
-		uint16_t falling_edge_triggers = (~dual_edge_triggers & drv_data->triggers.on_low);
-		uint16_t fired_triggers = 0;
+		pcal64xxa_data_t dual_edge_triggers = drv_data->triggers.dual_edge;
+		pcal64xxa_data_t falling_edge_triggers =
+			~dual_edge_triggers & drv_data->triggers.on_low;
+		pcal64xxa_data_t fired_triggers = 0;
 
 		/* For dual edge triggers, react to all state changes. */
 		fired_triggers |= (int_sources & dual_edge_triggers);
@@ -271,16 +284,16 @@ static int pcal64xxa_port_get_raw(const struct device *dev, gpio_port_value_t *v
 	return rc;
 }
 
-static int pcal64xxa_port_set_raw(const struct device *dev, uint16_t mask, uint16_t value,
-				  uint16_t toggle)
+static int pcal64xxa_port_set_raw(const struct device *dev, pcal64xxa_data_t mask,
+				  pcal64xxa_data_t value, pcal64xxa_data_t toggle)
 {
 	const struct pcal64xxa_drv_cfg *drv_cfg = dev->config;
 	struct pcal64xxa_drv_data *drv_data = dev->data;
 	int rc;
-	uint16_t output;
+	pcal64xxa_data_t output;
 
-	LOG_DBG("setting port with mask 0x%04X with value 0x%04X and toggle 0x%04X", mask, value,
-		toggle);
+	LOG_DBG("setting port with mask 0x%" PRIpcal_data " with value 0x%" PRIpcal_data
+		" and toggle 0x%" PRIpcal_data, mask, value, toggle);
 
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
@@ -313,22 +326,22 @@ static int pcal64xxa_port_set_raw(const struct device *dev, uint16_t mask, uint1
 static int pcal64xxa_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
 				  gpio_port_value_t value)
 {
-	return pcal64xxa_port_set_raw(dev, (uint16_t)mask, (uint16_t)value, 0);
+	return pcal64xxa_port_set_raw(dev, (pcal64xxa_data_t)mask, (pcal64xxa_data_t)value, 0);
 }
 
 static int pcal64xxa_port_set_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
-	return pcal64xxa_port_set_raw(dev, (uint16_t)pins, (uint16_t)pins, 0);
+	return pcal64xxa_port_set_raw(dev, (pcal64xxa_data_t)pins, (pcal64xxa_data_t)pins, 0);
 }
 
 static int pcal64xxa_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
-	return pcal64xxa_port_set_raw(dev, (uint16_t)pins, 0, 0);
+	return pcal64xxa_port_set_raw(dev, (pcal64xxa_data_t)pins, 0, 0);
 }
 
 static int pcal64xxa_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
-	return pcal64xxa_port_set_raw(dev, 0, 0, (uint16_t)pins);
+	return pcal64xxa_port_set_raw(dev, 0, 0, (pcal64xxa_data_t)pins);
 }
 
 static int pcal64xxa_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
@@ -458,8 +471,8 @@ static int pcal6408a_pins_cfg_apply(const struct i2c_dt_spec *i2c,
 	return 0;
 }
 
-static int pcal6408a_inputs_read(const struct i2c_dt_spec *i2c, uint16_t *int_sources,
-				 uint16_t *input_port)
+static int pcal6408a_inputs_read(const struct i2c_dt_spec *i2c, pcal64xxa_data_t *int_sources,
+				 pcal64xxa_data_t *input_port)
 {
 	int rc;
 	uint8_t value;
@@ -482,7 +495,7 @@ static int pcal6408a_inputs_read(const struct i2c_dt_spec *i2c, uint16_t *int_so
 	return 0;
 }
 
-static int pcal6408a_outputs_write(const struct i2c_dt_spec *i2c, uint16_t outputs)
+static int pcal6408a_outputs_write(const struct i2c_dt_spec *i2c, pcal64xxa_data_t outputs)
 {
 	int rc;
 
@@ -608,8 +621,8 @@ static int pcal6416a_pins_cfg_apply(const struct i2c_dt_spec *i2c,
 	return 0;
 }
 
-static int pcal6416a_inputs_read(const struct i2c_dt_spec *i2c, uint16_t *int_sources,
-				 uint16_t *input_port)
+static int pcal6416a_inputs_read(const struct i2c_dt_spec *i2c, pcal64xxa_data_t *int_sources,
+				 pcal64xxa_data_t *input_port)
 {
 	int rc;
 	uint8_t value_low;
@@ -644,7 +657,7 @@ static int pcal6416a_inputs_read(const struct i2c_dt_spec *i2c, uint16_t *int_so
 	return 0;
 }
 
-static int pcal6416a_outputs_write(const struct i2c_dt_spec *i2c, uint16_t outputs)
+static int pcal6416a_outputs_write(const struct i2c_dt_spec *i2c, pcal64xxa_data_t outputs)
 {
 	int rc;
 
@@ -673,8 +686,8 @@ static int pcal6416a_triggers_apply(const struct i2c_dt_spec *i2c,
 				    const struct pcal64xxa_triggers *triggers)
 {
 	int rc;
-	uint16_t input_latch = ~triggers->masked;
-	uint16_t interrupt_mask = triggers->masked;
+	pcal64xxa_data_t input_latch = ~triggers->masked;
+	pcal64xxa_data_t interrupt_mask = triggers->masked;
 
 	rc = pcal64xxa_i2c_write(i2c, PCAL6416A_REG_INPUT_LATCH_0, (uint8_t)input_latch);
 	if (rc != 0) {
@@ -742,16 +755,16 @@ int pcal64xxa_init(const struct device *dev)
 	const struct pcal64xxa_drv_cfg *drv_cfg = dev->config;
 	struct pcal64xxa_drv_data *drv_data = dev->data;
 	const struct pcal64xxa_pins_cfg initial_pins_cfg = {
-		.configured_as_inputs = 0xFFFF,
+		.configured_as_inputs = PCAL64XXA_INIT_HIGH,
 		.outputs_high = 0,
 		.pull_ups_selected = 0,
 		.pulls_enabled = 0,
 	};
 	const struct pcal64xxa_triggers initial_triggers = {
-		.masked = 0xFFFF,
+		.masked = PCAL64XXA_INIT_HIGH,
 	};
 	int rc;
-	uint16_t int_sources;
+	pcal64xxa_data_t int_sources;
 
 	LOG_DBG("initializing PCAL64XXA");
 

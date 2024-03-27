@@ -50,6 +50,18 @@ LOG_MODULE_REGISTER(bt_rfcomm);
 #define SESSION_RTX(_w) CONTAINER_OF(k_work_delayable_from_work(_w), \
 				     struct bt_rfcomm_session, rtx_work)
 
+struct bt_rfcomm_tx {
+	sys_snode_t node;
+	struct bt_rfcomm_dlc *dlc;
+	struct net_buf *buf;
+};
+
+#define rfcomm_tx_data(buf) ((struct bt_rfcomm_tx **)net_buf_user_data(buf))
+
+static struct bt_rfcomm_tx rfcomm_tx[CONFIG_BT_RFCOMM_TX_MAX];
+
+static K_FIFO_DEFINE(rfcomm_tx_free);
+
 static struct bt_rfcomm_server *servers;
 
 /* Pool for dummy buffers to wake up the tx threads */
@@ -312,16 +324,22 @@ struct net_buf *bt_rfcomm_create_pdu(struct net_buf_pool *pool)
 				  sizeof(struct bt_rfcomm_hdr) + 1);
 }
 
-static int rfcomm_send(struct bt_rfcomm_session *session, struct net_buf *buf)
+static int rfcomm_send_cb(struct bt_rfcomm_session *session, struct net_buf *buf,
+				 bt_conn_tx_cb_t cb, void *user_data)
 {
 	int err;
 
-	err = bt_l2cap_chan_send(&session->br_chan.chan, buf);
+	err = bt_l2cap_br_chan_send_cb(&session->br_chan.chan, buf, cb, user_data);
 	if (err < 0) {
 		net_buf_unref(buf);
 	}
 
 	return err;
+}
+
+static int rfcomm_send(struct bt_rfcomm_session *session, struct net_buf *buf)
+{
+	return rfcomm_send_cb(session, buf, NULL, NULL);
 }
 
 static int rfcomm_send_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
@@ -535,11 +553,103 @@ static void rfcomm_check_fc(struct bt_rfcomm_dlc *dlc)
 	k_sem_give(&dlc->tx_credits);
 }
 
+static struct bt_rfcomm_tx *bt_rfcomm_tx_alloc(void)
+{
+	/* The TX context always get freed in the system workqueue,
+	 * so if we're in the same workqueue but there are no immediate
+	 * contexts available, there's no chance we'll get one by waiting.
+	 */
+	if (k_current_get() == &k_sys_work_q.thread) {
+		return k_fifo_get(&rfcomm_tx_free, K_NO_WAIT);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_RFCOMM_LOG_LEVEL_DBG)) {
+		struct bt_rfcomm_tx *tx = k_fifo_get(&rfcomm_tx_free, K_NO_WAIT);
+
+		if (tx) {
+			return tx;
+		}
+
+		LOG_WRN("Unable to get an immediate free bt_rfcomm_tx");
+	}
+
+	return k_fifo_get(&rfcomm_tx_free, K_FOREVER);
+}
+
+static void bt_rfcomm_tx_free(struct bt_rfcomm_tx *tx)
+{
+	LOG_DBG("Free tx buffer %p", tx);
+
+	tx->buf = NULL;
+	tx->dlc = NULL;
+	k_fifo_put(&rfcomm_tx_free, tx);
+}
+
+static void bt_rfcomm_tx_destroy(struct net_buf *buf)
+{
+	struct bt_rfcomm_tx *tx;
+	struct bt_rfcomm_dlc *dlc;
+	struct net_buf *tx_buf;
+
+	LOG_DBG("buf %p", buf);
+
+	if ((buf == NULL) || (buf->len == 0)) {
+		return;
+	}
+
+	tx = *rfcomm_tx_data(buf);
+	tx_buf = tx->buf;
+	dlc = tx->dlc;
+
+	bt_rfcomm_tx_free(tx);
+
+	if (tx_buf != buf) {
+		LOG_ERR("Tx buf %p and buf %p are inconsistent", tx_buf, buf);
+	}
+
+	if (dlc && dlc->ops && dlc->ops->sent) {
+		dlc->ops->sent(dlc, tx_buf, -ESHUTDOWN);
+	}
+
+	if (tx_buf != NULL) {
+		net_buf_unref(tx_buf);
+	}
+}
+
+static void rfcomm_sent(struct bt_conn *conn, void *user_data, int err)
+{
+	struct bt_rfcomm_tx *tx;
+	struct bt_rfcomm_dlc *dlc;
+	struct net_buf *tx_buf;
+
+	LOG_DBG("conn %p", conn);
+
+	if (user_data == NULL)	{
+		return;
+	}
+
+	tx = user_data;
+
+	tx_buf = tx->buf;
+	dlc = tx->dlc;
+
+	bt_rfcomm_tx_free(tx);
+
+	if (dlc && dlc->ops && dlc->ops->sent) {
+		dlc->ops->sent(dlc, tx_buf, err);
+	}
+
+	if (tx_buf != NULL) {
+		net_buf_unref(tx_buf);
+	}
+}
+
 static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 {
 	struct bt_rfcomm_dlc *dlc = p1;
 	k_timeout_t timeout = K_FOREVER;
 	struct net_buf *buf;
+	struct bt_rfcomm_tx *tx;
 
 	LOG_DBG("Started for dlc %p", dlc);
 
@@ -553,6 +663,7 @@ static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 		     dlc->state != BT_RFCOMM_STATE_USER_DISCONNECT) ||
 		    !buf || !buf->len) {
 			if (buf) {
+				bt_rfcomm_tx_destroy(buf);
 				net_buf_unref(buf);
 			}
 			break;
@@ -561,13 +672,17 @@ static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 		rfcomm_check_fc(dlc);
 		if (dlc->state != BT_RFCOMM_STATE_CONNECTED &&
 		    dlc->state != BT_RFCOMM_STATE_USER_DISCONNECT) {
+			bt_rfcomm_tx_destroy(buf);
 			net_buf_unref(buf);
 			break;
 		}
 
-		if (rfcomm_send(dlc->session, buf) < 0) {
+		tx = *rfcomm_tx_data(buf);
+
+		if (rfcomm_send_cb(dlc->session, buf, rfcomm_sent, tx) < 0) {
 			/* This fails only if channel is disconnected */
 			dlc->state = BT_RFCOMM_STATE_DISCONNECTED;
+			bt_rfcomm_tx_destroy(buf);
 			break;
 		}
 
@@ -580,6 +695,7 @@ static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 
 	/* Give back any allocated buffers */
 	while ((buf = net_buf_get(&dlc->tx_queue, K_NO_WAIT))) {
+		bt_rfcomm_tx_destroy(buf);
 		net_buf_unref(buf);
 	}
 
@@ -1411,6 +1527,7 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 
 int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 {
+	struct bt_rfcomm_tx *tx;
 	uint8_t fcs, cr;
 
 	if (!buf) {
@@ -1426,6 +1543,19 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	if (buf->len > dlc->mtu) {
 		return -EMSGSIZE;
 	}
+
+	tx = bt_rfcomm_tx_alloc();
+	if (tx == NULL) {
+		LOG_ERR("No tx buffer");
+		return -ENOBUFS;
+	}
+
+	LOG_DBG("TX buffer %p", tx);
+
+	tx->dlc = dlc;
+	tx->buf = net_buf_ref(buf);
+
+	*rfcomm_tx_data(buf) = tx;
 
 	/* length */
 	if (buf->len > BT_RFCOMM_MAX_LEN_8) {
@@ -1724,6 +1854,7 @@ static int rfcomm_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 
 void bt_rfcomm_init(void)
 {
+	int i;
 	static struct bt_l2cap_server server = {
 		.psm       = BT_L2CAP_PSM_RFCOMM,
 		.accept    = rfcomm_accept,
@@ -1731,4 +1862,10 @@ void bt_rfcomm_init(void)
 	};
 
 	bt_l2cap_br_server_register(&server);
+
+	k_fifo_init(&rfcomm_tx_free);
+
+	for (i = 0; i < ARRAY_SIZE(rfcomm_tx); i++) {
+		k_fifo_put(&rfcomm_tx_free, &rfcomm_tx[i]);
+	}
 }

@@ -7,7 +7,7 @@ common:
   platform_exclude:
     - mps2/an385
     - native_posix
-    - native_posix_64
+    - native_posix/native/64
 tests:
   net.socket.service:
     min_ram: 21

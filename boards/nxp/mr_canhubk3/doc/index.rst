@@ -100,6 +100,20 @@ led1 / user_led1_green   Green  PTA27  FXIO D5 / EMIOS1 CH10 / EMIOS2 CH10
 led2 / user_led1_blue    Blue   PTE12  FXIO D8 / EMIOS1 CH5
 =======================  =====  =====  ===================================
 
+In addition to the RGB LED, the MR-CANHUBK3 board has six red LEDs, each located
+next to one of the CAN connectors:
+
+=======================  =====  =====  ===================================
+Devicetree node          Color  Pin    Pin Functions
+=======================  =====  =====  ===================================
+can_led0                 Red    PTC18  FXIO D6 / FXIO D12 / EMIOS2 CH12
+can_led1                 Red    PTE5   FXIO D7 / EMIOS1 CH5 / EMIOS0 CH 19
+can_led2                 Red    PTD20  EMIOS1 CH17 / EMIOS2 CH0
+can_led3                 Red    PTB24  FXIO D5 / EMIOS1 CH20 / EMIOS2 CH20
+can_led4                 Red    PTB26  FXIO D7 / EMIOS1 CH22 / EMIOS2 CH22
+can_led5                 Red    PTD31  FXIO D6 / EMIOS2 CH22
+=======================  =====  =====  ===================================
+
 The user can control the LEDs in any way. An output of ``0`` illuminates the LED.
 
 Buttons
@@ -195,7 +209,7 @@ flexcan5         | 8 bytes   | 32 MBs          | 32 MBs
 ===============  ==========  ================  ================
 
 .. note::
-   A CAN bus usually requires 60 Ohm termination at both ends of the bus. This may be
+   A CAN bus usually requires 120 Ohm termination at both ends of the bus. This may be
    accomplished using one of the included CAN termination boards. For more details, refer
    to the section ``6.3 CAN Connectors`` in the Hardware User Manual of `NXP MR-CANHUBK3`_.
 
@@ -213,6 +227,8 @@ P3.3       PTD8   LPI2C1_SDA
 P4.3       PTD14  LPI2C0_SCL
 P4.4       PTD13  LPI2C0_SDA
 =========  =====  ============
+
+The accompanying display board can be connected to ``lpi2c0`` via connector ``P4``.
 
 ADC
 ===
@@ -266,9 +282,10 @@ Programming and Debugging
 Applications for the ``mr_canhubk3`` board can be built in the usual way as
 documented in :ref:`build_an_application`.
 
-This board configuration supports `Lauterbach TRACE32`_ and `SEGGER J-Link`_
+This board configuration supports `Lauterbach TRACE32`_, `SEGGER J-Link`_ and `pyOCD`_
 West runners for flashing and debugging applications. Follow the steps described
-in :ref:`lauterbach-trace32-debug-host-tools` and :ref:`jlink-debug-host-tools`,
+in :ref:`lauterbach-trace32-debug-host-tools`, :ref:`jlink-debug-host-tools` and
+:ref:`pyocd-debug-host-tools`,
 to setup the flash and debug host tools for these runners, respectively. The
 default runner is J-Link.
 
@@ -276,7 +293,8 @@ Flashing
 ========
 
 Run the ``west flash`` command to flash the application using SEGGER J-Link.
-Alternatively, run ``west flash -r trace32`` to use Lauterbach TRACE32.
+Alternatively, run ``west flash -r trace32`` to use Lauterbach TRACE32, or
+``west flash -r pyocd``` to use pyOCD.
 
 The Lauterbach TRACE32 runner supports additional options that can be passed
 through command line:
@@ -309,8 +327,8 @@ Debugging
 =========
 
 Run the ``west debug`` command to start a GDB session using SEGGER J-Link.
-Alternatively, run ``west debug -r trace32`` to launch the Lauterbach TRACE32
-software debugging interface.
+Alternatively, run ``west debug -r trace32`` or ``west debug -r pyocd``
+to launch the Lauterbach TRACE32 or pyOCD software debugging interface respectively.
 
 References
 **********
@@ -337,3 +355,6 @@ References
 
 .. _SEGGER J-Link:
    https://wiki.segger.com/NXP_S32K3xx
+
+.. _pyOCD:
+   https://pyocd.io/

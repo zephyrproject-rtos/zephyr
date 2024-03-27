@@ -123,8 +123,6 @@
 			interrupts = <159 0>, <160 0>, <63 0>;
 			interrupt-names = "int0", "int1", "calib";
 			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
-			sample-point = <875>;
-			sample-point-data = <875>;
 			status = "disabled";
 		};
 
@@ -136,7 +134,7 @@
 			};
 		};
 
-		timers23: timers@0x4000e000 {
+		timers23: timers@4000e000 {
 			compatible = "st,stm32-timers";
 			reg = <0x4000e000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x01000000>;

@@ -25,6 +25,7 @@
 	aliases {
 		led0 = &led0;
 		pwm-led0 = &pwm_led0;
+		led-strip = &led1;
 	};
 
 	leds {

@@ -34,23 +34,23 @@ GEN_OFFSET_SYM(_kernel_t, cpus);
 
 #if defined(CONFIG_FPU_SHARING)
 GEN_OFFSET_SYM(_cpu_t, fp_ctx);
-#endif
+#endif /* CONFIG_FPU_SHARING */
 
 #ifdef CONFIG_PM
 GEN_OFFSET_SYM(_kernel_t, idle);
-#endif
+#endif /* CONFIG_PM */
 
 #ifndef CONFIG_SCHED_CPU_MASK_PIN_ONLY
 GEN_OFFSET_SYM(_kernel_t, ready_q);
-#endif
+#endif /* CONFIG_SCHED_CPU_MASK_PIN_ONLY */
 
 #ifndef CONFIG_SMP
 GEN_OFFSET_SYM(_ready_q_t, cache);
-#endif
+#endif /* CONFIG_SMP */
 
 #ifdef CONFIG_FPU_SHARING
 GEN_OFFSET_SYM(_kernel_t, current_fp);
-#endif
+#endif /* CONFIG_FPU_SHARING */
 
 GEN_OFFSET_SYM(_thread_base_t, user_options);
 
@@ -60,15 +60,15 @@ GEN_OFFSET_SYM(_thread_t, arch);
 
 #ifdef CONFIG_USE_SWITCH
 GEN_OFFSET_SYM(_thread_t, switch_handle);
-#endif
+#endif /* CONFIG_USE_SWITCH */
 
 #ifdef CONFIG_THREAD_STACK_INFO
 GEN_OFFSET_SYM(_thread_t, stack_info);
-#endif
+#endif /* CONFIG_THREAD_STACK_INFO */
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 GEN_OFFSET_SYM(_thread_t, tls);
-#endif
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
 
 GEN_ABSOLUTE_SYM(__z_interrupt_stack_SIZEOF, sizeof(z_interrupt_stacks[0]));
 
@@ -76,12 +76,12 @@ GEN_ABSOLUTE_SYM(__z_interrupt_stack_SIZEOF, sizeof(z_interrupt_stacks[0]));
 #ifdef CONFIG_DEVICE_DEPS
 GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_HANDLES_OFFSET,
 		 offsetof(struct device, deps));
-#endif
+#endif /* CONFIG_DEVICE_DEPS */
 
 #ifdef CONFIG_PM_DEVICE
 GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_PM_OFFSET,
 		 offsetof(struct device, pm));
-#endif
+#endif /* CONFIG_PM_DEVICE */
 
 /* member offsets in the pm_device structure. Used in image post-processing */
 

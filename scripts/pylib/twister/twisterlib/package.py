@@ -15,7 +15,7 @@ class Artifacts:
     def make_tarfile(self, output_filename, source_dirs):
         root = os.path.basename(self.options.outdir)
         with tarfile.open(output_filename, "w:bz2") as tar:
-            tar.add("twister-out", recursive=False)
+            tar.add(self.options.outdir, recursive=False)
             for d in source_dirs:
                 f = os.path.relpath(d, self.options.outdir)
                 tar.add(d, arcname=os.path.join(root, f))

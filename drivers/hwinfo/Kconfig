@@ -192,4 +192,11 @@ config HWINFO_ANDES
 	help
 	  Enable Andes hwinfo driver
 
+config HWINFO_RW61X
+	bool "RW61X hwinfo"
+	default y
+	depends on SOC_SERIES_RW6XX
+	help
+	  Enable RW61X hwinfo driver
+
 endif

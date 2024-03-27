@@ -1,17 +1,13 @@
 #!/usr/bin/env bash
-#Copyright (c) 2024 NXP
-#Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
+set -eu
+: "${ZEPHYR_BASE:?ZEPHYR_BASE must be defined}"
 
-# Path checks, etc
-source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+INCR_BUILD=1
 
-# Place yourself in the test's root (i.e. ./../)
-rm -rf ${BSIM_OUT_PATH}/bin/bs_nrf52_bsim_tests*
+source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
-# terminate running simulations (if any)
-${BSIM_COMPONENTS_PATH}/common/stop_bsim.sh
+app="$(guess_test_relpath)" compile
 
-bsim_exe=bs_nrf52_bsim_tests_bsim_bluetooth_host_misc_unregister_conn_cb_prj_conf
-west build -b nrf52_bsim && \
-	cp build/zephyr/zephyr.exe ${BSIM_OUT_PATH}/bin/${bsim_exe}
+wait_for_background_jobs

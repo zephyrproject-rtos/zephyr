@@ -28,6 +28,8 @@ extern "C" {
 
 /**
  * @defgroup settings Settings
+ * @since 1.12
+ * @version 1.0.0
  * @ingroup file_system_storage
  * @{
  */

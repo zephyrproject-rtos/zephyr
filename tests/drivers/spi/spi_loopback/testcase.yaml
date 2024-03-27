@@ -158,3 +158,8 @@ tests:
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
     platform_allow: rpi_pico
+  drivers.spi.mcux_flexio_spi.loopback:
+    extra_args: DTC_OVERLAY_FILE="overlay-mcux-flexio-spi.overlay"
+    filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
+            CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
+    platform_allow: mimxrt1064_evk

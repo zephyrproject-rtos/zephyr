@@ -306,7 +306,7 @@ Run a Sample Application natively (Linux)
 
 You can compile some samples to run as host programs
 on Linux. See :ref:`native_sim` for more information. On 64-bit host operating systems, you
-need to install a 32-bit C library, or build targeting :ref:`native_sim_64 <native_sim32_64>`.
+need to install a 32-bit C library, or build targeting :ref:`native_sim/native/64<native_sim32_64>`.
 
 First, build Hello World for ``native_sim``.
 

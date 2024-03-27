@@ -30,6 +30,8 @@ extern "C" {
 /**
  * @brief CAN Interface
  * @defgroup can_interface CAN Interface
+ * @since 1.12
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -329,6 +331,8 @@ typedef void (*can_state_change_callback_t)(const struct device *dev,
 struct can_driver_config {
 	/** Pointer to the device structure for the associated CAN transceiver device or NULL. */
 	const struct device *phy;
+	/** The minimum bitrate supported by the CAN controller/transceiver combination. */
+	uint32_t min_bitrate;
 	/** The maximum bitrate supported by the CAN controller/transceiver combination. */
 	uint32_t max_bitrate;
 	/** Initial CAN classic/CAN FD arbitration phase bitrate. */
@@ -347,11 +351,13 @@ struct can_driver_config {
  * @brief Static initializer for @p can_driver_config struct
  *
  * @param node_id Devicetree node identifier
+ * @param _min_bitrate minimum bitrate supported by the CAN controller
  * @param _max_bitrate maximum bitrate supported by the CAN controller
  */
-#define CAN_DT_DRIVER_CONFIG_GET(node_id, _max_bitrate)						\
+#define CAN_DT_DRIVER_CONFIG_GET(node_id, _min_bitrate, _max_bitrate)				\
 	{											\
 		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, phys)),			\
+		.min_bitrate = DT_CAN_TRANSCEIVER_MIN_BITRATE(node_id, _min_bitrate),		\
 		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, _max_bitrate),		\
 		.bus_speed = DT_PROP(node_id, bus_speed),					\
 		.sample_point = DT_PROP_OR(node_id, sample_point, 0),				\
@@ -364,11 +370,12 @@ struct can_driver_config {
  * @brief Static initializer for @p can_driver_config struct from DT_DRV_COMPAT instance
  *
  * @param inst DT_DRV_COMPAT instance number
+ * @param _min_bitrate minimum bitrate supported by the CAN controller
  * @param _max_bitrate maximum bitrate supported by the CAN controller
  * @see CAN_DT_DRIVER_CONFIG_GET()
  */
-#define CAN_DT_DRIVER_CONFIG_INST_GET(inst, _max_bitrate)					\
-	CAN_DT_DRIVER_CONFIG_GET(DT_DRV_INST(inst), _max_bitrate)
+#define CAN_DT_DRIVER_CONFIG_INST_GET(inst, _min_bitrate, _max_bitrate)				\
+	CAN_DT_DRIVER_CONFIG_GET(DT_DRV_INST(inst), _min_bitrate, _max_bitrate)
 
 /**
  * @brief Common CAN controller driver data.
@@ -788,7 +795,9 @@ struct can_device_state {
 /**
  * @brief Get the CAN core clock rate
  *
- * Returns the CAN core clock rate. One time quantum is 1/(core clock rate).
+ * Returns the CAN core clock rate. One minimum time quantum (mtq) is 1/(core clock rate). The CAN
+ * core clock can be further divided by the CAN clock prescaler (see the @a can_timing struct),
+ * providing the time quantum (tq).
  *
  * @param dev  Pointer to the device structure for the driver instance.
  * @param[out] rate CAN core clock rate in Hz.
@@ -802,6 +811,28 @@ static inline int z_impl_can_get_core_clock(const struct device *dev, uint32_t *
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
 	return api->get_core_clock(dev, rate);
+}
+
+/**
+ * @brief Get minimum supported bitrate
+ *
+ * Get the minimum supported bitrate for the CAN controller/transceiver combination.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param[out] min_bitrate Minimum supported bitrate in bits/s
+ *
+ * @retval -EIO General input/output error.
+ * @retval -ENOSYS If this function is not implemented by the driver.
+ */
+__syscall int can_get_min_bitrate(const struct device *dev, uint32_t *min_bitrate);
+
+static inline int z_impl_can_get_min_bitrate(const struct device *dev, uint32_t *min_bitrate)
+{
+	const struct can_driver_config *common = (const struct can_driver_config *)dev->config;
+
+	*min_bitrate = common->min_bitrate;
+
+	return 0;
 }
 
 /**

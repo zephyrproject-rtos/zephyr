@@ -8,7 +8,7 @@ tests:
     # will cover I2C, SPI, and emul based drivers
     platform_allow:
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
     extra_args: "CONFIG_GPIO=y"
   drivers.adc.cc32xx.build:
     platform_allow: cc3220sf_launchxl

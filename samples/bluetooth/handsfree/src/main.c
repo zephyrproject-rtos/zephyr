@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/classic/hfp_hf.h>
+#include <zephyr/settings/settings.h>
 
 static void connected(struct bt_conn *conn)
 {
@@ -86,6 +87,10 @@ static void bt_ready(int err)
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;
+	}
+
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		settings_load();
 	}
 
 	printk("Bluetooth initialized\n");

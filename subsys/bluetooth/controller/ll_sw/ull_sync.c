@@ -201,6 +201,10 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	sync->skip = skip;
 	sync->is_stop = 0U;
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	sync->enc = 0U;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
+
 	/* NOTE: Use timeout not zero to represent sync context used for sync
 	 * create.
 	 */
@@ -671,6 +675,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	struct lll_sync *lll;
 	uint16_t sync_handle;
 	uint32_t interval_us;
+	uint32_t overhead_us;
 	struct pdu_adv *pdu;
 	uint16_t interval;
 	uint32_t slot_us;
@@ -818,6 +823,22 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	sync_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	sync_offset_us -= EVENT_JITTER_US;
 	sync_offset_us -= ready_delay_us;
+
+	/* Minimum prepare tick offset + minimum preempt tick offset are the
+	 * overheads before ULL scheduling can setup radio for reception
+	 */
+	overhead_us = HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_CMP_OFFSET_MIN << 1);
+
+	/* CPU execution overhead to setup the radio for reception */
+	overhead_us += EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US;
+
+	/* If not sufficient CPU processing time, skip to receiving next
+	 * event.
+	 */
+	if ((sync_offset_us - ftr->radio_end_us) < overhead_us) {
+		sync_offset_us += interval_us;
+		lll->event_counter++;
+	}
 
 	interval_us -= lll->window_widening_periodic_us;
 
@@ -1475,7 +1496,6 @@ static struct pdu_cte_info *pdu_cte_info_get(struct pdu_adv *pdu)
 {
 	struct pdu_adv_com_ext_adv *com_hdr;
 	struct pdu_adv_ext_hdr *hdr;
-	uint8_t *dptr;
 
 	com_hdr = &pdu->adv_ext_ind;
 	hdr = &com_hdr->ext_hdr;
@@ -1483,9 +1503,6 @@ static struct pdu_cte_info *pdu_cte_info_get(struct pdu_adv *pdu)
 	if (!com_hdr->ext_hdr_len || (com_hdr->ext_hdr_len != 0 && !hdr->cte_info)) {
 		return NULL;
 	}
-
-	/* Skip flags in extended advertising header */
-	dptr = hdr->data;
 
 	/* Make sure there are no fields that are not allowd for AUX_SYNC_IND and AUX_CHAIN_IND */
 	LL_ASSERT(!hdr->adv_addr);

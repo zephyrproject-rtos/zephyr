@@ -62,7 +62,6 @@
 			interrupts = <11 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 			bus-speed = <125000>;
-			sample-point = <875>;
 
 			can-transceiver {
 				max-bitrate = <1000000>;

@@ -13,6 +13,7 @@ import os
 import shutil
 import pytest
 import sys
+import tarfile
 
 from conftest import ZEPHYR_BASE, TEST_DATA, sample_filename_mock, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
@@ -199,3 +200,55 @@ class TestOutfile:
         # However, the cost of testing that this leaves less seems to outweigh the benefits.
         # So we'll only check for the most important artifact.
         assert 'zephyr.elf' in zephyr_artifact_list
+
+    def test_package_artifacts(self, out_path):
+        test_platforms = ['qemu_x86']
+        path = os.path.join(TEST_DATA, 'samples', 'hello_world')
+        package_name = 'PACKAGE'
+        package_path = os.path.join(out_path, package_name)
+        args = ['-i', '--outdir', out_path, '-T', path] + \
+               ['--package-artifacts', package_path] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        assert str(sys_exit.value) == '0'
+
+        # Check whether we have something as basic as zephyr.elf file
+        with tarfile.open(package_path, "r") as tar:
+            assert any([path.endswith('zephyr.elf') for path in tar.getnames()])
+
+        # Delete everything but for the package
+        for clean_up in os.listdir(os.path.join(out_path)):
+            if not clean_up.endswith(package_name):
+                clean_up_path = os.path.join(out_path, clean_up)
+                if os.path.isfile(clean_up_path):
+                    os.remove(clean_up_path)
+                else:
+                    shutil.rmtree(os.path.join(out_path, clean_up))
+
+        # Unpack the package
+        with tarfile.open(package_path, "r") as tar:
+            tar.extractall(path=out_path)
+
+        # Why does package.py put files inside the out_path folder?
+        # It forces us to move files up one directory after extraction.
+        file_names = os.listdir(os.path.join(out_path, os.path.basename(out_path)))
+        for file_name in file_names:
+            shutil.move(os.path.join(out_path, os.path.basename(out_path), file_name), out_path)
+
+        args = ['-i', '--outdir', out_path, '-T', path] + \
+               ['--test-only'] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        assert str(sys_exit.value) == '0'

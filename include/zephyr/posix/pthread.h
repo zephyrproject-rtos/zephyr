@@ -39,6 +39,12 @@ extern "C" {
 #define PTHREAD_CANCEL_DEFERRED     0
 #define PTHREAD_CANCEL_ASYNCHRONOUS 1
 
+/* Pthread scope */
+#undef PTHREAD_SCOPE_PROCESS
+#define PTHREAD_SCOPE_PROCESS    1
+#undef PTHREAD_SCOPE_SYSTEM
+#define PTHREAD_SCOPE_SYSTEM     0
+
 /* Passed to pthread_once */
 #define PTHREAD_ONCE_INIT {0}
 
@@ -384,22 +390,18 @@ int pthread_equal(pthread_t pt1, pthread_t pt2);
  *
  * See IEEE 1003.1
  */
-static inline int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr)
-{
-	ARG_UNUSED(attr);
-	return 0;
-}
+int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr);
 
 /**
  * @brief initialize the read-write lock attributes object.
  *
  * See IEEE 1003.1
  */
-static inline int pthread_rwlockattr_init(pthread_rwlockattr_t *attr)
-{
-	ARG_UNUSED(attr);
-	return 0;
-}
+int pthread_rwlockattr_init(pthread_rwlockattr_t *attr);
+
+int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *ZRESTRICT attr,
+				  int *ZRESTRICT pshared);
+int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared);
 
 int pthread_attr_getguardsize(const pthread_attr_t *ZRESTRICT attr, size_t *ZRESTRICT guardsize);
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);
@@ -419,6 +421,8 @@ int pthread_attr_getstack(const pthread_attr_t *attr,
 			  void **stackaddr, size_t *stacksize);
 int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
 			  size_t stacksize);
+int pthread_attr_getscope(const pthread_attr_t *attr, int *contentionscope);
+int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope);
 #ifdef CONFIG_PTHREAD_IPC
 int pthread_once(pthread_once_t *once, void (*initFunc)(void));
 #endif

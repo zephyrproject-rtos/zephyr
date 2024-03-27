@@ -20,6 +20,10 @@ tests:
       - mimxrt1160_evk/mimxrt1166/cm7
       - lpcxpresso55s69/lpc55s69/cpu0
       - mr_canhubk3
+      - stm32f429i_disc1
+      - stm32f746g_disco
+      - stm32h747i_disco/stm32h747xx/m7
+      - stm32h750b_dk
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.filesystem.littlefs.nrf52840dk_spi:
@@ -34,8 +38,35 @@ tests:
     extra_args:
       - OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_qspi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_qspi.overlay
-  sample.filesystem.littlefs.stm32h747i_disco_m7_sdmmc:
+  sample.filesystem.littlefs.stm32h747i_disco_m7_blk:
     build_only: true
     platform_allow: stm32h747i_disco/stm32h747xx/m7
     extra_args:
+      - OVERLAY_CONFIG=boards/stm32_blk.conf
       - CONF_FILE=prj_blk.conf
+    extra_configs:
+      - CONFIG_SDMMC_STM32_HWFC=y
+  sample.filesystem.littlefs.nucleo_h743zi_qspi:
+    build_only: true
+    platform_allow: nucleo_h743zi
+    extra_args:
+      - OVERLAY_CONFIG=boards/nucleo_h743zi_qspi.conf
+  sample.filesystem.littlefs.nucleo_h743zi_blk:
+    build_only: true
+    platform_allow: nucleo_h743zi
+    extra_args:
+      - OVERLAY_CONFIG=boards/nucleo_h743zi_blk.conf
+      - CONF_FILE=prj_blk.conf
+  sample.filesystem.littlefs.stm32l562e_dk_ospi:
+    build_only: true
+    platform_allow: stm32l562e_dk
+    extra_args:
+      - OVERLAY_CONFIG=boards/stm32l562e_dk_ospi.conf
+  sample.filesystem.littlefs.stm32f746g_disco_blk:
+    build_only: true
+    platform_allow: stm32f746g_disco
+    extra_args:
+      - OVERLAY_CONFIG=boards/stm32_blk.conf
+      - CONF_FILE=prj_blk.conf
+    extra_configs:
+      - CONFIG_SDMMC_STM32_HWFC=y

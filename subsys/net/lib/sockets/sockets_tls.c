@@ -974,6 +974,7 @@ static int tls_add_ca_certificate(struct tls_context *tls,
 	}
 
 	if (err != 0) {
+		NET_ERR("Failed to parse CA certificate, err: -0x%x", -err);
 		return -EINVAL;
 	}
 

@@ -11,7 +11,7 @@ EXECUTE_TIMEOUT=120
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_host_misc_disable_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_host_misc_disable_prj_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=disable
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \

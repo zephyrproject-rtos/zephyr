@@ -136,7 +136,7 @@
 				io-channels = <&test_adc 0>;
 				out-min = <(-127)>;
 				out-max = <127>;
-				out-deadzone = <8>;
+				in-deadzone = <8>;
 				in-min = <(-100)>;
 				in-max = <100>;
 				zephyr,axis = <0>;
@@ -211,6 +211,13 @@
 				sleep1-enable;
 				sleep2-enable;
 			};
+
+			cf1133@6 {
+				compatible = "sitronix,cf1133";
+				reg = <0x6>;
+				int-gpios = <&test_gpio 0 0>;
+			};
+
 		};
 
 		spi@2 {
@@ -248,6 +255,8 @@
 				zephyr,axis-y = <1>;
 				invert-x;
 				invert-y;
+				force-awake;
+				smart-mode;
 			};
 		};
 	};
