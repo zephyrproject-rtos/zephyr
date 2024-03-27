@@ -182,3 +182,10 @@ Here are the conventions:
   off, and powering up after as a new simulation) should use separate simulation ids for each
   simulation segment, ensuring that the radio activity of each segment can be inspected a
   posteriori.
+- Avoid overly long tests. If the test takes over 20 seconds of runtime, consider if it is possible
+  to split it in several separate tests.
+- If the test takes over 5 seconds, set ``EXECUTE_TIMEOUT`` to a value that is at least 5 times
+  bigger than the measured run-time.
+- Do not set ``EXECUTE_TIMEOUT`` to a value lower than the default.
+- Tests should not be overly verbose: less than a hundred lines are expected on the outputs. Do make
+  use of ``LOG_DBG()`` extensively, but don't enable the ``DBG`` log level by default.
