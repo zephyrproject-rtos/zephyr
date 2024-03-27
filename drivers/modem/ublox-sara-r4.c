@@ -935,6 +935,58 @@ MODEM_CMD_DEFINE(on_cmd_socknotifycreg)
 	return 0;
 }
 
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_TIME)
+/* Handler: +CCLK: <date>[0],<time>[1]
+ * where <date> is "yy/MM/dd" and <time> is "hh:mm:ss+TZ"
+ * 	where TZ is the timezone offset in 15min increments
+ * Ex: +CCLK: "14/07/01,15:00:00+01"
+ * https://content.u-blox.com/sites/default/files/SARA-R4_ATCommands_UBX-17003787.pdf#page=42
+*/
+MODEM_CMD_DEFINE(on_cmd_atcclk)
+{
+	char* date = (char*)argv[0];
+	char* time = (char*)argv[1];
+	size_t date_len = strlen(date);
+	size_t time_len = strlen(time);
+	if (date_len > 20 || time_len > 20) {
+		LOG_ERR("Modem responded with invalid date/time; overflow!");
+		// dump the response:
+		LOG_ERR("DATE: %s", log_strdup(date));
+		LOG_ERR("TIME: %s", log_strdup(time));
+		return 0;
+	}
+	// Copy and strip quotes:
+	memcpy((char*)&mdata.data_date, date + 1, date_len - 1);
+	mdata.data_date[date_len - 1] = '\0';
+	// Get and add TZ offset to hour:
+	int tz_offset = atoi(time + time_len - 3);
+	LOG_INF("TZ: %d", tz_offset);
+
+	int hour = atoi(time);
+	hour += tz_offset / 4;	// Divide by 15min increments
+	if (hour < 0) {
+		hour += 24;
+	} else if (hour >= 24) {
+		hour -= 24;
+	}
+
+	memcpy((char*)&mdata.data_time, time, time_len - 4); // strip +tz" at end
+	mdata.data_time[time_len - 4] = '\0';
+
+	// Replace hour with new hour:
+	mdata.data_time[0] = '0' + hour / 10;
+	mdata.data_time[1] = '0' + hour % 10;
+
+	LOG_DBG("DATE: %s", log_strdup(mdata.data_date));
+	LOG_DBG("TIME: %s", log_strdup(mdata.data_time));
+
+	return 0;
+}
+
+#endif
+
+
+
 /* RX thread */
 static void modem_rx(void *p1, void *p2, void *p3)
 {
@@ -1143,6 +1195,12 @@ static void modem_reset(void)
 			STRINGIFY(CONFIG_MODEM_UBLOX_SARA_R4_NET_STATUS_PIN)
 			",2"),
 #endif
+
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_TIME)
+		/* Timezone from network enable via NITZ */
+		SETUP_CMD("AT+CTZU=1", "", on_cmd_ok, 0U, ""),
+#endif
+
 		/* UNC messages for registration */
 		SETUP_CMD_NOHANDLE("AT+CREG=1"),
 		/* query modem info */
@@ -1187,6 +1245,12 @@ static void modem_reset(void)
 		/* activate the PDP context */
 		SETUP_CMD_NOHANDLE("AT+CGACT=1,1"),
 #endif
+
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_TIME)
+		// get network time and timezone
+		SETUP_CMD("AT+CCLK?", "+CCLK: ", on_cmd_atcclk, 2U, ","),
+#endif
+
 	};
 
 restart:
