@@ -62,8 +62,9 @@ The ip_k66f board configuration supports the following hardware features:
 The default configuration can be found in
 :zephyr_file:`boards/segger/ip_k66f/ip_k66f_defconfig`
 
-Micrel/Microchip KSZ8794CNX Ethernet Switch is not currently
-supported.
+Micrel/Microchip KSZ8794CNX Ethernet Switch is supported - example
+with LLDP frames handling via DSA subsystem:
+`west build -p always -b ip_k66f samples/net/dsa/`
 
 Connections and IOs
 ===================
