@@ -31,6 +31,18 @@
 		/* adjust channel number according to pinmux in board.dts */
 		io-channels = <&adc4 8>;
 	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+		red_led_3: led_3 {
+			gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+	};
+
+	aliases {
+		led2 = &red_led_3;
+	};
 };
 
 &lptim1 {
@@ -49,4 +61,19 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
 		zephyr,resolution = <12>;
 	};
+};
+
+&spi1 {
+	dmas = <&gpdma1 0 2 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
+		&gpdma1 1 1 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+	fast@0 {
+		compatible = "test-spi-loopback";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+};
+
+&gpdma1 {
+	status = "okay";
 };
