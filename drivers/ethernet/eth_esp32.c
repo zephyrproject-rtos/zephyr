@@ -285,9 +285,12 @@ int eth_esp32_initialize(const struct device *dev)
 		goto err;
 	}
 
+	/* Set dma_burst_len as ETH_DMA_BURST_LEN_32 by default */
+	emac_hal_dma_config_t dma_config = { .dma_burst_len = 0 };
+
 	emac_hal_reset_desc_chain(&dev_data->hal);
 	emac_hal_init_mac_default(&dev_data->hal);
-	emac_hal_init_dma_default(&dev_data->hal);
+	emac_hal_init_dma_default(&dev_data->hal, &dma_config);
 
 	res = generate_mac_addr(dev_data->mac_addr);
 	if (res != 0) {
