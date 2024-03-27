@@ -469,6 +469,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	bool found = false;
 	char bands_str[MAX_BANDS_STR_LEN] = {0};
 	size_t offset = 0;
+	long channel;
 
 	/* Defaults */
 	params->band = WIFI_FREQ_BAND_UNKNOWN;
@@ -503,7 +504,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			}
 			break;
 		case 'c':
-			long channel = strtol(optarg, &endptr, 10);
+			channel = strtol(optarg, &endptr, 10);
 			for (band = 0; band < ARRAY_SIZE(all_bands); band++) {
 				offset += snprintf(bands_str + offset,
 						   sizeof(bands_str) - offset,
