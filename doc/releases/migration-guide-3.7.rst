@@ -111,6 +111,14 @@ Controller Area Network (CAN)
 Display
 =======
 
+Enhanced Seria Peripheral Interface (eSPI)
+==========================================
+  * The macros ESPI_SLAVE_TO_MASTER and ESPI_MASTER_TO_SLAVE were renamed to ESPI_TARGET_TO_CONTROLLER
+    and ESPI_CONTROLLER_TO_TARGET respectively to reflect new terminology in eSPI 1.5 specification.
+  * The enum values ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE and ESPI_VWIRE_SIGNAL_SLV_GPIO_XX
+    were renamed to ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE and
+    ESPI_VWIRE_SIGNAL_TARGET_GPIO_XX to reflect new terminology in eSPI 1.5 specification.
+
 Flash
 =====
 
