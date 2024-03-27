@@ -244,6 +244,10 @@ do {                                                                    \
 #endif
 #endif
 
+#ifndef __malloc_like_with_free
+#define __malloc_like_with_free(d, i)	__attribute__((malloc (d, i)))
+#endif
+
 #define __used		__attribute__((__used__))
 #define __unused	__attribute__((__unused__))
 #define __maybe_unused	__attribute__((__unused__))

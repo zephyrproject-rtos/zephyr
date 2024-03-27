@@ -17,6 +17,10 @@
 #define __fallthrough __attribute__((fallthrough))
 #endif
 
+#ifndef __malloc_like_with_free
+#define __malloc_like_with_free(d, i)
+#endif
+
 #define TOOLCHAIN_CLANG_VERSION \
 	((__clang_major__ * 10000) + (__clang_minor__ * 100) + \
 	  __clang_patchlevel__)
