@@ -50,6 +50,9 @@ extern "C" {
 /** The app version number such as 0x10203 */
 #define BINDESC_ID_APP_VERSION_NUMBER 0x804
 
+/** The app git reference such as "v3.3.0-18-g2c85d9224fca" */
+#define BINDESC_ID_APP_BUILD_VERSION 0x805
+
 /** The kernel version string such as "3.4.0" */
 #define BINDESC_ID_KERNEL_VERSION_STRING 0x900
 
@@ -64,6 +67,9 @@ extern "C" {
 
 /** The kernel version number such as 0x30400 */
 #define BINDESC_ID_KERNEL_VERSION_NUMBER 0x904
+
+/** The kernel git reference such as "v3.3.0-18-g2c85d9224fca" */
+#define BINDESC_ID_KERNEL_BUILD_VERSION 0x905
 
 /** The year the image was compiled in */
 #define BINDESC_ID_BUILD_TIME_YEAR 0xa00
@@ -311,6 +317,10 @@ extern const struct bindesc_entry BINDESC_NAME(kernel_version_patchlevel);
 extern const struct bindesc_entry BINDESC_NAME(kernel_version_number);
 #endif /* IS_ENABLED(CONFIG_BINDESC_KERNEL_VERSION_NUMBER) */
 
+#if IS_ENABLED(CONFIG_BINDESC_KERNEL_BUILD_VERSION)
+extern const struct bindesc_entry BINDESC_NAME(kernel_build_version);
+#endif /* IS_ENABLED(CONFIG_BINDESC_KERNEL_BUILD_VERSION) */
+
 #if IS_ENABLED(CONFIG_BINDESC_APP_VERSION_STRING)
 extern const struct bindesc_entry BINDESC_NAME(app_version_string);
 #endif /* IS_ENABLED(CONFIG_BINDESC_APP_VERSION_STRING) */
@@ -330,6 +340,10 @@ extern const struct bindesc_entry BINDESC_NAME(app_version_patchlevel);
 #if IS_ENABLED(CONFIG_BINDESC_APP_VERSION_NUMBER)
 extern const struct bindesc_entry BINDESC_NAME(app_version_number);
 #endif /* IS_ENABLED(CONFIG_BINDESC_APP_VERSION_NUMBER) */
+
+#if IS_ENABLED(CONFIG_BINDESC_APP_BUILD_VERSION)
+extern const struct bindesc_entry BINDESC_NAME(app_build_version);
+#endif /* IS_ENABLED(CONFIG_BINDESC_APP_BUILD_VERSION) */
 
 #if IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_YEAR)
 extern const struct bindesc_entry BINDESC_NAME(build_time_year);
