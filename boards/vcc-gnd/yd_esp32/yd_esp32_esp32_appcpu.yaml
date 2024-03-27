@@ -1,5 +1,5 @@
 identifier: yd_esp32/esp32/appcpu
-name: ESP32 DEVKITC WROVER APPCPU
+name: YD-ESP32 APPCPU
 type: mcu
 arch: xtensa
 toolchain:

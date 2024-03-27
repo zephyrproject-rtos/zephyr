@@ -1,5 +1,5 @@
 identifier: esp32s3_luatos_core/esp32s3/procpu
-name: ESP32-S3 LuatOS Core
+name: ESP32-S3 LuatOS Core PROCPU
 type: mcu
 arch: xtensa
 toolchain:

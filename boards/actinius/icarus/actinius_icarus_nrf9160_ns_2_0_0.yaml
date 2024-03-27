@@ -1,5 +1,5 @@
 identifier: actinius_icarus@2.0.0/nrf9160/ns
-name: Actinius Icarus Non-Secure
+name: Actinius Icarus Non-Secure (rev. 2.0.0)
 type: mcu
 arch: arm
 toolchain:

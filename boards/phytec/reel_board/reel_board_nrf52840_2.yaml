@@ -1,5 +1,5 @@
 identifier: reel_board@2
-name: reel-board
+name: reel-board (rev. 2)
 type: mcu
 arch: arm
 ram: 512
