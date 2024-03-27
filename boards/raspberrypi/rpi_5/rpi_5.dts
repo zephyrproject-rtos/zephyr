@@ -21,6 +21,8 @@
 
 	chosen {
 		zephyr,sram = &sram0;
+		zephyr,console = &uart10;
+		zephyr,shell-uart = &uart10;
 	};
 
 	leds {
@@ -35,4 +37,9 @@
 
 &gio_aon {
 	status = "okay";
+};
+
+&uart10 {
+	status = "okay";
+	current-speed = <115200>;
 };
