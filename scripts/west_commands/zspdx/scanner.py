@@ -30,7 +30,7 @@ class ScannerConfig:
         self.numLinesScanned = 20
 
         # should we calculate SHA256 hashes for each Package's Files?
-        # note that SHA1 hashes are mandatory, per SPDX 2.2
+        # note that SHA1 hashes are mandatory, per SPDX 2.3
         self.doSHA256 = True
 
         # should we calculate MD5 hashes for each Package's Files?
