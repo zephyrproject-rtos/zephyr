@@ -307,21 +307,32 @@ cmd_write_channels(const struct shell *sh, size_t argc, char **argv)
 	return err;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_led,
-	SHELL_CMD_ARG(off, NULL, "<device> <led>", cmd_off, 3, 0),
-	SHELL_CMD_ARG(on, NULL, "<device> <led>", cmd_on, 3, 0),
-	SHELL_CMD_ARG(get_info, NULL, "<device> <led>", cmd_get_info, 3, 0),
-	SHELL_CMD_ARG(set_brightness, NULL, "<device> <led> <value [0-100]>",
+static void device_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_lookup(idx, NULL);
+
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_led, SHELL_CMD_ARG(off, &dsub_device_name, "<device> <led>", cmd_off, 3, 0),
+	SHELL_CMD_ARG(on, &dsub_device_name, "<device> <led>", cmd_on, 3, 0),
+	SHELL_CMD_ARG(get_info, &dsub_device_name, "<device> <led>", cmd_get_info, 3, 0),
+	SHELL_CMD_ARG(set_brightness, &dsub_device_name, "<device> <led> <value [0-100]>",
 		      cmd_set_brightness, 4, 0),
-	SHELL_CMD_ARG(set_color, NULL,
-		      "<device> <led> <color 0 [0-255]> ... <color N>",
-		      cmd_set_color, 4, MAX_CHANNEL_ARGS - 1),
-	SHELL_CMD_ARG(set_channel, NULL, "<device> <channel> <value [0-255]>",
+	SHELL_CMD_ARG(set_color, &dsub_device_name,
+		      "<device> <led> <color 0 [0-255]> ... <color N>", cmd_set_color, 4,
+		      MAX_CHANNEL_ARGS - 1),
+	SHELL_CMD_ARG(set_channel, &dsub_device_name, "<device> <channel> <value [0-255]>",
 		      cmd_set_channel, 4, 0),
-	SHELL_CMD_ARG(write_channels, NULL,
-		      "<device> <chan> <value 0 [0-255]> ... <value N>",
-		      cmd_write_channels, 4, MAX_CHANNEL_ARGS - 1),
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_CMD_ARG(write_channels, &dsub_device_name,
+		      "<device> <chan> <value 0 [0-255]> ... <value N>", cmd_write_channels, 4,
+		      MAX_CHANNEL_ARGS - 1),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(led, &sub_led, "LED commands", NULL);
