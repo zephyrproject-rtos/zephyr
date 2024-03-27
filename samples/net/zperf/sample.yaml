@@ -40,6 +40,10 @@ tests:
       - net
       - zperf
     depends_on: usb_device
+    # native_sim usb driver does not work with CONFIG_POSIX_API
+    platform_exclude:
+      - native_sim
+      - native_sim/native/64
   sample.net.zperf.device_next_ecm:
     harness: net
     extra_args: OVERLAY_CONFIG="overlay-usbd_next_ecm.conf"
@@ -58,6 +62,10 @@ tests:
       - net
       - zperf
     depends_on: usb_device
+    # native_sim usb driver does not work with CONFIG_POSIX_API
+    platform_exclude:
+      - native_sim
+      - native_sim/native/64
   sample.net.zperf.netusb_rndis:
     harness: net
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
@@ -69,6 +77,10 @@ tests:
       - net
       - zperf
     depends_on: usb_device
+    # native_sim usb driver does not work with CONFIG_POSIX_API
+    platform_exclude:
+      - native_sim
+      - native_sim/native/64
   sample.net.zperf.shield:
     harness: net
     platform_allow: reel_board

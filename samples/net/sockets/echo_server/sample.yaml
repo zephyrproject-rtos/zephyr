@@ -86,6 +86,10 @@ tests:
     tags:
       - net
       - usb
+    # native_sim usb driver does not work with CONFIG_POSIX_API
+    platform_exclude:
+      - native_sim
+      - native_sim/native/64
   sample.net.sockets.echo_server.nrf_openthread:
     extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     slow: true
