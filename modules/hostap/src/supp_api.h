@@ -16,6 +16,7 @@
 #define MAC_ADDR_LEN 6
 #endif
 
+#define MAC_STR_LEN 18 /* for ':' or '-' separated MAC address string */
 #define CHAN_NUM_LEN 6 /* for space-separated channel numbers string */
 
 /**
