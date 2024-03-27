@@ -13,6 +13,9 @@ DesignWare ARC MetaWare Development Toolkit (MWDT)
       Even though ARC MWDT toolchain is used for Zephyr RTOS build, still the GNU preprocessor & GNU
       objcopy might be used for some steps like device tree preprocessing and ``.bin`` file
       generation. We used Zephyr SDK as a source of these ARC GNU tools as well.
+      To setup ARC GNU toolchain please use SDK Bundle (Full or Minimal) instead of manual installation
+      of separate tarballs. It installs and registers toolchain and host tools in the system,
+      that allows you to avoid toolchain related issues while building Zephyr.
 
 #. :ref:`Set these environment variables <env_vars>`:
 
