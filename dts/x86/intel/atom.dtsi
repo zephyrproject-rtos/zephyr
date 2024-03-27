@@ -56,6 +56,7 @@
 			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 			reg-shift = <0>;
+			io-mapped;
 			status = "disabled";
 		};
 
@@ -67,6 +68,7 @@
 			interrupts = <3 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 			reg-shift = <0>;
+			io-mapped;
 			status = "disabled";
 		};
 
@@ -85,7 +87,7 @@
 			interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 			alarms-count = <1>;
-
+			io-mapped;
 			status = "okay";
 		};
 

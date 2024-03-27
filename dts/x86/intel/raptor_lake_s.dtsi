@@ -8,6 +8,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pcie/pcie.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/acpi/acpi.h>
 
 / {
 	cpus {
@@ -42,6 +43,18 @@
 		interrupt-controller;
 		#interrupt-cells = <3>;
 		#address-cells = <1>;
+	};
+
+	uart_ec_0: uart_ec_0 {
+		compatible = "ns16550";
+		acpi-hid = "PNP0501";
+		acpi-uid = "2";
+		clock-frequency = <1843200>;
+		interrupt-parent = <&intc>;
+		interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+		reg-shift = <0>;
+		io-mapped;
+		status = "okay";
 	};
 
 	pcie0: pcie0 {
@@ -339,18 +352,6 @@
 			status = "okay";
 		};
 
-		uart_ec_0: uart@3f8 {
-			compatible = "ns16550";
-			reg = <0x000003f8 0x100>;
-			io-mapped;
-			clock-frequency = <1843200>;
-			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
-			interrupt-parent = <&intc>;
-			reg-shift = <0>;
-			io-mapped;
-			status = "okay";
-		};
-
 		gpio_0_i: gpio@e06e0700 {
 			compatible = "intel,gpio";
 			reg = <0xe06e0700 0x1000>;
@@ -543,13 +544,13 @@
 			status = "okay";
 		};
 
-		rtc: counter: rtc@70 {
+		rtc: counter: rtc {
 			compatible = "motorola,mc146818";
-			reg = <0x70 0x0D 0x71 0x0D>;
+			acpi-hid = "PNP0B00";
 			interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 			alarms-count = <1>;
-
+			io-mapped;
 			status = "okay";
 		};
 

@@ -9,12 +9,18 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/pcie/pcie.h>
 #include <soc.h>
+#ifdef CONFIG_ACPI
+#include <zephyr/acpi/acpi.h>
+#endif
 
+#define UART_IS_ACPIDEV \
+	DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_console), acpi_hw_id)
 
 #if DT_PROP_OR(DT_CHOSEN(zephyr_console), io_mapped, 0) != 0
 #define UART_IS_IOPORT_ACCESS 1
 #endif
 
+#if !defined(UART_IS_ACPIDEV)
 #if defined(UART_IS_IOPORT_ACCESS)
 /* Legacy I/O Port Access to a NS16550 UART */
 #define IN(reg)       sys_in8(reg + DT_REG_ADDR(DT_CHOSEN(zephyr_console)))
@@ -119,3 +125,15 @@ void z_x86_early_serial_init(void)
 		       suppressed_chars);
 	}
 }
+#else
+/* TODO: ACPI need kheap and hence we cannot support early console currently. */
+int arch_printk_char_out(int c)
+{
+	return 0;
+}
+
+void z_x86_early_serial_init(void)
+{
+
+}
+#endif

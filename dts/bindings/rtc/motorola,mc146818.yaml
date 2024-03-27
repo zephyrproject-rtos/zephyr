@@ -6,7 +6,7 @@ description: Motorola MC146818 compatible Real Timer Clock
 
 compatible: "motorola,mc146818"
 
-include: [rtc-device.yaml, acpi.yaml]
+include: [rtc-device.yaml, bus.yaml]
 
 properties:
   clock-frequency:
@@ -17,3 +17,6 @@ properties:
       - 1048576
       - 32768
     description: Frequency of the input-clock in Hertz (Hz)
+
+  io-mapped:
+    required: true

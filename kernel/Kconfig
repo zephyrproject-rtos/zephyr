@@ -1005,5 +1005,13 @@ config THREAD_LOCAL_STORAGE
 
 endmenu
 
+config BUS_DEV
+	bool "Bus device support"
+	help
+	  Provide abstract interface for device drivers which are designed to work on
+	  multiple bus topologies such as PCI, ACPI or just DTS base. Driver developers can use
+	  the new BUS_DEV_INST_DEFINE macro instead of DEVICE_INST_DEFINE in case
+	  they have to design drivers which need to works seamlessly on PCI bus, ACPI and DTS base.
+
 rsource "Kconfig.device"
 rsource "Kconfig.vm"
