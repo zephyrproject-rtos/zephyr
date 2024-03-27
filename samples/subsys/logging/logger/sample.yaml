@@ -38,6 +38,7 @@ tests:
       - logging
       - bluetooth
     filter: CONFIG_DT_HAS_ZEPHYR_NUS_UART_ENABLED
+    harness: bluetooth_nus
     arch_exclude:
       - posix
     extra_args:
