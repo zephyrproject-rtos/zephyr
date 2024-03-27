@@ -156,6 +156,7 @@ LOG_MODULE_REGISTER(CP9314, CONFIG_REGULATOR_LOG_LEVEL);
 
 #define CP9314_SOFT_RESET_DELAY_MSEC 200
 #define CP9314_EN_DEBOUNCE_USEC      3000
+#define CP9314_T_STARTUP_MSEC        120
 
 #define CP9314_DEVICE_MODE_HOST_4GANG_0x78      0x0
 #define CP9314_DEVICE_MODE_HOST_4GANG_0x72      0x1
@@ -184,6 +185,7 @@ struct regulator_cp9314_config {
 	struct regulator_common_config common;
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec en_pin;
+	struct gpio_dt_spec pgood_pin;
 	uint8_t initial_op_mode_idx;
 };
 
@@ -268,13 +270,34 @@ static int regulator_cp9314_enable(const struct device *dev)
 	}
 
 	if (config->en_pin.port != NULL) {
-		return gpio_pin_set_dt(&config->en_pin, 1);
+		ret = gpio_pin_set_dt(&config->en_pin, 1);
+		if (ret < 0) {
+			return ret;
+		}
 	} else {
 		ret = i2c_reg_update_byte_dt(&config->i2c, CP9314_REG_CTRL1, CP9314_CP_EN,
 					     CP9314_CP_EN);
 		if (ret < 0) {
 			LOG_ERR("Unable to set CP_EN");
 			return ret;
+		}
+	}
+
+	k_msleep(CP9314_T_STARTUP_MSEC);
+
+	if (config->pgood_pin.port != NULL) {
+		ret = gpio_pin_get_dt(&config->pgood_pin);
+		if (ret < 0) {
+			return ret;
+		} else if (ret == 0) {
+			return -EINVAL;
+		}
+	} else {
+		ret = i2c_reg_read_byte_dt(&config->i2c, CP9314_REG_CONVERTER, &value);
+		if (ret < 0) {
+			return ret;
+		} else if (FIELD_GET(CP9314_PGOOD_PIN_STS, value) == 0U) {
+			return -EINVAL;
 		}
 	}
 
@@ -408,6 +431,17 @@ static int regulator_cp9314_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
+	if (config->pgood_pin.port != NULL) {
+		if (!gpio_is_ready_dt(&config->pgood_pin)) {
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&config->pgood_pin, GPIO_INPUT);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	if (config->en_pin.port != NULL) {
 		if (!gpio_is_ready_dt(&config->en_pin)) {
 			return -ENODEV;
@@ -525,6 +559,7 @@ static const struct regulator_driver_api api = {
 		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),                              \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.en_pin = GPIO_DT_SPEC_INST_GET_OR(inst, cirrus_en_gpios, {}),                     \
+		.pgood_pin = GPIO_DT_SPEC_INST_GET_OR(inst, cirrus_pgood_gpios, {}),               \
 		.initial_op_mode_idx =                                                             \
 			DT_INST_ENUM_IDX_OR(inst, cirrus_initial_switched_capacitor_mode, -1) + 1, \
 	};                                                                                         \
