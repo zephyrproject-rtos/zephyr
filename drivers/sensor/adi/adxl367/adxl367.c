@@ -573,7 +573,7 @@ int adxl367_fifo_setup(const struct device *dev,
 		       enum adxl367_fifo_mode mode,
 		       enum adxl367_fifo_format format,
 		       enum adxl367_fifo_read_mode read_mode,
-		       uint8_t sets_nb)
+		       uint16_t sets_nb)
 {
 	int ret;
 
