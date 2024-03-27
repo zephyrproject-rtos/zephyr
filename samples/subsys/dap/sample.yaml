@@ -1,0 +1,10 @@
+sample:
+  name: DAP USB
+tests:
+  sample.dap.hid:
+    build_only: true
+    platform_allow: nrf52840dk_nrf52840
+    integration_platforms:
+      - nrf52840dk_nrf52840
+    depends_on: usb_device
+    tags: usb
