@@ -121,6 +121,8 @@ The Zephyr STM32WB5MM-DK board configuration supports the following hardware fea
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 
 Other hardware features are not yet supported on this Zephyr port.
@@ -157,6 +159,7 @@ Default Zephyr Peripheral Mapping:
 - LPUART_1 TX/RX : PA3/PA2
 - USB : PA11/PA12
 - SWD : PA13/PA14
+- I2C3: SDA/SCL PB11/PB13 (Sensor I2C bus)
 
 System Clock
 ------------
