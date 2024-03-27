@@ -1,7 +1,7 @@
 # Copyright (c) 2023 IoT.bzh
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_R8A779F0
+if SOC_SERIES_RCAR_GEN4
 
 config NUM_IRQS
 	default 1216 #960 SPI + 256 LPI
@@ -9,4 +9,4 @@ config NUM_IRQS
 config PINCTRL
 	default y
 
-endif # SOC_R8A779F0
+endif # SOC_SERIES_RCAR_GEN4

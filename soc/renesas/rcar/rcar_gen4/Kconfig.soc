@@ -5,14 +5,20 @@ config SOC_SERIES_RCAR_GEN4
 	bool
 	select SOC_FAMILY_RENESAS_RCAR
 
-config SOC_R8A779F0
+config SOC_R8A779F0_R52
 	bool
 	select SOC_SERIES_RCAR_GEN4
 	help
-	  r8a779f0
+	  r8a779f0 r52
+
+config SOC_R8A779F0_A55
+	bool
+	select SOC_SERIES_RCAR_GEN4
+	help
+	  r8a779f0 a55
 
 config SOC_SERIES
 	default "rcar_gen4" if SOC_SERIES_RCAR_GEN4
 
 config SOC
-	default "r8a779f0" if SOC_R8A779F0
+	default "r8a779f0" if SOC_R8A779F0_R52 || SOC_R8A779F0_A55

@@ -1,10 +1,15 @@
 # Copyright (c) 2023 IoT.bzh
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_RCAR_GEN4
-	bool
+config SOC_R8A779F0_R52
 	select ARM
 	select CPU_CORTEX_R52
 	select GIC_SINGLE_SECURITY_STATE
+	select CLOCK_CONTROL_RCAR_CPG_MSSR if CLOCK_CONTROL
+	select ARM_ARCH_TIMER
+
+config SOC_R8A779F0_A55
+	select ARM64
+	select CPU_CORTEX_A55
 	select CLOCK_CONTROL_RCAR_CPG_MSSR if CLOCK_CONTROL
 	select ARM_ARCH_TIMER
