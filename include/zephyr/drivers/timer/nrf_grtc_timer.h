@@ -101,11 +101,13 @@ void z_nrf_grtc_timer_compare_int_unlock(int32_t chan, bool key);
  *
  * @param chan Channel ID.
  *
- * @retval >=0 Positive is a Value set in the compare register
+ * @param val Pointer to store the value.
+ *
+ * @retval 0 if the compare register was read successfully.
  * @retval -EAGAIN if compare for given channel is not set.
  * @retval -EPERM if either channel is unavailable or SYSCOUNTER is not running.
  */
-uint64_t z_nrf_grtc_timer_compare_read(int32_t chan);
+int z_nrf_grtc_timer_compare_read(int32_t chan, uint64_t *val);
 
 /** @brief  Set compare channel to given value.
  *
