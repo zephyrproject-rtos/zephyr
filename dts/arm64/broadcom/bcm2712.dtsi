@@ -67,5 +67,23 @@
 				status = "disabled";
 			};
 		};
+
+		uart10: serial@107d001000 {
+			compatible = "arm,pl011";
+			reg = <0x10 0x7d001000 0x200>;
+			interrupts = <GIC_SPI 121 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clk_uart>;
+			status = "disabled";
+		};
+
+	};
+
+	clocks {
+		clk_uart: clk_uart {
+			compatible = "fixed-clock";
+			clock-frequency = <44236800>;
+			#clock-cells = <0>;
+		};
 	};
 };

@@ -46,6 +46,9 @@ The Raspberry Pi 5 board configuration supports the following hardware features:
    * - GPIO
      - :kconfig:option:`CONFIG_GPIO`
      - :dtcompatible:`brcm,brcmstb-gpio`
+   * - UART
+     - :kconfig:option:`CONFIG_SERIAL`
+     - :dtcompatible:`arm,pl011`
 
 Not all hardware features are supported yet. See `Raspberry Pi hardware`_ for the complete list of hardware features.
 
@@ -91,6 +94,60 @@ Copy `zephyr.bin` from `build/zephyr` directory to the root directory of the Mic
 
 Insert the Micro SD card and power on the Raspberry Pi 5. And then, the STAT LED will start to blink.
 
+
+Serial Communication
+====================
+
+wiring
+------
+
+You will need the following items:
+   * `Raspberry Pi Debug Probe`_
+   * JST cable: 3-pin JST connector to 3-pin JST connector cable
+   * USB cable: USB A male - Micro USB B male
+
+Use the JST cable to connect the Raspberry Pi Debug Probe UART port to the Raspberry Pi 5 UART port between the HDMI ports.
+
+Then connect the Raspberry Pi Debug Probe to your computer with a USB cable.
+
+
+config.txt
+----------
+
+.. code-block:: text
+
+   kernel=zephyr.bin
+   arm_64bit=1
+   enable_uart=1
+   uart_2ndstage=1
+
+
+zephyr.bin
+----------
+
+Build an app `samples/hello_world`
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: rpi_5
+   :goals: build
+
+Copy `zephyr.bin` from `build/zephyr` directory to the root directory of the Micro SD card.
+
+Insert the Micro SD card into your Raspberry Pi 5.
+
+
+serial terminal emulator
+------------------------
+
+When you power on the Raspberry Pi 5, you will see the following output in the serial console:
+
+.. code-block:: text
+
+   *** Booting Zephyr OS build XXXXXXXXXXXX  ***
+   Hello World! rpi_5/bcm2712
+
+
 .. _Raspberry Pi 5 product-brief:
    https://datasheets.raspberrypi.com/rpi5/raspberry-pi-5-product-brief.pdf
 
@@ -99,3 +156,6 @@ Insert the Micro SD card and power on the Raspberry Pi 5. And then, the STAT LED
 
 .. _bcm2712-rpi-5.dtb:
    https://github.com/raspberrypi/firmware/raw/master/boot/bcm2712-rpi-5-b.dtb
+
+.. _Raspberry Pi Debug Probe:
+   https://www.raspberrypi.com/products/debug-probe/
