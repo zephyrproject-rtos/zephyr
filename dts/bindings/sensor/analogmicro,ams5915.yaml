@@ -13,11 +13,11 @@ properties:
     type: int
     description: |
       The lower pressure limit in kilopascal of the attached AMS5915 sensor
-      variant according datasheet. 
+      variant according datasheet.
 
   upper-limit-press:
     required: true
     type: int
     description: |
       The upper pressure limit in kilopascal of the attached AMS5915 sensor
-      variant according datasheet. 
+      variant according datasheet.
