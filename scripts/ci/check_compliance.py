@@ -1248,12 +1248,20 @@ class BinaryFiles(ComplianceTest):
         # svg files are always detected as binary, see .gitattributes
         BINARY_ALLOW_EXT = (".jpg", ".jpeg", ".png", ".svg", ".webp")
 
+        # Allow certificate files in networking samples so that the
+        # samples can work properly.
+        NET_BINARY_ALLOW_SAMPLE_PATHS = "samples/net"
+        NET_BINARY_ALLOW_CERT_EXT = ".der"
+
         for stat in git("diff", "--numstat", "--diff-filter=A",
                         COMMIT_RANGE).splitlines():
             added, deleted, fname = stat.split("\t")
             if added == "-" and deleted == "-":
                 if (fname.startswith(BINARY_ALLOW_PATHS) and
                     fname.endswith(BINARY_ALLOW_EXT)):
+                    continue
+                if (fname.startswith(NET_BINARY_ALLOW_SAMPLE_PATHS) and
+                    fname.endswith(NET_BINARY_ALLOW_CERT_EXT)):
                     continue
                 self.failure(f"Binary file not allowed: {fname}")
 
