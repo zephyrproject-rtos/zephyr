@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/throttle.h>
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 
@@ -45,6 +46,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #else
 #define ETH_HDR_LEN sizeof(struct net_eth_hdr)
 #endif
+
+#if defined(CONFIG_NET_THROTTLE)
+struct throttler {
+	bool state;
+	uint64_t bytes_per_sec;
+	k_timepoint_t period;
+};
+#endif /* CONFIG_NET_THROTTLE */
 
 struct eth_context {
 	uint8_t recv[NET_ETH_MTU + ETH_HDR_LEN];
@@ -67,6 +76,7 @@ struct eth_context {
 #if defined(CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK)
 	const struct device *ptp_clock;
 #endif
+	IF_ENABLED(CONFIG_NET_THROTTLE, (struct throttler throttle;))
 };
 
 #define DEFINE_RX_THREAD(x, _)						\
@@ -574,6 +584,49 @@ static int vlan_setup(const struct device *dev, struct net_if *iface,
 }
 #endif /* CONFIG_NET_VLAN */
 
+#if defined(CONFIG_NET_THROTTLE)
+static void throttle_init(struct net_if *iface,
+			  bool state, uint64_t bytes_per_sec,
+			  k_timepoint_t period)
+{
+	struct eth_context *ctx = net_if_get_device(iface)->data;
+
+	ctx->throttle.state = state;
+	ctx->throttle.bytes_per_sec = bytes_per_sec;
+	ctx->throttle.period = period;
+}
+
+static int throttle_enable(struct net_if *iface, bool state)
+{
+	struct eth_context *ctx = net_if_get_device(iface)->data;
+
+	if (ctx->throttle.state == state) {
+		return -EALREADY;
+	}
+
+	ctx->throttle.state = state;
+
+	return 0;
+}
+
+static int throttle_watermark(struct net_if *iface, uint64_t bytes_per_sec,
+			      k_timepoint_t period)
+{
+	struct eth_context *ctx = net_if_get_device(iface)->data;
+
+	ctx->throttle.bytes_per_sec = bytes_per_sec;
+	ctx->throttle.period = period;
+
+	return 0;
+}
+
+static const struct net_throttle_api throttle_api = {
+	.init = throttle_init,
+	.enable = throttle_enable,
+	.watermark = throttle_watermark,
+};
+#endif /* CONFIG_NET_THROTTLE */
+
 static const struct ethernet_api eth_if_api = {
 	.iface_api.init = eth_iface_init,
 
@@ -608,7 +661,10 @@ LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_ETH_DEV_DATA, (;), _);
 			    NULL, NULL,	&eth_context_data_##x, NULL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &eth_if_api,				\
-			    NET_ETH_MTU)
+			    NET_ETH_MTU);				\
+	NET_TRAFFIC_THROTTLE_DEFINE(eth_native_posix_throttle_##x,	\
+				    eth_native_posix_##x,		\
+				    &throttle_api)
 
 LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_ETH_DEVICE, (;), _);
 
