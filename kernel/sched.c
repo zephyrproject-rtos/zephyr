@@ -1320,19 +1320,6 @@ static inline k_tid_t z_vrfy_k_sched_current_thread_query(void)
 #include <syscalls/k_sched_current_thread_query_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_k_is_preempt_thread(void)
-{
-	return !arch_is_in_isr() && is_preempt(_current);
-}
-
-#ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_is_preempt_thread(void)
-{
-	return z_impl_k_is_preempt_thread();
-}
-#include <syscalls/k_is_preempt_thread_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
 static inline void unpend_all(_wait_q_t *wait_q)
 {
 	struct k_thread *thread;
