@@ -68,22 +68,9 @@ static const char *e1000_reg_to_string(enum e1000_reg_t r)
 	return NULL;
 }
 
-static struct net_if *get_iface(struct e1000_dev *ctx, uint16_t vlan_tag)
+static struct net_if *get_iface(struct e1000_dev *ctx)
 {
-#if defined(CONFIG_NET_VLAN)
-	struct net_if *iface;
-
-	iface = net_eth_get_vlan_iface(ctx->iface, vlan_tag);
-	if (!iface) {
-		return ctx->iface;
-	}
-
-	return iface;
-#else
-	ARG_UNUSED(vlan_tag);
-
 	return ctx->iface;
-#endif
 }
 
 static enum ethernet_hw_caps e1000_caps(const struct device *dev)
@@ -187,7 +174,6 @@ static void e1000_isr(const struct device *ddev)
 {
 	struct e1000_dev *dev = ddev->data;
 	uint32_t icr = ior32(dev, ICR); /* Cleared upon read */
-	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 
 	icr &= ~(ICR_TXDW | ICR_TXQE);
 
@@ -197,31 +183,9 @@ static void e1000_isr(const struct device *ddev)
 		icr &= ~ICR_RXO;
 
 		if (pkt) {
-#if defined(CONFIG_NET_VLAN)
-			struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
-
-			if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
-				struct net_eth_vlan_hdr *hdr_vlan =
-					(struct net_eth_vlan_hdr *)
-					NET_ETH_HDR(pkt);
-
-				net_pkt_set_vlan_tci(
-					pkt, ntohs(hdr_vlan->vlan.tci));
-				vlan_tag = net_pkt_vlan_tag(pkt);
-
-#if CONFIG_NET_TC_RX_COUNT > 1
-				enum net_priority prio;
-
-				prio = net_vlan2priority(
-						net_pkt_vlan_priority(pkt));
-				net_pkt_set_priority(pkt, prio);
-#endif
-			}
-#endif /* CONFIG_NET_VLAN */
-
-			net_recv_data(get_iface(dev, vlan_tag), pkt);
+			net_recv_data(get_iface(dev), pkt);
 		} else {
-			eth_stats_update_errors_rx(get_iface(dev, vlan_tag));
+			eth_stats_update_errors_rx(get_iface(dev));
 		}
 	}
 
@@ -291,10 +255,6 @@ static void e1000_iface_init(struct net_if *iface)
 	struct e1000_dev *dev = net_if_get_device(iface)->data;
 	const struct e1000_config *config = net_if_get_device(iface)->config;
 
-	/* For VLAN, this value is only used to get the correct L2 driver.
-	 * The iface pointer in device context should contain the main
-	 * interface if the VLANs are enabled.
-	 */
 	if (dev->iface == NULL) {
 		dev->iface = iface;
 

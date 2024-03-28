@@ -63,22 +63,9 @@ struct eth_nxp_s32_data {
 
 static void eth_nxp_s32_rx_thread(void *arg1, void *unused1, void *unused2);
 
-static inline struct net_if *get_iface(struct eth_nxp_s32_data *ctx, uint16_t vlan_tag)
+static inline struct net_if *get_iface(struct eth_nxp_s32_data *ctx)
 {
-#if defined(CONFIG_NET_VLAN)
-	struct net_if *iface;
-
-	iface = net_eth_get_vlan_iface(ctx->iface, vlan_tag);
-	if (!iface) {
-		return ctx->iface;
-	}
-
-	return iface;
-#else
-	ARG_UNUSED(vlan_tag);
-
 	return ctx->iface;
-#endif
 }
 
 static void convert_phy_to_mac_config(Gmac_Ip_ConfigType *gmac_cfg, enum phy_link_speed phy_speed)
@@ -302,10 +289,6 @@ static void eth_nxp_s32_iface_init(struct net_if *iface)
 	const struct eth_nxp_s32_config *cfg = dev->config;
 	struct eth_nxp_s32_data *ctx = dev->data;
 
-	/* For VLAN, this value is only used to get the correct L2 driver.
-	 * The iface pointer in context should contain the main interface
-	 * if the VLANs are enabled.
-	 */
 	if (ctx->iface == NULL) {
 		ctx->iface = iface;
 	}
@@ -416,19 +399,11 @@ error:
 
 static struct net_pkt *eth_nxp_s32_get_pkt(const struct device *dev,
 					Gmac_Ip_BufferType *buf,
-					Gmac_Ip_RxInfoType *rx_info,
-					uint16_t *vlan_tag)
+					Gmac_Ip_RxInfoType *rx_info)
 {
 	struct eth_nxp_s32_data *ctx = dev->data;
 	struct net_pkt *pkt = NULL;
 	int res = 0;
-#if defined(CONFIG_NET_VLAN)
-	struct net_eth_hdr *hdr;
-	struct net_eth_vlan_hdr *hdr_vlan;
-#if CONFIG_NET_TC_RX_COUNT > 1
-	enum net_priority prio;
-#endif /* CONFIG_NET_TC_RX_COUNT > 1 */
-#endif /* CONFIG_NET_VLAN */
 
 	/* Using root iface, it will be updated in net_recv_data() */
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, rx_info->PktLen,
@@ -446,23 +421,9 @@ static struct net_pkt *eth_nxp_s32_get_pkt(const struct device *dev,
 		goto exit;
 	}
 
-#if defined(CONFIG_NET_VLAN)
-	hdr = NET_ETH_HDR(pkt);
-	if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
-		hdr_vlan = (struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-		net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
-		*vlan_tag = net_pkt_vlan_tag(pkt);
-
-#if CONFIG_NET_TC_RX_COUNT > 1
-		prio = net_vlan2priority(net_pkt_vlan_priority(pkt));
-		net_pkt_set_priority(pkt, prio);
-#endif /* CONFIG_NET_TC_RX_COUNT > 1 */
-	}
-#endif /* CONFIG_NET_VLAN */
-
 exit:
 	if (!pkt) {
-		eth_stats_update_errors_rx(get_iface(ctx, *vlan_tag));
+		eth_stats_update_errors_rx(get_iface(ctx));
 	}
 
 	return pkt;
@@ -472,7 +433,6 @@ static void eth_nxp_s32_rx(const struct device *dev)
 {
 	struct eth_nxp_s32_data *ctx = dev->data;
 	const struct eth_nxp_s32_config *cfg = dev->config;
-	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct net_pkt *pkt;
 	int res = 0;
 	Gmac_Ip_RxInfoType rx_info = {0};
@@ -484,12 +444,12 @@ static void eth_nxp_s32_rx(const struct device *dev)
 		Gmac_Ip_ProvideRxBuff(cfg->instance, cfg->rx_ring_idx, &buf);
 		LOG_ERR("Rx frame has errors (error mask 0x%X)", rx_info.ErrMask);
 	} else if (status == GMAC_STATUS_SUCCESS) {
-		pkt = eth_nxp_s32_get_pkt(dev, &buf, &rx_info, &vlan_tag);
+		pkt = eth_nxp_s32_get_pkt(dev, &buf, &rx_info);
 		Gmac_Ip_ProvideRxBuff(cfg->instance, cfg->rx_ring_idx, &buf);
 		if (pkt != NULL) {
-			res = net_recv_data(get_iface(ctx, vlan_tag), pkt);
+			res = net_recv_data(get_iface(ctx), pkt);
 			if (res < 0) {
-				eth_stats_update_errors_rx(get_iface(ctx, vlan_tag));
+				eth_stats_update_errors_rx(get_iface(ctx));
 				net_pkt_unref(pkt);
 				LOG_ERR("Failed to enqueue frame into rx queue (%d)", res);
 			}

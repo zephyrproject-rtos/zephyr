@@ -541,35 +541,16 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 				       bool is_tx)
 {
 	uint8_t *msg_start = net_pkt_data(pkt);
-	struct ethernet_context *eth_ctx;
 	struct gptp_hdr *gptp_hdr;
 	int eth_hlen;
+	struct net_eth_hdr *hdr;
 
-#if defined(CONFIG_NET_VLAN)
-	eth_ctx = net_if_l2_data(iface);
-	if (net_eth_is_vlan_enabled(eth_ctx, iface)) {
-		struct net_eth_vlan_hdr *hdr_vlan;
-
-		hdr_vlan = (struct net_eth_vlan_hdr *)msg_start;
-		if (ntohs(hdr_vlan->type) != NET_ETH_PTYPE_PTP) {
-			return NULL;
-		}
-
-		eth_hlen = sizeof(struct net_eth_vlan_hdr);
-	} else
-#else
-	ARG_UNUSED(eth_ctx);
-#endif
-	{
-		struct net_eth_hdr *hdr;
-
-		hdr = (struct net_eth_hdr *)msg_start;
-		if (ntohs(hdr->type) != NET_ETH_PTYPE_PTP) {
-			return NULL;
-		}
-
-		eth_hlen = sizeof(struct net_eth_hdr);
+	hdr = (struct net_eth_hdr *)msg_start;
+	if (ntohs(hdr->type) != NET_ETH_PTYPE_PTP) {
+		return NULL;
 	}
+
+	eth_hlen = sizeof(struct net_eth_hdr);
 
 	/* In TX, the first net_buf contains the Ethernet header
 	 * and the actual gPTP header is in the second net_buf.
@@ -706,23 +687,9 @@ static inline void timestamp_rx_pkt(Gmac *gmac, struct gptp_hdr *hdr,
 
 #endif
 
-static inline struct net_if *get_iface(struct eth_sam_dev_data *ctx,
-				       uint16_t vlan_tag)
+static inline struct net_if *get_iface(struct eth_sam_dev_data *ctx)
 {
-#if defined(CONFIG_NET_VLAN)
-	struct net_if *iface;
-
-	iface = net_eth_get_vlan_iface(ctx->iface, vlan_tag);
-	if (!iface) {
-		return ctx->iface;
-	}
-
-	return iface;
-#else
-	ARG_UNUSED(vlan_tag);
-
 	return ctx->iface;
-#endif
 }
 
 /*
@@ -738,7 +705,6 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 	struct net_buf *frag;
 #if defined(CONFIG_NET_GPTP)
 	struct net_pkt *pkt;
-	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct gptp_hdr *hdr;
 	struct eth_sam_dev_data *dev_data =
 		CONTAINER_OF(queue, struct eth_sam_dev_data,
@@ -763,15 +729,9 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 			/* Release net packet to the packet pool */
 			pkt = UINT_TO_POINTER(ring_buf_get(&queue->tx_frames));
-#if defined(CONFIG_NET_VLAN)
-			struct net_eth_hdr *eth_hdr = NET_ETH_HDR(pkt);
 
-			if (ntohs(eth_hdr->type) == NET_ETH_PTYPE_VLAN) {
-				vlan_tag = net_pkt_vlan_tag(pkt);
-			}
-#endif
 #if defined(CONFIG_NET_GPTP)
-			hdr = check_gptp_msg(get_iface(dev_data, vlan_tag),
+			hdr = check_gptp_msg(get_iface(dev_data),
 					     pkt, true);
 
 			timestamp_tx_pkt(gmac, hdr, pkt);
@@ -1375,7 +1335,6 @@ static void eth_rx(struct gmac_queue *queue)
 	struct eth_sam_dev_data *dev_data =
 		CONTAINER_OF(queue, struct eth_sam_dev_data,
 			     queue_list[queue->que_idx]);
-	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct net_pkt *rx_frame;
 #if defined(CONFIG_NET_GPTP)
 	const struct device *const dev = net_if_get_device(dev_data->iface);
@@ -1391,37 +1350,8 @@ static void eth_rx(struct gmac_queue *queue)
 	while (rx_frame) {
 		LOG_DBG("ETH rx");
 
-#if defined(CONFIG_NET_VLAN)
-		/* FIXME: Instead of this, use the GMAC register to get
-		 * the used VLAN tag.
-		 */
-		{
-			struct net_eth_hdr *p_hdr = NET_ETH_HDR(rx_frame);
-
-			if (ntohs(p_hdr->type) == NET_ETH_PTYPE_VLAN) {
-				struct net_eth_vlan_hdr *hdr_vlan =
-					(struct net_eth_vlan_hdr *)
-					NET_ETH_HDR(rx_frame);
-
-				net_pkt_set_vlan_tci(rx_frame,
-						    ntohs(hdr_vlan->vlan.tci));
-				vlan_tag = net_pkt_vlan_tag(rx_frame);
-
-#if CONFIG_NET_TC_RX_COUNT > 1
-				{
-					enum net_priority prio;
-
-					prio = net_vlan2priority(
-					      net_pkt_vlan_priority(rx_frame));
-					net_pkt_set_priority(rx_frame, prio);
-				}
-#endif
-			}
-		}
-#endif
 #if defined(CONFIG_NET_GPTP)
-		hdr = check_gptp_msg(get_iface(dev_data, vlan_tag), rx_frame,
-				     false);
+		hdr = check_gptp_msg(get_iface(dev_data), rx_frame, false);
 
 		timestamp_rx_pkt(gmac, hdr, rx_frame);
 
@@ -1430,10 +1360,8 @@ static void eth_rx(struct gmac_queue *queue)
 		}
 #endif /* CONFIG_NET_GPTP */
 
-		if (net_recv_data(get_iface(dev_data, vlan_tag),
-				  rx_frame) < 0) {
-			eth_stats_update_errors_rx(get_iface(dev_data,
-							     vlan_tag));
+		if (net_recv_data(get_iface(dev_data), rx_frame) < 0) {
+			eth_stats_update_errors_rx(get_iface(dev_data));
 			net_pkt_unref(rx_frame);
 		}
 
@@ -1490,11 +1418,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	uint8_t pkt_prio;
 #if GMAC_MULTIPLE_TX_PACKETS == 0
 #if defined(CONFIG_NET_GPTP)
-	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct gptp_hdr *hdr;
-#if defined(CONFIG_NET_VLAN)
-	struct net_eth_hdr *eth_hdr;
-#endif
 #endif
 #endif
 
@@ -1635,14 +1559,8 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		return -EIO;
 	}
 #if defined(CONFIG_NET_GPTP)
-#if defined(CONFIG_NET_VLAN)
-	eth_hdr = NET_ETH_HDR(pkt);
-	if (ntohs(eth_hdr->type) == NET_ETH_PTYPE_VLAN) {
-		vlan_tag = net_pkt_vlan_tag(pkt);
-	}
-#endif
 #if defined(CONFIG_NET_GPTP)
-	hdr = check_gptp_msg(get_iface(dev_data, vlan_tag), pkt, true);
+	hdr = check_gptp_msg(get_iface(dev_data), pkt, true);
 	timestamp_tx_pkt(gmac, hdr, pkt);
 	if (hdr && need_timestamping(hdr)) {
 		net_if_add_tx_timestamp(pkt);
@@ -1884,10 +1802,6 @@ static void eth0_iface_init(struct net_if *iface)
 	int result;
 	int i;
 
-	/* For VLAN, this value is only used to get the correct L2 driver.
-	 * The iface pointer in context should contain the main interface
-	 * if the VLANs are enabled.
-	 */
 	if (dev_data->iface == NULL) {
 		dev_data->iface = iface;
 	}
@@ -1999,7 +1913,10 @@ static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(const struct device *
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
+	return ETHERNET_LINK_10BASE_T |
+#if defined(CONFIG_NET_VLAN)
+		ETHERNET_HW_VLAN |
+#endif
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 		ETHERNET_PTP |
 #endif

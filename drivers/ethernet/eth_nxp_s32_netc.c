@@ -43,22 +43,9 @@ static void nxp_s32_eth_msix_wrapper(const struct device *dev, uint32_t channel,
 	msix->handler(channel, NULL, 0);
 }
 
-static inline struct net_if *get_iface(struct nxp_s32_eth_data *ctx, uint16_t vlan_tag)
+static inline struct net_if *get_iface(struct nxp_s32_eth_data *ctx)
 {
-#if defined(CONFIG_NET_VLAN)
-	struct net_if *iface;
-
-	iface = net_eth_get_vlan_iface(ctx->iface, vlan_tag);
-	if (!iface) {
-		return ctx->iface;
-	}
-
-	return iface;
-#else
-	ARG_UNUSED(vlan_tag);
-
 	return ctx->iface;
-#endif
 }
 
 int nxp_s32_eth_initialize_common(const struct device *dev)
@@ -185,19 +172,11 @@ error:
 }
 
 static struct net_pkt *nxp_s32_eth_get_pkt(const struct device *dev,
-					   Netc_Eth_Ip_BufferType *buf,
-					   uint16_t *vlan_tag)
+					   Netc_Eth_Ip_BufferType *buf)
 {
 	struct nxp_s32_eth_data *ctx = dev->data;
 	struct net_pkt *pkt = NULL;
 	int res = 0;
-#if defined(CONFIG_NET_VLAN)
-	struct net_eth_hdr *hdr;
-	struct net_eth_vlan_hdr *hdr_vlan;
-#if CONFIG_NET_TC_RX_COUNT > 1
-	enum net_priority prio;
-#endif
-#endif /* CONFIG_NET_VLAN */
 
 	/* Use root iface, it will be updated later in net_recv_data() */
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, buf->length,
@@ -213,23 +192,9 @@ static struct net_pkt *nxp_s32_eth_get_pkt(const struct device *dev,
 		goto exit;
 	}
 
-#if defined(CONFIG_NET_VLAN)
-	hdr = NET_ETH_HDR(pkt);
-	if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
-		hdr_vlan = (struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-		net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
-		*vlan_tag = net_pkt_vlan_tag(pkt);
-
-#if CONFIG_NET_TC_RX_COUNT > 1
-		prio = net_vlan2priority(net_pkt_vlan_priority(pkt));
-		net_pkt_set_priority(pkt, prio);
-#endif
-	}
-#endif /* CONFIG_NET_VLAN */
-
 exit:
 	if (!pkt) {
-		eth_stats_update_errors_rx(get_iface(ctx, *vlan_tag));
+		eth_stats_update_errors_rx(get_iface(ctx));
 	}
 
 	return pkt;
@@ -242,7 +207,6 @@ static int nxp_s32_eth_rx(const struct device *dev)
 	Netc_Eth_Ip_BufferType buf;
 	Netc_Eth_Ip_RxInfoType info;
 	Netc_Eth_Ip_StatusType status;
-	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct net_pkt *pkt;
 	int key;
 	int res = 0;
@@ -255,13 +219,13 @@ static int nxp_s32_eth_rx(const struct device *dev)
 		LOG_ERR("Error on received frame: %d (0x%X)", status, info.rxStatus);
 		res = -EIO;
 	} else {
-		pkt = nxp_s32_eth_get_pkt(dev, &buf, &vlan_tag);
+		pkt = nxp_s32_eth_get_pkt(dev, &buf);
 		Netc_Eth_Ip_ProvideRxBuff(cfg->si_idx, cfg->rx_ring_idx, &buf);
 
 		if (pkt != NULL) {
-			res = net_recv_data(get_iface(ctx, vlan_tag), pkt);
+			res = net_recv_data(get_iface(ctx), pkt);
 			if (res < 0) {
-				eth_stats_update_errors_rx(get_iface(ctx, vlan_tag));
+				eth_stats_update_errors_rx(get_iface(ctx));
 				net_pkt_unref(pkt);
 				LOG_ERR("Failed to enqueue frame into rx queue: %d", res);
 			}

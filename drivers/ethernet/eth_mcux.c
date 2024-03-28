@@ -161,10 +161,6 @@ static const char *eth_name(ENET_Type *base)
 struct eth_context {
 	ENET_Type *base;
 	void (*config_func)(void);
-	/* If VLAN is enabled, there can be multiple VLAN interfaces related to
-	 * this physical device. In that case, this pointer value is not really
-	 * used for anything.
-	 */
 	struct net_if *iface;
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 	clock_ip_name_t clock;
@@ -336,22 +332,9 @@ static void eth_mcux_decode_duplex_and_speed(uint32_t status,
 }
 #endif /* ETH_MCUX_FIXED_LINK */
 
-static inline struct net_if *get_iface(struct eth_context *ctx, uint16_t vlan_tag)
+static inline struct net_if *get_iface(struct eth_context *ctx)
 {
-#if defined(CONFIG_NET_VLAN)
-	struct net_if *iface;
-
-	iface = net_eth_get_vlan_iface(ctx->iface, vlan_tag);
-	if (!iface) {
-		return ctx->iface;
-	}
-
-	return iface;
-#else
-	ARG_UNUSED(vlan_tag);
-
 	return ctx->iface;
-#endif
 }
 
 static void eth_mcux_phy_enter_reset(struct eth_context *context)
@@ -672,30 +655,11 @@ static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt)
 {
 	int eth_hlen;
 
-#if defined(CONFIG_NET_VLAN)
-	struct net_eth_vlan_hdr *hdr_vlan;
-	struct ethernet_context *eth_ctx;
-	bool vlan_enabled = false;
-
-	eth_ctx = net_if_l2_data(iface);
-	if (net_eth_is_vlan_enabled(eth_ctx, iface)) {
-		hdr_vlan = (struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-		vlan_enabled = true;
-
-		if (ntohs(hdr_vlan->type) != NET_ETH_PTYPE_PTP) {
-			return false;
-		}
-
-		eth_hlen = sizeof(struct net_eth_vlan_hdr);
-	} else
-#endif
-	{
-		if (ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_PTP) {
-			return false;
-		}
-
-		eth_hlen = sizeof(struct net_eth_hdr);
+	if (ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_PTP) {
+		return false;
 	}
+
+	eth_hlen = sizeof(struct net_eth_hdr);
 
 	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
 
@@ -762,7 +726,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 static int eth_rx(struct eth_context *context)
 {
-	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	uint32_t frame_length = 0U;
 	struct net_if *iface;
 	struct net_pkt *pkt;
@@ -823,36 +786,12 @@ static int eth_rx(struct eth_context *context)
 
 	k_mutex_unlock(&context->rx_frame_buf_mutex);
 
-#if defined(CONFIG_NET_VLAN)
-	{
-		struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
-
-		if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
-			struct net_eth_vlan_hdr *hdr_vlan =
-				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-
-			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
-			vlan_tag = net_pkt_vlan_tag(pkt);
-
-#if CONFIG_NET_TC_RX_COUNT > 1
-			{
-				enum net_priority prio;
-
-				prio = net_vlan2priority(
-						net_pkt_vlan_priority(pkt));
-				net_pkt_set_priority(pkt, prio);
-			}
-#endif
-		}
-	}
-#endif /* CONFIG_NET_VLAN */
-
 	/*
 	 * Use MAC timestamp
 	 */
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	k_mutex_lock(&context->ptp_mutex, K_FOREVER);
-	if (eth_get_ptp_data(get_iface(context, vlan_tag), pkt)) {
+	if (eth_get_ptp_data(get_iface(context), pkt)) {
 		ENET_Ptp1588GetTimer(context->base, &context->enet_handle,
 					&ptpTimeData);
 		/* If latest timestamp reloads after getting from Rx BD,
@@ -873,7 +812,7 @@ static int eth_rx(struct eth_context *context)
 	k_mutex_unlock(&context->ptp_mutex);
 #endif /* CONFIG_PTP_CLOCK_MCUX */
 
-	iface = get_iface(context, vlan_tag);
+	iface = get_iface(context);
 #if defined(CONFIG_NET_DSA)
 	iface = dsa_net_recv(iface, &pkt);
 #endif
@@ -892,7 +831,7 @@ flush:
 					0, RING_ID, NULL);
 	__ASSERT_NO_MSG(status == kStatus_Success);
 error:
-	eth_stats_update_errors_rx(get_iface(context, vlan_tag));
+	eth_stats_update_errors_rx(get_iface(context));
 	return -EIO;
 }
 
@@ -1174,10 +1113,6 @@ static void eth_iface_init(struct net_if *iface)
 			     sizeof(context->mac_addr),
 			     NET_LINK_ETHERNET);
 
-	/* For VLAN, this value is only used to get the correct L2 driver.
-	 * The iface pointer in context should contain the main interface
-	 * if the VLANs are enabled.
-	 */
 	if (context->iface == NULL) {
 		context->iface = iface;
 	}
@@ -1195,8 +1130,11 @@ static enum ethernet_hw_caps eth_mcux_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
+	return ETHERNET_LINK_10BASE_T |
 		ETHERNET_HW_FILTERING |
+#if defined(CONFIG_NET_VLAN)
+		ETHERNET_HW_VLAN |
+#endif
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 		ETHERNET_PTP |
 #endif

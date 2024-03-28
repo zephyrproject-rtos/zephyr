@@ -581,19 +581,6 @@ static void gptp_add_port(struct net_if *iface, void *user_data)
 		return;
 	}
 
-#if defined(CONFIG_NET_GPTP_VLAN)
-	if (CONFIG_NET_GPTP_VLAN_TAG >= 0 &&
-	    CONFIG_NET_GPTP_VLAN_TAG < NET_VLAN_TAG_UNSPEC) {
-		struct net_if *vlan_iface;
-
-		vlan_iface = net_eth_get_vlan_iface(iface,
-						    CONFIG_NET_GPTP_VLAN_TAG);
-		if (vlan_iface != iface) {
-			return;
-		}
-	}
-#endif /* CONFIG_NET_GPTP_VLAN */
-
 	/* Check if interface has a PTP clock. */
 	clk = net_eth_get_ptp_clock(iface);
 	if (clk) {
@@ -926,128 +913,9 @@ static void init_ports(void)
 	k_thread_name_set(&gptp_thread_data, "gptp");
 }
 
-#if defined(CONFIG_NET_GPTP_VLAN)
-static struct net_mgmt_event_callback vlan_cb;
-
-struct vlan_work {
-	struct k_work work;
-	struct net_if *iface;
-} vlan;
-
-static void disable_port(int port)
-{
-	GPTP_GLOBAL_DS()->selected_role[port] = GPTP_PORT_DISABLED;
-
-	gptp_state_machine();
-}
-
-static void vlan_enabled(struct k_work *work)
-{
-	struct vlan_work *one_vlan = CONTAINER_OF(work,
-						  struct vlan_work,
-						  work);
-	if (tid) {
-		int port;
-
-		port = gptp_get_port_number(one_vlan->iface);
-		if (port < 0) {
-			NET_DBG("No port found for iface %p", one_vlan->iface);
-			return;
-		}
-
-		GPTP_GLOBAL_DS()->selected_role[port] = GPTP_PORT_SLAVE;
-
-		gptp_state_machine();
-	} else {
-		init_ports();
-	}
-}
-
-static void vlan_disabled(struct k_work *work)
-{
-	struct vlan_work *one_vlan = CONTAINER_OF(work,
-						  struct vlan_work,
-						  work);
-	int port;
-
-	port = gptp_get_port_number(one_vlan->iface);
-	if (port < 0) {
-		NET_DBG("No port found for iface %p", one_vlan->iface);
-		return;
-	}
-
-	disable_port(port);
-}
-
-static void vlan_event_handler(struct net_mgmt_event_callback *cb,
-			       uint32_t mgmt_event,
-			       struct net_if *iface)
-{
-	uint16_t tag;
-
-	if (mgmt_event != NET_EVENT_ETHERNET_VLAN_TAG_ENABLED &&
-	    mgmt_event != NET_EVENT_ETHERNET_VLAN_TAG_DISABLED) {
-		return;
-	}
-
-#if defined(CONFIG_NET_MGMT_EVENT_INFO)
-	if (!cb->info) {
-		return;
-	}
-
-	tag = *((uint16_t *)cb->info);
-	if (tag != CONFIG_NET_GPTP_VLAN_TAG) {
-		return;
-	}
-
-	vlan.iface = iface;
-
-	if (mgmt_event == NET_EVENT_ETHERNET_VLAN_TAG_ENABLED) {
-		/* We found the right tag, now start gPTP for this interface */
-		k_work_init(&vlan.work, vlan_enabled);
-
-		NET_DBG("VLAN tag %d %s for iface %p", tag, "enabled", iface);
-	} else {
-		k_work_init(&vlan.work, vlan_disabled);
-
-		NET_DBG("VLAN tag %d %s for iface %p", tag, "disabled", iface);
-	}
-
-	k_work_submit(&vlan.work);
-#else
-	NET_WARN("VLAN event but tag info missing!");
-
-	ARG_UNUSED(tag);
-#endif
-}
-
-static void setup_vlan_events_listener(void)
-{
-	net_mgmt_init_event_callback(&vlan_cb, vlan_event_handler,
-				     NET_EVENT_ETHERNET_VLAN_TAG_ENABLED |
-				     NET_EVENT_ETHERNET_VLAN_TAG_DISABLED);
-	net_mgmt_add_event_callback(&vlan_cb);
-}
-#endif /* CONFIG_NET_GPTP_VLAN */
-
 void net_gptp_init(void)
 {
 	gptp_domain.default_ds.nb_ports = 0U;
 
-#if defined(CONFIG_NET_GPTP_VLAN)
-	/* If user has enabled gPTP over VLAN support, then we start gPTP
-	 * support after we have received correct "VLAN tag enabled" event.
-	 */
-	if (CONFIG_NET_GPTP_VLAN_TAG >= 0 &&
-	    CONFIG_NET_GPTP_VLAN_TAG < NET_VLAN_TAG_UNSPEC) {
-		setup_vlan_events_listener();
-	} else {
-		NET_WARN("VLAN tag %d set but the value is not valid.",
-			 CONFIG_NET_GPTP_VLAN_TAG);
-
-		init_ports();
-	}
-#else
 	init_ports();
-#endif
 }

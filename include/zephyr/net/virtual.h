@@ -38,6 +38,9 @@ enum virtual_interface_caps {
 	/** IPIP tunnel */
 	VIRTUAL_INTERFACE_IPIP = BIT(1),
 
+	/** Virtual LAN interface (VLAN) */
+	VIRTUAL_INTERFACE_VLAN = BIT(2),
+
 /** @cond INTERNAL_HIDDEN */
 	/* Marker for capabilities - must be at the end of the enum.
 	 * It is here because the capability list cannot be empty.
