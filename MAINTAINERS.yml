@@ -3596,7 +3596,7 @@ ITE Platforms:
     - sjg20
   files:
     - boards/ite/
-    - drivers/*/*/*it8xxx2*.c
+    - drivers/sensor/ite/
     - drivers/*/*it8xxx2*.c
     - drivers/*/*_ite_*
     - dts/bindings/*/*ite*
