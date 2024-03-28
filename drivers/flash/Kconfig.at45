@@ -24,10 +24,23 @@ if SPI_FLASH_AT45
 config SPI_FLASH_AT45_USE_READ_MODIFY_WRITE
 	bool "Use Read-Modify-Write command in flash_write()"
 	default y
+	select FLASH_ANY_HAS_UNRESTRICTED_WRITE
 	help
 	  Use the Read-Modify-Write command (opcode 0x58) instead of the default
 	  Main Memory Program without Built-In Erase (opcode 0x02). This allows
 	  writing of data without prior erasing of corresponding pages.
+
+if !SPI_FLASH_AT45_USE_READ_MODIFY_WRITE
+
+config SPI_FLASH_AT45_USE_DEFAULT_WRITE
+	bool "Use default main memory program in flash_write()"
+	default y
+	select FLASH_ANY_HAS_RESTRICTED_WRITE
+	help
+	  Use the default Main Memory Program (opcode 0x02) for writing data,
+	  this requires pages to be erased before write.
+
+endif
 
 config SPI_FLASH_AT45_INIT_PRIORITY
 	int "Driver initialization priority"
