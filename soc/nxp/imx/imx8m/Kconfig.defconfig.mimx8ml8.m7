@@ -4,7 +4,7 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_MIMX8MP_M7
+if SOC_MIMX8ML8_M7
 
 config SOC
 	string
@@ -50,4 +50,4 @@ config PINCTRL_IMX
 	default y if HAS_MCUX_IOMUXC
 	depends on PINCTRL
 
-endif # SOC_MIMX8MP_M7
+endif # SOC_MIMX8ML8_M7
