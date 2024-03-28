@@ -178,6 +178,20 @@ Drivers and Sensors
 Networking
 **********
 
+* DHCPv4:
+
+  * Added support for encapsulated vendor specific options. By enabling
+    :kconfig:option:`CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC` callbacks can be
+    registered with :c:func:`net_dhcpv4_add_option_vendor_callback` to handle these options after
+    being initialised with :c:func:`net_dhcpv4_init_option_vendor_callback`.
+
+  * Added support for the "Vendor class identifier" option. Use the
+    :kconfig:option:`CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER` to enable it and
+    :kconfig:option:`CONFIG_NET_DHCPV4_VENDOR_CLASS_IDENTIFIER_STRING` to set it.
+
+  * The NTP server from the DHCPv4 option can now be used to set the system time. This is done by
+    default, if :kconfig:option:`CONFIG_NET_CONFIG_CLOCK_SNTP_INIT` is enabled.
+
 * LwM2M:
 
   * Added new API function:
@@ -196,6 +210,9 @@ Libraries / Subsystems
 * Management
 
 * Logging
+
+  * By enabling :kconfig:option:`CONFIG_LOG_BACKEND_NET_USE_DHCPV4_OPTION`, the IP address of the
+    syslog server for the networking backend is set by the DHCPv4 Log Server Option (7).
 
 * Modem modules
 
