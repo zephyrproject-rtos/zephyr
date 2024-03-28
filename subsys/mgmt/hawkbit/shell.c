@@ -8,7 +8,6 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/dfu/flash_img.h>
-#include <zephyr/sys/reboot.h>
 #include <zephyr/mgmt/hawkbit.h>
 #include "hawkbit_firmware.h"
 #include "hawkbit_device.h"
@@ -25,7 +24,7 @@ static void cmd_run(const struct shell *sh, size_t argc, char **argv)
 			sh, SHELL_ERROR,
 			"Image is unconfirmed."
 			"Rebooting to revert back to previous confirmed image\n");
-		sys_reboot(SYS_REBOOT_WARM);
+		hawkbit_reboot();
 		break;
 
 	case HAWKBIT_CANCEL_UPDATE:
@@ -43,6 +42,7 @@ static void cmd_run(const struct shell *sh, size_t argc, char **argv)
 
 	case HAWKBIT_UPDATE_INSTALLED:
 		shell_fprintf(sh, SHELL_INFO, "Update Installed\n");
+		hawkbit_reboot();
 		break;
 
 	case HAWKBIT_DOWNLOAD_ERROR:
