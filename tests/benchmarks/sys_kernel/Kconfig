@@ -1,13 +1,5 @@
-# Copyright (c) 2024 Intel Corporation
+# Copyright (c) 2024 Enphase Energy
 # SPDX-License-Identifier: Apache-2.0
-
-mainmenu "Latency Measure Benchmark"
-
-source "Kconfig.zephyr"
-
-config BENCHMARK_NUM_ITERATIONS
-	int "Number of iterations to gather data"
-	default 1000
 
 # Minimize timer interrupts during the benchmark. Without
 # overflowing timer calculations (e.g. Cortex-M 24bit systick).
@@ -16,3 +8,5 @@ config SYS_CLOCK_TICKS_PER_SEC
 	default 100  if CORTEX_M_SYSTICK && SYS_CLOCK_HW_CYCLES_PER_SEC > 80000000
 	default 10   if CORTEX_M_SYSTICK && SYS_CLOCK_HW_CYCLES_PER_SEC > 8000000
 	default 1
+
+source "Kconfig.zephyr"
