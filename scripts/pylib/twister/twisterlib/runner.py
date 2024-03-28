@@ -45,6 +45,7 @@ from twisterlib.testsuite import TestSuite
 from twisterlib.platform import Platform
 from twisterlib.testplan import change_skip_to_error_if_integration
 from twisterlib.harness import HarnessImporter, Pytest
+from twisterlib.environment import ZEPHYR_BASE
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -670,13 +671,9 @@ class ProjectBuilder(FilterBuilder):
 
         # Run the generated binary using one of the supported handlers
         elif op == "run":
-            logger.debug("run test: %s" % self.instance.name)
-            self.run()
-            logger.debug(f"run status: {self.instance.name} {self.instance.status}")
-            try:
-                # to make it work with pickle
-                self.instance.handler.thread = None
-                self.instance.handler.duts = None
+            if self.options.dyn_filter and not self.dependencies_have_changed():
+                self.instance.status = "skipped"
+                self.instance.reason = "Dependencies not changed"
                 pipeline.put({
                     "op": "report",
                     "test": self.instance,
@@ -684,9 +681,24 @@ class ProjectBuilder(FilterBuilder):
                     "reason": self.instance.reason
                     }
                 )
-            except RuntimeError as e:
-                logger.error(f"RuntimeError: {e}")
-                traceback.print_exc()
+            else:
+                logger.debug("run test: %s" % self.instance.name)
+                self.run()
+                logger.debug(f"run status: {self.instance.name} {self.instance.status}")
+                try:
+                    # to make it work with pickle
+                    self.instance.handler.thread = None
+                    self.instance.handler.duts = None
+                    pipeline.put({
+                        "op": "report",
+                        "test": self.instance,
+                        "status": self.instance.status,
+                        "reason": self.instance.reason
+                        }
+                    )
+                except RuntimeError as e:
+                    logger.error(f"RuntimeError: {e}")
+                    traceback.print_exc()
 
         # Report results and output progress to screen
         elif op == "report":
@@ -1131,6 +1143,35 @@ class ProjectBuilder(FilterBuilder):
                 instance.handler.handle(harness)
 
         sys.stdout.flush()
+
+    def dependencies_have_changed(self):
+        if "changed_src" in self.options.dyn_filter:
+            has_changed_dependencies = False
+            ninja_deps = subprocess.run(['ninja', '-t', 'deps'], capture_output=True, cwd=self.instance.build_dir)
+            if ninja_deps.returncode == 0:
+                split_dependencies_list = ninja_deps.stdout.decode().split('\n')
+                dependencies = [dep.strip() for dep in split_dependencies_list]
+            else:
+                logger.error(f'Getting the ninja dependencies of {self.instance} failed')
+                raise subprocess.CalledProcessError(ninja_deps.returncode, ninja_deps.args, ninja_deps.stdout,
+                                                    ninja_deps.stderr)
+
+            git_diff = subprocess.run(['git', 'diff', '--name-only', '--merge-base', 'main'], capture_output=True)
+            if git_diff.returncode == 0:
+                for path in git_diff.stdout.decode().split('\n'):
+                    if path:
+                        full_path = os.path.join(ZEPHYR_BASE, path)
+                        if full_path in dependencies:
+                            has_changed_dependencies = True
+                            logger.debug(f"Dependencies of test: {self.instance.name} have changed, running tests.")
+                            break
+            else:
+                logger.error(f'Running git diff failed')
+                raise subprocess.CalledProcessError(git_diff.returncode, git_diff.args, git_diff.stdout,
+                                                    git_diff.stderr)
+            return has_changed_dependencies
+        else:
+            return True
 
     def gather_metrics(self, instance: TestInstance):
         if self.options.create_rom_ram_report:
