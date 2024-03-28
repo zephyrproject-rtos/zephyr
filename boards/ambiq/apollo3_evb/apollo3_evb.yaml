@@ -1,0 +1,15 @@
+identifier: apollo3_evb
+name: Apollo3 Blue EVB
+type: mcu
+arch: arm
+ram: 384
+flash: 976
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+testing:
+  ignore_tags:
+    - net
+vendor: ambiq
