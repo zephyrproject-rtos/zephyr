@@ -2,4 +2,4 @@ board:
   name: google_dragonclaw
   vendor: google
   socs:
-    - name: stm32f412zx
+    - name: stm32f412cx

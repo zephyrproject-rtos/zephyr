@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <st/f4/stm32f412Xg.dtsi>
-#include <st/f4/stm32f412z(e-g)tx-pinctrl.dtsi>
+#include <st/f4/stm32f412c(e-g)ux-pinctrl.dtsi>
 
 / {
 	model = "Google Dragonclaw development board";
