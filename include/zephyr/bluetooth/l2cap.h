@@ -642,6 +642,30 @@ int bt_l2cap_chan_give_credits(struct bt_l2cap_chan *chan, uint16_t additional_c
 int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan,
 				struct net_buf *buf);
 
+/** @brief Give credits to the local
+ *
+ *  Credits can be given after entering the @ref BT_L2CAP_CONNECTED state.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_chan_give_credits_cb(struct bt_l2cap_chan *chan, uint16_t additional_credits);
+
+/** @brief Send data to L2CAP channel
+ *
+ *  Send data from buffer to the channel. If credits are not available, buf will
+ *  be queued and sent as and when credits are received from peer.
+ *  Regarding to first input parameter, to get details see reference description
+ *  to bt_l2cap_chan_connect() API above.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ *  @return -EINVAL if `buf` or `chan` is NULL.
+ *  @return -EINVAL if `chan` is not either BR/EDR or LE credit-based.
+ *  @return -ENOTCONN if underlying conn is disconnected.
+ *  @return -ESHUTDOWN if L2CAP channel is disconnected.
+ *  @return -other (from lower layers) if chan is BR/EDR.
+ */
+int bt_l2cap_chan_send_traffic_cb(struct bt_l2cap_chan *chan, struct net_buf *buf);
+
 #ifdef __cplusplus
 }
 #endif

@@ -38,9 +38,14 @@
 #define L2CAP_POLICY_ALLOWLIST		0x01
 #define L2CAP_POLICY_16BYTE_KEY		0x02
 
-NET_BUF_POOL_FIXED_DEFINE(data_tx_pool, 1, BT_L2CAP_SDU_BUF_SIZE(DATA_MTU),
+/*
+ * When sending a large amount of data, the allocation of buffer cannot be completed with
+ * the timeout period, in order to ensure that the sending speed of data is not limited
+ * by the buffer acquisition, increase the number of buffers in the pool to 16.
+ */
+NET_BUF_POOL_FIXED_DEFINE(data_tx_pool, 16, BT_L2CAP_SDU_BUF_SIZE(DATA_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
-NET_BUF_POOL_FIXED_DEFINE(data_rx_pool, 1, DATA_MTU, 8, NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_rx_pool, 16, DATA_MTU, 8, NULL);
 
 static uint8_t l2cap_policy;
 static struct bt_conn *l2cap_allowlist[CONFIG_BT_MAX_CONN];
@@ -58,6 +63,10 @@ struct l2ch {
 #define L2CAP_CHAN(_chan) _chan->ch.chan
 
 static bool metrics;
+
+static int32_t g_l2cap_send_count;
+static uint8_t g_l2cap_send_length;
+struct k_timer g_l2cap_send_timer;
 
 static int l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
@@ -104,10 +113,6 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	shell_print(ctx_shell, "Incoming data channel %p len %u", chan,
 		    buf->len);
-
-	if (buf->len) {
-		shell_hexdump(ctx_shell, buf->data, buf->len);
-	}
 
 	if (l2cap_recv_delay_ms > 0) {
 		/* Submit work only if queue is empty */
@@ -410,6 +415,53 @@ static int cmd_disconnect(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
+static void g_l2cap_send_timer_cb(struct k_timer *timer)
+{
+	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
+	int ret, len = DATA_MTU;
+	struct net_buf *buf;
+
+	len = MIN(l2ch_chan.ch.tx.mtu, g_l2cap_send_length);
+
+	buf = net_buf_alloc(&data_tx_pool, K_SECONDS(2));
+	if (buf) {
+		net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
+		net_buf_add_mem(buf, buf_data, len);
+
+		ret = bt_l2cap_chan_send_traffic_cb(&l2ch_chan.ch.chan, buf);
+		if (ret >= 0) {
+			g_l2cap_send_count--;
+			if (g_l2cap_send_count < 0) {
+				k_timer_stop(&g_l2cap_send_timer);
+			}
+		}
+	}
+}
+
+K_TIMER_DEFINE(g_l2cap_send_timer, g_l2cap_send_timer_cb, NULL);
+
+static int cmd_send_traffic(const struct shell *sh, size_t argc, char *argv[])
+{
+	if (argc > 1) {
+		g_l2cap_send_count = strtoul(argv[1], NULL, 10);
+	}
+	if (argc > 2) {
+		g_l2cap_send_length = strtoul(argv[2], NULL, 10);
+		if (g_l2cap_send_length > DATA_MTU) {
+			shell_print(sh,
+			"Length exceeds TX MTU for the channel");
+			return -ENOEXEC;
+		}
+	}
+
+	/* In order to improve the packet sending speed of the sender, increase
+	 * the credits value of tx to 30.
+	 */
+	bt_l2cap_chan_give_credits_cb(&l2ch_chan.ch.chan, 30);
+	k_timer_start(&g_l2cap_send_timer, K_MSEC(30), K_MSEC(30));
+	return 0;
+}
+
 static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 {
 	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
@@ -550,6 +602,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 	SHELL_CMD_ARG(ecred-reconfigure, NULL, "<mtu (dec)>",
 		cmd_ecred_reconfigure, 1, 1),
 #endif /* CONFIG_BT_L2CAP_ECRED */
+	SHELL_CMD_ARG(send_traffic, NULL, "[number of packets] [length of packet(s)]",
+		      cmd_send_traffic, 1, 2),
 	SHELL_SUBCMD_SET_END
 );
 
