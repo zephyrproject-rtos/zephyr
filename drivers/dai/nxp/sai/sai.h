@@ -7,6 +7,7 @@
 #define ZEPHYR_DRIVERS_DAI_NXP_SAI_H_
 
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 #include <fsl_sai.h>
 
@@ -271,6 +272,7 @@ struct sai_config {
 	void (*irq_config)(void);
 	uint32_t tx_dline;
 	uint32_t rx_dline;
+	const struct pinctrl_dev_config *pincfg;
 };
 
 /* this needs to perfectly match SOF's struct sof_ipc_dai_sai_params */
