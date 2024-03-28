@@ -494,6 +494,94 @@ function(zephyr_library_compile_definitions item)
   target_compile_definitions(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${item} ${ARGN})
 endfunction()
 
+#
+# Helper functions for specifying _POSIX_C_SOURCE and _XOPEN_SOURCE application conformance.
+#
+
+function(target_posix_library_compile_options target)
+  set(min_level 0)
+
+  if(CONFIG_POSIX_C_SOURCE_CHOICE_NONE)
+    # Do not specify any application conformance level
+    return()
+  endif()
+
+  # Check if a minimum application conformance level is required
+  if(ARGC GREATER_EQUAL 2)
+    # strip out L if it exists in the argument
+    string(REPLACE "L" "" min_level ${ARGV1})
+    # ensure that arg can be evaluated as a number
+    math(EXPR min_level "${min_level} - 0" OUTPUT_FORMAT DECIMAL)
+  endif()
+
+  if(CONFIG_POSIX_C_SOURCE_CHOICE_DEFAULT)
+    set(level ${CONFIG_POSIX_C_SOURCE_LATEST_VERSION})
+  elseif(CONFIG_POSIX_C_SOURCE_CHOICE_200809L)
+    set(level 200809)
+  elseif(CONFIG_POSIX_C_SOURCE_CHOICE_200112L)
+    set(level 200112)
+  elseif(CONFIG_POSIX_C_SOURCE_CHOICE_199506L)
+    set(level 199506)
+  elseif(CONFIG_POSIX_C_SOURCE_CHOICE_199309L)
+    set(level 199309)
+  elseif(CONFIG_POSIX_C_SOURCE_CHOICE_2)
+    set(level 2)
+  elseif(CONFIG_POSIX_C_SOURCE_CHOICE_1)
+    set(level 1)
+  endif()
+
+  if(level LESS min_level)
+    set(level min_level)
+  endif()
+
+  if(level GREATER 2)
+    # append L (required for _POSIX_C_SOURCE > 2)
+    set(level "${level}L")
+  endif()
+
+  target_compile_options(${target} PRIVATE -U_POSIX_C_SOURCE -D_POSIX_C_SOURCE=${level})
+endfunction()
+
+function(zephyr_posix_library_compile_options)
+  target_posix_library_compile_options(${ZEPHYR_CURRENT_LIBRARY} ${ARGN})
+endfunction()
+
+function(target_xopen_library_compile_options target)
+  set(min_level 0)
+
+  if(CONFIG_XOPEN_SOURCE_CHOICE_NONE)
+    # Do not specify any application conformance level
+    return()
+  endif()
+
+  # Check if a minimum application conformance level is required
+  if(ARGC GREATER_EQUAL 2)
+    # ensure that arg can be evaluated as a number
+    math(EXPR min_level "${ARGV1} - 0" OUTPUT_FORMAT DECIMAL)
+  endif()
+
+  if(CONFIG_XOPEN_SOURCE_CHOICE_DEFAULT)
+    set(level ${CONFIG_XOPEN_SOURCE_LATEST_VERSION})
+  elseif(CONFIG_XOPEN_SOURCE_CHOICE_700)
+    set(level 700)
+  elseif(CONFIG_XOPEN_SOURCE_CHOICE_600)
+    set(level 600)
+    elseif(CONFIG_XOPEN_SOURCE_CHOICE_500)
+    set(level 500)
+  endif()
+
+  if(level LESS min_level)
+    set(level min_level)
+  endif()
+
+  # A trailing L is not required for _XOPEN_SOURCE
+  target_compile_options(${target} PRIVATE -U_XOPEN_SOURCE -D_XOPEN_SOURCE=${level})
+endfunction()
+
+function(zephyr_xopen_library_compile_options)
+  target_xopen_library_compile_options(${ZEPHYR_CURRENT_LIBRARY} ${ARGV})
+endfunction()
+
 function(zephyr_library_compile_options item)
   # The compiler is relied upon for sane behaviour when flags are in
   # conflict. Compilers generally give precedence to flags given late

@@ -6,3 +6,4 @@ project(posix_headers)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
+target_posix_library_compile_options(app)
