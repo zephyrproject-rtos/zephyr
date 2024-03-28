@@ -74,7 +74,6 @@ config BINDESC_BUILD_TIME_STRING
 	  The time of compilation as a string, such as "T17:43:14+0000"
 
 config BINDESC_BUILD_DATE_TIME_STRING_FORMAT
-	depends on BINDESC_BUILD_DATE_TIME_STRING
 	string "Date-Time format"
 	default "%Y-%m-%dT%H:%M:%S%z"
 	help
@@ -89,7 +88,6 @@ config BINDESC_BUILD_DATE_TIME_STRING_FORMAT
 	  Note: the default format complies with ISO-8601.
 
 config BINDESC_BUILD_DATE_STRING_FORMAT
-	depends on BINDESC_BUILD_DATE_STRING
 	string "Date format"
 	default "%Y-%m-%d"
 	help
@@ -102,7 +100,6 @@ config BINDESC_BUILD_DATE_STRING_FORMAT
 	  Note: the default format complies with ISO-8601.
 
 config BINDESC_BUILD_TIME_STRING_FORMAT
-	depends on BINDESC_BUILD_TIME_STRING
 	string "Time format"
 	default "T%H:%M:%S%z"
 	help
