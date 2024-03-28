@@ -7,13 +7,34 @@
 #include <atmel/saml2x.dtsi>
 
 / {
+
+	aliases {
+		watchdog0 = &wdog;
+	};
+
+	chosen {
+		zephyr,flash-controller = &nvmctrl;
+		zephyr,entropy = &trng;
+	};
+
 	soc {
-		usb0: usb@41000000 {
-			compatible = "atmel,sam0-usb";
-			status = "disabled";
-			reg = <0x41000000 0x1000>;
-			interrupts = <6 0>;
-			num-bidir-endpoints = <8>;
+		pm: pm@40000000 {
+			compatible = "atmel,saml2x-pm";
+			reg = <0x40000000 0x400>;
+			interrupts = <0 0>;
+			#clock-cells = <2>;
+		};
+
+		mclk: mclk@40000400 {
+			compatible = "atmel,saml2x-mclk";
+			reg = <0x40000400 0x400>;
+			#clock-cells = <2>;
+		};
+
+		gclk: gclk@40001800 {
+			compatible = "atmel,saml2x-gclk";
+			reg = <0x40001800 0x400>;
+			#clock-cells = <1>;
 		};
 
 		dmac: dmac@44000400 {
@@ -23,13 +44,150 @@
 			#dma-cells = <2>;
 		};
 
+		eic: eic@40002400 {
+			compatible = "atmel,sam0-eic";
+			reg = <0x40002400 0x24>;
+			interrupts = <3 0>;
+		};
+
+		wdog: watchdog@40001c00 {
+			compatible = "atmel,sam0-watchdog";
+			reg = <0x40001c00 0x0c>;
+			interrupts = <1 0>;
+		};
+
+		sercom0: sercom@42000000 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x42000000 0x40>;
+			interrupts = <8 0>;
+			clocks = <&gclk 18>, <&mclk 0x1c 0>;
+			clock-names = "GCLK", "MCLK";
+			status = "disabled";
+		};
+
+		sercom1: sercom@42000400 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x42000400 0x40>;
+			interrupts = <9 0>;
+			clocks = <&gclk 19>, <&mclk 0x1c 1>;
+			clock-names = "GCLK", "MCLK";
+			status = "disabled";
+		};
+
+		sercom2: sercom@42000800 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x42000800 0x40>;
+			interrupts = <10 0>;
+			clocks = <&gclk 20>, <&mclk 0x1c 2>;
+			clock-names = "GCLK", "MCLK";
+			status = "disabled";
+		};
+
+		sercom3: sercom@42000c00 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x42000C00 0x40>;
+			interrupts = <11 0>;
+			clocks = <&gclk 21>, <&mclk 0x1c 3>;
+			clock-names = "GCLK", "MCLK";
+			status = "disabled";
+		};
+
+		sercom4: sercom@42001000 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x42001000 0x40>;
+			interrupts = <12 0>;
+			clocks = <&gclk 22>, <&mclk 0x1c 4>;
+			clock-names = "GCLK", "MCLK";
+			status = "disabled";
+		};
+
+		sercom5: sercom@43000400 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x43000400 0x40>;
+			interrupts = <13 0>;
+			clocks = <&gclk 24>, <&mclk 0x20 1>;
+			clock-names = "GCLK", "MCLK";
+			status = "disabled";
+		};
+
+		tc4: tc@43000800 {
+			compatible = "atmel,sam0-tc32";
+			reg = <0x43000800 0x32>;
+			interrupts = <21 0>;
+			clocks = <&gclk 29>, <&mclk 0x20 2>;
+			clock-names = "GCLK", "MCLK";
+		};
+
+		pinctrl: pinctrl@40002800 {
+			compatible = "atmel,sam0-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x40002800 0x40002800 0x100>;
+
+			porta: gpio@40002800 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x40002800 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+
+			};
+
+			portb: gpio@40002880 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x40002880 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+		};
+
+		rtc: rtc@40002000 {
+			compatible = "atmel,sam0-rtc";
+			reg = <0x40002000 0x1c>;
+			interrupts = <2 0>;
+			clock-generator = <0>;
+			status = "disabled";
+		};
+
+		adc: adc@43000c00 {
+			compatible = "atmel,sam0-adc";
+			reg = <0x43000c00 0x30>;
+			interrupt-names = "resrdy";
+			clocks = <&gclk 30>, <&mclk 0x20 3>;
+			clock-names = "GCLK", "MCLK";
+			/*
+			 * 16 MHz max, so clock it with the
+			 * 48 MHz DFLL / 2 / 2 = 12 MHz
+			 */
+			gclk = <3>;
+			prescaler = <2>;
+			#io-channel-cells = <1>;
+			interrupts = <22 0>;
+		};
+
+		dac: dac@42003000 {
+			compatible = "atmel,sam0-dac";
+			status = "disabled";
+			reg = <0x42003000 0x1a>;
+			#io-channel-cells = <0>;
+			interrupts = <24 0>;
+			clocks = <&gclk 32>, <&mclk 0x1c 12>;
+			clock-names = "GCLK", "MCLK";
+		};
+
+		trng: random@42003800 {
+			compatible = "atmel,sam-trng";
+			reg = <0x42003800 0x24>;
+			interrupts = <27 0>;
+		};
+
 		tcc0: tcc@42001400 {
 			compatible = "atmel,sam0-tcc";
 			reg = <0x42001400 0x80>;
 			interrupts = <14 0>;
 			clocks = <&gclk 25>, <&mclk 0x1c 5>;
 			clock-names = "GCLK", "MCLK";
-
 			channels = <4>;
 			counter-size = <24>;
 		};
@@ -40,7 +198,6 @@
 			interrupts = <15 0>;
 			clocks = <&gclk 25>, <&mclk 0x1c 6>;
 			clock-names = "GCLK", "MCLK";
-
 			channels = <4>;
 			counter-size = <24>;
 		};
@@ -51,64 +208,29 @@
 			interrupts = <16 0>;
 			clocks = <&gclk 26>, <&mclk 0x1c 7>;
 			clock-names = "GCLK", "MCLK";
-
 			channels = <2>;
 			counter-size = <16>;
 		};
 	};
 };
 
-&dac {
-	interrupts = <24 0>;
-	clocks = <&gclk 32>, <&mclk 0x1c 12>;
+
+&tc0 {
+	clocks = <&gclk 27>, <&mclk 0x1c 8>;
 	clock-names = "GCLK", "MCLK";
 };
 
-&sercom0 {
-	interrupts = <8 0>;
-	clocks = <&gclk 18>, <&mclk 0x1c 0>;
+&tc1 {
+	clocks = <&gclk 27>, <&mclk 0x1c 9>;
 	clock-names = "GCLK", "MCLK";
 };
 
-&sercom1 {
-	interrupts = <9 0>;
-	clocks = <&gclk 19>, <&mclk 0x1c 1>;
+&tc2 {
+	clocks = <&gclk 28>, <&mclk 0x1c 10>;
 	clock-names = "GCLK", "MCLK";
 };
 
-&sercom2 {
-	interrupts = <10 0>;
-	clocks = <&gclk 20>, <&mclk 0x1c 2>;
-	clock-names = "GCLK", "MCLK";
-};
-
-&sercom3 {
-	interrupts = <11 0>;
-	clocks = <&gclk 21>, <&mclk 0x1c 3>;
-	clock-names = "GCLK", "MCLK";
-};
-
-&sercom4 {
-	interrupts = <12 0>;
-	clocks = <&gclk 22>, <&mclk 0x1c 4>;
-	clock-names = "GCLK", "MCLK";
-};
-
-&sercom5 {
-	interrupts = <13 0>;
-	clocks = <&gclk 24>, <&mclk 0x20 1>;
-	clock-names = "GCLK", "MCLK";
-};
-
-&tc4 {
-	interrupts = <21 0>;
-	clocks = <&gclk 29>, <&mclk 0x20 2>;
-	clock-names = "GCLK", "MCLK";
-};
-
-&adc {
-	interrupts = <22 0>;
-	interrupt-names = "resrdy";
-	clocks = <&gclk 30>, <&mclk 0x20 3>;
+&tc3 {
+	clocks = <&gclk 28>, <&mclk 0x1c 11>;
 	clock-names = "GCLK", "MCLK";
 };
