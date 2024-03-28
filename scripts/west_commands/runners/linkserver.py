@@ -130,7 +130,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
 
             linkserver_cmd = ([self.linkserver] +
                               ["gdbserver"]    +
-                              ["--probe", "#"+str(self.probe) ] +
+                              ["--probe", str(self.probe) ] +
                               ["--gdb-port", str(self.gdb_port )] +
                               ["--semihost-port", str(self.semihost_port) ] +
                               _cmd_core +
