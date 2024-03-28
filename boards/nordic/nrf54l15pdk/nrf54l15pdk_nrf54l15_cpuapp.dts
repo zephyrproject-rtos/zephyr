@@ -6,78 +6,26 @@
 
 /dts-v1/;
 #include <nordic/nrf54l15_cpuapp.dtsi>
-#include "nrf54l15pdk_nrf54l15_cpuapp-pinctrl.dtsi"
-#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "nrf54l15pdk_nrf54l15-common.dtsi"
 
 / {
-	model = "Nordic nRF54L15 PDK nRF54L15 Application MCU";
 	compatible = "nordic,nrf54l15pdk_nrf54l15-cpuapp";
+	model = "Nordic nRF54L15 PDK nRF54L15 Application MCU";
 
 	chosen {
 		zephyr,console = &uart20;
 		zephyr,shell-uart = &uart20;
 		zephyr,uart-mcumgr = &uart20;
-		zephyr,sram = &sram0;
-		zephyr,flash = &rram0;
+		zephyr,flash-controller = &rram_controller;
+		zephyr,flash = &cpuapp_rram;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
 		zephyr,ieee802154 = &ieee802154;
 	};
+};
 
-	leds {
-		compatible = "gpio-leds";
-		led0: led_0 {
-			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
-			label = "Green LED 0";
-		};
-		led1: led_1 {
-			gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
-			label = "Green LED 1";
-		};
-		led2: led_2 {
-			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-			label = "Green LED 2";
-		};
-		led3: led_3 {
-			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
-			label = "Green LED 3";
-		};
-	};
-
-	buttons {
-		compatible = "gpio-keys";
-		button0: button_0 {
-			gpios = <&gpio1 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button 0";
-			zephyr,code = <INPUT_KEY_0>;
-		};
-		button1: button_1 {
-			gpios = <&gpio1 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button 1";
-			zephyr,code = <INPUT_KEY_1>;
-		};
-		button2: button_2 {
-			gpios = <&gpio2 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button 2";
-			zephyr,code = <INPUT_KEY_2>;
-		};
-		button3: button_3 {
-			gpios = <&gpio2 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button 3";
-			zephyr,code = <INPUT_KEY_3>;
-		};
-	};
-
-	aliases {
-		led0 = &led0;
-		led1 = &led1;
-		led2 = &led2;
-		led3 = &led3;
-		watchdog0 = &wdt30;
-		sw0 = &button0;
-		sw1 = &button1;
-		sw2 = &button2;
-		sw3 = &button3;
-	};
+&cpuapp_sram {
+	status = "okay";
 };
 
 &lfxo {
@@ -90,22 +38,47 @@
 	load-capacitance-femtofarad = <15000>;
 };
 
-&uart20 {
-	status = "okay";
-	current-speed = <115200>;
-	pinctrl-0 = <&uart20_default>;
-	pinctrl-1 = <&uart20_sleep>;
-	pinctrl-names = "default", "sleep";
-};
-
-&uart30 {
-	current-speed = <115200>;
-	pinctrl-0 = <&uart30_default>;
-	pinctrl-1 = <&uart30_sleep>;
-	pinctrl-names = "default", "sleep";
-};
-
 &grtc {
+	owned-channels = <0 1 2 3 4 5 6 7 8 9 10 11>;
+	/* Channels 7-11 reserved for Zero Latency IRQs, 3-4 for FLPR */
+	child-owned-channels = <3 4 7 8 9 10 11>;
+	status = "okay";
+};
+
+&cpuapp_rram {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x10000 DT_SIZE_K(324)>;
+		};
+		slot0_ns_partition: partition@61000 {
+			label = "image-0-nonsecure";
+			reg = <0x61000 DT_SIZE_K(324)>;
+		};
+		slot1_partition: partition@b2000 {
+			label = "image-1";
+			reg = <0xb2000 DT_SIZE_K(324)>;
+		};
+		slot1_ns_partition: partition@103000 {
+			label = "image-1-nonsecure";
+			reg = <0x103000 DT_SIZE_K(324)>;
+		};
+		/* 32k from 0x154000 to 0x15bfff reserved for TF-M partitions */
+		storage_partition: partition@15c000 {
+			label = "storage";
+			reg = <0x15c000 DT_SIZE_K(36)>;
+		};
+	};
+};
+
+&uart20 {
 	status = "okay";
 };
 
@@ -129,45 +102,16 @@
 	status = "okay";
 };
 
+&radio {
+	status = "okay";
+};
+
 &ieee802154 {
 	status = "okay";
 };
 
 &temp {
 	status = "okay";
-};
-
-&rram0 {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x0 DT_SIZE_K(64)>;
-		};
-		slot0_partition: partition@10000 {
-			label = "image-0";
-			reg = <0x10000 DT_SIZE_K(348)>;
-		};
-		slot0_ns_partition: partition@67000 {
-			label = "image-0-nonsecure";
-			reg = <0x67000 DT_SIZE_K(348)>;
-		};
-		slot1_partition: partition@be000 {
-			label = "image-1";
-			reg = <0xbe000 DT_SIZE_K(348)>;
-		};
-		slot1_ns_partition: partition@115000 {
-			label = "image-1-nonsecure";
-			reg = <0x115000 DT_SIZE_K(348)>;
-		};
-		/* 32k from 0x16c000 to 0x173fff reserved for TF-M partitions */
-		storage_partition: partition@174000 {
-			label = "storage";
-			reg = <0x174000 DT_SIZE_K(36)>;
-		};
-	};
 };
 
 &clock {
