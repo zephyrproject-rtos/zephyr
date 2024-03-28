@@ -1084,6 +1084,36 @@ config BT_A2DP
 	help
 	  This option enables the A2DP profile
 
+if BT_AVDTP
+
+config BT_AVDTP_RTP_VERSION
+	int "Bluetooth AVDTP RTP version"
+	default 2
+	help
+	  This option sets the AVDTP RTP protocol version
+
+endif # BT_AVDTP
+
+if BT_A2DP
+
+config BT_A2DP_SOURCE
+	bool "Bluetooth A2DP Profile Source Function"
+	help
+	  This option enables the A2DP profile source function
+
+config BT_A2DP_SINK
+	bool "Bluetooth A2DP Profile Sink Function"
+	help
+	  This option enables the A2DP profile sink function
+
+config BT_A2DP_MAX_ENDPOINT_COUNT
+	int "Bluetooth max endpoints count"
+	default 2
+	help
+	  This option sets the max endpoints count
+
+endif # BT_A2DP
+
 config BT_PAGE_TIMEOUT
 	hex "Bluetooth Page Timeout"
 	default 0x2000
