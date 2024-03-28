@@ -1,0 +1,27 @@
+# Microchip ATECCx08 EEPROM
+
+# Copyright (c) 2024 Vogl Electronic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_ATECCX08
+	bool
+	help
+	  Enable support for Microchip ATECCx08 I2C EEPROMs.
+
+config EEPROM_ATECC608
+	bool "Microchip ATECC608 I2C EEPROM support"
+	default y
+	depends on DT_HAS_MICROCHIP_ATECC608_ENABLED
+	select I2C
+	select EEPROM_ATECCX08
+	help
+	  Enable support for Microchip ATECC608 I2C EEPROMs.
+
+config EEPROM_ATECC508
+	bool "Microchip ATECC508 I2C EEPROM support"
+	default y
+	depends on DT_HAS_MICROCHIP_ATECC508_ENABLED
+	select I2C
+	select EEPROM_ATECCX08
+	help
+	  Enable support for Microchip ATECC508 I2C EEPROMs.
