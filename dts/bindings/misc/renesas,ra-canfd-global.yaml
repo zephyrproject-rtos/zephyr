@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA CANFD controller global
+
+compatible: "renesas,ra-canfd-global"
+
+include: [base.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
