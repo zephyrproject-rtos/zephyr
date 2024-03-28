@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nordic/nrf54l15.dtsi>
+
+cpu: &cpuflpr {};
+clic: &cpuflpr_clic {};
+cpuflpr_vevif: &cpuflpr_vevif_local {};
+
+/delete-node/ &cpuapp;
+/delete-node/ &cpuapp_rram;
+/delete-node/ &cpuapp_ppb;
+/delete-node/ &cpuapp_sram;
+
+/ {
+	soc {
+		compatible = "simple-bus";
+		interrupt-parent = <&cpuflpr_clic>;
+		ranges;
+	};
+};
+
+&grtc {
+	interrupts = <226 NRF_DEFAULT_IRQ_PRIORITY>;
+};
