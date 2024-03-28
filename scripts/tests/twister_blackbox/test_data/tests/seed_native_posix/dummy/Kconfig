@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Intel Corporation
+
+config FAKE_ENTROPY_NATIVE_POSIX
+	default y
+
+source "Kconfig.zephyr"
