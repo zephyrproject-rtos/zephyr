@@ -12,6 +12,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/sections.h>
+#include <zephyr/pm/state.h>
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
@@ -419,6 +420,10 @@ struct device {
 		struct pm_device_isr *pm_isr;
 	};
 #endif
+#if defined(CONFIG_PM) || defined(__DOXYGEN__)
+	struct pm_state_constraint const *pm_constraints;
+	uint8_t pm_constraints_size;
+#endif /* CONFIG_PM */
 };
 
 /**
@@ -861,6 +866,58 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 
 #endif /* CONFIG_DEVICE_DEPS */
 
+#if defined(CONFIG_PM) || defined(__DOXYGEN__)
+
+/**
+ * @brief Synthesize the name of the object that holds a device pm constraint.
+ *
+ * @param dev_id Device identifier.
+ */
+#define Z_DEVICE_PM_CONSTRAINTS_NAME(dev_id) _CONCAT(__devicepmconstraints_, dev_id)
+
+/**
+ * @brief initialize a device pm constraint with information from devicetree.
+ *
+ * @param node_id Node identifier.
+ */
+#define Z_PM_STATE_CONSTRAINT_DT_INIT(node_id)                                 \
+	{                                                                      \
+		.state = PM_STATE_DT_INIT(node_id),                            \
+		.substate_id = DT_PROP_OR(node_id, substate_id, 0),            \
+	}
+
+#define Z_PM_STATE_FROM_DT_DEVICE(i, node_id)                                        \
+	COND_CODE_1(DT_NODE_HAS_STATUS(DT_PHANDLE_BY_IDX(node_id,                    \
+		zephyr_disabling_power_states, i), okay),                            \
+		(Z_PM_STATE_CONSTRAINT_DT_INIT(DT_PHANDLE_BY_IDX(node_id,            \
+		zephyr_disabling_power_states, i)),), ())
+
+/**
+ * @brief Helper macro to generate a list of device pm constraints.
+ */
+#define Z_PM_STATE_CONSTRAINTS_FROM_DT_DEVICE(node_id)                                 \
+	{                                                                              \
+		LISTIFY(DT_PROP_LEN_OR(node_id, zephyr_disabling_power_states, 0),     \
+			Z_PM_STATE_FROM_DT_DEVICE, (), node_id)	               \
+	}
+
+/**
+ * @brief Define device pm constraints.
+ *
+ * Defines a list of `pm_state_constraint` for a specific device from its
+ * devicetree definition.
+ *
+ * This information tell us which power states would cause power loss
+ * and intended to be used by a device to set power state constraints when
+ * it is in the middle of an operation.
+ */
+#define Z_DEVICE_PM_CONSTRAINTS_DEFINE(node_id, dev_id, ...)         \
+	Z_DECL_ALIGN(struct pm_state_constraint)                     \
+		Z_DEVICE_PM_CONSTRAINTS_NAME(dev_id)[] =             \
+		Z_PM_STATE_CONSTRAINTS_FROM_DT_DEVICE(node_id);
+
+#endif /* CONFIG_PM */
+
 /**
  * @brief Init sub-priority of the device
  *
@@ -900,15 +957,18 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param state_ Reference to device state.
  * @param deps_ Reference to device dependencies.
  */
-#define Z_DEVICE_INIT(name_, pm_, data_, config_, api_, state_, deps_)         \
-	{                                                                      \
-		.name = name_,                                                 \
-		.config = (config_),                                           \
-		.api = (api_),                                                 \
-		.state = (state_),                                             \
-		.data = (data_),                                               \
-		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/        \
-		IF_ENABLED(CONFIG_PM_DEVICE, ({ .pm_base = (pm_),)}) /**/         \
+#define Z_DEVICE_INIT(name_, pm_, data_, config_, api_, state_, deps_,                   \
+			constraints_size_, constraints_)                                 \
+	{                                                                                \
+		.name = name_,                                                           \
+		.config = (config_),                                                     \
+		.api = (api_),                                                           \
+		.state = (state_),                                                       \
+		.data = (data_),                                                         \
+		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/                  \
+		IF_ENABLED(CONFIG_PM_DEVICE, (.pm_base = (pm_),)) /**/                   \
+		IF_ENABLED(CONFIG_PM, (.pm_constraints = (constraints_),))               \
+		IF_ENABLED(CONFIG_PM, (.pm_constraints_size = (constraints_size_),))     \
 	}
 
 /**
@@ -937,13 +997,14 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param ... Optional dependencies, manually specified.
  */
 #define Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level, prio, api, state,     \
-			     deps)                                                                 \
+			     deps, constraints)                                                    \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))                                         \
 	COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (), (const))                                     \
 	STRUCT_SECTION_ITERABLE_NAMED_ALTERNATE(                                                   \
 		device, COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (device_mutable), (device)),     \
 		Z_DEVICE_SECTION_NAME(level, prio), DEVICE_NAME_GET(dev_id)) =                     \
-		Z_DEVICE_INIT(name, pm, data, config, api, state, deps)
+		Z_DEVICE_INIT(name, pm, data, config, api, state, deps,                            \
+			DT_PROP_LEN_OR(node_id, zephyr_disabling_power_states, 0), constraints)
 
 /* deprecated device initialization levels */
 #define Z_DEVICE_LEVEL_DEPRECATED_EARLY                                        \
@@ -1009,16 +1070,19 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param state Reference to device state.
  * @param ... Optional dependencies, manually specified.
  */
-#define Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data, config,      \
-			level, prio, api, state, ...)                          \
-	Z_DEVICE_NAME_CHECK(name);                                             \
-                                                                               \
-	IF_ENABLED(CONFIG_DEVICE_DEPS,                                         \
-		   (Z_DEVICE_DEPS_DEFINE(node_id, dev_id, __VA_ARGS__);))      \
-                                                                               \
-	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
-			     prio, api, state, Z_DEVICE_DEPS_NAME(dev_id));    \
-                                                                               \
+#define Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data, config,       \
+			level, prio, api, state, ...)                           \
+	Z_DEVICE_NAME_CHECK(name);                                              \
+                                                                                \
+	IF_ENABLED(CONFIG_DEVICE_DEPS,                                          \
+		   (Z_DEVICE_DEPS_DEFINE(node_id, dev_id, __VA_ARGS__);))       \
+                                                                                \
+	IF_ENABLED(CONFIG_PM,                                                   \
+		(Z_DEVICE_PM_CONSTRAINTS_DEFINE(node_id, dev_id, __VA_ARGS__);))\
+                                                                                \
+	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,    \
+		prio, api, state, Z_DEVICE_DEPS_NAME(dev_id),                   \
+		Z_DEVICE_PM_CONSTRAINTS_NAME(dev_id));                          \
 	Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn, level, prio)
 
 /**

@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "test_driver.h"
+
+#include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/pm/pm.h>
@@ -12,16 +15,28 @@
  * set the default 0 value
  */
 static struct pm_state_info infos[] = {{PM_STATE_SUSPEND_TO_IDLE, 0, 10000, 100},
-	       {PM_STATE_SUSPEND_TO_RAM, 0, 50000, 500}, {PM_STATE_STANDBY, 0, 0}};
+	       {PM_STATE_STANDBY, 0, 20000, 200}, {PM_STATE_SUSPEND_TO_RAM, 0, 50000, 500}};
 static enum pm_state states[] = {PM_STATE_SUSPEND_TO_IDLE,
-			PM_STATE_SUSPEND_TO_RAM, PM_STATE_STANDBY};
+			PM_STATE_STANDBY, PM_STATE_SUSPEND_TO_RAM};
 static enum pm_state wrong_states[] = {PM_STATE_SUSPEND_TO_DISK,
 		PM_STATE_SUSPEND_TO_RAM, PM_STATE_SUSPEND_TO_RAM};
+
+static bool ongoing_operation;
+static uint8_t suspend_to_ram_count;
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
-	ARG_UNUSED(state);
+
+	if (ongoing_operation) {
+		zassert(state != PM_STATE_SUSPEND_TO_RAM, "Invalid state");
+	} else {
+		if (state == PM_STATE_SUSPEND_TO_RAM) {
+			suspend_to_ram_count++;
+		}
+	}
+
+	k_cpu_idle();
 }
 
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
@@ -61,6 +76,32 @@ ZTEST(power_states_1cpu, test_power_states)
 		     "Invalid number of pm states");
 	zassert_true(memcmp(cpu_states, dts_infos, sizeof(dts_infos)) == 0,
 		     "Invalid pm_state_info array");
+}
+
+ZTEST(power_states_1cpu, test_device_power_state_constraints)
+{
+	static const struct device *const dev =
+		DEVICE_DT_GET(DT_NODELABEL(test_dev));
+
+	ongoing_operation = true;
+
+	test_driver_async_operation(dev);
+
+	/** Lets sleep long enough to suspend the CPU with `suspend to ram`
+	 *  power state. If everything works well the cpu should not use this
+	 *  state due the constraint set by `test_dev`.
+	 */
+	k_sleep(K_USEC(60000));
+
+	ongoing_operation = false;
+
+	/** Now lets check ensure that if there is no ongoing work
+	 *  the cpu will suspend to ram.
+	 */
+	suspend_to_ram_count = 0;
+	k_sleep(K_MSEC(600));
+
+	zassert(suspend_to_ram_count != 0, "Not suspended to ram");
 }
 
 ZTEST_SUITE(power_states_1cpu, NULL, NULL, ztest_simple_1cpu_before,
