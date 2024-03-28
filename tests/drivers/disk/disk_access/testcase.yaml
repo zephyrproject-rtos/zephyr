@@ -19,3 +19,10 @@ tests:
     extra_configs:
       - CONFIG_NVME=y
     platform_allow: qemu_x86_64
+  drivers.disk.loopback:
+    extra_configs:
+      - CONFIG_DISK_DRIVER_LOOPBACK=y
+      - CONFIG_FILE_SYSTEM=y
+      - CONFIG_FILE_SYSTEM_MKFS=y
+      - CONFIG_FAT_FILESYSTEM_ELM=y
+    platform_allow: qemu_x86_64
