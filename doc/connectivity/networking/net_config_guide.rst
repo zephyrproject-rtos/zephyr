@@ -35,8 +35,8 @@ are able to either send or receive at the same time.
   When data is received from the network, it is placed into net_buf data portion.
   Depending on device resources and desired network usage, user can tweak
   the size of the fixed buffer by setting :kconfig:option:`CONFIG_NET_BUF_DATA_SIZE`, and
-  the size of the data pool size by setting :kconfig:option:`CONFIG_NET_BUF_DATA_POOL_SIZE`
-  if variable size buffers are used.
+  the size of the data pool size by setting :kconfig:option:`CONFIG_NET_PKT_BUF_RX_DATA_POOL_SIZE`
+  and :kconfig:option:`CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE` if variable size buffers are used.
 
   When using the fixed size data buffers, the memory consumption of network buffers
   can be tweaked by selecting the size of the data part according to what kind of network
