@@ -1,0 +1,13 @@
+# Private config options for a2dp sink sample
+
+# Copyright (c) 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "bluetooth a2dp sink sample application"
+
+config A2DP_SINK_STREAM_VIRTUAL_CODEC
+	bool "use actual codec or not"
+	help
+	  false means no codec to play audio stream, true means to use the actual codec (like: WM8960).
+
+source "Kconfig.zephyr"
