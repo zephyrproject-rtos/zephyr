@@ -165,6 +165,18 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 	enum pm_device_state device_power_state;
 
+#ifndef CONFIG_PM_DEVICE_SYSTEM_MANAGED
+	/* Devices shouldn't have changed state because system managed
+	 * device power management is not enabled.
+	 **/
+	pm_device_state_get(device_a, &device_power_state);
+	zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE,
+			NULL);
+
+	pm_device_state_get(device_c, &device_power_state);
+	zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE,
+			NULL);
+#else
 	/* If testing device order this function does not need to anything */
 	if (testing_device_order) {
 		return;
@@ -213,6 +225,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	 */
 	zassert_false(state == PM_STATE_ACTIVE,
 		      "Entering low power state with a wrong parameter");
+#endif
 }
 
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
@@ -229,9 +242,10 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 /* Our PM policy handler */
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
-	static struct pm_state_info info;
+	const struct pm_state_info *cpu_states;
 
-	ARG_UNUSED(cpu);
+	zassert_true(pm_state_cpu_get_all(cpu, &cpu_states) == 1,
+		     "There is no power state defined");
 
 	/* make sure this is idle thread */
 	zassert_true(z_is_idle_thread_object(_current));
@@ -242,14 +256,10 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 	if (enter_low_power) {
 		enter_low_power = false;
 		notify_app_entry = true;
-		info.state = PM_STATE_SUSPEND_TO_IDLE;
-	} else {
-		/* only test pm_policy_next_state()
-		 * no PM operation done
-		 */
-		info.state = PM_STATE_ACTIVE;
+		return &cpu_states[0];
 	}
-	return &info;
+
+	return NULL;
 }
 
 /* implement in application, called by idle thread */
@@ -264,7 +274,7 @@ static void notify_pm_state_entry(enum pm_state state)
 	zassert_equal(state, PM_STATE_SUSPEND_TO_IDLE);
 
 	pm_device_state_get(device_dummy, &device_power_state);
-	if (testing_device_runtime) {
+	if (testing_device_runtime || !IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED)) {
 		/* If device runtime is enable, the device should still be
 		 * active
 		 */
