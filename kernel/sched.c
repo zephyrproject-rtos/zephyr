@@ -248,7 +248,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	 */
 	struct k_thread *mirqp = _current_cpu->metairq_preempted;
 
-	if (mirqp != NULL && (thread == NULL || !is_metairq(thread))) {
+	if (mirqp != NULL && (thread == NULL || !thread_is_metairq(thread))) {
 		if (!z_is_thread_prevented_from_running(mirqp)) {
 			thread = mirqp;
 		} else {
@@ -333,11 +333,11 @@ static void update_metairq_preempt(struct k_thread *thread)
 {
 #if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
 	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
-	if (is_metairq(thread) && !is_metairq(_current) &&
+	if (thread_is_metairq(thread) && !thread_is_metairq(_current) &&
 	    !is_preempt(_current)) {
 		/* Record new preemption */
 		_current_cpu->metairq_preempted = _current;
-	} else if (!is_metairq(thread) && !z_is_idle_thread_object(thread)) {
+	} else if (!thread_is_metairq(thread) && !z_is_idle_thread_object(thread)) {
 		/* Returning from existing preemption */
 		_current_cpu->metairq_preempted = NULL;
 	}
