@@ -121,6 +121,20 @@ static inline int z_vrfy_k_is_preempt_thread(void)
 #include <syscalls/k_is_preempt_thread_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+int z_impl_k_thread_priority_get(k_tid_t thread)
+{
+	return thread->base.prio;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_thread_priority_get(k_tid_t thread)
+{
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	return z_impl_k_thread_priority_get(thread);
+}
+#include <syscalls/k_thread_priority_get_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
 int z_impl_k_thread_name_set(struct k_thread *thread, const char *value)
 {
 #ifdef CONFIG_THREAD_NAME
