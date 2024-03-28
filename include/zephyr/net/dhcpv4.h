@@ -64,8 +64,6 @@ enum net_dhcpv4_msg_type {
 	NET_DHCPV4_MSG_TYPE_INFORM	= 8,
 };
 
-#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
-
 struct net_dhcpv4_option_callback;
 
 /**
@@ -161,10 +159,6 @@ int net_dhcpv4_add_option_callback(struct net_dhcpv4_option_callback *cb);
  */
 int net_dhcpv4_remove_option_callback(struct net_dhcpv4_option_callback *cb);
 
-#endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS */
-
-#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
-
 /**
  * @brief Helper to initialize a struct net_dhcpv4_option_callback for encapsulated vendor-specific
  * options properly
@@ -202,8 +196,6 @@ int net_dhcpv4_add_option_vendor_callback(struct net_dhcpv4_option_callback *cb)
  * @return 0 if successful, negative errno code on failure.
  */
 int net_dhcpv4_remove_option_vendor_callback(struct net_dhcpv4_option_callback *cb);
-
-#endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC */
 
 /**
  *  @brief Start DHCPv4 client on an iface
