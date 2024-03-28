@@ -405,10 +405,46 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 
 	}
 
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+	/* Map the stack into virtual memory and use that as the base to
+	 * calculate the initial stack pointer at the high end of the stack
+	 * object. The stack pointer may be reduced later in this function
+	 * by TLS or random offset.
+	 *
+	 * K_MEM_MAP_UNINIT is used to mimic the behavior of non-mapped
+	 * stack. If CONFIG_INIT_STACKS is enabled, the stack will be
+	 * cleared below.
+	 */
+	void *stack_mapped = k_mem_phys_map((uintptr_t)stack, stack_obj_size,
+					    K_MEM_PERM_RW | K_MEM_CACHE_WB | K_MEM_MAP_UNINIT);
+
+	__ASSERT_NO_MSG((uintptr_t)stack_mapped != 0);
+
+#ifdef CONFIG_USERSPACE
+	if (z_stack_is_user_capable(stack)) {
+		stack_buf_start = K_THREAD_STACK_BUFFER(stack_mapped);
+	} else
+#endif /* CONFIG_USERSPACE */
+	{
+		stack_buf_start = K_KERNEL_STACK_BUFFER(stack_mapped);
+	}
+
+	stack_ptr = (char *)stack_mapped + stack_obj_size;
+
+	/* Need to store the info on mapped stack so we can remove the mappings
+	 * when the thread ends.
+	 */
+	new_thread->stack_info.mapped.addr = stack_mapped;
+	new_thread->stack_info.mapped.sz = stack_obj_size;
+
+#else /* CONFIG_THREAD_STACK_MEM_MAPPED */
+
 	/* Initial stack pointer at the high end of the stack object, may
 	 * be reduced later in this function by TLS or random offset
 	 */
 	stack_ptr = (char *)stack + stack_obj_size;
+
+#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
 
 	LOG_DBG("stack %p for thread %p: obj_size=%zu buf_start=%p "
 		" buf_size %zu stack_ptr=%p",
@@ -472,6 +508,10 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	char *stack_ptr;
 
 	Z_ASSERT_VALID_PRIO(prio, entry);
+
+#ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
+	k_thread_abort_cleanup_check_reuse(new_thread);
+#endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
 
 #ifdef CONFIG_OBJ_CORE_THREAD
 	k_obj_core_init_and_link(K_OBJ_CORE(new_thread), &obj_type_thread);
@@ -810,6 +850,12 @@ int z_stack_space_get(const uint8_t *stack_start, size_t size, size_t *unused_pt
 int z_impl_k_thread_stack_space_get(const struct k_thread *thread,
 				    size_t *unused_ptr)
 {
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+	if (thread->stack_info.mapped.addr == NULL) {
+		return -EINVAL;
+	}
+#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+
 	return z_stack_space_get((const uint8_t *)thread->stack_info.start,
 				 thread->stack_info.size, unused_ptr);
 }
@@ -939,3 +985,94 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 
 	return 0;
 }
+
+#ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
+/** Pointer to thread which needs to be cleaned up. */
+static struct k_thread *thread_to_cleanup;
+
+/** Spinlock for thread abort cleanup. */
+static struct k_spinlock thread_cleanup_lock;
+
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+static void *thread_cleanup_stack_addr;
+static size_t thread_cleanup_stack_sz;
+#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+
+void defer_thread_cleanup(struct k_thread *thread)
+{
+	thread_to_cleanup = thread;
+
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+	thread_cleanup_stack_addr = thread->stack_info.mapped.addr;
+	thread_cleanup_stack_sz = thread->stack_info.mapped.sz;
+
+	/* The stack is now considered un-usable. This should prevent any functions
+	 * from looking directly into the mapped stack if they are made to be aware
+	 * of memory mapped stacks, e.g., z_stack_space_get().
+	 */
+	thread->stack_info.mapped.addr = NULL;
+	thread->stack_info.mapped.sz = 0;
+#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+}
+
+void do_thread_cleanup(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+	if (thread_cleanup_stack_addr != NULL) {
+		k_mem_phys_unmap(thread_cleanup_stack_addr,
+				 thread_cleanup_stack_sz);
+
+		thread_cleanup_stack_addr = NULL;
+	}
+#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+}
+
+void k_thread_abort_cleanup(struct k_thread *thread)
+{
+	K_SPINLOCK(&thread_cleanup_lock) {
+		if (thread_to_cleanup != NULL) {
+			/* Finish the pending one first. */
+			do_thread_cleanup(thread_to_cleanup);
+			thread_to_cleanup = NULL;
+		}
+
+		if (thread == _current) {
+			/* Need to defer for current running thread as the cleanup
+			 * might result in exception. Actual cleanup will be done
+			 * at the next time k_thread_abort() is called, or at thread
+			 * creation if the same thread object is being reused. This
+			 * is to make sure the cleanup code no longer needs this
+			 * thread's stack. This is not exactly ideal as the stack
+			 * may still be memory mapped for a while. However, this is
+			 * a simple solution without a) the need to workaround
+			 * the schedule lock during k_thread_abort(), b) creating
+			 * another thread to perform the cleanup, and c) does not
+			 * require architecture code support (e.g. via exception).
+			 */
+			defer_thread_cleanup(thread);
+		} else {
+			/* Not the current running thread, so we are safe to do
+			 * cleanups.
+			 */
+			do_thread_cleanup(thread);
+		}
+	}
+}
+
+void k_thread_abort_cleanup_check_reuse(struct k_thread *thread)
+{
+	K_SPINLOCK(&thread_cleanup_lock) {
+		/* This is to guard reuse of the same thread object and make sure
+		 * any pending cleanups of it needs to be finished before the thread
+		 * object can be reused.
+		 */
+		if (thread_to_cleanup == thread) {
+			do_thread_cleanup(thread_to_cleanup);
+			thread_to_cleanup = NULL;
+		}
+	}
+}
+
+#endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */

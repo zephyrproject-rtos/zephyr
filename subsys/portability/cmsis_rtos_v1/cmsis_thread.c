@@ -47,7 +47,17 @@ void thread_abort_hook(struct k_thread *thread)
 
 	if (thread_def != NULL) {
 		/* get thread instance index according to stack address */
-		offset = thread->stack_info.start - (uintptr_t)thread_def->stack_mem;
+		uintptr_t stack_start;
+
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+		/* The offset calculation below requires physical address. */
+		extern int arch_page_phys_get(void *virt, uintptr_t *phys);
+		(void)arch_page_phys_get((void *)thread->stack_info.start, &stack_start);
+#else
+		stack_start = thread->stack_info.start;
+#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+
+		offset = stack_start - (uintptr_t)thread_def->stack_mem;
 		instance = offset / K_THREAD_STACK_LEN(CONFIG_CMSIS_THREAD_MAX_STACK_SIZE);
 		sys_bitarray_clear_bit((sys_bitarray_t *)(thread_def->status_mask), instance);
 	}

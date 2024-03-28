@@ -168,7 +168,54 @@ size_t k_mem_free_get(void);
  *         space, insufficient physical memory to establish the mapping,
  *         or insufficient memory for paging structures.
  */
-void *k_mem_map(size_t size, uint32_t flags);
+static inline void *k_mem_map(size_t size, uint32_t flags)
+{
+	return k_mem_map_impl((uintptr_t)NULL, size, flags, true);
+}
+
+/**
+ * Map a physical memory region into kernel's virtual address space with guard pages.
+ *
+ * This function maps a contiguous physical memory region into kernel's
+ * virtual address space. Given a physical address and a size, return a
+ * linear address representing the base of where the physical region is mapped
+ * in the virtual address space for the Zephyr kernel.
+ *
+ * This function alters the active page tables in the area reserved
+ * for the kernel. This function will choose the virtual address
+ * and return it to the caller.
+ *
+ * If user thread access control needs to be managed in any way, do not enable
+ * K_MEM_PERM_USER flags here; instead manage the region's permissions
+ * with memory domain APIs after the mapping has been established. Setting
+ * K_MEM_PERM_USER here will allow all user threads to access this memory
+ * which is usually undesirable.
+ *
+ * Unless K_MEM_MAP_UNINIT is used, the returned memory will be zeroed.
+ *
+ * The returned virtual memory pointer will be page-aligned. The size
+ * parameter, and any base address for re-mapping purposes must be page-
+ * aligned.
+ *
+ * Note that the allocation includes two guard pages immediately before
+ * and after the requested region. The total size of the allocation will be
+ * the requested size plus the size of these two guard pages.
+ *
+ * Many K_MEM_MAP_* flags have been implemented to alter the behavior of this
+ * function, with details in the documentation for these flags.
+ *
+ * @param phys Physical address base of the memory region.
+ *             This must be page-aligned.
+ * @param size Size of the memory mapping. This must be page-aligned.
+ * @param flags K_MEM_PERM_*, K_MEM_MAP_* control flags.
+ *
+ * @return The mapped memory location, or NULL if insufficient virtual address
+ *         space or insufficient memory for paging structures.
+ */
+static inline void *k_mem_phys_map(uintptr_t phys, size_t size, uint32_t flags)
+{
+	return k_mem_map_impl(phys, size, flags, false);
+}
 
 /**
  * Un-map mapped memory
@@ -183,7 +230,33 @@ void *k_mem_map(size_t size, uint32_t flags);
  * @param addr Page-aligned memory region base virtual address
  * @param size Page-aligned memory region size
  */
-void k_mem_unmap(void *addr, size_t size);
+static inline void k_mem_unmap(void *addr, size_t size)
+{
+	k_mem_unmap_impl(addr, size, true);
+}
+
+/**
+ * Un-map memory mapped via k_mem_phys_map().
+ *
+ * This unmaps a virtual memory region from kernel's virtual address space.
+ *
+ * This function alters the active page tables in the area reserved
+ * for the kernel.
+ *
+ * This removes a memory mapping for the provided page-aligned region
+ * and the guard pages. The kernel may re-use the associated virtual address
+ * region later.
+ *
+ * @note Calling this function on a region which was not mapped via
+ *       k_mem_phys_map() to begin with is undefined behavior.
+ *
+ * @param addr Page-aligned memory region base virtual address
+ * @param size Page-aligned memory region size
+ */
+static inline void k_mem_phys_unmap(void *addr, size_t size)
+{
+	k_mem_unmap_impl(addr, size, false);
+}
 
 /**
  * Given an arbitrary region, provide a aligned region that covers it

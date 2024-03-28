@@ -297,6 +297,35 @@ int z_kernel_stats_raw(struct k_obj_core *obj_core, void *stats);
 int z_kernel_stats_query(struct k_obj_core *obj_core, void *stats);
 #endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
 
+#if defined(CONFIG_THREAD_ABORT_NEED_CLEANUP)
+/**
+ * Perform cleanup at the end of k_thread_abort().
+ *
+ * This performs additional cleanup steps at the end of k_thread_abort()
+ * where these steps require that the thread is no longer running.
+ * If the target thread is not the current running thread, the cleanup
+ * steps will be performed immediately. However, if the target thread is
+ * the current running thread (e.g. k_thread_abort(_current)), it defers
+ * the cleanup steps to later when the work will be finished in another
+ * context.
+ *
+ * @param thread Pointer to thread to be cleaned up.
+ */
+void k_thread_abort_cleanup(struct k_thread *thread);
+
+/**
+ * Check if thread is the same as the one waiting for cleanup.
+ *
+ * This is used to guard against reusing the same thread object
+ * before the previous cleanup has finished. This will perform
+ * the necessary cleanups before the thread object can be
+ * reused. Should mainly be used during thread creation.
+ *
+ * @param thread Pointer to thread to be checked.
+ */
+void k_thread_abort_cleanup_check_reuse(struct k_thread *thread);
+#endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
+
 #ifdef __cplusplus
 }
 #endif

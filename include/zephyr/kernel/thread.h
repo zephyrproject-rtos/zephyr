@@ -171,6 +171,16 @@ struct _thread_stack_info {
 	 * is the initial stack pointer for a thread. May be 0.
 	 */
 	size_t delta;
+
+#if defined(CONFIG_THREAD_STACK_MEM_MAPPED)
+	struct {
+		/** Base address of the memory mapped thread stack */
+		k_thread_stack_t *addr;
+
+		/** Size of whole mapped stack object */
+		size_t sz;
+	} mapped;
+#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
 };
 
 typedef struct _thread_stack_info _thread_stack_info_t;
