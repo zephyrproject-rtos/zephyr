@@ -194,6 +194,7 @@ struct http_response {
 	uint8_t cl_present : 1;
 	uint8_t body_found : 1;
 	uint8_t message_complete : 1;
+	uint8_t message_begin : 1;
 };
 
 /** HTTP client internal data that the application should not touch

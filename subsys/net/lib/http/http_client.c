@@ -325,6 +325,8 @@ static int on_message_begin(struct http_parser *parser)
 	NET_DBG("-- HTTP %s response (headers) --",
 		http_method_str(req->method));
 
+	req->internal.response.message_begin = true;
+
 	return 0;
 }
 
@@ -422,6 +424,8 @@ static int http_wait_data(int sock, struct http_request *req, int32_t timeout)
 	int nfds = 1;
 	int32_t remaining_time = timeout;
 	int64_t timestamp = k_uptime_get();
+
+	req->internal.response.message_begin = false;
 
 	fds[0].fd = sock;
 	fds[0].events = ZSOCK_POLLIN;
@@ -720,8 +724,17 @@ int http_client_req(int sock, struct http_request *req,
 		ret = total_recv;
 		goto out;
 	} else if (total_recv == 0) {
+		if (req->internal.response.message_begin) {
+			/* We received some of the headers but no actual body */
+			ret = 0;
+		} else {
+			/* We received nothing from server so can only timeout
+			 * the request.
+			 */
+			ret = -ETIMEDOUT;
+		}
+
 		NET_DBG("Timeout while waiting data");
-		ret = -ETIMEDOUT;
 		goto out;
 	}
 
