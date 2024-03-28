@@ -61,6 +61,19 @@ properties:
       Source clock for flash read. See the RXCLKSRC field in register MCR0.
       The default corresponds to the reset value of the register field.
 
+  rx-clock-source-b:
+    type: int
+    default: 0
+    enum:
+      - 0 # Loopback internally
+      - 1 # Loopback from DQS pad
+      - 2 # Loopback from SCK pad
+      - 3 # External input from DQS pad
+    description: |
+      Source clock for flash read on port B. Only supported by some instances
+      of this IP. See the RXCLKSRC_B field in register MCR2.
+      The default corresponds to the reset value of the register field.
+
   rx-buffer-config:
     type: array
     description: |
