@@ -57,6 +57,7 @@ struct flash_pages_layout {
  * through a runtime.
  */
 struct flash_parameters {
+	bool unrestricted_write; /* direct write without erase allowed */
 	const size_t write_block_size;
 	uint8_t erase_value; /* Byte value of erased flash */
 };
