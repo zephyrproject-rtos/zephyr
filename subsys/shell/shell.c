@@ -288,8 +288,8 @@ static bool tab_prepare(const struct shell *sh,
 	/* If last command is not completed (followed by space) it is treated
 	 * as uncompleted one.
 	 */
-	int space = isspace((int)sh->ctx->cmd_buff[
-						sh->ctx->cmd_buff_pos - 1]);
+	int space = (sh->ctx->cmd_buff_pos > 0) ?
+		     isspace((int)sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos - 1]) : 0;
 
 	/* root command completion */
 	if ((*argc == 0) || ((space == 0) && (*argc == 1))) {
