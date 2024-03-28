@@ -92,3 +92,7 @@
 &w25q64jvssiq {
 	status = "okay";
 };
+
+&lpadc0 {
+	status = "okay";
+};

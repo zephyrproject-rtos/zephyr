@@ -7,6 +7,7 @@
 #include <fsl_clock.h>
 #include <fsl_spc.h>
 #include <soc.h>
+#include <fsl_vref.h>
 
 /* Board xtal frequency in Hz */
 #define BOARD_XTAL0_CLK_HZ                        24000000U
@@ -49,6 +50,8 @@ void power_mode_od(void)
 
 static int frdm_mcxn947_init(void)
 {
+	vref_config_t vrefConfig;
+
 	enable_lpcac();
 
 	power_mode_od();
@@ -130,6 +133,26 @@ static int frdm_mcxn947_init(void)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio5), okay)
 	CLOCK_EnableClock(kCLOCK_Gpio5);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpadc0), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, 1U);
+	CLOCK_AttachClk(kFRO_HF_to_ADC0);
+
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlVref);
+	VREF_GetDefaultConfig(&vrefConfig);
+	vrefConfig.bufferMode = kVREF_ModeBandgapOnly;
+	VREF_Init(VREF0, &vrefConfig);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpadc1), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivAdc1Clk, 1U);
+	CLOCK_AttachClk(kFRO_HF_to_ADC1);
+
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlVref);
+	VREF_GetDefaultConfig(&vrefConfig);
+	vrefConfig.bufferMode = kVREF_ModeBandgapOnly;
+	VREF_Init(VREF0, &vrefConfig);
 #endif
 
 	/* Set SystemCoreClock variable. */

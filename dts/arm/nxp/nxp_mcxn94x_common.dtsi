@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	cpus: cpus {
@@ -566,6 +567,36 @@
 		reg = <0x49000 0x1000>;
 		interrupts = <57 0>;
 		status = "disabled";
+	};
+
+	lpadc0: lpadc@10d000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0x10d000 0x1000>;
+		interrupts = <45 0>;
+		status = "disabled";
+		clk-divider = <1>;
+		clk-source = <0>;
+		voltage-ref= <3>;
+		calibration-average = <128>;
+		power-level = <0>;
+		offset-value-a = <0>;
+		offset-value-b = <0>;
+		#io-channel-cells = <1>;
+	};
+
+	lpadc1: lpadc@10e000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0x10e000 0x1000>;
+		interrupts = <46 0>;
+		status = "disabled";
+		clk-divider = <1>;
+		clk-source = <0>;
+		voltage-ref= <3>;
+		calibration-average = <128>;
+		power-level = <1>;
+		offset-value-a = <0>;
+		offset-value-b = <0>;
+		#io-channel-cells = <1>;
 	};
 };
 
