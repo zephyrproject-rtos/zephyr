@@ -1,0 +1,21 @@
+common:
+  tags:
+    - drivers
+    - gpio
+  depends_on:
+    - gpio
+    - arduino_gpio
+  harness: ztest
+  harness_config:
+    fixture: arduino_gpio
+
+tests:
+  drivers.gpio.arduino:
+    filter: not dt_compat_enabled("arduino-header-r3")
+    integration_platforms:
+      - frdm_k64f
+    platform_exclude:
+      # below boards are mifro bus not arduino
+      - da14695_dk_usb
+      - stm32h735g_disco
+      - stm32h750b_dk
