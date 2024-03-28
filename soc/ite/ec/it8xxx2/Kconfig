@@ -149,6 +149,13 @@ config SOC_IT8XXX2_SHA256_HW_ACCELERATE
 	  If we enable this config, because HW limits, the sha256 data must place in
 	  first 4KB of RAM.
 
+config SOC_IT8XXX2_SHA256_V2_RAM
+	bool "it8xxx2 HW sha256 v2 support bigger RAM buffer"
+	help
+	  IT8XXX2 HW sha256 v2 support automatically loading 64/1024 bytes SHA256 message
+	  from DLM. Also, FW needn't set key data, so we need to redefine the RAM map
+	  for data buffer.
+
 DT_CHOSEN_ZEPHYR_FLASH := zephyr,flash
 
 config SOC_IT8XXX2_FLASH_SIZE_BYTES

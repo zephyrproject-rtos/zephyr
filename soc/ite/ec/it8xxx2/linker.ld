@@ -66,7 +66,11 @@
 #endif
 
 #ifdef CONFIG_SOC_IT8XXX2_SHA256_HW_ACCELERATE
-#define SHA256_BLOCK_SIZE 0x200
+	#ifdef CONFIG_SOC_IT8XXX2_SHA256_V2_RAM
+		#define SHA256_BLOCK_SIZE 0x500
+	#else
+		#define SHA256_BLOCK_SIZE 0x200
+	#endif
 #endif
 
 #include <zephyr/linker/linker-devnull.h>
@@ -249,15 +253,22 @@ SECTIONS
 		__sha256_ram_block_size = \
 			ABSOLUTE(. - __sha256_ram_block_start);
 		__sha256_ram_block_end = .;
+#ifdef CONFIG_SOC_IT8XXX2_SHA256_V2_RAM
+		ASSERT((__sha256_ram_block_size == SHA256_BLOCK_SIZE), \
+			"We need 1280bytes for HW sha256 v2 module");
+#else
 		ASSERT((__sha256_ram_block_size == SHA256_BLOCK_SIZE), \
 			"We need 512bytes for HW sha256 module");
+#endif
 		ASSERT((__sha256_ram_block_end < (RAM_BASE + 0x1000)), \
 			"512bytes must in SRAM first 4kbytes");
 		ASSERT(((ABSOLUTE(__sha256_ram_block_start) & 0xfff) == \
 			(ABSOLUTE(__sha256_pad_block_start) & 0xfff)), \
 			"sha256 ram block needs the same offset with sha256 rom block");
+#else
+		__sha256_ram_block_size = 0;
 #endif
-		. += __ilm_flash_end - __ilm_flash_start;
+		. += __ilm_flash_end - __ilm_flash_start - __sha256_ram_block_size;
 		__ilm_ram_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 

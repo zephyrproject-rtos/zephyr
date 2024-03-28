@@ -203,6 +203,10 @@
 	pinctrl-names = "default";
 };
 
+&sha0 {
+	status = "okay";
+};
+
 zephyr_udc0: &usb0 {
 	status = "okay";
 	pinctrl-0 = <&usb0_dm_gph5_default
