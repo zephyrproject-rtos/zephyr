@@ -3,6 +3,7 @@
 /*
  * Copyright (c) 2015-2016 Intel Corporation
  * Copyright (c) 2022 Codecoup
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -141,9 +142,12 @@ struct btp_gap_start_discovery_cmd {
 #define BTP_GAP_STOP_DISCOVERY			0x0d
 
 #define BTP_GAP_CONNECT				0x0e
+#define BTP_GAP_CONNECT_LE			0x00
+#define BTP_GAP_CONNECT_BREDR		0x01
 struct btp_gap_connect_cmd {
 	bt_addr_le_t address;
 	uint8_t own_addr_type;
+    uint8_t transport;
 } __packed;
 
 #define BTP_GAP_DISCONNECT			0x0f
@@ -319,6 +323,11 @@ struct btp_gap_padv_sync_transfer_recv_cmd {
 	uint8_t flags;
 } __packed;
 
+#define BTP_SM_AUTH				0x2a
+struct btp_sm_auth_cmd {
+	bt_addr_le_t address;
+    uint8_t   useh7;
+} __packed;
 /* events */
 #define BTP_GAP_EV_NEW_SETTINGS			0x80
 struct btp_gap_new_settings_ev {

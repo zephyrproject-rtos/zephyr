@@ -3,6 +3,7 @@
 /*
  * Copyright (c) 2015-2016 Intel Corporation
  * Copyright (c) 2022 Codecoup
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -73,8 +74,9 @@
 #define BTP_SERVICE_ID_CAP	26
 #define BTP_SERVICE_ID_TBS	27
 #define BTP_SERVICE_ID_TMAP	28
+#define BTP_SERVICE_ID_SDP	31
 
-#define BTP_SERVICE_ID_MAX	BTP_SERVICE_ID_TMAP
+#define BTP_SERVICE_ID_MAX	BTP_SERVICE_ID_SDP
 
 #define BTP_STATUS_SUCCESS	0x00
 #define BTP_STATUS_FAILED	0x01

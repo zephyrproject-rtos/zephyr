@@ -630,9 +630,24 @@ struct bt_hci_cp_host_num_completed_packets {
 	struct bt_hci_handle_count h[0];
 } __packed;
 
+#define BT_HCI_OP_WRITE_CURRENT_IAC_LAP         BT_OP(BT_OGF_BASEBAND, 0x003A) /* 0x0c3A */
+struct bt_hci_cp_write_current_iac_lap {
+	uint8_t  num_current_iac;
+	struct
+	{
+		uint8_t iac[3];
+	} lap[0];
+} __packed;
+
 #define BT_HCI_OP_WRITE_INQUIRY_MODE            BT_OP(BT_OGF_BASEBAND, 0x0045) /* 0x0c45 */
 struct bt_hci_cp_write_inquiry_mode {
 	uint8_t  mode;
+} __packed;
+
+#define BT_HCI_OP_WRITE_EXTENDED_INQUIRY_RESPONSE   BT_OP(BT_OGF_BASEBAND, 0x0052) /* 0x0c52 */
+struct bt_hci_cp_write_extended_inquiry_response {
+	uint8_t fec_required;
+	uint8_t Extended_Inquiry_Response[240];
 } __packed;
 
 #define BT_HCI_OP_WRITE_SSP_MODE                BT_OP(BT_OGF_BASEBAND, 0x0056) /* 0x0c56 */

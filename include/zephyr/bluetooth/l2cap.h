@@ -239,6 +239,8 @@ struct bt_l2cap_br_endpoint {
 	uint16_t				cid;
 	/** Endpoint Maximum Transmission Unit */
 	uint16_t				mtu;
+	/** Endpoint Maximum PDU payload Size */
+	uint16_t				mps;
 };
 
 /** @brief BREDR L2CAP Channel structure. */

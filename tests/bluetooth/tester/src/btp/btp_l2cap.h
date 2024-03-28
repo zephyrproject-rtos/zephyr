@@ -3,6 +3,7 @@
 /*
  * Copyright (c) 2015-2016 Intel Corporation
  * Copyright (c) 2022 Codecoup
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,11 +37,13 @@ struct btp_l2cap_connect_rp {
 #define BTP_L2CAP_DISCONNECT				0x03
 struct btp_l2cap_disconnect_cmd {
 	uint8_t chan_id;
+	uint8_t transport;
 } __packed;
 
 #define BTP_L2CAP_SEND_DATA				0x04
 struct btp_l2cap_send_data_cmd {
 	uint8_t chan_id;
+	uint8_t transport;
 	uint16_t data_len;
 	uint8_t data[];
 } __packed;
@@ -53,6 +56,7 @@ struct btp_l2cap_send_data_cmd {
 #define BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHOR	0x02
 #define BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_ENC_KEY	0x03
 #define BTP_L2CAP_CONNECTION_RESPONSE_INSUFF_ENCRYPTION 0x04
+#define BTP_L2CAP_CONNECTION_RESPONSE_MODE4_LEVEL4  0x05
 
 #define BTP_L2CAP_LISTEN				0x05
 struct btp_l2cap_listen_cmd {
@@ -70,8 +74,10 @@ struct btp_l2cap_accept_connection_cmd {
 
 #define BTP_L2CAP_RECONFIGURE				0x07
 struct btp_l2cap_reconfigure_cmd {
+	uint8_t transport;
 	bt_addr_le_t address;
 	uint16_t mtu;
+	uint16_t mps;
 	uint8_t num;
 	uint8_t chan_id[];
 } __packed;
@@ -79,12 +85,26 @@ struct btp_l2cap_reconfigure_cmd {
 #define BTP_L2CAP_CREDITS				0x08
 struct btp_l2cap_credits_cmd {
 	uint8_t chan_id;
+	uint8_t transport;
 } __packed;
 
 #define BTP_L2CAP_DISCONNECT_EATT_CHANS			0x09
 struct btp_l2cap_disconnect_eatt_chans_cmd {
 	bt_addr_le_t address;
 	uint8_t count;
+} __packed;
+
+#define BTP_L2CAP_ECHO			0x0a
+struct btp_l2cap_echo_cmd {
+	bt_addr_t address;
+	uint16_t data_length;
+	uint8_t data[];
+} __packed;
+
+#define BTP_L2CAP_RX_FLOW_REQ			0x0b
+struct btp_l2cap_rx_flow_req_cmd {
+	uint8_t chan_id;
+	uint8_t flow;
 } __packed;
 
 /* events */
