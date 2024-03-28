@@ -4,7 +4,7 @@
 
 '''Runner for NIOS II, based on quartus-flash.py and GDB.'''
 
-from runners.core import ZephyrBinaryRunner, NetworkPortHelper
+from runners.core import ZephyrBinaryRunner, NetworkPortHelper, RunnerCaps
 
 
 class Nios2BinaryRunner(ZephyrBinaryRunner):
@@ -28,6 +28,10 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def name(cls):
         return 'nios2'
+
+    @classmethod
+    def capabilities(cls):
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'})
 
     @classmethod
     def do_add_parser(cls, parser):

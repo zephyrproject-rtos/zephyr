@@ -200,7 +200,7 @@ class MissingProgram(FileNotFoundError):
         super().__init__(errno.ENOENT, os.strerror(errno.ENOENT), program)
 
 
-_RUNNERCAPS_COMMANDS = {'flash', 'debug', 'debugserver', 'attach'}
+_RUNNERCAPS_COMMANDS = {'flash', 'debug', 'debugserver', 'attach', 'simulate', 'robot'}
 
 @dataclass
 class RunnerCaps:
@@ -212,7 +212,7 @@ class RunnerCaps:
     Available capabilities:
 
     - commands: set of supported commands; default is {'flash',
-      'debug', 'debugserver', 'attach'}.
+      'debug', 'debugserver', 'attach', 'simulate', 'robot'}.
 
     - dev_id: whether the runner supports device identifiers, in the form of an
       -i, --dev-id option. This is useful when the user has multiple debuggers
@@ -243,6 +243,8 @@ class RunnerCaps:
     - file: whether the runner supports a --file option, which specifies
       exactly the file that should be used to flash, overriding any default
       discovered in the build directory.
+
+    - hide_load_files: whether the elf/hex/bin file arguments should be hidden.
     '''
 
     commands: Set[str] = field(default_factory=lambda: set(_RUNNERCAPS_COMMANDS))
@@ -252,6 +254,7 @@ class RunnerCaps:
     reset: bool = False
     tool_opt: bool = False
     file: bool = False
+    hide_load_files: bool = False
 
     def __post_init__(self):
         if not self.commands.issubset(_RUNNERCAPS_COMMANDS):
@@ -506,18 +509,23 @@ class ZephyrBinaryRunner(abc.ABC):
             parser.add_argument('-f', '--file', help=argparse.SUPPRESS)
             parser.add_argument('-t', '--file-type', help=argparse.SUPPRESS)
 
-        parser.add_argument('--elf-file',
-                        metavar='FILE',
-                        action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
-                        help='path to zephyr.elf' if not caps.file else 'Deprecated, use -f/--file instead.')
-        parser.add_argument('--hex-file',
-                        metavar='FILE',
-                        action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
-                        help='path to zephyr.hex' if not caps.file else 'Deprecated, use -f/--file instead.')
-        parser.add_argument('--bin-file',
-                        metavar='FILE',
-                        action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
-                        help='path to zephyr.bin' if not caps.file else 'Deprecated, use -f/--file instead.')
+        if caps.hide_load_files:
+            parser.add_argument('--elf-file', help=argparse.SUPPRESS)
+            parser.add_argument('--hex-file', help=argparse.SUPPRESS)
+            parser.add_argument('--bin-file', help=argparse.SUPPRESS)
+        else:
+            parser.add_argument('--elf-file',
+                                metavar='FILE',
+                                action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
+                                help='path to zephyr.elf' if not caps.file else 'Deprecated, use -f/--file instead.')
+            parser.add_argument('--hex-file',
+                                metavar='FILE',
+                                action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
+                                help='path to zephyr.hex' if not caps.file else 'Deprecated, use -f/--file instead.')
+            parser.add_argument('--bin-file',
+                                metavar='FILE',
+                                action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
+                                help='path to zephyr.bin' if not caps.file else 'Deprecated, use -f/--file instead.')
 
         parser.add_argument('--erase', '--no-erase', nargs=0,
                             action=_ToggleAction,

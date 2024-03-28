@@ -12,6 +12,6 @@ e51 PerformanceInMips 80
 
 macro reset
 """
-    sysbus LoadELF $bin
+    sysbus LoadELF $elf
 """
 runMacro $reset
