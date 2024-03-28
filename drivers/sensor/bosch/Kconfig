@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/bosch/bma280/Kconfig"
+source "drivers/sensor/bosch/bma4xx/Kconfig"
+source "drivers/sensor/bosch/bmc150_magn/Kconfig"
+source "drivers/sensor/bosch/bme280/Kconfig"
+source "drivers/sensor/bosch/bme680/Kconfig"
+source "drivers/sensor/bosch/bmg160/Kconfig"
+source "drivers/sensor/bosch/bmi08x/Kconfig"
+source "drivers/sensor/bosch/bmi160/Kconfig"
+source "drivers/sensor/bosch/bmi270/Kconfig"
+source "drivers/sensor/bosch/bmi323/Kconfig"
+source "drivers/sensor/bosch/bmm150/Kconfig"
+source "drivers/sensor/bosch/bmp388/Kconfig"
+source "drivers/sensor/bosch/bmp581/Kconfig"
+# zephyr-keep-sorted-stop
