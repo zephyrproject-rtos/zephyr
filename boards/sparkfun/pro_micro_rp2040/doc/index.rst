@@ -115,12 +115,14 @@ Flashing
 Using UF2
 ---------
 
-Since it doesn't expose the SWD pins, you must flash the SparkFun Pro Micro
-RP2040 with a UF2 file. By default, building an app for this board will
-generate a `build/zephyr/zephyr.uf2` file. If the Pro Micro RP2040 is powered
-on with the `BOOTSEL` button pressed, it will appear on the host as a mass
-storage device. The UF2 file should be drag-and-dropped to the device, which
-will flash the Pro Micro RP2040.
+The Pro Micro board does make the SWD pins available on pads on the
+underside of the board. You can solder to these pins, and use a JTag
+debugger. You can also flash the SparkFun ProMicro RP2040 with a UF2 file.
+By default, building an app for this board will generate a
+`build/zephyr/zephyr.uf2` file. If the Pro Micro RP2040 is powered on with
+the `BOOTSEL` button pressed, it will appear on the host as a mass storage
+device. The UF2 file should be copied to the device, which will
+flash the Pro Micro RP2040.
 
 .. target-notes::
 
