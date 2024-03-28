@@ -373,7 +373,12 @@ enum wifi_conn_status {
 	WIFI_STATUS_CONN_SUCCESS = 0,
 	/** Connection failed - generic failure */
 	WIFI_STATUS_CONN_FAIL,
-	/** Connection failed - wrong password */
+	/** Connection failed - wrong password
+	 *  Possible reasons for 4-way handshake failure that we can guess are as follows.
+	 *  1) There maybe a incorrect key which cause authentication fail.
+	 *  2) When station is out of range of access point, the signal
+	 *  strength is weak. It cause the authentication fail.
+	 */
 	WIFI_STATUS_CONN_WRONG_PASSWORD,
 	/** Connection timed out */
 	WIFI_STATUS_CONN_TIMEOUT,
