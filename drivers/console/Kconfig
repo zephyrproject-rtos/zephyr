@@ -104,13 +104,28 @@ config RAM_CONSOLE
 	  be examined at runtime with a debugger. Useful in board bring-up
 	  if there aren't any working serial drivers.
 
+config RAM_CONSOLE_BUFFER_SECTION
+	bool "Use dedicated section as RAM console buffer"
+	depends on RAM_CONSOLE
+	select KERNEL_DIRECT_MAP
+	help
+	  Use a dedicated section as the RAM console buffer, whose address is
+	  known before build so that the console output messages can be easily
+	  examined by a debuffer or software tool from a parallel-running OS.
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_RAM_CONSOLE := zephyr,ram-console
+
 config RAM_CONSOLE_BUFFER_SIZE
 	int "Ram Console buffer size"
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_RAM_CONSOLE)) if RAM_CONSOLE_BUFFER_SECTION
 	default 1024
 	depends on RAM_CONSOLE
 	help
-	  Size of the RAM console buffer. Messages will wrap around if the
-	  length is exceeded.
+	  Total size of the RAM console buffer, to ensure it's always
+	  NULL-terminated leave one byte unused, the actual length is
+	  less one byte. Messages will wrap around if the actual length
+	  is exceeded.
 
 config RTT_CONSOLE
 	bool "Use RTT console"
