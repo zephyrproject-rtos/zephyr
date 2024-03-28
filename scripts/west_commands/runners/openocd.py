@@ -10,6 +10,7 @@ import subprocess
 import re
 
 from os import path
+from os import environ
 from pathlib import Path
 
 try:
@@ -40,7 +41,14 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                  target_handle=DEFAULT_OPENOCD_TARGET_HANDLE):
         super().__init__(cfg)
 
-        support = path.join(cfg.board_dir, 'support')
+        if not path.exists(cfg.board_dir):
+            # try to find the board support in-tree
+            cfg_board_path = path.normpath(cfg.board_dir)
+            _temp_path = cfg_board_path.split("boards/")[1]
+            support = path.join(environ['ZEPHYR_BASE'], "boards", _temp_path, 'support')
+        else:
+            support = path.join(cfg.board_dir, 'support')
+
 
         if not config:
             default = path.join(support, 'openocd.cfg')
