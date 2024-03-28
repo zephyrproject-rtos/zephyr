@@ -110,7 +110,7 @@ static inline void *z_vrfy_k_thread_custom_data_get(void)
 
 int z_impl_k_is_preempt_thread(void)
 {
-	return !arch_is_in_isr() && is_preempt(_current);
+	return !arch_is_in_isr() && thread_is_preemptible(_current);
 }
 
 #ifdef CONFIG_USERSPACE

@@ -38,7 +38,7 @@ static inline int slice_time(struct k_thread *thread)
 
 bool thread_is_sliceable(struct k_thread *thread)
 {
-	bool ret = is_preempt(thread)
+	bool ret = thread_is_preemptible(thread)
 		&& slice_time(thread) != 0
 		&& !z_is_prio_higher(thread->base.prio, slice_max_prio)
 		&& !z_is_thread_prevented_from_running(thread)
