@@ -45,6 +45,12 @@ extern "C" {
 #undef PTHREAD_SCOPE_SYSTEM
 #define PTHREAD_SCOPE_SYSTEM     0
 
+/* Pthread inherit scheduler */
+#undef PTHREAD_INHERIT_SCHED
+#define PTHREAD_INHERIT_SCHED  0
+#undef PTHREAD_EXPLICIT_SCHED
+#define PTHREAD_EXPLICIT_SCHED 1
+
 /* Passed to pthread_once */
 #define PTHREAD_ONCE_INIT {0}
 
@@ -423,6 +429,8 @@ int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
 			  size_t stacksize);
 int pthread_attr_getscope(const pthread_attr_t *attr, int *contentionscope);
 int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope);
+int pthread_attr_getinheritsched(const pthread_attr_t *attr, int *inheritsched);
+int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched);
 #ifdef CONFIG_PTHREAD_IPC
 int pthread_once(pthread_once_t *once, void (*initFunc)(void));
 #endif

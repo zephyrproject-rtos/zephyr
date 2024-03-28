@@ -502,10 +502,10 @@ _POSIX_THREAD_PRIORITY_SCHEDULING
    :header: API, Supported
    :widths: 50,10
 
-    pthread_attr_getinheritsched(),
+    pthread_attr_getinheritsched(),yes
     pthread_attr_getschedpolicy(),yes
     pthread_attr_getscope(),yes
-    pthread_attr_setinheritsched(),
+    pthread_attr_setinheritsched(),yes
     pthread_attr_setschedpolicy(),yes
     pthread_attr_setscope(),yes
     pthread_getschedparam(),yes
