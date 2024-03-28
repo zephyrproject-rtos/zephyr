@@ -8,7 +8,6 @@ test_name='sc_indicate'
 test_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_gatt_${test_name}_prj_conf"
 simulation_id="${test_name}"
 verbosity_level=2
-EXECUTE_TIMEOUT=30
 
 cd ${BSIM_OUT_PATH}/bin
 

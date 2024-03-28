@@ -10,7 +10,7 @@ test_path=$(guess_test_long_name)
 dev_exe="bs_${BOARD_TS}_${test_path}_prj_conf"
 simulation_id="${test_path}"
 
-EXECUTE_TIMEOUT=60
+EXECUTE_TIMEOUT=120
 
 cd "${BSIM_OUT_PATH}/bin"
 

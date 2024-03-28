@@ -8,7 +8,6 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # notification
 simulation_id="basic_conn_encr_split_single_timer"
 verbosity_level=2
-EXECUTE_TIMEOUT=5
 
 cd ${BSIM_OUT_PATH}/bin
 

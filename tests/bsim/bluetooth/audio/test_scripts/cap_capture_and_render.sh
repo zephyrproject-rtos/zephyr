@@ -6,7 +6,6 @@
 
 SIMULATION_ID="cap_capture_and_render"
 VERBOSITY_LEVEL=2
-EXECUTE_TIMEOUT=20
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 

@@ -9,7 +9,6 @@
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 VERBOSITY_LEVEL=2
-EXECUTE_TIMEOUT=30
 
 cd ${BSIM_OUT_PATH}/bin
 

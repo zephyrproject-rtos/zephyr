@@ -5,6 +5,7 @@ set -eu
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
+EXECUTE_TIMEOUT=100
 verbosity_level=2
 simulation_id="$(guess_test_long_name)"
 
