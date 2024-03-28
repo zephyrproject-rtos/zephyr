@@ -1,0 +1,12 @@
+sample:
+  name: Bluetooth ST GUI HCI UART
+  description: Allows BlueNRG-based boards to connect to BlueNRG GUI application via UART
+tests:
+  sample.boards.stm32.gui_hci_uart:
+    harness: bluetooth
+    platform_allow:
+      - sensortile_box_pro
+      - disco_l475_iot1
+    tags:
+      - uart
+      - bluetooth
