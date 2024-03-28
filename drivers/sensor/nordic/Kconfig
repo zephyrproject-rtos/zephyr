@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/nordic/npm1300_charger/Kconfig"
+source "drivers/sensor/nordic/nrf5/Kconfig"
+source "drivers/sensor/nordic/qdec_nrfx/Kconfig"
+# zephyr-keep-sorted-stop
