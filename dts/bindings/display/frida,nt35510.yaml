@@ -1,0 +1,33 @@
+# Copyright (c) 2024 Erik Andersson <erian747@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Frida Techshine Panel
+
+compatible: "frida,nt35510"
+
+include: [mipi-dsi-device.yaml, display-controller.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Hardware based reset gpio pin
+      Setting a low level will hold NT35510 in reset
+
+  bl-gpios:
+    type: phandle-array
+    description: |
+      The BLn pin is asserted to turn on the backlight of the panel.
+      Note that some boards may use software control instead
+      and don't have this pin connected
+
+  rotation:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 90
+      - 180
+      - 270
+    description: |
+      Display rotation clockwise in degrees. Defaults to 0, display default.

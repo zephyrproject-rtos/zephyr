@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 2023 bytes at work AG
+ * Copyright (c) 2024 Erik Andersson <erian747@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 &mipi_dsi {
-	otm8009a: otm8009a@0 {
+	nt35510: nt35510@0 {
 		status = "okay";
-		compatible = "orisetech,otm8009a";
+		compatible = "frida,nt35510";
 		reg = <0x0>;
 		height = <800>;
 		width = <480>;
