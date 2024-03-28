@@ -92,3 +92,7 @@
 &w25q64jvssiq {
 	status = "okay";
 };
+
+&dac0 {
+	status = "okay";
+};

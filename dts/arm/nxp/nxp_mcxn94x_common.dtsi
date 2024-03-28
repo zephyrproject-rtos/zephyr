@@ -567,6 +567,24 @@
 		interrupts = <57 0>;
 		status = "disabled";
 	};
+
+	dac0: dac@10f000 {
+		compatible = "nxp,lpdac";
+		reg = < 0x10f000 0x1000>;
+		interrupts = <106 0>;
+		status = "disabled";
+		voltage-reference = <0>;
+		#io-channel-cells = <1>;
+	};
+
+	dac1: dac@112000 {
+		compatible = "nxp,lpdac";
+		reg = < 0x112000 0x1000>;
+		interrupts = <107 0>;
+		status = "disabled";
+		voltage-reference = <0>;
+		#io-channel-cells = <1>;
+	};
 };
 
 &systick {
