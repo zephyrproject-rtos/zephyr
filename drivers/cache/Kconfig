@@ -20,5 +20,6 @@ comment "Device Drivers"
 
 source "drivers/cache/Kconfig.aspeed"
 source "drivers/cache/Kconfig.nrf"
+source "drivers/cache/Kconfig.andes"
 
 endif # CACHE
