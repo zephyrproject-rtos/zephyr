@@ -307,8 +307,6 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 #include <syscalls/k_thread_name_copy_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-
-#ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_STACK_SENTINEL
 /* Check that the stack sentinel is still present
  *
@@ -357,8 +355,6 @@ static inline void z_vrfy_k_thread_start(struct k_thread *thread)
 }
 #include <syscalls/k_thread_start_mrsh.c>
 #endif /* CONFIG_USERSPACE */
-#endif /* CONFIG_MULTITHREADING */
-
 
 #if CONFIG_STACK_POINTER_RANDOM
 int z_stack_adjust_initialized;
@@ -616,7 +612,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	return stack_ptr;
 }
 
-#ifdef CONFIG_MULTITHREADING
+
 k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 			      k_thread_stack_t *stack,
 			      size_t stack_size, k_thread_entry_t entry,
@@ -634,7 +630,6 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 
 	return new_thread;
 }
-
 
 #ifdef CONFIG_USERSPACE
 bool z_stack_is_user_capable(k_thread_stack_t *stack)
@@ -708,8 +703,6 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 }
 #include <syscalls/k_thread_create_mrsh.c>
 #endif /* CONFIG_USERSPACE */
-#endif /* CONFIG_MULTITHREADING */
-
 
 void z_init_thread_base(struct _thread_base *thread_base, int priority,
 		       uint32_t initial_state, unsigned int options)

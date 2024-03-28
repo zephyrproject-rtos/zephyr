@@ -1136,13 +1136,11 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 
 	LOG_DBG("thread %p for %lu ticks", _current, (unsigned long)ticks);
 
-#ifdef CONFIG_MULTITHREADING
 	/* wait of 0 ms is treated as a 'yield' */
 	if (ticks == 0) {
 		k_yield();
 		return 0;
 	}
-#endif /* CONFIG_MULTITHREADING */
 
 	if (Z_TICK_ABS(ticks) <= 0) {
 		expected_wakeup_ticks = ticks + sys_clock_tick_get_32();
@@ -1150,7 +1148,6 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 		expected_wakeup_ticks = Z_TICK_ABS(ticks);
 	}
 
-#ifdef CONFIG_MULTITHREADING
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(ticks);
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 
@@ -1169,10 +1166,6 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 	if (ticks > 0) {
 		return ticks;
 	}
-#else
-	/* busy wait to be time coherent since subsystems may depend on it */
-	z_impl_k_busy_wait(k_ticks_to_us_ceil32(expected_wakeup_ticks));
-#endif /* CONFIG_MULTITHREADING */
 
 	return 0;
 }
@@ -1187,12 +1180,8 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 
 	/* in case of K_FOREVER, we suspend */
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-#ifdef CONFIG_MULTITHREADING
+
 		k_thread_suspend(_current);
-#else
-		/* In Single Thread, just wait for an interrupt saving power */
-		k_cpu_idle();
-#endif /* CONFIG_MULTITHREADING */
 		SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, (int32_t) K_TICKS_FOREVER);
 
 		return (int32_t) K_TICKS_FOREVER;
