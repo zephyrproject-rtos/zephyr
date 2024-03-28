@@ -140,7 +140,7 @@
 	ITERABLE_SECTION_RAM(device_mutable, 4)
 #endif
 
-#if defined(CONFIG_BT_NUS)
+#if defined(CONFIG_BT_ZEPHYR_NUS)
 	ITERABLE_SECTION_RAM(bt_nus_inst, 4)
 #endif
 
