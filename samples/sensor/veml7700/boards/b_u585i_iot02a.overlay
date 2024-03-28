@@ -1,0 +1,7 @@
+&i2c2{
+	veml7700:veml7700@10 {
+		compatible ="vishay,veml7700";
+		reg = <0x10>;
+		psm-mode = <0x03>;
+	};
+};

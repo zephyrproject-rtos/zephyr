@@ -1,0 +1,23 @@
+sample:
+  name: veml7700 ambient light sensor
+common:
+  harness: console
+  integration_platforms:
+    - b_u585i_iot02a
+  filter: dt_compat_enabled("vishay,veml7700")
+  tags: sensors
+  depends_on:
+    - i2c
+    - veml7700
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "Observation:(.*)"
+tests:
+  sample.sensor.veml7700:
+    extra_configs:
+  sample.sensor.veml7700.trigger:
+    extra_configs:
+    platform_exclude:
+      - b_u585i_iot02a
