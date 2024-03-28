@@ -19,4 +19,26 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT)
   if(SB_CONFIG_BOOT_ENCRYPTION)
     set_config_string(${image} CONFIG_BOOT_ENCRYPTION_KEY_FILE "${SB_CONFIG_BOOT_ENCRYPTION_KEY_FILE}")
   endif()
+
+# Include VPR laucher if enabled.
+elseif(SB_CONFIG_BOOTLOADER_VPR_LAUNCHER)
+  if((${BOARD} STREQUAL "nrf54h20dk") AND (${BOARD_QUALIFIERS} STREQUAL "/nrf54h20/cpuppr"))
+    set(core nrf54h20dk/nrf54h20/cpuapp)
+  else()
+    message(FATAL_ERROR "Unsupported target for VPR launcher")
+  endif()
+
+  set(image vpr_launcher)
+  ExternalZephyrProject_Add(
+    APPLICATION ${image}
+    SOURCE_DIR ${ZEPHYR_BASE}/samples/basic/minimal
+    APP_TYPE BOOTLOADER
+    BOARD ${core}
+  )
+
+  if(SB_CONFIG_BOOT_XIP)
+    sysbuild_cache_set(VAR ${image}_SNIPPET APPEND REMOVE_DUPLICATES nordic-ppr-xip)
+  else()
+    sysbuild_cache_set(VAR ${image}_SNIPPET APPEND REMOVE_DUPLICATES nordic-ppr)
+  endif()
 endif()

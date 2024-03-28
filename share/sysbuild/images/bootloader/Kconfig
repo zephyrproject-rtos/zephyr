@@ -26,6 +26,10 @@ config BOOTLOADER_MCUBOOT
 	help
 	  Include MCUboot (Zephyr port) as the bootloader to use
 
+config BOOTLOADER_VPR_LAUNCHER
+	bool "VPR launcher"
+	help
+	  Include VPR launcher as the bootloader to use
 endchoice
 
 if BOOTLOADER_MCUBOOT
@@ -79,5 +83,12 @@ config BOOT_ENCRYPTION_KEY_FILE
 	default ""
 	help
 	  Absolute path to encryption key file to use with MCUBoot.
+
+endif
+
+if BOOTLOADER_VPR_LAUNCHER
+
+config BOOT_XIP
+	bool "Use XIP snippet and skip copying to RAM"
 
 endif
