@@ -49,7 +49,7 @@
 		hsync-active = <0>;
 		vsync-active = <0>;
 		de-active = <1>;
-		pixelclk-active = <1>;
+		pixelclk-active = <0>;
 		/*
 		 * Pixel clock is given by the following formula:
 		 * (height + vsync-len + vfront-porch + vback-porch) *
