@@ -105,3 +105,10 @@ tests:
       - frdm_k64f
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1160_evk/mimxrt1166/cm7
+  sample.net.zperf.nxp_enet1g_experimental:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="nxp,enet1g-experimental.overlay"
+    tags:
+      - net
+      - zperf
+    platform_allow:
+      - mimxrt1170_evk_cm7

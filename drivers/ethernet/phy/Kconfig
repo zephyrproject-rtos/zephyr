@@ -51,6 +51,15 @@ config PHY_MICROCHIP_KSZ8081
 	help
 	  Enable Microchip KSZ8081 Ethernet Phy Driver
 
+config PHY_REALTEK_RTL8211F
+	bool "Realtek RTL8211F Phy Driver"
+	default y
+	depends on DT_HAS_REALTEK_RTL8211F_ENABLED
+	depends on MDIO
+	depends on GPIO
+	help
+	  Enable Realtek RTL8211F Ethernet Phy Driver
+
 config PHY_AUTONEG_TIMEOUT_MS
 	int "Auto-negotiation timeout value in milliseconds"
 	default 4000

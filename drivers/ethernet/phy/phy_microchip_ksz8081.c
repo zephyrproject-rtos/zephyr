@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * Inspiration from phy_mii.c, which is:
  * Copyright (c) 2021 IP-Logix Inc.
@@ -65,6 +65,9 @@ static int phy_mc_ksz8081_read(const struct device *dev,
 	const struct mc_ksz8081_config *config = dev->config;
 	int ret;
 
+	/* Make sure excessive bits 16-31 are reset */
+	*data = 0U;
+
 	ret = mdio_read(config->mdio_dev, config->addr, reg_addr, (uint16_t *)data);
 	if (ret) {
 		return ret;
@@ -117,7 +120,10 @@ static int phy_mc_ksz8081_autonegotiate(const struct device *dev)
 	do {
 		if (timeout-- == 0) {
 			LOG_DBG("PHY (%d) autonegotiation timed out", config->addr);
-			return -ETIMEDOUT;
+			/* The value -ETIMEDOUT can be returned by PHY read/write functions, so
+			 * return -ENETDOWN instead to distinguish link timeout from PHY timeout.
+			 */
+			return -ENETDOWN;
 		}
 		k_msleep(100);
 
@@ -161,6 +167,7 @@ static int phy_mc_ksz8081_get_link(const struct device *dev,
 	state->is_up = bmsr & MII_BMSR_LINK_STATUS;
 
 	if (!state->is_up) {
+		k_mutex_unlock(&data->mutex);
 		goto result;
 	}
 
@@ -200,9 +207,11 @@ static int phy_mc_ksz8081_get_link(const struct device *dev,
 result:
 	if (memcmp(&old_state, state, sizeof(struct phy_link_state)) != 0) {
 		LOG_DBG("PHY %d is %s", config->addr, state->is_up ? "up" : "down");
-		LOG_DBG("PHY (%d) Link speed %s Mb, %s duplex\n", config->addr,
-			(PHY_LINK_IS_SPEED_100M(state->speed) ? "100" : "10"),
-			PHY_LINK_IS_FULL_DUPLEX(state->speed) ? "full" : "half");
+		if (state->is_up) {
+			LOG_DBG("PHY (%d) Link speed %s Mb, %s duplex\n", config->addr,
+				(PHY_LINK_IS_SPEED_100M(state->speed) ? "100" : "10"),
+				PHY_LINK_IS_FULL_DUPLEX(state->speed) ? "full" : "half");
+		}
 	}
 
 	return ret;
@@ -254,11 +263,59 @@ static int phy_mc_ksz8081_static_cfg(const struct device *dev)
 	return 0;
 }
 
+static int phy_mc_ksz8081_reset(const struct device *dev)
+{
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio)
+	const struct mc_ksz8081_config *config = dev->config;
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio) */
+	struct mc_ksz8081_data *data = dev->data;
+	int ret;
+
+	/* Lock mutex */
+	ret = k_mutex_lock(&data->mutex, K_FOREVER);
+	if (ret) {
+		LOG_ERR("PHY mutex lock error");
+		return ret;
+	}
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio)
+	if (!config->reset_gpio.port) {
+		goto skip_reset_gpio;
+	}
+
+	/* Start reset */
+	ret = gpio_pin_set_dt(&config->reset_gpio, 0);
+	if (ret) {
+		goto done;
+	}
+
+	/* Wait for 500 ms as specified by datasheet */
+	k_busy_wait(USEC_PER_MSEC * 500);
+
+	/* Reset over */
+	ret = gpio_pin_set_dt(&config->reset_gpio, 1);
+	goto done;
+skip_reset_gpio:
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio) */
+	ret = phy_mc_ksz8081_write(dev, MII_BMCR, MII_BMCR_RESET);
+	if (ret) {
+		goto done;
+	}
+	/* Wait for 500 ms as specified by datasheet */
+	k_busy_wait(USEC_PER_MSEC * 500);
+
+done:
+	/* Unlock mutex */
+	k_mutex_unlock(&data->mutex);
+	return ret;
+}
+
 static int phy_mc_ksz8081_cfg_link(const struct device *dev,
 					enum phy_link_speed speeds)
 {
 	const struct mc_ksz8081_config *config = dev->config;
 	struct mc_ksz8081_data *data = dev->data;
+	struct phy_link_state state = {};
 	int ret;
 	uint32_t anar;
 
@@ -271,6 +328,12 @@ static int phy_mc_ksz8081_cfg_link(const struct device *dev,
 
 	/* We are going to reconfigure the phy, don't need to monitor until done */
 	k_work_cancel_delayable(&data->phy_monitor_work);
+
+	/* Reset PHY */
+	ret = phy_mc_ksz8081_reset(dev);
+	if (ret) {
+		goto done;
+	}
 
 	/* DT configurations */
 	ret = phy_mc_ksz8081_static_cfg(dev);
@@ -316,19 +379,28 @@ static int phy_mc_ksz8081_cfg_link(const struct device *dev,
 
 	/* (re)do autonegotiation */
 	ret = phy_mc_ksz8081_autonegotiate(dev);
-	if (ret) {
+	if (ret && (ret != -ENETDOWN)) {
 		LOG_ERR("Error in autonegotiation");
 		goto done;
 	}
 
 	/* Get link status */
-	ret = phy_mc_ksz8081_get_link(dev, &data->state);
+	ret = phy_mc_ksz8081_get_link(dev, &state);
+
+	if (ret == 0 && memcmp(&state, &data->state, sizeof(struct phy_link_state)) != 0) {
+		memcpy(&data->state, &state, sizeof(struct phy_link_state));
+		if (data->cb) {
+			data->cb(dev, &data->state, data->cb_data);
+		}
+	}
 
 	/* Log the results of the configuration */
 	LOG_INF("PHY %d is %s", config->addr, data->state.is_up ? "up" : "down");
-	LOG_INF("PHY (%d) Link speed %s Mb, %s duplex\n", config->addr,
-		(PHY_LINK_IS_SPEED_100M(data->state.speed) ? "100" : "10"),
-		PHY_LINK_IS_FULL_DUPLEX(data->state.speed) ? "full" : "half");
+	if (data->state.is_up) {
+		LOG_INF("PHY (%d) Link speed %s Mb, %s duplex\n", config->addr,
+			(PHY_LINK_IS_SPEED_100M(data->state.speed) ? "100" : "10"),
+			PHY_LINK_IS_FULL_DUPLEX(data->state.speed) ? "full" : "half");
+	}
 
 done:
 	/* Unlock mutex */
@@ -362,7 +434,7 @@ static void phy_mc_ksz8081_monitor_work_handler(struct k_work *work)
 	struct mc_ksz8081_data *data =
 		CONTAINER_OF(dwork, struct mc_ksz8081_data, phy_monitor_work);
 	const struct device *dev = data->dev;
-	struct phy_link_state state;
+	struct phy_link_state state = {};
 	int rc;
 
 	rc = phy_mc_ksz8081_get_link(dev, &state);
@@ -407,29 +479,20 @@ static int phy_mc_ksz8081_init(const struct device *dev)
 skip_int_gpio:
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_interrupt_gpio) */
 
-
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio)
-	if (!config->reset_gpio.port) {
-		goto skip_reset_gpio;
+	if (config->reset_gpio.port) {
+		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
+		if (ret) {
+			return ret;
+		}
 	}
-
-	/* Start reset */
-	ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
-	if (ret) {
-		return ret;
-	}
-
-	/* Wait for 500 ms as specified by datasheet */
-	k_busy_wait(USEC_PER_MSEC * 500);
-
-	/* Reset over */
-	ret = gpio_pin_set_dt(&config->reset_gpio, 1);
-	if (ret) {
-		return ret;
-	}
-
-skip_reset_gpio:
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio) */
+
+	/* Reset PHY */
+	ret = phy_mc_ksz8081_reset(dev);
+	if (ret) {
+		return ret;
+	}
 
 	k_work_init_delayable(&data->phy_monitor_work,
 				phy_mc_ksz8081_monitor_work_handler);
