@@ -56,7 +56,7 @@ static inline int is_preempt(struct k_thread *thread)
 }
 
 
-static inline int is_metairq(struct k_thread *thread)
+static inline int thread_is_metairq(struct k_thread *thread)
 {
 #if CONFIG_NUM_METAIRQ_PRIORITIES > 0
 	return (thread->base.prio - K_HIGHEST_THREAD_PRIO)
@@ -209,7 +209,7 @@ static ALWAYS_INLINE bool should_preempt(struct k_thread *thread,
 	/* Otherwise we have to be running a preemptible thread or
 	 * switching to a metairq
 	 */
-	if (is_preempt(_current) || is_metairq(thread)) {
+	if (is_preempt(_current) || thread_is_metairq(thread)) {
 		return true;
 	}
 
