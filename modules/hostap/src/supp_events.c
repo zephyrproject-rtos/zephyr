@@ -177,7 +177,7 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 	case SUPPLICANT_EVENT_NETWORK_ADDED:
 	case SUPPLICANT_EVENT_NETWORK_REMOVED:
 		strncpy(data->supplicant_event_str, event_info.event_str,
-			sizeof(data->supplicant_event_str));
+			sizeof(data->supplicant_event_str) - 1);
 		event_data->data_len = strlen(data->supplicant_event_str) + 1;
 	case SUPPLICANT_EVENT_DSCP_POLICY:
 		/* TODO */
