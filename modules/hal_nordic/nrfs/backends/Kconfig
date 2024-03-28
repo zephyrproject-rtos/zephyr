@@ -1,0 +1,89 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+
+menu "NRFS backend settings"
+depends on NRFS
+module = NRFS_BACKEND
+module-str = NRFS backend
+source "subsys/logging/Kconfig.template.log_config"
+
+choice NRFS_IPC_SERVICE_BACKEND_VARIANT
+	prompt "Select variant of IPC service backend for nrfs."
+	depends on NRFS_BACKEND_IPC_SERVICE
+	default NRFS_BACKEND_IPC_SERVICE_LITE
+
+config NRFS_BACKEND_IPC_SERVICE_EXTENDED
+	bool "Zephyr IPC service backend for NRFS with additional buffering."
+
+config NRFS_BACKEND_IPC_SERVICE_LITE
+	bool "Use IPC service directly by NRFS"
+
+endchoice
+
+if NRFS_BACKEND_IPC_SERVICE_LITE
+config NRFS_BACKEND_IPC_SERVICE_LITE_INIT_PRIO
+	int "Initialization priority for NRFS IPC backend"
+	default 51
+	help
+	   This should be higher than priority of other divers/subsystems
+	   used by NRFS backend. For example MBOX_INIT_PRIORITY which is 50.
+endif
+
+config NRFS_MAX_BACKEND_PACKET_SIZE
+	int "Maximum IPC data packet size in bytes"
+	range 8 128
+	default 32
+
+config NRFS_BACKEND_RX_TASK_STACK_SIZE
+	int "Stack size used for incoming messages task"
+	range 128 16384
+	default 2048 if LOG
+	default 512
+
+config NRFS_BACKEND_TX_TASK_STACK_SIZE
+	int "Stack size used for outgoing messages task"
+	range 128 16384
+	default 2048 if LOG
+	default 512
+
+config NRFS_BACKEND_RX_TASK_PRIORITY
+	int "Priority of RX backend task"
+	range -16 NUM_PREEMPT_PRIORITIES
+	default 0
+
+config NRFS_BACKEND_TX_TASK_PRIORITY
+	int "Priority of TX backend task"
+	range -16 NUM_PREEMPT_PRIORITIES
+	default 0
+
+config NRFS_BACKEND_RX_MSG_QUEUE_SIZE
+	int "Size of RX buffer message queue size"
+	range 1 16
+	default 8
+
+config NRFS_BACKEND_TX_MSG_QUEUE_SIZE
+	int "Size of TX buffer message queue size"
+	range 1 16
+	default 8
+
+config NRFS_BACKEND_TX_MAX_RETRIES
+	int "Max number of retries when sending message"
+	range 0 100
+	default 5
+
+config NRFS_BACKEND_TX_RETRY_DELAY_US
+	int "Delay in us that will be added between send retries"
+	range 0 1000000
+	default 10
+
+config NRFS_BACKEND_RX_QUEUE_MAX_WAIT_US
+	int "Maximum wait time to wait when putting data to RX queue in usec"
+	range 0 1000000
+	default 10
+
+config NRFS_BACKEND_SERVICE_START_DELAY_MS
+	int "Delay before backend initialization and start in ms"
+	range 0 1000000
+	default 0
+endmenu

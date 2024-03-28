@@ -4,6 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_NRF54HX
+	select NRF_HAS_NRFS
+	select NRFS_HAS_CLOCK_SERVICE
+	select NRFS_HAS_DVFS_SERVICE
+	select NRFS_HAS_TEMP_SERVICE
+	select NRFS_HAS_USB_SERVICE
 	select HAS_NRFX
 	select HAS_NORDIC_DRIVERS
 

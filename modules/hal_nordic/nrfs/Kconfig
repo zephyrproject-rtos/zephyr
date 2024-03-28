@@ -1,0 +1,121 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config NRF_HAS_NRFS
+	bool
+
+config NRFS_HAS_CLOCK_SERVICE
+	bool
+
+config NRFS_HAS_CONST_LATENCY_SERVICE
+	bool
+
+config NRFS_HAS_DIAG_SERVICE
+	bool
+
+config NRFS_HAS_DVFS_SERVICE
+	bool
+
+config NRFS_HAS_MRAM_SERVICE
+	bool
+
+config NRFS_HAS_PMIC_SERVICE
+	bool
+
+config NRFS_HAS_RESET_SERVICE
+	bool
+
+config NRFS_HAS_TEMP_SERVICE
+	bool
+
+config NRFS_HAS_USB_SERVICE
+	bool
+
+menu "nRF Services"
+	depends on NRF_HAS_NRFS
+
+config NRFS
+	bool "nRF Services Support"
+	help
+	  This option enables the nRF Services library
+
+config NRFS_LOCAL_DOMAIN
+	bool "nRF Services Local Domain Support"
+	depends on NRFS
+	help
+	  This option enables the nRF Services Local Domain libraries
+
+config NRFS_BACKEND_IPC_SERVICE
+	bool "IPC service backend for NRFS"
+	depends on NRFS
+	imply IPC_SERVICE
+	imply IPC_SERVICE_BACKEND_ICMSG
+	imply MBOX
+	imply EVENTS
+	imply REBOOT
+	help
+	  This option enables transport protocol for the NRFS
+
+config NRFS_DVFS_LOCAL_DOMAIN
+	bool "Local domain that supports DVFS"
+	depends on NRFS
+	depends on NRFS_LOCAL_DOMAIN
+	default y if SOC_NRF54H20_CPUAPP
+
+menu "Enabled Services"
+depends on NRFS
+module = NRFS
+module-str = nRF-Services
+source "subsys/logging/Kconfig.template.log_config"
+
+config RESET_SERVICE_ENABLED
+	bool "Reset service"
+	depends on NRFS_HAS_RESET_SERVICE
+	default n
+
+config MRAM_SERVICE_ENABLED
+	bool "MRAM latency service"
+	depends on NRFS_HAS_MRAM_SERVICE
+	default y
+
+config TEMP_SERVICE_ENABLED
+	bool "Temperature service"
+	depends on NRFS_HAS_TEMP_SERVICE
+	default y
+
+config USB_SERVICE_ENABLED
+	bool "USB service"
+	depends on NRFS_HAS_USB_SERVICE
+	default y
+
+config CONST_LATENCY_SERVICE_ENABLED
+	bool "DPPI constant latency service"
+	depends on NRFS_HAS_CONST_LATENCY_SERVICE
+	default y
+
+config PMIC_SERVICE_ENABLED
+	bool "PMIC service"
+	depends on NRFS_HAS_PMIC_SERVICE
+	default n
+
+config DVFS_SERVICE_ENABLED
+	bool "DVFS service"
+	depends on NRFS_HAS_DVFS_SERVICE
+	default y if SOC_NRF54H20_CPUAPP
+	default n
+
+config DIAG_SERVICE_ENABLED
+	bool "System Diagnostics service (only for development purposes)"
+	depends on NRFS_HAS_DIAG_SERVICE
+	default n
+
+config CLOCK_SERVICE_ENABLED
+	bool "Clock service"
+	depends on NRFS_HAS_CLOCK_SERVICE
+	default y
+endmenu
+
+rsource "backends/Kconfig"
+rsource "dvfs/Kconfig"
+
+endmenu
