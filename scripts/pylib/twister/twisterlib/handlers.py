@@ -20,7 +20,7 @@ import threading
 import time
 
 from queue import Queue, Empty
-from twisterlib.environment import ZEPHYR_BASE
+from twisterlib.environment import ZEPHYR_BASE, strip_ansi_sequences
 from twisterlib.error import TwisterException
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains
@@ -216,7 +216,7 @@ class BinaryHandler(Handler):
                     else:
                         stripped_line = line_decoded.rstrip()
                     logger.debug("OUTPUT: %s", stripped_line)
-                    log_out_fp.write(line_decoded)
+                    log_out_fp.write(strip_ansi_sequences(line_decoded))
                     log_out_fp.flush()
                     harness.handle(stripped_line)
                     if harness.state:
@@ -426,7 +426,7 @@ class DeviceHandler(Handler):
                 sl = serial_line.decode('utf-8', 'ignore').lstrip()
                 logger.debug("DEVICE: {0}".format(sl.rstrip()))
 
-                log_out_fp.write(sl.encode('utf-8'))
+                log_out_fp.write(strip_ansi_sequences(sl).encode('utf-8'))
                 log_out_fp.flush()
                 harness.handle(sl.rstrip())
 
@@ -921,7 +921,7 @@ class QEMUHandler(Handler):
                 continue
 
             # line contains a full line of data output from QEMU
-            log_out_fp.write(line)
+            log_out_fp.write(strip_ansi_sequences(line))
             log_out_fp.flush()
             line = line.rstrip()
             logger.debug(f"QEMU ({pid}): {line}")
