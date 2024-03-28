@@ -81,14 +81,14 @@
 };
 
 &i2c0 {
-	location-sda = <GECKO_LOCATION(4) GECKO_PORT_C GECKO_PIN(0)>;
-	location-scl = <GECKO_LOCATION(4) GECKO_PORT_C GECKO_PIN(1)>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &i2c1 {
-	location-sda = <GECKO_LOCATION(0) GECKO_PORT_C GECKO_PIN(4)>;
-	location-scl = <GECKO_LOCATION(0) GECKO_PORT_C GECKO_PIN(5)>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 

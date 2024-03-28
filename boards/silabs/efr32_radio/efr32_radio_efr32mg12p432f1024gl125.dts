@@ -62,9 +62,32 @@
 	};
 };
 
+&pinctrl {
+	i2c0_default: i2c0_default {
+		group1 {
+			psels = <GECKO_PSEL(I2C_SDA, C, 11)>,
+				<GECKO_PSEL(I2C_SCL, C, 10)>,
+				<GECKO_LOC(I2C_SDA, 16)>,
+				<GECKO_LOC(I2C_SCL, 14)>;
+		};
+	};
+};
+
 &usart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	si7021: si7021@40 {
+		compatible = "silabs,si7006";
+		reg = <0x40>;
+		status = "okay";
+	};
 };
