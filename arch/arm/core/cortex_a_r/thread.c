@@ -361,7 +361,7 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 			guard_len,
 			fault_addr, psp)) {
 		/* Thread stack corruption */
-		return (uint32_t)Z_THREAD_STACK_BUFFER(z_main_stack);
+		return (uint32_t)K_THREAD_STACK_BUFFER(z_main_stack);
 	}
 #endif
 #endif /* CONFIG_USERSPACE */

@@ -863,6 +863,9 @@ def parse_arguments(parser, args, options = None):
 
     return options
 
+def strip_ansi_sequences(s: str) -> str:
+    """Remove ANSI escape sequences from a string."""
+    return re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', "", s)
 
 class TwisterEnv:
 
@@ -967,8 +970,7 @@ class TwisterEnv:
         # for instance if twister is executed from inside a makefile. In such a
         # scenario it is then necessary to remove them, as otherwise the JSON decoding
         # will fail.
-        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-        out = ansi_escape.sub('', out.decode())
+        out = strip_ansi_sequences(out.decode())
 
         if p.returncode == 0:
             msg = "Finished running %s" % (args[0])

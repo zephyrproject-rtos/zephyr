@@ -63,6 +63,8 @@ tmp_res_file=tmp.xml
 
 all_cases_a=( $all_cases )
 n_cases=$((${#all_cases_a[@]}))
+
+mkdir -p $(dirname ${RESULTS_FILE})
 touch ${RESULTS_FILE}
 echo "Attempting to run ${n_cases} cases (logging to \
  `realpath ${RESULTS_FILE}`)"

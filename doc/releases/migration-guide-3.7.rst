@@ -206,6 +206,12 @@ Networking
   used to read the inner IPv4/IPv6 packets in an IP tunnel. This incoming tunnel read is now
   implemented in `recv` callback. (:github:`70549`)
 
+* Virtual LAN (VLAN) implementation is changed to use the Virtual network interfaces.
+  There are no API changes, but the type of a VLAN network interface is changed from `ETHERNET`
+  to `VIRTUAL`. This could require changes to the code that sets the VLAN tags to a network
+  interface. For example in the `net_eth_is_vlan_enabled()` API, the 2nd interface parameter
+  must point to the main Ethernet interface, and not to the VLAN interface. (:github:`70345`)
+
 * Modified the ``wifi connect`` command to use key-value format for the arguments. In the
   previous implementation, we were identifying an option using its position in the argument string.
   This made it difficult to deal with optional arguments or extending the support

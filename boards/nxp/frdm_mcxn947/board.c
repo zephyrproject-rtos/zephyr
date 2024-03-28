@@ -132,6 +132,22 @@ static int frdm_mcxn947_init(void)
 	CLOCK_EnableClock(kCLOCK_Gpio5);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(dac0), okay)
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac0);
+	CLOCK_SetClkDiv(kCLOCK_DivDac0Clk, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_DAC0);
+
+	CLOCK_EnableClock(kCLOCK_Dac0);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(dac1), okay)
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac1);
+	CLOCK_SetClkDiv(kCLOCK_DivDac1Clk, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_DAC1);
+
+	CLOCK_EnableClock(kCLOCK_Dac1);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 

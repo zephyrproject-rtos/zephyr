@@ -132,7 +132,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	size_t stack_aligned_size;
 
 	stack_start = POINTER_TO_UINT(_current->stack_obj);
-	stack_size = Z_THREAD_STACK_SIZE_ADJUST(_current->stack_info.size);
+	stack_size = K_THREAD_STACK_LEN(_current->stack_info.size);
 
 #if defined(CONFIG_HW_STACK_PROTECTION)
 	/* With hardware stack protection, the first page of stack

@@ -794,7 +794,7 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
             # memory section.
             fp.write("static uint8_t Z_GENERIC_SECTION(.priv_stacks.noinit) "
                      " __aligned(Z_KERNEL_STACK_OBJ_ALIGN)"
-                     " priv_stacks[%d][Z_KERNEL_STACK_LEN(CONFIG_PRIVILEGED_STACK_SIZE)];\n"
+                     " priv_stacks[%d][K_KERNEL_STACK_LEN(CONFIG_PRIVILEGED_STACK_SIZE)];\n"
                      % stack_counter)
 
             fp.write("static const struct z_stack_data stack_data[%d] = {\n"

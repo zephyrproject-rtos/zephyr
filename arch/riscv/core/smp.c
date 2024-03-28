@@ -33,7 +33,7 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 	riscv_cpu_init[cpu_num].fn = fn;
 	riscv_cpu_init[cpu_num].arg = arg;
 
-	riscv_cpu_sp = Z_KERNEL_STACK_BUFFER(stack) + sz;
+	riscv_cpu_sp = K_KERNEL_STACK_BUFFER(stack) + sz;
 	riscv_cpu_boot_flag = 0U;
 
 #ifdef CONFIG_PM_CPU_OPS
