@@ -32,6 +32,7 @@ struct flashdisk_data {
 	off_t cached_addr;
 	bool cache_valid;
 	bool cache_dirty;
+	bool unrestricted_write;
 };
 
 #define GET_SIZE_TO_BOUNDARY(start, block_size) \
@@ -51,6 +52,7 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 				  const struct flash_area *fap)
 {
 	int rc;
+	const struct flash_parameters *par = flash_get_parameters(ctx->info.dev);
 	struct flash_pages_info page;
 	off_t offset;
 
@@ -61,6 +63,7 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 	}
 
 	ctx->page_size = page.size;
+	ctx->unrestricted_write = par->unrestricted_write;
 	LOG_INF("Initialize device %s", ctx->info.name);
 	LOG_INF("offset %lx, sector size %zu, page size %zu, volume size %zu",
 		(long)ctx->offset, ctx->sector_size, ctx->page_size, ctx->size);
@@ -206,6 +209,18 @@ end:
 	return rc;
 }
 
+static int flashdisk_erase_page(struct flashdisk_data *ctx)
+{
+	int rc = 0;
+
+	if ((IS_ENABLED(CONFIG_FLASH_ANY_HAS_RESTRICTED_WRITE)) &&
+	    (!ctx->unrestricted_write)) {
+		rc = flash_erase(ctx->info.dev, ctx->cached_addr, ctx->page_size);
+	}
+
+	return rc;
+}
+
 static int flashdisk_cache_commit(struct flashdisk_data *ctx)
 {
 	if (!ctx->cache_valid || !ctx->cache_dirty) {
@@ -213,7 +228,7 @@ static int flashdisk_cache_commit(struct flashdisk_data *ctx)
 		return 0;
 	}
 
-	if (flash_erase(ctx->info.dev, ctx->cached_addr, ctx->page_size) < 0) {
+	if (flashdisk_erase_page(ctx) < 0) {
 		return -EIO;
 	}
 
