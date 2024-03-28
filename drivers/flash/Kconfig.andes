@@ -12,6 +12,7 @@ menuconfig FLASH_ANDES_QSPI
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_JESD216
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_ANY_HAS_RESTRICTED_WRITE
 	depends on !SPI_NOR
 	help
 	  Enable driver for Andes QSPI

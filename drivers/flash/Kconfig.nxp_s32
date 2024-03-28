@@ -8,6 +8,7 @@ config FLASH_NXP_S32_QSPI_NOR
 	select MEMC
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_ANY_HAS_RESTRICTED_WRITE
 	select FLASH_JESD216
 	help
 	  Enable the Flash driver for a NOR Serial Flash Memory device connected
