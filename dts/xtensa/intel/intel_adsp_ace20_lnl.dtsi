@@ -176,10 +176,11 @@
 			status = "okay";
 		};
 
-		ssp0: ssp@28100 {
-			compatible = "intel,ssp-dai";
+		ssplink0: ssp-link@28100 {
+			compatible = "intel,ssp-link";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			link = <0>;
 			reg = <0x00028100 0x1000
 				   0x00079C00 0x200>;
 			i2svss = <0x00028C00 0x1000>;
@@ -192,10 +193,11 @@
 			status = "okay";
 		};
 
-		ssp1: ssp@29100 {
-			compatible = "intel,ssp-dai";
+		ssplink1: ssp-link@29100 {
+			compatible = "intel,ssp-link";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			link = <1>;
 			reg = <0x00029100 0x1000
 				   0x00079C00 0x200>;
 			i2svss = <0x00029C00 0x1000>;
@@ -208,10 +210,11 @@
 			status = "okay";
 		};
 
-		ssp2: ssp@2a100 {
-			compatible = "intel,ssp-dai";
+		ssplink2: ssp-link@2a100 {
+			compatible = "intel,ssp-link";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			link = <2>;
 			reg = <0x0002a100 0x1000
 				   0x00079C00 0x200>;
 			i2svss = <0x0002AC00 0x1000>;
@@ -224,10 +227,11 @@
 			status = "okay";
 		};
 
-		ssp3: ssp@2b100 {
-			compatible = "intel,ssp-dai";
+		ssplink3: ssp-link@2b100 {
+			compatible = "intel,ssp-link";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			link = <3>;
 			reg = <0x0002b100 0x1000
 				   0x00079C00 0x200>;
 			i2svss = <0x0002BC00 0x1000>;
@@ -240,10 +244,11 @@
 			status = "okay";
 		};
 
-		ssp4: ssp@2c100 {
-			compatible = "intel,ssp-dai";
+		ssplink4: ssp-link@2c100 {
+			compatible = "intel,ssp-link";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			link = <4>;
 			reg = <0x0002c100 0x1000
 				   0x00079C00 0x200>;
 			i2svss = <0x0002CC00 0x1000>;
@@ -256,10 +261,11 @@
 			status = "okay";
 		};
 
-		ssp5: ssp@2d100 {
-			compatible = "intel,ssp-dai";
+		ssplink5: ssp-link@2d100 {
+			compatible = "intel,ssp-link";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			link = <5>;
 			reg = <0x0002d100 0x1000
 				   0x00079C00 0x200>;
 			i2svss = <0x0002DC00 0x1000>;
@@ -547,6 +553,52 @@
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <0x12>;
+		};
+	};
+
+	ssps {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		ssp00: ssp@0 {
+			compatible = "intel,ssp-dai";
+			reg = <0x0>;
+			link = <0>;
+			status = "okay";
+		};
+
+		ssp10: ssp@10 {
+			compatible = "intel,ssp-dai";
+			reg = <0x10>;
+			link = <1>;
+			status = "okay";
+		};
+
+		ssp20: ssp@20 {
+			compatible = "intel,ssp-dai";
+			reg = <0x20>;
+			link = <2>;
+			status = "okay";
+		};
+
+		ssp30: ssp@30 {
+			compatible = "intel,ssp-dai";
+			reg = <0x30>;
+			link = <3>;
+			status = "okay";
+		};
+
+		ssp40: ssp@40 {
+			compatible = "intel,ssp-dai";
+			reg = <0x40>;
+			link = <4>;
+			status = "okay";
+		};
+
+		ssp50: ssp@50 {
+			compatible = "intel,ssp-dai";
+			reg = <0x50>;
+			link = <5>;
+			status = "okay";
 		};
 	};
 };

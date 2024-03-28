@@ -216,10 +216,11 @@
 			paddr-size = <11>;
 		};
 
-		ssp0: ssp@77000 {
-			compatible = "intel,ssp-dai";
+		ssplink0: ssp-link@77000 {
+			compatible = "intel,ssp-link";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			link = <0>;
 			reg = <0x00077000 0x200
 			       0x00078C00 0x008>;
 			interrupts = <0x01 0 0>;
@@ -231,10 +232,11 @@
 			status = "okay";
 		};
 
-		ssp1: ssp@77200 {
-			compatible = "intel,ssp-dai";
+		ssplink1: ssp-link@77200 {
+			compatible = "intel,ssp-link";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			link = <1>;
 			reg = <0x00077200 0x200
 			       0x00078C00 0x008>;
 			interrupts = <0x01 0 0>;
@@ -246,10 +248,11 @@
 			status = "okay";
 		};
 
-		ssp2: ssp@77400 {
-			compatible = "intel,ssp-dai";
+		ssplink2: ssp-link@77400 {
+			compatible = "intel,ssp-link";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			link = <2>;
 			reg = <0x00077400 0x200
 			       0x00078C00 0x008>;
 			interrupts = <0x02 0 0>;
@@ -261,10 +264,11 @@
 			status = "okay";
 		};
 
-		ssp3: ssp@77600 {
-			compatible = "intel,ssp-dai";
+		ssplink3: ssp-link@77600 {
+			compatible = "intel,ssp-link";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			link = <3>;
 			reg = <0x00077600 0x200
 			       0x00078C00 0x008>;
 			interrupts = <0x03 0 0>;
@@ -276,10 +280,11 @@
 			status = "okay";
 		};
 
-		ssp4: ssp@77800 {
-			compatible = "intel,ssp-dai";
+		ssplink4: ssp-link@77800 {
+			compatible = "intel,ssp-link";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			link = <4>;
 			reg = <0x00077800 0x200
 			       0x00078C00 0x008>;
 			interrupts = <0x03 0 0>;
@@ -291,10 +296,11 @@
 			status = "okay";
 		};
 
-		ssp5: ssp@77a00 {
-			compatible = "intel,ssp-dai";
+		ssplink5: ssp-link@77a00 {
+			compatible = "intel,ssp-link";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			link = <5>;
 			reg = <0x00077A00 0x200
 			       0x00078C00 0x008>;
 			interrupts = <0x03 0 0>;
@@ -511,6 +517,53 @@
 			compatible = "intel,hda-dai";
 			status = "okay";
 			reg = <0x0f>;
+		};
+	};
+
+	ssps {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ssp00: ssp@0 {
+			compatible = "intel,ssp-dai";
+			reg = <0x0>;
+			link = <0>;
+			status = "okay";
+		};
+
+		ssp10: ssp@10 {
+			compatible = "intel,ssp-dai";
+			reg = <0x10>;
+			link = <1>;
+			status = "okay";
+		};
+
+		ssp20: ssp@20 {
+			compatible = "intel,ssp-dai";
+			reg = <0x20>;
+			link = <2>;
+			status = "okay";
+		};
+
+		ssp30: ssp@30 {
+			compatible = "intel,ssp-dai";
+			reg = <0x30>;
+			link = <3>;
+			status = "okay";
+		};
+
+		ssp40: ssp@40 {
+			compatible = "intel,ssp-dai";
+			reg = <0x40>;
+			link = <4>;
+			status = "okay";
+		};
+
+		ssp50: ssp@50 {
+			compatible = "intel,ssp-dai";
+			reg = <0x50>;
+			link = <5>;
+			status = "okay";
 		};
 	};
 };
