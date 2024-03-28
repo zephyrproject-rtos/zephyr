@@ -90,11 +90,35 @@
 	pinctrl-names = "default";
 };
 
-&lpi2c2{
-	status = "disabled";
+&lpi2c2 {
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-names = "default";
+
+	gpio_exp1: pcal6524@22 {
+		compatible = "nxp,pca-series";
+		part_no = "pcal6524";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupt-gpios = <&gpio3 27 (GPIO_ACTIVE_LOW|GPIO_PULL_UP)>;
+		status = "okay";
+
+		/** M.2 power en */
+		gpiohog_ext1_pwren: ext1-pwren-hog {
+			gpio-hog;
+			gpios = <13 GPIO_ACTIVE_HIGH>;
+			line-name = "ext1_pwren";
+		};
+
+		/** LVDS backlight en */
+		gpiohog_ext2_pwren: ext2-pwren-hog {
+			gpio-hog;
+			gpios = <14 GPIO_ACTIVE_HIGH>;
+			line-name = "ext2_pwren";
+		};
+	};
 };
 
 &lpspi3 {
