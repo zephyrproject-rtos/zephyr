@@ -593,12 +593,22 @@ config BT_CTLR_DYNAMIC_INTERRUPTS
 	  permit use of SoC's peripheral for custom use when Bluetooth is not
 	  enabled.
 
-config BT_CTLR_OPTIMIZE_FOR_SPEED
-	prompt "Optimize for Speed" if !(SOC_SERIES_NRF51X && BT_CTLR_LE_ENC)
-	bool
-	default y if BT_CTLR_LE_ENC
+config BT_CTLR_LTO
+	bool "HCI Controller with Link Time Optimization"
+	depends on ARM && BT_HCI_RAW
+	select SHARED_INTERRUPTS
+	select ISR_TABLES_LOCAL_DECLARATION
+	select LTO
 	help
-	  Optimize compilation of controller for execution speed.
+	  Enable use of Link Time Optimizations, to reduce code space usage.
+	  This disables compiler optimization for execution speed.
+
+config BT_CTLR_OPTIMIZE_FOR_SPEED
+	bool "Optimize for Speed"
+	depends on !BT_CTLR_LTO
+	default y
+	help
+	  Optimize compilation of Controller for execution speed.
 
 config BT_CTLR_XTAL_ADVANCED
 	bool "Advanced event preparation"
