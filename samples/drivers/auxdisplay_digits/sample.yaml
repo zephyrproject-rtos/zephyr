@@ -1,0 +1,11 @@
+sample:
+  description: Demonstration of auxdisplay driver for segment displays
+  name: Auxiliary (segment) display sample
+tests:
+  sample.drivers.auxdisplay_digits:
+    tags: auxdisplay
+    harness_config:
+      fixture: fixture_auxdisplay
+    platform_allow: esp32c3_devkitm
+    integration_platforms:
+      - esp32c3_devkitm
