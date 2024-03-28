@@ -41,6 +41,14 @@ config ADC_MCUX_ETC
 	help
 	  Enable the MCUX ADC ETC driver.
 
+config ADC_MCUX_GAU
+	bool "MCUX GAU ADC driver"
+	default y
+	depends on DT_HAS_NXP_GAU_ADC_ENABLED
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable the GAU ADC driver
+
 if ADC_MCUX_ADC16
 
 choice
