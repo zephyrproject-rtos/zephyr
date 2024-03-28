@@ -1237,9 +1237,6 @@ struct can_mcan_config {
 	uint16_t mram_elements[CAN_MCAN_MRAM_CFG_NUM_CELLS];
 	uint16_t mram_offsets[CAN_MCAN_MRAM_CFG_NUM_CELLS];
 	size_t mram_size;
-#ifdef CONFIG_CAN_FD_MODE
-	uint8_t tx_delay_comp_offset;
-#endif
 	const void *custom;
 };
 
@@ -1300,7 +1297,6 @@ struct can_mcan_config {
 		.mram_elements = CAN_MCAN_DT_MRAM_ELEMENTS_GET(node_id),                           \
 		.mram_offsets = CAN_MCAN_DT_MRAM_OFFSETS_GET(node_id),                             \
 		.mram_size = CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id),                              \
-		.tx_delay_comp_offset = DT_PROP(node_id, tx_delay_comp_offset),                    \
 		.custom = _custom,                                                                 \
 	}
 #else /* CONFIG_CAN_FD_MODE */
