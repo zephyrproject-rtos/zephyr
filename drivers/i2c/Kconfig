@@ -54,8 +54,15 @@ config I2C_CALLBACK
 	help
 	  API and implementations of i2c_transfer_cb.
 
+config HAS_I2C_RTIO
+	bool
+	help
+	  This option must be selected by I2C controller drivers that optionally implement the RTIO
+	  interface.
+
 config I2C_RTIO
 	bool "I2C RTIO API"
+	depends on HAS_I2C_RTIO
 	select RTIO
 	help
 	  API and implementations of I2C for RTIO
