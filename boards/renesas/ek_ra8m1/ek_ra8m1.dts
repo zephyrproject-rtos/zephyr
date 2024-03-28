@@ -21,6 +21,7 @@
 		zephyr,console = &uart9;
 		zephyr,shell-uart = &uart9;
 		zephyr,entropy = &trng;
+		zephyr,canbus = &canfd0;
 	};
 
 	leds {
@@ -65,6 +66,13 @@
 	aliases {
 		led0 = &led1;
 	};
+
+	transceiver0: can-phy0 {
+		compatible = "nxp,tja1040t", "can-transceiver-gpio";
+		standby-gpios = <&ioport2 7 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
 };
 
 &xtal {
@@ -97,11 +105,21 @@
 	status = "okay";
 };
 
+&canfdclk {
+	clocks = <&pll>;
+	div = <5>;
+	status = "okay";
+};
+
 &ioport0 {
 	status = "okay";
 };
 
 &ioport1 {
+	status = "okay";
+};
+
+&ioport2 {
 	status = "okay";
 };
 
@@ -187,5 +205,16 @@ mikrobus_serial: &uart3 {};
 			label = "storage";
 			reg = <0X0 DT_SIZE_K(12)>;
 		};
+	};
+};
+
+&canfd_global {
+	status = "okay";
+	canfd0 {
+		pinctrl-0 = <&canfd0_default>;
+		pinctrl-names = "default";
+		phys = <&transceiver0>;
+		rx-max-filters = <16>;
+		status = "okay";
 	};
 };
