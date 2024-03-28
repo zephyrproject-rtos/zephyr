@@ -1,0 +1,10 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_SOPHGO
+	bool
+
+config SOC_FAMILY
+	default "sophgo" if SOC_FAMILY_SOPHGO
+
+rsource "*/Kconfig.soc"
