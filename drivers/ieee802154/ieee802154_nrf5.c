@@ -25,7 +25,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/debug/stack.h>
 
 #include <soc.h>
+
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && defined(NRF_FICR_S)
 #include <soc_secure.h>
+#else
+#include <hal/nrf_ficr.h>
+#endif
+
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/debug/stack.h>
@@ -120,7 +126,12 @@ static void nrf5_get_eui64(uint8_t *mac)
 	mac[index++] = (IEEE802154_NRF5_VENDOR_OUI >> 8) & 0xff;
 	mac[index++] = IEEE802154_NRF5_VENDOR_OUI & 0xff;
 
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && defined(NRF_FICR_S)
 	soc_secure_read_deviceid(deviceid);
+#else
+	deviceid[0] = nrf_ficr_deviceid_get(NRF_FICR, 0);
+	deviceid[1] = nrf_ficr_deviceid_get(NRF_FICR, 1);
+#endif
 
 	factoryAddress = (uint64_t)deviceid[EUI64_ADDR_HIGH] << 32;
 	factoryAddress |= deviceid[EUI64_ADDR_LOW];

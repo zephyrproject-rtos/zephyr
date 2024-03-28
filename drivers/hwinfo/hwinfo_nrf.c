@@ -7,12 +7,17 @@
 #include <soc.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>
-#include <hal/nrf_ficr.h>
 #include <zephyr/sys/byteorder.h>
 #ifndef CONFIG_BOARD_QEMU_CORTEX_M0
 #include <helpers/nrfx_reset_reason.h>
 #endif
+
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && defined(NRF_FICR_S)
 #include <soc_secure.h>
+#else
+#include <hal/nrf_ficr.h>
+#endif
+
 struct nrf_uid {
 	uint32_t id[2];
 };
@@ -22,7 +27,12 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	struct nrf_uid dev_id;
 	uint32_t deviceid[2];
 
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && defined(NRF_FICR_S)
 	soc_secure_read_deviceid(deviceid);
+#else
+	deviceid[0] = nrf_ficr_deviceid_get(NRF_FICR, 0);
+	deviceid[1] = nrf_ficr_deviceid_get(NRF_FICR, 1);
+#endif
 
 	dev_id.id[0] = sys_cpu_to_be32(deviceid[1]);
 	dev_id.id[1] = sys_cpu_to_be32(deviceid[0]);
