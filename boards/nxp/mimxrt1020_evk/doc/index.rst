@@ -106,8 +106,6 @@ already supported, which can also be re-used on this mimxrt1020_evk board:
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
-| ENET      | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |

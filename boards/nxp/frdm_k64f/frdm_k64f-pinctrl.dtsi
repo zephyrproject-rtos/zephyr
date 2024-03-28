@@ -26,7 +26,21 @@
 		};
 	};
 
-	enet_default: enet_default {
+	pinmux_enet: pinmux_enet {
+		group1 {
+			pinmux = <RMII0_RXER_PTA5>,
+				<RMII0_RXD1_PTA12>,
+				<RMII0_RXD0_PTA13>,
+				<RMII0_CRS_DV_PTA14>,
+				<RMII0_TXEN_PTA15>,
+				<RMII0_TXD0_PTA16>,
+				<RMII0_TXD1_PTA17>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_enet_mdio: pinmux_enet_mdio {
 		group0 {
 			pinmux = <RMII0_MDIO_PTB0>;
 			drive-strength = "low";
@@ -35,14 +49,17 @@
 			slew-rate = "fast";
 		};
 		group1 {
-			pinmux = <RMII0_RXER_PTA5>,
-				<RMII0_RXD1_PTA12>,
-				<RMII0_RXD0_PTA13>,
-				<RMII0_CRS_DV_PTA14>,
-				<RMII0_TXEN_PTA15>,
-				<RMII0_TXD0_PTA16>,
-				<RMII0_TXD1_PTA17>,
-				<RMII0_MDC_PTB1>;
+			pinmux = <RMII0_MDC_PTB1>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_ptp: pinmux_ptp {
+		group0 {
+			pinmux = <ENET0_1588_TMR0_PTC16>,
+				<ENET0_1588_TMR1_PTC17>,
+				<ENET0_1588_TMR2_PTC18>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};

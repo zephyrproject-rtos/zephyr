@@ -64,7 +64,7 @@ const clock_enet_pll_config_t ethPllConfig = {
 	.enableClkOutput1 = true,
 #endif
 #endif
-#if defined(CONFIG_PTP_CLOCK_MCUX)
+#if defined(CONFIG_PTP_CLOCK_MCUX) || defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	.enableClkOutput25M = true,
 #else
 	.enableClkOutput25M = false,

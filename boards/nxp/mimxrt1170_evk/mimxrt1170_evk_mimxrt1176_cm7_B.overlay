@@ -70,7 +70,12 @@
 	/delete-node/ fxos8700@1f;
 };
 
-/* Disable ethernet, as PHY is not supported */
-&enet {
-	status = "disabled";
+&enet_mdio {
+	/delete-node/ phy@0;
+
+	phy: phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
 };

@@ -49,16 +49,29 @@
 	soc {
 		/* i.MX rt1060 has a second Ethernet controller. */
 		enet2: ethernet@402d4000 {
-			compatible = "nxp,kinetis-ethernet";
-			reg = <0x402D4000 0x628>;
-			interrupts = <152 0>;
-			interrupt-names = "COMMON";
-			status = "disabled";
-			ptp {
-				compatible = "nxp,kinetis-ptp";
+			compatible = "nxp,enet";
+			reg = <0x402D8000 0x628>;
+			clocks = <&ccm IMX_CCM_ENET_CLK 0 0>;
+			enet2_mac: ethernet {
+				compatible = "nxp,enet-mac";
+				interrupts = <152 0>;
+				interrupt-names = "COMMON";
+				nxp,mdio = <&enet2_mdio>;
+				nxp,ptp-clock = <&enet_ptp_clock>;
+				status = "disabled";
+			};
+			enet2_mdio: mdio {
+				compatible = "nxp,enet-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+			enet2_ptp_clock: ptp_clock {
+				compatible = "nxp,enet-ptp-clock";
 				status = "disabled";
 				interrupts = <153 0>;
 				interrupt-names = "IEEE1588_TMR";
+				clocks = <&ccm IMX_CCM_ENET_PLL 0 0>;
 			};
 		};
 

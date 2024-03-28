@@ -22,3 +22,10 @@ properties:
     required: true
     description: |
       Corresponding ptp clock device
+
+  nxp,unique-mac:
+    type: boolean
+    description: |
+      Use unique silicon ID to use UAA MAC.
+      This property will be overridden if the node has
+      zephyr,random-mac-address or local-mac-address also.
