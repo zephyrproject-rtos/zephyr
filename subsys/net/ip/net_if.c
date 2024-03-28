@@ -4560,6 +4560,15 @@ int net_if_get_by_iface(struct net_if *iface)
 	return (iface - _net_if_list_start) + 1;
 }
 
+struct net_if *net_if_check_iface(struct net_if *iface)
+{
+	if (!(iface >= _net_if_list_start && iface < _net_if_list_end)) {
+		return NULL;
+	}
+
+	return iface;
+}
+
 void net_if_foreach(net_if_cb_t cb, void *user_data)
 {
 	STRUCT_SECTION_FOREACH(net_if, iface) {

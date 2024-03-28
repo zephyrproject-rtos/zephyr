@@ -41,34 +41,29 @@ static void handler(struct net_mgmt_event_callback *cb,
 		    uint32_t mgmt_event,
 		    struct net_if *iface)
 {
-	int i = 0;
-
 	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
 		return;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+	ARRAY_FOR_EACH(NET_IF_IPV4_UNICAST_ADDRESSES(iface), i) {
 		char buf[NET_IPV4_ADDR_LEN];
 
-		if (iface->config.ip.ipv4->unicast[i].ipv4.addr_type !=
-							NET_ADDR_DHCP) {
+		if (NET_IF_IPV4_UNICAST_ADDRESS(iface, i).addr_type != NET_ADDR_DHCP) {
 			continue;
 		}
 
 		LOG_INF("   Address[%d]: %s", net_if_get_by_iface(iface),
 			net_addr_ntop(AF_INET,
-			    &iface->config.ip.ipv4->unicast[i].ipv4.address.in_addr,
-						  buf, sizeof(buf)));
+				      &NET_IF_IPV4_UNICAST_ADDRESS(iface, i).address.in_addr,
+				      buf, sizeof(buf)));
 		LOG_INF("    Subnet[%d]: %s", net_if_get_by_iface(iface),
-			net_addr_ntop(AF_INET,
-				       &iface->config.ip.ipv4->unicast[i].netmask,
-				       buf, sizeof(buf)));
+			net_addr_ntop(AF_INET, &NET_IF_IPV4_NETMASK(iface, i),
+				      buf, sizeof(buf)));
 		LOG_INF("    Router[%d]: %s", net_if_get_by_iface(iface),
-			net_addr_ntop(AF_INET,
-						 &iface->config.ip.ipv4->gw,
-						 buf, sizeof(buf)));
+			net_addr_ntop(AF_INET, &NET_IF_IPV4_CONFIG(iface)->gw,
+				      buf, sizeof(buf)));
 		LOG_INF("Lease time[%d]: %u seconds", net_if_get_by_iface(iface),
-			iface->config.dhcpv4.lease_time);
+			NET_IF_DHCPV4_CONFIG(iface).lease_time);
 	}
 }
 
