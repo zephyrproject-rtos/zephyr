@@ -39,6 +39,14 @@ config STM32_ENABLE_DEBUG_SLEEP_STOP
 	  effectivly destroys the use-case of `west attach`. Also
 	  SEGGER RTT and similar technologies need this.
 
+config SWJ_ANALOG_PRIORITY
+	int "SWJ DP port to analog routine initialization priority"
+	default 49
+	help
+	  Initialization priority of the routine within the PRE_KERNEL1 level.
+	  This priority must be greater than GPIO_INIT_PRIORITY and lower than
+	  UART_INIT_PRIORITY.
+
 choice POWER_SUPPLY_CHOICE
 	prompt "STM32 power supply configuration"
 	default POWER_SUPPLY_LDO
