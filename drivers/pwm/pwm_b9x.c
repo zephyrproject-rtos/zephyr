@@ -72,7 +72,11 @@ static int pwm_b9x_set_cycles(const struct device *dev, uint32_t channel,
 	pwm_set_tmax(channel, period_cycles);
 
 	/* start pwm */
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 	pwm_start(channel);
+#elif CONFIG_SOC_RISCV_TELINK_B95
+	pwm_start((channel == 0)?FLD_PWM0_EN:BIT(channel));
+#endif
 
 	/* switch to 32K */
 	if (config->clk32k_ch_enable & BIT(channel)) {

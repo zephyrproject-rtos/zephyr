@@ -20,7 +20,11 @@
 #endif
 
 /* Software reset defines */
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 #define reg_reset                   REG_ADDR8(0x1401ef)
+#elif CONFIG_SOC_RISCV_TELINK_B95
+#define reg_reset                   REG_ADDR8(0x14082f)
+#endif
 #define SOFT_RESET                  0x20u
 
 /* List of supported CCLK frequencies */
@@ -29,7 +33,9 @@
 #define CLK_32MHZ                   32000000u
 #define CLK_48MHZ                   48000000u
 #define CLK_60MHZ                   60000000u
+#define CLK_80MHZ                   80000000u
 #define CLK_96MHZ                   96000000u
+#define CLK_120MHZ                  120000000u
 
 /* MID register flash size */
 #define FLASH_MID_SIZE_OFFSET       16
@@ -58,13 +64,13 @@
 	#endif
 #elif CONFIG_SOC_RISCV_TELINK_B95
 	#if DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 0
-		#define POWER_MODE      LDO_1P4_LDO_2P0
+		#define POWER_MODE      LDO_0P94_LDO_1P8
 	#elif DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 1
-		#define POWER_MODE      DCDC_1P4_LDO_2P0
+		#define POWER_MODE      DCDC_0P94_LDO_1P8
 	#elif DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 2
-		#define POWER_MODE      DCDC_1P4_DCDC_2P0
+		#define POWER_MODE      DCDC_0P94_DCDC_1P8
 	#else
-		#error "Wrong value for power-mode parameter"
+	#error "Wrong value for power-mode parameter"
 	#endif
 #endif
 
@@ -83,8 +89,10 @@
 	(DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != CLK_32MHZ) && \
 	(DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != CLK_48MHZ) && \
 	(DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != CLK_60MHZ) && \
-	(DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != CLK_96MHZ))
-	#error "Unsupported clock-frequency. Supported values: 16, 24, 32, 48, 60 and 96 MHz"
+	(DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != CLK_80MHZ) && \
+	(DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != CLK_96MHZ) && \
+	(DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != CLK_120MHZ))
+	#error "Invalid clock-frequency. Supported values: 16, 24, 32, 48, 60, 80, 96 and 120 MHz"
 #endif
 
 #if (defined(CONFIG_BT_B9X) || defined(CONFIG_IEEE802154))
@@ -138,9 +146,9 @@ static int soc_b9x_init(void)
 #endif /* CONFIG_PM  */
 
 	/* system init */
-#if CONFIG_SOC_RISCV_TELINK_B91
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B95
 	sys_init(POWER_MODE, VBAT_TYPE);
-#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
+#elif CONFIG_SOC_RISCV_TELINK_B92
 	sys_init(POWER_MODE, VBAT_TYPE, GPIO_VOLTAGE_3V3);
 #endif
 
@@ -152,32 +160,59 @@ static int soc_b9x_init(void)
 	soc_load_rf_parameters_normal();
 #endif
 
-
 	/* clocks init: CCLK, HCLK, PCLK */
 	switch (cclk) {
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 	case CLK_16MHZ:
 		CCLK_16M_HCLK_16M_PCLK_16M;
 		break;
+#endif
 
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 	case CLK_24MHZ:
 		CCLK_24M_HCLK_24M_PCLK_24M;
 		break;
+#endif
 
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 	case CLK_32MHZ:
 		CCLK_32M_HCLK_32M_PCLK_16M;
 		break;
+#endif
 
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 	case CLK_48MHZ:
 		CCLK_48M_HCLK_48M_PCLK_24M;
 		break;
-#if CONFIG_SOC_RISCV_TELINK_B91
+#endif
+
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B95
 	case CLK_60MHZ:
+#if CONFIG_SOC_RISCV_TELINK_B91
 		CCLK_60M_HCLK_30M_PCLK_15M;
+#else
+		PLL_240M_CCLK_60M_HCLK_60M_PCLK_60M_MSPI_48M;
+#endif
 		break;
 #endif
+
+#if CONFIG_SOC_RISCV_TELINK_B95
+	case CLK_80MHZ:
+		PLL_240M_CCLK_80M_HCLK_40M_PCLK_40M_MSPI_48M;
+		break;
+#endif
+
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 	case CLK_96MHZ:
 		CCLK_96M_HCLK_48M_PCLK_24M;
 		break;
+#endif
+
+#if CONFIG_SOC_RISCV_TELINK_B95
+	case CLK_120MHZ:
+		PLL_240M_CCLK_120M_HCLK_60M_PCLK_60M_MSPI_48M;
+		break;
+#endif
 	}
 
 	/* Init Machine Timer source clock: 32 KHz RC */
@@ -210,9 +245,9 @@ void soc_b9x_restore(void)
 	unsigned int cclk = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
 
 	/* system init */
-#if CONFIG_SOC_RISCV_TELINK_B91
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B95
 	sys_init(POWER_MODE, VBAT_TYPE);
-#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
+#elif CONFIG_SOC_RISCV_TELINK_B92
 	sys_init(POWER_MODE, VBAT_TYPE, GPIO_VOLTAGE_3V3);
 #endif
 
@@ -226,30 +261,67 @@ void soc_b9x_restore(void)
 
 	/* clocks init: CCLK, HCLK, PCLK */
 	switch (cclk) {
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 	case CLK_16MHZ:
 		CCLK_16M_HCLK_16M_PCLK_16M;
 		break;
+#endif
 
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 	case CLK_24MHZ:
 		CCLK_24M_HCLK_24M_PCLK_24M;
 		break;
+#endif
 
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 	case CLK_32MHZ:
 		CCLK_32M_HCLK_32M_PCLK_16M;
 		break;
+#endif
 
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 	case CLK_48MHZ:
 		CCLK_48M_HCLK_48M_PCLK_24M;
 		break;
-#if CONFIG_SOC_RISCV_TELINK_B91
+#endif
+
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B95
 	case CLK_60MHZ:
+#if CONFIG_SOC_RISCV_TELINK_B91
 		CCLK_60M_HCLK_30M_PCLK_15M;
+#else
+		PLL_240M_CCLK_60M_HCLK_60M_PCLK_60M_MSPI_48M;
+#endif
 		break;
 #endif
+
+#if CONFIG_SOC_RISCV_TELINK_B95
+	case CLK_80MHZ:
+		PLL_240M_CCLK_80M_HCLK_40M_PCLK_40M_MSPI_48M;
+		break;
+#endif
+
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 	case CLK_96MHZ:
 		CCLK_96M_HCLK_48M_PCLK_24M;
 		break;
+#endif
+
+#if CONFIG_SOC_RISCV_TELINK_B95
+	case CLK_120MHZ:
+		PLL_240M_CCLK_120M_HCLK_60M_PCLK_60M_MSPI_48M;
+		break;
+#endif
 	}
+}
+
+static inline uint32_t read_flash_mid(void)
+{
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
+	return flash_read_mid();
+#elif CONFIG_SOC_RISCV_TELINK_B95
+	return flash_read_mid(SLAVE0);
+#endif
 }
 
 /**
@@ -261,7 +333,7 @@ static int soc_b9x_check_flash(void)
 	size_t hw_flash_size = 0;
 
 	const flash_capacity_e hw_flash_cap =
-		(flash_read_mid() & FLASH_MID_SIZE_MASK) >> FLASH_MID_SIZE_OFFSET;
+		(read_flash_mid() & FLASH_MID_SIZE_MASK) >> FLASH_MID_SIZE_OFFSET;
 
 	switch (hw_flash_cap) {
 	case FLASH_SIZE_1M:
@@ -280,7 +352,7 @@ static int soc_b9x_check_flash(void)
 	case FLASH_SIZE_16M:
 		hw_flash_size = 16 * 1024 * 1024;
 		break;
-#endif /* CONFIG_SOC_RISCV_TELINK_B92 */
+#endif
 	default:
 		break;
 	}

@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2024 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	keys {
+		/delete-node/ button_1;
+		compatible = "gpio-keys";
+		key_1: button_1 {
+			gpios = <&gpiod 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+};
+
+&pinctrl {
+	/* Define I2C pins: SCL(PC0), SDA(PC1) */
+	i2c_scl_pc0_default: i2c_scl_pc0_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_C, B9x_PIN_0, B92_FUNC_I2C_SCL_IO)>;
+	};
+	i2c_sda_pc1_default: i2c_sda_pc1_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_C, B9x_PIN_1, B92_FUNC_I2C_SDA_IO)>;
+	};
+};
+
+&i2c {
+	pinctrl-0 = <&i2c_scl_pc0_default &i2c_sda_pc1_default>;
+
+	sht3xd@44 {
+		compatible = "sensirion,sht3xd";
+		reg = <0x44>;
+	};
+};

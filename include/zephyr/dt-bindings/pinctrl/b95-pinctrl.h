@@ -40,39 +40,72 @@
 #define B95_FUNC_UART1_RTX_IO       28
 #define B95_FUNC_CLK_7816           29
 #define B95_FUNC_I2S0_BCK_IO        30
-#define B95_FUNC_I2S0_LR_OUT_IO     31
-#define B95_FUNC_I2S0_DAT_OUT       32
-#define B95_FUNC_I2S0_LR_IN_IO      33
-#define B95_FUNC_I2S0_DAT_IN_I      34
+#define B95_FUNC_I2S0_LR0_IO        31
+#define B95_FUNC_I2S0_DAT0_IO       32
+#define B95_FUNC_I2S0_LR1_IO        33
+#define B95_FUNC_I2S0_DAT1_IO       34
 #define B95_FUNC_I2S0_CLK           35
 #define B95_FUNC_I2S1_BCK_IO        36
-#define B95_FUNC_I2S1_LR_OUT_IO     37
-#define B95_FUNC_I2S1_DAT_OUT       38
-#define B95_FUNC_I2S1_LR_IN_IO      39
-#define B95_FUNC_I2S1_DAT_IN_I      40
+#define B95_FUNC_I2S1_LR0_IO        37
+#define B95_FUNC_I2S1_DAT0_IO       38
+#define B95_FUNC_I2S1_LR1_IO        39
+#define B95_FUNC_I2S1_DAT1_IO       40
 #define B95_FUNC_I2S1_CLK           41
 #define B95_FUNC_DMIC0_CLK          42
 #define B95_FUNC_DMIC0_DAT_I        43
-#define B95_FUNC_DMIC1_CLK          44
-#define B95_FUNC_DMIC1_DAT_I        45
+#define B95_FUNC_MSPI_CN2           44
+#define B95_FUNC_MSPI_CN3           45
 #define B95_FUNC_DBG_PROBE_CLK      46
 #define B95_FUNC_TX_CYC2PA          47
 #define B95_FUNC_WIFI_DENY_I        48
 #define B95_FUNC_BT_ACTIVITY        49
 #define B95_FUNC_BT_STATUS          50
-#define B95_FUNC_BT_INBAND          51
+
 #define B95_FUNC_ATSEL_0            52
 #define B95_FUNC_ATSEL_1            53
 #define B95_FUNC_ATSEL_2            54
 #define B95_FUNC_ATSEL_3            55
 #define B95_FUNC_RX_CYC2LNA         56
-#define B95_FUNC_DBG_BB0            57
-#define B95_FUNC_DBG_ADC_I_DAT0     58
+
 #define B95_FUNC_I2C1_SDA_IO        59
 #define B95_FUNC_I2C1_SCL_IO        60
 #define B95_FUNC_GSPI_CN1           61
 #define B95_FUNC_GSPI_CN2           62
 #define B95_FUNC_GSPI_CN3           63
+#define B95_FUNC_ATSEL_4            64
+#define B95_FUNC_ATSEL_5            65
+#define B95_FUNC_IR_LEARN_I         66
+#define B95_FUNC_UART2_CTS_I        67
+#define B95_FUNC_UART2_RTS          68
+#define B95_FUNC_UART2_TX           69
+#define B95_FUNC_UART2_RTX_IO       70
+#define B95_FUNC_SDM0_P             71
+#define B95_FUNC_SDM0_N             72
+#define B95_FUNC_SDM1_P             73
+#define B95_FUNC_SDM1_N             74
+#define B95_FUNC_I2S2_BCK_IO        75
+#define B95_FUNC_I2S2_LR0_IO        76
+#define B95_FUNC_I2S2_DAT0_IO       77
+#define B95_FUNC_I2S2_LR1_IO        78
+#define B95_FUNC_I2S2_DAT1_IO       79
+#define B95_FUNC_I2S2_CLK           80
+#define B95_FUNC_SSPI_CN_I          81
+#define B95_FUNC_SSPI_CK_I          82
+#define B95_FUNC_SSPI_SI_IO         83
+#define B95_FUNC_SSPI_SO_IO         84
+#define B95_FUNC_KEYS0_IO           85
+#define B95_FUNC_PWM_SYNC_I         86
+#define B95_FUNC_PWM6               87
+#define B95_FUNC_PWM6_N             88
+#define B95_FUNC_TMR0_CMP           89
+#define B95_FUNC_TMR1_CMP           90
+
+
+#define B95_FUNC_LSPI_CN_IO         92
+
+#define B95_FUNC_MSPI_CN1           96
+#define B95_FUNC_RZ_TX              97
+#define B95_FUNC_SWM_IO             98
 
 /* IDs for GPIO Ports  */
 
@@ -82,6 +115,7 @@
 #define B9x_PORT_D       0x03
 #define B9x_PORT_E       0x04
 #define B9x_PORT_F       0x05
+#define B9x_PORT_G       0x06
 
 /* IDs for GPIO Pins */
 
@@ -102,7 +136,7 @@
 
 /* Pin function positions */
 
-#define B95_PIN_FUNC_POS    0x3F
+#define B95_PIN_FUNC_POS    0xFF
 
 /* Pin pull up positions */
 
@@ -117,16 +151,20 @@
 
 /* B95 pin configuration bit field positions and masks */
 
-#define B9x_PULL_POS     21
+#define B9x_PULL_POS     24
 #define B9x_PULL_MSK     0x3
 #define B9x_FUNC_POS     16
-#define B95_FUNC_MSK     0x1F
+#define B95_FUNC_MSK     0xFF
 #define B9x_PORT_POS     8
 #define B9x_PORT_MSK     0xFF
 
 #define B9x_PIN_POS      0
 #define B9x_PIN_MSK      0xFFFF
 #define B9x_PIN_ID_MSK   0xFF
+
+#define B95_PULL_NONE    (B9x_PULL_NONE << (B9x_PULL_POS - B9x_FUNC_POS))
+#define B95_PULL_DOWN    (B9x_PULL_DOWN << (B9x_PULL_POS - B9x_FUNC_POS))
+#define B95_PULL_UP      (B9x_PULL_UP << (B9x_PULL_POS - B9x_FUNC_POS))
 
 /* Setters and getters */
 

@@ -43,9 +43,9 @@ entry:
 #elif CONFIG_SOC_RISCV_TELINK_B95
 	.org 0x24
 #if defined(CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE) && CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE
-	.word (0x3b0097a9)              #/ 2 - wire SPI interface
+	.word (0x030020A8)              #/ 2 - wire SPI interface
 #else
-	.word (0xeb0095ba)              #/ 4 - wire SPI interface
+	.word (0xeb0493ba)              #/ 4 - wire SPI interface
 #endif
 
 #endif

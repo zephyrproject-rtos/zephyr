@@ -44,20 +44,35 @@ jobs:
         cd ..
         west build -b tlsr9258a                  -d build_blinky_b95                    zephyr/samples/basic/blinky
 
-    - name: Build B95 basic/blinky with PM
+    - name: Build B95 basic/blinky_pwm
       run: |
         cd ..
-        west build -b tlsr9258a                  -d build_blinky_pm_b95                 zephyr/samples/basic/blinky                              -- -DCONFIG_PM=y
+        west build -b tlsr9258a                  -d build_blinky_pwm_b95                zephyr/samples/basic/blinky_pwm
+
+    - name: Build B95 hello_world
+      run: |
+        cd ..
+        west build -b tlsr9258a                  -d build_hello_b95                     zephyr/samples/hello_world
+
+    - name: Build B95 drivers/watchdog
+      run: |
+        cd ..
+        west build -b tlsr9258a                  -d build_watchdog_b95                  zephyr/samples/drivers/watchdog
+
+    - name: Build B95 sensor/sht3xd
+      run: |
+        cd ..
+        west build -b tlsr9258a                  -d build_sht3xd_b95                    zephyr/samples/sensor/sht3xd
 
     - name: Build B95 bluetooth/peripheral_ht
       run: |
         cd ..
-        west build -b tlsr9258a                  -d build_bt_peripheral_ht_b95          zephyr/samples/bluetooth/peripheral_ht
+        west build -b tlsr9258a                  -d build_peripheral_ht_b95             zephyr/samples/bluetooth/peripheral_ht
 
-    - name: Build B95 bluetooth/peripheral_ht with PM
+    - name: Build B95 net/openthread/cli
       run: |
         cd ..
-        west build -b tlsr9258a                  -d build_bt_peripheral_ht_pm_b95       zephyr/samples/bluetooth/peripheral_ht                   -- -DCONFIG_PM=y
+        west build -b tlsr9258a                  -d build_ot_cli_b95                    zephyr/samples/net/openthread/cli                        -- -DOVERLAY_CONFIG=overlay-telink-fixed-mac.conf
 
     - name: Build B95 net/openthread/coprocessor in RCP configuration with UART interface
       run: |
@@ -74,76 +89,26 @@ jobs:
         cd ..
         west build -b tlsr9258a                  -d build_ot_echo_client_b95            zephyr/samples/net/sockets/echo_client                   -- -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\"
 
-    - name: Build B95 net/sockets/echo_client for OpenThread with PM
-      run: |
-        cd ..
-        west build -b tlsr9258a                  -d build_ot_echo_client_pm_b95         zephyr/samples/net/sockets/echo_client                   -- -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\" -DCONFIG_PM=y
-
-    - name: Build B95 bootloader/mcuboot/boot
-      run: |
-        cd ..
-        west build -b tlsr9258a                  -d build_mcuboot_b95                   bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_LOG_DEFAULT_LEVEL=3 -DCONFIG_BOOT_MAX_IMG_SECTORS=4096
-
-    - name: Build B95 subsys/mgmt/mcumgr/smp_svr for Bluetooth
-      run: |
-        cd ..
-        west build -b tlsr9258a                  -d build_bt_smp_svr_b95                zephyr/samples/subsys/mgmt/mcumgr/smp_svr                -- -DOVERLAY_CONFIG=overlay-bt.conf
-
     - name: Build B95 subsys/usb/console for USB driver
       run: |
         cd ..
-        west build -b tlsr9258a                  -d build_usb_console_b95               zephyr/samples/subsys/usb/console
-
-    - name: Build B95 net/openthread/coprocessor in RCP configuration with USB interface
-      run: |
-        cd ..
-        west build -b tlsr9258a                  -d build_ot_coprocessor_rcp_usb_b95    zephyr/samples/net/openthread/coprocessor                -- -DDTC_OVERLAY_FILE="usb.overlay boards/tlsr9258a-dongle.overlay" -DOVERLAY_CONFIG=overlay-rcp-usb-telink.conf
-
-    - name: Build B95 boards/tlsr9x/basic
-      run: |
-        cd ..
-        west build -b tlsr9258a_retention        -d build_retention_basic_b95           zephyr/samples/boards/tlsr9x/basic                       -- -DCONFIG_SOC_SERIES_RISCV_TELINK_B9X_NON_RETENTION_RAM_CODE=y
-
-    - name: Build B95 net/sockets/echo_client for OpenThread with PM deep-sleep
-      run: |
-        cd ..
-        west build -b tlsr9258a_retention        -d build_ot_echo_client_pm_deep_b95    zephyr/samples/net/sockets/echo_client                   -- -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\" -DCONFIG_PM=y -DCONFIG_SOC_SERIES_RISCV_TELINK_B9X_NON_RETENTION_RAM_CODE=y -DCONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE=y
-
-    - name: Build B95 bootloader/mcuboot/boot for USB DFU
-      run: |
-        cd ..
-        west build -b tlsr9258a                  -d build_mcuboot_usb_dfu_b95           bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_LOG_DEFAULT_LEVEL=3 -DCONFIG_USB_DFU_WILL_DETACH=n -DCONFIG_BOOT_USB_DFU_GPIO=y -DCONFIG_MCUBOOT_INDICATION_LED=y
-
-    - name: Build B95 basic/blinky for USB DFU
-      run: |
-        cd ..
-        west build -b tlsr9258a                  -d build_blinky_usb_dfu_b95            zephyr/samples/basic/blinky                              -- -DCONFIG_BOOTLOADER_MCUBOOT=y
-
-    - name: Build B95 net/openthread/cli
-      run: |
-        cd ..
-        west build -b tlsr9258a                  -d build_ot_cli_b95                    zephyr/samples/net/openthread/cli                        -- -DOVERLAY_CONFIG=overlay-telink-fixed-mac.conf
+        west build -b tlsr9258a             -d build_usb_console_b95               zephyr/samples/subsys/usb/console
 
     - name: Collect artifacts
       run: |
         mkdir telink_build_artifacts
         cp ../build_blinky_b95/zephyr/zephyr.bin                    telink_build_artifacts/b95_blinky.bin
-        cp ../build_blinky_pm_b95/zephyr/zephyr.bin                 telink_build_artifacts/b95_blinky_pm.bin
-        cp ../build_bt_peripheral_ht_b95/zephyr/zephyr.bin          telink_build_artifacts/b95_bt_peripheral_ht.bin
-        cp ../build_bt_peripheral_ht_pm_b95/zephyr/zephyr.bin       telink_build_artifacts/b95_bt_peripheral_ht_pm.bin
+        cp ../build_blinky_pwm_b95/zephyr/zephyr.bin                telink_build_artifacts/b95_blinky_pwm.bin
+        cp ../build_hello_b95/zephyr/zephyr.bin                     telink_build_artifacts/b95_hello.bin
+        cp ../build_watchdog_b95/zephyr/zephyr.bin                  telink_build_artifacts/b95_watchdog.bin
+        cp ../build_sht3xd_b95/zephyr/zephyr.bin                    telink_build_artifacts/b95_sht3xd.bin
+        cp ../build_peripheral_ht_b95/zephyr/zephyr.bin             telink_build_artifacts/b95_peripheral_ht.bin
+        cp ../build_ot_cli_b95/zephyr/zephyr.bin                    telink_build_artifacts/b95_ot_cli.bin
         cp ../build_ot_coprocessor_rcp_uart_b95/zephyr/zephyr.bin   telink_build_artifacts/b95_ot_coprocessor_rcp_uart.bin
         cp ../build_ot_echo_server_b95/zephyr/zephyr.bin            telink_build_artifacts/b95_ot_echo_server.bin
         cp ../build_ot_echo_client_b95/zephyr/zephyr.bin            telink_build_artifacts/b95_ot_echo_client.bin
-        cp ../build_ot_echo_client_pm_b95/zephyr/zephyr.bin         telink_build_artifacts/b95_ot_echo_client_pm.bin
-        cp ../build_mcuboot_b95/zephyr/zephyr.bin                   telink_build_artifacts/b95_mcuboot.bin
-        cp ../build_bt_smp_svr_b95/zephyr/zephyr.signed.bin         telink_build_artifacts/b95_bt_smp_svr.signed.bin
         cp ../build_usb_console_b95/zephyr/zephyr.bin               telink_build_artifacts/b95_usb_console.bin
-        cp ../build_ot_coprocessor_rcp_usb_b95/zephyr/zephyr.bin    telink_build_artifacts/b95_ot_coprocessor_rcp_usb.bin
-        cp ../build_retention_basic_b95/zephyr/zephyr.bin           telink_build_artifacts/b95_retention_basic.bin
-        cp ../build_ot_echo_client_pm_deep_b95/zephyr/zephyr.bin    telink_build_artifacts/b95_ot_echo_client_pm_retention.bin
-        cp ../build_mcuboot_usb_dfu_b95/zephyr/zephyr.bin           telink_build_artifacts/b95_mcuboot_usb_dfu.bin
-        cp ../build_blinky_usb_dfu_b95/zephyr/zephyr.signed.bin     telink_build_artifacts/b95_blinky_usb_dfu.signed.bin
-        cp ../build_ot_cli_b95/zephyr/zephyr.bin                    telink_build_artifacts/b95_ot_cli.bin
+        cp ../modules/hal/telink/zephyr/blobs/liblt_9258_zephyr.a   telink_build_artifacts/liblt_9258_zephyr.a
 
     - name: Publish artifacts
       uses: actions/upload-artifact@v3

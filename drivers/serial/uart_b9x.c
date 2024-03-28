@@ -187,9 +187,13 @@ static void uart_b9x_cal_div_and_bwpc(uint32_t baudrate, uint32_t pclk,
 static void uart_b9x_init(volatile struct uart_b9x_t *uart, uint16_t divider,
 			  uint8_t bwpc, uint8_t parity, uint8_t stop_bit)
 {
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
+	uart->ctrl0 = bwpc;
+#elif CONFIG_SOC_RISCV_TELINK_B95
+	uart->ctrl0 = ((uart->ctrl0 & (~FLD_UART_BPWC_O)) | bwpc);
+#endif
 	/* config clock */
 	divider = divider | FLD_UART_CLK_DIV_EN;
-	uart->ctrl0 = bwpc;
 #if CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95
 	uart->ctrl0 &= ~(FLD_UART_RX_CLR_EN | FLD_UART_NDMA_RXDONE_EN |
 		FLD_UART_RXTIMEOUT_RTS_EN | FLD_UART_S7816_EN);

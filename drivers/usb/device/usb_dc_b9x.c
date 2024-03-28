@@ -25,9 +25,11 @@
 
 #include <soc.h>
 
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 #if (defined CONFIG_USB_TELINK_B9X && DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != 48000000u) \
 && (defined CONFIG_USB_TELINK_B9X && DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) != 96000000u)
-#error USB on current paltform requires CPU clocks frequency equal 48MHz or 96 MHz.
+#error USB on B91 and B92 paltform requires CPU clocks frequency equal 48MHz or 96 MHz.
+#endif
 #endif
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
@@ -884,6 +886,10 @@ static int usb_irq_init(void)
 
 #if CONFIG_SOC_RISCV_TELINK_B91
 	usbhw_set_irq_mask(USB_IRQ_RESET_MASK | USB_IRQ_SUSPEND_MASK);
+#endif
+#if CONFIG_SOC_RISCV_TELINK_B95
+	usbhw_set_irq_mask(USB_IRQ_RESET_MASK | USB_IRQ_SUSPEND_MASK |
+				USB_IRQ_SETUP_MASK | USB_IRQ_DATA_MASK | USB_IRQ_STATUS_MASK);
 #endif
 	usbhw_clr_irq_status(USB_IRQ_RESET_STATUS);
 
@@ -1766,6 +1772,10 @@ static int usb_init(void)
 	int ret;
 
 	reg_wakeup_en = 0;
+#if CONFIG_SOC_RISCV_TELINK_B95
+	usbhw_init();
+	usbhw_set_ctrl_ep_size(SIZE_64_BYTE);
+#endif
 
 	for (size_t i = 0; i <  USBD_EP_TOTAL_CNT; i++) {
 		k_timer_init(&usbd_ctx.ep_ctx[i].retry_timer, usbd_retry_timer_expire, NULL);

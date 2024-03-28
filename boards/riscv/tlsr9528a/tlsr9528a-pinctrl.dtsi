@@ -42,7 +42,7 @@
 		pinmux = <B9x_PINMUX_SET(B9x_PORT_C, B9x_PIN_4, B92_FUNC_UART1_CTS_I)>;
 	};
 
-	/* PWM Channel 0 (PD1) */
+	/* PWM Channel 0 (PD0) */
 
 	pwm_ch0_pd0_default: pwm_ch0_pd0_default {
 		pinmux = <B9x_PINMUX_SET(B9x_PORT_D, B9x_PIN_0, B92_FUNC_PWM0)>;

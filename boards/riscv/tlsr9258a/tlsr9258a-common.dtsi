@@ -34,22 +34,22 @@
 		compatible = "gpio-leds";
 
 		led_blue: led_0 {
-			gpios = <&gpiod 0 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioc 0 GPIO_ACTIVE_HIGH>;
 			label = "LED Blue";
 		};
 
 		led_green: led_1 {
-			gpios = <&gpiod 1 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioc 2 GPIO_ACTIVE_HIGH>;
 			label = "LED Green";
 		};
 
 		led_white: led_2 {
-			gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioc 3 GPIO_ACTIVE_HIGH>;
 			label = "LED White";
 		};
 
 		led_red: led_3 {
-			gpios = <&gpioe 7 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
 			label = "LED Red";
 		};
 	};
@@ -67,19 +67,19 @@
 		compatible = "gpio-keys";
 		key_1: button_1 {
 			label = "User KEY1";
-			gpios = <&gpiod 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&gpiod 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 		key_2: button_2 {
 			label = "User KEY2";
-			gpios = <&gpiod 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&gpiod 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 		key_3: button_3 {
 			label = "User KEY3";
-			gpios = <&gpiod 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&gpiod 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 		key_4: button_4 {
 			label = "User KEY4";
-			gpios = <&gpiof 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&gpiod 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 		key_dfu: button_dfu {
 			label = "USB DFU";
@@ -100,11 +100,11 @@
 };
 
 &cpu0 {
-	clock-frequency = <48000000>;
+	clock-frequency = <60000000>;
 };
 
 &ram_ilm {
-	reg = <0x00000000 0x00040000>;
+	reg = <0x00040000 0x00040000>;
 };
 
 &ram_dlm {
@@ -174,6 +174,10 @@
 	status = "okay";
 };
 
+&gpiog {
+	status = "okay";
+};
+
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
@@ -191,9 +195,8 @@
 
 &pwm0 {
 	status = "okay";
-	clock-frequency = <93750>;
-	pinctrl-0 = <&pwm_ch0_pd0_default>;
-	pinctrl-names = "default";
+	clock-frequency = <300000>;
+	pinctrl-ch0 = <&pwm_ch0_pb7_default>;
 };
 
 &lspi {
@@ -213,7 +216,7 @@
 &i2c {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	pinctrl-0 = <&i2c_scl_pc0_default &i2c_sda_pc1_default>;
+	pinctrl-0 = <&i2c_scl_pe6_default &i2c_sda_pe7_default>;
 	pinctrl-names = "default";
 };
 
@@ -221,7 +224,7 @@
 	status = "okay";
 	vref-internal-mv = <1200>;
 	sample-freq = <DT_FREQ_K(96)>;
-	pinctrl-0 = <&adc_pb0_default>;
+	pinctrl-0 = <&adc_pb1_default>;
 	pinctrl-names = "default";
 };
 

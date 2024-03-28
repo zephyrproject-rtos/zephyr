@@ -1008,6 +1008,9 @@ static int b9x_start(const struct device *dev)
 		riscv_plic_set_priority(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET,
 			DT_INST_IRQ(0, priority));
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
+#if CONFIG_SOC_RISCV_TELINK_B95
+		ske_dig_en();
+#endif
 		rf_mode_init();
 		rf_set_zigbee_250K_mode();
 		rf_set_tx_dma(1, B9X_TRX_LENGTH);
