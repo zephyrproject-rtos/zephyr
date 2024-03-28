@@ -24,6 +24,7 @@ family:
     - name: nrf54l15
       cpuclusters:
       - name: cpuapp
+      - name: cpuflpr
   - name: nrf54h
     socs:
     - name: nrf54h20

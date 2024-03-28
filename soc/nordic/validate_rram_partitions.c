@@ -43,7 +43,7 @@
 
 /* clang-format off */
 
-#define RRAM_BASE REG_ADDR_NS(DT_NODELABEL(rram0))
+#define RRAM_BASE REG_ADDR_NS(DT_CHOSEN(zephyr_flash))
 #define RRAM_CONTROLLER DT_NODELABEL(rram_controller)
 
 #if !DT_NODE_EXISTS(RRAM_CONTROLLER)
