@@ -25,50 +25,71 @@ LOG_MODULE_REGISTER(modem_cmd_handler, CONFIG_MODEM_LOG_LEVEL);
  * Parsing Functions
  */
 
-static bool is_crlf(uint8_t c)
+static bool is_cr_or_lf(uint8_t c)
 {
-	if (c == '\n' || c == '\r') {
-		return true;
-	} else {
-		return false;
-	}
+    if (c== '\n' || c == '\r') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+static bool is_cr(uint8_t c)
+{
+    if (c == '\r') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+static bool is_lf(uint8_t c) {
+    if (c == '\n') {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 static void skipcrlf(struct modem_cmd_handler_data *data)
 {
-	while (data->rx_buf && data->rx_buf->len &&
-			is_crlf(*data->rx_buf->data)) {
-		net_buf_pull_u8(data->rx_buf);
-		if (!data->rx_buf->len) {
-			data->rx_buf = net_buf_frag_del(NULL, data->rx_buf);
-		}
-	}
+    while (data->rx_buf && data->rx_buf->len &&
+           is_cr_or_lf(*data->rx_buf->data)) {
+        net_buf_pull_u8(data->rx_buf);
+        if (!data->rx_buf->len) {
+            data->rx_buf = net_buf_frag_del(NULL, data->rx_buf);
+        }
+    }
 }
 
 static uint16_t findcrlf(struct modem_cmd_handler_data *data,
-		      struct net_buf **frag, uint16_t *offset)
+                         struct net_buf **frag, uint16_t *offset)
 {
-	struct net_buf *buf = data->rx_buf;
-	uint16_t len = 0U, pos = 0U;
+    struct net_buf *buf = data->rx_buf;
+    uint16_t len = 0U, pos = 0U;
 
-	while (buf && buf->len && !is_crlf(*(buf->data + pos))) {
-		if (pos + 1 >= buf->len) {
-			len += buf->len;
-			buf = buf->frags;
-			pos = 0U;
-		} else {
-			pos++;
-		}
-	}
+    while (buf && buf->len) {
+        if (pos + 1 >= buf->len) {
+            len += buf->len;
+            buf = buf->frags;
+            pos = 0U;
+        } else {
+            if (is_cr(*(buf->data + pos)) && is_lf(*(buf->data + pos + 1))) {
+                break;
+            } else {
+                pos++;
+            }
+        }
+    }
 
-	if (buf && buf->len && is_crlf(*(buf->data + pos))) {
-		len += pos;
-		*offset = pos;
-		*frag = buf;
-		return len;
-	}
+    if (buf && buf->len && is_cr(*(buf->data + pos)) && is_lf(*(buf->data + pos + 1))) {
+        len += pos;
+        *offset = pos;
+        *frag = buf;
+        return len;
+    }
 
-	return 0;
+    return 0;
 }
 
 static bool starts_with(struct net_buf *buf, const char *str)

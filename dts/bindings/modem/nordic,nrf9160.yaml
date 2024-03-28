@@ -1,0 +1,15 @@
+# Copyright (c) Sendrato B.V. 2023
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF9160 modem
+
+compatible: "nordic,nrf9160"
+
+include: uart-device.yaml
+
+properties:
+  mdm-power-gpios:
+    type: phandle-array
+
+  mdm-reset-gpios:
+    type: phandle-array
