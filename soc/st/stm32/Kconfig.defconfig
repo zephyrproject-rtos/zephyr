@@ -44,6 +44,11 @@ config SYS_CLOCK_TICKS_PER_SEC
 	default  250 if "$(dt_node_int_prop_int,$(DT_STM32_LPTIM_PATH),$(DT_ST_PRESCALER))" = 128
 	depends on STM32_LPTIM_TIMER && STM32_LPTIM_CLOCK_LSI
 
+choice STM32_LPTIM_CLOCK
+	default STM32_LPTIM_CLOCK_LSE if "$(dt_node_ph_array_prop_int,$(DT_STM32_LPTIM_PATH),clocks,1,bus)" = 2
+	default STM32_LPTIM_CLOCK_LSI if "$(dt_node_ph_array_prop_int,$(DT_STM32_LPTIM_PATH),clocks,1,bus)" = 3
+endchoice
+
 config CLOCK_CONTROL_STM32_CUBE
 	default y
 	depends on CLOCK_CONTROL
