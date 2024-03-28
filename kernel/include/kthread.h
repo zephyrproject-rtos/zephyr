@@ -49,7 +49,7 @@ static inline void thread_schedule_new(struct k_thread *thread, k_timeout_t dela
 }
 #endif /* CONFIG_MULTITHREADING */
 
-static inline int is_preempt(struct k_thread *thread)
+static inline int thread_is_preemptible(struct k_thread *thread)
 {
 	/* explanation in kernel_struct.h */
 	return thread->base.preempt <= _PREEMPT_THRESHOLD;
@@ -209,7 +209,7 @@ static ALWAYS_INLINE bool should_preempt(struct k_thread *thread,
 	/* Otherwise we have to be running a preemptible thread or
 	 * switching to a metairq
 	 */
-	if (is_preempt(_current) || thread_is_metairq(thread)) {
+	if (thread_is_preemptible(_current) || thread_is_metairq(thread)) {
 		return true;
 	}
 

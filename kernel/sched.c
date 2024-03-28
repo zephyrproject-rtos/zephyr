@@ -334,7 +334,7 @@ static void update_metairq_preempt(struct k_thread *thread)
 #if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
 	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
 	if (thread_is_metairq(thread) && !thread_is_metairq(_current) &&
-	    !is_preempt(_current)) {
+	    !thread_is_preemptible(_current)) {
 		/* Record new preemption */
 		_current_cpu->metairq_preempted = _current;
 	} else if (!thread_is_metairq(thread) && !z_is_idle_thread_object(thread)) {
