@@ -132,6 +132,14 @@ static int frdm_mcxn947_init(void)
 	CLOCK_EnableClock(kCLOCK_Gpio5);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(wwdt0), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivWdt0Clk, 1u);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(wwdt1), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivWdt1Clk, 1u);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 

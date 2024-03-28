@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(wdt_mcux_wwdt);
 struct mcux_wwdt_config {
 	WWDT_Type *base;
 	uint8_t clk_divider;
+	uint8_t wdt_instance;
 	void (*irq_config_func)(const struct device *dev);
 };
 
@@ -86,6 +87,10 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 	clock_freq = CLOCK_GetWdtClkFreq(0);
 #elif defined(CONFIG_SOC_SERIES_RW6XX)
 	clock_freq = CLOCK_GetWdtClkFreq();
+#elif defined(CONFIG_SOC_SERIES_MCXNX4X)
+	const struct mcux_wwdt_config *config = dev->config;
+
+	clock_freq = CLOCK_GetWdtClkFreq(config->wdt_instance);
 #else
 	const struct mcux_wwdt_config *config = dev->config;
 
@@ -179,28 +184,33 @@ static const struct wdt_driver_api mcux_wwdt_api = {
 	.feed = mcux_wwdt_feed,
 };
 
-static void mcux_wwdt_config_func_0(const struct device *dev);
+#define WDT_DEVICE_INIT_MCUX(n)						\
+									\
+	static void mcux_wwdt_config_func_##n(const struct device *dev);\
+									\
+	static const struct mcux_wwdt_config mcux_wwdt_config_##n = {	\
+		.base = (WWDT_Type *) DT_INST_REG_ADDR(n),		\
+		.clk_divider =						\
+			DT_INST_PROP(n, clk_divider),			\
+		.wdt_instance = n,					\
+		.irq_config_func = mcux_wwdt_config_func_##n,		\
+	};								\
+									\
+	static struct mcux_wwdt_data mcux_wwdt_data_##n;		\
+									\
+	DEVICE_DT_INST_DEFINE(n, &mcux_wwdt_init,			\
+			    NULL, &mcux_wwdt_data_##n,			\
+			    &mcux_wwdt_config_##n, POST_KERNEL,		\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &mcux_wwdt_api);				\
+									\
+	static void mcux_wwdt_config_func_##n(const struct device *dev)	\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+			    DT_INST_IRQ(n, priority),			\
+			    mcux_wwdt_isr, DEVICE_DT_INST_GET(n), 0);	\
+									\
+		irq_enable(DT_INST_IRQN(n));				\
+	}
 
-static const struct mcux_wwdt_config mcux_wwdt_config_0 = {
-	.base = (WWDT_Type *) DT_INST_REG_ADDR(0),
-	.clk_divider =
-		DT_INST_PROP(0, clk_divider),
-	.irq_config_func = mcux_wwdt_config_func_0,
-};
-
-static struct mcux_wwdt_data mcux_wwdt_data_0;
-
-DEVICE_DT_INST_DEFINE(0, &mcux_wwdt_init,
-		    NULL, &mcux_wwdt_data_0,
-		    &mcux_wwdt_config_0, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_wwdt_api);
-
-static void mcux_wwdt_config_func_0(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    mcux_wwdt_isr, DEVICE_DT_INST_GET(0), 0);
-
-	irq_enable(DT_INST_IRQN(0));
-}
+DT_INST_FOREACH_STATUS_OKAY(WDT_DEVICE_INIT_MCUX)
