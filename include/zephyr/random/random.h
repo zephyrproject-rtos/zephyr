@@ -38,16 +38,6 @@
 extern "C" {
 #endif
 
-/**
- * @brief Return a 32-bit random value that should pass general
- * randomness tests.
- *
- * @note The random value returned is not a cryptographically secure
- * random number value.
- *
- * @return 32-bit random value.
- */
-__syscall uint32_t sys_rand32_get(void);
 
 /**
  * @brief Fill the destination buffer with random data values that should
@@ -76,6 +66,25 @@ __syscall void sys_rand_get(void *dst, size_t len);
  *
  */
 __syscall int sys_csrand_get(void *dst, size_t len);
+
+/**
+ * @brief Return a 32-bit random value that should pass general
+ * randomness tests.
+ *
+ * @note The random value returned is not a cryptographically secure
+ * random number value.
+ *
+ * @return 32-bit random value.
+ */
+static inline uint32_t sys_rand32_get(void)
+{
+	uint32_t ret;
+
+	sys_rand_get(&ret, sizeof(ret));
+
+	return ret;
+}
+
 
 #ifdef __cplusplus
 }

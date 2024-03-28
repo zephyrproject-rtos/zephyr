@@ -33,7 +33,7 @@ static struct k_spinlock rand32_lock;
  *
  * @return a 32-bit number
  */
-uint32_t z_impl_sys_rand32_get(void)
+static inline uint32_t rand32_get(void)
 {
 	/* initial seed value */
 	static uint64_t state = (uint64_t)CONFIG_TIMER_RANDOM_INITIAL_STATE;
@@ -64,7 +64,7 @@ void z_impl_sys_rand_get(void *dst, size_t outlen)
 	uint32_t ret;
 
 	while (outlen) {
-		ret = sys_rand32_get();
+		ret = rand32_get();
 		blocksize = MIN(outlen, sizeof(ret));
 		(void)memcpy((void *)udst, &ret, blocksize);
 		udst += blocksize;
