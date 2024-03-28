@@ -1,11 +1,15 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2024 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef ZEPHYR_INCLUDE_CONN_MGR_H_
 #define ZEPHYR_INCLUDE_CONN_MGR_H_
+
+#include <zephyr/net/tls_credentials.h>
+#include <zephyr/net/net_pkt.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,6 +89,55 @@ void conn_mgr_ignore_l2(const struct net_l2 *l2);
 void conn_mgr_watch_l2(const struct net_l2 *l2);
 
 /**
+ * @typedef net_conn_mgr_online_checker_t
+ * @brief Handler function that is called when network stack needs
+ * to do a HTTPS request and needs to ask application to setup TLS
+ * credentials and return them to the caller.
+ *
+ * @param iface Network interface where the online check is sent.
+ * @param sec_tag_list Array of TLS security tags returned to the connection manager.
+ * @param sec_tag_size Size of the returned tags array.
+ * @param tls_hostname User needs to set this and it is returned to the connection
+ *        manager. The value is used to set TLS_HOSTNAME socket option. If the value
+ *        is empty, the TLS connection most like will not work. The returned pointer
+ *        should point to a NULL terminated buffer that is valid when the callback
+ *        returns.
+ * @param url URL where the HTTPS request is sent.
+ * @param host Hostname where the HTTPS request is sent.
+ * @param port Port where the HTTPS request is sent.
+ * @param dst Destination address where the HTTPS request is sent.
+ * @param user_data A valid pointer to user data or NULL
+ *
+ * @retval <0 if this online check request is cancelled and not done.
+ * @retval  0 the online check is done by the connection manager.
+ */
+typedef int (*net_conn_mgr_online_checker_t)(struct net_if *iface,
+					     const sec_tag_t **sec_tag_list,
+					     size_t *sec_tag_size,
+					     const char **tls_hostname,
+					     const char *url,
+					     const char *host,
+					     const char *port,
+					     struct sockaddr *dst,
+					     void *user_data);
+
+/**
+ * @brief Register online checker socket configuration callback.
+ *
+ * Application wishing to use Online Checker should register a setup
+ * callback function. The connection manager will call this function
+ * if HTTPS checker needs to be setup. Typically application would need
+ * to setup TLS credentials etc. for the checker socket.
+ *
+ * @param cb Callback function to be called.
+ * @param user_data Application specific user data is returned in callback.
+ *
+ * @return Return 0 if checker registration succeed, <0 otherwise.
+ */
+int conn_mgr_register_online_checker_cb(net_conn_mgr_online_checker_t cb,
+					void *user_data);
+
+/**
  * @}
  */
 
@@ -95,8 +148,97 @@ void conn_mgr_watch_l2(const struct net_l2 *l2);
 #define conn_mgr_watch_iface(...)
 #define conn_mgr_ignore_l2(...)
 #define conn_mgr_watch_l2(...)
+#define conn_mgr_register_online_checker_cb(...)
 
 #endif /* CONFIG_NET_CONNECTION_MANAGER */
+
+/** @cond INTERNAL_HIDDEN */
+#if defined(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK)
+/* Let online checker to decide if this network packet can be considered
+ * when deciding if we are online or not.
+ */
+void conn_mgr_online_checker_update(struct net_pkt *pkt,
+				    void *hdr,
+				    sa_family_t family,
+				    bool is_loopback);
+
+/* Used when triggering online connectivity check manually from net-shell
+ * and "net conn check" command. This is mainly for debugging purposes.
+ */
+bool conn_mgr_trigger_online_connectivity_check(void);
+#else
+static inline void conn_mgr_online_checker_update(struct net_pkt *pkt,
+						  void *hdr,
+						  sa_family_t family,
+						  bool is_loopback)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(hdr);
+	ARG_UNUSED(family);
+	ARG_UNUSED(is_loopback);
+}
+
+static inline bool conn_mgr_trigger_online_connectivity_check(void)
+{
+	return false;
+}
+
+#endif
+/** @endcond */
+
+/** Possible choices for the online connectivity check. */
+enum net_conn_mgr_online_check_type {
+	/** Use ICMP Echo-Request (ping). This is the default */
+	NET_CONN_MGR_ONLINE_CHECK_PING = 0,
+	/** Use HTTP(S) GET request. */
+	NET_CONN_MGR_ONLINE_CHECK_HTTP,
+};
+
+/**
+ * @brief Set how the online connectivity check should be done.
+ * Default is ICMP Echo-Request i.e., ping.
+ *
+ * @param type Online connectivity check strategy (ping or http(s))
+ *
+ */
+#if defined(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK)
+void conn_mgr_set_online_check_strategy(enum net_conn_mgr_online_check_type type);
+#else
+static inline void conn_mgr_set_online_check_strategy(enum net_conn_mgr_online_check_type type)
+{
+	ARG_UNUSED(type);
+}
+#endif
+
+/**
+ * @brief Set the URL to where to do the online connectivity check.
+ *
+ * If application does not set the URL using this function, then the
+ * value set in CONFIG_NET_CONNECTION_MANAGER_ONLINE_CHECK_HTTP_URL
+ * is used as a default URL.
+ *
+ * Note that the online checker uses the pointer directly and it will
+ * not copy the URL anywhere. This means that the URL pointer should
+ * be valid when the online checker is running.
+ *
+ * @param url URL of the HTTP GET request. If the URL starts with
+ *        https:/ then an HTTPS request is made. This requires
+ *        that TLS support (CONFIG_NET_SOCKETS_SOCKOPT_TLS) is
+ *        enabled.
+ *
+ * @return Return 0 if URL registetration succeed, <0 otherwise.
+ */
+#if defined(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK)
+int conn_mgr_register_online_checker_url(const char *url);
+#else
+static inline int conn_mgr_register_online_checker_url(const char *url)
+{
+	ARG_UNUSED(url);
+
+	return -ENOTSUP;
+}
+#endif
+
 
 #ifdef __cplusplus
 }

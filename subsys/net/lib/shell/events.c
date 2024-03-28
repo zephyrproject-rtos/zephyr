@@ -264,6 +264,12 @@ static const char *get_l4_desc(uint32_t event)
 	case NET_EVENT_COAP_OBSERVER_REMOVED:
 		desc = "CoAP observer removed";
 		break;
+	case NET_EVENT_CONNECTIVITY_ONLINE:
+		desc = "online";
+		break;
+	case NET_EVENT_CONNECTIVITY_OFFLINE:
+		desc = "offline";
+		break;
 	}
 
 	return desc;
