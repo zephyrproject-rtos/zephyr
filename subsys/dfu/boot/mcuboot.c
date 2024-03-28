@@ -49,6 +49,48 @@ enum IMAGE_INDEXES {
 	IMAGE_INDEX_2
 };
 
+#if USE_PARTITION_MANAGER
+#include <pm_config.h>
+
+#if CONFIG_MCUBOOT_APPLICATION_IMAGE_NUMBER != -1
+/* Sysbuild */
+#ifdef CONFIG_MCUBOOT
+/* lib is part of MCUboot -> operate on the primary application slot */
+#define ACTIVE_SLOT_FLASH_AREA_ID	PM_MCUBOOT_PRIMARY_ID
+#else
+/* TODO: Add firmware loader support */
+/* lib is part of the app -> operate on active slot */
+#if defined(CONFIG_NCS_IS_VARIANT_IMAGE)
+#define ACTIVE_SLOT_FLASH_AREA_ID	PM_MCUBOOT_SECONDARY_ID
+#else
+#define ACTIVE_SLOT_FLASH_AREA_ID	PM_MCUBOOT_PRIMARY_ID
+#endif
+#endif /* CONFIG_MCUBOOT */
+#else
+/* Legacy child/parent */
+#if CONFIG_BUILD_WITH_TFM
+	#define PM_ADDRESS_OFFSET (PM_MCUBOOT_PAD_SIZE + PM_TFM_SIZE)
+#else
+	#define PM_ADDRESS_OFFSET (PM_MCUBOOT_PAD_SIZE)
+#endif
+
+#ifdef CONFIG_MCUBOOT
+	/* lib is part of MCUboot -> operate on the primary application slot */
+	#define ACTIVE_SLOT_FLASH_AREA_ID	PM_MCUBOOT_PRIMARY_ID
+#else
+	/* lib is part of the App -> operate on active slot */
+#if (PM_ADDRESS - PM_ADDRESS_OFFSET) == PM_MCUBOOT_PRIMARY_ADDRESS
+	#define ACTIVE_SLOT_FLASH_AREA_ID	PM_MCUBOOT_PRIMARY_ID
+#elif (PM_ADDRESS - PM_ADDRESS_OFFSET) == PM_MCUBOOT_SECONDARY_ADDRESS
+	#define ACTIVE_SLOT_FLASH_AREA_ID	PM_MCUBOOT_SECONDARY_ID
+#else
+	#error Missing partition definitions.
+#endif
+#endif /* CONFIG_MCUBOOT */
+#endif /* CONFIG_MCUBOOT_APPLICATION_IMAGE_NUMBER != -1 */
+
+#else
+
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
 /* For RAM LOAD mode, the active image must be fetched from the bootloader */
 #define ACTIVE_SLOT_FLASH_AREA_ID boot_fetch_active_slot()
@@ -57,6 +99,8 @@ enum IMAGE_INDEXES {
 /* Get active partition. zephyr,code-partition chosen node must be defined */
 #define ACTIVE_SLOT_FLASH_AREA_ID DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_code_partition))
 #endif
+
+#endif /* USE_PARTITION_MANAGER */
 
 /*
  * Raw (on-flash) representation of the v1 image header.
