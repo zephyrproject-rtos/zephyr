@@ -11,3 +11,9 @@ properties:
   mipi-max-frequency:
     type: int
     description: Maximum clock frequency of device's MIPI interface in Hz
+
+  mipi-mode:
+    type: int
+    description: |
+      MIPI DBI mode in use. See dt-bindings/mipi_dbi/mipi_dbi.h for a list
+      of supported modes.
