@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/init.h>
 #include <zephyr/ztest.h>
 #include <zephyr/sys/printk.h>
@@ -21,9 +22,22 @@
 #define MY_DRIVER_A     "my_driver_A"
 #define MY_DRIVER_B     "my_driver_B"
 
+#define FAKEDEFERDRIVER0	DEVICE_DT_GET(DT_PATH(fakedeferdriver_e7000000))
+#define FAKEDEFERDRIVER1	DEVICE_DT_GET(DT_PATH(fakedeferdriver_e8000000))
+
 /* A device without init call */
 DEVICE_DEFINE(dummy_noinit, DUMMY_NOINIT, NULL, NULL, NULL, NULL,
 	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+
+/* To access from userspace, the device needs an API. Use a dummy GPIO one */
+static const struct gpio_driver_api fakedeferdriverapi;
+
+/* Fake deferred devices */
+DEVICE_DT_DEFINE(DT_INST(0, fakedeferdriver), NULL, NULL, NULL, NULL,
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+DEVICE_DT_DEFINE(DT_INST(1, fakedeferdriver), NULL, NULL, NULL, NULL,
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+	      &fakedeferdriverapi);
 
 /**
  * @brief Test cases to verify device objects
@@ -387,9 +401,41 @@ ZTEST(device, test_abstraction_driver_common)
 	zassert_true(baz == 2, "common API do_that fail");
 }
 
+ZTEST(device, test_deferred_init)
+{
+	int ret;
+
+	zassert_false(device_is_ready(FAKEDEFERDRIVER0));
+
+	ret = device_init(FAKEDEFERDRIVER0);
+	zassert_true(ret == 0);
+
+	zassert_true(device_is_ready(FAKEDEFERDRIVER0));
+}
+
+ZTEST_USER(device, test_deferred_init_user)
+{
+	int ret;
+
+	zassert_false(device_is_ready(FAKEDEFERDRIVER1));
+
+	ret = device_init(FAKEDEFERDRIVER1);
+	zassert_true(ret == 0);
+
+	zassert_true(device_is_ready(FAKEDEFERDRIVER1));
+}
+
+void *user_setup(void)
+{
+#ifdef CONFIG_USERSPACE
+	k_object_access_grant(FAKEDEFERDRIVER1, k_current_get());
+#endif
+
+	return NULL;
+}
 
 /**
  * @}
  */
 
-ZTEST_SUITE(device, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(device, NULL, user_setup, NULL, NULL, NULL);
