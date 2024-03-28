@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Intel Corporation
+ * Copyright (c) 2024 Schneider Electric
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +9,6 @@
 #define ZEPHYR_LLEXT_SYMBOL_H
 
 #include <zephyr/sys/iterable_sections.h>
-#include <zephyr/toolchain.h>
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -74,9 +74,11 @@ struct llext_symtable {
  *
  * @param x Symbol to export
  */
+#define PASTER(x, y) x ##  y
+#define EVALUATOR(x, y)  PASTER(x, y)
 #define EXPORT_SYMBOL(x)							\
-	static const STRUCT_SECTION_ITERABLE(llext_const_symbol, x ## _sym) = {	\
-		.name = STRINGIFY(x), .addr = (const void *)&x,			\
+	static const STRUCT_SECTION_ITERABLE(llext_const_symbol, EVALUATOR(x, _sym)) = {	\
+		.name = STRINGIFY(x), .addr = (const void*)&x,				\
 	}
 
 #define LL_EXTENSION_SYMBOL(x)							\

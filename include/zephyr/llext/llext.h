@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Intel Corporation
+ * Copyright (c) 2024 Schneider Electric
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,8 +33,10 @@ extern "C" {
  */
 enum llext_mem {
 	LLEXT_MEM_TEXT,
-	LLEXT_MEM_DATA,
 	LLEXT_MEM_RODATA,
+	LLEXT_MEM_DATA,
+	LLEXT_MEM_GOT,
+	LLEXT_MEM_PLT,
 	LLEXT_MEM_BSS,
 	LLEXT_MEM_EXPORT,
 	LLEXT_MEM_SYMTAB,
@@ -178,6 +181,15 @@ const void * const llext_find_sym(const struct llext_symtable *sym_table, const 
  */
 int llext_call_fn(struct llext *ext, const char *sym_name);
 
+#if CONFIG_LLEXT_HEAP_STAT
+/**
+ * @brief Heap info
+ *
+ * Printk LLEXT heap info
+ */
+void llext_print_heap_info(void);
+#endif
+
 /**
  * @brief Add the known memory partitions of the extension to a memory domain
  *
@@ -202,10 +214,15 @@ int llext_add_domain(struct llext *ext, struct k_mem_domain *domain);
  * or object.
  *
  * @param[in] rel Relocation data provided by elf
- * @param[in] opaddr Address of operation to rewrite with relocation
- * @param[in] opval Value of looked up symbol to relocate
+ * @param[in] rel_index Index of relocation
+ * @param[in] loc Address of operation to rewrite with relocation
+ * @param[in] sym_base_addr Symbol address
+ * @param[in] symname Symbol name
+ * @param[in] load_bias .text load address
+ * @retval -ENOEXEC invalid relocation
  */
-void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval);
+int32_t arch_elf_relocate(elf_rela_t *rel, uint32_t rel_index, uintptr_t loc,
+			     uintptr_t sym_base_addr, const char *symname, uintptr_t load_bias);
 
 /**
  * @brief Find an ELF section

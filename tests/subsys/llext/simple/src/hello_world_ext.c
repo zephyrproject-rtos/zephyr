@@ -17,9 +17,9 @@
 
 static const uint32_t number = 42;
 
-void test_entry(void)
+void start(void)
 {
 	printk("hello world\n");
 	printk("A number is %u\n", number);
 }
-LL_EXTENSION_SYMBOL(test_entry);
+LL_EXTENSION_SYMBOL(start);

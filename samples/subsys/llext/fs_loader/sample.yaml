@@ -1,0 +1,11 @@
+sample:
+  description: Loadable extensions with filesystem sample
+  name: Extension loader filesystem
+tests:
+  sample.llext.filesystem:
+    tags: llext
+    harness: keyboard
+    arch_allow: arm
+    depends_on:
+      - usb_device
+      - filesystem

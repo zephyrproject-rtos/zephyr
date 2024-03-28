@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Intel Corporation
+ * Copyright (c) 2024 Schneider Electric
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -11,6 +12,10 @@
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/llext.h>
 #include <zephyr/llext/buf_loader.h>
+#ifdef CONFIG_FILE_SYSTEM
+#include <zephyr/llext/file_loader.h>
+#include <zephyr/fs/fs.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(llext_shell, CONFIG_LLEXT_LOG_LEVEL);
@@ -25,6 +30,10 @@ LOG_MODULE_REGISTER(llext_shell, CONFIG_LLEXT_LOG_LEVEL);
 	"Unload an extension by name. Syntax:\n"					\
 	"<ext_name>"
 
+#define LLEXT_LOAD_FILE_HELP									\
+	"Load an elf file from file system. Syntax:\n"		\
+	"<module_name> <module_file path>"
+
 #define LLEXT_LIST_SYMBOLS_HELP								\
 	"List extension symbols. Syntax:\n"						\
 	"<ext_name>"
@@ -32,6 +41,11 @@ LOG_MODULE_REGISTER(llext_shell, CONFIG_LLEXT_LOG_LEVEL);
 #define LLEXT_CALL_FN_HELP								\
 	"Call extension function with prototype void fn(void). Syntax:\n"		\
 	"<ext_name> <function_name>"
+
+#if CONFIG_LLEXT_HEAP_STAT
+#define LLEXT_HEAP_INFO_HELP								\
+	"Show llext heap info."
+#endif
 
 static int cmd_llext_list_symbols(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -44,9 +58,9 @@ static int cmd_llext_list_symbols(const struct shell *sh, size_t argc, char *arg
 
 	shell_print(sh, "Extension: %s symbols", m->name);
 	shell_print(sh, "| Symbol           | Address    |");
-	for (elf_word i = 0; i < m->sym_tab.sym_cnt; i++) {
-		shell_print(sh, "| %16s | %p |", m->sym_tab.syms[i].name,
-			    m->sym_tab.syms[i].addr);
+	for (size_t i = 0; i < m->exp_tab.sym_cnt; i++) {
+			shell_print(sh, "| %16s | %p |", m->exp_tab.syms[i].name,
+			    m->exp_tab.syms[i].addr);
 	}
 
 	return 0;
@@ -153,6 +167,41 @@ static int cmd_llext_load_hex(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#ifdef CONFIG_FILE_SYSTEM
+static int cmd_llext_load_file(const struct shell *sh, size_t argc, char *argv[])
+{
+	char name[16];
+	struct fs_file_t fd;
+
+	// get extension name
+	strncpy(name, argv[1], sizeof(name));
+
+	fs_file_t_init(&fd);
+	int rc = fs_open(&fd, argv[2], FS_O_READ);
+	if(rc < 0) {
+		shell_print(sh, "%d File not found: %s\n", rc, argv[2]);
+		return rc;
+	}
+
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext_file_loader file_stream = LLEXT_FILE_LOADER(&fd);
+	struct llext_loader *stream = &file_stream.loader;
+
+	struct llext *m;
+	int res = llext_load(stream, name, &m, &ldr_parm);
+
+	fs_close(&fd);
+
+	if (res == 0) {
+		shell_print(sh, "Successfully loaded extension %s, addr %p\n", m->name, m);
+	} else {
+		shell_print(sh, "Failed to load extension %s, return code %d\n", name, res);
+	}
+
+	return 0;
+}
+#endif
+
 static int cmd_llext_unload(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct llext *ext = llext_by_name(argv[1]);
@@ -177,11 +226,22 @@ static int cmd_llext_call_fn(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	llext_call_fn(ext, argv[2]);
+	int rc = llext_call_fn(ext, argv[2]);
+	if(rc==-EINVAL)
+	{
+		shell_print(sh, "No such symbol '%s' in extension %s", argv[2], argv[1]);
+	}
 
-	return 0;
+	return rc;
 }
 
+#if CONFIG_LLEXT_HEAP_STAT
+static int cmd_llext_heap_info(const struct shell *sh, size_t argc, char *argv[])
+{
+	llext_print_heap_info();
+	return 0;
+}
+#endif
 
 /* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_llext,
@@ -192,7 +252,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_llext,
 		      cmd_llext_list_symbols, 2, 0),
 	SHELL_CMD_ARG(call_fn, &msub_llext_name_arg, LLEXT_CALL_FN_HELP,
 		      cmd_llext_call_fn, 3, 0),
-
+#if CONFIG_FILE_SYSTEM
+	SHELL_CMD_ARG(load_file, NULL, LLEXT_LOAD_FILE_HELP, cmd_llext_load_file,
+		3, 0),
+#endif
+#if CONFIG_LLEXT_HEAP_STAT
+	SHELL_CMD_ARG(heap_info, NULL, LLEXT_HEAP_INFO_HELP, cmd_llext_heap_info,
+		0, 0),
+#endif
 	SHELL_SUBCMD_SET_END
 	);
 /* clang-format on */

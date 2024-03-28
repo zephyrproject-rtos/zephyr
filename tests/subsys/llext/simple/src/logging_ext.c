@@ -18,9 +18,9 @@ LOG_MODULE_REGISTER(logging_ext);
 
 static const uint32_t number = 42;
 
-void test_entry(void)
+void start(void)
 {
 	LOG_INF("hello world");
 	LOG_INF("A number is %" PRIu32, number);
 }
-LL_EXTENSION_SYMBOL(test_entry);
+LL_EXTENSION_SYMBOL(start);

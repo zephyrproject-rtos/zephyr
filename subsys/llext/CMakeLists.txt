@@ -1,5 +1,5 @@
 if(CONFIG_LLEXT)
   zephyr_library()
-  zephyr_library_sources(llext.c llext_export.c buf_loader.c)
+  zephyr_library_sources(llext.c llext_export.c buf_loader.c file_loader.c)
   zephyr_library_sources_ifdef(CONFIG_LLEXT_SHELL shell.c)
 endif()

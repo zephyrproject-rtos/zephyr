@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2024 Schneider Electric
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&usbotg_fs {
+    pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+/* hsi48 must be enabled for usb */
+&clk_hsi48 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@0 {
+			label = "code";
+			reg = <0x0000000 DT_SIZE_K(1024-128)>;
+			read-only;
+		};
+
+		/*
+		 * The final 128 KiB is reserved for the application.
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@E0000 {
+			label = "storage";
+			reg = <0x00E0000 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+/ {
+	msc_disk0 {
+		status="okay";
+		compatible = "zephyr,flash-disk";
+		partition = <&storage_partition>;
+		disk-name = "NAND";
+		/* cache-size == page erase size */
+		cache-size = <2048>;
+	};
+};

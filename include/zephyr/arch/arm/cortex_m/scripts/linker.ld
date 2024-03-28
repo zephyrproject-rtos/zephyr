@@ -338,6 +338,17 @@ SECTIONS
 
     __data_region_end = .;
 
+#ifdef CONFIG_LLEXT
+	SECTION_PROLOGUE(_LLEXT_SECTION_NAME,(NOLOAD),)
+		{
+			. = ALIGN(4);
+			__llext_heap_start = .;
+			KEEP(*(*.kheap_buf_llext_heap));
+			__llext_heap_end = .;
+			__llext_heap_size = __llext_heap_end - __llext_heap_start;
+		} GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+#endif
+
 #ifndef CONFIG_USERSPACE
    SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{

@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2024 Schneider Electric
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config APP_WIPE_STORAGE
+	bool "Option to clear the flash area before mounting"
+	help
+	  Use this to force an existing file system to be created.
+
+config CONFIG_LLEXT_PIC
+	bool "Build LL extension with PIC enabled"
+	help
+	  Use this to force building LL extension in Position Independant Code.
+
+source "Kconfig.zephyr"

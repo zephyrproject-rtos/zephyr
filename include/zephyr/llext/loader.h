@@ -70,6 +70,7 @@ struct llext_loader {
 
 	/** @cond ignore */
 	elf_ehdr_t hdr;
+	elf_phdr_t phdr;
 	elf_shdr_t sects[LLEXT_MEM_COUNT];
 	enum llext_mem *sect_map;
 	uint32_t sect_cnt;
