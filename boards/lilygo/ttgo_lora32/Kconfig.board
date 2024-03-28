@@ -1,0 +1,12 @@
+# Lilygo ttgo LoRa32 board configuration
+
+# Copyright (c) 2024 Lothar Felten <lothar.felten@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LILYGO_TTGO_LORA32
+	bool "Lilygo ttgo LoRa32 Development Board"
+	depends on SOC_SERIES_ESP32
+
+choice SOC_PART_NUMBER
+	default SOC_ESP32_PICO_D4
+endchoice
