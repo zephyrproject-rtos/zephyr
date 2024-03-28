@@ -29,6 +29,7 @@ struct flash_numaker_data {
 static const struct flash_parameters flash_numaker_parameters = {
 	.write_block_size = SOC_NV_FLASH_WRITE_BLOCK_SIZE,
 	.erase_value = 0xff,
+	.unrestricted_write = true,
 };
 
 /* Validate offset and length */

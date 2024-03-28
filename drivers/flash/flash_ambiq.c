@@ -42,6 +42,7 @@ static struct k_sem flash_ambiq_sem;
 #endif /* CONFIG_MULTITHREADING */
 
 static const struct flash_parameters flash_ambiq_parameters = {
+	.unrestricted_write = true,
 	.write_block_size = FLASH_WRITE_BLOCK_SIZE,
 	.erase_value = FLASH_ERASE_BYTE,
 };
