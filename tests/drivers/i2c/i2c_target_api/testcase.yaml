@@ -16,6 +16,7 @@ tests:
       - nucleo_f091rc
       - stm32f072b_disco
       - stm32f3_disco
+      - stm32h573i_dk
       - nucleo_g071rb
       - nucleo_f207zg
       - nucleo_f401re
