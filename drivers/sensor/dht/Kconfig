@@ -3,10 +3,21 @@
 # Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-config DHT
+menuconfig DHT
 	bool "DHT Temperature and Humidity Sensor"
 	default y
 	depends on DT_HAS_AOSONG_DHT_ENABLED
 	depends on GPIO
 	help
 	  Enable driver for the DHT temperature and humidity sensor family.
+
+if DHT
+
+config DHT_LOCK_IRQS
+	bool "Lock IRQs for sensor measurement"
+	help
+	  Locks IRQs when taking sensor readings, this greatly improves the chances of getting a
+	  reading successfully from the sensor at the cost of delayed interrupt servicing (e.g.
+	  Bluetooth). Note that other systems might need to be adjusted to account for this.
+
+endif # DHT
