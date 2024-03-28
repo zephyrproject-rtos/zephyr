@@ -80,7 +80,6 @@ static struct hawkbit_context {
 	int32_t action_id;
 	uint8_t *response_data;
 	int32_t json_action_id;
-	size_t url_buffer_size;
 	struct hawkbit_download dl;
 	struct http_request http_req;
 	struct flash_img_context flash_ctx;
@@ -1012,8 +1011,7 @@ enum hawkbit_response hawkbit_probe(void)
 	memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
 	hb_context.dl.http_content_size = 0;
 	hb_context.dl.downloaded_size = 0;
-	hb_context.url_buffer_size = URL_BUFFER_SIZE;
-	snprintk(hb_context.url_buffer, hb_context.url_buffer_size, "%s/%s-%s",
+	snprintk(hb_context.url_buffer, sizeof(hb_context.url_buffer), "%s/%s-%s",
 		 HAWKBIT_JSON_URL, CONFIG_BOARD, device_id);
 	memset(&hawkbit_results.base, 0, sizeof(hawkbit_results.base));
 
@@ -1040,9 +1038,9 @@ enum hawkbit_response hawkbit_probe(void)
 		ret = hawkbit_find_cancelAction_base(&hawkbit_results.base, cancel_base);
 		memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
 		hb_context.dl.http_content_size = 0;
-		hb_context.url_buffer_size = URL_BUFFER_SIZE;
-		snprintk(hb_context.url_buffer, hb_context.url_buffer_size, "%s/%s-%s/%s/feedback",
-			 HAWKBIT_JSON_URL, CONFIG_BOARD, device_id, cancel_base);
+		snprintk(hb_context.url_buffer, sizeof(hb_context.url_buffer),
+			 "%s/%s-%s/%s/feedback", HAWKBIT_JSON_URL, CONFIG_BOARD, device_id,
+			 cancel_base);
 		memset(&hawkbit_results.cancel, 0, sizeof(hawkbit_results.cancel));
 
 		if (!send_request(HTTP_POST, HAWKBIT_CLOSE, HAWKBIT_STATUS_FINISHED_SUCCESS,
@@ -1061,8 +1059,7 @@ enum hawkbit_response hawkbit_probe(void)
 			hawkbit_results.base._links.configData.href);
 		memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
 		hb_context.dl.http_content_size = 0;
-		hb_context.url_buffer_size = URL_BUFFER_SIZE;
-		snprintk(hb_context.url_buffer, hb_context.url_buffer_size, "%s/%s-%s/%s",
+		snprintk(hb_context.url_buffer, sizeof(hb_context.url_buffer), "%s/%s-%s/%s",
 			 HAWKBIT_JSON_URL, CONFIG_BOARD, device_id, "configData");
 
 		if (!send_request(HTTP_PUT, HAWKBIT_CONFIG_DEVICE, HAWKBIT_STATUS_FINISHED_SUCCESS,
@@ -1088,9 +1085,8 @@ enum hawkbit_response hawkbit_probe(void)
 	memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
 	hb_context.dl.http_content_size = 0;
 	hb_context.dl.downloaded_size = 0;
-	hb_context.url_buffer_size = URL_BUFFER_SIZE;
-	snprintk(hb_context.url_buffer, hb_context.url_buffer_size, "%s/%s-%s/%s", HAWKBIT_JSON_URL,
-		 CONFIG_BOARD, device_id, deployment_base);
+	snprintk(hb_context.url_buffer, sizeof(hb_context.url_buffer), "%s/%s-%s/%s",
+		 HAWKBIT_JSON_URL, CONFIG_BOARD, device_id, deployment_base);
 	memset(&hawkbit_results.dep, 0, sizeof(hawkbit_results.dep));
 	memset(hb_context.response_data, 0, RESPONSE_BUFFER_SIZE);
 
@@ -1121,8 +1117,7 @@ enum hawkbit_response hawkbit_probe(void)
 		LOG_INF("Preventing repeated attempt to install %d", hb_context.json_action_id);
 		hb_context.dl.http_content_size = 0;
 		memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
-		hb_context.url_buffer_size = URL_BUFFER_SIZE;
-		snprintk(hb_context.url_buffer, hb_context.url_buffer_size,
+		snprintk(hb_context.url_buffer, sizeof(hb_context.url_buffer),
 			 "%s/%s-%s/%s/%d/feedback", HAWKBIT_JSON_URL, CONFIG_BOARD,
 			 device_id, "deploymentBase", hb_context.json_action_id);
 
@@ -1141,9 +1136,7 @@ enum hawkbit_response hawkbit_probe(void)
 
 	hb_context.dl.http_content_size = 0;
 	memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
-	hb_context.url_buffer_size = URL_BUFFER_SIZE;
-
-	snprintk(hb_context.url_buffer, hb_context.url_buffer_size, "%s", download_http);
+	snprintk(hb_context.url_buffer, sizeof(hb_context.url_buffer), "%s", download_http);
 
 	flash_img_init(&hb_context.flash_ctx);
 
