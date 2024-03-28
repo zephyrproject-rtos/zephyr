@@ -267,6 +267,12 @@ static const char *get_l4_desc(uint32_t event)
 	case NET_EVENT_COAP_OBSERVER_REMOVED:
 		desc = "CoAP observer removed";
 		break;
+	case NET_EVENT_CAPTURE_STARTED:
+		desc = "Capture started";
+		break;
+	case NET_EVENT_CAPTURE_STOPPED:
+		desc = "Capture stopped";
+		break;
 	}
 
 	return desc;
