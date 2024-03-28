@@ -27,6 +27,10 @@ properties:
     type: phandle-array
     description: GPIO tied to EN pin
 
+  cirrus,pgood-gpios:
+    type: phandle-array
+    description: GPIO tied to PGOOD pin
+
   cirrus,initial-switched-capacitor-mode:
     type: string
     enum:
