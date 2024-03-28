@@ -270,6 +270,10 @@ LinkServer west runner   ``--probe`` option to pass the probe index.
 
    west flash --runner=linkserver --override /device/memory/5/flash-driver=MIMXRT500_SFDP_MXIC_OSPI_S.cfx
 
+4. LinkServer does not install an implicit breakpoint at the reset handler. If
+   you would like to single step from the start of their application, you
+   will need to add a breakpoint at ``main`` or the reset handler manually.
+
 .. _jlink-debug-host-tools:
 
 J-Link Debug Host Tools
