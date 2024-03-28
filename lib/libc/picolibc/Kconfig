@@ -70,6 +70,12 @@ endchoice
 
 if PICOLIBC_USE_MODULE
 
+# TODO: How should -Oz be integrated into these options? Grepping the picolibc sources, it looks
+# like these might not be used? See ex:
+# https://github.com/picolibc/picolibc/blob/6dc88bad1794eb49b09e9c33312f3621f166d7d6/zephyr/zephyr.cmake#L84
+# where picolibc seems to use the "regular" SIZE_OPTIMIZATIONS instead.
+#
+# Would picolibc need a patch to understand MIN_SIZE_OPTIMIZATIONS (or equivalent)?
 choice PICOLIBC_OPTIMIZATIONS
 	prompt "Optimization level"
 	default PICOLIBC_SIZE_OPTIMIZATIONS if SIZE_OPTIMIZATIONS
