@@ -219,15 +219,6 @@ static size_t copy_bytes(char *dest, size_t dest_size, const char *src, size_t s
 	return bytes_to_copy;
 }
 
-#define Z_STATE_STR_DUMMY       "dummy"
-#define Z_STATE_STR_PENDING     "pending"
-#define Z_STATE_STR_PRESTART    "prestart"
-#define Z_STATE_STR_DEAD        "dead"
-#define Z_STATE_STR_SUSPENDED   "suspended"
-#define Z_STATE_STR_ABORTING    "aborting"
-#define Z_STATE_STR_SUSPENDING  "suspending"
-#define Z_STATE_STR_QUEUED      "queued"
-
 const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size)
 {
 	size_t      off = 0;
