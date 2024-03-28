@@ -794,9 +794,9 @@ ZTEST(net_vlan, test_vlan_ipv6_sendto_recvfrom)
 	ret = add_neighbor(iface, &server_addr.sin6_addr);
 	zassert_true(ret, "Cannot add neighbor");
 
-	ret = bind(server_sock,
-		   (struct sockaddr *)&server_addr,
-		   sizeof(server_addr));
+	ret = zsock_bind(server_sock,
+			 (struct sockaddr *)&server_addr,
+			 sizeof(server_addr));
 	zassert_equal(ret, 0, "bind failed");
 
 	test_started = true;
@@ -808,9 +808,9 @@ ZTEST(net_vlan, test_vlan_ipv6_sendto_recvfrom)
 			     (struct sockaddr *)&server_addr,
 			     sizeof(server_addr));
 
-	ret = close(client_sock);
+	ret = zsock_close(client_sock);
 	zassert_equal(ret, 0, "close failed");
-	ret = close(server_sock);
+	ret = zsock_close(server_sock);
 	zassert_equal(ret, 0, "close failed");
 }
 
