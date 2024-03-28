@@ -831,6 +831,14 @@ static int sai_init(const struct device *dev)
 		LOG_DBG("clock %s has been ungated", cfg->clk_data.clock_names[i]);
 	}
 
+	/* note: optional operation so -ENOENT is allowed (i.e: we
+	 * allow the default state to not be defined)
+	 */
+	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0 && ret != -ENOENT) {
+		return ret;
+	}
+
 	/* set TX/RX default states */
 	data->tx_state = DAI_STATE_NOT_READY;
 	data->rx_state = DAI_STATE_NOT_READY;
@@ -842,6 +850,8 @@ static int sai_init(const struct device *dev)
 }
 
 #define SAI_INIT(inst)								\
+										\
+PINCTRL_DT_INST_DEFINE(inst);							\
 										\
 BUILD_ASSERT(SAI_FIFO_DEPTH(inst) > 0 &&					\
 	     SAI_FIFO_DEPTH(inst) <= _SAI_FIFO_DEPTH(inst),			\
@@ -910,6 +920,7 @@ static struct sai_config sai_config_##inst = {					\
 	.rx_sync_mode = SAI_RX_SYNC_MODE(inst),					\
 	.tx_dline = SAI_TX_DLINE_INDEX(inst),					\
 	.rx_dline = SAI_RX_DLINE_INDEX(inst),					\
+	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
 };										\
 										\
 static struct sai_data sai_data_##inst = {					\
