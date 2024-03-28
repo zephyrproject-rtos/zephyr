@@ -26,6 +26,7 @@
 };
 
 #include "nxp_lpc55S6x_common.dtsi"
+#include "nxp_lpc55sxx_clocks.dtsi"
 
 /*
  * Explicitly enable IAP after we include the common LPC55S6X dtsi file,

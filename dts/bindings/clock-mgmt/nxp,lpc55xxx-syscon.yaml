@@ -1,0 +1,15 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: LPC55xxx SYSCON
+
+compatible: "nxp,lpc55xxx-syscon"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 0

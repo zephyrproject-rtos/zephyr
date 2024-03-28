@@ -1,0 +1,22 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for nodes within clock controller clock tree
+
+properties:
+  "#clock-cells":
+    type: int
+    required: true
+    description: Number of items to expect in a node specifier
+
+  clock-output:
+    type: boolean
+    description: |
+      Set if the clock node is usable as a clock source within the system.
+
+  clock-id:
+    type: string
+    required: true
+    description: |
+      Clock identifier. Unique string identifying this clock within the
+      system clock tree

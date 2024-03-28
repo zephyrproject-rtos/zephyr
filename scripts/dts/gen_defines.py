@@ -354,6 +354,10 @@ def write_special_props(node):
     write_fixed_partitions(node)
     write_gpio_hogs(node)
 
+    # Macros special to Zephyr's clock support implementation
+    write_clocks(node)
+
+
 def write_ranges(node):
     # ranges property: edtlib knows the right #address-cells and
     # #size-cells of parent and child, and can therefore pack the
@@ -617,6 +621,77 @@ def write_gpio_hogs(node):
         out_dt_define(f"{macro}_NUM", len(node.gpio_hogs))
         for macro, val in macro2val.items():
             out_dt_define(macro, val)
+
+def write_clocks(node):
+    """
+    Generate clock specific definitions. Given the following
+    devicetree fragment:
+
+    &clock-controller {
+        clk_div: clock-div {
+            clock-id = "VND_CLOCK_DIV";
+        };
+        clk_src: clock-source {
+            clock-id = "VND_CLOCK_SOURCE";
+        };
+    }
+
+    soc {
+        vnd-device {
+            clock-state-0 = <&clk_div 1 &clk_src 1000>;
+            clock-state-1 = <&clk_src 500 &clk_div 500>;
+        };
+    };
+
+    The following macros will be generated:
+
+    #define DT_N_S_soc_S_vnd_device_CLOCK_STATE_NUM 2
+
+    #define DT_N_S_soc_S_vnd_device_CLOCK_STATE_0_VND_CLOCK_DIV_EXISTS 1
+    #define DT_N_S_soc_S_vnd_device_CLOCK_STATE_0_VND_CLOCK_DIV_IDX 0
+    #define DT_N_S_soc_S_vnd_device_CLOCK_STATE_0_VND_CLOCK_SOURCE_EXISTS 1
+    #define DT_N_S_soc_S_vnd_device_CLOCK_STATE_0_VND_CLOCK_SOURCE_IDX 1
+
+    #define DT_N_S_soc_S_vnd_device_CLOCK_STATE_1_VND_CLOCK_SOURCE_EXISTS 1
+    #define DT_N_S_soc_S_vnd_device_CLOCK_STATE_1_VND_CLOCK_SOURCE_IDX 0
+    #define DT_N_S_soc_S_vnd_device_CLOCK_STATE_1_VND_CLOCK_DIV_EXISTS 1
+    #define DT_N_S_soc_S_vnd_device_CLOCK_STATE_1_VND_CLOCK_DIV_IDX 1
+
+    These macros are required to enable the C code supporting clock
+    control to easily check if a clock-state-n property contains
+    a phandle with a given clock-id, and extract the index of that phandle
+    if it is present.
+    """
+
+    out_comment("Clock control (clock-state-<i>) properties:")
+
+    # Find clock-state-<index> properties
+    clock_state_props = [prop for name, prop in node.props.items()
+                         if re.match("clock-state-[0-9]+", name)]
+    clock_state_props.sort(key=lambda prop: prop.name)
+
+    # Check indices
+    for i, prop in enumerate(clock_state_props):
+        if prop.name != "clock-state-" + str(i):
+            sys.exit(f"missing 'clock-state-{i}' property on {node!r} "
+                     "- indices should be contiguous and start from zero")
+
+    # Write the number of CLOCK_STATE properties
+    out_dt_define(f"{node.z_path_id}_CLOCK_STATE_NUM", len(clock_state_props))
+    if len(clock_state_props) == 0:
+        return
+
+    # Node has clock-state properties, write remaining definitions we need
+    for state_idx, clock_state in enumerate(clock_state_props):
+        for ph_idx, clock_node_ph in enumerate(clock_state.val):
+            if not 'clock-id' in clock_node_ph.controller.props:
+                sys.exit(f"Node {clock_node_ph.controller!r} does not have a "
+                         "clock-id property")
+            # Read the clock-id property for the controller of this phandle
+            clock_id = clock_node_ph.controller.props['clock-id'].val
+            # Write out required definitions
+            out_dt_define(f"{node.z_path_id}_CLOCK_STATE_{state_idx}_{clock_id}_EXISTS", 1)
+            out_dt_define(f"{node.z_path_id}_CLOCK_STATE_{state_idx}_{clock_id}_IDX", ph_idx)
 
 def write_vanilla_props(node):
     # Writes macros for any and all properties defined in the
@@ -990,6 +1065,27 @@ def write_global_macros(edt):
         for bus in buses:
             out_define(
                 f"DT_COMPAT_{str2ident(compat)}_BUS_{str2ident(bus)}", 1)
+
+    out_comment('Macros to iterate over enabled clock outputs\n')
+
+
+    clock_ids = []
+    used_clock_ids = set()
+    for node in edt.nodes:
+        if "clock-id" in node.props:
+            # Record the clock ID
+            clock_ids.append(node.props["clock-id"].val)
+        if "clocks" in node.props:
+            if node.status == "okay":
+                # Check if clock node has clock-id property
+                for clock_ph in node.props["clocks"].val:
+                    if "clock-id" in clock_ph.controller.props:
+                        used_clock_ids.add(clock_ph.controller.props["clock-id"].val)
+    out_dt_define("FOREACH_CLOCK_ID(fn)",
+                  " ".join(f"fn({clock_id})" for clock_id in clock_ids))
+    for clock_id in used_clock_ids:
+        out_dt_define(f"CLOCK_ID_{clock_id}_USED", 1)
+
 
 def str2ident(s):
     # Converts 's' to a form suitable for (part of) an identifier

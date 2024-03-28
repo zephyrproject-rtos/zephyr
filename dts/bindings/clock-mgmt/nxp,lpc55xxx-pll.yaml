@@ -1,0 +1,20 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: LPC55xxx PLL
+
+compatible: "nxp,lpc55xxx-pll"
+
+include: [clock-node.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 6
+
+clock-cells:
+  - multiplier
+  - divider
+  - pdec
+  - seli
+  - selp
+  - selr
