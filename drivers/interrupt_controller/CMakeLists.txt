@@ -2,6 +2,7 @@
 
 zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
+zephyr_library_sources_ifdef(CONFIG_USERSPACE               intc_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_ARCV2_INTERRUPT_UNIT    intc_arcv2_irq_unit.c)
 zephyr_library_sources_ifdef(CONFIG_CAVS_ICTL               intc_cavs.c)
 zephyr_library_sources_ifdef(CONFIG_DW_ICTL                 intc_dw.c)
