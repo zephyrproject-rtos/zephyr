@@ -135,8 +135,8 @@ stm32_lp_tick_source: &lptim1 {
 		compatible = "st,stm32-ospi-nor";
 		reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
-		spi-bus-width = <OSPI_OPI_MODE>;
-		data-rate = <OSPI_DTR_TRANSFER>;
+		spi-bus-width = <XSPI_OCTO_MODE>;
+		data-rate = <XSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
 		status = "okay";
 
