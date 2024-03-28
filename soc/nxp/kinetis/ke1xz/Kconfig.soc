@@ -1,0 +1,37 @@
+# Kinetis KE1xZ MCU line
+
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_KE1XZ
+	bool
+	select SOC_FAMILY_KINETIS
+
+config SOC_SERIES
+	default "ke1xz" if SOC_SERIES_KE1XZ
+
+config SOC_MKE15Z7
+	bool
+	select SOC_SERIES_KE1XZ
+
+config SOC
+	default "mke15z7" if SOC_MKE15Z7
+
+config SOC_PART_NUMBER_MKE15Z128VLL7
+	bool
+
+config SOC_PART_NUMBER_MKE15Z128VLH7
+	bool
+
+config SOC_PART_NUMBER_MKE15Z256VLL7
+	bool
+
+config SOC_PART_NUMBER_MKE15Z256VLH7
+	bool
+
+config SOC_PART_NUMBER
+	default "MKE15Z128VLL7" if SOC_PART_NUMBER_MKE15Z128VLL7
+	default "MKE15Z128VLH7" if SOC_PART_NUMBER_MKE15Z128VLH7
+	default "MKE15Z256VLL7" if SOC_PART_NUMBER_MKE15Z256VLL7
+	default "MKE15Z256VLH7" if SOC_PART_NUMBER_MKE15Z256VLH7
