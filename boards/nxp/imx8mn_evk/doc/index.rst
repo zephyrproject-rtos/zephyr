@@ -82,13 +82,13 @@ Use U-Boot to load and kick zephyr.bin:
 
 .. code-block:: console
 
-    mw 303d0518 f 1; fatload mmc 1:1 0x93c00000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; go 0x93c00000
+    fatload mmc 1:1 0x93c00000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; go 0x93c00000
 
 Or kick SMP zephyr.bin:
 
 .. code-block:: console
 
-    mw 303d0518 f 1; fatload mmc 1:1 0x93c00000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; cpu 2 release 0x93c00000
+    fatload mmc 1:1 0x93c00000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; cpu 2 release 0x93c00000
 
 
 Use this configuration to run basic Zephyr applications and kernel tests,
