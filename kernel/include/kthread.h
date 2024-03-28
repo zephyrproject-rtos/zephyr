@@ -12,6 +12,16 @@
 #include <kernel_internal.h>
 #include <timeout_q.h>
 
+
+#define Z_STATE_STR_DUMMY       "dummy"
+#define Z_STATE_STR_PENDING     "pending"
+#define Z_STATE_STR_PRESTART    "prestart"
+#define Z_STATE_STR_DEAD        "dead"
+#define Z_STATE_STR_SUSPENDED   "suspended"
+#define Z_STATE_STR_ABORTING    "aborting"
+#define Z_STATE_STR_SUSPENDING  "suspending"
+#define Z_STATE_STR_QUEUED      "queued"
+
 #ifdef CONFIG_THREAD_MONITOR
 /* This lock protects the linked list of active threads; i.e. the
  * initial _kernel.threads pointer and the linked list made up of
