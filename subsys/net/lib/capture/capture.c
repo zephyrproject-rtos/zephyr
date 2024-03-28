@@ -486,6 +486,8 @@ static int capture_enable(const struct device *dev, struct net_if *iface)
 	ctx->capture_iface = iface;
 	ctx->is_enabled = true;
 
+	net_mgmt_event_notify(NET_EVENT_CAPTURE_STARTED, iface);
+
 	net_if_up(ctx->tunnel_iface);
 
 	return 0;
@@ -494,11 +496,14 @@ static int capture_enable(const struct device *dev, struct net_if *iface)
 static int capture_disable(const struct device *dev)
 {
 	struct net_capture *ctx = dev->data;
+	struct net_if *iface = ctx->capture_iface;
 
 	ctx->capture_iface = NULL;
 	ctx->is_enabled = false;
 
 	net_if_down(ctx->tunnel_iface);
+
+	net_mgmt_event_notify(NET_EVENT_CAPTURE_STOPPED, iface);
 
 	return 0;
 }
