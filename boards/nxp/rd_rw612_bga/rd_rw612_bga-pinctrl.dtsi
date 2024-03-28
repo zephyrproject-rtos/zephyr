@@ -32,6 +32,16 @@
 		};
 	};
 
+	pinmux_dmic0: pinmux_dmic0 {
+		group0 {
+			pinmux = <IO_MUX_PDM_IO51
+				IO_MUX_PDM_IO52
+				IO_MUX_PDM_IO53
+				IO_MUX_PDM_IO54>;
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_flexspi: pinmux_flexspi {
 		group0 {
 			pinmux = <IO_MUX_QUAD_SPI_FLASH_IO28

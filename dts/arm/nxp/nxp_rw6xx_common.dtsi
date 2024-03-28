@@ -303,6 +303,44 @@
 		};
 	};
 
+	dmic0: dmic@121000 {
+		#address-cells=<1>;
+		#size-cells=<0>;
+		compatible = "nxp,dmic";
+		reg = <0x121000 0x1000>;
+		interrupts = <25 0>;
+		status = "disabled";
+		clocks = <&clkctl1 MCUX_DMIC_CLK>;
+
+		pdmc0: dmic-channel@0 {
+			reg = <0>;
+			compatible = "nxp,dmic-channel";
+			dmas = <&dma0 16>;
+			status = "disabled";
+		};
+
+		pdmc1: dmic-channel@1 {
+			reg = <1>;
+			compatible = "nxp,dmic-channel";
+			dmas = <&dma0 17>;
+			status = "disabled";
+		};
+
+		pdmc2: dmic-channel@2 {
+			reg = <2>;
+			compatible = "nxp,dmic-channel";
+			dmas = <&dma0 18>;
+			status = "disabled";
+		};
+
+		pdmc3: dmic-channel@3 {
+			reg = <3>;
+			compatible = "nxp,dmic-channel";
+			dmas = <&dma0 19>;
+			status = "disabled";
+		};
+	};
+
 };
 
 &flexspi {
