@@ -165,8 +165,8 @@ MEMORY
 	*intc_loapic.c.obj(.##lsect##.*)				\
 	*intc_system_apic.c.obj(.##lsect)				\
 	*intc_system_apic.c.obj(.##lsect##.*)				\
-	*rand32_timer.c.obj(.##lsect)					\
-	*rand32_timer.c.obj(.##lsect##.*)				\
+	*random_timer.c.obj(.##lsect)					\
+	*random_timer.c.obj(.##lsect##.*)				\
 	*uart_console.c.obj(.##lsect)					\
 	*uart_console.c.obj(.##lsect##.*)
 
