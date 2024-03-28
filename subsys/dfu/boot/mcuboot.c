@@ -34,8 +34,34 @@
 #define BOOT_HEADER_MAGIC_V1 0x96f3b83d
 #define BOOT_HEADER_SIZE_V1 32
 
+#if USE_PARTITION_MANAGER
+#include <pm_config.h>
+
+#if CONFIG_BUILD_WITH_TFM
+	#define PM_ADDRESS_OFFSET (PM_MCUBOOT_PAD_SIZE + PM_TFM_SIZE)
+#else
+	#define PM_ADDRESS_OFFSET (PM_MCUBOOT_PAD_SIZE)
+#endif
+
+#ifdef CONFIG_MCUBOOT
+	/* lib is part of MCUboot -> operate on the primart application slot */
+	#define ACTIVE_SLOT_ID		PM_MCUBOOT_PRIMARY_ID
+#else
+	/* lib is part of the App -> operate on active slot */
+#if (PM_ADDRESS - PM_ADDRESS_OFFSET) == PM_MCUBOOT_PRIMARY_ADDRESS
+	#define ACTIVE_SLOT_ID		PM_MCUBOOT_PRIMARY_ID
+#elif (PM_ADDRESS - PM_ADDRESS_OFFSET) == PM_MCUBOOT_SECONDARY_ADDRESS
+	#define ACTIVE_SLOT_ID		PM_MCUBOOT_SECONDARY_ID
+#else
+	#error Missing partition definitions.
+#endif
+#endif /* CONFIG_MCUBOOT */
+
+#define ACTIVE_SLOT_FLASH_AREA_ID ACTIVE_SLOT_ID
+#else
 /* Get active partition. zephyr,code-partition chosen node must be defined */
 #define ACTIVE_SLOT_FLASH_AREA_ID DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_code_partition))
+#endif /* USE_PARTITION_MANAGER */
 
 /*
  * Raw (on-flash) representation of the v1 image header.
