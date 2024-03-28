@@ -6,4 +6,12 @@ if BOARD_IT82XX2_EVB
 config INPUT
 	default y if KSCAN
 
+config PM
+	default n if SOC_IT8XXX2_JTAG_DEBUG_INTERFACE
+	default y
+
+config PM_DEVICE
+	default n if SOC_IT8XXX2_JTAG_DEBUG_INTERFACE
+	default y
+
 endif
