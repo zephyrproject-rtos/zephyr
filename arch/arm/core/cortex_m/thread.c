@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  * Copyright (c) 2021 Lexmark International, Inc.
+ * Copyright (c) 2023 Arm Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -554,37 +555,52 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 #if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
 	__set_PSPLIM(main_thread->stack_info.start);
 #else
-#error "Built-in PSP limit checks not supported by HW"
+#error "Built-in PSP limit checks not supported by the hardware."
 #endif
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
 
 	/*
 	 * Set PSP to the highest address of the main stack
 	 * before enabling interrupts and jumping to main.
+	 *
+	 * The compiler may store _main on the stack, but this
+	 * location is relative to `PSP`.
+	 * This assembly block ensures that _main is stored in
+	 * a callee saved register before switching stack and continuing
+	 * with the thread entry process.
+	 *
+	 * When calling arch_irq_unlock_outlined, LR is lost which is fine since
+	 * we do not intend to return after calling z_thread_entry.
 	 */
 	__asm__ volatile (
-	"mov   r0,  %0\n\t"	/* Store _main in R0 */
-	"msr   PSP, %1\n\t"	/* __set_PSP(stack_ptr) */
+	"mov   r4,  %0\n"	/* force _main to be stored in a register */
+	"msr   PSP, %1\n"	/* __set_PSP(stack_ptr) */
 
-	"movs r1, #0\n\t"
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	"cpsie i\n\t"		/* __enable_irq() */
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	"cpsie if\n\t"		/* __enable_irq(); __enable_fault_irq() */
-	"msr   BASEPRI, r1\n\t"	/* __set_BASEPRI(0) */
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-	"isb\n\t"
-	"movs r2, #0\n\t"
-	"movs r3, #0\n\t"
-	"bl z_thread_entry\n\t"	/* z_thread_entry(_main, 0, 0, 0); */
-	:
-	: "r" (_main), "r" (stack_ptr)
-	: "r0" /* not to be overwritten by msr PSP, %1 */
-	);
+	"mov   r0,  #0\n"	/* arch_irq_unlock(0) */
+	"ldr   r3, =arch_irq_unlock_outlined\n"
+	"blx   r3\n"
+
+	"mov   r0, r4\n"	/* z_thread_entry(_main, NULL, NULL, NULL) */
+	"mov   r1, #0\n"
+	"mov   r2, #0\n"
+	"mov   r3, #0\n"
+	"ldr   r4, =z_thread_entry\n"
+	"bx    r4\n"		/* We don’t intend to return, so there is no need to link. */
+	: "+r" (_main)
+	: "r" (stack_ptr)
+	: "r0", "r1", "r2", "r3", "r4");
 
 	CODE_UNREACHABLE;
+}
+
+__used void arch_irq_unlock_outlined(unsigned int key)
+{
+	arch_irq_unlock(key);
+}
+
+__used unsigned int arch_irq_lock_outlined(void)
+{
+	return arch_irq_lock();
 }
 
 #if !defined(CONFIG_MULTITHREADING)
@@ -608,42 +624,39 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(
 	 * after stack pointer change. The function is not going
 	 * to return, so callee-saved registers do not need to be
 	 * stacked.
+	 *
+	 * The compiler may store _main on the stack, but this
+	 * location is relative to `PSP`.
+	 * This assembly block ensures that _main is stored in
+	 * a callee saved register before switching stack and continuing
+	 * with the thread entry process.
 	 */
-	register void *p1_inreg __asm__("r0") = p1;
-	register void *p2_inreg __asm__("r1") = p2;
-	register void *p3_inreg __asm__("r2") = p3;
 
 	__asm__ volatile (
 #ifdef CONFIG_BUILTIN_STACK_GUARD
-	"msr  PSPLIM, %[_psplim]\n\t"
+	"msr  PSPLIM, %[_psplim]\n" /* __set_PSPLIM(_psplim) */
 #endif
-	"msr  PSP, %[_psp]\n\t"       /* __set_PSP(psp) */
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	"cpsie i\n\t"         /* enable_irq() */
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	"cpsie if\n\t"		/* __enable_irq(); __enable_fault_irq() */
-	"mov r3, #0\n\t"
-	"msr   BASEPRI, r3\n\t"	/* __set_BASEPRI(0) */
-#endif
-	"isb\n\t"
-	"blx  %[_main_entry]\n\t"     /* main_entry(p1, p2, p3) */
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	"cpsid i\n\t"         /* disable_irq() */
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	"msr BASEPRI, %[basepri]\n\t"/* __set_BASEPRI(_EXC_IRQ_DEFAULT_PRIO) */
-	"isb\n\t"
-#endif
+	"msr  PSP, %[_psp]\n"       /* __set_PSP(psp) */
+	"mov r0, #0\n"
+	"ldr r1, =arch_irq_unlock_outlined\n"
+	"blx r1\n"
+
+	"mov r0, %[_p1]\n"
+	"mov r1, %[_p2]\n"
+	"mov r2, %[_p3]\n"
+	"blx  %[_main_entry]\n"     /* main_entry(p1, p2, p3) */
+
+	"mov r0, #0\n"
+	"ldr r1, =arch_irq_unlock_outlined\n"
+	"blx r1\n"
 	"loop: b loop\n\t"    /* while (true); */
 	:
-	: "r" (p1_inreg), "r" (p2_inreg), "r" (p3_inreg),
+	: [_p1]"r" (p1), [_p2]"r" (p2), [_p3]"r" (p3),
 	  [_psp]"r" (psp), [_main_entry]"r" (main_entry)
-#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	, [basepri] "r" (_EXC_IRQ_DEFAULT_PRIO)
-#endif
 #ifdef CONFIG_BUILTIN_STACK_GUARD
 	, [_psplim]"r" (psplim)
 #endif
-	:
+	: "r0", "r1", "r2", "r3"
 	);
 
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */

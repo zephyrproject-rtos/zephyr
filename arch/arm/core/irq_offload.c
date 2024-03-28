@@ -10,6 +10,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/irq_offload.h>
+#include <cmsis_core.h>
 
 volatile irq_offload_routine_t offload_routine;
 static const void *offload_param;
@@ -22,14 +23,11 @@ void z_irq_do_offload(void)
 
 void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && defined(CONFIG_ASSERT)
-	/* ARMv6-M/ARMv8-M Baseline HardFault if you make a SVC call with
-	 * interrupts locked.
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && !defined(CONFIG_ARMV8_M_BASELINE) \
+	&& defined(CONFIG_ASSERT)
+	/* ARMv6-M HardFault if you make a SVC call with interrupts locked.
 	 */
-	unsigned int key;
-
-	__asm__ volatile("mrs %0, PRIMASK;" : "=r" (key) : : "memory");
-	__ASSERT(key == 0U, "irq_offload called with interrupts locked\n");
+	__ASSERT(__get_PRIMASK() == 0U, "irq_offload called with interrupts locked\n");
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE && CONFIG_ASSERT */
 
 	k_sched_lock();
