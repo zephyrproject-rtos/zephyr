@@ -952,6 +952,12 @@ static bool send_request(enum http_method method, enum hawkbit_http_request type
 	return true;
 }
 
+void hawkbit_reboot(void)
+{
+	LOG_PANIC();
+	sys_reboot(SYS_REBOOT_WARM);
+}
+
 enum hawkbit_response hawkbit_probe(void)
 {
 	int ret;
@@ -1186,8 +1192,7 @@ static void autohandler(struct k_work *work)
 		LOG_ERR("Rebooting to previous confirmed image");
 		LOG_ERR("If this image is flashed using a hardware tool");
 		LOG_ERR("Make sure that it is a confirmed image");
-		k_sleep(K_SECONDS(1));
-		sys_reboot(SYS_REBOOT_WARM);
+		hawkbit_reboot();
 		break;
 
 	case HAWKBIT_NO_UPDATE:
@@ -1203,7 +1208,8 @@ static void autohandler(struct k_work *work)
 		break;
 
 	case HAWKBIT_UPDATE_INSTALLED:
-		LOG_INF("Update installed, please reboot");
+		LOG_INF("Update installed");
+		hawkbit_reboot();
 		break;
 
 	case HAWKBIT_DOWNLOAD_ERROR:
