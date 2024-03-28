@@ -66,6 +66,16 @@ LOG_MODULE_REGISTER(CP9314, CONFIG_REGULATOR_LOG_LEVEL);
 #define CP9314_MODE_2TO1        1
 #define CP9314_MODE_3TO1        2
 
+#define CP9314_REG_FLT_FLAG   0x12
+#define CP9314_VIN_OVP_FLAG   BIT(1)
+#define CP9314_VOUT_OVP_FLAG  BIT(0)
+
+#define CP9314_REG_COMP_FLAG0 0x2A
+#define CP9314_IIN_OCP_FLAG   BIT(4)
+
+#define CP9314_REG_COMP_FLAG1 0x2C
+#define CP9314_VIN2OUT_OVP_FLAG BIT(0)
+
 #define CP9314_REG_LION_CFG_1  0x31
 #define CP9314_LB2_DELTA_CFG_1 GENMASK(7, 5)
 
@@ -231,6 +241,47 @@ static struct cp9314_reg_patch otp_1_patch[3] = {
 	{CP9314_REG_BST_CP_PD_CFG, CP9314_LB1_BLANK_CFG, CP9314_LB1_BLANK_CFG},
 	{CP9314_REG_TSBAT_CTRL, CP9314_LB1_STOP_PHASE_SEL, CP9314_LB1_STOP_PHASE_SEL},
 };
+
+static int regulator_cp9314_get_error_flags(const struct device *dev,
+					    regulator_error_flags_t *flags)
+{
+	const struct regulator_cp9314_config *config = dev->config;
+	uint8_t val[3];
+	int ret;
+
+	*flags = 0U;
+
+	ret = i2c_reg_read_byte_dt(&config->i2c, CP9314_REG_FLT_FLAG, &val[0]);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (FIELD_GET(CP9314_VIN_OVP_FLAG, val[0]) || FIELD_GET(CP9314_VOUT_OVP_FLAG, val[0])) {
+		*flags |= REGULATOR_ERROR_OVER_VOLTAGE;
+	}
+
+	ret = i2c_reg_read_byte_dt(&config->i2c, CP9314_REG_COMP_FLAG0, &val[1]);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (FIELD_GET(CP9314_IIN_OCP_FLAG, val[1])) {
+		*flags |= REGULATOR_ERROR_OVER_CURRENT;
+	}
+
+	ret = i2c_reg_read_byte_dt(&config->i2c, CP9314_REG_COMP_FLAG1, &val[2]);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (FIELD_GET(CP9314_VIN2OUT_OVP_FLAG, val[2])) {
+		*flags |= REGULATOR_ERROR_OVER_VOLTAGE;
+	}
+
+	LOG_DBG("FLT_FLAG = 0x%x, COMP_FLAG0 = 0x%x, COMP_FLAG1 = 0x%x", val[0], val[1], val[2]);
+
+	return 0;
+}
 
 static int regulator_cp9314_disable(const struct device *dev)
 {
@@ -550,6 +601,7 @@ static int regulator_cp9314_init(const struct device *dev)
 static const struct regulator_driver_api api = {
 	.enable = regulator_cp9314_enable,
 	.disable = regulator_cp9314_disable,
+	.get_error_flags = regulator_cp9314_get_error_flags,
 };
 
 #define REGULATOR_CP9314_DEFINE(inst)                                                              \
