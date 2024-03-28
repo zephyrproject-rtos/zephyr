@@ -11,7 +11,7 @@ sphinx-copybutton
 sphinx-togglebutton
 
 # YAML validation. Used by zephyr_module.
-PyYAML>=5.1
+PyYAML>=6.0
 pykwalify
 
 # Used by pytest-twister-harness plugin
