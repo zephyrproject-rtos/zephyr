@@ -19,6 +19,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart9;
 		zephyr,shell-uart = &uart9;
+		zephyr,canbus = &canfd0;
 	};
 
 	leds {
@@ -63,6 +64,13 @@
 	aliases {
 		led0 = &led1;
 	};
+
+	transceiver0: can-phy0 {
+		compatible = "nxp,tja1040", "can-transceiver-gpio";
+		standby-gpios = <&ioport2 7 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
 };
 
 &xtal {
@@ -82,8 +90,8 @@
 	mul = <96 0>;
 	divp = <RA_PLL_DIV_2>;
 	freqp = <DT_FREQ_M(480)>;
-	divq = <RA_PLL_DIV_2>;
-	freqq = <DT_FREQ_M(480)>;
+	divq = <RA_PLL_DIV_4>;
+	freqq = <DT_FREQ_M(240)>;
 	divr = <RA_PLL_DIV_2>;
 	freqr = <DT_FREQ_M(480)>;
 	status = "okay";
@@ -95,6 +103,24 @@
 	status = "okay";
 };
 
+&pclka {
+	clk_src = <RA_CLOCK_SOURCE_PLL1P>;
+	clk_div = <RA_SYS_CLOCK_DIV_4>;
+	status = "okay";
+};
+
+&pclke {
+	clk_src = <RA_CLOCK_SOURCE_PLL1P>;
+	clk_div = <RA_SYS_CLOCK_DIV_2>;
+	status = "okay";
+};
+
+&canfdclk {
+	clk_src = <RA_CLOCK_SOURCE_PLL1P>;
+	clk_div = <RA_CANFD_CLOCK_DIV_5>;
+	status = "okay";
+};
+
 &ioport0 {
 	status = "okay";
 };
@@ -103,7 +129,7 @@
 	status = "okay";
 };
 
-&ioport3 {
+&ioport2 {
 	status = "okay";
 };
 
@@ -144,3 +170,17 @@
 };
 
 mikrobus_serial: &uart3 {};
+
+&canfd_global {
+	status = "okay";
+	canfd0 {
+		bitrate = <500000>;
+		sample-point = <750>;
+		bitrate-data = <2000000>;
+		sample-point-data = <750>;
+		pinctrl-0 = <&canfd0_default>;
+		pinctrl-names = "default";
+		phys = <&transceiver0>;
+		status = "okay";
+	};
+};
