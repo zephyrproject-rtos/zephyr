@@ -19,6 +19,10 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
 
+#ifndef CONFIG_NATIVE_LIBC
+extern void getopt_init(void);
+#endif
+
 static inline bool is_ascii(uint8_t data)
 {
 	return (data >= 0x30 && data <= 0x39) || (data >= 0x61 && data <= 0x66) ||
@@ -101,6 +105,9 @@ static int cmd_dump(const struct shell *sh, size_t argc, char **argv)
 	mem_addr_t addr = -1;
 
 	optind = 1;
+#ifndef CONFIG_NATIVE_LIBC
+	getopt_init();
+#endif
 	while ((rv = getopt(argc, argv, "a:s:w:")) != -1) {
 		switch (rv) {
 		case 'a':
@@ -349,7 +356,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_devmem,
 			       SHELL_CMD_ARG(dump, NULL,
 					     "Usage:\n"
 					     "devmem dump -a <address> -s <size> [-w <width>]\n",
-					     cmd_dump, 4, 6),
+					     cmd_dump, 5, 2),
 			       SHELL_CMD_ARG(load, NULL,
 					     "Usage:\n"
 					     "devmem load [options] [address]\n"
