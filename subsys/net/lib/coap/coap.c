@@ -1257,6 +1257,22 @@ int coap_remove_descriptive_block_option(struct coap_packet *cpkt)
 	}
 }
 
+bool coap_block_has_more(struct coap_packet *cpkt)
+{
+	bool more = false;
+	int opt;
+
+	if (coap_packet_is_request(cpkt)) {
+		opt = coap_get_option_int(cpkt, COAP_OPTION_BLOCK1);
+	} else {
+		opt = coap_get_option_int(cpkt, COAP_OPTION_BLOCK2);
+	}
+	if (opt >= 0) {
+		more = GET_MORE(opt);
+	}
+	return more;
+}
+
 int coap_append_block1_option(struct coap_packet *cpkt,
 			      struct coap_block_context *ctx)
 {

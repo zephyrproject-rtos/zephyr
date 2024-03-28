@@ -43,6 +43,7 @@ DEFINE_FAKE_VOID_FUNC(lwm2m_clear_block_contexts);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_security_mode, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, z_impl_zsock_setsockopt, int, int, int, const void *, socklen_t);
 DEFINE_FAKE_VOID_FUNC(engine_update_tx_time);
+DEFINE_FAKE_VALUE_FUNC(bool, coap_block_has_more, struct coap_packet *);
 
 static sys_slist_t obs_obj_path_list = SYS_SLIST_STATIC_INIT(&obs_obj_path_list);
 sys_slist_t *lwm2m_obs_obj_path_list(void)
