@@ -1,0 +1,78 @@
+; Copyright (c) 2023 Stephen Boylan <stephen.boylan@beechwoods.com>
+; SPDX-License-Identifier: Apache-2.0
+
+; RP2040 PIO programs for SPI
+; Delays are used to keep clock symmetric
+; Each version uses 4 clock cycles
+
+; CPOL=0, CPHA=0
+.program spi_mode_0_0
+.side_set 1
+
+    out pins, 1  side 0  [1]
+    in  pins, 1  side 1  [1]
+
+; CPOL=1, CPHA=1
+.program spi_mode_1_1
+.side_set 1
+
+    out x, 1     side 1
+    mov pins, x  side 0 [1]
+    in  pins, 1  side 1
+
+; This 3-wire code runs at 2 clock cycles per bit
+; 3-wire, CPOL=0, CPHA=0
+; Output stage
+.program spi_sio_mode_0_0_tx
+.side_set 1
+
+.wrap_target
+    pull                side 0
+wrloop:
+    out pins, 1         side 0
+    jmp !osre wrloop    side 1
+.wrap
+
+; The following logic follows Jeremy P. Bentham's approach from
+; his blog, https://iosoft.blog/2022/12/06/picowi/
+.program spi_sio_mode_0_0_8_bit_rx
+.side_set 1
+.wrap_target
+    pull                side 0
+    out x, 32           side 0
+byteloop:
+    set y, 7            side 0
+bitloop:
+    in pins, 1          side 1
+    jmp y--, bitloop    side 0
+    push                side 0
+    jmp x--, byteloop   side 0
+.wrap
+
+.program spi_sio_mode_0_0_16_bit_rx
+.side_set 1
+.wrap_target
+    pull                side 0
+    out x, 32           side 0
+byteloop:
+    set y, 15           side 0
+bitloop:
+    in pins, 1          side 1
+    jmp y--, bitloop    side 0
+    push                side 0
+    jmp x--, byteloop   side 0
+.wrap
+
+.program spi_sio_mode_0_0_32_bit_rx
+.side_set 1
+.wrap_target
+    pull                side 0
+    out x, 32           side 0
+byteloop:
+    set y, 31           side 0
+bitloop:
+    in pins, 1          side 1
+    jmp y--, bitloop    side 0
+    push                side 0
+    jmp x--, byteloop   side 0
+.wrap
