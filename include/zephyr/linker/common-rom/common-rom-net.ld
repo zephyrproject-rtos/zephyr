@@ -15,6 +15,7 @@
 #endif
 
 #if defined(CONFIG_HTTP_SERVER)
+	ITERABLE_SECTION_ROM(http_resource_desc, 4)
 	ITERABLE_SECTION_ROM(http_service_desc, 4)
 #endif
 

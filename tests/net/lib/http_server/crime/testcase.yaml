@@ -1,0 +1,13 @@
+common:
+  harness: net
+  min_ram: 16
+  tags:
+    - http
+    - net
+    - server
+    - socket
+  integration_platforms:
+    - native_sim
+    - qemu_x86
+tests:
+  net.http.server.crime: {}
