@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, NXP
+ * Copyright 2020, 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -387,6 +387,7 @@
 		offset-value-a = <10>;
 		offset-value-b = <10>;
 		#io-channel-cells = <1>;
+		clocks = <&clkctl1 MCUX_LPADC1_CLK>;
 	};
 
 	ctimer0: ctimer@28000 {

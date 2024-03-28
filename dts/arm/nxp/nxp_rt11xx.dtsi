@@ -1,5 +1,5 @@
 /*
- * Copyright 2021,2023 NXP
+ * Copyright 2021,2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -867,6 +867,7 @@
 			offset-value-a = <10>;
 			offset-value-b = <10>;
 			#io-channel-cells = <1>;
+			clocks = <&ccm IMX_CCM_LPADC1_CLK 0 0>;
 		};
 
 		lpadc1: lpadc@40054000 {
@@ -882,6 +883,7 @@
 			offset-value-a = <10>;
 			offset-value-b = <10>;
 			#io-channel-cells = <1>;
+			clocks = <&ccm IMX_CCM_LPADC2_CLK 0 0>;
 		};
 
 		acmp1: cmp@401a4000 {
