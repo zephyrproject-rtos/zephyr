@@ -40,6 +40,19 @@
 				width = <320>;
 				height = <240>;
 			};
+
+			test_mipi_dbi_st7796s: st7796s@1 {
+				compatible = "sitronix,st7796s";
+				reg = <1>;
+				mipi-max-frequency = <25000000>;
+				height = <320>;
+				width = <480>;
+				/* Use dummy values for PCG and NGC,
+				 * As this won't drive a real panel
+				 */
+				pgc = [F0 06 0B 07 06 05 2E 33 47 3A 17 16 2E 31];
+				ngc = [F0 09 0D 09 08 23 2E 33 46 38 13 13 2C 32];
+			};
 		};
 
 

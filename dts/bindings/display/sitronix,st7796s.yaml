@@ -1,0 +1,106 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST7796S Display controller
+
+compatible: "sitronix,st7796s"
+
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+
+properties:
+  frmctl1:
+    type: uint8-array
+    default: [0xA0, 0x10]
+    description: |
+      Frame rate control (partial mode / full colors). The default value should
+      result in a framerate of ~41 FPS.
+
+  frmctl2:
+    type: uint8-array
+    default: [0x00, 0x10]
+    description: |
+      Frame rate control (idle mode / 8 colors). This property sets the
+      division ratio for internal clocks in idle mode
+
+  frmctl3:
+    type: uint8-array
+    default: [0x00, 0x10]
+    description: |
+      Frame rate control (partial mode / full colors). This property sets the
+      division ratio for internal clocks in partial mode
+
+  bpc:
+    type: uint8-array
+    default: [0x02, 0x02, 0x00, 0x04]
+    description: |
+      Blanking porch control. This sets the vertical and horizontal
+      front/back porch values
+
+  dfc:
+    type: uint8-array
+    default: [0x80, 0x02, 0x3B]
+    description: |
+      Display function control. Sets display graphical ram mode, as well as
+      gate scan mode
+
+  pwr1:
+    type: uint8-array
+    default: [0x80, 0x25]
+    description: Power control parameter 1. Sets AVDDS, AVLCS, and VGHS
+
+  pwr2:
+    type: int
+    default: 0x13
+    description: Power control parameter 2. Sets VAP
+
+  pwr3:
+    type: int
+    default: 0xA
+    description: Power control parameter 3. Sets source and gamma current levels
+
+  vcmpctl:
+    type: int
+    default: 0x1C
+    description: |
+      VCOM control setting. Value starts at 0.300V, and moves upwards in
+      increments of 0.025V. Maximum of 1.875V
+
+  doca:
+    type: uint8-array
+    default: [0x40, 0x8A, 0x00, 0x00, 0x25, 0x0A, 0x38, 0x33]
+    description: |
+      Display output control adjust. Sets display timing controls
+
+  pgc:
+    type: uint8-array
+    required: true
+    description: |
+      Positive gamma control settings. No default is provided by controller,
+      as this setting is panel specific.
+  ngc:
+    type: uint8-array
+    required: true
+    description: |
+      Negative gamma control settings. No default is provided by controller,
+      as this setting is panel specific.
+
+  madctl:
+    type: int
+    default: 0x0
+    description: |
+       Memory data access control value. This controls the panel color format,
+       as well as rotation settings.
+
+  color-invert:
+    type: boolean
+    description: When present, inverts display colors
+
+  invert-mode:
+    type: string
+    default: "1-dot"
+    enum:
+      - "column"
+      - "1-dot"
+      - "2-dot"
+    description: |
+      Display inversion control mode.
