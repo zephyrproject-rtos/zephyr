@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Benedikt Schmidt <benediktibk@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics STC3100 battery monitor
+
+compatible: "st,stc3100"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  sense-resistor:
+    type: int
+    required: true
+    description: |
+      External sense resistor in mOhm.
+
+  nominal-capacity:
+    type: int
+    required: true
+    description: |
+      Nominal capacity in mAh.
