@@ -72,7 +72,7 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 		 * If we get here, we must have been doing a syscall, check
 		 * privilege elevation stack bounds
 		 */
-		start = _current->stack_info.start - CONFIG_MMU_PAGE_SIZE;
+		start = _current->stack_info.start - CONFIG_PRIVILEGED_STACK_SIZE;
 		end = _current->stack_info.start;
 #endif /* CONFIG_USERSPACE */
 	} else {
