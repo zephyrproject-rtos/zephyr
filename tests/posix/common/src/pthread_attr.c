@@ -511,14 +511,20 @@ ZTEST(pthread_attr, test_pthread_attr_getinheritsched)
 static void *inheritsched_entry(void *arg)
 {
 	int prio;
-	bool inheritsched = (bool)POINTER_TO_UINT(arg);
+	int policy;
+	int inheritsched;
+	struct sched_param param;
+	int pprio = POINTER_TO_INT(arg);
+
+	zassert_ok(pthread_attr_getinheritsched(&attr, &inheritsched));
 
 	prio = k_thread_priority_get(k_current_get());
+	zassert_ok(pthread_getschedparam(pthread_self(), &policy, &param));
 
 	/*
-	 * There may be numerical overlap between posix priorities in different scheduler policies
-	 * so only check the Zephyr priority here. The posix policy and posix priority are derived
-	 * from the Zephyr priority in any case.
+	 * There may be numerical overlap between posix priorities in different scheduler
+	 * policies so only check the Zephyr priority here. The posix policy and posix
+	 * priority are derived from the Zephyr priority in any case.
 	 */
 
 	if (inheritsched == PTHREAD_INHERIT_SCHED) {
@@ -551,9 +557,10 @@ static void test_pthread_attr_setinheritsched_common(bool inheritsched)
 
 	zassert_ok(pthread_attr_setschedpolicy(&attr, policy));
 	zassert_ok(pthread_attr_setschedparam(&attr, &param));
+
 	zassert_ok(pthread_attr_setinheritsched(&attr, inheritsched));
 	create_thread_common_entry(&attr, true, true, inheritsched_entry,
-				   UINT_TO_POINTER(inheritsched));
+				   UINT_TO_POINTER(k_thread_priority_get(k_current_get())));
 }
 
 ZTEST(pthread_attr, test_pthread_attr_setinheritsched)
@@ -567,8 +574,7 @@ ZTEST(pthread_attr, test_pthread_attr_setinheritsched)
 			zassert_equal(pthread_attr_setinheritsched(NULL, PTHREAD_INHERIT_SCHED),
 				      EINVAL);
 			zassert_equal(pthread_attr_setinheritsched((pthread_attr_t *)&uninit_attr,
-								   PTHREAD_INHERIT_SCHED),
-				      EINVAL);
+				      PTHREAD_INHERIT_SCHED), EINVAL);
 		}
 		zassert_equal(pthread_attr_setinheritsched(&attr, 3), EINVAL);
 	}
@@ -577,6 +583,7 @@ ZTEST(pthread_attr, test_pthread_attr_setinheritsched)
 	test_pthread_attr_setinheritsched_common(PTHREAD_INHERIT_SCHED);
 	test_pthread_attr_setinheritsched_common(PTHREAD_EXPLICIT_SCHED);
 }
+
 
 ZTEST(pthread_attr, test_pthread_attr_large_stacksize)
 {
