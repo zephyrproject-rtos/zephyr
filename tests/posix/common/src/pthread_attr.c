@@ -33,7 +33,8 @@ static void *thread_entry(void *arg)
 	return NULL;
 }
 
-static void create_thread_common(const pthread_attr_t *attrp, bool expect_success, bool joinable)
+static void create_thread_common_entry(const pthread_attr_t *attrp, bool expect_success,
+				       bool joinable, void *(*entry)(void *arg), void *arg)
 {
 	pthread_t th;
 
@@ -42,9 +43,9 @@ static void create_thread_common(const pthread_attr_t *attrp, bool expect_succes
 	}
 
 	if (expect_success) {
-		zassert_ok(pthread_create(&th, attrp, thread_entry, UINT_TO_POINTER(joinable)));
+		zassert_ok(pthread_create(&th, attrp, entry, arg));
 	} else {
-		zassert_not_ok(pthread_create(&th, attrp, thread_entry, UINT_TO_POINTER(joinable)));
+		zassert_not_ok(pthread_create(&th, attrp, entry, arg));
 		return;
 	}
 
@@ -64,6 +65,12 @@ static void create_thread_common(const pthread_attr_t *attrp, bool expect_succes
 	}
 
 	zassert_true(detached_thread_has_finished, "detached thread did not seem to finish");
+}
+
+static void create_thread_common(const pthread_attr_t *attrp, bool expect_success, bool joinable)
+{
+	create_thread_common_entry(attrp, expect_success, joinable, thread_entry,
+				   UINT_TO_POINTER(joinable));
 }
 
 static inline void can_create_thread(const pthread_attr_t *attrp)
@@ -470,8 +477,7 @@ ZTEST(pthread_attr, test_pthread_attr_setscope)
 			zassert_equal(pthread_attr_setscope(NULL, PTHREAD_SCOPE_SYSTEM), EINVAL);
 			zassert_equal(pthread_attr_setscope(NULL, contentionscope), EINVAL);
 			zassert_equal(pthread_attr_setscope((pthread_attr_t *)&uninit_attr,
-							    contentionscope),
-				      EINVAL);
+				      contentionscope), EINVAL);
 		}
 		zassert_equal(pthread_attr_setscope(&attr, 3), EINVAL);
 	}
@@ -502,96 +508,74 @@ ZTEST(pthread_attr, test_pthread_attr_getinheritsched)
 	zassert_equal(inheritsched, PTHREAD_INHERIT_SCHED);
 }
 
-static int setinheritsched_inheritsched;
-
-static void *test_pthread_attr_set_inheritsched_child_fn(void *arg)
+static void *inheritsched_entry(void *arg)
 {
-	ARG_UNUSED(arg);
+	int prio;
+	bool inheritsched = (bool)POINTER_TO_UINT(arg);
 
-	struct sched_param param = {
-		.sched_priority = 1,
-	};
-	int policy = SCHED_INVALID;
+	prio = k_thread_priority_get(k_current_get());
 
-	int getChildPolicy = SCHED_INVALID;
-	struct sched_param getChildParam = {
-		.sched_priority = 3,
-	};
+	/*
+	 * There may be numerical overlap between posix priorities in different scheduler policies
+	 * so only check the Zephyr priority here. The posix policy and posix priority are derived
+	 * from the Zephyr priority in any case.
+	 */
 
-	pthread_t self = pthread_self();
-
-	zassert_ok(pthread_getschedparam(self, &getChildPolicy, &getChildParam));
-	zassert_ok(pthread_attr_getschedpolicy(&attr, &policy));
-	zassert_ok(pthread_attr_getschedparam(&attr, &param));
-
-	if (setinheritsched_inheritsched == PTHREAD_INHERIT_SCHED) {
-		zassert_equal(getChildPolicy, policy);
-		zassert_equal(getChildParam.sched_priority, param.sched_priority);
+	if (inheritsched == PTHREAD_INHERIT_SCHED) {
+		zassert_not_equal(prio, K_LOWEST_APPLICATION_THREAD_PRIO);
+	} else {
+		zassert_equal(prio, K_LOWEST_APPLICATION_THREAD_PRIO);
 	}
 
 	return NULL;
 }
 
-static void test_pthread_attr_set_inheritsched_parent_fn(bool inheritsched)
+static void test_pthread_attr_setinheritsched_common(bool inheritsched)
 {
-	ARG_UNUSED(arg);
+	int prio;
+	int policy;
+	struct sched_param param;
 
-	pthread_t child;
+	extern int zephyr_to_posix_priority(int priority, int *policy);
 
-	zassert_ok(pthread_create(&child, NULL, test_pthread_attr_set_inheritsched_child_fn, NULL));
-	zassert_ok(pthread_join(child, NULL));
+	prio = k_thread_priority_get(k_current_get());
+	zassert_not_equal(prio, K_LOWEST_APPLICATION_THREAD_PRIO);
 
-	return NULL;
-}
+	/*
+	 * values affected by inheritsched are policy / priority / contentionscope
+	 *
+	 * we only support PTHREAD_SCOPE_SYSTEM, so no need to set contentionscope
+	 */
+	prio = K_LOWEST_APPLICATION_THREAD_PRIO;
+	param.sched_priority = zephyr_to_posix_priority(prio, &policy);
 
-static void test_pthread_attr_set_inheritsched_common(int inheritsched)
-{
-	int getinheritsched = BIOS_FOOD;
-	struct sched_param param = {
-		.sched_priority = 2,
-	};
-	int policy = SCHED_RR;
-
-	setinheritsched_inheritsched = inheritsched;
-
-	/* Set inheritsched attribute */
-	zassert_ok(pthread_attr_setinheritsched(&attr, inheritsched));
-	zassert_ok(pthread_attr_getinheritsched(&attr, &getinheritsched));
-	zassert_equal(getinheritsched, inheritsched);
-
-	/* Change priority of thread */
-	zassert_ok(pthread_attr_setschedparam(&attr, &param));
 	zassert_ok(pthread_attr_setschedpolicy(&attr, policy));
-
-	pthread_t parent;
-
-	zassert_ok(
-		pthread_create(&parent, &attr, test_pthread_attr_set_inheritsched_parent_fn, NULL));
-	zassert_ok(pthread_join(parent, NULL));
+	zassert_ok(pthread_attr_setschedparam(&attr, &param));
+	zassert_ok(pthread_attr_setinheritsched(&attr, inheritsched));
+	create_thread_common_entry(&attr, true, true, inheritsched_entry,
+				   UINT_TO_POINTER(inheritsched));
 }
 
 ZTEST(pthread_attr, test_pthread_attr_setinheritsched)
 {
-	int inheritsched = BIOS_FOOD;
 	/* degenerate cases */
 	{
 		if (false) {
 			/* undefined behaviour */
 			zassert_equal(pthread_attr_setinheritsched(NULL, PTHREAD_EXPLICIT_SCHED),
 				      EINVAL);
-			zassert_equal(pthread_attr_setinheritsched(NULL, inheritsched), EINVAL);
+			zassert_equal(pthread_attr_setinheritsched(NULL, PTHREAD_INHERIT_SCHED),
+				      EINVAL);
 			zassert_equal(pthread_attr_setinheritsched((pthread_attr_t *)&uninit_attr,
-								   inheritsched),
+								   PTHREAD_INHERIT_SCHED),
 				      EINVAL);
 		}
 		zassert_equal(pthread_attr_setinheritsched(&attr, 3), EINVAL);
 	}
 
-	zassert_ok(pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED));
-	zassert_ok(pthread_attr_getinheritsched(&attr, &inheritsched));
-	zassert_equal(inheritsched, PTHREAD_EXPLICIT_SCHED);
-
-	test_pthread_attr_set_inheritsched_common(PTHREAD_INHERIT_SCHED);
+	/* valid cases */
+	test_pthread_attr_setinheritsched_common(PTHREAD_INHERIT_SCHED);
+	test_pthread_attr_setinheritsched_common(PTHREAD_EXPLICIT_SCHED);
 }
 
 ZTEST(pthread_attr, test_pthread_attr_large_stacksize)
