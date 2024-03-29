@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Benedikt Schmidt <benediktibk@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config STC3100
+	bool "STC3100 temperature sensor"
+	default y
+	depends on DT_HAS_ST_STC3100_ENABLED
+	select I2C
+	help
+	  Enable driver for the STC3100 battery monitor sensor.
