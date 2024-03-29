@@ -9,8 +9,8 @@
 #include <ti/ti_am6234_a53.dtsi>
 
 / {
-	model = "PHYTEC phyCORE-AM62x A53";
-	compatible = "ti,am6234";
+	model = "PHYTEC phyBOARD-Lyra AM62x A53";
+	compatible = "phytec,am62x-a53-phyboard-lyra", "ti,am625";
 
 	chosen {
 		zephyr,console = &uart0;

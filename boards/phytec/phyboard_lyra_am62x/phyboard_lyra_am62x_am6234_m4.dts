@@ -10,7 +10,7 @@
 #include <ti/am62x_m4.dtsi>
 
 / {
-	model = "PHYTEC AM62x M4 phyBOARD-Lyra";
+	model = "PHYTEC phyBOARD-Lyra AM62x M4";
 	compatible = "phytec,am62x-m4-phyboard-lyra", "ti,am625";
 
 	chosen {
