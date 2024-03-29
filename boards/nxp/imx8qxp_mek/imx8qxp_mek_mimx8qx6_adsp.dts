@@ -27,6 +27,11 @@
 	pinctrl-names = "default";
 };
 
+&sai1 {
+	pinctrl-0 = <&sai1_default>;
+	pinctrl-names = "default";
+};
+
 &irqsteer {
 	reg = <0x51080000 DT_SIZE_K(64)>;
 };
