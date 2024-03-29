@@ -83,7 +83,7 @@ _high_gpr_spill_done:
 	 * time how many registers were spilled, then return, leaving the
 	 * modified SP in A1.
 	 */
-	addi a1, a1, -4
+	addi a1, a1, -16
 	s32i a3, a1, 0
 
 	ret
@@ -101,7 +101,7 @@ _high_gpr_spill_done:
 xtensa_restore_high_regs:
 	/* pop our "original" stack pointer into a2, stash in a3 also */
 	l32i a2, a1, 0
-	addi a1, a1, 4
+	addi a1, a1, 16
 	mov a3, a2
 
 	beq a1, a2, _high_restore_done

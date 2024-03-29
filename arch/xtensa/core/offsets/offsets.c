@@ -9,7 +9,7 @@
 
 #include <xtensa_asm2_context.h>
 
-GEN_ABSOLUTE_SYM(___xtensa_irq_bsa_t_SIZEOF, sizeof(_xtensa_irq_bsa_t));
+GEN_ABSOLUTE_SYM(___xtensa_irq_bsa_t_SIZEOF, ROUND_UP(sizeof(_xtensa_irq_bsa_t), 16));
 GEN_ABSOLUTE_SYM(___xtensa_irq_stack_frame_raw_t_SIZEOF, sizeof(_xtensa_irq_stack_frame_raw_t));
 GEN_ABSOLUTE_SYM(___xtensa_irq_stack_frame_a15_t_SIZEOF, sizeof(_xtensa_irq_stack_frame_a15_t));
 GEN_ABSOLUTE_SYM(___xtensa_irq_stack_frame_a11_t_SIZEOF, sizeof(_xtensa_irq_stack_frame_a11_t));
