@@ -1699,3 +1699,17 @@ This has been fixed in main for v3.6.0
 
 - `PR 69170 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/69170>`_
+
+CVE-2024-3077
+-------------
+
+Bluetooth: Integer underflow in gatt_find_info_rsp. A malicious BLE
+device can crash BLE victim device by sending malformed gatt packet.
+
+- `Zephyr project bug tracker GHSA-gmfv-4vfh-2mh8
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-gmfv-4vfh-2mh8>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 69396 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/69396>`_
