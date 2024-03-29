@@ -493,3 +493,86 @@ The CSIP implementation supports the following roles
 
 The API reference for media control can be found in
 :ref:`Bluetooth Coordinated Sets <bluetooth_coordinated_sets>`.
+
+
+LE Audio resources
+##################
+
+This section contains some links and reference to resources that are useful for either contributors
+to the LE Audio Stack in Zephyr, LE Audio application developers or both.
+
+The LE audio channel on Discord
+*******************************
+
+Zephyr has a specific Discord channel for LE Audio development, which is open to all.
+Find it here at https://discordapp.com/channels/720317445772017664/1207326649591271434 or simply
+search for `ble-audio` from within Discord.
+Since the `ble-audio` channel is open for all,
+we cannot discuss any specifications that are in development in that channel.
+For discussions that require a Bluetooth SIG membership we refer to the `bluetooth-sig`
+Discord channel found at https://discordapp.com/channels/720317445772017664/869172014018097162.
+
+Zephyr weekly meetings
+**********************
+
+Anyone who is a Bluetooth SIG member and a Zephyr member can join the weekly meetings where we
+discuss and plan the development of LE Audio in Zephyr. You can find the time of the meetings by
+joining the Bluetooth-sig group at https://lists.zephyrproject.org/g/Bluetooth-sig.
+
+Github project
+**************
+
+LE Audio in Zephyr has its own Github project available at
+https://github.com/orgs/zephyrproject-rtos/projects/26.
+The project is mostly automated,
+and the LE Audio contributors almost only rely on the automated workflows
+to present the state of development.
+Anyone is able to pick any of the open issues and work on it.
+If you cannot assign the issue to youself,
+please leave a comment in the issue itself or ping the Discord channel for help.
+
+Bluetooth SIG errata for LE Audio
+*********************************
+
+There are many specifications for LE Audio,
+and several of them are still being updated and developed.
+To get an overview of the errata for the LE Audio specifications you can visit
+
+* Generic Audio (GA) errata https://bluetooth.atlassian.net/wiki/spaces/GA/pages/1634402349/GAWG+Errata+Lists
+* Hearing Aid (HA) errata https://bluetooth.atlassian.net/wiki/spaces/HA/pages/1634140216/HA+WG+Errata+List
+* Audio, Telephony and Automotive (ATA) errata https://bluetooth.atlassian.net/wiki/spaces/ATA/pages/1668481034/ATA+Errata+Lists
+
+Access to errata requires a Bluetooth SIG membership.
+
+Bluetooth SIG working groups for LE Audio
+*****************************************
+
+There are 3 working groups in the Bluetooth SIG related to LE Audio:
+
+* Generic Audio (GA) https://www.bluetooth.org/groups/group.aspx?gId=665
+* Hearing Aid (HA) https://www.bluetooth.org/groups/group.aspx?gId=605
+* Audio, Telephony, and Automotive (ATA) https://www.bluetooth.org/groups/group.aspx?gId=659
+
+By joining these groups you will also get emails from their respective mailing lists,
+where multiple questions and discussions are handled.
+The working groups also have scheduled weekly meetings,
+where issues and the development of the specifications are handled.
+
+Access to the Bluetooth SIG working groups requires a Bluetooth SIG membership.
+
+The LE Audio Book
+*****************
+
+There is a free ebook on LE Audio at https://www.bluetooth.com/bluetooth-resources/le-audio-book/.
+The book was released in January 2022,
+and thus before some of the specifications were finalized,
+but also before some of the released updates to the specifications.
+Nevertheless the book still provides a good explanation for many of the concepts and ideas,
+but please refer to the individual specifications for technical information.
+
+Bluetooth SIG informational papers, reports and guides
+******************************************************
+
+The Bluetooth SIG occasionally release new informational papers, report and guides.
+These can be found at https://www.bluetooth.com/bluetooth-resources/?tags=le-audio&keyword.
+Here you will also find the aforementioned LE Audio book, among many other good resources.
