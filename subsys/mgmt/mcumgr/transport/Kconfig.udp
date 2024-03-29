@@ -14,7 +14,6 @@ menuconfig MCUMGR_TRANSPORT_UDP
 	depends on NET_UDP
 	depends on NET_SOCKETS
 	select NET_CONNECTION_MANAGER
-	select POSIX_API
 	help
 	  Enables handling of SMP commands received over UDP.
 	  Will start a thread for listening on the configured UDP port.
