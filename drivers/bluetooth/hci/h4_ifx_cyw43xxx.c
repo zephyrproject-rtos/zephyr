@@ -189,15 +189,12 @@ static int bt_firmware_download(const uint8_t *firmware_image, uint32_t size)
 
 		switch (op_code) {
 		case BT_HCI_VND_OP_WRITE_RAM:
+		case BT_HCI_VND_OP_LAUNCH_RAM:
 			/* Update remaining length and data pointer:
 			 * content of data length + 2 bytes of opcode and 1 byte of data length.
 			 */
 			data += data_length + 3;
 			remaining_length -= data_length + 3;
-			break;
-
-		case BT_HCI_VND_OP_LAUNCH_RAM:
-			remaining_length = 0;
 			break;
 
 		default:
