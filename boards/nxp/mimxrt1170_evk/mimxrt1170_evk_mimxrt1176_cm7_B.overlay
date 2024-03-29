@@ -6,6 +6,12 @@
 
 / {
 	chosen {
+		/*
+		 * Due to the pin conflict between SDRAM and the M.2 module,
+		 * all cases/samples will fail on the board where the M.2
+		 * module is installed. Set the default sram to dtcm.
+		 */
+		zephyr,sram = &dtcm;
 		zephyr,flash = &w25q512nw;
 		/delete-property/ zephyr,flash-controller;
 		/delete-property/ zephyr,code-partition;
