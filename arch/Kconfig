@@ -134,6 +134,7 @@ config XTENSA
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
 	select ARCH_HAS_DIRECTED_IPIS
+	select THREAD_STACK_INFO
 	help
 	  Xtensa architecture
 
