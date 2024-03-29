@@ -1,5 +1,5 @@
-identifier: phycore_am62x/am6234/a53
-name: PHYTEC phyCORE-AM62x A53
+identifier: phyboard_lyra_am62x/am6234/a53
+name: PHYTEC phyBOARD-Lyra AM62x A53
 type: mcu
 arch: arm64
 toolchain:
@@ -10,4 +10,4 @@ testing:
   ignore_tags:
     - net
     - bluetooth
-vendor: ti
+vendor: phytec
