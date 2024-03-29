@@ -638,18 +638,13 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 		t->attr = *(struct posix_thread_attr *)_attr;
 	}
 
-	struct posix_thread *self = NULL;
+	if (t->attr.inheritsched == PTHREAD_INHERIT_SCHED) {
+		int pol;
 
-	K_SPINLOCK(&pthread_pool_lock) {
-		self = to_posix_thread(pthread_self());
-		if (self == NULL) {
--			K_SPINLOCK_BREAK;
-		}
-		if (self->attr.inheritsched == PTHREAD_INHERIT_SCHED) {
-			t->attr.priority = self->attr.priority;
-			t->attr.schedpolicy = self->attr.schedpolicy;
-			t->attr.inheritsched = self->attr.inheritsched;
-		}
+		t->attr.priority =
+			zephyr_to_posix_priority(k_thread_priority_get(k_current_get()), &pol);
+		t->attr.schedpolicy = pol;
+	}
 
 	/* spawn the thread */
 	k_thread_create(
