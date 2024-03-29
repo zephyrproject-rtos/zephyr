@@ -133,6 +133,10 @@ struct smf_ctx {
 	const struct smf_state *current;
 	/** Previous state the state machine executed */
 	const struct smf_state *previous;
+#ifdef CONFIG_SMF_UML_HSM
+	/** State currently executing when calling ancestors */
+	const struct smf_state *executing;
+#endif
 	/**
 	 * This value is set by the set_terminate function and
 	 * should terminate the state machine when its set to a
@@ -149,6 +153,8 @@ struct smf_ctx {
 
 /**
  * @brief Initializes the state machine and sets its initial state.
+ * @note This will use the original SMF rules of assuming all transitions come from the leaf state
+ * even if a parent state calls smf_set_state().
  *
  * @param ctx        State machine context
  * @param init_state Initial state the state machine starts in.
@@ -156,17 +162,33 @@ struct smf_ctx {
 void smf_set_initial(struct smf_ctx *ctx, const struct smf_state *init_state);
 
 /**
+ * @brief Initializes a state machine in UML mode, and sets its initial state
+ * @note UML mode considers the context of the state that is performing the transition, rather
+ * than assuming all transitions come from the leaf state that was run.
+ *
+ * @param ctx        State machine context
+ * @param init_state Initial state the state machine starts in.
+ */
+void smf_set_initial_uml(struct smf_ctx *ctx, const struct smf_state *init_state);
+
+
+/**
  * @brief Changes a state machines state. This handles exiting the previous
  *        state and entering the target state. A common parent state will not
- *        exited nor be re-entered.
+ *        be exited nor be re-entered.
+ * @note If called on a state machine using UML rules, common parent
+ *       exit/entry actions will be run if the transition is from the parent
+ *       to itself.
  *
  * @param ctx       State machine context
- * @param new_state State to transition to (NULL is valid and exits all states)
+ * @param new_state State to transition to
+ *                  (For non-UML state machines, NULL causes the exit actions
+ *                  of the state and all parent exit actions (if any) to be run.)
  */
 void smf_set_state(struct smf_ctx *ctx, const struct smf_state *new_state);
 
 /**
- * @brief Terminate a state machine
+ * @brief Terminate a state machine. Return value must be non-zero.
  *
  * @param ctx  State machine context
  * @param val  Non-Zero termination value that's returned by the smf_run_state
@@ -187,10 +209,10 @@ void smf_set_handled(struct smf_ctx *ctx);
  * @brief Runs one iteration of a state machine (including any parent states)
  *
  * @param ctx  State machine context
- * @return	   A non-zero value should terminate the state machine. This
- *			   non-zero value could represent a terminal state being reached
- *			   or the detection of an error that should result in the
- *			   termination of the state machine.
+ * @return A non-zero value should terminate the state machine. This
+ *	   non-zero value could represent a terminal state being reached
+ *	   or the detection of an error that should result in the
+ *	   termination of the state machine.
  */
 int32_t smf_run_state(struct smf_ctx *ctx);
 

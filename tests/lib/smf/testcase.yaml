@@ -12,3 +12,6 @@ tests:
     extra_configs:
       - CONFIG_SMF_ANCESTOR_SUPPORT=y
       - CONFIG_SMF_INITIAL_TRANSITION=y
+  libraries.smf.uml_hsm:
+    extra_configs:
+      - CONFIG_SMF_UML_HSM=y

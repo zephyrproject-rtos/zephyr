@@ -13,6 +13,35 @@ provides an easy way for developers to integrate state machines into their
 application. The framework can be added to any project by enabling the
 :kconfig:option:`CONFIG_SMF` option.
 
+UML State Machines
+==================
+
+SMF may follow UML hierarchical state machine rules for transitions when
+:kconfig:option:`CONFIG_SMF_UML_HSM` is enabled, i.e., the entry and exit
+actions of the least common ancestor are not executed on transition, unless
+said transition is a transition to self. A UML-style state machine is
+initialized using :c:func:`smf_set_initial_uml`, while a state machine using
+the original state transition rules is initialized using
+:c:func:`smf_set_initial`.
+
+The UML Specification for StateMachines may be found in chapter 14 of the UML
+specification available here: https://www.omg.org/spec/UML/
+
+SMF breaks from UML rules in:
+
+1. Executing the actions associated with the transition within the context
+   of the source state, rather than after the exit actions are performed.
+2. Only allowing external transitions to self, not to sub-states. A transition
+   from a superstate to a child state is treated as a local transition.
+3. Requiring a containing superstate for all active states (to provide a Least
+   Common Ancestor for all possible transitions).
+4. Prohibiting transitions using :c:func:`smf_set_state` in entry and exit
+   actions.
+
+SMF also does not provide any pseudostates except the Initial Pseudostate
+and Terminate. Orthogonal regions are modelled by calling
+:c:func:`smf_run_state` for each region.
+
 State Creation
 ==============
 
@@ -96,6 +125,11 @@ To set the initial state, the :c:func:`smf_set_initial` function should be
 called. It has the following prototype:
 ``void smf_set_initial(smf_ctx *ctx, smf_state *state)``
 
+The state machine can be set to follow UML-style rules for transitions when
+:c:func:`smf_set_initial_uml` is called to set the initial state instead of
+:c:func:`smf_set_initial`. This function has the same signature as
+:c:func:`smf_set_initial`.
+
 To transition from one state to another, the :c:func:`smf_set_state`
 function is used and it has the following prototype:
 ``void smf_set_state(smf_ctx *ctx, smf_state *state)``
@@ -105,11 +139,14 @@ function is used and it has the following prototype:
    not be passed a parent state as the parent state does not know which
    child state to transition to. Transitioning to a parent state is OK
    if an initial transition to a child state is defined. A well-formed
-   HSM will have initial transitions defined for all parent states.
+   HSM must have initial transitions defined for all parent states.
 
-.. note:: While the state machine is running, smf_set_state should only be
-   called from the Entry and Run functions. Calling smf_set_state from the
-   Exit functions doesn't make sense and will generate a warning.
+.. note:: While the state machine is running, :c:func:`smf_set_state` should
+   only be called from the Entry and Run functions. Calling smf_set_state from
+   the Exit functions doesn't make sense and will generate a warning.
+
+.. note:: UML-style state machines can only call :c:func:`smf_set_state` from
+   Run functions, not Entry or Exit functions.
 
 State Machine Execution
 =======================
@@ -135,8 +172,11 @@ function takes a non-zero user defined value that's returned by the
 :c:func:`smf_run_state` function. The function has the following prototype:
 ``void smf_set_terminate(smf_ctx *ctx, int32_t val)``
 
+State Machine Examples
+======================
+
 Flat State Machine Example
-==========================
+**************************
 
 This example turns the following state diagram into code using the SMF, where
 the initial state is S0.
@@ -238,7 +278,7 @@ Code::
 	}
 
 Hierarchical State Machine Example
-==================================
+**********************************
 
 This example turns the following state diagram into code using the SMF, where
 S0 and S1 share a parent state and S0 is the initial state.
@@ -348,17 +388,18 @@ When designing hierarchical state machines, the following should be considered:
    re-execute the ancestor\'s entry action or execute the exit action.
    For example, the parent_entry function is not called when transitioning
    from S0 to S1, nor is the parent_exit function called.
- - Ancestor exit actions are executed after the sibling exit actions. For
-   example, the s1_exit function is called before the parent_exit function
-   is called.
+ - Ancestor exit actions are executed after the exit action of the current
+   state. For example, the s1_exit function is called before the parent_exit
+   function is called.
  - The parent_run function only executes if the child_run function does not
    call either :c:func:`smf_set_state` or :c:func:`smf_set_handled`.
- - Transitions to self in super-states containing sub-states are not supported.
-   Transitions to self from the most-nested child state are supported and will
+ - Transitions to self in super-states containing sub-states are only
+   supported if :kconfig:option:`CONFIG_SMF_UML_HSM` is enabled. Transitions
+   to self from the most-nested child state are always supported and will
    call the exit and entry function of the child state correctly.
 
 Event Driven State Machine Example
-==================================
+**********************************
 
 Events are not explicitly part of the State Machine Framework but an event driven
 state machine can be implemented using Zephyr :ref:`events`.
@@ -506,7 +547,7 @@ Code::
 	}
 
 Hierarchical State Machine Example With Initial Transitions
-===========================================================
+***********************************************************
 
 :zephyr_file:`tests/lib/smf/src/test_lib_initial_transitions_smf.c` defines
 a state machine for testing initial transitions and :c:func:`smf_set_handled`.
@@ -518,7 +559,7 @@ The statechart for this test is below.
    digraph smf_hierarchical_initial {
       compound=true;
       node [style = rounded];
-      smf_set_initial [shape=plaintext];
+      "smf_set_initial()" [shape=plaintext fontname=Courier];
       ab_init_state [shape = point];
       STATE_A [shape = box];
       STATE_B [shape = box];
@@ -538,14 +579,62 @@ The statechart for this test is below.
 	 STATE_C -> STATE_C
       }
 
-      smf_set_initial -> STATE_A [lhead=cluster_ab]
+      "smf_set_initial()" -> STATE_A [lhead=cluster_ab]
       STATE_B -> STATE_C
       STATE_C -> STATE_D
    }
 
+UML  State Machine Example With Initial Transitions
+***************************************************
+
+:zephyr_file:`tests/lib/smf/src/test_lib_uml_hsm_smf.c` defines a state
+machine for testing the UML transitions provided by
+:kconfig:option:`CONFIG_SMF_UML_HSM`. The statechart for this test is below.
+If the UML-style state transitions are not enabled, then the transition to
+self in PARENT_C will not call the correct entry and exit actions.
+
+
+.. graphviz::
+   :caption: Test state machine for UML State Transitions
+
+   digraph smf_hierarchical_initial {
+      compound=true;
+      node [style = rounded];
+      "smf_set_initial()" [shape=plaintext fontname=Courier];
+      ab_init_state [shape = point];
+      STATE_A [shape = box];
+      STATE_B [shape = box];
+      STATE_C [shape = box];
+      STATE_D [shape = box];
+      DC[shape=point height=0 width=0 label=<>]
+
+      subgraph cluster_root {
+         label = "ROOT";
+         style = rounded;
+
+         subgraph cluster_ab {
+            label = "PARENT_AB";
+            style = rounded;
+            ab_init_state -> STATE_A;
+            STATE_A -> STATE_B;
+         }
+
+         subgraph cluster_c {
+            label = "PARENT_C";
+            style = rounded;
+            STATE_B -> STATE_C [ltail=cluster_ab]
+         }
+
+         STATE_C -> DC [ltail=cluster_c, dir=none];
+         DC -> STATE_C [lhead=cluster_c];
+         STATE_C -> STATE_D
+      }
+
+      "smf_set_initial()" -> STATE_A [lhead=cluster_ab]
+   }
 
 
 API Reference
-*************
+=============
 
 .. doxygengroup:: smf

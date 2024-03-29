@@ -10,5 +10,4 @@
 #include <zephyr/smf.h>
 #include "test_lib_smf.h"
 
-
 ZTEST_SUITE(smf_tests, NULL, NULL, NULL, NULL, NULL);

@@ -6,7 +6,9 @@ project(smf)
 
 target_sources(app PRIVATE src/main.c)
 
-if(CONFIG_SMF_INITIAL_TRANSITION)
+if(CONFIG_SMF_UML_HSM)
+  target_sources(app PRIVATE src/test_lib_uml_hsm_smf.c)
+elseif(CONFIG_SMF_INITIAL_TRANSITION)
   target_sources(app PRIVATE src/test_lib_initial_transitions_smf.c)
 elseif(CONFIG_SMF_ANCESTOR_SUPPORT)
   target_sources(app PRIVATE src/test_lib_hierarchical_smf.c
