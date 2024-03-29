@@ -24,6 +24,7 @@ static int k_sys_work_q_init(void)
 	struct k_work_queue_config cfg = {
 		.name = "sysworkq",
 		.no_yield = IS_ENABLED(CONFIG_SYSTEM_WORKQUEUE_NO_YIELD),
+		.essential = true,
 	};
 
 	k_work_queue_start(&k_sys_work_q,
