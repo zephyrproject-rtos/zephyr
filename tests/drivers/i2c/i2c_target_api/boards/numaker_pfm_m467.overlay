@@ -10,8 +10,8 @@
 
 	i2c3_default: i2c3_default {
 		group0 {
-			pinmux = <PG1MFP_I2C3_SDA 0x0000>,  /* UNO D14 */
-				 <PG0MFP_I2C3_SCL 0x0000>;  /* UNO D15 */
+			pinmux = <PG1MFP_I2C3_SDA>,  /* UNO D14 */
+				 <PG0MFP_I2C3_SCL>;  /* UNO D15 */
 		};
 	};
 };
