@@ -1277,7 +1277,10 @@ void otPlatRadioSetMacFrameCounterIfLarger(otInstance *aInstance, uint32_t aMacF
 otError otPlatRadioEnableCsl(otInstance *aInstance, uint32_t aCslPeriod, otShortAddress aShortAddr,
 			     const otExtAddress *aExtAddr)
 {
-	struct ieee802154_config config = { 0 };
+	struct ieee802154_config config;
+	/* CSL phase will be injected on-the-fly by the driver. */
+	struct ieee802154_header_ie header_ie =
+		IEEE802154_DEFINE_HEADER_IE_CSL_REDUCED(/* phase */ 0, aCslPeriod);
 	int result;
 
 	ARG_UNUSED(aInstance);
@@ -1290,26 +1293,12 @@ otError otPlatRadioEnableCsl(otInstance *aInstance, uint32_t aCslPeriod, otShort
 	if (result) {
 		return OT_ERROR_FAILED;
 	}
-	config.ack_ie.short_addr = aShortAddr;
-	config.ack_ie.ext_addr = aExtAddr != NULL ? aExtAddr->m8 : NULL;
 
 	/* Configure the CSL IE. */
-	if (aCslPeriod > 0) {
-		uint8_t header_ie_buf[OT_IE_HEADER_SIZE + OT_CSL_IE_SIZE] = {
-			CSL_IE_HEADER_BYTES_LO,
-			CSL_IE_HEADER_BYTES_HI,
-		};
-		struct ieee802154_header_ie *header_ie =
-			(struct ieee802154_header_ie *)header_ie_buf;
-
-		/* Write CSL period and leave CSL phase empty as it will be
-		 * injected on-the-fly by the driver.
-		 */
-		header_ie->content.csl.reduced.csl_period = sys_cpu_to_le16(aCslPeriod);
-		config.ack_ie.header_ie = header_ie;
-	} else {
-		config.ack_ie.header_ie = NULL;
-	}
+	config.ack_ie.header_ie = aCslPeriod > 0 ? &header_ie : NULL;
+	config.ack_ie.short_addr = aShortAddr;
+	config.ack_ie.ext_addr = aExtAddr != NULL ? aExtAddr->m8 : NULL;
+	config.ack_ie.purge_ie = false;
 
 	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_HEADER_IE, &config);
 
