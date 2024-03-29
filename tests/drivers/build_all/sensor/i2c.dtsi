@@ -1011,3 +1011,11 @@ test_i2c_am2301b: am2301b@89 {
 	reg = <0x89>;
 	status = "okay";
 };
+
+test_i2c_stc3100: stc3100@8b {
+	compatible = "st,stc3100";
+	reg = <0x8b>;
+	status = "okay";
+	sense-resistor = <100>;
+	nominal-capacity = <1000>;
+};
