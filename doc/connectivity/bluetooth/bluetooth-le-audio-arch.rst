@@ -313,6 +313,110 @@ The MCP implementation supports the following roles
 The API reference for media control can be found in
 :ref:`Bluetooth Media Control <bluetooth_media>`.
 
+Generic TBS and Generic MCS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Both the Telephone Bearer Service (TBS) used by CCP and the Media Control Service (MCS) used by MCP
+have the concept of generic instances of the services called Generic TBS (GTBS) and
+Generic MCS (GMCS).
+
+While these share a common name prefix, the behavior of these two may be significantly different.
+
+Generic TBS
+^^^^^^^^^^^
+
+The TBS spec defines GTBS as
+
+   GTBS provides a single point of access and exposes a representation of its internal telephone
+   bearers into a single telephone bearer.
+   This service provides telephone status and control of the device as a single unit with a
+   single set of characteristics.
+   It is left up to the implementation to determine what telephone bearer a characteristic of
+   GTBS represents at any time.
+   There is no specified manner of representing a characteristic from each individual TBS that
+   resides on the device to the same characteristic of the GTBS.
+
+   For example, if there is more than one TBS on a device and each has a unique telephone bearer
+   name (e.g., Name1 and Name2),
+   the way the GTBS represents the telephone bearer name is left up to the implementation.
+   GTBS is suited for clients that do not need to access or control all the
+   information available on specific telephone bearers.
+
+This means that a GTBS instance represents one or more telephone bearers.
+A telephone bearer could be any application on a device that can handle (telephone) calls,
+such as the default Call application on a smartphone,
+but also other applications such as Signal, Discord, Teams, Slack, etc.
+
+GTBS may be standalone (i.e.the device only has a GTBS instance without any TBS instances),
+and the behavior of the GTBS is mostly left up to the implementation.
+In Zephyr the implementation of GBTS is that it contains some generic information,
+such as the provider name which is defined to  simply be "Generic TBS",
+but the majority of the information in the GTBS instance in Zephyr has been implemented to be a
+union of the data of the other bearers.
+For example if you have a bearer for regular phone calls and
+Teams and have an active call in both bearers,
+then each of those bearers will report a single call,
+but the GTBS instance will report 2 calls,
+making it possible for a simple Call Control Client to control all calls from a single bearer.
+Similarly the supported URIs for each bearer are also made into a union in GTBS, and when placing
+a call using the GTBS the server will pick the most suited bearer depending on the URI.
+For example calls with URI `tel` would go to the regular phone application,
+and calls with the URI `skype` would go to the Teams application.
+
+In conclusion the GTBS implementation in Zephyr is a union of the non-generic telephone bearers.
+
+Generic MCS
+^^^^^^^^^^^
+
+The MCS spec defines GMCS as
+
+   The GMCS provides status and control of media playback for the device as a single unit.
+   An MCS instance describes and controls the media playback for a
+   specific media player within the device.
+   A device implements MCS instances to allow clients to access the
+   separate internal media player entities.
+
+and where the behavior of GMCS is defined as
+
+   ... the behavior of MCS and GMCS is identical,
+   and all the characteristics and the characteristics' behaviors are the same.
+   The term “MCS” is used throughout the document.
+   Unless otherwise specifically stated in this specification,
+   the same meaning applies to GMCS as well.
+
+This means that a GMCS instance works the same way as an MCS instance,
+and it follows that GMCS
+
+   controls the media playback for a specific media player within the device
+
+A media player on a device could be anything that plays media,
+such as a Spotify or Youtube application on a smartphone.
+Thus if a device has multiple MCS instances,
+then each of these control media for that specific application,
+but the GMCS also controls media playback for a specific media player.
+GMCS can thus be considered a pointer to a specific MCS instance,
+and control either e.g. Spotify or Youtube, but not both.
+
+The MCS spec does however provide an example of GMCS where a device can
+
+   Implement a GMCS that provides status and control of media playback for the device as a whole.
+
+Which may indicate that an implementation may use GMCS to represent all media players with GMCS and
+not a specific media player as stated above. In the case where a device does not have any MCS
+instances and only GMCS, then GMCS will point to a generic instance.
+
+The Zephyr implementation of MCS and GMCS is incomplete,
+and currently only supports instantiating a single instance that can either be an MCS or GMCS.
+This means that the implementation is neither complete nor spec-compliant.
+
+Difference between GTBS and GMCS
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The definitions and implementations of GTBS and GMCS as stated above are notably different.
+GTBS works as a union between the other TBS instances (if any),
+and GMCS works as a pointer to a specific MCS instance (if any).
+This effectively means that a simple Call Control Client can control all calls just using GTBS,
+but a Media Control Client may only be able to control a single player using GMCS.
 
 Coordinated Sets
 ----------------
