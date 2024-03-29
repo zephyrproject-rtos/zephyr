@@ -1,0 +1,17 @@
+identifier: norik_octopus_io_boardnrf9160
+name: Norik Octopus IO-Board
+type: mcu
+arch: arm
+ram: 88
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - i2c
+  - spi
+  - pwm
+  - watchdog
+vendor: norik
