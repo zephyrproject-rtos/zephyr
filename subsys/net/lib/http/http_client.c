@@ -392,7 +392,11 @@ static void http_client_init_parser(struct http_parser *parser,
 	settings->on_url = on_url;
 }
 
-static void http_data_final_null_resp(struct http_request *req)
+/* Report a NULL HTTP response to the caller.
+ * A NULL response is when the HTTP server intentionally closes the TLS socket (using FINACK)
+ * without sending any HTTP payload.
+ */
+static void http_report_null(struct http_request *req)
 {
 	if (req->internal.response.cb) {
 		NET_DBG("Calling callback for Final Data"
@@ -409,6 +413,28 @@ static void http_data_final_null_resp(struct http_request *req)
 		memset(req->internal.response.http_status, 0, HTTP_STATUS_STR_SIZE);
 
 		req->internal.response.cb(&req->internal.response, HTTP_DATA_FINAL,
+					  req->internal.user_data);
+	}
+}
+
+/* Report a completed HTTP transaction (with no error) to the caller */
+static void http_report_complete(struct http_request *req)
+{
+	if (req->internal.response.cb) {
+		NET_DBG("Calling callback for %zd len data", req->internal.response.data_len);
+		req->internal.response.cb(&req->internal.response, HTTP_DATA_FINAL,
+					  req->internal.user_data);
+	}
+}
+
+/* Report that some data has been received, but the HTTP transaction is still ongoing. */
+static void http_report_progress(struct http_request *req)
+{
+	if (req->internal.response.cb) {
+		NET_DBG("Calling callback for partitioned %zd len data",
+			req->internal.response.data_len);
+
+		req->internal.response.cb(&req->internal.response, HTTP_DATA_MORE,
 					  req->internal.user_data);
 	}
 }
@@ -438,24 +464,26 @@ static int http_wait_data(int sock, struct http_request *req, int32_t timeout)
 		ret = zsock_poll(fds, nfds, remaining_time);
 		if (ret == 0) {
 			LOG_DBG("Timeout");
-			goto finalize_data;
+			ret = -ETIMEDOUT;
+			goto error;
 		} else if (ret < 0) {
+			ret = -errno;
 			goto error;
 		}
 		if (fds[0].revents & (ZSOCK_POLLERR | ZSOCK_POLLNVAL)) {
+			ret = -errno;
 			goto error;
 		} else if (fds[0].revents & ZSOCK_POLLHUP) {
 			/* Connection closed */
-			LOG_DBG("Connection closed");
-			goto finalize_data;
+			goto closed;
 		} else if (fds[0].revents & ZSOCK_POLLIN) {
 			received = zsock_recv(sock, req->internal.response.recv_buf + offset,
 					      req->internal.response.recv_buf_len - offset, 0);
 			if (received == 0) {
 				/* Connection closed */
-				LOG_DBG("Connection closed");
-				goto finalize_data;
+				goto closed;
 			} else if (received < 0) {
+				ret = -errno;
 				goto error;
 			} else {
 				req->internal.response.data_len += received;
@@ -472,54 +500,41 @@ static int http_wait_data(int sock, struct http_request *req, int32_t timeout)
 				offset = 0;
 			}
 
-			if (req->internal.response.cb) {
-				bool notify = false;
-				enum http_final_call event;
-
-				if (req->internal.response.message_complete) {
-					NET_DBG("Calling callback for %zd len data",
-						req->internal.response.data_len);
-
-					notify = true;
-					event = HTTP_DATA_FINAL;
-				} else if (offset == 0) {
-					NET_DBG("Calling callback for partitioned %zd len data",
-						req->internal.response.data_len);
-
-					notify = true;
-					event = HTTP_DATA_MORE;
-				}
-
-				if (notify) {
-					req->internal.response.cb(&req->internal.response, event,
-								  req->internal.user_data);
-
-					/* Re-use the result buffer and start to fill it again */
-					req->internal.response.data_len = 0;
-					req->internal.response.body_frag_start = NULL;
-					req->internal.response.body_frag_len = 0;
-				}
-			}
-
 			if (req->internal.response.message_complete) {
-				ret = total_received;
+				http_report_complete(req);
 				break;
+			} else if (offset == 0) {
+				http_report_progress(req);
+
+				/* Re-use the result buffer and start to fill it again */
+				req->internal.response.data_len = 0;
+				req->internal.response.body_frag_start = NULL;
+				req->internal.response.body_frag_len = 0;
 			}
 		}
 
 	} while (true);
 
-	return ret;
+	return total_received;
 
-finalize_data:
-	ret = total_received;
+closed:
+	LOG_DBG("Connection closed");
 
-	http_data_final_null_resp(req);
-	return ret;
+	/* If connection was closed with no data sent, this is a NULL response, and is a special
+	 * case valid response.
+	 */
+	if (total_received == 0) {
+		http_report_null(req);
+		return total_received;
+	}
+
+	/* Otherwise, connection was closed mid-way through response, and this should be
+	 * considered an error.
+	 */
+	ret = -ECONNRESET;
 
 error:
-	LOG_DBG("Connection error (%d)", errno);
-	ret = -errno;
+	LOG_DBG("Connection error (%d)", ret);
 	return ret;
 }
 
@@ -718,10 +733,6 @@ int http_client_req(int sock, struct http_request *req,
 	if (total_recv < 0) {
 		NET_DBG("Wait data failure (%d)", total_recv);
 		ret = total_recv;
-		goto out;
-	} else if (total_recv == 0) {
-		NET_DBG("Timeout while waiting data");
-		ret = -ETIMEDOUT;
 		goto out;
 	}
 
