@@ -571,6 +571,17 @@ class TestPlan:
                 break
         return selected_platform
 
+    def handle_quarantined_tests(self, instance: TestInstance, plat: Platform):
+        if self.quarantine:
+            matched_quarantine = self.quarantine.get_matched_quarantine(
+                instance.testsuite.id, plat.name, plat.arch, plat.simulation
+            )
+            if matched_quarantine and not self.options.quarantine_verify:
+                instance.add_filter("Quarantine: " + matched_quarantine, Filters.QUARANTINE)
+                return
+            if not matched_quarantine and self.options.quarantine_verify:
+                instance.add_filter("Not under quarantine", Filters.QUARANTINE)
+
     def load_from_file(self, file, filter_platform=[]):
         with open(file, "r") as json_test_plan:
             jtp = json.load(json_test_plan)
@@ -617,6 +628,8 @@ class TestPlan:
                 else:
                     instance.status = status
                     instance.reason = reason
+
+                self.handle_quarantined_tests(instance, platform)
 
                 for tc in ts.get('testcases', []):
                     identifier = tc['identifier']
@@ -903,15 +916,7 @@ class TestPlan:
                                 break
 
                 # handle quarantined tests
-                if self.quarantine:
-                    matched_quarantine = self.quarantine.get_matched_quarantine(
-                        instance.testsuite.id, plat.name, plat.arch, plat.simulation
-                    )
-                    if matched_quarantine and not self.options.quarantine_verify:
-                        instance.add_filter("Quarantine: " + matched_quarantine, Filters.QUARANTINE)
-                    if not matched_quarantine and self.options.quarantine_verify:
-                        instance.add_filter("Not under quarantine", Filters.QUARANTINE)
-
+                self.handle_quarantined_tests(instance, plat)
 
                 # platform_key is a list of unique platform attributes that form a unique key a test
                 # will match against to determine if it should be scheduled to run. A key containing a
