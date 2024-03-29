@@ -131,7 +131,7 @@ project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
 # because clang from OneApi can't recognize them as asm files on
 # windows now.
 list(APPEND CMAKE_ASM_SOURCE_FILE_EXTENSIONS "S")
-enable_language(C CXX ASM)
+enable_language(ASM)
 
 # The setup / configuration of the toolchain itself and the configuration of
 # supported compilation flags are now split, as this allows to use the toolchain
