@@ -166,6 +166,11 @@ static void offload_func(const void *param)
 
 	k_thread_abort(t);
 
+	/* Thread memory is unused now, validate that we can clobber it. */
+	if (!IS_ENABLED(CONFIG_ARCH_POSIX)) {
+		memset(t, 0, sizeof(*t));
+	}
+
 	/* k_thread_abort() in an isr shouldn't affect the ISR's execution */
 	isr_finished = true;
 }
@@ -200,6 +205,19 @@ ZTEST(threads_lifecycle, test_abort_from_isr)
 
 	k_thread_join(&tdata, K_FOREVER);
 	zassert_true(isr_finished, "ISR did not complete");
+
+	/* Thread struct was cleared after the abort, make sure it is
+	 * still clear (i.e. that the arch layer didn't write to it
+	 * during interrupt exit).  Doesn't work on posix, which needs
+	 * the thread struct for its swap code.
+	 */
+	uint8_t *p = (uint8_t *)&tdata;
+
+	if (!IS_ENABLED(CONFIG_ARCH_POSIX)) {
+		for (int i = 0; i < sizeof(tdata); i++) {
+			zassert_true(p[i] == 0, "Free memory write to aborted thread");
+		}
+	}
 
 	/* Notice: Recover back the offload_sem: This is use for releasing
 	 * offload_sem which might be held when thread aborts itself in ISR
@@ -248,6 +266,5 @@ ZTEST(threads_lifecycle, test_abort_from_isr_not_self)
 	/* Simulate taking an interrupt which kills spwan thread */
 	irq_offload(offload_func, (void *)tid);
 
-	k_thread_join(&tdata, K_FOREVER);
 	zassert_true(isr_finished, "ISR did not complete");
 }
