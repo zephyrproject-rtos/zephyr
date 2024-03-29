@@ -414,7 +414,7 @@ int pthread_attr_setscope(pthread_attr_t *_attr, int contentionscope)
 		return EINVAL;
 	}
 	if (!(contentionscope == PTHREAD_SCOPE_PROCESS ||
-	      contentionscope == PTHREAD_SCOPE_SYSTEM)) {
+					     contentionscope == PTHREAD_SCOPE_SYSTEM)) {
 		LOG_DBG("%s contentionscope %d", "Invalid", contentionscope);
 		return EINVAL;
 	}
@@ -434,7 +434,7 @@ int pthread_attr_setscope(pthread_attr_t *_attr, int contentionscope)
  */
 int pthread_attr_getinheritsched(const pthread_attr_t *_attr, int *inheritsched)
 {
-	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
+struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
 	if (!__attr_is_initialized(attr) || inheritsched == NULL) {
 		return EINVAL;
