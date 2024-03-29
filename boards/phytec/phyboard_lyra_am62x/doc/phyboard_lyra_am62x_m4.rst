@@ -1,12 +1,12 @@
-.. _am62x_m4_phyboard_lyra:
+.. _phyboard_lyra_am62x_m4:
 
-AM62x phyBOARD-Lyra M4F Core
+phyBOARD-Lyra AM62x M4F Core
 ############################
 
 Overview
 ********
 
-The AM62x phyBOARD-Lyra board configuration is used by Zephyr applications
+The phyBOARD-Lyra AM62x board configuration is used by Zephyr applications
 that run on the TI AM62x platform. The board configuration provides support
 for the ARM Cortex-M4F MCU core and the following features:
 
@@ -19,13 +19,13 @@ See the `PHYTEC AM62x Product Page`_ for details.
 
 .. figure:: img/phyCORE-AM62x_Lyra_frontside.webp
    :align: center
-   :alt: AM62x phyBOARD-Lyra
+   :alt: phyBOARD-Lyra AM62x
 
    PHYTEC phyBOARD-Lyra with the phyCORE-AM62x SoM
 
 Hardware
 ********
-The AM62x phyBOARD-Lyra kit features the AM62x SoC, which is composed of a
+The phyBOARD-Lyra AM62x kit features the AM62x SoC, which is composed of a
 quad Cortex-A53 cluster and a single Cortex-M4 core in the MCU domain. Zephyr
 is ported to run on the M4F core and the following listed hardware
 specifications are used:
@@ -43,7 +43,7 @@ specifications are used:
 Supported Features
 ==================
 
-The am62x_m4_phyboard_lyra configuration supports the following hardware features:
+The phyboard_lyra_am62x/am6234/m4 configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -136,10 +136,10 @@ port.
    https://www.phytec.com/product/phycore-am62x/
 
 .. _WIC:
-   https://download.phytec.de/Software/Linux/BSP-Yocto-AM62x/BSP-Yocto-AM62x-PD23.1.0/images/yogurt/phyboard-lyra-am62xx-2/phytec-qt5demo-image-phyboard-lyra-am62xx-2.wic.xz
+   https://download.phytec.de/Software/Linux/BSP-Yocto-AM62x/BSP-Yocto-Ampliphy-AM62x-PD23.2.1/images/ampliphy-xwayland/phyboard-lyra-am62xx-3/phytec-qt5demo-image-phyboard-lyra-am62xx-3.wic.xz
 
 .. _BMAP:
-   https://download.phytec.de/Software/Linux/BSP-Yocto-AM62x/BSP-Yocto-AM62x-PD23.1.0/images/yogurt/phyboard-lyra-am62xx-2/phytec-qt5demo-image-phyboard-lyra-am62xx-2.wic.bmap
+   https://download.phytec.de/Software/Linux/BSP-Yocto-AM62x/BSP-Yocto-Ampliphy-AM62x-PD23.2.1/images/ampliphy-xwayland/phyboard-lyra-am62xx-3/phytec-qt5demo-image-phyboard-lyra-am62xx-3.wic.bmap
 
 .. _phyBOARD SD Card Booting Essentials:
-   https://docs.phytec.com/latest/phycore-am62x/bootingessentials/sdcard.html
+   https://docs.phytec.com/projects/yocto-phycore-am62x/en/bsp-yocto-ampliphy-am62x-pd23.2.1/bootingessentials/sdcard.html

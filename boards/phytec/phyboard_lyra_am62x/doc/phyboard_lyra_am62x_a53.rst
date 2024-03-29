@@ -1,12 +1,12 @@
-.. _phycore_am62x_a53:
+.. _phyboard_lyra_am62x_a53:
 
-PHYTEC phyCORE-AM62x (Cortex-A53)
-#################################
+phyBOARD-Lyra AM62x A53 Core
+############################
 
 Overview
 ********
 
-PHYTEC phyCORE-AM62x board is based on TI Sitara applications
+PHYTEC phyBOARD-Lyra AM62x board is based on TI Sitara applications
 processor, composed of a quad Cortex®-A53 cluster and a single Cortex®-M4 core.
 Zephyr OS is ported to run on the Cortex®-A53 core.
 
@@ -20,13 +20,18 @@ Zephyr OS is ported to run on the Cortex®-A53 core.
     - 4KB EEPROM
   - Ethernet
 
-More information about the board can be found at the
-`PHYTEC website`_.
+See the `PHYTEC AM62x Product Page`_ for details.
+
+.. figure:: img/phyCORE-AM62x_Lyra_frontside.webp
+   :align: center
+   :alt: phyBOARD-Lyra AM62x
+
+   PHYTEC phyBOARD-Lyra with the phyCORE-AM62x SoM
 
 Supported Features
 ==================
 
-The Zephyr phycore_am62x_a53 board configuration supports the following hardware
+The Zephyr phyboard_lyra_am62x/am6234/a53 board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -68,7 +73,7 @@ bmap-tools on a SD-card.
 
 .. code-block:: console
 
-    bmaptool copy phytec-qt5demo-image-phyboard-lyra-am62xx-2.wic.xz /dev/sdX
+    bmaptool copy phytec-qt5demo-image-phyboard-lyra-am62xx-3.wic.xz /dev/sdX
 
 Building
 ********
@@ -78,7 +83,7 @@ You can build an application in the usual way. Refer to
 :ref:`hello_world`.
 
 .. zephyr-app-commands::
-   :board: phycore_am62x/am6234/a53
+   :board: phyboard_lyra_am62x/am6234/a53
    :zephyr-app: samples/hello_world
    :goals: build
 
@@ -99,11 +104,11 @@ Use U-Boot to load and kick zephyr.bin:
 ..
   References
 
-.. _PHYTEC website:
+.. _PHYTEC AM62x Product Page:
    https://www.phytec.com/product/phycore-am62x/
 
 .. _WIC:
-   https://download.phytec.de/Software/Linux/BSP-Yocto-AM62x/BSP-Yocto-AM62x-PD23.1.0/images/yogurt/phyboard-lyra-am62xx-2/phytec-qt5demo-image-phyboard-lyra-am62xx-2.wic.xz
+   https://download.phytec.de/Software/Linux/BSP-Yocto-AM62x/BSP-Yocto-Ampliphy-AM62x-PD23.2.1/images/ampliphy-xwayland/phyboard-lyra-am62xx-3/phytec-qt5demo-image-phyboard-lyra-am62xx-3.wic.xz
 
 .. _Bmap:
-   https://download.phytec.de/Software/Linux/BSP-Yocto-AM62x/BSP-Yocto-AM62x-PD23.1.0/images/yogurt/phyboard-lyra-am62xx-2/phytec-qt5demo-image-phyboard-lyra-am62xx-2.wic.bmap
+   https://download.phytec.de/Software/Linux/BSP-Yocto-AM62x/BSP-Yocto-Ampliphy-AM62x-PD23.2.1/images/ampliphy-xwayland/phyboard-lyra-am62xx-3/phytec-qt5demo-image-phyboard-lyra-am62xx-3.wic.bmap
