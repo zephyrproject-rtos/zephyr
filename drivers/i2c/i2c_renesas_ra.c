@@ -406,7 +406,7 @@ struct i2c_ra_cfg {
 
 #define BRL_MAX REG_MASK(ICBRL_BRL)
 #define BRH_MAX REG_MASK(ICBRH_BRH)
-#define NF_MAX REG_MASK(ICMR3_NF)
+#define NF_MAX  REG_MASK(ICMR3_NF)
 
 /* Helper Functions */
 
@@ -426,12 +426,14 @@ static inline void i2c_ra_write_8(const struct device *dev, uint32_t offs, uint8
 
 static inline void wait_for_turn_on(const struct device *dev, uint32_t offs, uint8_t bits)
 {
-	while (!(i2c_ra_read_8(dev, offs) & bits));
+	while (!(i2c_ra_read_8(dev, offs) & bits))
+		;
 }
 
 static inline void wait_for_turn_off(const struct device *dev, uint32_t offs, uint8_t bits)
 {
-	while (i2c_ra_read_8(dev, offs) & bits);
+	while (i2c_ra_read_8(dev, offs) & bits)
+		;
 }
 
 static int i2c_send_slave_address(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
@@ -648,8 +650,7 @@ static int i2c_ra_calc_bitrate_params(const struct device *dev, uint32_t dev_con
 
 	float cycles = (rate / (1 << cks)) / baud;
 	float cycles_rise_fall = config->clock_rise_fall_time * baud / 1000000;
-	float cycles_brl_brh =
-		cycles - required_cycles(0, 0, cks, nf) - cycles_rise_fall;
+	float cycles_brl_brh = cycles - required_cycles(0, 0, cks, nf) - cycles_rise_fall;
 
 	*pcks = cks;
 	*pbrl = cycles_brl_brh / 2;
@@ -737,8 +738,8 @@ static int i2c_ra_init(const struct device *dev)
 		.clock_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, id),          \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
-		.clock_rise_fall_time = DT_INST_PROP_OR(n, clock_rise_time, 0) +                        \
-		DT_INST_PROP_OR(n, clock_fall_time, 0),                         \
+		.clock_rise_fall_time = DT_INST_PROP_OR(n, clock_rise_time, 0) +                   \
+					DT_INST_PROP_OR(n, clock_fall_time, 0),                    \
 	};                                                                                         \
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_ra_init, NULL, NULL, &i2c_config_##n, POST_KERNEL,        \
 				  CONFIG_I2C_INIT_PRIORITY, &i2c_api);
