@@ -396,14 +396,19 @@ struct i2c_ra_cfg {
  * - BRH[0..4]:  Bit Rate High-Level Period
  */
 
-#define ICBRH_BRL_POS      (0)
-#define ICBRH_BRL_LEN      (5)
+#define ICBRH_BRH_POS      (0)
+#define ICBRH_BRH_LEN      (5)
 #define ICBRH_RESERVED_POS (5)
 #define ICBRH_RESERVED_LEN (3)
 
 #define ICCR1_DEFAULT (0x1f)
 
 #define ICSR2_ERROR_MASK (REG_MASK(ICSR2_TMOF) | REG_MASK(ICSR2_AL) | REG_MASK(ICSR2_NACKF))
+
+#define BRL_MIN 0
+#define BRH_MIN 0
+#define BRL_MAX REG_MASK(ICBRL_BRL)
+#define BRH_MAX REG_MASK(ICBRH_BRH)
 
 /* Helper Functions */
 
@@ -598,6 +603,11 @@ static int i2c_ra_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	return 0;
 };
 
+static inline float required_cycles(uint8_t brh, uint8_t brl, uint8_t cks, uint8_t nf)
+{
+	return brh + brl + 2 * (2 + !cks + nf);
+}
+
 static int i2c_ra_calc_bitrate_params(const struct device *dev, uint32_t dev_config, uint8_t *pcks,
 				      uint8_t *pbrl, uint8_t *pbrh)
 {
@@ -607,11 +617,6 @@ static int i2c_ra_calc_bitrate_params(const struct device *dev, uint32_t dev_con
 	uint32_t nf;
 	int rate;
 	int ret;
-
-	ret = clock_control_get_rate(config->clock_dev, config->clock_id, &rate);
-	if (ret) {
-		return ret;
-	}
 
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
@@ -633,18 +638,23 @@ static int i2c_ra_calc_bitrate_params(const struct device *dev, uint32_t dev_con
 		return -ENOTSUP;
 	}
 
+	ret = clock_control_get_rate(config->clock_dev, config->clock_id, &rate);
+	if (ret) {
+		return ret;
+	}
+
 	if (i2c_ra_read_8(dev, ICFER) & REG_MASK(ICFER_NFE)) {
 		nf = (i2c_ra_read_8(dev, ICMR3) & REG_MASK(ICMR3_NF)) + 1;
 	} else {
 		nf = 0;
 	}
 
-	if (baud > (rate / (2.f * (1.f + 2.f + 1.f + nf)))) {
+	if (baud > (rate / required_cycles(BRL_MIN, BRH_MIN, 0, nf))) {
 		return -ENOTSUP;
 	}
 
-	for (int i = 7; i >= 0; i--) {
-		if ((float)baud < ((rate / (float)(1 << i)) / (2.f * (31.f + 2.f + !i + nf)))) {
+	for (int i = BIT_MASK(ICMR3_NF_LEN); i >= 0; i--) {
+		if (baud < ((rate / (1 << i)) / required_cycles(BRL_MAX, BRH_MAX, i, nf))) {
 			cks = i + 1;
 			break;
 		}
@@ -652,15 +662,14 @@ static int i2c_ra_calc_bitrate_params(const struct device *dev, uint32_t dev_con
 
 	float cycles = (rate / (1 << cks)) / baud;
 	float cycles_rise_fall = ((config->clock_rise_time + config->clock_fall_time) / 1000000.f) * baud;
-	float cycles_LH = cycles - (2 * (2 + !cks + nf)) - cycles_rise_fall;
+	float cycles_brl_brh = cycles - required_cycles(BRL_MIN, BRH_MIN, cks, nf) - cycles_rise_fall;
 
 	*pcks = cks;
-	*pbrl = cycles_LH / 2;
-
-	if ((cycles_LH - ((float)(int)cycles_LH)) != 0.f) {
-		*pbrh = cycles_LH / 2 + 1;
+	*pbrl = cycles_brl_brh / 2;
+	if ((cycles_brl_brh - ((float)(int)cycles_brl_brh)) != 0.f) {
+		*pbrh = cycles_brl_brh / 2 + 1;
 	} else {
-		*pbrh = cycles_LH / 2;
+		*pbrh = cycles_brl_brh / 2;
 	}
 
 	return 0;
