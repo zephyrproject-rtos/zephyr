@@ -594,10 +594,75 @@ static int i2c_ra_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	return 0;
 };
 
+static int i2c_ra_calc_bitrate_params(const struct device *dev, uint32_t dev_config, uint8_t *pcks,
+				      uint8_t *pbrl, uint8_t *pbrh)
+{
+	const struct i2c_ra_cfg *config = dev->config;
+	uint32_t cks = 0;
+	uint32_t baud;
+	uint32_t nf;
+	int uTr = 3;
+	int uTf = 0;
+	int rate;
+	int ret;
+
+	ret = clock_control_get_rate(config->clock_dev, config->clock_id, &rate);
+	if (ret) {
+		return ret;
+	}
+
+	switch (I2C_SPEED_GET(dev_config)) {
+	case I2C_SPEED_STANDARD:
+		baud = 100000;
+		break;
+	case I2C_SPEED_FAST:
+		baud = 400000;
+		break;
+	case I2C_SPEED_FAST_PLUS:
+		baud = 1000000;
+		break;
+	case I2C_SPEED_HIGH:
+		baud = 3400000;
+		break;
+	case I2C_SPEED_ULTRA:
+		baud = 500000;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	if (i2c_ra_read_8(dev, ICFER) & REG_MASK(ICFER_NFE)) {
+		nf = (i2c_ra_read_8(dev, ICMR3) & REG_MASK(ICMR3_NF)) + 1;
+	} else {
+		nf = 0;
+	}
+
+	for (int i = 7; i >= 0; i--) {
+		if ((float)baud < ((rate / (float)(1 << i)) / (2.f * (31.f + 2.f + !i + nf)))) {
+			cks = i + 1;
+			break;
+		}
+	}
+
+	float cycles = (rate / (1 << cks)) / baud;
+	float cycles_rise_fall = ((uTr + uTf) / 1000000.f) * baud;
+	float cycles_LH = cycles - (2 * (2 + !cks + nf)) - cycles_rise_fall;
+
+	*pcks = cks;
+	*pbrl = cycles_LH / 2;
+
+	if ((cycles_LH - ((float)(int)cycles_LH)) != 0.f) {
+		*pbrh = cycles_LH / 2 + 1;
+	} else {
+		*pbrh = cycles_LH / 2;
+	}
+
+	return 0;
+}
+
 static int i2c_ra_configure(const struct device *dev, uint32_t dev_config)
 {
-	uint8_t brh_value, brl_value;
-	uint8_t cks;
+	uint8_t brh_value, brl_value, cks;
 	int ret = 0U;
 
 	/* We only support Master mode */
@@ -610,35 +675,19 @@ static int i2c_ra_configure(const struct device *dev, uint32_t dev_config)
 		return -ENOTSUP;
 	}
 
-	switch (I2C_SPEED_GET(dev_config)) {
-	case I2C_SPEED_STANDARD:
-		/* Use recommended value for 100 kHz bus */
-		brh_value = 0x1a;
-		brl_value = 0x1b;
-		cks = 0x2;
-		break;
-	case I2C_SPEED_FAST:
-		/* Use recommended value for 400 kHz bus */
-		brh_value = 0x1a;
-		brl_value = 0x1b;
-		cks = 0x2;
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
 	/* Assert Reset */
 	i2c_ra_write_8(dev, ICCR1, ICCR1_DEFAULT | REG_MASK(ICCR1_IICRST));
 	i2c_ra_write_8(dev, ICCR1, ICCR1_DEFAULT | REG_MASK(ICCR1_IICRST) | REG_MASK(ICCR1_ICE));
-
-	i2c_ra_write_8(dev, ICMR1, cks << ICMR1_CKS_POS);
-	i2c_ra_write_8(dev, ICBRL, REG_MASK(ICBRL_RESERVED) | brl_value);
-	i2c_ra_write_8(dev, ICBRH, REG_MASK(ICBRH_RESERVED) | brh_value);
 
 	/* Disable slave address */
 	i2c_ra_write_8(dev, ICSER, 0);
 	/* Disable interrupts */
 	i2c_ra_write_8(dev, ICIER, 0);
+
+	i2c_ra_calc_bitrate_params(dev, dev_config, &cks, &brl_value, &brh_value);
+	i2c_ra_write_8(dev, ICMR1, cks << ICMR1_CKS_POS);
+	i2c_ra_write_8(dev, ICBRL, REG_MASK(ICBRL_RESERVED) | brl_value);
+	i2c_ra_write_8(dev, ICBRH, REG_MASK(ICBRH_RESERVED) | brh_value);
 
 	/* Release Reset */
 	i2c_ra_write_8(dev, ICCR1, ICCR1_DEFAULT | REG_MASK(ICCR1_ICE));
