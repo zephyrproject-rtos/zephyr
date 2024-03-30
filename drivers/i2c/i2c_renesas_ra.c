@@ -22,8 +22,7 @@ struct i2c_ra_cfg {
 	clock_control_subsys_t clock_id;
 	const struct pinctrl_dev_config *pcfg;
 	uint32_t bitrate;
-	uint32_t clock_rise_time;
-	uint32_t clock_fall_time;
+	uint32_t clock_rise_fall_time;
 };
 
 #define REG_MASK(reg) (BIT_MASK(_CONCAT(reg, _LEN)) << _CONCAT(reg, _POS))
@@ -405,10 +404,9 @@ struct i2c_ra_cfg {
 
 #define ICSR2_ERROR_MASK (REG_MASK(ICSR2_TMOF) | REG_MASK(ICSR2_AL) | REG_MASK(ICSR2_NACKF))
 
-#define BRL_MIN 0
-#define BRH_MIN 0
 #define BRL_MAX REG_MASK(ICBRL_BRL)
 #define BRH_MAX REG_MASK(ICBRH_BRH)
+#define NF_MAX REG_MASK(ICMR3_NF)
 
 /* Helper Functions */
 
@@ -426,26 +424,14 @@ static inline void i2c_ra_write_8(const struct device *dev, uint32_t offs, uint8
 	sys_write8(value, config->regs + offs);
 }
 
-static inline uint8_t wait_for_turn_on(const struct device *dev, uint32_t offs, uint8_t bits)
+static inline void wait_for_turn_on(const struct device *dev, uint32_t offs, uint8_t bits)
 {
-	uint8_t regval;
-
-	do {
-		regval = i2c_ra_read_8(dev, offs);
-	} while (!(regval & bits));
-
-	return regval;
+	while (!(i2c_ra_read_8(dev, offs) & bits));
 }
 
-static inline uint8_t wait_for_turn_off(const struct device *dev, uint32_t offs, uint8_t bits)
+static inline void wait_for_turn_off(const struct device *dev, uint32_t offs, uint8_t bits)
 {
-	uint8_t regval;
-
-	do {
-		regval = i2c_ra_read_8(dev, offs);
-	} while (regval & bits);
-
-	return regval;
+	while (i2c_ra_read_8(dev, offs) & bits);
 }
 
 static int i2c_send_slave_address(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
@@ -649,11 +635,11 @@ static int i2c_ra_calc_bitrate_params(const struct device *dev, uint32_t dev_con
 		nf = 0;
 	}
 
-	if (baud > (rate / required_cycles(BRL_MIN, BRH_MIN, 0, nf))) {
+	if (baud > (rate / required_cycles(0, 0, 0, nf))) {
 		return -ENOTSUP;
 	}
 
-	for (int i = BIT_MASK(ICMR3_NF_LEN); i >= 0; i--) {
+	for (int i = NF_MAX; i >= 0; i--) {
 		if (baud < ((rate / (1 << i)) / required_cycles(BRL_MAX, BRH_MAX, i, nf))) {
 			cks = i + 1;
 			break;
@@ -661,8 +647,9 @@ static int i2c_ra_calc_bitrate_params(const struct device *dev, uint32_t dev_con
 	}
 
 	float cycles = (rate / (1 << cks)) / baud;
-	float cycles_rise_fall = ((config->clock_rise_time + config->clock_fall_time) / 1000000.f) * baud;
-	float cycles_brl_brh = cycles - required_cycles(BRL_MIN, BRH_MIN, cks, nf) - cycles_rise_fall;
+	float cycles_rise_fall = config->clock_rise_fall_time * baud / 1000000;
+	float cycles_brl_brh =
+		cycles - required_cycles(0, 0, cks, nf) - cycles_rise_fall;
 
 	*pcks = cks;
 	*pbrl = cycles_brl_brh / 2;
@@ -750,8 +737,8 @@ static int i2c_ra_init(const struct device *dev)
 		.clock_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, id),          \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
-		.clock_rise_time = DT_INST_PROP_OR(n, clock_rise_time, 0), \
-		.clock_fall_time = DT_INST_PROP_OR(n, clock_fall_time, 0), \
+		.clock_rise_fall_time = DT_INST_PROP_OR(n, clock_rise_time, 0) +                        \
+		DT_INST_PROP_OR(n, clock_fall_time, 0),                         \
 	};                                                                                         \
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_ra_init, NULL, NULL, &i2c_config_##n, POST_KERNEL,        \
 				  CONFIG_I2C_INIT_PRIORITY, &i2c_api);
