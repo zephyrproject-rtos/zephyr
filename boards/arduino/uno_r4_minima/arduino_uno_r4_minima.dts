@@ -83,6 +83,7 @@
 	clock-frequency = <100000>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+	clock-rise-time = <3>;
 };
 
 &cgc {
