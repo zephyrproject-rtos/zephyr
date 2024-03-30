@@ -15,6 +15,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/net/capture.h>
 
 #if defined(CONFIG_NET_CAPTURE)
+#define DEFAULT_DEV_NAME "NET_CAPTURE0"
 static const struct device *capture_dev;
 
 static void get_address_str(const struct sockaddr *addr,
@@ -73,6 +74,10 @@ static int cmd_net_capture(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_CAPTURE)
 	bool ret;
+
+	if (capture_dev == NULL) {
+		capture_dev = device_get_binding(DEFAULT_DEV_NAME);
+	}
 
 	if (capture_dev == NULL) {
 		PR_INFO("Network packet capture %s\n", "not configured");
