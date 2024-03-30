@@ -22,6 +22,8 @@ struct i2c_ra_cfg {
 	clock_control_subsys_t clock_id;
 	const struct pinctrl_dev_config *pcfg;
 	uint32_t bitrate;
+	uint32_t clock_rise_time;
+	uint32_t clock_fall_time;
 };
 
 #define REG_MASK(reg) (BIT_MASK(_CONCAT(reg, _LEN)) << _CONCAT(reg, _POS))
@@ -466,6 +468,7 @@ static int i2c_send_slave_address(const struct device *dev, struct i2c_msg *msg,
 	i2c_ra_write_8(dev, ICDRT, ((addr & 0x7F) << 1) | (msg->flags & I2C_MSG_RW_MASK));
 
 	if (msg->flags & I2C_MSG_READ) {
+		/* Wait data and check NACK */
 		wait_for_turn_on(dev, ICSR2, REG_MASK(ICSR2_RDRF));
 		if (i2c_ra_read_8(dev, ICSR2) & REG_MASK(ICSR2_NACKF)) {
 			return -EIO;
@@ -474,6 +477,7 @@ static int i2c_send_slave_address(const struct device *dev, struct i2c_msg *msg,
 		/* dummy read */
 		(void)i2c_ra_read_8(dev, ICDRR);
 	} else {
+		/* Check NACK */
 		if (i2c_ra_read_8(dev, ICSR2) & REG_MASK(ICSR2_NACKF)) {
 			return -EIO;
 		}
@@ -488,7 +492,6 @@ static int i2c_ra_process_msg_write(const struct device *dev, struct i2c_msg *ms
 	int ret = 0;
 
 	for (uint32_t i = 0; i < msg->len; i++) {
-		/* Wait TX Empty */
 		wait_for_turn_on(dev, ICSR2, REG_MASK(ICSR2_TDRE));
 		i2c_ra_write_8(dev, ICDRT, msg->buf[i]);
 
@@ -500,6 +503,7 @@ static int i2c_ra_process_msg_write(const struct device *dev, struct i2c_msg *ms
 	}
 
 	if (ret == 0) {
+		/* Wait data transfer finished */
 		wait_for_turn_on(dev, ICSR2, REG_MASK(ICSR2_TEND));
 	}
 
@@ -518,14 +522,13 @@ static int i2c_ra_process_msg_read(const struct device *dev, struct i2c_msg *msg
 	int ret = 0;
 
 	for (int i = 0; i < (msg->len - 1); i++) {
-		/* Wait data */
 		wait_for_turn_on(dev, ICSR2, REG_MASK(ICSR2_RDRF));
 
 		if (i == (msg->len - 3)) {
 			regval = i2c_ra_read_8(dev, ICMR3);
 			i2c_ra_write_8(dev, ICMR3, regval & REG_MASK(ICMR3_WAIT));
 		} else if (i == (msg->len - 2)) {
-			/* Set ACKBT */
+			/* Set ACKBT before */
 			regval = i2c_ra_read_8(dev, ICMR3);
 			i2c_ra_write_8(dev, ICMR3,
 				       regval | REG_MASK(ICMR3_ACKWP) | REG_MASK(ICMR3_ACKBT));
@@ -555,6 +558,7 @@ static int i2c_ra_process_msg_read(const struct device *dev, struct i2c_msg *msg
 			msg->buf[msg->len - 1] = regval;
 		}
 
+		/* Unset WAIT */
 		regval = i2c_ra_read_8(dev, ICMR3);
 		i2c_ra_write_8(dev, ICMR3, regval & ~REG_MASK(ICMR3_WAIT));
 
@@ -601,8 +605,6 @@ static int i2c_ra_calc_bitrate_params(const struct device *dev, uint32_t dev_con
 	uint32_t cks = 0;
 	uint32_t baud;
 	uint32_t nf;
-	int uTr = 3;
-	int uTf = 0;
 	int rate;
 	int ret;
 
@@ -628,7 +630,11 @@ static int i2c_ra_calc_bitrate_params(const struct device *dev, uint32_t dev_con
 		baud = 500000;
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
+	}
+
+	if ((float)baud > ((rate / (float)(1 << i)) / (2.f * (1.f + 2.f + !i + nf)))) {
+		return -ENOTSUP;
 	}
 
 	if (i2c_ra_read_8(dev, ICFER) & REG_MASK(ICFER_NFE)) {
@@ -645,7 +651,7 @@ static int i2c_ra_calc_bitrate_params(const struct device *dev, uint32_t dev_con
 	}
 
 	float cycles = (rate / (1 << cks)) / baud;
-	float cycles_rise_fall = ((uTr + uTf) / 1000000.f) * baud;
+	float cycles_rise_fall = ((config->clock_rise_time + config->clock_fall_time) / 1000000.f) * baud;
 	float cycles_LH = cycles - (2 * (2 + !cks + nf)) - cycles_rise_fall;
 
 	*pcks = cks;
