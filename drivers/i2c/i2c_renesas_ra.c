@@ -8,13 +8,44 @@
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/interrupt_controller/intc_ra_icu.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/irq.h>
+#include <zephyr/spinlock.h>
 
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(renesas_ra_i2c);
+
+LOG_MODULE_REGISTER(renesas_ra_i2c, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
+
+#define COUNT_NODE(inst) 1 +
+#define NODE_NUMS        (DT_INST_FOREACH_STATUS_OKAY_VARGS(COUNT_NODE) 0)
+
+#define COUNT_INTERRUPT_NODE(inst, _) DT_INST_IRQ_HAS_NAME(inst, rxi) +
+#define INTERRUPT_ENABLED_NODE_NUM    (DT_INST_FOREACH_STATUS_OKAY_VARGS(COUNT_INTERRUPT_NODE) 0)
+
+#if (INTERRUPT_ENABLED_NODE_NUM > 0)
+#define I2C_RA_INTERRUPT_ENABLED 1
+#endif
+
+#define I2C_RA_ALL_NODE_INTERRUPT_ENABLED (INTERRUPT_ENABLED_NODE_NUM == NODE_NUMS)
+
+uint8_t regmon;
+
+enum {
+	I2C_RA_INT_RXI,
+	I2C_RA_INT_TXI,
+	I2C_RA_INT_TEI,
+	I2C_RA_INT_EEI,
+	NUM_OF_I2C_RA_INT,
+};
+
+enum {
+	STATE_START,
+	STATE_SEND_ADDR,
+	STATE_SEND_DATA,
+};
 
 struct i2c_ra_cfg {
 	const mem_addr_t regs;
@@ -23,6 +54,17 @@ struct i2c_ra_cfg {
 	const struct pinctrl_dev_config *pcfg;
 	uint32_t bitrate;
 	uint32_t clock_rise_fall_time;
+#if IS_ENABLED(I2C_RA_INTERRUPT_ENABLED)
+	int (*irq_config_func)(const struct device *dev);
+#endif
+};
+
+struct i2c_ra_data {
+#if IS_ENABLED(I2C_RA_INTERRUPT_ENABLED)
+	int irqn[NUM_OF_I2C_RA_INT];
+	int state;
+	struct k_sem device_sync_sem;
+#endif
 };
 
 #define REG_MASK(reg) (BIT_MASK(_CONCAT(reg, _LEN)) << _CONCAT(reg, _POS))
@@ -436,8 +478,38 @@ static inline void wait_for_turn_off(const struct device *dev, uint32_t offs, ui
 		;
 }
 
+static int i2c_ra_set_start_condition(const struct device *dev, bool wait_non_busy)
+{
+	struct i2c_ra_data *data = dev->data;
+	uint8_t reg_val;
+
+	/* Wait busy */
+	if (wait_non_busy) {
+		wait_for_turn_off(dev, ICCR2, REG_MASK(ICCR2_BBSY));
+	} else {
+		if (i2c_ra_read_8(dev, ICCR2) & REG_MASK(ICCR2_BBSY)) {
+			return -EBUSY;
+		}
+	}
+
+	irq_enable(data->irqn[I2C_RA_INT_TXI]);
+
+	i2c_ra_write_8(dev, ICIER,
+		       REG_MASK(ICIER_ALIE) | REG_MASK(ICIER_NAKIE) | REG_MASK(ICIER_RIE) |
+			       REG_MASK(ICIER_TIE) | REG_MASK(ICIER_STIE) | REG_MASK(ICIER_SPIE));
+
+	/* Set and Ensure start */
+	reg_val = i2c_ra_read_8(dev, ICSR2);
+	i2c_ra_write_8(dev, ICSR2, reg_val & ~REG_MASK(ICSR2_START));
+	regmon = i2c_ra_read_8(dev, ICSR2);
+	i2c_ra_write_8(dev, ICCR2, REG_MASK(ICCR2_ST));
+
+	return 0;
+}
+
 static int i2c_send_slave_address(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
 {
+	printk("send_slave address\n");
 	if (msg->flags & I2C_MSG_RESTART) {
 		/* Wait busy */
 		if (!(i2c_ra_read_8(dev, ICCR2) & REG_MASK(ICCR2_BBSY))) {
@@ -446,16 +518,17 @@ static int i2c_send_slave_address(const struct device *dev, struct i2c_msg *msg,
 
 		/* Set and Ensure restart */
 		i2c_ra_write_8(dev, ICCR2, REG_MASK(ICCR2_RS));
-		wait_for_turn_off(dev, ICCR2, REG_MASK(ICCR2_RS));
+		// wait_for_turn_off(dev, ICCR2, REG_MASK(ICCR2_RS));
 	} else {
-		/* Wait busy */
-		wait_for_turn_off(dev, ICCR2, REG_MASK(ICCR2_BBSY));
-
-		/* Set and Ensure start */
-		i2c_ra_write_8(dev, ICCR2, REG_MASK(ICCR2_ST));
+		i2c_ra_set_start_condition(dev, true);
 		wait_for_turn_off(dev, ICCR2, REG_MASK(ICCR2_ST));
 	}
 
+	return 0;
+}
+
+static int i2c_send_slave_address2(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
+{
 	/* Write address to transfer register */
 	wait_for_turn_on(dev, ICSR2, REG_MASK(ICSR2_TDRE));
 	i2c_ra_write_8(dev, ICDRT, ((addr & 0x7F) << 1) | (msg->flags & I2C_MSG_RW_MASK));
@@ -565,35 +638,43 @@ static int i2c_ra_process_msg_read(const struct device *dev, struct i2c_msg *msg
 static int i2c_ra_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			   uint16_t addr)
 {
-	uint8_t reg_val;
+	struct i2c_ra_data *data = dev->data;
+	// uint8_t reg_val;
 	int ret;
 
-	for (int i = 0; i < num_msgs; i++) {
-		if (i == 0 || msgs[i].flags & I2C_MSG_RESTART) {
-			ret = i2c_send_slave_address(dev, &msgs[i], addr);
-		}
+	ret = i2c_ra_set_start_condition(dev, false);
 
-		if (msgs[i].flags & I2C_MSG_READ) {
-			ret = i2c_ra_process_msg_read(dev, &msgs[i], addr);
-		} else {
-			ret = i2c_ra_process_msg_write(dev, &msgs[i], addr);
-		}
-
-		reg_val = i2c_ra_read_8(dev, ICSR2);
-		i2c_ra_write_8(dev, ICSR2, reg_val & ~ICSR2_ERROR_MASK);
-
-		if (ret != 0) {
-			LOG_ERR("I2C failed to transfer messages\n");
-			return ret;
-		}
+	while (true) {
+		regmon = i2c_ra_read_8(dev, ICSR2);
 	}
+	/*
+		for (int i = 0; i < num_msgs; i++) {
+			if (i == 0 || msgs[i].flags & I2C_MSG_RESTART) {
+				ret = i2c_send_slave_address(dev, &msgs[i], addr);
+			}
+
+			if (msgs[i].flags & I2C_MSG_READ) {
+				ret = i2c_ra_process_msg_read(dev, &msgs[i], addr);
+			} else {
+				ret = i2c_ra_process_msg_write(dev, &msgs[i], addr);
+			}
+
+			reg_val = i2c_ra_read_8(dev, ICSR2);
+			i2c_ra_write_8(dev, ICSR2, reg_val & ~ICSR2_ERROR_MASK);
+
+			if (ret != 0) {
+				LOG_ERR("I2C failed to transfer messages\n");
+				return ret;
+			}
+		}
+	*/
 
 	return 0;
 };
 
-static inline float required_cycles(uint8_t brh, uint8_t brl, uint8_t cks, uint8_t nf)
+static inline float required_cycles(uint8_t brl, uint8_t brh, uint8_t cks, uint8_t nf)
 {
-	return brh + brl + 2 * (2 + !cks + nf);
+	return (brl + 2 + !cks + nf) + (brh + 2 + !cks + nf);
 }
 
 static int i2c_ra_calc_bitrate_params(const struct device *dev, uint32_t dev_config, uint8_t *pcks,
@@ -654,7 +735,7 @@ static int i2c_ra_calc_bitrate_params(const struct device *dev, uint32_t dev_con
 
 	*pcks = cks;
 	*pbrl = cycles_brl_brh / 2;
-	if ((cycles_brl_brh - ((float)(int)cycles_brl_brh)) != 0.f) {
+	if ((cycles_brl_brh - (int)cycles_brl_brh) != 0.f) {
 		*pbrh = cycles_brl_brh / 2 + 1;
 	} else {
 		*pbrh = cycles_brl_brh / 2;
@@ -665,6 +746,8 @@ static int i2c_ra_calc_bitrate_params(const struct device *dev, uint32_t dev_con
 
 static int i2c_ra_configure(const struct device *dev, uint32_t dev_config)
 {
+	const struct i2c_ra_cfg *config = dev->config;
+	struct i2c_ra_data *data = dev->data;
 	uint8_t brh_value, brl_value, cks;
 	int ret = 0U;
 
@@ -684,13 +767,28 @@ static int i2c_ra_configure(const struct device *dev, uint32_t dev_config)
 
 	/* Disable slave address */
 	i2c_ra_write_8(dev, ICSER, 0);
-	/* Disable interrupts */
-	i2c_ra_write_8(dev, ICIER, 0);
 
 	i2c_ra_calc_bitrate_params(dev, dev_config, &cks, &brl_value, &brh_value);
 	i2c_ra_write_8(dev, ICMR1, cks << ICMR1_CKS_POS);
 	i2c_ra_write_8(dev, ICBRL, REG_MASK(ICBRL_RESERVED) | brl_value);
 	i2c_ra_write_8(dev, ICBRH, REG_MASK(ICBRH_RESERVED) | brh_value);
+
+	if (config->irq_config_func) {
+		config->irq_config_func(dev);
+		irq_enable(data->irqn[I2C_RA_INT_RXI]);
+		irq_disable(data->irqn[I2C_RA_INT_TXI]);
+		irq_enable(data->irqn[I2C_RA_INT_TEI]);
+		irq_enable(data->irqn[I2C_RA_INT_EEI]);
+
+		i2c_ra_write_8(dev, ICIER,
+			       REG_MASK(ICIER_ALIE) | REG_MASK(ICIER_NAKIE) | REG_MASK(ICIER_RIE) |
+				       REG_MASK(ICIER_TIE));
+		//| REG_MASK(ICIER_STIE) |
+		//		       REG_MASK(ICIER_SPIE));
+	} else {
+		/* Disable interrupts */
+		i2c_ra_write_8(dev, ICIER, 0);
+	}
 
 	/* Release Reset */
 	i2c_ra_write_8(dev, ICCR1, ICCR1_DEFAULT | REG_MASK(ICCR1_ICE));
@@ -705,6 +803,7 @@ static const struct i2c_driver_api i2c_api = {
 
 static int i2c_ra_init(const struct device *dev)
 {
+	// struct i2c_ra_data *data = dev->data;
 	const struct i2c_ra_cfg *config = dev->config;
 	int ret;
 
@@ -730,7 +829,67 @@ static int i2c_ra_init(const struct device *dev)
 	return 0;
 }
 
-#define I2C_RA_INIT(n)                                                                             \
+#if INTERRUPT_ENABLED_NODE_NUM > 0
+/**
+ * @brief Interrupt service routine.
+ *
+ * This simply calls the callback function, if one exists.
+ *
+ * @param arg Argument to ISR.
+ */
+static inline void i2c_ra_isr(const struct device *dev)
+{
+	struct i2c_ra_data *data = dev->data;
+
+	// if (data->callback) {
+	//        data->callback(dev, data->cb_data);
+	//}
+	k_sem_give(&data->device_sync_sem);
+}
+
+static void i2c_ra_isr_rxi(const void *param)
+{
+	const struct device *dev = param;
+	struct i2c_ra_data *data = dev->data;
+
+	printk("rxi\n");
+
+	i2c_ra_isr(dev);
+	ra_icu_clear_int_flag(data->irqn[I2C_RA_INT_RXI]);
+}
+
+static void i2c_ra_isr_txi(const void *param)
+{
+	const struct device *dev = param;
+	struct i2c_ra_data *data = dev->data;
+
+	printk("txi\n");
+	i2c_ra_isr(dev);
+	ra_icu_clear_int_flag(data->irqn[I2C_RA_INT_TXI]);
+}
+
+static void i2c_ra_isr_tei(const void *param)
+{
+	const struct device *dev = param;
+	struct i2c_ra_data *data = dev->data;
+
+	printk("tei\n");
+	i2c_ra_isr(dev);
+	ra_icu_clear_int_flag(data->irqn[I2C_RA_INT_TEI]);
+}
+
+static void i2c_ra_isr_eei(const void *param)
+{
+	const struct device *dev = param;
+	struct i2c_ra_data *data = dev->data;
+
+	printk("eei\n");
+	i2c_ra_isr(dev);
+	ra_icu_clear_int_flag(data->irqn[I2C_RA_INT_EEI]);
+}
+#endif
+
+#define I2C_RA_INIT_CFG(n)                                                                         \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static struct i2c_ra_cfg i2c_config_##n = {                                                \
 		.regs = DT_INST_REG_ADDR(n),                                                       \
@@ -740,8 +899,69 @@ static int i2c_ra_init(const struct device *dev)
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
 		.clock_rise_fall_time = DT_INST_PROP_OR(n, clock_rise_time, 0) +                   \
 					DT_INST_PROP_OR(n, clock_fall_time, 0),                    \
-	};                                                                                         \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_ra_init, NULL, NULL, &i2c_config_##n, POST_KERNEL,        \
-				  CONFIG_I2C_INIT_PRIORITY, &i2c_api);
+		IF_ENABLED(I2C_RA_INTERRUPT_ENABLED, (.irq_config_func = irq_config_func_##n, ))};
+
+#if I2C_RA_INTERRUPT_ENABLED
+
+#define RA_IRQ_CONNECT_DYNAMIC(n, name, dev, isr)                                                  \
+	ra_icu_irq_connect_dynamic(DT_INST_IRQ_BY_NAME(n, name, irq),                              \
+				   DT_INST_IRQ_BY_NAME(n, name, priority), isr, dev,               \
+				   DT_INST_IRQ_BY_NAME(n, name, flags));
+
+#define RA_IRQ_DISCONNECT_DYNAMIC(irqn) ra_icu_irq_disconnect_dynamic(irqn, 0, NULL, NULL, 0)
+
+#define I2C_RA_CONFIG_FUNC(n)                                                                      \
+	static int irq_config_func_##n(const struct device *dev)                                   \
+	{                                                                                          \
+		struct i2c_ra_data *data = dev->data;                                              \
+		int irqn;                                                                          \
+                                                                                                   \
+		for (size_t i = 0; i < NUM_OF_I2C_RA_INT; i++) {                                   \
+			data->irqn[i] = -1;                                                        \
+		}                                                                                  \
+                                                                                                   \
+		irqn = RA_IRQ_CONNECT_DYNAMIC(n, rxi, dev, i2c_ra_isr_rxi);                        \
+		if (irqn < 0) {                                                                    \
+			goto err;                                                                  \
+		}                                                                                  \
+		data->irqn[I2C_RA_INT_RXI] = irqn;                                                 \
+		irqn = RA_IRQ_CONNECT_DYNAMIC(n, txi, dev, i2c_ra_isr_txi);                        \
+		if (irqn < 0) {                                                                    \
+			goto err;                                                                  \
+		}                                                                                  \
+		data->irqn[I2C_RA_INT_TXI] = irqn;                                                 \
+		irqn = RA_IRQ_CONNECT_DYNAMIC(n, tei, dev, i2c_ra_isr_tei);                        \
+		if (irqn < 0) {                                                                    \
+			goto err;                                                                  \
+		}                                                                                  \
+		data->irqn[I2C_RA_INT_TEI] = irqn;                                                 \
+		irqn = RA_IRQ_CONNECT_DYNAMIC(n, eei, dev, i2c_ra_isr_eei);                        \
+		if (irqn < 0) {                                                                    \
+			goto err;                                                                  \
+		}                                                                                  \
+		data->irqn[I2C_RA_INT_EEI] = irqn;                                                 \
+		return 0;                                                                          \
+                                                                                                   \
+	err:                                                                                       \
+		for (size_t i = 0; i < NUM_OF_I2C_RA_INT; i++) {                                   \
+			if (data->irqn[i] != -1) {                                                 \
+				RA_IRQ_DISCONNECT_DYNAMIC(data->irqn[i]);                          \
+			}                                                                          \
+		}                                                                                  \
+                                                                                                   \
+		return irqn;                                                                       \
+	}
+#else
+#define I2C_RA_CONFIG_FUNC(n)
+#endif
+
+#define I2C_RA_INIT(n)                                                                             \
+	I2C_RA_CONFIG_FUNC(n)                                                                      \
+	I2C_RA_INIT_CFG(n)                                                                         \
+                                                                                                   \
+	struct i2c_ra_data i2c_data_##n;                                                           \
+                                                                                                   \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_ra_init, NULL, &i2c_data_##n, &i2c_config_##n,            \
+				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &i2c_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_RA_INIT)

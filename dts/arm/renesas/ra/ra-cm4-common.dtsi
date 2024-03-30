@@ -305,6 +305,12 @@
 			reg = <0x40053000 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			interrupts = <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_IIC0_RXI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_IIC0_TXI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_IIC0_TEI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_IIC0_EEI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_IIC0_WUI>;
+			interrupt-names = "rxi", "txi", "tei", "eei", "wui";
 
 			clocks = <&cgc RA_CLOCK_IIC(0)>;
 			#clock-cells = <1>;
@@ -316,6 +322,11 @@
 			reg = <0x40053100 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			interrupts = <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_IIC1_RXI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_IIC1_TXI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_IIC1_TEI>,
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_IIC1_EEI>;
+			interrupt-names = "rxi", "txi", "tei", "eei";
 
 			clocks = <&cgc RA_CLOCK_IIC(1)>;
 			#clock-cells = <1>;
