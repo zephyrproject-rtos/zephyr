@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2019 Linaro Limited
  * Copyright (c) 2024, Friedt Professional Engineering Services, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -12,6 +13,11 @@
 #include <zephyr/posix/arpa/inet.h>
 #include <zephyr/posix/netinet/in.h>
 #include <zephyr/posix/net/if.h>
+#include <zephyr/posix/poll.h>
+#include <zephyr/posix/sys/select.h>
+#include <zephyr/posix/sys/socket.h>
+
+/* From arpa/inet.h */
 
 in_addr_t inet_addr(const char *cp)
 {
@@ -79,6 +85,18 @@ char *inet_ntoa(struct in_addr in)
 
 	return buf;
 }
+
+char *inet_ntop(sa_family_t family, const void *src, char *dst, size_t size)
+{
+	return zsock_inet_ntop(family, src, dst, size);
+}
+
+int inet_pton(sa_family_t family, const char *src, void *dst)
+{
+	return zsock_inet_pton(family, src, dst);
+}
+
+/* From net/if.h */
 
 char *if_indextoname(unsigned int ifindex, char *ifname)
 {
@@ -175,6 +193,8 @@ unsigned int if_nametoindex(const char *ifname)
 	return ret;
 }
 
+/* From netdb.h */
+
 void endhostent(void)
 {
 }
@@ -191,9 +211,31 @@ void endservent(void)
 {
 }
 
+void freeaddrinfo(struct zsock_addrinfo *ai)
+{
+	zsock_freeaddrinfo(ai);
+}
+
+const char *gai_strerror(int errcode)
+{
+	return zsock_gai_strerror(errcode);
+}
+
+int getaddrinfo(const char *host, const char *service, const struct zsock_addrinfo *hints,
+		struct zsock_addrinfo **res)
+{
+	return zsock_getaddrinfo(host, service, hints, res);
+}
+
 struct hostent *gethostent(void)
 {
 	return NULL;
+}
+
+int getnameinfo(const struct sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
+		char *serv, socklen_t servlen, int flags)
+{
+	return zsock_getnameinfo(addr, addrlen, host, hostlen, serv, servlen, flags);
 }
 
 struct netent *getnetbyaddr(uint32_t net, int type)
@@ -214,6 +256,11 @@ struct netent *getnetbyname(const char *name)
 struct netent *getnetent(void)
 {
 	return NULL;
+}
+
+int getpeername(int sock, struct sockaddr *addr, socklen_t *addrlen)
+{
+	return zsock_getpeername(sock, addr, addrlen);
 }
 
 struct protoent *getprotobyname(const char *name)
@@ -276,10 +323,104 @@ void setservent(int stayopen)
 	ARG_UNUSED(stayopen);
 }
 
+/* From sys/socket.h */
+
+int accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
+{
+	return zsock_accept(sock, addr, addrlen);
+}
+
+int bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
+{
+	return zsock_bind(sock, addr, addrlen);
+}
+
+int connect(int sock, const struct sockaddr *addr, socklen_t addrlen)
+{
+	return zsock_connect(sock, addr, addrlen);
+}
+
+int getsockname(int sock, struct sockaddr *addr, socklen_t *addrlen)
+{
+	return zsock_getsockname(sock, addr, addrlen);
+}
+
+int getsockopt(int sock, int level, int optname, void *optval, socklen_t *optlen)
+{
+	return zsock_getsockopt(sock, level, optname, optval, optlen);
+}
+
+int listen(int sock, int backlog)
+{
+	return zsock_listen(sock, backlog);
+}
+
+int poll(struct pollfd *fds, int nfds, int timeout)
+{
+	return zsock_poll(fds, nfds, timeout);
+}
+
+ssize_t recv(int sock, void *buf, size_t max_len, int flags)
+{
+	return zsock_recv(sock, buf, max_len, flags);
+}
+
+ssize_t recvfrom(int sock, void *buf, size_t max_len, int flags, struct sockaddr *src_addr,
+		 socklen_t *addrlen)
+{
+	return zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
+}
+
+ssize_t recvmsg(int sock, struct msghdr *msg, int flags)
+{
+	return zsock_recvmsg(sock, msg, flags);
+}
+
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout)
+{
+	return zsock_select(nfds, readfds, writefds, exceptfds, (struct zsock_timeval *)timeout);
+}
+
+ssize_t send(int sock, const void *buf, size_t len, int flags)
+{
+	return zsock_send(sock, buf, len, flags);
+}
+
+ssize_t sendmsg(int sock, const struct msghdr *message, int flags)
+{
+	return zsock_sendmsg(sock, message, flags);
+}
+
+ssize_t sendto(int sock, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr,
+	       socklen_t addrlen)
+{
+	return zsock_sendto(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+int setsockopt(int sock, int level, int optname, const void *optval, socklen_t optlen)
+{
+	return zsock_setsockopt(sock, level, optname, optval, optlen);
+}
+
+int shutdown(int sock, int how)
+{
+	return zsock_shutdown(sock, how);
+}
+
 int sockatmark(int s)
 {
 	ARG_UNUSED(s);
 
 	errno = ENOSYS;
 	return -1;
+}
+
+int socket(int family, int type, int proto)
+{
+	return zsock_socket(family, type, proto);
+}
+
+int socketpair(int family, int type, int proto, int sv[2])
+{
+	return zsock_socketpair(family, type, proto, sv);
 }
