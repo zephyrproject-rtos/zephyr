@@ -156,6 +156,9 @@ enum sensor_channel {
 	/** Revolutions per minute, in RPM. */
 	SENSOR_CHAN_RPM,
 
+	/** Frequency, in Hz. */
+	SENSOR_CHAN_FREQUENCY,
+
 	/** Voltage, in volts **/
 	SENSOR_CHAN_GAUGE_VOLTAGE,
 	/** Average current, in amps **/
