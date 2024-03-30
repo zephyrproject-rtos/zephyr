@@ -4128,7 +4128,7 @@ int bt_enable(bt_ready_cb_t cb)
 	k_work_queue_start(&bt_workq, rx_thread_stack,
 			   CONFIG_BT_RX_STACK_SIZE,
 			   K_PRIO_COOP(CONFIG_BT_RX_PRIO), NULL);
-	k_thread_name_set(&bt_workq.thread, "BT RX");
+	k_thread_name_set(&bt_workq.thread, "BT RX WQ");
 #endif
 
 	err = bt_dev.drv->open();
