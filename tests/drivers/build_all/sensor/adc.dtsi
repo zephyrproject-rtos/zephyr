@@ -85,3 +85,12 @@ test_lm35: lm35 {
 	io-channels = <&adc0 0>;
 	status = "okay";
 };
+
+test_murata_ncp15xh103: murata-ncp15xh103 {
+	compatible = "murata,ncp15xh103";
+	io-channels = <&test_adc 0>;
+	pullup-uv = <3300000>;
+	pullup-ohm = <0>;
+	pulldown-ohm = <10000>;
+	connected-positive;
+};
