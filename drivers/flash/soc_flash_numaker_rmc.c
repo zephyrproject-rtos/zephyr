@@ -28,7 +28,6 @@ struct flash_numaker_data {
 
 static const struct flash_parameters flash_numaker_parameters = {
 	.write_block_size = SOC_NV_FLASH_WRITE_BLOCK_SIZE,
-	.erase_value = 0xff,
 };
 
 /* Validate offset and length */
@@ -47,66 +46,6 @@ static bool flash_numaker_is_range_valid(off_t offset, size_t len)
 	}
 
 	return true;
-}
-
-/*
- * Erase a flash memory area.
- *
- * param dev       Device struct
- * param offset    The address's offset
- * param len       The size of the buffer
- * return 0       on success
- * return -EINVAL erroneous code
- */
-
-static int flash_numaker_erase(const struct device *dev, off_t offset, size_t len)
-{
-	struct flash_numaker_data *dev_data = dev->data;
-	uint32_t rc = 0;
-	unsigned int key;
-	int page_nums = len / RMC_FLASH_PAGE_SIZE;
-	uint32_t addr = dev_data->flash_block_base + offset;
-
-	/* return SUCCESS for len == 0 (required by tests/drivers/flash) */
-	if (len == 0) {
-		return 0;
-	}
-
-	/* Validate range */
-	if (!flash_numaker_is_range_valid(offset, len)) {
-		return -EINVAL;
-	}
-
-	/* check alignment and erase only by pages */
-	if (((addr % RMC_FLASH_PAGE_SIZE) != 0) || ((len % RMC_FLASH_PAGE_SIZE) != 0)) {
-		return -EINVAL;
-	}
-
-	/* take semaphore */
-	if (k_sem_take(&dev_data->write_lock, K_NO_WAIT)) {
-		return -EACCES;
-	}
-
-	SYS_UnlockReg();
-	key = irq_lock();
-	while (page_nums) {
-		/* erase page */
-		if (RMC_Erase(addr)) {
-			LOG_ERR("Erase flash page failed or erase time-out");
-			rc = -EIO;
-			goto done;
-		}
-		page_nums--;
-		addr += RMC_FLASH_PAGE_SIZE;
-	}
-
-done:
-	SYS_LockReg();
-	irq_unlock(key);
-	/* release semaphore */
-	k_sem_give(&dev_data->write_lock);
-
-	return rc;
 }
 
 /*
@@ -218,22 +157,6 @@ done:
 	return rc;
 }
 
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
-static const struct flash_pages_layout dev_layout = {
-	.pages_count = DT_REG_SIZE(SOC_NV_FLASH_NODE) /
-		       DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
-	.pages_size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
-};
-
-static void flash_numaker_pages_layout(const struct device *dev,
-				       const struct flash_pages_layout **layout,
-				       size_t *layout_size)
-{
-	*layout = &dev_layout;
-	*layout_size = 1;
-}
-#endif /* CONFIG_FLASH_PAGE_LAYOUT */
-
 static const struct flash_parameters *flash_numaker_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -244,13 +167,9 @@ static const struct flash_parameters *flash_numaker_get_parameters(const struct 
 static struct flash_numaker_data flash_data;
 
 static const struct flash_driver_api flash_numaker_api = {
-	.erase = flash_numaker_erase,
 	.write = flash_numaker_write,
 	.read = flash_numaker_read,
 	.get_parameters = flash_numaker_get_parameters,
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	.page_layout = flash_numaker_pages_layout,
-#endif
 };
 
 static int flash_numaker_init(const struct device *dev)
