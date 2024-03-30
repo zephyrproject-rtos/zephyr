@@ -78,6 +78,6 @@ Building for a simulated nrf5340bsim
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/unicast_audio_server/
-   :board: nrf5340bsim/nrf5340/cpuapp
+   :board: nrf5340bsim_nrf5340_cpuapp
    :goals: build
    :west-args: --sysbuild

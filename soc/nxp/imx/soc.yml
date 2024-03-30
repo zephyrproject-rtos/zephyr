@@ -18,7 +18,7 @@ family:
       - name: m4
   - name: imx8ulp
     socs:
-    - name: mimx8ud7
+    - name: imx8ulp
       cpuclusters:
       - name: adsp
       - name: f1_dsp

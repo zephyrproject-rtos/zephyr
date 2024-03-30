@@ -26,8 +26,8 @@ struct k_cycle_stats {
 	uint64_t  longest;      /**< \# of cycles in longest usage window */
 	uint32_t  num_windows;  /**< \# of usage windows */
 	/** @} */
-#endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
+#endif
 	bool      track_usage;  /**< true if gathering usage stats */
 };
 
-#endif /* ZEPHYR_INCLUDE_KERNEL_STATS_H_ */
+#endif

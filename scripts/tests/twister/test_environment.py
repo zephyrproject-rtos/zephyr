@@ -63,27 +63,13 @@ TESTDATA_1 = [
             '--device-testing',
             '--device-serial',
             'dummy',
-        ],
-        'When --device-testing is used with --device-serial' \
-        ' or --device-serial-pty, exactly one platform must' \
-        ' be specified'
-    ),
-    (
-        None,
-        None,
-        None,
-        [
-            '--device-testing',
-            '--device-serial',
-            'dummy',
             '--platform',
             'dummy_platform1',
             '--platform',
             'dummy_platform2'
         ],
         'When --device-testing is used with --device-serial' \
-        ' or --device-serial-pty, exactly one platform must' \
-        ' be specified'
+        ' or --device-serial-pty, only one platform is allowed'
     ),
 # Note the underscore.
     (
@@ -138,7 +124,6 @@ TESTDATA_1 = [
         'west runner without west flash',
         'west-flash without device-testing',
         'valgrind without executable',
-        'device serial without platform',
         'device serial with multiple platforms',
         'device flash with test without device testing',
         'shuffle-tests without subset',

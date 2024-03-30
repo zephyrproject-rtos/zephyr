@@ -150,42 +150,23 @@ required, and some Zephyr users do not use or have west, but still use the build
 Test scripts
 ------------
 
-Please follow the existing conventions and do not design one-off bespoke runners (e.g. a python
-script, or another shell abstraction).
-
-The rationale is that it is easier and faster for the maintainers to perform tree-wide updates for
-build system or compatibility changes if the tests are run in the same manner, with the same
-variables, etc..
-
-If you have a good idea for improving your test script, please make a PR changing *all* the test
-scripts in order to benefit everyone and conserve homogeneity. You can of course discuss it first in
-an RFC issue or on the babblesim discord channel.
-
-Scripts starting with an underscore (``_``) are not automatically discovered and run. They can serve
-as either helper functions for the main script, or can be used for local development utilities, e.g.
-building and running tests locally, debugging, etc..
-
-Here are the conventions:
-
-- Each test is defined by a shell script with the extension ``.sh``, in a subfolder called
-  ``test_scripts/``.
-- It is recommended to run a single test per script file. It allows for better parallelization of
-  the runs in CI.
-- Scripts expect that the binaries they require are already built. They should not compile binaries.
-- Scripts will spawn the processes for every simulated device and the physical layer simulation.
-- Scripts must return 0 to the invoking shell if the test passes, and not 0 if the test fails.
+- Each test is defined by a shell script with the extension ``.sh``.
+- Scripts starting with an underscore (``_``) are ignored.
+- Test scripts expect that the binaries they require are already built, and will spawn the processes
+  for the simulated devices and physical layer simulation with the necessary command line options.
+- Tests must return 0 to the invoking shell if the test passes, and not 0 if the test fails.
+- It is recommended to have a single test for each test script.
 - Each test must have a unique simulation id, to enable running different tests in parallel.
+- The test scripts should not compile the images on their own.
 - Neither the scripts nor the images should modify the workstation filesystem content beyond the
   ``${BSIM_OUT_PATH}/results/<simulation_id>/`` or ``/tmp/`` folders.
   That is, they should not leave stray files behind.
-- Tests that require several consecutive simulations (e.g, if simulating a device pairing, powering
-  off, and powering up after as a new simulation) should use separate simulation ids for each
-  simulation segment, ensuring that the radio activity of each segment can be inspected a
+- If the test scripts or the test binaries create temporary files, they should preferably do so by
+  placing them in the ``${BSIM_OUT_PATH}/results/<simulation_id>/`` folder.
+  Otherwise they should be named as to avoid conflicts with other test scripts which may be running
+  in parallel.
+- When running tests that require several consecutive simulations, for ex. if simulating a device
+  pairing, powering off, and powering up after as a new simulation,
+  they should strive for using separate simulation ids for each simulation part,
+  in that way ensuring that the simulation radio activity of each segment can be inspected a
   posteriori.
-- Avoid overly long tests. If the test takes over 20 seconds of runtime, consider if it is possible
-  to split it in several separate tests.
-- If the test takes over 5 seconds, set ``EXECUTE_TIMEOUT`` to a value that is at least 5 times
-  bigger than the measured run-time.
-- Do not set ``EXECUTE_TIMEOUT`` to a value lower than the default.
-- Tests should not be overly verbose: less than a hundred lines are expected on the outputs. Do make
-  use of ``LOG_DBG()`` extensively, but don't enable the ``DBG`` log level by default.

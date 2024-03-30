@@ -41,7 +41,6 @@ ZTEST(uart_async_rx, test_rx)
 	uint8_t *claim_buf;
 	uint8_t *aloc_buf;
 	struct uart_async_rx async_rx;
-	bool buf_available;
 	const struct uart_async_rx_config config = {
 		.buffer = buf,
 		.length = sizeof(buf),
@@ -88,8 +87,7 @@ ZTEST(uart_async_rx, test_rx)
 	zassert_true(mem_check(claim_buf, 0, aloc_len - 2));
 
 	/* Consume first 2 bytes. */
-	buf_available = uart_async_rx_data_consume(&async_rx, 2);
-	zassert_true(buf_available);
+	uart_async_rx_data_consume(&async_rx, 2);
 
 	/* Now claim will return buffer taking into account that first 2 bytes are
 	 * consumed.
@@ -100,8 +98,7 @@ ZTEST(uart_async_rx, test_rx)
 	zassert_true(mem_check(claim_buf, 2, aloc_len - 4));
 
 	/* Consume rest of data. Get indication that it was end of the buffer. */
-	buf_available = uart_async_rx_data_consume(&async_rx, aloc_len - 4);
-	zassert_true(buf_available);
+	uart_async_rx_data_consume(&async_rx, aloc_len - 4);
 }
 
 ZTEST(uart_async_rx, test_rx_late_consume)
@@ -137,7 +134,7 @@ ZTEST(uart_async_rx, test_rx_late_consume)
 		zassert_equal(claim_len, 1);
 		zassert_equal(claim_buf[0], (uint8_t)i);
 
-		(void)uart_async_rx_data_consume(&async_rx, 1);
+		uart_async_rx_data_consume(&async_rx, 1);
 	}
 
 	claim_len = uart_async_rx_data_claim(&async_rx, &claim_buf, 100);
@@ -220,13 +217,13 @@ static bool consumer(void *user_data, uint32_t cnt, bool last, int prio)
 			test_data->exp_consume++;
 		}
 
-		bool buf_released = uart_async_rx_data_consume(async_rx, len);
+		uart_async_rx_data_consume(async_rx, len);
 
-		if (buf_released && test_data->pending_req) {
+		if (test_data->pending_req) {
 			buf = uart_async_rx_buf_req(async_rx);
-			zassert_true(buf != NULL);
-
-			atomic_dec(&test_data->pending_req);
+			if (buf) {
+				atomic_dec(&test_data->pending_req);
+			}
 			k_spinlock_key_t key = k_spin_lock(&test_data->lock);
 
 			if (test_data->curr_buf == NULL) {

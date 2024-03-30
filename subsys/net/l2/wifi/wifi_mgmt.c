@@ -504,7 +504,7 @@ static int wifi_set_power_save(uint32_t mgmt_request, struct net_if *iface,
 			return -EIO;
 		}
 
-		if (info.state >= WIFI_STATE_ASSOCIATED) {
+		if (info.state == WIFI_STATE_COMPLETED) {
 			ps_params->fail_reason =
 				WIFI_PS_PARAM_FAIL_DEVICE_CONNECTED;
 			return -ENOTSUP;

@@ -1,5 +1,4 @@
 common:
-  build_only: true
   tags:
     - thrift
     - cpp

@@ -384,7 +384,6 @@ static inline int gpio_dw_manage_callback(const struct device *port,
 	return gpio_manage_callback(&context->callbacks, callback, set);
 }
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 static void gpio_dw_isr(const struct device *port)
 {
 	struct gpio_dw_runtime *context = port->data;
@@ -397,7 +396,6 @@ static void gpio_dw_isr(const struct device *port)
 
 	gpio_fire_callbacks(&context->callbacks, port, int_status);
 }
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts) */
 
 static const struct gpio_driver_api api_funcs = {
 	.pin_configure = gpio_dw_config,
@@ -439,10 +437,10 @@ static int gpio_dw_initialize(const struct device *port)
 	COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, flags), (DT_INST_IRQ(n, flags)), (0))
 
 #define GPIO_CFG_IRQ(idx, n)									\
-		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n, idx),					\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq),					\
 			    DT_INST_IRQ(n, priority), gpio_dw_isr,				\
 			    DEVICE_DT_INST_GET(n), INST_IRQ_FLAGS(n));				\
-		irq_enable(DT_INST_IRQN_BY_IDX(n, idx));					\
+		irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));					\
 
 #define GPIO_DW_INIT(n)										\
 	static void gpio_config_##n##_irq(const struct device *port)				\

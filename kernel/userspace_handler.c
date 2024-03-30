@@ -25,7 +25,7 @@ static struct k_object *validate_kernel_object(const void *obj,
 	if (ret != 0) {
 #ifdef CONFIG_LOG
 		k_object_dump_error(ret, obj, ko, otype);
-#endif /* CONFIG_LOG */
+#endif
 		return NULL;
 	}
 

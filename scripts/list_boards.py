@@ -13,7 +13,6 @@ import sys
 from typing import List
 import yaml
 import list_hardware
-from list_hardware import unique_paths
 
 BOARD_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'board-schema.yml')
 with open(BOARD_SCHEMA_PATH, 'r') as f:
@@ -117,7 +116,7 @@ def find_arch2board_set(args):
     arches = sorted(find_arches(args))
     ret = defaultdict(set)
 
-    for root in unique_paths(args.board_roots):
+    for root in args.board_roots:
         for arch, boards in find_arch2board_set_in(root, arches, args.board_dir).items():
             if args.board is not None:
                 ret[arch] |= {b for b in boards if b.name == args.board}
@@ -130,7 +129,7 @@ def find_arch2board_set(args):
 def find_arches(args):
     arch_set = set()
 
-    for root in unique_paths(args.arch_roots):
+    for root in args.arch_roots:
         arch_set |= find_arches_in(root)
 
     return arch_set
@@ -237,7 +236,7 @@ def find_v2_boards(args):
 
     boards = []
     board_files = []
-    for root in unique_paths(args.board_roots):
+    for root in args.board_roots:
         board_files.extend((root / 'boards').rglob(BOARD_YML))
 
     for board_yml in board_files:
@@ -276,10 +275,10 @@ def add_args_formatting(parser):
                         help='''CMake Format string to use to list each board''')
 
 
-def variant_v2_qualifiers(variant, qualifiers = None):
-    qualifiers_list = [variant.name] if qualifiers is None else [qualifiers + '/' + variant.name]
+def variant_v2_qualifiers(variant, qualifiers):
+    qualifiers_list = [qualifiers + '/' + variant.name]
     for v in variant.variants:
-        qualifiers_list.extend(variant_v2_qualifiers(v, qualifiers_list[0]))
+        qualifiers_list.extend(variant_v2_qualifiers(v, qualifiers + '/' + variant.name))
     return qualifiers_list
 
 
@@ -289,17 +288,21 @@ def board_v2_qualifiers(board):
     for s in board.socs:
         if s.cpuclusters:
             for c in s.cpuclusters:
-                id_str = s.name + '/' + c.name
+                id_str = board.name + '/' + s.name + '/' + c.name
                 qualifiers_list.append(id_str)
                 for v in c.variants:
                     qualifiers_list.extend(variant_v2_qualifiers(v, id_str))
         else:
-            qualifiers_list.append(s.name)
+            id_str = board.name + '/' + s.name
+            qualifiers_list.append(id_str)
             for v in s.variants:
-                qualifiers_list.extend(variant_v2_qualifiers(v, s.name))
+                qualifiers_list.extend(variant_v2_qualifiers(v, id_str))
+
+    if not board.socs:
+        qualifiers_list.append(board.name)
 
     for v in board.variants:
-        qualifiers_list.extend(variant_v2_qualifiers(v))
+        qualifiers_list.extend(variant_v2_qualifiers(v, board.name))
     return qualifiers_list
 
 

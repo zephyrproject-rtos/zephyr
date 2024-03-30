@@ -338,7 +338,6 @@ static void eth_enc28j60_gpio_callback(const struct device *dev,
 static int eth_enc28j60_init_buffers(const struct device *dev)
 {
 	uint8_t data_estat;
-	const struct eth_enc28j60_config *config = dev->config;
 
 	/* Reception buffers initialization */
 	eth_enc28j60_set_bank(dev, ENC28J60_REG_ERXSTL);
@@ -373,7 +372,7 @@ static int eth_enc28j60_init_buffers(const struct device *dev)
 
 	eth_enc28j60_set_bank(dev, ENC28J60_REG_ERXFCON);
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_ERXFCON,
-			       config->hw_rx_filter);
+			       ENC28J60_RECEIVE_FILTERS);
 
 	/* Waiting for OST */
 	/* 32 bits for this timer should be fine, rollover not an issue with initialisation */
@@ -457,9 +456,23 @@ static void eth_enc28j60_init_phy(const struct device *dev)
 	}
 }
 
-static struct net_if *get_iface(struct eth_enc28j60_runtime *ctx)
+static struct net_if *get_iface(struct eth_enc28j60_runtime *ctx,
+				uint16_t vlan_tag)
 {
+#if defined(CONFIG_NET_VLAN)
+	struct net_if *iface;
+
+	iface = net_eth_get_vlan_iface(ctx->iface, vlan_tag);
+	if (!iface) {
+		return ctx->iface;
+	}
+
+	return iface;
+#else
+	ARG_UNUSED(vlan_tag);
+
 	return ctx->iface;
+#endif
 }
 
 static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
@@ -535,7 +548,8 @@ static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static void enc28j60_read_packet(const struct device *dev, uint16_t frm_len)
+static void enc28j60_read_packet(const struct device *dev, uint16_t *vlan_tag,
+				 uint16_t frm_len)
 {
 	const struct eth_enc28j60_config *config = dev->config;
 	struct eth_enc28j60_runtime *context = dev->data;
@@ -545,11 +559,11 @@ static void enc28j60_read_packet(const struct device *dev, uint16_t frm_len)
 	uint8_t dummy[4];
 
 	/* Get the frame from the buffer */
-	pkt = net_pkt_rx_alloc_with_buffer(get_iface(context), frm_len,
+	pkt = net_pkt_rx_alloc_with_buffer(get_iface(context, *vlan_tag), frm_len,
 					   AF_UNSPEC, 0, K_MSEC(config->timeout));
 	if (!pkt) {
 		LOG_ERR("%s: Could not allocate rx buffer", dev->name);
-		eth_stats_update_errors_rx(get_iface(context));
+		eth_stats_update_errors_rx(get_iface(context, *vlan_tag));
 		return;
 	}
 
@@ -591,7 +605,28 @@ static void enc28j60_read_packet(const struct device *dev, uint16_t frm_len)
 		eth_enc28j60_read_mem(dev, dummy, 1);
 	}
 
+#if defined(CONFIG_NET_VLAN)
+	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+
+	if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
+		struct net_eth_vlan_hdr *hdr_vlan =
+			(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+
+		net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
+		*vlan_tag = net_pkt_vlan_tag(pkt);
+
+#if CONFIG_NET_TC_RX_COUNT > 1
+		enum net_priority prio;
+
+		prio = net_vlan2priority(net_pkt_vlan_priority(pkt));
+		net_pkt_set_priority(pkt, prio);
+#endif
+	} else {
+		net_pkt_set_iface(pkt, context->iface);
+	}
+#else /* CONFIG_NET_VLAN */
 	net_pkt_set_iface(pkt, context->iface);
+#endif /* CONFIG_NET_VLAN */
 
 	/* Feed buffer frame to IP stack */
 	LOG_DBG("%s: Received packet of length %u", dev->name, lengthfr);
@@ -600,7 +635,7 @@ static void enc28j60_read_packet(const struct device *dev, uint16_t frm_len)
 	}
 }
 
-static int eth_enc28j60_rx(const struct device *dev)
+static int eth_enc28j60_rx(const struct device *dev, uint16_t *vlan_tag)
 {
 	struct eth_enc28j60_runtime *context = dev->data;
 	uint8_t counter;
@@ -652,7 +687,7 @@ static int eth_enc28j60_rx(const struct device *dev)
 		 */
 		frm_len = sys_get_le16(info) - 4;
 
-		enc28j60_read_packet(dev, frm_len);
+		enc28j60_read_packet(dev, vlan_tag, frm_len);
 
 		/* Free buffer memory and decrement rx counter */
 		eth_enc28j60_set_bank(dev, ENC28J60_REG_ERXRDPTL);
@@ -680,6 +715,7 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 
 	const struct device *dev = p1;
 	struct eth_enc28j60_runtime *context = dev->data;
+	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	uint8_t int_stat;
 
 	while (true) {
@@ -687,7 +723,7 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 
 		eth_enc28j60_read_reg(dev, ENC28J60_REG_EIR, &int_stat);
 		if (int_stat & ENC28J60_BIT_EIR_PKTIF) {
-			eth_enc28j60_rx(dev);
+			eth_enc28j60_rx(dev, &vlan_tag);
 			/* Clear rx interruption flag */
 			eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_EIR,
 						   ENC28J60_BIT_EIR_PKTIF
@@ -732,6 +768,10 @@ static void eth_enc28j60_iface_init(struct net_if *iface)
 			     sizeof(context->mac_address),
 			     NET_LINK_ETHERNET);
 
+	/* For VLAN, this value is only used to get the correct L2 driver.
+	 * The iface pointer in context should contain the main interface
+	 * if the VLANs are enabled.
+	 */
 	if (context->iface == NULL) {
 		context->iface = iface;
 	}
@@ -837,7 +877,6 @@ static int eth_enc28j60_init(const struct device *dev)
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
 		.full_duplex = DT_INST_PROP(0, full_duplex),                                       \
 		.timeout = CONFIG_ETH_ENC28J60_TIMEOUT,                                            \
-		.hw_rx_filter = DT_INST_PROP_OR(inst, hw_rx_filter, ENC28J60_RECEIVE_FILTERS),     \
 	};                                                                                         \
                                                                                                    \
 	ETH_NET_DEVICE_DT_INST_DEFINE(inst, eth_enc28j60_init, NULL, &eth_enc28j60_runtime_##inst, \

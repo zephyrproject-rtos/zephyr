@@ -73,7 +73,7 @@ static inline void z_add_thread_timeout(struct k_thread *thread, k_timeout_t tic
 	ARG_UNUSED(ticks);
 }
 
-#endif /* CONFIG_SYS_CLOCK_EXISTS */
+#endif
 
 #ifdef __cplusplus
 }

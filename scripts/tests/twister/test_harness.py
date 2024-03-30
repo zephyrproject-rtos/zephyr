@@ -73,7 +73,7 @@ def test_harness_process_test(line, fault, fail_on_fault, cap_cov, exp_stat, exp
     assert harness.capture_coverage == cap_cov
 
 
-def test_robot_configure(tmp_path):
+def test_robot_configure():
     #Arrange
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
@@ -83,10 +83,7 @@ def test_robot_configure(tmp_path):
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.harness_config = {}
 
-    outdir = tmp_path / 'gtest_out'
-    outdir.mkdir()
-
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir="")
     instance.testsuite.harness_config = {
         'robot_test_path': '/path/to/robot/test'
     }
@@ -100,7 +97,7 @@ def test_robot_configure(tmp_path):
     assert robot_harness.path == '/path/to/robot/test'
 
 
-def test_robot_handle(tmp_path):
+def test_robot_handle():
     #Arrange
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
@@ -110,10 +107,7 @@ def test_robot_handle(tmp_path):
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.harness_config = {}
 
-    outdir = tmp_path / 'gtest_out'
-    outdir.mkdir()
-
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir="")
 
     handler = Robot()
     handler.instance = instance
@@ -136,7 +130,7 @@ TEST_DATA_2 = [("", 0, "passed"), ("Robot test failure: sourcedir for mock_platf
     TEST_DATA_2,
     ids=["passed", "failed"]
 )
-def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_status):
+def test_robot_run_robot_test(caplog, exp_out, returncode, expected_status):
     # Arrange
     command = "command"
 
@@ -154,10 +148,7 @@ def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_st
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.harness_config = {}
 
-    outdir = tmp_path / 'gtest_out'
-    outdir.mkdir()
-
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir="")
     instance.build_dir = "build_dir"
 
     open_mock = mock.mock_open()
@@ -192,7 +183,7 @@ TEST_DATA_3 = [('one_line', None), ('multi_line', 2),]
     TEST_DATA_3,
     ids=["one line", "multi line"]
 )
-def test_console_configure(tmp_path, type, num_patterns):
+def test_console_configure(type, num_patterns):
     #Arrange
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
@@ -202,10 +193,7 @@ def test_console_configure(tmp_path, type, num_patterns):
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.harness_config = {}
 
-    outdir = tmp_path / 'gtest_out'
-    outdir.mkdir()
-
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir="")
     instance.testsuite.harness_config = {
         'type': type,
         'regex': ['pattern1', 'pattern2']
@@ -235,7 +223,7 @@ TEST_DATA_4 = [("one_line", True, "passed", "line", False, False),
     TEST_DATA_4,
     ids=["one line", "multi line ordered", "multi line not ordered", "logger error", "fail on fault", "GCOV START", "GCOV END"]
 )
-def test_console_handle(tmp_path, line_type, ordered_val, exp_state, line, exp_fault, exp_capture):
+def test_console_handle(line_type, ordered_val, exp_state, line, exp_fault, exp_capture):
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
     mock_platform.normalized_name = "mock_platform"
@@ -244,10 +232,7 @@ def test_console_handle(tmp_path, line_type, ordered_val, exp_state, line, exp_f
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.harness_config = {}
 
-    outdir = tmp_path / 'gtest_out'
-    outdir.mkdir()
-
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir="")
 
     console = Console()
     console.instance = instance
@@ -293,7 +278,7 @@ TEST_DATA_5 = [("serial_pty", 0), (None, 0),(None, 1)]
    ids=["hardware pty", "hardware", "non hardware"]
 )
 
-def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_value):
+def test_pytest__generate_parameters_for_hardware(pty_value, hardware_value):
     #Arrange
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
@@ -303,10 +288,7 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.harness_config = {}
 
-    outdir = tmp_path / 'gtest_out'
-    outdir.mkdir()
-
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir="")
 
     handler = mock.Mock()
     handler.instance = instance
@@ -369,7 +351,7 @@ def test__update_command_with_env_dependencies():
     assert result_cmd == ['cmd', '-p', 'twister_harness.plugin']
 
 
-def test_pytest_run(tmp_path, caplog):
+def test_pytest_run(caplog):
     # Arrange
     timeout = 10
     cmd=['command']
@@ -393,11 +375,7 @@ def test_pytest_run(tmp_path, caplog):
         options = mock.Mock(verbose= 0),
         type_str = 'handler_type'
     )
-
-    outdir = tmp_path / 'gtest_out'
-    outdir.mkdir()
-
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir="")
     instance.handler = handler
 
     test_obj = Pytest()
@@ -440,7 +418,7 @@ TEST_DATA_7 = [("", "Running TESTSUITE suite_name", ['suite_name'], None, True, 
    TEST_DATA_7,
    ids=['testsuite', 'testcase', 'pass', 'skip', 'failed', 'ztest pass', 'ztest fail']
 )
-def test_test_handle(tmp_path, caplog, exp_out, line, exp_suite_name, exp_status, ztest, state):
+def test_test_handle(caplog, exp_out, line, exp_suite_name, exp_status, ztest, state):
     # Arrange
     line = line
     mock_platform = mock.Mock()
@@ -451,10 +429,7 @@ def test_test_handle(tmp_path, caplog, exp_out, line, exp_suite_name, exp_status
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.harness_config = {}
 
-    outdir = tmp_path / 'gtest_out'
-    outdir.mkdir()
-
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
+    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir="")
 
     test_obj = Test()
     test_obj.configure(instance)

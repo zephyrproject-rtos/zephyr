@@ -1,14 +1,18 @@
-#!/usr/bin/env bash
+#!/bin/env bash
 # Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
+
 set -eu
-: "${ZEPHYR_BASE:?ZEPHYR_BASE must be defined}"
+bash_source_dir="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 
-INCR_BUILD=1
+source "${bash_source_dir}/_env.sh"
 
-source ${ZEPHYR_BASE}/tests/bsim/compile.source
+pushd client
+west build -b nrf52_bsim && \
+	cp -v build/zephyr/zephyr.exe "${test_exe_d0}"
+popd
 
-app="$(guess_test_relpath)"/client compile
-app="$(guess_test_relpath)"/server  compile
-
-wait_for_background_jobs
+pushd server
+west build -b nrf52_bsim && \
+	cp -v build/zephyr/zephyr.exe "${test_exe_d1}"
+popd

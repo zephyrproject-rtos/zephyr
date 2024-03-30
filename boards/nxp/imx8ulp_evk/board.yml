@@ -2,4 +2,4 @@ board:
   name: imx8ulp_evk
   vendor: nxp
   socs:
-    - name: mimx8ud7
+    - name: imx8ulp

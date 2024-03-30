@@ -136,6 +136,9 @@ static void iface_cb(struct net_if *iface, void *user_data)
 #if defined(CONFIG_NET_IPV4)
 	struct net_if_ipv4 *ipv4;
 #endif
+#if defined(CONFIG_NET_VLAN)
+	struct ethernet_context *eth_ctx;
+#endif
 #if defined(CONFIG_NET_IP)
 	struct net_if_addr *unicast;
 	struct net_if_mcast_addr *mcast;
@@ -282,16 +285,23 @@ static void iface_cb(struct net_if *iface, void *user_data)
 #endif
 
 #if defined(CONFIG_NET_VLAN)
-	if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
-		if (net_virtual_get_iface_capabilities(iface) & VIRTUAL_INTERFACE_VLAN) {
-			uint16_t tag;
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		eth_ctx = net_if_l2_data(iface);
 
-			tag = net_eth_get_vlan_tag(iface);
-			if (tag == NET_VLAN_TAG_UNSPEC) {
-				PR("VLAN not configured\n");
-			} else {
-				PR("VLAN tag  : %d (0x%03x)\n", tag, tag);
+		if (eth_ctx->vlan_enabled) {
+			for (int i = 0; i < CONFIG_NET_VLAN_COUNT; i++) {
+				if (eth_ctx->vlan[i].iface != iface ||
+				    eth_ctx->vlan[i].tag ==
+							NET_VLAN_TAG_UNSPEC) {
+					continue;
+				}
+
+				PR("VLAN tag  : %d (0x%x)\n",
+				   eth_ctx->vlan[i].tag,
+				   eth_ctx->vlan[i].tag);
 			}
+		} else {
+			PR("VLAN not enabled\n");
 		}
 	}
 #endif
@@ -344,8 +354,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 			continue;
 		}
 
-		PR("\t%s%s\n", net_sprint_ipv6_addr(&mcast->address.in6_addr),
-		   net_if_ipv6_maddr_is_joined(mcast) ? "" : "  <not joined>");
+		PR("\t%s\n", net_sprint_ipv6_addr(&mcast->address.in6_addr));
 
 		count++;
 	}
@@ -456,8 +465,7 @@ skip_ipv6:
 			continue;
 		}
 
-		PR("\t%s%s\n", net_sprint_ipv4_addr(&mcast->address.in_addr),
-		   net_if_ipv4_maddr_is_joined(mcast) ? "" : "  <not joined>");
+		PR("\t%s\n", net_sprint_ipv4_addr(&mcast->address.in_addr));
 
 		count++;
 	}
@@ -475,20 +483,18 @@ skip_ipv4:
 #endif /* CONFIG_NET_IPV4 */
 
 #if defined(CONFIG_NET_DHCPV4)
-	if (net_if_flag_is_set(iface, NET_IF_IPV4)) {
-		PR("DHCPv4 lease time : %u\n",
-		   iface->config.dhcpv4.lease_time);
-		PR("DHCPv4 renew time : %u\n",
-		   iface->config.dhcpv4.renewal_time);
-		PR("DHCPv4 server     : %s\n",
-		   net_sprint_ipv4_addr(&iface->config.dhcpv4.server_id));
-		PR("DHCPv4 requested  : %s\n",
-		   net_sprint_ipv4_addr(&iface->config.dhcpv4.requested_ip));
-		PR("DHCPv4 state      : %s\n",
-		   net_dhcpv4_state_name(iface->config.dhcpv4.state));
-		PR("DHCPv4 attempts   : %d\n",
-		   iface->config.dhcpv4.attempts);
-	}
+	PR("DHCPv4 lease time : %u\n",
+	   iface->config.dhcpv4.lease_time);
+	PR("DHCPv4 renew time : %u\n",
+	   iface->config.dhcpv4.renewal_time);
+	PR("DHCPv4 server     : %s\n",
+	   net_sprint_ipv4_addr(&iface->config.dhcpv4.server_id));
+	PR("DHCPv4 requested  : %s\n",
+	   net_sprint_ipv4_addr(&iface->config.dhcpv4.requested_ip));
+	PR("DHCPv4 state      : %s\n",
+	   net_dhcpv4_state_name(iface->config.dhcpv4.state));
+	PR("DHCPv4 attempts   : %d\n",
+	   iface->config.dhcpv4.attempts);
 #endif /* CONFIG_NET_DHCPV4 */
 
 #else

@@ -724,8 +724,8 @@ static int enable(const struct shell_transport *transport, bool blocking)
 	return 0;
 }
 
-static int write_data(const struct shell_transport *transport, const void *data, size_t length,
-		      size_t *cnt)
+static int write(const struct shell_transport *transport, const void *data, size_t length,
+		 size_t *cnt)
 {
 	ARG_UNUSED(transport);
 	int rc = 0;
@@ -784,8 +784,7 @@ out:
 	return rc;
 }
 
-static int read_data(const struct shell_transport *transport, void *data, size_t length,
-		     size_t *cnt)
+static int read(const struct shell_transport *transport, void *data, size_t length, size_t *cnt)
 {
 	ARG_UNUSED(transport);
 
@@ -813,8 +812,8 @@ static int read_data(const struct shell_transport *transport, void *data, size_t
 const struct shell_transport_api shell_mqtt_transport_api = { .init = init,
 							      .uninit = uninit,
 							      .enable = enable,
-							      .write = write_data,
-							      .read = read_data };
+							      .write = write,
+							      .read = read };
 
 static int enable_shell_mqtt(void)
 {

@@ -29,8 +29,7 @@
 			 .CONF_POL  = 0x0400,	\
 			 .CONF_M0   = 0x8000,	\
 			 .CONF_RST  = 0x0080,	\
-			 .TEMP_MULT = 15625,	\
-			 .TEMP_DIV  = 2,        \
+			 .TEMP_MULT = 125000,	\
 			 .WAKEUP_TIME_IN_MS = 120 }
 
 #define TI_TMP108_CONF	{.CONF_HYS0  = 0x0010,	\
@@ -42,8 +41,7 @@
 			 .CONF_CR0   = 0x2000,	\
 			 .CONF_CR1   = 0x4000,	\
 			 .CONF_RST   = 0x0022,	\
-			 .TEMP_MULT  = 15625,	\
-			 .TEMP_DIV   = 4,       \
+			 .TEMP_MULT  = 62500,	\
 			 .WAKEUP_TIME_IN_MS = 30 }
 
 #define TI_TMP108_MODE_SHUTDOWN(x) 0
@@ -79,7 +77,6 @@
 #define TI_TMP108_CONF_M0(x) TI_TMP108_GET_CONF(x, CONF_M0)
 
 #define TMP108_TEMP_MULTIPLIER(x)	TI_TMP108_GET_CONF(x, TEMP_MULT)
-#define TMP108_TEMP_DIVISOR(x)	TI_TMP108_GET_CONF(x, TEMP_DIV)
 #define TMP108_WAKEUP_TIME_IN_MS(x)	TI_TMP108_GET_CONF(x, WAKEUP_TIME_IN_MS)
 #define TMP108_CONF_RST(x)	TI_TMP108_GET_CONF(x, CONF_RST)
 
@@ -94,8 +91,7 @@ struct tmp_108_reg_def {
 	uint16_t CONF_TM;	/** Thermostat mode setting bit */
 	uint16_t CONF_HYS1;	/** Temperature hysteresis config 1 bit  */
 	uint16_t CONF_HYS0;	/** Temperature hysteresis config 2 bit */
-	int32_t TEMP_MULT;	/** Temperature multiplier */
-	int32_t TEMP_DIV;	/** Temperature divisor */
+	uint32_t TEMP_MULT;	/** Temperature multiplier */
 	uint16_t WAKEUP_TIME_IN_MS; /** Wake up and conversion time from one shot */
 	uint16_t CONF_RST;	/** default reset values on init */
 };
@@ -111,7 +107,7 @@ struct tmp108_config {
 struct tmp108_data {
 	const struct device *tmp108_dev;
 
-	int16_t sample;
+	uint16_t sample;
 
 	bool one_shot_mode;
 

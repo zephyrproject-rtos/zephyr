@@ -30,7 +30,7 @@ void z_pm_save_idle_exit(void)
 #endif	/* CONFIG_PM */
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	sys_clock_idle_exit();
-#endif /* CONFIG_SYS_CLOCK_EXISTS */
+#endif
 }
 
 void idle(void *unused1, void *unused2, void *unused3)
@@ -87,7 +87,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 		}
 #else
 		k_cpu_idle();
-#endif /* CONFIG_PM */
+#endif
 
 #if !defined(CONFIG_PREEMPT_ENABLED)
 # if !defined(CONFIG_USE_SWITCH) || defined(CONFIG_SPARC)
@@ -103,8 +103,8 @@ void idle(void *unused1, void *unused2, void *unused3)
 		if (_kernel.ready_q.cache != _current) {
 			z_swap_unlocked();
 		}
-# endif /* !defined(CONFIG_USE_SWITCH) || defined(CONFIG_SPARC) */
-#endif /* !defined(CONFIG_PREEMPT_ENABLED) */
+# endif
+#endif
 	}
 }
 

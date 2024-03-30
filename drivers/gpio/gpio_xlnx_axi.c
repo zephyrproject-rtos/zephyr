@@ -260,26 +260,39 @@ static int gpio_xlnx_axi_pin_interrupt_configure(const struct device *dev, gpio_
 
 	irq_unlock(key);
 	return 0;
-}
-#endif
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pin);
+	ARG_UNUSED(mode);
+	ARG_UNUSED(trig);
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
+	return -ENOTSUP;
+#endif
+}
+
 static int gpio_xlnx_axi_manage_callback(const struct device *dev, struct gpio_callback *callback,
 					 bool set)
 {
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 	struct gpio_xlnx_axi_data *data = dev->data;
 
 	return gpio_manage_callback(&data->callbacks, callback, set);
-}
-#endif
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(callback);
+	ARG_UNUSED(set);
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
+	return -ENOTSUP;
+#endif
+}
+
 /**
  * Returns the pins on this devices channel which changed and also have an interrupt enabled on that
  * pin. Also clears the pending interrupt for that channel.
  */
 static uint32_t gpio_xlnx_axi_get_pending_int(const struct device *dev)
 {
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 	const struct gpio_xlnx_axi_config *config = dev->config;
 	struct gpio_xlnx_axi_data *data = dev->data;
 	const uint32_t chan_mask = BIT(config->channel);
@@ -315,8 +328,12 @@ static uint32_t gpio_xlnx_axi_get_pending_int(const struct device *dev)
 
 	irq_unlock(key);
 	return interrupts;
-}
+#else
+	ARG_UNUSED(dev);
+
+	return 0;
 #endif
+}
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 static void gpio_xlnx_axi_isr(const struct device *dev)

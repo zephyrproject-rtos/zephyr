@@ -141,8 +141,6 @@ struct modem_cmux {
 	uint16_t receive_buf_size;
 	uint16_t receive_buf_len;
 
-	uint8_t work_buf[CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE];
-
 	/* Transmit buffer */
 	struct ring_buf transmit_rb;
 	struct k_mutex transmit_rb_lock;

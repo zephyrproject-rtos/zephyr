@@ -3,13 +3,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set -eu
+bash_source_dir="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
+
+source "${bash_source_dir}/_env.sh"
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="security_bond_overwrite_allowed"
-verbosity_level=2
-
-central_exe="${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf"
-peripheral_exe="${central_exe}"
+EXECUTE_TIMEOUT=30
 
 cd ${BSIM_OUT_PATH}/bin
 

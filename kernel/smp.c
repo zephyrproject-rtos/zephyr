@@ -49,7 +49,7 @@ static struct cpu_start_cb {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	/** True if smp_timer_init() needs to be called. */
 	bool reinit_timer;
-#endif /* CONFIG_SYS_CLOCK_EXISTS */
+#endif
 } cpu_start_fn;
 
 static struct k_spinlock cpu_start_lock;
@@ -130,7 +130,7 @@ static inline void smp_init_top(void *arg)
 	if ((arg == NULL) || csc.reinit_timer) {
 		smp_timer_init();
 	}
-#endif /* CONFIG_SYS_CLOCK_EXISTS */
+#endif
 
 	/* Do additional initialization steps if needed. */
 	if (csc.fn != NULL) {
@@ -156,7 +156,7 @@ static void start_cpu(int id, struct cpu_start_cb *csc)
 	(void)atomic_clear(&ready_flag);
 
 	/* Power up the CPU */
-	arch_cpu_start(id, z_interrupt_stacks[id], CONFIG_ISR_STACK_SIZE,
+	arch_start_cpu(id, z_interrupt_stacks[id], CONFIG_ISR_STACK_SIZE,
 		       smp_init_top, csc);
 
 	/* Wait until the newly powered up CPU to signal that
@@ -177,7 +177,7 @@ void k_smp_cpu_start(int id, smp_init_fn fn, void *arg)
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	cpu_start_fn.reinit_timer = true;
-#endif /* CONFIG_SYS_CLOCK_EXISTS */
+#endif
 
 	/* We are only starting one CPU so we do not need to synchronize
 	 * across all CPUs using the start_flag. So just set it to 1.
@@ -206,7 +206,7 @@ void k_smp_cpu_resume(int id, smp_init_fn fn, void *arg,
 	cpu_start_fn.reinit_timer = reinit_timer;
 #else
 	ARG_UNUSED(reinit_timer);
-#endif /* CONFIG_SYS_CLOCK_EXISTS */
+#endif
 
 	/* We are only starting one CPU so we do not need to synchronize
 	 * across all CPUs using the start_flag. So just set it to 1.

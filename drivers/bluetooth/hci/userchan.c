@@ -220,7 +220,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			buf = get_rx(frame_start);
 			if (!buf) {
 				LOG_DBG("Discard adv report due to insufficient buf");
-				goto next;
+				continue;
 			}
 
 			buf_tailroom = net_buf_tailroom(buf);
@@ -229,7 +229,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 				LOG_ERR("Not enough space in buffer %zu/%zu",
 					buf_add_len, buf_tailroom);
 				net_buf_unref(buf);
-				goto next;
+				continue;
 			}
 
 			net_buf_add_mem(buf, frame_start + sizeof(packet_type), buf_add_len);
@@ -237,8 +237,6 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			LOG_DBG("Calling bt_recv(%p)", buf);
 
 			bt_recv(buf);
-
-next:
 			len -= decoded_len;
 			frame_start += decoded_len;
 		}

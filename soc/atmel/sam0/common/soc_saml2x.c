@@ -31,6 +31,10 @@
 
 static inline void gclk_reset(void)
 {
+	GCLK->CTRLA.bit.SWRST = 1;
+	while (GCLK->SYNCBUSY.bit.SWRST) {
+	}
+
 	/* by default, OSC16M will be enabled at 4 MHz, and the CPU will
 	 * run from it. to permit initialization, the CPU is temporarily
 	 * clocked from OSCULP32K, and OSC16M is disabled

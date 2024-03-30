@@ -2055,15 +2055,11 @@ static int parse_write_op(struct lwm2m_message *msg, uint16_t format)
 
 		block_num = GET_BLOCK_NUM(block_opt);
 
-		/*
-		 * RFC7959: 2.5. Using the Block1 Option
-		 * If we've received first block, replace old context (if any) with a new one.
+		/* Try to retrieve existing block context. If one not exists,
+		 * and we've received first block, allocate new context.
 		 */
 		r = get_block_ctx(&msg->path, &block_ctx);
-		if (block_num == 0) {
-			/* free block context for previous incomplete transfer */
-			free_block_ctx(block_ctx);
-
+		if (r < 0 && block_num == 0) {
 			r = init_block_ctx(&msg->path, &block_ctx);
 		}
 

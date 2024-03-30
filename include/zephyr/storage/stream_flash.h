@@ -108,11 +108,9 @@ size_t stream_flash_bytes_written(struct stream_flash_ctx *ctx);
  * @param data data to write
  * @param len Number of bytes to write
  * @param flush when true this forces any buffered data to be written to flash
- *        A write with the @p flush set to true has to be issued as the last
- *        write request for a given context, as it concludes write of a stream;
- *        there must not be issued any more write requests for given context,
- *        unless it is re-initialized, and such write attempts may result in the
- *        function returning error.
+ *        A flush write should be the last write operation in a sequence of
+ *        write operations for given context (although this is not mandatory
+ *        if the total data size is a multiple of the buffer size).
  *
  * @return non-negative on success, negative errno code on fail
  */

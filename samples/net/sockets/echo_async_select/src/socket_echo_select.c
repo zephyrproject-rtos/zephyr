@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#if !defined(__ZEPHYR__)
+#if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
 
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -24,8 +24,7 @@
 
 #else
 
-#include <zephyr/posix/fcntl.h>
-#include <zephyr/posix/sys/select.h>
+#include <fcntl.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/kernel.h>
 

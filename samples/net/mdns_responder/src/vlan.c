@@ -15,13 +15,14 @@ LOG_MODULE_DECLARE(net_mdns_responder_sample, LOG_LEVEL_DBG);
 struct ud {
 	struct net_if *first;
 	struct net_if *second;
+	struct net_if *third;
 };
 
 static void iface_cb(struct net_if *iface, void *user_data_param)
 {
 	struct ud *user_data = user_data_param;
 
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return;
 	}
 
@@ -34,13 +35,15 @@ static void iface_cb(struct net_if *iface, void *user_data_param)
 		user_data->second = iface;
 		return;
 	}
+
+	if (!user_data->third) {
+		user_data->third = iface;
+		return;
+	}
 }
 
-static int setup_iface(struct net_if *eth_iface,
-		       struct net_if *iface,
-		       const char *ipv6_addr,
-		       const char *ipv4_addr,
-		       const char *netmask,
+static int setup_iface(struct net_if *iface, const char *ipv6_addr,
+		       const char *ipv4_addr, const char *netmask,
 		       uint16_t vlan_tag)
 {
 	struct net_if_addr *ifaddr;
@@ -48,7 +51,7 @@ static int setup_iface(struct net_if *eth_iface,
 	struct in6_addr addr6;
 	int ret;
 
-	ret = net_eth_vlan_enable(eth_iface, vlan_tag);
+	ret = net_eth_vlan_enable(iface, vlan_tag);
 	if (ret < 0) {
 		LOG_ERR("Cannot enable VLAN for tag %d (%d)", vlan_tag, ret);
 	}
@@ -101,15 +104,8 @@ static int setup_iface(struct net_if *eth_iface,
 
 int init_vlan(void)
 {
-	struct net_if *iface;
 	struct ud user_data;
 	int ret;
-
-	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
-	if (!iface) {
-		LOG_ERR("No ethernet interfaces found.");
-		return -ENOENT;
-	}
 
 	memset(&user_data, 0, sizeof(user_data));
 
@@ -119,7 +115,7 @@ int init_vlan(void)
 	 * create IP address for this test. But first the VLAN needs to be
 	 * added to the interface so that IPv6 DAD can work properly.
 	 */
-	ret = setup_iface(iface, user_data.first,
+	ret = setup_iface(user_data.second,
 			  CONFIG_NET_SAMPLE_IFACE2_MY_IPV6_ADDR,
 			  CONFIG_NET_SAMPLE_IFACE2_MY_IPV4_ADDR,
 			  CONFIG_NET_SAMPLE_IFACE2_MY_IPV4_NETMASK,
@@ -128,7 +124,7 @@ int init_vlan(void)
 		return ret;
 	}
 
-	ret = setup_iface(iface, user_data.second,
+	ret = setup_iface(user_data.third,
 			  CONFIG_NET_SAMPLE_IFACE3_MY_IPV6_ADDR,
 			  CONFIG_NET_SAMPLE_IFACE3_MY_IPV4_ADDR,
 			  CONFIG_NET_SAMPLE_IFACE3_MY_IPV4_NETMASK,
@@ -136,10 +132,6 @@ int init_vlan(void)
 	if (ret < 0) {
 		return ret;
 	}
-
-	/* Bring up the VLAN interface automatically */
-	net_if_up(user_data.first);
-	net_if_up(user_data.second);
 
 	return 0;
 }

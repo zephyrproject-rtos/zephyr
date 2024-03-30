@@ -36,7 +36,7 @@ setuptools.setup(
         'Operating System :: Microsoft :: Windows',
     ],
     install_requires=[
-        'PyYAML>=6.0',
+        'PyYAML>=5.1',
     ],
     python_requires='>=3.6',
 )

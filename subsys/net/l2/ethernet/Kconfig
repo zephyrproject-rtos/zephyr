@@ -25,8 +25,7 @@ config NET_L2_ETHERNET_MGMT
 	  configure at run-time Ethernet drivers and L2 settings.
 
 config NET_VLAN
-	bool "Virtual LAN support"
-	select NET_L2_VIRTUAL
+	bool "Virtual lan support"
 	help
 	  Enables virtual lan (VLAN) support for Ethernet.
 
@@ -37,13 +36,6 @@ config NET_VLAN_COUNT
 	depends on NET_VLAN
 	help
 	  How many VLAN tags can be configured.
-
-config NET_VLAN_TXRX_DEBUG
-	bool "Debug received and sent packets in VLAN"
-	depends on NET_L2_ETHERNET_LOG_LEVEL_DBG && NET_VLAN
-	help
-	  Enables printing of received and sent network packets.
-	  This can produce lot of output so it is disabled by default.
 
 config NET_ARP
 	bool "ARP"

@@ -3,6 +3,9 @@
 AutoPTS on Linux
 ################
 
+Overview
+========
+
 This tutorial shows how to setup AutoPTS client on Linux with AutoPTS server running on Windows 10
 virtual machine. Tested with Ubuntu 20.4 and Linux Mint 20.4.
 
@@ -19,12 +22,8 @@ Supported methods to test zephyr bluetooth host:
 
 For running with QEMU or :ref:`native_sim <native_sim>`, see :ref:`bluetooth_qemu_native`.
 
-.. contents::
-    :local:
-    :depth: 2
-
 Setup Linux
-===========
+===========================
 
 Install nrftools (only required in the actual hardware test mode)
 =================================================================

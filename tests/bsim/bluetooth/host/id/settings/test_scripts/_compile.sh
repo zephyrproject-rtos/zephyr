@@ -3,12 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set -eu
-: "${ZEPHYR_BASE:?ZEPHYR_BASE must be defined}"
+bash_source_dir="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 
-INCR_BUILD=1
+bsim_bin="${BSIM_OUT_PATH}/bin"
+BOARD="${BOARD:-nrf52_bsim}"
+test_exe="${bsim_bin}/bs_${BOARD}_tests_bsim_bluetooth_host_id_settings_prj_conf"
 
-source ${ZEPHYR_BASE}/tests/bsim/compile.source
-
-app="$(guess_test_relpath)" compile
-
-wait_for_background_jobs
+west build -b nrf52_bsim -d build && \
+        cp -v build/zephyr/zephyr.exe "${test_exe}"

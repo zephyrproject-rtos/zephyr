@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/sys/arch_interface.h>
 
 #define NUM_THREADS 20
 #define STACK_SIZE (1024)

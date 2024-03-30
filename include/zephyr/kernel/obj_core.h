@@ -76,7 +76,7 @@ struct k_obj_core;
 #else
 #define K_OBJ_CORE_INIT(objp, type)   do { } while (0)
 #define K_OBJ_CORE_LINK(objp)         do { } while (0)
-#endif /* CONFIG_OBJ_CORE */
+#endif
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -114,7 +114,7 @@ struct k_obj_type {
 #ifdef CONFIG_OBJ_CORE_STATS
 	/** Pointer to object core statistics descriptor */
 	struct k_obj_core_stats_desc *stats_desc;
-#endif /* CONFIG_OBJ_CORE_STATS */
+#endif
 };
 
 /** Object core structure */
@@ -123,7 +123,7 @@ struct k_obj_core {
 	struct k_obj_type *type;   /**< Object type to which object belongs */
 #ifdef CONFIG_OBJ_CORE_STATS
 	void  *stats;              /**< Pointer to kernel object's stats */
-#endif /* CONFIG_OBJ_CORE_STATS */
+#endif
 };
 
 /**
@@ -280,7 +280,7 @@ static inline void k_obj_core_stats_init(struct k_obj_core *obj_core,
 {
 	obj_core->stats = stats;
 }
-#endif /* CONFIG_OBJ_CORE_STATS */
+#endif
 
 /**
  * @brief Register kernel object for gathering statistics

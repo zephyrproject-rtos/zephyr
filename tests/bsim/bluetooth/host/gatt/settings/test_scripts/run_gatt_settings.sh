@@ -3,12 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 set -eu
 
+bash_source_dir="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
+
+source "${bash_source_dir}/_env.sh"
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="settings"
+simulation_id="${test_name}"
 verbosity_level=2
-EXECUTE_TIMEOUT=120
-test_exe="./bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf"
+EXECUTE_TIMEOUT=30
 
 cd ${BSIM_OUT_PATH}/bin
 

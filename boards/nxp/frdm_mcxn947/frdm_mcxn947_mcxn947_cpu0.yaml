@@ -15,8 +15,5 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
-  - dma
   - gpio
-  - spi
-  - dac
 vendor: nxp

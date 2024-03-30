@@ -126,22 +126,18 @@ static const char *modem_cmux_frame_type_to_str(enum modem_cmux_frame_types fram
 	return "";
 }
 
-static void modem_cmux_log_frame(const struct modem_cmux_frame *frame,
-				 const char *action, size_t hexdump_len)
-{
-	LOG_DBG("%s ch:%u cr:%u pf:%u type:%s dlen:%u", action, frame->dlci_address,
-		frame->cr, frame->pf, modem_cmux_frame_type_to_str(frame->type), frame->data_len);
-	LOG_HEXDUMP_DBG(frame->data, hexdump_len, "data:");
-}
-
 static void modem_cmux_log_transmit_frame(const struct modem_cmux_frame *frame)
 {
-	modem_cmux_log_frame(frame, "tx", frame->data_len);
+	LOG_DBG("ch:%u,cr:%u,pf:%u,type:%s", frame->dlci_address, frame->cr, frame->pf,
+		modem_cmux_frame_type_to_str(frame->type));
+	LOG_HEXDUMP_DBG(frame->data, frame->data_len, "data:");
 }
 
 static void modem_cmux_log_received_frame(const struct modem_cmux_frame *frame)
 {
-	modem_cmux_log_frame(frame, "rcvd", frame->data_len);
+	LOG_DBG("ch:%u,cr:%u,pf:%u,type:%s", frame->dlci_address, frame->cr, frame->pf,
+		modem_cmux_frame_type_to_str(frame->type));
+	LOG_HEXDUMP_DBG(frame->data, frame->data_len, "data:");
 }
 
 static const char *modem_cmux_command_type_to_str(enum modem_cmux_command_types command_type)
@@ -656,19 +652,6 @@ static void modem_cmux_on_frame(struct modem_cmux *cmux)
 	}
 }
 
-static void modem_cmux_drop_frame(struct modem_cmux *cmux)
-{
-	LOG_WRN("Dropped frame");
-	cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_SOF;
-
-#if defined(CONFIG_MODEM_CMUX_LOG_LEVEL_DBG)
-	struct modem_cmux_frame *frame = &cmux->frame;
-
-	frame->data = cmux->receive_buf;
-	modem_cmux_log_frame(frame, "dropped", MIN(frame->data_len, cmux->receive_buf_size));
-#endif
-}
-
 static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t byte)
 {
 	uint8_t fcs;
@@ -814,14 +797,15 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		break;
 
 	case MODEM_CMUX_RECEIVE_STATE_DROP:
-		modem_cmux_drop_frame(cmux);
+		LOG_WRN("Dropped frame");
+		cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_SOF;
 		break;
 
 	case MODEM_CMUX_RECEIVE_STATE_EOF:
 		/* Validate byte is EOF */
 		if (byte != 0xF9) {
 			/* Unexpected byte */
-			modem_cmux_drop_frame(cmux);
+			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_SOF;
 			break;
 		}
 
@@ -842,10 +826,11 @@ static void modem_cmux_receive_handler(struct k_work *item)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
 	struct modem_cmux *cmux = CONTAINER_OF(dwork, struct modem_cmux, receive_work);
+	uint8_t buf[16];
 	int ret;
 
 	/* Receive data from pipe */
-	ret = modem_pipe_receive(cmux->pipe, cmux->work_buf, sizeof(cmux->work_buf));
+	ret = modem_pipe_receive(cmux->pipe, buf, sizeof(buf));
 	if (ret < 1) {
 		if (ret < 0) {
 			LOG_ERR("Pipe receiving error: %d", ret);
@@ -854,8 +839,8 @@ static void modem_cmux_receive_handler(struct k_work *item)
 	}
 
 	/* Process received data */
-	for (int i = 0; i < ret; i++) {
-		modem_cmux_process_received_byte(cmux, cmux->work_buf[i]);
+	for (uint16_t i = 0; i < (uint16_t)ret; i++) {
+		modem_cmux_process_received_byte(cmux, buf[i]);
 	}
 
 	/* Reschedule received work */

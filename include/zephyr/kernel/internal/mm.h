@@ -39,7 +39,7 @@
 			 (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_OFFSET))
 #else
 #define Z_MEM_VM_OFFSET	0
-#endif /* CONFIG_MMU */
+#endif
 
 #define Z_MEM_PHYS_ADDR(virt)	((virt) - Z_MEM_VM_OFFSET)
 #define Z_MEM_VIRT_ADDR(phys)	((phys) + Z_MEM_VM_OFFSET)
@@ -70,26 +70,26 @@ static inline uintptr_t z_mem_phys_addr(void *virt)
 	__ASSERT(
 #if CONFIG_KERNEL_VM_BASE != 0
 		 (addr >= CONFIG_KERNEL_VM_BASE) &&
-#endif /* CONFIG_KERNEL_VM_BASE != 0 */
+#endif
 #if (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE) != 0
 		 (addr < (CONFIG_KERNEL_VM_BASE +
 			  (CONFIG_KERNEL_VM_SIZE))),
 #else
 		 false,
-#endif /* CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE != 0 */
+#endif
 		 "address %p not in permanent mappings", virt);
 #else
 	/* Should be identity-mapped */
 	__ASSERT(
 #if CONFIG_SRAM_BASE_ADDRESS != 0
 		 (addr >= CONFIG_SRAM_BASE_ADDRESS) &&
-#endif /* CONFIG_SRAM_BASE_ADDRESS != 0 */
+#endif
 #if (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0
 		 (addr < (CONFIG_SRAM_BASE_ADDRESS +
 			  (CONFIG_SRAM_SIZE * 1024UL))),
 #else
 		 false,
-#endif /* (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0 */
+#endif
 		 "physical address 0x%lx not in RAM",
 		 (unsigned long)addr);
 #endif /* CONFIG_MMU */
@@ -111,15 +111,15 @@ static inline void *z_mem_virt_addr(uintptr_t phys)
 	__ASSERT(
 #if CONFIG_SRAM_BASE_ADDRESS != 0
 		 (phys >= CONFIG_SRAM_BASE_ADDRESS) &&
-#endif /* CONFIG_SRAM_BASE_ADDRESS != 0 */
+#endif
 #if (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0
 		 (phys < (CONFIG_SRAM_BASE_ADDRESS +
 			  (CONFIG_SRAM_SIZE * 1024UL))),
 #else
 		 false,
-#endif /* (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0 */
+#endif
 		 "physical address 0x%lx not in RAM", (unsigned long)phys);
-#endif /* CONFIG_KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK */
+#endif
 
 	/* TODO add assertion that this page frame is pinned to boot mapping,
 	 * the above check won't be sufficient with demand paging

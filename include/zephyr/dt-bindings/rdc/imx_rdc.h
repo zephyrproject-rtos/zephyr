@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2018, Diego Sueiro
- * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +9,6 @@
 
 #define A7_DOMAIN_ID	0
 #define A9_DOMAIN_ID	0
-#define A53_DOMAIN_ID	0
 #define M4_DOMAIN_ID	1
 #define M7_DOMAIN_ID	1
 

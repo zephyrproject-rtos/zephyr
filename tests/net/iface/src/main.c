@@ -1301,16 +1301,6 @@ ZTEST(net_iface, test_interface_name)
 	ret = net_if_set_name(iface, name);
 	zassert_equal(ret, 0, "Unexpected value (%d) returned", ret);
 
-	name = "abc0";
-	ret = net_if_set_name(iface2, name);
-	zassert_equal(ret, -EALREADY, "Unexpected value (%d) returned", ret);
-
-	name = "abc";
-	ret = net_if_set_name(iface2, name);
-	zassert_equal(ret, 0, "Unexpected value (%d) returned", ret);
-
-	name = "abc0";
-
 	ret = net_if_get_name(iface, buf, 1);
 	zassert_equal(ret, -ERANGE, "Unexpected value (%d) returned", ret);
 
@@ -1318,8 +1308,7 @@ ZTEST(net_iface, test_interface_name)
 	zassert_equal(ret, -ERANGE, "Unexpected value (%d) returned", ret);
 
 	ret = net_if_get_name(iface, buf, sizeof(buf) - 1);
-	zassert_equal(ret, strlen(name), "Unexpected value (%d) returned, expected %d",
-		      ret, strlen(name));
+	zassert_equal(ret, strlen(name), "Unexpected value (%d) returned", ret);
 
 	ret = net_if_get_by_name(name);
 	zassert_equal(ret, net_if_get_by_iface(iface), "Unexpected value (%d) returned", ret);

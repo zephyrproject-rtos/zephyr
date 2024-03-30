@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 VERBOSITY_LEVEL=2
-EXECUTE_TIMEOUT=100
+EXECUTE_TIMEOUT=50
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
@@ -15,10 +15,10 @@ printf "\n\n======== Public Broadcaster test =========\n\n"
 
 SIMULATION_ID="pbp_broadcaster"
 
-Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=public_broadcast_source -rs=27 -D=2
 
-Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=public_broadcast_sink -rs=27 -D=2
 
 # Simulation time should be larger than the WAIT_TIME in common.h

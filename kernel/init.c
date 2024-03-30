@@ -85,7 +85,7 @@ static void z_init_static_threads(void)
 					      pos->thread);
 		}
 	}
-#endif /* CONFIG_USERSPACE */
+#endif
 
 	/*
 	 * Non-legacy static threads may be started immediately or
@@ -128,12 +128,12 @@ enum init_level {
 	INIT_LEVEL_APPLICATION,
 #ifdef CONFIG_SMP
 	INIT_LEVEL_SMP,
-#endif /* CONFIG_SMP */
+#endif
 };
 
 #ifdef CONFIG_SMP
 extern const struct init_entry __init_SMP_start[];
-#endif /* CONFIG_SMP */
+#endif
 
 /*
  * storage space for the interrupt stack
@@ -173,8 +173,8 @@ static struct k_obj_core_stats_desc  kernel_stats_desc = {
 	.disable = NULL,
 	.enable  = NULL,
 };
-#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
-#endif /* CONFIG_OBJ_CORE_SYSTEM */
+#endif
+#endif
 
 /* LCOV_EXCL_START
  *
@@ -245,7 +245,7 @@ void z_bss_zero(void)
 #ifdef CONFIG_COVERAGE_GCOV
 	z_early_memset(&__gcov_bss_start, 0,
 		       ((uintptr_t) &__gcov_bss_end - (uintptr_t) &__gcov_bss_start));
-#endif /* CONFIG_COVERAGE_GCOV */
+#endif
 }
 
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
@@ -279,7 +279,7 @@ void z_bss_zero_boot(void)
 __boot_func
 #else
 __pinned_func
-#endif /* CONFIG_LINKER_USE_BOOT_SECTION */
+#endif
 void z_bss_zero_pinned(void)
 {
 	z_early_memset(&lnkr_pinned_bss_start, 0,
@@ -293,7 +293,7 @@ void z_bss_zero_pinned(void)
 extern __thread volatile uintptr_t __stack_chk_guard;
 #else
 extern volatile uintptr_t __stack_chk_guard;
-#endif /* CONFIG_STACK_CANARIES_TLS */
+#endif
 #endif /* CONFIG_STACK_CANARIES */
 
 /* LCOV_EXCL_STOP */
@@ -322,7 +322,7 @@ static void z_sys_init_run_level(enum init_level level)
 		__init_APPLICATION_start,
 #ifdef CONFIG_SMP
 		__init_SMP_start,
-#endif /* CONFIG_SMP */
+#endif
 		/* End marker */
 		__init_end,
 	};
@@ -391,13 +391,13 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	z_sys_init_run_level(INIT_LEVEL_POST_KERNEL);
 #if CONFIG_STACK_POINTER_RANDOM
 	z_stack_adjust_initialized = 1;
-#endif /* CONFIG_STACK_POINTER_RANDOM */
+#endif
 	boot_banner();
 
 #if defined(CONFIG_CPP)
 	void z_cpp_init_static(void);
 	z_cpp_init_static();
-#endif /* CONFIG_CPP */
+#endif
 
 	/* Final init level before app starts */
 	z_sys_init_run_level(INIT_LEVEL_APPLICATION);
@@ -406,14 +406,14 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT_NO_MSG(arch_mem_coherent(&_kernel));
-#endif /* CONFIG_KERNEL_COHERENCE */
+#endif
 
 #ifdef CONFIG_SMP
 	if (!IS_ENABLED(CONFIG_SMP_BOOT_DELAY)) {
 		z_smp_init();
 	}
 	z_sys_init_run_level(INIT_LEVEL_SMP);
-#endif /* CONFIG_SMP */
+#endif
 
 #ifdef CONFIG_MMU
 	z_mem_manage_boot_finish();
@@ -429,7 +429,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_COVERAGE_DUMP
 	/* Dump coverage data once the main() has exited. */
 	gcov_coverage_dump();
-#endif /* CONFIG_COVERAGE_DUMP */
+#endif
 } /* LCOV_EXCL_LINE ... because we just dumped final coverage data */
 
 #if defined(CONFIG_MULTITHREADING)
@@ -446,7 +446,7 @@ static void init_idle_thread(int i)
 	snprintk(tname, 8, "idle %02d", i);
 #else
 	char *tname = "idle";
-#endif /* CONFIG_MP_MAX_NUM_CPUS */
+#endif
 
 #else
 	char *tname = NULL;
@@ -460,7 +460,7 @@ static void init_idle_thread(int i)
 
 #ifdef CONFIG_SMP
 	thread->base.is_idle = 1U;
-#endif /* CONFIG_SMP */
+#endif
 }
 
 void z_init_cpu(int id)
@@ -469,7 +469,7 @@ void z_init_cpu(int id)
 	_kernel.cpus[id].idle_thread = &z_idle_threads[id];
 	_kernel.cpus[id].id = id;
 	_kernel.cpus[id].irq_stack =
-		(K_KERNEL_STACK_BUFFER(z_interrupt_stacks[id]) +
+		(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[id]) +
 		 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[id]));
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 	_kernel.cpus[id].usage = &_kernel.usage[id];
@@ -524,7 +524,7 @@ static char *prepare_multithreading(void)
 	 *   to work as intended
 	 */
 	_kernel.ready_q.cache = &z_main_thread;
-#endif /* CONFIG_SMP */
+#endif
 	stack_ptr = z_setup_new_thread(&z_main_thread, z_main_stack,
 				       CONFIG_MAIN_STACK_SIZE, bg_thread_main,
 				       NULL, NULL, NULL,
@@ -551,7 +551,7 @@ static FUNC_NORETURN void switch_to_main_thread(char *stack_ptr)
 	 * will never be rescheduled in.
 	 */
 	z_swap_unlocked();
-#endif /* CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN */
+#endif
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 #endif /* CONFIG_MULTITHREADING */
@@ -573,7 +573,7 @@ void __weak z_early_rand_get(uint8_t *buf, size_t length)
 			buf += rc;
 		}
 	}
-#endif /* CONFIG_ENTROPY_HAS_DRIVER */
+#endif
 
 	while (length > 0) {
 		uint32_t val;
@@ -621,7 +621,7 @@ FUNC_NORETURN void z_cstart(void)
 	struct k_thread dummy_thread;
 
 	z_dummy_thread_init(&dummy_thread);
-#endif /* CONFIG_MULTITHREADING */
+#endif
 	/* do any necessary initialization of static devices */
 	z_device_state_init();
 
@@ -640,7 +640,7 @@ FUNC_NORETURN void z_cstart(void)
 #ifdef CONFIG_TIMING_FUNCTIONS_NEED_AT_BOOT
 	timing_init();
 	timing_start();
-#endif /* CONFIG_TIMING_FUNCTIONS_NEED_AT_BOOT */
+#endif
 
 #ifdef CONFIG_MULTITHREADING
 	switch_to_main_thread(prepare_multithreading());
@@ -661,7 +661,7 @@ FUNC_NORETURN void z_cstart(void)
 	while (true) {
 	}
 	/* LCOV_EXCL_STOP */
-#endif /* ARCH_SWITCH_TO_MAIN_NO_MULTITHREADING */
+#endif
 #endif /* CONFIG_MULTITHREADING */
 
 	/*
@@ -683,7 +683,7 @@ static int init_cpu_obj_core_list(void)
 
 #ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
 	k_obj_type_stats_init(&obj_type_cpu, &cpu_stats_desc);
-#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
+#endif
 
 	return 0;
 }
@@ -697,13 +697,13 @@ static int init_kernel_obj_core_list(void)
 
 #ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
 	k_obj_type_stats_init(&obj_type_kernel, &kernel_stats_desc);
-#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
+#endif
 
 	k_obj_core_init_and_link(K_OBJ_CORE(&_kernel), &obj_type_kernel);
 #ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
 	k_obj_core_stats_register(K_OBJ_CORE(&_kernel), _kernel.usage,
 				  sizeof(_kernel.usage));
-#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
+#endif
 
 	return 0;
 }
@@ -713,4 +713,4 @@ SYS_INIT(init_cpu_obj_core_list, PRE_KERNEL_1,
 
 SYS_INIT(init_kernel_obj_core_list, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-#endif /* CONFIG_OBJ_CORE_SYSTEM */
+#endif

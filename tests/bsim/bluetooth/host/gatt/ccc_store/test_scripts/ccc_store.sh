@@ -4,9 +4,11 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-test_exe="bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf"
-simulation_id="ccc_store"
+test_name='ccc_store'
+test_exe="bs_${BOARD}_tests_bsim_bluetooth_host_gatt_${test_name}_prj_conf"
+simulation_id="${test_name}"
 verbosity_level=2
+EXECUTE_TIMEOUT=30
 
 cd ${BSIM_OUT_PATH}/bin
 

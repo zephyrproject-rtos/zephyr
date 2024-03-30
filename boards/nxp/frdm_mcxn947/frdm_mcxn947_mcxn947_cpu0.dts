@@ -65,34 +65,10 @@
 	status = "okay";
 };
 
-&edma0 {
-	status = "okay";
-};
-
-&flexcomm1 {
-	status = "okay";
-};
-
-&flexcomm1_lpspi1 {
-	status = "okay";
-};
-
 &flexcomm4 {
 	status = "okay";
 };
 
 &flexcomm4_lpuart4 {
-	status = "okay";
-};
-
-&flexspi {
-	status = "okay";
-};
-
-&w25q64jvssiq {
-	status = "okay";
-};
-
-&dac0 {
 	status = "okay";
 };

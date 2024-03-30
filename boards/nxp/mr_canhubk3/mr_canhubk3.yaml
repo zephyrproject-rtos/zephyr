@@ -20,5 +20,4 @@ supported:
   - netif:eth
   - pwm
   - dma
-  - display
 vendor: nxp

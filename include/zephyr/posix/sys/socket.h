@@ -125,8 +125,6 @@ static inline int getsockname(int sock, struct sockaddr *addr,
 
 #endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
 
-int sockatmark(int s);
-
 #ifdef __cplusplus
 }
 #endif

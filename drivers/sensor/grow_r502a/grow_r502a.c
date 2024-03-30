@@ -107,6 +107,7 @@ static void uart_cb_handler(const struct device *dev, void *user_data)
 
 static int fps_led_control(const struct device *dev, struct led_params *led_control)
 {
+	struct grow_r502a_data *drv_data = dev->data;
 	union r502a_packet rx_packet = {0};
 	char const led_ctrl_len = 5;
 
@@ -136,6 +137,7 @@ static int fps_led_control(const struct device *dev, struct led_params *led_cont
 
 static int fps_verify_password(const struct device *dev)
 {
+	struct grow_r502a_data *drv_data = dev->data;
 	union r502a_packet rx_packet = {0};
 	char const verify_pwd_len = 5;
 
@@ -243,6 +245,7 @@ unlock:
 
 static int fps_get_image(const struct device *dev)
 {
+	struct grow_r502a_data *drv_data = dev->data;
 	union r502a_packet rx_packet = {0};
 	char const get_img_len = 1;
 
@@ -281,6 +284,7 @@ static int fps_get_image(const struct device *dev)
 
 static int fps_image_to_char(const struct device *dev, uint8_t char_buf_idx)
 {
+	struct grow_r502a_data *drv_data = dev->data;
 	union r502a_packet rx_packet = {0};
 	char const img_to_char_len = 2;
 
@@ -308,6 +312,7 @@ static int fps_image_to_char(const struct device *dev, uint8_t char_buf_idx)
 
 static int fps_create_model(const struct device *dev)
 {
+	struct grow_r502a_data *drv_data = dev->data;
 	union r502a_packet rx_packet = {0};
 	char const create_model_len = 1;
 
@@ -335,6 +340,7 @@ static int fps_create_model(const struct device *dev)
 
 static int fps_store_model(const struct device *dev, uint16_t id)
 {
+	struct grow_r502a_data *drv_data = dev->data;
 	union r502a_packet rx_packet = {0};
 	char const store_model_len = 4;
 
@@ -374,6 +380,7 @@ static int fps_store_model(const struct device *dev, uint16_t id)
 
 static int fps_delete_model(const struct device *dev, uint16_t id, uint16_t count)
 {
+	struct grow_r502a_data *drv_data = dev->data;
 	union r502a_packet rx_packet = {0};
 	char const delete_model_len = 5;
 

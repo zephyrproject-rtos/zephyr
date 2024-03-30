@@ -15,7 +15,7 @@
 extern void z_check_stack_sentinel(void);
 #else
 #define z_check_stack_sentinel() /**/
-#endif /* CONFIG_STACK_SENTINEL */
+#endif
 
 extern struct k_spinlock _sched_spinlock;
 
@@ -63,7 +63,7 @@ static inline void z_sched_switch_spin(struct k_thread *thread)
 	 * non-null.
 	 */
 	barrier_dmem_fence_full();
-#endif /* CONFIG_SMP */
+#endif
 }
 
 /* New style context switching.  arch_switch() is a lower level
@@ -99,8 +99,8 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	__ASSERT(arch_irq_unlocked(key) ||
 		 _current->base.thread_state & (_THREAD_DUMMY | _THREAD_DEAD),
 		 "Context switching while holding lock!");
-# endif /* CONFIG_ARM64 */
-#endif /* CONFIG_SPIN_VALIDATE */
+# endif
+#endif
 
 	old_thread = _current;
 
@@ -131,18 +131,18 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		if (!is_spinlock) {
 			z_smp_release_global_lock(new_thread);
 		}
-#endif /* CONFIG_SMP */
+#endif
 		z_thread_mark_switched_out();
 		z_sched_switch_spin(new_thread);
 		_current_cpu->current = new_thread;
 
 #ifdef CONFIG_TIMESLICING
 		z_reset_time_slice(new_thread);
-#endif /* CONFIG_TIMESLICING */
+#endif
 
 #ifdef CONFIG_SPIN_VALIDATE
 		z_spin_lock_set_owner(&_sched_spinlock);
-#endif /* CONFIG_SPIN_VALIDATE */
+#endif
 
 		arch_cohere_stacks(old_thread, NULL, new_thread);
 
@@ -152,7 +152,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		 * time.  See z_sched_switch_spin().
 		 */
 		z_requeue_current(old_thread);
-#endif /* CONFIG_SMP */
+#endif
 		void *newsh = new_thread->switch_handle;
 
 		if (IS_ENABLED(CONFIG_SMP)) {
@@ -241,24 +241,24 @@ static inline void z_dummy_thread_init(struct k_thread *dummy_thread)
 	dummy_thread->base.thread_state = _THREAD_DUMMY;
 #ifdef CONFIG_SCHED_CPU_MASK
 	dummy_thread->base.cpu_mask = -1;
-#endif /* CONFIG_SCHED_CPU_MASK */
+#endif
 	dummy_thread->base.user_options = K_ESSENTIAL;
 #ifdef CONFIG_THREAD_STACK_INFO
 	dummy_thread->stack_info.start = 0U;
 	dummy_thread->stack_info.size = 0U;
-#endif /* CONFIG_THREAD_STACK_INFO */
+#endif
 #ifdef CONFIG_USERSPACE
 	dummy_thread->mem_domain_info.mem_domain = &k_mem_domain_default;
-#endif /* CONFIG_USERSPACE */
+#endif
 #if (K_HEAP_MEM_POOL_SIZE > 0)
 	k_thread_system_pool_assign(dummy_thread);
 #else
 	dummy_thread->resource_pool = NULL;
-#endif /* K_HEAP_MEM_POOL_SIZE */
+#endif
 
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 	dummy_thread->base.slice_ticks = 0;
-#endif /* CONFIG_TIMESLICE_PER_THREAD */
+#endif
 
 	_current_cpu->current = dummy_thread;
 }
