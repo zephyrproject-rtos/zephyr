@@ -75,9 +75,10 @@ static int cmd_erase(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *flash_dev;
 	uint32_t page_addr;
-	int result;
+	int result = -ENOTSUP;
 	uint32_t size;
 
+#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
 	result = parse_helper(sh, &argc, &argv, &flash_dev, &page_addr);
 	if (result) {
 		return result;
@@ -106,6 +107,7 @@ static int cmd_erase(const struct shell *sh, size_t argc, char *argv[])
 	} else {
 		shell_print(sh, "Erase success.");
 	}
+#endif
 
 	return result;
 }
