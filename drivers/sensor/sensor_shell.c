@@ -88,6 +88,7 @@ static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_POS_DZ] = "pos_dz",
 	[SENSOR_CHAN_POS_DXYZ] = "pos_dxyz",
 	[SENSOR_CHAN_RPM] = "rpm",
+	[SENSOR_CHAN_FREQUENCY] = "frequency",
 	[SENSOR_CHAN_GAUGE_VOLTAGE] = "gauge_voltage",
 	[SENSOR_CHAN_GAUGE_AVG_CURRENT] = "gauge_avg_current",
 	[SENSOR_CHAN_GAUGE_STDBY_CURRENT] = "gauge_stdby_current",
