@@ -9,3 +9,7 @@ config SOC_SERIES_RA4M1
 	select DYNAMIC_INTERRUPTS
 	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	select XIP
+
+config SOC_OPTION_SETTING_MEMORY
+	bool "Option Setting Memory"
+	default y
