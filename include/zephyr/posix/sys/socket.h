@@ -9,6 +9,17 @@
 #include <sys/types.h>
 #include <zephyr/net/socket.h>
 
+#ifndef CONFIG_NET_SOCKETS_POSIX_NAMES
+
+#define SHUT_RD   ZSOCK_SHUT_RD
+#define SHUT_WR   ZSOCK_SHUT_WR
+#define SHUT_RDWR ZSOCK_SHUT_RDWR
+
+#define MSG_PEEK     ZSOCK_MSG_PEEK
+#define MSG_TRUNC    ZSOCK_MSG_TRUNC
+#define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
+#define MSG_WAITALL  ZSOCK_MSG_WAITALL
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -17,8 +28,6 @@ struct linger {
 	int  l_onoff;
 	int  l_linger;
 };
-
-#ifndef CONFIG_NET_SOCKETS_POSIX_NAMES
 
 static inline int socket(int family, int type, int proto)
 {
@@ -29,15 +38,6 @@ static inline int socketpair(int family, int type, int proto, int sv[2])
 {
 	return zsock_socketpair(family, type, proto, sv);
 }
-
-#define SHUT_RD ZSOCK_SHUT_RD
-#define SHUT_WR ZSOCK_SHUT_WR
-#define SHUT_RDWR ZSOCK_SHUT_RDWR
-
-#define MSG_PEEK ZSOCK_MSG_PEEK
-#define MSG_TRUNC ZSOCK_MSG_TRUNC
-#define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
-#define MSG_WAITALL ZSOCK_MSG_WAITALL
 
 static inline int shutdown(int sock, int how)
 {
