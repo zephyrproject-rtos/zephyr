@@ -633,14 +633,14 @@ static int i2c_ra_calc_bitrate_params(const struct device *dev, uint32_t dev_con
 		return -ENOTSUP;
 	}
 
-	if ((float)baud > ((rate / (float)(1 << i)) / (2.f * (1.f + 2.f + !i + nf)))) {
-		return -ENOTSUP;
-	}
-
 	if (i2c_ra_read_8(dev, ICFER) & REG_MASK(ICFER_NFE)) {
 		nf = (i2c_ra_read_8(dev, ICMR3) & REG_MASK(ICMR3_NF)) + 1;
 	} else {
 		nf = 0;
+	}
+
+	if (baud > (rate / (2.f * (1.f + 2.f + 1.f + nf)))) {
+		return -ENOTSUP;
 	}
 
 	for (int i = 7; i >= 0; i--) {
@@ -741,6 +741,8 @@ static int i2c_ra_init(const struct device *dev)
 		.clock_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, id),          \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
+		.clock_rise_time = DT_INST_PROP_OR(n, clock_rise_time, 0), \
+		.clock_fall_time = DT_INST_PROP_OR(n, clock_fall_time, 0), \
 	};                                                                                         \
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_ra_init, NULL, NULL, &i2c_config_##n, POST_KERNEL,        \
 				  CONFIG_I2C_INIT_PRIORITY, &i2c_api);
