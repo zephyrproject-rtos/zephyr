@@ -57,42 +57,19 @@ struct servent {
 	char *s_proto;
 };
 
-#ifndef CONFIG_NET_SOCKETS_POSIX_NAMES
-
 #define addrinfo zsock_addrinfo
-
-static inline int getaddrinfo(const char *host, const char *service,
-			      const struct zsock_addrinfo *hints,
-			      struct zsock_addrinfo **res)
-{
-	return zsock_getaddrinfo(host, service, hints, res);
-}
-
-static inline void freeaddrinfo(struct zsock_addrinfo *ai)
-{
-	zsock_freeaddrinfo(ai);
-}
-
-static inline const char *gai_strerror(int errcode)
-{
-	return zsock_gai_strerror(errcode);
-}
-
-static inline int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
-			      char *host, socklen_t hostlen,
-			      char *serv, socklen_t servlen, int flags)
-{
-	return zsock_getnameinfo(addr, addrlen, host, hostlen,
-				 serv, servlen, flags);
-}
-
-#endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
 
 void endhostent(void);
 void endnetent(void);
 void endprotoent(void);
 void endservent(void);
+void freeaddrinfo(struct zsock_addrinfo *ai);
+const char *gai_strerror(int errcode);
+int getaddrinfo(const char *host, const char *service, const struct zsock_addrinfo *hints,
+		struct zsock_addrinfo **res);
 struct hostent *gethostent(void);
+int getnameinfo(const struct sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
+		char *serv, socklen_t servlen, int flags);
 struct netent *getnetbyaddr(uint32_t net, int type);
 struct netent *getnetbyname(const char *name);
 struct netent *getnetent(void);
