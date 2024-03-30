@@ -17,25 +17,12 @@
 extern "C" {
 #endif
 
-#ifndef CONFIG_NET_SOCKETS_POSIX_NAMES
-
-static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
-			      size_t size)
-{
-	return zsock_inet_ntop(family, src, dst, size);
-}
-
-static inline int inet_pton(sa_family_t family, const char *src, void *dst)
-{
-	return zsock_inet_pton(family, src, dst);
-}
-
-#endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
-
 typedef uint32_t in_addr_t;
 
 in_addr_t inet_addr(const char *cp);
 char *inet_ntoa(struct in_addr in);
+char *inet_ntop(sa_family_t family, const void *src, char *dst, size_t size);
+int inet_pton(sa_family_t family, const char *src, void *dst);
 
 #ifdef __cplusplus
 }
