@@ -45,6 +45,8 @@
 		led0 = &green_led;
 		led1 = &blue_led;
 		sw0 = &user_button;
+		eeprom-0 = &eeprom;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -129,4 +131,12 @@
 	backup_regs {
 		status = "okay";
 	};
+};
+
+&eeprom {
+		status = "okay";
+};
+
+&iwdg {
+		status = "okay";
 };
