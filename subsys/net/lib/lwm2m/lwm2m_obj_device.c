@@ -259,32 +259,35 @@ static int lwm2m_obj_device_settings_set(const char *name, size_t len,
 	int rc;
 	int i;
 
-	if (settings_name_steq(name, ERROR_LIST_KEY, &next) && !next) {
-		if (len > sizeof(error_code_list)) {
-			LOG_ERR("Error code list too large: %zu", len);
-			return -EINVAL;
-		}
-
-		rc = read_cb(cb_arg, error_code_list, sizeof(error_code_list));
-		if (rc == 0) {
-			reset_error_list();
-			return 0;
-		} else if (rc > 0) {
-			for (i = 0; i < ARRAY_SIZE(error_code_list); i++) {
-				if (i < rc) {
-					error_code_ri[i].res_inst_id = i;
-				} else {
-					/* Reset remaining error code instances */
-					error_code_list[i] = LWM2M_DEVICE_ERROR_NONE;
-					error_code_ri[i].res_inst_id = RES_INSTANCE_NOT_CREATED;
-				}
+	if (IS_ENABLED(CONFIG_LWM2M_DEVICE_ERROR_CODE_SETTINGS)) {
+		if (settings_name_steq(name, ERROR_LIST_KEY, &next) && !next) {
+			if (len > sizeof(error_code_list)) {
+				LOG_ERR("Error code list too large: %zu", len);
+				return -EINVAL;
 			}
-			return 0;
+
+			rc = read_cb(cb_arg, error_code_list, sizeof(error_code_list));
+			if (rc == 0) {
+				reset_error_list();
+				return 0;
+			} else if (rc > 0) {
+				for (i = 0; i < ARRAY_SIZE(error_code_list); i++) {
+					if (i < rc) {
+						error_code_ri[i].res_inst_id = i;
+					} else {
+						/* Reset remaining error code instances */
+						error_code_list[i] = LWM2M_DEVICE_ERROR_NONE;
+						error_code_ri[i].res_inst_id =
+							RES_INSTANCE_NOT_CREATED;
+					}
+				}
+				return 0;
+			}
+
+			LOG_ERR("Error code list read failure: %d", rc);
+
+			return rc;
 		}
-
-		LOG_ERR("Error code list read failure: %d", rc);
-
-		return rc;
 	}
 
 	return -ENOENT;
