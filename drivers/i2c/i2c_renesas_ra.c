@@ -791,7 +791,7 @@ static int i2c_ra_configure(const struct device *dev, uint32_t dev_config)
 
 	if (config->irq_config_func) {
 		config->irq_config_func(dev);
-		irq_disable(data->irqn[I2C_RA_INT_RXI]);
+		irq_enable(data->irqn[I2C_RA_INT_RXI]);
 		irq_disable(data->irqn[I2C_RA_INT_TXI]);
 		irq_enable(data->irqn[I2C_RA_INT_TEI]);
 		irq_enable(data->irqn[I2C_RA_INT_EEI]);
