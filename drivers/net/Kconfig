@@ -70,6 +70,24 @@ config NET_PPP_VERIFY_FCS
 	  to disable this as it takes some time to verify the received
 	  packet.
 
+config NET_PPP_CAPTURE
+	bool "Capture received PPP packets"
+	depends on NET_CAPTURE_COOKED_MODE
+	help
+	  This enables PPP packet capture. One needs to configure the
+	  packet capturing in core network stack to send the captured packets
+	  to outside system. This requires a non-PPP network connection
+	  where the captured packets are sent for processing. Note that you
+	  cannot use the PPP connection to sending packets as that would
+	  lead recursion.
+
+config NET_PPP_CAPTURE_BUF_SIZE
+	int "Capture buffer for storing full PPP packets"
+	depends on NET_PPP_CAPTURE
+	default 1500
+	help
+	  The captured PPP frames are temporarily stored into this buffer.
+
 config PPP_MAC_ADDR
 	string "MAC address for the interface"
 	help

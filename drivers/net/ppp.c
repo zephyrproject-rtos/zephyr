@@ -32,6 +32,9 @@ LOG_MODULE_REGISTER(net_ppp, LOG_LEVEL);
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/console/uart_mux.h>
 #include <zephyr/random/random.h>
+#include <zephyr/posix/net/if_arp.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/capture.h>
 
 #include "../../subsys/net/ip/net_stats.h"
 #include "../../subsys/net/ip/net_private.h"
@@ -49,6 +52,24 @@ enum ppp_driver_state {
 #define PPP_WORKQ_STACK_SIZE CONFIG_NET_PPP_RX_STACK_SIZE
 
 K_KERNEL_STACK_DEFINE(ppp_workq, PPP_WORKQ_STACK_SIZE);
+
+#if defined(CONFIG_NET_PPP_CAPTURE)
+#define MAX_CAPTURE_BUF_LEN CONFIG_NET_PPP_CAPTURE_BUF_SIZE
+#else
+#define MAX_CAPTURE_BUF_LEN 1
+#endif
+
+struct net_ppp_capture_ctx {
+	struct net_capture_cooked cooked;
+	uint8_t capture_buf[MAX_CAPTURE_BUF_LEN];
+};
+
+#if defined(CONFIG_NET_PPP_CAPTURE)
+static struct net_ppp_capture_ctx _ppp_capture_ctx;
+static struct net_ppp_capture_ctx *ppp_capture_ctx = &_ppp_capture_ctx;
+#else
+static struct net_ppp_capture_ctx *ppp_capture_ctx;
+#endif
 
 struct ppp_driver_context {
 	const struct device *dev;
@@ -378,6 +399,28 @@ static int ppp_send_flush(struct ppp_driver_context *ppp, int off)
 	}
 	uint8_t *buf = ppp->send_buf;
 
+	if (IS_ENABLED(CONFIG_NET_PPP_CAPTURE) &&
+	    net_capture_is_enabled(NULL) && ppp_capture_ctx) {
+		size_t len = off;
+		uint8_t *start = &buf[0];
+
+		/* Do not capture HDLC frame start and stop bytes (0x7e) */
+
+		if (buf[0] == 0x7e) {
+			len--;
+			start++;
+		}
+
+		if (buf[off] == 0x7e) {
+			len--;
+		}
+
+		net_capture_data(&ppp_capture_ctx->cooked,
+				 start, len,
+				 NET_CAPTURE_OUTGOING,
+				 NET_ETH_PTYPE_HDLC);
+	}
+
 	/* If we're using gsm_mux, We don't want to use poll_out because sending
 	 * one byte at a time causes each byte to get wrapped in muxing headers.
 	 * But we can safely call uart_fifo_fill outside of ISR context when
@@ -594,6 +637,34 @@ static void ppp_process_msg(struct ppp_driver_context *ppp)
 #endif
 		net_pkt_unref(ppp->pkt);
 	} else {
+		/* If PPP packet capturing is enabled, then send the
+		 * full packet with PPP headers for processing. Currently this
+		 * captures only valid frames. If we would need to receive also
+		 * invalid frames, the if-block would need to be moved before
+		 * fcs check above.
+		 */
+		if (IS_ENABLED(CONFIG_NET_PPP_CAPTURE) &&
+		    net_capture_is_enabled(NULL) && ppp_capture_ctx) {
+			size_t copied;
+
+			/* Linearize the packet data. We cannot use the
+			 * capture API that deals with net_pkt as we work
+			 * in cooked mode and want to capture also the
+			 * HDLC frame data.
+			 */
+			copied = net_buf_linearize(ppp_capture_ctx->capture_buf,
+						   sizeof(ppp_capture_ctx->capture_buf),
+						   ppp->pkt->buffer,
+						   0U,
+						   net_pkt_get_len(ppp->pkt));
+
+			net_capture_data(&ppp_capture_ctx->cooked,
+					 ppp_capture_ctx->capture_buf,
+					 copied,
+					 NET_CAPTURE_HOST,
+					 NET_ETH_PTYPE_HDLC);
+		}
+
 		/* Remove the Address (0xff), Control (0x03) and
 		 * FCS fields (16-bit) as the PPP L2 layer does not need
 		 * those bytes.
@@ -960,6 +1031,24 @@ use_random_mac:
 
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
 			     NET_LINK_ETHERNET);
+
+	if (IS_ENABLED(CONFIG_NET_PPP_CAPTURE)) {
+		static bool capture_setup_done;
+
+		if (!capture_setup_done) {
+			int ret;
+
+			ret = net_capture_cooked_setup(&ppp_capture_ctx->cooked,
+						       ARPHRD_PPP,
+						       sizeof(ppp->mac_addr),
+						       ppp->mac_addr);
+			if (ret < 0) {
+				LOG_DBG("Cannot setup capture (%d)", ret);
+			} else {
+				capture_setup_done = true;
+			}
+		}
+	}
 
 	memset(ppp->buf, 0, sizeof(ppp->buf));
 
