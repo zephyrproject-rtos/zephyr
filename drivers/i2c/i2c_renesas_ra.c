@@ -529,17 +529,12 @@ static int i2c_send_slave_address(const struct device *dev, struct i2c_msg *msg,
 
 		/* Set and Ensure restart */
 		i2c_ra_write_8(dev, ICCR2, REG_MASK(ICCR2_RS));
-		// wait_for_turn_off(dev, ICCR2, REG_MASK(ICCR2_RS));
+		wait_for_turn_off(dev, ICCR2, REG_MASK(ICCR2_RS));
 	} else {
 		i2c_ra_set_start_condition(dev, true);
 		wait_for_turn_off(dev, ICCR2, REG_MASK(ICCR2_ST));
 	}
 
-	return 0;
-}
-
-static int i2c_send_slave_address2(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
-{
 	/* Write address to transfer register */
 	wait_for_turn_on(dev, ICSR2, REG_MASK(ICSR2_TDRE));
 	i2c_ra_write_8(dev, ICDRT, ((addr & 0x7F) << 1) | (msg->flags & I2C_MSG_RW_MASK));
@@ -563,8 +558,10 @@ static int i2c_send_slave_address2(const struct device *dev, struct i2c_msg *msg
 	return 0;
 }
 
-static int i2c_ra_process_msg_write(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
+static int i2c_ra_process_msg_write(const struct device *dev)
 {
+	struct i2c_ra_data *data = dev->data;
+	struct i2c_msg *msg = &data->msgs[data->msgs_pos];
 	uint8_t reg_val;
 	int ret = 0;
 
@@ -593,8 +590,10 @@ static int i2c_ra_process_msg_write(const struct device *dev, struct i2c_msg *ms
 	return ret;
 }
 
-static int i2c_ra_process_msg_read(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
+static int i2c_ra_process_msg_read(const struct device *dev)
 {
+	struct i2c_ra_data *data = dev->data;
+	struct i2c_msg *msg = &data->msgs[data->msgs_pos];
 	uint8_t reg_val;
 	int ret = 0;
 
@@ -649,8 +648,9 @@ static int i2c_ra_process_msg_read(const struct device *dev, struct i2c_msg *msg
 static int i2c_ra_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			   uint16_t addr)
 {
+	const struct i2c_ra_cfg *config = dev->config;
 	struct i2c_ra_data *data = dev->data;
-	// uint8_t reg_val;
+	uint8_t reg_val;
 	int ret;
 
 	data->addr = addr;
@@ -659,32 +659,31 @@ static int i2c_ra_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	data->msgs_pos = 0;
 	data->buf_pos = 0;
 
-	ret = i2c_ra_set_start_condition(dev, false);
-
-	while (true) {
-		regmon = i2c_ra_read_8(dev, ICSR2);
+	if (config->irq_config_func) {
+		ret = i2c_ra_set_start_condition(dev, false);
+		k_sem_take(&data->device_sync_sem, K_FOREVER);
+		return ret;
 	}
-	/*
-		for (int i = 0; i < num_msgs; i++) {
-			if (i == 0 || msgs[i].flags & I2C_MSG_RESTART) {
-				ret = i2c_send_slave_address(dev, &msgs[i], addr);
-			}
 
-			if (msgs[i].flags & I2C_MSG_READ) {
-				ret = i2c_ra_process_msg_read(dev, &msgs[i], addr);
-			} else {
-				ret = i2c_ra_process_msg_write(dev, &msgs[i], addr);
-			}
-
-			reg_val = i2c_ra_read_8(dev, ICSR2);
-			i2c_ra_write_8(dev, ICSR2, reg_val & ~ICSR2_ERROR_MASK);
-
-			if (ret != 0) {
-				LOG_ERR("I2C failed to transfer messages\n");
-				return ret;
-			}
+	for (data->msgs_pos = 0; data->msgs_pos < data->msgs_len; data->msgs_pos++) {
+		if (data->msgs_pos == 0 || data->msgs[data->msgs_pos].flags & I2C_MSG_RESTART) {
+			ret = i2c_send_slave_address(dev, &data->msgs[data->msgs_pos], data->addr);
 		}
-	*/
+
+		if (msgs[data->msgs_pos].flags & I2C_MSG_READ) {
+			ret = i2c_ra_process_msg_read(dev);
+		} else {
+			ret = i2c_ra_process_msg_write(dev);
+		}
+
+		reg_val = i2c_ra_read_8(dev, ICSR2);
+		i2c_ra_write_8(dev, ICSR2, reg_val & ~ICSR2_ERROR_MASK);
+
+		if (ret != 0) {
+			LOG_ERR("I2C failed to transfer messages\n");
+			return ret;
+		}
+	}
 
 	return 0;
 };
@@ -949,7 +948,6 @@ static void i2c_ra_isr_eei(const void *param)
 {
 	const struct device *dev = param;
 	struct i2c_ra_data *data = dev->data;
-	uint8_t reg_val;
 
 	// printk("eei %02x\n", i2c_ra_read_8(dev, ICSR2));
 
