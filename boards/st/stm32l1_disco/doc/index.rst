@@ -80,6 +80,9 @@ The Zephyr stm32l1_disco board configuration supports the following hardware fea
    * - FLASH
      - on-chip
      - flash memory
+   * - EEPROM
+     - on-chip
+     - eeprom
    * - WATCHDOG
      - on-chip
      - window watchdog
