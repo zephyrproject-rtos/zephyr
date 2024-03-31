@@ -1,4 +1,4 @@
-.. _phyboard_lyra_am62x_m4:
+.. _phyboard_lyra_am62xx_m4:
 
 phyBOARD-Lyra AM62x M4F Core
 ############################
@@ -43,7 +43,7 @@ specifications are used:
 Supported Features
 ==================
 
-The phyboard_lyra_am62x/am6234/m4 configuration supports the following hardware features:
+The phyboard_lyra/am6234/m4 configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -87,7 +87,7 @@ cores of the SoM. These cores will then load the zephyr binary on the M4 core
 using remoteproc.
 
 The default configuration can be found in
-:zephyr_file:`boards/phytec/phyboard_lyra_am62x/phyboard_lyra_am62x_am6234_m4_defconfig`
+:zephyr_file:`boards/phytec/phyboard_lyra/phyboard_lyra_am6234_m4_defconfig`
 
 Flashing
 ********
@@ -101,7 +101,7 @@ To test the M4F core, we build the `hello_world` sample with the following comma
 .. code-block:: console
 
    # From the root of the Zephyr repository
-   west build -p -b phyboard_lyra_am62x/am6234/m4 samples/hello_world
+   west build -p -b phyboard_lyra/am6234/m4 samples/hello_world
 
 This builds the program and the binary is present in the `build/zephyr` directory as `zephyr.elf`.
 
