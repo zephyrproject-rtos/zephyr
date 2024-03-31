@@ -14,6 +14,7 @@
 #define ZEPHYR_INCLUDE_NET_CAPTURE_H_
 
 #include <zephyr/kernel.h>
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -127,15 +128,25 @@ static inline int net_capture_enable(const struct device *dev, struct net_if *if
 /**
  * @brief Is network packet capture enabled or disabled.
  *
- * @param dev Network capture device
+ * @param dev Network capture device. If set to NULL, then the
+ *            default capture device is used.
  *
  * @return True if enabled, False if network capture is disabled.
  */
 static inline bool net_capture_is_enabled(const struct device *dev)
 {
 #if defined(CONFIG_NET_CAPTURE)
-	const struct net_capture_interface_api *api =
-		(const struct net_capture_interface_api *)dev->api;
+	const struct net_capture_interface_api *api;
+
+	if (dev == NULL) {
+		/* TODO: Go through all capture devices instead of one */
+		dev = device_get_binding("NET_CAPTURE0");
+		if (dev == NULL) {
+			return false;
+		}
+	}
+
+	api = (const struct net_capture_interface_api *)dev->api;
 
 	return api->is_enabled(dev);
 #else
