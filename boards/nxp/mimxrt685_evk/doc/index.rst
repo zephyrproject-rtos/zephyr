@@ -290,7 +290,7 @@ Here is an example for the :ref:`hello_world` application. This example uses the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimxrt685_evk
+   :board: mimxrt685_evk/mimxrt685s/cm33
    :goals: flash
 
 Open a serial terminal, reset the board (press the RESET button), and you should
@@ -309,7 +309,7 @@ Here is an example for the :ref:`hello_world` application. This example uses the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimxrt685_evk
+   :board: mimxrt685_evk/mimxrt685s/cm33
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you

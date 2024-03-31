@@ -32,3 +32,5 @@ family:
   - name: imxrt6xx
     socs:
     - name: mimxrt685s
+      cpuclusters:
+      - name: cm33
