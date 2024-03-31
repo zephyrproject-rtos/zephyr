@@ -481,15 +481,15 @@ static int i2c_send_slave_address(const struct device *dev, struct i2c_msg *msg,
 
 static int i2c_ra_process_msg_write(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
 {
-	uint8_t regval;
+	uint8_t reg_val;
 	int ret = 0;
 
 	for (uint32_t i = 0; i < msg->len; i++) {
 		wait_for_turn_on(dev, ICSR2, REG_MASK(ICSR2_TDRE));
 		i2c_ra_write_8(dev, ICDRT, msg->buf[i]);
 
-		regval = i2c_ra_read_8(dev, ICSR2);
-		if (regval & ICSR2_ERROR_MASK) {
+		reg_val = i2c_ra_read_8(dev, ICSR2);
+		if (reg_val & ICSR2_ERROR_MASK) {
 			ret = -EIO;
 			break;
 		}
@@ -511,26 +511,26 @@ static int i2c_ra_process_msg_write(const struct device *dev, struct i2c_msg *ms
 
 static int i2c_ra_process_msg_read(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
 {
-	uint8_t regval;
+	uint8_t reg_val;
 	int ret = 0;
 
 	for (int i = 0; i < (msg->len - 1); i++) {
 		wait_for_turn_on(dev, ICSR2, REG_MASK(ICSR2_RDRF));
 
 		if (i == (msg->len - 3)) {
-			regval = i2c_ra_read_8(dev, ICMR3);
-			i2c_ra_write_8(dev, ICMR3, regval & REG_MASK(ICMR3_WAIT));
+			reg_val = i2c_ra_read_8(dev, ICMR3);
+			i2c_ra_write_8(dev, ICMR3, reg_val & REG_MASK(ICMR3_WAIT));
 		} else if (i == (msg->len - 2)) {
 			/* Set ACKBT before */
-			regval = i2c_ra_read_8(dev, ICMR3);
+			reg_val = i2c_ra_read_8(dev, ICMR3);
 			i2c_ra_write_8(dev, ICMR3,
-				       regval | REG_MASK(ICMR3_ACKWP) | REG_MASK(ICMR3_ACKBT));
+				       reg_val | REG_MASK(ICMR3_ACKWP) | REG_MASK(ICMR3_ACKBT));
 		}
 
 		msg->buf[i] = i2c_ra_read_8(dev, ICDRR);
 
-		regval = i2c_ra_read_8(dev, ICSR2);
-		if (regval & ICSR2_ERROR_MASK) {
+		reg_val = i2c_ra_read_8(dev, ICSR2);
+		if (reg_val & ICSR2_ERROR_MASK) {
 			ret = -EIO;
 			break;
 		}
@@ -541,19 +541,19 @@ static int i2c_ra_process_msg_read(const struct device *dev, struct i2c_msg *msg
 	}
 
 	if (msg->flags & I2C_MSG_STOP || ret != 0) {
-		regval = i2c_ra_read_8(dev, ICSR2);
-		i2c_ra_write_8(dev, ICSR2, regval & ~REG_MASK(ICSR2_STOP));
+		reg_val = i2c_ra_read_8(dev, ICSR2);
+		i2c_ra_write_8(dev, ICSR2, reg_val & ~REG_MASK(ICSR2_STOP));
 		i2c_ra_write_8(dev, ICCR2, REG_MASK(ICCR2_SP));
 
-		regval = i2c_ra_read_8(dev, ICDRR);
+		reg_val = i2c_ra_read_8(dev, ICDRR);
 
 		if (ret == 0) {
-			msg->buf[msg->len - 1] = regval;
+			msg->buf[msg->len - 1] = reg_val;
 		}
 
 		/* Unset WAIT */
-		regval = i2c_ra_read_8(dev, ICMR3);
-		i2c_ra_write_8(dev, ICMR3, regval & ~REG_MASK(ICMR3_WAIT));
+		reg_val = i2c_ra_read_8(dev, ICMR3);
+		i2c_ra_write_8(dev, ICMR3, reg_val & ~REG_MASK(ICMR3_WAIT));
 
 		/* Ensure stop */
 		wait_for_turn_on(dev, ICSR2, REG_MASK(ICSR2_STOP));
@@ -565,7 +565,7 @@ static int i2c_ra_process_msg_read(const struct device *dev, struct i2c_msg *msg
 static int i2c_ra_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			   uint16_t addr)
 {
-	uint8_t regval;
+	uint8_t reg_val;
 	int ret;
 
 	for (int i = 0; i < num_msgs; i++) {
@@ -579,8 +579,8 @@ static int i2c_ra_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 			ret = i2c_ra_process_msg_write(dev, &msgs[i], addr);
 		}
 
-		regval = i2c_ra_read_8(dev, ICSR2);
-		i2c_ra_write_8(dev, ICSR2, regval & ~ICSR2_ERROR_MASK);
+		reg_val = i2c_ra_read_8(dev, ICSR2);
+		i2c_ra_write_8(dev, ICSR2, reg_val & ~ICSR2_ERROR_MASK);
 
 		if (ret != 0) {
 			LOG_ERR("I2C failed to transfer messages\n");
