@@ -49,6 +49,8 @@ enum {
 	STATE_SEND_ADDRESS,
 	STATE_SEND_DATA,
 	STATE_SEND_FINISHED,
+	STATE_CHECK_ADDRESS_RESPONSE,
+	STATE_READ_DATA,
 };
 
 struct i2c_ra_cfg {
@@ -644,6 +646,10 @@ static int i2c_ra_process_msg_read(const struct device *dev)
 
 	return 0;
 }
+int hoge;
+void hook() {
+	hoge++;
+}
 
 static int i2c_ra_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			   uint16_t addr)
@@ -662,6 +668,7 @@ static int i2c_ra_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	if (config->irq_config_func) {
 		ret = i2c_ra_set_start_condition(dev, false);
 		k_sem_take(&data->device_sync_sem, K_FOREVER);
+		hook();
 		return ret;
 	}
 
@@ -809,6 +816,8 @@ static int i2c_ra_configure(const struct device *dev, uint32_t dev_config)
 	/* Release Reset */
 	i2c_ra_write_8(dev, ICCR1, ICCR1_DEFAULT | REG_MASK(ICCR1_ICE));
 
+   k_sem_init(&data->device_sync_sem, 0, 1);
+
 	return ret;
 }
 
@@ -866,7 +875,9 @@ static inline void i2c_ra_isr(const struct device *dev, int irq)
 		} else if (data->status == STATE_REQ_STOP) {
 			reg_val = i2c_ra_read_8(dev, ICSR2);
 			i2c_ra_write_8(dev, ICSR2, reg_val & ~REG_MASK(ICSR2_STOP));
+			//printk("sem_give\n");
 			k_sem_give(&data->device_sync_sem);
+
 			data->status = STATE_INIT;
 		}
 	} else if (irq == I2C_RA_INT_TXI) {
@@ -879,17 +890,23 @@ static inline void i2c_ra_isr(const struct device *dev, int irq)
 			data->status = STATE_SEND_ADDRESS;
 		} else if ((data->status == STATE_SEND_ADDRESS) ||
 			   (data->status == STATE_SEND_DATA)) {
-			if (data->buf_pos == (data->msgs[data->msgs_pos].len)) {
-				data->msgs_pos += 1;
-				data->buf_pos = 0;
-			}
 
-			if (data->msgs_pos < data->msgs_len) {
-				i2c_ra_write_8(dev, ICDRT,
-					       data->msgs[data->msgs_pos].buf[data->buf_pos++]);
-				data->status = STATE_SEND_DATA;
+			if ((data->status == STATE_SEND_ADDRESS) && (data->msgs[data->msgs_pos].flags & I2C_MSG_READ)) {
+				data->status = STATE_CHECK_ADDRESS_RESPONSE;
 			} else {
-				data->status = STATE_SEND_FINISHED;
+
+				if (data->buf_pos == (data->msgs[data->msgs_pos].len)) {
+					data->msgs_pos += 1;
+					data->buf_pos = 0;
+				}
+
+				if (data->msgs_pos < data->msgs_len) {
+					i2c_ra_write_8(dev, ICDRT,
+						       data->msgs[data->msgs_pos].buf[data->buf_pos++]);
+					data->status = STATE_SEND_DATA;
+				} else {
+					data->status = STATE_SEND_FINISHED;
+				}
 			}
 		}
 	} else if (irq == I2C_RA_INT_TEI) {
@@ -903,10 +920,40 @@ static inline void i2c_ra_isr(const struct device *dev, int irq)
 			i2c_ra_write_8(dev, ICCR2, REG_MASK(ICCR2_SP));
 		}
 	} else if (irq == I2C_RA_INT_RXI) {
-		reg_val = i2c_ra_read_8(dev, ICDRR);
-		if ((data->msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+		static int count = 0;
+		
+			
+		if (data->buf_pos == (data->msgs[data->msgs_pos].len - 3)) {
+			reg_val = i2c_ra_read_8(dev, ICMR3);
+			i2c_ra_write_8(dev, ICMR3, reg_val & REG_MASK(ICMR3_WAIT));
+		} else if (data->buf_pos == (data->msgs[data->msgs_pos].len - 2)) {
+			/* Set ACKBT before */
+			reg_val = i2c_ra_read_8(dev, ICMR3);
+			i2c_ra_write_8(dev, ICMR3,
+				       reg_val | REG_MASK(ICMR3_ACKWP) | REG_MASK(ICMR3_ACKBT));
+		}
+
+		if (data->status == STATE_CHECK_ADDRESS_RESPONSE ||
+			data->status == STATE_SEND_ADDRESS) {
+			// dummy
+			reg_val = i2c_ra_read_8(dev, ICDRR);
+			data->status = STATE_READ_DATA;
+		} else if (data->status == STATE_READ_DATA) {
+			if (data->buf_pos == data->msgs[data->msgs_pos].len) {
+				data->status = STATE_REQ_STOP;
+				reg_val = i2c_ra_read_8(dev, ICSR2);
+				i2c_ra_write_8(dev, ICSR2, reg_val & ~REG_MASK(ICSR2_STOP));
+				i2c_ra_write_8(dev, ICCR2, REG_MASK(ICCR2_SP));
+			}
+
+			reg_val = i2c_ra_read_8(dev, ICDRR);
+			//printk("%d: %x\n", data->buf_pos, reg_val);
+			data->msgs[data->msgs_pos].buf[data->buf_pos++] == reg_val;
+
 		}
 	}
+
+	//printk("exit\n");
 
 	// if (data->callback) {
 	//        data->callback(dev, data->cb_data);
@@ -918,7 +965,7 @@ static void i2c_ra_isr_rxi(const void *param)
 	const struct device *dev = param;
 	struct i2c_ra_data *data = dev->data;
 
-	printk("rxi\n");
+	//printk("rxi\n");
 
 	i2c_ra_isr(dev, I2C_RA_INT_RXI);
 	ra_icu_clear_int_flag(data->irqn[I2C_RA_INT_RXI]);
@@ -929,7 +976,7 @@ static void i2c_ra_isr_txi(const void *param)
 	const struct device *dev = param;
 	struct i2c_ra_data *data = dev->data;
 
-	printk("txi\n");
+	//printk("txi\n");
 	i2c_ra_isr(dev, I2C_RA_INT_TXI);
 	ra_icu_clear_int_flag(data->irqn[I2C_RA_INT_TXI]);
 }
@@ -939,7 +986,7 @@ static void i2c_ra_isr_tei(const void *param)
 	const struct device *dev = param;
 	struct i2c_ra_data *data = dev->data;
 
-	// printk("tei\n");
+	printk("tei\n");
 	i2c_ra_isr(dev, I2C_RA_INT_TEI);
 	ra_icu_clear_int_flag(data->irqn[I2C_RA_INT_TEI]);
 }
@@ -949,7 +996,7 @@ static void i2c_ra_isr_eei(const void *param)
 	const struct device *dev = param;
 	struct i2c_ra_data *data = dev->data;
 
-	// printk("eei %02x\n", i2c_ra_read_8(dev, ICSR2));
+	//printk("eei %02x\n", i2c_ra_read_8(dev, ICSR2));
 
 	i2c_ra_isr(dev, I2C_RA_INT_EEI);
 	i2c_ra_write_8(dev, ICSR2, 0);
