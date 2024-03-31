@@ -384,7 +384,7 @@ set(mimxrt595_evk_cm33_DEPRECATED
     mimxrt595_evk/mimxrt595s/cm33
 )
 set(mimxrt685_evk_cm33_DEPRECATED
-    mimxrt685_evk
+    mimxrt685_evk/mimxrt685s/cm33
 )
 set(mps2_an385_DEPRECATED
     mps2/an385

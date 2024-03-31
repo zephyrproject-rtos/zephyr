@@ -34,7 +34,7 @@ tests:
       - drivers
       - counter
     depends_on: counter
-    platform_allow: mimxrt685_evk
+    platform_allow: mimxrt685_evk/mimxrt685s/cm33
     timeout: 400
     extra_args:
       DTC_OVERLAY_FILE="boards/mimxrt685_evk_rtc_1khz.overlay"

@@ -7,7 +7,7 @@ tests:
     filter: not CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
     platform_exclude:
       - mimxrt595_evk/mimxrt595s/cm33
-      - mimxrt685_evk
+      - mimxrt685_evk/mimxrt685s/cm33
   drivers.i2s.gpio_loopback:
     depends_on:
       - i2s
@@ -19,6 +19,6 @@ tests:
     harness: ztest
     platform_exclude:
       - mimxrt595_evk/mimxrt595s/cm33
-      - mimxrt685_evk
+      - mimxrt685_evk/mimxrt685s/cm33
     harness_config:
       fixture: gpio_loopback
