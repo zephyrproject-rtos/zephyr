@@ -24,7 +24,7 @@ struct wdt_regs {
 };
 
 #define WDT_MIN_CNT                         3U
-#define WDT_SAMPLE_TIME                     31.25
+#define WDT_TICK_TIME_US                    31250
 
 #define WDT_RESET_WHOLE_CHIP_WO_GPIO        0
 #define WDT_RESET_WHOLE_CHIP                1
