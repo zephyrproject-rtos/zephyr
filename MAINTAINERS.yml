@@ -3635,7 +3635,7 @@ TI K3 Platforms:
     - gramsay0
     - dnltz
   files:
-    - boards/phytec/*am62*/
+    - boards/phytec/phyboard_lyra/
     - boards/ti/*am62*/
     - drivers/*/*ti_k3*
     - dts/bindings/*/ti,k3*
