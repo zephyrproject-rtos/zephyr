@@ -51,7 +51,7 @@ static bool input_dump_enabled(void)
 }
 #endif /* CONFIG_INPUT_SHELL */
 
-static void input_cb(struct input_event *evt)
+static void input_dump_cb(struct input_event *evt)
 {
 	if (!input_dump_enabled()) {
 		return;
@@ -64,7 +64,7 @@ static void input_cb(struct input_event *evt)
 		evt->code,
 		evt->value);
 }
-INPUT_CALLBACK_DEFINE(NULL, input_cb);
+INPUT_CALLBACK_DEFINE(NULL, input_dump_cb);
 #endif /* CONFIG_INPUT_EVENT_DUMP */
 
 #ifdef CONFIG_INPUT_SHELL
