@@ -36,6 +36,19 @@ char *net_sprint_addr(sa_family_t af, const void *addr)
 	return net_addr_ntop(af, addr, s, NET_IPV6_ADDR_LEN);
 }
 
+const char *net_verdict2str(enum net_verdict verdict)
+{
+	if (verdict == NET_OK) {
+		return "NET_OK";
+	} else if (verdict == NET_CONTINUE) {
+		return "NET_CONTINUE";
+	} else if (verdict == NET_DROP) {
+		return "NET_DROP";
+	}
+
+	return "<unknown>";
+}
+
 const char *net_proto2str(int family, int proto)
 {
 	if (family == AF_INET || family == AF_INET6) {
