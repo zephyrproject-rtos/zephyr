@@ -11,7 +11,7 @@
 
 / {
 	model = "PHYTEC phyBOARD-Lyra AM62x M4";
-	compatible = "phytec,am62x-m4-phyboard-lyra", "ti,am625";
+	compatible = "phytec,phyboard-lyra-am62xx-m4", "ti,am625";
 
 	chosen {
 		zephyr,sram = &sram0;

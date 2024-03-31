@@ -10,7 +10,7 @@
 
 / {
 	model = "PHYTEC phyBOARD-Lyra AM62x A53";
-	compatible = "phytec,am62x-a53-phyboard-lyra", "ti,am625";
+	compatible = "phytec,phyboard-lyra-am62xx-a53", "ti,am625";
 
 	chosen {
 		zephyr,console = &uart0;

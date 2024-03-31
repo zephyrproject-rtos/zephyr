@@ -1,4 +1,4 @@
-identifier: phyboard_lyra_am62x/am6234/a53
+identifier: phyboard_lyra/am6234/a53
 name: PHYTEC phyBOARD-Lyra AM62x A53
 type: mcu
 arch: arm64

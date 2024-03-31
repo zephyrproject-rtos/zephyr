@@ -1,4 +1,4 @@
-.. _phyboard_lyra_am62x_a53:
+.. _phyboard_lyra_am62xx_a53:
 
 phyBOARD-Lyra AM62x A53 Core
 ############################
@@ -31,7 +31,7 @@ See the `PHYTEC AM62x Product Page`_ for details.
 Supported Features
 ==================
 
-The Zephyr phyboard_lyra_am62x/am6234/a53 board configuration supports the following hardware
+The Zephyr phyboard_lyra/am6234/a53 board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -83,7 +83,7 @@ You can build an application in the usual way. Refer to
 :ref:`hello_world`.
 
 .. zephyr-app-commands::
-   :board: phyboard_lyra_am62x/am6234/a53
+   :board: phyboard_lyra/am6234/a53
    :zephyr-app: samples/hello_world
    :goals: build
 
