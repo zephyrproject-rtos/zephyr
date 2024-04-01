@@ -3636,6 +3636,7 @@ TI K3 Platforms:
     - dnltz
   files:
     - boards/phytec/phyboard_lyra/
+    - boards/phytec/phyboard_electra/
     - boards/ti/*am62*/
     - drivers/*/*ti_k3*
     - dts/bindings/*/ti,k3*
