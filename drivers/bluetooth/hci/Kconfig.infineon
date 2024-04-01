@@ -196,6 +196,22 @@ config AIROC_CUSTOM_FIRMWARE_HCD_BLOB
 	  Path to BT firmware HCD file for custom or vendor CYW43xx modules.
 	  It can be absolute path, or relative from project folder.
 
+config AIROC_AUTOBAUD_MODE
+	bool "Autobaud mode"
+	help
+	  Use Autobaud feature of AIROC Controller for fast firmware download
+
+	  Newer AIROC Controllers such as CYW555xx only allow firmware
+	  upload in Download Mode after a Recovery Reset.
+	  In Download Mode the Baud Rate vendor command cannot be used
+	  initially. Instead, Autobaud mode allows to direct use a higher
+	  baud rate.
+
+	  Autobaud mode is not required on older AIROC controllers.
+
+	  https://infineon.github.io/btsdk-docs/BT-SDK/AIROC-HCI-Firmware-Download.pdf
+
+
 # Change size of command lengths. It for vendor commands related to
 # firmware downloading.
 config BT_BUF_CMD_TX_SIZE
