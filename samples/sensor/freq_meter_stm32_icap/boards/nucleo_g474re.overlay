@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2024 Freedom Veiculos Eletricos
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&tim1_ch1_pa8 {
+	slew-rate = "low-speed";
+	bias-pull-down;
+};
+
+&timers1 {
+	st,prescaler = <8192>;
+	status = "disabled";
+
+	freq_meter: freq_meter {
+		compatible = "st,stm32-icap-freq-meter";
+		status = "okay";
+
+		pinctrl-0 = <&tim1_ch1_pa8>;
+		pinctrl-names = "default";
+/*
+		dmas = <&dmamux1 1 42 ( STM32_DMA_PERIPH_RX  | STM32_DMA_PRIORITY_HIGH
+				      | STM32_DMA_MEM_32BITS | STM32_DMA_PERIPH_32BITS
+				      | STM32_DMA_MODE_CYCLIC)>;
+		dma-names = "cc";
+*/
+	};
+};
+
+&timers2 {
+	status = "disabled";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
