@@ -404,7 +404,7 @@ class Reporting:
         logger.debug("running footprint_reports")
         deltas = self.compare_metrics(report)
         warnings = 0
-        if deltas and show_footprint:
+        if deltas:
             for i, metric, value, delta, lower_better in deltas:
                 if not all_deltas and ((delta < 0 and lower_better) or
                                        (delta > 0 and not lower_better)):
@@ -417,15 +417,19 @@ class Reporting:
                 if not all_deltas and (percentage < (footprint_threshold / 100.0)):
                     continue
 
-                logger.info("{:<25} {:<60} {}{}{}: {} {:<+4}, is now {:6} {:+.2%}".format(
-                    i.platform.name, i.testsuite.name, Fore.YELLOW,
-                    "INFO" if all_deltas else "WARNING", Fore.RESET,
-                    metric, delta, value, percentage))
+                if show_footprint:
+                    logger.log(
+                        logging.INFO if all_deltas else logging.WARNING,
+                        "{:<25} {:<60} {} {:<+4}, is now {:6} {:+.2%}".format(
+                        i.platform.name, i.testsuite.name,
+                        metric, delta, value, percentage))
+
                 warnings += 1
 
         if warnings:
-            logger.warning("Deltas based on metrics from last %s" %
-                           ("release" if not last_metrics else "run"))
+            logger.warning("Found {} footprint deltas to {} as a baseline.".format(
+                           warnings,
+                           (report if not last_metrics else "the last twister run.")))
 
     def synopsis(self):
         cnt = 0
@@ -456,13 +460,13 @@ class Reporting:
                         f"{example_instance.testsuite.source_dir_rel} -T {example_instance.testsuite.id}")
             logger.info("-+" * 40)
 
-    def summary(self, results, unrecognized_sections, duration):
+    def summary(self, results, ignore_unrecognized_sections, duration):
         failed = 0
         run = 0
         for instance in self.instances.values():
             if instance.status == "failed":
                 failed += 1
-            elif instance.metrics.get("unrecognized") and not unrecognized_sections:
+            elif not ignore_unrecognized_sections and instance.metrics.get("unrecognized"):
                 logger.error("%sFAILED%s: %s has unrecognized binary sections: %s" %
                              (Fore.RED, Fore.RESET, instance.name,
                               str(instance.metrics.get("unrecognized", []))))
