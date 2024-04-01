@@ -902,9 +902,9 @@ static inline void z_impl_uart_irq_tx_disable(const struct device *dev)
 }
 
 /**
- * @brief Check if UART TX buffer can accept a new char
+ * @brief Check if UART TX buffer can accept bytes
  *
- * @details Check if UART TX buffer can accept at least one character
+ * @details Check if UART TX buffer can accept more bytes
  * for transmission (i.e. uart_fifo_fill() will succeed and return
  * non-zero). This function must be called in a UART interrupt
  * handler, or its result is undefined. Before calling this function
@@ -913,9 +913,11 @@ static inline void z_impl_uart_irq_tx_disable(const struct device *dev)
  *
  * @param dev UART device instance.
  *
- * @retval 1 If TX interrupt is enabled and at least one char can be
- *           written to UART.
  * @retval 0 If device is not ready to write a new byte.
+ * @retval >0 Minimum number of bytes that can be written in a single call to
+ *            @ref uart_fifo_fill. It may be possible to write more bytes, but
+ *            the actual number written must be checked in the return code from
+ *            @ref uart_fifo_fill.
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
