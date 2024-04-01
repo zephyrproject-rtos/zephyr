@@ -9,6 +9,23 @@ LE Audio Stack
 
    Bluetooth Audio Architecture
 
+Overall design
+**************
+
+The overall design of the LE Audio stack is that the implementation follows the specifications
+as closely as possible,
+both in terms of structure but also naming.
+Most API functions are prefixed by the specification acronym
+(e.g. `bt_bap` for the Basic Audio Profile (BAP) and `bt_vcp` for the Volume Control Profile (VCP)).
+The functions are then further prefixed with the specific role from each profile where applicable
+(e.g. :c:func:`bt_bap_unicast_client_discover` and :c:func:`bt_vcp_vol_rend_set_vol`).
+There are usually a function per procedure defined by the profile or service specifications,
+and additional helper or meta functions that do not correspond to procedures.
+
+The structure of the files generally also follow this,
+where BAP related files are prefixed with `bap` and VCP related files are prefixed with `vcp`.
+If the file is specific for a profile role, the role is also embedded in the file name.
+
 Generic Audio Framework (GAF)
 *****************************
 The Generic Audio Framework (GAF) is considered the middleware of the Bluetooth
@@ -494,6 +511,50 @@ The CSIP implementation supports the following roles
 The API reference for media control can be found in
 :ref:`Bluetooth Coordinated Sets <bluetooth_coordinated_sets>`.
 
+Specification correctness and data location
+-------------------------------------------
+
+The implementations are designed to ensure specification compliance as much as possible.
+When a specification introduces a requirement with e.g. a **shall** then the implementation should
+attempt to ensure that this requirement is always followed.
+Depending on the context of this,
+the implementation ensures this by rejecting invalid parameters from the application,
+or from the remote devices.
+
+Some requirements from the specifications are not or can not be handled by the stack itself for
+various reasons.
+One reason when the stack cannot handle a requirement is if the data related to the requirement is
+exclusively controlled by the application.
+An example of this is the advertising data,
+where multiple service have requirements for what to advertise and when,
+but where both the advertising state and data is exclusively controlled by the application.
+
+Oppositely there are also requirements from the specification,
+where the data related to the requirement is exclusively controlled by the stack.
+An example of this is the Volume Control Service (VCS) state,
+where the specifications mandata that the VCP Volume Renderer (VCS server) modify the values
+without a choice,
+e.g. when setting the absolutely volume.
+In cases like this the application is only notified about the change with a callback,
+but cannot reject the request (the stack will reject any invalid requests).
+
+Generally when the data is simple (like the VCS state which only take up a few bytes),
+the data is kept in and controlled by the stack,
+as this can ensure that the requirements can be handled by the stack,
+making it easier to use a profile role correctly.
+When the data is more complex (e.g. the PAC records),
+the data may be kept by the application and the stack only contains a reference to it.
+When the data is very application specific (e.g. advertising data),
+the data is kept in and controlled by the application.
+
+As a rule of thumb, the return types of the callbacks for each profile implementation indicate
+whether the data is controlled by the stack or the application.
+For example all the callbacks for the VCP Volume Renderer have the return type of `void`,
+but the return type of the BAP Unicast Server callbacks are `int`,
+indicating that the application not only controls a lot of the Unicast Server data,
+but can also reject the requests.
+The choice of what the return type of the callbacks often depend on the specifications,
+and how much control the role has in a given context.
 
 LE Audio resources
 ##################
