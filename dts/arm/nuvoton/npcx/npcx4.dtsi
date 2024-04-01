@@ -317,6 +317,13 @@
 				status = "disabled";
 			};
 		};
+
+		rctl: reset-controller@400c3100 {
+			compatible = "nuvoton,npcx-rst";
+			reg = <0x400c3100 0x14>;
+			#reset-cells = <1>;
+			status = "disabled";
+		};
 	};
 
 	soc-if {

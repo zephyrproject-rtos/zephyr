@@ -288,6 +288,13 @@
 			rx-plsize = <64>;
 			tx-plsize = <16>;
 		};
+
+		rctl: reset-controller@400c3100 {
+			compatible = "nuvoton,npcx-rst";
+			reg = <0x400c3100 0x14>;
+			#reset-cells = <1>;
+			status = "disabled";
+		};
 	};
 
 	soc-id {
