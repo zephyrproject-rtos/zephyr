@@ -20,5 +20,6 @@ tests:
     tags: userspace
     extra_configs:
       - CONFIG_USERSPACE=y
+      - CONFIG_MAX_THREAD_BYTES=3
     platform_exclude:
       - ip_k66f
