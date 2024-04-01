@@ -1,0 +1,8 @@
+identifier: phyboard_electra/am6442/m4
+name: PHYTEC phyBOARD-Electra AM64x M4
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 192
+vendor: phytec
