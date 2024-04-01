@@ -1756,4 +1756,12 @@ struct spip_reg {
 #define NPCX_SPIP_STAT_BSY              0
 #define NPCX_SPIP_STAT_RBF              1
 
+/* Software-triggered Pheripheral Reset Controller Register */
+struct swrst_reg {
+	/* 0x000: Software Reset Trigger */
+	volatile uint16_t SWRST_TRG;
+	volatile uint8_t reserved1[2];
+	volatile uint32_t SWRST_CTL[4];
+};
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */
