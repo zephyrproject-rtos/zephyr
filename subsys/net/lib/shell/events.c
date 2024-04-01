@@ -252,6 +252,9 @@ static const char *get_l4_desc(uint32_t event)
 	case NET_EVENT_DNS_SERVER_DEL:
 		desc = "DNS server del";
 		break;
+	case NET_EVENT_HOSTNAME_CHANGED:
+		desc = "Hostname changed";
+		break;
 	case NET_EVENT_COAP_SERVICE_STARTED:
 		desc = "CoAP service started";
 		break;
