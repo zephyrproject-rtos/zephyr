@@ -777,7 +777,7 @@ _XOPEN_STREAMS
     ioctl(),yes
     isastream(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     putmsg(), yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    putpmsg(),
+    putpmsg(), yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
 
 .. _Subprofiling Considerations:
     https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
