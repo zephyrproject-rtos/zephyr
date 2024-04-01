@@ -35,4 +35,8 @@ config FLASH_MCUX_FLEXSPI_XIP_MEM
 
 endif # FLASH_MCUX_FLEXSPI_XIP
 
+config MFD
+	default y
+	depends on DT_HAS_NXP_LP_FLEXCOMM_ENABLED
+
 endif # SOC_FAMILY_NXP_MCX
