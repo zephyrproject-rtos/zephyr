@@ -35,7 +35,7 @@
 
 	sysclk: system-clock {
 		compatible = "fixed-clock";
-		clock-frequency = <400000000>;
+		clock-frequency = <DT_FREQ_M(400)>;
 		#clock-cells = <0>;
 	};
 
@@ -50,7 +50,7 @@
 		reg = <0x04a00000 0x200>;
 		interrupts = <24 4>;
 		interrupt-parent = <&nvic>;
-		clock-frequency = <48000000>;
+		clock-frequency = <DT_FREQ_M(48)>;
 		current-speed = <115200>;
 		reg-shift = <2>;
 		status = "disabled";
