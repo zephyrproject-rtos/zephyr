@@ -118,12 +118,16 @@ class TestOutput:
             r'-DTC_RUNID=[0-9a-zA-Z]+',
             # Remove variable order CMake flags
             r'-I[0-9a-zA-Z/\\]+',
+            # Remove duration-sensitive entries
+            r'-- Configuring done \([0-9.]+s\)',
+            r'-- Generating done \([0-9.]+s\)',
             # Cache location may vary between CI runs
             r'^.*-- Cache files will be written to:.*$'
         ]
         for pattern in removal_patterns:
-            inline_twister_log = re.sub(pattern, '', inline_twister_log, flags=re.MULTILINE)
-            build_log = re.sub(pattern, '', build_log, flags=re.MULTILINE)
+            c_pattern = re.compile(pattern, flags=re.MULTILINE)
+            inline_twister_log = re.sub(c_pattern, '', inline_twister_log)
+            build_log = re.sub(c_pattern, '', build_log)
 
         split_build_log = build_log.split('\n')
         for r in split_build_log:
