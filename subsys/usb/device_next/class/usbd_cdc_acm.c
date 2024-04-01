@@ -707,9 +707,7 @@ static int cdc_acm_irq_tx_ready(const struct device *dev)
 	struct cdc_acm_uart_data *const data = dev->data;
 
 	if (check_wq_ctx(dev)) {
-		if (ring_buf_space_get(data->tx_fifo.rb)) {
-			return 1;
-		}
+		return ring_buf_space_get(data->tx_fifo.rb);
 	} else {
 		LOG_WRN("Invoked by inappropriate context");
 		__ASSERT_NO_MSG(false);
