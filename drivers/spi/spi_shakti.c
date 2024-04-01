@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(spi_shakti);
 
 sspi_struct *sspi_instance[SSPI_MAX_COUNT];
 
+int sclk_config[];
+int comm_config[];
 
 int sspi_shakti_init(const struct device *dev, int spi_number)
 { 
@@ -474,14 +476,18 @@ static int spi_shakti_transceive(const struct device *dev,
 			  const struct spi_buf_set *tx_bufs,
 			  const struct spi_buf_set *rx_bufs)
 {
-  	if(SIMPLEX_TX)
     spi_context_lock(&SPI_DATA(dev)->ctx, false, NULL, NULL, config);
-    sspi_shakti_init(const struct device *dev, int spi_number);
-    sclk_shakti_config(const struct device *dev, int spi_number, int pol, int pha, int prescale, int setup_time, int hold_time);
-    sspi_shakti_comm_control_config(const struct device *dev, int spi_number, int master_mode, int lsb_first, int comm_mode, int spi_size);
-
-    if(rx)
     
+    sclk_config[] = DT_PROP(DT_NODELABEL(spi0), sclk_configure);
+    comm_config[] = DT_PROP(DT_NODELABEL(spi0), communication_configure);
+
+    sspi_shakti_init(const struct device *dev, int spi_number);
+    sclk_shakti_config(const struct device *dev, int spi_number, int pol = sclk_config[0], int pha = sclk_config[1], int prescale = sclk_config[2], int setup_time = sclk_config[3], int hold_time = sclk_config[4]);
+  	
+    if(communication_configure[3] == SIMPLEX_TX){
+    sspi_shakti_comm_control_config(const struct device *dev, int spi_number, int master_mode = comm_config[0], int lsb_first = comm_config[1], int comm_mode = comm_config[2], int spi_size = comm_config[3]);
+  }
+
 
 }
 

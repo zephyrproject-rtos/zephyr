@@ -56,8 +56,16 @@ CPU0_intc: interrupt-controller {
     };
   };
 
-uart0: serial@11300 {
-         compatible = "shakti,uart0";
-         reg= < 0x0 0x11300 0x0 0x1000>;
+  uart0: serial@11300 {
+          compatible = "shakti,uart0";
+          reg= < 0x0 0x11300 0x0 0x1000>;
+  };
+
+  spi0: spi@00020000 {
+          compatible = "shakti,spi0";
+          reg = <0x0 0x20000 0x0 0x100>;
+          status = "okay";
+          sclk_configure = [0 0 16 0 0];
+          Communication_configure = [1 1 0 8];
   };
 };
