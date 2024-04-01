@@ -143,9 +143,9 @@ ZTEST(posix_headers, test_pthread_h)
 		zassert_not_null(pthread_rwlock_unlock);
 		zassert_not_null(pthread_rwlock_wrlock);
 		zassert_not_null(pthread_rwlockattr_destroy);
-		/* zassert_not_null(pthread_rwlockattr_getpshared); */ /* not implemented */
+		zassert_not_null(pthread_rwlockattr_getpshared);
 		zassert_not_null(pthread_rwlockattr_init);
-		/* zassert_not_null(pthread_rwlockattr_setpshared); */ /* not implemented */
+		zassert_not_null(pthread_rwlockattr_setpshared);
 		zassert_not_null(pthread_self);
 		zassert_not_null(pthread_setcancelstate);
 		zassert_not_null(pthread_setcanceltype);
