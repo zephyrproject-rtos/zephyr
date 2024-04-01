@@ -251,14 +251,27 @@ int bt_h4_vnd_setup(const struct device *dev)
 	/* BT settling time after power on */
 	(void)k_msleep(BT_POWER_ON_SETTLING_TIME_MS);
 
+	/* Newer controllers like CYW555xx require Download mode for firmware upload.
+	 * In Download mode, the baudrate cannot be changed without the Minidriver.
+	 * We use auto-baud mode to use a higher baud rate directly.
+	 */
+	if (IS_ENABLED(CONFIG_AIROC_AUTOBAUD_MODE) &&
+	    (fw_download_speed != default_uart_speed)) {
+		err = bt_hci_uart_set_baudrate(dev, fw_download_speed);
+		if (err) {
+			return err;
+		}
+	}
+
 	/* Send HCI_RESET */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
 	if (err) {
 		return err;
 	}
 
-	/* Re-configure baudrate for BT Controller */
-	if (fw_download_speed != default_uart_speed) {
+	/* Re-configure baudrate for BT Controller (if we haven't already) */
+	if (!IS_ENABLED(CONFIG_AIROC_AUTOBAUD_MODE) &&
+	    (fw_download_speed != default_uart_speed)) {
 		err = bt_update_controller_baudrate(dev, fw_download_speed);
 		if (err) {
 			return err;
