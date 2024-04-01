@@ -23,6 +23,8 @@ tests:
     platform_exclude:
       - native_sim
       - native_sim/native/64
+      - native_posix
+      - native_posix/native/64
   sample.net.sockets.dumb_http_server.netusb_zeroconf:
     depends_on: usb_device
     harness: net
@@ -32,3 +34,5 @@ tests:
     platform_exclude:
       - native_sim
       - native_sim/native/64
+      - native_posix
+      - native_posix/native/64
