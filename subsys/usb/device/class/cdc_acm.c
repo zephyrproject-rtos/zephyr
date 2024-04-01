@@ -622,7 +622,7 @@ static int cdc_acm_irq_tx_ready(const struct device *dev)
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
 
 	if (dev_data->tx_irq_ena && dev_data->tx_ready) {
-		return 1;
+		return ring_buf_space_get(dev_data->tx_ringbuf);
 	}
 
 	return 0;

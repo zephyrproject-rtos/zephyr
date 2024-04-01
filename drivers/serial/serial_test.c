@@ -130,10 +130,10 @@ static void irq_tx_disable(const struct device *dev)
 static int irq_tx_ready(const struct device *dev)
 {
 	struct serial_vnd_data *data = dev->data;
-	bool ready = (ring_buf_space_get(data->written) != 0);
+	int available = ring_buf_space_get(data->written);
 
-	LOG_DBG("tx ready: %d", ready);
-	return ready;
+	LOG_DBG("tx ready: %d", available);
+	return available;
 }
 
 static void irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
