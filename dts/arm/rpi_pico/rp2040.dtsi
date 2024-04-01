@@ -311,7 +311,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40048000 DT_SIZE_K(4)>;
-			resets = <&reset RPI_PICO_RESETS_RESET_I2C0>;
+			resets = <&reset RPI_PICO_RESETS_RESET_I2C1>;
 			clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 			interrupts = <24 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "i2c1";
