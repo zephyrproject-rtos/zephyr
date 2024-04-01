@@ -90,6 +90,8 @@ tests:
     platform_exclude:
       - native_sim
       - native_sim/native/64
+      - native_posix
+      - native_posix/native/64
   sample.net.sockets.echo_server.nrf_openthread:
     extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     slow: true
