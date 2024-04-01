@@ -394,6 +394,33 @@
 			clocks = <&pcc NUMAKER_WWDT_MODULE NUMAKER_CLK_CLKSEL1_WWDTSEL_LIRC 0>;
 			status = "disabled";
 		};
+
+		tcpc0: utcpd@400c6000 {
+			compatible = "nuvoton,numaker-tcpc";
+			reg = <0x400c6000 0x1000>,
+			      <0x40043000 0x1000>,
+			      <0x40050000 0x1000>;
+			reg-names = "utcpd", "eadc", "timer";
+			interrupts = <108 0>;
+			interrupt-names = "utcpd";
+			resets = <&rst NUMAKER_UTCPD0_RST>,
+				 <&rst NUMAKER_TMR0_RST>;
+			reset-names = "utcpd", "timer";
+			clocks = <&pcc NUMAKER_UTCPD0_MODULE 0 0>,
+				 <&pcc NUMAKER_TMR0_MODULE NUMAKER_CLK_CLKSEL1_TMR0SEL_HIRC 0>;
+			clock-names = "utcpd", "timer";
+			status = "disabled";
+
+			vbus0: vbus0 {
+				compatible = "nuvoton,numaker-vbus";
+				status = "disabled";
+			};
+
+			ppc0: ppc0 {
+				compatible = "nuvoton,numaker-ppc";
+				status = "disabled";
+			};
+		};
 	};
 };
 
