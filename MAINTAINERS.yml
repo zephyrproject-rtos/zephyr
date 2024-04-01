@@ -446,7 +446,17 @@ Bluetooth Audio:
     - include/zephyr/bluetooth/audio/
     - tests/bluetooth/audio/
     - tests/bsim/bluetooth/audio/
-    - tests/bluetooth/shell/audio*
+    - tests/bluetooth/shell/audio.conf
+    - doc/connectivity/bluetooth/img/ble_audio_arch.svg
+    - doc/connectivity/bluetooth/img/cap_proc.svg
+    - doc/connectivity/bluetooth/img/gaf.svg
+    - doc/connectivity/bluetooth/img/zephyr_gaf.svg
+    - doc/connectivity/bluetooth/bluetooth-le-audio-arch.rst
+    - samples/bluetooth/broadcast_audio*/
+    - samples/bluetooth/hap*/
+    - samples/bluetooth/public_broadcast*/
+    - samples/bluetooth/tmap*/
+    - samples/bluetooth/unicast_audio*/
   labels:
     - "area: Bluetooth Audio"
     - "area: Bluetooth"
