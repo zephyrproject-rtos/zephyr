@@ -17,8 +17,9 @@
  */
 ZTEST(posix_headers, test_stropts_h)
 {
-	#ifdef CONFIG_POSIX_API
+#ifdef CONFIG_POSIX_API
 	zassert_not_null((void *)putmsg, "putmsg is null");
+	zassert_not_null((void *)putpmsg, "putpmsg is null");
 	zassert_not_null((void *)fdetach, "fdetach is null");
 	zassert_not_null((void *)fattach, "fattach is null");
 	zassert_not_null((void *)getmsg, "getmsg is null");
@@ -29,5 +30,5 @@ ZTEST(posix_headers, test_stropts_h)
 	zassert_true(sizeof(((struct strbuf *)0)->len) > 0, "len size is 0");
 	zassert_true(sizeof(((struct strbuf *)0)->buf) > 0, "buf size is 0");
 	zassert_not_equal(RS_HIPRI, ~RS_HIPRI);
-	#endif
+#endif
 }

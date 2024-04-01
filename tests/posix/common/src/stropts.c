@@ -18,6 +18,14 @@ ZTEST(stropts, test_putmsg)
 	zassert_equal(errno, ENOSYS, "Expected errno ENOSYS, got %d", errno);
 }
 
+ZTEST(stropts, test_putpmsg)
+{
+	int ret = putpmsg(-1, NULL, NULL, 0, 0);
+
+	zassert_equal(ret, -1, "Expected return value -1, got %d", ret);
+	zassert_equal(errno, ENOSYS, "Expected errno ENOSYS, got %d", errno);
+}
+
 ZTEST(stropts, test_fdetach)
 {
 	char *path = NULL;
