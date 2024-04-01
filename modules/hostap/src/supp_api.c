@@ -269,11 +269,15 @@ static inline int chan_to_freq(int chan)
 	 * op_class for 5GHz channels as there is no user input
 	 * for these (yet).
 	 */
-	int freq;
+	int freq = -1;
+	int op_classes[] = {81, 128};
+	int op_classes_size = ARRAY_SIZE(op_classes);
 
-	freq = ieee80211_chan_to_freq(NULL, 81, chan);
-	if (freq <= 0) {
-		freq = ieee80211_chan_to_freq(NULL, 128, chan);
+	for (int i = 0; i < op_classes_size; i++) {
+		freq = ieee80211_chan_to_freq(NULL, op_classes[i], chan);
+		if (freq > 0) {
+			break;
+		}
 	}
 
 	if (freq <= 0) {
