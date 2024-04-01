@@ -189,3 +189,11 @@ NPCX_REG_OFFSET_CHECK(kbs_reg, KBS_BUF_INDX, 0x00a);
 /* SPIP register structure check */
 NPCX_REG_SIZE_CHECK(spip_reg, 0x006);
 NPCX_REG_OFFSET_CHECK(spip_reg, SPIP_CTL1, 0x002);
+
+/* SWRST register structure check */
+NPCX_REG_SIZE_CHECK(swrst_reg, 0x014);
+NPCX_REG_OFFSET_CHECK(swrst_reg, SWRST_TRG, 0x000);
+NPCX_REG_OFFSET_CHECK(swrst_reg, SWRST_CTL[0], 0x004);
+NPCX_REG_OFFSET_CHECK(swrst_reg, SWRST_CTL[1], 0x008);
+NPCX_REG_OFFSET_CHECK(swrst_reg, SWRST_CTL[2], 0x00c);
+NPCX_REG_OFFSET_CHECK(swrst_reg, SWRST_CTL[3], 0x010);
