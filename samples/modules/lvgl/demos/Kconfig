@@ -16,6 +16,7 @@ config LV_Z_DEMO_MUSIC
 config LV_Z_DEMO_BENCHMARK
 	bool "LVGL benchmark demo"
 	select LV_USE_DEMO_BENCHMARK
+	select LV_USE_DEMO_WIDGETS
 	help
 	  Build benchmarking demo application.
 
