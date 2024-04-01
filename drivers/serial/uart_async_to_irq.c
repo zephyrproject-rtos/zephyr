@@ -263,8 +263,10 @@ void z_uart_async_to_irq_irq_tx_disable(const struct device *dev)
 int z_uart_async_to_irq_irq_tx_ready(const struct device *dev)
 {
 	struct uart_async_to_irq_data *data = get_data(dev);
+	bool ready = (data->flags & A2I_TX_IRQ_ENABLED) && !(data->flags & A2I_TX_BUSY);
 
-	return (data->flags & A2I_TX_IRQ_ENABLED) && !(data->flags & A2I_TX_BUSY);
+	/* async API handles arbitrary sizes */
+	return ready ? data->tx.len : 0;
 }
 
 /** Interrupt driven receiver enabling function */
