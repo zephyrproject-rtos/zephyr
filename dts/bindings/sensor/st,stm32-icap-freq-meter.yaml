@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Freedom Veiculos Eletricos
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 Input Capture Frequency Meter Sensor
+
+compatible: "st,stm32-icap-freq-meter"
+
+include:
+  - name: sensor-device.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

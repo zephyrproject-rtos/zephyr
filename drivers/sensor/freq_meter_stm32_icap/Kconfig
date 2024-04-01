@@ -1,0 +1,25 @@
+# STM32 Input Capture Frequency Meter sensor configuration options
+
+# Copyright (c) 2024 Freedom Veiculos Eletricos
+# SPDX-License-Identifier: Apache-2.0
+
+config FREQ_METER_STM32_ICAP
+	bool "STM32 Input Capture Frequency Meter Sensor"
+	default y
+	depends on DT_HAS_ST_STM32_ICAP_FREQ_METER_ENABLED
+	depends on SOC_FAMILY_STM32
+	help
+	  Enable driver for STM32 Input Capture Frequency Meter sensor.
+
+if FREQ_METER_STM32_ICAP
+
+config FREQ_METER_STM32_ICAP_GEN
+	bool "STM32 Frequency Generator"
+	default y
+
+config FREQ_METER_STM32_ICAP_GEN_FREQ
+	int "Frequency in Hz"
+	range 10 150
+	default 100
+	depends on FREQ_METER_STM32_ICAP_GEN
+endif
