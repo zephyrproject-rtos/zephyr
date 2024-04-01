@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2024 Freedom Veiculos Eletricos
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&tim3_ch2_pb5 {
+	slew-rate = "low-speed";
+	bias-pull-down;
+};
+
+&timers3 {
+	st,prescaler = <8192>;
+	status = "disabled";
+
+	freq_meter: freq_meter {
+		compatible = "st,stm32-icap-freq-meter";
+		status = "okay";
+
+		channel = <2>;
+		pinctrl-0 = <&tim3_ch2_pb5>;
+		pinctrl-names = "default";
+	};
+};

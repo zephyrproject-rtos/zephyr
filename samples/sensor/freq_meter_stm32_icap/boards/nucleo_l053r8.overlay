@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2024 Freedom Veiculos Eletricos
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&tim2_ch1_pa0 {
+	slew-rate = "low-speed";
+	bias-pull-down;
+};
+
+&tim2_ch1_pa5 {
+	slew-rate = "low-speed";
+	bias-pull-down;
+};
+
+&tim2_ch2_pa1 {
+	slew-rate = "low-speed";
+	bias-pull-down;
+};
+
+&tim2_ch3_pb10 {
+	slew-rate = "low-speed";
+	bias-pull-down;
+};
+
+&tim2_ch4_pb11 {
+	slew-rate = "low-speed";
+	bias-pull-down;
+};
+
+&timers2 {
+	st,prescaler = <8192>;
+	status = "disabled";
+
+	freq_meter: freq_meter {
+		compatible = "st,stm32-icap-freq-meter";
+		status = "okay";
+
+		channel = <3>;
+		pinctrl-0 = <&tim2_ch3_pb10>;
+		pinctrl-names = "default";
+	};
+};

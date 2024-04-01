@@ -1,0 +1,9 @@
+sample:
+  name: STM32 Input Capture Frequency Meter Sensor Sample
+tests:
+  sample.sensor.freq_meter_stm32_icap:
+    harness: sensor
+    tags: sensors
+    platform_allow:
+      - nucleo_g474re
+      - nucleo_f767zi
