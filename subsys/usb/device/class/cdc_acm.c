@@ -519,6 +519,7 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 			     const uint8_t *tx_data, int len)
 {
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
+	unsigned int lock;
 	size_t wrote;
 
 	LOG_DBG("dev_data %p len %d tx_ringbuf space %u",
@@ -532,7 +533,9 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 
 	dev_data->tx_ready = false;
 
+	lock = irq_lock();
 	wrote = ring_buf_put(dev_data->tx_ringbuf, tx_data, len);
+	irq_unlock(lock);
 	if (wrote < len) {
 		LOG_WRN("Ring buffer full, drop %zd bytes", len - wrote);
 	}
@@ -1028,10 +1031,18 @@ static int cdc_acm_poll_in(const struct device *dev, unsigned char *c)
 static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
 {
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
+	unsigned int lock;
+	uint32_t wrote;
 
 	dev_data->tx_ready = false;
 
-	while (!ring_buf_put(dev_data->tx_ringbuf, &c, 1)) {
+	while (true) {
+		lock = irq_lock();
+		wrote = ring_buf_put(dev_data->tx_ringbuf, &c, 1);
+		irq_unlock(lock);
+		if (wrote == 1) {
+			break;
+		}
 		if (k_is_in_isr() || !dev_data->flow_ctrl) {
 			LOG_WRN_ONCE("Ring buffer full, discard data");
 			break;

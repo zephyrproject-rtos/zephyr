@@ -655,6 +655,7 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 			     const int len)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
+	unsigned int lock;
 	uint32_t done;
 
 	if (!check_wq_ctx(dev)) {
@@ -663,7 +664,9 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 		return 0;
 	}
 
+	lock = irq_lock();
 	done = ring_buf_put(data->tx_fifo.rb, tx_data, len);
+	irq_unlock(lock);
 	if (done) {
 		data->tx_fifo.altered = true;
 	}
