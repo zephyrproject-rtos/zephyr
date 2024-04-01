@@ -1,0 +1,11 @@
+# Nuvoton NuMaker USB-C PPC device configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config USBC_PPC_NUMAKER
+	bool "Nuvoton NuMaker USB-C PPC"
+	default y
+	depends on DT_HAS_NUVOTON_NUMAKER_PPC_ENABLED && USBC_TCPC_NUMAKER
+	help
+	  Enable USB-C PPC support for Nuvoton NuMaker chip with UTCPD.

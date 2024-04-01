@@ -1,0 +1,13 @@
+# Nuvoton NuMaker USB-C TCPC device configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config USBC_TCPC_NUMAKER
+	bool "Nuvoton NuMaker USB-C TCPC device controller driver"
+	default y
+	select HAS_NUMAKER_ADC
+	select HAS_NUMAKER_TMR
+	depends on DT_HAS_NUVOTON_NUMAKER_TCPC_ENABLED
+	help
+	  Enable USB-C TCPC support for Nuvoton NuMaker chip with UTCPD.
