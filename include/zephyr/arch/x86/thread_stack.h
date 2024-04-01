@@ -14,16 +14,20 @@
 #define ARCH_STACK_PTR_ALIGN 4UL
 #endif
 
-#if defined(CONFIG_X86_STACK_PROTECTION) || defined(CONFIG_USERSPACE)
+#if defined(CONFIG_X86_STACK_PROTECTION) || defined(CONFIG_USERSPACE) \
+	|| defined(CONFIG_THREAD_STACK_MEM_MAPPED)
 #define Z_X86_STACK_BASE_ALIGN	CONFIG_MMU_PAGE_SIZE
 #else
 #define Z_X86_STACK_BASE_ALIGN	ARCH_STACK_PTR_ALIGN
 #endif
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_THREAD_STACK_MEM_MAPPED)
 /* If user mode enabled, expand any stack size to fill a page since that is
  * the access control granularity and we don't want other kernel data to
  * unintentionally fall in the latter part of the page
+ *
+ * This is also true when memory mapped stacks are used with since
+ * access control applies to one page at a time.
  */
 #define Z_X86_STACK_SIZE_ALIGN	CONFIG_MMU_PAGE_SIZE
 #else
@@ -34,16 +38,37 @@
 /* With both hardware stack protection and userspace enabled, stacks are
  * arranged as follows:
  *
+ * --- Without stack being memory mapped:
  * High memory addresses
  * +-----------------------------------------+
  * | Thread stack (varies)                   |
  * +-----------------------------------------+
  * | Privilege elevation stack               |
- * |      (4096 bytes)                       |
+ * |   (CONFIG_PRIVILEGED_STACK_SIZE)        |
  * +-----------------------------------------+
  * | Guard page (4096 bytes)                 |
+ * |   - 'guard_page' in struct              |
+ * |     z_x86_thread_stack_header           |
  * +-----------------------------------------+
  * Low Memory addresses
+ *
+ * --- With stack being memory mapped:
+ * High memory addresses
+ * +-----------------------------------------+
+ * | Guard page (empty page)                 |
+ * +-----------------------------------------+
+ * | Thread stack (varies)                   |
+ * +-----------------------------------------+
+ * | Privilege elevation stack               |
+ * |   (CONFIG_PRIVILEGED_STACK_SIZE)        |
+ * +-----------------------------------------+
+ * | Guard page (empty page)                 |
+ * +-----------------------------------------+
+ * Low Memory addresses
+ *
+ * Without memory mapped stacks, the guard page is actually allocated
+ * as part of the stack struct, which takes up physical memory during
+ * linking.
  *
  * Privilege elevation stacks are fixed-size. All the pages containing the
  * thread stack are marked as user-accessible. The guard page is marked
@@ -62,7 +87,7 @@
  * privileged mode stack.
  */
 struct z_x86_thread_stack_header {
-#ifdef CONFIG_X86_STACK_PROTECTION
+#if defined(CONFIG_X86_STACK_PROTECTION) && !defined(CONFIG_THREAD_STACK_MEM_MAPPED)
 	char guard_page[CONFIG_MMU_PAGE_SIZE];
 #endif
 #ifdef CONFIG_USERSPACE
