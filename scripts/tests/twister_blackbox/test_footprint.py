@@ -12,6 +12,7 @@ import mock
 import os
 import pytest
 import sys
+import re
 
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
@@ -24,11 +25,14 @@ class TestFootprint:
 
     # These warnings notify us that deltas were shown in log.
     # Coupled with the code under test.
-    DELTA_WARNING_RELEASE = 'Deltas based on metrics from last release'
-    DELTA_WARNING_RUN = 'Deltas based on metrics from last run'
+    DELTA_WARNING_COMPARE = re.compile(
+        r'Found [1-9]+[0-9]* footprint deltas to .*blackbox-out\.[0-9]+/twister.json as a baseline'
+    )
+    DELTA_WARNING_RUN = re.compile(r'Found [1-9]+[0-9]* footprint deltas to the last twister run')
 
     # Size report key we modify to control for deltas
     RAM_KEY = 'used_ram'
+    DELTA_DETAIL = re.compile(RAM_KEY + r' \+[0-9]+, is now +[0-9]+ \+[0-9.]+%')
 
     @classmethod
     def setup_class(cls):
@@ -103,11 +107,11 @@ class TestFootprint:
 
         if expect_delta_log:
             assert self.RAM_KEY in caplog.text
-            assert self.DELTA_WARNING_RELEASE in caplog.text, \
+            assert re.search(self.DELTA_WARNING_COMPARE, caplog.text), \
                 'Expected footprint deltas not logged.'
         else:
             assert self.RAM_KEY not in caplog.text
-            assert self.DELTA_WARNING_RELEASE not in caplog.text, \
+            assert not re.search(self.DELTA_WARNING_COMPARE, caplog.text), \
                 'Unexpected footprint deltas logged.'
 
     def test_footprint_from_buildlog(self, out_path):
@@ -116,7 +120,7 @@ class TestFootprint:
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'device', 'group')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                [] + \
-               ['--show-footprint'] + \
+               ['--enable-size-report'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
@@ -141,7 +145,7 @@ class TestFootprint:
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'device', 'group')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--footprint-from-buildlog'] + \
-               ['--show-footprint'] + \
+               ['--enable-size-report'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
@@ -229,11 +233,11 @@ class TestFootprint:
 
         if expect_delta_log:
             assert self.RAM_KEY in caplog.text
-            assert self.DELTA_WARNING_RELEASE in caplog.text, \
+            assert re.search(self.DELTA_WARNING_COMPARE, caplog.text), \
                 'Expected footprint deltas not logged.'
         else:
             assert self.RAM_KEY not in caplog.text
-            assert self.DELTA_WARNING_RELEASE not in caplog.text, \
+            assert not re.search(self.DELTA_WARNING_COMPARE, caplog.text), \
                 'Unexpected footprint deltas logged.'
 
     @pytest.mark.parametrize(
@@ -298,12 +302,16 @@ class TestFootprint:
 
         if expect_delta_log:
             assert self.RAM_KEY in caplog.text
-            assert self.DELTA_WARNING_RELEASE in caplog.text, \
+            assert re.search(self.DELTA_DETAIL, caplog.text), \
+                'Expected footprint delta not logged.'
+            assert re.search(self.DELTA_WARNING_COMPARE, caplog.text), \
                 'Expected footprint deltas not logged.'
         else:
             assert self.RAM_KEY not in caplog.text
-            assert self.DELTA_WARNING_RELEASE not in caplog.text, \
-                'Unexpected footprint deltas logged.'
+            assert not re.search(self.DELTA_DETAIL, caplog.text), \
+                'Expected footprint delta not logged.'
+            assert re.search(self.DELTA_WARNING_COMPARE, caplog.text), \
+                'Expected footprint deltas logged.'
 
     @pytest.mark.parametrize(
         'old_ram_multiplier, expect_delta_log',
@@ -367,11 +375,11 @@ class TestFootprint:
 
         if expect_delta_log:
             assert self.RAM_KEY in caplog.text
-            assert self.DELTA_WARNING_RUN in caplog.text, \
+            assert re.search(self.DELTA_WARNING_RUN, caplog.text), \
                 'Expected footprint deltas not logged.'
         else:
             assert self.RAM_KEY not in caplog.text
-            assert self.DELTA_WARNING_RUN not in caplog.text, \
+            assert not re.search(self.DELTA_WARNING_RUN, caplog.text), \
                 'Unexpected footprint deltas logged.'
 
         second_logs = caplog.records
@@ -464,9 +472,9 @@ class TestFootprint:
 
         if expect_delta_log:
             assert self.RAM_KEY in caplog.text
-            assert self.DELTA_WARNING_RELEASE in caplog.text, \
+            assert re.search(self.DELTA_WARNING_COMPARE, caplog.text), \
                 'Expected footprint deltas not logged.'
         else:
             assert self.RAM_KEY not in caplog.text
-            assert self.DELTA_WARNING_RELEASE not in caplog.text, \
+            assert not re.search(self.DELTA_WARNING_COMPARE, caplog.text), \
                 'Unexpected footprint deltas logged.'
