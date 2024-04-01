@@ -120,17 +120,16 @@ static const uint8_t img_data[] = {
 /* 96 */
 };
 
-static lv_img_dsc_t img_dsc = {
-	.header.always_zero = 0,
+static lv_image_dsc_t img_dsc = {
 	.header.w = 96,
 	.header.h = 96,
 	.data_size = sizeof(img_data),
-	.header.cf = LV_IMG_CF_INDEXED_1BIT,
+	.header.cf = LV_COLOR_FORMAT_I1,
 	.data = img_data,
 };
 
 
-const lv_img_dsc_t *get_lvgl_img(void)
+const lv_image_dsc_t *get_lvgl_img(void)
 {
 	return &img_dsc;
 }

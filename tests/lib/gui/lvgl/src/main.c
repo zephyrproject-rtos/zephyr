@@ -100,7 +100,7 @@ void *setup_fs(void)
 	struct fs_file_t img;
 	struct fs_dirent info;
 	int ret;
-	const lv_img_dsc_t *c_img = get_lvgl_img();
+	const lv_image_dsc_t *c_img = get_lvgl_img();
 
 	ret = fs_mount(&mnt);
 	if (ret < 0) {
@@ -122,7 +122,7 @@ void *setup_fs(void)
 		return NULL;
 	}
 
-	ret = fs_write(&img, &c_img->header, sizeof(lv_img_header_t));
+	ret = fs_write(&img, &c_img->header, sizeof(lv_image_header_t));
 	if (ret < 0) {
 		TC_PRINT("Failed to write image file header: %d\n", ret);
 		ztest_test_fail();
