@@ -1596,7 +1596,7 @@ static int uarte_nrfx_irq_tx_ready_complete(const struct device *dev)
 		data->int_driven->fifo_fill_lock = 0;
 	}
 
-	return ready;
+	return ready ? data->int_driven->tx_buff_size : 0;
 }
 
 static int uarte_nrfx_irq_rx_ready(const struct device *dev)
