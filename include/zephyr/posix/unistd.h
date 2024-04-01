@@ -117,7 +117,7 @@ extern "C" {
 #define _XOPEN_REALTIME			  (-1L)
 #define _XOPEN_REALTIME_THREADS		  (-1L)
 #define _XOPEN_SHM			  (-1L)
-#define _XOPEN_STREAMS			  (-1L)
+#define _XOPEN_STREAMS			  Z_SC_VAL_IFDEF(CONFIG_XOPEN_STREAMS, _POSIX_VERSION)
 #define _XOPEN_UNIX			  (-1L)
 #define _XOPEN_UUCP			  (-1L)
 

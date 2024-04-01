@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config POSIX_PUTMSG
-	bool "Support for putmsg function"
+config XOPEN_STREAMS
+	bool "Support for XOPEN_STREAMS"
 	default y if POSIX_API
 	help
-	  This option provides support for the putmsg function used in message passing.
+	  This option provides support for the XOPEN_STREAMS API.
