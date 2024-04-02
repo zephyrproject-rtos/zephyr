@@ -44,18 +44,22 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/${CMAKE_HOST_SYSTEM_NAME}.${CMAKE_HOST_SYSTE
   include(${CMAKE_HOST_SYSTEM_NAME}.${CMAKE_HOST_SYSTEM_PROCESSOR}.cmake)
 else() # Linux.x86_64
   if (CONFIG_64BIT)
-    # some gcc versions fail to build without -fPIC
-    zephyr_compile_options(-m64 -fPIC)
-    zephyr_link_libraries(-m64)
+    if (CONFIG_ARCH_POSIX_COMPILE_NATIVE)
+      # some gcc versions fail to build without -fPIC
+      zephyr_compile_options(-m64 -fPIC)
+      zephyr_link_libraries(-m64)
 
-    target_link_options(native_simulator INTERFACE "-m64")
-    target_compile_options(native_simulator INTERFACE "-m64")
+      target_link_options(native_simulator INTERFACE "-m64")
+      target_compile_options(native_simulator INTERFACE "-m64")
+    endif()
   else ()
-    zephyr_compile_options(-m32)
-    zephyr_link_libraries(-m32)
+    if (CONFIG_ARCH_POSIX_COMPILE_NATIVE)
+      zephyr_compile_options(-m32)
+      zephyr_link_libraries(-m32)
 
-    target_link_options(native_simulator INTERFACE "-m32")
-    target_compile_options(native_simulator INTERFACE "-m32")
+      target_link_options(native_simulator INTERFACE "-m32")
+      target_compile_options(native_simulator INTERFACE "-m32")
+    endif()
 
     # When building for 32bits x86, gcc defaults to using the old 8087 float arithmetic
     # which causes some issues with literal float comparisons. So we set it

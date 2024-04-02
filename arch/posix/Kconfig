@@ -63,4 +63,15 @@ config ARCH_POSIX_TRAP_ON_FATAL
 	  Raise a SIGTRAP signal on fatal error before exiting.
 	  This automatically suspends the target if a debugger is attached.
 
+choice ARCH_POSIX_COMPILE
+	prompt "Posix Compile"
+
+config ARCH_POSIX_COMPILE_NATIVE
+	bool "native"
+
+config ARCH_POSIX_COMPILE_CROSS_ARM
+	bool "Arm"
+
+endchoice
+
 endmenu
