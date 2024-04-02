@@ -18,3 +18,4 @@ tests:
       type: one_line
       regex:
         - "[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]*: temp is (.*) °C humidity is (.*) %RH"
+    fixture: fixture_i2c_hs300x
