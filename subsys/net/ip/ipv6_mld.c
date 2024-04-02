@@ -124,16 +124,19 @@ static int mld_create_packet(struct net_pkt *pkt, uint16_t count)
 
 static int mld_send(struct net_pkt *pkt)
 {
+	int ret;
+
 	net_pkt_cursor_init(pkt);
 	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
 
-	if (net_send_data(pkt) < 0) {
+	ret = net_send_data(pkt);
+	if (ret < 0) {
 		net_stats_update_icmp_drop(net_pkt_iface(pkt));
 		net_stats_update_ipv6_mld_drop(net_pkt_iface(pkt));
 
 		net_pkt_unref(pkt);
 
-		return -1;
+		return ret;
 	}
 
 	net_stats_update_icmp_sent(net_pkt_iface(pkt));
@@ -251,11 +254,12 @@ int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
 	return ret;
 }
 
-static void send_mld_report(struct net_if *iface)
+static int send_mld_report(struct net_if *iface)
 {
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	struct net_pkt *pkt;
 	int i, count = 0;
+	int ret;
 
 	NET_ASSERT(ipv6);
 
@@ -273,10 +277,11 @@ static void send_mld_report(struct net_if *iface)
 					AF_INET6, IPPROTO_ICMPV6,
 					PKT_WAIT_TIME);
 	if (!pkt) {
-		return;
+		return -ENOBUFS;
 	}
 
-	if (mld_create_packet(pkt, count)) {
+	ret = mld_create_packet(pkt, count);
+	if (ret < 0) {
 		goto drop;
 	}
 
@@ -285,18 +290,22 @@ static void send_mld_report(struct net_if *iface)
 			continue;
 		}
 
-		if (!mld_create(pkt, &ipv6->mcast[i].address.in6_addr,
-				NET_IPV6_MLDv2_MODE_IS_EXCLUDE, 0)) {
+		ret = mld_create(pkt, &ipv6->mcast[i].address.in6_addr,
+				 NET_IPV6_MLDv2_MODE_IS_EXCLUDE, 0);
+		if (ret < 0) {
 			goto drop;
 		}
 	}
 
-	if (!mld_send(pkt)) {
-		return;
+	ret = mld_send(pkt);
+	if (ret < 0) {
+		return ret;
 	}
 
 drop:
 	net_pkt_unref(pkt);
+
+	return ret;
 }
 
 #define dbg_addr(action, pkt_str, src, dst)				\
@@ -361,9 +370,7 @@ static int handle_mld_query(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	send_mld_report(net_pkt_iface(pkt));
-
-	return 0;
+	return send_mld_report(net_pkt_iface(pkt));
 
 drop:
 	net_stats_update_ipv6_mld_drop(net_pkt_iface(pkt));
