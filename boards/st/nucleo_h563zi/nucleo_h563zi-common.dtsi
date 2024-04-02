@@ -190,3 +190,13 @@ zephyr_udc0: &usb {
 &vbat {
 	status = "okay";
 };
+
+&clk_lsi {
+	status = "okay";
+};
+
+stm32_lp_tick_source: &lptim4 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x2000>,
+		 <&rcc STM32_SRC_LSI LPTIM4_SEL(4)>;
+	status = "okay";
+};
