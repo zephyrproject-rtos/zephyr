@@ -6,10 +6,10 @@ append:
 boards:
   qemu_cortex_a53/qemu_cortex_a53:
     append:
-      EXTRA_DTC_OVERLAY_FILE: boards/qemu_cortex_a53.overlay
+      EXTRA_DTC_OVERLAY_FILE: boards/qemu_cortex_a53_qemu_cortex_a53.overlay
   rcar_h3ulcb/r8a77951/a57:
     append:
       EXTRA_DTC_OVERLAY_FILE: boards/rcar_h3ulcb_r8a77951_a57.overlay
   rcar_salvator_xs/r8a77961:
     append:
-      EXTRA_DTC_OVERLAY_FILE: boards/rcar_salvator_xs.overlay
+      EXTRA_DTC_OVERLAY_FILE: boards/rcar_salvator_xs_r8a77961.overlay
