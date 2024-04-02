@@ -113,7 +113,12 @@ static void print_fatal_exception(void *print_stack, int cause,
 
 	__asm__ volatile("rsr.excvaddr %0" : "=r"(vaddr));
 
-	LOG_ERR(" ** FATAL EXCEPTION%s", (is_dblexc ? " (DOUBLE)" : ""));
+	if (is_dblexc) {
+		LOG_ERR(" ** FATAL EXCEPTION (DOUBLE)");
+	} else {
+		LOG_ERR(" ** FATAL EXCEPTION");
+	}
+
 	LOG_ERR(" ** CPU %d EXCCAUSE %d (%s)",
 		arch_curr_cpu()->id, cause,
 		xtensa_exccause(cause));
