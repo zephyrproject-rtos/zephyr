@@ -121,24 +121,11 @@ void mgmt_register_group(struct mgmt_group *group);
 void mgmt_unregister_group(struct mgmt_group *group);
 
 /**
- * @brief Get number of registered groups
+ * @brief Get list of registered groups
  *
- * @return Number of registered groups
+ * @return Pointer to list of registered groups
  */
-int mgmt_get_num_groups(void);
-
-/**
- * @brief Get all registered group IDs
- *
- * ids must point to memory region large enough to hold
- * all group ids. Call @mgmt_get_num_groups to get the
- * correct size for the array.
- *
- * @param ids Pointer to array that will hold IDs
- *
- * @return Number of enumerated groups
- */
-int mgmt_get_group_ids(int *ids);
+sys_slist_t *mgmt_get_group_list();
 
 /**
  * @brief Finds a registered command handler.

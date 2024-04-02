@@ -3,6 +3,7 @@
 #
 
 config MCUMGR_GRP_ENUM
-	bool "Mcumgr handlers for enumeration management"
+	bool "MCUmgr handlers for enumeration management"
 	help
-	  Enables Mcumgr handlers for enumeration management
+	  Enables MCUmgr handlers for enumeration management. This includes
+	  a single command which returns a list of all registered groups.

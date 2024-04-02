@@ -19,8 +19,6 @@
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
 
-static int num_groups;
-
 static sys_slist_t mgmt_group_list =
 	SYS_SLIST_STATIC_INIT(&mgmt_group_list);
 
@@ -32,9 +30,7 @@ static sys_slist_t mgmt_callback_list =
 void
 mgmt_unregister_group(struct mgmt_group *group)
 {
-	if (sys_slist_find_and_remove(&mgmt_group_list, &group->node)) {
-		num_groups--;
-	}
+	sys_slist_find_and_remove(&mgmt_group_list, &group->node);
 }
 
 const struct mgmt_handler *
@@ -135,27 +131,12 @@ smp_translate_error_fn mgmt_find_error_translation_function(uint16_t group_id)
 void
 mgmt_register_group(struct mgmt_group *group)
 {
-	num_groups++;
 	sys_slist_append(&mgmt_group_list, &group->node);
 }
 
-int mgmt_get_num_groups(void)
+sys_slist_t *mgmt_get_group_list()
 {
-	return num_groups;
-}
-
-int mgmt_get_group_ids(int *ids)
-{
-	int count = 0;
-	sys_snode_t *snp, *sns;
-
-	SYS_SLIST_FOR_EACH_NODE_SAFE(&mgmt_group_list, snp, sns) {
-		struct mgmt_group *loop_group =
-			CONTAINER_OF(snp, struct mgmt_group, node);
-		ids[count] = loop_group->mg_group_id;
-		count++;
-	}
-	return count;
+	return &mgmt_group_list;
 }
 
 #if defined(CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS)

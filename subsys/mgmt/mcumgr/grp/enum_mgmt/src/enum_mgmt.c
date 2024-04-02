@@ -6,12 +6,10 @@
 
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
-#include <zephyr/debug/object_tracing.h>
-#include <zephyr/kernel_structs.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
-#include <zephyr/mgmt/mcumgr/grp/enum_mgmt/enum_mgmt.h>
 #include <zephyr/logging/log.h>
 #include <assert.h>
 #include <string.h>
@@ -23,26 +21,29 @@
 
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
 
+#define ENUMERATION_MGMT_LIST   0
+#define ENUMERATION_MGMT_GP_ID  10
+
+static bool encode_id(sys_snode_t *group_node, zcbor_state_t *zse) {
+	struct mgmt_group *group = CONTAINER_OF(group_node, struct mgmt_group, node);
+	return zcbor_uint32_put(group->mg_group_id);
+}
+
 static int enumeration_mgmt_list(struct smp_streamer *ctxt)
 {
-	int count;
 	zcbor_state_t *zse = ctxt->writer->zs;
-	bool ok;
+	sys_slist_t *groups;
+	sys_snode_t *snp, *sns;
+	int count;
 
-	count = mgmt_get_num_groups();
-	int ids[count];
-
-	count = mgmt_get_group_ids(ids);
-
-	if (count == 0) {
-		return MGMT_ERR_ENOTSUP;
-	}
+	groups = mgmt_get_group_list();
+	count = sys_slist_len(groups);
 
 	ok = zcbor_tstr_put_lit(zse, "groups") &&
 		zcbor_list_start_encode(zse, count);
 
-	for (int i = 0; i < count; ++i) {
-		ok = zcbor_uint32_put(zse, ids[i]);
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&groups, snp, sns) {
+		ok = encode_id(sns, zse);
 		if (!ok) {
 			return MGMT_ERR_EBADSTATE;
 		}
@@ -53,36 +54,19 @@ static int enumeration_mgmt_list(struct smp_streamer *ctxt)
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_ECORRUPT;
 }
 
-static int enumeration_mgmt_info(struct smp_streamer *ctxt)
-{
-	zcbor_state_t *zse = ctxt->writer->zs
-	bool ok;
-
-	ok = zcbor_tstr_put_lit(zse, "name") &&
-		zcbor_tstr_put_lit(zse, ENUMERATION_MGMT_NAME) &&
-		zcbor_tstr_put_lit(zse, "rev") &&
-		zcbor_uint32_put(zse, ENUMERATION_MGMT_VER);
-
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_ECORRUPT;
-}
-
 static const struct mgmt_handler enumeration_mgmt_group_handlers[] = {
 	[ENUMERATION_MGMT_LIST] = {enumeration_mgmt_list, NULL},
-	[ENUMERATION_MGMT_INFO] = {enumeration_mgmt_info, NULL},
 };
 
 static struct mgmt_group enumeration_mgmt_group = {
 	.mg_handlers = enumeration_mgmt_group_handlers,
-	.mg_handlers_count = ENUMERATION_NUM_CMDS,
+	.mg_handlers_count = ARRAY_SIZE(enumeration_mgmt_group_handlers),
 	.mg_group_id = ENUMERATION_MGMT_GP_ID,
 };
 
-void enumeration_mgmt_register_group(void)
+static void enumeration_mgmt_register_group(void)
 {
 	mgmt_register_group(&enumeration_mgmt_group);
 }
 
-void enumeration_mgmt_unregister_group(void)
-{
-	mgmt_unregister_group(&enumeration_mgmt_group);
-}
+MCUMGR_HANDLER_DEFINE(enumerationg_mgmt, enumeration_mgmt_register_group);
