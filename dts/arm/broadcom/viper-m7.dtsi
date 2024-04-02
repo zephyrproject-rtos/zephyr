@@ -5,8 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
-
-#include "viper-common.dtsi"
+#include <broadcom/viper-common.dtsi>
 
 / {
 	cpus {
