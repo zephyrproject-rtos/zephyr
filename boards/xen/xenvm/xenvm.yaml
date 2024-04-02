@@ -7,6 +7,3 @@ toolchain:
   - cross-compile
 ram: 16384
 vendor: xen
-testing:
-  ignore_tags:
-    - userspace
