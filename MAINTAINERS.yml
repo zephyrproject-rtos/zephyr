@@ -3541,10 +3541,9 @@ STM32 Platforms:
   maintainers:
     - erwango
   collaborators:
-    - ABOSTM
+    - ajarmouni-st
     - FRASTM
     - gautierg-st
-    - Desvauxm-st
     - GeorgeCGV
   files:
     - boards/st/
