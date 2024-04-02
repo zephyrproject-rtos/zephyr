@@ -484,25 +484,39 @@ static void test_catch_query(void)
 
 static void test_verify_send_report(void)
 {
+	join_mldv2_capable_routers_group();
+
 	is_query_received = false;
 	is_report_sent = false;
 
 	ignore_already = true;
 
+	k_sem_reset(&wait_data);
+
 	test_join_group();
 
+	k_yield();
+
+	/* Did we send a report? */
+	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
+		zassert_true(0, "Timeout while waiting for report");
+	}
+
+	k_sem_reset(&wait_data);
+
+	is_report_sent = false;
 	send_query(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)));
 
 	k_yield();
 
 	/* Did we send a report? */
 	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
-		zassert_true(0, "Timeout while waiting report");
+		zassert_true(0, "Timeout while waiting for report");
 	}
 
-	if (!is_report_sent) {
-		zassert_true(0, "Report not sent");
-	}
+	zassert_true(is_report_sent, "Report not sent");
+
+	leave_mldv2_capable_routers_group();
 }
 
 /* This value should be longer that the one in net_if.c when DAD timeouts */
