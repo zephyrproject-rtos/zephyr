@@ -138,6 +138,10 @@
 #define MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 #endif
 
+#if defined(CONFIG_MBEDTLS_HKDF_C)
+#define MBEDTLS_HKDF_C
+#endif
+
 /* Supported cipher modes */
 
 #if defined(CONFIG_MBEDTLS_CIPHER_AES_ENABLED)
