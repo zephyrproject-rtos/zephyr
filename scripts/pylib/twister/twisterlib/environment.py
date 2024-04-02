@@ -341,10 +341,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         "--device-serial-baud", action="store", default=None,
         help="Serial device baud rate (default 115200)")
 
-    parser.add_argument("--disable-asserts", action="store_false",
-                        dest="enable_asserts",
-                        help="deprecated, left for compatibility")
-
     parser.add_argument(
         "--disable-unrecognized-section-test", action="store_true",
         default=False,
@@ -489,12 +485,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     # Include paths in names by default.
     parser.set_defaults(detailed_test_id=True)
 
-    # To be removed in favor of --detailed-skipped-report
-    parser.add_argument(
-        "--no-skipped-report", action="store_true",
-        help="""Do not report skipped test cases in junit output. [Experimental]
-        """)
-
     parser.add_argument(
         "--detailed-skipped-report", action="store_true",
         help="Generate a detailed report with all skipped test cases"
@@ -555,9 +545,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         before device handler open serial port and invoke runner.
                         """)
 
-    parser.add_argument("-Q", "--error-on-deprecations", action="store_false",
-                        help="Error on deprecation warnings.")
-
     parser.add_argument(
         "--quarantine-list",
         action="append",
@@ -572,10 +559,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         action="store_true",
         help="Use the list of test scenarios under quarantine and run them"
              "to verify their current status.")
-
-    parser.add_argument("-R", "--enable-asserts", action="store_true",
-                        default=True,
-                        help="deprecated, left for compatibility")
 
     parser.add_argument(
         "--report-name",
