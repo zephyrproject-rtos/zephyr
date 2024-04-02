@@ -19,6 +19,7 @@
 		led1 = &red_led;
 		watchdog0 = &wdog1;
 		sdhc0 = &usdhc1;
+		sw0 = &arming_button;
 	};
 
 	chosen {
@@ -34,13 +35,13 @@
 		zephyr,code-partition = &slot0_partition;
 	};
 
-	/* This regulator controls VDD_3V3_SD_CARD onboard supply */
-	reg-3v3-sdcard {
-		compatible = "regulator-fixed";
-		regulator-name = "reg-3v3-sdcard";
-		enable-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
-		regulator-always-on;
-		status = "okay";
+	/* This is the Button on the included GPS module for 10 pin JST-GH */
+	buttons {
+		compatible = "gpio-keys";
+		arming_button: button_0 {
+			label = "Arming Switch";
+			gpios = <&gpio1 24 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		};
 	};
 
 	/* This regulator controls VDD_5V_PERIPH onboard supply */
@@ -397,6 +398,8 @@
 
 &usdhc1 {
 	status = "okay";
+	no-1-8-v;
+	pwr-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		status = "okay";
