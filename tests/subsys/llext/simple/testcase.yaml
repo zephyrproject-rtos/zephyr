@@ -55,6 +55,17 @@ tests:
       - CONFIG_MODULES=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_TEST_HELLO=m
+  llext.simple.modules_enabled_writable_relocatable:
+    arch_exclude: arm arm64
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    platform_key:
+      - simulation
+      - arch
+    extra_configs:
+      - CONFIG_MODULES=y
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
+      - CONFIG_LLEXT_TYPE_ELF_RELOCATABLE=y
+      - CONFIG_LLEXT_TEST_HELLO=m
   llext.simple.modules_enabled_readonly:
     filter: not CONFIG_MPU and not CONFIG_MMU
     arch_exclude: xtensa # for now

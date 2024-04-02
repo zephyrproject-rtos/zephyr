@@ -219,6 +219,7 @@ static LLEXT_CONST uint8_t object_ext[] __aligned(4) = {
 };
 LLEXT_LOAD_UNLOAD(object, true, NULL)
 
+#ifndef CONFIG_LLEXT_TYPE_ELF_RELOCATABLE
 static LLEXT_CONST uint8_t syscalls_ext[] __aligned(4) = {
 	#include "syscalls.inc"
 };
@@ -228,6 +229,7 @@ static LLEXT_CONST uint8_t threads_kernel_objects_ext[] __aligned(4) = {
 	#include "threads_kernel_objects.inc"
 };
 LLEXT_LOAD_UNLOAD(threads_kernel_objects, true, threads_objects_perm_setup)
+#endif
 #endif /* ! LOADER_BUILD_ONLY */
 
 
