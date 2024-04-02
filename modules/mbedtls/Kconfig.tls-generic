@@ -118,6 +118,9 @@ config MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 	bool "ECJPAKE based ciphersuite modes"
 	depends on MBEDTLS_ECJPAKE_C
 
+config MBEDTLS_HKDF_C
+	bool "HMAC-based Extract-and-Expand Key Derivation Function"
+
 comment "Elliptic curve libraries"
 
 config MBEDTLS_ECDH_C
