@@ -68,4 +68,9 @@ config MAX32_SECONDARY_RV32_BOOT_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_RV32_PARTITION))
 	depends on MAX32_SECONDARY_RV32
 
+config BUILD_WITH_TFM
+	default y if TRUSTED_EXECUTION_NONSECURE
+	help
+	  Auto set WITH_TFM for a Non-Secure version of the board,
+
 endif # SOC_FAMILY_MAX32
