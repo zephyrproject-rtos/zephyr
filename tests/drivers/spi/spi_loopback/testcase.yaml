@@ -53,6 +53,7 @@ tests:
     extra_args:
       - OVERLAY_CONFIG="overlay-stm32-spi-16bits.conf"
       - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
+    filter: CONFIG_SOC_FAMILY_STM32
     platform_allow:
       - nucleo_h743zi
       - nucleo_h753zi
@@ -64,6 +65,7 @@ tests:
       - nucleo_f207zg
       - nucleo_f429zi
       - nucleo_f746zg
+      - nucleo_f767zi
       - nucleo_wb55rg
       - nucleo_l152re
       - nucleo_wl55jc
@@ -72,10 +74,12 @@ tests:
       - stm32h573i_dk
     integration_platforms:
       - nucleo_g474re
-  drivers.spi.stm32_spi_dma_no_nocache.loopback:
+  drivers.spi.stm32_spi_dma_dt_nocache_mem.loopback:
+    # this test case is for when nocache memory region is defined in DT
+    # using `zephyr,memory-attr = < DT_MEM_ARM_MPU_RAM_NOCACHE)>`
     extra_args:
-      - OVERLAY_CONFIG="overlay-stm32-spi-dma-no-nocache.conf"
-    filter: CONFIG_SOC_FAMILY_STM32
+      - OVERLAY_CONFIG="overlay-stm32-spi-dma-dt-nocache-mem.conf"
+    filter: CONFIG_SOC_FAMILY_STM32 and CONFIG_CPU_HAS_DCACHE
     platform_allow:
       - nucleo_h743zi
       - nucleo_h753zi
@@ -87,11 +91,11 @@ tests:
     platform_allow:
       - nucleo_h743zi
       - nucleo_h753zi
-  drivers.spi.stm32_spi_16bits_frames_dma_no_nocache.loopback:
+  drivers.spi.stm32_spi_16bits_frames_dma_dt_nocache_mem.loopback:
     extra_args:
-      - OVERLAY_CONFIG="overlay-stm32-spi-16bits-dma-no-nocache.conf"
+      - OVERLAY_CONFIG="overlay-stm32-spi-16bits-dma-dt-nocache-mem.conf"
       - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
-    filter: CONFIG_SOC_FAMILY_STM32
+    filter: CONFIG_SOC_FAMILY_STM32 and CONFIG_CPU_HAS_DCACHE
     platform_allow:
       - nucleo_h743zi
       - nucleo_h753zi
@@ -99,6 +103,8 @@ tests:
     extra_args: OVERLAY_CONFIG="overlay-stm32-spi-interrupt.conf"
     filter: CONFIG_SOC_FAMILY_STM32
     platform_allow:
+      - nucleo_f746zg
+      - nucleo_f767zi
       - nucleo_h743zi
       - nucleo_h753zi
   drivers.spi.gd32_spi_interrupt.loopback:
