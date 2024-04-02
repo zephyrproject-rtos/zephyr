@@ -34,5 +34,5 @@ tests:
       - xenvm
       - xenvm/xenvm/gicv3
     extra_args:
-      CONF_FILE="prj.conf;boards/qemu_cortex_a53.conf"
-      DTC_OVERLAY_FILE="boards/qemu_cortex_a53.overlay"
+      CONF_FILE="prj.conf;boards/qemu_cortex_a53_qemu_cortex_a53.conf"
+      DTC_OVERLAY_FILE="boards/qemu_cortex_a53_qemu_cortex_a53.overlay"

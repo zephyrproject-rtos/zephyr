@@ -17,7 +17,6 @@ tests:
     platform_allow: nucleo_h743zi
     integration_platforms:
       - nucleo_h743zi
-    extra_args: DTC_OVERLAY_FILE="boards/nucleo_h743zi.overlay"
   drivers.uart.basic_api.poll:
     extra_args: CONF_FILE=prj_poll.conf
     tags:

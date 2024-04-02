@@ -6,7 +6,7 @@ include(ExternalProject)
 
 # Add the sources and set up the build for either unit testing or native_sim
 list(APPEND SOURCES src/main.cpp)
-if(BOARD STREQUAL unit_testing)
+if("${BOARD}" STREQUAL "unit_testing/unit_testing")
   find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
   set(target testbinary)
   # Set the target binary for the 'core' external project. The path to this must match the one set

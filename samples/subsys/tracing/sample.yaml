@@ -10,7 +10,7 @@ common:
       - "thread_b: Hello World from (.*)!"
 tests:
   sample.tracing.user:
-    extra_args: CONF_FILE="prj_user.conf"
+    extra_args: EXTRA_CONF_FILE="prj_user.conf"
     integration_platforms:
       - qemu_x86
     platform_exclude:
