@@ -350,6 +350,21 @@ steps:
 
 #. Reset by pressing SW3
 
+HIFI4 DSP Core
+==============
+
+You can build a Zephyr application for the RT600 DSP core by targeting the HIFI4 DSP
+SOC. Xtensa toolchain supporting RT600 DSP core is included in Zephyr SDK.
+To build the hello_world sample for the RT600 DSP core:
+
+.. code-block:: shell
+
+   $ west build -b mimxrt685_evk/mimxrt685s/adsp samples/hello_world
+
+Debugging can be directly carried out using the J-Link GDB server with ``xt-gdb`` connected. It's
+also possible to debug the HiFi 4 DSP in tandem with the ARM core of this device using the ``xt-ocd``
+daemon. See `RT685 Dual-Core Communication and Debugging`_ for details.
+
 .. _MIMXRT685-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt600-evaluation-kit:MIMXRT685-EVK
 
@@ -367,3 +382,6 @@ steps:
 
 .. _i.MX RT685 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=UM11147
+
+.. _RT685 Dual-Core Communication and Debugging:
+   https://www.nxp.com/docs/en/application-note/AN12789.pdf
