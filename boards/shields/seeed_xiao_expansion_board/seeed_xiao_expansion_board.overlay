@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
 / {
 	chosen {
 		zephyr,display = &ssd1306_128x64;
