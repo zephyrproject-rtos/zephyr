@@ -8,6 +8,7 @@ family:
   - name: max32655
     cpuclusters:
     - name: m4
+  - name: max32657
   - name: max32660
   - name: max32662
   - name: max32666
