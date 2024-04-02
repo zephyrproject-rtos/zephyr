@@ -496,12 +496,8 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			}
 			break;
 		case 'p':
-			if (secure_connection) {
-				params->psk = optarg;
-				params->psk_length = strlen(params->psk);
-			} else {
-				PR_WARNING("Passphrase provided without security configuration\n");
-			}
+			params->psk = optarg;
+			params->psk_length = strlen(params->psk);
 			break;
 		case 'c':
 			channel = strtol(optarg, &endptr, 10);
@@ -568,7 +564,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 				&params->bssid[4], &params->bssid[5]);
 			break;
 		case 'h':
-			shell_help(sh);
+			return -ENOEXEC;
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", opt);
@@ -576,7 +572,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			return -EINVAL;
 		}
 	}
-
+	if (params->psk && !secure_connection) {
+		PR_WARNING("Passphrase provided without security configuration\n");
+	}
 	return 0;
 }
 
@@ -1242,7 +1240,7 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 	int ret;
 
 	context.sh = sh;
-	if (__wifi_args_to_params(sh, argc - 1, &argv[1], &cnx_params, WIFI_MODE_AP)) {
+	if (__wifi_args_to_params(sh, argc, &argv[0], &cnx_params, WIFI_MODE_AP)) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
@@ -1811,15 +1809,18 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  cmd_wifi_ap_disable,
 		  1, 0),
 	SHELL_CMD_ARG(enable, NULL,
-		  "\"<SSID>\"\n"
-		  "<channel number>\n"
-		  "[PSK: valid only for secure SSIDs]\n"
-		  "[Security type: valid only for secure SSIDs]\n"
+		  "-s --ssid=<SSID>\n"
+		  "-c --channel=<channel number>\n"
+		  "-p --passphrase=<PSK> (valid only for secure SSIDs)\n"
+		  "-k --key-mgmt=<Security type> (valid only for secure SSIDs)\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP, 7: WPA-PSK\n"
-		  "[MFP (optional: needs security type to be specified)]\n"
-		  ": 0:Disable, 1:Optional, 2:Required.\n",
+		  "-w --ieee-80211w=<MFP> (optional: needs security type to be specified)\n"
+		  "0:Disable, 1:Optional, 2:Required\n"
+		  "-b --band=<band> (2 -2.6GHz, 5 - 5Ghz, 6 - 6GHz)\n"
+		  "-m --bssid=<BSSID>\n"
+		  "-h --help (prints help)",
 		  cmd_wifi_ap_enable,
-		  3, 3),
+		  2, 13),
 	SHELL_CMD_ARG(stations, NULL,
 		  "List stations connected to the AP",
 		  cmd_wifi_ap_stations,
