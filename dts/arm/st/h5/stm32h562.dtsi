@@ -54,6 +54,50 @@
 			};
 		};
 
+		lptim3: timers@44004800 {
+			compatible = "st,stm32-lptim";
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44004800 0x400>;
+			interrupts = <127 1>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+		};
+
+		lptim4: timers@44004C00 {
+			compatible = "st,stm32-lptim";
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x2000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44004C00 0x400>;
+			interrupts = <128 1>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+		};
+
+		lptim5: timers@44005000 {
+			compatible = "st,stm32-lptim";
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44005000 0x400>;
+			interrupts = <129 1>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+		};
+
+		lptim6: timers@44005400 {
+			compatible = "st,stm32-lptim";
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x8000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44005400 0x400>;
+			interrupts = <130 1>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+		};
+
 		uart4: serial@40004c00 {
 			compatible = "st,stm32-uart";
 			reg = <0x40004c00 0x400>;

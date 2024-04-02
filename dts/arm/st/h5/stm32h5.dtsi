@@ -206,6 +206,28 @@
 			};
 		};
 
+		lptim1: timers@44004400 {
+			compatible = "st,stm32-lptim";
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x800>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44004400 0x400>;
+			interrupts = <64 1>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+		};
+
+		lptim2: timers@40009400 {
+			compatible = "st,stm32-lptim";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x20>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40009400 0x400>;
+			interrupts = <70 1>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+		};
+
 		usart1: serial@40013800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013800 0x400>;
