@@ -155,6 +155,16 @@ extern "C" {
 #define SPI2 2
 #define SPI3 3
 
+#define DATA_SIZE_8 8
+#define DATA_SIZE_16 16
+#define DATA_SIZE_32 32
+
+// typedef union{
+//     uint8_t tx_data8;
+//     uint16_t tx_data16;
+//     uint32_t tx_data32;
+// }size;
+
 typedef union{
     uint32_t data_32;
     uint16_t data_16;
