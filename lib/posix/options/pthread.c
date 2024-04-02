@@ -870,6 +870,46 @@ int pthread_setschedparam(pthread_t pthread, int policy, const struct sched_para
 }
 
 /**
+ * @brief Set thread scheduling priority.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_setschedprio(pthread_t thread, int prio)
+{
+	int ret;
+	int new_prio = K_LOWEST_APPLICATION_THREAD_PRIO;
+	struct posix_thread *t = NULL;
+	int policy;
+	struct sched_param param;
+
+	ret = pthread_getschedparam(thread, &policy, &param);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (!is_posix_policy_prio_valid(prio, policy)) {
+		return EINVAL;
+	}
+
+	K_SPINLOCK(&pthread_pool_lock) {
+		t = to_posix_thread(thread);
+		if (t == NULL) {
+			ret = ESRCH;
+			K_SPINLOCK_BREAK;
+		}
+
+		new_prio = posix_to_zephyr_priority(prio, policy);
+	}
+
+	if (ret == 0) {
+		k_thread_priority_set(&t->thread, new_prio);
+	}
+
+	return ret;
+}
+
+/**
  * @brief Initialise threads attribute object
  *
  * See IEEE 1003.1
