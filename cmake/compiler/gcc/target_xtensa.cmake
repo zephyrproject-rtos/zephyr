@@ -13,9 +13,18 @@ set(LLEXT_REMOVE_FLAGS
 )
 
 # Flags to be added to llext code compilation
-set(LLEXT_APPEND_FLAGS
-  -fPIC
-  -nostdlib
-  -nodefaultlibs
-  -shared
-)
+if(CONFIG_LLEXT_RELOCATABLE)
+  set(LLEXT_APPEND_FLAGS
+    -fPIC
+    -nostdlib
+    -nodefaultlibs
+    -r
+  )
+else()
+  set(LLEXT_APPEND_FLAGS
+    -fPIC
+    -nostdlib
+    -nodefaultlibs
+    -shared
+  )
+endif()

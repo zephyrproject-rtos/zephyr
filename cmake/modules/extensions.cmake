@@ -5206,20 +5206,37 @@ function(add_llext_target target_name)
     set(pre_output_file ${output_dir}/${output_name_we}.pre.llext)
 
     # Need to convert the object file to a shared library, then strip some sections
-    add_custom_command(
-      OUTPUT ${output_file}
-      BYPRODUCTS ${pre_output_file}
-      COMMAND ${CMAKE_C_COMPILER} ${LLEXT_APPEND_FLAGS}
-              -o ${pre_output_file}
-              $<TARGET_OBJECTS:${target_name}_lib>
-      COMMAND $<TARGET_PROPERTY:bintools,strip_command>
-              $<TARGET_PROPERTY:bintools,strip_flag>
-              $<TARGET_PROPERTY:bintools,strip_flag_remove_section>.xt.*
-              $<TARGET_PROPERTY:bintools,strip_flag_infile>${pre_output_file}
-              $<TARGET_PROPERTY:bintools,strip_flag_outfile>${output_file}
-              $<TARGET_PROPERTY:bintools,strip_flag_final>
-      DEPENDS ${target_name}_lib $<TARGET_OBJECTS:${target_name}_lib>
-    )
+    if(CONFIG_LLEXT_RELOCATABLE)
+      add_custom_command(
+        OUTPUT ${output_file}
+        BYPRODUCTS ${pre_output_file}
+        COMMAND ${CMAKE_C_COMPILER} ${LLEXT_APPEND_FLAGS}
+                -o ${pre_output_file}
+                $<TARGET_OBJECTS:${target_name}_lib>
+        COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+                $<TARGET_PROPERTY:bintools,elfconvert_flag>
+                $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.xt.*
+                $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${pre_output_file}
+                $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${output_file}
+                $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+        DEPENDS ${target_name}_lib $<TARGET_OBJECTS:${target_name}_lib>
+      )
+    else()
+      add_custom_command(
+        OUTPUT ${output_file}
+        BYPRODUCTS ${pre_output_file}
+        COMMAND ${CMAKE_C_COMPILER} ${LLEXT_APPEND_FLAGS}
+                -o ${pre_output_file}
+                $<TARGET_OBJECTS:${target_name}_lib>
+        COMMAND $<TARGET_PROPERTY:bintools,strip_command>
+                $<TARGET_PROPERTY:bintools,strip_flag>
+                $<TARGET_PROPERTY:bintools,strip_flag_remove_section>.xt.*
+                $<TARGET_PROPERTY:bintools,strip_flag_infile>${pre_output_file}
+                $<TARGET_PROPERTY:bintools,strip_flag_outfile>${output_file}
+                $<TARGET_PROPERTY:bintools,strip_flag_final>
+        DEPENDS ${target_name}_lib $<TARGET_OBJECTS:${target_name}_lib>
+      )
+    endif()
 
   else()
     message(FATAL_ERROR "add_llext_target: unsupported architecture")

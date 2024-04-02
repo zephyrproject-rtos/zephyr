@@ -174,10 +174,12 @@ static LLEXT_CONST uint8_t object_ext[] __aligned(4) = {
 };
 LLEXT_LOAD_UNLOAD(object, true)
 
+#ifndef CONFIG_LLEXT_RELOCATABLE
 static LLEXT_CONST uint8_t syscalls_ext[] __aligned(4) = {
 	#include "syscalls.inc"
 };
 LLEXT_LOAD_UNLOAD(syscalls, true)
+#endif
 #endif /* ! LOADER_BUILD_ONLY */
 
 /*

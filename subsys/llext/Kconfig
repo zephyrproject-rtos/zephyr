@@ -34,6 +34,11 @@ config LLEXT_STORAGE_WRITABLE
 	  Select if LLEXT storage is writable, i.e. if extensions are stored in
 	  RAM and can be modified in place
 
+config LLEXT_RELOCATABLE
+	bool "Build relocatable extensions"
+	help
+	  Build relocatable LLEXT binaries using the linker's "-r" flag
+
 module = LLEXT
 module-str = llext
 source "subsys/logging/Kconfig.template.log_config"
