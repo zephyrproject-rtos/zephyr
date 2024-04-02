@@ -3,10 +3,6 @@
 
 add_subdirectory_ifdef(CONFIG_RISCV_CORE_NORDIC_VPR vpr)
 
-if(CONFIG_ARM AND CONFIG_SOC_FAMILY_NORDIC_NRF)
-  zephyr_library_sources(soc_nrf_common.S)
-endif()
-
 zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
 zephyr_include_directories(.)
