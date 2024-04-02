@@ -447,6 +447,7 @@ int pthread_attr_setschedparam(pthread_attr_t *attr,
 			       const struct sched_param *schedparam);
 int pthread_setschedparam(pthread_t pthread, int policy,
 			  const struct sched_param *param);
+int pthread_setschedprio(pthread_t thread, int prio);
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlock);
 int pthread_rwlock_init(pthread_rwlock_t *rwlock,
 			const pthread_rwlockattr_t *attr);
