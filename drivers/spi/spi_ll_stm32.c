@@ -29,9 +29,9 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/irq.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 
-#ifdef CONFIG_SOC_SERIES_STM32H7X
+#ifdef CONFIG_DCACHE
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#endif
+#endif /* CONFIG_DCACHE */
 
 #ifdef CONFIG_NOCACHE_MEMORY
 #include <zephyr/linker/linker-defs.h>
@@ -41,17 +41,13 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 
 #include "spi_ll_stm32.h"
 
-/*
- * Check defined(CONFIG_DCACHE) because some platforms disable it in the tests
- * e.g. nucleo_f746zg
- */
-#if defined(CONFIG_CPU_HAS_DCACHE) &&                       \
-	defined(CONFIG_DCACHE) &&                               \
+#if defined(CONFIG_DCACHE) &&                               \
 	!defined(CONFIG_NOCACHE_MEMORY)
+/* currently, manual cache coherency management is only done on dummy_rx_tx_buffer */
 #define SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED	1
 #else
 #define  SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED	0
-#endif /* defined(CONFIG_CPU_HAS_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY) */
+#endif /* defined(CONFIG_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY) */
 
 #define WAIT_1US	1U
 
@@ -111,25 +107,16 @@ static uint32_t bits2bytes(uint32_t bits)
 	return bits / 8;
 }
 
-/* dummy value used for transferring NOP when tx buf is null
- * and use as dummy sink for when rx buf is null.
+/* dummy buffer is used for transferring NOP when tx buf is null
+ * and used as a dummy sink for when rx buf is null.
  */
-#ifdef CONFIG_NOCACHE_MEMORY
 /*
- * If a nocache area is available, place it there to avoid potential DMA
- * cache-coherency problems.
- */
-static __aligned(32) uint32_t dummy_rx_tx_buffer
-	__attribute__((__section__(".nocache")));
-
-#else /* CONFIG_NOCACHE_MEMORY */
-
-/*
- * If nocache areas are not available, cache coherency might need to be kept
+ * If Nocache Memory is supported, buffer will be placed in nocache region by
+ * the linker to avoid potential DMA cache-coherency problems.
+ * If Nocache Memory is not supported, cache coherency might need to be kept
  * manually. See SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED.
  */
-static __aligned(32) uint32_t dummy_rx_tx_buffer;
-#endif /* CONFIG_NOCACHE_MEMORY */
+static __aligned(32) uint32_t dummy_rx_tx_buffer __nocache;
 
 /* This function is executed in the interrupt context */
 static void dma_callback(const struct device *dev, void *arg,
@@ -182,7 +169,7 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 		dummy_rx_tx_buffer = 0;
 #if SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED
 		arch_dcache_flush_range((void *)&dummy_rx_tx_buffer, sizeof(uint32_t));
-#endif /* CONFIG_CPU_HAS_DCACHE && !defined(CONFIG_NOCACHE_MEMORY) */
+#endif /* SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED */
 		blk_cfg->source_address = (uint32_t)&dummy_rx_tx_buffer;
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
@@ -937,12 +924,13 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 	return res;
 }
 
-#ifdef CONFIG_SOC_SERIES_STM32H7X
+#ifdef CONFIG_DCACHE
 static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 {
 	bool buf_within_nocache = false;
 
 #ifdef CONFIG_NOCACHE_MEMORY
+	/* Check if buffer is in nocache region defined by the linker */
 	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
 		((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
 	if (buf_within_nocache) {
@@ -950,6 +938,7 @@ static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 	}
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+	/* Check if buffer is in nocache memory region defined in DT */
 	buf_within_nocache = mem_attr_check_buf(
 		(void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
 
@@ -973,7 +962,7 @@ static bool spi_buf_set_in_nocache(const struct spi_buf_set *bufs)
 	}
 	return true;
 }
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* CONFIG_DCACHE */
 
 static int transceive_dma(const struct device *dev,
 		      const struct spi_config *config,
@@ -996,12 +985,12 @@ static int transceive_dma(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-#ifdef CONFIG_SOC_SERIES_STM32H7X
+#ifdef CONFIG_DCACHE
 	if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
 		(rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs))) {
 		return -EFAULT;
 	}
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* CONFIG_DCACHE */
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
