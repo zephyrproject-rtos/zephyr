@@ -151,7 +151,7 @@ ZTEST(posix_headers, test_pthread_h)
 		zassert_not_null(pthread_setcanceltype);
 		zassert_not_null(pthread_setconcurrency);
 		zassert_not_null(pthread_setschedparam);
-		/* zassert_not_null(pthread_setschedprio); */ /* not implemented */
+		zassert_not_null(pthread_setschedprio);
 		zassert_not_null(pthread_setspecific);
 		zassert_not_null(pthread_spin_destroy);
 		zassert_not_null(pthread_spin_init);
