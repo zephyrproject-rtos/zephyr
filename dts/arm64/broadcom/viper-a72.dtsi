@@ -5,9 +5,9 @@
  */
 
 #include <arm64/armv8-a.dtsi>
-#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <broadcom/viper-common.dtsi>
 
-#include "viper-common.dtsi"
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
 	cpus {
