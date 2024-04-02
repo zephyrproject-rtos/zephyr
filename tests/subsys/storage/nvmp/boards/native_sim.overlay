@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2024 Laczen
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+        compatible = "soc-nv-flash";
+
+	nvmp_partitions {
+		compatible = "zephyr,flash-nvmp-fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash0_partition0: partition@0 {
+			reg = <0x00000000 0x00002000>;
+                        block-size = <DT_SIZE_K(8)>;
+		};
+
+                flash0_partition1: partition@2000 {
+			reg = <0x00002000 0x00002000>;
+			write-block-size = <4>;
+		};
+	};
+};
+
+&eeprom0 {
+        compatible = "zephyr,sim-eeprom";
+
+	nvmp_partitions {
+		compatible = "zephyr,eeprom-nvmp-fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		eeprom0_partition0: partition@0 {
+			reg = <0x00000000 0x00000800>;
+                        block-size = <DT_SIZE_K(1)>;
+			status = "okay";
+		};
+
+		eeprom0_partition1: partition@800 {
+			reg = <0x00000800 0x00000800>;
+			status = "okay";
+		};
+
+	};
+};

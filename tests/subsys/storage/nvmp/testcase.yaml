@@ -1,0 +1,13 @@
+common:
+  depends_on:
+    - nvmp
+    - flash
+    - eeprom
+  tags: nvmp
+tests:
+  storage.nvmp.native_sim.api:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    timeout: 60
