@@ -36,7 +36,7 @@ For example, for the Sample USB-C Sink application:
 Each Physical Type-C port is represented in the devicetree by a usb-c-connector
 compatible node:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/sink/boards/b_g474e_dpow1.overlay
+.. literalinclude:: ../../../../samples/subsys/usb_c/sink/boards/b_g474e_dpow1_stm32g474xx.overlay
    :language: dts
    :start-after: usbc.rst usbc-port start
    :end-before: usbc.rst usbc-port end
@@ -45,7 +45,7 @@ compatible node:
 VBUS is measured by a device that's referenced in the devicetree by a
 usb-c-vbus-adc compatible node:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/sink/boards/b_g474e_dpow1.overlay
+.. literalinclude:: ../../../../samples/subsys/usb_c/sink/boards/b_g474e_dpow1_stm32g474xx.overlay
    :language: dts
    :start-after: usbc.rst vbus-voltage-divider-adc start
    :end-before: usbc.rst vbus-voltage-divider-adc end
@@ -126,7 +126,7 @@ For example, for the Sample USB-C Source application:
 Each Physical Type-C port is represented in the devicetree by a ``usb-c-connector``
 compatible node:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/source/boards/stm32g081b_eval.overlay
+.. literalinclude:: ../../../../samples/subsys/usb_c/source/boards/stm32g081b_eval_stm32g081xx.overlay
    :language: dts
    :start-after: usbc.rst usbc-port start
    :end-before: usbc.rst usbc-port end
@@ -135,7 +135,7 @@ compatible node:
 VBUS is measured by a device that's referenced in the devicetree by a
 ``usb-c-vbus-adc`` compatible node:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/source/boards/stm32g081b_eval.overlay
+.. literalinclude:: ../../../../samples/subsys/usb_c/source/boards/stm32g081b_eval_stm32g081xx.overlay
    :language: dts
    :start-after: usbc.rst vbus-voltage-divider-adc start
    :end-before: usbc.rst vbus-voltage-divider-adc end
