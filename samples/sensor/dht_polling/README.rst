@@ -23,7 +23,17 @@ be aliased as ``dhtN`` where ``N`` goes from ``0`` to ``9``. For example:
 		};
 	};
 
-Make sure the aliases are in devicetree, then build and run with:
+
+Make sure the aliases are in devicetree.
+
+It also requires a correct fixture setup when the sensor is present.
+For the correct execution of that sample in twister, add into boards's
+map-file next fixture settings::
+
+      - fixture: fixture_i2c_hs300x
+
+
+Then build and run with:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/dht_polling
