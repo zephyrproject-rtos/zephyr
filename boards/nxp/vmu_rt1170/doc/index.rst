@@ -125,7 +125,7 @@ following hardware features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/nxp/vmu_rt1170/vmu_rt1170_defconfig`
+:zephyr_file:`boards/nxp/vmu_rt1170/vmu_rt1170_mimxrt1176_cm7_defconfig`
 
 Other hardware features are not currently supported by the port.
 
@@ -243,7 +243,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: vmu_rt1170
+   :board: vmu_rt1170/mimxrt1176/cm7
    :goals: flash
 
 You should see the following message in the terminal:
@@ -251,7 +251,7 @@ You should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v3.4.0-xxxx-xxxxxxxxxxxxx *****
-   Hello World! vmu_rt1170
+   Hello World! vmu_rt1170/mimxrt1176/cm7
 
 Debugging
 =========
@@ -260,7 +260,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: vmu_rt1170
+   :board: vmu_rt1170/mimxrt1176/cm7
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -269,7 +269,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v3.4.0-xxxx-xxxxxxxxxxxxx *****
-   Hello World! vmu_rt1170
+   Hello World! vmu_rt1170/mimxrt1176/cm7
 
 .. _VMU RT1170 Website:
    https://www.nxp.com/part/VMU-RT1170

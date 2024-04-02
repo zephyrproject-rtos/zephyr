@@ -206,7 +206,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/waveshare/nrf51_ble400/nrf51_ble400.dts`.
+:zephyr_file:`boards/waveshare/nrf51_ble400/nrf51_ble400_nrf51822.dts`.
 
 References
 **********

@@ -127,7 +127,7 @@ Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
 
-	:zephyr_file:`boards/alientek/pandora_stm32l475/pandora_stm32l475_defconfig`
+	:zephyr_file:`boards/alientek/pandora_stm32l475/pandora_stm32l475_stm32l475xx_defconfig`
 
 
 Connections and IOs

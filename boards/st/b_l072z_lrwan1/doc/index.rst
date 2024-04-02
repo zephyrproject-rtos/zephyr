@@ -147,7 +147,7 @@ The Zephyr B-L072Z-LRWAN1 Discovery board configuration supports the following h
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/b_l072z_lrwan1/b_l072z_lrwan1_defconfig`
+:zephyr_file:`boards/st/b_l072z_lrwan1/b_l072z_lrwan1_stm32l072xx_defconfig`
 
 
 Connections and IOs

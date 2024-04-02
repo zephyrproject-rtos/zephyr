@@ -96,7 +96,7 @@ currently supports the following hardware features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the
-:zephyr_file:`boards/ite/it82xx2_evb/it82xx2_evb_defconfig` Kconfig file.
+:zephyr_file:`boards/ite/it82xx2_evb/it82xx2_evb_it82202ax_defconfig` Kconfig file.
 
 Programming and debugging on it82202
 ************************************

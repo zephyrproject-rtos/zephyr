@@ -78,7 +78,7 @@ The default configuration can be found in the defconfig file:
 
 .. code-block:: console
 
-   boards/arm/v2m_beetle/v2m_beetle_defconfig
+   boards/arm/v2m_beetle/v2m_beetle_beetle_r0_defconfig
 
 Interrupt Controller
 ====================

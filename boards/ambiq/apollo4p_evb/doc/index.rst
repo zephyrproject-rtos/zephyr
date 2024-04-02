@@ -54,7 +54,7 @@ The Apollo4P EVB board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/ambiq/apollo4p_evb/apollo4p_evb_defconfig`
+:zephyr_file:`boards/ambiq/apollo4p_evb/apollo4p_evb_apollo4p_defconfig`
 
 Programming and Debugging
 =========================

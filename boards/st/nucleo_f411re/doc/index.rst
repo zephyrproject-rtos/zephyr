@@ -89,7 +89,7 @@ The Zephyr nucleo_f411re board configuration supports the following hardware fea
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f411re/nucleo_f411re_defconfig`
+:zephyr_file:`boards/st/nucleo_f411re/nucleo_f411re_stm32f411xe_defconfig`
 
 
 Connections and IOs

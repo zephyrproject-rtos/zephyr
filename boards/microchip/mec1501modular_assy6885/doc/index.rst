@@ -88,7 +88,7 @@ features:
 Other hardware features are not currently supported by Zephyr (at the moment)
 
 The default configuration can be found in the
-:zephyr_file:`boards/microchip/mec1501modular_assy6885/mec1501modular_assy6885_defconfig`
+:zephyr_file:`boards/microchip/mec1501modular_assy6885/mec1501modular_assy6885_mec1501_hsz_defconfig`
 Kconfig file.
 
 Connections and IOs

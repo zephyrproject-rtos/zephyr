@@ -6,4 +6,4 @@
 
 #define DT_DRAM_BASE            0x100000
 #define DT_DRAM_SIZE            DT_SIZE_K(256)
-#include "qemu_x86.dts"
+#include "qemu_x86_atom.dts"

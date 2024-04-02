@@ -69,7 +69,7 @@ The USB-KW24D512 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/nxp/usb_kw24d512/usb_kw24d512_defconfig`
+:zephyr_file:`boards/nxp/usb_kw24d512/usb_kw24d512_mkw24d5_defconfig`
 
 Other hardware features are not currently supported by the port.
 

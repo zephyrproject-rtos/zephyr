@@ -120,7 +120,7 @@ already supported, which can also be re-used on this mimxrt1020_evk board:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/nxp/mimxrt1020_evk/mimxrt1020_evk_defconfig`
+:zephyr_file:`boards/nxp/mimxrt1020_evk/mimxrt1020_evk_mimxrt1021_defconfig`
 
 Other hardware features are not currently supported by the port.
 

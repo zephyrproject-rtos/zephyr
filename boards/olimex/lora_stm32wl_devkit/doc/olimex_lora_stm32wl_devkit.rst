@@ -83,8 +83,8 @@ Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in:
 
-- :zephyr_file:`boards/olimex/lora_stm32wl_devkit/olimex_lora_stm32wl_devkit_defconfig`
-- :zephyr_file:`boards/olimex/lora_stm32wl_devkit/olimex_lora_stm32wl_devkit.dts`
+- :zephyr_file:`boards/olimex/lora_stm32wl_devkit/olimex_lora_stm32wl_devkit_stm32wle5xx_defconfig`
+- :zephyr_file:`boards/olimex/lora_stm32wl_devkit/olimex_lora_stm32wl_devkit_stm32wle5xx.dts`
 
 Programming and Debugging
 *************************

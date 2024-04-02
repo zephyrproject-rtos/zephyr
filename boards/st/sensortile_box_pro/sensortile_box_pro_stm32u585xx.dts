@@ -18,7 +18,7 @@
 		 * By default, Zephyr console and shell are assigned to
 		 * USB CDC/ACM. To enable console and shell over UART,
 		 * uncomment following lines and set the correct config
-		 * in sensortile_box_pro_defconfig.
+		 * in sensortile_box_pro_stm32u585xx_defconfig.
 		 *
 		 * zephyr,console = &uart4;
 		 * zephyr,shell-uart = &uart4;

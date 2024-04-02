@@ -161,7 +161,7 @@ The Zephyr ``nucleo_l412rb_p`` board configuration supports the following hardwa
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_l412rb_p/nucleo_l412rb_p_defconfig`
+:zephyr_file:`boards/st/nucleo_l412rb_p/nucleo_l412rb_p_stm32l412xx_defconfig`
 
 
 Connections and IOs

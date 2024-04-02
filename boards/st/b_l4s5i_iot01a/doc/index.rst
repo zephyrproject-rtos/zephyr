@@ -135,7 +135,7 @@ The Zephyr b_l4s5i_iot01a board configuration supports the following hardware fe
 
 The default configuration can be found in the defconfig file:
 
-	:zephyr_file:`boards/st/b_l4s5i_iot01a/b_l4s5i_iot01a_defconfig`
+	:zephyr_file:`boards/st/b_l4s5i_iot01a/b_l4s5i_iot01a_stm32l4s5xx_defconfig`
 
 
 Connections and IOs

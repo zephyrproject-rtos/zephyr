@@ -113,7 +113,7 @@ features:
 Other hardware features are not yet supported on Zephyr porting.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/stm32f3_disco/stm32f3_disco_defconfig`
+:zephyr_file:`boards/st/stm32f3_disco/stm32f3_disco_stm32f303xc_defconfig`
 
 
 Pin Mapping

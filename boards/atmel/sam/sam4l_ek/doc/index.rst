@@ -87,7 +87,7 @@ The sam4l_ek board configuration supports the following hardware features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam/sam4l_ek/sam4l_ek_defconfig`.
+:zephyr_file:`boards/atmel/sam/sam4l_ek/sam4l_ek_sam4lc4c_defconfig`.
 
 Connections and IOs
 ===================

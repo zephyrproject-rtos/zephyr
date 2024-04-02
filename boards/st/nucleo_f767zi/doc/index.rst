@@ -133,7 +133,7 @@ features:
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f767zi/nucleo_f767zi_defconfig`
+:zephyr_file:`boards/st/nucleo_f767zi/nucleo_f767zi_stm32f767xx_defconfig`
 
 For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 

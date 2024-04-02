@@ -121,7 +121,7 @@ JTAG UART
 ---------
 
 You can also have it send its console output to the JTAG UART.
-Enable ``jtag_uart`` node in :file:`altera_max10.dts` or overlay file:
+Enable ``jtag_uart`` node in :file:`altera_max10_zephyr_nios2f.dts` or overlay file:
 
 .. code-block:: devicetree
 

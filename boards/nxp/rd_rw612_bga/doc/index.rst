@@ -59,9 +59,8 @@ Supported Features
 +-----------+------------+-----------------------------------+
 
 
-The default configuration can be found in the defconfig file:
-
-   :zephyr_file:`boards/nxp/rd_rw612_bga/rd_rw612_bga_defconfig/`
+The default configuration can be found in
+:zephyr_file:`boards/nxp/rd_rw612_bga/rd_rw612_bga_rw612_defconfig`
 
 Other hardware features are not currently supported
 

@@ -198,8 +198,8 @@ The default configuration can be found in the defconfig and dts files:
 
 - Secure target:
 
-  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_defconfig`
-  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk.dts`
+  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_stm32l562xx_defconfig`
+  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_stm32l562xx.dts`
 
 - Non-Secure target:
 
@@ -215,7 +215,7 @@ for building for both Secure and Non-Secure firmware.
 The BOARD options are summarized below:
 
 +------------------------------+-------------------------------------------+
-| BOARD                        | Description                               |
+| Board target                 | Description                               |
 +==============================+===========================================+
 | stm32l562e_dk                | For building Trust Zone Disabled firmware |
 +------------------------------+-------------------------------------------+

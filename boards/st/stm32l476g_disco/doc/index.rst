@@ -126,7 +126,7 @@ Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
 
-	:zephyr_file:`boards/st/stm32l476g_disco/stm32l476g_disco_defconfig`
+	:zephyr_file:`boards/st/stm32l476g_disco/stm32l476g_disco_stm32l476xx_defconfig`
 
 
 Connections and IOs

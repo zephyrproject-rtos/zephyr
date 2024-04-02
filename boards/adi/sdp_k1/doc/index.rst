@@ -90,7 +90,7 @@ The Zephyr stm32f469i_disco board configuration supports the following hardware 
 Other hardware features are not yet supported on Zephyr porting.
 
 The default configuration can be found in
-:zephyr_file:`boards/adi/sdp_k1/adi_sdp_k1_defconfig`
+:zephyr_file:`boards/adi/sdp_k1/adi_sdp_k1_stm32f469xx_defconfig`
 
 Pin Mapping
 ===========

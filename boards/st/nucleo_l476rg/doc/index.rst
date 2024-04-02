@@ -127,7 +127,7 @@ The Zephyr nucleo_l476rg board configuration supports the following hardware fea
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_l476rg/nucleo_l476rg_defconfig`
+:zephyr_file:`boards/st/nucleo_l476rg/nucleo_l476rg_stm32l476xx_defconfig`
 
 
 Connections and IOs

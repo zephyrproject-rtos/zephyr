@@ -47,7 +47,7 @@ The following features are supported:
 Other hardware features are not currently supported by Zephyr (at the moment)
 
 The default configuration can be found in
-:zephyr_file:`boards/aspeed/ast1030_evb/ast1030_evb_defconfig`
+:zephyr_file:`boards/aspeed/ast1030_evb/ast1030_evb_ast1030_defconfig`
 
 
 Connections and IOs

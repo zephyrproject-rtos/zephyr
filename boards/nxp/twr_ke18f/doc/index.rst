@@ -89,7 +89,7 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/nxp/twr_ke18f/twr_ke18f_defconfig`.
+:zephyr_file:`boards/nxp/twr_ke18f/twr_ke18f_mke18f16_defconfig`.
 
 Other hardware features are not currently supported by the port.
 

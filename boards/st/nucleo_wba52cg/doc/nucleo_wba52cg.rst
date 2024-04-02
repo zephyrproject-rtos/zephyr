@@ -183,7 +183,7 @@ The Zephyr nucleo_wba52cg board configuration supports the following hardware fe
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_wba52cg/nucleo_wba52cg_defconfig`
+:zephyr_file:`boards/st/nucleo_wba52cg/nucleo_wba52cg_stm32wba52xx_defconfig`
 
 Connections and IOs
 ===================

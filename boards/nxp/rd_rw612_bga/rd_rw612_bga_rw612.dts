@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_rw6xx.dtsi>
-#include "rd_rw612_bga.dtsi"
+#include "rd_rw612_bga_rw612.dtsi"
 
 / {
 	model = "nxp,rd_rw612_bga";

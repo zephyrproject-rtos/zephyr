@@ -100,7 +100,7 @@ means Pin number 2 on PORTA, as used in the board's datasheets and manuals.
 +-------+-------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/efr32xg24_dk2601b/efr32xg24_dk2601b_defconfig`
+:zephyr_file:`boards/silabs/efr32xg24_dk2601b/efr32xg24_dk2601b_efr32mg24b310f1536im48_defconfig`
 
 System Clock
 ============

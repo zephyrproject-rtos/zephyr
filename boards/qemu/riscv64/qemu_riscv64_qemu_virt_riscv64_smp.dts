@@ -1,0 +1,4 @@
+/* Copyright (c) 2019 BayLibre SAS */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "qemu_riscv64_qemu_virt_riscv64.dts"

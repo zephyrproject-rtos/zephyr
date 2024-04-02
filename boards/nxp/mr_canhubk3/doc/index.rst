@@ -63,7 +63,7 @@ EDMA          on-chip     dma
 ============  ==========  ================================
 
 The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/nxp/mr_canhubk3/mr_canhubk3_defconfig`.
+:zephyr_file:`boards/nxp/mr_canhubk3/mr_canhubk3_s32k344_defconfig`.
 
 Connections and IOs
 ===================

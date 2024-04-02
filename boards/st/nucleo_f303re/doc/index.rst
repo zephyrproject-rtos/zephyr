@@ -100,7 +100,7 @@ features:
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f303re/nucleo_f303re_defconfig`
+:zephyr_file:`boards/st/nucleo_f303re/nucleo_f303re_stm32f303xe_defconfig`
 
 Connections and IOs
 ===================

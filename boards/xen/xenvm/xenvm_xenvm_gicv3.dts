@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "xenvm.dts"
+#include "xenvm_xenvm.dts"
 
 &gic {
 	compatible = "arm,gic-v3", "arm,gic";

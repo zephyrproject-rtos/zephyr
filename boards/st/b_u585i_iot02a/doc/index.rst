@@ -199,7 +199,7 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/b_u585i_iot02a/b_u585i_iot02a_defconfig`
+:zephyr_file:`boards/st/b_u585i_iot02a/b_u585i_iot02a_stm32u585xx_defconfig`
 
 Zephyr board options
 ====================

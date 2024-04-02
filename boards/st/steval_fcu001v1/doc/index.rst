@@ -67,7 +67,7 @@ The Zephyr steval_fcu001v1 board configuration supports the following hardware f
 
 
 The default configuration can be found in
-:zephyr_file:`boards/st/steval_fcu001v1/steval_fcu001v1_defconfig`
+:zephyr_file:`boards/st/steval_fcu001v1/steval_fcu001v1_stm32f401xc_defconfig`
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

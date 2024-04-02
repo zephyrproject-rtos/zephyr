@@ -78,7 +78,7 @@ More information about the board can be found at the
 `ARGONKEY website`_.
 
 The default board configuration can be found in
-:zephyr_file:`boards/96boards/argonkey/96b_argonkey_defconfig`
+:zephyr_file:`boards/96boards/argonkey/96b_argonkey_stm32f412cx_defconfig`
 
 Connections and IOs
 ===================

@@ -86,7 +86,7 @@ following hardware features:
 
 The default configuration can be found in the defconfig file:
 
-	:zephyr_file:`boards/adi/eval_adin2111ebz/adi_eval_adin2111ebz_defconfig`
+	:zephyr_file:`boards/adi/eval_adin2111ebz/adi_eval_adin2111ebz_stm32l4s5xx_defconfig`
 
 
 Connections and IOs

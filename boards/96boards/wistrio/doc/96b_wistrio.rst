@@ -71,7 +71,7 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default board configuration can be found in
-:zephyr_file:`boards/96boards/wistrio/96b_wistrio_defconfig`
+:zephyr_file:`boards/96boards/wistrio/96b_wistrio_stm32l151xba_defconfig`
 
 Connections and IOs
 ===================

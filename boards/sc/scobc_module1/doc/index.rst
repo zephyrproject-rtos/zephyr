@@ -44,7 +44,7 @@ The Space Cubics OBC module 1 provides the following hardware features:
 +-----------+------------+------------------------------------+
 
 The default configuration for the board can be found in the defconfig file:
-:file:`boards/arm/scobc_module1/scobc_module1_defconfig`.
+:file:`boards/arm/scobc_module1/scobc_module1_designstart_fpga_cortex_m3_defconfig`.
 
 Other hardware features are not currently supported by the port.
 

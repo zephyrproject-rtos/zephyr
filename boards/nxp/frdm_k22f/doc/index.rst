@@ -103,7 +103,7 @@ already supported, which can also be re-used on this frdm_k22f board:
 
 The default configuration can be found in the defconfig file:
 
-:zephyr_file:`boards/nxp/frdm_k22f/frdm_k22f_defconfig`
+:zephyr_file:`boards/nxp/frdm_k22f/frdm_k22f_mk22f51212_defconfig`
 
 Other hardware features are not currently supported by the port.
 

@@ -101,7 +101,7 @@ The Zephyr Dragino LSN50 board configuration supports the following hardware fea
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/dragino/lsn50/dragino_lsn50_defconfig`
+:zephyr_file:`boards/dragino/lsn50/dragino_lsn50_stm32l072xx_defconfig`
 
 
 Connections and IOs

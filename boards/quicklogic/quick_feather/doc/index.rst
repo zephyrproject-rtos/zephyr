@@ -45,7 +45,7 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/quicklogic/quick_feather/quick_feather_defconfig`.
+:zephyr_file:`boards/quicklogic/quick_feather/quick_feather_quicklogic_eos_s3_defconfig`.
 
 Connections and IOs
 ===================

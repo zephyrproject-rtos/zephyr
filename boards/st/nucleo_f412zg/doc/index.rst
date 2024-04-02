@@ -93,7 +93,7 @@ The Zephyr nucleo_412zg board configuration supports the following hardware feat
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f412zg/nucleo_f412zg_defconfig`
+:zephyr_file:`boards/st/nucleo_f412zg/nucleo_f412zg_stm32f412zx_defconfig`
 
 
 Connections and IOs

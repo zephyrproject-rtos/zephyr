@@ -116,7 +116,7 @@ The Zephyr nucleo_g071rb board configuration supports the following hardware fea
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_g071rb/nucleo_g071rb_defconfig`
+:zephyr_file:`boards/st/nucleo_g071rb/nucleo_g071rb_stm32g071xx_defconfig`
 
 Connections and IOs
 ===================

@@ -59,7 +59,7 @@ The Apollo4 Blue Plus KXR EVB board configuration supports the following hardwar
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/ambiq/apollo4p_blue_kxr_evb/apollo4p_blue_kxr_evb_defconfig`
+:zephyr_file:`boards/ambiq/apollo4p_blue_kxr_evb/apollo4p_blue_kxr_evb_apollo4p_blue_defconfig`
 
 Programming and Debugging
 =========================

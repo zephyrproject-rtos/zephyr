@@ -60,7 +60,7 @@ hardware features:
 Other hardware features are not yet supported on this Zephyr porting.
 
 The default configuration can be found in
-:zephyr_file:`boards/others/stm32f030_demo/stm32f030_demo_defconfig`
+:zephyr_file:`boards/others/stm32f030_demo/stm32f030_demo_stm32f030x6_defconfig`
 
 Pin Mapping
 ===========

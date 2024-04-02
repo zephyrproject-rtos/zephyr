@@ -47,7 +47,7 @@ hardware features:
 Other hardware features have not been enabled yet for this board.
 
 The default configuration can be found in
-:zephyr_file:`boards/renesas/rcar_salvator_xs/rcar_salvator_xs_defconfig`
+:zephyr_file:`boards/renesas/rcar_salvator_xs/rcar_salvator_xs_r8a77961_defconfig`
 
 Programming and Debugging
 *************************

@@ -56,7 +56,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/adafruit/trinket_m0/adafruit_trinket_m0_defconfig`.
+:zephyr_file:`boards/adafruit/trinket_m0/adafruit_trinket_m0_samd21e18a_defconfig`.
 
 Connections and IOs
 ===================

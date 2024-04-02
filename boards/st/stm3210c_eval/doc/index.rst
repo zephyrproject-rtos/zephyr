@@ -81,7 +81,7 @@ The Zephyr stm3210c_eval board configuration supports the following hardware fea
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/stm3210c_eval/stm3210c_eval_defconfig`.
+:zephyr_file:`boards/st/stm3210c_eval/stm3210c_eval_stm32f107xc_defconfig`.
 
 Connections and IOs
 ===================

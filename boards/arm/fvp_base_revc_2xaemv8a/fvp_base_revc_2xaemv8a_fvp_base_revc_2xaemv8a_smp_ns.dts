@@ -3,4 +3,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "fvp_base_revc_2xaemv8a.dts"
+#include "fvp_base_revc_2xaemv8a_fvp_base_revc_2xaemv8a.dts"

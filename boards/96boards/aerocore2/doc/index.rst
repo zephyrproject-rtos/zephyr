@@ -80,7 +80,7 @@ features:
 More details about the board can be found at `96Boards website`_.
 
 The default configuration can be found in
-:zephyr_file:`boards/96boards/aerocore2/96b_aerocore2_defconfig`
+:zephyr_file:`boards/96boards/aerocore2/96b_aerocore2_stm32f427xx_defconfig`
 
 Connections and IOs
 ===================

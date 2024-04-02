@@ -7,8 +7,8 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
-#include "reel_board.dtsi"
-#include "reel_board-pinctrl.dtsi"
+#include "reel_board_nrf52840.dtsi"
+#include "reel_board_nrf52840-pinctrl.dtsi"
 
 / {
 	model = "reel board";

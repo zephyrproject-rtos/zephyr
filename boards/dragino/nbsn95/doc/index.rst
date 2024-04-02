@@ -100,7 +100,7 @@ The Zephyr Dragino NBSN95 board configuration supports the following hardware fe
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/dragino/nbsn95/dragino_nbsn95_defconfig`
+:zephyr_file:`boards/dragino/nbsn95/dragino_nbsn95_stm32l072xx_defconfig`
 
 
 Connections and IOs

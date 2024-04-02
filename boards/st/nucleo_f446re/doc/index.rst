@@ -94,7 +94,7 @@ The Zephyr nucleo_f446re board configuration supports the following hardware fea
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f446re/nucleo_f446re_defconfig`
+:zephyr_file:`boards/st/nucleo_f446re/nucleo_f446re_stm32f446xx_defconfig`
 
 
 Connections and IOs

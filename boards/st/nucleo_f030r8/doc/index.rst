@@ -99,7 +99,7 @@ The Zephyr nucleo_f030r8 board configuration supports the following hardware fea
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f030r8/nucleo_f030r8_defconfig`
+:zephyr_file:`boards/st/nucleo_f030r8/nucleo_f030r8_stm32f030x8_defconfig`
 
 Connections and IOs
 ===================

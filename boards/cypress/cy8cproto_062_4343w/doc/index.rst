@@ -74,7 +74,7 @@ The board configuration supports the following hardware features:
 
 The default configuration can be found in the Kconfig
 
-:zephyr_file:`boards/cypress/cy8cproto_062_4343w/cy8cproto_062_4343w_defconfig`
+:zephyr_file:`boards/cypress/cy8cproto_062_4343w/cy8cproto_062_4343w_cy8c624abzi_s2d44_defconfig`
 
 
 System Clock

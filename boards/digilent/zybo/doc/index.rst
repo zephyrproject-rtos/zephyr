@@ -41,7 +41,7 @@ The zybo board configuration supports the following hardware features:
 +------------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/digilent/zybo/zybo_defconfig`
+:zephyr_file:`boards/digilent/zybo/zybo_xc7z010_defconfig`
 
 Other hardware features are not currently supported by the port.
 

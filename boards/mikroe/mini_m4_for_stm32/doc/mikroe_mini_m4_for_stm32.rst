@@ -86,7 +86,7 @@ features:
 Other hardware features have not been enabled yet for this board.
 
 The default configuration can be found in
-:zephyr_file:`boards/mikroe/mini_m4_for_stm32/mikroe_mini_m4_for_stm32_defconfig`
+:zephyr_file:`boards/mikroe/mini_m4_for_stm32/mikroe_mini_m4_for_stm32_stm32f415xx_defconfig`
 
 Serial Port
 ===========

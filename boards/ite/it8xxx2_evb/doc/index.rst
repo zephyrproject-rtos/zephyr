@@ -72,7 +72,7 @@ currently supports the following hardware features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the
-:zephyr_file:`boards/ite/it8xxx2_evb/it8xxx2_evb_defconfig` Kconfig file.
+:zephyr_file:`boards/ite/it8xxx2_evb/it8xxx2_evb_it81302bx_defconfig` Kconfig file.
 
 Hardware reworks
 ****************

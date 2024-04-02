@@ -69,7 +69,7 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/efm32gg_slwstk6121a/efm32gg_slwstk6121a_defconfig`
+:zephyr_file:`boards/silabs/efm32gg_slwstk6121a/efm32gg_slwstk6121a_efm32gg11b820f2048gm64_defconfig`
 
 Other hardware features, including the WF200 WiFi transceiver, are
 currently not supported by the port.

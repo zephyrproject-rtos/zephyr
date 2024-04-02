@@ -73,7 +73,7 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/nxp/twr_kv58f220m/twr_kv58f220m_defconfig`.
+:zephyr_file:`boards/nxp/twr_kv58f220m/twr_kv58f220m_mkv58f24_defconfig`.
 
 Other hardware features are not currently supported by the port.
 

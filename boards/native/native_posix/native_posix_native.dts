@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "../native_sim/native_sim.dts"
+#include "../native_sim/native_sim_native.dts"

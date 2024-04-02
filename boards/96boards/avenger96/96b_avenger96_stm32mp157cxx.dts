@@ -17,7 +17,7 @@
 		 * By default, Zephyr console and shell are assigned to
 		 * remoteproc. To enable console and shell over UART, uncomment
 		 * following lines and set the correct config in
-		 * 96b_avenger96_defconfig. Refer "Serial Port" section in
+		 * 96b_avenger96_stm32mp157cxx_defconfig. Refer "Serial Port" section in
 		 * Zephyr board documentation.
 		 * zephyr,console = &uart7;
 		 * zephyr,shell-uart = &uart7;

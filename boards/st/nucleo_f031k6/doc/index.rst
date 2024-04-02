@@ -74,7 +74,7 @@ The Zephyr nucleo_f031k6 board configuration supports the following hardware fea
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/nucleo_f031k6/nucleo_f031k6_defconfig`
+:zephyr_file:`boards/st/nucleo_f031k6/nucleo_f031k6_stm32f031x6_defconfig`
 
 Connections and IOs
 ===================

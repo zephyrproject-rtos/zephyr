@@ -80,9 +80,9 @@ The efr32bg22_brd4184a/b board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/efr32_thunderboard/efr32bg22_brd4184a_defconfig`
+:zephyr_file:`boards/silabs/efr32_thunderboard/efr32bg22_brd4184a_efr32bg22c224f512im40_defconfig`
 and
-:zephyr_file:`boards/silabs/efr32_thunderboard/efr32bg22_brd4184b_defconfig`
+:zephyr_file:`boards/silabs/efr32_thunderboard/efr32bg22_brd4184b_efr32bg22c224f512im40_defconfig`
 
 Connections and IOs
 ===================

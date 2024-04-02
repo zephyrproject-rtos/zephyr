@@ -114,7 +114,7 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/nxp/frdm_k64f/frdm_k64f_defconfig`
+:zephyr_file:`boards/nxp/frdm_k64f/frdm_k64f_mk64f12_defconfig`
 
 Other hardware features are not currently supported by the port.
 

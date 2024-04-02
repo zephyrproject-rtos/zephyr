@@ -124,7 +124,7 @@ The Zephyr stm32f769i_disco board configuration supports the following hardware 
 Other hardware features are not yet supported on Zephyr porting.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/stm32f769i_disco/stm32f769i_disco_defconfig`
+:zephyr_file:`boards/st/stm32f769i_disco/stm32f769i_disco_stm32f769xx_defconfig`
 
 Pin Mapping
 ===========

@@ -107,7 +107,7 @@ features:
      - N/A
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/tdk/robokit1/robokit1_defconfig`.
+:zephyr_file:`boards/tdk/robokit1/robokit1_same70q21b_defconfig`.
 
 Connections and IOs
 ===================

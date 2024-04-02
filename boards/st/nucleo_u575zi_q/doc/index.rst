@@ -176,7 +176,7 @@ The Zephyr nucleo_u575zi_q board configuration supports the following hardware f
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_u575zi_q/nucleo_u575zi_q_defconfig`
+:zephyr_file:`boards/st/nucleo_u575zi_q/nucleo_u575zi_q_stm32u575xx_defconfig`
 
 
 Connections and IOs

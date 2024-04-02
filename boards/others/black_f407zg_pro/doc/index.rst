@@ -116,7 +116,7 @@ features:
 Other hardware features are not yet supported on Zephyr porting.
 
 The default configuration can be found in
-:zephyr_file:`boards/others/black_f407zg_pro/black_f407zg_pro_defconfig`
+:zephyr_file:`boards/others/black_f407zg_pro/black_f407zg_pro_stm32f407xx_defconfig`
 
 
 Pin Mapping

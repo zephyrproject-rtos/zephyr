@@ -71,7 +71,7 @@ The Zephyr b_g474e_dpow1 board configuration supports the following hardware fea
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/b_g474e_dpow1/b_g474e_dpow1_defconfig`
+:zephyr_file:`boards/st/b_g474e_dpow1/b_g474e_dpow1_stm32g474xx_defconfig`
 
 Connections and IOs
 ===================

@@ -93,7 +93,7 @@ The Zephyr stm32l1_disco board configuration supports the following hardware fea
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/stm32l1_disco/stm32l1_disco_defconfig`
+:zephyr_file:`boards/st/stm32l1_disco/stm32l1_disco_stm32l151xb_defconfig`
 
 Connections and IOs
 ===================

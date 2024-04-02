@@ -57,7 +57,7 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/efm32gg_sltb009a/efm32gg_sltb009a_defconfig`
+:zephyr_file:`boards/silabs/efm32gg_sltb009a/efm32gg_sltb009a_efm32gg12b810f1024gm64_defconfig`
 
 Connections and IOs
 ===================

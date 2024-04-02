@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "vmu_rt1170-pinctrl.dtsi"
+#include "vmu_rt1170_mimxrt1176_cm7-pinctrl.dtsi"
 
 / {
 	aliases {

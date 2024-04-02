@@ -108,7 +108,7 @@ already supported, which can also be re-used on this frdm_k82f board:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/nxp/frdm_k82f/frdm_k82f_defconfig`
+:zephyr_file:`boards/nxp/frdm_k82f/frdm_k82f_mk82f25615_defconfig`
 
 Other hardware features are not currently supported by the port.
 

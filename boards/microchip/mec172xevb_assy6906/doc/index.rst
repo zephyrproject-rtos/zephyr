@@ -73,7 +73,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the
-:zephyr_file:`boards/microchip/mec172xevb_assy6906/mec172xevb_assy6906_defconfig` Kconfig file.
+:zephyr_file:`boards/microchip/mec172xevb_assy6906/mec172xevb_assy6906_mec172x_nsz_defconfig` Kconfig file.
 
 Connections and IOs
 ===================
