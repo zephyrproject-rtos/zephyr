@@ -38,6 +38,7 @@
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref1;
 		volt-sensor1 = &vbat4;
+		eeprom-0 = &eeprom0;
 	};
 };
 
@@ -187,6 +188,16 @@ stm32_lp_tick_source: &lptim1 {
 		compatible = "st,lps22hh";
 		reg = <0x5d>;
 		drdy-gpios =  <&gpiog 2 GPIO_ACTIVE_HIGH>;
+	};
+
+	eeprom0:eeprom@56 {
+		compatible = "atmel,at24";
+		reg = <0x56>;
+		status = "okay";
+		size = <DT_SIZE_K(32)>;
+		pagesize = <64>;
+		address-width = <16>;
+		timeout = <5>;
 	};
 
 	hts221@5f {
