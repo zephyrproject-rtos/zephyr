@@ -115,3 +115,23 @@ choice USB_MCUX_CONTROLLER_TYPE
 endchoice
 
 endif # SOC_MIMXRT685S_CM33
+
+if SOC_MIMXRT685S_ADSP
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "nxp_rt600_adsp"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 198000000
+
+config XTENSA_CCOUNT_HZ
+	default SYS_CLOCK_HW_CYCLES_PER_SEC
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+config CACHE
+	default n
+
+endif # SOC_MIMXRT685S_ADSP
