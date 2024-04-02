@@ -128,6 +128,11 @@
 		};
 	};
 
+	pinmux_user: pinmux_user {
+		group0 {
+			pinmux = <&iomuxc_gpio_emc_b1_24_gpio_mux1_io24>;
+		};
+	};
 
 	pinmux_flexspi1: pinmux_flexspi1 {
 		group0 {
@@ -346,10 +351,14 @@
 			input-enable;
 		};
 		group1 {
-			pinmux = <&iomuxc_gpio_sd_b1_01_usdhc1_clk>,
-				<&iomuxc_gpio_ad_32_usdhc1_cd_b>;
+			pinmux = <&iomuxc_gpio_sd_b1_01_usdhc1_clk>;
 			drive-strength = "high";
 			slew-rate = "fast";
+		};
+		group2 {
+			pinmux = <&iomuxc_gpio_ad_32_usdhc1_cd_b>;
+			bias-pull-down;
+			input-enable;
 		};
 	};
 
