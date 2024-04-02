@@ -46,8 +46,6 @@ static inline bool xtensa_stack_ptr_is_sane(uint32_t sp)
 	valid = esp_stack_ptr_is_sane(sp);
 #elif defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
 	valid = intel_adsp_ptr_is_sane(sp);
-#elif defined(CONFIG_SOC_XTENSA_DC233C)
-	valid = xtensa_dc233c_stack_ptr_is_sane(sp);
 #else
 	/* Platform does not have additional requirements on
 	 * whether stack pointer is valid. So use the generic
