@@ -1,0 +1,42 @@
+# Copyright (c) 2024, Laczen
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NVMP
+	bool "nvmp support"
+	help
+	  Enables support for the nvmp system, which enables using unified
+	  routines to read/write and erase non volatile memory.
+
+if NVMP
+
+config NVMP_FLASH
+	bool "nvmp support for flash devices"
+	default y if DT_HAS_ZEPHYR_FLASH_NVMP_FIXED_PARTITIONS_ENABLED
+	depends on FLASH
+	help
+	  Enables nvmp support for flash devices.
+
+if NVMP_FLASH
+
+config NVMP_FLASH_RUNTIME_VERIFY
+	bool "runtime verification of flash properties"
+	default n
+	help
+	  Enable runtime verification that block size is multiple of the flash
+	  erase block size, that write block size is a multiple of the flash
+	  write block size, and that the erase-value is correct.
+
+endif #NVMP_FLASH
+
+config NVMP_EEPROM
+	bool "nvmp support for eeprom devices"
+	default y if DT_HAS_ZEPHYR_EEPROM_NVMP_FIXED_PARTITIONS_ENABLED
+	depends on EEPROM
+	help
+	  Enables nvmp support for eeprom devices.
+
+module = NVMP
+module-str = nvmp
+source "subsys/logging/Kconfig.template.log_config"
+
+endif #NVMP

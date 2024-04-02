@@ -1,0 +1,20 @@
+description: |
+  This binding is used to describe fixed non volatile partitions on eeprom.
+  Here is an example:
+    &eeprom0 {
+            nvmp_partitions {
+                    compatible = "zephyr,eeprom-nvmp-fixed-partitions";
+                    #address-cells = <1>;
+                    #size-cells = <1>;
+                    partition0: partition@0 {
+                            reg = <0x00000000 0x0000C000>;
+                    };
+                    partition1: partition@c000 {
+                            reg = <0x0000C000 0x00076000>;
+                    };
+            };
+    };
+
+compatible: "zephyr,eeprom-nvmp-fixed-partitions"
+
+include: zephyr,nvmp-fixed-partitions.yaml
