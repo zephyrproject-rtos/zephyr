@@ -427,6 +427,8 @@ static int can_stm32fd_clock_enable(const struct device *dev)
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_stm32fd_config *stm32fd_cfg = mcan_cfg->custom;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	uint32_t host_clock = 0xffffffff;
+	uint32_t fdcan_clock = 0xffffffff;
 
 	if (!device_is_ready(clk)) {
 		return -ENODEV;
@@ -439,6 +441,30 @@ static int can_stm32fd_clock_enable(const struct device *dev)
 		if (ret < 0) {
 			LOG_ERR("Could not select can_stm32fd domain clock");
 			return ret;
+		}
+
+		/* Check if fdcan clock has correct range.
+		 * M_CAN requires that the host clock should be
+		 * higher or equal to the CAN core clock.
+		 */
+		ret = clock_control_get_rate(clk,
+			(clock_control_subsys_t)&stm32fd_cfg->pclken[0], &host_clock);
+		if (ret != 0) {
+			LOG_ERR("failure getting host clock rate");
+			return ret;
+		}
+
+		ret = clock_control_get_rate(clk,
+			(clock_control_subsys_t)&stm32fd_cfg->pclken[1], &fdcan_clock);
+		if (ret != 0) {
+			LOG_ERR("failure getting fdcan clock rate");
+			return ret;
+		}
+
+		if (fdcan_clock > host_clock) {
+			LOG_ERR("FDCAN Clock '%d' exceeds the host clock '%d'",
+					fdcan_clock, host_clock);
+			return -ENODEV;
 		}
 	}
 
