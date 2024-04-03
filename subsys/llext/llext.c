@@ -801,6 +801,7 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 	for (i = 0; i < LLEXT_MEM_COUNT; ++i) {
 		if (ext->mem[i]) {
 			sys_cache_data_flush_range(ext->mem[i], ext->mem_size[i]);
+			sys_cache_instr_invd_range(ext->mem[i], ext->mem_size[i]);
 		}
 	}
 #endif
