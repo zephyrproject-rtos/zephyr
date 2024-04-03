@@ -132,6 +132,12 @@ and then directly run one of the tests:
 Conventions
 ===========
 
+Test code
+---------
+
+See the :zephyr_file:`Bluetooth sample test <tests/bsim/bluetooth/host/misc/sample_test/README.rst>` for conventions that apply to test
+code.
+
 Build scripts
 -------------
 
