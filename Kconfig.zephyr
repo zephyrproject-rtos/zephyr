@@ -338,6 +338,71 @@ endmenu
 
 menu "Compiler Options"
 
+config REQUIRES_STD_C99
+	bool
+	help
+	  Hidden option to select compiler support C99 standard or higher.
+
+config REQUIRES_STD_C11
+	bool
+	select REQUIRES_STD_C99
+	help
+	  Hidden option to select compiler support C11 standard or higher.
+
+config REQUIRES_STD_C17
+	bool
+	select REQUIRES_STD_C11
+	help
+	  Hidden option to select compiler support C17 standard or higher.
+
+config REQUIRES_STD_C23
+	bool
+	select REQUIRES_STD_C17
+	help
+	  Hidden option to select compiler support C23 standard or higher.
+
+choice STD_C
+	prompt "C Standard"
+	default STD_C23 if REQUIRES_STD_C23
+	default STD_C17 if REQUIRES_STD_C17
+	default STD_C11 if REQUIRES_STD_C11
+	default STD_C99
+	help
+	  C Standards.
+
+config STD_C90
+	bool "C90"
+	depends on !REQUIRES_STD_C99
+	help
+	  1989 C standard as completed in 1989 and ratified by ISO/IEC
+	  as ISO/IEC 9899:1990. This version is known as "ANSI C".
+
+config STD_C99
+	bool "C99"
+	depends on !REQUIRES_STD_C11
+	help
+	  1999 C standard.
+
+config STD_C11
+	bool "C11"
+	depends on !REQUIRES_STD_C17
+	help
+	  2011 C standard.
+
+config STD_C17
+	bool "C17"
+	depends on !REQUIRES_STD_C23
+	help
+	  2017 C standard, addresses defects in C11 without introducing
+	  new language features.
+
+config STD_C23
+	bool "C23"
+	help
+	  2023 C standard.
+
+endchoice
+
 config CODING_GUIDELINE_CHECK
 	bool "Enforce coding guideline rules"
 	help

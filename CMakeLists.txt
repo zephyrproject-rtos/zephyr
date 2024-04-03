@@ -957,7 +957,24 @@ if(CONFIG_USERSPACE)
 endif()
 
 get_property(CSTD GLOBAL PROPERTY CSTD)
-set_ifndef(CSTD c99)
+if(NOT DEFINED CSTD)
+  if(CONFIG_STD_C23)
+    set(CSTD c2x)
+  elseif(CONFIG_STD_C17)
+    set(CSTD c17)
+  elseif(CONFIG_STD_C11)
+    set(CSTD c11)
+  elseif(CONFIG_STD_C99)
+    set(CSTD c99)
+  elseif(CONFIG_STD_C90)
+    set(CSTD c90)
+  else()
+    message(FATAL_ERROR "Unreachable code. Expected C standard to have been chosen.")
+  endif()
+else()
+  message(DEPRECATION
+    "Global CSTD property is deprecated, see Kconfig.zephyr for C Standard options.")
+endif()
 
 # @Intent: Obtain compiler specific flag for specifying the c standard
 zephyr_compile_options(
