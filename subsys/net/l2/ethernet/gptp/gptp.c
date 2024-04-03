@@ -490,10 +490,10 @@ static void gptp_init_port_ds(int port)
 	port_ds->compute_neighbor_prop_delay = true;
 
 	/* Random Sequence Numbers. */
-	port_ds->sync_seq_id = (uint16_t)sys_rand32_get();
-	port_ds->pdelay_req_seq_id = (uint16_t)sys_rand32_get();
-	port_ds->announce_seq_id = (uint16_t)sys_rand32_get();
-	port_ds->signaling_seq_id = (uint16_t)sys_rand32_get();
+	port_ds->sync_seq_id = sys_rand16_get();
+	port_ds->pdelay_req_seq_id = sys_rand16_get();
+	port_ds->announce_seq_id = sys_rand16_get();
+	port_ds->signaling_seq_id = sys_rand16_get();
 
 #if defined(CONFIG_NET_GPTP_STATISTICS)
 	/* Initialize stats data set. */
