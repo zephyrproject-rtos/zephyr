@@ -352,6 +352,14 @@
 				prescaler = <0>;
 			};
 
+			pwm120: pwm@8e4000 {
+				compatible = "nordic,nrf-pwm";
+				reg = <0x8e4000 0x1000>;
+				status = "disabled";
+				interrupts = <228 NRF_DEFAULT_IRQ_PRIORITY>;
+				#pwm-cells = <3>;
+			};
+
 			spi120: spi@8e6000 {
 				compatible = "nordic,nrf-spim";
 				reg = <0x8e6000 0x1000>;
@@ -609,6 +617,14 @@
 				prescaler = <0>;
 			};
 
+			pwm130: pwm@9a4000 {
+				compatible = "nordic,nrf-pwm";
+				reg = <0x9a4000 0x1000>;
+				status = "disabled";
+				interrupts = <420 NRF_DEFAULT_IRQ_PRIORITY>;
+				#pwm-cells = <3>;
+			};
+
 			i2c130: i2c@9a5000 {
 				compatible = "nordic,nrf-twim";
 				reg = <0x9a5000 0x1000>;
@@ -689,6 +705,14 @@
 				interrupts = <435 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
 				prescaler = <0>;
+			};
+
+			pwm131: pwm@9b4000 {
+				compatible = "nordic,nrf-pwm";
+				reg = <0x9b4000 0x1000>;
+				status = "disabled";
+				interrupts = <436 NRF_DEFAULT_IRQ_PRIORITY>;
+				#pwm-cells = <3>;
 			};
 
 			i2c132: i2c@9b5000 {
@@ -773,6 +797,14 @@
 				prescaler = <0>;
 			};
 
+			pwm132: pwm@9c4000 {
+				compatible = "nordic,nrf-pwm";
+				reg = <0x9c4000 0x1000>;
+				status = "disabled";
+				interrupts = <452 NRF_DEFAULT_IRQ_PRIORITY>;
+				#pwm-cells = <3>;
+			};
+
 			i2c134: i2c@9c5000 {
 				compatible = "nordic,nrf-twim";
 				reg = <0x9c5000 0x1000>;
@@ -853,6 +885,14 @@
 				interrupts = <467 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
 				prescaler = <0>;
+			};
+
+			pwm133: pwm@9d4000 {
+				compatible = "nordic,nrf-pwm";
+				reg = <0x9d4000 0x1000>;
+				status = "disabled";
+				interrupts = <468 NRF_DEFAULT_IRQ_PRIORITY>;
+				#pwm-cells = <3>;
 			};
 
 			i2c136: i2c@9d5000 {
