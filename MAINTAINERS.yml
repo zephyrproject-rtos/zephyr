@@ -3485,7 +3485,7 @@ Renesas RA Platforms:
   maintainers:
     - soburi
   files:
-    - boards/arduino/uno_r4_minima/
+    - boards/arduino/uno_r4/
     - drivers/*/*renesas_ra*
     - drivers/pinctrl/renesas/ra/
     - dts/arm/renesas/ra/
