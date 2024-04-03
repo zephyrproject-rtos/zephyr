@@ -357,8 +357,7 @@ static inline uint8_t *get_mac(const struct device *dev)
 	upipe->mac_addr[3] = 0x30;
 
 #if defined(CONFIG_IEEE802154_UPIPE_RANDOM_MAC)
-	UNALIGNED_PUT(sys_cpu_to_be32(sys_rand32_get()),
-		      (uint32_t *) ((uint8_t *)upipe->mac_addr+4));
+	sys_rand_get(&upipe->mac_addr[4], 4U);
 #else
 	upipe->mac_addr[4] = CONFIG_IEEE802154_UPIPE_MAC4;
 	upipe->mac_addr[5] = CONFIG_IEEE802154_UPIPE_MAC5;
