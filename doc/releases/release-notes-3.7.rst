@@ -225,6 +225,12 @@ Libraries / Subsystems
 
 * Crypto
 
+* Random
+
+  * Besides the existing :c:func:`sys_rand32_get` function, :c:func:`sys_rand8_get`,
+    :c:func:`sys_rand16_get` and :c:func:`sys_rand64_get` are now also available.
+    These functions are all implemented on top of :c:func:`sys_rand_get`.
+
 * Retention
 
 * SD
