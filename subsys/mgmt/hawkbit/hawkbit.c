@@ -235,14 +235,14 @@ static bool start_http_client(void)
 		CA_CERTIFICATE_TAG,
 	};
 
-	if (setsockopt(hb_context.sock, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt,
-		       sizeof(sec_tag_opt)) < 0) {
+	if (zsock_setsockopt(hb_context.sock, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt,
+			     sizeof(sec_tag_opt)) < 0) {
 		LOG_ERR("Failed to set TLS_TAG option");
 		goto err_sock;
 	}
 
-	if (setsockopt(hb_context.sock, SOL_TLS, TLS_HOSTNAME, CONFIG_HAWKBIT_SERVER,
-		       sizeof(CONFIG_HAWKBIT_SERVER)) < 0) {
+	if (zsock_setsockopt(hb_context.sock, SOL_TLS, TLS_HOSTNAME, CONFIG_HAWKBIT_SERVER,
+			     sizeof(CONFIG_HAWKBIT_SERVER)) < 0) {
 		goto err_sock;
 	}
 #endif
