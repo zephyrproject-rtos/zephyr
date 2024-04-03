@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 const struct bt_csip_set_coordinator_set_member *btp_csip_set_members[CONFIG_BT_MAX_CONN];
 static const struct bt_csip_set_coordinator_csis_inst *cur_csis_inst;
 static struct bt_csip_set_coordinator_svc_inst *csip_inst;
+static uint8_t members_count;
 
 static uint8_t btp_csip_supported_commands(const void *cmd, uint16_t cmd_len,
 					   void *rsp, uint16_t *rsp_len)
@@ -189,15 +190,53 @@ static uint8_t btp_csip_discover(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_VAL(err);
 }
 
+static int get_available_members(const struct bt_csip_set_coordinator_set_member **members)
+{
+	members_count = 0;
+
+	if (cur_csis_inst == NULL) {
+		LOG_ERR("No CISP instance available");
+		return BTP_STATUS_FAILED;
+	}
+
+	for (size_t i = 0; i < (size_t)ARRAY_SIZE(btp_csip_set_members); i++) {
+		if (btp_csip_set_members[i] == NULL) {
+			continue;
+		}
+
+		members[members_count++] = btp_csip_set_members[i];
+	}
+
+	if (members_count == 0) {
+		LOG_ERR("No set members available");
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static uint8_t btp_csip_set_coordinator_lock(const void *cmd, uint16_t cmd_len, void *rsp,
 					     uint16_t *rsp_len)
 {
+	const struct bt_csip_set_coordinator_set_member *members[ARRAY_SIZE(btp_csip_set_members)];
 	const struct btp_csip_set_coordinator_lock_cmd *cp = cmd;
 	int err;
+	int rc;
 
 	LOG_DBG("");
 
-	err = bt_csip_set_coordinator_lock(btp_csip_set_members, cp->count, &cur_csis_inst->info);
+	if (cp->addr_cnt != 0) {
+		/* TODO: add support for lock request procedure on subset of set members */
+		return BTP_STATUS_FAILED;
+	}
+
+	rc = get_available_members(members);
+
+	if (rc) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_csip_set_coordinator_lock(members, members_count, &cur_csis_inst->info);
 
 	if (err) {
 		LOG_DBG("Failed to lock set members");
@@ -210,13 +249,25 @@ static uint8_t btp_csip_set_coordinator_lock(const void *cmd, uint16_t cmd_len, 
 static uint8_t btp_csip_set_coordinator_release(const void *cmd, uint16_t cmd_len, void *rsp,
 					     uint16_t *rsp_len)
 {
+	const struct bt_csip_set_coordinator_set_member *members[ARRAY_SIZE(btp_csip_set_members)];
 	const struct btp_csip_set_coordinator_release_cmd *cp = cmd;
 	int err;
+	int rc;
 
 	LOG_DBG("");
 
-	err = bt_csip_set_coordinator_release(btp_csip_set_members, cp->count,
-					      &cur_csis_inst->info);
+	if (cp->addr_cnt != 0) {
+		/* TODO: add support for lock release procedure on subset of set members */
+		return BTP_STATUS_FAILED;
+	}
+
+	rc = get_available_members(members);
+
+	if (rc) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_csip_set_coordinator_release(members, members_count, &cur_csis_inst->info);
 
 	if (err) {
 		LOG_DBG("Failed to release set members");
