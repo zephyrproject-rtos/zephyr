@@ -55,7 +55,7 @@ static inline int clk_enable_ambiq_uart(const struct device *dev, uint32_t clk)
  * Note: busy wait is not allowed to use here due to UART is initiated before timer starts.
  */
 
-#define QUIRK_AMBIQ_UART_DEFINE(n)                                                                 \
+#define AMBIQ_UART_DEFINE(n)                                                                       \
 	static int pwr_on_ambiq_uart_##n(void)                                                     \
 	{                                                                                          \
 		uint32_t addr = DT_REG_ADDR(DT_INST_PHANDLE(n, ambiq_pwrcfg)) +                    \
@@ -67,10 +67,10 @@ static inline int clk_enable_ambiq_uart(const struct device *dev, uint32_t clk)
 			arch_nop();                                                                \
 		};                                                                                 \
 		return 0;                                                                          \
+	}                                                                                          \
+	static inline int clk_enable_ambiq_uart_##n(const struct device *dev, uint32_t clk)        \
+	{                                                                                          \
+		return clk_enable_ambiq_uart(dev, clk);                                            \
 	}
-
-#define PL011_QUIRK_AMBIQ_UART_DEFINE(n)                                                           \
-	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), ambiq_uart), (QUIRK_AMBIQ_UART_DEFINE(n)),  \
-		    ())
 
 #endif /* ZEPHYR_DRIVERS_SERIAL_UART_PL011_AMBIQ_H_ */
