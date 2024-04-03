@@ -21,6 +21,9 @@
 #if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
 #endif
+#if IS_ENABLED(CONFIG_RESET)
+#include <zephyr/drivers/reset.h>
+#endif
 
 #ifdef CONFIG_CPU_CORTEX_M
 #include <cmsis_compiler.h>
@@ -34,6 +37,9 @@ struct pl011_config {
 	uint32_t sys_clk_freq;
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pincfg;
+#endif
+#if IS_ENABLED(CONFIG_RESET)
+	const struct reset_dt_spec reset;
 #endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t irq_config_func;
@@ -408,6 +414,15 @@ static int pl011_init(const struct device *dev)
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
+#if IS_ENABLED(CONFIG_RESET)
+	if (config->reset.dev) {
+		ret = reset_line_toggle_dt(&config->reset);
+		if (ret) {
+			return ret;
+		}
+	}
+#endif
+
 	/*
 	 * If working in SBSA mode, we assume that UART is already configured,
 	 * or does not require configuration at all (if UART is emulated by
@@ -504,6 +519,13 @@ static int pl011_init(const struct device *dev)
 #define PINCTRL_DEFINE(n)
 #define PINCTRL_INIT(n)
 #endif /* CONFIG_PINCTRL */
+
+#if IS_ENABLED(CONFIG_RESET)
+#define RESET_INIT(n)                                                                              \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, resets), (.reset = RESET_DT_SPEC_INST_GET(n),))
+#else
+#define RESET_INIT(n)
+#endif
 
 #define ARM_PL011_DEFINE(n)                                                                        \
 	static inline int pwr_on_arm_pl011_##n(void)                                               \
