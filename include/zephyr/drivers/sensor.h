@@ -582,29 +582,46 @@ struct sensor_stream_trigger {
 	{                                                                                          \
 		.trigger = (_trigger), .opt = (_opt),                                              \
 	}
-/*
- * Internal data structure used to store information about the IODevice for async reading and
- * streaming sensor data.
+
+
+/**
+ * @brief Sensor Channel Specification
+ *
+ * A sensor channel specification is a unique identifier per sensor device describing
+ * a measurement channel.
  */
-struct sensor_read_config {
+ struct sensor_chan_spec {
+ 	const uint16_t chan_type; /**< A sensor channel type */
+ 	const uint16_t chan_idx; /**< A sensor channel index */
+ };
+
+/**
+ * @brief Sensor Channel Specification Initializer
+ *
+ * @param _chan_type Channel Type (from enum sensor_channel)
+ * @param _chan_idx Channel index for that type
+ */
+#define SENSOR_CHAN_SPEC(chan_type, chan_idx) \
+   struct sensor_chan_spec { chan_type, chan_idx }
+ 
+/**
+ * @private Internal data structure for one shot sensor reads using RTIO
+ */
+struct sensor_oneshot_config {
 	const struct device *sensor;
-	const bool is_streaming;
-	union {
-		enum sensor_channel *const channels;
-		struct sensor_stream_trigger *const triggers;
-	};
-	size_t count;
-	const size_t max;
+	const struct sensor_channel_spec *chan_specs;
+	size_t chan_specs_count;
 };
 
 /**
- * @brief Define a reading instance of a sensor
+ * @brief Define a one-shot io device for reading sensor data
  *
  * Use this macro to generate a @ref rtio_iodev for reading specific channels. Example:
  *
  * @code(.c)
  * SENSOR_DT_READ_IODEV(icm42688_accelgyro, DT_NODELABEL(icm42688),
- *     SENSOR_CHAN_ACCEL_XYZ, SENSOR_CHAN_GYRO_XYZ);
+ *     SENSOR_CHAN_SPEC(SENSOR_CHAN_ACCEL_XYZ, 0),
+ *     SENSOR_CHAN_SPEC(SENSOR_CHAN_GYRO_XYZ, 0));
  *
  * int main(void) {
  *   sensor_read(&icm42688_accelgyro, &rtio);
@@ -612,18 +629,16 @@ struct sensor_read_config {
  * @endcode
  */
 #define SENSOR_DT_READ_IODEV(name, dt_node, ...)                                                   \
-	static enum sensor_channel _CONCAT(__channel_array_, name)[] = {__VA_ARGS__};              \
-	static struct sensor_read_config _CONCAT(__sensor_read_config_, name) = {                  \
+	static struct sensor_chan_spec _CONCAT(__chan_spec_array_, name)[] = {__VA_ARGS__};              \
+	static struct sensor_oneshot_config _CONCAT(__sensor_read_config_, name) = {                  \
 		.sensor = DEVICE_DT_GET(dt_node),                                                  \
-		.is_streaming = false,                                                             \
-		.channels = _CONCAT(__channel_array_, name),                                       \
-		.count = ARRAY_SIZE(_CONCAT(__channel_array_, name)),                              \
-		.max = ARRAY_SIZE(_CONCAT(__channel_array_, name)),                                \
+		.chan_specs = _CONCAT(__chan_spec_array_, name),                                       \
+		.count = ARRAY_SIZE(_CONCAT(__chan_spec_array_, name)),                              \
 	};                                                                                         \
 	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, _CONCAT(&__sensor_read_config_, name))
 
 /**
- * @brief Define a stream instance of a sensor
+ * @brief Define a stream (self triggering) io device for reading sensor data
  *
  * Use this macro to generate a @ref rtio_iodev for starting a stream that's triggered by specific
  * interrupts. Example:
@@ -643,13 +658,12 @@ struct sensor_read_config {
  */
 #define SENSOR_DT_STREAM_IODEV(name, dt_node, ...)                                                 \
 	static struct sensor_stream_trigger _CONCAT(__trigger_array_, name)[] = {__VA_ARGS__};     \
-	static struct sensor_read_config _CONCAT(__sensor_read_config_, name) = {                  \
+	static struct sensor_stream_config _CONCAT(__sensor_stream_config_, name) = {        \
 		.sensor = DEVICE_DT_GET(dt_node),                                                  \
-		.is_streaming = true,                                                              \
 		.triggers = _CONCAT(__trigger_array_, name),                                       \
-		.count = ARRAY_SIZE(_CONCAT(__trigger_array_, name)),                              \
+		.trigger_count = ARRAY_SIZE(_CONCAT(__trigger_array_, name)),                      \
 		.max = ARRAY_SIZE(_CONCAT(__trigger_array_, name)),                                \
-	};                                                                                         \
+	};                                                                                   \
 	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, &_CONCAT(__sensor_read_config_, name))
 
 /* Used to submit an RTIO sqe to the sensor's iodev */
@@ -993,8 +1007,52 @@ static inline int sensor_stream(struct rtio_iodev *iodev, struct rtio *ctx, void
 }
 
 /**
- * @brief Read data from a sensor.
+ * @brief Blocking one shot read of samples from a sensor into a buffer
  *
+ * Using @p cfg, read one-shot data from the device by using the provided RTIO context
+ * @p ctx. This call will generate a @ref rtio_sqe that will be given the provided buffer. The call
+ * will wait for the read to complete before returning to the caller.
+ *
+ * @param[in] iodev The iodev created by @ref SENSOR_DT_READ_IODEV
+ * @param[in] ctx The RTIO context to service the read
+ * @param[in] buf Pointer to memory to read sample data into
+ * @param[in] buf_len Size in bytes of the given memory that are valid to read into
+ * @return 0 on success
+ * @return < 0 on error
+ */
+static inline int sensor_read(struct rtio_iodev *iodev, struct rtio *ctx, uint8_t *buf, size_t buf_len)
+{
+	if (IS_ENABLED(CONFIG_USERSPACE)) {
+		struct rtio_sqe sqe;
+
+		rtio_sqe_prep_read(&sqe, iodev, RTIO_PRIO_NORM, buf, buf_len, buf);
+		rtio_sqe_copy_in(ctx, &sqe, 1);
+	} else {
+		struct rtio_sqe *sqe = rtio_sqe_acquire(ctx);
+
+		if (sqe == NULL) {
+			return -ENOMEM;
+		}
+		rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM, buf, buf_len, buf);
+	}
+	rtio_submit(ctx, 1);
+
+  struct rtio_cqe *cqe = rtio_cqe_consume(ctx);
+
+  CHECKIF(cqe->userdata != buf) {
+  	LOG_ERR("consumed non-matching completion for sensor read into buffer %p\n", buf);
+  }
+
+  int res = cqe->result;
+
+  rtio_cqe_release(ctx);
+
+	return res;
+}
+
+/**
+ * @brief One shot non-blocking read with pool allocated buffer
+ * 
  * Using @p cfg, read one snapshot of data from the device by using the provided RTIO context
  * @p ctx. This call will generate a @ref rtio_sqe that will leverage the RTIO's internal
  * mempool when the time comes to service the read.
@@ -1005,9 +1063,9 @@ static inline int sensor_stream(struct rtio_iodev *iodev, struct rtio *ctx, void
  * @return 0 on success
  * @return < 0 on error
  */
-static inline int sensor_read(struct rtio_iodev *iodev, struct rtio *ctx, void *userdata)
+static inline int sensor_read_async_mempool(struct rtio_iodev *iodev, struct rtio *ctx, void *userdata)
 {
-	if (IS_ENABLED(CONFIG_USERSPACE)) {
+		if (IS_ENABLED(CONFIG_USERSPACE)) {
 		struct rtio_sqe sqe;
 
 		rtio_sqe_prep_read_with_pool(&sqe, iodev, RTIO_PRIO_NORM, userdata);
