@@ -298,7 +298,7 @@ static int publish(struct mqtt_client *client, enum mqtt_qos qos)
 	param.message.topic.topic.size = len;
 	param.message.payload.data = payload;
 	param.message.payload.len = strlen(payload);
-	param.message_id = sys_rand32_get();
+	param.message_id = sys_rand16_get();
 	param.dup_flag = 0U;
 	param.retain_flag = 0U;
 
@@ -324,7 +324,7 @@ static void poll_mqtt(void)
  */
 static uint8_t timeout_for_publish(void)
 {
-	return (10 + sys_rand32_get() % 5);
+	return (10 + sys_rand8_get() % 5);
 }
 
 static void publish_timeout(struct k_work *work)

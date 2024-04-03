@@ -448,14 +448,12 @@ static void init_tx_queue(void)
  */
 static uint8_t *get_mac(const struct device *dev)
 {
-	uint32_t *ptr = (uint32_t *)mac_addr;
-
 	mac_addr[7] = 0x00;
 	mac_addr[6] = 0x12;
 	mac_addr[5] = 0x4b;
-
 	mac_addr[4] = 0x00;
-	UNALIGNED_PUT(sys_rand32_get(), ptr);
+
+	sys_rand_get(mac_addr, 4U);
 
 	mac_addr[0] = (mac_addr[0] & ~0x01) | 0x02;
 
