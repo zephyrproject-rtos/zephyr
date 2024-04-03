@@ -163,9 +163,7 @@ static int parse_ipv6_addr(const struct shell *sh, char *host, char *port,
 
 	ret = net_addr_pton(AF_INET6, host, &addr->sin6_addr);
 	if (ret < 0) {
-		shell_fprintf(sh, SHELL_WARNING,
-			      "Invalid IPv6 address %s\n", host);
-		return -EINVAL;
+		return -EDESTADDRREQ;
 	}
 
 	addr->sin6_port = htons(strtoul(port, NULL, 10));
@@ -189,9 +187,7 @@ static int parse_ipv4_addr(const struct shell *sh, char *host, char *port,
 
 	ret = net_addr_pton(AF_INET, host, &addr->sin_addr);
 	if (ret < 0) {
-		shell_fprintf(sh, SHELL_WARNING,
-			      "Invalid IPv4 address %s\n", host);
-		return -EINVAL;
+		return -EDESTADDRREQ;
 	}
 
 	addr->sin_port = htons(strtoul(port, NULL, 10));
@@ -803,6 +799,7 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 	bool is_udp;
 	int start = 0;
 	size_t opt_cnt = 0;
+	int ret;
 
 	param.options.priority = -1;
 	is_udp = proto == IPPROTO_UDP;
@@ -907,8 +904,12 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && !IS_ENABLED(CONFIG_NET_IPV4)) {
-		if (parse_ipv6_addr(sh, argv[start + 1], port_str,
-				    &ipv6) < 0) {
+		ret = parse_ipv6_addr(sh, argv[start + 1], port_str, &ipv6);
+		if (ret == -EDESTADDRREQ) {
+			shell_fprintf(sh, SHELL_WARNING,
+				"Invalid IPv6 address %s\n", argv[start + 1]);
+		}
+		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Please specify the IP address of the "
 				      "remote server.\n");
@@ -922,8 +923,12 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && !IS_ENABLED(CONFIG_NET_IPV6)) {
-		if (parse_ipv4_addr(sh, argv[start + 1], port_str,
-				    &ipv4) < 0) {
+		ret = parse_ipv4_addr(sh, argv[start + 1], port_str, &ipv4);
+		if (ret == -EDESTADDRREQ) {
+			shell_fprintf(sh, SHELL_WARNING,
+				"Invalid IPv4 address %s\n", argv[start + 1]);
+		}
+		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Please specify the IP address of the "
 				      "remote server.\n");
@@ -937,10 +942,14 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && IS_ENABLED(CONFIG_NET_IPV4)) {
-		if (parse_ipv6_addr(sh, argv[start + 1], port_str,
-				    &ipv6) < 0) {
-			if (parse_ipv4_addr(sh, argv[start + 1], port_str,
-					    &ipv4) < 0) {
+		ret = parse_ipv6_addr(sh, argv[start + 1], port_str, &ipv6);
+		if (ret < 0) {
+			ret = parse_ipv4_addr(sh, argv[start + 1], port_str, &ipv4);
+			if (ret == -EDESTADDRREQ) {
+				shell_fprintf(sh, SHELL_WARNING,
+					"Invalid IP address %s\n", argv[start + 1]);
+			}
+			if (ret < 0) {
 				shell_fprintf(sh, SHELL_WARNING,
 					      "Please specify the IP address "
 					      "of the remote server.\n");
