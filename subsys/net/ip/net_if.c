@@ -1104,7 +1104,7 @@ static void join_mcast_allnodes(struct net_if *iface)
 	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
 
 	ret = net_ipv6_mld_join(iface, &addr);
-	if (ret < 0 && ret != -EALREADY) {
+	if (ret < 0 && ret != -EALREADY && ret != -ENETDOWN) {
 		NET_ERR("Cannot join all nodes address %s for %d (%d)",
 			net_sprint_ipv6_addr(&addr),
 			net_if_get_by_iface(iface), ret);
@@ -1121,10 +1121,12 @@ static void join_mcast_solicit_node(struct net_if *iface,
 	net_ipv6_addr_create_solicited_node(my_addr, &addr);
 
 	ret = net_ipv6_mld_join(iface, &addr);
-	if (ret < 0 && ret != -EALREADY) {
-		NET_ERR("Cannot join solicit node address %s for %d (%d)",
-			net_sprint_ipv6_addr(&addr),
-			net_if_get_by_iface(iface), ret);
+	if (ret < 0) {
+		if (ret != -EALREADY && ret != -ENETDOWN) {
+			NET_ERR("Cannot join solicit node address %s for %d (%d)",
+				net_sprint_ipv6_addr(&addr),
+				net_if_get_by_iface(iface), ret);
+		}
 	} else {
 		NET_DBG("Join solicit node address %s (ifindex %d)",
 			net_sprint_ipv6_addr(&addr),
