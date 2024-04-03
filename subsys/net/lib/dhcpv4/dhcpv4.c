@@ -407,7 +407,7 @@ static uint32_t dhcpv4_update_message_timeout(struct net_if_dhcpv4 *dhcpv4)
 	}
 
 	/* +1/-1 second randomization */
-	timeout += (sys_rand32_get() % 3U) - 1;
+	timeout += (sys_rand8_get() % 3U) - 1;
 
 	dhcpv4->attempts++;
 	dhcpv4_set_timeout(dhcpv4, timeout);
