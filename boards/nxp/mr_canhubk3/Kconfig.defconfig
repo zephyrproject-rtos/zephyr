@@ -23,13 +23,6 @@ config WDT_NXP_FS26_INIT_PRIORITY
 endif # WDT_NXP_FS26
 endif # SPI
 
-if CAN
-
-config GPIO
-	default y
-
-endif # CAN
-
 if NETWORKING
 
 config NET_L2_ETHERNET
