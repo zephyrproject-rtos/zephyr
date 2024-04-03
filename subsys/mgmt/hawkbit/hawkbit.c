@@ -59,11 +59,7 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #define STORAGE_DEV FIXED_PARTITION_DEVICE(STORAGE_LABEL)
 #define STORAGE_OFFSET FIXED_PARTITION_OFFSET(STORAGE_LABEL)
 
-#if ((CONFIG_HAWKBIT_POLL_INTERVAL > 1) && (CONFIG_HAWKBIT_POLL_INTERVAL < 43200))
-static uint32_t poll_sleep = (CONFIG_HAWKBIT_POLL_INTERVAL * 60 * MSEC_PER_SEC);
-#else
-static uint32_t poll_sleep = (300 * MSEC_PER_SEC);
-#endif
+static uint32_t poll_sleep = (CONFIG_HAWKBIT_POLL_INTERVAL * SEC_PER_MIN);
 
 static struct nvs_fs fs;
 
@@ -346,16 +342,16 @@ static int hawkbit_device_acid_update(int32_t new_value)
  */
 static void hawkbit_update_sleep(struct hawkbit_ctl_res *hawkbit_res)
 {
-	uint32_t sleep_time;
+	int sleep_time;
 	const char *sleep = hawkbit_res->config.polling.sleep;
 
 	if (strlen(sleep) != HAWKBIT_SLEEP_LENGTH) {
 		LOG_ERR("Invalid poll sleep: %s", sleep);
 	} else {
 		sleep_time = hawkbit_time2sec(sleep);
-		if (sleep_time > 0 && poll_sleep != (MSEC_PER_SEC * sleep_time)) {
+		if (sleep_time > 0 && poll_sleep != sleep_time) {
 			LOG_DBG("New poll sleep %d seconds", sleep_time);
-			poll_sleep = sleep_time * MSEC_PER_SEC;
+			poll_sleep = (uint32_t)sleep_time;
 		}
 	}
 }
@@ -1231,7 +1227,7 @@ static void autohandler(struct k_work *work)
 		break;
 	}
 
-	k_work_reschedule(&hawkbit_work_handle, K_MSEC(poll_sleep));
+	k_work_reschedule(&hawkbit_work_handle, K_SECONDS(poll_sleep));
 }
 
 void hawkbit_autohandler(void)
