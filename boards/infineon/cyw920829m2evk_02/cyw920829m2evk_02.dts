@@ -22,6 +22,7 @@
 		zephyr,flash = &app_region;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
+		zephyr,bt-hci = &bluetooth;
 	};
 };
 
@@ -76,6 +77,10 @@ uart2: &scb2 {
 };
 
 &watchdog0 {
+	status = "okay";
+};
+
+&bluetooth {
 	status = "okay";
 };
 
