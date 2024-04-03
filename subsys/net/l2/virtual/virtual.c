@@ -169,11 +169,7 @@ NET_L2_INIT(VIRTUAL_L2, virtual_recv, virtual_send, virtual_enable,
 
 static void random_linkaddr(uint8_t *linkaddr, size_t len)
 {
-	int i;
-
-	for (i = 0; i < len; i++) {
-		linkaddr[i] = sys_rand32_get();
-	}
+	sys_rand_get(linkaddr, len);
 
 	linkaddr[0] |= 0x02; /* force LAA bit */
 }

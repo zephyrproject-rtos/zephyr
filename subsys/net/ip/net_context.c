@@ -312,7 +312,7 @@ static uint16_t find_available_port(struct net_context *context,
 	uint16_t local_port;
 
 	do {
-		local_port = sys_rand32_get() | 0x8000;
+		local_port = sys_rand16_get() | 0x8000;
 	} while (check_used_port(NULL, net_context_get_proto(context),
 				 htons(local_port), addr, false, false) == -EEXIST);
 
