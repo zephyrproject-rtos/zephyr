@@ -145,13 +145,13 @@ static void tx_dma_done(struct k_work *work)
 		fragment = fragment->frags;
 	}
 
-	net_pkt_frag_unref(tx_data->tx_header);
+	net_pkt_frag_unref(data->tx.tx_header);
 	net_pkt_unref(pkt);
 
 	eth_stats_update_pkts_tx(data->iface);
 
 	/* Allows another send */
-	k_sem_give(&tx_data->tx_sem);
+	k_sem_give(&data->tx.tx_sem);
 }
 
 static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct device *dev)
@@ -165,7 +165,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 		CONTAINER_OF(work, struct nxp_enet_qos_rx_data, rx_work);
 	struct nxp_enet_qos_mac_data *data =
 		CONTAINER_OF(rx_data, struct nxp_enet_qos_mac_data, rx);
-	volatile union nxp_enet_qos_rx_desc *desc_arr = rx_data->descriptors;
+	volatile union nxp_enet_qos_rx_desc *desc_arr = data->rx.descriptors;
 	volatile union nxp_enet_qos_rx_desc *desc;
 	struct net_pkt *pkt;
 	struct net_buf *new_buf;
@@ -206,7 +206,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			goto error;
 		}
 
-		buf = rx_data->reserved_bufs[i];
+		buf = data->rx.reserved_bufs[i];
 		pkt_len = desc->write.control3 & DESC_RX_PKT_LEN;
 
 		LOG_DBG("Receiving RX packet");
@@ -227,7 +227,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 		LOG_DBG("Recycling RX buf");
 
 		/* Fresh meat */
-		rx_data->reserved_bufs[i] = new_buf;
+		data->rx.reserved_bufs[i] = new_buf;
 		desc->read.buf1_addr = (uint32_t)new_buf->data;
 		desc->read.control |= rx_desc_refresh_flags;
 
