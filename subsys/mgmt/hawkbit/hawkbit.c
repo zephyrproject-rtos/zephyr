@@ -8,35 +8,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/logging/log.h>
-
-LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
-
 #include <stdio.h>
-#include <zephyr/kernel.h>
-#include <string.h>
 #include <stdlib.h>
-#include <zephyr/fs/nvs.h>
-#include <zephyr/data/json.h>
-#include <zephyr/net/net_ip.h>
-#include <zephyr/net/socket.h>
-#include <zephyr/net/net_mgmt.h>
-#include <zephyr/sys/reboot.h>
-#include <zephyr/drivers/flash.h>
-#include <zephyr/net/http/client.h>
-#include <zephyr/net/dns_resolve.h>
-#include <zephyr/logging/log_ctrl.h>
-#include <zephyr/storage/flash_map.h>
+#include <string.h>
 
-#include "hawkbit_priv.h"
-#include "hawkbit_device.h"
+#include <zephyr/data/json.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/fs/nvs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
 #include <zephyr/mgmt/hawkbit.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/http/client.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/sys/reboot.h>
+
+#include "hawkbit_device.h"
 #include "hawkbit_firmware.h"
+#include "hawkbit_priv.h"
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 #define CA_CERTIFICATE_TAG 1
 #include <zephyr/net/tls_credentials.h>
 #endif
+
+LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 
 #define ADDRESS_ID 1
 
