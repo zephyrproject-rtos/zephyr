@@ -144,7 +144,9 @@ int hawkbit_default_config_data_cb(const char *device_id, uint8_t *buffer,
 static hawkbit_config_device_data_cb_handler_t hawkbit_config_device_data_cb_handler =
 	hawkbit_default_config_data_cb;
 
-static struct k_work_delayable hawkbit_work_handle;
+static void autohandler(struct k_work *work);
+
+static K_WORK_DELAYABLE_DEFINE(hawkbit_work_handle, autohandler);
 
 K_SEM_DEFINE(probe_sem, 1, 1);
 
@@ -1516,6 +1518,5 @@ static void autohandler(struct k_work *work)
 
 void hawkbit_autohandler(void)
 {
-	k_work_init_delayable(&hawkbit_work_handle, autohandler);
 	k_work_reschedule(&hawkbit_work_handle, K_NO_WAIT);
 }
