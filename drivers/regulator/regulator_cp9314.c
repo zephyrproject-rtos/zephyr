@@ -269,12 +269,13 @@ static int regulator_cp9314_enable(const struct device *dev)
 
 	if (config->en_pin.port != NULL) {
 		return gpio_pin_set_dt(&config->en_pin, 1);
-	}
-
-	ret = i2c_reg_update_byte_dt(&config->i2c, CP9314_REG_CTRL1, CP9314_CP_EN, CP9314_CP_EN);
-	if (ret < 0) {
-		LOG_ERR("Unable to set CP_EN");
-		return ret;
+	} else {
+		ret = i2c_reg_update_byte_dt(&config->i2c, CP9314_REG_CTRL1, CP9314_CP_EN,
+					     CP9314_CP_EN);
+		if (ret < 0) {
+			LOG_ERR("Unable to set CP_EN");
+			return ret;
+		}
 	}
 
 	return 0;
