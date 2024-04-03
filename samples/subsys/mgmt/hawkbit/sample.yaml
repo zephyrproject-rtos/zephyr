@@ -1,7 +1,7 @@
 common:
   filter: CONFIG_FULL_LIBC_SUPPORTED
 sample:
-  description: Hawkbit Firmware Over-the-Air (FOTA)
+  description: hawkBit Firmware Over-the-Air (FOTA)
   name: hawkbit
 tests:
   sample.net.hawkbit:
