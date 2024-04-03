@@ -288,7 +288,7 @@ static int tla2021_init(const struct device *dev)
 static const struct adc_driver_api tla2021_driver_api = {
 	.channel_setup = tla2021_channel_setup,
 	.read = tla2021_read,
-	.ref_internal = 2048,
+	.ref_internal = 4096,
 #ifdef CONFIG_ADC_ASYNC
 	.read_async = tla2021_read_async,
 #endif
