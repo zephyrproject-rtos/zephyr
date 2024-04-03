@@ -78,6 +78,24 @@
 			};
 		};
 
+		wdt0: watchdog@6001f048  {
+			compatible = "espressif,esp32-watchdog";
+			reg = <0x6001f048 0x20>;
+			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TIMG0_MODULE>;
+			status = "disabled";
+		};
+
+		wdt1: watchdog@60020048 {
+			compatible = "espressif,esp32-watchdog";
+			reg = <0x60020048 0x20>;
+			interrupts = <TG1_WDT_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TIMG1_MODULE>;
+			status = "disabled";
+		};
+
 		flash: flash-controller@60002000 {
 			compatible = "espressif,esp32-flash-controller";
 			reg = <0x60002000 0x1000>;
