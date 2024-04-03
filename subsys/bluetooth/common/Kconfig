@@ -14,13 +14,14 @@ config BT_BUF_ACL_TX_SIZE
 	help
 	  Maximum supported ACL size of data packets sent from the Host to the
 	  Controller. This value does not include the HCI ACL header.
-	  The Host will segment the data transmitted to the Controller so that
-	  packets sent to the Controller will contain data up to this size.
+
 	  In a combined build this value will be set in both the Host and the
 	  Controller.
+
 	  In a Host-only build the Host will read the maximum ACL size supported
 	  by the Controller and use the smallest value supported by both the
 	  Host and the Controller.
+
 	  The Host supports sending of larger L2CAP PDUs than the ACL size and
 	  will fragment L2CAP PDUs into ACL data packets.
 	  The Controller will return this value in the HCI LE Read Buffer
@@ -60,37 +61,21 @@ config BT_BUF_ACL_RX_SIZE
 	help
 	  Maximum support ACL size of data packets sent from the Controller to
 	  the Host. This value does not include the HCI ACL header.
-	  In a combined Host and Controller build the buffer sizes in both the
-	  Host and the Controller will use this value for buffer sizes, and
-	  therefore Controller to Host flow Controller is not needed.
+
+	  In a combined Host and Controller build, both the
+	  Host and the Controller will use this value for buffer sizes, making
+	  Controller to Host flow control not strictly necessary.
+
 	  In a Host only build with Controller to Host flow control enabled
 	  the Host will inform the Controller about the maximum ACL data size it
 	  can send by setting this value in the Host Buffer Size command.
+
 	  If Controller to Host flow control is not enabled then the Controller
-	  can assume the Host has infinite buffer size so this value should then
-	  be set to something that is guaranteed the Controller will not exceed
-	  or the data packets will be dropped.
+	  can assume the Host has to receive and process ACL data faster than
+	  the controller can produce it.
+
 	  In a Controller only build this will determine the maximum ACL size
 	  that the Controller will send to the Host.
-	  The Host supports reassembling of L2CAP PDUs from ACL data packets,
-	  but the maximum supported L2CAP PDU size is limited by the maximum
-	  supported ACL size.
-	  This means the maximum L2CAP PDU MTU is restricted by the maximum ACL
-	  size subtracting the 4 byte header of an L2CAP PDU.
-	  When using L2CAP Connection oriented Channels without segmentation
-	  then the L2CAP SDU MTU is also restricted by the maximum ACL size
-	  subtracting the 4 Byte header of an L2CAP PDU plus the 2 byte header
-	  of an L2CAP SDU.
-
-	  With Enhanced ATT enabled the minimum of 70 is needed to support the
-	  minimum ATT_MTU of 64 octets in an L2CAP SDU without segmentation.
-	  With SMP LE Secure Connections enabled the minimum of 69 is needed to
-	  support the minimum SMP MTU of 65 octets (public key + opcode) in an
-	  L2CAP PDU.
-
-	  An L2CAP PDU is also referred to as an L2CAP basic frame or B-frame.
-	  An L2CAP SDU is also referred to as an L2CAP Credit-based frame or
-	  K-frame.
 
 config BT_BUF_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
@@ -102,9 +87,11 @@ config BT_BUF_ACL_RX_COUNT
 	  Host.
 	  In a combined Host and Controller build the buffers are shared and
 	  therefore Controller to Host flow control is not needed.
+
 	  In a Host only build with Controller to Host flow control enabled
 	  the Host will inform the Controller about the maximum number of
 	  buffers by setting this value in the Host Buffer Size command.
+
 	  When Controller to Host flow control is not enabled the Controller
 	  can assume that the Host has infinite amount of buffers.
 
