@@ -788,7 +788,7 @@ static inline void tmag5273_temperature_convert(int64_t raw_value, struct sensor
 static inline void tmag5273_angle_convert(int16_t raw_value, struct sensor_value *angle)
 {
 	angle->val1 = (raw_value >> 4) & 0x1FF;
-	angle->val2 = ((raw_value & 0xF) * 1000000) >> 1;
+	angle->val2 = (raw_value & 0xF) * (1000000 / 16);
 }
 
 /**
