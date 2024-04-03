@@ -353,6 +353,7 @@ static void tcp_send(struct net_pkt *pkt)
 			 * free the net_pkt.
 			 */
 			tcp_pkt_unref(pkt);
+			NET_WARN("net_pkt alloc failure");
 			goto out;
 		}
 
@@ -866,6 +867,8 @@ static bool tcp_send_process_no_lock(struct tcp *conn)
 			if (clone) {
 				tcp_send(clone);
 				conn->send_retries--;
+			} else {
+				NET_WARN("net_pkt alloc failure");
 			}
 		} else {
 			unref = true;
@@ -880,7 +883,7 @@ static bool tcp_send_process_no_lock(struct tcp *conn)
 					 struct net_pkt, next) :
 			tcp_pkt_clone(pkt);
 		if (!pkt) {
-			NET_ERR("net_pkt alloc failure");
+			NET_WARN("net_pkt alloc failure");
 			goto out;
 		}
 
