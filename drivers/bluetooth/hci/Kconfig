@@ -133,6 +133,13 @@ config BT_NXP
 	help
 	  NXP HCI bluetooth interface
 
+config BT_CYW208XX
+	bool "CYW208XX BLE driver"
+	default y
+	depends on DT_HAS_INFINEON_CYW208XX_HCI_ENABLED
+	help
+	  Infineon CYW208XX HCI bluetooth interface
+
 config BT_AMBIQ_HCI
 	bool "AMBIQ BT HCI driver"
 	default y
@@ -144,6 +151,7 @@ config BT_AMBIQ_HCI
 	help
 	  Supports Ambiq Bluetooth SoC using SPI as the communication protocol.
 	  HCI packets are sent and received as single Byte transfers.
+
 
 if BT_SPI
 
@@ -175,11 +183,13 @@ config BT_STM32_IPM_RX_STACK_SIZE
 menuconfig BT_AIROC
 	bool "AIROC BT connectivity"
 	default y
+	select GPIO                          if BT_H4
+	select UART                          if BT_H4
+	select UART_USE_RUNTIME_CONFIGURE    if BT_H4
 	select BT_HCI_SETUP
-	select UART_USE_RUNTIME_CONFIGURE
-	depends on GPIO
-	depends on DT_HAS_INFINEON_CYW43XXX_BT_HCI_ENABLED
-	depends on BT_H4
+	select USE_INFINEON_ABSTRACTION_RTOS if BT_CYW208XX
+	select EVENTS                        if BT_CYW208XX
+	depends on DT_HAS_INFINEON_CYW43XXX_BT_HCI_ENABLED || DT_HAS_INFINEON_CYW208XX_HCI_ENABLED
 	help
 	  Infineon's AIROC™ Wi-Fi & combos portfolio integrates
 	  IEEE 802.11a/b/g/n/ac/ax Wi-Fi and Bluetooth® 5.2 in a single-chip

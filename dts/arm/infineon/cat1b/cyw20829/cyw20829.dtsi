@@ -289,6 +289,12 @@
 					     <34 6>; /* CH15 */
 			status = "disabled";
 		};
+		bluetooth: btss@42000000 {
+			compatible = "infineon,cyw208xx-hci";
+			reg = <0x42000000 0x6186A0>;
+			interrupts = <16 6>;
+			status = "disabled";
+		};
 
 	};
 };
