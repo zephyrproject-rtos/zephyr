@@ -1060,6 +1060,15 @@ class ProjectBuilder(FilterBuilder):
         elif op == "gather_metrics":
             try:
                 ret = self.gather_metrics(self.instance)
+                if (
+                    self.instance.metrics.get("unrecognized")
+                    and not self.options.disable_unrecognized_section_test
+                ):
+                    logger.warning(
+                        f"{Fore.RED}FAILED{Fore.RESET}:"
+                        f" {self.instance.name} has unrecognized binary sections:"
+                        f" {self.instance.metrics.get('unrecognized')}"
+                    )
                 if not ret or ret.get('returncode', 1) > 0:
                     self.instance.status = TwisterStatus.ERROR
                     self.instance.reason = "Build Failure at gather_metrics."
@@ -1822,7 +1831,7 @@ class TwisterRunner:
                 else:
                     inst.metrics.update(self.instances[inst.name].metrics)
                     inst.metrics["handler_time"] = inst.execution_time
-                    inst.metrics["unrecognized"] = []
+                    inst.metrics.setdefault("unrecognized", [])
                     self.instances[inst.name] = inst
 
             print("")
