@@ -374,6 +374,5 @@ config ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y if !SMP
 
 rsource "Kconfig.isa"
-rsource "Kconfig.core"
 
 endmenu
