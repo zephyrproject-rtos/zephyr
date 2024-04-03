@@ -127,6 +127,7 @@ checkpoint	Check Point Software Technologies Ltd.
 chefree	Chefree Technology Corp.
 chipidea	Chipidea, Inc
 chipone	ChipOne
+chipsemi	Chipsemi Corp.
 chipspark	ChipSPARK
 chrontel	Chrontel, Inc.
 chrp	Common Hardware Reference Platform
