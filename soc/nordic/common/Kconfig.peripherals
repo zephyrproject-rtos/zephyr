@@ -147,6 +147,30 @@ config HAS_HW_NRF_PWM2
 config HAS_HW_NRF_PWM3
 	def_bool $(dt_nodelabel_enabled_with_compat,pwm3,$(DT_COMPAT_NORDIC_NRF_PWM))
 
+config HAS_HW_NRF_PWM20
+	def_bool $(dt_nodelabel_enabled_with_compat,pwm20,$(DT_COMPAT_NORDIC_NRF_PWM))
+
+config HAS_HW_NRF_PWM21
+	def_bool $(dt_nodelabel_enabled_with_compat,pwm21,$(DT_COMPAT_NORDIC_NRF_PWM))
+
+config HAS_HW_NRF_PWM22
+	def_bool $(dt_nodelabel_enabled_with_compat,pwm22,$(DT_COMPAT_NORDIC_NRF_PWM))
+
+config HAS_HW_NRF_PWM120
+	def_bool $(dt_nodelabel_enabled_with_compat,pwm120,$(DT_COMPAT_NORDIC_NRF_PWM))
+
+config HAS_HW_NRF_PWM130
+	def_bool $(dt_nodelabel_enabled_with_compat,pwm130,$(DT_COMPAT_NORDIC_NRF_PWM))
+
+config HAS_HW_NRF_PWM131
+	def_bool $(dt_nodelabel_enabled_with_compat,pwm131,$(DT_COMPAT_NORDIC_NRF_PWM))
+
+config HAS_HW_NRF_PWM132
+	def_bool $(dt_nodelabel_enabled_with_compat,pwm132,$(DT_COMPAT_NORDIC_NRF_PWM))
+
+config HAS_HW_NRF_PWM133
+	def_bool $(dt_nodelabel_enabled_with_compat,pwm133,$(DT_COMPAT_NORDIC_NRF_PWM))
+
 config HAS_HW_NRF_QDEC0
 	def_bool $(dt_nodelabel_enabled_with_compat,qdec0,$(DT_COMPAT_NORDIC_NRF_QDEC))
 
