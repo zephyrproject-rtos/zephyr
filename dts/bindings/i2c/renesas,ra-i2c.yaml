@@ -1,0 +1,31 @@
+# Copyright (c) 2024 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA series I2C
+
+compatible: "renesas,ra-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clock-rise-time:
+    type: int
+    description: |
+      Specify the rise time of the SCL pulse in microseconds.
+
+  clock-fall-time:
+    type: int
+    description: |
+      Specify the fall time of the SCL pulse in microseconds.

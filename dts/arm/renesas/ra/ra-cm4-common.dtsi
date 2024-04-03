@@ -299,6 +299,28 @@
 				status = "disabled";
 			};
 		};
+
+		i2c0: i2c@40053000 {
+			compatible = "renesas,ra-i2c";
+			reg = <0x40053000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			clocks = <&cgc RA_CLOCK_IIC(0)>;
+			#clock-cells = <1>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40053100 {
+			compatible = "renesas,ra-i2c";
+			reg = <0x40053100 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			clocks = <&cgc RA_CLOCK_IIC(1)>;
+			#clock-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
 

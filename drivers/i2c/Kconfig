@@ -120,6 +120,7 @@ source "drivers/i2c/Kconfig.ambiq"
 source "drivers/i2c/Kconfig.numaker"
 source "drivers/i2c/Kconfig.mcux"
 source "drivers/i2c/Kconfig.ene"
+source "drivers/i2c/Kconfig.renesas_ra"
 
 config I2C_INIT_PRIORITY
 	int "Init priority"
