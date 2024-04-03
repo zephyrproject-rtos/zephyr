@@ -468,6 +468,35 @@ static int pl011_init(const struct device *dev)
 	return 0;
 }
 
+#define COMPAT_SPECIFIC_FUNC_NAME(prefix, name) _CONCAT(_CONCAT(prefix, name), _)
+
+/*
+ * The first element of compatible is used to determine the type.
+ * When compatible defines as "ambiq,uart", "arm,pl011",
+ * this macro expands to pwr_on_ambiq_uart_[n].
+ */
+#define COMPAT_SPECIFIC_PWR_ON_FUNC(n)                                                             \
+	_CONCAT(COMPAT_SPECIFIC_FUNC_NAME(pwr_on_, DT_INST_STRING_TOKEN_BY_IDX(n, compatible, 0)), \
+		n)
+
+/*
+ * The first element of compatible is used to determine the type.
+ * When compatible defines as "ambiq,uart", "arm,pl011",
+ * this macro expands to clk_enable_ambiq_uart_[n].
+ */
+#define COMPAT_SPECIFIC_CLK_ENABLE_FUNC(n)                                                         \
+	_CONCAT(COMPAT_SPECIFIC_FUNC_NAME(clk_enable_,                                             \
+					  DT_INST_STRING_TOKEN_BY_IDX(n, compatible, 0)), n)
+
+/*
+ * The first element of compatible is used to determine the type.
+ * When compatible defines as "ambiq,uart", "arm,pl011",
+ * this macro expands to AMBIQ_UART_DEFINE(n).
+ */
+#define COMPAT_SPECIFIC_DEFINE(n)                                                                  \
+	_CONCAT(DT_INST_STRING_UPPER_TOKEN_BY_IDX(n, compatible, 0), _DEFINE)(n)
+
+
 #if defined(CONFIG_PINCTRL)
 #define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
 #define PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
@@ -476,17 +505,15 @@ static int pl011_init(const struct device *dev)
 #define PINCTRL_INIT(n)
 #endif /* CONFIG_PINCTRL */
 
-#define PL011_GET_COMPAT_QUIRK_NONE(n)	NULL
-
-#define PL011_GET_COMPAT_CLK_QUIRK_0(n)					\
-	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), ambiq_uart),	\
-		    (clk_enable_ambiq_uart),				\
-		    PL011_GET_COMPAT_QUIRK_NONE(n))
-
-#define PL011_GET_COMPAT_PWR_QUIRK_0(n)					\
-	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), ambiq_uart),	\
-		    (pwr_on_ambiq_uart_##n),				\
-		    PL011_GET_COMPAT_QUIRK_NONE(n))
+#define ARM_PL011_DEFINE(n)                                                                        \
+	static inline int pwr_on_arm_pl011_##n(void)                                               \
+	{                                                                                          \
+		return 0;                                                                          \
+	}                                                                                          \
+	static inline int clk_enable_arm_pl011_##n(const struct device *dev, uint32_t clk)         \
+	{                                                                                          \
+		return 0;                                                                          \
+	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 void pl011_isr(const struct device *dev)
@@ -523,8 +550,8 @@ void pl011_isr(const struct device *dev)
 		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),	\
 		PINCTRL_INIT(n)	\
 		.irq_config_func = pl011_irq_config_func_##n,				\
-		.clk_enable_func = PL011_GET_COMPAT_CLK_QUIRK_0(n),			\
-		.pwr_on_func = PL011_GET_COMPAT_PWR_QUIRK_0(n),				\
+		.clk_enable_func = COMPAT_SPECIFIC_CLK_ENABLE_FUNC(n),		        \
+		.pwr_on_func = COMPAT_SPECIFIC_PWR_ON_FUNC(n),			        \
 	};
 #else
 #define PL011_CONFIG_PORT(n)								\
@@ -537,7 +564,7 @@ void pl011_isr(const struct device *dev)
 
 #define PL011_INIT(n)						\
 	PINCTRL_DEFINE(n)					\
-	PL011_QUIRK_AMBIQ_UART_DEFINE(n)			\
+	COMPAT_SPECIFIC_DEFINE(n)				\
 	PL011_CONFIG_PORT(n)					\
 								\
 	static struct pl011_data pl011_data_port_##n = {	\
