@@ -348,7 +348,7 @@ static int hawkbit_device_acid_update(int32_t new_value)
 }
 
 /*
- * Update sleep interval, based on results from hawkbit base polling
+ * Update sleep interval, based on results from hawkBit base polling
  * resource
  */
 static void hawkbit_update_sleep(struct hawkbit_ctl_res *hawkbit_res)
@@ -513,7 +513,7 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res, int32_t *json_a
 
 	/*
 	 * Find the download-http href. We only support the DEFAULT
-	 * tenant on the same hawkbit server.
+	 * tenant on the same hawkBit server.
 	 */
 	href = artifact->_links.download_http.href;
 	if (!href) {
@@ -1004,7 +1004,7 @@ enum hawkbit_response hawkbit_probe(void)
 	}
 
 	/*
-	 * Query the hawkbit base polling resource.
+	 * Query the hawkBit base polling resource.
 	 */
 	LOG_INF("Polling target data from hawkBit");
 
