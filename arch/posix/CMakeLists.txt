@@ -196,11 +196,4 @@ if(NOT ${LLVM_SANITIZERS_ARG} STREQUAL "")
   target_compile_options(native_simulator INTERFACE ${LLVM_SANITIZERS_ARG})
 endif()
 
-# Override the C standard used for compilation to C 2011
-# This is due to some tests using _Static_assert which is a 2011 feature, but
-# otherwise relying on compilers supporting it also when set to C99.
-# This was in general ok, but with some host compilers and C library versions
-# it led to problems. So we override it to 2011 for the native targets.
-set_property(GLOBAL PROPERTY CSTD c11)
-
 add_subdirectory(core)
