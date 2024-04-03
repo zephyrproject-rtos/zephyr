@@ -34,6 +34,7 @@
 
 #include "uart_pl011_registers.h"
 #include "uart_pl011_ambiq.h"
+#include "uart_pl011_raspberrypi_pico.h"
 
 struct pl011_config {
 	DEVICE_MMIO_ROM;
