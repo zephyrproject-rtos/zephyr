@@ -216,7 +216,7 @@ static k_timeout_t randomize_t(k_timeout_t t)
 static void microdelay(void)
 {
 	static volatile int microdelay_cnt;
-	uint32_t repeat = sys_rand32_get() & 0xff;
+	uint8_t repeat = sys_rand8_get();
 
 	for (int i = 0; i < repeat; i++) {
 		microdelay_cnt++;

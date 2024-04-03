@@ -424,7 +424,7 @@ bool stress_read(void *user_data, uint32_t cnt, bool last, int prio)
 	struct stress_data *ctx = (struct stress_data *)user_data;
 	char buf[128];
 	int len;
-	int rpt = (sys_rand32_get() & 3) + 1;
+	int rpt = (sys_rand8_get() & 3) + 1;
 
 	for (int i = 0; i < rpt; i++) {
 		len = spsc_pbuf_read(ctx->pbuf, buf, (uint16_t)sizeof(buf));
@@ -447,8 +447,8 @@ bool stress_write(void *user_data, uint32_t cnt, bool last, int prio)
 {
 	struct stress_data *ctx = (struct stress_data *)user_data;
 	char buf[128];
-	uint16_t len = 1 + (sys_rand32_get() % (ctx->capacity / 4));
-	int rpt = (sys_rand32_get() & 1) + 1;
+	uint16_t len = 1 + (sys_rand16_get() % (ctx->capacity / 4));
+	int rpt = (sys_rand8_get() & 1) + 1;
 
 	zassert_true(len < sizeof(buf), "len:%d %d", len, ctx->capacity);
 
@@ -490,7 +490,7 @@ bool stress_claim_free(void *user_data, uint32_t cnt, bool last, int prio)
 	struct stress_data *ctx = (struct stress_data *)user_data;
 	char *buf;
 	uint16_t len;
-	int rpt = sys_rand32_get() % 0x3;
+	int rpt = sys_rand8_get() % 0x3;
 
 	for (int i = 0; i < rpt; i++) {
 		len = spsc_pbuf_claim(ctx->pbuf, &buf);
@@ -512,7 +512,7 @@ bool stress_claim_free(void *user_data, uint32_t cnt, bool last, int prio)
 bool stress_alloc_commit(void *user_data, uint32_t cnt, bool last, int prio)
 {
 	struct stress_data *ctx = (struct stress_data *)user_data;
-	uint32_t rnd = sys_rand32_get();
+	uint16_t rnd = sys_rand16_get();
 	uint16_t len = 1 + (rnd % (ctx->capacity / 4));
 	int rpt = rnd % 0x3;
 	char *buf;

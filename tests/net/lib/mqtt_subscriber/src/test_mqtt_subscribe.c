@@ -251,7 +251,7 @@ static int test_subscribe(void)
 	topic.qos = MQTT_QOS_1_AT_LEAST_ONCE;
 	sub.list = &topic;
 	sub.list_count = 1U;
-	sub.message_id = sys_rand32_get();
+	sub.message_id = sys_rand16_get();
 
 	rc = mqtt_subscribe(&client_ctx, &sub);
 	if (rc != 0) {
@@ -274,7 +274,7 @@ static int test_unsubscribe(void)
 	topic.topic.size = strlen(topic.topic.utf8);
 	unsub.list = &topic;
 	unsub.list_count = 1U;
-	unsub.message_id = sys_rand32_get();
+	unsub.message_id = sys_rand16_get();
 
 	rc = mqtt_unsubscribe(&client_ctx, &unsub);
 	if (rc != 0) {
