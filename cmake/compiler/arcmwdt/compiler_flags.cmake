@@ -1,5 +1,3 @@
-set_property(GLOBAL PROPERTY CSTD gnu99)
-
 # List the warnings that are not supported for C++ compilations
 list(APPEND CXX_EXCLUDED_OPTIONS
   -Werror=implicit-int
