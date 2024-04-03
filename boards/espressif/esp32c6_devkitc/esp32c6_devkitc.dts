@@ -23,6 +23,7 @@
 
 	aliases {
 		sw0 = &user_button1;
+		watchdog0 = &wdt0;
 	};
 
 	gpio_keys {
@@ -46,6 +47,10 @@
 };
 
 &gpio0 {
+	status = "okay";
+};
+
+&wdt0 {
 	status = "okay";
 };
 
