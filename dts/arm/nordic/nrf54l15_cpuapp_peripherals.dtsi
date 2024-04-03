@@ -261,6 +261,30 @@ timer24: timer@ce000 {
 	prescaler = <0>;
 };
 
+pwm20: pwm@d2000 {
+	compatible = "nordic,nrf-pwm";
+	status = "disabled";
+	reg = <0xd2000 0x1000>;
+	interrupts = <210 NRF_DEFAULT_IRQ_PRIORITY>;
+	#pwm-cells = <3>;
+};
+
+pwm21: pwm@d3000 {
+	compatible = "nordic,nrf-pwm";
+	status = "disabled";
+	reg = <0xd3000 0x1000>;
+	interrupts = <211 NRF_DEFAULT_IRQ_PRIORITY>;
+	#pwm-cells = <3>;
+};
+
+pwm22: pwm@d4000 {
+	compatible = "nordic,nrf-pwm";
+	status = "disabled";
+	reg = <0xd4000 0x1000>;
+	interrupts = <212 NRF_DEFAULT_IRQ_PRIORITY>;
+	#pwm-cells = <3>;
+};
+
 adc: adc@d5000 {
 	compatible = "nordic,nrf-saadc";
 	reg = <0xd5000 0x1000>;
