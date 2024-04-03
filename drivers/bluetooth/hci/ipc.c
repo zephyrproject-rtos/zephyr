@@ -237,19 +237,7 @@ static void bt_ipc_rx(const uint8_t *data, size_t len)
 
 	if (buf) {
 		LOG_DBG("Calling bt_recv(%p)", buf);
-
-		/* The IPC service does not guarantee that the handler thread
-		 * is cooperative. In particular, the OpenAMP implementation is
-		 * preemtible by default. OTOH, the HCI driver interface requires
-		 * that the bt_recv() function is called from a cooperative
-		 * thread.
-		 *
-		 * Calling `k_sched lock()` has the effect of making the current
-		 * thread cooperative.
-		 */
-		k_sched_lock();
 		bt_recv(buf);
-		k_sched_unlock();
 
 		LOG_HEXDUMP_DBG(buf->data, buf->len, "RX buf payload:");
 	}
