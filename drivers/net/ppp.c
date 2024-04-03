@@ -1026,7 +1026,7 @@ use_random_mac:
 		ppp->mac_addr[2] = 0x5E;
 		ppp->mac_addr[3] = 0x00;
 		ppp->mac_addr[4] = 0x53;
-		ppp->mac_addr[5] = sys_rand32_get();
+		ppp->mac_addr[5] = sys_rand8_get();
 	}
 
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
