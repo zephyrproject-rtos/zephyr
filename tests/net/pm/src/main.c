@@ -66,7 +66,7 @@ static uint8_t *fake_dev_get_mac(struct fake_dev_context *ctx)
 		ctx->mac_addr[2] = 0x5E;
 		ctx->mac_addr[3] = 0x00;
 		ctx->mac_addr[4] = 0x53;
-		ctx->mac_addr[5] = sys_rand32_get();
+		ctx->mac_addr[5] = sys_rand8_get();
 	}
 
 	return ctx->mac_addr;
