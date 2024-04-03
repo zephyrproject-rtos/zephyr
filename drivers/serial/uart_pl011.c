@@ -24,6 +24,9 @@
 #if IS_ENABLED(CONFIG_RESET)
 #include <zephyr/drivers/reset.h>
 #endif
+#if IS_ENABLED(CONFIG_CLOCK_CONTROL)
+#include <zephyr/drivers/clock_control.h>
+#endif
 
 #ifdef CONFIG_CPU_CORTEX_M
 #include <cmsis_compiler.h>
@@ -34,12 +37,15 @@
 
 struct pl011_config {
 	DEVICE_MMIO_ROM;
-	uint32_t sys_clk_freq;
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pincfg;
 #endif
 #if IS_ENABLED(CONFIG_RESET)
 	const struct reset_dt_spec reset;
+#endif
+#if IS_ENABLED(CONFIG_CLOCK_CONTROL)
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_id;
 #endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t irq_config_func;
@@ -53,6 +59,7 @@ struct pl011_data {
 	DEVICE_MMIO_RAM;
 	struct uart_config uart_cfg;
 	bool sbsa;		/* SBSA mode */
+	uint32_t clk_freq;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	volatile bool sw_call_txdrdy;
 	uart_irq_callback_user_data_t irq_cb;
@@ -150,7 +157,6 @@ static int pl011_runtime_configure_internal(const struct device *dev,
 					const struct uart_config *cfg,
 					bool disable)
 {
-	const struct pl011_config *config = dev->config;
 	struct pl011_data *data = dev->data;
 	uint32_t lcrh;
 	int ret = -ENOTSUP;
@@ -216,7 +222,7 @@ static int pl011_runtime_configure_internal(const struct device *dev,
 	}
 
 	/* Set baud rate */
-	ret = pl011_set_baudrate(dev, config->sys_clk_freq, cfg->baudrate);
+	ret = pl011_set_baudrate(dev, data->clk_freq, cfg->baudrate);
 	if (ret != 0) {
 		goto enable;
 	}
@@ -423,6 +429,13 @@ static int pl011_init(const struct device *dev)
 	}
 #endif
 
+#if IS_ENABLED(CONFIG_CLOCK_CONTROL)
+	if (config->clock_dev) {
+		clock_control_on(config->clock_dev, config->clock_id);
+		clock_control_get_rate(config->clock_dev, config->clock_id, &data->clk_freq);
+	}
+#endif
+
 	/*
 	 * If working in SBSA mode, we assume that UART is already configured,
 	 * or does not require configuration at all (if UART is emulated by
@@ -446,7 +459,7 @@ static int pl011_init(const struct device *dev)
 
 		/* Call vendor-specific function to enable clock for the peripheral */
 		if (config->clk_enable_func != NULL) {
-			ret = config->clk_enable_func(dev, config->sys_clk_freq);
+			ret = config->clk_enable_func(dev, data->clk_freq);
 			if (ret) {
 				return ret;
 			}
@@ -511,6 +524,8 @@ static int pl011_init(const struct device *dev)
 #define COMPAT_SPECIFIC_DEFINE(n)                                                                  \
 	_CONCAT(DT_INST_STRING_UPPER_TOKEN_BY_IDX(n, compatible, 0), _DEFINE)(n)
 
+#define COMPAT_SPECIFIC_CLOCK_CTLR_SUBSYS_CELL(n)                                                  \
+	_CONCAT(DT_INST_STRING_UPPER_TOKEN_BY_IDX(n, compatible, 0), _CLOCK_CTLR_SUBSYS_CELL)
 
 #if defined(CONFIG_PINCTRL)
 #define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
@@ -526,6 +541,12 @@ static int pl011_init(const struct device *dev)
 #else
 #define RESET_INIT(n)
 #endif
+
+#define CLOCK_INIT(n)                                                                              \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(n), fixed_clock), (),                   \
+		    (.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                           \
+		     .clock_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n,                    \
+				  COMPAT_SPECIFIC_CLOCK_CTLR_SUBSYS_CELL(n)),))
 
 #define ARM_PL011_DEFINE(n)                                                                        \
 	static inline int pwr_on_arm_pl011_##n(void)                                               \
@@ -569,8 +590,8 @@ void pl011_isr(const struct device *dev)
 											\
 	static struct pl011_config pl011_cfg_port_##n = {				\
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),					\
-		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),	\
-		PINCTRL_INIT(n)	\
+		CLOCK_INIT(n)                                                           \
+		PINCTRL_INIT(n)	                                                        \
 		.irq_config_func = pl011_irq_config_func_##n,				\
 		.clk_enable_func = COMPAT_SPECIFIC_CLK_ENABLE_FUNC(n),		        \
 		.pwr_on_func = COMPAT_SPECIFIC_PWR_ON_FUNC(n),			        \
@@ -579,8 +600,8 @@ void pl011_isr(const struct device *dev)
 #define PL011_CONFIG_PORT(n)								\
 	static struct pl011_config pl011_cfg_port_##n = {				\
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),					\
-		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),	\
-		PINCTRL_INIT(n)	\
+		CLOCK_INIT(n)                                                           \
+		PINCTRL_INIT(n)	                                                        \
 	};
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
@@ -597,6 +618,9 @@ void pl011_isr(const struct device *dev)
 			.data_bits = UART_CFG_DATA_BITS_8,		\
 			.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,		\
 		},							\
+		.clk_freq = COND_CODE_1(                                                \
+			DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(n), fixed_clock),        \
+			(DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency)), (0)),    \
 	};							\
 								\
 	DEVICE_DT_INST_DEFINE(n, &pl011_init,			\
