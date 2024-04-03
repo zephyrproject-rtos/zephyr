@@ -218,6 +218,12 @@
 				int-gpios = <&test_gpio 0 0>;
 			};
 
+			chsc6x@7 {
+				compatible = "chipsemi,chsc6x";
+				reg = <0x7>;
+				irq-gpios = <&test_gpio 0 0>;
+			};
+
 			pinnacle@2a {
 				compatible = "cirque,pinnacle";
 				reg = <0x2a>;
