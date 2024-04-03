@@ -154,7 +154,7 @@ static uint8_t *net_route_mcast_get_mac(const struct device *dev)
 		cfg->mac_addr[2] = 0x5E;
 		cfg->mac_addr[3] = 0x00;
 		cfg->mac_addr[4] = 0x53;
-		cfg->mac_addr[5] = sys_rand32_get();
+		cfg->mac_addr[5] = sys_rand8_get();
 	}
 
 	cfg->ll_addr.addr = cfg->mac_addr;
