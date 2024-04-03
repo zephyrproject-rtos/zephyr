@@ -362,6 +362,8 @@
 				max-frequency = <DT_FREQ_M(32)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart120: uart@8e6000 {
@@ -380,6 +382,8 @@
 				max-frequency = <DT_FREQ_M(32)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			cpuppr_vpr: vpr@908000 {
@@ -637,6 +641,8 @@
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart130: uart@9a5000 {
@@ -665,6 +671,8 @@
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart131: uart@9a6000 {
@@ -727,6 +735,8 @@
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart132: uart@9b5000 {
@@ -755,6 +765,8 @@
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart133: uart@9b6000 {
@@ -817,6 +829,8 @@
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart134: uart@9c5000 {
@@ -845,6 +859,8 @@
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart135: uart@9c6000 {
@@ -907,6 +923,8 @@
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart136: uart@9d5000 {
@@ -935,6 +953,8 @@
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart137: uart@9d6000 {
