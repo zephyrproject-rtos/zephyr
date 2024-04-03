@@ -37,12 +37,11 @@ LOG_MODULE_REGISTER(bt_bap_broadcast_assistant, CONFIG_BT_BAP_BROADCAST_ASSISTAN
 
 struct bap_broadcast_assistant_recv_state_info {
 	uint8_t src_id;
-	bt_addr_le_t addr;
-	uint8_t adv_sid;
-	uint32_t broadcast_id;
-
 	/** Cached PAST available */
 	bool past_avail;
+	uint8_t adv_sid;
+	uint32_t broadcast_id;
+	bt_addr_le_t addr;
 };
 
 struct bap_broadcast_assistant_instance {
@@ -444,7 +443,7 @@ static uint8_t notify_handler(struct bt_conn *conn,
 	} else {
 		broadcast_assistant.recv_states[index].past_avail = false;
 		bap_broadcast_assistant_recv_state_removed(conn, 0,
-							   broadcast_assistant.recv_states[index].src_id);
+					broadcast_assistant.recv_states[index].src_id);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -781,6 +780,28 @@ static struct bt_le_scan_cb scan_cb = {
 	.recv = scan_recv
 };
 
+/* BAP 6.5.4 states that the Broadcast Assistant shall not initiate the Add Source operation
+ * if the operation would result in duplicate values for the combined Source_Address_Type,
+ * Source_Adv_SID, and Broadcast_ID fields of any Broadcast Receive State characteristic exposed
+ * by the Scan Delegator.
+ */
+static bool broadcast_src_is_duplicate(uint32_t broadcast_id, uint8_t adv_sid, uint8_t addr_type)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(broadcast_assistant.recv_states); i++) {
+		const struct bap_broadcast_assistant_recv_state_info *state =
+							&broadcast_assistant.recv_states[i];
+
+		if (state != NULL && state->broadcast_id == broadcast_id &&
+			state->adv_sid == adv_sid && state->addr.type == addr_type) {
+			LOG_DBG("recv_state already exists at src_id=0x%02X", state->src_id);
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
 /****************************** PUBLIC API ******************************/
 
 static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *inst)
@@ -796,8 +817,7 @@ static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *in
 	(void)k_work_cancel_delayable(&inst->bap_read_work);
 
 	for (int i = 0U; i < CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT; i++) {
-		memset(&inst->recv_states[i], 0,
-		       sizeof(struct bap_broadcast_assistant_recv_state_info));
+		memset(&inst->recv_states[i], 0, sizeof(inst->recv_states[i]));
 		inst->recv_states[i].past_avail = false;
 		inst->recv_state_handles[i] = 0U;
 	}
@@ -1013,7 +1033,6 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 				       const struct bt_bap_broadcast_assistant_add_src_param *param)
 {
 	struct bt_bap_bass_cp_add_src *cp;
-	struct bap_broadcast_assistant_recv_state_info *state;
 
 	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
@@ -1030,20 +1049,11 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 	}
 
 	/* Check if this operation would result in a duplicate before proceeding */
-	for (size_t i = 0; i < ARRAY_SIZE(broadcast_assistant.recv_states); i++) {
-		state = &broadcast_assistant.recv_states[i];
+	if (broadcast_src_is_duplicate(param->broadcast_id, param->adv_sid, param->addr.type)) {
+		LOG_DBG("Broadcast source already exists");
 
-		if (param->addr.type == state->addr.type && param->adv_sid == state->adv_sid &&
-		    param->broadcast_id == state->broadcast_id) {
-			LOG_DBG("recv_state using broadcast_id=0x%06X, adv_sid=0x%02X, and "
-				"addr.type=0x%02X already exists with src_id=0x%02X",
-				param->broadcast_id, param->adv_sid, param->addr.type,
-				state->src_id);
-
-			return -EINVAL;
-		}
+		return -EINVAL;
 	}
-
 	/* Reset buffer before using */
 	net_buf_simple_reset(&att_buf);
 	cp = net_buf_simple_add(&att_buf, sizeof(*cp));
