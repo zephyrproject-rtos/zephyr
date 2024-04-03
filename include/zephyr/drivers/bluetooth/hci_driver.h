@@ -46,8 +46,6 @@ enum {
  * host with data from the controller. The buffer needs to have its type
  * set with the help of bt_buf_set_type() before calling this API.
  *
- * @note This function must only be called from a cooperative thread.
- *
  * @param buf Network buffer containing data from the controller.
  *
  * @return 0 on success or negative error number on failure.
