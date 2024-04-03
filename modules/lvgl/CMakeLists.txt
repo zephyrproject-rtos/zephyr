@@ -19,6 +19,7 @@ zephyr_compile_definitions(LV_CONF_INCLUDE_SIMPLE=1)
 zephyr_compile_definitions(LV_CONF_PATH=${CMAKE_CURRENT_SOURCE_DIR}/include/lv_conf.h)
 
 zephyr_library_sources(
+
     ${LVGL_DIR}/src/core/lv_group.c
     ${LVGL_DIR}/src/core/lv_obj.c
     ${LVGL_DIR}/src/core/lv_obj_class.c
@@ -45,7 +46,6 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/draw/lv_draw_rect.c
     ${LVGL_DIR}/src/draw/lv_draw_triangle.c
     ${LVGL_DIR}/src/draw/lv_draw_vector.c
-    ${LVGL_DIR}/src/draw/lv_image_buf.c
     ${LVGL_DIR}/src/draw/lv_image_decoder.c
 
     ${LVGL_DIR}/src/draw/nxp/pxp/lv_draw_buf_pxp.c
@@ -56,7 +56,6 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/draw/nxp/pxp/lv_pxp_cfg.c
     ${LVGL_DIR}/src/draw/nxp/pxp/lv_pxp_osa.c
     ${LVGL_DIR}/src/draw/nxp/pxp/lv_pxp_utils.c
-
     ${LVGL_DIR}/src/draw/nxp/vglite/lv_draw_buf_vglite.c
     ${LVGL_DIR}/src/draw/nxp/vglite/lv_draw_vglite_arc.c
     ${LVGL_DIR}/src/draw/nxp/vglite/lv_draw_vglite_border.c
@@ -83,10 +82,11 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/draw/renesas/dave2d/lv_draw_dave2d_triangle.c
     ${LVGL_DIR}/src/draw/renesas/dave2d/lv_draw_dave2d_utils.c
 
-    ${LVGL_DIR}/src/draw/sdl/lv_draw_sdl.c
-
     ${LVGL_DIR}/src/draw/sw/blend/lv_draw_sw_blend.c
+    ${LVGL_DIR}/src/draw/sw/blend/lv_draw_sw_blend_to_al88.c
     ${LVGL_DIR}/src/draw/sw/blend/lv_draw_sw_blend_to_argb8888.c
+    ${LVGL_DIR}/src/draw/sw/blend/lv_draw_sw_blend_to_i1.c
+    ${LVGL_DIR}/src/draw/sw/blend/lv_draw_sw_blend_to_l8.c
     ${LVGL_DIR}/src/draw/sw/blend/lv_draw_sw_blend_to_rgb565.c
     ${LVGL_DIR}/src/draw/sw/blend/lv_draw_sw_blend_to_rgb888.c
     ${LVGL_DIR}/src/draw/sw/lv_draw_sw_arc.c
@@ -118,8 +118,10 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_triangle.c
     ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_vector.c
     ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_decoder.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_grad.c
     ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_math.c
     ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_path.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_pending.c
     ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_utils.c
 
     ${LVGL_DIR}/src/font/lv_binfont_loader.c
@@ -148,6 +150,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/font/lv_font_montserrat_46.c
     ${LVGL_DIR}/src/font/lv_font_montserrat_48.c
     ${LVGL_DIR}/src/font/lv_font_montserrat_8.c
+    ${LVGL_DIR}/src/font/lv_font_simsun_14_cjk.c
     ${LVGL_DIR}/src/font/lv_font_simsun_16_cjk.c
     ${LVGL_DIR}/src/font/lv_font_unscii_16.c
     ${LVGL_DIR}/src/font/lv_font_unscii_8.c
@@ -171,6 +174,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/libs/freetype/lv_ftsystem.c
     ${LVGL_DIR}/src/libs/fsdrv/lv_fs_cbfs.c
     ${LVGL_DIR}/src/libs/fsdrv/lv_fs_fatfs.c
+    ${LVGL_DIR}/src/libs/fsdrv/lv_fs_littlefs.c
     ${LVGL_DIR}/src/libs/fsdrv/lv_fs_memfs.c
     ${LVGL_DIR}/src/libs/fsdrv/lv_fs_posix.c
     ${LVGL_DIR}/src/libs/fsdrv/lv_fs_stdio.c
@@ -196,6 +200,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/misc/cache/lv_cache_entry.c
     ${LVGL_DIR}/src/misc/cache/_lv_cache_lru_rb.c
     ${LVGL_DIR}/src/misc/cache/lv_image_cache.c
+    ${LVGL_DIR}/src/misc/cache/lv_image_header_cache.c
     ${LVGL_DIR}/src/misc/lv_anim.c
     ${LVGL_DIR}/src/misc/lv_anim_timeline.c
     ${LVGL_DIR}/src/misc/lv_area.c
@@ -220,7 +225,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/misc/lv_text.c
     ${LVGL_DIR}/src/misc/lv_timer.c
     ${LVGL_DIR}/src/misc/lv_utils.c
-
+    ${LVGL_DIR}/src/osal/lv_os.c
     ${LVGL_DIR}/src/osal/lv_os_none.c
 
     ${LVGL_DIR}/src/others/file_explorer/lv_file_explorer.c
@@ -235,16 +240,18 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/others/sysmon/lv_sysmon.c
     ${LVGL_DIR}/src/others/vg_lite_tvg/vg_lite_matrix.c
 
-    ${LVGL_DIR}/src/stdlib/builtin/lv_mem_core_builtin.c
     ${LVGL_DIR}/src/stdlib/builtin/lv_sprintf_builtin.c
     ${LVGL_DIR}/src/stdlib/builtin/lv_string_builtin.c
     ${LVGL_DIR}/src/stdlib/builtin/lv_tlsf.c
+
     ${LVGL_DIR}/src/stdlib/clib/lv_mem_core_clib.c
     ${LVGL_DIR}/src/stdlib/clib/lv_sprintf_clib.c
     ${LVGL_DIR}/src/stdlib/clib/lv_string_clib.c
+
     ${LVGL_DIR}/src/stdlib/lv_mem.c
 
     ${LVGL_DIR}/src/themes/default/lv_theme_default.c
+
     ${LVGL_DIR}/src/themes/lv_theme.c
     ${LVGL_DIR}/src/themes/mono/lv_theme_mono.c
     ${LVGL_DIR}/src/themes/simple/lv_theme_simple.c
@@ -257,6 +264,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/widgets/button/lv_button.c
     ${LVGL_DIR}/src/widgets/buttonmatrix/lv_buttonmatrix.c
     ${LVGL_DIR}/src/widgets/calendar/lv_calendar.c
+    ${LVGL_DIR}/src/widgets/calendar/lv_calendar_chinese.c
     ${LVGL_DIR}/src/widgets/calendar/lv_calendar_header_arrow.c
     ${LVGL_DIR}/src/widgets/calendar/lv_calendar_header_dropdown.c
     ${LVGL_DIR}/src/widgets/canvas/lv_canvas.c
@@ -270,9 +278,13 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/widgets/led/lv_led.c
     ${LVGL_DIR}/src/widgets/line/lv_line.c
     ${LVGL_DIR}/src/widgets/list/lv_list.c
+    ${LVGL_DIR}/src/widgets/lottie/lv_lottie.c
     ${LVGL_DIR}/src/widgets/menu/lv_menu.c
     ${LVGL_DIR}/src/widgets/msgbox/lv_msgbox.c
     ${LVGL_DIR}/src/widgets/objx_templ/lv_objx_templ.c
+    ${LVGL_DIR}/src/widgets/property/lv_image_properties.c
+    ${LVGL_DIR}/src/widgets/property/lv_obj_properties.c
+    ${LVGL_DIR}/src/widgets/property/lv_style_properties.c
     ${LVGL_DIR}/src/widgets/roller/lv_roller.c
     ${LVGL_DIR}/src/widgets/scale/lv_scale.c
     ${LVGL_DIR}/src/widgets/slider/lv_slider.c

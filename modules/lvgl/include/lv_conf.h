@@ -10,37 +10,27 @@
 
 /* Memory manager settings */
 
-#define LV_MEMCPY_MEMSET_STD 1
-#define LV_MEM_CUSTOM        1
+#define LV_USE_STDLIB_MALLOC LV_STDLIB_CUSTOM
 
 #if defined(CONFIG_LV_Z_MEM_POOL_HEAP_LIB_C)
-
-#define LV_MEM_CUSTOM_INCLUDE "stdlib.h"
-#define LV_MEM_CUSTOM_ALLOC   malloc
-#define LV_MEM_CUSTOM_REALLOC realloc
-#define LV_MEM_CUSTOM_FREE    free
-
+#define LV_STDLIB_INCLUDE "stdlib.h"
+#define lv_malloc_core    malloc
+#define lv_realloc_core   realloc
+#define lv_free_core      free
 #else
-
-#define LV_MEM_CUSTOM_INCLUDE "lvgl_mem.h"
-#define LV_MEM_CUSTOM_ALLOC   lvgl_malloc
-#define LV_MEM_CUSTOM_REALLOC lvgl_realloc
-#define LV_MEM_CUSTOM_FREE    lvgl_free
-
+#define LV_STDLIB_INCLUDE "lvgl_mem.h"
+#define lv_malloc_core    lvgl_malloc
+#define lv_realloc_core   lvgl_realloc
+#define lv_free_core      lvgl_free
 #endif
 
-/* HAL settings */
-
-#define LV_TICK_CUSTOM               1
-#define LV_TICK_CUSTOM_INCLUDE       <zephyr/kernel.h>
-#define LV_TICK_CUSTOM_SYS_TIME_EXPR (k_uptime_get_32())
-
 /* Misc settings */
+#define lv_snprintf  snprintf
+#define lv_vsnprintf vsnprintf
 
-#define LV_SPRINTF_CUSTOM  1
-#define LV_SPRINTF_INCLUDE "stdio.h"
-#define lv_snprintf        snprintf
-#define lv_vsnprintf       vsnprintf
+#if CONFIG_LV_COLOR_DEPTH == 1
+#define LV_COLOR_FORMAT_NATIVE LV_COLOR_FORMAT_RAW
+#endif /* CONFIG_LV_COLOR_DEPTH == 1 */
 
 /*
  * Needed because of a workaround for a GCC bug,

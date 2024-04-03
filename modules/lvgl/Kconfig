@@ -86,7 +86,10 @@ choice LV_COLOR_DEPTH
 endchoice
 
 config LV_COLOR_16_SWAP
-	bool
+	bool "Swap the 2 bytes of RGB565 color"
+	depends on LV_COLOR_DEPTH_16
+	help
+	  Useful if the display has an 8-bit interface (e.g. SPI).
 
 config LV_Z_FLUSH_THREAD
 	bool "Flush LVGL frames in a separate thread"
