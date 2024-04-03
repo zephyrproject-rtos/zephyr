@@ -304,18 +304,18 @@ static uint16_t lcet; /* Last Crank Event Time */
 static void csc_simulation(void)
 {
 	static uint8_t i;
-	uint32_t rand = sys_rand32_get();
+	uint8_t rnd = sys_rand8_get();
 	bool nfy_crank = false, nfy_wheel = false;
 
 	/* Measurements don't have to be updated every second */
 	if (!(i % 2)) {
-		lwet += 1050 + rand % 50;
+		lwet += 1050 + rnd % 50;
 		c_wheel_revs += 2U;
 		nfy_wheel = true;
 	}
 
 	if (!(i % 3)) {
-		lcet += 1000 + rand % 50;
+		lcet += 1000 + rnd % 50;
 		ccr += 1U;
 		nfy_crank = true;
 	}

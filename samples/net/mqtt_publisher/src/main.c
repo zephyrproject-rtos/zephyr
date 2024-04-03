@@ -219,7 +219,7 @@ static char *get_mqtt_payload(enum mqtt_qos qos)
 	static APP_BMEM char payload[30];
 
 	snprintk(payload, sizeof(payload), "{d:{temperature:%d}}",
-		 (uint8_t)sys_rand32_get());
+		 sys_rand8_get());
 #else
 	static APP_DMEM char payload[] = "DOORS:OPEN_QoSx";
 
@@ -250,7 +250,7 @@ static int publish(struct mqtt_client *client, enum mqtt_qos qos)
 	param.message.payload.data = get_mqtt_payload(qos);
 	param.message.payload.len =
 			strlen(param.message.payload.data);
-	param.message_id = sys_rand32_get();
+	param.message_id = sys_rand16_get();
 	param.dup_flag = 0U;
 	param.retain_flag = 0U;
 
