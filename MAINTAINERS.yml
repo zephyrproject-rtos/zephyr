@@ -762,6 +762,8 @@ Devicetree:
   status: maintained
   maintainers:
     - galak
+  collaborators:
+    - decsny
   files:
     - scripts/dts/
     - dts/common/
@@ -779,6 +781,8 @@ Devicetree Bindings:
   status: maintained
   maintainers:
     - galak
+  collaborators:
+    - decsny
   files:
     - dts/bindings/
     - include/zephyr/dt-bindings/
