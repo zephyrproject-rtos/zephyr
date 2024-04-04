@@ -492,6 +492,16 @@ static int spi_shakti_transceive(const struct device *dev,
   int comm_mode = comm_config[2];
   int spi_size = comm_config[3];
 
+  printk("pol %d\n", pol);
+  printk("pha %d\n", pha);
+  printk("prescale %d\n", prescale);
+  printk("setup_time %d\n", setup_time);
+  printk("hold_time %d\n", hold_time);
+  printk("master_mode %d\n", master_mode);
+  printk("lsb_first %d\n", lsb_first);
+  printk("comm_mode %d\n", comm_mode);
+  printk("spi_size %d\n", spi_size);
+
   sspi_shakti_init(*dev, spi_number);
   sclk_shakti_config(*dev, spi_number, pol, pha, prescale, setup_time, hold_time);
   
@@ -543,7 +553,7 @@ static int spi_shakti_transceive(const struct device *dev,
 
 
 
-static int spi_sifive_release(const struct device *dev,
+static int spi_shakti_release(const struct device *dev,
 		       const struct spi_config *config)
 {
 	spi_context_unlock_unconditionally(&SPI_DATA(dev)->ctx);
@@ -557,8 +567,25 @@ static struct spi_driver_api spi_shakti_api = {
 };
 
 
-static const struct spi_shakti_cfg spi_shakti_cfg_##n = {
+	static struct spi_shakti_data spi_shakti_data_0 = { \
+		SPI_CONTEXT_INIT_LOCK(spi_shakti_data_##n, ctx), \
+		SPI_CONTEXT_INIT_SYNC(spi_shakti_data_##n, ctx), \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
+	}; \
+
+static const struct spi_shakti_cfg spi_shakti_cfg_0 = {
   .base = SPI0_START , \
   .f_sys = CLOCK_FREQUENCY,/
 };
 
+
+DEVICE_DT_INST_DEFINE(n, \
+			spi_shakti_init, \
+			NULL, \
+			&spi_shakti_data_0, \
+			&spi_shakti_cfg_0, \
+			POST_KERNEL, \
+			CONFIG_SPI_INIT_PRIORITY, \
+			&spi_shakti_api);
+
+DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

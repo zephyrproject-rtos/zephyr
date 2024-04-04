@@ -1,0 +1,17 @@
+# Shakti SPI Driver configuration options
+
+# Copyright (c) 2024 Shakti Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_SHAKTI
+	bool "Shakti SPI controller driver"
+	default y
+	depends on DT_HAS_SHAKTI_SPI0_ENABLED
+	help
+	  This option enables the Shakti spi driver.
+
+config SPI_INIT_PRIORITY
+	int "SPI init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  SPI driver device initialization priority.

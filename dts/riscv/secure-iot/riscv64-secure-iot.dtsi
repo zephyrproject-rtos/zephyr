@@ -64,8 +64,5 @@ CPU0_intc: interrupt-controller {
   spi0: spi@00020000 {
           compatible = "shakti,spi0";
           reg = <0x0 0x20000 0x0 0x100>;
-          status = "okay";
-          sclk_configure = [0 0 16 0 0];
-          Comm_configure = [1 1 0 8];
   };
 };
