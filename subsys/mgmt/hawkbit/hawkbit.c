@@ -202,16 +202,9 @@ static bool start_http_client(void)
 {
 	int ret = -1;
 	struct zsock_addrinfo *addr;
-	struct zsock_addrinfo hints;
+	struct zsock_addrinfo hints = {0};
 	int resolve_attempts = 10;
-
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-	int protocol = IPPROTO_TLS_1_2;
-#else
-	int protocol = IPPROTO_TCP;
-#endif
-
-	(void)memset(&hints, 0, sizeof(hints));
+	int protocol = IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) ? IPPROTO_TLS_1_2 : IPPROTO_TCP;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		hints.ai_family = AF_INET6;
