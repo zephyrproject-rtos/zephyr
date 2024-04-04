@@ -116,10 +116,10 @@ ZTEST(rtc_api, test_alarm)
 		zassert_equal(alarm_time_mask_get, alarm_time_mask_set,
 			      "Incorrect alarm time mask");
 
-		zassert_equal(alarm_time_get.tm_min, alarm_time_get.tm_min,
+		zassert_equal(alarm_time_get.tm_min, alarm_time_set.tm_min,
 			      "Incorrect alarm time minute field");
 
-		zassert_equal(alarm_time_get.tm_hour, alarm_time_get.tm_hour,
+		zassert_equal(alarm_time_get.tm_hour, alarm_time_set.tm_hour,
 			      "Incorrect alarm time hour field");
 	}
 
