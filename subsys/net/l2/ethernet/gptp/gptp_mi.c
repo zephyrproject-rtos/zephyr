@@ -960,12 +960,17 @@ static void gptp_mi_set_ps_sync_cmss(void)
 	sync_info->precise_orig_ts.second = current_time / NSEC_PER_SEC;
 	sync_info->precise_orig_ts.nanosecond = current_time % NSEC_PER_SEC;
 
-	/* TODO calculate correction field properly, rate_ratio is also set to
-	 * zero instead of being copied from global_ds as it affects the final
-	 * value of FUP correction field.
+	/* TODO calculate rate ratio and correction field properly.
+	 * Whenever time aware system is the grand master clock, we currently
+	 * make the following shortcuts:
+	 * - assuming that clock source is the local clock,
+	 *   rate_ratio is set to 1.0 instead of being copied from global_ds.
+	 * - considering that precise origin timestamp is directly inherited
+	 *   from sync egress timestamp in gptp_md_follow_up_prepare(),
+	 *   follow_up_correction_field is set to 0.
 	 */
 	sync_info->follow_up_correction_field = 0;
-	sync_info->rate_ratio = 0;
+	sync_info->rate_ratio = 1.0;
 
 	memcpy(&sync_info->src_port_id.clk_id,
 	       GPTP_DEFAULT_DS()->clk_id,
