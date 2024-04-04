@@ -245,6 +245,7 @@
 				    &test_gpio 0 0
 				    &test_gpio 0 0
 				    &test_gpio 0 0
+				    &test_gpio 0 0
 				    &test_gpio 0 0>;
 
 			test_spi_mcp23s17: mcp23s17@0 {
@@ -312,6 +313,23 @@
 					#gpio-cells = <2>;
 					ngpios = <4>;
 				};
+			};
+
+			test_spi_max22190: max22190@5 {
+				compatible = "adi,max22190-gpio";
+				status = "okay";
+				reg = <0x05>;
+				spi-max-frequency = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				max22190-mode = <1>;
+				filter-wbes = <1 0 1 0  1 0 1 0>;
+				filter-fbps = <0 0 0 0  0 0 0 0>;
+				filter-delays = <50 100 400 800 1600 3200 12800 20000>;
+				drdy-gpios = <&test_gpio 0 0>;
+				fault-gpios = <&test_gpio 0 0>;
+				latch-gpios = <&test_gpio 0 0>;
 			};
 		};
 	};
