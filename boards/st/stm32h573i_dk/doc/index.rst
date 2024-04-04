@@ -193,8 +193,11 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | AES       | on-chip    | crypto                              |
 +-----------+------------+-------------------------------------+
+| SDMMC     | on-chip    | disk access                         |
++-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB full-speed host/device bus      |
 +-----------+------------+-------------------------------------+
+
 
 Other hardware features are not yet supported on this Zephyr port.
 
