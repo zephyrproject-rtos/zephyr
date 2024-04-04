@@ -618,6 +618,105 @@
 		clk-divider = <1>;
 	};
 
+	flexpwm0: flexpwm@ce000 {
+		compatible = "nxp,flexpwm";
+		reg = <0xce000 0x1000>;
+		interrupt-names = "RELOAD-ERROR", "FAULT";
+		interrupts = <112 0>, <113 0>;
+		flexpwm0_pwm0: pwm0 {
+			compatible = "nxp,imx-pwm";
+			index = <0>;
+			interrupts = <114 0>;
+			#pwm-cells = <3>;
+			clocks = <&syscon MCUX_BUS_CLK>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+			run-in-wait;
+		};
+
+		flexpwm0_pwm1: pwm1 {
+			compatible = "nxp,imx-pwm";
+			index = <1>;
+			interrupts = <115 0>;
+			#pwm-cells = <3>;
+			clocks = <&syscon MCUX_BUS_CLK>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+			run-in-wait;
+		};
+
+		flexpwm0_pwm2: pwm2 {
+			compatible = "nxp,imx-pwm";
+			index = <2>;
+			interrupts = <116 0>;
+			#pwm-cells = <3>;
+			clocks = <&syscon MCUX_BUS_CLK>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+			run-in-wait;
+		};
+
+		flexpwm0_pwm3: pwm3 {
+			compatible = "nxp,imx-pwm";
+			index = <3>;
+			interrupts = <117 0>;
+			#pwm-cells = <3>;
+			clocks = <&syscon MCUX_BUS_CLK>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+			run-in-wait;
+		};
+	};
+
+	flexpwm1: flexpwm@d0000 {
+		compatible = "nxp,flexpwm";
+		reg = <0xd0000 0x1000>;
+		interrupt-names = "RELOAD-ERROR", "FAULT";
+		interrupts = <118 0>, <119 0>;
+		flexpwm1_pwm0: pwm0 {
+			compatible = "nxp,imx-pwm";
+			index = <0>;
+			interrupts = <120 0>;
+			#pwm-cells = <3>;
+			clocks = <&syscon MCUX_BUS_CLK>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+			run-in-wait;
+		};
+
+		flexpwm1_pwm1: pwm1 {
+			compatible = "nxp,imx-pwm";
+			index = <1>;
+			interrupts = <121 0>;
+			#pwm-cells = <3>;
+			clocks = <&syscon MCUX_BUS_CLK>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+			run-in-wait;
+		};
+
+		flexpwm1_pwm2: pwm2 {
+			compatible = "nxp,imx-pwm";
+			index = <2>;
+			interrupts = <122 0>;
+			#pwm-cells = <3>;
+			clocks = <&syscon MCUX_BUS_CLK>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+			run-in-wait;
+		};
+
+		flexpwm1_pwm3: pwm3 {
+			compatible = "nxp,imx-pwm";
+			index = <3>;
+			interrupts = <123 0>;
+			#pwm-cells = <3>;
+			clocks = <&syscon MCUX_BUS_CLK>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+			run-in-wait;
+		};
+	};
 };
 
 &systick {
