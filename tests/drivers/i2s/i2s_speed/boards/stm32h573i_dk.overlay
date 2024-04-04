@@ -1,0 +1,74 @@
+/* i2s-node0 is the receiver    */
+/* i2s-node1 is the transmitter */
+/ {
+	aliases {
+		i2s-node0 = &i2s1;
+		i2s-node1 = &i2s2;
+	};
+};
+
+&pll1 {
+	div-m = <5>;
+	mul-n = <64>;
+	div-p = <2>;
+	div-q = <4>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&i2s1 {
+	pinctrl-0 = <&i2s1_ws_pa4 &i2s1_ck_pa5 &spi1_miso_pa6 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
+	interrupts = <55 3>;
+	dmas = <&gpdma1 0 7 STM32_DMA_PERIPH_TX
+		&gpdma1 1 6 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_INC | STM32_DMA_PERIPH_16BITS | \
+			STM32_DMA_MEM_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+	status = "okay";
+};
+
+&i2s2 {
+	pinctrl-0 = <&i2s2_ws_pa3 &i2s2_ck_pi1 &spi2_miso_pi2 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	interrupts = <56 3>;
+	dmas = <&gpdma1 2 9 (STM32_DMA_PERIPH_TX | STM32_DMA_MEM_INC | STM32_DMA_PERIPH_16BITS | \
+			STM32_DMA_MEM_16BITS | STM32_DMA_PRIORITY_HIGH)
+		&gpdma1 3 8 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+	status = "okay";
+};
+
+&i2s3 {
+	pinctrl-0 = <&i2s3_ws_pa15 &i2s3_ck_pb3 &spi3_miso_pb4 &spi3_mosi_pc12>;
+	pinctrl-names = "default";
+	interrupts = <57 3>;
+	dmas = <&gpdma1 4 11 (STM32_DMA_PERIPH_TX  | STM32_DMA_MEM_INC | STM32_DMA_PERIPH_16BITS \
+			| STM32_DMA_MEM_16BITS | STM32_DMA_PRIORITY_HIGH)
+		&gpdma1 5 10 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+	status = "disabled";
+};
+
+&spi1 {
+	status = "disabled";
+};
+
+&spi2 {
+	status = "disabled";
+};
+
+&spi3 {
+	status = "disabled";
+};
+
+/* DMA Tx interrupt 0 has a higher Prio than Rx Dma interrupt 1 */
+&gpdma1 {
+	interrupts = <27 1 28 2 29 1 30 1 31 1 32 1 33 1 34 1>;
+	status = "okay";
+};
+
+&gpdma2 {
+	interrupts = <90 1 91 1 92 1 93 1 94 1 95 1 96 1 97 1>;
+	status = "okay";
+};
