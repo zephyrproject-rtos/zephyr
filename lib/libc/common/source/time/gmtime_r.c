@@ -11,6 +11,7 @@
  */
 
 #include <time.h>
+#include <zephyr/toolchain.h>
 
 /* A signed type with the representation of time_t without its
  * implications.
