@@ -125,14 +125,8 @@ def kobject_to_enum(kobj):
 
     return "K_OBJ_%s" % name.upper()
 
-subsystems = [
-    # Editing the list is deprecated, add the __subsystem sentinel to your driver
-    # api declaration instead. e.x.
-    #
-    # __subsystem struct my_driver_api {
-    #    ....
-    #};
-]
+# Names of all structs tagged with __subsystem, found by parse_syscalls.py
+subsystems = [ ]
 
 # Names of all structs tagged with __net_socket, found by parse_syscalls.py
 net_sockets = [ ]
