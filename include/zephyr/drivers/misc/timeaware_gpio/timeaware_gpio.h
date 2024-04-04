@@ -49,7 +49,7 @@ enum tgpio_pin_polarity {
  * (Internal use only.)
  */
 
-__subsystem struct tgpio_driver_api {
+DEVICE_API struct tgpio_driver_api {
 	int (*pin_disable)(const struct device *dev, uint32_t pin);
 	int (*get_time)(const struct device *dev, uint64_t *current_time);
 	int (*cyc_per_sec)(const struct device *dev, uint32_t *cycles);

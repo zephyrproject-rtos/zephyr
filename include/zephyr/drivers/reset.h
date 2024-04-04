@@ -139,7 +139,7 @@ typedef int (*reset_api_line_toggle)(const struct device *dev, uint32_t id);
 /**
  * @brief Reset Controller driver API
  */
-__subsystem struct reset_driver_api {
+DEVICE_API struct reset_driver_api {
 	reset_api_status status;
 	reset_api_line_assert line_assert;
 	reset_api_line_deassert line_deassert;

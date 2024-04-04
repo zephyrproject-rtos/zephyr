@@ -65,7 +65,7 @@
 /* More flags to be added as necessary */
 
 /** @brief Crypto driver API definition. */
-__subsystem struct crypto_driver_api {
+DEVICE_API struct crypto_driver_api {
 	int (*query_hw_caps)(const struct device *dev);
 
 	/* Setup a crypto session */

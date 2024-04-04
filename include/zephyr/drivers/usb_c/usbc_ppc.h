@@ -50,7 +50,7 @@ enum usbc_ppc_event {
 typedef void (*usbc_ppc_event_cb_t)(const struct device *dev, void *data, enum usbc_ppc_event ev);
 
 /** Structure with pointers to the functions implemented by driver */
-__subsystem struct usbc_ppc_drv {
+DEVICE_API struct usbc_ppc_drv {
 	int (*is_dead_battery_mode)(const struct device *dev);
 	int (*exit_dead_battery_mode)(const struct device *dev);
 	int (*is_vbus_source)(const struct device *dev);

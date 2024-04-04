@@ -575,7 +575,7 @@ struct i3c_device_id;
 struct i3c_i2c_device_desc;
 struct i3c_target_config;
 
-__subsystem struct i3c_driver_api {
+DEVICE_API struct i3c_driver_api {
 	/**
 	 * For backward compatibility to I2C API.
 	 *

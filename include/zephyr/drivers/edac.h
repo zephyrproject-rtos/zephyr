@@ -47,7 +47,7 @@ typedef void (*edac_notify_callback_f)(const struct device *dev, void *data);
  *
  * This is the mandatory API any EDAC driver needs to expose.
  */
-__subsystem struct edac_driver_api {
+DEVICE_API struct edac_driver_api {
 	/* Error Injection API is disabled by default */
 	int (*inject_set_param1)(const struct device *dev, uint64_t value);
 	int (*inject_get_param1)(const struct device *dev, uint64_t *value);

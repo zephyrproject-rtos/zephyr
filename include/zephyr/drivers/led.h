@@ -111,7 +111,7 @@ typedef int (*led_api_write_channels)(const struct device *dev,
 /**
  * @brief LED driver API
  */
-__subsystem struct led_driver_api {
+DEVICE_API struct led_driver_api {
 	/* Mandatory callbacks. */
 	led_api_on on;
 	led_api_off off;

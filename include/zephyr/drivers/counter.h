@@ -231,7 +231,7 @@ typedef int (*counter_api_set_guard_period)(const struct device *dev,
 						uint32_t flags);
 typedef uint32_t (*counter_api_get_freq)(const struct device *dev);
 
-__subsystem struct counter_driver_api {
+DEVICE_API struct counter_driver_api {
 	counter_api_start start;
 	counter_api_stop stop;
 	counter_api_get_value get_value;

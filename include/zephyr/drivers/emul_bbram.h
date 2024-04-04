@@ -23,7 +23,7 @@
  * These are for internal use only, so skip these in public documentation.
  */
 
-__subsystem struct emul_bbram_backend_api {
+DEVICE_API struct emul_bbram_backend_api {
 	/** Sets the data */
 	int (*set_data)(const struct emul *target, size_t offset, size_t count,
 			const uint8_t *data);

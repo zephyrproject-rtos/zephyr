@@ -130,7 +130,7 @@ typedef int (*flash_api_read_jedec_id)(const struct device *dev, uint8_t *id);
 typedef int (*flash_api_ex_op)(const struct device *dev, uint16_t code,
 			       const uintptr_t in, void *out);
 
-__subsystem struct flash_driver_api {
+DEVICE_API struct flash_driver_api {
 	flash_api_read read;
 	flash_api_write write;
 	flash_api_erase erase;

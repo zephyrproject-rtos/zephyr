@@ -335,7 +335,7 @@ typedef void (*uart_callback_t)(const struct device *dev,
  */
 
 /** @brief Driver API structure. */
-__subsystem struct uart_driver_api {
+DEVICE_API struct uart_driver_api {
 
 #ifdef CONFIG_UART_ASYNC_API
 

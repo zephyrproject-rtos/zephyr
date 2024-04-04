@@ -90,7 +90,7 @@ typedef bool (*coredump_device_register_callback_t)(const struct device *dev,
 /*
  * API which a coredump pseudo-device driver should expose
  */
-__subsystem struct coredump_driver_api {
+DEVICE_API struct coredump_driver_api {
 	coredump_device_dump_t              dump;
 	coredump_device_register_memory_t   register_memory;
 	coredump_device_unregister_memory_t unregister_memory;

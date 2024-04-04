@@ -110,7 +110,7 @@ typedef int (*cellular_api_get_registration_status)(const struct device *dev,
 						    enum cellular_registration_status *status);
 
 /** Cellular driver API */
-__subsystem struct cellular_driver_api {
+DEVICE_API struct cellular_driver_api {
 	cellular_api_configure_networks configure_networks;
 	cellular_api_get_supported_networks get_supported_networks;
 	cellular_api_get_signal get_signal;

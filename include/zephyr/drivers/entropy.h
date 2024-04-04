@@ -62,7 +62,7 @@ typedef int (*entropy_get_entropy_isr_t)(const struct device *dev,
  *
  * This is the mandatory API any Entropy driver needs to expose.
  */
-__subsystem struct entropy_driver_api {
+DEVICE_API struct entropy_driver_api {
 	entropy_get_entropy_t     get_entropy;
 	entropy_get_entropy_isr_t get_entropy_isr;
 };

@@ -32,7 +32,7 @@ extern "C" {
  *
  * These are for internal use only, so skip these in public documentation.
  */
-__subsystem struct fuel_gauge_emul_driver_api {
+DEVICE_API struct fuel_gauge_emul_driver_api {
 	int (*set_battery_charging)(const struct emul *emul, uint32_t uV, int uA);
 	int (*is_battery_cutoff)(const struct emul *emul, bool *cutoff);
 };

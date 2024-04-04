@@ -33,7 +33,7 @@ extern "C" {
  * These are for internal use only, so skip these in
  * public documentation.
  */
-__subsystem struct mdio_driver_api {
+DEVICE_API struct mdio_driver_api {
 	/** Enable the MDIO bus device */
 	void (*bus_enable)(const struct device *dev);
 

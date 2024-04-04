@@ -307,7 +307,7 @@ struct dai_ts_data {
  *
  * For internal use only, skip these in public documentation.
  */
-__subsystem struct dai_driver_api {
+DEVICE_API struct dai_driver_api {
 	int (*probe)(const struct device *dev);
 	int (*remove)(const struct device *dev);
 	int (*config_set)(const struct device *dev, const struct dai_config *cfg,

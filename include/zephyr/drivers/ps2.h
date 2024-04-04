@@ -52,7 +52,7 @@ typedef int (*ps2_write_t)(const struct device *dev, uint8_t value);
 typedef int (*ps2_disable_callback_t)(const struct device *dev);
 typedef int (*ps2_enable_callback_t)(const struct device *dev);
 
-__subsystem struct ps2_driver_api {
+DEVICE_API struct ps2_driver_api {
 	ps2_config_t config;
 	ps2_read_t read;
 	ps2_write_t write;

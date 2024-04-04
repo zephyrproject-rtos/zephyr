@@ -219,7 +219,7 @@ typedef int (*mbox_set_enabled_t)(const struct device *dev,
  */
 typedef uint32_t (*mbox_max_channels_get_t)(const struct device *dev);
 
-__subsystem struct mbox_driver_api {
+DEVICE_API struct mbox_driver_api {
 	mbox_send_t send;
 	mbox_register_callback_t register_callback;
 	mbox_mtu_get_t mtu_get;

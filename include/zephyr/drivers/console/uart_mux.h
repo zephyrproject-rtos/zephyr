@@ -44,7 +44,7 @@ typedef void (*uart_mux_attach_cb_t)(const struct device *mux,
 				     bool connected, void *user_data);
 
 /** @brief UART mux driver API structure. */
-__subsystem struct uart_mux_driver_api {
+DEVICE_API struct uart_mux_driver_api {
 	/**
 	 * The uart_driver_api must be placed in first position in this
 	 * struct so that we are compatible with uart API. Note that currently

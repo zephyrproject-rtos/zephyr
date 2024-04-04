@@ -41,7 +41,7 @@ typedef int (*can_transceiver_enable_t)(const struct device *dev, can_mode_t mod
  */
 typedef int (*can_transceiver_disable_t)(const struct device *dev);
 
-__subsystem struct can_transceiver_driver_api {
+DEVICE_API struct can_transceiver_driver_api {
 	can_transceiver_enable_t enable;
 	can_transceiver_disable_t disable;
 };

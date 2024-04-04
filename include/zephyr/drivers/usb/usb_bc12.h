@@ -130,7 +130,7 @@ typedef void (*bc12_callback_t)(const struct device *dev, struct bc12_partner_st
  *
  * These are for internal use only, so skip these in public documentation.
  */
-__subsystem struct bc12_driver_api {
+DEVICE_API struct bc12_driver_api {
 	int (*set_role)(const struct device *dev, enum bc12_role role);
 	int (*set_result_cb)(const struct device *dev, bc12_callback_t cb, void *user_data);
 };

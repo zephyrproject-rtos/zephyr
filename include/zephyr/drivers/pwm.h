@@ -435,7 +435,7 @@ typedef int (*pwm_disable_capture_t)(const struct device *dev,
 #endif /* CONFIG_PWM_CAPTURE */
 
 /** @brief PWM driver API definition. */
-__subsystem struct pwm_driver_api {
+DEVICE_API struct pwm_driver_api {
 	pwm_set_cycles_t set_cycles;
 	pwm_get_cycles_per_sec_t get_cycles_per_sec;
 #ifdef CONFIG_PWM_CAPTURE

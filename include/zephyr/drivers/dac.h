@@ -67,7 +67,7 @@ typedef int (*dac_api_write_value)(const struct device *dev,
  *
  * This is the mandatory API any DAC driver needs to expose.
  */
-__subsystem struct dac_driver_api {
+DEVICE_API struct dac_driver_api {
 	dac_api_channel_setup channel_setup;
 	dac_api_write_value   write_value;
 };

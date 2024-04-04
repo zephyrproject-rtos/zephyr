@@ -73,7 +73,7 @@ typedef void (*phy_callback_t)(const struct device *dev,
  * These are for internal use only, so skip these in
  * public documentation.
  */
-__subsystem struct ethphy_driver_api {
+DEVICE_API struct ethphy_driver_api {
 	/** Get link state */
 	int (*get_link)(const struct device *dev,
 			struct phy_link_state *state);

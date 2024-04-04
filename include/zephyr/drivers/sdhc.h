@@ -256,7 +256,7 @@ enum sdhc_interrupt_source {
 typedef void (*sdhc_interrupt_cb_t)(const struct device *dev, int reason,
 				    const void *user_data);
 
-__subsystem struct sdhc_driver_api {
+DEVICE_API struct sdhc_driver_api {
 	int (*reset)(const struct device *dev);
 	int (*request)(const struct device *dev,
 		       struct sdhc_command *cmd,

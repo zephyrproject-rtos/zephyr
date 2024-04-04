@@ -378,7 +378,7 @@ typedef int (*smbus_api_smbalert_cb_t)(const struct device *dev,
 typedef int (*smbus_api_host_notify_cb_t)(const struct device *dev,
 					  struct smbus_callback *cb);
 
-__subsystem struct smbus_driver_api {
+DEVICE_API struct smbus_driver_api {
 	smbus_api_configure_t configure;
 	smbus_api_get_config_t get_config;
 	smbus_api_quick_t smbus_quick;

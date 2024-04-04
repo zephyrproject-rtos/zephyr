@@ -171,7 +171,7 @@ void pcie_generic_ctrl_enumerate(const struct device *dev, pcie_bdf_t bdf_start)
 /** @brief Structure providing callbacks to be implemented for devices
  * that supports the PCI Express Controller API
  */
-__subsystem struct pcie_ctrl_driver_api {
+DEVICE_API struct pcie_ctrl_driver_api {
 	pcie_ctrl_conf_read_t conf_read;
 	pcie_ctrl_conf_write_t conf_write;
 	pcie_ctrl_region_allocate_t region_allocate;

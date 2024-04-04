@@ -64,7 +64,7 @@ typedef int (*ivshmem_enable_interrupts_f)(const struct device *dev,
 
 #endif /* CONFIG_IVSHMEM_V2 */
 
-__subsystem struct ivshmem_driver_api {
+DEVICE_API struct ivshmem_driver_api {
 	ivshmem_get_mem_f get_mem;
 	ivshmem_get_id_f get_id;
 	ivshmem_get_vectors_f get_vectors;

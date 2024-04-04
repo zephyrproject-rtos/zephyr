@@ -97,7 +97,7 @@ typedef int (*w1_configure_t)(const struct device *dev,
 			      enum w1_settings_type type, uint32_t value);
 typedef int (*w1_change_bus_lock_t)(const struct device *dev, bool lock);
 
-__subsystem struct w1_driver_api {
+DEVICE_API struct w1_driver_api {
 	w1_reset_bus_t reset_bus;
 	w1_read_bit_t read_bit;
 	w1_write_bit_t write_bit;

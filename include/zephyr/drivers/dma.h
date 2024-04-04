@@ -352,7 +352,7 @@ typedef int (*dma_api_get_attribute)(const struct device *dev, uint32_t type, ui
 typedef bool (*dma_api_chan_filter)(const struct device *dev,
 				int channel, void *filter_param);
 
-__subsystem struct dma_driver_api {
+DEVICE_API struct dma_driver_api {
 	dma_api_config config;
 	dma_api_reload reload;
 	dma_api_start start;

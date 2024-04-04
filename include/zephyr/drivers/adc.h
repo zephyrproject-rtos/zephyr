@@ -698,7 +698,7 @@ typedef int (*adc_api_read_async)(const struct device *dev,
  *
  * This is the mandatory API any ADC driver needs to expose.
  */
-__subsystem struct adc_driver_api {
+DEVICE_API struct adc_driver_api {
 	adc_api_channel_setup channel_setup;
 	adc_api_read          read;
 #ifdef CONFIG_ADC_ASYNC

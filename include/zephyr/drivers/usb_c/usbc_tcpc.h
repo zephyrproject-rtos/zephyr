@@ -125,7 +125,7 @@ typedef	int (*tcpc_vconn_discharge_cb_t)(const struct device *dev,
 typedef void (*tcpc_alert_handler_cb_t)(const struct device *dev, void *data,
 		enum tcpc_alert alert);
 
-__subsystem struct tcpc_driver_api {
+DEVICE_API struct tcpc_driver_api {
 	int (*init)(const struct device *dev);
 	int (*get_cc)(const struct device *dev, enum tc_cc_voltage_state *cc1,
 			enum tc_cc_voltage_state *cc2);

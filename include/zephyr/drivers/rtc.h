@@ -164,7 +164,7 @@ typedef int (*rtc_api_get_calibration)(const struct device *dev, int32_t *calibr
 /**
  * @brief RTC driver API
  */
-__subsystem struct rtc_driver_api {
+DEVICE_API struct rtc_driver_api {
 	rtc_api_set_time set_time;
 	rtc_api_get_time get_time;
 #if defined(CONFIG_RTC_ALARM) || defined(__DOXYGEN__)

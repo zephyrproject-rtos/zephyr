@@ -789,7 +789,7 @@ enum gpio_int_trig {
 	GPIO_INT_TRIG_WAKE = GPIO_INT_WAKEUP,
 };
 
-__subsystem struct gpio_driver_api {
+DEVICE_API struct gpio_driver_api {
 	int (*pin_configure)(const struct device *port, gpio_pin_t pin,
 			     gpio_flags_t flags);
 #ifdef CONFIG_GPIO_GET_CONFIG

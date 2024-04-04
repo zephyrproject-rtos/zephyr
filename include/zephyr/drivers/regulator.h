@@ -65,7 +65,7 @@ typedef int (*regulator_dvs_state_set_t)(const struct device *dev,
 typedef int (*regulator_ship_mode_t)(const struct device *dev);
 
 /** @brief Driver-specific API functions to support parent regulator control. */
-__subsystem struct regulator_parent_driver_api {
+DEVICE_API struct regulator_parent_driver_api {
 	regulator_dvs_state_set_t dvs_state_set;
 	regulator_ship_mode_t ship_mode;
 };
@@ -98,7 +98,7 @@ typedef int (*regulator_get_error_flags_t)(
 	const struct device *dev, regulator_error_flags_t *flags);
 
 /** @brief Driver-specific API functions to support regulator control. */
-__subsystem struct regulator_driver_api {
+DEVICE_API struct regulator_driver_api {
 	regulator_enable_t enable;
 	regulator_disable_t disable;
 	regulator_count_voltages_t count_voltages;

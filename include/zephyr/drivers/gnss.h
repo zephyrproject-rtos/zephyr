@@ -180,7 +180,7 @@ struct gnss_time {
 };
 
 /** GNSS API structure */
-__subsystem struct gnss_driver_api {
+DEVICE_API struct gnss_driver_api {
 	gnss_set_fix_rate_t set_fix_rate;
 	gnss_get_fix_rate_t get_fix_rate;
 	gnss_set_periodic_config_t set_periodic_config;

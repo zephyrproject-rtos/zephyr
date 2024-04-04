@@ -236,7 +236,7 @@ typedef int (*fuel_gauge_battery_cutoff_t)(const struct device *dev);
 
 /* Caching is entirely on the onus of the client */
 
-__subsystem struct fuel_gauge_driver_api {
+DEVICE_API struct fuel_gauge_driver_api {
 	/**
 	 * Note: Historically this API allowed drivers to implement a custom multi-get/set property
 	 * function, this was added so drivers could potentially optimize batch read with their

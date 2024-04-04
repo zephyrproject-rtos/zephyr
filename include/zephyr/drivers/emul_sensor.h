@@ -25,7 +25,7 @@
 /**
  * @brief Collection of function pointers implementing a common backend API for sensor emulators
  */
-__subsystem struct emul_sensor_backend_api {
+DEVICE_API struct emul_sensor_backend_api {
 	/** Sets a given fractional value for a given sensor channel. */
 	int (*set_channel)(const struct emul *target, enum sensor_channel ch, const q31_t *value,
 			   int8_t shift);

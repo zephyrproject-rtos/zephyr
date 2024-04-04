@@ -330,7 +330,7 @@ typedef int (*charger_charge_enable_t)(const struct device *dev, const bool enab
  *
  * Caching is entirely on the onus of the client
  */
-__subsystem struct charger_driver_api {
+DEVICE_API struct charger_driver_api {
 	charger_get_property_t get_property;
 	charger_set_property_t set_property;
 	charger_charge_enable_t charge_enable;

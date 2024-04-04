@@ -122,7 +122,7 @@ struct mipi_dbi_config {
 
 
 /** MIPI-DBI host driver API */
-__subsystem struct mipi_dbi_driver_api {
+DEVICE_API struct mipi_dbi_driver_api {
 	int (*command_write)(const struct device *dev,
 			     const struct mipi_dbi_config *config, uint8_t cmd,
 			     const uint8_t *data, size_t len);

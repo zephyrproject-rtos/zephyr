@@ -36,7 +36,7 @@ typedef int (*fpga_api_on)(const struct device *dev);
 typedef int (*fpga_api_off)(const struct device *dev);
 typedef const char *(*fpga_api_get_info)(const struct device *dev);
 
-__subsystem struct fpga_driver_api {
+DEVICE_API struct fpga_driver_api {
 	fpga_api_get_status get_status;
 	fpga_api_reset reset;
 	fpga_api_load load;

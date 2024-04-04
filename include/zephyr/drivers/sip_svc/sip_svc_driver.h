@@ -91,7 +91,7 @@ typedef uint32_t (*sip_svc_plat_get_error_code_t)(const struct device *dev,
  * @brief  API structure for sip_svc driver.
  *
  */
-__subsystem struct svc_driver_api {
+DEVICE_API struct svc_driver_api {
 	sip_supervisory_call_t sip_supervisory_call;
 	sip_svc_plat_func_id_valid_t sip_svc_plat_func_id_valid;
 	sip_svc_plat_format_trans_id_t sip_svc_plat_format_trans_id;

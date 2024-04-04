@@ -119,7 +119,7 @@ struct mipi_dsi_msg {
 };
 
 /** MIPI-DSI host driver API. */
-__subsystem struct mipi_dsi_driver_api {
+DEVICE_API struct mipi_dsi_driver_api {
 	int (*attach)(const struct device *dev, uint8_t channel,
 		      const struct mipi_dsi_device *mdev);
 	ssize_t (*transfer)(const struct device *dev, uint8_t channel,

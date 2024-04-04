@@ -49,7 +49,7 @@ typedef void (*hwspinlock_api_unlock)(const struct device *dev, uint32_t id);
  */
 typedef uint32_t (*hwspinlock_api_get_max_id)(const struct device *dev);
 
-__subsystem struct hwspinlock_driver_api {
+DEVICE_API struct hwspinlock_driver_api {
 	hwspinlock_api_trylock trylock;
 	hwspinlock_api_lock lock;
 	hwspinlock_api_unlock unlock;

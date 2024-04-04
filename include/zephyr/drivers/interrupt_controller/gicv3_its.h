@@ -24,7 +24,7 @@ typedef int (*its_api_map_intid_t)(const struct device *dev, uint32_t device_id,
 typedef int (*its_api_send_int_t)(const struct device *dev, uint32_t device_id, uint32_t event_id);
 typedef uint32_t (*its_api_get_msi_addr_t)(const struct device *dev);
 
-__subsystem struct its_driver_api {
+DEVICE_API struct its_driver_api {
 	its_api_alloc_intid_t alloc_intid;
 	its_api_setup_deviceid_t setup_deviceid;
 	its_api_map_intid_t map_intid;

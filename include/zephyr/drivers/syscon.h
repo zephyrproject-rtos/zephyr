@@ -59,7 +59,7 @@ typedef int (*syscon_api_get_size)(const struct device *dev, size_t *size);
 /**
  * @brief System Control (syscon) register driver API
  */
-__subsystem struct syscon_driver_api {
+DEVICE_API struct syscon_driver_api {
 	syscon_api_read_reg read;
 	syscon_api_write_reg write;
 	syscon_api_get_base get_base;

@@ -509,7 +509,7 @@ typedef int (*can_get_core_clock_t)(const struct device *dev, uint32_t *rate);
  */
 typedef int (*can_get_max_filters_t)(const struct device *dev, bool ide);
 
-__subsystem struct can_driver_api {
+DEVICE_API struct can_driver_api {
 	can_get_capabilities_t get_capabilities;
 	can_start_t start;
 	can_stop_t stop;

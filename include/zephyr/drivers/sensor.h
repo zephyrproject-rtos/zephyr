@@ -661,7 +661,7 @@ extern const struct sensor_decoder_api __sensor_default_decoder;
 /* The default sensor iodev API */
 extern const struct rtio_iodev_api __sensor_iodev_api;
 
-__subsystem struct sensor_driver_api {
+DEVICE_API struct sensor_driver_api {
 	sensor_attr_set_t attr_set;
 	sensor_attr_get_t attr_get;
 	sensor_trigger_set_t trigger_set;

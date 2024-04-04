@@ -59,7 +59,7 @@ typedef int (*kscan_config_t)(const struct device *dev,
 typedef int (*kscan_disable_callback_t)(const struct device *dev);
 typedef int (*kscan_enable_callback_t)(const struct device *dev);
 
-__subsystem struct kscan_driver_api {
+DEVICE_API struct kscan_driver_api {
 	kscan_config_t config;
 	kscan_disable_callback_t disable_callback;
 	kscan_enable_callback_t enable_callback;

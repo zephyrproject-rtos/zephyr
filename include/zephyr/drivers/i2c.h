@@ -241,7 +241,7 @@ typedef void (*i2c_api_iodev_submit)(const struct device *dev,
 
 typedef int (*i2c_api_recover_bus_t)(const struct device *dev);
 
-__subsystem struct i2c_driver_api {
+DEVICE_API struct i2c_driver_api {
 	i2c_api_configure_t configure;
 	i2c_api_get_config_t get_config;
 	i2c_api_full_io_t transfer;

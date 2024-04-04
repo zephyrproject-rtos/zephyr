@@ -31,7 +31,7 @@ extern "C" {
  *
  * These are for internal use only, so skip these in public documentation.
  */
-__subsystem struct bc12_emul_driver_api {
+DEVICE_API struct bc12_emul_driver_api {
 	int (*set_charging_partner)(const struct emul *emul, enum bc12_type partner_type);
 	int (*set_pd_partner)(const struct emul *emul, bool connected);
 };

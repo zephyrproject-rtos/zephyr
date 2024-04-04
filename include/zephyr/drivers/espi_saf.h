@@ -152,7 +152,7 @@ typedef int (*espi_saf_api_manage_callback)(const struct device *dev,
 					    struct espi_callback *callback,
 					    bool set);
 
-__subsystem struct espi_saf_driver_api {
+DEVICE_API struct espi_saf_driver_api {
 	espi_saf_api_config config;
 	espi_saf_api_set_protection_regions set_protection_regions;
 	espi_saf_api_activate activate;
