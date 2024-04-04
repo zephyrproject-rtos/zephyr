@@ -604,6 +604,35 @@ _Level\LVL\()VectorHelper :
 .global _Level\LVL\()Vector
 _Level\LVL\()Vector:
 #endif
+
+#ifdef CONFIG_XTENSA_MMU
+.if \LVL == 1
+	/* If there is a DTLB miss during interrupt handling,
+	 * the double exception vector will be triggered for
+	 * DTLB miss and EXCCAUSE overwritten. The DTLB miss
+	 * will be handled and exection returned back to
+	 * this vector. When it gets to the C handler,
+	 * it will not see the original EXCCAUSE. So save
+	 * the EXCCAUSE here and use it there if needed.
+	 *
+	 * Note that DTLB misses are handled in the vectors,
+	 * we will never see EXCCAUSE_DTLB_MISS and will never
+	 * save that in ZSR_EXCCAUSE_SAVE. So that EXCCAUSE
+	 * being EXCCAUSE_DTLB_MISS can be used to determine
+	 * such a scenario.
+	 */
+	wsr a0, ZSR_EXCCAUSE_SAVE
+
+	esync
+
+	rsr.exccause a0
+
+	xsr a0, ZSR_EXCCAUSE_SAVE
+
+	esync
+.endif
+#endif
+
 	addi a1, a1, -___xtensa_irq_bsa_t_SIZEOF
 	s32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	s32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET

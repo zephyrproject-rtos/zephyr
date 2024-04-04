@@ -229,6 +229,30 @@ void *xtensa_excint1_c(int *interrupted_stack)
 	__asm__ volatile("rsr.depc %0" : "=r"(depc));
 
 	is_dblexc = (depc != 0U);
+
+	if (cause == EXCCAUSE_DTLB_MISS) {
+		/* If there is a DTLB miss during interrupt handling,
+		 * the double exception vector will be triggered for
+		 * TLB miss and EXCCAUSE overwritten. The DTLB will be
+		 * handled and execution returned to the original
+		 * vector. Because of this, the EXCCAUSE read above
+		 * is not the original EXCCAUSE. So read the stashed
+		 * EXCCAUSE and clear the double exception flags and DEPC.
+		 *
+		 * Note that DTLB misses are handled in the vectors,
+		 * we should only see EXCCAUSE_DTLB_MISS in exactly
+		 * this scenario.
+		 *
+		 * Since the handling of DTLB misses in double exception
+		 * still has DEPC populated and we cannot clear it there
+		 * due to RFDE needing that, we need to ignore it as
+		 * an indication for double exception.
+		 */
+		cause = XTENSA_RSR(ZSR_EXCCAUSE_SAVE_STR);
+
+		is_dblexc = false;
+		__asm__ volatile("wsr.depc %0" : : "r"(0));
+	}
 #endif /* CONFIG_XTENSA_MMU */
 
 	switch (cause) {
