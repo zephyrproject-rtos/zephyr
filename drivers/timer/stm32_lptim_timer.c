@@ -401,12 +401,8 @@ static int sys_clock_driver_init(void)
 		return -EIO;
 	}
 
-#if defined(LL_APB1_GRP1_PERIPH_LPTIM1)
-	LL_APB1_GRP1_ReleaseReset(LL_APB1_GRP1_PERIPH_LPTIM1);
-#elif defined(LL_APB3_GRP1_PERIPH_LPTIM1)
+#if defined(LL_SRDAMR_GRP1_PERIPH_LPTIM1AMEN)
 	LL_SRDAMR_GRP1_EnableAutonomousClock(LL_SRDAMR_GRP1_PERIPH_LPTIM1AMEN);
-#elif defined(LL_APB7_GRP1_PERIPH_LPTIM1)
-	LL_APB7_GRP1_ReleaseReset(LL_APB7_GRP1_PERIPH_LPTIM1);
 #endif
 
 	/* Enable LPTIM clock source */
