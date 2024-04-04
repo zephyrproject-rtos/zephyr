@@ -1,0 +1,21 @@
+# STEVAL_STWINBX1 Development kit board configuration
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STEVAL_STWINBX1
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+if LOG
+
+# Logger cannot use itself to log
+choice USB_CDC_ACM_LOG_LEVEL_CHOICE
+	default USB_CDC_ACM_LOG_LEVEL_OFF
+endchoice
+
+endif # LOG
+
+endif # BOARD_STEVAL_STWINBX1

@@ -1,0 +1,5 @@
+board:
+  name: steval_stwinbx1
+  vendor: st
+  socs:
+    - name: stm32u585xx
