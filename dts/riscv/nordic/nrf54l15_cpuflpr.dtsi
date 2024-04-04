@@ -23,6 +23,10 @@ cpuflpr_vevif: &cpuflpr_vevif_local {};
 	};
 };
 
+&cpuflpr_clic {
+	status = "okay";
+};
+
 &grtc {
 	interrupts = <226 NRF_DEFAULT_IRQ_PRIORITY>;
 };

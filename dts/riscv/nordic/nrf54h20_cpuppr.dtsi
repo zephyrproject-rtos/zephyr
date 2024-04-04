@@ -28,6 +28,10 @@ cpusys_vevif: &cpusys_vevif_remote {};
 	};
 };
 
+&cpuppr_clic {
+	status = "okay";
+};
+
 &cpusec_bellboard {
 	compatible = "nordic,nrf-bellboard-remote";
 };
