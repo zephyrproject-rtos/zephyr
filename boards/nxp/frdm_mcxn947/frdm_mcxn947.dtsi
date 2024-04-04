@@ -168,3 +168,8 @@
 		status = "okay";
 	};
 };
+
+&flexpwm1_pwm0 {
+	pinctrl-0 = <&pinmux_flexpwm1_pwm0>;
+	pinctrl-names = "default";
+};

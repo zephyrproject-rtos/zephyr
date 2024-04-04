@@ -28,6 +28,7 @@
 
 	aliases{
 		watchdog0 = &wwdt0;
+		pwm-0 = &flexpwm1_pwm0;
 	};
 };
 
@@ -130,5 +131,9 @@
 };
 
 &wwdt0 {
+	status = "okay";
+};
+
+&flexpwm1_pwm0 {
 	status = "okay";
 };
