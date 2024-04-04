@@ -561,6 +561,39 @@ class KconfigCheck(ComplianceTest):
             # Clean up the temporary directory
             shutil.rmtree(kconfiglib_dir)
 
+    def get_logging_syms(self, kconf):
+        # Returns a set() with the names of the Kconfig symbols generated with
+        # logging template in samples/tests folders. The Kconfig symbols doesn't
+        # include `CONFIG_` and for each module declared there is one symbol
+        # per suffix created.
+
+        suffixes = [
+            "_LOG_LEVEL",
+            "_LOG_LEVEL_DBG",
+            "_LOG_LEVEL_ERR",
+            "_LOG_LEVEL_INF",
+            "_LOG_LEVEL_WRN",
+            "_LOG_LEVEL_OFF",
+            "_LOG_LEVEL_INHERIT",
+            "_LOG_LEVEL_DEFAULT",
+        ]
+
+        # Warning: Needs to work with both --perl-regexp and the 're' module.
+        regex = r"^\s*(?:module\s*=\s*)([A-Z0-9_]+)\s*(?:#|$)"
+
+        # Grep samples/ and tests/ for symbol definitions
+        grep_stdout = git("grep", "-I", "-h", "--perl-regexp", regex, "--",
+                          ":samples", ":tests", cwd=ZEPHYR_BASE)
+
+        names = re.findall(regex, grep_stdout, re.MULTILINE)
+
+        kconf_syms = []
+        for name in names:
+            for suffix in suffixes:
+                kconf_syms.append(f"{name}{suffix}")
+
+        return set(kconf_syms)
+
     def get_defined_syms(self, kconf):
         # Returns a set() with the names of all defined Kconfig symbols (with no
         # 'CONFIG_' prefix). This is complicated by samples and tests defining
@@ -582,8 +615,10 @@ class KconfigCheck(ComplianceTest):
 
         # Symbols from the main Kconfig tree + grepped definitions from samples
         # and tests
-        return set([sym.name for sym in kconf_syms]
-                   + re.findall(regex, grep_stdout, re.MULTILINE))
+        return set(
+            [sym.name for sym in kconf_syms]
+            + re.findall(regex, grep_stdout, re.MULTILINE)
+        ).union(self.get_logging_syms(kconf))
 
     def check_top_menu_not_too_long(self, kconf):
         """
@@ -829,8 +864,6 @@ flagged.
         "BOOT_SIGNATURE_TYPE_RSA",        # MCUboot setting used by sysbuild
         "BOOT_VALIDATE_SLOT0",       # Used in (sysbuild-based) test
         "BOOT_WATCHDOG_FEED",        # Used in (sysbuild-based) test
-        "BTTESTER_LOG_LEVEL",  # Used in tests/bluetooth/tester
-        "BTTESTER_LOG_LEVEL_DBG",  # Used in tests/bluetooth/tester
         "CDC_ACM_PORT_NAME_",
         "CHRE",  # Optional module
         "CHRE_LOG_LEVEL_DBG",  # Optional module
@@ -868,8 +901,6 @@ flagged.
         "MCUBOOT_CLEANUP_ARM_CORE", # Used in (sysbuild-based) test
         "MCUBOOT_SERIAL",           # Used in (sysbuild-based) test/
                                     # documentation
-        "MCUMGR_GRP_EXAMPLE", # Used in documentation
-        "MCUMGR_GRP_EXAMPLE_LOG_LEVEL", # Used in documentation
         "MCUMGR_GRP_EXAMPLE_OTHER_HOOK", # Used in documentation
         "MISSING",
         "MODULES",
@@ -882,8 +913,6 @@ flagged.
         "REG1",
         "REG2",
         "RIMAGE_SIGNING_SCHEMA",  # Optional module
-        "SAMPLE_MODULE_LOG_LEVEL",  # Used as an example in samples/subsys/logging
-        "SAMPLE_MODULE_LOG_LEVEL_DBG",  # Used in tests/subsys/logging/log_api
         "LOG_BACKEND_MOCK_OUTPUT_DEFAULT", #Referenced in tests/subsys/logging/log_syst
         "LOG_BACKEND_MOCK_OUTPUT_SYST", #Referenced in testcase.yaml of log_syst test
         "SEL",
@@ -897,7 +926,6 @@ flagged.
         "SRAM2",  # Referenced in a comment in samples/application_development
         "STACK_SIZE",  # Used as an example in the Kconfig docs
         "STD_CPP",  # Referenced in CMake comment
-        "TAGOIO_HTTP_POST_LOG_LEVEL",  # Used as in samples/net/cloud/tagoio
         "TEST1",
         "TOOLCHAIN_ARCMWDT_SUPPORTS_THREAD_LOCAL_STORAGE", # The symbol is defined in the toolchain
                                                     # Kconfig which is sourced based on Zephyr
