@@ -497,6 +497,7 @@ static int api_rx_enable(const struct device *dev, uint8_t *buf, size_t len, int
 	 * flags are already known to the driver (e.g. if flushed data shall be
 	 * kept or not).
 	 */
+	adata->err = 0;
 	adata->en_rx_buf = buf;
 	adata->en_rx_len = len;
 
