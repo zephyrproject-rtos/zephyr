@@ -5,17 +5,18 @@ common:
   tags: sensors
   timeout: 5
   harness: console
-  harness_config:
-    type: multi_line
-    ordered: true
-    regex:
-      - "Quadrature decoder sensor test"
-      - "Position = (.*) degrees"
+
 tests:
   sample.sensor.qdec_sensor:
     platform_allow: nucleo_f401re
     harness_config:
       fixture: fixture_mech_encoder
+      type: multi_line
+      ordered: true
+      regex:
+        - "Quadrature decoder sensor test"
+        - "Position = (.*) degrees"
+
   sample.sensor.nrf_qdec_sensor:
     platform_allow:
       - nrf52840dk/nrf52840
@@ -27,3 +28,8 @@ tests:
       - nrf54l15pdk/nrf54l15/cpuapp
     harness_config:
       fixture: gpio_loopback
+      type: multi_line
+      ordered: true
+      regex:
+        - "Quadrature decoder sensor test"
+        - "Position = (.*) degrees"
