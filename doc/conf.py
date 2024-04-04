@@ -268,6 +268,7 @@ cpp_id_attributes = [
     "__DEPRECATED_MACRO",
     "FUNC_NORETURN",
     "__subsystem",
+    "DEVICE_API",
     "ALWAYS_INLINE",
 ]
 c_id_attributes = cpp_id_attributes

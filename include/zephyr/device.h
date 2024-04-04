@@ -70,6 +70,15 @@ typedef int16_t device_handle_t;
 #define DEVICE_HANDLE_NULL 0
 
 /**
+ * @brief Device API struct tag.
+ *
+ * This definition is used to tag structures that define the API ops for a
+ * certain device class. Tagging is required for features like
+ * @kconfig{CONFIG_USERSPACE}.
+ */
+#define DEVICE_API
+
+/**
  * @brief Expands to the name of a global device object.
  *
  * Return the full name of a device object symbol created by DEVICE_DEFINE(),

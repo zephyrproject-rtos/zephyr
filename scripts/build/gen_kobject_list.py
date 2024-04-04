@@ -125,7 +125,7 @@ def kobject_to_enum(kobj):
 
     return "K_OBJ_%s" % name.upper()
 
-# Names of all structs tagged with __subsystem, found by parse_syscalls.py
+# Names of all structs tagged with __subsystem or DEVICE_API, found by parse_syscalls.py
 subsystems = [ ]
 
 # Names of all structs tagged with __net_socket, found by parse_syscalls.py
@@ -969,6 +969,7 @@ def parse_subsystems_list_file(path):
     with open(path, "r") as fp:
         subsys_list = json.load(fp)
     subsystems.extend(subsys_list["__subsystem"])
+    subsystems.extend(subsys_list["DEVICE_API"])
     net_sockets.extend(subsys_list["__net_socket"])
 
 def parse_args():

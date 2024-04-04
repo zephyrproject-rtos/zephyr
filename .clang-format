@@ -26,6 +26,7 @@ AttributeMacros:
   - __syscall
   - __syscall_always_inline
   - __subsystem
+  - DEVICE_API
 BitFieldColonSpacing: After
 BreakBeforeBraces: Linux
 ColumnLimit: 100

@@ -14,8 +14,8 @@ C or header files, and building up a database of system calls and their
 function call prototypes. This information is emitted to a generated
 JSON file for further processing.
 
-This script also scans for struct definitions such as __subsystem and
-__net_socket, emitting a JSON dictionary mapping tags to all the struct
+This script also scans for struct definitions such as __subsystem, DEVICE_API,
+and __net_socket, emitting a JSON dictionary mapping tags to all the struct
 declarations found that were tagged with them.
 
 If the output JSON file already exists, its contents are checked against
@@ -41,7 +41,7 @@ syscall_regex = re.compile(r'''
 [)]                                        # Closing parenthesis
 ''', regex_flags)
 
-struct_tags = ["__subsystem", "__net_socket"]
+struct_tags = ["__subsystem", "DEVICE_API", "__net_socket"]
 
 tagged_struct_decl_template = r'''
 %s\s+                           # tag, must be first
