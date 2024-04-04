@@ -3,6 +3,7 @@
 # zephyr-keep-sorted-start
 add_subdirectory(adi)
 add_subdirectory(ams)
+add_subdirectory(aosong)
 add_subdirectory(bosch)
 add_subdirectory(ite)
 add_subdirectory(maxim)
@@ -21,15 +22,12 @@ add_subdirectory(wsen)
 # zephyr-keep-sorted-stop
 
 add_subdirectory_ifdef(CONFIG_A01NYUB a01nyub)
-add_subdirectory_ifdef(CONFIG_AGS10 ags10)
 add_subdirectory_ifdef(CONFIG_AK8975 ak8975)
 add_subdirectory_ifdef(CONFIG_AKM09918C akm09918c)
 add_subdirectory_ifdef(CONFIG_AMD_SB_TSI amd_sb_tsi)
 add_subdirectory_ifdef(CONFIG_AMG88XX amg88xx)
 add_subdirectory_ifdef(CONFIG_APDS9960 apds9960)
 add_subdirectory_ifdef(CONFIG_CURRENT_AMP current_amp)
-add_subdirectory_ifdef(CONFIG_DHT dht)
-add_subdirectory_ifdef(CONFIG_DHT20 dht20)
 add_subdirectory_ifdef(CONFIG_DPS310 dps310)
 add_subdirectory_ifdef(CONFIG_ENS160 ens160)
 add_subdirectory_ifdef(CONFIG_ESP32_TEMP esp32_temp)
