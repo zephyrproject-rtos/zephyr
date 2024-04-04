@@ -160,7 +160,7 @@
  */
 
 /* Indicates this is a driver subsystem */
-#define __subsystem
+#define __subsystem __DEPRECATED_MACRO
 
 /* Indicates this is a network socket object */
 #define __net_socket
