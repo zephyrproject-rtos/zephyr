@@ -256,6 +256,9 @@
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x94000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
+			/* DMA channels 4 and 5, muxed to LPUART2 RX and TX */
+			dmas = <&edma0 4 73>, <&edma0 5 74>;
+			dma-names = "rx", "tx";
 			status = "disabled";
 		};
 		flexcomm2_lpspi2: lpspi@94000 {
@@ -324,6 +327,9 @@
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0xb4000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
+			/* DMA channels 2 and 3, muxed to LPUART4 RX and TX */
+			dmas = <&edma0 2 77>, <&edma0 3 78>;
+			dma-names = "rx", "tx";
 			status = "disabled";
 		};
 		flexcomm4_lpspi4: lpspi@b4000 {
