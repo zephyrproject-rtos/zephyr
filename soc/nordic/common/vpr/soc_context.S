@@ -6,16 +6,8 @@
 #include <offsets.h>
 #include <zephyr/toolchain.h>
 
-/* Exports */
-GTEXT(__soc_handle_irq)
 GTEXT(__soc_save_context)
 GTEXT(__soc_restore_context)
-
-/*
- * No need to clear anything, pending bit is cleared by HW.
- */
-SECTION_FUNC(exception.other, __soc_handle_irq)
-	ret
 
 SECTION_FUNC(exception.other, __soc_save_context)
 	csrr t0, 0x347
