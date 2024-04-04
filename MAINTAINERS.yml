@@ -3676,7 +3676,7 @@ Infineon Platforms:
     - drivers/*/*ifx_cat1*
     - drivers/*/*xmc*/
     - drivers/*/*xmc*.c
-    - drivers/*/*/*xmc*
+    - drivers/sensor/infineon/
     - dts/arm/infineon/
     - dts/arm/cypress/
     - soc/cypress/
