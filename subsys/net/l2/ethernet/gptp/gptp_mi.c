@@ -2014,7 +2014,22 @@ void gptp_mi_state_machines(void)
 	gptp_mi_port_role_selection_state_machine();
 	gptp_mi_clk_master_sync_offset_state_machine();
 #if defined(CONFIG_NET_GPTP_GM_CAPABLE)
-	gptp_mi_clk_master_sync_snd_state_machine();
+	/*
+	 * Only call ClockMasterSyncSend state machine in case a Grand Master clock
+	 * is present and is this time aware system.
+	 * This check is not described by IEEE802.1AS. Instead, according to
+	 * 10.2.9.3, the SiteSyncSync state machine shall not take into account
+	 * information from ClockMasterSyncSend in case this time aware system is
+	 * not grand-master capable. Current implementation of ClockMasterSyncSend
+	 * state machine send sync indication to the PortSync entities, instead of
+	 * sending it to the SiteSyncSync entity. And the SiteSyncSync state machine
+	 * does not make sanity check.
+	 */
+	if (memcmp(GPTP_GLOBAL_DS()->gm_priority.root_system_id.grand_master_id,
+			   GPTP_DEFAULT_DS()->clk_id, GPTP_CLOCK_ID_LEN) == 0 &&
+			   GPTP_GLOBAL_DS()->gm_present) {
+		gptp_mi_clk_master_sync_snd_state_machine();
+	}
 #endif
 	gptp_mi_clk_master_sync_rcv_state_machine();
 }
