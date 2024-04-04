@@ -50,18 +50,21 @@ function Execute() {
 }
 
 function _guess_test_relpath(){
-  local PA="$(realpath --relative-to "${ZEPHYR_BASE}" $(dirname "${BASH_SOURCE[2]}"))"
+  local PA="$(cd -- "$(dirname "${BASH_SOURCE[2]}")" && pwd)"
+  PA="$(realpath --relative-to "${ZEPHYR_BASE}" "${PA}")"
   echo $PA | sed -E 's/\/tests?_scripts//'
 }
 
 # For a caller running from a tests_script/ folder, get the path of its parent
 # relative to $ZEPHYR_BASE
+# This must be run without/before cd'ing into another directory
 function guess_test_relpath(){
   echo $(_guess_test_relpath)
 }
 
 # For a caller running from a tests_script/ folder, get the path of its parent
 # relative to $ZEPHYR_BASE, replacing "/" with "_"
+# This must be run without/before cd'ing into another directory
 function guess_test_long_name(){
   echo $(_guess_test_relpath) | tr / _
 }
