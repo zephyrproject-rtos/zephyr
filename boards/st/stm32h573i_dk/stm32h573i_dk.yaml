@@ -24,4 +24,5 @@ supported:
   - usb_device
   - usb
   - i2c
+  - sdhc
 vendor: st
