@@ -241,6 +241,29 @@ net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
 #endif /* CONFIG_NET_IPV6_MLD */
 
 /**
+ * @brief Send MLDv2 report message with a single entry.
+ *
+ * @param iface Network interface where message is sent
+ * @param addr Mutlicast group
+ * @param mode MLDv2 mode (NET_IPV6_MLDv2_MODE_IS_INCLUDE NET_IPV6_MLDv2_MODE_IS_EXCLUDE)
+ *
+ * @return Return 0 if leaving is done, <0 otherwise.
+ */
+#if defined(CONFIG_NET_IPV6_MLD)
+int net_ipv6_mld_send_single(struct net_if *iface, const struct in6_addr *addr, uint8_t mode);
+#else
+static inline int
+net_ipv6_mld_send_single(struct net_if *iface, const struct in6_addr *addr, uint8_t mode)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(mode);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_NET_IPV6_MLD */
+
+/**
  * @typedef net_nbr_cb_t
  * @brief Callback used while iterating over neighbors.
  *

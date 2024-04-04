@@ -145,9 +145,7 @@ static int mld_send(struct net_pkt *pkt)
 	return 0;
 }
 
-static int mld_send_generic(struct net_if *iface,
-			    const struct in6_addr *addr,
-			    uint8_t mode)
+int net_ipv6_mld_send_single(struct net_if *iface, const struct in6_addr *addr, uint8_t mode)
 {
 	struct net_pkt *pkt;
 	int ret;
@@ -206,7 +204,7 @@ int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
 		return -ENETDOWN;
 	}
 
-	ret = mld_send_generic(iface, addr, NET_IPV6_MLDv2_MODE_IS_EXCLUDE);
+	ret = net_ipv6_mld_send_single(iface, addr, NET_IPV6_MLDv2_MODE_IS_EXCLUDE);
 	if (ret < 0) {
 		return ret;
 	}
@@ -240,7 +238,7 @@ int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
 		return 0;
 	}
 
-	ret = mld_send_generic(iface, addr, NET_IPV6_MLDv2_MODE_IS_INCLUDE);
+	ret = net_ipv6_mld_send_single(iface, addr, NET_IPV6_MLDv2_MODE_IS_INCLUDE);
 	if (ret < 0) {
 		return ret;
 	}
