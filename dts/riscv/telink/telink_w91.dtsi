@@ -41,7 +41,7 @@
 
 		ram_dlm: memory@200000 {
 			compatible = "mmio-sram";
-			reg = <0x00200000 0x0002e000>;
+			reg = <0x00200000 0x00030000>;
 		};
 
 		reserved-memory {
@@ -49,12 +49,12 @@
 			#size-cells = <1>;
 			ranges;
 
-			sram_tx: memory@22e000 {
-				reg = <0x22e000 0x1000>;
+			sram_tx: memory@40000000 {
+				reg = <0x40000000 0x3000>;
 			};
 
-			sram_rx: memory@22f000 {
-				reg = <0x22f000 0x1000>;
+			sram_rx: memory@40003000 {
+				reg = <0x40003000 0x3000>;
 			};
 		};
 

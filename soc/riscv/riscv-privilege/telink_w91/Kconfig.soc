@@ -42,6 +42,9 @@ config SOC_RISCV_TELINK_W91
 	bool "Telink W91 SoC implementation"
 	select ATOMIC_OPERATIONS_BUILTIN
 	select CPU_HAS_FPU
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select CACHE_MANAGEMENT
 	select INCLUDE_RESET_VECTOR
 
 endchoice

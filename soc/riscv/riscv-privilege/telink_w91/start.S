@@ -56,10 +56,14 @@ _start:                                #/ after reset starts on D25 core
 	sw     t1, 0x050(t0)               #/ SPI flash quad mode: 0xf0900050 <- 0x05
 #endif
 
+#if defined(CONFIG_ICACHE) && CONFIG_ICACHE
 	li     t0, 0x1
 	csrs   NDS_MCACHE_CTL, t0          #/ enable I-Cache
+#endif
+#if defined(CONFIG_DCACHE) && CONFIG_DCACHE
 	li     t0, 0x2
-	csrs   NDS_MCACHE_CTL, t0          #/ enable I-Cache
+	csrs   NDS_MCACHE_CTL, t0          #/ enable D-Cache
+#endif
 	li     t0, (1 << 6)
 	csrs   NDS_MMISC_CTL, t0           #/ Enable Misaligned access
 

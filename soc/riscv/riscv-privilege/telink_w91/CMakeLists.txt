@@ -11,6 +11,7 @@ zephyr_sources(
 	soc.c
 	halt.c
 	sys_heap_alloc_wrap.c
+	cache.c
 )
 
 if(CONFIG_TELINK_W91_IPC_DISPATCHER)
