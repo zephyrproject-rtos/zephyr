@@ -17,6 +17,7 @@ child-binding:
       - name: pincfg-node.yaml
         property-allowlist:
           - bias-pull-up
+          - drive-open-drain
 
     properties:
       pinmux:

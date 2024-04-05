@@ -78,7 +78,8 @@ extern int pinctrl_ra_query_config(uint32_t port, uint32_t pin,
 	{                                                                                          \
 		.config = DT_PROP_BY_IDX(node_id, pinmux, idx) |                                   \
 			  (DT_ENUM_IDX_OR(node_id, drive_strength, 0) << PmnPFS_DSCR_POS) |        \
-			  (DT_PROP_OR(node_id, bias_pull_up, 0) << PmnPFS_PCR_POS),                \
+			  (DT_PROP_OR(node_id, bias_pull_up, 0) << PmnPFS_PCR_POS) |               \
+			  (DT_PROP_OR(node_id, drive_open_drain, 0) << PmnPFS_NCODR_POS),          \
 	},
 
 /**
