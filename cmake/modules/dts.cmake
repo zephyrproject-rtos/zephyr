@@ -123,13 +123,23 @@ set(DTS_CMAKE                   ${PROJECT_BINARY_DIR}/dts.cmake)
 set(VENDOR_PREFIXES             dts/bindings/vendor-prefixes.txt)
 
 if(NOT DEFINED DTS_SOURCE)
-  zephyr_build_string(dts_board_string BOARD ${BOARD} BOARD_QUALIFIERS ${BOARD_QUALIFIERS} MERGE)
-  foreach(str ${dts_board_string})
-    if(EXISTS ${BOARD_DIR}/${str}.dts)
-      set(DTS_SOURCE ${BOARD_DIR}/${str}.dts)
-      break()
-    endif()
-  endforeach()
+  zephyr_build_string(board_string SHORT shortened_board_string
+                      BOARD ${BOARD} BOARD_QUALIFIERS ${BOARD_QUALIFIERS}
+  )
+  if(EXISTS ${BOARD_DIR}/${shortened_board_string}.dts AND NOT BOARD_${BOARD}_SINGLE_SOC)
+    message(FATAL_ERROR "Board ${ZFILE_BOARD} defines multiple SoCs.\nShortened file name "
+            "(${shortened_board_string}.dts) not allowed, use '<board>_<soc>.dts' naming"
+    )
+  elseif(EXISTS ${BOARD_DIR}/${board_string}.dts AND EXISTS ${BOARD_DIR}/${shortened_board_string}.dts)
+    message(FATAL_ERROR "Conflicting file names discovered. Cannot use both "
+            "${board_string}.dts and ${shortened_board_string}.dts. "
+            "Please choose one naming style, ${board_string}.dts is recommended."
+    )
+  elseif(EXISTS ${BOARD_DIR}/${board_string}.dts)
+    set(DTS_SOURCE ${BOARD_DIR}/${board_string}.dts)
+  elseif(EXISTS ${BOARD_DIR}/${shortened_board_string}.dts)
+    set(DTS_SOURCE ${BOARD_DIR}/${shortened_board_string}.dts)
+  endif()
 endif()
 
 if(EXISTS ${DTS_SOURCE})
