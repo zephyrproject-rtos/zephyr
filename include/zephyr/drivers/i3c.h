@@ -864,11 +864,12 @@ __subsystem struct i3c_driver_api {
 	 * @param dev Pointer to the controller device driver instance.
 	 * @param buf Pointer to the buffer
 	 * @param len Length of the buffer
+	 * @param hdr_mode HDR mode
 	 *
 	 * @return @see i3c_target_tx_write
 	 */
 	int (*target_tx_write)(const struct device *dev,
-				 uint8_t *buf, uint16_t len);
+				 uint8_t *buf, uint16_t len, uint8_t hdr_mode);
 };
 
 /**
@@ -1830,6 +1831,7 @@ static inline int i3c_write(struct i3c_device_desc *target,
 	msg.buf = (uint8_t *)buf;
 	msg.len = num_bytes;
 	msg.flags = I3C_MSG_WRITE | I3C_MSG_STOP;
+	msg.hdr_mode = 0;
 	msg.hdr_cmd_code = 0;
 
 	return i3c_transfer(target, &msg, 1);
@@ -1856,6 +1858,7 @@ static inline int i3c_read(struct i3c_device_desc *target,
 	msg.buf = buf;
 	msg.len = num_bytes;
 	msg.flags = I3C_MSG_READ | I3C_MSG_STOP;
+	msg.hdr_mode = 0;
 	msg.hdr_cmd_code = 0;
 
 	return i3c_transfer(target, &msg, 1);
@@ -1887,11 +1890,13 @@ static inline int i3c_write_read(struct i3c_device_desc *target,
 	msg[0].buf = (uint8_t *)write_buf;
 	msg[0].len = num_write;
 	msg[0].flags = I3C_MSG_WRITE;
+	msg[0].hdr_mode = 0;
 	msg[0].hdr_cmd_code = 0;
 
 	msg[1].buf = (uint8_t *)read_buf;
 	msg[1].len = num_read;
 	msg[1].flags = I3C_MSG_RESTART | I3C_MSG_READ | I3C_MSG_STOP;
+	msg[1].hdr_mode = 0;
 	msg[1].hdr_cmd_code = 0;
 
 	return i3c_transfer(target, msg, 2);
@@ -1954,11 +1959,13 @@ static inline int i3c_burst_write(struct i3c_device_desc *target,
 	msg[0].buf = &start_addr;
 	msg[0].len = 1U;
 	msg[0].flags = I3C_MSG_WRITE;
+	msg[0].hdr_mode = 0;
 	msg[0].hdr_cmd_code = 0;
 
 	msg[1].buf = (uint8_t *)buf;
 	msg[1].len = num_bytes;
 	msg[1].flags = I3C_MSG_WRITE | I3C_MSG_STOP;
+	msg[1].hdr_mode = 0;
 	msg[1].hdr_cmd_code = 0;
 
 	return i3c_transfer(target, msg, 2);
