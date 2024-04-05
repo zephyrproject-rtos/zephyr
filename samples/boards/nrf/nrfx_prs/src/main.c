@@ -13,6 +13,7 @@
 #include <nrfx_uarte.h>
 #include <drivers/src/prs/nrfx_prs.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
 
 #define TRANSFER_LENGTH 10
 
@@ -141,7 +142,7 @@ static bool switch_to_spim(void)
 		NRF_SPIM_PIN_NOT_CONNECTED,
 		NRF_SPIM_PIN_NOT_CONNECTED,
 		NRF_DT_GPIOS_TO_PSEL(SPIM_NODE, cs_gpios));
-	spim_config.frequency = NRF_SPIM_FREQ_1M;
+	spim_config.frequency = MHZ(1);
 	spim_config.skip_gpio_cfg = true;
 	spim_config.skip_psel_cfg = true;
 
@@ -291,7 +292,7 @@ static bool background_transfer(const struct device *spi_dev)
 	static const struct spi_config spi_dev_cfg = {
 		.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |
 			     SPI_TRANSFER_MSB,
-		.frequency = 1000000,
+		.frequency = MHZ(1),
 		.cs = {
 			.gpio = GPIO_DT_SPEC_GET(SPI_DEV_NODE, cs_gpios),
 		},
