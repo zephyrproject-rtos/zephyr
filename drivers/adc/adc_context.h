@@ -255,6 +255,7 @@ static inline void adc_context_on_sampling_done(struct adc_context *ctx,
 		switch (action) {
 		case ADC_ACTION_REPEAT:
 			repeat = true;
+			ctx->sampling_index = 0U;
 			break;
 		case ADC_ACTION_FINISH:
 			finish = true;
