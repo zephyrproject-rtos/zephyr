@@ -8,6 +8,7 @@ common:
     - nrf52840dk/nrf52840
     - nrf9160dk/nrf9160
     - nrf5340dk/nrf5340/cpuapp
+    - nrf54l15pdk/nrf54l15/cpuapp
     - nrf52_bsim
   integration_platforms:
     - nrf52840dk/nrf52840
