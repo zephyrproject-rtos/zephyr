@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2024 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/microchip-xec-gpio.h>
+#include <zephyr/dt-bindings/pinctrl/mchp-xec-pinctrl.h>
+
+/*
+ * MEC5_ASSY6941 EVT with MEC1743, MEC5402, or MEC5502
+ * SPI flash dongle Assembly 6791 connected to J18
+ * Select VTR2 for J18. ???
+ * VTR2 set to +3.3V. JP43 1-2, J68 1-2, JP62 1-2, JP65 1-2
+ *
+ * Flash dongle has Winbond W25Q128JV
+ * Flash dongle using QSPI shared SPI pins.
+ * NOTE: If W25Q128JV Quad-Enable STATUS2 bit is 1 then nWP and nHOLD
+ * signals are IO2/IO3. No write-protect or hold functionality.
+ *
+ * GPIO175/CMP_VOUT1/PWM8_ALT on schematic, LED4 on silkscreen.
+ */
+
+/ {
+	chosen {
+		zephyr,console = &uart1;
+	};
+
+	aliases {
+		spi0 = &qspi0;
+		led0 = &led4;
+		spi-flash = &shd_flash;
+		spi-flash-wp = &qspi_shd_io2_gpio227;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led4: led_0 {
+			gpios = <MCHP_GPIO_DECODE_175 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&qspi0 {
+	status = "okay";
+	lines = <4>;
+	pinctrl-0 = < &qspi_shd_cs0_n_gpio055 &qspi_shd_clk_gpio056
+		      &qspi_shd_io0_gpio223 &qspi_shd_io1_gpio224
+		      &qspi_shd_io2_gpio227 &qspi_shd_io3_gpio016 >;
+	pinctrl-names = "default";
+
+	shd_flash: w25q128jv@0 {
+		compatible ="jedec,spi-nor";
+		/* 16 Mbit Flash */
+		size = <DT_SIZE_M(16)>;
+		page-size = <256>;
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(24)>;
+		status = "okay";
+		jedec-id = [ef 40 18];
+	};
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart1_tx_gpio170 &uart1_rx_gpio171>;
+	pinctrl-names = "default";
+};
