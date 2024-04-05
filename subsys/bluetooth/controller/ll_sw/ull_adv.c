@@ -861,7 +861,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 				}
 
 				/* Check advertising not terminated */
-				type = &adv->lll.node_rx_adv_term->type;
+				type = &adv->lll.node_rx_adv_term->hdr.type;
 				if (*type == NODE_RX_TYPE_NONE) {
 					/* Reset event counter, update duration,
 					 * and max events
@@ -1089,7 +1089,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		/* NOTE: use allocated link for generating dedicated
 		 * terminate ind rx node
 		 */
-		conn->llcp_terminate.node_rx.hdr.link = link;
+		conn->llcp_terminate.node_rx.rx.hdr.link = link;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 		conn->phy_pref_tx = ull_conn_default_phy_tx_get();
@@ -1952,7 +1952,7 @@ void ull_adv_done(struct node_rx_event_done *done)
 {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	struct lll_adv_aux *lll_aux;
-	struct node_rx_hdr *rx_hdr;
+	struct node_rx_pdu *rx;
 	uint8_t handle;
 	uint32_t ret;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
@@ -2042,15 +2042,15 @@ void ull_adv_done(struct node_rx_event_done *done)
 	if (adv->max_events && (adv->event_counter >= adv->max_events)) {
 		adv->max_events = 0U;
 
-		rx_hdr = (void *)lll->node_rx_adv_term;
-		rx_hdr->rx_ftr.param_adv_term.status = BT_HCI_ERR_LIMIT_REACHED;
+		rx = (void *)lll->node_rx_adv_term;
+		rx->rx_ftr.param_adv_term.status = BT_HCI_ERR_LIMIT_REACHED;
 	} else if (adv->remain_duration_us &&
 		   (adv->remain_duration_us <=
 		    ((uint64_t)adv->interval * ADV_INT_UNIT_US))) {
 		adv->remain_duration_us = 0U;
 
-		rx_hdr = (void *)lll->node_rx_adv_term;
-		rx_hdr->rx_ftr.param_adv_term.status = BT_HCI_ERR_ADV_TIMEOUT;
+		rx = (void *)lll->node_rx_adv_term;
+		rx->rx_ftr.param_adv_term.status = BT_HCI_ERR_ADV_TIMEOUT;
 	} else {
 		return;
 	}
@@ -2058,10 +2058,10 @@ void ull_adv_done(struct node_rx_event_done *done)
 	handle = ull_adv_handle_get(adv);
 	LL_ASSERT(handle < BT_CTLR_ADV_SET);
 
-	rx_hdr->type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
-	rx_hdr->handle = handle;
-	rx_hdr->rx_ftr.param_adv_term.conn_handle = 0xffff;
-	rx_hdr->rx_ftr.param_adv_term.num_events = adv->event_counter;
+	rx->hdr.type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
+	rx->hdr.handle = handle;
+	rx->rx_ftr.param_adv_term.conn_handle = 0xffff;
+	rx->rx_ftr.param_adv_term.num_events = adv->event_counter;
 
 	lll_aux = lll->aux;
 	if (lll_aux) {
@@ -2546,7 +2546,7 @@ static void disabled_cb(void *param)
 	memset(cc, 0x00, sizeof(struct node_rx_cc));
 	cc->status = BT_HCI_ERR_ADV_TIMEOUT;
 
-	rx->hdr.rx_ftr.param = param;
+	rx->rx_ftr.param = param;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (adv->lll.node_rx_adv_term) {
@@ -2560,9 +2560,9 @@ static void disabled_cb(void *param)
 		rx = (void *)adv->lll.node_rx_adv_term;
 		rx->hdr.type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
 		rx->hdr.handle = handle;
-		rx->hdr.rx_ftr.param_adv_term.status = BT_HCI_ERR_ADV_TIMEOUT;
-		rx->hdr.rx_ftr.param_adv_term.conn_handle = 0xffff;
-		rx->hdr.rx_ftr.param_adv_term.num_events = adv->event_counter;
+		rx->rx_ftr.param_adv_term.status = BT_HCI_ERR_ADV_TIMEOUT;
+		rx->rx_ftr.param_adv_term.conn_handle = 0xffff;
+		rx->rx_ftr.param_adv_term.num_events = adv->event_counter;
 
 		link = rx->hdr.link;
 	}
@@ -2727,18 +2727,18 @@ static void ext_disable(void *param)
 static void ext_disabled_cb(void *param)
 {
 	struct lll_adv *lll = (void *)param;
-	struct node_rx_hdr *rx_hdr = (void *)lll->node_rx_adv_term;
+	struct node_rx_pdu *rx = lll->node_rx_adv_term;
 
 	/* Under race condition, if a connection has been established then
 	 * node_rx is already utilized to send terminate event on connection
 	 */
-	if (!rx_hdr) {
+	if (!rx) {
 		return;
 	}
 
 	/* NOTE: parameters are already populated on disable, just enqueue here
 	 */
-	ll_rx_put_sched(rx_hdr->link, rx_hdr);
+	ll_rx_put_sched(rx->hdr.link, rx);
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 

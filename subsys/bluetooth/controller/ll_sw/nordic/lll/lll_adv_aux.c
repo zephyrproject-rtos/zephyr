@@ -788,7 +788,7 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux, uint8_t phy_flags_rx,
 		rx->hdr.type = NODE_RX_TYPE_CONNECTION;
 		rx->hdr.handle = 0xffff;
 
-		ftr = &(rx->hdr.rx_ftr);
+		ftr = &(rx->rx_ftr);
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = radio_tmr_end_get() -
@@ -862,7 +862,7 @@ static void isr_tx_connect_rsp(void *param)
 	bool is_done;
 
 	rx = param;
-	ftr = &(rx->hdr.rx_ftr);
+	ftr = &(rx->rx_ftr);
 	lll = ftr->param;
 
 	is_done = radio_is_done();

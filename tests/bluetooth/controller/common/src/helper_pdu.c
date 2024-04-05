@@ -406,7 +406,7 @@ void helper_pdu_encode_zero(struct pdu_data *pdu, void *param)
 
 void helper_node_encode_cte_rsp(struct node_rx_pdu *rx, void *param)
 {
-	rx->hdr.rx_ftr.iq_report = (struct cte_conn_iq_report *)param;
+	rx->rx_ftr.iq_report = (struct cte_conn_iq_report *)param;
 }
 
 void helper_pdu_encode_cis_req(struct pdu_data *pdu, void *param)
@@ -1054,7 +1054,7 @@ void helper_node_verify_cte_rsp(const char *file, uint32_t line, struct node_rx_
 				void *param)
 {
 	struct cte_conn_iq_report *p_iq_report = param;
-	struct cte_conn_iq_report *rx_iq_report = rx->hdr.rx_ftr.iq_report;
+	struct cte_conn_iq_report *rx_iq_report = rx->rx_ftr.iq_report;
 
 	zassert_equal(rx_iq_report->cte_info.time, p_iq_report->cte_info.time,
 		      "CTE Time mismatch.\nCalled at %s:%d\n", file, line);

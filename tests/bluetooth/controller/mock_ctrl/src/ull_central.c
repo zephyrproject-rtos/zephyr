@@ -20,7 +20,7 @@
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
 
-void ull_central_setup(memq_link_t *link, struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
+void ull_central_setup(memq_link_t *link, struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		      struct lll_conn *lll)
 {
 }

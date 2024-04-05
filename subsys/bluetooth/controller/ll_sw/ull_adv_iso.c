@@ -552,7 +552,7 @@ ll_big_create_rtn_retry:
 
 	/* Store the link buffer for ISO create and terminate complete event */
 	adv_iso->node_rx_complete.hdr.link = link_cmplt;
-	adv_iso->node_rx_terminate.hdr.link = link_term;
+	adv_iso->node_rx_terminate.rx.hdr.link = link_term;
 
 	/* Initialise LLL header members */
 	lll_hdr_init(lll_adv_iso, adv_iso);
@@ -681,7 +681,7 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 	node_rx = (void *)&adv_iso->node_rx_terminate;
 	node_rx->hdr.type = NODE_RX_TYPE_BIG_TERMINATE;
 	node_rx->hdr.handle = big_handle;
-	node_rx->hdr.rx_ftr.param = adv_iso;
+	node_rx->rx_ftr.param = adv_iso;
 
 	if (reason == BT_HCI_ERR_REMOTE_USER_TERM_CONN) {
 		*((uint8_t *)node_rx->pdu) = BT_HCI_ERR_LOCALHOST_TERM_CONN;
@@ -740,7 +740,7 @@ uint8_t ull_adv_iso_chm_update(void)
 	return 0;
 }
 
-void ull_adv_iso_chm_complete(struct node_rx_hdr *rx)
+void ull_adv_iso_chm_complete(struct node_rx_pdu *rx)
 {
 	struct lll_adv_sync *sync_lll;
 	struct lll_adv_iso *iso_lll;
@@ -868,7 +868,7 @@ void ull_adv_iso_done_complete(struct node_rx_event_done *done)
 {
 	struct ll_adv_iso_set *adv_iso;
 	struct lll_adv_iso *lll;
-	struct node_rx_hdr *rx;
+	struct node_rx_pdu *rx;
 	memq_link_t *link;
 
 	/* switch to normal prepare */
@@ -880,7 +880,7 @@ void ull_adv_iso_done_complete(struct node_rx_event_done *done)
 
 	/* Prepare BIG complete event */
 	rx = (void *)&adv_iso->node_rx_complete;
-	link = rx->link;
+	link = rx->hdr.link;
 	if (!link) {
 		/* NOTE: When BIS events have overlapping prepare placed in
 		 *       in the pipeline, more than one done complete event
@@ -889,10 +889,10 @@ void ull_adv_iso_done_complete(struct node_rx_event_done *done)
 		 */
 		return;
 	}
-	rx->link = NULL;
+	rx->hdr.link = NULL;
 
-	rx->type = NODE_RX_TYPE_BIG_COMPLETE;
-	rx->handle = lll->handle;
+	rx->hdr.type = NODE_RX_TYPE_BIG_COMPLETE;
+	rx->hdr.handle = lll->handle;
 	rx->rx_ftr.param = adv_iso;
 
 	ll_rx_put_sched(link, rx);

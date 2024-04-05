@@ -409,11 +409,19 @@ struct node_rx_hdr {
 		memq_link_t *link;    /* Supply memq_link from ULL to LLL */
 		uint8_t     ack_last; /* Tx ack queue index at this node rx */
 	};
-
 	enum node_rx_type type;
 	uint8_t           user_meta; /* User metadata */
 	uint16_t          handle;    /* State/Role instance handle */
+};
 
+
+/* Template node rx type with memory aligned offset to PDU buffer.
+ * NOTE: offset to memory aligned pdu buffer location is used to reference
+ *       node rx type specific information, like, terminate or sync lost reason
+ *       from a dedicated node rx structure storage location.
+ */
+struct node_rx_pdu {
+	struct node_rx_hdr hdr;
 	union {
 		struct node_rx_ftr rx_ftr;
 #if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
@@ -423,15 +431,6 @@ struct node_rx_hdr {
 		lll_rx_pdu_meta_t  rx_pdu_meta;
 #endif /* CONFIG_BT_CTLR_RX_PDU_META */
 	};
-};
-
-/* Template node rx type with memory aligned offset to PDU buffer.
- * NOTE: offset to memory aligned pdu buffer location is used to reference
- *       node rx type specific information, like, terminate or sync lost reason
- *       from a dedicated node rx structure storage location.
- */
-struct node_rx_pdu {
-	struct node_rx_hdr hdr;
 	union {
 		uint8_t    pdu[0] __aligned(4);
 	};

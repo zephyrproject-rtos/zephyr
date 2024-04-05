@@ -462,7 +462,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 				if (dp && dp->path_id == BT_HCI_DATAPATH_ID_HCI) {
 					/* If HCI datapath pass to ISO AL here */
 					struct isoal_pdu_rx pckt_meta = {
-						.meta = &node_rx->hdr.rx_iso_meta,
+						.meta = &node_rx->rx_iso_meta,
 						.pdu  = (void *)&node_rx->pdu[0],
 					};
 
@@ -491,7 +491,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 			 */
 			if (stream && stream->dp &&
 			    (stream->dp->path_id == BT_HCI_DATAPATH_ID_HCI)) {
-				isoal_rx.meta = &node_rx->hdr.rx_iso_meta;
+				isoal_rx.meta = &node_rx->rx_iso_meta;
 				isoal_rx.pdu = (void *)node_rx->pdu;
 				err = isoal_rx_pdu_recombine(stream->dp->sink_hdl, &isoal_rx);
 
