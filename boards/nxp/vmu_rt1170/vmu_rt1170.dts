@@ -9,6 +9,7 @@
 #include <nxp/nxp_rt11xx_cm7.dtsi>
 #include <zephyr/dt-bindings/led/led.h>
 #include "vmu_rt1170.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NXP VMU RT1170";
@@ -35,12 +36,13 @@
 		zephyr,code-partition = &slot0_partition;
 	};
 
-	/* This is the Button on the included GPS module for 10 pin JST-GH */
-	buttons {
+	/* This is the Arming Button on the included GPS module for 10 pin JST-GH */
+	gpio_keys {
 		compatible = "gpio-keys";
 		arming_button: button_0 {
 			label = "Arming Switch";
 			gpios = <&gpio1 24 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
