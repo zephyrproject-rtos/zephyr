@@ -1619,6 +1619,30 @@ function(zephyr_build_string outvar)
   set(${outvar} ${${outvar}} PARENT_SCOPE)
 endfunction()
 
+# Function to add one or more directories to the include list passed to the syscall generator.
+function(zephyr_syscall_include_directories)
+  foreach(one_dir ${ARGV})
+    if(EXISTS ${one_dir})
+      set(include_dir ${one_dir})
+    elseif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${one_dir})
+      set(include_dir ${CMAKE_CURRENT_SOURCE_DIR}/${one_dir})
+    else()
+      message(FATAL_ERROR "Syscall include directory not found: ${one_dir}")
+    endif()
+
+    target_include_directories(
+      syscalls_interface INTERFACE
+      ${include_dir}
+    )
+    add_dependencies(
+      syscalls_interface
+      ${include_dir}
+    )
+
+    unset(include_dir)
+  endforeach()
+endfunction()
+
 # Function to add header file(s) to the list to be passed to syscall generator.
 function(zephyr_syscall_header)
   foreach(one_file ${ARGV})
