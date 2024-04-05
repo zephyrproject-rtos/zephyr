@@ -216,6 +216,10 @@ static int test_wdt_no_callback(void)
 	}
 
 	err = wdt_setup(wdt, WDT_OPT_PAUSE_HALTED_BY_DBG);
+	if (err == -ENOTSUP) {
+		TC_PRINT("- pausing watchdog by debugger is not supported\n");
+		err = wdt_setup(wdt, 0);
+	}
 	if (err < 0) {
 		TC_PRINT("Watchdog setup error\n");
 		return TC_FAIL;
@@ -270,6 +274,10 @@ static int test_wdt_callback_1(void)
 	}
 
 	err = wdt_setup(wdt, WDT_OPT_PAUSE_HALTED_BY_DBG);
+	if (err == -ENOTSUP) {
+		TC_PRINT("- pausing watchdog by debugger is not supported\n");
+		err = wdt_setup(wdt, 0);
+	}
 	if (err < 0) {
 		TC_PRINT("Watchdog setup error\n");
 		return TC_FAIL;
@@ -330,6 +338,10 @@ static int test_wdt_callback_2(void)
 	}
 
 	err = wdt_setup(wdt, WDT_OPT_PAUSE_HALTED_BY_DBG);
+	if (err == -ENOTSUP) {
+		TC_PRINT("- pausing watchdog by debugger is not supported\n");
+		err = wdt_setup(wdt, 0);
+	}
 	if (err < 0) {
 		TC_PRINT("Watchdog setup error\n");
 		return TC_FAIL;
