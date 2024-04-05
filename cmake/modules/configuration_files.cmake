@@ -83,15 +83,14 @@ endif()
 
 # If still not found, search for other overlays in the configuration directory.
 if(NOT DEFINED DTC_OVERLAY_FILE)
-  zephyr_build_string(board_overlay_strings
-                      BOARD ${BOARD}
-                      BOARD_QUALIFIERS ${BOARD_QUALIFIERS}
-                      MERGE
-  )
-  list(TRANSFORM board_overlay_strings APPEND ".overlay")
+  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} DTS DTC_OVERLAY_FILE)
 
-  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} DTS DTC_OVERLAY_FILE
-              NAMES "${board_overlay_strings};app.overlay" SUFFIX ${FILE_SUFFIX})
+  if(NOT DEFINED DTC_OVERLAY_FILE)
+    zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} DTS DTC_OVERLAY_FILE
+                NAMES "app.overlay" SUFFIX ${FILE_SUFFIX}
+    )
+  endif()
+
 endif()
 
 set(DTC_OVERLAY_FILE ${DTC_OVERLAY_FILE} CACHE STRING "If desired, you can \
