@@ -508,6 +508,44 @@ static int tmag5273_attr_get(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
+static int tmag5273_perform_conversion(const struct device *dev)
+{
+	const struct tmag5273_config *drv_cfg = dev->config;
+	struct tmag5273_data *drv_data = dev->data;
+	uint8_t status;
+	int retval;
+
+	/* trigger conversion */
+	if (drv_cfg->trigger_conv_via_int) {
+		retval = tmag5273_dev_int_trigger(drv_cfg);
+	} else {
+		retval = i2c_reg_read_byte_dt(
+			&drv_cfg->i2c, TMAG5273_REG_CONV_STATUS | TMAG5273_CONVERSION_START_BIT,
+			&status);
+	}
+	if (retval < 0) {
+		LOG_ERR("failed to trigger conversion %d", retval);
+		return retval;
+	}
+
+	/* wait for conversion to complete */
+	k_usleep(drv_data->conversion_time_us);
+
+	/* verify conversion is complete */
+	retval = i2c_reg_read_byte_dt(&drv_cfg->i2c, TMAG5273_REG_CONV_STATUS, &status);
+	if (retval < 0) {
+		LOG_ERR("error reading conversion state %d", retval);
+		return retval;
+	}
+
+	if ((status & TMAG5273_RESULT_STATUS_MSK) != TMAG5273_CONVERSION_COMPLETE) {
+		LOG_ERR("conversion failed");
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static int tmag5273_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	const struct tmag5273_config *drv_cfg = dev->config;
@@ -519,28 +557,9 @@ static int tmag5273_sample_fetch(const struct device *dev, enum sensor_channel c
 
 	/* trigger a conversion and wait until done if in standby mode */
 	if (drv_cfg->operation_mode == TMAG5273_DT_OPER_MODE_STANDBY) {
-		if (drv_cfg->trigger_conv_via_int) {
-			retval = tmag5273_dev_int_trigger(drv_cfg);
-			if (retval < 0) {
-				return retval;
-			}
-		}
-
-		uint8_t conv_bit = TMAG5273_CONVERSION_START_BIT;
-
-		while ((i2c_buffer[0] & TMAG5273_RESULT_STATUS_MSK) !=
-		       TMAG5273_CONVERSION_COMPLETE) {
-			retval = i2c_reg_read_byte_dt(
-				&drv_cfg->i2c, TMAG5273_REG_CONV_STATUS | conv_bit, &i2c_buffer[0]);
-
-			if (retval < 0) {
-				LOG_ERR("error reading conversion state %d", retval);
-				return retval;
-			}
-
-			conv_bit = 0;
-
-			k_usleep(drv_data->conversion_time_us);
+		retval = tmag5273_perform_conversion(dev);
+		if (retval < 0) {
+			return retval;
 		}
 	}
 
