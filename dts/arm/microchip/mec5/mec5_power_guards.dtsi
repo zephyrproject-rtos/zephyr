@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2024 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Microchip MEC5 SoC's optional hardware power guard controllers
+ * Include this file in the soc {} section in the relevant chip DTSI files.
+ */
+pwrgrd0: pwrgrd@40003000 {
+	reg = <0x40003000 0x80>;
+	interrupts = <88 3>;
+	status = "disabled";
+};
+
+pwrgrd1: pwrgrd@40003080 {
+	reg = <0x40003080 0x80>;
+	interrupts = <89 3>;
+	status = "disabled";
+};

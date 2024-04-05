@@ -1,0 +1,103 @@
+/*
+ * Copyright (c) 2024 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/espi/mchp-mec5-espi.h>
+
+/ {
+	mchp-mec5-espi-vw-map {
+		compatible = "microchip,mec5-espi-vw-map";
+
+		ctvw00: ctvw00 {
+			host-index = <0x02>;
+			direction = "downstream";
+			vw-reg = <MCHP_MEC5_ESPI_CTVW00>;
+			reset-source = "reset_espi";
+		};
+		ctvw01: ctvw01 {
+			host-index = <0x03>;
+			direction = "downstream";
+			vw-reg = <MCHP_MEC5_ESPI_CTVW01>;
+			reset-source = "reset_espi";
+		};
+		ctvw02: ctvw02 {
+			host-index = <0x07>;
+			direction = "downstream";
+			vw-reg = <MCHP_MEC5_ESPI_CTVW02>;
+			reset-source = "pltrst";
+		};
+		ctvw03: ctvw03 {
+			host-index = <0x41>;
+			direction = "downstream";
+			vw-reg = <MCHP_MEC5_ESPI_CTVW03>;
+			reset-source = "reset_espi";
+		};
+		ctvw04: ctvw04 {
+			host-index = <0x42>;
+			direction = "downstream";
+			vw-reg = <MCHP_MEC5_ESPI_CTVW04>;
+			reset-source = "reset_espi";
+		};
+		/* TODO how to handle ctvw05 and ctvw06 */
+		ctvw07: ctvw07 {
+			host-index = <0x47>;
+			direction = "downstream";
+			vw-reg = <MCHP_MEC5_ESPI_CTVW07>;
+			reset-source = "pltrst";
+		};
+		ctvw08: ctvw08 {
+			host-index = <0x4a>;
+			direction = "downstream";
+			vw-reg = <MCHP_MEC5_ESPI_CTVW08>;
+			reset-source = "reset_espi";
+		};
+		/* TODO how to handle ctvw09 and ctvw10 */
+
+		tcvw00: tcvw00 {
+			host-index = <0x04>;
+			direction = "upstream";
+			vw-reg = <MCHP_MEC5_ESPI_TCVW00>;
+			reset-source = "reset_espi";
+		};
+		tcvw01: tcvw01 {
+			host-index = <0x05>;
+			direction = "upstream";
+			vw-reg = <MCHP_MEC5_ESPI_TCVW01>;
+			reset-source = "reset_espi";
+		};
+		tcvw02: tcvw02 {
+			host-index = <0x06>;
+			direction = "upstream";
+			vw-reg = <MCHP_MEC5_ESPI_TCVW02>;
+			reset-source = "pltrst";
+		};
+		tcvw03: tcvw03 {
+			host-index = <0x40>;
+			direction = "upstream";
+			vw-reg = <MCHP_MEC5_ESPI_TCVW03>;
+			reset-source = "reset_espi";
+		};
+		/* TODO how to handle tcvw04 and tcvw05 */
+		tcvw06: tcvw06 {
+			host-index = <0x50>;
+			direction = "upstream";
+			vw-reg = <MCHP_MEC5_ESPI_TCVW06>;
+			reset-source = "reset_espi";
+		};
+		tcvw07: tcvw07 {
+			host-index = <0x51>;
+			direction = "upstream";
+			vw-reg = <MCHP_MEC5_ESPI_TCVW07>;
+			reset-source = "reset_espi";
+		};
+		tcvw08: tcvw08 {
+			host-index = <0x52>;
+			direction = "upstream";
+			vw-reg = <MCHP_MEC5_ESPI_TCVW08>;
+			reset-source = "reset_espi";
+		};
+		/* TODO how to handle tcvw09 and tcvw10 */
+	};
+};

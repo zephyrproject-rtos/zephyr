@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2024 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/espi/mchp-mec5-espi.h>
+
+/ {
+	mchp-mec5-espi-sram-bars {
+		compatible = "microchip,mec5-espi-sram-bar";
+		espi_sram_bar0: espi_sram_bar0 {
+			id = <0>;
+			host-address-lsw = <0>;
+			region-base = <0>;
+			region-size = "1B";
+			access = "DISABLED";
+			status = "disabled";
+		};
+		espi_sram_bar1: espi_sram_bar1 {
+			id = <1>;
+			host-address-lsw = <0>;
+			region-base = <0>;
+			region-size = "1B";
+			access = "DISABLED";
+			status = "disabled";
+		};
+	};
+};

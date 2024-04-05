@@ -1,0 +1,135 @@
+/*
+ * Copyright (c) 2024 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* eSPI I/O configuration port */
+espi_config: espi_config {
+	ldn = <0x0d>;
+	host-address = <0x2e>;
+	status = "okay";
+};
+/* eSPI memory component I/O BAR */
+espi_mem: espi_mem {
+	ldn = <0x0e>;
+	host-address = <0>;
+	status = "okay";
+};
+espi_mbox0: espi_mbox0 {
+	ldn = <0>;
+	host-address = <0>;
+	sirqs = <0xff 0xff>;
+	sirq-names = "mbox_sirq", "mbox_smi";
+	status = "disabled";
+};
+espi_kbc0: espi_kbc0 {
+	ldn = <1>;
+	host-address = <0x60>;
+	sirqs = <0xff 0xff>;
+	sirq-names = "kirq", "mirq";
+	status = "disabled";
+};
+espi_acpi_ec0: espi_acpi_ec0 {
+	ldn = <2>;
+	host-address = <0x62>;
+	sirqs = <0xff>;
+	sirq-names = "ec_obf";
+	status = "disabled";
+};
+espi_acpi_ec1: espi_acpi_ec1 {
+	ldn = <3>;
+	host-address = <0>;
+	sirqs = <0xff>;
+	sirq-names = "ec_obf";
+	status = "disabled";
+};
+espi_acpi_ec2: espi_acpi_ec2 {
+	ldn = <4>;
+	host-address = <0>;
+	sirqs = <0xff>;
+	sirq-names = "ec_obf";
+	status = "disabled";
+};
+espi_acpi_ec3: espi_acpi_ec3 {
+	ldn = <5>;
+	host-address = <0>;
+	sirqs = <0xff>;
+	sirq-names = "ec_obf";
+	status = "disabled";
+};
+espi_acpi_ec4: espi_acpi_ec4 {
+	ldn = <6>;
+	host-address = <0>;
+	sirqs = <0xff>;
+	sirq-names = "ec_obf";
+	status = "disabled";
+};
+espi_acpi_pm1: espi_acpi_pm1 {
+	ldn = <7>;
+	host-address = <0>;
+	status = "disabled";
+};
+espi_kb_port92: espi_kb_port92 {
+	ldn = <8>;
+	host-address = <0x92>;
+	status = "disabled";
+};
+espi_uart0: espi_uart0 {
+	ldn = <9>;
+	host-address = <0x3f8>;
+	sirqs = <0xff>;
+	sirq-names = "uart_irq";
+	status = "disabled";
+};
+espi_uart1: espi_uart1 {
+	ldn = <0xa>;
+	host-address = <0x2f8>;
+	sirqs = <0xff>;
+	sirq-names = "uart_irq";
+	status = "disabled";
+};
+espi_glue: espi_glue {
+	ldn = <0xf>;
+	host-address = <0>;
+	status = "disabled";
+};
+espi_emi0: espi_emi0 {
+	ldn = <0x10>;
+	host-address = <0>;
+	sirqs = <0xff 0xff>;
+	sirq-names = "host_event", "ec_to_host";
+	status = "disabled";
+};
+espi_emi1: espi_emi1 {
+	ldn = <0x11>;
+	host-address = <0>;
+	sirqs = <0xff 0xff>;
+	sirq-names = "host_event", "ec_to_host";
+	status = "disabled";
+};
+espi_emi2: espi_emi2 {
+	ldn = <0x12>;
+	host-address = <0>;
+	sirqs = <0xff 0xff>;
+	sirq-names = "host_event", "ec_to_host";
+	status = "disabled";
+};
+espi_rtc0: espi_rtc0 {
+	ldn = <0x14>;
+	host-address = <0>;
+	sirqs = <0xff>;
+	sirq-names = "rtc0";
+	status = "disabled";
+};
+espi_bdp0: espi_bdp0 {
+	ldn = <0x20>;
+	host-address = <0>;
+	status = "disabled";
+};
+espi_bdpa0: espi_bdpa0 {
+	ldn = <0x21>;
+	host-address = <0>;
+	bdp-host-alias-byte-lane = <1>;
+	status = "disabled";
+};

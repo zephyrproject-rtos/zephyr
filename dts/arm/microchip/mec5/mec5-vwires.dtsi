@@ -1,0 +1,282 @@
+/*
+ * Copyright (c) 2024 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/espi/mchp-mec5-espi.h>
+
+/ {
+	mchp-mec5-espi-ct-vwires {
+		compatible = "microchip,mec5-espi-vwires";
+
+		vw_slp_s3_n: vw_slp_s3_n {
+			vw-group = <&ctvw00>;
+			source = <0>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLP_S3";
+			irq-sel = "both edges";
+		};
+		vw_slp_s4_n: vw_slp_s4_n {
+			vw-group = <&ctvw00>;
+			source = <1>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLP_S4";
+			irq-sel = "both edges";
+		};
+		vw_slp_s5_n: vw_slp_s5_n {
+			vw-group = <&ctvw00>;
+			source = <2>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLP_S5";
+			irq-sel = "both edges";
+		};
+		vw_sus_stat_n: vw_sus_stat_n {
+			vw-group = <&ctvw01>;
+			source = <0>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SUS_STAT";
+			irq-sel = "both edges";
+		};
+		vw_pltrst_n: vw_pltrst_n {
+			vw-group = <&ctvw01>;
+			source = <1>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_PLTRST";
+			irq-sel = "both edges";
+		};
+		vw_oob_rst_warn: vw_oob_rst_warn {
+			vw-group = <&ctvw01>;
+			source = <2>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_OOB_RST_WARN";
+			irq-sel = "both edges";
+		};
+		vw_host_rst_warn: vw_host_rst_warn {
+			vw-group = <&ctvw02>;
+			source = <0>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_HOST_RST_WARN";
+			irq-sel = "both edges";
+		};
+		vw_smiout_n: vw_smiout_n {
+			vw-group = <&ctvw02>;
+			source = <1>;
+			reset-state = <1>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SMIOUT";
+		};
+		vw_nmiout_n: vw_nmiout_n {
+			vw-group = <&ctvw02>;
+			source = <2>;
+			reset-state = <1>;
+			vw-name = "ESPI_VWIRE_SIGNAL_NMIOUT";
+		};
+		vw_sus_warn_n: vw_sus_warn_n {
+			vw-group = <&ctvw03>;
+			source = <0>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SUS_WARN";
+			irq-sel = "both edges";
+		};
+		vw_sus_pwrdn_ack: vw_sus_pwrdn_ack {
+			vw-group = <&ctvw03>;
+			source = <1>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SUS_PWRDN_ACK";
+			irq-sel = "both edges";
+		};
+		vw_slp_a_n: vw_slp_a_n {
+			vw-group = <&ctvw03>;
+			source = <3>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLP_A";
+			irq-sel = "both edges";
+		};
+		vw_slp_lan_n: vw_slp_lan_n {
+			vw-group = <&ctvw04>;
+			source = <0>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLP_LAN";
+			irq-sel = "both edges";
+		};
+		vw_slp_wlan_n: vw_slp_wlan_n {
+			vw-group = <&ctvw04>;
+			source = <1>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLP_WLAN";
+			irq-sel = "both edges";
+		};
+		vw_host_c10: vw_host_c10 {
+			vw-group = <&ctvw07>;
+			source = <0>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_HOST_C10";
+			irq-sel = "both edges";
+		};
+		vw_dnx_warn: vw_dnx_warn {
+			vw-group = <&ctvw08>;
+			source = <1>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_DNX_WARN";
+			irq-sel = "both edges";
+		};
+	};
+
+	/* Target(EC) to Host (TCVW) do not have SoC interrupts */
+	mchp-mec5-espi-tc-vwires {
+		compatible = "microchip,mec5-espi-vwires";
+
+		vw_oob_rst_ack: vw_oob_rst_ack {
+			vw-group = <&tcvw00>;
+			source = <0>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_OOB_RST_ACK";
+		};
+		vw_wake_n: vw_wake_n {
+			vw-group = <&tcvw00>;
+			source = <2>;
+			reset-state = <1>;
+			reset-state = <1>;
+			vw-name = "ESPI_VWIRE_SIGNAL_WAKE";
+		};
+		vw_pme_n: vw_pme_n {
+			vw-group = <&tcvw00>;
+			source = <3>;
+			reset-state = <1>;
+			reset-state = <1>;
+			vw-name = "ESPI_VWIRE_SIGNAL_PME";
+		};
+		vw_slave_boot_done: vw_slave_boot_done {
+			vw-group = <&tcvw01>;
+			source = <0>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE";
+		};
+		vw_error_fatal: vw_error_fatal {
+			vw-group = <&tcvw01>;
+			source = <1>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_ERR_FATAL";
+		};
+		vw_error_non_fatal: vw_error_non_fatal {
+			vw-group = <&tcvw01>;
+			source = <2>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_ERR_NON_FATAL";
+		};
+		vw_slave_boot_status: vw_slave_boot_status {
+			vw-group = <&tcvw01>;
+			source = <3>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLV_BOOT_STS";
+		};
+		vw_sci_n: vw_sci_n {
+			vw-group = <&tcvw02>;
+			source = <0>;
+			reset-state = <1>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SCI";
+		};
+		vw_smi_n: vw_smi_n {
+			vw-group = <&tcvw02>;
+			source = <1>;
+			reset-state = <1>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SMI";
+		};
+		vw_rcin_n: vw_rcin_n {
+			vw-group = <&tcvw02>;
+			source = <2>;
+			reset-state = <1>;
+			vw-name = "ESPI_VWIRE_SIGNAL_RST_CPU_INIT";
+		};
+		vw_host_rst_ack: vw_host_rst_ack {
+			vw-group = <&tcvw02>;
+			source = <3>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_HOST_RST_ACK";
+		};
+		vw_sus_ack_n: vw_sus_ack_n {
+			vw-group = <&tcvw03>;
+			source = <0>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SUS_ACK";
+		};
+		vw_dnx_ack: vw_dnx_ack {
+			vw-group = <&tcvw03>;
+			source = <1>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_DNX_ACK";
+		};
+		vw_t2c_gpio_0: vw_t2c_gpio_0 {
+			vw-group = <&tcvw06>;
+			source = <0>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_0";
+		};
+		vw_t2c_gpio_1: vw_t2c_gpio_1 {
+			vw-group = <&tcvw06>;
+			source = <1>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_1";
+		};
+		vw_t2c_gpio_2: vw_t2c_gpio_2 {
+			vw-group = <&tcvw06>;
+			source = <2>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_2";
+		};
+		vw_t2c_gpio_3: vw_t2c_gpio_3 {
+			vw-group = <&tcvw06>;
+			source = <3>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_3";
+		};
+		vw_t2c_gpio_4: vw_t2c_gpio_4 {
+			vw-group = <&tcvw07>;
+			source = <0>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_4";
+		};
+		vw_t2c_gpio_5: vw_t2c_gpio_5 {
+			vw-group = <&tcvw07>;
+			source = <1>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_5";
+		};
+		vw_t2c_gpio_6: vw_t2c_gpio_6 {
+			vw-group = <&tcvw07>;
+			source = <2>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_6";
+		};
+		vw_t2c_gpio_7: vw_t2c_gpio_7 {
+			vw-group = <&tcvw07>;
+			source = <3>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_7";
+		};
+		vw_t2c_gpio_8: vw_t2c_gpio_8 {
+			vw-group = <&tcvw08>;
+			source = <0>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_8";
+		};
+		vw_t2c_gpio_9: vw_t2c_gpio_9 {
+			vw-group = <&tcvw08>;
+			source = <1>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_9";
+		};
+		vw_t2c_gpio_10: vw_t2c_gpio_10 {
+			vw-group = <&tcvw08>;
+			source = <2>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_10";
+		};
+		vw_t2c_gpio_11: vw_t2c_gpio_11 {
+			vw-group = <&tcvw08>;
+			source = <3>;
+			reset-state = <0>;
+			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_11";
+		};
+	};
+};

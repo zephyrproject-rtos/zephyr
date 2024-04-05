@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2024 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/espi/mchp-mec5-espi.h>
+
+/ {
+	mchp-mec5-espi-host-dev {
+		compatible = "microchip,mec5-espi-host-dev";
+
+		#include "mec5-espi-host-dev-common.dtsi"
+
+		espi_uart2: espi_uart2 {
+			devhandle = <&uart2>;
+			ldn = <0xb>;
+			host-address = <0x3e8>;
+			sirqs = <0xff>;
+			sirq-names = "uart_irq";
+			status = "disabled";
+		};
+		espi_uart3: espi_uart3 {
+			devhandle = <&uart3>;
+			ldn = <0xc>;
+			host-address = <0x2e8>;
+			sirqs = <0xff>;
+			sirq-names = "uart_irq";
+			status = "disabled";
+		};
+	};
+};
