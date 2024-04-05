@@ -945,13 +945,6 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 	    (preempt_req != preempt_ack)) {
 		uint32_t diff;
 
-		/* preempt timeout already started but no role/state in the head
-		 * of prepare pipeline.
-		 */
-		if (!prev || prev->is_aborted) {
-			return TICKER_STATUS_SUCCESS;
-		}
-
 		/* Calc the preempt timeout */
 		p = &next->prepare_param;
 		ull = HDR_LLL2ULL(p->param);
@@ -985,14 +978,20 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 		 *        A proper solution will be to re-design the pipeline
 		 *        as a ordered list, instead of the current FIFO.
 		 */
-		/* Set early as we get called again through the call to
-		 * abort_cb().
+		/* preempt timeout already started but no role/state in the head
+		 * of prepare pipeline.
 		 */
-		ticks_at_preempt = ticks_at_preempt_new;
+		if (prev && !prev->is_aborted) {
+			/* Set early as we get called again through the call to
+			 * abort_cb().
+			 */
+			ticks_at_preempt = ticks_at_preempt_new;
 
-		/* Abort previous prepare that set the preempt timeout */
-		prev->is_aborted = 1U;
-		prev->abort_cb(&prev->prepare_param, prev->prepare_param.param);
+			/* Abort previous prepare that set the preempt timeout */
+			prev->is_aborted = 1U;
+			prev->abort_cb(&prev->prepare_param,
+				       prev->prepare_param.param);
+		}
 #endif /* CONFIG_BT_CTLR_EARLY_ABORT_PREVIOUS_PREPARE */
 
 		/* Schedule short preempt timeout */
