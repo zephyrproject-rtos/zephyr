@@ -295,7 +295,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	/* NOTE: use allocated link for generating dedicated
 	 * terminate ind rx node
 	 */
-	conn->llcp_terminate.node_rx.hdr.link = link;
+	conn->llcp_terminate.node_rx.rx.hdr.link = link;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	conn->phy_pref_tx = ull_conn_default_phy_tx_get();
@@ -516,7 +516,7 @@ uint8_t ll_connect_disable(void **rx)
 		memq_link_t *link;
 
 		conn = HDR_LLL2ULL(conn_lll);
-		node_rx = (void *)&conn->llcp_terminate.node_rx;
+		node_rx = (void *)&conn->llcp_terminate.node_rx.rx;
 		link = node_rx->hdr.link;
 		LL_ASSERT(link);
 
@@ -536,7 +536,7 @@ uint8_t ll_connect_disable(void **rx)
 		 *       LLL context for other cases, pass LLL context as
 		 *       parameter.
 		 */
-		node_rx->hdr.rx_ftr.param = scan_lll;
+		node_rx->rx_ftr.param = scan_lll;
 
 		*rx = node_rx;
 	}
@@ -613,7 +613,7 @@ int ull_central_reset(void)
 	return err;
 }
 
-void ull_central_cleanup(struct node_rx_hdr *rx_free)
+void ull_central_cleanup(struct node_rx_pdu *rx_free)
 {
 	struct lll_conn *conn_lll;
 	struct ll_scan_set *scan;
@@ -663,7 +663,7 @@ void ull_central_cleanup(struct node_rx_hdr *rx_free)
 #endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_CTLR_PHY_CODED */
 }
 
-void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
+void ull_central_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		      struct lll_conn *lll)
 {
 	uint32_t conn_offset_us, conn_interval_us;
@@ -683,7 +683,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	void *node;
 
 	/* Get reference to Tx-ed CONNECT_IND PDU */
-	pdu_tx = (void *)((struct node_rx_pdu *)rx)->pdu;
+	pdu_tx = (void *)rx->pdu;
 
 	/* Backup peer addr and type, as we reuse the Tx-ed PDU to generate
 	 * event towards LL
@@ -742,7 +742,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 
 	conn = lll->hdr.parent;
 	lll->handle = ll_conn_handle_get(conn);
-	rx->handle = lll->handle;
+	rx->hdr.handle = lll->handle;
 
 	/* Set LLCP as connection-wise connected */
 	ull_cp_state_set(conn, ULL_CP_CONNECTED);
@@ -754,7 +754,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	/* Use the link stored in the node rx to enqueue connection
 	 * complete node rx towards LL context.
 	 */
-	link = rx->link;
+	link = rx->hdr.link;
 
 	/* Use Channel Selection Algorithm #2 if peer too supports it */
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
@@ -770,11 +770,11 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		ll_rx_put(link, rx);
 
 		/* use the rx node for CSA event */
-		rx = (void *)rx_csa;
-		link = rx->link;
+		rx = rx_csa;
+		link = rx->hdr.link;
 
-		rx->handle = lll->handle;
-		rx->type = NODE_RX_TYPE_CHAN_SEL_ALGO;
+		rx->hdr.handle = lll->handle;
+		rx->hdr.type = NODE_RX_TYPE_CHAN_SEL_ALGO;
 
 		cs = (void *)rx_csa->pdu;
 
@@ -1057,7 +1057,7 @@ static inline void conn_release(struct ll_scan_set *scan)
 
 	conn = HDR_LLL2ULL(lll);
 
-	cc = (void *)&conn->llcp_terminate.node_rx;
+	cc = (void *)&conn->llcp_terminate.node_rx.rx;
 	link = cc->hdr.link;
 	LL_ASSERT(link);
 
