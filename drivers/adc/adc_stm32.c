@@ -949,6 +949,9 @@ static int start_read(const struct device *dev,
 	int err;
 
 	data->buffer = sequence->buffer;
+
+	/* store the buffer address to be used in a repeat */
+	data->repeat_buffer = data->buffer;
 	data->channels = sequence->channels;
 	data->channel_count = POPCOUNT(data->channels);
 	data->samples_count = 0;
@@ -1058,8 +1061,6 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	/* Remove warning for some series */
 	ARG_UNUSED(adc);
 
-	data->repeat_buffer = data->buffer;
-
 #ifdef CONFIG_ADC_STM32_DMA
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 	/* Make sure DMA bit of ADC register CR2 is set to 0 before starting a DMA transfer */
@@ -1077,6 +1078,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
 
 	if (repeat_sampling) {
+		/* when repeating, set the original buffer address again */
 		data->buffer = data->repeat_buffer;
 	}
 }
