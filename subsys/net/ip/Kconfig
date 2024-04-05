@@ -88,8 +88,6 @@ config NET_RAW_MODE
 	  net_pkt part. It is currently used only by IEEE 802.15.4 drivers,
 	  though any type of net drivers could use it.
 
-if !NET_RAW_MODE
-
 choice NET_QEMU_NETWORKING
 	prompt "Qemu networking"
 	default NET_QEMU_PPP if NET_PPP
@@ -133,6 +131,8 @@ config NET_QEMU_USER_EXTRA_ARGS
 	  Extra arguments passed to QEMU when User Networking is enabled. This may
 	  include host / guest port forwarding, device id, Network address
 	  information etc. This string is appended to the QEMU "-net user" option.
+
+if !NET_RAW_MODE
 
 config NET_INIT_PRIO
 	int
@@ -583,6 +583,8 @@ config NET_CONTEXT_RECV_PKTINFO
 	  This way user can get extra information about the received data in the
 	  socket.
 
+endif # NET_RAW_MODE
+
 config NET_SLIP_TAP
 	bool "TAP SLIP driver"
 	depends on NET_QEMU_SLIP
@@ -591,14 +593,13 @@ config NET_SLIP_TAP
 	select UART_PIPE
 	select UART_INTERRUPT_DRIVEN
 	select SLIP_TAP
-	default y if (QEMU_TARGET && !NET_TEST && !NET_L2_BT)
+	select NET_L2_ETHERNET
+	default y if (QEMU_TARGET && !NET_TEST)
 	help
 	  SLIP TAP support is necessary when testing with QEMU. The host
 	  needs to have tunslip6 with TAP support running in order to
 	  communicate via the SLIP driver. See net-tools project at
 	  https://github.com/zephyrproject-rtos/net-tools for more details.
-
-endif # NET_RAW_MODE
 
 config NET_TEST
 	bool "Network Testing"
