@@ -6,6 +6,7 @@
 menu "Storage"
 
 source "subsys/storage/flash_map/Kconfig"
+source "subsys/storage/flash_partitions/Kconfig"
 source "subsys/storage/stream/Kconfig"
 
 endmenu
