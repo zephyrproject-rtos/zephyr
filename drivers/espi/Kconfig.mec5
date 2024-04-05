@@ -1,0 +1,137 @@
+# Microchip MEC5 ESPI driver configuration
+
+# Copyright (c) 2024 Microchip Technologies Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ESPI_MEC5
+	bool "Microchip MEC5 family ESPI driver"
+	depends on DT_HAS_MICROCHIP_MEC5_ESPI_ENABLED
+	help
+	  Enable the Microchip MEC5 family ESPI driver.
+
+if ESPI_MEC5
+
+config ESPI_OOB_CHANNEL
+	default y
+
+config ESPI_FLASH_CHANNEL
+	default y
+
+config ESPI_PERIPHERAL_HOST_IO
+	default y
+
+config ESPI_PERIPHERAL_HOST_IO_PVT
+	default  y
+
+config ESPI_PERIPHERAL_HOST_MAILBOX
+	default  y
+
+config ESPI_PERIPHERAL_DEBUG_PORT_80
+	default y
+
+config ESPI_PERIPHERAL_UART
+	default y
+
+config ESPI_PERIPHERAL_UART_SOC_MAPPING
+	int "SoC port exposed as logical eSPI UART"
+	default 2 if SOC_SERIES_MEC174X || SOC_SERIES_MEC175X
+	default 1 if SOC_SERIES_MEC172XH || SOC_SERIES_MEC520X
+	depends on ESPI_PERIPHERAL_UART
+	help
+	  This tells the driver to which SoC UART to direct the UART traffic
+	  send over eSPI from host.
+
+config ESPI_OOB_BUFFER_SIZE
+	int "eSPI OOB channel buffer size in bytes"
+	default 128
+	depends on ESPI_OOB_CHANNEL
+	help
+	  Use minimum RAM buffer size by default but allow applications to
+	  override the value.
+	  Maximum OOB payload is 73 bytes.
+
+config ESPI_FLASH_BUFFER_SIZE
+	int "eSPI Flash channel buffer size in bytes"
+	default 256
+	depends on ESPI_FLASH_CHANNEL
+	help
+	  Use maximum RAM buffer size defined by spec but allow applications
+	  to override if eSPI host doesn't support it.
+
+config ESPI_MEC5_PERIPHERAL_ACPI_SHD_MEM_SIZE
+	int "Host I/O peripheral port size for shared memory in MEC5 series"
+	depends on ESPI_MEC5 || ESPI_PERIPHERAL_ACPI_SHM_REGION
+	default 256
+	help
+	  This is the port size used by the Host and EC to communicate over
+	  the shared memory region to return the ACPI response data.
+
+config ESPI_MEC5_PERIPHERAL_HOST_CMD_PARAM_SIZE
+	int "Host I/O peripheral port size for ec host command in MEC5 series"
+	depends on ESPI_MEC5 || ESPI_PERIPHERAL_EC_HOST_CMD
+	default 256
+	help
+	  This is the port size used by the Host and EC to communicate over
+	  the shared memory region to return the host command parameter data.
+
+config ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA
+	bool "Read ACPI EC Event Data in IBF ISR"
+	depends on ESPI_PERIPHERAL_CHANNEL
+	help
+	  Enable reading event data in ACPI EC IBF ISR. This is used in OS
+	  environment where application expects IBF ISR to read data and pass
+	  to callback.
+
+config ESPI_SAF_MEC5
+	bool "Microchip MEC5 ESPI SAF driver"
+	default y
+	depends on SOC_SERIES_MEC5
+	depends on DT_HAS_MICROCHIP_MEC5_ESPI_SAF_ENABLED
+	help
+	  Enable the Microchip MEC5 family SAF ESPI driver.
+
+config ESPI_SAF
+	bool "Microchip MEC5 ESPI SAF driver"
+	depends on ESPI_FLASH_CHANNEL
+	help
+	  Enable Slave Attached Flash eSPI driver. SAF depends upon ESPI MEC5 driver
+	  and flash channel.
+
+config ESPI_SAF_INIT_PRIORITY
+	int "ESPI SAF driver initialization priority"
+	depends on ESPI_SAF
+	default 4
+	help
+	  Driver initialization priority for eSPI SAF driver.
+
+if ESPI_PERIPHERAL_8042_KBC
+
+config ESPI_PERIPHERAL_KBC_IBF_EVT_DATA
+	bool "KBC event data format in IBF"
+	help
+	  Enable espi_evt_data_kbc format for encoding event in KBC IBF ISR
+
+config ESPI_PERIPHERAL_KBC_OBE_CBK
+	bool "KBC OBE Callback"
+	help
+	  Enable KBC OBE callback from OBE ISR
+
+endif #ESPI_PERIPHERAL_8042_KBC
+
+if ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA
+
+config ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA_UD0
+	bool "Select UD0 as the handshake bit between OS and ACPI EC"
+	help
+	  For ACPI_EC IBF event data use hardware status UD0 bit as a
+	  handshake bit between OS and ACPI EC.
+
+config ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA_UD1
+	bool "Select UD1 as the handshake bit between OS and ACPI EC"
+	help
+	  For ACPI_EC IBF event data use hardware status UD1 bit as a
+	  handshake bit between OS and ACPI EC.
+
+endif #ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA
+
+endif #ESPI_MEC5

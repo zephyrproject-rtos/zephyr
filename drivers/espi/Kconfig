@@ -18,6 +18,8 @@ source "drivers/espi/Kconfig.espi_emul"
 
 source "drivers/espi/Kconfig.it8xxx2"
 
+source "drivers/espi/Kconfig.mec5"
+
 module = ESPI
 module-str = espi
 source "subsys/logging/Kconfig.template.log_config"
@@ -115,6 +117,11 @@ config ESPI_PERIPHERAL_DEBUG_PORT_80
 	bool "Debug Port 80 peripheral"
 	help
 	  Enables debug Port 80 over eSPI peripheral channel.
+
+config ESPI_PERIPHERAL_HOST_MAILBOX
+	bool "Host(SBIOS) to EC Mailbox"
+	help
+	  Enables mailbox interface for Host to EC communication.
 
 config ESPI_PERIPHERAL_EC_HOST_CMD
 	bool "Host peripheral device support EC host command subsystem"

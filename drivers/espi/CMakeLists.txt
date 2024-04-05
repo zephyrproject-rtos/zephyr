@@ -15,3 +15,8 @@ zephyr_library_sources_ifdef(CONFIG_ESPI_XEC_V2		espi_mchp_xec_v2.c)
 zephyr_library_sources_ifdef(CONFIG_ESPI_XEC_V2		espi_mchp_xec_host_v2.c)
 zephyr_library_sources_ifdef(CONFIG_ESPI_IT8XXX2	espi_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_ESPI_SAF_XEC_V2	espi_saf_mchp_xec_v2.c)
+zephyr_library_sources_ifdef(CONFIG_ESPI_MEC5		espi_mchp_mec5.c)
+
+if(CONFIG_ESPI_MEC5)
+    add_subdirectory(mchp/mec5)
+endif()
