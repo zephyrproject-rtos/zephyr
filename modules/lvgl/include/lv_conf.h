@@ -39,6 +39,11 @@
 #define LV_COLOR_16_SWAP 1
 #endif /* CONFIG_LV_COLOR_16_SWAP */
 
+#ifdef CONFIG_LV_Z_USE_OSAL
+#define LV_USE_OS            LV_OS_CUSTOM
+#define LV_OS_CUSTOM_INCLUDE "lvgl_zephyr_osal.h"
+#endif /* CONFIG_LV_Z_USE_OSAL */
+
 /*
  * Needed because of a workaround for a GCC bug,
  * see https://github.com/lvgl/lvgl/issues/3078
