@@ -3217,6 +3217,7 @@ Intel Platforms (X86):
   collaborators:
     - tbursztyka
     - laurenmurphyx64
+    - najumon1980
   files:
     - boards/intel/adl/
     - boards/intel/ehl/
@@ -4667,6 +4668,7 @@ x86 arch:
     - dcpleung
     - ceolin
     - laurenmurphyx64
+    - najumon1980
   files:
     - arch/x86/
     - include/zephyr/arch/x86/
