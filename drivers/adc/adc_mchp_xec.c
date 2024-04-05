@@ -27,6 +27,8 @@ LOG_MODULE_REGISTER(adc_mchp_xec);
 
 #define XEC_ADC_VREF_ANALOG 3300
 
+#define XEC_ADC_CFG_CHANNELS DT_INST_PROP(0, channels)
+
 /* ADC Control Register */
 #define XEC_ADC_CTRL_SINGLE_DONE_STATUS		BIT(7)
 #define XEC_ADC_CTRL_REPEAT_DONE_STATUS		BIT(6)
@@ -54,8 +56,8 @@ struct adc_xec_regs {
 	uint32_t status_reg;
 	uint32_t single_reg;
 	uint32_t repeat_reg;
-	uint32_t channel_read_reg[8];
-	uint32_t unused[18];
+	uint32_t channel_read_reg[XEC_ADC_CFG_CHANNELS];
+	uint32_t unused[26 - XEC_ADC_CFG_CHANNELS];
 	uint32_t config_reg;
 	uint32_t vref_channel_reg;
 	uint32_t vref_control_reg;
@@ -139,7 +141,7 @@ static int adc_xec_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (channel_cfg->channel_id >= MCHP_ADC_MAX_CHAN) {
+	if (channel_cfg->channel_id >= XEC_ADC_CFG_CHANNELS) {
 		return -EINVAL;
 	}
 
@@ -205,7 +207,7 @@ static int adc_xec_start_read(const struct device *dev,
 	struct adc_xec_data * const data = dev->data;
 	uint32_t sar_ctrl;
 
-	if (sequence->channels & ~BIT_MASK(MCHP_ADC_MAX_CHAN)) {
+	if (sequence->channels & ~BIT_MASK(XEC_ADC_CFG_CHANNELS)) {
 		LOG_ERR("Incorrect channels, bitmask 0x%x", sequence->channels);
 		return -EINVAL;
 	}
