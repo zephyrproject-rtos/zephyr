@@ -584,7 +584,7 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 
 	ctx.dev = dev;
 	ctx.sh = sh;
-	err = sensor_read(&iodev_sensor_shell_read, &sensor_read_rtio, &ctx);
+	err = sensor_read_async_mempool(&iodev_sensor_shell_read, &sensor_read_rtio, &ctx);
 	if (err < 0) {
 		shell_error(sh, "Failed to read sensor: %d", err);
 	}
