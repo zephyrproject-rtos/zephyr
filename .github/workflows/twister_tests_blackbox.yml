@@ -15,12 +15,30 @@ on:
     - 'scripts/tests/twister_blackbox/**'
     - '.github/workflows/twister_tests_blackbox.yml'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  list-test-files:
+    runs-on: ubuntu-22.04
+    outputs:
+      files-json: ${{ steps.set-files-json.outputs.files-json }}
+    steps:
+    - uses: actions/checkout@v4
+    - id: set-files-json
+      run: echo "files-json=$(ls $test_dir_path/test_*.py | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+      env:
+        test_dir_path: scripts/tests/twister_blackbox
   twister-tests:
     name: Twister Black Box Tests
+    needs: list-test-files
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
+      fail-fast: false
       matrix:
+        file: ${{ fromJson(needs.list-test-files.outputs.files-json) }}
         python-version: [3.8, 3.9, '3.10', '3.11', '3.12']
         os: [ubuntu-22.04]
     container:
@@ -66,7 +84,7 @@ jobs:
       run: |
         python3 -m pip install -U -r scripts/requirements-base.txt -r scripts/requirements-build-test.txt -r scripts/requirements-run-test.txt
 
-    - name: Run Pytest For Twister Black Box Tests
+    - name: Run Pytest For Twister Black Box Test - ${{ matrix.file }}
       shell: bash
       env:
         ZEPHYR_BASE: ./
