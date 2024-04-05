@@ -1,0 +1,9 @@
+tests:
+  boards.mec_assy6941.i2c:
+    build_only: true
+    platform_allow:
+      - mec_assy6941_mec1743qlj
+      - mec_assy6941_mec1743qsz
+      - mec_assy6941_mec1753qlj
+      - mec_assy6941_mec1753qsz
+    tags: drivers i2c

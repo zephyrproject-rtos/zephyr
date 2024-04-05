@@ -1,0 +1,125 @@
+/*
+ * Copyright (c) 2024 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/microchip-xec-gpio.h>
+
+/*
+ * MEC5_ASSY6941
+ * JP7 2-3 GPIO055 pulled-down via 10K to ground.
+ * JP23 14-15 selects GPIO055 as SHD_nCS0
+ * JP42 1-2 connects 1.8V
+ * JP60 2-3 VTR2 is powered by 1.8V
+ * NOTE: VTR3 is always 1.8V
+ *
+ * Boot-ROM GPIO055 as RSMRST#
+ * GPIO Control register value = 0x0200
+ * Output, push-pull, driver low, no internal pulls,
+ * interrupt detection = level low, alternate out enabled.
+ * ROM drives pin high(inactive) using alternate out (bit[16] of control register)
+ * Control register = 0x10200
+ *
+ * GPIO175/CMP_VOUT1/PWM8_ALT on schematic, LED4 on silkscreen.
+ *
+ * I2C00_SDA/SCL = GPIO003/004
+ * Install Jumper JP14 4-5 to route GPIO004 as I2C00_SCL
+ * Install Jumper JP14 7-8 to route GPIO003 as I2C00_SDA
+ * Install Jumper JP68 21-22 7.5K pull-up to VTR1 for I2C00_SCL
+ * Install Jumper JP68 23-24 7.5K pull-up to VTR1 for I2C00_SDA
+ *
+ * U4 is PCA9555 I2C GPIO expander
+ * JP49 1-2 use +3.3V_STBY
+ * JP58 1-2, 3-4 connect I2C00_SCL and I2C00_SDA to EXTERNAL_SCLK/SDATA
+ * JP53 selects I2C address
+ * 1-2 = A0, 3-4 = A1, 5-6 = A2 all pull-up by default. Install jumper to ground signals.
+ * Installed jumper on JP53 1-2. I2C Address = 0x26
+ *
+ * U19 is LTC2489 I2C 4-channel delta-sigma ADC
+ * Address select pins CA0, CA1 both pulled high. Install jumpers to ground signals.
+ * Installed jumpers on JP124 1-2 and 3-4. I2C Address = 0x34
+ *
+ * Attached Fujitsu MB85RC256V I2C FRAM demo board to 6-pin header J10
+ * AdaFruit I2C FRAM breakout board.
+ * NOTE: removed demo board 1K pulls on SCL and SDA. Using EVB pulls on SCL/SDA.
+ * This device allows testing of larger I2C messages and breaking up large transactions
+ * into multiple message buffers.
+ * FRAM board power -> J10-5 VTR1 (3.3V)
+ * FRAM board GND   -> J10-6 GND
+ * FRAM board SCL   -> J10-1 I2C00_SCL
+ * FRAM board SDA   -> J10-3 I2C00_SDA
+ * FRAM address pins A0, A1, A2 are internally pulled-down.
+ * I2C Address = 1010_A2_A1_A0 = 0x50 (default)
+ */
+
+/ {
+	chosen {
+		zephyr,console = &uart1;
+	};
+
+	aliases {
+		spi0 = &qspi0;
+		led0 = &led4;
+		i2c0 = &i2c_smb_0;
+		i2c-0 = &i2c_smb_0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led4: led_0 {
+			gpios = <MCHP_GPIO_DECODE_175 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&i2c00_scl_gpio004 {
+	drive-open-drain;
+	output-enable;
+	output-high;
+	drive-strength = "4x";
+};
+
+&i2c00_sda_gpio003 {
+	drive-open-drain;
+	output-enable;
+	output-high;
+	drive-strength = "4x";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart1_tx_gpio170 &uart1_rx_gpio171>;
+	pinctrl-names = "default";
+};
+
+&i2c_smb_0 {
+	status = "okay";
+	port_sel = < 0 >;
+	sda-gpios = < MCHP_GPIO_DECODE_003 0 >;
+	scl-gpios = < MCHP_GPIO_DECODE_004 0 >;
+	pinctrl-0 = < &i2c00_sda_gpio003 &i2c00_scl_gpio004 >;
+	pinctrl-names = "default";
+
+	pca9555_evb: pca9555@26 {
+		/* Zephyr will load NXP PCA9555 driver after MEC5 I2C because it calls MEC5 I2C during init */
+		compatible = "nxp,pca9555";
+		reg = <0x26>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	ltc2489_evb: ltc2489@34 {
+		/* No Zephyr driver exists */
+		reg = <0x34>;
+		#io-channels-cells = <1>;
+	};
+
+	/* External Fujitsu MB85RC256V 256KB (32K x 8) FRAM */
+	mb85rc256v: mb85rc256v@50 {
+		/* No Zephyr driver exists */
+		reg = <0x50>;
+	};
+};
