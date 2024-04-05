@@ -1,0 +1,40 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip MEC5 eSPI peripheral channel ACPI_EC for processing
+  host specific commands.
+
+compatible: "microchip,mec5-acpi-ec-hcmd"
+
+include: [base.yaml]
+
+on-bus: espi
+
+properties:
+  reg:
+    description: mmio register space
+    required: true
+
+  interrupts:
+    required: true
+    description: Interrupt number and priority for ACPI_EC IBF and OBE interrupts.
+
+  interrupt-names:
+    required: true
+    description: Names for ACPI_EC IBF and OBE interrupts.
+
+  four-byte-data-mode:
+    type: boolean
+    description: |
+      ACPI_EC data register size is defined as one byte. Add this boolean to
+      configure the data register to be four bytes. When four byte mode is
+      enabled the IBF bit is cleared by the host reading data byte 3. The
+      Host memory or I/O address should be at least 4-byte aligned when this
+      mode is enabled.
+
+  host-infos:
+    type: phandles
+    description: |
+      Handle to the logical device node containing host
+      properties: logical device number, host address, etc.

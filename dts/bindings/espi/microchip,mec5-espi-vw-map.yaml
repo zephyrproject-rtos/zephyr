@@ -1,0 +1,55 @@
+
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 map eSPI virtual wires to hardware
+
+compatible: "microchip,mec5-espi-vw-map"
+
+child-binding:
+  description: |
+    Child node containing the mapping of eSPI Virtual Wires to the
+    Host and MEC5 hardware.
+  properties:
+    host-index:
+      type: int
+      required: true
+      description: |
+        Virtual wires are grouped by eSPI into sets of four identfied by a Host
+        index and source position. This field specifies the Host index used for
+        a group of vwires.
+
+    vw-reg:
+      type: int
+      required: true
+      description: |
+        Zero based logical index into MEC5 eSPI Virtual Wire register banks.
+
+    reset-source:
+      type: string
+      default: "reset_espi"
+      description: |
+        Specifies the reset signal causing the HW to load default values into
+        all four VWires.  The reset value of each vwire is one of the properties
+        of the vwire nodes whose handles are specified in the vwires property.
+      enum:
+        - "reset_espi"
+        - "reset_sys"
+        - "reset_sio"
+        - "pltrst"
+
+    direction:
+      type: string
+      required: true
+      description: |
+        Downstream is Controller(Host) to Target(EC) and upstream is Target(EC) to
+        Controller(Host).
+      enum:
+        - "downstream"
+        - "upstream"
+
+    override-defaults:
+      type: boolean
+      description: |
+        If present the driver will override default(POR) eSPI Host Index VWire
+        register configuration.

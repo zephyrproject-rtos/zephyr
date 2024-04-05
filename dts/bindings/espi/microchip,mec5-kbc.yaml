@@ -1,0 +1,30 @@
+
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 eSPI 8042 Keyboard Controller(KBC) host facing device
+
+compatible: "microchip,mec5-kbc"
+
+include: [base.yaml]
+
+on-bus: espi
+
+properties:
+  reg:
+    description: mmio register space
+    required: true
+
+  interrupts:
+    required: true
+    description: Interrupt number and priority for keyboard and mouse interrupts
+
+  interrupt-names:
+    required: true
+    description: Names for Keyboard controller keyboard and mouse interrupts
+
+  host-infos:
+    type: phandles
+    description: |
+      Handles to the two logical device nodes containing host
+      properties: logical device number, host address, etc.

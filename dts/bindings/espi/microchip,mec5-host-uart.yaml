@@ -1,0 +1,29 @@
+
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 eSPI Mailbox host facing device
+
+compatible: "microchip,mec5-host-uart"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+# on-bus: espi
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  hwdev:
+    type: phandle
+    required: true
+    description: Handle to the UART hardware device node.
+
+  host-infos:
+    type: phandles
+    description: |
+      Handles to the device node containing properties:
+      logical device number, host address, SIRQ, etc.

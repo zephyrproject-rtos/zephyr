@@ -1,0 +1,67 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 eSPI SRAM BAR
+
+compatible: "microchip,mec5-espi-sram-bar"
+
+child-binding:
+  description: |
+    Child node containing eSPI SRAM BARs hardware. SRAM BAR allows
+    mapping of a section of EC SRAM to the Host address space.
+  properties:
+    id:
+      type: int
+      required: true
+      description: |
+        Zero based SRAM BAR identification.
+
+    host-address-lsw:
+      type: int
+      required: true
+      description: |
+        Low 32-bits of the Host address the EC SRAM can be accessed at.
+
+    region-base:
+      type: int
+      required: true
+      description: |
+        Base address of the EC SRAM being mapped. Hardware requires the
+        address to aligned with the SRAM region size.
+
+    region-size:
+      type: string
+      required: true
+      description: |
+        Region size is powers of 2 from 0 to 15 creating regions from 1
+        byte to 32KB. Note: hardware enforces region base address to
+        be aligned on the size.
+      enum:
+        - "1B"
+        - "2B"
+        - "4B"
+        - "8B"
+        - "16B"
+        - "32B"
+        - "64B"
+        - "128B"
+        - "256B"
+        - "512B"
+        - "1KB"
+        - "2KB"
+        - "4KB"
+        - "8KB"
+        - "16KB"
+        - "32KB"
+
+    access:
+      type: string
+      required: true
+      default: "DISABLED"
+      description: |
+        Host access mode: disabled, read-only, write-only, and read-write.
+      enum:
+        - "DISABLED"
+        - "READ_ONLY"
+        - "WRITE_ONLY"
+        - "READ_WRITE"

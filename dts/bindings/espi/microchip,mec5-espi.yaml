@@ -1,0 +1,126 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 eSPI target mode controller
+
+compatible: "microchip,mec5-espi"
+
+include: [espi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    description: mmio register space
+    required: true
+
+  reg-names:
+    required: true
+    description: Name of each register space
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  espi-alert-od-capable:
+    type: boolean
+    description: |
+      Platform supports ESPI_ALERT# signal as opendrain in addition
+      to push-pull. If this property is present it allows the Host
+      eSPI Controller to select push-pull versus open-drain for
+      this signal.
+
+  espi-max-supp-freq-mhz:
+    type: string
+    default: "50"
+    description: |
+      Maximum supported frequency in MHz this eSPI target controller reports
+      to the eSPI Host Controller.
+    enum:
+      - "20"
+      - "25"
+      - "33"
+      - "50"
+      - "66"
+
+  espi-io-mode:
+    type: string
+    default: "IO124"
+    description: |
+      I/O mode(s) supported by this eSPI target controller exposed to
+      the eSPI Host Controller via capability registers. The target may
+      report single, single/dual, single/quad, or single/dual/quad.
+    enum:
+      - "IO1"
+      - "IO12"
+      - "IO14"
+      - "IO124"
+
+  vwires:
+    type: phandle-array
+    description: |
+      Optional property to override hardware default configuration of MEC5
+      Virtual Wire registers or configure unused VW registers. Each array
+      entry is a phandle to a VW node from mchp-mec5-espi-vw-routing and an
+      integer containing flags indicating the VW node properites for
+      modification.
+
+  vwire-names:
+    type: string-array
+    description: name of each virtual wire
+
+  sirqs:
+    type: array
+    description: |
+      Host Serial IRQ numbers assigned to this device. A value of 255
+      disables SIRQ genaration.
+
+  sirq-names:
+    type: string-array
+    description: |
+      Names for the provided Serial IRQs. The number of names needs to match the
+      number of sirqs.
+
+  config-io-addr:
+    type: int
+    required: true
+    description: |
+      Host I/O base address for the eSPI legacy I/O configuration port.
+
+  host-memmap-addr-high:
+    type: int
+    required: true
+    description: |
+      Contains bits [47:32] of the Host address range where all memory mapped
+      host (logical) devices are mapped.
+
+  sram-bar-addr-high:
+    type: int
+    required: true
+    description: |
+      Contains Host address bits [47:32] where both SRAM BAR's are mapped.
+
+  "#vwire-cells":
+    type: int
+    const: 1
+
+  "#ldn-cells":
+    type: int
+    const: 4
+
+  "#sirq-cells":
+    type: int
+    const: 1
+
+  "#sram-bar-cells":
+    type: int
+    const: 4
+
+vwire-cells:
+  - flags
+
+ldn-cells:
+  - ldn
+  - hostaddr
+  - haddrmsk
+  - flags

@@ -1,0 +1,41 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 eSPI BIOS I/O port capture device
+
+compatible: "microchip,mec5-bdp"
+
+include: [base.yaml]
+
+on-bus: espi
+
+properties:
+  reg:
+    description: mmio register space
+    required: true
+
+  interrupts:
+    required: true
+    description: Interrupt number and priority for BDP interrupt.
+
+  fifo-threshold:
+    type: string
+    description: |
+      BDP will generate an interrupt to the EC when the number of
+      Host I/O writes to the capture range is equal to or greater
+      than this value.
+    enum:
+      - "1"
+      - "4"
+      - "8"
+      - "16"
+      - "20"
+      - "24"
+      - "28"
+      - "30"
+
+  host-infos:
+    type: phandles
+    description: |
+      Handles to the two logical device nodes containing host
+      properties: logical device number, host address, etc.

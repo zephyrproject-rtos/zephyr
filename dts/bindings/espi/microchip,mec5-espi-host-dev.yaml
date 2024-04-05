@@ -1,0 +1,61 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 eSPI Host Logical Devices
+
+compatible: "microchip,mec5-espi-host-dev"
+
+include: [espi-controller.yaml]
+
+child-binding:
+  description: |
+    Child node containing eSPI Host device properties.
+  properties:
+    devhandle:
+      type: phandle
+      description: Handle to the Host devices hardware node
+
+    ldn:
+      type: int
+      required: true
+      description: Host device logical device number.
+
+    host-address:
+      type: int
+      required: true
+      description: |
+        Host address the logical device appears at. On x86 systems this
+        address may be I/O or memory space.
+
+    host-mem-space:
+      type: boolean
+      description: |
+        If present indicates host-address is in Host memory address space.
+
+    bdp-host-alias-byte-lane:
+      type: int
+      description: |
+        BDP peripheral has an 8-bit alias Host I/O address which
+        can be mapped to a specific byte lane (0-3) of the primary
+        I/O port.
+
+    sirqs:
+      type: array
+      description: |
+        Host Serial IRQ numbers assigned to this device. A value of 255
+        disables SIRQ genaration.
+
+        Example: Mailbox implements two Serial IRQ slots.
+          sirqs = <13 14>;
+        Example: UART implements one Serial IRQ slot.
+          sirqs = <3>;
+
+    sirq-names:
+      type: string-array
+      description: |
+        Names for the provided Serial IRQs. The number of names needs to match the
+        number of sirqs.
+
+    "#sirq-cells":
+      type: int
+      const: 1

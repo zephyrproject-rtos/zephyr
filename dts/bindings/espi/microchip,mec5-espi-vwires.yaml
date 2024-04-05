@@ -1,0 +1,57 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 eSPI Virtual Wire routing
+
+compatible: "microchip,mec5-espi-vwires"
+
+child-binding:
+  description: |
+    Child node containing the routing of an eSPI virtual wire to the SoC
+    VW registers and ECIA GIRQ registers.
+  properties:
+    source:
+      type: int
+      required: true
+      description: |
+        Position in the virtual wire group of 4 signals. Allowd values are
+        0 to 3. Default values are based upon eSPI version 1.5 specification.
+
+    vw-group:
+      type: phandle
+      required: true
+      description: |
+        Phandle to the virtual wire group containing this signal.
+
+        Example: eSPI SLP_S3 is source 0 in the group mapped to CTVW00 registers
+          vw-group = <&ctvw00>;
+
+    irq-sel:
+      type: string
+      default: "disabled"
+      description: |
+        Controller to Target virtual wires can generate an interrupt to EC.
+        This field selects edge or level mode.
+      enum:
+        - "disabled"
+        - "level low"
+        - "level high"
+        - "rising edge"
+        - "falling edge"
+        - "both edges"
+
+    reset-state:
+      type: int
+      required: true
+      description: |
+        Value (0 or 1) loaded into the virtual wire by hardware when the
+        group's configured reset event occurs.
+
+    vw-name:
+      type: string
+      required: true
+      description: |
+        The last part of the virtual wire signal name from the zephyr
+        espi driver header file. This property is appended with an
+        underscore to ESPI_VWIRE_SIGNAL to create the enumerated type
+        value name.

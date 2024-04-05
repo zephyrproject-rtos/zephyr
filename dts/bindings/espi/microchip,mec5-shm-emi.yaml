@@ -1,0 +1,27 @@
+
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip MEC5 eSPI EMI host facing device
+
+compatible: "microchip,mec5-shm-emi"
+
+include: [base.yaml]
+
+on-bus: espi
+
+properties:
+  reg:
+    description: mmio register space
+    required: true
+
+  interrupts:
+    required: true
+    description: Interrupt number and priority for EMI interrupt.
+
+  host-infos:
+    type: phandles
+    description: |
+      Handles to the two logical device nodes containing host
+      properties: logical device number, host address, etc.
