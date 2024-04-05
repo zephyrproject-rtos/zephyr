@@ -1,0 +1,37 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 I2C-SMB controller
+
+compatible: "microchip,mec5-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  port_sel:
+    type: int
+    description: soc block mapping to pin
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  sda-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The SDA pin for the selected port. Pin choice for port is
+      determined by chip and package.
+
+  scl-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The SCL pin for the selected port. Pin choice for port is
+      determined by chip and package.

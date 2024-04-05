@@ -1,0 +1,11 @@
+# Microchip MEC5 I2C configuration options
+
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_MCHP_MEC5
+	bool "Microchip MEC5 family I2C driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_I2C_ENABLED
+	help
+	  Enable the Microchip MEC5 family I2C driver.
