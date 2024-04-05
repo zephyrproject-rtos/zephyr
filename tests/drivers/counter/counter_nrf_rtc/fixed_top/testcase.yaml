@@ -7,3 +7,4 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52_bsim
+      - nrf54l15pdk/nrf54l15/cpuapp
