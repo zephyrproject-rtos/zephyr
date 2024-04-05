@@ -1519,7 +1519,8 @@ endfunction()
 # build string as first item in the list.
 # The full order of build strings returned in the list will be:
 # - Normalized board target build string, this includes qualifiers and revision
-# - Normalized board target build string, without revision
+# - Build string with board variants removed in addition
+# - Build string with cpuset removed in addition
 # - Build string with soc removed in addition
 #
 # If BUILD is supplied, then build type will be appended to each entry in the
@@ -1538,6 +1539,7 @@ endfunction()
 #   )
 #
 # <out-variable>:            Output variable where the build string will be returned.
+# SHORT <out-variable>:      Output variable where the shortened build string will be returned.
 # BOARD <board>:             Board name to use when creating the build string.
 # BOARD_REVISION <revision>: Board revision to use when creating the build string.
 # BUILD <type>:              Build type to use when creating the build string.
@@ -1560,11 +1562,17 @@ endfunction()
 # calling
 #   zephyr_build_string(build_string BOARD alpha BOARD_REVISION 1.0.0 BOARD_QUALIFIERS /soc/bar MERGE)
 # will return a list of the following strings
-# `alpha_soc_bar_1_0_0;alpha_soc_bar;alpha_bar` in `build_string` parameter.
+# `alpha_soc_bar_1_0_0;alpha_soc_bar` in `build_string` parameter.
+#
+# calling
+#   zephyr_build_string(build_string SHORTENED short_build_string BOARD alpha BOARD_REVISION 1.0.0 BOARD_QUALIFIERS /soc/bar MERGE)
+# will return two lists of the following strings
+# `alpha_soc_bar_1_0_0;alpha_soc_bar` in `build_string` parameter.
+# `alpha_bar_1_0_0;alpha_bar` in `short_build_string` parameter.
 #
 function(zephyr_build_string outvar)
   set(options MERGE REVERSE)
-  set(single_args BOARD BOARD_QUALIFIERS BOARD_REVISION BUILD)
+  set(single_args BOARD BOARD_QUALIFIERS BOARD_REVISION BUILD SHORT)
 
   cmake_parse_arguments(BUILD_STR "${options}" "${single_args}" "" ${ARGN})
   if(BUILD_STR_UNPARSED_ARGUMENTS)
@@ -1588,27 +1596,43 @@ function(zephyr_build_string outvar)
     )
   endif()
 
-  string(REPLACE "/" ";" str_segment_list "${BUILD_STR_BOARD}${BUILD_STR_BOARD_QUALIFIERS}")
+  string(REPLACE "/" ";" str_segment_list "${BUILD_STR_BOARD_QUALIFIERS}")
   string(REPLACE "." "_" revision_string "${BUILD_STR_BOARD_REVISION}")
 
-  string(JOIN "_" ${outvar} ${str_segment_list} ${revision_string} ${BUILD_STR_BUILD})
+  string(JOIN "_" ${outvar} ${BUILD_STR_BOARD} ${str_segment_list} ${revision_string} ${BUILD_STR_BUILD})
 
   if(BUILD_STR_MERGE)
-    string(JOIN "_" variant_string ${str_segment_list} ${BUILD_STR_BUILD})
+    string(JOIN "_" variant_string ${BUILD_STR_BOARD} ${str_segment_list} ${BUILD_STR_BUILD})
 
     if(NOT "${variant_string}" IN_LIST ${outvar})
       list(APPEND ${outvar} "${variant_string}")
-    endif()
-
-    if(BUILD_STR_BOARD_QUALIFIERS)
-      string(REGEX REPLACE "^/[^/]*(.*)" "\\1" qualifiers_without_soc "${BUILD_STR_BOARD_QUALIFIERS}")
-      string(REPLACE "/" "_" qualifiers_without_soc "${qualifiers_without_soc}")
-      list(APPEND ${outvar} "${BUILD_STR_BOARD}${qualifiers_without_soc}")
     endif()
   endif()
 
   if(BUILD_STR_REVERSE)
     list(REVERSE ${outvar})
+  endif()
+  list(REMOVE_DUPLICATES ${outvar})
+
+  if(BUILD_STR_SHORT AND BUILD_STR_BOARD_QUALIFIERS)
+    string(REGEX REPLACE "^/[^/]*(.*)" "\\1" shortened_qualifiers "${BOARD_QUALIFIERS}")
+    string(REPLACE "/" ";" str_short_segment_list "${shortened_qualifiers}")
+    string(JOIN "_" ${BUILD_STR_SHORT}
+           ${BUILD_STR_BOARD} ${str_short_segment_list} ${revision_string} ${BUILD_STR_BUILD}
+    )
+    if(BUILD_STR_MERGE)
+      string(JOIN "_" variant_string ${BUILD_STR_BOARD} ${str_short_segment_list} ${BUILD_STR_BUILD})
+
+      if(NOT "${variant_string}" IN_LIST ${BUILD_STR_SHORT})
+        list(APPEND ${BUILD_STR_SHORT} "${variant_string}")
+      endif()
+    endif()
+
+    if(BUILD_STR_REVERSE)
+      list(REVERSE ${BUILD_STR_SHORT})
+    endif()
+    list(REMOVE_DUPLICATES ${BUILD_STR_SHORT})
+    set(${BUILD_STR_SHORT} ${${BUILD_STR_SHORT}} PARENT_SCOPE)
   endif()
 
   # This updates the provided outvar in parent scope (callers scope)
@@ -2522,7 +2546,6 @@ endfunction()
 #                                                creating file names based on board settings.
 #                                                Only the first match found in <paths> will be
 #                                                returned in the <list>
-#
 #                     DTS <list>:    List to append DTS overlay files in <path> to
 #                     KCONF <list>:  List to append Kconfig fragment files in <path> to
 #                     DEFCONF <list>: List to append _defconfig files in <path> to
@@ -2618,32 +2641,44 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
       set(kconf_filename_list ${ZFILE_NAMES})
     else()
       zephyr_build_string(filename_list
+                          SHORT shortened_filename_list
                           BOARD ${ZFILE_BOARD}
                           BOARD_REVISION ${ZFILE_BOARD_REVISION}
                           BOARD_QUALIFIERS ${ZFILE_BOARD_QUALIFIERS}
                           BUILD ${ZFILE_BUILD}
                           MERGE REVERSE
       )
-      list(REMOVE_DUPLICATES filename_list)
+
       set(dts_filename_list ${filename_list})
+      set(dts_shortened_filename_list ${shortened_filename_list})
       list(TRANSFORM dts_filename_list APPEND ".overlay")
+      list(TRANSFORM dts_shortened_filename_list APPEND ".overlay")
 
       set(kconf_filename_list ${filename_list})
+      set(kconf_shortened_filename_list ${shortened_filename_list})
       list(TRANSFORM kconf_filename_list APPEND ".conf")
+      list(TRANSFORM kconf_shortened_filename_list APPEND ".conf")
     endif()
 
     if(ZFILE_DTS)
       foreach(path ${ZFILE_CONF_FILES})
-        foreach(filename ${dts_filename_list})
-          if(NOT IS_ABSOLUTE ${filename})
-            set(test_file ${path}/${filename})
-          else()
-            set(test_file ${filename})
-          endif()
-          zephyr_file_suffix(test_file SUFFIX ${ZFILE_SUFFIX})
+        foreach(filename IN ZIP_LISTS dts_filename_list dts_shortened_filename_list)
+          foreach(i RANGE 1)
+            if(NOT IS_ABSOLUTE filename_${i} AND DEFINED filename_${i})
+              set(test_file_${i} ${path}/${filename_${i}})
+            else()
+              set(test_file_${i} ${filename_${i}})
+            endif()
+            zephyr_file_suffix(test_file_${i} SUFFIX ${ZFILE_SUFFIX})
 
-          if(EXISTS ${test_file})
-            list(APPEND ${ZFILE_DTS} ${test_file})
+            if(NOT EXISTS ${test_file_${i}})
+              set(test_file_${i})
+            endif()
+          endforeach()
+
+          if(test_file_0 OR test_file_1)
+            list(APPEND found_dts_files ${test_file_0})
+            list(APPEND found_dts_files ${test_file_1})
 
             if(DEFINED ZFILE_BUILD)
               set(deprecated_file_found y)
@@ -2653,29 +2688,48 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
               break()
             endif()
           endif()
+
+          if(test_file_1 AND NOT BOARD_${ZFILE_BOARD}_SINGLE_SOC)
+            message(FATAL_ERROR "Board ${ZFILE_BOARD} defines multiple SoCs.\nShortened file name "
+                    "(${filename_1}) not allowed, use '<board>_<soc>.overlay' naming"
+            )
+          endif()
+
+          if(test_file_0 AND test_file_1)
+            message(FATAL_ERROR "Conflicting file names discovered. Cannot use both ${filename_0} "
+                    "and ${filename_1}. Please choose one naming style, "
+                    "${filename_0} is recommended."
+            )
+          endif()
         endforeach()
       endforeach()
+
+      list(APPEND ${ZFILE_DTS} ${found_dts_files})
 
       # This updates the provided list in parent scope (callers scope)
       set(${ZFILE_DTS} ${${ZFILE_DTS}} PARENT_SCOPE)
-
-      if(NOT ${ZFILE_DTS})
-        set(not_found ${dts_filename_list})
-      endif()
     endif()
 
     if(ZFILE_KCONF)
+      set(found_conf_files)
       foreach(path ${ZFILE_CONF_FILES})
-        foreach(filename ${kconf_filename_list})
-          if(NOT IS_ABSOLUTE ${filename})
-            set(test_file ${path}/${filename})
-          else()
-            set(test_file ${filename})
-          endif()
-          zephyr_file_suffix(test_file SUFFIX ${ZFILE_SUFFIX})
+        foreach(filename IN ZIP_LISTS kconf_filename_list kconf_shortened_filename_list)
+          foreach(i RANGE 1)
+            if(NOT IS_ABSOLUTE filename_${i} AND DEFINED filename_${i})
+              set(test_file_${i} ${path}/${filename_${i}})
+            else()
+              set(test_file_${i} ${filename_${i}})
+            endif()
+            zephyr_file_suffix(test_file_${i} SUFFIX ${ZFILE_SUFFIX})
 
-          if(EXISTS ${test_file})
-            list(APPEND ${ZFILE_KCONF} ${test_file})
+            if(NOT EXISTS ${test_file_${i}})
+              set(test_file_${i})
+            endif()
+          endforeach()
+
+          if(test_file_0 OR test_file_1)
+            list(APPEND found_conf_files ${test_file_0})
+            list(APPEND found_conf_files ${test_file_1})
 
             if(DEFINED ZFILE_BUILD)
               set(deprecated_file_found y)
@@ -2685,8 +2739,23 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
               break()
             endif()
           endif()
+
+          if(test_file_1 AND NOT BOARD_${ZFILE_BOARD}_SINGLE_SOC)
+            message(FATAL_ERROR "Board ${ZFILE_BOARD} defines multiple SoCs.\nShortened file name "
+                    "(${filename_1}) not allowed, use '<board>_<soc>.conf' naming"
+            )
+          endif()
+
+          if(test_file_0 AND test_file_1)
+            message(FATAL_ERROR "Conflicting file names discovered. Cannot use both ${filename_0} "
+                    "and ${filename_1}. Please choose one naming style, "
+                    "${filename_0} is recommended."
+            )
+          endif()
         endforeach()
       endforeach()
+
+      list(APPEND ${ZFILE_KCONF} ${found_conf_files})
 
       # This updates the provided list in parent scope (callers scope)
       set(${ZFILE_KCONF} ${${ZFILE_KCONF}} PARENT_SCOPE)
@@ -2709,13 +2778,34 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
     endif()
 
     if(ZFILE_DEFCONFIG)
+      set(found_defconf_files)
       foreach(path ${ZFILE_CONF_FILES})
-        foreach(filename ${filename_list})
-          if(EXISTS ${path}/${filename}_defconfig)
-            list(APPEND ${ZFILE_DEFCONFIG} ${path}/${filename}_defconfig)
+        foreach(filename IN ZIP_LISTS filename_list shortened_filename_list)
+          foreach(i RANGE 1)
+            set(test_file_${i} ${path}/${filename_${i}}_defconfig)
+
+            if(EXISTS ${test_file_${i}})
+              list(APPEND found_defconf_files ${test_file_${i}})
+            else()
+              set(test_file_${i})
+            endif()
+          endforeach()
+
+          if(test_file_1 AND NOT BOARD_${ZFILE_BOARD}_SINGLE_SOC)
+            message(FATAL_ERROR "Board ${ZFILE_BOARD} defines multiple SoCs.\nShortened file name "
+                    "(${filename_1}_defconfig) not allowed, use '<board>_<soc>_defconfig' naming"
+            )
+          endif()
+
+          if(test_file_0 AND test_file_1)
+            message(FATAL_ERROR "Conflicting file names discovered. Cannot use both "
+                    "${filename_0}_defconfig and ${filename_1}_defconfig. Please choose one "
+                    "naming style, ${filename_0}_defconfig is recommended."
+            )
           endif()
         endforeach()
       endforeach()
+      list(APPEND ${ZFILE_DEFCONFIG} ${found_defconf_files})
 
       # This updates the provided list in parent scope (callers scope)
       set(${ZFILE_DEFCONFIG} ${${ZFILE_DEFCONFIG}} PARENT_SCOPE)
@@ -4377,7 +4467,7 @@ function(zephyr_linker_dts_section)
 
   if(DTS_SECTION_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR "zephyr_linker_dts_section(${ARGV0} ...) given unknown "
-	    "arguments: ${DTS_SECTION_UNPARSED_ARGUMENTS}"
+            "arguments: ${DTS_SECTION_UNPARSED_ARGUMENTS}"
     )
   endif()
 
