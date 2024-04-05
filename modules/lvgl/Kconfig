@@ -139,6 +139,13 @@ config LV_GPU_DMA2D_CMSIS_INCLUDE
 	  Must be defined to include path of CMSIS header of target processor
 	  e.g. "stm32f769xx.h" or "stm32f429xx.h"
 
+config LV_Z_USE_OSAL
+	bool "Use OSAL enabling parallel rendering"
+	depends on DYNAMIC_THREAD
+	help
+	  Use the Zephyr LVGL OSAL to enable parallel rendering
+	  pipelines.
+
 rsource "Kconfig.memory"
 rsource "Kconfig.input"
 rsource "Kconfig.shell"
