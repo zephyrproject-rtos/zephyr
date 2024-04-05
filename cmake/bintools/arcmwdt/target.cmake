@@ -22,6 +22,18 @@ find_program(CMAKE_GDB     ${CROSS_COMPILE}mdb     PATHS ${TOOLCHAIN_HOME} NO_DE
 
 # MWDT binutils don't support required features like section renaming, so we
 # temporarily had to use GNU objcopy instead
+
+# ZEPHYR_SDK_CROSS_COMPILE was defined earlier for DTC preprocessing while ARCH variable
+# was undefined. Redefine it with correct value. Save and restore values affected by target.cmake.
+set(save_CROSS_COMPILE CROSS_COMPILE)
+set(save_SYSROOT_DIR SYSROOT_DIR)
+include(${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr/target.cmake)
+set(ZEPHYR_SDK_CROSS_COMPILE ${CROSS_COMPILE})
+unset(CROSS_COMPILE)
+unset(SYSROOT_DIR)
+set(CROSS_COMPILE save_CROSS_COMPILE)
+set(SYSROOT_DIR save_SYSROOT_DIR)
+
 find_program(CMAKE_OBJCOPY ${ZEPHYR_SDK_CROSS_COMPILE}objcopy PATHS ${ZEPHYR_SDK_INSTALL_DIR} NO_DEFAULT_PATH)
 message(STATUS "Found GNU objcopy helper for MWDT: ${CMAKE_OBJCOPY} (Zephyr SDK ${SDK_VERSION})")
 
