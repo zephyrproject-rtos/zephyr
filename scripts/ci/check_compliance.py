@@ -803,6 +803,7 @@ flagged.
         "APP_LOG_LEVEL", # Application log level is not detected correctly as
                          # the option is defined using a template, so it can't
                          # be grepped
+        "APP_LOG_LEVEL_DBG",
         "ARMCLANG_STD_LIBC",  # The ARMCLANG_STD_LIBC is defined in the
                               # toolchain Kconfig which is sourced based on
                               # Zephyr toolchain variant and therefore not
