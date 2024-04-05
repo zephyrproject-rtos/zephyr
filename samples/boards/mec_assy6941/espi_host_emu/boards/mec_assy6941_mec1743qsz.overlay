@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2023 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* mec_assy6941 EVB with MEC1743Q-SZ daughter card
+ * MEC1743 does not have an internal SPI flash.
+ * Connect QSPI to external shared SPI flash pins using SHD_nCS1.
+ */
+
+#include "mec_common.dtsi"
+
+&pinctrl {
+	qspi_shd_cs0_n_gpio055_sleep: qspi_shd_cs0_n_gpio055_sleep {
+		pinmux = < MCHP_XEC_PINMUX(055, MCHP_AF2) >;
+		low-power-enable;
+	};
+};
+
+&qspi0 {
+	status = "okay";
+	pinctrl-0 = < &qspi_shd_cs0_n_gpio055_sleep
+		      &qspi_shd_cs1_n_gpio002
+		      &qspi_shd_clk_gpio056
+		      &qspi_shd_io0_gpio223
+		      &qspi_shd_io1_gpio224
+		      &qspi_shd_io2_gpio227
+		      &qspi_shd_io3_gpio016 >;
+	pinctrl-names = "default";
+};
