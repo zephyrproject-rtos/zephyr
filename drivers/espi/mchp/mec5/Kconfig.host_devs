@@ -1,0 +1,100 @@
+# Microchip MEC5 eSPI ACPI_EC logical device configuration options
+
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ESPI_MEC5_BDP
+	bool "Microchip MEC5 family eSPI BIOS Debug Port capture host driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_BDP_ENABLED
+	help
+	  Enable the Microchip MEC5 family eSPI BIOS Debug Port capture host device driver.
+
+config ESPI_MEC5_KBC
+	bool "Microchip MEC5 family eSPI MIF8042 KBC host driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_KBC_ENABLED
+	help
+	  Enable the Microchip MEC5 family MIF8042 KBC host device driver.
+
+config ESPI_MEC5_MAILBOX
+	bool "Microchip MEC5 family eSPI Mailbox host driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_MAILBOX_ENABLED
+	help
+	  Enable the Microchip MEC5 family Mailbox host device driver.
+
+config ESPI_MEC5_ACPI_EC_OS
+	bool "Microchip MEC5 family eSPI OS ACPI_EC host driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_ACPI_EC_OS_ENABLED
+	help
+	  Enable the Microchip MEC5 family ACPI_EC host device driver.
+
+config ESPI_MEC5_ACPI_EC_HCMD
+	bool "Microchip MEC5 family eSPI Host command ACPI_EC host driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_ACPI_EC_HCMD_ENABLED
+	depends on ESPI_PERIPHERAL_EC_HOST_CMD || ESPI_PERIPHERAL_HOST_IO_PVT
+	help
+	  Enable the Microchip MEC5 family ACPI_EC host command device driver
+
+config ESPI_MEC5_SHM_EMI
+	bool "Microchip MEC5 family eSPI EMI host driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_SHM_EMI_ENABLED
+	help
+	  Enable the Microchip MEC5 family EMI host device driver.
+
+config ESPI_MEC5_HOST_UART
+	bool "Microchip MEC5 family eSPI Host UART driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_HOST_UART_ENABLED
+	help
+	  Enable the Microchip MEC5 family UART host device driver.
+	  Note, this driver powers on the UART controller and configures
+	  its pins only.
+
+if ESPI_MEC5_OS_ACPI_EC
+
+config ESPI_MEC5_ACPI_EC_CMD_DATA_BUF_SIZE
+	int "ESPI ACPI_EC command data buffer size"
+	default 256
+	help
+	  ACPI_EC command data buffer size.
+
+endif # ESPI_MEC5_OS_ACPI_EC
+
+if ESPI_MEC5_MAILBOX
+
+config ESPI_MEC5_MAILBOX_CALLBACK
+	bool "Mailbox driver includes a single callback"
+	default n
+	help
+	  Selects whether the Mailbox driver manages/implements
+	  its own callback. If not defined the Mailbox driver will
+	  use its parent (eSPI) driver callbacks.
+
+endif # ESPI_MEC5_MAILBOX
+
+if ESPI_MEC5_BDP
+
+config ESPI_MEC5_BDP_FIFO_THRESHOLD_LEVEL
+	int "ESPI Host I/O write capture peripheral FIFO threshold"
+	range 0 7
+	default 0
+	help
+	  BDP contains a 32 entry capture FIFO capable of generating
+	  an interrupt to the EC when the number of entries is equal
+	  to or above a threshold value. Threshold encoding is
+	  [0, 7] -> [1, 4, 8, 16, 20, 24, 28, 30]
+
+config ESPI_MEC5_BDP_CALLBACK
+	bool "BDP driver uses its own single callback"
+	default n
+	help
+	  Selects whether the BDP driver manages/implements
+	  its own callback. If not defined the BDP driver will
+	  use its parent (eSPI) driver callbacks.
+
+endif # ESPI_MEC5_BDP

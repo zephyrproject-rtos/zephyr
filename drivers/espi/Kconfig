@@ -19,6 +19,7 @@ source "drivers/espi/Kconfig.espi_emul"
 source "drivers/espi/Kconfig.it8xxx2"
 
 source "drivers/espi/Kconfig.mec5"
+source "drivers/espi/mchp/mec5/Kconfig.host_devs"
 
 module = ESPI
 module-str = espi
