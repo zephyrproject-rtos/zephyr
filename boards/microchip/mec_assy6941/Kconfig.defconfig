@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MEC_ASSY6941_MEC1743QLJ || BOARD_MEC_ASSY6941_MEC1743QSZ ||\
+	BOARD_MEC_ASSY6941_MEC1753QLJ || BOARD_MEC_ASSY6941_MEC1753QSZ
+
+# Use ARM Cortex-M SYSTICK. SYSTICK frequency is 96 MHz divided down by the MEC174x PCR
+# processor clock divider register. Boot-ROM sets PCR processor clock divider to 1.
+# Refer to SOC_MEC_PROC_CLK_DIV
+#
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 96000000
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+endif # BOARD_MEC_ASSY6941_MEC1743QLJ or _MEC1743QSZ or _MEC1753QLJ or _MEC1753QSZ

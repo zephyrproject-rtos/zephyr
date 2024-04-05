@@ -1,0 +1,17 @@
+boards:
+  - name: mec_assy6941_mec1743qlj
+    vendor: microchip
+    socs:
+      - name: mec1743_qlj
+  - name: mec_assy6941_mec1743qsz
+    vendor: microchip
+    socs:
+      - name: mec1743_qsz
+  - name: mec_assy6941_mec1753qlj
+    vendor: microchip
+    socs:
+      - name: mec1753_qlj
+  - name: mec_assy6941_mec1753qsz
+    vendor: microchip
+    socs:
+      - name: mec1753_qsz
