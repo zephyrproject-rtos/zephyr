@@ -285,7 +285,7 @@ static void sensing_sensor_polling_timer(struct k_timer *timer_id)
 			struct sensing_sensor, timer);
 
 	/* TODO: move it into sensing_runtime_thread */
-	sensor_read(sensor->iodev, &sensing_rtio_ctx, sensor);
+	sensor_read_async_mempool(sensor->iodev, &sensing_rtio_ctx, sensor);
 }
 
 static int init_sensor(struct sensing_sensor *sensor)
