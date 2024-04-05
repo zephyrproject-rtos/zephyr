@@ -84,7 +84,7 @@
 	ahb-prescaler = <1>;
 	apb1-prescaler = <2>;
 	apb2-prescaler = <1>;
-	apb3-prescaler = <1>;
+	apb3-prescaler = <2>;
 };
 
 &lpuart1 {
