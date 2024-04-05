@@ -3,14 +3,15 @@ common:
     - drivers
     - uart
   harness: ztest
-  platform_allow:
-    - nrf52840dk/nrf52840
-    - nrf52_bsim
   harness_config:
     fixture: gpio_loopback
   depends_on: gpio
 tests:
   drivers.uart.pm:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52_bsim
+      - nrf54l15pdk/nrf54l15/cpuapp
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_UART_ASYNC_API=n
@@ -18,6 +19,9 @@ tests:
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
 
   drivers.uart.pm.no_rxpin:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52_bsim
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_UART_ASYNC_API=n
@@ -25,7 +29,20 @@ tests:
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
     extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;nrf_rx_disable.overlay"
 
+  drivers.uart.pm.no_rxpin_54l:
+    platform_allow:
+      - nrf54l15pdk/nrf54l15/cpuapp
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15pdk_nrf54l15_cpuapp.overlay;nrf_rx_disable.overlay"
+
   drivers.uart.pm.enhanced_poll:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52_bsim
+      - nrf54l15pdk/nrf54l15/cpuapp
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_UART_ASYNC_API=n
@@ -33,6 +50,10 @@ tests:
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
 
   drivers.uart.pm.int_driven:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52_bsim
+      - nrf54l15pdk/nrf54l15/cpuapp
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=y
       - CONFIG_UART_0_INTERRUPT_DRIVEN=y
@@ -41,6 +62,10 @@ tests:
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
 
   drivers.uart.pm.int_driven.enhanced_poll:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52_bsim
+      - nrf54l15pdk/nrf54l15/cpuapp
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=y
       - CONFIG_UART_0_INTERRUPT_DRIVEN=y
@@ -49,6 +74,10 @@ tests:
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
 
   drivers.uart.pm.async:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52_bsim
+      - nrf54l15pdk/nrf54l15/cpuapp
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_UART_ASYNC_API=y
@@ -60,6 +89,10 @@ tests:
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
 
   drivers.uart.pm.async.enhanced_poll:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52_bsim
+      - nrf54l15pdk/nrf54l15/cpuapp
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_UART_ASYNC_API=y
