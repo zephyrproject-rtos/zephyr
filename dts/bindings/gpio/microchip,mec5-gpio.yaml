@@ -1,0 +1,29 @@
+# Copyright (c) 2024, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 GPIO node
+
+compatible: "microchip,mec5-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  port-id:
+    type: int
+    required: true
+    description: Zero based GPIO port number
+
+  girq-id:
+    type: int
+    required: true
+    description: Aggregated GIRQ number for this bank of 32 GPIO pins.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
