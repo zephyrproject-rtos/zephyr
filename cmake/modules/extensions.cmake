@@ -1632,10 +1632,6 @@ function(zephyr_syscall_header)
       syscalls_interface INTERFACE
       ${header_file}
     )
-    target_include_directories(
-      syscalls_interface INTERFACE
-      ${header_file}
-    )
     add_dependencies(
       syscalls_interface
       ${header_file}
