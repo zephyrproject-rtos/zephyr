@@ -75,19 +75,3 @@ jobs:
         echo "Run twister tests"
         source zephyr-env.sh
         PYTHONPATH="./scripts/tests" pytest ./scripts/tests/twister_blackbox
-
-    - name: Upload Unit Test Results
-      if: success() || failure()
-      uses: actions/upload-artifact@v2
-      with:
-        name: Black Box Test Results (Python ${{ matrix.python-version }})
-        path: |
-          twister-out*/twister.log
-          twister-out*/twister.json
-          twister-out*/testplan.log
-        retention-days: 14
-
-    - name: Clear Workspace
-      if: success() || failure()
-      run: |
-        rm -rf twister-out*/
