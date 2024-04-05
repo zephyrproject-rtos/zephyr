@@ -840,7 +840,7 @@ add_subdirectory(kernel)
 get_property(
   syscalls_file_list
   TARGET syscalls_interface
-  PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+  PROPERTY INTERFACE_SOURCES
 )
 file(CONFIGURE OUTPUT ${syscalls_file_list_output}
      CONTENT "@syscalls_file_list@" @ONLY)
