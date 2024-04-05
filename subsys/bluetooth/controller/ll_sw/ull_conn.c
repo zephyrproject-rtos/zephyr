@@ -819,7 +819,7 @@ bool ull_conn_peer_connected(uint8_t const own_id_addr_type,
 }
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
-void ull_conn_setup(memq_link_t *rx_link, struct node_rx_hdr *rx)
+void ull_conn_setup(memq_link_t *rx_link, struct node_rx_pdu *rx)
 {
 	struct node_rx_ftr *ftr;
 	struct ull_hdr *hdr;
@@ -827,7 +827,7 @@ void ull_conn_setup(memq_link_t *rx_link, struct node_rx_hdr *rx)
 	/* Store the link in the node rx so that when done event is
 	 * processed it can be used to enqueue node rx towards LL context
 	 */
-	rx->link = rx_link;
+	rx->hdr.link = rx_link;
 
 	/* NOTE: LLL conn context SHALL be after lll_hdr in
 	 *       struct lll_adv and struct lll_scan.
@@ -1683,7 +1683,7 @@ static void ticker_start_conn_op_cb(uint32_t status, void *param)
 static void conn_setup_adv_scan_disabled_cb(void *param)
 {
 	struct node_rx_ftr *ftr;
-	struct node_rx_hdr *rx;
+	struct node_rx_pdu *rx;
 	struct lll_conn *lll;
 
 	/* NOTE: LLL conn context SHALL be after lll_hdr in
@@ -1809,7 +1809,7 @@ static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
 	 * value and handle through the mayfly scheduling of the
 	 * tx_lll_flush.
 	 */
-	rx = (void *)&conn->llcp_terminate.node_rx;
+	rx = (void *)&conn->llcp_terminate.node_rx.rx;
 	rx->hdr.handle = conn->lll.handle;
 	rx->hdr.type = NODE_RX_TYPE_TERMINATE;
 	*((uint8_t *)rx->pdu) = reason;

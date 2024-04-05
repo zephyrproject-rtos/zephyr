@@ -106,16 +106,12 @@ struct ll_adv_iso_set {
 				 * clock.
 				 */
 
-	struct {
-		struct node_rx_hdr hdr;
-	} node_rx_complete;
+	struct node_rx_pdu node_rx_complete;
 
 	struct {
-		struct node_rx_hdr hdr;
-		union {
-			uint8_t    pdu[0] __aligned(4);
-			uint8_t    reason;
-		};
+		struct node_rx_pdu rx;
+		/* Dummy declaration to ensure space allocated to hold one pdu bytes */
+		uint8_t  dummy;
 	} node_rx_terminate;
 
 #if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)

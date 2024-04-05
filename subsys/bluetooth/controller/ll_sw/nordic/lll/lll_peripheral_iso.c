@@ -594,7 +594,7 @@ static void isr_rx(void *param)
 			/* Enqueue Rx ISO PDU */
 			node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
 			node_rx->hdr.handle = cis_lll->handle;
-			iso_meta = &node_rx->hdr.rx_iso_meta;
+			iso_meta = &node_rx->rx_iso_meta;
 			iso_meta->payload_number = cis_lll->rx.payload_count +
 						   cis_lll->rx.bn_curr - 1U;
 			iso_meta->timestamp = cis_lll->offset +
