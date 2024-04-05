@@ -1,0 +1,70 @@
+# Copyright (c) 2024, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 series QSPI controller
+
+compatible: "microchip,mec5-qspi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  lines:
+    type: int
+    description: |
+      QSPI data lines 1, 2, or 4. 1 data line is full-duplex
+      MOSI and MISO or half-duplex on MOSI only. Lines set to 2
+      or 4 indicate dual or quad I/O modes.
+      Defaults to 1 for full duplex driver's support for full-duplex spi.
+    enum:
+      - 1
+      - 2
+      - 4
+
+  chip-select:
+    type: int
+    description: |
+      Use QSPI CS0# or CS1#. Shared SPI supports two chip selects.
+      All other QSPI ports support one chip select.
+
+  dcsckon:
+    type: int
+    description: |
+      Delay in QSPI main clocks from CS# assertion to first clock edge.
+      If not present use hardware default value. Refer to chip documention
+      for QMSPI input clock frequency.
+
+  dckcsoff:
+    type: int
+    description: |
+      Delay in QSPI main clocks from last clock edge to CS# de-assertion.
+      If not presetn use hardware default value. Refer to chip documention
+      for QSPI input clock frequency.
+
+  dldh:
+    type: int
+    description: |
+      Delay in QSPI main clocks from CS# de-assertion to driving HOLD#
+      and WP#. If not present use hardware default value. Refer to chip
+      documention for QSPI input clock frequency.
+
+  dcsda:
+    type: int
+    description: |
+      Delay in QSPI main clocks from CS# de-assertion to CS# assertion.
+      If not present use hardware default value. Refer to chip documention
+      for QSPI input clock frequency.
+
+  cs1-freq:
+    type: int
+    description: |
+      Allows different frequencies for CS#0 and CS1# devices. This applies
+      to ports implementing CS1#.

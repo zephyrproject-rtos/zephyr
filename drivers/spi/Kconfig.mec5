@@ -1,0 +1,20 @@
+# Microchip MEC5 QSPI
+
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_MEC5_QSPI
+	bool "Microchip MEC5 QSPI driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_QSPI_ENABLED
+	help
+	  Enable support for Microchip MEC5 QSPI driver.
+
+if SPI_MEC5_QSPI
+
+config SPI_MEC5_QSPI_INTERRUPT
+	bool "Microchip MEC5 QSPI interrupt support"
+	help
+	  Enable interrupt support for Microchip MEC5 QSPI driver.
+
+endif # SPI_MEC5_QSPI
