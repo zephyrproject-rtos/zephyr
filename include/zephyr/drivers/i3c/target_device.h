@@ -234,14 +234,15 @@ __subsystem struct i3c_target_driver_api {
  *            driver configured in target mode.
  * @param buf Pointer to the buffer
  * @param len Length of the buffer
+ * @param hdr_mode HDR mode see @c I3C_MSG_HDR_MODE*
  *
  * @retval Total number of bytes written
- * @retval -ENOTSUP Not in Target Mode
+ * @retval -ENOTSUP Not in Target Mode or HDR Mode not supported
  * @retval -ENOSPC No space in Tx FIFO
  * @retval -ENOSYS If target mode is not implemented
  */
 static inline int i3c_target_tx_write(const struct device *dev,
-				      uint8_t *buf, uint16_t len)
+				      uint8_t *buf, uint16_t len, uint8_t hdr_mode)
 {
 	const struct i3c_driver_api *api =
 		(const struct i3c_driver_api *)dev->api;
@@ -250,7 +251,7 @@ static inline int i3c_target_tx_write(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	return api->target_tx_write(dev, buf, len);
+	return api->target_tx_write(dev, buf, len, hdr_mode);
 }
 
 /**
