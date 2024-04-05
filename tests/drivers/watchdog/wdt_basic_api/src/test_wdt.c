@@ -212,11 +212,13 @@ static int test_wdt_no_callback(void)
 	err = wdt_install_timeout(wdt, &m_cfg_wdt0);
 	if (err < 0) {
 		TC_PRINT("Watchdog install error\n");
+		return TC_FAIL;
 	}
 
 	err = wdt_setup(wdt, WDT_OPT_PAUSE_HALTED_BY_DBG);
 	if (err < 0) {
 		TC_PRINT("Watchdog setup error\n");
+		return TC_FAIL;
 	}
 
 	TC_PRINT("Waiting to restart MCU\n");
