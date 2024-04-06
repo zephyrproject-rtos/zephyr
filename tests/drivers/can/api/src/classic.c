@@ -393,9 +393,9 @@ static void send_receive(const struct can_filter *filter1,
  * @param data_frame  CAN data frame
  * @param rtr_frame   CAN RTR frame
  */
-void send_receive_rtr(const struct can_filter *filter,
-		      const struct can_frame *data_frame,
-		      const struct can_frame *rtr_frame)
+static void send_receive_rtr(const struct can_filter *filter,
+			     const struct can_frame *data_frame,
+			     const struct can_frame *rtr_frame)
 {
 	struct can_frame frame;
 	int filter_id;
@@ -698,6 +698,55 @@ ZTEST(can_classic, test_send_callback)
 
 	err = k_sem_take(&tx_callback_sem, TEST_SEND_TIMEOUT);
 	zassert_equal(err, 0, "missing TX callback");
+}
+
+/**
+ * @brief Test sending an invalid CAN frame.
+ *
+ * @param dev   Pointer to the device structure for the driver instance.
+ * @param frame Pointer to the CAN frame to send.
+ */
+static void send_invalid_frame(const struct device *dev, const struct can_frame *frame)
+{
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_RUNTIME_ERROR_CHECKS);
+
+	err = can_send(dev, frame, TEST_SEND_TIMEOUT, NULL, NULL);
+	zassert_equal(err, -EINVAL, "wrong error on sending invalid frame (err %d)", err);
+}
+
+/**
+ * @brief Test sending NULL frame.
+ */
+ZTEST(can_classic, test_send_null_frame)
+{
+	send_invalid_frame(can_dev, NULL);
+}
+
+/**
+ * @brief Test sending frame with standard (11-bit) CAN ID out-of-range.
+ */
+ZTEST(can_classic, test_send_std_id_out_of_range)
+{
+	struct can_frame frame = {
+		.id = CAN_STD_ID_MASK + 1U,
+	};
+
+	send_invalid_frame(can_dev, &frame);
+}
+
+/**
+ * @brief Test sending frame with extended (29-bit) CAN ID out-of-range.
+ */
+ZTEST(can_classic, test_send_ext_id_out_of_range)
+{
+	struct can_frame frame = {
+		.flags = CAN_FRAME_IDE,
+		.id = CAN_EXT_ID_MASK + 1U,
+	};
+
+	send_invalid_frame(can_dev, &frame);
 }
 
 /**
