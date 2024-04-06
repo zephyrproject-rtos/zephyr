@@ -217,14 +217,11 @@ struct can_frame {
  */
 struct can_filter {
 	/** CAN identifier to match. */
-	uint32_t id           : 29;
-	/** @cond INTERNAL_HIDDEN */
-	uint32_t res0         : 3;
-	/** @endcond */
+	uint32_t id;
 	/** CAN identifier matching mask. If a bit in this mask is 0, the value
 	 * of the corresponding bit in the ``id`` field is ignored by the filter.
 	 */
-	uint32_t mask         : 29;
+	uint32_t mask;
 	/** Flags. @see @ref CAN_FILTER_FLAGS. */
 	uint8_t flags;
 };
