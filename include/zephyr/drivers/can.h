@@ -47,16 +47,20 @@ extern "C" {
 #define CAN_STD_ID_MASK 0x7FFU
 /**
  * @brief Maximum value for a standard (11-bit) CAN identifier.
+ *
+ * @deprecated Use ``CAN_STD_ID_MASK`` instead.
  */
-#define CAN_MAX_STD_ID  CAN_STD_ID_MASK
+#define CAN_MAX_STD_ID  CAN_STD_ID_MASK __DEPRECATED_MACRO
 /**
  * @brief Bit mask for an extended (29-bit) CAN identifier.
  */
 #define CAN_EXT_ID_MASK 0x1FFFFFFFU
 /**
  * @brief Maximum value for an extended (29-bit) CAN identifier.
+ *
+ * @deprecated Use ``CAN_EXT_ID_MASK`` instead.
  */
-#define CAN_MAX_EXT_ID  CAN_EXT_ID_MASK
+#define CAN_MAX_EXT_ID  CAN_EXT_ID_MASK __DEPRECATED_MACRO
 /**
  * @brief Maximum data length code for CAN 2.0A/2.0B.
  */
