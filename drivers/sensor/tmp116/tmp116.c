@@ -232,6 +232,7 @@ static int tmp116_attr_set(const struct device *dev,
 {
 	struct tmp116_data *drv_data = dev->data;
 	int16_t value;
+	int rc;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
@@ -251,7 +252,21 @@ static int tmp116_attr_set(const struct device *dev,
 						/ (int32_t)TMP116_RESOLUTION;
 
 		return tmp116_reg_write(dev, TMP117_REG_TEMP_OFFSET, value);
+	case SENSOR_ATTR_CONFIGURATION:
+		rc = tmp116_reg_write(dev, TMP116_REG_EEPROM_UL,
+					    TMP116_EEPROM_UL_UNLOCK);
+		if (rc) {
+			return rc;
+		}
 
+		rc = tmp116_reg_write(dev, TMP116_REG_CFGR, val->val1);
+		if (rc) {
+			tmp116_reg_write(dev, TMP116_REG_EEPROM_UL, 0);
+			return rc;
+		}
+
+		rc = tmp116_reg_write(dev, TMP116_REG_EEPROM_UL, 0);
+		return rc;
 	default:
 		return -ENOTSUP;
 	}
