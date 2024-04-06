@@ -171,10 +171,7 @@ enum can_state {
  */
 struct can_frame {
 	/** Standard (11-bit) or extended (29-bit) CAN identifier. */
-	uint32_t id  : 29;
-	/** @cond INTERNAL_HIDDEN */
-	uint8_t res0 : 3; /* reserved/padding. */
-	/** @endcond */
+	uint32_t id;
 	/** Data Length Code (DLC) indicating data length in bytes. */
 	uint8_t dlc;
 	/** Flags. @see @ref CAN_FRAME_FLAGS. */
@@ -190,7 +187,8 @@ struct can_frame {
 	uint16_t timestamp;
 #else
 	/** @cond INTERNAL_HIDDEN */
-	uint16_t res1;  /* reserved/padding. */
+	/** Padding. */
+	uint16_t reserved;
 	/** @endcond */
 #endif
 	/** The frame payload data. */
@@ -211,7 +209,6 @@ struct can_frame {
 
 /** Filter matches frames with extended (29-bit) CAN IDs */
 #define CAN_FILTER_IDE  BIT(0)
-
 
 /** @} */
 
