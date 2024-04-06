@@ -38,7 +38,7 @@ int main(void)
 	CONFIG_LV_USE_DEMO_STRESS, or CONFIG_LV_USE_DEMO_WIDGETS
 #endif
 
-	lv_task_handler();
+	lv_timer_handler();
 	display_blanking_off(display_dev);
 #ifdef CONFIG_LV_Z_MEM_POOL_SYS_HEAP
 	lvgl_print_heap_info(false);
@@ -46,7 +46,7 @@ int main(void)
 	printf("lvgl in malloc mode\n");
 #endif
 	while (1) {
-		uint32_t sleep_ms = lv_task_handler();
+		uint32_t sleep_ms = lv_timer_handler();
 
 		k_msleep(MIN(sleep_ms, INT32_MAX));
 	}
