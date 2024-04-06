@@ -295,15 +295,15 @@ static void icm42688_emul_get_gyro_ranges(const struct emul *target, q31_t *lowe
 	*lower = -*upper;
 }
 
-static int icm42688_emul_backend_get_sample_range(const struct emul *target, enum sensor_channel ch,
-						  q31_t *lower, q31_t *upper, q31_t *epsilon,
-						  int8_t *shift)
+static int icm42688_emul_backend_get_sample_range(const struct emul *target,
+						  struct sensor_chan_spec ch, q31_t *lower,
+						  q31_t *upper, q31_t *epsilon, int8_t *shift)
 {
 	if (!lower || !upper || !epsilon || !shift) {
 		return -EINVAL;
 	}
 
-	switch (ch) {
+	switch (ch.chan_type) {
 	case SENSOR_CHAN_DIE_TEMP:
 		/* degrees C = ([16-bit signed temp_data register] / 132.48) + 25 */
 		*shift = 9;
@@ -328,7 +328,7 @@ static int icm42688_emul_backend_get_sample_range(const struct emul *target, enu
 	return 0;
 }
 
-static int icm42688_emul_backend_set_channel(const struct emul *target, enum sensor_channel ch,
+static int icm42688_emul_backend_set_channel(const struct emul *target, struct sensor_chan_spec ch,
 					     const q31_t *value, int8_t shift)
 {
 	if (!target || !target->data) {
@@ -343,7 +343,7 @@ static int icm42688_emul_backend_set_channel(const struct emul *target, enum sen
 	int64_t value_unshifted =
 		shift < 0 ? ((int64_t)*value >> -shift) : ((int64_t)*value << shift);
 
-	switch (ch) {
+	switch (ch.chan_type) {
 	case SENSOR_CHAN_DIE_TEMP:
 		reg_addr = REG_TEMP_DATA1;
 		reg_val = ((value_unshifted - (25 * Q31_SCALE)) * 13248) / (100 * Q31_SCALE);
@@ -351,7 +351,7 @@ static int icm42688_emul_backend_set_channel(const struct emul *target, enum sen
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
-		switch (ch) {
+		switch (ch.chan_type) {
 		case SENSOR_CHAN_ACCEL_X:
 			reg_addr = REG_ACCEL_DATA_X1;
 			break;
@@ -370,7 +370,7 @@ static int icm42688_emul_backend_set_channel(const struct emul *target, enum sen
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
-		switch (ch) {
+		switch (ch.chan_type) {
 		case SENSOR_CHAN_GYRO_X:
 			reg_addr = REG_GYRO_DATA_X1;
 			break;

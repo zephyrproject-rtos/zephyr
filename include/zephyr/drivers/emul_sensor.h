@@ -27,16 +27,16 @@
  */
 __subsystem struct emul_sensor_driver_api {
 	/** Sets a given fractional value for a given sensor channel. */
-	int (*set_channel)(const struct emul *target, enum sensor_channel ch, const q31_t *value,
-			   int8_t shift);
+	int (*set_channel)(const struct emul *target, struct sensor_chan_spec ch,
+			   const q31_t *value, int8_t shift);
 	/** Retrieve a range of sensor values to use with test. */
-	int (*get_sample_range)(const struct emul *target, enum sensor_channel ch, q31_t *lower,
+	int (*get_sample_range)(const struct emul *target, struct sensor_chan_spec ch, q31_t *lower,
 				q31_t *upper, q31_t *epsilon, int8_t *shift);
 	/** Set the attribute value(s) of a given chanel. */
-	int (*set_attribute)(const struct emul *target, enum sensor_channel ch,
+	int (*set_attribute)(const struct emul *target, struct sensor_chan_spec ch,
 			     enum sensor_attribute attribute, const void *value);
 	/** Get metadata about an attribute. */
-	int (*get_attribute_metadata)(const struct emul *target, enum sensor_channel ch,
+	int (*get_attribute_metadata)(const struct emul *target, struct sensor_chan_spec ch,
 				      enum sensor_attribute attribute, q31_t *min, q31_t *max,
 				      q31_t *increment, int8_t *shift);
 };
@@ -68,8 +68,9 @@ static inline bool emul_sensor_backend_is_supported(const struct emul *target)
  * @return -ENOTSUP if no backend API or if channel not supported by emul
  * @return -ERANGE if provided value is not in the sensor's supported range
  */
-static inline int emul_sensor_backend_set_channel(const struct emul *target, enum sensor_channel ch,
-						  const q31_t *value, int8_t shift)
+static inline int emul_sensor_backend_set_channel(const struct emul *target,
+						  struct sensor_chan_spec ch, const q31_t *value,
+						  int8_t shift)
 {
 	if (!target || !target->backend_api) {
 		return -ENOTSUP;
@@ -101,7 +102,7 @@ static inline int emul_sensor_backend_set_channel(const struct emul *target, enu
  *
  */
 static inline int emul_sensor_backend_get_sample_range(const struct emul *target,
-						       enum sensor_channel ch, q31_t *lower,
+						       struct sensor_chan_spec ch, q31_t *lower,
 						       q31_t *upper, q31_t *epsilon, int8_t *shift)
 {
 	if (!target || !target->backend_api) {
@@ -127,7 +128,7 @@ static inline int emul_sensor_backend_get_sample_range(const struct emul *target
  * @return < 0 on error
  */
 static inline int emul_sensor_backend_set_attribute(const struct emul *target,
-						    enum sensor_channel ch,
+						    struct sensor_chan_spec ch,
 						    enum sensor_attribute attribute,
 						    const void *value)
 {
@@ -161,7 +162,7 @@ static inline int emul_sensor_backend_set_attribute(const struct emul *target,
  * @return < 0 on error
  */
 static inline int emul_sensor_backend_get_attribute_metadata(const struct emul *target,
-							     enum sensor_channel ch,
+							     struct sensor_chan_spec ch,
 							     enum sensor_attribute attribute,
 							     q31_t *min, q31_t *max,
 							     q31_t *increment, int8_t *shift)
