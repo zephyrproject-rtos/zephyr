@@ -679,7 +679,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 	static unsigned int frame_counter;
 	unsigned int frame_no;
 	struct can_frame frame;
-	uint32_t max_id;
+	uint32_t id_mask;
 	int argidx = 2;
 	uint32_t val;
 	char *endptr;
@@ -693,7 +693,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	/* Defaults */
-	max_id = CAN_MAX_STD_ID;
+	id_mask = CAN_STD_ID_MASK;
 	frame.flags = 0;
 	frame.dlc = 0;
 
@@ -704,7 +704,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 			break;
 		} else if (strcmp(argv[argidx], "-e") == 0) {
 			frame.flags |= CAN_FRAME_IDE;
-			max_id = CAN_MAX_EXT_ID;
+			id_mask = CAN_EXT_ID_MASK;
 			argidx++;
 		} else if (strcmp(argv[argidx], "-r") == 0) {
 			frame.flags |= CAN_FRAME_RTR;
@@ -735,7 +735,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	if (val > max_id) {
+	if (val > id_mask) {
 		shell_error(sh, "CAN ID 0x%0*x out of range",
 			    (frame.flags & CAN_FRAME_IDE) != 0 ? 8 : 3,
 			    val);
@@ -798,7 +798,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = device_get_binding(argv[1]);
 	struct can_filter filter;
-	uint32_t max_id;
+	uint32_t id_mask;
 	int argidx = 2;
 	uint32_t val;
 	char *endptr;
@@ -810,7 +810,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	/* Defaults */
-	max_id = CAN_MAX_STD_ID;
+	id_mask = CAN_STD_ID_MASK;
 	filter.flags = 0U;
 
 	/* Parse options */
@@ -820,7 +820,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 			break;
 		} else if (strcmp(argv[argidx], "-e") == 0) {
 			filter.flags |= CAN_FILTER_IDE;
-			max_id = CAN_MAX_EXT_ID;
+			id_mask = CAN_EXT_ID_MASK;
 			argidx++;
 		} else {
 			shell_error(sh, "unsupported argument %s", argv[argidx]);
@@ -842,7 +842,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	if (val > max_id) {
+	if (val > id_mask) {
 		shell_error(sh, "CAN ID 0x%0*x out of range",
 			    (filter.flags & CAN_FILTER_IDE) != 0 ? 8 : 3,
 			    val);
@@ -859,7 +859,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 			return -EINVAL;
 		}
 
-		if (val > max_id) {
+		if (val > id_mask) {
 			shell_error(sh, "CAN ID mask 0x%0*x out of range",
 				    (filter.flags & CAN_FILTER_IDE) != 0 ? 8 : 3,
 				    val);
@@ -867,7 +867,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 		}
 
 	} else {
-		val = max_id;
+		val = id_mask;
 	}
 
 	filter.mask = val;
