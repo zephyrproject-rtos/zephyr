@@ -99,8 +99,8 @@ static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
 		int ret = net_ipv4_igmp_join(iface, &local_addr4.sin_addr, NULL);
 
 		if (ret < 0) {
-			NET_DBG("Cannot add IPv4 multicast address to iface %p",
-				iface);
+			NET_DBG("Cannot add IPv4 multicast address to iface %d",
+				net_if_get_by_iface(iface));
 		}
 #endif /* defined(CONFIG_NET_IPV4) */
 	}
@@ -653,10 +653,25 @@ static void iface_ipv4_cb(struct net_if *iface, void *user_data)
 	struct in_addr *addr = user_data;
 	int ret;
 
+	if (!net_if_is_up(iface)) {
+		struct net_if_mcast_addr *maddr;
+
+		NET_DBG("Interface %d is down, not joining mcast group yet",
+			net_if_get_by_iface(iface));
+
+		maddr = net_if_ipv4_maddr_add(iface, addr);
+		if (!maddr) {
+			NET_DBG("Cannot add multicast address %s",
+				net_sprint_ipv4_addr(addr));
+		}
+
+		return;
+	}
+
 	ret = net_ipv4_igmp_join(iface, addr, NULL);
 	if (ret < 0) {
-		NET_DBG("Cannot add IPv4 multicast address to iface %p",
-			iface);
+		NET_DBG("Cannot add IPv4 multicast address to iface %d",
+			net_if_get_by_iface(iface));
 	}
 }
 
