@@ -36,11 +36,11 @@ int main(void)
 	CONFIG_LV_USE_DEMO_STRESS, or CONFIG_LV_USE_DEMO_WIDGETS
 #endif
 
-	lv_task_handler();
+	lv_timer_handler();
 	display_blanking_off(display_dev);
 
 	while (1) {
-		k_msleep(lv_task_handler());
+		k_msleep(lv_timer_handler());
 	}
 
 	return 0;
