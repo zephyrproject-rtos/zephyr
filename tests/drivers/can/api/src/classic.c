@@ -607,6 +607,66 @@ ZTEST(can_classic, test_add_filter)
 }
 
 /**
+ * @brief Test adding an invalid CAN RX filter.
+ *
+ * @param dev   Pointer to the device structure for the driver instance.
+ * @param frame Pointer to the CAN RX filter.
+ */
+static void add_invalid_rx_filter(const struct device *dev, const struct can_filter *filter)
+{
+	int filter_id;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_RUNTIME_ERROR_CHECKS);
+
+	filter_id = can_add_rx_filter(dev, rx_std_callback_1, NULL, filter);
+	zassert_equal(filter_id, -EINVAL, "added invalid filter");
+}
+
+/**
+ * @brief Test adding NULL filter.
+ */
+ZTEST(can_classic, test_add_invalid_null_filter)
+{
+	add_invalid_rx_filter(can_dev, NULL);
+}
+
+/**
+ * @brief Test adding invalid standard (11-bit) filters.
+ */
+ZTEST(can_classic, test_add_invalid_std_filter)
+{
+	struct can_filter filter = {
+		.flags = 0U,
+	};
+
+	filter.id = CAN_STD_ID_MASK;
+	filter.mask = CAN_STD_ID_MASK + 1U;
+	add_invalid_rx_filter(can_dev, &filter);
+
+	filter.id = CAN_STD_ID_MASK + 1U;
+	filter.mask = CAN_STD_ID_MASK;
+	add_invalid_rx_filter(can_dev, &filter);
+}
+
+/**
+ * @brief Test adding invalid extended (29-bit) filters.
+ */
+ZTEST(can_classic, test_add_invalid_ext_filter)
+{
+	struct can_filter filter = {
+		.flags = CAN_FILTER_IDE,
+	};
+
+	filter.id = CAN_EXT_ID_MASK;
+	filter.mask = CAN_EXT_ID_MASK + 1U;
+	add_invalid_rx_filter(can_dev, &filter);
+
+	filter.id = CAN_EXT_ID_MASK + 1U;
+	filter.mask = CAN_EXT_ID_MASK;
+	add_invalid_rx_filter(can_dev, &filter);
+}
+
+/**
  * @brief Test adding up to and above the maximum number of RX filters.
  *
  * @param ide standard (11-bit) CAN ID filters if false, or extended (29-bit) CAN ID filters if
