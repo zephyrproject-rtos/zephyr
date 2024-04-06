@@ -406,6 +406,9 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 	{								\
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),			\
 			(GPIO_MCUX_IRQ_INIT(n);))			\
+		if (n == 3) {						\
+			return -EINVAL;					\
+		}							\
 		return 0;						\
 	}
 

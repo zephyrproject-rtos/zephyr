@@ -323,7 +323,11 @@ static int do_device_init(const struct init_entry *entry)
 		}
 	}
 
-	dev->state->initialized = true;
+	if (rc == 0) {
+		dev->state->status = DEVICE_INIT_STATUS_OK;
+	} else {
+		dev->state->status = DEVICE_INIT_STATUS_FAILED;
+	}
 
 	if (rc == 0) {
 		/* Run automatic device runtime enablement */

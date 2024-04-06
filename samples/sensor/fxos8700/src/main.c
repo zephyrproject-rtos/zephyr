@@ -7,9 +7,22 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/zbus/zbus.h>
 #include <stdio.h>
 
 K_SEM_DEFINE(sem, 0, 1);	/* starts off "not available" */
+
+ZBUS_CHAN_DECLARE(device_failed_chan);
+
+static void device_failed_cb(const struct zbus_channel *chan)
+{
+	const struct device_notification *notif;
+
+	notif = zbus_chan_const_msg(chan);
+	printf("Device %p failed: %d\n", notif->dev, notif->dev->state->init_res);
+}
+ZBUS_LISTENER_DEFINE(device_failed_listener, device_failed_cb);
+ZBUS_CHAN_ADD_OBS(device_failed_chan, device_failed_listener, 1);
 
 #if !defined(CONFIG_FXOS8700_TRIGGER_NONE)
 static void trigger_handler(const struct device *dev,

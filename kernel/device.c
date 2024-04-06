@@ -97,7 +97,7 @@ bool z_device_is_ready(const struct device *dev)
 		return false;
 	}
 
-	return dev->state->initialized && (dev->state->init_res == 0U);
+	return dev->state->status == DEVICE_INIT_STATUS_OK;
 }
 
 #ifdef CONFIG_DEVICE_DEPS

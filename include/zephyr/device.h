@@ -359,6 +359,10 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_INIT_GET(dev_id) (&Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)))
 
+#define DEVICE_INIT_STATUS_NOT_INITIATED 0
+#define DEVICE_INIT_STATUS_OK 1
+#define DEVICE_INIT_STATUS_FAILED 2
+
 /**
  * @brief Runtime device dynamic structure (in RAM) per driver instance
  *
@@ -380,7 +384,7 @@ struct device_state {
 	/** Indicates the device initialization function has been
 	 * invoked.
 	 */
-	bool initialized : 1;
+	uint8_t status;
 };
 
 struct pm_device_base;
@@ -783,6 +787,17 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @retval -errno For other errors.
  */
 __syscall int device_init(const struct device *dev);
+
+#ifdef CONFIG_DEVICE_NOTIFICATIONS
+enum device_notification_type {
+	DEVICE_NOTIFICATION_FAILURE,
+};
+
+struct device_notification {
+	const struct device *dev;
+	enum device_notification_type type;
+};
+#endif /* CONFIG_DEVICE_NOTIFICATIONS */
 
 /**
  * @}
