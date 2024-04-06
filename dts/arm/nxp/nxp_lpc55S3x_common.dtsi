@@ -13,10 +13,6 @@
 #include <mem.h>
 
 / {
-	chosen {
-		zephyr,entropy = &css;
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -268,12 +264,6 @@
 		status = "disabled";
 		#address-cells = <1>;
 		#size-cells = <0>;
-	};
-
-	css: css@4003000 {
-		compatible = "nxp,css-v2";
-		reg = <0x4003000 0x200>;
-		status = "okay";
 	};
 
 	adc0: adc@A0000 {

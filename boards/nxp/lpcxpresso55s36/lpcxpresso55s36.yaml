@@ -20,8 +20,3 @@ supported:
   - pwm
   - dac
 vendor: nxp
-env: # Provisional hack to prevent tests being run in this board, as it fails in many test & samples
-  - LPCXPRESSO55S36_TWISTER_ENABLE
-  # Twister won't run tests in this board unless LPCXPRESSO55S36_TWISTER_ENABLE is set in the
-  # environment, which it normally won't.
-  # Once https://github.com/zephyrproject-rtos/zephyr/issues/69961 is fixed this should be removed
