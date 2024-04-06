@@ -6,6 +6,7 @@
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 
@@ -35,6 +36,25 @@ int z_impl_can_send(const struct device *dev, const struct can_frame *frame,
 		    void *user_data)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	uint32_t id_mask;
+
+	CHECKIF(frame == NULL) {
+		return -EINVAL;
+	}
+
+	if ((frame->flags & CAN_FRAME_IDE) != 0U) {
+		id_mask = CAN_EXT_ID_MASK;
+	} else {
+		id_mask = CAN_STD_ID_MASK;
+	}
+
+	CHECKIF((frame->id & ~(id_mask)) != 0U) {
+		LOG_ERR("invalid frame with %s (%d-bit) CAN ID 0x%0*x",
+			(frame->flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
+			(frame->flags & CAN_FRAME_IDE) != 0 ? 29 : 11,
+			(frame->flags & CAN_FRAME_IDE) != 0 ? 8 : 3, frame->id);
+		return -EINVAL;
+	}
 
 	if (callback == NULL) {
 		struct can_tx_default_cb_ctx ctx;
