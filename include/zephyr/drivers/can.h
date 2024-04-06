@@ -1366,17 +1366,8 @@ __syscall int can_send(const struct device *dev, const struct can_frame *frame,
  * @retval -EINVAL if the requested filter type is invalid.
  * @retval -ENOTSUP if the requested filter type is not supported.
  */
-static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
-				    void *user_data, const struct can_filter *filter)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
-
-	if (filter == NULL) {
-		return -EINVAL;
-	}
-
-	return api->add_rx_filter(dev, callback, user_data, filter);
-}
+int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
+		      void *user_data, const struct can_filter *filter);
 
 /**
  * @brief Statically define and initialize a CAN RX message queue.
