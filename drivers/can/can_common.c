@@ -75,6 +75,34 @@ int z_impl_can_send(const struct device *dev, const struct can_frame *frame,
 	return api->send(dev, frame, timeout, callback, user_data);
 }
 
+int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
+		      void *user_data, const struct can_filter *filter)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	uint32_t id_mask;
+
+	CHECKIF(callback == NULL || filter == NULL) {
+		return -EINVAL;
+	}
+
+	if ((filter->flags & CAN_FILTER_IDE) != 0U) {
+		id_mask = CAN_EXT_ID_MASK;
+	} else {
+		id_mask = CAN_STD_ID_MASK;
+	}
+
+	CHECKIF(((filter->id & ~(id_mask)) != 0U) || ((filter->mask & ~(id_mask)) != 0U)) {
+		LOG_ERR("invalid filter with %s (%d-bit) CAN ID 0x%0*x, CAN ID mask 0x%0*x",
+			(filter->flags & CAN_FILTER_IDE) != 0 ? "extended" : "standard",
+			(filter->flags & CAN_FILTER_IDE) != 0 ? 29 : 11,
+			(filter->flags & CAN_FILTER_IDE) != 0 ? 8 : 3, filter->id,
+			(filter->flags & CAN_FILTER_IDE) != 0 ? 8 : 3, filter->mask);
+		return -EINVAL;
+	}
+
+	return api->add_rx_filter(dev, callback, user_data, filter);
+}
+
 static void can_msgq_put(const struct device *dev, struct can_frame *frame, void *user_data)
 {
 	struct k_msgq *msgq = (struct k_msgq *)user_data;
