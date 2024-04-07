@@ -671,6 +671,19 @@ config BT_CTLR_ASSERT_OVERHEAD_START
 	  otherwise leading to remote supervision timeout and possible missing
 	  local disconnect events.
 
+config BT_CTLR_ASSERT_OVERHEAD_START_SCAN_AUX
+	bool "Assert on Prepare Latency for Auxiliary PDU reception"
+	help
+	  Introduce BT_CTLR_ASSERT_OVERHEAD_START_SCAN_AUX workaround
+	  to handle assertion due to detected overhead scanning for
+	  auxiliary PDU in ULL scheduling.
+
+	  For unknown reasons the preempt timeout is being setup
+	  beyond its expire. This is only happening when unreserved
+	  scanning on both 1M and Coded PHY is enabled.
+
+	  Remove/revert this workaround when a fix is identified.
+
 config BT_CTLR_CENTRAL_SPACING
 	int "Central Connection Spacing"
 	depends on BT_CTLR_SCHED_ADVANCED

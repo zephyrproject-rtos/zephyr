@@ -566,12 +566,20 @@ sync_aux_prepare_done:
 					  ull_scan_aux_lll_handle_get(lll_aux)), ticks_at_event);
 	/* check if preempt to start has changed */
 	if (overhead) {
-		LL_ASSERT_OVERHEAD(overhead);
+		int err;
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_ASSERT_OVERHEAD_START_SCAN_AUX)) {
+			LL_ASSERT_OVERHEAD(overhead);
+
+			err = -ECANCELED;
+		} else {
+			err = 0;
+		}
 
 		radio_isr_set(isr_done, lll_aux);
 		radio_disable();
 
-		return -ECANCELED;
+		return err;
 	}
 #endif /* !CONFIG_BT_CTLR_XTAL_ADVANCED */
 
