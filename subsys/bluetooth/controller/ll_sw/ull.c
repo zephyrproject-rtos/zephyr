@@ -2072,12 +2072,16 @@ void ull_prepare_dequeue(uint8_t caller_id)
 	void *param_resume_head = NULL;
 	void *param_resume_next = NULL;
 	struct lll_event *next;
+	uint8_t loop = 10U;
 
 	next = ull_prepare_dequeue_get();
 	while (next) {
 		void *param = next->prepare_param.param;
 		uint8_t is_aborted = next->is_aborted;
 		uint8_t is_resume = next->is_resume;
+
+		LL_ASSERT(loop);
+		loop--;
 
 		/* Let LLL invoke the `prepare` interface if radio not in active
 		 * use. Otherwise, enqueue at end of the prepare pipeline queue.
