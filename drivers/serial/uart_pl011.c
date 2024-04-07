@@ -153,6 +153,29 @@ static void pl011_poll_out(const struct device *dev,
 	get_uart(dev)->dr = (uint32_t)c;
 }
 
+static int pl011_err_check(const struct device *dev)
+{
+	int errors = 0;
+
+	if (get_uart(dev)->rsr & PL011_RSR_ECR_OE) {
+		errors |= UART_ERROR_OVERRUN;
+	}
+
+	if (get_uart(dev)->rsr & PL011_RSR_ECR_BE) {
+		errors |= UART_BREAK;
+	}
+
+	if (get_uart(dev)->rsr & PL011_RSR_ECR_PE) {
+		errors |= UART_ERROR_PARITY;
+	}
+
+	if (get_uart(dev)->rsr & PL011_RSR_ECR_FE) {
+		errors |= UART_ERROR_FRAMING;
+	}
+
+	return errors;
+}
+
 static int pl011_runtime_configure_internal(const struct device *dev,
 					const struct uart_config *cfg,
 					bool disable)
@@ -390,6 +413,7 @@ static void pl011_irq_callback_set(const struct device *dev,
 static const struct uart_driver_api pl011_driver_api = {
 	.poll_in = pl011_poll_in,
 	.poll_out = pl011_poll_out,
+	.err_check = pl011_err_check,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = pl011_runtime_configure,
 	.config_get = pl011_runtime_config_get,
