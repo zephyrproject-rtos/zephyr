@@ -2,6 +2,13 @@
 # Makefile for documentation build
 # SPDX-License-Identifier: Apache-2.0
 
+# Note: If the load is too high for your machine, you can limit the number of
+# processes by adding likely "-j1" to SPHINXOPTS_EXTRA as shown below.
+# (Although "-j auto" is already set, the setting will be overwritten by your
+#  one.)
+#
+# make SPHINXOPTS_EXTRA=-j1 html-fast
+
 define set_cmake_variable_if_defined
   $(if ${$1},-D$1="${$1}")
 endef
