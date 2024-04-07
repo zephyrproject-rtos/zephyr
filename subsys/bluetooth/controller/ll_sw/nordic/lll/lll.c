@@ -898,10 +898,20 @@ static uint8_t volatile preempt_ack;
 static void ticker_stop_op_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
-	ARG_UNUSED(status);
 
 	LL_ASSERT(preempt_stop_req != preempt_stop_ack);
 	preempt_stop_ack = preempt_stop_req;
+
+	/* We do not fail on status not being success because under scenarios
+	 * where there is ticker_start then ticker_stop and then ticker_start,
+	 * the call to ticker_stop will fail and this is acceptable.
+	 * Also, the preempt_req and preempt_ack would not be update as the
+	 * ticker_start was not processed before ticker_stop. Hence, it is
+	 * safe to reset preempt_req and preempt_ack here.
+	 */
+	if (status == TICKER_STATUS_SUCCESS) {
+		LL_ASSERT(preempt_req != preempt_ack);
+	}
 
 	preempt_req = preempt_ack;
 }
@@ -1135,6 +1145,8 @@ static void preempt(void *param)
 			/* No ready prepare */
 			return;
 		}
+
+		LL_ASSERT(ready->prepare_param.param == param);
 	}
 
 	/* Check if current event want to continue */
