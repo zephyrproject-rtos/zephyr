@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(voltage, CONFIG_SENSOR_LOG_LEVEL);
 struct voltage_config {
 	struct voltage_divider_dt_spec voltage;
 	struct gpio_dt_spec gpio_power;
+	uint32_t off_on_delay_us;
 };
 
 struct voltage_data {
@@ -89,6 +90,17 @@ static const struct sensor_driver_api voltage_api = {
 	.channel_get = get,
 };
 
+static void wait_power_off_on_delay(uint32_t off_on_delay_us)
+{
+	if (off_on_delay_us != 0) {
+		if (k_can_yield()) {
+			k_usleep(off_on_delay_us);
+		} else {
+			k_busy_wait(off_on_delay_us);
+		}
+	}
+}
+
 static int __maybe_unused pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct voltage_config *config = dev->config;
@@ -100,6 +112,7 @@ static int __maybe_unused pm_action(const struct device *dev, enum pm_device_act
 		if (ret != 0) {
 			LOG_ERR("failed to set GPIO for PM resume");
 		}
+		wait_power_off_on_delay(config->off_on_delay_us);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		ret = gpio_pin_set_dt(&config->gpio_power, 0);
@@ -144,6 +157,8 @@ static int voltage_init(const struct device *dev)
 
 		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 			pm_device_init_suspended(dev);
+		} else {
+			wait_power_off_on_delay(config->off_on_delay_us);
 		}
 	}
 
@@ -177,6 +192,7 @@ static int voltage_init(const struct device *dev)
 	static const struct voltage_config voltage_##inst##_config = {                             \
 		.voltage = VOLTAGE_DIVIDER_DT_SPEC_GET(DT_DRV_INST(inst)),                         \
 		.gpio_power = GPIO_DT_SPEC_INST_GET_OR(inst, power_gpios, {0}),                    \
+		.off_on_delay_us = DT_INST_PROP_OR(inst, off_on_delay_us, 0),                      \
 	};                                                                                         \
                                                                                                    \
 	IF_ENABLED(VOLTAGE_HAS_POWER_GPIO(inst), (PM_DEVICE_DT_INST_DEFINE(inst, pm_action);))     \
