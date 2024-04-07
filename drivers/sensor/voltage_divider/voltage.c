@@ -126,15 +126,24 @@ static int voltage_init(const struct device *dev)
 	}
 
 	if (config->gpio_power.port != NULL) {
+		int power_gpio_state = GPIO_OUTPUT_ACTIVE;
+
+		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+			power_gpio_state = GPIO_OUTPUT_INACTIVE;
+		}
+
 		if (!gpio_is_ready_dt(&config->gpio_power)) {
 			LOG_ERR("Power GPIO is not ready");
 			return -ENODEV;
 		}
-
-		ret = gpio_pin_configure_dt(&config->gpio_power, GPIO_OUTPUT_ACTIVE);
+		ret = gpio_pin_configure_dt(&config->gpio_power, power_gpio_state);
 		if (ret != 0) {
 			LOG_ERR("failed to initialize GPIO for power");
 			return ret;
+		}
+
+		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+			pm_device_init_suspended(dev);
 		}
 	}
 
