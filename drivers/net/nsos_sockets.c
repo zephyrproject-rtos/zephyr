@@ -298,6 +298,11 @@ static int nsos_poll_update(struct nsos_socket *sock, struct zsock_pollfd *pfd,
 	signaled = 0;
 	flags = 0;
 
+	if (!sys_dnode_is_linked(&sock->node)) {
+		nsos_adapt_poll_update(&sock->pollfd);
+		return 0;
+	}
+
 	nsos_adapt_poll_remove(&sock->pollfd);
 	sys_dlist_remove(&sock->node);
 
