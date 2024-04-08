@@ -129,6 +129,17 @@
 	};
 
 	soc {
+
+		lsbpm: lsbpm@71d80 {
+			compatible = "intel,adsp-lsbpm";
+			reg = <0x71d80 0x0008>;
+		};
+
+		hsbpm: hsbpm@17a800 {
+			compatible = "intel,adsp-hsbpm";
+			reg = <0x17a800 0x0008>;
+		};
+
 		core_intc: core_intc@0 {
 			compatible = "cdns,xtensa-core-intc";
 			reg = <0x00 0x400>;
