@@ -398,23 +398,9 @@ static inline uint8_t tmag5273_get_crc_size(const struct tmag5273_config *drv_cf
 	return 0;
 }
 
-static int tmag5273_attr_set(const struct device *dev, enum sensor_channel chan,
-			     enum sensor_attribute attr, const struct sensor_value *val)
+static int tmag5273_attr_set_awake(const struct device *dev, enum sensor_channel chan,
+				   enum sensor_attribute attr, const struct sensor_value *val)
 {
-	CHECKIF(dev == NULL) {
-		LOG_ERR("dev: NULL");
-		return -EINVAL;
-	}
-
-	CHECKIF(val == NULL) {
-		LOG_ERR("val: NULL");
-		return -EINVAL;
-	}
-
-	if (chan != SENSOR_CHAN_MAGN_XYZ) {
-		return -ENOTSUP;
-	}
-
 	const struct tmag5273_config *drv_cfg = dev->config;
 
 	int retval;
@@ -446,6 +432,30 @@ static int tmag5273_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 
 	return 0;
+}
+
+static int tmag5273_attr_set(const struct device *dev, enum sensor_channel chan,
+			     enum sensor_attribute attr, const struct sensor_value *val)
+{
+	int retval;
+
+	CHECKIF(dev == NULL) {
+		LOG_ERR("dev: NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(val == NULL) {
+		LOG_ERR("val: NULL");
+		return -EINVAL;
+	}
+
+	if (chan != SENSOR_CHAN_MAGN_XYZ) {
+		return -ENOTSUP;
+	}
+
+	retval = tmag5273_attr_set_awake(dev, chan, attr, val);
+
+	return retval;
 }
 
 static int tmag5273_attr_get(const struct device *dev, enum sensor_channel chan,
