@@ -137,3 +137,7 @@
 &flexpwm1_pwm0 {
 	status = "okay";
 };
+
+&ctimer0 {
+	status = "okay";
+};
