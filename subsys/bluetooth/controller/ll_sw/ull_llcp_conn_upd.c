@@ -585,6 +585,7 @@ static void lp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 	switch (evt) {
 	case LP_CU_EVT_CONN_UPDATE_IND:
 		llcp_pdu_decode_conn_update_ind(ctx, param);
+		llcp_rr_set_incompat(conn, INCOMPAT_RESERVED);
 		/* Keep RX node to use for NTF */
 		llcp_rx_node_retain(ctx);
 		ctx->state = LP_CU_STATE_WAIT_INSTANT;
