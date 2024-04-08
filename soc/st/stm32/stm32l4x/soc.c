@@ -15,6 +15,7 @@
 #include <zephyr/logging/log.h>
 
 #include <cmsis_core.h>
+#include <stm32_ll_system.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
@@ -30,6 +31,11 @@ LOG_MODULE_REGISTER(soc);
  */
 static int stm32l4_init(void)
 {
+	/* Enable the ART Accelerator I-cache, D-cache and prefetch */
+	LL_FLASH_EnableInstCache();
+	LL_FLASH_EnableDataCache();
+	LL_FLASH_EnablePrefetch();
+
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 4 MHz from MSI */
 	SystemCoreClock = 4000000;
