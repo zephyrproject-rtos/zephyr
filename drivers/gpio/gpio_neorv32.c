@@ -179,13 +179,13 @@ static int neorv32_gpio_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_FEATURES, &features);
+	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_SOC, &features);
 	if (err < 0) {
 		LOG_ERR("failed to determine implemented features (err %d)", err);
 		return -EIO;
 	}
 
-	if ((features & NEORV32_SYSINFO_FEATURES_IO_GPIO) == 0) {
+	if ((features & NEORV32_SYSINFO_SOC_IO_GPIO) == 0) {
 		LOG_ERR("neorv32 gpio not supported");
 		return -ENODEV;
 	}

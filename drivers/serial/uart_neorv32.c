@@ -395,7 +395,7 @@ static int neorv32_uart_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_FEATURES, &features);
+	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_SOC, &features);
 	if (err < 0) {
 		LOG_ERR("failed to determine implemented features (err %d)", err);
 		return -EIO;
@@ -503,7 +503,7 @@ static const struct uart_driver_api neorv32_uart_driver_api = {
 									\
 	static const struct neorv32_uart_config neorv32_uart_##n##_config = { \
 		.syscon = DEVICE_DT_GET(DT_PHANDLE(node_id, syscon)),	\
-		.feature_mask = NEORV32_SYSINFO_FEATURES_IO_UART##n,	\
+		.feature_mask = NEORV32_SYSINFO_SOC_IO_UART##n,		\
 		.base = DT_REG_ADDR(node_id),				\
 		NEORV32_UART_CONFIG_INIT(node_id, n)			\
 	};								\
