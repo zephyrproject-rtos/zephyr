@@ -11,8 +11,14 @@ target_sources(app PRIVATE
 	src/main.c
 	src/test_time_incrementing.c
 	src/test_time.c
-	src/test_y2k.c
 )
+
+# STM32 RTC does not support years before 2000
+if(NOT(DEFINED CONFIG_SOC_FAMILY_STM32))
+	target_sources(app PRIVATE
+    src/test_y2k.c
+  )
+endif()
 
 if(DEFINED CONFIG_RTC_ALARM)
 	target_sources(app PRIVATE
