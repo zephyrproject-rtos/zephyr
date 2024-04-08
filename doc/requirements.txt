@@ -2,7 +2,7 @@
 
 sphinx<8.2.0
 sphinx_rtd_theme~=3.0
-sphinx-tabs
+sphinx-tabs>=3.4.7
 sphinxcontrib-svg2pdfconverter
 pygments>=2.9,!=2.19.0
 sphinx-notfound-page
