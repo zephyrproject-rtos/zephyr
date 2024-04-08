@@ -175,17 +175,7 @@ static inline int tmag5273_dev_int_trigger(const struct tmag5273_config *drv_cfg
 {
 	int retval;
 
-	retval = gpio_pin_configure_dt(&drv_cfg->int_gpio, GPIO_OUTPUT);
-	if (retval < 0) {
-		return retval;
-	}
-
-	retval = gpio_pin_set_dt(&drv_cfg->int_gpio, 1);
-	if (retval < 0) {
-		return retval;
-	}
-
-	retval = gpio_pin_set_dt(&drv_cfg->int_gpio, 0);
+	retval = gpio_pin_configure_dt(&drv_cfg->int_gpio, GPIO_OUTPUT_ACTIVE);
 	if (retval < 0) {
 		return retval;
 	}
