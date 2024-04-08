@@ -7,3 +7,10 @@ properties:
     description: |
       Identifies pin for the INT1 signal on the sensor.  The sensor
       INT2,3,4 signals are not supported by the driver.
+  supported-channels:
+    default:
+      - SENSOR_CHAN_ACCEL_X
+      - SENSOR_CHAN_ACCEL_Y
+      - SENSOR_CHAN_ACCEL_Z
+      - SENSOR_CHAN_ACCEL_XYZ
+      - SENSOR_CHAN_DIE_TEMP
