@@ -32,10 +32,6 @@
 /* Accel sensor sensitivity grain is 15 ug/LSB */
 #define GAIN_UNIT_XL				(15LL)
 
-#define SENSOR_PI_DOUBLE			(SENSOR_PI / 1000000.0)
-#define SENSOR_DEG2RAD_DOUBLE			(SENSOR_PI_DOUBLE / 180)
-#define SENSOR_G_DOUBLE				(SENSOR_G / 1000000.0)
-
 struct iis2iclx_config {
 	stmdev_ctx_t ctx;
 	union {
