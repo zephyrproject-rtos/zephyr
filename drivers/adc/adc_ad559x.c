@@ -23,6 +23,10 @@ LOG_MODULE_REGISTER(adc_ad559x, CONFIG_ADC_LOG_LEVEL);
 #define AD559X_ADC_RESOLUTION 12U
 #define AD559X_ADC_VREF_MV 2500U
 
+#define AD559X_ADC_RES_IND_BIT BIT(15)
+#define AD559X_ADC_RES_CHAN_MASK GENMASK(14, 12)
+#define AD559X_ADC_RES_VAL_MASK GENMASK(11, 0)
+
 struct adc_ad559x_config {
 	const struct device *mfd_dev;
 };
@@ -103,6 +107,7 @@ static int adc_ad559x_read_channel(const struct device *dev, uint8_t channel, ui
 {
 	const struct adc_ad559x_config *config = dev->config;
 	uint16_t val;
+	uint8_t conv_channel;
 	int ret;
 
 	/* Select channel */
@@ -142,11 +147,27 @@ static int adc_ad559x_read_channel(const struct device *dev, uint8_t channel, ui
 		}
 
 		val = sys_be16_to_cpu(val);
-		if (channel >= 1) {
-			val -= channel * BIT(AD559X_ADC_RESOLUTION);
+
+		/*
+		 * Invalid data:
+		 * See "ADC section" in "Theory of operation" chapter.
+		 * Valid ADC result has MSB bit set to 0.
+		 */
+		if ((val & AD559X_ADC_RES_IND_BIT) != 0) {
+			return -EAGAIN;
 		}
 
-		*result = val;
+		/*
+		 * Invalid channel converted:
+		 * See "ADC section" in "Theory of operation" chapter.
+		 * Conversion result contains channel number which should match requested channel.
+		 */
+		conv_channel = FIELD_GET(AD559X_ADC_RES_CHAN_MASK, val);
+		if (conv_channel != channel) {
+			return -EIO;
+		}
+
+		*result = val & AD559X_ADC_RES_VAL_MASK;
 	}
 
 	return 0;
