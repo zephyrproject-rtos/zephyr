@@ -30,10 +30,6 @@
 /* Gyro sensor sensitivity grain is 4.375 udps/LSB */
 #define GAIN_UNIT_G				(4375LL)
 
-#define SENSOR_PI_DOUBLE			(SENSOR_PI / 1000000.0)
-#define SENSOR_DEG2RAD_DOUBLE			(SENSOR_PI_DOUBLE / 180)
-#define SENSOR_G_DOUBLE				(SENSOR_G / 1000000.0)
-
 struct ism330dhcx_config {
 	int (*bus_init)(const struct device *dev);
 	uint8_t accel_odr;

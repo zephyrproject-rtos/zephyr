@@ -473,10 +473,8 @@ static inline void lsm6dsv16x_accel_convert(struct sensor_value *val, int raw_va
 
 	/* Sensitivity is exposed in ug/LSB */
 	/* Convert to m/s^2 */
-	dval = (int64_t)(raw_val) * sensitivity * SENSOR_G_DOUBLE;
-	val->val1 = (int32_t)(dval / 1000000);
-	val->val2 = (int32_t)(dval % 1000000);
-
+	dval = (int64_t)(raw_val) * sensitivity;
+	sensor_ug_to_ms2(dval, val);
 }
 
 static inline int lsm6dsv16x_accel_get_channel(enum sensor_channel chan,
@@ -521,10 +519,9 @@ static inline void lsm6dsv16x_gyro_convert(struct sensor_value *val, int raw_val
 	int64_t dval;
 
 	/* Sensitivity is exposed in udps/LSB */
-	/* Convert to rad/s */
-	dval = (int64_t)(raw_val) * sensitivity * SENSOR_DEG2RAD_DOUBLE;
-	val->val1 = (int32_t)(dval / 1000000);
-	val->val2 = (int32_t)(dval % 1000000);
+	/* So, calculate value in 10 udps unit and then to rad/s */
+	dval = (int64_t)(raw_val) * sensitivity / 10;
+	sensor_10udegrees_to_rad(dval, val);
 }
 
 static inline int lsm6dsv16x_gyro_get_channel(enum sensor_channel chan,
@@ -585,7 +582,7 @@ static inline void lsm6dsv16x_magn_convert(struct sensor_value *val, int raw_val
 {
 	double dval;
 
-	/* Sensitivity is exposed in mgauss/LSB */
+	/* Sensitivity is exposed in ugauss/LSB */
 	dval = (double)(raw_val * sensitivity);
 	val->val1 = (int32_t)dval / 1000000;
 	val->val2 = (int32_t)dval % 1000000;
