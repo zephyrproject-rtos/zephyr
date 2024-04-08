@@ -3200,11 +3200,7 @@ Raspberry Pi Pico Platforms:
     - "platform: Raspberry Pi Pico"
 
 SiLabs Platforms:
-  status: maintained
-  maintainers:
-    - fkokosinski
-  collaborators:
-    - tgorochowik
+  status: odd fixes
   files:
     - soc/silabs/
     - boards/silabs/
@@ -4252,9 +4248,7 @@ West:
     - "platform: Raspberry Pi Pico"
 
 "West project: hal_silabs":
-  status: maintained
-  maintainers:
-    - fkokosinski
+  status: odd fixes
   collaborators:
     - sateeshkotapati
     - yonsch
