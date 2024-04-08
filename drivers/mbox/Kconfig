@@ -23,6 +23,8 @@ source "drivers/mbox/Kconfig.nrf_bellboard"
 source "drivers/mbox/Kconfig.stm32_hsem"
 source "drivers/mbox/Kconfig.esp32"
 source "drivers/mbox/Kconfig.ivshmem"
+source "drivers/mbox/Kconfig.ti_omap"
+
 
 config MBOX_INIT_PRIORITY
 	int "MBOX init priority"
