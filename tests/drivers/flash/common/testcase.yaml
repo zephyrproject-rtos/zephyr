@@ -35,6 +35,9 @@ tests:
     integration_platforms:
       - qemu_x86
       - mimxrt1060_evk
+  drivers.flash.common.no_explicit_erase:
+    platform_allow:
+      - nrf54l15pdk/nrf54l15/cpuapp
   drivers.flash.common.tfm_ns:
     build_only: true
     filter: (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE
