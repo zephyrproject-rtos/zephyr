@@ -1533,7 +1533,7 @@ int net_dhcpv4_server_start(struct net_if *iface, struct in_addr *base_addr)
 
 	sock = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock < 0) {
-		ret = errno;
+		ret = -errno;
 		LOG_ERR("Failed to create DHCPv4 server socket, %d", ret);
 		goto error;
 	}
@@ -1541,7 +1541,7 @@ int net_dhcpv4_server_start(struct net_if *iface, struct in_addr *base_addr)
 	ret = zsock_setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
 			       sizeof(ifreq));
 	if (ret < 0) {
-		ret = errno;
+		ret = -errno;
 		LOG_ERR("Failed to bind DHCPv4 server socket with interface, %d",
 			ret);
 		goto error;
@@ -1549,7 +1549,7 @@ int net_dhcpv4_server_start(struct net_if *iface, struct in_addr *base_addr)
 
 	ret = zsock_bind(sock, (struct sockaddr *)&addr, sizeof(addr));
 	if (ret < 0) {
-		ret = errno;
+		ret = -errno;
 		LOG_ERR("Failed to bind DHCPv4 server socket, %d", ret);
 		goto error;
 	}
