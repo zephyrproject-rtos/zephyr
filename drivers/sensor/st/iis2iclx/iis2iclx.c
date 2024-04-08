@@ -281,10 +281,8 @@ static inline void iis2iclx_accel_convert(struct sensor_value *val, int raw_val,
 
 	/* Sensitivity is exposed in ug/LSB */
 	/* Convert to m/s^2 */
-	dval = (int64_t)(raw_val) * sensitivity * SENSOR_G_DOUBLE;
-	val->val1 = (int32_t)(dval / 1000000);
-	val->val2 = (int32_t)(dval % 1000000);
-
+	dval = (int64_t)(raw_val) * sensitivity;
+	sensor_ug_to_ms2(dval, val);
 }
 
 static inline int iis2iclx_accel_get_channel(enum sensor_channel chan,
@@ -336,7 +334,7 @@ static inline void iis2iclx_magn_convert(struct sensor_value *val, int raw_val,
 {
 	double dval;
 
-	/* Sensitivity is exposed in mgauss/LSB */
+	/* Sensitivity is exposed in ugauss/LSB */
 	dval = (double)(raw_val * sensitivity);
 	val->val1 = (int32_t)dval / 1000000;
 	val->val2 = (int32_t)dval % 1000000;

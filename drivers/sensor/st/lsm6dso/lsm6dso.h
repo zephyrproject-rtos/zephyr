@@ -36,10 +36,6 @@
 /* Gyro sensor sensitivity grain is 4.375 udps/LSB */
 #define GAIN_UNIT_G				(4375LL)
 
-#define SENSOR_PI_DOUBLE			(SENSOR_PI / 1000000.0)
-#define SENSOR_DEG2RAD_DOUBLE			(SENSOR_PI_DOUBLE / 180)
-#define SENSOR_G_DOUBLE				(SENSOR_G / 1000000.0)
-
 struct lsm6dso_config {
 	stmdev_ctx_t ctx;
 	union {
