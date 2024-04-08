@@ -19,3 +19,9 @@ tests:
     extra_configs:
       - CONFIG_NVME=y
     platform_allow: qemu_x86_64
+  drivers.disk.flash:
+    extra_configs:
+      - CONFIG_DISK_DRIVER_FLASH=y
+    platform_allow:
+      - native_sim/native/64
+      - native_sim
