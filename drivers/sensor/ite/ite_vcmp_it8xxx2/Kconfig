@@ -13,13 +13,13 @@ config VCMP_IT8XXX2
 	  it8xxx2 supports six 10-bit resolution voltage comparator
 	  channels, and the input of each comparator comes from ADC pin.
 
+if VCMP_IT8XXX2
+
 config VCMP_IT8XXX2_INIT_PRIORITY
 	int "ITE it8xxx2 voltage comparator device instance init priority"
 	default SENSOR_INIT_PRIORITY
 	help
 	  This option sets ITE voltage comparator device instance init priority.
-
-if VCMP_IT8XXX2
 
 config VCMP_IT8XXX2_WORKQUEUE
 	bool "ITE it8xxx2 voltage comparator threshold detection uses internal work queue"
