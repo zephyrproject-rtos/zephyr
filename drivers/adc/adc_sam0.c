@@ -245,22 +245,22 @@ static int adc_sam0_channel_setup(const struct device *dev,
 	uint16_t* calib = (uint16_t*)ADC0_FUSES_BIASREFBUF_ADDR;
 	if ((void*)adc == (void*)&REG_ADC0_CTRLA)
 	{
-		adc->CALIB.bit.BIASREFBUF = (*calib & ADC0_FUSES_BIASREFBUF_Msk);   // Bias Reference Buffer Scaling,
-		adc->CALIB.bit.BIASCOMP = (*calib & ADC0_FUSES_BIASCOMP_Msk);		// Bias Comparator Scaling
+		adc->CALIB.bit.BIASREFBUF = (*calib & ADC0_FUSES_BIASREFBUF_Msk);   	// Bias Reference Buffer Scaling,
+		adc->CALIB.bit.BIASCOMP = ((*calib>>ADC0_FUSES_BIASCOMP_Pos) & 0x7);	// Bias Comparator Scaling
 	}
 	else if ((void*)adc == (void*)&REG_ADC1_CTRLA)
 	{
-		adc->CALIB.bit.BIASREFBUF = (*calib & ADC0_FUSES_BIASREFBUF_Msk);   // Bias Reference Buffer Scaling,
-		adc->CALIB.bit.BIASCOMP = (*calib & ADC0_FUSES_BIASCOMP_Msk);		// Bias Comparator Scaling
+		adc->CALIB.bit.BIASREFBUF = ((*calib>>ADC1_FUSES_BIASREFBUF_Pos) & 0x7);   	// Bias Reference Buffer Scaling,
+		adc->CALIB.bit.BIASCOMP = ((*calib>>ADC1_FUSES_BIASCOMP_Pos) & 0x7);	// Bias Comparator Scaling
 	}
 	else
 	{
 		return -EINVAL;
 	}
-	adc->REFCTRL.bit.REFCOMP = 1;   				 	// Reference buffer offset compensation enabled.
-	// adc->CTRLC.bit.CORREN = 0x1;             		// Digital Error Correction enabled
-	adc->CTRLC.bit.R2R = 0x1;                			// R2R mode enabled
-	// adc->SAMPCTRL.bit.OFFCOMP = 0x1;         		// Comparator Offset Compensation enabled
+	adc->REFCTRL.bit.REFCOMP = 1; 		// Reference buffer offset compensation enabled.
+	// adc->CTRLC.bit.CORREN = 0x1;     // Digital Error Correction enabled
+	// adc->CTRLC.bit.R2R = 0x1;        // R2R mode enabled
+	adc->SAMPCTRL.bit.OFFCOMP = 0x1;    // Comparator Offset Compensation enabled
 	wait_synchronization(adc);
 	#ifdef ADC_SAM0_REFERENCE_ENABLE_PROTECTED
 			adc->CTRLA.bit.ENABLE = 1;
