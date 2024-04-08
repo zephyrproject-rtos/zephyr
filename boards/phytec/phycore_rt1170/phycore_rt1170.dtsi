@@ -1,0 +1,140 @@
+/*
+ * Copyright 2024, PHYTEC America, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "phycore_rt1170-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		led0 = &green_led;
+		led1 = &red_led;
+		sw0 = &user_button;
+		eeprom-0 = &eeprom0;
+		sdram0 = &sdram0;
+	};
+
+	sdram0: memory@80000000 {
+		/* MT48LC16M16A2B4-7EIT */
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(64)>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led-1 {
+			gpios = <&gpio13 12 GPIO_ACTIVE_HIGH>;
+			label = "Green LED D8";
+		};
+
+		red_led: led-2 {
+			gpios = <&gpio13 11 GPIO_ACTIVE_HIGH>;
+			label = "Red LED D7";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button-1 {
+			label = "User Button";
+			gpios = <&gpio10 2 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&lpuart1 {
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart5 {
+	pinctrl-0 = <&pinmux_lpuart5>;
+	pinctrl-1 = <&pinmux_lpuart5_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart6 {
+	pinctrl-0 = <&pinmux_lpuart6>;
+	pinctrl-1 = <&pinmux_lpuart6_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpi2c1 {
+	pinctrl-0 =<&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+};
+
+&lpi2c2 {
+	pinctrl-0 =<&pinmux_lpi2c2>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom0: eeprom@50 {
+		compatible = "st,m24xxx", "atmel,at24";
+		reg = <0x50>;
+		status = "okay";
+		size = <256>;
+		pagesize = <8>;
+		address-width = <16>;
+		timeout = <5>;
+	};
+};
+
+&lpspi1 {
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+};
+
+&flexspi {
+	pinctrl-0 = <&pinmux_flexspi1>;
+	pinctrl-names = "default";
+};
+
+&flexspi {
+	status = "okay";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
+	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
+	mx25u12832f: mx25u12832f@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		/* MX25U12832FM2I02 is 16MB, 128MBit flash part */
+		size = <DT_SIZE_M(16 * 8)>;
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		status = "okay";
+		jedec-id = [c2 25 38];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+			/* Note slot 0 has one additional sector,
+			 * this is intended for use with the swap move algorithm
+			 */
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 0x301000>;
+			};
+			slot1_partition: partition@321000 {
+				label = "image-1";
+				reg = <0x00321000 0x300000>;
+			};
+			storage_partition: partition@621000 {
+				label = "storage";
+				reg = <0x00621000 DT_SIZE_K(1984)>;
+			};
+		};
+	};
+};

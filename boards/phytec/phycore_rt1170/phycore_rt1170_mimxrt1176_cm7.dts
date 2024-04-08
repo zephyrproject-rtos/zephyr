@@ -1,0 +1,93 @@
+/*
+ * Copyright 2024, PHYTEC America, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt11xx_cm7.dtsi>
+#include "phycore_rt1170.dtsi"
+
+/ {
+	model = "PHYTEC phyCORE-RT1170";
+	compatible = "nxp,mimxrt1176";
+
+	chosen {
+		zephyr,sram = &sdram0;
+		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,flash-controller = &mx25u12832f;
+		zephyr,flash = &mx25u12832f;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,cpu1-region = &ocram;
+		zephyr,ipc = &mailbox_a;
+	};
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpuart5 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpuart6 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&user_button {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&red_led {
+	status = "okay";
+};
+
+&lpspi1 {
+	dmas = <&edma0 0 36>, <&edma0 1 37>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+/* GPT and Systick are enabled. If power management is enabled, the GPT
+ * timer will be used instead of systick, as allows the core clock to
+ * be gated.
+ */
+&gpt_hw_timer {
+	status = "okay";
+};
+
+&systick {
+	status = "okay";
+};
+
+&wdog1 {
+	status = "okay";
+};
+
+&mailbox_a {
+	status = "okay";
+};
+
+&pit1 {
+	status = "okay";
+};
+
+&pit2 {
+	status = "okay";
+};

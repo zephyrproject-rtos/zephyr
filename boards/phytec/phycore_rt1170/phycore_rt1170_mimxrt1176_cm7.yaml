@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2024, PHYTEC America, LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: phycore_rt1170/mimxrt1176/cm7
+name: PHYTEC phyCORE-RT1170 CM7
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 256
+flash: 16384
+supported:
+  - dma
+  - gpio
+  - i2c
+  - spi
+vendor: phytec
