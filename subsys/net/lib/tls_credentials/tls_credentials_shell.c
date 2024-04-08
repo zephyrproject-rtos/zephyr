@@ -344,6 +344,70 @@ static int shell_write_cred_buf(const struct shell *sh, char *chunk)
 	return 0;
 }
 
+/* Dump the contents of the credential buffer as either base64 or raw text,
+ * optionally truncating NULL terminator.
+
+ * Returns -EBADF if non-ASCII characters are printed.
+ * Returns -EINVAL if NULL terminator is missing
+ */
+static int shell_dump_cred_buf(const struct shell *sh, bool terminated,
+			       enum cred_storage_fmt format)
+{
+	int i;
+	int written;
+	int remaining;
+	bool invalid_printed = false;
+	size_t line_length = CONFIG_TLS_CREDENTIALS_SHELL_CRED_OUTPUT_WIDTH;
+
+	/* If the credential is stored as binary, adjust line length so that the output
+	 * base64 has width CONFIG_TLS_CREDENTIALS_SHELL_CRED_OUTPUT_WIDTH
+	 */
+	if (format == CRED_STORAGE_FMT_BINARY) {
+		line_length = CONFIG_TLS_CREDENTIALS_SHELL_CRED_OUTPUT_WIDTH / 4 * 3;
+	}
+
+	/* If the stored credential is NULL-terminated, do not include NULL termination in output */
+	if (terminated) {
+		if (cred_buf[cred_written - 1] != 0) {
+			/* NULL terminator is missing. */
+			return -EINVAL;
+		}
+		cred_written -= 1;
+	}
+
+	/* Print the credential out in lines. */
+	for (i = 0; i < cred_written; i += line_length) {
+		/* Print either a full line, or however much credential data is left. */
+		remaining = MIN(line_length, cred_written - i);
+
+		/* Read out a line of data. */
+		memset(cred_out_buf, 0, sizeof(cred_out_buf));
+		if (format == CRED_STORAGE_FMT_BINARY) {
+			(void)base64_encode(cred_out_buf, sizeof(cred_out_buf),
+					    &written, &cred_buf[i], remaining);
+		} else if (format == CRED_STORAGE_FMT_STRING) {
+			memcpy(cred_out_buf, &cred_buf[i], remaining);
+			if (filter_nonprint(cred_out_buf, remaining, '?')) {
+				invalid_printed = true;
+			}
+		}
+
+		/* Print the line (with prefix). */
+		shell_fprintf(sh, SHELL_NORMAL, "%s%s\n",
+			      CONFIG_TLS_CREDENTIALS_SHELL_BLK_PREFIX, cred_out_buf);
+	}
+
+	/* If there is a configured end-of-block marker, print it on a new line */
+	if (sizeof(CONFIG_TLS_CREDENTIALS_SHELL_BLK_END) > 1) {
+		shell_fprintf(sh, SHELL_NORMAL, "%s\n", CONFIG_TLS_CREDENTIALS_SHELL_BLK_END);
+	}
+
+	if (invalid_printed) {
+		return -EBADF;
+	}
+	return 0;
+}
+
 /* Adds a credential to the credential store */
 static int tls_cred_cmd_add(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -596,17 +660,12 @@ cleanup:
 /* Retrieves credential data from credential store. */
 static int tls_cred_cmd_get(const struct shell *sh, size_t argc, char *argv[])
 {
-	int i;
-	int remaining;
-	int written;
 	int err = 0;
 	size_t cred_len;
 	sec_tag_t sectag;
 	enum tls_credential_type type;
 	enum cred_storage_fmt format;
 	bool terminated;
-
-	size_t line_length;
 
 	/* Lock credentials so that we can safely use internal access functions. */
 	credentials_lock();
@@ -626,15 +685,6 @@ static int tls_cred_cmd_get(const struct shell *sh, size_t argc, char *argv[])
 		goto cleanup;
 	}
 
-	line_length = CONFIG_TLS_CREDENTIALS_SHELL_CRED_OUTPUT_WIDTH;
-
-	/* If the credential is stored as binary, adjust line length so that the output
-	 * base64 has width CONFIG_TLS_CREDENTIALS_SHELL_CRED_OUTPUT_WIDTH
-	 */
-	if (format == CRED_STORAGE_FMT_BINARY) {
-		line_length = CONFIG_TLS_CREDENTIALS_SHELL_CRED_OUTPUT_WIDTH / 4 * 3;
-	}
-
 	/* Check whether a credential of this type and sectag actually exists. */
 	if (!credential_get(sectag, type)) {
 		shell_fprintf(sh, SHELL_ERROR, "There is no TLS credential with sectag %d and "
@@ -652,7 +702,8 @@ static int tls_cred_cmd_get(const struct shell *sh, size_t argc, char *argv[])
 	if (err == -EFBIG) {
 		shell_fprintf(sh, SHELL_ERROR, "Not enough room in the credential buffer to "
 					       "retrieve credential with sectag %d and type %s. "
-					       "Increase TLS_CREDENTIALS_SHELL_MAX_CRED_LEN.\n",
+					       "Increase "
+					       "CONFIG_TLS_CREDENTIALS_SHELL_CRED_BUF_SIZE.\n",
 					       sectag, cred_type_name(type));
 		err = -ENOMEM;
 		goto cleanup;
@@ -663,49 +714,25 @@ static int tls_cred_cmd_get(const struct shell *sh, size_t argc, char *argv[])
 		goto cleanup;
 	}
 
-	/* Update the credential buffer writehead.
-	 * Keeping this accurate ensures that a "Buffer Cleared" message is eventually printed.
-	 */
+	/* Update the credential buffer writehead. */
 	cred_written = cred_len;
 
-	/* If the stored credential is NULL-terminated, do not include NULL termination in output */
-	if (terminated) {
-		if (cred_buf[cred_written - 1] != 0) {
-			shell_fprintf(sh, SHELL_ERROR, "The stored credential isn't "
-						       "NULL-terminated, but a NULL-terminated "
-						       "format was specified.\n");
-
-			err = -EINVAL;
-			goto cleanup;
-		}
-		cred_written -= 1;
+	err = shell_dump_cred_buf(sh, terminated, format);
+	if (err == -EINVAL) {
+		shell_fprintf(sh, SHELL_ERROR, "The stored credential isn't "
+						"NULL-terminated, but a NULL-terminated "
+							"format was specified.\n");
+		goto cleanup;
 	}
-
-	/* Print the credential out in lines. */
-	for (i = 0; i < cred_written; i += line_length) {
-		/* Print either a full line, or however much credential data is left. */
-		remaining = MIN(line_length, cred_written - i);
-
-		/* Read out a line of data. */
-		memset(cred_out_buf, 0, sizeof(cred_out_buf));
-		if (format == CRED_STORAGE_FMT_BINARY) {
-			(void)base64_encode(cred_out_buf, sizeof(cred_out_buf),
-					    &written, &cred_buf[i], remaining);
-		} else if (format == CRED_STORAGE_FMT_STRING) {
-			memcpy(cred_out_buf, &cred_buf[i], remaining);
-			if (filter_nonprint(cred_out_buf, remaining, '?')) {
-				err = -EBADF;
-			}
-		}
-
-		/* Print the line. */
-		shell_fprintf(sh, SHELL_NORMAL, "%s\n", cred_out_buf);
-	}
-
-	if (err) {
+	if (err == -EBADF) {
 		shell_fprintf(sh, SHELL_WARNING, "Non-printable characters were included in the "
-						 "output and filtered. Have you selected the "
-						 "correct storage format?\n");
+						"output and filtered. Have you selected the "
+						"correct storage format?\n");
+		goto cleanup;
+	}
+	if (err) {
+		shell_fprintf(sh, SHELL_WARNING, "Unknown error dumping credential buffer: %d", err);
+		err = 0;
 	}
 
 cleanup:
