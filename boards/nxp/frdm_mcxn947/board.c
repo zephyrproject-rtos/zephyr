@@ -166,6 +166,31 @@ static int frdm_mcxn947_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivWdt0Clk, 1u);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer0), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivCtimer0Clk, 1U);
+	CLOCK_AttachClk(kPLL0_to_CTIMER0);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer1), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivCtimer1Clk, 1U);
+	CLOCK_AttachClk(kPLL0_to_CTIMER1);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer2), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivCtimer2Clk, 1U);
+	CLOCK_AttachClk(kPLL0_to_CTIMER2);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer3), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivCtimer3Clk, 1U);
+	CLOCK_AttachClk(kPLL0_to_CTIMER3);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer4), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivCtimer4Clk, 1U);
+	CLOCK_AttachClk(kPLL0_to_CTIMER4);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 

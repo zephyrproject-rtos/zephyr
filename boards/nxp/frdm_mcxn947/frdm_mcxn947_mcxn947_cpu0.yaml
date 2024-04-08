@@ -22,4 +22,5 @@ supported:
   - i2c
   - watchdog
   - pwm
+  - counter
 vendor: nxp
