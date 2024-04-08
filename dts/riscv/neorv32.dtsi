@@ -64,31 +64,39 @@
 		#size-cells = <1>;
 		ranges;
 
-		mtimer: timer@ffffff90 {
+		mtimer: timer@fffff400 {
 			compatible = "neorv32-machine-timer";
-			reg = <0xffffff90 0x10>;
+			reg = <0xfffff400 0x10>;
 			interrupts = <7>;
+			interrupt-parent = <&intc>;
 		};
 
-		uart0: serial@ffffffa0 {
+		uart0: serial@fffff500 {
 			compatible = "neorv32-uart";
 			status = "disabled";
-			reg = <0xffffffa0 8>;
+			reg = <0xfffff500 8>;
 			interrupts = <2>, <3>;
 			interrupt-names = "RX", "TX";
 			syscon = <&sysinfo>;
 		};
 
-		trng: rng@ffffffb8 {
+		trng: rng@fffffa00 {
 			compatible = "neorv32-trng";
 			status = "disabled";
-			reg = <0xffffffb8 4>;
+			reg = <0xfffffa00 4>;
+			syscon = <&sysinfo>;
+		};
+
+		wdt: wdt@fffffb00 {
+			compatible = "neorv32-wdt";
+			status = "disabled";
+			reg = <0xfffffb00 8>;
 			syscon = <&sysinfo>;
 		};
 
 		gpio: gpio {
 			compatible = "simple-bus";
-			gpio-map-mask = <0xffffffe0 0xffffffc0>;
+			gpio-map-mask = <0xfffffe00 0xfffffc00>;
 			gpio-map-pass-thru = <0x1f 0x3f>;
 			gpio-map = <
 				0x00 0x0 &gpio_lo 0x0 0x0
@@ -99,10 +107,10 @@
 			#size-cells = <1>;
 			ranges;
 
-			gpio_lo: gpio@ffffffc0 {
+			gpio_lo: gpio@fffffc00 {
 				compatible = "neorv32-gpio";
 				status = "disabled";
-				reg = <0xffffffc0 4 0xffffffc8 4>;
+				reg = <0xfffffc00 4 0xfffffc08 4>;
 				reg-names = "input", "output";
 				gpio-controller;
 				ngpios = <32>;
@@ -110,10 +118,10 @@
 				#gpio-cells = <2>;
 			};
 
-			gpio_hi: gpio@ffffffc4 {
+			gpio_hi: gpio@fffffc04 {
 				compatible = "neorv32-gpio";
 				status = "disabled";
-				reg = <0xffffffc4 4 0xffffffcc 4>;
+				reg = <0xfffffc04 4 0xfffffc0c 4>;
 				reg-names = "input", "output";
 				gpio-controller;
 				ngpios = <32>;
@@ -122,19 +130,51 @@
 			};
 		};
 
-		uart1: serial@ffffffd0 {
+		uart1: serial@fffff600 {
 			compatible = "neorv32-uart";
 			status = "disabled";
-			reg = <0xffffffd0 8>;
+			reg = <0xfffff600 8>;
 			interrupts = <4>, <5>;
 			interrupt-names = "RX", "TX";
 			syscon = <&sysinfo>;
 		};
 
-		sysinfo: syscon@ffffffe0 {
+		sysinfo: syscon@fffffe00 {
 			compatible = "neorv-sysinfo", "syscon";
 			status = "okay";
-			reg = <0xffffffe0 32>;
+			reg = <0xfffffe00 32>;
+
 		};
+
+		xirq: xirq@fffff300 {
+			compatible = "neorv32-xirq";
+			status = "okay";
+			reg = <0xfffff300 12>;
+			interrupts = <8>;
+			syscon = <&sysinfo>;
+			trigger-type = <0xffffffff>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+		};
+
+		slink: slink@ffffec00 {
+			compatible = "neorv32-slink";
+			status = "disabled";
+			reg = <0xffffec00 16>;
+			interrupts = <14>, <15>;
+			syscon = <&sysinfo>;
+		};
+	};
+
+	ext: ext {
+		compatible = "simple-bus";
+		interrupt-parent = <&xirq>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* Placeholder for devices implemented outside the NeoRV32 core
+		 * (i.e. elsewhere in the FPGA fabric).
+		 */
 	};
 };

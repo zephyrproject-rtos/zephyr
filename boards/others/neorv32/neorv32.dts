@@ -32,9 +32,9 @@
 			reg = <0x0 DT_SIZE_K(64)>;
 		};
 
-		bootrom: memory@ffff0000 {
+		bootrom: memory@ffffc000 {
 			compatible = "soc-nv-flash", "mmio-sram";
-			reg = <0xffff0000 DT_SIZE_K(4)>;
+			reg = <0xffffc000 DT_SIZE_K(4)>;
 		};
 
 		dmem: memory@80000000 {
