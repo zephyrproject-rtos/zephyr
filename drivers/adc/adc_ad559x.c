@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(adc_ad559x, CONFIG_ADC_LOG_LEVEL);
 #define AD559X_ADC_RD_POINTER      0x40
 
 #define AD559X_ADC_RESOLUTION 12U
+#define AD559X_ADC_VREF_MV 2500U
 
 struct adc_ad559x_config {
 	const struct device *mfd_dev;
@@ -257,6 +258,7 @@ static const struct adc_driver_api adc_ad559x_api = {
 #ifdef CONFIG_ADC_ASYNC
 	.read_async = adc_ad559x_read_async,
 #endif
+	.ref_internal = AD559X_ADC_VREF_MV,
 };
 
 #define ADC_AD559X_DEFINE(inst)                                                                    \
