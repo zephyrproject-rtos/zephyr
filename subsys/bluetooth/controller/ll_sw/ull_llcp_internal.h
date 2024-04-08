@@ -276,7 +276,7 @@ struct proc_ctx {
 #if defined(CONFIG_BT_PERIPHERAL)
 			uint32_t host_request_to;
 #endif /* defined(CONFIG_BT_PERIPHERAL) */
-#if defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 			uint32_t cig_sync_delay;
 			uint32_t cis_sync_delay;
 			uint8_t  c_phy;
@@ -295,7 +295,7 @@ struct proc_ctx {
 			uint8_t  c_ft;
 			uint8_t  p_ft;
 			uint8_t  aa[4];
-#endif /* defined(CONFIG_BT_CENTRAL) */
+#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
 		} cis_create;
 
 		struct {
