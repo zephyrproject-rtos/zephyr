@@ -39,7 +39,7 @@ void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flag
 
 #else /* PLIC + HLINT/CLINT or HLINT/CLINT only */
 
-void arch_irq_enable(unsigned int irq)
+void __weak arch_irq_enable(unsigned int irq)
 {
 	uint32_t mie;
 
@@ -59,7 +59,7 @@ void arch_irq_enable(unsigned int irq)
 	mie = csr_read_set(mie, 1 << irq);
 }
 
-void arch_irq_disable(unsigned int irq)
+void __weak arch_irq_disable(unsigned int irq)
 {
 	uint32_t mie;
 
@@ -79,7 +79,7 @@ void arch_irq_disable(unsigned int irq)
 	mie = csr_read_clear(mie, 1 << irq);
 }
 
-int arch_irq_is_enabled(unsigned int irq)
+int __weak arch_irq_is_enabled(unsigned int irq)
 {
 	uint32_t mie;
 

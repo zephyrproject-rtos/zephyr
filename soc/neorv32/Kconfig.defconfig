@@ -7,7 +7,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if RISCV_MACHINE_TIMER
 
 config NUM_IRQS
-	default 32
+	default 64
 
 config RISCV_GP
 	default y
@@ -22,5 +22,30 @@ config SERIAL_INIT_PRIORITY
 config ENTROPY_INIT_PRIORITY
 	default 55
 	depends on ENTROPY_GENERATOR
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+if MULTI_LEVEL_INTERRUPTS
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 32
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 32
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 24
+
+endif # MULTI_LEVEL_INTERRUPTS
 
 endif # SOC_NEORV32

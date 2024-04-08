@@ -1,0 +1,31 @@
+description: NEORV32 External Interrupt Controller (XIRQ)
+
+compatible: "neorv32-xirq"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#interrupt-cells":
+    const: 1
+
+  syscon:
+    type: phandle
+    required: true
+    description: |
+      phandle to syscon (NEORV32 SYSINFO) node.
+
+  trigger-type:
+    type: int
+    required: true
+    description: |
+      Bitmask indicating trigger type for each interrupt. 0 = level, 1 = edge.
+      Same as XIRQ_TRIGGER_TYPE value used in synthesis for XIRQ core.
+
+interrupt-cells:
+  - irq

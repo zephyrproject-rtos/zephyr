@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Calian Advanced Technologies
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NEORV32_XIRQ
+	bool "NEORV32 External Interrupt Controller (XIRQ)"
+	default y
+	depends on DT_HAS_NEORV32_XIRQ_ENABLED
+	depends on MULTI_LEVEL_INTERRUPTS
+	depends on SYSCON
+	select 2ND_LEVEL_INTERRUPTS
+	help
+	  NEORV32 XIRQ is the optional core within the NEORV32 CPU
+	  implementation to support external interrupt sources.
+
+if NEORV32_XIRQ
+
+config NEORV32_XIRQ_INIT_PRIORITY
+	int "Init priority for XIRQ interrupt controller"
+	default 51
+	help
+	  NEORV32 XIRQ initialization priority.
+
+endif # NEORV32_XIRQ

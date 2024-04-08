@@ -106,4 +106,6 @@ source "drivers/interrupt_controller/Kconfig.renesas_ra"
 
 source "drivers/interrupt_controller/Kconfig.nxp_irqsteer"
 
+source "drivers/interrupt_controller/Kconfig.neorv32"
+
 endmenu
