@@ -17,3 +17,7 @@ properties:
       This property is defined in the Generic Sensor Property Usages of the HID
       Usage Tables specification
       (https://usb.org/sites/default/files/hut1_3_0.pdf, section 22.5).
+  supported-channels:
+    type: array
+    description: |
+      A list of sensor channels that are supported by this device.

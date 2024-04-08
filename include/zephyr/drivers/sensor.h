@@ -55,6 +55,8 @@ struct sensor_value {
 	int32_t val2;
 };
 
+#include <zephyr/drivers/sensor_channel_shim.h>
+
 /**
  * @brief Sensor channels.
  */
@@ -190,6 +192,11 @@ enum sensor_channel {
 	SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE,
 	/** Desired charging current in mA */
 	SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT,
+
+  /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   * DO NOT ADD NEW CHANNELS HERE!
+   * All new channels should be added to zephyr/dt_bindings/sensor.h
+   *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 	/** All channels. */
 	SENSOR_CHAN_ALL,
