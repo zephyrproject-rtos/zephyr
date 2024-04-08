@@ -280,9 +280,9 @@ static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 	const struct can_timing *timing_max;
 	struct can_bus_err_cnt err_cnt;
 	enum can_state state;
-	uint32_t max_bitrate = 0;
-	int max_std_filters = 0;
-	int max_ext_filters = 0;
+	uint32_t bitrate_max;
+	int max_std_filters;
+	int max_ext_filters;
 	uint32_t core_clock;
 	can_mode_t cap;
 	int err;
@@ -298,11 +298,7 @@ static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 		return err;
 	}
 
-	err = can_get_max_bitrate(dev, &max_bitrate);
-	if (err != 0 && err != -ENOSYS) {
-		shell_error(sh, "failed to get maximum bitrate (err %d)", err);
-		return err;
-	}
+	bitrate_max = can_get_bitrate_max(dev);
 
 	max_std_filters = can_get_max_filters(dev, false);
 	if (max_std_filters < 0 && max_std_filters != -ENOSYS) {
@@ -329,7 +325,7 @@ static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	shell_print(sh, "core clock:      %d Hz", core_clock);
-	shell_print(sh, "max bitrate:     %d bps", max_bitrate);
+	shell_print(sh, "max bitrate:     %d bps", bitrate_max);
 	shell_print(sh, "max std filters: %d", max_std_filters);
 	shell_print(sh, "max ext filters: %d", max_ext_filters);
 
