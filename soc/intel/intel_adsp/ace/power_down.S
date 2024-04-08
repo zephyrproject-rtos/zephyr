@@ -47,7 +47,7 @@ power_down:
 	/**
 	 * effectively executes:
 	 * xthal_dcache_region_lock(&literals, 128);
-	 * xthal_dcache_region_lock(&powerdown, 256);
+	 * xthal_icache_region_lock(&powerdown, 256);
 	 * xthal_dcache_region_lock(&pu32_hpsram_mask, 64);
 	 */
 	movi pfl_reg, power_down_literals
