@@ -111,6 +111,10 @@ static void *datapath_free;
 /* ISO LL conformance tests require a PDU size of maximum 251 bytes + header */
 #define ISO_RX_BUFFER_SIZE (2 + 251)
 
+#if defined(BT_CTLR_ISO_TX_BUFFERS) && (BT_CTLR_ISO_TX_BUFFERS > 0)
+#define BT_CTLR_USE_ISO_TX_POOL
+#endif /* BT_CTLR_ISO_TX_BUFFERS */
+
 /* Declare the ISO rx node RXFIFO. This is a composite pool-backed MFIFO for
  * rx_nodes. The declaration constructs the following data structures:
  * - mfifo_iso_rx:    FIFO with pointers to PDU buffers
@@ -143,6 +147,7 @@ void ll_iso_tx_mem_release(void *node_tx);
 
 #define ISO_TEST_TX_BUFFER_SIZE 32U
 
+#if defined(BT_CTLR_USE_ISO_TX_POOL)
 static struct {
 	void *free;
 	uint8_t pool[NODE_TX_BUFFER_SIZE * BT_CTLR_ISO_TX_BUFFERS];
@@ -152,7 +157,7 @@ static struct {
 	void *free;
 	uint8_t pool[sizeof(memq_link_t) * BT_CTLR_ISO_TX_BUFFERS];
 } mem_link_iso_tx;
-
+#endif /* BT_CTLR_USE_ISO_TX_POOL */
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 uint8_t ll_read_iso_tx_sync(uint16_t handle, uint16_t *seq,
@@ -1395,12 +1400,18 @@ uint8_t ll_iso_test_end(uint16_t handle, uint32_t *received_cnt,
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 void *ll_iso_tx_mem_acquire(void)
 {
+#if defined(BT_CTLR_USE_ISO_TX_POOL)
 	return mem_acquire(&mem_iso_tx.free);
+#else
+	return NULL;
+#endif /* BT_CTLR_USE_ISO_TX_POOL */
 }
 
 void ll_iso_tx_mem_release(void *node_tx)
 {
+#if defined(BT_CTLR_USE_ISO_TX_POOL)
 	mem_release(node_tx, &mem_iso_tx.free);
+#endif /* BT_CTLR_USE_ISO_TX_POOL */
 }
 
 int ll_iso_tx_mem_enqueue(uint16_t handle, void *node_tx, void *link)
@@ -1788,7 +1799,9 @@ void ull_iso_datapath_release(struct ll_iso_datapath *dp)
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 void ll_iso_link_tx_release(void *link)
 {
+#if defined(BT_CTLR_USE_ISO_TX_POOL)
 	mem_release(link, &mem_link_iso_tx.free);
+#endif /* BT_CTLR_USE_ISO_TX_POOL */
 }
 
 /**
@@ -1867,6 +1880,7 @@ static isoal_status_t ll_iso_pdu_write(struct isoal_pdu_buffer *pdu_buffer,
 static isoal_status_t ll_iso_pdu_emit(struct node_tx_iso *node_tx,
 				      const uint16_t handle)
 {
+#if defined(BT_CTLR_USE_ISO_TX_POOL)
 	memq_link_t *link;
 
 	link = mem_acquire(&mem_link_iso_tx.free);
@@ -1877,6 +1891,10 @@ static isoal_status_t ll_iso_pdu_emit(struct node_tx_iso *node_tx,
 	}
 
 	return ISOAL_STATUS_OK;
+#else
+	LL_ASSERT(0);
+	return ISOAL_STATUS_ERR_PDU_EMIT;
+#endif /* BT_CTLR_USE_ISO_TX_POOL */
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
@@ -1948,6 +1966,7 @@ static int init_reset(void)
 #endif /* CONFIG_BT_CTLR_SYNC_ISO) || CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+#if defined(BT_CTLR_USE_ISO_TX_POOL)
 	/* Initialize tx pool. */
 	mem_init(mem_iso_tx.pool, NODE_TX_BUFFER_SIZE, BT_CTLR_ISO_TX_BUFFERS,
 		 &mem_iso_tx.free);
@@ -1955,6 +1974,7 @@ static int init_reset(void)
 	/* Initialize tx link pool. */
 	mem_init(mem_link_iso_tx.pool, sizeof(memq_link_t),
 		 BT_CTLR_ISO_TX_BUFFERS, &mem_link_iso_tx.free);
+#endif /* BT_CTLR_USE_ISO_TX_POOL */
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 #if BT_CTLR_ISO_STREAMS
