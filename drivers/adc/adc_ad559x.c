@@ -242,9 +242,11 @@ static int adc_ad559x_init(const struct device *dev)
 			(k_thread_entry_t)adc_ad559x_acquisition_thread, data, NULL, NULL,
 			CONFIG_ADC_AD559X_ACQUISITION_THREAD_PRIO, 0, K_NO_WAIT);
 
-	ret = k_thread_name_set(tid, "adc_ad559x");
-	if (ret < 0) {
-		return ret;
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		ret = k_thread_name_set(tid, "adc_ad559x");
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	adc_context_unlock_unconditionally(&data->ctx);
