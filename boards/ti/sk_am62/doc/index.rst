@@ -46,6 +46,8 @@ The sk_am62 configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
+| Mailbox   | on-chip    | IPC Mailbox                         |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
