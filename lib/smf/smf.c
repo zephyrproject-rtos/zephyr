@@ -172,7 +172,8 @@ __unused static bool smf_execute_ancestor_exit_actions(
 	for (const struct smf_state *tmp_state = ctx->current->parent;
 	     tmp_state != NULL;
 	     tmp_state = tmp_state->parent) {
-		if (!share_paren(target->parent, tmp_state) && tmp_state->exit) {
+		if ((target == NULL || !share_paren(target->parent, tmp_state)) &&
+		    tmp_state->exit) {
 			tmp_state->exit(ctx);
 
 			/* No need to continue if terminate was set */
