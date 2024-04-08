@@ -585,6 +585,95 @@ ZTEST(phy_periph, test_phy_update_periph_loc)
 				  "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
+ZTEST(phy_periph, test_phy_update_periph_loc_invalid_central)
+{
+	uint8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
+	uint16_t instant;
+	struct pdu_data_llctrl_conn_param_req conn_param_req = {  };
+
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
+
+	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = { .c_to_p_phy = PHY_2M,
+							      .p_to_c_phy = PHY_2M };
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate an PHY Update Procedure */
+	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, HOST_INITIATED);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Check that data tx was paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
+
+	/* Check that data tx is no longer paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	phy_update_ind.instant = instant = event_counter(&conn) + 6;
+	lt_tx(LL_PHY_UPDATE_IND, &conn, &phy_update_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Check that data tx is no longer paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
+
+	/* One event ahead */
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should NOT be a host notification */
+	ut_rx_q_is_empty();
+
+	/* 'Inject' invalid param request from central */
+	/* Prepare */
+	event_prepare(&conn);
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_DIFF_TRANS_COLLISION,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+}
+
 ZTEST(phy_periph, test_phy_update_periph_rem)
 {
 	struct node_tx *tx;

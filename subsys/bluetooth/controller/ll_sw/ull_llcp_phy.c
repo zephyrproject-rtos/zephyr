@@ -717,6 +717,7 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 	switch (evt) {
 	case LP_PU_EVT_PHY_UPDATE_IND:
 		LL_ASSERT(conn->lll.role == BT_HCI_ROLE_PERIPHERAL);
+		llcp_rr_set_incompat(conn, INCOMPAT_RESERVED);
 		llcp_pdu_decode_phy_update_ind(ctx, (struct pdu_data *)param);
 		const uint8_t end_procedure = pu_check_update_ind(conn, ctx);
 
