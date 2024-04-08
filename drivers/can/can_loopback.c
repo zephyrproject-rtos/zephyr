@@ -442,17 +442,23 @@ static int can_loopback_init(const struct device *dev)
 	return 0;
 }
 
-#define CAN_LOOPBACK_INIT(inst)							\
-	static const struct can_loopback_config can_loopback_config_##inst = {	\
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 0),		\
-	};									\
-										\
-	static struct can_loopback_data can_loopback_data_##inst;		\
-										\
-	CAN_DEVICE_DT_INST_DEFINE(inst, can_loopback_init, NULL,		\
-				  &can_loopback_data_##inst,			\
-				  &can_loopback_config_##inst,			\
-				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,	\
+#ifdef CONFIG_CAN_FD_MODE
+#define CAN_LOOPBACK_MAX_BITRATE 8000000
+#else /* CONFIG_CAN_FD_MODE */
+#define CAN_LOOPBACK_MAX_BITRATE 1000000
+#endif /* !CONFIG_CAN_FD_MODE */
+
+#define CAN_LOOPBACK_INIT(inst)									\
+	static const struct can_loopback_config can_loopback_config_##inst = {			\
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, CAN_LOOPBACK_MAX_BITRATE),	\
+	};											\
+												\
+	static struct can_loopback_data can_loopback_data_##inst;				\
+												\
+	CAN_DEVICE_DT_INST_DEFINE(inst, can_loopback_init, NULL,				\
+				  &can_loopback_data_##inst,					\
+				  &can_loopback_config_##inst,					\
+				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,			\
 				  &can_loopback_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_LOOPBACK_INIT)
