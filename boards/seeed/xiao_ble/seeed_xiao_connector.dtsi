@@ -30,3 +30,4 @@
 xiao_spi: &spi2 {};
 xiao_i2c: &i2c1 {};
 xiao_serial: &uart0 {};
+xiao_adc: &adc {};

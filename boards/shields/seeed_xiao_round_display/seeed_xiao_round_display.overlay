@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2024, Nicolas Goualard <nicolas.goualard@sfr.fr>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <zephyr/dt-bindings/display/panel.h>
+
+/ {
+	chosen {
+		zephyr,display = &gc9a01_xiao_round_display;
+	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&xiao_adc 0>;
+		output-ohms = <470000>;
+		full-ohms = <940000>;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&chsc6x_xiao_round_display>;
+	};
+
+	aliases {
+		rtc = &pcf8563_xiao_round_display;
+	};
+};
+
+&xiao_adc {
+	status = "okay";
+};
+
+/*
+ * xiao_serial uses pins D6 and D7 of the Xiao, which are used respectively to
+ * control the screen backlight and as touch controller interrupt.
+ */
+&xiao_serial {
+	status = "disabled";
+};
+
+&xiao_i2c {
+	clock-frequency = < I2C_BITRATE_FAST >;
+
+	pcf8563_xiao_round_display: pcf8563@51 {
+		status = "okay";
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+	};
+
+	chsc6x_xiao_round_display: chsc6x@2e {
+		status = "okay";
+		compatible = "chipsemi,chsc6x";
+		reg = <0x2e>;
+		irq-gpios = <&xiao_d 7 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&xiao_spi {
+	status = "okay";
+	cs-gpios = <&xiao_d 1 GPIO_ACTIVE_LOW>, <&xiao_d 2 GPIO_ACTIVE_LOW>;
+
+	gc9a01_xiao_round_display: gc9a01@0 {
+		status = "okay";
+		compatible = "galaxycore,gc9x01x";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(100)>;
+		cmd-data-gpios = <&xiao_d 3 GPIO_ACTIVE_HIGH>;
+		pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+		width = <240>;
+		height = <240>;
+		display-inversion;
+	};
+
+	sdhc_xiao_round_display: sdhc@1 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <1>;
+		status = "okay";
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+		spi-max-frequency = <DT_FREQ_M(24)>;
+	};
+};

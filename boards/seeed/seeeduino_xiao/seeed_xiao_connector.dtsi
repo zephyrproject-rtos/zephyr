@@ -30,3 +30,4 @@ xiao_spi: &sercom0 {};
 xiao_i2c: &sercom2 {};
 xiao_serial: &sercom4 {};
 xiao_dac: &dac0 {};
+xiao_adc: &adc {};
