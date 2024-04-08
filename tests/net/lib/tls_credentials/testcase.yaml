@@ -1,13 +1,36 @@
-tests:
-  net.tls_credentials:
+common:
     tags:
       - net
       - tls
+tests:
+  net.tls_credentials:
     depends_on: netif
   net.tls_credentials.trusted_tfm:
     filter: CONFIG_BUILD_WITH_TFM
-    extra_args: OVERLAY_CONFIG=./prj_trusted_tfm.conf
+    extra_args: OVERLAY_CONFIG=./prj-trusted-tfm.conf
     tags:
-      - net
-      - tls
+      - trusted-firmware-m
+  net.tls_credentials.trusted_tfm_csr_keygen:
+    filter: CONFIG_BUILD_WITH_TFM
+    extra_args: OVERLAY_CONFIG=./prj-trusted-tfm-csr-keygen.conf
+    extra_configs:
+      - CONFIG_TLS_CREDENTIAL_CSR=y
+      - CONFIG_TLS_CREDENTIAL_KEYGEN=y
+    tags:
+      - trusted-firmware-m
+  net.tls_credentials.trusted_tfm_csr:
+    filter: CONFIG_BUILD_WITH_TFM
+    extra_args: OVERLAY_CONFIG=./prj-trusted-tfm-csr-keygen.conf
+    extra_configs:
+      - CONFIG_TLS_CREDENTIAL_CSR=y
+      - CONFIG_TLS_CREDENTIAL_KEYGEN=n
+    tags:
+      - trusted-firmware-m
+  net.tls_credentials.trusted_tfm_keygen:
+    filter: CONFIG_BUILD_WITH_TFM
+    extra_args: OVERLAY_CONFIG=./prj-trusted-tfm-csr-keygen.conf
+    extra_configs:
+      - CONFIG_TLS_CREDENTIAL_CSR=n
+      - CONFIG_TLS_CREDENTIAL_KEYGEN=y
+    tags:
       - trusted-firmware-m
