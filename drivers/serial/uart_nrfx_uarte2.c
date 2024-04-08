@@ -385,6 +385,15 @@ static int api_tx(const struct device *dev, const uint8_t *buf, size_t len, int3
 	nrfx_err_t err;
 	bool hwfc;
 
+#if CONFIG_PM_DEVICE
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+	if (state != PM_DEVICE_STATE_ACTIVE) {
+		return -ECANCELED;
+	}
+#endif
+
 #if CONFIG_UART_USE_RUNTIME_CONFIGURE
 	hwfc = data->uart_config.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS;
 #else
@@ -574,6 +583,15 @@ static void api_poll_out(const struct device *dev, unsigned char out_char)
 {
 	const nrfx_uarte_t *nrfx_dev = get_nrfx_dev(dev);
 	nrfx_err_t err;
+
+#if CONFIG_PM_DEVICE
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+	if (state != PM_DEVICE_STATE_ACTIVE) {
+		return;
+	}
+#endif
 
 	do {
 		/* When runtime PM is used we cannot use early return because then
