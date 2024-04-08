@@ -1,0 +1,22 @@
+deps:
+  - "test_deps.yaml"
+compatible:
+  org: "zephyr"
+  part: "test-sensor"
+attributes:
+  - attribute: "attr0"
+    channel: "foo"
+    units: "bars"
+  - attribute: "attr1"
+    channel: "foo"
+    units: "foos"
+  - attribute: "attr0"
+    channel: "bar"
+    units: "bars"
+channels:
+  foo: []
+  bar:
+    - name: "left"
+      description: "Left side of the bar"
+    - name: "right"
+      description: "Right side of the bar"

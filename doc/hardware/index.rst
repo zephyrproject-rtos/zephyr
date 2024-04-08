@@ -4,7 +4,7 @@ Hardware Support
 ################
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    arch/index.rst
    barriers/index.rst
@@ -14,3 +14,4 @@ Hardware Support
    peripherals/index.rst
    pinctrl/index.rst
    porting/index
+   sensors/sensors.rst

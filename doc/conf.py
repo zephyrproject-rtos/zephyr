@@ -88,6 +88,7 @@ extensions = [
     "zephyr.doxytooltip",
     "zephyr.gh_utils",
     "zephyr.manifest_projects_table",
+    "zephyr.sensor_drivers",
     "notfound.extension",
     "sphinx_copybutton",
     "sphinx_togglebutton",
@@ -354,3 +355,15 @@ def setup(app):
     # theme customizations
     app.add_css_file("css/custom.css")
     app.add_js_file("js/custom.js")
+    app.add_js_file("js/dark-mode-toggle.min.mjs", type="module")
+    app.add_config_value(name="sensor_yaml_files", default="", rebuild="html", types=str)
+
+    # Get the sensor yaml files
+    def initialize_sensor_yaml_files(app):
+        sensor_yaml_files_str = app.config.sensor_yaml_files
+        if sensor_yaml_files_str:
+            app.config.sensor_yaml_files = sensor_yaml_files_str.split()
+        else:
+            app.config.sensor_yaml_files = []
+
+    app.connect('builder-inited', initialize_sensor_yaml_files)

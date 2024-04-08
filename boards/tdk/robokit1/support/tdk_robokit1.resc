@@ -1,0 +1,8 @@
+:name: TDK-Robokit1
+:description: This script is prepared to run Zephyr on TDK Robokit1 board.
+
+$name?="TDK-Robokit1"
+
+using sysbus
+mach create $name
+machine LoadPlatformDescription @platforms/boards/

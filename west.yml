@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: pigweed
+      url-base: https://pigweed.googlesource.com/pigweed
 
   group-filter: [-babblesim, -optional]
 

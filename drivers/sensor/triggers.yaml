@@ -1,0 +1,49 @@
+triggers:
+  timer:
+    name: "timer"
+    description: >
+      Timer-based trigger, useful when the sensor does not have an interrupt
+      line.
+  data_ready:
+    name: " data ready"
+    description: "Trigger fires whenever new data is ready."
+  delta:
+    name: "significant change"
+    description: >
+      Trigger fires when the selected channel varies significantly.
+      This includes any-motion detection when the channel is
+      acceleration or gyro. If detection is based on slope between
+      successive channel readings, the slope threshold is configured
+      via the @ref SENSOR_ATTR_SLOPE_TH and @ref SENSOR_ATTR_SLOPE_DUR
+      attributes.
+  near_far:
+    name: "near/far"
+    description: "Trigger fires when a near/far event is detected."
+  threshold:
+    name: "threshold reached"
+    description: >
+      Trigger fires when channel reading transitions configured
+      thresholds.  The thresholds are configured via the @ref
+      SENSOR_ATTR_LOWER_THRESH, @ref SENSOR_ATTR_UPPER_THRESH, and
+      @ref SENSOR_ATTR_HYSTERESIS attributes.
+  tap:
+    name: "tap"
+    description: "Trigger fires when a single tap is detected."
+  double_tap:
+    name: "double tap"
+    description: "Trigger fires when a double tap is detected."
+  freefall:
+    name: "free fall"
+    description: "Trigger fires when a free fall is detected."
+  motion:
+    name: "motion"
+    description: "Trigger fires when motion is detected."
+  stationary:
+    name: "stationary"
+    description: "Trigger fires when no motion has been detected for a while."
+  fifo_watermark:
+    name: "FIFO watermark"
+    description: "Trigger fires when the FIFO watermark has been reached."
+  fifo_full:
+    name: "FIFO full"
+    description: "Trigger fires when the FIFO becomes full."

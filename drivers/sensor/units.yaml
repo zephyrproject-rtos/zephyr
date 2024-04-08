@@ -1,0 +1,85 @@
+units:
+  acceleration:
+    name: "acceleration"
+    description: "change in velocity"
+    symbol: "m/s^2"
+  angular_velocity:
+    name: "angular velocity"
+    description: "rate of rotation"
+    symbol: "rad/s"
+  frequency:
+    name: "frequency"
+    description: "events per second"
+    symbol: "Hz"
+  magnetic_field:
+    name: "magnetic field"
+    description: "strength of magnetic field"
+    symbol: "Gs"
+  temperature:
+    name: "temperature"
+    description: "temperature"
+    symbol: "C"
+  pressure:
+    name: "pressure"
+    description: "pressure"
+    symbol: "kPa"
+  points:
+    name: "points"
+    description: "points"
+    symbol: "pts"
+  near:
+    name: "near"
+    description: "Boolean describing if an object is near or not"
+    symbol: "near"
+  battery_cycles:
+    name: "battery cycles"
+    description: "battery charge/discharge cycle count"
+    symbol: "cycles"
+  percent:
+    name: "percent"
+    description: "A relative count based on 100"
+    symbol: "%"
+  illuminance:
+    name: "illuminance"
+    description: "The brightness of a light source"
+    symbol: "lux"
+  distance:
+    name: "distance"
+    description: "The distance measured between 2 points."
+    symbol: "m"
+  density:
+    name: "density"
+    description: "Mass per unit of volume"
+    symbol: "ug/m^3"
+  concentration:
+    name: "concentration"
+    description: "Particle count per unit of volume"
+    symbol: "ppb"
+  resistance:
+    name: "electrical resistance"
+    description: "Electrical resistance"
+    symbol: "Ohm"
+  volts:
+    name: "volts"
+    description: "Electrical potential"
+    symbol: "V"
+  current:
+    name: "current"
+    description: "Electrical current"
+    symbol: "A"
+  power:
+    name: "power"
+    description: "Power (either electrical or neutonian)"
+    symbol: "W"
+  angle:
+    name: "angle"
+    description: "The angle between 2 vectors"
+    symbol: "rad"
+  electrical_charge:
+    name: "electrical charge"
+    description: "Electrical charge"
+    symbol: "Ah"
+  time:
+    name: "time"
+    description: "Time"
+    symbol: "s"

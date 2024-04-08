@@ -1,0 +1,55 @@
+attributes:
+  sampling_frequency:
+    name: "sampling rate"
+    description: "Sensor sampling frequency, i.e. how many times a second the sensor takes a measurement."
+  lower_thresh:
+    name: "lower threshold"
+    description: "Lower threshold for trigger."
+  upper_thresh:
+    name: "upper threshold"
+    description: "Upper threshold for trigger."
+  slope_th:
+    name: "any motion threshold"
+    description: "Threshold for any-motion (slope) trigger."
+  slope_dur:
+    name: "slope value threshold duration"
+    description: "Duration for which the slope values needs to be outside the threshold for the trigger to fire."
+  hysteresis:
+    name: "hysteresis"
+    description: "Hysteresis for trigger thresholds."
+  oversampling:
+    name: "oversampling factor"
+    description: "Oversampling factor"
+  full_scale:
+    name: "range"
+    description: "Sensor range, in SI units."
+  offset:
+    name: "value offset"
+    description: "The sensor value returned will be altered by the amount indicated by offset: final_value = sensor_value + offset."
+  calib_target:
+    name: "calibration target"
+    description: "Calibration target. This will be used by the internal chip's algorithms to calibrate itself on a certain axis, or all of them."
+  configuration:
+    name: "operating mode"
+    description: "Configure the operating modes of a sensor."
+  calibration:
+    name: "calibration value"
+    description: "Set a calibration value needed by a sensor."
+  feature_mask:
+    name: "enabled/disabled feature"
+    description: "Enable/disable sensor features"
+  alert:
+    name: "alert threshold"
+    description: "Alert threshold or alert enable/disable"
+  ff_dur:
+    name: "free-fall duration"
+    description: "Free-fall duration represented in milliseconds. If the sampling frequency is changed during runtime, this attribute should be set to adjust freefall duration to the new sampling frequency."
+  batch_duration:
+    name: "batch duration"
+    description: "Hardware batch duration in ticks"
+  gain:
+    name: "gain"
+    description: "Configure the gain of a sensor."
+  resolution:
+    name: "resolution"
+    description: "Configure the resolution of a sensor."

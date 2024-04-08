@@ -1061,3 +1061,20 @@ li>a.code-sample-link.reference.internal {
 li>a.code-sample-link.reference.internal.current {
     text-decoration: underline;
 }
+
+button.sensor-filter-button {
+    background-color: transparent;
+    border: 1px solid var(--navbar-heading-color);
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button.sensor-filter-button.active {
+    background-color: color-mix(in srgb, var(--navbar-heading-color) 50%, transparent 50%);
+}
+
+span.sensor-filter-data {
+    display: none;
+}

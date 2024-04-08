@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.20.0)
 project(Zephyr-Kernel-Doc LANGUAGES)
 
 set(MIN_WEST_VERSION 1.0.0)
+set(ZEPHYR_MODULE_NAMES pigweed)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} .. COMPONENTS doc)
 
 file(TO_CMAKE_PATH "${ZEPHYR_BASE}" ZEPHYR_BASE)
@@ -93,8 +94,16 @@ function(add_doc_target name)
   add_custom_target(${name}-nodeps ${ARGN})
 endfunction()
 
+add_custom_target(generate_sensor_constants ALL COMMAND)
+
 #-------------------------------------------------------------------------------
 # Doxygen (standalone)
+
+set(CMAKE_C_ARCHIVE_CREATE "<CMAKE_C_COMPILER> cr <TARGET> <OBJECTS>")
+set(CMAKE_C_ARCHIVE_FINISH  "<CMAKE_C_COMPILER> s <TARGET>")
+add_library(zephyr_interface INTERFACE)
+include(${ZEPHYR_BASE}/drivers/sensor/codegen.cmake)
+set_target_properties(zephyr_sensor.constants PROPERTIES LINKER_LANGUAGE C)
 
 set(DOXY_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
 set(DOXYFILE_IN ${CMAKE_CURRENT_LIST_DIR}/zephyr.doxyfile.in)
@@ -115,6 +124,8 @@ set_target_properties(
   PROPERTIES
     ADDITIONAL_CLEAN_FILES "${DOXY_OUT}"
 )
+
+add_dependencies(doxygen zephyr_sensor.constants.__generate_constants)
 
 #-------------------------------------------------------------------------------
 # devicetree
@@ -149,6 +160,28 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_DEVICETREE_
 #-------------------------------------------------------------------------------
 # html
 
+# add_custom_command(
+#   OUTPUT ${DOCS_SRC_DIR}/hardware/sensors/sensors.rst
+#   COMMAND python3
+#   $ENV{PW_ROOT}/pw_sensor/py/pw_sensor/sensor_desc.py
+#   -I ${ZEPHYR_BASE}
+#   -g "python3 ${ZEPHYR_BASE}/scripts/sensors/gen_docs.py"
+#   -o ${DOCS_SRC_DIR}/hardware/sensors/sensors.rst
+#   ${sensor_yaml_files}
+# )
+# add_custom_target(sensors.rst DEPENDS ${DOCS_SRC_DIR}/hardware/sensors/sensors.rst)
+# execute_process(
+#   COMMAND python3
+#   $ENV{PW_ROOT}/pw_sensor/py/pw_sensor/sensor_desc.py
+#   -I ${ZEPHYR_BASE}
+#   -g "python3 ${ZEPHYR_BASE}/scripts/sensors/gen_docs.py"
+#   -o ${DOCS_SRC_DIR}/hardware/sensors/sensors.rst
+#   ${sensor_yaml_files}
+#   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+# )
+set(SPHINXOPTS_EXTRA ${SPHINXOPTS_EXTRA} -D sensor_yaml_files="${sensor_yaml_files}")
+message("SPHINXOPTS_EXTRA=${SPHINXOPTS_EXTRA}")
+
 add_doc_target(
   html
   COMMAND ${CMAKE_COMMAND} -E env ${SPHINX_ENV} OUTPUT_DIR=${DOCS_HTML_DIR}
@@ -172,7 +205,7 @@ set_target_properties(
     ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_HTML_DIR};${DOCS_DOCTREE_DIR}"
 )
 
-add_dependencies(html devicetree)
+add_dependencies(html devicetree zephyr_sensor.constants.__generate_constants)
 
 #-------------------------------------------------------------------------------
 # html-live
@@ -230,7 +263,7 @@ set_target_properties(
     ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_LATEX_DIR};${DOCS_DOCTREE_DIR}"
 )
 
-add_dependencies(latex devicetree)
+add_dependencies(latex devicetree zephyr_sensor.constants.__generate_constants)
 
 if(LATEX_PDFLATEX_FOUND AND LATEXMK)
   if(WIN32)
@@ -252,7 +285,7 @@ if(LATEX_PDFLATEX_FOUND AND LATEXMK)
     USES_TERMINAL
   )
 
-  add_dependencies(pdf latex)
+  add_dependencies(pdf latex zephyr_sensor.constants.__generate_constants)
 endif()
 
 #-------------------------------------------------------------------------------

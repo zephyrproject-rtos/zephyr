@@ -1,0 +1,9 @@
+tests:
+  drivers.sensor.generator:
+    harness: gtest
+    tags:
+      - drivers
+      - sensor
+      - subsys
+    platform_allow:
+      - native_sim

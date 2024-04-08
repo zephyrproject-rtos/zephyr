@@ -1,0 +1,25 @@
+attributes:
+  attr0:
+    name: "attribute 0"
+    description: "The first new attribute"
+  attr1:
+    name: "attribute 1"
+    description: "The second new attribute"
+channels:
+  foo:
+    name: "foo"
+    description: "A measurement of 'foo'"
+    units: "foos"
+  bar:
+    name: "bar"
+    description: "A measurement of 'bar'"
+    units: "bars"
+units:
+  foos:
+    name: "foos"
+    description: "The number of foos"
+    symbol: "foo"
+  bars:
+    name: "bars"
+    description: "The number of bars"
+    symbol: "bar"
