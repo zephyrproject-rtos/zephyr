@@ -152,6 +152,10 @@ static bool switch_to_spim(void)
 		return ret;
 	}
 
+	/* Set initial state of SCK according to the SPI mode. */
+	nrfy_gpio_pin_write(nrfy_spim_sck_pin_get(spim.p_reg),
+			    (spim_config.mode <= NRF_SPIM_MODE_1) ? 0 : 1);
+
 	err = nrfx_spim_init(&spim, &spim_config, spim_handler, NULL);
 	if (err != NRFX_SUCCESS) {
 		printk("nrfx_spim_init() failed: 0x%08x\n", err);
