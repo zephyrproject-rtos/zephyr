@@ -18,6 +18,7 @@ supported:
   - i2c
   - flash
   - sdmmc
+  - rtc
 ram: 2496
 flash: 4096
 vendor: st

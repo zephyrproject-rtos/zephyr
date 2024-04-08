@@ -55,6 +55,10 @@
 	msi-pll-mode;
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
 &pll1 {
 	div-m = <1>;
 	mul-n = <80>;
@@ -232,6 +236,12 @@ zephyr_udc0: &usbotg_fs {
 &dac1 {
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	clocks =  <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+			<&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 

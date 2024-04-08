@@ -89,6 +89,10 @@
 	msi-pll-mode;
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
 &pll1 {
 	div-m = <1>;
 	mul-n = <80>;
@@ -276,6 +280,12 @@ uart0: &usart3 {
 			reg = <0x003e2000 DT_SIZE_K(120)>;
 		};
 	};
+};
+
+&rtc {
+	clocks =  <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+			<&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
 };
 
 &iwdg {
