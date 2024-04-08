@@ -332,6 +332,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			nxp,kinetis-port = <&porte>;
+			zephyr,deferred-init;
 		};
 
 		spi0: spi@4002c000 {

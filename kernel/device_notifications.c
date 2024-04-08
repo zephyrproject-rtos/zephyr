@@ -28,7 +28,7 @@ static int device_failed_notify(void)
 				.type = DEVICE_NOTIFICATION_FAILURE,
 			};
 			zbus_chan_pub(&device_failed_chan, &msg,
-					K_NO_WAIT);
+				      K_NO_WAIT);
 		}
 	}
 

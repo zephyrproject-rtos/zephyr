@@ -77,8 +77,13 @@ K_TIMER_DEFINE(test_timer, test_cb, NULL);
 
 int main(void)
 {
+	int ret;
 	struct sensor_value accel[3];
 	const struct device *const dev = DEVICE_DT_GET_ONE(nxp_fxos8700);
+
+	/* Inits the deferred device */
+	ret = device_init(DEVICE_DT_GET(GPIO_DEFERRED));
+	printf("device_init returned %d\n", ret);
 
 	/* Timer which deinits a device, to show the notifications propagating */
 	k_timer_start(&test_timer, K_MSEC(5000), K_NO_WAIT);
