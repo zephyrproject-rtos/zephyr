@@ -113,6 +113,7 @@ int nsos_adapt_recvfrom(int fd, void *buf, size_t len, int flags,
 
 void nsos_adapt_poll_add(struct nsos_mid_pollfd *pollfd);
 void nsos_adapt_poll_remove(struct nsos_mid_pollfd *pollfd);
+void nsos_adapt_poll_update(struct nsos_mid_pollfd *pollfd);
 
 int nsos_adapt_fcntl_getfl(int fd);
 int nsos_adapt_fcntl_setfl(int fd, int flags);
