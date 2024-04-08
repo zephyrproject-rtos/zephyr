@@ -106,6 +106,8 @@ the :term:`SoC series` and :term:`SoC family` levels are not always used.
    | :ref:`mimx8mp_evk <imx8mp_evk>`            | mimx8ml8/a53             | i.MX8M Plus | i.MX8M             | NXP i.MX           | Arm Cortex-A53 | ARMv8-A              |
    |                                            +--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
    |                                            | mimx8ml8/m7              | i.MX8M Plus | i.MX8M             | NXP i.MX           | Arm Cortex-M7  | ARMv7-M              |
+   |                                            +--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
+   |                                            | mimx8ml8/adsp            | i.MX8M Plus | i.MX8M             | NXP i.MX           | Cadence HIFI4  | Xtensa LX6           |
    +--------------------------------------------+--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
 
 Additional details about terminology can be found in the next section.
