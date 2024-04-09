@@ -9,6 +9,10 @@ zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
 zephyr_include_directories(.)
 
+if(CONFIG_HAS_NORDIC_DMM)
+  zephyr_library_sources(dmm.c)
+endif()
+
 if(CONFIG_TFM_PARTITION_PLATFORM)
   zephyr_library_sources(soc_secure.c)
   zephyr_library_include_directories(
