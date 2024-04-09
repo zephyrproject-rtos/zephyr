@@ -25,6 +25,12 @@
 		zephyr,sram = &cpurad_ram0;
 		zephyr,shell-uart = &uart135;
 		zephyr,bt-hci-ipc = &ipc0;
+		zephyr,entropy = &prng;
+	};
+
+	prng: prng {
+		compatible = "nordic,entropy-prng";
+		status = "okay";
 	};
 };
 

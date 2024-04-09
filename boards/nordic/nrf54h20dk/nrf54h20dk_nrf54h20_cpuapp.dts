@@ -24,6 +24,7 @@
 		zephyr,sram = &cpuapp_data;
 		zephyr,shell-uart = &uart136;
 		zephyr,bt-hci-ipc = &ipc0;
+		zephyr,entropy = &prng;
 	};
 
 	aliases {
@@ -87,6 +88,11 @@
 			gpios = <&gpio9 3 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 3";
 		};
+	};
+
+	prng: prng {
+		compatible = "nordic,entropy-prng";
+		status = "okay";
 	};
 };
 
