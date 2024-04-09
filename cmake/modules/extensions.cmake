@@ -5318,6 +5318,26 @@ function(add_llext_target target_name)
     add_library(${llext_lib_target} OBJECT ${source_files})
     set(llext_lib_output $<TARGET_OBJECTS:${llext_lib_target}>)
 
+  elseif(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE)
+
+    # CMake does not directly support a "RELOCATABLE" library target.
+    # The "SHARED" target would be similar, but that unavoidably adds
+    # a "-shared" flag to the linker command line which does firmly
+    # conflict with "-r".
+    # A workaround is to use an executable target and make the linker
+    # output a relocatable file. The output file suffix is changed so
+    # the result looks like the object file it actually is.
+    add_executable(${llext_lib_target} EXCLUDE_FROM_ALL ${source_files})
+    target_link_options(${llext_lib_target} PRIVATE -r)
+    set_target_properties(${llext_lib_target} PROPERTIES
+      SUFFIX ${CMAKE_C_OUTPUT_EXTENSION})
+    set(llext_lib_output $<TARGET_FILE:${llext_lib_target}>)
+
+    # Add the llext flags to the linking step as well
+    target_link_options(${llext_lib_target} PRIVATE
+      ${LLEXT_APPEND_FLAGS}
+    )
+
   elseif(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
 
     # Create a shared library
@@ -5377,6 +5397,21 @@ function(add_llext_target target_name)
     add_custom_command(
       OUTPUT ${llext_pkg_output}
       COMMAND ${CMAKE_COMMAND} -E copy ${llext_pkg_input} ${llext_pkg_output}
+      DEPENDS ${llext_proc_target} ${llext_pkg_input}
+    )
+
+  elseif(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE)
+
+    # Need to remove just some sections from the relocatable object
+    # (using strip in this case would remove _all_ symbols)
+    add_custom_command(
+      OUTPUT ${llext_pkg_output}
+      COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+              $<TARGET_PROPERTY:bintools,elfconvert_flag>
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.xt.*
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${llext_pkg_input}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
       DEPENDS ${llext_proc_target} ${llext_pkg_input}
     )
 
