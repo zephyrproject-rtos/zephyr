@@ -2100,12 +2100,12 @@ static int parse_write_op(struct lwm2m_message *msg, uint16_t format)
 
 		block_ctx->last_block = last_block;
 
-		/* Initial block sent by the server might be larger than
-		 * our block size therefore it is needed to take this
-		 * into account when calculating next expected block
-		 * number.
+		/* Initial block sent by the server might be larger or smaller than
+		 * our block size, therefore it is needed to take this into account
+		 * when calculating next expected block number.
 		 */
-		block_ctx->expected += GET_BLOCK_SIZE(block_opt) - block_ctx->ctx.block_size + 1;
+		block_ctx->expected +=
+			1 << MAX(0, GET_BLOCK_SIZE(block_opt) - block_ctx->ctx.block_size);
 	}
 
 	r = do_write_op(msg, format);
