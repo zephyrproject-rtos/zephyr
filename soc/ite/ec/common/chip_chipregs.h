@@ -55,10 +55,6 @@
 #define IT8XXX2_GCTRL_JTAGSEL   BIT(0)
 #define IT8XXX2_GCTRL_JTAG      (IT8XXX2_GCTRL_JTAGEN | IT8XXX2_GCTRL_JTAGSEL)
 
-/* --- External GPIO Control (EGPIO) --- */
-#define IT8XXX2_EGPIO_BASE      0x00F02100
-#define IT8XXX2_EGPIO_EGCR      ECREG(IT8XXX2_EGPIO_BASE + 0x04)
-
 #ifdef CONFIG_SOC_IT8XXX2_REG_SET_V2
 #define IT8XXX2_JTAG_PINS_BASE  ECREG(0xF01660)
 #define IT8XXX2_JTAG_VOLT_SET   ECREG(0xF01648)
@@ -67,18 +63,25 @@
 #define IT8XXX2_JTAG_VOLT_SET   ECREG(0xF016e9)
 #endif
 
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V2
+/* --- External GPIO Control (EGPIO) --- */
+#define IT8XXX2_EGPIO_BASE      0x00F02100
+#define IT8XXX2_EGPIO_EGCR      ECREG(IT8XXX2_EGPIO_BASE + 0x04)
+
 /* EGPIO register fields */
 /*
  * 0x04: External GPIO Control
  * BIT(4): EXGPIO EGAD Pin Output Driving Disable
  */
 #define IT8XXX2_EGPIO_EEPODD    BIT(4)
+#endif
 
 /**
  *
  * (11xxh) Interrupt controller (INTC)
  *
  */
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
 #define ISR0			ECREG(EC_REG_BASE_ADDR + 0x3F00)
 #define ISR1			ECREG(EC_REG_BASE_ADDR + 0x3F01)
 #define ISR2			ECREG(EC_REG_BASE_ADDR + 0x3F02)
@@ -178,7 +181,7 @@
 #define IPOLR21			ECREG(EC_REG_BASE_ADDR + 0x3F5B)
 #define IPOLR22			ECREG(EC_REG_BASE_ADDR + 0x3F5F)
 #define IPOLR23			ECREG(EC_REG_BASE_ADDR + 0x3F93)
-
+#endif
 #define IVECT			ECREG(EC_REG_BASE_ADDR + 0x3F10)
 
 
@@ -187,10 +190,17 @@
  *       to fix in tcpm\it83xx_pd.h.
  */
 /* GPIO control register */
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
 #define GPCRF4			ECREG(EC_REG_BASE_ADDR + 0x163C)
 #define GPCRF5			ECREG(EC_REG_BASE_ADDR + 0x163D)
 #define GPCRH1			ECREG(EC_REG_BASE_ADDR + 0x1649)
 #define GPCRH2			ECREG(EC_REG_BASE_ADDR + 0x164A)
+#elif CONFIG_SOC_IT8XXX2_REG_SET_V2
+#define GPCRF4			ECREG(EC_REG_BASE_ADDR + 0x168C)
+#define GPCRF5			ECREG(EC_REG_BASE_ADDR + 0x168D)
+#define GPCRH1			ECREG(EC_REG_BASE_ADDR + 0x1699)
+#define GPCRH2			ECREG(EC_REG_BASE_ADDR + 0x169A)
+#endif
 
 /*
  * IT8XXX2 register structure size/offset checking macro function to mitigate
@@ -268,6 +278,7 @@ struct pwm_it8xxx2_regs {
 
 
 /* --- Wake-Up Control (WUC) --- */
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
 #define IT8XXX2_WUC_BASE   0x00F01B00
 
 /* TODO: should a defined interface for configuring wake-up interrupts */
@@ -277,6 +288,7 @@ struct pwm_it8xxx2_regs {
 #define IT8XXX2_WUC_WUESR5 (IT8XXX2_WUC_BASE + 0x0d)
 #define IT8XXX2_WUC_WUBEMR1 (IT8XXX2_WUC_BASE + 0x3c)
 #define IT8XXX2_WUC_WUBEMR5 (IT8XXX2_WUC_BASE + 0x0f)
+#endif
 
 /**
  *
@@ -1117,8 +1129,8 @@ struct gpio_it8xxx2_regs {
 					 GPCR_PORT_PIN_MODE_PULLDOWN)
 
 /* --- GPIO --- */
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
 #define IT8XXX2_GPIO_BASE  0x00F01600
-#define IT8XXX2_GPIO2_BASE 0x00F03E00
 
 #define IT8XXX2_GPIO_GCRX(offset) ECREG(IT8XXX2_GPIO_BASE + (offset))
 #define IT8XXX2_GPIO_GCR25_OFFSET 0xd1
@@ -1136,11 +1148,14 @@ struct gpio_it8xxx2_regs {
 #define IT8XXX2_GPIO_GCR24_OFFSET 0xe9
 #define IT8XXX2_GPIO_GCR30_OFFSET 0xed
 #define IT8XXX2_GPIO_GCR29_OFFSET 0xee
+#endif
 
 /*
  * TODO: use pinctrl node instead of following register declarations
  *       to fix in tcpm\it83xx_pd.h.
  */
+#define IT8XXX2_GPIO2_BASE 0x00F03E00
+
 #define IT8XXX2_GPIO_GPCRP0     ECREG(IT8XXX2_GPIO2_BASE + 0x18)
 #define IT8XXX2_GPIO_GPCRP1     ECREG(IT8XXX2_GPIO2_BASE + 0x19)
 
@@ -1494,11 +1509,7 @@ enum chip_pll_mode {
 #define IT83XX_SPI_RXFFSM                  (BIT(4) | BIT(3))
 #define IT83XX_SPI_RXF2FS                  BIT(2)
 #define IT83XX_SPI_RXF1FS                  BIT(1)
-#ifdef CHIP_VARIANT_IT83202BX
-#define IT83XX_SPI_SPISRDR           ECREG(IT83XX_SPI_BASE + 0x08)
-#else
 #define IT83XX_SPI_SPISRDR           ECREG(IT83XX_SPI_BASE + 0x0b)
-#endif
 #define IT83XX_SPI_CPUWTFDB0         ECREG_u32(IT83XX_SPI_BASE + 0x08)
 #define IT83XX_SPI_FCR               ECREG(IT83XX_SPI_BASE + 0x09)
 #define IT83XX_SPI_SPISRTXF                BIT(2)
