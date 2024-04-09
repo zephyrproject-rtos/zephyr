@@ -318,6 +318,15 @@
 				#mbox-cells = <1>;
 			};
 
+			cpusys_vevif_remote: mailbox@8c8000 {
+				compatible = "nordic,nrf-vevif-remote";
+				reg = <0x8c8000 0x1000>;
+				status = "disabled";
+				#mbox-cells = <1>;
+				nordic,tasks = <32>;
+				nordic,tasks-mask = <0xfffff0ff>;
+			};
+
 			ipct120: ipct@8d1000 {
 				compatible = "nordic,nrf-ipct-global";
 				reg = <0x8d1000 0x1000>;
