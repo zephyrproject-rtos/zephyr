@@ -29,14 +29,6 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 extern char xtensa_arch_except_epc[];
 extern char xtensa_arch_kernel_oops_epc[];
 
-#ifdef CONFIG_USERSPACE
-Z_EXC_DECLARE(xtensa_user_string_nlen);
-
-static const struct z_exc_handle exceptions[] = {
-	Z_EXC_HANDLE(xtensa_user_string_nlen)
-};
-#endif /* CONFIG_USERSPACE */
-
 void xtensa_dump_stack(const void *stack)
 {
 	_xtensa_irq_stack_frame_raw_t *frame = (void *)stack;
@@ -265,21 +257,6 @@ void *xtensa_excint1_c(void *esf)
 		ps = bsa->ps;
 		pc = (void *)bsa->pc;
 
-#ifdef CONFIG_USERSPACE
-		/* If the faulting address is from one of the known
-		 * exceptions that should not be fatal, return to
-		 * the fixup address.
-		 */
-		for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
-			if ((pc >= exceptions[i].start) &&
-			    (pc < exceptions[i].end)) {
-				bsa->pc = (uintptr_t)exceptions[i].fixup;
-
-				goto fixup_out;
-			}
-		}
-#endif /* CONFIG_USERSPACE */
-
 		/* Default for exception */
 		int reason = K_ERR_CPU_EXCEPTION;
 		is_fatal_error = true;
@@ -371,9 +348,6 @@ void *xtensa_excint1_c(void *esf)
 		_current_cpu->nested = 1;
 	}
 
-#ifdef CONFIG_USERSPACE
-fixup_out:
-#endif
 #if defined(CONFIG_XTENSA_MMU)
 	if (is_dblexc) {
 		XTENSA_WSR(ZSR_DEPC_SAVE_STR, 0);
