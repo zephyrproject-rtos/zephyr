@@ -501,7 +501,9 @@ _DoubleExceptionVector:
 	rsr a0, ZSR_DBLEXC
 
 	j _Level1Vector
-#else
+
+_TripleFault:
+#endif /* CONFIG_XTENSA_MMU */
 
 #if XCHAL_HAVE_DEBUG && defined(CONFIG_XTENSA_BREAK_ON_UNRECOVERABLE_EXCEPTIONS)
 	/* Signals an unhandled double exception, and unrecoverable exceptions.
@@ -521,7 +523,6 @@ _DoubleExceptionVector:
 #endif
 1:
 	j	1b
-#endif /* CONFIG_XTENSA_MMU */
 
 #ifdef CONFIG_XTENSA_MMU
 _handle_tlb_miss_dblexc:
