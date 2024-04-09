@@ -5242,13 +5242,14 @@ endfunction()
 # Usage:
 #   add_llext_target(<target_name>
 #                    OUTPUT  <output_file>
-#                    SOURCES <source_file>
+#                    SOURCES <source_files>
 #   )
 #
-# Add a custom target that compiles a single source file to a .llext file.
+# Add a custom target that compiles a set of source files to a .llext file.
 #
 # Output and source files must be specified using the OUTPUT and SOURCES
-# arguments. Only one source file is currently supported.
+# arguments. Only one source file is supported when LLEXT_TYPE_ELF_OBJECT is
+# selected, since there is no linking step in that case.
 #
 # The llext code will be compiled with mostly the same C compiler flags used
 # in the Zephyr build, but with some important modifications. The list of
@@ -5285,14 +5286,14 @@ function(add_llext_target target_name)
   # Source and output files must be provided
   zephyr_check_arguments_required_all("add_llext_target" LLEXT OUTPUT SOURCES)
 
-  # Source list length must currently be 1
   list(LENGTH LLEXT_SOURCES source_count)
-  if(NOT source_count EQUAL 1)
-    message(FATAL_ERROR "add_llext_target: only one source file is supported")
+  if(CONFIG_LLEXT_TYPE_ELF_OBJECT AND NOT (source_count EQUAL 1))
+    message(FATAL_ERROR "add_llext_target: only one source file is supported "
+                        "for ELF object file builds")
   endif()
 
   set(llext_pkg_output ${LLEXT_OUTPUT})
-  set(source_file ${LLEXT_SOURCES})
+  set(source_files ${LLEXT_SOURCES})
 
   # Convert the LLEXT_REMOVE_FLAGS list to a regular expression, and use it to
   # filter out these flags from the Zephyr target settings
@@ -5314,13 +5315,13 @@ function(add_llext_target target_name)
   if(CONFIG_LLEXT_TYPE_ELF_OBJECT)
 
     # Create an object library to compile the source file
-    add_library(${llext_lib_target} OBJECT ${source_file})
+    add_library(${llext_lib_target} OBJECT ${source_files})
     set(llext_lib_output $<TARGET_OBJECTS:${llext_lib_target}>)
 
   elseif(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
 
     # Create a shared library
-    add_library(${llext_lib_target} SHARED ${source_file})
+    add_library(${llext_lib_target} SHARED ${source_files})
     set(llext_lib_output $<TARGET_FILE:${llext_lib_target}>)
 
     # Add the llext flags to the linking step as well
@@ -5420,7 +5421,7 @@ endfunction()
 # the build. The command will be executed at the specified build step and
 # can refer to <target>'s properties for build-specific details.
 #
-# The differrent build steps are:
+# The different build steps are:
 # - PRE_BUILD:  Before the llext code is linked, if the architecture uses
 #               dynamic libraries. This step can access `lib_target` and
 #               its own properties.
