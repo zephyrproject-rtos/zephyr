@@ -41,4 +41,11 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_MAXQ10XX_RNG    entropy_maxq10xx.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_RENESAS_RA      entropy_renesas_ra.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_SY1XX_TRNG      entropy_sy1xx_trng.c)
 
+if (CONFIG_FAKE_ENTROPY_NRF_PRNG)
+  zephyr_library_sources(fake_entropy_nrf_prng.c)
+
+  message(WARNING "\nA nRF PRNG is used, which does not produce real random bits."
+  "This is not secure and should therefore never be used in a product.")
+endif()
+
 zephyr_library_link_libraries_ifdef(CONFIG_BUILD_WITH_TFM tfm_api)

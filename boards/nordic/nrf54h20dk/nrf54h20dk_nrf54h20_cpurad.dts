@@ -27,6 +27,11 @@
 		zephyr,ieee802154 = &cpurad_ieee802154;
 		zephyr,bt-hci-ipc = &ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
+		zephyr,entropy = &prng;
+	};
+	prng: prng {
+		compatible = "nordic,entropy-prng";
+		status = "okay";
 	};
 	aliases {
 		ipc-to-cpusys = &cpurad_cpusys_ipc;

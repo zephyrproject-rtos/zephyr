@@ -27,6 +27,7 @@
 		zephyr,ieee802154 = &cpuapp_ieee802154;
 		zephyr,bt-hci = &bt_hci_ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
+		zephyr,entropy = &prng;
 	};
 
 	aliases {
@@ -106,6 +107,11 @@
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm130 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+	};
+
+	prng: prng {
+		compatible = "nordic,entropy-prng";
+		status = "okay";
 	};
 };
 
