@@ -1008,9 +1008,10 @@ int shell_stop(const struct shell *sh);
  * @param[in] fmt	Format string.
  * @param[in] ...	List of parameters to print.
  */
-void __printf_like(3, 4) shell_fprintf(const struct shell *sh,
-				       enum shell_vt100_color color,
-				       const char *fmt, ...);
+void __printf_like(3, 4) shell_fprintf_impl(const struct shell *sh, enum shell_vt100_color color,
+					    const char *fmt, ...);
+
+#define shell_fprintf(sh, color, fmt, ...) shell_fprintf_impl(sh, color, fmt, ##__VA_ARGS__)
 
 /**
  * @brief vprintf-like function which sends formatted data stream to the shell.
@@ -1275,6 +1276,11 @@ int shell_get_return_value(const struct shell *sh);
 
 #ifdef __cplusplus
 }
+#endif
+
+#ifdef CONFIG_SHELL_CUSTOM_HEADER
+/* This include must always be at the end of shell.h */
+#include <zephyr_custom_shell.h>
 #endif
 
 #endif /* SHELL_H__ */
