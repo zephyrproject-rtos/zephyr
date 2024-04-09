@@ -214,9 +214,10 @@ static inline uint32_t *alloc_l2_table(void)
 }
 
 static void map_memory_range(const uint32_t start, const uint32_t end,
-			     const uint32_t attrs, bool shared)
+			     const uint32_t attrs)
 {
 	uint32_t page, *table;
+	bool shared = !!(attrs & XTENSA_MMU_MAP_SHARED);
 
 	for (page = start; page < end; page += CONFIG_MMU_PAGE_SIZE) {
 		uint32_t pte = XTENSA_MMU_PTE(page,
@@ -245,18 +246,18 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 }
 
 static void map_memory(const uint32_t start, const uint32_t end,
-		       const uint32_t attrs, bool shared)
+		       const uint32_t attrs)
 {
-	map_memory_range(start, end, attrs, shared);
+	map_memory_range(start, end, attrs);
 
 #ifdef CONFIG_XTENSA_MMU_DOUBLE_MAP
 	if (sys_cache_is_ptr_uncached((void *)start)) {
 		map_memory_range(POINTER_TO_UINT(sys_cache_cached_ptr_get((void *)start)),
 			POINTER_TO_UINT(sys_cache_cached_ptr_get((void *)end)),
-			attrs | XTENSA_MMU_CACHED_WB, shared);
+			attrs | XTENSA_MMU_CACHED_WB);
 	} else if (sys_cache_is_ptr_cached((void *)start)) {
 		map_memory_range(POINTER_TO_UINT(sys_cache_uncached_ptr_get((void *)start)),
-			POINTER_TO_UINT(sys_cache_uncached_ptr_get((void *)end)), attrs, shared);
+			POINTER_TO_UINT(sys_cache_uncached_ptr_get((void *)end)), attrs);
 	}
 #endif
 }
@@ -270,24 +271,14 @@ static void xtensa_init_page_tables(void)
 
 	for (entry = 0; entry < ARRAY_SIZE(mmu_zephyr_ranges); entry++) {
 		const struct xtensa_mmu_range *range = &mmu_zephyr_ranges[entry];
-		bool shared;
-		uint32_t attrs;
 
-		shared = !!(range->attrs & XTENSA_MMU_MAP_SHARED);
-		attrs = range->attrs & ~XTENSA_MMU_MAP_SHARED;
-
-		map_memory(range->start, range->end, attrs, shared);
+		map_memory(range->start, range->end, range->attrs);
 	}
 
 	for (entry = 0; entry < xtensa_soc_mmu_ranges_num; entry++) {
 		const struct xtensa_mmu_range *range = &xtensa_soc_mmu_ranges[entry];
-		bool shared;
-		uint32_t attrs;
 
-		shared = !!(range->attrs & XTENSA_MMU_MAP_SHARED);
-		attrs = range->attrs & ~XTENSA_MMU_MAP_SHARED;
-
-		map_memory(range->start, range->end, attrs, shared);
+		map_memory(range->start, range->end, range->attrs);
 	}
 
 	/* Finally, the direct-mapped pages used in the page tables
@@ -297,10 +288,10 @@ static void xtensa_init_page_tables(void)
 	 */
 	map_memory_range((uint32_t) &l1_page_table[0],
 			 (uint32_t) &l1_page_table[CONFIG_XTENSA_MMU_NUM_L1_TABLES],
-			 XTENSA_MMU_PAGE_TABLE_ATTR | XTENSA_MMU_PERM_W, false);
+			 XTENSA_MMU_PAGE_TABLE_ATTR | XTENSA_MMU_PERM_W);
 	map_memory_range((uint32_t) &l2_page_tables[0],
 			 (uint32_t) &l2_page_tables[CONFIG_XTENSA_MMU_NUM_L2_TABLES],
-			 XTENSA_MMU_PAGE_TABLE_ATTR | XTENSA_MMU_PERM_W, false);
+			 XTENSA_MMU_PAGE_TABLE_ATTR | XTENSA_MMU_PERM_W);
 
 	sys_cache_data_flush_all();
 }
