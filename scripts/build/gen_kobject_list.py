@@ -171,6 +171,7 @@ def debug_die(die, text):
 # -- ELF processing
 
 DW_OP_addr = 0x3
+DW_OP_plus_uconst = 0x23
 DW_OP_fbreg = 0x91
 STACK_TYPE = "z_thread_stack_element"
 thread_counter = 0
@@ -621,6 +622,11 @@ def find_kobjects(elf, syms):
         else:
             addr = ((loc.value[1] << 0 ) | (loc.value[2] << 8)  |
                     (loc.value[3] << 16) | (loc.value[4] << 24))
+
+            # Handle a DW_FORM_exprloc that contains a DW_OP_addr, followed immediately by
+            # a DW_OP_plus_uconst.
+            if len(loc.value) >= 7 and loc.value[5] == DW_OP_plus_uconst:
+                addr += (loc.value[6])
 
         if addr == 0:
             # Never linked; gc-sections deleted it
