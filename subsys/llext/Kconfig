@@ -9,6 +9,29 @@ menuconfig LLEXT
 
 if LLEXT
 
+choice LLEXT_BINARY_TYPE
+	prompt "Binary object type for llext"
+	default LLEXT_TYPE_ELF_OBJECT if ARM
+	default LLEXT_TYPE_ELF_SHAREDLIB if XTENSA
+	help
+	  Object type for llext
+
+config LLEXT_TYPE_ELF_OBJECT
+	bool "Single object ELF file"
+	help
+	  Build and expect object files as binary object type for the
+	  llext subsystem. A single compiler invocation is used to
+	  generate the object file.
+
+config LLEXT_TYPE_ELF_SHAREDLIB
+	bool "Shared library ELF file"
+	help
+	  Build and expect shared libraries as binary object type for
+	  the llext subsystem. The usual linking process is used to
+	  generate the shared library from multiple object files.
+
+endchoice
+
 config LLEXT_HEAP_SIZE
 	int "llext heap memory size in kilobytes"
 	default 8
