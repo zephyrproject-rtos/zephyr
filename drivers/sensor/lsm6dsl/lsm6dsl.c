@@ -476,9 +476,9 @@ static inline void lsm6dsl_accel_convert(struct sensor_value *val, int raw_val,
 
 	/* Sensitivity is exposed in mg/LSB */
 	/* Convert to m/s^2 */
-	dval = (double)(raw_val) * (double)sensitivity * SENSOR_G_DOUBLE / 1000;
-	val->val1 = (int32_t)dval;
-	val->val2 = (((int32_t)(dval * 1000)) % 1000) * 1000;
+	dval = (double)(raw_val) * (double)sensitivity / 1000; 
+	int32_t dval_ug = dval * 1000000; //value converted in micro g
+	sensor_ug_to_ms2(dval_ug, val); //value in m/s^2
 
 }
 
@@ -526,9 +526,9 @@ static inline void lsm6dsl_gyro_convert(struct sensor_value *val, int raw_val,
 
 	/* Sensitivity is exposed in mdps/LSB */
 	/* Convert to rad/s */
-	dval = (double)(raw_val * (double)sensitivity * SENSOR_DEG2RAD_DOUBLE / 1000);
-	val->val1 = (int32_t)dval;
-	val->val2 = (((int32_t)(dval * 1000)) % 1000) * 1000;
+	dval = (double)(raw_val) * (double)sensitivity / 1000; //value in degrees
+	int32_t dval_10ud = dval * 100000; //value in 10 micro degrees
+	sensor_10udegrees_to_rad(dval_10ud, val); //value in radians
 }
 
 static inline int lsm6dsl_gyro_get_channel(enum sensor_channel chan,
