@@ -134,6 +134,8 @@ static bool switch_to_spim(void)
 	 */
 	if (uarte_initialized) {
 		nrfx_uarte_uninit(&uarte);
+		/* Workaround: uninit does not clear events, make sure all events are cleared. */
+		nrfy_uarte_int_init(uarte.p_reg, 0xFFFFFFFF, 0, false);
 		uarte_initialized = false;
 	}
 
@@ -220,6 +222,8 @@ static bool switch_to_uarte(void)
 	 */
 	if (spim_initialized) {
 		nrfx_spim_uninit(&spim);
+		/* Workaround: uninit does not clear events, make sure all events are cleared. */
+		nrfy_spim_int_init(spim.p_reg, 0xFFFFFFFF, 0, false);
 		spim_initialized = false;
 	}
 
