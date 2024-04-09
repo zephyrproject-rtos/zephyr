@@ -622,6 +622,33 @@ _Level\LVL\()Vector:
 
 	esync
 
+	rsr a0, ZSR_DEPC_SAVE
+	beqz a0, _not_triple_fault
+
+	/* If stashed DEPC is not zero, we have started servicing
+	 * a double exception and yet we are here because there is
+	 * another exception (through user/kernel if PS.EXCM is
+	 * cleared, or through double if PS.EXCM is set). This can
+	 * be considered triple fault. Although there is no triple
+	 * faults on Xtensa. Once PS.EXCM is set, it keeps going
+	 * through double exception vector for any new exceptions.
+	 * However, our exception code needs to unmask PS.EXCM to
+	 * enable register window operations. So after that, any
+	 * new exceptions will go through the kernel or user vectors
+	 * depending on PS.UM. If there is continuous faults, it may
+	 * keep ping-ponging between double and kernel/user exception
+	 * vectors that may never get resolved. Since we stash DEPC
+	 * during double exception, and the stashed one is only cleared
+	 * once the double exception has been processed, we can use
+	 * the stashed DEPC value to detect if the next exception could
+	 * be considered a triple fault. If such a case exists, simply
+	 * jump to an infinite loop, or quit the simulator, or invoke
+	 * debugger.
+	 */
+	rsr a0, ZSR_EXCCAUSE_SAVE
+	j _TripleFault
+
+_not_triple_fault:
 	rsr.exccause a0
 
 	xsr a0, ZSR_EXCCAUSE_SAVE
