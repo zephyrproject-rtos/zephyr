@@ -1,0 +1,12 @@
+# NEORV32 watchdog configuration
+
+# Copyright (c) 2024, Calian
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_NEORV32
+	bool "NEORV32 Watchdog Timer driver"
+	default y
+	depends on DT_HAS_NEORV32_WDT_ENABLED
+	depends on SYSCON
+	help
+	  Enable the NEORV32 Watchdog Timer driver.

@@ -1,0 +1,18 @@
+# Copyright (c) 2024, Calian
+# SPDX-License-Identifier: Apache-2.0
+
+description: NEORV32 Watchdog Timer
+
+compatible: "neorv32-wdt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  syscon:
+    type: phandle
+    required: true
+    description: |
+      phandle to syscon (NEORV32 SYSINFO) node.
