@@ -13,6 +13,7 @@
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/spinlock.h>
 
 #include <soc.h>
 
@@ -33,8 +34,8 @@ LOG_MODULE_REGISTER(uart_neorv32, CONFIG_UART_LOG_LEVEL);
 #define NEORV32_UART_CTRL_RX_NEMPTY       BIT(16)
 #define NEORV32_UART_CTRL_RX_HALF         BIT(17)
 #define NEORV32_UART_CTRL_RX_FULL         BIT(18)
-#define NEORV32_UART_CTRL_TX_NEMPTY       BIT(19)
-#define NEORV32_UART_CTRL_TX_HALF         BIT(20)
+#define NEORV32_UART_CTRL_TX_EMPTY        BIT(19)
+#define NEORV32_UART_CTRL_TX_NHALF        BIT(20)
 #define NEORV32_UART_CTRL_TX_FULL         BIT(21)
 #define NEORV32_UART_CTRL_IRQ_RX_NEMPTY   BIT(22)
 #define NEORV32_UART_CTRL_IRQ_RX_HALF     BIT(23)
@@ -57,9 +58,9 @@ struct neorv32_uart_config {
 
 struct neorv32_uart_data {
 	struct uart_config uart_cfg;
-	uint32_t last_data;
+	struct k_spinlock lock;
+	uint32_t last_ctrl;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	struct k_timer timer;
 	uart_irq_callback_user_data_t callback;
 	void *callback_data;
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -82,14 +83,8 @@ static inline void neorv32_uart_write_ctrl(const struct device *dev, uint32_t ct
 static inline uint32_t neorv32_uart_read_data(const struct device *dev)
 {
 	const struct neorv32_uart_config *config = dev->config;
-	struct neorv32_uart_data *data = dev->data;
-	uint32_t reg;
 
-	/* Cache status bits as they are cleared upon read */
-	reg = sys_read32(config->base + NEORV32_UART_DATA_OFFSET);
-	data->last_data = reg;
-
-	return reg;
+	return sys_read32(config->base + NEORV32_UART_DATA_OFFSET);
 }
 
 static inline void neorv32_uart_write_data(const struct device *dev, uint32_t data)
@@ -101,12 +96,10 @@ static inline void neorv32_uart_write_data(const struct device *dev, uint32_t da
 
 static int neorv32_uart_poll_in(const struct device *dev, unsigned char *c)
 {
-	uint32_t data;
+	uint32_t ctrl = neorv32_uart_read_ctrl(dev);
 
-	data = neorv32_uart_read_data(dev);
-
-	if ((data & NEORV32_UART_CTRL_RX_NEMPTY) != 0) {
-		*c = data & BIT_MASK(8);
+	if ((ctrl & NEORV32_UART_CTRL_RX_NEMPTY) != 0) {
+		*c = neorv32_uart_read_data(dev) & BIT_MASK(8);
 		return 0;
 	}
 
@@ -115,7 +108,7 @@ static int neorv32_uart_poll_in(const struct device *dev, unsigned char *c)
 
 static void neorv32_uart_poll_out(const struct device *dev, unsigned char c)
 {
-	while ((neorv32_uart_read_ctrl(dev) & NEORV32_UART_CTRL_TX_BUSY) != 0) {
+	while ((neorv32_uart_read_ctrl(dev) & NEORV32_UART_CTRL_TX_FULL) != 0) {
 	}
 
 	neorv32_uart_write_data(dev, c);
@@ -125,11 +118,13 @@ static int neorv32_uart_configure(const struct device *dev, const struct uart_co
 {
 	const struct neorv32_uart_config *config = dev->config;
 	struct neorv32_uart_data *data = dev->data;
-	uint32_t ctrl = NEORV32_UART_CTRL_EN;
+	uint32_t ctrl;
+	bool hwfc;
 	uint16_t baudxx = 0;
 	uint8_t prscx = 0;
 	uint32_t clk;
 	int err;
+	k_spinlock_key_t key;
 
 	__ASSERT_NO_MSG(cfg != NULL);
 
@@ -153,10 +148,10 @@ static int neorv32_uart_configure(const struct device *dev, const struct uart_co
 
 	switch (cfg->flow_ctrl) {
 	case UART_CFG_FLOW_CTRL_NONE:
-		ctrl |= 0;
+		hwfc = false;
 		break;
 	case UART_CFG_FLOW_CTRL_RTS_CTS:
-		ctrl |= NEORV32_UART_CTRL_HWFC_EN;
+		hwfc = true;
 		break;
 	default:
 		LOG_ERR("unsupported flow control mode %d", cfg->flow_ctrl);
@@ -194,11 +189,22 @@ static int neorv32_uart_configure(const struct device *dev, const struct uart_co
 		return -ENOTSUP;
 	}
 
+	key = k_spin_lock(&data->lock);
+	ctrl = neorv32_uart_read_ctrl(dev);
+	ctrl |= NEORV32_UART_CTRL_EN;
+	if (hwfc) {
+		ctrl |= NEORV32_UART_CTRL_HWFC_EN;
+	} else {
+		ctrl &= ~NEORV32_UART_CTRL_HWFC_EN;
+	}
+	ctrl &= ~(NEORV32_UART_CTRL_BAUD_MASK << NEORV32_UART_CTRL_BAUD_POS);
 	ctrl |= (baudxx - 1) << NEORV32_UART_CTRL_BAUD_POS;
+	ctrl &= ~(NEORV32_UART_CTRL_PRSC_MASK << NEORV32_UART_CTRL_PRSC_POS);
 	ctrl |= prscx << NEORV32_UART_CTRL_PRSC_POS;
 
 	data->uart_cfg = *cfg;
 	neorv32_uart_write_ctrl(dev, ctrl);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -217,7 +223,7 @@ static int neorv32_uart_config_get(const struct device *dev, struct uart_config 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int neorv32_uart_fifo_fill(const struct device *dev, const uint8_t *tx_data, int len)
 {
-	uint32_t ctrl;
+	int count = 0;
 
 	if (len <= 0) {
 		return 0;
@@ -225,18 +231,15 @@ static int neorv32_uart_fifo_fill(const struct device *dev, const uint8_t *tx_da
 
 	__ASSERT_NO_MSG(tx_data != NULL);
 
-	ctrl = neorv32_uart_read_ctrl(dev);
-	if ((ctrl & NEORV32_UART_CTRL_TX_BUSY) == 0) {
-		neorv32_uart_write_data(dev, *tx_data);
-		return 1;
+	while (count < len && (neorv32_uart_read_ctrl(dev) & NEORV32_UART_CTRL_TX_FULL) == 0) {
+		neorv32_uart_write_data(dev, tx_data[count++]);
 	}
 
-	return 0;
+	return count;
 }
 
 static int neorv32_uart_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
-	struct neorv32_uart_data *data = dev->data;
 	int count = 0;
 
 	if (size <= 0) {
@@ -245,29 +248,11 @@ static int neorv32_uart_fifo_read(const struct device *dev, uint8_t *rx_data, co
 
 	__ASSERT_NO_MSG(rx_data != NULL);
 
-	while ((data->last_data & NEORV32_UART_CTRL_RX_NEMPTY) != 0) {
-		rx_data[count++] = data->last_data & BIT_MASK(8);
-		data->last_data &= ~(NEORV32_UART_CTRL_RX_NEMPTY);
-
-		if (count >= size) {
-			break;
-		}
-
-		(void)neorv32_uart_read_data(dev);
+	while (count < size && (neorv32_uart_read_ctrl(dev) & NEORV32_UART_CTRL_RX_NEMPTY) != 0) {
+		rx_data[count++] = neorv32_uart_read_data(dev) & BIT_MASK(8);
 	}
 
 	return count;
-}
-
-static void neorv32_uart_tx_soft_isr(struct k_timer *timer)
-{
-	const struct device *dev = k_timer_user_data_get(timer);
-	struct neorv32_uart_data *data = dev->data;
-	uart_irq_callback_user_data_t callback = data->callback;
-
-	if (callback) {
-		callback(dev, data->callback_data);
-	}
 }
 
 static void neorv32_uart_irq_tx_enable(const struct device *dev)
@@ -278,41 +263,50 @@ static void neorv32_uart_irq_tx_enable(const struct device *dev)
 
 	irq_enable(config->tx_irq);
 
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 	ctrl = neorv32_uart_read_ctrl(dev);
-	if ((ctrl & NEORV32_UART_CTRL_TX_BUSY) == 0) {
-		/*
-		 * TX done event already generated an edge interrupt. Generate a
-		 * soft interrupt and have it call the callback function in
-		 * timer isr context.
-		 */
-		k_timer_start(&data->timer, K_NO_WAIT, K_NO_WAIT);
-	}
+	ctrl |= NEORV32_UART_CTRL_IRQ_TX_EMPTY;
+	neorv32_uart_write_ctrl(dev, ctrl);
+	k_spin_unlock(&data->lock, key);
 }
 
 static void neorv32_uart_irq_tx_disable(const struct device *dev)
 {
 	const struct neorv32_uart_config *config = dev->config;
+	struct neorv32_uart_data *data = dev->data;
+	uint32_t ctrl;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
+	ctrl = neorv32_uart_read_ctrl(dev);
+	ctrl &= ~NEORV32_UART_CTRL_IRQ_TX_EMPTY;
+	neorv32_uart_write_ctrl(dev, ctrl);
+	k_spin_unlock(&data->lock, key);
 	irq_disable(config->tx_irq);
 }
 
 static int neorv32_uart_irq_tx_ready(const struct device *dev)
 {
 	const struct neorv32_uart_config *config = dev->config;
-	uint32_t ctrl;
+	struct neorv32_uart_data *data = dev->data;
 
 	if (!irq_is_enabled(config->tx_irq)) {
 		return 0;
 	}
 
-	ctrl = neorv32_uart_read_ctrl(dev);
-
-	return (ctrl & NEORV32_UART_CTRL_TX_BUSY) == 0;
+	return (data->last_ctrl & NEORV32_UART_CTRL_TX_FULL) == 0;
 }
 
 static void neorv32_uart_irq_rx_enable(const struct device *dev)
 {
 	const struct neorv32_uart_config *config = dev->config;
+	struct neorv32_uart_data *data = dev->data;
+	uint32_t ctrl;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	ctrl = neorv32_uart_read_ctrl(dev);
+	ctrl |= NEORV32_UART_CTRL_IRQ_RX_NEMPTY;
+	neorv32_uart_write_ctrl(dev, ctrl);
+	k_spin_unlock(&data->lock, key);
 
 	irq_enable(config->rx_irq);
 }
@@ -320,17 +314,23 @@ static void neorv32_uart_irq_rx_enable(const struct device *dev)
 static void neorv32_uart_irq_rx_disable(const struct device *dev)
 {
 	const struct neorv32_uart_config *config = dev->config;
+	struct neorv32_uart_data *data = dev->data;
+	uint32_t ctrl;
+	k_spinlock_key_t key;
 
 	irq_disable(config->rx_irq);
+	key = k_spin_lock(&data->lock);
+	ctrl = neorv32_uart_read_ctrl(dev);
+	ctrl &= ~NEORV32_UART_CTRL_IRQ_RX_NEMPTY;
+	neorv32_uart_write_ctrl(dev, ctrl);
+	k_spin_unlock(&data->lock, key);
 }
 
 static int neorv32_uart_irq_tx_complete(const struct device *dev)
 {
-	uint32_t ctrl;
+	struct neorv32_uart_data *data = dev->data;
 
-	ctrl = neorv32_uart_read_ctrl(dev);
-
-	return (ctrl & NEORV32_UART_CTRL_TX_BUSY) == 0;
+	return (data->last_ctrl & NEORV32_UART_CTRL_TX_BUSY) == 0;
 }
 
 static int neorv32_uart_irq_rx_ready(const struct device *dev)
@@ -342,7 +342,7 @@ static int neorv32_uart_irq_rx_ready(const struct device *dev)
 		return 0;
 	}
 
-	return (data->last_data & NEORV32_UART_CTRL_RX_NEMPTY) != 0;
+	return (data->last_ctrl & NEORV32_UART_CTRL_RX_NEMPTY) != 0;
 }
 
 static int neorv32_uart_irq_is_pending(const struct device *dev)
@@ -353,12 +353,10 @@ static int neorv32_uart_irq_is_pending(const struct device *dev)
 
 static int neorv32_uart_irq_update(const struct device *dev)
 {
-	const struct neorv32_uart_config *config = dev->config;
+	struct neorv32_uart_data *data = dev->data;
 
-	if (irq_is_enabled(config->rx_irq)) {
-		/* Cache data for use by rx_ready() and fifo_read() */
-		(void)neorv32_uart_read_data(dev);
-	}
+	/* Cache data for use by rx_ready() and tx_ready() */
+	data->last_ctrl = neorv32_uart_read_ctrl(dev);
 
 	return 1;
 }
@@ -381,6 +379,7 @@ static void neorv32_uart_isr(const struct device *dev)
 		callback(dev, data->callback_data);
 	}
 }
+
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static int neorv32_uart_init(const struct device *dev)
@@ -406,10 +405,10 @@ static int neorv32_uart_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	k_timer_init(&data->timer, &neorv32_uart_tx_soft_isr, NULL);
-	k_timer_user_data_set(&data->timer, (void *)dev);
+	/* Disable UART and all interrupts */
+	neorv32_uart_write_ctrl(dev, 0);
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
@@ -420,6 +419,7 @@ static int neorv32_uart_init(const struct device *dev)
 static int neorv32_uart_pm_action(const struct device *dev,
 				  enum pm_device_action action)
 {
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 	uint32_t ctrl = neorv32_uart_read_ctrl(dev);
 
 	switch (action) {
@@ -434,6 +434,7 @@ static int neorv32_uart_pm_action(const struct device *dev,
 	}
 
 	neorv32_uart_write_ctrl(dev, ctrl);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
