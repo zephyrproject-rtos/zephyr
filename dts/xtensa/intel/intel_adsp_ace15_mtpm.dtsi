@@ -16,7 +16,7 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <0>;
-			cpu-power-states = <&d0i3 &d3>;
+			cpu-power-states = <&active &d0i3 &d3>;
 			i-cache-line-size = <64>;
 			d-cache-line-size = <64>;
 		};
@@ -25,17 +25,23 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <1>;
-			cpu-power-states = <&d0i3 &d3>;
+			cpu-power-states = <&active &d0i3 &d3>;
 		};
 
 		cpu2: cpu@2 {
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <2>;
-			cpu-power-states = <&d0i3 &d3>;
+			cpu-power-states = <&active &d0i3 &d3>;
 		};
 
 		power-states {
+			active: active {
+				compatible = "zephyr,power-state";
+				power-state-name = "active";
+				min-residency-us = <0>;
+				exit-latency-us = <0>;
+			};
 			d0i3: idle {
 				compatible = "zephyr,power-state";
 				power-state-name = "runtime-idle";
