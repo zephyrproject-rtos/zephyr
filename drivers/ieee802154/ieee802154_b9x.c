@@ -1046,7 +1046,9 @@ static int b9x_stop(const struct device *dev)
 		riscv_plic_irq_disable(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET);
 		rf_set_tx_rx_off();
 		rf_baseband_reset();
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 		rf_reset_dma();
+#endif
 		b9x->is_started = false;
 		if (b9x->event_handler) {
 			b9x->event_handler(dev, IEEE802154_EVENT_SLEEP, NULL);
