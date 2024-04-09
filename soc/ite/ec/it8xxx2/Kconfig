@@ -31,29 +31,48 @@ config SOC_IT8XXX2_REG_SET_V2
 	  This option is selected by a variable of which soc, and will
 	  determine the register for the IT82xx2 specification.
 
+config SOC_IT8XXX2_USBPD_PHY_V1
+	bool
+	help
+	  This option is automatically selected by variant soc and sets
+	  the USBPD PHY version.
+
+config SOC_IT8XXX2_USBPD_PHY_V2
+	bool
+	help
+	  This option is automatically selected by variant soc and sets
+	  the USBPD PHY version.
+
 config SOC_IT81302_BX
 	select SOC_IT8XXX2_REG_SET_V1
+	select SOC_IT8XXX2_USBPD_PHY_V1
 
 config SOC_IT81202_BX
 	select SOC_IT8XXX2_REG_SET_V1
+	select SOC_IT8XXX2_USBPD_PHY_V1
 
 config SOC_IT81302_CX
 	select SOC_IT8XXX2_REG_SET_V1
+	select SOC_IT8XXX2_USBPD_PHY_V2
 
 config SOC_IT81202_CX
 	select SOC_IT8XXX2_REG_SET_V1
+	select SOC_IT8XXX2_USBPD_PHY_V2
 
 config SOC_IT82202_AX
 	select SOC_IT8XXX2_REG_SET_V2
 	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
+	select SOC_IT8XXX2_USBPD_PHY_V2
 
 config SOC_IT82302_AX
 	select SOC_IT8XXX2_REG_SET_V2
 	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
+	select SOC_IT8XXX2_USBPD_PHY_V2
 
 config SOC_IT82002_AW
 	select SOC_IT8XXX2_REG_SET_V2
 	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
+	select SOC_IT8XXX2_USBPD_PHY_V2
 
 config SOC_IT8XXX2_PLL_FLASH_48M
 	bool "Flash frequency is 48MHz"
