@@ -10,6 +10,7 @@ cpu: &cpuapp {};
 systick: &cpuapp_systick {};
 nvic: &cpuapp_nvic {};
 cpuppr_vevif: &cpuppr_vevif_remote {};
+cpusys_vevif: &cpusys_vevif_remote {};
 
 /delete-node/ &cpuppr;
 /delete-node/ &cpurad;
