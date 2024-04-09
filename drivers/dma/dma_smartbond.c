@@ -483,7 +483,7 @@ static int dma_smartbond_config(const struct device *dev, uint32_t channel, stru
 	}
 
 	/* Error handling is not supported; just warn user. */
-	if (cfg->error_callback_en) {
+	if (!cfg->error_callback_dis) {
 		LOG_WRN("Error handling is not supported");
 	}
 

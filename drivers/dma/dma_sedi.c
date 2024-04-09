@@ -57,7 +57,7 @@ static void dma_handler(sedi_dma_t dma_device, int channel, int event_id,
 		    (config->complete_callback_en)) {
 			config->dma_callback(dev, config->user_data,
 					channel, 0);
-		} else if (config->error_callback_en) {
+		} else if (!config->error_callback_dis) {
 			config->dma_callback(dev, config->user_data,
 					channel, event_id);
 		}

@@ -124,7 +124,7 @@ int32_t i2c_dw_idma_rx_transfer(const struct device *dev)
 	dma_cfg.dma_callback = cb_i2c_idma_transfer;
 	dma_cfg.user_data = (void *)dev;
 	dma_cfg.complete_callback_en = 0U;
-	dma_cfg.error_callback_en = 1U;
+	dma_cfg.error_callback_dis = 0U;
 	dma_cfg.block_count = 1U;
 	dma_cfg.head_block = &dma_block_cfg;
 
@@ -172,7 +172,7 @@ int32_t i2c_dw_idma_tx_transfer(const struct device *dev,
 	dma_cfg.dma_callback = cb_i2c_idma_transfer;
 	dma_cfg.user_data = (void *)dev;
 	dma_cfg.complete_callback_en = 0U;
-	dma_cfg.error_callback_en = 1U;
+	dma_cfg.error_callback_dis = 0U;
 	dma_cfg.block_count = 1U;
 	dma_cfg.head_block = &dma_block_cfg;
 
