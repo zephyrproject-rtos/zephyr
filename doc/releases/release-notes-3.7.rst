@@ -87,6 +87,10 @@ Drivers and Sensors
   * Deprecated the :c:func:`can_calc_prescaler` API function, as it allows for bitrate
     errors. Bitrate errors between nodes on the same network leads to them drifting apart after the
     start-of-frame (SOF) synchronization has taken place, leading to bus errors.
+  * Added :c:func:`can_get_bitrate_min` and :c:func:`can_get_bitrate_max` for retrieving the minimum
+    and maximum supported bitrate for a given CAN controller/CAN transceiver combination, reflecting
+    that retrieving the bitrate limits can no longer fail. Deprecated the existing
+    :c:func:`can_get_min_bitrate` and :c:func:`can_get_max_bitrate` API functions.
   * Extended support for automatic sample point location to also cover :c:func:`can_calc_timing` and
     :c:func:`can_calc_timing_data`.
   * Added optional ``min-bitrate`` devicetree property for CAN transceivers.
