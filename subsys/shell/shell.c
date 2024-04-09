@@ -1548,7 +1548,7 @@ void shell_vfprintf(const struct shell *sh, enum shell_vt100_color color,
 /* This function mustn't be used from shell context to avoid deadlock.
  * However it can be used in shell command handlers.
  */
-void shell_fprintf(const struct shell *sh, enum shell_vt100_color color,
+void shell_fprintf_impl(const struct shell *sh, enum shell_vt100_color color,
 		   const char *fmt, ...)
 {
 	va_list args;

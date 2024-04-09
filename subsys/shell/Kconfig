@@ -297,6 +297,14 @@ config SHELL_CMDS_RETURN_VALUE
 	  This option enables the retval command. It is used to retrieve
 	  the return value from the most recently executed command.
 
+config SHELL_CUSTOM_HEADER
+	bool "Include Custom Shell Header"
+	help
+	  When enabled, a custom application provided header, named
+	  "zephyr_custom_shell.h", is included at the end of shell.h. This enables
+	  extension of the shell APIs at the macro level. Please use cautiously!
+	  The internal shell API may change in future releases.
+
 source "subsys/shell/modules/Kconfig"
 
 endif # SHELL
