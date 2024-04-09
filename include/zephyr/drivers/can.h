@@ -31,7 +31,7 @@ extern "C" {
  * @brief CAN Interface
  * @defgroup can_interface CAN Interface
  * @since 1.12
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup io_interfaces
  * @{
  */
