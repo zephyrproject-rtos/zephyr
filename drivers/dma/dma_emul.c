@@ -129,7 +129,7 @@ static const char *dma_emul_xfer_config_to_string(const struct dma_config *cfg)
 		 "\n\tslot: %u"
 		 "\n\tchannel_direction: %u"
 		 "\n\tcomplete_callback_en: %u"
-		 "\n\terror_callback_en: %u"
+		 "\n\terror_callback_dis: %u"
 		 "\n\tsource_handshake: %u"
 		 "\n\tdest_handshake: %u"
 		 "\n\tchannel_priority: %u"
@@ -148,7 +148,7 @@ static const char *dma_emul_xfer_config_to_string(const struct dma_config *cfg)
 		 "\n\tdma_callback: %p"
 		 "\n}",
 		 cfg->dma_slot, cfg->channel_direction, cfg->complete_callback_en,
-		 cfg->error_callback_en, cfg->source_handshake, cfg->dest_handshake,
+		 cfg->error_callback_dis, cfg->source_handshake, cfg->dest_handshake,
 		 cfg->channel_priority, cfg->source_chaining_en, cfg->dest_chaining_en,
 		 cfg->linked_channel, cfg->cyclic, cfg->_reserved, cfg->source_data_size,
 		 cfg->dest_data_size, cfg->source_burst_length, cfg->dest_burst_length,
@@ -248,11 +248,11 @@ static void dma_emul_work_handler(struct k_work *work)
 
 				if (state == DMA_EMUL_CHANNEL_STOPPED) {
 					LOG_DBG("asynchronously canceled");
-					if (xfer_config.error_callback_en) {
+					if (!xfer_config.error_callback_dis) {
 						xfer_config.dma_callback(dev, xfer_config.user_data,
 									 channel, -ECANCELED);
 					} else {
-						LOG_DBG("error_callback_en is not set (async "
+						LOG_DBG("error_callback_dis is not set (async "
 							"cancel)");
 					}
 					goto out;
