@@ -114,6 +114,8 @@ Display
 Flash
 =====
 
+* The STM32 octoSPI driver has a common reference to XSPI constant definition. Values prefixed with XSPI_xxx are used instead of OSPI_xxx
+
 General Purpose I/O (GPIO)
 ==========================
 
