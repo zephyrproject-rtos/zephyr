@@ -27,6 +27,7 @@
 		zephyr,ieee802154 = &cpuapp_ieee802154;
 		zephyr,bt-hci-ipc = &ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
+		zephyr,entropy = &prng;
 	};
 
 	aliases {
@@ -92,6 +93,11 @@
 			gpios = <&gpio9 3 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 3";
 		};
+	};
+
+	prng: prng {
+		compatible = "nordic,entropy-prng";
+		status = "okay";
 	};
 };
 
