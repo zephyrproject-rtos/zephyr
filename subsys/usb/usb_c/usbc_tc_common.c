@@ -326,16 +326,19 @@ static const struct smf_state tc_states[TC_STATE_COUNT] = {
 		tc_cc_open_entry,
 		NULL,
 		NULL,
+		NULL,
 		NULL),
 #ifdef CONFIG_USBC_CSM_SINK_ONLY
 	[TC_CC_RD_SUPER_STATE] = SMF_CREATE_STATE(
 		tc_cc_rd_entry,
 		NULL,
 		NULL,
+		NULL,
 		NULL),
 #else
 	[TC_CC_RP_SUPER_STATE] = SMF_CREATE_STATE(
 		tc_cc_rp_entry,
+		NULL,
 		NULL,
 		NULL,
 		NULL),
@@ -346,48 +349,57 @@ static const struct smf_state tc_states[TC_STATE_COUNT] = {
 		tc_unattached_snk_entry,
 		tc_unattached_snk_run,
 		NULL,
-		&tc_states[TC_CC_RD_SUPER_STATE]),
+		&tc_states[TC_CC_RD_SUPER_STATE],
+		NULL),
 	[TC_ATTACH_WAIT_SNK_STATE] = SMF_CREATE_STATE(
 		tc_attach_wait_snk_entry,
 		tc_attach_wait_snk_run,
 		tc_attach_wait_snk_exit,
-		&tc_states[TC_CC_RD_SUPER_STATE]),
+		&tc_states[TC_CC_RD_SUPER_STATE],
+		NULL),
 	[TC_ATTACHED_SNK_STATE] = SMF_CREATE_STATE(
 		tc_attached_snk_entry,
 		tc_attached_snk_run,
 		tc_attached_snk_exit,
+		NULL,
 		NULL),
 #else
 	[TC_UNATTACHED_SRC_STATE] = SMF_CREATE_STATE(
 		tc_unattached_src_entry,
 		tc_unattached_src_run,
 		NULL,
-		&tc_states[TC_CC_RP_SUPER_STATE]),
+		&tc_states[TC_CC_RP_SUPER_STATE],
+		NULL),
 	[TC_UNATTACHED_WAIT_SRC_STATE] = SMF_CREATE_STATE(
 		tc_unattached_wait_src_entry,
 		tc_unattached_wait_src_run,
 		tc_unattached_wait_src_exit,
+		NULL,
 		NULL),
 	[TC_ATTACH_WAIT_SRC_STATE] = SMF_CREATE_STATE(
 		tc_attach_wait_src_entry,
 		tc_attach_wait_src_run,
 		tc_attach_wait_src_exit,
-		&tc_states[TC_CC_RP_SUPER_STATE]),
+		&tc_states[TC_CC_RP_SUPER_STATE],
+		NULL),
 	[TC_ATTACHED_SRC_STATE] = SMF_CREATE_STATE(
 		tc_attached_src_entry,
 		tc_attached_src_run,
 		tc_attached_src_exit,
+		NULL,
 		NULL),
 #endif
 	[TC_DISABLED_STATE] = SMF_CREATE_STATE(
 		tc_disabled_entry,
 		tc_disabled_run,
 		NULL,
-		&tc_states[TC_CC_OPEN_SUPER_STATE]),
+		&tc_states[TC_CC_OPEN_SUPER_STATE],
+		NULL),
 	[TC_ERROR_RECOVERY_STATE] = SMF_CREATE_STATE(
 		tc_error_recovery_entry,
 		tc_error_recovery_run,
 		NULL,
-		&tc_states[TC_CC_OPEN_SUPER_STATE]),
+		&tc_states[TC_CC_OPEN_SUPER_STATE],
+		NULL),
 };
 BUILD_ASSERT(ARRAY_SIZE(tc_states) == TC_STATE_COUNT);
