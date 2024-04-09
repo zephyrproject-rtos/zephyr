@@ -263,6 +263,14 @@ Networking
 Other Subsystems
 ****************
 
+hawkBit
+=======
+
+  * :kconfig:option:`CONFIG_HAWKBIT_PORT` is now an int instead of a string.
+
+  * :kconfig:option:`CONFIG_SETTINGS` needs to be enabled to use hawkBit, as it now uses the
+    settings subsystem to store the hawkBit configuration.
+
 LoRaWAN
 =======
 
