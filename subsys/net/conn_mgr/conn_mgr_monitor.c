@@ -192,7 +192,10 @@ static void conn_mgr_mon_handle_update(void)
 		} else if (last_ready_count == 0) {
 			/* We just gained connectivity */
 			net_mgmt_event_notify(NET_EVENT_L4_CONNECTED, blame);
+		}
 
+		if (ready_count > 0) {
+			/* Trigger online check to be done for each ready interface */
 			conn_mgr_trigger_online_connectivity_check();
 		}
 		last_ready_count = ready_count;

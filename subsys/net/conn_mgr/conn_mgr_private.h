@@ -27,6 +27,9 @@
 /* Configuration flags */
 #define CONN_MGR_IF_IGNORED		BIT(7)
 
+/* Online check running */
+#define CONN_MGR_IF_ONLINE_CHECK	BIT(13)
+
 /* Internal state flags */
 #define CONN_MGR_IF_READY		BIT(13)
 #define CONN_MGR_IF_READY_IPV4		BIT(14)

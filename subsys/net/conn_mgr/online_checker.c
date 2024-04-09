@@ -82,6 +82,8 @@ static struct online_check_data *online_check = &online_check_data_storage;
 
 static void stop_online_check(void);
 
+static K_MUTEX_DEFINE(check_running_lock);
+static bool check_running;
 static uint16_t *states;
 
 bool conn_mgr_trigger_online_checks;
@@ -589,9 +591,13 @@ static int exec_http_query(struct net_if *iface, int sock)
 		net_mgmt_event_notify(NET_EVENT_CONNECTIVITY_ONLINE, iface);
 
 		enable_online_state_verifier();
+
+		ret = 0;
 	} else {
 		NET_DBG("Received HTTP status %d, not considering online.",
 			status);
+
+		ret = -ENOTCONN;
 	}
 
 out:
@@ -715,51 +721,66 @@ static int do_online_http_check(struct net_if *iface, const char *host)
 		ntohs(net_sin6(&online_check->hostaddr)->sin6_port),
 		net_if_get_by_iface(iface));
 
-	exec_http_query(iface, sock);
-	ret = 0;
+	ret = exec_http_query(iface, sock);
 
 out:
 	zsock_close(sock);
 	return ret;
 }
 
-static void do_online_check(struct net_if *iface)
+static int do_online_check(struct net_if *iface)
 {
 	int ret;
 
 	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CHECK_PING) &&
 	    online_check->strategy == NET_CONN_MGR_ONLINE_CHECK_PING) {
 		ret = do_online_ping_check(iface, PING_HOST);
-		if (ret == 0) {
-			online_check->running = true;
-		} else {
-			online_check->running = false;
-		}
 
-		return;
-	}
-
-	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CHECK_HTTP) &&
+	} else if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CHECK_HTTP) &&
 	    online_check->strategy == NET_CONN_MGR_ONLINE_CHECK_HTTP) {
 		ret = do_online_http_check(iface, online_check->url);
-		if (ret == 0) {
-			online_check->running = true;
-		} else {
-			online_check->running = false;
+	} else {
+		if (online_check->strategy != NET_CONN_MGR_ONLINE_CHECK_PING &&
+		    online_check->strategy != NET_CONN_MGR_ONLINE_CHECK_HTTP) {
+			NET_ERR("Invalid online check strategy (%d)", online_check->strategy);
 		}
 
-		return;
+		return -EINVAL;
 	}
 
-	if (online_check->strategy != NET_CONN_MGR_ONLINE_CHECK_HTTP &&
-	    online_check->strategy != NET_CONN_MGR_ONLINE_CHECK_PING) {
-		NET_ERR("Invalid online check strategy (%d)", online_check->strategy);
+	if (ret == 0) {
+		online_check->running = true;
+	} else {
+		online_check->running = false;
 	}
+
+	return ret;
+}
+
+static void clear_online_check_flags(void)
+{
+	int i, state_count;
+
+	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
+
+	state_count = conn_mgr_get_iface_states(&states);
+
+	for (i = 0; i < state_count; i++) {
+		states[i] &= ~CONN_MGR_IF_ONLINE_CHECK;
+	}
+
+	k_mutex_unlock(&conn_mgr_mon_lock);
 }
 
 static void stop_online_check(void)
 {
 	int ret;
+
+	clear_online_check_flags();
+
+	k_mutex_lock(&check_running_lock, K_FOREVER);
+	check_running = false;
+	k_mutex_unlock(&check_running_lock);
 
 	if (!IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_VERIFY)) {
 		return;
@@ -781,7 +802,7 @@ static void stop_online_check(void)
 
 void conn_mgr_online_connectivity_check(void)
 {
-	int i, state_count;
+	int ret, i, state_count;
 
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
 	state_count = conn_mgr_get_iface_states(&states);
@@ -790,7 +811,9 @@ void conn_mgr_online_connectivity_check(void)
 	for (i = 0; i < state_count; i++) {
 		if (states[i] & CONN_MGR_IF_READY) {
 			k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
-			if (!(states[i] & CONN_MGR_IF_READY)) {
+
+			if (!(states[i] & CONN_MGR_IF_READY) ||
+			    (states[i] & CONN_MGR_IF_ONLINE_CHECK)) {
 				k_mutex_unlock(&conn_mgr_mon_lock);
 				continue;
 			}
@@ -801,7 +824,58 @@ void conn_mgr_online_connectivity_check(void)
 			 * generate CONNECTIVITY_ONLINE event. The online
 			 * check might take some time.
 			 */
-			do_online_check(conn_mgr_mon_get_if_by_index(i));
+			k_mutex_lock(&check_running_lock, K_FOREVER);
+
+			if (check_running) {
+				NET_DBG("Online check already running");
+				k_mutex_unlock(&check_running_lock);
+				break;
+			}
+
+			check_running = true;
+
+			k_mutex_unlock(&check_running_lock);
+
+			k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
+
+			/* Tells that we are doing online check for this interface */
+			states[i] |= CONN_MGR_IF_ONLINE_CHECK;
+
+			k_mutex_unlock(&conn_mgr_mon_lock);
+
+			/* Did we get to online? This is a synchronous call and
+			 * in worst case might take a long time to return.
+			 */
+			ret = do_online_check(conn_mgr_mon_get_if_by_index(i));
+			if (ret == 0) {
+				/* We are online, no need to check the other interfaces */
+				break;
+			}
+
+			k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
+
+			states[i] &= ~CONN_MGR_IF_ONLINE_CHECK;
+
+			k_mutex_unlock(&conn_mgr_mon_lock);
+		} else {
+			bool trigger_check = false;
+
+			k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
+
+			/* If this interface was online, then we should re-check */
+			if (states[i] & CONN_MGR_IF_ONLINE_CHECK) {
+				trigger_check = true;
+			}
+
+			/* Clear the online check flag for non ready interface */
+			states[i] &= ~CONN_MGR_IF_ONLINE_CHECK;
+
+			k_mutex_unlock(&conn_mgr_mon_lock);
+
+			if (trigger_check) {
+				conn_mgr_refresh_online_connectivity_check();
+				break;
+			}
 		}
 	}
 }
