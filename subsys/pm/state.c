@@ -8,6 +8,7 @@
 #include <zephyr/pm/state.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/arch/arch_inlines.h>
 
 BUILD_ASSERT(DT_NODE_EXISTS(DT_PATH(cpus)),
 	     "cpus node not defined in Devicetree");
@@ -87,8 +88,13 @@ void pm_state_custom_data_set(enum pm_state state, uint8_t substate_id,
 void *pm_state_custom_data_get(enum pm_state state, uint8_t substate_id)
 {
 #ifdef CONFIG_PM_STATE_CUSTOM_DATA
-	for (int16_t i = 0; i < ARRAY_SIZE(cpus_states); i++) {
-		struct pm_state_info *state_info = cpus_states[i];
+	unsigned int num_cpu_states;
+	const struct pm_state_info *cpu_states;
+
+	num_cpu_states = pm_state_cpu_get_all(arch_proc_id(), &cpu_states);
+
+	for (int i = num_cpu_states - 1; i >= 0; i--) {
+		const struct pm_state_info *state_info = &cpu_states[i];
 
 		if ((state_info->state == state) &&
 		    (state_info->substate_id == substate_id)) {
