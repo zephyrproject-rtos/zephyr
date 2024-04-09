@@ -6,6 +6,7 @@ common:
   platform_allow:
     - nrf52840dk/nrf52840
     - nrf54l15pdk/nrf54l15/cpuapp
+    - nrf54h20dk/nrf54h20/cpuapp
     - nrf52_bsim
   harness_config:
     fixture: gpio_loopback
@@ -27,6 +28,7 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;nrf_rx_disable.overlay"
     platform_exclude:
       - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
 
   drivers.uart.pm.enhanced_poll:
     extra_configs:
@@ -36,6 +38,7 @@ tests:
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
     platform_exclude:
       - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
 
   drivers.uart.pm.int_driven:
     extra_configs:
@@ -54,6 +57,7 @@ tests:
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
     platform_exclude:
       - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
 
   drivers.uart.pm.async:
     extra_configs:
@@ -78,3 +82,4 @@ tests:
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
     platform_exclude:
       - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
