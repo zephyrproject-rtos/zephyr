@@ -7,6 +7,7 @@ config SOC_SERIES_NRF54HX
 	select HAS_NRFS
 	select HAS_NRFX
 	select HAS_NORDIC_DRIVERS
+	select HAS_NORDIC_DMM
 
 config SOC_NRF54H20_CPUAPP
 	select ARM
