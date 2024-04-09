@@ -220,7 +220,7 @@ static size_t metadata_model_size(const struct bt_mesh_model *mod,
 
 	size += sizeof(uint8_t);
 
-	for (entry = *mod->metadata; entry && entry->len; ++entry) {
+	for (entry = mod->metadata; entry && entry->len; ++entry) {
 		size += sizeof(entry->len) + sizeof(entry->id) + entry->len;
 	}
 
@@ -286,7 +286,7 @@ static int metadata_add_model(const struct bt_mesh_model *mod,
 	count_ptr = data_buf_add_u8_offset(buf, 0, offset);
 
 	if (mod->metadata) {
-		for (entry = *mod->metadata; entry && entry->data != NULL; ++entry) {
+		for (entry = mod->metadata; entry && entry->data != NULL; ++entry) {
 			data_buf_add_le16_offset(buf, entry->len, offset);
 			data_buf_add_le16_offset(buf, entry->id, offset);
 			data_buf_add_mem_offset(buf, entry->data, entry->len, offset);
