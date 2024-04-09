@@ -1041,6 +1041,10 @@ static inline int tmag5273_init_device_config(const struct device *dev)
 		return -EIO;
 	}
 
+	if (drv_cfg->operation_mode == TMAG5273_DT_OPER_MODE_CONTINUOUS) {
+		k_usleep(TMAG5273_T_START_MEASURE_US + drv_data->conversion_time_us);
+	}
+
 	return 0;
 }
 
