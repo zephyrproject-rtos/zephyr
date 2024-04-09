@@ -489,6 +489,15 @@ _DoubleExceptionVector:
 	addi a0, a0, -EXCCAUSE_DTLB_MISS
 	beqz a0, _handle_tlb_miss_dblexc
 
+	/* Need to stash the DEPC for used by the C handler.
+	 * If we encounter any DTLB misses when PS.EXCM is set,
+	 * this vector will be used and the DEPC register will
+	 * have the new address instead of the one resulted in
+	 * double exception.
+	 */
+	rsr.depc a0
+	wsr a0, ZSR_DEPC_SAVE
+
 	rsr a0, ZSR_DBLEXC
 
 	j _Level1Vector

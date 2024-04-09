@@ -604,6 +604,32 @@ _Level\LVL\()VectorHelper :
 .global _Level\LVL\()Vector
 _Level\LVL\()Vector:
 #endif
+
+#ifdef CONFIG_XTENSA_MMU
+.if \LVL == 1
+	/* If there are any TLB misses during interrupt handling,
+	 * the user/kernel/double exception vector will be triggered
+	 * to handle these misses. This results in DEPC and EXCCAUSE
+	 * being overwritten, and then execution returned back to
+	 * this site of TLB misses. When it gets to the C handler,
+	 * it will not see the original cause. So stash
+	 * the EXCCAUSE here so C handler can see the original cause.
+	 *
+	 * For double exception, DEPC in saved in earlier vector
+	 * code.
+	 */
+	wsr a0, ZSR_EXCCAUSE_SAVE
+
+	esync
+
+	rsr.exccause a0
+
+	xsr a0, ZSR_EXCCAUSE_SAVE
+
+	esync
+.endif
+#endif
+
 	addi a1, a1, -___xtensa_irq_bsa_t_SIZEOF
 	s32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	s32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET
