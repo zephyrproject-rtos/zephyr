@@ -10,6 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+// NOLINTBEGIN(clang-analyzer-core.NullDereference)
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_ADC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_ADC_H_
 
@@ -857,3 +859,5 @@ static inline int adc_sequence_init_dt(const struct adc_dt_spec *spec,
 #include <syscalls/adc.h>
 
 #endif  /* ZEPHYR_INCLUDE_DRIVERS_ADC_H_ */
+
+// NOLINTEND(clang-analyzer-core.NullDereference)

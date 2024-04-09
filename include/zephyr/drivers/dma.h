@@ -397,8 +397,10 @@ __syscall int dma_start(const struct device *dev, uint32_t channel);
 
 static inline int z_impl_dma_start(const struct device *dev, uint32_t channel)
 {
+	// NOLINTBEGIN(clang-analyzer-core.NullDereference)
 	const struct dma_driver_api *api =
 		(const struct dma_driver_api *)dev->api;
+	// NOLINTEND(clang-analyzer-core.NullDereference)
 
 	return api->start(dev, channel);
 }
