@@ -68,6 +68,14 @@
 				voltage_reference = <0>;
 				power_down_mode = <0>;
 			};
+
+			test_i2c_dacx0501:dacx0501@62 {
+				compatible = "ti,dacx0501";
+				status = "okay";
+				reg = <0x62>;
+				voltage-reference = "internal";
+				output-gain = "mul2";
+			};
 		};
 
 		test_spi: spi@33334444 {

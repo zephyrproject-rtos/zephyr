@@ -1,0 +1,23 @@
+# DAC configuration options
+
+# Copyright (c) 2023 Google, LLC.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_DACX0501
+	bool "TI DACx0501 DAC driver"
+	default y
+	depends on DT_HAS_TI_DACX0501_ENABLED
+	select I2C
+	help
+	  Enable the driver for the TI DACx0501.
+
+if DAC_DACX0501
+
+config DAC_DACX0501_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  TI DACx0501 DAC device driver initialization priority. Must be greater than I2C_INIT_PRIORITY.
+
+endif # DAC_DACX0501

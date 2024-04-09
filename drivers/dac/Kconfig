@@ -37,6 +37,8 @@ source "drivers/dac/Kconfig.sam"
 
 source "drivers/dac/Kconfig.sam0"
 
+source "drivers/dac/Kconfig.dacx0501"
+
 source "drivers/dac/Kconfig.dacx0508"
 
 source "drivers/dac/Kconfig.dacx3608"
