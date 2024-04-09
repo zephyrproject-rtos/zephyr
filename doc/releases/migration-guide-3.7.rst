@@ -379,6 +379,14 @@ Modem
 Shell
 =====
 
+State Machine Framework
+=======================
+
+* The :c:macro:`SMF_CREATE_STATE` macro now always takes 5 arguments. The amount of arguments is
+  now independent of the values of :kconfig:option:`CONFIG_SMF_ANCESTOR_SUPPORT` and
+  :kconfig:option:`CONFIG_SMF_INITIAL_TRANSITION`. If the additional arguments are not used, they
+  have to be set to ``NULL``. (:github:`71250`)
+
 ZBus
 ====
 
