@@ -5309,17 +5309,15 @@ function(add_llext_target target_name)
   )
 
   # Compile the source file using current Zephyr settings but a different
-  # set of flags.
-  # This is currently arch-specific since the ARM loader for .llext files
-  # expects object file format, while the Xtensa one uses shared libraries.
+  # set of flags to obtain the desired llext object type.
   set(llext_lib_target ${target_name}_llext_lib)
-  if(CONFIG_ARM)
+  if(CONFIG_LLEXT_TYPE_ELF_OBJECT)
 
     # Create an object library to compile the source file
     add_library(${llext_lib_target} OBJECT ${source_file})
     set(llext_lib_output $<TARGET_OBJECTS:${llext_lib_target}>)
 
-  elseif(CONFIG_XTENSA)
+  elseif(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
 
     # Create a shared library
     add_library(${llext_lib_target} SHARED ${source_file})
@@ -5371,8 +5369,8 @@ function(add_llext_target target_name)
     COMMAND_EXPAND_LISTS
   )
 
-  # Arch-specific packaging of the built binary file into an .llext file
-  if(CONFIG_ARM)
+  # Type-specific packaging of the built binary file into an .llext file
+  if(CONFIG_LLEXT_TYPE_ELF_OBJECT)
 
     # No packaging required, simply copy the object file
     add_custom_command(
@@ -5381,7 +5379,7 @@ function(add_llext_target target_name)
       DEPENDS ${llext_proc_target} ${llext_pkg_input}
     )
 
-  elseif(CONFIG_XTENSA)
+  elseif(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
 
     # Need to strip the shared library of some sections
     add_custom_command(
@@ -5395,8 +5393,6 @@ function(add_llext_target target_name)
       DEPENDS ${llext_proc_target} ${llext_pkg_input}
     )
 
-  else()
-    message(FATAL_ERROR "add_llext_target: unsupported architecture")
   endif()
 
   # Add user-visible target and dependency, and fill in properties
