@@ -1,0 +1,28 @@
+# Copyright (c) 2023 Google, LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+include: base.yaml
+
+description: TI DACx0501 12 to 16 bit DAC
+
+compatible: "ti,dac-x0501"
+
+properties:
+  ref-source:
+    type: string
+    required: true
+    enum:
+      - "internal"
+      - "external"
+    description: |
+      DAC voltage reference select: either internal or external
+
+  voltage_mult:
+    type: string
+    enum:
+      - "mul2"
+      - "nop"
+      - "div2"
+    default: "nop"
+    description: |
+      DAC voltage multiplier: either 0.5 (div2), 1 (nop) or 2 (mul2).
