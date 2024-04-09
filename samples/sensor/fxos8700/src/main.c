@@ -8,9 +8,14 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/zbus/zbus.h>
+#include <zephyr/device_notifications.h>
 #include <stdio.h>
 
 K_SEM_DEFINE(sem, 0, 1);	/* starts off "not available" */
+
+#define GPIO_DEFERRED DT_NODELABEL(gpioe)
+#define I2C_DEV DT_NODELABEL(i2c0)
+#define FXOS8700 DT_NODELABEL(fxos8700)
 
 ZBUS_CHAN_DECLARE(device_failed_chan);
 
@@ -23,6 +28,24 @@ static void device_failed_cb(const struct zbus_channel *chan)
 }
 ZBUS_LISTENER_DEFINE(device_failed_listener, device_failed_cb);
 ZBUS_CHAN_ADD_OBS(device_failed_chan, device_failed_listener, 1);
+
+ZBUS_CHAN_DECLARE(DEVICE_CHANNEL_GET(I2C_DEV));
+ZBUS_CHAN_DECLARE(DEVICE_CHANNEL_GET(GPIO_DEFERRED));
+ZBUS_CHAN_DECLARE(DEVICE_CHANNEL_GET(FXOS8700));
+
+static void device_obs_cb(const struct zbus_channel *chan)
+{
+	const struct device_notification *notif;
+
+	notif = zbus_chan_const_msg(chan);
+	printf("Device %p type %d status: %d init_res: %d\n", notif->dev,
+	       notif->type, notif->dev->state->status,
+	       notif->dev->state->init_res);
+}
+ZBUS_LISTENER_DEFINE(device_obs_listener, device_obs_cb);
+ZBUS_CHAN_ADD_OBS(DEVICE_CHANNEL_GET(I2C_DEV), device_obs_listener, 1);
+ZBUS_CHAN_ADD_OBS(DEVICE_CHANNEL_GET(GPIO_DEFERRED), device_obs_listener, 1);
+ZBUS_CHAN_ADD_OBS(DEVICE_CHANNEL_GET(FXOS8700), device_obs_listener, 1);
 
 #if !defined(CONFIG_FXOS8700_TRIGGER_NONE)
 static void trigger_handler(const struct device *dev,
@@ -42,10 +65,23 @@ static void trigger_handler(const struct device *dev,
 }
 #endif /* !CONFIG_FXOS8700_TRIGGER_NONE */
 
+void test_cb(struct k_timer *timer)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
+
+	printf("Calling deinit for %p\n", dev);
+	device_deinit(dev);
+}
+
+K_TIMER_DEFINE(test_timer, test_cb, NULL);
+
 int main(void)
 {
 	struct sensor_value accel[3];
 	const struct device *const dev = DEVICE_DT_GET_ONE(nxp_fxos8700);
+
+	/* Timer which deinits a device, to show the notifications propagating */
+	k_timer_start(&test_timer, K_MSEC(5000), K_NO_WAIT);
 
 	if (!device_is_ready(dev)) {
 		printf("Device %s is not ready\n", dev->name);
@@ -88,6 +124,7 @@ int main(void)
 		return 0;
 	}
 #endif /* !CONFIG_FXOS8700_TRIGGER_NONE */
+
 
 	while (1) {
 #ifdef CONFIG_FXOS8700_TRIGGER_NONE

@@ -15,6 +15,7 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/device_notifications.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -350,6 +351,11 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 #endif
 };
 
+static void i2c_mcux_deinit(const struct device *dev)
+{
+	printk("I2C deinit [%p]\n", dev);
+}
+
 #define I2C_DEVICE_INIT_MCUX(n)			\
 	PINCTRL_DT_INST_DEFINE(n);					\
 									\
@@ -365,12 +371,15 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 									\
 	static struct i2c_mcux_data i2c_mcux_data_ ## n;		\
 									\
+	DEVICE_CHANNEL_DEFINE(DT_DRV_INST(n));				\
+									\
 	I2C_DEVICE_DT_INST_DEFINE(n,					\
 			i2c_mcux_init, NULL,				\
 			&i2c_mcux_data_ ## n,				\
 			&i2c_mcux_config_ ## n, POST_KERNEL,		\
 			CONFIG_I2C_INIT_PRIORITY,			\
-			&i2c_mcux_driver_api);				\
+			&i2c_mcux_driver_api, i2c_mcux_deinit,		\
+			&DEVICE_CHANNEL_GET(DT_DRV_INST(n)));		\
 									\
 	static void i2c_mcux_config_func_ ## n(const struct device *dev) \
 	{								\

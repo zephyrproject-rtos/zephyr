@@ -14,11 +14,7 @@ ZBUS_CHAN_DEFINE(device_failed_chan,
 		ZBUS_OBSERVERS_EMPTY,
 		ZBUS_MSG_INIT(0));
 
-extern const struct init_entry __init_start[];
-extern const struct init_entry __init_end[];
-
-
-int _device_failed_notify(void)
+static int device_failed_notify(void)
 {
 	const struct device *devs;
 	size_t devc;
@@ -38,5 +34,19 @@ int _device_failed_notify(void)
 
 	return 0;
 }
+SYS_INIT(device_failed_notify, APPLICATION, CONFIG_DEVICE_NOTIFICATIONS_PRIORITY);
 
-SYS_INIT(_device_failed_notify, APPLICATION, CONFIG_DEVICE_NOTIFICATIONS_PRIORITY);
+void device_notification_send(const struct device *dev,
+			      enum device_notification_type type)
+{
+	struct device_notification msg = {
+		.dev = dev,
+		.type = type,
+	};
+
+	/* Also notify failures on common channel */
+	if (type == DEVICE_NOTIFICATION_FAILURE) {
+		zbus_chan_pub(&device_failed_chan, &msg, K_NO_WAIT);
+	}
+	zbus_chan_pub(dev->channel, &msg, K_NO_WAIT);
+}

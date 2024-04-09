@@ -131,11 +131,11 @@ typedef int16_t device_handle_t;
  * @param api Pointer to the device's API structure. Can be `NULL`.
  */
 #define DEVICE_DEFINE(dev_id, name, init_fn, pm, data, config, level, prio,    \
-		      api)                                                     \
+		      api, deinit_fn, channel)                                 \
 	Z_DEVICE_STATE_DEFINE(dev_id);                                         \
 	Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_id, name, init_fn, pm, data,      \
 			config, level, prio, api,                              \
-			&Z_DEVICE_STATE_NAME(dev_id))
+			&Z_DEVICE_STATE_NAME(dev_id), deinit_fn, channel)
 
 /**
  * @brief Return a string name for a devicetree node.
@@ -192,13 +192,13 @@ typedef int16_t device_handle_t;
  * @param api Pointer to the device's API structure. Can be `NULL`.
  */
 #define DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, prio, api, \
-			 ...)                                                  \
+			 deinit_fn, channel, ...)                              \
 	Z_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));                    \
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),                  \
 			DEVICE_DT_NAME(node_id), init_fn, pm, data, config,    \
 			level, prio, api,                                      \
 			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)),     \
-			__VA_ARGS__)
+			deinit_fn, channel, __VA_ARGS__)
 
 /**
  * @brief Like DEVICE_DT_DEFINE(), but uses an instance of a `DT_DRV_COMPAT`
@@ -362,6 +362,8 @@ typedef int16_t device_handle_t;
 #define DEVICE_INIT_STATUS_NOT_INITIATED 0
 #define DEVICE_INIT_STATUS_OK 1
 #define DEVICE_INIT_STATUS_FAILED 2
+#define DEVICE_INIT_STATUS_DEINITING 3
+#define DEVICE_INIT_STATUS_DEINITIATED 4
 
 /**
  * @brief Runtime device dynamic structure (in RAM) per driver instance
@@ -432,6 +434,17 @@ struct device {
 		struct pm_device *pm;
 		struct pm_device_isr *pm_isr;
 	};
+#endif
+#if defined(CONFIG_DEVICE_DEINIT) || defined(__DOXYGEN__)
+	/**
+	 * Pointer to the device deinitialization function.
+	 *
+	 * This function is called when the device is being deinitialized.
+	 */
+	void (*deinit)(const struct device *dev);
+#endif
+#if defined(CONFIG_DEVICE_NOTIFICATIONS) || defined(__DOXYGEN__)
+	const struct zbus_channel *channel;
 #endif
 };
 
@@ -791,12 +804,17 @@ __syscall int device_init(const struct device *dev);
 #ifdef CONFIG_DEVICE_NOTIFICATIONS
 enum device_notification_type {
 	DEVICE_NOTIFICATION_FAILURE,
+	DEVICE_NOTIFICATION_PRE_DEINIT,
+	DEVICE_NOTIFICATION_POST_DEINIT
 };
 
 struct device_notification {
 	const struct device *dev;
 	enum device_notification_type type;
 };
+
+void device_notification_send(const struct device *dev,
+			      enum device_notification_type type);
 #endif /* CONFIG_DEVICE_NOTIFICATIONS */
 
 /**
@@ -941,13 +959,16 @@ struct device_notification {
  * @param state_ Reference to device state.
  * @param deps_ Reference to device dependencies.
  */
-#define Z_DEVICE_INIT(name_, pm_, data_, config_, api_, state_, deps_)         \
+#define Z_DEVICE_INIT(name_, pm_, data_, config_, api_, state_, deps_,         \
+		      deinit_fn_, channel_)                                    \
 	{                                                                      \
 		.name = name_,                                                 \
 		.config = (config_),                                           \
 		.api = (api_),                                                 \
 		.state = (state_),                                             \
 		.data = (data_),                                               \
+		IF_ENABLED(CONFIG_DEVICE_DEINIT, (.deinit = (deinit_fn_),)) /**/         \
+		IF_ENABLED(CONFIG_DEVICE_NOTIFICATIONS, (.channel = (channel_),)) /**/         \
 		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/        \
 		IF_ENABLED(CONFIG_PM_DEVICE, ({ .pm_base = (pm_),)}) /**/         \
 	}
@@ -978,13 +999,14 @@ struct device_notification {
  * @param ... Optional dependencies, manually specified.
  */
 #define Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level, prio, api, state,     \
-			     deps)                                                                 \
+			     deps, deinit_fn, channel)                                             \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))                                         \
 	COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (), (const))                                     \
 	STRUCT_SECTION_ITERABLE_NAMED_ALTERNATE(                                                   \
 		device, COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (device_mutable), (device)),     \
 		Z_DEVICE_SECTION_NAME(level, prio), DEVICE_NAME_GET(dev_id)) =                     \
-		Z_DEVICE_INIT(name, pm, data, config, api, state, deps)
+		Z_DEVICE_INIT(name, pm, data, config, api, state, deps, deinit_fn,                 \
+			      channel)
 
 /* deprecated device initialization levels */
 #define Z_DEVICE_LEVEL_DEPRECATED_EARLY                                        \
@@ -1063,14 +1085,15 @@ struct device_notification {
  * @param ... Optional dependencies, manually specified.
  */
 #define Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data, config,      \
-			level, prio, api, state, ...)                          \
+			level, prio, api, state, deinit_fn, channel, ...)      \
 	Z_DEVICE_NAME_CHECK(name);                                             \
                                                                                \
 	IF_ENABLED(CONFIG_DEVICE_DEPS,                                         \
 		   (Z_DEVICE_DEPS_DEFINE(node_id, dev_id, __VA_ARGS__);))      \
                                                                                \
 	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
-			     prio, api, state, Z_DEVICE_DEPS_NAME(dev_id));    \
+			     prio, api, state, Z_DEVICE_DEPS_NAME(dev_id),     \
+			     deinit_fn, channel);                              \
                                                                                \
 	COND_CODE_1(DEVICE_DT_DEFER(node_id),                                  \
 		    (Z_DEFER_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id,         \

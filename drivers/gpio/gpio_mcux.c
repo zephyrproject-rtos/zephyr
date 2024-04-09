@@ -9,6 +9,7 @@
 
 #include <errno.h>
 #include <zephyr/device.h>
+#include <zephyr/device_notifications.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/gpio/nxp-kinetis-gpio.h>
 #include <zephyr/irq.h>
@@ -393,6 +394,8 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 									\
 	static struct gpio_mcux_data gpio_mcux_port## n ##_data;	\
 									\
+	DEVICE_CHANNEL_DEFINE(DT_DRV_INST(n));				\
+									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    gpio_mcux_port## n ##_init,			\
 			    NULL,					\
@@ -400,7 +403,8 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 			    &gpio_mcux_port## n##_config,		\
 			    POST_KERNEL,				\
 			    CONFIG_GPIO_INIT_PRIORITY,			\
-			    &gpio_mcux_driver_api);			\
+			    &gpio_mcux_driver_api, NULL,		\
+			    &DEVICE_CHANNEL_GET(DT_DRV_INST(n)));		\
 									\
 	static int gpio_mcux_port## n ##_init(const struct device *dev)	\
 	{								\

@@ -451,7 +451,7 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 			    &uart_mcux_##n##_config,			\
 			    PRE_KERNEL_1,				\
 			    CONFIG_SERIAL_INIT_PRIORITY,		\
-			    &uart_mcux_driver_api);			\
+			    &uart_mcux_driver_api, NULL, NULL)		\
 									\
 	UART_MCUX_CONFIG_FUNC(n)					\
 									\

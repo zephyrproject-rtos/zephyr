@@ -38,6 +38,12 @@ config DEVICE_NOTIFICATIONS_PRIORITY
 	default 6
 	help
 	  Priority of device notifications.
+
+config DEVICE_DEINIT
+	bool "Device deinitialization"
+	help
+	  Enable device deinitialization. This allows devices to be deinitialized
+	  and reinitialized at runtime.
 endmenu
 
 menu "Initialization Priorities"

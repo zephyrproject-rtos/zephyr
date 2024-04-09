@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/atomic.h>
@@ -142,3 +143,30 @@ int device_supported_foreach(const struct device *dev,
 }
 
 #endif /* CONFIG_DEVICE_DEPS */
+
+#ifdef CONFIG_DEVICE_DEINIT
+int z_impl_device_deinit(const struct device *dev)
+{
+	if (dev->deinit) {
+		dev->state->status = DEVICE_INIT_STATUS_DEINITING;
+		device_notification_send(dev, DEVICE_NOTIFICATION_PRE_DEINIT);
+		dev->deinit(dev);
+		dev->state->status = DEVICE_INIT_STATUS_DEINITIATED;
+		device_notification_send(dev, DEVICE_NOTIFICATION_POST_DEINIT);
+
+		return 0;
+	}
+
+	return -ENOSYS;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_device_deinit(const struct device *dev)
+{
+	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
+
+	z_impl_device_deinit(dev);
+}
+#include <syscalls/device_deinit_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_DEVICE_DEINIT */

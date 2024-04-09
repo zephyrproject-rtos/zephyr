@@ -8,9 +8,11 @@
 #define DT_DRV_COMPAT nxp_fxos8700
 
 #include "fxos8700.h"
+#include <zephyr/device_notifications.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/zbus/zbus.h>
 #include <stdlib.h>
 
 LOG_MODULE_REGISTER(FXOS8700, CONFIG_SENSOR_LOG_LEVEL);
@@ -656,6 +658,33 @@ static int fxos8700_init(const struct device *dev)
 	return 0;
 }
 
+static void fx8700_deinit(const struct device *dev)
+{
+	printk("Deiniting fx8700 [%p]\n", dev);
+}
+
+#define DEVICE_I2C_LISTENER_CB_DEF(n)					\
+static void device_i2c_cb##n(const struct zbus_channel *chan)		\
+{									\
+	const struct device_notification *notif;			\
+									\
+	notif = zbus_chan_const_msg(chan);				\
+	printk("fx8700_"#n": device_i2c_cb [%d - %p - %d]\n",		\
+			notif->type, notif->dev,			\
+			notif->dev->state->status);			\
+	if (notif->dev->state->status == DEVICE_INIT_STATUS_DEINITING) {\
+		printk("fx8700_"#n": i2c dev going down %p\n",		\
+				notif->dev);				\
+									\
+		printk("fx8700_"#n": deiniting self\n");		\
+		device_deinit(DEVICE_DT_INST_GET(n));			\
+	}								\
+}									\
+ZBUS_LISTENER_DEFINE(device_i2c_listener##n, device_i2c_cb##n);		\
+ZBUS_CHAN_DECLARE(DEVICE_CHANNEL_GET(DT_BUS(DT_DRV_INST(n))));		\
+ZBUS_CHAN_ADD_OBS(DEVICE_CHANNEL_GET(DT_BUS(DT_DRV_INST(n))),		\
+		  device_i2c_listener##n, 1)
+
 static const struct sensor_driver_api fxos8700_driver_api = {
 	.sample_fetch = fxos8700_sample_fetch,
 	.channel_get = fxos8700_channel_get,
@@ -767,6 +796,8 @@ static const struct sensor_driver_api fxos8700_driver_api = {
 									\
 	static struct fxos8700_data fxos8700_data_##n;			\
 									\
+	DEVICE_CHANNEL_DEFINE(DT_DRV_INST(n));				\
+									\
 	SENSOR_DEVICE_DT_INST_DEFINE(n,					\
 				     fxos8700_init,			\
 				     NULL,				\
@@ -774,6 +805,9 @@ static const struct sensor_driver_api fxos8700_driver_api = {
 				     &fxos8700_config_##n,		\
 				     POST_KERNEL,			\
 				     CONFIG_SENSOR_INIT_PRIORITY,	\
-				     &fxos8700_driver_api);
+				     &fxos8700_driver_api, fx8700_deinit,\
+				     &DEVICE_CHANNEL_GET(DT_DRV_INST(n)));\
+									\
+	DEVICE_I2C_LISTENER_CB_DEF(n);
 
 DT_INST_FOREACH_STATUS_OKAY(FXOS8700_INIT)

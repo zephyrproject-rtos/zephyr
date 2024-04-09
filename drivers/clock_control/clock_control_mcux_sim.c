@@ -111,4 +111,4 @@ DEVICE_DT_DEFINE(NXP_KINETIS_SIM_NODE,
 		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		    &mcux_sim_driver_api);
+		    &mcux_sim_driver_api, NULL, NULL);
