@@ -229,12 +229,13 @@ void *xtensa_excint1_c(void *esf)
 	void *pc, *print_stack = (void *)interrupted_stack;
 	uint32_t depc = 0;
 
-	__asm__ volatile("rsr.exccause %0" : "=r"(cause));
-
 #ifdef CONFIG_XTENSA_MMU
-	__asm__ volatile("rsr.depc %0" : "=r"(depc));
+	depc = XTENSA_RSR(ZSR_DEPC_SAVE_STR);
+	cause = XTENSA_RSR(ZSR_EXCCAUSE_SAVE_STR);
 
 	is_dblexc = (depc != 0U);
+#else /* CONFIG_XTENSA_MMU */
+	__asm__ volatile("rsr.exccause %0" : "=r"(cause));
 #endif /* CONFIG_XTENSA_MMU */
 
 	switch (cause) {
@@ -375,7 +376,7 @@ fixup_out:
 #endif
 #if defined(CONFIG_XTENSA_MMU)
 	if (is_dblexc) {
-		__asm__ volatile("wsr.depc %0" : : "r"(0));
+		XTENSA_WSR(ZSR_DEPC_SAVE_STR, 0);
 	}
 #endif /* CONFIG_XTENSA_MMU */
 
