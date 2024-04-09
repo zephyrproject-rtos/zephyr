@@ -2865,9 +2865,9 @@ endfunction()
 #
 function(zephyr_file_suffix filename)
   set(single_args SUFFIX)
-  cmake_parse_arguments(FILE "" "${single_args}" "" ${ARGN})
+  cmake_parse_arguments(SFILE "" "${single_args}" "" ${ARGN})
 
-  if(NOT DEFINED FILE_SUFFIX OR NOT DEFINED ${filename})
+  if(NOT DEFINED SFILE_SUFFIX OR NOT DEFINED ${filename})
     # If the file suffix variable is not known then there is nothing to do, return early
     return()
   endif()
@@ -2883,7 +2883,7 @@ function(zephyr_file_suffix filename)
     # Search for the full stop so we know where to add the file suffix before the file extension
     cmake_path(GET file EXTENSION file_ext)
     cmake_path(REMOVE_EXTENSION file OUTPUT_VARIABLE new_filename)
-    cmake_path(APPEND_STRING new_filename "_${FILE_SUFFIX}${file_ext}")
+    cmake_path(APPEND_STRING new_filename "_${SFILE_SUFFIX}${file_ext}")
 
     # Use the filename with the suffix if it exists, if not then fall back to the default
     if(EXISTS "${new_filename}")
