@@ -22,6 +22,7 @@ class DeviceConfig:
     serial: str = ''
     baud: int = 115200
     runner: str = ''
+    runner_params: list[str] = field(default_factory=list, repr=False)
     id: str = ''
     product: str = ''
     serial_pty: str = ''
@@ -46,6 +47,9 @@ class TwisterHarnessConfig:
         west_flash_extra_args: list[str] = []
         if config.option.west_flash_extra_args:
             west_flash_extra_args = [w.strip() for w in config.option.west_flash_extra_args.split(',')]
+        runner_params: list[str] = []
+        if config.option.runner_params:
+            runner_params = [w.strip() for w in config.option.runner_params]
         device_from_cli = DeviceConfig(
             type=config.option.device_type,
             build_dir=_cast_to_path(config.option.build_dir),
@@ -54,6 +58,7 @@ class TwisterHarnessConfig:
             serial=config.option.device_serial,
             baud=config.option.device_serial_baud,
             runner=config.option.runner,
+            runner_params=runner_params,
             id=config.option.device_id,
             product=config.option.device_product,
             serial_pty=config.option.device_serial_pty,
