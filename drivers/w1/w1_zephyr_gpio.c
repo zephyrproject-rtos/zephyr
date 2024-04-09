@@ -289,7 +289,7 @@ static int w1_gpio_init(const struct device *dev)
 
 	if (gpio_is_ready_dt(spec)) {
 		int ret = gpio_pin_configure_dt(spec, GPIO_OUTPUT_INACTIVE | GPIO_OPEN_DRAIN |
-							      GPIO_PULL_UP);
+							      GPIO_INPUT);
 		if (ret < 0) {
 			LOG_ERR("Failed to configure GPIO port %s pin %d", spec->port->name,
 				spec->pin);
