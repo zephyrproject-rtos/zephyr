@@ -1,0 +1,19 @@
+# nRF fake entropy prng generator driver configuration
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if ENTROPY_GENERATOR
+
+config FAKE_ENTROPY_NRF_PRNG
+	bool "A fake nRF entropy driver"
+	default y
+	depends on DT_HAS_NORDIC_ENTROPY_PRNG_ENABLED
+	depends on (SOC_SERIES_NRF54HX || SOC_SERIES_NRF92X || SOC_SERIES_NRF54LX)
+	select ENTROPY_HAS_DRIVER
+	help
+	  This is a super simple PRNG driver that can be used on nRF platforms that
+	  do not have an entropy source.
+	  This is NOT SAFE to use for cryptographic operations!
+
+endif
