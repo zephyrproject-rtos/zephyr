@@ -11,6 +11,7 @@
 #include "nrf54h20dk_nrf54h20-ipc_conf.dtsi"
 #include "nrf54h20dk_nrf54h20-pinctrl.dtsi"
 
+/delete-node/ &cpurad_cpusys_ipc;
 /delete-node/ &cpusec_cpurad_ipc;
 
 / {
@@ -100,8 +101,8 @@
 &cpuapp_bellboard {
 	interrupts = <96 NRF_DEFAULT_IRQ_PRIORITY>;
 	interrupt-names = "irq0";
-	/* irq0: 0: cpuapp-cpusec, 13: cpuapp-cpuppr, 18: cpuapp-cpurad */
-	nordic,interrupt-mapping = <0x00042001 0>;
+	/* irq0: 0: cpuapp-cpusec, 6: cpuapp-cpusys, 13: cpuapp-cpuppr, 18: cpuapp-cpurad */
+	nordic,interrupt-mapping = <0x00042041 0>;
 };
 
 &cpusec_cpuapp_ipc {
@@ -115,6 +116,12 @@
 	mbox-names = "rx", "tx";
 	tx-region = <&cpuapp_cpurad_ipc_shm>;
 	rx-region = <&cpurad_cpuapp_ipc_shm>;
+};
+
+&cpuapp_cpusys_ipc {
+	mbox-names = "rx", "tx";
+	tx-region = <&cpuapp_cpusys_ipc_shm>;
+	rx-region = <&cpusys_cpuapp_ipc_shm>;
 };
 
 &cpuapp_cpuppr_ipc {

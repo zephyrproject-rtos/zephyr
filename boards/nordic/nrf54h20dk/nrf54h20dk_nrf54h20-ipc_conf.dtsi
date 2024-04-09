@@ -26,11 +26,25 @@
 				 <&cpurad_bellboard 12>;
 		};
 
+		cpuapp_cpusys_ipc: ipc-2-12 {
+			compatible = "zephyr,ipc-icmsg";
+			status = "disabled";
+			mboxes = <&cpuapp_bellboard 6>,
+				 <&cpusys_vevif 12>;
+		};
+
 		cpuapp_cpuppr_ipc: ipc-2-13 {
 			compatible = "zephyr,ipc-icmsg";
 			status = "disabled";
 			mboxes = <&cpuapp_bellboard 13>,
 				 <&cpuppr_vevif 12>;
+		};
+
+		cpurad_cpusys_ipc: ipc-3-12 {
+			compatible = "zephyr,ipc-icmsg";
+			status = "disabled";
+			mboxes = <&cpurad_bellboard 6>,
+				 <&cpusys_vevif 18>;
 		};
 	};
 };
