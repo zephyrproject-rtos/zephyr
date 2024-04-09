@@ -1735,41 +1735,53 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (dev_cfg->pclk_len > 3) {
+		/* Max 3 domain clock are expected */
+		LOG_ERR("Could not select %d XSPI domain clock", dev_cfg->pclk_len);
+		return -EIO;
+	}
+
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t) &dev_cfg->pclken) != 0) {
+			     (clock_control_subsys_t) &dev_cfg->pclken[0]) != 0) {
 		LOG_ERR("Could not enable XSPI clock");
 		return -EIO;
 	}
-	/* Alternate clock config for peripheral if any */
-#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_ker)
-	if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				(clock_control_subsys_t) &dev_cfg->pclken_ker,
-				NULL) != 0) {
-		LOG_ERR("Could not select XSPI domain clock");
-		return -EIO;
-	}
 	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &dev_cfg->pclken_ker,
-					&ahb_clock_freq) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate(pclken_ker)");
-		return -EIO;
-	}
-#else
-	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &dev_cfg->pclken,
+					(clock_control_subsys_t) &dev_cfg->pclken[0],
 					&ahb_clock_freq) < 0) {
 		LOG_ERR("Failed call clock_control_get_rate(pclken)");
 		return -EIO;
 	}
-#endif
-#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_mgr)
-	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t) &dev_cfg->pclken_mgr) != 0) {
-		LOG_ERR("Could not enable XSPI Manager clock");
-		return -EIO;
+	/* Alternate clock config for peripheral if any */
+	if (IS_ENABLED(STM32_XSPI_DOMAIN_CLOCK_SUPPORT) && (dev_cfg->pclk_len > 1)) {
+		if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				(clock_control_subsys_t) &dev_cfg->pclken[1],
+				NULL) != 0) {
+			LOG_ERR("Could not select XSPI domain clock");
+			return -EIO;
+		}
+		/*
+		 * Get the clock rate from this one (update ahb_clock_freq)
+		 * TODO: retrieve index in the clocks property where clocks has "xspi-ker"
+		 * Assuming index is 1
+		 */
+		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				(clock_control_subsys_t) &dev_cfg->pclken[1],
+				&ahb_clock_freq) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclken)");
+			return -EIO;
+		}
 	}
-#endif
+	/* Clock domain corresponding to the IO-Mgr (XSPIM) */
+	if (IS_ENABLED(STM32_XSPI_DOMAIN_CLOCK_SUPPORT) && (dev_cfg->pclk_len > 2)) {
+		if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				(clock_control_subsys_t) &dev_cfg->pclken[2]) != 0) {
+			LOG_ERR("Could not enable XSPI Manager clock");
+			return -EIO;
+		}
+		/* Do NOT Get the clock rate from this one */
+	}
 
 	for (; prescaler <= STM32_XSPI_CLOCK_PRESCALER_MAX; prescaler++) {
 		uint32_t clk = STM32_XSPI_CLOCK_COMPUTE(ahb_clock_freq, prescaler);
@@ -2008,19 +2020,13 @@ static int flash_stm32_xspi_init(const struct device *dev)
 
 static void flash_stm32_xspi_irq_config_func(const struct device *dev);
 
+static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(STM32_XSPI_NODE);
+
 PINCTRL_DT_DEFINE(STM32_XSPI_NODE);
 
 static const struct flash_stm32_xspi_config flash_stm32_xspi_cfg = {
-	.pclken = {.bus = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspix, bus),
-		   .enr = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspix, bits)},
-#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_ker)
-	.pclken_ker = {.bus = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspi_ker, bus),
-		       .enr = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspi_ker, bits)},
-#endif
-#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_mgr)
-	.pclken_mgr = {.bus = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspi_mgr, bus),
-		       .enr = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspi_mgr, bits)},
-#endif
+	.pclken = pclken,
+	.pclk_len = DT_NUM_CLOCKS(STM32_XSPI_NODE),
 	.irq_config = flash_stm32_xspi_irq_config_func,
 	.flash_size = DT_INST_REG_ADDR_BY_IDX(0, 1),
 	.max_frequency = DT_INST_PROP(0, ospi_max_frequency),
@@ -2061,14 +2067,14 @@ static struct flash_stm32_xspi_data flash_stm32_xspi_dev_data = {
 #endif /* jedec_id */
 };
 
-DEVICE_DT_INST_DEFINE(0, &flash_stm32_xspi_init, NULL,
-		      &flash_stm32_xspi_dev_data, &flash_stm32_xspi_cfg,
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		      &flash_stm32_xspi_driver_api);
-
 static void flash_stm32_xspi_irq_config_func(const struct device *dev)
 {
 	IRQ_CONNECT(DT_IRQN(STM32_XSPI_NODE), DT_IRQ(STM32_XSPI_NODE, priority),
 		    flash_stm32_xspi_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_IRQN(STM32_XSPI_NODE));
 }
+
+DEVICE_DT_INST_DEFINE(0, &flash_stm32_xspi_init, NULL,
+		      &flash_stm32_xspi_dev_data, &flash_stm32_xspi_cfg,
+		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		      &flash_stm32_xspi_driver_api);
