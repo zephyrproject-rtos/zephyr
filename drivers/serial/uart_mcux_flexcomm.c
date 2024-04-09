@@ -1144,7 +1144,7 @@ DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 			.source_data_size = 1,					\
 			.dest_data_size = 1,					\
 			.complete_callback_en = 1,				\
-			.error_callback_en = 1,					\
+			.error_callback_dis = 1,				\
 			.block_count = 1,					\
 			.head_block =						\
 				&mcux_flexcomm_##n##_data.tx_data.active_block,	\
@@ -1165,7 +1165,7 @@ DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 			.source_data_size = 1,					\
 			.dest_data_size = 1,					\
 			.complete_callback_en = 1,				\
-			.error_callback_en = 1,					\
+			.error_callback_dis = 1,				\
 			.block_count = 1,					\
 			.head_block =						\
 				&mcux_flexcomm_##n##_data.rx_data.active_block,	\
