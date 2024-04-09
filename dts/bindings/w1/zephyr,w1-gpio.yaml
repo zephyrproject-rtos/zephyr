@@ -19,6 +19,12 @@ description: |
     - w1 is pin 13 on gpio0. The gpio is active when the pin is high, is
       configured as an open-drain, and has a pull-up resistor.
 
+  Implementation details:
+    - Most drivers require the selected gpio to support open drain, this enables onewire
+      devices to lower the signal when the SOC set the signal high.
+    - Ensure pullup is strong enough (4.7K according to the specification). Standard pullup in
+      SOC are usually weak, and may not be strong enough.
+
 compatible: "zephyr,w1-gpio"
 
 include: [w1-master.yaml]
