@@ -467,17 +467,15 @@ static void lis2dh_thread_cb(const struct device *dev)
 			TRIGGED_INT2)) {
 		uint8_t reg_val = 0;
 
-		if (cfg->hw.anym_latch) {
-			/* clear interrupt to de-assert int line */
-			status = lis2dh->hw_tf->read_reg(dev,
-							 cfg->hw.anym_on_int1 ?
-								LIS2DH_REG_INT1_SRC :
-								LIS2DH_REG_INT2_SRC,
-							 &reg_val);
-			if (status < 0) {
-				LOG_ERR("clearing interrupt 2 failed: %d", status);
-				return;
-			}
+		/* if necessary also clears an interrupt to de-assert int line */
+		status = lis2dh->hw_tf->read_reg(dev,
+						 cfg->hw.anym_on_int1 ?
+							LIS2DH_REG_INT1_SRC :
+							LIS2DH_REG_INT2_SRC,
+						 &reg_val);
+		if (status < 0) {
+			LOG_ERR("clearing interrupt 2 failed: %d", status);
+			return;
 		}
 
 		if (likely(lis2dh->handler_anymotion != NULL) &&
