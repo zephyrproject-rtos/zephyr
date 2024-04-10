@@ -27,7 +27,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <zephyr/net/net_ip.h>
-
+#include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
@@ -694,6 +694,27 @@ static inline uint16_t coap_block_size_to_bytes(
 	enum coap_block_size block_size)
 {
 	return (1 << (block_size + 4));
+}
+
+/**
+ * @brief Helper for converting block size in bytes to enumeration.
+ *
+ * NOTE: Only valid CoAP block sizes map correctly.
+ *
+ * @param bytes CoAP block size in bytes.
+ * @return enum coap_block_size
+ */
+static inline enum coap_block_size coap_bytes_to_block_size(uint16_t bytes)
+{
+	int sz = u32_count_trailing_zeros(bytes) - 4;
+
+	if (sz < COAP_BLOCK_16) {
+		return COAP_BLOCK_16;
+	}
+	if (sz > COAP_BLOCK_1024) {
+		return COAP_BLOCK_1024;
+	}
+	return sz;
 }
 
 /**
