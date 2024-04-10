@@ -724,8 +724,8 @@ static int execute_upload(const struct shell *sh,
 			shell_udp_upload_print_stats(sh, &results);
 		}
 	} else {
-		if (!IS_ENABLED(CONFIG_NET_UDP)) {
-			shell_fprintf(sh, SHELL_INFO,
+		if (is_udp && !IS_ENABLED(CONFIG_NET_UDP)) {
+			shell_fprintf(sh, SHELL_WARNING,
 				      "UDP not supported\n");
 		}
 	}
@@ -750,8 +750,8 @@ static int execute_upload(const struct shell *sh,
 			shell_tcp_upload_print_stats(sh, &results);
 		}
 	} else {
-		if (!IS_ENABLED(CONFIG_NET_TCP)) {
-			shell_fprintf(sh, SHELL_INFO,
+		if (!is_udp && !IS_ENABLED(CONFIG_NET_TCP)) {
+			shell_fprintf(sh, SHELL_WARNING,
 				      "TCP not supported\n");
 		}
 	}
@@ -916,7 +916,7 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 			return -ENOEXEC;
 		}
 
-		shell_fprintf(sh, SHELL_WARNING, "Connecting to %s\n",
+		shell_fprintf(sh, SHELL_NORMAL, "Connecting to %s\n",
 			      net_sprint_ipv6_addr(&ipv6.sin6_addr));
 
 		memcpy(&param.peer_addr, &ipv6, sizeof(ipv6));
@@ -974,20 +974,24 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 		param.duration_ms = MSEC_PER_SEC * strtoul(argv[start + 3],
 							   NULL, 10);
 	} else {
-		param.duration_ms = MSEC_PER_SEC * 1;
+		param.duration_ms = MSEC_PER_SEC * DEF_DURATION_SECONDS;
 	}
 
 	if (argc > 4) {
 		param.packet_size = parse_number(argv[start + 4], K, K_UNIT);
 	} else {
-		param.packet_size = 256U;
+		param.packet_size = DEF_PACKET_SIZE;
 	}
 
 	if (argc > 5) {
 		param.rate_kbps =
 			(parse_number(argv[start + 5], K, K_UNIT) + 999) / 1000;
+		if (!is_udp) {
+			shell_fprintf(sh, SHELL_WARNING,
+				    "TCP upload will ignore <baud rate> argument\n");
+		}
 	} else {
-		param.rate_kbps = 10U;
+		param.rate_kbps = DEF_RATE_KBPS;
 	}
 
 	return execute_upload(sh, &param, is_udp, async);
@@ -1138,20 +1142,24 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 		param.duration_ms = MSEC_PER_SEC * strtoul(argv[start + 2],
 							   NULL, 10);
 	} else {
-		param.duration_ms = MSEC_PER_SEC * 1;
+		param.duration_ms = MSEC_PER_SEC * DEF_DURATION_SECONDS;
 	}
 
 	if (argc > 3) {
 		param.packet_size = parse_number(argv[start + 3], K, K_UNIT);
 	} else {
-		param.packet_size = 256U;
+		param.packet_size = DEF_PACKET_SIZE;
 	}
 
 	if (argc > 4) {
 		param.rate_kbps =
 			(parse_number(argv[start + 4], K, K_UNIT) + 999) / 1000;
+		if (!is_udp) {
+			shell_fprintf(sh, SHELL_WARNING,
+				    "TCP upload will ignore <baud rate> argument\n");
+		}
 	} else {
-		param.rate_kbps = 10U;
+		param.rate_kbps = DEF_RATE_KBPS;
 	}
 
 	return execute_upload(sh, &param, is_udp, async);
@@ -1374,9 +1382,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 		  "<options>     command options (optional): [-S tos -a]\n"
 		  "<dest ip>     IP destination\n"
 		  "<dest port>   port destination\n"
-		  "<duration>    of the test in seconds\n"
-		  "<packet size> Size of the packet in byte or kilobyte "
-							"(with suffix K)\n"
+		  "<duration>    of the test in seconds "
+							"(default " DEF_DURATION_SECONDS_STR ")\n"
+		  "<packet size> in byte or kilobyte "
+							"(with suffix K) "
+							"(default " DEF_PACKET_SIZE_STR ")\n"
 		  "Available options:\n"
 		  "-S tos: Specify IPv4/6 type of service\n"
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
@@ -1388,12 +1398,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 		  "Example: tcp upload 2001:db8::2\n",
 		  cmd_tcp_upload),
 	SHELL_CMD(upload2, NULL,
-		  "[<options>] v6|v4 <duration> <packet size>[K] <baud rate>[K|M]\n"
+		  "[<options>] v6|v4 <duration> <packet size>[K]\n"
 		  "<options>     command options (optional): [-S tos -a]\n"
 		  "<v6|v4>:      Use either IPv6 or IPv4\n"
-		  "<duration>    Duration of the test in seconds\n"
-		  "<packet size> Size of the packet in byte or kilobyte "
-							"(with suffix K)\n"
+		  "<duration>    of the test in seconds "
+							"(default " DEF_DURATION_SECONDS_STR ")\n"
+		  "<packet size> in byte or kilobyte "
+							"(with suffix K) "
+							"(default " DEF_PACKET_SIZE_STR ")\n"
 		  "Available options:\n"
 		  "-S tos: Specify IPv4/6 type of service\n"
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
@@ -1433,10 +1445,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  "<options>     command options (optional): [-S tos -a]\n"
 		  "<dest ip>     IP destination\n"
 		  "<dest port>   port destination\n"
-		  "<duration>    of the test in seconds\n"
-		  "<packet size> Size of the packet in byte or kilobyte "
-							"(with suffix K)\n"
-		  "<baud rate>   Baudrate in kilobyte or megabyte\n"
+		  "<duration>    of the test in seconds "
+							"(default " DEF_DURATION_SECONDS_STR ")\n"
+		  "<packet size> in byte or kilobyte "
+							"(with suffix K) "
+							"(default " DEF_PACKET_SIZE_STR ")\n"
+		  "<baud rate>   in kilobyte or megabyte "
+							"(default " DEF_RATE_KBPS_STR "K)\n"
 		  "Available options:\n"
 		  "-S tos: Specify IPv4/6 type of service\n"
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
@@ -1451,10 +1466,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  "[<options>] v6|v4 [<duration> <packet size>[K] <baud rate>[K|M]]\n"
 		  "<options>     command options (optional): [-S tos -a]\n"
 		  "<v6|v4>:      Use either IPv6 or IPv4\n"
-		  "<duration>    Duration of the test in seconds\n"
-		  "<packet size> Size of the packet in byte or kilobyte "
-							"(with suffix K)\n"
-		  "<baud rate>   Baudrate in kilobyte or megabyte\n"
+		  "<duration>    of the test in seconds "
+							"(default " DEF_DURATION_SECONDS_STR ")\n"
+		  "<packet size> in byte or kilobyte "
+							"(with suffix K) "
+							"(default " DEF_PACKET_SIZE_STR ")\n"
+		  "<baud rate>   in kilobyte or megabyte "
+							"(default " DEF_RATE_KBPS_STR "K)\n"
 		  "Available options:\n"
 		  "-S tos: Specify IPv4/6 type of service\n"
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
