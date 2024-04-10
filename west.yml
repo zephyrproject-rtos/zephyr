@@ -56,7 +56,7 @@ manifest:
       remote: babblesim
       repo-path: ext_2G4_phy_v1
       path: tools/bsim/components/ext_2G4_phy_v1
-      revision: 1ab9a884621d9ca719ef23536ca47d10494220c6
+      revision: d8302b8d51409b9e717a1a0ba6b443d3b5552a6c
       groups:
         - babblesim
     - name: babblesim_ext_2G4_channel_NtNcable
