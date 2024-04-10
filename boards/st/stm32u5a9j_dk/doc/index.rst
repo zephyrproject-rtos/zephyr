@@ -83,6 +83,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| TIMER     | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 
 Other hardware features have not been enabled yet for this board.
 
