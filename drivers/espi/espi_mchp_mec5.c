@@ -281,17 +281,15 @@ struct espi_mec5_hdi2 {
 	const struct device *dev;
 };
 
-#define MEC5_ESPI_HDI_NSIRQS2(node_id) \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, sirqs), (DT_PROP_LEN(node_id, sirqs)), (0))
-
-#define MEC5_ESPI_HDI_CFG2(node_id) \
-	((MEC5_ESPI_HDI_NSIRQS(node_id) & 0xfu) \
-	 | ((DT_PROP(node_id, host_address_space) & 0x1u) << 4))
+/* host-infos */
 
 #define MEC5_ESPI_HDI_ENTRY2(node_id) \
 	{ \
 		.dev = (const struct device *)DEVICE_DT_GET(node_id), \
 	},
+
+#define MEC5_ESPI_HDI_ENTRY(node_id) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, host_infos), (MEC5_ESPI_HDI_ENTRY2(node_id)), ())
 
 const struct espi_mec5_hdi2 espi_mec5_hdi_tbl2[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY(DT_NODELABEL(espi0), MEC5_ESPI_HDI_ENTRY2)
