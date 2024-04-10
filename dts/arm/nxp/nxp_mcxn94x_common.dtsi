@@ -904,6 +904,18 @@
 		clk-source = <1>;
 		resolution = <32>;
 	};
+
+	flexio0: flexio@105000 {
+		compatible = "nxp,flexio";
+		reg = <0x105000 0x1000>;
+		status = "disabled";
+		interrupts = <105 0>;
+		clocks = <&syscon MCUX_FLEXIO0_CLK>;
+		flexio0_lcd: flexio0-lcd {
+			compatible = "nxp,mipi-dbi-flexio-lcdif";
+			status = "disabled";
+		};
+	};
 };
 
 &systick {
