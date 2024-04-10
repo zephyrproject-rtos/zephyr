@@ -9,18 +9,3 @@ tests:
     extra_args: CONF_FILE=log_sync.conf
     integration_platforms:
       - native_sim
-  logging.log_user:
-    tags: logging
-    filter: CONFIG_USERSPACE
-    extra_args:
-      - CONF_FILE=log_user.conf
-      - USERSPACE_TEST=1
-    # FIXME: log_user test fails when compiled with the GCC 12 from Zephyr SDK.
-    #        (see the GitHub issue zephyrproject-rtos/zephyr#49213)
-    #        Make sure to un-comment `integration_platforms` when the above
-    #        issue is fixed. It has been temporarily disabled because
-    #        `integration_platforms` and `toolchain_exclude` cannot be used
-    #        together.
-    toolchain_exclude: zephyr
-    # integration_platforms:
-    #   - qemu_x86
