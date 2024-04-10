@@ -171,6 +171,7 @@ endif()
 
 if(CONFIG_ASAN_RECOVER)
   zephyr_compile_options(-fsanitize-recover=all)
+  target_compile_options(native_simulator INTERFACE "-fsanitize-recover=all")
 endif()
 
 if(CONFIG_ARCH_POSIX_LIBFUZZER)
