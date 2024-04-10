@@ -35,7 +35,7 @@ struct nsi_hw_event_st {
  */
 #define NSI_HW_EVENT(t, fn, prio)					\
 	static const struct nsi_hw_event_st NSI_CONCAT(NSI_CONCAT(__nsi_hw_event_, fn), t) \
-		__attribute__((__used__))						\
+		__attribute__((__used__)) NSI_NOASAN					\
 		__attribute__((__section__(".nsi_hw_event_" NSI_STRINGIFY(prio))))	\
 		= {			\
 			.callback = fn,	\
