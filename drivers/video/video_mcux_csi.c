@@ -156,7 +156,6 @@ static int video_mcux_csi_set_fmt(const struct device *dev, enum video_endpoint_
 static int video_mcux_csi_get_fmt(const struct device *dev, enum video_endpoint_id ep,
 				  struct video_format *fmt)
 {
-	struct video_mcux_csi_data *data = dev->data;
 	const struct video_mcux_csi_config *config = dev->config;
 
 	if (fmt == NULL || ep != VIDEO_EP_OUT) {
@@ -168,12 +167,7 @@ static int video_mcux_csi_get_fmt(const struct device *dev, enum video_endpoint_
 		return video_mcux_csi_set_fmt(dev, ep, fmt);
 	}
 
-	fmt->pixelformat = data->pixelformat;
-	fmt->height = data->csi_config.height;
-	fmt->width = data->csi_config.width;
-	fmt->pitch = data->csi_config.linePitch_Bytes;
-
-	return 0;
+	return -EIO;
 }
 
 static int video_mcux_csi_stream_start(const struct device *dev)
