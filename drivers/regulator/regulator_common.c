@@ -10,11 +10,7 @@
 static void regulator_delay(uint32_t delay_us)
 {
 	if (delay_us > 0U) {
-#ifdef CONFIG_MULTITHREADING
 		k_sleep(K_USEC(delay_us));
-#else
-		k_busy_wait(delay_us);
-#endif
 	}
 }
 
