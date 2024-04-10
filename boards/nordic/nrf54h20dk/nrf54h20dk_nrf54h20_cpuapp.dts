@@ -173,4 +173,5 @@
 	pinctrl-0 = <&uart136_default>;
 	pinctrl-1 = <&uart136_sleep>;
 	pinctrl-names = "default", "sleep";
+	hw-flow-control;
 };
