@@ -8,22 +8,14 @@ common:
     - qemu_cortex_r5 # unsupported relocations
 
 tests:
-  # add_llext_target() supports a fairly limited number of
-  # CONFIG_urations.  For instance, invoking add_llext_target()
-  # currently blocks us from compiling subsys/llext/*.c in 64bits mode;
-  # CMake aborts before even invoking the compiler.
-  #
   # While there is in practice no value in compiling subsys/llext/*.c
   # without actually running it to load some extension, let's keep it in
-  # good shape and ready to be used when add_llext_target()
-  # limitations get lifted in the future.
+  # good shape and ready to be used by additional architectures in the
+  # future.
   llext.simple.loader_build:
     build_only: true
     # How to override the above and allow ANY arch?
     arch_allow: arm arm64 x86 x86_64 xtensa posix
-    extra_args:
-      - LOADER_BUILD_ONLY=1
-      - EXTRA_CFLAGS=-DLOADER_BUILD_ONLY=1
 
   llext.simple.readonly:
     arch_exclude: xtensa # for now
