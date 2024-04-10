@@ -32,5 +32,6 @@ endforeach()
 set(SYSBUILD_CURRENT_MODULE_DIR)
 set(SYSBUILD_CURRENT_CMAKE_DIR)
 
-# This allows for board specific images to be included.
+# This allows for board and SoC specific images to be included.
 sysbuild_add_subdirectory(boards)
+sysbuild_add_subdirectory(soc)
