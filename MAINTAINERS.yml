@@ -3457,7 +3457,7 @@ nRF Platforms:
     - drivers/*/*nrfx*.c
     - soc/nordic/
     - samples/boards/nrf/
-    - dts/arm/nordic/
+    - dts/*/nordic/
     - dts/bindings/*/nordic,*
     - tests/drivers/timer/nrf_rtc_timer/
   labels:
