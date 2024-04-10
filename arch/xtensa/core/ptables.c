@@ -1083,8 +1083,7 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 	size_t aligned_size;
 	const struct k_thread *thread = _current;
 	uint32_t *ptables = thread_page_tables_get(thread);
-	uint8_t ring = ((thread->base.user_options & K_USER) != 0) ?
-		XTENSA_MMU_USER_RING : XTENSA_MMU_KERNEL_RING;
+	uint8_t ring = XTENSA_MMU_USER_RING;
 
 	/* addr/size arbitrary, fix this up into an aligned region */
 	k_mem_region_align((uintptr_t *)&virt, &aligned_size,
