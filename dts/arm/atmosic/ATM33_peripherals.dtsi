@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2021-2024 Atmosic
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+timer0: timer@0 {
+	compatible = "arm,cmsdk-timer";
+	reg = <0x00000000 0x1000>;
+	interrupts = <3 2>;
+};
+
+timer1: timer@1000 {
+	compatible = "arm,cmsdk-timer";
+	reg = <0x00001000 0x1000>;
+	interrupts = <4 2>;
+};
+
+dtimer0: dtimer@2000 {
+	compatible = "arm,cmsdk-dtimer";
+	reg = <0x00002000 0x1000>;
+	interrupts = <5 2>;
+};
+
+wdog0: wdog@81000 {
+	compatible = "arm,cmsdk-watchdog";
+	clocks = <&sysclk>;
+	reg = <0x00081000 0x1000>;
+};
+
+wrpr0: wrpr0@143000 {
+	reg = <0x00143000 0x1000>;
+};
+
+uart0: uart@144000 {
+	compatible = "atmosic,atm-uart";
+	reg = <0x00144000 0x1000>;
+	interrupts = <32 2>, <33 2>, <41 2>;
+	interrupt-names = "rx", "tx", "ovf";
+	clocks = <&clk_16M>;
+	current-speed = <115200>;
+	instance = <0>;
+	status = "disabled";
+};
+
+uart1: uart@145000 {
+	compatible = "atmosic,atm-uart";
+	reg = <0x00145000 0x1000>;
+	interrupts = <34 2>, <35 2>, <42 2>;
+	interrupt-names = "rx", "tx", "ovf";
+	clocks = <&clk_16M>;
+	current-speed = <115200>;
+	instance = <1>;
+};
+
+slwtimer: slwtimer@14e000 {
+	reg = <0x0014e000 0x1000>;
+	interrupts = <44 2>;
+};
+
+nvm: nvm@152000 {
+	reg = <0x00152000 0x1000>;
+	interrupts = <52 2>;
+};
+
+wrpr1: wrpr@153000 {
+	reg = <0x00153000 0x1000>;
+};
+
+pseq: pseq@158000 {
+	reg = <0x00158000 0x1000>;
+	interrupts = <91 2>;
+};
+
+wrpr2: wrpr2@163000 {
+	reg = <0x00163000 0x1000>;
+};

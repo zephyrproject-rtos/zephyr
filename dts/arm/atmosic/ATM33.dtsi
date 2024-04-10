@@ -1,0 +1,93 @@
+/*
+ * Copyright (c) 2021-2023 Atmosic
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+
+/ {
+	power-states {
+		idle: idle {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <10>;
+		};
+		sleep: sleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <1000>;
+		};
+		retain: retain {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			min-residency-us = <20000>;
+
+			/* Carefully measured in simulation - DO NOT ADJUST */
+			exit-latency-us = <1800>;
+		};
+		hibernate: hibernate {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			substate-id = <0>;
+			min-residency-us = <100000>;
+		};
+		soc_off: soc_off {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			substate-id = <1>;
+			min-residency-us = <100000>;
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			cpu-power-states = <&idle &sleep &retain &hibernate>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+				arm,num-mpu-regions = <8>;
+			};
+		};
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+#ifdef INIT_BP_FREQ
+		clock-frequency = <INIT_BP_FREQ>;
+#else
+		clock-frequency = <16000000>;
+#endif
+		#clock-cells = <0>;
+	};
+
+	clk_16M: alt-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <16000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		peripheral@50000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x50000000 0x10000000>;
+
+			#include "ATM33_peripherals.dtsi"
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

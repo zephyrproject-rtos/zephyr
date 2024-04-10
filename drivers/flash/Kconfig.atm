@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_ATM
+	bool "Atmosic external flash driver"
+	depends on DT_HAS_ATMOSIC_EXTERNAL_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	default y
+	help
+	  Enable Atmosic external flash driver.
+
+config SOC_FLASH_ATM_RRAM
+	bool "Atmosic RRAM driver"
+	depends on DT_HAS_ATMOSIC_RRAM_CONTROLLER_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	default y
+	help
+	  Enable Atmosic RRAM driver.

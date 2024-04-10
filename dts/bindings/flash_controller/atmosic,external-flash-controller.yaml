@@ -1,0 +1,40 @@
+# Copyright (c) 2024 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Flash controller
+
+compatible: "atmosic,external-flash-controller"
+
+include: flash-controller.yaml
+
+properties:
+    clk-pin:
+      type: int
+      required: false
+      description: QSPI_CLK pin to use
+
+    csn-pin:
+      type: int
+      required: false
+      description: QSPI_CSN pin to use
+
+    d0-pin:
+      type: int
+      required: false
+      description: QSPI_D0 pin to use
+
+    d1-pin:
+      type: int
+      required: false
+      description: QSPI_D1 pin to use
+
+    d2-pin:
+      type: int
+      required: false
+      description: QSPI_D2 pin to use
+
+    d3-pin:
+      type: int
+      required: false
+      description: QSPI_D3 pin to use

@@ -1,0 +1,41 @@
+# Copyright (c) 2024 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmosic UART
+
+compatible: "atmosic,atm-uart"
+
+include: uart-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    instance:
+      type: int
+      required: true
+      description: UART Hardware Instance
+
+    rx-pin:
+      type: int
+      required: true
+      description: RX pin to use
+
+    tx-pin:
+      type: int
+      required: true
+      description: TX pin to use
+
+    cts-pin:
+      type: int
+      required: false
+      description: CTS pin to use
+
+    rts-pin:
+      type: int
+      required: false
+      description: RTS pin to use

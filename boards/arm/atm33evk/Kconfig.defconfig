@@ -1,0 +1,27 @@
+# Copyright (c) 2021-2023 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ATM33_EVK || BOARD_ATM33_EVK_NS
+
+config BOARD
+	default "atm33_evk"
+
+if SERIAL
+
+config UART_ATM
+	default y
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif # SERIAL
+
+if MCUBOOT
+
+config BOOT_NVM_COND_ERASE
+	bool "device supports conditional erase"
+	default y
+
+endif
+endif # BOARD_ATM33_EVK || BOARD_ATM33_EVK_NS

@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2021-2024 Atmosic
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/atmosic/ATM33xx.dtsi>
+
+/ {
+	model = "Atmosic EVK 3330-QN-5";
+	compatible = "atmosic,ATMEVK-3330-QN-5";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart1;
+		zephyr,bt-c2h-uart = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &rram0;
+		zephyr,code-partition = &spe_partition;
+	};
+};
+
+&uart1 {
+	rx-pin = <25>;
+	tx-pin = <27>;
+};
+
+&uart0 {
+	rx-pin = <30>;
+	tx-pin = <15>;
+	rts-pin = <13>;
+	cts-pin = <12>;
+};

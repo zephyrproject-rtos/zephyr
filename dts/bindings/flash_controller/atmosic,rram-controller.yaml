@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: RRAM controller
+
+compatible: "atmosic,rram-controller"
+
+include: flash-controller.yaml
+properties:
+    no-erase-before-write:
+        type: boolean
+        required: false
+        description: Set if erase is not required before re-writing byte

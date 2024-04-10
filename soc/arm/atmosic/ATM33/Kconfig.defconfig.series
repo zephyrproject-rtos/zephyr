@@ -1,0 +1,83 @@
+# Copyright (c) 2021 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_ATM33
+
+gsource "soc/arm/atmosic/ATM33/Kconfig.defconfig.ATM33*"
+
+config SOC_SERIES
+	default "ATM33"
+
+ config ROM_START_OFFSET
+	default 0 if MERGE_SPE_NSPE && BOOTLOADER_MCUBOOT
+	default 0x800 if BOOTLOADER_MCUBOOT
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 16000000
+
+config NUM_IRQS
+	int
+	default 448
+
+config BUILD_OUTPUT_HEX
+	default "y"
+
+if PM
+
+config PM_DEVICE
+	default y
+
+config IDLE_STACK_SIZE
+	int
+	default 1024
+
+endif # PM
+
+
+SLOT1_NODE_LABEL := $(dt_nodelabel_path,slot1_partition)
+SLOT1_SIZE := $(dt_node_reg_size_int,$(SLOT1_NODE_LABEL),0)
+SLOT1_PARENT := $(dt_node_parent,$(SLOT1_NODE_LABEL))
+SLOT1_GPARENT := $(dt_node_parent,$(SLOT1_PARENT))
+SLOT1_GPARENT_EB := $(dt_node_int_prop_int,$(SLOT1_GPARENT),erase-block-size)
+MAX_SECTORS := $(shell, python3 -c "print(int($(SLOT1_SIZE)/$(SLOT1_GPARENT_EB))) if $(SLOT1_SIZE) else print(0)")
+
+if MCUBOOT || BOOTLOADER_MCUBOOT
+
+config BOOT_MAX_IMG_SECTORS
+	int
+	default $(MAX_SECTORS)
+
+endif #  MCUBOOT || BOOTLOADER_MCUBOOT
+
+if TRUSTED_EXECUTION_NONSECURE
+
+config SPE_PATH
+	string "Path to SPE build directory"
+
+config ARM_FIRMWARE_USES_SECURE_ENTRY_FUNCS
+	default y if SPE_PATH != ""
+
+config MERGE_SPE_NSPE
+	bool "Merge SPE and application into single image"
+	depends on SPE_PATH != ""
+	default y if BOOTLOADER_MCUBOOT
+	default n
+	help
+	  Option to merge SPE and NSPE to a single image. This config must
+	  be set if building with MCUboot as the merged image is signed.
+	  However, it can also be set to allow a single `west flash` to flash
+	  both the spe and nspe.
+
+if BOOTLOADER_MCUBOOT
+
+config MCUBOOT_EXTRA_IMGTOOL_ARGS
+	# Need to override header-size for image tool to the SPE header allocation
+	default "--header-size=0x800" if MERGE_SPE_NSPE
+
+endif # BOOTLOADER_MCUBOOT
+
+endif # TRUSTED_EXECUTION_NONSECURE
+
+endif # SOC_SERIES_ATM33

@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_ATM
+	bool
+	# omit prompt to signify a "hidden" option
+
+if SOC_FAMILY_ATM
+config SOC_FAMILY
+	string
+	default "atmosic"
+
+source "soc/arm/atmosic/Kconfig.peripherals"
+gsource "soc/arm/atmosic/*/Kconfig.soc"
+
+endif # SOC_FAMILY_ATM

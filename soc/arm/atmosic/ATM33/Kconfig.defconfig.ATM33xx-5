@@ -1,0 +1,11 @@
+# Copyright (c) 2021 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ATM33xx_5
+
+config SOC
+	string
+	default "ATM33xx-5"
+
+endif # SOC_ATM33xx_5

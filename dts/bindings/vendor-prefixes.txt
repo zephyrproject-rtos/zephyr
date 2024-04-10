@@ -74,6 +74,7 @@ aspeed	ASPEED Technology Inc.
 asus	AsusTek Computer Inc.
 atlas	Atlas Scientific LLC
 atmel	Atmel Corporation
+atmosic	Atmosic Technologies
 auo	AU Optronics Corporation
 auvidea	Auvidea GmbH
 avago	Avago Technologies

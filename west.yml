@@ -154,6 +154,10 @@ manifest:
       path: modules/hal/atmel
       groups:
         - hal
+    - name: hal_atmosic
+      url: https://github.com/Atmosic/_hal_atmosic.git
+      revision: c760881bad95fa31d8906508880fab676ba8d6f0
+      path: modules/hal/atmosic
     - name: hal_espressif
       revision: 31fc5758f3507f8f0af00b1dea1a0df7af99bfc0
       path: modules/hal/espressif
