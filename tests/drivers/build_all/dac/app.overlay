@@ -76,6 +76,33 @@
 				voltage-reference = "internal";
 				output-gain = "mul2";
 			};
+
+			test_ad5691: ad5691@4a {
+				status = "okay";
+				compatible = "adi,ad5691";
+				reg = <0x4a>;
+				resolution = <12>;
+				voltage-reference-mv = <2500>;
+				#io-channel-cells = < 1 >;
+			};
+
+			test_ad5692: ad5692@4b {
+				status = "okay";
+				compatible = "adi,ad5692";
+				reg = <0x4b>;
+				resolution = <14>;
+				voltage-reference-mv = <2500>;
+				#io-channel-cells = < 1 >;
+			};
+
+			test_ad5693: ad5693@4c {
+				status = "okay";
+				compatible = "adi,ad5693";
+				reg = <0x4c>;
+				resolution = <16>;
+				voltage-reference-mv = <2500>;
+				#io-channel-cells = < 1 >;
+			};
 		};
 
 		test_spi: spi@33334444 {
