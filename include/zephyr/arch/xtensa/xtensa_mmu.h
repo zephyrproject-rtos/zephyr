@@ -124,6 +124,16 @@ extern int xtensa_soc_mmu_ranges_num;
 void xtensa_mmu_init(void);
 
 /**
+ * @brief Re-initialize hardware MMU.
+ *
+ * This configures the MMU hardware when the cpu lost context and has
+ * re-started.
+ *
+ * It assumes that the page table is already created and accessible in memory.
+ */
+void xtensa_mmu_reinit(void);
+
+/**
  * @brief Tell other processors to flush TLBs.
  *
  * This sends IPI to other processors to telling them to
