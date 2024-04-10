@@ -338,11 +338,7 @@ static int cp9314_do_soft_reset(const struct device *dev)
 		return ret;
 	}
 
-#ifdef CONFIG_MULTITHREADING
 	k_msleep(CP9314_SOFT_RESET_DELAY_MSEC);
-#else
-	k_busy_wait(CP9314_SOFT_RESET_DELAY_MSEC * USEC_PER_MSEC);
-#endif
 
 	return 0;
 }
@@ -421,11 +417,7 @@ static int regulator_cp9314_init(const struct device *dev)
 			return ret;
 		}
 
-#ifdef CONFIG_MULTITHREADING
 		k_usleep(CP9314_EN_DEBOUNCE_USEC);
-#else
-		k_busy_wait(CP9314_EN_DEBOUNCE_USEC);
-#endif
 	}
 
 	ret = cp9314_do_soft_reset(dev);
