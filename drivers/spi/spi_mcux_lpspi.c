@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_imx_lpspi
 
 #include <errno.h>
+#include <zephyr/cache.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/clock_control.h>
 #include <fsl_lpspi.h>
@@ -17,6 +18,8 @@
 #include <zephyr/irq.h>
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
 #include <zephyr/drivers/dma.h>
+#include <zephyr/mem_mgmt/mem_attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #endif
 #include <zephyr/drivers/pinctrl.h>
 #ifdef CONFIG_SPI_RTIO
@@ -296,6 +299,50 @@ static int spi_mcux_configure(const struct device *dev,
 }
 
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
+static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
+{
+	bool buf_within_nocache = false;
+
+#ifdef CONFIG_NOCACHE_MEMORY
+	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
+			     ((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
+	if (buf_within_nocache) {
+		return true;
+	}
+#endif /* CONFIG_NOCACHE_MEMORY */
+
+	buf_within_nocache =
+		mem_attr_check_buf((void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
+
+	return buf_within_nocache;
+}
+
+static bool buf_cache_aligned(uintptr_t buf, size_t len_bytes)
+{
+	return (buf % sizeof(uint32_t) == 0U) && (len_bytes % sizeof(uint32_t) == 0U);
+}
+
+static bool spi_buf_set_supported(const struct spi_buf_set *bufs)
+{
+	if (!IS_ENABLED(CONFIG_DCACHE) || bufs == NULL) {
+		return true;
+	}
+
+	for (size_t i = 0; i < bufs->count; i++) {
+		const struct spi_buf *buf = &bufs->buffers[i];
+
+		if (buf->buf == NULL || buf_cache_aligned((uintptr_t)buf->buf, buf->len)) {
+			continue;
+		}
+
+		if (!buf_in_nocache((uintptr_t)buf->buf, buf->len)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static int spi_mcux_dma_rxtx_load(const struct device *dev,
 				size_t *dma_size);
 
@@ -374,6 +421,10 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf, si
 		/* tx direction has memory as source and periph as dest. */
 		blk_cfg->source_address = (uint32_t)buf;
 		stream->dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+
+		if (IS_ENABLED(CONFIG_DCACHE) && !buf_in_nocache((uintptr_t)buf, len)) {
+			sys_cache_data_flush_range((void *)buf, len);
+		}
 	}
 	/* Enable scatter/gather */
 	blk_cfg->source_gather_en = 1;
@@ -417,6 +468,10 @@ static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf,
 		/* rx direction has periph as source and mem as dest. */
 		blk_cfg->dest_address = (uint32_t)buf;
 		stream->dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+
+		if (IS_ENABLED(CONFIG_DCACHE) && !buf_in_nocache((uintptr_t)buf, len)) {
+			sys_cache_data_flush_and_invd_range((void *)buf, len);
+		}
 	}
 	blk_cfg->block_size = len;
 	/* Enable scatter/gather */
@@ -508,6 +563,11 @@ static int transceive_dma(const struct device *dev,
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	int ret;
 	size_t dma_size;
+
+	if (!spi_buf_set_supported(tx_bufs) || !spi_buf_set_supported(rx_bufs)) {
+		LOG_ERR("SPI buffers should be NOCACHE or CACHE aligned");
+		return -EFAULT;
+	}
 
 	if (!asynchronous) {
 		spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
