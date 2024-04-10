@@ -282,11 +282,6 @@ config HAS_MCUX_SMC
 	help
 	  Set if the SMC  module is present in the SoC.
 
-config HAS_MCUX_CSI
-	bool
-	help
-	  Set if the CMOS Sensor Interface module is present in the SoC.
-
 config HAS_MCUX_LPTMR
 	bool
 	help
