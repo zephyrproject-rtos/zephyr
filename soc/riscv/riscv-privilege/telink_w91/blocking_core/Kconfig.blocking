@@ -1,0 +1,38 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config TELINK_W91_BLOCKING_CORE
+	bool "Telink W91 blocking core"
+	default y
+	help
+		This option enables Telink W91 blocking core.
+
+config TELINK_W91_BLOCKING_CORE_THREAD_STACK_SIZE
+	int "Blocking thread stack size"
+	default 1024
+	help
+	  Blocking thread stack size.
+
+config TELINK_W91_BLOCKING_CORE_THREAD_PRIORITY
+	int "Blocking thread priority"
+	default 10
+	help
+	  Blocking thread priority.
+
+config BLOCKING_CORE_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS
+	int "Telink IPC dispatcher timeout while waiting from the endpoint response"
+	default 10
+	help
+	  This option sets Telink IPC dispatcher response driver timeout in mS.
+
+config BLOCKING_CORE_TELINK_W91_CHECK_STATE_PERIOD_US
+	int "Blocking check state period"
+	default 100
+	help
+	  This option sets blocking check state period in uS.
+
+config BLOCKING_CORE_TELINK_W91_CORE_STOP_TIMEOUT_US
+	int "Core stop timeout (500ms)"
+	default 500000
+	help
+	  This option sets core stop timeout in uS.

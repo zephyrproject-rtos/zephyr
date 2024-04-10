@@ -81,9 +81,8 @@
 			};
 		};
 
-		flash_mspi: flash-controller@A3FFFF00 {
+		flash_mspi: flash-controller {
 			compatible = "telink,w91-flash-controller";
-			reg = <0xA3FFFF00 0x100>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;

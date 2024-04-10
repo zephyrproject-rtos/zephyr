@@ -67,6 +67,19 @@ _start:                                #/ after reset starts on D25 core
 	li     t0, (1 << 6)
 	csrs   NDS_MMISC_CTL, t0           #/ Enable Misaligned access
 
+_RAMCODE_INIT:
+	la     t1, _RAMCODE_LMA_START
+	la     t2, _RAMCODE_VMA_START
+	la     t3, _RAMCODE_VMA_END
+_RAMCODE_INIT_BEGIN:
+	bleu   t3, t2, _START
+	lw     t0, 0(t1)
+	sw     t0, 0(t2)
+	addi   t1, t1, 4
+	addi   t2, t2, 4
+	j      _RAMCODE_INIT_BEGIN
+
+_START:
 	call   __start                     #/ jump to kernel entry
 1:	j      1b
 

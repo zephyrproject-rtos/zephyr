@@ -51,7 +51,12 @@ jobs:
     - name: Build W91 I2C sensor/mpu6050
       run: |
         cd ..
-        west build -b tlsr9118bdk40d             -d build_mpu6050_w91                    zephyr/samples/sensor/mpu6050
+        west build -b tlsr9118bdk40d             -d build_mpu6050_w91                   zephyr/samples/sensor/mpu6050
+
+    - name: Build W91 subsys/nvs
+      run: |
+        cd ..
+        west build -b tlsr9118bdk40d             -d build_nvs_w91                       zephyr/samples/subsys/nvs
 
     - name: Collect artifacts
       run: |

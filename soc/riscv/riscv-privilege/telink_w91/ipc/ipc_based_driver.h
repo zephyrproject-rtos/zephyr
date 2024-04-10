@@ -19,6 +19,8 @@ enum ipc_dispatcher_id {
 	IPC_DISPATCHER_ENTROPY_TRNG             = 0x400,
 	IPC_DISPATCHER_PINCTRL                  = 0x500,
 	IPC_DISPATCHER_I2C                      = 0x600,
+	IPC_DISPATCHER_FLASH                    = 0x700,
+	IPC_DISPATCHER_BLOCKING                 = 0x800,
 } __attribute__((__packed__));
 
 typedef void (*ipc_based_driver_unpack_t)(void *result, const uint8_t *data, size_t len);
@@ -37,9 +39,9 @@ void ipc_based_driver_init(struct ipc_based_driver *drv);
 int ipc_based_driver_send(struct ipc_based_driver *drv,
 	const void *tx_data, size_t tx_len,
 	struct ipc_based_driver_ctx *ctx, uint32_t timeout_ms);
+uint32_t ipc_based_driver_get_ipc_events(void);
 
 /* Macros to pack/unpack the different types */
-
 #define IPC_DISPATCHER_PACK_FIELD(buff, field)                                 \
 do {                                                                           \
 	memcpy(buff, &field, sizeof(field));                                       \

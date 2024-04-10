@@ -11,6 +11,11 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/linker/linker-tool.h>
 
+MEMORY
+{
+	RAMILM       (rwx) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(ram_ilm)),              LENGTH = DT_REG_SIZE(DT_NODELABEL(ram_ilm))
+}
+
 #include <zephyr/arch/riscv/common/linker.ld>
 
 #ifdef CONFIG_MCUBOOT

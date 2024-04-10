@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_TELINK_W91
+	bool "Telink Semiconductor W91 flash driver"
+	default y
+	depends on DT_HAS_TELINK_W91_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enables Telink W91 flash driver.
+
+if SOC_FLASH_TELINK_W91
+
+config FLASH_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS
+	int "Telink IPC dispatcher timeout while waiting from the endpoint response"
+	default 1000
+	help
+	  This option sets Telink IPC dispatcher response driver timeout in mS.
+
+endif # SOC_FLASH_TELINK_W91

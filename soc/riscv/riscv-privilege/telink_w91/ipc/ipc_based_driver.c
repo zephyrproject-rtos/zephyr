@@ -10,6 +10,8 @@
 #define LOG_MODULE_NAME ipc_based_driver
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+static uint32_t ipc_events;
+
 void ipc_based_driver_init(struct ipc_based_driver *drv)
 {
 	(void)k_mutex_init(&drv->mutex);
@@ -47,6 +49,8 @@ void resp_cb(const void *data, size_t len, void *param)
 	k_sem_reset(&drv->resp_sem);
 	ipc_dispatcher_add(id, resp_cb, &response_data);
 
+	ipc_events++;
+
 	do {
 		if (ipc_dispatcher_send(tx_data, tx_len) != tx_len) {
 			LOG_ERR("IPC data send error (id=%x)", id);
@@ -61,8 +65,15 @@ void resp_cb(const void *data, size_t len, void *param)
 		}
 	} while (0);
 
+	ipc_events--;
+
 	ipc_dispatcher_rm(id);
 	k_mutex_unlock(&drv->mutex);
 
 	return result;
+}
+
+uint32_t ipc_based_driver_get_ipc_events(void)
+{
+	return ipc_events;
 }

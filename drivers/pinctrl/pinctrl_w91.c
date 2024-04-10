@@ -87,4 +87,4 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 	return err;
 }
 
-SYS_INIT(pinctrl_w91_init, POST_KERNEL, CONFIG_TELINK_W91_IPC_PINCTRL_DRIVER_INIT_PRIORITY);
+SYS_INIT(pinctrl_w91_init, POST_KERNEL, CONFIG_TELINK_W91_IPC_PRE_DRIVERS_INIT_PRIORITY);

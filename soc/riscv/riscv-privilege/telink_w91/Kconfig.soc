@@ -98,3 +98,7 @@ config TELINK_W91_DEBUG_BAUDRATE
 	depends on TELINK_W91_DEBUG_ENABLE
 	help
 		This option sets Telink W91 debug baudrate, bps.
+
+source "soc/riscv/riscv-privilege/telink_w91/ipc/Kconfig.ipc"
+
+source "soc/riscv/riscv-privilege/telink_w91/blocking_core/Kconfig.blocking"
