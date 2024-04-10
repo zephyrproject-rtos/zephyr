@@ -247,7 +247,9 @@ static int eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
 			errno = EINVAL;
 			ret = -1;
 		} else {
-			efd->flags = flags;
+			int prev_flags = efd->flags & ~EFD_FLAGS_SET_INTERNAL;
+
+			efd->flags = flags | prev_flags;
 			ret = 0;
 		}
 	} break;
