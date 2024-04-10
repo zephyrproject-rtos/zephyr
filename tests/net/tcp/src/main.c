@@ -136,6 +136,7 @@ static void handle_server_recv_out_of_order(struct net_pkt *pkt);
 static void handle_server_rst_on_closed_port(sa_family_t af, struct tcphdr *th);
 static void handle_server_rst_on_listening_port(sa_family_t af, struct tcphdr *th);
 static void handle_syn_invalid_ack(sa_family_t af, struct tcphdr *th);
+static void handle_client_fin_ack_with_data_test(sa_family_t af, struct tcphdr *th);
 
 static void verify_flags(struct tcphdr *th, uint8_t flags,
 			 const char *fun, int line)
@@ -484,6 +485,10 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		break;
 	case 17:
 		handle_client_fin_wait_2_failure_test(net_pkt_family(pkt), &th);
+		break;
+
+	case 18:
+		handle_client_fin_ack_with_data_test(net_pkt_family(pkt), &th);
 		break;
 
 	default:
@@ -2406,6 +2411,193 @@ ZTEST(net_tcp, test_client_rst_on_unexpected_ack_on_syn)
 
 	/* Peer will release the semaphore after it receives final ACK */
 	test_sem_take(K_MSEC(100), __LINE__);
+}
+
+#define TEST_FIN_DATA "test_data"
+
+static enum fin_data_variant {
+	FIN_DATA_FIN,
+	FIN_DATA_FIN_ACK,
+	FIN_DATA_FIN_ACK_PSH,
+} test_fin_data_variant;
+
+static struct k_work_delayable test_fin_data_work;
+
+/* In this test we check that FIN packet containing data is handled correctly
+ * by the TCP stack.
+ */
+static void handle_client_fin_ack_with_data_test(sa_family_t af, struct tcphdr *th)
+{
+	static uint16_t peer_port;
+	struct net_pkt *reply;
+	uint8_t flags = 0;
+
+	switch (t_state) {
+	case T_SYN:
+		test_verify_flags(th, SYN);
+		device_initial_seq = ntohl(th->th_seq);
+		seq = 0U;
+		ack = ntohl(th->th_seq) + 1U;
+		peer_port = th->th_sport;
+		reply = prepare_syn_ack_packet(af, htons(MY_PORT), peer_port);
+		seq++;
+		t_state = T_SYN_ACK;
+		break;
+	case T_SYN_ACK:
+		test_verify_flags(th, ACK);
+		t_state = T_DATA;
+
+		/* FIN packet with DATA needs to be rescheduled for later - if
+		 * we send it here, the net_context_recv() won't have a chance
+		 * to execute, hence no callback will be registered and data
+		 * will be dropped.
+		 */
+		k_work_reschedule(&test_fin_data_work, K_MSEC(1));
+		return;
+	case T_DATA:
+		switch (test_fin_data_variant) {
+		case FIN_DATA_FIN:
+			flags = FIN;
+			t_state = T_FIN;
+			break;
+		case FIN_DATA_FIN_ACK:
+			flags = FIN | ACK;
+			t_state = T_FIN_ACK;
+			break;
+		case FIN_DATA_FIN_ACK_PSH:
+			flags = FIN | ACK | PSH;
+			t_state = T_FIN_ACK;
+			break;
+		}
+
+		reply = tester_prepare_tcp_pkt(af, htons(MY_PORT), peer_port,
+					       flags, TEST_FIN_DATA,
+					       strlen(TEST_FIN_DATA));
+		seq += strlen(TEST_FIN_DATA) + 1;
+
+		break;
+	case T_FIN:
+		test_verify_flags(th, ACK);
+		zassert_equal(get_rel_seq(th), 1, "Unexpected SEQ number in T_FIN, got %d",
+			      get_rel_seq(th));
+		zassert_equal(ntohl(th->th_ack), seq, "Unexpected ACK in T_FIN, got %d",
+			      ntohl(th->th_ack));
+
+		t_state = T_CLOSING;
+		return;
+	case T_FIN_ACK:
+		test_verify_flags(th, FIN | ACK);
+		zassert_equal(get_rel_seq(th), 1, "Unexpected SEQ number in T_FIN_ACK, got %d",
+			      get_rel_seq(th));
+		zassert_equal(ntohl(th->th_ack), seq, "Unexpected ACK in T_FIN_ACK, got %d",
+			      ntohl(th->th_ack));
+
+		ack++;
+		reply = prepare_ack_packet(af, htons(MY_PORT), peer_port);
+		t_state = T_SYN;
+		break;
+
+	case T_CLOSING:
+		test_verify_flags(th, FIN);
+		zassert_equal(get_rel_seq(th), 1, "Unexpected SEQ number in T_CLOSING, got %d",
+			      get_rel_seq(th));
+
+		ack++;
+		reply = prepare_ack_packet(af, htons(MY_PORT), peer_port);
+		t_state = T_SYN;
+		break;
+
+	default:
+		zassert_true(false, "%s unexpected state", __func__);
+		return;
+	}
+
+	zassert_ok(net_recv_data(net_iface, reply), "%s failed", __func__);
+}
+
+
+static void test_fin_data_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	handle_client_fin_ack_with_data_test(AF_INET, NULL);
+}
+
+static void test_fin_ack_data_recv_cb(struct net_context *context,
+				      struct net_pkt *pkt,
+				      union net_ip_header *ip_hdr,
+				      union net_proto_header *proto_hdr,
+				      int status,
+				      void *user_data)
+{
+	if (status) {
+		zassert_true(false, "failed to recv the data");
+	}
+
+	if (pkt) {
+		uint8_t buf[sizeof(TEST_FIN_DATA)] = { 0 };
+		int data_len = net_pkt_remaining_data(pkt);
+
+		zassert_equal(data_len, strlen(TEST_FIN_DATA),
+			      "Invalid packet length, %d", data_len);
+		zassert_ok(net_pkt_read(pkt, buf, data_len));
+		zassert_mem_equal(buf, TEST_FIN_DATA, data_len);
+
+		net_pkt_unref(pkt);
+	}
+
+	test_sem_give();
+}
+
+/* Test case scenario IPv4
+ *   expect SYN,
+ *   send SYN ACK,
+ *   expect ACK,
+ *   send FIN/FIN,ACK/FIN,ACK,PSH with Data,
+ *   expect FIN/FIN,ACK/ACK,
+ *   send ACK
+ *   any failures cause test case to fail.
+ */
+ZTEST(net_tcp, test_client_fin_ack_with_data)
+{
+	struct net_context *ctx;
+
+	test_case_no = 18;
+
+	k_work_init_delayable(&test_fin_data_work, test_fin_data_handler);
+
+	for (enum fin_data_variant variant = FIN_DATA_FIN;
+	     variant <= FIN_DATA_FIN_ACK_PSH; variant++) {
+		test_fin_data_variant = variant;
+		t_state = T_SYN;
+		seq = ack = 0;
+
+		zassert_ok(net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx),
+			   "Failed to get net_context");
+
+		net_context_ref(ctx);
+
+		zassert_ok(net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
+					       sizeof(struct sockaddr_in), NULL,
+					       K_MSEC(1000), NULL),
+			   "Failed to connect to peer");
+		zassert_ok(net_context_recv(ctx, test_fin_ack_data_recv_cb,
+					    K_NO_WAIT, NULL),
+			   "Failed to recv data from peer");
+
+		/* Take sem twice, one for data packet, second for conn close
+		 * (NULL net_pkt).
+		 */
+		test_sem_take(K_MSEC(100), __LINE__);
+		test_sem_take(K_MSEC(100), __LINE__);
+
+		net_context_put(ctx);
+
+		/* Connection is in TIME_WAIT state, context will be released
+		 * after K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY), so wait for it.
+		 */
+		k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
+	}
 }
 
 ZTEST_SUITE(net_tcp, NULL, presetup, NULL, NULL, NULL);
