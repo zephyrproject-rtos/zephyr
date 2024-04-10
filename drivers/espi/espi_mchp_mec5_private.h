@@ -118,8 +118,8 @@ int espi_mec5_bar_config(const struct device *espi_dev, uint32_t haddr, uint32_t
 #define ESPI_MEC5_SIRQ_CFG_LDN_MSK	0xffu
 #define ESPI_MEC5_SIRQ_CFG_LDN_IDX_POS	8
 #define ESPI_MEC5_SIRQ_CFG_LDN_IDX_MSK	0xf00u
-#define ESPI_MEC5_SIRQ_CFG_SLOT_POS	12
-#define ESPI_MEC5_SIRQ_CFG_SLOT_MSK	0xf000u
+#define ESPI_MEC5_SIRQ_CFG_SLOT_POS	16
+#define ESPI_MEC5_SIRQ_CFG_SLOT_MSK	0xff0000u
 
 int espi_mec5_sirq_config(const struct device *espi_dev, uint32_t cfg);
 
