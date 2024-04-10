@@ -77,7 +77,7 @@ void z_intel_adsp_ipc_isr(const void *devarg)
 		/* Allow the system to enter the runtime idle state after the IPC acknowledgment
 		 * is received.
 		 */
-		pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 		k_sem_give(&devdata->sem);
 
 		/* IPC completion registers will be set externally */
@@ -160,7 +160,7 @@ int intel_adsp_ipc_send_message(const struct device *dev,
 
 	k_sem_init(&devdata->sem, 0, 1);
 	/* Prevent entering runtime idle state until IPC acknowledgment is received. */
-	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 	devdata->tx_ack_pending = true;
 	config->regs->idd = ext_data;
 	config->regs->idr = data | INTEL_ADSP_IPC_BUSY;
