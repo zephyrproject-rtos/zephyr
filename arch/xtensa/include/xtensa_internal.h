@@ -56,6 +56,25 @@ void xtensa_userspace_enter(k_thread_entry_t user_entry,
 			    uintptr_t stack_start);
 
 /**
+ * @brief Check if kernel threads have access to a memory region.
+ *
+ * Given a memory region, return whether the current memory management
+ * hardware configuration would allow kernel threads to read/write
+ * that region.
+ *
+ * This is mainly used to make sure kernel has access to avoid relying
+ * on page fault to detect invalid mappings.
+ *
+ * @param addr Start address of the buffer
+ * @param size Size of the buffer
+ * @param write If non-zero, additionally check if the area is writable.
+ *              Otherwise, just check if the memory can be read.
+ *
+ * @return False if the permissions don't match.
+ */
+bool xtensa_mem_kernel_has_access(void *addr, size_t size, int write);
+
+/**
  * @}
  */
 
