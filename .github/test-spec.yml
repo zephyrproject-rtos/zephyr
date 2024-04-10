@@ -293,6 +293,7 @@
 
 "CI-test-low-level":
   - "dts/**/*"
+  - "boards/nordic/nrf54*/**/*"
   - "include/zephyr/**/*"
   - "tests/arch/**/*"
   - "arch/**/*"
