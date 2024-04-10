@@ -128,30 +128,19 @@ struct espi_mec5_vwire {
 
 #define MEC5_ESPI_VW_FLAGS_DIR_IS_TC(x) ((uint8_t)(x) & 0x01u)
 
-const struct espi_mec5_vwire espi_mec5_ct_vwires[] = {
+const struct espi_mec5_vwire espi_mec5_vw_tbl[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY(MEC5_DT_ESPI_CT_VWIRES_NODE, MEC5_ESPI_CTVW_ENTRY)
-};
-
-const struct espi_mec5_vwire espi_mec5_tc_vwires[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY(MEC5_DT_ESPI_TC_VWIRES_NODE, MEC5_ESPI_TCVW_ENTRY)
 };
 
 static struct espi_mec5_vwire const *find_vw(const struct device *dev,
 					     enum espi_vwire_signal signal)
 {
-	size_t nct = ARRAY_SIZE(espi_mec5_ct_vwires);
-	size_t ntc = ARRAY_SIZE(espi_mec5_tc_vwires);
+	size_t nvw = ARRAY_SIZE(espi_mec5_vw_tbl);
 
-	for (size_t n = 0; n < MAX(nct, ntc); n++) {
-		if (n < nct) {
-			if (signal == (uint8_t)espi_mec5_ct_vwires[n].signal) {
-				return &espi_mec5_ct_vwires[n];
-			}
-		}
-		if (n < ntc) {
-			if (signal == (uint8_t)espi_mec5_tc_vwires[n].signal) {
-				return &espi_mec5_tc_vwires[n];
-			}
+	for (size_t n = 0; n < nvw; n++) {
+		if (signal == (uint8_t)espi_mec5_vw_tbl[n].signal) {
+			return &espi_mec5_vw_tbl[n];
 		}
 	}
 
@@ -160,13 +149,13 @@ static struct espi_mec5_vwire const *find_vw(const struct device *dev,
 
 static int find_ct_vw_signal(uint8_t ctidx, uint8_t ctpos)
 {
-	size_t nct = ARRAY_SIZE(espi_mec5_ct_vwires);
+	size_t nct = ARRAY_SIZE(espi_mec5_vw_tbl);
 
 	for (size_t n = 0; n < nct; n++) {
-		if ((ctidx == (uint8_t)espi_mec5_ct_vwires[n].reg_idx) &&
-		    (ctpos == (uint8_t)espi_mec5_ct_vwires[n].source)) {
-			/* Does the C compiler sign extend 0xff to 0xffffffff ? */
-			return (int)espi_mec5_ct_vwires[n].signal;
+		const struct espi_mec5_vwire *p = &espi_mec5_vw_tbl[n];
+
+		if ((ctidx == (uint8_t)p->reg_idx) && (ctpos == (uint8_t)p->source)) {
+			return (int)p->signal;
 		}
 	}
 
@@ -183,8 +172,8 @@ static int espi_mec5_init_vwires(const struct device *dev)
 	uint32_t vwcfg = 0;
 	int ret = 0;
 
-	for (size_t n = 0; n < ARRAY_SIZE(espi_mec5_ct_vwires); n++) {
-		const struct espi_mec5_vwire *vw = &espi_mec5_ct_vwires[n];
+	for (size_t n = 0; n < ARRAY_SIZE(espi_mec5_vw_tbl); n++) {
+		const struct espi_mec5_vwire *vw = &espi_mec5_vw_tbl[n];
 
 		vwcfg = ((((uint32_t)vw->flags >> 2) & 0x3u) << MEC_ESPI_VW_CFG_RSTSRC_POS)
 			& MEC_ESPI_VW_CFG_RSTSRC_MSK;
@@ -204,60 +193,6 @@ static int espi_mec5_init_vwires(const struct device *dev)
 
 	return ret;
 }
-
-/* CT VWire handlers
- * MEC5_ESPI_NUM_CTVW each with 4 VWires (11 * 4) = 44 entries
- * Each entry:
- *  function pointer: 4 bytes
- *  Total = 176 bytes
- *
- * Maximum Intel defined CT VWires = 16
- *
- * Can we have a common CT VWire handler using parameters to
- * indicate what it should do?
- */
-
-
-/* SoC devices exposed to the Host via eSPI Peripheral Channel
- * eSPI controller implements:
- * Perpiheral I/O and Memory BARs to map the peripheral to Host address space.
- * Two SRAM BARs allowing SoC memory to be mapped to Host address space with R/W attributes.
- * Serial IRQ Host interrupt mapping for those peripherals capable of generating an interrupt
- * to the Host.
- * NOTE: MCHP eSPI peripheral device I/O BARs, device Memory BARs, SoC SRAM BAR's, and Serial IRQ
- * configuration registers are cleared on assertion of internal signal RESET_HOST/RESET_SIO.
- * This signal is a combination of SoC chip reset, external VCC power good, and platform/PCI reset.
- * For eSPI systems platform reset is usually configured as the PLTRST# virtual wire which defaults
- * to 0 (active). Therefore, BAR's and Serial IRQ can only be configured after RESET_HOST
- * de-asserts. The MCHP PCR Power Control Reset status has a read-only bit indicating the state of
- * RESET_HOST. When RESET_HOST de-asserts, i.e. PLTRST# VWire 0 -> 1 we must configure all eSPI
- * registers affected by the reset.
- */
-
-struct espi_mec5_host_dev_cfg {
-	uint32_t temp;
-};
-
-struct espi_mec5_host_dev_data {
-	const struct device *espi_bus_dev;
-};
-
-/* host_dev = pointer to peripheral device's struct device
- * host_addr = Host address
- * ldn = Fixed logical device number of this pc device
- * hdcfg
- *   b[3:0] = number of sirqs (0, 1, or 2)
- *   b[4] = 0(host I/O space), 1(host memory space)
- * sirqs[2] = Serial IRQ slot numbers for up to two
- *            SIRQ's per peripheral.
- */
-struct espi_mec5_hdi {
-	const struct device *host_dev;
-	uint32_t host_addr;
-	uint8_t ldn;
-	uint8_t hdcfg;
-	uint8_t sirqs[2];
-};
 
 struct espi_mec5_sram_bar {
 	uint32_t host_addr_lsw;
@@ -283,8 +218,6 @@ struct espi_mec5_sram_bar {
 struct espi_mec5_hdi2 {
 	const struct device *dev;
 };
-
-/* host-infos */
 
 #define MEC5_ESPI_HDI_ENTRY2(node_id) \
 	{ \
@@ -1125,23 +1058,14 @@ static const struct espi_driver_api espi_mec5_driver_api = {
 #ifdef MEC5_ESPI_DEBUG_VW_TABLE
 void espi_mec5_debug_vw_table(void)
 {
-	size_t n;
-	size_t tbl_size = ARRAY_SIZE(espi_mec5_ct_vwires);
+	size_t n, tbl_size;
 
-	LOG_DBG("CT VW table has %u entries", tbl_size);
+	tbl_size = ARRAY_SIZE(espi_mec5_vw_tbl);
+	LOG_DBG("VW table has %u entries", tbl_size);
 	for (n = 0; n < tbl_size; n++) {
-		const struct espi_mec5_vwire *p = &espi_mec5_ct_vwires[n];
+		const struct espi_mec5_vwire *p = &espi_mec5_vw_tbl[n];
 
-		LOG_DBG("CTVW[%u] signal=%u host_idx=0x%x source=%u reg_idx=%u flags=0x%x",
-			n, p->signal, p->host_idx, p->source, p->reg_idx, p->flags);
-	}
-
-	tbl_size = ARRAY_SIZE(espi_mec5_tc_vwires);
-	LOG_DBG("TC VW table has %u entries", tbl_size);
-	for (n = 0; n < tbl_size; n++) {
-		const struct espi_mec5_vwire *p = &espi_mec5_tc_vwires[n];
-
-		LOG_DBG("CTVW[%u] signal=%u host_idx=0x%x source=%u reg_idx=%u flags=0x%x",
+		LOG_DBG("VW[%u] signal=%u host_idx=0x%x source=%u reg_idx=%u flags=0x%x",
 			n, p->signal, p->host_idx, p->source, p->reg_idx, p->flags);
 	}
 }
@@ -1204,7 +1128,7 @@ static int espi_mec5_dev_init(const struct device *dev)
 		mec_espi_reset_change_clr(iob);
 	}
 
-	espi_mec5_init_vwires(dev); /* TODO move to config API */
+	espi_mec5_init_vwires(dev);
 
 	if (devcfg->irq_cfg_func) {
 		devcfg->irq_cfg_func(dev);
