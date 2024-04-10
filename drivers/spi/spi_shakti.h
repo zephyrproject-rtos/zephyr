@@ -10,8 +10,9 @@ extern "C" {
 #include <stdint.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/device.h>
+#include <stdlib.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/pinctrl.h>
+// #include <./zephyr/drivers/pinctrl.h>
 
 
 #define SPI_CFG(dev) ((struct spi_shakti_cfg *) ((dev)->config))
@@ -24,10 +25,10 @@ extern "C" {
 #define CLOCK_FREQUENCY 40000000
 
 /*!Serial Peripheral Interface Offsets */
-#define SPI0_START 0x00020000 /* Serial Peripheral Interface 0 */
-#define SPI1_START 0x00020100 /* Serial Peripheral Interface 1 */
-#define SPI2_START 0x00020200 /* Serial Peripheral Interface 2 */
-#define SPI3_START 0x00020300 /* Serial Peripheral Interface 3 */
+#define SPI_START_0 0x00020000 /* Serial Peripheral Interface 0 */
+#define SPI_START_1 0x00020100 /* Serial Peripheral Interface 1 */
+#define SPI_START_2 0x00020200 /* Serial Peripheral Interface 2 */
+#define SPI_START_3 0x00020300 /* Serial Peripheral Interface 3 */
 
 /* Struct to access SSPI registers as 32 bit registers */
 
@@ -194,6 +195,7 @@ struct spi_shakti_data {
 struct spi_shakti_cfg {
 	uint32_t base;
 	uint32_t f_sys;
+    const struct pinctrl_dev_config *pcfg;
 };
 
 

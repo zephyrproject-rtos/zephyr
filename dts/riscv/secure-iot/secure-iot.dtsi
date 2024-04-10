@@ -18,10 +18,3 @@ chosen {
 	current-speed = <19200>;
 	clock-frequency = <40000000>;
 };
-
-&spi0 {
-          status = "okay";
-          sclk_configure = [0x0 0x0 0x10 0x0 0x0];
-          comm_configure = [0x01 0x01 0x00 0x08];
-		  clock-frequency = <10000000>;
-};
