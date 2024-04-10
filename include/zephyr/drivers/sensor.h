@@ -286,6 +286,8 @@ struct sensor_trigger {
 	enum sensor_trigger_type type;
 	/** Channel the trigger is set on. */
 	enum sensor_channel chan;
+	/** Channel context pointer. */
+	void* context;
 };
 
 /**
