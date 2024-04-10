@@ -3237,7 +3237,6 @@ Intel Platforms (X86):
     - soc/intel/atom/
     - soc/intel/lakemont/
     - soc/intel/*_lake/
-    - samples/boards/up_squared/
   labels:
     - "platform: X86"
 
