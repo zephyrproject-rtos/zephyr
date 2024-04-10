@@ -69,6 +69,10 @@
 	status = "disabled";
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
 &pll {
 	div-m = <4>;
 	mul-n = <216>;
