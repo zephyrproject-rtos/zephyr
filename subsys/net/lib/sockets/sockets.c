@@ -2116,7 +2116,8 @@ static int zsock_poll_prepare_ctx(struct net_context *ctx,
 {
 	if (pfd->events & ZSOCK_POLLIN) {
 		if (*pev == pev_end) {
-			return -ENOMEM;
+			errno = ENOMEM;
+			return -1;
 		}
 
 		(*pev)->obj = &ctx->recv_q;
@@ -2131,7 +2132,8 @@ static int zsock_poll_prepare_ctx(struct net_context *ctx,
 		    net_context_get_type(ctx) == SOCK_STREAM &&
 		    !net_if_is_ip_offloaded(net_context_get_iface(ctx))) {
 			if (*pev == pev_end) {
-				return -ENOMEM;
+				errno = ENOMEM;
+				return -1;
 			}
 
 			if (net_context_get_state(ctx) == NET_CONTEXT_CONNECTING) {
@@ -2145,7 +2147,8 @@ static int zsock_poll_prepare_ctx(struct net_context *ctx,
 			(*pev)->state = K_POLL_STATE_NOT_READY;
 			(*pev)++;
 		} else {
-			return -EALREADY;
+			errno = EALREADY;
+			return -1;
 		}
 
 	}
@@ -2154,7 +2157,8 @@ static int zsock_poll_prepare_ctx(struct net_context *ctx,
 	 * immediately, so we tell poll() to short-circuit wait.
 	 */
 	if (sock_is_eof(ctx) || sock_is_error(ctx)) {
-		return -EALREADY;
+		errno = EALREADY;
+		return -1;
 	}
 
 	return 0;
@@ -2246,7 +2250,7 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 		result = z_fdtable_call_ioctl(vtable, ctx,
 					      ZFD_IOCTL_POLL_PREPARE,
 					      pfd, &pev, pev_end);
-		if (result == -EALREADY) {
+		if (result < 0 && errno == EALREADY) {
 			/* If POLL_PREPARE returned with EALREADY, it means
 			 * it already detected that some socket is ready. In
 			 * this case, we still perform a k_poll to pick up
@@ -2255,7 +2259,7 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 			timeout = K_NO_WAIT;
 			end = sys_timepoint_calc(timeout);
 			result = 0;
-		} else if (result == -EXDEV) {
+		} else if (result < 0 && errno == EXDEV) {
 			/* If POLL_PREPARE returned EXDEV, it means
 			 * it detected an offloaded socket.
 			 * If offloaded socket is used with native TLS, the TLS
@@ -2276,7 +2280,6 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 		k_mutex_unlock(lock);
 
 		if (result < 0) {
-			errno = -result;
 			return -1;
 		}
 	}
@@ -2336,11 +2339,10 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 						      pfd, &pev);
 			k_mutex_unlock(lock);
 
-			if (result == -EAGAIN) {
+			if (result < 0 && errno == EAGAIN) {
 				retry = true;
 				continue;
 			} else if (result != 0) {
-				errno = -result;
 				return -1;
 			}
 
