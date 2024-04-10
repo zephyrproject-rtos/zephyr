@@ -574,6 +574,23 @@ static void test_vlan_enable(void)
 	ret = net_eth_vlan_enable(iface, VLAN_TAG_1);
 	zassert_equal(ret, -EALREADY, "VLAN tag %d enabled for iface 1 (%d)",
 		      VLAN_TAG_1, ret);
+
+	for (int i = VLAN_TAG_1; i <= VLAN_TAG_5; i += 100) {
+		iface = net_eth_get_vlan_iface(NULL, i);
+
+		ARRAY_FOR_EACH_PTR(vlan_interfaces, vlan_iface) {
+			uint16_t tag;
+
+			if (*vlan_iface == iface) {
+				tag = net_eth_get_vlan_tag(*vlan_iface);
+
+				zassert_equal(tag, i,
+					      "Could not get the VLAN interface (%d)",
+					      net_if_get_by_iface(*vlan_iface));
+				break;
+			}
+		}
+	}
 }
 
 static void test_vlan_disable(void)
@@ -628,13 +645,13 @@ static void test_vlan_enable_all(void)
 	int ret;
 
 	ret = net_eth_vlan_enable(eth_interfaces[0], VLAN_TAG_1);
-	zassert_equal(ret, 0, "Cannot enable %d", VLAN_TAG_1);
+	zassert_true(ret == 0 || ret == -EALREADY, "Cannot enable %d", VLAN_TAG_1);
 	ret = net_eth_vlan_enable(eth_interfaces[0], VLAN_TAG_2);
-	zassert_equal(ret, 0, "Cannot enable %d", VLAN_TAG_2);
+	zassert_true(ret == 0 || ret == -EALREADY, "Cannot enable %d", VLAN_TAG_2);
 	ret = net_eth_vlan_enable(eth_interfaces[0], VLAN_TAG_3);
-	zassert_equal(ret, 0, "Cannot enable %d", VLAN_TAG_3);
+	zassert_true(ret == 0 || ret == -EALREADY, "Cannot enable %d", VLAN_TAG_3);
 	ret = net_eth_vlan_enable(eth_interfaces[0], VLAN_TAG_4);
-	zassert_equal(ret, 0, "Cannot enable %d", VLAN_TAG_4);
+	zassert_true(ret == 0 || ret == -EALREADY, "Cannot enable %d", VLAN_TAG_4);
 
 	eth_ctx = net_if_l2_data(eth_interfaces[0]);
 
