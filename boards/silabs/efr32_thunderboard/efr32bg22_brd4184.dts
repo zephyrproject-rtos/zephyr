@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/dts-v1/;
+#include <silabs/efr32bg22.dtsi>
+#include <silabs/efr32bg2x-pinctrl.dtsi>
 #include "thunderboard.dtsi"
 
 / {

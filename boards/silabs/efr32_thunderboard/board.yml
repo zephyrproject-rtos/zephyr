@@ -1,12 +1,15 @@
 boards:
-  - name: efr32bg22_brd4184a
+  - name: efr32bg22_brd4184
     vendor: silabs
     socs:
       - name: efr32bg22c224f512im40
-  - name: efr32bg22_brd4184b
-    vendor: silabs
-    socs:
-      - name: efr32bg22c224f512im40
+    revision:
+      format: letter
+      exact: true
+      revisions:
+        - name: A
+        - name: B
+      default: B
   - name: efr32bg27_brd2602a
     vendor: silabs
     socs:

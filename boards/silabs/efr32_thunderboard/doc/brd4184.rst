@@ -49,7 +49,7 @@ For more information about the EFR32BG SoC and Thunderboard EFR32BG22 board:
 Supported Features
 ==================
 
-The efr32bg22_brd4184a/b board configuration supports the following hardware features:
+The efr32bg22_brd4184A/B board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -80,9 +80,7 @@ The efr32bg22_brd4184a/b board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/efr32_thunderboard/efr32bg22_brd4184a_defconfig`
-and
-:zephyr_file:`boards/silabs/efr32_thunderboard/efr32bg22_brd4184b_defconfig`
+:zephyr_file:`boards/silabs/efr32_thunderboard/efr32bg22_brd4184_defconfig`
 
 Connections and IOs
 ===================
@@ -145,14 +143,14 @@ BRD4184A:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efr32bg22_brd4184a
+   :board: efr32bg22_brd4184@A
    :goals: flash
 
 BRD4184B:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: efr32bg22_brd4184b
+   :board: efr32bg22_brd4184@B
    :goals: flash
 
 .. note::
@@ -191,14 +189,14 @@ BRD4184A:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/observer
-   :board: efr32bg22_brd4184a
+   :board: efr32bg22_brd4184@A
    :goals: build
 
 BRD4184B:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/observer
-   :board: efr32bg22_brd4184b
+   :board: efr32bg22_brd4184@B
    :goals: build
 
 

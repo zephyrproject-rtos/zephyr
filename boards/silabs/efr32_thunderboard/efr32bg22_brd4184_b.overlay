@@ -5,14 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
-#include <silabs/efr32bg22.dtsi>
-#include <silabs/efr32bg2x-pinctrl.dtsi>
-#include "efr32bg22_brd4184.dtsi"
-
 / {
 	model = "Silicon Labs EFR32BG BRD4184B (aka Thunderboard BG22)";
-	compatible = "silabs,efr32bg22c224f512im40", "silabs,efr32bg_brd4184b",
+	compatible = "silabs,efr32bg22c224f512im40", "silabs,efr32bg_brd4184_b",
 		"silabs,efr32bg22";
 };
 

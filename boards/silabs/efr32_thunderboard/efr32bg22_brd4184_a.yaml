@@ -1,5 +1,5 @@
-identifier: efr32bg22_brd4184b
-name: EFR32BG22-BRD4184B
+identifier: efr32bg22_brd4184@A
+name: EFR32BG22-BRD4184A
 type: mcu
 arch: arm
 ram: 32
