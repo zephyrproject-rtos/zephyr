@@ -3204,7 +3204,8 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 			ret = z_fdtable_call_ioctl(vtable, obj,
 						   ZFD_IOCTL_POLL_PREPARE,
 						   pfd, pev, *pev + 1);
-			if (ret != 0 && ret != -EALREADY) {
+			if (ret != 0 && errno != EALREADY) {
+				ret = -errno;
 				goto out;
 			}
 
