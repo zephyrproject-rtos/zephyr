@@ -1,0 +1,51 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Driver state retention, which has a retention area as a parent. This is an
+  example containing two drivers. The first one stores one byte, the second one
+  eight. It is strongly recommended to use a prefix and a checksum for the
+  parent retention area to ensure that only valid settings are retained for the
+  drivers.
+
+  retention0: retention@0 {
+    compatible = "zephyr,retention";
+    status = "okay";
+    reg = <0x0 0x40>;
+    prefix = [04 fa];
+    checksum = <1>;
+
+    driver_state1: driver_state@0 {
+      compatible = "zephyr,retention-driver-state";
+      status = "okay";
+      reg = <0x0 0x1>;
+    };
+
+    driver_state2: driver_state@1 {
+      compatible = "zephyr,retention-driver-state";
+      status = "okay";
+      reg = <0x1 0x8>;
+    };
+  };
+
+compatible: "zephyr,retention-driver-state"
+
+include: base.yaml
+
+on-bus: retention
+
+properties:
+  "#address-cells":
+    const: 1
+    description: |
+      The address reg cell is used for the offset in the parent retention area.
+
+  "#size-cells":
+    const: 1
+    description: |
+      The size reg cell defines the size of the storage which is available for
+      the state of the driver. The driver is responsible of checking, ideally
+      during build time, if the available space is sufficient.
+
+  reg:
+    required: true

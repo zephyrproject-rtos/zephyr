@@ -56,6 +56,7 @@ config RETENTION_BOOT_MODE
 	  via device tree.
 
 source "subsys/retention/Kconfig.blinfo"
+source "subsys/retention/Kconfig.driver_state"
 
 endmenu
 
