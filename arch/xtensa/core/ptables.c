@@ -320,6 +320,24 @@ void xtensa_mmu_init(void)
 	arch_xtensa_mmu_post_init(_current_cpu->id == 0);
 }
 
+void xtensa_mmu_reinit(void)
+{
+	/* First initialize the hardware */
+	xtensa_init_paging(xtensa_kernel_ptables);
+
+#ifdef CONFIG_USERSPACE
+	struct k_thread *thread = _current_cpu->current;
+	struct arch_mem_domain *domain =
+			&(thread->mem_domain_info.mem_domain->arch);
+
+
+	/* Set the page table for current context */
+	xtensa_set_paging(domain->asid, domain->ptables);
+#endif /* CONFIG_USERSPACE */
+
+	arch_xtensa_mmu_post_init(_current_cpu->id == 0);
+}
+
 #ifdef CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES
 /* Zephyr's linker scripts for Xtensa usually puts
  * something before z_mapped_start (aka .text),
