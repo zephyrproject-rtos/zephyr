@@ -2,6 +2,7 @@
  * Copyright (c) 2017 Piotr Mienkowski
  * Copyright (c) 2017 Justin Watson
  * Copyright (c) 2020-2024 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +19,7 @@
 
 &tc0 {
 	status = "okay";
-	compatible = "atmel,sam-tc-qdec";
+	compatible = "atmel,sam-tc";
 
 	pinctrl-0 = <&tc0_qdec_default>;
 	pinctrl-names = "default";
@@ -26,7 +27,7 @@
 
 &tc1 {
 	status = "disabled";
-	compatible = "atmel,sam-tc-qdec";
+	compatible = "atmel,sam-tc";
 
 	pinctrl-0 = <&tc1_qdec_default>;
 	pinctrl-names = "default";
@@ -34,7 +35,7 @@
 
 &tc2 {
 	status = "disabled";
-	compatible = "atmel,sam-tc-qdec";
+	compatible = "atmel,sam-tc";
 
 	pinctrl-0 = <&tc2_qdec_default>;
 	pinctrl-names = "default";
@@ -42,7 +43,7 @@
 
 &tc3 {
 	status = "disabled";
-	compatible = "atmel,sam-tc-qdec";
+	compatible = "atmel,sam-tc";
 
 	pinctrl-0 = <&tc3_qdec_default>;
 	pinctrl-names = "default";
