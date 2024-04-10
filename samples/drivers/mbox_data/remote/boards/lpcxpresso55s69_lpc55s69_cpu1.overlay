@@ -29,7 +29,7 @@
 
 	mbox-consumer {
 		compatible = "vnd,mbox-consumer";
-		mboxes = <&mbox 2>, <&mbox 3>;
+		mboxes = <&mbox 3>, <&mbox 2>;
 		mbox-names = "tx", "rx";
 	};
 };
