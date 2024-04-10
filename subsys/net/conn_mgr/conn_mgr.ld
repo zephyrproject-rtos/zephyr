@@ -6,4 +6,4 @@
 
 #include <zephyr/linker/iterable_sections.h>
 
-ITERABLE_SECTION_RAM(conn_mgr_conn_binding, 4)
+ITERABLE_SECTION_RAM(conn_mgr_conn_binding, Z_LINK_ITERABLE_SUBALIGN)
