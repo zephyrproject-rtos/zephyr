@@ -382,6 +382,8 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap)
 		return err;
 	}
 
+	res.channel = strtol(channel, NULL, 10);
+
 	if (dev->scan_cb) {
 		dev->scan_cb(dev->net_iface, 0, &res);
 	}
