@@ -33,6 +33,9 @@ LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
 /* #define MEC5_ESPI_DEBUG_VW_TABLE */
 
+#define MEC5_ESPI_VW_T2C_POLL_CNT 100
+#define MEC5_ESPI_VW_T2C_POLL_DELAY_US 100
+
 /* eSPI virtual wire table entry
  * signal is a enum espi_vwire_signal from espi.h, we hope this enum remains
  * zero based and actual numeric values do not exceed 255.
@@ -612,6 +615,11 @@ static int espi_mec5_vw_send(const struct device *dev, enum espi_vwire_signal si
 	struct mec_espi_vw mvw = {0};
 	const struct espi_mec5_dev_config *devcfg = dev->config;
 	struct espi_vw_regs *regs = devcfg->vwb;
+	const struct mec_espi_vw_poll vwp = {
+		.delayfp = k_busy_wait,
+		.delay_param = MEC5_ESPI_VW_T2C_POLL_DELAY_US,
+		.nloops = MEC5_ESPI_VW_T2C_POLL_CNT,
+	};
 	const struct espi_mec5_vwire *vw = find_vw(dev, signal);
 
 	if (!vw) {
@@ -622,13 +630,15 @@ static int espi_mec5_vw_send(const struct device *dev, enum espi_vwire_signal si
 	mvw.srcidx = vw->source;
 	mvw.val = level;
 
-	ret = mec_espi_vw_set_src(regs, &mvw, 0);
+	ret = mec_espi_vw_set_src_cs(regs, &mvw, &vwp);
 	if (ret == MEC_RET_OK) {
 		ret = 0;
+	} else if (ret == MEC_RET_ERR_TIMEOUT) {
+		ret = 0;
+		LOG_WRN("Timeout: Host did not send GET_VW quickly");
 	} else {
 		ret = -EIO;
 	}
-
 #endif
 	return ret;
 }
