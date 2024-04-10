@@ -224,6 +224,13 @@ void bst_main(void)
  */
 uint8_t bst_delete(void)
 {
+	static bool already_deleted;
+
+	if (already_deleted) {
+		return bst_result;
+	}
+	already_deleted = true;
+
 	if (current_test && current_test->test_delete_f) {
 		current_test->test_delete_f();
 	}
