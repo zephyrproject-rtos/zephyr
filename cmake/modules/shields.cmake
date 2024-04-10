@@ -60,7 +60,7 @@ foreach(root ${BOARD_ROOT})
   # from each file and looking for <shield>.overlay files in there.
   # Each overlay corresponds to a shield. We obtain the shield name by
   # removing the .overlay extension.
-  unset(SHIELD_LIST)
+  # We also create a SHIELD_DIR_${name} variable for each shield's directory.
   foreach(shields_refs ${shields_refs_list})
     get_filename_component(shield_path ${shields_refs} DIRECTORY)
     file(GLOB shield_overlays RELATIVE ${shield_path} ${shield_path}/*.overlay)
@@ -70,34 +70,21 @@ foreach(root ${BOARD_ROOT})
       set(SHIELD_DIR_${shield} ${shield_path})
     endforeach()
   endforeach()
-
-  if(DEFINED SHIELD)
-    foreach(s ${SHIELD_AS_LIST})
-      if(NOT ${s} IN_LIST SHIELD_LIST)
-        continue()
-      endif()
-
-      list(REMOVE_ITEM SHIELD-NOTFOUND ${s})
-
-      # Add <shield>.overlay to a temporary variable
-      set(shield_${s}_dts_file ${SHIELD_DIR_${s}}/${s}.overlay)
-
-      # Search for shield/shield.conf file
-      if(EXISTS ${SHIELD_DIR_${s}}/${s}.conf)
-        # Add <shield>.conf to a temporary variable
-        set(shield_${s}_conf_file ${SHIELD_DIR_${s}}/${s}.conf)
-      endif()
-    endforeach()
-  endif()
 endforeach()
 
 # Process shields in-order
 if(DEFINED SHIELD)
   foreach(s ${SHIELD_AS_LIST})
+    if(NOT ${s} IN_LIST SHIELD_LIST)
+      continue()
+    endif()
+
+    list(REMOVE_ITEM SHIELD-NOTFOUND ${s})
+
     # Add <shield>.overlay to the shield_dts_files output variable.
     list(APPEND
       shield_dts_files
-      ${shield_${s}_dts_file}
+      ${SHIELD_DIR_${s}}/${s}.overlay
       )
 
     # Add the shield's directory to the SHIELD_DIRS output variable.
@@ -106,10 +93,11 @@ if(DEFINED SHIELD)
       ${SHIELD_DIR_${s}}
       )
 
-    if(DEFINED shield_${s}_conf_file)
+    # Search for shield/shield.conf file
+    if(EXISTS ${SHIELD_DIR_${s}}/${s}.conf)
       list(APPEND
         shield_conf_files
-        ${shield_${s}_conf_file}
+        ${SHIELD_DIR_${s}}/${s}.conf
         )
     endif()
 
