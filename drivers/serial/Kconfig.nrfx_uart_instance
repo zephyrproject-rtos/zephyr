@@ -87,7 +87,7 @@ config UART_$(nrfx_uart_num)_TX_CACHE_SIZE
 config UART_$(nrfx_uart_num)_RX_CACHE_SIZE
 	int "RX cache buffer size"
 	depends on !UART_NRFX_UARTE_LEGACY_SHIM
-	default 32 if $(dt_nodelabel_has_compat,ram3x,$(DT_COMPAT_MMIO_SRAM))
+	default 32 if $(dt_nodelabel_has_compat,shared_ram3x_region,$(DT_COMPAT_NORDIC_OWNED_MEMORY))
 	default 5
 	range 5 255
 	help
