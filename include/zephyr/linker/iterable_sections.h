@@ -32,6 +32,12 @@
 	*(SORT_BY_NAME(._##struct_type.static.*)); \
 	_CONCAT(_##struct_type, _list_end) = .
 
+#ifdef CONFIG_64BIT
+#define Z_LINK_ITERABLE_SUBALIGN  8
+#else
+#define Z_LINK_ITERABLE_SUBALIGN  4
+#endif
+
 /**
  * @brief Define a read-only iterable section output.
  *
