@@ -714,8 +714,10 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 	}
 }
 
-__weak void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval)
+__weak int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
+			     uintptr_t sym_base_addr, const char *sym_name, uintptr_t load_bias)
 {
+	return -EOPNOTSUPP;
 }
 
 static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
@@ -773,6 +775,9 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 			if (tgt)
 				llext_link_plt(ldr, ext, &shdr, do_local, tgt);
 			continue;
+		} else if (strcmp(name, ".rel.dyn") == 0) {
+			/* we assume that first load segment starts at MEM_TEXT */
+			loc = (uintptr_t)ext->mem[LLEXT_MEM_TEXT];
 		}
 
 		LOG_DBG("relocation section %s (%d) linked to section %d has %zd relocations",
@@ -815,8 +820,11 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 
 			op_loc = loc + rel.r_offset;
 
-			/* If symbol is undefined, then we need to look it up */
-			if (sym.st_shndx == SHN_UNDEF) {
+			if (ELF_R_SYM(rel.r_info) == 0) {
+				/* no symbol ex: R_ARM_V4BX relocation, R_ARM_RELATIVE  */
+				link_addr = 0;
+			} else if (sym.st_shndx == SHN_UNDEF) {
+				/* If symbol is undefined, then we need to look it up */
 				link_addr = (uintptr_t)llext_find_sym(NULL, name);
 
 				if (link_addr == 0) {
@@ -824,6 +832,8 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 						"symbol table %s, offset %zd, link section %d",
 						name, (size_t)rel.r_offset, shdr.sh_link);
 					return -ENODATA;
+				} else {
+					LOG_INF("found symbol %s at 0x%lx", name, link_addr);
 				}
 			} else if (ELF_ST_TYPE(sym.st_info) == STT_SECTION ||
 				   ELF_ST_TYPE(sym.st_info) == STT_FUNC ||
@@ -839,18 +849,17 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 				continue;
 			}
 
-			LOG_INF("relocating (linking) symbol %s type %d binding %d ndx %d offset "
-				"%zd link section %d",
-				name, ELF_ST_TYPE(sym.st_info), ELF_ST_BIND(sym.st_info),
-				sym.st_shndx, (size_t)rel.r_offset, shdr.sh_link);
-
 			LOG_INF("writing relocation symbol %s type %zd sym %zd at addr 0x%lx "
 				"addr 0x%lx",
 				name, (size_t)ELF_R_TYPE(rel.r_info), (size_t)ELF_R_SYM(rel.r_info),
 				op_loc, link_addr);
 
 			/* relocation */
-			arch_elf_relocate(&rel, op_loc, link_addr);
+			ret = arch_elf_relocate(&rel, op_loc, link_addr, name,
+					     (uintptr_t)ext->mem[LLEXT_MEM_TEXT]);
+			if (ret != 0) {
+				return ret;
+			}
 		}
 	}
 
