@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Intel Corporation
+ * Copyright (c) 2024 Schneider Electric
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -370,10 +371,29 @@ struct elf64_rela {
 #define R_ARM_PC24 1
 #define R_ARM_ABS32 2
 #define R_ARM_REL32 3
-#define R_ARM_COPY 4
-#define R_ARM_THM_CALL 10
+#define R_ARM_COPY 20
+#define R_ARM_GLOB_DAT 21
+#define R_ARM_JUMP_SLOT 22
+#define R_ARM_RELATIVE 23
 #define R_ARM_CALL 28
+#define R_ARM_JUMP24 29
+#define R_ARM_TARGET1 38
 #define R_ARM_V4BX 40
+#define R_ARM_PREL31 42
+#define R_ARM_MOVW_ABS_NC 43
+#define R_ARM_MOVT_ABS 44
+#define R_ARM_MOVW_PREL_NC 45
+#define R_ARM_MOVT_PREL 46
+#define R_ARM_ALU_PC_G0_NC 57
+#define R_ARM_ALU_PC_G1_NC 59
+#define R_ARM_LDR_PC_G2 63
+
+#define R_ARM_THM_CALL 10
+#define R_ARM_THM_JUMP24 30
+#define R_ARM_THM_MOVW_ABS_NC 47
+#define R_ARM_THM_MOVT_ABS 48
+#define R_ARM_THM_MOVW_PREL_NC 49
+#define R_ARM_THM_MOVT_PREL 50
 
 #define R_XTENSA_NONE 0
 #define R_XTENSA_32 1
