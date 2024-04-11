@@ -82,43 +82,6 @@ int32_t z_sched_prio_cmp(struct k_thread *thread_1,
 	return 0;
 }
 
-#ifdef CONFIG_SCHED_CPU_MASK
-static ALWAYS_INLINE struct k_thread *_priq_dumb_mask_best(sys_dlist_t *pq)
-{
-	/* With masks enabled we need to be prepared to walk the list
-	 * looking for one we can run
-	 */
-	struct k_thread *thread;
-
-	SYS_DLIST_FOR_EACH_CONTAINER(pq, thread, base.qnode_dlist) {
-		if ((thread->base.cpu_mask & BIT(_current_cpu->id)) != 0) {
-			return thread;
-		}
-	}
-	return NULL;
-}
-#endif /* CONFIG_SCHED_CPU_MASK */
-
-#if defined(CONFIG_SCHED_DUMB) || defined(CONFIG_WAITQ_DUMB)
-static ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq,
-					  struct k_thread *thread)
-{
-	struct k_thread *t;
-
-	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
-
-	SYS_DLIST_FOR_EACH_CONTAINER(pq, t, base.qnode_dlist) {
-		if (z_sched_prio_cmp(thread, t) > 0) {
-			sys_dlist_insert(&t->base.qnode_dlist,
-					 &thread->base.qnode_dlist);
-			return;
-		}
-	}
-
-	sys_dlist_append(pq, &thread->base.qnode_dlist);
-}
-#endif /* CONFIG_SCHED_DUMB || CONFIG_WAITQ_DUMB */
-
 static ALWAYS_INLINE void *thread_runq(struct k_thread *thread)
 {
 #ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
@@ -150,11 +113,15 @@ static ALWAYS_INLINE void *curr_cpu_runq(void)
 
 static ALWAYS_INLINE void runq_add(struct k_thread *thread)
 {
+	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
+
 	_priq_run_add(thread_runq(thread), thread);
 }
 
 static ALWAYS_INLINE void runq_remove(struct k_thread *thread)
 {
+	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
+
 	_priq_run_remove(thread_runq(thread), thread);
 }
 
@@ -616,7 +583,7 @@ static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 
 	if (wait_q != NULL) {
 		thread->base.pended_on = wait_q;
-		z_priq_wait_add(&wait_q->waitq, thread);
+		_priq_wait_add(&wait_q->waitq, thread);
 	}
 }
 
