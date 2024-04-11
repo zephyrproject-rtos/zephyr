@@ -25,8 +25,6 @@
 #include "audio.h"
 
 #define INVALID_BROADCAST_ID 0xFFFFFFFFU
-/* BIS sync is a 32-bit bitfield where BIT(0) is not allowed */
-#define VALID_BIS_SYNC(_bis_sync) ((bis_sync & BIT(0)) == 0U && bis_sync < UINT32_MAX)
 
 static uint8_t received_base[UINT8_MAX];
 static uint8_t received_base_size;
