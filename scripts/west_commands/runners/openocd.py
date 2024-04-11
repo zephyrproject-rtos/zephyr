@@ -37,6 +37,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                  tcl_port=DEFAULT_OPENOCD_TCL_PORT,
                  telnet_port=DEFAULT_OPENOCD_TELNET_PORT,
                  gdb_port=DEFAULT_OPENOCD_GDB_PORT,
+                 gdb_client_port=DEFAULT_OPENOCD_GDB_PORT,
                  gdb_init=None, no_load=False,
                  target_handle=DEFAULT_OPENOCD_TARGET_HANDLE):
         super().__init__(cfg)
@@ -85,6 +86,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.tcl_port = tcl_port
         self.telnet_port = telnet_port
         self.gdb_port = gdb_port
+        self.gdb_client_port = gdb_client_port
         self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
         self.tui_arg = ['-tui'] if tui else []
         self.halt_arg = [] if no_halt else ['-c halt']
@@ -146,6 +148,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                             help='openocd telnet port, defaults to 4444')
         parser.add_argument('--gdb-port', default=DEFAULT_OPENOCD_GDB_PORT,
                             help='openocd gdb port, defaults to 3333')
+        parser.add_argument('--gdb-client-port', default=DEFAULT_OPENOCD_GDB_PORT,
+                            help='''openocd gdb client port if multiple ports come
+                            up, defaults to 3333''')
         parser.add_argument('--gdb-init', action='append',
                             help='if given, add GDB init commands')
         parser.add_argument('--no-halt', action='store_true',
@@ -174,8 +179,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             use_elf=args.use_elf, no_halt=args.no_halt, no_init=args.no_init,
             no_targets=args.no_targets, tcl_port=args.tcl_port,
             telnet_port=args.telnet_port, gdb_port=args.gdb_port,
-            gdb_init=args.gdb_init, no_load=args.no_load,
-            target_handle=args.target_handle)
+            gdb_client_port=args.gdb_client_port, gdb_init=args.gdb_init,
+            no_load=args.no_load, target_handle=args.target_handle)
 
     def print_gdbserver_message(self):
         if not self.thread_info_enabled:
@@ -351,7 +356,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                       pre_init_cmd + self.init_arg + self.targets_arg +
                       self.halt_arg)
         gdb_cmd = (self.gdb_cmd + self.tui_arg +
-                   ['-ex', 'target extended-remote :{}'.format(self.gdb_port),
+                   ['-ex', 'target extended-remote :{}'.format(self.gdb_client_port),
                     self.elf_name])
         if command == 'debug':
             gdb_cmd.extend(self.load_arg)
