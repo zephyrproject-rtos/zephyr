@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADIN1100 PHY
+
+compatible: "adi,adin1100-phy"
+
+include: adi,adin2111-phy.yaml
