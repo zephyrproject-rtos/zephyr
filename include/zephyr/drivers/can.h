@@ -19,6 +19,7 @@
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/syscall.h>
 #include <string.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/sys/util.h>
@@ -825,9 +826,7 @@ struct can_device_state {
  *
  * @return 0 on success, or a negative error code on error
  */
-__syscall int can_get_core_clock(const struct device *dev, uint32_t *rate);
-
-static inline int z_impl_can_get_core_clock(const struct device *dev, uint32_t *rate)
+K_SYSCALL_INLINE(int, can_get_core_clock, const struct device *dev, uint32_t *rate)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
