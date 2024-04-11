@@ -11,9 +11,11 @@ import contextlib
 import mmap
 import glob
 from typing import List
+
 from twisterlib.mixins import DisablePyTestCollectionMixin
 from twisterlib.environment import canonical_zephyr_base
 from twisterlib.error import TwisterException, TwisterRuntimeError
+from twisterlib.statuses import TestCaseStatus
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -357,7 +359,7 @@ class TestCase(DisablePyTestCollectionMixin):
     def __init__(self, name=None, testsuite=None):
         self.duration = 0
         self.name = name
-        self.status = None
+        self.status = TestCaseStatus.NONE
         self.reason = None
         self.testsuite = testsuite
         self.output = ""
