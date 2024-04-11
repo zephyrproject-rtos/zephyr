@@ -2998,30 +2998,9 @@ next_state:
 		break;
 	case TCP_ESTABLISHED:
 		/* full-close */
-		if (th && FL(&fl, ==, (FIN | ACK), th_seq(th) == conn->ack)) {
-			if (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
-				uint32_t len_acked = th_ack(th) - conn->seq;
+		if (th && FL(&fl, &, FIN, th_seq(th) == conn->ack)) {
+			bool acked = false;
 
-				conn_seq(conn, + len_acked);
-			}
-
-			conn_ack(conn, + 1);
-			tcp_out(conn, FIN | ACK);
-			conn_seq(conn, + 1);
-			next = TCP_LAST_ACK;
-			verdict = NET_OK;
-			keep_alive_timer_stop(conn);
-			tcp_setup_last_ack_timer(conn);
-			break;
-		} else if (th && FL(&fl, ==, FIN, th_seq(th) == conn->ack)) {
-			conn_ack(conn, + 1);
-			tcp_out(conn, ACK);
-			next = TCP_CLOSE_WAIT;
-			verdict = NET_OK;
-			keep_alive_timer_stop(conn);
-			break;
-		} else if (th && FL(&fl, ==, (FIN | ACK | PSH),
-				    th_seq(th) == conn->ack)) {
 			if (len) {
 				verdict = tcp_data_get(conn, pkt, &len);
 				if (verdict == NET_OK) {
@@ -3033,11 +3012,28 @@ next_state:
 			}
 
 			conn_ack(conn, + len + 1);
-			tcp_out(conn, FIN | ACK);
-			conn_seq(conn, + 1);
-			next = TCP_LAST_ACK;
 			keep_alive_timer_stop(conn);
-			tcp_setup_last_ack_timer(conn);
+
+			if (FL(&fl, &, ACK)) {
+				acked = true;
+
+				if (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
+					uint32_t len_acked = th_ack(th) - conn->seq;
+
+					conn_seq(conn, + len_acked);
+				}
+			}
+
+			if (acked) {
+				tcp_out(conn, FIN | ACK);
+				conn_seq(conn, + 1);
+				tcp_setup_last_ack_timer(conn);
+				next = TCP_LAST_ACK;
+			} else {
+				tcp_out(conn, ACK);
+				next = TCP_CLOSE_WAIT;
+			}
+
 			break;
 		}
 
