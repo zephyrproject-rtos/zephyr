@@ -25,14 +25,8 @@ config BLOCKING_CORE_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS
 	help
 	  This option sets Telink IPC dispatcher response driver timeout in mS.
 
-config BLOCKING_CORE_TELINK_W91_CHECK_STATE_PERIOD_US
-	int "Blocking check state period"
+config BLOCKING_CORE_TELINK_W91_CORE_STOP_TIMEOUT_MS
+	int "Core stop timeout"
 	default 100
-	help
-	  This option sets blocking check state period in uS.
-
-config BLOCKING_CORE_TELINK_W91_CORE_STOP_TIMEOUT_US
-	int "Core stop timeout (500ms)"
-	default 500000
 	help
 	  This option sets core stop timeout in uS.

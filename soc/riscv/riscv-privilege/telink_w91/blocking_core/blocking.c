@@ -12,7 +12,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(blocking_core_w91);
 
-#define ASM_NOP_CYCLES_PER_SEC       (DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) / 10)
+#define MTIME_REG    DT_REG_ADDR(DT_INST(0, telink_machine_timer))
 
 enum {
 	IPC_DISPATCHER_BLOCKING_SET_STATE_ADDR = IPC_DISPATCHER_BLOCKING,
@@ -28,13 +28,29 @@ enum {
 	BLOCKING_CORE_ACTIVE_REQ_STATE,
 };
 
-static atomic_t blocking_state = BLOCKING_INVALID_STATE;
+static atomic_t __GENERIC_SECTION(.ram_dlm) blocking_state = BLOCKING_INVALID_STATE;
 static struct ipc_based_driver ipc_data;    /* ipc driver data part */
 static uint32_t blocking_events;
 
 static struct k_thread blocking_thread_data;
 K_THREAD_STACK_DEFINE(blocking_thread_stack, CONFIG_TELINK_W91_BLOCKING_CORE_THREAD_STACK_SIZE);
 K_SEM_DEFINE(blocking_sem, 0, 1);
+
+/* API implementation: get Machine Timer value */
+static uint64_t __GENERIC_SECTION(.ram_code) get_mtime(void)
+{
+	const volatile uint32_t *const rl = (const volatile uint32_t *const)MTIME_REG;
+	const volatile uint32_t *const rh =
+		(const volatile uint32_t *const)(MTIME_REG + sizeof(uint32_t));
+	uint32_t mtime_l, mtime_h;
+
+	do {
+		mtime_h = *rh;
+		mtime_l = *rl;
+	} while (mtime_h != *rh);
+
+	return (((uint64_t)mtime_h) << 32) | mtime_l;
+}
 
 /* APIs implementation: set address of blocking state */
 static size_t pack_blocking_w91_set_state_addr(uint8_t inst, void *unpack_data, uint8_t *pack_data)
@@ -77,26 +93,20 @@ static void __GENERIC_SECTION(.ram_code) __attribute__((noinline)) blocking_w91_
 {
 	unsigned int key;
 
-	/* Convert the check state period to approximate number of "nop" instructions */
-	uint32_t nop_count = CONFIG_BLOCKING_CORE_TELINK_W91_CHECK_STATE_PERIOD_US *
-			(ASM_NOP_CYCLES_PER_SEC / USEC_PER_SEC);
-
-	uint32_t steps_timeout = CONFIG_BLOCKING_CORE_TELINK_W91_CORE_STOP_TIMEOUT_US /
-			CONFIG_BLOCKING_CORE_TELINK_W91_CHECK_STATE_PERIOD_US;
-	uint32_t steps_count = 0;
+	bool blocking_timeout = false;
+	uint64_t start_ticks;
+	uint64_t timeout_ticks = (uint64_t)CONFIG_BLOCKING_CORE_TELINK_W91_CORE_STOP_TIMEOUT_MS *
+			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / MSEC_PER_SEC;
 
 	key = irq_lock();
 
 	atomic_set(&blocking_state, BLOCKING_CORE_STOPPED_STATE);
 
+	start_ticks = get_mtime();
+
 	while (atomic_get(&blocking_state) != BLOCKING_CORE_ACTIVE_REQ_STATE) {
-		for (uint32_t i = 0; i < nop_count; i++) {
-			__asm volatile("nop");
-		}
-
-		steps_count++;
-
-		if (steps_count == steps_timeout) {
+		if ((get_mtime() - start_ticks) >= timeout_ticks) {
+			blocking_timeout = true;
 			break;
 		}
 	}
@@ -105,12 +115,12 @@ static void __GENERIC_SECTION(.ram_code) __attribute__((noinline)) blocking_w91_
 
 	irq_unlock(key);
 
-	if (steps_count == steps_timeout) {
+	if (blocking_timeout) {
 		LOG_ERR("Blocking core timeout");
 	}
 }
 
-static void blocking_w91_thread(void)
+static void blocking_w91_thread(void *p1, void *p2, void *p3)
 {
 	static volatile uint32_t ipc_events;
 
