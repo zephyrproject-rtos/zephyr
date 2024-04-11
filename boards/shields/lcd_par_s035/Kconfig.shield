@@ -1,0 +1,5 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_LCD_PAR_S035
+	def_bool $(shields_list_contains,lcd_par_s035_8080)
