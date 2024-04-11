@@ -141,6 +141,7 @@ struct llext_load_param {
  * @param[in] ldr_parm Loader parameters
  *
  * @retval 0 Success
+ * @retval > 0 extension use count
  * @retval -ENOMEM Not enough memory
  * @retval -EINVAL Invalid ELF stream
  */
