@@ -1764,7 +1764,7 @@ static void dai_ssp_set_reg_config(struct dai_intel_ssp *dp, const struct dai_co
 	ssrsa = SSRSA_GET(regs->ssrsa);
 	sscr1 = regs->ssc1 & ~(SSCR1_RSRE | SSCR1_TSRE);
 
-	LOG_ERR("SSP%d configuration:", dp->index);
+	LOG_INF("SSP%d configuration:", dp->index);
 	if (regs->sstsa & SSTSA_TXEN || regs->ssrsa & SSRSA_RXEN ||
 	    regs->ssc1 & (SSCR1_RSRE | SSCR1_TSRE)) {
 		LOG_INF(" Ignoring %s%s%s%sfrom blob",
