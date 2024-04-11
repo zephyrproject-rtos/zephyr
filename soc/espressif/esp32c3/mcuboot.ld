@@ -133,6 +133,7 @@ SECTIONS
     . += 16;
 
     _text_end = ABSOLUTE(.);
+    __text_region_end = .;
     _etext = .;
 
     /* Similar to _iram_start, this symbol goes here so it is

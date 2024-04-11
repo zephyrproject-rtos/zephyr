@@ -743,6 +743,7 @@ SECTIONS
   {
     _stext = .;
     _instruction_reserved_start = ABSOLUTE(.);
+    __text_region_start = .;
     _text_start = ABSOLUTE(.);
     _instruction_reserved_start = ABSOLUTE(.);
 
@@ -774,6 +775,7 @@ SECTIONS
 
     _instruction_reserved_end = ABSOLUTE(.);
     _text_end = ABSOLUTE(.);
+    __text_region_end = .;
     _instruction_reserved_end = ABSOLUTE(.);
     _etext = .;
 
