@@ -436,3 +436,18 @@ and index 1 gets the second offset, etc.:
    AICS inst 0x20014188 state gain 15, mute 0, mode 0
    Gain set for inst 0x20014188
    Microphone gain change completed
+
+Starting a broadcast reception
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: console
+
+   uart:~$ bt connect <device A>
+   Connected: <device A>
+   uart:~$ bap_init
+   uart:~$ cap_commander discover
+   discovery completed with CSIS
+   uart:~$ bap_broadcast_assistant discover
+   BASS discover done with 1 recv states
+   uart:~$ cap_commander broadcast_reception_start <device B> 0 4
+   Starting broadcast reception on 1 connection(s)
