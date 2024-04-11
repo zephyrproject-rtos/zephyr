@@ -31,11 +31,3 @@ config SOC_NRF54H20_CPURAD
 
 config SOC_NRF54H20_CPUPPR
 	depends on RISCV_CORE_NORDIC_VPR
-
-if SOC_NRF54H20
-
-config NRF_ENABLE_ICACHE
-	bool "Instruction cache (I-Cache)"
-	default y
-
-endif # SOC_NRF54H20
