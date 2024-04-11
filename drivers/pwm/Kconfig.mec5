@@ -1,0 +1,12 @@
+# Microchip MEC5 HAL based PWM configuration options
+
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_MEC5
+	bool "Microchip MEC5 PWM"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_PWM_ENABLED
+	select PINCTRL
+	help
+	  Enable driver to utilize PWM using the Microchip MEC5 HAL.
