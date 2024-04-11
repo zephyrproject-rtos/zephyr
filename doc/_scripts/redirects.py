@@ -15,6 +15,7 @@ Notes:
 REDIRECTS = [
     # zephyr-keep-sorted-start
     ('application/index', 'develop/application/index'),
+    ('boards/arduino/uno_r4_minima/doc/index', 'boards/arduino/uno_r4/doc/index'),
     ('boards/x86/ehl_crb/doc/index', 'boards/x86/intel_ehl/doc/index'),
     ('boards/x86/rpl_crb/doc/index', 'boards/x86/intel_rpl/doc/index'),
     ('connectivity/bluetooth/bluetooth-audio-arch', 'connectivity/bluetooth/bluetooth-le-audio-arch'),
