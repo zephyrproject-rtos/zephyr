@@ -20,5 +20,10 @@ chosen {
 	clock-frequency = <100000000>;
 };
 
+&i2c0 {
+	status = "ok";
+	clock_frequency = <40000000>;
+	scl_frequency = <100000>;
+};
 
 	

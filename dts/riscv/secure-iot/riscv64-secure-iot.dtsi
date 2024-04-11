@@ -60,4 +60,10 @@ uart0: serial@11300 {
          compatible = "shakti,uart0";
          reg= < 0x0 0x11300 0x0 0x1000>;
   };
+
+  i2c0: i2c@44000 {
+         compatible = "shakti,i2c0";
+         reg= <0x0 0x44000 0x0 0x100>;
+  };
+
 };
