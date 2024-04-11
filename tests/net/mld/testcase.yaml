@@ -10,3 +10,8 @@ tests:
   net.mld.preempt:
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+  net.mld.mcast_routes:
+    extra_configs:
+      - CONFIG_NET_ROUTE_MCAST=y
+      - CONFIG_NET_MAX_MCAST_ROUTES=5
+      - CONFIG_NET_MCAST_ROUTE_MLD_REPORTS=y
