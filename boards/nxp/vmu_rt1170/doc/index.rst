@@ -61,6 +61,10 @@ Hardware
 
 - CAN bus JST-GH connectors
 
+- RC IN
+
+  - RC input connector for SBUS compatible RC receivers
+
 For more information about the MIMXRT1176 SoC and VMU RT1170 board, see
 these references:
 

@@ -245,6 +245,7 @@ friendlyarm	Guangzhou FriendlyARM Computer Tech Co., Ltd
 fsl	Freescale Semiconductor
 ftdi	Future Technology Devices International Ltd.
 fujitsu	Fujitsu Ltd.
+futaba	Futaba Corporation
 gaisler	Gaisler
 galaxycore	Galaxycore, Inc.
 gardena	GARDENA GmbH
