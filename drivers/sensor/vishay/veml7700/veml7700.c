@@ -92,6 +92,16 @@ struct veml7700_data {
 	uint32_t int_flags;
 };
 
+static bool is_veml7700_gain_in_range(int32_t gain_selection)
+{
+	return ((gain_selection >= 0U) && (gain_selection < VEML7700_ALS_GAIN_ELEM_COUNT));
+}
+
+static bool is_veml7700_it_in_range(int32_t it_selection)
+{
+	return ((it_selection >= 0U) && (it_selection < VEML7700_ALS_IT_ELEM_COUNT));
+}
+
 /**
  * @brief Waits for a specific amount of time which depends
  * on the current integration time setting.
@@ -135,16 +145,24 @@ static void veml7700_sleep_by_integration_time(const struct veml7700_data *data)
 	}
 }
 
-static uint32_t veml7700_counts_to_lux(const struct veml7700_data *data,
-				       uint16_t counts)
+static int veml7700_counts_to_lux(const struct veml7700_data *data, uint16_t counts,
+				  uint32_t *lux)
 {
-	return counts * veml7700_resolution[data->gain][data->it];
+	if (!is_veml7700_gain_in_range(data->gain) || !is_veml7700_it_in_range(data->it)) {
+		return -EINVAL;
+	}
+	*lux = counts * veml7700_resolution[data->gain][data->it];
+	return 0;
 }
 
-static uint16_t veml7700_lux_to_counts(const struct veml7700_data *data,
-				       uint32_t lux)
+static int veml7700_lux_to_counts(const struct veml7700_data *data, uint32_t lux,
+				       uint16_t *counts)
 {
-	return lux / veml7700_resolution[data->gain][data->it];
+	if (!is_veml7700_gain_in_range(data->gain) || !is_veml7700_it_in_range(data->it)) {
+		return -EINVAL;
+	}
+	*counts = lux / veml7700_resolution[data->gain][data->it];
+	return 0;
 }
 
 static int veml7700_check_gain(const struct sensor_value *val)
@@ -166,8 +184,11 @@ static int veml7700_check_int_mode(const struct sensor_value *val)
 	       || val->val1 == VEML7700_INT_DISABLED;
 }
 
-static uint16_t veml7700_build_als_conf_param(const struct veml7700_data *data)
+static int veml7700_build_als_conf_param(const struct veml7700_data *data, uint16_t *return_value)
 {
+	if (!is_veml7700_gain_in_range(data->gain) || !is_veml7700_it_in_range(data->it)) {
+		return -EINVAL;
+	}
 	uint16_t param = 0;
 	/* Bits 15:13 -> reserved */
 	/* Bits 12:11 -> gain selection (ALS_GAIN) */
@@ -186,7 +207,8 @@ static uint16_t veml7700_build_als_conf_param(const struct veml7700_data *data)
 	if (data->shut_down) {
 		param |= BIT(0);
 	}
-	return param;
+	*return_value = param;
+	return 0;
 }
 
 static uint16_t veml7700_build_psm_param(const struct veml7700_config *conf)
@@ -229,8 +251,12 @@ static int veml7700_write_als_conf(const struct device *dev)
 {
 	const struct veml7700_data *data = dev->data;
 	uint16_t param;
+	int ret = 0;
 
-	param = veml7700_build_als_conf_param(data);
+	ret = veml7700_build_als_conf_param(data, &param);
+	if (ret < 0) {
+		return ret;
+	}
 	LOG_DBG("Writing ALS configuration: 0x%04x", param);
 	return veml7700_write(dev, VEML7700_CMDCODE_ALS_CONF, param);
 }
@@ -289,7 +315,11 @@ static int veml7700_fetch_als(const struct device *dev)
 	}
 
 	data->als_counts = counts;
-	data->als_lux = veml7700_counts_to_lux(data, counts);
+	ret = veml7700_counts_to_lux(data, counts, &data->als_lux);
+	if (ret < 0) {
+		return ret;
+	}
+
 	LOG_DBG("Read ALS measurement: counts=%d, lux=%d", data->als_counts, data->als_lux);
 
 	return 0;
@@ -339,12 +369,19 @@ static int veml7700_attr_set(const struct device *dev,
 	}
 
 	struct veml7700_data *data = dev->data;
+	int ret = 0;
 
 	if (attr == SENSOR_ATTR_LOWER_THRESH) {
-		data->thresh_low = veml7700_lux_to_counts(data, val->val1);
+		ret = veml7700_lux_to_counts(data, val->val1, &data->thresh_low);
+		if (ret < 0) {
+			return ret;
+		}
 		return veml7700_write_thresh_low(dev);
 	} else if (attr == SENSOR_ATTR_UPPER_THRESH) {
-		data->thresh_high = veml7700_lux_to_counts(data, val->val1);
+		ret = veml7700_lux_to_counts(data, val->val1, &data->thresh_high);
+		if (ret < 0) {
+			return ret;
+		}
 		return veml7700_write_thresh_high(dev);
 	} else if ((enum sensor_attribute_veml7700)attr == SENSOR_ATTR_VEML7700_GAIN) {
 		if (veml7700_check_gain(val)) {
