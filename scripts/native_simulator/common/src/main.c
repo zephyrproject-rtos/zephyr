@@ -52,9 +52,11 @@ NSI_FUNC_NORETURN void nsi_exit(int exit_code)
 /**
  * Run all early native simulator initialization steps, including command
  * line parsing and CPU start, until we are ready to let the HW models
- * run via hwm_one_event()
+ * run via nsi_hws_one_event()
+ *
+ * Note: This API should normally only be called by the native simulator main()
  */
-static void nsi_init(int argc, char *argv[])
+void nsi_init(int argc, char *argv[])
 {
 	/*
 	 * Let's ensure that even if we are redirecting to a file, we get stdout
@@ -92,6 +94,8 @@ static void nsi_init(int argc, char *argv[])
  * return.  Note that this does not affect event timing, so the "next
  * event" may be significantly after the request if the hardware has
  * not been configured to e.g. send an interrupt when expected.
+ *
+ * Note: This API should normally only be called by the native simulator main()
  */
 void nsi_exec_for(uint64_t us)
 {
@@ -102,7 +106,7 @@ void nsi_exec_for(uint64_t us)
 	} while (nsi_hws_get_time() < (start + us));
 }
 
-#ifndef NSI_LIBFUZZER
+#ifndef NSI_NO_MAIN
 
 /**
  *
@@ -121,39 +125,4 @@ int main(int argc, char *argv[])
 	return 1; /* LCOV_EXCL_LINE */
 }
 
-#else /* NSI_LIBFUZZER */
-
-/**
- * Entry point for fuzzing (when enabled). Works by placing the data
- * into two known symbols, triggering an app-visible interrupt, and
- * then letting the simulator run for a fixed amount of time (intended to be
- * "long enough" to handle the event and reach a quiescent state
- * again)
- */
-uint8_t *nsi_fuzz_buf, nsi_fuzz_sz;
-
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t sz)
-{
-	static bool nsi_initialized;
-
-	if (!nsi_initialized) {
-		nsi_init(0, NULL);
-		nsi_initialized = true;
-	}
-
-	/* Provide the fuzz data to the embedded OS as an interrupt, with
-	 * "DMA-like" data placed into nsi_fuzz_buf/sz
-	 */
-	nsi_fuzz_buf = (void *)data;
-	nsi_fuzz_sz = sz;
-	hw_irq_ctrl_set_irq(NSI_FUZZ_IRQ);
-
-	/* Give the OS time to process whatever happened in that
-	 * interrupt and reach an idle state.
-	 */
-	nsi_exec_for(NSI_FUZZ_TIME);
-
-	return 0;
-}
-
-#endif /* NSI_LIBFUZZER */
+#endif /* NSI_NO_MAIN */
