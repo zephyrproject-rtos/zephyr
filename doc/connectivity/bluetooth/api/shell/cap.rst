@@ -258,6 +258,7 @@ the optionally included CSIS instance by calling (:code:`cap_commander discover`
    cap_commander - Bluetooth CAP commander shell commands
    Subcommands:
      discover                :Discover CAS
+     cancel                  :CAP commander cancel current procedure
      change_volume           :Change volume on all connections <volume>
      change_volume_mute      :Change volume mute state on all connections <mute>
      change_volume_offset    :Change volume offset per connection <volume_offset
