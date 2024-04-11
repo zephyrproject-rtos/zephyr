@@ -246,7 +246,7 @@ static int create_answer(struct net_context *ctx,
 	/* Prepare the response into the query buffer: move the name
 	 * query buffer has to get enough free space: dns_hdr + query + answer
 	 */
-	if ((query->size - query->len) < (DNS_MSG_HEADER_SIZE +
+	if ((net_buf_max_len(query) - query->len) < (DNS_MSG_HEADER_SIZE +
 					  (DNS_QTYPE_LEN + DNS_QCLASS_LEN) * 2 +
 					  DNS_TTL_LEN + DNS_RDLENGTH_LEN +
 					  addr_len + query->len)) {
@@ -491,7 +491,7 @@ static int dns_read(struct net_context *ctx,
 		enum dns_rr_type qtype;
 		enum dns_class qclass;
 
-		(void)memset(result->data, 0, result->size);
+		(void)memset(result->data, 0, net_buf_max_len(result));
 		result->len = 0U;
 
 		ret = dns_unpack_query(&dns_msg, result, &qtype, &qclass);
