@@ -238,7 +238,7 @@ static int create_answer(struct net_context *ctx,
 	/* Prepare the response into the query buffer: move the name
 	 * query buffer has to get enough free space: dns_hdr + answer
 	 */
-	if ((query->size - query->len) < (DNS_MSG_HEADER_SIZE +
+	if ((net_buf_max_len(query) - query->len) < (DNS_MSG_HEADER_SIZE +
 					  DNS_QTYPE_LEN + DNS_QCLASS_LEN +
 					  DNS_TTL_LEN + DNS_RDLENGTH_LEN +
 					  addr_len)) {
@@ -453,7 +453,7 @@ static void send_sd_response(struct net_context *ctx,
 			/* Construct the response */
 			if (service_type_enum) {
 				ret = dns_sd_handle_service_type_enum(record, addr4, addr6,
-					result->data, result->size);
+						result->data, net_buf_max_len(result));
 				if (ret < 0) {
 					NET_DBG("dns_sd_handle_service_type_enum() failed (%d)",
 						ret);
@@ -461,7 +461,7 @@ static void send_sd_response(struct net_context *ctx,
 				}
 			} else {
 				ret = dns_sd_handle_ptr_query(record, addr4, addr6,
-					result->data, result->size);
+						result->data, net_buf_max_len(result));
 				if (ret < 0) {
 					NET_DBG("dns_sd_handle_ptr_query() failed (%d)", ret);
 					continue;
