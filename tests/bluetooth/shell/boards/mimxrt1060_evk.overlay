@@ -1,0 +1,17 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,bt-uart = &lpuart3;
+	};
+};
+
+&lpuart3 {
+	status = "okay";
+	current-speed = <3000000>;
+	hw-flow-control;
+};
