@@ -10,6 +10,7 @@
 #include <zephyr/logging/log.h>
 
 #include <soc.h>
+#include <nrf53_cpunet_mgmt.h>
 
 LOG_MODULE_REGISTER(raytac_mdbt53_db_40_nrf5340_cpuapp, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -49,7 +50,7 @@ static int remoteproc_mgr_boot(const struct device *dev)
 	 */
 
 	/* Release the Network MCU, 'Release force off signal' */
-	NRF_RESET->NETWORK.FORCEOFF = RESET_NETWORK_FORCEOFF_FORCEOFF_Release;
+	nrf53_cpunet_enable(true);
 
 	LOG_DBG("Network MCU released.");
 #endif /* !CONFIG_TRUSTED_EXECUTION_SECURE */
