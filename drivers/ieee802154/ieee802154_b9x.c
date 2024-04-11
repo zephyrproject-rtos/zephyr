@@ -994,6 +994,8 @@ static int b9x_set_txpower(const struct device *dev, int16_t dbm)
 	return 0;
 }
 
+volatile bool b9x_rf_zigbee_250K_mode;
+
 /* API implementation: start */
 static int b9x_start(const struct device *dev)
 {
@@ -1008,11 +1010,14 @@ static int b9x_start(const struct device *dev)
 		riscv_plic_set_priority(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET,
 			DT_INST_IRQ(0, priority));
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
+		if (!b9x_rf_zigbee_250K_mode) {
 #if CONFIG_SOC_RISCV_TELINK_B95 && CONFIG_IEEE802154_2015
-		ske_dig_en();
+			ske_dig_en();
 #endif
-		rf_mode_init();
-		rf_set_zigbee_250K_mode();
+			rf_mode_init();
+			rf_set_zigbee_250K_mode();
+			b9x_rf_zigbee_250K_mode = true;
+		}
 		rf_set_tx_dma(1, B9X_TRX_LENGTH);
 		rf_set_rx_dma(b9x->rx_buffer, 0, B9X_TRX_LENGTH);
 		if (b9x->current_channel != B9X_TX_CH_NOT_SET) {
@@ -1045,10 +1050,13 @@ static int b9x_stop(const struct device *dev)
 		}
 		riscv_plic_irq_disable(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET);
 		rf_set_tx_rx_off();
+#ifdef CONFIG_PM_DEVICE
 		rf_baseband_reset();
 #if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 		rf_reset_dma();
 #endif
+		b9x_rf_zigbee_250K_mode = false;
+#endif /* CONFIG_PM_DEVICE */
 		b9x->is_started = false;
 		if (b9x->event_handler) {
 			b9x->event_handler(dev, IEEE802154_EVENT_SLEEP, NULL);

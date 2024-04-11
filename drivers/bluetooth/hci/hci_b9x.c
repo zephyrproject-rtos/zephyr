@@ -216,6 +216,11 @@ done:
 
 static int hci_b9x_open(void)
 {
+#if CONFIG_IEEE802154_TELINK_B9X
+	extern volatile bool b9x_rf_zigbee_250K_mode;
+
+	b9x_rf_zigbee_250K_mode = false;
+#endif
 	int status;
 
 	status = b9x_bt_controller_init();
@@ -243,7 +248,11 @@ static int hci_b9x_close(void)
 	bt_le_adv_stop();
 #endif /* CONFIG_BT_HCI_HOST && CONFIG_BT_BROADCASTER */
 	b9x_bt_controller_deinit();
+#if CONFIG_IEEE802154_TELINK_B9X
+	extern volatile bool b9x_rf_zigbee_250K_mode;
 
+	b9x_rf_zigbee_250K_mode = false;
+#endif
 	return 0;
 }
 
