@@ -1821,6 +1821,17 @@ Release Notes:
   tests:
     - drivers.sensors
 
+"Drivers: SKY13317":
+  status: maintained
+  maintainers:
+    - ayush1325
+    - niflostancu
+  files:
+    - drivers/misc/sky13317/
+    - dts/bindings/misc/skyworks,sky13317.yaml
+  labels:
+    - "area: Networking"
+
 "Drivers: SMBus":
   status: maintained
   maintainers:

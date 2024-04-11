@@ -49,7 +49,7 @@ const RFCC26XX_HWAttrsV2 RFCC26XX_hwAttrs = {
 
 PINCTRL_DT_INST_DEFINE(0);
 DEVICE_DT_INST_DEFINE(0, board_antenna_init, NULL, NULL, NULL,
-					  POST_KERNEL, CONFIG_BOARD_ANTENNA_INIT_PRIO, NULL);
+					  POST_KERNEL, CONFIG_SKY13317_INIT_PRIO, NULL);
 
 static const struct pinctrl_dev_config *ant_pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 static const struct gpio_dt_spec ant_gpios[] = {

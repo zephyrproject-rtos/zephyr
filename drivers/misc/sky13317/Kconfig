@@ -1,0 +1,23 @@
+# SKY13317 GaAs pHEMT single-pole, triple-throw (SP3T) antenna switch
+
+# Copyright (c) 2024 Ayush Singh <ayushdevel1325@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SKY13317
+	bool "SKY13317 GaAs pHEMT single-pole, triple-throw (SP3T) antenna switch"
+	default y
+	depends on DT_HAS_SKYWORKS_SKY13317_ENABLED
+	help
+	  Enable driver for SKY13317 antenna switch.
+
+if SKY13317
+
+config SKY13317_INIT_PRIO
+	int "SKY13317 initialization priority"
+	default 70
+	help
+	  Set the priority for board init, must be greater than
+	  KERNEL_INIT_PRIORITY_DEVICE but smaller than
+	  IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO.
+
+endif # SKY13317
