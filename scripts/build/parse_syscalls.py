@@ -41,6 +41,14 @@ syscall_regex = re.compile(r'''
 [)]                                        # Closing parenthesis
 ''', regex_flags)
 
+syscall_regex_alt = re.compile(r'''
+^\s*K_SYSCALL_INLINE\(\s*                  # K_SYSCALL_INLINE, must be first
+([^,]+),\s*                                # type of system call
+([^,]+),\s*                                # name of system call
+([^)]*)                                    # Arg list (split later)
+\)                                         # Closing parenthesis
+''', regex_flags)
+
 struct_tags = ["__subsystem", "__net_socket"]
 
 tagged_struct_decl_template = r'''
@@ -129,6 +137,8 @@ def analyze_headers(include_dir, scan_dir, file_list):
 
             syscall_result = [(mo.groups(), fn, to_emit)
                               for mo in syscall_regex.finditer(contents)]
+            syscall_result_alt = [(mo.groups(), fn, to_emit)
+                                  for mo in syscall_regex_alt.finditer(contents)]
             for tag in struct_tags:
                 tagged_struct_update(tagged_ret[tag], tag, contents)
         except Exception:
@@ -136,6 +146,7 @@ def analyze_headers(include_dir, scan_dir, file_list):
             raise
 
         syscall_ret.extend(syscall_result)
+        syscall_ret.extend(syscall_result_alt)
 
     return syscall_ret, tagged_ret
 

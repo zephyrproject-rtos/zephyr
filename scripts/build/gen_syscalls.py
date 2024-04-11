@@ -378,17 +378,23 @@ def marshall_defs(func_name, func_type, args):
     return mrsh, mrsh_name
 
 def analyze_fn(match_group, fn):
-    func, args = match_group
+    if len(match_group) > 2:
+        func_type, func_name, args = match_group
+    else:
+        func, args = match_group
+        try:
+            func_type, func_name = typename_split(func)
+        except SyscallParseException:
+            sys.stderr.write("In declaration of %s\n" % func)
+            raise
 
     try:
         if args == "void":
             args = []
         else:
             args = [typename_split(a.strip()) for a in args.split(",")]
-
-        func_type, func_name = typename_split(func)
     except SyscallParseException:
-        sys.stderr.write("In declaration of %s\n" % func)
+        sys.stderr.write("In declaration of %s\n" % func_name)
         raise
 
     sys_id = "K_SYSCALL_" + func_name.upper()
@@ -465,7 +471,10 @@ def main():
             ids_not_emit.append(sys_id)
 
         if mrsh and to_emit:
-            syscall = typename_split(match_group[0])[1]
+            if len(match_group) > 2:
+                syscall = match_group[1]
+            else:
+                syscall = typename_split(match_group[0])[1]
             mrsh_defs[syscall] = mrsh
             mrsh_includes[syscall] = "#include <syscalls/%s>" % fn
 

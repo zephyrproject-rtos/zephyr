@@ -48,6 +48,36 @@ extern "C" {
  */
 
 /**
+ * @brief Utility macro to define an inline system call.
+ *
+ * Example:
+ *
+ * @code{.c}
+ * K_SYSCALL_INLINE(int, foo, int bar)
+ * {
+ *	...
+ * }
+ * @endcode
+ *
+ * expands to:
+ *
+ * @code{.c}
+ * int foo(int bar);
+ * static inline int z_impl_foo(int bar)
+ * {
+ *     ...
+ * }
+ * @endcode
+ *
+ * @param ret Return type
+ * @param name Function name
+ * @param ... Function arguments
+ */
+#define K_SYSCALL_INLINE(ret, name, ...) \
+	static inline ret name(__VA_ARGS__); \
+	static inline ret z_impl_##name(__VA_ARGS__)
+
+/**
  * @typedef _k_syscall_handler_t
  * @brief System call handler function type
  *
