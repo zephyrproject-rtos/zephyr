@@ -14,7 +14,9 @@ import pytest
 import sys
 import json
 
+# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, sample_filename_mock, testsuite_filename_mock
+from twisterlib.statuses import TestCaseStatus
 from twisterlib.testplan import TestPlan
 
 
@@ -83,7 +85,7 @@ class TestTooling:
 
         # Normally, board not supporting our toolchain would be filtered, so we check against that
         assert len(filtered_j) == 1
-        assert filtered_j[0][3] != 'filtered'
+        assert filtered_j[0][3] != TestCaseStatus.FILTER
 
     @pytest.mark.parametrize(
         'test_path, test_platforms',
