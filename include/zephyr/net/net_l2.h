@@ -14,6 +14,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/net/net_ip.h>
 #include <zephyr/net/capture.h>
 #include <zephyr/sys/iterable_sections.h>
 
@@ -79,6 +80,13 @@ struct net_l2 {
 	 * Return L2 flags for the network interface.
 	 */
 	enum net_l2_flags (*get_flags)(struct net_if *iface);
+
+	/**
+	 * Optional function for reserving L2 header space for this technology.
+	 */
+	int (*alloc)(struct net_if *iface, struct net_pkt *pkt,
+		     size_t size, enum net_ip_protocol proto,
+		     k_timeout_t timeout);
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -121,13 +129,16 @@ NET_L2_DECLARE_PUBLIC(CANBUS_RAW_L2);
 NET_L2_DECLARE_PUBLIC(CUSTOM_IEEE802154_L2);
 #endif /* CONFIG_NET_L2_CUSTOM_IEEE802154 */
 
-#define NET_L2_INIT(_name, _recv_fn, _send_fn, _enable_fn, _get_flags_fn) \
+#define NET_L2_INIT(_name, _recv_fn, _send_fn, _enable_fn, _get_flags_fn, ...) \
 	const STRUCT_SECTION_ITERABLE(net_l2,				\
 				      NET_L2_GET_NAME(_name)) = {	\
 		.recv = (_recv_fn),					\
 		.send = (_send_fn),					\
 		.enable = (_enable_fn),					\
 		.get_flags = (_get_flags_fn),				\
+		.alloc = COND_CODE_0(NUM_VA_ARGS_LESS_1(LIST_DROP_EMPTY(__VA_ARGS__, _)), \
+				     (NULL),				\
+				     (GET_ARG_N(1, __VA_ARGS__))),	\
 	}
 
 #define NET_L2_GET_DATA(name, sfx) _net_l2_data_##name##sfx
