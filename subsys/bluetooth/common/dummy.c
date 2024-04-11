@@ -23,13 +23,6 @@ BUILD_ASSERT(sizeof(bt_addr_t) == BT_ADDR_SIZE);
 BUILD_ASSERT(sizeof(bt_addr_le_t) == BT_ADDR_LE_SIZE);
 
 #if defined(CONFIG_BT_HCI_HOST)
-/* The Bluetooth subsystem requires the Tx thread to execute at higher priority
- * than the Rx thread as the Tx thread needs to process the acknowledgements
- * before new Rx data is processed. This is a necessity to correctly detect
- * transaction violations in ATT and SMP protocols.
- */
-BUILD_ASSERT(CONFIG_BT_HCI_TX_PRIO < CONFIG_BT_RX_PRIO);
-
 /* The Bluetooth subsystem requires that higher priority events shall be given
  * in a priority higher than the Bluetooth Host's Tx and the Controller's
  * receive thread priority.
