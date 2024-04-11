@@ -20,6 +20,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,canbus = &fdcan1;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds: leds {
@@ -49,6 +50,7 @@
 
 	aliases {
 		led0 = &green_led;
+		mcuboot-led0 = &green_led;
 		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
@@ -170,6 +172,18 @@ stm32_lp_tick_source: &lptim1 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(34)>;
+		};
+		slot0_partition: partition@8800 {
+			label = "image-0";
+			reg = <0x00008800 DT_SIZE_K(240)>;
+		};
+		slot1_partition: partition@44800 {
+			label = "image-1";
+			reg = <0x00044800 DT_SIZE_K(234)>;
+		};
 		/* Set 4Kb of storage at the end of the 512Kb of flash */
 		storage_partition: partition@7f000 {
 			label = "storage";
