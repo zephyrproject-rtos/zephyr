@@ -496,7 +496,7 @@ do {                                                                    \
 #define GEN_ABSOLUTE_SYM(name, value)                                                              \
 	do {                                                                                       \
 		__asm__(".global " #name);                                                         \
-		__asm__(".set " #name ", %c0" ::"n"(value));                                       \
+		__asm__(".set " #name ", %0" ::"n"(value));                                        \
 		__asm__(".type " #name ", STT_OBJECT");                                            \
 	} while (false)
 
