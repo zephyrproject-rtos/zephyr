@@ -94,7 +94,6 @@ static struct sockaddr_in6 peer_addr_v6_s = {
 };
 
 static struct net_if *net_iface;
-static uint8_t test_case_no;
 static uint32_t seq;
 static uint32_t device_initial_seq;
 static uint32_t ack;
@@ -114,6 +113,27 @@ enum test_state {
 	T_CLOSING,
 	T_RST,
 };
+
+static enum test_case_no {
+	TEST_CLIENT_IPV4 = 1,
+	TEST_CLIENT_IPV6 = 2,
+	TEST_SERVER_IPV4 = 3,
+	TEST_SERVER_WITH_OPTIONS_IPV4 = 4,
+	TEST_SERVER_IPV6 = 5,
+	TEST_CLIENT_SYN_RESEND = 6,
+	TEST_CLIENT_FIN_WAIT_2_IPV4 = 7,
+	TEST_CLIENT_CLOSING_IPV6 = 8,
+	TEST_SERVER_RECV_OUT_OF_ORDER_DATA = 9,
+	TEST_CLIENT_FIN_WAIT_1_RETRANSMIT_IPV4 = 10,
+	TEST_CLIENT_DATA_DURING_FIN_1_IPV4 = 11,
+	TEST_CLIENT_SYN_RST_ACK = 12,
+	TEST_SERVER_RST_ON_CLOSED_PORT = 13,
+	TEST_SERVER_RST_ON_LISTENING_PORT_NO_ACTIVE_CONNECTION = 14,
+	TEST_CLIENT_RST_ON_UNEXPECTED_ACK_ON_SYN = 15,
+	TEST_CLIENT_CLOSING_FAILURE_IPV6 = 16,
+	TEST_CLIENT_FIN_WAIT_2_IPV4_FAILURE = 17,
+	TEST_CLIENT_FIN_ACK_WITH_DATA = 18,
+} test_case_no;
 
 static enum test_state t_state;
 
@@ -247,7 +267,7 @@ static struct net_pkt *tester_prepare_tcp_pkt(sa_family_t af,
 	uint8_t opts_len = 0;
 	int ret = -EINVAL;
 
-	if ((test_case_no == 4U) && (flags & SYN)) {
+	if ((test_case_no == TEST_SERVER_WITH_OPTIONS_IPV4) && (flags & SYN)) {
 		opts_len = sizeof(tcp_options);
 	}
 
@@ -283,7 +303,7 @@ static struct net_pkt *tester_prepare_tcp_pkt(sa_family_t af,
 	th->th_sport = src_port;
 	th->th_dport = dst_port;
 
-	if ((test_case_no == 4U) && (flags & SYN)) {
+	if ((test_case_no == TEST_SERVER_WITH_OPTIONS_IPV4) && (flags & SYN)) {
 		th->th_off = 10U;
 	} else {
 		th->th_off = 5U;
@@ -302,7 +322,7 @@ static struct net_pkt *tester_prepare_tcp_pkt(sa_family_t af,
 		goto fail;
 	}
 
-	if ((test_case_no == 4U) && (flags & SYN)) {
+	if ((test_case_no == TEST_SERVER_WITH_OPTIONS_IPV4) && (flags & SYN)) {
 		/* Add TCP Options */
 		ret = net_pkt_write(pkt, tcp_options, opts_len);
 		if (ret < 0) {
@@ -441,53 +461,52 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	switch (test_case_no) {
-	case 1:
-	case 2:
+	case TEST_CLIENT_IPV4:
+	case TEST_CLIENT_IPV6:
 		handle_client_test(net_pkt_family(pkt), &th);
 		break;
-	case 3:
-	case 4:
-	case 5:
+	case TEST_SERVER_IPV4:
+	case TEST_SERVER_WITH_OPTIONS_IPV4:
+	case TEST_SERVER_IPV6:
 		handle_server_test(net_pkt_family(pkt), &th);
 		break;
-	case 6:
+	case TEST_CLIENT_SYN_RESEND:
 		handle_syn_resend();
 		break;
-	case 7:
+	case TEST_CLIENT_FIN_WAIT_2_IPV4:
 		handle_client_fin_wait_2_test(net_pkt_family(pkt), &th);
 		break;
-	case 8:
+	case TEST_CLIENT_CLOSING_IPV6:
 		handle_client_closing_test(net_pkt_family(pkt), &th);
 		break;
-	case 9:
+	case TEST_SERVER_RECV_OUT_OF_ORDER_DATA:
 		handle_server_recv_out_of_order(pkt);
 		break;
-	case 10:
+	case TEST_CLIENT_FIN_WAIT_1_RETRANSMIT_IPV4:
 		handle_data_fin1_test(net_pkt_family(pkt), &th);
 		break;
-	case 11:
+	case TEST_CLIENT_DATA_DURING_FIN_1_IPV4:
 		handle_data_during_fin1_test(net_pkt_family(pkt), &th);
 		break;
-	case 12:
+	case TEST_CLIENT_SYN_RST_ACK:
 		handle_syn_rst_ack(net_pkt_family(pkt), &th);
 		break;
-	case 13:
+	case TEST_SERVER_RST_ON_CLOSED_PORT:
 		handle_server_rst_on_closed_port(net_pkt_family(pkt), &th);
 		break;
-	case 14:
+	case TEST_SERVER_RST_ON_LISTENING_PORT_NO_ACTIVE_CONNECTION:
 		handle_server_rst_on_listening_port(net_pkt_family(pkt), &th);
 		break;
-	case 15:
+	case TEST_CLIENT_RST_ON_UNEXPECTED_ACK_ON_SYN:
 		handle_syn_invalid_ack(net_pkt_family(pkt), &th);
 		break;
-	case 16:
+	case TEST_CLIENT_CLOSING_FAILURE_IPV6:
 		handle_client_closing_failure_test(net_pkt_family(pkt), &th);
 		break;
-	case 17:
+	case TEST_CLIENT_FIN_WAIT_2_IPV4_FAILURE:
 		handle_client_fin_wait_2_failure_test(net_pkt_family(pkt), &th);
 		break;
-
-	case 18:
+	case TEST_CLIENT_FIN_ACK_WITH_DATA:
 		handle_client_fin_ack_with_data_test(net_pkt_family(pkt), &th);
 		break;
 
@@ -600,7 +619,7 @@ ZTEST(net_tcp, test_client_ipv4)
 	int ret;
 
 	t_state = T_SYN;
-	test_case_no = 1;
+	test_case_no = TEST_CLIENT_IPV4;
 	seq = ack = 0;
 
 	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx);
@@ -662,7 +681,7 @@ ZTEST(net_tcp, test_client_ipv6)
 	int ret;
 
 	t_state = T_SYN;
-	test_case_no = 2;
+	test_case_no = TEST_CLIENT_IPV6;
 	seq = ack = 0;
 
 	ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP, &ctx);
@@ -764,10 +783,12 @@ fail:
 
 static void test_server_timeout(struct k_work *work)
 {
-	if (test_case_no == 3 || test_case_no == 4 || test_case_no == 13 ||
-	    test_case_no == 14) {
+	if (test_case_no == TEST_SERVER_IPV4 ||
+	    test_case_no == TEST_SERVER_WITH_OPTIONS_IPV4 ||
+	    test_case_no == TEST_SERVER_RST_ON_CLOSED_PORT ||
+	    test_case_no == TEST_SERVER_RST_ON_LISTENING_PORT_NO_ACTIVE_CONNECTION) {
 		handle_server_test(AF_INET, NULL);
-	} else if (test_case_no == 5) {
+	} else if (test_case_no == TEST_SERVER_IPV6) {
 		handle_server_test(AF_INET6, NULL);
 	} else {
 		zassert_true(false, "Invalid test case");
@@ -829,7 +850,7 @@ ZTEST(net_tcp, test_server_ipv4)
 	int ret;
 
 	t_state = T_SYN;
-	test_case_no = 3;
+	test_case_no = TEST_SERVER_IPV4;
 	seq = ack = 0;
 
 	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx);
@@ -898,7 +919,7 @@ ZTEST(net_tcp, test_server_with_options_ipv4)
 	int ret;
 
 	t_state = T_SYN;
-	test_case_no = 4;
+	test_case_no = TEST_SERVER_WITH_OPTIONS_IPV4;
 	seq = ack = 0;
 
 	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx);
@@ -967,7 +988,7 @@ ZTEST(net_tcp, test_server_ipv6)
 	int ret;
 
 	t_state = T_SYN;
-	test_case_no = 5;
+	test_case_no = TEST_SERVER_IPV6;
 	seq = ack = 0;
 
 	ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP, &ctx);
@@ -1042,7 +1063,7 @@ ZTEST(net_tcp, test_client_syn_resend)
 	int ret;
 
 	t_state = T_SYN;
-	test_case_no = 6;
+	test_case_no = TEST_CLIENT_SYN_RESEND;
 	seq = ack = 0;
 
 	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx);
@@ -1104,7 +1125,7 @@ ZTEST(net_tcp, test_client_syn_rst_ack)
 	int ret;
 
 	t_state = T_SYN;
-	test_case_no = 12;
+	test_case_no = TEST_CLIENT_SYN_RST_ACK;
 	seq = ack = 0;
 
 	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx);
@@ -1208,7 +1229,7 @@ ZTEST(net_tcp, test_client_fin_wait_2_ipv4)
 	int ret;
 
 	t_state = T_SYN;
-	test_case_no = 7;
+	test_case_no = TEST_CLIENT_FIN_WAIT_2_IPV4;
 	seq = ack = 0;
 
 	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx);
@@ -1349,7 +1370,7 @@ ZTEST(net_tcp, test_client_fin_wait_2_ipv4_failure)
 	int ret;
 
 	t_state = T_SYN;
-	test_case_no = 17;
+	test_case_no = TEST_CLIENT_FIN_WAIT_2_IPV4_FAILURE;
 	seq = ack = 0;
 	closed = false;
 
@@ -1502,7 +1523,7 @@ ZTEST(net_tcp, test_client_fin_wait_1_retransmit_ipv4)
 	int ret;
 
 	t_state = T_SYN;
-	test_case_no = 10;
+	test_case_no = TEST_CLIENT_FIN_WAIT_1_RETRANSMIT_IPV4;
 	seq = ack = 0;
 
 	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx);
@@ -1620,7 +1641,7 @@ ZTEST(net_tcp, test_client_data_during_fin_1_ipv4)
 	int ret;
 
 	t_state = T_SYN;
-	test_case_no = 11;
+	test_case_no = TEST_CLIENT_DATA_DURING_FIN_1_IPV4;
 	seq = ack = 0;
 
 	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx);
@@ -1733,7 +1754,7 @@ ZTEST(net_tcp, test_client_closing_ipv6)
 	int ret;
 
 	t_state = T_SYN;
-	test_case_no = 8;
+	test_case_no = TEST_CLIENT_CLOSING_IPV6;
 	seq = ack = 0;
 
 	ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP, &ctx);
@@ -1859,7 +1880,7 @@ ZTEST(net_tcp, test_client_closing_failure_ipv6)
 	int ret;
 
 	t_state = T_SYN;
-	test_case_no = 16;
+	test_case_no = TEST_CLIENT_CLOSING_FAILURE_IPV6;
 	seq = ack = 0;
 
 	ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP, &ctx);
@@ -1904,7 +1925,7 @@ static struct net_context *create_server_socket(uint32_t my_seq,
 	int ret;
 
 	t_state = T_SYN;
-	test_case_no = 5;
+	test_case_no = TEST_SERVER_IPV6;
 	seq = my_seq;
 	ack = my_ack;
 
@@ -2142,7 +2163,7 @@ static void test_server_recv_out_of_order_data(void)
 	/* This will force the packet to be routed to our checker func
 	 * handle_server_recv_out_of_order()
 	 */
-	test_case_no = 9;
+	test_case_no = TEST_SERVER_RECV_OUT_OF_ORDER_DATA;
 
 	/* Run over the checklist to complete the test */
 	checklist_based_out_of_order_test(out_of_order_check_list,
@@ -2223,7 +2244,7 @@ static void handle_server_rst_on_closed_port(sa_family_t af, struct tcphdr *th)
 ZTEST(net_tcp, test_server_rst_on_closed_port)
 {
 	t_state = T_SYN;
-	test_case_no = 13;
+	test_case_no = TEST_SERVER_RST_ON_CLOSED_PORT;
 	seq = ack = 0;
 
 	k_sem_reset(&test_sem);
@@ -2269,7 +2290,7 @@ ZTEST(net_tcp, test_server_rst_on_listening_port_no_active_connection)
 	int ret;
 
 	t_state = T_DATA;
-	test_case_no = 14;
+	test_case_no = TEST_SERVER_RST_ON_LISTENING_PORT_NO_ACTIVE_CONNECTION;
 	seq = ack = 200;
 
 	k_sem_reset(&test_sem);
@@ -2388,7 +2409,7 @@ ZTEST(net_tcp, test_client_rst_on_unexpected_ack_on_syn)
 	int ret;
 
 	t_state = T_SYN;
-	test_case_no = 15;
+	test_case_no = TEST_CLIENT_RST_ON_UNEXPECTED_ACK_ON_SYN;
 	seq = ack = 0;
 
 	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx);
@@ -2562,7 +2583,7 @@ ZTEST(net_tcp, test_client_fin_ack_with_data)
 {
 	struct net_context *ctx;
 
-	test_case_no = 18;
+	test_case_no = TEST_CLIENT_FIN_ACK_WITH_DATA;
 
 	k_work_init_delayable(&test_fin_data_work, test_fin_data_handler);
 
