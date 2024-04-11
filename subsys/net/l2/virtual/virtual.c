@@ -165,8 +165,22 @@ enum net_l2_flags virtual_flags(struct net_if *iface)
 	return ctx->virtual_l2_flags;
 }
 
+#if defined(CONFIG_NET_L2_ETHERNET_RESERVE_HEADER) && defined(CONFIG_NET_VLAN)
+extern int vlan_alloc_buffer(struct net_if *iface, struct net_pkt *pkt,
+			     size_t size, uint16_t proto, k_timeout_t timeout);
+
+static int virtual_l2_alloc(struct net_if *iface, struct net_pkt *pkt,
+			    size_t size, enum net_ip_protocol proto,
+			    k_timeout_t timeout)
+{
+	return vlan_alloc_buffer(iface, pkt, size, proto, timeout);
+}
+#else
+#define virtual_l2_alloc NULL
+#endif
+
 NET_L2_INIT(VIRTUAL_L2, virtual_recv, virtual_send, virtual_enable,
-	    virtual_flags);
+	    virtual_flags, virtual_l2_alloc);
 
 static void random_linkaddr(uint8_t *linkaddr, size_t len)
 {
