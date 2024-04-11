@@ -615,9 +615,7 @@ function(sysbuild_cache_set)
     # Search for these exact items in the existing value and prevent adding
     # them if they are already present which avoids issues with double addition
     # when cmake is reran.
-    string(FIND "$CACHE{${VARS_VAR}}" "${VARS_UNPARSED_ARGUMENTS}" index)
-
-    if(NOT ${index} EQUAL -1)
+    if("${VARS_UNPARSED_ARGUMENTS}" IN_LIST var_new)
       return()
     endif()
 
