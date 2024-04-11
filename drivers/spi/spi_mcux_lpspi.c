@@ -135,7 +135,6 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
 		transfer.dataSize = ctx->rx_len;
-		transfer.configFlags |= kLPSPI_MasterPcsContinuous;
 	} else {
 		/* Break up the rx into multiple transfers so we don't have to
 		 * tx from a longer intermediate buffer. Leave chip select
@@ -144,11 +143,6 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
 		transfer.dataSize = ctx->tx_len;
-		transfer.configFlags |= kLPSPI_MasterPcsContinuous;
-	}
-
-	if (!(ctx->tx_count <= 1 && ctx->rx_count <= 1)) {
-		transfer.configFlags |= kLPSPI_MasterPcsContinuous;
 	}
 
 	data->transfer_len = transfer.dataSize;
