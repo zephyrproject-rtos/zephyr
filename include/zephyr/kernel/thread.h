@@ -206,13 +206,12 @@ struct _thread_userspace_local_data {
 
 typedef struct k_thread_runtime_stats {
 #ifdef CONFIG_SCHED_THREAD_USAGE
-	uint64_t execution_cycles;
-	uint64_t total_cycles;        /* total # of non-idle cycles */
 	/*
-	 * In the context of thread statistics, [execution_cycles] is the same
-	 * as the total # of non-idle cycles. In the context of CPU statistics,
-	 * it refers to the sum of non-idle + idle cycles.
+	 * For CPU stats, execution_cycles is the sum of non-idle + idle cycles.
+	 * For thread stats, execution_cycles = total_cycles.
 	 */
+	uint64_t execution_cycles;    /* total # of cycles (cpu: non-idle + idle) */
+	uint64_t total_cycles;        /* total # of non-idle cycles */
 #endif /* CONFIG_SCHED_THREAD_USAGE */
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
