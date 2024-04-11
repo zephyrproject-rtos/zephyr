@@ -18,3 +18,7 @@ chosen {
 	clock-frequency = <100000000>;
 };
 
+&spi0 {
+	status = "okay";
+	db_configure = <0x1 0x0 4>;
+}

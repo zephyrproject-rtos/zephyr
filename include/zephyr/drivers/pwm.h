@@ -67,6 +67,15 @@ extern "C" {
 
 /** @} */
 
+//Shakti
+typedef enum
+{
+	rise_interrupt,				//Enable interrupt only on rise
+	fall_interrupt,				//Enable interrupt only on fall
+	halfperiod_interrupt,			//Enable interrupt only on halfperiod
+	no_interrupt				//Disable interrupts
+}pwm_interrupt_modes;
+
 /**
  * @brief Provides a type to hold PWM configuration flags.
  *
@@ -397,9 +406,19 @@ typedef void (*pwm_capture_callback_handler_t)(const struct device *dev,
  * @brief PWM driver API call to configure PWM pin period and pulse width.
  * @see pwm_set_cycles() for argument description.
  */
-typedef int (*pwm_set_cycles_t)(const struct device *dev, uint32_t channel,
-				uint32_t period_cycles, uint32_t pulse_cycles,
-				pwm_flags_t flags);
+// typedef int (*pwm_set_cycles_t)(const struct device *dev, uint32_t channel,
+// 				uint32_t period_cycles, uint32_t pulse_cycles,
+// 				pwm_flags_t flags);
+
+// //Shakti
+// typedef int (*pwm_set_cycles_t)(const struct device *dev, uint32_t channel,
+// 				uint32_t period_cycles, uint32_t pulse_cycles);
+
+// typedef void (*pwm_start_t)(const struct device *dev,int pwm_number);
+// typedef void (*pwm_stop_t)(const struct device *dev, int pwm_number);
+// typedef void (*pwm_set_prescalar_value_t)(const struct device *dev, int pwm_number, uint16_t prescalar_value);
+// typedef void (*pwm_configure_t)(const struct device *dev, int pwm_number, uint32_t period, uint32_t duty, pwm_interrupt_modes interrupt_mode , uint32_t deadband_delay, bool change_output_polarity); 
+// typedef int  (*pwm_set_control_t)(const struct device *dev, int pwm_number, uint32_t value);
 
 /**
  * @brief PWM driver API call to obtain the PWM cycles per second (frequency).
@@ -436,6 +455,12 @@ typedef int (*pwm_disable_capture_t)(const struct device *dev,
 __subsystem struct pwm_driver_api {
 	pwm_set_cycles_t set_cycles;
 	pwm_get_cycles_per_sec_t get_cycles_per_sec;
+	// //Shakti
+	// pwm_start_t start;
+	// pwm_stop_t stop;
+	// pwm_set_prescalar_value_t set_prescalar_value;
+	// pwm_configure_t configure;
+	// pwm_set_control_t set_control;
 #ifdef CONFIG_PWM_CAPTURE
 	pwm_configure_capture_t configure_capture;
 	pwm_enable_capture_t enable_capture;
@@ -475,8 +500,7 @@ __subsystem struct pwm_driver_api {
  * @retval -errno Negative errno code on failure.
  */
 __syscall int pwm_set_cycles(const struct device *dev, uint32_t channel,
-			     uint32_t period, uint32_t pulse,
-			     pwm_flags_t flags);
+			     uint32_t period, uint32_t pulse);
 
 static inline int z_impl_pwm_set_cycles(const struct device *dev,
 					uint32_t channel, uint32_t period,
@@ -489,8 +513,44 @@ static inline int z_impl_pwm_set_cycles(const struct device *dev,
 		return -EINVAL;
 	}
 
-	return api->set_cycles(dev, channel, period, pulse, flags);
+	return api->set_cycles(dev, channel, period, pulse);
 }
+
+// //Shakti
+// __syscall void pwm_start(const struct device *dev,int pwm_number);
+// static inline void z_impl_pwm_start(const struct device *dev,int pwm_number)
+// {
+// 	const struct pwm_driver_api *api = (const struct pwm_driver_api *)dev->api;
+// 	api->start(dev, pwm_number);
+// }
+
+// __syscall void pwm_stop(const struct device *dev, int pwm_number);
+// static inline void z_impl_pwm_stop(const struct device *dev, int pwm_number)
+// {
+// 	const struct pwm_driver_api *api = (const struct pwm_driver_api *)dev->api;
+// 	api->stop(dev, pwm_number);
+// }
+
+// __syscall void pwm_set_prescalar_value(const struct device *dev, int pwm_number, uint16_t prescalar_value);
+// static inline void z_impl_pwm_set_prescalar_value(const struct device *dev, int pwm_number, uint16_t prescalar_value)
+// {
+// 	const struct pwm_driver_api *api = (const struct pwm_driver_api *)dev->api;
+// 	api->set_prescalar_value(dev, pwm_number, prescalar_value);
+// }
+
+// __syscall void pwm_configure(const struct device *dev, int pwm_number, uint32_t period, uint32_t duty, pwm_interrupt_modes interrupt_mode , uint32_t deadband_delay, bool change_output_polarity); 
+// static inline void z_impl_pwm_configure(const struct device *dev, int pwm_number, uint32_t period, uint32_t duty, pwm_interrupt_modes interrupt_mode , uint32_t deadband_delay, bool change_output_polarity)
+// {
+// 	const struct pwm_driver_api *api = (const struct pwm_driver_api *)dev->api;
+// 	api->configure(dev, pwm_number, period, duty, interrupt_mode , deadband_delay, change_output_polarity);
+// }
+
+// __syscall int pwm_set_control(const struct device *dev, int pwm_number, uint32_t value);
+// static inline int z_impl_pwm_set_control(const struct device *dev, int pwm_number, uint32_t value)
+// {
+// 	const struct pwm_driver_api *api = (const struct pwm_driver_api *)dev->api;
+// 	api->set_control(dev, pwm_number, value);
+// } 
 
 /**
  * @brief Get the clock rate (cycles per second) for a single PWM output.
@@ -946,6 +1006,6 @@ static inline bool pwm_is_ready_dt(const struct pwm_dt_spec *spec)
  * @}
  */
 
-#include <syscalls/pwm.h>
+// #include <syscalls/pwm.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_PWM_H_ */
