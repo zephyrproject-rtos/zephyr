@@ -437,9 +437,17 @@ static int lis2dh_pm_action(const struct device *dev,
 {
 	int status;
 	struct lis2dh_data *lis2dh = dev->data;
+	uint8_t regdata;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		/* read REFERENCE register (see datasheet rev 6 section 8.9 footnote 1) */
+		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_REFERENCE, &regdata);
+		if (status < 0) {
+			LOG_ERR("failed to read reg_reference");
+			return status;
+		}
+
 		/* Resume previous mode. */
 		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
 						  lis2dh->reg_ctrl1_active_val);
