@@ -76,9 +76,10 @@ zephyr_boilerplate_watch(CONF_FILE)
 
 zephyr_get(DTC_OVERLAY_FILE SYSBUILD LOCAL)
 
-# If DTC_OVERLAY_FILE is not set by the user, look for board-specific overlays
-# in the 'boards' configuration subdirectory.
+# If DTC_OVERLAY_FILE is not set by the user, look for SoC and board-specific overlays
+# in the 'boards' and `soc` configuration subdirectories.
 if(NOT DEFINED DTC_OVERLAY_FILE)
+  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/socs DTS DTC_OVERLAY_FILE QUALIFIERS SUFFIX ${FILE_SUFFIX})
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards DTS DTC_OVERLAY_FILE SUFFIX ${FILE_SUFFIX})
 endif()
 
@@ -91,7 +92,6 @@ if(NOT DEFINED DTC_OVERLAY_FILE)
                 NAMES "app.overlay" SUFFIX ${FILE_SUFFIX}
     )
   endif()
-
 endif()
 
 set(DTC_OVERLAY_FILE ${DTC_OVERLAY_FILE} CACHE STRING "If desired, you can \
