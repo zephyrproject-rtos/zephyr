@@ -16,6 +16,7 @@ from twisterlib.testsuite import TestCase, TestSuite
 from twisterlib.platform import Platform
 from twisterlib.error import BuildError
 from twisterlib.size_calc import SizeCalculator
+from twisterlib.statuses import TestCaseStatus, TestInstanceStatus
 from twisterlib.handlers import (
     Handler,
     SimulationHandler,
@@ -46,7 +47,7 @@ class TestInstance:
         self.testsuite: TestSuite = testsuite
         self.platform: Platform = platform
 
-        self.status = None
+        self.status = TestInstanceStatus.NONE
         self.reason = "Unknown"
         self.metrics = dict()
         self.handler = None
@@ -94,7 +95,7 @@ class TestInstance:
 
     def add_filter(self, reason, filter_type):
         self.filters.append({'type': filter_type, 'reason': reason })
-        self.status = "filtered"
+        self.status = TestInstanceStatus.FILTER
         self.reason = reason
         self.filter_type = filter_type
 
@@ -124,9 +125,9 @@ class TestInstance:
 
     def add_missing_case_status(self, status, reason=None):
         for case in self.testcases:
-            if case.status == 'started':
-                case.status = "failed"
-            elif not case.status:
+            if case.status == TestCaseStatus.STARTED:
+                case.status = TestCaseStatus.FAIL
+            elif case.status == TestCaseStatus.NONE:
                 case.status = status
                 if reason:
                     case.reason = reason
