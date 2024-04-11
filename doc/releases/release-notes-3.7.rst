@@ -95,7 +95,11 @@ Boards & SoC Support
 Build system and Infrastructure
 *******************************
 
-* CI-enabled blackbox tests were added in order to verify correctness of the vast majority of Twister flags.
+  * CI-enabled blackbox tests were added in order to verify correctness of the vast majority of Twister flags.
+
+  * A ``socs`` folder for applications has been introduced that allows for Kconfig fragments and
+    devicetree overlays that should apply to any board target using a particular SoC and board
+    qualifier.
 
 * Compiler
 
