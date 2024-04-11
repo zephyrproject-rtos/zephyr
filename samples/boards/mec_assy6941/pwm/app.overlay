@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2024 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/microchip-xec-gpio.h>
+
+/*
+ * MEC5_ASSY6941
+ * JP7 2-3 GPIO055 pulled-down via 10K to ground.
+ * JP23 14-15 selects GPIO055 as SHD_nCS0
+ * JP42 1-2 connects 1.8V
+ * JP60 2-3 VTR2 is powered by 1.8V
+ * NOTE: VTR3 is always 1.8V
+ *
+ * Boot-ROM GPIO055 as RSMRST#
+ * GPIO Control register value = 0x0200
+ * Output, push-pull, driver low, no internal pulls,
+ * interrupt detection = level low, alternate out enabled.
+ * ROM drives pin high(inactive) using alternate out (bit[16] of control register)
+ * Control register = 0x10200
+ *
+ * GPIO175/CMP_VOUT1/PWM8_ALT on schematic, LED4 on silkscreen.
+ *
+ * PWM0 pin jumpers:
+ * JP76 1-2 OFF do not connect to 100K pull-up to VTR2
+ * JP79 1-2 ON connect GPIO053 from SoC to FAN_PWM0 signal to P4 1x4 pin 4
+ *   (pulled up with 10K to VTR2)
+
+ * Headers:
+ * P4 1x4
+ *	Pin 1 = GND
+ *	Pin 2 = JP78-2 selecting +12V or +5V
+ *	Pin 3 = FAN_TACH0
+ *	Pin 4 = FAN_PWM0
+ *
+ * J30 2x8
+ *	Pins 2, 10 = FAN_PWM0
+ *	Pin 1 = FAN_TACH0
+ *	Pin 9 = FAN_TACH4
+ *
+ * Switch S4 through Schmidt trigger U19B to GPIO162/nVCI_IN1
+ * Fly-wire GPIO162 to GPIO222
+ * J57 3-4
+ * JP146 2-3 selects JP147 pull-up voltage rail as VBAT_CHIP
+ * JP24 3x16 34-35 to select GPIO222/PROCHOT_IN_ALT
+ * JP147-27 to JP76-11 (GPIO222/PROCHOT_IN_ALT)
+ *
+ */
+
+/ {
+	chosen {
+		zephyr,console = &uart1;
+	};
+
+	aliases {
+		led0 = &led4;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led4: led_0 {
+			gpios = <MCHP_GPIO_DECODE_175 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	zephyr,user {
+		gpios = <MCHP_GPIO_DECODE_222 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pwm0 {
+	compatible = "microchip,mec5-pwm";
+	pinctrl-0 = <&pwm0_gpio053>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart1_tx_gpio170 &uart1_rx_gpio171>;
+	pinctrl-names = "default";
+};
+
