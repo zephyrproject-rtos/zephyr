@@ -401,47 +401,47 @@
 			status = "disabled";
 		};
 		pwm0: pwm@40005800 {
-			reg = <0x40005800 0x20>;
+			reg = <0x40005800 0x10>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
 		pwm1: pwm@40005810 {
-			reg = <0x40005810 0x20>;
+			reg = <0x40005810 0x10>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
 		pwm2: pwm@40005820 {
-			reg = <0x40005820 0x20>;
+			reg = <0x40005820 0x10>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
 		pwm3: pwm@40005830 {
-			reg = <0x40005830 0x20>;
+			reg = <0x40005830 0x10>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
 		pwm4: pwm@40005840 {
-			reg = <0x40005840 0x20>;
+			reg = <0x40005840 0x10>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
 		pwm5: pwm@40005850 {
-			reg = <0x40005850 0x20>;
+			reg = <0x40005850 0x10>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
 		pwm6: pwm@40005860 {
-			reg = <0x40005860 0x20>;
+			reg = <0x40005860 0x10>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
 		pwm7: pwm@40005870 {
-			reg = <0x40005870 0x20>;
+			reg = <0x40005870 0x10>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
 		pwm8: pwm@40005880 {
-			reg = <0x40005880 0x20>;
+			reg = <0x40005880 0x10>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
