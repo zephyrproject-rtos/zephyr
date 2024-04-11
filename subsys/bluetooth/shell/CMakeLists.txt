@@ -22,6 +22,10 @@ zephyr_library_sources_ifdef(
   rfcomm.c
   )
 zephyr_library_sources_ifdef(
+  CONFIG_BT_A2DP
+  a2dp.c
+  )
+zephyr_library_sources_ifdef(
   CONFIG_BT_ISO
   iso.c
   )
