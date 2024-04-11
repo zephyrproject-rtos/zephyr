@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Copyright (c) 2020 Linaro Limited
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  */
 
 #include <zephyr/dt-bindings/adc/mcux-lpadc.h>
@@ -30,7 +30,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_EXTERNAL0";
 		zephyr,vref-mv = <1800>;
-		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 7)>;
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <MCUX_LPADC_CH0A>;
 	};
@@ -40,7 +40,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_EXTERNAL0";
 		zephyr,vref-mv = <1800>;
-		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 7)>;
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <MCUX_LPADC_CH0B>;
 	};
