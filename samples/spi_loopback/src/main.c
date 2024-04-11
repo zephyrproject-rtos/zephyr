@@ -15,22 +15,26 @@ int main()
     printf("basic_write_9bit_words; ret: \n");
 
     const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(spi1));
-    uint8_t buff[3] = {0x34, 0x56, 0x78};
-    // uint8_t buff[3];
-    // buff[0] = 0xAB;
-    // buff[1] = 0xCD;
-    // buff[2] = 0xEF;
-	int len = 2 * sizeof(buff[0]);
+    uint8_t tx_buff[3] = {0x12, 0x34, 0x56};
+    // uint16_t tx_buff[3] = {0x1234, 0xabcd, 0x5678};
+    // uint32_t tx_buff[3] = {0x12345678, 0xabcdefaa, 0xafcefbca};
 
-    struct spi_buf tx_buf = { .buf = buff, .len = len };
-	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1 };
+    uint8_t rx_buff[3];
+    // uint16_t rx_buff[3];
+    // uint32_t rx_buff[3];
 
-    printf("basic_write_9bit_words; ret: \n");
+	int len = sizeof(tx_buff) / sizeof(tx_buff[0]);
+
+    printf("len :%d\n", len);
+
+    struct spi_buf tx_buf = { .buf = tx_buff, .len = len };
+	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1};
+
+    struct spi_buf rx_buf = { .buf = rx_buff, .len = len};
+    struct spi_buf_set rx_bufs = { .buffers = &rx_buf, .count = 1};
     
-    int ret = spi_write(dev, &config, &tx_bufs);
-
-    printf("basic_write_9bit_words; ret: %d\n", ret);
-	printf(" wrote %04x %04x %04x %04x %04x\n",
-		buff[0], buff[1], buff[2], buff[3], buff[4]);
+    int ret = spi_transceive(dev, &config, &tx_bufs, &rx_bufs);
+    
+    printf("completed transmission\n");
 
 }

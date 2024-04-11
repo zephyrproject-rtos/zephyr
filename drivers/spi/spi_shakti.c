@@ -148,7 +148,9 @@ void sspi_shakti_disable(const struct device *dev){
 
 // int sspi_shakti_transmit_data(const struct device *dev, int spi_number, )
 
-int sspi8_shakti_transmit_data(const struct device *dev, struct spi_buf *tx_data, uint8_t data){
+int sspi8_shakti_transmit_data(const struct device *dev, struct spi_buf *tx_data){
+
+  int data = tx_data->len;
 
   for (int i = 0; i<data; i++){
     printk("transferring %d\n", i);
@@ -179,12 +181,19 @@ int sspi8_shakti_transmit_data(const struct device *dev, struct spi_buf *tx_data
 }
 
 
-int sspi16_shakti_transmit_data(const struct device *dev, uint16_t * tx_data, uint8_t data){
+int sspi16_shakti_transmit_data(const struct device *dev, struct spi_buf *tx_data){
+
+  int data = tx_data->len;
+  printk("DATA_SIZE : %d\n", data);
 
   for(int i = 0; i<data; i++){
-    int temp = sspi_shakti_check_tx_fifo_30();
+    volatile int temp = sspi_shakti_check_tx_fifo_30();
+    uint16_t *buffer = tx_data->buf;
     if (temp == 0){
-      sspi_instance[spi_number]->data_tx.data_16 = *(tx_data + i);
+      printk("tx_data[%d] : %x\n", i, buffer[i]);
+      printk("Addr :%#x",&(sspi_instance[spi_number]->data_tx.data_16));
+      sspi_instance[spi_number]->data_tx.data_16 = buffer[i];
+
       #ifdef SPI_DEBUG
       printk("tx_data[%d] = %d\n", i, tx_data[i]);
       #endif
@@ -201,12 +210,17 @@ int sspi16_shakti_transmit_data(const struct device *dev, uint16_t * tx_data, ui
   return 0;
 }
 
-int sspi32_shakti_transmit_data(const struct device *dev, uint32_t * tx_data, uint8_t data){
+int sspi32_shakti_transmit_data(const struct device *dev, struct spi_buf *tx_data){
+
+  int data = tx_data->len;
 
   for( int i = 0; i<data; i++){
-    int temp = sspi_check_tx_fifo_28();
+    volatile int temp = sspi_shakti_check_tx_fifo_28();
+    uint32_t *buffer = tx_data->buf;
     if (temp == 0){
-      sspi_instance[spi_number]->data_tx.data_32 = *(tx_data + i);
+      printk("tx_data[%d] : %x\n", i, buffer[i]);
+      printk("Addr :%#x",&(sspi_instance[spi_number]->data_tx.data_32));
+      sspi_instance[spi_number]->data_tx.data_32 = buffer[i];
       #ifdef SPI_DEBUG
       printk("tx_data[%d] = %d\n", i, tx_data[i]);
       #endif
@@ -427,55 +441,66 @@ void sspi_shakti_wait_till_rxfifo_4(const struct device *dev){
 
 
 
-void sspi8_shakti_receive_data(const struct device *dev, uint8_t rx_data[FIFO_DEPTH_8]/*,uint8_t data_size*/){
+void sspi8_shakti_receive_data(const struct device *dev, struct spi_buf *rx_data){
 
-    // int no_of_itr = data_size;
-    uint32_t temp;
+    int no_of_itr = rx_data->len;;
+    volatile uint32_t temp;
     temp = sspi_instance[spi_number]->comm_control;
     temp = temp & SPI_COMM_MODE(3);
 
-    if (temp == SPI_COMM_MODE(1)){
-      sspi_shakti_enable(dev);
+    for (int i =0; i< no_of_itr; i++){
+
+      uint8_t *buffer = rx_data->buf;
+      if (temp == SPI_COMM_MODE(1)){
+        sspi_shakti_enable(dev);
+      }
+      sspi_shakti_wait_till_rxfifo_not_empty(dev);
+      buffer[i]= sspi_instance[spi_number]->data_rx.data_8;
+      printk("rx_data[%d] : %x\n", i, buffer[i]);
     }
-    sspi_shakti_wait_till_rxfifo_not_empty(dev);
-    rx_data= sspi_instance[spi_number]->data_rx.data_8;
 }
 
 
 
-void sspi16_shakti_receive_data(const struct device *dev, uint16_t rx_data[FIFO_DEPTH_16] /*,uint8_t data_size*/){
+void sspi16_shakti_receive_data(const struct device *dev, struct spi_buf *rx_data){
 
-    // int no_of_itr = data_size;
-    uint32_t temp;
+    int no_of_itr = rx_data->len;;
+    volatile uint32_t temp;
     temp = sspi_instance[spi_number]->comm_control;
     temp = temp & SPI_COMM_MODE(3);
 
-    // for (int i=0; i < no_of_itr; i++){
+    for (int i=0; i < no_of_itr; i++){
+      
+      uint16_t *buffer = rx_data->buf;
       if (temp == SPI_COMM_MODE(1)){
         sspi_shakti_enable(dev);
       }
       sspi_shakti_wait_till_rxfifo_2(dev);
-      rx_data = sspi_instance[spi_number]->data_rx.data_16;
+      buffer[i] = sspi_instance[spi_number]->data_rx.data_16;
+      printk("rx_data[%d] : %x\n", i, buffer[i]);
     }
-// }
+}
 
 
 
-void sspi32_shakti_receive_data(const struct device *dev, uint32_t rx_data[FIFO_DEPTH_32]/*,uint8_t data_size*/ ){
+void sspi32_shakti_receive_data(const struct device *dev, struct spi_buf *rx_data){
 
-    // int no_of_itr = data_size;
-    uint32_t temp;
+    int no_of_itr = rx_data->len;;
+    volatile uint32_t temp;
     temp = sspi_instance[spi_number]->comm_control;
     temp = temp & SPI_COMM_MODE(3);
 
-    // for (int i=0; i < no_of_itr; i++){
+    for (int i=0; i < no_of_itr; i++){
+
+      uint32_t *buffer = rx_data->buf;
       if (temp == SPI_COMM_MODE(1)){
         sspi_shakti_enable(dev);
       }
       sspi_shakti_wait_till_rxfifo_4(dev);
-      rx_data = sspi_instance[spi_number]->data_rx.data_32;
+      buffer[i] = sspi_instance[spi_number]->data_rx.data_32;
+      printk("rx_data[%d] : %x\n", i, buffer[i]);
     }
-// }
+}
 
 
 void qualify(const struct device *dev){
@@ -535,38 +560,86 @@ static int spi_shakti_transceive(const struct device *dev,
     if (comm_config[3] == DATA_SIZE_8)
     {
       printf("basic_write_8bit_words \n");
-      sspi8_shakti_transmit_data(dev, tx_bufs->buffers, 3);
+      sspi8_shakti_transmit_data(dev, tx_bufs->buffers);
     }
 
     else if (comm_config[3] == DATA_SIZE_16)
     {
-      sspi16_shakti_transmit_data(dev, tx_bufs, sizeof(tx_bufs)/sizeof(tx_bufs[0]));
+      sspi16_shakti_transmit_data(dev, tx_bufs->buffers);
     }
 
     else if (comm_config[3] == DATA_SIZE_32)
     {
-      sspi32_shakti_transmit_data(dev, tx_bufs, sizeof(tx_bufs)/sizeof(tx_bufs[0]));
+      sspi32_shakti_transmit_data(dev, tx_bufs->buffers);
     }
   }
 
   if (comm_config[2] == SIMPLEX_RX)
   {
     sspi_shakti_comm_control_config(dev, master_mode, lsb_first, comm_mode, spi_size);
-    // spi_context_buffers_setup(&SPI_DATA(dev)->ctx, NULL, rx_bufs, 1);
+    spi_context_buffers_setup(&SPI_DATA(dev)->ctx, NULL, rx_bufs, 1);
 
-    if (comm_config == DATA_SIZE_8)
+    if (comm_config[3] == DATA_SIZE_8)
     {
-      sspi8_shakti_receive_data(dev, rx_bufs);
+      sspi8_shakti_receive_data(dev, rx_bufs->buffers);  
     }
 
-    if (comm_config == DATA_SIZE_16)
+    if (comm_config[3] == DATA_SIZE_16)
     {
-      sspi16_shakti_receive_data(dev, rx_bufs);
+      sspi16_shakti_receive_data(dev, rx_bufs->buffers);
     }
 
-    if (comm_config == DATA_SIZE_32)
+    if (comm_config[3] == DATA_SIZE_32)
     {
-      sspi32_shakti_receive_data(dev, rx_bufs);
+      sspi32_shakti_receive_data(dev, rx_bufs->buffers);
+    }
+  }
+
+  if (comm_config[2] == FULL_DUPLEX)
+  {
+    sspi_shakti_comm_control_config(dev, master_mode, lsb_first, comm_mode, spi_size);
+    spi_context_buffers_setup(&SPI_DATA(dev)->ctx, tx_bufs, rx_bufs, 1);
+
+    if (comm_config[3] == DATA_SIZE_8)
+    {
+      sspi8_shakti_transmit_data(dev, tx_bufs->buffers);
+      sspi8_shakti_receive_data(dev, rx_bufs->buffers);  
+    }
+
+    if (comm_config[3] == DATA_SIZE_16)
+    {
+      sspi16_shakti_transmit_data(dev, tx_bufs->buffers);
+      sspi16_shakti_receive_data(dev, rx_bufs->buffers);  
+    }
+
+    if (comm_config[3] == DATA_SIZE_32)
+    {
+      sspi32_shakti_transmit_data(dev, tx_bufs->buffers);
+      sspi32_shakti_receive_data(dev, rx_bufs->buffers);  
+    }
+  }
+
+  if (comm_config[2] == HALF_DUPLEX)
+  {
+    sspi_shakti_comm_control_config(dev, master_mode, lsb_first, comm_mode, spi_size);
+    spi_context_buffers_setup(&SPI_DATA(dev)->ctx, tx_bufs, rx_bufs, 1);
+
+    if (comm_config[3] == DATA_SIZE_8)
+    {
+      sspi8_shakti_transmit_data(dev, tx_bufs->buffers);
+      sspi8_shakti_receive_data(dev, rx_bufs->buffers);  
+    }
+
+    if (comm_config[3] == DATA_SIZE_16)
+    {
+      sspi16_shakti_transmit_data(dev, tx_bufs->buffers);
+      sspi16_shakti_receive_data(dev, rx_bufs->buffers);  
+    }
+
+    if (comm_config[3] == DATA_SIZE_32)
+    {
+      sspi32_shakti_transmit_data(dev, tx_bufs->buffers);
+      sspi32_shakti_receive_data(dev, rx_bufs->buffers);  
     }
   }
 }
