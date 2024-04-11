@@ -1532,6 +1532,7 @@ endfunction()
 # Usage:
 #   zephyr_build_string(<out-variable>
 #                       BOARD <board>
+#                       [SHORT <out-variable>]
 #                       [BOARD_QUALIFIERS <qualifiers>]
 #                       [BOARD_REVISION <revision>]
 #                       [BUILD <type>]
@@ -1565,7 +1566,7 @@ endfunction()
 # `alpha_soc_bar_1_0_0;alpha_soc_bar` in `build_string` parameter.
 #
 # calling
-#   zephyr_build_string(build_string SHORTENED short_build_string BOARD alpha BOARD_REVISION 1.0.0 BOARD_QUALIFIERS /soc/bar MERGE)
+#   zephyr_build_string(build_string SHORT short_build_string BOARD alpha BOARD_REVISION 1.0.0 BOARD_QUALIFIERS /soc/bar MERGE)
 # will return two lists of the following strings
 # `alpha_soc_bar_1_0_0;alpha_soc_bar` in `build_string` parameter.
 # `alpha_bar_1_0_0;alpha_bar` in `short_build_string` parameter.
