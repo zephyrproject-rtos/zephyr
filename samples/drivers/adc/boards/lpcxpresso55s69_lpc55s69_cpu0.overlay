@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  *
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2024 NXP
  */
 
 #include <zephyr/dt-bindings/adc/mcux-lpadc.h>
@@ -39,7 +39,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_EXTERNAL0";
 		zephyr,vref-mv = <3300>;
-		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 7)>;
 		zephyr,resolution = <13>;
 		zephyr,input-positive = <MCUX_LPADC_CH0A>;
 		zephyr,input-negative = <MCUX_LPADC_CH0B>;
@@ -54,7 +54,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_EXTERNAL0";
 		zephyr,vref-mv = <3300>;
-		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 7)>;
 		zephyr,resolution = <16>;
 		zephyr,input-positive = <MCUX_LPADC_CH4A>;
 	};
@@ -68,7 +68,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_EXTERNAL0";
 		zephyr,vref-mv = <3300>;
-		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 7)>;
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <MCUX_LPADC_CH4B>;
 	};
