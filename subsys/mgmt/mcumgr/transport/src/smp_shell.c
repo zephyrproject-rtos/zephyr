@@ -242,7 +242,7 @@ int smp_shell_init(void)
 	rc = smp_transport_init(&smp_shell_transport);
 #ifdef CONFIG_SMP_CLIENT
 	if (rc == 0) {
-		smp_client_transport.smpt = &CONFIG_SMP_CLIENT;
+		smp_client_transport.smpt = &smp_shell_transport;
 		smp_client_transport.smpt_type = SMP_SHELL_TRANSPORT;
 		smp_client_transport_register(&smp_client_transport);
 	}
