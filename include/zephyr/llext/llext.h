@@ -164,7 +164,7 @@ int llext_unload(struct llext **ext);
  * @retval NULL if no symbol found
  * @retval addr Address of symbol in memory if found
  */
-const void * const llext_find_sym(const struct llext_symtable *sym_table, const char *sym_name);
+const void *llext_find_sym(const struct llext_symtable *sym_table, const char *sym_name);
 
 /**
  * @brief Call a function by name

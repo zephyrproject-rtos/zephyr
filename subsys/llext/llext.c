@@ -114,7 +114,7 @@ int llext_iterate(int (*fn)(struct llext *ext, void *arg), void *arg)
 	return ret;
 }
 
-const void * const llext_find_sym(const struct llext_symtable *sym_table, const char *sym_name)
+const void *llext_find_sym(const struct llext_symtable *sym_table, const char *sym_name)
 {
 	if (sym_table == NULL) {
 		/* Built-in symbol table */
