@@ -102,7 +102,7 @@
 	soc {
 		#address-cells = <2>;
 		#size-cells = <2>;
-		compatible = "simple-bus";
+		compatible = "fu740-soc", "sifive-soc", "simple-bus";
 		ranges;
 
 		modeselect: rom@1000 {
