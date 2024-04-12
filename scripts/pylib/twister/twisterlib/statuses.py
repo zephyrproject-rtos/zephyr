@@ -17,10 +17,8 @@ class TestInstanceStatus(str, Enum):
     ERROR = 'error'
     FAIL = 'failed'
     FILTER = 'filtered'
-    FLASH = 'flash_error'
     PASS = 'passed'
     SKIP = 'skipped'
-    TIMEOUT = 'timeout'
 
 
 # Possible direct assignments:
