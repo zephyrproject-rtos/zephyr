@@ -38,15 +38,12 @@ static void rc_check(bool on, nrf_clock_lfclk_t type)
 
 static void synth_check(bool on, nrf_clock_lfclk_t type)
 {
-	#if !defined(CLOCK_LFCLKSRC_SRC_Synth) && \
-	    !defined(CLOCK_LFCLKSRC_SRC_LFSYNT)
-	#define NRF_CLOCK_LFCLK_SYNTH 0
-	#endif
-
+#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_SYNTH
 	if (!IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT)) {
 		zassert_true(on, "Clock should be on");
 		zassert_equal(type, NRF_CLOCK_LFCLK_SYNTH);
 	}
+#endif
 }
 
 ZTEST(nrf_lf_clock_start, test_clock_check)
