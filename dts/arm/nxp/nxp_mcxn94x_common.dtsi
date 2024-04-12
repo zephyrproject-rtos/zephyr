@@ -219,6 +219,9 @@
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x93000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
+			/* DMA channels 0 and 1, muxed to LPUART1 RX and TX */
+			dmas = <&edma0 0 71>, <&edma0 1 72>;
+			dma-names = "rx", "tx";
 			status = "disabled";
 		};
 		flexcomm1_lpspi1: lpspi@93000 {
@@ -267,6 +270,9 @@
 			clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			/* DMA channels 4 and 5, muxed to LPSPI2 RX and TX */
+			dmas = <&edma0 4 73>, <&edma0 5 74>;
+			dma-names = "rx", "tx";
 			status = "disabled";
 		};
 		flexcomm2_lpi2c2: lpi2c@94800 {
@@ -338,6 +344,9 @@
 			clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			/* DMA channels 2 and 3, muxed to LPSPI4 RX and TX */
+			dmas = <&edma0 2 77>, <&edma0 3 78>;
+			dma-names = "rx", "tx";
 			status = "disabled";
 		};
 		flexcomm4_lpi2c4: lpi2c@b4800 {
