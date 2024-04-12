@@ -78,7 +78,7 @@ static void msg_work_handler(struct k_work *work)
 
 	if (node != NULL) {
 		m_pkt = SYS_SLIST_CONTAINER(node, m_pkt, node);
-		m_pkt->ctx->msg_cb(&m_pkt->msg);
+		m_pkt->ctx->msg_cb(m_pkt->ctx, &m_pkt->msg);
 		k_mem_slab_free(&usbd_msg_slab, (void *)m_pkt);
 	}
 
