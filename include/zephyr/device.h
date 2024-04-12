@@ -983,17 +983,6 @@ device_get_dt_nodelabels(const struct device *dev)
 #endif  /* CONFIG_DEVICE_DT_METADATA */
 
 /**
- * @brief Init sub-priority of the device
- *
- * The sub-priority is defined by the devicetree ordinal, which ensures that
- * multiple drivers running at the same priority level run in an order that
- * respects the devicetree dependencies.
- */
-#define Z_DEVICE_INIT_SUB_PRIO(node_id)                                        \
-	COND_CODE_1(DT_NODE_EXISTS(node_id),                                   \
-		    (DT_DEP_ORD_STR_SORTABLE(node_id)), (0))
-
-/**
  * @brief Maximum device name length.
  *
  * The maximum length is set so that device_get_binding() can be used from
@@ -1109,7 +1098,7 @@ device_get_dt_nodelabels(const struct device *dev)
 	Z_DEVICE_CHECK_INIT_LEVEL(level)                                                           \
                                                                                                    \
 	static const Z_DECL_ALIGN(struct init_entry) __used __noasan Z_INIT_ENTRY_SECTION(         \
-		level, prio, Z_DEVICE_INIT_SUB_PRIO(node_id))                                      \
+		level, prio)                                                                       \
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
 			.init_fn = {COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (.dev_rw), (.dev)) = \
 					    (init_fn_)},                                           \
