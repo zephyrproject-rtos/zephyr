@@ -10,6 +10,7 @@
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/retention/driver_state.h>
 
 LOG_MODULE_REGISTER(pcal64xxa, CONFIG_GPIO_LOG_LEVEL);
 
@@ -95,6 +96,8 @@ struct pcal64xxa_drv_data {
 
 typedef int (*pcal64xxa_pins_cfg_apply)(const struct i2c_dt_spec *i2c,
 					const struct pcal64xxa_pins_cfg *pins_cfg);
+typedef int (*pcal64xxa_pins_cfg_read)(const struct i2c_dt_spec *i2c,
+				       struct pcal64xxa_pins_cfg *pins_cfg);
 typedef int (*pcal64xxa_triggers_apply)(const struct i2c_dt_spec *i2c,
 					const struct pcal64xxa_triggers *triggers);
 typedef int (*pcal64xxa_reset_state_apply)(const struct i2c_dt_spec *i2c);
@@ -108,6 +111,9 @@ struct pcal64xxa_chip_api {
 	pcal64xxa_inputs_read inputs_read;
 	pcal64xxa_outputs_write outputs_write;
 	pcal64xxa_reset_state_apply reset_state_apply;
+#ifdef CONFIG_RETENTION_DRIVER_STATE
+	pcal64xxa_pins_cfg_read pins_cfg_read;
+#endif /* CONFIG_RETENTION_DRIVER_STATE */
 };
 
 struct pcal64xxa_drv_cfg {
@@ -119,6 +125,9 @@ struct pcal64xxa_drv_cfg {
 	const struct gpio_dt_spec gpio_reset;
 	const struct gpio_dt_spec gpio_interrupt;
 	const struct pcal64xxa_chip_api *chip_api;
+#ifdef CONFIG_RETENTION_DRIVER_STATE
+	const struct device *retention_driver_state;
+#endif /* CONFIG_RETENTION_DRIVER_STATE */
 };
 
 static int pcal64xxa_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
@@ -472,6 +481,45 @@ static int pcal6408a_pins_cfg_apply(const struct i2c_dt_spec *i2c,
 	return 0;
 }
 
+#ifdef CONFIG_RETENTION_DRIVER_STATE
+static int pcal6408a_pins_cfg_read(const struct i2c_dt_spec *i2c,
+				   struct pcal64xxa_pins_cfg *pins_cfg)
+{
+	int rc;
+	uint8_t value;
+
+	rc = pcal64xxa_i2c_read(i2c, PCAL6408A_REG_PULL_UP_DOWN_SELECT, &value);
+	if (rc != 0) {
+		return -EIO;
+	}
+
+	pins_cfg->pull_ups_selected = value;
+
+	rc = pcal64xxa_i2c_read(i2c, PCAL6408A_REG_PULL_UP_DOWN_ENABLE, &value);
+	if (rc != 0) {
+		return -EIO;
+	}
+
+	pins_cfg->pulls_enabled = value;
+
+	rc = pcal64xxa_i2c_read(i2c, PCAL6408A_REG_OUTPUT_PORT, &value);
+	if (rc != 0) {
+		return -EIO;
+	}
+
+	pins_cfg->outputs_high = value;
+
+	rc = pcal64xxa_i2c_read(i2c, PCAL6408A_REG_CONFIGURATION, &value);
+	if (rc != 0) {
+		return -EIO;
+	}
+
+	pins_cfg->configured_as_inputs = value;
+
+	return 0;
+}
+#endif /* CONFIG_RETENTION_DRIVER_STATE */
+
 static int pcal6408a_inputs_read(const struct i2c_dt_spec *i2c, pcal64xxa_data_t *int_sources,
 				 pcal64xxa_data_t *input_port)
 {
@@ -563,6 +611,9 @@ static const struct pcal64xxa_chip_api pcal6408a_chip_api = {
 	.inputs_read = pcal6408a_inputs_read,
 	.outputs_write = pcal6408a_outputs_write,
 	.reset_state_apply = pcal6408a_reset_state_apply,
+#ifdef CONFIG_RETENTION_DRIVER_STATE
+	.pins_cfg_read = pcal6408a_pins_cfg_read,
+#endif /* CONFIG_RETENTION_DRIVER_STATE */
 };
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nxp_pcal6408a) */
 
@@ -621,6 +672,66 @@ static int pcal6416a_pins_cfg_apply(const struct i2c_dt_spec *i2c,
 
 	return 0;
 }
+
+#ifdef CONFIG_RETENTION_DRIVER_STATE
+static int pcal6416a_pins_cfg_read(const struct i2c_dt_spec *i2c,
+				   struct pcal64xxa_pins_cfg *pins_cfg)
+{
+	int rc;
+	uint8_t value_low;
+	uint8_t value_high;
+
+	rc = pcal64xxa_i2c_read(i2c, PCAL6416A_REG_PULL_UP_DOWN_SELECT_0, &value_low);
+	if (rc != 0) {
+		return -EIO;
+	}
+
+	rc = pcal64xxa_i2c_read(i2c, PCAL6416A_REG_PULL_UP_DOWN_SELECT_1, &value_high);
+	if (rc != 0) {
+		return -EIO;
+	}
+
+	pins_cfg->pull_ups_selected = value_high << 8 | value_low;
+
+	rc = pcal64xxa_i2c_read(i2c, PCAL6416A_REG_PULL_UP_DOWN_ENABLE_0, &value_low);
+	if (rc != 0) {
+		return -EIO;
+	}
+
+	rc = pcal64xxa_i2c_read(i2c, PCAL6416A_REG_PULL_UP_DOWN_ENABLE_1, &value_high);
+	if (rc != 0) {
+		return -EIO;
+	}
+
+	pins_cfg->pulls_enabled = value_high << 8 | value_low;
+
+	rc = pcal64xxa_i2c_read(i2c, PCAL6416A_REG_OUTPUT_PORT_0, &value_low);
+	if (rc != 0) {
+		return -EIO;
+	}
+
+	rc = pcal64xxa_i2c_read(i2c, PCAL6416A_REG_OUTPUT_PORT_1, &value_high);
+	if (rc != 0) {
+		return -EIO;
+	}
+
+	pins_cfg->outputs_high = value_high << 8 | value_low;
+
+	rc = pcal64xxa_i2c_read(i2c, PCAL6416A_REG_CONFIGURATION_0, &value_low);
+	if (rc != 0) {
+		return -EIO;
+	}
+
+	rc = pcal64xxa_i2c_read(i2c, PCAL6416A_REG_CONFIGURATION_1, &value_high);
+	if (rc != 0) {
+		return -EIO;
+	}
+
+	pins_cfg->configured_as_inputs = value_high << 8 | value_low;
+
+	return 0;
+}
+#endif /* CONFIG_RETENTION_DRIVER_STATE */
 
 static int pcal6416a_inputs_read(const struct i2c_dt_spec *i2c, pcal64xxa_data_t *int_sources,
 				 pcal64xxa_data_t *input_port)
@@ -748,6 +859,9 @@ static const struct pcal64xxa_chip_api pcal6416a_chip_api = {
 	.inputs_read = pcal6416a_inputs_read,
 	.outputs_write = pcal6416a_outputs_write,
 	.reset_state_apply = pcal6416a_reset_state_apply,
+#ifdef CONFIG_RETENTION_DRIVER_STATE
+	.pins_cfg_read = pcal6416a_pins_cfg_read,
+#endif
 };
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nxp_pcal6416a) */
 
@@ -812,6 +926,24 @@ static int pcal64xxa_apply_initial_state(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_RETENTION_DRIVER_STATE
+static int pcal64xxa_read_state_from_registers(const struct device *dev)
+{
+	const struct pcal64xxa_drv_cfg *drv_cfg = dev->config;
+	struct pcal64xxa_drv_data *drv_data = dev->data;
+	int rc;
+
+	/* Read current configuration of the pins. */
+	rc = drv_cfg->chip_api->pins_cfg_read(&drv_cfg->i2c, &drv_data->pins_cfg);
+	if (rc != 0) {
+		LOG_ERR("%s: failed to apply pin config", dev->name);
+		return rc;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_RETENTION_DRIVER_STATE */
+
 int pcal64xxa_init(const struct device *dev)
 {
 	const struct pcal64xxa_drv_cfg *drv_cfg = dev->config;
@@ -820,13 +952,14 @@ int pcal64xxa_init(const struct device *dev)
 		.masked = PCAL64XXA_INIT_HIGH,
 	};
 	pcal64xxa_data_t int_sources;
+	bool use_retained_state = false;
 	int rc;
 
 	LOG_DBG("%s: initializing PCAL64XXA", dev->name);
 
 	if (drv_cfg->ngpios != 8U && drv_cfg->ngpios != 16U) {
-		LOG_ERR("%s: Invalid value ngpios=%u. Expected 8 or 16!",
-			dev->name, drv_cfg->ngpios);
+		LOG_ERR("%s: Invalid value ngpios=%u. Expected 8 or 16!", dev->name,
+			drv_cfg->ngpios);
 		return -EINVAL;
 	}
 
@@ -839,10 +972,33 @@ int pcal64xxa_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	LOG_DBG("%s: apply initial state", dev->name);
-	rc = pcal64xxa_apply_initial_state(dev);
-	if (rc != 0) {
-		return rc;
+#ifdef CONFIG_RETENTION_DRIVER_STATE
+	if (drv_cfg->retention_driver_state != NULL) {
+		if (!device_is_ready(drv_cfg->retention_driver_state)) {
+			LOG_ERR("%s is not ready", drv_cfg->retention_driver_state->name);
+			return -ENODEV;
+		}
+
+		if (retention_driver_state_is_valid(drv_cfg->retention_driver_state)) {
+			use_retained_state = true;
+		}
+	}
+
+	if (use_retained_state) {
+		LOG_DBG("%s: use retained state", dev->name);
+		rc = pcal64xxa_read_state_from_registers(dev);
+		if (rc != 0) {
+			return rc;
+		}
+	}
+#endif /* CONFIG_RETENTION_DRIVER_STATE */
+
+	if (!use_retained_state) {
+		LOG_DBG("%s: apply initial state", dev->name);
+		rc = pcal64xxa_apply_initial_state(dev);
+		if (rc != 0) {
+			return rc;
+		}
 	}
 
 	/* Set initial state of the interrupt related registers. */
@@ -891,6 +1047,16 @@ int pcal64xxa_init(const struct device *dev)
 		}
 	}
 
+#ifdef CONFIG_RETENTION_DRIVER_STATE
+	if (drv_cfg->retention_driver_state != NULL) {
+		rc = retention_driver_state_write(drv_cfg->retention_driver_state, NULL, 0);
+		if (rc != 0) {
+			LOG_WRN("%s: unable to write retained state", dev->name);
+			return rc;
+		}
+	}
+#endif /* CONFIG_RETENTION_DRIVER_STATE */
+
 	/* Device configured, unlock it so that it can be used. */
 	k_sem_give(&drv_data->lock);
 
@@ -904,6 +1070,13 @@ int pcal64xxa_init(const struct device *dev)
 #define PCAL64XXA_INIT_RESET_GPIO_FIELDS(idx)                                                      \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, reset_gpios),                                       \
 		    (GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(idx), reset_gpios, 0)), ({0}))
+
+#ifdef CONFIG_RETENTION_DRIVER_STATE
+#define PCAL64XXA_ASSIGN_RETENTION_DRIVER_STATE(idx)                                               \
+	.retention_driver_state = DEVICE_DT_GET_OR_NULL(DT_INST_PROP(idx, retention_driver_state)),
+#else
+#define PCAL64XXA_ASSIGN_RETENTION_DRIVER_STATE(idx) EMPTY
+#endif /* CONFIG_RETENTION_DRIVER_STATE */
 
 #define GPIO_PCAL6408A_INST(idx)                                                                   \
 	static const struct gpio_driver_api pcal6408a_drv_api##idx = {                             \
@@ -925,12 +1098,16 @@ int pcal64xxa_init(const struct device *dev)
 		.gpio_interrupt = PCAL64XXA_INIT_INT_GPIO_FIELDS(idx),                             \
 		.gpio_reset = PCAL64XXA_INIT_RESET_GPIO_FIELDS(idx),                               \
 		.chip_api = &pcal6408a_chip_api,                                                   \
-	};                                                                                         \
+		PCAL64XXA_ASSIGN_RETENTION_DRIVER_STATE(idx)};                                     \
 	static struct pcal64xxa_drv_data pcal6408a_data##idx = {                                   \
 		.lock = Z_SEM_INITIALIZER(pcal6408a_data##idx.lock, 1, 1),                         \
 		.work = Z_WORK_INITIALIZER(pcal64xxa_work_handler),                                \
 		.dev = DEVICE_DT_INST_GET(idx),                                                    \
 	};                                                                                         \
+	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(idx), retention_driver_state),                    \
+		    (RETENTION_DRIVER_STATE_SIZE_CHECK(DT_INST_PROP(idx, retention_driver_state),  \
+						       0);),                                       \
+		    ());                                                                           \
 	DEVICE_DT_INST_DEFINE(idx, pcal64xxa_init, NULL, &pcal6408a_data##idx,                     \
 			      &pcal6408a_cfg##idx, POST_KERNEL,                                    \
 			      CONFIG_GPIO_PCAL64XXA_INIT_PRIORITY, &pcal6408a_drv_api##idx);
@@ -958,12 +1135,16 @@ DT_INST_FOREACH_STATUS_OKAY(GPIO_PCAL6408A_INST)
 		.gpio_interrupt = PCAL64XXA_INIT_INT_GPIO_FIELDS(idx),                             \
 		.gpio_reset = PCAL64XXA_INIT_RESET_GPIO_FIELDS(idx),                               \
 		.chip_api = &pcal6416a_chip_api,                                                   \
-	};                                                                                         \
+		PCAL64XXA_ASSIGN_RETENTION_DRIVER_STATE(idx)};                                     \
 	static struct pcal64xxa_drv_data pcal6416a_data##idx = {                                   \
 		.lock = Z_SEM_INITIALIZER(pcal6416a_data##idx.lock, 1, 1),                         \
 		.work = Z_WORK_INITIALIZER(pcal64xxa_work_handler),                                \
 		.dev = DEVICE_DT_INST_GET(idx),                                                    \
 	};                                                                                         \
+	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(idx), retention_driver_state),                    \
+		    (RETENTION_DRIVER_STATE_SIZE_CHECK(DT_INST_PROP(idx, retention_driver_state),  \
+						       0);),                                       \
+		    ());                                                                           \
 	DEVICE_DT_INST_DEFINE(idx, pcal64xxa_init, NULL, &pcal6416a_data##idx,                     \
 			      &pcal6416a_cfg##idx, POST_KERNEL,                                    \
 			      CONFIG_GPIO_PCAL64XXA_INIT_PRIORITY, &pcal6416a_drv_api##idx);
