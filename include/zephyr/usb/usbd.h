@@ -900,6 +900,20 @@ int usbd_config_maxpower(struct usbd_contex *const uds_ctx,
 			 const uint8_t cfg, const uint8_t power);
 
 /**
+ * @brief Check that the controller can detect the VBUS state change.
+ *
+ * This can be used in a generic application to explicitly handle the VBUS
+ * detected event after usbd_init(). For example, to call usbd_enable() after a
+ * short delay to give the PMIC time to detect the bus, or to handle cases
+ * where usbd_enable() can only be called after a VBUS detected event.
+ *
+ * @param[in] uds_ctx Pointer to USB device support context
+ *
+ * @return true if controller can detect VBUS state change, false otherwise
+ */
+bool usbd_can_detect_vbus(struct usbd_contex *const uds_ctx);
+
+/**
  * @}
  */
 
