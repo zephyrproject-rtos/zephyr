@@ -58,6 +58,9 @@ struct mcux_lpuart_config {
 	uint8_t parity;
 	bool rs485_de_active_low;
 	bool loopback_en;
+	bool single_wire;
+	bool tx_invert;
+	bool rx_invert;
 #ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
 	void (*irq_config_func)(const struct device *dev);
 #endif
@@ -1105,7 +1108,29 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 		/* Set the LPUART into loopback mode */
 		config->base->CTRL |= LPUART_CTRL_LOOPS_MASK;
 		config->base->CTRL &= ~LPUART_CTRL_RSRC_MASK;
+	} else if (config->single_wire) {
+		/* Enable the single wire / half-duplex mode, only possible when
+		 * loopback is disabled. We need a critical section to prevent
+		 * the UART firing an interrupt during mode switch
+		 */
+		unsigned int key = irq_lock();
+
+		config->base->CTRL |= (LPUART_CTRL_LOOPS_MASK | LPUART_CTRL_RSRC_MASK);
+		irq_unlock(key);
+	} else {
+#ifdef LPUART_CTRL_TXINV
+		/* Only invert TX in full-duplex mode */
+		if (config->tx_invert) {
+			config->base->CTRL |= LPUART_CTRL_TXINV(1);
+		}
+#endif
 	}
+
+#ifdef LPUART_STAT_RXINV
+	if (config->rx_invert) {
+		config->base->STAT |= LPUART_STAT_RXINV(1);
+	}
+#endif
 
 	/* update internal uart_config */
 	data->uart_config = *cfg;
@@ -1125,6 +1150,9 @@ static int mcux_lpuart_configure(const struct device *dev,
 				 const struct uart_config *cfg)
 {
 	const struct mcux_lpuart_config *config = dev->config;
+
+	/* Make sure that RSRC is de-asserted otherwise deinit will hang. */
+	config->base->CTRL &= ~LPUART_CTRL_RSRC_MASK;
 
 	/* disable LPUART */
 	LPUART_Deinit(config->base);
@@ -1330,6 +1358,9 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),       \
 	.rs485_de_active_low = DT_INST_PROP(n, nxp_rs485_de_active_low),      \
 	.loopback_en = DT_INST_PROP(n, nxp_loopback),                         \
+	.single_wire = DT_INST_PROP(n, single_wire),	                      \
+	.rx_invert = DT_INST_PROP(n, rx_invert),	                      \
+	.tx_invert = DT_INST_PROP(n, tx_invert),	                      \
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                          \
 	MCUX_LPUART_IRQ_INIT(n) \
 	RX_DMA_CONFIG(n)        \
