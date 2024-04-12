@@ -55,6 +55,7 @@ static void counter_tear_down_instance(const struct device *dev)
 
 static void test_all_instances(counter_test_func_t func)
 {
+	zassert_true(ARRAY_SIZE(devices) > 0);
 	for (int i = 0; i < ARRAY_SIZE(devices); i++) {
 		counter_setup_instance(devices[i]);
 		func(i);
