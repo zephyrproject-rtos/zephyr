@@ -72,6 +72,16 @@ timer10: timer@85000 {
 	prescaler = <0>;
 };
 
+rtc10: rtc@86000 {
+	compatible = "nordic,nrf-rtc";
+	reg = <0x86000 0x1000>;
+	status = "disabled";
+	cc-num = <4>;
+	clock-frequency = <32768>;
+	interrupts = <134 NRF_DEFAULT_IRQ_PRIORITY>;
+	prescaler = <1>;
+};
+
 egu10: egu@87000 {
 	compatible = "nordic,nrf-egu";
 	reg = <0x87000 0x1000>;
@@ -409,6 +419,16 @@ uart30: uart@104000 {
 	reg = <0x104000 0x1000>;
 	interrupts = <260 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
+};
+
+rtc30: rtc@105000 {
+	compatible = "nordic,nrf-rtc";
+	reg = <0x105000 0x1000>;
+	status = "disabled";
+	cc-num = <4>;
+	clock-frequency = <32768>;
+	interrupts = <261 NRF_DEFAULT_IRQ_PRIORITY>;
+	prescaler = <1>;
 };
 
 wdt30: watchdog@108000 {
