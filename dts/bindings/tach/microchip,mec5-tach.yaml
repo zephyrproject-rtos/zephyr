@@ -1,0 +1,53 @@
+# Copyright (c) 2024, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 HAL based tachometer
+
+compatible: "microchip,mec5-tach"
+
+include: [tach.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  read-mode:
+    type: string
+    description: |
+      Select the method to increment the tachometer counter. Power on default
+      is to increment the counter on the rising edge of the tachometer input.
+      The second method is increment on the rising edge of the internal 100KHz
+      clock. The counter is latched into the tachometers counter read-only bit
+      field in its control register and reset when the programmed number of edges
+      is detected.
+    enum:
+      - "input rising edge"
+      - "internal 100kHz rising edge"
+
+  edges-count:
+    type: string
+    description: |
+      The number of edges on the tachometer input triggering capture of the
+      100 KHz counter. Typically, two periods of the input represent one fan
+      revolution. A tachometer input period consists of three edges. This value
+      is the number of edges used to determine the interval over which the
+      tachometers 100KHz internal pulses will be counted.
+      Nine tach edges is 4 Tach periods.
+      Five tach edges is 2 Tach periods.
+      Three tach edges is 1 Tach period.
+      Two tach edges is 1/2 Tach period.
+    enum:
+      - "9"
+      - "5"
+      - "3"
+      - "2"
+
+  "#address-cells":
+    required: true
+    const: 1
+  "#size-cells":
+    type: int
+    const: 0

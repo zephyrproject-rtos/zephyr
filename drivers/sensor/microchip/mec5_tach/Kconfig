@@ -1,0 +1,25 @@
+# Microchip MEC5 HAL based tachometer sensor configuration options
+
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config TACH_MEC5
+	bool "Microchip MEC5 HAL based Tachometer sensor"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_TACH_ENABLED
+	depends on SOC_FAMILY_MICROCHIP_MEC
+	depends on HAS_MEC5_HAL
+	select PINCTRL
+	help
+	  Enable the Microchip MEC5 HAL based tachometer sensor.
+
+if TACH_MEC5
+
+config TACH_MEC5_INTERRUPT
+	bool "Microchip MEC5 TACH driver use interrupt"
+	default n
+	help
+	  Enable the MCHP MEC5 TACH driver to use interrupts
+	  instead of a polling loop.
+
+endif # TACH_MEC5
