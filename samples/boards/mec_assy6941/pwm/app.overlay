@@ -78,6 +78,15 @@
 	status = "okay";
 };
 
+&tach0 {
+	compatible = "microchip,mec5-tach";
+	pinctrl-0 = <&ict0_tach0_gpio050>;
+	pinctrl-names = "default";
+	read-mode = "internal 100kHz rising edge";
+	edges-count = "9";
+	status = "okay";
+};
+
 &uart1 {
 	current-speed = <115200>;
 	status = "okay";
