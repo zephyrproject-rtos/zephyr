@@ -489,52 +489,85 @@ do {                                                                    \
  * to generate named symbol/value pairs for kconfigs.
  */
 
-#if defined(CONFIG_ARM) || defined(CONFIG_X86) || defined(CONFIG_ARC) || defined(CONFIG_ARM64) ||  \
-	defined(CONFIG_NIOS2) || defined(CONFIG_XTENSA) || defined(CONFIG_MIPS) ||                 \
-	defined(CONFIG_ARCH_POSIX) || defined(CONFIG_SPARC)
+#if defined(CONFIG_ARM)
 
-#define GEN_ABSOLUTE_SYM(name, value)                                                              \
-	do {                                                                                       \
-		__asm__(".global " #name);                                                         \
-		__asm__(".set " #name ", %c0" ::"n"(value));                                       \
-		__asm__(".type " #name ", STT_OBJECT");                                            \
-	} while (false)
-
-#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)                                                      \
-	do {                                                                                       \
-		__asm__(".global " #name);                                                         \
-		__asm__(".set " #name ", " #value);                                                \
-		__asm__(".type " #name ", STT_OBJECT");                                            \
-	} while (false)
-
-/* The following is a workaround for the RISC-V target, which
- * has a bug so it errors out on the target-agnostic '%c'.
- *
- * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=112434
- *
- * > error: invalid 'asm': invalid use of '%c'
- *
- * According to commit cd83e85edc5d741f6b52c6b5995303c30bda443a,
- * '%0' is equivalent to '%c0' for the RISC-V target. We use
- * this as a workaround for now.
- *
- * This workaround should be removed when the above bug is fixed
- * in all supported Zephyr toolchain versions.
+/*
+ * GNU/ARM backend does not have a proper operand modifier which does not
+ * produces prefix # followed by value, such as %0 for PowerPC, Intel, and
+ * MIPS. The workaround performed here is using %B0 which converts
+ * the value to ~(value). Thus "n"(~(value)) is set in operand constraint
+ * to output (value) in the ARM specific GEN_OFFSET macro.
  */
-#elif defined(CONFIG_RISCV)
-#define GEN_ABSOLUTE_SYM(name, value)                                                              \
-	do {                                                                                       \
-		__asm__(".global " #name);                                                         \
-		__asm__(".set " #name ", %0" ::"n"(value));                                        \
-		__asm__(".type " #name ", STT_OBJECT");                                            \
-	} while (false)
 
-#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)                                                      \
-	do {                                                                                       \
-		__asm__(".global " #name);                                                         \
-		__asm__(".set " #name ", " #value);                                                \
-		__asm__(".type " #name ", STT_OBJECT");                                            \
-	} while (false)
+#define GEN_ABSOLUTE_SYM(name, value)               \
+	__asm__(".globl\t" #name "\n\t.equ\t" #name \
+		",%B0"                              \
+		"\n\t.type\t" #name ",%%object" :  : "n"(~(value)))
+
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
+	__asm__(".globl\t" #name                    \
+		"\n\t.equ\t" #name "," #value       \
+		"\n\t.type\t" #name ",%object")
+
+#elif defined(CONFIG_X86)
+
+#define GEN_ABSOLUTE_SYM(name, value)               \
+	__asm__(".globl\t" #name "\n\t.equ\t" #name \
+		",%c0"                              \
+		"\n\t.type\t" #name ",@object" :  : "n"(value))
+
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
+	__asm__(".globl\t" #name                    \
+		"\n\t.equ\t" #name "," #value       \
+		"\n\t.type\t" #name ",@object")
+
+#elif defined(CONFIG_ARC) || defined(CONFIG_ARM64)
+
+#define GEN_ABSOLUTE_SYM(name, value)               \
+	__asm__(".globl\t" #name "\n\t.equ\t" #name \
+		",%c0"                              \
+		"\n\t.type\t" #name ",@object" :  : "n"(value))
+
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
+	__asm__(".globl\t" #name                    \
+		"\n\t.equ\t" #name "," #value       \
+		"\n\t.type\t" #name ",@object")
+
+#elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || \
+	defined(CONFIG_XTENSA) || defined(CONFIG_MIPS)
+
+/* No special prefixes necessary for constants in this arch AFAICT */
+#define GEN_ABSOLUTE_SYM(name, value)		\
+	__asm__(".globl\t" #name "\n\t.equ\t" #name \
+		",%0"                              \
+		"\n\t.type\t" #name ",%%object" :  : "n"(value))
+
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
+	__asm__(".globl\t" #name                    \
+		"\n\t.equ\t" #name "," #value       \
+		"\n\t.type\t" #name ",%object")
+
+#elif defined(CONFIG_ARCH_POSIX)
+#define GEN_ABSOLUTE_SYM(name, value)               \
+	__asm__(".globl\t" #name "\n\t.equ\t" #name \
+		",%c0"                              \
+		"\n\t.type\t" #name ",@object" :  : "n"(value))
+
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
+	__asm__(".globl\t" #name                    \
+		"\n\t.equ\t" #name "," #value       \
+		"\n\t.type\t" #name ",@object")
+
+#elif defined(CONFIG_SPARC)
+#define GEN_ABSOLUTE_SYM(name, value)			\
+	__asm__(".global\t" #name "\n\t.equ\t" #name	\
+		",%0"					\
+		"\n\t.type\t" #name ",#object" : : "n"(value))
+
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
+	__asm__(".globl\t" #name                    \
+		"\n\t.equ\t" #name "," #value       \
+		"\n\t.type\t" #name ",#object")
 
 #else
 #error processor architecture not supported
