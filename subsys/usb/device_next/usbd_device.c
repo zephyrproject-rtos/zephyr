@@ -296,3 +296,10 @@ int usbd_shutdown(struct usbd_contex *const uds_ctx)
 
 	return 0;
 }
+
+bool usbd_can_detect_vbus(struct usbd_contex *const uds_ctx)
+{
+	const struct udc_device_caps caps = udc_caps(uds_ctx->dev);
+
+	return caps.can_detect_vbus;
+}
