@@ -181,6 +181,7 @@ REDIRECTS = [
     ('reference/usermode/overview', 'kernel/usermode/overview'),
     ('reference/usermode/syscalls', 'kernel/usermode/syscalls'),
     ('reference/util/index', 'kernel/util/index'),
+    ('samples/drivers/adc/README', 'samples/drivers/adc/adc_dt/README'),
     ('samples/drivers/kscan_touch', 'samples/subsys/input/input'),
     ('samples/drivers/led_apa102/README', 'samples/drivers/led_strip/README'),
     ('samples/drivers/led_lpd8806/README', 'samples/drivers/led_strip/README'),

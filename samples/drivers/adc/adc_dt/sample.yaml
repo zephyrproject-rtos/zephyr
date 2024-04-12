@@ -1,7 +1,7 @@
 sample:
-  name: ADC driver sample
+  name: ADC devicetree driver sample
 tests:
-  sample.drivers.adc:
+  sample.drivers.adc.adc_dt:
     tags:
       - adc
     depends_on: adc
