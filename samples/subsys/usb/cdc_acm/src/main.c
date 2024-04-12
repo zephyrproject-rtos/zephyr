@@ -52,7 +52,7 @@ static inline void print_baudrate(const struct device *dev)
 static struct usbd_contex *sample_usbd;
 K_SEM_DEFINE(dtr_sem, 0, 1);
 
-static void sample_msg_cb(const struct usbd_msg *msg)
+static void sample_msg_cb(struct usbd_contex *const ctx, const struct usbd_msg *msg)
 {
 	LOG_INF("USBD message: %s", usbd_msg_type_string(msg->type));
 

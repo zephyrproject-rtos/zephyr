@@ -169,6 +169,22 @@ struct usbd_status {
 	enum usbd_speed speed : 2;
 };
 
+struct usbd_contex;
+
+/**
+ * @brief Callback type definition for USB device message delivery
+ *
+ * The implementation uses the system workqueue, and a callback provided and
+ * registered by the application. The application callback is called in the
+ * context of the system workqueue. Notification messages are stored in a queue
+ * and delivered to the callback in sequence.
+ *
+ * @param[in] ctx Pointer to USB device support context
+ * @param[in] msg Pointer to USB device message
+ */
+typedef void (*usbd_msg_cb_t)(struct usbd_contex *const ctx,
+			      const struct usbd_msg *const msg);
+
 /**
  * USB device support runtime context
  *
@@ -882,6 +898,7 @@ int usbd_config_attrib_self(struct usbd_contex *const uds_ctx,
 int usbd_config_maxpower(struct usbd_contex *const uds_ctx,
 			 const enum usbd_speed speed,
 			 const uint8_t cfg, const uint8_t power);
+
 /**
  * @}
  */
