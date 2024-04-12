@@ -15,6 +15,12 @@ properties:
     description: |
       GPIO connected to the controller RESET pin. This pin is active-low.
 
+  retention:
+    type: phandle
+    description: |
+      Retention device which is used to retain state from for instance a
+      previously executed bootloader.
+
   "#gpio-cells":
     const: 2
 
