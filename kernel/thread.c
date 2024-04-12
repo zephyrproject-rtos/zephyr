@@ -750,6 +750,7 @@ void z_init_thread_base(struct _thread_base *thread_base, int priority,
 	/* k_q_node is initialized upon first insertion in a list */
 	thread_base->pended_on = NULL;
 	thread_base->user_options = (uint8_t)options;
+	thread_base->pending_reason = (uint8_t)0;
 	thread_base->thread_state = (uint8_t)initial_state;
 
 	thread_base->prio = priority;

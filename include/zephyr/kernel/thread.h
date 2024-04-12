@@ -74,6 +74,10 @@ struct _thread_base {
 	/* thread state */
 	uint8_t thread_state;
 
+
+	/* the reasone make this thread pending */
+	uint8_t pending_reason;
+
 	/*
 	 * scheduler lock count and thread priority
 	 *

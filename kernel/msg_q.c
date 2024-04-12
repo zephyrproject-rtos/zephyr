@@ -121,7 +121,8 @@ int k_msgq_cleanup(struct k_msgq *msgq)
 }
 
 
-int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout)
+static int _msgq_put_internal(struct k_msgq *msgq, const void *data,
+				k_timeout_t timeout, bool is_prepend)
 {
 	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
 
@@ -146,15 +147,26 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 			arch_thread_return_value_set(pending_thread, 0);
 			z_ready_thread(pending_thread);
 			z_reschedule(&msgq->lock, key);
-			return 0;
+			result = 0;
+			goto out;
 		} else {
 			/* put message in queue */
-			__ASSERT_NO_MSG(msgq->write_ptr >= msgq->buffer_start &&
-					msgq->write_ptr < msgq->buffer_end);
-			(void)memcpy(msgq->write_ptr, (char *)data, msgq->msg_size);
-			msgq->write_ptr += msgq->msg_size;
-			if (msgq->write_ptr == msgq->buffer_end) {
-				msgq->write_ptr = msgq->buffer_start;
+			if (is_prepend) {
+				__ASSERT_NO_MSG(msgq->read_ptr >= msgq->buffer_start &&
+						msgq->read_ptr < msgq->buffer_end);
+				if (msgq->read_ptr == msgq->buffer_start) {
+					msgq->read_ptr = msgq->buffer_end;
+				}
+				msgq->read_ptr -= msgq->msg_size;
+				(void)memcpy(msgq->read_ptr, data, msgq->msg_size);
+			} else {
+				__ASSERT_NO_MSG(msgq->write_ptr >= msgq->buffer_start &&
+						msgq->write_ptr < msgq->buffer_end);
+				(void)memcpy(msgq->write_ptr, data, msgq->msg_size);
+				msgq->write_ptr += msgq->msg_size;
+				if (msgq->write_ptr == msgq->buffer_end) {
+					msgq->write_ptr = msgq->buffer_start;
+				}
 			}
 			msgq->used_msgs++;
 #ifdef CONFIG_POLL
@@ -166,7 +178,13 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 		/* don't wait for message space to become available */
 		result = -ENOMSG;
 	} else {
-		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, put, msgq, timeout);
+		if (is_prepend) {
+			_current->base.pending_reason |= _MSG_PENDING;
+			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, prepend, msgq, timeout);
+		} else {
+			_current->base.pending_reason &= ~_MSG_PENDING;
+			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, put, msgq, timeout);
+		}
 
 		/* wait for put message success, failure, or timeout */
 		_current->base.swap_data = (void *) data;
@@ -180,7 +198,13 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 
 	k_spin_unlock(&msgq->lock, key);
 
+out:
 	return result;
+}
+
+int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout)
+{
+	return _msgq_put_internal(msgq, data, timeout, false);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -193,6 +217,23 @@ static inline int z_vrfy_k_msgq_put(struct k_msgq *msgq, const void *data,
 	return z_impl_k_msgq_put(msgq, data, timeout);
 }
 #include <syscalls/k_msgq_put_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+int z_impl_k_msgq_prepend(struct k_msgq *msgq, const void *data, k_timeout_t timeout)
+{
+	return _msgq_put_internal(msgq, data, timeout, true);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_msgq_prepend(struct k_msgq *msgq, const void *data,
+				    k_timeout_t timeout)
+{
+	K_OOPS(K_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	K_OOPS(K_SYSCALL_MEMORY_READ(data, msgq->msg_size));
+
+	return z_impl_k_msgq_prepend(msgq, data, timeout);
+}
+#include <syscalls/k_msgq_prepend_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void z_impl_k_msgq_get_attrs(struct k_msgq *msgq, struct k_msgq_attrs *attrs)
@@ -240,13 +281,24 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, get, msgq, timeout);
 
 			/* add thread's message to queue */
-			__ASSERT_NO_MSG(msgq->write_ptr >= msgq->buffer_start &&
-					msgq->write_ptr < msgq->buffer_end);
-			(void)memcpy(msgq->write_ptr, (char *)pending_thread->base.swap_data,
+			if (pending_thread->base.pending_reason & _MSG_PENDING) {
+				__ASSERT_NO_MSG(msgq->read_ptr >= msgq->buffer_start &&
+						msgq->read_ptr < msgq->buffer_end);
+				if (msgq->read_ptr == msgq->buffer_start) {
+					msgq->read_ptr = msgq->buffer_end;
+				}
+				msgq->read_ptr -= msgq->msg_size;
+				(void)memcpy(msgq->read_ptr, pending_thread->base.swap_data,
+					msgq->msg_size);
+			} else {
+				__ASSERT_NO_MSG(msgq->write_ptr >= msgq->buffer_start &&
+						msgq->write_ptr < msgq->buffer_end);
+				(void)memcpy(msgq->write_ptr, pending_thread->base.swap_data,
 			       msgq->msg_size);
-			msgq->write_ptr += msgq->msg_size;
-			if (msgq->write_ptr == msgq->buffer_end) {
-				msgq->write_ptr = msgq->buffer_start;
+				msgq->write_ptr += msgq->msg_size;
+				if (msgq->write_ptr == msgq->buffer_end) {
+					msgq->write_ptr = msgq->buffer_start;
+				}
 			}
 			msgq->used_msgs++;
 
