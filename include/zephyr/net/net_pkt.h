@@ -177,12 +177,6 @@ struct net_pkt {
 			       */
 #endif
 	uint8_t ppp_msg : 1; /* This is a PPP message */
-#if defined(CONFIG_NET_TCP)
-	uint8_t tcp_first_msg : 1; /* Is this the first time this pkt is
-				    * sent, or is this a resend of a TCP
-				    * segment.
-				    */
-#endif
 	uint8_t captured : 1;	  /* Set to 1 if this packet is already being
 				   * captured
 				   */
@@ -480,25 +474,6 @@ static inline void net_pkt_set_ip_ecn(struct net_pkt *pkt, uint8_t ecn)
 {
 #if defined(CONFIG_NET_IP_DSCP_ECN)
 	pkt->ip_ecn = ecn;
-#endif
-}
-
-static inline uint8_t net_pkt_tcp_1st_msg(struct net_pkt *pkt)
-{
-#if defined(CONFIG_NET_TCP)
-	return pkt->tcp_first_msg;
-#else
-	return true;
-#endif
-}
-
-static inline void net_pkt_set_tcp_1st_msg(struct net_pkt *pkt, bool is_1st)
-{
-#if defined(CONFIG_NET_TCP)
-	pkt->tcp_first_msg = is_1st;
-#else
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_1st);
 #endif
 }
 
