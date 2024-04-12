@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_ARM)
-  zephyr_include_directories(.)
   zephyr_library_sources(soc.c)
 endif()
+
+zephyr_include_directories(.)
 
 # Ensure that image size aligns with 16 bytes so that MRAMC finalizes all writes
 # for the image correctly
