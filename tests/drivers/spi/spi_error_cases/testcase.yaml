@@ -1,0 +1,12 @@
+tests:
+  drivers.spi.spi_error_cases:
+    depends_on: spi
+    tags: drivers spi
+    harness: ztest
+    harness_config:
+      fixture: gpio_spi_loopback
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf54l15pdk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf52840dk/nrf52840
