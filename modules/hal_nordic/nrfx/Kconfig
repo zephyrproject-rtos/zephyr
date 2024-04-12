@@ -771,6 +771,66 @@ config NRFX_TWIS3
 	depends on $(dt_nodelabel_has_compat,i2c3,$(DT_COMPAT_NORDIC_NRF_TWIS))
 	select NRFX_TWIS
 
+config NRFX_TWIS20
+	bool "TWIS20 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c20,$(DT_COMPAT_NORDIC_NRF_TWIS))
+	select NRFX_TWIS
+
+config NRFX_TWIS21
+	bool "TWIS21 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c21,$(DT_COMPAT_NORDIC_NRF_TWIS))
+	select NRFX_TWIS
+
+config NRFX_TWIS22
+	bool "TWIS22 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c22,$(DT_COMPAT_NORDIC_NRF_TWIS))
+	select NRFX_TWIS
+
+config NRFX_TWIS30
+	bool "TWIS30 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c30,$(DT_COMPAT_NORDIC_NRF_TWIS))
+	select NRFX_TWIS
+
+config NRFX_TWIS130
+	bool "TWIS130 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c130,$(DT_COMPAT_NORDIC_NRF_TWIS))
+	select NRFX_TWIS
+
+config NRFX_TWIS131
+	bool "TWIS131 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c131,$(DT_COMPAT_NORDIC_NRF_TWIS))
+	select NRFX_TWIS
+
+config NRFX_TWIS132
+	bool "TWIS132 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c132,$(DT_COMPAT_NORDIC_NRF_TWIS))
+	select NRFX_TWIS
+
+config NRFX_TWIS133
+	bool "TWIS133 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c133,$(DT_COMPAT_NORDIC_NRF_TWIS))
+	select NRFX_TWIS
+
+config NRFX_TWIS134
+	bool "TWIS134 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c134,$(DT_COMPAT_NORDIC_NRF_TWIS))
+	select NRFX_TWIS
+
+config NRFX_TWIS135
+	bool "TWIS135 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c135,$(DT_COMPAT_NORDIC_NRF_TWIS))
+	select NRFX_TWIS
+
+config NRFX_TWIS136
+	bool "TWIS136 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c136,$(DT_COMPAT_NORDIC_NRF_TWIS))
+	select NRFX_TWIS
+
+config NRFX_TWIS137
+	bool "TWIS137 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c137,$(DT_COMPAT_NORDIC_NRF_TWIS))
+	select NRFX_TWIS
+
 config NRFX_UART
 	bool
 
