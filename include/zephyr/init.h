@@ -13,6 +13,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
+#include <zephyr/sys/util_init.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -147,9 +149,9 @@ struct init_entry {
  * linker scripts to sort them according to the specified
  * level/priority/sub-priority.
  */
-#define Z_INIT_ENTRY_SECTION(level, prio, sub_prio)                           \
-	__attribute__((__section__(                                           \
-		".z_init_" #level STRINGIFY(prio)"_" STRINGIFY(sub_prio)"_")))
+#define Z_INIT_ENTRY_SECTION(node_id, level, prio, sub_prio)		\
+	__attribute__((__section__(                                     \
+	".z_init_" STRINGIFY(ZINIT_GET_LEVEL(node_id, level)) STRINGIFY(prio)"_")))
 
 
 /* Designated initializers where added to C in C99. There were added to
@@ -237,7 +239,8 @@ struct init_entry {
  */
 #define SYS_INIT_NAMED(name, init_fn_, level, prio)                                       \
 	static const Z_DECL_ALIGN(struct init_entry)                                      \
-		Z_INIT_ENTRY_SECTION(level, prio, 0) __used __noasan                      \
+		Z_INIT_ENTRY_SECTION(name, level, ZINIT_GET_PRIORITY(name, name), 0)      \
+		__used __noasan                                                           \
 		Z_INIT_ENTRY_NAME(name) = {.init_fn = {.sys = (init_fn_)},                \
 			Z_INIT_SYS_INIT_DEV_NULL}
 
