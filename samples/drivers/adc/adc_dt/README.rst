@@ -1,5 +1,5 @@
-.. zephyr:code-sample:: adc
-   :name: Analog-to-Digital Converter (ADC)
+.. zephyr:code-sample:: adc_dt
+   :name: Analog-to-Digital Converter (ADC) with devicetree
    :relevant-api: adc_interface
 
    Read analog inputs from ADC channels.
@@ -31,7 +31,7 @@ Configuration of channels (settings like gain, reference, or acquisition time)
 also needs to be specified in devicetree, in ADC controller child nodes. Also
 the ADC resolution and oversampling setting (if used) need to be specified
 there. See :zephyr_file:`boards/nrf52840dk_nrf52840.overlay
-<samples/drivers/adc/boards/nrf52840dk_nrf52840.overlay>` for an example of
+<samples/drivers/adc/adc_dt/boards/nrf52840dk_nrf52840.overlay>` for an example of
 such setup.
 
 Building and Running for ST Nucleo L073RZ
@@ -41,7 +41,7 @@ The sample can be built and executed for the
 :ref:`nucleo_l073rz_board` as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/adc
+   :zephyr-app: samples/drivers/adc/adc_dt
    :board: nucleo_l073rz
    :goals: build flash
    :compact:
