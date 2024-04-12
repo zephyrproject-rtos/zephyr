@@ -2130,21 +2130,13 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 			instance->ticks_slot_previous = 0U;
 		}
 
-		uint32_t ticker_ticks_slot;
-
-		if (TICKER_HAS_SLOT_WINDOW(ticker) && !ticker->ticks_slot) {
-			ticker_ticks_slot = HAL_TICKER_RESCHEDULE_MARGIN;
-		} else {
-			ticker_ticks_slot = ticker->ticks_slot;
-		}
-
 		/* If a reschedule is set pending, we will need to keep
 		 * the slot_previous information
 		 */
-		if (ticker_ticks_slot && (state == 2U) && !skip_collision &&
-		    !TICKER_RESCHEDULE_PENDING(ticker)) {
+		if ((ticker->ticks_slot != 0U) && (state == 2U) &&
+		    (skip_collision == 0U) && !TICKER_RESCHEDULE_PENDING(ticker)) {
 			instance->ticker_id_slot_previous = id_expired;
-			instance->ticks_slot_previous = ticker_ticks_slot;
+			instance->ticks_slot_previous = ticker->ticks_slot;
 		}
 #endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
