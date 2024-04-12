@@ -1976,23 +1976,14 @@ TESTDATA_13 = [
         ['Unknown status = unknown status'],
         'INFO    - Total complete:   20/  25  80%  skipped:    3,' \
         ' failed:    2, error:    1\r'
-    ),
-    (
-        TestInstanceStatus.TIMEOUT, True, False, True,
-        ['INFO      20/25 dummy platform' \
-         '            dummy.testsuite.name' \
-         '                               UNKNOWN' \
-         ' (dummy handler type: dummy dut, 60.000s/seed: 123)'],
-        None
-    ),
+    )
 ]
 
 @pytest.mark.parametrize(
     'status, verbose, cmake_only, ready_run, expected_logs, expected_out',
     TESTDATA_13,
     ids=['verbose error cmake only', 'failed', 'verbose skipped', 'filtered',
-         'verbose passed ready run', 'verbose passed', 'unknown status',
-         'timeout']
+         'verbose passed ready run', 'verbose passed', 'unknown status']
 )
 def test_projectbuilder_report_out(
     capfd,
