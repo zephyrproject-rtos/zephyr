@@ -104,3 +104,15 @@ tests:
       - mg100
     integration_platforms:
       - nrf52840dk/nrf52840
+  sample.mcumgr.smp_svr.bt.nrf54l15pdk.ext_flash:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-bt.conf"
+      - DTC_OVERLAY_FILE="boards/nrf54l15pdk_nrf54l15_cpuapp_ext_flash.overlay"
+      - mcuboot_CONF_FILE="boards/nrf54l15pdk_nrf54l15_cpuapp_ext_flash.conf"
+      - mcuboot_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l15pdk_nrf54l15_cpuapp_ext_flash.overlay"
+    extra_configs:
+      - CONFIG_PM_OVERRIDE_EXTERNAL_DRIVER_CHECK=y
+    platform_allow:
+      - nrf54l15pdk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54l15pdk/nrf54l15/cpuapp
