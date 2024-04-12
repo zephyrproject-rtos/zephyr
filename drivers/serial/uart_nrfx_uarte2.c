@@ -242,22 +242,21 @@ static void on_rx_done(const struct device *dev, const nrfx_uarte_event_t *event
 	struct uarte_nrfx_data *data = dev->data;
 	struct uart_event evt;
 
-	if (event->data.rx.length) {
-		if (data->async->err) {
-			evt.type = UART_RX_STOPPED;
-			evt.data.rx_stop.reason = UARTE_ERROR_FROM_MASK(data->async->err);
-			evt.data.rx_stop.data.buf = event->data.rx.p_buffer;
-			evt.data.rx_stop.data.len = event->data.rx.length;
-			/* Keep error code for uart_err_check(). */
-			if (!IS_INT_DRIVEN_API(dev)) {
-				data->async->err = 0;
-			}
-		} else {
-			evt.type = UART_RX_RDY,
-			evt.data.rx.buf = event->data.rx.p_buffer,
-			evt.data.rx.len = event->data.rx.length,
-			evt.data.rx.offset = 0;
+	if (data->async->err) {
+		evt.type = UART_RX_STOPPED;
+		evt.data.rx_stop.reason = UARTE_ERROR_FROM_MASK(data->async->err);
+		evt.data.rx_stop.data.buf = event->data.rx.p_buffer;
+		evt.data.rx_stop.data.len = event->data.rx.length;
+		/* Keep error code for uart_err_check(). */
+		if (!IS_INT_DRIVEN_API(dev)) {
+			data->async->err = 0;
 		}
+		data->async->user_callback(dev, &evt, data->async->user_data);
+	} else if (event->data.rx.length) {
+		evt.type = UART_RX_RDY,
+		evt.data.rx.buf = event->data.rx.p_buffer,
+		evt.data.rx.len = event->data.rx.length,
+		evt.data.rx.offset = 0;
 		data->async->user_callback(dev, &evt, data->async->user_data);
 	}
 
