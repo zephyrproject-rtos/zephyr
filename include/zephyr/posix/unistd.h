@@ -263,6 +263,7 @@ extern char *optarg;
 extern int opterr, optind, optopt;
 #endif
 
+int getentropy(void *buffer, size_t length);
 pid_t getpid(void);
 unsigned sleep(unsigned int seconds);
 int usleep(useconds_t useconds);
