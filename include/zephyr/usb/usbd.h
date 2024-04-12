@@ -698,20 +698,6 @@ int usbd_ep_clear_halt(struct usbd_contex *uds_ctx, uint8_t ep);
 bool usbd_ep_is_halted(struct usbd_contex *uds_ctx, uint8_t ep);
 
 /**
- * @brief Allocate buffer for USB device control request
- *
- * Allocate a new buffer from controller's driver buffer pool.
- *
- * @param[in] uds_ctx Pointer to USB device support context
- * @param[in] ep      Endpoint address
- * @param[in] size    Size of the request buffer
- *
- * @return pointer to allocated request or NULL on error.
- */
-struct net_buf *usbd_ep_ctrl_buf_alloc(struct usbd_contex *const uds_ctx,
-				       const uint8_t ep, const size_t size);
-
-/**
  * @brief Allocate buffer for USB device request
  *
  * Allocate a new buffer from controller's driver buffer pool.
