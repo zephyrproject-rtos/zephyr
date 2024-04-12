@@ -7,6 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(log_backend_net, CONFIG_LOG_DEFAULT_LEVEL);
 
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_output.h>
@@ -16,11 +17,7 @@ LOG_MODULE_REGISTER(log_backend_net, CONFIG_LOG_DEFAULT_LEVEL);
 /* Set this to 1 if you want to see what is being sent to server */
 #define DEBUG_PRINTING 0
 
-#if DEBUG_PRINTING
-#define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
-#else
-#define DBG(fmt, ...)
-#endif
+#define DBG(fmt, ...) IF_ENABLED(DEBUG_PRINTING, (printk(fmt, ##__VA_ARGS__)))
 
 #if defined(CONFIG_NET_IPV6) || CONFIG_NET_HOSTNAME_ENABLE
 #define MAX_HOSTNAME_LEN NET_IPV6_ADDR_LEN
@@ -38,22 +35,46 @@ static uint32_t log_format_current = CONFIG_LOG_BACKEND_NET_OUTPUT_DEFAULT;
 
 static struct log_backend_net_ctx {
 	int sock;
+	bool is_tcp;
 } ctx = {
 	.sock = -1,
 };
-
-const struct log_backend *log_backend_net_get(void);
 
 static int line_out(uint8_t *data, size_t length, void *output_ctx)
 {
 	struct log_backend_net_ctx *ctx = (struct log_backend_net_ctx *)output_ctx;
 	int ret = -ENOMEM;
+	struct msghdr msg = { 0 };
+	struct iovec io_vector[2];
+	int pos = 0;
 
 	if (ctx == NULL) {
 		return length;
 	}
 
-	ret = zsock_send(ctx->sock, data, length, ZSOCK_MSG_DONTWAIT);
+#if defined(CONFIG_NET_TCP)
+	char len[sizeof("123456789")];
+
+	if (ctx->is_tcp) {
+		(void)snprintk(len, sizeof(len), "%zu ", length);
+		io_vector[pos].iov_base = (void *)len;
+		io_vector[pos].iov_len = strlen(len);
+		pos++;
+	}
+#else
+	if (ctx->is_tcp) {
+		return -ENOTSUP;
+	}
+#endif
+
+	io_vector[pos].iov_base = (void *)data;
+	io_vector[pos].iov_len = length;
+	pos++;
+
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = pos;
+
+	ret = zsock_sendmsg(ctx->sock, &msg, ctx->is_tcp ? 0 : ZSOCK_MSG_DONTWAIT);
 	if (ret < 0) {
 		goto fail;
 	}
@@ -71,7 +92,7 @@ static int do_net_init(struct log_backend_net_ctx *ctx)
 	struct sockaddr_in6 local_addr6 = {0};
 	struct sockaddr_in local_addr4 = {0};
 	socklen_t server_addr_len;
-	int ret;
+	int ret, proto = IPPROTO_UDP, type = SOCK_DGRAM;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && server_addr.sa_family == AF_INET) {
 		local_addr = (struct sockaddr *)&local_addr4;
@@ -92,7 +113,12 @@ static int do_net_init(struct log_backend_net_ctx *ctx)
 
 	local_addr->sa_family = server_addr.sa_family;
 
-	ret = zsock_socket(server_addr.sa_family, SOCK_DGRAM, IPPROTO_UDP);
+	if (ctx->is_tcp) {
+		proto = IPPROTO_TCP;
+		type = SOCK_STREAM;
+	}
+
+	ret = zsock_socket(server_addr.sa_family, type, proto);
 	if (ret < 0) {
 		ret = -errno;
 		DBG("Cannot get socket (%d)\n", ret);
@@ -171,7 +197,9 @@ err:
 static void process(const struct log_backend *const backend,
 		    union log_msg_generic *msg)
 {
-	uint32_t flags = LOG_OUTPUT_FLAG_FORMAT_SYSLOG | LOG_OUTPUT_FLAG_TIMESTAMP;
+	uint32_t flags = LOG_OUTPUT_FLAG_FORMAT_SYSLOG |
+			 LOG_OUTPUT_FLAG_TIMESTAMP |
+			 LOG_OUTPUT_FLAG_THREAD;
 
 	if (panic_mode) {
 		return;
@@ -192,7 +220,7 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 	return 0;
 }
 
-bool log_backend_net_set_addr(const char *addr)
+static bool check_net_init_done(void)
 {
 	bool ret = false;
 
@@ -217,9 +245,18 @@ bool log_backend_net_set_addr(const char *addr)
 
 		ctx->sock = -1;
 
-		if (!ret) {
-			return ret;
-		}
+		return ret;
+	}
+
+	return true;
+}
+
+bool log_backend_net_set_addr(const char *addr)
+{
+	bool ret = check_net_init_done();
+
+	if (!ret) {
+		return ret;
 	}
 
 	net_sin(&server_addr)->sin_port = htons(514);
@@ -233,6 +270,27 @@ bool log_backend_net_set_addr(const char *addr)
 	return ret;
 }
 
+bool log_backend_net_set_ip(const struct sockaddr *addr)
+{
+	bool ret = check_net_init_done();
+
+	if (!ret) {
+		return ret;
+	}
+
+	if ((IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) ||
+	    (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == AF_INET6)) {
+		memcpy(&server_addr, addr, sizeof(server_addr));
+
+		net_port_set_default(&server_addr, 514);
+	} else {
+		LOG_ERR("Unknown address family");
+		return false;
+	}
+
+	return ret;
+}
+
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
 void log_backend_net_hostname_set(char *hostname, size_t len)
 {
@@ -241,13 +299,29 @@ void log_backend_net_hostname_set(char *hostname, size_t len)
 }
 #endif
 
+void log_backend_net_start(void)
+{
+	const struct log_backend *backend = log_backend_net_get();
+
+	if (!log_backend_is_active(backend)) {
+		log_backend_activate(backend, backend->cb->ctx);
+	}
+}
+
 static void init_net(struct log_backend const *const backend)
 {
 	ARG_UNUSED(backend);
 
 	if (strlen(CONFIG_LOG_BACKEND_NET_SERVER) != 0) {
-		bool ret = log_backend_net_set_addr(CONFIG_LOG_BACKEND_NET_SERVER);
+		const char *server = CONFIG_LOG_BACKEND_NET_SERVER;
+		bool ret;
 
+		if (memcmp(server, "tcp://", sizeof("tcp://") - 1) == 0) {
+			server += sizeof("tcp://") - 1;
+			ctx.is_tcp = true;
+		}
+
+		ret = log_backend_net_set_addr(server);
 		if (!ret) {
 			return;
 		}

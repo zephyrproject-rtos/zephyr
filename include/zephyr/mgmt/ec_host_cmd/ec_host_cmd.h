@@ -10,6 +10,8 @@
 /**
  * @brief EC Host Command Interface
  * @defgroup ec_host_cmd_interface EC Host Command Interface
+ * @since 2.4
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  */

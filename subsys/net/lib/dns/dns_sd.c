@@ -667,33 +667,40 @@ static bool port_in_use_sockaddr(uint16_t proto, uint16_t port,
 		|| net_context_port_in_use(proto, port, anyp);
 }
 
-static bool port_in_use(uint16_t proto, uint16_t port, const struct in_addr *addr4,
-	const struct in6_addr *addr6)
+static bool port_in_use(uint16_t proto, uint16_t port,
+			const struct in_addr *addr4,
+			const struct in6_addr *addr6)
 {
-	bool r;
-	struct sockaddr sa;
+	bool ret = false;
 
 	if (addr4 != NULL) {
-		net_sin(&sa)->sin_family = AF_INET;
-		net_sin(&sa)->sin_addr = *addr4;
+		struct sockaddr_in sa = { 0 };
 
-		r = port_in_use_sockaddr(proto, port, &sa);
-		if (r) {
-			return true;
+		sa.sin_family = AF_INET;
+		sa.sin_addr = *addr4;
+
+		ret = port_in_use_sockaddr(proto, port,
+					   (struct sockaddr *)&sa);
+		if (ret) {
+			goto out;
 		}
 	}
 
 	if (addr6 != NULL) {
-		net_sin6(&sa)->sin6_family = AF_INET6;
-		net_sin6(&sa)->sin6_addr = *addr6;
+		struct sockaddr_in6 sa = { 0 };
 
-		r = port_in_use_sockaddr(proto, port, &sa);
-		if (r) {
-			return true;
+		sa.sin6_family = AF_INET6;
+		sa.sin6_addr = *addr6;
+
+		ret = port_in_use_sockaddr(proto, port,
+					   (struct sockaddr *)&sa);
+		if (ret) {
+			goto out;
 		}
 	}
 
-	return false;
+out:
+	return ret;
 }
 #else /* CONFIG_NET_TEST */
 static inline bool port_in_use(uint16_t proto, uint16_t port, const struct in_addr *addr4,
@@ -857,6 +864,7 @@ int dns_sd_handle_service_type_enum(const struct dns_sd_rec *inst,
 
 	if (!port_in_use(proto, ntohs(*(inst->port)), addr4, addr6)) {
 		/* Service is not yet bound, so do not advertise */
+		NET_DBG("service not bound");
 		return -EHOSTDOWN;
 	}
 

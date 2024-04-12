@@ -1,0 +1,31 @@
+# BMA4XX 3-axis accelerometer config options
+#
+# Copyright (c) 2023 Google LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BMA4XX
+	bool "BMA4XX 3-axis acceleration sensor"
+	default y
+	depends on DT_HAS_BOSCH_BMA4XX_ENABLED
+	depends on SENSOR_ASYNC_API
+	select I2C
+	help
+	  Enable driver for Bosch BMA4XX (I2C-based)
+
+config BMA4XX_TEMPERATURE
+	bool "Allow reading the BMA4XX die temperature"
+	default n
+	depends on BMA4XX
+	help
+	  Allow reading the BMA4xx's on-chip temperature sensor. This creates
+	  extra bus activity and increases code size.
+
+config EMUL_BMA4XX
+	bool "Emulator for the BMA4XX"
+	default y
+	depends on BMA4XX
+	depends on EMUL
+	help
+	  Enable the hardware emulator for the BMA4XX. Doing so allows exercising
+	  sensor APIs for this sensor in native_sim and qemu.

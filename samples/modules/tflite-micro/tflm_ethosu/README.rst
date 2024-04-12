@@ -19,6 +19,13 @@ Ethos-U custom operator.
 Building and running
 ********************
 
+Add the tflite-micro module to your West manifest and pull it:
+
+.. code-block:: console
+
+    west config manifest.project-filter -- +tflite-micro
+    west update
+
 This application can be built and run on any Arm Ethos-U capable platform, for
 example Corstone(TM)-300. A reference implementation of Corstone-300 can be
 downloaded either as a FPGA bitfile for the

@@ -19,6 +19,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,bt-c2h-uart = &usart1;
 	};
 
 	aliases {

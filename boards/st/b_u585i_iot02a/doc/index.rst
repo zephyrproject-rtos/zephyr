@@ -230,11 +230,11 @@ option bit TZEN will be set).
 
    .. code-block:: bash
 
-      $ ./build/tfm/regression.sh
+      $ ./build/tfm/api_ns/regression.sh
       $ west flash
 
 Please note that, after having run a TFM sample on the board, you will need to
-run `./build/tfm/regression.sh` once more to clean up the board from secure
+run `./build/tfm/api_ns/regression.sh` once more to clean up the board from secure
 options and get back the platform back to a "normal" state and be able to run
 usual, non-TFM, binaries.
 Also note that, even then, TZEN will remain set, and you will need to use
@@ -334,34 +334,6 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
    :zephyr-app: samples/basic/blinky
    :board: b_u585i_iot02a
    :goals: debug
-
-Building a secure/non-secure with Arm |reg| TrustZone |reg|
-===========================================================
-
-The TF-M applications can be run on this board, thanks to its Arm |reg| TrustZone |reg|
-support.
-In TF-M configuration, Zephyr is run on the non-secure domain. A non-secure image
-can be generated using ``b_u585i_iot02a/stm32u585xx/ns`` as build target.
-
-.. code-block:: bash
-
-   $ west build -b b_u585i_iot02a/stm32u585xx/ns path/to/source/directory
-
-Note: When building the ``*_ns`` image with TF-M, ``build/tfm/api_ns/postbuild.sh`` bash script
-is run automatically in a post-build step to make some required flash layout changes.
-
-Once the build is completed, run the following script to initialize the option bytes.
-
-.. code-block:: bash
-
-   $ build/tfm/api_ns/regression.sh
-
-Finally, to flash the board, run:
-
-.. code-block:: bash
-
-   $ west flash
-
 
 Disabling TrustZone |reg| on the board
 ======================================

@@ -143,6 +143,8 @@ already supported, which can also be re-used on this mimxrt1160_evk board:
 +-----------+------------+-------------------------------------+
 | FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
+| PIT       | on-chip    | pit                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/nxp/mimxrt1160_evk/mimxrt1160_evk_mimxrt1166_cm7_defconfig`

@@ -1,0 +1,210 @@
+/*
+ * Copyright (c) 2024 Charles Dias <charlesdias.cd@outlook.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h743Xi.dtsi>
+#include <st/h7/stm32h743vitx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "WeAct Studio MiniSTM32H743 Core Board";
+	compatible = "weact,mini-stm32h743";
+
+	chosen {
+		zephyr,console = &usb_cdc_acm_uart;
+		zephyr,shell-uart = &usb_cdc_acm_uart;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,display = &st7735r_tft;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		user_led: led {
+			gpios = <&gpioe 3 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User PB";
+			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &user_led;
+		sw0 = &user_button;
+		spi-flash0 = &w25q64_spi;
+		watchdog0 = &iwdg;
+		sdhc0 = &sdmmc1;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <96>;
+	div-p = <2>;
+	div-q = <10>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(240)>;
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <1>;
+	d2ppre1 = <1>;
+	d2ppre2 = <1>;
+	d3ppre = <1>;
+};
+
+&sdmmc1 {
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+	cd-gpios = <&gpiod 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	usb_cdc_acm_uart: cdc_acm_uart {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
+
+&quadspi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pb6
+		&quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
+		&quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
+	flash-id = <1>;
+	status = "okay";
+
+	w25q64_qspi: qspi-nor-flash@90000000 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0x90000000 DT_SIZE_M(64)>; /* 64 Mbits */
+		qspi-max-frequency = <40000000>;
+		status = "okay";
+		spi-bus-width = <4>;
+		writeoc = "PP_1_1_4";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			slot0_partition: partition@0 {
+				reg = <0x00000000 DT_SIZE_M(64)>;
+			};
+		};
+	};
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pb3 &spi1_miso_pb4 &spi1_mosi_pd7>;
+	cs-gpios = <&gpiod 6 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+	status = "okay";
+	w25q64_spi: spi-nor-flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		status = "okay";
+		jedec-id = [ef 40 17];
+		has-dpd;
+		t-enter-dpd = <3500>;
+		t-exit-dpd = <3500>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x00000000 DT_SIZE_M(64)>;
+			};
+		};
+	};
+};
+
+&spi4 {
+	pinctrl-0 = <&spi4_sck_pe12 &spi4_mosi_pe14>;
+	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	st7735r_tft: st7735r@0 {
+		compatible = "sitronix,st7735r";
+		spi-max-frequency = <20000000>;
+		reg = <0>;
+		cmd-data-gpios = <&gpioe 13 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpioe 10 GPIO_ACTIVE_HIGH>;
+		width = <160>;
+		height = <80>;
+		inversion-on;
+		rgb-is-inverted;
+		x-offset = <1>;
+		y-offset = <26>;
+		pwctr1 = [A2 02 84];
+		pwctr2 = [C5];
+		pwctr3 = [0A 00];
+		pwctr4 = [8A 2A];
+		pwctr5 = [8A EE];
+		invctr = <7>;
+		frmctr1 = [01 2C 2D];
+		frmctr2 = [01 2C 2D];
+		frmctr3 = [01 2C 2D 01 2C 2D];
+		vmctr1 = <14>;
+		gamctrp1 = [02 1C 07 12 37 32 29 2D 29 25 2B 39 00 01 03 10];
+		gamctrn1 = [03 1D 07 06 2E 2C 29 2D 2E 2E 37 3F 00 00 02 10];
+		colmod = <5>;
+		/* Set D3 (RGB) bit to 1. LV_COLOR_16_SWAP is enabled by default in Kconfig */
+		madctl = <120>; /* Set to <184> to rotate the image 180 degrees. */
+		caset = [00 01 00 a0];
+		raset = [00 1a 00 69];
+	};
+};
+
+&rng {
+	status = "okay";
+};
+
+&backup_sram {
+	status = "okay";
+};
+
+&iwdg1 {
+	status = "okay";
+};

@@ -18,6 +18,8 @@
 
 /**
  * @defgroup edac EDAC API
+ * @since 2.5
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */

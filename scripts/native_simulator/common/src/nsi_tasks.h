@@ -51,7 +51,7 @@ extern "C" {
  */
 #define NSI_TASK(fn, level, prio)	\
 	static void (* const NSI_CONCAT(__nsi_task_, fn))(void) \
-	__attribute__((__used__)) \
+	__attribute__((__used__)) NSI_NOASAN \
 	__attribute__((__section__(".nsi_" #level NSI_STRINGIFY(prio) "_task")))\
 	= fn; \
 	/* Let's cross-check the macro level is a valid one, so we don't silently drop it */ \

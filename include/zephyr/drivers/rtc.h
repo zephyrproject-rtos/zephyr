@@ -16,6 +16,8 @@
 /**
  * @brief RTC Interface
  * @defgroup rtc_interface RTC Interface
+ * @since 3.4
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  */

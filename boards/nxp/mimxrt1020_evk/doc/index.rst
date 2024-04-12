@@ -119,8 +119,8 @@ already supported, which can also be re-used on this mimxrt1020_evk board:
 | FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-``boards/arm/mimxrt1020_evk/mimxrt1020_evk_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/nxp/mimxrt1020_evk/mimxrt1020_evk_defconfig`
 
 Other hardware features are not currently supported by the port.
 

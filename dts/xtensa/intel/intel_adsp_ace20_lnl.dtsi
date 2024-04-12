@@ -62,8 +62,9 @@
 			d3: off {
 				compatible = "zephyr,power-state";
 				power-state-name = "soft-off";
-				min-residency-us = <2147483647>;
+				min-residency-us = <0>;
 				exit-latency-us = <0>;
+				status = "disabled";
 			};
 		};
 	};
@@ -173,112 +174,6 @@
 		hdamlssp: hdamlssp@d00 {
 			compatible = "intel,adsp-hda-ssp-cap";
 			reg = <0xD00 0x40>;
-			status = "okay";
-		};
-
-		/*
-		 * FIXME this is modeling individual alh channels/instances
-		 * with node labels, which has problems. A better representation
-		 * is discussed here:
-		 *
-		 * https://github.com/zephyrproject-rtos/zephyr/pull/50287#discussion_r974591009
-		 *
-		 * The hardware actually supports 16 ALH streams/FIFOs. Below description does
-		 * not fully represent hardware capabilities and is expected to be modified.
-		 */
-		alh0: alh0@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
-		alh1: alh1@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
-		alh2: alh2@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
-		alh3: alh3@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
-		alh4: alh4@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
-		alh5: alh5@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
-		alh6: alh6@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
-		alh7: alh7@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
-		alh8: alh8@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
-		alh9: alh9@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
-		alh10: alh10@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
-		alh11: alh11@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
-		alh12: alh12@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
-		alh13: alh13@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
-		alh14: alh14@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
-			status = "okay";
-		};
-
-		alh15: alh15@24400 {
-			compatible = "intel,alh-dai";
-			reg = <0x00024400 0x00024600>;
 			status = "okay";
 		};
 
@@ -426,37 +321,25 @@
 				compatible = "intel,adsp-power-domain";
 				bit-position = <15>;
 			};
-			hub_hp_domain: hub_hpp_domain {
+			ml0_domain: ml0_domain {
 				compatible = "intel,adsp-power-domain";
-				bit-position = <6>;
-			};
-			io0_domain: io0_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <8>;
+				bit-position = <12>;
 			};
 			io1_domain: io1_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <9>;
 			};
-			io2_domain: io2_domain {
+			io0_domain: io0_domain {
 				compatible = "intel,adsp-power-domain";
-				bit-position = <10>;
+				bit-position = <8>;
 			};
-			io3_domain: io3_domain {
+			hub_hp_domain: hub_hp_domain {
 				compatible = "intel,adsp-power-domain";
-				bit-position = <11>;
+				bit-position = <6>;
 			};
 			hst_domain: hst_domain {
 				compatible = "intel,adsp-power-domain";
-				bit-position = <4>;
-			};
-			ml0_domain: ml0_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <12>;
-			};
-			ml1_domain: ml1_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <13>;
+				bit-position = <5>;
 			};
 		};
 
@@ -489,7 +372,7 @@
 			dma-channels = <9>;
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
-			dma-copy-alignment = <32>;
+			dma-copy-alignment = <16>;
 			interrupts = <13 0 0>;
 			interrupt-parent = <&ace_intc>;
 			status = "okay";
@@ -502,7 +385,7 @@
 			dma-channels = <11>;
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
-			dma-copy-alignment = <32>;
+			dma-copy-alignment = <16>;
 			interrupts = <12 0 0>;
 			interrupt-parent = <&ace_intc>;
 			status = "okay";
@@ -523,7 +406,7 @@
 			dma-channels = <9>;
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
-			dma-copy-alignment = <32>;
+			dma-copy-alignment = <16>;
 			status = "okay";
 		};
 
@@ -534,7 +417,7 @@
 			dma-channels = <11>;
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
-			dma-copy-alignment = <32>;
+			dma-copy-alignment = <16>;
 			status = "okay";
 		};
 

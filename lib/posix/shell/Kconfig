@@ -10,6 +10,7 @@ config POSIX_SHELL
 	help
 	  Compile the parent `posix` shell command.
 
+rsource "Kconfig.env"
 rsource "Kconfig.uname"
 
 endif # SHELL

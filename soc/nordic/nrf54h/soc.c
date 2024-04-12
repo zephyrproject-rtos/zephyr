@@ -12,6 +12,7 @@
 
 #include <hal/nrf_hsfll.h>
 #include <hal/nrf_lrcconf.h>
+#include <hal/nrf_spu.h>
 #include <soc/nrfx_coredep.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
@@ -25,6 +26,12 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define FICR_ADDR_GET(node_id, name)                                           \
 	DT_REG_ADDR(DT_PHANDLE_BY_NAME(node_id, nordic_ficrs, name)) +         \
 		DT_PHA_BY_NAME(node_id, nordic_ficrs, name, offset)
+
+#define SPU_INSTANCE_GET(p_addr)                                               \
+	((NRF_SPU_Type *)((p_addr) & (ADDRESS_REGION_Msk |                     \
+				      ADDRESS_SECURITY_Msk |                   \
+				      ADDRESS_DOMAIN_Msk |                     \
+				      ADDRESS_BUS_Msk)))
 
 static void power_domain_init(void)
 {
@@ -44,10 +51,6 @@ static void power_domain_init(void)
 
 	nrf_lrcconf_retain_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_MAIN, true);
 	nrf_lrcconf_retain_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_DOMAIN_0, true);
-
-#if defined(CONFIG_SOC_NRF54H20_ENGA_CPUAPP)
-	nrf_lrcconf_poweron_force_set(NRF_LRCCONF000, NRF_LRCCONF_POWER_DOMAIN_0, true);
-#endif
 }
 
 static int trim_hsfll(void)
@@ -69,12 +72,6 @@ static int trim_hsfll(void)
 	nrf_hsfll_trim_set(hsfll, &trim);
 
 	nrf_hsfll_task_trigger(hsfll, NRF_HSFLL_TASK_FREQ_CHANGE);
-#if defined(CONFIG_SOC_NRF54H20_ENGA_CPUAPP) || defined(CONFIG_SOC_NRF54H20_ENGA_CPURAD)
-	/* In this HW revision, HSFLL task frequency change needs to be
-	 * triggered additional time to take effect.
-	 */
-	nrf_hsfll_task_trigger(hsfll, NRF_HSFLL_TASK_FREQ_CHANGE);
-#endif
 
 	LOG_DBG("NRF_HSFLL->TRIM.VSUP = %d", hsfll->TRIM.VSUP);
 	LOG_DBG("NRF_HSFLL->TRIM.COARSE = %d", hsfll->TRIM.COARSE);
@@ -92,6 +89,16 @@ static int nordicsemi_nrf54h_init(void)
 	power_domain_init();
 
 	trim_hsfll();
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ccm030), okay)
+	/* DMASEC is set to non-secure by default, which prevents CCM from
+	 * accessing secure memory. Change DMASEC to secure.
+	 */
+	uint32_t ccm030_addr = DT_REG_ADDR(DT_NODELABEL(ccm030));
+	NRF_SPU_Type *spu = SPU_INSTANCE_GET(ccm030_addr);
+
+	nrf_spu_periph_perm_dmasec_set(spu, nrf_address_slave_get(ccm030_addr), true);
+#endif
 
 	return 0;
 }

@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(aws, LOG_LEVEL_DBG);
 
 #define SNTP_SERVER "0.pool.ntp.org"
 
-#define AWS_BROKER_PORT "8883"
+#define AWS_BROKER_PORT CONFIG_AWS_MQTT_PORT
 
 #define MQTT_BUFFER_SIZE 256u
 #define APP_BUFFER_SIZE	 4096u
@@ -53,6 +53,10 @@ static const char mqtt_client_name[] = CONFIG_AWS_THING_NAME;
 static uint32_t messages_received_counter;
 static bool do_publish;	  /* Trigger client to publish */
 static bool do_subscribe; /* Trigger client to subscribe */
+
+#if (CONFIG_AWS_MQTT_PORT == 443 && !defined(CONFIG_MQTT_LIB_WEBSOCKET))
+static const char * const alpn_list[] = {"x-amzn-mqtt-ca"};
+#endif
 
 #define TLS_TAG_DEVICE_CERTIFICATE 1
 #define TLS_TAG_DEVICE_PRIVATE_KEY 1
@@ -266,6 +270,10 @@ static void aws_client_setup(void)
 	tls_config->sec_tag_count = ARRAY_SIZE(sec_tls_tags);
 	tls_config->hostname = CONFIG_AWS_ENDPOINT;
 	tls_config->cert_nocopy = TLS_CERT_NOCOPY_NONE;
+#if (CONFIG_AWS_MQTT_PORT == 443 && !defined(CONFIG_MQTT_LIB_WEBSOCKET))
+	tls_config->alpn_protocol_name_list = alpn_list;
+	tls_config->alpn_protocol_name_count = ARRAY_SIZE(alpn_list);
+#endif
 }
 
 struct backoff_context {
@@ -356,7 +364,7 @@ void aws_client_loop(void)
 {
 	int rc;
 	int timeout;
-	struct zsock_pollfd fds;
+	struct pollfd fds;
 
 	aws_client_setup();
 
@@ -366,13 +374,13 @@ void aws_client_loop(void)
 	}
 
 	fds.fd = client_ctx.transport.tcp.sock;
-	fds.events = ZSOCK_POLLIN;
+	fds.events = POLLIN;
 
 	for (;;) {
 		timeout = mqtt_keepalive_time_left(&client_ctx);
-		rc = zsock_poll(&fds, 1u, timeout);
+		rc = poll(&fds, 1u, timeout);
 		if (rc >= 0) {
-			if (fds.revents & ZSOCK_POLLIN) {
+			if (fds.revents & POLLIN) {
 				rc = mqtt_input(&client_ctx);
 				if (rc != 0) {
 					LOG_ERR("Failed to read MQTT input: %d", rc);
@@ -380,7 +388,7 @@ void aws_client_loop(void)
 				}
 			}
 
-			if (fds.revents & (ZSOCK_POLLHUP | ZSOCK_POLLERR)) {
+			if (fds.revents & (POLLHUP | POLLERR)) {
 				LOG_ERR("Socket closed/error");
 				break;
 			}
@@ -409,7 +417,7 @@ void aws_client_loop(void)
 cleanup:
 	mqtt_disconnect(&client_ctx);
 
-	zsock_close(fds.fd);
+	close(fds.fd);
 	fds.fd = -1;
 }
 
@@ -436,27 +444,29 @@ int sntp_sync_time(void)
 static int resolve_broker_addr(struct sockaddr_in *broker)
 {
 	int ret;
-	struct zsock_addrinfo *ai = NULL;
+	struct addrinfo *ai = NULL;
 
-	const struct zsock_addrinfo hints = {
+	const struct addrinfo hints = {
 		.ai_family = AF_INET,
 		.ai_socktype = SOCK_STREAM,
 		.ai_protocol = 0,
 	};
+	char port_string[6] = {0};
 
-	ret = zsock_getaddrinfo(CONFIG_AWS_ENDPOINT, AWS_BROKER_PORT, &hints, &ai);
+	sprintf(port_string, "%d", AWS_BROKER_PORT);
+	ret = getaddrinfo(CONFIG_AWS_ENDPOINT, port_string, &hints, &ai);
 	if (ret == 0) {
 		char addr_str[INET_ADDRSTRLEN];
 
 		memcpy(broker, ai->ai_addr, MIN(ai->ai_addrlen, sizeof(struct sockaddr_storage)));
 
-		zsock_inet_ntop(AF_INET, &broker->sin_addr, addr_str, sizeof(addr_str));
+		inet_ntop(AF_INET, &broker->sin_addr, addr_str, sizeof(addr_str));
 		LOG_INF("Resolved: %s:%u", addr_str, htons(broker->sin_port));
 	} else {
 		LOG_ERR("failed to resolve hostname err = %d (errno = %d)", ret, errno);
 	}
 
-	zsock_freeaddrinfo(ai);
+	freeaddrinfo(ai);
 
 	return ret;
 }

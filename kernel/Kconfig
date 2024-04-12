@@ -192,10 +192,27 @@ config THREAD_STACK_INFO
 	  This option allows each thread to store the thread stack info into
 	  the k_thread data structure.
 
+config THREAD_STACK_MEM_MAPPED
+	bool "Stack to be memory mapped at runtime"
+	depends on MMU && ARCH_SUPPORTS_MEM_MAPPED_STACKS
+	select THREAD_STACK_INFO
+	select THREAD_ABORT_NEED_CLEANUP
+	help
+	  This option changes behavior where the thread stack is memory
+	  mapped with guard pages on both ends to catch undesired
+	  accesses.
+
 config THREAD_ABORT_HOOK
 	bool
 	help
 	  Used by portability layers to modify locally managed status mask.
+
+config THREAD_ABORT_NEED_CLEANUP
+	bool
+	help
+	  This option enables the bits to clean up the current thread if
+	  k_thread_abort(_current) is called, as the cleanup cannot be
+	  running in the current thread stack.
 
 config THREAD_CUSTOM_DATA
 	bool "Thread custom data"
@@ -317,18 +334,17 @@ config SCHED_MULTIQ
 	depends on !SCHED_DEADLINE
 	help
 	  When selected, the scheduler ready queue will be implemented
-	  as the classic/textbook array of lists, one per priority
-	  (max 32 priorities).  This corresponds to the scheduler
-	  algorithm used in Zephyr versions prior to 1.12.  It incurs
-	  only a tiny code size overhead vs. the "dumb" scheduler and
-	  runs in O(1) time in almost all circumstances with very low
-	  constant factor.  But it requires a fairly large RAM budget
-	  to store those list heads, and the limited features make it
-	  incompatible with features like deadline scheduling that
-	  need to sort threads more finely, and SMP affinity which
-	  need to traverse the list of threads.  Typical applications
-	  with small numbers of runnable threads probably want the
-	  DUMB scheduler.
+	  as the classic/textbook array of lists, one per priority.
+	  This corresponds to the scheduler algorithm used in Zephyr
+	  versions prior to 1.12.  It incurs only a tiny code size
+	  overhead vs. the "dumb" scheduler and runs in O(1) time
+	  in almost all circumstances with very low constant factor.
+	  But it requires a fairly large RAM budget to store those list
+	  heads, and the limited features make it incompatible with
+	  features like deadline scheduling that need to sort threads
+	  more finely, and SMP affinity which need to traverse the list
+	  of threads.  Typical applications with small numbers of runnable
+	  threads probably want the DUMB scheduler.
 
 endchoice # SCHED_ALGORITHM
 

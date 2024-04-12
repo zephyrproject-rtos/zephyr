@@ -110,6 +110,8 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | FTFE      | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
+| PIT       | on-chip    | pit                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in
 :zephyr_file:`boards/nxp/frdm_k64f/frdm_k64f_defconfig`

@@ -438,8 +438,9 @@ void intel_adsp_hda_dma_isr(void)
 #if CONFIG_DMA_INTEL_ADSP_HDA_TIMING_L1_EXIT
 	struct dma_context *dma_ctx;
 	const struct intel_adsp_hda_dma_cfg *cfg;
-	bool clear_l1_exit = false;
+	bool triggered_interrupts = false;
 	int i, j;
+	int expected_interrupts = 0;
 	const struct device *host_dev[] = {
 #if CONFIG_DMA_INTEL_ADSP_HDA_HOST_OUT
 		DT_FOREACH_STATUS_OKAY(intel_adsp_hda_host_out, DEVICE_DT_GET_AND_COMMA)
@@ -449,25 +450,44 @@ void intel_adsp_hda_dma_isr(void)
 #endif
 	};
 
+	/*
+	 * To initiate transfer, DSP must be in L0 state. Once the transfer is started, DSP can go
+	 * to the low power L1 state, and the transfer will be able to continue and finish in L1
+	 * state. Interrupts are configured to trigger after the first 32 bytes of data arrive.
+	 * Once such an interrupt arrives, the transfer has already started. If all expected
+	 * transfers have started, it is safe to allow the low power L1 state.
+	 */
+
 	for (i = 0; i < ARRAY_SIZE(host_dev); i++) {
 		dma_ctx = (struct dma_context *)host_dev[i]->data;
 		cfg = host_dev[i]->config;
 
 		for (j = 0; j < dma_ctx->dma_channels; j++) {
-			if (atomic_test_bit(dma_ctx->atomic, j)) {
-				clear_l1_exit |=
-					intel_adsp_hda_check_buffer_interrupt(cfg->base,
-									      cfg->regblock_size,
-									      j);
+			if (!atomic_test_bit(dma_ctx->atomic, j))
+				continue;
+
+			if (!intel_adsp_hda_is_buffer_interrupt_enabled(cfg->base,
+									cfg->regblock_size, j))
+				continue;
+
+			if (intel_adsp_hda_check_buffer_interrupt(cfg->base,
+								  cfg->regblock_size, j)) {
+				triggered_interrupts = true;
 				intel_adsp_hda_disable_buffer_interrupt(cfg->base,
 									cfg->regblock_size, j);
 				intel_adsp_hda_clear_buffer_interrupt(cfg->base,
 								      cfg->regblock_size, j);
+			} else {
+				expected_interrupts++;
 			}
 		}
 	}
 
-	if (clear_l1_exit) {
+	/*
+	 * Allow entering low power L1 state only after all enabled interrupts arrived, i.e.,
+	 * transfers started on all channels.
+	 */
+	if (triggered_interrupts && expected_interrupts == 0) {
 		intel_adsp_allow_dmi_l1_state();
 	}
 #endif

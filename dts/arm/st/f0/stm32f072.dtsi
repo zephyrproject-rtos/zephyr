@@ -16,7 +16,6 @@
 			interrupts = <30 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
-			sample-point = <875>;
 		};
 
 		usb: usb@40005c00 {

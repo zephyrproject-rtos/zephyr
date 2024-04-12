@@ -1190,7 +1190,7 @@ static const struct can_driver_api can_rcar_driver_api = {
 	PINCTRL_DT_INST_DEFINE(n);						\
 	static void can_rcar_##n##_init(const struct device *dev);		\
 	static const struct can_rcar_cfg can_rcar_cfg_##n = {			\
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(n, 1000000),		\
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(n, 0, 1000000),		\
 		.reg_addr = DT_INST_REG_ADDR(n),				\
 		.reg_size = DT_INST_REG_SIZE(n),				\
 		.init_func = can_rcar_##n##_init,				\

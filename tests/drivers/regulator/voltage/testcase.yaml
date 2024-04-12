@@ -17,7 +17,7 @@ tests:
       fixture: npm6001_ek_to_adc
   drivers.regulator.voltage.nxp:
     platform_allow:
-      - mimxrt685_evk
+      - mimxrt685_evk/mimxrt685s/cm33
       - lpcxpresso55s36
     harness_config:
       fixture: gpio_loopback

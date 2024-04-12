@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2024, Ian Wakely
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+	aliases {
+		led-strip = &bff_led_strip;
+	};
+};

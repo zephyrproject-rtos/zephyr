@@ -117,12 +117,15 @@ below to retrieve those files.
 Building & Flashing
 *******************
 
-ESP-IDF bootloader
-==================
+Simple boot
+===========
 
-The board is using the ESP-IDF bootloader as the default 2nd stage bootloader.
-It is build as a subproject at each application build. No further attention
-is expected from the user.
+The board could be loaded using the single binary image, without 2nd stage bootloader.
+It is the default option when building the application without additional configuration.
+
+.. note::
+
+   Simple boot does not provide any security features nor OTA updates.
 
 MCUboot bootloader
 ==================
@@ -233,10 +236,10 @@ RGB LED
 =======
 
 The board contains an addressable RGB LED (`XL-5050RGBC-WS2812B`_), driven by GPIO16.
-Here is an example of how to test it using the :zephyr:code-sample:`led-ws2812` application.
+Here is an example of how to test it using the :zephyr:code-sample:`led-strip` application.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/led_ws2812
+   :zephyr-app: samples/drivers/led_strip
    :board: yd_esp32/esp32/procpu
    :goals: flash
 

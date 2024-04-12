@@ -39,7 +39,7 @@
 			 (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_OFFSET))
 #else
 #define Z_MEM_VM_OFFSET	0
-#endif
+#endif /* CONFIG_MMU */
 
 #define Z_MEM_PHYS_ADDR(virt)	((virt) - Z_MEM_VM_OFFSET)
 #define Z_MEM_VIRT_ADDR(phys)	((phys) + Z_MEM_VM_OFFSET)
@@ -70,26 +70,26 @@ static inline uintptr_t z_mem_phys_addr(void *virt)
 	__ASSERT(
 #if CONFIG_KERNEL_VM_BASE != 0
 		 (addr >= CONFIG_KERNEL_VM_BASE) &&
-#endif
+#endif /* CONFIG_KERNEL_VM_BASE != 0 */
 #if (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE) != 0
 		 (addr < (CONFIG_KERNEL_VM_BASE +
 			  (CONFIG_KERNEL_VM_SIZE))),
 #else
 		 false,
-#endif
+#endif /* CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE != 0 */
 		 "address %p not in permanent mappings", virt);
 #else
 	/* Should be identity-mapped */
 	__ASSERT(
 #if CONFIG_SRAM_BASE_ADDRESS != 0
 		 (addr >= CONFIG_SRAM_BASE_ADDRESS) &&
-#endif
+#endif /* CONFIG_SRAM_BASE_ADDRESS != 0 */
 #if (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0
 		 (addr < (CONFIG_SRAM_BASE_ADDRESS +
 			  (CONFIG_SRAM_SIZE * 1024UL))),
 #else
 		 false,
-#endif
+#endif /* (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0 */
 		 "physical address 0x%lx not in RAM",
 		 (unsigned long)addr);
 #endif /* CONFIG_MMU */
@@ -111,15 +111,15 @@ static inline void *z_mem_virt_addr(uintptr_t phys)
 	__ASSERT(
 #if CONFIG_SRAM_BASE_ADDRESS != 0
 		 (phys >= CONFIG_SRAM_BASE_ADDRESS) &&
-#endif
+#endif /* CONFIG_SRAM_BASE_ADDRESS != 0 */
 #if (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0
 		 (phys < (CONFIG_SRAM_BASE_ADDRESS +
 			  (CONFIG_SRAM_SIZE * 1024UL))),
 #else
 		 false,
-#endif
+#endif /* (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0 */
 		 "physical address 0x%lx not in RAM", (unsigned long)phys);
-#endif
+#endif /* CONFIG_KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK */
 
 	/* TODO add assertion that this page frame is pinned to boot mapping,
 	 * the above check won't be sufficient with demand paging
@@ -204,6 +204,47 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size,
  * @param size Size of the virtual address region
  */
 void z_phys_unmap(uint8_t *virt, size_t size);
+
+/**
+ * Map memory into virtual address space with guard pages.
+ *
+ * This maps memory into virtual address space with a preceding and
+ * a succeeding guard pages.
+ *
+ * @see k_mem_map() for additional information if called via that.
+ *
+ * @see k_mem_phys_map() for additional information if called via that.
+ *
+ * @param phys Physical address base of the memory region if not requesting
+ *             anonymous memory. Must be page-aligned.
+ * @param size Size of the memory mapping. This must be page-aligned.
+ * @param flags K_MEM_PERM_*, K_MEM_MAP_* control flags.
+ * @param is_anon True is requesting mapping with anonymous memory.
+ *
+ * @return The mapped memory location, or NULL if insufficient virtual address
+ *         space, insufficient physical memory to establish the mapping,
+ *         or insufficient memory for paging structures.
+ */
+void *k_mem_map_impl(uintptr_t phys, size_t size, uint32_t flags, bool is_anon);
+
+/**
+ * Un-map mapped memory
+ *
+ * This removes the memory mappings for the provided page-aligned region,
+ * and the two guard pages surrounding the region.
+ *
+ * @see k_mem_unmap() for additional information if called via that.
+ *
+ * @see k_mem_phys_unmap() for additional information if called via that.
+ *
+ * @note Calling this function on a region which was not mapped to begin
+ *       with is undefined behavior.
+ *
+ * @param addr Page-aligned memory region base virtual address
+ * @param size Page-aligned memory region size
+ * @param is_anon True if the mapped memory is from anonymous memory.
+ */
+void k_mem_unmap_impl(void *addr, size_t size, bool is_anon);
 
 #ifdef __cplusplus
 }

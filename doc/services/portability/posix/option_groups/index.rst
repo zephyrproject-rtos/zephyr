@@ -163,14 +163,14 @@ process applications.
    :header: API, Supported
    :widths: 50,10
 
-    confstr(),
-    environ,
+    confstr(),yes
+    environ,yes
     errno,yes
-    getenv(),
-    setenv(),
+    getenv(),yes
+    setenv(),yes
     sysconf(),yes
     uname(),yes
-    unsetenv()
+    unsetenv(),yes
 
 .. _posix_option_group_signals:
 
@@ -289,6 +289,70 @@ POSIX_CLOCK_SELECTION
     pthread_condattr_setclock(),yes
     clock_nanosleep(),yes
 
+.. _posix_option_group_networking:
+
+POSIX_NETWORKING
+================
+
+.. csv-table:: POSIX_NETWORKING
+   :header: API, Supported
+   :widths: 50,10
+
+    accept(),yes
+    bind(),yes
+    connect(),yes
+    endhostent(),yes
+    endnetent(),yes
+    endprotoent(),yes
+    endservent(),yes
+    freeaddrinfo(),yes
+    gai_strerror(),yes
+    getaddrinfo(),yes
+    gethostent(),yes
+    gethostname(),yes
+    getnameinfo(),yes
+    getnetbyaddr(),yes
+    getnetbyname(),yes
+    getnetent(),yes
+    getpeername(),yes
+    getprotobyname(),yes
+    getprotobynumber(),yes
+    getprotoent(),yes
+    getservbyname(),yes
+    getservbyport(),yes
+    getservent(),yes
+    getsockname(),yes
+    getsockopt(),yes
+    htonl(),yes
+    htons(),yes
+    if_freenameindex(),yes
+    if_indextoname(),yes
+    if_nameindex(),yes
+    if_nametoindex(),yes
+    inet_addr(),yes
+    inet_ntoa(),yes
+    inet_ntop(),yes
+    inet_pton(),yes
+    listen(),yes
+    ntohl(),yes
+    ntohs(),yes
+    recv(),yes
+    recvfrom(),yes
+    recvmsg(),yes
+    send(),yes
+    sendmsg(),yes
+    sendto(),yes
+    sethostent(),yes
+    setnetent(),yes
+    setprotoent(),yes
+    setservent(),yes
+    setsockopt(),yes
+    shutdown(),yes
+    socket(),yes
+    sockatmark(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    socketpair(),yes
+
+
 .. _posix_option_group_semaphores:
 
 POSIX_SEMAPHORES
@@ -332,7 +396,7 @@ POSIX_TIMERS
    :header: API, Supported
    :widths: 50,10
 
-    clock_getres(),
+    clock_getres(),yes
     clock_gettime(),yes
     clock_settime(),yes
     nanosleep(),yes
@@ -379,9 +443,9 @@ _POSIX_PRIORITY_SCHEDULING
     sched_get_priority_min(),yes
     sched_getparam(),yes
     sched_getscheduler(),yes
-    sched_rr_get_interval(),yes
-    sched_setparam(),yes
-    sched_setscheduler(),yes
+    sched_rr_get_interval(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    sched_setparam(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    sched_setscheduler(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     sched_yield(),yes
 
 .. _posix_option_reader_writer_locks:
@@ -401,9 +465,9 @@ _POSIX_READER_WRITER_LOCKS
     pthread_rwlock_unlock(),yes
     pthread_rwlock_wrlock(),yes
     pthread_rwlockattr_destroy(),yes
-    pthread_rwlockattr_getpshared(),
+    pthread_rwlockattr_getpshared(),yes
     pthread_rwlockattr_init(),yes
-    pthread_rwlockattr_setpshared(),
+    pthread_rwlockattr_setpshared(),yes
 
 .. _posix_option_thread_attr_stackaddr:
 
@@ -438,12 +502,12 @@ _POSIX_THREAD_PRIORITY_SCHEDULING
    :header: API, Supported
    :widths: 50,10
 
-    pthread_attr_getinheritsched(),
+    pthread_attr_getinheritsched(),yes
     pthread_attr_getschedpolicy(),yes
-    pthread_attr_getscope(),
-    pthread_attr_setinheritsched(),
+    pthread_attr_getscope(),yes
+    pthread_attr_setinheritsched(),yes
     pthread_attr_setschedpolicy(),yes
-    pthread_attr_setscope(),
+    pthread_attr_setscope(),yes
     pthread_getschedparam(),yes
     pthread_setschedparam(),yes
     pthread_setschedprio(),yes
@@ -505,11 +569,11 @@ _XOPEN_STREAMS
 
     fattach(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     fdetach(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    getmsg(),
-    getpmsg(),
+    getmsg(),  yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    getpmsg(),  yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     ioctl(),yes
     isastream(),
-    putmsg(),
+    putmsg(), yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     putpmsg(),
 
 

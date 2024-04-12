@@ -10,6 +10,7 @@
 #include <zephyr/pm/state.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <errno.h>
 
 void intel_adsp_ipc_set_message_handler(const struct device *dev,
@@ -73,6 +74,10 @@ void z_intel_adsp_ipc_isr(const void *devarg)
 			external_completion = devdata->done_notify(dev, devdata->done_arg);
 		}
 		devdata->tx_ack_pending = false;
+		/* Allow the system to enter the runtime idle state after the IPC acknowledgment
+		 * is received.
+		 */
+		pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 		k_sem_give(&devdata->sem);
 
 		/* IPC completion registers will be set externally */
@@ -143,10 +148,6 @@ int intel_adsp_ipc_send_message(const struct device *dev,
 	}
 #endif
 
-	if (pm_device_state_is_locked(INTEL_ADSP_IPC_HOST_DEV)) {
-		return -EAGAIN;
-	}
-
 	pm_device_busy_set(dev);
 	const struct intel_adsp_ipc_config *config = dev->config;
 	struct intel_adsp_ipc_data *devdata = dev->data;
@@ -158,6 +159,8 @@ int intel_adsp_ipc_send_message(const struct device *dev,
 	}
 
 	k_sem_init(&devdata->sem, 0, 1);
+	/* Prevent entering runtime idle state until IPC acknowledgment is received. */
+	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 	devdata->tx_ack_pending = true;
 	config->regs->idd = ext_data;
 	config->regs->idr = data | INTEL_ADSP_IPC_BUSY;
@@ -285,7 +288,6 @@ static int ipc_pm_action(const struct device *dev, enum pm_device_action action)
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
-		pm_device_state_lock(dev);
 		if (api->suspend_fn) {
 			ret = api->suspend_fn(dev, api->suspend_fn_args);
 			if (!ret) {
@@ -294,7 +296,6 @@ static int ipc_pm_action(const struct device *dev, enum pm_device_action action)
 		}
 		break;
 	case PM_DEVICE_ACTION_RESUME:
-		pm_device_state_lock(dev);
 		irq_enable(DT_IRQN(INTEL_ADSP_IPC_HOST_DTNODE));
 		if (!irq_is_enabled(DT_IRQN(INTEL_ADSP_IPC_HOST_DTNODE))) {
 			ret = -EINTR;
@@ -314,7 +315,6 @@ static int ipc_pm_action(const struct device *dev, enum pm_device_action action)
 		return -ENOTSUP;
 	}
 
-	pm_device_state_unlock(dev);
 	return ret;
 }
 

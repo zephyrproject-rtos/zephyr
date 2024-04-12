@@ -55,7 +55,6 @@ uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 {
 	struct net_buf *buf;
 	uint8_t packet_type = data[0];
-	uint8_t flags;
 	uint8_t event_code;
 
 	LOG_HEXDUMP_DBG(data, len, "host packet data:");
@@ -67,7 +66,6 @@ uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 	switch (packet_type) {
 	case h4_event:
 		event_code = data[0];
-		flags = bt_hci_evt_get_flags(event_code);
 		buf = bt_buf_get_evt(event_code, false, K_FOREVER);
 		break;
 	case h4_acl:
@@ -79,12 +77,7 @@ uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 	}
 
 	net_buf_add_mem(buf, data, len);
-	if (IS_ENABLED(CONFIG_BT_RECV_BLOCKING) &&
-	    (packet_type == h4_event) && (flags & BT_HCI_EVT_FLAG_RECV_PRIO)) {
-		bt_recv_prio(buf);
-	} else {
-		bt_recv(buf);
-	}
+	bt_recv(buf);
 
 	sl_btctrl_hci_transmit_complete(0);
 

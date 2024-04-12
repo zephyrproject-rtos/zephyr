@@ -9,7 +9,7 @@ Overview
 The Raspberry Pi Pico and Pico W are small, low-cost, versatile boards from
 Raspberry Pi. They are equipped with an RP2040 SoC, an on-board LED,
 a USB connector, and an SWD interface. The Pico W additionally contains an
-Infineon CYW43439 2.4 GHz Wi-Fi/Bluetoth module. The USB bootloader allows the
+Infineon CYW43439 2.4 GHz Wi-Fi/Bluetooth module. The USB bootloader allows the
 ability to flash without any adapter, in a drag-and-drop manner.
 It is also possible to flash and debug the boards with their SWD interface,
 using an external adapter.

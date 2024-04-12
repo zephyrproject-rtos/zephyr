@@ -133,6 +133,29 @@ static void SOC_ClockInit(void)
 #endif
 #endif
 
+#if defined(CONFIG_SPI_MCUX_ECSPI)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ecspi1), okay)
+	/* Set ECSPI1 source to SYSTEM PLL1 800MHZ */
+	CLOCK_SetRootMux(kCLOCK_RootEcspi1, kCLOCK_EcspiRootmuxSysPll1);
+	/* Set root clock to 800MHZ / 10 = 80MHZ */
+	CLOCK_SetRootDivider(kCLOCK_RootEcspi1, 2U, 5U);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ecspi2), okay)
+	/* Set ECSPI2 source to SYSTEM PLL1 800MHZ */
+	CLOCK_SetRootMux(kCLOCK_RootEcspi2, kCLOCK_EcspiRootmuxSysPll1);
+	/* Set root clock to 800MHZ / 10 = 80MHZ */
+	CLOCK_SetRootDivider(kCLOCK_RootEcspi2, 2U, 5U);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ecspi3), okay)
+	/* Set ECSPI3 source to SYSTEM PLL1 800MHZ */
+	CLOCK_SetRootMux(kCLOCK_RootEcspi3, kCLOCK_EcspiRootmuxSysPll1);
+	/* Set root clock to 800MHZ / 10 = 80MHZ */
+	CLOCK_SetRootDivider(kCLOCK_RootEcspi3, 2U, 5U);
+#endif
+#endif
+
 	CLOCK_EnableClock(kCLOCK_Rdc);   /* Enable RDC clock */
 	CLOCK_EnableClock(kCLOCK_Ocram); /* Enable Ocram clock */
 
@@ -148,6 +171,38 @@ static void SOC_ClockInit(void)
 	CLOCK_EnableClock(kCLOCK_Sec_Debug);
 }
 
+static void gpio_init(void)
+{
+
+#if defined(CONFIG_GPIO_MCUX_IGPIO)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+
+	CLOCK_EnableClock(kCLOCK_Gpio1);
+
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
+
+	CLOCK_EnableClock(kCLOCK_Gpio2);
+
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio3), okay)
+
+	CLOCK_EnableClock(kCLOCK_Gpio3);
+
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio4), okay)
+
+	CLOCK_EnableClock(kCLOCK_Gpio4);
+
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio5), okay)
+
+	CLOCK_EnableClock(kCLOCK_Gpio5);
+
+#endif
+#endif
+}
+
 static int nxp_mimx8ml8_init(void)
 {
 
@@ -156,6 +211,8 @@ static int nxp_mimx8ml8_init(void)
 
 	/* SoC specific Clock settings */
 	SOC_ClockInit();
+
+	gpio_init();
 
 	return 0;
 }

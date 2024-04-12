@@ -697,6 +697,14 @@ config BT_MESH_ACCESS_LAYER_MSG
 	  Bluetooth access layer messages without the need to
 	  instantiate Bluetooth Mesh models.
 
+	  Please note that Bluetooth Mesh stack stores authentication sequence from
+	  any message that passed over network cache if this option is enabled.
+	  It happens despite the device does not have necessary application keys or
+	  there are unknown model operation codes. It causes the situation when device
+	  will update the replay protection cache for messages those cannot be handled
+	  in the stack. For example, spamming broadcast messages those stack cannot handle
+	  might wear out persistent memory.
+
 config BT_MESH_MODEL_VND_MSG_CID_FORCE
 	bool "Force vendor model to use the corresponding CID field message"
 	default y

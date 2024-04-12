@@ -11,7 +11,7 @@ struct ll_scan_set {
 	uint32_t ticks_window;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	struct node_rx_hdr *node_rx_scan_term;
+	struct node_rx_pdu *node_rx_scan_term;
 	uint16_t duration_lazy;
 
 	uint8_t is_stop:1;
@@ -47,12 +47,12 @@ struct ll_scan_aux_set {
 	/* lll_scan or lll_sync */
 	void *volatile parent;
 
-	struct node_rx_hdr *rx_head;
-	struct node_rx_hdr *rx_last;
+	struct node_rx_pdu *rx_head;
+	struct node_rx_pdu *rx_last;
 
 	uint16_t data_len;
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-	struct node_rx_hdr *rx_incomplete;
+	struct node_rx_pdu *rx_incomplete;
 #endif
 };

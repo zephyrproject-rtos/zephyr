@@ -27,7 +27,7 @@ static void analog_axis_calibration_log(const struct device *dev)
 		analog_axis_calibration_get(dev, i, &cal);
 
 		LOG_INF("%s: ch: %d min: %d max: %d deadzone: %d",
-			dev->name, i, cal.in_min, cal.in_max, cal.out_deadzone);
+			dev->name, i, cal.in_min, cal.in_max, cal.in_deadzone);
 	}
 }
 

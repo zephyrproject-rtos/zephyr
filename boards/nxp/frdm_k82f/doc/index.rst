@@ -104,6 +104,8 @@ already supported, which can also be re-used on this frdm_k82f board:
 +-----------+------------+-------------------------------------+
 | FTFA      | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
+| PIT       | on-chip    | pit                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in
 :zephyr_file:`boards/nxp/frdm_k82f/frdm_k82f_defconfig`

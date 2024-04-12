@@ -429,7 +429,9 @@ endchoice
 
 config LTO
 	bool "Link Time Optimization [EXPERIMENTAL]"
-	depends on (!(GEN_ISR_TABLES || GEN_IRQ_VECTOR_TABLE) || ISR_TABLES_LOCAL_DECLARATION) && !NATIVE_LIBRARY
+	depends on !(GEN_ISR_TABLES || GEN_IRQ_VECTOR_TABLE) || ISR_TABLES_LOCAL_DECLARATION
+	depends on !NATIVE_LIBRARY
+	depends on !CODE_DATA_RELOCATION
 	select EXPERIMENTAL
 	help
 	  This option enables Link Time Optimization.
@@ -902,15 +904,6 @@ config BOOTLOADER_SRAM_SIZE_DEPRECATED
 	help
 	  Non-prompt symbol to indicate that the deprecated BOOTLOADER_SRAM_SIZE Kconfig has a
 	  non-0 value. Please transition to using devicetree.
-
-config BOOTLOADER_ESP_IDF
-	bool "ESP-IDF bootloader support"
-	depends on SOC_FAMILY_ESPRESSIF_ESP32 && !BOOTLOADER_MCUBOOT && !MCUBOOT
-	default	y
-	help
-	  This option will trigger the compilation of the ESP-IDF bootloader
-	  inside the build folder.
-	  At flash time, the bootloader will be flashed with the zephyr image
 
 config BOOTLOADER_BOSSA
 	bool "BOSSA bootloader support"

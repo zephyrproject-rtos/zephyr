@@ -67,7 +67,7 @@ static struct updatehub_context {
 	uint8_t uri_path[MAX_PATH_SIZE];
 	uint8_t payload[MAX_PAYLOAD_SIZE];
 	int downloaded_size;
-	struct pollfd fds[1];
+	struct zsock_pollfd fds[1];
 	int sock;
 	int nfds;
 } ctx;
@@ -99,7 +99,7 @@ static int bin2hex_str(uint8_t *bin, size_t bin_len, char *str, size_t str_buf_l
 
 static void wait_fds(void)
 {
-	if (poll(ctx.fds, ctx.nfds, NETWORK_TIMEOUT) < 0) {
+	if (zsock_poll(ctx.fds, ctx.nfds, NETWORK_TIMEOUT) < 0) {
 		LOG_ERR("Error in poll");
 	}
 }
@@ -107,7 +107,7 @@ static void wait_fds(void)
 static void prepare_fds(void)
 {
 	ctx.fds[ctx.nfds].fd = ctx.sock;
-	ctx.fds[ctx.nfds].events = POLLIN;
+	ctx.fds[ctx.nfds].events = ZSOCK_POLLIN;
 	ctx.nfds++;
 }
 
@@ -153,7 +153,7 @@ static void cleanup_connection(void)
 {
 	int i;
 
-	if (close(ctx.sock) < 0) {
+	if (zsock_close(ctx.sock) < 0) {
 		LOG_ERR("Could not close the socket");
 	}
 
@@ -167,8 +167,8 @@ static void cleanup_connection(void)
 
 static bool start_coap_client(void)
 {
-	struct addrinfo *addr;
-	struct addrinfo hints;
+	struct zsock_addrinfo *addr;
+	struct zsock_addrinfo hints;
 	int resolve_attempts = 10;
 	int ret = -1;
 
@@ -193,7 +193,7 @@ static bool start_coap_client(void)
 #endif
 
 	while (resolve_attempts--) {
-		ret = getaddrinfo(UPDATEHUB_SERVER, port, &hints, &addr);
+		ret = zsock_getaddrinfo(UPDATEHUB_SERVER, port, &hints, &addr);
 		if (ret == 0) {
 			break;
 		}
@@ -206,7 +206,7 @@ static bool start_coap_client(void)
 
 	ret = 1;
 
-	ctx.sock = socket(addr->ai_family, SOCK_DGRAM, protocol);
+	ctx.sock = zsock_socket(addr->ai_family, SOCK_DGRAM, protocol);
 	if (ctx.sock < 0) {
 		LOG_ERR("Failed to create UDP socket");
 		goto error;
@@ -215,19 +215,19 @@ static bool start_coap_client(void)
 	ret = -1;
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
-	if (setsockopt(ctx.sock, SOL_TLS, TLS_SEC_TAG_LIST,
-		       sec_list, sizeof(sec_list)) < 0) {
+	if (zsock_setsockopt(ctx.sock, SOL_TLS, TLS_SEC_TAG_LIST,
+			     sec_list, sizeof(sec_list)) < 0) {
 		LOG_ERR("Failed to set TLS_TAG option");
 		goto error;
 	}
 
-	if (setsockopt(ctx.sock, SOL_TLS, TLS_PEER_VERIFY, &verify, sizeof(int)) < 0) {
+	if (zsock_setsockopt(ctx.sock, SOL_TLS, TLS_PEER_VERIFY, &verify, sizeof(int)) < 0) {
 		LOG_ERR("Failed to set TLS_PEER_VERIFY option");
 		goto error;
 	}
 #endif
 
-	if (connect(ctx.sock, addr->ai_addr, addr->ai_addrlen) < 0) {
+	if (zsock_connect(ctx.sock, addr->ai_addr, addr->ai_addrlen) < 0) {
 		LOG_ERR("Cannot connect to UDP remote");
 		goto error;
 	}
@@ -236,7 +236,7 @@ static bool start_coap_client(void)
 
 	ret = 0;
 error:
-	freeaddrinfo(addr);
+	zsock_freeaddrinfo(addr);
 
 	if (ret > 0) {
 		cleanup_connection();
@@ -345,7 +345,7 @@ static int send_request(enum coap_msgtype msgtype, enum coap_method method,
 		goto error;
 	}
 
-	ret = send(ctx.sock, request_packet.data, request_packet.offset, 0);
+	ret = zsock_send(ctx.sock, request_packet.data, request_packet.offset, 0);
 	if (ret < 0) {
 		LOG_ERR("Could not send request");
 		goto error;
@@ -425,7 +425,7 @@ static void install_update_cb(void)
 
 	wait_fds();
 
-	rcvd = recv(ctx.sock, data, MAX_DOWNLOAD_DATA, MSG_DONTWAIT);
+	rcvd = zsock_recv(ctx.sock, data, MAX_DOWNLOAD_DATA, ZSOCK_MSG_DONTWAIT);
 	if (rcvd <= 0) {
 		ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
 		LOG_ERR("Could not receive data");
@@ -693,7 +693,7 @@ static void probe_cb(char *metadata, size_t metadata_size)
 
 	wait_fds();
 
-	rcvd = recv(ctx.sock, tmp, MAX_DOWNLOAD_DATA, MSG_DONTWAIT);
+	rcvd = zsock_recv(ctx.sock, tmp, MAX_DOWNLOAD_DATA, ZSOCK_MSG_DONTWAIT);
 	if (rcvd <= 0) {
 		LOG_ERR("Could not receive data");
 		ctx.code_status = UPDATEHUB_NETWORKING_ERROR;

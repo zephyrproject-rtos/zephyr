@@ -652,8 +652,8 @@ int main(void)
 			case GPIO_BUTTON_0:
 			{
 				/* Move the mouse in random direction */
-				uint8_t rep[] = {0x00, sys_rand32_get(),
-					      sys_rand32_get(), 0x00};
+				uint8_t rep[] = {0x00, sys_rand8_get(),
+					      sys_rand8_get(), 0x00};
 
 				k_sem_take(&usb_sem, K_FOREVER);
 				hid_int_ep_write(hid0_dev, rep,

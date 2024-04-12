@@ -390,10 +390,7 @@ static const struct ethernet_api eth_ivshmem_api = {
 #define ETH_IVSHMEM_RANDOM_MAC_ADDR(inst)						\
 	static void generate_mac_addr_##inst(uint8_t mac_addr[6])			\
 	{										\
-		uint32_t entropy = sys_rand32_get();					\
-		mac_addr[0] = (entropy >> 16) & 0xff;					\
-		mac_addr[1] = (entropy >>  8) & 0xff;					\
-		mac_addr[2] = (entropy >>  0) & 0xff;					\
+		sys_rand_get(mac_addr, 3U);						\
 		/* Clear multicast bit */						\
 		mac_addr[0] &= 0xFE;							\
 		gen_random_mac(mac_addr, mac_addr[0], mac_addr[1], mac_addr[2]);	\

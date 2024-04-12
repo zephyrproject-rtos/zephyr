@@ -48,6 +48,7 @@ extern "C" {
 #endif /* CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL */
 
 #define WIFI_MGMT_BAND_STR_SIZE_MAX 8
+#define WIFI_MGMT_SCAN_MAX_BSS_CNT 65535
 
 /** Wi-Fi management commands */
 enum net_request_wifi_cmd {
@@ -65,16 +66,12 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_IFACE_STATUS,
 	/** Set power save status */
 	NET_REQUEST_WIFI_CMD_PS,
-	/** Set power save mode */
-	NET_REQUEST_WIFI_CMD_PS_MODE,
 	/** Setup or teardown TWT flow */
 	NET_REQUEST_WIFI_CMD_TWT,
 	/** Get power save config */
 	NET_REQUEST_WIFI_CMD_PS_CONFIG,
 	/** Set or get regulatory domain */
 	NET_REQUEST_WIFI_CMD_REG_DOMAIN,
-	/** Set power save timeout */
-	NET_REQUEST_WIFI_CMD_PS_TIMEOUT,
 	/** Set or get Mode of operation */
 	NET_REQUEST_WIFI_CMD_MODE,
 	/** Set or get packet filter setting for current mode */
@@ -123,11 +120,6 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_IFACE_STATUS);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS);
 
-#define NET_REQUEST_WIFI_PS_MODE			\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PS_MODE)
-
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_MODE);
-
 #define NET_REQUEST_WIFI_TWT			\
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_TWT)
 
@@ -141,11 +133,6 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_CONFIG);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_REG_DOMAIN)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_REG_DOMAIN);
-
-#define NET_REQUEST_WIFI_PS_TIMEOUT			\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PS_TIMEOUT)
-
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_TIMEOUT);
 
 #define NET_REQUEST_WIFI_MODE				\
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_MODE)
@@ -359,6 +346,8 @@ struct wifi_connect_req_params {
 	enum wifi_security_type security;
 	/** MFP options */
 	enum wifi_mfp_options mfp;
+	/** BSSID */
+	uint8_t bssid[WIFI_MAC_ADDR_LEN];
 	/** Connect timeout in seconds, SYS_FOREVER_MS for no timeout */
 	int timeout;
 };
@@ -371,12 +360,23 @@ enum wifi_conn_status {
 	WIFI_STATUS_CONN_SUCCESS = 0,
 	/** Connection failed - generic failure */
 	WIFI_STATUS_CONN_FAIL,
-	/** Connection failed - wrong password */
+	/** Connection failed - wrong password
+	 * Few possible reasons for 4-way handshake failure that we can guess are as follows:
+	 * 1) Incorrect key
+	 * 2) EAPoL frames lost causing timeout
+	 *
+	 * #1 is the likely cause, so, we convey to the user that it is due to
+	 * Wrong passphrase/password.
+	 */
 	WIFI_STATUS_CONN_WRONG_PASSWORD,
 	/** Connection timed out */
 	WIFI_STATUS_CONN_TIMEOUT,
 	/** Connection failed - AP not found */
 	WIFI_STATUS_CONN_AP_NOT_FOUND,
+	/** Last connection status */
+	WIFI_STATUS_CONN_LAST_STATUS,
+	/** Connection disconnected status */
+	WIFI_STATUS_DISCONN_FIRST_STATUS = WIFI_STATUS_CONN_LAST_STATUS,
 };
 
 /** Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
@@ -384,7 +384,7 @@ enum wifi_conn_status {
  */
 enum wifi_disconn_reason {
 	/** Unspecified reason */
-	WIFI_REASON_DISCONN_UNSPECIFIED = 0,
+	WIFI_REASON_DISCONN_UNSPECIFIED = WIFI_STATUS_DISCONN_FIRST_STATUS,
 	/** Disconnected due to user request */
 	WIFI_REASON_DISCONN_USER_REQUEST,
 	/** Disconnected due to AP leaving */

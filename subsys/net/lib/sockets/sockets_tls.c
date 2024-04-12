@@ -6,11 +6,7 @@
  */
 
 #include <stdbool.h>
-#ifdef CONFIG_ARCH_POSIX
-#include <fcntl.h>
-#else
 #include <zephyr/posix/fcntl.h>
-#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -659,6 +655,7 @@ static int tls_session_get(const struct sockaddr *peer_addr,
 		/* Discard corrupted session data. */
 		mbedtls_free(entry->session);
 		entry->session = NULL;
+		NET_ERR("Failed to load TLS session %d", ret);
 		return -EIO;
 	}
 
@@ -766,6 +763,8 @@ static int wait(int sock, int timeout, int event)
 
 			if (zsock_getsockopt(fds.fd, SOL_SOCKET, SO_ERROR,
 					     &optval, &optlen) == 0) {
+				NET_ERR("TLS underlying socket poll error %d",
+					-optval);
 				return -optval;
 			}
 
@@ -974,6 +973,7 @@ static int tls_add_ca_certificate(struct tls_context *tls,
 	}
 
 	if (err != 0) {
+		NET_ERR("Failed to parse CA certificate, err: -0x%x", -err);
 		return -EINVAL;
 	}
 
@@ -2316,6 +2316,8 @@ static ssize_t send_tls(struct tls_context *ctx, const void *buf,
 				break;
 			}
 		} else {
+			NET_ERR("TLS send error: -%x", -ret);
+
 			/* MbedTLS API documentation requires session to
 			 * be reset in other error cases
 			 */
@@ -2625,6 +2627,7 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 					continue;
 				}
 			} else {
+				NET_ERR("TLS recv error: -%x", -ret);
 				ret = -EIO;
 			}
 
@@ -2795,6 +2798,8 @@ static ssize_t recvfrom_dtls_client(struct tls_context *ctx, void *buf,
 		break;
 
 	default:
+		NET_ERR("DTLS client recv error: -%x", -ret);
+
 		/* MbedTLS API documentation requires session to
 		 * be reset in other error cases
 		 */
@@ -2896,6 +2901,8 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 			break;
 
 		default:
+			NET_ERR("DTLS server recv error: -%x", -ret);
+
 			ret = tls_mbedtls_reset(ctx);
 			if (ret != 0) {
 				ctx->error = ENOMEM;
@@ -3092,6 +3099,8 @@ static int ztls_socket_data_check(struct tls_context *ctx)
 		    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 			return 0;
 		}
+
+		NET_ERR("TLS data check error: -%x", -ret);
 
 		/* MbedTLS API documentation requires session to
 		 * be reset in other error cases

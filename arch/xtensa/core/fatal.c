@@ -16,7 +16,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
-#ifdef XT_SIMULATOR
+#if defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
 #include <xtensa/simcall.h>
 #endif
 
@@ -109,8 +109,8 @@ void xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	z_fatal_error(reason, esf);
 }
 
-#ifdef XT_SIMULATOR
-void exit(int return_code)
+#if defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
+void xtensa_simulator_exit(int return_code)
 {
 	__asm__ (
 	    "mov a3, %[code]\n\t"
@@ -119,13 +119,13 @@ void exit(int return_code)
 	    :
 	    : [code] "r" (return_code), [call] "i" (SYS_exit)
 	    : "a3", "a2");
-}
-#endif
 
-#ifdef XT_SIMULATOR
-FUNC_NORETURN void z_system_halt(unsigned int reason)
+	CODE_UNREACHABLE;
+}
+
+FUNC_NORETURN void arch_system_halt(unsigned int reason)
 {
-	exit(255 - reason);
+	xtensa_simulator_exit(255 - reason);
 	CODE_UNREACHABLE;
 }
 #endif

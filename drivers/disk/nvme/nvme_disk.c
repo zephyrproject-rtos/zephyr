@@ -1,6 +1,6 @@
 /*
+ * Copyright (c) 2022 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (c) 2022 Intel Corp.
  */
 
 #include <zephyr/logging/log.h>

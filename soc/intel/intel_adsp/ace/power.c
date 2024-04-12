@@ -25,6 +25,13 @@
 #define SRAM_ALIAS_BASE         0xA0000000
 #define SRAM_ALIAS_MASK         0xF0000000
 
+#if CONFIG_SOC_INTEL_ACE15_MTPM
+/* Used to force any pending transaction by HW issuing an upstream read before
+ * power down host domain.
+ */
+uint8_t adsp_pending_buffer[CONFIG_DCACHE_LINE_SIZE] __aligned(CONFIG_DCACHE_LINE_SIZE);
+#endif /* CONFIG_SOC_INTEL_ACE15_MTPM */
+
 __imr void power_init(void)
 {
 #if CONFIG_ADSP_IDLE_CLOCK_GATING
@@ -34,6 +41,14 @@ __imr void power_init(void)
 	/* Disable idle power and clock gating */
 	DSPCS.bootctl[0].bctl |= DSPBR_BCTL_WAITIPCG | DSPBR_BCTL_WAITIPPG;
 #endif /* CONFIG_ADSP_IDLE_CLOCK_GATING */
+
+#if CONFIG_SOC_INTEL_ACE15_MTPM
+	*((__sparse_force uint32_t *)sys_cache_cached_ptr_get(&adsp_pending_buffer)) =
+		INTEL_ADSP_ACE15_MAGIC_KEY;
+	cache_data_flush_range((__sparse_force void *)
+			sys_cache_cached_ptr_get(&adsp_pending_buffer),
+			sizeof(adsp_pending_buffer));
+#endif /* CONFIG_SOC_INTEL_ACE15_MTPM */
 }
 
 #ifdef CONFIG_PM
@@ -176,10 +191,17 @@ void power_gate_entry(uint32_t core_id)
 	soc_cpus_active[core_id] = false;
 	sys_cache_data_flush_range(soc_cpus_active, sizeof(soc_cpus_active));
 	k_cpu_idle();
+
+	/* It is unlikely we get in here, but when this happens
+	 * we need to lock interruptions again.
+	 *
+	 * @note Zephyr looks PS.INTLEVEL to check if interruptions are locked.
+	 */
+	(void)arch_irq_lock();
 	z_xt_ints_off(0xffffffff);
 }
 
-void power_gate_exit(void)
+static void __used power_gate_exit(void)
 {
 	cpu_early_init();
 	sys_cache_data_flush_and_invd_all();

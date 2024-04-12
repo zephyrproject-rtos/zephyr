@@ -694,6 +694,13 @@ if(CONFIG_ZTEST)
 
 endif()
 
+get_property(
+  syscalls_include_list
+  TARGET syscalls_interface
+  PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+)
+list(APPEND SYSCALL_INCLUDE_DIRS ${syscalls_include_list})
+
 foreach(d ${SYSCALL_INCLUDE_DIRS})
   list(APPEND parse_syscalls_include_args
     --include ${d}
@@ -759,6 +766,7 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   --json-file        ${syscalls_json}                     # Read this file
   --base-output      include/generated/syscalls           # Write to this dir
   --syscall-dispatch include/generated/syscall_dispatch.c # Write this file
+  --syscall-export-llext  include/generated/syscall_export_llext.c
   --syscall-list     ${syscall_list_h}
   $<$<BOOL:${CONFIG_USERSPACE}>:--gen-mrsh-files>
   ${SYSCALL_LONG_REGISTERS_ARG}
@@ -839,7 +847,7 @@ add_subdirectory(kernel)
 get_property(
   syscalls_file_list
   TARGET syscalls_interface
-  PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+  PROPERTY INTERFACE_SOURCES
 )
 file(CONFIGURE OUTPUT ${syscalls_file_list_output}
      CONTENT "@syscalls_file_list@" @ONLY)
@@ -875,6 +883,13 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   # TODO: Could this become an INTERFACE property of zephyr_interface?
   add_dependencies(${zephyr_lib} zephyr_generated_headers)
 endforeach()
+
+if(CONFIG_LLEXT)
+  set(WHOLE_ARCHIVE_LIBS ${ZEPHYR_LIBS_PROPERTY} kernel)
+else()
+  set(WHOLE_ARCHIVE_LIBS ${ZEPHYR_LIBS_PROPERTY})
+  set(NO_WHOLE_ARCHIVE_LIBS kernel)
+endif()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
@@ -1812,12 +1827,13 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
   )
 
   if(CONFIG_CHECK_INIT_PRIORITIES)
-    add_custom_target(
-      check_init_priorities
-      ALL
-      COMMAND ${check_init_priorities_command}
-      DEPENDS ${check_init_priorities_dependencies}
-    )
+    if(TARGET native_runner_executable)
+      add_custom_command(TARGET native_runner_executable POST_BUILD
+                         COMMAND ${check_init_priorities_command}
+      )
+    else()
+      list(APPEND post_build_commands COMMAND ${check_init_priorities_command})
+    endif()
   endif()
 
   add_custom_target(

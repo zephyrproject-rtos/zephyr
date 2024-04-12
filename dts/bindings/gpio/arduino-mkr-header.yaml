@@ -28,7 +28,7 @@ description: |
         21 A6/D21               D12/SCL  12
         0  D0                   D11/SDA  11
         1  D1                   D10/CPIO 10
-        2  D2                   D9/SCK   0
+        2  D2                   D9/SCK   9
         3  D3                   D8/COPI  8
         4  D4                   D7       7
         5  D5                   D6       6

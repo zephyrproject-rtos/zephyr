@@ -44,8 +44,6 @@ enum pm_device_flag {
 	PM_DEVICE_FLAG_WS_ENABLED,
 	/** Indicates if device runtime is enabled  */
 	PM_DEVICE_FLAG_RUNTIME_ENABLED,
-	/** Indicates if the device pm is locked.  */
-	PM_DEVICE_FLAG_STATE_LOCKED,
 	/** Indicates if the device is used as a power domain */
 	PM_DEVICE_FLAG_PD,
 	/** Indicates if device runtime PM should be automatically enabled */
@@ -274,6 +272,7 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
  */
 #define Z_PM_DEVICE_NAME(dev_id) _CONCAT(__pm_device_, dev_id)
 
+#ifdef CONFIG_PM
 /**
  * @brief Define device PM slot.
  *
@@ -288,6 +287,9 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
 #define Z_PM_DEVICE_DEFINE_SLOT(dev_id)					\
 	static STRUCT_SECTION_ITERABLE_ALTERNATE(pm_device_slots, device, \
 			_CONCAT(__pm_slot_, dev_id))
+#else
+#define Z_PM_DEVICE_DEFINE_SLOT(dev_id)
+#endif /* CONFIG_PM */
 
 #ifdef CONFIG_PM_DEVICE
 /**
@@ -566,43 +568,6 @@ bool pm_device_wakeup_is_enabled(const struct device *dev);
 bool pm_device_wakeup_is_capable(const struct device *dev);
 
 /**
- * @brief Lock current device state.
- *
- * This function locks the current device power state. Once
- * locked the device power state will not be changed by
- * system power management or device runtime power
- * management until unlocked.
- *
- * @note The given device should not have device runtime enabled.
- *
- * @see pm_device_state_unlock
- *
- * @param dev Device instance.
- */
-void pm_device_state_lock(const struct device *dev);
-
-/**
- * @brief Unlock the current device state.
- *
- * Unlocks a previously locked device pm.
- *
- * @see pm_device_state_lock
- *
- * @param dev Device instance.
- */
-void pm_device_state_unlock(const struct device *dev);
-
-/**
- * @brief Check if the device pm is locked.
- *
- * @param dev Device instance.
- *
- * @retval true If device is locked.
- * @retval false If device is not locked.
- */
-bool pm_device_state_is_locked(const struct device *dev);
-
-/**
  * @brief Check if the device is on a switchable power domain.
  *
  * @param dev Device instance.
@@ -715,19 +680,6 @@ static inline bool pm_device_wakeup_is_enabled(const struct device *dev)
 	return false;
 }
 static inline bool pm_device_wakeup_is_capable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return false;
-}
-static inline void pm_device_state_lock(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-static inline void pm_device_state_unlock(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-static inline bool pm_device_state_is_locked(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return false;

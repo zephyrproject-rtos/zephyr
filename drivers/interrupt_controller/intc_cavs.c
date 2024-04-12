@@ -10,7 +10,7 @@
 #include <zephyr/device.h>
 #include <zephyr/irq.h>
 #include <zephyr/irq_nextlevel.h>
-#include <zephyr/sys/arch_interface.h>
+#include <zephyr/arch/arch_interface.h>
 #include "intc_cavs.h"
 
 #if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)

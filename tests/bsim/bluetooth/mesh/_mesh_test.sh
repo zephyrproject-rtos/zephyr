@@ -3,7 +3,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-EXECUTE_TIMEOUT=300
+EXECUTE_TIMEOUT=800
 
 function Skip(){
   for i in "${SKIP[@]}" ; do
@@ -60,9 +60,9 @@ function RunTest(){
     conf=${conf:-prj_conf}
 
     if [ ${overlay} ]; then
-        exe_name=./bs_${BOARD}_tests_bsim_bluetooth_mesh_${conf}_${overlay}
+        exe_name=./bs_${BOARD_TS}_tests_bsim_bluetooth_mesh_${conf}_${overlay}
     else
-        exe_name=./bs_${BOARD}_tests_bsim_bluetooth_mesh_${conf}
+        exe_name=./bs_${BOARD_TS}_tests_bsim_bluetooth_mesh_${conf}
     fi
 
     Execute \

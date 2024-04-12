@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 TiaC Systems
- * Copyright 2019,2023 NXP
+ * Copyright 2019,2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -174,5 +174,9 @@ zephyr_udc0: &usb1 {
 };
 
 &systick {
+	status = "okay";
+};
+
+&pit0 {
 	status = "okay";
 };

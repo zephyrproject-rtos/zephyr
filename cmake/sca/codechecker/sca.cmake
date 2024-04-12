@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2023, Basalte bv
 
-find_program(CODECHECKER_EXE CodeChecker REQUIRED)
+find_program(CODECHECKER_EXE NAMES CodeChecker codechecker REQUIRED)
 message(STATUS "Found SCA: CodeChecker (${CODECHECKER_EXE})")
 
 # CodeChecker uses the compile_commands.json as input
@@ -26,6 +26,7 @@ add_custom_target(codechecker ALL
     --name zephyr # Set a default metadata name
     ${CODECHECKER_ANALYZE_OPTS}
     ${CMAKE_BINARY_DIR}/compile_commands.json
+    || ${CMAKE_COMMAND} -E true # allow to continue processing results
   DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json ${output_dir}/codechecker.ready
   BYPRODUCTS ${output_dir}/codechecker.plist
   VERBATIM

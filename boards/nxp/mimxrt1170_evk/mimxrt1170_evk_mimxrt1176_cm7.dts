@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-22, NXP
+ * Copyright 2021-2022,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -146,5 +146,13 @@ zephyr_udc0: &usb1 {
 };
 
 &mailbox_a {
+	status = "okay";
+};
+
+&pit1 {
+	status = "okay";
+};
+
+&pit2 {
 	status = "okay";
 };

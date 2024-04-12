@@ -32,6 +32,15 @@
 #include <zephyr/sys/rb.h>
 #endif
 
+#define K_NUM_THREAD_PRIO (CONFIG_NUM_PREEMPT_PRIORITIES + CONFIG_NUM_COOP_PRIORITIES + 1)
+
+#if defined(CONFIG_64BIT)
+#define PRIQ_BITMAP_SIZE (DIV_ROUND_UP(K_NUM_THREAD_PRIO, 8 * sizeof(uint64_t)))
+#else
+#define PRIQ_BITMAP_SIZE (DIV_ROUND_UP(K_NUM_THREAD_PRIO, 8 * sizeof(uint32_t)))
+#endif
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -117,8 +126,12 @@ struct _priq_rb {
  * to represent their requirements.
  */
 struct _priq_mq {
-	sys_dlist_t queues[32];
-	unsigned int bitmask; /* bit 1<<i set if queues[i] is non-empty */
+	sys_dlist_t queues[K_NUM_THREAD_PRIO];
+#ifdef CONFIG_64BIT
+	uint64_t bitmask[PRIQ_BITMAP_SIZE];
+#else
+	uint32_t bitmask[PRIQ_BITMAP_SIZE];
+#endif
 };
 
 struct _ready_q {

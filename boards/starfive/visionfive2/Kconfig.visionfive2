@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Kanak Shilledar <kanakshilledar111@protonmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_VISIONFIVE2_JH7110
+	select SOC_JH7110

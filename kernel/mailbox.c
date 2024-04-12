@@ -18,11 +18,12 @@
 #include <zephyr/init.h>
 /* private kernel APIs */
 #include <ksched.h>
+#include <kthread.h>
 #include <wait_q.h>
 
 #ifdef CONFIG_OBJ_CORE_MAILBOX
 static struct k_obj_type  obj_type_mailbox;
-#endif
+#endif /* CONFIG_OBJ_CORE_MAILBOX */
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 
@@ -47,10 +48,6 @@ static inline void mbox_async_free(struct k_mbox_async *async)
 	k_stack_push(&async_msg_free, (stack_data_t)async);
 }
 
-#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
-
-#if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
-
 /*
  * Do run-time initialization of mailbox object subsystem.
  */
@@ -59,7 +56,6 @@ static int init_mbox_module(void)
 	/* array of asynchronous message descriptors */
 	static struct k_mbox_async __noinit async_msg[CONFIG_NUM_MBOX_ASYNC_MSGS];
 
-#if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 	/*
 	 * Create pool of asynchronous message descriptors.
 	 *
@@ -78,7 +74,6 @@ static int init_mbox_module(void)
 		z_init_thread_base(&async_msg[i].thread, 0, _THREAD_DUMMY, 0);
 		k_stack_push(&async_msg_free, (stack_data_t)&async_msg[i]);
 	}
-#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
 
 	/* Complete initialization of statically defined mailboxes. */
 
@@ -87,7 +82,7 @@ static int init_mbox_module(void)
 
 SYS_INIT(init_mbox_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS */
+#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
 
 void k_mbox_init(struct k_mbox *mbox)
 {
@@ -97,7 +92,7 @@ void k_mbox_init(struct k_mbox *mbox)
 
 #ifdef CONFIG_OBJ_CORE_MAILBOX
 	k_obj_core_init_and_link(K_OBJ_CORE(mbox), &obj_type_mailbox);
-#endif
+#endif /* CONFIG_OBJ_CORE_MAILBOX */
 
 	SYS_PORT_TRACING_OBJ_INIT(k_mbox, mbox);
 }
@@ -189,7 +184,7 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
 		}
 		return;
 	}
-#endif
+#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS */
 
 	/* synchronous send: wake up sending thread */
 	arch_thread_return_value_set(sending_thread, 0);
@@ -256,7 +251,7 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 				z_reschedule(&mbox->lock, key);
 				return 0;
 			}
-#endif
+#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS */
 			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_mbox, message_put, mbox, timeout);
 
 			/*
@@ -286,7 +281,7 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 		k_spin_unlock(&mbox->lock, key);
 		return 0;
 	}
-#endif
+#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS */
 	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_mbox, message_put, mbox, timeout);
 
 	/* synchronous send: sender waits on tx queue for receiver or timeout */
@@ -335,7 +330,7 @@ void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	(void)mbox_message_put(mbox, &async->tx_msg, K_FOREVER);
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox, async_put, mbox, sem);
 }
-#endif
+#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS */
 
 void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer)
 {
@@ -463,4 +458,4 @@ static int init_mailbox_obj_core_list(void)
 
 SYS_INIT(init_mailbox_obj_core_list, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-#endif
+#endif /* CONFIG_OBJ_CORE_MAILBOX */

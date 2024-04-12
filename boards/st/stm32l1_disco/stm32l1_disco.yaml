@@ -12,4 +12,6 @@ supported:
   - gpio
   - i2c
   - spi
+  - eeprom
+  - watchdog
 vendor: st

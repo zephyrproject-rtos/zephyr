@@ -13,5 +13,8 @@
 		width = <480>;
 		reset-gpios = <&dsi_lcd_qsh_030 57 GPIO_ACTIVE_HIGH>;
 		bl-gpios = <&dsi_lcd_qsh_030 53 GPIO_ACTIVE_HIGH>;
+		data-lanes = <2>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+		rotation = <90>;
 	};
 };

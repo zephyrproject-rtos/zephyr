@@ -8,6 +8,7 @@
 #include <st/g0/stm32g070Xb.dtsi>
 #include <st/g0/stm32g070rbtx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {

@@ -30,9 +30,9 @@ Minimal Realtime System Profile (PSE51)
     POSIX_DEVICE_IO,, :ref:`†<posix_undefined_behaviour>`
     POSIX_FILE_LOCKING,,
     POSIX_SIGNALS,, :ref:`†<posix_undefined_behaviour>`
-    POSIX_SINGLE_PROCESS,, :ref:`†<posix_undefined_behaviour>`
+    POSIX_SINGLE_PROCESS, yes,
     POSIX_THREADS_BASE, yes, :ref:`†<posix_undefined_behaviour>`
-    XSI_THREADS_EXT, yes, :ref:`†<posix_undefined_behaviour>`
+    XSI_THREADS_EXT, yes,
 
 .. csv-table:: PSE51 Option Requirements
    :header: Symbol, Support, Remarks
@@ -82,9 +82,9 @@ Realtime Controller System Profile (PSE52)
     POSIX_FILE_LOCKING,,
     POSIX_FILE_SYSTEM,,
     POSIX_SIGNALS,, :ref:`†<posix_undefined_behaviour>`
-    POSIX_SINGLE_PROCESS,, :ref:`†<posix_undefined_behaviour>`
+    POSIX_SINGLE_PROCESS, yes,
     POSIX_THREADS_BASE, yes, :ref:`†<posix_undefined_behaviour>`
-    XSI_THREADS_EXT, yes, :ref:`†<posix_undefined_behaviour>`
+    XSI_THREADS_EXT, yes,
 
 .. csv-table:: PSE52 Option Requirements
    :header: Symbol, Support, Remarks
@@ -139,13 +139,13 @@ Dedicated Realtime System Profile (PSE53)
     POSIX_FILE_LOCKING,,
     POSIX_FILE_SYSTEM,,
     POSIX_MULTI_PROCESS,, :ref:`†<posix_undefined_behaviour>`
-    POSIX_NETWORKING, yes, :ref:`†<posix_undefined_behaviour>`
+    POSIX_NETWORKING, yes, :ref:`POSIX_NETWORKING <posix_option_group_networking>`
     POSIX_PIPE,, :ref:`†<posix_undefined_behaviour>`
     POSIX_SIGNALS,, :ref:`†<posix_undefined_behaviour>`
     POSIX_SIGNAL_JUMP,, :ref:`†<posix_undefined_behaviour>`
-    POSIX_SINGLE_PROCESS,, :ref:`†<posix_undefined_behaviour>`
+    POSIX_SINGLE_PROCESS, yes,
     POSIX_THREADS_BASE, yes, :ref:`†<posix_undefined_behaviour>`
-    XSI_THREADS_EXT, yes, :ref:`†<posix_undefined_behaviour>`
+    XSI_THREADS_EXT, yes,
 
 .. csv-table:: PSE53 Option Requirements
    :header: Symbol, Support, Remarks

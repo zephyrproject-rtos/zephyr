@@ -13,6 +13,8 @@
 /**
  * @brief Regulator Interface
  * @defgroup regulator_interface Regulator Interface
+ * @since 2.4
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  */

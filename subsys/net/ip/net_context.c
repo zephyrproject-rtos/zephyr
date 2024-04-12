@@ -312,7 +312,7 @@ static uint16_t find_available_port(struct net_context *context,
 	uint16_t local_port;
 
 	do {
-		local_port = sys_rand32_get() | 0x8000;
+		local_port = sys_rand16_get() | 0x8000;
 	} while (check_used_port(NULL, net_context_get_proto(context),
 				 htons(local_port), addr, false, false) == -EEXIST);
 
@@ -2401,9 +2401,24 @@ static int recv_udp(struct net_context *context,
 
 	ARG_UNUSED(timeout);
 
+	/* If the context already has a connection handler, it means it's
+	 * already registered. In that case, all we have to do is 1) update
+	 * the callback registered in the net_context and 2) update the
+	 * user_data and remote address and port using net_conn_update().
+	 *
+	 * The callback function passed to net_conn_update() must be the same
+	 * function as the one passed to net_conn_register(), not the callback
+	 * set for the net context passed by recv_udp().
+	 */
 	if (context->conn_handler) {
-		net_conn_unregister(context->conn_handler);
-		context->conn_handler = NULL;
+		context->recv_cb = cb;
+		ret = net_conn_update(context->conn_handler,
+				      net_context_packet_received,
+				      user_data,
+				      context->flags & NET_CONTEXT_REMOTE_ADDR_SET ?
+						&context->remote : NULL,
+				      ntohs(net_sin(&context->remote)->sin_port));
+		return ret;
 	}
 
 	ret = bind_default(context);
@@ -2497,17 +2512,30 @@ static int recv_raw(struct net_context *context,
 
 	ARG_UNUSED(timeout);
 
-	context->recv_cb = cb;
-
+	/* If the context already has a connection handler, it means it's
+	 * already registered. In that case, all we have to do is 1) update
+	 * the callback registered in the net_context and 2) update the
+	 * user_data using net_conn_update().
+	 *
+	 * The callback function passed to net_conn_update() must be the same
+	 * function as the one passed to net_conn_register(), not the callback
+	 * set for the net context passed by recv_raw().
+	 */
 	if (context->conn_handler) {
-		net_conn_unregister(context->conn_handler);
-		context->conn_handler = NULL;
+		context->recv_cb = cb;
+		ret = net_conn_update(context->conn_handler,
+				      net_context_raw_packet_received,
+				      user_data,
+				      NULL, 0);
+		return ret;
 	}
 
 	ret = bind_default(context);
 	if (ret) {
 		return ret;
 	}
+
+	context->recv_cb = cb;
 
 	ret = net_conn_register(net_context_get_proto(context),
 				net_context_get_family(context),

@@ -16,7 +16,6 @@ menuconfig NET_L2_OPENTHREAD
 	select OPENTHREAD
 
 	imply FLASH
-	imply FLASH_PAGE_LAYOUT
 	imply FLASH_MAP
 	imply MPU_ALLOW_FLASH_WRITE
 	imply NVS

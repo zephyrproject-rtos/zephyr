@@ -7,6 +7,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/bindesc.h>
 
+/* Include generated header */
+#include <bindesc_build_time.h>
+
 #if IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_YEAR)
 BINDESC_UINT_DEFINE(build_time_year, BINDESC_ID_BUILD_TIME_YEAR, BUILD_TIME_YEAR);
 #endif /* IS_ENABLED(CONFIG_BINDESC_BUILD_TIME_YEAR) */

@@ -1,4 +1,4 @@
-identifier: nrf5340bsim_nrf5340_cpunet
+identifier: nrf5340bsim/nrf5340/cpunet
 name: NRF53 Net Core BabbleSim board
 type: native
 arch: posix

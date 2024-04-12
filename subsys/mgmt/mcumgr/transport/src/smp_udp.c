@@ -13,12 +13,7 @@
 #include <assert.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#if defined(CONFIG_POSIX_API)
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/sys/socket.h>
-#else
 #include <zephyr/net/socket.h>
-#endif
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
@@ -108,7 +103,7 @@ static int smp_udp4_tx(struct net_buf *nb)
 	int ret;
 	struct sockaddr *addr = net_buf_user_data(nb);
 
-	ret = sendto(smp_udp_configs.ipv4.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
+	ret = zsock_sendto(smp_udp_configs.ipv4.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
 
 	if (ret < 0) {
 		if (errno == ENOMEM) {
@@ -132,7 +127,7 @@ static int smp_udp6_tx(struct net_buf *nb)
 	int ret;
 	struct sockaddr *addr = net_buf_user_data(nb);
 
-	ret = sendto(smp_udp_configs.ipv6.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
+	ret = zsock_sendto(smp_udp_configs.ipv6.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
 
 	if (ret < 0) {
 		if (errno == ENOMEM) {
@@ -201,7 +196,7 @@ static int create_socket(enum proto_type proto, int *sock)
 	}
 #endif
 
-	tmp_sock = socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
+	tmp_sock = zsock_socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
 	err = errno;
 
 	if (tmp_sock < 0) {
@@ -211,12 +206,12 @@ static int create_socket(enum proto_type proto, int *sock)
 		return -err;
 	}
 
-	if (bind(tmp_sock, addr, sizeof(*addr)) < 0) {
+	if (zsock_bind(tmp_sock, addr, sizeof(*addr)) < 0) {
 		err = errno;
 		LOG_ERR("Could not bind to receive socket (%s), err: %i",
 			smp_udp_proto_to_name(proto), err);
 
-		close(tmp_sock);
+		zsock_close(tmp_sock);
 
 		return -err;
 	}
@@ -247,9 +242,8 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 		struct sockaddr addr;
 		socklen_t addr_len = sizeof(addr);
 
-		int len = recvfrom(conf->sock, conf->recv_buffer,
-				   CONFIG_MCUMGR_TRANSPORT_UDP_MTU,
-				   0, &addr, &addr_len);
+		int len = zsock_recvfrom(conf->sock, conf->recv_buffer,
+					 CONFIG_MCUMGR_TRANSPORT_UDP_MTU, 0, &addr, &addr_len);
 
 		if (len > 0) {
 			struct sockaddr *ud;
@@ -355,7 +349,7 @@ int smp_udp_close(void)
 		k_thread_abort(&(smp_udp_configs.ipv4.thread));
 
 		if (smp_udp_configs.ipv4.sock >= 0) {
-			close(smp_udp_configs.ipv4.sock);
+			zsock_close(smp_udp_configs.ipv4.sock);
 			smp_udp_configs.ipv4.sock = -1;
 		}
 	} else {
@@ -368,7 +362,7 @@ int smp_udp_close(void)
 		k_thread_abort(&(smp_udp_configs.ipv6.thread));
 
 		if (smp_udp_configs.ipv6.sock >= 0) {
-			close(smp_udp_configs.ipv6.sock);
+			zsock_close(smp_udp_configs.ipv6.sock);
 			smp_udp_configs.ipv6.sock = -1;
 		}
 	} else {

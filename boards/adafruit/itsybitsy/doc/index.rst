@@ -123,7 +123,7 @@ The :zephyr:code-sample:`button` sample lets you test the buttons (switches) and
 The :zephyr:code-sample:`blinky` sample lets you test the red LED.
 
 The DotStar LED has been implemented as a SPI device and can be tested
-with the :zephyr:code-sample:`led-apa102` sample application.
+with the :zephyr:code-sample:`led-strip` sample application.
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in

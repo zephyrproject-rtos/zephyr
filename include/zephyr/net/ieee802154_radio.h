@@ -29,6 +29,8 @@ extern "C" {
 
 /**
  * @defgroup ieee802154_driver IEEE 802.15.4 Drivers
+ * @since 1.0
+ * @version 0.8.0
  * @ingroup ieee802154
  *
  * @brief IEEE 802.15.4 driver API
@@ -1668,7 +1670,7 @@ struct ieee802154_radio_api {
 	 * @retval -EBUSY The frame could not be sent because the medium was
 	 * busy (CSMA/CA or CCA offloading feature only).
 	 * @retval -ENOMSG The frame was not confirmed by an ACK packet (TX ACK
-	 * offloading feature only).
+	 * offloading feature only) or the received ACK packet was invalid.
 	 * @retval -ENOBUFS The frame could not be scheduled due to missing
 	 * internal resources (timed TX offloading feature only).
 	 * @retval -ENETDOWN The interface is not "UP".

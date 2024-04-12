@@ -11,7 +11,6 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_MCUX_RNG           entropy_mcux_rng.
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_MCUX_RNGA          entropy_mcux_rnga.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_MCUX_TRNG          entropy_mcux_trng.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_MCUX_CAAM          entropy_mcux_caam.c)
-zephyr_library_sources_ifdef(CONFIG_ENTROPY_MCUX_CSS           entropy_mcux_css.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_NRF5_RNG           entropy_nrf5.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_SAM_RNG            entropy_sam.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_SMARTBOND_TRNG     entropy_smartbond.c)
@@ -33,6 +32,7 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_NEORV32_TRNG       entropy_neorv32_t
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_BT_HCI             entropy_bt_hci.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_GECKO_SE           entropy_gecko_se.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_PSA_CRYPTO_RNG     entropy_psa_crypto.c)
+zephyr_library_sources_ifdef(CONFIG_ENTROPY_NPCX_DRBG          entropy_npcx_drbg.c)
 
 if (CONFIG_BUILD_WITH_TFM)
   target_include_directories(${ZEPHYR_CURRENT_LIBRARY} PRIVATE

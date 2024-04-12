@@ -244,7 +244,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button, LED and sensor device definitions can be found in
-:zephyr_file:`boards/laird_connect/bt510/bt510.dts`.
+:zephyr_file:`boards/lairdconnect/bt510/bt510.dts`.
 
 
 References

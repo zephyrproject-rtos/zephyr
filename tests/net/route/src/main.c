@@ -113,7 +113,7 @@ static uint8_t *net_route_get_mac(const struct device *dev)
 		route->mac_addr[2] = 0x5E;
 		route->mac_addr[3] = 0x00;
 		route->mac_addr[4] = 0x53;
-		route->mac_addr[5] = sys_rand32_get();
+		route->mac_addr[5] = sys_rand8_get();
 	}
 
 	route->ll_addr.addr = route->mac_addr;
@@ -285,7 +285,7 @@ static void test_init(void)
 		       sizeof(struct in6_addr));
 
 		dest_addresses[i].s6_addr[14] = i + 1;
-		dest_addresses[i].s6_addr[15] = sys_rand32_get();
+		dest_addresses[i].s6_addr[15] = sys_rand8_get();
 	}
 }
 

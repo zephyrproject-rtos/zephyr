@@ -421,6 +421,15 @@ GROUP_END(DTCM)
 	KEEP(*(.gnu.attributes))
 	}
 
+/* Output section descriptions are needed for these sections to suppress
+ * warnings when "--orphan-handling=warn" is set for lld.
+ */
+#if defined(CONFIG_LLVM_USE_LLD)
+    SECTION_PROLOGUE(.symtab, 0,) { *(.symtab) }
+    SECTION_PROLOGUE(.strtab, 0,) { *(.strtab) }
+    SECTION_PROLOGUE(.shstrtab, 0,) { *(.shstrtab) }
+#endif
+
     /* Sections generated from 'zephyr,memory-region' nodes */
     LINKER_DT_SECTIONS()
 

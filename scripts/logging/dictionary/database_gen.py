@@ -143,7 +143,7 @@ def find_elf_sections(elf, sh_name):
 def get_kconfig_symbols(elf):
     """Get kconfig symbols from the ELF file"""
     for section in elf.iter_sections():
-        if isinstance(section, SymbolTableSection):
+        if isinstance(section, SymbolTableSection) and section['sh_type'] != 'SHT_DYNSYM':
             return {sym.name: sym.entry.st_value
                     for sym in section.iter_symbols()
                        if sym.name.startswith("CONFIG_")}
@@ -254,6 +254,9 @@ def process_kconfigs(elf, database):
         if arch['kconfig'] in kconfigs:
             database.set_arch(name)
             break
+    else:
+        logger.error("Did not found architecture")
+        sys.exit(1)
 
     # Put some kconfigs into the database
     #

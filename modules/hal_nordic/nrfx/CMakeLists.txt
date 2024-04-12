@@ -36,17 +36,16 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUAPP      NRF5340_XXAA_APP
 zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF5340_CPUAPP NRF5340_XXAA_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUNET      NRF5340_XXAA_NETWORK)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET NRF5340_XXAA_NETWORK)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPUAPP     NRF54H20_XXAA
+                                                                NRF_APPLICATION)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPURAD     NRF54H20_XXAA
+                                                                NRF_RADIOCORE)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPUPPR     NRF54H20_XXAA
+                                                                NRF_PPR)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L15_ENGA       NRF54L15_ENGA_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L15_ENGA_CPUAPP NRF_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9120             NRF9120_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9160             NRF9160_XXAA)
-
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_ENGA_CPUAPP NRF54H20_ENGA_XXAA
-                                                                 NRF_APPLICATION)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_ENGA_CPURAD NRF54H20_ENGA_XXAA
-                                                                 NRF_RADIOCORE)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_ENGA_CPUPPR NRF54H20_ENGA_XXAA
-                                                                 NRF_PPR)
 
 zephyr_compile_definitions_ifdef(CONFIG_NRF_APPROTECT_LOCK
                                  ENABLE_APPROTECT)
@@ -157,10 +156,20 @@ if(CONFIG_SOC_NRF54L15)
 endif()
 
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_CLOCK_CONFIG NRF_SKIP_CLOCK_CONFIGURATION)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_DISABLE_FICR_TRIMCNF NRF_DISABLE_FICR_TRIMCNF)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE NRF_SKIP_GLITCHDETECTOR_DISABLE)
 
 if(CONFIG_SOC_SERIES_NRF54LX AND CONFIG_NRFX_DPPI)
   zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_dppi_ppib_lumos.c)
   zephyr_library_sources(${NRFX_DIR}/soc/interconnect/dppic_ppib/nrfx_interconnect_dppic_ppib.c)
+endif()
+
+if(CONFIG_SOC_SERIES_NRF54HX AND
+   (CONFIG_DT_HAS_NORDIC_NRF_DPPIC_LOCAL_ENABLED OR
+    CONFIG_DT_HAS_NORDIC_NRF_DPPIC_GLOBAL_ENABLED))
+  zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_dppi_ppib.c)
+  zephyr_library_sources(${NRFX_DIR}/soc/interconnect/apb/nrfx_interconnect_apb.c)
+  zephyr_library_sources(${NRFX_DIR}/soc/interconnect/ipct/nrfx_interconnect_ipct.c)
 endif()
 
 # Get the SVD file for the current SoC
@@ -180,8 +189,8 @@ mdk_svd_ifdef(CONFIG_SOC_NRF52833             nrf52833.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF52840             nrf52840.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF5340_CPUAPP       nrf5340_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF5340_CPUNET       nrf5340_network.svd)
-mdk_svd_ifdef(CONFIG_SOC_NRF54H20_ENGA_CPUAPP nrf54h20_enga_application.svd)
-mdk_svd_ifdef(CONFIG_SOC_NRF54H20_ENGA_CPUPPR nrf54h20_enga_ppr.svd)
-mdk_svd_ifdef(CONFIG_SOC_NRF54H20_ENGA_CPURAD nrf54h20_enga_radiocore.svd)
+mdk_svd_ifdef(CONFIG_SOC_NRF54H20_CPUAPP      nrf54h20_application.svd)
+mdk_svd_ifdef(CONFIG_SOC_NRF54H20_CPUPPR      nrf54h20_ppr.svd)
+mdk_svd_ifdef(CONFIG_SOC_NRF54H20_CPURAD      nrf54h20_radiocore.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF9120              nrf9120.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF9160              nrf9160.svd)

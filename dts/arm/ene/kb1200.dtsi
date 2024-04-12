@@ -1,0 +1,343 @@
+/*
+ * Copyright (c) 2023 ENE Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <arm/armv7-m.dtsi>
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(48)>;
+		};
+	};
+
+	sram0: memory@20040000 {
+		compatible = "mmio-sram";
+		reg = <0x20040000 0x10000>;
+	};
+
+	soc {
+		flash-controller@50100000 {
+			compatible = "ene,kb1200-flash-controller";
+			reg = <0x50100000 0x2000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@10000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x10000000 0x40000>;
+			};
+		};
+
+		pmu: pmu@40010000 {
+			compatible = "ene,kb1200-pmu";
+			reg = <0x40010000 0x100>;
+		};
+
+		gcfg: gcfg@40000000 {
+			compatible = "ene,kb1200-gcfg";
+			reg = <0x40000000 0x100>;
+		};
+
+		pinctrl: pin-controller@50000000 {
+			compatible = "ene,kb1200-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x50000000 0x100>;
+			status = "okay";
+			gpio0x1x: gpio@50000000 {
+				compatible = "ene,kb1200-gpio";
+				reg = <0x50000000 0x04>, <0x50010000 0x04>;
+				interrupts = <2 3>, <3 3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+
+			gpio2x3x: gpio@50000004 {
+				compatible = "ene,kb1200-gpio";
+				reg = <0x50000004 0x04>, <0x50010004 0x04>;
+				interrupts = <4 3>, <5 3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+
+			gpio4x5x: gpio@50000008 {
+				compatible = "ene,kb1200-gpio";
+				reg = <0x50000008 0x04>, <0x50010008 0x04>;
+				interrupts = <6 3>, <7 3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+
+			gpio6x7x: gpio@5000000c {
+				compatible = "ene,kb1200-gpio";
+				reg = <0x5000000C 0x04>, <0x5001000C 0x04>;
+				interrupts = <8 3>, <9 3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+		};
+
+		uart0: serial@40310000 {
+			compatible = "ene,kb1200-uart";
+			reg = <0x40310000 0x4c>;
+			interrupts = <20 3>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart1: serial@40310020 {
+			compatible = "ene,kb1200-uart";
+			reg = <0x40310020 0x4c>;
+			interrupts = <20 3>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart2: serial@40310040 {
+			compatible = "ene,kb1200-uart";
+			reg = <0x40310040 0x4c>;
+			interrupts = <20 3>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		adc0: adc0@40130000 {
+			compatible = "ene,kb1200-adc";
+			reg = <0x40130000 0x100>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		pwm0: pwm@40210000 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210000 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm1: pwm@40210010 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210010 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm2: pwm@40210020 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210020 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm3: pwm@40210030 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210030 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm4: pwm@40210040 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210040 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm5: pwm@40210050 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210050 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm6: pwm@40210060 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210060 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm7: pwm@40210070 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210070 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm8: pwm@40210080 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210080 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm9: pwm@40210090 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40210090 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		fanpwm0: pwm@40200000 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40200000 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		fanpwm1: pwm@40200010 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40200010 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		tach0: tach@40100000 {
+			compatible = "ene,kb1200-tach";
+			reg = <0x40100000 0x10>;
+			status = "disabled";
+		};
+
+		tach1: tach@40100010 {
+			compatible = "ene,kb1200-tach";
+			reg = <0x40100010 0x10>;
+			status = "disabled";
+		};
+
+		tach2: tach@40100020 {
+			compatible = "ene,kb1200-tach";
+			reg = <0x40100020 0x10>;
+			status = "disabled";
+		};
+
+		tach3: tach@40100030 {
+			compatible = "ene,kb1200-tach";
+			reg = <0x40100030 0x10>;
+			status = "disabled";
+		};
+
+		wdt0: watchdog@40060000 {
+			compatible = "ene,kb1200-watchdog";
+			reg = <0x40060000 0x100>;
+			interrupts = <0 0>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@40340000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40340000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40341000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40341000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@40342000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40342000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c3: i2c@40343000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40343000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c4: i2c@40344000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40344000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c5: i2c@40345000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40345000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c6: i2c@40346000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40346000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c7: i2c@40347000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40347000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c8: i2c@40348000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40348000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c9: i2c@40349000 {
+			compatible = "ene,kb1200-i2c";
+			reg = <0x40349000 0x1000>;
+			interrupts = <17 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

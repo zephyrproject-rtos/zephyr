@@ -3,6 +3,9 @@
 
 if BOARD_MEC1501MODULAR_ASSY6885
 
+config INPUT
+	default y if KSCAN
+
 #PS/2 driver is compiled in terms of this flag.
 config ESPI_PERIPHERAL_8042_KBC
 	default y

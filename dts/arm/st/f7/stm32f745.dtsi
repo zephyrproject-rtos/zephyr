@@ -73,7 +73,6 @@
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
 			status = "disabled";
-			sample-point = <875>;
 		};
 
 		mac: ethernet@40028000 {

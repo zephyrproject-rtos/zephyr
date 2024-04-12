@@ -127,7 +127,7 @@ static int pwm_led_esp32_calculate_max_resolution(struct pwm_ledc_esp32_channel_
 	uint64_t clock_freq = channel->clock_src == LEDC_APB_CLK ? APB_CLK_FREQ : REF_CLK_FREQ;
 	uint32_t max_precision_n = clock_freq/channel->freq;
 
-	for (uint8_t i = 0; i <= SOC_LEDC_TIMER_BIT_WIDE_NUM; i++) {
+	for (uint8_t i = 0; i <= SOC_LEDC_TIMER_BIT_WIDTH; i++) {
 		max_precision_n /= 2;
 		if (!max_precision_n) {
 			channel->resolution =  i;
@@ -164,10 +164,12 @@ static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *chan
 		return 0;
 	}
 
+#if SOC_LEDC_SUPPORT_REF_TICK
 	channel->clock_src = LEDC_REF_TICK;
 	if (!pwm_led_esp32_calculate_max_resolution(channel)) {
 		return 0;
 	}
+#endif
 
 	/**
 	 * ESP32 - S2,S3 and C3 variants have only 14 bits counter.
@@ -178,7 +180,7 @@ static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *chan
 	 * so select the slow clock source (1MHz) with highest counter resolution.
 	 * this can be handled on the func 'pwm_led_esp32_timer_set' with 'prescaler'.
 	 */
-	channel->resolution = SOC_LEDC_TIMER_BIT_WIDE_NUM;
+	channel->resolution = SOC_LEDC_TIMER_BIT_WIDTH;
 	return 0;
 }
 
@@ -199,9 +201,11 @@ static int pwm_led_esp32_timer_set(const struct device *dev,
 		 */
 		prescaler = ((uint64_t) APB_CLK_FREQ << 8) / channel->freq / precision;
 	break;
+#if SOC_LEDC_SUPPORT_REF_TICK
 	case LEDC_REF_TICK:
 		prescaler = ((uint64_t) REF_CLK_FREQ << 8) / channel->freq / precision;
 	break;
+#endif
 	default:
 		LOG_ERR("Invalid clock source (%d)", channel->clock_src);
 		return -EINVAL;
@@ -213,7 +217,7 @@ static int pwm_led_esp32_timer_set(const struct device *dev,
 	}
 
 	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
-		ledc_hal_set_slow_clk(&data->hal, channel->clock_src);
+		ledc_hal_set_slow_clk_sel(&data->hal, channel->clock_src);
 	}
 
 	ledc_hal_set_clock_divider(&data->hal, channel->timer_num, prescaler);

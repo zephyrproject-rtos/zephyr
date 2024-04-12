@@ -99,7 +99,21 @@ void bt_bap_stream_cb_register(struct bt_bap_stream *stream,
 
 int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 {
-	enum bt_audio_dir dir = ep->dir;
+	enum bt_audio_dir dir;
+
+	CHECKIF(ep == NULL) {
+		LOG_DBG("ep is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(info == NULL) {
+		LOG_DBG("info is NULL");
+
+		return -EINVAL;
+	}
+
+	dir = ep->dir;
 
 	info->id = ep->status.id;
 	info->state = ep->status.state;
@@ -107,8 +121,10 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 
 	if (ep->iso == NULL) {
 		info->paired_ep = NULL;
+		info->iso_chan = NULL;
 	} else {
 		info->paired_ep = bt_bap_iso_get_paired_ep(ep);
+		info->iso_chan = &ep->iso->chan;
 	}
 
 	info->can_send = false;

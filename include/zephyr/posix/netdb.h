@@ -29,36 +29,60 @@
 extern "C" {
 #endif
 
-#ifndef CONFIG_NET_SOCKETS_POSIX_NAMES
+struct hostent {
+	char *h_name;
+	char **h_aliases;
+	int h_addrtype;
+	int h_length;
+	char **h_addr_list;
+};
+
+struct netent {
+	char *n_name;
+	char **n_aliases;
+	int n_addrtype;
+	uint32_t n_net;
+};
+
+struct protoent {
+	char *p_name;
+	char **p_aliases;
+	int p_proto;
+};
+
+struct servent {
+	char *s_name;
+	char **s_aliases;
+	int s_port;
+	char *s_proto;
+};
 
 #define addrinfo zsock_addrinfo
 
-static inline int getaddrinfo(const char *host, const char *service,
-			      const struct zsock_addrinfo *hints,
-			      struct zsock_addrinfo **res)
-{
-	return zsock_getaddrinfo(host, service, hints, res);
-}
-
-static inline void freeaddrinfo(struct zsock_addrinfo *ai)
-{
-	zsock_freeaddrinfo(ai);
-}
-
-static inline const char *gai_strerror(int errcode)
-{
-	return zsock_gai_strerror(errcode);
-}
-
-static inline int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
-			      char *host, socklen_t hostlen,
-			      char *serv, socklen_t servlen, int flags)
-{
-	return zsock_getnameinfo(addr, addrlen, host, hostlen,
-				 serv, servlen, flags);
-}
-
-#endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
+void endhostent(void);
+void endnetent(void);
+void endprotoent(void);
+void endservent(void);
+void freeaddrinfo(struct zsock_addrinfo *ai);
+const char *gai_strerror(int errcode);
+int getaddrinfo(const char *host, const char *service, const struct zsock_addrinfo *hints,
+		struct zsock_addrinfo **res);
+struct hostent *gethostent(void);
+int getnameinfo(const struct sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
+		char *serv, socklen_t servlen, int flags);
+struct netent *getnetbyaddr(uint32_t net, int type);
+struct netent *getnetbyname(const char *name);
+struct netent *getnetent(void);
+struct protoent *getprotobyname(const char *name);
+struct protoent *getprotobynumber(int proto);
+struct protoent *getprotoent(void);
+struct servent *getservbyname(const char *name, const char *proto);
+struct servent *getservbyport(int port, const char *proto);
+struct servent *getservent(void);
+void sethostent(int stayopen);
+void setnetent(int stayopen);
+void setprotoent(int stayopen);
+void setservent(int stayopen);
 
 #ifdef __cplusplus
 }

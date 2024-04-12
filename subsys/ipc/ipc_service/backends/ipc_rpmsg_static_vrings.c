@@ -30,6 +30,12 @@
 #define STATE_BUSY	(1)
 #define STATE_INITED	(2)
 
+#if defined(CONFIG_THREAD_MAX_NAME_LEN)
+#define THREAD_MAX_NAME_LEN CONFIG_THREAD_MAX_NAME_LEN
+#else
+#define THREAD_MAX_NAME_LEN 1
+#endif
+
 K_THREAD_STACK_ARRAY_DEFINE(mbox_stack, NUM_INSTANCES, WQ_STACK_SIZE);
 
 struct backend_data_t {
@@ -326,6 +332,13 @@ static int mbox_init(const struct device *instance)
 
 	k_work_queue_init(&data->mbox_wq);
 	k_work_queue_start(&data->mbox_wq, mbox_stack[conf->id], WQ_STACK_SIZE, prio, NULL);
+
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		char name[THREAD_MAX_NAME_LEN];
+
+		snprintk(name, sizeof(name), "mbox_wq #%d", conf->id);
+		k_thread_name_set(&data->mbox_wq.thread, name);
+	}
 
 	k_work_init(&data->mbox_work, mbox_callback_process);
 

@@ -21,7 +21,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
-#include <zephyr/sys/arch_interface.h>
+#include <zephyr/arch/arch_interface.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/irq.h>
 #include "boot.h"
@@ -62,7 +62,7 @@ static uint64_t cpu_map[CONFIG_MP_MAX_NUM_CPUS] = {
 extern void z_arm64_mm_init(bool is_primary_core);
 
 /* Called from Zephyr initialization */
-void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
 	int cpu_count;
@@ -84,7 +84,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		"The count of CPU Cores nodes in dts is not equal to CONFIG_MP_MAX_NUM_CPUS\n");
 #endif
 
-	arm64_cpu_boot_params.sp = Z_KERNEL_STACK_BUFFER(stack) + sz;
+	arm64_cpu_boot_params.sp = K_KERNEL_STACK_BUFFER(stack) + sz;
 	arm64_cpu_boot_params.fn = fn;
 	arm64_cpu_boot_params.arg = arg;
 	arm64_cpu_boot_params.cpu_num = cpu_num;

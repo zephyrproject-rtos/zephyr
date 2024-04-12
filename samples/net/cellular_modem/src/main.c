@@ -138,10 +138,19 @@ int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t 
 
 	printk("Opening UDP socket\n");
 
-	socket_fd = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	socket_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (socket_fd < 0) {
 		printk("Failed to open socket (%d)\n", errno);
 		return -1;
+	}
+
+	{
+		const struct timeval tv = { .tv_sec = 10 };
+
+		if (zsock_setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+			printk("Failed to set socket receive timeout (%d)\n", errno);
+			return -1;
+		}
 	}
 
 	printk("Socket opened\n");
@@ -152,8 +161,8 @@ int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t 
 		printk("Sending echo packet\n");
 		send_start_ms = k_uptime_get_32();
 
-		ret = zsock_sendto(socket_fd, sample_test_packet, sizeof(sample_test_packet), 0,
-				ai_addr, ai_addrlen);
+		ret = sendto(socket_fd, sample_test_packet, sizeof(sample_test_packet), 0,
+			     ai_addr, ai_addrlen);
 
 		if (ret < sizeof(sample_test_packet)) {
 			printk("Failed to send sample test packet\n");
@@ -161,9 +170,13 @@ int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t 
 		}
 
 		printk("Receiving echoed packet\n");
-		ret = zsock_recv(socket_fd, sample_recv_buffer, sizeof(sample_recv_buffer), 0);
+		ret = recv(socket_fd, sample_recv_buffer, sizeof(sample_recv_buffer), 0);
 		if (ret != sizeof(sample_test_packet)) {
-			printk("Echoed sample test packet has incorrect size\n");
+			if (ret == -1) {
+				printk("Failed to receive echoed sample test packet (%d)\n", errno);
+			} else {
+				printk("Echoed sample test packet has incorrect size (%d)\n", ret);
+			}
 			continue;
 		}
 
@@ -189,7 +202,7 @@ int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t 
 
 	printk("Close UDP socket\n");
 
-	ret = zsock_close(socket_fd);
+	ret = close(socket_fd);
 	if (ret < 0) {
 		printk("Failed to close socket\n");
 		return -1;
@@ -211,7 +224,7 @@ int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint
 
 	printk("Opening UDP socket\n");
 
-	socket_fd = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	socket_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (socket_fd < 0) {
 		printk("Failed to open socket\n");
 		return -1;
@@ -224,8 +237,8 @@ int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint
 	printk("Sending %u packets\n", SAMPLE_TEST_TRANSMIT_PACKETS);
 	send_start_ms = k_uptime_get_32();
 	for (uint32_t i = 0; i < SAMPLE_TEST_TRANSMIT_PACKETS; i++) {
-		ret = zsock_sendto(socket_fd, sample_test_packet, sizeof(sample_test_packet), 0,
-				ai_addr, ai_addrlen);
+		ret = sendto(socket_fd, sample_test_packet, sizeof(sample_test_packet), 0,
+			     ai_addr, ai_addrlen);
 
 		if (ret < sizeof(sample_test_packet)) {
 			printk("Failed to send sample test packet\n");
@@ -237,7 +250,7 @@ int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint
 	send_end_ms = k_uptime_get_32();
 
 	printk("Awaiting response from server\n");
-	ret = zsock_recv(socket_fd, sample_recv_buffer, sizeof(sample_recv_buffer), 0);
+	ret = recv(socket_fd, sample_recv_buffer, sizeof(sample_recv_buffer), 0);
 	if (ret != 2) {
 		printk("Invalid response\n");
 		return -1;
@@ -245,7 +258,7 @@ int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint
 
 	packets_received = sample_recv_buffer[0];
 	packets_dropped = sample_recv_buffer[1];
-	printk("Server received %u packets\n", packets_received);
+	printk("Server received %u/%u packets\n", packets_received, packets_sent);
 	printk("Server dropped %u packets\n", packets_dropped);
 	printk("Time elapsed sending packets %ums\n", send_end_ms - send_start_ms);
 	printk("Throughput %u bytes/s\n",
@@ -253,7 +266,7 @@ int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint
 	       (send_end_ms - send_start_ms));
 
 	printk("Close UDP socket\n");
-	ret = zsock_close(socket_fd);
+	ret = close(socket_fd);
 	if (ret < 0) {
 		printk("Failed to close socket\n");
 		return -1;
@@ -363,7 +376,7 @@ int main(void)
 	printk("L4 connected\n");
 
 	/* Wait a bit to avoid (unsuccessfully) trying to send the first echo packet too quickly. */
-	k_sleep(K_SECONDS(1));
+	k_sleep(K_SECONDS(5));
 
 	ret = sample_echo_packet(&sample_test_dns_addrinfo.ai_addr,
 				 sample_test_dns_addrinfo.ai_addrlen, port);

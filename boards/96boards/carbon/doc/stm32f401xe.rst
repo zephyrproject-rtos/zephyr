@@ -338,16 +338,16 @@ in general, see :ref:`build_an_application`.
 
 #. Install the dfu-util flashing app, as described above.
 
-#. Build and flash the ``samples/bluetooth/ipsp`` application for
+#. Build and flash the ``samples/bluetooth/peripheral_hr`` application for
    96b_carbon. See the instructions above for how to put your board
    into DFU mode if you haven't done this before:
 
    .. zephyr-app-commands::
-      :zephyr-app: samples/bluetooth/ipsp
+      :zephyr-app: samples/bluetooth/peripheral_hr
       :board: 96b_carbon/stm32f401xe
       :goals: build flash
 
-#. Refer to the instructions in :ref:`bluetooth-ipsp-sample` for how
+#. Refer to the instructions in :ref:`peripheral_hr` for how
    to verify functionality.
 
 Congratulations! Your 96Boards Carbon now has Bluetooth

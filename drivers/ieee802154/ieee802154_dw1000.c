@@ -1633,11 +1633,8 @@ static int dw1000_init(const struct device *dev)
 static inline uint8_t *get_mac(const struct device *dev)
 {
 	struct dwt_context *dw1000 = dev->data;
-	uint32_t *ptr = (uint32_t *)(dw1000->mac_addr);
 
-	UNALIGNED_PUT(sys_rand32_get(), ptr);
-	ptr = (uint32_t *)(dw1000->mac_addr + 4);
-	UNALIGNED_PUT(sys_rand32_get(), ptr);
+	sys_rand_get(dw1000->mac_addr, sizeof(dw1000->mac_addr));
 
 	dw1000->mac_addr[0] = (dw1000->mac_addr[0] & ~0x01) | 0x02;
 

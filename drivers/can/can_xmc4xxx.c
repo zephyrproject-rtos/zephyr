@@ -925,7 +925,7 @@ static const struct can_driver_api can_xmc4xxx_api_funcs = {
                                                                                                    \
 	static struct can_xmc4xxx_data can_xmc4xxx_data_##inst;                                    \
 	static const struct can_xmc4xxx_config can_xmc4xxx_config_##inst = {                       \
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 1000000),                            \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 1000000),                         \
 		.can = (CAN_NODE_TypeDef *)DT_INST_REG_ADDR(inst),                                 \
 		.clock_div8 = DT_INST_PROP(inst, clock_div8),                                      \
 		.irq_config_func = can_xmc4xxx_irq_config_##inst,                                  \

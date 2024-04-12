@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&usart3 {
+	/* Set domain clock to HSI to allow wakeup from Stop mode */
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>,
+		 <&rcc STM32_SRC_HSI USART3_SEL(3)>;
+
+	/* Configure device as wakeup source */
+	wakeup-source;
+
+	/* Configure sleep pinctrl configuration which will be used when
+	 * device is not configured as wakeup source by the application.
+	 * This use case is only applicable in PM_DEVICE mode.
+	 */
+	pinctrl-1 = <&analog_pd8 &analog_pd9>;
+	pinctrl-names = "default", "sleep";
+};
+
+&clk_hsi {
+	/* Make sure HSI is enabled */
+	status = "okay";
+};

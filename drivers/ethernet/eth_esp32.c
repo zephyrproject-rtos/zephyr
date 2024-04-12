@@ -57,6 +57,29 @@ static enum ethernet_hw_caps eth_esp32_caps(const struct device *dev)
 	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
 }
 
+static int eth_esp32_set_config(const struct device *dev,
+				enum ethernet_config_type type,
+				const struct ethernet_config *config)
+{
+	struct eth_esp32_dev_data *const dev_data = dev->data;
+	int ret = -ENOTSUP;
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		memcpy(dev_data->mac_addr, config->mac_address.addr, 6);
+		emac_hal_set_address(&dev_data->hal, dev_data->mac_addr);
+		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
+				     sizeof(dev_data->mac_addr),
+				     NET_LINK_ETHERNET);
+		ret = 0;
+		break;
+	default:
+		break;
+	}
+
+	return ret;
+}
+
 static int eth_esp32_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_esp32_dev_data *dev_data = dev->data;
@@ -262,9 +285,12 @@ int eth_esp32_initialize(const struct device *dev)
 		goto err;
 	}
 
+	/* Set dma_burst_len as ETH_DMA_BURST_LEN_32 by default */
+	emac_hal_dma_config_t dma_config = { .dma_burst_len = 0 };
+
 	emac_hal_reset_desc_chain(&dev_data->hal);
 	emac_hal_init_mac_default(&dev_data->hal);
-	emac_hal_init_dma_default(&dev_data->hal);
+	emac_hal_init_dma_default(&dev_data->hal, &dma_config);
 
 	res = generate_mac_addr(dev_data->mac_addr);
 	if (res != 0) {
@@ -318,6 +344,7 @@ static void eth_esp32_iface_init(struct net_if *iface)
 static const struct ethernet_api eth_esp32_api = {
 	.iface_api.init		= eth_esp32_iface_init,
 	.get_capabilities	= eth_esp32_caps,
+	.set_config		= eth_esp32_set_config,
 	.send			= eth_esp32_send,
 };
 

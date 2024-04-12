@@ -175,6 +175,18 @@ class Json_report:
                                         test_suite['platforms'].append(testsuite['platform'])
                                         sub_component["test_suites"].append(test_suite)
                                     else:
+                                        if 'qemu' in testsuite['platform'] or 'native' in testsuite['platform']:
+                                            if test_suite['status'] == "":
+                                                test_suite['status'] = 'sim_only'
+
+                                            if test_suite['status'] == 'hw_only':
+                                                test_suite['status'] = 'mixed'
+                                        else:
+                                            if test_suite['status'] == "":
+                                                test_suite['status'] = 'hw_only'
+
+                                            if test_suite['status'] == 'sim_only':
+                                                test_suite['status'] = 'mixed'
                                         test_case = {}
                                         test_cases = test_suite['test_cases']
                                         known_testcase_flag = False

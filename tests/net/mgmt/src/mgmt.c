@@ -33,7 +33,7 @@ static uint32_t throw_times;
 static uint32_t throw_sleep;
 static bool with_info;
 static bool with_static;
-static K_THREAD_STACK_DEFINE(thrower_stack, 512 + CONFIG_TEST_EXTRA_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(thrower_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread thrower_thread_data;
 static struct k_sem thrower_lock;
 
@@ -421,6 +421,39 @@ ZTEST(mgmt_fn_test_suite, test_mgmt)
 
 	zassert_false(test_synchronous_event_listener(2, true),
 		      "test_synchronous_event_listener failed");
+}
+
+static K_SEM_DEFINE(wait_for_event_processing, 0, 1);
+
+static void net_mgmt_event_handler(struct net_mgmt_event_callback *cb,
+				    uint32_t mgmt_event, struct net_if *iface)
+{
+	static int cb_call_count;
+
+	ARG_UNUSED(cb);
+	ARG_UNUSED(iface);
+	ARG_UNUSED(mgmt_event);
+
+	k_sem_give(&wait_for_event_processing);
+	cb_call_count++;
+	zassert_equal(cb_call_count, 1, "Too many calls to event callback");
+}
+
+ZTEST(mgmt_fn_test_suite, test_mgmt_duplicate_handler)
+{
+	struct net_mgmt_event_callback cb;
+	int ret;
+
+	net_mgmt_init_event_callback(&cb, net_mgmt_event_handler, NET_EVENT_IPV6_ADDR_ADD);
+	net_mgmt_add_event_callback(&cb);
+	net_mgmt_add_event_callback(&cb);
+
+	net_mgmt_event_notify(NET_EVENT_IPV6_ADDR_ADD, NULL);
+
+	ret = k_sem_take(&wait_for_event_processing, K_MSEC(50));
+	zassert_equal(ret, 0, "Event is not processed");
+
+	net_mgmt_del_event_callback(&cb);
 }
 
 ZTEST_SUITE(mgmt_fn_test_suite, NULL, NULL, NULL, NULL, NULL);

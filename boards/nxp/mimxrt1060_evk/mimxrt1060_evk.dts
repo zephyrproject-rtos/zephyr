@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, NXP
+ * Copyright 2018,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -109,8 +109,9 @@
 
 arduino_serial: &lpuart3 {
 	pinctrl-0 = <&pinmux_lpuart3>;
-	pinctrl-1 = <&pinmux_lpuart3_sleep>;
-	pinctrl-names = "default", "sleep";
+	pinctrl-1 = <&pinmux_lpuart3_flow_control>;
+	pinctrl-2 = <&pinmux_lpuart3_sleep>;
+	pinctrl-names = "default", "flowcontrol", "sleep";
 };
 
 &lcdif {
@@ -286,5 +287,9 @@ arduino_spi: &lpspi1 {
 };
 
 &pxp {
+	status = "okay";
+};
+
+&pit0 {
 	status = "okay";
 };

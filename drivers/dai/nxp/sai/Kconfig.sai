@@ -5,6 +5,7 @@ config DAI_NXP_SAI
 	bool "NXP Synchronous Audio Interface (SAI) driver"
 	default y
 	depends on DT_HAS_NXP_DAI_SAI_ENABLED
+	select PINCTRL
 	help
 		Select this to enable NXP SAI driver.
 

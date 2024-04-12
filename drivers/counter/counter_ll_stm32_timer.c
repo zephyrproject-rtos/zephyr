@@ -96,8 +96,6 @@ struct counter_stm32_data {
 	uint32_t guard_period;
 	atomic_t cc_int_pending;
 	uint32_t freq;
-	/* Reset controller device configuration */
-	const struct reset_dt_spec reset;
 };
 
 struct counter_stm32_ch_data {
@@ -113,6 +111,8 @@ struct counter_stm32_config {
 	struct stm32_pclken pclken;
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t irqn;
+	/* Reset controller device configuration */
+	const struct reset_dt_spec reset;
 
 	LOG_INSTANCE_PTR_DECLARE(log);
 };
@@ -487,13 +487,13 @@ static int counter_stm32_init_timer(const struct device *dev)
 	}
 	data->freq = tim_clk / (cfg->prescaler + 1U);
 
-	if (!device_is_ready(data->reset.dev)) {
+	if (!device_is_ready(cfg->reset.dev)) {
 		LOG_ERR("reset controller not ready");
 		return -ENODEV;
 	}
 
 	/* Reset timer to default state using RCC */
-	(void)reset_line_toggle_dt(&data->reset);
+	(void)reset_line_toggle_dt(&cfg->reset);
 
 	/* config/enable IRQ */
 	cfg->irq_config_func(dev);
@@ -639,9 +639,7 @@ void counter_stm32_irq_handler(const struct device *dev)
 	BUILD_ASSERT(NUM_CH(TIM(idx)) <= TIMER_MAX_CH,				  \
 		     "TIMER too many channels");				  \
 										  \
-	static struct counter_stm32_data counter##idx##_data = {		  \
-		.reset = RESET_DT_SPEC_GET(TIMER(idx)),				  \
-	};									  \
+	static struct counter_stm32_data counter##idx##_data;			  \
 	static struct counter_stm32_ch_data counter##idx##_ch_data[TIMER_MAX_CH]; \
 										  \
 	static void counter_##idx##_stm32_irq_config(const struct device *dev)	  \
@@ -671,6 +669,7 @@ void counter_stm32_irq_handler(const struct device *dev)
 		},								  \
 		.irq_config_func = counter_##idx##_stm32_irq_config,		  \
 		.irqn = DT_IRQN(TIMER(idx)),					  \
+		.reset = RESET_DT_SPEC_GET(TIMER(idx)),				  \
 	};									  \
 										  \
 	DEVICE_DT_INST_DEFINE(idx,						  \

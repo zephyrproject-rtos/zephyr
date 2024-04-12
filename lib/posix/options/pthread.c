@@ -384,6 +384,88 @@ int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksi
 	return 0;
 }
 
+/**
+ * @brief Get scope attributes in thread attributes object.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_attr_getscope(const pthread_attr_t *_attr, int *contentionscope)
+{
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
+
+	if (!__attr_is_initialized(attr) || contentionscope == NULL) {
+		return EINVAL;
+	}
+	*contentionscope = attr->contentionscope;
+	return 0;
+}
+
+/**
+ * @brief Set scope attributes in thread attributes object.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_attr_setscope(pthread_attr_t *_attr, int contentionscope)
+{
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
+
+	if (!__attr_is_initialized(attr)) {
+		LOG_DBG("attr %p is not initialized", attr);
+		return EINVAL;
+	}
+	if (!(contentionscope == PTHREAD_SCOPE_PROCESS ||
+	      contentionscope == PTHREAD_SCOPE_SYSTEM)) {
+		LOG_DBG("%s contentionscope %d", "Invalid", contentionscope);
+		return EINVAL;
+	}
+	if (contentionscope == PTHREAD_SCOPE_PROCESS) {
+		/* Zephyr does not yet support processes or process scheduling */
+		LOG_DBG("%s contentionscope %d", "Unsupported", contentionscope);
+		return ENOTSUP;
+	}
+	attr->contentionscope = contentionscope;
+	return 0;
+}
+
+/**
+ * @brief Get inherit scheduler attributes in thread attributes object.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_attr_getinheritsched(const pthread_attr_t *_attr, int *inheritsched)
+{
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
+
+	if (!__attr_is_initialized(attr) || inheritsched == NULL) {
+		return EINVAL;
+	}
+	*inheritsched = attr->inheritsched;
+	return 0;
+}
+
+/**
+ * @brief Set inherit scheduler attributes in thread attributes object.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_attr_setinheritsched(pthread_attr_t *_attr, int inheritsched)
+{
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
+
+	if (!__attr_is_initialized(attr)) {
+		LOG_DBG("attr %p is not initialized", attr);
+		return EINVAL;
+	}
+
+	if (inheritsched != PTHREAD_INHERIT_SCHED && inheritsched != PTHREAD_EXPLICIT_SCHED) {
+		LOG_DBG("Invalid inheritsched %d", inheritsched);
+		return EINVAL;
+	}
+
+	attr->inheritsched = inheritsched;
+	return 0;
+}
+
 static void posix_thread_recycle_work_handler(struct k_work *work)
 {
 	ARG_UNUSED(work);
@@ -554,6 +636,14 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 	} else {
 		/* copy user-provided attr into thread, caller must destroy attr at a later time */
 		t->attr = *(struct posix_thread_attr *)_attr;
+	}
+
+	if (t->attr.inheritsched == PTHREAD_INHERIT_SCHED) {
+		int pol;
+
+		t->attr.priority =
+			zephyr_to_posix_priority(k_thread_priority_get(k_current_get()), &pol);
+		t->attr.schedpolicy = pol;
 	}
 
 	/* spawn the thread */
@@ -780,6 +870,46 @@ int pthread_setschedparam(pthread_t pthread, int policy, const struct sched_para
 }
 
 /**
+ * @brief Set thread scheduling priority.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_setschedprio(pthread_t thread, int prio)
+{
+	int ret;
+	int new_prio = K_LOWEST_APPLICATION_THREAD_PRIO;
+	struct posix_thread *t = NULL;
+	int policy;
+	struct sched_param param;
+
+	ret = pthread_getschedparam(thread, &policy, &param);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (!is_posix_policy_prio_valid(prio, policy)) {
+		return EINVAL;
+	}
+
+	K_SPINLOCK(&pthread_pool_lock) {
+		t = to_posix_thread(thread);
+		if (t == NULL) {
+			ret = ESRCH;
+			K_SPINLOCK_BREAK;
+		}
+
+		new_prio = posix_to_zephyr_priority(prio, policy);
+	}
+
+	if (ret == 0) {
+		k_thread_priority_set(&t->thread, new_prio);
+	}
+
+	return ret;
+}
+
+/**
  * @brief Initialise threads attribute object
  *
  * See IEEE 1003.1
@@ -797,6 +927,8 @@ int pthread_attr_init(pthread_attr_t *_attr)
 
 	*attr = (struct posix_thread_attr){0};
 	attr->guardsize = CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT;
+	attr->contentionscope = PTHREAD_SCOPE_SYSTEM;
+	attr->inheritsched = PTHREAD_INHERIT_SCHED;
 
 	if (DYNAMIC_STACK_SIZE > 0) {
 		attr->stack = k_thread_stack_alloc(DYNAMIC_STACK_SIZE + attr->guardsize,

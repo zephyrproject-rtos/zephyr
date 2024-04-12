@@ -21,6 +21,10 @@
 		zephyr,code-partition = &slot0_partition;
 	};
 
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		red_led: led_0 {
@@ -167,11 +171,4 @@ zephyr_udc0: &usbd {
 	status = "okay";
 	pinctrl-0 = <&spi2_controller>;
 	pinctrl-names = "default";
-};
-
-&mipi_dbi {
-	pinctrl-0 = <&mipi_dbi_default>;
-	pinctrl-1 = <&mipi_dbi_read>;
-	pinctrl-2 = <&mipi_dbi_sleep>;
-	pinctrl-names = "default", "read", "sleep";
 };

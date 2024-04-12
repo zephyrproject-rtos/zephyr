@@ -263,12 +263,12 @@ markup (double backticks) to indicate a ``filename``.
 For references to files that are in the Zephyr GitHub tree, a special
 role can be used that creates a hyperlink to that file.  For example a
 reference to the reST file used to create this document can be generated
-using ``:zephyr_file:`doc/contribute/documentation/index.rst```  that will
-show up as :zephyr_file:`doc/contribute/documentation/index.rst`, a link to
+using ``:zephyr_file:`doc/contribute/documentation/guidelines.rst```  that will
+show up as :zephyr_file:`doc/contribute/documentation/guidelines.rst`, a link to
 the "blob" file in the github repo.  There's also a
-``:zephyr_raw:`doc/guides/documentation/index.rst``` role that will
+``:zephyr_raw:`doc/contribute/documentation/guidelines.rst``` role that will
 link to the "raw" content,
-:zephyr_raw:`doc/contribute/documentation/index.rst`. (You can click on
+:zephyr_raw:`doc/contribute/documentation/guidelines.rst`. (You can click on
 these links to see the difference.)
 
 .. _internal-linking:

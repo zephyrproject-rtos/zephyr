@@ -22,7 +22,7 @@ compatible API implementation for Zephyr:
 * Is namespaced by default, to avoid name conflicts with well-known
   names like ``close()``, which may be part of libc or other POSIX
   compatibility libraries.
-  If enabled by :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES`, it will also
+  If enabled by :kconfig:option:`CONFIG_POSIX_API`, it will also
   expose native POSIX names.
 
 BSD Sockets compatible API is enabled using :kconfig:option:`CONFIG_NET_SOCKETS`
@@ -35,7 +35,7 @@ config option and implements the following operations: ``socket()``, ``close()``
 Based on the namespacing requirements above, these operations are by
 default exposed as functions with ``zsock_`` prefix, e.g.
 :c:func:`zsock_socket` and :c:func:`zsock_close`. If the config option
-:kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined, all the functions
+:kconfig:option:`CONFIG_POSIX_API` is defined, all the functions
 will be also exposed as aliases without the prefix. This includes the
 functions like ``close()`` and ``fcntl()`` (which may conflict with
 functions in libc or other libraries, for example, with the filesystem

@@ -387,14 +387,41 @@
 		};
 
 		pit0: pit@40037000 {
-			compatible = "nxp,kinetis-pit";
+			compatible = "nxp,pit";
 			reg = <0x40037000 0x1000>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103c 23>;
-			interrupts = <48 0>, <49 0>, <50 0>, <51 0>;
 			status = "disabled";
-			pit-channel = <0>;
-			pit-period = <1000000>;
 			max-load-value = <0xffffffff>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pit0_channel0: pit0_channel@0 {
+				compatible = "nxp,pit-channel";
+				reg = <0>;
+				interrupts = <48 0>;
+				status = "disabled";
+			};
+
+			pit0_channel1: pit0_channel@1 {
+				compatible = "nxp,pit-channel";
+				reg = <1>;
+				interrupts = <49 0>;
+				status = "disabled";
+			};
+
+			pit0_channel2: pit0_channel@2 {
+				compatible = "nxp,pit-channel";
+				reg = <2>;
+				interrupts = <50 0>;
+				status = "disabled";
+			};
+
+			pit0_channel3: pit0_channel@3 {
+				compatible = "nxp,pit-channel";
+				reg = <3>;
+				interrupts = <51 0>;
+				status = "disabled";
+			};
 		};
 
 		edma0: dma-controller@40008000 {

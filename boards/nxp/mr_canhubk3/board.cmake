@@ -12,6 +12,8 @@ else()
 endif()
 
 board_runner_args(jlink "--device=S32K344" "--reset-after-load")
+board_runner_args(pyocd "--target=s32k344")
 
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/trace32.board.cmake)

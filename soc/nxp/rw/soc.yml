@@ -1,0 +1,7 @@
+family:
+- name: nxp_rw
+  series:
+  - name: rw61x
+    socs:
+    - name: rw612
+    - name: rw610

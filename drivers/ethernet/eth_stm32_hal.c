@@ -100,22 +100,6 @@ static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __eth_stm32_desc;
 static uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_STM32_RX_BUF_SIZE] __eth_stm32_buf;
 static uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_STM32_TX_BUF_SIZE] __eth_stm32_buf;
 
-#if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
-
-static struct net_if_mcast_monitor mcast_monitor;
-
-static K_MUTEX_DEFINE(multicast_addr_lock);
-
-#if defined(CONFIG_NET_NATIVE_IPV6)
-static struct in6_addr multicast_ipv6_joined_addrs[NET_IF_MAX_IPV6_MADDR] = {0};
-#endif /* CONFIG_NET_NATIVE_IPV6 */
-
-#if defined(CONFIG_NET_NATIVE_IPV4)
-static struct in_addr multicast_ipv4_joined_addrs[NET_IF_MAX_IPV4_MADDR] = {0};
-#endif /* CONFIG_NET_NATIVE_IPV4 */
-
-#endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
-
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 
 BUILD_ASSERT(ETH_STM32_RX_BUF_SIZE % 4 == 0, "Rx buffer size must be a multiple of 4");
@@ -287,23 +271,8 @@ static inline void setup_mac_filter(ETH_HandleTypeDef *heth)
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 static bool eth_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt)
 {
-#if defined(CONFIG_NET_VLAN)
-	struct net_eth_vlan_hdr *hdr_vlan;
-	struct ethernet_context *eth_ctx;
-
-	eth_ctx = net_if_l2_data(iface);
-	if (net_eth_is_vlan_enabled(eth_ctx, iface)) {
-		hdr_vlan = (struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-
-		if (ntohs(hdr_vlan->type) != NET_ETH_PTYPE_PTP) {
-			return false;
-		}
-	} else
-#endif
-	{
-		if (ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_PTP) {
-			return false;
-		}
+	if (ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_PTP) {
+		return false;
 	}
 
 	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
@@ -606,26 +575,12 @@ error:
 	return res;
 }
 
-static struct net_if *get_iface(struct eth_stm32_hal_dev_data *ctx,
-				uint16_t vlan_tag)
+static struct net_if *get_iface(struct eth_stm32_hal_dev_data *ctx)
 {
-#if defined(CONFIG_NET_VLAN)
-	struct net_if *iface;
-
-	iface = net_eth_get_vlan_iface(ctx->iface, vlan_tag);
-	if (!iface) {
-		return ctx->iface;
-	}
-
-	return iface;
-#else
-	ARG_UNUSED(vlan_tag);
-
 	return ctx->iface;
-#endif
 }
 
-static struct net_pkt *eth_rx(const struct device *dev, uint16_t *vlan_tag)
+static struct net_pkt *eth_rx(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data;
 	ETH_HandleTypeDef *heth;
@@ -756,7 +711,7 @@ static struct net_pkt *eth_rx(const struct device *dev, uint16_t *vlan_tag)
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
-	pkt = net_pkt_rx_alloc_with_buffer(get_iface(dev_data, *vlan_tag),
+	pkt = net_pkt_rx_alloc_with_buffer(get_iface(dev_data),
 					   total_len, AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
@@ -826,29 +781,8 @@ release_desc:
 		goto out;
 	}
 
-#if defined(CONFIG_NET_VLAN)
-	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
-
-	if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
-		struct net_eth_vlan_hdr *hdr_vlan =
-			(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-
-		net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
-		*vlan_tag = net_pkt_vlan_tag(pkt);
-
-#if CONFIG_NET_TC_RX_COUNT > 1
-		enum net_priority prio;
-
-		prio = net_vlan2priority(net_pkt_vlan_priority(pkt));
-		net_pkt_set_priority(pkt, prio);
-#endif
-	} else {
-		net_pkt_set_iface(pkt, dev_data->iface);
-	}
-#endif /* CONFIG_NET_VLAN */
-
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	if (eth_is_ptp_pkt(get_iface(dev_data, *vlan_tag), pkt)) {
+	if (eth_is_ptp_pkt(get_iface(dev_data), pkt)) {
 		pkt->timestamp.second = timestamp.second;
 		pkt->timestamp.nanosecond = timestamp.nanosecond;
 	} else {
@@ -860,7 +794,7 @@ release_desc:
 
 out:
 	if (!pkt) {
-		eth_stats_update_errors_rx(get_iface(dev_data, *vlan_tag));
+		eth_stats_update_errors_rx(get_iface(dev_data));
 	}
 
 	return pkt;
@@ -868,7 +802,6 @@ out:
 
 static void rx_thread(void *arg1, void *unused1, void *unused2)
 {
-	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	const struct device *dev;
 	struct eth_stm32_hal_dev_data *dev_data;
 	struct net_if *iface;
@@ -893,10 +826,9 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 			/* semaphore taken, update link status and receive packets */
 			if (dev_data->link_up != true) {
 				dev_data->link_up = true;
-				net_eth_carrier_on(get_iface(dev_data,
-							     vlan_tag));
+				net_eth_carrier_on(get_iface(dev_data));
 			}
-			while ((pkt = eth_rx(dev, &vlan_tag)) != NULL) {
+			while ((pkt = eth_rx(dev)) != NULL) {
 				iface = net_pkt_iface(pkt);
 #if defined(CONFIG_NET_DSA)
 				iface = dsa_net_recv(iface, &pkt);
@@ -919,15 +851,13 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 					if (dev_data->link_up != true) {
 						dev_data->link_up = true;
 						net_eth_carrier_on(
-							get_iface(dev_data,
-								  vlan_tag));
+							get_iface(dev_data));
 					}
 				} else {
 					if (dev_data->link_up != false) {
 						dev_data->link_up = false;
 						net_eth_carrier_off(
-							get_iface(dev_data,
-								  vlan_tag));
+							get_iface(dev_data));
 					}
 				}
 			}
@@ -1305,62 +1235,6 @@ static int eth_initialize(const struct device *dev)
 }
 
 #if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
-
-#if defined(CONFIG_NET_NATIVE_IPV6)
-static void add_ipv6_multicast_addr(const struct in6_addr *addr)
-{
-	uint32_t i;
-
-	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
-		if (net_ipv6_is_addr_unspecified(&multicast_ipv6_joined_addrs[i])) {
-			net_ipv6_addr_copy_raw((uint8_t *)&multicast_ipv6_joined_addrs[i],
-					(uint8_t *)addr);
-			break;
-		}
-	}
-}
-
-static void remove_ipv6_multicast_addr(const struct in6_addr *addr)
-{
-	uint32_t i;
-
-	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
-		if (net_ipv6_addr_cmp(&multicast_ipv6_joined_addrs[i], addr)) {
-			net_ipv6_addr_copy_raw((uint8_t *)&multicast_ipv6_joined_addrs[i],
-					(uint8_t *)net_ipv6_unspecified_address);
-			break;
-		}
-	}
-}
-#endif /* CONFIG_NET_NATIVE_IPV6 */
-
-#if defined(CONFIG_NET_NATIVE_IPV4)
-static void add_ipv4_multicast_addr(const struct in_addr *addr)
-{
-	uint32_t i;
-
-	for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
-		if (net_ipv4_is_addr_unspecified(&multicast_ipv4_joined_addrs[i])) {
-			net_ipv4_addr_copy_raw((uint8_t *)&multicast_ipv4_joined_addrs[i],
-					(uint8_t *)addr);
-			break;
-		}
-	}
-}
-
-static void remove_ipv4_multicast_addr(const struct in_addr *addr)
-{
-	uint32_t i;
-
-	for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
-		if (net_ipv4_addr_cmp(&multicast_ipv4_joined_addrs[i], addr)) {
-			multicast_ipv4_joined_addrs[i].s_addr = 0;
-			break;
-		}
-	}
-}
-#endif /* CONFIG_NET_NATIVE_IPV4 */
-
 static uint32_t reverse(uint32_t val)
 {
 	uint32_t res = 0;
@@ -1375,112 +1249,43 @@ static uint32_t reverse(uint32_t val)
 	return res;
 }
 
-static void net_if_stm32_mcast_cb(struct net_if *iface,
-			    const struct net_addr *addr,
-			    bool is_joined)
+static void eth_stm32_mcast_filter(const struct device *dev, const struct ethernet_filter *filter)
 {
-	ARG_UNUSED(addr);
-
-	const struct device *dev;
-	struct eth_stm32_hal_dev_data *dev_data;
+	struct eth_stm32_hal_dev_data *dev_data = (struct eth_stm32_hal_dev_data *)dev->data;
 	ETH_HandleTypeDef *heth;
-	struct net_eth_addr mac_addr;
 	uint32_t crc;
 	uint32_t hash_table[2];
 	uint32_t hash_index;
-	int i;
-
-	dev = net_if_get_device(iface);
-
-	dev_data = (struct eth_stm32_hal_dev_data *)dev->data;
 
 	heth = &dev_data->heth;
 
-	hash_table[0] = 0;
-	hash_table[1] = 0;
+	crc = reverse(crc32_ieee(filter->mac_address.addr, sizeof(struct net_eth_addr)));
+	hash_index = (crc >> 26) & 0x3f;
 
-	if (is_joined) {
-	/* Save a copy of the hash table which we update with
-	 * the hash for a single multicast address for join
-	 */
+	__ASSERT_NO_MSG(hash_index < ARRAY_SIZE(dev_data->hash_index_cnt));
+
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-		hash_table[0] = heth->Instance->MACHT0R;
-		hash_table[1] = heth->Instance->MACHT1R;
+	hash_table[0] = heth->Instance->MACHT0R;
+	hash_table[1] = heth->Instance->MACHT1R;
 #else
-		hash_table[0] = heth->Instance->MACHTLR;
-		hash_table[1] = heth->Instance->MACHTHR;
+	hash_table[0] = heth->Instance->MACHTLR;
+	hash_table[1] = heth->Instance->MACHTHR;
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X */
-	}
 
-	k_mutex_lock(&multicast_addr_lock, K_FOREVER);
-
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	if (is_joined) {
-		/* When joining only update the hash filter with the joining
-		 * multicast address.
-		 */
-		add_ipv6_multicast_addr(&addr->in6_addr);
-
-		net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &mac_addr);
-		crc = reverse(crc32_ieee(mac_addr.addr,
-					sizeof(struct net_eth_addr)));
-		hash_index = (crc >> 26) & 0x3f;
+	if (filter->set) {
+		dev_data->hash_index_cnt[hash_index]++;
 		hash_table[hash_index / 32] |= (1 << (hash_index % 32));
 	} else {
-		/* When leaving its better to compute the full hash table
-		 * for all the multicast addresses that we're aware of.
-		 */
-		remove_ipv6_multicast_addr(&addr->in6_addr);
+		if (dev_data->hash_index_cnt[hash_index] == 0) {
+			__ASSERT_NO_MSG(false);
+			return;
+		}
 
-		for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
-			if (net_ipv6_is_addr_unspecified(&multicast_ipv6_joined_addrs[i])) {
-				continue;
-			}
-
-			net_eth_ipv6_mcast_to_mac_addr(&multicast_ipv6_joined_addrs[i],
-							&mac_addr);
-			crc = reverse(crc32_ieee(mac_addr.addr,
-						sizeof(struct net_eth_addr)));
-			hash_index = (crc >> 26) & 0x3f;
-			hash_table[hash_index / 32] |= (1 << (hash_index % 32));
+		dev_data->hash_index_cnt[hash_index]--;
+		if (dev_data->hash_index_cnt[hash_index] == 0) {
+			hash_table[hash_index / 32] &= ~(1 << (hash_index % 32));
 		}
 	}
-#endif /* CONFIG_NET_IPV6 */
-
-#if defined(CONFIG_NET_NATIVE_IPV4)
-	if (is_joined) {
-		/* When joining only update the hash filter with the joining
-		 * multicast address.
-		 */
-		add_ipv4_multicast_addr(&addr->in_addr);
-
-		net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &mac_addr);
-		crc = reverse(crc32_ieee(mac_addr.addr,
-						sizeof(struct net_eth_addr)));
-		hash_index = (crc >> 26) & 0x3f;
-		hash_table[hash_index / 32] |= (1 << (hash_index % 32));
-	} else {
-		/* When leaving its better to compute the full hash table
-		 * for all the multicast addresses that we're aware of.
-		 */
-		remove_ipv4_multicast_addr(&addr->in_addr);
-
-		for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
-			if (net_ipv4_is_addr_unspecified(&multicast_ipv4_joined_addrs[i])) {
-				continue;
-			}
-
-			net_eth_ipv4_mcast_to_mac_addr(&multicast_ipv4_joined_addrs[i],
-							&mac_addr);
-			crc = reverse(crc32_ieee(mac_addr.addr,
-						sizeof(struct net_eth_addr)));
-			hash_index = (crc >> 26) & 0x3f;
-			hash_table[hash_index / 32] |= (1 << (hash_index % 32));
-		}
-	}
-#endif /* CONFIG_NET_IPV4 */
-
-	k_mutex_unlock(&multicast_addr_lock);
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
 	heth->Instance->MACHT0R = hash_table[0];
@@ -1507,18 +1312,10 @@ static void eth_iface_init(struct net_if *iface)
 	dev_data = dev->data;
 	__ASSERT_NO_MSG(dev_data != NULL);
 
-	/* For VLAN, this value is only used to get the correct L2 driver.
-	 * The iface pointer in context should contain the main interface
-	 * if the VLANs are enabled.
-	 */
 	if (dev_data->iface == NULL) {
 		dev_data->iface = iface;
 		is_first_init = true;
 	}
-
-#if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
-	net_if_mcast_mon_register(&mcast_monitor, iface, net_if_stm32_mcast_cb);
-#endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 
 	/* Register Ethernet MAC Address with the upper layer */
 	net_if_set_link_addr(iface, dev_data->mac_addr,
@@ -1576,6 +1373,9 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 #if defined(CONFIG_NET_DSA)
 		| ETHERNET_DSA_MASTER_PORT
 #endif
+#if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
+		| ETHERNET_HW_FILTERING
+#endif
 		;
 }
 
@@ -1622,6 +1422,11 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 		ret = 0;
 #endif /* CONFIG_NET_PROMISCUOUS_MODE */
 		break;
+#if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
+	case ETHERNET_CONFIG_TYPE_FILTER:
+		eth_stm32_mcast_filter(dev, &config->filter);
+		break;
+#endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 	default:
 		break;
 	}

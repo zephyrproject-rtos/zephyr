@@ -464,7 +464,7 @@ do { \
  *
  * Macro handles creation of log message which includes storing log message
  * description, timestamp, arguments, copying string arguments into message and
- * copying user data into the message space. The are 3 modes of message
+ * copying user data into the message space. There are 3 modes of message
  * creation:
  * - at compile time message size is determined, message is allocated and
  *   content is written directly to the message. It is the fastest but cannot

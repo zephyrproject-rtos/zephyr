@@ -24,6 +24,7 @@ config SOC_NRF5340_CPUAPP
 	select ARMV8_M_DSP
 	select HAS_POWEROFF
 	select SOC_COMPATIBLE_NRF5340_CPUAPP
+	select SOC_NRF53_CPUNET_MGMT
 	imply SOC_NRF53_RTC_PRETICK
 	imply SOC_NRF53_ANOMALY_168_WORKAROUND
 
@@ -137,6 +138,12 @@ config SOC_NRF_GPIO_FORWARDER_FOR_NRF5340
 	depends on NRF_SOC_SECURE_SUPPORTED
 	help
 	  hidden option for including the nRF GPIO pin forwarding
+
+config SOC_NRF53_CPUNET_MGMT
+	bool
+	select ONOFF
+	help
+	  hidden option for including the nRF53 network CPU management
 
 if !TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM
 

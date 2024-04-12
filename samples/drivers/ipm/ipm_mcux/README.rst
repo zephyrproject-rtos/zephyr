@@ -28,6 +28,7 @@ Building the application for lpcxpresso54114/lpc54114/m4
    :zephyr-app: samples/drivers/ipm/ipm_mcux
    :board: lpcxpresso54114/lpc54114/m4
    :goals: debug
+   :west-args: --sysbuild
 
 
 Building the application for lpcxpresso55s69/lpc55s69/cpu0
@@ -37,6 +38,7 @@ Building the application for lpcxpresso55s69/lpc55s69/cpu0
    :zephyr-app: samples/drivers/ipm/ipm_mcux
    :board: lpcxpresso55s69/lpc55s69/cpu0
    :goals: debug
+   :west-args: --sysbuild
 
 Running
 *******

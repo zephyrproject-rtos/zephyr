@@ -35,13 +35,13 @@ if(HWMv1)
   set(OPERATION WRITE)
   foreach(root ${kconfig_soc_root})
     file(APPEND ${soc_defconfig_file}
-         "osource \"${root}/soc/soc_legacy/$(ARCH)/*/Kconfig.defconfig\"\n")
+         "osource \"${root}/soc/$(ARCH)/*/Kconfig.defconfig\"\n")
     file(${OPERATION} ${KCONFIG_BINARY_DIR}/soc/Kconfig.soc.choice
-         "osource \"${root}/soc/soc_legacy/$(ARCH)/*/Kconfig.soc\"\n"
+         "osource \"${root}/soc/$(ARCH)/*/Kconfig.soc\"\n"
     )
     file(${OPERATION} ${KCONFIG_BINARY_DIR}/soc/Kconfig.soc.arch
-         "osource \"${root}/soc/soc_legacy/$(ARCH)/Kconfig\"\n"
-         "osource \"${root}/soc/soc_legacy/$(ARCH)/*/Kconfig\"\n"
+         "osource \"${root}/soc/$(ARCH)/Kconfig\"\n"
+         "osource \"${root}/soc/$(ARCH)/*/Kconfig\"\n"
     )
     set(OPERATION APPEND)
   endforeach()
@@ -81,7 +81,7 @@ endif()
 if(DEFINED BOARD_REVISION)
   zephyr_build_string(config_board_string
                       BOARD ${BOARD}
-                      BOARD_IDENTIFIER ${BOARD_IDENTIFIER}
+                      BOARD_QUALIFIERS ${BOARD_QUALIFIERS}
                       BOARD_REVISION ${BOARD_REVISION}
   )
   set(board_rev_file ${config_board_string})
@@ -160,7 +160,7 @@ set(COMMON_KCONFIG_ENV_SETTINGS
   BOARD_DIR=${BOARD_DIR}
   BOARD=${BOARD}
   BOARD_REVISION=${BOARD_REVISION}
-  BOARD_IDENTIFIER=${BOARD_IDENTIFIER}
+  BOARD_QUALIFIERS=${BOARD_QUALIFIERS}
   HWM_SCHEME=${HWM}
   KCONFIG_BINARY_DIR=${KCONFIG_BINARY_DIR}
   APPLICATION_SOURCE_DIR=${APPLICATION_SOURCE_DIR}

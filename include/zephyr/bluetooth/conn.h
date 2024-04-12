@@ -1774,19 +1774,6 @@ struct bt_br_conn_param {
 struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 				  const struct bt_br_conn_param *param);
 
-/** @brief Initiate an SCO connection to a remote device.
- *
- *  Allows initiate new SCO link to remote peer using its address.
- *
- *  The caller gets a new reference to the connection object which must be
- *  released with bt_conn_unref() once done using the object.
- *
- *  @param peer  Remote address.
- *
- *  @return Valid connection object on success or NULL otherwise.
- */
-struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer);
-
 #ifdef __cplusplus
 }
 #endif

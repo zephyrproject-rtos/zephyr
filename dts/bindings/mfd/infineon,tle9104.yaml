@@ -1,0 +1,78 @@
+#
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Infineon TLE9104 4-channel powertrain switch
+
+compatible: "infineon,tle9104"
+
+include: spi-device.yaml
+
+bus: tle9104
+
+properties:
+  en-gpios:
+    type: phandle-array
+    description: "GPIO for enable"
+
+  resn-gpios:
+    type: phandle-array
+    description: "GPIO for reset"
+
+  in1-gpios:
+    type: phandle-array
+    description: "GPIO for controlling OUT1"
+
+  in2-gpios:
+    type: phandle-array
+    description: "GPIO for controlling OUT2"
+
+  in3-gpios:
+    type: phandle-array
+    description: "GPIO for controlling OUT3"
+
+  in4-gpios:
+    type: phandle-array
+    description: "GPIO for controlling OUT4"
+
+  diagnostic-filter-time:
+    type: int
+    default: 500
+    enum:
+      - 200
+      - 500
+      - 1000
+      - 2000
+    description:
+      diagnostic filter time in us,
+      default matches power on reset value
+
+  overcurrent-shutdown-delay-time:
+    type: int
+    default: 60
+    enum:
+      - 60
+      - 120
+      - 500
+      - 1000
+      - 5000
+      - 10000
+      - 20000
+      - 30000
+    description:
+      overcurrent shutdown delay time in us,
+      default matches power on reset value
+
+  overcurrent-shutdown-threshold:
+    type: int
+    default: 2000
+    enum:
+      - 1000
+      - 2000
+      - 3000
+      - 4000
+    description:
+      overcurrent shutdown threshold in mA,
+      default matches power on reset value

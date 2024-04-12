@@ -60,6 +60,20 @@ config LOG_BACKEND_ADSP
 
 endif # LOG
 
+config XTENSA_MORE_SPIN_RELAX_NOPS
+	default y if SMP && MP_MAX_NUM_CPUS > 1
+
+if XTENSA_MORE_SPIN_RELAX_NOPS
+
+config XTENSA_NUM_SPIN_RELAX_NOPS
+	default 32 if MP_MAX_NUM_CPUS = 1
+	default 64 if MP_MAX_NUM_CPUS = 2
+	default 96 if MP_MAX_NUM_CPUS = 3
+	default 128 if MP_MAX_NUM_CPUS = 4
+	default 160 if MP_MAX_NUM_CPUS = 5
+
+endif # XTENSA_MORE_SPIN_RELAX_NOPS
+
 rsource "Kconfig.defconfig.ace*"
 
 endif # SOC_SERIES_INTEL_ADSP_ACE

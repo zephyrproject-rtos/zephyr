@@ -909,10 +909,10 @@ ZTEST(sprintf, test_fwrite)
 	ret = fwrite("This 3", 0, 4, stdout);
 	zassert_equal(ret, 0, "fwrite failed!");
 
-	ret = fwrite("This 3", 4, 4, stdout);
+	ret = fwrite("This 3", 1, 4, stdout);
 	zassert_equal(ret, 4, "fwrite failed!");
 
-	ret = fwrite("This 3", 4, 4, stdin);
+	ret = fwrite("This 3", 1, 4, stdin);
 	zassert_equal(ret, 0, "fwrite failed!");
 }
 

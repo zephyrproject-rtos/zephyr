@@ -47,7 +47,7 @@ struct k_mem_paging_stats_t {
 #if !defined(CONFIG_DEMAND_PAGING_ALLOW_IRQ) || defined(__DOXYGEN__)
 		/** Number of page faults while in ISR */
 		unsigned long			in_isr;
-#endif
+#endif /* !CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	} pagefaults;
 
 	struct {

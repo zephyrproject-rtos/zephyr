@@ -5,20 +5,20 @@ common:
 tests:
   drivers.flash.common.nrf_qspi_nor:
     platform_allow: nrf52840dk/nrf52840
-    extra_args: OVERLAY_CONFIG=boards/nrf52840_flash_qspi.conf
+    extra_args: OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_qspi_nor.conf
     integration_platforms:
       - nrf52840dk/nrf52840
   drivers.flash.common.nrf_qspi_nor.size_in_bytes:
     platform_allow: nrf52840dk/nrf52840
     extra_args:
-      - OVERLAY_CONFIG=boards/nrf52840_flash_qspi.conf
+      - OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_qspi_nor.conf
       - DTC_OVERLAY_FILE=boards/nrf52840_size_in_bytes.overlay
     integration_platforms:
       - nrf52840dk/nrf52840
   drivers.flash.common.nrf_qspi_nor_4B_addr:
     platform_allow: nrf52840dk/nrf52840
     extra_args:
-      - OVERLAY_CONFIG=boards/nrf52840_flash_qspi.conf
+      - OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_qspi_nor.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_mx25l51245g.overlay
     harness_config:
       fixture: external_flash_mx25l51245g
@@ -26,7 +26,7 @@ tests:
       - nrf52840dk/nrf52840
   drivers.flash.common.soc_flash_nrf:
     platform_allow: nrf52840dk/nrf52840
-    extra_args: OVERLAY_CONFIG=boards/nrf52840_flash_soc.conf
+    extra_args: OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_soc.conf
     integration_platforms:
       - nrf52840dk/nrf52840
   drivers.flash.common.default:

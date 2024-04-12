@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if(BOARD_LPCXPRESSO54114_LPC54114_M4 OR CONFIG_SECOND_CORE_MCUX)
+if(CONFIG_BOARD_LPCXPRESSO54114_LPC54114_M4 OR CONFIG_SECOND_CORE_MCUX)
   board_runner_args(jlink "--device=LPC54114J256_M4" "--reset-after-load")
-elseif(BOARD_LPCXPRESSO54114_LPC54114_M0)
+elseif(CONFIG_BOARD_LPCXPRESSO54114_LPC54114_M0)
   board_runner_args(jlink "--device=LPC54114J256_M0" "--reset-after-load")
 endif()
 

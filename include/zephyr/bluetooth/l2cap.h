@@ -572,6 +572,8 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  Regarding to first input parameter, to get details see reference description
  *  to bt_l2cap_chan_connect() API above.
  *
+ *  Network buffer fragments (ie `buf->frags`) are not supported.
+ *
  *  When sending L2CAP data over an BR/EDR connection the application is sending
  *  L2CAP PDUs. The application is required to have reserved
  *  @ref BT_L2CAP_CHAN_SEND_RESERVE bytes in the buffer before sending.

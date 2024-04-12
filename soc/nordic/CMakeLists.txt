@@ -2,14 +2,12 @@
 
 zephyr_library()
 
-if(CONFIG_ARM)
-  set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "SoC Linker script")
+set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "SoC Linker script")
 
-  zephyr_library_sources(
-    validate_base_addresses.c
-    validate_enabled_instances.c
-    )
-endif()
+zephyr_library_sources(
+  validate_base_addresses.c
+  validate_enabled_instances.c
+  )
 
 if(CONFIG_SOC_HAS_TIMING_FUNCTIONS AND NOT CONFIG_BOARD_HAS_TIMING_FUNCTIONS)
   if(CONFIG_TIMING_FUNCTIONS)

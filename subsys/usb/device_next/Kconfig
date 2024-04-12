@@ -40,6 +40,13 @@ config USBD_MAX_UDC_MSG
 	help
 	  Maximum number of USB device controller events that can be queued.
 
+config USBD_MSG_SLAB_COUNT
+	int "Maximum number of USB device notification messages"
+	range 4 64
+	default 8
+	help
+	  Maximum number of USB device notification messages that can be queued.
+
 rsource "class/Kconfig"
 
 endif # USB_DEVICE_STACK_NEXT

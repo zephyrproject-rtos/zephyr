@@ -935,11 +935,7 @@ static inline uint8_t *get_mac(const struct device *dev)
 	 *       and how to allow for a OUI portion?
 	 */
 
-	uint32_t *ptr = (uint32_t *)(kw41z->mac_addr);
-
-	UNALIGNED_PUT(sys_rand32_get(), ptr);
-	ptr = (uint32_t *)(kw41z->mac_addr + 4);
-	UNALIGNED_PUT(sys_rand32_get(), ptr);
+	sys_rand_get(kw41z->mac_addr, sizeof(kw41z->mac_addr));
 
 	/*
 	 * Clear bit 0 to ensure it isn't a multicast address and set

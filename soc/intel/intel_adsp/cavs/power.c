@@ -58,6 +58,7 @@ struct core_state {
 	uint32_t a1;
 	uint32_t excsave2;
 	uint32_t intenable;
+	uint32_t ps;
 };
 
 static struct core_state core_desc[CONFIG_MP_MAX_NUM_CPUS] = {{0}};
@@ -83,6 +84,7 @@ static ALWAYS_INLINE void _save_core_context(void)
 {
 	uint32_t core_id = arch_proc_id();
 
+	core_desc[core_id].ps = XTENSA_RSR("PS");
 	core_desc[core_id].excsave2 = XTENSA_RSR(ZSR_CPU_STR);
 	__asm__ volatile("mov %0, a0" : "=r"(core_desc[core_id].a0));
 	__asm__ volatile("mov %0, a1" : "=r"(core_desc[core_id].a1));
@@ -93,13 +95,14 @@ static ALWAYS_INLINE void _restore_core_context(void)
 {
 	uint32_t core_id = arch_proc_id();
 
+	XTENSA_WSR("PS", core_desc[core_id].ps);
 	XTENSA_WSR(ZSR_CPU_STR, core_desc[core_id].excsave2);
 	__asm__ volatile("mov a0, %0" :: "r"(core_desc[core_id].a0));
 	__asm__ volatile("mov a1, %0" :: "r"(core_desc[core_id].a1));
 	__asm__ volatile("rsync");
 }
 
-void power_gate_exit(void)
+static void __used power_gate_exit(void)
 {
 	cpu_early_init();
 	sys_cache_data_flush_and_invd_all();

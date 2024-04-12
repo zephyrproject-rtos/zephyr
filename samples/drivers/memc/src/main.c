@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <string.h>
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_flexspi)
 /* Use memc API to get AHB base address for the device */
@@ -53,7 +54,7 @@ int main(void)
 		memc_write_buffer[i] = (uint8_t)i;
 	}
 	printk("Writing to memory region with base %p, size 0x%0x\n\n",
-		MEMC_BASE, MEMC_SIZE);
+		memc, MEMC_SIZE);
 	/* Copy write buffer into memc region */
 	for (i = 0, j = 0; j < (MEMC_SIZE / BUF_SIZE); i += BUF_SIZE, j++) {
 		memcpy(memc + i, memc_write_buffer, BUF_SIZE);
@@ -69,8 +70,11 @@ int main(void)
 		if (memcmp(memc_read_buffer, memc_write_buffer, BUF_SIZE)) {
 			printk("Error: read data differs in range [0x%x- 0x%x]\n",
 				i, i + (BUF_SIZE - 1));
+			dump_memory(memc_write_buffer, BUF_SIZE);
+			dump_memory(memc_read_buffer, BUF_SIZE);
 			return 0;
 		}
+		printk("Check (%i/%i) passed!\n", j, (MEMC_SIZE / BUF_SIZE) - 1);
 	}
 	/* Copy any remaining space bytewise */
 	for (; i < MEMC_SIZE; i++) {

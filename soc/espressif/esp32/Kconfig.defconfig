@@ -3,18 +3,6 @@
 
 if SOC_SERIES_ESP32
 
-config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
-	default n
-
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
-
-config XTENSA_CCOUNT_HZ
-	default SYS_CLOCK_HW_CYCLES_PER_SEC
-
-config ESPTOOLPY_FLASHFREQ_80M
-	default y
-
 config FLASH_SIZE
 	default $(dt_node_reg_size_int,/soc/flash-controller@3ff42000/flash@0,0)
 
@@ -27,7 +15,7 @@ config SCHED_IPI_SUPPORTED
 	default y
 
 config SCHED_CPU_MASK
-	default y
+	default y if SCHED_DUMB
 
 config MP_MAX_NUM_CPUS
 	default 2

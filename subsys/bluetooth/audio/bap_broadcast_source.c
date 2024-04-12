@@ -594,7 +594,8 @@ static bool valid_broadcast_source_param(const struct bt_bap_broadcast_source_pa
 				return false;
 			}
 
-			CHECKIF(subgroup_param->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3 &&
+			CHECKIF(stream_param->data != NULL &&
+				subgroup_param->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3 &&
 				!bt_audio_valid_ltv(stream_param->data, stream_param->data_len)) {
 				LOG_DBG("subgroup_params[%zu].stream_params[%zu]->data not valid "
 					"LTV",

@@ -8,9 +8,13 @@ config SOC_SERIES_IMXRT6XX
 config SOC_SERIES
 	default "imxrt6xx" if SOC_SERIES_IMXRT6XX
 
-config SOC_MIMXRT685S_CM33
+config SOC_MIMXRT685S
 	bool
 	select SOC_SERIES_IMXRT6XX
+
+config SOC_MIMXRT685S_CM33
+	bool
+	select SOC_MIMXRT685S
 
 config SOC
 	default "mimxrt685s" if SOC_MIMXRT685S_CM33

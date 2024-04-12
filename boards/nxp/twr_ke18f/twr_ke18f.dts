@@ -132,13 +132,6 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
-
-	flexio: flexio@4005a000 {
-		reg = <0x4005a000 0x1000>;
-		compatible = "nxp,flexio";
-		pinctrl-0 = <&flexio_clockout>;
-		pinctrl-names = "default";
-	};
 };
 
 &cpu0 {
@@ -328,6 +321,10 @@
 };
 
 &edma {
+	status = "okay";
+};
+
+&flexio1 {
 	status = "okay";
 };
 

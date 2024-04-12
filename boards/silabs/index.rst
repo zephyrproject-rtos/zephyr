@@ -1,7 +1,7 @@
 .. _boards-silabs:
 
-Silabgs
-#######
+Silicon Labs
+############
 
 .. toctree::
    :maxdepth: 1

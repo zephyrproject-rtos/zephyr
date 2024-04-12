@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 NXP
+ * Copyright 2021-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -345,6 +345,10 @@ static ALWAYS_INLINE void clock_init(void)
 #elif defined(CONFIG_SOC_MIMXRT1166_CM4)
 	rootCfg.mux = kCLOCK_BUS_LPSR_ClockRoot_MuxSysPll3Out;
 	rootCfg.div = 4;
+	CLOCK_SetRootClock(kCLOCK_Root_Bus_Lpsr, &rootCfg);
+#elif defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
+	rootCfg.mux = kCLOCK_BUS_LPSR_ClockRoot_MuxSysPll3Out;
+	rootCfg.div = 2;
 	CLOCK_SetRootClock(kCLOCK_Root_Bus_Lpsr, &rootCfg);
 #endif
 

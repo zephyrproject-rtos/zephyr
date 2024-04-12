@@ -18,6 +18,7 @@ tests:
       - qemu_cortex_m3
       - frdm_kw41z
       - qemu_cortex_a53
+      - native_sim
     integration_platforms:
       - qemu_x86
   sample.net.sockets.echo_server.802154:
@@ -63,10 +64,6 @@ tests:
       - SHIELD=atmel_rf2xx_mikrobus
       - OVERLAY_CONFIG="overlay-802154.conf"
     platform_allow: lpcxpresso55s69/lpc55s69/cpu0/ns
-  sample.net.sockets.echo_server.bt:
-    extra_args: OVERLAY_CONFIG="overlay-bt.conf"
-    platform_allow: qemu_x86
-    tags: bluetooth
   sample.net.sockets.echo_server.mcr20a:
     extra_args:
       - SHIELD=frdm_cr20a
@@ -85,6 +82,12 @@ tests:
     tags:
       - net
       - usb
+    # native_sim usb driver does not work with CONFIG_POSIX_API
+    platform_exclude:
+      - native_sim
+      - native_sim/native/64
+      - native_posix
+      - native_posix/native/64
   sample.net.sockets.echo_server.nrf_openthread:
     extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     slow: true
@@ -127,8 +130,14 @@ tests:
     extra_args:
       - CONFIG_USERSPACE=y
       - OVERLAY_CONFIG="overlay-e1000.conf"
+      - CONFIG_MAX_THREAD_BYTES=3
     platform_allow:
       - qemu_x86
       - qemu_x86_64
     integration_platforms:
       - qemu_x86
+  sample.net.sockets.echo_server.nsos:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - OVERLAY_CONFIG="overlay-nsos.conf"

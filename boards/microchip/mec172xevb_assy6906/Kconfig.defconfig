@@ -3,6 +3,9 @@
 
 if BOARD_MEC172XEVB_ASSY6906
 
+config INPUT
+	default y if KSCAN
+
 if RTOS_TIMER
 
 # XEC RTOS timer HW frequency is fixed at 32768 Hz.

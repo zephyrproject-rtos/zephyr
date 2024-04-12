@@ -20,6 +20,7 @@ abt	ShenZhen Asia Better Technology Ltd.
 acer	Acer Inc.
 acme	Acme Systems srl
 aconno	aconno GmbH
+acrn	Project ACRN
 actinius	Actinius B.V.
 actions	Actions Semiconductor Co., Ltd.
 active-semi	Active-Semi International Inc
@@ -57,6 +58,7 @@ analogix	Analogix Semiconductor, Inc.
 andestech	Andes Technology Corporation
 anvo	Anvo-Systems Dresden GmbH
 aosong	Guangzhou Aosong Electronic Co., Ltd.
+ap	Angst+Pfister
 apa	Apa Electronic Co., Ltd
 apm	Applied Micro Circuits Corporation (APM)
 apple	Apple Inc.
@@ -125,6 +127,7 @@ checkpoint	Check Point Software Technologies Ltd.
 chefree	Chefree Technology Corp.
 chipidea	Chipidea, Inc
 chipone	ChipOne
+chipsemi	Chipsemi Corp.
 chipspark	ChipSPARK
 chrontel	Chrontel, Inc.
 chrp	Common Hardware Reference Platform
@@ -132,6 +135,7 @@ chunghwa	Chunghwa Picture Tubes Ltd.
 chuwi	Chuwi Innovation Ltd.
 ciaa	Computadora Industrial Abierta Argentina
 circuitdojo	Circuit Dojo
+cirque	Cirque Corporation
 cirrus	Cirrus Logic, Inc.
 cisco	Cisco Systems, Inc.
 cloudengines	Cloud Engines, Inc.
@@ -204,6 +208,7 @@ endless	Endless Mobile, Inc.
 ene	ENE Technology, Inc.
 energymicro	Silicon Laboratories (formerly Energy Micro AS)
 engicam	Engicam S.r.l.
+enjoydigital	EnjoyDigital
 epcos	EPCOS AG
 epfl	Ecole Polytechnique Fédérale de Lausanne
 epson	Seiko Epson Corp.
@@ -230,6 +235,7 @@ fii	Foxconn Industrial Internet
 fintek	Feature Integration Technology Inc.
 firefly	Firefly
 focaltech	FocalTech Systems Co.,Ltd
+franzininho	Franzininho
 frida	Shenzhen Frida LCD Co., Ltd.
 friendlyarm	Guangzhou FriendlyARM Computer Tech Co., Ltd
 fsl	Freescale Semiconductor
@@ -678,6 +684,7 @@ udoo	Udoo
 ugoos	Ugoos Industrial Co., Ltd.
 ultrachip	UltraChip Inc.
 uniwest	United Western Technologies Corp (UniWest)
+up-brige-the-gap	UP Bridge the Gap
 upisemi	uPI Semiconductor Corp.
 urt	United Radiant Technology Corporation
 usi	Universal Scientific Industrial Co., Ltd.

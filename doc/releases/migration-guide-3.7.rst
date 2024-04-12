@@ -28,6 +28,9 @@ Kernel
 Boards
 ******
 
+* Reordered D1 and D0 in the `pro_micro` connector gpio-map for SparkFun Pro Micro RP2040 to match
+  original Pro Micro definition. Out-of-tree shields must be updated to reflect this change.
+
 Modules
 *******
 
@@ -40,11 +43,48 @@ zcbor
 Device Drivers and Devicetree
 *****************************
 
+* The :dtcompatible:`nxp,kinetis-pit` pit driver has changed it's compatible
+  to :dtcompatible:`nxp,pit` and has been updated to support multiple channels.
+  To configure the individual channels, you must add a child node with the
+  compatible :dtcompatible:`nxp,pit-channel` and configure as below.
+  The :kconfig:option:`CONFIG_COUNTER_MCUX_PIT` has also been renamed to
+  :kconfig:option:`CONFIG_COUNTER_NXP_PIT` with regards to the renaming
+  of the binding for the pit.
+  example:
+
+  .. code-block:: devicetree
+
+    / {
+        pit0: pit@40037000 {
+            /* Other Pit DT Attributes */
+            compatible = "nxp,pit";
+            status = "disabled";
+            num-channels = <1>;
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            pit0_channel0: pit0_channel@0 {
+                compatible = "nxp,pit-channel";
+                reg = <0>;
+                status = "disabled";
+            };
+    };
+
+
 Analog-to-Digital Converter (ADC)
 =================================
 
 Bluetooth HCI
 =============
+
+Charger
+=======
+
+* Dropped ``constant-charge-current-max-microamp`` property in ``charger_max20335`` driver because
+  it did not reflect real chip functionality.
+
+* Added enum key to ``constant-charge-voltage-max-microvolt`` property in ``maxim,max20335-charger``
+  binding to indicate invalid devicetree values at build time.
 
 Controller Area Network (CAN)
 =============================
@@ -92,6 +132,12 @@ General Purpose I/O (GPIO)
 Input
 =====
 
+* The ``analog-axis`` deadzone calibration value has been changed to be
+  relative to the raw ADC values, similarly to min and max. The data structures
+  and properties have been renamed to reflect that (from ``out-deadzone`` to
+  ``in-deadzone``) and when migrating to the new definition the value should be
+  scaled accordingly.
+
 Interrupt Controller
 ====================
 
@@ -116,6 +162,11 @@ Bluetooth
 Bluetooth Mesh
 ==============
 
+* The model metadata pointer declaration of :c:struct:`bt_mesh_model` has been changed
+  to add ``const`` qualifiers. The data pointer of :c:struct:`bt_mesh_models_metadata_entry`
+  got ``const`` qualifier too. The model's metadata structure and metadata raw value
+  can be declared as permanent constants in the non-volatile memory. (:github:`69679`)
+
 Bluetooth Audio
 ===============
 
@@ -130,6 +181,18 @@ Bluetooth Classic
 Networking
 **********
 
+* Deprecate the :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` option. It is a legacy option
+  and was used to allow user to call BSD socket API while not enabling POSIX API.
+  This could cause complications when building applications that wanted to enable the
+  :kconfig:option:`CONFIG_POSIX_API` option. This means that if the application wants to use
+  normal BSD socket interface, then it needs to enable :kconfig:option:`CONFIG_POSIX_API`.
+  If the application does not want or is not able to enable that option, then the socket API
+  calls need to be prefixed by a ``zsock_`` string.
+  All the sample applications that use BSD socket interface are changed to enable
+  :kconfig:option:`CONFIG_POSIX_API`. Internally the network stack will not enable POSIX API
+  option which means that various network libraries that use sockets, are converted to
+  use the ``zsock_*`` API calls. (:github:`69950`)
+
 * The zperf zperf_results struct is changed to support 64 bits transferred bytes (total_len)
   and test duration (time_in_us and client_time_in_us), instead of 32 bits. This will make
   the long-duration zperf test show with correct throughput result.
@@ -142,6 +205,31 @@ Networking
   one IPv4 address / network interface, the netmask must be specified
   for each IPv4 address separately. (:github:`68419`)
 
+* Virtual network interface API no longer has the `input` callback. The input callback was
+  used to read the inner IPv4/IPv6 packets in an IP tunnel. This incoming tunnel read is now
+  implemented in `recv` callback. (:github:`70549`)
+
+* Virtual LAN (VLAN) implementation is changed to use the Virtual network interfaces.
+  There are no API changes, but the type of a VLAN network interface is changed from `ETHERNET`
+  to `VIRTUAL`. This could require changes to the code that sets the VLAN tags to a network
+  interface. For example in the `net_eth_is_vlan_enabled()` API, the 2nd interface parameter
+  must point to the main Ethernet interface, and not to the VLAN interface. (:github:`70345`)
+
+* Modified the ``wifi connect`` command to use key-value format for the arguments. In the
+  previous implementation, we were identifying an option using its position in the argument string.
+  This made it difficult to deal with optional arguments or extending the support
+  for other options. Having this key-value format makes it easier to extend the options that
+  can be passed to the connect command.
+  ``wifi -h`` will give more information about the usage of connect command.
+  (:github:`70024`)
+
+* The Kconfig ``CONFIG_NET_TCP_ACK_TIMEOUT`` has been deprecated. Its usage was
+  limited to TCP handshake only, and in such case the total timeout should depend
+  on the total retransmission timeout (as in other cases) making the config
+  redundant and confusing. Use ``CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT`` and
+  ``CONFIG_NET_TCP_RETRY_COUNT`` instead to control the total timeout at the
+  TCP level. (:github:`70731`)
+
 Other Subsystems
 ****************
 
@@ -150,6 +238,12 @@ LoRaWAN
 
 MCUmgr
 ======
+
+Modem
+=====
+
+* The ``CONFIG_MODEM_CHAT_LOG_BUFFER`` Kconfig option was
+  renamed to :kconfig:option:`MODEM_CHAT_LOG_BUFFER_SIZE`.
 
 Shell
 =====
@@ -162,6 +256,8 @@ Userspace
 
 Architectures
 *************
+
+* Function :c:func:`arch_start_cpu` has been renamed to :c:func:`arch_cpu_start`.
 
 * x86
 

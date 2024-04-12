@@ -1,8 +1,7 @@
 /*
- * Copyright (c) 2019 BayLibre SAS
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
-#include "native_posix.dts"
+#include "../native_sim/native_sim.dts"

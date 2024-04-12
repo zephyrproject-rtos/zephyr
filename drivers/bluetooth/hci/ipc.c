@@ -159,6 +159,7 @@ static struct net_buf *bt_ipc_acl_recv(const uint8_t *data, size_t remaining)
 static struct net_buf *bt_ipc_iso_recv(const uint8_t *data, size_t remaining)
 {
 	struct bt_hci_iso_hdr hdr;
+	static size_t fail_cnt;
 	struct net_buf *buf;
 	size_t buf_tailroom;
 
@@ -174,8 +175,15 @@ static struct net_buf *bt_ipc_iso_recv(const uint8_t *data, size_t remaining)
 		remaining -= sizeof(hdr);
 
 		net_buf_add_mem(buf, &hdr, sizeof(hdr));
+
+		fail_cnt = 0U;
 	} else {
-		LOG_ERR("No available ISO buffers!");
+		if ((fail_cnt % 100U) == 0U) {
+			LOG_ERR("No available ISO buffers (%zu)!", fail_cnt);
+		}
+
+		fail_cnt++;
+
 		return NULL;
 	}
 

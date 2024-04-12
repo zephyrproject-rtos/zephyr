@@ -4,12 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#undef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 200809L
-
 #include <stdio.h>
 #include <stdlib.h>
-#include "cmdline.h" /* native_posix command line options header */
+#include "cmdline.h" /* native_sim command line options header */
 #include "soc.h"
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest_test.h>

@@ -95,6 +95,8 @@ BUILD_ASSERT(NUM_INSTS <= 1, "Only one USB device supported");
 #elif DT_NODE_HAS_STATUS(DT_NODELABEL(usb2), okay)
 #define CONTROLLER_ID kUSB_ControllerEhci1
 #endif /* IMX RT */
+#elif defined(CONFIG_SOC_SERIES_RW6XX)
+#define CONTROLLER_ID kUSB_ControllerEhci0
 #else
 /* If SOC has EHCI or LPCIP3511 then probably just need to add controller ID to this code */
 #error "USB driver does not yet support this SOC"

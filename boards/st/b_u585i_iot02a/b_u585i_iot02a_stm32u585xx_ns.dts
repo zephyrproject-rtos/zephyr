@@ -54,12 +54,12 @@
 			label = "image-0-nonsecure";
 			reg = <0x00098000 DT_SIZE_K(512)>;
 		};
-		/* Secure image primary slot */
+		/* Secure image secondary slot */
 		slot1_partition: partition@118000 {
 			label = "image-1";
 			reg = <0x00118000 DT_SIZE_K(384)>;
 		};
-		/* Non-secure image primary slot */
+		/* Non-secure image secondary slot */
 		slot1_ns_partition: partition@178000 {
 			label = "image-1-nonsecure";
 			reg = <0x00178000 DT_SIZE_K(512)>;

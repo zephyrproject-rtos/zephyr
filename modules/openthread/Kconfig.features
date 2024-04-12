@@ -326,6 +326,11 @@ config OPENTHREAD_SLAAC
 config OPENTHREAD_SNTP_CLIENT
 	bool "SNTP Client support"
 
+config OPENTHREAD_SRP_ADV_PROXY
+	bool "SRP Server Advertising Proxy support"
+	depends on OPENTHREAD_SRP_SERVER
+	depends on OPENTHREAD_BORDER_ROUTING
+
 config OPENTHREAD_SRP_CLIENT
 	bool "SRP Client support"
 	select OPENTHREAD_ECDSA
@@ -336,7 +341,8 @@ config OPENTHREAD_SRP_SERVER
 	select OPENTHREAD_ECDSA
 
 config OPENTHREAD_TIME_SYNC
-	bool "The time synchronization service feature"
+	bool "The time synchronization service feature [EXPERIMENTAL]"
+	select EXPERIMENTAL
 
 config OPENTHREAD_TREL
 	bool "TREL radio link for Thread over Infrastructure feature"

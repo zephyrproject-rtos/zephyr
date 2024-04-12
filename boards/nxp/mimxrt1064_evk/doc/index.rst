@@ -151,8 +151,8 @@ configuration supports the following hardware features:
 | FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-``boards/arm/mimxrt1064_evk/mimxrt1064_evk_defconfig``
+The default configuration can be found in
+:zephyr_file:`boards/nxp/mimxrt1064_evk/mimxrt1064_evk_defconfig`
 
 Other hardware features are not currently supported by the port.
 

@@ -415,13 +415,6 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 	& RADIO_PUBLISH_RATEBOOST_EN_Msk))
 #define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_TASK(cc_reg) \
 	SW_SWITCH_TIMER->SUBSCRIBE_CAPTURE[cc_reg]
-#define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK \
-	(((HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI << \
-		TIMER_SUBSCRIBE_CAPTURE_CHIDX_Pos) \
-		& TIMER_SUBSCRIBE_CAPTURE_CHIDX_Msk) | \
-	((TIMER_SUBSCRIBE_CAPTURE_EN_Enabled << \
-		TIMER_SUBSCRIBE_CAPTURE_EN_Pos) \
-		& TIMER_SUBSCRIBE_CAPTURE_EN_Msk))
 
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 /* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing PHYEND delay compensation
@@ -444,9 +437,6 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 	  RADIO_PUBLISH_CTEPRESENT_CHIDX_Msk) | \
 	 ((RADIO_PUBLISH_CTEPRESENT_EN_Enabled << RADIO_PUBLISH_CTEPRESENT_EN_Pos) & \
 	  RADIO_PUBLISH_CTEPRESENT_EN_Msk))
-
-#define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_TASK(cc_reg) \
-	SW_SWITCH_TIMER->SUBSCRIBE_CAPTURE[cc_reg]
 
 #define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_TASK \
 	(((HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI \
@@ -608,9 +598,9 @@ static inline void hal_radio_sw_switch_coded_tx_config_set(uint8_t ppi_en,
 	 */
 	HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_EVT =
 		HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_EVT;
-	HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_TASK(
-		SW_SWITCH_TIMER_EVTS_COMP(group_index)) =
-		HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK;
+	nrf_timer_subscribe_set(SW_SWITCH_TIMER,
+				nrf_timer_capture_task_get(SW_SWITCH_TIMER_EVTS_COMP(group_index)),
+				HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI);
 
 	nrf_dppi_channels_enable(NRF_DPPIC,
 				 BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI));
@@ -761,8 +751,9 @@ hal_radio_sw_switch_phyend_delay_compensation_config_set(uint8_t radio_enable_pp
 	/* Wire Radio CTEPRESENT event to cancel EVENTS_COMPARE[<cc_offs>] timer */
 	HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_EVT =
 		HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_EVT;
-	HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_TASK(phyend_delay_cc) =
-		HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_TASK;
+	nrf_timer_subscribe_set(SW_SWITCH_TIMER,
+				nrf_timer_capture_task_get(phyend_delay_cc),
+				HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI);
 
 	/*  Enable CTEPRESENT event to disable EVENTS_COMPARE[<cc_offs>] PPI channel */
 	nrf_dppi_channels_enable(NRF_DPPIC,
@@ -789,8 +780,8 @@ hal_radio_sw_switch_phyend_delay_compensation_config_clear(uint8_t radio_enable_
 	 */
 	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(phyend_delay_cc) = NRF_PPI_NONE;
 
-	HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_TASK(phyend_delay_cc) =
-		NRF_PPI_NONE;
+	nrf_timer_subscribe_clear(SW_SWITCH_TIMER,
+				  nrf_timer_capture_task_get(phyend_delay_cc));
 
 	/* Disable CTEPRESENT event to disable EVENTS_COMPARE[<phyend_delay_cc_offs>] PPI channel */
 	nrf_dppi_channels_disable(NRF_DPPIC,

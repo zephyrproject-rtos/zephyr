@@ -3,6 +3,7 @@
 zephyr_library_sources(soc.c)
 zephyr_include_directories(.)
 
+zephyr_library_sources_ifdef(CONFIG_SOC_NRF53_CPUNET_MGMT nrf53_cpunet_mgmt.c)
 zephyr_library_sources_ifdef(CONFIG_NRF53_SYNC_RTC sync_rtc.c)
 
 if (CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED AND

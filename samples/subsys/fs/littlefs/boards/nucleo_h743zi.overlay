@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Lukasz Majewski, DENX Software Engineering GmbH
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,22 @@
 		     &sdmmc1_cmd_pd2>;
 
 	pinctrl-names = "default";
+};
+
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+		lfs1: lfs1 {
+			compatible = "zephyr,fstab,littlefs";
+			read-size = <32>;
+			prog-size = <32>;
+			cache-size = <256>;
+			lookahead-size = <64>;
+			block-cycles = <512>;
+			partition = <&storage_partition>;
+			mount-point = "/lfs1";
+		};
+	};
 };
 
 &quadspi {

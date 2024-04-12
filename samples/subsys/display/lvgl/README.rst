@@ -80,7 +80,7 @@ Example building for :ref:`native_sim <native_sim>`:
    :goals: build run
 
 Alternatively, if building from a 64-bit host machine, the previous target
-board argument may also be replaced by ``native_sim_64``.
+board argument may also be replaced by ``native_sim/native/64``.
 
 References
 **********

@@ -175,7 +175,7 @@ static void generate_mac(uint8_t *mac_addr)
 	mac_addr[2] = 0x5E;
 	mac_addr[3] = 0x00;
 	mac_addr[4] = 0x53;
-	mac_addr[5] = sys_rand32_get();
+	mac_addr[5] = sys_rand8_get();
 }
 
 static int eth_init(const struct device *dev)
@@ -209,7 +209,7 @@ static uint8_t *net_iface_get_mac(const struct device *dev)
 		data->mac_addr[2] = 0x5E;
 		data->mac_addr[3] = 0x00;
 		data->mac_addr[4] = 0x53;
-		data->mac_addr[5] = sys_rand32_get();
+		data->mac_addr[5] = sys_rand8_get();
 	}
 
 	data->ll_addr.addr = data->mac_addr;
@@ -533,12 +533,12 @@ static bool add_to_arp(struct net_if *iface, struct in_addr *addr)
 #if defined(CONFIG_NET_ARP)
 	struct net_eth_addr lladdr;
 
-	lladdr.addr[0] = sys_rand32_get();
+	lladdr.addr[0] = sys_rand8_get();
 	lladdr.addr[1] = 0x08;
 	lladdr.addr[2] = 0x09;
 	lladdr.addr[3] = 0x10;
 	lladdr.addr[4] = 0x11;
-	lladdr.addr[5] = sys_rand32_get();
+	lladdr.addr[5] = sys_rand8_get();
 
 	return arp_add(iface, addr, &lladdr);
 #else
@@ -738,6 +738,12 @@ ZTEST(net_virtual, test_virtual_05_set_peer)
 		      net_if_get_by_iface(iface),
 		      net_if_get_by_iface(dummy_interfaces[0]),
 		      ret);
+
+	ret = net_virtual_interface_attach(iface, NULL);
+	zassert_equal(ret, 0, "Cannot deattach %d from %d (%d)",
+		      net_if_get_by_iface(iface),
+		      net_if_get_by_iface(eth_interfaces[0]),
+		      ret);
 }
 
 ZTEST(net_virtual, test_virtual_06_get_peer)
@@ -792,11 +798,24 @@ ZTEST(net_virtual, test_virtual_07_verify_name)
 			  "Cannot get name");
 }
 
+ZTEST(net_virtual, test_virtual_08_detach)
+{
+	struct net_if *iface = virtual_interfaces[0];
+	int ret;
+
+	ret = net_virtual_interface_attach(iface, NULL);
+	zassert_true((ret == 0) || (ret == -EALREADY),
+		     "Cannot deattach %d from %d (%d)",
+		     net_if_get_by_iface(iface),
+		     net_if_get_by_iface(eth_interfaces[0]),
+		     ret);
+}
+
 ZTEST(net_virtual, test_virtual_08_send_data_to_tunnel)
 {
 	struct virtual_interface_req_params params = { 0 };
 	struct net_if *iface = virtual_interfaces[0];
-	struct net_if *attached;
+	struct net_if *attached = eth_interfaces[0];
 	struct sockaddr dst_addr, src_addr;
 	void *addr;
 	int addrlen;
@@ -1011,7 +1030,12 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 	net_pkt_write(inner, test_data, strlen(test_data));
 
 	net_pkt_cursor_init(inner);
-	net_ipv4_finalize(inner, IPPROTO_UDP);
+
+	if (virtual_addr.sa_family == AF_INET) {
+		net_ipv4_finalize(inner, IPPROTO_UDP);
+	} else {
+		net_ipv6_finalize(inner, IPPROTO_UDP);
+	}
 
 	net_buf_frag_add(outer->buffer, inner->buffer);
 	inner->buffer = NULL;
@@ -1050,7 +1074,7 @@ static void test_virtual_recv_data_from_tunnel(int remote_ip,
 	}
 
 	if (expected_ok) {
-		zassert_equal(verdict, NET_CONTINUE,
+		zassert_equal(verdict, NET_OK,
 			      "Packet not accepted (%d)",
 			      verdict);
 	} else {

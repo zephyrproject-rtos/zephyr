@@ -4,7 +4,7 @@ tests:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
       - native_sim
-      - native_sim_64
+      - native_sim/native/64
       - mr_canhubk3
     integration_platforms:
       - nrf52840dk/nrf52840

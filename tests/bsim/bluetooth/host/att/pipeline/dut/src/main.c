@@ -151,16 +151,10 @@ static struct bt_conn *connect(void)
 {
 	int err;
 	struct bt_conn *conn;
-	struct bt_le_scan_param scan_param = {
-		.type = BT_LE_SCAN_TYPE_ACTIVE,
-		.options = BT_LE_SCAN_OPT_NONE,
-		.interval = BT_GAP_SCAN_FAST_INTERVAL,
-		.window = BT_GAP_SCAN_FAST_WINDOW,
-	};
 
 	UNSET_FLAG(is_connected);
 
-	err = bt_le_scan_start(&scan_param, device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE_CONTINUOUS, device_found);
 	ASSERT(!err, "Scanning failed to start (err %d)\n", err);
 
 	LOG_DBG("Central initiating connection...");

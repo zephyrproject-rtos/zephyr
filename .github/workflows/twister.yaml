@@ -25,7 +25,7 @@ jobs:
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.9.20240223
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.11.20240324
       options: '--entrypoint /bin/bash'
     outputs:
       subset: ${{ steps.output-services.outputs.subset }}
@@ -129,7 +129,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.9.20240223
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.11.20240324
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
@@ -212,6 +212,16 @@ jobs:
           ccache -M 10G
           ccache -p
           ccache -z -s -vv
+
+      - name: Update BabbleSim to manifest revision
+        run: |
+          export BSIM_VERSION=$( west list bsim -f {revision} )
+          echo "Manifest points to bsim sha $BSIM_VERSION"
+          cd /opt/bsim_west/bsim
+          git fetch -n origin ${BSIM_VERSION}
+          git -c advice.detachedHead=false checkout ${BSIM_VERSION}
+          west update
+          make everything -s -j 8
 
       - if: github.event_name == 'push'
         name: Run Tests with Twister (Push)
