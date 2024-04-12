@@ -1091,7 +1091,7 @@ config BT_TICKER_EXT
 config BT_TICKER_EXT_SLOT_WINDOW_YIELD
 	bool "Tickers with slot window always yields"
 	depends on BT_TICKER_EXT
-	default y if BT_CTLR_ADV_ISO
+	default y if BT_MESH || BT_CTLR_ADV_ISO
 	help
 	  This options forces tickers with slot window extensions to yield to
 	  normal tickers and be placed at the end of their slot window.
