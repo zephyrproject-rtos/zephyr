@@ -752,7 +752,7 @@ static const struct pcal64xxa_chip_api pcal6416a_chip_api = {
 };
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nxp_pcal6416a) */
 
-int pcal64xxa_init(const struct device *dev)
+static int pcal64xxa_apply_initial_state(const struct device *dev)
 {
 	const struct pcal64xxa_drv_cfg *drv_cfg = dev->config;
 	struct pcal64xxa_drv_data *drv_data = dev->data;
@@ -762,27 +762,7 @@ int pcal64xxa_init(const struct device *dev)
 		.pull_ups_selected = 0,
 		.pulls_enabled = 0,
 	};
-	const struct pcal64xxa_triggers initial_triggers = {
-		.masked = PCAL64XXA_INIT_HIGH,
-	};
 	int rc;
-	pcal64xxa_data_t int_sources;
-
-	LOG_DBG("initializing PCAL64XXA");
-
-	if (drv_cfg->ngpios != 8U && drv_cfg->ngpios != 16U) {
-		LOG_ERR("Invalid value ngpios=%u. Expected 8 or 16!", drv_cfg->ngpios);
-		return -EINVAL;
-	}
-
-	/*
-	 * executing the is ready check on i2c_bus_dev instead of on i2c.bus
-	 * to avoid a const warning
-	 */
-	if (!i2c_is_ready_dt(&drv_cfg->i2c)) {
-		LOG_ERR("%s is not ready", drv_cfg->i2c.bus->name);
-		return -ENODEV;
-	}
 
 	/* If the RESET line is available, use it to reset the expander.
 	 * Otherwise, write reset values to registers that are not used by
@@ -830,11 +810,39 @@ int pcal64xxa_init(const struct device *dev)
 
 	drv_data->pins_cfg = initial_pins_cfg;
 
-	/* Read initial state of the input port register. */
-	rc = drv_cfg->chip_api->inputs_read(&drv_cfg->i2c, &int_sources,
-					    &drv_data->input_port_last);
+	return 0;
+}
+
+int pcal64xxa_init(const struct device *dev)
+{
+	const struct pcal64xxa_drv_cfg *drv_cfg = dev->config;
+	struct pcal64xxa_drv_data *drv_data = dev->data;
+	const struct pcal64xxa_triggers initial_triggers = {
+		.masked = PCAL64XXA_INIT_HIGH,
+	};
+	pcal64xxa_data_t int_sources;
+	int rc;
+
+	LOG_DBG("%s: initializing PCAL64XXA", dev->name);
+
+	if (drv_cfg->ngpios != 8U && drv_cfg->ngpios != 16U) {
+		LOG_ERR("%s: Invalid value ngpios=%u. Expected 8 or 16!",
+			dev->name, drv_cfg->ngpios);
+		return -EINVAL;
+	}
+
+	/*
+	 * executing the is ready check on i2c_bus_dev instead of on i2c.bus
+	 * to avoid a const warning
+	 */
+	if (!i2c_is_ready_dt(&drv_cfg->i2c)) {
+		LOG_ERR("%s: %s is not ready", dev->name, drv_cfg->i2c.bus->name);
+		return -ENODEV;
+	}
+
+	LOG_DBG("%s: apply initial state", dev->name);
+	rc = pcal64xxa_apply_initial_state(dev);
 	if (rc != 0) {
-		LOG_ERR("failed to read inputs for device %s", dev->name);
 		return rc;
 	}
 
@@ -846,6 +854,14 @@ int pcal64xxa_init(const struct device *dev)
 	}
 
 	drv_data->triggers = initial_triggers;
+
+	/* Read initial state of the input port register. */
+	rc = drv_cfg->chip_api->inputs_read(&drv_cfg->i2c, &int_sources,
+					    &drv_data->input_port_last);
+	if (rc != 0) {
+		LOG_ERR("%s: failed to read inputs", dev->name);
+		return rc;
+	}
 
 	/* If the INT line is available, configure the callback for it. */
 	if (drv_cfg->gpio_interrupt.port != NULL) {
@@ -902,10 +918,9 @@ int pcal64xxa_init(const struct device *dev)
 		.manage_callback = pcal64xxa_manage_callback,                                      \
 	};                                                                                         \
 	static const struct pcal64xxa_drv_cfg pcal6408a_cfg##idx = {                               \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
-			},                                                                         \
+		.common = {                                                                        \
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),                     \
+		},                                                                                 \
 		.i2c = I2C_DT_SPEC_INST_GET(idx),                                                  \
 		.ngpios = DT_INST_PROP(idx, ngpios),                                               \
 		.gpio_interrupt = PCAL64XXA_INIT_INT_GPIO_FIELDS(idx),                             \
@@ -936,10 +951,9 @@ DT_INST_FOREACH_STATUS_OKAY(GPIO_PCAL6408A_INST)
 		.manage_callback = pcal64xxa_manage_callback,                                      \
 	};                                                                                         \
 	static const struct pcal64xxa_drv_cfg pcal6416a_cfg##idx = {                               \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
-			},                                                                         \
+		.common = {                                                                        \
+		       .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),                      \
+		},                                                                                 \
 		.i2c = I2C_DT_SPEC_INST_GET(idx),                                                  \
 		.ngpios = DT_INST_PROP(idx, ngpios),                                               \
 		.gpio_interrupt = PCAL64XXA_INIT_INT_GPIO_FIELDS(idx),                             \
