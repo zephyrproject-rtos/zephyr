@@ -68,8 +68,9 @@
 	HAL_TICKER_TICKS_TO_US(HAL_TICKER_PSEC_PER_USEC)
 
 /* Macro defining the margin for positioning re-scheduled nodes */
+#define HAL_TICKER_RESCHEDULE_MARGIN_US 150U
 #define HAL_TICKER_RESCHEDULE_MARGIN \
-	HAL_TICKER_US_TO_TICKS(150)
+	HAL_TICKER_US_TO_TICKS(HAL_TICKER_RESCHEDULE_MARGIN_US)
 
 /* Remove ticks and return positive remainder value in microseconds */
 static inline void hal_ticker_remove_jitter(uint32_t *ticks,
