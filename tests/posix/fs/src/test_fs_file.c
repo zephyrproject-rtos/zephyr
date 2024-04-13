@@ -141,6 +141,24 @@ static int test_file_close(void)
 	return res;
 }
 
+static int test_file_fsync(void)
+{
+	int res = 0;
+
+	if (file < 0)
+		return res;
+
+	res = fsync(file);
+	if (res < 0) {
+		TC_ERROR("Failed to sync file: %d, errno = %d\n", res, errno);
+		res = TC_FAIL;
+	}
+
+	close(file);
+	file = -1;
+	return res;
+}
+
 static int test_file_delete(void)
 {
 	int res;
@@ -199,6 +217,19 @@ ZTEST(posix_fs_file_test, test_fs_read)
 	zassert_true(test_file_open() == TC_PASS);
 	zassert_true(test_file_write() == TC_PASS);
 	zassert_true(test_file_read() == TC_PASS);
+}
+
+/**
+ * @brief Test for POSIX fsync API
+ *
+ * @details Test sync the file through POSIX fsync API.
+ */
+ZTEST(posix_fs_file_test, test_fs_sync)
+{
+	/* FIXME: restructure tests as per #46897 */
+	zassert_true(test_file_open() == TC_PASS);
+	zassert_true(test_file_write() == TC_PASS);
+	zassert_true(test_file_fsync() == TC_PASS);
 }
 
 /**
