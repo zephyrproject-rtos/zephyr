@@ -11,6 +11,7 @@ config SOC_SERIES_MEC172X
 	select CPU_HAS_ARM_MPU
 	select HAS_SWO
 	select HAS_PM
+	select ZERVICE
 
 if SOC_SERIES_MEC172X
 
@@ -72,5 +73,13 @@ config GPIO_INIT_PRIORITY
 	default 41
 
 endif # GPIO
+
+config ZERVICE_SOC_INIT_AFTER
+	string "SoC initialization after"
+	default "microchip,xec-ecia;PRE_KERNEL_1"
+
+config ZERVICE_SOC_INIT_BEFORE
+	string "SoC initialization before"
+	default "microchip,xec-gpio-v2;POST_KERNEL_2"
 
 endif # SOC_SERIES_MEC172X

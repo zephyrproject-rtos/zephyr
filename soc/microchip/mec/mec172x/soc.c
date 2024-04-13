@@ -46,4 +46,4 @@ static int soc_init(void)
 	return 0;
 }
 
-SYS_INIT(soc_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+ZERVICE_DEFINE(soc_init, "", "");
