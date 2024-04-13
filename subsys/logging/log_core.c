@@ -466,18 +466,16 @@ static bool msg_filter_check(struct log_backend const *backend,
 	uint8_t level;
 	uint8_t domain_id;
 	int16_t source_id;
-	struct log_source_dynamic_data *source;
 
-	source = (struct log_source_dynamic_data *)log_msg_get_source(&msg->log);
 	level = log_msg_get_level(&msg->log);
 	domain_id = log_msg_get_domain(&msg->log);
+	source_id = log_msg_get_source_id(&msg->log);
 
 	/* Accept all non-logging messages. */
 	if (level == LOG_LEVEL_NONE) {
 		return true;
 	}
-	if (source) {
-		source_id = log_dynamic_source_id(source);
+	if (source_id >= 0) {
 		backend_level = log_filter_get(backend, domain_id, source_id, true);
 
 		return (level <= backend_level);
