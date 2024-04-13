@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2017 Christian Taedcke
 
-if SOC_VENDOR_SILABS
-
 rsource "*/*/Kconfig.defconfig"
+
+if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
 
 config SOC_GECKO_EMU
 	default y
