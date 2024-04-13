@@ -144,6 +144,10 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	struct posix_fs_desc *ptr = obj;
 
 	switch (request) {
+	case ZFD_IOCTL_FSYNC: {
+		rc = fs_sync(&ptr->file);
+		break;
+	}
 	case ZFD_IOCTL_LSEEK: {
 		off_t offset;
 		int whence;

@@ -362,6 +362,7 @@ int fsync(int fd)
 
 	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_FSYNC);
 }
+FUNC_ALIAS(fsync, _fsync, int);
 
 off_t lseek(int fd, off_t offset, int whence)
 {
