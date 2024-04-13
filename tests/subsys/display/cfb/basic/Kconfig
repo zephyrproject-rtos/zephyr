@@ -4,4 +4,8 @@
 config TEST_MSB_FIRST_FONT
 	bool "Use MSB_FIRST font"
 
+config TEST_TRANSFER_BUF_SIZE
+	int "transfer buffer size"
+	default 0
+
 source "Kconfig.zephyr"

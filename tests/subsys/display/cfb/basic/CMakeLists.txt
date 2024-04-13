@@ -10,6 +10,7 @@ project(cfb_basic)
 if(CONFIG_TEST_MSB_FIRST_FONT)
 	target_sources(app PRIVATE src/testdata.c
 				   src/utils.c
+				   src/color_conv.c
 				   src/clear.c
 				   src/draw_point.c
 				   src/draw_line.c
@@ -28,6 +29,7 @@ if(CONFIG_TEST_MSB_FIRST_FONT)
 else()
 	target_sources(app PRIVATE src/testdata.c
 				   src/utils.c
+				   src/color_conv.c
 				   src/clear.c
 				   src/draw_point.c
 				   src/draw_line.c

@@ -37,20 +37,20 @@ ZTEST(invert, test_invert)
 	zassert_ok(cfb_invert(fb));
 	zassert_ok(cfb_finalize(fb));
 
-	zassert_true(verify_color_inside_rect(0, 0, 320, 240, 0xFFFFFF));
+	zassert_true(verify_color_inside_rect(0, 0, 320, 240, COLOR_WHITE));
 }
 
 ZTEST(invert, test_invert_contents)
 {
 	zassert_ok(cfb_invert_area(fb, 10, 10, 10, 10));
 	zassert_ok(cfb_finalize(fb));
-	zassert_true(verify_color_outside_rect(10, 10, 10, 10, 0));
-	zassert_true(verify_color_inside_rect(10, 10, 10, 10, 0xFFFFFF));
+	zassert_true(verify_color_outside_rect(10, 10, 10, 10, COLOR_BLACK));
+	zassert_true(verify_color_inside_rect(10, 10, 10, 10, COLOR_WHITE));
 
 	zassert_ok(cfb_invert(fb));
 	zassert_ok(cfb_finalize(fb));
 
-	zassert_true(verify_color_outside_rect(10, 10, 10, 10, 0xFFFFFF));
+	zassert_true(verify_color_outside_rect(10, 10, 10, 10, COLOR_WHITE));
 }
 
 ZTEST_SUITE(invert, NULL, NULL, cfb_test_before, cfb_test_after, NULL);
