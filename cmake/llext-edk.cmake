@@ -19,7 +19,7 @@
 #   zephyr_interface target.
 # - AUTOCONF_H: Name of the autoconf.h file, used to generate the imacros flag.
 # - llext_edk_file: Output file name for the tarball.
-# - LLEXT_CFLAGS: Additional flags to be added to the generated flags.
+# - llext_cflags: Additional flags to be added to the generated flags.
 # - ZEPHYR_BASE: Path to the zephyr base directory.
 # - WEST_TOPDIR: Path to the west top directory.
 # - APPLICATION_SOURCE_DIR: Path to the application source directory.
@@ -44,9 +44,9 @@ set(autoconf_h_edk ${llext_edk_inc}/${AUTOCONF_H})
 cmake_path(RELATIVE_PATH AUTOCONF_H BASE_DIRECTORY ${PROJECT_BINARY_DIR} OUTPUT_VARIABLE autoconf_h_rel)
 
 list(APPEND base_flags_make
-    "${LLEXT_CFLAGS} -imacros\$(${install_dir_var})/include/zephyr/${autoconf_h_rel}")
+    "${llext_cflags} -imacros\$(${install_dir_var})/include/zephyr/${autoconf_h_rel}")
 list(APPEND base_flags_cmake
-    "${LLEXT_CFLAGS} -imacros\${CMAKE_CURRENT_LIST_DIR}/include/zephyr/${autoconf_h_rel}")
+    "${llext_cflags} -imacros\${CMAKE_CURRENT_LIST_DIR}/include/zephyr/${autoconf_h_rel}")
 
 file(MAKE_DIRECTORY ${llext_edk_inc})
 foreach(dir ${include_dirs})
