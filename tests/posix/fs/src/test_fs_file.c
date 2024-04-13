@@ -159,6 +159,25 @@ static int test_file_fsync(void)
 	return res;
 }
 
+static int test_file_truncate(void)
+{
+	int res = 0;
+	size_t truncate_size = sizeof(test_str) - 4;
+
+	if (file < 0)
+		return res;
+
+	res = ftruncate(file, truncate_size);
+	if (res) {
+		TC_PRINT("Error truncating file [%d]\n", res);
+		res = TC_FAIL;
+	}
+
+	close(file);
+	file = -1;
+	return res;
+}
+
 static int test_file_delete(void)
 {
 	int res;
@@ -230,6 +249,19 @@ ZTEST(posix_fs_file_test, test_fs_sync)
 	zassert_true(test_file_open() == TC_PASS);
 	zassert_true(test_file_write() == TC_PASS);
 	zassert_true(test_file_fsync() == TC_PASS);
+}
+
+/**
+ * @brief Test for POSIX ftruncate API
+ *
+ * @details Test truncate the file through POSIX ftruncate API.
+ */
+ZTEST(posix_fs_file_test, test_fs_truncate)
+{
+	/* FIXME: restructure tests as per #46897 */
+	zassert_true(test_file_open() == TC_PASS);
+	zassert_true(test_file_write() == TC_PASS);
+	zassert_true(test_file_truncate() == TC_PASS);
 }
 
 /**
