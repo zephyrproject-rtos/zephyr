@@ -1,0 +1,7 @@
+sample:
+  description: Zervice sample
+  name: zervice
+tests:
+  sample.basic.zervice:
+    platform_allow:
+      - frdm_k64f

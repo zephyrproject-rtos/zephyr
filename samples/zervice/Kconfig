@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ZERVICE_SECOND_AFTER
+	string
+	default "EARLY;first"
+
+config ZERVICE_SECOND_BEFORE
+	string "'second' service should run before"
+	default "APPLICATION"
+
+config ZERVICE_THIRD_AFTER
+	string
+	default "APPLICATION;delta"
+
+config ZERVICE_THIRD_BEFORE
+	string
+	default "fourth"
+
+source "Kconfig.zephyr"
