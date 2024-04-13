@@ -34,25 +34,15 @@ cmake_minimum_required(VERSION 3.20.0)
 set(llext_edk ${PROJECT_BINARY_DIR}/${llext_edk_name})
 set(llext_edk_inc ${llext_edk}/include)
 
-string(REGEX REPLACE "[^a-zA-Z0-9]" "_" llext_edk_name_sane ${llext_edk_name})
-string(TOUPPER ${llext_edk_name_sane} llext_edk_name_sane)
-set(install_dir_var "${llext_edk_name_sane}_INSTALL_DIR")
-
-cmake_path(CONVERT "${INTERFACE_INCLUDE_DIRECTORIES}" TO_CMAKE_PATH_LIST include_dirs)
-
-set(autoconf_h_edk ${llext_edk_inc}/${AUTOCONF_H})
-cmake_path(RELATIVE_PATH AUTOCONF_H BASE_DIRECTORY ${PROJECT_BINARY_DIR} OUTPUT_VARIABLE autoconf_h_rel)
-
-list(APPEND base_flags_make
-    "${llext_cflags} -imacros\$(${install_dir_var})/include/zephyr/${autoconf_h_rel}")
-list(APPEND base_flags_cmake
-    "${llext_cflags} -imacros\${CMAKE_CURRENT_LIST_DIR}/include/zephyr/${autoconf_h_rel}")
-
-file(MAKE_DIRECTORY ${llext_edk_inc})
-foreach(dir ${include_dirs})
-    if (NOT EXISTS ${dir})
-        continue()
-    endif()
+# Usage:
+#   relative_dir(<dir> <relative_out> <bindir_out>)
+#
+# Helper function to generate relative paths to a few key directories
+# (PROJECT_BINARY_DIR, ZEPHYR_BASE, WEST_TOPDIR and APPLICATION_SOURCE_DIR).
+# The generated path is relative to the key directory, and the bindir_out
+# output variable is set to TRUE if the path is relative to PROJECT_BINARY_DIR.
+#
+function(relative_dir dir relative_out bindir_out)
     cmake_path(IS_PREFIX PROJECT_BINARY_DIR ${dir} NORMALIZE to_prj_bindir)
     cmake_path(IS_PREFIX ZEPHYR_BASE ${dir} NORMALIZE to_zephyr_base)
     if("${WEST_TOPDIR}" STREQUAL "")
@@ -87,6 +77,58 @@ foreach(dir ${include_dirs})
         set(dest ${llext_edk_inc}/${dir})
     endif()
 
+    set(${relative_out} ${dest} PARENT_SCOPE)
+    if(to_prj_bindir)
+        set(${bindir_out} TRUE PARENT_SCOPE)
+    else()
+        set(${bindir_out} FALSE PARENT_SCOPE)
+    endif()
+endfunction()
+
+string(REGEX REPLACE "[^a-zA-Z0-9]" "_" llext_edk_name_sane ${llext_edk_name})
+string(TOUPPER ${llext_edk_name_sane} llext_edk_name_sane)
+set(install_dir_var "${llext_edk_name_sane}_INSTALL_DIR")
+
+separate_arguments(LLEXT_CFLAGS NATIVE_COMMAND ${llext_cflags})
+
+set(make_relative FALSE)
+foreach(flag ${llext_cflags})
+    if (flag STREQUAL "-imacros")
+        set(make_relative TRUE)
+    elseif (make_relative)
+        set(make_relative FALSE)
+        cmake_path(GET flag PARENT_PATH parent)
+        cmake_path(GET flag FILENAME name)
+        relative_dir(${parent} dest bindir)
+        cmake_path(RELATIVE_PATH dest BASE_DIRECTORY ${llext_edk} OUTPUT_VARIABLE dest_rel)
+        if(bindir)
+            list(APPEND imacros_gen_make "-imacros\$(${install_dir_var})/${dest_rel}/${name}")
+            list(APPEND imacros_gen_cmake "-imacros\${CMAKE_CURRENT_LIST_DIR}/${dest_rel}/${name}")
+        else()
+            list(APPEND imacros_make "-imacros\$(${install_dir_var})/${dest_rel}/${name}")
+            list(APPEND imacros_cmake "-imacros\${CMAKE_CURRENT_LIST_DIR}/${dest_rel}/${name}")
+        endif()
+    else()
+        list(APPEND new_cflags ${flag})
+    endif()
+endforeach()
+set(LLEXT_CFLAGS ${new_cflags})
+
+cmake_path(CONVERT "${INTERFACE_INCLUDE_DIRECTORIES}" TO_CMAKE_PATH_LIST include_dirs)
+
+set(autoconf_h_edk ${llext_edk_inc}/${AUTOCONF_H})
+cmake_path(RELATIVE_PATH AUTOCONF_H BASE_DIRECTORY ${PROJECT_BINARY_DIR} OUTPUT_VARIABLE autoconf_h_rel)
+
+list(APPEND base_flags_make ${llext_cflags} ${imacros_make})
+list(APPEND base_flags_cmake ${llext_cflags} ${imacros_cmake})
+
+file(MAKE_DIRECTORY ${llext_edk_inc})
+foreach(dir ${include_dirs})
+    if (NOT EXISTS ${dir})
+        continue()
+    endif()
+
+    relative_dir(${dir} dest bindir)
     # Use destination parent, as the last part of the source directory is copied as well
     cmake_path(GET dest PARENT_PATH dest_p)
 
@@ -94,10 +136,10 @@ foreach(dir ${include_dirs})
     file(COPY ${dir} DESTINATION ${dest_p} FILES_MATCHING PATTERN "*.h")
 
     cmake_path(RELATIVE_PATH dest BASE_DIRECTORY ${llext_edk} OUTPUT_VARIABLE dest_rel)
-    if(to_prj_bindir)
+    if(bindir)
         list(APPEND inc_gen_flags_make "-I\$(${install_dir_var})/${dest_rel}")
         list(APPEND inc_gen_flags_cmake "-I\${CMAKE_CURRENT_LIST_DIR}/${dest_rel}")
-    else(to_zephyr_base)
+    else()
         list(APPEND inc_flags_make "-I\$(${install_dir_var})/${dest_rel}")
         list(APPEND inc_flags_cmake "-I\${CMAKE_CURRENT_LIST_DIR}/${dest_rel}")
     endif()
@@ -107,11 +149,11 @@ endforeach()
 
 if(CONFIG_LLEXT_EDK_USERSPACE_ONLY)
     # Copy syscall headers from edk directory, as they were regenerated there.
-    file(COPY ${PROJECT_BINARY_DIR}/edk/include/generated/ DESTINATION ${LLEXT_EDK_INC}/zephyr/include/generated)
+    file(COPY ${PROJECT_BINARY_DIR}/edk/include/generated/ DESTINATION ${llext_edk_inc}/zephyr/include/generated)
 endif()
 
 # Generate flags for Makefile
-list(APPEND all_flags_make ${base_flags_make} ${all_inc_flags_make})
+list(APPEND all_flags_make ${base_flags_make} ${imacros_gen_make} ${all_inc_flags_make})
 list(JOIN all_flags_make " " all_flags_str)
 file(WRITE ${llext_edk}/Makefile.cflags "LLEXT_CFLAGS = ${all_flags_str}")
 
@@ -127,8 +169,11 @@ file(APPEND ${llext_edk}/Makefile.cflags "\n\nLLEXT_GENERATED_INCLUDE_CFLAGS = $
 list(JOIN base_flags_make " " base_flags_str)
 file(APPEND ${llext_edk}/Makefile.cflags "\n\nLLEXT_BASE_CFLAGS = ${base_flags_str}")
 
+list(JOIN imacros_gen_make " " imacros_gen_str)
+file(APPEND ${llext_edk}/Makefile.cflags "\n\nLLEXT_GENERATED_IMACROS_CFLAGS = ${imacros_gen_str}")
+
 # Generate flags for CMake
-list(APPEND all_flags_cmake ${base_flags_cmake} ${all_inc_flags_cmake})
+list(APPEND all_flags_cmake ${base_flags_cmake} ${imacros_gen_make} ${all_inc_flags_cmake})
 file(WRITE ${llext_edk}/cmake.cflags "set(LLEXT_CFLAGS ${all_flags_cmake})")
 
 file(APPEND ${llext_edk}/cmake.cflags "\n\nset(LLEXT_ALL_INCLUDE_CFLAGS ${all_inc_flags_cmake})")
@@ -138,6 +183,8 @@ file(APPEND ${llext_edk}/cmake.cflags "\n\nset(LLEXT_INCLUDE_CFLAGS ${inc_flags_
 file(APPEND ${llext_edk}/cmake.cflags "\n\nset(LLEXT_GENERATED_INCLUDE_CFLAGS ${inc_gen_flags_cmake})")
 
 file(APPEND ${llext_edk}/cmake.cflags "\n\nset(LLEXT_BASE_CFLAGS ${base_flags_cmake})")
+
+file(APPEND ${llext_edk}/cmake.cflags "\n\nset(LLEXT_GENERATED_IMACROS_CFLAGS ${imacros_gen_cmake})")
 
 # Generate the tarball
 file(ARCHIVE_CREATE
