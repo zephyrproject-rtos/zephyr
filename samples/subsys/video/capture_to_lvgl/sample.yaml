@@ -1,0 +1,10 @@
+sample:
+  name: Video capture to LVGL
+tests:
+  sample.video.capture_to_lvgl:
+    build_only: true
+    tags:
+      - video
+    platform_allow:
+      - mini_stm32h743
+    depends_on: video
