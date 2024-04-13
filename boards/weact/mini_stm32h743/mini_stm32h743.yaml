@@ -15,4 +15,5 @@ supported:
   - backup_sram
   - watchdog
   - qspi
+  - video
 vendor: weact
