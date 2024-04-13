@@ -1,4 +1,4 @@
-.. mini_stm32h743:
+.. _mini_stm32h743:
 
 WeAct Studio MiniSTM32H743 Core Board
 #####################################
