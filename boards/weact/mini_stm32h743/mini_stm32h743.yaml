@@ -16,4 +16,5 @@ supported:
   - watchdog
   - usb
   - qspi
+  - video
 vendor: weact
