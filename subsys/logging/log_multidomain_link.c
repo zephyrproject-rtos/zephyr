@@ -76,11 +76,13 @@ void log_multidomain_link_on_recv_cb(struct log_multidomain_link *link_remote,
 	case Z_LOG_MULTIDOMAIN_ID_SET_RUNTIME_LEVEL:
 		link_remote->dst.set_runtime_level.level = msg->data.set_rt_level.runtime_level;
 		break;
+	case Z_LOG_MULTIDOMAIN_ID_DROPPED:
+		return;
 	case Z_LOG_MULTIDOMAIN_ID_READY:
 		break;
 	default:
 		__ASSERT(0, "Unexpected message");
-		break;
+		return;
 	}
 
 exit:
