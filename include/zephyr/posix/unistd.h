@@ -237,6 +237,7 @@ int close(int file);
 ssize_t write(int file, const void *buffer, size_t count);
 ssize_t read(int file, void *buffer, size_t count);
 off_t lseek(int file, off_t offset, int whence);
+int fsync(int fd);
 
 /* File System related operations */
 int rename(const char *old, const char *newp);
