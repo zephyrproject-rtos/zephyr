@@ -5,7 +5,11 @@ menuconfig LPS22HB
 	bool "LPS22HB pressure and temperature"
 	default y
 	depends on DT_HAS_ST_LPS22HB_PRESS_ENABLED
-	select I2C
+	depends on ZEPHYR_HAL_ST_MODULE
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HB),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HB),spi)
+	select HAS_STMEMSC
+	select USE_STDC_LPS22HB
 	help
 	  Enable driver for LPS22HB I2C-based pressure and temperature
 	  sensor.
