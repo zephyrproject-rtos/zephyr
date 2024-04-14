@@ -190,6 +190,7 @@ void *memalign(size_t alignment, size_t size)
 }
 #endif
 
+#if CONFIG_COMMON_LIBC_MALLOC && CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE > 0
 static int malloc_prepare(void)
 {
 	void *heap_base = NULL;
@@ -235,6 +236,7 @@ static int malloc_prepare(void)
 
 	return 0;
 }
+#endif
 
 void *realloc(void *ptr, size_t requested_size)
 {
@@ -260,7 +262,9 @@ void free(void *ptr)
 	malloc_unlock();
 }
 
+#if CONFIG_COMMON_LIBC_MALLOC && CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE > 0
 SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif
 #else /* No malloc arena */
 void *malloc(size_t size)
 {
