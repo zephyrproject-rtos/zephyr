@@ -45,9 +45,9 @@ extern "C" {
 		.dqs_enable           = DT_PROP(mspi_dev, mspi_dqs_enable),                       \
 		.rx_dummy             = DT_PROP_OR(mspi_dev, rx_dummy, 0),                        \
 		.tx_dummy             = DT_PROP_OR(mspi_dev, tx_dummy, 0),                        \
-		.read_cmd             = DT_PROP_OR(mspi_dev, read_cmd, 0),                        \
-		.write_cmd            = DT_PROP_OR(mspi_dev, write_cmd, 0),                       \
-		.cmd_length           = DT_ENUM_IDX_OR(mspi_dev, cmd_length, 0),                  \
+		.read_cmd             = DT_PROP_OR(mspi_dev, read_command, 0),                    \
+		.write_cmd            = DT_PROP_OR(mspi_dev, write_command, 0),                   \
+		.cmd_length           = DT_ENUM_IDX_OR(mspi_dev, command_length, 0),              \
 		.addr_length          = DT_ENUM_IDX_OR(mspi_dev, address_length, 0),              \
 		.mem_boundary         = COND_CODE_1(DT_NODE_HAS_PROP(mspi_dev, ce_break_config),  \
 						(DT_PROP_BY_IDX(mspi_dev, ce_break_config, 0)),   \
