@@ -11,8 +11,7 @@ menuconfig LPS22HB
 	select HAS_STMEMSC
 	select USE_STDC_LPS22HB
 	help
-	  Enable driver for LPS22HB I2C-based pressure and temperature
-	  sensor.
+	  Enable driver for LPS22HB pressure and temperature sensor.
 
 if LPS22HB
 
