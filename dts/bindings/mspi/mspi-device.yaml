@@ -1,0 +1,212 @@
+# Copyright (c) 2024, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for MSPI devices
+
+include: [base.yaml, power.yaml]
+
+on-bus: mspi
+
+properties:
+  reg:
+    required: true
+
+  mspi-max-frequency:
+    type: int
+    required: true
+    description: |
+      Maximum clock frequency of device to configure in Hz.
+      In device tree, it is normally the target operating
+      frequency after initialization.
+
+  mspi-io-mode:
+    type: string
+    enum:
+      - "MSPI_IO_MODE_SINGLE"
+      - "MSPI_IO_MODE_DUAL"
+      - "MSPI_IO_MODE_DUAL_1_1_2"
+      - "MSPI_IO_MODE_DUAL_1_2_2"
+      - "MSPI_IO_MODE_QUAD"
+      - "MSPI_IO_MODE_QUAD_1_1_4"
+      - "MSPI_IO_MODE_QUAD_1_4_4"
+      - "MSPI_IO_MODE_OCTAL"
+      - "MSPI_IO_MODE_OCTAL_1_1_8"
+      - "MSPI_IO_MODE_OCTAL_1_8_8"
+      - "MSPI_IO_MODE_HEX"
+      - "MSPI_IO_MODE_HEX_8_8_16"
+      - "MSPI_IO_MODE_HEX_8_16_16"
+    description: |
+      MSPI I/O mode setting.
+      In device tree, it is normally the target io mode
+      after initialization.
+
+  mspi-data-rate:
+    type: string
+    enum:
+      - "MSPI_DATA_RATE_SINGLE"
+      - "MSPI_DATA_RATE_S_S_D"
+      - "MSPI_DATA_RATE_S_D_D"
+      - "MSPI_DATA_RATE_DUAL"
+    description:
+      MSPI data rate setting.
+      In device tree, it is normally the target data rate
+      after initialization.
+
+  mspi-hardware-ce-num:
+    type: int
+    description: |
+      MSPI hardware CE number.
+      MSPI controller may natively support multiple peripheral devices
+      on the same MSPI instance by assigning designated CE numbers.
+
+  mspi-cpp-mode:
+    type: string
+    enum:
+      - "MSPI_CPP_MODE_0"
+      - "MSPI_CPP_MODE_1"
+      - "MSPI_CPP_MODE_2"
+      - "MSPI_CPP_MODE_3"
+    description: |
+      MSPI clock polarity setting.
+      MSPI_CPP_MODE_0: CPOL=0, CPHA=0
+      MSPI_CPP_MODE_1: CPOL=0, CPHA=1
+      MSPI_CPP_MODE_2: CPOL=1, CPHA=0
+      MSPI_CPP_MODE_3: CPOL=1, CPHA=1
+
+  mspi-endian:
+    type: string
+    enum:
+      - "MSPI_LITTLE_ENDIAN"
+      - "MSPI_BIG_ENDIAN"
+    description: |
+      MSPI transfer MSB or LSB first.
+
+  mspi-ce-polarity:
+    type: string
+    enum:
+      - "MSPI_CE_ACTIVE_LOW"
+      - "MSPI_CE_ACTIVE_HIGH"
+    description: |
+      MSPI CE polarity. In most cases, it is active low.
+
+  mspi-dqs-enable:
+    type: boolean
+    description: |
+      Enable DQS mode for a device which supports it.
+      This will be checked against dqs-support and configure
+      the MSPI hardware if it supports DQS mode.
+
+  mspi-hold-ce:
+    type: boolean
+    description: |
+      In some cases, it is necessary for the controller to manage
+      MSPI chip enable (under software control), so that multiple
+      mspi transactions can be performed without releasing CE.
+      A typical use case is variable length MSPI packets where
+      the first mspi transaction reads the length and the second
+      mspi transaction reads length bytes.
+
+  rx-dummy:
+    type: int
+    description: |
+      The number of data or clock cycles between addr and data
+      in RX direction.
+      0 means the RX dummy phase is disabled.
+
+  tx-dummy:
+    type: int
+    description: |
+      The number of data or clock cycles between addr and data
+      in TX direction.
+      0 means the TX dummy phase is disabled.
+
+  read-command:
+    type: int
+    description: |
+      Read command to be sent in RX direction.
+
+  write-command:
+    type: int
+    description: |
+      Write command to be sent in RX direction.
+
+  command-length:
+    type: string
+    enum:
+      - "INSTR_DISABLED"
+      - "INSTR_1_BYTE"
+      - "INSTR_2_BYTE"
+    description: |
+      Length in bytes of the write and read commands.
+
+  address-length:
+    type: string
+    enum:
+      - "ADDR_DISABLED"
+      - "ADDR_1_BYTE"
+      - "ADDR_2_BYTE"
+      - "ADDR_3_BYTE"
+      - "ADDR_4_BYTE"
+    description: |
+      Length in bytes of address to be sent in address phase.
+
+  xip-config:
+    type: array
+    description: |
+      Array of parameters to configure the xip feature.
+      enable: whether XIP feature is enabled.
+      address_offset: The offset in bytes to the start of the
+                      platform specific XIP address region.
+      size: The size in bytes of the XIP address region one
+            wish to enable or disable.
+      permission: The permission granted to the region. (RW/RO)
+
+      For controller that support this feature. One may map the device
+      memory into Soc system memory map. i.e. XIP address region
+      So that the device may be used as an external RAM and execute code.
+
+      default =
+      <
+        .enable         = false;
+        .address_offset = 0;
+        .size           = 0;
+        .permission     = 0;
+      >
+
+  scramble-config:
+    type: array
+    description: |
+      Array of parameters to configure the scrambling feature.
+      enable: whether scrambling feature is enabled.
+      address_offset: The offset in bytes to the start address which
+                      can be the offset to the start of the platform
+                      specific XIP address region or phyiscal device address.
+
+      size: The size in bytes of the region one wish to enable or disable.
+      For controller that support hardware scrambling, one may use it for
+      additional security to protect data or code stored in external devices.
+
+      default =
+      <
+        .enable         = false;
+        .address_offset = 0;
+        .size           = 0;
+      >
+
+  ce-break-config:
+    type: array
+    description: |
+      Array of parameters to configure the auto CE break feature.
+      mem_boundary: Memory boundary in bytes of a device that a transfer
+                    should't cross.
+      time_to_break: The maximum time of a transfer should't exceed for
+                     a device in micro seconds(us).
+
+      This is typically used with devices that has memory boundaries or
+      requires periodic internal refresh. e.g. psram
+
+      default =
+      <
+        .mem_boundary    = 0;
+        .time_to_break   = 0;
+      >
