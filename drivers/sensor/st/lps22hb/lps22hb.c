@@ -136,6 +136,9 @@ static const struct sensor_driver_api lps22hb_driver_api = {
 	.attr_set = lps22hb_attr_set,
 	.sample_fetch = lps22hb_sample_fetch,
 	.channel_get = lps22hb_channel_get,
+#if CONFIG_LPS22HB_TRIGGER
+	.trigger_set = lps22hb_trigger_set,
+#endif
 };
 
 static int lps22hb_init_chip(const struct device *dev)
@@ -198,6 +201,13 @@ static int lps22hb_init(const struct device *dev)
 		LOG_ERR("Failed to initialize chip");
 		return -EIO;
 	}
+
+#ifdef CONFIG_LPS22HB_TRIGGER
+	if (lps22hb_init_interrupt(dev) < 0) {
+		LOG_ERR("Failed to initialize interrupt.");
+		return -EIO;
+	}
+#endif
 
 	return 0;
 }
