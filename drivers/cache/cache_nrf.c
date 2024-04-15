@@ -144,7 +144,17 @@ static inline int _cache_range(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, vo
 			       size_t size)
 {
 	uintptr_t line_addr = (uintptr_t)addr;
-	uintptr_t end_addr = line_addr + size;
+	uintptr_t end_addr;
+
+	/* Some SOCs has a bug that requires to set 28th bit in the address on
+	 * Trustzone secure builds.
+	 */
+	if (IS_ENABLED(CONFIG_CACHE_NRF_PATCH_LINEADDR) &&
+	    !IS_ENABLED(CONFIG_TRUSTED_EXECUTION_NONSECURE)) {
+		line_addr |= BIT(28);
+	}
+
+	end_addr = line_addr + size;
 
 	/*
 	 * Align address to line size
