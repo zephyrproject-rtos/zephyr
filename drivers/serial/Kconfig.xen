@@ -11,6 +11,7 @@ config UART_XEN_HVC
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	depends on XEN && !XEN_DOM0 && !XEN_DOM0LESS
+	select XEN_EVENTS if UART_INTERRUPT_DRIVEN
 	help
 	  Enable Xen ring buffer based hypervisor console driver. Used
 	  for Zephyr as unprivileged domain.
