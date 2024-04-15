@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Syslinbit SCOP SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config UHC_STM32
+	bool "STM32 USB host controller driver"
+	default y
+	depends on DT_HAS_ST_STM32_OTGFS_ENABLED \
+		|| DT_HAS_ST_STM32_OTGHS_ENABLED \
+		|| DT_HAS_ST_STM32_USB_ENABLED
+	select USE_STM32_LL_USB
+	select USE_STM32_HAL_HCD
+	help
+	  STM32 USB host controller driver.
+
+if UHC_STM32
+
+config UHC_STM32_DRV_THREAD_STACK_SIZE
+	int "Driver internal thread stack size"
+	default 512
+	help
+	  Size of the stack used in the STM32 USB host driver
+
+endif #UHC_STM32
