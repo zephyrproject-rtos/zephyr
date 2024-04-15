@@ -7,3 +7,9 @@ config CACHE_NRF_CACHE
 	depends on HAS_NRFX && CACHE_MANAGEMENT
 	help
 	  Enable support for the nRF cache driver.
+
+config CACHE_NRF_PATCH_LINEADDR
+	bool "Patch lineaddr"
+	default y if SOC_NRF54H20
+	help
+	  Manually set 28th bit in the LINEADDR in Trustzone Secure build.
