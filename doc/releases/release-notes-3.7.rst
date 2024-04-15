@@ -187,6 +187,9 @@ Drivers and Sensors
 
 * Wi-Fi
 
+  * Added support for configuring RTS threshold. With this, users can set the RTS threshold value or
+    disable the RTS mechanism.
+
 Networking
 **********
 
