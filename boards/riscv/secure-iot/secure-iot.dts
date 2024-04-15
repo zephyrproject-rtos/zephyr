@@ -19,5 +19,5 @@ chosen {
 };
 
 &gpio0 {
-	status = "ok";
+	status = "okay";
 };

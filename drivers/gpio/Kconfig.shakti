@@ -5,8 +5,7 @@
 
 menuconfig GPIO_SHAKTI
 	bool "shakti GPIO driver"
-	depends on DT_HAS_SHAKTI_GPIO0_ENABLED
-	depends on SOC_RISCV64_SHAKTI 
+	default y
 	help
 	  This option enables the Shakti GPIO driver.
 
