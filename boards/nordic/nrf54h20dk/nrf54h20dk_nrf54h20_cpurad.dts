@@ -46,10 +46,11 @@
 };
 
 &cpuapp_cpurad_ipc {
-	compatible = "zephyr,ipc-icmsg-me-follower";
 	mbox-names = "tx", "rx";
 	tx-region = <&cpurad_cpuapp_ipc_shm>;
 	rx-region = <&cpuapp_cpurad_ipc_shm>;
+	tx-blocks = <32>;
+	rx-blocks = <32>;
 };
 
 &cpurad_cpusys_ipc {
