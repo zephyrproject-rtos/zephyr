@@ -17,9 +17,8 @@
 LOG_MODULE_REGISTER(gt911, CONFIG_INPUT_LOG_LEVEL);
 
 /* GT911 used registers */
-#define DEVICE_ID       BSWAP_16(0x8140U)
-#define REG_STATUS      BSWAP_16(0x814EU)
-#define REG_FIRST_POINT BSWAP_16(0x814FU)
+#define DEVICE_ID  BSWAP_16(0x8140U)
+#define REG_STATUS BSWAP_16(0x814EU)
 
 /* REG_TD_STATUS: Touch points. */
 #define TOUCH_POINTS_MSK 0x0FU
@@ -28,10 +27,16 @@ LOG_MODULE_REGISTER(gt911, CONFIG_INPUT_LOG_LEVEL);
 #define TOUCH_STATUS_MSK (1 << 7U)
 
 /* The GT911's config */
-#define REG_GT911_CONFIG   BSWAP_16(0x8047U)
-#define REG_CONFIG_VERSION REG_GT911_CONFIG
-#define REG_CONFIG_SIZE    186U
-#define GT911_PRODUCT_ID   0x00313139U
+#define REG_GT911_CONFIG            BSWAP_16(0x8047U)
+#define REG_CONFIG_VERSION          REG_GT911_CONFIG
+#define REG_CONFIG_TOUCH_NUM_OFFSET 0x5
+#define REG_CONFIG_SIZE             186U
+#define GT911_PRODUCT_ID            0x00313139U
+
+/* Points registers */
+#define REG_POINT_0       0x814F
+#define POINT_OFFSET      0x8
+#define REG_POINT_ADDR(n) BSWAP_16(REG_POINT_0 + POINT_OFFSET * n)
 
 /** GT911 configuration (DT). */
 struct gt911_config {
@@ -101,27 +106,29 @@ static int gt911_process(const struct device *dev)
 	int r;
 	uint16_t reg_addr;
 	uint8_t status;
+	uint8_t i;
+	uint8_t j;
+	uint16_t row;
+	uint16_t col;
 	uint8_t points;
-	struct gt911_point_reg point_reg;
-	uint16_t row, col;
-	bool pressed;
+	static uint8_t prev_points;
+	struct gt911_point_reg point_reg[CONFIG_INPUT_GT911_MAX_TOUCH_POINTS];
+	static struct gt911_point_reg prev_point_reg[CONFIG_INPUT_GT911_MAX_TOUCH_POINTS];
 
-	/* obtain number of touch points (NOTE: multi-touch ignored) */
+	/* obtain number of touch points */
 	reg_addr = REG_STATUS;
 	r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), &status, sizeof(status));
 	if (r < 0) {
 		return r;
 	}
 
-	points = status & TOUCH_POINTS_MSK;
-	if (points != 0U && points != 1U && (0 != (status & TOUCH_STATUS_MSK))) {
-		points = 1;
-	}
-
 	if (!(status & TOUCH_STATUS_MSK)) {
 		/* Status bit not set, ignore this event */
 		return 0;
 	}
+
+	points = status & TOUCH_POINTS_MSK;
+
 	/* need to clear the status */
 	uint8_t clear_buffer[3] = {(uint8_t)REG_STATUS, (uint8_t)(REG_STATUS >> 8), 0};
 
@@ -130,28 +137,55 @@ static int gt911_process(const struct device *dev)
 		return r;
 	}
 
-	/* obtain first point X, Y coordinates and event from:
-	 * REG_P1_XH, REG_P1_XL, REG_P1_YH, REG_P1_YL.
-	 */
-	reg_addr = REG_FIRST_POINT;
-	r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), &point_reg, sizeof(point_reg));
-	if (r < 0) {
-		return r;
+	/* current points array */
+	for (i = 0; i <= points; i++) {
+		reg_addr = REG_POINT_ADDR(i);
+		r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), &point_reg[i],
+					 sizeof(point_reg[i]));
+
+		if (r < 0) {
+			return r;
+		}
 	}
 
-	pressed = (points == 1);
-	row = ((point_reg.high_y) << 8U) | point_reg.low_y;
-	col = ((point_reg.high_x) << 8U) | point_reg.low_x;
+	/* touch events */
+	for (i = 0; i < points; i++) {
+		if (CONFIG_INPUT_GT911_MAX_TOUCH_POINTS > 1) {
+			input_report_abs(dev, INPUT_ABS_MT_SLOT, point_reg[i].id, true, K_FOREVER);
+		}
 
-	LOG_DBG("pressed: %d, row: %d, col: %d", pressed, row, col);
+		row = ((point_reg[i].high_y) << 8U) | point_reg[i].low_y;
+		col = ((point_reg[i].high_x) << 8U) | point_reg[i].low_x;
 
-	if (pressed) {
 		input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
 		input_report_abs(dev, INPUT_ABS_Y, row, false, K_FOREVER);
 		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
-	} else {
-		input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
 	}
+
+	/* release events */
+	for (i = 0; i < prev_points; i++) {
+		/* We look for the prev_point in the current points list */
+		for (j = 0; j < points; j++) {
+			if (prev_point_reg[i].id == point_reg[j].id) {
+				break;
+			}
+		}
+
+		if (j == points) {
+			if (CONFIG_INPUT_GT911_MAX_TOUCH_POINTS > 1) {
+				input_report_abs(dev, INPUT_ABS_MT_SLOT, prev_point_reg[i].id, true,
+						 K_FOREVER);
+			}
+			row = ((prev_point_reg[i].high_y) << 8U) | prev_point_reg[i].low_y;
+			col = ((prev_point_reg[i].high_x) << 8U) | prev_point_reg[i].low_x;
+			input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
+			input_report_abs(dev, INPUT_ABS_Y, row, false, K_FOREVER);
+			input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
+		}
+	}
+
+	memcpy(prev_point_reg, point_reg, sizeof(point_reg));
+	prev_points = points;
 
 	return 0;
 }
@@ -327,6 +361,9 @@ static int gt911_init(const struct device *dev)
 	if (!gt911_verify_firmware(gt911_config_firmware + 2)) {
 		return -ENODEV;
 	}
+
+	gt911_config_firmware[REG_CONFIG_TOUCH_NUM_OFFSET + 2] =
+		CONFIG_INPUT_GT911_MAX_TOUCH_POINTS;
 
 	gt911_config_firmware[REG_CONFIG_SIZE] =
 		gt911_get_firmware_checksum(gt911_config_firmware + 2);
