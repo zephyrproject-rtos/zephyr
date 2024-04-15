@@ -491,19 +491,7 @@ static bool canfd_predicate(const void *state)
 
 void *canfd_setup(void)
 {
-	int err;
-
-	k_sem_init(&rx_callback_sem, 0, 2);
-	k_sem_init(&tx_callback_sem, 0, 2);
-
-	(void)can_stop(can_dev);
-
-	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK | CAN_MODE_FD);
-	zassert_equal(err, 0, "failed to set CAN FD loopback mode (err %d)", err);
-	zassert_equal(CAN_MODE_LOOPBACK | CAN_MODE_FD, can_get_mode(can_dev));
-
-	err = can_start(can_dev);
-	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+	can_common_test_setup(CAN_MODE_LOOPBACK | CAN_MODE_FD);
 
 	return NULL;
 }
