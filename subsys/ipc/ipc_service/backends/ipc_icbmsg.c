@@ -75,6 +75,9 @@
  * data messages, it calls bound endpoint and it is ready to send data.
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* For strnlen() */
+
 #include <string.h>
 
 #include <zephyr/logging/log.h>
