@@ -403,6 +403,19 @@ config STD_C23
 
 endchoice
 
+config TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS
+	bool
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
+	help
+	  Hidden option to signal that toolchain supports GNU Extensions.
+
+config GNU_C_EXTENSIONS
+	bool "GNU C Extensions"
+	depends on TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS
+	help
+	  Enable GNU C Extensions. GNU C provides several language features
+	  not found in ISO standard C.
+
 config CODING_GUIDELINE_CHECK
 	bool "Enforce coding guideline rules"
 	help
