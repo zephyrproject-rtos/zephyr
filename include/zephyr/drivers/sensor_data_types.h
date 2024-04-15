@@ -110,6 +110,7 @@ struct sensor_q31_data {
 			q31_t power;           /**< Unit: watts */
 			q31_t angle;           /**< Unit: degrees */
 			q31_t electric_charge; /**< Unit: mAh */
+			q31_t humidity;        /**< Unit: RH */
 		};
 	} readings[1];
 };
