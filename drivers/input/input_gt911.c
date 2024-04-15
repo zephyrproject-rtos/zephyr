@@ -17,21 +17,21 @@
 LOG_MODULE_REGISTER(gt911, CONFIG_INPUT_LOG_LEVEL);
 
 /* GT911 used registers */
-#define DEVICE_ID           BSWAP_16(0x8140U)
-#define REG_STATUS		    BSWAP_16(0x814EU)
-#define REG_FIRST_POINT		BSWAP_16(0x814FU)
+#define DEVICE_ID       BSWAP_16(0x8140U)
+#define REG_STATUS      BSWAP_16(0x814EU)
+#define REG_FIRST_POINT BSWAP_16(0x814FU)
 
 /* REG_TD_STATUS: Touch points. */
-#define TOUCH_POINTS_MSK	0x0FU
+#define TOUCH_POINTS_MSK 0x0FU
 
 /* REG_TD_STATUS: Pressed. */
-#define TOUCH_STATUS_MSK    (1 << 7U)
+#define TOUCH_STATUS_MSK (1 << 7U)
 
 /* The GT911's config */
-#define GT911_CONFIG_REG         BSWAP_16(0x8047U)
+#define GT911_CONFIG_REG   BSWAP_16(0x8047U)
 #define REG_CONFIG_VERSION GT911_CONFIG_REG
-#define REG_CONFIG_SIZE (186U)
-#define GT911_PRODUCT_ID (0x00313139U)
+#define REG_CONFIG_SIZE    (186U)
+#define GT911_PRODUCT_ID   (0x00313139U)
 
 /** GT911 configuration (DT). */
 struct gt911_config {
@@ -62,7 +62,7 @@ struct gt911_data {
 };
 
 /** gt911 point reg */
-struct  gt911_point_reg_t {
+struct gt911_point_reg_t {
 	uint8_t id;       /*!< Track ID. */
 	uint8_t lowX;     /*!< Low byte of x coordinate. */
 	uint8_t highX;    /*!< High byte of x coordinate. */
@@ -78,8 +78,7 @@ struct  gt911_point_reg_t {
  * These wrappers handle the case where the GT911 did not accept the requested
  * I2C address, and the alternate I2C address is used.
  */
-static int gt911_i2c_write(const struct device *dev,
-			   const uint8_t *buf, uint32_t num_bytes)
+static int gt911_i2c_write(const struct device *dev, const uint8_t *buf, uint32_t num_bytes)
 {
 	const struct gt911_config *config = dev->config;
 	struct gt911_data *data = dev->data;
@@ -87,15 +86,14 @@ static int gt911_i2c_write(const struct device *dev,
 	return i2c_write(config->bus.bus, buf, num_bytes, data->actual_address);
 }
 
-static int gt911_i2c_write_read(const struct device *dev,
-				const void *write_buf, size_t num_write,
+static int gt911_i2c_write_read(const struct device *dev, const void *write_buf, size_t num_write,
 				void *read_buf, size_t num_read)
 {
 	const struct gt911_config *config = dev->config;
 	struct gt911_data *data = dev->data;
 
-	return i2c_write_read(config->bus.bus, data->actual_address, write_buf,
-			      num_write, read_buf, num_read);
+	return i2c_write_read(config->bus.bus, data->actual_address, write_buf, num_write, read_buf,
+			      num_read);
 }
 
 static int gt911_process(const struct device *dev)
@@ -110,8 +108,7 @@ static int gt911_process(const struct device *dev)
 
 	/* obtain number of touch points (NOTE: multi-touch ignored) */
 	reg_addr = REG_STATUS;
-	r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr),
-				 &status, sizeof(status));
+	r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), &status, sizeof(status));
 	if (r < 0) {
 		return r;
 	}
@@ -137,8 +134,7 @@ static int gt911_process(const struct device *dev)
 	 * REG_P1_XH, REG_P1_XL, REG_P1_YH, REG_P1_YL.
 	 */
 	reg_addr = REG_FIRST_POINT;
-	r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr),
-				 &pointRegs, sizeof(pointRegs));
+	r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), &pointRegs, sizeof(pointRegs));
 	if (r < 0) {
 		return r;
 	}
@@ -168,8 +164,7 @@ static void gt911_work_handler(struct k_work *work)
 }
 
 #ifdef CONFIG_INPUT_GT911_INTERRUPT
-static void gt911_isr_handler(const struct device *dev,
-			       struct gpio_callback *cb, uint32_t pins)
+static void gt911_isr_handler(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	struct gt911_data *data = CONTAINER_OF(cb, struct gt911_data, int_gpio_cb);
 
@@ -187,7 +182,7 @@ static void gt911_timer_handler(struct k_timer *timer)
 static uint8_t gt911_get_firmware_checksum(const uint8_t *firmware)
 {
 	uint8_t sum = 0;
-	uint16_t i  = 0;
+	uint16_t i = 0;
 
 	for (i = 0; i < REG_CONFIG_SIZE - 2U; i++) {
 		sum += (*firmware);
@@ -273,15 +268,13 @@ static int gt911_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_INPUT_GT911_INTERRUPT
-	r = gpio_pin_interrupt_configure_dt(&config->int_gpio,
-					    GPIO_INT_EDGE_TO_ACTIVE);
+	r = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (r < 0) {
 		LOG_ERR("Could not configure interrupt GPIO interrupt.");
 		return r;
 	}
 
-	gpio_init_callback(&data->int_gpio_cb, gt911_isr_handler,
-			   BIT(config->int_gpio.pin));
+	gpio_init_callback(&data->int_gpio_cb, gt911_isr_handler, BIT(config->int_gpio.pin));
 #else
 	k_timer_init(&data->timer, gt911_timer_handler, NULL);
 #endif
@@ -299,20 +292,18 @@ static int gt911_init(const struct device *dev)
 		 * route the INT pin, or can only read it as an input (IE when
 		 * using a level shifter).
 		 */
-		r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr),
-					 &reg_id, sizeof(reg_id));
+		r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), &reg_id, sizeof(reg_id));
 		if (r < 0) {
 			/* Try alternate address */
 			data->actual_address = config->alt_addr;
-			r = gt911_i2c_write_read(dev, &reg_addr,
-						 sizeof(reg_addr),
-						 &reg_id, sizeof(reg_id));
+			r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), &reg_id,
+						 sizeof(reg_id));
 			LOG_INF("Device did not accept I2C address, "
-				"updated to 0x%02X", data->actual_address);
+				"updated to 0x%02X",
+				data->actual_address);
 		}
 	} else {
-		r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr),
-					 &reg_id, sizeof(reg_id));
+		r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), &reg_id, sizeof(reg_id));
 	}
 	if (r < 0) {
 		LOG_ERR("Device did not respond to I2C request");
@@ -324,13 +315,12 @@ static int gt911_init(const struct device *dev)
 	}
 
 	/* need to setup the firmware first: read and write */
-	uint8_t gt911Config[REG_CONFIG_SIZE + 2] = {
-		(uint8_t)GT911_CONFIG_REG, (uint8_t)(GT911_CONFIG_REG >> 8)
-	};
+	uint8_t gt911Config[REG_CONFIG_SIZE + 2] = {(uint8_t)GT911_CONFIG_REG,
+						    (uint8_t)(GT911_CONFIG_REG >> 8)};
 
 	reg_addr = GT911_CONFIG_REG;
-	r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr),
-				 gt911Config + 2, REG_CONFIG_SIZE);
+	r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), gt911Config + 2,
+				 REG_CONFIG_SIZE);
 	if (r < 0) {
 		return r;
 	}
@@ -360,17 +350,15 @@ static int gt911_init(const struct device *dev)
 	return 0;
 }
 
-#define GT911_INIT(index)                                                      \
-	static const struct gt911_config gt911_config_##index = {	       \
-		.bus = I2C_DT_SPEC_INST_GET(index),			       \
-		.rst_gpio = GPIO_DT_SPEC_INST_GET_OR(index, reset_gpios, {0}),	\
-		.int_gpio = GPIO_DT_SPEC_INST_GET(index, irq_gpios),	       \
-		.alt_addr = DT_INST_PROP_OR(index, alt_addr, 0),	       \
-	};								       \
-	static struct gt911_data gt911_data_##index;			       \
-	DEVICE_DT_INST_DEFINE(index, gt911_init, NULL,			       \
-			    &gt911_data_##index, &gt911_config_##index,        \
-			    POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,	       \
-			    NULL);
+#define GT911_INIT(index)                                                                          \
+	static const struct gt911_config gt911_config_##index = {                                  \
+		.bus = I2C_DT_SPEC_INST_GET(index),                                                \
+		.rst_gpio = GPIO_DT_SPEC_INST_GET_OR(index, reset_gpios, {0}),                     \
+		.int_gpio = GPIO_DT_SPEC_INST_GET(index, irq_gpios),                               \
+		.alt_addr = DT_INST_PROP_OR(index, alt_addr, 0),                                   \
+	};                                                                                         \
+	static struct gt911_data gt911_data_##index;                                               \
+	DEVICE_DT_INST_DEFINE(index, gt911_init, NULL, &gt911_data_##index, &gt911_config_##index, \
+			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(GT911_INIT)
