@@ -313,6 +313,7 @@
 			interrupts = <67 0>;
 			interrupt-names = "otgfs";
 			num-bidir-endpoints = <4>;
+			num-host-channels = <8>;
 			ram-size = <1280>;
 			maximum-speed = "full-speed";
 			phys = <&otgfs_phy>;

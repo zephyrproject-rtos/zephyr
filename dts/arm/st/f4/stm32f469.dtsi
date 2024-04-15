@@ -17,12 +17,14 @@
 
 		usbotg_fs: usb@50000000 {
 			num-bidir-endpoints = <6>;
+			num-host-channels = <12>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 7U)>,
 				 <&rcc STM32_SRC_PLL_Q CLK48M_SEL(0)>;
 		};
 
 		usbotg_hs: usb@40040000 {
 			num-bidir-endpoints = <9>;
+			num-host-channels = <16>;
 		};
 	};
 };
