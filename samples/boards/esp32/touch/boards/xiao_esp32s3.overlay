@@ -1,0 +1,25 @@
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+aliases {
+	led0 = &led0;
+	touch1 = &touch1;
+};
+
+leds {
+	compatible = "gpio-leds";
+	led0: led_0 {
+		gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+};
+
+&touch {
+	status="okay";
+	touch1: touch_1 {
+		channel-num = <1>;
+		channel-sens = <20>;
+		zephyr,code = <INPUT_KEY_0>;	// 11
+	};
+
+};
