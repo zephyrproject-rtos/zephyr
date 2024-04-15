@@ -2058,7 +2058,7 @@ struct bt_le_scan_recv_info {
 	uint16_t adv_props;
 
 	/**
-	 * @brief Periodic advertising interval.
+	 * @brief Periodic advertising interval (N * 1.25 ms).
 	 *
 	 * If 0 there is no periodic advertising.
 	 */
