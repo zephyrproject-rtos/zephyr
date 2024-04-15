@@ -22,6 +22,7 @@
 		zephyr,code-partition = &cpuapp_slot0_partition;
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpuapp_data;
+		zephyr,shell-uart = &uart136;
 	};
 
 	aliases {
