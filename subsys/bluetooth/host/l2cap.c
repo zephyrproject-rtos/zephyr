@@ -2017,7 +2017,7 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 		sent += ret;
 
 		/* If the current buffer has been fully consumed, destroy it */
-		if (ret == rem_len) {
+		if (sent == rem_len) {
 			net_buf_unref(buf);
 		}
 	}
