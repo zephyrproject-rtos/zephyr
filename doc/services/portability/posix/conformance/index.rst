@@ -59,7 +59,7 @@ POSIX System Interfaces
    :widths: 50, 10, 50
 
     _POSIX_VERSION, 200809L,
-    _POSIX_ASYNCHRONOUS_IO, -1, :ref:`†<posix_undefined_behaviour>`
+    :ref:`_POSIX_ASYNCHRONOUS_IO<posix_option_asynchronous_io>`, 200809L, :ref:`†<posix_undefined_behaviour>`
     :ref:`_POSIX_BARRIERS<posix_option_group_barriers>`, 200809L, :kconfig:option:`CONFIG_PTHREAD_BARRIER`
     :ref:`_POSIX_CLOCK_SELECTION<posix_option_group_clock_selection>`, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
     _POSIX_MAPPED_FILES, -1, :ref:`†<posix_undefined_behaviour>`
