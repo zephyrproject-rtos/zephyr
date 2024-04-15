@@ -143,6 +143,16 @@ static const struct json_obj_descr array_2dim_extra_named_descr[] = {
 				   ARRAY_SIZE(obj_array_descr)),
 };
 
+struct test_json_tok_encoded_obj {
+	const char *encoded_obj;
+	int ok;
+};
+
+static const struct json_obj_descr test_json_tok_encoded_obj_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct test_json_tok_encoded_obj, encoded_obj, JSON_TOK_ENCODED_OBJ),
+	JSON_OBJ_DESCR_PRIM(struct test_json_tok_encoded_obj, ok, JSON_TOK_NUMBER),
+};
+
 ZTEST(lib_json_test, test_json_encoding)
 {
 	struct test_struct ts = {
@@ -1207,6 +1217,25 @@ ZTEST(lib_json_test, test_large_descriptor)
 	zassert_true(ret & ((int64_t)1 << 21), "Field int21 not decoded");
 	zassert_true(ret & ((int64_t)1 << 31), "Field int31 not decoded");
 	zassert_true(ret & ((int64_t)1 << 39), "Field int39 not decoded");
+}
+
+ZTEST(lib_json_test, test_json_encoded_object_tok_encoding)
+{
+	static const char encoded[] =
+		"{\"encoded_obj\":{\"test\":{\"nested\":\"yes\"}},\"ok\":1234}";
+	const struct test_json_tok_encoded_obj obj = {
+		.encoded_obj = "{\"test\":{\"nested\":\"yes\"}}",
+		.ok = 1234,
+	};
+	char buffer[sizeof(encoded)];
+	int ret;
+
+	ret = json_obj_encode_buf(test_json_tok_encoded_obj_descr,
+				  ARRAY_SIZE(test_json_tok_encoded_obj_descr), &obj, buffer,
+				  sizeof(buffer));
+
+	zassert_equal(ret, 0, "Encoding function failed");
+	zassert_mem_equal(buffer, encoded, sizeof(encoded), "Encoded contents not consistent");
 }
 
 ZTEST_SUITE(lib_json_test, NULL, NULL, NULL, NULL, NULL);
