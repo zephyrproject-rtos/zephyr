@@ -3,7 +3,7 @@
 
 menuconfig HAWKBIT
 	bool "Eclipse hawkBit Firmware Over-the-Air support"
-	depends on NVS
+	depends on SETTINGS
 	depends on FLASH
 	depends on REBOOT
 	depends on HWINFO
