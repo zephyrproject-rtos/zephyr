@@ -26,7 +26,7 @@
 
 #ifdef CONFIG_BOARD_SECURE_IOT
 
-#define SHAKTI_UART_0_CLK_FREQUENCY 100000000 // Change to 40000000 for nexys video board and 100 * 10^6 for vcu118 FPGA
+#define SHAKTI_UART_0_CLK_FREQUENCY 40000000 // Change to 40000000 for nexys video board and 100 * 10^6 for vcu118 FPGA
 #define SHAKTI_UART_1_CLK_FREQUENCY 40000000
 
 #endif
@@ -437,7 +437,7 @@ static void uart_shakti_irq_cfg_func_0(void);
 static const struct uart_shakti_device_config uart_shakti_dev_cfg_0 = {
 	.port         = 0X11300,
 	.sys_clk_freq = SHAKTI_UART_0_CLK_FREQUENCY,
-	.baud_rate    = 115200,
+	.baud_rate    = 19200,
 	.rxcnt_irq    = 0,
 	.txcnt_irq    = 0,
 	// .pcfg	      = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
