@@ -1869,7 +1869,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "[-c --channel]: Channel that needs to be scanned for connection. 0:any channel.\n"
 		  "[-b, --band] 0: any band (2:2.4GHz, 5:5GHz, 6:6GHz]\n"
 		  "[-p, --psk]: Passphrase (valid only for secure SSIDs)\n"
-		  "[-k, --key-mgmt]: Key Management type (valid only for secure SSIDs)\n"
+		  "[-k, --key-mgmt]: Key Management type\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP, 7: WPA-PSK\n"
 		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n"
