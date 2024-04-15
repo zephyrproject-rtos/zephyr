@@ -26,6 +26,9 @@
 #define EXTFLASH_SIZE	DT_PROP_OR(EXTFLASH_NODE, size_in_bytes, \
 				   DT_PROP(EXTFLASH_NODE, size) / 8)
 
+/* Let SystemInit() be called in place of z_arm_platform_init() by default. */
+PROVIDE(z_arm_platform_init = SystemInit);
+
 #else
 
 /*
