@@ -54,6 +54,8 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 
 static uint32_t poll_sleep = (CONFIG_HAWKBIT_POLL_INTERVAL * SEC_PER_MIN);
 
+static bool hawkbit_initialized;
+
 static struct hawkbit_config {
 	int32_t action_id;
 } hb_cfg;
@@ -613,6 +615,10 @@ int hawkbit_init(void)
 	bool image_ok;
 	int ret = 0;
 
+	if (hawkbit_initialized) {
+		return 0;
+	}
+
 	ret = settings_subsys_init();
 	if (ret < 0) {
 		LOG_ERR("Failed to initialize settings subsystem: %d", ret);
@@ -643,7 +649,7 @@ int hawkbit_init(void)
 			return ret;
 		}
 	}
-
+	hawkbit_initialized = true;
 
 	return ret;
 }
@@ -1015,6 +1021,10 @@ enum hawkbit_response hawkbit_probe(void)
 	     deployment_base[DEPLOYMENT_BASE_SIZE] = { 0 },
 	     firmware_version[BOOT_IMG_VER_STRLEN_MAX] = { 0 };
 
+	if (!hawkbit_initialized) {
+		return HAWKBIT_NOT_INITIALIZED;
+	}
+
 	if (k_sem_take(&probe_sem, K_NO_WAIT) != 0) {
 		return HAWKBIT_PROBE_IN_PROGRESS;
 	}
@@ -1269,6 +1279,10 @@ static void autohandler(struct k_work *work)
 
 	case HAWKBIT_METADATA_ERROR:
 		LOG_INF("Metadata error");
+		break;
+
+	case HAWKBIT_NOT_INITIALIZED:
+		LOG_INF("hawkBit not initialized");
 		break;
 
 	case HAWKBIT_PROBE_IN_PROGRESS:
