@@ -515,11 +515,8 @@ static inline int16_t mcr20a_get_rssi(uint8_t lqi)
 static inline uint8_t *get_mac(const struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->data;
-	uint32_t *ptr = (uint32_t *)(mcr20a->mac_addr);
 
-	UNALIGNED_PUT(sys_rand32_get(), ptr);
-	ptr = (uint32_t *)(mcr20a->mac_addr + 4);
-	UNALIGNED_PUT(sys_rand32_get(), ptr);
+	sys_rand_get(mcr20a->mac_addr, sizeof(mcr20a->mac_addr));
 
 	mcr20a->mac_addr[0] = (mcr20a->mac_addr[0] & ~0x01) | 0x02;
 

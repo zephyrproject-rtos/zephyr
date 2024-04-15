@@ -152,6 +152,16 @@ typedef int16_t device_handle_t;
 	DT_PROP_OR(node_id, label, DT_NODE_FULL_NAME(node_id))
 
 /**
+ * @brief Determine if a devicetree node initialization should be deferred.
+ *
+ * @param node_id The devicetree node identifier.
+ *
+ * @return Boolean stating if node initialization should be deferred.
+ */
+#define DEVICE_DT_DEFER(node_id)                                               \
+	DT_PROP(node_id, zephyr_deferred_init)
+
+/**
  * @brief Create a device object from a devicetree node identifier and set it up
  * for boot time initialization.
  *
@@ -759,6 +769,22 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 }
 
 /**
+ * @brief Initialize a device.
+ *
+ * A device whose initialization was deferred (by marking it as
+ * ``zephyr,deferred-init`` on devicetree) needs to be initialized manually via
+ * this call. Note that only devices whose initialization was deferred can be
+ * initialized via this call - one can not try to initialize a non
+ * initialization deferred device that failed initialization with this call.
+ *
+ * @param dev device to be initialized.
+ *
+ * @retval -ENOENT If device was not found - or isn't a deferred one.
+ * @retval -errno For other errors.
+ */
+__syscall int device_init(const struct device *dev);
+
+/**
  * @}
  */
 
@@ -988,6 +1014,18 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 			},                                                                         \
 	}
 
+#define Z_DEFER_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn_)                                \
+	static const Z_DECL_ALIGN(struct init_entry) __used __noasan                               \
+		__attribute__((__section__(".z_deferred_init")))                                   \
+		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
+			.init_fn = {COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (.dev_rw), (.dev)) = \
+					    (init_fn_)},                                           \
+			{                                                                          \
+				COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (.dev_rw), (.dev)) =     \
+					&DEVICE_NAME_GET(dev_id),                                  \
+			},                                                                         \
+	}
+
 /**
  * @brief Define a @ref device and all other required objects.
  *
@@ -1019,7 +1057,11 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
 			     prio, api, state, Z_DEVICE_DEPS_NAME(dev_id));    \
                                                                                \
-	Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn, level, prio)
+	COND_CODE_1(DEVICE_DT_DEFER(node_id),                                  \
+		    (Z_DEFER_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id,         \
+						      init_fn)),               \
+		    (Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn,      \
+						level, prio)));
 
 /**
  * @brief Declare a device for each status "okay" devicetree node.

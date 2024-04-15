@@ -26,7 +26,7 @@ extra-path=scripts/gitlint
 # max-line-count=200
 
 [title-starts-with-subsystem]
-regex = ^(?!subsys:)(([^:]+):)(\s([^:]+):)*\s(.+)$
+regex = ^(?!subsys:)(?!treewide:)(([^:]+):)(\s([^:]+):)*\s(.+)$
 
 [title-must-not-contain-word]
 # Comma-separated list of words that should not occur in the title. Matching is case

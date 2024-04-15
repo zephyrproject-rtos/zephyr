@@ -249,7 +249,7 @@ static void eth_stellaris_isr(const struct device *dev)
 		 * to get how many packets are in the Ethernet.
 		 */
 		num_packets = sys_read32(REG_MACNP);
-		for (int i = 0; i < np; i++) {
+		for (int i = 0; i < num_packets; i++) {
 			if (eth_stellaris_rx(dev) != 0) {
 				break;
 			}

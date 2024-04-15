@@ -27,7 +27,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <zephyr/net/net_ip.h>
-
+#include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
@@ -697,6 +697,27 @@ static inline uint16_t coap_block_size_to_bytes(
 }
 
 /**
+ * @brief Helper for converting block size in bytes to enumeration.
+ *
+ * NOTE: Only valid CoAP block sizes map correctly.
+ *
+ * @param bytes CoAP block size in bytes.
+ * @return enum coap_block_size
+ */
+static inline enum coap_block_size coap_bytes_to_block_size(uint16_t bytes)
+{
+	int sz = u32_count_trailing_zeros(bytes) - 4;
+
+	if (sz < COAP_BLOCK_16) {
+		return COAP_BLOCK_16;
+	}
+	if (sz > COAP_BLOCK_1024) {
+		return COAP_BLOCK_1024;
+	}
+	return sz;
+}
+
+/**
  * @brief Represents the current state of a block-wise transaction.
  */
 struct coap_block_context {
@@ -756,6 +777,15 @@ bool coap_has_descriptive_block_option(struct coap_packet *cpkt);
  * @return 0 in case of success or negative in case of error.
  */
 int coap_remove_descriptive_block_option(struct coap_packet *cpkt);
+
+/**
+ * @brief Check if BLOCK1 or BLOCK2 option has more flag set
+ *
+ * @param cpkt Packet to be checked.
+ * @return true If more flag is set in BLOCK1 or BLOCK2
+ * @return false If MORE flag is not set or BLOCK header not found.
+ */
+bool coap_block_has_more(struct coap_packet *cpkt);
 
 /**
  * @brief Append BLOCK1 option to the packet.

@@ -18,7 +18,10 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <string.h>
+
+/* internal kernel APIs */
 #include <ksched.h>
+#include <kthread.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);

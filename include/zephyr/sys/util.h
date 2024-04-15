@@ -422,6 +422,30 @@ static inline bool is_power_of_two(unsigned int x)
 }
 
 /**
+ * @brief Is @p p equal to ``NULL``?
+ *
+ * Some macros may need to check their arguments against NULL to support
+ * multiple use-cases, but NULL checks can generate warnings if such a macro
+ * is used in contexts where that particular argument can never be NULL.
+ *
+ * The warnings can be triggered if:
+ * a) all macros are expanded (e.g. when using CONFIG_COMPILER_SAVE_TEMPS=y)
+ * or
+ * b) tracking of macro expansions are turned off (-ftrack-macro-expansion=0)
+ *
+ * The warnings can be circumvented by using this inline function for doing
+ * the NULL check within the macro. The compiler is still able to optimize the
+ * NULL check out at a later stage.
+ *
+ * @param p Pointer to check
+ * @return true if @p p is equal to ``NULL``, false otherwise
+ */
+static ALWAYS_INLINE bool is_null_no_warn(void *p)
+{
+	return p == NULL;
+}
+
+/**
  * @brief Arithmetic shift right
  * @param value value to shift
  * @param shift number of bits to shift

@@ -1274,7 +1274,7 @@ uint8_t ull_adv_sync_chm_update(void)
 	return 0;
 }
 
-void ull_adv_sync_chm_complete(struct node_rx_hdr *rx)
+void ull_adv_sync_chm_complete(struct node_rx_pdu *rx)
 {
 	uint8_t hdr_data[ULL_ADV_HDR_DATA_LEN_SIZE +
 			 ULL_ADV_HDR_DATA_ACAD_PTR_SIZE];

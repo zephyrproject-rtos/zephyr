@@ -85,6 +85,7 @@ struct shell_stream {
 #endif /* CONFIG_BT_AUDIO_TX */
 #if defined(CONFIG_BT_AUDIO_RX)
 	struct bt_iso_recv_info last_info;
+	size_t empty_sdu_pkts;
 	size_t lost_pkts;
 	size_t err_pkts;
 	size_t dup_psn;
@@ -154,8 +155,7 @@ int bap_ac_create_unicast_group(const struct bap_unicast_ac_param *param,
 				struct shell_stream *snk_uni_streams[], size_t snk_cnt,
 				struct shell_stream *src_uni_streams[], size_t src_cnt);
 
-int cap_ac_unicast(const struct shell *sh, size_t argc, char **argv,
-		   const struct bap_unicast_ac_param *param);
+int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *param);
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
 
@@ -783,13 +783,18 @@ static inline void print_codec_cfg_chan_allocation(const struct shell *sh, size_
 	shell_print(sh, "%*sChannel allocation:", indent, "");
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
-	/* There can be up to 32 bits set in the field */
-	for (size_t i = 0; i < 32; i++) {
-		const uint8_t bit_val = BIT(i);
 
-		if (chan_allocation & bit_val) {
-			shell_print(sh, "%*s%s (0x%08X)", indent, "",
-				    chan_location_bit_to_str(bit_val), bit_val);
+	if (chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO) {
+		shell_print(sh, "%*s Mono", indent, "");
+	} else {
+		/* There can be up to 32 bits set in the field */
+		for (size_t i = 0; i < 32; i++) {
+			const uint8_t bit_val = BIT(i);
+
+			if (chan_allocation & bit_val) {
+				shell_print(sh, "%*s%s (0x%08X)", indent, "",
+					    chan_location_bit_to_str(bit_val), bit_val);
+			}
 		}
 	}
 }
@@ -940,6 +945,7 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 
 extern struct shell_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 extern struct broadcast_source default_source;
+extern struct named_lc3_preset default_broadcast_source_preset;
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 static inline bool print_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis,

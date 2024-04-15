@@ -68,7 +68,7 @@ static void cc_ntf_established(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	ntf->hdr.type = NODE_RX_TYPE_CIS_ESTABLISHED;
 	ntf->hdr.handle = conn->lll.handle;
-	ntf->hdr.rx_ftr.param = ll_conn_iso_stream_get(ctx->data.cis_create.cis_handle);
+	ntf->rx_ftr.param = ll_conn_iso_stream_get(ctx->data.cis_create.cis_handle);
 
 	pdu = (struct node_rx_conn_iso_estab *)ntf->pdu;
 

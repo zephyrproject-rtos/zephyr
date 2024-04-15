@@ -294,7 +294,7 @@ static void poll_out_timer_handler(struct k_timer *timer)
 		k_timer_stop(timer);
 		k_sem_give(&data->sem);
 	} else {
-		k_timer_start(timer, K_USEC(250 + (sys_rand32_get() % 800)),
+		k_timer_start(timer, K_USEC(250 + (sys_rand16_get() % 800)),
 				K_NO_WAIT);
 	}
 }

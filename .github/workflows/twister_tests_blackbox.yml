@@ -24,7 +24,7 @@ jobs:
         python-version: [3.8, 3.9, '3.10', '3.11', '3.12']
         os: [ubuntu-22.04]
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.9
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.11
 
     steps:
     - name: Apply Container Owner Mismatch Workaround
@@ -75,19 +75,3 @@ jobs:
         echo "Run twister tests"
         source zephyr-env.sh
         PYTHONPATH="./scripts/tests" pytest ./scripts/tests/twister_blackbox
-
-    - name: Upload Unit Test Results
-      if: success() || failure()
-      uses: actions/upload-artifact@v2
-      with:
-        name: Black Box Test Results (Python ${{ matrix.python-version }})
-        path: |
-          twister-out*/twister.log
-          twister-out*/twister.json
-          twister-out*/testplan.log
-        retention-days: 14
-
-    - name: Clear Workspace
-      if: success() || failure()
-      run: |
-        rm -rf twister-out*/

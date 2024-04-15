@@ -49,7 +49,7 @@ int bt_nus_inst_cb_register(struct bt_nus_inst *instance, struct bt_nus_cb *cb, 
 	}
 
 	if (!instance) {
-		if (IS_ENABLED(CONFIG_BT_NUS_DEFAULT_INSTANCE)) {
+		if (IS_ENABLED(CONFIG_BT_ZEPHYR_NUS_DEFAULT_INSTANCE)) {
 			instance = bt_nus_inst_default();
 		} else {
 			return -ENOTSUP;
@@ -72,7 +72,7 @@ int bt_nus_inst_send(struct bt_conn *conn,
 	}
 
 	if (!instance) {
-		if (IS_ENABLED(CONFIG_BT_NUS_DEFAULT_INSTANCE)) {
+		if (IS_ENABLED(CONFIG_BT_ZEPHYR_NUS_DEFAULT_INSTANCE)) {
 			instance = bt_nus_inst_default();
 		} else {
 			return -ENOTSUP;

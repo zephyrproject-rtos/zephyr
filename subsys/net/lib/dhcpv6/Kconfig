@@ -15,6 +15,13 @@ config NET_DHCPV6
 	select NET_MGMT_EVENT
 	depends on NET_IPV6 && NET_UDP
 
+config NET_DHCPV6_DUID_MAX_LEN
+	int "The maximum DUID length (not including a type code)"
+	range 1 128
+	default 22
+	help
+	  This will set the available number of bytes for the DUID.
+
 if NET_DHCPV6
 module = NET_DHCPV6
 module-dep = NET_LOG

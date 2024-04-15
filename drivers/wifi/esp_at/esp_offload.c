@@ -110,7 +110,13 @@ static int esp_bind(struct net_context *context, const struct sockaddr *addr,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
+		struct sockaddr_in *addr4 = (struct sockaddr_in *)addr;
+
 		LOG_DBG("link %d", sock->link_id);
+
+		if (addr4->sin_addr.s_addr == INADDR_ANY) {
+			return 0;
+		}
 
 		if (esp_socket_connected(sock)) {
 			return -EISCONN;

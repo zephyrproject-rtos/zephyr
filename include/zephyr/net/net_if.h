@@ -71,6 +71,8 @@ struct net_if_addr {
 #if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
 	/** How many times we have done DAD */
 	uint8_t dad_count;
+	/* What interface the DAD is running */
+	uint8_t ifindex;
 #endif
 
 	/** Is the IP address valid forever */
@@ -1788,6 +1790,10 @@ static inline void net_if_ipv6_set_base_reachable_time(struct net_if *iface,
 	}
 
 	iface->config.ip.ipv6->base_reachable_time = reachable_time;
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(reachable_time);
+
 #endif
 }
 
@@ -1809,6 +1815,7 @@ static inline uint32_t net_if_ipv6_get_reachable_time(struct net_if *iface)
 
 	return iface->config.ip.ipv6->reachable_time;
 #else
+	ARG_UNUSED(iface);
 	return 0;
 #endif
 }
@@ -1836,6 +1843,8 @@ static inline void net_if_ipv6_set_reachable_time(struct net_if_ipv6 *ipv6)
 	}
 
 	ipv6->reachable_time = net_if_ipv6_calc_reachable_time(ipv6);
+#else
+	ARG_UNUSED(ipv6);
 #endif
 }
 
@@ -1856,6 +1865,9 @@ static inline void net_if_ipv6_set_retrans_timer(struct net_if *iface,
 	}
 
 	iface->config.ip.ipv6->retrans_timer = retrans_timer;
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(retrans_timer);
 #endif
 }
 
@@ -1877,6 +1889,7 @@ static inline uint32_t net_if_ipv6_get_retrans_timer(struct net_if *iface)
 
 	return iface->config.ip.ipv6->retrans_timer;
 #else
+	ARG_UNUSED(iface);
 	return 0;
 #endif
 }

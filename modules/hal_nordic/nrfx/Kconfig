@@ -184,6 +184,46 @@ config NRFX_PWM3
 	depends on $(dt_nodelabel_has_compat,pwm3,$(DT_COMPAT_NORDIC_NRF_PWM))
 	select NRFX_PWM
 
+config NRFX_PWM20
+	bool "PWM20 driver instance"
+	depends on $(dt_nodelabel_has_compat,pwm20,$(DT_COMPAT_NORDIC_NRF_PWM))
+	select NRFX_PWM
+
+config NRFX_PWM21
+	bool "PWM21 driver instance"
+	depends on $(dt_nodelabel_has_compat,pwm21,$(DT_COMPAT_NORDIC_NRF_PWM))
+	select NRFX_PWM
+
+config NRFX_PWM22
+	bool "PWM22 driver instance"
+	depends on $(dt_nodelabel_has_compat,pwm22,$(DT_COMPAT_NORDIC_NRF_PWM))
+	select NRFX_PWM
+
+config NRFX_PWM120
+	bool "PWM120 driver instance"
+	depends on $(dt_nodelabel_has_compat,pwm120,$(DT_COMPAT_NORDIC_NRF_PWM))
+	select NRFX_PWM
+
+config NRFX_PWM130
+	bool "PWM130 driver instance"
+	depends on $(dt_nodelabel_has_compat,pwm130,$(DT_COMPAT_NORDIC_NRF_PWM))
+	select NRFX_PWM
+
+config NRFX_PWM131
+	bool "PWM131 driver instance"
+	depends on $(dt_nodelabel_has_compat,pwm131,$(DT_COMPAT_NORDIC_NRF_PWM))
+	select NRFX_PWM
+
+config NRFX_PWM132
+	bool "PWM132 driver instance"
+	depends on $(dt_nodelabel_has_compat,pwm132,$(DT_COMPAT_NORDIC_NRF_PWM))
+	select NRFX_PWM
+
+config NRFX_PWM133
+	bool "PWM133 driver instance"
+	depends on $(dt_nodelabel_has_compat,pwm133,$(DT_COMPAT_NORDIC_NRF_PWM))
+	select NRFX_PWM
+
 config NRFX_QDEC
 	bool
 
@@ -846,7 +886,7 @@ config NRFX_UARTE_CONFIG_TX_LINK
 
 config NRFX_UARTE_CONFIG_RX_CACHE_ENABLED
 	bool "UARTE RX caching support"
-	default y if $(dt_nodelabel_has_compat,ram3x,$(DT_COMPAT_MMIO_SRAM))
+	default y if $(dt_nodelabel_has_compat,shared_ram3x_region,$(DT_COMPAT_NORDIC_OWNED_MEMORY))
 	depends on NRFX_UARTE
 	help
 	  Feature might be enabled on platforms which has limitations regarding addresses

@@ -632,15 +632,15 @@ static int can_stm32_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = can_stm32_leave_sleep_mode(can);
-	if (ret) {
-		LOG_ERR("Failed to exit sleep mode");
-		return ret;
-	}
-
 	ret = can_stm32_enter_init_mode(can);
 	if (ret) {
 		LOG_ERR("Failed to enter init mode");
+		return ret;
+	}
+
+	ret = can_stm32_leave_sleep_mode(can);
+	if (ret) {
+		LOG_ERR("Failed to exit sleep mode");
 		return ret;
 	}
 

@@ -38,6 +38,7 @@ For more information about the MCX-N947 SoC and FRDM-MCXN947 board, see:
 - `MCX-N947 Reference Manual`_
 - `FRDM-MCXN947 Website`_
 - `FRDM-MCXN947 User Guide`_
+- `FRDM-MCXN947 Board User Manual`_
 - `FRDM-MCXN947 Schematics`_
 
 Supported Features
@@ -59,21 +60,35 @@ The FRDM-MCXN947 board configuration supports the following hardware features:
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| DMA       | on-chip    | dma                                 |
++-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | clock_control                       |
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | soc flash                           |
 +-----------+------------+-------------------------------------+
 | FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
+| DAC       | on-chip    | dac                                 |
++-----------+------------+-------------------------------------+
+| ENET QOS  | on-chip    | ethernet                            |
++-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 
 Targets available
 ==================
 
 The default configuration file
-zephyr_file:`boards/nxp/frdm_mcxn947/frdm_mcxn947_mcxn947_cpu0_defconfig`
+:zephyr_file:`boards/nxp/frdm_mcxn947/frdm_mcxn947_mcxn947_cpu0_defconfig`
 only enables the first core.
 
-Other hardware features are not currently supported by the port.`
+Other hardware features are not currently supported by the port.
 
 Connections and IOs
 ===================
@@ -116,10 +131,12 @@ configured by default to use the MCU-Link CMSIS-DAP Onboard Debug Probe.
 Using LinkServer
 ----------------
 
-Linkserver is the default runner for this board. Follow the instructions in
-:ref:`mcu-link-cmsis-onboard-debug-probe` to progtam the MCU-Link firmware.
-This only needs to be done if the default onboard debug circuit firmware was changed.
-To put the board in ``DFU mode`` to program the firmware, short jumper J21.
+Linkserver is the default runner for this board, and supports the factory
+default MCU-Link firmware. Follow the instructions in
+:ref:`mcu-link-cmsis-onboard-debug-probe` to reprogram the default MCU-Link
+firmware. This only needs to be done if the default onboard debug circuit
+firmware was changed. To put the board in ``DFU mode`` to program the firmware,
+short jumper J21.
 
 Using J-Link
 ------------
@@ -127,11 +144,12 @@ Using J-Link
 There are two options. The onboard debug circuit can be updated with Segger
 J-Link firmware by following the instructions in
 :ref:`mcu-link-jlink-onboard-debug-probe`.
-To put the board in ``DFU mode`` to program the firmware, short jumper J21.
-The second option is to attach :ref:`jlink-external-debug-probe` to the
-board.
-
-Use the ``-r jlink`` option with west to use the jlink runner.
+To be able to program the firmware, you need to put the board in ``DFU mode``
+by shortening the jumper J21.
+The second option is to attach a :ref:`jlink-external-debug-probe` to the
+10-pin SWD connector (J23) of the board. Additionally, the jumper J19 must
+be shortened.
+For both options use the ``-r jlink`` option with west to use the jlink runner.
 
 .. code-block:: console
 
@@ -164,7 +182,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build v3.6.0-479-g91faa20c6741 ***
-   Hello World! frdm_mcxn947
+   Hello World! frdm_mcxn947/mcxn947/cpu0
 
 Debugging
 =========
@@ -182,7 +200,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build v3.6.0-479-g91faa20c6741 ***
-   Hello World! frdm_mcxn947
+   Hello World! frdm_mcxn947/mcxn947/cpu0
 
 .. _MCX-N947 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-n-series-microcontrollers/mcx-n94x-54x-highly-integrated-multicore-mcus-with-on-chip-accelerators-intelligent-peripherals-and-advanced-security:MCX-N94X-N54X
@@ -199,8 +217,8 @@ should see the following message in the terminal:
 .. _FRDM-MCXN947 User Guide:
    https://www.nxp.com/document/guide/getting-started-with-frdm-mcxn947:GS-FRDM-MCXNXX
 
-.. _FRDM-MCXN947 Debug Firmware:
-   https://www.nxp.com/docs/en/application-note/AN13206.pdf
+.. _FRDM-MCXN947 Board User Manual:
+   https://www.nxp.com/webapp/Download?colCode=UM12018
 
 .. _FRDM-MCXN947 Schematics:
-   https://www.nxp.com/webapp/Download?colCode=LPC55S69-SCH
+   https://www.nxp.com/webapp/Download?colCode=90818-MCXN947SH

@@ -127,6 +127,15 @@ config LV_Z_AREA_Y_ALIGNMENT_WIDTH
 	  the current frame dimensions to meet display and/or LCD host
 	  controller requirements. The value must be power of 2.
 
+config LV_USE_GPU_STM32_DMA2D
+	bool
+
+config LV_GPU_DMA2D_CMSIS_INCLUDE
+	string
+	help
+	  Must be defined to include path of CMSIS header of target processor
+	  e.g. "stm32f769xx.h" or "stm32f429xx.h"
+
 rsource "Kconfig.memory"
 rsource "Kconfig.input"
 rsource "Kconfig.shell"

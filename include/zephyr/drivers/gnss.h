@@ -156,7 +156,7 @@ struct gnss_info {
 	/** Number of satellites being tracked */
 	uint16_t satellites_cnt;
 	/** Horizontal dilution of precision in 1/1000 */
-	uint16_t hdop;
+	uint32_t hdop;
 	/** The fix status */
 	enum gnss_fix_status fix_status;
 	/** The fix quality */

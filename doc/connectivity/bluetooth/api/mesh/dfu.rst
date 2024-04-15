@@ -170,6 +170,12 @@ Firmware metadata
 |                        |              | with a status message.                 |
 +------------------------+--------------+----------------------------------------+
 
+  .. note::
+
+      The AES-CMAC algorithm serves as a hashing function with a fixed key and is not used for
+      encryption in Bluetooth Mesh DFU metadata. The resulting hash is not secure since the key is
+      known.
+
 Firmware URI
    The firmware URI gives the Initiator information about where firmware updates for the image can
    be found. The URI points to an online resource the Initiator can interact with to get new

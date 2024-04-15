@@ -14,27 +14,27 @@ by calling :code:`gmap init`. It is also strongly suggested to enable BAP via :c
 
 .. code-block:: console
 
-   gmap --help
+   uart:~$ gmap --help
    gmap - Bluetooth GMAP shell commands
    Subcommands:
-     init      :[none]
-     set_role  :[ugt | ugg | bgr | bgs]
-     discover  :[none]
-     ac_1      :<sink preset>
-     ac_2      :<source preset>
-     ac_3      :<sink preset> <source preset>
-     ac_4      :<sink preset>
-     ac_5      :<sink preset> <source preset>
-     ac_6_i    :<sink preset>
-     ac_6_ii   :<sink preset>
-     ac_7_ii   :<sink preset> <source preset>
-     ac_8_i    :<sink preset> <source preset>
-     ac_8_ii   :<sink preset> <source preset>
-     ac_11_i   :<sink preset> <source preset>
-     ac_11_ii  :<sink preset> <source preset>
-     ac_12     :<preset>
-     ac_13     :<preset>
-     ac_14     :<preset>
+     init      : [none]
+     set_role  : [ugt | ugg | bgr | bgs]
+     discover  : [none]
+     ac_1      : Unicast audio configuration 1
+     ac_2      : Unicast audio configuration 2
+     ac_3      : Unicast audio configuration 3
+     ac_4      : Unicast audio configuration 4
+     ac_5      : Unicast audio configuration 5
+     ac_6_i    : Unicast audio configuration 6(i)
+     ac_6_ii   : Unicast audio configuration 6(ii)
+     ac_7_ii   : Unicast audio configuration 7(ii)
+     ac_8_i    : Unicast audio configuration 8(i)
+     ac_8_ii   : Unicast audio configuration 8(ii)
+     ac_11_i   : Unicast audio configuration 11(i)
+     ac_11_ii  : Unicast audio configuration 11(ii)
+     ac_12     : Broadcast audio configuration 12
+     ac_13     : Broadcast audio configuration 13
+     ac_14     : Broadcast audio configuration 14
 
 The :code:`set_role` command can be used to change the role at runtime, assuming that the device
 supports the role (the GMAP roles depend on some BAP configurations).
@@ -63,7 +63,9 @@ Connect and establish Gaming Audio streams using Audio Configuration (AC) 3
         ugt_feat 0x6f
         bgs_feat 0x01
         bgr_feat 0x03
-   uart:~$ gmap ac_3 32_2_gr 32_2_gs
+   uart:~$ bap preset sink 32_2_gr
+   uart:~$ bap preset source 32_2_gs
+   uart:~$ gmap ac_3
    Starting 2 streams for AC_3
    stream 0x20020060 config operation rsp_code 0 reason 0
    stream 0x200204d0 config operation rsp_code 0 reason 0

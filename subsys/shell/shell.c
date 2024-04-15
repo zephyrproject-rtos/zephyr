@@ -1208,7 +1208,6 @@ static int instance_init(const struct shell *sh,
 			(sh->shell_flag == SHELL_FLAG_OLF_CRLF));
 
 	memset(sh->ctx, 0, sizeof(*sh->ctx));
-	sh->ctx->prompt = sh->default_prompt;
 	if (CONFIG_SHELL_CMD_ROOT[0]) {
 		sh->ctx->selected_cmd = root_cmd_find(CONFIG_SHELL_CMD_ROOT);
 	}
@@ -1235,7 +1234,13 @@ static int instance_init(const struct shell *sh,
 					CONFIG_SHELL_DEFAULT_TERMINAL_WIDTH;
 	sh->ctx->vt100_ctx.cons.terminal_hei =
 					CONFIG_SHELL_DEFAULT_TERMINAL_HEIGHT;
+
+#if defined(CONFIG_SHELL_PROMPT_CHANGE) && CONFIG_SHELL_PROMPT_CHANGE
+	shell_prompt_change(sh, sh->default_prompt);
+#else
+	sh->ctx->prompt = sh->default_prompt;
 	sh->ctx->vt100_ctx.cons.name_len = z_shell_strlen(sh->ctx->prompt);
+#endif
 
 	/* Configure backend according to enabled shell features and backend
 	 * specific settings.
@@ -1614,15 +1619,35 @@ void shell_hexdump(const struct shell *sh, const uint8_t *data, size_t len)
 
 int shell_prompt_change(const struct shell *sh, const char *prompt)
 {
+#if defined(CONFIG_SHELL_PROMPT_CHANGE) && CONFIG_SHELL_PROMPT_CHANGE
 	__ASSERT_NO_MSG(sh);
 
 	if (prompt == NULL) {
 		return -EINVAL;
 	}
-	sh->ctx->prompt = prompt;
-	sh->ctx->vt100_ctx.cons.name_len = z_shell_strlen(prompt);
+
+	static const size_t mtx_timeout_ms = 20;
+	size_t prompt_length = z_shell_strlen(prompt);
+
+	if (k_mutex_lock(&sh->ctx->wr_mtx, K_MSEC(mtx_timeout_ms))) {
+		return -EBUSY;
+	}
+
+	if ((prompt_length + 1 > CONFIG_SHELL_PROMPT_BUFF_SIZE) || (prompt_length == 0)) {
+		k_mutex_unlock(&sh->ctx->wr_mtx);
+		return -EINVAL;
+	}
+
+	strcpy(sh->ctx->prompt, prompt);
+
+	sh->ctx->vt100_ctx.cons.name_len = prompt_length;
+
+	k_mutex_unlock(&sh->ctx->wr_mtx);
 
 	return 0;
+#else
+	return -EPERM;
+#endif
 }
 
 void shell_help(const struct shell *sh)

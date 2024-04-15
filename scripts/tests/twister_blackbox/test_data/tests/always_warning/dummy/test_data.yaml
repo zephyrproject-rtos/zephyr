@@ -1,0 +1,10 @@
+common:
+  timeout: 10
+tests:
+  always_warning.dummy:
+    platform_allow:
+      - native_posix
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - native_posix

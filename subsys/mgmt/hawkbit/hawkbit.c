@@ -8,35 +8,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/logging/log.h>
-
-LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
-
 #include <stdio.h>
-#include <zephyr/kernel.h>
-#include <string.h>
 #include <stdlib.h>
-#include <zephyr/fs/nvs.h>
-#include <zephyr/data/json.h>
-#include <zephyr/net/net_ip.h>
-#include <zephyr/net/socket.h>
-#include <zephyr/net/net_mgmt.h>
-#include <zephyr/sys/reboot.h>
-#include <zephyr/drivers/flash.h>
-#include <zephyr/net/http/client.h>
-#include <zephyr/net/dns_resolve.h>
-#include <zephyr/logging/log_ctrl.h>
-#include <zephyr/storage/flash_map.h>
+#include <string.h>
 
-#include "hawkbit_priv.h"
-#include "hawkbit_device.h"
+#include <zephyr/data/json.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/fs/nvs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
 #include <zephyr/mgmt/hawkbit.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/http/client.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/sys/reboot.h>
+
+#include "hawkbit_device.h"
 #include "hawkbit_firmware.h"
+#include "hawkbit_priv.h"
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 #define CA_CERTIFICATE_TAG 1
 #include <zephyr/net/tls_credentials.h>
 #endif
+
+LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 
 #define ADDRESS_ID 1
 
@@ -59,11 +59,7 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #define STORAGE_DEV FIXED_PARTITION_DEVICE(STORAGE_LABEL)
 #define STORAGE_OFFSET FIXED_PARTITION_OFFSET(STORAGE_LABEL)
 
-#if ((CONFIG_HAWKBIT_POLL_INTERVAL > 1) && (CONFIG_HAWKBIT_POLL_INTERVAL < 43200))
-static uint32_t poll_sleep = (CONFIG_HAWKBIT_POLL_INTERVAL * 60 * MSEC_PER_SEC);
-#else
-static uint32_t poll_sleep = (300 * MSEC_PER_SEC);
-#endif
+static uint32_t poll_sleep = (CONFIG_HAWKBIT_POLL_INTERVAL * SEC_PER_MIN);
 
 static struct nvs_fs fs;
 
@@ -80,7 +76,6 @@ static struct hawkbit_context {
 	int32_t action_id;
 	uint8_t *response_data;
 	int32_t json_action_id;
-	size_t url_buffer_size;
 	struct hawkbit_download dl;
 	struct http_request http_req;
 	struct flash_img_context flash_ctx;
@@ -203,16 +198,9 @@ static bool start_http_client(void)
 {
 	int ret = -1;
 	struct zsock_addrinfo *addr;
-	struct zsock_addrinfo hints;
+	struct zsock_addrinfo hints = {0};
 	int resolve_attempts = 10;
-
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-	int protocol = IPPROTO_TLS_1_2;
-#else
-	int protocol = IPPROTO_TCP;
-#endif
-
-	(void)memset(&hints, 0, sizeof(hints));
+	int protocol = IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) ? IPPROTO_TLS_1_2 : IPPROTO_TCP;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		hints.ai_family = AF_INET6;
@@ -247,14 +235,14 @@ static bool start_http_client(void)
 		CA_CERTIFICATE_TAG,
 	};
 
-	if (setsockopt(hb_context.sock, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt,
-		       sizeof(sec_tag_opt)) < 0) {
+	if (zsock_setsockopt(hb_context.sock, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt,
+			     sizeof(sec_tag_opt)) < 0) {
 		LOG_ERR("Failed to set TLS_TAG option");
 		goto err_sock;
 	}
 
-	if (setsockopt(hb_context.sock, SOL_TLS, TLS_HOSTNAME, CONFIG_HAWKBIT_SERVER,
-		       sizeof(CONFIG_HAWKBIT_SERVER)) < 0) {
+	if (zsock_setsockopt(hb_context.sock, SOL_TLS, TLS_HOSTNAME, CONFIG_HAWKBIT_SERVER,
+			     sizeof(CONFIG_HAWKBIT_SERVER)) < 0) {
 		goto err_sock;
 	}
 #endif
@@ -349,21 +337,21 @@ static int hawkbit_device_acid_update(int32_t new_value)
 }
 
 /*
- * Update sleep interval, based on results from hawkbit base polling
+ * Update sleep interval, based on results from hawkBit base polling
  * resource
  */
 static void hawkbit_update_sleep(struct hawkbit_ctl_res *hawkbit_res)
 {
-	uint32_t sleep_time;
+	int sleep_time;
 	const char *sleep = hawkbit_res->config.polling.sleep;
 
 	if (strlen(sleep) != HAWKBIT_SLEEP_LENGTH) {
 		LOG_ERR("Invalid poll sleep: %s", sleep);
 	} else {
 		sleep_time = hawkbit_time2sec(sleep);
-		if (sleep_time > 0 && poll_sleep != (MSEC_PER_SEC * sleep_time)) {
+		if (sleep_time > 0 && poll_sleep != sleep_time) {
 			LOG_DBG("New poll sleep %d seconds", sleep_time);
-			poll_sleep = sleep_time * MSEC_PER_SEC;
+			poll_sleep = (uint32_t)sleep_time;
 		}
 	}
 }
@@ -514,7 +502,7 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res, int32_t *json_a
 
 	/*
 	 * Find the download-http href. We only support the DEFAULT
-	 * tenant on the same hawkbit server.
+	 * tenant on the same hawkBit server.
 	 */
 	href = artifact->_links.download_http.href;
 	if (!href) {
@@ -964,6 +952,12 @@ static bool send_request(enum http_method method, enum hawkbit_http_request type
 	return true;
 }
 
+void hawkbit_reboot(void)
+{
+	LOG_PANIC();
+	sys_reboot(SYS_REBOOT_WARM);
+}
+
 enum hawkbit_response hawkbit_probe(void)
 {
 	int ret;
@@ -1005,15 +999,14 @@ enum hawkbit_response hawkbit_probe(void)
 	}
 
 	/*
-	 * Query the hawkbit base polling resource.
+	 * Query the hawkBit base polling resource.
 	 */
 	LOG_INF("Polling target data from hawkBit");
 
 	memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
 	hb_context.dl.http_content_size = 0;
 	hb_context.dl.downloaded_size = 0;
-	hb_context.url_buffer_size = URL_BUFFER_SIZE;
-	snprintk(hb_context.url_buffer, hb_context.url_buffer_size, "%s/%s-%s",
+	snprintk(hb_context.url_buffer, sizeof(hb_context.url_buffer), "%s/%s-%s",
 		 HAWKBIT_JSON_URL, CONFIG_BOARD, device_id);
 	memset(&hawkbit_results.base, 0, sizeof(hawkbit_results.base));
 
@@ -1040,9 +1033,9 @@ enum hawkbit_response hawkbit_probe(void)
 		ret = hawkbit_find_cancelAction_base(&hawkbit_results.base, cancel_base);
 		memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
 		hb_context.dl.http_content_size = 0;
-		hb_context.url_buffer_size = URL_BUFFER_SIZE;
-		snprintk(hb_context.url_buffer, hb_context.url_buffer_size, "%s/%s-%s/%s/feedback",
-			 HAWKBIT_JSON_URL, CONFIG_BOARD, device_id, cancel_base);
+		snprintk(hb_context.url_buffer, sizeof(hb_context.url_buffer),
+			 "%s/%s-%s/%s/feedback", HAWKBIT_JSON_URL, CONFIG_BOARD, device_id,
+			 cancel_base);
 		memset(&hawkbit_results.cancel, 0, sizeof(hawkbit_results.cancel));
 
 		if (!send_request(HTTP_POST, HAWKBIT_CLOSE, HAWKBIT_STATUS_FINISHED_SUCCESS,
@@ -1061,8 +1054,7 @@ enum hawkbit_response hawkbit_probe(void)
 			hawkbit_results.base._links.configData.href);
 		memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
 		hb_context.dl.http_content_size = 0;
-		hb_context.url_buffer_size = URL_BUFFER_SIZE;
-		snprintk(hb_context.url_buffer, hb_context.url_buffer_size, "%s/%s-%s/%s",
+		snprintk(hb_context.url_buffer, sizeof(hb_context.url_buffer), "%s/%s-%s/%s",
 			 HAWKBIT_JSON_URL, CONFIG_BOARD, device_id, "configData");
 
 		if (!send_request(HTTP_PUT, HAWKBIT_CONFIG_DEVICE, HAWKBIT_STATUS_FINISHED_SUCCESS,
@@ -1088,9 +1080,8 @@ enum hawkbit_response hawkbit_probe(void)
 	memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
 	hb_context.dl.http_content_size = 0;
 	hb_context.dl.downloaded_size = 0;
-	hb_context.url_buffer_size = URL_BUFFER_SIZE;
-	snprintk(hb_context.url_buffer, hb_context.url_buffer_size, "%s/%s-%s/%s", HAWKBIT_JSON_URL,
-		 CONFIG_BOARD, device_id, deployment_base);
+	snprintk(hb_context.url_buffer, sizeof(hb_context.url_buffer), "%s/%s-%s/%s",
+		 HAWKBIT_JSON_URL, CONFIG_BOARD, device_id, deployment_base);
 	memset(&hawkbit_results.dep, 0, sizeof(hawkbit_results.dep));
 	memset(hb_context.response_data, 0, RESPONSE_BUFFER_SIZE);
 
@@ -1121,8 +1112,7 @@ enum hawkbit_response hawkbit_probe(void)
 		LOG_INF("Preventing repeated attempt to install %d", hb_context.json_action_id);
 		hb_context.dl.http_content_size = 0;
 		memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
-		hb_context.url_buffer_size = URL_BUFFER_SIZE;
-		snprintk(hb_context.url_buffer, hb_context.url_buffer_size,
+		snprintk(hb_context.url_buffer, sizeof(hb_context.url_buffer),
 			 "%s/%s-%s/%s/%d/feedback", HAWKBIT_JSON_URL, CONFIG_BOARD,
 			 device_id, "deploymentBase", hb_context.json_action_id);
 
@@ -1141,9 +1131,7 @@ enum hawkbit_response hawkbit_probe(void)
 
 	hb_context.dl.http_content_size = 0;
 	memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
-	hb_context.url_buffer_size = URL_BUFFER_SIZE;
-
-	snprintk(hb_context.url_buffer, hb_context.url_buffer_size, "%s", download_http);
+	snprintk(hb_context.url_buffer, sizeof(hb_context.url_buffer), "%s", download_http);
 
 	flash_img_init(&hb_context.flash_ctx);
 
@@ -1204,8 +1192,7 @@ static void autohandler(struct k_work *work)
 		LOG_ERR("Rebooting to previous confirmed image");
 		LOG_ERR("If this image is flashed using a hardware tool");
 		LOG_ERR("Make sure that it is a confirmed image");
-		k_sleep(K_SECONDS(1));
-		sys_reboot(SYS_REBOOT_WARM);
+		hawkbit_reboot();
 		break;
 
 	case HAWKBIT_NO_UPDATE:
@@ -1221,7 +1208,8 @@ static void autohandler(struct k_work *work)
 		break;
 
 	case HAWKBIT_UPDATE_INSTALLED:
-		LOG_INF("Update installed, please reboot");
+		LOG_INF("Update installed");
+		hawkbit_reboot();
 		break;
 
 	case HAWKBIT_DOWNLOAD_ERROR:
@@ -1245,7 +1233,7 @@ static void autohandler(struct k_work *work)
 		break;
 	}
 
-	k_work_reschedule(&hawkbit_work_handle, K_MSEC(poll_sleep));
+	k_work_reschedule(&hawkbit_work_handle, K_SECONDS(poll_sleep));
 }
 
 void hawkbit_autohandler(void)

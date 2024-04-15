@@ -225,7 +225,7 @@ def test_parse_arguments_warnings(caplog):
 
 
 TESTDATA_2 = [
-    (['--show-footprint']),
+    (['--enable-size-report']),
     (['--compare-report', 'dummy']),
 ]
 

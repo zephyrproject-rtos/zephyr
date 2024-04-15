@@ -1,0 +1,75 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Enhanced Serial Audio Interface (ESAI) node
+
+compatible: "nxp,dai-esai"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+  dai-index:
+    type: int
+    description: |
+      Use this property to specify the index of the DAI. At the
+      moment, this is only used by SOF to fetch the "struct device"
+      associated with the DAI whose index Linux passes to SOF
+      through an IPC. If this property is not specified, the DAI
+      index will be considered 0.
+  tx-fifo-watermark:
+    type: int
+    description: |
+      Use this property to specify the watermark value for the TX
+      FIFO. This value needs to be in FIFO words (NOT BYTES). This
+      value needs to be in the following interval: (0, DEFAULT_FIFO_DEPTH],
+      otherwise a BUILD_ASSERT() failure will be raised. If unspecified,
+      the TX FIFO watermark will be set to DEFAULT_FIFO_DEPTH / 2.
+  rx-fifo-watermark:
+    type: int
+    description: |
+      Use this property to specify the watermark value for the RX
+      FIFO. This values needs to be in FIFO words (NOT BYTES). This
+      value needs to be in the following interval: (0, DEFAULT_FIFO_DEPTH],
+      otherwise a BUILD_ASSERT() failure will be raised. If unspecified,
+      the RX FIFO watermark will be set to DEFAULT_FIFO_DEPTH / 2.
+  fifo-depth:
+    type: int
+    description: |
+      Use this property to set the FIFO depth that will be reported
+      to upper layer applications calling dai_get_properties(). This
+      value should be in the following interval: (0, DEFAULT_FIFO_DEPTH],
+      otherwise a BUILD_ASSERT() failure will be raised. By DEFAULT_FIFO_DEPTH
+      we mean the actual (hardware) value of the FIFO depth. This is needed
+      because some applications (e.g: SOF) use this value directly as the
+      DMA burst size in which case DEFAULT_FIFO_DEPTH cannot be used.
+      Generally, reporting a false FIFO depth should be avoided. Please note
+      that the sanity check for tx/rx-fifo-watermark uses DEFAULT_FIFO_DETPH
+      instead of this value so use with caution. If unsure, it's better to
+      not use this property at all, in which case the reported value will be
+      DEFAULT_FIFO_DEPTH.
+  word-width:
+    type: int
+    description: |
+      This property is used to specify the width of a word. If unspecified,
+      the word width used will be 24.
+  esai-pin-modes:
+    type: array
+    description: |
+      This property is used to configure the ESAI pins. Each ESAI pin
+      supports 4 modes:
+        1) DISCONNECTED (PDC[i] = 0, PC[i] = 0)
+        2) GPIO input (PDC[i] = 0, PC[i] = 1)
+        3) GPIO output (PDC[i] = 1, PC[i] = 0)
+        4) ESAI (PDC[i] = 1, PC[i] = 1)
+      If pin is not used then DISCONNECTED mode should be used for said pin.
+      If unsure, don't specify this property at all. By default, all pins will
+      be set to ESAI mode.
+  esai-clock-configuration:
+    type: array
+    description: |
+      Use this property to configure the directions of the ESAI clocks (HCLK, BCLK, FSYNC).
+      This provides extra flexibility since the bespoke configuration is not direction-based.
+      The values from this array will overwrite the values set through the bespoke
+      configuration. If unspecified, the values from the bespoke configuration will be used.

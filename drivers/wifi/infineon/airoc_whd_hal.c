@@ -11,6 +11,7 @@
 #include <bus_protocols/whd_bus.h>
 #include <bus_protocols/whd_sdio.h>
 #include <zephyr/sd/sd.h>
+#include <cy_utils.h>
 
 #define DT_DRV_COMPAT infineon_airoc_wifi
 
@@ -103,14 +104,14 @@ int airoc_wifi_power_on(const struct device *dev)
 	}
 
 	/* Allow CBUCK regulator to discharge */
-	(void)cyhal_system_delay_ms(WLAN_CBUCK_DISCHARGE_MS);
+	(void)k_msleep(WLAN_CBUCK_DISCHARGE_MS);
 
 	/* WIFI power on */
 	ret = gpio_pin_set_dt(&config->wifi_reg_on_gpio, 1);
 	if (ret) {
 		return ret;
 	}
-	(void)cyhal_system_delay_ms(WLAN_POWER_UP_DELAY_MS);
+	(void)k_msleep(WLAN_POWER_UP_DELAY_MS);
 #endif /* DT_INST_NODE_HAS_PROP(0, reg_on_gpios) */
 
 	return 0;

@@ -352,6 +352,8 @@ int net_conn_register(uint16_t proto, uint8_t family,
 
 	conn = conn_get_unused();
 	if (!conn) {
+		NET_ERR("Not enough connection contexts. "
+			"Consider increasing CONFIG_NET_MAX_CONN.");
 		return -ENOENT;
 	}
 

@@ -10,6 +10,7 @@
 #include <kthread.h>
 #include <priority_q.h>
 #include <kswap.h>
+#include <ipi.h>
 #include <kernel_arch_func.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/timer/system_timer.h>
@@ -23,6 +24,10 @@
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+#if defined(CONFIG_SWAP_NONATOMIC) && defined(CONFIG_TIMESLICING)
+extern struct k_thread *pending_current;
+#endif
+
 struct k_spinlock _sched_spinlock;
 
 static void update_cache(int preempt_ok);
@@ -30,35 +35,10 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state);
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
 
 
-
-static inline int is_preempt(struct k_thread *thread)
-{
-	/* explanation in kernel_struct.h */
-	return thread->base.preempt <= _PREEMPT_THRESHOLD;
-}
-
 BUILD_ASSERT(CONFIG_NUM_COOP_PRIORITIES >= CONFIG_NUM_METAIRQ_PRIORITIES,
 	     "You need to provide at least as many CONFIG_NUM_COOP_PRIORITIES as "
 	     "CONFIG_NUM_METAIRQ_PRIORITIES as Meta IRQs are just a special class of cooperative "
 	     "threads.");
-
-static inline int is_metairq(struct k_thread *thread)
-{
-#if CONFIG_NUM_METAIRQ_PRIORITIES > 0
-	return (thread->base.prio - K_HIGHEST_THREAD_PRIO)
-		< CONFIG_NUM_METAIRQ_PRIORITIES;
-#else
-	ARG_UNUSED(thread);
-	return 0;
-#endif /* CONFIG_NUM_METAIRQ_PRIORITIES */
-}
-
-#if CONFIG_ASSERT
-static inline bool is_thread_dummy(struct k_thread *thread)
-{
-	return (thread->base.thread_state & _THREAD_DUMMY) != 0U;
-}
-#endif /* CONFIG_ASSERT */
 
 /*
  * Return value same as e.g. memcmp
@@ -100,43 +80,6 @@ int32_t z_sched_prio_cmp(struct k_thread *thread_1,
 	}
 #endif /* CONFIG_SCHED_DEADLINE */
 	return 0;
-}
-
-static ALWAYS_INLINE bool should_preempt(struct k_thread *thread,
-					 int preempt_ok)
-{
-	/* Preemption is OK if it's being explicitly allowed by
-	 * software state (e.g. the thread called k_yield())
-	 */
-	if (preempt_ok != 0) {
-		return true;
-	}
-
-	__ASSERT(_current != NULL, "");
-
-	/* Or if we're pended/suspended/dummy (duh) */
-	if (z_is_thread_prevented_from_running(_current)) {
-		return true;
-	}
-
-	/* Edge case on ARM where a thread can be pended out of an
-	 * interrupt handler before the "synchronous" swap starts
-	 * context switching.  Platforms with atomic swap can never
-	 * hit this.
-	 */
-	if (IS_ENABLED(CONFIG_SWAP_NONATOMIC)
-	    && z_is_thread_timeout_active(thread)) {
-		return true;
-	}
-
-	/* Otherwise we have to be running a preemptible thread or
-	 * switching to a metairq
-	 */
-	if (is_preempt(_current) || is_metairq(thread)) {
-		return true;
-	}
-
-	return false;
 }
 
 #ifdef CONFIG_SCHED_CPU_MASK
@@ -250,25 +193,6 @@ static ALWAYS_INLINE void dequeue_thread(struct k_thread *thread)
 	}
 }
 
-static void signal_pending_ipi(void)
-{
-	/* Synchronization note: you might think we need to lock these
-	 * two steps, but an IPI is idempotent.  It's OK if we do it
-	 * twice.  All we require is that if a CPU sees the flag true,
-	 * it is guaranteed to send the IPI, and if a core sets
-	 * pending_ipi, the IPI will be sent the next time through
-	 * this code.
-	 */
-#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-	if (arch_num_cpus() > 1) {
-		if (_kernel.pending_ipi) {
-			_kernel.pending_ipi = false;
-			arch_sched_ipi();
-		}
-	}
-#endif /* CONFIG_SMP && CONFIG_SCHED_IPI_SUPPORTED */
-}
-
 #ifdef CONFIG_SMP
 /* Called out of z_swap() when CONFIG_SMP.  The current thread can
  * never live in the run queue until we are inexorably on the context
@@ -324,7 +248,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	 */
 	struct k_thread *mirqp = _current_cpu->metairq_preempted;
 
-	if (mirqp != NULL && (thread == NULL || !is_metairq(thread))) {
+	if (mirqp != NULL && (thread == NULL || !thread_is_metairq(thread))) {
 		if (!z_is_thread_prevented_from_running(mirqp)) {
 			thread = mirqp;
 		} else {
@@ -392,7 +316,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 #endif /* CONFIG_SMP */
 }
 
-static void move_thread_to_end_of_prio_q(struct k_thread *thread)
+void move_thread_to_end_of_prio_q(struct k_thread *thread)
 {
 	if (z_is_thread_queued(thread)) {
 		dequeue_thread(thread);
@@ -400,140 +324,6 @@ static void move_thread_to_end_of_prio_q(struct k_thread *thread)
 	queue_thread(thread);
 	update_cache(thread == _current);
 }
-
-static void flag_ipi(void)
-{
-#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-	if (arch_num_cpus() > 1) {
-		_kernel.pending_ipi = true;
-	}
-#endif /* CONFIG_SMP && CONFIG_SCHED_IPI_SUPPORTED */
-}
-
-#ifdef CONFIG_TIMESLICING
-
-static int slice_ticks = DIV_ROUND_UP(CONFIG_TIMESLICE_SIZE * Z_HZ_ticks, Z_HZ_ms);
-static int slice_max_prio = CONFIG_TIMESLICE_PRIORITY;
-static struct _timeout slice_timeouts[CONFIG_MP_MAX_NUM_CPUS];
-static bool slice_expired[CONFIG_MP_MAX_NUM_CPUS];
-
-#ifdef CONFIG_SWAP_NONATOMIC
-/* If z_swap() isn't atomic, then it's possible for a timer interrupt
- * to try to timeslice away _current after it has already pended
- * itself but before the corresponding context switch.  Treat that as
- * a noop condition in z_time_slice().
- */
-static struct k_thread *pending_current;
-#endif /* CONFIG_SWAP_NONATOMIC */
-
-static inline int slice_time(struct k_thread *thread)
-{
-	int ret = slice_ticks;
-
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-	if (thread->base.slice_ticks != 0) {
-		ret = thread->base.slice_ticks;
-	}
-#else
-	ARG_UNUSED(thread);
-#endif /* CONFIG_TIMESLICE_PER_THREAD */
-	return ret;
-}
-
-static inline bool sliceable(struct k_thread *thread)
-{
-	bool ret = is_preempt(thread)
-		&& slice_time(thread) != 0
-		&& !z_is_prio_higher(thread->base.prio, slice_max_prio)
-		&& !z_is_thread_prevented_from_running(thread)
-		&& !z_is_idle_thread_object(thread);
-
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-	ret |= thread->base.slice_ticks != 0;
-#endif /* CONFIG_TIMESLICE_PER_THREAD */
-
-	return ret;
-}
-
-static void slice_timeout(struct _timeout *timeout)
-{
-	int cpu = ARRAY_INDEX(slice_timeouts, timeout);
-
-	slice_expired[cpu] = true;
-
-	/* We need an IPI if we just handled a timeslice expiration
-	 * for a different CPU.  Ideally this would be able to target
-	 * the specific core, but that's not part of the API yet.
-	 */
-	if (IS_ENABLED(CONFIG_SMP) && cpu != _current_cpu->id) {
-		flag_ipi();
-	}
-}
-
-void z_reset_time_slice(struct k_thread *thread)
-{
-	int cpu = _current_cpu->id;
-
-	z_abort_timeout(&slice_timeouts[cpu]);
-	slice_expired[cpu] = false;
-	if (sliceable(thread)) {
-		z_add_timeout(&slice_timeouts[cpu], slice_timeout,
-			      K_TICKS(slice_time(thread) - 1));
-	}
-}
-
-void k_sched_time_slice_set(int32_t slice, int prio)
-{
-	K_SPINLOCK(&_sched_spinlock) {
-		slice_ticks = k_ms_to_ticks_ceil32(slice);
-		slice_max_prio = prio;
-		z_reset_time_slice(_current);
-	}
-}
-
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-void k_thread_time_slice_set(struct k_thread *thread, int32_t thread_slice_ticks,
-			     k_thread_timeslice_fn_t expired, void *data)
-{
-	K_SPINLOCK(&_sched_spinlock) {
-		thread->base.slice_ticks = thread_slice_ticks;
-		thread->base.slice_expired = expired;
-		thread->base.slice_data = data;
-	}
-}
-#endif /* CONFIG_TIMESLICE_PER_THREAD */
-
-/* Called out of each timer interrupt */
-void z_time_slice(void)
-{
-	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
-	struct k_thread *curr = _current;
-
-#ifdef CONFIG_SWAP_NONATOMIC
-	if (pending_current == curr) {
-		z_reset_time_slice(curr);
-		k_spin_unlock(&_sched_spinlock, key);
-		return;
-	}
-	pending_current = NULL;
-#endif /* CONFIG_SWAP_NONATOMIC */
-
-	if (slice_expired[_current_cpu->id] && sliceable(curr)) {
-#ifdef CONFIG_TIMESLICE_PER_THREAD
-		if (curr->base.slice_expired) {
-			k_spin_unlock(&_sched_spinlock, key);
-			curr->base.slice_expired(curr, curr->base.slice_data);
-			key = k_spin_lock(&_sched_spinlock);
-		}
-#endif /* CONFIG_TIMESLICE_PER_THREAD */
-		if (!z_is_thread_prevented_from_running(curr)) {
-			move_thread_to_end_of_prio_q(curr);
-		}
-		z_reset_time_slice(curr);
-	}
-	k_spin_unlock(&_sched_spinlock, key);
-}
-#endif /* CONFIG_TIMESLICING */
 
 /* Track cooperative threads preempted by metairqs so we can return to
  * them specifically.  Called at the moment a new thread has been
@@ -543,11 +333,11 @@ static void update_metairq_preempt(struct k_thread *thread)
 {
 #if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
 	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
-	if (is_metairq(thread) && !is_metairq(_current) &&
-	    !is_preempt(_current)) {
+	if (thread_is_metairq(thread) && !thread_is_metairq(_current) &&
+	    !thread_is_preemptible(_current)) {
 		/* Record new preemption */
 		_current_cpu->metairq_preempted = _current;
-	} else if (!is_metairq(thread) && !z_is_idle_thread_object(thread)) {
+	} else if (!thread_is_metairq(thread) && !z_is_idle_thread_object(thread)) {
 		/* Returning from existing preemption */
 		_current_cpu->metairq_preempted = NULL;
 	}
@@ -624,6 +414,13 @@ static void ready_thread(struct k_thread *thread)
 		queue_thread(thread);
 		update_cache(0);
 		flag_ipi();
+	}
+}
+
+void z_ready_thread_locked(struct k_thread *thread)
+{
+	if (!thread_active_elsewhere(thread)) {
+		ready_thread(thread);
 	}
 }
 
@@ -1235,20 +1032,6 @@ void z_sched_init(void)
 #endif /* CONFIG_SCHED_CPU_MASK_PIN_ONLY */
 }
 
-int z_impl_k_thread_priority_get(k_tid_t thread)
-{
-	return thread->base.prio;
-}
-
-#ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_thread_priority_get(k_tid_t thread)
-{
-	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	return z_impl_k_thread_priority_get(thread);
-}
-#include <syscalls/k_thread_priority_get_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
 void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
 {
 	/*
@@ -1360,13 +1143,11 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 
 	LOG_DBG("thread %p for %lu ticks", _current, (unsigned long)ticks);
 
-#ifdef CONFIG_MULTITHREADING
 	/* wait of 0 ms is treated as a 'yield' */
 	if (ticks == 0) {
 		k_yield();
 		return 0;
 	}
-#endif /* CONFIG_MULTITHREADING */
 
 	if (Z_TICK_ABS(ticks) <= 0) {
 		expected_wakeup_ticks = ticks + sys_clock_tick_get_32();
@@ -1374,7 +1155,6 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 		expected_wakeup_ticks = Z_TICK_ABS(ticks);
 	}
 
-#ifdef CONFIG_MULTITHREADING
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(ticks);
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 
@@ -1393,10 +1173,6 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 	if (ticks > 0) {
 		return ticks;
 	}
-#else
-	/* busy wait to be time coherent since subsystems may depend on it */
-	z_impl_k_busy_wait(k_ticks_to_us_ceil32(expected_wakeup_ticks));
-#endif /* CONFIG_MULTITHREADING */
 
 	return 0;
 }
@@ -1411,12 +1187,8 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 
 	/* in case of K_FOREVER, we suspend */
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-#ifdef CONFIG_MULTITHREADING
+
 		k_thread_suspend(_current);
-#else
-		/* In Single Thread, just wait for an interrupt saving power */
-		k_cpu_idle();
-#endif /* CONFIG_MULTITHREADING */
 		SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, (int32_t) K_TICKS_FOREVER);
 
 		return (int32_t) K_TICKS_FOREVER;
@@ -1495,28 +1267,6 @@ void z_impl_k_wakeup(k_tid_t thread)
 	}
 }
 
-#ifdef CONFIG_TRACE_SCHED_IPI
-extern void z_trace_sched_ipi(void);
-#endif /* CONFIG_TRACE_SCHED_IPI */
-
-#ifdef CONFIG_SMP
-void z_sched_ipi(void)
-{
-	/* NOTE: When adding code to this, make sure this is called
-	 * at appropriate location when !CONFIG_SCHED_IPI_SUPPORTED.
-	 */
-#ifdef CONFIG_TRACE_SCHED_IPI
-	z_trace_sched_ipi();
-#endif /* CONFIG_TRACE_SCHED_IPI */
-
-#ifdef CONFIG_TIMESLICING
-	if (sliceable(_current)) {
-		z_time_slice();
-	}
-#endif /* CONFIG_TIMESLICING */
-}
-#endif /* CONFIG_SMP */
-
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_wakeup(k_tid_t thread)
 {
@@ -1550,19 +1300,6 @@ static inline k_tid_t z_vrfy_k_sched_current_thread_query(void)
 	return z_impl_k_sched_current_thread_query();
 }
 #include <syscalls/k_sched_current_thread_query_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
-int z_impl_k_is_preempt_thread(void)
-{
-	return !arch_is_in_isr() && is_preempt(_current);
-}
-
-#ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_is_preempt_thread(void)
-{
-	return z_impl_k_is_preempt_thread();
-}
-#include <syscalls/k_is_preempt_thread_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static inline void unpend_all(_wait_q_t *wait_q)
@@ -1641,6 +1378,10 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state)
 		k_object_uninit(thread->stack_obj);
 		k_object_uninit(thread);
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
+		k_thread_abort_cleanup(thread);
+#endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
 	}
 }
 

@@ -181,4 +181,18 @@
 			reg = <0x126000 DT_SIZE_K(64)>;
 		};
 	};
+
+	cpuapp_rw_partitions: cpuapp-rw-partitions {
+		compatible = "nordic,owned-partitions", "fixed-partitions";
+		status = "disabled";
+		perm-read;
+		perm-write;
+		perm-secure;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@136000 {
+			reg = <0x136000 DT_SIZE_K(24)>;
+		};
+	};
 };

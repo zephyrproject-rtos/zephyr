@@ -14,6 +14,7 @@
 	FAKE(mock_cap_commander_volume_changed_cb)                                                 \
 	FAKE(mock_cap_commander_volume_mute_changed_cb)                                            \
 	FAKE(mock_cap_commander_volume_offset_changed_cb)                                          \
+	FAKE(mock_cap_commander_microphone_mute_changed_cb)                                        \
 	FAKE(mock_cap_commander_microphone_gain_changed_cb)
 
 DEFINE_FAKE_VOID_FUNC(mock_cap_commander_discovery_complete_cb, struct bt_conn *, int,
@@ -22,6 +23,7 @@ DEFINE_FAKE_VOID_FUNC(mock_cap_commander_discovery_complete_cb, struct bt_conn *
 DEFINE_FAKE_VOID_FUNC(mock_cap_commander_volume_changed_cb, struct bt_conn *, int);
 DEFINE_FAKE_VOID_FUNC(mock_cap_commander_volume_mute_changed_cb, struct bt_conn *, int);
 DEFINE_FAKE_VOID_FUNC(mock_cap_commander_volume_offset_changed_cb, struct bt_conn *, int);
+DEFINE_FAKE_VOID_FUNC(mock_cap_commander_microphone_mute_changed_cb, struct bt_conn *, int);
 DEFINE_FAKE_VOID_FUNC(mock_cap_commander_microphone_gain_changed_cb, struct bt_conn *, int);
 
 const struct bt_cap_commander_cb mock_cap_commander_cb = {
@@ -34,6 +36,7 @@ const struct bt_cap_commander_cb mock_cap_commander_cb = {
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
 #if defined(CONFIG_BT_MICP_MIC_CTLR)
+	.microphone_mute_changed = mock_cap_commander_microphone_mute_changed_cb,
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 	.microphone_gain_changed = mock_cap_commander_microphone_gain_changed_cb,
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */

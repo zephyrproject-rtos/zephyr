@@ -1,0 +1,8 @@
+# Copyright (C) 2024, Vitrolife A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analog AD559X ADC/DAC/GPIO chip via I2C bus
+
+compatible: "adi,ad559x"
+
+include: [i2c-device.yaml, "adi,ad559x-common.yaml"]

@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "arduino_uno_r4_common.dtsi"
+#include "arduino_uno_r4_wifi-pinctrl.dtsi"
+
+/ {
+	model = "Arduino Uno R4 WiFi";
+
+	leds {
+		compatible = "gpio-leds";
+		led: led {
+			gpios = <&ioport1 2 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	aliases {
+		led0 = &led;
+	};
+};

@@ -7,6 +7,40 @@
 #include <nxp/mcx/MCXN947VDF-pinctrl.h>
 
 &pinctrl {
+	pinmux_flexcomm1_lpspi: pinmux_flexcomm1_lpspi {
+		group0 {
+			pinmux = <FC1_P0_PIO0_24>,
+				<FC1_P1_PIO0_25>,
+				<FC1_P2_PIO0_26>,
+				<FC1_P3_PIO0_27>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_flexcomm2_lpi2c: pinmux_flexcomm2_lpi2c {
+		group0 {
+			pinmux = <FC2_P0_PIO4_0>,
+				<FC2_P1_PIO4_1>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+
+	pinmux_flexcomm2_lpuart: pinmux_flexcomm2_lpuart {
+		group0 {
+			pinmux = <FC2_P2_PIO4_2>,
+				<FC2_P3_PIO4_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
 	pinmux_flexcomm4_lpuart: pinmux_flexcomm4_lpuart {
 		group0 {
 			pinmux = <FC4_P0_PIO1_8>,
@@ -37,4 +71,62 @@
 			bias-pull-up;
 		};
 	};
+
+	pinmux_dac0: pinmux_dac0 {
+		group0 {
+			pinmux = <DAC0_OUT_PIO4_2>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_enet_qos: pinmux_enet_qos {
+		mdio_group {
+			pinmux = <ENET0_MDC_PIO1_20>,
+				<ENET0_MDIO_PIO1_21>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+		mac_group {
+			pinmux = <ENET0_RXDV_PIO1_13>,
+				<ENET0_RXD0_PIO1_14>,
+				<ENET0_RXD1_PIO1_15>,
+				<ENET0_TX_CLK_PIO1_4>,
+				<ENET0_TXEN_PIO1_5>,
+				<ENET0_TXD0_PIO1_6>,
+				<ENET0_TXD1_PIO1_7>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_flexpwm1_pwm0: pinmux_flexpwm1_pwm0 {
+		group0 {
+			pinmux = <PWM1_A0_PIO2_6>,
+				<PWM1_B0_PIO2_7>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_flexpwm1_pwm1: pinmux_flexpwm1_pwm1 {
+		group0 {
+			pinmux = <PWM1_A1_PIO2_4>,
+				<PWM1_B1_PIO2_5>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_flexpwm1_pwm2: pinmux_flexpwm1_pwm2 {
+		group0 {
+			pinmux = <PWM1_A2_PIO2_2>,
+				<PWM1_B2_PIO2_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
 };

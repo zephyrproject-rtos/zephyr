@@ -77,6 +77,21 @@ static struct sync_state *sync_state_get_by_pa(struct bt_le_per_adv_sync *sync)
 	return NULL;
 }
 
+static struct sync_state *
+sync_state_get_by_sync_info(const struct bt_le_per_adv_sync_synced_info *info)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
+		if (sync_states[i].recv_state != NULL &&
+		    bt_addr_le_eq(info->addr, &sync_states[i].recv_state->addr) &&
+		    info->sid == sync_states[i].recv_state->adv_sid) {
+
+			return &sync_states[i];
+		}
+	}
+
+	return NULL;
+}
+
 static struct sync_state *sync_state_new(void)
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
@@ -337,7 +352,13 @@ static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
 
 	shell_info(ctx_shell, "PA %p synced", sync);
 
-	state = sync_state_get_by_pa(sync);
+	if (info->conn == NULL) {
+		state = sync_state_get_by_pa(sync);
+	} else {
+		/* In case of PAST we need to use the addr instead */
+		state = sync_state_get_by_sync_info(info);
+	}
+
 	if (state == NULL) {
 		shell_info(ctx_shell,
 			   "Could not get sync state from PA sync %p",
@@ -451,7 +472,7 @@ static int cmd_bap_scan_delegator_sync_pa(const struct shell *sh, size_t argc,
 		shell_info(sh, "Syncing with PAST");
 
 		err = pa_sync_past(state->conn, state, state->pa_interval);
-		if (err != 0) {
+		if (err == 0) {
 			err = bt_bap_scan_delegator_set_pa_state(src_id,
 								 BT_BAP_PA_STATE_INFO_REQ);
 			if (err != 0) {

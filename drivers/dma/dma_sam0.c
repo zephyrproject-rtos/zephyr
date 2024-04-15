@@ -125,7 +125,7 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 
 	/* Enable the interrupts */
 	DMA_REGS->CHINTENSET.reg = DMAC_CHINTENSET_TCMPL;
-	if (!config->error_callback_en) {
+	if (!config->error_callback_dis) {
 		DMA_REGS->CHINTENSET.reg = DMAC_CHINTENSET_TERR;
 	} else {
 		DMA_REGS->CHINTENCLR.reg = DMAC_CHINTENSET_TERR;
@@ -179,7 +179,7 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 
 	/* Enable the interrupts */
 	chcfg->CHINTENSET.reg = DMAC_CHINTENSET_TCMPL;
-	if (!config->error_callback_en) {
+	if (!config->error_callback_dis) {
 		chcfg->CHINTENSET.reg = DMAC_CHINTENSET_TERR;
 	} else {
 		chcfg->CHINTENCLR.reg = DMAC_CHINTENSET_TERR;

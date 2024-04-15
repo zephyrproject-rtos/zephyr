@@ -17,6 +17,6 @@ if(CONFIG_BT_IAS OR CONFIG_BT_IAS_CLIENT)
   add_subdirectory(ias)
 endif()
 
-if(CONFIG_BT_NUS)
+if(CONFIG_BT_ZEPHYR_NUS)
   add_subdirectory(nus)
 endif()

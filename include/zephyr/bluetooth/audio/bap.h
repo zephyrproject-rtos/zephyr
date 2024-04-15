@@ -397,6 +397,9 @@ struct bt_bap_ep_info {
 	/** Capabilities type */
 	enum bt_audio_dir dir;
 
+	/** The isochronous channel associated with the endpoint. */
+	struct bt_iso_chan *iso_chan;
+
 	/** @brief True if the stream associated with the endpoint is able to send data */
 	bool can_send;
 

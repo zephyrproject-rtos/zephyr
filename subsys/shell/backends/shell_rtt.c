@@ -9,6 +9,12 @@
 #include <SEGGER_RTT.h>
 #include <zephyr/logging/log.h>
 
+#define RTT_LOCK() \
+	COND_CODE_0(CONFIG_SHELL_BACKEND_RTT_BUFFER, (SEGGER_RTT_LOCK()), ())
+
+#define RTT_UNLOCK() \
+	COND_CODE_0(CONFIG_SHELL_BACKEND_RTT_BUFFER, (SEGGER_RTT_UNLOCK()), ())
+
 #if IS_ENABLED(CONFIG_LOG_BACKEND_RTT)
 BUILD_ASSERT(!(CONFIG_SHELL_BACKEND_RTT_BUFFER == CONFIG_LOG_BACKEND_RTT_BUFFER),
 	     "Conflicting log RTT backend enabled on the same channel");
@@ -25,7 +31,8 @@ SHELL_DEFINE(shell_rtt, CONFIG_SHELL_PROMPT_RTT, &shell_transport_rtt,
 
 LOG_MODULE_REGISTER(shell_rtt, CONFIG_SHELL_RTT_LOG_LEVEL);
 
-static bool rtt_blocking;
+static bool panic_mode;
+static bool host_present;
 
 static void timer_handler(struct k_timer *timer)
 {
@@ -78,29 +85,81 @@ static int enable(const struct shell_transport *transport, bool blocking)
 	struct shell_rtt *sh_rtt = (struct shell_rtt *)transport->ctx;
 
 	if (blocking) {
-		rtt_blocking = true;
 		k_timer_stop(&sh_rtt->timer);
 	}
 
 	return 0;
 }
 
+static inline bool is_panic_mode(void)
+{
+	return panic_mode;
+}
+
+static inline bool is_sync_mode(void)
+{
+	return (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) && IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) ||
+		is_panic_mode();
+}
+
+static void on_failed_write(int retry_cnt)
+{
+	if (retry_cnt == 0) {
+		host_present = false;
+	} else if (is_sync_mode()) {
+		k_busy_wait(USEC_PER_MSEC *
+				CONFIG_SHELL_BACKEND_RTT_RETRY_DELAY_MS);
+	} else {
+		k_msleep(CONFIG_SHELL_BACKEND_RTT_RETRY_DELAY_MS);
+	}
+}
+
+static void on_write(int retry_cnt)
+{
+	host_present = true;
+	if (is_panic_mode()) {
+		/* In panic mode block on each write until host reads it. This
+		 * way it is ensured that if system resets all messages are read
+		 * by the host. While pending on data being read by the host we
+		 * must also detect situation where host is disconnected.
+		 */
+		while (SEGGER_RTT_HasDataUp(CONFIG_SHELL_BACKEND_RTT_BUFFER) &&
+			host_present) {
+			on_failed_write(retry_cnt--);
+		}
+	}
+
+}
+
 static int write(const struct shell_transport *transport,
 		 const void *data, size_t length, size_t *cnt)
 {
 	struct shell_rtt *sh_rtt = (struct shell_rtt *)transport->ctx;
-	const uint8_t *data8 = (const uint8_t *)data;
+	int ret = 0;
+	int retry_cnt = CONFIG_SHELL_BACKEND_RTT_RETRY_CNT;
 
-	if (rtt_blocking) {
-		*cnt = SEGGER_RTT_WriteNoLock(CONFIG_SHELL_BACKEND_RTT_BUFFER, data8, length);
-		while (SEGGER_RTT_HasDataUp(CONFIG_SHELL_BACKEND_RTT_BUFFER)) {
-			/* empty */
+	do {
+		if (!is_sync_mode()) {
+			RTT_LOCK();
+			ret = SEGGER_RTT_WriteSkipNoLock(CONFIG_SHELL_BACKEND_RTT_BUFFER,
+							 data, length);
+			RTT_UNLOCK();
+		} else {
+			ret = SEGGER_RTT_WriteSkipNoLock(CONFIG_SHELL_BACKEND_RTT_BUFFER,
+							 data, length);
 		}
-	} else {
-		*cnt = SEGGER_RTT_Write(CONFIG_SHELL_BACKEND_RTT_BUFFER, data8, length);
-	}
+
+		if (ret) {
+			on_write(retry_cnt);
+		} else if (host_present) {
+			retry_cnt--;
+			on_failed_write(retry_cnt);
+		} else {
+		}
+	} while ((ret == 0) && host_present);
 
 	sh_rtt->handler(SHELL_TRANSPORT_EVT_TX_RDY, sh_rtt->context);
+	*cnt = length;
 
 	return 0;
 }

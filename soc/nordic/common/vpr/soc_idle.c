@@ -4,6 +4,7 @@
  */
 
 #include <zephyr/irq.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/tracing/tracing.h>
 
 /*
@@ -13,6 +14,7 @@
 void arch_cpu_idle(void)
 {
 	sys_trace_idle();
+	barrier_dsync_fence_full();
 	irq_unlock(MSTATUS_IEN);
 	__asm__ volatile("wfi");
 }
@@ -20,6 +22,7 @@ void arch_cpu_idle(void)
 void arch_cpu_atomic_idle(unsigned int key)
 {
 	sys_trace_idle();
+	barrier_dsync_fence_full();
 	irq_unlock(MSTATUS_IEN);
 	__asm__ volatile("wfi");
 

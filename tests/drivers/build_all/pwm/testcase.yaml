@@ -23,7 +23,7 @@ tests:
   drivers.pwm.mcux.build:
     platform_allow: mimxrt1064_evk
   drivers.pwm.mcux.sctimer.build:
-    platform_allow: mimxrt685_evk
+    platform_allow: mimxrt685_evk/mimxrt685s/cm33
   drivers.pwm.rv32m1.tpm.build:
     platform_allow: rv32m1_vega/openisa_rv32m1/ri5cy
   drivers.pwm.sifive.build:

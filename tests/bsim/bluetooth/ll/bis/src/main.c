@@ -850,7 +850,7 @@ static void test_iso_recv_main(void)
 	printk("success.\n");
 
 	printk("Terminating BIG Sync...");
-	struct node_rx_hdr *node_rx = NULL;
+	struct node_rx_pdu *node_rx = NULL;
 	err = ll_big_sync_terminate(big_handle, (void **)&node_rx);
 	if (err) {
 		FAIL("Could not terminate BIG sync: %d\n", err);
@@ -883,7 +883,7 @@ static void test_iso_recv_main(void)
 	printk("success.\n");
 
 	if (node_rx) {
-		node_rx->next = NULL;
+		node_rx->hdr.next = NULL;
 		ll_rx_mem_release((void **)&node_rx);
 	}
 #else

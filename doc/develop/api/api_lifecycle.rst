@@ -41,7 +41,7 @@ The following requirements apply to all new APIs:
 
 When introducing a new and experimental API, mark the API version in the headers
 where the API is defined. An experimental API shall have a version where the minor
-version is up to one (0.1.z). (see `api overview <api_overview>`)
+version is up to one (0.1.z). (see :ref:`api_overview`)
 
 Peripheral APIs (Hardware Related)
 ==================================
@@ -64,7 +64,7 @@ be used on different hardware platforms.
 
 When the API changes status to unstable API, mark the API version in the headers
 where the API is defined. Unstable APIs shall have a version where the minor
-version is larger than one (0.y.z | y > 1 ). (see `api overview <api_overview>`)
+version is larger than one (0.y.z | y > 1 ). (see :ref:`api_overview`)
 
 .. note::
 
@@ -112,7 +112,7 @@ In order to declare an API ``stable``, the following steps need to be followed:
 
 When the API changes status to stable API, mark the API version in the headers
 where the API is defined. Stable APIs shall have a version where the major
-version is one or larger (x.y.z | x >= 1 ). (see `api overview <api_overview>`)
+version is one or larger (x.y.z | x >= 1 ). (see :ref:`api_overview`)
 
 .. _breaking_api_changes:
 
@@ -200,7 +200,7 @@ If the Pull Request is merged then an email must be sent to the ``devel`` and
 The API version shall be changed to signal backward incompatible changes. This
 is achieved by incrementing the major version (X.y.z | X > 1).  It MAY also
 include minor and patch level changes. Patch and minor versions MUST be reset to
-0 when major version is incremented. (see `api overview <api_overview>`)
+0 when major version is incremented. (see :ref:`api_overview`)
 
 .. note::
 

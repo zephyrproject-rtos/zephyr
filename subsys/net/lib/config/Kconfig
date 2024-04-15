@@ -185,14 +185,6 @@ config NET_CONFIG_IEEE802154_ACK_REQUIRED
 
 endif # NET_L2_IEEE802154 || IEEE802154_RAW_MODE
 
-config NET_CONFIG_BT_NODE
-	bool "Bluetooth node support"
-	depends on NET_L2_BT
-	select NET_L2_BT_MGMT
-	help
-	  Enables application to operate in node mode which requires GATT
-	  service to be registered and start advertising as peripheral.
-
 endif # NET_CONFIG_SETTINGS
 
 if NET_DHCPV6

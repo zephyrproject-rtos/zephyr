@@ -75,7 +75,7 @@ static k_thread_stack_t *stack_alloc_dyn(size_t size, int flags)
 	}
 
 	return z_thread_stack_alloc_dyn(Z_KERNEL_STACK_OBJ_ALIGN,
-			Z_KERNEL_STACK_SIZE_ADJUST(size));
+					K_KERNEL_STACK_LEN(size));
 }
 
 k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, int flags)

@@ -45,6 +45,22 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			sys_write32(pin_ctrl_flags & (~(0x1 << MCUX_IMX_INPUT_ENABLE_SHIFT)),
 				    (mem_addr_t)config_register);
 		}
+#elif defined(CONFIG_SOC_MIMX8UD7)
+		if (mux_register == config_register) {
+			sys_write32(IOMUXC_PCR_MUX_MODE(mux_mode) |
+				    pin_ctrl_flags, (mem_addr_t)mux_register);
+		} else {
+			sys_write32(IOMUXC_PCR_MUX_MODE(mux_mode),
+				    (mem_addr_t)mux_register);
+
+			if (config_register) {
+				sys_write32(pin_ctrl_flags, (mem_addr_t)config_register);
+			}
+		}
+
+		if (input_register) {
+			sys_write32(IOMUXC_PSMI_SSS(input_daisy), (mem_addr_t)input_register);
+		}
 #else
 		sys_write32(
 			IOMUXC_SW_MUX_CTL_PAD_MUX_MODE(mux_mode) |

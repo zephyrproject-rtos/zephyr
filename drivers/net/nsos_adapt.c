@@ -526,11 +526,30 @@ void nsos_adapt_poll_remove(struct nsos_mid_pollfd *pollfd)
 
 	err = epoll_ctl(nsos_epoll_fd, EPOLL_CTL_DEL, pollfd->fd, NULL);
 	if (err) {
-		nsi_print_error_and_exit("error in EPOLL_CTL_ADD: errno=%d\n", errno);
+		nsi_print_error_and_exit("error in EPOLL_CTL_DEL: errno=%d\n", errno);
 		return;
 	}
 
 	nsos_adapt_nfds--;
+}
+
+void nsos_adapt_poll_update(struct nsos_mid_pollfd *pollfd)
+{
+	struct pollfd fds = {
+		.fd = pollfd->fd,
+		.events = pollfd->events,
+	};
+	int ret;
+
+	ret = poll(&fds, 1, 0);
+	if (ret < 0) {
+		nsi_print_error_and_exit("error in poll(): errno=%d\n", errno);
+		return;
+	}
+
+	if (ret > 0) {
+		pollfd->revents = fds.revents;
+	}
 }
 
 struct nsos_addrinfo_wrap {

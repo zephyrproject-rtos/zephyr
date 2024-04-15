@@ -888,6 +888,7 @@ static inline bool net_context_is_proxy_enabled(struct net_context *context)
 #else
 static inline bool net_context_is_proxy_enabled(struct net_context *context)
 {
+	ARG_UNUSED(context);
 	return false;
 }
 #endif
@@ -1004,6 +1005,10 @@ static inline int net_context_create_ipv6_new(struct net_context *context,
 					      const struct in6_addr *src,
 					      const struct in6_addr *dst)
 {
+	ARG_UNUSED(context);
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(src);
+	ARG_UNUSED(dst);
 	return -1;
 }
 #endif /* CONFIG_NET_IPV6 */

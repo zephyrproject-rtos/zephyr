@@ -175,7 +175,7 @@ static void generate_mac(uint8_t *mac_addr)
 	mac_addr[2] = 0x5E;
 	mac_addr[3] = 0x00;
 	mac_addr[4] = 0x53;
-	mac_addr[5] = sys_rand32_get();
+	mac_addr[5] = sys_rand8_get();
 }
 
 static int eth_init(const struct device *dev)
@@ -209,7 +209,7 @@ static uint8_t *net_iface_get_mac(const struct device *dev)
 		data->mac_addr[2] = 0x5E;
 		data->mac_addr[3] = 0x00;
 		data->mac_addr[4] = 0x53;
-		data->mac_addr[5] = sys_rand32_get();
+		data->mac_addr[5] = sys_rand8_get();
 	}
 
 	data->ll_addr.addr = data->mac_addr;
@@ -533,12 +533,12 @@ static bool add_to_arp(struct net_if *iface, struct in_addr *addr)
 #if defined(CONFIG_NET_ARP)
 	struct net_eth_addr lladdr;
 
-	lladdr.addr[0] = sys_rand32_get();
+	lladdr.addr[0] = sys_rand8_get();
 	lladdr.addr[1] = 0x08;
 	lladdr.addr[2] = 0x09;
 	lladdr.addr[3] = 0x10;
 	lladdr.addr[4] = 0x11;
-	lladdr.addr[5] = sys_rand32_get();
+	lladdr.addr[5] = sys_rand8_get();
 
 	return arp_add(iface, addr, &lladdr);
 #else

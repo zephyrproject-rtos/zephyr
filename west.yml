@@ -56,7 +56,7 @@ manifest:
       remote: babblesim
       repo-path: ext_2G4_phy_v1
       path: tools/bsim/components/ext_2G4_phy_v1
-      revision: 1ab9a884621d9ca719ef23536ca47d10494220c6
+      revision: d8302b8d51409b9e717a1a0ba6b443d3b5552a6c
       groups:
         - babblesim
     - name: babblesim_ext_2G4_channel_NtNcable
@@ -152,7 +152,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: e705cc16c4b63b5b3cad5c395297a4c2b49651fd
+      revision: dddb7cf318d931c25623c34ecde20f3150d7f987
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -183,17 +183,17 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 13ac55b5b52c905642e9c54f069109d188aa5840
+      revision: fc2bab706f195c64d40016c9855b8acd7c235ded
       path: modules/hal/nordic
       groups:
         - hal
     - name: hal_nuvoton
-      revision: cf24f9ebd893b349cec439ef7eaac6554a6b6d6f
+      revision: 34efb92e37bd07043a2cab7fff847d8443d930f9
       path: modules/hal/nuvoton
       groups:
         - hal
     - name: hal_nxp
-      revision: 1a360dbcd58e9f8bc30320bc82e907c03271c5f4
+      revision: f6c7108caf50684742689bfab838048208963f4f
       path: modules/hal/nxp
       groups:
         - hal
@@ -224,7 +224,7 @@ manifest:
       groups:
         - hal
     - name: hal_st
-      revision: 0643d20ae85b32c658ad11036f7c964a860ddefe
+      revision: b77157f6bc4395e398d90ab02a7d2cbc01ab2ce7
       path: modules/hal/st
       groups:
         - hal
@@ -256,7 +256,7 @@ manifest:
     - name: hostap
       repo-path: hostap
       path: modules/lib/hostap
-      revision: 9ad92f5249a6743f55787bb783d3398113b136c0
+      revision: 81bdd8343347a2e36c67253a8aeb22ea7cb41132
     - name: libmetal
       revision: 243eed541b9c211a2ce8841c788e62ddce84425e
       path: modules/hal/libmetal
@@ -290,12 +290,12 @@ manifest:
         - debug
       revision: a819419603a2dfcb47f7f39092e1bc112e45d1ef
     - name: net-tools
-      revision: 3a677d355cc7f73e444801a6280d0ccec80a1957
+      revision: cd2eb1858a1570b49241e18fc1e1cd849a450af2
       path: tools/net-tools
       groups:
         - tools
     - name: nrf_hw_models
-      revision: df94612a846b8b1da166d3e4e4273df54de02340
+      revision: 123d37db9cae528d51530c61ba0422192bc03bda
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
       revision: da78aea63159771956fe0c9263f2e6985b66e9d5

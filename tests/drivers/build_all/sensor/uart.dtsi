@@ -34,3 +34,7 @@ test_uart_a01nyub: a01nyub {
 test_uart_explorir_m: explorir-m {
 	compatible = "gss,explorir-m";
 };
+
+test_uart_fcx_mldx5: fcx-mldx5 {
+	compatible = "ap,fcx-mldx5";
+};

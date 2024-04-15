@@ -1,0 +1,9 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FRDM_MCXN947
+
+config NET_L2_ETHERNET
+	default y if NETWORKING
+
+endif

@@ -1245,7 +1245,7 @@ try_resolve:
 		goto quit;
 	}
 
-	ctx->queries[i].id = sys_rand32_get();
+	ctx->queries[i].id = sys_rand16_get();
 
 	/* If mDNS is enabled, then send .local queries only to multicast
 	 * address. For mDNS the id should be set to 0, see RFC 6762 ch. 18.1

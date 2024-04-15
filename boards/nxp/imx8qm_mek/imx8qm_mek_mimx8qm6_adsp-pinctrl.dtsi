@@ -14,6 +14,22 @@
 	iomuxc_uart2_tx_uart0_cts_b: IOMUXC_UART2_TX_UART0_CTS_B {
 		pinmux = <SC_P_UART0_CTS_B IMX8QM_DMA_LPUART2_TX_UART0_CTS_B>;
 	};
+
+	iomuxc_aud_sai1_rxd_sai1_rxd: IOMUXC_AUD_SAI1_RXD_SAI1_RXD {
+		pinmux = <SC_P_SAI1_RXD IMX8QM_AUD_SAI1_RXD_SAI1_RXD>;
+	};
+
+	iomuxc_aud_sai1_txc_sai1_txc: IOMUXC_AUD_SAI1_TXC_SAI1_TXC {
+		pinmux = <SC_P_SAI1_TXC IMX8QM_AUD_SAI1_TXC_SAI1_TXC>;
+	};
+
+	iomuxc_aud_sai1_txd_sai1_txd: IOMUXC_AUD_SAI1_TXD_SAI1_TXD {
+		pinmux = <SC_P_SAI1_TXD IMX8QM_AUD_SAI1_TXD_SAI1_TXD>;
+	};
+
+	iomuxc_aud_sai1_txfs_sai1_txfs: IOMUXC_AUD_SAI1_TXFS_SAI1_TXFS {
+		pinmux = <SC_P_SAI1_TXFS IMX8QM_AUD_SAI1_TXFS_SAI1_TXFS>;
+	};
 };
 
 &pinctrl {
@@ -21,6 +37,15 @@
 		group0 {
 			pinmux = <&iomuxc_uart2_rx_uart0_rts_b>,
 				<&iomuxc_uart2_tx_uart0_cts_b>;
+		};
+	};
+
+	sai1_default: sai1_default {
+		group0 {
+			pinmux = <&iomuxc_aud_sai1_rxd_sai1_rxd>,
+				<&iomuxc_aud_sai1_txc_sai1_txc>,
+				<&iomuxc_aud_sai1_txd_sai1_txd>,
+				<&iomuxc_aud_sai1_txfs_sai1_txfs>;
 		};
 	};
 };

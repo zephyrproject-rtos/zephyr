@@ -5,3 +5,4 @@ tests:
   sample.board.esp32.ethernet:
     platform_allow: esp32_ethernet_kit/esp32/procpu
     tags: esp32
+    build_only: true

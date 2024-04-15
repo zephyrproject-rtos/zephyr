@@ -351,22 +351,12 @@ int z_impl_can_set_timing(const struct device *dev,
 int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate)
 {
 	struct can_timing timing = { 0 };
-	uint32_t min_bitrate;
-	uint32_t max_bitrate;
+	uint32_t min = can_get_bitrate_min(dev);
+	uint32_t max = can_get_bitrate_max(dev);
 	uint16_t sample_pnt;
 	int ret;
 
-	(void)can_get_min_bitrate(dev, &min_bitrate);
-
-	ret = can_get_max_bitrate(dev, &max_bitrate);
-	if (ret == -ENOSYS) {
-		/* Maximum bitrate unknown */
-		max_bitrate = 0;
-	} else if (ret < 0) {
-		return ret;
-	}
-
-	if ((bitrate < min_bitrate) || (((max_bitrate > 0) && (bitrate > max_bitrate)))) {
+	if ((bitrate < min) || (bitrate > max)) {
 		return -ENOTSUP;
 	}
 
@@ -407,22 +397,12 @@ int z_impl_can_set_timing_data(const struct device *dev,
 int z_impl_can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data)
 {
 	struct can_timing timing_data = { 0 };
-	uint32_t min_bitrate;
-	uint32_t max_bitrate;
+	uint32_t min = can_get_bitrate_min(dev);
+	uint32_t max = can_get_bitrate_max(dev);
 	uint16_t sample_pnt;
 	int ret;
 
-	(void)can_get_min_bitrate(dev, &min_bitrate);
-
-	ret = can_get_max_bitrate(dev, &max_bitrate);
-	if (ret == -ENOSYS) {
-		/* Maximum bitrate unknown */
-		max_bitrate = 0;
-	} else if (ret < 0) {
-		return ret;
-	}
-
-	if ((bitrate_data < min_bitrate) || ((max_bitrate > 0) && (bitrate_data > max_bitrate))) {
+	if ((bitrate_data < min) || (bitrate_data > max)) {
 		return -ENOTSUP;
 	}
 

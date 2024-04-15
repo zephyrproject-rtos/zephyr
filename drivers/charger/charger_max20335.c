@@ -17,34 +17,56 @@
 #include "zephyr/logging/log.h"
 LOG_MODULE_REGISTER(max20335_charger);
 
-#define MAX20335_REG_STATUS_A 0x02
-#define MAX20335_REG_STATUS_B 0x03
-#define MAX20335_REG_INT_A 0x05
-#define MAX20335_REG_INT_B 0x06
-#define MAX20335_INT_A_USB_OK_MASK BIT(3)
-#define MAX20335_INT_A_CHG_STAT_MASK BIT(6)
-#define MAX20335_REG_INT_MASK_A 0x07
-#define MAX20335_REG_INT_MASK_B 0x08
+#define MAX20335_REG_STATUSA 0x02
+#define MAX20335_REG_STATUSB 0x03
+#define MAX20335_REG_INTA 0x05
+#define MAX20335_REG_INTB 0x06
+#define MAX20335_REG_INTMASKA 0x07
+#define MAX20335_REG_INTMASKB 0x08
 #define MAX20335_REG_ILIMCNTL 0x09
-#define MAX20335_REG_CHG_CNTL_A 0x0A
-#define MAX20335_CHGCNTLA_BAT_REG_CFG_MASK GENMASK(4, 1)
-#define MAX20335_ILIMCNTL_MASK GENMASK(1, 0)
-#define MAX20335_STATUS_A_CHG_STAT_MASK GENMASK(2, 0)
-#define MAX20335_STATUS_B_USB_OK_MASK BIT(3)
-#define MAX20335_CHRG_EN_MASK BIT(0)
-#define MAX20335_CHRG_EN BIT(0)
+#define MAX20335_REG_CHGCNTLA 0x0A
+#define MAX20335_REG_THRMCFG 0x18
+
+#define MAX20335_INTA_USBOK_MASK BIT(3)
+#define MAX20335_INTA_CHGSTAT_MASK BIT(6)
+#define MAX20335_ILIMCNTL_ILIMCNTL_MASK GENMASK(1, 0)
+#define MAX20335_ILIMCNTL_SYSMIN_MASK GENMASK(7, 5)
+#define MAX20335_STATUSA_CHGSTAT_MASK GENMASK(2, 0)
+#define MAX20335_STATUSB_USBOK_MASK BIT(3)
+#define MAX20335_CHGCNTLA_BATRECHG_MASK GENMASK(6, 5)
+#define MAX20335_CHGCNTLA_BATREG_MASK GENMASK(4, 1)
+#define MAX20335_CHGCNTLA_CHRGEN_MASK BIT(0)
+#define MAX20335_CHGCNTLA_CHRGEN BIT(0)
+#define MAX20335_THRMCFG_THERMEN_MASK GENMASK(1, 0)
+
 #define MAX20335_REG_CVC_VREG_MIN_UV 4050000U
 #define MAX20335_REG_CVC_VREG_STEP_UV 50000U
 #define MAX20335_REG_CVC_VREG_MIN_IDX 0x0U
-#define MAX20335_REG_CVC_VREG_MAX_IDX 0x0CU
+#define MAX20335_REG_CVC_VREG_MAX_IDX 0x0BU
+
+#define MAX20335_ILIMCNTL_SYSMIN_MIN_UV 3600000U
+#define MAX20335_ILIMCNTL_SYSMIN_STEP_UV 100000U
+#define MAX20335_ILIMCNTL_SYSMIN_MIN_IDX 0x0U
+#define MAX20335_ILIMCNTL_SYSMIN_MAX_IDX 0x7U
 
 #define INT_ENABLE_DELAY K_MSEC(500)
+
+enum charger_max20335_therm_mode {
+	MAX20335_THERM_MODE_DISABLED,
+	MAX20335_THERM_MODE_THERMISTOR,
+	MAX20335_THERM_MODE_JEITA_1,
+	MAX20335_THERM_MODE_JEITA_2,
+	MAX20335_THERM_MODE_UNKNOWN,
+};
 
 struct charger_max20335_config {
 	struct i2c_dt_spec bus;
 	struct gpio_dt_spec int_gpio;
-	uint32_t max_ichg_ua;
 	uint32_t max_vreg_uv;
+	uint32_t max_ichgin_to_sys_ua;
+	uint32_t min_vsys_uv;
+	uint32_t recharge_threshold_uv;
+	char *therm_mon_mode;
 };
 
 struct charger_max20335_data {
@@ -57,7 +79,6 @@ struct charger_max20335_data {
 	charger_status_notifier_t charger_status_notifier;
 	charger_online_notifier_t charger_online_notifier;
 	bool charger_enabled;
-	uint32_t charge_current_ua;
 	uint32_t charge_voltage_uv;
 };
 
@@ -66,6 +87,12 @@ static const struct linear_range charger_uv_range =
 			  MAX20335_REG_CVC_VREG_STEP_UV,
 			  MAX20335_REG_CVC_VREG_MIN_IDX,
 			  MAX20335_REG_CVC_VREG_MAX_IDX);
+
+static const struct linear_range system_uv_range =
+	LINEAR_RANGE_INIT(MAX20335_ILIMCNTL_SYSMIN_MIN_UV,
+			  MAX20335_ILIMCNTL_SYSMIN_STEP_UV,
+			  MAX20335_ILIMCNTL_SYSMIN_MIN_IDX,
+			  MAX20335_ILIMCNTL_SYSMIN_MAX_IDX);
 
 static int max20335_get_charger_status(const struct device *dev, enum charger_status *status)
 {
@@ -83,12 +110,12 @@ static int max20335_get_charger_status(const struct device *dev, enum charger_st
 	uint8_t val;
 	int ret;
 
-	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_STATUS_A, &val);
+	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_STATUSA, &val);
 	if (ret) {
 		return ret;
 	}
 
-	val = FIELD_GET(MAX20335_STATUS_A_CHG_STAT_MASK, val);
+	val = FIELD_GET(MAX20335_STATUSA_CHGSTAT_MASK, val);
 
 	switch (val) {
 	case MAX20335_CHARGER_OFF:
@@ -128,12 +155,12 @@ static int max20335_get_charger_online(const struct device *dev, enum charger_on
 	uint8_t val;
 	int ret;
 
-	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_STATUS_B, &val);
+	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_STATUSB, &val);
 	if (ret) {
 		return ret;
 	}
 
-	val = FIELD_GET(MAX20335_STATUS_B_USB_OK_MASK, val);
+	val = FIELD_GET(MAX20335_STATUSB_USBOK_MASK, val);
 
 	switch (val) {
 	case MAX20335_CHGIN_IN_PRESENT_AND_VALID:
@@ -147,6 +174,36 @@ static int max20335_get_charger_online(const struct device *dev, enum charger_on
 	return 0;
 }
 
+static int max20335_set_recharge_threshold(const struct device *dev, uint32_t voltage_uv)
+{
+	const struct charger_max20335_config *const config = dev->config;
+	uint8_t val;
+
+	switch (voltage_uv) {
+	case 70000:
+		val = 0x00;
+		break;
+	case 120000:
+		val = 0x01;
+		break;
+	case 170000:
+		val = 0x02;
+		break;
+	case 220000:
+		val = 0x03;
+		break;
+	default:
+		return -ENOTSUP;
+	};
+
+	val = FIELD_PREP(MAX20335_CHGCNTLA_BATRECHG_MASK, val);
+
+	return i2c_reg_update_byte_dt(&config->bus,
+				      MAX20335_REG_CHGCNTLA,
+				      MAX20335_CHGCNTLA_BATRECHG_MASK,
+				      val);
+}
+
 static int max20335_set_constant_charge_voltage(const struct device *dev,
 						uint32_t voltage_uv)
 {
@@ -155,34 +212,23 @@ static int max20335_set_constant_charge_voltage(const struct device *dev,
 	uint8_t val;
 	int ret;
 
-	if (voltage_uv > config->max_vreg_uv) {
-		LOG_WRN("Exceeded max constant charge voltage!");
-		return -EINVAL;
-	}
-
 	ret = linear_range_get_index(&charger_uv_range, voltage_uv, &idx);
-	if (ret == -EINVAL) {
+	if (ret < 0) {
 		return ret;
 	}
 
-	val = FIELD_PREP(MAX20335_CHGCNTLA_BAT_REG_CFG_MASK, idx);
+	val = FIELD_PREP(MAX20335_CHGCNTLA_BATREG_MASK, idx);
 
 	return i2c_reg_update_byte_dt(&config->bus,
-				      MAX20335_REG_CHG_CNTL_A,
-				      MAX20335_CHGCNTLA_BAT_REG_CFG_MASK,
+				      MAX20335_REG_CHGCNTLA,
+				      MAX20335_CHGCNTLA_BATREG_MASK,
 				      val);
 }
 
-static int max20335_set_constant_charge_current(const struct device *dev,
-						uint32_t current_ua)
+static int max20335_set_chgin_to_sys_current_limit(const struct device *dev, uint32_t current_ua)
 {
 	const struct charger_max20335_config *const config = dev->config;
 	uint8_t val;
-
-	if (current_ua > config->max_ichg_ua) {
-		LOG_WRN("Exceeded max constant charge current!");
-		return -EINVAL;
-	}
 
 	switch (current_ua) {
 	case 0:
@@ -201,61 +247,63 @@ static int max20335_set_constant_charge_current(const struct device *dev,
 		return -ENOTSUP;
 	};
 
-	val = FIELD_PREP(MAX20335_ILIMCNTL_MASK, val);
+	val = FIELD_PREP(MAX20335_ILIMCNTL_ILIMCNTL_MASK, val);
 
 	return i2c_reg_update_byte_dt(&config->bus,
 				      MAX20335_REG_ILIMCNTL,
-				      MAX20335_ILIMCNTL_MASK,
+				      MAX20335_ILIMCNTL_ILIMCNTL_MASK,
 				      val);
 }
 
-static int __maybe_unused max20335_get_constant_charge_current(const struct device *dev,
-							       uint32_t *current_ua)
+static int max20335_set_sys_voltage_min_threshold(const struct device *dev, uint32_t voltage_uv)
 {
 	const struct charger_max20335_config *const config = dev->config;
+	uint16_t idx;
 	uint8_t val;
 	int ret;
 
-	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_ILIMCNTL, &val);
-	if (ret) {
+	ret = linear_range_get_index(&system_uv_range, voltage_uv, &idx);
+	if (ret < 0) {
 		return ret;
 	}
 
-	switch (val) {
-	case 0x00:
-		*current_ua = 0;
+	val = FIELD_PREP(MAX20335_ILIMCNTL_SYSMIN_MASK, idx);
+
+	return i2c_reg_update_byte_dt(&config->bus,
+				      MAX20335_REG_ILIMCNTL,
+				      MAX20335_ILIMCNTL_SYSMIN_MASK,
+				      val);
+}
+
+static int max20335_set_thermistor_mode(const struct device *dev,
+					enum charger_max20335_therm_mode mode)
+{
+	const struct charger_max20335_config *const config = dev->config;
+	uint8_t val;
+
+	switch (mode) {
+	case MAX20335_THERM_MODE_DISABLED:
+		val = 0x00;
 		break;
-	case 0x01:
-		*current_ua = 100000;
+	case MAX20335_THERM_MODE_THERMISTOR:
+		val = 0x01;
 		break;
-	case 0x02:
-		*current_ua = 500000;
+	case MAX20335_THERM_MODE_JEITA_1:
+		val = 0x02;
 		break;
-	case 0x03:
-		*current_ua = 1000000;
+	case MAX20335_THERM_MODE_JEITA_2:
+		val = 0x03;
 		break;
 	default:
 		return -ENOTSUP;
 	};
 
-	return 0;
-}
+	val = FIELD_PREP(MAX20335_THRMCFG_THERMEN_MASK, val);
 
-static int __maybe_unused max20335_get_constant_charge_voltage(const struct device *dev,
-							       uint32_t *voltage_uv)
-{
-	const struct charger_max20335_config *const config = dev->config;
-	uint8_t val;
-	int ret;
-
-	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_CHG_CNTL_A, &val);
-	if (ret) {
-		return ret;
-	}
-
-	val = FIELD_GET(MAX20335_CHGCNTLA_BAT_REG_CFG_MASK, val);
-
-	return linear_range_get_value(&charger_uv_range, val, voltage_uv);
+	return i2c_reg_update_byte_dt(&config->bus,
+				      MAX20335_REG_THRMCFG,
+				      MAX20335_THRMCFG_THERMEN_MASK,
+				      val);
 }
 
 static int max20335_set_enabled(const struct device *dev, bool enable)
@@ -266,9 +314,9 @@ static int max20335_set_enabled(const struct device *dev, bool enable)
 	data->charger_enabled = enable;
 
 	return i2c_reg_update_byte_dt(&config->bus,
-				      MAX20335_REG_CHG_CNTL_A,
-				      MAX20335_CHRG_EN_MASK,
-				      enable ? MAX20335_CHRG_EN : 0);
+				      MAX20335_REG_CHGCNTLA,
+				      MAX20335_CHGCNTLA_CHRGEN_MASK,
+				      enable ? MAX20335_CHGCNTLA_CHRGEN : 0);
 }
 
 static int max20335_get_interrupt_source(const struct device *dev, uint8_t *int_a, uint8_t *int_b)
@@ -281,19 +329,19 @@ static int max20335_get_interrupt_source(const struct device *dev, uint8_t *int_
 	/* Both INT_A and INT_B registers need to be read to clear all int flags */
 
 	int_src = (int_a != NULL) ? int_a : &dummy;
-	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_INT_A, int_src);
+	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_INTA, int_src);
 	if (ret < 0) {
 		return ret;
 	}
 
 	int_src = (int_b != NULL) ? int_b : &dummy;
 
-	return i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_INT_B, int_src);
+	return i2c_reg_read_byte_dt(&config->bus, MAX20335_REG_INTB, int_src);
 }
 
 static int max20335_enable_interrupts(const struct device *dev)
 {
-	enum {MASK_A_VAL_ENABLE = 0xFF};
+	enum {MASKA_VAL_ENABLE = 0xFF};
 	const struct charger_max20335_config *config = dev->config;
 	int ret;
 
@@ -303,12 +351,12 @@ static int max20335_enable_interrupts(const struct device *dev)
 		return ret;
 	}
 
-	ret = i2c_reg_write_byte_dt(&config->bus, MAX20335_REG_INT_MASK_A, MASK_A_VAL_ENABLE);
+	ret = i2c_reg_write_byte_dt(&config->bus, MAX20335_REG_INTMASKA, MASKA_VAL_ENABLE);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return i2c_reg_write_byte_dt(&config->bus, MAX20335_REG_INT_MASK_B, 0);
+	return i2c_reg_write_byte_dt(&config->bus, MAX20335_REG_INTMASKB, 0);
 }
 
 static int max20335_init_properties(const struct device *dev)
@@ -317,7 +365,6 @@ static int max20335_init_properties(const struct device *dev)
 	const struct charger_max20335_config *config = dev->config;
 	int ret;
 
-	data->charge_current_ua = config->max_ichg_ua;
 	data->charge_voltage_uv = config->max_vreg_uv;
 	data->charger_enabled = true;
 
@@ -336,14 +383,54 @@ static int max20335_init_properties(const struct device *dev)
 	return 0;
 }
 
+enum charger_max20335_therm_mode max20335_string_to_therm_mode(const char *mode_string)
+{
+	static const char * const modes[] = {
+		[MAX20335_THERM_MODE_DISABLED] = "disabled",
+		[MAX20335_THERM_MODE_THERMISTOR] = "thermistor",
+		[MAX20335_THERM_MODE_JEITA_1] = "JEITA-1",
+		[MAX20335_THERM_MODE_JEITA_2] = "JEITA-2",
+	};
+	enum charger_max20335_therm_mode i;
+
+	for (i = MAX20335_THERM_MODE_DISABLED; i < ARRAY_SIZE(modes); i++) {
+		if (strncmp(mode_string, modes[i], strlen(modes[i])) == 0) {
+			return i;
+		}
+	}
+
+	return MAX20335_THERM_MODE_UNKNOWN;
+}
+
 static int max20335_update_properties(const struct device *dev)
 {
 	struct charger_max20335_data *data = dev->data;
+	const struct charger_max20335_config *config = dev->config;
+	enum charger_max20335_therm_mode therm_mode;
 	int ret;
 
-	ret = max20335_set_constant_charge_current(dev, data->charge_current_ua);
+	ret = max20335_set_chgin_to_sys_current_limit(dev, config->max_ichgin_to_sys_ua);
 	if (ret < 0) {
-		LOG_ERR("Failed to set charge current: %d", ret);
+		LOG_ERR("Failed to set chgin-to-sys current limit: %d", ret);
+		return ret;
+	}
+
+	ret = max20335_set_sys_voltage_min_threshold(dev, config->min_vsys_uv);
+	if (ret < 0) {
+		LOG_ERR("Failed to set minimum system voltage threshold: %d", ret);
+		return ret;
+	}
+
+	ret = max20335_set_recharge_threshold(dev, config->recharge_threshold_uv);
+	if (ret < 0) {
+		LOG_ERR("Failed to set recharge threshold: %d", ret);
+		return ret;
+	}
+
+	therm_mode = max20335_string_to_therm_mode(config->therm_mon_mode);
+	ret = max20335_set_thermistor_mode(dev, therm_mode);
+	if (ret < 0) {
+		LOG_ERR("Failed to set thermistor mode: %d", ret);
 		return ret;
 	}
 
@@ -374,9 +461,6 @@ static int max20335_get_prop(const struct device *dev, charger_prop_t prop,
 	case CHARGER_PROP_STATUS:
 		val->status = data->charger_status;
 		return 0;
-	case CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA:
-		val->const_charge_current_ua = data->charge_current_ua;
-		return 0;
 	case CHARGER_PROP_CONSTANT_CHARGE_VOLTAGE_UV:
 		val->const_charge_voltage_uv = data->charge_voltage_uv;
 		return 0;
@@ -392,13 +476,6 @@ static int max20335_set_prop(const struct device *dev, charger_prop_t prop,
 	int ret;
 
 	switch (prop) {
-	case CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA:
-		ret = max20335_set_constant_charge_current(dev, val->const_charge_current_ua);
-		if (ret == 0) {
-			data->charge_current_ua = val->const_charge_current_ua;
-		}
-
-		return ret;
 	case CHARGER_PROP_CONSTANT_CHARGE_VOLTAGE_UV:
 		ret =  max20335_set_constant_charge_voltage(dev, val->const_charge_voltage_uv);
 		if (ret == 0) {
@@ -462,7 +539,7 @@ static void max20335_int_routine_work_handler(struct k_work *work)
 		return;
 	}
 
-	if ((int_src_a & MAX20335_INT_A_CHG_STAT_MASK) != 0) {
+	if ((int_src_a & MAX20335_INTA_CHGSTAT_MASK) != 0) {
 		ret = max20335_get_charger_status(data->dev, &data->charger_status);
 		if (ret < 0) {
 			LOG_WRN("Failed to read charger status: %d", ret);
@@ -473,7 +550,7 @@ static void max20335_int_routine_work_handler(struct k_work *work)
 		}
 	}
 
-	if ((int_src_a & MAX20335_INT_A_USB_OK_MASK) != 0) {
+	if ((int_src_a & MAX20335_INTA_USBOK_MASK) != 0) {
 		ret = max20335_get_charger_online(data->dev, &data->charger_online);
 		if (ret < 0) {
 			LOG_WRN("Failed to read charger online %d", ret);
@@ -580,8 +657,11 @@ static const struct charger_driver_api max20335_driver_api = {
 	static const struct charger_max20335_config charger_max20335_config_##inst = {		\
 		.bus = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),					\
 		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),				\
-		.max_ichg_ua = DT_INST_PROP(inst, constant_charge_current_max_microamp),	\
 		.max_vreg_uv = DT_INST_PROP(inst, constant_charge_voltage_max_microvolt),	\
+		.max_ichgin_to_sys_ua = DT_INST_PROP(inst, chgin_to_sys_current_limit_microamp),\
+		.min_vsys_uv = DT_INST_PROP(inst, system_voltage_min_threshold_microvolt),	\
+		.recharge_threshold_uv = DT_INST_PROP(inst, re_charge_threshold_microvolt),	\
+		.therm_mon_mode = DT_INST_PROP(inst, thermistor_monitoring_mode),		\
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(inst, &max20335_init, NULL, &charger_max20335_data_##inst,	\

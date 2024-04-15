@@ -12,7 +12,7 @@
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
 #include <fsl_clock.h>
 
-#if defined(CONFIG_SOC_MIMX8QM_ADSP) || defined(CONFIG_SOC_MIMX8QXP_ADSP)
+#if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
 #include <main/ipc.h>
 #endif
 
@@ -46,7 +46,7 @@ static const clock_ip_name_t uart_clocks[] = {
 
 #ifdef CONFIG_UART_MCUX_LPUART
 
-#ifdef CONFIG_SOC_MIMX8QM_ADSP
+#ifdef CONFIG_SOC_MIMX8QM6_ADSP
 static const clock_ip_name_t lpuart_clocks[] = {
 	kCLOCK_DMA_Lpuart0,
 	kCLOCK_DMA_Lpuart1,
@@ -56,9 +56,9 @@ static const clock_ip_name_t lpuart_clocks[] = {
 };
 
 static const uint32_t lpuart_rate = MHZ(80);
-#endif /* CONFIG_SOC_MIMX8QM_ADSP */
+#endif /* CONFIG_SOC_MIMX8QM6_ADSP */
 
-#ifdef CONFIG_SOC_MIMX8QXP_ADSP
+#ifdef CONFIG_SOC_MIMX8QX6_ADSP
 static const clock_ip_name_t lpuart_clocks[] = {
 	kCLOCK_DMA_Lpuart0,
 	kCLOCK_DMA_Lpuart1,
@@ -67,7 +67,7 @@ static const clock_ip_name_t lpuart_clocks[] = {
 };
 
 static const uint32_t lpuart_rate = MHZ(80);
-#endif /* CONFIG_SOC_MIMX8QXP_ADSP */
+#endif /* CONFIG_SOC_MIMX8QX6_ADSP */
 
 #endif /* CONFIG_UART_MCUX_LPUART */
 
@@ -88,7 +88,7 @@ static int mcux_ccm_on(const struct device *dev,
 		return 0;
 #endif
 
-#if defined(CONFIG_UART_MCUX_LPUART) && defined(CONFIG_SOC_MIMX8QM_ADSP)
+#if defined(CONFIG_UART_MCUX_LPUART) && defined(CONFIG_SOC_MIMX8QM6_ADSP)
 	case IMX_CCM_LPUART1_CLK:
 	case IMX_CCM_LPUART2_CLK:
 	case IMX_CCM_LPUART3_CLK:
@@ -98,7 +98,7 @@ static int mcux_ccm_on(const struct device *dev,
 		return 0;
 #endif
 
-#if defined(CONFIG_UART_MCUX_LPUART) && defined(CONFIG_SOC_MIMX8QXP_ADSP)
+#if defined(CONFIG_UART_MCUX_LPUART) && defined(CONFIG_SOC_MIMX8QX6_ADSP)
 	case IMX_CCM_LPUART1_CLK:
 	case IMX_CCM_LPUART2_CLK:
 	case IMX_CCM_LPUART3_CLK:
@@ -174,7 +174,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 #ifdef CONFIG_UART_MCUX_LPUART
 
-#if defined(CONFIG_SOC_MIMX8QM_ADSP)
+#if defined(CONFIG_SOC_MIMX8QM6_ADSP)
 	case IMX_CCM_LPUART1_CLK:
 	case IMX_CCM_LPUART2_CLK:
 	case IMX_CCM_LPUART3_CLK:
@@ -186,7 +186,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		*rate = CLOCK_GetIpFreq(lpuart_clocks[instance]);
 		break;
 
-#elif defined(CONFIG_SOC_MIMX8QXP_ADSP)
+#elif defined(CONFIG_SOC_MIMX8QX6_ADSP)
 	case IMX_CCM_LPUART1_CLK:
 	case IMX_CCM_LPUART2_CLK:
 	case IMX_CCM_LPUART3_CLK:
@@ -292,6 +292,17 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 	case IMX_CCM_GPT_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_PerClk);
 		break;
+#ifdef CONFIG_SOC_SERIES_IMX8M
+	case IMX_CCM_GPT_IPG_CLK:
+	{
+		uint32_t mux = CLOCK_GetRootMux(kCLOCK_RootGpt1);
+
+		if (mux == 0)
+			*rate = OSC24M_CLK_FREQ;
+		else
+			*rate = 0;
+	} break;
+#endif
 #endif
 
 #ifdef CONFIG_COUNTER_MCUX_QTMR
@@ -377,6 +388,24 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 					/ (CLOCK_GetDiv(kCLOCK_Flexio2Div) + 1);
 	} break;
 #endif
+
+#ifdef CONFIG_SPI_MCUX_ECSPI
+	case IMX_CCM_ECSPI1_CLK:
+		*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
+			(CLOCK_GetRootPreDivider(kCLOCK_RootEcspi1)) /
+			(CLOCK_GetRootPostDivider(kCLOCK_RootEcspi1));
+		break;
+	case IMX_CCM_ECSPI2_CLK:
+		*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
+			(CLOCK_GetRootPreDivider(kCLOCK_RootEcspi2)) /
+			(CLOCK_GetRootPostDivider(kCLOCK_RootEcspi2));
+		break;
+	case IMX_CCM_ECSPI3_CLK:
+		*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
+			(CLOCK_GetRootPreDivider(kCLOCK_RootEcspi3)) /
+			(CLOCK_GetRootPostDivider(kCLOCK_RootEcspi3));
+		break;
+#endif /* CONFIG_SPI_MCUX_ECSPI */
 	}
 
 	return 0;
@@ -428,7 +457,7 @@ static const struct clock_control_driver_api mcux_ccm_driver_api = {
 
 static int mcux_ccm_init(const struct device *dev)
 {
-#if defined(CONFIG_SOC_MIMX8QM_ADSP) || defined(CONFIG_SOC_MIMX8QXP_ADSP)
+#if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
 	sc_ipc_t ipc_handle;
 	int ret;
 

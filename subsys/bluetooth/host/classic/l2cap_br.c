@@ -1469,7 +1469,23 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 int bt_l2cap_br_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt_conn_tx_cb_t cb,
 			     void *user_data)
 {
-	struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
+	struct bt_l2cap_br_chan *br_chan;
+
+	if (!buf || !chan) {
+		return -EINVAL;
+	}
+
+	br_chan = BR_CHAN(chan);
+
+	LOG_DBG("chan %p buf %p len %zu", chan, buf, net_buf_frags_len(buf));
+
+	if (!chan->conn || chan->conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	if (atomic_test_bit(chan->status, BT_L2CAP_STATUS_SHUTDOWN)) {
+		return -ESHUTDOWN;
+	}
 
 	if (buf->len > br_chan->tx.mtu) {
 		return -EMSGSIZE;

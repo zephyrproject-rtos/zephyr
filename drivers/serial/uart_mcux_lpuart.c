@@ -1176,7 +1176,7 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 			.source_data_size = 1,						       \
 			.dest_data_size = 1,						       \
 			.complete_callback_en = 1,					       \
-			.error_callback_en = 1,						       \
+			.error_callback_dis = 0,					       \
 			.block_count = 1,						       \
 			.head_block =							       \
 				&mcux_lpuart_##id##_data.async.tx_dma_params.active_dma_block, \
@@ -1199,7 +1199,7 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 			.source_data_size = 1,						       \
 			.dest_data_size = 1,						       \
 			.complete_callback_en = 1,					       \
-			.error_callback_en = 1,						       \
+			.error_callback_dis = 0,					       \
 			.block_count = 1,						       \
 			.head_block =							       \
 				&mcux_lpuart_##id##_data.async.rx_dma_params.active_dma_block, \

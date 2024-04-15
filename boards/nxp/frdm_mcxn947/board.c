@@ -94,6 +94,16 @@ static int frdm_mcxn947_init(void)
 	/* Set AHBCLKDIV divider to value 1 */
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U);
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm1), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcom1Clk, 1u);
+	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM1);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm2), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcom2Clk, 1u);
+	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM2);
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm4), okay)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 1u);
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
@@ -125,6 +135,35 @@ static int frdm_mcxn947_init(void)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio5), okay)
 	CLOCK_EnableClock(kCLOCK_Gpio5);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(dac0), okay)
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac0);
+	CLOCK_SetClkDiv(kCLOCK_DivDac0Clk, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_DAC0);
+
+	CLOCK_EnableClock(kCLOCK_Dac0);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(dac1), okay)
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac1);
+	CLOCK_SetClkDiv(kCLOCK_DivDac1Clk, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_DAC1);
+
+	CLOCK_EnableClock(kCLOCK_Dac1);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
+	CLOCK_AttachClk(kNONE_to_ENETRMII);
+	CLOCK_EnableClock(kCLOCK_Enet);
+	SYSCON0->PRESETCTRL2 = SYSCON_PRESETCTRL2_ENET_RST_MASK;
+	SYSCON0->PRESETCTRL2 &= ~SYSCON_PRESETCTRL2_ENET_RST_MASK;
+	/* rmii selection for this board */
+	SYSCON->ENET_PHY_INTF_SEL = SYSCON_ENET_PHY_INTF_SEL_PHY_SEL(1);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(wwdt0), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivWdt0Clk, 1u);
 #endif
 
 	/* Set SystemCoreClock variable. */

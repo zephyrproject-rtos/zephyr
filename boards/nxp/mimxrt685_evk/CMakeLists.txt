@@ -4,11 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+if(CONFIG_BOARD_MIMXRT685_EVK_MIMXRT685S_CM33)
 zephyr_library()
 zephyr_library_sources(init.c)
+endif()
 
 if(CONFIG_NXP_IMXRT_BOOT_HEADER)
-  if(NOT DEFINED CONFIG_BOARD_MIMXRT685_EVK)
+  if(NOT DEFINED CONFIG_BOARD_MIMXRT685_EVK_MIMXRT685S_CM33)
     message(WARNING "It appears you are using the board definition for "
      "the MIMXRT685-EVK, but targeting a custom board. You may need to "
      "update your flash configuration block data")

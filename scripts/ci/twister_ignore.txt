@@ -45,3 +45,4 @@ scripts/checkpatch.pl
 scripts/ci/pylintrc
 scripts/footprint/*
 scripts/set_assignees.py
+scripts/gitlint/zephyr_commit_rules.py

@@ -25,6 +25,11 @@
 		zephyr,console = &flexcomm4_lpuart4;
 		zephyr,shell-uart = &flexcomm4_lpuart4;
 	};
+
+	aliases{
+		watchdog0 = &wwdt0;
+		pwm-0 = &flexpwm1_pwm0;
+	};
 };
 
 /*
@@ -65,6 +70,34 @@
 	status = "okay";
 };
 
+&edma0 {
+	status = "okay";
+};
+
+&flexcomm1 {
+	status = "okay";
+};
+
+&flexcomm1_lpspi1 {
+	status = "okay";
+};
+
+&flexcomm2 {
+	status = "okay";
+};
+
+&flexcomm2_lpi2c2 {
+	status = "okay";
+};
+
+/*
+ *LPFLEXCOMM supports UART and I2C on the same instance, enable this for
+ * LFLEXCOMM2
+ */
+&flexcomm2_lpuart2 {
+	status = "okay";
+};
+
 &flexcomm4 {
 	status = "okay";
 };
@@ -78,5 +111,29 @@
 };
 
 &w25q64jvssiq {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+};
+
+&enet {
+	status = "okay";
+};
+
+&enet_mac {
+	status = "okay";
+};
+
+&enet_mdio {
+	status = "okay";
+};
+
+&wwdt0 {
+	status = "okay";
+};
+
+&flexpwm1_pwm0 {
 	status = "okay";
 };

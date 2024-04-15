@@ -78,7 +78,7 @@ struct named_lc3_preset default_sink_preset = {"16_2_1",
 					       BT_BAP_LC3_UNICAST_PRESET_16_2_1(LOCATION, CONTEXT)};
 struct named_lc3_preset default_source_preset = {
 	"16_2_1", BT_BAP_LC3_UNICAST_PRESET_16_2_1(LOCATION, CONTEXT)};
-static struct named_lc3_preset default_broadcast_source_preset = {
+struct named_lc3_preset default_broadcast_source_preset = {
 	"16_2_1", BT_BAP_LC3_BROADCAST_PRESET_16_2_1(LOCATION, CONTEXT)};
 #endif /* IS_BAP_INITIATOR */
 
@@ -2150,6 +2150,7 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 static struct broadcast_sink_auto_scan {
 	struct broadcast_sink *broadcast_sink;
 	uint32_t broadcast_id;
+	struct bt_le_per_adv_sync **out_sync;
 } auto_scan = {
 	.broadcast_id = INVALID_BROADCAST_ID,
 };
@@ -2204,8 +2205,10 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
-	shell_print(ctx_shell, "Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X",
-		    broadcast_id, le_addr, info->sid);
+	shell_print(ctx_shell,
+		    "Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X (looking for "
+		    "0x%06X)",
+		    broadcast_id, le_addr, info->sid, auto_scan.broadcast_id);
 
 	if (auto_scan.broadcast_id == broadcast_id && auto_scan.broadcast_sink != NULL &&
 	    auto_scan.broadcast_sink->pa_sync == NULL) {
@@ -2224,9 +2227,11 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 		create_params.timeout = interval_to_sync_timeout(info->interval);
 
 		shell_print(ctx_shell, "Attempting to PA sync to the broadcaster");
-		err = bt_le_per_adv_sync_create(&create_params, &auto_scan.broadcast_sink->pa_sync);
+		err = bt_le_per_adv_sync_create(&create_params, auto_scan.out_sync);
 		if (err != 0) {
 			shell_error(ctx_shell, "Could not create Broadcast PA sync: %d", err);
+		} else {
+			auto_scan.broadcast_sink->pa_sync = *auto_scan.out_sync;
 		}
 	}
 
@@ -2271,12 +2276,13 @@ static void syncable(struct bt_bap_broadcast_sink *sink, const struct bt_iso_big
 static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 				  struct bt_le_per_adv_sync_synced_info *info)
 {
-	if (auto_scan.broadcast_sink != NULL && sync == auto_scan.broadcast_sink->pa_sync) {
+	if (auto_scan.broadcast_sink != NULL && auto_scan.out_sync != NULL &&
+	    sync == *auto_scan.out_sync) {
 		shell_print(ctx_shell, "PA synced to broadcast with broadcast ID 0x%06x",
 			    auto_scan.broadcast_id);
 
 		if (auto_scan.broadcast_sink->bap_sink == NULL) {
-			shell_print(ctx_shell, "Attempting to sync to the BIG");
+			shell_print(ctx_shell, "Attempting to create the sink");
 			int err;
 
 			err = bt_bap_broadcast_sink_create(sync, auto_scan.broadcast_id,
@@ -2285,7 +2291,7 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 				shell_error(ctx_shell, "Could not create broadcast sink: %d", err);
 			}
 		} else {
-			shell_print(ctx_shell, "BIG is already synced");
+			shell_print(ctx_shell, "Sink is already created");
 		}
 	}
 
@@ -2338,12 +2344,20 @@ static void audio_recv(struct bt_bap_stream *stream,
 
 	sh_stream->rx_cnt++;
 
-	if (info->ts == sh_stream->last_info.ts) {
-		sh_stream->dup_ts++;
-	}
+	if ((info->flags & BT_ISO_FLAGS_VALID) != 0) {
+		/* For valid ISO packets we check if they are invalid in other ways */
 
-	if (info->seq_num == sh_stream->last_info.seq_num) {
-		sh_stream->dup_psn++;
+		if (info->ts == sh_stream->last_info.ts) {
+			sh_stream->dup_ts++;
+		}
+
+		if (info->seq_num == sh_stream->last_info.seq_num) {
+			sh_stream->dup_psn++;
+		}
+
+		if (buf->len == 0U) {
+			sh_stream->empty_sdu_pkts++;
+		}
 	}
 
 	if (info->flags & BT_ISO_FLAGS_ERROR) {
@@ -2355,12 +2369,13 @@ static void audio_recv(struct bt_bap_stream *stream,
 	}
 
 	if ((sh_stream->rx_cnt % recv_stats_interval) == 0) {
-		shell_print(ctx_shell,
-			    "[%zu]: Incoming audio on stream %p len %u ts %u seq_num %u flags %u "
-			    "(dup ts %zu; dup psn %zu, err_pkts %zu, lost_pkts %zu)",
-			    sh_stream->rx_cnt, stream, buf->len, info->ts, info->seq_num,
-			    info->flags, sh_stream->dup_ts, sh_stream->dup_psn, sh_stream->err_pkts,
-			    sh_stream->lost_pkts);
+		shell_print(
+			ctx_shell,
+			"[%zu]: Incoming audio on stream %p len %u ts %u seq_num %u flags %u "
+			"(dup ts %zu; dup psn %zu, err_pkts %zu, lost_pkts %zu, empty SDUs %zu)",
+			sh_stream->rx_cnt, stream, buf->len, info->ts, info->seq_num, info->flags,
+			sh_stream->dup_ts, sh_stream->dup_psn, sh_stream->err_pkts,
+			sh_stream->lost_pkts, sh_stream->empty_sdu_pkts);
 	}
 
 	(void)memcpy(&sh_stream->last_info, info, sizeof(sh_stream->last_info));
@@ -2421,6 +2436,7 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 	printk("Stream %p started\n", bap_stream);
 
 #if defined(CONFIG_BT_AUDIO_RX)
+	sh_stream->empty_sdu_pkts = 0U;
 	sh_stream->lost_pkts = 0U;
 	sh_stream->err_pkts = 0U;
 	sh_stream->dup_psn = 0U;
@@ -2812,6 +2828,7 @@ static int cmd_create_broadcast_sink(const struct shell *sh, size_t argc, char *
 
 		auto_scan.broadcast_sink = &default_broadcast_sink;
 		auto_scan.broadcast_id = broadcast_id;
+		auto_scan.out_sync = &per_adv_syncs[selected_per_adv_sync];
 	} else {
 		shell_print(sh, "Creating broadcast sink with broadcast ID 0x%06X",
 			    (uint32_t)broadcast_id);
@@ -3729,6 +3746,8 @@ ssize_t audio_pa_data_add(struct bt_data *data_array,
 		 */
 		NET_BUF_SIMPLE_DEFINE_STATIC(base_buf, UINT8_MAX);
 		int err;
+
+		net_buf_simple_reset(&base_buf);
 
 		err = bt_bap_broadcast_source_get_base(default_source.bap_source, &base_buf);
 		if (err != 0) {

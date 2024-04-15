@@ -452,6 +452,40 @@ ZTEST(net_buf_tests, test_net_buf_clone_no_ref_count)
 	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
 }
 
+/* Regression test: Zero sized buffers must be copy-able, not trigger a NULL pointer dereference */
+ZTEST(net_buf_tests, test_net_buf_clone_reference_counted_zero_sized_buffer)
+{
+	struct net_buf *buf, *clone;
+
+	buf = net_buf_alloc_len(&var_pool, 0, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	clone = net_buf_clone(buf, K_NO_WAIT);
+	zassert_not_null(clone, "Failed to clone zero sized buffer");
+
+	net_buf_unref(buf);
+}
+
+ZTEST(net_buf_tests, test_net_buf_clone_user_data)
+{
+	struct net_buf *original, *clone;
+	uint32_t *buf_user_data, *clone_user_data;
+
+	/* Requesting size 1 because all we are interested in are the user data */
+	original = net_buf_alloc_len(&bufs_pool, 1, K_NO_WAIT);
+	zassert_not_null(original, "Failed to get buffer");
+	buf_user_data = net_buf_user_data(original);
+	*buf_user_data = 0xAABBCCDD;
+
+	clone = net_buf_clone(original, K_NO_WAIT);
+	zassert_not_null(clone, "Failed to get clone buffer");
+	clone_user_data = net_buf_user_data(clone);
+	zexpect_equal(*clone_user_data, 0xAABBCCDD, "User data copy is invalid");
+
+	net_buf_unref(original);
+	net_buf_unref(clone);
+}
+
 ZTEST(net_buf_tests, test_net_buf_fixed_pool)
 {
 	struct net_buf *buf;
@@ -504,6 +538,8 @@ ZTEST(net_buf_tests, test_net_buf_byte_order)
 	uint8_t be24[3] = { 0x01, 0x02, 0x03 };
 	uint8_t le32[4] = { 0x04, 0x03, 0x02, 0x01 };
 	uint8_t be32[4] = { 0x01, 0x02, 0x03, 0x04 };
+	uint8_t le40[5] = { 0x05, 0x04, 0x03, 0x02, 0x01 };
+	uint8_t be40[5] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
 	uint8_t le48[6] = { 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 	uint8_t be48[6] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
 	uint8_t le64[8] = { 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
@@ -570,6 +606,24 @@ ZTEST(net_buf_tests, test_net_buf_byte_order)
 			  sizeof(le32), "Invalid 32 bits byte order");
 	zassert_mem_equal(be32, net_buf_pull_mem(buf, sizeof(be32)),
 			  sizeof(be32), "Invalid 32 bits byte order");
+
+	net_buf_reset(buf);
+
+	net_buf_add_mem(buf, &le40, sizeof(le40));
+	net_buf_add_mem(buf, &be40, sizeof(be40));
+
+	u64 = net_buf_pull_le40(buf);
+	zassert_equal(u64, net_buf_pull_be40(buf), "Invalid 40 bits byte order");
+
+	net_buf_reset(buf);
+
+	net_buf_add_le40(buf, u64);
+	net_buf_add_be40(buf, u64);
+
+	zassert_mem_equal(le40, net_buf_pull_mem(buf, sizeof(le40)), sizeof(le40),
+			  "Invalid 40 bits byte order");
+	zassert_mem_equal(be40, net_buf_pull_mem(buf, sizeof(be40)), sizeof(be40),
+			  "Invalid 40 bits byte order");
 
 	net_buf_reset(buf);
 
@@ -672,6 +726,26 @@ ZTEST(net_buf_tests, test_net_buf_byte_order)
 			  sizeof(le32), "Invalid 32 bits byte order");
 	zassert_mem_equal(be32, net_buf_remove_mem(buf, sizeof(be32)),
 			  sizeof(be32), "Invalid 32 bits byte order");
+
+	net_buf_reset(buf);
+	net_buf_reserve(buf, 16);
+
+	net_buf_push_mem(buf, &le40, sizeof(le40));
+	net_buf_push_mem(buf, &be40, sizeof(be40));
+
+	u64 = net_buf_remove_le40(buf);
+	zassert_equal(u64, net_buf_remove_be40(buf), "Invalid 40 bits byte order");
+
+	net_buf_reset(buf);
+	net_buf_reserve(buf, 16);
+
+	net_buf_push_le40(buf, u64);
+	net_buf_push_be40(buf, u64);
+
+	zassert_mem_equal(le40, net_buf_remove_mem(buf, sizeof(le40)), sizeof(le40),
+			  "Invalid 40 bits byte order");
+	zassert_mem_equal(be40, net_buf_remove_mem(buf, sizeof(be40)), sizeof(be40),
+			  "Invalid 40 bits byte order");
 
 	net_buf_reset(buf);
 	net_buf_reserve(buf, 16);

@@ -68,6 +68,7 @@ config SOC_LPC55S69_CPU0
 	select HAS_MCUX_CTIMER
 	select HAS_MCUX_SCTIMER
 	select HAS_MCUX_RNG
+	select HAS_PM
 
 if SOC_SERIES_LPC55XXX
 

@@ -10,6 +10,7 @@
 /* Internal APIs */
 #include <kernel_internal.h>
 #include <ksched.h>
+#include <kthread.h>
 
 struct k_thread kthread_thread;
 struct k_thread kthread_thread1;

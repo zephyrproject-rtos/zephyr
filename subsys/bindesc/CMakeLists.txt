@@ -9,32 +9,6 @@ else()
   zephyr_linker_sources(ROM_START SORT_KEY 0x1bindesc bindesc.ld)
 endif()
 
-# Wrapper macro around string(TIMESTAMP ...), that returns the time
-# in either local time or UTC, depending on CONFIG_BINDESC_BUILD_TIME_USE_LOCAL_TIME.
-macro(get_time out_var format)
-  if(CONFIG_BINDESC_BUILD_TIME_USE_LOCAL_TIME)
-    string(TIMESTAMP ${out_var} ${format})
-  else()
-    string(TIMESTAMP ${out_var} ${format} UTC)
-  endif()
-endmacro()
-
-macro(gen_build_time_int_definition def_name format)
-  if(CONFIG_BINDESC_${def_name})
-    get_time(${def_name} ${format})
-    # remove leading zeros so that the output will not be interpreted as octal
-    math(EXPR ${def_name} ${${def_name}})
-    zephyr_library_compile_definitions(${def_name}=${${def_name}})
-  endif()
-endmacro()
-
-macro(gen_build_time_str_definition def_name format)
-  if(CONFIG_BINDESC_${def_name})
-    get_time(${def_name} ${${format}})
-    zephyr_library_compile_definitions(${def_name}="${${def_name}}")
-  endif()
-endmacro()
-
 macro(gen_str_definition def_name value)
   if(CONFIG_BINDESC_${def_name})
     zephyr_library_compile_definitions(${def_name}="${value}")
@@ -43,31 +17,37 @@ endmacro()
 
 if(CONFIG_BINDESC_DEFINE_BUILD_TIME)
   zephyr_library_sources(bindesc_build_time.c)
-  gen_build_time_int_definition(BUILD_TIME_YEAR "%Y")
-  gen_build_time_int_definition(BUILD_TIME_MONTH "%m")
-  gen_build_time_int_definition(BUILD_TIME_DAY "%d")
-  gen_build_time_int_definition(BUILD_TIME_HOUR "%H")
-  gen_build_time_int_definition(BUILD_TIME_MINUTE "%M")
-  gen_build_time_int_definition(BUILD_TIME_SECOND "%S")
-  gen_build_time_int_definition(BUILD_TIME_UNIX "%s")
 
-  gen_build_time_str_definition(BUILD_DATE_TIME_STRING
-      CONFIG_BINDESC_BUILD_DATE_TIME_STRING_FORMAT)
-  gen_build_time_str_definition(BUILD_DATE_STRING
-      CONFIG_BINDESC_BUILD_DATE_STRING_FORMAT)
-  gen_build_time_str_definition(BUILD_TIME_STRING
-      CONFIG_BINDESC_BUILD_TIME_STRING_FORMAT)
+  set(gen_header ${PROJECT_BINARY_DIR}/include/generated/bindesc_build_time.h)
+
+  if(CONFIG_BINDESC_BUILD_TIME_USE_LOCAL_TIME)
+    set(BUILD_TIME "LOCAL")
+  else()
+    set(BUILD_TIME "UTC")
+  endif()
+
+  set(GEN_COMMAND ${CMAKE_COMMAND}
+      -DIN_FILE=${CMAKE_CURRENT_LIST_DIR}/bindesc_build_time.h.in
+      -DOUT_FILE=${gen_header}
+      -DBUILD_TIME_TYPE="${BUILD_TIME}"
+      -DBUILD_DATE_TIME_STRING_FORMAT="${CONFIG_BINDESC_BUILD_DATE_TIME_STRING_FORMAT}"
+      -DBUILD_DATE_STRING_FORMAT="${CONFIG_BINDESC_BUILD_DATE_STRING_FORMAT}"
+      -DBUILD_TIME_STRING_FORMAT="${CONFIG_BINDESC_BUILD_TIME_STRING_FORMAT}"
+      -P ${CMAKE_CURRENT_LIST_DIR}/gen_bindesc_build_time_h.cmake)
 
   if(CONFIG_BINDESC_BUILD_TIME_ALWAYS_REBUILD)
-    # By adding a custom target that invokes cmake,
-    # CMake is forced to rebuild this target on every build. This is
-    # done to ensure that the timestamp is always up to date.
-    add_custom_target(
-      bindesc_time_force_rebuild
-      COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
+    add_custom_target(gen_bindesc_build_time
+      COMMAND ${GEN_COMMAND}
+      BYPRODUCTS ${gen_header}
     )
-    zephyr_library_add_dependencies(bindesc_time_force_rebuild)
+  else()
+    add_custom_command(OUTPUT ${gen_header}
+      COMMAND ${GEN_COMMAND}
+    )
+    add_custom_target(gen_bindesc_build_time DEPENDS ${gen_header})
   endif()
+
+  zephyr_library_add_dependencies(gen_bindesc_build_time)
 endif()
 
 if(CONFIG_BINDESC_DEFINE_VERSION)

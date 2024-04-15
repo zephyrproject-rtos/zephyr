@@ -26,18 +26,18 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include "net_private.h"
 #include "tcp_internal.h"
 
-#define ACK_TIMEOUT_MS CONFIG_NET_TCP_ACK_TIMEOUT
+#define ACK_TIMEOUT_MS tcp_max_timeout_ms
 #define ACK_TIMEOUT K_MSEC(ACK_TIMEOUT_MS)
-#define LAST_ACK_TIMEOUT_MS tcp_fin_timeout_ms
+#define LAST_ACK_TIMEOUT_MS tcp_max_timeout_ms
 #define LAST_ACK_TIMEOUT K_MSEC(LAST_ACK_TIMEOUT_MS)
-#define FIN_TIMEOUT K_MSEC(tcp_fin_timeout_ms)
+#define FIN_TIMEOUT K_MSEC(tcp_max_timeout_ms)
 #define ACK_DELAY K_MSEC(100)
 #define ZWP_MAX_DELAY_MS 120000
 #define DUPLICATE_ACK_RETRANSMIT_TRHESHOLD 3
 
 static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 static int tcp_retries = CONFIG_NET_TCP_RETRY_COUNT;
-static int tcp_fin_timeout_ms;
+static int tcp_max_timeout_ms;
 static int tcp_rx_window =
 #if (CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE != 0)
 	CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE;
@@ -45,7 +45,7 @@ static int tcp_rx_window =
 #if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 	(CONFIG_NET_BUF_RX_COUNT * CONFIG_NET_BUF_DATA_SIZE) / 3;
 #else
-	CONFIG_NET_BUF_DATA_POOL_SIZE / 3;
+	CONFIG_NET_PKT_BUF_RX_DATA_POOL_SIZE / 3;
 #endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 #endif
 static int tcp_tx_window =
@@ -55,7 +55,7 @@ static int tcp_tx_window =
 #if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 	(CONFIG_NET_BUF_TX_COUNT * CONFIG_NET_BUF_DATA_SIZE) / 3;
 #else
-	CONFIG_NET_BUF_DATA_POOL_SIZE / 3;
+	CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE / 3;
 #endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 #endif
 #ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
@@ -317,10 +317,8 @@ end:
 
 #define is_6lo_technology(pkt)						\
 	(IS_ENABLED(CONFIG_NET_IPV6) &&	net_pkt_family(pkt) == AF_INET6 && \
-	 ((IS_ENABLED(CONFIG_NET_L2_BT) &&				\
-	   net_pkt_lladdr_dst(pkt)->type == NET_LINK_BLUETOOTH) ||	\
-	  (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&			\
-	   net_pkt_lladdr_dst(pkt)->type == NET_LINK_IEEE802154)))
+	 (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&			\
+	  net_pkt_lladdr_dst(pkt)->type == NET_LINK_IEEE802154))
 
 static void tcp_send(struct net_pkt *pkt)
 {
@@ -353,6 +351,7 @@ static void tcp_send(struct net_pkt *pkt)
 			 * free the net_pkt.
 			 */
 			tcp_pkt_unref(pkt);
+			NET_WARN("net_pkt alloc failure");
 			goto out;
 		}
 
@@ -866,6 +865,8 @@ static bool tcp_send_process_no_lock(struct tcp *conn)
 			if (clone) {
 				tcp_send(clone);
 				conn->send_retries--;
+			} else {
+				NET_WARN("net_pkt alloc failure");
 			}
 		} else {
 			unref = true;
@@ -880,7 +881,7 @@ static bool tcp_send_process_no_lock(struct tcp *conn)
 					 struct net_pkt, next) :
 			tcp_pkt_clone(pkt);
 		if (!pkt) {
-			NET_ERR("net_pkt alloc failure");
+			NET_WARN("net_pkt alloc failure");
 			goto out;
 		}
 
@@ -1821,7 +1822,7 @@ static void tcp_resend_data(struct k_work *work)
 		if (conn->in_close && conn->send_data_total == 0) {
 			NET_DBG("TCP connection in %s close, "
 				"not disposing yet (waiting %dms)",
-				"active", tcp_fin_timeout_ms);
+				"active", tcp_max_timeout_ms);
 			k_work_reschedule_for_queue(&tcp_work_q,
 						    &conn->fin_timer,
 						    FIN_TIMEOUT);
@@ -1896,7 +1897,7 @@ static void tcp_fin_timeout(struct k_work *work)
 		return;
 	}
 
-	NET_DBG("Did not receive %s in %dms", "FIN", tcp_fin_timeout_ms);
+	NET_DBG("Did not receive %s in %dms", "FIN", tcp_max_timeout_ms);
 	NET_DBG("conn: %p %s", conn, tcp_conn_state(conn, NULL));
 
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
@@ -2997,30 +2998,9 @@ next_state:
 		break;
 	case TCP_ESTABLISHED:
 		/* full-close */
-		if (th && FL(&fl, ==, (FIN | ACK), th_seq(th) == conn->ack)) {
-			if (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
-				uint32_t len_acked = th_ack(th) - conn->seq;
+		if (th && FL(&fl, &, FIN, th_seq(th) == conn->ack)) {
+			bool acked = false;
 
-				conn_seq(conn, + len_acked);
-			}
-
-			conn_ack(conn, + 1);
-			tcp_out(conn, FIN | ACK);
-			conn_seq(conn, + 1);
-			next = TCP_LAST_ACK;
-			verdict = NET_OK;
-			keep_alive_timer_stop(conn);
-			tcp_setup_last_ack_timer(conn);
-			break;
-		} else if (th && FL(&fl, ==, FIN, th_seq(th) == conn->ack)) {
-			conn_ack(conn, + 1);
-			tcp_out(conn, ACK);
-			next = TCP_CLOSE_WAIT;
-			verdict = NET_OK;
-			keep_alive_timer_stop(conn);
-			break;
-		} else if (th && FL(&fl, ==, (FIN | ACK | PSH),
-				    th_seq(th) == conn->ack)) {
 			if (len) {
 				verdict = tcp_data_get(conn, pkt, &len);
 				if (verdict == NET_OK) {
@@ -3032,11 +3012,28 @@ next_state:
 			}
 
 			conn_ack(conn, + len + 1);
-			tcp_out(conn, FIN | ACK);
-			conn_seq(conn, + 1);
-			next = TCP_LAST_ACK;
 			keep_alive_timer_stop(conn);
-			tcp_setup_last_ack_timer(conn);
+
+			if (FL(&fl, &, ACK)) {
+				acked = true;
+
+				if (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
+					uint32_t len_acked = th_ack(th) - conn->seq;
+
+					conn_seq(conn, + len_acked);
+				}
+			}
+
+			if (acked) {
+				tcp_out(conn, FIN | ACK);
+				conn_seq(conn, + 1);
+				tcp_setup_last_ack_timer(conn);
+				next = TCP_LAST_ACK;
+			} else {
+				tcp_out(conn, ACK);
+				next = TCP_CLOSE_WAIT;
+			}
+
 			break;
 		}
 
@@ -3564,7 +3561,7 @@ int net_tcp_put(struct net_context *context)
 
 			NET_DBG("TCP connection in %s close, "
 				"not disposing yet (waiting %dms)",
-				"active", tcp_fin_timeout_ms);
+				"active", tcp_max_timeout_ms);
 			k_work_reschedule_for_queue(&tcp_work_q,
 						    &conn->fin_timer,
 						    FIN_TIMEOUT);
@@ -4445,18 +4442,18 @@ void net_tcp_init(void)
 			   NULL);
 
 	/* Compute the largest possible retransmission timeout */
-	tcp_fin_timeout_ms = 0;
+	tcp_max_timeout_ms = 0;
 	rto = tcp_rto;
 	for (i = 0; i < tcp_retries; i++) {
-		tcp_fin_timeout_ms += rto;
+		tcp_max_timeout_ms += rto;
 		rto += rto >> 1;
 	}
 	/* At the last timeout cicle */
-	tcp_fin_timeout_ms += tcp_rto;
+	tcp_max_timeout_ms += tcp_rto;
 
 	/* When CONFIG_NET_TCP_RANDOMIZED_RTO is active in can be worse case 1.5 times larger */
 	if (IS_ENABLED(CONFIG_NET_TCP_RANDOMIZED_RTO)) {
-		tcp_fin_timeout_ms += tcp_fin_timeout_ms >> 1;
+		tcp_max_timeout_ms += tcp_max_timeout_ms >> 1;
 	}
 
 	k_thread_name_set(&tcp_work_q.thread, "tcp_work");

@@ -8,7 +8,6 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/dfu/flash_img.h>
-#include <zephyr/sys/reboot.h>
 #include <zephyr/mgmt/hawkbit.h>
 #include "hawkbit_firmware.h"
 #include "hawkbit_device.h"
@@ -18,19 +17,19 @@ static void cmd_run(const struct shell *sh, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_fprintf(sh, SHELL_INFO, "Starting Hawkbit run...\n");
+	shell_fprintf(sh, SHELL_INFO, "Starting hawkBit run...\n");
 	switch (hawkbit_probe()) {
 	case HAWKBIT_UNCONFIRMED_IMAGE:
 		shell_fprintf(
 			sh, SHELL_ERROR,
 			"Image is unconfirmed."
 			"Rebooting to revert back to previous confirmed image\n");
-		sys_reboot(SYS_REBOOT_WARM);
+		hawkbit_reboot();
 		break;
 
 	case HAWKBIT_CANCEL_UPDATE:
 		shell_fprintf(sh, SHELL_INFO,
-			      "Hawkbit update Cancelled from server\n");
+			      "hawkBit update Cancelled from server\n");
 		break;
 
 	case HAWKBIT_NO_UPDATE:
@@ -43,6 +42,7 @@ static void cmd_run(const struct shell *sh, size_t argc, char **argv)
 
 	case HAWKBIT_UPDATE_INSTALLED:
 		shell_fprintf(sh, SHELL_INFO, "Update Installed\n");
+		hawkbit_reboot();
 		break;
 
 	case HAWKBIT_DOWNLOAD_ERROR:
@@ -84,8 +84,8 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_hawkbit,
-	SHELL_CMD(info, NULL, "Dump Hawkbit information", cmd_info),
-	SHELL_CMD(run, NULL, "Trigger an Hawkbit update run", cmd_run),
+	SHELL_CMD(info, NULL, "Dump hawkBit information", cmd_info),
+	SHELL_CMD(run, NULL, "Trigger an hawkBit update run", cmd_run),
 	SHELL_SUBCMD_SET_END);
 
-SHELL_CMD_REGISTER(hawkbit, &sub_hawkbit, "Hawkbit commands", NULL);
+SHELL_CMD_REGISTER(hawkbit, &sub_hawkbit, "hawkBit commands", NULL);

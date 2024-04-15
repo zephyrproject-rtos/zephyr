@@ -55,6 +55,24 @@ config SHELL_BACKSPACE_MODE_DELETE
 	  Some terminals send code: 0x08 (backspace) other 0x7F (delete). When
 	  this option is set shell will expect 0x7F for backspace key.
 
+config SHELL_PROMPT_CHANGE
+	bool "Allow prompt change in runtime"
+	default y if !SHELL_MINIMAL
+	help
+	  Allow for the modification of the shell prompt at runtime.
+	  Enabling this will allocate additional RAM memory where
+	  the string of the prompt will be stored.
+
+config SHELL_PROMPT_BUFF_SIZE
+	int "Shell prompt buffer size"
+	depends on SHELL_PROMPT_CHANGE
+	range 2 40
+	default 10 if SHELL_MINIMAL
+	default 20
+	help
+	  Maximum prompt size in bytes. One byte is reserved for the string
+	  terminator character.
+
 config SHELL_CMD_BUFF_SIZE
 	int "Shell command buffer size"
 	default 128 if SHELL_MINIMAL

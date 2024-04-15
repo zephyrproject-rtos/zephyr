@@ -248,6 +248,30 @@
 #ifdef CONFIG_NRFX_PWM3
 #define NRFX_PWM3_ENABLED 1
 #endif
+#ifdef CONFIG_NRFX_PWM20
+#define NRFX_PWM20_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PWM21
+#define NRFX_PWM21_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PWM22
+#define NRFX_PWM22_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PWM120
+#define NRFX_PWM120_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PWM130
+#define NRFX_PWM130_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PWM131
+#define NRFX_PWM131_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PWM132
+#define NRFX_PWM132_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PWM133
+#define NRFX_PWM133_ENABLED 1
+#endif
 
 #ifdef CONFIG_NRFX_QDEC
 #define NRFX_QDEC_ENABLED 1
@@ -357,8 +381,10 @@
 #ifdef CONFIG_NRFX_SPIM4
 #define NRFX_SPIM4_ENABLED 1
 #endif
-#if (DT_PROP(DT_NODELABEL(spi3), rx_delay_supported) || \
-	DT_PROP(DT_NODELABEL(spi4), rx_delay_supported))
+
+#define NRFX_SPIM_DT_HAS_RX_DELAY(node) DT_PROP(node, rx_delay_supported) +
+
+#if DT_FOREACH_STATUS_OKAY(nordic_nrf_spim, NRFX_SPIM_DT_HAS_RX_DELAY) 0
 #define NRFX_SPIM_EXTENDED_ENABLED 1
 #endif
 #ifdef CONFIG_NRFX_SPIM00

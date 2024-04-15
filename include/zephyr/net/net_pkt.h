@@ -177,12 +177,6 @@ struct net_pkt {
 			       */
 #endif
 	uint8_t ppp_msg : 1; /* This is a PPP message */
-#if defined(CONFIG_NET_TCP)
-	uint8_t tcp_first_msg : 1; /* Is this the first time this pkt is
-				    * sent, or is this a resend of a TCP
-				    * segment.
-				    */
-#endif
 	uint8_t captured : 1;	  /* Set to 1 if this packet is already being
 				   * captured
 				   */
@@ -305,6 +299,11 @@ struct net_pkt {
 		struct sockaddr_storage remote_storage;
 	};
 #endif /* CONFIG_NET_OFFLOAD */
+
+#if defined(CONFIG_NET_CAPTURE_COOKED_MODE)
+	/* Tell the capture api that this is a captured packet */
+	uint8_t cooked_mode_pkt : 1;
+#endif /* CONFIG_NET_CAPTURE_COOKED_MODE */
 
 	/* @endcond */
 };
@@ -475,25 +474,6 @@ static inline void net_pkt_set_ip_ecn(struct net_pkt *pkt, uint8_t ecn)
 {
 #if defined(CONFIG_NET_IP_DSCP_ECN)
 	pkt->ip_ecn = ecn;
-#endif
-}
-
-static inline uint8_t net_pkt_tcp_1st_msg(struct net_pkt *pkt)
-{
-#if defined(CONFIG_NET_TCP)
-	return pkt->tcp_first_msg;
-#else
-	return true;
-#endif
-}
-
-static inline void net_pkt_set_tcp_1st_msg(struct net_pkt *pkt, bool is_1st)
-{
-#if defined(CONFIG_NET_TCP)
-	pkt->tcp_first_msg = is_1st;
-#else
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_1st);
 #endif
 }
 
@@ -891,6 +871,31 @@ static inline void net_pkt_set_priority(struct net_pkt *pkt,
 {
 	pkt->priority = priority;
 }
+
+#if defined(CONFIG_NET_CAPTURE_COOKED_MODE)
+static inline bool net_pkt_is_cooked_mode(struct net_pkt *pkt)
+{
+	return pkt->cooked_mode_pkt;
+}
+
+static inline void net_pkt_set_cooked_mode(struct net_pkt *pkt, bool value)
+{
+	pkt->cooked_mode_pkt = value;
+}
+#else
+static inline bool net_pkt_is_cooked_mode(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return false;
+}
+
+static inline void net_pkt_set_cooked_mode(struct net_pkt *pkt, bool value)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(value);
+}
+#endif /* CONFIG_NET_CAPTURE_COOKED_MODE */
 
 #if defined(CONFIG_NET_VLAN)
 static inline uint16_t net_pkt_vlan_tag(struct net_pkt *pkt)

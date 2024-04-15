@@ -117,11 +117,9 @@ struct nxp_enet_mac_data {
  ********************
  */
 
-static inline struct net_if *get_iface(struct nxp_enet_mac_data *data, uint16_t vlan_tag)
+static inline struct net_if *get_iface(struct nxp_enet_mac_data *data)
 {
-	struct net_if *iface = net_eth_get_vlan_iface(data->iface, vlan_tag);
-
-	return iface ? iface : data->iface;
+	return data->iface;
 }
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
@@ -248,10 +246,6 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 			     sizeof(data->mac_addr),
 			     NET_LINK_ETHERNET);
 
-	/* For VLAN, this value is only used to get the correct L2 driver.
-	 * The iface pointer in context should contain the main interface
-	 * if the VLANs are enabled.
-	 */
 	if (data->iface == NULL) {
 		data->iface = iface;
 	}
@@ -270,8 +264,11 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
+	return ETHERNET_LINK_10BASE_T |
 		ETHERNET_HW_FILTERING |
+#if defined(CONFIG_NET_VLAN)
+		ETHERNET_HW_VLAN |
+#endif
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 		ETHERNET_PTP |
 #endif
@@ -334,7 +331,6 @@ static int eth_nxp_enet_rx(const struct device *dev)
 {
 	const struct nxp_enet_mac_config *config = dev->config;
 	struct nxp_enet_mac_data *data = dev->data;
-	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	uint32_t frame_length = 0U;
 	struct net_if *iface;
 	struct net_pkt *pkt = NULL;
@@ -382,19 +378,6 @@ static int eth_nxp_enet_rx(const struct device *dev)
 		goto error;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_VLAN) && ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_VLAN) {
-		struct net_eth_vlan_hdr *hdr_vlan = (struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-
-		net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
-		vlan_tag = net_pkt_vlan_tag(pkt);
-
-#if CONFIG_NET_TC_RX_COUNT > 1
-		enum net_priority prio = net_vlan2priority(net_pkt_vlan_priority(pkt));
-
-		net_pkt_set_priority(pkt, prio);
-#endif /* CONFIG_NET_TC_RX_COUNT > 1 */
-	}
-
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	k_mutex_lock(data->ptp_mutex, K_FOREVER);
 
@@ -403,7 +386,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	pkt->timestamp.second = UINT64_MAX;
 
 	/* Timestamp the packet using PTP clock */
-	if (eth_get_ptp_data(get_iface(data, vlan_tag), pkt)) {
+	if (eth_get_ptp_data(get_iface(data), pkt)) {
 		struct net_ptp_time ptp_time;
 
 		ptp_clock_get(config->ptp_clock, &ptp_time);
@@ -421,7 +404,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	k_mutex_unlock(data->ptp_mutex);
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
-	iface = get_iface(data, vlan_tag);
+	iface = get_iface(data);
 #if defined(CONFIG_NET_DSA)
 	iface = dsa_net_recv(iface, &pkt);
 #endif
@@ -442,7 +425,7 @@ error:
 	if (pkt) {
 		net_pkt_unref(pkt);
 	}
-	eth_stats_update_errors_rx(get_iface(data, vlan_tag));
+	eth_stats_update_errors_rx(get_iface(data));
 	return -EIO;
 }
 

@@ -1,0 +1,41 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&pinctrl {
+	i2c2_default: i2c2_default {
+		group0 {
+			pinmux = <PA10MFP_I2C2_SDA>, /* UNO D6 */
+				 <PA11MFP_I2C2_SCL>; /* UNO D7 */
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group0 {
+			pinmux = <PA4MFP_I2C0_SDA>, /* UNO D14 */
+				 <PA5MFP_I2C0_SCL>; /* UNO D15 */
+		};
+	};
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <1024>;
+	};
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <1024>;
+	};
+};

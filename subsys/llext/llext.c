@@ -32,7 +32,7 @@ static sys_slist_t _llext_list = SYS_SLIST_STATIC_INIT(&_llext_list);
 
 static struct k_mutex llext_lock = Z_MUTEX_INITIALIZER(llext_lock);
 
-ssize_t llext_find_section(struct llext_loader *ldr, const char *search_name)
+static elf_shdr_t *llext_section_by_name(struct llext_loader *ldr, const char *search_name)
 {
 	elf_shdr_t *shdr;
 	unsigned int i;
@@ -44,7 +44,7 @@ ssize_t llext_find_section(struct llext_loader *ldr, const char *search_name)
 		shdr = llext_peek(ldr, pos);
 		if (!shdr) {
 			/* The peek() method isn't supported */
-			return -EOPNOTSUPP;
+			return NULL;
 		}
 
 		const char *name = llext_peek(ldr,
@@ -52,11 +52,18 @@ ssize_t llext_find_section(struct llext_loader *ldr, const char *search_name)
 					      shdr->sh_name);
 
 		if (!strcmp(name, search_name)) {
-			return shdr->sh_offset;
+			return shdr;
 		}
 	}
 
-	return -ENOENT;
+	return NULL;
+}
+
+ssize_t llext_find_section(struct llext_loader *ldr, const char *search_name)
+{
+	elf_shdr_t *shdr = llext_section_by_name(ldr, search_name);
+
+	return shdr ? shdr->sh_offset : -ENOENT;
 }
 
 /*
@@ -214,8 +221,11 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 {
 	int i, ret;
 	size_t pos;
-	elf_shdr_t shdr;
+	elf_shdr_t shdr, rodata = {.sh_addr = ~0},
+		high_shdr = {.sh_offset = 0}, low_shdr = {.sh_offset = ~0};
 	const char *name;
+
+	ldr->sects[LLEXT_MEM_RODATA].sh_size = 0;
 
 	for (i = 0, pos = ldr->hdr.e_shoff;
 	     i < ldr->hdr.e_shnum;
@@ -230,12 +240,38 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 			return ret;
 		}
 
+		/* Identify the lowest and the highest data sections */
+		if (!(shdr.sh_flags & SHF_EXECINSTR) &&
+		    shdr.sh_type == SHT_PROGBITS) {
+			if (shdr.sh_offset > high_shdr.sh_offset) {
+				high_shdr = shdr;
+			}
+			if (shdr.sh_offset < low_shdr.sh_offset) {
+				low_shdr = shdr;
+			}
+		}
+
 		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr.sh_name);
 
 		LOG_DBG("section %d name %s", i, name);
 
 		enum llext_mem mem_idx;
 
+		/*
+		 * .rodata section is optional. If there isn't one, use the
+		 * first read-only data section
+		 */
+		if (shdr.sh_addr && !(shdr.sh_flags & (SHF_WRITE | SHF_EXECINSTR)) &&
+		    shdr.sh_addr < rodata.sh_addr) {
+			rodata = shdr;
+			LOG_DBG("rodata: select %#zx name %s", (size_t)shdr.sh_addr, name);
+		}
+
+		/*
+		 * Keep in mind, that when using relocatable (partially linked)
+		 * objects, ELF segments aren't created, so ldr->sect_map[] and
+		 * ldr->sects[] don't contain all the sections
+		 */
 		if (strcmp(name, ".text") == 0) {
 			mem_idx = LLEXT_MEM_TEXT;
 		} else if (strcmp(name, ".data") == 0) {
@@ -253,6 +289,13 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 
 		ldr->sects[mem_idx] = shdr;
 		ldr->sect_map[i] = mem_idx;
+	}
+
+	ldr->prog_data_size = high_shdr.sh_size + high_shdr.sh_offset - low_shdr.sh_offset;
+
+	/* No verbatim .rodata, use an automatically selected one */
+	if (!ldr->sects[LLEXT_MEM_RODATA].sh_size) {
+		ldr->sects[LLEXT_MEM_RODATA] = rodata;
 	}
 
 	return 0;
@@ -556,12 +599,12 @@ static size_t llext_file_offset(struct llext_loader *ldr, size_t offset)
 }
 
 __weak void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
-				    elf_rela_t *rel, size_t got_offset)
+				    const elf_rela_t *rel, const elf_sym_t *sym, size_t got_offset)
 {
 }
 
 static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
-			   elf_shdr_t *shdr, bool do_local)
+			   elf_shdr_t *shdr, bool do_local, elf_shdr_t *tgt)
 {
 	unsigned int sh_cnt = shdr->sh_size / shdr->sh_entsize;
 	/*
@@ -613,25 +656,36 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 		}
 
 		uint32_t stt = ELF_ST_TYPE(sym_tbl.st_info);
-		uint32_t stb = ELF_ST_BIND(sym_tbl.st_info);
 
-		if (stt != STT_FUNC && (stt != STT_NOTYPE || sym_tbl.st_shndx != SHN_UNDEF)) {
+		if (stt != STT_FUNC &&
+		    stt != STT_SECTION &&
+		    (stt != STT_NOTYPE || sym_tbl.st_shndx != SHN_UNDEF)) {
 			continue;
 		}
 
 		const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym_tbl.st_name);
+
 		/*
 		 * Both r_offset and sh_addr are addresses for which the extension
 		 * has been built.
 		 */
-		size_t got_offset = llext_file_offset(ldr, rela.r_offset) -
-			ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+		size_t got_offset;
 
+		if (tgt) {
+			got_offset = rela.r_offset + tgt->sh_offset -
+				ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+		} else {
+			got_offset = llext_file_offset(ldr, rela.r_offset) -
+				ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+		}
+
+		uint32_t stb = ELF_ST_BIND(sym_tbl.st_info);
 		const void *link_addr;
 
 		switch (stb) {
 		case STB_GLOBAL:
 			link_addr = llext_find_sym(NULL, name);
+
 			if (!link_addr)
 				link_addr = llext_find_sym(&ext->sym_tab, name);
 
@@ -648,9 +702,9 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 			/* Resolve the symbol */
 			*(const void **)(text + got_offset) = link_addr;
 			break;
-		case  STB_LOCAL:
+		case STB_LOCAL:
 			if (do_local) {
-				arch_elf_relocate_local(ldr, ext, &rela, got_offset);
+				arch_elf_relocate_local(ldr, ext, &rela, &sym_tbl, got_offset);
 			}
 		}
 
@@ -660,8 +714,10 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 	}
 }
 
-__weak void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval)
+__weak int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
+			     uintptr_t sym_base_addr, const char *sym_name, uintptr_t load_bias)
 {
+	return -EOPNOTSUPP;
 }
 
 static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
@@ -697,8 +753,7 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 
 		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr.sh_name);
 
-		if (strcmp(name, ".rel.text") == 0 ||
-		    strcmp(name, ".rela.text") == 0) {
+		if (strcmp(name, ".rel.text") == 0) {
 			loc = (uintptr_t)ext->mem[LLEXT_MEM_TEXT];
 		} else if (strcmp(name, ".rel.bss") == 0 ||
 			   strcmp(name, ".rela.bss") == 0) {
@@ -706,15 +761,23 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 		} else if (strcmp(name, ".rel.rodata") == 0 ||
 			   strcmp(name, ".rela.rodata") == 0) {
 			loc = (uintptr_t)ext->mem[LLEXT_MEM_RODATA];
-		} else if (strcmp(name, ".rel.data") == 0 ||
-			   strcmp(name, ".rela.data") == 0) {
+		} else if (strcmp(name, ".rel.data") == 0) {
 			loc = (uintptr_t)ext->mem[LLEXT_MEM_DATA];
 		} else if (strcmp(name, ".rel.exported_sym") == 0) {
 			loc = (uintptr_t)ext->mem[LLEXT_MEM_EXPORT];
 		} else if (strcmp(name, ".rela.plt") == 0 ||
 			   strcmp(name, ".rela.dyn") == 0) {
-			llext_link_plt(ldr, ext, &shdr, do_local);
+			llext_link_plt(ldr, ext, &shdr, do_local, NULL);
 			continue;
+		} else if (strncmp(name, ".rela", 5) == 0 && strlen(name) > 5) {
+			elf_shdr_t *tgt = llext_section_by_name(ldr, name + 5);
+
+			if (tgt)
+				llext_link_plt(ldr, ext, &shdr, do_local, tgt);
+			continue;
+		} else if (strcmp(name, ".rel.dyn") == 0) {
+			/* we assume that first load segment starts at MEM_TEXT */
+			loc = (uintptr_t)ext->mem[LLEXT_MEM_TEXT];
 		}
 
 		LOG_DBG("relocation section %s (%d) linked to section %d has %zd relocations",
@@ -757,8 +820,11 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 
 			op_loc = loc + rel.r_offset;
 
-			/* If symbol is undefined, then we need to look it up */
-			if (sym.st_shndx == SHN_UNDEF) {
+			if (ELF_R_SYM(rel.r_info) == 0) {
+				/* no symbol ex: R_ARM_V4BX relocation, R_ARM_RELATIVE  */
+				link_addr = 0;
+			} else if (sym.st_shndx == SHN_UNDEF) {
+				/* If symbol is undefined, then we need to look it up */
 				link_addr = (uintptr_t)llext_find_sym(NULL, name);
 
 				if (link_addr == 0) {
@@ -766,6 +832,8 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 						"symbol table %s, offset %zd, link section %d",
 						name, (size_t)rel.r_offset, shdr.sh_link);
 					return -ENODATA;
+				} else {
+					LOG_INF("found symbol %s at 0x%lx", name, link_addr);
 				}
 			} else if (ELF_ST_TYPE(sym.st_info) == STT_SECTION ||
 				   ELF_ST_TYPE(sym.st_info) == STT_FUNC ||
@@ -781,18 +849,17 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 				continue;
 			}
 
-			LOG_INF("relocating (linking) symbol %s type %d binding %d ndx %d offset "
-				"%zd link section %d",
-				name, ELF_ST_TYPE(sym.st_info), ELF_ST_BIND(sym.st_info),
-				sym.st_shndx, (size_t)rel.r_offset, shdr.sh_link);
-
 			LOG_INF("writing relocation symbol %s type %zd sym %zd at addr 0x%lx "
 				"addr 0x%lx",
 				name, (size_t)ELF_R_TYPE(rel.r_info), (size_t)ELF_R_SYM(rel.r_info),
 				op_loc, link_addr);
 
 			/* relocation */
-			arch_elf_relocate(&rel, op_loc, link_addr);
+			ret = arch_elf_relocate(&rel, op_loc, link_addr, name,
+					     (uintptr_t)ext->mem[LLEXT_MEM_TEXT]);
+			if (ret != 0) {
+				return ret;
+			}
 		}
 	}
 
@@ -801,6 +868,7 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 	for (i = 0; i < LLEXT_MEM_COUNT; ++i) {
 		if (ext->mem[i]) {
 			sys_cache_data_flush_range(ext->mem[i], ext->mem_size[i]);
+			sys_cache_instr_invd_range(ext->mem[i], ext->mem_size[i]);
 		}
 	}
 #endif

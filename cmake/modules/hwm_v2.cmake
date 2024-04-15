@@ -12,6 +12,7 @@
 # - Kconfig.defconfig: Contains references to SoC defconfig files for Zephyr integration.
 # - Kconfig: Contains references to regular SoC Kconfig files for Zephyr integration.
 # - Kconfig.soc: Contains references to generic SoC Kconfig files.
+# - Kconfig.sysbuild: Contains references to SoC sysbuild Kconfig files.
 #
 # The following file is generated in '<kconfig-binary-dir>/arch'
 # - Kconfig: Contains references to regular arch Kconfig files for Zephyr integration.
@@ -96,19 +97,23 @@ set(arch_kconfig_file  Kconfig)
 set(soc_defconfig_file Kconfig.defconfig)
 set(soc_zephyr_file    Kconfig)
 set(soc_kconfig_file   Kconfig.soc)
+set(soc_sysbuild_file  Kconfig.sysbuild)
 set(arch_kconfig_header "# Load arch Kconfig descriptions.\n")
 set(defconfig_header    "# Load Zephyr SoC Kconfig defconfig.\n")
 set(soc_zephyr_header   "# Load Zephyr SoC Kconfig descriptions.\n")
 set(soc_kconfig_header  "# Load SoC Kconfig descriptions.\n")
+set(soc_sysbuild_header "# Load SoC sysbuild Kconfig descriptions.\n")
 file(WRITE ${KCONFIG_BINARY_DIR}/arch/${arch_kconfig_file} "${arch_kconfig_header}")
 file(WRITE ${KCONFIG_BINARY_DIR}/soc/${soc_defconfig_file} "${defconfig_header}")
 file(WRITE ${KCONFIG_BINARY_DIR}/soc/${soc_zephyr_file}    "${soc_zephyr_header}")
 file(WRITE ${KCONFIG_BINARY_DIR}/soc/${soc_kconfig_file}   "${soc_kconfig_header}")
+file(WRITE ${KCONFIG_BINARY_DIR}/soc/${soc_sysbuild_file}  "${soc_sysbuild_header}")
 
 kconfig_gen("${KCONFIG_BINARY_DIR}/arch" "${arch_kconfig_file}" "${kconfig_arch_source_dir}")
 kconfig_gen("${KCONFIG_BINARY_DIR}/soc" "${soc_defconfig_file}" "${kconfig_soc_source_dir}")
 kconfig_gen("${KCONFIG_BINARY_DIR}/soc" "${soc_zephyr_file}" "${kconfig_soc_source_dir}")
 kconfig_gen("${KCONFIG_BINARY_DIR}/soc" "${soc_kconfig_file}" "${kconfig_soc_source_dir}")
+kconfig_gen("${KCONFIG_BINARY_DIR}/soc" "${soc_sysbuild_file}" "${kconfig_soc_source_dir}")
 
 # Clear variables created by cmake_parse_arguments
 unset(SOC_V2_NAME)

@@ -82,7 +82,7 @@ static int wdt_kb1200_install_timeout(const struct device *dev,
 		data->timeout_installed = false;
 		return -EINVAL;
 	}
-	cfg->wdt->WDTM = (config->window.max) / WDT_SAMPLE_TIME;
+	cfg->wdt->WDTM = (config->window.max * 1000) / WDT_TICK_TIME_US;
 	/* (HW design) The counter match value must be >= 3 */
 	if (cfg->wdt->WDTM < WDT_MIN_CNT) {
 		data->timeout_installed = false;

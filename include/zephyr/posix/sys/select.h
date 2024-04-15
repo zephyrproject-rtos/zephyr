@@ -13,8 +13,6 @@
 extern "C" {
 #endif
 
-#ifndef CONFIG_NET_SOCKETS_POSIX_NAMES
-
 #define fd_set zsock_fd_set
 #define FD_SETSIZE ZSOCK_FD_SETSIZE
 #define FD_ZERO ZSOCK_FD_ZERO
@@ -24,15 +22,7 @@ extern "C" {
 
 struct timeval;
 
-static inline int select(int nfds, fd_set *readfds,
-			 fd_set *writefds, fd_set *exceptfds,
-			 struct timeval *timeout)
-{
-	return zsock_select(nfds, readfds, writefds, exceptfds,
-			    (struct zsock_timeval *)timeout);
-}
-
-#endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
 
 #ifdef __cplusplus
 }

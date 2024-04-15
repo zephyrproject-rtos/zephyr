@@ -195,7 +195,7 @@ struct lll_adv {
 	struct lll_adv_pdu scan_rsp;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	struct node_rx_hdr *node_rx_adv_term;
+	struct node_rx_pdu *node_rx_adv_term;
 	struct lll_adv_aux *aux;
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)

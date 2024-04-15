@@ -45,11 +45,17 @@ extern "C" {
 #undef PTHREAD_SCOPE_SYSTEM
 #define PTHREAD_SCOPE_SYSTEM     0
 
+/* Pthread inherit scheduler */
+#undef PTHREAD_INHERIT_SCHED
+#define PTHREAD_INHERIT_SCHED  0
+#undef PTHREAD_EXPLICIT_SCHED
+#define PTHREAD_EXPLICIT_SCHED 1
+
 /* Passed to pthread_once */
 #define PTHREAD_ONCE_INIT {0}
 
 /* The minimum allowable stack size */
-#define PTHREAD_STACK_MIN Z_KERNEL_STACK_SIZE_ADJUST(0)
+#define PTHREAD_STACK_MIN K_KERNEL_STACK_LEN(0)
 
 /**
  * @brief Declare a condition variable as initialized
@@ -423,6 +429,8 @@ int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
 			  size_t stacksize);
 int pthread_attr_getscope(const pthread_attr_t *attr, int *contentionscope);
 int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope);
+int pthread_attr_getinheritsched(const pthread_attr_t *attr, int *inheritsched);
+int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched);
 #ifdef CONFIG_PTHREAD_IPC
 int pthread_once(pthread_once_t *once, void (*initFunc)(void));
 #endif
@@ -439,6 +447,7 @@ int pthread_attr_setschedparam(pthread_attr_t *attr,
 			       const struct sched_param *schedparam);
 int pthread_setschedparam(pthread_t pthread, int policy,
 			  const struct sched_param *param);
+int pthread_setschedprio(pthread_t thread, int prio);
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlock);
 int pthread_rwlock_init(pthread_rwlock_t *rwlock,
 			const pthread_rwlockattr_t *attr);

@@ -26,6 +26,7 @@ app=tests/bsim/bluetooth/host/misc/conn_stress/central compile
 app=tests/bsim/bluetooth/host/misc/conn_stress/peripheral compile
 app=tests/bsim/bluetooth/host/misc/hfc compile
 app=tests/bsim/bluetooth/host/misc/unregister_conn_cb compile
+app=tests/bsim/bluetooth/host/misc/sample_test compile
 
 app=tests/bsim/bluetooth/host/privacy/central compile
 app=tests/bsim/bluetooth/host/privacy/peripheral compile

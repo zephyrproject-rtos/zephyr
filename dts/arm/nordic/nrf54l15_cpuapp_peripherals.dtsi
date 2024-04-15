@@ -24,6 +24,8 @@ spi00: spi@4a000 {
 	interrupts = <74 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(32)>;
 	easydma-maxcnt-bits = <16>;
+	rx-delay-supported;
+	rx-delay = <1>;
 	status = "disabled";
 };
 
@@ -124,6 +126,8 @@ spi20: spi@c6000 {
 	interrupts = <198 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(8)>;
 	easydma-maxcnt-bits = <16>;
+	rx-delay-supported;
+	rx-delay = <1>;
 	status = "disabled";
 };
 
@@ -159,6 +163,8 @@ spi21: spi@c7000 {
 	interrupts = <199 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(8)>;
 	easydma-maxcnt-bits = <16>;
+	rx-delay-supported;
+	rx-delay = <1>;
 	status = "disabled";
 };
 
@@ -194,6 +200,8 @@ spi22: spi@c8000 {
 	interrupts = <200 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(8)>;
 	easydma-maxcnt-bits = <16>;
+	rx-delay-supported;
+	rx-delay = <1>;
 	status = "disabled";
 };
 
@@ -259,6 +267,30 @@ timer24: timer@ce000 {
 	max-bit-width = <32>;
 	interrupts = <206 NRF_DEFAULT_IRQ_PRIORITY>;
 	prescaler = <0>;
+};
+
+pwm20: pwm@d2000 {
+	compatible = "nordic,nrf-pwm";
+	status = "disabled";
+	reg = <0xd2000 0x1000>;
+	interrupts = <210 NRF_DEFAULT_IRQ_PRIORITY>;
+	#pwm-cells = <3>;
+};
+
+pwm21: pwm@d3000 {
+	compatible = "nordic,nrf-pwm";
+	status = "disabled";
+	reg = <0xd3000 0x1000>;
+	interrupts = <211 NRF_DEFAULT_IRQ_PRIORITY>;
+	#pwm-cells = <3>;
+};
+
+pwm22: pwm@d4000 {
+	compatible = "nordic,nrf-pwm";
+	status = "disabled";
+	reg = <0xd4000 0x1000>;
+	interrupts = <212 NRF_DEFAULT_IRQ_PRIORITY>;
+	#pwm-cells = <3>;
 };
 
 adc: adc@d5000 {
@@ -367,6 +399,8 @@ spi30: spi@104000 {
 	interrupts = <260 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(8)>;
 	easydma-maxcnt-bits = <16>;
+	rx-delay-supported;
+	rx-delay = <1>;
 	status = "disabled";
 };
 

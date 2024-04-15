@@ -29,4 +29,14 @@
 
 #define NSI_FUNC_NORETURN __attribute__((__noreturn__))
 
+#if defined(__clang__)
+  /* The address sanitizer in llvm adds padding (redzones) after data
+   * But for those we are re-grouping using the linker script
+   * we cannot have that extra padding as we intend to iterate over them
+   */
+#define NSI_NOASAN __attribute__((no_sanitize("address")))
+#else
+#define NSI_NOASAN
+#endif
+
 #endif /* NSI_COMMON_SRC_INCL_NSI_UTILS_H */

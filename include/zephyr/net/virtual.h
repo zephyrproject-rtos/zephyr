@@ -38,6 +38,9 @@ enum virtual_interface_caps {
 	/** IPIP tunnel */
 	VIRTUAL_INTERFACE_IPIP = BIT(1),
 
+	/** Virtual LAN interface (VLAN) */
+	VIRTUAL_INTERFACE_VLAN = BIT(2),
+
 /** @cond INTERNAL_HIDDEN */
 	/* Marker for capabilities - must be at the end of the enum.
 	 * It is here because the capability list cannot be empty.
@@ -51,6 +54,14 @@ enum virtual_interface_caps {
 enum virtual_interface_config_type {
 	VIRTUAL_INTERFACE_CONFIG_TYPE_PEER_ADDRESS,
 	VIRTUAL_INTERFACE_CONFIG_TYPE_MTU,
+	VIRTUAL_INTERFACE_CONFIG_TYPE_LINK_TYPE,
+};
+
+struct virtual_interface_link_types {
+	int count;
+	uint16_t type[COND_CODE_1(CONFIG_NET_CAPTURE_COOKED_MODE,
+				  (CONFIG_NET_CAPTURE_COOKED_MODE_MAX_LINK_TYPES),
+				  (1))];
 };
 
 struct virtual_interface_config {
@@ -59,6 +70,7 @@ struct virtual_interface_config {
 		struct in_addr peer4addr;
 		struct in6_addr peer6addr;
 		int mtu;
+		struct virtual_interface_link_types link_types;
 	};
 };
 

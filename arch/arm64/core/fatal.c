@@ -33,7 +33,7 @@ void z_arm64_safe_exception_stack_init(void)
 	char *safe_exc_sp;
 
 	cpu_id = arch_curr_cpu()->id;
-	safe_exc_sp = Z_KERNEL_STACK_BUFFER(z_arm64_safe_exception_stacks[cpu_id]) +
+	safe_exc_sp = K_KERNEL_STACK_BUFFER(z_arm64_safe_exception_stacks[cpu_id]) +
 		      CONFIG_ARM64_SAFE_EXCEPTION_STACK_SIZE;
 	arch_curr_cpu()->arch.safe_exception_stack = (uint64_t)safe_exc_sp;
 	write_sp_el0((uint64_t)safe_exc_sp);

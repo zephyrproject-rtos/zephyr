@@ -102,3 +102,9 @@ properties:
 
   pinctrl-names:
     required: true
+
+  push-pull-recovery:
+    type: boolean
+    description: |
+      This property is enabled when selecting the push-pull GPIO output
+      type to drive the I2C recovery. The default is open-drain.

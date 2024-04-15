@@ -24,6 +24,11 @@
 				   (((x) >> 8) & 0xff00) | \
 				   (((x) & 0xff00) << 8) | \
 				   (((x) & 0xff) << 24)))
+#define BSWAP_40(x) ((uint64_t) ((((x) >> 32) & 0xff) | \
+				   (((x) >> 16) & 0xff00) | \
+				   (((x)) & 0xff0000) | \
+				   (((x) & 0xff00) << 16) | \
+				   (((x) & 0xff) << 32)))
 #define BSWAP_48(x) ((uint64_t) ((((x) >> 40) & 0xff) | \
 				   (((x) >> 24) & 0xff00) | \
 				   (((x) >> 8) & 0xff0000) | \
@@ -217,6 +222,8 @@
 #define sys_cpu_to_le24(val) (val)
 #define sys_le32_to_cpu(val) (val)
 #define sys_cpu_to_le32(val) (val)
+#define sys_le40_to_cpu(val) (val)
+#define sys_cpu_to_le40(val) (val)
 #define sys_le48_to_cpu(val) (val)
 #define sys_cpu_to_le48(val) (val)
 #define sys_le64_to_cpu(val) (val)
@@ -227,6 +234,8 @@
 #define sys_cpu_to_be24(val) BSWAP_24(val)
 #define sys_be32_to_cpu(val) BSWAP_32(val)
 #define sys_cpu_to_be32(val) BSWAP_32(val)
+#define sys_be40_to_cpu(val) BSWAP_40(val)
+#define sys_cpu_to_be40(val) BSWAP_40(val)
 #define sys_be48_to_cpu(val) BSWAP_48(val)
 #define sys_cpu_to_be48(val) BSWAP_48(val)
 #define sys_be64_to_cpu(val) BSWAP_64(val)
@@ -259,6 +268,8 @@
 #define sys_cpu_to_le24(val) BSWAP_24(val)
 #define sys_le32_to_cpu(val) BSWAP_32(val)
 #define sys_cpu_to_le32(val) BSWAP_32(val)
+#define sys_le40_to_cpu(val) BSWAP_40(val)
+#define sys_cpu_to_le40(val) BSWAP_40(val)
 #define sys_le48_to_cpu(val) BSWAP_48(val)
 #define sys_cpu_to_le48(val) BSWAP_48(val)
 #define sys_le64_to_cpu(val) BSWAP_64(val)
@@ -269,6 +280,8 @@
 #define sys_cpu_to_be24(val) (val)
 #define sys_be32_to_cpu(val) (val)
 #define sys_cpu_to_be32(val) (val)
+#define sys_be40_to_cpu(val) (val)
+#define sys_cpu_to_be40(val) (val)
 #define sys_be48_to_cpu(val) (val)
 #define sys_cpu_to_be48(val) (val)
 #define sys_be64_to_cpu(val) (val)
@@ -339,6 +352,20 @@ static inline void sys_put_be32(uint32_t val, uint8_t dst[4])
 {
 	sys_put_be16(val >> 16, dst);
 	sys_put_be16(val, &dst[2]);
+}
+/**
+ *  @brief Put a 40-bit integer as big-endian to arbitrary location.
+ *
+ *  Put a 40-bit integer, originally in host endianness, to a
+ *  potentially unaligned memory location in big-endian format.
+ *
+ *  @param val 40-bit integer in host endianness.
+ *  @param dst Destination memory address to store the result.
+ */
+static inline void sys_put_be40(uint64_t val, uint8_t dst[5])
+{
+	dst[0] = val >> 32;
+	sys_put_be32(val, &dst[1]);
 }
 
 /**
@@ -417,6 +444,21 @@ static inline void sys_put_le32(uint32_t val, uint8_t dst[4])
 }
 
 /**
+ *  @brief Put a 40-bit integer as little-endian to arbitrary location.
+ *
+ *  Put a 40-bit integer, originally in host endianness, to a
+ *  potentially unaligned memory location in little-endian format.
+ *
+ *  @param val 40-bit integer in host endianness.
+ *  @param dst Destination memory address to store the result.
+ */
+static inline void sys_put_le40(uint64_t val, uint8_t dst[5])
+{
+	sys_put_le32(val, dst);
+	dst[4] = val >> 32;
+}
+
+/**
  *  @brief Put a 48-bit integer as little-endian to arbitrary location.
  *
  *  Put a 48-bit integer, originally in host endianness, to a
@@ -492,6 +534,21 @@ static inline uint32_t sys_get_be32(const uint8_t src[4])
 }
 
 /**
+ *  @brief Get a 40-bit integer stored in big-endian format.
+ *
+ *  Get a 40-bit integer, stored in big-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ *  @param src Location of the big-endian 40-bit integer to get.
+ *
+ *  @return 40-bit integer in host endianness.
+ */
+static inline uint64_t sys_get_be40(const uint8_t src[5])
+{
+	return ((uint64_t)sys_get_be32(&src[0]) << 8) | src[4];
+}
+
+/**
  *  @brief Get a 48-bit integer stored in big-endian format.
  *
  *  Get a 48-bit integer, stored in big-endian format in a potentially
@@ -564,6 +621,21 @@ static inline uint32_t sys_get_le24(const uint8_t src[3])
 static inline uint32_t sys_get_le32(const uint8_t src[4])
 {
 	return ((uint32_t)sys_get_le16(&src[2]) << 16) | sys_get_le16(&src[0]);
+}
+
+/**
+ *  @brief Get a 40-bit integer stored in little-endian format.
+ *
+ *  Get a 40-bit integer, stored in little-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ *  @param src Location of the little-endian 40-bit integer to get.
+ *
+ *  @return 40-bit integer in host endianness.
+ */
+static inline uint64_t sys_get_le40(const uint8_t src[5])
+{
+	return ((uint64_t)sys_get_le32(&src[1]) << 8) | src[0];
 }
 
 /**

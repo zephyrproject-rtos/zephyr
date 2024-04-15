@@ -104,11 +104,13 @@ static struct wpa_supplicant *get_wpa_s_handle(const struct device *dev)
 	return wpa_s;
 }
 
+#define WPA_SUPP_STATE_POLLING_MS 10
 static int wait_for_disconnect_complete(const struct device *dev)
 {
 	int ret = 0;
-	int timeout = 0;
+	int attempts = 0;
 	struct wpa_supplicant *wpa_s = get_wpa_s_handle(dev);
+	unsigned int max_attempts = DISCONNECT_TIMEOUT_MS / WPA_SUPP_STATE_POLLING_MS;
 
 	if (!wpa_s) {
 		ret = -ENODEV;
@@ -117,14 +119,13 @@ static int wait_for_disconnect_complete(const struct device *dev)
 	}
 
 	while (wpa_s->wpa_state != WPA_DISCONNECTED) {
-		if (timeout > DISCONNECT_TIMEOUT_MS) {
+		if (attempts++ > max_attempts) {
 			ret = -ETIMEDOUT;
 			wpa_printf(MSG_WARNING, "Failed to disconnect from network");
 			break;
 		}
 
-		k_sleep(K_MSEC(10));
-		timeout++;
+		k_sleep(K_MSEC(WPA_SUPP_STATE_POLLING_MS));
 	}
 out:
 	return ret;
@@ -365,7 +366,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		}
 
 		if (chan_list) {
-			if (!wpa_cli_cmd_v("set_network %d freq_list%s", resp.network_id,
+			if (!wpa_cli_cmd_v("set_network %d scan_freq%s", resp.network_id,
 					   chan_list)) {
 				k_free(chan_list);
 				goto out;
@@ -376,6 +377,14 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	}
 
 	if (params->security != WIFI_SECURITY_TYPE_NONE) {
+		/* SAP - only open and WPA2-PSK are supported for now */
+		if (mode_ap && params->security != WIFI_SECURITY_TYPE_PSK) {
+			ret = -1;
+			wpa_printf(MSG_ERROR, "Unsupported security type: %d",
+				params->security);
+			goto rem_net;
+		}
+
 		/* Except for WPA-PSK, rest all are under WPA2 */
 		if (params->security != WIFI_SECURITY_TYPE_WPA_PSK) {
 			if (!wpa_cli_cmd_v("set_network %d proto RSN",
@@ -512,7 +521,7 @@ static int wpas_disconnect_network(const struct device *dev, int cur_mode)
 
 	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
 
-	if (!wpa_s->current_ssid || wpa_s->current_ssid->mode != cur_mode) {
+	if (wpa_s->current_ssid && wpa_s->current_ssid->mode != cur_mode) {
 		ret = -EBUSY;
 		wpa_printf(MSG_ERROR, "Interface %s is not in %s mode", dev->name,
 			   cur_mode == WPAS_MODE_INFRA ? "STA" : "AP");
@@ -647,6 +656,7 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 		struct status_resp cli_status;
 		bool is_ap;
 		int proto;
+		int key_mgmt;
 
 		if (!ssid) {
 			wpa_printf(MSG_ERROR, "Failed to get current ssid");
@@ -656,9 +666,10 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 		is_ap = ssid->mode == WPAS_MODE_AP;
 		/* For AP its always the configured one */
 		proto = is_ap ? ssid->proto : wpa_s->wpa_proto;
+		key_mgmt = is_ap ? ssid->key_mgmt : wpa_s->key_mgmt;
 		os_memcpy(status->bssid, wpa_s->bssid, WIFI_MAC_ADDR_LEN);
 		status->band = wpas_band_to_zephyr(wpas_freq_to_band(wpa_s->assoc_freq));
-		status->security = wpas_key_mgmt_to_zephyr(wpa_s->key_mgmt, proto);
+		status->security = wpas_key_mgmt_to_zephyr(key_mgmt, proto);
 		status->mfp = ssid->ieee80211w; /* Same mapping */
 		ieee80211_freq_to_chan(wpa_s->assoc_freq, &channel);
 		status->channel = channel;

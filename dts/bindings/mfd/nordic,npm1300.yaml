@@ -18,3 +18,27 @@ properties:
   pmic-int-pin:
     type: int
     description: Pmic pin number for interrupt output
+
+  ship-to-active-time-ms:
+    type: int
+    description: |
+      Press duration required to wake from ship / hibernate in ms.
+      The default is the device powerup value.
+    enum:
+    - 16
+    - 32
+    - 64
+    - 96
+    - 304
+    - 608
+    - 1008
+    - 3008
+    default: 96
+
+  long-press-reset:
+    type: string
+    description: Long press reset configuration
+    enum:
+    - "one-button"
+    - "disabled"
+    - "two-button"

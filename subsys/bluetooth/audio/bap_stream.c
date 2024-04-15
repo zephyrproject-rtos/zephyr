@@ -121,8 +121,10 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 
 	if (ep->iso == NULL) {
 		info->paired_ep = NULL;
+		info->iso_chan = NULL;
 	} else {
 		info->paired_ep = bt_bap_iso_get_paired_ep(ep);
+		info->iso_chan = &ep->iso->chan;
 	}
 
 	info->can_send = false;

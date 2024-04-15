@@ -7,4 +7,8 @@ tests:
       - esp32_devkitc_wroom/esp32/procpu
       - esp32c3_devkitm
       - esp32s3_devkitm/esp32s3/procpu
-    tags: esp32
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "memory-mapped reading matches flash API read"

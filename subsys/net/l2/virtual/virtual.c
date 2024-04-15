@@ -84,6 +84,12 @@ static int virtual_send(struct net_if *iface, struct net_pkt *pkt)
 		return -ENOENT;
 	}
 
+	if (!net_if_is_up(iface)) {
+		NET_DBG("Interface %d is down.",
+			net_if_get_by_iface(iface));
+		return -ENETDOWN;
+	}
+
 	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
 		pkt_len = net_pkt_get_len(pkt);
 	}
@@ -163,11 +169,9 @@ NET_L2_INIT(VIRTUAL_L2, virtual_recv, virtual_send, virtual_enable,
 
 static void random_linkaddr(uint8_t *linkaddr, size_t len)
 {
-	int i;
+	sys_rand_get(linkaddr, len);
 
-	for (i = 0; i < len; i++) {
-		linkaddr[i] = sys_rand32_get();
-	}
+	linkaddr[0] |= 0x02; /* force LAA bit */
 }
 
 int net_virtual_interface_attach(struct net_if *virtual_iface,

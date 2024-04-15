@@ -49,14 +49,19 @@ extern "C" {
  * @{
  */
 
+#define NET_ETH_ADDR_LEN		6U
+
 /** @cond INTERNAL_HIDDEN */
 
 struct net_eth_addr {
-	uint8_t addr[6];
+	uint8_t addr[NET_ETH_ADDR_LEN];
 };
 
 #define NET_ETH_HDR(pkt) ((struct net_eth_hdr *)net_pkt_data(pkt))
 
+#define NET_ETH_PTYPE_CAN		0x000C /* CAN: Controller Area Network */
+#define NET_ETH_PTYPE_CANFD		0x000D /* CANFD: CAN flexible data rate*/
+#define NET_ETH_PTYPE_HDLC		0x0019 /* HDLC frames (like in PPP) */
 #define NET_ETH_PTYPE_ARP		0x0806
 #define NET_ETH_PTYPE_IP		0x0800
 #define NET_ETH_PTYPE_TSN		0x22f0 /* TSN (IEEE 1722) packet */
@@ -92,6 +97,15 @@ struct net_eth_addr {
 #endif
 #if !defined(ETH_P_IEEE802154)
 #define  ETH_P_IEEE802154 NET_ETH_PTYPE_IEEE802154
+#endif
+#if !defined(ETH_P_CAN)
+#define ETH_P_CAN	NET_ETH_PTYPE_CAN
+#endif
+#if !defined(ETH_P_CANFD)
+#define ETH_P_CANFD	NET_ETH_PTYPE_CANFD
+#endif
+#if !defined(ETH_P_HDLC)
+#define ETH_P_HDLC	NET_ETH_PTYPE_HDLC
 #endif
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
@@ -592,17 +606,6 @@ struct ethernet_context {
 	 */
 	atomic_t flags;
 
-#if defined(CONFIG_NET_VLAN)
-	struct ethernet_vlan vlan[NET_VLAN_MAX_COUNT];
-
-	/** Array that will help when checking if VLAN is enabled for
-	 * some specific network interface. Requires that VLAN count
-	 * NET_VLAN_MAX_COUNT is not smaller than the actual number
-	 * of network interfaces.
-	 */
-	ATOMIC_DEFINE(interfaces, NET_VLAN_MAX_COUNT);
-#endif
-
 #if defined(CONFIG_NET_ETHERNET_BRIDGE)
 	struct eth_bridge_iface_context bridge;
 #endif
@@ -649,14 +652,6 @@ struct ethernet_context {
 
 	/** Send a network packet via DSA master port */
 	dsa_send_t dsa_send;
-#endif
-
-#if defined(CONFIG_NET_VLAN)
-	/** Flag that tells whether how many VLAN tags are enabled for this
-	 * context. The same information can be dug from the vlan array but
-	 * this saves some time in RX path.
-	 */
-	int8_t vlan_enabled;
 #endif
 
 	/** Is network carrier up */
@@ -839,6 +834,9 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag);
 #else
 static inline int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 {
+	ARG_UNUSED(iface);
+	ARG_UNUSED(tag);
+
 	return -EINVAL;
 }
 #endif
@@ -856,14 +854,20 @@ int net_eth_vlan_disable(struct net_if *iface, uint16_t tag);
 #else
 static inline int net_eth_vlan_disable(struct net_if *iface, uint16_t tag)
 {
+	ARG_UNUSED(iface);
+	ARG_UNUSED(tag);
+
 	return -EINVAL;
 }
 #endif
 
 /**
- * @brief Return VLAN tag specified to network interface
+ * @brief Return VLAN tag specified to network interface.
  *
- * @param iface Network interface.
+ * Note that the interface parameter must be the VLAN interface,
+ * and not the Ethernet one.
+ *
+ * @param iface VLAN network interface.
  *
  * @return VLAN tag for this interface or NET_VLAN_TAG_UNSPEC if VLAN
  * is not configured for that interface.
@@ -873,6 +877,8 @@ uint16_t net_eth_get_vlan_tag(struct net_if *iface);
 #else
 static inline uint16_t net_eth_get_vlan_tag(struct net_if *iface)
 {
+	ARG_UNUSED(iface);
+
 	return NET_VLAN_TAG_UNSPEC;
 }
 #endif
@@ -880,8 +886,7 @@ static inline uint16_t net_eth_get_vlan_tag(struct net_if *iface)
 /**
  * @brief Return network interface related to this VLAN tag
  *
- * @param iface Master network interface. This is used to get the
- *        pointer to ethernet L2 context
+ * @param iface Main network interface (not the VLAN one).
  * @param tag VLAN tag
  *
  * @return Network interface related to this tag or NULL if no such interface
@@ -893,17 +898,46 @@ struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag);
 static inline
 struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag)
 {
+	ARG_UNUSED(iface);
+	ARG_UNUSED(tag);
+
 	return NULL;
 }
 #endif
 
 /**
- * @brief Check if VLAN is enabled for a specific network interface.
+ * @brief Return main network interface that is attached to this VLAN tag.
+ *
+ * @param iface VLAN network interface. This is used to get the
+ *        pointer to ethernet L2 context
+ *
+ * @return Network interface related to this tag or NULL if no such interface
+ * exists.
+ */
+#if defined(CONFIG_NET_VLAN)
+struct net_if *net_eth_get_vlan_main(struct net_if *iface);
+#else
+static inline
+struct net_if *net_eth_get_vlan_main(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return NULL;
+}
+#endif
+
+/**
+ * @brief Check if there are any VLAN interfaces enabled to this specific
+ *        Ethernet network interface.
+ *
+ * Note that the iface must be the actual Ethernet interface and not the
+ * virtual VLAN interface.
  *
  * @param ctx Ethernet context
- * @param iface Network interface
+ * @param iface Ethernet network interface
  *
- * @return True if VLAN is enabled for this network interface, false if not.
+ * @return True if there are enabled VLANs for this network interface,
+ *         false if not.
  */
 #if defined(CONFIG_NET_VLAN)
 bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
@@ -912,6 +946,9 @@ bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
 static inline bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
 					   struct net_if *iface)
 {
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(iface);
+
 	return false;
 }
 #endif
@@ -928,26 +965,13 @@ bool net_eth_get_vlan_status(struct net_if *iface);
 #else
 static inline bool net_eth_get_vlan_status(struct net_if *iface)
 {
+	ARG_UNUSED(iface);
+
 	return false;
 }
 #endif
 
 #if !defined(CONFIG_ETH_DRIVER_RAW_MODE)
-#if defined(CONFIG_NET_VLAN)
-
-#define Z_ETH_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
-				       init_fn, pm, data, config, prio,	\
-				       api, mtu)			\
-	Z_DEVICE_STATE_DEFINE(dev_id);					\
-	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
-			config, POST_KERNEL, prio, api,			\
-			&Z_DEVICE_STATE_NAME(dev_id));			\
-	NET_L2_DATA_INIT(dev_id, instance,				\
-			 NET_L2_GET_CTX_TYPE(ETHERNET_L2));		\
-	NET_IF_INIT(dev_id, instance, ETHERNET_L2, mtu,			\
-		    NET_VLAN_MAX_COUNT)
-
-#else /* CONFIG_NET_VLAN */
 
 #define Z_ETH_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
 				       init_fn, pm, data, config, prio,	\
@@ -956,7 +980,6 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 				   init_fn, pm, data, config, prio,	\
 				   api, ETHERNET_L2,			\
 				   NET_L2_GET_CTX_TYPE(ETHERNET_L2), mtu)
-#endif /* CONFIG_NET_VLAN */
 
 #else /* CONFIG_ETH_DRIVER_RAW_MODE */
 
@@ -967,6 +990,7 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
 			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));
+
 #endif /* CONFIG_ETH_DRIVER_RAW_MODE */
 
 #define Z_ETH_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
