@@ -68,14 +68,6 @@ static inline int _cache_all(NRF_CACHE_Type *cache, enum k_nrf_cache_op op)
 		return -ENOTSUP;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	/*
-	 * Invalidating the whole cache is dangerous. For good measure
-	 * disable the cache.
-	 */
-	nrf_cache_disable(cache);
-
 	wait_for_cache(cache);
 
 	switch (op) {
@@ -101,10 +93,6 @@ static inline int _cache_all(NRF_CACHE_Type *cache, enum k_nrf_cache_op op)
 	}
 
 	wait_for_cache(cache);
-
-	nrf_cache_enable(cache);
-
-	k_spin_unlock(&lock, key);
 
 	return 0;
 }
@@ -202,11 +190,6 @@ void cache_data_enable(void)
 	nrf_cache_enable(NRF_DCACHE);
 }
 
-void cache_data_disable(void)
-{
-	nrf_cache_disable(NRF_DCACHE);
-}
-
 int cache_data_flush_all(void)
 {
 #if NRF_CACHE_HAS_TASK_CLEAN
@@ -214,6 +197,14 @@ int cache_data_flush_all(void)
 #else
 	return -ENOTSUP;
 #endif
+}
+
+void cache_data_disable(void)
+{
+	if (nrf_cache_enable_check(NRF_DCACHE)) {
+		(void)cache_data_flush_all();
+	}
+	nrf_cache_disable(NRF_DCACHE);
 }
 
 int cache_data_invd_all(void)
