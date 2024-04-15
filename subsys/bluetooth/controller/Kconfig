@@ -804,6 +804,7 @@ config BT_CTLR_ADV_ISO_STREAM_COUNT
 	int "Maximum Broadcast ISO Streams"
 	depends on BT_CTLR_ADV_ISO
 	range BT_CTLR_ADV_ISO_STREAM_MAX 64
+	default BT_ISO_MAX_CHAN
 	help
 	  Maximum Broadcast ISO Streams supported in the the Controller across
 	  all Broadcast ISO groups.
@@ -836,6 +837,7 @@ config BT_CTLR_SYNC_ISO_STREAM_COUNT
 	int "Maximum ISO Synchronized Receiver Streams"
 	depends on BT_CTLR_SYNC_ISO
 	range BT_CTLR_SYNC_ISO_STREAM_MAX 64
+	default BT_ISO_MAX_CHAN
 	help
 	  Maximum ISO Synchronized Receiver Streams supported in the the
 	  Controller across all Broadcast ISO groups.
@@ -894,7 +896,7 @@ config BT_CTLR_CONN_ISO_STREAMS
 	int "LE Connected Isochronous Streams"
 	depends on BT_CTLR_CONN_ISO
 	range 1 64
-	default 2
+	default BT_ISO_MAX_CHAN
 	help
 	  Maximum supported total number of CISes.
 
