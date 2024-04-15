@@ -17,6 +17,7 @@
 		CREATE_OBJ_LEVEL(init, POST_KERNEL)
 		CREATE_OBJ_LEVEL(init, APPLICATION)
 		CREATE_OBJ_LEVEL(init, SMP)
+		CREATE_OBJ_LEVEL(init, MANUAL)
 		__init_end = .;
 		__deferred_init_list_start = .;
 		KEEP(*(.z_deferred_init))

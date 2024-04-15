@@ -15,7 +15,7 @@ mapping:
           "level":
             type: str
             enum: ['EARLY', 'PRE_KERNEL_1', 'PRE_KERNEL_2',
-                   'POST_KERNEL', 'APPLICATION', 'SMP']
+                   'POST_KERNEL', 'APPLICATION', 'SMP', 'MANUAL']
             required: false
 
           "dependencies":
@@ -34,7 +34,7 @@ mapping:
               "level":
                 type: str
                 enum: ['EARLY', 'PRE_KERNEL_1', 'PRE_KERNEL_2',
-                       'POST_KERNEL', 'APPLICATION', 'SMP']
+                       'POST_KERNEL', 'APPLICATION', 'SMP', 'MANUAL']
                 required: false
               "dependencies":
                 type: seq

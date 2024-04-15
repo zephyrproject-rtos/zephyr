@@ -57,6 +57,12 @@ SMP:
     rank: 5
     dependencies:
         - APPLICATION
+
+MANUAL:
+    fake: true
+    rank: 6
+    dependencies:
+        - SMP
 """
 
 # Q&D debug enabler

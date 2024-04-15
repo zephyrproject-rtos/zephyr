@@ -39,7 +39,7 @@ _DEVICE_ORD_PREFIX = "__device_dts_ord_"
 
 # Defined init level in order of priority.
 _DEVICE_INIT_LEVELS = ["EARLY", "PRE_KERNEL_1", "PRE_KERNEL_2", "POST_KERNEL",
-                      "APPLICATION", "SMP"]
+                       "APPLICATION", "SMP", "MANUAL"]
 
 # List of compatibles for node where the initialization priority should be the
 # opposite of the device tree inferred dependency.

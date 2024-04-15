@@ -43,6 +43,8 @@ class TestPriority(unittest.TestCase):
                 check_init_priorities.Priority("APPLICATION", 1),
                 check_init_priorities.Priority("SMP", 0),
                 check_init_priorities.Priority("SMP", 1),
+                check_init_priorities.Priority("MANUAL", 0),
+                check_init_priorities.Priority("MANUAL", 1),
                 ]
 
         self.assertListEqual(prios, sorted(prios))
@@ -121,10 +123,14 @@ class testZephyrInitLevels(unittest.TestCase):
         s5.entry.st_value = 0x55
 
         s6 = mock.Mock()
-        s6.name = "__init_end"
+        s6.name = "__init_MANUAL_start"
         s6.entry.st_value = 0x66
 
-        sts.iter_symbols.return_value = [s0, s1, s2, s3, s4, s5, s6]
+        s7 = mock.Mock()
+        s7.name = "__init_end"
+        s7.entry.st_value = 0x77
+
+        sts.iter_symbols.return_value = [s0, s1, s2, s3, s4, s5, s6, s7]
 
         obj = check_init_priorities.ZephyrInitLevels("")
         obj._elf = mock_elf
@@ -137,8 +143,9 @@ class testZephyrInitLevels(unittest.TestCase):
             "POST_KERNEL": 0x33,
             "APPLICATION": 0x44,
             "SMP": 0x55,
+            "MANUAL": 0x66,
             })
-        self.assertEqual(obj._init_level_end, 0x66)
+        self.assertEqual(obj._init_level_end, 0x77)
 
     @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
     def test_device_ord_from_name(self, mock_zilinit):
@@ -203,6 +210,7 @@ class testZephyrInitLevels(unittest.TestCase):
             "POST_KERNEL": 0x08,
             "APPLICATION": 0x0c,
             "SMP": 0x0c,
+            "MANUAL": 0x0c,
             }
         obj._init_level_end = 0x0c
         obj._objects = {
@@ -234,6 +242,7 @@ class testZephyrInitLevels(unittest.TestCase):
             "POST_KERNEL": ["c: name_8_0(name_8_1)"],
             "APPLICATION": [],
             "SMP": [],
+            "MANUAL": [],
             })
         self.assertDictEqual(obj.devices, {
             11: (check_init_priorities.Priority("PRE_KERNEL_2", 0), "i0"),
