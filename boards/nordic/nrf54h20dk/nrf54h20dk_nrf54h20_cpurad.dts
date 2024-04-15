@@ -23,6 +23,7 @@
 		zephyr,code-partition = &cpurad_slot0_partition;
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpurad_ram0;
+		zephyr,shell-uart = &uart135;
 	};
 };
 

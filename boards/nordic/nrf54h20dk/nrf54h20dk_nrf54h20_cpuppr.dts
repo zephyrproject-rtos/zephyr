@@ -26,6 +26,7 @@
 		zephyr,code-partition = &cpuppr_code_partition;
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpuppr_code_data;
+		zephyr,shell-uart = &uart135;
 	};
 };
 
