@@ -20,7 +20,7 @@ CREATE_FLAG(flag_l2cap_connected);
 #define L2CAP_CHANS     NUM_PERIPHERALS
 #define SDU_NUM         20
 #define SDU_LEN         3000
-#define NUM_SEGMENTS    10
+#define NUM_SEGMENTS    100
 #define RESCHEDULE_DELAY K_MSEC(100)
 
 static void sdu_destroy(struct net_buf *buf)
@@ -479,7 +479,7 @@ static void test_central_main(void)
 	}
 	LOG_DBG("All peripherals disconnected.");
 
-	LOG_DBG("Max segment pool usage: %u bufs", max_seg_allocated);
+	LOG_INF("Max segment pool usage: %u bufs", max_seg_allocated);
 
 	PASS("L2CAP STRESS Central passed\n");
 }
