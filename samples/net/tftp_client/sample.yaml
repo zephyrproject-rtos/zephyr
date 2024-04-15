@@ -6,7 +6,6 @@ tests:
     harness: net
     depends_on: netif
     platform_allow:
-      - native_posix
       - native_sim
     integration_platforms:
       - native_sim
