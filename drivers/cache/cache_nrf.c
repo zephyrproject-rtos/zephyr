@@ -14,7 +14,6 @@ LOG_MODULE_REGISTER(cache_nrfx, CONFIG_CACHE_LOG_LEVEL);
 #define NRF_ICACHE NRF_CACHE
 #endif
 
-#define CACHE_LINE_SIZE		     32
 #define CACHE_BUSY_RETRY_INTERVAL_US 10
 
 
@@ -145,11 +144,11 @@ static inline int _cache_range(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, vo
 	/*
 	 * Align address to line size
 	 */
-	line_addr &= ~(CACHE_LINE_SIZE - 1);
+	line_addr &= ~(CONFIG_DCACHE_LINE_SIZE - 1);
 
 	do {
 		_cache_line(cache, op, line_addr);
-		line_addr += CACHE_LINE_SIZE;
+		line_addr += CONFIG_DCACHE_LINE_SIZE;
 	} while (line_addr < end_addr);
 
 	wait_for_cache(cache);
