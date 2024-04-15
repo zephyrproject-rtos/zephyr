@@ -78,10 +78,10 @@ if [ `command -v parallel` ]; then
   parallel '
   echo "<testcase name=\"{}\" time=\"0\">"
   start=$(date +%s%N)
-  {} $@ &> {#}.log
+  {} $@ &> {#}.log ; result=$?
   dur=$(($(date +%s%N) - $start))
   dur_s=$(awk -vdur=$dur "BEGIN { printf(\"%0.3f\", dur/1000000000)}")
-  if [ $? -ne 0 ]; then
+  if [ $result -ne 0 ]; then
     (>&2 echo -e "\e[91m{} FAILED\e[39m ($dur_s s)")
     (>&2 cat {#}.log)
     echo "<failure message=\"failed\" type=\"failure\">"
