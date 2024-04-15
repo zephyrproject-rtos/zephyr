@@ -88,11 +88,6 @@
 	pinctrl-names = "default";
 	cd-gpios = <&gpiod 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
 	status = "okay";
-
-	sdmmc {
-		compatible = "zephyr,sdmmc-disk";
-		status = "okay";
-	};
 };
 
 zephyr_udc0: &usbotg_fs {
