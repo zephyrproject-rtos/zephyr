@@ -14,7 +14,6 @@
 
 #include <zephyr/data/json.h>
 #include <zephyr/drivers/flash.h>
-#include <zephyr/fs/nvs.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
@@ -24,6 +23,7 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/settings/settings.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/sys/reboot.h>
 
@@ -37,8 +37,6 @@
 #endif
 
 LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
-
-#define ADDRESS_ID 1
 
 #define CANCEL_BASE_SIZE 50
 #define RECV_BUFFER_SIZE 640
@@ -54,13 +52,11 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #define SLOT1_LABEL slot1_partition
 #define SLOT1_SIZE FIXED_PARTITION_SIZE(SLOT1_LABEL)
 
-#define STORAGE_LABEL storage_partition
-#define STORAGE_DEV FIXED_PARTITION_DEVICE(STORAGE_LABEL)
-#define STORAGE_OFFSET FIXED_PARTITION_OFFSET(STORAGE_LABEL)
-
 static uint32_t poll_sleep = (CONFIG_HAWKBIT_POLL_INTERVAL * SEC_PER_MIN);
 
-static struct nvs_fs fs;
+static struct hawkbit_config {
+	int32_t action_id;
+} hb_cfg;
 
 struct hawkbit_download {
 	int download_status;
@@ -191,6 +187,40 @@ static const struct json_obj_descr json_dep_res_descr[] = {
 static const struct json_obj_descr json_dep_fbk_descr[] = {
 	JSON_OBJ_DESCR_OBJECT(struct hawkbit_dep_fbk, status, json_status_descr),
 };
+
+static int hawkbit_settings_set(const char *name, size_t len, settings_read_cb read_cb,
+				void *cb_arg)
+{
+	const char *next;
+	int rc;
+
+	if (settings_name_steq(name, "action_id", &next) && !next) {
+		if (len != sizeof(hb_cfg.action_id)) {
+			return -EINVAL;
+		}
+
+		rc = read_cb(cb_arg, &hb_cfg.action_id, sizeof(hb_cfg.action_id));
+		LOG_DBG("<%s> = %d", "hawkbit/action_id", hb_cfg.action_id);
+		if (rc >= 0) {
+			return 0;
+		}
+
+		return rc;
+	}
+
+
+	return -ENOENT;
+}
+
+static int hawkbit_settings_export(int (*cb)(const char *name, const void *value, size_t val_len))
+{
+	LOG_DBG("export hawkbit settings");
+	(void)cb("hawkbit/action_id", &hb_cfg.action_id, sizeof(hb_cfg.action_id));
+	return 0;
+}
+
+SETTINGS_STATIC_HANDLER_DEFINE(hawkbit, "hawkbit", NULL, hawkbit_settings_set, NULL,
+			       hawkbit_settings_export);
 
 static bool start_http_client(void)
 {
@@ -324,8 +354,9 @@ static const char *hawkbit_status_execution(enum hawkbit_status_exec e)
 static int hawkbit_device_acid_update(int32_t new_value)
 {
 	int ret;
+	hb_cfg.action_id = new_value;
 
-	ret = nvs_write(&fs, ADDRESS_ID, &new_value, sizeof(new_value));
+	ret = settings_save_one("hawkbit/action_id", &hb_cfg.action_id, sizeof(hb_cfg.action_id));
 	if (ret < 0) {
 		LOG_ERR("Failed to write device id: %d", ret);
 		return -EIO;
@@ -580,34 +611,21 @@ int hawkbit_default_config_data_cb(const char *device_id, uint8_t *buffer, const
 int hawkbit_init(void)
 {
 	bool image_ok;
-	int ret = 0, rc = 0;
-	struct flash_pages_info info;
-	int32_t action_id;
+	int ret = 0;
 
-	fs.flash_device = STORAGE_DEV;
-	if (!device_is_ready(fs.flash_device)) {
-		LOG_ERR("Flash device not ready");
-		return -ENODEV;
+	ret = settings_subsys_init();
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize settings subsystem: %d", ret);
+		return ret;
 	}
 
-	fs.offset = STORAGE_OFFSET;
-	rc = flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
-	if (rc) {
-		LOG_ERR("Failed to get storage page info: %d", rc);
-		return -EIO;
+	ret = settings_load_subtree("hawkbit");
+	if (ret < 0) {
+		LOG_ERR("Failed to load settings: %d", ret);
+		return ret;
 	}
 
-	fs.sector_size = info.size;
-	fs.sector_count = 3U;
-
-	rc = nvs_mount(&fs);
-	if (rc) {
-		LOG_ERR("Failed to mount storage flash: %d", rc);
-		return rc;
-	}
-
-	rc = nvs_read(&fs, ADDRESS_ID, &action_id, sizeof(action_id));
-	LOG_DBG("Current action_id: %d", action_id);
+	LOG_DBG("Current action_id: %d", hb_cfg.action_id);
 
 	image_ok = boot_is_img_confirmed();
 	LOG_INF("Current image is%s confirmed", image_ok ? "" : " not");
@@ -620,7 +638,7 @@ int hawkbit_init(void)
 
 		LOG_DBG("Marked current image as OK");
 		ret = boot_erase_img_bank(FIXED_PARTITION_ID(SLOT1_LABEL));
-		if (ret) {
+		if (ret < 0) {
 			LOG_ERR("Failed to erase second slot: %d", ret);
 			return ret;
 		}
@@ -1133,9 +1151,7 @@ enum hawkbit_response hawkbit_probe(void)
 		goto cleanup;
 	}
 
-	nvs_read(&fs, ADDRESS_ID, &action_id, sizeof(action_id));
-
-	if (action_id == (int32_t)hb_context.json_action_id) {
+	if (hb_cfg.action_id == (int32_t)hb_context.json_action_id) {
 		LOG_INF("Preventing repeated attempt to install %d", hb_context.json_action_id);
 		hb_context.dl.http_content_size = 0;
 		memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
