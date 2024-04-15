@@ -8,6 +8,7 @@ INCR_BUILD=1
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
 app="$(guess_test_relpath)" compile
+app="$(guess_test_relpath)" conf_file=prj_nofrag.conf compile
 app="$(guess_test_relpath)" conf_file=prj_syswq.conf compile
 
 wait_for_background_jobs
