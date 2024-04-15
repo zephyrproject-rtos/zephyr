@@ -774,6 +774,7 @@ int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat
 		return -EBUSY;
 	}
 
+	modem_chat_parse_reset(chat);
 	chat->pending_script = script;
 	k_work_submit(&chat->script_run_work);
 	return 0;
