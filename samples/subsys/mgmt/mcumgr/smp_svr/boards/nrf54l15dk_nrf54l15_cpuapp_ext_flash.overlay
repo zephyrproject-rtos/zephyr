@@ -4,6 +4,42 @@
 	};
 };
 
+/delete-node/ &boot_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+
+/delete-node/ &slot0_ns_partition;
+/delete-node/ &slot1_ns_partition;
+
+/delete-node/ &storage_partition;
+
+&rram0 {
+	partitions {
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x000000000 0x00014000>;
+		};
+		slot0_partition: partition@14000 {
+			label = "image-0";
+			reg = <0x000014000 0x0015A000>;
+		};
+		storage_partition: partition@16E000 {
+			label = "storage";
+			reg = < 0x16E000 0x9000 >;
+		};
+	};
+};
+
 &mx25r64 {
 	status = "okay";
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot1_partition: partition@0 {
+			label = "image-1";
+			reg = <0x000000000 0x0015A000>;
+		};
+	};
 };
