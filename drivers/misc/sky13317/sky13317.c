@@ -16,48 +16,48 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 
+#if defined(CONFIG_SOC_CC1352P) || defined(CONFIG_SOC_CC1352P7)
 #include <ti/drivers/rf/RF.h>
+#endif /* CONFIG_SOC_CC1352P || CONFIG_SOC_CC1352P7 */
 #include <driverlib/rom.h>
 #include <driverlib/interrupt.h>
 
-/* custom pinctrl states for the antenna mux */
-#define PINCTRL_STATE_ANT_24G		1
-#define PINCTRL_STATE_ANT_24G_PA	2
-#define PINCTRL_STATE_ANT_SUBG		3
-#define PINCTRL_STATE_ANT_SUBG_PA	4
-
-#define BOARD_ANT_GPIO_24G   0
-#define BOARD_ANT_GPIO_PA    1
-#define BOARD_ANT_GPIO_SUBG  2
-
-#define ANTENNA_MUX DT_NODELABEL(antenna_mux0)
-
 static int board_antenna_init(const struct device *dev);
-static void board_cc13xx_rf_callback(RF_Handle client, RF_GlobalEvent events,
-		void *arg);
+static void board_rf_callback(RF_Handle client, RF_GlobalEvent events, void *arg);
+
+#if defined(CONFIG_SOC_CC1352P) || defined(CONFIG_SOC_CC1352P7)
+/* custom pinctrl states for the antenna mux */
+#define PINCTRL_STATE_ANT_24G     1
+#define PINCTRL_STATE_ANT_24G_PA  2
+#define PINCTRL_STATE_ANT_SUBG    3
+#define PINCTRL_STATE_ANT_SUBG_PA 4
+
+/* Friendly names for antenna GPIOs */
+#define BOARD_ANT_GPIO_24G  0
+#define BOARD_ANT_GPIO_PA   1
+#define BOARD_ANT_GPIO_SUBG 2
 
 const RFCC26XX_HWAttrsV2 RFCC26XX_hwAttrs = {
-	.hwiPriority        = INT_PRI_LEVEL7,
-	.swiPriority        = 0,
+	.hwiPriority = INT_PRI_LEVEL7,
+	.swiPriority = 0,
 	.xoscHfAlwaysNeeded = true,
 	/* RF driver callback for custom antenna switching */
-	.globalCallback = board_cc13xx_rf_callback,
+	.globalCallback = board_rf_callback,
 	/* Subscribe to events */
-	.globalEventMask = (RF_GlobalEventRadioSetup |
-			RF_GlobalEventRadioPowerDown),
+	.globalEventMask = (RF_GlobalEventRadioSetup | RF_GlobalEventRadioPowerDown),
 };
+#endif /* CONFIG_SOC_CC1352P || CONFIG_SOC_CC1352P7 */
 
 PINCTRL_DT_INST_DEFINE(0);
-DEVICE_DT_INST_DEFINE(0, board_antenna_init, NULL, NULL, NULL,
-					  POST_KERNEL, CONFIG_SKY13317_INIT_PRIO, NULL);
+DEVICE_DT_INST_DEFINE(0, board_antenna_init, NULL, NULL, NULL, POST_KERNEL,
+		      CONFIG_SKY13317_INIT_PRIO, NULL);
 
 static const struct pinctrl_dev_config *ant_pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 static const struct gpio_dt_spec ant_gpios[] = {
-	GPIO_DT_SPEC_GET_BY_IDX_OR(ANTENNA_MUX, gpios, BOARD_ANT_GPIO_24G, {0}),
-	GPIO_DT_SPEC_GET_BY_IDX_OR(ANTENNA_MUX, gpios, BOARD_ANT_GPIO_PA, {0}),
-	GPIO_DT_SPEC_GET_BY_IDX_OR(ANTENNA_MUX, gpios, BOARD_ANT_GPIO_SUBG, {0}),
+	GPIO_DT_SPEC_INST_GET_OR(0, v1_gpios, {0}),
+	GPIO_DT_SPEC_INST_GET_OR(0, v2_gpios, {0}),
+	GPIO_DT_SPEC_INST_GET_OR(0, v3_gpios, {0}),
 };
-
 
 /**
  * Antenna switch GPIO init routine.
@@ -79,9 +79,10 @@ int board_antenna_init(const struct device *dev)
 /**
  * Custom TI RFCC26XX callback for switching the on-board antenna mux on radio setup.
  */
-void board_cc13xx_rf_callback(RF_Handle client, RF_GlobalEvent events, void *arg)
+#if defined(CONFIG_SOC_CC1352P) || defined(CONFIG_SOC_CC1352P7)
+void board_rf_callback(RF_Handle client, RF_GlobalEvent events, void *arg)
 {
-	bool    sub1GHz   = false;
+	bool sub1GHz = false;
 	uint8_t loDivider = 0;
 	int i;
 
@@ -92,8 +93,8 @@ void board_cc13xx_rf_callback(RF_Handle client, RF_GlobalEvent events, void *arg
 
 	if (events & RF_GlobalEventRadioSetup) {
 		/* Decode the current PA configuration. */
-		RF_TxPowerTable_PAType paType = (RF_TxPowerTable_PAType)
-			RF_getTxPower(client).paType;
+		RF_TxPowerTable_PAType paType =
+			(RF_TxPowerTable_PAType)RF_getTxPower(client).paType;
 		/* Decode the generic argument as a setup command. */
 		RF_RadioSetup *setupCommand = (RF_RadioSetup *)arg;
 
@@ -133,3 +134,4 @@ void board_cc13xx_rf_callback(RF_Handle client, RF_GlobalEvent events, void *arg
 		pinctrl_apply_state(ant_pcfg, PINCTRL_STATE_DEFAULT);
 	}
 }
+#endif /* CONFIG_SOC_CC1352P || CONFIG_SOC_CC1352P7 */

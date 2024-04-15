@@ -8,7 +8,19 @@ compatible: "skyworks,sky13317"
 include: [pinctrl-device.yaml, base.yaml]
 
 properties:
-  gpios:
+  v1-gpios:
     type: phandle-array
     required: true
-    description: Antenna mux control pins
+    description: v1 control pin
+  v2-gpios:
+    type: phandle-array
+    required: true
+    description: v2 control pin
+  v3-gpios:
+    type: phandle-array
+    required: true
+    description: v3 control pin
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true
