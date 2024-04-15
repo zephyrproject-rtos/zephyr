@@ -971,6 +971,10 @@ if(NOT DEFINED CSTD)
   else()
     message(FATAL_ERROR "Unreachable code. Expected C standard to have been chosen.")
   endif()
+
+  if(CONFIG_GNU_C_EXTENSIONS)
+    string(REPLACE "c" "gnu" CSTD "${CSTD}")
+  endif()
 else()
   message(DEPRECATION
     "Global CSTD property is deprecated, see Kconfig.zephyr for C Standard options.")
