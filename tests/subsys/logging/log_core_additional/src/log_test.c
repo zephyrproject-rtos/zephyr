@@ -439,6 +439,41 @@ ZTEST(test_log_core_additional, test_log_thread)
 }
 #endif
 
+/**
+ * @brief Process all logging activities using a dedicated thread (trigger immediate processing)
+ *
+ * @addtogroup logging
+ */
+
+#ifdef CONFIG_LOG_PROCESS_THREAD
+ZTEST(test_log_core_additional, test_log_thread_trigger)
+{
+	log_setup(false);
+
+	zassert_false(log_data_pending());
+
+	LOG_INF("log info to log thread");
+	LOG_WRN("log warning to log thread");
+	LOG_ERR("log error to log thread");
+
+	zassert_true(log_data_pending());
+
+	/* Trigger log thread to process messages as soon as possible. */
+	log_thread_trigger();
+
+	/* wait 1ms to give logging thread chance to handle these log messages. */
+	k_sleep(K_MSEC(1));
+	zassert_equal(3, backend1_cb.counter,
+		      "Unexpected amount of messages received by the backend.");
+	zassert_false(log_data_pending());
+}
+#else
+ZTEST(test_log_core_additional, test_log_thread_trigger)
+{
+	ztest_test_skip();
+}
+#endif
+
 static void call_log_generic(const char *fmt, ...)
 {
 	va_list ap;
