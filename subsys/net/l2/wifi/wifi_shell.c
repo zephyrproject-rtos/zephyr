@@ -565,7 +565,6 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'h':
 			return -ENOEXEC;
-			break;
 		default:
 			PR_ERROR("Invalid option %c\n", opt);
 			shell_help(sh);
