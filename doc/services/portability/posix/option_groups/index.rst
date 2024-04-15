@@ -435,6 +435,24 @@ This table lists service support status in Zephyr for `POSIX_FD_MGMT`:
 Additional POSIX Options
 ========================
 
+.. _posix_option_asynchronous_io:
+
+_POSIX_ASYNCHRONOUS_IO
+++++++++++++++++++++++
+
+.. csv-table:: _POSIX_ASYNCHRONOUS_IO
+   :header: API, Supported
+   :widths: 50,10
+
+    aio_cancel(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    aio_error(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    aio_fsync(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    aio_read(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    aio_return(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    aio_suspend(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    aio_write(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    lio_listio(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+
 .. _posix_option_fsync:
 
 _POSIX_FSYNC
