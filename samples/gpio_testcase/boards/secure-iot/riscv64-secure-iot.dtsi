@@ -1,15 +1,13 @@
-//#include <zephyr/dt-bindings/gpio/gpio.h>
-
 / {
-  #address-cells = <2>;
-  #size-cells = <2>;
+#address-cells = <2>;
+#size-cells = <2>;
   compatible = "shakti,spike-bare-dev";
   model = "shakti,spike-bare";
   cpus {
-    #address-cells = <1>;
-    #size-cells = <0>;
+#address-cells = <1>;
+#size-cells = <0>;
     timebase-frequency = <10000000>;
-      CPU0: cpu@0 {
+CPU0: cpu@0 {
         device_type = "cpu";
         reg = <0>;
         status = "okay";
@@ -17,12 +15,12 @@
         riscv,isa = "rv64imafdc";
         mmu-type = "riscv,sv39";
         clock-frequency = <40000000>;
-          CPU0_intc: interrupt-controller {
+CPU0_intc: interrupt-controller {
              #address-cells = <0>;
 	           #interrupt-cells = <1>;
              interrupt-controller;
              compatible = "riscv,cpu-intc";
-          };
+           };
       };
   };
   memory@80000000 {
@@ -56,31 +54,15 @@
       riscv,max-priority = <7>;
       riscv,ndev = <8>;
     };
-
-      uart0: serial@11300 {
-          compatible = "shakti,uart0";
-          reg= < 0x0 0x11300 0x0 0x100>;
   };
 
-  spi0: spi@20000 {
-          compatible = "shakti,spi";
-          reg = <0x0 0x20000 0x0 0x100>;
+uart0: serial@11300 {
+         compatible = "shakti,uart0";
+         reg= < 0x0 0x11300 0x0 0x1000>;
   };
 
-   spi1: spi@20100 {
-          compatible = "shakti,spi";
-          reg = <0x0 0x20100 0x0 0x100>;
-    };
-
-    gpio0: gpio@40200 {
-              compatible = "shakti,gpio0";
-              reg = < 0x0 0x40200 0x0 0x08>;
-    };
+GPIO: gpio@40200 {
+          compatible = "shakti,GPIO";
+          reg = < 0x0 0x40200 0x0 0x08>;
   };
-
-  i2c0: i2c@44000 {
-         compatible = "shakti,i2c0";
-         reg= <0x0 0x44000 0x0 0x100>;
-  };
-
 };

@@ -8,13 +8,18 @@
 
 chosen {
 		zephyr,console = &uart0;
+		zephyr,console = &GPIO
 	};
 
 
 };
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <19200>;
 	clock-frequency = <40000000>;
+};
+
+&GPIO {
+	status = "okay";
 };

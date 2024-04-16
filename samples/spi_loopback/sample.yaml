@@ -1,0 +1,16 @@
+sample:
+  description: SPI application sample, the simplest Zephyr
+    application
+  name: spi_loopback  
+common:
+  tags: introduction
+  integration_platforms:
+    - native_posix
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "spi_loopback! (.*)"
+tests:
+  sample.spi_loopback:
+    tags: introduction

@@ -1,0 +1,16 @@
+# SiFive Freedom GPIO configuration option
+
+# Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_SHAKTI
+	bool "shakti GPIO driver"
+	default y
+	help
+	  This option enables the Shakti GPIO driver.
+
+config GPIO_INIT_PRIORITY
+	int "GPIO init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  GPIO driver device initialization priority.
