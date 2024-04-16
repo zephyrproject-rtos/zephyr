@@ -414,6 +414,7 @@ Bluetooth Mesh:
     - Andrewpini
     - akredalen
     - HaavardRei
+    - omkar3141
   files:
     - subsys/bluetooth/mesh/
     - include/zephyr/bluetooth/mesh/
