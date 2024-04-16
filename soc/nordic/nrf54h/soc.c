@@ -111,4 +111,4 @@ void arch_busy_wait(uint32_t time_us)
 	nrfx_coredep_delay_us(time_us);
 }
 
-SYS_INIT(nordicsemi_nrf54h_init, PRE_KERNEL_1, 0);
+SYS_INIT(nordicsemi_nrf54h_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
