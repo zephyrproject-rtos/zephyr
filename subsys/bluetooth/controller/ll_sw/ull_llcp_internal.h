@@ -33,6 +33,14 @@ enum llcp_proc {
 	PROC_NONE = 0x0,
 };
 
+/* Generic IDLE state to be used across all procedures
+ * This allows a cheap procedure alloc/init handling
+ */
+enum llcp_proc_state_idle {
+	LLCP_STATE_IDLE
+};
+
+
 enum llcp_tx_q_pause_data_mask {
 	LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION = 0x01,
 	LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE = 0x02,
@@ -128,6 +136,11 @@ struct proc_ctx {
 	/* llcp_mem_pool owner of this context */
 	struct llcp_mem_pool *owner;
 
+#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
+	/* Wait list next pointer */
+	sys_snode_t wait_node;
+#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
+
 	/* PROC_ */
 	enum llcp_proc proc;
 
@@ -149,9 +162,6 @@ struct proc_ctx {
 	int collision;
 
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
-	/* Wait list next pointer */
-	sys_snode_t wait_node;
-
 	/* Procedure wait reason */
 	enum llcp_wait_reason wait_reason;
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
