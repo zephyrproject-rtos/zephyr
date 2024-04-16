@@ -70,7 +70,7 @@ class HardwareAdapter(DeviceAdapter):
             if runner == 'pyocd':
                 extra_args.append('--board-id')
                 extra_args.append(board_id)
-            elif runner == 'nrfjprog':
+            elif runner in ('nrfjprog', 'nrfutil'):
                 extra_args.append('--dev-id')
                 extra_args.append(board_id)
             elif runner == 'openocd' and self.device_config.product in ['STM32 STLink', 'STLINK-V3']:
