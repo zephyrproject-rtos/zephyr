@@ -527,8 +527,10 @@ int modbus_serial_rx_adu(struct modbus_context *ctx)
 		return -ENOTSUP;
 	}
 
+	unsigned int key = irq_lock();
 	cfg->uart_buf_ctr = 0;
 	cfg->uart_buf_ptr = &cfg->uart_buf[0];
+	irq_unlock(key);
 
 	return rc;
 }
