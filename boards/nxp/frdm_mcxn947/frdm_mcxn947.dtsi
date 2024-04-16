@@ -196,6 +196,22 @@
 	pinctrl-names = "default";
 };
 
+nxp_flexio_lcd: &flexio0_lcd {
+	/* DMA channels 0, muxed to FlexIO TX */
+	dmas = <&edma0 0 61>;
+	dma-names = "tx";
+	shifters-count = <8>;
+	timers-count = <1>;
+	enwr-pin = <1>;
+	rd-pin = <0>;
+	data-pin-start = <16>;
+	reset-gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+	rs-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&pinmux_flexio_lcd>;
+	pinctrl-names = "default";
+};
+
 &lpcmp0 {
 	pinctrl-0 = <&pinmux_lpcmp0>;
 	pinctrl-names = "default";
