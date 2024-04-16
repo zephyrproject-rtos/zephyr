@@ -37,7 +37,7 @@ config TELINK_W91_IPC_DRIVERS_INIT_PRIORITY
 
 config TELINK_W91_IPC_DISPATCHER_BOUND_TIMEOUT_MS
 	int "Telink IPC dispatcher bound timeout"
-	default 1000
+	default 2000
 	depends on TELINK_W91_IPC_DISPATCHER
 	help
 		This option sets Telink IPC dispatcher bound timeout in mS.
