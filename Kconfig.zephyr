@@ -520,17 +520,17 @@ choice
 config ASSERT_ON_ERRORS
 	bool "Assert on all errors"
 	help
-	  Assert on errors covered with the CHECK macro.
+	  Assert on errors covered with the CHECKIF() macro.
 
 config NO_RUNTIME_CHECKS
 	bool "No runtime error checks"
 	help
-	  Do not do any runtime checks or asserts when using the CHECK macro.
+	  Do not do any runtime checks or asserts when using the CHECKIF() macro.
 
 config RUNTIME_ERROR_CHECKS
 	bool "Runtime error checks"
 	help
-	  Always perform runtime checks covered with the CHECK macro. This
+	  Always perform runtime checks covered with the CHECKIF() macro. This
 	  option is the default and the only option used during testing.
 
 endchoice
