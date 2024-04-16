@@ -57,9 +57,19 @@
       riscv,ndev = <8>;
     };
 
-    uart0: serial@11300 {
-         compatible = "shakti,uart0";
-         reg= < 0x0 0x11300 0x0 0x1000>;
+      uart0: serial@11300 {
+          compatible = "shakti,uart0";
+          reg= < 0x0 0x11300 0x0 0x100>;
+  };
+
+  spi0: spi@20000 {
+          compatible = "shakti,spi";
+          reg = <0x0 0x20000 0x0 0x100>;
+  };
+
+   spi1: spi@20100 {
+          compatible = "shakti,spi";
+          reg = <0x0 0x20100 0x0 0x100>;
     };
 
     gpio0: gpio@40200 {
