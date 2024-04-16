@@ -285,51 +285,6 @@
 
 			status = "okay";
 		};
-
-		ssp3: ssp@77600 {
-			compatible = "intel,ssp-dai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x00077600 0x200
-			       0x00078C00 0x008>;
-			interrupts = <0x03 0 0>;
-			interrupt-parent = <&cavs_intc3>;
-			dmas = <&lpgpdma0 8
-				&lpgpdma0 9>;
-			dma-names = "tx", "rx";
-
-			status = "okay";
-		};
-
-		ssp4: ssp@77800 {
-			compatible = "intel,ssp-dai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x00077800 0x200
-			       0x00078C00 0x008>;
-			interrupts = <0x03 0 0>;
-			interrupt-parent = <&cavs_intc3>;
-			dmas = <&lpgpdma0 10
-				&lpgpdma0 11>;
-			dma-names = "tx", "rx";
-
-			status = "okay";
-		};
-
-		ssp5: ssp@77a00 {
-			compatible = "intel,ssp-dai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x00077A00 0x200
-			       0x00078C00 0x008>;
-			interrupts = <0x03 0 0>;
-			interrupt-parent = <&cavs_intc3>;
-			dmas = <&lpgpdma0 12
-				&lpgpdma0 13>;
-			dma-names = "tx", "rx";
-
-			status = "okay";
-		};
 	};
 
 	hdas {
