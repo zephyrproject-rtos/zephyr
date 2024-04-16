@@ -567,6 +567,17 @@ config OUTPUT_DISASSEMBLE_ALL
 	  The .lst file will contain complete disassembly of the firmware
 	  not just those expected to contain instructions including zeros
 
+config OUTPUT_DISASSEMBLY_WITH_SOURCE
+	bool "Include source code in output disassembly file"
+	default y
+	depends on OUTPUT_DISASSEMBLY && !OUTPUT_DISASSEMBLE_ALL
+	help
+	  The .lst file will also contain the source code. Having
+	  control over this can be useful for reproducible builds
+	  since it can be used to remove one of the elements of
+	  the .lst file that can vary across platforms because
+	  of reasons such as having ".." include paths.
+
 config OUTPUT_PRINT_MEMORY_USAGE
 	bool "Print memory usage to stdout"
 	default y
