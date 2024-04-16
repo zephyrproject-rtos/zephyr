@@ -372,7 +372,7 @@ static int nsos_ioctl(void *obj, unsigned int request, va_list args)
 	return -EINVAL;
 }
 
-static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t *addrlen,
+static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
 				struct nsos_mid_sockaddr **addr_mid, size_t *addrlen_mid)
 {
 	if (!addr || !addrlen) {
@@ -389,7 +389,7 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t *addrlen,
 		struct nsos_mid_sockaddr_in *addr_in_mid =
 			(struct nsos_mid_sockaddr_in *)*addr_mid;
 
-		if (*addrlen < sizeof(*addr_in)) {
+		if (addrlen < sizeof(*addr_in)) {
 			return -NSOS_MID_EINVAL;
 		}
 
@@ -407,7 +407,7 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t *addrlen,
 		struct nsos_mid_sockaddr_in6 *addr_in_mid =
 			(struct nsos_mid_sockaddr_in6 *)*addr_mid;
 
-		if (*addrlen < sizeof(*addr_in)) {
+		if (addrlen < sizeof(*addr_in)) {
 			return -NSOS_MID_EINVAL;
 		}
 
@@ -477,7 +477,7 @@ static int nsos_bind(void *obj, const struct sockaddr *addr, socklen_t addrlen)
 	size_t addrlen_mid;
 	int ret;
 
-	ret = sockaddr_to_nsos_mid(addr, &addrlen, &addr_mid, &addrlen_mid);
+	ret = sockaddr_to_nsos_mid(addr, addrlen, &addr_mid, &addrlen_mid);
 	if (ret < 0) {
 		goto return_ret;
 	}
@@ -501,7 +501,7 @@ static int nsos_connect(void *obj, const struct sockaddr *addr, socklen_t addrle
 	size_t addrlen_mid;
 	int ret;
 
-	ret = sockaddr_to_nsos_mid(addr, &addrlen, &addr_mid, &addrlen_mid);
+	ret = sockaddr_to_nsos_mid(addr, addrlen, &addr_mid, &addrlen_mid);
 	if (ret < 0) {
 		goto return_ret;
 	}
@@ -653,7 +653,7 @@ static ssize_t nsos_sendto(void *obj, const void *buf, size_t len, int flags,
 
 	flags_mid = ret;
 
-	ret = sockaddr_to_nsos_mid(addr, &addrlen, &addr_mid, &addrlen_mid);
+	ret = sockaddr_to_nsos_mid(addr, addrlen, &addr_mid, &addrlen_mid);
 	if (ret < 0) {
 		goto return_ret;
 	}
