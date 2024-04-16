@@ -1,17 +1,15 @@
-identifier: hifive_unmatched
-name: SiFive HiFive Unmatched
-type: mcu
+identifier: snps_rmx500
+name: Synopsys rmx500 
+simulation: nsim
+simulation_exec: nsimdrv
+type: sim
 arch: riscv
 toolchain:
   - zephyr
-ram: 3840
-simulation: renode
-simulation_exec: renode
+  - cross-compile
+  - arcmwdt
 testing:
   ignore_tags:
     - net
     - bluetooth
-supported:
-  - spi
-  - memc
-vendor: sifive
+vendor: snps
