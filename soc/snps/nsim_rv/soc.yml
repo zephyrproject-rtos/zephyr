@@ -1,0 +1,7 @@
+family:
+  - name: nsim_rv
+    series:
+      - name: rmx500
+        socs:
+          - name: rmx500
+
