@@ -16,6 +16,7 @@ import logging
 import copy
 import shutil
 import random
+
 import snippets
 from pathlib import Path
 from argparse import Namespace
@@ -396,7 +397,6 @@ class TestPlan:
         sys.stdout.write(what + "\n")
         sys.stdout.flush()
 
-
     def add_configurations(self):
         board_dirs = set()
         # Create a list of board roots as defined by the build system in general
@@ -448,7 +448,7 @@ class TestPlan:
                             # cmake/modules/extensions.cmake.
                             revision_patterns = ["[A-Z]",
                                                     "[0-9]+",
-                                                    "(0|[1-9][0-9]*)(_[0-9]+)*(_[0-9]+)*"]
+                                                    "(0|[1-9][0-9]*)(_[0-9]+){0,2}"]
 
                             for pattern in revision_patterns:
                                 result = re.match(f"{platform.name}_(?P<revision>{pattern})\\.conf", item)
