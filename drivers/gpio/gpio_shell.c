@@ -530,6 +530,7 @@ static void print_gpio_ctrl_info(const struct shell *sh, const struct gpio_ctrl 
 {
 	gpio_pin_t pin;
 	bool reserved;
+	const char *line_name;
 
 	shell_print(sh, " ngpios: %u", ctrl->ngpios);
 	shell_print(sh, " Reserved pin mask: 0x%08X", ctrl->reserved_mask);
@@ -537,14 +538,14 @@ static void print_gpio_ctrl_info(const struct shell *sh, const struct gpio_ctrl 
 	shell_print(sh, "");
 
 	shell_print(sh, " Reserved  Pin  Line Name");
-	for (pin = 0; pin < GPIO_MAX_PINS_PER_PORT; pin++) {
-		if ((pin >= ctrl->ngpios) && (pin >= ctrl->line_names_len)) {
-			/* Out of info */
-			break;
-		}
+	for (pin = 0; pin < ctrl->ngpios; pin++) {
 		reserved = (BIT64(pin) & ctrl->reserved_mask) != 0;
-		shell_print(sh, "     %c     %2u    %s", reserved ? '*' : ' ',
-			    pin, ctrl->line_names[pin]);
+		if (pin < ctrl->line_names_len) {
+			line_name = ctrl->line_names[pin];
+		} else {
+			line_name = "";
+		}
+		shell_print(sh, "     %c     %2u    %s", reserved ? '*' : ' ', pin, line_name);
 	}
 }
 
