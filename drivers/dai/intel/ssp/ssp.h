@@ -244,13 +244,22 @@
 
 /** \brief Offset of MCLK Divider x Ratio Register. */
 #define MN_MDIVR(x) (0x180 + (x) * 0x4)
+
+/** \brief Enables the output of MCLK Divider.
+ *  On ACE+ there is a single divider for all MCLKs
+ */
+#define MN_MDIVCTRL_M_DIV_ENABLE(x) BIT(0)
+
 #else
 #define MN_MDIVCTRL 0x0
 #define MN_MDIVR(x) (0x80 + (x) * 0x4)
-#endif
 
-/** \brief Enables the output of MCLK Divider. */
+/** \brief Enables the output of MCLK Divider.
+ * Each MCLK divider can be enabled separately.
+ */
 #define MN_MDIVCTRL_M_DIV_ENABLE(x) BIT(x)
+
+#endif
 
 /** \brief Bits for setting MCLK source clock. */
 #define MCDSS(x)	DAI_INTEL_SSP_SET_BITS(17, 16, x)
