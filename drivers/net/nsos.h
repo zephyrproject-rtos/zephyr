@@ -89,6 +89,21 @@ struct nsos_mid_addrinfo {
 	struct nsos_mid_addrinfo *ai_next;
 };
 
+struct nsos_mid_iovec {
+	void  *iov_base;
+	size_t iov_len;
+};
+
+struct nsos_mid_msghdr {
+	void                  *msg_name;       /* optional socket address, big endian */
+	size_t                 msg_namelen;    /* size of socket address */
+	struct nsos_mid_iovec *msg_iov;        /* scatter/gather array */
+	size_t                 msg_iovlen;     /* number of elements in msg_iov */
+	void                  *msg_control;    /* ancillary data */
+	size_t                 msg_controllen; /* ancillary data buffer len */
+	int                    msg_flags;      /* flags on received message */
+};
+
 static inline void nsos_socket_flag_convert(int *flags_a, int flag_a,
 					    int *flags_b, int flag_b)
 {
@@ -108,6 +123,7 @@ int nsos_adapt_listen(int fd, int backlog);
 int nsos_adapt_accept(int fd, struct nsos_mid_sockaddr *addr, size_t *addrlen);
 int nsos_adapt_sendto(int fd, const void *buf, size_t len, int flags,
 		      const struct nsos_mid_sockaddr *addr, size_t addrlen);
+int nsos_adapt_sendmsg(int fd, const struct nsos_mid_msghdr *msg_mid, int flags);
 int nsos_adapt_recvfrom(int fd, void *buf, size_t len, int flags,
 			struct nsos_mid_sockaddr *addr, size_t *addrlen);
 

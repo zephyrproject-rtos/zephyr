@@ -672,8 +672,57 @@ return_ret:
 
 static ssize_t nsos_sendmsg(void *obj, const struct msghdr *msg, int flags)
 {
-	errno = ENOTSUP;
-	return -1;
+	struct nsos_socket *sock = obj;
+	struct nsos_mid_sockaddr_storage addr_storage_mid;
+	struct nsos_mid_sockaddr *addr_mid = (struct nsos_mid_sockaddr *)&addr_storage_mid;
+	size_t addrlen_mid = sizeof(addr_storage_mid);
+	struct nsos_mid_msghdr msg_mid;
+	struct nsos_mid_iovec *msg_iov;
+	int flags_mid;
+	int ret;
+
+	ret = socket_flags_to_nsos_mid(flags);
+	if (ret < 0) {
+		goto return_ret;
+	}
+
+	flags_mid = ret;
+
+	ret = sockaddr_to_nsos_mid(msg->msg_name, msg->msg_namelen, &addr_mid, &addrlen_mid);
+	if (ret < 0) {
+		goto return_ret;
+	}
+
+	msg_iov = k_calloc(msg->msg_iovlen, sizeof(*msg_iov));
+	if (!msg_iov) {
+		ret = -ENOMEM;
+		goto return_ret;
+	}
+
+	for (size_t i = 0; i < msg->msg_iovlen; i++) {
+		msg_iov[i].iov_base = msg->msg_iov[i].iov_base;
+		msg_iov[i].iov_len = msg->msg_iov[i].iov_len;
+	}
+
+	msg_mid.msg_name = addr_mid;
+	msg_mid.msg_namelen = addrlen_mid;
+	msg_mid.msg_iov = msg_iov;
+	msg_mid.msg_iovlen = msg->msg_iovlen;
+	msg_mid.msg_control = NULL;
+	msg_mid.msg_controllen = 0;
+	msg_mid.msg_flags = 0;
+
+	ret = nsos_adapt_sendmsg(sock->pollfd.fd, &msg_mid, flags_mid);
+
+	k_free(msg_iov);
+
+return_ret:
+	if (ret < 0) {
+		errno = errno_from_nsos_mid(-ret);
+		return -1;
+	}
+
+	return ret;
 }
 
 static int nsos_recvfrom_with_poll(struct nsos_socket *sock, void *buf, size_t len, int flags,
