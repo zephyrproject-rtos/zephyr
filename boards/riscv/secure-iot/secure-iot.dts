@@ -11,11 +11,16 @@ chosen {
 	};
 };
 
-
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <100000000>;
+};
+
+&i2c0 {
+	status = "ok";
+	clock_frequency = <40000000>;
+	scl_frequency = <100000>;
 };
 
 &spi0 {
@@ -31,7 +36,6 @@ chosen {
         comm_configure = <0x01 0x00 0x03 0x08>;
 		clock-frequency = <10000000>;
 };
-
 
 &gpio0 {
 	status = "okay";

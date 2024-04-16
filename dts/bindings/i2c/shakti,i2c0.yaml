@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Mindgrove Technologies Pvt. Ltd 
+# SPDX-License-Identifier: Apache-2.0
+
+description: Mindgrove Silicon Secure-IoT I2C interface
+
+compatible: "shakti,i2c0"
+
+properties:
+  reg:
+    type: array
+    required: true
+
+  clock_frequency:
+    type: int
+    required: true
+
+  scl_frequency:
+    type: int
+    required: true
+
+
