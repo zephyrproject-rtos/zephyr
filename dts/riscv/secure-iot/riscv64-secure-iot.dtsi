@@ -87,4 +87,11 @@
     };
 
   };
+
+pwm0: pwm@30000 {
+  compatible = "shakti,pwm";
+         reg= < 0x0 0x30000 0x0 0x100>;
+         status = "okay";
+  };
+
 };
