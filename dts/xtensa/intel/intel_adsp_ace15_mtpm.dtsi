@@ -293,51 +293,6 @@
 			status = "okay";
 		};
 
-		ssp3: ssp@2b000 {
-			compatible = "intel,ssp-dai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x0002b000 0x1000
-				   0x00079C00 0x200>;
-			interrupts = <0x03 0 0>;
-			interrupt-parent = <&ace_intc>;
-			dmas = <&lpgpdma0 8
-					&lpgpdma0 9>;
-			dma-names = "tx", "rx";
-			power-domain = <&io0_domain>;
-			status = "okay";
-		};
-
-		ssp4: ssp@2c000 {
-			compatible = "intel,ssp-dai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x0002c000 0x1000
-				   0x00079C00 0x200>;
-			interrupts = <0x04 0 0>;
-			interrupt-parent = <&ace_intc>;
-			dmas = <&lpgpdma0 10
-					&lpgpdma0 11>;
-			dma-names = "tx", "rx";
-			power-domain = <&io0_domain>;
-			status = "okay";
-		};
-
-		ssp5: ssp@2d000 {
-			compatible = "intel,ssp-dai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x0002d000 0x1000
-				   0x00079C00 0x200>;
-			interrupts = <0x04 0 0>;
-			interrupt-parent = <&ace_intc>;
-			dmas = <&lpgpdma0 12
-					&lpgpdma0 13>;
-			dma-names = "tx", "rx";
-			power-domain = <&io0_domain>;
-			status = "okay";
-		};
-
 		mem_window0: mem_window@70200 {
 			compatible = "intel,adsp-mem-window";
 			reg = <0x70200 0x8>;
