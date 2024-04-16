@@ -154,6 +154,18 @@
 				interrupts = <5 0 0>;
 				status = "disabled";
 			};
+
+			mbox: mbox@111000 {
+				#mbox-cells = <1>;
+
+				compatible = "nxp,mbox-imx-mu";
+				reg = <0x111000 0x1000>;
+
+				interrupts = <27 0 0>;
+				rx-channels = <4>;
+
+				status = "disabled";
+			};
 		};
 	};
 };
