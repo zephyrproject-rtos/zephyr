@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &zephyr_udc0;
+
+#include <dt-bindings/usb/audio.h>
+
+/ {
+	uac2_headphones: usb_audio2 {
+		compatible = "zephyr,uac2";
+		status = "okay";
+		audio-function = <AUDIO_FUNCTION_OTHER>;
+
+		uac_aclk: aclk {
+			compatible = "zephyr,uac2-clock-source";
+			clock-type = "internal-programmable";
+			frequency-control = "host-programmable";
+			sampling-frequencies = <48000>;
+		};
+
+		out_terminal: out_terminal {
+			compatible = "zephyr,uac2-input-terminal";
+			clock-source = <&uac_aclk>;
+			terminal-type = <USB_TERMINAL_STREAMING>;
+			front-left;
+			front-right;
+		};
+
+		headphones_output: headphones {
+			compatible = "zephyr,uac2-output-terminal";
+			data-source = <&out_terminal>;
+			clock-source = <&uac_aclk>;
+			terminal-type = <OUTPUT_TERMINAL_HEADPHONES>;
+		};
+
+		as_iso_out: out_interface {
+			compatible = "zephyr,uac2-audio-streaming";
+			linked-terminal = <&out_terminal>;
+			subslot-size = <2>;
+			bit-resolution = <16>;
+		};
+	};
+
+	ramdisk0 {
+		compatible = "zephyr,ram-disk";
+		disk-name = "RAM";
+		sector-size = <512>;
+		sector-count = <192>;
+	};
+
+	cdc_ecm_eth0: cdc_ecm_eth0 {
+		compatible = "zephyr,cdc-ecm-ethernet";
+		remote-mac-address = "00005E005301";
+	};
+
+	zephyr_uhc0: uhc_vrt0 {
+		compatible = "zephyr,uhc-virtual";
+
+		zephyr_udc0: udc_vrt0 {
+			compatible = "zephyr,udc-virtual";
+			num-bidir-endpoints = <16>;
+			maximum-speed = "high-speed";
+		};
+	};
+
+};
+
+&zephyr_udc0 {
+	cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
