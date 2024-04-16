@@ -25,15 +25,18 @@
           };
       };
   };
+
   memory@80000000 {
     device_type = "memory";
     reg = <0x0 0x80000000 0x0 0x10000000 >;
   };
+
   soc {
     #address-cells = <1>;
 		#size-cells = <1>;
     compatible = "shakti,spike-bare-soc", "simple-bus";
     ranges;
+
     clint@2000000 {
       #address-cells = <0>;
       #size-cells = <2>;
@@ -43,6 +46,7 @@
             0x02004000 0x00000008
 	    0x0200bff8 0x00000008>;
     };
+
     plic: interrupt-controller@c000000 {
       #address-cells = <0>;
 			#interrupt-cells = <2>;
@@ -58,13 +62,29 @@
     };
 
     uart0: serial@11300 {
-         compatible = "shakti,uart0";
-         reg= < 0x0 0x11300 0x0 0x1000>;
+        compatible = "shakti,uart0";
+        reg= < 0x0 0x11300 0x0 0x100>;
+    };
+
+    spi0: spi@20000 {
+            compatible = "shakti,spi";
+            reg = <0x0 0x20000 0x0 0x100>;
+    };
+
+    spi1: spi@20100 {
+           compatible = "shakti,spi";
+           reg = <0x0 0x20100 0x0 0x100>;
     };
 
     gpio0: gpio@40200 {
-              compatible = "shakti,gpio0";
-              reg = < 0x0 0x40200 0x0 0x08>;
+                compatible = "shakti,gpio0";
+                reg = < 0x0 0x40200 0x0 0x08>;
     };
+    
+    i2c0: i2c@44000 {
+           compatible = "shakti,i2c0";
+           reg= <0x0 0x44000 0x0 0x100>;
+    };
+
   };
 };

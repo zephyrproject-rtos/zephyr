@@ -19,11 +19,6 @@ chosen {
 	clock-frequency = <40000000>;
 };
 
-gpio0: gpio@40200 {
-          compatible = "shakti,gpio0";
-          reg = < 0x0 0x40200 0x0 0x08>;
-};
-
 pwm0: pwm@30000 {
   compatible = "shakti,pwm0";
          reg= < 0x0 0x30000 0x0 0x100>;

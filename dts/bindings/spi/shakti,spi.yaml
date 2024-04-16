@@ -1,0 +1,28 @@
+# Copyright (c) 2018, SiFive Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  shakti SPI controller.
+
+  Note: First instance of the Sifive SPI controller (spi0) must be kept
+  disabled if used to access SPI Flash ROM. Failing to do so could result in
+  crashes during boot time.
+
+compatible: "shakti,spi"
+
+properties:
+  reg:
+    type: array
+    required: true
+
+  sclk_configure:
+    type: array
+    required: true
+
+  comm_configure:
+    type: array
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true

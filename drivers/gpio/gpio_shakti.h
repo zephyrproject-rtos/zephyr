@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // #ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_SHAKTI_H_
 // #define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_SHAKTI_H_
 
@@ -71,22 +75,6 @@ typedef uint32_t gpio_flags_t;
 #define GPIO31 (1 << 31)
 #define GPIO_COUNT  0x20
 
-int gpio_shakti_init(const struct device *dev);
-
-static int gpio_shakti_pin_configure(const struct device*dev,
-                    gpio_pin_t pin,
-                    gpio_flags_t flags);
-
-static int gpio_shakti_pin_get_raw(const struct device *dev,
-                    gpio_pin_t pin);
-
-static int gpio_shakti_pin_set_raw(const struct device *dev,
-                    gpio_pin_t pin);
-
-static int gpio_shakti_pin_clear_raw(const struct device *dev,
-                    gpio_pin_t pin);
-
-static int gpio_shakti_pin_toggle(const struct device *dev,
-                    gpio_pin_t pin);
-
-static void gpio_shakti_cfg(uint32_t gpio_pin);
+#ifdef __cplusplus
+}
+#endif

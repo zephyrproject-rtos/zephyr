@@ -6,8 +6,10 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/irq.h>
 
+#include "gpio_shakti.h"
+
 #include <zephyr/drivers/gpio/gpio_utils.h>
-#include <zephyr/drivers/gpio/gpio_shakti.h>
+
 
 #define DT_DRV_COMPAT shakti_gpio0
 
@@ -76,7 +78,7 @@ static int gpio_shakti_pin_configure (const struct device *dev,
                         gpio_flags_t flags){
 
     volatile struct gpio_shakti_regs_t *gpio = DEV_GPIO(dev);
-    const struct gpio_shakti_regs_t *cfg = DEV_GPIO_CFG(dev);
+    const struct gpio_shakti_config *cfg = DEV_GPIO_CFG(dev);
 
     gpio->direction |= (flags << pin);
     printk("Configuration Done2\n");
@@ -93,12 +95,14 @@ static int gpio_shakti_pin_get_raw(const struct device *dev,
 }
 
 static int gpio_shakti_pin_set_raw(const struct device *dev,
-                    gpio_pin_t pin,
-                    int value)
+                    gpio_pin_t pin)
 {
     volatile struct gpio_shakti_regs_t *gpio = DEV_GPIO(dev);   
-    gpio ->set = (value << pin);
+    const struct gpio_shakti_config *cfg = DEV_GPIO_CFG(dev);
+
+    gpio ->set = (1 << pin);
     printk("set has been done \n");
+    printk("gpio addr: 0x%x", gpio);
 
     return 0;
 }
@@ -106,6 +110,7 @@ static int gpio_shakti_pin_set_raw(const struct device *dev,
 static int gpio_shakti_pin_toggle(const struct device *dev,
                     gpio_pin_t pin)
 {
+    printf("toggle pin\n");
     volatile struct gpio_shakti_regs_t *gpio = DEV_GPIO(dev);
     gpio ->toggle = (1 << pin);
 
