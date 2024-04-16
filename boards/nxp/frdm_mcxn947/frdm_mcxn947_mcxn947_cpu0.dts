@@ -178,3 +178,7 @@ zephyr_udc0: &usb1 {
 &lptmr0 {
 	status = "okay";
 };
+
+&flexio0 {
+	status = "okay";
+};
