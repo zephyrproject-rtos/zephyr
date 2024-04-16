@@ -30,10 +30,6 @@
 #include <zephyr/toolchain.h>
 #include <soc.h>
 
-#ifdef CONFIG_MCUBOOT
-#include "bootloader_init.h"
-#endif /* CONFIG_MCUBOOT */
-
 extern void esp_reset_reason_init(void);
 
 /*
@@ -63,20 +59,6 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	wdt_hal_write_protect_disable(&rtc_wdt_ctx);
 	wdt_hal_disable(&rtc_wdt_ctx);
 	wdt_hal_write_protect_enable(&rtc_wdt_ctx);
-
-	/* Configure the Cache MMU size for instruction and rodata in flash. */
-	extern uint32_t esp_rom_cache_set_idrom_mmu_size(uint32_t irom_size,
-			uint32_t drom_size);
-
-	extern int _rodata_reserved_start;
-	uint32_t rodata_reserved_start_align =
-		(uint32_t)&_rodata_reserved_start & ~(CONFIG_MMU_PAGE_SIZE - 1);
-	uint32_t cache_mmu_irom_size =
-		((rodata_reserved_start_align - SOC_DROM_LOW) / CONFIG_MMU_PAGE_SIZE) *
-			sizeof(uint32_t);
-
-	esp_rom_cache_set_idrom_mmu_size(cache_mmu_irom_size,
-		CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 
 	/* Enable wireless phy subsystem clock,
 	 * This needs to be done before the kernel starts

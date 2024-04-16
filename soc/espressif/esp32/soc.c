@@ -40,9 +40,6 @@
 #include "esp_clk_internal.h"
 #endif /* CONFIG_SOC_ENABLE_APPCPU */
 
-#ifdef CONFIG_MCUBOOT
-#include "bootloader_init.h"
-#endif /* CONFIG_MCUBOOT */
 #include <zephyr/sys/printk.h>
 
 #if CONFIG_ESP_SPIRAM

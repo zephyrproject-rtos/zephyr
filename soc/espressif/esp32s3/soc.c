@@ -45,9 +45,6 @@
 #include <esp_clk_internal.h>
 #include <esp_app_format.h>
 
-#ifdef CONFIG_MCUBOOT
-#include "bootloader_init.h"
-#endif /* CONFIG_MCUBOOT */
 #include <zephyr/sys/printk.h>
 
 #if CONFIG_ESP_SPIRAM
