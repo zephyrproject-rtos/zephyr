@@ -141,6 +141,14 @@ config SPIRAM_RODATA
 	  can forgo being placed in IRAM, thus optimizing RAM usage (see External RAM documentation
 	  for more details).
 
+config SPIRAM_ECC_ENABLE
+	bool "Allow enabling SPI RAM ECC"
+	default n
+	depends on SPIRAM_MODE_OCT && SOC_SERIES_ESP32S3
+	help
+	  Enable MSPI Error-Correcting Code function when accessing SPIRAM.
+	  If enabled, 1/16 of the SPI RAM total size will be reserved for error-correcting code.
+
 if SOC_SERIES_ESP32
 
 menu "PSRAM clock and cs IO for ESP32-DOWD"
