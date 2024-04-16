@@ -7,7 +7,6 @@ config SOC_SERIES_NSIM_RV_RMX500
 	select RISCV
 	select RISCV_PRIVILEGED
 	select RISCV_HAS_PLIC
-#	select RISCV_HAS_CLIC
 	select RISCV_ISA_RV32I
 	select RISCV_ISA_EXT_G
 #	G by-default includes the following:
