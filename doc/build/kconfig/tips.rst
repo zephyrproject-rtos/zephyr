@@ -1060,7 +1060,7 @@ This is logically equivalent to the following:
    See the `optional prompts`_ section for the meaning of the conditions on the
    prompts.
 
-When ``HAS_CONFIGURABLE`` is ``n``, we now get the following configuration
+When ``HAS_CONFIGURABLE_FOO`` is ``n``, we now get the following configuration
 output for the symbols, instead of no output:
 
 .. code-block:: cfg
