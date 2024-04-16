@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/gd32.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -62,14 +63,13 @@ static const uint16_t gd32_port_clkids[] = {
  *
  * @retval 0 Always
  */
-static int afio_init(const struct device *dev)
+static int afio_init(void)
 {
 	uint16_t clkid = DT_CLOCKS_CELL(AFIO_NODE, id);
 
-	ARG_UNUSED(dev);
 
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t *)&clkid);
+			       (clock_control_subsys_t)&clkid);
 
 #ifdef AFIO_CPSCTL
 	if (DT_PROP(AFIO_NODE, enable_cps)) {
@@ -139,23 +139,23 @@ static void configure_pin(pinctrl_soc_pin_t pin)
 	}
 
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t *)&clkid);
+			       (clock_control_subsys_t)&clkid);
 
 	reg_val = *reg;
 	reg_val &= ~GPIO_MODE_MASK(pin_num);
 
 	if (mode == GD32_MODE_ALTERNATE) {
-		uint8_t mode;
+		uint8_t new_mode;
 
-		mode = configure_spd(port, pin_bit, GD32_OSPEED_GET(pin));
+		new_mode = configure_spd(port, pin_bit, GD32_OSPEED_GET(pin));
 
 		if (GD32_OTYPE_GET(pin) == GD32_OTYPE_PP) {
-			mode |= GPIO_MODE_ALT_PP;
+			new_mode |= GPIO_MODE_ALT_PP;
 		} else {
-			mode |= GPIO_MODE_ALT_OD;
+			new_mode |= GPIO_MODE_ALT_OD;
 		}
 
-		reg_val |= GPIO_MODE_SET(pin_num, mode);
+		reg_val |= GPIO_MODE_SET(pin_num, new_mode);
 	} else if (mode == GD32_MODE_GPIO_IN) {
 		uint8_t pupd = GD32_PUPD_GET(pin);
 

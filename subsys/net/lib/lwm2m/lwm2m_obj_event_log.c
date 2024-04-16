@@ -78,7 +78,7 @@ static struct lwm2m_engine_obj_inst *lwm2m_event_log_create(uint16_t obj_inst_id
 	return &inst;
 }
 
-static int lwm2m_event_log_init(const struct device *dev)
+static int lwm2m_event_log_init(void)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	int ret = 0;

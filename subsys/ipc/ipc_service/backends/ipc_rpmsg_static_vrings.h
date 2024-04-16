@@ -130,7 +130,10 @@
  *
  */
 
-#define VDEV_STATUS_SIZE	(4) /* Size of status region */
+/*
+ * Size of the status region (possibly a multiple of the cache line size).
+ */
+#define VDEV_STATUS_SIZE	CONFIG_IPC_SERVICE_STATIC_VRINGS_MEM_ALIGNMENT
 
 #define VIRTQUEUE_ID_HOST	(0)
 #define VIRTQUEUE_ID_REMOTE	(1)
@@ -140,24 +143,26 @@
 
 static inline size_t vq_ring_size(unsigned int num, unsigned int buf_size)
 {
-	return (buf_size * num);
+	return ROUND_UP((buf_size * num), MEM_ALIGNMENT);
 }
 
 static inline size_t shm_size(unsigned int num, unsigned int buf_size)
 {
-	return (VDEV_STATUS_SIZE + (VRING_COUNT * vq_ring_size(num, buf_size)) +
-	       (VRING_COUNT * vring_size(num, VRING_ALIGNMENT)));
+	return (VRING_COUNT * (vq_ring_size(num, buf_size) +
+		ROUND_UP(vring_size(num, MEM_ALIGNMENT), MEM_ALIGNMENT)));
 }
 
-static inline unsigned int optimal_num_desc(size_t shm_size, unsigned int buf_size)
+static inline unsigned int optimal_num_desc(size_t mem_size, unsigned int buf_size)
 {
-	size_t available, single_alloc;
-	unsigned int num_desc;
+	size_t available;
+	unsigned int num_desc = 1;
 
-	available = shm_size - VDEV_STATUS_SIZE;
-	single_alloc = VRING_COUNT * (vq_ring_size(1, buf_size) + vring_size(1, VRING_ALIGNMENT));
+	available = mem_size - VDEV_STATUS_SIZE;
 
-	num_desc = (unsigned int) (available / single_alloc);
+	while (available > shm_size(num_desc, buf_size)) {
+		num_desc++;
+	}
 
-	return (1 << (find_msb_set(num_desc) - 1));
+	/* if num_desc == 1 there is not enough memory */
+	return (--num_desc == 0) ? 0 : (1 << LOG2(num_desc));
 }

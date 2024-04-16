@@ -1,7 +1,8 @@
-.. _sx1509b_intensity:
+.. zephyr:code-sample:: sx1509b
+   :name: SX1509B RGB LED
+   :relevant-api: led_interface
 
-SX1509B LED Intensity
-######################
+   Control an RGB LED connected to an SX1509B driver chip.
 
 Overview
 ********

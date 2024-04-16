@@ -6,8 +6,9 @@
 
 /dts-v1/;
 
-#include <espressif/esp32s2.dtsi>
+#include <espressif/esp32s2/esp32s2_wrover_n4r2.dtsi>
 #include "esp32s2_saola-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "esp32s2_saola";
@@ -26,34 +27,18 @@
 		zephyr,flash = &flash0;
 	};
 
-	power-states {
-		light_sleep: light_sleep {
-			compatible = "zephyr,power-state";
-			power-state-name = "standby";
-			min-residency-us = <200>;
-			exit-latency-us = <60>;
-		};
-
-		deep_sleep: deep_sleep {
-			compatible = "zephyr,power-state";
-			power-state-name = "soft-off";
-			min-residency-us = <2000>;
-			exit-latency-us = <212>;
-		};
-	};
-
 	gpio_keys {
 		compatible = "gpio-keys";
 		user_button: user_button {
 			label = "BOOT";
 			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };
 
 &cpu0 {
 	clock-frequency = <ESP32_CLK_CPU_240M>;
-	cpu-power-states = <&deep_sleep &light_sleep>;
 };
 
 &uart0 {
@@ -120,8 +105,10 @@
 	pinctrl-names = "default";
 };
 
+
 &flash0 {
 	status = "okay";
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

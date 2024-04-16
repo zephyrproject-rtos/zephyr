@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/ethernet_mgmt.h>
 #include <zephyr/net/gptp.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #if defined(CONFIG_NET_LLDP)
 #include <zephyr/net/lldp.h>
@@ -144,11 +144,9 @@ static inline void ethernet_update_length(struct net_if *iface,
 }
 
 static void ethernet_update_rx_stats(struct net_if *iface,
-				     struct net_pkt *pkt, size_t length)
+				     struct net_eth_hdr *hdr, size_t length)
 {
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
-
 	eth_stats_update_bytes_rx(iface, length);
 	eth_stats_update_pkts_rx(iface);
 
@@ -213,7 +211,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		net_pkt_lladdr_dst(pkt)->addr = hdr->dst.addr;
 		net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 		net_pkt_lladdr_dst(pkt)->type = NET_LINK_ETHERNET;
-		ethernet_update_rx_stats(iface, pkt, net_pkt_get_len(pkt));
+		ethernet_update_rx_stats(iface, hdr, net_pkt_get_len(pkt));
 		return net_eth_bridge_input(ctx, pkt);
 	}
 
@@ -263,7 +261,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		}
 
 		NET_DBG("Unknown hdr type 0x%04x iface %p", type, iface);
-		goto drop;
+		eth_stats_update_unknown_protocol(iface);
+		return NET_DROP;
 	}
 
 	/* Set the pointers to ll src and dst addresses */
@@ -303,6 +302,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	    !net_eth_is_addr_multicast((struct net_eth_addr *)lladdr->addr) &&
 	    !net_eth_is_addr_lldp_multicast(
 		    (struct net_eth_addr *)lladdr->addr) &&
+	    !net_eth_is_addr_ptp_multicast((struct net_eth_addr *)lladdr->addr) &&
 	    !net_linkaddr_cmp(net_if_get_link_addr(iface), lladdr)) {
 		/* The ethernet frame is not for me as the link addresses
 		 * are different.
@@ -320,7 +320,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		goto drop;
 	}
 
-	ethernet_update_rx_stats(iface, pkt, net_pkt_get_len(pkt) + hdr_len);
+	ethernet_update_rx_stats(iface, hdr, net_pkt_get_len(pkt) + hdr_len);
 
 	if (IS_ENABLED(CONFIG_NET_ARP) &&
 	    family == AF_INET && type == NET_ETH_PTYPE_ARP) {
@@ -601,8 +601,9 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct ethernet_api *api = net_if_get_device(iface)->api;
 	struct ethernet_context *ctx = net_if_l2_data(iface);
-	uint16_t ptype;
+	uint16_t ptype = 0;
 	int ret;
+	struct net_pkt *orig_pkt = pkt;
 
 	if (!api) {
 		ret = -ENOENT;
@@ -667,21 +668,6 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 			net_pkt_lladdr_src(pkt)->len =
 						sizeof(struct net_eth_addr);
 			ptype = dst_addr->sll_protocol;
-		} else if (context && net_context_get_type(context) == SOCK_RAW &&
-			   net_context_get_proto(context) == IPPROTO_RAW) {
-			char type = (NET_IPV6_HDR(pkt)->vtc & 0xf0);
-
-			switch (type) {
-			case 0x60:
-				ptype = htons(NET_ETH_PTYPE_IPV6);
-				break;
-			case 0x40:
-				ptype = htons(NET_ETH_PTYPE_IP);
-				break;
-			default:
-				ret = -ENOTSUP;
-				goto error;
-			}
 		} else {
 			goto send;
 		}
@@ -732,6 +718,19 @@ send:
 	if (ret != 0) {
 		eth_stats_update_errors_tx(iface);
 		ethernet_remove_l2_header(pkt);
+		if (IS_ENABLED(CONFIG_NET_ARP) && ptype == htons(NET_ETH_PTYPE_ARP)) {
+			/* Original packet was added to ARP's pending Q, so, to avoid it
+			 * being freed, take a reference, the reference is dropped when we
+			 * clear the pending Q in ARP and then it will be freed by net_if.
+			 */
+			net_pkt_ref(orig_pkt);
+			if (net_arp_clear_pending(iface,
+				(struct in_addr *)NET_IPV4_HDR(pkt)->dst)) {
+				NET_DBG("Could not find pending ARP entry");
+			}
+			/* Free the ARP request */
+			net_pkt_unref(pkt);
+		}
 		goto error;
 	}
 
@@ -747,6 +746,7 @@ error:
 
 static inline int ethernet_enable(struct net_if *iface, bool state)
 {
+	int ret = 0;
 	const struct ethernet_api *eth =
 		net_if_get_device(iface)->api;
 
@@ -758,15 +758,15 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 		net_arp_clear_cache(iface);
 
 		if (eth->stop) {
-			eth->stop(net_if_get_device(iface));
+			ret = eth->stop(net_if_get_device(iface));
 		}
 	} else {
 		if (eth->start) {
-			eth->start(net_if_get_device(iface));
+			ret = eth->start(net_if_get_device(iface));
 		}
 	}
 
-	return 0;
+	return ret;
 }
 
 enum net_l2_flags ethernet_flags(struct net_if *iface)
@@ -1179,6 +1179,7 @@ void net_eth_set_ptp_port(struct net_if *iface, int port)
 }
 #endif /* CONFIG_NET_L2_PTP */
 
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
 int net_eth_promisc_mode(struct net_if *iface, bool enable)
 {
 	struct ethernet_req_params params;
@@ -1192,6 +1193,7 @@ int net_eth_promisc_mode(struct net_if *iface, bool enable)
 	return net_mgmt(NET_REQUEST_ETHERNET_SET_PROMISC_MODE, iface,
 			&params, sizeof(struct ethernet_req_params));
 }
+#endif/* CONFIG_NET_PROMISCUOUS_MODE */
 
 void ethernet_init(struct net_if *iface)
 {

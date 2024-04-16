@@ -18,11 +18,13 @@ config POWER_DOMAIN_GPIO
 	depends on DT_HAS_POWER_DOMAIN_GPIO_ENABLED
 	depends on GPIO
 	depends on TIMEOUT_64BIT
+	select DEVICE_DEPS
 
 config POWER_DOMAIN_INTEL_ADSP
 	bool "Use Intel ADSP power gating mechanisms"
 	default y
 	depends on DT_HAS_INTEL_ADSP_POWER_DOMAIN_ENABLED
+	select DEVICE_DEPS
 	help
 	  Include Intel ADSP power domain control mechanisms
 

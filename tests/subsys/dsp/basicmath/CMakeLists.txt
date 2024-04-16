@@ -14,3 +14,8 @@ target_sources(app PRIVATE
 target_sources_ifdef(CONFIG_FP16 app PRIVATE src/f16.c)
 
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/tests/lib/cmsis_dsp)
+
+if(COMPILER STREQUAL arcmwdt)
+  get_property(Z_ARC_DSP_OPTIONS GLOBAL PROPERTY z_arc_dsp_options)
+  target_compile_options(app PRIVATE ${Z_ARC_DSP_OPTIONS})
+endif()

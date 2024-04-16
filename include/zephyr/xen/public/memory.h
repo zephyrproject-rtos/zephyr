@@ -69,6 +69,40 @@ struct xen_memory_reservation {
 typedef struct xen_memory_reservation xen_memory_reservation_t;
 DEFINE_XEN_GUEST_HANDLE(xen_memory_reservation_t);
 
+/* A batched version of add_to_physmap. */
+#define XENMEM_add_to_physmap_batch 23
+struct xen_add_to_physmap_batch {
+	/* IN */
+	/* Which domain to change the mapping for. */
+	domid_t domid;
+	uint16_t space; /* => enum phys_map_space */
+
+	/* Number of pages to go through */
+	uint16_t size;
+
+#if __XEN_INTERFACE_VERSION__ < 0x00040700
+	domid_t foreign_domid; /* IFF gmfn_foreign. Should be 0 for other spaces. */
+#else
+	union xen_add_to_physmap_batch_extra {
+		domid_t foreign_domid; /* gmfn_foreign */
+		uint16_t res0;  /* All the other spaces. Should be 0 */
+	} u;
+#endif
+
+	/* Indexes into space being mapped. */
+	XEN_GUEST_HANDLE(xen_ulong_t) idxs;
+
+	/* GPFN in domid where the source mapping page should appear. */
+	XEN_GUEST_HANDLE(xen_pfn_t) gpfns;
+
+	/* OUT */
+	/* Per index error code. */
+	XEN_GUEST_HANDLE(int) errs;
+};
+typedef struct xen_add_to_physmap_batch xen_add_to_physmap_batch_t;
+DEFINE_XEN_GUEST_HANDLE(xen_add_to_physmap_batch_t);
+
+
 #define XENMAPSPACE_shared_info		0	/* shared info page */
 #define XENMAPSPACE_grant_table		1	/* grant table page */
 #define XENMAPSPACE_gmfn		2	/* GMFN */

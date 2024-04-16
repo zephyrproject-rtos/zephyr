@@ -9,9 +9,11 @@
 
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
-#include <zephyr/timeout_q.h>
+#include <timeout_q.h>
 #include <zephyr/tracing/tracing.h>
 #include <stdbool.h>
+
+bool z_is_thread_essential(void);
 
 BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 	     >= K_HIGHEST_APPLICATION_THREAD_PRIO);
@@ -55,7 +57,7 @@ void z_thread_priority_set(struct k_thread *thread, int prio);
 bool z_set_prio(struct k_thread *thread, int prio);
 void *z_get_next_switch_handle(void *interrupted);
 void idle(void *unused1, void *unused2, void *unused3);
-void z_time_slice(int ticks);
+void z_time_slice(void);
 void z_reset_time_slice(struct k_thread *curr);
 void z_sched_abort(struct k_thread *thread);
 void z_sched_ipi(void);
@@ -268,15 +270,6 @@ static ALWAYS_INLINE void z_sched_unlock_no_reschedule(void)
 	++_current->base.sched_locked;
 }
 
-static ALWAYS_INLINE bool z_is_thread_timeout_expired(struct k_thread *thread)
-{
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	return thread->base.timeout.dticks == _EXPIRED;
-#else
-	return 0;
-#endif
-}
-
 /*
  * APIs for working with the Zephyr kernel scheduler. Intended for use in
  * management of IPC objects, either in the core kernel or other IPC
@@ -314,6 +307,18 @@ static ALWAYS_INLINE bool z_is_thread_timeout_expired(struct k_thread *thread)
  * @retval false If the wait_q was empty
  */
 bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data);
+
+/**
+ * Wakes the specified thread.
+ *
+ * Given a specific thread, wake it up. This routine assumes that the given
+ * thread is not on the timeout queue.
+ *
+ * @param thread Given thread to wake up.
+ * @param is_timeout True if called from the timer ISR; false otherwise.
+ *
+ */
+void z_sched_wake_thread(struct k_thread *thread, bool is_timeout);
 
 /**
  * Wake up all threads pending on the provided wait queue
@@ -363,6 +368,26 @@ static inline bool z_sched_wake_all(_wait_q_t *wait_q, int swap_retval,
 int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
 		 _wait_q_t *wait_q, k_timeout_t timeout, void **data);
 
+/**
+ * @brief Walks the wait queue invoking the callback on each waiting thread
+ *
+ * This function walks the wait queue invoking the callback function on each
+ * waiting thread while holding sched_spinlock. This can be useful for routines
+ * that need to operate on multiple waiting threads.
+ *
+ * CAUTION! As a wait queue is of indeterminant length, the scheduler will be
+ * locked for an indeterminant amount of time. This may impact system
+ * performance. As such, care must be taken when using both this function and
+ * the specified callback.
+ *
+ * @param wait_q Identifies the wait queue to walk
+ * @param func   Callback to invoke on each waiting thread
+ * @param data   Custom data passed to the callback
+ *
+ * @retval non-zero if walk is terminated by the callback; otherwise 0
+ */
+int z_sched_waitq_walk(_wait_q_t *wait_q,
+		       int (*func)(struct k_thread *, void *), void *data);
 
 /** @brief Halt thread cycle usage accounting.
  *

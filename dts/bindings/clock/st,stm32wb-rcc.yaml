@@ -13,64 +13,64 @@ include:
       - ahb-prescaler
 
 properties:
-    cpu1-prescaler:
-      type: int
-      required: true
-      enum:
-        - 1
-        - 2
-        - 3
-        - 4
-        - 5
-        - 6
-        - 8
-        - 10
-        - 16
-        - 32
-        - 64
-        - 128
-        - 256
-        - 512
-      description: |
-          CPU1 prescaler. Sets a HCLK1 frequency (Core frequency)
-          lower than SYSCLK frequency.
-          The HCLK1 clocks CPU1, AHB1, AHB2, AHB3 and SRAM1.
+  cpu1-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 8
+      - 10
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+    description: |
+        CPU1 prescaler. Sets a HCLK1 frequency (Core frequency)
+        lower than SYSCLK frequency.
+        The HCLK1 clocks CPU1, AHB1, AHB2, AHB3 and SRAM1.
 
-    cpu2-prescaler:
-      type: int
-      required: true
-      enum:
-        - 1
-        - 2
-        - 4
-        - 8
-        - 16
-        - 32
-        - 64
-        - 128
-        - 256
-        - 512
-      description: |
-          CPU2 prescaler. Sets HCLK2 frequency which clocks CPU2.
-          (A.K.A C2HPRE)
+  cpu2-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+    description: |
+        CPU2 prescaler. Sets HCLK2 frequency which clocks CPU2.
+        (A.K.A C2HPRE)
 
-    ahb4-prescaler:
-      type: int
-      required: true
-      enum:
-        - 1
-        - 2
-        - 4
-        - 8
-        - 16
-        - 32
-        - 64
-        - 128
-        - 256
-        - 512
-      description: |
-          HCLK4 shared prescaler (AHB4, Flash memory and SRAM2).
-          (A.K.A SHDHPRE)
+  ahb4-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+    description: |
+        HCLK4 shared prescaler (AHB4, Flash memory and SRAM2).
+        (A.K.A SHDHPRE)
 
 clock-cells:
   - bus

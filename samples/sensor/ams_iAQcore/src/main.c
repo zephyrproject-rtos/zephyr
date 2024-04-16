@@ -9,7 +9,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/printk.h>
 
-void main(void)
+int main(void)
 {
 	const struct device *dev;
 	struct sensor_value co2, voc;
@@ -17,7 +17,7 @@ void main(void)
 	dev = DEVICE_DT_GET_ONE(ams_iaqcore);
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");
-		return;
+		return 0;
 	}
 
 	printk("device is %p, name is %s\n", dev, dev->name);
@@ -32,4 +32,5 @@ void main(void)
 
 		k_sleep(K_MSEC(1000));
 	}
+	return 0;
 }

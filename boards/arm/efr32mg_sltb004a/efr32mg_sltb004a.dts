@@ -6,6 +6,8 @@
 
 /dts-v1/;
 #include <silabs/efr32mg12p332f1024gl125.dtsi>
+#include <silabs/efr32xg13p-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Silabs EFR32MG SLTB004A board (aka Thunderboard Sense 2)";
@@ -48,11 +50,13 @@
 			/* gpio flags need validation */
 			gpios = <&gpiod 14 GPIO_ACTIVE_LOW>;
 			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		button1: button_1 {
 			/* gpio flags need validation */
 			gpios = <&gpiod 15 GPIO_ACTIVE_LOW>;
 			label = "User Push Button 1";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 
@@ -71,8 +75,8 @@
 
 &usart0 {
 	current-speed = <115200>;
-	location-rx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(1)>;
-	location-tx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(0)>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 

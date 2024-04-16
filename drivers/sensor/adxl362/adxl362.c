@@ -223,15 +223,18 @@ static int adxl362_set_range(const struct device *dev, uint8_t range)
 
 static int adxl362_set_output_rate(const struct device *dev, uint8_t out_rate)
 {
+	int ret;
 	uint8_t old_filter_ctl;
 	uint8_t new_filter_ctl;
 
-	adxl362_get_reg(dev, &old_filter_ctl, ADXL362_REG_FILTER_CTL, 1);
+	ret = adxl362_get_reg(dev, &old_filter_ctl, ADXL362_REG_FILTER_CTL, 1);
+	if (ret) {
+		return ret;
+	}
+
 	new_filter_ctl = old_filter_ctl & ~ADXL362_FILTER_CTL_ODR(0x7);
 	new_filter_ctl = new_filter_ctl | ADXL362_FILTER_CTL_ODR(out_rate);
-	adxl362_set_reg(dev, new_filter_ctl, ADXL362_REG_FILTER_CTL, 1);
-
-	return 0;
+	return adxl362_set_reg(dev, new_filter_ctl, ADXL362_REG_FILTER_CTL, 1);
 }
 
 
@@ -705,7 +708,7 @@ static int adxl362_chip_init(const struct device *dev)
 static int adxl362_init(const struct device *dev)
 {
 	const struct adxl362_config *config = dev->config;
-	uint8_t value;
+	uint8_t value = 0;
 	int err;
 
 	if (!spi_is_ready_dt(&config->bus)) {
@@ -716,15 +719,15 @@ static int adxl362_init(const struct device *dev)
 	err = adxl362_software_reset(dev);
 
 	if (err) {
-		LOG_ERR("adxl362_software_reset failed, error %d\n", err);
+		LOG_ERR("adxl362_software_reset failed, error %d", err);
 		return -ENODEV;
 	}
 
 	k_sleep(K_MSEC(5));
 
-	adxl362_get_reg(dev, &value, ADXL362_REG_PARTID, 1);
+	(void)adxl362_get_reg(dev, &value, ADXL362_REG_PARTID, 1);
 	if (value != ADXL362_PART_ID) {
-		LOG_ERR("wrong part_id: %d\n", value);
+		LOG_ERR("wrong part_id: %d", value);
 		return -ENODEV;
 	}
 

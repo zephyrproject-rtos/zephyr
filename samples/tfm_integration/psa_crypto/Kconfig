@@ -1,9 +1,9 @@
-# Private config options for PSA level 1 application
+# Private config options for PSA Crypto application
 
-# Copyright (c) 2019,2020 Linaro
+# Copyright (c) 2023 Linaro
 # SPDX-License-Identifier: Apache-2.0
 
-mainmenu "PSA level 1 sample application"
+mainmenu "PSA Crypto sample application"
 
 menu "Application configuration"
 

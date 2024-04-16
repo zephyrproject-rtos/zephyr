@@ -10,8 +10,10 @@ supported:
   - netif:eth
   - gpio
   - spi
+  - sdhc
   - watchdog
   - xpro_gpio
   - xpro_i2c
   - xpro_serial
   - xpro_spi
+vendor: atmel

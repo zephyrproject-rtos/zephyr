@@ -1,0 +1,129 @@
+/*
+ * Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <infineon/psoc6/mpns/CYBLE_416045_02.dtsi>
+#include <infineon/psoc6/system_clocks.dtsi>
+#include "cy8cproto_063_ble-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "CY8CPROTO-063-BLE PSoC™ 6 BLE Prototyping Kit";
+	compatible = "cypress,cy8cproto_063_ble", "cypress,PSoC6";
+
+	aliases {
+		uart-5 = &uart5;
+		led0 = &user_led;
+		sw0 = &user_bt;
+		watchdog0 = &watchdog0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+	};
+
+	/delete-node/ cpu@0;
+
+	leds {
+		compatible = "gpio-leds";
+		user_led: led_0 {
+			label = "LED_0";
+			gpios = <&gpio_prt6 3 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_bt: button_0 {
+			label = "SW_0";
+			gpios = <&gpio_prt0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&gpio_prt0 {
+	status = "okay";
+};
+
+&gpio_prt5 {
+	status = "okay";
+};
+
+&gpio_prt6 {
+	status = "okay";
+};
+
+&gpio_prt7 {
+	status = "okay";
+};
+
+&gpio_prt9 {
+	status = "okay";
+};
+
+&gpio_prt10 {
+	status = "okay";
+};
+
+&gpio_prt12 {
+	status = "okay";
+};
+
+uart5: &scb5 {
+	compatible = "infineon,cat1-uart";
+	status = "okay";
+	current-speed = <115200>;
+
+	/* UART pins */
+	pinctrl-0 = <&p5_1_scb5_uart_tx &p5_0_scb5_uart_rx>;
+	pinctrl-names = "default";
+};
+
+/* System clock configuration */
+&fll0 {
+	status = "okay";
+	clock-frequency = <100000000>;
+};
+
+&clk_hf0 {
+	clock-div = <1>;
+	clocks = <&fll0>;
+};
+
+/* CM4 core clock = 100MHz
+ * &fll clock-frequency / &clk_hf0 clock-div / &clk_fast clock-div = 100MHz / 1 / 1 = 100MHz
+ */
+&clk_fast {
+	clock-div = <1>;
+};
+
+/* CM0+ core clock = 50MHz
+ * &fll clock-frequency / &clk_hf0 clock-div / &clk_slow clock-div = 100MHz / 1 / 2 = 50MHz
+ */
+&clk_slow {
+	clock-div = <2>;
+};
+
+/* PERI core clock = 100MHz
+ * &fll clock-frequency / &clk_hf0 clock-div / &clk_peri clock-div = 100MHz / 1 / 1 = 100MHz
+ */
+&clk_peri {
+	clock-div = <1>;
+};
+
+&bluetooth {
+	status = "okay";
+};
+
+&watchdog0 {
+	status = "okay";
+};

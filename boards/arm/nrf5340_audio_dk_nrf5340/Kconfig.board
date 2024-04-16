@@ -1,0 +1,18 @@
+# nRF5340 Audio DK board configuration
+
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF5340_CPUAPP_QKAA
+
+config BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP
+	bool "nrf5340 Audio DK nRF5340 Application MCU"
+
+config BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP_NS
+	bool "nrf5340 Audio DK nRF5340 Application MCU non-secure"
+
+endif # SOC_NRF5340_CPUAPP_QKAA
+
+config BOARD_NRF5340_AUDIO_DK_NRF5340_CPUNET
+	bool "nrf5340 Audio DK NRF5340 Network MCU"
+	depends on SOC_NRF5340_CPUNET_QKAA

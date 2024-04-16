@@ -37,8 +37,6 @@ endmenu
 
 menu "Network additional services"
 
-source "subsys/net/lib/conn_mgr/Kconfig"
-
 source "subsys/net/lib/capture/Kconfig"
 
 source "subsys/net/lib/zperf/Kconfig"

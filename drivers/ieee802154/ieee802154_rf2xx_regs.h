@@ -100,6 +100,7 @@
 /* TRX_STATE */
 #define RF2XX_TRAC_STATUS                   5
 #define RF2XX_TRX_CMD                       0
+#define RF2XX_TRAC_BIT_MASK                 7
 
 /* TRX_CTRL_0 */
 #define RF2XX_TOM_EN                        7
@@ -130,6 +131,7 @@
 #define RF2XX_RX_CRC_VALID                  7
 #define RF2XX_RND_VALUE                     5
 #define RF2XX_RSSI                          0
+#define RF2XX_RSSI_MASK                     0x1F
 
 /* PHY_CC_CCA */
 #define RF2XX_CCA_REQUEST                   7
@@ -295,6 +297,6 @@
 
 /* RX_STATUS */
 #define RF2XX_RX_TRAC_STATUS                4
-#define RF2XX_RX_TRAC_BIT_MASK              0x03
+#define RF2XX_RX_TRAC_BIT_MASK              RF2XX_TRAC_BIT_MASK
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_RF2XX_REGS_H_ */

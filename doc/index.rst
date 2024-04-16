@@ -111,6 +111,7 @@ Sections
    contribute/index.rst
    project/index.rst
    security/index.rst
+   safety/index.rst
    samples/index.rst
    boards/index.rst
    releases/index.rst

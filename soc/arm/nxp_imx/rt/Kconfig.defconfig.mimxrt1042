@@ -1,0 +1,19 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMXRT1042
+
+config SOC
+	default "mimxrt1042"
+
+config NUM_IRQS
+	default 157
+
+config GPIO
+	default y
+
+# Set DCDC to 1.275V for 600 MHz AHB operation
+config DCDC_VALUE
+	default 0x13
+
+endif # SOC_MIMXRT1042

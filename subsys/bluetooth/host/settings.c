@@ -228,33 +228,6 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 	return -ENOENT;
 }
 
-#define ID_DATA_LEN(array) (bt_dev.id_count * sizeof(array[0]))
-
-static void save_id(struct k_work *work)
-{
-	int err;
-	LOG_INF("Saving ID");
-	err = settings_save_one("bt/id", &bt_dev.id_addr,
-				ID_DATA_LEN(bt_dev.id_addr));
-	if (err) {
-		LOG_ERR("Failed to save ID (err %d)", err);
-	}
-
-#if defined(CONFIG_BT_PRIVACY)
-	err = settings_save_one("bt/irk", bt_dev.irk, ID_DATA_LEN(bt_dev.irk));
-	if (err) {
-		LOG_ERR("Failed to save IRK (err %d)", err);
-	}
-#endif
-}
-
-K_WORK_DEFINE(save_id_work, save_id);
-
-void bt_settings_save_id(void)
-{
-	k_work_submit(&save_id_work);
-}
-
 static int commit_settings(void)
 {
 	int err;
@@ -301,7 +274,8 @@ static int commit_settings(void)
 	 */
 	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_STORE_ID)) {
 		LOG_DBG("Storing Identity Information");
-		bt_settings_save_id();
+		bt_settings_store_id();
+		bt_settings_store_irk();
 	}
 
 	return 0;
@@ -322,4 +296,178 @@ int bt_settings_init(void)
 	}
 
 	return 0;
+}
+
+int bt_settings_store(const char *key, uint8_t id, const bt_addr_le_t *addr, const void *value,
+		      size_t val_len)
+{
+	int err;
+	char id_str[4];
+	char key_str[BT_SETTINGS_KEY_MAX];
+
+	if (addr) {
+		if (id) {
+			u8_to_dec(id_str, sizeof(id_str), id);
+		}
+
+		bt_settings_encode_key(key_str, sizeof(key_str), key, addr, (id ? id_str : NULL));
+	} else {
+		err = snprintk(key_str, sizeof(key_str), "bt/%s", key);
+		if (err < 0) {
+			return -EINVAL;
+		}
+	}
+
+	return settings_save_one(key_str, value, val_len);
+}
+
+int bt_settings_delete(const char *key, uint8_t id, const bt_addr_le_t *addr)
+{
+	int err;
+	char id_str[4];
+	char key_str[BT_SETTINGS_KEY_MAX];
+
+	if (addr) {
+		if (id) {
+			u8_to_dec(id_str, sizeof(id_str), id);
+		}
+
+		bt_settings_encode_key(key_str, sizeof(key_str), key, addr, (id ? id_str : NULL));
+	} else {
+		err = snprintk(key_str, sizeof(key_str), "bt/%s", key);
+		if (err < 0) {
+			return -EINVAL;
+		}
+	}
+
+	return settings_delete(key_str);
+}
+
+int bt_settings_store_sc(uint8_t id, const bt_addr_le_t *addr, const void *value, size_t val_len)
+{
+	return bt_settings_store("sc", id, addr, value, val_len);
+}
+
+int bt_settings_delete_sc(uint8_t id, const bt_addr_le_t *addr)
+{
+	return bt_settings_delete("sc", id, addr);
+}
+
+int bt_settings_store_cf(uint8_t id, const bt_addr_le_t *addr, const void *value, size_t val_len)
+{
+	return bt_settings_store("cf", id, addr, value, val_len);
+}
+
+int bt_settings_delete_cf(uint8_t id, const bt_addr_le_t *addr)
+{
+	return bt_settings_delete("cf", id, addr);
+}
+
+int bt_settings_store_ccc(uint8_t id, const bt_addr_le_t *addr, const void *value, size_t val_len)
+{
+	return bt_settings_store("ccc", id, addr, value, val_len);
+}
+
+int bt_settings_delete_ccc(uint8_t id, const bt_addr_le_t *addr)
+{
+	return bt_settings_delete("ccc", id, addr);
+}
+
+int bt_settings_store_hash(const void *value, size_t val_len)
+{
+	return bt_settings_store("hash", 0, NULL, value, val_len);
+}
+
+int bt_settings_delete_hash(void)
+{
+	return bt_settings_delete("hash", 0, NULL);
+}
+
+int bt_settings_store_name(const void *value, size_t val_len)
+{
+	return bt_settings_store("name", 0, NULL, value, val_len);
+}
+
+int bt_settings_delete_name(void)
+{
+	return bt_settings_delete("name", 0, NULL);
+}
+
+int bt_settings_store_appearance(const void *value, size_t val_len)
+{
+	return bt_settings_store("appearance", 0, NULL, value, val_len);
+}
+
+int bt_settings_delete_appearance(void)
+{
+	return bt_settings_delete("appearance", 0, NULL);
+}
+
+static void do_store_id(struct k_work *work)
+{
+	int err = bt_settings_store("id", 0, NULL, &bt_dev.id_addr, ID_DATA_LEN(bt_dev.id_addr));
+
+	if (err) {
+		LOG_ERR("Failed to save ID (err %d)", err);
+	}
+}
+
+K_WORK_DEFINE(store_id_work, do_store_id);
+
+int bt_settings_store_id(void)
+{
+	k_work_submit(&store_id_work);
+
+	return 0;
+}
+
+int bt_settings_delete_id(void)
+{
+	return bt_settings_delete("id", 0, NULL);
+}
+
+static void do_store_irk(struct k_work *work)
+{
+#if defined(CONFIG_BT_PRIVACY)
+	int err = bt_settings_store("irk", 0, NULL, bt_dev.irk, ID_DATA_LEN(bt_dev.irk));
+
+	if (err) {
+		LOG_ERR("Failed to save IRK (err %d)", err);
+	}
+#endif
+}
+
+K_WORK_DEFINE(store_irk_work, do_store_irk);
+
+int bt_settings_store_irk(void)
+{
+#if defined(CONFIG_BT_PRIVACY)
+	k_work_submit(&store_irk_work);
+#endif /* defined(CONFIG_BT_PRIVACY) */
+	return 0;
+}
+
+int bt_settings_delete_irk(void)
+{
+	return bt_settings_delete("irk", 0, NULL);
+}
+
+int bt_settings_store_link_key(const bt_addr_le_t *addr, const void *value, size_t val_len)
+{
+	return bt_settings_store("link_key", 0, addr, value, val_len);
+}
+
+int bt_settings_delete_link_key(const bt_addr_le_t *addr)
+{
+	return bt_settings_delete("link_key", 0, addr);
+}
+
+int bt_settings_store_keys(uint8_t id, const bt_addr_le_t *addr, const void *value, size_t val_len)
+{
+	return bt_settings_store("keys", id, addr, value, val_len);
+}
+
+int bt_settings_delete_keys(uint8_t id, const bt_addr_le_t *addr)
+{
+	return bt_settings_delete("keys", id, addr);
 }

@@ -7,6 +7,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/sys/barrier.h>
 
 void z_arm64_el3_plat_init(void)
 {
@@ -47,6 +48,6 @@ void z_arm64_el3_plat_init(void)
 
 	write_sysreg(reg, CORTEX_A72_L2CTLR_EL1);
 
-	dsb();
-	isb();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 }

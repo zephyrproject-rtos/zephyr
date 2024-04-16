@@ -4,17 +4,17 @@
 # Common fields for GPIO nexus nodes
 
 properties:
-    gpio-map:
-      type: compound
-      required: true
+  gpio-map:
+    type: compound
+    required: true
 
-    gpio-map-mask:
-      type: compound
+  gpio-map-mask:
+    type: compound
 
-    gpio-map-pass-thru:
-      type: compound
+  gpio-map-pass-thru:
+    type: compound
 
-    "#gpio-cells":
-      type: int
-      required: true
-      description: Number of items to expect in a GPIO specifier
+  "#gpio-cells":
+    type: int
+    required: true
+    description: Number of items to expect in a GPIO specifier

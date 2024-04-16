@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Renesas Electronics Corporation
+ * Copyright (c) 2022 Renesas Electronics Corporation and/or its affiliates
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -13,6 +13,46 @@
 		group2 {
 			pinmux = <SMARTBOND_PINMUX(UART_RX, 0, 8)>;
 			bias-pull-up;
+		};
+	};
+
+	i2c_default: i2c_default {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(I2C_SDA, 0, 31)>,
+				<SMARTBOND_PINMUX(I2C_SCL, 0, 30)>;
+			bias-pull-up;
+		};
+	};
+
+	i2c2_default: i2c2_default {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(I2C2_SDA, 0, 19)>,
+				<SMARTBOND_PINMUX(I2C2_SCL, 0, 18)>;
+			bias-pull-up;
+		};
+	};
+
+	spi_controller: spi_controller {
+		group1 {
+			pinmux = < SMARTBOND_PINMUX(SPI_CLK, 0, 21) >,
+				<SMARTBOND_PINMUX(SPI_DO, 0, 26)>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <SMARTBOND_PINMUX(SPI_DI, 0, 24)>;
+			input-enable;
+		};
+	};
+
+	spi2_controller: spi2_controller {
+		group1 {
+			pinmux = < SMARTBOND_PINMUX(SPI2_CLK, 1, 3) >,
+				<SMARTBOND_PINMUX(SPI2_DO, 1, 5)>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <SMARTBOND_PINMUX(SPI2_DI, 1, 4)>;
+			input-enable;
 		};
 	};
 };

@@ -75,8 +75,8 @@ compatible: "st,stm32-dma-v1"
 include: st,stm32-dma.yaml
 
 properties:
-    "#dma-cells":
-      const: 4
+  "#dma-cells":
+    const: 4
 
 # Parameter syntax of stm32 follows the dma client dts syntax
 # in the Linux kernel declared in

@@ -1,0 +1,50 @@
+# Copyright (c) 2022 Wolter HV <wolterhv@gmx.de>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Espressif ESP32 ADC
+  Possible available resolutions depends on the used chip.
+    - ESP32     < 9,10,11,12 >
+    - ESP32-S2  < 12 >
+    - ESP32-C3  < 12 >
+    - ESP32-S3  < 12 >
+  For chips with configurable resolution feature (ESP32),
+  maximum resolution will be used if not set explicitly.
+
+  Zephyr API is using gain unit to characterize ADC input.
+  To achieve compatibility we choose to select those gain,
+  which coresponds to the ESP32 ADC attenuation feature.
+
+    ESP32,attenuation ~ zephyr,gain
+    -----------------   -----------
+    0 dB                ADC_GAIN_1
+    2.5 dB              ADC_GAIN_4_5
+    6 dB                ADC_GAIN_1_2
+    11 dB               ADC_GAIN_1_4
+
+  In case unsupported gain is selected the adc_channel_setup()
+  would return ENOTSUP error.
+
+compatible: "espressif,esp32-adc"
+
+include: [adc-controller.yaml]
+
+properties:
+
+  unit:
+    type: int
+    required: true
+    description: ADC unit number.
+      Possible values are 1,2,.. depending on chip.
+
+  channel-count:
+    type: int
+    required: true
+    description: The maximum channels supported on each unit.
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

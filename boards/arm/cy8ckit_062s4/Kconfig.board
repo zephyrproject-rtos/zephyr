@@ -1,0 +1,6 @@
+# Copyright (c) 2023 David Ullmann
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CY8CKIT_062S4_M4
+	bool "PSoC 62S4 pioneer kit"
+	depends on SOC_CY8C6244LQI_S4D92

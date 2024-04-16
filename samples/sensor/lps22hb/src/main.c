@@ -41,17 +41,18 @@ static void process_sample(const struct device *dev)
 
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ONE(st_lps22hb_press);
 
 	if (!device_is_ready(dev)) {
 		printf("Device %s is not ready\n", dev->name);
-		return;
+		return 0;
 	}
 
 	while (true) {
 		process_sample(dev);
 		k_sleep(K_MSEC(2000));
 	}
+	return 0;
 }

@@ -14,10 +14,13 @@ if(CONFIG_FILE_SYSTEM)
                                            LFS_CONFIG=zephyr_lfs_config.h
   )
 
+  add_subdirectory_ifdef(CONFIG_FILE_SYSTEM_EXT2 ext2)
+
   zephyr_library_link_libraries(FS)
 
   target_link_libraries_ifdef(CONFIG_FAT_FILESYSTEM_ELM   FS INTERFACE ELMFAT)
   target_link_libraries_ifdef(CONFIG_FILE_SYSTEM_LITTLEFS FS INTERFACE LITTLEFS)
+  target_link_libraries_ifdef(CONFIG_FILE_SYSTEM_EXT2     FS INTERFACE EXT2)
 endif()
 
 add_subdirectory_ifdef(CONFIG_FCB  ./fcb)

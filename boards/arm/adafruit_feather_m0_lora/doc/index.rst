@@ -100,7 +100,7 @@ USB Device Port
 
 The SAMD21 MCU has a USB device port that can be used to communicate
 with a host PC.  See the :ref:`usb-samples` sample applications for
-more, such as the :ref:`usb_cdc-acm` sample which sets up a virtual
+more, such as the :zephyr:code-sample:`usb-cdc-acm` sample which sets up a virtual
 serial port that echos characters back to the host PC.
 
 LoRa Radio
@@ -167,7 +167,7 @@ References
 .. target-notes::
 
 .. _Adafruit Feather M0 with LoRa radio module Learn site:
-    https://learn.adafruit.com/adafruit-feather-m0-radio-with-lora-radio-module.
+    https://learn.adafruit.com/adafruit-feather-m0-radio-with-lora-radio-module
 
 .. _pinouts:
     https://learn.adafruit.com/adafruit-feather-m0-radio-with-lora-radio-module/pinouts

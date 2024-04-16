@@ -19,8 +19,6 @@
 
 #define IDC_CORE_MASK(num_cpus) (BIT(num_cpus) - 1)
 
-#define CAVS15_ROM_IDC_DELAY 500
-
 __imr void soc_mp_startup(uint32_t cpu)
 {
 	/* We got here via an IDC interrupt.  Clear the TFC high bit
@@ -38,22 +36,12 @@ __imr void soc_mp_startup(uint32_t cpu)
 	/* Interrupt must be enabled while running on current core */
 	irq_enable(DT_IRQN(INTEL_ADSP_IDC_DTNODE));
 
-	/* Unfortunately the interrupt controller doesn't understand
-	 * that each CPU has its own mask register (the timer has a
-	 * similar hook).  Needed only on hardware with ROMs that
-	 * disable this; otherwise our own code in soc_idc_init()
-	 * already has it unmasked.
-	 */
-	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25)) {
-		CAVS_INTCTRL[cpu].l2.clear = CAVS_L2_IDC;
-	}
 }
 
 void soc_start_core(int cpu_num)
 {
 	uint32_t curr_cpu = arch_proc_id();
 
-#ifdef CONFIG_SOC_INTEL_CAVS_V25
 	/* On cAVS v2.5, MP startup works differently.  The core has
 	 * no ROM, and starts running immediately upon receipt of an
 	 * IDC interrupt at the start of LPSRAM at 0xbe800000.  Note
@@ -84,7 +72,6 @@ void soc_start_core(int cpu_num)
 
 	memcpy(lpsram, tramp, ARRAY_SIZE(tramp));
 	lpsram[1] = z_soc_mp_asm_entry;
-#endif
 
 	/* Disable automatic power and clock gating for that CPU, so
 	 * it won't just go back to sleep.  Note that after startup,
@@ -93,18 +80,8 @@ void soc_start_core(int cpu_num)
 	 * turn itself off when it gets to the WAITI instruction in
 	 * the idle thread.
 	 */
-	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
-		CAVS_SHIM.clkctl |= CAVS_CLKCTL_TCPLCG(cpu_num);
-	}
+	CAVS_SHIM.clkctl |= CAVS_CLKCTL_TCPLCG(cpu_num);
 	CAVS_SHIM.pwrctl |= CAVS_PWRCTL_TCPDSPPG(cpu_num);
-
-	/* Older devices boot from a ROM and needs some time to
-	 * complete initialization and be waiting for the IDC we're
-	 * about to send.
-	 */
-	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25)) {
-		k_busy_wait(CAVS15_ROM_IDC_DELAY);
-	}
 
 	/* We set the interrupt controller up already, but the ROM on
 	 * some platforms will mess it up.
@@ -220,8 +197,7 @@ int soc_adsp_halt_cpu(int id)
 	 * because power is controlled by the host, so synchronization
 	 * needs to be part of the application layer.
 	 */
-	while (IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25) &&
-	       (CAVS_SHIM.pwrsts & CAVS_PWRSTS_PDSPPGS(id))) {
+	while ((CAVS_SHIM.pwrsts & CAVS_PWRSTS_PDSPPGS(id))) {
 	}
 	return 0;
 }

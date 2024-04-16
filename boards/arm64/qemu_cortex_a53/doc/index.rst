@@ -60,7 +60,7 @@ Programming and Debugging
 *************************
 
 Use this configuration to run basic Zephyr applications and kernel tests in the QEMU
-emulated environment, for example, with the :ref:`synchronization_sample`:
+emulated environment, for example, with the :zephyr:code-sample:`synchronization` sample:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
@@ -92,6 +92,13 @@ Refer to the detailed overview about :ref:`application_debugging`.
 
 Networking
 ==========
+
+The board supports the QEMU built-in Ethernet adapter to connect to the host
+system. See :ref:`networking_with_eth_qemu` for details.
+
+It is also possible to use SLIP networking over an emulated serial port.
+Although this board only supports a single UART, so subsystems like logging
+and shell would need to be disabled, therefore this is not directly supported.
 
 References
 **********

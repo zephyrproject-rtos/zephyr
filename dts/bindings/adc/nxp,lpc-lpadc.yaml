@@ -1,0 +1,82 @@
+# Copyright (c) 2020, Toby Firth
+# SPDX-License-Identifier: Apache-2.0
+
+description: LPC LPADC
+
+compatible: "nxp,lpc-lpadc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clk-divider:
+    type: int
+    required: true
+    description: clock divider for the converter
+
+  clk-source:
+    type: int
+    required: true
+    description: source to attach the ADC clock to
+
+  voltage-ref:
+    type: int
+    required: true
+    description: |
+      Voltage reference selection. Corresponds to value of
+      register field CFG[REFSEL] (see chip specific manual).
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  calibration-average:
+    type: int
+    description: conversion average number for auto-calibration
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+
+  power-level:
+    type: int
+    required: true
+    description: |
+      Power level selection. Corresponds to the value of
+      register field CFG[PWRSEL] (see chip specific manual).
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  offset-value-a:
+    type: int
+    required: true
+    description: Offset value A to use if CONFIG_LPADC_DO_OFFSET_CALIBRATION is false
+
+  offset-value-b:
+    type: int
+    required: true
+    description: Offset value B to use if CONFIG_LPADC_DO_OFFSET_CALIBRATION is false
+
+  nxp,reference-supply:
+    type: phandles
+    description: References to required regulators which must be enabled for LPADC to function
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

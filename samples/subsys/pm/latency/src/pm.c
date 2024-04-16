@@ -13,8 +13,6 @@ LOG_MODULE_REGISTER(soc_pm, CONFIG_APP_LOG_LEVEL);
 static const char *state2str(enum pm_state state)
 {
 	switch (state) {
-	case PM_STATE_ACTIVE:
-		return "ACTIVE";
 	case PM_STATE_RUNTIME_IDLE:
 		return "RUNTIME_IDLE";
 	case PM_STATE_SUSPEND_TO_IDLE:

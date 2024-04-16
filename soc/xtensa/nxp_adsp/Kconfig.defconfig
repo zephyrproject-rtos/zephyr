@@ -4,3 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 source "soc/xtensa/nxp_adsp/*/Kconfig.defconfig.series"
+
+config CACHE_MANAGEMENT
+	def_bool y

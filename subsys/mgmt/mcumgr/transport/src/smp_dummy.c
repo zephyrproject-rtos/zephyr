@@ -10,8 +10,8 @@
  */
 
 /* Define required for uart_mcumgr.h functionality reuse */
-#define CONFIG_UART_MCUMGR_RX_BUF_SIZE CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE
-#define MCUMGR_DUMMY_MAX_FRAME CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE
+#define CONFIG_UART_MCUMGR_RX_BUF_SIZE CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE
+#define MCUMGR_DUMMY_MAX_FRAME CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
@@ -29,8 +29,8 @@
 
 #include <mgmt/mcumgr/transport/smp_internal.h>
 
-BUILD_ASSERT(CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE != 0,
-	     "CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE must be > 0");
+BUILD_ASSERT(CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE != 0,
+	     "CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE must be > 0");
 
 struct device;
 static struct mcumgr_serial_rx_ctxt smp_dummy_rx_ctxt;
@@ -38,9 +38,9 @@ static struct mcumgr_serial_rx_ctxt smp_dummy_tx_ctxt;
 static struct smp_transport smp_dummy_transport;
 static bool enable_dummy_smp;
 static struct k_sem smp_data_ready_sem;
-static uint8_t smp_send_buffer[CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE];
+static uint8_t smp_send_buffer[CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE];
 static uint16_t smp_send_pos;
-static uint8_t smp_receive_buffer[CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE];
+static uint8_t smp_receive_buffer[CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE];
 static uint16_t smp_receive_pos;
 
 /** Callback to execute when a valid fragment has been received. */
@@ -65,7 +65,7 @@ static struct net_buf *mcumgr_dummy_process_frag(
 
 static struct net_buf *mcumgr_dummy_process_frag_outgoing(
 	struct mcumgr_serial_rx_ctxt *tx_ctxt,
-	const uint8_t *frag, int frag_len);
+	const uint8_t *frag, uint16_t frag_len);
 
 static int mcumgr_dummy_tx_pkt(const uint8_t *data, int len,
 			       mcumgr_serial_tx_cb cb);
@@ -113,7 +113,7 @@ static void smp_dummy_process_frag(struct uart_mcumgr_rx_buf *rx_buf)
  * used in tests
  */
 static struct net_buf *smp_dummy_process_frag_outgoing(uint8_t *buffer,
-						       uint8_t buffer_size)
+						       uint16_t buffer_size)
 {
 	struct net_buf *nb;
 
@@ -152,7 +152,7 @@ static void smp_dummy_rx_frag(struct uart_mcumgr_rx_buf *rx_buf)
 
 static uint16_t smp_dummy_get_mtu(const struct net_buf *nb)
 {
-	return CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE;
+	return CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE;
 }
 
 int dummy_mcumgr_send_raw(const void *data, int len)
@@ -185,19 +185,25 @@ static int smp_dummy_tx_pkt_int(struct net_buf *nb)
 	return rc;
 }
 
-static int smp_dummy_init(const struct device *dev)
+static int smp_dummy_init(void)
 {
-	ARG_UNUSED(dev);
+	int rc;
 
 	k_sem_init(&smp_data_ready_sem, 0, 1);
 
-	smp_transport_init(&smp_dummy_transport, smp_dummy_tx_pkt_int,
-			   smp_dummy_get_mtu, NULL, NULL, NULL);
+	smp_dummy_transport.functions.output = smp_dummy_tx_pkt_int;
+	smp_dummy_transport.functions.get_mtu = smp_dummy_get_mtu;
+
+	rc = smp_transport_init(&smp_dummy_transport);
+
+	if (rc != 0) {
+		return rc;
+	}
+
 	dummy_mgumgr_recv_cb = smp_dummy_rx_frag;
 
 	return 0;
 }
-
 
 static struct uart_mcumgr_rx_buf *dummy_mcumgr_alloc_rx_buf(void)
 {
@@ -220,7 +226,7 @@ static void dummy_mcumgr_free_rx_buf(struct uart_mcumgr_rx_buf *rx_buf)
 	void *block;
 
 	block = rx_buf;
-	k_mem_slab_free(&dummy_mcumgr_slab, &block);
+	k_mem_slab_free(&dummy_mcumgr_slab, block);
 }
 
 /**
@@ -435,7 +441,7 @@ static struct net_buf *mcumgr_dummy_process_frag(
  */
 static struct net_buf *mcumgr_dummy_process_frag_outgoing(
 	struct mcumgr_serial_rx_ctxt *tx_ctxt,
-	const uint8_t *frag, int frag_len)
+	const uint8_t *frag, uint16_t frag_len)
 {
 	struct net_buf *nb;
 	uint16_t crc;

@@ -47,6 +47,7 @@ int iis2mdc_i2c_init(const struct device *dev)
 
 	data->ctx_i2c.read_reg = (stmdev_read_ptr) iis2mdc_i2c_read;
 	data->ctx_i2c.write_reg = (stmdev_write_ptr) iis2mdc_i2c_write;
+	data->ctx_i2c.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay;
 
 	data->ctx = &data->ctx_i2c;
 	data->ctx->handle = (void *)dev;

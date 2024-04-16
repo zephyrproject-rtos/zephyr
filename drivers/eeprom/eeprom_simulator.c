@@ -219,14 +219,14 @@ static int eeprom_mock_init(const struct device *dev)
 
 	eeprom_fd = open(eeprom_file_path, O_RDWR | O_CREAT, (mode_t)0600);
 	if (eeprom_fd == -1) {
-		posix_print_warning("Failed to open eeprom device file ",
+		posix_print_warning("Failed to open eeprom device file "
 				    "%s: %s\n",
 				    eeprom_file_path, strerror(errno));
 		return -EIO;
 	}
 
 	if (ftruncate(eeprom_fd, DT_INST_PROP(0, size)) == -1) {
-		posix_print_warning("Failed to resize eeprom device file ",
+		posix_print_warning("Failed to resize eeprom device file "
 				    "%s: %s\n",
 				    eeprom_file_path, strerror(errno));
 		return -EIO;

@@ -7,7 +7,7 @@
 # SYSCON options
 #
 menuconfig SYSCON
-	bool "SYSCON (System Controller) drivers"
+	bool "System Controller (SYSCON) drivers"
 	help
 	  SYSCON (System Controller) drivers. System controller node represents
 	  a register region containing a set of miscellaneous registers. The

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_TESTS_DRIVERS_CAN_SHELL_FAKE_CAN_H_
-#define ZEPHYR_TESTS_DRIVERS_CAN_SHELL_FAKE_CAN_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_FAKE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_FAKE_H_
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/fff.h>
@@ -49,4 +49,4 @@ DECLARE_FAKE_VALUE_FUNC(int, fake_can_get_max_filters, const struct device *, bo
 }
 #endif
 
-#endif /* ZEPHYR_TESTS_DRIVERS_CAN_SHELL_FAKE_CAN_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_FAKE_H_ */

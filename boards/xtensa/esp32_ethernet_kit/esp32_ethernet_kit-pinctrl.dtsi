@@ -13,6 +13,7 @@
 	uart0_default: uart0_default {
 		group1 {
 			pinmux = <UART0_TX_GPIO1>;
+			output-high;
 		};
 		group2 {
 			pinmux = <UART0_RX_GPIO3>;

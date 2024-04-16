@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Kamil Serwus
+ * Copyright (c) 2023 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +10,6 @@
  * @brief Atmel SAMC MCU series initialization code
  */
 
-#include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -43,27 +43,10 @@ static void gclks_init(void)
 			     | GCLK_GENCTRL_GENEN;
 }
 
-static int atmel_samc_init(const struct device *arg)
+void z_arm_platform_init(void)
 {
-	uint32_t key;
-
-	ARG_UNUSED(arg);
-
-	key = irq_lock();
-
 	flash_waitstates_init();
 	osc48m_init();
 	mclk_init();
 	gclks_init();
-
-	/* Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	irq_unlock(key);
-
-	return 0;
 }
-
-SYS_INIT(atmel_samc_init, PRE_KERNEL_1, 0);

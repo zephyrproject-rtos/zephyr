@@ -1,0 +1,9 @@
+# Copyright (C) 2023, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_AGILEX5
+	bool "Agilex5 SoCFPGA clock control driver"
+	default y
+	depends on DT_HAS_INTEL_AGILEX5_CLOCK_ENABLED
+	help
+	  This option enables the clock driver for Intel Agilex5 SoCFPGA SOC.

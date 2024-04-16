@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		accel0 = &bmi160_ti_bp_bassensorsmkii;
+		gyro0 = &bmi160_ti_bp_bassensorsmkii;
+		optical0 = &opt3001_ti_bp_bassensorsmkii;
+	};
+};
+
+&arduino_i2c {
+	bmi160_ti_bp_bassensorsmkii: bmi160@69 {
+		compatible = "bosch,bmi160";
+		reg = <0x69>;
+		int-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>;
+	};
+
+	opt3001_ti_bp_bassensorsmkii: opt3001@44 {
+		compatible = "ti,opt3001";
+		reg = <0x44>;
+	};
+};

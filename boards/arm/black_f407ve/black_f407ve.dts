@@ -7,14 +7,15 @@
 /dts-v1/;
 #include <st/f4/stm32f407Xe.dtsi>
 #include <st/f4/stm32f407v(e-g)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "black_f407ve board";
-	compatible = "st,stm32f407";
+	compatible = "black-stm32f407";
 
 	chosen {
-		zephyr,console = &usart2;
-		zephyr,shell-uart = &usart2;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,ccm = &ccm0;
@@ -38,14 +39,17 @@
 		user_button_0: K0 {
 			label = "Key K0";
 			gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		user_button_1: K1 {
 			label = "Key K1";
 			gpios = <&gpioe 3 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		user_button_UP: K_UP {
 			label = "Key WK_UP";
 			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_UP>;
 		};
 	};
 
@@ -84,7 +88,7 @@
 };
 
 &usart1 {
-	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";

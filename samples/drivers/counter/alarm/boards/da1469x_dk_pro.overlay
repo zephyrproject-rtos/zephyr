@@ -1,0 +1,5 @@
+&timer3 {
+	clock-src = <&lp_clk>;
+	prescaler = <1>;
+	status = "okay";
+};

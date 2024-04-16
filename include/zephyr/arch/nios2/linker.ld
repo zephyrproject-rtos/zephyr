@@ -259,16 +259,14 @@ SECTIONS
 
 #include <zephyr/linker/common-noinit.ld>
 
-    /* Define linker symbols */
-    _image_ram_end = .;
-    _end = .; /* end of image */
-
-    GROUP_END(RAMABLE_REGION)
-
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-sections.ld>
+
+#include <zephyr/linker/ram-end.ld>
+
+    GROUP_END(RAMABLE_REGION)
 
 #include <zephyr/linker/debug-sections.ld>
 

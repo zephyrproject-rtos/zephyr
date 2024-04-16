@@ -1,0 +1,27 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_BOARD_MR_CANHUBK3=y
+CONFIG_SOC_S32K344_M7=y
+CONFIG_SOC_SERIES_S32K3_M7=y
+CONFIG_BUILD_OUTPUT_HEX=y
+
+# Use Systick as system clock
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=160000000
+
+# Run from internal Flash
+CONFIG_XIP=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Use no-cached memory for HAL
+CONFIG_NOCACHE_MEMORY=y
+
+# Drivers
+CONFIG_PINCTRL=y
+CONFIG_SERIAL=y
+CONFIG_WATCHDOG=y
+
+# Serial console
+CONFIG_CONSOLE=y

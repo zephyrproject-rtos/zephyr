@@ -1,0 +1,23 @@
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+TYPE = TIMER
+type = timer_t
+type-function = timer_create
+source "lib/posix/Kconfig.template.pooled_type"
+
+config TIMER_CREATE_WAIT
+	int "Time to wait for timer availability (in msec) in POSIX application"
+	default 100
+	range 0 1000
+	help
+	  This controls how long to wait for resources to come available to create
+	  a new timer in POSIX compliant application
+
+config TIMER_DELAYTIMER_MAX
+	int "Maximum count returned my timer_getoverrun() in POSIX application"
+	default 20
+	help
+	  This controls the maximum number of times a timer can overrun before
+	  timer_getoverrun() in POSIX compliant application.

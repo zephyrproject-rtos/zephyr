@@ -424,7 +424,7 @@ References
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
 .. _TI TCA9538 datasheet: https://www.ti.com/lit/gpn/TCA9538
 .. _Macronix MX25R6435FZNIL0 datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/8868/MX25R6435F,%20Wide%20Range,%2064Mb,%20v1.6.pdf
-.. _Giantec GT24C256C-2GLI-TR datasheet: http://www.giantec-semi.com/Upload/datasheet/CU/GT24C256C_DS_Cu.pdf
+.. _Giantec GT24C256C-2GLI-TR datasheet: https://www.giantec-semi.com/juchen1123/uploads/pdf/GT24C256C_DS_Cu.pdf
 .. _Bosch BME680 datasheet: https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bme680-ds001.pdf
 .. _ST Microelectronics LIS3DH datasheet: https://www.st.com/resource/en/datasheet/lis3dh.pdf
 .. _Microchip ENC424J600 datasheet: https://ww1.microchip.com/downloads/en/DeviceDoc/39935c.pdf

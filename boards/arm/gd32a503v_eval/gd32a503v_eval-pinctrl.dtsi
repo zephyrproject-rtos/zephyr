@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2022 YuLong Yao <feilongphone@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/gd32a503v(b-c-d)xx-pinctrl.h>
+
+&pinctrl {
+	usart0_default: usart0_default {
+		group1 {
+			pinmux = <USART0_TX_PA10>, <USART0_RX_PA11>;
+		};
+	};
+
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <ADC0_IN1_PC10>;
+		};
+	};
+
+	dac_default: dac_default {
+		group1 {
+			pinmux = <DAC_OUT_PA7>;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <SPI0_SCK_PE14>, <SPI0_MOSI_PA2>,
+				 <SPI0_MISO_PE13>,
+				 /* Use pinmux to pullup pg10 and pg11. */
+				 <SPI0_IO2_PE15>, <SPI0_IO3_PB10>;
+		};
+	};
+};

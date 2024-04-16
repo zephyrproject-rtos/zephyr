@@ -31,6 +31,7 @@ extern "C" {
 
 /**
  * @defgroup timeutil_apis Time Utility APIs
+ * @ingroup utilities
  * @defgroup timeutil_repr_apis Time Representation APIs
  * @ingroup timeutil_apis
  * @{

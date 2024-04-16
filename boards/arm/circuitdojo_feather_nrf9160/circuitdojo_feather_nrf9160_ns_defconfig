@@ -28,5 +28,3 @@ CONFIG_UART_CONSOLE=y
 
 # required to enable 3V3 power rail
 CONFIG_REGULATOR=y
-
-CONFIG_PINCTRL=y

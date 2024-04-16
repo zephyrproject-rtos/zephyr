@@ -11,13 +11,10 @@ config BOARD
 config BT_CTLR
 	default BT
 
+config INPUT
+	default y if LVGL
+
 if FLASH
-
-config SPI
-	default y
-
-config SPI_NOR
-	default y
 
 config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	default 4096

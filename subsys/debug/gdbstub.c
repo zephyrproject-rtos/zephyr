@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
@@ -821,9 +821,8 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 	return 0;
 }
 
-int gdb_init(const struct device *arg)
+int gdb_init(void)
 {
-	ARG_UNUSED(arg);
 
 	if (z_gdb_backend_init() == -1) {
 		LOG_ERR("Could not initialize gdbstub backend.");

@@ -11,6 +11,7 @@ config SOC_SERIES_EFR32MG12P
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
 	select SOC_FAMILY_EXX32
+	select SOC_GECKO_HAS_RADIO
 	select HAS_SILABS_GECKO
 	select HAS_SWO
 	select SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
@@ -19,5 +20,7 @@ config SOC_SERIES_EFR32MG12P
 	select SOC_GECKO_EMU
 	select SOC_GECKO_GPIO
 	select SOC_GECKO_TRNG
+	select HAS_PM
+	select SOC_GECKO_SERIES1
 	help
 	  Enable support for EFR32 Mighty Gecko MCU series

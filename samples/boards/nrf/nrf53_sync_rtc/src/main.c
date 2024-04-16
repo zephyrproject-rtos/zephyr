@@ -30,8 +30,9 @@ static void timeout_handler(struct k_timer *timer)
 
 K_TIMER_DEFINE(timer, timeout_handler, NULL);
 
-void main(void)
+int main(void)
 {
 	LOG_INF("Synchronization using %s driver", IS_ENABLED(CONFIG_MBOX) ? "mbox" : "ipm");
 	k_timer_start(&timer, K_MSEC(50), K_MSEC(50));
+	return 0;
 }

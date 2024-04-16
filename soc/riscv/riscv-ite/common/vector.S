@@ -33,7 +33,7 @@ SECTION_FUNC(vectors, __start)
 	la t0, _isr_wrapper
 	csrw mtvec, t0
 	csrwi mie, 0
-
+#if (CONFIG_SOC_IT8XXX2_FLASH_SIZE_BYTES == 0x100000)
 	/*
 	 * bit[3-0]@EIDSR=8: instruction local memory size is 1M byte
 	 * This operation must be done before accessing memory.
@@ -43,7 +43,7 @@ SECTION_FUNC(vectors, __start)
 	andi t1, t1, 0xf0
 	ori  t1, t1, 0x8
 	sb t1, 0(t0)
-
+#endif
 	/* Jump to __initialize */
 	tail __initialize
 

@@ -46,7 +46,7 @@ def main():
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument('-u', '--user', help='username')
     parser.add_argument('-p', '--password', help='password')
     parser.add_argument('-i', '--index', help='index to push to.', required=True)

@@ -24,7 +24,7 @@ Configuration options
 
 import logging
 import re
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from sphinx.application import Sphinx
 from sphinx.util.logging import NAMESPACE
@@ -41,6 +41,7 @@ class WarningsFilter(logging.Filter):
         silent: If true, warning is hidden, otherwise it is shown as INFO.
         name: Filter name.
     """
+
     def __init__(self, expressions: List[str], silent: bool, name: str = "") -> None:
         super().__init__(name)
 
@@ -52,7 +53,8 @@ class WarningsFilter(logging.Filter):
             return True
 
         for expression in self._expressions:
-            if re.match(expression, record.msg):
+            # The message isn't always a string so we convert it before regexing as we can only regex strings
+            if expression.match(str(record.msg)):
                 if self._silent:
                     return False
                 else:
@@ -61,6 +63,21 @@ class WarningsFilter(logging.Filter):
                     return True
 
         return True
+
+
+class Expression:
+    """
+    Encapsulate a log filter pattern and track if it ever matches a log line.
+    """
+
+    def __init__(self, pattern):
+        self.pattern = pattern
+        self.matched = False
+
+    def match(self, str):
+        matches = bool(re.match(self.pattern, str))
+        self.matched = matches or self.matched
+        return matches
 
 
 def configure(app: Sphinx) -> None:
@@ -74,8 +91,10 @@ def configure(app: Sphinx) -> None:
     with open(app.config.warnings_filter_config) as f:
         expressions = list()
         for line in f.readlines():
-            if not line.startswith("#"):
-                expressions.append(line.rstrip())
+            if line.strip() and not line.startswith("#"):
+                expressions.append(Expression(line.rstrip()))
+
+    app.env.warnings_filter_expressions = expressions
 
     # install warnings filter to all the Sphinx logger handlers
     filter = WarningsFilter(expressions, app.config.warnings_filter_silent)
@@ -84,11 +103,28 @@ def configure(app: Sphinx) -> None:
         handler.filters.insert(0, filter)
 
 
+def finished(app: Sphinx, exception: Optional[Exception]):
+    """
+    Prints out any patterns that have not matched a log line to allow us to clean up any that are not used.
+    """
+    if exception:
+        # Early exit if there has been an exception as matching data is only
+        # valid for complete builds
+        return
+
+    expressions = app.env.warnings_filter_expressions
+
+    for expression in expressions:
+        if not expression.matched:
+            logging.warning(f"Unused expression: {expression.pattern}")
+
+
 def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("warnings_filter_config", "", "")
     app.add_config_value("warnings_filter_silent", True, "")
 
     app.connect("builder-inited", configure)
+    app.connect("build-finished", finished)
 
     return {
         "version": __version__,

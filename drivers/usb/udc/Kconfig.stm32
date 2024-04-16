@@ -1,0 +1,14 @@
+# Copyright (c) 2023 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_STM32
+	bool "STM32 USB device controller driver"
+	depends on DT_HAS_ST_STM32_OTGFS_ENABLED \
+		|| DT_HAS_ST_STM32_OTGHS_ENABLED \
+		|| DT_HAS_ST_STM32_USB_ENABLED
+	select USE_STM32_LL_USB
+	select USE_STM32_HAL_PCD
+	select USE_STM32_HAL_PCD_EX
+	default y
+	help
+	  STM32 USB device controller driver.

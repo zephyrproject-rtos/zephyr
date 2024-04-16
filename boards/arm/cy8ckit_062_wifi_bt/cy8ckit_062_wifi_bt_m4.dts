@@ -10,7 +10,7 @@
 
 / {
 	model = "cy8ckit_062_wifi_bt_m4 with a Cypress PSoC6 SoC";
-	compatible = "cy8ckit_062_wifi_bt_m4", "PSoC6";
+	compatible = "cypress,cy8ckit_062_wifi_bt_m4", "cypress,PSoC6";
 
 	aliases {
 		uart-5 = &uart5;

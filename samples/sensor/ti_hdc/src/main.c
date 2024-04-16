@@ -12,14 +12,14 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/gpio.h>
 
-void main(void)
+int main(void)
 {
 	printk("Running on %s!\n", CONFIG_ARCH);
 	const struct device *const dev = DEVICE_DT_GET_ONE(ti_hdc);
 
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");
-		return;
+		return 0;
 	}
 
 	printk("Dev %p name %s is ready!\n", dev, dev->name);
@@ -40,4 +40,5 @@ void main(void)
 		/* wait for the next sample */
 		k_sleep(K_SECONDS(10));
 	}
+	return 0;
 }

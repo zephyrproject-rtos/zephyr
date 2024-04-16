@@ -1,0 +1,16 @@
+# Nordic Semiconductor nRF52833 MCU
+
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF52833_QDAA
+
+config SOC
+	string
+	default "nRF52833_QDAA"
+
+config NUM_IRQS
+	int
+	default 48
+
+endif # SOC_NRF52833_QDAA

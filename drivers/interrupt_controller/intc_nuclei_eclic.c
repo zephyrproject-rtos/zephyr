@@ -11,11 +11,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/init.h>
+#include <zephyr/device.h>
 #include <soc.h>
 
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
+
+#define DT_DRV_COMPAT nuclei_eclic
 
 union CLICCFG {
 	struct {
@@ -182,4 +184,5 @@ static int nuclei_eclic_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(nuclei_eclic_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);
+DEVICE_DT_INST_DEFINE(0, nuclei_eclic_init, NULL, NULL, NULL,
+		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);

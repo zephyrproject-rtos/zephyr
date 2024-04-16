@@ -40,10 +40,6 @@ target_include_directories(boot_stage2 PUBLIC
   ${ZEPHYR_BASE}/include
   )
 
-if(CONFIG_LEGACY_INCLUDE_PATH)
-  target_include_directories(boot_stage2 PUBLIC ${ZEPHYR_BASE}/include/zephyr)
-endif()
-
 target_link_options(boot_stage2 PRIVATE
   "-nostartfiles"
   "--specs=nosys.specs"

@@ -16,7 +16,6 @@
 LOG_MODULE_REGISTER(can_mcp2515, CONFIG_CAN_LOG_LEVEL);
 
 #include "can_mcp2515.h"
-#include "can_utils.h"
 
 #define SP_IS_SET(inst) DT_INST_NODE_HAS_PROP(inst, sample_point) ||
 
@@ -362,11 +361,8 @@ static int mcp2515_set_timing(const struct device *dev,
 	/* CNF1; SJW<7:6> | BRP<5:0> */
 	__ASSERT(timing->prescaler > 0, "Prescaler should be bigger than zero");
 	uint8_t brp = timing->prescaler - 1;
-	if (timing->sjw != CAN_SJW_NO_CHANGE) {
-		dev_data->sjw = (timing->sjw - 1) << 6;
-	}
-
-	uint8_t cnf1 = dev_data->sjw | brp;
+	uint8_t sjw = (timing->sjw - 1) << 6;
+	uint8_t cnf1 = sjw | brp;
 
 	/* CNF2; BTLMODE<7>|SAM<6>|PHSEG1<5:3>|PRSEG<2:0> */
 	const uint8_t btlmode = 1 << 7;
@@ -392,17 +388,6 @@ static int mcp2515_set_timing(const struct device *dev,
 	 * RXB1 */
 	const uint8_t rx0_ctrl = BIT(6) | BIT(5) | BIT(2);
 	const uint8_t rx1_ctrl = BIT(6) | BIT(5);
-
-	__ASSERT(timing->sjw <= 4, "1 <= SJW <= 4");
-	__ASSERT((timing->prop_seg >= 1) && (timing->prop_seg <= 8),
-		 "1 <= PROP <= 8");
-	__ASSERT((timing->phase_seg1 >= 1) && (timing->phase_seg1 <= 8),
-		 "1 <= BS1 <= 8");
-	__ASSERT((timing->phase_seg2 >= 2) && (timing->phase_seg2 <= 8),
-		 "2 <= BS2 <= 8");
-	__ASSERT(timing->prop_seg + timing->phase_seg1 >= timing->phase_seg2,
-		 "PROP + BS1 >= BS2");
-	__ASSERT(timing->phase_seg2 > timing->sjw, "BS2 > SJW");
 
 	config_buf[0] = cnf3;
 	config_buf[1] = cnf2;
@@ -704,8 +689,7 @@ static void mcp2515_rx_filter(const struct device *dev,
 			continue; /* filter slot empty */
 		}
 
-		if (!can_utils_filter_match(frame,
-					    &dev_data->filter[filter_id])) {
+		if (!can_frame_matches_filter(frame, &dev_data->filter[filter_id])) {
 			continue; /* filter did not match */
 		}
 
@@ -939,7 +923,8 @@ static int mcp2515_init(const struct device *dev)
 {
 	const struct mcp2515_config *dev_cfg = dev->config;
 	struct mcp2515_data *dev_data = dev->data;
-	struct can_timing timing;
+	struct can_timing timing = { 0 };
+	k_tid_t tid;
 	int ret;
 
 	k_sem_init(&dev_data->int_sem, 0, 1);
@@ -965,7 +950,7 @@ static int mcp2515_init(const struct device *dev)
 	}
 
 	/* Initialize interrupt handling  */
-	if (!device_is_ready(dev_cfg->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&dev_cfg->int_gpio)) {
 		LOG_ERR("Interrupt GPIO port not ready");
 		return -ENODEV;
 	}
@@ -988,17 +973,17 @@ static int mcp2515_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	k_thread_create(&dev_data->int_thread, dev_data->int_thread_stack,
-			dev_cfg->int_thread_stack_size,
-			(k_thread_entry_t) mcp2515_int_thread, (void *)dev,
-			NULL, NULL, K_PRIO_COOP(dev_cfg->int_thread_priority),
-			0, K_NO_WAIT);
+	tid = k_thread_create(&dev_data->int_thread, dev_data->int_thread_stack,
+			      dev_cfg->int_thread_stack_size,
+			      (k_thread_entry_t) mcp2515_int_thread, (void *)dev,
+			      NULL, NULL, K_PRIO_COOP(dev_cfg->int_thread_priority),
+			      0, K_NO_WAIT);
+	(void)k_thread_name_set(tid, "mcp2515");
 
 	(void)memset(dev_data->rx_cb, 0, sizeof(dev_data->rx_cb));
 	(void)memset(dev_data->filter, 0, sizeof(dev_data->filter));
 	dev_data->old_state = CAN_STATE_ERROR_ACTIVE;
 
-	timing.sjw = dev_cfg->tq_sjw;
 	if (dev_cfg->sample_point && USE_SP_ALGO) {
 		ret = can_calc_timing(dev, &timing, dev_cfg->bus_speed,
 				      dev_cfg->sample_point);
@@ -1010,6 +995,7 @@ static int mcp2515_init(const struct device *dev)
 			timing.prescaler, timing.phase_seg1, timing.phase_seg2);
 		LOG_DBG("Sample-point err : %d", ret);
 	} else {
+		timing.sjw = dev_cfg->tq_sjw;
 		timing.prop_seg = dev_cfg->tq_prop;
 		timing.phase_seg1 = dev_cfg->tq_bs1;
 		timing.phase_seg2 = dev_cfg->tq_bs2;
@@ -1057,8 +1043,8 @@ static int mcp2515_init(const struct device *dev)
 		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(inst, 1000000),                 \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &mcp2515_init, NULL, &mcp2515_data_##inst,                     \
-			      &mcp2515_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,       \
-			      &can_api_funcs);
+	CAN_DEVICE_DT_INST_DEFINE(inst, mcp2515_init, NULL, &mcp2515_data_##inst,                 \
+				  &mcp2515_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,   \
+				  &can_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(MCP2515_INIT)

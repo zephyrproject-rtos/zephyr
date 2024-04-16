@@ -8,11 +8,12 @@
 
 int broadcaster_multiple(void);
 
-void main(void)
+int main(void)
 {
 	printk("Starting Multiple Broadcaster Demo\n");
 
 	(void)broadcaster_multiple();
 
 	printk("Exiting %s thread.\n", __func__);
+	return 0;
 }

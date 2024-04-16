@@ -8,5 +8,5 @@ compatible: "zephyr,sim-eeprom"
 include: eeprom-base.yaml
 
 properties:
-    size:
-      required: true
+  size:
+    required: true

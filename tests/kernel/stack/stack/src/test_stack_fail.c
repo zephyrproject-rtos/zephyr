@@ -17,14 +17,14 @@ extern struct k_stack stack;
 K_THREAD_STACK_DEFINE(threadstack2, STACK_SIZE);
 struct k_thread thread_data2;
 
-static void stack_pop_fail(struct k_stack *stack)
+static void stack_pop_fail(struct k_stack *rx_data_stack)
 {
 	stack_data_t rx_data;
 
 	/**TESTPOINT: stack pop returns -EBUSY*/
-	zassert_equal(k_stack_pop(stack, &rx_data, K_NO_WAIT), -EBUSY);
+	zassert_equal(k_stack_pop(rx_data_stack, &rx_data, K_NO_WAIT), -EBUSY);
 	/**TESTPOINT: stack pop returns -EAGAIN*/
-	zassert_equal(k_stack_pop(stack, &rx_data, TIMEOUT), -EAGAIN);
+	zassert_equal(k_stack_pop(rx_data_stack, &rx_data, TIMEOUT), -EAGAIN);
 }
 
 /**

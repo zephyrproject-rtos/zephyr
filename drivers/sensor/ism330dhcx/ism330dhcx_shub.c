@@ -146,7 +146,7 @@ static int ism330dhcx_lis2mdl_conf(const struct device *dev, uint8_t i2c_addr,
 
 #define HTS221_REG_CONV_START		0x30
 
-static int lsmdso_hts221_read_conv_data(const struct device *dev, uint8_t i2c_addr)
+static int ism330dhcx_hts221_read_conv_data(const struct device *dev, uint8_t i2c_addr)
 {
 	struct ism330dhcx_data *data = dev->data;
 	uint8_t buf[16], i;
@@ -179,7 +179,7 @@ static int ism330dhcx_hts221_init(const struct device *dev, uint8_t i2c_addr)
 	hum_cfg = HTS221_ODR_1HZ | HTS221_BDU | HTS221_PD;
 	ism330dhcx_shub_write_slave_reg(dev, i2c_addr, HTS221_REG_CTRL1, &hum_cfg, 1);
 
-	return lsmdso_hts221_read_conv_data(dev, i2c_addr);
+	return ism330dhcx_hts221_read_conv_data(dev, i2c_addr);
 }
 
 static const uint16_t hts221_map[] = {0, 1, 7, 12};

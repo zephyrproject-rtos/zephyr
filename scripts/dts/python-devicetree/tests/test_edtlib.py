@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import contextlib
+from copy import deepcopy
 import io
 from logging import WARNING
 import os
@@ -60,85 +61,167 @@ def test_interrupts():
     '''Tests for the interrupts property.'''
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
-    filenames = {i: hpath(f'test-bindings/interrupt-{i}-cell.yaml')
-                 for i in range(1, 4)}
 
-    assert str(edt.get_node("/interrupt-parent-test/node").interrupts) == \
-        f"[<ControllerAndData, name: foo, controller: <Node /interrupt-parent-test/controller in 'test.dts', binding {filenames[3]}>, data: {{'one': 1, 'two': 2, 'three': 3}}>, <ControllerAndData, name: bar, controller: <Node /interrupt-parent-test/controller in 'test.dts', binding {filenames[3]}>, data: {{'one': 4, 'two': 5, 'three': 6}}>]"
+    node = edt.get_node("/interrupt-parent-test/node")
+    controller = edt.get_node('/interrupt-parent-test/controller')
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller, data={'one': 1, 'two': 2, 'three': 3}, name='foo', basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller, data={'one': 4, 'two': 5, 'three': 6}, name='bar', basename=None)
+    ]
 
-    assert str(edt.get_node("/interrupts-extended-test/node").interrupts) == \
-        f"[<ControllerAndData, controller: <Node /interrupts-extended-test/controller-0 in 'test.dts', binding {filenames[1]}>, data: {{'one': 1}}>, <ControllerAndData, controller: <Node /interrupts-extended-test/controller-1 in 'test.dts', binding {filenames[2]}>, data: {{'one': 2, 'two': 3}}>, <ControllerAndData, controller: <Node /interrupts-extended-test/controller-2 in 'test.dts', binding {filenames[3]}>, data: {{'one': 4, 'two': 5, 'three': 6}}>]"
+    node = edt.get_node("/interrupts-extended-test/node")
+    controller_0 = edt.get_node('/interrupts-extended-test/controller-0')
+    controller_1 = edt.get_node('/interrupts-extended-test/controller-1')
+    controller_2 = edt.get_node('/interrupts-extended-test/controller-2')
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller_0, data={'one': 1}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_1, data={'one': 2, 'two': 3}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 4, 'two': 5, 'three': 6}, name=None, basename=None)
+    ]
 
-    assert str(edt.get_node("/interrupt-map-test/node@0").interrupts) == \
-        f"[<ControllerAndData, controller: <Node /interrupt-map-test/controller-0 in 'test.dts', binding {filenames[1]}>, data: {{'one': 0}}>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-1 in 'test.dts', binding {filenames[2]}>, data: {{'one': 0, 'two': 1}}>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-2 in 'test.dts', binding {filenames[3]}>, data: {{'one': 0, 'two': 0, 'three': 2}}>]"
+    node = edt.get_node("/interrupt-map-test/node@0")
+    controller_0 = edt.get_node('/interrupt-map-test/controller-0')
+    controller_1 = edt.get_node('/interrupt-map-test/controller-1')
+    controller_2 = edt.get_node('/interrupt-map-test/controller-2')
 
-    assert str(edt.get_node("/interrupt-map-test/node@1").interrupts) == \
-        f"[<ControllerAndData, controller: <Node /interrupt-map-test/controller-0 in 'test.dts', binding {filenames[1]}>, data: {{'one': 3}}>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-1 in 'test.dts', binding {filenames[2]}>, data: {{'one': 0, 'two': 4}}>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-2 in 'test.dts', binding {filenames[3]}>, data: {{'one': 0, 'two': 0, 'three': 5}}>]"
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller_0, data={'one': 0}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_1, data={'one': 0, 'two': 1}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 2}, name=None, basename=None)
+    ]
 
-    assert str(edt.get_node("/interrupt-map-bitops-test/node@70000000E").interrupts) == \
-        f"[<ControllerAndData, controller: <Node /interrupt-map-bitops-test/controller in 'test.dts', binding {filenames[2]}>, data: {{'one': 3, 'two': 2}}>]"
+    node = edt.get_node("/interrupt-map-test/node@1")
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller_0, data={'one': 3}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_1, data={'one': 0, 'two': 4}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 5}, name=None, basename=None)
+    ]
+
+    node = edt.get_node("/interrupt-map-bitops-test/node@70000000E")
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=edt.get_node('/interrupt-map-bitops-test/controller'), data={'one': 3, 'two': 2}, name=None, basename=None)
+    ]
 
 def test_ranges():
     '''Tests for the ranges property'''
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
 
-    assert str(edt.get_node("/reg-ranges/parent").ranges) == \
-        "[<Range, child-bus-cells: 0x1, child-bus-addr: 0x1, parent-bus-cells: 0x2, parent-bus-addr: 0xa0000000b, length-cells 0x1, length 0x1>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x2, parent-bus-cells: 0x2, parent-bus-addr: 0xc0000000d, length-cells 0x1, length 0x2>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x4, parent-bus-cells: 0x2, parent-bus-addr: 0xe0000000f, length-cells 0x1, length 0x1>]"
+    node = edt.get_node("/reg-ranges/parent")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x1, parent_bus_cells=0x2, parent_bus_addr=0xa0000000b, length_cells=0x1, length=0x1),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x2, parent_bus_cells=0x2, parent_bus_addr=0xc0000000d, length_cells=0x1, length=0x2),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x4, parent_bus_cells=0x2, parent_bus_addr=0xe0000000f, length_cells=0x1, length=0x1)
+    ]
 
-    assert str(edt.get_node("/reg-nested-ranges/grandparent").ranges) == \
-        "[<Range, child-bus-cells: 0x2, child-bus-addr: 0x0, parent-bus-cells: 0x3, parent-bus-addr: 0x30000000000000000, length-cells 0x2, length 0x200000002>]"
+    node = edt.get_node("/reg-nested-ranges/grandparent")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0x0, parent_bus_cells=0x3, parent_bus_addr=0x30000000000000000, length_cells=0x2, length=0x200000002)
+    ]
 
-    assert str(edt.get_node("/reg-nested-ranges/grandparent/parent").ranges) == \
-        "[<Range, child-bus-cells: 0x1, child-bus-addr: 0x0, parent-bus-cells: 0x2, parent-bus-addr: 0x200000000, length-cells 0x1, length 0x2>]"
+    node = edt.get_node("/reg-nested-ranges/grandparent/parent")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x0, parent_bus_cells=0x2, parent_bus_addr=0x200000000, length_cells=0x1, length=0x2)
+    ]
 
-    assert str(edt.get_node("/ranges-zero-cells/node").ranges) == "[]"
+    assert edt.get_node("/ranges-zero-cells/node").ranges == []
 
-    assert str(edt.get_node("/ranges-zero-parent-cells/node").ranges) == \
-        "[<Range, child-bus-cells: 0x1, child-bus-addr: 0xa, parent-bus-cells: 0x0, length-cells 0x0>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x1a, parent-bus-cells: 0x0, length-cells 0x0>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x2a, parent-bus-cells: 0x0, length-cells 0x0>]"
+    node = edt.get_node("/ranges-zero-parent-cells/node")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0xa, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x0, length=None),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x1a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x0, length=None),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x2a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x0, length=None)
+    ]
 
-    assert str(edt.get_node("/ranges-one-address-cells/node").ranges) == \
-        "[<Range, child-bus-cells: 0x1, child-bus-addr: 0xa, parent-bus-cells: 0x0, length-cells 0x1, length 0xb>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x1a, parent-bus-cells: 0x0, length-cells 0x1, length 0x1b>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x2a, parent-bus-cells: 0x0, length-cells 0x1, length 0x2b>]"
+    node = edt.get_node("/ranges-one-address-cells/node")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0xa, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x1, length=0xb),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x1a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x1, length=0x1b),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x2a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x1, length=0x2b)
+    ]
 
-    assert str(edt.get_node("/ranges-one-address-two-size-cells/node").ranges) == \
-        "[<Range, child-bus-cells: 0x1, child-bus-addr: 0xa, parent-bus-cells: 0x0, length-cells 0x2, length 0xb0000000c>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x1a, parent-bus-cells: 0x0, length-cells 0x2, length 0x1b0000001c>, <Range, child-bus-cells: 0x1, child-bus-addr: 0x2a, parent-bus-cells: 0x0, length-cells 0x2, length 0x2b0000002c>]"
+    node = edt.get_node("/ranges-one-address-two-size-cells/node")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0xa, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x2, length=0xb0000000c),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x1a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x2, length=0x1b0000001c),
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x2a, parent_bus_cells=0x0, parent_bus_addr=None, length_cells=0x2, length=0x2b0000002c)
+    ]
 
-    assert str(edt.get_node("/ranges-two-address-cells/node@1").ranges) == \
-        "[<Range, child-bus-cells: 0x2, child-bus-addr: 0xa0000000b, parent-bus-cells: 0x1, parent-bus-addr: 0xc, length-cells 0x1, length 0xd>, <Range, child-bus-cells: 0x2, child-bus-addr: 0x1a0000001b, parent-bus-cells: 0x1, parent-bus-addr: 0x1c, length-cells 0x1, length 0x1d>, <Range, child-bus-cells: 0x2, child-bus-addr: 0x2a0000002b, parent-bus-cells: 0x1, parent-bus-addr: 0x2c, length-cells 0x1, length 0x2d>]"
+    node = edt.get_node("/ranges-two-address-cells/node@1")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0xa0000000b, parent_bus_cells=0x1, parent_bus_addr=0xc, length_cells=0x1, length=0xd),
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0x1a0000001b, parent_bus_cells=0x1, parent_bus_addr=0x1c, length_cells=0x1, length=0x1d),
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0x2a0000002b, parent_bus_cells=0x1, parent_bus_addr=0x2c, length_cells=0x1, length=0x2d)
+    ]
 
-    assert str(edt.get_node("/ranges-two-address-two-size-cells/node@1").ranges) == \
-        "[<Range, child-bus-cells: 0x2, child-bus-addr: 0xa0000000b, parent-bus-cells: 0x1, parent-bus-addr: 0xc, length-cells 0x2, length 0xd0000000e>, <Range, child-bus-cells: 0x2, child-bus-addr: 0x1a0000001b, parent-bus-cells: 0x1, parent-bus-addr: 0x1c, length-cells 0x2, length 0x1d0000001e>, <Range, child-bus-cells: 0x2, child-bus-addr: 0x2a0000002b, parent-bus-cells: 0x1, parent-bus-addr: 0x2c, length-cells 0x2, length 0x2d0000001d>]"
+    node = edt.get_node("/ranges-two-address-two-size-cells/node@1")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0xa0000000b, parent_bus_cells=0x1, parent_bus_addr=0xc, length_cells=0x2, length=0xd0000000e),
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0x1a0000001b, parent_bus_cells=0x1, parent_bus_addr=0x1c, length_cells=0x2, length=0x1d0000001e),
+        edtlib.Range(node=node, child_bus_cells=0x2, child_bus_addr=0x2a0000002b, parent_bus_cells=0x1, parent_bus_addr=0x2c, length_cells=0x2, length=0x2d0000001d)
+    ]
 
-    assert str(edt.get_node("/ranges-three-address-cells/node@1").ranges) == \
-        "[<Range, child-bus-cells: 0x3, child-bus-addr: 0xa0000000b0000000c, parent-bus-cells: 0x2, parent-bus-addr: 0xd0000000e, length-cells 0x1, length 0xf>, <Range, child-bus-cells: 0x3, child-bus-addr: 0x1a0000001b0000001c, parent-bus-cells: 0x2, parent-bus-addr: 0x1d0000001e, length-cells 0x1, length 0x1f>, <Range, child-bus-cells: 0x3, child-bus-addr: 0x2a0000002b0000002c, parent-bus-cells: 0x2, parent-bus-addr: 0x2d0000002e, length-cells 0x1, length 0x2f>]"
+    node = edt.get_node("/ranges-three-address-cells/node@1")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0xa0000000b0000000c, parent_bus_cells=0x2, parent_bus_addr=0xd0000000e, length_cells=0x1, length=0xf),
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x1a0000001b0000001c, parent_bus_cells=0x2, parent_bus_addr=0x1d0000001e, length_cells=0x1, length=0x1f),
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x2a0000002b0000002c, parent_bus_cells=0x2, parent_bus_addr=0x2d0000002e, length_cells=0x1, length=0x2f)
+    ]
 
-    assert str(edt.get_node("/ranges-three-address-two-size-cells/node@1").ranges) == \
-        "[<Range, child-bus-cells: 0x3, child-bus-addr: 0xa0000000b0000000c, parent-bus-cells: 0x2, parent-bus-addr: 0xd0000000e, length-cells 0x2, length 0xf00000010>, <Range, child-bus-cells: 0x3, child-bus-addr: 0x1a0000001b0000001c, parent-bus-cells: 0x2, parent-bus-addr: 0x1d0000001e, length-cells 0x2, length 0x1f00000110>, <Range, child-bus-cells: 0x3, child-bus-addr: 0x2a0000002b0000002c, parent-bus-cells: 0x2, parent-bus-addr: 0x2d0000002e, length-cells 0x2, length 0x2f00000210>]"
+    node = edt.get_node("/ranges-three-address-two-size-cells/node@1")
+    assert node.ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0xa0000000b0000000c, parent_bus_cells=0x2, parent_bus_addr=0xd0000000e, length_cells=0x2, length=0xf00000010),
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x1a0000001b0000001c, parent_bus_cells=0x2, parent_bus_addr=0x1d0000001e, length_cells=0x2, length=0x1f00000110),
+        edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x2a0000002b0000002c, parent_bus_cells=0x2, parent_bus_addr=0x2d0000002e, length_cells=0x2, length=0x2f00000210)
+    ]
 
 def test_reg():
     '''Tests for the regs property'''
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
 
-    assert str(edt.get_node("/reg-zero-address-cells/node").regs) == \
-        "[<Register, size: 0x1>, <Register, size: 0x2>]"
+    def verify_regs(node, expected_tuples):
+        regs = node.regs
+        assert len(regs) == len(expected_tuples)
+        for reg, expected_tuple in zip(regs, expected_tuples):
+            name, addr, size = expected_tuple
+            assert reg.node is node
+            assert reg.name == name
+            assert reg.addr == addr
+            assert reg.size == size
 
-    assert str(edt.get_node("/reg-zero-size-cells/node").regs) == \
-        "[<Register, addr: 0x1>, <Register, addr: 0x2>]"
+    verify_regs(edt.get_node("/reg-zero-address-cells/node"),
+                [('foo', None, 0x1),
+                 ('bar', None, 0x2)])
 
-    assert str(edt.get_node("/reg-ranges/parent/node").regs) == \
-        "[<Register, addr: 0x5, size: 0x1>, <Register, addr: 0xe0000000f, size: 0x1>, <Register, addr: 0xc0000000e, size: 0x1>, <Register, addr: 0xc0000000d, size: 0x1>, <Register, addr: 0xa0000000b, size: 0x1>, <Register, addr: 0x0, size: 0x1>]"
+    verify_regs(edt.get_node("/reg-zero-size-cells/node"),
+                [(None, 0x1, None),
+                 (None, 0x2, None)])
 
-    assert str(edt.get_node("/reg-nested-ranges/grandparent/parent/node").regs) == \
-        "[<Register, addr: 0x30000000200000001, size: 0x1>]"
+    verify_regs(edt.get_node("/reg-ranges/parent/node"),
+                [(None, 0x5, 0x1),
+                 (None, 0xe0000000f, 0x1),
+                 (None, 0xc0000000e, 0x1),
+                 (None, 0xc0000000d, 0x1),
+                 (None, 0xa0000000b, 0x1),
+                 (None, 0x0, 0x1)])
+
+    verify_regs(edt.get_node("/reg-nested-ranges/grandparent/parent/node"),
+                [(None, 0x30000000200000001, 0x1)])
 
 def test_pinctrl():
     '''Test 'pinctrl-<index>'.'''
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
 
-    assert str(edt.get_node("/pinctrl/dev").pinctrls) == \
-        "[<PinCtrl, name: zero, configuration nodes: []>, <PinCtrl, name: one, configuration nodes: [<Node /pinctrl/pincontroller/state-1 in 'test.dts', no binding>]>, <PinCtrl, name: two, configuration nodes: [<Node /pinctrl/pincontroller/state-1 in 'test.dts', no binding>, <Node /pinctrl/pincontroller/state-2 in 'test.dts', no binding>]>]"
+    node = edt.get_node("/pinctrl/dev")
+    state_1 = edt.get_node('/pinctrl/pincontroller/state-1')
+    state_2 = edt.get_node('/pinctrl/pincontroller/state-2')
+    assert node.pinctrls == [
+        edtlib.PinCtrl(node=node, name='zero', conf_nodes=[]),
+        edtlib.PinCtrl(node=node, name='one', conf_nodes=[state_1]),
+        edtlib.PinCtrl(node=node, name='two', conf_nodes=[state_1, state_2])
+    ]
 
 def test_hierarchy():
     '''Test Node.parent and Node.children'''
@@ -177,26 +260,19 @@ def test_include():
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
 
-    assert str(edt.get_node("/binding-include").description) == \
-        "Parent binding"
+    binding_include = edt.get_node("/binding-include")
 
-    assert str(edt.get_node("/binding-include").props) == (
-        "{"
-        "'foo': <Property, name: foo, type: int, value: 0>, "
-        "'bar': <Property, name: bar, type: int, value: 1>, "
-        "'baz': <Property, name: baz, type: int, value: 2>, "
-        "'qaz': <Property, name: qaz, type: int, value: 3>"
-        "}"
-    )
+    assert binding_include.description == "Parent binding"
 
-    assert str(edt.get_node("/binding-include/child").props) == (
-        "{"
-        "'foo': <Property, name: foo, type: int, value: 0>, "
-        "'bar': <Property, name: bar, type: int, value: 1>, "
-        "'baz': <Property, name: baz, type: int, value: 2>, "
-        "'qaz': <Property, name: qaz, type: int, value: 3>"
-        "}"
-    )
+    verify_props(binding_include,
+                 ['foo', 'bar', 'baz', 'qaz'],
+                 ['int', 'int', 'int', 'int'],
+                 [0, 1, 2, 3])
+
+    verify_props(edt.get_node("/binding-include/child"),
+                 ['foo', 'bar', 'baz', 'qaz'],
+                 ['int', 'int', 'int', 'int'],
+                 [0, 1, 2, 3])
 
 def test_include_filters():
     '''Test property-allowlist and property-blocklist in an include.'''
@@ -353,15 +429,15 @@ def test_child_binding():
 
     assert str(child1.binding_path) == hpath("test-bindings/child-binding.yaml")
     assert str(child1.description) == "child node"
-    assert str(child1.props) == "{'child-prop': <Property, name: child-prop, type: int, value: 1>}"
+    verify_props(child1, ['child-prop'], ['int'], [1])
 
     assert str(child2.binding_path) == hpath("test-bindings/child-binding.yaml")
     assert str(child2.description) == "child node"
-    assert str(child2.props) == "{'child-prop': <Property, name: child-prop, type: int, value: 3>}"
+    verify_props(child2, ['child-prop'], ['int'], [3])
 
     assert str(grandchild.binding_path) == hpath("test-bindings/child-binding.yaml")
     assert str(grandchild.description) == "grandchild node"
-    assert str(grandchild.props) == "{'grandchild-prop': <Property, name: grandchild-prop, type: int, value: 2>}"
+    verify_props(grandchild, ['grandchild-prop'], ['int'], [2])
 
     with from_here():
         binding_file = Path("test-bindings/child-binding.yaml").resolve()
@@ -385,69 +461,77 @@ def test_props():
     '''Test Node.props (derived from DT and 'properties:' in the binding)'''
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
-    filenames = {i: hpath(f'test-bindings/phandle-array-controller-{i}.yaml')
-                 for i in range(0, 4)}
 
-    assert str(edt.get_node("/props").props["int"]) == \
-        "<Property, name: int, type: int, value: 1>"
+    props_node = edt.get_node('/props')
+    ctrl_1, ctrl_2 = [edt.get_node(path) for path in ['/ctrl-1', '/ctrl-2']]
 
-    assert str(edt.get_node("/props").props["existent-boolean"]) == \
-        "<Property, name: existent-boolean, type: boolean, value: True>"
+    verify_props(props_node,
+                 ['int',
+                  'existent-boolean', 'nonexistent-boolean',
+                  'array', 'uint8-array',
+                  'string', 'string-array',
+                  'phandle-ref', 'phandle-refs',
+                  'path'],
+                 ['int',
+                  'boolean', 'boolean',
+                  'array', 'uint8-array',
+                  'string', 'string-array',
+                  'phandle', 'phandles',
+                  'path'],
+                 [1,
+                  True, False,
+                  [1,2,3], b'\x124',
+                  'foo', ['foo','bar','baz'],
+                  ctrl_1, [ctrl_1,ctrl_2],
+                  ctrl_1])
 
-    assert str(edt.get_node("/props").props["nonexistent-boolean"]) == \
-        "<Property, name: nonexistent-boolean, type: boolean, value: False>"
+    verify_phandle_array_prop(props_node,
+                              'phandle-array-foos',
+                              [(ctrl_1, {'one': 1}),
+                               (ctrl_2, {'one': 2, 'two': 3})])
 
-    assert str(edt.get_node("/props").props["array"]) == \
-        "<Property, name: array, type: array, value: [1, 2, 3]>"
+    verify_phandle_array_prop(edt.get_node("/props-2"),
+                              "phandle-array-foos",
+                              [(edt.get_node('/ctrl-0-1'), {}),
+                               None,
+                               (edt.get_node('/ctrl-0-2'), {})])
 
-    assert str(edt.get_node("/props").props["uint8-array"]) == \
-        r"<Property, name: uint8-array, type: uint8-array, value: b'\x124'>"
-
-    assert str(edt.get_node("/props").props["string"]) == \
-        "<Property, name: string, type: string, value: 'foo'>"
-
-    assert str(edt.get_node("/props").props["string-array"]) == \
-        "<Property, name: string-array, type: string-array, value: ['foo', 'bar', 'baz']>"
-
-    assert str(edt.get_node("/props").props["phandle-ref"]) == \
-        f"<Property, name: phandle-ref, type: phandle, value: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>>"
-
-    assert str(edt.get_node("/props").props["phandle-refs"]) == \
-        f"<Property, name: phandle-refs, type: phandles, value: [<Node /ctrl-1 in 'test.dts', binding {filenames[1]}>, <Node /ctrl-2 in 'test.dts', binding {filenames[2]}>]>"
-
-    assert str(edt.get_node("/props").props["phandle-array-foos"]) == \
-        f"<Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>, data: {{'one': 1}}>, <ControllerAndData, controller: <Node /ctrl-2 in 'test.dts', binding {filenames[2]}>, data: {{'one': 2, 'two': 3}}>]>"
-
-    assert str(edt.get_node("/props-2").props["phandle-array-foos"]) == \
-        ("<Property, name: phandle-array-foos, type: phandle-array, value: ["
-         f"<ControllerAndData, name: a, controller: <Node /ctrl-0-1 in 'test.dts', binding {filenames[0]}>, data: {{}}>, "
-         "None, "
-         f"<ControllerAndData, name: b, controller: <Node /ctrl-0-2 in 'test.dts', binding {filenames[0]}>, data: {{}}>]>")
-
-    assert str(edt.get_node("/props").props["foo-gpios"]) == \
-        f"<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>, data: {{'gpio-one': 1}}>]>"
-
-    assert str(edt.get_node("/props").props["path"]) == \
-        f"<Property, name: path, type: path, value: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>>"
+    verify_phandle_array_prop(props_node,
+                              'foo-gpios',
+                              [(ctrl_1, {'gpio-one': 1})])
 
 def test_nexus():
     '''Test <prefix>-map via gpio-map (the most common case).'''
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
-    filename = hpath('test-bindings/gpio-dst.yaml')
 
-    assert str(edt.get_node("/gpio-map/source").props["foo-gpios"]) == \
-        f"<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding {filename}>, data: {{'val': 6}}>, <ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding {filename}>, data: {{'val': 5}}>]>"
+    source = edt.get_node("/gpio-map/source")
+    destination = edt.get_node('/gpio-map/destination')
+    verify_phandle_array_prop(source,
+                              'foo-gpios',
+                              [(destination, {'val': 6}),
+                               (destination, {'val': 5})])
 
-    assert str(edt.get_node("/gpio-map/source").props["foo-gpios"].val[0].basename) == f"gpio"
+    assert source.props["foo-gpios"].val[0].basename == f"gpio"
 
 def test_prop_defaults():
     '''Test property default values given in bindings'''
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
 
-    assert str(edt.get_node("/defaults").props) == \
-        r"{'int': <Property, name: int, type: int, value: 123>, 'array': <Property, name: array, type: array, value: [1, 2, 3]>, 'uint8-array': <Property, name: uint8-array, type: uint8-array, value: b'\x89\xab\xcd'>, 'string': <Property, name: string, type: string, value: 'hello'>, 'string-array': <Property, name: string-array, type: string-array, value: ['hello', 'there']>, 'default-not-used': <Property, name: default-not-used, type: int, value: 234>}"
+    verify_props(edt.get_node("/defaults"),
+                 ['int',
+                  'array', 'uint8-array',
+                  'string', 'string-array',
+                  'default-not-used'],
+                 ['int',
+                  'array', 'uint8-array',
+                  'string', 'string-array',
+                  'int'],
+                 [123,
+                  [1,2,3], b'\x89\xab\xcd',
+                  'hello', ['hello','there'],
+                  234])
 
 def test_prop_enums():
     '''test properties with enum: in the binding'''
@@ -498,22 +582,29 @@ def test_binding_inference():
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"], warnings,
                          infer_binding_for_paths=["/zephyr,user"])
-    filenames = {i: hpath(f'test-bindings/phandle-array-controller-{i}.yaml')
-                 for i in range(1, 3)}
+    ctrl_1 = edt.get_node('/ctrl-1')
+    ctrl_2 = edt.get_node('/ctrl-2')
+    zephyr_user = edt.get_node("/zephyr,user")
 
-    assert str(edt.get_node("/zephyr,user").props) == (
-        "{"
-        "'boolean': <Property, name: boolean, type: boolean, value: True>, "
-        r"'bytes': <Property, name: bytes, type: uint8-array, value: b'\x81\x82\x83'>, "
-        "'number': <Property, name: number, type: int, value: 23>, "
-        "'numbers': <Property, name: numbers, type: array, value: [1, 2, 3]>, "
-        "'string': <Property, name: string, type: string, value: 'text'>, "
-        "'strings': <Property, name: strings, type: string-array, value: ['a', 'b', 'c']>, "
-        f"'handle': <Property, name: handle, type: phandle, value: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>>, "
-        f"'phandles': <Property, name: phandles, type: phandles, value: [<Node /ctrl-1 in 'test.dts', binding {filenames[1]}>, <Node /ctrl-2 in 'test.dts', binding {filenames[2]}>]>, "
-        f"'phandle-array-foos': <Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /ctrl-2 in 'test.dts', binding {filenames[2]}>, data: {{'one': 1, 'two': 2}}>]>"
-        "}"
-    )
+    verify_props(zephyr_user,
+                 ['boolean', 'bytes', 'number',
+                  'numbers', 'string', 'strings'],
+                 ['boolean', 'uint8-array', 'int',
+                  'array', 'string', 'string-array'],
+                 [True, b'\x81\x82\x83', 23,
+                  [1,2,3], 'text', ['a','b','c']])
+
+    assert zephyr_user.props['handle'].val is ctrl_1
+
+    phandles = zephyr_user.props['phandles']
+    val = phandles.val
+    assert len(val) == 2
+    assert val[0] is ctrl_1
+    assert val[1] is ctrl_2
+
+    verify_phandle_array_prop(zephyr_user,
+                              'phandle-array-foos',
+                              [(edt.get_node('/ctrl-2'), {'one': 1, 'two': 2})])
 
 def test_multi_bindings():
     '''Test having multiple directories with bindings'''
@@ -627,6 +718,80 @@ def test_wrong_props():
         assert value_str.endswith("but no 'specifier-space' was provided.")
 
 
+def test_deepcopy():
+    with from_here():
+        # We intentionally use different kwarg values than the
+        # defaults to make sure they're getting copied. This implies
+        # we have to set werror=True, so we can't use test.dts, since
+        # that generates warnings on purpose.
+        edt = edtlib.EDT("test-multidir.dts",
+                         ["test-bindings", "test-bindings-2"],
+                         warn_reg_unit_address_mismatch=False,
+                         default_prop_types=False,
+                         support_fixed_partitions_on_any_bus=False,
+                         infer_binding_for_paths=['/test-node'],
+                         vendor_prefixes={'test-vnd': 'A test vendor'},
+                         werror=True)
+        edt_copy = deepcopy(edt)
+
+    def equal_paths(list1, list2):
+        assert len(list1) == len(list2)
+        return all(elt1.path == elt2.path for elt1, elt2 in zip(list1, list2))
+
+    def equal_key2path(key2node1, key2node2):
+        assert len(key2node1) == len(key2node2)
+        return (all(key1 == key2 for (key1, key2) in
+                    zip(key2node1, key2node2)) and
+                all(node1.path == node2.path for (node1, node2) in
+                    zip(key2node1.values(), key2node2.values())))
+
+    def equal_key2paths(key2nodes1, key2nodes2):
+        assert len(key2nodes1) == len(key2nodes2)
+        return (all(key1 == key2 for (key1, key2) in
+                    zip(key2nodes1, key2nodes2)) and
+                all(equal_paths(nodes1, nodes2) for (nodes1, nodes2) in
+                    zip(key2nodes1.values(), key2nodes2.values())))
+
+    def test_equal_but_not_same(attribute, equal=None):
+        if equal is None:
+            equal = lambda a, b: a == b
+        copy = getattr(edt_copy, attribute)
+        original = getattr(edt, attribute)
+        assert equal(copy, original)
+        assert copy is not original
+
+    test_equal_but_not_same("nodes", equal_paths)
+    test_equal_but_not_same("compat2nodes", equal_key2paths)
+    test_equal_but_not_same("compat2okay", equal_key2paths)
+    test_equal_but_not_same("compat2vendor")
+    test_equal_but_not_same("compat2model")
+    test_equal_but_not_same("label2node", equal_key2path)
+    test_equal_but_not_same("dep_ord2node", equal_key2path)
+    assert edt_copy.dts_path == "test-multidir.dts"
+    assert edt_copy.bindings_dirs == ["test-bindings", "test-bindings-2"]
+    assert edt_copy.bindings_dirs is not edt.bindings_dirs
+    assert not edt_copy._warn_reg_unit_address_mismatch
+    assert not edt_copy._default_prop_types
+    assert not edt_copy._fixed_partitions_no_bus
+    assert edt_copy._infer_binding_for_paths == set(["/test-node"])
+    assert edt_copy._infer_binding_for_paths is not edt._infer_binding_for_paths
+    assert edt_copy._vendor_prefixes == {"test-vnd": "A test vendor"}
+    assert edt_copy._vendor_prefixes is not edt._vendor_prefixes
+    assert edt_copy._werror
+    test_equal_but_not_same("_compat2binding", equal_key2path)
+    test_equal_but_not_same("_binding_paths")
+    test_equal_but_not_same("_binding_fname2path")
+    assert len(edt_copy._node2enode) == len(edt._node2enode)
+    for node1, node2 in zip(edt_copy._node2enode, edt._node2enode):
+        enode1 = edt_copy._node2enode[node1]
+        enode2 = edt._node2enode[node2]
+        assert node1.path == node2.path
+        assert enode1.path == enode2.path
+        assert node1 is not node2
+        assert enode1 is not enode2
+    assert edt_copy._dt is not edt._dt
+
+
 def verify_error(dts, dts_file, expected_err):
     # Verifies that parsing a file 'dts_file' with the contents 'dts'
     # (a string) raises an EDTError with the message 'expected_err'.
@@ -642,3 +807,35 @@ def verify_error(dts, dts_file, expected_err):
         edtlib.EDT(dts_file, [])
 
     assert str(e.value) == expected_err
+
+
+def verify_props(node, names, types, values):
+    # Verifies that each property in 'names' has the expected
+    # value in 'values'. Property lookup is done in Node 'node'.
+
+    for name, type, value in zip(names, types, values):
+        prop = node.props[name]
+        assert prop.name == name
+        assert prop.type == type
+        assert prop.val == value
+        assert prop.node is node
+
+def verify_phandle_array_prop(node, name, values):
+    # Verifies 'node.props[name]' is a phandle-array, and has the
+    # expected controller/data values in 'values'. Elements
+    # of 'values' may be None.
+
+    prop = node.props[name]
+    assert prop.type == 'phandle-array'
+    assert prop.name == name
+    val = prop.val
+    assert isinstance(val, list)
+    assert len(val) == len(values)
+    for actual, expected in zip(val, values):
+        if expected is not None:
+            controller, data = expected
+            assert isinstance(actual, edtlib.ControllerAndData)
+            assert actual.controller is controller
+            assert actual.data == data
+        else:
+            assert actual is None

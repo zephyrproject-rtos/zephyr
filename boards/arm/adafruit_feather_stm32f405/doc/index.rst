@@ -100,7 +100,7 @@ of the built in DFU-Util bootloader is possible by following the
 Flashing
 ========
 
-#. Build the Zephyr kernel and the :ref:`blinky-sample` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`blinky` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/blinky

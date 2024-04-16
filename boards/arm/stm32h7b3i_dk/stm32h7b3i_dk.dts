@@ -7,8 +7,9 @@
 /dts-v1/;
 #include <st/h7/stm32h7b3Xi.dtsi>
 #include <st/h7/stm32h7b3lihxq-pinctrl.dtsi>
-#include <zephyr/dt-bindings/display/stm32_ltdc.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32H7B3I DISCOVERY KIT board";
@@ -20,8 +21,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,display = &ltdc;
-		zephyr,canbus = &can1;
-		zephyr,keyboard-scan = &touch_controller;
+		zephyr,canbus = &fdcan1;
 	};
 
 	leds {
@@ -41,7 +41,13 @@
 		user_button: button {
 			label = "User PB";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336>;
 	};
 
 	sdram2: sdram@d0000000 {
@@ -49,6 +55,7 @@
 		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(16)>;
 		zephyr,memory-region = "SDRAM2";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
 	};
 
 	transceiver0: can-phy0 {
@@ -62,7 +69,7 @@
 		led0 = &blue_led;
 		led1 = &red_led;
 		sw0 = &user_button;
-		kscan0 = &touch_controller;
+		spi-flash0 = &mx25lm51245;
 	};
 };
 
@@ -128,7 +135,7 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 
-	touch_controller: ft5336@38 {
+	ft5336: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpioh 2 0>;
@@ -142,7 +149,7 @@
 };
 
 /* Connect solder bridges SB3, SB4 and SB5 to use CAN connector (CN21) */
-&can1 {
+&fdcan1 {
 	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
 	pinctrl-names = "default";
 	phys = <&transceiver0>;
@@ -214,16 +221,20 @@
 
 	width = <480>;
 	height = <272>;
-	hsync-pol = <STM32_LTDC_HSPOL_ACTIVE_LOW>;
-	vsync-pol = <STM32_LTDC_VSPOL_ACTIVE_LOW>;
-	de-pol = <STM32_LTDC_DEPOL_ACTIVE_LOW>;
-	pclk-pol = <STM32_LTDC_PCPOL_ACTIVE_LOW>;
-	hsync-duration = <1>;
-	vsync-duration = <10>;
-	hbp-duration = <43>;
-	vbp-duration = <12>;
-	hfp-duration = <8>;
-	vfp-duration = <4>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		hsync-len = <1>;
+		vsync-len = <10>;
+		hback-porch = <43>;
+		vback-porch = <12>;
+		hfront-porch = <8>;
+		vfront-porch = <4>;
+	};
 	def-back-color-red = <0xFF>;
 	def-back-color-green = <0xFF>;
 	def-back-color-blue = <0xFF>;

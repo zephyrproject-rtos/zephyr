@@ -19,9 +19,8 @@
 #include <zephyr/sys/__assert.h>
 #include <soc.h>
 #include <zephyr/init.h>
-#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/interrupt_controller/exti_stm32.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/reset.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
 
@@ -54,6 +53,13 @@ LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
 
 #define HAS_LPUART_1 (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1), \
 					 st_stm32_lpuart, okay))
+
+/* Available everywhere except l1, f1, f2, f4. */
+#ifdef USART_CR3_DEM
+#define HAS_DRIVER_ENABLE 1
+#else
+#define HAS_DRIVER_ENABLE 0
+#endif
 
 #if HAS_LPUART_1
 #ifdef USART_PRESC_PRESCALER
@@ -187,7 +193,7 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 #endif
 				     baud_rate);
 		/* Check BRR is greater than or equal to 16d */
-		__ASSERT(LL_USART_ReadReg(config->usart, BRR) > 16,
+		__ASSERT(LL_USART_ReadReg(config->usart, BRR) >= 16,
 			 "BaudRateReg >= 16");
 
 #if HAS_LPUART_1
@@ -255,6 +261,27 @@ static inline uint32_t uart_stm32_get_hwctrl(const struct device *dev)
 	return LL_USART_GetHWFlowCtrl(config->usart);
 }
 
+#if HAS_DRIVER_ENABLE
+static inline void uart_stm32_set_driver_enable(const struct device *dev,
+						bool driver_enable)
+{
+	const struct uart_stm32_config *config = dev->config;
+
+	if (driver_enable) {
+		LL_USART_EnableDEMode(config->usart);
+	} else {
+		LL_USART_DisableDEMode(config->usart);
+	}
+}
+
+static inline bool uart_stm32_get_driver_enable(const struct device *dev)
+{
+	const struct uart_stm32_config *config = dev->config;
+
+	return LL_USART_IsEnabledDEMode(config->usart);
+}
+#endif
+
 static inline uint32_t uart_stm32_cfg2ll_parity(enum uart_config_parity parity)
 {
 	switch (parity) {
@@ -281,12 +308,19 @@ static inline enum uart_config_parity uart_stm32_ll2cfg_parity(uint32_t parity)
 	}
 }
 
-static inline uint32_t uart_stm32_cfg2ll_stopbits(enum uart_config_stop_bits sb)
+static inline uint32_t uart_stm32_cfg2ll_stopbits(const struct uart_stm32_config *config,
+							enum uart_config_stop_bits sb)
 {
 	switch (sb) {
 /* Some MCU's don't support 0.5 stop bits */
 #ifdef LL_USART_STOPBITS_0_5
 	case UART_CFG_STOP_BITS_0_5:
+#if HAS_LPUART_1
+		if (IS_LPUART_INSTANCE(config->usart)) {
+			/* return the default */
+			return LL_USART_STOPBITS_1;
+		}
+#endif /* HAS_LPUART_1 */
 		return LL_USART_STOPBITS_0_5;
 #endif	/* LL_USART_STOPBITS_0_5 */
 	case UART_CFG_STOP_BITS_1:
@@ -294,6 +328,12 @@ static inline uint32_t uart_stm32_cfg2ll_stopbits(enum uart_config_stop_bits sb)
 /* Some MCU's don't support 1.5 stop bits */
 #ifdef LL_USART_STOPBITS_1_5
 	case UART_CFG_STOP_BITS_1_5:
+#if HAS_LPUART_1
+		if (IS_LPUART_INSTANCE(config->usart)) {
+			/* return the default */
+			return LL_USART_STOPBITS_2;
+		}
+#endif
 		return LL_USART_STOPBITS_1_5;
 #endif	/* LL_USART_STOPBITS_1_5 */
 	case UART_CFG_STOP_BITS_2:
@@ -387,7 +427,7 @@ static inline enum uart_config_data_bits uart_stm32_ll2cfg_databits(uint32_t db,
 /**
  * @brief  Get LL hardware flow control define from
  *         Zephyr hardware flow control option.
- * @note   Supports only UART_CFG_FLOW_CTRL_RTS_CTS.
+ * @note   Supports only UART_CFG_FLOW_CTRL_RTS_CTS and UART_CFG_FLOW_CTRL_RS485.
  * @param  fc: Zephyr hardware flow control option.
  * @retval LL_USART_HWCONTROL_RTS_CTS, or LL_USART_HWCONTROL_NONE.
  */
@@ -395,6 +435,9 @@ static inline uint32_t uart_stm32_cfg2ll_hwctrl(enum uart_config_flow_control fc
 {
 	if (fc == UART_CFG_FLOW_CTRL_RTS_CTS) {
 		return LL_USART_HWCONTROL_RTS_CTS;
+	} else if (fc == UART_CFG_FLOW_CTRL_RS485) {
+		/* Driver Enable is handled separately */
+		return LL_USART_HWCONTROL_NONE;
 	}
 
 	return LL_USART_HWCONTROL_NONE;
@@ -416,17 +459,74 @@ static inline enum uart_config_flow_control uart_stm32_ll2cfg_hwctrl(uint32_t fc
 	return UART_CFG_FLOW_CTRL_NONE;
 }
 
+static void uart_stm32_parameters_set(const struct device *dev,
+				      const struct uart_config *cfg)
+{
+	const struct uart_stm32_config *config = dev->config;
+	struct uart_stm32_data *data = dev->data;
+	struct uart_config *uart_cfg = data->uart_cfg;
+	const uint32_t parity = uart_stm32_cfg2ll_parity(cfg->parity);
+	const uint32_t stopbits = uart_stm32_cfg2ll_stopbits(config, cfg->stop_bits);
+	const uint32_t databits = uart_stm32_cfg2ll_databits(cfg->data_bits,
+							     cfg->parity);
+	const uint32_t flowctrl = uart_stm32_cfg2ll_hwctrl(cfg->flow_ctrl);
+#if HAS_DRIVER_ENABLE
+	bool driver_enable = cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485;
+#endif
+
+	if (cfg == uart_cfg) {
+		/* Called via (re-)init function, so the SoC either just booted,
+		 * or is returning from a low-power state where it lost register
+		 * contents
+		 */
+		LL_USART_ConfigCharacter(config->usart,
+					 databits,
+					 parity,
+					 stopbits);
+		uart_stm32_set_hwctrl(dev, flowctrl);
+		uart_stm32_set_baudrate(dev, cfg->baudrate);
+	} else {
+		/* Called from application/subsys via uart_configure syscall */
+		if (parity != uart_stm32_get_parity(dev)) {
+			uart_stm32_set_parity(dev, parity);
+		}
+
+		if (stopbits != uart_stm32_get_stopbits(dev)) {
+			uart_stm32_set_stopbits(dev, stopbits);
+		}
+
+		if (databits != uart_stm32_get_databits(dev)) {
+			uart_stm32_set_databits(dev, databits);
+		}
+
+		if (flowctrl != uart_stm32_get_hwctrl(dev)) {
+			uart_stm32_set_hwctrl(dev, flowctrl);
+		}
+
+#if HAS_DRIVER_ENABLE
+		if (driver_enable != uart_stm32_get_driver_enable(dev)) {
+			uart_stm32_set_driver_enable(dev, driver_enable);
+		}
+#endif
+
+		if (cfg->baudrate != uart_cfg->baudrate) {
+			uart_stm32_set_baudrate(dev, cfg->baudrate);
+			uart_cfg->baudrate = cfg->baudrate;
+		}
+	}
+}
+
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int uart_stm32_configure(const struct device *dev,
 				const struct uart_config *cfg)
 {
 	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
+	struct uart_config *uart_cfg = data->uart_cfg;
 	const uint32_t parity = uart_stm32_cfg2ll_parity(cfg->parity);
-	const uint32_t stopbits = uart_stm32_cfg2ll_stopbits(cfg->stop_bits);
+	const uint32_t stopbits = uart_stm32_cfg2ll_stopbits(config, cfg->stop_bits);
 	const uint32_t databits = uart_stm32_cfg2ll_databits(cfg->data_bits,
 							     cfg->parity);
-	const uint32_t flowctrl = uart_stm32_cfg2ll_hwctrl(cfg->flow_ctrl);
 
 	/* Hardware doesn't support mark or space parity */
 	if ((cfg->parity == UART_CFG_PARITY_MARK) ||
@@ -440,70 +540,46 @@ static int uart_stm32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-#if defined(LL_USART_STOPBITS_0_5) && HAS_LPUART_1
-	if (IS_LPUART_INSTANCE(config->usart) &&
-	    (cfg->stop_bits == UART_CFG_STOP_BITS_0_5)) {
+	/* When the transformed ll stop bits don't match with what was requested, then it's not
+	 * supported
+	 */
+	if (uart_stm32_ll2cfg_stopbits(stopbits) != cfg->stop_bits) {
 		return -ENOTSUP;
 	}
-#else
-	if (cfg->stop_bits == UART_CFG_STOP_BITS_0_5) {
+
+	/* When the transformed ll databits don't match with what was requested, then it's not
+	 * supported
+	 */
+	if (uart_stm32_ll2cfg_databits(databits, parity) != cfg->data_bits) {
 		return -ENOTSUP;
 	}
+
+	/* Driver supports only RTS/CTS and RS485 flow control */
+	if (!(cfg->flow_ctrl == UART_CFG_FLOW_CTRL_NONE
+		|| (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS &&
+			IS_UART_HWFLOW_INSTANCE(config->usart))
+#if HAS_DRIVER_ENABLE
+		|| (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485 &&
+			IS_UART_DRIVER_ENABLE_INSTANCE(config->usart))
 #endif
-
-#if defined(LL_USART_STOPBITS_1_5) && HAS_LPUART_1
-	if (IS_LPUART_INSTANCE(config->usart) &&
-	    (cfg->stop_bits == UART_CFG_STOP_BITS_1_5)) {
+		)) {
 		return -ENOTSUP;
-	}
-#else
-	if (cfg->stop_bits == UART_CFG_STOP_BITS_1_5) {
-		return -ENOTSUP;
-	}
-#endif
-
-	/* Driver doesn't support 5 or 6 databits and potentially 7 or 9 */
-	if ((cfg->data_bits == UART_CFG_DATA_BITS_5) ||
-	    (cfg->data_bits == UART_CFG_DATA_BITS_6)
-#ifndef LL_USART_DATAWIDTH_7B
-	    || (cfg->data_bits == UART_CFG_DATA_BITS_7)
-#endif /* LL_USART_DATAWIDTH_7B */
-	    || (cfg->data_bits == UART_CFG_DATA_BITS_9)) {
-		return -ENOTSUP;
-	}
-
-	/* Driver supports only RTS CTS flow control */
-	if (cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
-		if (!IS_UART_HWFLOW_INSTANCE(config->usart) ||
-		    UART_CFG_FLOW_CTRL_RTS_CTS != cfg->flow_ctrl) {
-			return -ENOTSUP;
-		}
 	}
 
 	LL_USART_Disable(config->usart);
 
-	if (parity != uart_stm32_get_parity(dev)) {
-		uart_stm32_set_parity(dev, parity);
-	}
-
-	if (stopbits != uart_stm32_get_stopbits(dev)) {
-		uart_stm32_set_stopbits(dev, stopbits);
-	}
-
-	if (databits != uart_stm32_get_databits(dev)) {
-		uart_stm32_set_databits(dev, databits);
-	}
-
-	if (flowctrl != uart_stm32_get_hwctrl(dev)) {
-		uart_stm32_set_hwctrl(dev, flowctrl);
-	}
-
-	if (cfg->baudrate != data->baud_rate) {
-		uart_stm32_set_baudrate(dev, cfg->baudrate);
-		data->baud_rate = cfg->baudrate;
-	}
+	/* Set basic parmeters, such as data-/stop-bit, parity, and baudrate */
+	uart_stm32_parameters_set(dev, cfg);
 
 	LL_USART_Enable(config->usart);
+
+	/* Upon successful configuration, persist the syscall-passed
+	 * uart_config.
+	 * This allows restoring it, should the device return from a low-power
+	 * mode in which register contents are lost.
+	 */
+	*uart_cfg = *cfg;
+
 	return 0;
 };
 
@@ -511,8 +587,9 @@ static int uart_stm32_config_get(const struct device *dev,
 				 struct uart_config *cfg)
 {
 	struct uart_stm32_data *data = dev->data;
+	struct uart_config *uart_cfg = data->uart_cfg;
 
-	cfg->baudrate = data->baud_rate;
+	cfg->baudrate = uart_cfg->baudrate;
 	cfg->parity = uart_stm32_ll2cfg_parity(uart_stm32_get_parity(dev));
 	cfg->stop_bits = uart_stm32_ll2cfg_stopbits(
 		uart_stm32_get_stopbits(dev));
@@ -520,11 +597,20 @@ static int uart_stm32_config_get(const struct device *dev,
 		uart_stm32_get_databits(dev), uart_stm32_get_parity(dev));
 	cfg->flow_ctrl = uart_stm32_ll2cfg_hwctrl(
 		uart_stm32_get_hwctrl(dev));
+#if HAS_DRIVER_ENABLE
+	if (uart_stm32_get_driver_enable(dev)) {
+		cfg->flow_ctrl = UART_CFG_FLOW_CTRL_RS485;
+	}
+#endif
 	return 0;
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
-static int uart_stm32_poll_in(const struct device *dev, unsigned char *c)
+typedef void (*poll_in_fn)(
+	const struct uart_stm32_config *config,
+	void *in);
+
+static int uart_stm32_poll_in_visitor(const struct device *dev, void *in, poll_in_fn get_fn)
 {
 	const struct uart_stm32_config *config = dev->config;
 
@@ -541,13 +627,15 @@ static int uart_stm32_poll_in(const struct device *dev, unsigned char *c)
 		return -1;
 	}
 
-	*c = (unsigned char)LL_USART_ReceiveData8(config->usart);
+	get_fn(config, in);
 
 	return 0;
 }
 
-static void uart_stm32_poll_out(const struct device *dev,
-					unsigned char c)
+typedef void (*poll_out_fn)(
+	const struct uart_stm32_config *config, void *out);
+
+static void uart_stm32_poll_out_visitor(const struct device *dev, void *out, poll_out_fn set_fn)
 {
 	const struct uart_stm32_config *config = dev->config;
 #ifdef CONFIG_PM
@@ -590,9 +678,53 @@ static void uart_stm32_poll_out(const struct device *dev,
 	}
 #endif /* CONFIG_PM */
 
-	LL_USART_TransmitData8(config->usart, (uint8_t)c);
+	set_fn(config, out);
 	irq_unlock(key);
 }
+
+static void poll_in_u8(const struct uart_stm32_config *config, void *in)
+{
+	*((unsigned char *)in) = (unsigned char)LL_USART_ReceiveData8(config->usart);
+}
+
+static void poll_out_u8(const struct uart_stm32_config *config, void *out)
+{
+	LL_USART_TransmitData8(config->usart, *((uint8_t *)out));
+}
+
+static int uart_stm32_poll_in(const struct device *dev, unsigned char *c)
+{
+	return uart_stm32_poll_in_visitor(dev, (void *)c, poll_in_u8);
+}
+
+static void uart_stm32_poll_out(const struct device *dev, unsigned char c)
+{
+	uart_stm32_poll_out_visitor(dev, (void *)&c, poll_out_u8);
+}
+
+#ifdef CONFIG_UART_WIDE_DATA
+
+static void poll_out_u9(const struct uart_stm32_config *config, void *out)
+{
+	LL_USART_TransmitData9(config->usart, *((uint16_t *)out));
+}
+
+static void poll_in_u9(const struct uart_stm32_config *config, void *in)
+{
+	*((uint16_t *)in) = LL_USART_ReceiveData9(config->usart);
+}
+
+static int uart_stm32_poll_in_u16(const struct device *dev, uint16_t *in_u16)
+{
+	return uart_stm32_poll_in_visitor(dev, (void *)in_u16, poll_in_u9);
+}
+
+static void uart_stm32_poll_out_u16(const struct device *dev, uint16_t out_u16)
+{
+	uart_stm32_poll_out_visitor(dev, (void *)&out_u16, poll_out_u9);
+}
+
+#endif
 
 static int uart_stm32_err_check(const struct device *dev)
 {
@@ -614,6 +746,10 @@ static int uart_stm32_err_check(const struct device *dev)
 
 	if (LL_USART_IsActiveFlag_FE(config->usart)) {
 		err |= UART_ERROR_FRAMING;
+	}
+
+	if (LL_USART_IsActiveFlag_NE(config->usart)) {
+		err |= UART_ERROR_NOISE;
 	}
 
 #if !defined(CONFIG_SOC_SERIES_STM32F0X) || defined(USART_LIN_SUPPORT)
@@ -641,10 +777,10 @@ static int uart_stm32_err_check(const struct device *dev)
 	if (err & UART_ERROR_FRAMING) {
 		LL_USART_ClearFlag_FE(config->usart);
 	}
-	/* Clear noise error as well,
-	 * it is not represented by the errors enum
-	 */
-	LL_USART_ClearFlag_NE(config->usart);
+
+	if (err & UART_ERROR_NOISE) {
+		LL_USART_ClearFlag_NE(config->usart);
+	}
 
 	return err;
 }
@@ -659,9 +795,11 @@ static inline void __uart_stm32_get_clock(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_stm32_fifo_fill(const struct device *dev,
-				  const uint8_t *tx_data,
-				  int size)
+typedef void (*fifo_fill_fn)(const struct uart_stm32_config *config, const void *tx_data,
+			     const uint8_t offset);
+
+static int uart_stm32_fifo_fill_visitor(const struct device *dev, const void *tx_data, int size,
+					fifo_fill_fn fill_fn)
 {
 	const struct uart_stm32_config *config = dev->config;
 	uint8_t num_tx = 0U;
@@ -674,12 +812,12 @@ static int uart_stm32_fifo_fill(const struct device *dev,
 	/* Lock interrupts to prevent nested interrupts or thread switch */
 	key = irq_lock();
 
-	while ((size - num_tx > 0) &&
-	       LL_USART_IsActiveFlag_TXE(config->usart)) {
+	while ((size - num_tx > 0) && LL_USART_IsActiveFlag_TXE(config->usart)) {
 		/* TXE flag will be cleared with byte write to DR|RDR register */
 
-		/* Send a character (8bit , parity none) */
-		LL_USART_TransmitData8(config->usart, tx_data[num_tx++]);
+		/* Send a character */
+		fill_fn(config, tx_data, num_tx);
+		num_tx++;
 	}
 
 	irq_unlock(key);
@@ -687,31 +825,110 @@ static int uart_stm32_fifo_fill(const struct device *dev,
 	return num_tx;
 }
 
-static int uart_stm32_fifo_read(const struct device *dev, uint8_t *rx_data,
-				  const int size)
+static void fifo_fill_with_u8(const struct uart_stm32_config *config,
+					 const void *tx_data, const uint8_t offset)
+{
+	const uint8_t *data = (const uint8_t *)tx_data;
+	/* Send a character (8bit) */
+	LL_USART_TransmitData8(config->usart, data[offset]);
+}
+
+static int uart_stm32_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
+{
+	if (uart_stm32_ll2cfg_databits(uart_stm32_get_databits(dev), uart_stm32_get_parity(dev)) ==
+	    UART_CFG_DATA_BITS_9) {
+		return -ENOTSUP;
+	}
+	return uart_stm32_fifo_fill_visitor(dev, (const void *)tx_data, size,
+					    fifo_fill_with_u8);
+}
+
+typedef void (*fifo_read_fn)(const struct uart_stm32_config *config, void *rx_data,
+			     const uint8_t offset);
+
+static int uart_stm32_fifo_read_visitor(const struct device *dev, void *rx_data, const int size,
+					fifo_read_fn read_fn)
 {
 	const struct uart_stm32_config *config = dev->config;
 	uint8_t num_rx = 0U;
 
-	while ((size - num_rx > 0) &&
-	       LL_USART_IsActiveFlag_RXNE(config->usart)) {
+	while ((size - num_rx > 0) && LL_USART_IsActiveFlag_RXNE(config->usart)) {
 		/* RXNE flag will be cleared upon read from DR|RDR register */
 
-		/* Receive a character (8bit , parity none) */
-		rx_data[num_rx++] = LL_USART_ReceiveData8(config->usart);
+		read_fn(config, rx_data, num_rx);
+		num_rx++;
 
 		/* Clear overrun error flag */
 		if (LL_USART_IsActiveFlag_ORE(config->usart)) {
 			LL_USART_ClearFlag_ORE(config->usart);
-		/*
-		 * On stm32 F4X, F1X, and F2X, the RXNE flag is affected (cleared) by
-		 * the uart_err_check function call (on errors flags clearing)
-		 */
+			/*
+			 * On stm32 F4X, F1X, and F2X, the RXNE flag is affected (cleared) by
+			 * the uart_err_check function call (on errors flags clearing)
+			 */
 		}
 	}
 
 	return num_rx;
 }
+
+static void fifo_read_with_u8(const struct uart_stm32_config *config, void *rx_data,
+					 const uint8_t offset)
+{
+	uint8_t *data = (uint8_t *)rx_data;
+
+	data[offset] = LL_USART_ReceiveData8(config->usart);
+}
+
+static int uart_stm32_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
+{
+	if (uart_stm32_ll2cfg_databits(uart_stm32_get_databits(dev), uart_stm32_get_parity(dev)) ==
+	    UART_CFG_DATA_BITS_9) {
+		return -ENOTSUP;
+	}
+	return uart_stm32_fifo_read_visitor(dev, (void *)rx_data, size,
+					    fifo_read_with_u8);
+}
+
+#ifdef CONFIG_UART_WIDE_DATA
+
+static void fifo_fill_with_u16(const struct uart_stm32_config *config,
+					  const void *tx_data, const uint8_t offset)
+{
+	const uint16_t *data = (const uint16_t *)tx_data;
+
+	/* Send a character (9bit) */
+	LL_USART_TransmitData9(config->usart, data[offset]);
+}
+
+static int uart_stm32_fifo_fill_u16(const struct device *dev, const uint16_t *tx_data, int size)
+{
+	if (uart_stm32_ll2cfg_databits(uart_stm32_get_databits(dev), uart_stm32_get_parity(dev)) !=
+	    UART_CFG_DATA_BITS_9) {
+		return -ENOTSUP;
+	}
+	return uart_stm32_fifo_fill_visitor(dev, (const void *)tx_data, size,
+					    fifo_fill_with_u16);
+}
+
+static void fifo_read_with_u16(const struct uart_stm32_config *config, void *rx_data,
+					  const uint8_t offset)
+{
+	uint16_t *data = (uint16_t *)rx_data;
+
+	data[offset] = LL_USART_ReceiveData9(config->usart);
+}
+
+static int uart_stm32_fifo_read_u16(const struct device *dev, uint16_t *rx_data, const int size)
+{
+	if (uart_stm32_ll2cfg_databits(uart_stm32_get_databits(dev), uart_stm32_get_parity(dev)) !=
+	    UART_CFG_DATA_BITS_9) {
+		return -ENOTSUP;
+	}
+	return uart_stm32_fifo_read_visitor(dev, (void *)rx_data, size,
+					    fifo_read_with_u16);
+}
+
+#endif
 
 static void uart_stm32_irq_tx_enable(const struct device *dev)
 {
@@ -850,6 +1067,11 @@ static void uart_stm32_irq_callback_set(const struct device *dev,
 
 	data->user_cb = cb;
 	data->user_data = cb_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->async_cb = NULL;
+	data->async_user_data = NULL;
+#endif
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -1071,6 +1293,11 @@ static int uart_stm32_async_callback_set(const struct device *dev,
 	data->async_cb = callback;
 	data->async_user_data = user_data;
 
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->user_cb = NULL;
+	data->user_data = NULL;
+#endif
+
 	return 0;
 }
 
@@ -1083,9 +1310,19 @@ static inline void uart_stm32_dma_tx_enable(const struct device *dev)
 
 static inline void uart_stm32_dma_tx_disable(const struct device *dev)
 {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_dma)
+	ARG_UNUSED(dev);
+
+	/*
+	 * Errata Sheet ES0499 : STM32U575xx and STM32U585xx device errata
+	 * USART does not generate DMA requests after setting/clearing DMAT bit
+	 * (also seen on stm32H5 serie)
+	 */
+#else
 	const struct uart_stm32_config *config = dev->config;
 
 	LL_USART_DisableDMAReq_TX(config->usart);
+#endif /* ! st_stm32u5_dma */
 }
 
 static inline void uart_stm32_dma_rx_enable(const struct device *dev)
@@ -1212,7 +1449,7 @@ void uart_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 	const struct device *uart_dev = user_data;
 	struct uart_stm32_data *data = uart_dev->data;
 
-	if (status != 0) {
+	if (status < 0) {
 		async_evt_rx_err(data, status);
 		return;
 	}
@@ -1535,11 +1772,36 @@ static int uart_stm32_async_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_UART_WIDE_DATA
+
+static int uart_stm32_async_tx_u16(const struct device *dev, const uint16_t *tx_data,
+				   size_t buf_size, int32_t timeout)
+{
+	return uart_stm32_async_tx(dev, (const uint8_t *)tx_data, buf_size * 2, timeout);
+}
+
+static int uart_stm32_async_rx_enable_u16(const struct device *dev, uint16_t *buf, size_t len,
+					  int32_t timeout)
+{
+	return uart_stm32_async_rx_enable(dev, (uint8_t *)buf, len * 2, timeout);
+}
+
+static int uart_stm32_async_rx_buf_rsp_u16(const struct device *dev, uint16_t *buf, size_t len)
+{
+	return uart_stm32_async_rx_buf_rsp(dev, (uint8_t *)buf, len * 2);
+}
+
+#endif
+
 #endif /* CONFIG_UART_ASYNC_API */
 
 static const struct uart_driver_api uart_stm32_driver_api = {
 	.poll_in = uart_stm32_poll_in,
 	.poll_out = uart_stm32_poll_out,
+#ifdef CONFIG_UART_WIDE_DATA
+	.poll_in_u16 = uart_stm32_poll_in_u16,
+	.poll_out_u16 = uart_stm32_poll_out_u16,
+#endif
 	.err_check = uart_stm32_err_check,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = uart_stm32_configure,
@@ -1548,6 +1810,10 @@ static const struct uart_driver_api uart_stm32_driver_api = {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_stm32_fifo_fill,
 	.fifo_read = uart_stm32_fifo_read,
+#ifdef CONFIG_UART_WIDE_DATA
+	.fifo_fill_u16 = uart_stm32_fifo_fill_u16,
+	.fifo_read_u16 = uart_stm32_fifo_read_u16,
+#endif
 	.irq_tx_enable = uart_stm32_irq_tx_enable,
 	.irq_tx_disable = uart_stm32_irq_tx_disable,
 	.irq_tx_ready = uart_stm32_irq_tx_ready,
@@ -1560,7 +1826,7 @@ static const struct uart_driver_api uart_stm32_driver_api = {
 	.irq_is_pending = uart_stm32_irq_is_pending,
 	.irq_update = uart_stm32_irq_update,
 	.irq_callback_set = uart_stm32_irq_callback_set,
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 #ifdef CONFIG_UART_ASYNC_API
 	.callback_set = uart_stm32_async_callback_set,
 	.tx = uart_stm32_async_tx,
@@ -1568,25 +1834,18 @@ static const struct uart_driver_api uart_stm32_driver_api = {
 	.rx_enable = uart_stm32_async_rx_enable,
 	.rx_disable = uart_stm32_async_rx_disable,
 	.rx_buf_rsp = uart_stm32_async_rx_buf_rsp,
-#endif  /* CONFIG_UART_ASYNC_API */
+#ifdef CONFIG_UART_WIDE_DATA
+	.tx_u16 = uart_stm32_async_tx_u16,
+	.rx_enable_u16 = uart_stm32_async_rx_enable_u16,
+	.rx_buf_rsp_u16 = uart_stm32_async_rx_buf_rsp_u16,
+#endif
+#endif /* CONFIG_UART_ASYNC_API */
 };
 
-/**
- * @brief Initialize UART channel
- *
- * This routine is called to reset the chip in a quiescent state.
- * It is assumed that this function is called only once per UART.
- *
- * @param dev UART device struct
- *
- * @return 0
- */
-static int uart_stm32_init(const struct device *dev)
+static int uart_stm32_clocks_enable(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
-	uint32_t ll_parity;
-	uint32_t ll_datawidth;
 	int err;
 
 	__uart_stm32_get_clock(dev);
@@ -1613,59 +1872,31 @@ static int uart_stm32_init(const struct device *dev)
 		}
 	}
 
-	/* Configure dt provided device signals when available */
-	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0) {
-		return err;
-	}
+	return 0;
+}
+
+static int uart_stm32_registers_configure(const struct device *dev)
+{
+	const struct uart_stm32_config *config = dev->config;
+	struct uart_stm32_data *data = dev->data;
+	struct uart_config *uart_cfg = data->uart_cfg;
 
 	LL_USART_Disable(config->usart);
 
-	if (!device_is_ready(data->reset.dev)) {
+	if (!device_is_ready(config->reset.dev)) {
 		LOG_ERR("reset controller not ready");
 		return -ENODEV;
 	}
 
 	/* Reset UART to default state using RCC */
-	reset_line_toggle_dt(&data->reset);
+	(void)reset_line_toggle_dt(&config->reset);
 
 	/* TX/RX direction */
 	LL_USART_SetTransferDirection(config->usart,
 				      LL_USART_DIRECTION_TX_RX);
 
-	/* Determine the datawidth and parity. If we use other parity than
-	 * 'none' we must use datawidth = 9 (to get 8 databit + 1 parity bit).
-	 */
-	if (config->parity == 2) {
-		/* 8 databit, 1 parity bit, parity even */
-		ll_parity = LL_USART_PARITY_EVEN;
-		ll_datawidth = LL_USART_DATAWIDTH_9B;
-	} else if (config->parity == 1) {
-		/* 8 databit, 1 parity bit, parity odd */
-		ll_parity = LL_USART_PARITY_ODD;
-		ll_datawidth = LL_USART_DATAWIDTH_9B;
-	} else {  /* Default to 8N0, but show warning if invalid value */
-		if (config->parity != 0) {
-			LOG_WRN("Invalid parity setting '%d'."
-				"Defaulting to 'none'.", config->parity);
-		}
-		/* 8 databit, parity none */
-		ll_parity = LL_USART_PARITY_NONE;
-		ll_datawidth = LL_USART_DATAWIDTH_8B;
-	}
-
-	/* Set datawidth and parity, 1 start bit, 1 stop bit  */
-	LL_USART_ConfigCharacter(config->usart,
-				 ll_datawidth,
-				 ll_parity,
-				 LL_USART_STOPBITS_1);
-
-	if (config->hw_flow_control) {
-		uart_stm32_set_hwctrl(dev, LL_USART_HWCONTROL_RTS_CTS);
-	}
-
-	/* Set the default baudrate */
-	uart_stm32_set_baudrate(dev, data->baud_rate);
+	/* Set basic parmeters, such as data-/stop-bit, parity, and baudrate */
+	uart_stm32_parameters_set(dev, uart_cfg);
 
 	/* Enable the single wire / half-duplex mode */
 	if (config->single_wire) {
@@ -1690,6 +1921,23 @@ static int uart_stm32_init(const struct device *dev)
 	}
 #endif
 
+#if HAS_DRIVER_ENABLE
+	if (config->de_enable) {
+		if (!IS_UART_DRIVER_ENABLE_INSTANCE(config->usart)) {
+			LOG_ERR("%s does not support driver enable", dev->name);
+			return -EINVAL;
+		}
+
+		uart_stm32_set_driver_enable(dev, true);
+		LL_USART_SetDEAssertionTime(config->usart, config->de_assert_time);
+		LL_USART_SetDEDeassertionTime(config->usart, config->de_deassert_time);
+
+		if (config->de_invert) {
+			LL_USART_SetDESignalPolarity(config->usart, LL_USART_DE_POLARITY_LOW);
+		}
+	}
+#endif
+
 	LL_USART_Enable(config->usart);
 
 #ifdef USART_ISR_TEACK
@@ -1703,6 +1951,40 @@ static int uart_stm32_init(const struct device *dev)
 	while (!(LL_USART_IsActiveFlag_REACK(config->usart))) {
 	}
 #endif /* !USART_ISR_REACK */
+
+	return 0;
+}
+
+/**
+ * @brief Initialize UART channel
+ *
+ * This routine is called to reset the chip in a quiescent state.
+ * It is assumed that this function is called only once per UART.
+ *
+ * @param dev UART device struct
+ *
+ * @return 0
+ */
+static int uart_stm32_init(const struct device *dev)
+{
+	const struct uart_stm32_config *config = dev->config;
+	int err;
+
+	err = uart_stm32_clocks_enable(dev);
+	if (err < 0) {
+		return err;
+	}
+
+	/* Configure dt provided device signals when available */
+	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		return err;
+	}
+
+	err = uart_stm32_registers_configure(dev);
+	if (err < 0) {
+		return err;
+	}
 
 #if defined(CONFIG_PM) || \
 	defined(CONFIG_UART_INTERRUPT_DRIVEN) || \
@@ -1787,10 +2069,14 @@ static int uart_stm32_pm_action(const struct device *dev,
 
 		/* Move pins to sleep state */
 		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
-		if (err == -ENOENT) {
-			/* Warn but don't block PM suspend */
-			LOG_WRN("(LP)UART pinctrl sleep state not available ");
-		} else if (err < 0) {
+		if ((err < 0) && (err != -ENOENT)) {
+			/*
+			 * If returning -ENOENT, no pins where defined for sleep mode :
+			 * Do not output on console (might sleep already) when going to sleep,
+			 * "(LP)UART pinctrl sleep state not available"
+			 * and don't block PM suspend.
+			 * Else return the error.
+			 */
 			return err;
 		}
 		break;
@@ -1880,6 +2166,112 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 #define STM32_UART_PM_WAKEUP(index) /* Not used */
 #endif
 
+/* Ensure DTS doesn't present an incompatible parity configuration.
+ * Mark/space parity isn't supported on the STM32 family.
+ * If 9 data bits are configured, ensure that a parity bit isn't set.
+ */
+#define STM32_UART_CHECK_DT_PARITY(index)				\
+BUILD_ASSERT(								\
+	!(DT_INST_ENUM_IDX_OR(index, parity, STM32_UART_DEFAULT_PARITY)	\
+					== UART_CFG_PARITY_MARK ||	\
+	DT_INST_ENUM_IDX_OR(index, parity, STM32_UART_DEFAULT_PARITY)	\
+					== UART_CFG_PARITY_SPACE),	\
+	"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
+	" has unsupported parity configuration");			\
+BUILD_ASSERT(								\
+	!(DT_INST_ENUM_IDX_OR(index, parity, STM32_UART_DEFAULT_PARITY)	\
+					!= UART_CFG_PARITY_NONE	&&	\
+	DT_INST_ENUM_IDX_OR(index, data_bits,				\
+			    STM32_UART_DEFAULT_DATA_BITS)		\
+					== UART_CFG_DATA_BITS_9),	\
+	"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
+		" has unsupported parity + data bits combination");
+
+/* Ensure DTS doesn't present an incompatible data bits configuration
+ * The STM32 family doesn't support 5 data bits, or 6 data bits without parity.
+ * Only some series support 7 data bits.
+ */
+#ifdef LL_USART_DATAWIDTH_7B
+#define STM32_UART_CHECK_DT_DATA_BITS(index)				\
+BUILD_ASSERT(								\
+	!(DT_INST_ENUM_IDX_OR(index, data_bits,				\
+			      STM32_UART_DEFAULT_DATA_BITS)		\
+					== UART_CFG_DATA_BITS_5 ||	\
+		(DT_INST_ENUM_IDX_OR(index, data_bits,			\
+				    STM32_UART_DEFAULT_DATA_BITS)	\
+					== UART_CFG_DATA_BITS_6 &&	\
+		DT_INST_ENUM_IDX_OR(index, parity,			\
+				    STM32_UART_DEFAULT_PARITY)		\
+					== UART_CFG_PARITY_NONE)),	\
+	"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
+		" has unsupported data bits configuration");
+#else
+#define STM32_UART_CHECK_DT_DATA_BITS(index)				\
+BUILD_ASSERT(								\
+	!(DT_INST_ENUM_IDX_OR(index, data_bits,				\
+			      STM32_UART_DEFAULT_DATA_BITS)		\
+					== UART_CFG_DATA_BITS_5 ||	\
+	DT_INST_ENUM_IDX_OR(index, data_bits,				\
+			    STM32_UART_DEFAULT_DATA_BITS)		\
+					== UART_CFG_DATA_BITS_6 ||	\
+		(DT_INST_ENUM_IDX_OR(index, data_bits,			\
+			    STM32_UART_DEFAULT_DATA_BITS)		\
+					== UART_CFG_DATA_BITS_7 &&	\
+		DT_INST_ENUM_IDX_OR(index, parity,			\
+				    STM32_UART_DEFAULT_PARITY)		\
+					== UART_CFG_PARITY_NONE)),	\
+	"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
+		" has unsupported data bits configuration");
+#endif
+
+/* Ensure DTS doesn't present an incompatible stop bits configuration.
+ * Some STM32 series USARTs don't support 0.5 stop bits, and it generally isn't
+ * supported for LPUART.
+ */
+#ifndef LL_USART_STOPBITS_0_5
+#define STM32_UART_CHECK_DT_STOP_BITS_0_5(index)			\
+BUILD_ASSERT(								\
+	!(DT_INST_ENUM_IDX_OR(index, stop_bits,				\
+			      STM32_UART_DEFAULT_STOP_BITS)		\
+					== UART_CFG_STOP_BITS_0_5),	\
+	"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
+		" has unsupported stop bits configuration");
+/* LPUARTs don't support 0.5 stop bits configurations */
+#else
+#define STM32_UART_CHECK_DT_STOP_BITS_0_5(index)			\
+BUILD_ASSERT(								\
+	!(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_lpuart) &&			\
+	  DT_INST_ENUM_IDX_OR(index, stop_bits,				\
+			      STM32_UART_DEFAULT_STOP_BITS)		\
+					== UART_CFG_STOP_BITS_0_5),	\
+	"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
+		" has unsupported stop bits configuration");
+#endif
+
+/* Ensure DTS doesn't present an incompatible stop bits configuration.
+ * Some STM32 series USARTs don't support 1.5 stop bits, and it generally isn't
+ * supported for LPUART.
+ */
+#ifndef LL_USART_STOPBITS_1_5
+#define STM32_UART_CHECK_DT_STOP_BITS_1_5(index)			\
+BUILD_ASSERT(								\
+	DT_INST_ENUM_IDX_OR(index, stop_bits,				\
+			    STM32_UART_DEFAULT_STOP_BITS)		\
+					!= UART_CFG_STOP_BITS_1_5,	\
+	"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
+		" has unsupported stop bits configuration");
+/* LPUARTs don't support 1.5 stop bits configurations */
+#else
+#define STM32_UART_CHECK_DT_STOP_BITS_1_5(index)			\
+BUILD_ASSERT(								\
+	!(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_lpuart) &&			\
+	  DT_INST_ENUM_IDX_OR(index, stop_bits,				\
+			      STM32_UART_DEFAULT_STOP_BITS)		\
+					== UART_CFG_STOP_BITS_1_5),	\
+	"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
+		" has unsupported stop bits configuration");
+#endif
+
 #define STM32_UART_INIT(index)						\
 STM32_UART_IRQ_HANDLER_DECL(index)					\
 									\
@@ -1888,24 +2280,40 @@ PINCTRL_DT_INST_DEFINE(index);						\
 static const struct stm32_pclken pclken_##index[] =			\
 					    STM32_DT_INST_CLOCKS(index);\
 									\
+static struct uart_config uart_cfg_##index = {				\
+	.baudrate  = DT_INST_PROP_OR(index, current_speed,		\
+				     STM32_UART_DEFAULT_BAUDRATE),	\
+	.parity    = DT_INST_ENUM_IDX_OR(index, parity,			\
+					 STM32_UART_DEFAULT_PARITY),	\
+	.stop_bits = DT_INST_ENUM_IDX_OR(index, stop_bits,		\
+					 STM32_UART_DEFAULT_STOP_BITS),	\
+	.data_bits = DT_INST_ENUM_IDX_OR(index, data_bits,		\
+					 STM32_UART_DEFAULT_DATA_BITS),	\
+	.flow_ctrl = DT_INST_PROP(index, hw_flow_control)		\
+					? UART_CFG_FLOW_CTRL_RTS_CTS	\
+					: UART_CFG_FLOW_CTRL_NONE,	\
+};									\
+									\
 static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.usart = (USART_TypeDef *)DT_INST_REG_ADDR(index),		\
+	.reset = RESET_DT_SPEC_GET(DT_DRV_INST(index)),			\
 	.pclken = pclken_##index,					\
 	.pclk_len = DT_INST_NUM_CLOCKS(index),				\
-	.hw_flow_control = DT_INST_PROP(index, hw_flow_control),	\
-	.parity = DT_INST_ENUM_IDX_OR(index, parity, UART_CFG_PARITY_NONE),	\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 	.single_wire = DT_INST_PROP_OR(index, single_wire, false),	\
 	.tx_rx_swap = DT_INST_PROP_OR(index, tx_rx_swap, false),	\
 	.rx_invert = DT_INST_PROP(index, rx_invert),			\
 	.tx_invert = DT_INST_PROP(index, tx_invert),			\
+	.de_enable = DT_INST_PROP(index, de_enable),			\
+	.de_assert_time = DT_INST_PROP(index, de_assert_time),		\
+	.de_deassert_time = DT_INST_PROP(index, de_deassert_time),	\
+	.de_invert = DT_INST_PROP(index, de_invert),			\
 	STM32_UART_IRQ_HANDLER_FUNC(index)				\
 	STM32_UART_PM_WAKEUP(index)					\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##index = {		\
-	.baud_rate = DT_INST_PROP(index, current_speed),		\
-	.reset = RESET_DT_SPEC_GET(DT_DRV_INST(index)),			\
+	.uart_cfg = &uart_cfg_##index,					\
 	UART_DMA_CHANNEL(index, rx, RX, PERIPHERAL, MEMORY)		\
 	UART_DMA_CHANNEL(index, tx, TX, MEMORY, PERIPHERAL)		\
 };									\
@@ -1919,6 +2327,11 @@ DEVICE_DT_INST_DEFINE(index,						\
 		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\
 		    &uart_stm32_driver_api);				\
 									\
-STM32_UART_IRQ_HANDLER(index)
+STM32_UART_IRQ_HANDLER(index)						\
+									\
+STM32_UART_CHECK_DT_PARITY(index)					\
+STM32_UART_CHECK_DT_DATA_BITS(index)					\
+STM32_UART_CHECK_DT_STOP_BITS_0_5(index)				\
+STM32_UART_CHECK_DT_STOP_BITS_1_5(index)
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_UART_INIT)

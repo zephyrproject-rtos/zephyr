@@ -216,11 +216,10 @@ static void rv32m1_setup_peripheral_clocks(void)
  *
  * @return 0
  */
-static int soc_rv32m1_init(const struct device *arg)
+static int soc_rv32m1_init(void)
 {
 	unsigned int key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

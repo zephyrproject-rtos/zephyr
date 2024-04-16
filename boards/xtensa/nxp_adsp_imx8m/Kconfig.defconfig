@@ -17,5 +17,4 @@ config IMX_SDMA
 	default y
 	depends on DMA
 
-
 endif # BOARD_NXP_ADSP_IMX8M

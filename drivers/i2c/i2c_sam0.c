@@ -155,7 +155,24 @@ static void i2c_sam0_isr(const struct device *dev)
 	if (status & SERCOM_I2CM_INTFLAG_MB) {
 		if (!data->msg.size) {
 			i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
-			i2c->CTRLB.bit.CMD = 3;
+
+			/*
+			 * Decide whether to issue a repeated start, or a stop condition...
+			 *   - A repeated start can either be accomplished by writing a 0x1
+			 *     to the CMD field, or by writing to ADDR - which is what this
+			 *     driver does in i2c_sam0_transfer().
+			 *   - A stop is accomplished by writing a 0x3 to CMD (below).
+			 *
+			 * This decision is not the same as continue_next, as the value of
+			 * data->msg.size is already zero (not one), and i2c_sam0_transfer()
+			 * is responsible for advancing to the next message, not the ISR.
+			 */
+			if ((data->num_msgs <= 1)
+			    || (data->msgs[0].flags & I2C_MSG_STOP)
+			    || !(data->msgs[1].flags & I2C_MSG_RESTART)) {
+				i2c->CTRLB.bit.CMD = 3;
+			}
+
 			k_sem_give(&data->sem);
 			return;
 		}

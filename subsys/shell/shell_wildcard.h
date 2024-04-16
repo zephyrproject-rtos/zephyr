@@ -20,7 +20,7 @@ enum shell_wildcard_status {
  *
  * @param[in] shell	Pointer to the shell instance.
  */
-void z_shell_wildcard_prepare(const struct shell *shell);
+void z_shell_wildcard_prepare(const struct shell *sh);
 
 /* Function returns true if string contains wildcard character: '?' or '*'
  *
@@ -44,7 +44,7 @@ bool z_shell_has_wildcard(const char *str);
  * @param[in] cmd	Pointer to command which will be processed.
  * @param[in] pattern	Pointer to wildcard pattern.
  */
-enum shell_wildcard_status z_shell_wildcard_process(const struct shell *shell,
+enum shell_wildcard_status z_shell_wildcard_process(const struct shell *sh,
 					const struct shell_static_entry *cmd,
 					const char *pattern);
 
@@ -52,7 +52,7 @@ enum shell_wildcard_status z_shell_wildcard_process(const struct shell *shell,
  *
  * @param[in] shell	Pointer to the shell instance.
  */
-void z_shell_wildcard_finalize(const struct shell *shell);
+void z_shell_wildcard_finalize(const struct shell *sh);
 
 
 #endif /* SHELL_SHELL_WILDCARDS_H__ */

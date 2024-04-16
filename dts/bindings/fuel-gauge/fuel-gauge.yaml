@@ -8,5 +8,3 @@ include: base.yaml
 
 description: |
    Battery fuel-gauge parameters and info
-
-compatible: "fuel-gauge.yaml"

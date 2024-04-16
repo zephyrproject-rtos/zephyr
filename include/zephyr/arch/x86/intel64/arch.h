@@ -8,6 +8,9 @@
 
 #include <zephyr/arch/x86/intel64/thread.h>
 #include <zephyr/arch/x86/thread_stack.h>
+#if defined(CONFIG_PCIE) && !defined(_ASMLANGUAGE)
+#include <zephyr/sys/iterable_sections.h>
+#endif
 
 #if CONFIG_ISR_STACK_SIZE != (CONFIG_ISR_SUBSTACK_SIZE * CONFIG_ISR_DEPTH)
 #error "Check ISR stack configuration (CONFIG_ISR_*)"
@@ -113,15 +116,14 @@ struct x86_ssf {
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */ \
 } while (false)
 
-#endif /* _ASMLANGUAGE */
-
 #ifdef CONFIG_PCIE
 #define X86_RESERVE_IRQ(irq_p, name) \
-	static Z_DECL_ALIGN(uint8_t) name \
-	__in_section(_irq_alloc, static, name) __used = irq_p
+	static TYPE_SECTION_ITERABLE(uint8_t, name, irq_alloc, name) = irq_p
 #else
 #define X86_RESERVE_IRQ(irq_p, name)
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 /*
  * All Intel64 interrupts are dynamically connected.

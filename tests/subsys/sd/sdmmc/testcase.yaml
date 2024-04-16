@@ -1,8 +1,10 @@
 common:
   depends_on: sdhc
-  tags: drivers sdhc
+  tags:
+    - drivers
+    - sdhc
 tests:
-  subsys.sd.sdmmc:
+  sd.sdmmc:
     harness: ztest
     harness_config:
       fixture: fixture_sdhc

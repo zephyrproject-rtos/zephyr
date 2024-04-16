@@ -10,61 +10,67 @@ compatible: "st,stm32-ucpd"
 include: [base.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    psc-ucpdclk:
-      default: 2
-      type: int
-      enum:
-        - 1
-        - 2
-        - 4
-        - 8
-        - 16
-        - 32
-        - 64
-        - 128
-      description: |
-        Determines the division ratio of a kernel clock pre-scaler
-        producing UCPD peripheral clock (ucpd_clk). It is recommended
-        to use the pre-scaler so as to set the ucpd_clk frequency in
-        the range from 6 to 9 MHz.
+  psc-ucpdclk:
+    default: 2
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+    description: |
+      Determines the division ratio of a kernel clock pre-scaler
+      producing UCPD peripheral clock (ucpd_clk). It is recommended
+      to use the pre-scaler so as to set the ucpd_clk frequency in
+      the range from 6 to 9 MHz.
 
-    ifrgap:
-      type: int
-      default: 17
-      description: |
-        Determines the division ratio of a ucpd_clk divider producing
-        inter-frame gap timer clock (tInterFrameGap).
-        The division ratio 15 is to apply for Tx clock at the USB PD 2.0
-        specification nominal value.
-        Valid range: 2 - 32
+  ifrgap:
+    type: int
+    default: 17
+    description: |
+      Determines the division ratio of a ucpd_clk divider producing
+      inter-frame gap timer clock (tInterFrameGap).
+      The division ratio 15 is to apply for Tx clock at the USB PD 2.0
+      specification nominal value.
+      Valid range: 2 - 32
 
-    transwin:
-      type: int
-      default: 8
-      description: |
-        Determines the division ratio of a hbit_clk divider producing
-        tTransitionWindow interval.
-        Valid range: 2 - 32
+  transwin:
+    type: int
+    default: 8
+    description: |
+      Determines the division ratio of a hbit_clk divider producing
+      tTransitionWindow interval.
+      Valid range: 2 - 32
 
-    hbitclkdiv:
-      type: int
-      default: 14
-      description: |
-        Determines the division ratio of a ucpd_clk divider producing
-        half-bit clock (hbit_clk)
-        Valid range: 1 - 64
+  hbitclkdiv:
+    type: int
+    default: 14
+    description: |
+      Determines the division ratio of a ucpd_clk divider producing
+      half-bit clock (hbit_clk)
+      Valid range: 1 - 64
 
-    pinctrl-0:
-      required: true
+  dead-battery:
+    type: boolean
+    description: |
+      Determine if USB-C Dead Battery pull-down's should be
+      applied to the CC lines.
 
-    pinctrl-names:
-      required: true
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

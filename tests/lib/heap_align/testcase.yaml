@@ -1,3 +1,8 @@
 tests:
-  lib.heap_align:
-    tags: heap heap_align
+  libraries.heap_align:
+    tags:
+      - heap
+      - heap_align
+    integration_platforms:
+      - native_posix
+      - mps2_an521

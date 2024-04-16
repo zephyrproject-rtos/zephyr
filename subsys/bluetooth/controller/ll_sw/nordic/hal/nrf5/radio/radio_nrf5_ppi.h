@@ -4,11 +4,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
-
-#include <hal/nrf_ppi.h>
-
-#include "radio_nrf5_ppi_resources.h"
 
 static inline void hal_radio_nrf_ppi_channels_enable(uint32_t mask)
 {
@@ -34,28 +29,54 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(uint8_t trx)
 	/* No need to configure anything for the pre-programmed channels.
 	 * Just enable and disable them accordingly.
 	 */
-	nrf_ppi_channels_disable(
-		NRF_PPI,
-		trx ? BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI)
-		    : BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI));
-	nrf_ppi_channels_enable(
-		NRF_PPI,
-		trx ? BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI)
-		    : BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI));
+	if (trx) {
+		nrf_ppi_channels_enable(NRF_PPI,
+					BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI));
+	} else {
+		nrf_ppi_channels_enable(NRF_PPI,
+					BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI));
+	}
 }
 
 #else
 
 static inline void hal_radio_enable_on_tick_ppi_config_and_enable(uint8_t trx)
 {
-	uint32_t event_address = (trx ? (uint32_t)&(NRF_RADIO->TASKS_TXEN)
-				   : (uint32_t)&(NRF_RADIO->TASKS_RXEN));
-	nrf_ppi_channel_endpoint_setup(
-		NRF_PPI,
-		HAL_RADIO_ENABLE_ON_TICK_PPI,
-		(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[0]),
-		event_address);
-	nrf_ppi_channels_enable(NRF_PPI, BIT(HAL_RADIO_ENABLE_ON_TICK_PPI));
+	if (trx) {
+		nrf_ppi_channel_endpoint_setup(NRF_PPI,
+			HAL_RADIO_ENABLE_TX_ON_TICK_PPI,
+			(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[0]),
+			(uint32_t)&(NRF_RADIO->TASKS_TXEN));
+
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+		NRF_PPI->CHG[SW_SWITCH_SINGLE_TIMER_TASK_GROUP_IDX] =
+			BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI);
+
+		nrf_ppi_fork_endpoint_setup(NRF_PPI,
+			HAL_RADIO_ENABLE_TX_ON_TICK_PPI,
+			(uint32_t)&(NRF_PPI->TASKS_CHG[SW_SWITCH_SINGLE_TIMER_TASK_GROUP_IDX].DIS));
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+		nrf_ppi_channels_enable(NRF_PPI,
+					BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI));
+	} else {
+		nrf_ppi_channel_endpoint_setup(NRF_PPI,
+			HAL_RADIO_ENABLE_RX_ON_TICK_PPI,
+			(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[0]),
+			(uint32_t)&(NRF_RADIO->TASKS_RXEN));
+
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+		NRF_PPI->CHG[SW_SWITCH_SINGLE_TIMER_TASK_GROUP_IDX] =
+			BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI);
+
+		nrf_ppi_fork_endpoint_setup(NRF_PPI,
+			HAL_RADIO_ENABLE_RX_ON_TICK_PPI,
+			(uint32_t)&(NRF_PPI->TASKS_CHG[SW_SWITCH_SINGLE_TIMER_TASK_GROUP_IDX].DIS));
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+		nrf_ppi_channels_enable(NRF_PPI,
+					BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI));
+	}
 }
 
 #endif /* (EVENT_TIMER_ID == 0) */
@@ -138,7 +159,7 @@ static inline void hal_radio_end_time_capture_ppi_config(void)
 	nrf_ppi_channel_endpoint_setup(
 		NRF_PPI,
 		HAL_RADIO_END_TIME_CAPTURE_PPI,
-		(uint32_t)&(NRF_RADIO->EVENTS_END),
+		(uint32_t)&(NRF_RADIO->NRF_RADIO_TXRX_END_EVENT),
 		(uint32_t)&(EVENT_TIMER->TASKS_CAPTURE[2]));
 }
 
@@ -182,6 +203,16 @@ static inline void hal_radio_ready_time_capture_ppi_config(void)
 static inline void hal_trigger_crypt_ppi_config(void)
 {
 	/* No need to configure anything for the pre-programmed channel. */
+}
+
+/*******************************************************************************
+ * Disable trigger encryption task
+ */
+static inline void hal_trigger_crypt_ppi_disable(void)
+{
+	/* No need to disable anything as ppi channel will be disabled in a
+	 * separate disable ppi call by the caller of this function.
+	 */
 }
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
@@ -389,10 +420,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_RX \
 	((uint32_t)&(NRF_RADIO->TASKS_RXEN))
 
-static inline void hal_radio_sw_switch_setup(
-		uint8_t compare_reg,
-		uint8_t radio_enable_ppi,
-		uint8_t ppi_group_index)
+static inline void hal_radio_sw_switch_setup(uint8_t ppi_group_index)
 {
 	/* Set up software switch mechanism for next Radio switch. */
 
@@ -404,53 +432,58 @@ static inline void hal_radio_sw_switch_setup(
 		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI,
 		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT,
 		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_TASK(ppi_group_index));
+}
 
+static inline void hal_radio_txen_on_sw_switch(uint8_t compare_reg_index, uint8_t radio_enable_ppi)
+{
 	/* Wire SW Switch timer event <compare_reg> to the
 	 * PPI[<radio_enable_ppi>] for enabling Radio. Do
 	 * not wire the task; it is done by the caller of
 	 * the function depending on the desired direction
 	 * (TX/RX).
 	 */
-	nrf_ppi_event_endpoint_setup(
-		NRF_PPI,
-		radio_enable_ppi,
-		HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(compare_reg));
+	nrf_ppi_event_endpoint_setup(NRF_PPI, radio_enable_ppi,
+				     HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(compare_reg_index));
+
+	nrf_ppi_task_endpoint_setup(NRF_PPI, radio_enable_ppi,
+				    HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX);
 }
 
-static inline void hal_radio_txen_on_sw_switch(uint8_t ppi)
-{
-	nrf_ppi_task_endpoint_setup(
-		NRF_PPI,
-		ppi,
-		HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX);
-}
-
-static inline void hal_radio_b2b_txen_on_sw_switch(uint8_t ppi)
+static inline void hal_radio_b2b_txen_on_sw_switch(uint8_t compare_reg_index,
+						   uint8_t radio_enable_ppi)
 {
 	/* NOTE: As independent PPI are used to trigger the Radio Tx task,
 	 *       double buffers implementation works for sw_switch using PPIs,
 	 *       simply reuse the hal_radio_txen_on_sw_switch() functon to set
 	 *	 the next PPIs task to be Radio Tx enable.
 	 */
-	hal_radio_txen_on_sw_switch(ppi);
+	hal_radio_txen_on_sw_switch(compare_reg_index, radio_enable_ppi);
 }
 
-static inline void hal_radio_rxen_on_sw_switch(uint8_t ppi)
+static inline void hal_radio_rxen_on_sw_switch(uint8_t compare_reg_index, uint8_t radio_enable_ppi)
 {
-	nrf_ppi_task_endpoint_setup(
-		NRF_PPI,
-		ppi,
-		HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_RX);
-}
-
-static inline void hal_radio_b2b_rxen_on_sw_switch(uint8_t ppi)
-{
-	/* NOTE: As independent PPI are used to trigger the Radio Rx task,
-	 *       double buffers implementation works for sw_switch using PPIs,
-	 *       simply reuse the hal_radio_rxen_on_sw_switch() functon to set
-	 *	 the next PPIs task to be Radio Rx enable.
+	/* Wire SW Switch timer event <compare_reg> to the
+	 * PPI[<radio_enable_ppi>] for enabling Radio. Do
+	 * not wire the task; it is done by the caller of
+	 * the function depending on the desired direction
+	 * (TX/RX).
 	 */
-	hal_radio_rxen_on_sw_switch(ppi);
+	nrf_ppi_event_endpoint_setup(NRF_PPI, radio_enable_ppi,
+				     HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(compare_reg_index));
+
+	nrf_ppi_task_endpoint_setup(NRF_PPI, radio_enable_ppi,
+				    HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_RX);
+}
+
+static inline void hal_radio_b2b_rxen_on_sw_switch(uint8_t compare_reg_index,
+						   uint8_t radio_enable_ppi)
+{
+	/* NOTE: As independent PPI are used to trigger the Radio Tx task,
+	 *       double buffers implementation works for sw_switch using PPIs,
+	 *       simply reuse the hal_radio_txen_on_sw_switch() functon to set
+	 *	 the next PPIs task to be Radio Tx enable.
+	 */
+	hal_radio_rxen_on_sw_switch(compare_reg_index, radio_enable_ppi);
 }
 
 static inline void hal_radio_sw_switch_disable(void)
@@ -463,6 +496,16 @@ static inline void hal_radio_sw_switch_disable(void)
 		NRF_PPI,
 		BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
 		BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
+}
+
+static inline void hal_radio_sw_switch_b2b_tx_disable(uint8_t compare_reg_index)
+{
+	hal_radio_sw_switch_disable();
+}
+
+static inline void hal_radio_sw_switch_b2b_rx_disable(uint8_t compare_reg_index)
+{
+	hal_radio_sw_switch_disable();
 }
 
 static inline void hal_radio_sw_switch_cleanup(void)
@@ -700,4 +743,3 @@ static inline void hal_radio_sw_switch_ppi_group_setup(void)
 }
 
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
-#endif /* CONFIG_SOC_SERIES_NRF51X || CONFIG_SOC_COMPATIBLE_NRF52X */

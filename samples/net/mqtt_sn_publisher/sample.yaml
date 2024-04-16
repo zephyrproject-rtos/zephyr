@@ -3,9 +3,15 @@ sample:
   name: MQTT-SN publisher
 common:
   harness: net
-  tags: net mqtt
+  tags:
+    - net
+    - mqtt
 tests:
   sample.net.mqtt_publisher.sn:
-    platform_allow: frdm_k64f qemu_x86 pinnacle_100_dvk mg100
+    platform_allow:
+      - frdm_k64f
+      - qemu_x86
+      - pinnacle_100_dvk
+      - mg100
     integration_platforms:
       - qemu_x86

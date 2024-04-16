@@ -321,8 +321,6 @@ config MODEM_HL7800_BOOT_IN_AIRPLANE_MODE
 	help
 	  mdm_hl7800_set_functionality must be used by app to exit
 	  airplane mode.
-	  If bands are reconfigured, then this setting is overridden
-	  because modem is rebooted into full functionality mode.
 
 endchoice
 

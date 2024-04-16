@@ -60,7 +60,7 @@ struct lps22hh_data {
 #ifdef CONFIG_LPS22HH_TRIGGER
 	struct gpio_callback gpio_cb;
 
-	struct sensor_trigger data_ready_trigger;
+	const struct sensor_trigger *data_ready_trigger;
 	sensor_trigger_handler_t handler_drdy;
 	const struct device *dev;
 

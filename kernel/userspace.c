@@ -47,8 +47,27 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  * not.
  */
 #ifdef CONFIG_DYNAMIC_OBJECTS
-static struct k_spinlock lists_lock;       /* kobj rbtree/dlist */
+static struct k_spinlock lists_lock;       /* kobj dlist */
 static struct k_spinlock objfree_lock;     /* k_object_free */
+
+#ifdef CONFIG_GEN_PRIV_STACKS
+/* On ARM & ARC MPU we may have two different alignment requirement
+ * when dynamically allocating thread stacks, one for the privileged
+ * stack and other for the user stack, so we need to account the
+ * worst alignment scenario and reserve space for that.
+ */
+#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU)
+#define STACK_ELEMENT_DATA_SIZE(size) \
+	(sizeof(struct z_stack_data) + CONFIG_PRIVILEGED_STACK_SIZE + \
+	Z_THREAD_STACK_OBJ_ALIGN(size) + Z_THREAD_STACK_SIZE_ADJUST(size))
+#else
+#define STACK_ELEMENT_DATA_SIZE(size) (sizeof(struct z_stack_data) + \
+	Z_THREAD_STACK_SIZE_ADJUST(size))
+#endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU */
+#else
+#define STACK_ELEMENT_DATA_SIZE(size) Z_THREAD_STACK_SIZE_ADJUST(size)
+#endif /* CONFIG_GEN_PRIV_STACKS */
+
 #endif
 static struct k_spinlock obj_lock;         /* kobj struct data */
 
@@ -130,31 +149,33 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 #define DYN_OBJ_DATA_ALIGN_K_THREAD	(sizeof(void *))
 #endif
 
+#ifdef CONFIG_DYNAMIC_THREAD_STACK_SIZE
+#ifndef CONFIG_MPU_STACK_GUARD
+#define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
+	Z_THREAD_STACK_OBJ_ALIGN(CONFIG_PRIVILEGED_STACK_SIZE)
+#else
+#define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
+	Z_THREAD_STACK_OBJ_ALIGN(CONFIG_DYNAMIC_THREAD_STACK_SIZE)
+#endif /* !CONFIG_MPU_STACK_GUARD */
+#else
+#define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
+	Z_THREAD_STACK_OBJ_ALIGN(ARCH_STACK_PTR_ALIGN)
+#endif /* CONFIG_DYNAMIC_THREAD_STACK_SIZE */
+
 #define DYN_OBJ_DATA_ALIGN		\
 	MAX(DYN_OBJ_DATA_ALIGN_K_THREAD, (sizeof(void *)))
 
 struct dyn_obj {
 	struct z_object kobj;
 	sys_dnode_t dobj_list;
-	struct rbnode node; /* must be immediately before data member */
 
 	/* The object itself */
-	uint8_t data[] __aligned(DYN_OBJ_DATA_ALIGN_K_THREAD);
+	void *data;
 };
 
 extern struct z_object *z_object_gperf_find(const void *obj);
 extern void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func,
 					     void *context);
-
-static bool node_lessthan(struct rbnode *a, struct rbnode *b);
-
-/*
- * Red/black tree of allocated kernel objects, for reasonably fast lookups
- * based on object pointer values.
- */
-static struct rbtree obj_rb_tree = {
-	.lessthan_fn = node_lessthan
-};
 
 /*
  * Linked list of allocated kernel objects, for iteration over all allocated
@@ -163,8 +184,7 @@ static struct rbtree obj_rb_tree = {
 static sys_dlist_t obj_list = SYS_DLIST_STATIC_INIT(&obj_list);
 
 /*
- * TODO: Write some hash table code that will replace both obj_rb_tree
- * and obj_list.
+ * TODO: Write some hash table code that will replace obj_list.
  */
 
 static size_t obj_size_get(enum k_objects otype)
@@ -201,44 +221,31 @@ static size_t obj_align_get(enum k_objects otype)
 	return ret;
 }
 
-static bool node_lessthan(struct rbnode *a, struct rbnode *b)
-{
-	return a < b;
-}
-
-static inline struct dyn_obj *node_to_dyn_obj(struct rbnode *node)
-{
-	return CONTAINER_OF(node, struct dyn_obj, node);
-}
-
-static inline struct rbnode *dyn_obj_to_node(void *obj)
-{
-	struct dyn_obj *dobj = CONTAINER_OF(obj, struct dyn_obj, data);
-
-	return &dobj->node;
-}
-
 static struct dyn_obj *dyn_object_find(void *obj)
 {
-	struct rbnode *node;
-	struct dyn_obj *ret;
+	struct dyn_obj *node;
+	k_spinlock_key_t key;
 
 	/* For any dynamically allocated kernel object, the object
 	 * pointer is just a member of the containing struct dyn_obj,
 	 * so just a little arithmetic is necessary to locate the
 	 * corresponding struct rbnode
 	 */
-	node = dyn_obj_to_node(obj);
+	key = k_spin_lock(&lists_lock);
 
-	k_spinlock_key_t key = k_spin_lock(&lists_lock);
-	if (rb_contains(&obj_rb_tree, node)) {
-		ret = node_to_dyn_obj(node);
-	} else {
-		ret = NULL;
+	SYS_DLIST_FOR_EACH_CONTAINER(&obj_list, node, dobj_list) {
+		if (node->kobj.name == obj) {
+			goto end;
+		}
 	}
+
+	/* No object found */
+	node = NULL;
+
+ end:
 	k_spin_unlock(&lists_lock, key);
 
-	return ret;
+	return node;
 }
 
 /**
@@ -304,31 +311,80 @@ static void thread_idx_free(uintptr_t tidx)
 	sys_bitfield_set_bit((mem_addr_t)_thread_idx_map, tidx);
 }
 
-struct z_object *z_dynamic_object_aligned_create(size_t align, size_t size)
+static struct z_object *dynamic_object_create(enum k_objects otype, size_t align,
+					      size_t size)
 {
 	struct dyn_obj *dyn;
 
-	dyn = z_thread_aligned_alloc(align, sizeof(*dyn) + size);
+	dyn = z_thread_aligned_alloc(align, sizeof(struct dyn_obj));
 	if (dyn == NULL) {
-		LOG_ERR("could not allocate kernel object, out of memory");
 		return NULL;
 	}
 
-	dyn->kobj.name = &dyn->data;
-	dyn->kobj.type = K_OBJ_ANY;
+	if (otype == K_OBJ_THREAD_STACK_ELEMENT) {
+		size_t adjusted_size;
+
+		if (size == 0) {
+			k_free(dyn);
+			return NULL;
+		}
+
+		adjusted_size = STACK_ELEMENT_DATA_SIZE(size);
+		dyn->data = z_thread_aligned_alloc(DYN_OBJ_DATA_ALIGN_K_THREAD_STACK,
+						     adjusted_size);
+		if (dyn->data == NULL) {
+			k_free(dyn);
+			return NULL;
+		}
+
+#ifdef CONFIG_GEN_PRIV_STACKS
+		struct z_stack_data *stack_data = (struct z_stack_data *)
+			((uint8_t *)dyn->data + adjusted_size - sizeof(*stack_data));
+		stack_data->priv = (uint8_t *)dyn->data;
+		dyn->kobj.data.stack_data = stack_data;
+#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU)
+		dyn->kobj.name = (void *)ROUND_UP(
+			  ((uint8_t *)dyn->data + CONFIG_PRIVILEGED_STACK_SIZE),
+			  Z_THREAD_STACK_OBJ_ALIGN(size));
+#else
+		dyn->kobj.name = dyn->data;
+#endif
+#else
+		dyn->kobj.name = dyn->data;
+#endif
+	} else {
+		dyn->data = z_thread_aligned_alloc(align, obj_size_get(otype) + size);
+		if (dyn->data == NULL) {
+			k_free(dyn->data);
+			return NULL;
+		}
+		dyn->kobj.name = dyn->data;
+	}
+
+	dyn->kobj.type = otype;
 	dyn->kobj.flags = 0;
 	(void)memset(dyn->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
 
 	k_spinlock_key_t key = k_spin_lock(&lists_lock);
 
-	rb_insert(&obj_rb_tree, &dyn->node);
 	sys_dlist_append(&obj_list, &dyn->dobj_list);
 	k_spin_unlock(&lists_lock, key);
 
 	return &dyn->kobj;
 }
 
-void *z_impl_k_object_alloc(enum k_objects otype)
+struct z_object *z_dynamic_object_aligned_create(size_t align, size_t size)
+{
+	struct z_object *obj = dynamic_object_create(K_OBJ_ANY, align, size);
+
+	if (obj == NULL) {
+		LOG_ERR("could not allocate kernel object, out of memory");
+	}
+
+	return obj;
+}
+
+static void *z_object_alloc(enum k_objects otype, size_t size)
 {
 	struct z_object *zo;
 	uintptr_t tidx = 0;
@@ -348,7 +404,6 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 	/* The following are currently not allowed at all */
 	case K_OBJ_FUTEX:			/* Lives in user memory */
 	case K_OBJ_SYS_MUTEX:			/* Lives in user memory */
-	case K_OBJ_THREAD_STACK_ELEMENT:	/* No aligned allocator */
 	case K_OBJ_NET_SOCKET:			/* Indeterminate size */
 		LOG_ERR("forbidden object type '%s' requested",
 			otype_to_str(otype));
@@ -358,15 +413,13 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 		break;
 	}
 
-	zo = z_dynamic_object_aligned_create(obj_align_get(otype),
-					     obj_size_get(otype));
+	zo = dynamic_object_create(otype, obj_align_get(otype), size);
 	if (zo == NULL) {
 		if (otype == K_OBJ_THREAD) {
 			thread_idx_free(tidx);
 		}
 		return NULL;
 	}
-	zo->type = otype;
 
 	if (otype == K_OBJ_THREAD) {
 		zo->data.thread_id = tidx;
@@ -385,6 +438,16 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 	return zo->name;
 }
 
+void *z_impl_k_object_alloc(enum k_objects otype)
+{
+	return z_object_alloc(otype, 0);
+}
+
+void *z_impl_k_object_alloc_size(enum k_objects otype, size_t size)
+{
+	return z_object_alloc(otype, size);
+}
+
 void k_object_free(void *obj)
 {
 	struct dyn_obj *dyn;
@@ -398,7 +461,6 @@ void k_object_free(void *obj)
 
 	dyn = dyn_object_find(obj);
 	if (dyn != NULL) {
-		rb_remove(&obj_rb_tree, &dyn->node);
 		sys_dlist_remove(&dyn->dobj_list);
 
 		if (dyn->kobj.type == K_OBJ_THREAD) {
@@ -408,6 +470,7 @@ void k_object_free(void *obj)
 	k_spin_unlock(&objfree_lock, key);
 
 	if (dyn != NULL) {
+		k_free(dyn->data);
 		k_free(dyn);
 	}
 }
@@ -419,15 +482,15 @@ struct z_object *z_object_find(const void *obj)
 	ret = z_object_gperf_find(obj);
 
 	if (ret == NULL) {
-		struct dyn_obj *dynamic_obj;
+		struct dyn_obj *dyn;
 
 		/* The cast to pointer-to-non-const violates MISRA
 		 * 11.8 but is justified since we know dynamic objects
 		 * were not declared with a const qualifier.
 		 */
-		dynamic_obj = dyn_object_find((void *)obj);
-		if (dynamic_obj != NULL) {
-			ret = &dynamic_obj->kobj;
+		dyn = dyn_object_find((void *)obj);
+		if (dyn != NULL) {
+			ret = &dyn->kobj;
 		}
 	}
 
@@ -508,8 +571,8 @@ static void unref_check(struct z_object *ko, uintptr_t index)
 		break;
 	}
 
-	rb_remove(&obj_rb_tree, &dyn->node);
 	sys_dlist_remove(&dyn->dobj_list);
+	k_free(dyn->data);
 	k_free(dyn);
 out:
 #endif
@@ -722,7 +785,7 @@ void z_object_recycle(const void *obj)
 
 	if (ko != NULL) {
 		(void)memset(ko->perms, 0, sizeof(ko->perms));
-		z_thread_perms_set(ko, k_current_get());
+		z_thread_perms_set(ko, _current);
 		ko->flags |= K_OBJ_FLAG_INITIALIZED;
 	}
 }
@@ -859,11 +922,10 @@ out:
 extern char __app_shmem_regions_start[];
 extern char __app_shmem_regions_end[];
 
-static int app_shmem_bss_zero(const struct device *unused)
+static int app_shmem_bss_zero(void)
 {
 	struct z_app_region *region, *end;
 
-	ARG_UNUSED(unused);
 
 	end = (struct z_app_region *)&__app_shmem_regions_end;
 	region = (struct z_app_region *)&__app_shmem_regions_start;

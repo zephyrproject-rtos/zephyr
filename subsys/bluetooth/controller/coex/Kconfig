@@ -1,0 +1,19 @@
+# Bluetooth co-existence configuration options
+
+# Copyright (c) 2022 Dronetag
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_CTLR_COEX_DRIVERS
+	bool "Bluetooth Co-existence Drivers"
+	default y
+	depends on BT_CTLR && DT_HAS_GPIO_RADIO_COEX_ENABLED
+
+if BT_CTLR_COEX_DRIVERS
+
+config BT_CTLR_COEX_TICKER
+	bool "Coexistence Ticker"
+	help
+	  When enabled Coexistence device implementation is included in
+	  the controller. Which abort any radio states, when coex pin is asserted.
+
+endif # BT_CTLR_COEX_DRIVERS

@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022 Meta
+
+source "Kconfig.zephyr"
+
+config THRIFT_COMPACT_PROTOCOL
+	bool "Use TCompactProtocol in samples"
+	depends on THRIFT
+	help
+	  Enable this option to use TCompactProtocol in samples

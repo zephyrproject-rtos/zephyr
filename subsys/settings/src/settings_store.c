@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <zephyr/kernel.h>
-
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/settings/settings.h>
 #include "settings_priv.h"
 

@@ -15,6 +15,8 @@ struct smartbond_pinctrl_soc_pin {
 	uint32_t pin : 5;
 	uint32_t bias_pull_up : 1;
 	uint32_t bias_pull_down : 1;
+	uint32_t output_enable : 1;
+	uint32_t input_enable : 1;
 };
 
 typedef struct smartbond_pinctrl_soc_pin pinctrl_soc_pin_t;
@@ -26,6 +28,8 @@ typedef struct smartbond_pinctrl_soc_pin pinctrl_soc_pin_t;
 		SMARTBOND_GET_PIN(DT_PROP_BY_IDX(node_id, prop, idx)),	\
 		DT_PROP(node_id, bias_pull_up),				\
 		DT_PROP(node_id, bias_pull_down),			\
+		DT_PROP(node_id, output_enable),			\
+		DT_PROP(node_id, input_enable),				\
 	},
 
 #define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)			\

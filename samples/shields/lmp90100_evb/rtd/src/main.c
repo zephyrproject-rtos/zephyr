@@ -40,7 +40,7 @@ static double rtd_temperature(int nom, double resistance)
 	return temp;
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const lmp90100 = DEVICE_DT_GET_ONE(ti_lmp90100);
 	double resistance;
@@ -67,13 +67,13 @@ void main(void)
 
 	if (!device_is_ready(lmp90100)) {
 		LOG_ERR("LMP90100 device not ready");
-		return;
+		return 0;
 	}
 
 	err = adc_channel_setup(lmp90100, &ch_cfg);
 	if (err) {
 		LOG_ERR("failed to setup ADC channel (err %d)", err);
-		return;
+		return 0;
 	}
 
 	while (true) {
@@ -90,4 +90,5 @@ void main(void)
 
 		k_sleep(K_MSEC(1000));
 	}
+	return 0;
 }

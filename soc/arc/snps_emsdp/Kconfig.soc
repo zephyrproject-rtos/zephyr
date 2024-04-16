@@ -4,3 +4,4 @@
 config SOC_ARC_EMSDP
 	bool "Synopsys ARC EM Software Development Platform"
 	select ARC
+	select HAS_SPI_DW if SPI

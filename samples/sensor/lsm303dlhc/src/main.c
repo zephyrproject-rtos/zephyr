@@ -36,19 +36,19 @@ end:
 	return ret;
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const accelerometer = DEVICE_DT_GET_ONE(st_lis2dh);
 	const struct device *const magnetometer = DEVICE_DT_GET_ONE(st_lsm303dlhc_magn);
 
 	if (!device_is_ready(accelerometer)) {
 		printf("Device %s is not ready\n", accelerometer->name);
-		return;
+		return 0;
 	}
 
 	if (!device_is_ready(magnetometer)) {
 		printf("Device %s is not ready\n", magnetometer->name);
-		return;
+		return 0;
 	}
 
 	while (1) {
@@ -64,4 +64,5 @@ void main(void)
 
 		k_sleep(K_MSEC(2000));
 	}
+	return 0;
 }

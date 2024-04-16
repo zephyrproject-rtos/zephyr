@@ -1,6 +1,0 @@
-# Copyright (c) 2021 Rajnesh Kanwal <rajnesh.kanwal49@gmail.com>
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD
-	default "beaglev_starlight_jh7100"
-	depends on BOARD_BEAGLEV_STARLIGHT_JH7100

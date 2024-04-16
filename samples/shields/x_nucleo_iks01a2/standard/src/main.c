@@ -21,7 +21,7 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 }
 #endif
 
-void main(void)
+int main(void)
 {
 	struct sensor_value temp1, temp2, hum, press;
 	struct sensor_value accel1[3], accel2[3];
@@ -38,23 +38,23 @@ void main(void)
 
 	if (!device_is_ready(hts221)) {
 		printk("%s: device not ready.\n", hts221->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(lps22hb)) {
 		printk("%s: device not ready.\n", lps22hb->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(lsm6dsl)) {
 		printk("%s: device not ready.\n", lsm6dsl->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(lsm303agr_a)) {
 		printk("%s: device not ready.\n", lsm303agr_a->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(lsm303agr_m)) {
 		printk("%s: device not ready.\n", lsm303agr_m->name);
-		return;
+		return 0;
 	}
 
 	/* set LSM6DSL accel/gyro sampling frequency to 104 Hz */
@@ -66,13 +66,13 @@ void main(void)
 	if (sensor_attr_set(lsm6dsl, SENSOR_CHAN_ACCEL_XYZ,
 			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for accelerometer.\n");
-		return;
+		return 0;
 	}
 
 	if (sensor_attr_set(lsm6dsl, SENSOR_CHAN_GYRO_XYZ,
 			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for gyro.\n");
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
@@ -90,26 +90,26 @@ void main(void)
 
 		if (sensor_sample_fetch(hts221) < 0) {
 			printf("HTS221 Sensor sample update error\n");
-			return;
+			return 0;
 		}
 		if (sensor_sample_fetch(lps22hb) < 0) {
 			printf("LPS22HB Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #ifndef CONFIG_LSM6DSL_TRIGGER
 		if (sensor_sample_fetch(lsm6dsl) < 0) {
 			printf("LSM6DSL Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #endif
 		ret = sensor_sample_fetch(lsm303agr_a);
 		if (ret < 0 && ret != -EBADMSG) {
 			printf("LSM303AGR Accel Sensor sample update error\n");
-			return;
+			return 0;
 		}
 		if (sensor_sample_fetch(lsm303agr_m) < 0) {
 			printf("LSM303AGR Magn Sensor sample update error\n");
-			return;
+			return 0;
 		}
 
 		/* Get sensor data */

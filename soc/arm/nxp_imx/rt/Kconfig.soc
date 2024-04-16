@@ -118,6 +118,24 @@ config SOC_MIMXRT1024
 	select HAS_MCUX_IOMUXC
 	select HAS_SWO
 
+config SOC_MIMXRT1042
+	bool "SOC_MIMXRT1042"
+	select SOC_SERIES_IMX_RT10XX
+	select HAS_MCUX
+	select HAS_MCUX_CACHE
+	select HAS_MCUX_FLEXSPI
+	select HAS_MCUX_SEMC
+	select HAS_MCUX_IGPIO
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_HAS_ARM_MPU
+	select INIT_ARM_PLL
+	select HAS_MCUX_EDMA
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
+	select HAS_SWO
+
 config SOC_MIMXRT1051
 	bool "SOC_MIMXRT1051"
 	select SOC_SERIES_IMX_RT10XX
@@ -184,6 +202,7 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_IOMUXC
 	select HAS_MCUX_SRC
 	select HAS_SWO
+	select HAS_MCUX_XBARA
 
 config SOC_MIMXRT1061
 	bool "SOC_MIMXRT1061"
@@ -333,6 +352,7 @@ config SOC_MIMXRT1176_CM7
 	select HAS_MCUX_ACMP
 	select HAS_MCUX_SRC_V2
 	select HAS_MCUX_IOMUXC
+	select HAS_MCUX_XBARA
 	select HAS_SWO
 
 config SOC_MIMXRT1176_CM4
@@ -464,6 +484,30 @@ config SOC_PART_NUMBER_MIMXRT1024CAG4A
 config SOC_PART_NUMBER_MIMXRT1024DAG5A
 	bool
 
+config SOC_PART_NUMBER_MIMXRT1041DFP6B
+	bool
+
+config SOC_PART_NUMBER_MIMXRT1041DJM6B
+	bool
+
+config SOC_PART_NUMBER_MIMXRT1041XFP5B
+	bool
+
+config SOC_PART_NUMBER_MIMXRT1041XJM5B
+	bool
+
+config SOC_PART_NUMBER_MIMXRT1042DFP6B
+	bool
+
+config SOC_PART_NUMBER_MIMXRT1042DJM6B
+	bool
+
+config SOC_PART_NUMBER_MIMXRT1042XFP5B
+	bool
+
+config SOC_PART_NUMBER_MIMXRT1042XJM5B
+	bool
+
 config SOC_PART_NUMBER_MIMXRT1051CVL5A
 	bool
 
@@ -569,6 +613,14 @@ config SOC_PART_NUMBER_IMX_RT
 	default "MIMXRT1021DAG5A" if SOC_PART_NUMBER_MIMXRT1021DAG5A
 	default "MIMXRT1024CAG4A" if SOC_PART_NUMBER_MIMXRT1024CAG4A
 	default "MIMXRT1024DAG5A" if SOC_PART_NUMBER_MIMXRT1024DAG5A
+	default "MIMXRT1041DFP6B" if SOC_PART_NUMBER_MIMXRT1041DFP6B
+	default "MIMXRT1041DJM6B" if SOC_PART_NUMBER_MIMXRT1041DJM6B
+	default "MIMXRT1041XFP5B" if SOC_PART_NUMBER_MIMXRT1041XFP5B
+	default "MIMXRT1041XJM5B" if SOC_PART_NUMBER_MIMXRT1041XJM5B
+	default "MIMXRT1042DFP6B" if SOC_PART_NUMBER_MIMXRT1042DFP6B
+	default "MIMXRT1042DJM6B" if SOC_PART_NUMBER_MIMXRT1042DJM6B
+	default "MIMXRT1042XFP5B" if SOC_PART_NUMBER_MIMXRT1042XFP5B
+	default "MIMXRT1042XJM5B" if SOC_PART_NUMBER_MIMXRT1042XJM5B
 	default "MIMXRT1051CVL5A" if SOC_PART_NUMBER_MIMXRT1051CVL5A
 	default "MIMXRT1051DVL6A" if SOC_PART_NUMBER_MIMXRT1051DVL6A
 	default "MIMXRT1052CVJ5B" if SOC_PART_NUMBER_MIMXRT1052CVJ5B
@@ -613,6 +665,7 @@ config SOC_SERIES_IMX_RT10XX
 
 config SOC_SERIES_IMX_RT11XX
 	bool "i.MX RT 11XX Series"
+	select PLATFORM_SPECIFIC_INIT
 
 config INIT_ARM_PLL
 	bool "Initialize ARM PLL"
@@ -651,7 +704,7 @@ config PM_MCUX_PMU
 
 menuconfig NXP_IMX_RT_BOOT_HEADER
 	bool "Boot header"
-	depends on ((!BOOTLOADER_MCUBOOT) && (CODE_FLEXSPI || CODE_FLEXSPI2))
+	depends on (!BOOTLOADER_MCUBOOT) && CPU_CORTEX_M7
 	help
 	  Enable data structures required by the boot ROM to boot the
 	  application from an external flash device.
@@ -696,10 +749,11 @@ config IMAGE_VECTOR_TABLE_OFFSET
 
 config DEVICE_CONFIGURATION_DATA
 	bool "Device configuration data"
-	default y if HAS_MCUX_SEMC
 	help
 	  Device configuration data (DCD) provides a sequence of commands to
-	  the boot ROM to initialize components such as an SDRAM.
+	  the boot ROM to initialize components such as an SDRAM. This is
+	  useful if your application expects components like SDRAM to be
+	  initialized at boot time.
 
 endif # NXP_IMX_RT_BOOT_HEADER
 
@@ -709,9 +763,11 @@ choice CODE_LOCATION
 
 config CODE_SEMC
 	bool "Link code into external SEMC-controlled memory"
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 config CODE_ITCM
 	bool "Link code into internal instruction tightly coupled memory (ITCM)"
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 config CODE_FLEXSPI
 	bool "Link code into external FlexSPI-controlled memory"
@@ -723,19 +779,38 @@ config CODE_FLEXSPI2
 
 config CODE_SRAM0
 	bool "Link code into RAM_L memory (RAM_L)"
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 config CODE_OCRAM
 	bool "Link code into OCRAM memory (OCRAM-M4)"
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 endchoice
 
-config OCRAM_NOCACHE
-	bool "Create noncacheable OCRAM region"
-	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
-	select PLATFORM_SPECIFIC_INIT
+config NXP_IMX_EXTERNAL_SDRAM
+	bool "Allow access to external SDRAM region"
 	help
-	  Creates linker section and MPU region for OCRAM region with
-	  noncacheable attribute. OCRAM memory is useful for fast DMA transfers.
+	  Enable access to external SDRAM region managed by the SEMC. This
+	  setting should be enabled when the application uses SDRAM, or
+	  an MPU region will be defined to disable cached access to the
+	  SDRAM memory space.
+
+config NXP_IMX_RT_ROM_RAMLOADER
+	depends on !FLASH_MCUX_FLEXSPI_XIP && NXP_IMX_RT_BOOT_HEADER
+	# Required so that debugger will load image to correct offset
+	select BUILD_OUTPUT_HEX
+	bool "Create output image that IMX RT ROM can load from FlexSPI to ram"
+	help
+	  Builds an output image that the IMX RT BootROM can load from the
+	  FlexSPI boot device into RAM region. The image will be loaded
+	  from FLEXSPI into the region specified by `zephyr,flash` node.
+
+# Setup LMA adjustment if using the RAMLOADER feature of ROM
+FLASH_CHOSEN := zephyr,flash
+FLASH_BASE := $(dt_chosen_reg_addr_hex,$(FLASH_CHOSEN))
+FLEXSPI_BASE := $(dt_node_reg_addr_hex,/soc/spi@402a8000,1)
+config BUILD_OUTPUT_ADJUST_LMA
+	default "$(FLEXSPI_BASE) - $(FLASH_BASE)" if NXP_IMX_RT_ROM_RAMLOADER
 
 config SECOND_CORE_MCUX
 	bool "Dual core operation on the RT11xx series"
@@ -747,5 +822,17 @@ config SECOND_CORE_MCUX
 	  The M4 image will be loaded from flash into RAM based off a
 	  generated header specifying the VMA and LMA of each memory section
 	  to load
+
+config IMXRT1XXX_CODE_CACHE
+	bool "Code cache"
+	default y
+	help
+	  Enable Code cache at boot for IMXRT1xxx series
+
+config IMXRT1XXX_DATA_CACHE
+	bool "Data cache"
+	default y
+	help
+	  Enable Data cache at boot for IMXRT1xxx series
 
 endif # SOC_SERIES_IMX_RT

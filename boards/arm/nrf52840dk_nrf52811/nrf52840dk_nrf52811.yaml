@@ -12,3 +12,5 @@ supported:
   - counter
   - pwm
   - netif:openthread
+  - gpio
+vendor: nordic

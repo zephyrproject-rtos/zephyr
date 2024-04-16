@@ -200,13 +200,13 @@ You can debug an application in the usual way.  Here is an example for the
    :goals: debug
 
 .. _Nucleo F410RB website:
-   http://www.st.com/en/evaluation-tools/nucleo-F410RB.html
+   https://www.st.com/en/evaluation-tools/nucleo-F410RB.html
 
 .. _STM32 Nucleo-64 board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00105823.pdf
+   https://www.st.com/resource/en/user_manual/dm00105823.pdf
 
 .. _STM32F410RB on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32f410rb.html
+   https://www.st.com/en/microcontrollers/stm32f410rb.html
 
 .. _STM32F410 reference manual:
    https://www.st.com/resource/en/reference_manual/dm00180366.pdf

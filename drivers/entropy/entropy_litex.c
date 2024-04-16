@@ -34,16 +34,9 @@ static int entropy_prbs_get_entropy(const struct device *dev, uint8_t *buffer,
 	return 0;
 }
 
-static int entropy_prbs_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct entropy_driver_api entropy_prbs_api = {
 	.get_entropy = entropy_prbs_get_entropy
 };
 
-DEVICE_DT_INST_DEFINE(0,
-		    entropy_prbs_init, NULL, NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		    &entropy_prbs_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1,
+		      CONFIG_ENTROPY_INIT_PRIORITY, &entropy_prbs_api);

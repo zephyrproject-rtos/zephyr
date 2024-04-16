@@ -8,6 +8,8 @@
 #include <st/l4/stm32l476Xg.dtsi>
 #include <st/l4/stm32l476r(c-e-g)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32L476RG-NUCLEO board";
@@ -20,28 +22,7 @@
 		zephyr,flash = &flash0;
 	};
 
-	power-states {
-		stop0: state0 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <1>;
-			min-residency-us = <500>;
-		};
-		stop1: state1 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <2>;
-			min-residency-us = <700>;
-		};
-		stop2: state2 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <3>;
-			min-residency-us = <1000>;
-		};
-	};
-
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led_2: led_2 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
@@ -54,12 +35,15 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
 	aliases {
 		led0 = &green_led_2;
 		sw0 = &user_button;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -89,10 +73,6 @@
 	ahb-prescaler = <1>;
 	apb1-prescaler = <1>;
 	apb2-prescaler = <1>;
-};
-
-&cpu0 {
-	cpu-power-states = <&stop0 &stop1 &stop2>;
 };
 
 &lptim1 {
@@ -187,5 +167,29 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pc0>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
 	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 32KB of storage at the end of 1024KB flash */
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 DT_SIZE_K(32)>;
+		};
+	};
 };

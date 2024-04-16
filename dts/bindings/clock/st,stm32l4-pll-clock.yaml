@@ -27,52 +27,52 @@ compatible: "st,stm32l4-pll-clock"
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-    "#clock-cells":
-      const: 0
+  "#clock-cells":
+    const: 0
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    div-m:
-      type: int
-      required: true
-      description: |
-          Division factor for the main PLL and audio PLLs (PLLSAI1 and PLLSAI2)
-          input clock
-          Valid range: 1 - 8
+  div-m:
+    type: int
+    required: true
+    description: |
+        Division factor for the main PLL and audio PLLs (PLLSAI1 and PLLSAI2)
+        input clock
+        Valid range: 1 - 8
 
-    mul-n:
-      type: int
-      required: true
-      description: |
-          Main PLL multiplication factor for VCO
-          Valid range: 8 - 86
+  mul-n:
+    type: int
+    required: true
+    description: |
+        Main PLL multiplication factor for VCO
+        Valid range: 8 - 86
 
-    div-p:
-      type: int
-      description: |
-          Main PLL division factor for PLLSAI3CLK
-      enum:
-        - 7
-        - 17
+  div-p:
+    type: int
+    description: |
+        Main PLL division factor for PLLSAI3CLK
+    enum:
+      - 7
+      - 17
 
-    div-q:
-      type: int
-      description: |
-          Main PLL division factor for PLL48M1CLK (48 MHz clock).
-      enum:
-        - 2
-        - 4
-        - 6
-        - 8
+  div-q:
+    type: int
+    description: |
+        Main PLL division factor for PLL48M1CLK (48 MHz clock).
+    enum:
+      - 2
+      - 4
+      - 6
+      - 8
 
-    div-r:
-      type: int
-      required: true
-      description: |
-          Main PLL division factor for PLLCLK (system clock)
-      enum:
-        - 2
-        - 4
-        - 6
-        - 8
+  div-r:
+    type: int
+    required: true
+    description: |
+        Main PLL division factor for PLLCLK (system clock)
+    enum:
+      - 2
+      - 4
+      - 6
+      - 8

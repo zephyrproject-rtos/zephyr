@@ -193,16 +193,21 @@ struct fxos8700_data {
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t drdy_handler;
+	const struct sensor_trigger *drdy_trig;
 #endif
 #ifdef CONFIG_FXOS8700_PULSE
 	sensor_trigger_handler_t tap_handler;
+	const struct sensor_trigger *tap_trig;
 	sensor_trigger_handler_t double_tap_handler;
+	const struct sensor_trigger *double_tap_trig;
 #endif
 #ifdef CONFIG_FXOS8700_MOTION
 	sensor_trigger_handler_t motion_handler;
+	const struct sensor_trigger *motion_trig;
 #endif
 #ifdef CONFIG_FXOS8700_MAG_VECM
 	sensor_trigger_handler_t m_vecm_handler;
+	const struct sensor_trigger *m_vecm_trig;
 #endif
 #ifdef CONFIG_FXOS8700_TRIGGER_OWN_THREAD
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_FXOS8700_THREAD_STACK_SIZE);

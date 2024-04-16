@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <stdio.h>
 #include <zephyr/sys/crc.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 
 /* Amount of parallel processed sender/receiver queues of packet headers */

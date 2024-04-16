@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_DRIVERS
-	bool "Network Drivers"
+	bool "Network drivers"
 
 if NET_DRIVERS
 

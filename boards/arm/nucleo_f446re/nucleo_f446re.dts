@@ -8,6 +8,8 @@
 #include <st/f4/stm32f446Xe.dtsi>
 #include <st/f4/stm32f446r(c-e)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32F446RE-NUCLEO board";
@@ -21,7 +23,7 @@
 		zephyr,canbus = &can2;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led_2: led_2 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
@@ -34,6 +36,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

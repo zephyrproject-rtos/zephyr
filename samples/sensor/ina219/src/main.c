@@ -9,7 +9,7 @@
 #include <zephyr/drivers/sensor.h>
 
 
-void main(void)
+int main(void)
 {
 	const struct device *const ina = DEVICE_DT_GET_ONE(ti_ina219);
 	struct sensor_value v_bus, power, current;
@@ -17,14 +17,14 @@ void main(void)
 
 	if (!device_is_ready(ina)) {
 		printf("Device %s is not ready.\n", ina->name);
-		return;
+		return 0;
 	}
 
 	while (true) {
 		rc = sensor_sample_fetch(ina);
 		if (rc) {
 			printf("Could not fetch sensor data.\n");
-			return;
+			return 0;
 		}
 
 		sensor_channel_get(ina, SENSOR_CHAN_VOLTAGE, &v_bus);
@@ -39,4 +39,5 @@ void main(void)
 		       sensor_value_to_double(&current));
 		k_sleep(K_MSEC(2000));
 	}
+	return 0;
 }

@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2023 FTP Technologies
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,47 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_BMM150_BMM150_H_
 #define ZEPHYR_DRIVERS_SENSOR_BMM150_BMM150_H_
 
+#include <zephyr/types.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/i2c.h>
+
+#define DT_DRV_COMPAT bosch_bmm150
+
+#define BMM150_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define BMM150_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+
+union bmm150_bus {
+#if BMM150_BUS_SPI
+	struct spi_dt_spec spi;
+#endif
+#if BMM150_BUS_I2C
+	struct i2c_dt_spec i2c;
+#endif
+};
+
+typedef int (*bmm150_bus_check_fn)(const union bmm150_bus *bus);
+typedef int (*bmm150_reg_read_fn)(const union bmm150_bus *bus,
+				  uint8_t start, uint8_t *buf, int size);
+typedef int (*bmm150_reg_write_fn)(const union bmm150_bus *bus,
+				   uint8_t reg, uint8_t val);
+
+struct bmm150_bus_io {
+	bmm150_bus_check_fn check;
+	bmm150_reg_read_fn read;
+	bmm150_reg_write_fn write;
+};
+
+#if BMM150_BUS_SPI
+#define BMM150_SPI_OPERATION (SPI_WORD_SET(8) | SPI_TRANSFER_MSB |	\
+			      SPI_MODE_CPOL | SPI_MODE_CPHA)
+extern const struct bmm150_bus_io bmm150_bus_io_spi;
+#endif
+
+#if BMM150_BUS_I2C
+extern const struct bmm150_bus_io bmm150_bus_io_i2c;
+#endif
 
 #include <zephyr/types.h>
 #include <zephyr/drivers/i2c.h>
@@ -18,6 +60,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/gpio.h>
@@ -41,6 +84,8 @@
 
 #define BMM150_REG_POWER           0x4B
 #define BMM150_MASK_POWER_CTL      BIT(0)
+#define BMM150_MASK_SOFT_RESET     (BIT(7) | BIT(1))
+#define BMM150_SOFT_RESET          BMM150_MASK_SOFT_RESET
 
 #define BMM150_REG_OPMODE_ODR      0x4C
 #define BMM150_MASK_OPMODE         (BIT(2) | BIT(1))
@@ -66,14 +111,14 @@
 #define BMM150_REGVAL_TO_REPXY(regval)     (((regval) * 2) + 1)
 #define BMM150_REGVAL_TO_REPZ(regval)      ((regval) + 1)
 #define BMM150_REPXY_TO_REGVAL(rep)        (((rep) - 1) / 2)
-#define BMM150_REPZ_TO_REGVAL(rep)         ((rep) - 1)
+#define BMM150_REPZ_TO_REGVAL(rep)         BMM150_REPXY_TO_REGVAL(rep)
 
 #define BMM150_REG_INT                     0x4D
 
 #define BMM150_REG_INT_DRDY                0x4E
 #define BMM150_MASK_DRDY_EN                BIT(7)
 #define BMM150_SHIFT_DRDY_EN               7
-#define BMM150_DRDY_INT3              BIT(6)
+#define BMM150_DRDY_INT3                   BIT(6)
 #define BMM150_MASK_DRDY_Z_EN              BIT(5)
 #define BMM150_MASK_DRDY_Y_EN              BIT(4)
 #define BMM150_MASK_DRDY_X_EN              BIT(3)
@@ -92,11 +137,6 @@
 	#define BMM150_MAGN_SET_ATTR
 #endif
 
-
-struct bmm150_config {
-	struct i2c_dt_spec i2c;
-};
-
 struct bmm150_trim_regs {
 	int8_t x1;
 	int8_t y1;
@@ -114,17 +154,41 @@ struct bmm150_trim_regs {
 	uint8_t xy1;
 } __packed;
 
+struct bmm150_config {
+	union bmm150_bus bus;
+	const struct bmm150_bus_io *bus_io;
+
+#ifdef CONFIG_BMM150_TRIGGER
+	struct gpio_dt_spec drdy_int;
+#endif
+};
+
 struct bmm150_data {
-	struct k_sem sem;
 	struct bmm150_trim_regs tregs;
 	int rep_xy, rep_z, odr, max_odr;
 	int sample_x, sample_y, sample_z;
-};
 
-enum bmm150_power_modes {
-	BMM150_POWER_MODE_SUSPEND,
-	BMM150_POWER_MODE_SLEEP,
-	BMM150_POWER_MODE_NORMAL
+#if defined(CONFIG_BMM150_TRIGGER)
+	struct gpio_callback gpio_cb;
+#endif
+
+#ifdef CONFIG_BMM150_TRIGGER_OWN_THREAD
+	struct k_sem sem;
+#endif
+
+#ifdef CONFIG_BMM150_TRIGGER_GLOBAL_THREAD
+	struct k_work work;
+#endif
+
+#if defined(CONFIG_BMM150_TRIGGER_GLOBAL_THREAD) || \
+	defined(CONFIG_BMM150_TRIGGER_DIRECT)
+	const struct device *dev;
+#endif
+
+#ifdef CONFIG_BMM150_TRIGGER
+	const struct sensor_trigger *drdy_trigger;
+	sensor_trigger_handler_t drdy_handler;
+#endif /* CONFIG_BMM150_TRIGGER */
 };
 
 enum bmm150_axis {
@@ -152,5 +216,20 @@ enum bmm150_presets {
 #elif defined(CONFIG_BMM150_PRESET_HIGH_ACCURACY)
 	#define BMM150_DEFAULT_PRESET BMM150_HIGH_ACCURACY_PRESET
 #endif
+
+/* Power On Reset time - from OFF to Suspend (Max) */
+#define BMM150_POR_TIME K_MSEC(1)
+
+/* Start-Up Time - from suspend to sleep (Max) */
+#define BMM150_START_UP_TIME K_MSEC(3)
+
+int bmm150_trigger_mode_init(const struct device *dev);
+
+int bmm150_trigger_set(const struct device *dev,
+		       const struct sensor_trigger *trig,
+		       sensor_trigger_handler_t handler);
+
+int bmm150_reg_update_byte(const struct device *dev, uint8_t reg,
+			   uint8_t mask, uint8_t value);
 
 #endif /* __SENSOR_BMM150_H__ */

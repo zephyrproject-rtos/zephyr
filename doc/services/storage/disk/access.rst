@@ -65,6 +65,14 @@ To read and write files and directories, see the :ref:`file_system_api` in
 :zephyr_file:`include/zephyr/fs/fs.h` such as :c:func:`fs_open()`,
 :c:func:`fs_read()`, and :c:func:`fs_write()`.
 
+eMMC Device Support
+*******************
+
+Zephyr also has support for eMMC devices using the Disk Access API.
+MMC in zephyr is implemented using the SD subsystem because the MMC bus
+shares a lot of similarity with the SD bus. MMC controllers also use the
+SDHC device driver API.
+
 Emulated block device on flash partition support
 ************************************************
 
@@ -84,6 +92,17 @@ a block device. The flashdisk instances are defined in devicetree:
 
 The cache size specified in :dtcompatible:`zephyr,flash-disk` node should be
 equal to backing partition minimum erasable block size.
+
+NVMe disk support
+=================
+
+NVMe disks are also supported
+
+.. toctree::
+    :maxdepth: 1
+
+    nvme.rst
+
 
 Disk Access API Configuration Options
 *************************************

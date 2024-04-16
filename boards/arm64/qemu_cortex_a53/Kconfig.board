@@ -6,3 +6,13 @@ config BOARD_QEMU_CORTEX_A53
 	depends on SOC_QEMU_CORTEX_A53
 	select ARM64
 	select QEMU_TARGET
+
+config QEMU_CORTEX_A53_ETH_E1000
+	bool "Use Intel e1000 Ethernet driver for networking"
+	default y if !NET_TEST
+	depends on BOARD_QEMU_CORTEX_A53 && NETWORKING && DT_HAS_INTEL_E1000_ENABLED
+	select ETH_E1000
+	select NET_L2_ETHERNET
+	select PCIE
+	select PCIE_CONTROLLER
+	select PCIE_ECAM

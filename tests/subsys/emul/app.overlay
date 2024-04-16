@@ -16,4 +16,17 @@
 		reg = <0x68>;
 		status = "okay";
 	};
+
+	emul_tester_a: driver@aa {
+		compatible = "vnd,emul-tester";
+                reg = <0xaa>;
+		status = "okay";
+		scale = <1>;
+	};
+	emul_tester_b: driver@bb {
+		compatible = "vnd,emul-tester";
+                reg = <0xbb>;
+		status = "okay";
+		scale = <10>;
+	};
 };

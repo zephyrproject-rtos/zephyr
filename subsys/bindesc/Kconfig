@@ -1,0 +1,25 @@
+# Copyright (c) 2023 Yonatan Schachter
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BINDESC
+	bool "Binary Descriptors"
+	depends on ARCH_SUPPORTS_ROM_START || BOARD_NATIVE_POSIX
+	help
+	  Binary Descriptors - constant data accessible outside of the executable image
+
+if BINDESC
+
+config BINDESC_DEFINE
+	bool "Binary Descriptors Define"
+	help
+	  Enable the app to define its own binary descriptors
+
+if BINDESC_DEFINE
+
+source "subsys/bindesc/Kconfig.version"
+source "subsys/bindesc/Kconfig.build_time"
+source "subsys/bindesc/Kconfig.host_info"
+
+endif # BINDESC_DEFINE
+
+endif # BINDESC

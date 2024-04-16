@@ -1,0 +1,83 @@
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_library()
+zephyr_library_link_libraries(subsys__bluetooth)
+
+zephyr_library_sources_ifdef(
+  CONFIG_BT_VCP_VOL_REND
+  vcp_vol_rend.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_VCP_VOL_CTLR
+  vcp_vol_ctlr.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_MICP_MIC_DEV
+  micp_mic_dev.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_MICP_MIC_CTLR
+  micp_mic_ctlr.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_CSIP_SET_MEMBER
+  csip_set_member.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_CSIP_SET_COORDINATOR
+  csip_set_coordinator.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_TBS
+  tbs.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_TBS_CLIENT
+  tbs_client.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_MPL
+  mpl.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_MCC
+  mcc.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_MCS
+  media_controller.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_HAS_PRESET_SUPPORT
+  has.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_CAP_ACCEPTOR
+  cap_acceptor.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_CAP_INITIATOR
+  cap_initiator.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_HAS_CLIENT
+  has_client.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_TMAP
+  tmap.c
+  )
+# We use BT_BAP_STREAM as a common ground for audio, as that is set whenever
+# any audio stream functionality is enabled.
+zephyr_library_sources_ifdef(
+  CONFIG_BT_BAP_STREAM
+  bap.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_BAP_SCAN_DELEGATOR
+  bap_scan_delegator.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_BAP_BROADCAST_ASSISTANT
+  bap_broadcast_assistant.c
+  )

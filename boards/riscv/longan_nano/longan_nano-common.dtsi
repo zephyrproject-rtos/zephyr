@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
 / {
 	chosen {
 		zephyr,console = &usart0;
@@ -35,6 +37,7 @@
 		button_boot0: button_boot0 {
 			label = "BUTTON_BOOT0";
 			gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

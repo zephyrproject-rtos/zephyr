@@ -68,7 +68,7 @@ osStatus osPoolFree(osPoolId pool_id, void *block)
 	 *                         permitted range.
 	 */
 
-	k_mem_slab_free((struct k_mem_slab *)(osPool->pool), (void *)&block);
+	k_mem_slab_free((struct k_mem_slab *)(osPool->pool), (void *)block);
 
 	return osOK;
 }

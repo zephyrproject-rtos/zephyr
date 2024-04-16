@@ -1,0 +1,41 @@
+&timers2 {
+	st,prescaler = <79>;
+	counter {
+		status = "okay";
+	};
+};
+
+&timers3 {
+	st,prescaler = <79>;
+	counter {
+		status = "okay";
+	};
+};
+
+&timers6 {
+	st,prescaler = <79>;
+	counter {
+		status = "okay";
+	};
+};
+
+&timers7 {
+	st,prescaler = <79>;
+	counter {
+		status = "okay";
+	};
+};
+
+&timers21 {
+	st,prescaler = <79>;
+	counter {
+		status = "okay";
+	};
+};
+
+&timers22 {
+	st,prescaler = <79>;
+	counter {
+		status = "okay";
+	};
+};

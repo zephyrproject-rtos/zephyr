@@ -22,6 +22,7 @@
 
 #include <zephyr/bluetooth/services/ots.h>
 #include "../services/ots/ots_client_internal.h"
+#include "mcs_internal.h"
 
 /* TODO: Temporarily copied here from media_proxy_internal.h - clean up */
 /* Debug output of 48 bit Object ID value */
@@ -134,7 +135,7 @@ struct mcs_instance_t {
 #endif /* CONFIG_BT_MCC_OTS */
 };
 
-static struct mcs_instance_t mcs_inst;
+static struct mcs_instance_t mcs_instance;
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
 static struct bt_mcc_cb *mcc_cb;
@@ -167,18 +168,14 @@ static struct mcs_instance_t *lookup_inst_by_conn(struct bt_conn *conn)
 	}
 
 	/* TODO: Expand when supporting more instances */
-	return &mcs_inst;
+	return &mcs_instance;
 }
 
-static uint8_t mcc_read_player_name_cb(struct bt_conn *conn, uint8_t err,
-				       struct bt_gatt_read_params *params,
-				       const void *data, uint16_t length)
+static void mcc_player_name_cb(struct bt_conn *conn, uint8_t err, const void *data, uint16_t length)
 {
-	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
 	int cb_err = err;
 	char name[CONFIG_BT_MCC_MEDIA_PLAYER_NAME_MAX];
 
-	mcs_inst->busy = false;
 	LOG_DBG("err: 0x%02x, length: %d, data: %p", err, length, data);
 
 	if (err) {
@@ -200,6 +197,16 @@ static uint8_t mcc_read_player_name_cb(struct bt_conn *conn, uint8_t err,
 	if (mcc_cb && mcc_cb->read_player_name) {
 		mcc_cb->read_player_name(conn, cb_err, name);
 	}
+}
+
+static uint8_t mcc_read_player_name_cb(struct bt_conn *conn, uint8_t err,
+				       struct bt_gatt_read_params *params,
+				       const void *data, uint16_t length)
+{
+	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
+
+	mcs_inst->busy = false;
+	mcc_player_name_cb(conn, err, data, length);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -225,6 +232,10 @@ static uint8_t mcc_read_icon_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		LOG_HEXDUMP_DBG(pid, length, "Icon Object ID");
 		id = sys_get_le48(pid);
 		LOG_DBG_OBJ_ID("Icon Object ID: ", id);
+
+		if (!BT_MCS_VALID_OBJ_ID(id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->read_icon_obj_id) {
@@ -265,15 +276,11 @@ static uint8_t mcc_read_icon_url_cb(struct bt_conn *conn, uint8_t err,
 	return BT_GATT_ITER_STOP;
 }
 
-static uint8_t mcc_read_track_title_cb(struct bt_conn *conn, uint8_t err,
-				       struct bt_gatt_read_params *params,
-				       const void *data, uint16_t length)
+static void mcc_track_title_cb(struct bt_conn *conn, uint8_t err, const void *data, uint16_t length)
 {
-	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
 	int cb_err = err;
 	char title[CONFIG_BT_MCC_TRACK_TITLE_MAX];
 
-	mcs_inst->busy = false;
 	if (err) {
 		LOG_DBG("err: 0x%02x", err);
 	} else if (!data) {
@@ -292,19 +299,26 @@ static uint8_t mcc_read_track_title_cb(struct bt_conn *conn, uint8_t err,
 	if (mcc_cb && mcc_cb->read_track_title) {
 		mcc_cb->read_track_title(conn, cb_err, title);
 	}
+}
+
+static uint8_t mcc_read_track_title_cb(struct bt_conn *conn, uint8_t err,
+				       struct bt_gatt_read_params *params,
+				       const void *data, uint16_t length)
+{
+	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
+
+	mcs_inst->busy = false;
+	mcc_track_title_cb(conn, err, data, length);
 
 	return BT_GATT_ITER_STOP;
 }
 
-static uint8_t mcc_read_track_duration_cb(struct bt_conn *conn, uint8_t err,
-					  struct bt_gatt_read_params *params,
-					  const void *data, uint16_t length)
+static void mcc_track_duration_cb(struct bt_conn *conn, uint8_t err, const void *data,
+				  uint16_t length)
 {
-	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
 	int cb_err = err;
 	int32_t dur = 0;
 
-	mcs_inst->busy = false;
 	if (err) {
 		LOG_DBG("err: 0x%02x", err);
 	} else if ((!data) || (length != sizeof(dur))) {
@@ -319,19 +333,26 @@ static uint8_t mcc_read_track_duration_cb(struct bt_conn *conn, uint8_t err,
 	if (mcc_cb && mcc_cb->read_track_duration) {
 		mcc_cb->read_track_duration(conn, cb_err, dur);
 	}
-
-	return BT_GATT_ITER_STOP;
 }
 
-static uint8_t mcc_read_track_position_cb(struct bt_conn *conn, uint8_t err,
+static uint8_t mcc_read_track_duration_cb(struct bt_conn *conn, uint8_t err,
 					  struct bt_gatt_read_params *params,
 					  const void *data, uint16_t length)
 {
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
+
+	mcs_inst->busy = false;
+	mcc_track_duration_cb(conn, err, data, length);
+
+	return BT_GATT_ITER_STOP;
+}
+
+static void mcc_track_position_cb(struct bt_conn *conn, uint8_t err, const void *data,
+				  uint16_t length)
+{
 	int cb_err = err;
 	int32_t pos = 0;
 
-	mcs_inst->busy = false;
 	if (err) {
 		LOG_DBG("err: 0x%02x", err);
 	} else if ((!data) || (length != sizeof(pos))) {
@@ -346,6 +367,16 @@ static uint8_t mcc_read_track_position_cb(struct bt_conn *conn, uint8_t err,
 	if (mcc_cb && mcc_cb->read_track_position) {
 		mcc_cb->read_track_position(conn, cb_err, pos);
 	}
+}
+
+static uint8_t mcc_read_track_position_cb(struct bt_conn *conn, uint8_t err,
+					  struct bt_gatt_read_params *params,
+					  const void *data, uint16_t length)
+{
+	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
+
+	mcs_inst->busy = false;
+	mcc_track_position_cb(conn, err, data, length);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -374,15 +405,12 @@ static void mcs_write_track_position_cb(struct bt_conn *conn, uint8_t err,
 	}
 }
 
-static uint8_t mcc_read_playback_speed_cb(struct bt_conn *conn, uint8_t err,
-					  struct bt_gatt_read_params *params,
-					  const void *data, uint16_t length)
+static void mcc_playback_speed_cb(struct bt_conn *conn, uint8_t err, const void *data,
+				  uint16_t length)
 {
-	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
 	int cb_err = err;
 	int8_t speed = 0;
 
-	mcs_inst->busy = false;
 	if (err) {
 		LOG_DBG("err: 0x%02x", err);
 	} else if ((!data) || (length != sizeof(speed))) {
@@ -397,6 +425,16 @@ static uint8_t mcc_read_playback_speed_cb(struct bt_conn *conn, uint8_t err,
 	if (mcc_cb && mcc_cb->read_playback_speed) {
 		mcc_cb->read_playback_speed(conn, cb_err, speed);
 	}
+}
+
+static uint8_t mcc_read_playback_speed_cb(struct bt_conn *conn, uint8_t err,
+					  struct bt_gatt_read_params *params,
+					  const void *data, uint16_t length)
+{
+	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
+
+	mcs_inst->busy = false;
+	mcc_playback_speed_cb(conn, err, data, length);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -424,15 +462,12 @@ static void mcs_write_playback_speed_cb(struct bt_conn *conn, uint8_t err,
 	}
 }
 
-static uint8_t mcc_read_seeking_speed_cb(struct bt_conn *conn, uint8_t err,
-					 struct bt_gatt_read_params *params,
-					 const void *data, uint16_t length)
+static void mcc_seeking_speed_cb(struct bt_conn *conn, uint8_t err, const void *data,
+				 uint16_t length)
 {
-	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
 	int cb_err = err;
 	int8_t speed = 0;
 
-	mcs_inst->busy = false;
 	if (err) {
 		LOG_DBG("err: 0x%02x", err);
 	} else if ((!data) || (length != sizeof(speed))) {
@@ -447,6 +482,16 @@ static uint8_t mcc_read_seeking_speed_cb(struct bt_conn *conn, uint8_t err,
 	if (mcc_cb && mcc_cb->read_seeking_speed) {
 		mcc_cb->read_seeking_speed(conn, cb_err, speed);
 	}
+}
+
+static uint8_t mcc_read_seeking_speed_cb(struct bt_conn *conn, uint8_t err,
+					 struct bt_gatt_read_params *params,
+					 const void *data, uint16_t length)
+{
+	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
+
+	mcs_inst->busy = false;
+	mcc_seeking_speed_cb(conn, err, data, length);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -457,14 +502,13 @@ static uint8_t mcc_read_segments_obj_id_cb(struct bt_conn *conn, uint8_t err,
 					   const void *data, uint16_t length)
 {
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
-	int cb_err;
+	int cb_err = err;
 	uint8_t *pid = (uint8_t *)data;
 	uint64_t id = 0;
 
 	mcs_inst->busy = false;
 	if (err) {
 		LOG_DBG("err: 0x%02x", err);
-		cb_err = err;
 	} else if ((!pid) || (length != BT_OTS_OBJ_ID_SIZE)) {
 		LOG_DBG("length: %d, data: %p", length, data);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
@@ -472,7 +516,10 @@ static uint8_t mcc_read_segments_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		LOG_HEXDUMP_DBG(pid, length, "Segments Object ID");
 		id = sys_get_le48(pid);
 		LOG_DBG_OBJ_ID("Segments Object ID: ", id);
-		cb_err = 0;
+
+		if (!BT_MCS_VALID_OBJ_ID(id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->read_segments_obj_id) {
@@ -482,19 +529,15 @@ static uint8_t mcc_read_segments_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	return BT_GATT_ITER_STOP;
 }
 
-static uint8_t mcc_read_current_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
-						struct bt_gatt_read_params *params,
-						const void *data, uint16_t length)
+static void mcc_current_track_obj_id_cb(struct bt_conn *conn, uint8_t err, const void *data,
+					uint16_t length)
 {
-	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
-	int cb_err;
+	int cb_err = err;
 	uint8_t *pid = (uint8_t *)data;
 	uint64_t id = 0;
 
-	mcs_inst->busy = false;
 	if (err) {
 		LOG_DBG("err: 0x%02x", err);
-		cb_err = err;
 	} else if ((!pid) || (length != BT_OTS_OBJ_ID_SIZE)) {
 		LOG_DBG("length: %d, data: %p", length, data);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
@@ -502,12 +545,25 @@ static uint8_t mcc_read_current_track_obj_id_cb(struct bt_conn *conn, uint8_t er
 		LOG_HEXDUMP_DBG(pid, length, "Current Track Object ID");
 		id = sys_get_le48(pid);
 		LOG_DBG_OBJ_ID("Current Track Object ID: ", id);
-		cb_err = 0;
+
+		if (!BT_MCS_VALID_OBJ_ID(id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->read_current_track_obj_id) {
 		mcc_cb->read_current_track_obj_id(conn, cb_err, id);
 	}
+}
+
+static uint8_t mcc_read_current_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
+						struct bt_gatt_read_params *params,
+						const void *data, uint16_t length)
+{
+	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
+
+	mcs_inst->busy = false;
+	mcc_current_track_obj_id_cb(conn, err, data, length);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -528,6 +584,10 @@ static void mcs_write_current_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	} else {
 		obj_id = sys_get_le48((const uint8_t *)params->data);
 		LOG_DBG_OBJ_ID("Object ID: ", obj_id);
+
+		if (!BT_MCS_VALID_OBJ_ID(obj_id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->set_current_track_obj_id) {
@@ -535,16 +595,13 @@ static void mcs_write_current_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	}
 }
 
-static uint8_t mcc_read_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
-					     struct bt_gatt_read_params *params,
-					     const void *data, uint16_t length)
+static void mcc_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err, const void *data,
+				     uint16_t length)
 {
-	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
 	int cb_err = err;
 	uint8_t *pid = (uint8_t *)data;
 	uint64_t id = 0;
 
-	mcs_inst->busy = false;
 	if (err) {
 		LOG_DBG("err: 0x%02x", err);
 	} else if (length == 0) {
@@ -556,11 +613,25 @@ static uint8_t mcc_read_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		LOG_HEXDUMP_DBG(pid, length, "Next Track Object ID");
 		id = sys_get_le48(pid);
 		LOG_DBG_OBJ_ID("Next Track Object ID: ", id);
+
+		if (!BT_MCS_VALID_OBJ_ID(id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->read_next_track_obj_id) {
 		mcc_cb->read_next_track_obj_id(conn, cb_err, id);
 	}
+}
+
+static uint8_t mcc_read_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
+					     struct bt_gatt_read_params *params,
+					     const void *data, uint16_t length)
+{
+	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
+
+	mcs_inst->busy = false;
+	mcc_next_track_obj_id_cb(conn, err, data, length);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -581,6 +652,10 @@ static void mcs_write_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	} else {
 		obj_id = sys_get_le48((const uint8_t *)params->data);
 		LOG_DBG_OBJ_ID("Object ID: ", obj_id);
+
+		if (!BT_MCS_VALID_OBJ_ID(obj_id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->set_next_track_obj_id) {
@@ -588,16 +663,13 @@ static void mcs_write_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	}
 }
 
-static uint8_t mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
-					       struct bt_gatt_read_params *params,
-					       const void *data, uint16_t length)
+static void mcc_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err, const void *data,
+				       uint16_t length)
 {
-	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
 	int cb_err = err;
 	uint8_t *pid = (uint8_t *)data;
 	uint64_t id = 0;
 
-	mcs_inst->busy = false;
 	if (err) {
 		LOG_DBG("err: 0x%02x", err);
 	} else if (!pid || (length != BT_OTS_OBJ_ID_SIZE)) {
@@ -607,25 +679,36 @@ static uint8_t mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err
 		LOG_HEXDUMP_DBG(pid, length, "Parent Group Object ID");
 		id = sys_get_le48(pid);
 		LOG_DBG_OBJ_ID("Parent Group Object ID: ", id);
+
+		if (!BT_MCS_VALID_OBJ_ID(id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->read_parent_group_obj_id) {
 		mcc_cb->read_parent_group_obj_id(conn, cb_err, id);
 	}
+}
+
+static uint8_t mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
+					       struct bt_gatt_read_params *params,
+					       const void *data, uint16_t length)
+{
+	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
+
+	mcs_inst->busy = false;
+	mcc_parent_group_obj_id_cb(conn, err, data, length);
 
 	return BT_GATT_ITER_STOP;
 }
 
-static uint8_t mcc_read_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
-						struct bt_gatt_read_params *params,
-						const void *data, uint16_t length)
+static void mcc_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err, const void *data,
+					uint16_t length)
 {
-	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
 	int cb_err = err;
 	uint8_t *pid = (uint8_t *)data;
 	uint64_t id = 0;
 
-	mcs_inst->busy = false;
 	if (err) {
 		LOG_DBG("err: 0x%02x", err);
 	} else if (!pid || (length != BT_OTS_OBJ_ID_SIZE)) {
@@ -635,11 +718,25 @@ static uint8_t mcc_read_current_group_obj_id_cb(struct bt_conn *conn, uint8_t er
 		LOG_HEXDUMP_DBG(pid, length, "Current Group Object ID");
 		id = sys_get_le48(pid);
 		LOG_DBG_OBJ_ID("Current Group Object ID: ", id);
+
+		if (!BT_MCS_VALID_OBJ_ID(id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->read_current_group_obj_id) {
 		mcc_cb->read_current_group_obj_id(conn, cb_err, id);
 	}
+}
+
+static uint8_t mcc_read_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
+						struct bt_gatt_read_params *params,
+						const void *data, uint16_t length)
+{
+	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
+
+	mcs_inst->busy = false;
+	mcc_current_group_obj_id_cb(conn, err, data, length);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -660,6 +757,10 @@ static void mcs_write_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	} else {
 		obj_id = sys_get_le48((const uint8_t *)params->data);
 		LOG_DBG_OBJ_ID("Object ID: ", obj_id);
+
+		if (!BT_MCS_VALID_OBJ_ID(obj_id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->set_current_group_obj_id) {
@@ -668,15 +769,12 @@ static void mcs_write_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
-static uint8_t mcc_read_playing_order_cb(struct bt_conn *conn, uint8_t err,
-					 struct bt_gatt_read_params *params,
-					 const void *data, uint16_t length)
+static void mcc_playing_order_cb(struct bt_conn *conn, uint8_t err, const void *data,
+				 uint16_t length)
 {
-	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
 	int cb_err = err;
 	uint8_t order = 0;
 
-	mcs_inst->busy = false;
 	if (err) {
 		LOG_DBG("err: 0x%02x", err);
 	} else if ((!data) || (length != sizeof(order))) {
@@ -691,6 +789,16 @@ static uint8_t mcc_read_playing_order_cb(struct bt_conn *conn, uint8_t err,
 	if (mcc_cb && mcc_cb->read_playing_order) {
 		mcc_cb->read_playing_order(conn, cb_err, order);
 	}
+}
+
+static uint8_t mcc_read_playing_order_cb(struct bt_conn *conn, uint8_t err,
+					 struct bt_gatt_read_params *params,
+					 const void *data, uint16_t length)
+{
+	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
+
+	mcs_inst->busy = false;
+	mcc_playing_order_cb(conn, err, data, length);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -745,15 +853,11 @@ static uint8_t mcc_read_playing_orders_supported_cb(struct bt_conn *conn, uint8_
 	return BT_GATT_ITER_STOP;
 }
 
-static uint8_t mcc_read_media_state_cb(struct bt_conn *conn, uint8_t err,
-				       struct bt_gatt_read_params *params,
-				       const void *data, uint16_t length)
+static void mcc_media_state_cb(struct bt_conn *conn, uint8_t err, const void *data, uint16_t length)
 {
-	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
 	int cb_err = err;
 	uint8_t state = 0;
 
-	mcs_inst->busy = false;
 	if (err) {
 		LOG_DBG("err: 0x%02x", err);
 	} else if (!data || length != sizeof(state)) {
@@ -768,6 +872,16 @@ static uint8_t mcc_read_media_state_cb(struct bt_conn *conn, uint8_t err,
 	if (mcc_cb && mcc_cb->read_media_state) {
 		mcc_cb->read_media_state(conn, cb_err, state);
 	}
+}
+
+static uint8_t mcc_read_media_state_cb(struct bt_conn *conn, uint8_t err,
+				       struct bt_gatt_read_params *params,
+				       const void *data, uint16_t length)
+{
+	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
+
+	mcs_inst->busy = false;
+	mcc_media_state_cb(conn, err, data, length);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -806,15 +920,11 @@ static void mcs_write_cp_cb(struct bt_conn *conn, uint8_t err,
 	}
 }
 
-static uint8_t mcc_read_opcodes_supported_cb(struct bt_conn *conn, uint8_t err,
-					     struct bt_gatt_read_params *params,
-					     const void *data, uint16_t length)
+static void mcc_opcodes_supported_cb(struct bt_conn *conn, uint8_t err, const void *data,
+				     uint16_t length)
 {
-	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
 	int cb_err = err;
 	int32_t operations = 0;
-
-	mcs_inst->busy = false;
 
 	if (err) {
 		LOG_DBG("err: 0x%02x", err);
@@ -831,6 +941,16 @@ static uint8_t mcc_read_opcodes_supported_cb(struct bt_conn *conn, uint8_t err,
 	if (mcc_cb && mcc_cb->read_opcodes_supported) {
 		mcc_cb->read_opcodes_supported(conn, cb_err, operations);
 	}
+}
+
+static uint8_t mcc_read_opcodes_supported_cb(struct bt_conn *conn, uint8_t err,
+					     struct bt_gatt_read_params *params,
+					     const void *data, uint16_t length)
+{
+	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
+
+	mcs_inst->busy = false;
+	mcc_opcodes_supported_cb(conn, err, data, length);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -862,16 +982,13 @@ static void mcs_write_scp_cb(struct bt_conn *conn, uint8_t err,
 	}
 }
 
-static uint8_t mcc_read_search_results_obj_id_cb(struct bt_conn *conn, uint8_t err,
-						 struct bt_gatt_read_params *params,
-						 const void *data, uint16_t length)
+static void mcc_search_results_obj_id_cb(struct bt_conn *conn, uint8_t err,
+					 const void *data, uint16_t length)
 {
-	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
 	int cb_err = err;
 	uint8_t *pid = (uint8_t *)data;
 	uint64_t id = 0;
 
-	mcs_inst->busy = false;
 	if (err) {
 		LOG_DBG("err: 0x%02x", err);
 	} else if (length == 0) {
@@ -884,11 +1001,25 @@ static uint8_t mcc_read_search_results_obj_id_cb(struct bt_conn *conn, uint8_t e
 	} else {
 		id = sys_get_le48(pid);
 		LOG_DBG_OBJ_ID("Search Results Object ID: ", id);
+
+		if (!BT_MCS_VALID_OBJ_ID(id)) {
+			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (mcc_cb && mcc_cb->read_search_results_obj_id) {
 		mcc_cb->read_search_results_obj_id(conn, cb_err, id);
 	}
+}
+
+static uint8_t mcc_read_search_results_obj_id_cb(struct bt_conn *conn, uint8_t err,
+						 struct bt_gatt_read_params *params,
+						 const void *data, uint16_t length)
+{
+	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
+
+	mcs_inst->busy = false;
+	mcc_search_results_obj_id_cb(conn, err, data, length);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -926,7 +1057,6 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 				  struct bt_gatt_subscribe_params *params,
 				  const void *data, uint16_t length)
 {
-	struct bt_gatt_read_params *read_params;
 	uint16_t handle = params->value_handle;
 	struct mcs_instance_t *mcs_inst;
 
@@ -944,18 +1074,11 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 		return BT_GATT_ITER_CONTINUE;
 	}
 
-	/* TODO: Work around for using CONTAINER_OF when re-using the
-	 * read callbacks for notifications. The handling of the values
-	 * should be put into separate functions instead of using the
-	 * read callbacks
-	 */
-	read_params = &mcs_inst->read_params;
-
 	LOG_DBG("Notification, handle: %d", handle);
 
 	if (handle == mcs_inst->player_name_handle) {
 		LOG_DBG("Player Name notification");
-		mcc_read_player_name_cb(conn, 0, read_params, data, length);
+		mcc_player_name_cb(conn, 0, data, length);
 
 	} else if (handle == mcs_inst->track_changed_handle) {
 		/* The Track Changed characteristic can only be */
@@ -976,53 +1099,49 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 
 	} else if (handle == mcs_inst->track_title_handle) {
 		LOG_DBG("Track Title notification");
-		mcc_read_track_title_cb(conn, 0, read_params, data, length);
+		mcc_track_title_cb(conn, 0, data, length);
 
 	} else if (handle == mcs_inst->track_duration_handle) {
 		LOG_DBG("Track Duration notification");
-		mcc_read_track_duration_cb(conn, 0, read_params, data, length);
+		mcc_track_duration_cb(conn, 0, data, length);
 
 	} else if (handle == mcs_inst->track_position_handle) {
 		LOG_DBG("Track Position notification");
-		mcc_read_track_position_cb(conn, 0, read_params, data, length);
+		mcc_track_position_cb(conn, 0, data, length);
 
 	} else if (handle == mcs_inst->playback_speed_handle) {
 		LOG_DBG("Playback Speed notification");
-		mcc_read_playback_speed_cb(conn, 0, read_params, data, length);
+		mcc_playback_speed_cb(conn, 0, data, length);
 
 	} else if (handle == mcs_inst->seeking_speed_handle) {
 		LOG_DBG("Seeking Speed notification");
-		mcc_read_seeking_speed_cb(conn, 0, read_params, data, length);
+		mcc_seeking_speed_cb(conn, 0, data, length);
 
 #ifdef CONFIG_BT_MCC_OTS
 	} else if (handle == mcs_inst->current_track_obj_id_handle) {
 		LOG_DBG("Current Track notification");
-		mcc_read_current_track_obj_id_cb(conn, 0, read_params, data,
-						 length);
+		mcc_current_track_obj_id_cb(conn, 0, data, length);
 
 	} else if (handle == mcs_inst->next_track_obj_id_handle) {
 		LOG_DBG("Next Track notification");
-		mcc_read_next_track_obj_id_cb(conn, 0, read_params, data,
-					      length);
+		mcc_next_track_obj_id_cb(conn, 0, data, length);
 
 	} else if (handle == mcs_inst->parent_group_obj_id_handle) {
 		LOG_DBG("Parent Group notification");
-		mcc_read_parent_group_obj_id_cb(conn, 0, read_params, data,
-						length);
+		mcc_parent_group_obj_id_cb(conn, 0, data, length);
 
 	} else if (handle == mcs_inst->current_group_obj_id_handle) {
 		LOG_DBG("Current Group notification");
-		mcc_read_current_group_obj_id_cb(conn, 0, read_params, data,
-						 length);
+		mcc_current_group_obj_id_cb(conn, 0, data, length);
 #endif /* CONFIG_BT_MCC_OTS */
 
 	} else if (handle == mcs_inst->playing_order_handle) {
 		LOG_DBG("Playing Order notification");
-		mcc_read_playing_order_cb(conn, 0, read_params, data, length);
+		mcc_playing_order_cb(conn, 0, data, length);
 
 	} else if (handle == mcs_inst->media_state_handle) {
 		LOG_DBG("Media State notification");
-		mcc_read_media_state_cb(conn, 0, read_params, data, length);
+		mcc_media_state_cb(conn, 0, data, length);
 
 	} else if (handle == mcs_inst->cp_handle) {
 		/* The control point is is a special case - only */
@@ -1048,8 +1167,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 
 	} else if (handle == mcs_inst->opcodes_supported_handle) {
 		LOG_DBG("Opcodes Supported notification");
-		mcc_read_opcodes_supported_cb(conn, 0, read_params, data,
-					      length);
+		mcc_opcodes_supported_cb(conn, 0, data, length);
 
 #ifdef CONFIG_BT_MCC_OTS
 	} else if (handle == mcs_inst->scp_handle) {
@@ -1073,8 +1191,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 
 	} else if (handle == mcs_inst->search_results_obj_id_handle) {
 		LOG_DBG("Search Results notification");
-		mcc_read_search_results_obj_id_cb(conn, 0, read_params, data,
-						  length);
+		mcc_search_results_obj_id_cb(conn, 0, data, length);
 #endif /* CONFIG_BT_MCC_OTS */
 	} else {
 		LOG_DBG("Unknown handle: %d (0x%04X)", handle, handle);
@@ -1295,6 +1412,8 @@ static void discover_included(struct mcs_instance_t *mcs_inst, struct bt_conn *c
 {
 	int err;
 
+	memset(&mcs_inst->discover_params, 0, sizeof(mcs_inst->discover_params));
+
 	mcs_inst->discover_params.start_handle = mcs_inst->start_handle;
 	mcs_inst->discover_params.end_handle = mcs_inst->end_handle;
 	mcs_inst->discover_params.type = BT_GATT_DISCOVER_INCLUDE;
@@ -1333,6 +1452,11 @@ static void subscribe_mcs_char_func(struct bt_conn *conn, uint8_t err,
 	LOG_DBG("Subscribed: value handle: %d, ccc handle: %d",
 	       params->value_handle, params->ccc_handle);
 
+	if (params->value_handle == 0) {
+		/* Unsubscribing, ignore */
+		return;
+	}
+
 	/* Subscribe to next characteristic */
 	subscription_done = subscribe_next_mcs_char(mcs_inst, conn);
 
@@ -1361,6 +1485,7 @@ static int do_subscribe(struct mcs_instance_t *mcs_inst, struct bt_conn *conn,
 	sub_params->subscribe = subscribe_mcs_char_func;
 	/* disc_params pointer is also used as subscription flag */
 	sub_params->disc_params = &mcs_inst->discover_params;
+	atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_NO_RESUB);
 
 	LOG_DBG("Subscring to handle %d", handle);
 	return bt_gatt_subscribe(conn, sub_params);
@@ -2304,7 +2429,7 @@ int bt_mcc_set_current_track_obj_id(struct bt_conn *conn, uint64_t obj_id)
 		return -EINVAL;
 	}
 
-	CHECKIF(obj_id < BT_OTS_OBJ_ID_MIN || obj_id > BT_OTS_OBJ_ID_MAX) {
+	CHECKIF(!BT_MCS_VALID_OBJ_ID(obj_id)) {
 		LOG_DBG("Object ID 0x%016llx invalid", obj_id);
 		return -EINVAL;
 	}
@@ -2389,7 +2514,7 @@ int bt_mcc_set_next_track_obj_id(struct bt_conn *conn, uint64_t obj_id)
 		return -EINVAL;
 	}
 
-	CHECKIF(obj_id < BT_OTS_OBJ_ID_MIN || obj_id > BT_OTS_OBJ_ID_MAX) {
+	CHECKIF(!BT_MCS_VALID_OBJ_ID(obj_id)) {
 		LOG_DBG("Object ID 0x%016llx invalid", obj_id);
 		return -EINVAL;
 	}
@@ -2512,7 +2637,7 @@ int bt_mcc_set_current_group_obj_id(struct bt_conn *conn, uint64_t obj_id)
 		return -EINVAL;
 	}
 
-	CHECKIF(obj_id < BT_OTS_OBJ_ID_MIN || obj_id > BT_OTS_OBJ_ID_MAX) {
+	CHECKIF(!BT_MCS_VALID_OBJ_ID(obj_id)) {
 		LOG_DBG("Object ID 0x%016llx invalid", obj_id);
 		return -EINVAL;
 	}
@@ -2609,6 +2734,14 @@ int bt_mcc_set_playing_order(struct bt_conn *conn, uint8_t order)
 		return -EBUSY;
 	} else if (mcs_inst->playing_order_handle == 0) {
 		LOG_DBG("handle not set");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(!IN_RANGE(order,
+			  BT_MCS_PLAYING_ORDER_SINGLE_ONCE,
+			  BT_MCS_PLAYING_ORDER_SHUFFLE_REPEAT)) {
+		LOG_DBG("Invalid playing order 0x%02X", order);
 
 		return -EINVAL;
 	}
@@ -2733,6 +2866,18 @@ int bt_mcc_send_cmd(struct bt_conn *conn, const struct mpl_cmd *cmd)
 		return -EINVAL;
 	}
 
+	CHECKIF(cmd == NULL) {
+		LOG_DBG("cmd is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(!BT_MCS_VALID_OP(cmd->opcode)) {
+		LOG_DBG("Opcode 0x%02X is invalid", cmd->opcode);
+
+		return -EINVAL;
+	}
+
 	length = sizeof(cmd->opcode);
 	(void)memcpy(mcs_inst->write_buf, &cmd->opcode, length);
 	if (cmd->use_param) {
@@ -2817,6 +2962,18 @@ int bt_mcc_send_search(struct bt_conn *conn, const struct mpl_search *search)
 		return -EBUSY;
 	} else if (mcs_inst->scp_handle == 0) {
 		LOG_DBG("handle not set");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(search == NULL) {
+		LOG_DBG("search is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(!IN_RANGE(search->len, SEARCH_LEN_MIN, SEARCH_LEN_MAX)) {
+		LOG_DBG("Invalid search->len: %u", search->len);
 
 		return -EINVAL;
 	}

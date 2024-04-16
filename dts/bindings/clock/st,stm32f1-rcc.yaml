@@ -1,0 +1,23 @@
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32F1 and STM32F37x Reset and Clock controller node.
+  Adds the ADC prescaler to the standard generic STM32 RCC.
+  For more description confere st,stm32-rcc.yaml
+
+compatible: "st,stm32f1-rcc"
+
+include: st,stm32-rcc.yaml
+
+properties:
+  adc-prescaler:
+    type: int
+    enum:
+      - 2
+      - 4
+      - 6
+      - 8
+    description: |
+        ADC prescaler. Defines ADC core clock frequency
+        based on APB2 frequency input.

@@ -17,7 +17,7 @@ void ping_ipm_callback(const struct device *dev, void *context,
 
 
 
-void main(void)
+int main(void)
 {
 	const struct device *ipm;
 
@@ -30,4 +30,5 @@ void main(void)
 	ipm_set_enabled(ipm, 1);
 	while (1) {
 	}
+	return 0;
 }

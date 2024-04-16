@@ -54,7 +54,7 @@ static void do_main(const struct device *dev)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ANY(ti_tmp112);
 
@@ -63,4 +63,5 @@ void main(void)
 	printk("device is %p, name is %s\n", dev, dev->name);
 
 	do_main(dev);
+	return 0;
 }

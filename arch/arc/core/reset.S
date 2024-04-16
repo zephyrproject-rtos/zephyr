@@ -16,6 +16,9 @@
 #include <zephyr/arch/cpu.h>
 #include <swap_macros.h>
 #include <zephyr/arch/arc/asm-compat/assembler.h>
+#ifdef CONFIG_ARC_EARLY_SOC_INIT
+  #include <soc_ctrl.h>
+#endif
 
 GDATA(z_interrupt_stacks)
 GDATA(z_main_stack)
@@ -109,6 +112,12 @@ done_icache_invalidate:
 
 done_dcache_invalidate:
 
+#ifdef CONFIG_ARC_EARLY_SOC_INIT
+	soc_early_asm_init_percpu
+#endif
+
+	_dsp_extension_probe
+
 /*
  * Init ARC internal architecture state
  * Force to initialize internal architecture state to reset values
@@ -117,8 +126,8 @@ done_dcache_invalidate:
  * substitution of normal hardware reset sequence.
  */
 #ifdef CONFIG_INIT_ARCH_HW_AT_BOOT
-	/* Set MPU (v4) registers to default */
-#if CONFIG_ARC_MPU_VER == 4
+	/* Set MPU (v4 or v8) registers to default */
+#if CONFIG_ARC_MPU_VER == 4 || CONFIG_ARC_MPU_VER == 8
 	/* Set default reset value to _ARC_V2_MPU_EN register */
 #define ARC_MPU_EN_RESET_VALUE 0x400181C0
 	mov_s r1, ARC_MPU_EN_RESET_VALUE

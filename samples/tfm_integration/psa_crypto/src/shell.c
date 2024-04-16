@@ -11,17 +11,17 @@
 #if CONFIG_PSA_SHELL
 
 static int
-psa_shell_invalid_arg(const struct shell *shell, char *arg_name)
+psa_shell_invalid_arg(const struct shell *sh, char *arg_name)
 {
-	shell_print(shell, "Error: invalid argument \"%s\"\n", arg_name);
+	shell_print(sh, "Error: invalid argument \"%s\"\n", arg_name);
 
 	return -EINVAL;
 }
 
 static int
-psa_shell_cmd_version(const struct shell *shell, size_t argc, char **argv)
+psa_shell_cmd_version(const struct shell *sh, size_t argc, char **argv)
 {
-	shell_print(shell, "%s", "0.0.0");
+	shell_print(sh, "%s", "0.0.0");
 
 	return 0;
 }

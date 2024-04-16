@@ -27,7 +27,7 @@
  * inner-working of the kernel and various other subsystems.
  *
  * @defgroup subsys_tracing Tracing
- * @ingroup subsys
+ * @ingroup os_services
  * @{
  */
 
@@ -1174,7 +1174,7 @@
  * @brief Trace FIFO Queue peek head entry
  * @param fifo FIFO object
  */
-#define sys_port_trace_k_fifo_peek_head_entry(fifo)
+#define sys_port_trace_k_fifo_peek_head_enter(fifo)
 
 /**
  * @brief Trace FIFO Queue peek head exit
@@ -1187,7 +1187,7 @@
  * @brief Trace FIFO Queue peek tail entry
  * @param fifo FIFO object
  */
-#define sys_port_trace_k_fifo_peek_tail_entry(fifo)
+#define sys_port_trace_k_fifo_peek_tail_enter(fifo)
 
 /**
  * @brief Trace FIFO Queue peek tail exit
@@ -1632,20 +1632,6 @@
  * @param ret Return value
  */
 #define sys_port_trace_k_pipe_get_exit(pipe, timeout, ret)
-
-/**
- * @brief Trace Pipe block put enter
- * @param pipe Pipe object
- * @param sem Semaphore object
- */
-#define sys_port_trace_k_pipe_block_put_enter(pipe, sem)
-
-/**
- * @brief Trace Pipe block put exit
- * @param pipe Pipe object
- * @param sem Semaphore object
- */
-#define sys_port_trace_k_pipe_block_put_exit(pipe, sem)
 
 /** @} */ /* end of subsys_tracing_apis_pipe */
 

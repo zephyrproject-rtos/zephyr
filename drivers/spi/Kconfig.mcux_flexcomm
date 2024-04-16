@@ -6,6 +6,7 @@ config SPI_MCUX_FLEXCOMM
 	bool "MCUX FLEXCOMM SPI driver"
 	default y
 	depends on DT_HAS_NXP_LPC_SPI_ENABLED
+	select PINCTRL
 	help
 	  Enable support for mcux flexcomm spi driver.
 

@@ -38,7 +38,7 @@ static const char *now_str(void)
 
 #ifdef CONFIG_MCP9808_TRIGGER
 
-static struct sensor_trigger trig;
+static struct sensor_trigger sensor_trig;
 
 static int set_window(const struct device *dev,
 		      const struct sensor_value *temp)
@@ -104,31 +104,31 @@ static void trigger_handler(const struct device *dev,
 }
 #endif
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ANY(microchip_mcp9808);
 	int rc;
 
 	if (dev == NULL) {
 		printf("Device not found.\n");
-		return;
+		return 0;
 	}
 	if (!device_is_ready(dev)) {
 		printf("Device %s is not ready.\n", dev->name);
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_MCP9808_TRIGGER
 	rc = set_window_ucel(dev, TEMP_INITIAL_CEL * UCEL_PER_CEL);
 	if (rc == 0) {
-		trig.type = SENSOR_TRIG_THRESHOLD;
-		trig.chan = SENSOR_CHAN_AMBIENT_TEMP;
-		rc = sensor_trigger_set(dev, &trig, trigger_handler);
+		sensor_trig.type = SENSOR_TRIG_THRESHOLD;
+		sensor_trig.chan = SENSOR_CHAN_AMBIENT_TEMP;
+		rc = sensor_trigger_set(dev, &sensor_trig, trigger_handler);
 	}
 
 	if (rc != 0) {
 		printf("Trigger set failed: %d\n", rc);
-		return;
+		return 0;
 	}
 	printk("Trigger set got %d\n", rc);
 #endif
@@ -153,4 +153,5 @@ void main(void)
 
 		k_sleep(K_SECONDS(2));
 	}
+	return 0;
 }

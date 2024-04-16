@@ -1,0 +1,73 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NATIVE_SIM
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config BUILD_OUTPUT_EXE
+	default y
+
+config OUTPUT_PRINT_MEMORY_USAGE
+	default n
+
+config BOARD
+	default "native_sim_64" if BOARD_NATIVE_SIM_64BIT
+	default "native_sim"
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y if !NET_LOOPBACK && !NET_TEST
+
+config ETH_NATIVE_POSIX
+	default y if NET_L2_ETHERNET && ETH_DRIVER
+
+endif # NETWORKING
+
+choice BT_HCI_BUS_TYPE
+	default BT_USERCHAN
+	depends on BT_HCI
+endchoice
+
+if LOG
+
+# For native_sim we can log synchronously without any problem
+# Doing so will be nicer for debugging
+choice LOG_MODE
+	default LOG_MODE_IMMEDIATE
+endchoice
+
+endif # LOG
+
+if CONSOLE
+
+config POSIX_ARCH_CONSOLE
+	default y if !SERIAL
+
+config UART_CONSOLE
+	default y if SERIAL
+
+endif # CONSOLE
+
+config FLASH_SIMULATOR
+	default y
+	depends on FLASH
+
+config USB_NATIVE_POSIX
+	default y
+	depends on USB_DEVICE_DRIVER
+
+config EEPROM_SIMULATOR
+	default y
+	depends on EEPROM
+
+if I2C
+
+config EMUL
+	default y
+
+endif # I2C
+
+endif # BOARD_NATIVE_SIM

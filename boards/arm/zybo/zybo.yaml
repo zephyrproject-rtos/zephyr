@@ -12,3 +12,4 @@ toolchain:
 ram: 524288
 supported:
   - gpio
+vendor: digilent

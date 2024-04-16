@@ -18,3 +18,4 @@ supported:
   - usb_device
 ram: 192
 flash: 512
+vendor: st

@@ -5,4 +5,4 @@ description: NEORV32 RISC-V CPU
 
 compatible: "neorv32-cpu"
 
-include: cpu.yaml
+include: riscv,cpus.yaml

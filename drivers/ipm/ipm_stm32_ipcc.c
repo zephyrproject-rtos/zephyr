@@ -253,7 +253,7 @@ static int stm32_ipcc_mailbox_init(const struct device *dev)
 
 	/* enable clock */
 	if (clock_control_on(clk,
-			     (clock_control_subsys_t *)&cfg->pclken) != 0) {
+			     (clock_control_subsys_t)&cfg->pclken) != 0) {
 		return -EIO;
 	}
 

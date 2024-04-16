@@ -10,3 +10,4 @@ ram: 256
 flash: 1024
 supported:
   - i2c
+vendor: nxp

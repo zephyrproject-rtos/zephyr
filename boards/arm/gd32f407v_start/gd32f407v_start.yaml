@@ -15,3 +15,6 @@ supported:
   - pwm
   - gpio
   - counter
+  - dma
+  - spi
+vendor: gd

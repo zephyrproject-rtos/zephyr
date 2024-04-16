@@ -142,7 +142,7 @@ static struct lwm2m_engine_obj_inst *accel_create(uint16_t obj_inst_id)
 	return &inst[avail];
 }
 
-static int ipso_accel_init(const struct device *dev)
+static int ipso_accel_init(void)
 {
 	accel.obj_id = IPSO_OBJECT_ACCELEROMETER_ID;
 	accel.version_major = ACCEL_VERSION_MAJOR;

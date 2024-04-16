@@ -61,6 +61,9 @@
 		wuc_wu40: wu40 {
 			wucs = <&wuc4 BIT(0)>; /* GPE5 */
 		};
+		wuc_wu42: wu42 {
+			wucs = <&wuc4 BIT(2)>; /* eSPI transaction */
+		};
 		wuc_wu45: wu45 {
 			wucs = <&wuc4 BIT(5)>; /* GPE6 */
 		};

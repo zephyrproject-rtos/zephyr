@@ -77,15 +77,8 @@ static ALWAYS_INLINE void clk_init(void)
 	CLOCK_SetSimConfig(&sim_config);
 }
 
-static int kv5x_init(const struct device *arg)
+static int kv5x_init(void)
 {
-	ARG_UNUSED(arg);
-
-	unsigned int old_level; /* old interrupt lock level */
-
-	/* Disable interrupts */
-	old_level = irq_lock();
-
 	/* release I/O power hold to allow normal run state */
 	PMC->REGSC |= PMC_REGSC_ACKISO_MASK;
 
@@ -97,16 +90,25 @@ static int kv5x_init(const struct device *arg)
 	/* Initialize system clocks and PLL */
 	clk_init();
 
-	/*
-	 * Install default handler that simply resets the CPU if
-	 * configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	/* Restore interrupt state */
-	irq_unlock(old_level);
+#ifndef CONFIG_KINETIS_KV5X_ENABLE_CODE_CACHE
+	/* SystemInit will have enabled the code cache. Disable it here */
+	SCB_DisableICache();
+#endif
+#ifndef CONFIG_KINETIS_KV5X_ENABLE_DATA_CACHE
+	/* SystemInit will have enabled the data cache. Disable it here */
+	SCB_DisableDCache();
+#endif
 
 	return 0;
 }
+
+#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+
+void z_arm_platform_init(void)
+{
+	SystemInit();
+}
+
+#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
 
 SYS_INIT(kv5x_init, PRE_KERNEL_1, 0);

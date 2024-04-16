@@ -1,0 +1,32 @@
+# Copyright (c) 2023 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP FlexCAN CANFD controller.
+
+  This is a specialization of the NXP FlexCAN CAN controller with support for CAN-FD.
+
+  Example:
+    flexcan3: can@401d8000 {
+      status = "okay";
+      compatible = "nxp,flexcan-fd", "nxp,flexcan";
+      reg = <0x401d8000 0x1000>;
+      interrupts = <154 0>;
+      interrupt-names = "common";
+      clocks = <&ccm IMX_CCM_CAN_CLK 0x84 6>;
+      clk-source = <2>;
+      sample-point = <875>;
+      sample-point-data = <875>;
+      bus-speed = <125000>;
+      bus-speed-data = <1000000>;
+      pinctrl-0 = <&pinmux_flexcan3>;
+      pinctrl-names = "default";
+
+      can-transceiver {
+        max-bitrate = <5000000>;
+      };
+    };
+
+compatible: "nxp,flexcan-fd"
+
+include: ["nxp,flexcan.yaml", "can-fd-controller.yaml", "pinctrl-device.yaml"]

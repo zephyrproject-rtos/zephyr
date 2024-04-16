@@ -10,4 +10,8 @@ config BOARD
 config MP_MAX_NUM_CPUS
 	default 2
 
+config HEAP_MEM_POOL_SIZE
+	default 32768 if ACPI
+	depends on KERNEL_MEM_POOL
+
 endif

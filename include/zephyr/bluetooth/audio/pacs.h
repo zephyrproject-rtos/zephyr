@@ -18,8 +18,8 @@ extern "C" {
 
 /** @brief Published Audio Capability structure. */
 struct bt_pacs_cap {
-	/** Capability codec reference */
-	struct bt_codec *codec;
+	/** Codec capability reference */
+	const struct bt_audio_codec_cap *codec_cap;
 
 	/* Internally used list node */
 	sys_snode_t _node;
@@ -95,6 +95,14 @@ int bt_pacs_set_available_contexts(enum bt_audio_dir dir,
  * @return Bitmask of available contexts.
  */
 enum bt_audio_context bt_pacs_get_available_contexts(enum bt_audio_dir dir);
+
+/** @brief Set the supported contexts for an endpoint type
+ *
+ * @param dir      Direction of the endpoints to change available contexts for.
+ * @param contexts The contexts to be set.
+ */
+int bt_pacs_set_supported_contexts(enum bt_audio_dir dir,
+				   enum bt_audio_context contexts);
 
 #ifdef __cplusplus
 }

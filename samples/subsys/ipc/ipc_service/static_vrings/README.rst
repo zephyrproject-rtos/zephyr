@@ -1,7 +1,8 @@
-.. _static_vrings_sample:
+.. zephyr:code-sample:: ipc-static-vrings
+   :name: IPC service: static vrings backend
+   :relevant-api: ipc
 
-IPC Service - static vrings - Sample Application
-################################################
+   Send messages between two cores using the IPC service and static vrings backend.
 
 Overview
 ********

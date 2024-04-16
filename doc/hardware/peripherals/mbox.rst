@@ -1,7 +1,7 @@
 .. _mbox_api:
 
-MBOX
-####
+Multi-Channel Inter-Processor Mailbox (MBOX)
+############################################
 
 Overview
 ********

@@ -15,11 +15,6 @@
 #include "storage.h"
 #include "transition.h"
 
-#if defined(CONFIG_MCUMGR)
-#include <zephyr/mgmt/mcumgr/transport/smp_bt.h>
-#include "smp_svr.h"
-#endif
-
 static bool reset;
 
 static void light_default_var_init(void)
@@ -148,17 +143,13 @@ static void reset_counter_timer_handler(struct k_timer *dummy)
 
 K_TIMER_DEFINE(reset_counter_timer, reset_counter_timer_handler, NULL);
 
-void main(void)
+int main(void)
 {
 	int err;
 
 	light_default_var_init();
 
 	app_gpio_init();
-
-#if defined(CONFIG_MCUMGR)
-	smp_svr_init();
-#endif
 
 	printk("Initializing...\n");
 
@@ -168,7 +159,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	bt_ready();
@@ -179,11 +170,5 @@ void main(void)
 
 	short_time_multireset_bt_mesh_unprovisioning();
 	k_timer_start(&reset_counter_timer, K_MSEC(7000), K_NO_WAIT);
-
-#if defined(CONFIG_MCUMGR)
-	/* Initialize the Bluetooth mcumgr transport. */
-	smp_bt_register();
-
-	k_timer_start(&smp_svr_timer, K_NO_WAIT, K_MSEC(1000));
-#endif
+	return 0;
 }

@@ -82,12 +82,17 @@ typedef sys_mem_blocks_t *(*sys_multi_mem_blocks_choice_fn_t)
  * @cond INTERNAL_HIDDEN
  */
 
-struct sys_mem_blocks {
-	/* Number of blocks */
-	uint32_t num_blocks;
+struct sys_mem_blocks_info {
+	uint32_t num_blocks;       /* Total number of blocks */
+	uint8_t  blk_sz_shift;     /* Bit shift for block size */
+#ifdef CONFIG_SYS_MEM_BLOCKS_RUNTIME_STATS
+	uint32_t used_blocks;      /* Current number of blocks in use */
+	uint32_t max_used_blocks;  /* Maximum number of blocks in use */
+#endif
+};
 
-	/* Bit shift for block size */
-	uint8_t blk_sz_shift;
+struct sys_mem_blocks {
+	struct sys_mem_blocks_info  info;
 
 	/* Memory block buffer */
 	uint8_t *buffer;
@@ -98,11 +103,10 @@ struct sys_mem_blocks {
 #ifdef CONFIG_SYS_MEM_BLOCKS_RUNTIME_STATS
 	/* Spinlock guarding access to memory block internals */
 	struct k_spinlock  lock;
-
-	uint32_t used_blocks;
-	uint32_t max_used_blocks;
 #endif
-
+#ifdef CONFIG_OBJ_CORE_SYS_MEM_BLOCKS
+	struct k_obj_core obj_core;
+#endif
 };
 
 struct sys_multi_mem_blocks {
@@ -124,12 +128,15 @@ struct sys_multi_mem_blocks {
 #define _SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(name, blk_sz, num_blks, buf, mbmod) \
 	_SYS_BITARRAY_DEFINE(_sys_mem_blocks_bitmap_##name,		\
 			     num_blks, mbmod);				\
-	mbmod sys_mem_blocks_t name = {					\
-		.num_blocks = num_blks,					\
-		.blk_sz_shift = ilog2(blk_sz),				\
+	mbmod struct sys_mem_blocks name = {                            \
+		.info = {num_blks, ilog2(blk_sz)},                      \
 		.buffer = buf,						\
 		.bitmap = &_sys_mem_blocks_bitmap_##name,		\
-	}
+	};                                                              \
+	STRUCT_SECTION_ITERABLE_ALTERNATE(sys_mem_blocks_ptr,           \
+					  sys_mem_blocks *,             \
+					  __##name##_ptr) = &name;      \
+	LINKER_KEEP(__##name##_ptr);
 
 /**
  * @brief Create a memory block object with a new backing buffer.

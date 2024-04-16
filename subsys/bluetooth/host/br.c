@@ -403,7 +403,9 @@ static void report_discovery_results(void)
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
 
-	discovery_cb(discovery_results, discovery_results_count);
+	if (discovery_cb) {
+		discovery_cb(discovery_results, discovery_results_count);
+	}
 	bt_br_discovery_reset();
 }
 
@@ -426,7 +428,7 @@ static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr,
 
 	/* check if already present in results */
 	for (i = 0; i < discovery_results_count; i++) {
-		if (!bt_addr_cmp(addr, &discovery_results[i].addr)) {
+		if (bt_addr_eq(addr, &discovery_results[i].addr)) {
 			return &discovery_results[i];
 		}
 	}
@@ -596,11 +598,11 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 check_names:
 	/* if still waiting for names */
 	for (i = 0; i < discovery_results_count; i++) {
-		struct discovery_priv *priv;
+		struct discovery_priv *dpriv;
 
-		priv = (struct discovery_priv *)&discovery_results[i]._priv;
+		dpriv = (struct discovery_priv *)&discovery_results[i]._priv;
 
-		if (priv->resolving) {
+		if (dpriv->resolving) {
 			return;
 		}
 	}
@@ -608,7 +610,9 @@ check_names:
 	/* all names resolved, report discovery results */
 	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
 
-	discovery_cb(discovery_results, discovery_results_count);
+	if (discovery_cb) {
+		discovery_cb(discovery_results, discovery_results_count);
+	}
 
 }
 
@@ -621,7 +625,7 @@ void bt_hci_read_remote_features_complete(struct net_buf *buf)
 
 	LOG_DBG("status 0x%02x handle %u", evt->status, handle);
 
-	conn = bt_conn_lookup_handle(handle);
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_BR);
 	if (!conn) {
 		LOG_ERR("Can't find conn for handle %u", handle);
 		return;
@@ -662,7 +666,7 @@ void bt_hci_read_remote_ext_features_complete(struct net_buf *buf)
 
 	LOG_DBG("status 0x%02x handle %u", evt->status, handle);
 
-	conn = bt_conn_lookup_handle(handle);
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_BR);
 	if (!conn) {
 		LOG_ERR("Can't find conn for handle %u", handle);
 		return;

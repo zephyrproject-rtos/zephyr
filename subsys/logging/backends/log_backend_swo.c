@@ -42,17 +42,12 @@ PINCTRL_DT_DEFINE(DT_NODELABEL(itm));
 #define SWO_FREQ_DIV  1
 #else
 
-/* Set reference frequency which can be custom or cpu frequency. */
-#if DT_NODE_HAS_PROP(DT_NODELABEL(itm), swo_ref_frequency)
-#define SWO_REF_FREQ DT_PROP(DT_NODELABEL(itm), swo_ref_frequency)
-#elif DT_NODE_HAS_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
-#define SWO_REF_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
-#else
-#error "Missing DT 'clock-frequency' property on cpu@0 node"
+#if CONFIG_LOG_BACKEND_SWO_REF_FREQ_HZ == 0
+#error "SWO reference frequency is not configured"
 #endif
 
 #define SWO_FREQ_DIV \
-	((SWO_REF_FREQ + (CONFIG_LOG_BACKEND_SWO_FREQ_HZ / 2)) / \
+	((CONFIG_LOG_BACKEND_SWO_REF_FREQ_HZ + (CONFIG_LOG_BACKEND_SWO_FREQ_HZ / 2)) / \
 		CONFIG_LOG_BACKEND_SWO_FREQ_HZ)
 
 #if SWO_FREQ_DIV > 0xFFFF

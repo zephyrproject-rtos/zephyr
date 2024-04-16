@@ -260,3 +260,10 @@ dsp_skip_load :
 #endif
 agu_skip_load :
 .endm
+
+.macro _dsp_extension_probe
+#ifdef CONFIG_ARC_DSP_TURNED_OFF
+	mov	 r0, 0 /* DSP_CTRL_DISABLED_ALL */
+	sr	 r0, [_ARC_V2_DSP_CTRL]
+#endif
+.endm

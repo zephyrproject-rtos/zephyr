@@ -1,8 +1,8 @@
 .. _kscan_api:
 
 
-KSCAN
-#####
+Keyboard Scan
+#############
 
 Overview
 ********

@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_lpc55S36_ns.dtsi>
 #include "lpcxpresso55s36-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NXP LPCXpresso55S36 board";
@@ -54,10 +55,12 @@
 		btn_wk: button_0 {
 			label = "Wakeup button";
 			gpios = <&gpio1 18 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_WAKEUP>;
 		};
 		btn_usr: button_1 {
 			label = "USR button";
 			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
@@ -127,7 +130,17 @@
 	bus-speed-data = <1000000>;
 	pinctrl-0 = <&pinmux_mcan_can0>;
 	pinctrl-names = "default";
-	status = "ok";
+	status = "okay";
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
 };
 
 &flash0 {
@@ -150,5 +163,25 @@
 &flexpwm1_pwm0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm1_pwm0>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbfs {
+	status = "okay";
+	pinctrl-0 = <&pinmux_usbfs>;
+	pinctrl-names = "default";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&vref0 {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_dac0>;
 	pinctrl-names = "default";
 };

@@ -10,9 +10,9 @@ compatible: "invensense,mpu6050"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-    int-gpios:
-      type: phandle-array
-      description: |
-        The INT signal default configuration is active-high.  The
-        property value should ensure the flags properly describe the
-        signal that is presented to the driver.
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT signal default configuration is active-high.  The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.

@@ -18,6 +18,8 @@ Configure this module using the following options.
 Here are the options to enable output backends for core dump:
 
 * ``DEBUG_COREDUMP_BACKEND_LOGGING``: use log module for core dump output.
+* ``DEBUG_COREDUMP_BACKEND_FLASH_PARTITION``: use flash partition for core
+  dump output.
 * ``DEBUG_COREDUMP_BACKEND_NULL``: fallback core dump backend if other
   backends cannot be enabled. All output is sent to null.
 
@@ -61,6 +63,20 @@ This usually involves the following steps:
    Developers for Intel ADSP CAVS 15-25 platforms using
    ``ZEPHYR_TOOLCHAIN_VARIANT=zephyr`` should use the debugger in the
    ``xtensa-intel_apl_adsp`` toolchain of the SDK.
+
+5. When ``DEBUG_COREDUMP_BACKEND_FLASH_PARTITION`` is enabled the core dump
+   data is stored in the flash partition. The flash partition must be defined
+   in the device tree:
+
+	.. code-block:: devicetree
+
+		&flash0 {
+			partitions {
+				coredump_partition: partition@255000 {
+					label = "coredump-partition";
+					reg = <0x255000 DT_SIZE_K(4)>;
+				};
+		};
 
 Example
 -------

@@ -53,7 +53,7 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base)
 	 */
 	do {
 		c = *s++;
-	} while (isspace((unsigned char)c));
+	} while (isspace((unsigned char)c) != 0);
 	if (c == '-') {
 		neg = 1;
 		c = *s++;
@@ -75,10 +75,10 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base)
 	cutoff = (unsigned long)ULONG_MAX / (unsigned long)base;
 	cutlim = (unsigned long)ULONG_MAX % (unsigned long)base;
 	for (acc = 0, any = 0;; c = *s++) {
-		if (isdigit((unsigned char)c)) {
+		if (isdigit((unsigned char)c) != 0) {
 			c -= '0';
-		} else if (isalpha((unsigned char)c)) {
-			c -= isupper((unsigned char)c) ? 'A' - 10 : 'a' - 10;
+		} else if (isalpha((unsigned char)c) != 0) {
+			c -= isupper((unsigned char)c) != 0 ? 'A' - 10 : 'a' - 10;
 		} else {
 			break;
 		}

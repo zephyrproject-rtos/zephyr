@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 Linaro Limited.
  * Copyright (c) 2018 Nordic Semiconductor ASA.
- * Copyright (c) 2021 Arm Limited (or its affiliates). All rights reserved.
+ * Copyright (c) 2021-2023 Arm Limited (or its affiliates). All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -132,7 +132,7 @@
  * recommended to use these helper defines only for configuring
  * fixed MPU regions at build-time.
  */
-#define REGION_DEVICE_ATTR					      \
+#define REGION_IO_ATTR						      \
 	{							      \
 		/* AP, XN, SH */				      \
 		.rbar = NOT_EXEC | P_RW_U_NA_Msk | NON_SHAREABLE_Msk, \
@@ -140,28 +140,36 @@
 		.mair_idx = MPU_MAIR_INDEX_DEVICE,		      \
 	}
 
-#define REGION_RAM_ATTR						      \
+#define REGION_RAM_ATTR							\
+	{								\
+		/* AP, XN, SH */					\
+		.rbar = NOT_EXEC | P_RW_U_NA_Msk | OUTER_SHAREABLE_Msk, \
+		/* Cache-ability */					\
+		.mair_idx = MPU_MAIR_INDEX_SRAM,			\
+	}
+
+#define REGION_RAM_NOCACHE_ATTR					      \
 	{							      \
 		/* AP, XN, SH */				      \
 		.rbar = NOT_EXEC | P_RW_U_NA_Msk | NON_SHAREABLE_Msk, \
 		/* Cache-ability */				      \
-		.mair_idx = MPU_MAIR_INDEX_SRAM,		      \
+		.mair_idx = MPU_MAIR_INDEX_SRAM_NOCACHE,	      \
 	}
 
-#define REGION_RAM_TEXT_ATTR				   \
-	{						   \
-		/* AP, XN, SH */			   \
-		.rbar = P_RO_U_RO_Msk | NON_SHAREABLE_Msk, \
-		/* Cache-ability */			   \
-		.mair_idx = MPU_MAIR_INDEX_SRAM,	   \
+#define REGION_RAM_TEXT_ATTR					\
+	{							\
+		/* AP, XN, SH */				\
+		.rbar = P_RO_U_RO_Msk | INNER_SHAREABLE_Msk,	\
+		/* Cache-ability */				\
+		.mair_idx = MPU_MAIR_INDEX_SRAM,		\
 	}
 
-#define REGION_RAM_RO_ATTR					      \
-	{							      \
-		/* AP, XN, SH */				      \
-		.rbar = NOT_EXEC | P_RO_U_RO_Msk | NON_SHAREABLE_Msk, \
-		/* Cache-ability */				      \
-		.mair_idx = MPU_MAIR_INDEX_SRAM,		      \
+#define REGION_RAM_RO_ATTR						\
+	{								\
+		/* AP, XN, SH */					\
+		.rbar = NOT_EXEC | P_RO_U_RO_Msk | INNER_SHAREABLE_Msk, \
+		/* Cache-ability */					\
+		.mair_idx = MPU_MAIR_INDEX_SRAM,			\
 	}
 
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
@@ -186,7 +194,7 @@
 
 struct arm_mpu_region_attr {
 	/* Attributes belonging to PRBAR */
-	uint8_t rbar : 5;
+	uint8_t rbar : 6;
 	/* MAIR index for attribute indirection */
 	uint8_t mair_idx : 3;
 };
@@ -239,6 +247,17 @@ typedef struct arm_mpu_region_attr k_mem_partition_attr_t;
  * not kept here.
  */
 extern const struct arm_mpu_config mpu_config;
+
+struct dynamic_region_info {
+	int index;
+	struct arm_mpu_region region_conf;
+};
+
+#define ARM64_MPU_MAX_DYNAMIC_REGIONS						\
+	1 + /* data section */							\
+	(CONFIG_MAX_DOMAIN_PARTITIONS + 2) +					\
+	(IS_ENABLED(CONFIG_ARM64_STACK_PROTECTION) ? 2 : 0) +			\
+	(IS_ENABLED(CONFIG_USERSPACE) ? 2 : 0)
 
 #endif	/* _ASMLANGUAGE */
 

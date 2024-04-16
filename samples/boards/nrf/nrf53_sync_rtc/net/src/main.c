@@ -54,7 +54,7 @@ static int mbox_init(void)
 	return mbox_set_enabled(&channel, true);
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -63,4 +63,5 @@ void main(void)
 	if (err < 0) {
 		LOG_ERR("Failed to initialize sync RTC listener (err:%d)", err);
 	}
+	return 0;
 }

@@ -31,7 +31,7 @@
 #define FLASH_TEST_OFFSET2 0x41234
 #define FLASH_TEST_PAGE_IDX 37
 
-void main(void)
+int main(void)
 {
 	const struct device *flash_dev = TEST_PARTITION_DEVICE;
 	uint32_t buf_array_1[4] = { TEST_DATA_WORD_0, TEST_DATA_WORD_1,
@@ -50,7 +50,7 @@ void main(void)
 
 	if (!device_is_ready(flash_dev)) {
 		printf("Flash device not ready\n");
-		return;
+		return 0;
 	}
 
 	printf("\nTest 1: Flash erase page at 0x%x\n", TEST_PARTITION_OFFSET);
@@ -68,13 +68,13 @@ void main(void)
 		if (flash_write(flash_dev, offset, &buf_array_1[i],
 					sizeof(uint32_t)) != 0) {
 			printf("   Flash write failed!\n");
-			return;
+			return 0;
 		}
 		printf("   Attempted to read 0x%x\n", offset);
 		if (flash_read(flash_dev, offset, &buf_word,
 					sizeof(uint32_t)) != 0) {
 			printf("   Flash read failed!\n");
-			return;
+			return 0;
 		}
 		printf("   Data read: %x\n", buf_word);
 		if (buf_array_1[i] == buf_word) {
@@ -100,13 +100,13 @@ void main(void)
 		if (flash_write(flash_dev, offset, &buf_array_2[i],
 					sizeof(uint32_t)) != 0) {
 			printf("   Flash write failed!\n");
-			return;
+			return 0;
 		}
 		printf("   Attempted to read 0x%x\n", offset);
 		if (flash_read(flash_dev, offset, &buf_word,
 					sizeof(uint32_t)) != 0) {
 			printf("   Flash read failed!\n");
-			return;
+			return 0;
 		}
 		printf("   Data read: %x\n", buf_word);
 		if (buf_array_2[i] == buf_word) {
@@ -131,13 +131,13 @@ void main(void)
 		if (flash_write(flash_dev, offset, &buf_array_3[i],
 					sizeof(uint32_t)) != 0) {
 			printf("   Flash write failed!\n");
-			return;
+			return 0;
 		}
 		printf("   Attempted to read 0x%x\n", offset);
 		if (flash_read(flash_dev, offset, &buf_word,
 					sizeof(uint32_t)) != 0) {
 			printf("   Flash read failed!\n");
-			return;
+			return 0;
 		}
 		printf("   Data read: %x\n", buf_word);
 		if (buf_array_3[i] == buf_word) {
@@ -191,4 +191,5 @@ void main(void)
 	printf("\nTest 8: Write block size API\n");
 	printf("   write-block-size = %u\n",
 	       flash_get_write_block_size(flash_dev));
+	return 0;
 }

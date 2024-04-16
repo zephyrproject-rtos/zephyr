@@ -10,7 +10,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 
-#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_BQ274XX_PM
 #include <zephyr/pm/device.h>
 #endif
 
@@ -22,13 +22,8 @@ static void bq274xx_handle_interrupts(const struct device *dev)
 {
 	struct bq274xx_data *data = dev->data;
 
-	struct sensor_trigger trig = {
-		.type = SENSOR_TRIG_DATA_READY,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (data->ready_handler) {
-		data->ready_handler(dev, &trig);
+		data->ready_handler(dev, data->ready_trig);
 	}
 }
 
@@ -58,7 +53,8 @@ static void bq274xx_ready_callback_handler(const struct device *port,
 					   struct gpio_callback *cb,
 					   gpio_port_pins_t pins)
 {
-	struct bq274xx_data *data = CONTAINER_OF(cb, struct bq274xx_data, ready_callback);
+	struct bq274xx_data *data = CONTAINER_OF(cb, struct bq274xx_data,
+						 ready_callback);
 
 	ARG_UNUSED(port);
 	ARG_UNUSED(pins);
@@ -74,7 +70,7 @@ int bq274xx_trigger_mode_init(const struct device *dev)
 {
 	const struct bq274xx_config *const config = dev->config;
 	struct bq274xx_data *data = dev->data;
-	int status = 0;
+	int ret;
 
 	data->dev = dev;
 
@@ -91,10 +87,10 @@ int bq274xx_trigger_mode_init(const struct device *dev)
 	k_work_init(&data->work, bq274xx_work_handler);
 #endif
 
-	status = gpio_pin_configure_dt(&config->int_gpios, GPIO_INPUT);
-	if (status < 0) {
-		LOG_ERR("Unable to configure interrupt pin to input");
-		return status;
+	ret = gpio_pin_configure_dt(&config->int_gpios, GPIO_INPUT);
+	if (ret < 0) {
+		LOG_ERR("Unable to configure interrupt pin");
+		return ret;
 	}
 	gpio_init_callback(&data->ready_callback,
 			   bq274xx_ready_callback_handler,
@@ -109,9 +105,9 @@ int bq274xx_trigger_set(const struct device *dev,
 {
 	const struct bq274xx_config *config = dev->config;
 	struct bq274xx_data *data = dev->data;
-	int status;
+	int ret;
 
-#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_BQ274XX_PM
 	enum pm_device_state state;
 
 	(void)pm_device_state_get(dev, &state);
@@ -124,43 +120,46 @@ int bq274xx_trigger_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (!device_is_ready(config->int_gpios.port)) {
-		LOG_ERR("GPIO device pointer is not ready to be used");
+	if (!gpio_is_ready_dt(&config->int_gpios)) {
+		LOG_ERR("GPIO device is not ready");
 		return -ENODEV;
 	}
 
 	data->ready_handler = handler;
+	data->ready_trig = trig;
 
 	if (handler) {
-		status = gpio_pin_configure_dt(&config->int_gpios, GPIO_INPUT);
-		if (status < 0) {
-			LOG_ERR("Unable to configure interrupt pin to input (%d)", status);
-			return status;
+		ret = gpio_pin_configure_dt(&config->int_gpios, GPIO_INPUT);
+		if (ret < 0) {
+			LOG_ERR("Unable to configure interrupt pin: %d", ret);
+			return ret;
 		}
 
-		status = gpio_add_callback(config->int_gpios.port, &data->ready_callback);
-		if (status < 0) {
-			LOG_ERR("Unable to add interrupt callback (%d)", status);
-			return status;
+		ret = gpio_add_callback(config->int_gpios.port,
+					&data->ready_callback);
+		if (ret < 0) {
+			LOG_ERR("Unable to add interrupt callback: %d", ret);
+			return ret;
 		}
 
-		status = gpio_pin_interrupt_configure_dt(&config->int_gpios,
-							 GPIO_INT_EDGE_TO_ACTIVE);
-		if (status < 0) {
-			LOG_ERR("Unable to configure interrupt (%d)", status);
-			return status;
+		ret = gpio_pin_interrupt_configure_dt(&config->int_gpios,
+						      GPIO_INT_EDGE_TO_ACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Unable to configure interrupt: %d", ret);
+			return ret;
 		}
 	} else {
-		status = gpio_remove_callback(config->int_gpios.port, &data->ready_callback);
-		if (status < 0) {
-			LOG_ERR("Unable to remove interrupt callback (%d)", status);
-			return status;
+		ret = gpio_remove_callback(config->int_gpios.port,
+					   &data->ready_callback);
+		if (ret < 0) {
+			LOG_ERR("Unable to remove interrupt callback: %d", ret);
+			return ret;
 		}
 
-		status = gpio_pin_interrupt_configure_dt(&config->int_gpios, GPIO_INT_DISABLE);
-		if (status < 0) {
-			LOG_ERR("Unable to configure interrupt (%d)", status);
-			return status;
+		ret = gpio_pin_interrupt_configure_dt(&config->int_gpios, GPIO_INT_DISABLE);
+		if (ret < 0) {
+			LOG_ERR("Unable to disable interrupt: %d", ret);
+			return ret;
 		}
 	}
 

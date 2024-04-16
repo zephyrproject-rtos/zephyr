@@ -12,3 +12,12 @@ config DMA_TRANSFER_CHANNEL_NR_0
 config DMA_TRANSFER_CHANNEL_NR_1
 	int "second DMA channel to use"
 	default 1
+
+config DMA_LOOP_TRANSFER_SRAM_SECTION
+	string "the section to place the memory buffers."
+	depends on NOCACHE_MEMORY
+	default ".nocache"
+
+config DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
+	int "Number of DMAs to test"
+	default 1

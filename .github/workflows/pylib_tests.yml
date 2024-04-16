@@ -1,0 +1,54 @@
+# Copyright (c) 2023 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Misc. Pylib Scripts TestSuite
+
+on:
+  push:
+    branches:
+    - main
+    - v*-branch
+    paths:
+    - 'scripts/pylib/build_helpers/**'
+    - '.github/workflows/pylib_tests.yml'
+  pull_request:
+    branches:
+    - main
+    - v*-branch
+    paths:
+    - 'scripts/pylib/build_helpers/**'
+    - '.github/workflows/pylib_tests.yml'
+
+jobs:
+  pylib-tests:
+    name: Misc. Pylib Unit Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, '3.10']
+        os: [ubuntu-22.04]
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: cache-pip-linux
+      if: startsWith(runner.os, 'Linux')
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}
+    - name: install-packages
+      run: |
+        pip3 install -r scripts/requirements-base.txt -r scripts/requirements-build-test.txt
+    - name: Run pytest for build_helpers
+      env:
+        ZEPHYR_BASE: ./
+        ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+      run: |
+        echo "Run build_helpers tests"
+        PYTHONPATH=./scripts/tests pytest ./scripts/tests/build_helpers

@@ -1,0 +1,29 @@
+# Copyright (c) 2023, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX LPDAC
+
+compatible: "nxp,lpdac"
+
+include: [dac-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  voltage-reference:
+    type: int
+    required: true
+    description: |
+      DAC voltage reference select. The meaning of the value may be
+      different for different SoCs.
+
+  low-power-mode:
+    type: boolean
+    description: Enable low-power mode
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - output

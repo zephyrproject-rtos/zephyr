@@ -1,0 +1,20 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_INTEL_ISH5
+
+config SOC_SERIES
+	string
+	default "intel_ish5"
+
+config SOC
+	string
+	default "intel_ish_5_4_1" if SOC_INTEL_ISH_5_4_1
+	default "intel_ish_5_6_0" if SOC_INTEL_ISH_5_6_0
+	default "intel_ish_5_8_0" if SOC_INTEL_ISH_5_8_0
+
+endif # SOC_SERIES_INTEL_ISH5
+
+rsource "pm/Kconfig.pm"

@@ -29,9 +29,17 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
 +===========+============+=====================================+
-| GIC       | on-chip    | interrupt_controller                |
+| Arm GIC   | on-chip    | interrupt_controller                |
 +-----------+------------+-------------------------------------+
-| ARM Timer | on-chip    | timer                               |
+| Arm Timer | on-chip    | timer                               |
++-----------+------------+-------------------------------------+
+| LINFlexD  | on-chip    | serial                              |
++-----------+------------+-------------------------------------+
+| MRU       | on-chip    | mbox                                |
++-----------+------------+-------------------------------------+
+| NETC      | on-chip    | ethernet                            |
+|           |            |                                     |
+|           |            | mdio                                |
 +-----------+------------+-------------------------------------+
 | SIUL2     | on-chip    | pinctrl                             |
 |           |            |                                     |
@@ -39,9 +47,11 @@ The boards support the following hardware features:
 |           |            |                                     |
 |           |            | external interrupt controller       |
 +-----------+------------+-------------------------------------+
-| LINFlexD  | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| SWT       | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
+| CANEXCEL  | on-chip    | can                                 |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
@@ -89,7 +99,7 @@ using GPIO driver or configuring the pinmuxing for the device drivers.
 +-------------------+-------------+
 
 This board does not include user LED's or switches, which are needed for some
-of the samples such as :ref:`blinky-sample` or :ref:`button-sample`.
+of the samples such as :zephyr:code-sample:`blinky` or :zephyr:code-sample:`button`.
 Follow the steps described in the sample description to enable support for this
 board.
 
@@ -101,9 +111,33 @@ The Cortex-R52 cores are configured to run at 800 MHz.
 Serial Port
 ===========
 
-The SoC has 12 LINFlexD instances that can be used in UART mode. Instance 0
-(defined as ``uart0`` in devicetree) is configured for the console and the
-remaining are disabled and not configured.
+The SoC has 12 LINFlexD instances that can be used in UART mode. The console can
+be accessed by default on the USB micro-B connector `J119`.
+
+Watchdog
+========
+
+The watchdog driver only supports triggering an interrupt upon timer expiration.
+Zephyr is currently running from SRAM on this board, thus system reset is not
+supported.
+
+Ethernet
+========
+
+NETC driver supports to manage the Physical Station Interface (PSI0) and/or a
+single Virtual SI (VSI). The rest of the VSI's shall be assigned to different
+cores of the system. Refer to :ref:`nxp_s32_netc-samples` to learn how to
+configure the Ethernet network controller.
+
+Controller Area Network (CAN)
+=============================
+
+Currently, the CANXL transceiver is not populated in this board. So CAN transceiver
+connection is required for running external traffic. We can use any CAN transceiver,
+which supports CAN 2.0 and CAN FD protocol.
+
+CAN driver supports classic (CAN 2.0) and CAN FD mode. Remote transmission request is
+not supported as this feature is not available on NXP S32 CANXL HAL.
 
 Programming and Debugging
 *************************
@@ -153,6 +187,14 @@ For example, you can build and run the :ref:`hello_world` sample for the board
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: s32z270dc2_rtu0_r52
+   :goals: build flash
+
+In case you are using a newer PCB revision, you have to use an adapted board
+definition as the default PCB revision is B. For example, if using revision D:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: s32z270dc2_rtu0_r52@D
    :goals: build flash
 
 You should see the following message in the terminal:

@@ -51,20 +51,6 @@ struct dhcp_msg {
 #define DHCPV4_SERVER_PORT	67
 #define DHCPV4_CLIENT_PORT	68
 
-/* These enumerations represent RFC2131 defined msy type codes, hence
- * they should not be renumbered.
- */
-enum dhcpv4_msg_type {
-	DHCPV4_MSG_TYPE_DISCOVER	= 1,
-	DHCPV4_MSG_TYPE_OFFER		= 2,
-	DHCPV4_MSG_TYPE_REQUEST		= 3,
-	DHCPV4_MSG_TYPE_DECLINE		= 4,
-	DHCPV4_MSG_TYPE_ACK		= 5,
-	DHCPV4_MSG_TYPE_NAK		= 6,
-	DHCPV4_MSG_TYPE_RELEASE		= 7,
-	DHCPV4_MSG_TYPE_INFORM		= 8,
-};
-
 #define DHCPV4_OPTIONS_SUBNET_MASK	1
 #define DHCPV4_OPTIONS_ROUTER		3
 #define DHCPV4_OPTIONS_DNS_SERVER	6
@@ -95,9 +81,7 @@ enum dhcpv4_msg_type {
 
 
 /* TODO:
- * 1) Support for UNICAST flag (some dhcpv4 servers will not reply if
- *    DISCOVER message contains BROADCAST FLAG).
- * 2) Support T2(Rebind) timer.
+ * 1) Support T2(Rebind) timer.
  */
 
 /* Maximum number of REQUEST or RENEWAL retransmits before reverting
@@ -128,5 +112,34 @@ int net_dhcpv4_init(void);
 #define net_dhcpv4_init() 0
 
 #endif /* CONFIG_NET_DHCPV4 */
+
+#if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_DHCPV4_ACCEPT_UNICAST)
+
+/**
+ * @brief Verify if the incoming packet should be accepted for the DHCPv4
+ *        module to process.
+ *
+ * In case server responds with an unicast IP packet, the IP stack needs to
+ * pass it through for the DHCPv4 module to process, before the actual
+ * destination IP address is configured on an interface.
+ * This function allows to determine whether there is an active DHCPv4 query on
+ * the interface and the packet is destined for the DHCPv4 module to process.
+ *
+ * @param pkt A packet to analyze
+ *
+ * @return true if the packet shall be accepted, false otherwise
+ */
+bool net_dhcpv4_accept_unicast(struct net_pkt *pkt);
+
+#else
+
+static inline bool net_dhcpv4_accept_unicast(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return false;
+}
+
+#endif /* CONFIG_NET_DHCPV4 && CONFIG_NET_DHCPV4_ACCEPT_UNICAST */
 
 #endif /* __INTERNAL_DHCPV4_H */

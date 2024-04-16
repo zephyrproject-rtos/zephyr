@@ -1,6 +1,10 @@
 common:
   depends_on: netif
-  tags: net socket net_mgmt userspace
+  tags:
+    - net
+    - socket
+    - net_mgmt
+    - userspace
   min_ram: 21
 tests:
   net.socket.mgmt:

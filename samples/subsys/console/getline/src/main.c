@@ -9,7 +9,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/console/console.h>
 
-void main(void)
+int main(void)
 {
 	console_getline_init();
 
@@ -21,4 +21,5 @@ void main(void)
 		printk("line: %s\n", s);
 		printk("last char was: 0x%x\n", s[strlen(s) - 1]);
 	}
+	return 0;
 }

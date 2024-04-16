@@ -21,3 +21,4 @@ supported:
   - spi
   - dac
   - watchdog
+vendor: st

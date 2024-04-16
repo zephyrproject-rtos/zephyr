@@ -1,0 +1,84 @@
+/*
+ * Device Tree Source for the R-Car H3/M3 (R8A77951/R8A77961) SoC
+ *
+ * Copyright (C) 2023 EPAM Systems.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <arm64/armv8-a.dtsi>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/clock/renesas_cpg_mssr.h>
+#include <zephyr/dt-bindings/clock/r8a7795_cpg_mssr.h>
+
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	psci {
+		compatible = "arm,psci-1.0", "arm,psci-0.2", "arm,psci";
+		method = "smc";
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	};
+
+	gic: interrupt-controller@f1010000 {
+		compatible = "arm,gic-400", "arm,gic-v2", "arm,gic" ;
+		#interrupt-cells = <4>;
+		#address-cells = <0>;
+		interrupt-controller;
+		reg = <0 0xf1010000 0 0x1000>,
+		      <0 0xf1020000 0 0x20000>;
+		status = "okay";
+	};
+
+	soc: soc {
+		compatible = "simple-bus";
+		interrupt-parent = <&gic>;
+
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		cpg: clock-controller@e6150000 {
+			reg = <0 0xe6150000 0 0x1000>;
+			#clock-cells = <2>;
+			#power-domain-cells = <0>;
+			#reset-cells = <1>;
+		};
+
+		emmc2: mmc@ee140000 {
+			compatible = "renesas,rcar-mmc";
+			reg = <0 0xee140000 0 0x2000>;
+			interrupts = <GIC_SPI 167 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 312>;
+			max-frequency = <200000000>;
+			status = "disabled";
+		};
+
+		pfc: pin-controller@e6060000 {
+			compatible = "renesas,rcar-pfc";
+			reg = <0 0xe6060000 0 0x50c>;
+		};
+
+		scif2: serial@e6e88000 {
+			compatible = "renesas,rcar-scif";
+			reg = <0 0xe6e88000 0 0x64>;
+			interrupt-parent = <&gic>;
+			clocks = <&cpg CPG_MOD 310>,
+				 <&cpg CPG_CORE R8A7795_CLK_S3D4>;
+			interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			current-speed = <115200>;
+			interrupt-names = "irq_0";
+			status = "disabled";
+		};
+	};
+};

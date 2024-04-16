@@ -5,6 +5,7 @@
  */
 
 /** Keys "test" IDs associated with a BT address */
+#define BT_ADDR_ID_0 (0x00)
 #define BT_ADDR_ID_1 (0x55)
 #define BT_ADDR_ID_2 (0xAA)
 #define BT_ADDR_ID_3 (0xA5)

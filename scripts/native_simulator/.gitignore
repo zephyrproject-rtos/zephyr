@@ -1,0 +1,11 @@
+_build/*
+*.o
+*.a
+*.d
+*.elf
+*.gcda
+*.gcno
+*~
+~*.~*
+/.*project
+.settings/*

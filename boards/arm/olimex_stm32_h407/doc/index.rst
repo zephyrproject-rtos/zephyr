@@ -372,4 +372,4 @@ way.  Here is an example for the :ref:`hello_world` application.
    https://www.olimex.com/Products/ARM/ST/STM32-H407/resources/STM32-H407.pdf
 
 .. _ST STM32F407ZG Datasheet:
-   http://www.st.com/resource/en/reference_manual/dm00031020.pdf
+   https://www.st.com/resource/en/reference_manual/dm00031020.pdf

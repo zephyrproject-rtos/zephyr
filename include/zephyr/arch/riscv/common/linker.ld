@@ -30,34 +30,49 @@
 #define _EXCEPTION_SECTION_NAME     exceptions
 #define _RESET_SECTION_NAME         reset
 
+/*
 #ifdef CONFIG_XIP
 #if DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_flash), soc_nv_flash, okay)
 #ifdef CONFIG_FLASH_LOAD_OFFSET
 #define ROM_BASE (DT_REG_ADDR(DT_CHOSEN(zephyr_flash)) + \
 				CONFIG_FLASH_LOAD_OFFSET)
 #else /* !CONFIG_FLASH_LOAD_OFFSET */
+/*
 #define ROM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
 #endif /* CONFIG_FLASH_LOAD_OFFSET */
+/*
 #define ROM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_flash))
 #elif DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_flash), jedec_spi_nor)
 /* For jedec,spi-nor we expect the spi controller to memory map the flash
  * and for that mapping to be the second register property of the spi
  * controller.
  */
+/*
 #define SPI_CTRL DT_PARENT(DT_CHOSEN(zephyr_flash))
 #define ROM_BASE DT_REG_ADDR_BY_IDX(SPI_CTRL, 1)
 #define ROM_SIZE DT_REG_SIZE_BY_IDX(SPI_CTRL, 1)
 #endif
 #else /* CONFIG_XIP */
+/*
 #define ROM_BASE CONFIG_SRAM_BASE_ADDRESS
 #define ROM_SIZE KB(CONFIG_SRAM_SIZE)
-#endif /* CONFIG_XIP */
+#endif /* CONFIG_XIP */ 
+
+#ifdef CONFIG_XIP && CONFIG_CONFIG_BOARD_SECURE_IOT
+#define ROM_BASE 0x90000000
+#define ROM_SIZE KB(8192*4)
+#else /* CONFIG_BOARD_SECURE_IOT */
+#define ROM_BASE CONFIG_SRAM_BASE_ADDRESS
+#define ROM_SIZE KB(CONFIG_SRAM_SIZE)
+#endif
+
+
 
 #define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
 #define RAM_SIZE KB(CONFIG_SRAM_SIZE)
 
 #ifdef CONFIG_RISCV_PMP
-	#define MPU_MIN_SIZE 4
+	#define MPU_MIN_SIZE CONFIG_PMP_GRANULARITY
 	#define MPU_MIN_SIZE_ALIGN . = ALIGN(MPU_MIN_SIZE);
 	#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
 		#define MPU_ALIGN(region_size) \
@@ -305,11 +320,6 @@ SECTIONS
 
     __data_region_end = .;
 
-    MPU_MIN_SIZE_ALIGN
-
-     _image_ram_end = .;
-     _end = .; /* end of image */
-
 	__kernel_ram_end = .;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
@@ -370,7 +380,11 @@ GROUP_END(DTCM)
  */
 #include <snippets-sections.ld>
 
-     GROUP_END(RAMABLE_REGION)
+#define LAST_RAM_ALIGN MPU_MIN_SIZE_ALIGN
+
+#include <zephyr/linker/ram-end.ld>
+
+    GROUP_END(RAMABLE_REGION)
 
 #include <zephyr/linker/debug-sections.ld>
 

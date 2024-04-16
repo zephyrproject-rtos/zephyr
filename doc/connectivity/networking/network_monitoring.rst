@@ -13,7 +13,7 @@ Zephyr. This page describes how to set up a way to capture network traffic so
 that user is able to use Wireshark or similar tool in remote host to see the
 network packets sent or received by a Zephyr device.
 
-See also the :ref:`net-capture-sample` sample application from the Zephyr
+See also the :zephyr:code-sample:`net-capture` sample application from the Zephyr
 source distribution for configuration options that need to be enabled.
 
 Host Configuration

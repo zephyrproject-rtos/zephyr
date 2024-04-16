@@ -16,3 +16,4 @@ supported:
 testing:
   ignore_tags:
     - bluetooth
+vendor: silabs

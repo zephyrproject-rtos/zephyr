@@ -18,19 +18,19 @@ target_include_directories(app PRIVATE
 			   ${CMAKE_CURRENT_SOURCE_DIR}/../common/include)
 
 zephyr_library_include_directories(
-    $ENV{ZEPHYR_BASE}/subsys/bluetooth/
-    $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/
-    $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw
+    ${ZEPHYR_BASE}/subsys/bluetooth/
+    ${ZEPHYR_BASE}/subsys/bluetooth/controller/
+    ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw
 )
 
 if(CONFIG_SOC_COMPATIBLE_NRF)
   zephyr_library_include_directories(
-    $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic
-    $ENV{ZEPHYR_BASE}/subsys/bluetooth/hci/nordic
+    ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic
+    ${ZEPHYR_BASE}/subsys/bluetooth/hci/nordic
   )
 elseif(CONFIG_SOC_OPENISA_RV32M1_RISCV32)
   zephyr_library_include_directories(
-    $ENV{ZEPHYR_BASE}/bluetooth/controller/ll_sw/openisa
-    $ENV{ZEPHYR_BASE}/bluetooth/hci/openisa
+    ${ZEPHYR_BASE}/bluetooth/controller/ll_sw/openisa
+    ${ZEPHYR_BASE}/bluetooth/hci/openisa
   )
 endif()

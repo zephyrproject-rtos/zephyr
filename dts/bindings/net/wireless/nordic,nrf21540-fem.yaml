@@ -67,72 +67,72 @@ compatible: "nordic,nrf21540-fem"
 include: base.yaml
 
 properties:
-    tx-en-gpios:
-        type: phandle-array
-        description: |
-            GPIO of the SOC controlling TX_EN pin of the nRF21540
-    rx-en-gpios:
-        type: phandle-array
-        description: |
-            GPIO of the SOC controlling RX_EN pin of the nRF21540
-    pdn-gpios:
-        type: phandle-array
-        description: |
-            GPIO of the SOC controlling PDN pin of the nRF21540
-    ant-sel-gpios:
-        type: phandle-array
-        description: |
-            GPIO of the SOC controlling ANT-SEL pin of the nRF21540
-    mode-gpios:
-        type: phandle-array
-        description: |
-            GPIO of the SOC controlling MODE pin of the nRF21540
-    spi-if:
-        type: phandle
-        description: |
-            Reference to the nordic,nrf21540-fem-spi SPI bus interface.
+  tx-en-gpios:
+    type: phandle-array
+    description: |
+        GPIO of the SOC controlling TX_EN pin of the nRF21540
+  rx-en-gpios:
+    type: phandle-array
+    description: |
+        GPIO of the SOC controlling RX_EN pin of the nRF21540
+  pdn-gpios:
+    type: phandle-array
+    description: |
+        GPIO of the SOC controlling PDN pin of the nRF21540
+  ant-sel-gpios:
+    type: phandle-array
+    description: |
+        GPIO of the SOC controlling ANT-SEL pin of the nRF21540
+  mode-gpios:
+    type: phandle-array
+    description: |
+        GPIO of the SOC controlling MODE pin of the nRF21540
+  spi-if:
+    type: phandle
+    description: |
+        Reference to the nordic,nrf21540-fem-spi SPI bus interface.
 
-            This must be present to support SPI control of the FEM.
-    tx-en-settle-time-us:
-        type: int
-        default: 11
-        description: |
-            Settling time in microseconds from state PG to TX.
+        This must be present to support SPI control of the FEM.
+  tx-en-settle-time-us:
+    type: int
+    default: 11
+    description: |
+        Settling time in microseconds from state PG to TX.
 
-            Default value is based on Table 6 of the nRF21540 Product
-            Specification (v1.0), and can be overridden for tuned
-            configurations.
-    rx-en-settle-time-us:
-        type: int
-        default: 11
-        description: |
-            Settling time in microseconds from state PG to RX.
+        Default value is based on Table 6 of the nRF21540 Product
+        Specification (v1.0), and can be overridden for tuned
+        configurations.
+  rx-en-settle-time-us:
+    type: int
+    default: 11
+    description: |
+        Settling time in microseconds from state PG to RX.
 
-            Default value is based on Table 6 of the nRF21540 Product
-            Specification (v1.0), and can be overridden for tuned
-            configurations.
-    pdn-settle-time-us:
-        type: int
-        default: 18
-        description: |
-            Settling time in microseconds from state PD to PG.
+        Default value is based on Table 6 of the nRF21540 Product
+        Specification (v1.0), and can be overridden for tuned
+        configurations.
+  pdn-settle-time-us:
+    type: int
+    default: 18
+    description: |
+        Settling time in microseconds from state PD to PG.
 
-            Default value is based on Table 6 of the nRF21540 Product
-            Specification (v1.0), and can be overridden for tuned
-            configurations.
-    trx-hold-time-us:
-        type: int
-        default: 3
-        description: |
-            Power-off time in microseconds when changing from RX or TX to PG.
+        Default value is based on Table 6 of the nRF21540 Product
+        Specification (v1.0), and can be overridden for tuned
+        configurations.
+  trx-hold-time-us:
+    type: int
+    default: 3
+    description: |
+        Power-off time in microseconds when changing from RX or TX to PG.
 
-            Default value is based on Table 6 of the nRF21540 Product
-            Specification (v1.0), and can be overridden for tuned
-            configurations.
-    supply-voltage-mv:
-        type: int
-        description: |
-            nRF21540 supply voltage in mV.
+        Default value is based on Table 6 of the nRF21540 Product
+        Specification (v1.0), and can be overridden for tuned
+        configurations.
+  supply-voltage-mv:
+    type: int
+    description: |
+        nRF21540 supply voltage in mV.
 
-            This is used if compensation for nRF21540 supply voltage is supported
-            by software.
+        This is used if compensation for nRF21540 supply voltage is supported
+        by software.

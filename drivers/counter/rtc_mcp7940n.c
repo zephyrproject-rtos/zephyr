@@ -306,9 +306,7 @@ static int set_day_of_week(const struct device *dev, time_t *unix_time)
 	struct tm time_buffer = { 0 };
 	int rc = 0;
 
-	gmtime_r(unix_time, &time_buffer);
-
-	if (time_buffer.tm_wday != 0) {
+	if (gmtime_r(unix_time, &time_buffer) != NULL) {
 		data->registers.rtc_weekday.weekday = time_buffer.tm_wday;
 		rc = write_register(dev, REG_RTC_WDAY,
 			*((uint8_t *)(&data->registers.rtc_weekday)));
@@ -691,7 +689,7 @@ static int mcp7940n_init(const struct device *dev)
 	/* Configure alarm interrupt gpio */
 	if (cfg->int_gpios.port != NULL) {
 
-		if (!device_is_ready(cfg->int_gpios.port)) {
+		if (!gpio_is_ready_dt(&cfg->int_gpios)) {
 			LOG_ERR("Port device %s is not ready",
 				cfg->int_gpios.port->name);
 			rc = -ENODEV;

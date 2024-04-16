@@ -1,0 +1,48 @@
+# M5Stack Core2 board configuration
+# Copyright (c) 2022 AVSystem Sławomir Wolf Sp.j. (AVSystem)
+# Copyright (c) 2023 Martin Kiepfer <m.kiepfer@teleschirm.org>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_M5STACK_CORE2
+
+config BOARD
+	default "m5stack_core2"
+	depends on BOARD_M5STACK_CORE2
+
+config ENTROPY_GENERATOR
+	default y
+
+config HEAP_MEM_POOL_SIZE
+	default 98304 if WIFI
+	default 65536 if BT
+	default 4096
+
+config KERNEL_MEM_POOL
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32 if BT
+endchoice
+
+config MFD_INIT_PRIORITY
+	default 60
+
+config REGULATOR_AXP192_INIT_PRIORITY
+	default 76
+
+config GPIO_AXP192_INIT_PRIORITY
+	default 80
+
+config GPIO_HOGS_INIT_PRIORITY
+	default 81
+
+config INPUT_FT5336_INTERRUPT
+	default y if INPUT
+
+config INPUT
+	default y
+
+config LV_COLOR_16_SWAP
+	default y if LVGL
+
+endif # BOARD_M5STACK_CORE2

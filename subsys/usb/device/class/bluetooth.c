@@ -296,7 +296,7 @@ static void acl_read_cb(uint8_t ep, int size, void *priv)
 
 restart_out_transfer:
 	usb_transfer(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr, ep_out_buf,
-		     sizeof(ep_out_buf), USB_TRANS_READ | USB_TRANS_NO_ZLP,
+		     sizeof(ep_out_buf), USB_TRANS_READ,
 		     acl_read_cb, NULL);
 }
 
@@ -340,11 +340,6 @@ static void bluetooth_status_cb(struct usb_cfg_data *cfg,
 		tmp = atomic_clear(&suspended);
 		if (tmp) {
 			LOG_DBG("Device resumed from suspend");
-			if (configured) {
-				/* Start reading */
-				acl_read_cb(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr,
-					    0, NULL);
-			}
 		} else {
 			LOG_DBG("Spurious resume event");
 		}
@@ -454,7 +449,7 @@ USBD_DEFINE_CFG_DATA(bluetooth_config) = {
 	.endpoint = bluetooth_ep_data,
 };
 
-static int bluetooth_init(const struct device *dev)
+static int bluetooth_init(void)
 {
 	int ret;
 

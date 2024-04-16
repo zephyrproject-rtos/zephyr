@@ -1,0 +1,44 @@
+# Copyright (c) 2022, HAW Hamburg FTZ-DIWIP
+# SPDX-License-Identifier: Apache-2.0
+
+
+description: |
+  Maxim MAX31865 SPI RTD-to-Digital Converter Temperature Sensor.
+  Find the datasheet here:
+  https://datasheets.maximintegrated.com/en/ds/MAX31865.pdf
+
+compatible: "maxim,max31865"
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  resistance-at-zero:
+    type: int
+    required: true
+    description: Sensor resistance in ohms at 0 Celsius (100 ohms for PT100, 1000 ohms for PT1000)
+
+  resistance-reference:
+    type: int
+    required: true
+    description: Circuit reference resistance in ohms (recommended on MAX31865 datasheet 400 ohms
+      for PT100, 4000 ohms for PT1000, the Adafruit boards use 430 ohms and 4300 ohms)
+
+  low-threshold:
+    type: int
+    default: 0
+    description: Low fault threshold (ADC CODE, 15-bit value, unit-free, default value is the
+      minimum value)
+
+  high-threshold:
+    type: int
+    default: 32767
+    description: High fault threshold (ADC CODE, 15-bit value, unit-free, default value is the
+      maximum value)
+
+  maxim,3-wire:
+    type: boolean
+    description: 3-wire enabled (@a true) or 2-wire/4-wire (@a false)
+
+  filter-50hz:
+    type: boolean
+    description: 50 Hz filter enabled (@a true) or 60 Hz filter enabled (@a false)

@@ -465,10 +465,10 @@ ZTEST(prf, test_d_length)
 	PRF_CHECK("3060399406/1876543210", rc);
 
 	if (!IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TEST_PRF(&rc, "%hd/%hd", min, max);
+		TEST_PRF(&rc, "%hd/%hd", (short) min, (short) max);
 		PRF_CHECK("-722/-14614", rc);
 
-		TEST_PRF(&rc, "%hhd/%hhd", min, max);
+		TEST_PRF(&rc, "%hhd/%hhd", (char) min, (char) max);
 		PRF_CHECK("46/-22", rc);
 	}
 
@@ -601,10 +601,10 @@ ZTEST(prf, test_x_length)
 		return;
 	}
 
-	TEST_PRF(&rc, "%hx/%hX", min, max);
+	TEST_PRF(&rc, "%hx/%hX", (short) min, (short) max);
 	PRF_CHECK("2c1c/2D1D", rc);
 
-	TEST_PRF(&rc, "%hhx/%hhX", min, max);
+	TEST_PRF(&rc, "%hhx/%hhX", (char) min, (char) max);
 	PRF_CHECK("1c/1D", rc);
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)) {

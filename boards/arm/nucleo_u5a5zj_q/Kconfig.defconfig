@@ -1,0 +1,11 @@
+# STM32U5A5ZJ Q Nucleo board configuration
+
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_U5A5ZJ_Q
+
+config BOARD
+	default "nucleo_u5a5zj_q"
+
+endif # BOARD_NUCLEO_U5A5ZJ_Q

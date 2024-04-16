@@ -37,7 +37,7 @@ on any sensors.
 The reference kernel application can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/modules/tensorflow/hello_world
+   :zephyr-app: samples/modules/tflite-micro/hello_world
    :host-os: unix
    :board: qemu_x86
    :goals: run
@@ -93,7 +93,7 @@ TensorFlow, you must enable the below Kconfig options in your :file:`prj.conf`:
 
 .. code-block:: kconfig
 
-    CONFIG_CPLUSPLUS=y
+    CONFIG_CPP=y
     CONFIG_NEWLIB_LIBC=y
     CONFIG_TENSORFLOW_LITE_MICRO=y
 

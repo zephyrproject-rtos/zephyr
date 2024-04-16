@@ -1,0 +1,17 @@
+# Infineon XMC4700 relax kit platform configuration options
+#
+# Copyright (c) 2023 Schlumberger
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_XMC4700
+
+config SOC
+	default "XMC4700"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 144000000
+
+config NUM_IRQS
+	default 112
+
+endif # SOC_XMC4700

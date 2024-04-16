@@ -30,7 +30,7 @@ config UART_NS16550_DRV_CMD
 
 	  Says n if not sure.
 
-choice
+choice UART_NS16550_VARIANT
 	prompt "UART variant"
 	default UART_NS16550_VARIANT_NS16550
 	help
@@ -60,11 +60,22 @@ config UART_NS16550_ACCESS_WORD_ONLY
 	  16550 (DesignWare UART) only allows word access, byte access will raise
 	  exception.
 
-config UART_NS16550_ACCESS_IOPORT
-	bool
+config UART_NS16550_PARENT_INIT_LEVEL
+	bool "Boot level based on parent node"
+	default y if ACPI
 	help
-	  When enabled, NS16550 will not be a memory mapped device. This option
-	  must be selected at SoC/board level if needed.
+	  Boot level based on parent node (PCI or no PCI device). Some platforms the
+	  PCI bus driver depends on ACPI sub system to retrieve platform information
+	  such as interrupt routing information. But ACPI sub system currently support
+	  only post kernel and hence such platforms the UART driver instance init
+	  should be invoked only post kernel in case parent node is PCI.
+
+config UART_NS16550_TI_K3
+	bool "Add support for NS16550 variant specific to TI K3 SoCs"
+	help
+	  Enabling this configuration allows the users to use the UART port in
+	  Texas Instruments K3 SoCs by enabling a vendor specific extended register
+	  set.
 
 menu "NS16550 Workarounds"
 

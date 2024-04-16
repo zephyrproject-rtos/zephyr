@@ -10,6 +10,7 @@ supported:
   - i2c
   - lptim
   - pwm
+  - counter
   - watchdog
   - dac
   - adc
@@ -23,3 +24,4 @@ supported:
   - nvs
 ram: 192
 flash: 512
+vendor: st

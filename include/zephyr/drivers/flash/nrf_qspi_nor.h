@@ -12,24 +12,24 @@ extern "C" {
 #endif
 
 /**
- * @brief Specifies whether the QSPI base clock divider should be kept set
- *        when the driver is idle
+ * @brief Specifies whether XIP (execute in place) operation should be possible
  *
- * On nRF53 Series SoCs, it is necessary to change the default base clock
- * divider to achieve the highest possible SCK frequencies. This divider
- * should be changed only for periods when it is actually needed, as such
- * configuration significantly increases power consumption, so the driver
- * normally does this only when it performs an operation on the QSPI bus.
- * But when XIP accesses to the flash chip are also used, and the driver
- * is not aware of those, it may be necessary for the divider to be kept
- * changed also when the driver is idle. This function allows forcing this.
+ * Normally, the driver deactivates the QSPI peripheral for periods when
+ * no QSPI operation is performed. This is done to avoid increased current
+ * consumption when the peripheral is idle. For the same reason, the base
+ * clock on nRF53 Series SoCs (HFCLK192M) is configured for those periods
+ * with the default /4 divider that cannot be used otherwise. However, when
+ * XIP accesses are used, the driver must be prevented from doing both these
+ * things as that would make XIP to fail. Hence, the application should use
+ * this function to signal to the driver that XIP accesses are expected to
+ * occur so that it keeps the QSPI peripheral operable. When XIP operation
+ * is no longer needed, it should be disabled with this function.
  *
  * @param dev   flash device
- * @param force if true, forces the base clock divider to be kept set even
- *              when the driver is idle
+ * @param enable if true, the driver enables XIP operation and suppresses
+ *               idle actions that would make XIP to fail
  */
-__syscall void nrf_qspi_nor_base_clock_div_force(const struct device *dev,
-						 bool force);
+__syscall void nrf_qspi_nor_xip_enable(const struct device *dev, bool enable);
 
 #ifdef __cplusplus
 }

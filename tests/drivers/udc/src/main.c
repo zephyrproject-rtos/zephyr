@@ -41,7 +41,7 @@ static void event_ep_request(const struct device *dev, struct udc_event event)
 	err = udc_ep_buf_free(dev, event.buf);
 	zassert_ok(err, "Failed to free request buffer");
 
-	if (event.status == -ECONNABORTED && bi->ep == last_used_ep) {
+	if (bi->err == -ECONNABORTED && bi->ep == last_used_ep) {
 		k_sem_give(&ep_queue_sem);
 	}
 }
@@ -94,6 +94,15 @@ static void test_udc_ep_try_config(const struct device *dev,
 				ed->bmAttributes, &mps,
 				ed->bInterval);
 	zassert_equal(err, 0, "Failed to test endpoint configuration");
+
+	if (ed->bmAttributes == USB_EP_TYPE_CONTROL ||
+	    ed->bmAttributes == USB_EP_TYPE_ISO) {
+		/*
+		 * Skip subsequent test since udc_ep_try_config() does not
+		 * update mps argument for control and iso endpoints.
+		 */
+		return;
+	}
 
 	mps = 0;
 	err = udc_ep_try_config(dev, ed->bEndpointAddress,

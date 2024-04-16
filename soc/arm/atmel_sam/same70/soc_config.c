@@ -20,7 +20,7 @@
  *
  * @return 0
  */
-static int atmel_same70_config(const struct device *dev)
+static int atmel_same70_config(void)
 {
 #ifdef CONFIG_SOC_ATMEL_SAME70_DISABLE_ERASE_PIN
 	/* Disable ERASE function on PB12 pin, this is controlled by Bus Matrix */

@@ -1,0 +1,43 @@
+# NPCX Keyboard scan driver configuration options
+
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INPUT_NPCX_KBD
+	bool "Nuvoton NPCX embedded controller (EC) keyboard scan driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_KBD_ENABLED
+	select MULTITHREADING
+	help
+	  This option enables the keyboard scan driver for NPCX family of
+	  processors.
+
+if  INPUT_NPCX_KBD
+
+config INPUT_NPCX_KBD_POLL_PERIOD_MS
+	int "Keyscan NPCX Poll Period"
+	default 5
+	help
+	  Defines the poll period in msecs between between matrix scans.
+
+config INPUT_NPCX_KBD_KSO_HIGH_DRIVE
+	bool "Select quasi-bidirectional buffers for KSO pins"
+	default y
+	help
+	  Select quasi-bidirectional buffers for KSO pins to reduce the
+	  low-to-high transition time.
+
+config INPUT_NPCX_KBD_POLL_COL_OUTPUT_SETTLE_TIME_US
+	int "keyboard matrix poll column output settle time"
+	default 50
+	help
+	  Delay (us) between setting column output and waiting for it
+	  to settle
+
+config INPUT_NPCX_KBD_THREAD_STACK_SIZE
+	int "Stack size for the kscan thread"
+	default 1024
+	help
+	  Size of the stack used for the kscan thread.
+
+endif # INPUT_NPCX_KBD

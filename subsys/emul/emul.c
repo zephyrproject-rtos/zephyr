@@ -11,13 +11,12 @@ LOG_MODULE_REGISTER(emul);
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <string.h>
 
 const struct emul *emul_get_binding(const char *name)
 {
-	const struct emul *emul_it;
-
-	for (emul_it = __emul_list_start; emul_it < __emul_list_end; emul_it++) {
+	STRUCT_SECTION_FOREACH(emul, emul_it) {
 		if (strcmp(emul_it->dev->name, name) == 0) {
 			return emul_it;
 		}
@@ -41,7 +40,10 @@ int emul_init_for_bus(const struct device *dev)
 	for (elp = cfg->children; elp < end; elp++) {
 		const struct emul *emul = emul_get_binding(elp->dev->name);
 
-		__ASSERT(emul, "Cannot find emulator for '%s'", elp->dev->name);
+		if (!emul) {
+			LOG_WRN("Cannot find emulator for '%s'", elp->dev->name);
+			continue;
+		}
 
 		switch (emul->bus_type) {
 		case EMUL_BUS_TYPE_I2C:

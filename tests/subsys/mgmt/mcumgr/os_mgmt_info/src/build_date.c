@@ -246,14 +246,6 @@ ZTEST(os_mgmt_info_build_date, test_info_build_date_2_all)
 		       abs(expected_time_seconds - received_time_seconds));
 }
 
-static void *setup_tests(void)
-{
-	/* Register os_mgmt mcumgr group */
-	os_mgmt_register_group();
-
-	return NULL;
-}
-
 static void cleanup_test(void *p)
 {
 	if (nb != NULL) {
@@ -263,6 +255,6 @@ static void cleanup_test(void *p)
 }
 
 /* Build date/time test set */
-ZTEST_SUITE(os_mgmt_info_build_date, NULL, setup_tests, NULL, cleanup_test, NULL);
+ZTEST_SUITE(os_mgmt_info_build_date, NULL, NULL, NULL, cleanup_test, NULL);
 
 #endif

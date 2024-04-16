@@ -14,3 +14,4 @@ supported:
   - arduino_i2c
   - gpio
   - i2c
+vendor: sifive

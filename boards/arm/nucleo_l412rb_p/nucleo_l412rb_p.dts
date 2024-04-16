@@ -8,6 +8,7 @@
 #include <st/l4/stm32l412XB.dtsi>
 #include <st/l4/stm32l412rbtx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32L412RB-P-NUCLEO board";
@@ -20,7 +21,7 @@
 		zephyr,flash = &flash0;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led: led_0 {
 			gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
@@ -33,12 +34,15 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -113,6 +117,8 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in5_pa0>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
 	status = "okay";
 };
 
@@ -134,4 +140,12 @@
 			reg = <0x0001c276 DT_SIZE_K(16)>;
 		};
 	};
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
 };

@@ -124,6 +124,8 @@ struct socketcan_filter {
 	socketcan_id_t can_id;
 	/** The mask applied to @a can_id for matching. */
 	socketcan_id_t can_mask;
+	/** Additional flags for FD frame filter. */
+	uint8_t flags;
 };
 
 /** @} */

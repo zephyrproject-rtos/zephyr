@@ -106,7 +106,7 @@ struct tcpc_chip_info {
 	/** Device Id */
 	uint16_t device_id;
 	/** Firmware version number */
-	uint64_t fw_verion_number;
+	uint64_t fw_version_number;
 
 	union {
 		/** Minimum Required firmware version string */
@@ -177,7 +177,7 @@ static inline int tcpc_is_cc_rp(enum tc_cc_voltage_state cc)
 static inline int tcpc_is_cc_open(enum tc_cc_voltage_state cc1,
 				  enum tc_cc_voltage_state cc2)
 {
-	return cc1 == TC_CC_VOLT_OPEN && cc2 == TC_CC_VOLT_OPEN;
+	return (cc1 < TC_CC_VOLT_RD) && (cc2 < TC_CC_VOLT_RD);
 }
 
 /**

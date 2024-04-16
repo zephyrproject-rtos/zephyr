@@ -7,6 +7,7 @@
 
 #include <gigadevice/gd32e10x/gd32e103vbt6.dtsi>
 #include "gd32e103v_eval-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "GigaDevice gd32e103v Evaluation Kit";
@@ -45,14 +46,17 @@
 		wakeup_key: wakeup_key {
 			label = "WAKEUP_KEY";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_WAKEUP>;
 		};
 		tamper_key: tamper_key {
 			label = "TAMPER_KEY";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		user_key: user_key {
 			label = "USER_KEY1";
 			gpios = <&gpiob 14 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 

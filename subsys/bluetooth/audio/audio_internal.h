@@ -9,6 +9,8 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/audio.h>
 
+#define BT_AUDIO_NOTIFY_RETRY_DELAY_US ((CONFIG_BT_AUDIO_NOTIFY_RETRY_DELAY) * 1250U)
+
 /** @brief LE Audio Attribute User Data. */
 struct bt_audio_attr_user_data {
 	/** Attribute read callback */
@@ -58,3 +60,15 @@ ssize_t bt_audio_ccc_cfg_write(struct bt_conn *conn, const struct bt_gatt_attr *
 	BT_GATT_CCC_MANAGED(((struct _bt_gatt_ccc[])					\
 		{BT_GATT_CCC_INITIALIZER(_changed, bt_audio_ccc_cfg_write, NULL)}),	\
 		(BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT))
+
+static inline const char *bt_audio_dir_str(enum bt_audio_dir dir)
+{
+	switch (dir) {
+	case BT_AUDIO_DIR_SINK:
+		return "sink";
+	case BT_AUDIO_DIR_SOURCE:
+		return "source";
+	}
+
+	return "Unknown";
+}

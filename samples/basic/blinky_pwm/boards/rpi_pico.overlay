@@ -4,6 +4,6 @@
 
 &pwm {
 	status = "okay";
-	divider-frac-4 = <255>;
+	divider-frac-4 = <15>;
 	divider-int-4 = <255>;
 };

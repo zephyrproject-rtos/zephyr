@@ -15,6 +15,11 @@ west-commands:
       - name: build
         class: Build
         help: compile a Zephyr application
+  - file: scripts/west_commands/twister_cmd.py
+    commands:
+      - name: twister
+        class: Twister
+        help: west twister wrapper
   - file: scripts/west_commands/sign.py
     commands:
       - name: sign
@@ -51,3 +56,8 @@ west-commands:
       - name: blobs
         class: Blobs
         help: work with binary blobs
+  - file: scripts/west_commands/bindesc.py
+    commands:
+      - name: bindesc
+        class: Bindesc
+        help: work with Binary Descriptors

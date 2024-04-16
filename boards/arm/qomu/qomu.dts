@@ -6,6 +6,8 @@
 
 /dts-v1/;
 #include <quicklogic/quicklogic_eos_s3.dtsi>
+#include <zephyr/dt-bindings/pinctrl/quicklogic-eos-s3-pinctrl.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "QuickLogic Qomu board";
@@ -48,11 +50,41 @@
 		button0: button_0 {
 			gpios = <&gpio 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
 	fpga0: fpga {
 		status = "okay";
+	};
+};
+
+&pinctrl {
+	uart1_rx_default: uart1_rx_default {
+		pinmux = <UART_RX_PAD45>;
+		input-enable;
+	};
+	uart1_tx_default: uart1_tx_default {
+		pinmux = <UART_TX_PAD44>;
+		output-enable;
+	};
+	usb_pu_default: usb_pu_default {
+		pinmux = <USB_PU_CTRL_PAD23>;
+		bias-high-impedance;
+		quicklogic,control-selection = "fabric";
+		output-enable;
+	};
+	usb_dn_default: usb_dn_default {
+		pinmux = <USB_DN_PAD28>;
+		bias-high-impedance;
+		quicklogic,control-selection = "fabric";
+		output-enable;
+	};
+	usb_dp_default: usb_dp_default {
+		pinmux = <USB_DP_PAD31>;
+		bias-high-impedance;
+		quicklogic,control-selection = "fabric";
+		output-enable;
 	};
 };
 
@@ -71,4 +103,7 @@
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&uart1_rx_default &uart1_tx_default
+		     &usb_pu_default &usb_dn_default &usb_dp_default>;
+	pinctrl-names = "default";
 };

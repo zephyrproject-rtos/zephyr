@@ -44,6 +44,10 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	mov	x2, sp
 	mov	sp, x1
 	str	x2, [sp, #-16]!
+#if defined(CONFIG_ARM64_SAFE_EXCEPTION_STACK)
+	sub	x1, x1, #CONFIG_ISR_STACK_SIZE
+	str	x1, [x0, #_cpu_offset_to_current_stack_limit]
+#endif
 1:
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	bl	z_sched_usage_stop
@@ -122,6 +126,12 @@ z_arm64_irq_done:
 
 	/* retrieve pointer to the current thread */
 	ldr	x1, [x0, #___cpu_t_current_OFFSET]
+
+#if defined(CONFIG_ARM64_SAFE_EXCEPTION_STACK)
+	/* arch_curr_cpu()->arch.current_stack_limit = thread->arch.stack_limit */
+	ldr	x2, [x1, #_thread_offset_to_stack_limit]
+	str	x2, [x0, #_cpu_offset_to_current_stack_limit]
+#endif
 
 	/*
 	 * Get next thread to schedule with z_get_next_switch_handle().

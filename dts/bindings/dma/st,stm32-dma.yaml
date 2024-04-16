@@ -16,21 +16,21 @@ compatible: "st,stm32-dma"
 include: dma-controller.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    st,mem2mem:
-      type: boolean
-      description: If the DMA controller V1 supports memory to memory transfer
+  st,mem2mem:
+    type: boolean
+    description: If the DMA controller V1 supports memory to memory transfer
 
-    dma-offset:
-      type: int
-      description: |
-        offset in the table of channels when mapping to a DMAMUX
-        for 1st dma instance, offset is 0,
-        for 2nd dma instance, offset is the nb of dma channels of the 1st dma,
-        for 3rd dma instance, offset is the nb of dma channels of the 2nd dma
-        plus the nb of dma channels of the 1st dma instance, etc.
+  dma-offset:
+    type: int
+    description: |
+      offset in the table of channels when mapping to a DMAMUX
+      for 1st dma instance, offset is 0,
+      for 2nd dma instance, offset is the nb of dma channels of the 1st dma,
+      for 3rd dma instance, offset is the nb of dma channels of the 2nd dma
+      plus the nb of dma channels of the 1st dma instance, etc.

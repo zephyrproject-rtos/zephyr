@@ -1,9 +1,12 @@
 sample:
-    name: MBOX IPC sample
+  name: MBOX IPC sample
 tests:
-    sample.drivers.mbox:
-        platform_allow: nrf5340dk_nrf5340_cpuapp
-        integration_platforms:
-          - nrf5340dk_nrf5340_cpuapp
-        tags: mbox
-        harness: remote
+  sample.drivers.mbox:
+    platform_allow:
+      - nrf5340dk_nrf5340_cpuapp
+      - adp_xc7k_ae350
+      - mimxrt595_evk_cm33
+    integration_platforms:
+      - nrf5340dk_nrf5340_cpuapp
+    tags: mbox
+    harness: remote

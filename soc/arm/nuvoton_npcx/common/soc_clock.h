@@ -44,22 +44,35 @@ struct npcx_clk_cfg {
 #define APB3DIV_VAL (DT_PROP(DT_NODELABEL(pcc), apb3_prescaler) - 1)
 /* APB4 clock divider if supported */
 #if DT_NODE_HAS_PROP(DT_NODELABEL(pcc), apb4_prescaler)
-#if defined(CONFIG_SOC_SERIES_NPCX9)
+#if !defined(CONFIG_SOC_SERIES_NPCX7) /* Supported in NPCX9 and later series */
 #define APB4DIV_VAL (DT_PROP(DT_NODELABEL(pcc), apb4_prescaler) - 1)
 #else
 #error "APB4 clock divider is not supported but defined in pcc node!"
+#endif /* !CONFIG_SOC_SERIES_NPCX7 */
 #endif
-#endif
+
+/* Construct a uint8_t array from 'pwdwn-ctl-val' prop for PWDWN_CTL initialization. */
+#define NPCX_PWDWN_CTL_ITEMS_INIT(node, prop, idx) DT_PROP_BY_IDX(node, prop, idx),
+#define NPCX_PWDWN_CTL_INIT DT_FOREACH_PROP_ELEM(DT_NODELABEL(pcc), \
+				pwdwn_ctl_val, NPCX_PWDWN_CTL_ITEMS_INIT)
 
 /*
  * NPCX7 and later series clock tree macros:
  * (Please refer Figure 58. for more information.)
  *
- * Suggestion:
- * - OFMCLK > 50MHz, XF_RANGE should be 1, else 0.
- * - CORE_CLK > 50MHz, AHB6DIV should be 1, else 0.
- * - CORE_CLK > 50MHz, FIUDIV should be 1, else 0.
+ * Maximum OFMCLK in npcx7/9 series is 100MHz,
+ * Maximum OFMCLK in npcx4 series is 120MHz,
+ *
+ * Suggestion for npcx series:
+ * - OFMCLK   > MAX_OFMCLK/2, XF_RANGE should be 1, else 0.
+ * - CORE_CLK > MAX_OFMCLK/2, AHB6DIV should be 1, else 0.
+ * - CORE_CLK > MAX_OFMCLK/2, FIUDIV should be 1, else 0.
  */
+#if defined(CONFIG_SOC_SERIES_NPCX4)
+#define MAX_OFMCLK 120000000
+#else
+#define MAX_OFMCLK 100000000
+#endif /* CONFIG_SOC_SERIES_NPCX4 */
 
 /* Core domain clock */
 #define CORE_CLK (OFMCLK / DT_PROP(DT_NODELABEL(pcc), core_prescaler))
@@ -67,8 +80,8 @@ struct npcx_clk_cfg {
 #define LFCLK 32768
 
 /* FMUL clock */
-#if (OFMCLK > 50000000)
-#define FMCLK (OFMCLK / 2) /* FMUL clock = OFMCLK/2 if OFMCLK > 50MHz */
+#if (OFMCLK > (MAX_OFMCLK / 2))
+#define FMCLK (OFMCLK / 2) /* FMUL clock = OFMCLK/2 */
 #else
 #define FMCLK OFMCLK /* FMUL clock = OFMCLK */
 #endif
@@ -77,17 +90,26 @@ struct npcx_clk_cfg {
 #define APBSRC_CLK OFMCLK
 
 /* AHB6 clock */
-#if (CORE_CLK > 50000000)
-#define AHB6DIV_VAL 1 /* AHB6_CLK = CORE_CLK/2 if CORE_CLK > 50MHz */
+#if (CORE_CLK > (MAX_OFMCLK / 2))
+#define AHB6DIV_VAL 1 /* AHB6_CLK = CORE_CLK/2 */
 #else
 #define AHB6DIV_VAL 0 /* AHB6_CLK = CORE_CLK */
 #endif
+
 /* FIU clock divider */
-#if (CORE_CLK > 50000000)
+#if (CORE_CLK > (MAX_OFMCLK / 2))
 #define FIUDIV_VAL 1 /* FIU_CLK = CORE_CLK/2 */
 #else
 #define FIUDIV_VAL 0 /* FIU_CLK = CORE_CLK */
 #endif
+
+#if defined(CONFIG_SOC_SERIES_NPCX4)
+#if (CORE_CLK > (MAX_OFMCLK / 2))
+#define FIU1DIV_VAL 1 /* FIU1_CLK = CORE_CLK/2 */
+#else
+#define FIU1DIV_VAL 0 /* FIU1_CLK = CORE_CLK */
+#endif
+#endif /* CONFIG_SOC_SERIES_NPCX4 */
 
 /* Get APB clock freq */
 #define NPCX_APB_CLOCK(no) (APBSRC_CLK / (APB##no##DIV_VAL + 1))
@@ -96,12 +118,15 @@ struct npcx_clk_cfg {
  * Frequency multiplier M/N value definitions according to the requested
  * OFMCLK (Unit:Hz).
  */
-#if (OFMCLK > 50000000)
-#define HFCGN_VAL    0x82 /* Set XF_RANGE as 1 if OFMCLK > 50MHz */
+#if (OFMCLK > (MAX_OFMCLK / 2))
+#define HFCGN_VAL    0x82 /* Set XF_RANGE as 1 */
 #else
 #define HFCGN_VAL    0x02
 #endif
-#if   (OFMCLK == 100000000)
+#if   (OFMCLK == 120000000)
+#define HFCGMH_VAL   0x0E
+#define HFCGML_VAL   0x4E
+#elif (OFMCLK == 100000000)
 #define HFCGMH_VAL   0x0B
 #define HFCGML_VAL   0xEC
 #elif (OFMCLK == 96000000)
@@ -122,15 +147,23 @@ struct npcx_clk_cfg {
 #elif (OFMCLK == 48000000)
 #define HFCGMH_VAL   0x0B
 #define HFCGML_VAL   0x72
-#elif (OFMCLK == 40000000)
-#define HFCGMH_VAL   0x09
-#define HFCGML_VAL   0x89
-#elif (OFMCLK == 33000000)
-#define HFCGMH_VAL   0x07
-#define HFCGML_VAL   0xDE
 #else
 #error "Unsupported OFMCLK Frequency"
 #endif
+
+/* Clock prescaler configurations in different series */
+#define VAL_HFCGP   ((FPRED_VAL << 4) | AHB6DIV_VAL)
+#if defined(FIU1DIV_VAL)
+#define VAL_HFCBCD  ((FIU1DIV_VAL << 4) | (FIUDIV_VAL << 2))
+#else
+#define VAL_HFCBCD  (FIUDIV_VAL << 4)
+#endif /* FIU1DIV_VAL */
+#define VAL_HFCBCD1 (APB1DIV_VAL | (APB2DIV_VAL << 4))
+#if defined(APB4DIV_VAL)
+#define VAL_HFCBCD2 (APB3DIV_VAL | (APB4DIV_VAL << 4))
+#else
+#define VAL_HFCBCD2 APB3DIV_VAL
+#endif /* APB4DIV_VAL */
 
 /**
  * @brief Function to notify clock driver that backup the counter value of

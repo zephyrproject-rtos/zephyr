@@ -10,5 +10,6 @@ config UART_RV32M1_LPUART
 	depends on CLOCK_CONTROL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
 	help
 	  Enable the RV32M1 LPUART driver.

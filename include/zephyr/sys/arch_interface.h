@@ -52,16 +52,32 @@ typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
  */
 
 /**
- * Obtain the current cycle count, in units that are hardware-specific
+ * Obtain the current cycle count, in units specified by
+ * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC.  While this is historically
+ * specified as part of the architecture API, in practice virtually
+ * all platforms forward it to the sys_clock_cycle_get_32() API
+ * provided by the timer driver.
  *
  * @see k_cycle_get_32()
+ *
+ * @return The current cycle time.  This should count up monotonically
+ * through the full 32 bit space, wrapping at 0xffffffff.  Hardware
+ * with fewer bits of precision in the timer is expected to synthesize
+ * a 32 bit count.
  */
 static inline uint32_t arch_k_cycle_get_32(void);
 
 /**
- * Obtain the current cycle count, in units that are hardware-specific
+ * As for arch_k_cycle_get_32(), but with a 64 bit return value.  Not
+ * all timer hardware has a 64 bit timer, this needs to be implemented
+ * only if CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER is set.
  *
- * @see k_cycle_get_64()
+ * @see arch_k_cycle_get_32()
+ *
+ * @return The current cycle time.  This should count up monotonically
+ * through the full 64 bit space, wrapping at 2^64-1.  Hardware with
+ * fewer bits of precision in the timer is generally not expected to
+ * implement this API.
  */
 static inline uint64_t arch_k_cycle_get_64(void);
 
@@ -308,6 +324,24 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     const void *parameter, uint32_t flags);
 
 /**
+ * Arch-specific hook to dynamically uninstall a shared interrupt.
+ * If the interrupt is not being shared, then the associated
+ * _sw_isr_table entry will be replaced by (NULL, z_irq_spurious)
+ * (default entry).
+ *
+ * @param irq IRQ line number
+ * @param priority Interrupt priority
+ * @param routine Interrupt service routine
+ * @param parameter ISR parameter
+ * @param flags Arch-specific IRQ configuration flag
+ *
+ * @return 0 in case of success, negative value otherwise
+ */
+int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
+				void (*routine)(const void *parameter),
+				const void *parameter, uint32_t flags);
+
+/**
  * @def ARCH_IRQ_CONNECT(irq, pri, isr, arg, flags)
  *
  * @see IRQ_CONNECT()
@@ -496,7 +530,7 @@ static inline unsigned int arch_num_cpus(void);
  * should be enabled when invoking the system call marshallers from the
  * dispatch table. Thread preemption may occur when handling system calls.
  *
- * Call ids are untrusted and must be bounds-checked, as the value is used to
+ * Call IDs are untrusted and must be bounds-checked, as the value is used to
  * index the system call dispatch table, containing function pointers to the
  * specific system call code.
  *
@@ -607,7 +641,7 @@ static inline uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
 /**
  * Indicate whether we are currently running in user mode
  *
- * @return true if the CPU is currently running with user permissions
+ * @return True if the CPU is currently running with user permissions
  */
 static inline bool arch_is_user_context(void);
 
@@ -734,11 +768,11 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
  * if the supplied memory buffer spans multiple enabled memory management
  * regions (even if all such regions permit user access).
  *
- * @warning 0 size buffer has undefined behavior.
+ * @warning Buffer of size zero (0) has undefined behavior.
  *
  * @param addr start address of the buffer
  * @param size the size of the buffer
- * @param write If nonzero, additionally check if the area is writable.
+ * @param write If non-zero, additionally check if the area is writable.
  *	  Otherwise, just check if the memory can be read.
  *
  * @return nonzero if the permissions don't match.
@@ -753,10 +787,12 @@ int arch_buffer_validate(void *addr, size_t size, int write);
  * This call returns the optimal virtual address alignment in order to permit
  * such optimization in the following MMU mapping call.
  *
- * @param[in] phys Physical address of region to be mapped, aligned to MMU_PAGE_SIZE
- * @param[in] size Size of region to be mapped, aligned to MMU_PAGE_SIZE
+ * @param[in] phys Physical address of region to be mapped,
+ *                 aligned to @kconfig{CONFIG_MMU_PAGE_SIZE}
+ * @param[in] size Size of region to be mapped,
+ *                 aligned to @kconfig{CONFIG_MMU_PAGE_SIZE}
  *
- * @retval alignment to apply on the virtual address of this region
+ * @return Alignment to apply on the virtual address of this region
  */
 size_t arch_virt_region_align(uintptr_t phys, size_t size);
 
@@ -800,9 +836,9 @@ FUNC_NORETURN void arch_syscall_oops(void *ssf);
 /**
  * @brief Safely take the length of a potentially bad string
  *
- * This must not fault, instead the err parameter must have -1 written to it.
+ * This must not fault, instead the @p err parameter must have -1 written to it.
  * This function otherwise should work exactly like libc strnlen(). On success
- * *err should be set to 0.
+ * @p err should be set to 0.
  *
  * @param s String to measure
  * @param maxsize Max length of the string
@@ -864,15 +900,15 @@ static inline bool arch_mem_coherent(void *ptr)
  * is not sufficient on many architectures and coordination with the
  * arch_switch() implementation is likely required.
  *
- * @arg old_thread The old thread to be flushed before being allowed
- *                 to run on other CPUs.
- * @arg old_switch_handle The switch handle to be stored into
- *                        old_thread (it will not be valid until the
- *                        cache is flushed so is not present yet).
- *                        This will be NULL if inside z_swap()
- *                        (because the arch_switch() has not saved it
- *                        yet).
- * @arg new_thread The new thread to be invalidated before it runs locally.
+ * @param old_thread The old thread to be flushed before being allowed
+ *                   to run on other CPUs.
+ * @param old_switch_handle The switch handle to be stored into
+ *                          old_thread (it will not be valid until the
+ *                          cache is flushed so is not present yet).
+ *                          This will be NULL if inside z_swap()
+ *                          (because the arch_switch() has not saved it
+ *                          yet).
+ * @param new_thread The new thread to be invalidated before it runs locally.
  */
 #ifndef CONFIG_KERNEL_COHERENCE
 static inline void arch_cohere_stacks(struct k_thread *old_thread,
@@ -1012,236 +1048,6 @@ int arch_gdb_remove_breakpoint(struct gdb_ctx *ctx, uint8_t type,
 			       uintptr_t addr, uint32_t kind);
 
 #endif
-/** @} */
-
-/**
- * @defgroup arch_cache Architecture-specific cache functions
- * @ingroup arch-interface
- * @{
- */
-
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ARCH_CACHE)
-#if defined(CONFIG_DCACHE)
-
-/**
- * @brief Enable the d-cache
- *
- * Enable the data cache.
- */
-
-void arch_dcache_enable(void);
-
-/**
- * @brief Disable the d-cache
- *
- * Disable the data cache.
- */
-void arch_dcache_disable(void);
-
-/**
- * @brief Flush the d-cache
- *
- * Flush the whole data cache.
- *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
- */
-int arch_dcache_flush_all(void);
-
-/**
- * @brief Invalidate the d-cache
- *
- * Invalidate the whole data cache.
- *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
- */
-int arch_dcache_invd_all(void);
-
-/**
- * @brief Flush and Invalidate the d-cache
- *
- * Flush and Invalidate the whole data cache.
- *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
- */
-int arch_dcache_flush_and_invd_all(void);
-
-/**
- * @brief Flush an address range in the d-cache
- *
- * Flush the specified address range of the data cache.
- *
- * @param addr Starting address to flush.
- * @param size Range size.
- *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
- */
-int arch_dcache_flush_range(void *addr, size_t size);
-
-/**
- * @brief Invalidate an address range in the d-cache
- *
- * Invalidate the specified address range of the data cache.
- *
- * @param addr Starting address to invalidate.
- * @param size Range size.
- *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
- */
-int arch_dcache_invd_range(void *addr, size_t size);
-
-/**
- * @brief Flush and Invalidate an address range in the d-cache
- *
- * Flush and Invalidate the specified address range of the data cache.
- *
- * @param addr Starting address to flush and invalidate.
- * @param size Range size.
- *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
- */
-int arch_dcache_flush_and_invd_range(void *addr, size_t size);
-
-#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
-/**
- *
- * @brief Get the the d-cache line size.
- *
- * The API is provided to dynamically detect the data cache line size at run
- * time.
- *
- * The function must be implemented only when CONFIG_DCACHE_LINE_SIZE_DETECT is
- * defined.
- *
- * @retval size Size of the d-cache line.
- * @retval 0 If the d-cache is not enabled.
- */
-size_t arch_dcache_line_size_get(void);
-#endif /* CONFIG_DCACHE_LINE_SIZE_DETECT */
-
-#endif /* CONFIG_DCACHE */
-
-#if defined(CONFIG_ICACHE)
-/**
- * @brief Enable the i-cache
- *
- * Enable the instruction cache.
- */
-void arch_icache_enable(void);
-
-/**
- * @brief Disable the i-cache
- *
- * Disable the instruction cache.
- */
-void arch_icache_disable(void);
-
-/**
- * @brief Flush the i-cache
- *
- * Flush the whole instruction cache.
- *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
- */
-int arch_icache_flush_all(void);
-
-/**
- * @brief Invalidate the i-cache
- *
- * Invalidate the whole instruction cache.
- *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
- */
-int arch_icache_invd_all(void);
-
-/**
- * @brief Flush and Invalidate the i-cache
- *
- * Flush and Invalidate the whole instruction cache.
- *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
- */
-int arch_icache_flush_and_invd_all(void);
-
-/**
- * @brief Flush an address range in the i-cache
- *
- * Flush the specified address range of the instruction cache.
- *
- * @param addr Starting address to flush.
- * @param size Range size.
- *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
- */
-int arch_icache_flush_range(void *addr, size_t size);
-
-/**
- * @brief Invalidate an address range in the i-cache
- *
- * Invalidate the specified address range of the instruction cache.
- *
- * @param addr Starting address to invalidate.
- * @param size Range size.
- *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
- */
-int arch_icache_invd_range(void *addr, size_t size);
-
-/**
- * @brief Flush and Invalidate an address range in the i-cache
- *
- * Flush and Invalidate the specified address range of the instruction cache.
- *
- * @param addr Starting address to flush and invalidate.
- * @param size Range size.
- *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
- */
-int arch_icache_flush_and_invd_range(void *addr, size_t size);
-
-#if defined(CONFIG_ICACHE_LINE_SIZE_DETECT)
-/**
- *
- * @brief Get the the i-cache line size.
- *
- * The API is provided to dynamically detect the instruction cache line size at
- * run time.
- *
- * The function must be implemented only when CONFIG_ICACHE_LINE_SIZE_DETECT is
- * defined.
- *
- * @retval size Size of the d-cache line.
- * @retval 0 If the d-cache is not enabled.
- */
-size_t arch_icache_line_size_get(void);
-#endif /* CONFIG_ICACHE_LINE_SIZE_DETECT */
-
-#endif /* CONFIG_ICACHE */
-#endif /* CONFIG_CACHE_MANAGEMENT && CONFIG_ARCH_CACHE */
-
 /** @} */
 
 #ifdef CONFIG_TIMING_FUNCTIONS
@@ -1403,6 +1209,16 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 				  uint32_t flags);
 
 #endif /* CONFIG_PCIE_MSI_MULTI_VECTOR */
+
+/**
+ * @brief Perform architecture specific processing within spin loops
+ *
+ * This is invoked from busy loops with IRQs disabled such as the contended
+ * spinlock loop. The default implementation is a weak function that calls
+ * arch_nop(). Architectures may implement this function to perform extra
+ * checks or power management tricks if needed.
+ */
+void arch_spin_relax(void);
 
 #ifdef __cplusplus
 }

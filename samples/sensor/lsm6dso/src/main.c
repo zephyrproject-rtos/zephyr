@@ -28,7 +28,7 @@ static void fetch_and_display(const struct device *dev)
 	sensor_channel_get(dev, SENSOR_CHAN_ACCEL_Z, &z);
 
 	printf("accel x:%f ms/2 y:%f ms/2 z:%f ms/2\n",
-			out_ev(&x), out_ev(&y), out_ev(&z));
+			(double)out_ev(&x), (double)out_ev(&y), (double)out_ev(&z));
 
 	/* lsm6dso gyro */
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_GYRO_XYZ);
@@ -37,7 +37,7 @@ static void fetch_and_display(const struct device *dev)
 	sensor_channel_get(dev, SENSOR_CHAN_GYRO_Z, &z);
 
 	printf("gyro x:%f rad/s y:%f rad/s z:%f rad/s\n",
-			out_ev(&x), out_ev(&y), out_ev(&z));
+			(double)out_ev(&x), (double)out_ev(&y), (double)out_ev(&z));
 
 	printf("trig_cnt:%d\n\n", trig_cnt);
 }
@@ -105,13 +105,13 @@ static void test_polling_mode(const struct device *dev)
 }
 #endif
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ONE(st_lsm6dso);
 
 	if (!device_is_ready(dev)) {
 		printk("%s: device not ready.\n", dev->name);
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_LSM6DSO_TRIGGER
@@ -121,4 +121,5 @@ void main(void)
 	printf("Testing LSM6DSO sensor in polling mode.\n\n");
 	test_polling_mode(dev);
 #endif
+	return 0;
 }

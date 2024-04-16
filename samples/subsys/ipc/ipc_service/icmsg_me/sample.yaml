@@ -1,9 +1,9 @@
 sample:
-    name: IPC Service example integration (icmsg multi endpoint backend)
+  name: IPC Service example integration (icmsg multi endpoint backend)
 tests:
-    sample.ipc.icmsg_me:
-        platform_allow: nrf5340dk_nrf5340_cpuapp
-        integration_platforms:
-          - nrf5340dk_nrf5340_cpuapp
-        tags: ipc
-        harness: remote
+  sample.ipc.icmsg_me:
+    platform_allow: nrf5340dk_nrf5340_cpuapp
+    integration_platforms:
+      - nrf5340dk_nrf5340_cpuapp
+    tags: ipc
+    harness: remote

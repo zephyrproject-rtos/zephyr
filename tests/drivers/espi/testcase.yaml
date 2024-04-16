@@ -3,7 +3,9 @@
 
 tests:
   drivers.espi.acpi:
-    tags: drivers espi
+    tags:
+      - drivers
+      - espi
     filter: dt_compat_enabled("zephyr,espi-emul-controller")
     harness: ztest
     platform_allow: native_posix

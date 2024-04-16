@@ -1,0 +1,209 @@
+/*
+ * Copyright (c) 2020 InnBlue
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "nrf9160_innblue21_common-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "innblue v21 Dev Kit";
+	compatible = "innblue,innblue21";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_1 {
+			gpios = <&gpio0 7 0>;
+			label = "RGB red channel";
+		};
+		green_led: led_2 {
+			gpios = <&gpio0 6 0>;
+			label = "RGB green channel";
+		};
+		blue_led: led_3 {
+			gpios = <&gpio0 5 0>;
+			label = "RGB blue channel";
+		};
+
+		mode_led: led_4 {
+			gpios = <&gpio0 4 0>;
+			label = "mode red channel";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio0 31 GPIO_PULL_UP>;
+			label = "Button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	en_3v3_sensor: enable-3v3-sensor {
+		compatible = "regulator-fixed";
+		regulator-name = "en_3v3_sensor";
+		enable-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <10000>;
+		regulator-boot-on;
+	};
+
+	en_5v0_boost: enable-5v0-boost {
+		compatible = "regulator-fixed";
+		regulator-name = "en_5v0_boost";
+		enable-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <10000>;
+		regulator-boot-on;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		led3 = &mode_led;
+		sw0  = &button0;
+		rgb-pwm  = &pwm0;
+		mode-pwm = &pwm1;
+		watchdog0 = &wdt0;
+		accel0 = &lis2dh12_accel;
+	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-1 = <&uart2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c2 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-1 = <&i2c2_sleep>;
+	pinctrl-names = "default", "sleep";
+	lis2dh12_accel: lis2dh12-accel@19 {
+		compatible = "st,lis2dh";
+		reg = <0x19>;
+		irq-gpios = <&gpio0 0 0>, <&gpio0 1 0>;
+	};
+
+	hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+		drdy-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+	};
+
+	lps22hb-press@5c {
+		compatible = "st,lps22hb-press";
+		reg = <0x5c>;
+	};
+
+	ccs811: ccs811@5a {
+		compatible = "ams,ccs811";
+		reg = <0x5a>;
+	};
+
+	bme680@76 {
+		compatible = "bosch,bme680";
+		reg = <0x76>;
+	};
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-1 = <&pwm1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+		};
+		slot0_ns_partition: partition@3e000 {
+			label = "image-0-nonsecure";
+		};
+		slot1_partition: partition@7e000 {
+			label = "image-1";
+		};
+		slot1_ns_partition: partition@b0000 {
+			label = "image-1-nonsecure";
+		};
+		scratch_partition: partition@f0000 {
+			label = "image-scratch";
+			reg = <0x000f0000 0xa000>;
+		};
+		storage_partition: partition@fa000 {
+			label = "storage";
+			reg = <0x000fa000 0x00006000>;
+		};
+	};
+};
+
+/ {
+	/* SRAM allocated and used by the BSD library */
+	sram0_bsd: memory@20010000 {
+		compatible = "mmio-sram";
+	};
+
+	/* SRAM allocated to the Non-Secure image */
+	sram0_ns: memory@20020000 {
+		compatible = "mmio-sram";
+	};
+};
+
+/* Include partition configuration file */
+#include "nrf9160_innblue21_partition_conf.dtsi"

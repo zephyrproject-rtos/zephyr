@@ -1,11 +1,12 @@
-.. _alarm_sample:
+.. zephyr:code-sample:: alarm
+   :name: Counter Alarm
+   :relevant-api: counter_interface
 
-Counter Alarm Sample
-#####################
+   Implement an alarm application using the counter API.
 
 Overview
 ********
-This sample provides an example of alarm application using counter API.
+This sample provides an example of alarm application using :ref:`counter API <counter_api>`.
 It sets an alarm with an initial delay of 2 seconds. At each alarm
 expiry, a new alarm is configured with a delay multiplied by 2.
 

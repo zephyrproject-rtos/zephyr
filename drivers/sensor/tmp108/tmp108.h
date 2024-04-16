@@ -113,11 +113,11 @@ struct tmp108_data {
 
 	struct k_work_delayable scheduled_work;
 
-	struct sensor_trigger temp_alert_trigger;
+	const struct sensor_trigger *temp_alert_trigger;
 	sensor_trigger_handler_t temp_alert_handler;
 
 	sensor_trigger_handler_t data_ready_handler;
-	struct sensor_trigger data_ready_trigger;
+	const struct sensor_trigger *data_ready_trigger;
 
 	struct gpio_callback temp_alert_gpio_cb;
 };

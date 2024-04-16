@@ -49,7 +49,7 @@ int bmc150_magn_trigger_set(const struct device *dev,
 		}
 
 		data->handler_drdy = handler;
-		data->trigger_drdy = *trig;
+		data->trigger_drdy = trig;
 
 		if (i2c_reg_update_byte_dt(&config->i2c,
 					   BMC150_MAGN_REG_INT_DRDY,
@@ -96,7 +96,7 @@ static void bmc150_magn_thread_main(struct bmc150_magn_data *data)
 		}
 
 		if (data->handler_drdy) {
-			data->handler_drdy(data->dev, &data->trigger_drdy);
+			data->handler_drdy(data->dev, data->trigger_drdy);
 		}
 
 		setup_drdy(data->dev, true);
@@ -149,7 +149,7 @@ int bmc150_magn_init_interrupt(const struct device *dev)
 			data, NULL, NULL,
 			K_PRIO_COOP(10), 0, K_NO_WAIT);
 
-	if (!device_is_ready(config->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->int_gpio)) {
 		LOG_ERR("GPIO device not ready");
 		return -ENODEV;
 	}

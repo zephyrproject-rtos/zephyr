@@ -13,9 +13,12 @@
 
 #include "util.h"
 #include "util/memq.h"
-#include "lll.h"
 
-#include "pdu.h"
+#include "ll_sw/lll.h"
+
+#include "ll_sw/pdu_df.h"
+#include "lll/pdu_vendor.h"
+#include "ll_sw/pdu.h"
 
 /**
  * @brief Population count: Count the number of bits set to 1

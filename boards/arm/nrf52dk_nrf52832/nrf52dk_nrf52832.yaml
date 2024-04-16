@@ -20,3 +20,4 @@ supported:
   - pwm
   - spi
   - watchdog
+vendor: nordic

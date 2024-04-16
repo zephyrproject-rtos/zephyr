@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-void main(void)
+int main(void)
 {
 	/* NET_CONFIG_SETTINGS will init DHCP
 	 * NET_SHELL is enabled to test ping, DNS etc
 	 */
+	return 0;
 }

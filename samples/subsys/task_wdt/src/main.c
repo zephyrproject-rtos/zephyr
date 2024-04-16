@@ -58,7 +58,7 @@ static void task_wdt_callback(int channel_id, void *user_data)
 	sys_reboot(SYS_REBOOT_COLD);
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 	const struct device *const hw_wdt_dev = DEVICE_DT_GET_OR_NULL(WDT_NODE);
@@ -72,7 +72,7 @@ void main(void)
 	ret = task_wdt_init(hw_wdt_dev);
 	if (ret != 0) {
 		printk("task wdt init failure: %d\n", ret);
-		return;
+		return 0;
 	}
 
 
@@ -84,6 +84,7 @@ void main(void)
 		task_wdt_feed(task_wdt_id);
 		k_sleep(K_MSEC(1000));
 	}
+	return 0;
 }
 
 /*

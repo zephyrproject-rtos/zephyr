@@ -1,0 +1,9 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_GPIO_QDEC
+	bool "GPIO based QDEC input driver"
+	default y
+	depends on DT_HAS_GPIO_QDEC_ENABLED
+	help
+	  GPIO Quadrature Decoder input driver.

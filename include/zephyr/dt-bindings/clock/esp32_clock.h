@@ -15,11 +15,11 @@
 #define ESP32_CLK_SRC_APLL             3U
 
 /* Supported CPU Frequencies */
-#define ESP32_CLK_CPU_26M              26U
-#define ESP32_CLK_CPU_40M              40U
-#define ESP32_CLK_CPU_80M              80U
-#define ESP32_CLK_CPU_160M             160U
-#define ESP32_CLK_CPU_240M             240U
+#define ESP32_CLK_CPU_26M              26000000
+#define ESP32_CLK_CPU_40M              40000000
+#define ESP32_CLK_CPU_80M              80000000
+#define ESP32_CLK_CPU_160M             160000000
+#define ESP32_CLK_CPU_240M             240000000
 
 /* Supported XTAL Frequencies */
 #define ESP32_CLK_XTAL_24M             0U

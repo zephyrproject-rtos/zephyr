@@ -1,7 +1,8 @@
-.. _clock_control_litex_sample:
+.. zephyr:code-sample:: clock-control-litex
+   :name: LiteX clock control driver
+   :relevant-api: clock_control_interface
 
-LiteX Clock Control Driver Sample
-#################################
+   Use LiteX clock control driver to generate multiple clock signals.
 
 Introduction
 ************
@@ -57,7 +58,7 @@ The driver is interfaced with the :ref:`Clock Control API <clock_control_api>` f
 		.phase = 90
 	};
 	dev = DEVICE_DT_GET(MMCM);
-	clock_control_subsys_t sub_system = (clock_control_subsys_t*)&setup;
+	clock_control_subsys_t sub_system = (clock_control_subsys_t)&setup;
 	if ((ret = clock_control_on(dev, sub_system)) != 0) {
 		LOG_ERR("Set CLKOUT%d param error!", setup.clkout_nr);
 		return ret;

@@ -5,7 +5,7 @@ config SOC_FAMILY_GD32
 	bool
 	select HAS_GD32_HAL
 	select BUILD_OUTPUT_HEX
-	select HAS_SEGGER_RTT
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 
 config SOC_FAMILY
 	string

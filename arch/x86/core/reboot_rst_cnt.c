@@ -27,7 +27,7 @@ static inline void cold_reboot(void)
 	sys_out8(reset_value, X86_RST_CNT_REG);
 }
 
-void sys_arch_reboot(int type)
+void __weak sys_arch_reboot(int type)
 {
 	switch (type) {
 	case SYS_REBOOT_COLD:

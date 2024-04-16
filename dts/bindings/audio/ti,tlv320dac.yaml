@@ -8,6 +8,6 @@ compatible: "ti,tlv320dac"
 include: i2c-device.yaml
 
 properties:
-    reset-gpios:
-      type: phandle-array
-      required: true
+  reset-gpios:
+    type: phandle-array
+    required: true

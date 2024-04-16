@@ -1,4 +1,8 @@
 tests:
   drivers.udc:
-    tags: usb drivers
-    platform_allow: nrf52840dk_nrf52840
+    tags:
+      - usb
+      - drivers
+    platform_allow:
+      - nrf52840dk_nrf52840
+      - native_posix_64

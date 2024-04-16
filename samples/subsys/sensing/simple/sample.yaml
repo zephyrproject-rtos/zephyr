@@ -1,0 +1,16 @@
+sample:
+  description: A sensor framework sample
+  name: sensing sample
+common:
+  tags: sensing
+  integration_platforms:
+    - native_posix
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "sensing subsystem run successfully"
+tests:
+  sample.subsys.sensing.simple:
+    platform_allow: native_posix
+    tags: sensing

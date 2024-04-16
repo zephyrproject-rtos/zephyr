@@ -26,6 +26,14 @@ config WS2812_STRIP_SPI
 	  The SPI driver is portable, but requires significantly more
 	  memory (1 byte of overhead per bit of pixel data).
 
+config WS2812_STRIP_I2S
+	bool "I2S driver"
+	depends on I2S
+	help
+	  Uses the I2S peripheral, memory usage is 4 bytes per color,
+	  times the number of pixels. A few more for the start and end
+	  delay. The reset delay has a coarse resolution of ~20us.
+
 config WS2812_STRIP_GPIO
 	bool "GPIO driver"
 	# Only an Cortex-M0 inline assembly implementation for the nRF51

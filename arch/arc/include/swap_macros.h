@@ -416,11 +416,11 @@ fpu_skip_load :
 .macro _store_old_thread_callee_regs
 
 	_save_callee_saved_regs
-	/* Save old thread into switch handle which is required by wait_for_switch.
+	/* Save old thread into switch handle which is required by z_sched_switch_spin.
 	 * NOTE: we shouldn't save anything related to old thread context after this point!
 	 * TODO: we should add SMP write-after-write data memory barrier here, as we want all
 	 * previous writes completed before setting switch_handle which is polled by other cores
-	 * in wait_for_switch in case of SMP. Though it's not likely that this issue
+	 * in z_sched_switch_spin in case of SMP. Though it's not likely that this issue
 	 * will reproduce in real world as there is some gap before reading switch_handle and
 	 * reading rest of the data we've stored before.
 	 */
@@ -553,19 +553,18 @@ fpu_skip_load :
  * instruction. So we can use _st32_huge_offset macro instead
  */
 .macro _st32_huge_offset, d, s, offset, temp
-	off = MACRO_ARG(offset)
-	u9_max_shifted = __arc_u9_max << __arc_ldst32_as_shift
-
-	.if off <= __arc_u9_max && off >= __arc_u9_min
-		st MACRO_ARG(d), [MACRO_ARG(s), off]
+	.if MACRO_ARG(offset) <= __arc_u9_max && MACRO_ARG(offset) >= __arc_u9_min
+		st MACRO_ARG(d), [MACRO_ARG(s), MACRO_ARG(offset)]
 	/* Technically we can optimize with .as both big positive and negative offsets here, but
 	 * as we use only positive offsets in hand-written assembly code we keep only
 	 * positive offset case here for simplicity.
 	 */
-	.elseif !(off % (1 << __arc_ldst32_as_shift)) && off <= u9_max_shifted && off >= 0
-		st.as MACRO_ARG(d), [MACRO_ARG(s), off >> __arc_ldst32_as_shift]
+	.elseif !(MACRO_ARG(offset) % (1 << __arc_ldst32_as_shift)) &&                             \
+		MACRO_ARG(offset) <= (__arc_u9_max << __arc_ldst32_as_shift) &&                    \
+		MACRO_ARG(offset) >= 0
+		st.as MACRO_ARG(d), [MACRO_ARG(s), MACRO_ARG(offset) >> __arc_ldst32_as_shift]
 	.else
-		ADDR MACRO_ARG(temp), MACRO_ARG(s), off
+		ADDR MACRO_ARG(temp), MACRO_ARG(s), MACRO_ARG(offset)
 		st MACRO_ARG(d), [MACRO_ARG(temp)]
 	.endif
 .endm

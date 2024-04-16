@@ -1,0 +1,185 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP S32 eMIOS PWM node for S32 SoCs. Each channel in eMIOS can be configured
+  to use for PWM operation. There are several PWM modes supported by this module,
+  some modes only support on channels that have internal counter, some modes
+  require to use a reference timebase from a master bus.
+
+  For example to configuring eMIOS instance 0 with:
+    - Channel 0 for mode OPWFMB
+    - Channel 1 for mode OPWMB
+    - Channel 2 for mode OPWMCB with deadtime inserted at leading edge
+    - Channel 3 for mode SAIC, use internal timebase with input filter = 2 eMIOS clock
+
+    emios0_pwm: pwm {
+      pwm_0 {
+        channel = <0>;
+        pwm-mode = "OPWFMB";
+        prescaler = <8>;
+        period = <65534>;
+        duty-cycle = <32768>;
+        polarity = "ACTIVE_HIGH";
+      };
+
+      pwm_1 {
+        channel = <1>;
+        master-bus = <&emios1_bus_a>;
+        pwm-mode = "OPWMB";
+        duty-cycle = <32768>;
+        phase-shift = <100>;
+        polarity = "ACTIVE_LOW";
+      };
+
+      pwm_2 {
+        channel = <2>;
+        master-bus = <&emios1_bus_b>;
+        pwm-mode = "OPWMCB_LEAD_EDGE";
+        duty-cycle = <32768>;
+        dead-time = <100>;
+        polarity = "ACTIVE_LOW";
+      };
+
+      pwm_3 {
+        channel = <3>;
+        pwm-mode = "SAIC";
+        prescaler = <8>;
+        input-filter = <2>;
+      };
+    };
+
+  OPWMB and OPWMCB modes use reference timebase, the master bus is chosen over
+  phandle 'master-bus'. For OPWMB mode, PWM's period is master bus's period and
+  is 2 * master bus's period - 2 for OPWMCB mode. Please notice that the devicetree
+  node for master bus should be enabled and configured for using, please see
+  'nxp,s32-emios' bindings.
+
+compatible: "nxp,s32-emios-pwm"
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  # Period in terms of nanoseconds
+  - period
+  - flags
+
+child-binding:
+  description: |
+    eMIOS PWM channel configuration.
+
+  properties:
+    channel:
+      type: int
+      required: true
+      description: eMIOS PWM channel
+
+    master-bus:
+      type: phandle
+      description: |
+        A phandle to master-bus node that will be used as external timebase
+        for current channel, this can be bypassed if internal counter is used
+        for PWM operation. A master bus must be used exclusively, such as if
+        is used as a timebase for a channel in SAIC mode, do not use that
+        master bus as a timebase for generate PWM pulse.
+
+    pwm-mode:
+      type: string
+      required: true
+      description: |
+        Select PWM mode:
+        - OPWFMB: provides waveforms with variable duty cycle and frequency,
+                  this mode uses internal counter.
+
+        - OPWMB:  generate pulses with programmable leading and trailing
+                  edge placement. The period is determined by period of
+                  an external counter driven in MCB Up Mode. Changing PWM period
+                  at runtime will impact to all channels share the same timebase.
+                  The new period and cycle take effect in next period boundary.
+
+        - OPWMCB: generates a center aligned PWM with dead time insertion to the
+                  leading or trailing edge. The period is determined by period of
+                  an external counter driven in MCB Up Down Mode. Changing PWM period
+                  at runtime will impact to all channels share the same timebase,
+                  The new period and cycle take effect in next period boundary.
+
+        - SAIC: single action input capture mode, the eMIOS captures events as soon as
+                they occur. The value of latest captured event is stored and can be read
+                by software.
+      enum:
+        - "OPWFMB"
+        - "OPWMB"
+        - "OPWMCB_TRAIL_EDGE"
+        - "OPWMCB_LEAD_EDGE"
+        - "SAIC"
+
+    polarity:
+      type: string
+      description: |
+        Output polarity for PWM channel.
+      enum:
+        - "ACTIVE_LOW"
+        - "ACTIVE_HIGH"
+
+    duty-cycle:
+      type: int
+      description: |
+        Duty-cycle (in ticks) for PWM channel at boot time.
+
+    period:
+      type: int
+      description: |
+        Period (in ticks) for OPWFMB at boot time. Period for the rest
+        of PWM mode depends on period's master bus. Must be in range [2 ... 65535].
+
+    freeze:
+      type: boolean
+      description: Freeze individual internal counter when the chip enters Debug mode.
+
+    prescaler-src:
+      type: string
+      default: "PRESCALED_CLOCK"
+      description: |
+        Select clock source for internal counter prescaler.
+      enum:
+        - "PRESCALED_CLOCK" # Clock source = eMIOS clock / (global prescaler)
+        - "MODULE_CLOCK"    # Clock source = eMIOS clock
+
+    prescaler:
+      type: int
+      description: |
+        The clock divider for internal counter prescaler.
+      enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
+    dead-time:
+      type: int
+      default: 0
+      description: |
+        Dead time (in ticks) for PWM channel in OPWMCB mode.
+
+    phase-shift:
+      type: int
+      default: 0
+      description: |
+        Phase Shift (in ticks) for PWM channel in OPWMB mode.
+
+    input-filter:
+      type: int
+      default: 0
+      enum: [0, 2, 4, 8, 16]
+      description: |
+        Select the minimim input pulse width, in filter clock cycles that can pass
+        through the input filter. The filter latency - the difference in time between
+        the input and the response is three clock edges. Default 0 means the filter
+        is bypassed. The clock source for programmable input filter is eMIOS clock.

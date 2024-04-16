@@ -1,0 +1,20 @@
+# RISCV32_MIV configuration options
+
+# Copyright (c) 2018 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Microchip Mi-V system implementation"
+	depends on SOC_SERIES_RISCV32_MIV
+
+config SOC_RISCV32_MIV
+	bool "Microchip Mi-V system implementation"
+	select ATOMIC_OPERATIONS_BUILTIN
+	select INCLUDE_RESET_VECTOR
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+
+endchoice

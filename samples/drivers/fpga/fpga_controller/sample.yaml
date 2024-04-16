@@ -2,8 +2,8 @@ sample:
   name: FPGA Controller sample
 
 common:
-    tags: FPGA
-    build_only: true
+  tags: FPGA
+  build_only: true
 
 tests:
   sample.drivers.fpga_controller:

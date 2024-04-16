@@ -21,4 +21,15 @@
 		status = "okay";
 		power-domain = <&test_domain>;
 	};
+
+	test_domain_balanced: test_domain_balanced {
+		compatible = "power-domain";
+		status = "okay";
+	};
+
+	test_dev_balanced: test_dev_balanced {
+		compatible = "test-device-pm";
+		status = "okay";
+		power-domain = <&test_domain_balanced>;
+	};
 };

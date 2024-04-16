@@ -8,5 +8,5 @@ compatible: "st,lsm9ds0-gyro"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-    irq-gpios:
-      type: phandle-array
+  irq-gpios:
+    type: phandle-array

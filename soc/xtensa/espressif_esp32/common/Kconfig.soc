@@ -1,0 +1,215 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_ESP32
+
+config ESPTOOLPY_FLASHFREQ_80M
+	bool
+
+config FLASH_SIZE
+	int
+
+config FLASH_BASE_ADDRESS
+	hex
+
+config ESP_SPIRAM
+	bool "Support for external, SPI-connected RAM"
+	help
+	  This enables support for an external SPI RAM chip, connected in
+	  parallel with the main SPI flash chip.
+
+config ESP_HEAP_MIN_EXTRAM_THRESHOLD
+	int "Minimum threshold for external RAM allocation"
+	default 8192
+	range 1024 131072
+	depends on ESP_SPIRAM
+	help
+	  Threshold to decide if memory will be allocated from DRAM
+	  or SPIRAM. If value of allocation size is less than this value,
+	  memory will be allocated from internal RAM.
+
+config ESP_HEAP_SEARCH_ALL_REGIONS
+	bool "Search for all available heap regions"
+	depends on ESP_SPIRAM
+	default y
+	help
+	  This configuration enables searching all available heap
+	  regions. If the region of desired capability is exhausted,
+	  memory will be allocated from other available region.
+
+config ESP_SPIRAM_HEAP_SIZE
+	int "Size of SPIRAM heap"
+	default 262134 if SYS_HEAP_SMALL_ONLY
+	default 1048576 if !SYS_HEAP_SMALL_ONLY
+	depends on ESP_SPIRAM
+	help
+	  Specify size of SPIRAM heap.
+
+menu "SPI RAM config"
+	depends on ESP_SPIRAM
+
+choice SPIRAM_MODE
+	prompt "Mode (QUAD/OCT) of SPI RAM chip in use"
+	default SPIRAM_MODE_QUAD
+
+config SPIRAM_MODE_QUAD
+	bool "Quad Mode PSRAM"
+
+endchoice # SPIRAM_MODE
+
+choice SPIRAM_TYPE
+	prompt "Type of SPI RAM chip in use"
+	depends on ESP_SPIRAM
+	default SPIRAM_TYPE_ESPPSRAM16
+
+config SPIRAM_TYPE_ESPPSRAM16
+	bool "ESP-PSRAM16 or APS1604"
+
+config SPIRAM_TYPE_ESPPSRAM32
+	bool "ESP-PSRAM32 or IS25WP032"
+
+config SPIRAM_TYPE_ESPPSRAM64
+	bool "ESP-PSRAM64 or LY68L6400"
+
+endchoice # SPIRAM_TYPE
+
+config ESP_SPIRAM_SIZE
+	int "Size of SPIRAM part"
+	default 2097152 if SPIRAM_TYPE_ESPPSRAM16
+	default 4194304 if SPIRAM_TYPE_ESPPSRAM32
+	default 8388608 if SPIRAM_TYPE_ESPPSRAM64
+	help
+	  Specify size of SPIRAM part.
+	  NOTE: If SPIRAM size is greater than 4MB, only
+	  lower 4MB can be allocated using k_malloc().
+
+choice SPIRAM_SPEED
+	prompt "Set RAM clock speed"
+	default SPIRAM_SPEED_40M
+	help
+	  Select the speed for the SPI RAM chip.
+	  If SPI RAM is enabled, we only support three combinations of SPI speed mode we supported now:
+
+	  1. Flash SPI running at 40MHz and RAM SPI running at 40MHz
+	  2. Flash SPI running at 80MHz and RAM SPI running at 40MHz
+	  3. Flash SPI running at 80MHz and RAM SPI running at 80MHz
+
+	  Note: If the third mode(80MHz+80MHz) is enabled for SPI RAM of type 32MBit, one of the HSPI/VSPI host
+	  will be occupied by the system. Which SPI host to use can be selected by the config item
+	  SPIRAM_OCCUPY_SPI_HOST. Application code should never touch HSPI/VSPI hardware in this case. The
+	  option to select 80MHz will only be visible if the flash SPI speed is also 80MHz.
+	  (ESPTOOLPY_FLASHFREQ_79M is true)
+
+config SPIRAM_SPEED_26M
+	bool "26MHz clock speed"
+	depends on SOC_SERIES_ESP32S2
+
+config SPIRAM_SPEED_20M
+	bool "20MHz clock speed"
+	depends on SOC_SERIES_ESP32S2
+
+config SPIRAM_SPEED_40M
+	bool "40MHz clock speed"
+
+config SPIRAM_SPEED_80M
+	depends on ESPTOOLPY_FLASHFREQ_80M
+	bool "80MHz clock speed"
+
+config SPIRAM_SPEED_120M
+	depends on SPIRAM_MODE_QUAD && SOC_SERIES_ESP32S3
+	bool "120MHz clock speed"
+
+endchoice # SPIRAM_SPEED
+
+menu "PSRAM clock and cs IO for ESP32-DOWD"
+
+config D0WD_PSRAM_CLK_IO
+	int "PSRAM CLK IO number"
+	range 0 33
+	default 17
+	help
+	  The PSRAM CLOCK IO can be any unused GPIO, user can config it based on hardware design. If user use
+	  1.8V flash and 1.8V psram, this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+
+config D0WD_PSRAM_CS_IO
+	int "PSRAM CS IO number"
+	range 0 33
+	default 16
+	help
+	  The PSRAM CS IO can be any unused GPIO, user can config it based on hardware design. If user use
+	  1.8V flash and 1.8V psram, this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+
+endmenu # PSRAM clock and cs IO for ESP32-DOWD
+
+menu "PSRAM clock and cs IO for ESP32-D2WD"
+
+config D2WD_PSRAM_CLK_IO
+	int "PSRAM CLK IO number"
+	range 0 33
+	default 9
+	help
+	  User can config it based on hardware design. For ESP32-D2WD chip, the psram can only be 1.8V psram,
+	  so this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+
+config D2WD_PSRAM_CS_IO
+	int "PSRAM CS IO number"
+	range 0 33
+	default 10
+	help
+	  User can config it based on hardware design. For ESP32-D2WD chip, the psram can only be 1.8V psram,
+	  so this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+
+endmenu # PSRAM clock and cs IO for ESP32-D2WD
+
+menu "PSRAM clock and cs IO for ESP32-PICO"
+
+config PICO_PSRAM_CS_IO
+	int "PSRAM CS IO number"
+	range 0 33
+	default 10
+	help
+	  The PSRAM CS IO can be any unused GPIO, user can config it based on hardware design.
+
+	  For ESP32-PICO chip, the psram share clock with flash, so user do not need to configure the clock
+	  IO.
+	  For the reference hardware design, please refer to
+	  https://www.espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf
+
+endmenu # PSRAM clock and cs IO for ESP32-PICO
+
+config SPIRAM_CUSTOM_SPIWP_SD3_PIN
+	bool "Use custom SPI PSRAM WP(SD3) Pin when flash pins set in eFuse (read help)"
+	default y if SPIRAM_SPIWP_SD3_PIN != 7  # backwards compatibility, can remove in IDF 5
+	default n
+	help
+	  This setting is only used if the SPI flash pins have been overridden by setting the eFuses
+	  SPI_PAD_CONFIG_xxx, and the SPI flash mode is DIO or DOUT.
+
+	  When this is the case, the eFuse config only defines 3 of the 4 Quad I/O data pins. The WP pin (aka
+	  ESP32 pin "SD_DATA_3" or SPI flash pin "IO2") is not specified in eFuse. The psram only has QPI
+	  mode, so a WP pin setting is necessary.
+
+	  If this config item is set to N (default), the correct WP pin will be automatically used for any
+	  Espressif chip or module with integrated flash. If a custom setting is needed, set this config item
+	  to Y and specify the GPIO number connected to the WP pin.
+
+	  When flash mode is set to QIO or QOUT, the PSRAM WP pin will be set the same as the SPI Flash WP pin
+	  configured in the bootloader.
+
+config SPIRAM_SPIWP_SD3_PIN
+	int "Custom SPI PSRAM WP(SD3) Pin"
+	range 0 33
+	default 7
+	help
+	  The option "Use custom SPI PSRAM WP(SD3) pin" must be set or this value is ignored
+
+	  If burning a customized set of SPI flash pins in eFuse and using DIO or DOUT mode for flash, set this
+	  value to the GPIO number of the SPIRAM WP pin.
+
+config SPIRAM
+	bool
+	default y
+
+endmenu # SPI RAM config
+
+endif # SOC_FAMILY_ESP32

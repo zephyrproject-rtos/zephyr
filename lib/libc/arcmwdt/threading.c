@@ -46,7 +46,7 @@ void _mwmutex_delete(_lock_t *mutex_ptr)
 #ifdef CONFIG_USERSPACE
 	k_object_release(mutex_ptr);
 #else
-	k_mem_slab_free(&z_arcmwdt_lock_slab, mutex_ptr);
+	k_mem_slab_free(&z_arcmwdt_lock_slab, *mutex_ptr);
 #endif /* CONFIG_USERSPACE */
 }
 

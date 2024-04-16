@@ -6,7 +6,6 @@
 
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
-#include <zephyr/arch/x86/acpi.h>
 #include <zephyr/arch/x86/multiboot.h>
 #include <zephyr/arch/x86/efi.h>
 #include <x86_mmu.h>
@@ -15,7 +14,7 @@ extern FUNC_NORETURN void z_cstart(void);
 extern void x86_64_irq_init(void);
 
 #if !defined(CONFIG_X86_64)
-x86_boot_arg_t x86_cpu_boot_arg;
+__pinned_data x86_boot_arg_t x86_cpu_boot_arg;
 #endif
 
 /* Early global initialization functions, C domain. This runs only on the first

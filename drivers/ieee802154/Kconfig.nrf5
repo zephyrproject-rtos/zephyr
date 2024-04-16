@@ -88,4 +88,10 @@ config IEEE802154_NRF5_LOG_RX_FAILURES
 	  It can be helpful for the network traffic analyze but it generates also
 	  a lot of log records in a stress environment.
 
+config IEEE802154_NRF5_MULTIPLE_CCA
+	bool "Support for multiple CCA attempts before transmission"
+	help
+	  When this option is enabled the OpenThread capability
+	  IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA is supported by the ieee802154_nrf5.
+
 endif

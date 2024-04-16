@@ -4,11 +4,14 @@ Bsim boards
 ###########
 
 This page covers the design, architecture and rationale, of the
-:ref:`nrf52_bsim<nrf52_bsim>` board and other similar bsim boards.
-Particular details on the nRF52 simulation board, including how to use it,
-can be found in that :ref:`board documentation<nrf52_bsim>`.
-These boards are postfixed with `_bsim` as they use BabbleSim
+:ref:`nrf52_bsim<nrf52_bsim>`, :ref:`nrf5340bsim<nrf5340bsim>` and other similar bsim boards.
+Particular details on the nRF52 and nRF5340 simulation boards, including how to use them,
+can be found in their respective documentation.
+These boards are postfixed with `_bsim` as they use BabbleSim_
 (shortened bsim).
+
+These boards use the `native simulator`_ and the :ref:`POSIX architecture<Posix arch>` to build
+and execute the embedded code natively on Linux.
 
 .. contents::
    :depth: 2
@@ -24,10 +27,20 @@ These boards are postfixed with `_bsim` as they use BabbleSim
 .. _Architecture of HW models used for FW development and testing:
    https://babblesim.github.io/arch_hw_models.html
 
+.. _native simulator:
+   https://github.com/BabbleSim/native_simulator/blob/main/docs/README.md
+
+.. _native simulator design documentation:
+   https://github.com/BabbleSim/native_simulator/blob/main/docs/Design.md
+
+.. _nRF HW models design documentation:
+   https://github.com/BabbleSim/ext_nRF_hw_models/blob/main/docs/README_HW_models.md
+
+
 Overall objective
 *****************
 
-Bsim boards main purpose is to be test-benches for
+The main purpose of these bsim boards is to be test-benches for
 integration testing of embedded code on workstation/simulation.
 Integration testing in the sense that the code under test will, at the very
 least, run with the Zephyr RTOS just like for any other
@@ -42,6 +55,7 @@ without the need for real HW, and in a deterministic/reproducible fashion.
 Unlike native_posix, bsim boards do not interact directly with any host
 peripherals, and their execution is independent of the host load, or timing.
 
+.. _bsim_boards_tests:
 
 Different types of tests and how the bsim boards relate to them
 ===============================================================
@@ -124,10 +138,11 @@ The basic architecture layering of these boards is as follows:
   Note that in a normal Zephyr target interrupt handling and a custom busy wait
   would be provided by the SOC layer, but abusing Zephyr's layering, and for the
   soc_inf layer to be generic, these were delegated to the board.
-  The board layer also provides the :c:func:`main` entry point for the linux
-  program, command line argument handling, the overall time scheduling of
-  the simulated device, and other test specific functionality like bs_tests
-  hooks, trace control, etc.
+  The board layer provides other test specific
+  functionality like bs_tests hooks, trace control, etc, and
+  by means of the native simulator, provides the :c:func:`main` entry point for the linux
+  program, command line argument handling, and the overall time scheduling of
+  the simulated device.
   Note that the POSIX arch and soc_inf expect a set of APIs being provided by
   the board. This includes the busy wait API, a basic tracing API, the interrupt
   controller and interrupt handling APIs, :c:func:`posix_exit`,
@@ -155,12 +170,15 @@ Threading and overall scheduling of CPU and HW models
 
 The threading description, as well as the general SOC and board architecture
 introduced in
-:ref:`POSIX arch architecture<posix_arch_architecture>`
-apply to the bsim boards.
+:ref:`POSIX arch architecture<posix_arch_architecture>` and on the
+`native simulator design documentation`_ apply to the bsim boards.
 
 Moreover in
 `Architecture of HW models used for FW development and testing`_
-more details on the HW models and their scheduling are provided.
+a general introduction to the babblesim HW models and their scheduling are provided.
+
+In case of the nRF bsim boards, more information can be found in the
+`nRF HW models design documentation`_.
 
 Time and the time_machine
 =========================
@@ -177,7 +195,7 @@ and the simulation results will not be affected in any way by the
 load of the simulation host or by the process execution being "paused"
 in a debugger or similar.
 
-The time_machine component provides the overall HW event time loop
+The native simulator HW scheduler provides the overall HW event time loop
 required by the HW models, which consists of a very simple
 "search for next event", "advance time to next event and execute it" loop,
 together with an API for components that use it to inform about their events
@@ -203,7 +221,7 @@ below represents this communication:
     Communication between a Zephyr device and other simulated devices
 
 Test code may also communicate with other devices' test code using the bsim
-backchannels. These provide a direct, reliable pipe between devices' test code
+backchannels. These provide a direct, reliable pipe between devices which test code
 can use to exchange data.
 
 
@@ -224,15 +242,16 @@ which relies on the bs_trace API. Instead, for tracing the bs_trace API
 should be used directly.
 The same applies to other Zephyr APIs, including the entropy API, etc.
 
-printk and posix_print backend
-==============================
+posix_print backend
+===================
 
-The bsim board provides a very simple backend for Zephyr's `printk()`,
-which simply routes the printk strings to the bs_trace bsim API.
-So printk messages are printed in the console (stdout) together with all
-other device messages.
-The board also provides the posix_print API which is expected by the posix ARCH
-and soc inf code, and which is based on the same bs_trace API.
+The bsim board provides a backend for the posix_print API which is expected by the posix ARCH
+and soc inf (POSIX) code.
+It simply routes the printk strings to the bs_trace bsim API.
+Any message printed to the posix_print API, which is also the default printk backend,
+will be printed to the console (stdout) together with all other device messages.
+
+.. _bsim_boards_bs_tests:
 
 bs_tests
 ========
@@ -287,8 +306,8 @@ arguments:
 - The HW models command line arguments: The HW models will expose which
   arguments they need to have processed, but the bsim board as actual
   integrating program ensures they are handled.
-- Test (bs_tests) control: To select a test, print which are available, and
-  pass arguments to the tests themselves.
+- Test (bs_tests) control: To select a test for each embedded CPU,
+  print which are available, and pass arguments to the tests themselves.
 
 Command line argument parsing is handled by using the bs_cmd_line component
 from Babblesim's base/libUtilv1 library. And basic arguments definitions that

@@ -4,7 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/cache.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_output.h>
@@ -68,7 +70,7 @@ static uint32_t hda_log_flush(void)
 #endif
 
 #if !(IS_ENABLED(CONFIG_KERNEL_COHERENCE))
-	z_xtensa_cache_flush(hda_log_buf, CONFIG_LOG_BACKEND_ADSP_HDA_SIZE);
+	sys_cache_data_flush_range(hda_log_buf, CONFIG_LOG_BACKEND_ADSP_HDA_SIZE);
 #endif
 	dma_reload(hda_log_dev, hda_log_chan, 0, 0, nearest128);
 
@@ -332,8 +334,10 @@ void adsp_hda_log_init(adsp_hda_log_hook_t fn, uint32_t channel)
 static inline void hda_ipc_msg(const struct device *dev, uint32_t data,
 			       uint32_t ext, k_timeout_t timeout)
 {
-	__ASSERT(intel_adsp_ipc_send_message_sync(dev, data, ext, timeout),
-		"Unexpected ipc send message failure, try increasing IPC_TIMEOUT");
+	int ret = intel_adsp_ipc_send_message_sync(dev, data, ext, timeout);
+
+	__ASSERT(!ret, "Unexpected ipc send message failure, error code: %d",
+		ret);
 }
 
 
@@ -342,25 +346,24 @@ void adsp_hda_log_cavstool_hook(uint32_t written)
 	/* We *must* send this, but we may be in a timer ISR, so we are
 	 * forced into a retry loop without timeouts and such.
 	 */
-	bool done = false;
+	int ret = -1;
 
 	/*  Send IPC message notifying log data has been written */
 	do {
-		done = intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_PRINT,
+		ret = intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_PRINT,
 					     (written << 8) | CHANNEL);
-	} while (!done);
-
+		if (ret == -ESHUTDOWN) {
+			return;
+		}
+	} while (ret);
 
 	/* Wait for confirmation log data has been received */
-	do {
-		done = intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV);
-	} while (!done);
-
+	while (!intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV))
+		;
 }
 
-int adsp_hda_log_cavstool_init(const struct device *dev)
+int adsp_hda_log_cavstool_init(void)
 {
-	ARG_UNUSED(dev);
 
 	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_RESET, CHANNEL, IPC_TIMEOUT);
 	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_CONFIG,

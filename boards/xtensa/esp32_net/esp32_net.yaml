@@ -19,3 +19,4 @@ testing:
     - logging
     - kernel
     - pm
+vendor: espressif

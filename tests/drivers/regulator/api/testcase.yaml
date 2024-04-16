@@ -1,0 +1,24 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.regulator.api:
+    tags:
+      - drivers
+      - regulator
+    platform_allow:
+      - native_posix
+      - native_posix_64
+    integration_platforms:
+      - native_posix
+  drivers.regulator.api.nothreadsaferefcnt:
+    tags:
+      - drivers
+      - regulator
+    platform_allow:
+      - native_posix
+      - native_posix_64
+    integration_platforms:
+      - native_posix
+    extra_configs:
+      - CONFIG_REGULATOR_THREAD_SAFE_REFCNT=n

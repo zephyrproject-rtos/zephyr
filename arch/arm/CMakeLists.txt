@@ -2,4 +2,4 @@
 
 set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-littlearm)
 
-add_subdirectory(core/aarch32)
+add_subdirectory(core)

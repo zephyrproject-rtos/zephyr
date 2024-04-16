@@ -13,58 +13,58 @@
 #include "hawkbit_firmware.h"
 #include "hawkbit_device.h"
 
-static void cmd_run(const struct shell *shell, size_t argc, char **argv)
+static void cmd_run(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_fprintf(shell, SHELL_INFO, "Starting Hawkbit run...\n");
+	shell_fprintf(sh, SHELL_INFO, "Starting Hawkbit run...\n");
 	switch (hawkbit_probe()) {
 	case HAWKBIT_UNCONFIRMED_IMAGE:
 		shell_fprintf(
-			shell, SHELL_ERROR,
+			sh, SHELL_ERROR,
 			"Image is unconfirmed."
 			"Rebooting to revert back to previous confirmed image\n");
 		sys_reboot(SYS_REBOOT_WARM);
 		break;
 
 	case HAWKBIT_CANCEL_UPDATE:
-		shell_fprintf(shell, SHELL_INFO,
+		shell_fprintf(sh, SHELL_INFO,
 			      "Hawkbit update Cancelled from server\n");
 		break;
 
 	case HAWKBIT_NO_UPDATE:
-		shell_fprintf(shell, SHELL_INFO, "No update found\n");
+		shell_fprintf(sh, SHELL_INFO, "No update found\n");
 		break;
 
 	case HAWKBIT_OK:
-		shell_fprintf(shell, SHELL_INFO, "Image Already updated\n");
+		shell_fprintf(sh, SHELL_INFO, "Image Already updated\n");
 		break;
 
 	case HAWKBIT_UPDATE_INSTALLED:
-		shell_fprintf(shell, SHELL_INFO, "Update Installed\n");
+		shell_fprintf(sh, SHELL_INFO, "Update Installed\n");
 		break;
 
 	case HAWKBIT_DOWNLOAD_ERROR:
-		shell_fprintf(shell, SHELL_INFO, "Download Error\n");
+		shell_fprintf(sh, SHELL_INFO, "Download Error\n");
 		break;
 
 	case HAWKBIT_NETWORKING_ERROR:
-		shell_fprintf(shell, SHELL_INFO, "Networking Error\n");
+		shell_fprintf(sh, SHELL_INFO, "Networking Error\n");
 		break;
 
 	case HAWKBIT_METADATA_ERROR:
-		shell_fprintf(shell, SHELL_INFO, "Metadata Error\n");
+		shell_fprintf(sh, SHELL_INFO, "Metadata Error\n");
 		break;
 
 	default:
-		shell_fprintf(shell, SHELL_ERROR, "Invalid response\n");
+		shell_fprintf(sh, SHELL_ERROR, "Invalid response\n");
 		break;
 	}
 	k_sleep(K_MSEC(1));
 }
 
-static int cmd_info(const struct shell *shell, size_t argc, char *argv)
+static int cmd_info(const struct shell *sh, size_t argc, char *argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -75,8 +75,8 @@ static int cmd_info(const struct shell *shell, size_t argc, char *argv)
 	hawkbit_get_firmware_version(firmware_version, BOOT_IMG_VER_STRLEN_MAX);
 	hawkbit_get_device_identity(device_id, DEVICE_ID_HEX_MAX_SIZE);
 
-	shell_fprintf(shell, SHELL_NORMAL, "Unique device id: %s\n", device_id);
-	shell_fprintf(shell, SHELL_NORMAL, "Firmware Version: %s\n",
+	shell_fprintf(sh, SHELL_NORMAL, "Unique device id: %s\n", device_id);
+	shell_fprintf(sh, SHELL_NORMAL, "Firmware Version: %s\n",
 		      firmware_version);
 
 	return 0;

@@ -5,10 +5,10 @@ compatible: "soc-nv-flash"
 include: base.yaml
 
 properties:
-    erase-block-size:
-     type: int
-     description: address alignment required by flash erase operations
+  erase-block-size:
+    type: int
+    description: address alignment required by flash erase operations
 
-    write-block-size:
-     type: int
-     description: address alignment required by flash write operations
+  write-block-size:
+    type: int
+    description: address alignment required by flash write operations

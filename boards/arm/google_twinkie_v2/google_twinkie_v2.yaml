@@ -1,0 +1,15 @@
+identifier: google_twinkie_v2
+name: Google Twinkie V2
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 144
+flash: 512
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: google

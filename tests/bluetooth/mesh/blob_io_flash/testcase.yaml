@@ -1,0 +1,8 @@
+tests:
+  bluetooth.mesh.blob_io_flash:
+    platform_allow: native_posix
+    tags:
+      - bluetooth
+      - mesh
+    integration_platforms:
+      - native_posix

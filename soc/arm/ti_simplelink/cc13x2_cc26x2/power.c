@@ -54,11 +54,10 @@ extern PowerCC26X2_ModuleState PowerCC26X2_module;
  * Power state mapping:
  * PM_STATE_SUSPEND_TO_IDLE: Idle
  * PM_STATE_STANDBY: Standby
- * PM_STATE_SUSPEND_TO_RAM | PM_STATE_SUSPEND_TO_DISK: Shutdown
  */
 
 /* Invoke Low Power/System Off specific Tasks */
-__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
+void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 
@@ -106,13 +105,6 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		/* go to standby mode */
 		Power_sleep(PowerCC26XX_STANDBY);
 		break;
-	case PM_STATE_SUSPEND_TO_RAM:
-		__fallthrough;
-	case PM_STATE_SUSPEND_TO_DISK:
-		__fallthrough;
-	case PM_STATE_SOFT_OFF:
-		Power_shutdown(0, 0);
-		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
 		break;
@@ -122,7 +114,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
@@ -136,11 +128,10 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 #endif /* CONFIG_PM */
 
 /* Initialize TI Power module */
-static int power_initialize(const struct device *dev)
+static int power_initialize(void)
 {
 	unsigned int ret;
 
-	ARG_UNUSED(dev);
 
 	ret = irq_lock();
 	Power_init();
@@ -154,7 +145,7 @@ static int power_initialize(const struct device *dev)
  * This needs to be called during POST_KERNEL in order for "Booting Zephyr"
  * message to show up
  */
-static int unlatch_pins(const struct device *dev)
+static int unlatch_pins(void)
 {
 	/* Get the reason for reset. */
 	uint32_t rSrc = SysCtrlResetSourceGet();

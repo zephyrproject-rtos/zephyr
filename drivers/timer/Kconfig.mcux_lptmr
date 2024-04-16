@@ -8,6 +8,7 @@ config MCUX_LPTMR_TIMER
 	default y
 	depends on DT_HAS_NXP_KINETIS_LPTMR_ENABLED
 	depends on !COUNTER_MCUX_LPTMR
+	depends on PM
 	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
 	help
 	  This module implements a kernel device driver for the NXP MCUX Low

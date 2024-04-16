@@ -6,6 +6,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #include "sockets_internal.h"
 
@@ -317,7 +318,6 @@ static int sock_dispatch_setsockopt_vmeth(void *obj, int level, int optname,
 
 	if ((level == SOL_SOCKET) && (optname == SO_BINDTODEVICE)) {
 		struct net_if *iface;
-		const struct device *dev;
 		const struct ifreq *ifreq = optval;
 
 		if ((ifreq == NULL) || (optlen != sizeof(*ifreq))) {
@@ -325,16 +325,34 @@ static int sock_dispatch_setsockopt_vmeth(void *obj, int level, int optname,
 			return -1;
 		}
 
-		dev = device_get_binding(ifreq->ifr_name);
-		if (dev == NULL) {
-			errno = ENODEV;
-			return -1;
-		}
+		if (IS_ENABLED(CONFIG_NET_INTERFACE_NAME)) {
+			int ret;
 
-		iface = net_if_lookup_by_dev(dev);
-		if (iface == NULL) {
-			errno = ENODEV;
-			return -1;
+			ret = net_if_get_by_name(ifreq->ifr_name);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			iface = net_if_get_by_index(ret);
+			if (iface == NULL) {
+				errno = ENODEV;
+				return -1;
+			}
+		} else {
+			const struct device *dev;
+
+			dev = device_get_binding(ifreq->ifr_name);
+			if (dev == NULL) {
+				errno = ENODEV;
+				return -1;
+			}
+
+			iface = net_if_lookup_by_dev(dev);
+			if (iface == NULL) {
+				errno = ENODEV;
+				return -1;
+			}
 		}
 
 		if (net_if_socket_offload(iface) != NULL) {

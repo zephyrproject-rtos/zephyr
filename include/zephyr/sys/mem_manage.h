@@ -16,6 +16,7 @@
 /**
  * @brief Memory Management
  * @defgroup memory_management Memory Management
+ * @ingroup os_services
  * @{
  * @}
  */
@@ -53,6 +54,13 @@
 
 /** Region will be accessible to user mode (normally supervisor-only) */
 #define K_MEM_PERM_USER		BIT(5)
+
+/*
+ * Region mapping behaviour attributes
+ */
+
+/** Region will be mapped to 1:1 virtual and physical address */
+#define K_MEM_DIRECT_MAP	BIT(6)
 
 /*
  * This is the offset to subtract from a virtual address mapped in the
@@ -141,13 +149,19 @@ static inline uintptr_t z_mem_phys_addr(void *virt)
 	uintptr_t addr = (uintptr_t)virt;
 
 #ifdef CONFIG_MMU
-	__ASSERT((addr >= CONFIG_KERNEL_VM_BASE) &&
+	__ASSERT(
+#if CONFIG_KERNEL_VM_BASE != 0
+		 (addr >= CONFIG_KERNEL_VM_BASE) &&
+#endif
 		 (addr < (CONFIG_KERNEL_VM_BASE +
 			  (CONFIG_KERNEL_VM_SIZE))),
 		 "address %p not in permanent mappings", virt);
 #else
 	/* Should be identity-mapped */
-	__ASSERT((addr >= CONFIG_SRAM_BASE_ADDRESS) &&
+	__ASSERT(
+#if CONFIG_SRAM_BASE_ADDRESS != 0
+		 (addr >= CONFIG_SRAM_BASE_ADDRESS) &&
+#endif
 		 (addr < (CONFIG_SRAM_BASE_ADDRESS +
 			  (CONFIG_SRAM_SIZE * 1024UL))),
 		 "physical address 0x%lx not in RAM",
@@ -164,7 +178,10 @@ static inline uintptr_t z_mem_phys_addr(void *virt)
 /* Just like Z_MEM_VIRT_ADDR() but with type safety and assertions */
 static inline void *z_mem_virt_addr(uintptr_t phys)
 {
-	__ASSERT((phys >= CONFIG_SRAM_BASE_ADDRESS) &&
+	__ASSERT(
+#if CONFIG_SRAM_BASE_ADDRESS != 0
+		 (phys >= CONFIG_SRAM_BASE_ADDRESS) &&
+#endif
 		 (phys < (CONFIG_SRAM_BASE_ADDRESS +
 			  (CONFIG_SRAM_SIZE * 1024UL))),
 		 "physical address 0x%lx not in RAM", (unsigned long)phys);

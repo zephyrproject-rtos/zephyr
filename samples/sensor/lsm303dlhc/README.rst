@@ -20,7 +20,7 @@ References
 **********
 
 For more information about the LSM303DLHC eCompass module, see
-http://www.st.com/en/mems-and-sensors/lsm303dlhc.html
+https://www.st.com/en/mems-and-sensors/lsm303dlhc.html
 
 Building and Running
 ********************

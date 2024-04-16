@@ -184,52 +184,52 @@
 
 #define csr_read(csr)						\
 ({								\
-	register unsigned long __v;				\
+	register unsigned long __rv;				\
 	__asm__ volatile ("csrr %0, " STRINGIFY(csr)		\
-				: "=r" (__v));			\
-	__v;							\
+				: "=r" (__rv));			\
+	__rv;							\
 })
 
 #define csr_write(csr, val)					\
 ({								\
-	unsigned long __v = (unsigned long)(val);		\
+	unsigned long __wv = (unsigned long)(val);		\
 	__asm__ volatile ("csrw " STRINGIFY(csr) ", %0"		\
-				: : "rK" (__v)			\
+				: : "rK" (__wv)			\
 				: "memory");			\
 })
 
 
 #define csr_read_set(csr, val)					\
 ({								\
-	unsigned long __v = (unsigned long)(val);		\
+	unsigned long __rsv = (unsigned long)(val);		\
 	__asm__ volatile ("csrrs %0, " STRINGIFY(csr) ", %1"	\
-				: "=r" (__v) : "rK" (__v)	\
+				: "=r" (__rsv) : "rK" (__rsv)	\
 				: "memory");			\
-	__v;							\
+	__rsv;							\
 })
 
 #define csr_set(csr, val)					\
 ({								\
-	unsigned long __v = (unsigned long)(val);		\
+	unsigned long __sv = (unsigned long)(val);		\
 	__asm__ volatile ("csrs " STRINGIFY(csr) ", %0"		\
-				: : "rK" (__v)			\
+				: : "rK" (__sv)			\
 				: "memory");			\
 })
 
 #define csr_read_clear(csr, val)				\
 ({								\
-	unsigned long __v = (unsigned long)(val);		\
+	unsigned long __rcv = (unsigned long)(val);		\
 	__asm__ volatile ("csrrc %0, " STRINGIFY(csr) ", %1"	\
-				: "=r" (__v) : "rK" (__v)	\
+				: "=r" (__rcv) : "rK" (__rcv)	\
 				: "memory");			\
-	__v;							\
+	__rcv;							\
 })
 
 #define csr_clear(csr, val)					\
 ({								\
-	unsigned long __v = (unsigned long)(val);		\
+	unsigned long __cv = (unsigned long)(val);		\
 	__asm__ volatile ("csrc " STRINGIFY(csr) ", %0"		\
-				: : "rK" (__v)			\
+				: : "rK" (__cv)			\
 				: "memory");			\
 })
 

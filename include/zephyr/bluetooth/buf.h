@@ -18,7 +18,8 @@
  * @{
  */
 
-#include <zephyr/types.h>
+#include <stdint.h>
+
 #include <zephyr/net/buf.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/util.h>

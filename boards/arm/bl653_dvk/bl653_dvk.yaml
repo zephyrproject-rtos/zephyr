@@ -16,3 +16,4 @@ supported:
   - counter
   - spi
   - i2c
+vendor: lairdconnect

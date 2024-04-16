@@ -17,7 +17,7 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include "net_private.h"
 #include "connection.h"
 #include "icmpv6.h"
@@ -213,8 +213,9 @@ static void reassembly_info(char *str, struct net_ipv6_reassembly *reass)
 
 static void reassembly_timeout(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct net_ipv6_reassembly *reass =
-		CONTAINER_OF(work, struct net_ipv6_reassembly, timer);
+		CONTAINER_OF(dwork, struct net_ipv6_reassembly, timer);
 
 	reassembly_info("Reassembly cancelled", reass);
 

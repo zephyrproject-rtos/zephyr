@@ -8,9 +8,6 @@ if BOARD_HOLYIOT_YJ16019
 config BOARD
 	default "holyiot_yj16019"
 
-config GPIO_AS_PINRESET
-	default n
-
 config BT_CTLR
 	default BT
 

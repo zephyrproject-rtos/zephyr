@@ -10,6 +10,7 @@
  * NOTE: This file is replicated in particle_{argon,boron,xenon}.
  * Changes should be made in all instances. */
 #include "mesh_feather-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	aliases {
@@ -56,11 +57,13 @@
 		mode_button: button_0 {
 			gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Mode Button";
+			zephyr,code = <INPUT_BTN_MODE>;
 		};
 
 		reset_button: button_1 {
 			gpios = <&gpio0 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Reset Button";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 

@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/f4/stm32f407Xg.dtsi>
 #include <st/f4/stm32f407z(e-g)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "black_f407zg_pro board";
@@ -38,14 +39,17 @@
 		user_button_0: K0 {
 			label = "Key K0";
 			gpios = <&gpiob 9 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		user_button_1: K1 {
 			label = "Key K1";
 			gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		user_button_UP: K_UP {
 			label = "Key WK_UP";
 			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_UP>;
 		};
 	};
 

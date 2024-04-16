@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(hello_world, 4);
 
 static const char *hexdump_msg = "HEXDUMP! HEXDUMP@ HEXDUMP#";
 
-void main(void)
+int main(void)
 {
 	int8_t i8 = 1;
 	uint8_t u8 = 2;
@@ -65,9 +65,10 @@ void main(void)
 
 	LOG_DBG("float %f, double %f", (double)f, d);
 #ifdef CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE
-	long double ld = 70.71;
+	long double ld = 70.71L;
 
 	LOG_DBG("long double %Lf", ld);
 #endif
 #endif
+	return 0;
 }

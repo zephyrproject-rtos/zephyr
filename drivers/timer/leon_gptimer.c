@@ -12,7 +12,7 @@
 
 #define DT_DRV_COMPAT gaisler_gptimer
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys_clock.h>
@@ -103,9 +103,8 @@ static void init_downcounter(volatile struct gptimer_timer_regs *tmr)
 	tmr->ctrl = GPTIMER_CTRL_LD | GPTIMER_CTRL_RS | GPTIMER_CTRL_EN;
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
 	const int timer_interrupt = get_timer_irq();
 	volatile struct gptimer_regs *regs = get_regs();
 	volatile struct gptimer_timer_regs *tmr = &regs->timer[0];

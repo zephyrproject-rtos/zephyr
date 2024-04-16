@@ -3,7 +3,7 @@
 
 config INTC_ESP32C3
 	bool "ESP32C3 interrupt controller driver"
-	depends on SOC_ESP32C3
+	depends on SOC_SERIES_ESP32C3
 	default y
 	help
 	  Enables the esp32c3 interrupt controller driver to handle ISR

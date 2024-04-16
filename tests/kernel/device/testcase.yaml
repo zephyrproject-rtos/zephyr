@@ -1,13 +1,28 @@
 common:
-  tags: device userspace
+  tags:
+    - device
+    - userspace
   integration_platforms:
     - native_posix
 tests:
   kernel.device:
-    tags: kernel device
-    platform_exclude: beaglev_starlight_jh7100
+    tags:
+      - kernel
+      - device
+    platform_exclude: xenvm
+  kernel.device.minimallibc:
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    tags:
+      - kernel
+      - device
+      - libc
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+    platform_exclude: xenvm
   kernel.device.pm:
-    tags: kernel device
-    platform_exclude: mec15xxevb_assy6853 beaglev_starlight_jh7100
+    tags:
+      - kernel
+      - device
+    platform_exclude: mec15xxevb_assy6853 xenvm
     extra_configs:
       - CONFIG_PM_DEVICE=y

@@ -36,6 +36,7 @@
 #include "csip_internal.h"
 #include "../host/conn_internal.h"
 #include "../host/keys.h"
+#include "common/bt_str.h"
 
 #include <zephyr/logging/log.h>
 
@@ -49,7 +50,6 @@ static struct bt_csip_set_coordinator_svc_inst *cur_inst;
 static bool busy;
 
 struct bt_csip_set_coordinator_svc_inst {
-	uint8_t rank;
 	uint8_t set_lock;
 
 	uint16_t start_handle;
@@ -68,7 +68,7 @@ struct bt_csip_set_coordinator_svc_inst {
 	struct bt_gatt_discover_params lock_sub_disc_params;
 
 	struct bt_conn *conn;
-	struct bt_csip_set_coordinator_set_member *member;
+	struct bt_csip_set_coordinator_set_info *set_info;
 };
 
 static struct active_members {
@@ -208,7 +208,7 @@ static int member_rank_compare_asc(const void *m1, const void *m2)
 		return 0;
 	}
 
-	return svc_inst_1->rank - svc_inst_2->rank;
+	return svc_inst_1->set_info->rank - svc_inst_2->set_info->rank;
 }
 
 static int member_rank_compare_desc(const void *m1, const void *m2)
@@ -232,26 +232,26 @@ static void active_members_store_ordered(const struct bt_csip_set_coordinator_se
 		qsort(active.members, count, sizeof(members[0U]),
 		ascending ? member_rank_compare_asc : member_rank_compare_desc);
 
-		if (IS_ENABLED(CONFIG_ASSERT)) {
-			for (size_t i = 1U; i < count; i++) {
-				const struct bt_csip_set_coordinator_svc_inst *svc_inst_1 =
-					lookup_instance_by_set_info(active.members[i - 1U], info);
-				const struct bt_csip_set_coordinator_svc_inst *svc_inst_2 =
-					lookup_instance_by_set_info(active.members[i], info);
-				const uint8_t rank_1 = svc_inst_1->rank;
-				const uint8_t rank_2 = svc_inst_2->rank;
+#if defined(CONFIG_ASSERT)
+		for (size_t i = 1U; i < count; i++) {
+			const struct bt_csip_set_coordinator_svc_inst *svc_inst_1 =
+				lookup_instance_by_set_info(active.members[i - 1U], info);
+			const struct bt_csip_set_coordinator_svc_inst *svc_inst_2 =
+				lookup_instance_by_set_info(active.members[i], info);
+			const uint8_t rank_1 = svc_inst_1->set_info->rank;
+			const uint8_t rank_2 = svc_inst_2->set_info->rank;
 
-				if (ascending) {
-					__ASSERT(rank_1 <= rank_2,
-						"Members not sorted by ascending rank %u - %u",
-						rank_1, rank_2);
-				} else {
-					__ASSERT(rank_1 >= rank_2,
-						"Members not sorted by descending rank %u - %u",
-						rank_1, rank_2);
-				}
+			if (ascending) {
+				__ASSERT(rank_1 <= rank_2,
+					 "Members not sorted by ascending rank %u - %u", rank_1,
+					 rank_2);
+			} else {
+				__ASSERT(rank_1 >= rank_2,
+					 "Members not sorted by descending rank %u - %u", rank_1,
+					 rank_2);
 			}
 		}
+#endif /* CONFIG_ASSERT */
 	}
 }
 
@@ -667,7 +667,8 @@ static uint8_t discover_func(struct bt_conn *conn,
 		LOG_DBG("Setup complete for %u / %u", cur_inst->idx + 1, client->inst_count);
 		(void)memset(params, 0, sizeof(*params));
 
-		if ((cur_inst->idx + 1) < client->inst_count) {
+		if (CONFIG_BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES > 1 &&
+		    (cur_inst->idx + 1) < client->inst_count) {
 			int err;
 
 			cur_inst = &client->svc_insts[cur_inst->idx + 1];
@@ -715,11 +716,16 @@ static uint8_t discover_func(struct bt_conn *conn,
 			sub_params->disc_params = &cur_inst->size_sub_disc_params;
 			notify_handler = size_notify_func;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_CSIS_SET_LOCK) == 0) {
+			struct bt_csip_set_coordinator_set_info *set_info;
+
 			LOG_DBG("Set lock");
 			cur_inst->set_lock_handle = chrc->value_handle;
 			sub_params = &cur_inst->lock_sub_params;
 			sub_params->disc_params = &cur_inst->lock_sub_disc_params;
 			notify_handler = lock_notify_func;
+
+			set_info = &client->set_member.insts[cur_inst->idx].info;
+			set_info->lockable = true;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_CSIS_RANK) == 0) {
 			LOG_DBG("Set rank");
 			cur_inst->rank_handle = chrc->value_handle;
@@ -792,6 +798,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 		cur_inst->start_handle = attr->handle;
 		cur_inst->end_handle = prim_service->end_handle;
 		cur_inst->conn = bt_conn_ref(conn);
+		cur_inst->set_info = &client->set_member.insts[cur_inst->idx].info;
 		client->inst_count++;
 	}
 
@@ -804,22 +811,24 @@ bool bt_csip_set_coordinator_is_set_member(const uint8_t set_sirk[BT_CSIP_SET_SI
 	if (data->type == BT_DATA_CSIS_RSI &&
 	    data->data_len == BT_CSIP_RSI_SIZE) {
 		uint8_t err;
+		uint8_t hash[BT_CSIP_CRYPTO_HASH_SIZE];
+		uint8_t prand[BT_CSIP_CRYPTO_PRAND_SIZE];
+		uint8_t calculated_hash[BT_CSIP_CRYPTO_HASH_SIZE];
 
-		uint32_t hash = sys_get_le24(data->data);
-		uint32_t prand = sys_get_le24(data->data + 3);
-		uint32_t calculated_hash;
+		memcpy(hash, data->data, BT_CSIP_CRYPTO_HASH_SIZE);
+		memcpy(prand, data->data + BT_CSIP_CRYPTO_HASH_SIZE, BT_CSIP_CRYPTO_PRAND_SIZE);
 
-		LOG_DBG("hash: 0x%06x, prand 0x%06x", hash, prand);
-		err = bt_csip_sih(set_sirk, prand, &calculated_hash);
+		LOG_DBG("hash: %s", bt_hex(hash, BT_CSIP_CRYPTO_HASH_SIZE));
+		LOG_DBG("prand %s", bt_hex(prand, BT_CSIP_CRYPTO_PRAND_SIZE));
+		err = bt_csip_sih(set_sirk, prand, calculated_hash);
 		if (err != 0) {
 			return false;
 		}
 
-		calculated_hash &= 0xffffff;
+		LOG_DBG("calculated_hash: %s", bt_hex(calculated_hash, BT_CSIP_CRYPTO_HASH_SIZE));
+		LOG_DBG("hash: %s", bt_hex(hash, BT_CSIP_CRYPTO_HASH_SIZE));
 
-		LOG_DBG("calculated_hash: 0x%06x, hash 0x%06x", calculated_hash, hash);
-
-		return calculated_hash == hash;
+		return memcmp(calculated_hash, hash, BT_CSIP_CRYPTO_HASH_SIZE) == 0;
 	}
 
 	return false;
@@ -842,12 +851,15 @@ static uint8_t csip_set_coordinator_discover_insts_read_rank_cb(struct bt_conn *
 
 		discover_complete(client, err);
 	} else if (data != NULL) {
+		struct bt_csip_set_coordinator_set_info *set_info;
+
 		LOG_HEXDUMP_DBG(data, length, "Data read");
 
-		if (length == 1) {
-			(void)memcpy(&client->svc_insts[cur_inst->idx].rank,
-				     data, length);
-			LOG_DBG("%u", client->svc_insts[cur_inst->idx].rank);
+		set_info = &client->set_member.insts[cur_inst->idx].info;
+
+		if (length == sizeof(set_info->rank)) {
+			(void)memcpy(&set_info->rank, data, length);
+			LOG_DBG("%u", set_info->rank);
 		} else {
 			LOG_DBG("Invalid length, continuing to next member");
 		}
@@ -1091,6 +1103,7 @@ static void csip_set_coordinator_write_lock_cb(struct bt_conn *conn,
 				LOG_DBG("Failed to lookup instance by set_info %p", active.info);
 
 				lock_set_complete(-ENOENT);
+				return;
 			}
 
 			csip_err = csip_set_coordinator_write_set_lock(
@@ -1201,7 +1214,8 @@ static void csip_set_coordinator_lock_state_read_cb(int err, bool locked)
 
 	if (err || locked) {
 		cur_member = active.members[active.members_handled];
-	} else if (!active.oap_cb(info, active.members, active.members_count)) {
+	} else if (active.oap_cb == NULL || !active.oap_cb(info, active.members,
+		   active.members_count)) {
 		err = -ECANCELED;
 	}
 
@@ -1305,7 +1319,6 @@ static void csip_set_coordinator_reset(struct bt_csip_set_coordinator_inst *inst
 		struct bt_csip_set_coordinator_svc_inst *svc_inst = &inst->svc_insts[i];
 
 		svc_inst->idx = 0;
-		svc_inst->rank = 0;
 		svc_inst->set_lock = 0;
 		svc_inst->start_handle = 0;
 		svc_inst->end_handle = 0;
@@ -1334,6 +1347,11 @@ static void csip_set_coordinator_reset(struct bt_csip_set_coordinator_inst *inst
 			bt_conn_unref(conn);
 			svc_inst->conn = NULL;
 		}
+
+		if (svc_inst->set_info != NULL) {
+			memset(svc_inst->set_info, 0, sizeof(*svc_inst->set_info));
+			svc_inst->set_info = NULL;
+		}
 	}
 
 	if (inst->conn) {
@@ -1358,8 +1376,21 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 struct bt_csip_set_coordinator_csis_inst *bt_csip_set_coordinator_csis_inst_by_handle(
 	struct bt_conn *conn, uint16_t start_handle)
 {
-	const struct bt_csip_set_coordinator_svc_inst *svc_inst =
-		lookup_instance_by_handle(conn, start_handle);
+	const struct bt_csip_set_coordinator_svc_inst *svc_inst;
+
+	CHECKIF(conn == NULL) {
+		LOG_DBG("conn is NULL");
+
+		return NULL;
+	}
+
+	CHECKIF(start_handle == 0) {
+		LOG_DBG("start_handle is 0");
+
+		return NULL;
+	}
+
+	svc_inst = lookup_instance_by_handle(conn, start_handle);
 
 	if (svc_inst != NULL) {
 		struct bt_csip_set_coordinator_inst *client;
@@ -1469,7 +1500,7 @@ static int verify_members(const struct bt_csip_set_coordinator_set_member **memb
 			return -EINVAL;
 		}
 
-		ranks[i] = svc_inst->rank;
+		ranks[i] = svc_inst->set_info->rank;
 		if (ranks[i] == 0U && !zero_rank) {
 			zero_rank = true;
 		} else if (ranks[i] != 0 && zero_rank) {
@@ -1477,9 +1508,12 @@ static int verify_members(const struct bt_csip_set_coordinator_set_member **memb
 			LOG_DBG("Found mix of 0 and non-0 ranks");
 			return -EINVAL;
 		}
+	}
 
-		if (!zero_rank) {
-			for (size_t j = 0U; j < i; j++) {
+	if (CONFIG_BT_MAX_CONN > 1 && !zero_rank && count > 1U) {
+		/* Search for duplicate ranks */
+		for (uint8_t i = 0U; i < count - 1; i++) {
+			for (uint8_t j = i + 1; j < count; j++) {
 				if (ranks[j] == ranks[i]) {
 					/* duplicate rank */
 					LOG_DBG("Duplicate rank (%u) for members[%zu] "
@@ -1514,19 +1548,40 @@ static int bt_csip_set_coordinator_get_lock_state(
 
 	active_members_store_ordered(members, count, set_info, true);
 
-	cur_inst = lookup_instance_by_set_info(active.members[0], active.info);
-	if (cur_inst == NULL) {
-		LOG_DBG("Failed to lookup instance by set_info %p", active.info);
+	for (uint8_t i = 0U; i < count; i++) {
+		cur_inst = lookup_instance_by_set_info(active.members[i], active.info);
+		if (cur_inst == NULL) {
+			LOG_DBG("Failed to lookup instance by set_info %p", active.info);
 
-		active_members_reset();
-		return -ENOENT;
+			active_members_reset();
+			return -ENOENT;
+		}
+
+		if (cur_inst->set_info->lockable) {
+			err = csip_set_coordinator_read_set_lock(cur_inst);
+			if (err == 0) {
+				busy = true;
+			} else {
+				cur_inst = NULL;
+			}
+
+			break;
+		}
+
+		active.members_handled++;
 	}
 
-	err = csip_set_coordinator_read_set_lock(cur_inst);
-	if (err == 0) {
-		busy = true;
-	} else {
-		cur_inst = NULL;
+	if (!busy && err == 0) {
+		/* We are not reading any lock states (because they are not on the remote devices),
+		 * so we can just initiate the ordered access procedure (oap) callback directly
+		 * here.
+		 */
+		if (active.oap_cb == NULL ||
+		    !active.oap_cb(active.info, active.members, active.members_count)) {
+			err = -ECANCELED;
+		}
+
+		ordered_access_complete(active.info, err, false, NULL);
 	}
 
 	return err;
@@ -1540,13 +1595,15 @@ int bt_csip_set_coordinator_ordered_access(
 {
 	int err;
 
-	err = bt_csip_set_coordinator_get_lock_state(members, count, set_info);
-	if (err != 0) {
-		return err;
-	}
-
 	/* wait for the get_lock_state to finish and then call the callback */
 	active.oap_cb = cb;
+
+	err = bt_csip_set_coordinator_get_lock_state(members, count, set_info);
+	if (err != 0) {
+		active.oap_cb = NULL;
+
+		return err;
+	}
 
 	return 0;
 }

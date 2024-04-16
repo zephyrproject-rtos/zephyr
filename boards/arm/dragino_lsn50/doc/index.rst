@@ -188,7 +188,7 @@ You can debug an application in the usual way.  Here is an example for the
    https://www.dragino.com/products/lora-lorawan-end-node/item/128-lsn50.html
 
 .. _STM32L072CZ on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32l072cz.html
+   https://www.st.com/en/microcontrollers/stm32l072cz.html
 
 .. _STM32L0x2 reference manual:
-   http://www.st.com/resource/en/reference_manual/DM00108281.pdf
+   https://www.st.com/resource/en/reference_manual/DM00108281.pdf

@@ -7,6 +7,13 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_NUMICRO_PINCTRL_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_NUMICRO_PINCTRL_H_
 
+#define NUMICRO_MFP_SHIFT 0U
+#define NUMICRO_MFP_MASK  0xFU
+#define NUMICRO_PIN_SHIFT 4U
+#define NUMICRO_PIN_MASK  0xFU
+#define NUMICRO_PORT_SHIFT 8U
+#define NUMICRO_PORT_MASK  0xFU
+
 /**
  * @brief Pin configuration configuration bit field.
  *
@@ -20,13 +27,6 @@
  * @param pin  Pin (0..15)
  * @param mfp  Multi-function value (0..15)
  */
-#define NUMICRO_MFP_SHIFT 0U
-#define NUMICRO_MFP_MASK  0xFU
-#define NUMICRO_PIN_SHIFT 4U
-#define NUMICRO_PIN_MASK  0xFU
-#define NUMICRO_PORT_SHIFT 8U
-#define NUMICRO_PORT_MASK  0xFU
-
 #define NUMICRO_PINMUX(port, pin, mfp)					\
 	(((((port) - 'A') & NUMICRO_PORT_MASK) << NUMICRO_PORT_SHIFT) |	\
 	(((pin) & NUMICRO_PIN_MASK) << NUMICRO_PIN_SHIFT) |		\

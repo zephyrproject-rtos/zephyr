@@ -1,7 +1,8 @@
-.. _coap-server-sample:
+.. zephyr:code-sample:: coap-server
+   :name: CoAP server
+   :relevant-api: coap udp
 
-CoAP Server
-###########
+   Use the CoAP library to implement a server that exposes CoAP resources.
 
 Overview
 ********

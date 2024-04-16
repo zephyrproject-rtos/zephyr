@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay performs configuration from clean sheet.
+ * It is assumed that it is applied after clear_clocks.overlay file.
+ */
+
+&clk_hse {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(32)>;
+};
+
+&pll1 {
+	div-m = <8>;
+	mul-n = <100>;
+	div-q = <2>;
+	div-r = <4>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(100)>;
+	ahb-prescaler = <1>;
+	ahb5-prescaler = <4>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb7-prescaler = <1>;
+};

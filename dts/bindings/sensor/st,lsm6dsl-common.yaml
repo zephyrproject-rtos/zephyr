@@ -1,0 +1,10 @@
+# Copyright (c) 2017, Linaro Limited
+# Copyright (c) 2023, Marcin Niestroj
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml
+
+properties:
+  irq-gpios:
+    # This signal is active high when produced by the sensor
+    type: phandle-array

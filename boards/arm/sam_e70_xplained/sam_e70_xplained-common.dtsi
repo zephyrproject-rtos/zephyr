@@ -8,6 +8,7 @@
  */
 
 #include "sam_e70_xplained-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	aliases {
@@ -44,6 +45,7 @@
 		sw0_user_button: button_1 {
 			label = "User Button";
 			gpios = <&pioa 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };
@@ -125,13 +127,7 @@ zephyr_udc0: &usbhs {
 	pinctrl-names = "default";
 
 	mac-eeprom = <&eeprom>;
-
-	phy: phy {
-		compatible = "ethernet-phy";
-		status = "okay";
-		address = <0>;
-		mdio = <&mdio>;
-	};
+	phy-handle = <&phy>;
 };
 
 &mdio {
@@ -139,6 +135,12 @@ zephyr_udc0: &usbhs {
 
 	pinctrl-0 = <&mdio_default>;
 	pinctrl-names = "default";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		status = "okay";
+		reg = <0>;
+	};
 };
 
 &pwm0 {

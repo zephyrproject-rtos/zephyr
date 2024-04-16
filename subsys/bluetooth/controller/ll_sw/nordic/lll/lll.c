@@ -8,6 +8,8 @@
 #include <stdbool.h>
 #include <errno.h>
 
+#include <hal/nrf_rtc.h>
+
 #include <zephyr/toolchain.h>
 
 #include <soc.h>
@@ -63,7 +65,9 @@ static int init_reset(void);
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
 static inline void done_inc(void);
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
-static struct lll_event *resume_enqueue(lll_prepare_cb_t resume_cb);
+static inline bool is_done_sync(void);
+static inline struct lll_event *prepare_dequeue_iter_ready_get(uint8_t *idx);
+static inline struct lll_event *resume_enqueue(lll_prepare_cb_t resume_cb);
 static void isr_race(void *param);
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
@@ -106,7 +110,7 @@ static void rtc0_nrf5_isr(const void *arg)
 
 	/* On compare0 run ticker worker instance0 */
 	if (NRF_RTC0->EVENTS_COMPARE[0]) {
-		NRF_RTC0->EVENTS_COMPARE[0] = 0;
+		nrf_rtc_event_clear(NRF_RTC0, NRF_RTC_EVENT_COMPARE_0);
 
 		ticker_trigger(0);
 	}
@@ -470,10 +474,7 @@ uint32_t lll_preempt_calc(struct ull_hdr *ull, uint8_t ticker_id,
 		 *    duration.
 		 * 3. Increase the preempt to start ticks for future events.
 		 */
-		LL_ASSERT_MSG(false, "%s: Actual EVENT_OVERHEAD_START_US = %u",
-			      __func__, HAL_TICKER_TICKS_TO_US(diff));
-
-		return 1U;
+		return diff;
 	}
 
 	return 0U;
@@ -562,6 +563,28 @@ void lll_isr_rx_status_reset(void)
 	}
 }
 
+void lll_isr_tx_sub_status_reset(void)
+{
+	radio_status_reset();
+	radio_tmr_tx_status_reset();
+
+	if (IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN) ||
+	    IS_ENABLED(HAL_RADIO_GPIO_HAVE_LNA_PIN)) {
+		radio_gpio_pa_lna_disable();
+	}
+}
+
+void lll_isr_rx_sub_status_reset(void)
+{
+	radio_status_reset();
+	radio_tmr_rx_status_reset();
+
+	if (IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN) ||
+	    IS_ENABLED(HAL_RADIO_GPIO_HAVE_LNA_PIN)) {
+		radio_gpio_pa_lna_disable();
+	}
+}
+
 void lll_isr_status_reset(void)
 {
 	radio_status_reset();
@@ -622,6 +645,125 @@ void lll_isr_early_abort(void *param)
 	lll_done(NULL);
 }
 
+int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
+			lll_prepare_cb_t prepare_cb,
+			struct lll_prepare_param *prepare_param,
+			uint8_t is_resume, uint8_t is_dequeue)
+{
+	struct lll_event *ready;
+	struct lll_event *next;
+	uint8_t idx;
+	int err;
+
+	/* Find the ready prepare in the pipeline */
+	idx = UINT8_MAX;
+	ready = prepare_dequeue_iter_ready_get(&idx);
+
+	/* Current event active or another prepare is ready in the pipeline */
+	if ((!is_dequeue && !is_done_sync()) ||
+	    event.curr.abort_cb ||
+	    (ready && is_resume)) {
+#if defined(CONFIG_BT_CTLR_LOW_LAT)
+		lll_prepare_cb_t resume_cb;
+#endif /* CONFIG_BT_CTLR_LOW_LAT */
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) && event.curr.param) {
+			/* early abort */
+			event.curr.abort_cb(NULL, event.curr.param);
+		}
+
+		/* Store the next prepare for deferred call */
+		next = ull_prepare_enqueue(is_abort_cb, abort_cb, prepare_param,
+					   prepare_cb, is_resume);
+		LL_ASSERT(next);
+
+#if !defined(CONFIG_BT_CTLR_LOW_LAT)
+		if (is_resume) {
+			return -EINPROGRESS;
+		}
+
+		/* Always start preempt timeout for first prepare in pipeline */
+		struct lll_event *first = ready ? ready : next;
+		uint32_t ret;
+
+		/* Start the preempt timeout */
+		ret  = preempt_ticker_start(first, ready, next);
+		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+			  (ret == TICKER_STATUS_BUSY));
+
+#else /* CONFIG_BT_CTLR_LOW_LAT */
+		next = NULL;
+		while (ready) {
+			if (!ready->is_aborted) {
+				if (event.curr.param == ready->prepare_param.param) {
+					ready->is_aborted = 1;
+					ready->abort_cb(&ready->prepare_param,
+							ready->prepare_param.param);
+				} else {
+					next = ready;
+				}
+			}
+
+			ready = ull_prepare_dequeue_iter(&idx);
+		}
+
+		if (next) {
+			/* check if resume requested by curr */
+			err = event.curr.is_abort_cb(NULL, event.curr.param,
+						     &resume_cb);
+			LL_ASSERT(err);
+
+			if (err == -EAGAIN) {
+				next = resume_enqueue(resume_cb);
+				LL_ASSERT(next);
+			} else {
+				LL_ASSERT(err == -ECANCELED);
+			}
+		}
+#endif /* CONFIG_BT_CTLR_LOW_LAT */
+
+		return -EINPROGRESS;
+	}
+
+	LL_ASSERT(!ready || &ready->prepare_param == prepare_param);
+
+	event.curr.param = prepare_param->param;
+	event.curr.is_abort_cb = is_abort_cb;
+	event.curr.abort_cb = abort_cb;
+
+	err = prepare_cb(prepare_param);
+
+	if (!IS_ENABLED(CONFIG_BT_CTLR_ASSERT_OVERHEAD_START) &&
+	    (err == -ECANCELED)) {
+		err = 0;
+	}
+
+#if !defined(CONFIG_BT_CTLR_LOW_LAT)
+	uint32_t ret;
+
+	/* NOTE: preempt timeout started prior for the current event that has
+	 *       its prepare that is now invoked is not explicitly stopped here.
+	 *       If there is a next prepare event in pipeline, then the prior
+	 *       preempt timeout if started will be stopped before starting
+	 *       the new preempt timeout. Refer to implementation in
+	 *       preempt_ticker_start().
+	 */
+
+	/* Find next prepare needing preempt timeout to be setup */
+	next = prepare_dequeue_iter_ready_get(&idx);
+	if (!next) {
+		return err;
+	}
+
+	/* Start the preempt timeout */
+	ret = preempt_ticker_start(next, NULL, next);
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
+#endif /* !CONFIG_BT_CTLR_LOW_LAT */
+
+	return err;
+}
+
 static int init_reset(void)
 {
 	return 0;
@@ -644,127 +786,18 @@ static inline bool is_done_sync(void)
 #endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 }
 
-int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
-			lll_prepare_cb_t prepare_cb,
-			struct lll_prepare_param *prepare_param,
-			uint8_t is_resume, uint8_t is_dequeue)
+static inline struct lll_event *prepare_dequeue_iter_ready_get(uint8_t *idx)
 {
-	struct lll_event *p;
-	uint8_t idx;
-	int err;
+	struct lll_event *ready;
 
-	/* Find the ready prepare in the pipeline */
-	idx = UINT8_MAX;
-	p = ull_prepare_dequeue_iter(&idx);
-	while (p && (p->is_aborted || p->is_resume)) {
-		p = ull_prepare_dequeue_iter(&idx);
-	}
-
-	/* Current event active or another prepare is ready in the pipeline */
-	if ((!is_dequeue && !is_done_sync()) ||
-	    event.curr.abort_cb ||
-	    (p && is_resume)) {
-#if defined(CONFIG_BT_CTLR_LOW_LAT)
-		lll_prepare_cb_t resume_cb;
-#endif /* CONFIG_BT_CTLR_LOW_LAT */
-		struct lll_event *next;
-
-		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) && event.curr.param) {
-			/* early abort */
-			event.curr.abort_cb(NULL, event.curr.param);
-		}
-
-		/* Store the next prepare for deferred call */
-		next = ull_prepare_enqueue(is_abort_cb, abort_cb, prepare_param,
-					   prepare_cb, is_resume);
-		LL_ASSERT(next);
-
-#if !defined(CONFIG_BT_CTLR_LOW_LAT)
-		if (is_resume) {
-			return -EINPROGRESS;
-		}
-
-		/* Always start preempt timeout for first prepare in pipeline */
-		struct lll_event *first = p ? p : next;
-		uint32_t ret;
-
-		/* Start the preempt timeout */
-		ret  = preempt_ticker_start(first, p, next);
-		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-			  (ret == TICKER_STATUS_BUSY));
-
-#else /* CONFIG_BT_CTLR_LOW_LAT */
-		next = NULL;
-		while (p) {
-			if (!p->is_aborted) {
-				if (event.curr.param ==
-				    p->prepare_param.param) {
-					p->is_aborted = 1;
-					p->abort_cb(&p->prepare_param,
-						    p->prepare_param.param);
-				} else {
-					next = p;
-				}
-			}
-
-			p = ull_prepare_dequeue_iter(&idx);
-		}
-
-		if (next) {
-			/* check if resume requested by curr */
-			err = event.curr.is_abort_cb(NULL, event.curr.param,
-						     &resume_cb);
-			LL_ASSERT(err);
-
-			if (err == -EAGAIN) {
-				next = resume_enqueue(resume_cb);
-				LL_ASSERT(next);
-			} else {
-				LL_ASSERT(err == -ECANCELED);
-			}
-		}
-#endif /* CONFIG_BT_CTLR_LOW_LAT */
-
-		return -EINPROGRESS;
-	}
-
-	LL_ASSERT(!p || &p->prepare_param == prepare_param);
-
-	event.curr.param = prepare_param->param;
-	event.curr.is_abort_cb = is_abort_cb;
-	event.curr.abort_cb = abort_cb;
-
-	err = prepare_cb(prepare_param);
-
-#if !defined(CONFIG_BT_CTLR_LOW_LAT)
-	uint32_t ret;
-
-	/* NOTE: preempt timeout started prior for the current event that has
-	 *       its prepare that is now invoked is not explicitly stopped here.
-	 *       If there is a next prepare event in pipeline, then the prior
-	 *       preempt timeout if started will be stopped before starting
-	 *       the new preempt timeout. Refer to implementation in
-	 *       preempt_ticker_start().
-	 */
-
-	/* Find next prepare needing preempt timeout to be setup */
 	do {
-		p = ull_prepare_dequeue_iter(&idx);
-		if (!p) {
-			return err;
-		}
-	} while (p->is_aborted || p->is_resume);
+		ready = ull_prepare_dequeue_iter(idx);
+	} while (ready && (ready->is_aborted || ready->is_resume));
 
-	/* Start the preempt timeout */
-	ret = preempt_ticker_start(p, NULL, p);
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
-#endif /* !CONFIG_BT_CTLR_LOW_LAT */
-
-	return err;
+	return ready;
 }
 
-static struct lll_event *resume_enqueue(lll_prepare_cb_t resume_cb)
+static inline struct lll_event *resume_enqueue(lll_prepare_cb_t resume_cb)
 {
 	struct lll_prepare_param prepare_param = {0};
 
@@ -809,11 +842,17 @@ static void ticker_start_op_cb(uint32_t status, void *param)
 	ARG_UNUSED(param);
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 
-	LL_ASSERT(preempt_start_req != preempt_start_ack);
-	preempt_start_ack++;
-
+	/* Increase preempt requested count before acknowledging that the
+	 * ticker start operation for the preempt timeout has been handled.
+	 */
 	LL_ASSERT(preempt_req == preempt_ack);
 	preempt_req++;
+
+	/* Increase preempt start ack count, to acknowledge that the ticker
+	 * start operation has been handled.
+	 */
+	LL_ASSERT(preempt_start_req != preempt_start_ack);
+	preempt_start_ack++;
 }
 
 static uint32_t preempt_ticker_start(struct lll_event *first,
@@ -828,10 +867,21 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 	uint32_t preempt_to;
 	uint32_t ret;
 
-	/* Do not request to start preempt timeout if already requested */
+	/* Do not request to start preempt timeout if already requested.
+	 *
+	 * Check if there is pending preempt timeout start requested or if
+	 * preempt timeout ticker has already been scheduled.
+	 */
 	if ((preempt_start_req != preempt_start_ack) ||
 	    (preempt_req != preempt_ack)) {
 		uint32_t diff;
+
+		/* preempt timeout already started but no role/state in the head
+		 * of prepare pipeline.
+		 */
+		if (!prev || prev->is_aborted) {
+			return TICKER_STATUS_SUCCESS;
+		}
 
 		/* Calc the preempt timeout */
 		p = &next->prepare_param;
@@ -845,9 +895,9 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 		ticks_at_preempt_new &= HAL_TICKER_CNTR_MASK;
 
 		/* Check for short preempt timeouts */
-		diff = ticks_at_preempt_new - ticks_at_preempt;
-		if (!prev || prev->is_aborted ||
-		    ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U)) {
+		diff = ticker_ticks_diff_get(ticks_at_preempt_new,
+					     ticks_at_preempt);
+		if ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) {
 			return TICKER_STATUS_SUCCESS;
 		}
 
@@ -855,15 +905,6 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 		ret = preempt_ticker_stop();
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 			  (ret == TICKER_STATUS_BUSY));
-
-		/* Set early as we get called again through the call to
-		 * abort_cb().
-		 */
-		ticks_at_preempt = ticks_at_preempt_new;
-
-		/* Abort previous prepare that set the preempt timeout */
-		prev->is_aborted = 1U;
-		prev->abort_cb(&prev->prepare_param, prev->prepare_param.param);
 
 		/* Schedule short preempt timeout */
 		first = next;
@@ -894,8 +935,8 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 			   TICKER_NULL_REMAINDER,
 			   TICKER_NULL_LAZY,
 			   TICKER_NULL_SLOT,
-			   preempt_ticker_cb, first,
-			   ticker_start_op_cb, first);
+			   preempt_ticker_cb, first->prepare_param.param,
+			   ticker_start_op_cb, NULL);
 
 	return ret;
 }
@@ -944,7 +985,7 @@ static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 static void preempt(void *param)
 {
 	lll_prepare_cb_t resume_cb;
-	struct lll_event *next;
+	struct lll_event *ready;
 	uint8_t idx;
 	int err;
 
@@ -953,43 +994,67 @@ static void preempt(void *param)
 		return;
 	}
 
-	/* Check if any prepare in pipeline */
-	idx = UINT8_MAX;
-	next = ull_prepare_dequeue_iter(&idx);
-	if (!next) {
-		return;
-	}
-
 	/* Find a prepare that is ready and not a resume */
-	while (next && (next->is_aborted || next->is_resume)) {
-		next = ull_prepare_dequeue_iter(&idx);
-	}
-
-	/* No ready prepare */
-	if (!next) {
+	idx = UINT8_MAX;
+	ready = prepare_dequeue_iter_ready_get(&idx);
+	if (!ready) {
+		/* No ready prepare */
 		return;
 	}
 
 	/* Preemptor not in pipeline */
-	if (next != param) {
+	if (ready->prepare_param.param != param) {
+		struct lll_event *ready_next = NULL;
+		struct lll_event *preemptor;
 		uint32_t ret;
 
-		/* Start the preempt timeout */
-		ret = preempt_ticker_start(next, NULL, next);
-		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-			  (ret == TICKER_STATUS_BUSY));
+		/* Find if a short prepare request in the pipeline */
+		do {
+			preemptor = ull_prepare_dequeue_iter(&idx);
+			if (!ready_next && preemptor && !preemptor->is_aborted &&
+			    !preemptor->is_resume) {
+				ready_next = preemptor;
+			}
+		} while (preemptor && (preemptor->is_aborted || preemptor->is_resume ||
+			 (preemptor->prepare_param.param != param)));
 
-		return;
+		/* No short prepare request in pipeline */
+		if (!preemptor) {
+			/* Start the preempt timeout for ready event */
+			ret = preempt_ticker_start(ready, NULL, ready);
+			LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+				  (ret == TICKER_STATUS_BUSY));
+
+			return;
+		}
+
+		/* FIXME: Abort all events in pipeline before the short
+		 *        prepare event. For now, lets assert when many
+		 *        enqueued prepares need aborting.
+		 */
+		LL_ASSERT(preemptor == ready_next);
+
+		/* Abort the prepare that is present before the short prepare */
+		ready->is_aborted = 1;
+		ready->abort_cb(&ready->prepare_param, ready->prepare_param.param);
+
+		/* As the prepare queue has been refreshed due to the call of
+		 * abort_cb which invokes the lll_done, find the latest prepare
+		 */
+		idx = UINT8_MAX;
+		ready = prepare_dequeue_iter_ready_get(&idx);
+		if (!ready) {
+			/* No ready prepare */
+			return;
+		}
 	}
 
 	/* Check if current event want to continue */
-	err = event.curr.is_abort_cb(next->prepare_param.param,
-				     event.curr.param,
-				     &resume_cb);
+	err = event.curr.is_abort_cb(ready->prepare_param.param, event.curr.param, &resume_cb);
 	if (!err) {
 		/* Let preemptor LLL know about the cancelled prepare */
-		next->is_aborted = 1;
-		next->abort_cb(&next->prepare_param, next->prepare_param.param);
+		ready->is_aborted = 1;
+		ready->abort_cb(&ready->prepare_param, ready->prepare_param.param);
 
 		return;
 	}

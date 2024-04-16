@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2023 bytes at work AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mipi_dsi {
+	otm8009a: otm8009a@0 {
+		status = "okay";
+		compatible = "orisetech,otm8009a";
+		reg = <0x0>;
+		height = <800>;
+		width = <480>;
+		reset-gpios = <&dsi_lcd_qsh_030 57 GPIO_ACTIVE_HIGH>;
+		bl-gpios = <&dsi_lcd_qsh_030 53 GPIO_ACTIVE_HIGH>;
+	};
+};

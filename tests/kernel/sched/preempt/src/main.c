@@ -50,7 +50,7 @@ const enum { METAIRQ, COOP, PREEMPTIBLE } worker_priorities[] = {
 
 #define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
-k_tid_t last_thread;
+k_tid_t last_wakeup_thread;
 
 struct k_thread manager_thread;
 
@@ -65,7 +65,7 @@ struct k_thread manager_thread;
 struct k_sem worker_sems[NUM_THREADS];
 
 /* Command to worker: who to wake up */
-int target;
+int wakeup_target;
 
 /* Command to worker: use a sched_lock()? */
 volatile int do_lock;
@@ -96,7 +96,7 @@ void wakeup_src_thread(int id)
 		return;
 	}
 
-	last_thread = NULL;
+	last_wakeup_thread = NULL;
 
 	/* A little bit of white-box inspection: check that all the
 	 * worker threads are pending.
@@ -112,35 +112,24 @@ void wakeup_src_thread(int id)
 	}
 
 	/* Wake the src worker up */
-	last_thread = NULL;
+	last_wakeup_thread = NULL;
 	k_sem_give(&worker_sems[id]);
 
 	while (do_sleep && !(src_thread->base.thread_state & _THREAD_PENDING)) {
 		/* spin, waiting on the sleep timeout */
-#if defined(CONFIG_ARCH_POSIX)
-		/**
-		 * In the posix arch busy wait loops waiting for something to
-		 * happen need to halt the CPU due to the infinitely fast clock
-		 * assumption. (Or in plain English: otherwise you hang in this
-		 * loop. Because the posix arch emulates having 1 CPU by only
-		 * enabling 1 thread at a time. And because it assumes code
-		 * executes in 0 time: it always waits for the code to finish
-		 * and it letting the cpu sleep before letting time pass)
-		 */
-		k_busy_wait(50);
-#endif
+		Z_SPIN_DELAY(50);
 	}
 
 	/* We are lowest priority, SOMEONE must have run */
-	zassert_true(!!last_thread, "");
+	zassert_true(!!last_wakeup_thread, "");
 }
 
 void manager(void *p1, void *p2, void *p3)
 {
 	for (int src = 0; src < NUM_THREADS; src++) {
-		for (target = 0; target < NUM_THREADS; target++) {
+		for (wakeup_target = 0; wakeup_target < NUM_THREADS; wakeup_target++) {
 
-			if (src == target) {
+			if (src == wakeup_target) {
 				continue;
 			}
 
@@ -168,7 +157,7 @@ void manager(void *p1, void *p2, void *p3)
 void irq_waker(const void *p)
 {
 	ARG_UNUSED(p);
-	k_sem_give(&worker_sems[target]);
+	k_sem_give(&worker_sems[wakeup_target]);
 }
 
 #define PRI(n) (worker_priorities[n])
@@ -255,12 +244,12 @@ void worker(void *p1, void *p2, void *p3)
 		 */
 		k_sem_take(&worker_sems[id], K_FOREVER);
 
-		last_thread = curr;
+		last_wakeup_thread = curr;
 
-		/* If we're the wakeup target, setting last_thread is
+		/* If we're the wakeup target, setting last_wakeup_thread is
 		 * all we do
 		 */
-		if (id == target) {
+		if (id == wakeup_target) {
 			continue;
 		}
 
@@ -273,14 +262,14 @@ void worker(void *p1, void *p2, void *p3)
 			 * ISR return does the right thing
 			 */
 			irq_offload(irq_waker, NULL);
-			prev = last_thread;
+			prev = last_wakeup_thread;
 		} else {
 			/* Do the sem_give() directly to validate that
 			 * the synchronous scheduling does the right
 			 * thing
 			 */
-			k_sem_give(&worker_sems[target]);
-			prev = last_thread;
+			k_sem_give(&worker_sems[wakeup_target]);
+			prev = last_wakeup_thread;
 		}
 
 		if (do_lock) {
@@ -289,7 +278,7 @@ void worker(void *p1, void *p2, void *p3)
 
 		if (do_yield) {
 			k_yield();
-			prev = last_thread;
+			prev = last_wakeup_thread;
 		}
 
 		if (do_sleep) {
@@ -299,10 +288,10 @@ void worker(void *p1, void *p2, void *p3)
 
 			zassert_true(k_uptime_get() - start > 0,
 				     "didn't sleep");
-			prev = last_thread;
+			prev = last_wakeup_thread;
 		}
 
-		validate_wakeup(id, target, prev);
+		validate_wakeup(id, wakeup_target, prev);
 	}
 }
 

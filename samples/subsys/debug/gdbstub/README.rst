@@ -1,7 +1,7 @@
-.. _gdb_debug_sample:
+.. zephyr:code-sample:: gdb-debug
+   :name: GDB debug
 
-GDB Debug Sample
-################
+   Use GDB Remote Serial Protocol to debug a Zephyr application running on QEMU.
 
 Overview
 ********

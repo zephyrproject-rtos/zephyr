@@ -9,6 +9,7 @@
 #include <st/g0/stm32g071Xb.dtsi>
 #include <st/g0/stm32g071r(6-8-b)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32G071RB-NUCLEO board";
@@ -21,22 +22,8 @@
 		zephyr,flash = &flash0;
 	};
 
-	power-states {
-		stop0: state0 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <1>;
-			min-residency-us = <20>;
-		};
-		stop1: state1 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <2>;
-			min-residency-us = <100>;
-		};
-	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led_1: led_4 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
@@ -49,6 +36,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
@@ -56,6 +44,9 @@
 		led0 = &green_led_1;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -149,6 +140,8 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <4>;
 	status = "okay";
 	vref-mv = <3300>;
 };
@@ -177,12 +170,16 @@
 	};
 };
 
-&cpu0 {
-	cpu-power-states = <&stop0 &stop1>;
-};
-
 &lptim1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
 		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };

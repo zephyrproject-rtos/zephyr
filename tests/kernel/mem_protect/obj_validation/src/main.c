@@ -190,4 +190,4 @@ void *object_validation_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(object_validation, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(object_validation, NULL, object_validation_setup, NULL, NULL, NULL);

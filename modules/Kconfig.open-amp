@@ -28,4 +28,9 @@ config OPENAMP_SLAVE
 	help
 	  This option enables support for OpenAMP VirtIO Slave
 
+config OPENAMP_WITH_DCACHE
+	bool "Build OpenAMP with vrings cache operations enabled"
+	depends on CACHE_MANAGEMENT
+	help
+	  Build OpenAMP with vrings cache operations enabled.
 endif # OPENAMP

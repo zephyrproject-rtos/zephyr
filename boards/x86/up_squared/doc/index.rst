@@ -76,179 +76,48 @@ Build Zephyr application
       A Zephyr EFI image file named :file:`zephyr.efi` is automatically
       created in the build directory after the application is built.
 
-Preparing the Boot Device
-=========================
+Booting the UP Squared Board using UEFI
+=======================================
 
-Prepare a USB flash drive to boot the Zephyr application image on
-a UP Squared board.
+.. include:: ../../common/efi_boot.rst
 
-#. Refer to the `UP Squared Serial Console Wiki page
+
+.. note::
+   Refer to the `UP Squared Serial Console Wiki page
    <https://wiki.up-community.org/Serial_console>`_ for instructions on how to
-   connect for serial console.
+   connect serial console.
 
-#. Format the USB flash drive as FAT32.
-
-   On Windows, open ``File Explorer``, and right-click on the USB flash drive.
-   Select ``Format...``. Make sure in ``File System``, ``FAT32`` is selected.
-   Click on the ``Format`` button and wait for it to finish.
-
-   On Linux, graphical utilities such as ``gparted`` can be used to format
-   the USB flash drive as FAT32. Alternatively, under terminal, find out
-   the corresponding device node for the USB flash drive (for example,
-   ``/dev/sdd``). Execute the following command:
+.. note::
+   You can safely ignore this message if it appears:
 
    .. code-block:: console
 
-      $ mkfs.vfat -F 32 <device-node>
-
-   .. important::
-      Make sure the device node is the actual device node for
-      the USB flash drive. Or else you may erase other storage devices
-      on your system, and will render the system unusable afterwards.
-
-#. Copy the Zephyr EFI image file :file:`zephyr/zephyr.efi` to the USB drive.
-
-Booting the UP Squared Board
-============================
-
-Boot the UP Squared board to the EFI shell with USB flash drive connected.
-
-#. Insert the prepared boot device (USB flash drive) into the UP Squared board.
-
-#. Connect the board to the host system using the serial cable and
-   configure your host system to watch for serial data.  See
-   https://wiki.up-community.org/Serial_console.
-
-   .. note::
-      On Windows, PuTTY has an option to set up configuration for
-      serial data.  Use a baud rate of 115200.
-
-#. Power on the UP Squared board.
-
-#. When the following output appears, press :kbd:`F7`:
-
-   .. code-block:: console
-
-      Press <DEL> or <ESC> to enter setup.
-
-#. From the menu that appears, select the menu entry that describes
-   that particular EFI shell.
-
-#. From the EFI shell select Zephyr EFI image to boot.
-
-   .. code-block:: console
-
-      Shell> fs0:zephyr.efi
-
-   .. note::
-      You can safely ignore this message if it appears:
-
-      .. code-block:: console
-
-         WARNING: no console will be available to OS
-
+      WARNING: no console will be available to OS
 
 Booting the UP Squared Board over network
 =========================================
 
-Build Zephyr image
-------------------
+.. include:: ../../common/net_boot.rst
 
-#. Follow `Build Zephyr application`_ steps to build Zephyr image.
+.. note::
+   Refer to the `UP Squared Serial Console Wiki page
+   <https://wiki.up-community.org/Serial_console>`_ for instructions on how to
+   connect serial console.
 
-Prepare Linux host
-------------------
+.. note::
+   To enable PXE boot for Up Squared board do the following:
 
-#. Install DHCP, TFTP servers. For example ``dnsmasq``
+   #. Enable network from BIOS settings.
 
-   .. code-block:: console
+      .. code-block:: console
 
-      $ sudo apt-get install dnsmasq
+         Advanced -> Network Stack Configuration -> Enable Network Stack -> Enable Ipv4 PXE Support
 
-#. Configure DHCP server. Configuration for ``dnsmasq`` is below:
+   #. Make network boot as the first boot option.
 
-   .. code-block:: console
+      .. code-block:: console
 
-      # Only listen to this interface
-      interface=eno2
-      dhcp-range=10.1.1.20,10.1.1.30,12h
-
-#. Configure TFTP server.
-
-   .. code-block:: console
-
-      # tftp
-      enable-tftp
-      tftp-root=/srv/tftp
-      dhcp-boot=zephyr.efi
-
-   ``zephyr.efi`` is a Zephyr EFI binary created above.
-
-#. Copy the Zephyr EFI image :file:`zephyr/zephyr.efi` to the
-   :file:`/srv/tftp` folder.
-
-    .. code-block:: console
-
-       $ sudo cp zephyr/zephyr.efi /srv/tftp
-
-
-#. TFTP root should be looking like:
-
-   .. code-block:: console
-
-      $ tree /srv/tftp
-      /srv/tftp
-      └── zephyr.efi
-
-#. Restart ``dnsmasq`` service:
-
-   .. code-block:: console
-
-      $ sudo systemctl restart dnsmasq.service
-
-Prepare UP Squared board for network boot
------------------------------------------
-
-#. Enable PXE network from BIOS settings.
-
-   .. code-block:: console
-
-      Advanced -> Network Stack Configuration -> Enable Network Stack -> Enable Ipv4 PXE Support
-
-#. Make network boot as the first boot option.
-
-   .. code-block:: console
-
-      Boot -> Boot Option #1 : [Network]
-
-Booting UP Squared
-------------------
-
-#. Connect the board to the host system using the serial cable and
-   configure your host system to watch for serial data.  See
-   https://wiki.up-community.org/Serial_console.
-
-#. Power on the UP Squared board.
-
-#. Verify that the board got an IP address:
-
-   .. code-block:: console
-
-      $ journalctl -f -u dnsmasq
-      dnsmasq-dhcp[5386]: DHCPDISCOVER(eno2) 00:07:32:52:25:88
-      dnsmasq-dhcp[5386]: DHCPOFFER(eno2) 10.1.1.28 00:07:32:52:25:88
-      dnsmasq-dhcp[5386]: DHCPREQUEST(eno2) 10.1.1.28 00:07:32:52:25:88
-      dnsmasq-dhcp[5386]: DHCPACK(eno2) 10.1.1.28 00:07:32:52:25:88
-
-#. Verify that network booting is started:
-
-   .. code-block:: console
-
-      $ journalctl -f -u dnsmasq
-      dnsmasq-tftp[5386]: sent /srv/tftp/zephyr.efi to 10.1.1.28
-
-#. When the boot process completes, you have finished booting the
-   Zephyr application image.
+         Boot -> Boot Option #1 : [Network]
 
 .. _UP Squared: https://www.up-board.org/upsquared/specifications
 

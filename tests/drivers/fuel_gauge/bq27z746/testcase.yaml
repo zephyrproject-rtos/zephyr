@@ -1,0 +1,5 @@
+tests:
+  # section.subsection
+  drivers.bq27z746:
+    filter: dt_compat_enabled("ti,bq27z746")
+    platform_allow: native_posix

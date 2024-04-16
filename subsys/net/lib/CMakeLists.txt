@@ -11,7 +11,6 @@ add_subdirectory_ifdef(CONFIG_TFTP_LIB               tftp)
 add_subdirectory_ifdef(CONFIG_NET_CONFIG_SETTINGS    config)
 add_subdirectory_ifdef(CONFIG_NET_SOCKETS            sockets)
 add_subdirectory_ifdef(CONFIG_TLS_CREDENTIALS        tls_credentials)
-add_subdirectory_ifdef(CONFIG_NET_CONNECTION_MANAGER conn_mgr)
 add_subdirectory_ifdef(CONFIG_NET_CAPTURE            capture)
 add_subdirectory_ifdef(CONFIG_NET_ZPERF              zperf)
 

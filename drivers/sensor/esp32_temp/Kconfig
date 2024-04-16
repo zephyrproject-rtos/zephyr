@@ -5,6 +5,6 @@ config ESP32_TEMP
 	bool "ESP32 Temperature Sensor"
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_TEMP_ENABLED
-	depends on !SOC_ESP32
+	depends on !SOC_SERIES_ESP32
 	help
 	  Enable driver for temperature sensor on certain ESP targets.

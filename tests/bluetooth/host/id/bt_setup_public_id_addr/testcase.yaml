@@ -1,0 +1,24 @@
+common:
+  tags:
+    - bluetooth
+    - host
+tests:
+  bluetooth.host.bt_setup_public_id_addr.default:
+    type: unit
+  bluetooth.host.bt_setup_public_id_addr.default_bt_settings_enabled:
+    type: unit
+    extra_configs:
+      - CONFIG_SETTINGS=y
+      - CONFIG_BT_SETTINGS=y
+  bluetooth.host.bt_setup_public_id_addr.bt_privacy_enabled:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_SMP=y
+      - CONFIG_BT_PRIVACY=y
+  bluetooth.host.bt_setup_public_id_addr.bt_privacy_settings_enabled:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_SMP=y
+      - CONFIG_BT_PRIVACY=y
+      - CONFIG_SETTINGS=y
+      - CONFIG_BT_SETTINGS=y

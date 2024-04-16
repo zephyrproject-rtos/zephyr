@@ -1,8 +1,7 @@
 .. _dai_api:
 
-
-DAI
-####
+Digital Audio Interface (DAI)
+#############################
 
 Overview
 ********

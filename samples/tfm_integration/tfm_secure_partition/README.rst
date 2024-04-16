@@ -6,21 +6,29 @@ TF-M Secure Partition Sample
 Overview
 ********
 
-A Secure Partition is an isolated module that resides in TF-M. It exposes a number of functions or "secure services" to other partitions and/or to the non-secure firmware.
-TF-M already contains standard partitions such as crypto, protected_storage, or firmware_update, but it's also possible to create your own partitions.
+A Secure Partition is an isolated module that resides in TF-M. It exposes a number of functions or
+"secure services" to other partitions and/or to the non-secure firmware. TF-M already contains
+standard partitions such as crypto, protected_storage, or firmware_update, but it's also possible to
+create your own partitions.
 
-This sample creates a dummy secure partition and secure service for TF-M and instructs the TF-M build system to build it into the secure firmware.
-The dummy secure service is then called in the main file (in the non-secure firmware).
+This sample creates a dummy secure partition and secure service for TF-M and instructs the TF-M
+build system to build it into the secure firmware. The dummy secure service is then called in the
+main file (in the non-secure firmware).
 
-This dummy partition has a single secure service, which can index one of 5 dummy secrets inside the partition, and retrieve a hash of the secret.
+This dummy partition has a single secure service, which can index one of 5 dummy secrets inside the
+partition, and retrieve a hash of the secret.
 
-The partition is located in the ``dummy_partition`` directory. It contains the partition sources, build files and build configuration files.
-The partition is built by the TF-M build system, refer to :ref:`tfm_build_system` for more details.
+The partition is located in the ``dummy_partition`` directory. It contains the partition sources,
+build files and build configuration files. The partition is built by the TF-M build system, refer to
+:ref:`tfm_build_system` for more details.
 
-For more information on how to add custom secure partitions refer to TF-M's guide: https://tf-m-user-guide.trustedfirmware.org/docs/integration_guide/services/tfm_secure_partition_addition.html
+For more information on how to add custom secure partitions refer to TF-M's guide:
+https://tf-m-user-guide.trustedfirmware.org/integration_guide/services/tfm_secure_partition_addition.html
 
-When adapting this partition for your own purposes, please change all occurrences of "dummy_partition", "DUMMY_PARTITION", "dp", and "DP" to your own partition name.
-Also, look through both the secure and non-secure CMakeLists.txt file and make relevant changes, as well as the yaml files inside "partition".
+When adapting this partition for your own purposes, please change all occurrences of
+"dummy_partition", "DUMMY_PARTITION", "dp", and "DP" to your own partition name. Also, look through
+both the secure and non-secure CMakeLists.txt file and make relevant changes, as well as the yaml
+files inside "partition".
 
 Building and Running
 ********************
@@ -32,8 +40,8 @@ On Target
 
 Refer to :ref:`tfm_ipc` for detailed instructions.
 
-On QEMU:
-========
+On QEMU
+=======
 
 Refer to :ref:`tfm_ipc` for detailed instructions.
 

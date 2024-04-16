@@ -212,7 +212,7 @@ static size_t get_package_len(void *packaged)
 	buf += ros_nbr;
 
 	/* Move beyond strings appended to the package. */
-	for (int i = 0; i < s_nbr; i++) {
+	for (unsigned int i = 0; i < s_nbr; i++) {
 		buf++;
 		buf += strlen((const char *)buf) + 1;
 	}
@@ -970,7 +970,7 @@ int cbprintf_package_convert(void *in_packaged,
 	if (cb == NULL) {
 		out_len = (int)in_len;
 		if (ro_cpy) {
-			for (int i = 0; i < ros_nbr; i++) {
+			for (unsigned int i = 0; i < ros_nbr; i++) {
 				const char *str = *(const char **)&buf32[*str_pos];
 				int len = append_string(cb, NULL, str, 0);
 
@@ -992,7 +992,7 @@ int cbprintf_package_convert(void *in_packaged,
 					 CBPRINTF_PACKAGE_CONVERT_RO_STR));
 
 		/* Handle RW strings. */
-		for (int i = 0; i < rws_nbr; i++) {
+		for (unsigned int i = 0; i < rws_nbr; i++) {
 			uint8_t arg_idx = *str_pos++;
 			uint8_t arg_pos = *str_pos++;
 			const char *str = *(const char **)&buf32[arg_pos];
@@ -1071,7 +1071,7 @@ calculate_string_length:
 	 * Note that there may be read-only strings there. Use address evaluation
 	 * to determine if strings is read-only.
 	 */
-	for (int i = 0; i < rws_nbr; i++) {
+	for (unsigned int i = 0; i < rws_nbr; i++) {
 		uint8_t arg_idx = *str_pos++;
 		uint8_t arg_pos = *str_pos++;
 		const char *str = *(const char **)&buf32[arg_pos];
@@ -1140,7 +1140,7 @@ calculate_string_length:
 	out_len += rv;
 
 	/* Append strings */
-	for (int i = 0; i < scpy_cnt; i++) {
+	for (unsigned int i = 0; i < scpy_cnt; i++) {
 		uint8_t loc = cpy_str_pos[i];
 		const char *str = *(const char **)&buf32[loc];
 		uint16_t str_len = strl ? strl[i] : 0;

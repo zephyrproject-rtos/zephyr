@@ -8,9 +8,4 @@ if BOARD_B_L072Z_LRWAN1
 config BOARD
 	default "b_l072z_lrwan1"
 
-choice COUNTER_RTC_STM32_CLOCK_SRC
-	default COUNTER_RTC_STM32_CLOCK_LSE
-	depends on COUNTER
-endchoice # COUNTER_RTC_STM32_CLOCK_SRC
-
 endif # BOARD_B_L072Z_LRWAN1

@@ -30,6 +30,13 @@ config HTTP_CLIENT
 	help
 	  HTTP client API
 
+config HTTP_SERVER
+	bool "HTTP Server [EXPERIMENTAL]"
+	select WARN_EXPERIMENTAL
+	help
+	  HTTP server support.
+	  Note: this is a work-in-progress
+
 module = NET_HTTP
 module-dep = NET_LOG
 module-str = Log level for HTTP client library

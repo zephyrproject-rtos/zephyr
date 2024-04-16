@@ -281,7 +281,10 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	 * request and we want to send it again.
 	 */
 	if (entry) {
-		k_fifo_put(&entry->pending_queue, net_pkt_ref(pending));
+		if (!net_pkt_ipv4_auto(pkt)) {
+			k_fifo_put(&entry->pending_queue, net_pkt_ref(pending));
+		}
+
 		entry->iface = net_pkt_iface(pkt);
 
 		net_ipaddr_copy(&entry->ip, next_addr);
@@ -334,6 +337,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 				struct in_addr *request_ip,
 				struct in_addr *current_ip)
 {
+	bool is_ipv4_ll_used = false;
 	struct arp_entry *entry;
 	struct in_addr *addr;
 
@@ -341,10 +345,17 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 		return NULL;
 	}
 
+	if (IS_ENABLED(CONFIG_NET_IPV4_AUTO)) {
+		is_ipv4_ll_used = net_ipv4_is_ll_addr((struct in_addr *)
+						&NET_IPV4_HDR(pkt)->src) ||
+				  net_ipv4_is_ll_addr((struct in_addr *)
+						&NET_IPV4_HDR(pkt)->dst);
+	}
+
 	/* Is the destination in the local network, if not route via
 	 * the gateway address.
 	 */
-	if (!current_ip &&
+	if (!current_ip && !is_ipv4_ll_used &&
 	    !net_if_ipv4_addr_mask_cmp(net_pkt_iface(pkt), request_ip)) {
 		struct net_if_ipv4 *ipv4 = net_pkt_iface(pkt)->config.ip.ipv4;
 
@@ -385,7 +396,8 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 			 * in the pending list and if so, resend the request, otherwise just
 			 * append the packet to the request fifo list.
 			 */
-			if (k_queue_unique_append(&entry->pending_queue._queue,
+			if (!net_pkt_ipv4_auto(pkt) &&
+			    k_queue_unique_append(&entry->pending_queue._queue,
 						  net_pkt_ref(pkt))) {
 				k_mutex_unlock(&arp_mutex);
 				return NULL;
@@ -466,28 +478,28 @@ static void arp_update(struct net_if *iface,
 
 		if (force) {
 			sys_snode_t *prev = NULL;
-			struct arp_entry *entry;
+			struct arp_entry *arp_ent;
 
-			entry = arp_entry_find(&arp_table, iface, src, &prev);
-			if (entry) {
-				memcpy(&entry->eth, hwaddr,
+			arp_ent = arp_entry_find(&arp_table, iface, src, &prev);
+			if (arp_ent) {
+				memcpy(&arp_ent->eth, hwaddr,
 				       sizeof(struct net_eth_addr));
 			} else {
 				/* Add new entry as it was not found and force
 				 * was set.
 				 */
-				entry = arp_entry_get_free();
-				if (!entry) {
+				arp_ent = arp_entry_get_free();
+				if (!arp_ent) {
 					/* Then let's take one from table? */
-					entry = arp_entry_get_last_from_table();
+					arp_ent = arp_entry_get_last_from_table();
 				}
 
-				if (entry) {
-					entry->req_start = k_uptime_get_32();
-					entry->iface = iface;
-					net_ipaddr_copy(&entry->ip, src);
-					memcpy(&entry->eth, hwaddr, sizeof(entry->eth));
-					sys_slist_prepend(&arp_table, &entry->node);
+				if (arp_ent) {
+					arp_ent->req_start = k_uptime_get_32();
+					arp_ent->iface = iface;
+					net_ipaddr_copy(&arp_ent->ip, src);
+					memcpy(&arp_ent->eth, hwaddr, sizeof(arp_ent->eth));
+					sys_slist_prepend(&arp_table, &arp_ent->node);
 				}
 			}
 		}
@@ -502,6 +514,8 @@ static void arp_update(struct net_if *iface,
 	sys_slist_prepend(&arp_table, &entry->node);
 
 	while (!k_fifo_is_empty(&entry->pending_queue)) {
+		int ret;
+
 		pkt = k_fifo_get(&entry->pending_queue, K_FOREVER);
 
 		/* Set the dst in the pending packet */
@@ -513,7 +527,17 @@ static void arp_update(struct net_if *iface,
 			net_sprint_ipv4_addr(&entry->ip),
 			pkt, pkt->frags);
 
-		net_if_queue_tx(iface, pkt);
+		/* We directly send the packet without first queueing it.
+		 * The pkt has already been queued for sending, once by
+		 * net_if and second time in the ARP queue. We must not
+		 * queue it twice in net_if so that the statistics of
+		 * the pkt are not counted twice and the packet filter
+		 * callbacks are only called once.
+		 */
+		ret = net_if_l2(iface)->send(iface, pkt);
+		if (ret < 0) {
+			net_pkt_unref(pkt);
+		}
 	}
 
 	k_mutex_unlock(&arp_mutex);
@@ -742,6 +766,19 @@ void net_arp_clear_cache(struct net_if *iface)
 	}
 
 	k_mutex_unlock(&arp_mutex);
+}
+
+int net_arp_clear_pending(struct net_if *iface, struct in_addr *dst)
+{
+	struct arp_entry *entry = arp_entry_find_pending(iface, dst);
+
+	if (!entry) {
+		return -ENOENT;
+	}
+
+	arp_entry_cleanup(entry, true);
+
+	return 0;
 }
 
 int net_arp_foreach(net_arp_cb_t cb, void *user_data)

@@ -13,8 +13,6 @@ Follow this guide to:
 
 .. _host_setup:
 
-.. rst-class:: numbered-step
-
 Select and Update OS
 ********************
 
@@ -46,8 +44,6 @@ Click the operating system you are using.
 
 .. _install-required-tools:
 
-.. rst-class:: numbered-step
-
 Install dependencies
 ********************
 
@@ -62,7 +58,7 @@ The current minimum required version for the main dependencies are:
      - Min. Version
 
    * - `CMake <https://cmake.org/>`_
-     - 3.20.0
+     - 3.20.5
 
    * - `Python <https://www.python.org/>`_
      - 3.8
@@ -166,7 +162,7 @@ The current minimum required version for the main dependencies are:
          .. code-block:: console
 
             choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-            choco install ninja gperf python git dtc-msys2 wget unzip
+            choco install ninja gperf python git dtc-msys2 wget 7zip
 
       #. Close the window and open a new ``cmd.exe`` window **as a regular user** to continue.
 
@@ -177,8 +173,6 @@ The current minimum required version for the main dependencies are:
 .. _clone-zephyr:
 .. _install_py_requirements:
 .. _gs_python_deps:
-
-.. rst-class:: numbered-step
 
 Get Zephyr and install Python dependencies
 ******************************************
@@ -476,8 +470,6 @@ additional Python dependencies.
 
                   pip3 install -r %HOMEPATH%\zephyrproject\zephyr\scripts\requirements.txt
 
-.. rst-class:: numbered-step
-
 
 Install Zephyr SDK
 ******************
@@ -496,14 +488,14 @@ that are used to emulate, flash and debug Zephyr applications.
 
       .. _ubuntu_zephyr_sdk:
 
-      #. Download and verify the `latest Zephyr SDK bundle
-         <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_:
+      #. Download and verify the `Zephyr SDK bundle
+         <https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v0.16.3>`_:
 
          .. code-block:: bash
 
             cd ~
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/zephyr-sdk-0.15.2_linux-x86_64.tar.gz
-            wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/sha256.sum | shasum --check --ignore-missing
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.3/zephyr-sdk-0.16.3_linux-x86_64.tar.xz
+            wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.3/sha256.sum | shasum --check --ignore-missing
 
          If your host architecture is 64-bit ARM (for example, Raspberry Pi), replace ``x86_64``
          with ``aarch64`` in order to download the 64-bit ARM Linux SDK.
@@ -512,7 +504,7 @@ that are used to emulate, flash and debug Zephyr applications.
 
          .. code-block:: bash
 
-            tar xvf zephyr-sdk-0.15.2_linux-x86_64.tar.gz
+            tar xvf zephyr-sdk-0.16.3_linux-x86_64.tar.xz
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -524,15 +516,15 @@ that are used to emulate, flash and debug Zephyr applications.
             * ``/opt``
             * ``/usr/local``
 
-            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.15.2`` directory and, when
+            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.16.3`` directory and, when
             extracted under ``$HOME``, the resulting installation path will be
-            ``$HOME/zephyr-sdk-0.15.2``.
+            ``$HOME/zephyr-sdk-0.16.3``.
 
       #. Run the Zephyr SDK bundle setup script:
 
          .. code-block:: bash
 
-            cd zephyr-sdk-0.15.2
+            cd zephyr-sdk-0.16.3
             ./setup.sh
 
          .. note::
@@ -546,21 +538,21 @@ that are used to emulate, flash and debug Zephyr applications.
 
          .. code-block:: bash
 
-            sudo cp ~/zephyr-sdk-0.15.2/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
+            sudo cp ~/zephyr-sdk-0.16.3/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
             sudo udevadm control --reload
 
    .. group-tab:: macOS
 
       .. _macos_zephyr_sdk:
 
-      #. Download and verify the `latest Zephyr SDK bundle
-         <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_:
+      #. Download and verify the `Zephyr SDK bundle
+         <https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v0.16.3>`_:
 
          .. code-block:: bash
 
             cd ~
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/zephyr-sdk-0.15.2_macos-x86_64.tar.gz
-            wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/sha256.sum | shasum --check --ignore-missing
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.3/zephyr-sdk-0.16.3_macos-x86_64.tar.xz
+            wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.3/sha256.sum | shasum --check --ignore-missing
 
          If your host architecture is 64-bit ARM (Apple Silicon, also known as M1), replace
          ``x86_64`` with ``aarch64`` in order to download the 64-bit ARM macOS SDK.
@@ -569,7 +561,7 @@ that are used to emulate, flash and debug Zephyr applications.
 
          .. code-block:: bash
 
-            tar xvf zephyr-sdk-0.15.2_macos-x86_64.tar.gz
+            tar xvf zephyr-sdk-0.16.3_macos-x86_64.tar.xz
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -581,15 +573,15 @@ that are used to emulate, flash and debug Zephyr applications.
             * ``/opt``
             * ``/usr/local``
 
-            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.15.2`` directory and, when
+            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.16.3`` directory and, when
             extracted under ``$HOME``, the resulting installation path will be
-            ``$HOME/zephyr-sdk-0.15.2``.
+            ``$HOME/zephyr-sdk-0.16.3``.
 
       #. Run the Zephyr SDK bundle setup script:
 
          .. code-block:: bash
 
-            cd zephyr-sdk-0.15.2
+            cd zephyr-sdk-0.16.3
             ./setup.sh
 
          .. note::
@@ -604,19 +596,19 @@ that are used to emulate, flash and debug Zephyr applications.
 
       #. Open a ``cmd.exe`` window by pressing the Windows key typing "cmd.exe".
 
-      #. Download the `latest Zephyr SDK bundle
-         <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_:
+      #. Download the `Zephyr SDK bundle
+         <https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v0.16.3>`_:
 
          .. code-block:: console
 
             cd %HOMEPATH%
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.2/zephyr-sdk-0.15.2_windows-x86_64.zip
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.3/zephyr-sdk-0.16.3_windows-x86_64.7z
 
       #. Extract the Zephyr SDK bundle archive:
 
          .. code-block:: console
 
-            unzip zephyr-sdk-0.15.2_windows-x86_64.zip
+            7z x zephyr-sdk-0.16.3_windows-x86_64.7z
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -624,15 +616,15 @@ that are used to emulate, flash and debug Zephyr applications.
             * ``%HOMEPATH%``
             * ``%PROGRAMFILES%``
 
-            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.15.2`` directory and, when
+            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.16.3`` directory and, when
             extracted under ``%HOMEPATH%``, the resulting installation path will be
-            ``%HOMEPATH%\zephyr-sdk-0.15.2``.
+            ``%HOMEPATH%\zephyr-sdk-0.16.3``.
 
       #. Run the Zephyr SDK bundle setup script:
 
          .. code-block:: console
 
-            cd zephyr-sdk-0.15.2
+            cd zephyr-sdk-0.16.3
             setup.cmd
 
          .. note::
@@ -643,21 +635,19 @@ that are used to emulate, flash and debug Zephyr applications.
 
 .. _getting_started_run_sample:
 
-.. rst-class:: numbered-step
-
 Build the Blinky Sample
 ***********************
 
 .. note::
 
-   Blinky is compatible with most, but not all, :ref:`boards`. If your board
+   :zephyr:code-sample:`blinky` is compatible with most, but not all, :ref:`boards`. If your board
    does not meet Blinky's :ref:`blinky-sample-requirements`, then
    :ref:`hello_world` is a good alternative.
 
    If you are unsure what name west uses for your board, ``west boards``
    can be used to obtain a list of all boards Zephyr supports.
 
-Build the :ref:`blinky-sample` with :ref:`west build <west-building>`, changing
+Build the :zephyr:code-sample:`blinky` with :ref:`west build <west-building>`, changing
 ``<your-board-name>`` appropriately for your board:
 
 .. tabs::
@@ -687,8 +677,6 @@ The ``-p always`` option forces a pristine build, and is recommended for new
 users. Users may also use the ``-p auto`` option, which will use
 heuristics to determine if a pristine build is required, such as when building
 another sample.
-
-.. rst-class:: numbered-step
 
 Flash the Sample
 ****************
@@ -780,11 +768,14 @@ Please **copy/paste text** instead of taking a picture or a screenshot of it.
 Text includes source code, terminal commands, and their output.
 
 Doing this makes it easier for people to help you, and also helps other users
-search the archives.
+search the archives. Unnecessary screenshots exclude vision impaired
+developers; some are major Zephyr contributors. `Accessibility`_ has been
+recognized as a basic human right by the United Nations.
 
-When copy/pasting more than 5 lines of text into Discord, create a snippet using
-three backticks to delimit the snippet.
+When copy/pasting more than 5 lines of computer text into Discord or Github,
+create a snippet using three backticks to delimit the snippet.
 
 .. _Search archives and sign up here: https://lists.zephyrproject.org/g/users
 .. _Discord invite: https://chat.zephyrproject.org
 .. _GitHub issues: https://github.com/zephyrproject-rtos/zephyr/issues
+.. _Accessibility: https://www.w3.org/standards/webdesign/accessibility

@@ -22,7 +22,7 @@ from github import Github
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument('-a', '--all', dest='all',
                         help='Show all bugs squashed', action='store_true')
     parser.add_argument('-t', '--token', dest='tokenfile',

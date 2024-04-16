@@ -6,6 +6,7 @@
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <mem.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	chosen {
@@ -105,34 +106,42 @@
 		sw0: sw0 {
 			gpios = <&gpio0_2 0 GPIO_ACTIVE_HIGH>;
 			label = "SW0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		sw1: sw1 {
 			gpios = <&gpio0_2 1 GPIO_ACTIVE_HIGH>;
 			label = "SW1";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		sw2: sw2 {
 			gpios = <&gpio0_2 2 GPIO_ACTIVE_HIGH>;
 			label = "SW2";
+			zephyr,code = <INPUT_KEY_2>;
 		};
 		sw3: sw3 {
 			gpios = <&gpio0_2 3 GPIO_ACTIVE_HIGH>;
 			label = "SW3";
+			zephyr,code = <INPUT_KEY_3>;
 		};
 		btn0: btn0 {
 			gpios = <&gpio1_2 0 GPIO_ACTIVE_HIGH>;
 			label = "BTN0";
+			zephyr,code = <INPUT_KEY_4>;
 		};
 		btn1: btn1 {
 			gpios = <&gpio1_2 1 GPIO_ACTIVE_HIGH>;
 			label = "BTN1";
+			zephyr,code = <INPUT_KEY_5>;
 		};
 		btn2: btn2 {
 			gpios = <&gpio1_2 2 GPIO_ACTIVE_HIGH>;
 			label = "BTN2";
+			zephyr,code = <INPUT_KEY_6>;
 		};
 		btn3: btn3 {
 			gpios = <&gpio1_2 3 GPIO_ACTIVE_HIGH>;
 			label = "BTN3";
+			zephyr,code = <INPUT_KEY_7>;
 		};
 	};
 

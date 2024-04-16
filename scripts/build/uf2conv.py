@@ -247,7 +247,8 @@ def main():
     def error(msg):
         print(msg)
         sys.exit(1)
-    parser = argparse.ArgumentParser(description='Convert to UF2 or flash directly.')
+    parser = argparse.ArgumentParser(description='Convert to UF2 or flash directly.',
+                                     allow_abbrev=False)
     parser.add_argument('input', metavar='INPUT', type=str, nargs='?',
                         help='input file (HEX, BIN or UF2)')
     parser.add_argument('-b' , '--base', dest='base', type=str,

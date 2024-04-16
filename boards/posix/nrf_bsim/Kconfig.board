@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF52_BSIM
+	bool "NRF52 simulation model"
+	select SOC_SERIES_BSIM_NRFXX
+	select SOC_SERIES_BSIM_NRF52X
+	select SOC_COMPATIBLE_NRF
+	select SOC_COMPATIBLE_NRF52X
+	select SOC_COMPATIBLE_NRF52833
+	select NRF_RTC_TIMER
+	select CLOCK_CONTROL
+	select HAS_NRFX
+	select HAS_NORDIC_DRIVERS
+	select NATIVE_LIBRARY
+	help
+	  Will produce a console Linux process which can be executed natively.
+	  It needs the BabbleSim simulator both in compile time and to execute
+
+config BOARD_NRF5340BSIM_NRF5340_CPUNET
+	bool "Simulated NRF53 Network core"
+	select SOC_SERIES_BSIM_NRFXX
+	select SOC_SERIES_BSIM_NRF53X
+	select SOC_COMPATIBLE_NRF
+	select SOC_COMPATIBLE_NRF53X
+	select SOC_COMPATIBLE_NRF5340_CPUNET
+	select NRF_RTC_TIMER
+	select CLOCK_CONTROL
+	select HAS_NRFX
+	select HAS_NORDIC_DRIVERS
+	select NATIVE_LIBRARY
+	help
+	  Will produce a console Linux process which can be executed natively.
+	  It needs the BabbleSim simulator both in compile time and to execute
+
+config BOARD_NRF5340BSIM_NRF5340_CPUAPP
+	bool "Simulated NRF53 Application core"
+	select SOC_SERIES_BSIM_NRFXX
+	select SOC_SERIES_BSIM_NRF53X
+	select SOC_COMPATIBLE_NRF
+	select SOC_COMPATIBLE_NRF53X
+	select SOC_COMPATIBLE_NRF5340_CPUAPP
+	select NRF_RTC_TIMER
+	select CLOCK_CONTROL
+	select HAS_NRFX
+	select HAS_NORDIC_DRIVERS
+	select NATIVE_LIBRARY
+	help
+	  Will produce a console Linux process which can be executed natively.
+	  It needs the BabbleSim simulator both in compile time and to execute

@@ -721,7 +721,8 @@ static const struct spi_sam0_config spi_sam0_config_##n = {		\
 	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
 	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
 	.pads = SPI_SAM0_SERCOM_PADS(n),				\
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)			\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+	SPI_SAM0_DMA_CHANNELS(n)					\
 }
 #else
 #define SPI_SAM0_DEFINE_CONFIG(n)					\

@@ -8,18 +8,18 @@ compatible: "zephyr,modbus-serial"
 include: uart-device.yaml
 
 properties:
-    de-gpios:
-      type: phandle-array
-      description: Driver enable pin.
+  de-gpios:
+    type: phandle-array
+    description: Driver enable pin.
 
-        Driver enable pin (DE) of the RS-485 transceiver.
-        If connected directly the MCU pin should be configured
-        as active high.
+      Driver enable pin (DE) of the RS-485 transceiver.
+      If connected directly the MCU pin should be configured
+      as active high.
 
-    re-gpios:
-      type: phandle-array
-      description: Receiver enable pin.
+  re-gpios:
+    type: phandle-array
+    description: Receiver enable pin.
 
-        Receiver enable pin (nRE) of the RS-485 transceiver.
-        If connected directly the MCU pin should be configured
-        as active low.
+      Receiver enable pin (nRE) of the RS-485 transceiver.
+      If connected directly the MCU pin should be configured
+      as active low.

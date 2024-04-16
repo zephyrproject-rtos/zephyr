@@ -487,7 +487,7 @@ static int fxos8700_channel_get(const struct device *dev,
 int fxos8700_get_power(const struct device *dev, enum fxos8700_power *power)
 {
 	const struct fxos8700_config *config = dev->config;
-	uint8_t val = *power;
+	uint8_t val;
 
 	if (config->ops->byte_read(dev, FXOS8700_REG_CTRLREG1, &val)) {
 		LOG_ERR("Could not get power setting");
@@ -536,7 +536,7 @@ static int fxos8700_init(const struct device *dev)
 		 * the sensor.
 		 */
 
-		if (!device_is_ready(config->reset_gpio.port)) {
+		if (!gpio_is_ready_dt(&config->reset_gpio)) {
 			LOG_ERR("GPIO device not ready");
 			return -ENODEV;
 		}

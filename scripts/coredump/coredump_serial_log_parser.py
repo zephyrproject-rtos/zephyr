@@ -17,7 +17,7 @@ COREDUMP_ERROR_STR = COREDUMP_PREFIX_STR + "ERROR CANNOT DUMP#"
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
 
     parser.add_argument("infile", help="Serial Log File")
     parser.add_argument("outfile",

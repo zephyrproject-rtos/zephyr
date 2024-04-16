@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,7 +82,7 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 		while (offset < ctx->offset + ctx->size) {
 			rc = flash_get_page_info_by_offs(ctx->info.dev, offset, &page);
 			if (rc < 0) {
-				LOG_ERR("Error %d while getting page info", rc);
+				LOG_ERR("Error %d getting page info at offset %lx", rc, offset);
 				return rc;
 			}
 			if (page.size != ctx->page_size) {
@@ -462,9 +462,8 @@ DT_INST_FOREACH_STATUS_OKAY(VERIFY_CACHE_SIZE_IS_NOT_ZERO_IF_NOT_READ_ONLY)
 		" has cache size which is not a multiple of its sector size");
 DT_INST_FOREACH_STATUS_OKAY(VERIFY_CACHE_SIZE_IS_MULTIPLY_OF_SECTOR_SIZE)
 
-static int disk_flash_init(const struct device *dev)
+static int disk_flash_init(void)
 {
-	ARG_UNUSED(dev);
 	int err = 0;
 
 	for (int i = 0; i < ARRAY_SIZE(flash_disks); i++) {

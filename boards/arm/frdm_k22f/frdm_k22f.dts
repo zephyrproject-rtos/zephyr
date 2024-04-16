@@ -9,6 +9,7 @@
 #include <nxp/nxp_k2x.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include "frdm_k22f-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NXP Freedom MK22F board";
@@ -75,10 +76,12 @@
 		user_button_2: button_0 {
 			label = "User SW2";
 			gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		user_button_3: button_1 {
 			label = "User SW3";
 			gpios = <&gpiob 17 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 

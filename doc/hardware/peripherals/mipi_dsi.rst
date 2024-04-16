@@ -1,7 +1,7 @@
 .. _mipi_dsi_api:
 
-MIPI-DSI
-########
+MIPI Display Serial Interface (DSI)
+###################################
 
 API Reference
 *************

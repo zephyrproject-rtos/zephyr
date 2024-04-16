@@ -26,3 +26,4 @@ supported:
   - dac
   - dma
   - backup_sram
+vendor: st

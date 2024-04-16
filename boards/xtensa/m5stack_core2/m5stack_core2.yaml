@@ -1,0 +1,21 @@
+identifier: m5stack_core2
+name: M5Stack Core2
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - regulator
+  - uart
+  - pinmux
+  - nvs
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: espressif

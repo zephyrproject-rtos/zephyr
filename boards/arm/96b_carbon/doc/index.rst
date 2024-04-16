@@ -369,16 +369,16 @@ STM32F401RET using an SWD scan.
    http://dfu-util.sourceforge.net/build.html
 
 .. _AN2606:
-   http://www.st.com/content/ccc/resource/technical/document/application_note/b9/9b/16/3a/12/1e/40/0c/CD00167594.pdf/files/CD00167594.pdf/jcr:content/translations/en.CD00167594.pdf
+   https://www.st.com/content/ccc/resource/technical/document/application_note/b9/9b/16/3a/12/1e/40/0c/CD00167594.pdf/files/CD00167594.pdf/jcr:content/translations/en.CD00167594.pdf
 
 .. _96Boards website:
    http://www.96boards.org/documentation
 
 .. _STM32F401RE on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32f401re.html
+   https://www.st.com/en/microcontrollers/stm32f401re.html
 
 .. _STM32F401 reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00096844.pdf
+   https://www.st.com/resource/en/reference_manual/dm00096844.pdf
 
 .. _96Boards IE Specification:
     https://linaro.co/ie-specification

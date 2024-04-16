@@ -1,0 +1,20 @@
+# Copyright (c) 2023 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC symmetric crypto (AES/Hash) accelerator.
+
+compatible: "microchip,xec-symcr"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  girqs:
+    type: array
+    required: true
+    description: XEC ECIA GIRQ number and bit position.

@@ -6,9 +6,9 @@ description: BMI160 inertial measurement unit
 include: sensor-device.yaml
 
 properties:
-    int-gpios:
-      type: phandle-array
-      description: |
-        This property specifies the connection for INT1, because the
-        Zephyr driver maps all interrupts to INT1.  The signal defaults
-        to output low when produced by the sensor.
+  int-gpios:
+    type: phandle-array
+    description: |
+      This property specifies the connection for INT1, because the
+      Zephyr driver maps all interrupts to INT1.  The signal defaults
+      to output low when produced by the sensor.

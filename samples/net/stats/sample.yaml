@@ -5,5 +5,9 @@ tests:
   sample.net.stats:
     harness: net
     min_ram: 64
-    tags: net statistics
+    tags:
+      - net
+      - statistics
     depends_on: netif
+    integration_platforms:
+      - qemu_x86

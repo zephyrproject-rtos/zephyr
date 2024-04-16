@@ -8,8 +8,6 @@ tests:
     integration_platforms:
       - qemu_x86
       - qemu_x86_64
-      - qemu_cortex_a53
-      - qemu_cortex_a53_smp
   sample.logger.basic.dictionary.fpu:
     build_only: true
     tags: logging
@@ -19,8 +17,6 @@ tests:
     integration_platforms:
       - qemu_x86
       - qemu_x86_64
-      - qemu_cortex_a53
-      - qemu_cortex_a53_smp
   sample.logger.basic.dictionary.fpu.long_double:
     build_only: true
     tags: logging
@@ -31,8 +27,6 @@ tests:
     integration_platforms:
       - qemu_x86
       - qemu_x86_64
-      - qemu_cortex_a53
-      - qemu_cortex_a53_smp
   sample.logger.basic.dictionary.uart_async_frontend:
     build_only: true
     tags: logging
@@ -54,8 +48,6 @@ tests:
     integration_platforms:
       - qemu_x86
       - qemu_x86_64
-      - qemu_cortex_a53
-      - qemu_cortex_a53_smp
     extra_configs:
       - CONFIG_LOG_BACKEND_UART=n
       - CONFIG_LOG_BACKEND_RTT=n

@@ -8,6 +8,7 @@
 #include <st/wl/stm32wl55Xc.dtsi>
 #include <st/wl/stm32wl55jcix-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32WL55JC-NUCLEO board";
@@ -21,7 +22,7 @@
 		zephyr,code-partition = &flash0;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		blue_led_1: led_0 {
 			gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
@@ -42,14 +43,17 @@
 		user_button_1: button_0 {
 			label = "SW1";
 			gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		user_button_2: button_1 {
 			label = "SW2";
 			gpios = <&gpioa 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		user_button_3: button_2 {
 			label = "SW3";
 			gpios = <&gpioc 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_2>;
 		};
 	};
 
@@ -60,32 +64,10 @@
 		sw2 = &user_button_3;
 		lora0 = &lora;
 		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
-
-	power-states {
-		stop0: state0 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <1>;
-			min-residency-us = <100>;
-		};
-		stop1: state1 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <2>;
-			min-residency-us = <500>;
-		};
-		stop2: state2 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			substate-id = <3>;
-			min-residency-us = <900>;
-		};
-	};
-};
-
-&cpu0 {
-	cpu-power-states = <&stop0 &stop1 &stop2>;
 };
 
 &clk_lsi {
@@ -162,6 +144,8 @@
 &adc1 {
 	pinctrl-0 = <&adc_in5_pb1>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
 	status = "okay";
 };
 
@@ -185,10 +169,18 @@
 	status = "okay";
 	lora: radio@0 {
 		status = "okay";
-		tx-enable-gpios = <&gpioc 4 GPIO_ACTIVE_LOW>;
-		rx-enable-gpios = <&gpioc 5 GPIO_ACTIVE_LOW>;
+		tx-enable-gpios = <&gpioc 4 GPIO_ACTIVE_LOW>; /* FE_CTRL1 */
+		rx-enable-gpios = <&gpioc 5 GPIO_ACTIVE_LOW>; /* FE_CTRL2 */
 		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V7>;
 		tcxo-power-startup-delay-ms = <5>;
+		/* High-power output is selected as a consequence of using
+		 * tx/rx-enable-gpio to control FE_CTRL1 and FE_CTRL2. Low-power
+		 * output would require both FE_CTRL1 and FE_CTRL2 to be high,
+		 * which is not currently supported by the driver.
+		 */
+		power-amplifier-output = "rfo-hp";
+		rfo-lp-max-power = <15>;
+		rfo-hp-max-power = <22>;
 	};
 };
 
@@ -207,4 +199,12 @@
 			reg = <0x0003c000 DT_SIZE_K(16)>;
 		};
 	};
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
 };

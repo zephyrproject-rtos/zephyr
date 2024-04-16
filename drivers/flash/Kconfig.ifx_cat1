@@ -1,0 +1,22 @@
+# Infineon CAT1 Flash configuration options
+
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_INFINEON_CAT1
+	bool "Infineon CAT1 FLASH driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_FLASH_CONTROLLER_ENABLED && DT_HAS_FIXED_PARTITIONS_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select USE_INFINEON_FLASH
+	help
+	  Enable the Flash driver for Infineon CAT1 family.
+
+
+config MPU_ALLOW_FLASH_WRITE
+	bool "Add MPU access to write to flash"
+	help
+	  Enable this to allow MPU RWX access to flash memory.

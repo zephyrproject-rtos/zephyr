@@ -377,8 +377,8 @@ static void *obj_attr_init(void)
 {
 	test_obj_init();
 	test_attr_init();
-	lwm2m_engine_set_u16("0/0/10", TEST_SSID);
-	lwm2m_engine_set_u16("1/0/0", TEST_SSID);
+	lwm2m_set_u16(&LWM2M_OBJ(0, 0, 10), TEST_SSID);
+	lwm2m_set_u16(&LWM2M_OBJ(1, 0, 0), TEST_SSID);
 	return NULL;
 }
 

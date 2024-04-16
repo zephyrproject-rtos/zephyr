@@ -1,0 +1,35 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: RAM disk
+
+compatible: "zephyr,ram-disk"
+
+include: ["base.yaml", "memory-region.yaml"]
+
+properties:
+  disk-name:
+    type: string
+    required: true
+    description: |
+      Disk name.
+
+  sector-size:
+    type: int
+    required: true
+    enum: [512, 1024, 2048, 4096, 8192, 16384, 32768, 65536]
+    description: |
+      Disk sector size in bytes.
+
+  sector-count:
+    type: int
+    required: true
+    description: |
+      Number of sectors.
+
+  ram-region:
+    type: phandle
+    description: |
+      Optional phandle to the memory region to be used as a RAM disk,
+      if not used a local buffer is defined for each disk instance.
+      Use it with caution as it makes memory contents easily accessible.

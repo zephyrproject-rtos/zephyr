@@ -179,6 +179,10 @@ static void lcp_down(struct ppp_fsm *fsm)
 
 	ppp_link_down(ctx);
 
+	if (!net_if_is_carrier_ok(ctx->iface)) {
+		return;
+	}
+
 	ppp_change_phase(ctx, PPP_ESTABLISH);
 }
 
@@ -206,11 +210,6 @@ static void lcp_finished(struct ppp_fsm *fsm)
 					       lcp.fsm);
 
 	ppp_link_terminated(ctx);
-
-	/* take the remainder down */
-	ppp_mgmt_raise_carrier_off_event(ctx->iface);
-
-	net_if_down(ctx->iface);
 }
 
 #if defined(CONFIG_NET_L2_PPP_OPTION_MRU)

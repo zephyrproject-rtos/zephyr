@@ -34,6 +34,7 @@ if(CONFIG_BT_HCI_HOST)
     uuid.c
     addr.c
     buf.c
+    data.c
     hci_core.c
     hci_common.c
     id.c

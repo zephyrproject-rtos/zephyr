@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <zephyr/init.h>
 #include <soc.h>
+#include <zephyr/sys/barrier.h>
 #include "flash_priv.h"
 
 #include "fsl_common.h"
@@ -68,8 +69,8 @@ static uint32_t get_cmd_status(uint32_t cmd, uint32_t addr, size_t len)
 	p_fmc->STARTA = (addr>>4) & 0x3FFFF;
 	p_fmc->STOPA = ((addr+len-1)>>4) & 0x3FFFF;
 	p_fmc->CMD = cmd;
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 
 	/* wait for command to be done */
 	while (!(p_fmc->INT_STATUS & FMC_STATUS_DONE))
@@ -192,9 +193,18 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 
 #ifdef CONFIG_CHECK_BEFORE_READING
   #ifdef CONFIG_SOC_LPC55S36
+	/* Validates the given address range is loaded in the flash hiding region. */
 	rc = FLASH_IsFlashAreaReadable(&priv->config, addr, len);
 	if (rc != kStatus_FLASH_Success) {
 		rc = -EIO;
+	} else {
+		/* Check whether the flash is erased ("len" and "addr" must be word-aligned). */
+		rc = FLASH_VerifyErase(&priv->config, ((addr + 0x3) & ~0x3),  ((len + 0x3) & ~0x3));
+		if (rc == kStatus_FLASH_Success) {
+			rc = -ENODATA;
+		} else {
+			rc = 0;
+		}
 	}
   #else
 	rc = is_area_readable(addr, len);

@@ -4,6 +4,7 @@
  */
 
 #include "rv32m1_vega-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	aliases {
@@ -66,18 +67,22 @@
 		user_button_2: button_0 {
 			label = "User SW2";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		user_button_3: button_1 {
 			label = "User SW3";
 			gpios = <&gpioe 8 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		user_button_4: button_2 {
 			label = "User SW4";
 			gpios = <&gpioe 9 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_2>;
 		};
 		user_button_5: button_3 {
 			label = "User SW5";
 			gpios = <&gpioe 12 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_3>;
 		};
 	};
 

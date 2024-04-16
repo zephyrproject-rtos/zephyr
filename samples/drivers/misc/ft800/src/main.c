@@ -28,7 +28,7 @@ static void touch_irq(void)
 	process_touch = true;
 }
 
-void main(void)
+int main(void)
 {
 	int cnt;
 	int val;
@@ -93,4 +93,5 @@ void main(void)
 		/* Wait a while */
 		k_msleep(SLEEPTIME);
 	}
+	return 0;
 }

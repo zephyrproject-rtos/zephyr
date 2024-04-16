@@ -1,0 +1,18 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Enable PWM outputs on J24 pin 3 and J22 pin 6. These outputs are not used
+ * by the test, but can be tested using the PWM shell.
+ */
+
+&flexpwm1_pwm3 {
+	status = "okay";
+};
+
+&flexpwm1_pwm0 {
+	status = "okay";
+};

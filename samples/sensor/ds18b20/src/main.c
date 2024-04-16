@@ -34,12 +34,12 @@ static const struct device *get_ds18b20_device(void)
 	return dev;
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *dev = get_ds18b20_device();
 
 	if (dev == NULL) {
-		return;
+		return 0;
 	}
 
 	while (1) {
@@ -51,4 +51,5 @@ void main(void)
 		printk("Temp: %d.%06d\n", temp.val1, temp.val2);
 		k_sleep(K_MSEC(2000));
 	}
+	return 0;
 }

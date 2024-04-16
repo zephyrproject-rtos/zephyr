@@ -8,9 +8,14 @@
 
 #include <psa/crypto.h>
 
+#include <zephyr/sys/__assert.h>
+
+#if !defined(CONFIG_BUILD_WITH_TFM) && defined(CONFIG_OPENTHREAD_CRYPTO_PSA)
+#include <zephyr/settings/settings.h>
+#endif
+
 #if defined(CONFIG_OPENTHREAD_ECDSA)
 #include <string.h>
-#include <zephyr/sys/__assert.h>
 #endif
 
 static otError psaToOtError(psa_status_t aStatus)
@@ -125,6 +130,16 @@ static void ensureKeyIsLoaded(otCryptoKeyRef aKeyRef)
 void otPlatCryptoInit(void)
 {
 	psa_crypto_init();
+
+#if !defined(CONFIG_BUILD_WITH_TFM) && defined(CONFIG_OPENTHREAD_CRYPTO_PSA)
+	/*
+	 * In OpenThread, Settings are initialized after KeyManager by default. If device uses
+	 * PSA with emulated TFM, Settings have to be initialized at the end of otPlatCryptoInit(),
+	 * to be available before storing Network Key.
+	 */
+	__ASSERT_EVAL((void) settings_subsys_init(), int err = settings_subsys_init(),
+		      !err, "Failed to initialize settings");
+#endif
 }
 
 otError otPlatCryptoImportKey(otCryptoKeyRef *aKeyRef,
@@ -415,6 +430,7 @@ otError otPlatCryptoSha256Finish(otCryptoContext *aContext, uint8_t *aHash, uint
 
 void otPlatCryptoRandomInit(void)
 {
+	psa_crypto_init();
 }
 
 void otPlatCryptoRandomDeinit(void)
@@ -559,6 +575,85 @@ otError otPlatCryptoEcdsaVerify(const otPlatCryptoEcdsaPublicKey *aPublicKey,
 out:
 	psa_reset_key_attributes(&attributes);
 	psa_destroy_key(key_id);
+
+	return psaToOtError(status);
+}
+
+otError otPlatCryptoEcdsaSignUsingKeyRef(otCryptoKeyRef aKeyRef,
+					 const otPlatCryptoSha256Hash *aHash,
+					 otPlatCryptoEcdsaSignature *aSignature)
+{
+	psa_status_t status;
+	size_t signature_length;
+
+	status = psa_sign_hash(aKeyRef, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256), aHash->m8,
+			       OT_CRYPTO_SHA256_HASH_SIZE, aSignature->m8,
+			       OT_CRYPTO_ECDSA_SIGNATURE_SIZE, &signature_length);
+	if (status != PSA_SUCCESS) {
+		goto out;
+	}
+
+	__ASSERT_NO_MSG(signature_length == OT_CRYPTO_ECDSA_SIGNATURE_SIZE);
+out:
+	return psaToOtError(status);
+}
+
+otError otPlatCryptoEcdsaVerifyUsingKeyRef(otCryptoKeyRef aKeyRef,
+					   const otPlatCryptoSha256Hash *aHash,
+					   const otPlatCryptoEcdsaSignature *aSignature)
+{
+	psa_status_t status;
+
+	status = psa_verify_hash(aKeyRef, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256), aHash->m8,
+				 OT_CRYPTO_SHA256_HASH_SIZE, aSignature->m8,
+				 OT_CRYPTO_ECDSA_SIGNATURE_SIZE);
+	if (status != PSA_SUCCESS) {
+		goto out;
+	}
+
+out:
+	return psaToOtError(status);
+}
+
+otError otPlatCryptoEcdsaExportPublicKey(otCryptoKeyRef aKeyRef,
+					 otPlatCryptoEcdsaPublicKey *aPublicKey)
+{
+	psa_status_t status;
+	size_t exported_length;
+	uint8_t buffer[1 + OT_CRYPTO_ECDSA_PUBLIC_KEY_SIZE];
+
+	status = psa_export_public_key(aKeyRef, buffer, sizeof(buffer), &exported_length);
+	if (status != PSA_SUCCESS) {
+		goto out;
+	}
+
+	__ASSERT_NO_MSG(exported_length == sizeof(buffer));
+	memcpy(aPublicKey->m8, buffer + 1, OT_CRYPTO_ECDSA_PUBLIC_KEY_SIZE);
+
+out:
+	return psaToOtError(status);
+}
+
+otError otPlatCryptoEcdsaGenerateAndImportKey(otCryptoKeyRef aKeyRef)
+{
+	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+	psa_status_t status;
+	psa_key_id_t key_id = (psa_key_id_t)aKeyRef;
+
+	psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_VERIFY_HASH | PSA_KEY_USAGE_SIGN_HASH);
+	psa_set_key_algorithm(&attributes, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256));
+	psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+	psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_PERSISTENT);
+	psa_set_key_id(&attributes, key_id);
+	psa_set_key_bits(&attributes, 256);
+
+	status = psa_generate_key(&attributes, &key_id);
+	if (status != PSA_SUCCESS) {
+		goto out;
+	}
+
+out:
+	psa_reset_key_attributes(&attributes);
 
 	return psaToOtError(status);
 }

@@ -1,7 +1,8 @@
-.. _x-nucleo-iks01a3-std-sample:
+.. zephyr:code-sample:: x-nucleo-iks01a3-std
+   :name: X-NUCLEO-IKS01A3 shield - Standard (Mode 1)
+   :relevant-api: sensor_interface
 
-X-NUCLEO-IKS01A3: shield Standard (Mode 1) sample
-#################################################
+   Interact with all the sensors of an X-NUCLEO-IKS01A3 shield using Standard mode.
 
 Overview
 ********
@@ -38,7 +39,7 @@ as sensors multiple instances are not supported.
 References
 **********
 
-- X-NUCLEO-IKS01A3: http://www.st.com/en/ecosystems/x-nucleo-iks01a3.html
+- X-NUCLEO-IKS01A3: https://www.st.com/en/ecosystems/x-nucleo-iks01a3.html
 
 Building and Running
 ********************

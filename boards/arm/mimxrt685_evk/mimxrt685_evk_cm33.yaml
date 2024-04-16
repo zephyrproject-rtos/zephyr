@@ -21,6 +21,7 @@ supported:
   - arduino_spi
   - counter
   - dma
+  - pwm
   - gpio
   - hwinfo
   - i2c
@@ -30,3 +31,4 @@ supported:
   - spi
   - watchdog
   - usb_device
+vendor: nxp

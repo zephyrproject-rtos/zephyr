@@ -11,8 +11,6 @@ struct lll_sync;
 /* Enables CTE transmission according to provided configuration */
 void lll_df_cte_tx_enable(struct lll_adv_sync *lll_sync, const struct pdu_adv *pdu,
 			  uint32_t *cte_len_us);
-/* Disables CTE transmission */
-void lll_df_conf_cte_tx_disable(void);
 
 /* Allocate memory for new DF sync configuration. It will always return the same
  * pointer until buffer is swapped by lll_df_sync_cfg_latest_get operation.
@@ -68,6 +66,9 @@ int lll_df_iq_report_no_resources_prepare(struct lll_sync *sync);
 /* Configure CTE transmission */
 void lll_df_cte_tx_configure(uint8_t cte_type, uint8_t cte_length, uint8_t num_ant_ids,
 			     const uint8_t *ant_ids);
+
+/* Disables CTE transmission */
+void lll_df_cte_tx_disable(void);
 
 /* Enabled parsing of a PDU for CTEInfo */
 void lll_df_conf_cte_info_parsing_enable(void);

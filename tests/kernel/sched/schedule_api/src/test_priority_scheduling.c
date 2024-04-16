@@ -16,7 +16,7 @@
 #else
 	#define NUM_THREAD 10
 #endif
-#define ITRERATION_COUNT 5
+#define ITERATION_COUNT 5
 #define BASE_PRIORITY 1
 
 BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
@@ -83,7 +83,7 @@ ZTEST(threads_scheduling, test_priority_scheduling)
 					 K_NO_WAIT);
 	}
 
-	while (count < ITRERATION_COUNT) {
+	while (count < ITERATION_COUNT) {
 
 		/* Wait for each thread to complete */
 		for (int i = 0; i < NUM_THREAD; i++) {

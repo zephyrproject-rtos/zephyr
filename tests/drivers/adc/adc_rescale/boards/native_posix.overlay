@@ -1,0 +1,70 @@
+/*
+ * Copyright 2023 The ChromiumOS Authors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ #include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	sensor0: vd {
+		compatible = "voltage-divider";
+		io-channels = <&adc0 0>;
+		output-ohms = <50>;
+		full-ohms = <100>;
+	};
+
+	sensor1: css {
+		compatible = "current-sense-shunt";
+		io-channels = <&adc0 1>;
+		shunt-resistor-micro-ohms = <500000>;
+	};
+
+	sensor2: csa {
+		compatible = "current-sense-amplifier";
+		io-channels = <&adc0 2>;
+		sense-resistor-micro-ohms = <5000>;
+		sense-gain-mult = <100>;
+	};
+
+	adc0: adc {
+		compatible = "zephyr,adc-emul";
+		nchannels = <3>;
+		ref-internal-mv = <3300>;
+		ref-external1-mv = <5000>;
+		#io-channel-cells = <1>;
+		status = "okay";
+	};
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};

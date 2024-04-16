@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2023 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx3";
+			reg = <0>;
+		};
+	};
+
+	/*
+	 * Although RAM is of size 128MB (0x08000000), limit this to 16MB so
+	 * fewer L2 page table entries are needed when MMU is enabled.
+	 */
+	sram0: memory@00000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x00000000 0x01000000>;
+	};
+
+	/*
+	 * Although ROM is of size 32MB (0x02000000), limit this to 16KB so
+	 * fewer L2 page table entries are needed when MMU is enabled.
+	 */
+	rom0: memory@fe000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xfe000000 0x00004000>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+	};
+};

@@ -1,0 +1,68 @@
+# Copyright (c) 2023 NXP Semiconductors
+# Copyright (c) 2023 Congipilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NCP5623 Triple Output I2C Controlled RGB LED driver
+
+  The LED_SHELL application can be used for testing
+
+  The following example defines a single RGB LED in the ncp5623 DT node
+
+  ncp5623c@39 {
+    compatible = "onnn,ncp5623";
+    reg = <0x39>;
+
+    led_0 {
+      label = "RGB LED";
+      index = <0>;
+      color-mapping =
+        <LED_COLOR_ID_RED>,
+        <LED_COLOR_ID_GREEN>,
+        <LED_COLOR_ID_BLUE>;
+    };
+  };
+
+  The following example defines three single-channel LEDs in the ncp5623 DT node
+
+  ncp5623c@39 {
+    compatible = "onnn,ncp5623";
+    reg = <0x39>;
+
+    led_0 {
+      label = "RED LED";
+      index = <0>;
+      color-mapping =
+        <LED_COLOR_ID_RED>;
+    };
+
+    led_1 {
+      label = "GREEN LED";
+      index = <1>;
+      color-mapping =
+        <LED_COLOR_ID_GREEN>;
+    };
+
+    led_2 {
+      label = "BLUE LED";
+      index = <2>;
+      color-mapping =
+        <LED_COLOR_ID_BLUE>;
+    };
+  };
+
+
+compatible: "onnn,ncp5623"
+
+include: ["i2c-device.yaml", "led-controller.yaml"]
+
+child-binding:
+  properties:
+    label:
+      required: true
+
+    index:
+      required: true
+
+    color-mapping:
+      required: true

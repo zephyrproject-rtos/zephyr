@@ -40,16 +40,37 @@ config COVERAGE
 	  For more information see
 	  https://docs.zephyrproject.org/latest/guides/coverage.html
 
+choice
+	prompt "Coverage mode"
+	default COVERAGE_NATIVE_GCOV if NATIVE_BUILD
+	default COVERAGE_GCOV if !NATIVE_BUILD
+	depends on COVERAGE
+
+config COVERAGE_NATIVE_GCOV
+	bool "Host compiler gcov based code coverage"
+	depends on NATIVE_BUILD
+	help
+	  Build natively with the compiler standard `--coverage` options,
+	  that is with gcov/GCC-compatible coverage
+
+config COVERAGE_NATIVE_SOURCE
+	bool "Host compiler source based code coverage"
+	depends on NATIVE_BUILD
+	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "llvm"
+	help
+	  Build natively with the compiler source based coverage options.
+	  Today this is only supported with LLVM
+
 config COVERAGE_GCOV
 	bool "Create Coverage data from hardware platform"
-	default y
-	depends on COVERAGE
-	depends on !NATIVE_APPLICATION
+	depends on !NATIVE_BUILD
 	help
 	  This option will select the custom gcov library. The reports will
 	  be available over serial. This serial dump can be passed to
 	  gen_gcov_files.py which creates the required .gcda files. These
 	  can be read by gcov utility. For more details see gcovr.com .
+
+endchoice
 
 config COVERAGE_GCOV_HEAP_SIZE
 	int "Size of heap allocated for gcov coverage data dump"

@@ -1,5 +1,5 @@
 identifier: arduino_portenta_h7_m7
-name: Arduino Portenta H7
+name: Arduino Portenta H7 (M7)
 type: mcu
 arch: arm
 toolchain:
@@ -10,3 +10,4 @@ ram: 512
 flash: 1024
 supported:
   - gpio
+vendor: arduino

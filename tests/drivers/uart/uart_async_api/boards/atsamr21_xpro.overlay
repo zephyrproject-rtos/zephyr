@@ -18,7 +18,7 @@
 	dma-names = "rx", "tx";
 };
 
-&sercom3 {
+dut: &sercom3 {
 	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;

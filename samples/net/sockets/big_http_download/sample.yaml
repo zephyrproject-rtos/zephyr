@@ -6,7 +6,9 @@ common:
   harness: net
   min_ram: 32
   min_flash: 128
-  tags: net socket
+  tags:
+    - net
+    - socket
 tests:
   sample.net.sockets.big_http_download:
     extra_configs:

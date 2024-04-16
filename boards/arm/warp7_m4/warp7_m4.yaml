@@ -21,3 +21,4 @@ testing:
 supported:
   - gpio
   - i2c
+vendor: nxp

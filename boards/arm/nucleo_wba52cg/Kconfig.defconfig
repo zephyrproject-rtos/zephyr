@@ -1,0 +1,20 @@
+# STM32WBA52CG Nucleo board configuration
+
+# Copyright (c) 2023 STMicroelectronics
+
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_WBA52CG
+
+config BOARD
+	default "nucleo_wba52cg"
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+# LPTIM clocked by LSE, force tick freq to 4096 for tick accuracy
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4096 if STM32_LPTIM_TIMER
+
+endif # BOARD_NUCLEO_WBA52CG

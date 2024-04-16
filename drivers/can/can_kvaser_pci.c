@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT kvaser_pcican
 
-#include "can_sja1000.h"
+#include <zephyr/drivers/can/can_sja1000.h>
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/pcie/pcie.h>
@@ -176,9 +176,9 @@ const struct can_driver_api can_kvaser_pci_driver_api = {
 	static struct can_sja1000_data can_sja1000_data_##inst =                                   \
 		CAN_SJA1000_DATA_INITIALIZER(&can_kvaser_pci_data_##inst);                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, can_kvaser_pci_init, NULL, &can_sja1000_data_##inst,           \
-			      &can_sja1000_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,   \
-			      &can_kvaser_pci_driver_api);                                         \
+	CAN_DEVICE_DT_INST_DEFINE(inst, can_kvaser_pci_init, NULL, &can_sja1000_data_##inst,       \
+				  &can_sja1000_config_##inst, POST_KERNEL,                         \
+				  CONFIG_CAN_INIT_PRIORITY, &can_kvaser_pci_driver_api);           \
                                                                                                    \
 	static void can_kvaser_pci_config_func_##inst(const struct device *dev)                    \
 	{                                                                                          \

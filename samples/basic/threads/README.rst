@@ -1,7 +1,8 @@
-.. _96b_carbon_multi_thread_blinky:
+.. zephyr:code-sample:: multi-thread-blinky
+   :name: Basic thread manipulation
+   :relevant-api: gpio_interface thread_apis
 
-Basic Thread Example
-####################
+   Spawn multiple threads that blink LEDs and print information to the console.
 
 Overview
 ********

@@ -46,8 +46,9 @@ int ism330dhcx_i2c_init(const struct device *dev)
 		return -ENODEV;
 	};
 
-	data->ctx_i2c.read_reg = (stmdev_read_ptr) ism330dhcx_i2c_read,
-	data->ctx_i2c.write_reg = (stmdev_write_ptr) ism330dhcx_i2c_write,
+	data->ctx_i2c.read_reg = (stmdev_read_ptr) ism330dhcx_i2c_read;
+	data->ctx_i2c.write_reg = (stmdev_write_ptr) ism330dhcx_i2c_write;
+	data->ctx_i2c.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay;
 
 	data->ctx = &data->ctx_i2c;
 	data->ctx->handle = (void *)dev;

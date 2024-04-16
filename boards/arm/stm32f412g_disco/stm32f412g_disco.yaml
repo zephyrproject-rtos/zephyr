@@ -12,3 +12,4 @@ supported:
   - arduino_i2c
   - arduino_spi
   - counter
+vendor: st

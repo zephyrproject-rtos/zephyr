@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32l475", "st,stm32l4", "simple-bus";
+
 		usbotg_fs: otgfs@50000000 {
 			compatible = "st,stm32-otgfs";
 			reg = <0x50000000 0x40000>;
@@ -17,7 +19,8 @@
 			ram-size = <1280>;
 			maximum-speed = "full-speed";
 			phys = <&otgfs_phy>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00001000>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00001000>,
+				 <&rcc STM32_SRC_MSI CLK48_SEL(3)>;
 			status = "disabled";
 		};
 	};

@@ -8,60 +8,60 @@ include: rtc.yaml
 # https://github.com/Xilinx/meta-xilinx
 
 properties:
-    clock-frequency:
-      required: true
+  clock-frequency:
+    required: true
 
-    xlnx,count-width:
-      type: int
-      required: true
-      enum:
-        - 8
-        - 16
-        - 32
-      description: |
-        Individual timer/counter width in bits.
+  xlnx,count-width:
+    type: int
+    required: true
+    enum:
+      - 8
+      - 16
+      - 32
+    description: |
+      Individual timer/counter width in bits.
 
-    xlnx,gen0-assert:
-      type: int
-      enum:
-        - 0
-        - 1
-      description: |
-        Active state of the generateout0 signal (0 for active-low, 1 for
-        active-high).
+  xlnx,gen0-assert:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Active state of the generateout0 signal (0 for active-low, 1 for
+      active-high).
 
-    xlnx,gen1-assert:
-      type: int
-      enum:
-        - 0
-        - 1
-      description: |
-        Active state of the generateout1 signal (0 for active-low, 1 for
-        active-high).
+  xlnx,gen1-assert:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Active state of the generateout1 signal (0 for active-low, 1 for
+      active-high).
 
-    xlnx,one-timer-only:
-      type: int
-      required: true
-      enum:
-        - 0
-        - 1
-      description: |
-        0 if both Timer 1 and Timer 2 are enabled, 1 if only Timer 1 is enabled.
+  xlnx,one-timer-only:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+    description: |
+      0 if both Timer 1 and Timer 2 are enabled, 1 if only Timer 1 is enabled.
 
-    xlnx,trig0-assert:
-      type: int
-      enum:
-        - 0
-        - 1
-      description: |
-        Active state of the capturetrig0 signal (0 for active-low, 1 for
-        active-high).
+  xlnx,trig0-assert:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Active state of the capturetrig0 signal (0 for active-low, 1 for
+      active-high).
 
-    xlnx,trig1-assert:
-      type: int
-      enum:
-        - 0
-        - 1
-      description: |
-        Active state of the capturetrig1 signal (0 for active-low, 1 for
-        active-high).
+  xlnx,trig1-assert:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Active state of the capturetrig1 signal (0 for active-low, 1 for
+      active-high).

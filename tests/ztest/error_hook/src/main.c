@@ -115,14 +115,16 @@ __no_optimization static void trigger_fault_divide_zero(void)
  * For the Cortex-M0, M0+, M23 (CONFIG_ARMV6_M_ARMV8_M_BASELINE)
  * which does not include a divide instruction, the test is skipped,
  * and there will be no hardware exception for that.
+ * For ARMv8-R, divide by zero trapping is not supported in hardware.
  */
 #if (defined(CONFIG_SOC_SERIES_MPS2) && defined(CONFIG_QEMU_TARGET)) || \
 	(defined(CONFIG_SOC_SERIES_MPS3) && defined(CONFIG_QEMU_TARGET)) || \
 	defined(CONFIG_BOARD_QEMU_CORTEX_A53) || defined(CONFIG_SOC_QEMU_ARC) || \
 	defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
 	defined(CONFIG_BOARD_QEMU_CORTEX_R5) || \
-	defined(CONFIG_BOARD_FVP_BASER_AEMV8R) || defined(CONFIG_BOARD_FVP_BASE_REVC_2XAEMV8A) || \
-	defined(CONFIG_BOARD_FVP_BASER_AEMV8R_AARCH32)
+	defined(CONFIG_ARMV8_R) || defined(CONFIG_AARCH32_ARMV8_R) || \
+	defined(CONFIG_BOARD_FVP_BASE_REVC_2XAEMV8A) || \
+	defined(CONFIG_SOC_NSIM_EM11D)
 	ztest_test_skip();
 #endif
 }

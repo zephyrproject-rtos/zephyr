@@ -1,7 +1,8 @@
-.. _ipm_imx:
+.. zephyr:code-sample:: ipm-imx
+   :name: IPM on NXP i.MX
+   :relevant-api: ipm_interface
 
-i.MX IPM example
-################
+   Implement inter-processor mailbox (IPM) on i.MX SoCs containing a Messaging Unit peripheral.
 
 Overview
 ********

@@ -1,7 +1,8 @@
-.. _display-sample:
+.. zephyr:code-sample:: display
+   :name: Display
+   :relevant-api: display_interface
 
-Display Sample
-##############
+   Draw basic rectangles on a display device.
 
 Overview
 ********

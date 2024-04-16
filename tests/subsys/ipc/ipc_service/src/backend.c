@@ -68,15 +68,6 @@ const static struct ipc_service_backend backend_ops = {
 	.deregister_endpoint = deregister_ept,
 };
 
-static int backend_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	/* Nothing to do */
-
-	return 0;
-}
-
 #define DEFINE_BACKEND_DEVICE(i)					\
 	static struct backend_config_t backend_config_##i = {		\
 		.offset = DT_INST_PROP(i, offset),			\
@@ -85,7 +76,7 @@ static int backend_init(const struct device *dev)
 	static struct backend_data_t backend_data_##i;			\
 									\
 	DEVICE_DT_INST_DEFINE(i,					\
-			 &backend_init,					\
+			 NULL,						\
 			 NULL,						\
 			 &backend_data_##i,				\
 			 &backend_config_##i,				\

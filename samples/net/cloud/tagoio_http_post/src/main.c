@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(tagoio_http_post, CONFIG_TAGOIO_HTTP_POST_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/http/client.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <stdio.h>
 
 #include "wifi.h"
@@ -72,7 +72,7 @@ static void next_turn(void)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	LOG_INF("TagoIO IoT - HTTP Client - Temperature demo");
 
@@ -83,4 +83,5 @@ void main(void)
 
 		k_sleep(K_SECONDS(CONFIG_TAGOIO_HTTP_PUSH_INTERVAL));
 	}
+	return 0;
 }

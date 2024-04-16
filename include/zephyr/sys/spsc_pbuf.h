@@ -90,7 +90,7 @@ struct spsc_pbuf_ext_nocache {
  *
  * The SPSC packet buffer implements lightweight unidirectional packet buffer
  * with read/write semantics on top of a memory region shared
- * by the reader and writer. It optionally embeds cache and memory barier
+ * by the reader and writer. It optionally embeds cache and memory barrier
  * management to ensure correct data access.
  *
  * This structure supports single writer and reader. Data stored in the buffer
@@ -190,7 +190,7 @@ int spsc_pbuf_alloc(struct spsc_pbuf *pb, uint16_t len, char **buf);
  * @brief Commit packet to the buffer.
  *
  * Commit a packet which was previously allocated (@ref spsc_pbuf_alloc).
- * If cache is used, cache writeback is perfromed on the written data.
+ * If cache is used, cache writeback is performed on the written data.
  *
  * @param pb	A buffer to which to write.
  * @param len	Packet length. Must be equal or less than the length used for allocation.
@@ -219,12 +219,16 @@ int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len);
 /**
  * @brief Claim packet from the buffer.
  *
- * Claimed packet must be freed using @ref spsc_pbuf_free.
+ * It claims a single packet from the buffer in the order of the commitment
+ * by the @ref spsc_pbuf_commit function. The first committed packet will be claimed first.
+ * The returned buffer is 32 bit word aligned and points to the continuous memory.
+ * Claimed packet must be freed using the @ref spsc_pbuf_free function.
  *
  * @note If data cache is used, cache is invalidate on the packet.
  *
  * @param[in] pb	A buffer from which packet will be claimed.
  * @param[in,out] buf	A location where claimed packet address is written.
+ *                      It is 32 bit word aligned and points to the continuous memory.
  *
  * @retval 0 No packets in the buffer.
  * @retval positive packet length.

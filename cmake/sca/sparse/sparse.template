@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2022, Nordic Semiconductor ASA
+
+# Everything before `--` are arguments for cmake invocation, those must be ignored.
+# First argument after `--` is the real compiler, but that is defined in REAL_CC
+# as environment variable for cgcc, hence that must also be ignored, thus first
+# argument to be passed to sparse is 2nd argument after `--`.
+foreach(i RANGE ${CMAKE_ARGC})
+  if("${CMAKE_ARGV${i}}" STREQUAL "--")
+    math(EXPR end_of_options "${i} + 2")
+    break()
+  endif()
+endforeach()
+
+foreach(i RANGE ${end_of_options} ${CMAKE_ARGC})
+  list(APPEND ARGS ${CMAKE_ARGV${i}})
+endforeach()
+execute_process(COMMAND @CMAKE_COMMAND@ -E env REAL_CC=@CMAKE_C_COMPILER@ @SPARSE_COMPILER@ ${ARGS})

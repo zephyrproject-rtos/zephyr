@@ -8,25 +8,25 @@ compatible: "ite,it8xxx2-uart"
 include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    port-num:
-      type: int
-      required: true
-      description: Ordinal identifying the port
+  port-num:
+    type: int
+    required: true
+    description: Ordinal identifying the port
 
-    gpios:
-      type: phandle-array
-      required: true
+  gpios:
+    type: phandle-array
+    required: true
 
-    uart-dev:
-      type: phandle
-      required: true
-      description: Get the handle of the UART device
+  uart-dev:
+    type: phandle
+    required: true
+    description: Get the handle of the UART device
 
-    pinctrl-0:
-      required: true
+  pinctrl-0:
+    required: true
 
-    pinctrl-names:
-      required: true
+  pinctrl-names:
+    required: true

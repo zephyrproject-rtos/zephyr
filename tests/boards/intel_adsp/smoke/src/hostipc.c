@@ -32,7 +32,7 @@ static bool ipc_done(const struct device *dev, void *arg)
 
 ZTEST(intel_adsp, test_host_ipc)
 {
-	bool ret;
+	int ret;
 
 	intel_adsp_ipc_set_message_handler(INTEL_ADSP_IPC_HOST_DEV, ipc_message, NULL);
 	intel_adsp_ipc_set_done_handler(INTEL_ADSP_IPC_HOST_DEV, ipc_done, NULL);
@@ -41,7 +41,7 @@ ZTEST(intel_adsp, test_host_ipc)
 	printk("Simple message send...\n");
 	done_flag = false;
 	ret = intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_SIGNAL_DONE, 0);
-	zassert_true(ret, "send failed");
+	zassert_true(!ret, "send failed");
 	AWAIT(intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV));
 	AWAIT(done_flag);
 
@@ -53,7 +53,7 @@ ZTEST(intel_adsp, test_host_ipc)
 	msg_flag = false;
 	ret = intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_RETURN_MSG,
 				RETURN_MSG_SYNC_VAL);
-	zassert_true(ret, "send failed");
+	zassert_true(!ret, "send failed");
 	AWAIT(done_flag);
 	AWAIT(intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV));
 	AWAIT(msg_flag);
@@ -66,24 +66,22 @@ ZTEST(intel_adsp, test_host_ipc)
 	msg_flag = false;
 	ret = intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_RETURN_MSG,
 				RETURN_MSG_SYNC_VAL);
-	zassert_true(ret, "send failed");
+	zassert_true(!ret, "send failed");
 	AWAIT(done_flag);
 	AWAIT(intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV));
 	AWAIT(msg_flag);
 
 	/* Same, but we'll complete it asynchronously (1.8+ only) */
-	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
-		printk("Return message request, async...\n");
-		done_flag = false;
-		msg_flag = false;
-		ret = intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_RETURN_MSG,
-					RETURN_MSG_ASYNC_VAL);
-		zassert_true(ret, "send failed");
-		AWAIT(done_flag);
-		AWAIT(intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV));
-		AWAIT(msg_flag);
-		intel_adsp_ipc_complete(INTEL_ADSP_IPC_HOST_DEV);
-	}
+	printk("Return message request, async...\n");
+	done_flag = false;
+	msg_flag = false;
+	ret = intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_RETURN_MSG,
+				RETURN_MSG_ASYNC_VAL);
+	zassert_true(!ret, "send failed");
+	AWAIT(done_flag);
+	AWAIT(intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV));
+	AWAIT(msg_flag);
+	intel_adsp_ipc_complete(INTEL_ADSP_IPC_HOST_DEV);
 
 	/* Now make a synchronous call with (on the host) a delayed
 	 * completion and make sure the interrupt fires and wakes us
@@ -94,7 +92,7 @@ ZTEST(intel_adsp, test_host_ipc)
 	done_flag = false;
 	ret = intel_adsp_ipc_send_message_sync(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_ASYNC_DONE_DELAY,
 					 0, K_FOREVER);
-	zassert_true(ret, "send failed");
+	zassert_true(!ret, "send failed");
 	zassert_true(done_flag, "done interrupt failed to fire");
 	zassert_true(intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV),
 		"sync message incomplete");

@@ -1,0 +1,161 @@
+# Copyright Runtime.io 2018. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# The Kconfig file is dedicated to smp subdirectory of MCUmgr
+# subsystem and provides Kconfig options to control aspects of
+# Simple Management Protocol (SMP) processing source code provided
+# under the subdirectory.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_SMP_ -- for general SMP options;
+#  MCUMGR_SMP_CBOR -- for CBOR encoding specific options;
+
+config MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES
+	int "Number of predicted maximum entries to main response map"
+	default 15
+	help
+	  This is number of predicted entries in main response map,
+	  the one that encapsulates everything within response.
+	  This value is used by zcbor to predict needed map encoding,
+	  and does not affect memory allocation or usage.
+	  Builtin command processors rarely add large amounts of
+	  data directly to main map, creating sub-maps instead so
+	  the default value works fine with them.
+	  If your app directly adds fields to main map, without
+	  encapsulating them, you may want to increase this value
+	  in case when encoding starts to fail.
+
+config MCUMGR_SMP_CBOR_MIN_DECODING_LEVELS
+	int
+	help
+	  Minimal decoding levels, map/list encapsulation, required
+	  to be supported by zcbor decoding of SMP responses
+	  is auto genereated from MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_? options.
+	  A group or command that adds additional maps/lists above the
+	  base map, which is already taken into account, should
+	  select one of the MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_?.
+	default 7 if MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_7
+	default 6 if MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_6
+	default 5 if MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_5
+	default 4 if MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_4
+	default 3 if MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_3
+	default 2 if MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+	default 1 if MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_1
+	default 0
+
+config MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_1
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_3
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_4
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_5
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_6
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_7
+	bool
+
+config MCUMGR_SMP_CBOR_MAX_DECODING_LEVELS
+	int "Number of map/list encapsulations allowed for SMP decoding"
+	range MCUMGR_SMP_CBOR_MIN_DECODING_LEVELS 15
+	default MCUMGR_SMP_CBOR_MIN_DECODING_LEVELS
+	help
+	  This is a maximum number of levels of maps/lists that will
+	  be expected to be decoded within different command groups.
+	  SMP commands/groups that provide no CBOR encoded payload
+	  have no requirements.
+	  Commands that provide CBOR payload require at least 1 level,
+	  and additional levels for each map/list encapsulation.
+	  For example if command accepts payload of map of parameters
+	  it will need 2 levels.
+	  This number translates to zcbor backup states, it increases
+	  size of cbor_nb_reader structure by zcbor_state_t size per
+	  one unit selected here.
+
+config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVELS
+	int
+	help
+	  Minimal encoding levels, map/list encapsulation, required
+	  to be supported by zcbor encoding of SMP responses
+	  is auto genereated from MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_? options.
+	  A group or command that adds additional maps/lists above the
+	  base map, which is already taken into account, should
+	  select one of the MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_?.
+	default 7 if MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_7
+	default 6 if MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_6
+	default 5 if MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_5
+	default 4 if MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_4
+	default 3 if MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_3
+	default 2 if MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_2
+	default 1 if MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_1 || ZCBOR_CANONICAL
+	default 0
+
+config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_1
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_2
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_3
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_4
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_5
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_6
+	bool
+
+config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_7
+	bool
+
+config MCUMGR_SMP_CBOR_MAX_ENCODING_LEVELS
+	int "Number of map/list encapsulations allowed for SMP encoding"
+	range MCUMGR_SMP_CBOR_MIN_ENCODING_LEVELS 15
+	default MCUMGR_SMP_CBOR_MIN_ENCODING_LEVELS
+	help
+	  This is a maximum number of levels of maps/lists that will
+	  be encoded within different comm&& groups.
+	  This number translates to zcbor backup states, it increases
+	  size of cbor_nb_writer structure by zcbor_state_t size per
+	  one unit selected here.
+
+config MCUMGR_SMP_COMMAND_STATUS_HOOKS
+	bool "SMP command status hooks"
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  This will enable SMP command status notification hooks for when an SMP message is
+	  received or processed.
+
+config MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+	bool "Support original protocol"
+	default y
+	help
+	  This option will enable supporting the original SMP protocol whereby
+	  all errors are returned in the "rc" field as well as the new protocol
+	  whereby there is a dedicated entry for command error/result codes.
+	  The protocol selection is indicated by the request header sent by the
+	  client.
+
+config MCUMGR_SMP_VERBOSE_ERR_RESPONSE
+	bool "Support verbose error response"
+	depends on MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+	help
+	  Support for encoding "rc" code explanation in form of "rsn"
+	  text string.  This is useful, when returning MGMT_ERR_EUNKNOWN,
+	  to add additional information on the source of an error.
+	  Note that the "rsn" is string additional to "rc" code,
+	  so MCUMGR_TRANSPORT_NETBUF_SIZE should be large enough to be able
+	  to encode both.

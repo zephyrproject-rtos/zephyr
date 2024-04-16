@@ -5,10 +5,12 @@
  */
 
 #include <st/f4/stm32f427.dtsi>
-#include <zephyr/dt-bindings/display/stm32_ltdc.h>
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	soc {
+		compatible = "st,stm32f429", "st,stm32f4", "simple-bus";
+
 		dac1: dac@40007400 {
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;

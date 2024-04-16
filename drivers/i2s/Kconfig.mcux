@@ -8,6 +8,7 @@ menuconfig I2S_MCUX_SAI
 	default y
 	depends on DT_HAS_NXP_MCUX_I2S_ENABLED
 	select DMA
+	select PINCTRL
 	help
 	  Enable I2S support on the I.MX family of processors.
 

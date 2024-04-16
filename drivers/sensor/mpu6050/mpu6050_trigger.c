@@ -36,7 +36,7 @@ int mpu6050_trigger_set(const struct device *dev,
 		return 0;
 	}
 
-	drv_data->data_ready_trigger = *trig;
+	drv_data->data_ready_trigger = trig;
 
 	gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
 					GPIO_INT_EDGE_TO_ACTIVE);
@@ -69,7 +69,7 @@ static void mpu6050_thread_cb(const struct device *dev)
 
 	if (drv_data->data_ready_handler != NULL) {
 		drv_data->data_ready_handler(dev,
-					     &drv_data->data_ready_trigger);
+					     drv_data->data_ready_trigger);
 	}
 
 	gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
@@ -101,7 +101,7 @@ int mpu6050_init_interrupt(const struct device *dev)
 	struct mpu6050_data *drv_data = dev->data;
 	const struct mpu6050_config *cfg = dev->config;
 
-	if (!device_is_ready(cfg->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&cfg->int_gpio)) {
 		LOG_ERR("GPIO device not ready");
 		return -ENODEV;
 	}

@@ -5,4 +5,8 @@
 
 config BOARD_ESP32_ETHERNET_KIT
 	bool "ESP32-ETHERNET-KIT Development Board"
-	depends on SOC_ESP32
+	depends on SOC_SERIES_ESP32
+
+choice SOC_PART_NUMBER
+	default SOC_ESP32_WROVER_E_N4R8
+endchoice

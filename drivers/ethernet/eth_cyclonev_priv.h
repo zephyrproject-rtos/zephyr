@@ -30,7 +30,6 @@ struct eth_cyclonev_dma_desc {
 
 struct eth_cyclonev_priv {
 	mem_addr_t base_addr; /* Base address */
-	uint32_t instance;
 	uint8_t mac_addr[6];
 	uint32_t interrupt_mask;
 	struct net_if *iface; /* Zephyr net_if Interface Struct (for interface initialisation) */

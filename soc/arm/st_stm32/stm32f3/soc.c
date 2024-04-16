@@ -11,10 +11,9 @@
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <zephyr/arch/cpu.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-#include <zephyr/arch/arm/aarch32/nmi.h>
-#include <zephyr/irq.h>
+#include <stm32_ll_system.h>
+
+#include <cmsis_core.h>
 
 /**
  * @brief Perform basic hardware initialization at boot.
@@ -24,24 +23,14 @@
  *
  * @return 0
  */
-static int stm32f3_init(const struct device *arg)
+static int stm32f3_init(void)
 {
-	uint32_t key;
-
-	ARG_UNUSED(arg);
-
-	key = irq_lock();
-
-	/* Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	irq_unlock(key);
-
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 8 MHz from HSI */
 	SystemCoreClock = 8000000;
+
+	/* Allow reflashing the board */
+	LL_DBGMCU_EnableDBGSleepMode();
 
 	return 0;
 }

@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <zephyr/linker/iterable_sections.h>
+
 	SECTION_PROLOGUE(initlevel,,)
 	{
 		/*
@@ -18,21 +20,7 @@
 		__init_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_PROLOGUE(devices,,)
-	{
-		/* Link in devices objects, which are tied to the init ones;
-		 * the objects are thus sorted the same way as their init
-		 * object parent. See above and include/device.h.
-		 */
-		__device_start = .;
-		CREATE_OBJ_LEVEL(device, EARLY)
-		CREATE_OBJ_LEVEL(device, PRE_KERNEL_1)
-		CREATE_OBJ_LEVEL(device, PRE_KERNEL_2)
-		CREATE_OBJ_LEVEL(device, POST_KERNEL)
-		CREATE_OBJ_LEVEL(device, APPLICATION)
-		CREATE_OBJ_LEVEL(device, SMP)
-		__device_end = .;
-	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	ITERABLE_SECTION_ROM_NUMERIC(device, 4)
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && !defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_PROLOGUE(sw_isr_table,,)
@@ -45,6 +33,15 @@
 		. = ALIGN(CONFIG_ARCH_SW_ISR_TABLE_ALIGN);
 		*(_SW_ISR_TABLE_SECTION_SYMS)
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+#if defined(CONFIG_SHARED_INTERRUPTS)
+	SECTION_PROLOGUE(shared_sw_isr_table,,)
+	{
+		/* TODO: does this section require alignment? */
+		KEEP(*(_SHARED_SW_ISR_TABLE_SECTION_SYMS))
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
+
 #endif
 
 	/* verify we don't have rogue .z_init_<something> initlevel sections */
@@ -73,17 +70,12 @@
 	ITERABLE_SECTION_ROM(_static_thread_data, 4)
 
 #if defined(CONFIG_PCIE)
-	SECTION_DATA_PROLOGUE(irq_alloc,,)
-	{
-		__irq_alloc_start = .;
-		KEEP(*(SORT_BY_NAME("._irq_alloc*")));
-		__irq_alloc_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	ITERABLE_SECTION_ROM(irq_alloc, 4)
 #endif /* CONFIG_PCIE */
 
-#if !defined(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
-	SECTION_DATA_PROLOGUE(device_handles,,)
+#if !defined(CONFIG_DEVICE_DEPS_DYNAMIC)
+	SECTION_DATA_PROLOGUE(device_deps,,)
 	{
-#include <zephyr/linker/device-handles.ld>
+#include <zephyr/linker/device-deps.ld>
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-#endif /* !CONFIG_HAS_DYNAMIC_DEVICE_HANDLES */
+#endif /* !CONFIG_DEVICE_DEPS_DYNAMIC */

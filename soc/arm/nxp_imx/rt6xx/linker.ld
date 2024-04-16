@@ -11,4 +11,4 @@
  */
 
 
-#include <zephyr/arch/arm/aarch32/cortex_m/scripts/linker.ld>
+#include <zephyr/arch/arm/cortex_m/scripts/linker.ld>

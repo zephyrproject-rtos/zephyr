@@ -9,5 +9,10 @@ if(DEFINED GCC_M_ARCH)
   list(APPEND TOOLCHAIN_LD_FLAGS  -march=${GCC_M_ARCH})
 endif()
 
+if(DEFINED GCC_M_TUNE)
+  list(APPEND TOOLCHAIN_C_FLAGS   -mtune=${GCC_M_TUNE})
+  list(APPEND TOOLCHAIN_LD_FLAGS  -mtune=${GCC_M_TUNE})
+endif()
+
 list(APPEND TOOLCHAIN_C_FLAGS   -mabi=lp64)
 list(APPEND TOOLCHAIN_LD_FLAGS  -mabi=lp64)

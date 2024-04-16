@@ -1,0 +1,13 @@
+# IST8310 Geomagnetic sensor configuration options
+
+# Copyright (c) 2023 NXP Semiconductors
+# Copyright (c) 2023 Cognipilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+config IST8310
+	bool "IST8310 I2C Geomagnetic Chip"
+	default y
+	depends on DT_HAS_ISENTEK_IST8310_ENABLED
+	select I2C
+	help
+	  Enable driver for IST8310 I2C-based Geomagnetic sensor.

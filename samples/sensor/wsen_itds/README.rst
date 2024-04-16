@@ -21,7 +21,7 @@ Requirements
 References
 **********
 
- - WSEN-ITDS: https://www.we-online.com/catalog/manual/2533020201601_WSEN-ITDS%202533020201601%20Manual_rev1.pdf
+ - WSEN-ITDS: https://www.we-online.com/components/products/manual/2533020201601_WSEN-ITDS%202533020201601%20Manual_rev2.3.pdf
 
 Building and Running
 ********************

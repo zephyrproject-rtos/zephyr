@@ -44,7 +44,7 @@
 #include <zephyr/toolchain/mwdt.h>
 #elif defined(__ARMCOMPILER_VERSION)
 #include <zephyr/toolchain/armclang.h>
-#elif defined(__llvm__)
+#elif defined(__llvm__) || (defined(_LINKER) && defined(__LLD_LINKER_CMD__))
 #include <zephyr/toolchain/llvm.h>
 #elif defined(__GNUC__) || (defined(_LINKER) && defined(__GCC_LINKER_CMD__))
 #include <zephyr/toolchain/gcc.h>
@@ -113,6 +113,36 @@
  */
 #ifndef TOOLCHAIN_HAS_C_AUTO_TYPE
 #define TOOLCHAIN_HAS_C_AUTO_TYPE 0
+#endif
+
+/**
+ * @def TOOLCHAIN_HAS_ZLA
+ * @brief Indicate if toolchain supports Zero Length Arrays.
+ */
+#ifndef TOOLCHAIN_HAS_ZLA
+#define TOOLCHAIN_HAS_ZLA 0
+#endif
+
+/**
+ * @def TOOLCHAIN_IGNORE_WSHADOW_BEGIN
+ * @brief Begin of block to ignore -Wshadow.
+ *
+ * To be used inside another macro.
+ * Only for toolchain supporting _Pragma("GCC diagnostic ...").
+ */
+#ifndef TOOLCHAIN_IGNORE_WSHADOW_BEGIN
+#define TOOLCHAIN_IGNORE_WSHADOW_BEGIN
+#endif
+
+/**
+ * @def TOOLCHAIN_IGNORE_WSHADOW_END
+ * @brief End of block to ignore -Wshadow.
+ *
+ * To be used inside another macro.
+ * Only for toolchain supporting _Pragma("GCC diagnostic ...").
+ */
+#ifndef TOOLCHAIN_IGNORE_WSHADOW_END
+#define TOOLCHAIN_IGNORE_WSHADOW_END
 #endif
 
 /*

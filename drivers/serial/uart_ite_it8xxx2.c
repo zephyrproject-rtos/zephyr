@@ -203,7 +203,7 @@ static int uart_it8xxx2_init(const struct device *dev)
 			      &uart_it8xxx2_data_##inst,                       \
 			      &uart_it8xxx2_cfg_##inst,                        \
 			      PRE_KERNEL_1,                                    \
-			      CONFIG_SERIAL_INIT_PRIORITY,                     \
+			      CONFIG_UART_ITE_IT8XXX2_INIT_PRIORITY,           \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_ITE_IT8XXX2_INIT)

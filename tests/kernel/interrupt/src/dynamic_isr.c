@@ -20,7 +20,7 @@ static void dyn_isr(const void *arg)
 }
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE)
-extern struct _isr_table_entry __sw_isr_table _sw_isr_table[];
+extern struct _isr_table_entry _sw_isr_table[];
 
 /**
  * @brief Test dynamic ISR installation

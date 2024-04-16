@@ -64,7 +64,7 @@ struct adt7420_data {
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t th_handler;
-	struct sensor_trigger th_trigger;
+	const struct sensor_trigger *th_trigger;
 
 	const struct device *dev;
 

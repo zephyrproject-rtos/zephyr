@@ -24,4 +24,4 @@ supported:
   - dac
   - dma
   - can
-  - canfd
+vendor: st

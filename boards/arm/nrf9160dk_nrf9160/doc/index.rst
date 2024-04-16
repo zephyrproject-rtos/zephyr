@@ -245,12 +245,12 @@ Testing the LEDs and buttons in the nRF9160 DK
 There are 2 samples that allow you to test that the buttons (switches) and LEDs on
 the board are working properly with Zephyr:
 
-* :ref:`blinky-sample`
-* :ref:`button-sample`
+* :zephyr:code-sample:`blinky`
+* :zephyr:code-sample:`button`
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/nrf9160dk_nrf9160/nrf9160dk_nrf9160_common.dts`.
+:zephyr_file:`boards/arm/nrf9160dk_nrf9160/nrf9160dk_nrf9160_common.dtsi`.
 
 References
 **********

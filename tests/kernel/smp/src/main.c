@@ -14,6 +14,8 @@
 #error SMP test requires at least two CPUs!
 #endif
 
+#define RUN_FACTOR (CONFIG_SMP_TEST_RUN_FACTOR / 100.0)
+
 #define T2_STACK_SIZE (2048 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define STACK_SIZE (384 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define DELAY_US 50000
@@ -21,7 +23,7 @@
 #define EQUAL_PRIORITY 1
 #define TIME_SLICE_MS 500
 #define THREAD_DELAY 1
-#define SLEEP_MS_LONG 15000
+#define SLEEP_MS_LONG ((int)(15000 * RUN_FACTOR))
 
 struct k_thread t2;
 K_THREAD_STACK_DEFINE(t2_stack, T2_STACK_SIZE);
@@ -196,7 +198,7 @@ ZTEST(smp, test_cpu_id_threads)
 	k_thread_join(tid, K_FOREVER);
 }
 
-static void thread_entry(void *p1, void *p2, void *p3)
+static void thread_entry_fn(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -274,6 +276,84 @@ static void cleanup_resources(void)
 	}
 }
 
+static void __no_optimization thread_ab_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	while (true) {
+	}
+}
+
+#define SPAWN_AB_PRIO K_PRIO_COOP(10)
+
+/**
+ * @brief Verify the code path when we do context switch in k_thread_abort on SMP system
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details test logic:
+ * - The ztest thread has cooperative priority.
+ * - From ztest thread we spawn N number of cooperative threads, where N = number of CPUs.
+ *   - The spawned cooperative are executing infinite loop (so they occupy CPU core until they are
+ *     aborted).
+ *   - We have (number of CPUs - 1) spawned threads run and executing infinite loop, as current CPU
+ *     is occupied by ztest cooperative thread. Due to that the last of spawned threads is ready but
+ *     not executing.
+ * - We abort spawned threads one-by-one from the ztest thread.
+ *   - At the first k_thread_abort call the ztest thread will be preempted by the remaining spawned
+ *     thread which has higher priority than ztest thread.
+ *     But... k_thread_abort call should has destroyed one of the spawned threads, so ztest thread
+ *     should have a CPU available to run on.
+ * - We expect that all spawned threads will be aborted successfully.
+ *
+ * This was the test case for zephyrproject-rtos/zephyr#58040 issue where this test caused system
+ * hang.
+ */
+
+ZTEST(smp, test_coop_switch_in_abort)
+{
+	k_tid_t tid[MAX_NUM_THREADS];
+	unsigned int num_threads = arch_num_cpus();
+	unsigned int i;
+
+	zassert_true(_current->base.prio < 0, "test case relies on ztest thread be cooperative");
+	zassert_true(_current->base.prio > SPAWN_AB_PRIO,
+		     "spawn test need to have higher priority than ztest thread");
+
+	/* Spawn N number of cooperative threads, where N = number of CPUs */
+	for (i = 0; i < num_threads; i++) {
+		tid[i] = k_thread_create(&tthread[i], tstack[i],
+					 STACK_SIZE, thread_ab_entry,
+					 NULL, NULL, NULL,
+					 SPAWN_AB_PRIO, 0, K_NO_WAIT);
+	}
+
+	/* Wait for some time to let spawned threads on other cores run and start executing infinite
+	 * loop.
+	 */
+	k_busy_wait(DELAY_US * 4);
+
+	/* At this time we have (number of CPUs - 1) spawned threads run and executing infinite loop
+	 * on other CPU cores, as current CPU is occupied by this ztest cooperative thread.
+	 * Due to that the last of spawned threads is ready but not executing.
+	 */
+
+	/* Abort all spawned threads one-by-one. At the first k_thread_abort call the context
+	 * switch will happen and the last 'spawned' thread will start.
+	 * We should successfully abort all threads.
+	 */
+	for (i = 0; i < num_threads; i++) {
+		k_thread_abort(tid[i]);
+	}
+
+	/* Cleanup */
+	for (i = 0; i < num_threads; i++) {
+		zassert_equal(k_thread_join(tid[i], K_FOREVER), 0);
+	}
+}
+
 /**
  * @brief Test cooperative threads non-preemption
  *
@@ -293,7 +373,7 @@ ZTEST(smp, test_coop_resched_threads)
 	 * will not get scheduled
 	 */
 	spawn_threads(K_PRIO_COOP(10), num_threads, !EQUAL_PRIORITY,
-		      &thread_entry, THREAD_DELAY);
+		      &thread_entry_fn, THREAD_DELAY);
 
 	/* Wait for some time to let other core's thread run */
 	k_busy_wait(DELAY_US);
@@ -334,7 +414,7 @@ ZTEST(smp, test_preempt_resched_threads)
 	 * be preempted by higher ones
 	 */
 	spawn_threads(K_PRIO_PREEMPT(10), num_threads, !EQUAL_PRIORITY,
-		      &thread_entry, THREAD_DELAY);
+		      &thread_entry_fn, THREAD_DELAY);
 
 	spin_for_threads_exit();
 
@@ -367,7 +447,7 @@ ZTEST(smp, test_yield_threads)
 	 * pending.
 	 */
 	spawn_threads(K_PRIO_COOP(10), num_threads, !EQUAL_PRIORITY,
-		      &thread_entry, !THREAD_DELAY);
+		      &thread_entry_fn, !THREAD_DELAY);
 
 	k_yield();
 	k_busy_wait(DELAY_US);
@@ -396,7 +476,7 @@ ZTEST(smp, test_sleep_threads)
 	unsigned int num_threads = arch_num_cpus();
 
 	spawn_threads(K_PRIO_COOP(10), num_threads, !EQUAL_PRIORITY,
-		      &thread_entry, !THREAD_DELAY);
+		      &thread_entry_fn, !THREAD_DELAY);
 
 	k_msleep(TIMEOUT);
 
@@ -679,6 +759,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 
 	if (reason != K_ERR_KERNEL_OOPS) {
 		printk("wrong error reason\n");
+		printk("PROJECT EXECUTION FAILED\n");
 		k_fatal_halt(reason);
 	}
 
@@ -716,8 +797,13 @@ ZTEST(smp, test_fatal_on_smp)
 				      NULL, NULL, NULL,
 				      K_PRIO_PREEMPT(2), 0, K_NO_WAIT);
 
-	/* hold cpu and wait for thread trigger exception */
-	k_busy_wait(2000);
+	/* hold cpu and wait for thread trigger exception and being terminated */
+	k_busy_wait(2 * DELAY_US);
+
+	/* Verify that child thread is no longer running. We can't simply use k_thread_join here
+	 * as we don't want to introduce reschedule point here.
+	 */
+	zassert_true(z_is_thread_state_set(&t2, _THREAD_DEAD));
 
 	/* Manually trigger the crash in mainthread */
 	entry_oops(NULL, NULL, NULL);
@@ -830,7 +916,7 @@ ZTEST(smp, test_smp_release_global_lock)
 	cleanup_resources();
 }
 
-#define LOOP_COUNT 20000
+#define LOOP_COUNT ((int)(20000 * RUN_FACTOR))
 
 enum sync_t {
 	LOCK_IRQ,
@@ -1031,6 +1117,19 @@ static void signal_raise(void *arg0, void *arg1, void *arg2)
 ZTEST(smp, test_smp_switch_torture)
 {
 	unsigned int num_threads = arch_num_cpus();
+
+	if (CONFIG_SMP_TEST_RUN_FACTOR == 0) {
+		/* If CONFIG_SMP_TEST_RUN_FACTOR is zero,
+		 * the switch torture test is effectively
+		 * not doing anything as the k_sleep()
+		 * below is not going to sleep at all,
+		 * and all created threads are being
+		 * terminated (almost) immediately after
+		 * creation. So if run factor is zero,
+		 * mark the test as skipped.
+		 */
+		ztest_test_skip();
+	}
 
 	for (uintptr_t i = 0; i < num_threads; i++) {
 		k_poll_signal_init(&tsignal[i]);

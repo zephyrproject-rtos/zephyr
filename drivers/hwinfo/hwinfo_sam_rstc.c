@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Basalte bv
+ * Copyright (c) 2023 Gerson Fernando Budke
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +9,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/hwinfo.h>
-#include <zephyr/init.h>
-#include <soc.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "No atmel,sam-rstc compatible device found");
@@ -53,15 +53,16 @@ int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 	return 0;
 }
 
-static int hwinfo_rstc_init(const struct device *dev)
+static int hwinfo_rstc_init(void)
 {
 	Rstc *regs = (Rstc *)DT_INST_REG_ADDR(0);
+	const struct atmel_sam_pmc_config clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0);
 	uint32_t mode;
 
-	ARG_UNUSED(dev);
 
 	/* Enable RSTC in PMC */
-	soc_pmc_peripheral_enable(DT_INST_PROP(0, peripheral_id));
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&clock_cfg);
 
 	/* Get current Mode Register value */
 	mode = regs->RSTC_MR;

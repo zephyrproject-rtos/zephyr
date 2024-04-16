@@ -1,0 +1,31 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Bluetooth: Broadcast Audio Sink"
+
+config SCAN_OFFLOAD
+	bool "Whether to wait for a Broadcast Assistant"
+	default y
+	# enable PAST support if we can
+	select BT_PER_ADV_SYNC_TRANSFER_RECEIVER if !BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
+	help
+	  If set to true, the sample will start advertising connectable for
+	  Broadcast Assistants.
+
+config SCAN_SELF
+	bool "Whether to scan for Broadcast Sources without Broadcast Assistant"
+	default y
+	help
+	  If set to true, the sample will start scanning for Broadcast Sources
+	  without waiting for a Broadcast Assistant to connect.
+
+config SCAN_DELAY
+	int "Delay before starting scan (in seconds)"
+	range 0 255
+	default 5
+	depends on SCAN_SELF
+	help
+	  Time to advertise connectable for a Broadcast Assistant to connect
+	  before starting scanning for Broadcast Sources.
+
+source "Kconfig.zephyr"

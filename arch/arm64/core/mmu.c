@@ -34,13 +34,16 @@ static struct k_spinlock xlat_lock;
 /* Returns a reference to a free table */
 static uint64_t *new_table(void)
 {
+	uint64_t *table;
 	unsigned int i;
 
 	/* Look for a free table. */
 	for (i = 0U; i < CONFIG_MAX_XLAT_TABLES; i++) {
 		if (xlat_use_count[i] == 0U) {
+			table = &xlat_tables[i * Ln_XLAT_NUM_ENTRIES];
 			xlat_use_count[i] = 1U;
-			return &xlat_tables[i * Ln_XLAT_NUM_ENTRIES];
+			MMU_DEBUG("allocating table [%d]%p\n", i, table);
+			return table;
 		}
 	}
 
@@ -427,21 +430,11 @@ static int privatize_page_range(struct arm_mmu_ptables *dst_pt,
 	return ret;
 }
 
-/*
- * GCC 12 and above may report a warning about the potential infinite recursion
- * in the `discard_table` function.
- */
-#if defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpragmas"
-#pragma GCC diagnostic ignored "-Winfinite-recursion"
-#endif
-
 static void discard_table(uint64_t *table, unsigned int level)
 {
 	unsigned int i;
 
-	for (i = 0U; Ln_XLAT_NUM_ENTRIES; i++) {
+	for (i = 0U; i < Ln_XLAT_NUM_ENTRIES; i++) {
 		if (is_table_desc(table[i], level)) {
 			table_usage(pte_desc_table(table[i]), -1);
 			discard_table(pte_desc_table(table[i]), level + 1);
@@ -453,10 +446,6 @@ static void discard_table(uint64_t *table, unsigned int level)
 	}
 	free_table(table);
 }
-
-#if defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
 
 static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
 			   uintptr_t virt, size_t size, unsigned int level)
@@ -501,11 +490,17 @@ static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
 		uint64_t *old_table = is_table_desc(dst_table[i], level) ?
 					pte_desc_table(dst_table[i]) : NULL;
 
-		dst_table[i] = src_table[i];
-		debug_show_pte(&dst_table[i], level);
+		if (is_free_desc(dst_table[i])) {
+			table_usage(dst_table, 1);
+		}
+		if (is_free_desc(src_table[i])) {
+			table_usage(dst_table, -1);
+		}
 		if (is_table_desc(src_table[i], level)) {
 			table_usage(pte_desc_table(src_table[i]), 1);
 		}
+		dst_table[i] = src_table[i];
+		debug_show_pte(&dst_table[i], level);
 
 		if (old_table) {
 			/* we can discard the whole branch */
@@ -624,8 +619,9 @@ static int __add_map(struct arm_mmu_ptables *ptables, const char *name,
 	uint64_t desc = get_region_desc(attrs);
 	bool may_overwrite = !(attrs & MT_NO_OVERWRITE);
 
-	MMU_DEBUG("mmap [%s]: virt %lx phys %lx size %lx attr %llx\n",
-		  name, virt, phys, size, desc);
+	MMU_DEBUG("mmap [%s]: virt %lx phys %lx size %lx attr %llx %s overwrite\n",
+		  name, virt, phys, size, desc,
+		  may_overwrite ? "may" : "no");
 	__ASSERT(((virt | phys | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
 		 "address/size are not page aligned\n");
 	desc |= phys;
@@ -733,6 +729,13 @@ static inline void add_arm_mmu_region(struct arm_mmu_ptables *ptables,
 	}
 }
 
+static inline void inv_dcache_after_map_helper(void *virt, size_t size, uint32_t attrs)
+{
+	if (MT_TYPE(attrs) == MT_NORMAL || MT_TYPE(attrs) == MT_NORMAL_WT) {
+		sys_cache_data_invd_range(virt, size);
+	}
+}
+
 static void setup_page_tables(struct arm_mmu_ptables *ptables)
 {
 	unsigned int index;
@@ -771,6 +774,20 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 	}
 
 	invalidate_tlb_all();
+
+	for (index = 0U; index < ARRAY_SIZE(mmu_zephyr_ranges); index++) {
+		size_t size;
+
+		range = &mmu_zephyr_ranges[index];
+		size = POINTER_TO_UINT(range->end) - POINTER_TO_UINT(range->start);
+		inv_dcache_after_map_helper(range->start, size, range->attrs);
+	}
+
+	for (index = 0U; index < mmu_config.num_regions; index++) {
+		region = &mmu_config.mmu_regions[index];
+		inv_dcache_after_map_helper(UINT_TO_POINTER(region->base_va), region->size,
+					    region->attrs);
+	}
 }
 
 /* Translation table control register settings */
@@ -817,17 +834,14 @@ static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 	write_ttbr0_el1((uint64_t)ptables->base_xlat_table);
 
 	/* Ensure these changes are seen before MMU is enabled */
-	isb();
-
-	/* Invalidate all data caches before enable them */
-	sys_cache_data_invd_all();
+	barrier_isync_fence_full();
 
 	/* Enable the MMU and data cache */
 	val = read_sctlr_el1();
 	write_sctlr_el1(val | SCTLR_M_BIT | SCTLR_C_BIT);
 
 	/* Ensure the MMU enable takes effect immediately */
-	isb();
+	barrier_isync_fence_full();
 
 	MMU_DEBUG("MMU enabled with dcache\n");
 }
@@ -896,7 +910,7 @@ static void sync_domains(uintptr_t virt, size_t size)
 static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	struct arm_mmu_ptables *ptables;
-	uint32_t entry_flags = MT_DEFAULT_SECURE_STATE | MT_P_RX_U_NA;
+	uint32_t entry_flags = MT_DEFAULT_SECURE_STATE | MT_P_RX_U_NA | MT_NO_OVERWRITE;
 
 	/* Always map in the kernel page tables */
 	ptables = &kernel_ptables;
@@ -910,6 +924,8 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 	 *			(Device memory nGnRE)
 	 * K_MEM_ARM_DEVICE_GRE => MT_DEVICE_GRE
 	 *			(Device memory GRE)
+	 * K_MEM_ARM_NORMAL_NC   => MT_NORMAL_NC
+	 *			(Normal memory Non-cacheable)
 	 * K_MEM_CACHE_WB   => MT_NORMAL
 	 *			(Normal memory Outer WB + Inner WB)
 	 * K_MEM_CACHE_WT   => MT_NORMAL_WT
@@ -925,6 +941,9 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 		break;
 	case K_MEM_ARM_DEVICE_GRE:
 		entry_flags |= MT_DEVICE_GRE;
+		break;
+	case K_MEM_ARM_NORMAL_NC:
+		entry_flags |= MT_NORMAL_NC;
 		break;
 	case K_MEM_CACHE_WT:
 		entry_flags |= MT_NORMAL_WT;
@@ -959,8 +978,19 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 		LOG_ERR("__arch_mem_map() returned %d", ret);
 		k_panic();
 	} else {
+		uint32_t mem_flags = flags & K_MEM_CACHE_MASK;
+
 		sync_domains((uintptr_t)virt, size);
 		invalidate_tlb_all();
+
+		switch (mem_flags) {
+		case K_MEM_CACHE_WB:
+		case K_MEM_CACHE_WT:
+			mem_flags = (mem_flags == K_MEM_CACHE_WB) ? MT_NORMAL : MT_NORMAL_WT;
+			inv_dcache_after_map_helper(virt, size, mem_flags);
+		default:
+			break;
+		}
 	}
 }
 
@@ -983,7 +1013,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 
 	key = arch_irq_lock();
 	__asm__ volatile ("at S1E1R, %0" : : "r" (virt));
-	isb();
+	barrier_isync_fence_full();
 	par = read_par_el1();
 	arch_irq_unlock(key);
 
@@ -1081,6 +1111,7 @@ static int private_map(struct arm_mmu_ptables *ptables, const char *name,
 	__ASSERT(ret == 0, "add_map() returned %d", ret);
 	invalidate_tlb_all();
 
+	inv_dcache_after_map_helper(UINT_TO_POINTER(virt), size, attrs);
 	return ret;
 }
 

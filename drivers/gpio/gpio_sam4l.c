@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 Justin Watson
- * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2020-2023 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include <zephyr/init.h>
 #include <soc.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <zephyr/irq.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
@@ -24,7 +25,8 @@ struct gpio_sam_config {
 	struct gpio_driver_config common;
 	Gpio *regs;
 	config_func_t config_func;
-	uint32_t periph_id;
+
+	const struct atmel_sam_pmc_config clock_cfg;
 };
 
 struct gpio_sam_runtime {
@@ -230,7 +232,9 @@ int gpio_sam_init(const struct device *dev)
 {
 	const struct gpio_sam_config * const cfg = dev->config;
 
-	soc_pmc_peripheral_enable(cfg->periph_id);
+	/* Enable GPIO clock in PM */
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&cfg->clock_cfg);
 
 	cfg->config_func(dev);
 
@@ -254,7 +258,7 @@ int gpio_sam_init(const struct device *dev)
 			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),\
 		},							\
 		.regs = (Gpio *)DT_INST_REG_ADDR(n),			\
-		.periph_id = DT_INST_PROP(n, peripheral_id),		\
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),		\
 		.config_func = port_##n##_sam_config_func,		\
 	};								\
 									\

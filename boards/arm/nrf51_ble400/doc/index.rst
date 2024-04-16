@@ -199,10 +199,10 @@ Testing the LEDs and buttons in the nRF51 DK
 There are samples below that allow you to test that the buttons (switches) and LEDs on
 the board are working properly with Zephyr:
 
-- :ref:`blinky-sample`
-- :ref:`button-sample`
-- :ref:`fade-led-sample`
-- :ref:`96b_carbon_multi_thread_blinky`
+- :zephyr:code-sample:`blinky`
+- :zephyr:code-sample:`button`
+- :zephyr:code-sample:`fade-led`
+- :zephyr:code-sample:`multi-thread-blinky`
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in

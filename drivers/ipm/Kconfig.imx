@@ -64,3 +64,9 @@ config IPM_IMX_MAX_ID_VAL
 	default 1 if IPM_IMX_MAX_DATA_SIZE_8
 	default 0 if IPM_IMX_MAX_DATA_SIZE_16
 	depends on IPM_IMX || IPM_IMX_REV2
+
+config IPM_IMX_FW_READY_REPLY
+	bool "Send FW_READY reply message"
+	depends on IPM_IMX || IPM_IMX_REV2
+	help
+	  Send FW_READY reply to check for FW boot completion

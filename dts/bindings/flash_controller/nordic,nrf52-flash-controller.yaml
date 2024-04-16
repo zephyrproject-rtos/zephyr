@@ -5,7 +5,7 @@ compatible: "nordic,nrf52-flash-controller"
 include: flash-controller.yaml
 
 properties:
-    partial-erase:
-      type: boolean
-      description: |
-        If set, indicates that the NVMC supports partial erase of flash pages.
+  partial-erase:
+    type: boolean
+    description: |
+      If set, indicates that the NVMC supports partial erase of flash pages.

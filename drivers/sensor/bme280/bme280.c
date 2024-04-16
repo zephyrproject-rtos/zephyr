@@ -245,6 +245,10 @@ static int bme280_channel_get(const struct device *dev,
 			(((data->comp_press & 0xff) * 1000U) >> 8);
 		break;
 	case SENSOR_CHAN_HUMIDITY:
+		/* The BMP280 doesn't have a humidity sensor */
+		if (data->chip_id != BME280_CHIP_ID) {
+			return -ENOTSUP;
+		}
 		/*
 		 * data->comp_humidity has 22 integer bits and 10
 		 * fractional.  Output value of 47445 represents
@@ -254,7 +258,7 @@ static int bme280_channel_get(const struct device *dev,
 		val->val2 = (((data->comp_humidity & 0x3ff) * 1000U * 1000U) >> 10);
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+
+source "soc/arm/ambiq/*/Kconfig.defconfig.series"
+
+config CORTEX_M_SYSTICK
+	default n if AMBIQ_STIMER_TIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768 if AMBIQ_STIMER_TIMER

@@ -2,9 +2,9 @@ name: Stale Workflow Queue Cleanup
 
 on:
   workflow_dispatch:
-    branches: [ main ]
+    branches: [main]
   schedule:
-    # everyday at 15:00
+  # everyday at 15:00
   - cron: '0 15 * * *'
 
 concurrency:
@@ -14,7 +14,7 @@ concurrency:
 jobs:
   cleanup:
     name: Cleanup
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
     - name: Delete stale queued workflow runs

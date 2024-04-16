@@ -82,11 +82,11 @@ Programming
 
 Three samples are provided as examples for ``x-nucleo-iks02a1`` shield:
 
-- :ref:`x-nucleo-iks02a1-std-sample` application, to be used when the shield is configured
+- :zephyr:code-sample:`x-nucleo-iks02a1-std` application, to be used when the shield is configured
   in Standard Mode
-- :ref:`x-nucleo-iks02a1-shub-sample` application, to be used when the shield is configured
+- :zephyr:code-sample:`x-nucleo-iks02a1-shub` application, to be used when the shield is configured
   in SensorHub Mode
-- :ref:`x-nucleo-iks02a1-mic-sample` application, to be used to acquire data through the
+- :zephyr:code-sample:`x-nucleo-iks02a1-mic` application, to be used to acquire data through the
   on-board PDM microphone
 
 See also :ref:`shields` for more details.
@@ -97,7 +97,7 @@ References
 .. target-notes::
 
 .. _X-NUCLEO-IKS02A1 website:
-   http://www.st.com/en/ecosystems/x-nucleo-iks02a1.html
+   https://www.st.com/en/ecosystems/x-nucleo-iks02a1.html
 
 .. _X-NUCLEO-IKS02A1 user manual:
    https://www.st.com/resource/en/user_manual/DM00651686.pdf

@@ -1,0 +1,231 @@
+/*
+ * Copyright (c) 2021 Sateesh Kotapati
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <arm/silabs/gpio_gecko.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/pinctrl/gecko-pinctrl.h>
+#include <dt-bindings/adc/adc.h>
+
+/ {
+	chosen {
+		zephyr,flash-controller = &msc;
+		zephyr,entropy = &trng;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			/*
+			 * EM1 is enabled by default because it is
+			 * unconditionally safe.
+			 *
+			 * EM2/3 can be enabled by the board code if proper
+			 * timing configuration is ensured:
+			 * - for EM2, EM3: BURTC used as sys_clock
+			 * - for EM3: BURTC clocked from ULFRCO
+			 * Using BURTC as sys_clock instead of SysTick
+			 * has implications on system performance. Read
+			 * KConfig documentation entry before enabling it.
+			 */
+			cpu-power-states = <&pstate_em1 &pstate_em2 &pstate_em3>;
+		};
+
+		power-states {
+			/*
+			 * EM1 is a basic "CPU WFI idle", all high-freq clocks remain
+			 * enabled.
+			 */
+			pstate_em1: em1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <4>;
+				/* HFXO remains active */
+				exit-latency-us = <2>;
+			};
+
+			/*
+			 * EM2 is a deepsleep with HF clocks disabled by HW, voltages
+			 * scaled down, etc.
+			 */
+			pstate_em2: em2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <260>;
+				exit-latency-us = <250>;
+			};
+
+			/*
+			 * EM3 seems to be exactly the same as EM2 except that
+			 * LFXO & LFRCO should be disabled, so you must use ULFRCO
+			 * as BURTC clock for the system to not lose track of time and
+			 * wake up.
+			 */
+			pstate_em3: em3 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <20000>;
+				exit-latency-us = <2000>;
+			};
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	soc {
+		msc: flash-controller@50030000 {
+			compatible = "silabs,gecko-flash-controller";
+			reg = <0x50030000 0xC69>;
+			interrupts = <49 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		usart0: usart@5005c000 {
+			compatible = "silabs,gecko-spi-usart";
+			reg = <0x5005C000 0x400>;
+			interrupt-names = "rx", "tx";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		usart1: usart@50060000 {
+			compatible = "silabs,gecko-usart";
+			reg = <0x50060000 0x400>;
+			interrupt-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		burtc0: burtc@50064000 {
+			compatible = "silabs,gecko-burtc";
+			reg = <0x50064000 0x3034>;
+			status = "disabled";
+		};
+
+		stimer0: stimer@58000000 {
+			compatible = "silabs,gecko-stimer";
+			reg = <0x58000000 0x3054>;
+			clock-frequency = <32768>;
+			prescaler = <1>;
+			status = "disabled";
+		};
+
+		trng: trng@4c021000 {
+			compatible = "silabs,gecko-trng";
+			reg = <0x4C021000 0x1000>;
+			status = "disabled";
+			interrupts = <0x1 0x0>;
+		};
+
+		i2c0: i2c@5a010000 {
+			compatible = "silabs,gecko-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x5a010000 0x3044>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@50068000 {
+			compatible = "silabs,gecko-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x50068000 0x3044>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		gpio: gpio@5003c000 {
+			compatible = "silabs,gecko-gpio";
+			reg = <0x5003C000 0x3660>;
+			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
+
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpioa: gpio@5003c000 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x5003C000 0x30>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpiob: gpio@5003c030 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x5003C030 0x30>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpioc: gpio@5003c060 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x5003C060 0x30>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpiod: gpio@5003c090 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x5003C090 0x30>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpiof: gpio@5003c0c0 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x5003C0C0 0x30>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+		};
+
+		wdog0: wdog@4a018000 {
+			compatible = "silabs,gecko-wdog";
+			reg = <0x4A018000 0x3028>;
+			peripheral-id = <0>;
+			interrupts = <43 0>;
+			status = "disabled";
+		};
+
+		adc0: adc@5a004000 {
+			compatible = "silabs,gecko-iadc";
+			reg = <0x5a004000 0x4000>;
+			interrupts = <48 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+	};
+};
+
+/ {
+	pinctrl: pin-controller {
+		/* Pin controller is a "virtual" device since SiLabs SoCs do pin
+		 * control in a distributed way (GPIO registers and PSEL
+		 * registers on each peripheral).
+		 */
+		compatible = "silabs,gecko-pinctrl";
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

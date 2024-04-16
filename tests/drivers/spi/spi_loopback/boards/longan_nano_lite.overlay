@@ -1,0 +1,42 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+ */
+
+#include <dt-bindings/dma/gd32_dma.h>
+
+&dma0 {
+	status = "okay";
+};
+
+&pinctrl {
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <SPI0_MISO_PA6_INP_NORMP>, <SPI0_SCK_PA5_OUT_NORMP>,
+				 <SPI0_MOSI_PA7_OUT_NORMP>, <SPI0_NSS_PA4_OUT_NORMP>;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+
+	dmas =  <&dma0 1 0>, <&dma0 2 0>;
+	dma-names = "rx", "tx";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};

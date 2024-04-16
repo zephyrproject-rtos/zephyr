@@ -22,7 +22,7 @@ config ARCH_POSIX_RECOMMENDED_STACK_SIZE
 	  thread stack, the real stack is the native underlying pthread stack.
 	  Therefore the allocated stack can be limited to this size)
 
-config ARCH_POSIX_LIBFUZZER
+menuconfig ARCH_POSIX_LIBFUZZER
 	bool "Build fuzz test target"
 	help
 	  Build the posix app as a LLVM libfuzzer target.  Requires
@@ -34,6 +34,8 @@ config ARCH_POSIX_LIBFUZZER
 	  environment "outside" the OS.  See Zephyr documentation and
 	  sample and https://llvm.org/docs/LibFuzzer.html for more
 	  information.
+
+if ARCH_POSIX_LIBFUZZER
 
 config ARCH_POSIX_FUZZ_IRQ
 	int "OS interrupt via which to deliver fuzz cases"
@@ -52,5 +54,13 @@ config ARCH_POSIX_FUZZ_TICKS
 	  apps won't require much time to reach an idle state
 	  following a unit-test style case, so the default is short to
 	  prevent interaction with regular timer workloads.
+
+endif # CONFIG_ARCH_POSIX_LIBFUZZER
+
+config ARCH_POSIX_TRAP_ON_FATAL
+	bool "Raise a SIGTRAP on fatal error"
+	help
+	  Raise a SIGTRAP signal on fatal error before exiting.
+	  This automatically suspends the target if a debugger is attached.
 
 endmenu

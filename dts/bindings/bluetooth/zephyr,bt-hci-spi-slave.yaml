@@ -29,6 +29,6 @@ include: base.yaml
 on-bus: spi
 
 properties:
-    irq-gpios:
-      type: phandle-array
-      required: true
+  irq-gpios:
+    type: phandle-array
+    required: true

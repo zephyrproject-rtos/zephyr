@@ -1,0 +1,25 @@
+/*
+ * Copyright © 2023 Calian Ltd.  All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ / {
+    i2c0: i2c@88888888 {
+        compatible = "xlnx,xps-iic-2.00.a";
+        #address-cells = <1>;
+        #size-cells = <0>;
+        reg = <0x88888888 0x10000>;
+        interrupt-parent = <&nvic>;
+        interrupts = <4 1>;
+    };
+
+    i2c1: i2c@88898888 {
+        compatible = "xlnx,xps-iic-2.1";
+        #address-cells = <1>;
+        #size-cells = <0>;
+        reg = <0x88898888 0x10000>;
+        interrupt-parent = <&nvic>;
+        interrupts = <5 1>;
+    };
+};

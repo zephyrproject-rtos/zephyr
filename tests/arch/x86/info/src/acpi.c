@@ -4,30 +4,33 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/arch/x86/acpi.h>
+#include <zephyr/acpi/acpi.h>
 
-static void vtd_dev_scope_info(struct acpi_dmar_dev_scope *dev_scope)
+static const uint32_t dmar_scope[] = {ACPI_DMAR_SCOPE_TYPE_ENDPOINT, ACPI_DMAR_SCOPE_TYPE_BRIDGE,
+				      ACPI_DMAR_SCOPE_TYPE_IOAPIC, ACPI_DMAR_SCOPE_TYPE_HPET,
+				      ACPI_DMAR_SCOPE_TYPE_NAMESPACE};
+
+static void vtd_dev_scope_info(int type, struct acpi_dmar_device_scope *dev_scope,
+			       union acpi_dmar_id *dmar_id, int num_inst)
 {
-	struct acpi_dmar_dev_path *path;
-	uint16_t id;
-	int n_path;
+	int i = 0;
 
 	printk("\t\t\t. Type: ");
 
-	switch (dev_scope->type) {
-	case ACPI_DRHD_DEV_SCOPE_PCI_EPD:
+	switch (type) {
+	case ACPI_DMAR_SCOPE_TYPE_ENDPOINT:
 		printk("PCI Endpoint");
 		break;
-	case ACPI_DRHD_DEV_SCOPE_PCI_SUB_H:
+	case ACPI_DMAR_SCOPE_TYPE_BRIDGE:
 		printk("PCI Sub-hierarchy");
 		break;
-	case ACPI_DRHD_DEV_SCOPE_IOAPIC:
-		printk("IOAPIC");
+	case ACPI_DMAR_SCOPE_TYPE_IOAPIC:
+
 		break;
-	case ACPI_DRHD_DEV_SCOPE_MSI_CAP_HPET:
+	case ACPI_DMAR_SCOPE_TYPE_HPET:
 		printk("MSI Capable HPET");
 		break;
-	case ACPI_DRHD_DEV_SCOPE_NAMESPACE_DEV:
+	case ACPI_DMAR_SCOPE_TYPE_NAMESPACE:
 		printk("ACPI name-space enumerated");
 		break;
 	default:
@@ -35,33 +38,26 @@ static void vtd_dev_scope_info(struct acpi_dmar_dev_scope *dev_scope)
 		return;
 	}
 
-	id = z_acpi_get_dev_id_from_dmar(dev_scope->type);
-	if (id != USHRT_MAX) {
-		printk(" ID 0x%x", id);
-	}
-
 	printk("\n");
 
-	printk("\t\t\t. Enumeration ID %u\n", dev_scope->enumeration_id);
-	printk("\t\t\t. PCI Bus %u\n", dev_scope->start_bus_num);
+	printk("\t\t\t. Enumeration ID %u\n", dev_scope->EnumerationId);
+	printk("\t\t\t. PCI Bus %u\n", dev_scope->Bus);
 
-	path = z_acpi_get_dev_scope_paths(dev_scope, &n_path);
-	for (; n_path > 0; n_path--) {
-		printk("\t\t\t. Path D:%u F:%u\n",
-		       path->device, path->function);
-		path = (struct acpi_dmar_dev_path *)(POINTER_TO_UINT(path) +
-						     ACPI_DMAR_DEV_PATH_SIZE);
+	for (; num_inst > 0; num_inst--, i++) {
+		printk("Info: Bus: %d, dev:%d, fun:%d\n", dmar_id[i].bits.bus,
+			dmar_id[i].bits.device, dmar_id[i].bits.function);
 	}
 
 	printk("\n");
 }
 
-static void vtd_drhd_info(struct acpi_drhd *drhd)
+static void vtd_drhd_info(struct acpi_dmar_hardware_unit *drhd)
 {
-	struct acpi_dmar_dev_scope *dev_scope;
-	int n_ds, i;
+	struct acpi_dmar_device_scope dev_scope;
+	union acpi_dmar_id dmar_id[4];
+	int num_inst, i;
 
-	if (drhd->flags & ACPI_DRHD_FLAG_INCLUDE_PCI_ALL) {
+	if (drhd->Flags & ACPI_DRHD_FLAG_INCLUDE_PCI_ALL) {
 		printk("\t\t- Includes all PCI devices");
 	} else {
 		printk("\t\t- Includes only listed PCI devices");
@@ -69,20 +65,19 @@ static void vtd_drhd_info(struct acpi_drhd *drhd)
 
 	printk(" under given Segment\n");
 
-	printk("\t\t- Segment number %u\n", drhd->segment_num);
-	printk("\t\t- Base Address 0x%llx\n", drhd->base_address);
-
-	dev_scope = z_acpi_get_drhd_dev_scopes(drhd, &n_ds);
-	if (dev_scope == NULL) {
-		printk("\t\t- No device scopes\n");
-		return;
-	}
+	printk("\t\t- Segment number %u\n", drhd->Segment);
+	printk("\t\t- Base Address 0x%llx\n", drhd->Address);
 
 	printk("\t\t- Device Scopes:\n");
-	for (i = 0; i < n_ds; i++) {
-		vtd_dev_scope_info(dev_scope);
-		dev_scope = (struct acpi_dmar_dev_scope *)(
-			POINTER_TO_UINT(dev_scope) + dev_scope->length);
+	for (i = 0; i < 5; i++) {
+		if (acpi_drhd_get(dmar_scope[i], &dev_scope, dmar_id, &num_inst, 4u)) {
+			printk(" No DRHD entry found for scope type:%d\n", dmar_scope[i]);
+			continue;
+		}
+
+		printk("Found DRHD entry: %d\n", i);
+
+		vtd_dev_scope_info(dmar_scope[i], &dev_scope, dmar_id, num_inst);
 	}
 
 	printk("\n");
@@ -90,9 +85,10 @@ static void vtd_drhd_info(struct acpi_drhd *drhd)
 
 static void vtd_info(void)
 {
-	struct acpi_dmar *dmar;
+	struct acpi_table_dmar *dmar;
+	struct acpi_dmar_hardware_unit *drhd;
 
-	dmar = z_acpi_find_dmar();
+	dmar = acpi_table_get("DMAR", 0);
 	if (dmar == NULL) {
 		printk("\tIntel VT-D not supported or exposed\n");
 		return;
@@ -101,27 +97,22 @@ static void vtd_info(void)
 	printk("\tIntel VT-D Supported:\n");
 
 	printk("\t-> X2APIC ");
-	if (dmar->flags & ACPI_DMAR_FLAG_X2APIC_OPT_OUT) {
+	if (dmar->Flags & ACPI_DMAR_FLAG_X2APIC_OPT_OUT) {
 		printk("should be opted out\n");
 	} else {
 		printk("does not need to be opted out\n");
 	}
 
-	if (dmar->flags & ACPI_DMAR_FLAG_INTR_REMAP) {
-		struct acpi_drhd *drhd;
-		int hw_n, i;
+	if (dmar->Flags & ACPI_DMAR_FLAG_INTR_REMAP) {
 
 		printk("\t-> Interrupt remapping supported\n");
 
-		drhd = z_acpi_find_drhds(&hw_n);
-		printk("\t-> %u remapping hardware found:\n", hw_n);
-
-		for (i = 0; i < hw_n; i++) {
-			printk("\t\tDRHD %u:\n", i);
-			vtd_drhd_info(drhd);
-			drhd = (struct acpi_drhd *)(POINTER_TO_UINT(drhd) +
-						    drhd->entry.length);
+		if (acpi_dmar_entry_get(ACPI_DMAR_TYPE_HARDWARE_UNIT,
+					(struct acpi_subtable_header **)&drhd)) {
+			printk("error in retrieve DHRD!!\n");
+			return;
 		}
+		vtd_drhd_info(drhd);
 	} else {
 		printk("\t-> Interrupt remapping not supported\n");
 	}
@@ -129,10 +120,20 @@ static void vtd_info(void)
 
 void acpi(void)
 {
-	int nr_cpus;
+	int nr_cpus = 0, i, inst_cnt;
+	struct acpi_madt_local_apic *lapic;
 
-	for (nr_cpus = 0; z_acpi_get_cpu(nr_cpus); ++nr_cpus) {
-		/* count number of CPUs present */
+	if (acpi_madt_entry_get(ACPI_MADT_TYPE_LOCAL_APIC, (ACPI_SUBTABLE_HEADER **)&lapic,
+				&inst_cnt)) {
+		printk("error on get MAD table\n");
+		return;
+	}
+
+	/* count number of CPUs present which are enabled*/
+	for (i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+		if (lapic[i].LapicFlags & 1u) {
+			nr_cpus++;
+		}
 	}
 
 	if (nr_cpus == 0) {
@@ -140,9 +141,8 @@ void acpi(void)
 	} else {
 		printk("ACPI: %d CPUs found\n", nr_cpus);
 
-		for (int i = 0; i < nr_cpus; ++i) {
-			struct acpi_cpu *cpu = z_acpi_get_cpu(i);
-			printk("\tCPU #%d: APIC ID 0x%02x\n", i, cpu->apic_id);
+		for (i = 0; i < CONFIG_MP_MAX_NUM_CPUS; ++i) {
+			printk("\tCPU #%d: APIC ID 0x%02x\n", i, lapic[i].Id);
 		}
 	}
 

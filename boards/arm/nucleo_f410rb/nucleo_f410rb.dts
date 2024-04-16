@@ -8,6 +8,8 @@
 #include <st/f4/stm32f410Xb.dtsi>
 #include <st/f4/stm32f410r(8-b)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32F410RB-NUCLEO board";
@@ -20,7 +22,7 @@
 		zephyr,flash = &flash0;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led_2: led_2 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
@@ -33,6 +35,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
@@ -125,31 +128,29 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 DT_SIZE_K(64)>;
+			reg = <0x00000000 DT_SIZE_K(32)>;
 			read-only;
 		};
 
 		/*
-		 * The flash starting at 0x00010000 and ending at
-		 * 0x0001ffff (sectors 16-31) is reserved for use
-		 * by the application.
+		 * The flash sectors 2&3 at 0x00008000 and ending at
+		 * 0x0000ffff
 		 */
-		storage_partition: partition@10000 {
-			label = "storage";
-			reg = <0x00010000 DT_SIZE_K(64)>;
-		};
-
-		slot0_partition: partition@20000 {
+		slot0_partition: partition@8000 {
 			label = "image-0";
-			reg = <0x00020000 DT_SIZE_K(128)>;
+			reg = <0x00008000 DT_SIZE_K(32)>;
 		};
-		slot1_partition: partition@40000 {
+		/*
+		 * The flash sectors 4 at 0x00010000 and ending at
+		 * 0x001ffff
+		 */
+		slot1_partition: partition@10000 {
 			label = "image-1";
-			reg = <0x00040000 DT_SIZE_K(128)>;
+			reg = <0x00010000 DT_SIZE_K(32)>;
 		};
-		scratch_partition: partition@60000 {
+		scratch_partition: partition@18000 {
 			label = "image-scratch";
-			reg = <0x00060000 DT_SIZE_K(128)>;
+			reg = <0x00018000 DT_SIZE_K(32)>;
 		};
 	};
 };

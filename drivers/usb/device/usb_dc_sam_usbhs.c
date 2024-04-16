@@ -7,8 +7,10 @@
 #define DT_DRV_COMPAT atmel_sam_usbhs
 
 #include <zephyr/usb/usb_device.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/barrier.h>
 #include <soc.h>
 #include <string.h>
 
@@ -122,7 +124,7 @@ static void usb_dc_ep_reset(uint8_t ep_idx)
 {
 	USBHS->USBHS_DEVEPT |= BIT(USBHS_DEVEPT_EPRST0_Pos + ep_idx);
 	USBHS->USBHS_DEVEPT &= ~BIT(USBHS_DEVEPT_EPRST0_Pos + ep_idx);
-	__DSB();
+	barrier_dsync_fence_full();
 }
 
 /* Enable endpoint interrupts, depending of the type and direction */
@@ -309,15 +311,17 @@ static void usb_dc_isr(void)
 /* Attach USB for device connection */
 int usb_dc_attach(void)
 {
+	const struct atmel_sam_pmc_config clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0);
 	uint32_t regval;
 
-	/* Start the peripheral clock */
-	soc_pmc_peripheral_enable(DT_INST_PROP(0, peripheral_id));
+	/* Enable USBHS clock in PMC */
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&clock_cfg);
 
 	/* Enable the USB controller in device mode with the clock frozen */
 	USBHS->USBHS_CTRL = USBHS_CTRL_UIMOD | USBHS_CTRL_USBE |
 			    USBHS_CTRL_FRZCLK;
-	__DSB();
+	barrier_dsync_fence_full();
 
 	/* Select the speed */
 	regval = USBHS_DEVCTRL_DETACH;
@@ -359,6 +363,8 @@ int usb_dc_attach(void)
 /* Detach the USB device */
 int usb_dc_detach(void)
 {
+	const struct atmel_sam_pmc_config clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0);
+
 	/* Detach the device */
 	USBHS->USBHS_DEVCTRL |= USBHS_DEVCTRL_DETACH;
 
@@ -368,8 +374,9 @@ int usb_dc_detach(void)
 	/* Disable the USB controller and freeze the clock */
 	USBHS->USBHS_CTRL = USBHS_CTRL_UIMOD | USBHS_CTRL_FRZCLK;
 
-	/* Disable the peripheral clock */
-	soc_pmc_peripheral_enable(DT_INST_PROP(0, peripheral_id));
+	/* Disable USBHS clock in PMC */
+	(void)clock_control_off(SAM_DT_PMC_CONTROLLER,
+				(clock_control_subsys_t)&clock_cfg);
 
 	/* Disable interrupt */
 	irq_disable(DT_INST_IRQN(0));
@@ -693,7 +700,7 @@ int usb_dc_ep_flush(uint8_t ep)
 	/* Kill the last written bank if needed */
 	if (USBHS->USBHS_DEVEPTISR[ep_idx] & USBHS_DEVEPTISR_NBUSYBK_Msk) {
 		USBHS->USBHS_DEVEPTIER[ep_idx] = USBHS_DEVEPTIER_KILLBKS;
-		__DSB();
+		barrier_dsync_fence_full();
 		while (USBHS->USBHS_DEVEPTIMR[ep_idx] &
 		       USBHS_DEVEPTIMR_KILLBK) {
 			k_yield();
@@ -703,7 +710,7 @@ int usb_dc_ep_flush(uint8_t ep)
 	/* Reset the endpoint */
 	usb_dc_ep_reset(ep_idx);
 
-	/* Reenable interrupts */
+	/* Re-enable interrupts */
 	usb_dc_ep_enable_interrupts(ep_idx);
 
 	LOG_DBG("ep 0x%x", ep);
@@ -742,7 +749,7 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t
 	for (int i = 0; i < packet_len; i++) {
 		usb_dc_ep_fifo_put(ep_idx, data[i]);
 	}
-	__DSB();
+	barrier_dsync_fence_full();
 
 	if (ep_idx == 0U) {
 		/*

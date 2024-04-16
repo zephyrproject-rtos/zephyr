@@ -11,9 +11,11 @@ config SOC_TOOLCHAIN_NAME
 	string
 	default "nxp_imx8m_adsp"
 
+# if SOC_MIMX8M_ADSP
+
 config SOC
 	string
-	default "nxp_imx8m"
+	default "mimx8ml8"
 
 config SMP
 	default n
@@ -46,5 +48,7 @@ config LOG
 config TEST_LOGGING_DEFAULTS
 	default n
 	depends on TEST
+
+# endif # SOC_MIMX8M_ADSP
 
 endif # SOC_SERIES_NXP_IMX8M

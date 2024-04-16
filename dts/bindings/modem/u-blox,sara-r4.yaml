@@ -8,12 +8,12 @@ compatible: "u-blox,sara-r4"
 include: uart-device.yaml
 
 properties:
-    mdm-power-gpios:
-      type: phandle-array
-      required: true
+  mdm-power-gpios:
+    type: phandle-array
+    required: true
 
-    mdm-reset-gpios:
-      type: phandle-array
+  mdm-reset-gpios:
+    type: phandle-array
 
-    mdm-vint-gpios:
-      type: phandle-array
+  mdm-vint-gpios:
+    type: phandle-array

@@ -26,9 +26,8 @@ static int ram_console_out(int character)
 	return character;
 }
 
-static int ram_console_init(const struct device *d)
+static int ram_console_init(void)
 {
-	ARG_UNUSED(d);
 	__printk_hook_install(ram_console_out);
 	__stdout_hook_install(ram_console_out);
 

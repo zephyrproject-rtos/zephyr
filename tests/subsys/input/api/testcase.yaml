@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  input.api.thread:
+    tags: input
+    integration_platforms:
+      - native_posix
+    extra_configs:
+      - CONFIG_INPUT_MODE_THREAD=y
+      - CONFIG_INPUT_THREAD_STACK_SIZE=1024
+  input.api.synchronous:
+    tags: input
+    integration_platforms:
+      - native_posix
+    extra_configs:
+      - CONFIG_INPUT_MODE_SYNCHRONOUS=y

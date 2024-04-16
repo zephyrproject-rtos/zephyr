@@ -9,7 +9,7 @@ include: [interrupt-controller.yaml, base.yaml]
 
 properties:
   "#interrupt-cells":
-      const: 1
+    const: 1
 
 interrupt-cells:
   - irq

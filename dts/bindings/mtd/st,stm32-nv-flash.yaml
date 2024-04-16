@@ -8,7 +8,7 @@ include: soc-nv-flash.yaml
 compatible: st,stm32-nv-flash
 
 properties:
-    max-erase-time:
-     type: int
-     description: max erase time(millisecond) of a flash sector or page or half-page
-     required: true
+  max-erase-time:
+    type: int
+    description: max erase time(millisecond) of a flash sector or page or half-page
+    required: true

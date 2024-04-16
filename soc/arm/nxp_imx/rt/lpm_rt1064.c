@@ -335,9 +335,8 @@ void clock_lpm_init(void)
 	XTALOSC24M->OSC_CONFIG1 = tmp_reg;
 }
 
-static int imxrt_lpm_init(const struct device *dev)
+static int imxrt_lpm_init(void)
 {
-	ARG_UNUSED(dev);
 
 	struct clock_callbacks callbacks;
 	uint32_t usb1_pll_pfd0_frac;

@@ -1,0 +1,14 @@
+# Emulated UART configuration options
+
+# Copyright (c) 2023 Fabian Blatz
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_EMUL
+	bool "Emulated UART driver [EXPERIMENTAL]"
+	default y
+	depends on DT_HAS_ZEPHYR_UART_EMUL_ENABLED
+	select SERIAL_SUPPORT_INTERRUPT
+	select RING_BUFFER
+	select EXPERIMENTAL
+	help
+	  Enable the emulated UART driver.

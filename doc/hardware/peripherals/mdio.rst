@@ -1,7 +1,7 @@
 .. _mdio_api:
 
-MDIO
-####
+Management Data Input/Output (MDIO)
+###################################
 
 Overview
 ********

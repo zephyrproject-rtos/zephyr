@@ -1,0 +1,20 @@
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+description: PTC PT6314 Dot Character VFD Controller/Driver IC
+
+compatible: "ptc,pt6314"
+
+include: [auxdisplay-device.yaml, spi-device.yaml]
+
+properties:
+  columns:
+    enum:
+      - 16
+      - 20
+      - 24
+
+  rows:
+    enum:
+      - 1
+      - 2

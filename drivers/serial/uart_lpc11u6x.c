@@ -5,7 +5,7 @@
  */
 #define DT_DRV_COMPAT nxp_lpc11u6x_uart
 
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>

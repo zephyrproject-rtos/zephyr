@@ -1,0 +1,9 @@
+tests:
+  net.lwm2m.block_transfer:
+    platform_key:
+      - simulation
+    tags:
+      - lwm2m
+      - net
+    integration_platforms:
+      - native_posix

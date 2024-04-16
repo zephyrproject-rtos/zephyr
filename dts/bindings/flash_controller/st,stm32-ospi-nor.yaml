@@ -23,85 +23,85 @@ include: ["flash-controller.yaml", "jedec,jesd216.yaml"]
 on-bus: ospi
 
 properties:
-    reg:
-      required: true
-    ospi-max-frequency:
-      type: int
-      required: true
-      description: Maximum clock frequency of device's OSPI interface in Hz
-    size:
-      required: true
-      description: Flash Memory size in bits
-    reset-gpios:
-      type: phandle-array
-      description: RESETn pin
-    spi-bus-width:
-      type: int
-      required: true
-      description: |
-       The width of (Octo)SPI bus to which flash memory is connected.
+  reg:
+    required: true
+  ospi-max-frequency:
+    type: int
+    required: true
+    description: Maximum clock frequency of device's OSPI interface in Hz
+  size:
+    required: true
+    description: Flash Memory size in bits
+  reset-gpios:
+    type: phandle-array
+    description: RESETn pin
+  spi-bus-width:
+    type: int
+    required: true
+    description: |
+     The width of (Octo)SPI bus to which flash memory is connected.
 
-       Possible values are :
-        - OSPI_SPI_MODE  <1> = SPI mode on 1 data line
-        - OSPI_DUAL_MODE <2> = Dual mode on 2 data lines
-        - OSPI_QUAD_MODE <4> = Quad mode on 4 data lines
-        - OSPI_OPI_MODE  <8> = Octo mode on 8 data lines
-      enum:
-        - 1
-        - 2
-        - 4
-        - 8
-    data-rate:
-      type: int
-      required: true
-      description: |
-       The SPI data Rate is STR or DTR
+     Possible values are :
+      - OSPI_SPI_MODE  <1> = SPI mode on 1 data line
+      - OSPI_DUAL_MODE <2> = Dual mode on 2 data lines
+      - OSPI_QUAD_MODE <4> = Quad mode on 4 data lines
+      - OSPI_OPI_MODE  <8> = Octo mode on 8 data lines
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+  data-rate:
+    type: int
+    required: true
+    description: |
+     The SPI data Rate is STR or DTR
 
-       Possible values are :
-        - OSPI_STR_TRANSFER <1> = Single Rate Transfer
-        - OSPI_DTR_TRANSFER <2> = Dual Rate Transfer (only with OSPI_OPI_MODE)
-      enum:
-        - 1
-        - 2
-    writeoc:
-      type: string
-      enum:
-        - "PP"            # Page program, PP (0x02) up to 256 bytes
-        - "PP_1_1_2"      # Dual page program, PP 1-1-2 (0xA2)
-        - "PP_1_1_4"      # Quad data line SPI, PP 1-1-4 (0x32)
-        - "PP_1_4_4"      # Quad data line SPI, PP 1-4-4 (0x38)
-      description: |
-        The value encodes number of I/O lines used for the opcode,
-        address, and data.
+     Possible values are :
+      - OSPI_STR_TRANSFER <1> = Single Rate Transfer
+      - OSPI_DTR_TRANSFER <2> = Dual Rate Transfer (only with OSPI_OPI_MODE)
+    enum:
+      - 1
+      - 2
+  writeoc:
+    type: string
+    enum:
+      - "PP"            # Page program, PP (0x02) up to 256 bytes
+      - "PP_1_1_2"      # Dual page program, PP 1-1-2 (0xA2)
+      - "PP_1_1_4"      # Quad data line SPI, PP 1-1-4 (0x32)
+      - "PP_1_4_4"      # Quad data line SPI, PP 1-4-4 (0x38)
+    description: |
+      The value encodes number of I/O lines used for the opcode,
+      address, and data.
 
-        There is no info about quad page program opcodes in the SFDP
-        tables, hence it has been assumed that NOR flash memory
-        supporting 1-4-4 mode also would support fast page programming.
+      There is no info about quad page program opcodes in the SFDP
+      tables, hence it has been assumed that NOR flash memory
+      supporting 1-4-4 mode also would support fast page programming.
 
-        Intended for modes other than OSPI_OPI_MODE.
+      Intended for modes other than OSPI_OPI_MODE.
 
-        If absent, then program page opcode is determined by the
-        `spi-bus-width`:
+      If absent, then program page opcode is determined by the
+      `spi-bus-width`:
 
-        * OSPI_SPI_MODE -> PP 1-1-1 (0x02)
-        * OSPI_DUAL_MODE -> PP 1-1-2 (0xA2)
-        * OSPI_QUAD_MODE -> PP 1-4-4 (0x38)
-    four-byte-opcodes:
-      type: boolean
-      description: |
-        Some NOR-Flash ICs use different opcodes when operating in
-        4 byte addressing mode.
+      * OSPI_SPI_MODE -> PP 1-1-1 (0x02)
+      * OSPI_DUAL_MODE -> PP 1-1-2 (0xA2)
+      * OSPI_QUAD_MODE -> PP 1-4-4 (0x38)
+  four-byte-opcodes:
+    type: boolean
+    description: |
+      Some NOR-Flash ICs use different opcodes when operating in
+      4 byte addressing mode.
 
-        When enabled, then 3 byte opcodes will be converted to
-        4 byte opcodes.
+      When enabled, then 3 byte opcodes will be converted to
+      4 byte opcodes.
 
-        * PP 1-1-1 (0x02) -> PP 1-1-1 4B (0x12)
-        * PP 1-1-4 (0x32) -> PP 1-1-4 4B (0x34)
-        * PP 1-4-4 (0x38) -> PP 1-4-4 4B (0x3E)
+      * PP 1-1-1 (0x02) -> PP 1-1-1 4B (0x12)
+      * PP 1-1-4 (0x32) -> PP 1-1-4 4B (0x34)
+      * PP 1-4-4 (0x38) -> PP 1-4-4 4B (0x3E)
 
-        * READ 1-1-1 (0x03) -> READ 1-1-1 4B (0x13)
-        * READ FAST 1-1-1 (0x0B) -> READ FAST 1-1-1 4B (0x0C)
-        * DREAD 1-1-2 (0x3B) -> DREAD 1-1-2 4B (0x3C)
-        * 2READ 1-2-2 (0xBB) -> 2READ 1-2-2 4B (0xBC)
-        * QREAD 1-1-4 (0x6B) -> QREAD 1-1-4 4B (0x6C)
-        * 4READ 1-4-4 (0xEB) -> 4READ 1-4-4 4B (0xEC)
+      * READ 1-1-1 (0x03) -> READ 1-1-1 4B (0x13)
+      * READ FAST 1-1-1 (0x0B) -> READ FAST 1-1-1 4B (0x0C)
+      * DREAD 1-1-2 (0x3B) -> DREAD 1-1-2 4B (0x3C)
+      * 2READ 1-2-2 (0xBB) -> 2READ 1-2-2 4B (0xBC)
+      * QREAD 1-1-4 (0x6B) -> QREAD 1-1-4 4B (0x6C)
+      * 4READ 1-4-4 (0xEB) -> 4READ 1-4-4 4B (0xEC)

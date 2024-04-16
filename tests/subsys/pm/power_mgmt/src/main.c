@@ -53,15 +53,6 @@ static const struct device *const device_c =
  * when suspending / resuming device B.
  */
 
-
-/* Common init function for devices A,B and C */
-static int device_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static int device_a_pm_action(const struct device *dev,
 		enum pm_device_action pm_action)
 {
@@ -73,7 +64,7 @@ static int device_a_pm_action(const struct device *dev,
 
 PM_DEVICE_DT_DEFINE(DT_INST(0, test_device_pm), device_a_pm_action);
 
-DEVICE_DT_DEFINE(DT_INST(0, test_device_pm), device_init,
+DEVICE_DT_DEFINE(DT_INST(0, test_device_pm), NULL,
 		PM_DEVICE_DT_GET(DT_INST(0, test_device_pm)), NULL, NULL,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		NULL);
@@ -118,7 +109,7 @@ static int device_b_pm_action(const struct device *dev,
 
 PM_DEVICE_DT_DEFINE(DT_INST(1, test_device_pm), device_b_pm_action);
 
-DEVICE_DT_DEFINE(DT_INST(1, test_device_pm), device_init,
+DEVICE_DT_DEFINE(DT_INST(1, test_device_pm), NULL,
 		PM_DEVICE_DT_GET(DT_INST(1, test_device_pm)), NULL, NULL,
 		PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		NULL);
@@ -134,7 +125,7 @@ static int device_c_pm_action(const struct device *dev,
 
 PM_DEVICE_DT_DEFINE(DT_INST(2, test_device_pm), device_c_pm_action);
 
-DEVICE_DT_DEFINE(DT_INST(2, test_device_pm), device_init,
+DEVICE_DT_DEFINE(DT_INST(2, test_device_pm), NULL,
 		PM_DEVICE_DT_GET(DT_INST(2, test_device_pm)), NULL, NULL,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		NULL);

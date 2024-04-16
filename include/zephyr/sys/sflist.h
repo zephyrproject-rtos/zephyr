@@ -4,15 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- *
- * @brief Single-linked list implementation
- *
- * Single-linked list implementation using inline macros/functions.
- * This API is not thread safe, and thus if a list is used across threads,
- * calls to functions must be protected with synchronization primitives.
- */
+ /**
+  * @file
+  * @defgroup flagged-single-linked-list_apis Flagged Single-linked list
+  * @ingroup datastructure_apis
+  *
+  * @brief Flagged single-linked list implementation.
+  *
+  * Similar to @ref single-linked-list_apis with the added ability to define
+  * two bits of user "flags" for each node. They can be accessed and modified
+  * using the sys_sfnode_flags_get() and sys_sfnode_flags_set() APIs.
+  *
+  * Flagged single-linked list implementation using inline macros/functions.
+  * This API is not thread safe, and thus if a list is used across threads,
+  * calls to functions must be protected with synchronization primitives.
+  *
+  * @{
+  */
 
 #ifndef ZEPHYR_INCLUDE_SYS_SFLIST_H_
 #define ZEPHYR_INCLUDE_SYS_SFLIST_H_
@@ -32,24 +40,24 @@ typedef uint64_t unative_t;
 typedef uint32_t unative_t;
 #endif
 
+/** @cond INTERNAL_HIDDEN */
 struct _sfnode {
 	unative_t next_and_flags;
 };
+/** @endcond */
 
+/** Flagged single-linked list node structure. */
 typedef struct _sfnode sys_sfnode_t;
 
+/** @cond INTERNAL_HIDDEN */
 struct _sflist {
 	sys_sfnode_t *head;
 	sys_sfnode_t *tail;
 };
+/** @endcond */
 
+/** Flagged single-linked list structure. */
 typedef struct _sflist sys_sflist_t;
-
- /**
-  * @defgroup flagged-single-linked-list_apis Flagged Single-linked list
-  * @ingroup datastructure_apis
-  * @{
-  */
 
 /**
  * @brief Provide the primitive to iterate on a list
@@ -111,7 +119,7 @@ typedef struct _sflist sys_sflist_t;
 #define SYS_SFLIST_FOR_EACH_NODE_SAFE(__sl, __sn, __sns)			\
 	Z_GENLIST_FOR_EACH_NODE_SAFE(sflist, __sl, __sn, __sns)
 
-/*
+/**
  * @brief Provide the primitive to resolve the container of a list node
  * Note: it is safe to use with NULL pointer nodes
  *
@@ -122,7 +130,7 @@ typedef struct _sflist sys_sflist_t;
 #define SYS_SFLIST_CONTAINER(__ln, __cn, __n) \
 	Z_GENLIST_CONTAINER(__ln, __cn, __n)
 
-/*
+/**
  * @brief Provide the primitive to peek container of the list head
  *
  * @param __sl A pointer on a sys_sflist_t to peek
@@ -132,7 +140,7 @@ typedef struct _sflist sys_sflist_t;
 #define SYS_SFLIST_PEEK_HEAD_CONTAINER(__sl, __cn, __n) \
 	Z_GENLIST_PEEK_HEAD_CONTAINER(sflist, __sl, __cn, __n)
 
-/*
+/**
  * @brief Provide the primitive to peek container of the list tail
  *
  * @param __sl A pointer on a sys_sflist_t to peek
@@ -142,7 +150,7 @@ typedef struct _sflist sys_sflist_t;
 #define SYS_SFLIST_PEEK_TAIL_CONTAINER(__sl, __cn, __n) \
 	Z_GENLIST_PEEK_TAIL_CONTAINER(sflist, __sl, __cn, __n)
 
-/*
+/**
  * @brief Provide the primitive to peek the next container
  *
  * @param __cn Container struct type pointer
@@ -205,6 +213,10 @@ static inline void sys_sflist_init(sys_sflist_t *list)
 	list->tail = NULL;
 }
 
+/**
+ * @brief Statically initialize a flagged single-linked list
+ * @param ptr_to_list A pointer on the list to initialize
+ */
 #define SYS_SFLIST_STATIC_INIT(ptr_to_list) {NULL, NULL}
 #define SYS_SFLIST_FLAGS_MASK	0x3UL
 
@@ -476,6 +488,17 @@ static inline bool sys_sflist_find_and_remove(sys_sflist_t *list,
 					      sys_sfnode_t *node);
 
 Z_GENLIST_FIND_AND_REMOVE(sflist, sfnode)
+
+/**
+ * @brief Compute the size of the given list in O(n) time
+ *
+ * @param list A pointer on the list
+ *
+ * @return an integer equal to the size of the list, or 0 if empty
+ */
+static inline size_t sys_sflist_len(sys_sflist_t *list);
+
+Z_GENLIST_LEN(sflist, sfnode)
 
 /** @} */
 

@@ -54,16 +54,5 @@ GEN_OFFSET_SYM(_callee_saved_t, esp);
 
 /* z_arch_esf_t structure member offsets */
 
-GEN_OFFSET_SYM(z_arch_esf_t, esp);
-GEN_OFFSET_SYM(z_arch_esf_t, ebp);
-GEN_OFFSET_SYM(z_arch_esf_t, ebx);
-GEN_OFFSET_SYM(z_arch_esf_t, esi);
-GEN_OFFSET_SYM(z_arch_esf_t, edi);
-GEN_OFFSET_SYM(z_arch_esf_t, edx);
-GEN_OFFSET_SYM(z_arch_esf_t, ecx);
-GEN_OFFSET_SYM(z_arch_esf_t, eax);
-GEN_OFFSET_SYM(z_arch_esf_t, errorCode);
-GEN_OFFSET_SYM(z_arch_esf_t, eip);
-GEN_OFFSET_SYM(z_arch_esf_t, cs);
 GEN_OFFSET_SYM(z_arch_esf_t, eflags);
 #endif /* _X86_OFFSETS_INC_ */

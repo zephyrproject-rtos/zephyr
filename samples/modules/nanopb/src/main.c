@@ -74,7 +74,7 @@ bool decode_message(uint8_t *buffer, size_t message_length)
 	return status;
 }
 
-void main(void)
+int main(void)
 {
 	/* This is the buffer where we will store our message. */
 	uint8_t buffer[SimpleMessage_size];
@@ -82,7 +82,7 @@ void main(void)
 
 	/* Encode our message */
 	if (!encode_message(buffer, sizeof(buffer), &message_length)) {
-		return;
+		return 0;
 	}
 
 	/* Now we could transmit the message over network, store it in a file or
@@ -91,4 +91,5 @@ void main(void)
 
 	/* But because we are lazy, we will just decode it immediately. */
 	decode_message(buffer, message_length);
+	return 0;
 }

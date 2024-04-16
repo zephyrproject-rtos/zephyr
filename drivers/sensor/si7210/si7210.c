@@ -414,7 +414,7 @@ static int si7210_channel_get(const struct device *dev,
 		val->val2 = tmp % 1000000;
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;

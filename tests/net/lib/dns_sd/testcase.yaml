@@ -1,5 +1,7 @@
 common:
-  tags: dns net
+  tags:
+    - dns
+    - net
   depends_on: netif
 tests:
   net.dns.sd:

@@ -703,7 +703,7 @@ static int dps310_channel_get(const struct device *dev,
 		val->val2 = data->psr_val2;
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;

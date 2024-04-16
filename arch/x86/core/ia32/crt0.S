@@ -44,6 +44,10 @@
 	GDATA(_sse_mxcsr_default_value)
 #endif
 
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
+	GTEXT(z_x86_early_tls_update_gdt)
+#endif
+
 	GDATA(x86_cpu_boot_arg)
 
 .macro install_page_tables
@@ -176,7 +180,7 @@ __csSet:
 	andl	$~0x400, %eax		/* CR4[OSXMMEXCPT] = 0 */
 	movl	%eax, %cr4		/* move EAX to CR4 */
 
-	ldmxcsr _sse_mxcsr_default_value   /* initialize SSE control/status reg */
+	ldmxcsr Z_MEM_PHYS_ADDR(_sse_mxcsr_default_value)   /* initialize SSE control/status reg */
 
   #endif /* CONFIG_X86_SSE */
 
@@ -252,6 +256,11 @@ __csSet:
 #endif
 #endif /* Z_VM_KERNEL */
 
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	pushl %esp
+	call z_x86_early_tls_update_gdt
+	popl %esp
+#endif
 	/* Clear BSS */
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
 	call	z_bss_zero_boot

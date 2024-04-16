@@ -83,6 +83,8 @@ child-binding:
         property-allowlist:
           - bias-pull-down
           - bias-pull-up
+          - output-enable
+          - input-enable
 
     properties:
       pinmux:

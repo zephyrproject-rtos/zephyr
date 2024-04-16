@@ -15,7 +15,7 @@ compatible: "st,stm32-bbram"
 include: base.yaml
 
 properties:
-    st,backup-regs:
-        type: int
-        required: true
-        description: Number of available backup registers.
+  st,backup-regs:
+    type: int
+    required: true
+    description: Number of available backup registers.

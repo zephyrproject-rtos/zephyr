@@ -925,6 +925,19 @@ static inline int pwm_capture_nsec(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
+/**
+ * @brief Validate that the PWM device is ready.
+ *
+ * @param spec PWM specification from devicetree
+ *
+ * @retval true If the PWM device is ready for use
+ * @retval false If the PWM device is not ready for use
+ */
+static inline bool pwm_is_ready_dt(const struct pwm_dt_spec *spec)
+{
+	return device_is_ready(spec->dev);
+}
+
 #ifdef __cplusplus
 }
 #endif

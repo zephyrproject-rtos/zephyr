@@ -3,5 +3,7 @@ sample:
 tests:
   sample.sensor.vl53l0x:
     build_only: true
-    depends_on: i2c vl53l0x
+    depends_on:
+      - i2c
+      - vl53l0x
     tags: sensors

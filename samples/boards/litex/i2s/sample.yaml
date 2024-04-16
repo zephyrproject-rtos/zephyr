@@ -1,0 +1,13 @@
+sample:
+  description: I2S sample
+
+  name: i2s example
+tests:
+  sample.drivers.i2s.litex:
+    tags: introduction
+    harness: console
+    platform_allow: litex_vexriscv
+    harness_config:
+      type: one_line
+      regex:
+        - "i2s example (.*)"

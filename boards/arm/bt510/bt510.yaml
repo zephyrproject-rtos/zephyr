@@ -13,3 +13,4 @@ supported:
   - watchdog
   - i2c
   - sm351lt
+vendor: lairdconnect

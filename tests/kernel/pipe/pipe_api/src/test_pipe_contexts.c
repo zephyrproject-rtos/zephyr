@@ -437,7 +437,6 @@ ZTEST(pipe_api, test_pipe_get_large)
  */
 ZTEST(pipe_api, test_pipe_reader_wait)
 {
-	/**TESTPOINT: test k_pipe_block_put with semaphore*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 					thread_handler, &kpipe1, NULL, NULL,
 					K_PRIO_PREEMPT(0), 0, K_NO_WAIT);

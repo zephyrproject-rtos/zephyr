@@ -119,14 +119,4 @@ config RV32M1_INTMUX_CHANNEL_7
 
 endif # MULTI_LEVEL_INTERRUPTS
 
-if FLASH
-
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_FLASH := zephyr,flash
-
-config FLASH_BASE_ADDRESS
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
-
-endif # FLASH
-
 endif # SOC_OPENISA_RV32M1_RISCV32

@@ -8,5 +8,5 @@ compatible: "zephyr,spi-emul-controller"
 include: spi-controller.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true

@@ -14,3 +14,4 @@ supported:
   - watchdog
 ram: 64
 flash: 256
+vendor: st

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,5 +21,11 @@
 
 &stm3 {
 	prescaler = <32>;
+	status = "okay";
+};
+
+&pit0 {
+	pit-channel = <0>;
+	pit-period = <1000000>;
 	status = "okay";
 };

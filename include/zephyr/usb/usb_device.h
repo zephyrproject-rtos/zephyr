@@ -41,6 +41,7 @@
 #include <zephyr/drivers/usb/usb_dc.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -390,6 +391,8 @@ int usb_transfer(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags,
  *
  * Synchronous version of usb_transfer, wait for transfer completion before
  * returning.
+ * A return value of zero can also mean that transfer was cancelled or that the
+ * endpoint is not ready. This is due to the design of transfers and usb_dc API.
  *
  * @param[in]  ep           Endpoint address corresponding to the one
  *                          listed in the device configuration table

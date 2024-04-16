@@ -21,7 +21,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC_
 
-#include <zephyr/types.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>

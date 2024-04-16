@@ -448,5 +448,14 @@
 		};
 	};
 
+	pinmux_qdec1: pinmux_qdec1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b0_09_xbar1_xbar_in21>,
+				<&iomuxc_gpio_ad_b0_10_xbar1_xbar_in22>;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
 };
 

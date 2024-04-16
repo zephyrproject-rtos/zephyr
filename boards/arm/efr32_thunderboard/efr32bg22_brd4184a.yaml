@@ -1,0 +1,21 @@
+identifier: efr32bg22_brd4184a
+name: EFR32BG22-BRD4184A
+type: mcu
+arch: arm
+ram: 32
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+  - gpio
+  - uart
+  - i2c
+  - spi
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: silabs

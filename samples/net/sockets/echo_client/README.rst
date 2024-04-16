@@ -1,7 +1,8 @@
-.. _sockets-echo-client-sample:
+.. zephyr:code-sample:: sockets-echo-client
+   :name: Echo client (advanced)
+   :relevant-api: bsd_sockets tls_credentials
 
-Socket Echo Client
-##################
+   Implement a client that sends IP packets, waits for data to be sent back, and verifies it.
 
 Overview
 ********
@@ -75,7 +76,7 @@ Example building for the IEEE 802.15.4 RF2XX transceiver:
    :zephyr-app: samples/net/sockets/echo_client
    :host-os: unix
    :board: [atsamr21_xpro | sam4s_xplained | sam_v71_xult]
-   :gen-args: -DOVERLAY_CONFIG=overlay-802154.conf
+   :gen-args: -DEXTRA_CONF_FILE=overlay-802154.conf
    :goals: build flash
    :compact:
 
@@ -100,19 +101,19 @@ Enable TLS support in the sample by building the project with the
    :goals: build
    :compact:
 
-An alternative way is to specify ``-DOVERLAY_CONFIG=overlay-tls.conf`` when
+An alternative way is to specify ``-DEXTRA_CONF_FILE=overlay-tls.conf`` when
 running ``west build`` or ``cmake``.
 
 The certificate and private key used by the sample can be found in the sample's
 ``src`` directory. The default certificates used by Socket Echo Client and
-:ref:`sockets-echo-server-sample` enable establishing a secure connection
+:zephyr:code-sample:`sockets-echo-server` enable establishing a secure connection
 between the samples.
 
 SOCKS5 proxy support
 ====================
 
 It is also possible to connect to the echo-server through a SOCKS5 proxy.
-To enable it, use ``-DOVERLAY_CONFIG=overlay-socks5.conf`` when running ``west
+To enable it, use ``-DEXTRA_CONF_FILE=overlay-socks5.conf`` when running ``west
 build`` or  ``cmake``.
 
 By default, to make the testing easier, the proxy is expected to run on the
@@ -178,6 +179,6 @@ You can verify TLS communication with a Linux host as well. See
 https://github.com/zephyrproject-rtos/net-tools documentation for information
 on how to test TLS with Linux host samples.
 
-See the :ref:`sockets-echo-server-sample` documentation for an alternate
+See the :zephyr:code-sample:`sockets-echo-server` documentation for an alternate
 way of running, with the echo-client on the Linux host and the echo-server
 in QEMU.

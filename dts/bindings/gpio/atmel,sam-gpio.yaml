@@ -1,3 +1,6 @@
+# Copyright (c) 2021-2023, Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
 description: SAM GPIO PORT node
 
 compatible: "atmel,sam-gpio"
@@ -5,25 +8,23 @@ compatible: "atmel,sam-gpio"
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    peripheral-id:
-      type: int
-      description: peripheral ID
-      required: true
+  clocks:
+    required: true
 
-    "#gpio-cells":
-      const: 2
+  "#gpio-cells":
+    const: 2
 
-    "#atmel,pin-cells":
-      type: int
-      required: true
-      const: 2
-      description: Number of items to expect in a atmel,pins specifier
+  "#atmel,pin-cells":
+    type: int
+    required: true
+    const: 2
+    description: Number of items to expect in a atmel,pins specifier
 
 
 gpio-cells:

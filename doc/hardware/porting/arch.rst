@@ -160,7 +160,7 @@ we strongly suggest that handlers at least print some debug information. The
 information helps figuring out what went wrong when hitting an exception that
 is a fault, like divide-by-zero or invalid memory access, or an interrupt that
 is not expected (:dfn:`spurious interrupt`). See the ARM implementation in
-:zephyr_file:`arch/arm/core/aarch32/cortex_m/fault.c` for an example.
+:zephyr_file:`arch/arm/core/cortex_m/fault.c` for an example.
 
 Thread Context Switching
 ************************
@@ -299,7 +299,7 @@ gracefully exits its entry point function.
 This means implementing an architecture-specific version of
 :c:func:`k_thread_abort`, and setting the Kconfig option
 :kconfig:option:`CONFIG_ARCH_HAS_THREAD_ABORT` as needed for the architecture (e.g. see
-:zephyr_file:`arch/arm/core/aarch32/cortex_m/Kconfig`).
+:zephyr_file:`arch/arm/core/cortex_m/Kconfig`).
 
 Thread Local Storage
 ********************

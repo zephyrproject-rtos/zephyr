@@ -95,7 +95,7 @@ static int temp_nrf5_channel_get(const struct device *dev,
 	return 0;
 }
 
-static void temp_nrf5_isr(void *arg)
+static void temp_nrf5_isr(const void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct temp_nrf5_data *data = dev->data;

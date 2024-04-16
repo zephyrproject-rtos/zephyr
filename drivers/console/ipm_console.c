@@ -64,9 +64,8 @@ static void ipm_console_hook_install(void)
 	__printk_hook_install(console_out);
 }
 
-static int ipm_console_init(const struct device *dev)
+static int ipm_console_init(void)
 {
-	ARG_UNUSED(dev);
 
 	LOG_DBG("IPM console initialization");
 

@@ -48,7 +48,7 @@ static void iface_uart_async_callback(const struct device *dev,
 		break;
 	case UART_RX_BUF_RELEASED:
 		/* UART driver is done with memory, free it */
-		k_mem_slab_free(&uart_modem_async_rx_slab, (void **)&evt->data.rx_buf.buf);
+		k_mem_slab_free(&uart_modem_async_rx_slab, (void *)evt->data.rx_buf.buf);
 		break;
 	case UART_RX_RDY:
 		/* Place received data on the ring buffer */
@@ -60,6 +60,21 @@ static void iface_uart_async_callback(const struct device *dev,
 		}
 		/* Notify upper layer that new data has arrived */
 		k_sem_give(&data->rx_sem);
+		break;
+	case UART_RX_STOPPED:
+		break;
+	case UART_RX_DISABLED:
+		/* RX stopped (likely due to line error), re-enable it */
+		rc = k_mem_slab_alloc(&uart_modem_async_rx_slab, (void **)&buf, K_FOREVER);
+		if (rc < 0) {
+			LOG_ERR("RX disabled and buffer starvation");
+			break;
+		}
+		rc = uart_rx_enable(dev, buf, RX_BUFFER_SIZE,
+				    CONFIG_MODEM_IFACE_UART_ASYNC_RX_TIMEOUT_US);
+		if (rc < 0) {
+			LOG_ERR("Failed to re-enable UART");
+		}
 		break;
 	default:
 		break;
@@ -148,13 +163,12 @@ int modem_iface_uart_init_dev(struct modem_iface *iface,
 	return rc;
 }
 
-int modem_iface_uart_init(struct modem_iface *iface,
-			  struct modem_iface_uart_data *data,
-			  const struct device *dev)
+int modem_iface_uart_init(struct modem_iface *iface, struct modem_iface_uart_data *data,
+			  const struct modem_iface_uart_config *config)
 {
 	int ret;
 
-	if (!iface || !data) {
+	if (iface == NULL || data == NULL || config == NULL) {
 		return -EINVAL;
 	}
 
@@ -162,12 +176,15 @@ int modem_iface_uart_init(struct modem_iface *iface,
 	iface->read = modem_iface_uart_async_read;
 	iface->write = modem_iface_uart_async_write;
 
-	ring_buf_init(&data->rx_rb, data->rx_rb_buf_len, data->rx_rb_buf);
+	ring_buf_init(&data->rx_rb, config->rx_rb_buf_len, config->rx_rb_buf);
 	k_sem_init(&data->rx_sem, 0, 1);
 	k_sem_init(&data->tx_sem, 0, 1);
 
-	/* get UART device */
-	ret = modem_iface_uart_init_dev(iface, dev);
+	/* Configure hardware flow control */
+	data->hw_flow_control = config->hw_flow_control;
+
+	/* Get UART device */
+	ret = modem_iface_uart_init_dev(iface, config->dev);
 	if (ret < 0) {
 		iface->iface_data = NULL;
 		iface->read = NULL;

@@ -92,7 +92,7 @@ static int adc_cmp_npcx_init(const struct device *dev)
 	if (config->thr_mv != ADC_CMP_NPCX_UNDEFINED) {
 		param.type = ADC_NPCX_THRESHOLD_PARAM_THVAL;
 		/* Convert from millivolts to ADC raw register value */
-		ret = adc_npcx_threshold_mv_to_thrval(config->thr_mv,
+		ret = adc_npcx_threshold_mv_to_thrval(config->adc, config->thr_mv,
 						&param.val);
 		if (ret) {
 			goto init_error;
@@ -135,7 +135,7 @@ static int adc_cmp_npcx_set_threshold(const struct device *dev, bool is_upper,
 
 	param.type = ADC_NPCX_THRESHOLD_PARAM_THVAL;
 	if (is_mv) {
-		ret = adc_npcx_threshold_mv_to_thrval(value, &param.val);
+		ret = adc_npcx_threshold_mv_to_thrval(config->adc, value, &param.val);
 		if (ret) {
 			return ret;
 		}
@@ -256,7 +256,7 @@ static const struct sensor_driver_api adc_cmp_npcx_api = {
 	static const struct adc_cmp_npcx_config adc_cmp_npcx_config_##inst = {\
 		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),         \
 		.chnsel = DT_INST_IO_CHANNELS_INPUT(inst),                    \
-		.th_sel = inst,                                               \
+		.th_sel = DT_INST_STRING_TOKEN_OR(inst, thr_sel, inst),       \
 		.thr_mv = DT_INST_PROP_OR(inst, threshold_mv,                 \
 			ADC_CMP_NPCX_UNDEFINED),                              \
 		.comparison = DT_INST_STRING_TOKEN_OR(inst,                   \

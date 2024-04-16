@@ -4,11 +4,11 @@ on: [pull_request]
 
 jobs:
   scancode_job:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Scan code for licenses
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v1
+      uses: actions/checkout@v3
     - name: Scan the code
       id: scancode
       uses: zephyrproject-rtos/action_scancode@v4

@@ -22,8 +22,9 @@
  * ongoing development.
  */
 
-#include <zephyr/bluetooth/bluetooth.h>
 #include <sys/types.h>
+
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
@@ -45,9 +46,9 @@ struct bt_has;
 
 /** Hearing Aid device type */
 enum bt_has_hearing_aid_type {
-	BT_HAS_HEARING_AID_TYPE_BINAURAL,
-	BT_HAS_HEARING_AID_TYPE_MONAURAL,
-	BT_HAS_HEARING_AID_TYPE_BANDED,
+	BT_HAS_HEARING_AID_TYPE_BINAURAL = 0x00,
+	BT_HAS_HEARING_AID_TYPE_MONAURAL = 0x01,
+	BT_HAS_HEARING_AID_TYPE_BANDED = 0x02,
 };
 
 /** Preset Properties values */
@@ -65,6 +66,28 @@ enum bt_has_properties {
 /** Hearing Aid device capablilities */
 enum bt_has_capabilities {
 	BT_HAS_PRESET_SUPPORT = BIT(0),
+};
+
+/** @brief Structure for registering features of a Hearing Access Service instance. */
+struct bt_has_features_param {
+	/** Hearing Aid Type value */
+	enum bt_has_hearing_aid_type type;
+
+	/**
+	 * @brief Preset Synchronization Support.
+	 *
+	 * Only applicable if @p type is @ref BT_HAS_HEARING_AID_TYPE_BINAURAL
+	 * and @kconfig{CONFIG_BT_HAS_PRESET_COUNT} is non-zero.
+	 */
+	bool preset_sync_support;
+
+	/**
+	 * @brief Independent Presets.
+	 *
+	 * Only applicable if @p type is @ref BT_HAS_HEARING_AID_TYPE_BINAURAL
+	 * and @kconfig{CONFIG_BT_HAS_PRESET_COUNT} is non-zero.
+	 */
+	bool independent_presets;
 };
 
 /** @brief Preset record definition */
@@ -316,6 +339,15 @@ struct bt_has_preset_register_param {
 };
 
 /**
+ * @brief Register the Hearing Access Service instance.
+ *
+ * @param features     Hearing Access Service register parameters.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_has_register(const struct bt_has_features_param *features);
+
+/**
  * @brief Register preset.
  *
  * Register preset. The preset will be a added to the list of exposed preset records.
@@ -437,6 +469,17 @@ static inline int bt_has_preset_active_clear(void)
  * @return 0 in case of success or negative value in case of error.
  */
 int bt_has_preset_name_change(uint8_t index, const char *name);
+
+/**
+ * @brief Change the Hearing Aid Features.
+ *
+ * Change the hearing aid features.
+ *
+ * @param features The features to be set.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_has_features_set(const struct bt_has_features_param *features);
 
 #ifdef __cplusplus
 }

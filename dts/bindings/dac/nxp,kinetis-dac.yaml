@@ -8,20 +8,20 @@ compatible: "nxp,kinetis-dac"
 include: dac-controller.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    voltage-reference:
-      type: int
-      required: true
-      description: DAC voltage reference select
+  voltage-reference:
+    type: int
+    required: true
+    description: DAC voltage reference select
 
-    low-power-mode:
-      type: boolean
-      description: Enable low-power mode
+  low-power-mode:
+    type: boolean
+    description: Enable low-power mode
 
-    "#io-channel-cells":
-      const: 1
+  "#io-channel-cells":
+    const: 1
 
 io-channel-cells:
-    - output
+  - output

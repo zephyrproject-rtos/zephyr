@@ -1,0 +1,18 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_PW
+	bool "Penwell SPI driver"
+	default y
+	depends on DT_HAS_INTEL_PENWELL_SPI_ENABLED
+	help
+	  Enable the Penwell SPI driver.
+
+if SPI_PW
+
+config SPI_PW_INTERRUPT
+	bool "Penwell SPI Interrupt mode Support"
+	help
+	  Enable Interrupt support for the SPI Driver.
+
+endif # SPI_PW

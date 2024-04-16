@@ -28,7 +28,7 @@ Packets smaller or equal to seven bytes on Classical CAN are called
 single-frames (SF). They don't need to fragment and do not have any flow-control.
 
 Packets larger than that are segmented into a first-frame (FF) and as many
-consecutive-frames as required. The FF contains information about the length of
+consecutive-frames (CF) as required. The FF contains information about the length of
 the entire payload data and additionally, the first few bytes of payload data.
 The receiving peer sends back a flow-control-frame (FC) to either deny,
 postpone, or accept the following consecutive frames.

@@ -17,7 +17,7 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/kernel.h>
-#ifndef CONFIG_SOC_ESP32C3
+#ifndef CONFIG_SOC_SERIES_ESP32C3
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #else
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
@@ -26,7 +26,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_counter, CONFIG_COUNTER_LOG_LEVEL);
 
-#ifdef CONFIG_SOC_ESP32C3
+#ifdef CONFIG_SOC_SERIES_ESP32C3
 #define ISR_HANDLER isr_handler_t
 #else
 #define ISR_HANDLER intr_handler_t

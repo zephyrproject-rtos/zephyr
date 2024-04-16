@@ -28,7 +28,7 @@ K_THREAD_STACK_DEFINE(app_a_stack, APP_A_STACKSIZE);
 struct k_thread app_b_thread;
 K_THREAD_STACK_DEFINE(app_b_stack, APP_B_STACKSIZE);
 
-void main(void)
+int main(void)
 {
 	k_tid_t thread_a, thread_b;
 
@@ -56,4 +56,5 @@ void main(void)
 
 	k_thread_join(thread_a, K_FOREVER);
 	k_thread_join(thread_b, K_FOREVER);
+	return 0;
 }

@@ -13,6 +13,13 @@
 extern "C" {
 #endif
 
+struct linger {
+	int  l_onoff;
+	int  l_linger;
+};
+
+#ifndef CONFIG_NET_SOCKETS_POSIX_NAMES
+
 static inline int socket(int family, int type, int proto)
 {
 	return zsock_socket(family, type, proto);
@@ -110,6 +117,8 @@ static inline int getsockname(int sock, struct sockaddr *addr,
 {
 	return zsock_getsockname(sock, addr, addrlen);
 }
+
+#endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
 
 #ifdef __cplusplus
 }

@@ -217,7 +217,7 @@ how GDB stub works.
 
          (gdb) list
          27
-         28     void main(void)
+         28     int main(void)
          29     {
          30             int ret;
          31

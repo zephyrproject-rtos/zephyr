@@ -1,0 +1,23 @@
+#include <common/mem.h>
+
+/ {
+	sram@2000FFE0 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2000FFE0 0x20>;
+		zephyr,memory-region = "Retention";
+		status = "okay";
+
+		retainedmem0: retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+	        };
+        };
+
+	aliases {
+		retainedmemtestdevice = &retainedmem0;
+	};
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(60)>;
+};

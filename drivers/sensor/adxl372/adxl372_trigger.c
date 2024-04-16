@@ -34,17 +34,17 @@ static void adxl372_thread_cb(const struct device *dev)
 		 */
 		if (cfg->max_peak_detect_mode &&
 			ADXL372_STATUS_2_INACT(status2)) {
-			drv_data->th_handler(dev, &drv_data->th_trigger);
+			drv_data->th_handler(dev, drv_data->th_trigger);
 		} else if (!cfg->max_peak_detect_mode &&
 			(ADXL372_STATUS_2_INACT(status2) ||
 			ADXL372_STATUS_2_ACTIVITY(status2))) {
-			drv_data->th_handler(dev, &drv_data->th_trigger);
+			drv_data->th_handler(dev, drv_data->th_trigger);
 		}
 	}
 
 	if ((drv_data->drdy_handler != NULL) &&
 		ADXL372_STATUS_1_DATA_RDY(status1)) {
-		drv_data->drdy_handler(dev, &drv_data->drdy_trigger);
+		drv_data->drdy_handler(dev, drv_data->drdy_trigger);
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
@@ -105,13 +105,13 @@ int adxl372_trigger_set(const struct device *dev,
 	switch (trig->type) {
 	case SENSOR_TRIG_THRESHOLD:
 		drv_data->th_handler = handler;
-		drv_data->th_trigger = *trig;
+		drv_data->th_trigger = trig;
 		int_mask = ADXL372_INT1_MAP_ACT_MSK |
 			   ADXL372_INT1_MAP_INACT_MSK;
 		break;
 	case SENSOR_TRIG_DATA_READY:
 		drv_data->drdy_handler = handler;
-		drv_data->drdy_trigger = *trig;
+		drv_data->drdy_trigger = trig;
 		int_mask = ADXL372_INT1_MAP_DATA_RDY_MSK;
 		break;
 	default:
@@ -150,7 +150,7 @@ int adxl372_init_interrupt(const struct device *dev)
 	struct adxl372_data *drv_data = dev->data;
 	int ret;
 
-	if (!device_is_ready(cfg->interrupt.port)) {
+	if (!gpio_is_ready_dt(&cfg->interrupt)) {
 		LOG_ERR("GPIO port %s not ready", cfg->interrupt.port->name);
 		return -EINVAL;
 	}

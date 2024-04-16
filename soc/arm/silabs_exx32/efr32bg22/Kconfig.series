@@ -1,0 +1,27 @@
+# Silicon Labs EFR32BG22 (Blue Gecko) MCU
+
+# Copyright (c) 2021 Sateesh Kotapati
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFR32BG22
+	bool "EFR32BG22P Series MCU"
+	select ARM
+	select ARMV8_M_DSP
+	select ARM_TRUSTZONE_M
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_FPU
+	select HAS_SILABS_GECKO
+	select HAS_SWO
+	select SOC_FAMILY_EXX32
+	select SOC_GECKO_HAS_RADIO
+	select SOC_GECKO_SERIES2
+	select SOC_GECKO_GPIO
+	select SOC_GECKO_CMU
+	select SOC_GECKO_CORE
+	select SOC_GECKO_DEV_INIT
+	select SOC_GECKO_SE
+	select HAS_PM
+	help
+	  Enable support for EFR32BG22 Blue Gecko MCU series

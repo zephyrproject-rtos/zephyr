@@ -7,7 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/ztress.h>
 #include <zephyr/sys/spsc_pbuf.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #define HDR_LEN sizeof(uint32_t)
 #define TLEN(len) ROUND_UP(HDR_LEN + len, sizeof(uint32_t))
@@ -436,7 +436,7 @@ bool stress_read(void *user_data, uint32_t cnt, bool last, int prio)
 			zassert_true(false, "Unexpected error: %d, cnt:%d", len, ctx->read_cnt);
 		}
 
-		check_buffer(buf, len, ctx->read_cnt);
+		zassert_ok(check_buffer(buf, len, ctx->read_cnt));
 		ctx->read_cnt++;
 	}
 
@@ -499,7 +499,7 @@ bool stress_claim_free(void *user_data, uint32_t cnt, bool last, int prio)
 			return true;
 		}
 
-		check_buffer(buf, len, ctx->read_cnt);
+		zassert_ok(check_buffer(buf, len, ctx->read_cnt));
 
 		spsc_pbuf_free(ctx->pbuf, len);
 

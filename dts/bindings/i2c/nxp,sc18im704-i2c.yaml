@@ -1,0 +1,10 @@
+# Copyright (c), 2023 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: I2C controller part for the SC18IM704 bridge
+
+compatible: "nxp,sc18im704-i2c"
+
+include: i2c-controller.yaml
+
+on-bus: nxp,sc18im704

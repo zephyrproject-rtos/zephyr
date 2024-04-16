@@ -1,0 +1,29 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for Ethernet devices
+
+include: base.yaml
+
+properties:
+  local-mac-address:
+    type: uint8-array
+    description: Specifies the MAC address that was assigned to the network device
+
+  zephyr,random-mac-address:
+    type: boolean
+    description: |
+      Use a random MAC address generated when the driver is initialized.
+      Note that using this choice and rebooting a board may leave stale
+      MAC address in peers' ARP caches and lead to issues and delays in
+      communication.  (Use "ip neigh flush all" on Linux peers to clear
+      ARP cache.)
+
+      It is driver specific how the OUI octets are handled.
+
+      If set we ignore any setting of the local-mac-address property.
+
+  phy-handle:
+    type: phandle
+    description: |
+      Specifies a reference to a node representing a PHY device.

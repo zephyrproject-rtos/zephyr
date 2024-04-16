@@ -9,9 +9,8 @@
 #include <zephyr/init.h>
 #include <soc.h>
 
-static int ti_msp432p4xx_init(const struct device *arg)
+static int ti_msp432p4xx_init(void)
 {
-	ARG_UNUSED(arg);
 
 	SystemInit();
 

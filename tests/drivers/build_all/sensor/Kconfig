@@ -1,0 +1,24 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config GENERIC_SENSOR_TEST
+	bool "Compile and run the generic sensor tests"
+	depends on ZTEST && ZTEST_NEW_API
+	help
+	  Enables building and running the generic sensor test suite that will
+	  iterate through the device tree and run sample path tests on any
+	  sensor that supports the backend sensor emulator API.
+
+config GENERIC_SENSOR_TEST_NUM_EXPECTED_VALS
+	int "Number of expected values to use in test"
+	default 5
+	depends on GENERIC_SENSOR_TEST
+	help
+	  Controls the number of expected values to use in the generic sensor
+	  test, interpolated from the sensor's reported lower and upper sample
+	  range boundaries. The test will run one iteration for each expected
+	  value. For example, if GENERIC_TEST_NUM_EXPECTED_VALS == 5, and the
+	  sensor range is 0..100, the test will run 5 times with expected values
+	  0, 25, 50, 75, and 100. These iterations are run in parallel.
+
+source "Kconfig.zephyr"

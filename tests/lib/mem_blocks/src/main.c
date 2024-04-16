@@ -61,7 +61,8 @@ static bool check_buffer_bound(sys_mem_blocks_t *mem_block, void *ptr)
 	uint8_t *start, *end, *ptr_u8;
 
 	start = mem_block->buffer;
-	end = start + (BIT(mem_block->blk_sz_shift) * mem_block->num_blocks);
+	end = start + (BIT(mem_block->info.blk_sz_shift) *
+		       mem_block->info.num_blocks);
 
 	ptr_u8 = (uint8_t *)ptr;
 
@@ -155,9 +156,11 @@ static void alloc_free(sys_mem_blocks_t *mem_block,
 			zassert_equal(listener_mem[i], blocks[i][0],
 				      "Heap allocated pointer mismatched: %p != %p",
 				      listener_mem[i], blocks[i][0]);
-			zassert_equal(listener_size[i], BIT(mem_block->blk_sz_shift),
+			zassert_equal(listener_size[i],
+				      BIT(mem_block->info.blk_sz_shift),
 				      "Heap allocated sized: %u != %u",
-				      listener_size[i], BIT(mem_block->blk_sz_shift));
+				      listener_size[i],
+				      BIT(mem_block->info.blk_sz_shift));
 #endif
 		}
 
@@ -190,9 +193,11 @@ static void alloc_free(sys_mem_blocks_t *mem_block,
 			zassert_equal(listener_mem[i], blocks[i][0],
 				      "Heap allocated pointer mismatched: %p != %p",
 				      listener_mem[i], blocks[i][0]);
-			zassert_equal(listener_size[i], BIT(mem_block->blk_sz_shift),
+			zassert_equal(listener_size[i],
+				      BIT(mem_block->info.blk_sz_shift),
 				      "Heap allocated sized: %u != %u",
-				      listener_size[i], BIT(mem_block->blk_sz_shift));
+				      listener_size[i],
+				      BIT(mem_block->info.blk_sz_shift));
 #endif
 		}
 	}
@@ -427,12 +432,9 @@ ZTEST(lib_mem_block, test_mem_block_alloc_free_contiguous)
 
 	/* all blocks should be taken */
 	for (i = 0; i < NUM_BLOCKS; i++) {
-		ret = sys_bitarray_test_bit(mem_block_01.bitmap,
-					    i, &val);
+		ret = sys_bitarray_test_bit(mem_block_01.bitmap, i, &val);
 		zassert_equal(val, 1,
 		     "sys_mem_blocks_alloc_contiguous failed, bit %i should be set", i);
-		break;
-
 	}
 
 	/* free first 3 memory blocks, use a pointer provided by previous case */
@@ -704,7 +706,8 @@ ZTEST(lib_mem_block, test_mem_block_invalid_params)
 
 	/* Fake a pointer */
 	blocks[0] = mem_block_01.buffer +
-			(BIT(mem_block_01.blk_sz_shift) * mem_block_01.num_blocks);
+			(BIT(mem_block_01.info.blk_sz_shift) *
+			 mem_block_01.info.num_blocks);
 	ret = sys_mem_blocks_free(&mem_block_01, 1, blocks);
 	zassert_equal(ret, -EFAULT,
 		      "sys_mem_blocks_free should fail with -EFAULT but not");
@@ -794,7 +797,8 @@ ZTEST(lib_mem_block, test_multi_mem_block_invalid_params)
 
 	/* Fake a pointer */
 	blocks[0] = mem_block_01.buffer +
-			(BIT(mem_block_01.blk_sz_shift) * mem_block_01.num_blocks);
+			(BIT(mem_block_01.info.blk_sz_shift) *
+			 mem_block_01.info.num_blocks);
 	ret = sys_multi_mem_blocks_free(&alloc_group, 1, blocks);
 	zassert_equal(ret, -EINVAL,
 		      "sys_multi_mem_blocks_free should fail with -EINVAL but not");

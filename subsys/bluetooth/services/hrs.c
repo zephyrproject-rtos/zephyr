@@ -83,9 +83,8 @@ BT_GATT_SERVICE_DEFINE(hrs_svc,
 			       NULL, NULL, NULL),
 );
 
-static int hrs_init(const struct device *dev)
+static int hrs_init(void)
 {
-	ARG_UNUSED(dev);
 
 	hrs_blsc = 0x01;
 

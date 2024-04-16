@@ -8,8 +8,8 @@ description: |
     edges of the board.
 
     Documentation:
-    * https://www.mikroe.com/mikrobus
-    * https://download.mikroe.com/documents/standards/mikrobus/mikrobus-standard-specification-v200.pdf
+    https://www.mikroe.com/mikrobus
+    https://download.mikroe.com/documents/standards/mikrobus/mikrobus-standard-specification-v200.pdf
 
     This binding provides a nexus mapping for 10 pins, left side pins are
     numbered 0 - 5 (AN - MOSI), the right side pins are numbered 6 - 10
@@ -25,7 +25,7 @@ description: |
                    VCC-3.3V power - +3.3V  +5V - VCC-5V power
                  Reference Ground - GND    GND - Reference Ground
 
-    Board's silkscreen may vary depending you board, but coherent with
+    Board's silkscreen may vary depending on your board, but coherent with
     the description above as it's according to the standard's specification.
 
 compatible: "mikro-bus"

@@ -1,0 +1,17 @@
+/*
+ * Copyright 2023 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "test_common.dtsi"
+
+/ {
+	regulator {
+		/* Arduino D11 */
+		enable-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+	};
+	resources {
+		/* Arduino D13 */
+		check-gpios = <&gpio0 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+	};
+};

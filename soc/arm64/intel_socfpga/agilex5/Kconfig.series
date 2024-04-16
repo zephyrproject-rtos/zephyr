@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_AGILEX5
+	bool "Intel SoC FPGA Agilex5 Series"
+	select ARM64
+	select CPU_CORTEX_A76_A55
+	select SOC_FAMILY_INTEL_SOCFPGA
+	help
+		Enable support for Intel SoC FPGA Series

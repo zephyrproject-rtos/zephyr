@@ -1,14 +1,15 @@
-.. _sockets-dumb-http-server-mt-sample:
+.. zephyr:code-sample:: socket-dumb-http-server-mt
+   :name: Dumb HTTP server (multi-threaded)
+   :relevant-api: bsd_sockets net_pkt thread_apis tls_credentials
 
-Socket Multithreaded Dumb HTTP Server
-#####################################
+   Implement a simple HTTP server supporting simultaneous connections using BSD sockets.
 
 Overview
 ********
 
 The ``sockets/dumb_http_server_mt`` sample application for Zephyr implements a
 skeleton HTTP server using a BSD Sockets compatible API.
-This sample has similar functionality as :ref:`sockets-dumb-http-server-sample`
+This sample has similar functionality as :zephyr:code-sample:`socket-dumb-http-server`
 except it has support for multiple simultaneous connections, TLS and
 IPv6. Also this sample application has no compatibility with POSIX.
 This HTTP server example is very minimal and does not really parse an incoming

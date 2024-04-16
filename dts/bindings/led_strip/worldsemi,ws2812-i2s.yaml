@@ -1,0 +1,43 @@
+# Copyright (c) 2022 Jonathan Rico
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Worldsemi WS2812 LED strip, I2S binding
+
+  Driver bindings for controlling a WS2812 or compatible LED
+  strip with an I2S master.
+
+compatible: "worldsemi,ws2812-i2s"
+
+include: [base.yaml, ws2812.yaml]
+
+properties:
+
+  i2s-dev:
+    type: phandle
+    required: true
+    description: Pointer to the I2S instance.
+
+  out-active-low:
+    type: boolean
+    description: True if the output pin is active low.
+
+  nibble-one:
+    type: int
+    default: 0x0E
+    description: 4-bit value to shift out for a 1 pulse.
+
+  nibble-zero:
+    type: int
+    default: 0x08
+    description: 4-bit value to shift out for a 0 pulse.
+
+  lrck-period:
+    type: int
+    default: 10
+    description: LRCK (left/right clock) period in microseconds.
+
+  extra-wait-time:
+    type: int
+    default: 300
+    description: Extra microseconds to wait for the driver to flush its I2S queue.

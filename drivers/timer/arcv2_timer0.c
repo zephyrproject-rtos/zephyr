@@ -4,7 +4,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
@@ -341,8 +341,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 		/* Round delay up to next tick boundary */
 		delay += unannounced;
-		delay =
-		 ((delay + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
+		delay = DIV_ROUND_UP(delay, CYC_PER_TICK) * CYC_PER_TICK;
 
 		delay -= unannounced;
 		delay = MAX(delay, MIN_DELAY);
@@ -414,9 +413,8 @@ void smp_timer_init(void)
  *
  * @return 0
  */
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/* ensure that the timer will not generate interrupts */
 	timer0_control_register_set(0);

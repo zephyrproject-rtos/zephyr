@@ -14,12 +14,6 @@
 		};
 	};
 
-	afec1_default: afec1_default {	/* ADCH - J504 */
-		group1 {
-			pinmux = <PC31X_AFE1_AD6>;
-		};
-	};
-
 	can0_default: can0_default {
 		group1 {
 			pinmux = <PB3A_CAN0_RX>,

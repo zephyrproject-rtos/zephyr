@@ -18,4 +18,12 @@
 		};
 	};
 
+	pinmux_can0: pinmux_can0 {
+		group0 {
+			pinmux = <CAN0_RD_PIO1_3>,
+				<CAN0_TD_PIO1_2>;
+			slew-rate = "standard";
+		};
+	};
+
 };

@@ -84,6 +84,14 @@ bool z_impl_atomic_cas(atomic_t *target, atomic_val_t old_value,
 	k_spinlock_key_t key;
 	int ret = false;
 
+	/*
+	 * On SMP the k_spin_lock() definition calls atomic_cas().
+	 * Using k_spin_lock() here would create an infinite loop and
+	 * massive stack overflow. Consider CONFIG_ATOMIC_OPERATIONS_ARCH
+	 * or CONFIG_ATOMIC_OPERATIONS_BUILTIN instead.
+	 */
+	BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP));
+
 	key = k_spin_lock(&lock);
 
 	if (*target == old_value) {

@@ -320,7 +320,7 @@ static size_t extract_decimal(const char **str)
 	const char *sp = *str;
 	size_t val = 0;
 
-	while (isdigit((int)(unsigned char)*sp)) {
+	while (isdigit((int)(unsigned char)*sp) != 0) {
 		val = 10U * val + *sp++ - '0';
 	}
 	*str = sp;
@@ -790,7 +790,7 @@ static char *encode_uint(uint_value_type value,
 			 char *bps,
 			 const char *bpe)
 {
-	bool upcase = isupper((int)conv->specifier);
+	bool upcase = isupper((int)conv->specifier) != 0;
 	const unsigned int radix = conversion_radix(conv->specifier);
 	char *bp = bps + (bpe - bps);
 
@@ -826,7 +826,7 @@ static char *encode_uint(uint_value_type value,
 /* Number of hex "digits" in the fractional part of an IEEE 754-2008
  * double precision float.
  */
-#define FRACTION_HEX ceiling_fraction(FRACTION_BITS, 4)
+#define FRACTION_HEX DIV_ROUND_UP(FRACTION_BITS, 4)
 
 /* Number of bits in the exponent of an IEEE 754-2008 double precision
  * float.
@@ -905,7 +905,7 @@ static char *encode_float(double value,
 	 */
 	if (expo == BIT_MASK(EXPONENT_BITS)) {
 		if (fract == 0) {
-			if (isupper((unsigned char)c)) {
+			if (isupper((unsigned char)c) != 0) {
 				*buf++ = 'I';
 				*buf++ = 'N';
 				*buf++ = 'F';
@@ -915,7 +915,7 @@ static char *encode_float(double value,
 				*buf++ = 'f';
 			}
 		} else {
-			if (isupper((unsigned char)c)) {
+			if (isupper((unsigned char)c) != 0) {
 				*buf++ = 'N';
 				*buf++ = 'A';
 				*buf++ = 'N';
@@ -997,7 +997,7 @@ static char *encode_float(double value,
 		 * for a and X for A.
 		 */
 		struct conversion aconv = {
-			.specifier = isupper((unsigned char)c) ? 'X' : 'x',
+			.specifier = isupper((unsigned char)c) != 0 ? 'X' : 'x',
 		};
 		const char *spe = *bpe;
 		char *sp = bps + (spe - bps);
@@ -1783,7 +1783,7 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
 					OUTC(*cp++);
 				}
 			} else {
-				while (isdigit((unsigned char)*cp)) {
+				while (isdigit((unsigned char)*cp) != 0) {
 					OUTC(*cp++);
 				}
 
@@ -1803,7 +1803,7 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
 						OUTC('0');
 					}
 				}
-				while (isdigit((unsigned char)*cp)) {
+				while (isdigit((unsigned char)*cp) != 0) {
 					OUTC(*cp++);
 				}
 			}

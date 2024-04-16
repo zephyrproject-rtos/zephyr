@@ -1,0 +1,23 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright (c) 2023 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+include: [i2c-device.yaml, gpio-controller.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the controller INT pin. This pin is active-low.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the controller RESET pin. This pin is active-low.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

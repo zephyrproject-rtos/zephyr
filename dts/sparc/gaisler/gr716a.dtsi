@@ -30,7 +30,7 @@
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "simple-bus";
+		compatible = "gaisler,gr716-soc", "simple-bus";
 		ranges;
 		interrupt-parent = <&irqmp>;
 

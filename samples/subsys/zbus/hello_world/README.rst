@@ -1,7 +1,8 @@
-.. _zbus-hello-world-sample:
+.. zephyr:code-sample:: zbus-hello-world
+   :name: zbus Hello World
+   :relevant-api: zbus_apis
 
-Hello world sample
-##################
+   Make three threads talk to each other using zbus.
 
 Overview
 ********

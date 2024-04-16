@@ -31,9 +31,8 @@ static char names[CONFIG_MP_MAX_NUM_CPUS][PM_STATE_COUNT][PM_STAT_NAME_LEN];
 static uint32_t time_start[CONFIG_MP_MAX_NUM_CPUS];
 static uint32_t time_stop[CONFIG_MP_MAX_NUM_CPUS];
 
-static int pm_stats_init(const struct device *dev)
+static int pm_stats_init(void)
 {
-	ARG_UNUSED(dev);
 
 	unsigned int num_cpus = arch_num_cpus();
 

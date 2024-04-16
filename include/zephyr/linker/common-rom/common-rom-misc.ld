@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <zephyr/linker/iterable_sections.h>
+
 #if defined(CONFIG_EC_HOST_CMD)
 	ITERABLE_SECTION_ROM(ec_host_cmd_handler, 4)
 #endif
@@ -8,18 +10,38 @@
 	ITERABLE_SECTION_ROM(settings_handler_static, 4)
 #endif
 
+#if defined(CONFIG_SENSING)
+	ITERABLE_SECTION_ROM(sensing_sensor_info, 4)
+#endif
+
 #if defined(CONFIG_SENSOR_INFO)
 	ITERABLE_SECTION_ROM(sensor_info, 4)
 #endif
 
+#if defined(CONFIG_SENSOR_ASYNC_API)
+	ITERABLE_SECTION_ROM(sensor_decoder_api, 4)
+#endif
+
+#if defined(CONFIG_MCUMGR)
+	ITERABLE_SECTION_ROM(mcumgr_handler, 4)
+#endif
+
+#if defined(CONFIG_INPUT)
+	ITERABLE_SECTION_ROM(input_listener, 4)
+#endif
+
 #if defined(CONFIG_EMUL)
-	SECTION_DATA_PROLOGUE(emulators_section,,)
-	{
-		__emul_list_start = .;
-		KEEP(*(SORT_BY_NAME(".emulators")));
-		__emul_list_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	ITERABLE_SECTION_ROM(emul, 4)
 #endif /* CONFIG_EMUL */
+
+#if defined(CONFIG_ZBUS)
+	ITERABLE_SECTION_ROM(zbus_channel, 4)
+	ITERABLE_SECTION_ROM(zbus_channel_observation, 4)
+#endif /* CONFIG_ZBUS */
+
+#ifdef CONFIG_LLEXT
+	ITERABLE_SECTION_ROM(llext_const_symbol, 4)
+#endif /* CONFIG_LLEXT */
 
 	SECTION_DATA_PROLOGUE(symbol_to_keep,,)
 	{
@@ -30,30 +52,10 @@
 
 	ITERABLE_SECTION_ROM(shell, 4)
 
-	SECTION_DATA_PROLOGUE(shell_root_cmds_sections,,)
-	{
-		__shell_root_cmds_start = .;
-		KEEP(*(SORT(.shell_root_cmd_*)));
-		__shell_root_cmds_end = .;
-	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	ITERABLE_SECTION_ROM(shell_root_cmds, 4)
 
-	SECTION_DATA_PROLOGUE(shell_subcmds_sections,,)
-	{
-		__shell_subcmds_start = .;
-		KEEP(*(SORT(.shell_subcmd_*)));
-		__shell_subcmds_end = .;
-	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	ITERABLE_SECTION_ROM(shell_subcmds, 4)
 
-	SECTION_DATA_PROLOGUE(shell_dynamic_subcmds_sections,,)
-	{
-		__shell_dynamic_subcmds_start = .;
-		KEEP(*(SORT(.shell_dynamic_subcmd_*)));
-		__shell_dynamic_subcmds_end = .;
-	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	ITERABLE_SECTION_ROM(shell_dynamic_subcmds, 4)
 
-	SECTION_DATA_PROLOGUE(font_entry_sections,,)
-	{
-		__font_entry_start = .;
-		KEEP(*(SORT_BY_NAME("._cfb_font.*")))
-		__font_entry_end = .;
-	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	ITERABLE_SECTION_ROM(cfb_font, 4)

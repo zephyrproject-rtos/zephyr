@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_POSIX
-	bool "Native POSIX port"
+	bool "Native port"
 	select ARCH_POSIX
 	select CPU_HAS_FPU
 	help

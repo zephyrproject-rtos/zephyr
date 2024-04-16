@@ -16,3 +16,4 @@ supported:
   - counter
   - nvs
   - watchdog
+vendor: ruuvi

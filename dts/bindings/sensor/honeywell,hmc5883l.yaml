@@ -8,10 +8,10 @@ compatible: "honeywell,hmc5883l"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-    int-gpios:
-      type: phandle-array
-      description: DRDY pin
+  int-gpios:
+    type: phandle-array
+    description: DRDY pin
 
-        This pin is active low, with an internal pullup in the sensor.
-        The property value should ensure the flags properly describe
-        the signal that is presented to the driver.
+      This pin is active low, with an internal pullup in the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.

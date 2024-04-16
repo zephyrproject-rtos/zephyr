@@ -1,6 +1,8 @@
 common:
   min_ram: 16
-  tags: net hostname
+  tags:
+    - net
+    - hostname
   depends_on: netif
 tests:
   net.hostname:

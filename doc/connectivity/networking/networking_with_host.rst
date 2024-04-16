@@ -14,6 +14,7 @@ Networking with the host system
    qemu_user_setup.rst
    networking_with_multiple_instances.rst
    qemu_802154_setup.rst
+   armfvp_user_networking_setup.rst
 
 While developing networking software, it is usually necessary to connect and
 exchange data with the host system like a Linux desktop computer.
@@ -41,6 +42,16 @@ possible:
     admin privileges on the host machine, unlike TAP. However, it has several
     limitations including performance which makes it less valuable for practical
     purposes. See :ref:`networking_with_user_qemu` for details.
+
+* Arm FVP (User Mode Networking).
+
+  * User mode networking emulates a built-in IP router and DHCP server, and
+    routes TCP and UDP traffic between the guest and host. It uses the user mode
+    socket layer of the host to communicate with other hosts. This allows
+    the use of a significant number of IP network services without requiring
+    administrative privileges, or the installation of a separate driver on
+    the host on which the model is running. See :ref:`networking_with_armfvp`
+    for details.
 
 * native_posix board.
 

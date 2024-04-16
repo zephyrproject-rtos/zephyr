@@ -8,9 +8,8 @@
 
 #include <driverlib/setup.h>
 
-static int ti_cc13x2_cc26x2_init(const struct device *dev)
+static int ti_cc13x2_cc26x2_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/* Performs necessary trim of the device. */
 	SetupTrimDevice();

@@ -1,0 +1,27 @@
+# Xen hypervisor configuration options
+
+# Copyright (c) 2023 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config XEN
+	bool
+	default y
+	depends on ARMV8_A
+	depends on DT_HAS_XEN_XEN_ENABLED
+	help
+	  Enables support of Xen hypervisor on arm64 platform. Get enabled
+	  when board device tree contains "hypervisor" node with "xen,xen"
+	  compatible enabled.
+
+config XEN_DOM0
+	bool "Zephyr as Xen Domain 0"
+	depends on XEN
+	help
+	  Built binary will be used as Xen privileged domain (Domain 0).
+
+config XEN_DOM0LESS
+	bool "Zephyr for Xen Dom0less setup"
+	depends on XEN && !XEN_DOM0
+	help
+	  Configures Zephyr as DomU, that can be started on Dom0less
+	  setup.

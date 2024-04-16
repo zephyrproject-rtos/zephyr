@@ -22,6 +22,7 @@ config ARC
 	select HAS_DTS
 	imply XIP
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select ARCH_SUPPORTS_ROM_START
 	help
 	  ARC architecture
 
@@ -34,6 +35,7 @@ config ARM
 	# is really only necessary for Cortex-M with ARM MPU!
 	select GEN_PRIV_STACKS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_AARCH32_CORTEX_R || CPU_CORTEX_M || CPU_AARCH32_CORTEX_A
+	select BARRIER_OPERATIONS_ARCH
 	help
 	  ARM architecture
 
@@ -42,11 +44,13 @@ config ARM64
 	select ARCH_IS_SET
 	select 64BIT
 	select HAS_DTS
+	select ARCH_SUPPORTS_COREDUMP
 	select HAS_ARM_SMCCC
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
+	select BARRIER_OPERATIONS_ARCH
 	help
 	  ARM64 (AArch64) architecture
 
@@ -78,6 +82,7 @@ config X86
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
 	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_SUPPORTS_ROM_START if !X86_64
 	select CPU_HAS_MMU
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE && !X86_COMMON_PAGE_TABLE
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
@@ -89,6 +94,7 @@ config X86
 	select NEED_LIBC_MEM_PARTITION if USERSPACE && TIMING_FUNCTIONS \
 					  && !BOARD_HAS_TIMING_FUNCTIONS \
 					  && !SOC_HAS_TIMING_FUNCTIONS
+	select ARCH_HAS_STACK_CANARIES_TLS
 	help
 	  x86 architecture
 
@@ -107,12 +113,14 @@ config RISCV
 	select ARCH_IS_SET
 	select HAS_DTS
 	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_SUPPORTS_ROM_START if !SOC_SERIES_ESP32C3
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select USE_SWITCH_SUPPORTED
 	select USE_SWITCH
 	select SCHED_IPI_SUPPORTED if SMP
+	select BARRIER_OPERATIONS_BUILTIN
 	imply XIP
 	help
 	  RISCV architecture
@@ -138,8 +146,9 @@ config ARCH_POSIX
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	select ARCH_HAS_CUSTOM_BUSY_WAIT
 	select ARCH_HAS_THREAD_ABORT
-	select NATIVE_APPLICATION
+	select NATIVE_BUILD
 	select HAS_COVERAGE_SUPPORT
+	select BARRIER_OPERATIONS_BUILTIN
 	help
 	  POSIX (native) architecture
 
@@ -203,7 +212,7 @@ config SRAM_BASE_ADDRESS
 	  /chosen/zephyr,sram in devicetree. The user should generally avoid
 	  changing it via menuconfig or in configuration files.
 
-if ARC || ARM || ARM64 || NIOS2 || X86
+if ARC || ARM || ARM64 || NIOS2 || X86 || RISCV
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -224,7 +233,7 @@ config FLASH_BASE_ADDRESS
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARM64 || ARC || NIOS2 || X86
+endif # ARM || ARM64 || ARC || NIOS2 || X86 || RISCV
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
@@ -274,6 +283,7 @@ config USERSPACE
 	depends on RUNTIME_ERROR_CHECKS
 	depends on SRAM_REGION_PERMISSIONS
 	select THREAD_STACK_INFO
+	select LINKER_USE_NO_RELAX
 	help
 	  When enabled, threads may be created or dropped down to user mode,
 	  which has significantly restricted permissions and must interact
@@ -288,6 +298,7 @@ config USERSPACE
 
 config PRIVILEGED_STACK_SIZE
 	int "Size of privileged stack"
+	default 2048 if EMUL
 	default 1024
 	depends on ARCH_HAS_USERSPACE
 	help
@@ -395,6 +406,23 @@ config DYNAMIC_INTERRUPTS
 	  interrupt-related data structures to RAM instead of ROM, and
 	  on some architectures increase code size.
 
+config SHARED_INTERRUPTS
+	bool "Set this to enable support for shared interrupts"
+	depends on GEN_SW_ISR_TABLE
+	select EXPERIMENTAL
+	help
+	  Set this to enable support for shared interrupts. Use this with
+	  caution as enabling this will increase the image size by a
+	  non-negligible amount.
+
+config SHARED_IRQ_MAX_NUM_CLIENTS
+	int "Maximum number of clients allowed per shared interrupt"
+	default 2
+	depends on SHARED_INTERRUPTS
+	help
+	  This option controls the maximum number of clients allowed
+	  per shared interrupt. Set this according to your needs.
+
 config GEN_ISR_TABLES
 	bool "Use generated IRQ tables"
 	help
@@ -455,13 +483,14 @@ config GEN_SW_ISR_TABLE
 
 config ARCH_SW_ISR_TABLE_ALIGN
 	int "Alignment size of a software ISR table"
+	default 64 if RISCV_HAS_CLIC
 	default 4
 	depends on GEN_SW_ISR_TABLE
 	help
 	  This option controls alignment size of generated
 	  _sw_isr_table.  Some architecture needs a software ISR table
 	  to be aligned to architecture specific size.  The default
-	  size is 0 for no alignment.
+	  size is 4.
 
 config GEN_IRQ_START_VECTOR
 	int
@@ -499,6 +528,18 @@ config EXTRA_EXCEPTION_INFO
 	  This option enables the collection of extra information, such as
 	  register state, when a fault occurs. This information can be useful
 	  to collect for post-mortem analysis and debug of issues.
+
+config SIMPLIFIED_EXCEPTION_CODES
+	bool "Convert arch specific exception codes to K_ERR_CPU_EXCEPTION"
+	default y if ZTEST
+	help
+	  The same piece of faulty code (NULL dereference, etc) can result in
+	  a multitude of potential exception codes at the CPU level, depending
+	  upon whether addresses exist, an MPU is configured, the particular
+	  implementation of the CPU or any number of other reasons. Enabling
+	  this option collapses all the architecture specific exception codes
+	  down to the generic K_ERR_CPU_EXCEPTION, which makes testing code
+	  much more portable.
 
 endmenu # Interrupt configuration
 
@@ -559,6 +600,9 @@ config ARCH_SUPPORTS_COREDUMP
 config ARCH_SUPPORTS_ARCH_HW_INIT
 	bool
 
+config ARCH_SUPPORTS_ROM_START
+	bool
+
 config ARCH_HAS_EXTRA_EXCEPTION_INFO
 	bool
 
@@ -579,6 +623,9 @@ config ARCH_HAS_SUSPEND_TO_RAM
 	bool
 	help
 	  When selected, the architecture supports suspend-to-RAM (S2RAM).
+
+config ARCH_HAS_STACK_CANARIES_TLS
+	bool
 
 #
 # Other architecture related options

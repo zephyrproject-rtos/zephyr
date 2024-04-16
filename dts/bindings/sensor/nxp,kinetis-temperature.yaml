@@ -8,35 +8,35 @@ compatible: "nxp,kinetis-temperature"
 include: sensor-device.yaml
 
 properties:
-    io-channels:
-      required: true
-      description: ADC channels for temperature sensor and bandgap voltage
+  io-channels:
+    required: true
+    description: ADC channels for temperature sensor and bandgap voltage
 
-    io-channel-names:
-      required: true
-      description: name of each ADC channel (SENSOR or BANDGAP)
+  io-channel-names:
+    required: true
+    description: name of each ADC channel (SENSOR or BANDGAP)
 
-    bandgap-voltage:
-      type: int
-      required: true
-      description: Bandgap voltage in microvolts
+  bandgap-voltage:
+    type: int
+    required: true
+    description: Bandgap voltage in microvolts
 
-    vtemp25:
-      type: int
-      required: true
-      description: |
-          Temperature sensor voltage at 25 degrees Celcius in microvolts
+  vtemp25:
+    type: int
+    required: true
+    description: |
+        Temperature sensor voltage at 25 degrees Celcius in microvolts
 
-    sensor-slope-cold:
-      type: int
-      required: true
-      description: |
-          Temperature sensor slope in microvolts per degree Celsius for
-          temperatures below 25 degrees Celsius
+  sensor-slope-cold:
+    type: int
+    required: true
+    description: |
+        Temperature sensor slope in microvolts per degree Celsius for
+        temperatures below 25 degrees Celsius
 
-    sensor-slope-hot:
-      type: int
-      required: true
-      description: |
-          Temperature sensor slope in microvolts per degree Celsius for
-          temperatures above or equal to 25 degrees Celsius
+  sensor-slope-hot:
+    type: int
+    required: true
+    description: |
+        Temperature sensor slope in microvolts per degree Celsius for
+        temperatures above or equal to 25 degrees Celsius

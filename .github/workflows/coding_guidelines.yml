@@ -4,7 +4,7 @@ on: pull_request
 
 jobs:
   compliance_job:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Run coding guidelines checks on patch series (PR)
     steps:
     - name: Checkout the code
@@ -28,9 +28,7 @@ jobs:
     - name: Install Packages
       run: |
         sudo apt-get update
-        sudo apt-get install ocaml-base-nox
-        wget https://launchpad.net/~npalix/+archive/ubuntu/coccinelle/+files/coccinelle_1.0.8~20.04npalix1_amd64.deb
-        sudo dpkg -i coccinelle_1.0.8~20.04npalix1_amd64.deb
+        sudo apt-get install coccinelle
 
     - name: Run Coding Guildeines Checks
       continue-on-error: true

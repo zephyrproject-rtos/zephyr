@@ -18,9 +18,8 @@ void sys_arch_reboot(int type)
 	MAP_PRCMMCUReset(!!type);
 }
 
-static int ti_cc32xx_init(const struct device *arg)
+static int ti_cc32xx_init(void)
 {
-	ARG_UNUSED(arg);
 
 	/* Note: This function also performs CC3220 Initialization */
 	MAP_PRCMCC3200MCUInit();

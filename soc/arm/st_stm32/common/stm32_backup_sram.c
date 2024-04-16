@@ -32,7 +32,7 @@ static int stm32_backup_sram_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(clk, (clock_control_subsys_t *)&config->pclken);
+	ret = clock_control_on(clk, (clock_control_subsys_t)&config->pclken);
 	if (ret < 0) {
 		LOG_ERR("Could not initialize backup SRAM clock (%d)", ret);
 		return ret;

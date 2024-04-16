@@ -7,4 +7,7 @@ common:
   depends_on: netif
 tests:
   net.ipv4.fragment:
-    tags: net ipv4 fragment
+    tags:
+      - net
+      - ipv4
+      - fragment

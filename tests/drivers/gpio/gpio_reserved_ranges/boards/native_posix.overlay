@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2023 MUNIC SA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		compatible = "test-gpio-reserved-ranges";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio_1: gpio@deadbeef {
+			compatible = "vnd,gpio-device";
+			gpio-controller;
+			reg = < 0xdeadbeef 0x10>;
+			#gpio-cells = < 0x2 >;
+			status = "okay";
+
+			gpio-reserved-ranges =  <0  4>, <5  3>, <9  5>, <11 2>,
+						<15 2>, <18 2>, <21 1>, <23 1>,
+						<25 4>, <30 2>;
+		};
+
+		test_gpio_2: gpio@abcd1234 {
+			compatible = "vnd,gpio-device";
+			gpio-controller;
+			reg = < 0xabcd1234 0x10>;
+			#gpio-cells = < 0x2 >;
+			status = "okay";
+
+			gpio-reserved-ranges = <0 8>, <9 5>, <14 0>, <15 16>;
+		};
+
+		test_gpio_3: gpio@1234 {
+			compatible = "vnd,gpio-device";
+			gpio-controller;
+			reg = < 0x1234 0x10 >;
+			#gpio-cells = < 0x2 >;
+			status = "okay";
+
+			ngpios = <18>;
+			gpio-reserved-ranges = <0 0>, <3 2>, <10 1>;
+		};
+
+		test_gpio_4: gpio@5678 {
+			compatible = "vnd,gpio-device";
+			gpio-controller;
+			reg = < 0x5678 0x10 >;
+			#gpio-cells = < 0x2 >;
+			status = "okay";
+
+			ngpios = <16>;
+			gpio-reserved-ranges = <4 16>;
+		};
+
+		test_gpio_5: gpio@8765 {
+			compatible = "vnd,gpio-device";
+			gpio-controller;
+			reg = < 0x8765 0x10 >;
+			#gpio-cells = < 0x2 >;
+			status = "okay";
+
+			ngpios = <0>;
+			gpio-reserved-ranges = <0 0>;
+		};
+
+		test_gpio_6: gpio@3210 {
+			compatible = "vnd,gpio-device";
+			gpio-controller;
+			reg = < 0x3210 0x10 >;
+			#gpio-cells = < 0x2 >;
+			status = "okay";
+		};
+	};
+};

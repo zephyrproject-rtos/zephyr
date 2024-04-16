@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Filesystems Sample Application"
+
+config FS_SAMPLE_CREATE_SOME_ENTRIES
+	bool "When no files are found on mounted partition create some"
+	default y
+	help
+	  In case when no files could be listed, because there are none,
+	  "some.dir" directory and "other.txt" file will be created
+	  and list will run again to show them. This is useful when
+	  showing how file system works on non-SD devices like internal
+	  flash or (Q)SPI connected memories, where it is not possible to
+	  easily add files with use of other device.
+
+source "Kconfig.zephyr"

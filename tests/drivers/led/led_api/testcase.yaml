@@ -1,5 +1,7 @@
 tests:
   drivers.led_api.i2c:
-    tags: drivers led
+    tags:
+      - drivers
+      - led
     depends_on: led
     filter: dt_alias_exists("led-controller-0")

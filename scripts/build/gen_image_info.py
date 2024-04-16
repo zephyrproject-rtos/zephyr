@@ -66,7 +66,7 @@ def main():
     parser = argparse.ArgumentParser(description='''
     Process ELF file and extract image information.
     Create header file with extracted image information which can be included
-    in other build systems.''')
+    in other build systems.''', allow_abbrev=False)
 
     parser.add_argument('--header-file', required=True,
                         help="""Header file to write with image data.""")

@@ -8,24 +8,25 @@ compatible: "nuvoton,npcx-scfg"
 include: [base.yaml]
 
 properties:
-    reg:
-        required: true
+  reg:
+    required: true
 
-    "#alt-cells":
-        type: int
-        required: true
-        description: Number of items to expect in a SCFG ALT (Alternative controllers) specifier
+  "#alt-cells":
+    type: int
+    required: true
+    description: Number of items to expect in a SCFG ALT (Alternative controllers) specifier
 
-    "#lvol-cells":
-        type: int
-        required: true
-        description: Number of items to expect in a SCFG LV_GPIO_CTL (Low level IO controllers) specifier
+  "#lvol-cells":
+    type: int
+    required: true
+    description: |
+      Number of items to expect in a SCFG LV_GPIO_CTL (Low level IO controllers) specifier
 
 alt-cells:
-    - group
-    - bit
-    - inv
+  - group
+  - bit
+  - inv
 
 lvol-cells:
-    - ctrl
-    - bit
+  - ctrl
+  - bit

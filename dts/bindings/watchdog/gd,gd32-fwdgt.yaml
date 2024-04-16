@@ -8,26 +8,26 @@ compatible: "gd,gd32-fwdgt"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    initial-timeout-ms:
-      type: int
-      default: 250
-      description: |
-        Set timeout value in milliseconds.
-        The following equation gives the maximum timeout value
+  initial-timeout-ms:
+    type: int
+    default: 250
+    description: |
+      Set timeout value in milliseconds.
+      The following equation gives the maximum timeout value
 
-          timeout = (reload + 1) / (peripheral_freqency / prescaler).
+        timeout = (reload + 1) / (peripheral_freqency / prescaler).
 
-        where the maximum prescaler = 256 and the maximum reload = 4096.
-        The peripheral_frequency uses GD32_LOW_SPEED_IRC_FREQUENCY
-        that defined in modules/hal_gigadevice/Kconfig.
-        Validate the value is within a capable range at the compile time.
+      where the maximum prescaler = 256 and the maximum reload = 4096.
+      The peripheral_frequency uses GD32_LOW_SPEED_IRC_FREQUENCY
+      that defined in modules/hal_gigadevice/Kconfig.
+      Validate the value is within a capable range at the compile time.
 
-        The default value defined is close to the register reset value
-        from values that don't cause calculation errors in both cases of
-        the low-speed internal RC oscillator frequency is 32kHz or 40kHz.
+      The default value defined is close to the register reset value
+      from values that don't cause calculation errors in both cases of
+      the low-speed internal RC oscillator frequency is 32kHz or 40kHz.
 
-        0.25 [timeout in sec] = (1999 [reload] + 1) / (32000 [freq] / 4 [prescaler])
-        0.25 [timeout in sec] = (2499 [reload] + 1) / (40000 [freq] / 4 [prescaler])
+      0.25 [timeout in sec] = (1999 [reload] + 1) / (32000 [freq] / 4 [prescaler])
+      0.25 [timeout in sec] = (2499 [reload] + 1) / (40000 [freq] / 4 [prescaler])

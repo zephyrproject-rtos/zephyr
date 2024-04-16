@@ -18,7 +18,7 @@ variable.  This must be set to "y" to enable SMP features, otherwise
 a uniprocessor kernel will be built.  In general the platform default
 will have enabled this anywhere it's supported. When enabled, the
 number of physical CPUs available is visible at build time as
-:kconfig:option:`CONFIG_MP_NUM_CPUS`.  Likewise, the default for this will be the
+:kconfig:option:`CONFIG_MP_MAX_NUM_CPUS`.  Likewise, the default for this will be the
 number of available CPUs on the platform and it is not expected that
 typical apps will change it.  But it is legal and supported to set
 this to a smaller (but obviously not larger) number for special

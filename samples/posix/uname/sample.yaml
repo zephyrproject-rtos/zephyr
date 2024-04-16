@@ -1,0 +1,22 @@
+sample:
+  description: posix uname sample
+  name: posix uname
+common:
+  tags: posix
+  filter: not CONFIG_ARCH_POSIX
+  integration_platforms:
+    - native_posix_64
+    - qemu_riscv64
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "sysname\\[7\\]: Zephyr"
+      - "nodename\\[\\d+\\]: .*"
+      - "release\\[\\d+\\]: \\d+\\.\\d+\\.\\d+"
+      - "version\\[\\d+\\]: .*"
+      - "machine\\[\\d+\\]: .*"
+tests:
+  sample.posix.uname:
+    tags: uname

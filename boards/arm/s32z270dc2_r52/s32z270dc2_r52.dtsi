@@ -1,70 +1,51 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arm/nxp/nxp_s32z27x_r52.dtsi>
-#include "s32z270dc2_r52-pinctrl.dtsi"
+#include "s32z270dc2_r52-pinctrl-common.dtsi"
 
-&uart0 {
-	pinctrl-0 = <&uart0_default>;
-	pinctrl-names = "default";
+&swt0 {
 	status = "okay";
 };
 
-&spi0 {
-	clock-frequency = <100000000>;
+&emdio {
+	pinctrl-0 = <&emdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy0: ethernet-phy@7 {
+		compatible = "ethernet-phy";
+		reg = <0x7>;
+		status = "okay";
+	};
 };
 
-&spi1 {
-	clock-frequency = <100000000>;
+&enetc_psi0 {
+	local-mac-address = [00 00 00 01 02 00];
+	pinctrl-0 = <&eth0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <300000000>;
+	phy-handle = <&phy0>;
+	status = "okay";
 };
 
-&spi2 {
-	clock-frequency = <100000000>;
+&can0 {
+	pinctrl-0 = <&can0_default>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+	sample-point = <875>;
+	bus-speed-data = <1000000>;
+	sample-point-data = <875>;
+	status = "okay";
 };
 
-&spi3 {
-	clock-frequency = <120000000>;
-};
-
-&spi4 {
-	clock-frequency = <120000000>;
-};
-
-&spi5 {
-	clock-frequency = <120000000>;
-};
-
-&spi6 {
-	clock-frequency = <120000000>;
-};
-
-&spi7 {
-	clock-frequency = <100000000>;
-};
-
-&spi8 {
-	clock-frequency = <100000000>;
-};
-
-&spi9 {
-	clock-frequency = <100000000>;
-};
-
-&stm0 {
-	clock-frequency = <133333333>;
-};
-
-&stm1 {
-	clock-frequency = <133333333>;
-};
-
-&stm2 {
-	clock-frequency = <133333333>;
-};
-
-&stm3 {
-	clock-frequency = <133333333>;
+&can1 {
+	pinctrl-0 = <&can1_default>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+	sample-point = <875>;
+	bus-speed-data = <1000000>;
+	sample-point-data = <875>;
 };

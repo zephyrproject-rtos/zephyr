@@ -26,7 +26,6 @@
  * [Experimental] Users should note that the APIs can change as a part of ongoing development.
  */
 
-#include <zephyr/types.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
 #ifdef __cplusplus
@@ -347,6 +346,18 @@ int bt_aics_type_get(struct bt_aics *inst);
 int bt_aics_status_get(struct bt_aics *inst);
 
 /**
+ * @brief Disable mute in the Audio Input Control Service.
+ *
+ * Calling bt_aics_unmute() or bt_aics_mute() will enable
+ * mute again and set the mute state to either unmuted or muted.
+ *
+ * @param inst          The instance pointer.
+ *
+ * @return 0 on success, errno value on fail.
+ */
+int bt_aics_disable_mute(struct bt_aics *inst);
+
+/**
  * @brief Unmute the Audio Input Control Service input.
  *
  * @param inst          The instance pointer.
@@ -363,6 +374,27 @@ int bt_aics_unmute(struct bt_aics *inst);
  * @return 0 on success, GATT error value on fail.
  */
 int bt_aics_mute(struct bt_aics *inst);
+
+/**
+ * @brief Set manual only gain mode in Audio Input Control Service.
+ *
+ * @param inst          The instance pointer.
+ *
+ * @return 0 on success, errno value on fail.
+ */
+int bt_aics_gain_set_manual_only(struct bt_aics *inst);
+
+/**
+ * @brief Set automatic only gain mode in Audio Input Control Service.
+ *
+ * Using this function and enabling automatic only gain disables
+ * setting the gain with bt_aics_gain_set
+ *
+ * @param inst          The instance pointer.
+ *
+ * @return 0 on success, errno value on fail.
+ */
+int bt_aics_gain_set_auto_only(struct bt_aics *inst);
 
 /**
  * @brief Set input gain to manual.

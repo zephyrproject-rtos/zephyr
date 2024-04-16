@@ -225,13 +225,13 @@ int fifo_test(void)
 			 NULL, INT_TO_POINTER(number_of_loops / 2U), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 	for (i = 0; i < number_of_loops / 2U; i++) {
-		intptr_t element[2];
+		intptr_t more_element[2];
 		intptr_t *pelement;
 
-		element[1] = i;
-		k_fifo_put(&fifo1, element);
-		element[1] = i;
-		k_fifo_put(&fifo1, element);
+		more_element[1] = i;
+		k_fifo_put(&fifo1, more_element);
+		more_element[1] = i;
+		k_fifo_put(&fifo1, more_element);
 
 		pelement = k_fifo_get(&fifo2, K_FOREVER);
 		if (pelement[1] != i) {

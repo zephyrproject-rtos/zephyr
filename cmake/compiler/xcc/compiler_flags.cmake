@@ -12,3 +12,6 @@ set_compiler_property(PROPERTY warning_error_misra_sane)
 
 # XCC does not support -fno-pic and -fno-pie
 set_compiler_property(PROPERTY no_position_independent "")
+
+# Remove after testing that -Wshadow works
+set_compiler_property(PROPERTY warning_shadow_variables)

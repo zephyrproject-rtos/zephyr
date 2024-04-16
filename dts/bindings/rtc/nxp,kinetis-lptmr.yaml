@@ -8,24 +8,24 @@ compatible: "nxp,kinetis-lptmr"
 include: rtc.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    clock-frequency:
-      required: true
+  clock-frequency:
+    required: true
 
-    prescaler:
-      required: true
+  prescaler:
+    required: true
 
-    clk-source:
-      type: int
-      required: true
-      description: Prescaler clock source (0 to 3)
+  clk-source:
+    type: int
+    required: true
+    description: Prescaler clock source (0 to 3)
 
-    input-pin:
-      type: int
-      description: Pulse counter input pin (0 to 3).
+  input-pin:
+    type: int
+    description: Pulse counter input pin (0 to 3).
 
-    active-low:
-      type: boolean
-      description: Pulse counter input pin is active-low
+  active-low:
+    type: boolean
+    description: Pulse counter input pin is active-low

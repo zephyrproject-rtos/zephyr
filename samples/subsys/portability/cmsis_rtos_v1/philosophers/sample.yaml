@@ -13,9 +13,10 @@ common:
     ordered: false
     regex:
       - ".*STARVING.*"
+      - ".*HOLDING.*"
+      - ".*EATING.*"
       - ".*DROPPED ONE FORK.*"
       - ".*THINKING.*"
-      - ".*EATING.*"
 tests:
   sample.portability.cmsis_rtos_v1.philosopher:
     tags: cmsis_rtos

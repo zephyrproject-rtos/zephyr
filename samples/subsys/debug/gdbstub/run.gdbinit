@@ -1,6 +1,6 @@
 set pagination off
-symbol-file zephyr/zephyr.elf
-target remote 127.0.0.1:1234
+#symbol-file build/zephyr/zephyr.elf
+target remote :5678
 b test
 b main.c:33
 c

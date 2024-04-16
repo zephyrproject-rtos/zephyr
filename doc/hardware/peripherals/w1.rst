@@ -1,7 +1,7 @@
 .. _w1_api:
 
-W1: Dallas 1-Wire Interface
-###########################
+1-Wire Bus
+##########
 
 Overview
 ********

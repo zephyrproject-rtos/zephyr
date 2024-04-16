@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/check.h>
 
@@ -50,8 +51,6 @@
 LOG_MODULE_REGISTER(bt_gatt);
 
 #define SC_TIMEOUT	K_MSEC(10)
-#define CCC_STORE_DELAY	K_SECONDS(1)
-
 #define DB_HASH_TIMEOUT	K_MSEC(10)
 
 static uint16_t last_static_handle;
@@ -86,8 +85,14 @@ static sys_slist_t callback_list;
 static sys_slist_t db;
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 
-static atomic_t init;
-static atomic_t service_init;
+enum gatt_global_flags {
+	GATT_INITIALIZED,
+	GATT_SERVICE_INITIALIZED,
+
+	GATT_NUM_FLAGS,
+};
+
+static ATOMIC_DEFINE(gatt_flags, GATT_NUM_FLAGS);
 
 static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
@@ -279,11 +284,12 @@ BUILD_ASSERT(sizeof(struct sc_data) == sizeof(sc_cfg[0].data));
 enum {
 	SC_RANGE_CHANGED,    /* SC range changed */
 	SC_INDICATE_PENDING, /* SC indicate pending */
+	SC_LOAD,	     /* SC has been loaded from settings */
 
-#if defined(CONFIG_BT_GATT_CACHING)
 	DB_HASH_VALID,       /* Database hash needs to be calculated */
 	DB_HASH_LOAD,        /* Database hash loaded from settings. */
-#endif
+	DB_HASH_LOAD_PROC,   /* DB hash loaded from settings has been processed. */
+
 	/* Total number of flags - must be at the end of the enum */
 	SC_NUM_FLAGS,
 };
@@ -326,28 +332,16 @@ static struct gatt_sc_cfg *find_sc_cfg(uint8_t id, const bt_addr_le_t *addr)
 
 static void sc_store(struct gatt_sc_cfg *cfg)
 {
-	char key[BT_SETTINGS_KEY_MAX];
 	int err;
 
-	if (cfg->id) {
-		char id_str[4];
-
-		u8_to_dec(id_str, sizeof(id_str), cfg->id);
-		bt_settings_encode_key(key, sizeof(key), "sc",
-				       &cfg->peer, id_str);
-	} else {
-		bt_settings_encode_key(key, sizeof(key), "sc",
-				       &cfg->peer, NULL);
-	}
-
-	err = settings_save_one(key, (char *)&cfg->data, sizeof(cfg->data));
+	err = bt_settings_store_sc(cfg->id, &cfg->peer, &cfg->data, sizeof(cfg->data));
 	if (err) {
 		LOG_ERR("failed to store SC (err %d)", err);
 		return;
 	}
 
-	LOG_DBG("stored SC for %s (%s, 0x%04x-0x%04x)", bt_addr_le_str(&cfg->peer), key,
-		cfg->data.start, cfg->data.end);
+	LOG_DBG("stored SC for %s (0x%04x-0x%04x)", bt_addr_le_str(&cfg->peer), cfg->data.start,
+		cfg->data.end);
 }
 
 static void clear_sc_cfg(struct gatt_sc_cfg *cfg)
@@ -366,25 +360,13 @@ static int bt_gatt_clear_sc(uint8_t id, const bt_addr_le_t *addr)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		char key[BT_SETTINGS_KEY_MAX];
 		int err;
 
-		if (cfg->id) {
-			char id_str[4];
-
-			u8_to_dec(id_str, sizeof(id_str), cfg->id);
-			bt_settings_encode_key(key, sizeof(key), "sc",
-					       &cfg->peer, id_str);
-		} else {
-			bt_settings_encode_key(key, sizeof(key), "sc",
-					       &cfg->peer, NULL);
-		}
-
-		err = settings_delete(key);
+		err = bt_settings_delete_sc(cfg->id, &cfg->peer);
 		if (err) {
 			LOG_ERR("failed to delete SC (err %d)", err);
 		} else {
-			LOG_DBG("deleted SC for %s (%s)", bt_addr_le_str(&cfg->peer), key);
+			LOG_DBG("deleted SC for %s", bt_addr_le_str(&cfg->peer));
 		}
 	}
 
@@ -502,6 +484,9 @@ static struct _bt_gatt_ccc sc_ccc = BT_GATT_CCC_INITIALIZER(NULL,
 							    sc_ccc_cfg_write,
 							    NULL);
 
+/* Do not shuffle the values in this enum, they are used as bit offsets when
+ * saving the CF flags to NVS (i.e. NVS persists between FW upgrades).
+ */
 enum {
 	CF_CHANGE_AWARE,	/* Client is changed aware */
 	CF_DB_HASH_READ,	/* The client has read the database hash */
@@ -515,15 +500,16 @@ enum {
 #define CF_BIT_NOTIFY_MULTI	2
 #define CF_BIT_LAST		CF_BIT_NOTIFY_MULTI
 
-#define CF_NUM_BITS             (CF_BIT_LAST + 1)
-#define CF_NUM_BYTES            ((CF_BIT_LAST / 8) + 1)
+#define CF_NUM_BITS		(CF_BIT_LAST + 1)
+#define CF_NUM_BYTES		((CF_BIT_LAST / 8) + 1)
+#define CF_FLAGS_STORE_LEN	1
 
 #define CF_ROBUST_CACHING(_cfg) (_cfg->data[0] & BIT(CF_BIT_ROBUST_CACHING))
 #define CF_EATT(_cfg) (_cfg->data[0] & BIT(CF_BIT_EATT))
 #define CF_NOTIFY_MULTI(_cfg) (_cfg->data[0] & BIT(CF_BIT_NOTIFY_MULTI))
 
 struct gatt_cf_cfg {
-	uint8_t                    id;
+	uint8_t			id;
 	bt_addr_le_t		peer;
 	uint8_t			data[CF_NUM_BYTES];
 	ATOMIC_DEFINE(flags, CF_NUM_FLAGS);
@@ -544,7 +530,70 @@ static void clear_cf_cfg(struct gatt_cf_cfg *cfg)
 	atomic_set(cfg->flags, 0);
 }
 
+enum delayed_store_flags {
+	DELAYED_STORE_CCC,
+	DELAYED_STORE_CF,
+	DELAYED_STORE_NUM_FLAGS
+};
+
+#if defined(CONFIG_BT_SETTINGS_DELAYED_STORE)
+static void gatt_delayed_store_enqueue(uint8_t id, const bt_addr_le_t *peer_addr,
+				       enum delayed_store_flags flag);
+#endif
+
 #if defined(CONFIG_BT_GATT_CACHING)
+static bool set_change_aware_no_store(struct gatt_cf_cfg *cfg, bool aware)
+{
+	bool changed;
+
+	if (aware) {
+		changed = !atomic_test_and_set_bit(cfg->flags, CF_CHANGE_AWARE);
+	} else {
+		changed = atomic_test_and_clear_bit(cfg->flags, CF_CHANGE_AWARE);
+	}
+
+	LOG_DBG("peer is now change-%saware", aware ? "" : "un");
+
+	return changed;
+}
+
+static void set_change_aware(struct gatt_cf_cfg *cfg, bool aware)
+{
+	bool changed = set_change_aware_no_store(cfg, aware);
+
+#if defined(CONFIG_BT_SETTINGS_DELAYED_STORE)
+	if (changed) {
+		gatt_delayed_store_enqueue(cfg->id, &cfg->peer, DELAYED_STORE_CF);
+	}
+#else
+	(void)changed;
+#endif
+}
+
+static int bt_gatt_store_cf(uint8_t id, const bt_addr_le_t *peer);
+
+static void set_all_change_unaware(void)
+{
+#if defined(CONFIG_BT_SETTINGS)
+	/* Mark all bonded peers as change-unaware.
+	 * - Can be called when not in a connection with said peers
+	 * - Doesn't have any effect when no bonds are in memory. This is the
+	 *   case when the device has just booted and `settings_load` hasn't yet
+	 *   been called.
+	 * - Expensive to call, as it will write the new status to settings
+	 *   right away.
+	 */
+	for (size_t i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
+		struct gatt_cf_cfg *cfg = &cf_cfg[i];
+
+		if (!bt_addr_le_eq(&cfg->peer, BT_ADDR_LE_ANY)) {
+			set_change_aware_no_store(cfg, false);
+			bt_gatt_store_cf(cfg->id, &cfg->peer);
+		}
+	}
+#endif	/* CONFIG_BT_SETTINGS */
+}
+
 static struct gatt_cf_cfg *find_cf_cfg(struct bt_conn *conn)
 {
 	int i;
@@ -638,7 +687,7 @@ static ssize_t cf_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	bt_addr_le_copy(&cfg->peer, &conn->le.dst);
 	cfg->id = conn->id;
-	atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
+	set_change_aware(cfg, true);
 
 	return len;
 }
@@ -760,17 +809,19 @@ static uint8_t gen_hash_m(const struct bt_gatt_attr *attr, uint16_t handle,
 
 static void db_hash_store(void)
 {
+#if defined(CONFIG_BT_SETTINGS)
 	int err;
 
-	err = settings_save_one("bt/hash", &db_hash.hash, sizeof(db_hash.hash));
+	err = bt_settings_store_hash(&db_hash.hash, sizeof(db_hash.hash));
 	if (err) {
 		LOG_ERR("Failed to save Database Hash (err %d)", err);
 	}
 
 	LOG_DBG("Database Hash stored");
+#endif	/* CONFIG_BT_SETTINGS */
 }
 
-static void db_hash_gen(bool store)
+static void db_hash_gen(void)
 {
 	uint8_t key[16] = {};
 	struct tc_aes_key_sched_struct sched;
@@ -799,10 +850,6 @@ static void db_hash_gen(bool store)
 
 	LOG_HEXDUMP_DBG(db_hash.hash, sizeof(db_hash.hash), "Hash: ");
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
-		db_hash_store();
-	}
-
 	atomic_set_bit(gatt_sc.flags, DB_HASH_VALID);
 }
 
@@ -810,13 +857,41 @@ static void db_hash_gen(bool store)
 static void sc_indicate(uint16_t start, uint16_t end);
 #endif
 
-static void db_hash_process(struct k_work *work)
+static void do_db_hash(void)
 {
+	bool new_hash = !atomic_test_bit(gatt_sc.flags, DB_HASH_VALID);
+
+	if (new_hash) {
+		db_hash_gen();
+	}
+
 #if defined(CONFIG_BT_SETTINGS)
-	if (atomic_test_and_clear_bit(gatt_sc.flags, DB_HASH_LOAD)) {
-		if (!atomic_test_bit(gatt_sc.flags, DB_HASH_VALID)) {
-			db_hash_gen(false);
+	bool hash_loaded_from_settings =
+		atomic_test_bit(gatt_sc.flags, DB_HASH_LOAD);
+	bool already_processed =
+		atomic_test_bit(gatt_sc.flags, DB_HASH_LOAD_PROC);
+
+	if (!hash_loaded_from_settings) {
+		/* we want to generate the hash, but not overwrite the hash
+		 * stored in settings, that we haven't yet loaded.
+		 */
+		return;
+	}
+
+	if (already_processed) {
+		/* hash has been loaded from settings and we have already
+		 * executed the special case below once. we can now safely save
+		 * the calculated hash to settings (if it has changed).
+		 */
+		if (new_hash) {
+			set_all_change_unaware();
+			db_hash_store();
 		}
+	} else {
+		/* this is only supposed to run once, on bootup, after the hash
+		 * has been loaded from settings.
+		 */
+		atomic_set_bit(gatt_sc.flags, DB_HASH_LOAD_PROC);
 
 		/* Check if hash matches then skip SC update */
 		if (!memcmp(db_hash.stored_hash, db_hash.hash,
@@ -838,12 +913,19 @@ static void db_hash_process(struct k_work *work)
 		 */
 		sc_indicate(0x0001, 0xffff);
 
-		/* Hash did not match, overwrite with current hash */
+		/* Hash did not match, overwrite with current hash.
+		 * Also immediately set all peers (in settings) as
+		 * change-unaware.
+		 */
+		set_all_change_unaware();
 		db_hash_store();
-		return;
 	}
 #endif /* defined(CONFIG_BT_SETTINGS) */
-	db_hash_gen(true);
+}
+
+static void db_hash_process(struct k_work *work)
+{
+	do_db_hash();
 }
 
 static ssize_t db_hash_read(struct bt_conn *conn,
@@ -857,7 +939,11 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 	 */
 	(void)k_work_cancel_delayable_sync(&db_hash.work, &db_hash.sync);
 	if (!atomic_test_bit(gatt_sc.flags, DB_HASH_VALID)) {
-		db_hash_gen(true);
+		db_hash_gen();
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			set_all_change_unaware();
+			db_hash_store();
+		}
 	}
 
 	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2347:
@@ -915,16 +1001,19 @@ static ssize_t sf_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 #endif /* CONFIG_BT_EATT */
 #endif /* CONFIG_BT_GATT_CACHING */
 
-static int bt_gatt_store_cf(struct bt_conn *conn)
+static struct gatt_cf_cfg *find_cf_cfg_by_addr(uint8_t id,
+					       const bt_addr_le_t *addr);
+
+static int bt_gatt_store_cf(uint8_t id, const bt_addr_le_t *peer)
 {
 #if defined(CONFIG_BT_GATT_CACHING)
 	struct gatt_cf_cfg *cfg;
-	char key[BT_SETTINGS_KEY_MAX];
+	char dst[CF_NUM_BYTES + CF_FLAGS_STORE_LEN];
 	char *str;
 	size_t len;
 	int err;
 
-	cfg = find_cf_cfg(conn);
+	cfg = find_cf_cfg_by_addr(id, peer);
 	if (!cfg) {
 		/* No cfg found, just clear it */
 		LOG_DBG("No config for CF");
@@ -934,33 +1023,33 @@ static int bt_gatt_store_cf(struct bt_conn *conn)
 		str = (char *)cfg->data;
 		len = sizeof(cfg->data);
 
-		if (conn->id) {
-			char id_str[4];
+		/* add the CF data to a temp array */
+		memcpy(dst, str, len);
 
-			u8_to_dec(id_str, sizeof(id_str), conn->id);
-			bt_settings_encode_key(key, sizeof(key), "cf",
-					       &conn->le.dst, id_str);
-		}
+		/* add the change-aware flag */
+		bool is_change_aware = atomic_test_bit(cfg->flags, CF_CHANGE_AWARE);
+
+		dst[len] = 0;
+		WRITE_BIT(dst[len], CF_CHANGE_AWARE, is_change_aware);
+		len += CF_FLAGS_STORE_LEN;
+
+		str = dst;
 	}
 
-	if (!cfg || !conn->id) {
-		bt_settings_encode_key(key, sizeof(key), "cf",
-				       &conn->le.dst, NULL);
-	}
-
-	err = settings_save_one(key, str, len);
+	err = bt_settings_store_cf(id, peer, str, len);
 	if (err) {
 		LOG_ERR("Failed to store Client Features (err %d)", err);
 		return err;
 	}
 
-	LOG_DBG("Stored CF for %s (%s)", bt_addr_le_str(&conn->le.dst), key);
+	LOG_DBG("Stored CF for %s", bt_addr_le_str(peer));
+	LOG_HEXDUMP_DBG(str, len, "Saved data");
 #endif /* CONFIG_BT_GATT_CACHING */
 	return 0;
 
 }
 
-#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP) && defined(CONFIG_BT_GATT_CLIENT)
+#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP)
 /** Struct used to store both the id and the random address of a device when replacing
  * random addresses in the ccc attribute's cfg array with the device's id address after
  * pairing complete.
@@ -1003,14 +1092,35 @@ static void bt_gatt_identity_resolved(struct bt_conn *conn, const bt_addr_le_t *
 		.private_addr = private_addr,
 		.id_addr      = id_addr
 	};
+	bool is_bonded = bt_addr_le_is_bonded(conn->id, &conn->le.dst);
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, convert_to_id_on_match, &user_data);
 
-	/* Store the ccc and cf data */
-	bt_gatt_store_ccc(conn->id, &(conn->le.dst));
-	bt_gatt_store_cf(conn);
+	/* Store the ccc */
+	if (is_bonded) {
+		bt_gatt_store_ccc(conn->id, &conn->le.dst);
+	}
+
+	/* Update the cf addresses and store it if we get a match */
+	struct gatt_cf_cfg *cfg = find_cf_cfg_by_addr(conn->id, private_addr);
+
+	if (cfg) {
+		bt_addr_le_copy(&cfg->peer, id_addr);
+		if (is_bonded) {
+			bt_gatt_store_cf(conn->id, &conn->le.dst);
+		}
+	}
 }
-#endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP && CONFIG_BT_GATT_CLIENT */
+
+static void bt_gatt_pairing_complete(struct bt_conn *conn, bool bonded)
+{
+	if (bonded) {
+		/* Store the ccc and cf data */
+		bt_gatt_store_ccc(conn->id, &(conn->le.dst));
+		bt_gatt_store_cf(conn->id, &conn->le.dst);
+	}
+}
+#endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
 
 BT_GATT_SERVICE_DEFINE(_1_gatt_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GATT),
@@ -1162,8 +1272,7 @@ static void sc_indicate_rsp(struct bt_conn *conn,
 	if (bt_att_fixed_chan_only(conn)) {
 		cfg = find_cf_cfg(conn);
 		if (cfg && CF_ROBUST_CACHING(cfg)) {
-			atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
-			LOG_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
+			set_change_aware(cfg, true);
 		}
 	}
 #endif /* CONFIG_BT_GATT_CACHING */
@@ -1211,77 +1320,133 @@ static void clear_ccc_cfg(struct bt_gatt_ccc_cfg *cfg)
 	cfg->value = 0U;
 }
 
-#if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
-static struct gatt_ccc_store {
-	struct bt_conn *conn_list[CONFIG_BT_MAX_CONN];
+static void gatt_store_ccc_cf(uint8_t id, const bt_addr_le_t *peer_addr);
+
+struct ds_peer {
+	uint8_t id;
+	bt_addr_le_t peer;
+
+	ATOMIC_DEFINE(flags, DELAYED_STORE_NUM_FLAGS);
+};
+
+IF_ENABLED(CONFIG_BT_SETTINGS_DELAYED_STORE, (
+static struct gatt_delayed_store {
+	struct ds_peer peer_list[CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN];
 	struct k_work_delayable work;
-} gatt_ccc_store;
+} gatt_delayed_store;
+))
 
-static bool gatt_ccc_conn_is_queued(struct bt_conn *conn)
+static struct ds_peer *gatt_delayed_store_find(uint8_t id,
+					       const bt_addr_le_t *peer_addr)
 {
-	return (conn == gatt_ccc_store.conn_list[bt_conn_index(conn)]);
+	IF_ENABLED(CONFIG_BT_SETTINGS_DELAYED_STORE, ({
+		struct ds_peer *el;
+
+		for (size_t i = 0; i < ARRAY_SIZE(gatt_delayed_store.peer_list); i++) {
+			el = &gatt_delayed_store.peer_list[i];
+			if (el->id == id &&
+			bt_addr_le_eq(peer_addr, &el->peer)) {
+				return el;
+			}
+		}
+	}))
+
+	return NULL;
 }
 
-static void gatt_ccc_conn_unqueue(struct bt_conn *conn)
+static void gatt_delayed_store_free(struct ds_peer *el)
 {
-	uint8_t index = bt_conn_index(conn);
-
-	if (gatt_ccc_store.conn_list[index] != NULL) {
-		bt_conn_unref(gatt_ccc_store.conn_list[index]);
-		gatt_ccc_store.conn_list[index] = NULL;
+	if (el) {
+		el->id = 0;
+		memset(&el->peer, 0, sizeof(el->peer));
+		atomic_set(el->flags, 0);
 	}
 }
 
-static void gatt_ccc_conn_enqueue(struct bt_conn *conn)
+#if defined(CONFIG_BT_SETTINGS_DELAYED_STORE)
+static struct ds_peer *gatt_delayed_store_alloc(uint8_t id,
+						const bt_addr_le_t *peer_addr)
 {
-	if ((!gatt_ccc_conn_is_queued(conn)) &&
-	    bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
-		/* Store the connection with the same index it has in
-		 * the conns array
+	struct ds_peer *el;
+
+	for (size_t i = 0; i < ARRAY_SIZE(gatt_delayed_store.peer_list); i++) {
+		el = &gatt_delayed_store.peer_list[i];
+
+		/* Checking for the flags is cheaper than a memcmp for the
+		 * address, so we use that to signal that a given slot is
+		 * free.
 		 */
-		gatt_ccc_store.conn_list[bt_conn_index(conn)] =
-			bt_conn_ref(conn);
+		if (atomic_get(el->flags) == 0) {
+			bt_addr_le_copy(&el->peer, peer_addr);
+			el->id = id;
 
-		k_work_reschedule(&gatt_ccc_store.work, CCC_STORE_DELAY);
-	}
-}
-
-static bool gatt_ccc_conn_queue_is_empty(void)
-{
-	for (size_t i = 0; i < CONFIG_BT_MAX_CONN; i++) {
-		if (gatt_ccc_store.conn_list[i]) {
-			return false;
+			return el;
 		}
 	}
 
-	return true;
+	return NULL;
 }
 
-static void ccc_delayed_store(struct k_work *work)
+static void gatt_delayed_store_enqueue(uint8_t id, const bt_addr_le_t *peer_addr,
+				       enum delayed_store_flags flag)
 {
+	bool bonded = bt_addr_le_is_bonded(id, peer_addr);
+	struct ds_peer *el = gatt_delayed_store_find(id, peer_addr);
+
+	if (bonded) {
+		if (el == NULL) {
+			el = gatt_delayed_store_alloc(id, peer_addr);
+			__ASSERT(el != NULL, "Can't save CF / CCC to flash");
+		}
+
+		atomic_set_bit(el->flags, flag);
+
+		k_work_reschedule(&gatt_delayed_store.work,
+				  K_MSEC(CONFIG_BT_SETTINGS_DELAYED_STORE_MS));
+	}
+}
+
+static void delayed_store(struct k_work *work)
+{
+	struct ds_peer *el;
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct gatt_ccc_store *ccc_store =
-		CONTAINER_OF(dwork, struct gatt_ccc_store, work);
+	struct gatt_delayed_store *store =
+		CONTAINER_OF(dwork, struct gatt_delayed_store, work);
 
-	for (size_t i = 0; i < CONFIG_BT_MAX_CONN; i++) {
-		struct bt_conn *conn = ccc_store->conn_list[i];
+	for (size_t i = 0; i < ARRAY_SIZE(gatt_delayed_store.peer_list); i++) {
+		el = &store->peer_list[i];
 
-		if (!conn) {
-			continue;
+		gatt_store_ccc_cf(el->id, &el->peer);
+	}
+}
+#endif	/* CONFIG_BT_SETTINGS_DELAYED_STORE */
+
+static void gatt_store_ccc_cf(uint8_t id, const bt_addr_le_t *peer_addr)
+{
+	struct ds_peer *el = gatt_delayed_store_find(id, peer_addr);
+
+	if (bt_addr_le_is_bonded(id, peer_addr)) {
+		if (!IS_ENABLED(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE) ||
+		    (IS_ENABLED(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE) && el &&
+		     atomic_test_and_clear_bit(el->flags, DELAYED_STORE_CCC))) {
+			bt_gatt_store_ccc(id, peer_addr);
 		}
 
-		if (bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
-			ccc_store->conn_list[i] = NULL;
-			bt_gatt_store_ccc(conn->id, &conn->le.dst);
-			bt_conn_unref(conn);
+		if (!IS_ENABLED(CONFIG_BT_SETTINGS_CF_STORE_ON_WRITE) ||
+		    (IS_ENABLED(CONFIG_BT_SETTINGS_CF_STORE_ON_WRITE) && el &&
+		     atomic_test_and_clear_bit(el->flags, DELAYED_STORE_CF))) {
+			bt_gatt_store_cf(id, peer_addr);
+		}
+
+		if (el && atomic_get(el->flags) == 0) {
+			gatt_delayed_store_free(el);
 		}
 	}
 }
-#endif
 
 static void bt_gatt_service_init(void)
 {
-	if (!atomic_cas(&service_init, 0, 1)) {
+	if (atomic_test_and_set_bit(gatt_flags, GATT_SERVICE_INITIALIZED)) {
 		return;
 	}
 
@@ -1292,7 +1457,7 @@ static void bt_gatt_service_init(void)
 
 void bt_gatt_init(void)
 {
-	if (!atomic_cas(&init, 0, 1)) {
+	if (atomic_test_and_set_bit(gatt_flags, GATT_INITIALIZED)) {
 		return;
 	}
 
@@ -1323,21 +1488,32 @@ void bt_gatt_init(void)
 	}
 #endif /* defined(CONFIG_BT_GATT_SERVICE_CHANGED) */
 
-#if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
-	k_work_init_delayable(&gatt_ccc_store.work, ccc_delayed_store);
+#if defined(CONFIG_BT_SETTINGS_DELAYED_STORE)
+	k_work_init_delayable(&gatt_delayed_store.work, delayed_store);
 #endif
 
-#if defined(CONFIG_BT_GATT_CLIENT) && defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP)
+	static struct bt_conn_auth_info_cb gatt_conn_auth_info_cb = {
+		.pairing_complete = bt_gatt_pairing_complete,
+	};
+
+	/* Register the gatt module for authentication info callbacks so it can
+	 * be notified when pairing has completed. This is used to enable CCC
+	 * and CF storage on pairing complete.
+	 */
+	bt_conn_auth_info_cb_register(&gatt_conn_auth_info_cb);
+
 	static struct bt_conn_cb gatt_conn_cb = {
 		.identity_resolved = bt_gatt_identity_resolved,
 	};
 
-	/* Register the gatt module for connection callbacks so it can be
-	 * notified when pairing has completed. This is used to enable CCC and
-	 * CF storage on pairing complete.
+	/* Also update the address of CCC or CF writes that happened before the
+	 * identity resolution. Note that to increase security in the future, we
+	 * might want to explicitly not do this and treat a bonded device as a
+	 * brand-new peer.
 	 */
 	bt_conn_cb_register(&gatt_conn_cb);
-#endif /* CONFIG_BT_GATT_CLIENT && CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
+#endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
 }
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB) || \
@@ -1407,10 +1583,7 @@ static void db_changed(void)
 			}
 
 			atomic_clear_bit(cfg->flags, CF_DB_HASH_READ);
-			if (atomic_test_and_clear_bit(cfg->flags,
-						      CF_CHANGE_AWARE)) {
-				LOG_DBG("%s change-unaware", bt_addr_le_str(&cfg->peer));
-			}
+			set_change_aware(cfg, false);
 		}
 	}
 #endif
@@ -1431,7 +1604,9 @@ static void gatt_unregister_ccc(struct _bt_gatt_ccc *ccc)
 			if (conn) {
 				if (conn->state == BT_CONN_CONNECTED) {
 #if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
-					gatt_ccc_conn_enqueue(conn);
+					gatt_delayed_store_enqueue(conn->id,
+								   &conn->le.dst,
+								   DELAYED_STORE_CCC);
 #endif
 					store = false;
 				}
@@ -1474,6 +1649,13 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	__ASSERT(svc->attrs, "invalid parameters\n");
 	__ASSERT(svc->attr_count, "invalid parameters\n");
 
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
+	    atomic_test_bit(gatt_flags, GATT_INITIALIZED) &&
+	    !atomic_test_bit(gatt_sc.flags, SC_LOAD)) {
+		LOG_ERR("Can't register service after init and before settings are loaded.");
+		return -EINVAL;
+	}
+
 	/* Init GATT core services */
 	bt_gatt_service_init();
 
@@ -1492,7 +1674,7 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	}
 
 	/* Don't submit any work until the stack is initialized */
-	if (!atomic_get(&init)) {
+	if (!atomic_test_bit(gatt_flags, GATT_INITIALIZED)) {
 		k_sched_unlock();
 		return 0;
 	}
@@ -1522,7 +1704,7 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 	}
 
 	/* Don't submit any work until the stack is initialized */
-	if (!atomic_get(&init)) {
+	if (!atomic_test_bit(gatt_flags, GATT_INITIALIZED)) {
 		k_sched_unlock();
 		return 0;
 	}
@@ -1998,7 +2180,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	if (value_changed) {
 #if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
 		/* Enqueue CCC store if value has changed for the connection */
-		gatt_ccc_conn_enqueue(conn);
+		gatt_delayed_store_enqueue(conn->id, &conn->le.dst, DELAYED_STORE_CCC);
 #endif
 	}
 
@@ -2550,11 +2732,11 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 
 		bt_conn_unref(conn);
 
+		data->err = err;
+
 		if (err < 0) {
 			return BT_GATT_ITER_STOP;
 		}
-
-		data->err = 0;
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -2740,7 +2922,8 @@ static int gatt_notify_multiple_verify_params(struct bt_conn *conn,
 		}
 
 		/* Check if the characteristic is subscribed. */
-		if (!bt_gatt_is_subscribed(conn, params[i].attr,
+		if (IS_ENABLED(CONFIG_BT_GATT_ENFORCE_SUBSCRIPTION) &&
+		    !bt_gatt_is_subscribed(conn, params[i].attr,
 					   BT_GATT_CCC_NOTIFY)) {
 			LOG_WRN("Device is not subscribed to characteristic");
 			return -EINVAL;
@@ -2904,26 +3087,47 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 
 	mask &= attr->perm;
 
-	if (mask & BT_GATT_PERM_LESC_MASK) {
-		if (!IS_ENABLED(CONFIG_BT_SMP) || !conn->le.keys ||
-		    (conn->le.keys->flags & BT_KEYS_SC) == 0) {
-			return BT_ATT_ERR_AUTHENTICATION;
-		}
-	}
+	/*
+	 * Core Specification 5.4 Vol. 3 Part C 10.3.1
+	 *
+	 * If neither an LTK nor an STK is available, the service
+	 * request shall be rejected with the error code
+	 * “Insufficient Authentication”.
+	 * Note: When the link is not encrypted, the error code
+	 * “Insufficient Authentication” does not indicate that
+	 *  MITM protection is required.
+	 *
+	 * If an LTK or an STK is available and encryption is
+	 * required (LE security mode 1) but encryption is not
+	 * enabled, the service request shall be rejected with
+	 * the error code “Insufficient Encryption”.
+	 */
 
-	if (mask & BT_GATT_PERM_AUTHEN_MASK) {
-		if (bt_conn_get_security(conn) < BT_SECURITY_L3) {
-			return BT_ATT_ERR_AUTHENTICATION;
-		}
-	}
-
-	if ((mask & BT_GATT_PERM_ENCRYPT_MASK)) {
+	if (mask & (BT_GATT_PERM_ENCRYPT_MASK | BT_GATT_PERM_AUTHEN_MASK)) {
 #if defined(CONFIG_BT_SMP)
 		if (!conn->encrypt) {
-			return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
+			if (bt_conn_ltk_present(conn)) {
+				return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
+			} else {
+				return BT_ATT_ERR_AUTHENTICATION;
+			}
+		}
+
+		if (mask & BT_GATT_PERM_AUTHEN_MASK) {
+			if (bt_conn_get_security(conn) < BT_SECURITY_L3) {
+				return BT_ATT_ERR_AUTHENTICATION;
+			}
+		}
+
+		if (mask & BT_GATT_PERM_LESC_MASK) {
+			const struct bt_keys *keys = conn->le.keys;
+
+			if (!keys || (keys->flags & BT_KEYS_SC) == 0) {
+				return BT_ATT_ERR_AUTHENTICATION;
+			}
 		}
 #else
-		return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
+		return BT_ATT_ERR_AUTHENTICATION;
 #endif /* CONFIG_BT_SMP */
 	}
 
@@ -2951,27 +3155,26 @@ static void sc_restore_rsp(struct bt_conn *conn,
 	if (bt_att_fixed_chan_only(conn)) {
 		cfg = find_cf_cfg(conn);
 		if (cfg && CF_ROBUST_CACHING(cfg)) {
-			atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
-			LOG_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
+			set_change_aware(cfg, true);
 		}
 	}
 #endif /* CONFIG_BT_GATT_CACHING */
 
 	if (!err && IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)) {
-		struct gatt_sc_cfg *sc_cfg = find_sc_cfg(conn->id, &conn->le.dst);
+		struct gatt_sc_cfg *gsc_cfg = find_sc_cfg(conn->id, &conn->le.dst);
 
-		if (sc_cfg) {
-			sc_reset(sc_cfg);
+		if (gsc_cfg) {
+			sc_reset(gsc_cfg);
 		}
 	}
 }
 
 static struct bt_gatt_indicate_params sc_restore_params[CONFIG_BT_MAX_CONN];
+static uint16_t sc_range[CONFIG_BT_MAX_CONN][2];
 
 static void sc_restore(struct bt_conn *conn)
 {
 	struct gatt_sc_cfg *cfg;
-	uint16_t sc_range[2];
 	uint8_t index;
 
 	cfg = find_sc_cfg(conn->id, &conn->le.dst);
@@ -2987,14 +3190,15 @@ static void sc_restore(struct bt_conn *conn)
 	LOG_DBG("peer %s start 0x%04x end 0x%04x", bt_addr_le_str(&cfg->peer), cfg->data.start,
 		cfg->data.end);
 
-	sc_range[0] = sys_cpu_to_le16(cfg->data.start);
-	sc_range[1] = sys_cpu_to_le16(cfg->data.end);
-
 	index = bt_conn_index(conn);
+
+	sc_range[index][0] = sys_cpu_to_le16(cfg->data.start);
+	sc_range[index][1] = sys_cpu_to_le16(cfg->data.end);
+
 	sc_restore_params[index].attr = &_1_gatt_svc.attrs[2];
 	sc_restore_params[index].func = sc_restore_rsp;
-	sc_restore_params[index].data = &sc_range[0];
-	sc_restore_params[index].len = sizeof(sc_range);
+	sc_restore_params[index].data = &sc_range[index][0];
+	sc_restore_params[index].len = sizeof(sc_range[index]);
 
 	if (bt_gatt_indicate(conn, &sc_restore_params[index])) {
 		LOG_ERR("SC restore indication failed");
@@ -3408,6 +3612,8 @@ static void remove_subscriptions(struct bt_conn *conn)
 
 	/* Lookup existing subscriptions */
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp, node) {
+		atomic_clear_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_SENT);
+
 		if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst) ||
 		    (atomic_test_bit(params->flags,
 				     BT_GATT_SUBSCRIBE_FLAG_VOLATILE))) {
@@ -3435,7 +3641,7 @@ static int gatt_exchange_mtu_encode(struct net_buf *buf, size_t len,
 	struct bt_att_exchange_mtu_req *req;
 	uint16_t mtu;
 
-	mtu = BT_ATT_MTU;
+	mtu = BT_LOCAL_ATT_MTU_UATT;
 
 	LOG_DBG("Client MTU %u", mtu);
 
@@ -4911,18 +5117,21 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, uint8_t err,
 	/* if write to CCC failed we remove subscription and notify app */
 	if (err) {
 		struct gatt_sub *sub;
-		sys_snode_t *node, *tmp;
+		sys_snode_t *node, *tmp, *prev;
 
 		sub = gatt_sub_find(conn);
 		if (!sub) {
 			return;
 		}
 
+		prev = NULL;
+
 		SYS_SLIST_FOR_EACH_NODE_SAFE(&sub->list, node, tmp) {
 			if (node == &params->node) {
-				gatt_sub_remove(conn, sub, tmp, params);
+				gatt_sub_remove(conn, sub, prev, params);
 				break;
 			}
+			prev = node;
 		}
 	} else if (!params->value) {
 		/* Notify with NULL data to complete unsubscribe */
@@ -4959,6 +5168,11 @@ static int gatt_write_ccc(struct bt_conn *conn,
 	size_t len = sizeof(struct bt_att_write_req) + sizeof(uint16_t);
 
 	LOG_DBG("handle 0x%04x value 0x%04x", params->ccc_handle, params->value);
+
+	/* The value of the params doesn't matter, this is just so we don't
+	 * repeat CCC writes when the AUTO_RESUBSCRIBE quirk is enabled.
+	 */
+	atomic_set_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_SENT);
 
 	return gatt_req_send(conn, gatt_write_ccc_rsp, params,
 			     gatt_write_ccc_buf, BT_ATT_OP_WRITE_REQ, len,
@@ -5204,10 +5418,15 @@ void bt_gatt_cancel(struct bt_conn *conn, void *params)
 	}
 }
 
+#if defined(CONFIG_BT_GATT_AUTO_RESUBSCRIBE)
 static void add_subscriptions(struct bt_conn *conn)
 {
 	struct gatt_sub *sub;
 	struct bt_gatt_subscribe_params *params;
+
+	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+		return;
+	}
 
 	sub = gatt_sub_find(conn);
 	if (!sub) {
@@ -5216,7 +5435,8 @@ static void add_subscriptions(struct bt_conn *conn)
 
 	/* Lookup existing subscriptions */
 	SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, params, node) {
-		if (bt_addr_le_is_bonded(conn->id, &conn->le.dst) &&
+		if (!atomic_test_bit(params->flags,
+				     BT_GATT_SUBSCRIBE_FLAG_SENT) &&
 		    !atomic_test_bit(params->flags,
 				     BT_GATT_SUBSCRIBE_FLAG_NO_RESUB)) {
 			/* Force write to CCC to workaround devices that don't
@@ -5226,6 +5446,7 @@ static void add_subscriptions(struct bt_conn *conn)
 		}
 	}
 }
+#endif	/* CONFIG_BT_GATT_AUTO_RESUBSCRIBE */
 
 #if defined(CONFIG_BT_GATT_AUTO_UPDATE_MTU)
 static void gatt_exchange_mtu_func(struct bt_conn *conn, uint8_t err,
@@ -5420,7 +5641,7 @@ static int ccc_set_cb(const char *name, size_t len_rd, settings_read_cb read_cb,
 	return ccc_set(name, len_rd, read_cb, cb_arg);
 }
 
-SETTINGS_STATIC_HANDLER_DEFINE(bt_ccc, "bt/ccc", NULL, ccc_set_cb, NULL, NULL);
+BT_SETTINGS_DEFINE(ccc, "ccc", ccc_set_cb, NULL);
 
 static int ccc_set_direct(const char *key, size_t len, settings_read_cb read_cb,
 			  void *cb_arg, void *param)
@@ -5498,8 +5719,6 @@ void bt_gatt_connected(struct bt_conn *conn)
 		}
 	}
 
-#if defined(CONFIG_BT_GATT_CLIENT)
-	add_subscriptions(conn);
 #if defined(CONFIG_BT_GATT_AUTO_UPDATE_MTU)
 	int err;
 
@@ -5508,7 +5727,6 @@ void bt_gatt_connected(struct bt_conn *conn)
 		LOG_WRN("MTU Exchange failed (err %d)", err);
 	}
 #endif /* CONFIG_BT_GATT_AUTO_UPDATE_MTU */
-#endif /* CONFIG_BT_GATT_CLIENT */
 }
 
 void bt_gatt_att_max_mtu_changed(struct bt_conn *conn, uint16_t tx, uint16_t rx)
@@ -5531,7 +5749,20 @@ void bt_gatt_encrypt_change(struct bt_conn *conn)
 	data.conn = conn;
 	data.sec = BT_SECURITY_L1;
 
+#if defined(CONFIG_BT_GATT_AUTO_RESUBSCRIBE)
+	add_subscriptions(conn);
+#endif	/* CONFIG_BT_GATT_AUTO_RESUBSCRIBE */
+
 	bt_gatt_foreach_attr(0x0001, 0xffff, update_ccc, &data);
+
+#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+	if (!bt_gatt_change_aware(conn, false)) {
+		/* Send a Service Changed indication if the current peer is
+		 * marked as change-unaware.
+		 */
+		sc_indicate(0x0001, 0xffff);
+	}
+#endif	/* CONFIG_BT_SETTINGS && CONFIG_BT_GATT_SERVICE_CHANGED */
 }
 
 bool bt_gatt_change_aware(struct bt_conn *conn, bool req)
@@ -5564,8 +5795,7 @@ bool bt_gatt_change_aware(struct bt_conn *conn, bool req)
 	 */
 	if (atomic_test_and_clear_bit(cfg->flags, CF_DB_HASH_READ)) {
 		bt_att_clear_out_of_sync_sent(conn);
-		atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
-		LOG_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
+		set_change_aware(cfg, true);
 		return true;
 	}
 
@@ -5580,8 +5810,7 @@ bool bt_gatt_change_aware(struct bt_conn *conn, bool req)
 	if (bt_att_fixed_chan_only(conn) && bt_att_out_of_sync_sent_on_fixed(conn)) {
 		atomic_clear_bit(cfg->flags, CF_DB_HASH_READ);
 		bt_att_clear_out_of_sync_sent(conn);
-		atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
-		LOG_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
+		set_change_aware(cfg, true);
 		return true;
 	}
 
@@ -5648,7 +5877,6 @@ static uint8_t ccc_save(const struct bt_gatt_attr *attr, uint16_t handle,
 int bt_gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
 {
 	struct ccc_save save;
-	char key[BT_SETTINGS_KEY_MAX];
 	size_t len;
 	char *str;
 	int err;
@@ -5659,15 +5887,6 @@ int bt_gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, ccc_save, &save);
 
-	if (id) {
-		char id_str[4];
-
-		u8_to_dec(id_str, sizeof(id_str), id);
-		bt_settings_encode_key(key, sizeof(key), "ccc", addr, id_str);
-	} else {
-		bt_settings_encode_key(key, sizeof(key), "ccc", addr, NULL);
-	}
-
 	if (save.count) {
 		str = (char *)save.store;
 		len = save.count * sizeof(*save.store);
@@ -5677,13 +5896,13 @@ int bt_gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
 		len = 0;
 	}
 
-	err = settings_save_one(key, str, len);
+	err = bt_settings_store_ccc(id, addr, str, len);
 	if (err) {
 		LOG_ERR("Failed to store CCCs (err %d)", err);
 		return err;
 	}
 
-	LOG_DBG("Stored CCCs for %s (%s)", bt_addr_le_str(addr), key);
+	LOG_DBG("Stored CCCs for %s", bt_addr_le_str(addr));
 	if (len) {
 		for (size_t i = 0; i < save.count; i++) {
 			LOG_DBG("  CCC: handle 0x%04x value 0x%04x", save.store[i].handle,
@@ -5768,6 +5987,7 @@ static int sc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 static int sc_commit(void)
 {
+	atomic_set_bit(gatt_sc.flags, SC_LOAD);
 	atomic_clear_bit(gatt_sc.flags, SC_INDICATE_PENDING);
 
 	if (atomic_test_bit(gatt_sc.flags, SC_RANGE_CHANGED)) {
@@ -5778,7 +5998,7 @@ static int sc_commit(void)
 	return 0;
 }
 
-SETTINGS_STATIC_HANDLER_DEFINE(bt_sc, "bt/sc", NULL, sc_set, sc_commit, NULL);
+BT_SETTINGS_DEFINE(sc, "sc", sc_set, sc_commit);
 #endif /* CONFIG_BT_GATT_SERVICE_CHANGED */
 
 #if defined(CONFIG_BT_GATT_CACHING)
@@ -5831,13 +6051,34 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	}
 
 	if (len_rd) {
-		len = read_cb(cb_arg, cfg->data, sizeof(cfg->data));
+		char dst[CF_NUM_BYTES + CF_FLAGS_STORE_LEN];
+
+		len = read_cb(cb_arg, dst, sizeof(dst));
 		if (len < 0) {
 			LOG_ERR("Failed to decode value (err %zd)", len);
 			return len;
 		}
 
+		memcpy(cfg->data, dst, sizeof(cfg->data));
 		LOG_DBG("Read CF: len %zd", len);
+
+		if (len != sizeof(dst)) {
+			LOG_WRN("Change-aware status not found in settings, "
+				"defaulting peer status to change-unaware");
+			set_change_aware(cfg, false);
+		} else {
+			/* change-aware byte is present in NVS */
+			uint8_t change_aware = dst[sizeof(cfg->data)];
+
+			if (change_aware & ~BIT(CF_CHANGE_AWARE)) {
+				LOG_WRN("Read back bad change-aware value: 0x%x, "
+					"defaulting peer status to change-unaware",
+					change_aware);
+				set_change_aware(cfg, false);
+			} else {
+				set_change_aware_no_store(cfg, change_aware);
+			}
+		}
 	} else {
 		clear_cf_cfg(cfg);
 	}
@@ -5847,7 +6088,7 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	return 0;
 }
 
-SETTINGS_STATIC_HANDLER_DEFINE(bt_cf, "bt/cf", NULL, cf_set, NULL, NULL);
+BT_SETTINGS_DEFINE(cf, "cf", cf_set, NULL);
 
 static int db_hash_set(const char *name, size_t len_rd,
 		       settings_read_cb read_cb, void *cb_arg)
@@ -5867,32 +6108,18 @@ static int db_hash_set(const char *name, size_t len_rd,
 
 static int db_hash_commit(void)
 {
-	int err;
-
 	atomic_set_bit(gatt_sc.flags, DB_HASH_LOAD);
-	/* Reschedule work to calculate and compare against the Hash value
-	 * loaded from flash.
+
+	/* Calculate the hash and compare it against the value loaded from
+	 * flash. Do it from the current context to avoid any potential race
+	 * conditions.
 	 */
-	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
-		err = bt_long_wq_reschedule(&db_hash.work, K_NO_WAIT);
-	} else {
-		err = k_work_reschedule(&db_hash.work, K_NO_WAIT);
-	}
+	do_db_hash();
 
-	/* Settings commit uses non-zero value to indicate failure. */
-	if (err > 0) {
-		err = 0;
-	}
-
-	if (err) {
-		LOG_ERR("Unable to reschedule database hash process (err %d)", err);
-	}
-
-	return err;
+	return 0;
 }
 
-SETTINGS_STATIC_HANDLER_DEFINE(bt_hash, "bt/hash", NULL, db_hash_set,
-			       db_hash_commit, NULL);
+BT_SETTINGS_DEFINE(hash, "hash", db_hash_set, db_hash_commit);
 #endif /*CONFIG_BT_GATT_CACHING */
 #endif /* CONFIG_BT_SETTINGS */
 
@@ -5930,20 +6157,7 @@ static int bt_gatt_clear_ccc(uint8_t id, const bt_addr_le_t *addr)
 			     &addr_with_id);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		char key[BT_SETTINGS_KEY_MAX];
-
-		if (id) {
-			char id_str[4];
-
-			u8_to_dec(id_str, sizeof(id_str), id);
-			bt_settings_encode_key(key, sizeof(key), "ccc",
-					       addr, id_str);
-		} else {
-			bt_settings_encode_key(key, sizeof(key), "ccc",
-					       addr, NULL);
-		}
-
-		return settings_delete(key);
+		return bt_settings_delete_ccc(id, addr);
 	}
 
 	return 0;
@@ -5959,20 +6173,7 @@ static int bt_gatt_clear_cf(uint8_t id, const bt_addr_le_t *addr)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		char key[BT_SETTINGS_KEY_MAX];
-
-		if (id) {
-			char id_str[4];
-
-			u8_to_dec(id_str, sizeof(id_str), id);
-			bt_settings_encode_key(key, sizeof(key), "cf",
-					       addr, id_str);
-		} else {
-			bt_settings_encode_key(key, sizeof(key), "cf",
-					       addr, NULL);
-		}
-
-		return settings_delete(key);
+		return bt_settings_delete_ccc(id, addr);
 	}
 
 	return 0;
@@ -6052,18 +6253,8 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 	cleanup_notify(conn);
 #endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 
-#if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
-	gatt_ccc_conn_unqueue(conn);
-
-	if (gatt_ccc_conn_queue_is_empty()) {
-		k_work_cancel_delayable(&gatt_ccc_store.work);
-	}
-#endif
-
-	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
-	    bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
-		bt_gatt_store_ccc(conn->id, &conn->le.dst);
-		bt_gatt_store_cf(conn);
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		gatt_store_ccc_cf(conn->id, &conn->le.dst);
 	}
 
 	/* Make sure to clear the CCC entry when using lazy loading */

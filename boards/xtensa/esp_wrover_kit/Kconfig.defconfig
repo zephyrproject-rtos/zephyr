@@ -7,19 +7,14 @@ config BOARD
 	default "esp_wrover_kit"
 	depends on BOARD_ESP_WROVER_KIT
 
-if BT
-
 config HEAP_MEM_POOL_SIZE
-	default 16384
-
-config ENTROPY_GENERATOR
-	default y
+	default 98304 if WIFI
+	default 40960 if BT
+	default 4096
 
 choice BT_HCI_BUS_TYPE
-	default BT_ESP32
+	default BT_ESP32 if BT
 endchoice
-
-endif # BT
 
 config DISK_DRIVER_SDMMC
 	default y

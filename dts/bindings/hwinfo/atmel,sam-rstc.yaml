@@ -11,9 +11,7 @@ properties:
   reg:
     required: true
 
-  peripheral-id:
-    type: int
-    description: peripheral ID
+  clocks:
     required: true
 
   user-nrst:

@@ -1,0 +1,7 @@
+sample:
+  description: Demonstration of the LP5569 LED driver
+  name: LP5569 sample
+tests:
+  sample.drivers.led.lp5569:
+    platform_allow: nrf52840dk_nrf52840
+    tags: led

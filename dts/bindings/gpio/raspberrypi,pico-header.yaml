@@ -1,0 +1,34 @@
+# Copyright (c) 2023, Joseph Yates
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on Raspberry Pi Pico headers.
+
+    The Raspberry Pi Pico layout provides 2 columns of 20 pins headers
+
+    This binding provides a nexus mapping for the default 26 pins as depicted below:
+
+        0  GPIO0/UART0_TX      VBUS            -
+        1  GPIO1/UART0_RX      VSYS            -
+        -  GND                 GND             -
+        2  GPIO2               3V3_EN          -
+        3  GPIO3               3V3_OUT         -
+        4  GPIO4/I2C0_SDA      ADC_VREF        -
+        5  GPIO5/I2C0_SCL      GPIO28/ADC2     28
+        -  GND                 GND             -
+        6  GPIO6               GPIO27/ADC1     27
+        7  GPIO7               GPIO26/ADC0     26
+        8  GPIO8               RUN             -
+        9  GPIO9               GPIO22          22
+        -  GND                 GND             -
+        10 GPIO10              GPIO21          21
+        11 GPIO11              GPIO20          20
+        12 GPIO12              GPIO19/SPI0_TX  19
+        13 GPIO13              GPIO18/SPI0_SCK 18
+        -  GND                 GND             -
+        14 GPIO14              GPIO17/SPI0_CSn 17
+        15 GPIO15              GPIO16/SPI0_RX  16
+
+compatible: "raspberrypi,pico-header"
+
+include: [gpio-nexus.yaml, base.yaml]

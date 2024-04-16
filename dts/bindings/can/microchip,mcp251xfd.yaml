@@ -1,0 +1,80 @@
+# Copyright (c) 2020 Abram Early
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip MCP251XFD SPI CAN-FD controller
+
+  The MCP251XFD node is defined on an SPI bus. An example
+  configuration is:
+
+  &mikrobus_spi {
+      cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+
+      mcp2518fd_mikroe_mcp2518fd_click: mcp2518fd@0 {
+          compatible = "microchip,mcp251xfd";
+          status = "okay";
+
+          spi-max-frequency = <18000000>;
+          int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+          reg = <0x0>;
+          osc-freq = <40000000>;
+
+          bus-speed = <125000>;
+          sample-point = <875>;
+          bus-speed-data = <1000000>;
+          sample-point-data = <875>;
+      };
+  };
+
+compatible: "microchip,mcp251xfd"
+
+include: [spi-device.yaml, can-fd-controller.yaml]
+
+properties:
+  osc-freq:
+    type: int
+    required: true
+    description: Frequency of the external oscillator in Hz.
+
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The interrupt signal from the controller is active low in push-pull mode.
+      The property value should ensure the flags properly describe the signal
+      that is presented to the driver.
+
+  pll-enable:
+    type: boolean
+    description: |
+      Enables controller PLL, which multiples input clock frequency x10.
+      This parameter also implicity sets whether the clock is from the PLL
+      output or directly from the oscillator.
+      If this option is enabled the clock source is the PLL, otherwise its
+      the oscillator.
+
+  timestamp-prescaler:
+    type: int
+    default: 1
+    description: |
+      Prescaler value for computing the timestamps of received messages.
+      The timestamp counter is derived from the internal clock divided by this value.
+      Valid range is [1, 1024].
+
+  sof-on-clko:
+    type: boolean
+    description: |
+      Output start-of-frame (SOF) signal on the CLKO pin every time
+      a Start bit of a CAN message is transmitted or received. If this option
+      is not set, then an internal clock (typically 40MHz or 20MHz) will be
+      output on CLKO pin instead.
+
+  clko-div:
+    type: int
+    description: The factor to divide the system clock for CLKO pin.
+    default: 10
+    enum:
+      - 1
+      - 2
+      - 4
+      - 10

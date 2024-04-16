@@ -17,3 +17,4 @@ supported:
   - pwm
   - spi
   - watchdog
+vendor: blueclover

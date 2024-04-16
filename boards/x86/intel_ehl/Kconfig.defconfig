@@ -1,0 +1,41 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_INTEL_EHL_CRB || BOARD_INTEL_EHL_CRB_SBL
+
+config BOARD
+	default "intel_ehl_crb_sbl" if BOARD_INTEL_EHL_CRB_SBL
+	default "intel_ehl_crb"
+
+config BUILD_OUTPUT_STRIPPED
+	default y
+
+config MP_MAX_NUM_CPUS
+	default 2
+
+if BOARD_INTEL_EHL_CRB_SBL
+config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
+	depends on SHELL_BACKEND_SERIAL
+	default n
+endif
+
+config HEAP_MEM_POOL_SIZE
+	default 32768 if ACPI
+	depends on KERNEL_MEM_POOL
+
+# TSC on this board is 1.9 GHz, HPET and APIC are 19.2 MHz
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1900000000 if APIC_TSC_DEADLINE_TIMER
+	default 1900000000 if APIC_TIMER_TSC
+	default 19200000
+
+if APIC_TIMER
+config APIC_TIMER_IRQ
+	default 24
+config APIC_TIMER_TSC_M
+	default 3
+config APIC_TIMER_TSC_N
+	default 249
+endif
+
+endif # BOARD_INTEL_EHL_CRB || BOARD_INTEL_EHL_CRB_SBL

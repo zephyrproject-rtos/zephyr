@@ -304,17 +304,25 @@ struct i3c_ccc_events {
 	uint8_t events;
 } __packed;
 
-/* For Enable Events */
+/** Enable Events (ENEC) - Target Interrupt Requests. */
 #define I3C_CCC_ENEC_EVT_ENINTR		BIT(0)
+
+/** Enable Events (ENEC) - Controller Role Requests. */
 #define I3C_CCC_ENEC_EVT_ENCR		BIT(1)
+
+/** Enable Events (ENEC) - Hot-Join Event. */
 #define I3C_CCC_ENEC_EVT_ENHJ		BIT(3)
 
 #define I3C_CCC_ENEC_EVT_ALL		\
 	(I3C_CCC_ENEC_EVT_ENINTR | I3C_CCC_ENEC_EVT_ENCR | I3C_CCC_ENEC_EVT_ENHJ)
 
-/* For Disable Events */
+/** Disable Events (DISEC) - Target Interrupt Requests. */
 #define I3C_CCC_DISEC_EVT_DISINTR	BIT(0)
+
+/** Disable Events (DISEC) - Controller Role Requests. */
 #define I3C_CCC_DISEC_EVT_DISCR		BIT(1)
+
+/** Disable Events (DISEC) - Hot-Join Event. */
 #define I3C_CCC_DISEC_EVT_DISHJ		BIT(3)
 
 #define I3C_CCC_DISEC_EVT_ALL		\
@@ -324,10 +332,17 @@ struct i3c_ccc_events {
  * Events for both enabling and disabling since
  * they have the same bits.
  */
+
+/** Events - Target Interrupt Requests. */
 #define I3C_CCC_EVT_INTR		BIT(0)
+
+/** Events - Controller Role Requests. */
 #define I3C_CCC_EVT_CR			BIT(1)
+
+/** Events - Hot-Join Event. */
 #define I3C_CCC_EVT_HJ			BIT(3)
 
+/** Bitmask for all events. */
 #define I3C_CCC_EVT_ALL			\
 	(I3C_CCC_EVT_INTR | I3C_CCC_EVT_CR | I3C_CCC_EVT_HJ)
 
@@ -488,14 +503,24 @@ struct i3c_ccc_getdcr {
  * @brief Indicate which format of GETSTATUS to use.
  */
 enum i3c_ccc_getstatus_fmt {
+	/** GETSTATUS Format 1 */
 	GETSTATUS_FORMAT_1,
+
+	/** GETSTATUS Format 2 */
 	GETSTATUS_FORMAT_2,
 };
 
+/**
+ * @brief Defining byte values for GETSTATUS Format 2.
+ */
 enum i3c_ccc_getstatus_defbyte {
+	/** Target status. */
 	GETSTATUS_FORMAT_2_TGTSTAT = 0x00U,
+
+	/** PRECR - Alternate status format describing Controller-capable device. */
 	GETSTATUS_FORMAT_2_PRECR = 0x91U,
 
+	/** Invalid defining byte. */
 	GETSTATUS_FORMAT_2_INVALID = 0x100U
 };
 
@@ -546,28 +571,51 @@ union i3c_ccc_getstatus {
 	} fmt2;
 } __packed;
 
+/** GETSTATUS Format 1 - Protocol Error bit. */
 #define I3C_CCC_GETSTATUS_PROTOCOL_ERR				BIT(5)
 
+/** GETSTATUS Format 1 - Activity Mode bit shift value. */
 #define I3C_CCC_GETSTATUS_ACTIVITY_MODE_SHIFT			6
 
+/** GETSTATUS Format 1 - Activity Mode bitmask. */
 #define I3C_CCC_GETSTATUS_ACTIVITY_MODE_MASK			\
 	(0x03U << I3C_CCC_GETSTATUS_ACTIVITY_MODE_SHIFT)
 
+/**
+ * @brief GETSTATUS Format 1 - Activity Mode
+ *
+ * Obtain Activity Mode from GETSTATUS Format 1 value obtained via
+ * GETSTATUS.
+ *
+ * @param status GETSTATUS Format 1 value
+ */
 #define I3C_CCC_GETSTATUS_ACTIVITY_MODE(status)			\
 	(((status) & I3C_CCC_GETSTATUS_ACTIVITY_MODE_MASK)	\
 	 >> I3C_CCC_GETSTATUS_ACTIVITY_MODE_SHIFT)
 
+/** GETSTATUS Format 1 - Number of Pending Interrupts bit shift value. */
 #define I3C_CCC_GETSTATUS_NUM_INT_SHIFT				0
 
+/** GETSTATUS Format 1 - Number of Pending Interrupts bitmask. */
 #define I3C_CCC_GETSTATUS_NUM_INT_MASK				\
 	(0x0FU << I3C_CCC_GETSTATUS_NUM_INT_SHIFT)
 
+/**
+ * @brief GETSTATUS Format 1 - Number of Pending Interrupts
+ *
+ * Obtain Number of Pending Interrupts from GETSTATUS Format 1 value
+ * obtained via GETSTATUS.
+ *
+ * @param status GETSTATUS Format 1 value
+ */
 #define I3C_CCC_GETSTATUS_NUM_INT(status)			\
 	(((status) & I3C_CCC_GETSTATUS_NUM_INT_MASK)		\
 	 >> I3C_CCC_GETSTATUS_NUM_INT_SHIFT)
 
+/** GETSTATUS Format 2 - PERCR - Deep Sleep Detected bit. */
 #define I3C_CCC_GETSTATUS_PRECR_DEEP_SLEEP_DETECTED		BIT(0)
 
+/** GETSTATUS Format 2 - PERCR - Handoff Delay NACK. */
 #define I3C_CCC_GETSTATUS_PRECR_HANDOFF_DELAY_NACK		BIT(1)
 
 /**
@@ -654,59 +702,122 @@ union i3c_ccc_getmxds {
 	} fmt3;
 } __packed;
 
+/** Get Max Data Speed (GETMXDS) - Default Max Sustained Data Rate. */
 #define I3C_CCC_GETMXDS_MAX_SDR_FSCL_MAX			0
+
+/** Get Max Data Speed (GETMXDS) - 8MHz Max Sustained Data Rate. */
 #define I3C_CCC_GETMXDS_MAX_SDR_FSCL_8MHZ			1
+
+/** Get Max Data Speed (GETMXDS) - 6MHz Max Sustained Data Rate. */
 #define I3C_CCC_GETMXDS_MAX_SDR_FSCL_6MHZ			2
+
+/** Get Max Data Speed (GETMXDS) - 4MHz Max Sustained Data Rate. */
 #define I3C_CCC_GETMXDS_MAX_SDR_FSCL_4MHZ			3
+
+/** Get Max Data Speed (GETMXDS) - 2MHz Max Sustained Data Rate. */
 #define I3C_CCC_GETMXDS_MAX_SDR_FSCL_2MHZ			4
 
+/** Get Max Data Speed (GETMXDS) - Clock to Data Turnaround <= 8ns. */
 #define I3C_CCC_GETMXDS_TSCO_8NS				0
+
+/** Get Max Data Speed (GETMXDS) - Clock to Data Turnaround <= 9ns. */
 #define I3C_CCC_GETMXDS_TSCO_9NS				1
+
+/** Get Max Data Speed (GETMXDS) - Clock to Data Turnaround <= 10ns. */
 #define I3C_CCC_GETMXDS_TSCO_10NS				2
+
+/** Get Max Data Speed (GETMXDS) - Clock to Data Turnaround <= 11ns. */
 #define I3C_CCC_GETMXDS_TSCO_11NS				3
+
+/** Get Max Data Speed (GETMXDS) - Clock to Data Turnaround <= 12ns. */
 #define I3C_CCC_GETMXDS_TSCO_12NS				4
+
+/** Get Max Data Speed (GETMXDS) - Clock to Data Turnaround > 12ns. */
 #define I3C_CCC_GETMXDS_TSCO_GT_12NS				7
 
+/** Get Max Data Speed (GETMXDS) - maxWr - Optional Defining Byte Support. */
 #define I3C_CCC_GETMXDS_MAXWR_DEFINING_BYTE_SUPPORT		BIT(3)
 
+/** Get Max Data Speed (GETMXDS) - Max Sustained Data Rate bit shift value. */
 #define I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL_SHIFT		0
 
+/** Get Max Data Speed (GETMXDS) - Max Sustained Data Rate bitmask. */
 #define I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL_MASK			\
 	(0x07U << I3C_CCC_GET_MXDS_MAXWR_MAX_SDR_FSCL_SHIFT)
 
+/**
+ * @brief Get Max Data Speed (GETMXDS) - maxWr - Max Sustained Data Rate
+ *
+ * Obtain Max Sustained Data Rate value from GETMXDS maxWr value
+ * obtained via GETMXDS.
+ *
+ * @param maxwr GETMXDS maxWr value.
+ */
 #define I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL(maxwr)		\
 	(((maxwr) &						\
 	  I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL_MASK)		\
 	 >> I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL_SHIFT)
 
+/** Get Max Data Speed (GETMXDS) - maxRd - Write-to-Read Permits Stop Between. */
 #define I3C_CCC_GETMXDS_MAXRD_W2R_PERMITS_STOP_BETWEEN		BIT(6)
 
+/** Get Max Data Speed (GETMXDS) - maxRd - Clock to Data Turnaround bit shift value. */
 #define I3C_CCC_GETMXDS_MAXRD_TSCO_SHIFT			3
 
+/** Get Max Data Speed (GETMXDS) - maxRd - Clock to Data Turnaround bitmask. */
 #define I3C_CCC_GETMXDS_MAXRD_TSCO_MASK				\
 	(0x07U << I3C_CCC_GETMXDS_MAXRD_TSCO_SHIFT)
 
+/**
+ * @brief Get Max Data Speed (GETMXDS) - maxRd - Clock to Data Turnaround
+ *
+ * Obtain Clock to Data Turnaround value from GETMXDS maxRd value
+ * obtained via GETMXDS.
+ *
+ * @param maxrd GETMXDS maxRd value.
+ */
 #define I3C_CCC_GETMXDS_MAXRD_TSCO(maxrd)			\
 	(((maxrd) & I3C_CCC_GETMXDS_MAXRD_TSCO_MASK)		\
 	 >> I3C_CCC_GETMXDS_MAXRD_TSCO_SHIFT)
 
+/** Get Max Data Speed (GETMXDS) - maxRd - Max Sustained Data Rate bit shift value. */
 #define I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL_SHIFT		0
 
+/** Get Max Data Speed (GETMXDS) - maxRd - Max Sustained Data Rate bitmask. */
 #define I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL_MASK			\
 	(0x07U << I3C_CCC_GET_MXDS_MAXRD_MAX_SDR_FSCL_SHIFT)
 
+/**
+ * @brief Get Max Data Speed (GETMXDS) - maxRd - Max Sustained Data Rate
+ *
+ * Obtain Max Sustained Data Rate value from GETMXDS maxRd value
+ * obtained via GETMXDS.
+ *
+ * @param maxrd GETMXDS maxRd value.
+ */
 #define I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL(maxrd)		\
 	(((maxrd) &						\
 	  I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL_MASK)		\
 	 >> I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL_SHIFT)
 
+/** Get Max Data Speed (GETMXDS) - CRDHLY1 - Set Bus Activity State bit shift value. */
 #define I3C_CCC_GETMXDS_CRDHLY1_SET_BUS_ACT_STATE		BIT(2)
 
+/** Get Max Data Speed (GETMXDS) - CRDHLY1 - Controller Handoff Activity State bit shift value. */
 #define I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_SHIFT	0
 
+/** Get Max Data Speed (GETMXDS) - CRDHLY1 - Controller Handoff Activity State bitmask. */
 #define I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_MASK	\
 	(0x03U << I3C_CCC_GETMXDS_CRDHLY1_SET_BUS_ACT_STATE_SHIFT)
 
+/**
+ * @brief Get Max Data Speed (GETMXDS) - CRDHLY1 - Controller Handoff Activity State
+ *
+ * Obtain Controller Handoff Activity State value from GETMXDS value
+ * obtained via GETMXDS.
+ *
+ * @param crhdly1 GETMXDS value.
+ */
 #define I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE(crhdly1)	\
 	(((crhdly1) &						\
 	  I3C_CCC_GETMXDS_CRDHLY1_SET_BUS_ACT_STATE_MASK)	\
@@ -724,51 +835,163 @@ struct i3c_ccc_getcaps {
 	uint8_t getcaps[4];
 } __packed;
 
+/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR-DDR mode bit. */
 #define I3C_CCC_GETCAPS1_HDR_DDR				BIT(0)
+
+/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR-BT mode bit. */
 #define I3C_CCC_GETCAPS1_HDR_BT					BIT(3)
 
+/**
+ * @brief Get Optional Feature Capabilities (GETCAPS) - HDR Mode
+ *
+ * Get the bit corresponding to HDR mode.
+ *
+ * @param x HDR mode
+ */
 #define I3C_CCC_GETCAPS1_HDR_MODE(x)				BIT(x)
+
+/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR Mode 0. */
 #define I3C_CCC_GETCAPS1_HDR_MODE0				BIT(0)
+
+/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR Mode 1. */
 #define I3C_CCC_GETCAPS1_HDR_MODE1				BIT(1)
+
+/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR Mode 2. */
 #define I3C_CCC_GETCAPS1_HDR_MODE2				BIT(2)
+
+/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR Mode 3. */
 #define I3C_CCC_GETCAPS1_HDR_MODE3				BIT(3)
+
+/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR Mode 4. */
 #define I3C_CCC_GETCAPS1_HDR_MODE4				BIT(4)
+
+/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR Mode 5. */
 #define I3C_CCC_GETCAPS1_HDR_MODE5				BIT(5)
+
+/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR Mode 6. */
 #define I3C_CCC_GETCAPS1_HDR_MODE6				BIT(6)
+
+/** Get Optional Feature Capabilities (GETCAPS) Format 1 - HDR Mode 7. */
 #define I3C_CCC_GETCAPS1_HDR_MODE7				BIT(7)
 
+/** Get Optional Feature Capabilities (GETCAPS) Format 2 - HDR-DDR Write Abort bit. */
 #define I3C_CCC_GETCAPS2_HDRDDR_WRITE_ABORT			BIT(6)
+
+/** Get Optional Feature Capabilities (GETCAPS) Format 2 - HDR-DDR Abort CRC bit. */
 #define I3C_CCC_GETCAPS2_HDRDDR_ABORT_CRC			BIT(7)
 
+/**
+ * @brief Get Optional Feature Capabilities (GETCAPS) Format 2 -
+ *        Group Address Capabilities bit shift value.
+ */
 #define I3C_CCC_GETCAPS2_GRPADDR_CAP_SHIFT			4
+
+/**
+ * @brief Get Optional Feature Capabilities (GETCAPS) Format 2 -
+ *        Group Address Capabilities bitmask.
+ */
 #define I3C_CCC_GETCAPS2_GRPADDR_CAP_MASK			\
 	(0x03U << I3C_CCC_GETCAPS2_GRPADDR_CAP_SHIFT)
+
+/**
+ * @brief Get Optional Feature Capabilities (GETCAPS) Format 2 - Group Address Capabilities.
+ *
+ * Obtain Group Address Capabilities value from GETCAPS Format 2 value
+ * obtained via GETCAPS.
+ *
+ * @param getcaps2 GETCAPS2 value.
+ */
 #define I3C_CCC_GETCAPS2_GRPADDR_CAP(getcaps2)			\
 	(((getcaps2) &						\
 	  I3C_CCC_GETCAPS2_GRPADDR_CAP_MASK)			\
 	 >> I3C_CCC_GETCAPS_GRPADDR_CAP_SHIFT)
 
+/**
+ * @brief Get Optional Feature Capabilities (GETCAPS) Format 2 -
+ *        I3C 1.x Specification Version bit shift value.
+ */
 #define I3C_CCC_GETCAPS2_SPEC_VER_SHIFT				0
+
+/**
+ * @brief Get Optional Feature Capabilities (GETCAPS) Format 2 -
+ *        I3C 1.x Specification Version bitmask.
+ */
 #define I3C_CCC_GETCAPS2_SPEC_VER_MASK				\
 	(0x0FU << I3C_CCC_GETCAPS2_SPEC_VER_SHIFT)
+
+/**
+ * @brief Get Optional Feature Capabilities (GETCAPS) Format 2 -
+ *        I3C 1.x Specification Version.
+ *
+ * Obtain I3C 1.x Specification Version value from GETCAPS Format 2 value
+ * obtained via GETCAPS.
+ *
+ * @param getcaps2 GETCAPS2 value.
+ */
 #define I3C_CCC_GETCAPS2_SPEC_VER(getcaps2)			\
 	(((getcaps2) &						\
 	  I3C_CCC_GETCAPS2_SPEC_VER_MASK)			\
 	 >> I3C_CCC_GETCAPS_SPEC_VER_SHIFT)
 
-#define I3C_CCC_GETCAPS3_MLAME_SUPPORT				BIT(0)
+/**
+ * @brief Get Optional Feature Capabilities (GETCAPS) Format 3 -
+ *        Multi-Lane Data Transfer Support bit.
+ */
+#define I3C_CCC_GETCAPS3_MLANE_SUPPORT				BIT(0)
+
+/**
+ * @brief Get Optional Feature Capabilities (GETCAPS) Format 3 -
+ *        Device to Device Transfer (D2DXFER) Support bit.
+ */
 #define I3C_CCC_GETCAPS3_D2DXFER_SUPPORT			BIT(1)
-#define I3C_CCC_GETCAPS3_D3DXFER_IBI_CAPABLE			BIT(2)
+
+/**
+ * @brief Get Optional Feature Capabilities (GETCAPS) Format 3 -
+ *        Device to Device Transfer (D2DXFER) IBI Capable bit.
+ */
+#define I3C_CCC_GETCAPS3_D2DXFER_IBI_CAPABLE			BIT(2)
+
+/**
+ * @brief Get Optional Feature Capabilities (GETCAPS) Format 3 -
+ *        Defining Byte Support in GETCAPS bit.
+ */
 #define I3C_CCC_GETCAPS3_GETCAPS_DEFINING_BYTE_SUPPORT		BIT(3)
+
+/**
+ * @brief Get Optional Feature Capabilities (GETCAPS) Format 3 -
+ *        Defining Byte Support in GETSTATUS bit.
+ */
 #define I3C_CCC_GETCAPS3_GETSTATUS_DEFINING_BYTE_SUPPORT	BIT(4)
+
+/**
+ * @brief Get Optional Feature Capabilities (GETCAPS) Format 3 -
+ *        HDR-BT CRC-32 Support bit.
+ */
 #define I3C_CCC_GETCAPS3_HDRBT_CRC32_SUPPORT			BIT(5)
+
+/**
+ * @brief Get Optional Feature Capabilities (GETCAPS) Format 3 -
+ *        IBI MDB Support for Pending Read Notification bit.
+ */
 #define I3C_CCC_GETCAPS3_IBI_MDR_PENDING_READ_NOTIFICATION	BIT(6)
 
+/**
+ * @brief Enum for I3C Reset Action (RSTACT) Defining Byte Values.
+ */
 enum i3c_ccc_rstact_defining_byte {
+	/** No Reset on Target Reset Pattern. */
 	I3C_CCC_RSTACT_NO_RESET = 0x00U,
+
+	/** Reset the I3C Peripheral Only. */
 	I3C_CCC_RSTACT_PERIPHERAL_ONLY = 0x01U,
+
+	/** Reset the Whole Target. */
 	I3C_CCC_RSTACT_RESET_WHOLE_TARGET = 0x02U,
+
+	/** Debug Network Adapter Reset. */
 	I3C_CCC_RSTACT_DEBUG_NETWORK_ADAPTER = 0x03U,
+
+	/** Virtual Target Detect. */
 	I3C_CCC_RSTACT_VIRTUAL_TARGET_DETECT = 0x04U,
 };
 
@@ -868,6 +1091,22 @@ int i3c_ccc_do_rstdaa_all(const struct device *controller);
  * @return @see i3c_do_ccc
  */
 int i3c_ccc_do_setdasa(const struct i3c_device_desc *target);
+
+/**
+ * @brief Set New Dynamic Address for a target
+ *
+ * Helper function to do SETNEWDA(Set New Dynamic Address) for a particular target.
+ *
+ * Note this does not update @p target with the new dynamic address.
+ *
+ * @param[in] target Pointer to the target device descriptor where
+ *                   the device is configured with a static address.
+ * @param[in] new_da Pointer to the new_da struct.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_setnewda(const struct i3c_device_desc *target,
+			  struct i3c_ccc_address new_da);
 
 /**
  * @brief Broadcast ENEC/DISEC to enable/disable target events.

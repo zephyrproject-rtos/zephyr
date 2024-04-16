@@ -8,35 +8,35 @@ include: [base.yaml, power.yaml]
 on-bus: spi
 
 properties:
-    reg:
-      required: true
-    spi-max-frequency:
-      type: int
-      required: true
-      description: Maximum clock frequency of device's SPI interface in Hz
-    duplex:
-      type: int
-      default: 0
-      description: |
-        Duplex mode, full or half. By default it's always full duplex thus 0
-        as this is, by far, the most common mode.
-        Use the macros not the actual enum value, here is the concordance
-        list (see dt-bindings/spi/spi.h)
-          0    SPI_FULL_DUPLEX
-          2048 SPI_HALF_DUPLEX
-      enum:
-        - 0
-        - 2048
-    frame-format:
-      type: int
-      default: 0
-      description: |
-        Motorola or TI frame format. By default it's always Motorola's,
-        thus 0 as this is, by far, the most common format.
-        Use the macros not the actual enum value, here is the concordance
-        list (see dt-bindings/spi/spi.h)
-          0     SPI_FRAME_FORMAT_MOTOROLA
-          32768 SPI_FRAME_FORMAT_TI
-      enum:
-        - 0
-        - 32768
+  reg:
+    required: true
+  spi-max-frequency:
+    type: int
+    required: true
+    description: Maximum clock frequency of device's SPI interface in Hz
+  duplex:
+    type: int
+    default: 0
+    description: |
+      Duplex mode, full or half. By default it's always full duplex thus 0
+      as this is, by far, the most common mode.
+      Use the macros not the actual enum value, here is the concordance
+      list (see dt-bindings/spi/spi.h)
+        0    SPI_FULL_DUPLEX
+        2048 SPI_HALF_DUPLEX
+    enum:
+      - 0
+      - 2048
+  frame-format:
+    type: int
+    default: 0
+    description: |
+      Motorola or TI frame format. By default it's always Motorola's,
+      thus 0 as this is, by far, the most common format.
+      Use the macros not the actual enum value, here is the concordance
+      list (see dt-bindings/spi/spi.h)
+        0     SPI_FRAME_FORMAT_MOTOROLA
+        32768 SPI_FRAME_FORMAT_TI
+    enum:
+      - 0
+      - 32768

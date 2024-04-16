@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_rt1015.dtsi>
 #include "mimxrt1015_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NXP MIMXRT1015-EVK board";
@@ -23,6 +24,7 @@
 		zephyr,itcm = &itcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
+		zephyr,flash = &at25sf128a;
 	};
 
 	leds {
@@ -38,6 +40,7 @@
 		user_button: button-1 {
 			label = "User SW4";
 			gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

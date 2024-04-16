@@ -70,7 +70,7 @@ static int serial_tx_rx(const struct device *dev, const uint8_t *tx_data,
 			uint8_t *rx_data, size_t len, uint32_t timeout)
 {
 	const struct w1_serial_config *cfg = dev->config;
-	uint64_t end;
+	k_timepoint_t end;
 	uint8_t dummy;
 	int ret = 0;
 
@@ -83,11 +83,11 @@ static int serial_tx_rx(const struct device *dev, const uint8_t *tx_data,
 		}
 
 		uart_poll_out(cfg->uart_dev, tx_data[i]);
-		end = sys_clock_timeout_end_calc(K_USEC(timeout));
+		end = sys_timepoint_calc(K_USEC(timeout));
 
 		do {
 			ret = uart_poll_in(cfg->uart_dev, &rx_data[i]);
-		} while (ret != 0 && end > k_uptime_ticks());
+		} while (ret != 0 && !sys_timepoint_expired(end));
 	}
 
 	return ret;

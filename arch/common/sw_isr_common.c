@@ -71,8 +71,45 @@ unsigned int get_parent_offset(unsigned int parent_irq,
 
 #endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */
 
-void z_isr_install(unsigned int irq, void (*routine)(const void *),
-		   const void *param)
+unsigned int z_get_sw_isr_table_idx(unsigned int irq)
+{
+	unsigned int table_idx;
+
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+	unsigned int level, parent_irq, parent_offset;
+
+	level = irq_get_level(irq);
+
+	if (level == 2U) {
+		parent_irq = irq_parent_level_2(irq);
+		parent_offset = get_parent_offset(parent_irq,
+						  lvl2_irq_list,
+						  CONFIG_NUM_2ND_LEVEL_AGGREGATORS);
+		table_idx = parent_offset + irq_from_level_2(irq);
+	}
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	else if (level == 3U) {
+		parent_irq = irq_parent_level_3(irq);
+		parent_offset = get_parent_offset(parent_irq,
+						  lvl3_irq_list,
+						  CONFIG_NUM_3RD_LEVEL_AGGREGATORS);
+		table_idx = parent_offset + irq_from_level_3(irq);
+	}
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
+	else {
+		table_idx = irq;
+	}
+
+	table_idx -= CONFIG_GEN_IRQ_START_VECTOR;
+#else
+	table_idx = irq - CONFIG_GEN_IRQ_START_VECTOR;
+#endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */
+
+	return table_idx;
+}
+
+void __weak z_isr_install(unsigned int irq, void (*routine)(const void *),
+			  const void *param)
 {
 	unsigned int table_idx;
 
@@ -85,37 +122,7 @@ void z_isr_install(unsigned int irq, void (*routine)(const void *),
 	__ASSERT(!irq_is_enabled(irq), "IRQ %d is enabled", irq);
 #endif /* !CONFIG_GIC */
 
-#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
-	unsigned int level;
-	unsigned int parent_irq;
-	unsigned int parent_offset;
-
-	level = irq_get_level(irq);
-
-	if (level == 2U) {
-		parent_irq = irq_parent_level_2(irq);
-		parent_offset = get_parent_offset(parent_irq,
-			lvl2_irq_list,
-			CONFIG_NUM_2ND_LEVEL_AGGREGATORS);
-		table_idx = parent_offset + irq_from_level_2(irq);
-	}
-#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
-	else if (level == 3U) {
-		parent_irq = irq_parent_level_3(irq);
-		parent_offset = get_parent_offset(parent_irq,
-			lvl3_irq_list,
-			CONFIG_NUM_3RD_LEVEL_AGGREGATORS);
-		table_idx = parent_offset + irq_from_level_3(irq);
-	}
-#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
-	else {
-		table_idx = irq;
-	}
-
-	table_idx -= CONFIG_GEN_IRQ_START_VECTOR;
-#else
-	table_idx = irq - CONFIG_GEN_IRQ_START_VECTOR;
-#endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */
+	table_idx = z_get_sw_isr_table_idx(irq);
 
 	/* If dynamic IRQs are enabled, then the _sw_isr_table is in RAM and
 	 * can be modified

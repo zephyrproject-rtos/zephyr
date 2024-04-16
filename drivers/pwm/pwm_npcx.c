@@ -113,7 +113,7 @@ static int pwm_npcx_set_cycles(const struct device *dev, uint32_t channel,
 	 * maximum pwm period cycles and won't exceed it.
 	 * Then prescaler = ceil (period_cycles / pwm_max_period_cycles)
 	 */
-	prescaler = ceiling_fraction(period_cycles, NPCX_PWM_MAX_PERIOD_CYCLES);
+	prescaler = DIV_ROUND_UP(period_cycles, NPCX_PWM_MAX_PERIOD_CYCLES);
 	if (prescaler > NPCX_PWM_MAX_PRESCALER) {
 		return -EINVAL;
 	}
@@ -189,14 +189,14 @@ static int pwm_npcx_init(const struct device *dev)
 	}
 
 	/* Turn on device clock first and get source clock freq. */
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)
 							&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on PWM clock fail %d", ret);
 		return ret;
 	}
 
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)
 			&config->clk_cfg, &data->cycles_per_sec);
 	if (ret < 0) {
 		LOG_ERR("Get PWM clock rate error %d", ret);

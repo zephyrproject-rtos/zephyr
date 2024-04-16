@@ -15,7 +15,20 @@ extern "C" {
 #include <stdint.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 
+/**
+ * @file
+ *
+ * @defgroup bitarray_apis Bit array
+ * @ingroup datastructure_apis
+ *
+ * @brief Store and manipulate bits in a bit array.
+ *
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
 struct sys_bitarray {
 	/* Number of bits */
 	uint32_t num_bits;
@@ -29,7 +42,9 @@ struct sys_bitarray {
 	/* Spinlock guarding access to this bit array */
 	struct k_spinlock lock;
 };
+/** @endcond */
 
+/** Bitarray structure */
 typedef struct sys_bitarray sys_bitarray_t;
 
 /**
@@ -41,13 +56,12 @@ typedef struct sys_bitarray sys_bitarray_t;
  */
 #define _SYS_BITARRAY_DEFINE(name, total_bits, sba_mod)			\
 	sba_mod uint32_t _sys_bitarray_bundles_##name			\
-		[(((total_bits + 8 - 1) / 8) + sizeof(uint32_t) - 1)	\
-		 / sizeof(uint32_t)] = {0};				\
+		[DIV_ROUND_UP(DIV_ROUND_UP(total_bits, 8),		\
+			       sizeof(uint32_t))] = {0};		\
 	sba_mod sys_bitarray_t name = {					\
 		.num_bits = total_bits,					\
-		.num_bundles = (((total_bits + 8 - 1) / 8)		\
-				+ sizeof(uint32_t) - 1)			\
-			       / sizeof(uint32_t),			\
+		.num_bundles = DIV_ROUND_UP(				\
+			DIV_ROUND_UP(total_bits, 8), sizeof(uint32_t)),	\
 		.bundles = _sys_bitarray_bundles_##name,		\
 	}
 
@@ -262,6 +276,10 @@ int sys_bitarray_test_and_set_region(sys_bitarray_t *bitarray, size_t num_bits,
  */
 int sys_bitarray_clear_region(sys_bitarray_t *bitarray, size_t num_bits,
 			      size_t offset);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

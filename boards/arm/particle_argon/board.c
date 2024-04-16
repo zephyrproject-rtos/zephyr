@@ -16,11 +16,11 @@ static inline void external_antenna(bool on)
 	struct gpio_dt_spec ufl_gpio = SKY_UFLn_GPIO_SPEC;
 	struct gpio_dt_spec pcb_gpio = SKY_PCBn_GPIO_SPEC;
 
-	if (!device_is_ready(ufl_gpio.port)) {
+	if (!gpio_is_ready_dt(&ufl_gpio)) {
 		return;
 	}
 
-	if (!device_is_ready(pcb_gpio.port)) {
+	if (!gpio_is_ready_dt(&pcb_gpio)) {
 		return;
 	}
 
@@ -28,9 +28,8 @@ static inline void external_antenna(bool on)
 	gpio_pin_configure_dt(&pcb_gpio, (on ? GPIO_OUTPUT_INACTIVE : GPIO_OUTPUT_ACTIVE));
 }
 
-static int board_particle_argon_init(const struct device *dev)
+static int board_particle_argon_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/*
 	 * On power-up the SKY13351 is left uncontrolled, so neither

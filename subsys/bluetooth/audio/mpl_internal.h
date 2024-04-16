@@ -100,6 +100,12 @@ void mpl_test_unset_parent_group(void);
 /* Force the media player into a given state */
 void mpl_test_media_state_set(uint8_t state);
 
+/** Trigger player name changed callback */
+void mpl_test_player_name_changed_cb(void);
+
+/** Trigger player name changed callback */
+void mpl_test_player_icon_url_changed_cb(void);
+
 /* Trigger track changed callback */
 void mpl_test_track_changed_cb(void);
 

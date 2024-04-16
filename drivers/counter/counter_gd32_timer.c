@@ -172,17 +172,11 @@ static uint32_t counter_gd32_timer_get_top_value(const struct device *dev)
 	return get_autoreload_value(dev);
 }
 
-/* Return true if value equals 2^n - 1 */
-static inline bool is_bit_mask(uint32_t val)
-{
-	return !(val & (val + 1));
-}
-
 static uint32_t ticks_add(uint32_t val1, uint32_t val2, uint32_t top)
 {
 	uint32_t to_top;
 
-	if (likely(is_bit_mask(top))) {
+	if (likely(IS_BIT_MASK(top))) {
 		return (val1 + val2) & top;
 	}
 
@@ -193,7 +187,7 @@ static uint32_t ticks_add(uint32_t val1, uint32_t val2, uint32_t top)
 
 static uint32_t ticks_sub(uint32_t val, uint32_t old, uint32_t top)
 {
-	if (likely(is_bit_mask(top))) {
+	if (likely(IS_BIT_MASK(top))) {
 		return (val - old) & top;
 	}
 
@@ -437,9 +431,9 @@ static int counter_gd32_timer_init(const struct device *dev)
 	uint32_t pclk;
 
 	clock_control_on(GD32_CLOCK_CONTROLLER,
-			 (clock_control_subsys_t *)&cfg->clkid);
+			 (clock_control_subsys_t)&cfg->clkid);
 	clock_control_get_rate(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t *)&cfg->clkid, &pclk);
+			       (clock_control_subsys_t)&cfg->clkid, &pclk);
 
 	data->freq = pclk / (cfg->prescaler + 1);
 

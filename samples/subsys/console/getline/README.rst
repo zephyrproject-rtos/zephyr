@@ -1,7 +1,7 @@
-.. _console_getline_sample:
+.. zephyr:code-sample:: console_getline
+   :name: console_getline()
 
-console_getline() Sample Application
-####################################
+   Use console_getline() to read an input line from the console.
 
 Overview
 ********
@@ -15,7 +15,7 @@ console input line by line. The sample also allows to see details of how
 a line is returned by the function.
 
 If you are interested in character by character console input, see
-:ref:`console_getchar_sample`.
+:zephyr:code-sample:`console_getchar`.
 
 
 Requirements

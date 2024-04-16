@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
+#include <hal/nrf_reset.h>
 
 LOG_MODULE_REGISTER(thingy53_board_init);
 
@@ -51,15 +52,14 @@ static void enable_cpunet(void)
 	 */
 
 	/* Release the Network MCU, 'Release force off signal' */
-	NRF_RESET->NETWORK.FORCEOFF = RESET_NETWORK_FORCEOFF_FORCEOFF_Release;
+	nrf_reset_network_force_off(NRF_RESET, false);
 
 	LOG_DBG("Network MCU released.");
 #endif /* !CONFIG_TRUSTED_EXECUTION_SECURE */
 }
 
-static int setup(const struct device *dev)
+static int setup(void)
 {
-	ARG_UNUSED(dev);
 
 #if !defined(CONFIG_TRUSTED_EXECUTION_SECURE)
 	if (IS_ENABLED(CONFIG_SENSOR)) {

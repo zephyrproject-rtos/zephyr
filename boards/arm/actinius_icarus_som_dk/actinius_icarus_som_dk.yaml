@@ -1,0 +1,22 @@
+identifier: actinius_icarus_som_dk
+name: Actinius Icarus SoM DK
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 88
+flash: 256
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - watchdog
+  - counter
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
+vendor: actinius

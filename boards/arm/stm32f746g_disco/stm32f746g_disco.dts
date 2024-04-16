@@ -8,6 +8,9 @@
 #include <st/f7/stm32f746Xg.dtsi>
 #include <st/f7/stm32f746nghx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	model = "STMicroelectronics STM32F746G DISCOVERY board";
@@ -21,7 +24,6 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,flash-controller = &n25q128a1;
 		zephyr,display = &ltdc;
-		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	leds {
@@ -37,7 +39,13 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioi 11 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336>;
 	};
 
 	sdram1: sdram@c0000000 {
@@ -45,12 +53,12 @@
 		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(16)>;
 		zephyr,memory-region = "SDRAM1";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
 	};
 
 	aliases {
 		led0 = &green_led_1;
 		sw0 = &user_button;
-		kscan0 = &touch_controller;
 		spi-flash0 = &n25q128a1;
 	};
 };
@@ -94,7 +102,7 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	touch_controller: ft5336@38 {
+	ft5336: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpioi 13 0>;
@@ -261,16 +269,20 @@ zephyr_udc0: &usbotg_fs {
 
 	width = <480>;
 	height = <272>;
-	hsync-pol = <STM32_LTDC_HSPOL_ACTIVE_LOW>;
-	vsync-pol = <STM32_LTDC_VSPOL_ACTIVE_LOW>;
-	de-pol = <STM32_LTDC_DEPOL_ACTIVE_LOW>;
-	pclk-pol = <STM32_LTDC_PCPOL_ACTIVE_LOW>;
-	hsync-duration = <1>;
-	vsync-duration = <10>;
-	hbp-duration = <43>;
-	vbp-duration = <12>;
-	hfp-duration = <8>;
-	vfp-duration = <4>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		hsync-len = <1>;
+		vsync-len = <10>;
+		hback-porch = <43>;
+		vback-porch = <12>;
+		hfront-porch = <8>;
+		vfront-porch = <4>;
+	};
 	def-back-color-red = <0xFF>;
 	def-back-color-green = <0xFF>;
 	def-back-color-blue = <0xFF>;

@@ -6,7 +6,9 @@ common:
   harness: net
   min_ram: 32
   min_flash: 96
-  tags: posix net
+  tags:
+    - posix
+    - net
 tests:
   sample.posix.gettimeofday:
     harness: net

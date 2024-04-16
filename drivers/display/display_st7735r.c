@@ -75,8 +75,8 @@ static void st7735r_set_cmd(const struct device *dev, int is_cmd)
 	gpio_pin_set_dt(&config->cmd_data, is_cmd);
 }
 
-static int st7735r_transmit(const struct device *dev, uint8_t cmd,
-			    const uint8_t *tx_data, size_t tx_count)
+static int st7735r_transmit_hold(const struct device *dev, uint8_t cmd,
+				 const uint8_t *tx_data, size_t tx_count)
 {
 	const struct st7735r_config *config = dev->config;
 	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
@@ -100,6 +100,17 @@ static int st7735r_transmit(const struct device *dev, uint8_t cmd,
 	}
 
 	return 0;
+}
+
+static int st7735r_transmit(const struct device *dev, uint8_t cmd,
+			    const uint8_t *tx_data, size_t tx_count)
+{
+	const struct st7735r_config *config = dev->config;
+	int ret;
+
+	ret = st7735r_transmit_hold(dev, cmd, tx_data, tx_count);
+	spi_release_dt(&config->bus);
+	return ret;
 }
 
 static int st7735r_exit_sleep(const struct device *dev)
@@ -161,28 +172,36 @@ static int st7735r_set_mem_area(const struct device *dev,
 				const uint16_t x, const uint16_t y,
 				const uint16_t w, const uint16_t h)
 {
+	const struct st7735r_config *config = dev->config;
 	struct st7735r_data *data = dev->data;
 	uint16_t spi_data[2];
 
 	int ret;
+
+	/* ST7735S requires repeating COLMOD for each transfer */
+	ret = st7735r_transmit_hold(dev, ST7735R_CMD_COLMOD, &config->colmod, 1);
+	if (ret < 0) {
+		return ret;
+	}
 
 	uint16_t ram_x = x + data->x_offset;
 	uint16_t ram_y = y + data->y_offset;
 
 	spi_data[0] = sys_cpu_to_be16(ram_x);
 	spi_data[1] = sys_cpu_to_be16(ram_x + w - 1);
-	ret = st7735r_transmit(dev, ST7735R_CMD_CASET, (uint8_t *)&spi_data[0], 4);
+	ret = st7735r_transmit_hold(dev, ST7735R_CMD_CASET, (uint8_t *)&spi_data[0], 4);
 	if (ret < 0) {
 		return ret;
 	}
 
 	spi_data[0] = sys_cpu_to_be16(ram_y);
 	spi_data[1] = sys_cpu_to_be16(ram_y + h - 1);
-	ret = st7735r_transmit(dev, ST7735R_CMD_RASET, (uint8_t *)&spi_data[0], 4);
+	ret = st7735r_transmit_hold(dev, ST7735R_CMD_RASET, (uint8_t *)&spi_data[0], 4);
 	if (ret < 0) {
 		return ret;
 	}
 
+	/* NB: CS still held - data transfer coming next */
 	return 0;
 }
 
@@ -209,7 +228,7 @@ static int st7735r_write(const struct device *dev,
 		desc->width, desc->height, x, y);
 	ret = st7735r_set_mem_area(dev, x, y, desc->width, desc->height);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	if (desc->pitch > desc->width) {
@@ -220,11 +239,11 @@ static int st7735r_write(const struct device *dev,
 		nbr_of_writes = 1U;
 	}
 
-	ret = st7735r_transmit(dev, ST7735R_CMD_RAMWR,
-			       (void *) write_data_start,
-			       desc->width * ST7735R_PIXEL_SIZE * write_h);
+	ret = st7735r_transmit_hold(dev, ST7735R_CMD_RAMWR,
+				    (void *) write_data_start,
+				    desc->width * ST7735R_PIXEL_SIZE * write_h);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	tx_bufs.buffers = &tx_buf;
@@ -236,13 +255,16 @@ static int st7735r_write(const struct device *dev,
 		tx_buf.len = desc->width * ST7735R_PIXEL_SIZE * write_h;
 		ret = spi_write_dt(&config->bus, &tx_bufs);
 		if (ret < 0) {
-			return ret;
+			goto out;
 		}
 
 		write_data_start += (desc->pitch * ST7735R_PIXEL_SIZE);
 	}
 
-	return 0;
+	ret = 0;
+out:
+	spi_release_dt(&config->bus);
+	return ret;
 }
 
 static void *st7735r_get_framebuffer(const struct device *dev)
@@ -455,7 +477,7 @@ static int st7735r_init(const struct device *dev)
 	}
 
 	if (config->reset.port != NULL) {
-		if (!device_is_ready(config->reset.port)) {
+		if (!gpio_is_ready_dt(&config->reset)) {
 			LOG_ERR("Reset GPIO port for display not ready");
 			return -ENODEV;
 		}
@@ -468,7 +490,7 @@ static int st7735r_init(const struct device *dev)
 		}
 	}
 
-	if (!device_is_ready(config->cmd_data.port)) {
+	if (!gpio_is_ready_dt(&config->cmd_data)) {
 		LOG_ERR("cmd/DATA GPIO port not ready");
 		return -ENODEV;
 	}
@@ -539,7 +561,8 @@ static const struct display_driver_api st7735r_api = {
 #define ST7735R_INIT(inst)							\
 	const static struct st7735r_config st7735r_config_ ## inst = {		\
 		.bus = SPI_DT_SPEC_INST_GET(					\
-			inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),		\
+			inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |		\
+			SPI_HOLD_ON_CS | SPI_LOCK_ON, 0),			\
 		.cmd_data = GPIO_DT_SPEC_INST_GET(inst, cmd_data_gpios),	\
 		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),	\
 		.width = DT_INST_PROP(inst, width),				\

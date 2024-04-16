@@ -308,11 +308,12 @@ static void listen(void)
 	net_context_put(tcp_recv6);
 }
 
-void main(void)
+int main(void)
 {
 	init_app();
 
 	k_thread_create(&thread_data, thread_stack, STACKSIZE,
 			(k_thread_entry_t)listen,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	return 0;
 }

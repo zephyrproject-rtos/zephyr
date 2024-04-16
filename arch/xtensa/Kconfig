@@ -46,7 +46,7 @@ config XTENSA_USE_CORE_CRT1
 config XTENSA_ENABLE_BACKTRACE
 	bool "Backtrace on panic exception"
 	default y
-	depends on SOC_ESP32 || SOC_FAMILY_INTEL_ADSP
+	depends on SOC_SERIES_ESP32 || SOC_FAMILY_INTEL_ADSP || SOC_XTENSA_DC233C
 	help
 	  Enable this config option to print backtrace on panic exception
 
@@ -102,5 +102,74 @@ config XTENSA_CCOUNT_HZ
 	help
 	  Rate in HZ of the Xtensa core as measured by the value of
 	  the CCOUNT register.
+
+config XTENSA_MORE_SPIN_RELAX_NOPS
+	bool "Use Xtensa specific arch_spin_relax() with more NOPs"
+	help
+	  Some Xtensa SoCs, especially under SMP, may need extra
+	  NOPs after failure to lock a spinlock. This gives
+	  the bus extra time to synchronize the RCW transaction
+	  among CPUs.
+
+config XTENSA_NUM_SPIN_RELAX_NOPS
+	int "Number of NOPs to be used in arch_spin_relax()"
+	default 1
+	depends on XTENSA_MORE_SPIN_RELAX_NOPS
+	help
+	  Specify the number of NOPs in Xtensa specific
+	  arch_spin_relax().
+
+if CPU_HAS_MMU
+
+config XTENSA_MMU
+	bool "Xtensa MMU Support"
+	default n
+	select MMU
+	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
+	help
+	  Enable support for Xtensa Memory Management Unit.
+
+if XTENSA_MMU
+
+	choice
+		prompt "PageTable virtual adddress"
+		default XTENSA_MMU_PTEVADDR_20000000
+		help
+		  The virtual address for Xtensa page table (PTEVADDR).
+
+	config XTENSA_MMU_PTEVADDR_20000000
+		bool "0x20000000"
+
+	endchoice
+
+	config XTENSA_MMU_PTEVADDR
+		hex
+		default 0x20000000 if XTENSA_MMU_PTEVADDR_20000000
+		help
+		  The virtual address for Xtensa page table (PTEVADDR).
+
+	config XTENSA_MMU_PTEVADDR_SHIFT
+		int
+		default 29 if XTENSA_MMU_PTEVADDR_20000000
+		help
+		  The bit shift number for the virtual address for Xtensa
+		  page table (PTEVADDR).
+
+	config XTENSA_MMU_NUM_L2_TABLES
+		int "Number of L2 page tables"
+		default 10
+		help
+		  Each table can address up to 4MB memory address.
+
+	config XTENSA_MMU_DOUBLE_MAP
+		bool "Map memory in cached and uncached region"
+		default n
+		help
+			This option specifies that the memory is mapped in two
+			distinct region, cached and uncached.
+
+endif # XTENSA_MMU
+
+endif # CPU_HAS_MMU
 
 endmenu

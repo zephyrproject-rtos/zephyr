@@ -80,6 +80,22 @@ config KERNEL_VM_SIZE
 	  implement a notion of "high" memory in Zephyr to work around physical
 	  RAM size larger than the defined bounds of the virtual address space.
 
+config KERNEL_DIRECT_MAP
+	bool "Memory region direct-map support"
+	depends on MMU
+	help
+	  This enables the direct-map support, namely the region can be 1:1
+	  mapping between virtual address and physical address.
+
+	  If the specific memory region is in the virtual memory space and
+	  there isn't overlap with the existed mappings, it will reserve the
+	  region from the virtual memory space and do the mapping, otherwise
+	  it will fail. And any attempt across the boundary of the virtual
+	  memory space will fail.
+
+	  Note that this is for compatibility and portable apps shouldn't
+	  be using it.
+
 endif # KERNEL_VM_SUPPORT
 
 menuconfig MMU

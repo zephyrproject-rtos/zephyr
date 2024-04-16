@@ -53,7 +53,7 @@ config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
 	default 2048
 
 config IPM_CONSOLE_STACK_SIZE
-	default 4096 if COVERAGE
+	default 4096 if COVERAGE_GCOV
 	default 1024
 
 endmenu

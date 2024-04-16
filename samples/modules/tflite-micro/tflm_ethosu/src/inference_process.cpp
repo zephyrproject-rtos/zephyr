@@ -6,9 +6,9 @@
 
 #include "inference_process.hpp"
 
-#include <tensorflow/lite/micro/all_ops_resolver.h>
+#include <tensorflow/lite/micro/micro_mutable_op_resolver.h>
 #include <tensorflow/lite/micro/cortex_m_generic/debug_log_callback.h>
-#include <tensorflow/lite/micro/micro_error_reporter.h>
+#include <tensorflow/lite/micro/micro_log.h>
 #include <tensorflow/lite/micro/micro_interpreter.h>
 #include <tensorflow/lite/micro/micro_profiler.h>
 #include <tensorflow/lite/schema/schema_generated.h>
@@ -118,11 +118,10 @@ bool InferenceProcess::runJob(InferenceJob &job)
 	}
 
 	/* Create the TFL micro interpreter */
-	tflite::AllOpsResolver resolver;
-	tflite::MicroErrorReporter errorReporter;
+	tflite::MicroMutableOpResolver <1> resolver;
+	resolver.AddEthosU();
 
-	tflite::MicroInterpreter interpreter(model, resolver, tensorArena, tensorArenaSize,
-					     &errorReporter);
+	tflite::MicroInterpreter interpreter(model, resolver, tensorArena, tensorArenaSize);
 
 	/* Allocate tensors */
 	TfLiteStatus allocate_status = interpreter.AllocateTensors();

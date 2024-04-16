@@ -4,7 +4,7 @@
 
 config SOC_FAMILY_KINETIS
 	bool
-	select HAS_SEGGER_RTT
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 
 if SOC_FAMILY_KINETIS
 
@@ -151,13 +151,18 @@ config KINETIS_FLASH_CONFIG_FDPROT
 
 endif # KINETIS_FLASH_CONFIG
 
+config WDOG_ENABLE_AT_BOOT
+	bool "Keep watchdog timer enabled at boot"
+	help
+	  Leave SOC watchdog timer enabled at boot. The specific timeout
+	  and clock configuration of the watchdog at boot is SOC dependent.
+	  Note: if the watchdog timer is enabled at boot, the user will
+	  need to configure the watchdog using z_arm_watchdog_init, as
+	  the SOC requires watchdog configuration before initial expiration
+
+# Enable watchdog configuration function if watchdog is left enabled at boot
 config WDOG_INIT
 	bool
-	default !BOOTLOADER_MCUBOOT
-	help
-	  This processor enables the watchdog timer with a short
-	  window for configuration upon reset. Therefore, this
-	  requires that the watchdog be configured during reset
-	  handling.
+	default WDOG_ENABLE_AT_BOOT
 
 endif # SOC_FAMILY_KINETIS

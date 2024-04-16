@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief IEEE 802.15.4 Private Management
+ * @brief IEEE 802.15.4 Net Management Private API
  */
 
 #ifndef __IEEE802154_MGMT_PRIV_H__
@@ -30,10 +30,22 @@ static inline void ieee802154_mgmt_init(struct net_if *iface)
 	k_sem_init(&ctx->scan_ctx_lock, 1, 1);
 }
 
+/**
+ * Handles the given Beacon frame.
+ *
+ * @retval NET_CONTINUE if successful.
+ * @retval NET_DROP error while parsing the beacon
+ */
 enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 					  struct ieee802154_mpdu *mpdu,
 					  uint8_t lqi);
 
+/**
+ * Executes the given MAC command.
+ *
+ * @retval NET_CONTINUE if successful.
+ * @retval NET_DROP error while parsing the mac command
+ */
 enum net_verdict ieee802154_handle_mac_command(struct net_if *iface,
 					       struct ieee802154_mpdu *mpdu);
 

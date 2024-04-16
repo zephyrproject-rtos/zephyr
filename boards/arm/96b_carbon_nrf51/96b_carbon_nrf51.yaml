@@ -10,3 +10,4 @@ toolchain:
   - xtools
 supported:
   - ble
+vendor: seeed

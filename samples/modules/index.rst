@@ -4,7 +4,8 @@ External Module Samples
 #######################
 
 .. toctree::
-   :maxdepth: 2
+   :titlesonly:
+   :maxdepth: 1
    :glob:
 
    **/*

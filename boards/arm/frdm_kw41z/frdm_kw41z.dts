@@ -4,6 +4,7 @@
 
 #include <nxp/nxp_kw41z.dtsi>
 #include "frdm_kw41z-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NXP Freedom KW41Z board";
@@ -71,10 +72,12 @@
 		user_button_3: button_0 {
 			label = "User SW3";
 			gpios = <&gpioc 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		user_button_4: button_1 {
 			label = "User SW4";
 			gpios = <&gpioc 5 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 

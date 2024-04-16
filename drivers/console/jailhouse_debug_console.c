@@ -45,9 +45,8 @@ extern void __printk_hook_install(int (*fn)(int));
  * @brief Initialize the console/debug port
  * @return 0 if successful, otherwise failed.
  */
-static int jailhouse_console_init(const struct device *arg)
+static int jailhouse_console_init(void)
 {
-	ARG_UNUSED(arg);
 	__stdout_hook_install(console_out);
 	__printk_hook_install(console_out);
 	return 0;

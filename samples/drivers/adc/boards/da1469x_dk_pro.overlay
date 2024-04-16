@@ -1,0 +1,113 @@
+/*
+ * Copyright (c) 2023 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	zephyr,user {
+		/* adjust channel number according to pinmux in board.dts */
+		io-channels = <&adc 0 &adc 1 &adc 2 &adc 3 &sdadc 0 &sdadc 1 &sdadc 2>;
+	};
+};
+
+&pinctrl {
+	adc_default: adc_default {
+		group_1 {
+			pinmux = <SMARTBOND_PINMUX(ADC, 0, 25)>,
+				 <SMARTBOND_PINMUX(ADC, 1, 9)>,
+				 <SMARTBOND_PINMUX(ADC, 1, 19)>;
+		};
+	};
+	sdadc_default: sdadc_default {
+		group_1 {
+			pinmux = <SMARTBOND_PINMUX(ADC, 1, 14)>,
+				 <SMARTBOND_PINMUX(ADC, 1, 20)>,
+				 <SMARTBOND_PINMUX(ADC, 1, 21)>;
+		};
+	};
+};
+
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_3";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <7>;
+		zephyr,input-positive = <SMARTBOND_GPADC_P1_09>;
+	};
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1_3";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <0>;
+		zephyr,input-positive = <SMARTBOND_GPADC_V30>;
+	};
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1_3";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <0>;
+		zephyr,input-positive = <SMARTBOND_GPADC_P0_25>;
+	};
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1_3";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <0>;
+		zephyr,input-positive = <SMARTBOND_GPADC_P1_19>;
+	};
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+};
+
+&sdadc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <14>;
+		zephyr,oversampling = <7>;
+		zephyr,input-positive = <SMARTBOND_SDADC_P1_14>;
+	};
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <14>;
+		zephyr,oversampling = <7>;
+		zephyr,input-positive = <SMARTBOND_SDADC_P1_20>;
+		zephyr,input-negative = <SMARTBOND_SDADC_P1_21>;
+	};
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <14>;
+		zephyr,oversampling = <7>;
+		zephyr,input-positive = <SMARTBOND_SDADC_VBAT>;
+	};
+	pinctrl-0 = <&sdadc_default>;
+	pinctrl-names = "default";
+};

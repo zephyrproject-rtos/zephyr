@@ -1,0 +1,472 @@
+# ARM Cortex-M platform configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# NOTE: We have the specific core implementations first and outside of the
+# if CPU_CORTEX_M block so that SoCs can select which core they are using
+# without having to select all the options related to that core.  Everything
+# else is captured inside the if CPU_CORTEX_M block so they are not exposed
+# if one select a different ARM Cortex Family (Cortex-A or Cortex-R)
+
+config CPU_CORTEX_M0
+	bool
+	select CPU_CORTEX_M
+	select ARMV6_M_ARMV8_M_BASELINE
+	help
+	  This option signifies the use of a Cortex-M0 CPU
+
+config CPU_CORTEX_M0PLUS
+	bool
+	select CPU_CORTEX_M
+	select ARMV6_M_ARMV8_M_BASELINE
+	help
+	  This option signifies the use of a Cortex-M0+ CPU
+
+config CPU_CORTEX_M1
+	bool
+	select CPU_CORTEX_M
+	select ARMV6_M_ARMV8_M_BASELINE
+	help
+	  This option signifies the use of a Cortex-M1 CPU
+
+config CPU_CORTEX_M3
+	bool
+	select CPU_CORTEX_M
+	select ARMV7_M_ARMV8_M_MAINLINE
+	help
+	  This option signifies the use of a Cortex-M3 CPU
+
+config CPU_CORTEX_M4
+	bool
+	select CPU_CORTEX_M
+	select ARMV7_M_ARMV8_M_MAINLINE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
+	help
+	  This option signifies the use of a Cortex-M4 CPU
+
+config CPU_CORTEX_M23
+	bool
+	select CPU_CORTEX_M
+	select ARMV8_M_BASELINE
+	select ARMV8_M_SE if CPU_HAS_TEE
+	help
+	  This option signifies the use of a Cortex-M23 CPU
+
+config CPU_CORTEX_M33
+	bool
+	select CPU_CORTEX_M
+	select ARMV8_M_MAINLINE
+	select ARMV8_M_SE if CPU_HAS_TEE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
+	help
+	  This option signifies the use of a Cortex-M33 CPU
+
+config CPU_CORTEX_M55
+	bool
+	select CPU_CORTEX_M
+	select ARMV8_1_M_MAINLINE
+	select ARMV8_M_SE if CPU_HAS_TEE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	help
+	  This option signifies the use of a Cortex-M55 CPU
+
+config CPU_CORTEX_M7
+	bool
+	select CPU_CORTEX_M
+	select ARMV7_M_ARMV8_M_MAINLINE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	help
+	  This option signifies the use of a Cortex-M7 CPU
+
+if CPU_CORTEX_M
+
+config CPU_CORTEX_M_HAS_SYSTICK
+	bool
+	help
+	  This option is enabled when the CPU implements the SysTick timer.
+
+config DCACHE_LINE_SIZE
+	default 32
+
+config ICACHE_LINE_SIZE
+	default 32
+
+config CPU_CORTEX_M_HAS_DWT
+	bool
+	depends on !CPU_CORTEX_M0 && !CPU_CORTEX_M0PLUS && !CPU_CORTEX_M1
+	help
+	  This option signifies that the CPU implements the Data Watchpoint and
+	  Trace (DWT) unit specified by the ARMv7-M and above.
+
+	  While ARMv6-M does define a "DWT" unit, this is significantly different
+	  from the DWT specified by the ARMv7-M and above in terms of both feature
+	  set and register mappings.
+
+config CPU_CORTEX_M_HAS_BASEPRI
+	bool
+	depends on ARMV7_M_ARMV8_M_MAINLINE
+	help
+	  This option signifies the CPU has the BASEPRI register.
+
+	  The BASEPRI register defines the minimum priority for
+	  exception processing. When BASEPRI is set to a nonzero
+	  value, it prevents the activation of all exceptions with
+	  the same or lower priority level as the BASEPRI value.
+	  Always present in CPUs that implement the ARMv7-M or
+	  ARM8-M Mainline architectures.
+
+config CPU_CORTEX_M_HAS_VTOR
+	bool
+	depends on !CPU_CORTEX_M0 && !CPU_CORTEX_M1
+	help
+	  This option signifies the CPU has the VTOR register.
+	  The VTOR indicates the offset of the vector table base
+	  address from memory address 0x00000000. Always present
+	  in CPUs implementing the ARMv7-M or ARMv8-M architectures.
+	  Optional in CPUs implementing ARMv6-M, ARMv8-M Baseline
+	  architectures (except for Cortex-M0/M1, where it is never
+	  implemented).
+
+config CPU_CORTEX_M_HAS_SPLIM
+	bool
+	depends on ARMV8_M_MAINLINE || (ARMV8_M_SE && !ARM_NONSECURE_FIRMWARE)
+	help
+	  This option signifies the CPU has the MSPLIM, PSPLIM registers.
+
+	  The stack pointer limit registers, MSPLIM, PSPLIM, limit the
+	  extend to which the Main and Process Stack Pointers, respectively,
+	  can descend. MSPLIM, PSPLIM are always present in ARMv8-M
+	  MCUs that implement the ARMv8-M Main Extension (Mainline).
+
+	  In an ARMv8-M Mainline implementation with the Security Extension
+	  the MSPLIM, PSPLIM registers have additional Secure instances.
+	  In an ARMv8-M Baseline implementation with the Security Extension
+	  the MSPLIM, PSPLIM registers have only Secure instances.
+
+config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
+	bool
+	depends on ARMV7_M_ARMV8_M_MAINLINE
+	help
+	  This option signifies the CPU may trigger system faults
+	  (other than HardFault) with configurable priority, and,
+	  therefore, it needs to reserve a priority level for them.
+
+config CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
+	bool
+	depends on ARMV6_M_ARMV8_M_BASELINE
+	help
+	  This option signifies the Cortex-M0 has some mechanisms that can map
+	  the vector table to SRAM
+
+config CPU_CORTEX_M_HAS_CMSE
+	bool
+	depends on ARMV8_M_BASELINE || ARMV8_M_MAINLINE
+	help
+	  This option signifies the Cortex-M CPU has the CMSE intrinsics.
+
+config ARMV6_M_ARMV8_M_BASELINE
+	bool
+	select ATOMIC_OPERATIONS_C if !ARMV8_M_BASELINE
+	select ISA_THUMB2
+	help
+	  This option signifies the use of an ARMv6-M processor
+	  implementation, or the use of an ARMv8-M processor
+	  supporting the Baseline implementation.
+
+	  Notes:
+	  - A Processing Element (PE) without the Main Extension
+	  is also referred to as a Baseline Implementation. A
+	  Baseline implementation has a subset of the instructions,
+	  registers, and features, of a Mainline implementation.
+	  - ARMv6-M compatibility is provided by all ARMv8-M
+	  implementations.
+
+config ARMV8_M_BASELINE
+	bool
+	select ARMV6_M_ARMV8_M_BASELINE
+	select CPU_CORTEX_M_HAS_CMSE
+	help
+	  This option signifies the use of an ARMv8-M processor
+	  implementation.
+
+	  ARMv8-M Baseline includes additional features
+	  not present in the ARMv6-M architecture.
+
+config ARMV7_M_ARMV8_M_MAINLINE
+	bool
+	select ATOMIC_OPERATIONS_BUILTIN
+	select ISA_THUMB2
+	select CPU_CORTEX_M_HAS_BASEPRI
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
+	select CPU_CORTEX_M_HAS_SYSTICK
+	help
+	  This option signifies the use of an ARMv7-M processor
+	  implementation, or the use of a backwards-compatible
+	  ARMv8-M processor implementation supporting the Main
+	  Extension.
+
+	  Notes:
+	  - A Processing Element (PE) with the Main Extension is also
+	  referred to as a Mainline Implementation.
+	  - ARMv7-M compatibility requires the Main Extension.
+
+	  From https://developer.arm.com/products/architecture/m-profile:
+	  The Main Extension provides backwards compatibility
+	  with ARMv7-M.
+
+config ARMV8_M_MAINLINE
+	bool
+	select ARMV7_M_ARMV8_M_MAINLINE
+	select CPU_CORTEX_M_HAS_SPLIM
+	select CPU_CORTEX_M_HAS_CMSE
+	help
+	  This option signifies the use of an ARMv8-M processor
+	  implementation, supporting the Main Extension.
+
+	  ARMv8-M Main Extension includes additional features
+	  not present in the ARMv7-M architecture.
+
+config ARMV8_1_M_MAINLINE
+	bool
+	select ARMV8_M_MAINLINE
+	help
+	  This option signifies the use of an ARMv8.1-M processor
+	  implementation, supporting the Main Extension.
+
+	  ARMv8.1-M Main Extension includes additional features
+	  not present in the ARMv8-M architecture.
+
+config ARMV8_M_SE
+	bool
+	depends on ARMV8_M_BASELINE || ARMV8_M_MAINLINE
+	select CPU_CORTEX_M_HAS_SPLIM if !ARM_NONSECURE_FIRMWARE
+	help
+	  This option signifies the use of an ARMv8-M processor
+	  implementation (Baseline or Mainline) supporting the
+	  Security Extensions.
+
+config ARMV7_M_ARMV8_M_FP
+	bool
+	depends on ARMV7_M_ARMV8_M_MAINLINE && !CPU_CORTEX_M3
+	imply FPU_SHARING
+	help
+	  This option signifies the use of an ARMv7-M processor
+	  implementation, or the use of an ARMv8-M processor
+	  implementation supporting the Floating-Point Extension.
+
+config ARMV8_M_DSP
+	bool
+	depends on ARMV8_M_MAINLINE
+	help
+	  This option signifies the use of an ARMv8-M processor
+	  implementation supporting the DSP Extension.
+
+config ARMV8_1_M_MVEI
+	bool
+	depends on ARMV8_1_M_MAINLINE
+	depends on ARMV8_M_DSP
+	help
+	  This option signifies the use of an ARMv8.1-M processor implementation
+	  supporting the M-Profile Vector Extension (MVE) integer instruction set.
+
+config ARMV8_1_M_MVEF
+	bool
+	depends on ARMV8_1_M_MVEI
+	help
+	  This option signifies the use of an ARMv8.1-M processor implementation
+	  supporting the M-Profile Vector Extension (MVE) floating-point
+	  instruction set.
+
+menu "ARM Cortex-M0/M0+/M1/M3/M4/M7/M23/M33 options"
+    depends on ARMV6_M_ARMV8_M_BASELINE || ARMV7_M_ARMV8_M_MAINLINE
+
+config GEN_ISR_TABLES
+	default y
+
+config ZERO_LATENCY_IRQS
+	bool "Zero-latency interrupts"
+	depends on CPU_CORTEX_M_HAS_BASEPRI
+	help
+	  The kernel may reserve some of the highest interrupts priorities in
+	  the system for its own use. These interrupts will not be masked
+	  by interrupt locking.
+	  When connecting interrupts the kernel will offset all interrupts
+	  to lower priority than those reserved by the kernel.
+	  Zero-latency interrupt can be used to set up an interrupt at the
+	  highest interrupt priority which will not be blocked by interrupt
+	  locking.
+	  Since Zero-latency ISRs will run in the same priority or possibly at
+	  higher priority than the rest of the kernel they cannot use any
+	  kernel functionality.
+
+config ZERO_LATENCY_LEVELS
+	int "Number of interrupt priority levels reserved for zero latency"
+	depends on ZERO_LATENCY_IRQS
+	range 1 255
+	help
+	  The amount of interrupt priority levels reserved for zero latency
+	  interrupts. Increase this value to reserve more than one priority
+	  level for zero latency interrupts.
+
+config DYNAMIC_DIRECT_INTERRUPTS
+	bool "Support for dynamic direct interrupts"
+	depends on DYNAMIC_INTERRUPTS
+	help
+	  Direct interrupts are designed for performance-critical interrupt
+	  handling and do not go through all of the common interrupt handling
+	  code. This option enables the installation of interrupt service
+	  routines for direct interrupts at runtime.
+	  Note: this requires enabling support for dynamic interrupts in the
+	  kernel.
+
+config SW_VECTOR_RELAY
+	bool "Software Vector Relay"
+	help
+	  When building a bootloader firmware this option adds a
+	  vector table relay handler and a vector relay table, to
+	  relay interrupts based on a vector table pointer.
+	  This is only required but not limited to Cortex-M Baseline CPUs
+	  with no hardware vector table relocation mechanisms (e.g. VTOR).
+
+config SW_VECTOR_RELAY_CLIENT
+	bool "Software Vector Relay (client)"
+	default y if BOOTLOADER_MCUBOOT && !CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
+	depends on !CPU_CORTEX_M_HAS_VTOR
+	help
+	  Another image has enabled SW_VECTOR_RELAY, and will be forwarding
+	  exceptions and HW interrupts to this image. Enable this option to make
+	  sure the vector table pointer in RAM is set properly by the image upon
+	  initialization.
+
+config CORTEX_M_DWT
+	bool "Data Watchpoint and Trace (DWT)"
+	depends on CPU_CORTEX_M_HAS_DWT
+	default y if TIMING_FUNCTIONS
+	help
+	  Enable and use the Data Watchpoint and Trace (DWT) unit for
+	  timing functions.
+
+config CORTEX_M_DEBUG_MONITOR_HOOK
+	bool "Debug monitor interrupt for debugging"
+	depends on !ARMV6_M_ARMV8_M_BASELINE
+	help
+	  Enable this option to configure debug monitor exception to low priority
+	  for debugging purposes.
+
+# enabled, which may increase ESF stacking requirements for
+# threads.
+config TEST_EXTRA_STACK_SIZE
+	default 512 if TEST_ARM_CORTEX_M && FPU_SHARING
+
+config TRAP_UNALIGNED_ACCESS
+	bool "Unaligned access trap"
+	depends on !ARMV6_M_ARMV8_M_BASELINE
+	help
+	  If enabled, the CPU generates a UsageFault exception when executing a
+	  halfword or word access.
+
+endmenu
+
+# Implement the null pointer detection using either the Data Watchpoint and
+# Trace Unit and the Debug Monitor Exception, or the Memory Protection Unit.
+
+choice NULL_POINTER_EXCEPTION_DETECTION
+	bool "Null-pointer exception"
+	# Disable this until https://github.com/zephyrproject-rtos/zephyr/issues/32984 is fixed
+	# default NULL_POINTER_EXCEPTION_DETECTION_DWT if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE && CPU_CORTEX_M_HAS_DWT
+	default NULL_POINTER_EXCEPTION_DETECTION_MPU if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE && ARM_MPU && !CPU_CORTEX_M_HAS_DWT
+	default NULL_POINTER_EXCEPTION_DETECTION_NONE
+	help
+	  There are 2 implementations available, one based
+	  on DWT and the other based on MPU. Use this choice
+	  symbol to select one of the options. By default the
+	  feature is disabled. In the test suite the feature
+	  is enabled and the DWT-based solution is preferred.
+
+config NULL_POINTER_EXCEPTION_DETECTION_NONE
+	bool "No null pointer exception detection"
+	help
+	  Null pointer exception detection feature is not
+	  enabled.
+
+config NULL_POINTER_EXCEPTION_DETECTION_DWT
+	bool "Use DWT for null pointer exception detection"
+	depends on CPU_CORTEX_M_HAS_DWT
+	depends on !TRUSTED_EXECUTION_NONSECURE
+	select CORTEX_M_DWT
+	select CORTEX_M_NULL_POINTER_EXCEPTION
+	help
+	  Null pointer dereference detection implemented
+	  using the DWT unit functionality.
+	  Notes:
+	  - Not enabled for Non-Secure FW images, where
+	  null-pointer dereferencing is likely caught as
+	  a SecureFault.
+	  - Requires DWT functionality in the Cortex-M SoC
+	  implementation (1 comparator for ARMv7-M, 2 comparators
+	  for ARMv8-M).
+	  - Requires the Cortex-M core be in normal mode.
+
+config NULL_POINTER_EXCEPTION_DETECTION_MPU
+	bool "Use MPU for null pointer exception detection"
+	depends on !TRUSTED_EXECUTION_NONSECURE
+	depends on ARM_MPU
+	select CORTEX_M_NULL_POINTER_EXCEPTION
+	help
+	  Null pointer dereference detection implemented
+	  using MPU functionality.
+	  Notes:
+	  - Mutually exclusive to the DWT-based solution
+	  - Not enabled for Non-Secure FW images, where
+	  null-pointer dereferencing is likely caught as
+	  a SecureFault.
+	  - Requires MPU functionality to be present and
+	  enabled. The implementation consumes 1 MPU region.
+	  - In ARMv8-M, explicit null-pointer dereference
+	  detection with MPU requires, additionally, that
+	  the area: [0x0,
+	  CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE)
+	  is not unmapped (covered by an MPU region already).
+	  If it is unmapped null-pointer dereferencing may
+	  still be indirectly detected (e.g. via a precise
+	  Bus access fault), but this is not guaranteed. A
+	  build-time message warns the user of this scenario.
+
+endchoice
+
+config CORTEX_M_NULL_POINTER_EXCEPTION
+	bool
+	help
+	  Enable and use the null pointer exception option.
+	  This is a debug feature in Cortex-M, allowing for
+	  detecting null pointer dereferencing (raising a
+	  CPU fault). Supporting the feature results in an
+	  increased code footprint, determined by option
+	  CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE.
+
+	  Note: this hidden option is selected by the choice
+	  symbols corresponding to the DWT-based or to the
+	  MPU-based solution.
+
+if CORTEX_M_NULL_POINTER_EXCEPTION
+
+config CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE
+	hex "Size of paged unmapped to implement null pointer detection"
+	default 0x400
+	help
+	  Size of the page reserved for detecting null pointer
+	  dereferencing. Must be a power of two. A large value
+	  offers enhanced detection performance to the cost of
+	  wasting a large flash area that code may not use.
+
+endif # CORTEX_M_NULL_POINTER_EXCEPTION
+
+rsource "tz/Kconfig"
+
+endif # CPU_CORTEX_M

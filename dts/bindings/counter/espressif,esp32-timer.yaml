@@ -23,34 +23,34 @@ description: |
 include: base.yaml
 
 properties:
-    group:
-      description: |
-        The Timer Group index to which a timer belongs.
-      type: int
-      required: true
-      enum:
-      - 0
-      - 1
+  group:
+    description: |
+      The Timer Group index to which a timer belongs.
+    type: int
+    required: true
+    enum:
+    - 0
+    - 1
 
-    index:
-      description: |
-        The index that identifies a timer within a Timer Group.
-      type: int
-      required: true
-      enum:
-      - 0
-      - 1
+  index:
+    description: |
+      The index that identifies a timer within a Timer Group.
+    type: int
+    required: true
+    enum:
+    - 0
+    - 1
 
-    prescaler:
-      description: |
-        The prescaler value defines the factor by which the APB clock will be
-        divided. The outcome of which serves as clock reference to the Timer
-        itself.
+  prescaler:
+    description: |
+      The prescaler value defines the factor by which the APB clock will be
+      divided. The outcome of which serves as clock reference to the Timer
+      itself.
 
-        The allowed values for this property are in the range [2..65535].
-        Values above that range will be 16-bit-masked. Values 0 and 1 will be
-        forced to 2.
-      type: int
-      default: 2
+      The allowed values for this property are in the range [2..65535].
+      Values above that range will be 16-bit-masked. Values 0 and 1 will be
+      forced to 2.
+    type: int
+    default: 2
 
 compatible: "espressif,esp32-timer"

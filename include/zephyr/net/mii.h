@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Piotr Mienkowski
+ * Copyright 2022 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,6 +38,10 @@
 #define MII_ANNPTR     0x7
 /** Auto-Negotiation Link Partner Received Next Page Reg */
 #define MII_ANLPRNPR   0x8
+/** 1000BASE-T Control Register */
+#define MII_1KTCR 0x9
+/** 1000BASE-T Status Register */
+#define MII_1KSTSR 0xa
 /** MMD Access Control Register */
 #define MII_MMD_ACR    0xd
 /** MMD Access Address Data Register */
@@ -130,9 +135,25 @@
 #define MII_ADVERTISE_SEL_MASK     (0x1F << 0)
 #define MII_ADVERTISE_SEL_IEEE_802_3   0x01
 
+/* 1000BASE-T Control Register bit definitions */
+/** try for 1000BASE-T full duplex support */
+#define MII_ADVERTISE_1000_FULL    (1 << 9)
+/** try for 1000BASE-T half duplex support */
+#define MII_ADVERTISE_1000_HALF    (1 << 8)
+
 #define MII_ADVERTISE_ALL (MII_ADVERTISE_10_HALF | MII_ADVERTISE_10_FULL |\
 			   MII_ADVERTISE_100_HALF | MII_ADVERTISE_100_FULL |\
 			   MII_ADVERTISE_SEL_IEEE_802_3)
+
+/* Extended Status Register bit definitions */
+/** 1000BASE-X full-duplex capable */
+#define MII_ESTAT_1000BASE_X_FULL  (1 << 15)
+/** 1000BASE-X half-duplex capable */
+#define MII_ESTAT_1000BASE_X_HALF  (1 << 14)
+/** 1000BASE-T full-duplex capable */
+#define MII_ESTAT_1000BASE_T_FULL  (1 << 13)
+/** 1000BASE-T half-duplex capable */
+#define MII_ESTAT_1000BASE_T_HALF  (1 << 12)
 
 /**
  * @}

@@ -5,9 +5,9 @@
 #
 mainmenu "SMP Reassembly unit test"
 
-config MCUMGR_SMP_REASSEMBLY_UNIT_TESTS
+config MCUMGR_TRANSPORT_REASSEMBLY_UNIT_TESTS
 	def_bool y
-	select MCUMGR_SMP_REASSEMBLY
+	select MCUMGR_TRANSPORT_REASSEMBLY
 	help
 	  Enable SMP Reassembly unit tests.
 

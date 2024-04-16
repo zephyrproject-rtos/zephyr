@@ -6,6 +6,8 @@
 
 /dts-v1/;
 #include <quicklogic/quicklogic_eos_s3.dtsi>
+#include <zephyr/dt-bindings/pinctrl/quicklogic-eos-s3-pinctrl.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "QuickLogic Quick Feather board";
@@ -48,11 +50,23 @@
 		button0: button_0 {
 			gpios = <&gpio 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
 	fpga0: fpga {
 		status = "okay";
+	};
+};
+
+&pinctrl {
+	uart_rx_default: uart_rx_default {
+		pinmux = <UART_RX_PAD45>;
+		input-enable;
+	};
+	uart_tx_default: uart_tx_default {
+		pinmux = <UART_TX_PAD44>;
+		output-enable;
 	};
 };
 
@@ -67,4 +81,6 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&uart_rx_default &uart_tx_default>;
+	pinctrl-names = "default";
 };

@@ -6,9 +6,9 @@
 include: base.yaml
 
 properties:
-    "#phy-cells":
-        type: int
-        required: true
-        description: |
-          Number of cells in a PHY provider. The meaning those
-          cells is defined by the binding for the phy node.
+  "#phy-cells":
+    type: int
+    required: true
+    description: |
+      Number of cells in a PHY provider. The meaning those
+      cells is defined by the binding for the phy node.

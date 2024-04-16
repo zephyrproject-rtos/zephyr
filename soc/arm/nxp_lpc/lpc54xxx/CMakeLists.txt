@@ -12,3 +12,10 @@ zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
   ${ZEPHYR_BASE}/arch/${ARCH}/include
   )
+
+
+# CMSIS SystemInit allows us to skip enabling clock to SRAM2 bank via
+# this compiler definition
+if(NOT DEFINED CONFIG_LPC54XXX_SRAM2_CLOCK)
+zephyr_compile_definitions(DONT_ENABLE_DISABLED_RAMBANKS=1)
+endif()

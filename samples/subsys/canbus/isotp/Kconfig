@@ -1,0 +1,33 @@
+# Private config options to the ISO-TP sample
+
+# Copyright (c) 2023 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "ISO-TP sample"
+
+config SAMPLE_LOOPBACK_MODE
+	bool "Use CAN loopback mode"
+	help
+	  Set the CAN controller to loopback mode. This allows testing without a second board.
+
+config SAMPLE_RX_THREAD_STACK_SIZE
+	int "RX threads stack size"
+	default 1024
+	help
+	  Stack size (in bytes) used for the RX threads.
+
+config SAMPLE_RX_THREAD_PRIORITY
+	int "RX threads priority"
+	default 2
+	help
+	  Priority used for the RX threads.
+
+config SAMPLE_CAN_FD_MODE
+	bool "Use CAN-FD"
+	select CAN_FD_MODE
+
+config ISOTP_RX_BUF_COUNT
+	default 4 if SAMPLE_CAN_FD_MODE
+	default 2
+
+source "Kconfig.zephyr"

@@ -1,0 +1,19 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+choice LLVM_LINKER
+	prompt "LLVM Linker"
+	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "llvm"
+	default LLVM_USE_LD
+
+config LLVM_USE_LD
+	bool "GNU ld"
+	help
+	  Use binutils ld linker with llvm/clang.
+
+config LLVM_USE_LLD
+	bool "LLVM lld"
+	help
+	  Use LLVM built-in lld linker with llvm/clang.
+
+endchoice

@@ -109,7 +109,8 @@ static int init_app(void)
 	return ret;
 }
 
-void main(void)
+int main(void)
 {
 	init_app();
+	return 0;
 }

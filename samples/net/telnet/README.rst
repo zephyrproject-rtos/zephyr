@@ -1,7 +1,8 @@
-.. _telnet-console-sample:
+.. zephyr:code-sample:: telnet-console
+   :name: Telnet console
+   :relevant-api: shell_api net_core net_if net_mgmt
 
-Sample TELNET console application
-#################################
+   Access Zephyr shell over telnet.
 
 Overview
 ********

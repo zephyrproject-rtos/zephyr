@@ -1,0 +1,9 @@
+tests:
+  dummy.agnostic.group2:
+    platform_allow:
+      - native_posix
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - native_posix
+    tags: agnostic

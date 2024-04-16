@@ -85,9 +85,9 @@ Programming
 
 Two samples are provided as examples for ``x-nucleo-iks01a2`` shield:
 
-- :ref:`x-nucleo-iks01a2-std-sample` application, to be used when the shield is configured
+- :zephyr:code-sample:`x-nucleo-iks01a2-std` sample application, to be used when the shield is configured
   in Standard Mode
-- :ref:`x-nucleo-iks01a2-shub-sample` application, to be used when the shield is configured
+- :zephyr:code-sample:`x-nucleo-iks01a2-shub` sample application, to be used when the shield is configured
   in SensorHub Mode
 
 See also :ref:`shields` for more details.
@@ -98,7 +98,7 @@ References
 .. target-notes::
 
 .. _X-NUCLEO-IKS01A2 website:
-   http://www.st.com/en/ecosystems/x-nucleo-iks01a2.html
+   https://www.st.com/en/ecosystems/x-nucleo-iks01a2.html
 
 .. _X-NUCLEO-IKS01A2 databrief:
-   http://www.st.com/resource/en/data_brief/x-nucleo-iks01a2.pdf
+   https://www.st.com/resource/en/data_brief/x-nucleo-iks01a2.pdf

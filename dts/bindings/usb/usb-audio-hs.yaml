@@ -7,17 +7,17 @@ description: USB Audio headset specific fields.
 
 compatible: "usb-audio-hs"
 
-include: usb-audio.yaml
+include: [usb-audio.yaml, usb-audio-feature-volume.yaml]
 
 properties:
   mic-resolution:
     type: int
     default: 16
     enum:
-     - 8
-     - 16
-     - 24
-     - 32
+      - 8
+      - 16
+      - 24
+      - 32
   mic-sync-type:
     default: "Synchronous"
     type: string
@@ -26,19 +26,19 @@ properties:
       Default value is Sychronous.
       Adaptive is not supported.
     enum:
-     - "No Synchronization"
-     - "Asynchronous"
-     - "Adaptive"
-     - "Synchronous"
+      - "No Synchronization"
+      - "Asynchronous"
+      - "Adaptive"
+      - "Synchronous"
   hp-resolution:
     type: int
     default: 16
     enum:
-     - 8
-     - 16
-     - 24
-     - 32
-# microphone channel configuration options
+      - 8
+      - 16
+      - 24
+      - 32
+  # microphone channel configuration options
   mic-channel-l:
     type: boolean
     description: Enable (l) channel.
@@ -78,7 +78,7 @@ properties:
   mic-channel-cfg:
     type: boolean
     description: Enable (cfg) channel.
-# microphone feature unit configuration options
+  # microphone feature unit configuration options
   mic-feature-mute:
     type: boolean
     required: true
@@ -158,7 +158,7 @@ properties:
   hp-channel-cfg:
     type: boolean
     description: Enable (cfg) channel.
-# headphones feature unit configuration options
+  # headphones feature unit configuration options
   hp-feature-mute:
     type: boolean
     required: true
@@ -167,7 +167,6 @@ properties:
     type: boolean
     description: |
       Enable Volume feature.
-      Currently not supported.
   hp-feature-tone-control:
     type: boolean
     description: |

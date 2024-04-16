@@ -114,7 +114,14 @@ struct z_page_frame {
 	 * flags bits which shouldn't clobber each other. At all costs
 	 * the total size of struct z_page_frame must be minimized.
 	 */
+
+	/* On Xtensa we can't pack this struct because of the memory alignment.
+	 */
+#ifdef CONFIG_XTENSA
+} __aligned(4);
+#else
 } __packed;
+#endif
 
 static inline bool z_page_frame_is_pinned(struct z_page_frame *pf)
 {
@@ -197,7 +204,7 @@ static inline void z_mem_assert_virtual_region(uint8_t *addr, size_t size)
 		 "unaligned addr %p", addr);
 	__ASSERT(size % CONFIG_MMU_PAGE_SIZE == 0U,
 		 "unaligned size %zu", size);
-	__ASSERT(addr + size > addr,
+	__ASSERT(!Z_DETECT_POINTER_OVERFLOW(addr, size),
 		 "region %p size %zu zero or wraps around", addr, size);
 	__ASSERT(addr >= Z_VIRT_RAM_START && addr + size < Z_VIRT_RAM_END,
 		 "invalid virtual address region %p (%zu)", addr, size);

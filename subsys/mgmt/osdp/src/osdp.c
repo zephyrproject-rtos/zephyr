@@ -32,8 +32,8 @@ struct osdp_device {
 	int rx_event_data;
 	struct k_fifo rx_event_fifo;
 #endif
-	uint8_t rx_fbuf[CONFIG_OSDP_UART_BUFFER_LENGTH];
-	uint8_t tx_fbuf[CONFIG_OSDP_UART_BUFFER_LENGTH];
+	uint8_t rx_fbuf[OSDP_PACKET_BUF_SIZE];
+	uint8_t tx_fbuf[OSDP_PACKET_BUF_SIZE];
 	struct uart_config dev_config;
 	const struct device *dev;
 	int wait_for_mark;
@@ -41,7 +41,6 @@ struct osdp_device {
 };
 
 static struct osdp osdp_ctx;
-static struct osdp_cp osdp_cp_ctx;
 static struct osdp_pd osdp_pd_ctx[CONFIG_OSDP_NUM_CONNECTED_PD];
 static struct osdp_device osdp_device;
 static struct k_thread osdp_refresh_thread;
@@ -142,19 +141,20 @@ static struct osdp *osdp_build_ctx(struct osdp_channel *channel)
 	}
 #endif
 	ctx = &osdp_ctx;
-	ctx->cp = &osdp_cp_ctx;
-	ctx->cp->__parent = ctx;
-	ctx->cp->num_pd = CONFIG_OSDP_NUM_CONNECTED_PD;
+	ctx->num_pd = CONFIG_OSDP_NUM_CONNECTED_PD;
 	ctx->pd = &osdp_pd_ctx[0];
 	SET_CURRENT_PD(ctx, 0);
 
 	for (i = 0; i < CONFIG_OSDP_NUM_CONNECTED_PD; i++) {
-		pd = TO_PD(ctx, i);
-		pd->offset = i;
+		pd = osdp_to_pd(ctx, i);
+		pd->idx = i;
 		pd->seq_number = -1;
-		pd->__parent = ctx;
+		pd->osdp_ctx = ctx;
 		pd->address = pd_adddres[i];
 		pd->baud_rate = CONFIG_OSDP_UART_BAUD_RATE;
+		if (IS_ENABLED(CONFIG_OSDP_SKIP_MARK_BYTE)) {
+			SET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK);
+		}
 		memcpy(&pd->channel, channel, sizeof(struct osdp_channel));
 		k_mem_slab_init(&pd->cmd.slab,
 				pd->cmd.slab_buf, sizeof(struct osdp_cmd),
@@ -177,9 +177,8 @@ void osdp_refresh(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-static int osdp_init(const struct device *arg)
+static int osdp_init(void)
 {
-	ARG_UNUSED(arg);
 	int len;
 	uint8_t c, *key = NULL, key_buf[16];
 	struct osdp *ctx;

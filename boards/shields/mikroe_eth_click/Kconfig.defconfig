@@ -9,10 +9,6 @@ if NETWORKING
 config NET_L2_ETHERNET
 	default y
 
-# ENC28J60 Ethernet Device
-config ETH_ENC28J60_0
-	default y
-
 endif # NETWORKING
 
 endif # SHIELD_MIKROE_ETH_CLICK

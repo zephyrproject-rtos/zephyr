@@ -273,7 +273,7 @@ void add_ipv6_maddr_to_zephyr(struct openthread_context *context)
 		      net_ipv6_is_addr_mcast_link_all_nodes(
 				(struct in6_addr *)(&maddress->mAddress)))) {
 
-			net_if_ipv6_maddr_join(zmaddr);
+			net_if_ipv6_maddr_join(context->iface, zmaddr);
 		}
 	}
 }

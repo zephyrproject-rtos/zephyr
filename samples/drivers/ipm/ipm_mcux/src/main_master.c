@@ -25,7 +25,7 @@ void ping_ipm_callback(const struct device *dev, void *context,
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int first_message = 1; /* do not start from 0,
 				* zero value can't be sent via mailbox register
@@ -51,4 +51,5 @@ void main(void)
 	ipm_send(ipm, 1, 0, &first_message, 4);
 	while (1) {
 	}
+	return 0;
 }

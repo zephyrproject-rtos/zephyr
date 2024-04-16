@@ -6,21 +6,21 @@
 include: usb-controller.yaml
 
 properties:
-    num-bidir-endpoints:
-      type: int
-      required: true
-      description: |
-        Number of bi-directional endpoints supported by hardware
-        (including EP0)
+  num-bidir-endpoints:
+    type: int
+    required: true
+    description: |
+      Number of bi-directional endpoints supported by hardware
+      (including EP0)
 
-    num-in-endpoints:
-      type: int
-      description: |
-        Number of IN endpoints supported by hardware
-        (including EP0 IN)
+  num-in-endpoints:
+    type: int
+    description: |
+      Number of IN endpoints supported by hardware
+      (including EP0 IN)
 
-    num-out-endpoints:
-      type: int
-      description: |
-        Number of OUT endpoints supported by hardware
-        (including EP0 OUT)
+  num-out-endpoints:
+    type: int
+    description: |
+      Number of OUT endpoints supported by hardware
+      (including EP0 OUT)

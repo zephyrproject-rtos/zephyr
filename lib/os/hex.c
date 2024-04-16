@@ -27,9 +27,9 @@ int char2hex(char c, uint8_t *x)
 int hex2char(uint8_t x, char *c)
 {
 	if (x <= 9) {
-		*c = x + '0';
+		*c = x + (char)'0';
 	} else  if (x <= 15) {
-		*c = x - 10 + 'a';
+		*c = x - 10 + (char)'a';
 	} else {
 		return -EINVAL;
 	}
@@ -39,33 +39,33 @@ int hex2char(uint8_t x, char *c)
 
 size_t bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen)
 {
-	if (hexlen < (buflen * 2 + 1)) {
+	if (hexlen < (buflen * 2U + 1U)) {
 		return 0;
 	}
 
 	for (size_t i = 0; i < buflen; i++) {
-		if (hex2char(buf[i] >> 4, &hex[2 * i]) < 0) {
+		if (hex2char(buf[i] >> 4, &hex[2U * i]) < 0) {
 			return 0;
 		}
-		if (hex2char(buf[i] & 0xf, &hex[2 * i + 1]) < 0) {
+		if (hex2char(buf[i] & 0xf, &hex[2U * i + 1U]) < 0) {
 			return 0;
 		}
 	}
 
-	hex[2 * buflen] = '\0';
-	return 2 * buflen;
+	hex[2U * buflen] = '\0';
+	return 2U * buflen;
 }
 
 size_t hex2bin(const char *hex, size_t hexlen, uint8_t *buf, size_t buflen)
 {
 	uint8_t dec;
 
-	if (buflen < hexlen / 2 + hexlen % 2) {
+	if (buflen < hexlen / 2U + hexlen % 2U) {
 		return 0;
 	}
 
 	/* if hexlen is uneven, insert leading zero nibble */
-	if (hexlen % 2) {
+	if ((hexlen % 2U) != 0) {
 		if (char2hex(hex[0], &dec) < 0) {
 			return 0;
 		}
@@ -75,17 +75,17 @@ size_t hex2bin(const char *hex, size_t hexlen, uint8_t *buf, size_t buflen)
 	}
 
 	/* regular hex conversion */
-	for (size_t i = 0; i < hexlen / 2; i++) {
-		if (char2hex(hex[2 * i], &dec) < 0) {
+	for (size_t i = 0; i < hexlen / 2U; i++) {
+		if (char2hex(hex[2U * i], &dec) < 0) {
 			return 0;
 		}
 		buf[i] = dec << 4;
 
-		if (char2hex(hex[2 * i + 1], &dec) < 0) {
+		if (char2hex(hex[2U * i + 1U], &dec) < 0) {
 			return 0;
 		}
 		buf[i] += dec;
 	}
 
-	return hexlen / 2 + hexlen % 2;
+	return hexlen / 2U + hexlen % 2U;
 }

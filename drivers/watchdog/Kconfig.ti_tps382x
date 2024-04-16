@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Prevas A/S
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_TI_TPS382X
+	bool "External TI TPS382x Watchdog (WDT) Driver"
+	default y
+	depends on DT_HAS_TI_TPS382X_ENABLED
+	depends on GPIO
+	help
+	  Enable WDT driver for TI TPS382x. This is an external IC and requires
+	  a GPIO connection from the processor.

@@ -78,6 +78,88 @@ static int lsm6dsl_lis2mdl_init(const struct device *dev, uint8_t i2c_addr)
 #endif /* CONFIG_LSM6DSL_EXT0_LIS2MDL */
 
 /*
+ * LIS3MDL magn device specific part
+ */
+#ifdef CONFIG_LSM6DSL_EXT0_LIS3MDL
+
+#define LIS3MDL_REG_CTRL1               0x20
+#define LIS3MDL_REG_CTRL2               0x21
+#define LIS3MDL_REG_CTRL3               0x22
+#define LIS3MDL_REG_CTRL4               0x23
+#define LIS3MDL_REG_CTRL5               0x24
+
+#define LIS3MDL_REG_SAMPLE_START        0x28
+
+#define LIS3MDL_REG_INT_CFG             0x30
+#define LIS3MDL_INT_X_EN                BIT(7)
+#define LIS3MDL_INT_Y_EN                BIT(6)
+#define LIS3MDL_INT_Z_EN                BIT(5)
+#define LIS3MDL_INT_XYZ_EN              \
+	(LIS3MDL_INT_X_EN | LIS3MDL_INT_Y_EN | LIS3MDL_INT_Z_EN)
+
+#define LIS3MDL_STATUS_REG        0x27
+
+/* REG_CTRL2 */
+#define LIS3MDL_REBOOT_MASK             BIT(3)
+#define LIS3MDL_SOFT_RST_MASK           BIT(2)
+
+/* REG_CTRL1 */
+#define LIS3MDL_OM_SHIFT                5
+#define LIS3MDL_DO_SHIFT                2
+#define LIS3MDL_FAST_ODR_SHIFT          1
+#define LIS3MDL_ODR_BITS(om_bits, do_bits, fast_odr)	\
+	(((om_bits) << LIS3MDL_OM_SHIFT) |		\
+	 ((do_bits) << LIS3MDL_DO_SHIFT) |		\
+	 ((fast_odr) << LIS3MDL_FAST_ODR_SHIFT))
+static const uint8_t lis3mdl_odr_bits[] = {
+		LIS3MDL_ODR_BITS(0, 0, 0), /* 0.625 Hz */
+		LIS3MDL_ODR_BITS(0, 1, 0), /* 1.25 Hz */
+		LIS3MDL_ODR_BITS(0, 2, 0), /* 2.5 Hz */
+		LIS3MDL_ODR_BITS(0, 3, 0), /* 5 Hz */
+		LIS3MDL_ODR_BITS(0, 4, 0), /* 10 Hz */
+		LIS3MDL_ODR_BITS(0, 5, 0), /* 20 Hz */
+		LIS3MDL_ODR_BITS(0, 6, 0), /* 40 Hz */
+		LIS3MDL_ODR_BITS(0, 7, 0), /* 80 Hz */
+		LIS3MDL_ODR_BITS(3, 0, 1), /* 155 Hz */
+		LIS3MDL_ODR_BITS(2, 0, 1), /* 300 Hz */
+		LIS3MDL_ODR_BITS(1, 0, 1), /* 560 Hz */
+		LIS3MDL_ODR_BITS(0, 0, 1)  /* 1000 Hz */
+};
+#define LIS3MDL_ODR lis3mdl_odr_bits[4]
+
+/* REG_CTRL3 */
+#define LIS3MDL_MD_CONTINUOUS          0x00
+
+/* Others */
+#define LIS3MDL_SENSITIVITY       6842
+
+static int lsm6dsl_lis3mdl_init(const struct device *dev, uint8_t i2c_addr)
+{
+	struct lsm6dsl_data *data = dev->data;
+	uint8_t mag_cfg[2];
+
+	data->magn_sensitivity = LIS3MDL_SENSITIVITY;
+
+	/* sw reset device */
+	mag_cfg[0] = LIS3MDL_REBOOT_MASK | LIS3MDL_SOFT_RST_MASK;
+	lsm6dsl_shub_write_slave_reg(dev, i2c_addr,
+				     LIS3MDL_REG_CTRL2, mag_cfg, 1);
+
+	k_sleep(K_MSEC(10)); /* turn-on time in ms */
+
+	/* configure mag */
+	mag_cfg[0] = LIS3MDL_ODR;
+	lsm6dsl_shub_write_slave_reg(dev, i2c_addr,
+				     LIS3MDL_REG_CTRL1, mag_cfg, 1);
+
+	mag_cfg[0] = LIS3MDL_MD_CONTINUOUS;
+	lsm6dsl_shub_write_slave_reg(dev, i2c_addr,
+				     LIS3MDL_REG_CTRL3, mag_cfg, 1);
+	return 0;
+}
+#endif /* CONFIG_LSM6DSL_EXT0_LIS3MDL */
+
+/*
  * LPS22HB baro/temp device specific part
  */
 #ifdef CONFIG_LSM6DSL_EXT0_LPS22HB
@@ -130,6 +212,18 @@ static struct lsm6dsl_shub_sens_list {
 		.dev_init       = (lsm6dsl_lis2mdl_init),
 	},
 #endif  /* CONFIG_LSM6DSL_EXT0_LIS2MDL */
+
+#ifdef CONFIG_LSM6DSL_EXT0_LIS3MDL
+	{
+		/* LIS3MDL */
+		.i2c_addr       = {0x1C, 0x1E},
+		.wai_addr       = 0x0F,
+		.wai_val        = 0x3D,
+		.out_data_addr  = 0x28,
+		.out_data_len   = 0x06,
+		.dev_init       = (lsm6dsl_lis3mdl_init),
+	},
+#endif  /* CONFIG_LSM6DSL_EXT0_LIS3MDL */
 
 #ifdef CONFIG_LSM6DSL_EXT0_LPS22HB
 	{

@@ -6,14 +6,14 @@
 #-------------------------------------------------------------------------------
 
 {
-  "name": "TF-M secure partition manifests",
+  "description": "TF-M secure partition manifests",
   "type": "manifest_list",
   "version_major": 0,
   "version_minor": 1,
   "pid": 1000,
   "manifest_list": [
     {
-      "name": "Dummy Partition",
+      "description": "Dummy Partition",
       "short_name": "TFM_DP",
       "manifest": "${APPLICATION_SOURCE_DIR}/dummy_partition/tfm_dummy_partition.yaml",
       "output_path": "${TFM_BINARY_DIR}/dummy_partition",

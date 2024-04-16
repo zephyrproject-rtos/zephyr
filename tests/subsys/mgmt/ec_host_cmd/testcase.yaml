@@ -1,4 +1,0 @@
-tests:
-  mgmt.ec_host_cmd.core:
-    platform_allow: native_posix
-    tags: ec_host_cmd

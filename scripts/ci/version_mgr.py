@@ -25,7 +25,7 @@ VERSIONS_FILE = "versions.json"
 
 def parse_args():
     parser = argparse.ArgumentParser(
-                description="Manage versions to be tested.")
+                description="Manage versions to be tested.", allow_abbrev=False)
     parser.add_argument('-l', '--list', action="store_true",
                         help="List all published versions")
     parser.add_argument('-u', '--update',

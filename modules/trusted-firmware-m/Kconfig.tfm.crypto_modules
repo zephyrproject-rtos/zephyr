@@ -19,7 +19,7 @@ config TFM_CRYPTO_KEY_MODULE_ENABLED
 	default y
 	help
 	  Enables the KEY crypto module within the crypto partition.
-	  Unset this option if the functionality provided by 'crypto_key.c'
+	  Unset this option if the functionality provided by 'crypto_key_management.c'
 	  is not used.
 
 config TFM_CRYPTO_AEAD_MODULE_ENABLED

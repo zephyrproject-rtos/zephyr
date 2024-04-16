@@ -19,7 +19,7 @@
 #include <zephyr/net/buf.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/drivers/usb/uhc.h>
-#include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +27,8 @@ extern "C" {
 
 /**
  * @brief USB HOST Core Layer API
- * @defgroup _usb_host_core_api USB Host Core API
+ * @defgroup usb_host_core_api USB Host Core API
+ * @ingroup usb
  * @{
  */
 
@@ -53,29 +54,15 @@ struct usbh_contex {
 	}
 
 /**
- * @brief USB host peripheral structure
+ * @brief USB Class Code triple
  */
-struct usbh_peripheral {
-	/** Peripheral dlist node */
-	sys_dnode_t node;
-	/** Peripheral address */
-	uint8_t addr;
-	/** Detected speed (TBD) */
-	uint8_t speed;
-};
-
-/**
- * @brief Class Code
- */
-struct usbh_class_code {
+struct usbh_code_triple {
 	/** Device Class Code */
 	uint8_t dclass;
 	/** Class Subclass Code */
 	uint8_t sub;
 	/** Class Protocol Code */
 	uint8_t proto;
-	/** Reserved */
-	uint8_t reserved;
 };
 
 /**
@@ -83,7 +70,7 @@ struct usbh_class_code {
  */
 struct usbh_class_data {
 	/** Class code supported by this instance */
-	struct usbh_class_code code;
+	struct usbh_code_triple code;
 
 	/** Initialization of the class implementation */
 	/* int (*init)(struct usbh_contex *const uhs_ctx); */

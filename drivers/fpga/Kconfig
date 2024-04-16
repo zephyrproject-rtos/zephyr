@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig FPGA
-	bool "FPGA Drivers"
+	bool "Field-Programmable Gate Array (FPGA) drivers"
 	help
 	  Enable support for FPGA drivers.
 
@@ -13,6 +13,12 @@ if FPGA
 module = fpga
 module-str = fpga
 source "subsys/logging/Kconfig.template.log_config"
+
+config FPGA_INIT_PRIORITY
+	int "Init priority"
+	default 75
+	help
+	  FPGA device drivers initialization priority
 
 config FPGA_SHELL
 	bool "FPGA Shell"

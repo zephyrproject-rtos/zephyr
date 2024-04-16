@@ -1,0 +1,34 @@
+common:
+  sysbuild: true
+  platform_allow:
+    - nrf52840dk_nrf52840
+    - nrf5340dk_nrf5340_cpuapp
+    - nrf9160dk_nrf9160
+  integration_platforms:
+    - nrf52840dk_nrf52840
+  timeout: 600
+  slow: true
+tests:
+  boot.with_mcumgr.test_upgrade:
+    tags:
+      - pytest
+      - mcuboot
+      - mcumgr
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_upgrade.py"
+
+  boot.with_mcumgr.test_downgrade_prevention:
+    tags:
+      - pytest
+      - mcuboot
+      - mcumgr
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_downgrade_prevention.py"
+    extra_args:
+      - mcuboot_CONFIG_MCUBOOT_DOWNGRADE_PREVENTION=y
+    extra_configs:
+      - CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION="1.1.1+1"

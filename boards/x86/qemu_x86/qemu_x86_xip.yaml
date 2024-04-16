@@ -9,4 +9,5 @@ toolchain:
 testing:
   default: true
   only_tags:
-     - xip
+    - xip
+vendor: qemu

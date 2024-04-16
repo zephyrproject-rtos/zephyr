@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -279,7 +280,6 @@
 		trng: random@42002800 {
 			compatible = "atmel,sam-trng";
 			reg = <0x42002800 0x1e>;
-			peripheral-id = <0>;
 			interrupts = <131 0>;
 		};
 

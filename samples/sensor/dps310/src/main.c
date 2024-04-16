@@ -9,14 +9,14 @@
 #include <zephyr/drivers/sensor.h>
 #include <stdlib.h>
 
-void main(void)
+int main(void)
 {
 	printk("Hello DPS310\n");
 	const struct device *const dev = DEVICE_DT_GET_ONE(infineon_dps310);
 
 	if (!device_is_ready(dev)) {
 		printk("Device %s is not ready\n", dev->name);
-		return;
+		return 0;
 	}
 
 	printk("dev %p name %s\n", dev, dev->name);
@@ -33,4 +33,5 @@ void main(void)
 
 		k_sleep(K_MSEC(1000));
 	}
+	return 0;
 }

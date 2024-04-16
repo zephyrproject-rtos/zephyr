@@ -8,6 +8,8 @@ sample:
   name: gdbstub sample
 tests:
   sample.debug.gdbstub:
-    build_only: true
     platform_allow: qemu_x86
-    tags: debug
+    harness: pytest
+    tags:
+      - debug
+      - gdbstub

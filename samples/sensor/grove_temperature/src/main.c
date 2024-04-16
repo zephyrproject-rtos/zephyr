@@ -17,7 +17,7 @@
 
 #define SLEEP_TIME	K_MSEC(1000)
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ONE(seeed_grove_temperature);
 	struct sensor_value temp;
@@ -25,7 +25,7 @@ void main(void)
 
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_GROVE_LCD_RGB
@@ -34,7 +34,7 @@ void main(void)
 	glcd = device_get_binding(GROVE_LCD_NAME);
 	if (glcd == NULL) {
 		printf("Failed to get Grove LCD\n");
-		return;
+		return 0;
 	}
 
 	/* configure LCD */

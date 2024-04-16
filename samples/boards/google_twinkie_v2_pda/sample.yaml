@@ -1,0 +1,6 @@
+sample:
+  name: Twinkie V2 usb Vbus snooper
+tests:
+  sample.board.google_twinkie_v2:
+    platform_allow: google_twinkie_v2
+    tags: usb

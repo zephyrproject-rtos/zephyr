@@ -1,0 +1,11 @@
+# STM32 Nucleo-64 development board with STM32C031C6 MCU
+
+# Copyright (c) 2023 Benjamin Björnsson <benjamin.bjornsson@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_C031C6
+
+config BOARD
+	default "nucleo_c031c6"
+
+endif # BOARD_NUCLEO_C031C6

@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <zephyr/linker/iterable_sections.h>
+
 #if defined(CONFIG_NET_SOCKETS)
 	ITERABLE_SECTION_ROM(net_socket_register, 4)
 #endif
@@ -10,4 +12,8 @@
 
 #if defined(CONFIG_DNS_SD)
 	ITERABLE_SECTION_ROM(dns_sd_rec, 4)
+#endif
+
+#if defined(CONFIG_HTTP_SERVER)
+	ITERABLE_SECTION_ROM(http_service_desc, 4)
 #endif

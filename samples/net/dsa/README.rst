@@ -1,7 +1,8 @@
-.. _dsa-sample:
+.. zephyr:code-sample:: dsa
+   :name: DSA (Distributed Switch Architecture)
+   :relevant-api: DSA
 
-DSA Sample Application
-######################
+   Test and debug Distributed Switch Architecture
 
 Overview
 ********

@@ -11,7 +11,11 @@
 #include <zephyr/arch/x86/multiboot.h>
 #include <x86_mmu.h>
 #include <zephyr/drivers/interrupt_controller/loapic.h>
-#include <zephyr/arch/x86/acpi.h>
+#ifdef CONFIG_ACPI
+#include <zephyr/acpi/acpi.h>
+#endif
+
+BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS <= 4, "Only supports max 4 CPUs");
 
 /*
  * Map of CPU logical IDs to CPU local APIC IDs. By default,
@@ -140,15 +144,14 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	uint8_t vector = ((unsigned long) x86_ap_start) >> 12;
 	uint8_t apic_id;
 
-	if (IS_ENABLED(CONFIG_ACPI)) {
-		struct acpi_cpu *cpu;
+#ifdef CONFIG_ACPI
+	struct acpi_madt_local_apic *lapic = acpi_local_apic_get(cpu_num);
 
-		cpu = z_acpi_get_cpu(cpu_num);
-		if (cpu != NULL) {
-			/* We update the apic_id, x86_ap_start will need it. */
-			x86_cpu_loapics[cpu_num] = cpu->apic_id;
-		}
+	if (lapic != NULL) {
+		/* We update the apic_id, __start will need it. */
+		x86_cpu_loapics[cpu_num] = lapic->Id;
 	}
+#endif
 
 	apic_id = x86_cpu_loapics[cpu_num];
 

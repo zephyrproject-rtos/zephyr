@@ -15,7 +15,8 @@ LOG_MODULE_REGISTER(net_native_posix_sample, LOG_LEVEL_DBG);
 /* This application itself does nothing as there is net-shell that can be used
  * to monitor things.
  */
-void main(void)
+int main(void)
 {
 	LOG_INF("Start application");
+	return 0;
 }

@@ -8,6 +8,13 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_PTM_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_PTM_H_
 
+/**
+ * @brief PCIe Host PTM Interface
+ * @defgroup pcie_host_ptm_interface PCIe Host PTM Interface
+ * @ingroup pcie_host_interface
+ * @{
+ */
+
 #include <stddef.h>
 #include <zephyr/types.h>
 
@@ -26,5 +33,9 @@ bool pcie_ptm_enable(pcie_bdf_t bdf);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_PCIE_PTM_H_ */

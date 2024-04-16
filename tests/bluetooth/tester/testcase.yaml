@@ -1,5 +1,36 @@
 tests:
   bluetooth.general.tester:
-    platform_allow: qemu_x86
+    build_only: true
+    platform_allow:
+      - qemu_x86
+      - native_posix
+      - nrf52840dk_nrf52840
+    tags: bluetooth
+    harness: bluetooth
+  bluetooth.general.tester_le_audio:
+    build_only: true
+    platform_allow:
+      - qemu_x86
+      - native_posix
+      - nrf5340dk_nrf5340_cpuapp
+    extra_args: OVERLAY_CONFIG="overlay-le-audio.conf"
+    tags: bluetooth
+    harness: bluetooth
+  bluetooth.general.tester_mesh:
+    build_only: true
+    platform_allow:
+      - qemu_x86
+      - native_posix
+      - nrf52840dk_nrf52840
+    extra_args: OVERLAY_CONFIG="overlay-mesh.conf"
+    tags: bluetooth
+    harness: bluetooth
+  bluetooth.general.tester_mesh_v1d1:
+    build_only: true
+    platform_allow:
+      - qemu_x86
+      - native_posix
+      - nrf52840dk_nrf52840
+    extra_args: OVERLAY_CONFIG="overlay-mesh.conf;overlay-mesh-v1d1.conf"
     tags: bluetooth
     harness: bluetooth

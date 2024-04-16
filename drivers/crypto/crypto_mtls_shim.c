@@ -599,11 +599,6 @@ static int mtls_query_caps(const struct device *dev)
 	return MTLS_SUPPORT;
 }
 
-static int mtls_shim_init(const struct device *dev)
-{
-	return 0;
-}
-
 static struct crypto_driver_api mtls_crypto_funcs = {
 	.cipher_begin_session = mtls_session_setup,
 	.cipher_free_session = mtls_session_free,
@@ -614,6 +609,5 @@ static struct crypto_driver_api mtls_crypto_funcs = {
 };
 
 DEVICE_DEFINE(crypto_mtls, CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME,
-		    &mtls_shim_init, NULL, NULL, NULL,
-		    POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
-		    (void *)&mtls_crypto_funcs);
+	      NULL, NULL, NULL, NULL, POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
+	      (void *)&mtls_crypto_funcs);

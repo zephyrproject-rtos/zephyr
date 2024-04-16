@@ -16,8 +16,8 @@ properties:
       timing information and supported command set.
       SHTC3 has an additional sleep mode that is entered between measurements.
     enum:
-        - "shtc1"
-        - "shtc3"
+      - "shtc1"
+      - "shtc3"
 
   measure-mode:
     type: string
@@ -26,8 +26,8 @@ properties:
       Specifies which measurement mode is used.
       SHTC1 sensor only supports the normal measuremnt mode.
     enum:
-        - "normal"
-        - "low-power"
+      - "normal"
+      - "low-power"
 
   clock-stretching:
     type: boolean

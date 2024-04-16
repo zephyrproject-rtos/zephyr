@@ -10,4 +10,12 @@ source "soc/arm/st_stm32/stm32g4/Kconfig.defconfig.stm32g4*"
 config SOC_SERIES
 	default "stm32g4"
 
+if PM
+config PM_DEVICE
+	default y
+
+config STM32_LPTIM_TIMER
+	default y
+endif # PM
+
 endif # SOC_SERIES_STM32G4X

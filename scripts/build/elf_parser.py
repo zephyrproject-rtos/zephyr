@@ -100,8 +100,11 @@ class Device(_Symbol):
         # Point to the handles instance associated with the device;
         # assigned by correlating the device struct handles pointer
         # value with the addr of a Handles instance.
-        ordinal_offset = self.elf.ld_consts['_DEVICE_STRUCT_HANDLES_OFFSET']
-        self.obj_ordinals = self._data_native_read(ordinal_offset)
+        self.obj_ordinals = None
+        if '_DEVICE_STRUCT_HANDLES_OFFSET' in self.elf.ld_consts:
+            ordinal_offset = self.elf.ld_consts['_DEVICE_STRUCT_HANDLES_OFFSET']
+            self.obj_ordinals = self._data_native_read(ordinal_offset)
+
         self.obj_pm = None
         if '_DEVICE_STRUCT_PM_OFFSET' in self.elf.ld_consts:
             pm_offset = self.elf.ld_consts['_DEVICE_STRUCT_PM_OFFSET']
@@ -117,6 +120,7 @@ class ZephyrElf:
     """
     def __init__(self, kernel, edt, device_start_symbol):
         self.elf = ELFFile(open(kernel, "rb"))
+        self.relocatable = self.elf['e_type'] == 'ET_REL'
         self.edt = edt
         self.devices = []
         self.ld_consts = self._symbols_find_value(set([device_start_symbol, *Device.required_ld_consts, *DevicePM.required_ld_consts]))
@@ -147,15 +151,18 @@ class ZephyrElf:
         """
         Retrieve the raw bytes associated with a symbol from the elf file.
         """
+        # Symbol data parameters
         addr = sym.entry.st_value
-        len = sym.entry.st_size
-        for section in self.elf.iter_sections():
-            start = section['sh_addr']
-            end = start + section['sh_size']
-
-            if (start <= addr) and (addr + len) <= end:
-                offset = addr - section['sh_addr']
-                return bytes(section.data()[offset:offset + len])
+        length = sym.entry.st_size
+        # Section associated with the symbol
+        section = self.elf.get_section(sym.entry['st_shndx'])
+        data = section.data()
+        # Relocatable data does not appear to be shifted
+        offset = addr - (0 if self.relocatable else section['sh_addr'])
+        # Validate data extraction
+        assert offset + length <= len(data)
+        # Extract symbol bytes from section
+        return bytes(data[offset:offset + length])
 
     def _symbols_find_value(self, names):
         symbols = {}
@@ -224,7 +231,7 @@ class ZephyrElf:
         ordinal_arrays = {}
         def _on_ordinal(sym):
             ordinal_arrays[sym.entry.st_value] = DeviceOrdinals(self, sym)
-        self._object_find_named('__devicehdl_', _on_ordinal)
+        self._object_find_named('__devicedeps_', _on_ordinal)
 
         # Find all device structs
         def _on_device(sym):

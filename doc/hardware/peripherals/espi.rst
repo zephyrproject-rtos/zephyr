@@ -1,7 +1,7 @@
 .. _espi_api:
 
-eSPI
-####
+Enhanced Serial Peripheral Interface (eSPI) Bus
+###############################################
 
 Overview
 ********

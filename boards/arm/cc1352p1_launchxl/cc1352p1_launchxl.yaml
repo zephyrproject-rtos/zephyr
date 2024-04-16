@@ -1,0 +1,17 @@
+identifier: cc1352p1_launchxl
+name: TI SimpleLink CC1352P LaunchPad
+type: mcu
+arch: arm
+ram: 80
+flash: 352
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - hwinfo
+vendor: ti

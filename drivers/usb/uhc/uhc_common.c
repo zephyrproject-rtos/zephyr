@@ -21,13 +21,11 @@ NET_BUF_POOL_VAR_DEFINE(uhc_ep_pool,
 
 int uhc_submit_event(const struct device *dev,
 		     const enum uhc_event_type type,
-		     const int status,
-		     struct uhc_transfer *const xfer)
+		     const int status)
 {
 	struct uhc_data *data = dev->data;
 	struct uhc_event drv_evt = {
 		.type = type,
-		.xfer = xfer,
 		.status = status,
 		.dev = dev,
 	};
@@ -43,10 +41,18 @@ void uhc_xfer_return(const struct device *dev,
 		     struct uhc_transfer *const xfer,
 		     const int err)
 {
+	struct uhc_data *data = dev->data;
+	struct uhc_event drv_evt = {
+		.type = UHC_EVT_EP_REQUEST,
+		.xfer = xfer,
+		.dev = dev,
+	};
+
 	sys_dlist_remove(&xfer->node);
 	xfer->queued = 0;
-	xfer->claimed = 0;
-	uhc_submit_event(dev, UHC_EVT_EP_REQUEST, err, xfer);
+	xfer->err = err;
+
+	data->event_cb(dev, &drv_evt);
 }
 
 struct uhc_transfer *uhc_xfer_get_next(const struct device *dev)
@@ -74,13 +80,25 @@ int uhc_xfer_append(const struct device *dev,
 	return 0;
 }
 
+struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
+				   const size_t size)
+{
+	return net_buf_alloc_len(&uhc_ep_pool, size, K_NO_WAIT);
+}
+
+void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf)
+{
+	net_buf_unref(buf);
+}
+
 struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t addr,
 				    const uint8_t ep,
 				    const uint8_t attrib,
 				    const uint16_t mps,
 				    const uint16_t timeout,
-				    void *const owner)
+				    void *const udev,
+				    void *const cb)
 {
 	const struct uhc_api *api = dev->api;
 	struct uhc_transfer *xfer = NULL;
@@ -91,8 +109,8 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		goto xfer_alloc_error;
 	}
 
-	LOG_DBG("Allocate xfer, ep 0x%02x attrib 0x%02x owner %p",
-		ep, attrib, owner);
+	LOG_DBG("Allocate xfer, ep 0x%02x attrib 0x%02x cb %p",
+		ep, attrib, cb);
 
 	if (k_mem_slab_alloc(&uhc_xfer_pool, (void **)&xfer, K_NO_WAIT)) {
 		LOG_ERR("Failed to allocate transfer");
@@ -100,14 +118,13 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	}
 
 	memset(xfer, 0, sizeof(struct uhc_transfer));
-	k_fifo_init(&xfer->queue);
-	k_fifo_init(&xfer->done);
 	xfer->addr = addr;
 	xfer->ep = ep;
 	xfer->attrib = attrib;
 	xfer->mps = mps;
 	xfer->timeout = timeout;
-	xfer->owner = owner;
+	xfer->udev = udev;
+	xfer->cb = cb;
 
 xfer_alloc_error:
 	api->unlock(dev);
@@ -115,31 +132,49 @@ xfer_alloc_error:
 	return xfer;
 }
 
+struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
+					     const uint8_t addr,
+					     const uint8_t ep,
+					     const uint8_t attrib,
+					     const uint16_t mps,
+					     const uint16_t timeout,
+					     void *const udev,
+					     void *const cb,
+					     size_t size)
+{
+	struct uhc_transfer *xfer;
+	struct net_buf *buf;
+
+	buf = uhc_xfer_buf_alloc(dev, size);
+	if (buf == NULL) {
+		return NULL;
+	}
+
+	xfer = uhc_xfer_alloc(dev, addr, ep, attrib, mps, timeout, udev, cb);
+	if (xfer == NULL) {
+		net_buf_unref(buf);
+		return NULL;
+	}
+
+	xfer->buf = buf;
+
+	return xfer;
+}
+
 int uhc_xfer_free(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	const struct uhc_api *api = dev->api;
-	struct net_buf *buf;
 	int ret = 0;
 
 	api->lock(dev);
 
-	if (xfer->queued || xfer->claimed) {
+	if (xfer->queued) {
 		ret = -EBUSY;
-		LOG_ERR("Transfer is still claimed");
+		LOG_ERR("Transfer is still queued");
 		goto xfer_free_error;
 	}
 
-	while (!k_fifo_is_empty(&xfer->queue)) {
-		buf = net_buf_get(&xfer->queue, K_NO_WAIT);
-		uhc_xfer_buf_free(dev, buf);
-	}
-
-	while (!k_fifo_is_empty(&xfer->done)) {
-		buf = net_buf_get(&xfer->done, K_NO_WAIT);
-		uhc_xfer_buf_free(dev, buf);
-	}
-
-	k_mem_slab_free(&uhc_xfer_pool, (void **)&xfer);
+	k_mem_slab_free(&uhc_xfer_pool, (void *)xfer);
 
 xfer_free_error:
 	api->unlock(dev);
@@ -147,52 +182,20 @@ xfer_free_error:
 	return ret;
 }
 
-struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
-				   struct uhc_transfer *const xfer,
-				   const size_t size)
-{
-	const struct uhc_api *api = dev->api;
-	struct net_buf *buf = NULL;
-
-	api->lock(dev);
-
-	if (!uhc_is_initialized(dev)) {
-		goto buf_alloc_error;
-	}
-
-	if (xfer->queued || xfer->claimed) {
-		goto buf_alloc_error;
-	}
-
-	LOG_DBG("Allocate net_buf, ep 0x%02x, size %zd", xfer->ep, size);
-	buf = net_buf_alloc_len(&uhc_ep_pool, size, K_NO_WAIT);
-	if (!buf) {
-		LOG_ERR("Failed to allocate net_buf");
-		goto buf_alloc_error;
-	}
-
-	if (buf->size < size) {
-		LOG_ERR("Buffer is smaller than requested");
-		net_buf_unref(buf);
-		buf = NULL;
-		goto buf_alloc_error;
-	}
-
-	k_fifo_put(&xfer->queue, &buf->node);
-
-buf_alloc_error:
-	api->unlock(dev);
-
-	return buf;
-}
-
-int uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf)
+int uhc_xfer_buf_add(const struct device *dev,
+		     struct uhc_transfer *const xfer,
+		     struct net_buf *buf)
 {
 	const struct uhc_api *api = dev->api;
 	int ret = 0;
 
 	api->lock(dev);
-	net_buf_unref(buf);
+	if (xfer->queued) {
+		ret = -EBUSY;
+	} else {
+		xfer->buf = buf;
+	}
+
 	api->unlock(dev);
 
 	return ret;
@@ -210,11 +213,12 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
 		goto ep_enqueue_error;
 	}
 
-	xfer->claimed = 1;
+	xfer->queued = 1;
 	ret = api->ep_enqueue(dev, xfer);
 	if (ret) {
-		xfer->claimed = 0;
+		xfer->queued = 0;
 	}
+
 
 ep_enqueue_error:
 	api->unlock(dev);
@@ -235,6 +239,7 @@ int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
 	}
 
 	ret = api->ep_dequeue(dev, xfer);
+	xfer->queued = 0;
 
 ep_dequeue_error:
 	api->unlock(dev);

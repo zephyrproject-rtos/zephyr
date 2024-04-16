@@ -5,16 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
+
 static inline void cpu_sleep(void)
 {
-#if defined(CONFIG_CPU_CORTEX_M0) || \
-	defined(CONFIG_CPU_CORTEX_M4) || \
-	defined(CONFIG_CPU_CORTEX_M33) || \
-	defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
-	__WFE();
-	__SEV();
-	__WFE();
-#endif
+	k_cpu_atomic_idle(irq_lock());
 }
 
 static inline void cpu_dmb(void)

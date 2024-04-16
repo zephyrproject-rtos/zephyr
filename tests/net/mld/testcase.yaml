@@ -1,5 +1,7 @@
 common:
-  tags: net mld
+  tags:
+    - net
+    - mld
   depends_on: netif
 tests:
   net.mld:

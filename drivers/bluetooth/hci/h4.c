@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(bt_driver);
 #define H4_EVT  0x04
 #define H4_ISO  0x05
 
-static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 static struct k_thread rx_thread_data;
 
 static struct {
@@ -553,9 +553,8 @@ static const struct bt_hci_driver drv = {
 #endif
 };
 
-static int bt_uart_init(const struct device *unused)
+static int bt_uart_init(void)
 {
-	ARG_UNUSED(unused);
 
 	if (!device_is_ready(h4_dev)) {
 		return -ENODEV;

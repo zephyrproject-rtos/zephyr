@@ -11,7 +11,7 @@ steps required:
 
    .. code-block:: bash
 
-     $ west build -p auto -t mps2_an521_ns samples/tfm_integration/psa_crypto/ -t run
+     $ west build -p auto -b mps2_an521_ns samples/tfm_integration/psa_protected_storage/ -t run
 
 The outputs and certain key steps in this build process are described here,
 however, since you will need to understand and interact with the outputs, and
@@ -121,6 +121,18 @@ following CMake snippet in your CMakeLists.txt file.
    The ``TFM_CMAKE_OPTIONS`` is a list so it is possible to append multiple
    options. Also CMake generator expressions are supported, such as
    ``$<1:-DFOO=bar>``
+
+Since ``TFM_CMAKE_OPTIONS`` is a list argument it will be expanded before it is
+passed to the TF-M build system.
+Options that have list arguments must therefore be properly escaped to avoid
+being expanded as a list.
+
+   .. code-block:: cmake
+
+     set_property(TARGET zephyr_property_target
+                  APPEND PROPERTY TFM_CMAKE_OPTIONS
+                  -DFOO="bar\\\;baz"
+     )
 
 Footprint and Memory Usage
 **************************

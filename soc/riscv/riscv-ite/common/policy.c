@@ -17,6 +17,7 @@ __weak const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t tic
 
 	for (int16_t i = (int16_t)num_cpu_states - 1; i >= 0; i--) {
 		const struct pm_state_info *state = &cpu_states[i];
+		uint32_t min_residency;
 
 		/* check if there is a lock on state + substate */
 		if (pm_policy_state_lock_is_active(
@@ -24,7 +25,14 @@ __weak const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t tic
 			continue;
 		}
 
-		return state;
+		min_residency = k_us_to_ticks_ceil32(state->min_residency_us);
+		/*
+		 * The tick interval for the system to enter sleep mode needs
+		 * to be longer than or equal to the minimum residency.
+		 */
+		if (ticks >= min_residency) {
+			return state;
+		}
 	}
 
 	return NULL;

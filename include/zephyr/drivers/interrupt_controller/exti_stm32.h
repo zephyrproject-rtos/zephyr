@@ -23,6 +23,8 @@
 
 #include <zephyr/types.h>
 
+#define STM32_EXTI_LINE_NONE	0xFFFFFFFFU
+
 /**
  * @brief enable EXTI interrupt for specific line
  *

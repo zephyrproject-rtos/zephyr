@@ -702,7 +702,7 @@ void z_x86_dump_page_tables(pentry_t *ptables)
 
 #if DUMP_PAGE_TABLES
 __pinned_func
-static int dump_kernel_tables(const struct device *unused)
+static int dump_kernel_tables(void)
 {
 	z_x86_dump_page_tables(z_x86_kernel_ptables);
 

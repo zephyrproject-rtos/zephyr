@@ -1,0 +1,21 @@
+# Copyright (c) 2022, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel SoC FPGA Reset Controller
+
+compatible: "intel,socfpga-reset"
+
+include: [base.yaml, reset-controller.yaml]
+
+properties:
+  reg:
+    required: true
+  active-low:
+    type: boolean
+    description: Add this property in dts node if the reset line is active_low, otherwise do not
+                   include this property for active_high lines.
+  "#reset-cells":
+    const: 1
+
+reset-cells:
+- id

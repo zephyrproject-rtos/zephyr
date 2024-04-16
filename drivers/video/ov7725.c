@@ -633,7 +633,7 @@ static int ov7725_init_0(const struct device *dev)
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	if (!device_is_ready(cfg->reset_gpio.port)) {
+	if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
 		LOG_ERR("%s: device %s is not ready", dev->name,
 				cfg->reset_gpio.port->name);
 		return -ENODEV;
@@ -645,5 +645,5 @@ static int ov7725_init_0(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, &ov7725_init_0, NULL,
 		    &ov7725_data_0, &ov7725_cfg_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 		    &ov7725_driver_api);

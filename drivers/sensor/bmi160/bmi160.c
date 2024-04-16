@@ -14,6 +14,9 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/logging/log.h>
 
 #include "bmi160.h"
@@ -712,6 +715,15 @@ static int bmi160_sample_fetch(const struct device *dev,
 	struct bmi160_data *data = dev->data;
 	uint8_t status;
 	size_t i;
+	int ret = 0;
+	enum pm_device_state pm_state;
+
+	(void)pm_device_state_get(dev, &pm_state);
+	if (pm_state != PM_DEVICE_STATE_ACTIVE) {
+		LOG_DBG("Device is suspended, fetch is unavailable");
+		ret = -EIO;
+		goto out;
+	}
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
@@ -719,13 +731,15 @@ static int bmi160_sample_fetch(const struct device *dev,
 	while ((status & BMI160_DATA_READY_BIT_MASK) == 0) {
 
 		if (bmi160_byte_read(dev, BMI160_REG_STATUS, &status) < 0) {
-			return -EIO;
+			ret = -EIO;
+			goto out;
 		}
 	}
 
 	if (bmi160_read(dev, BMI160_SAMPLE_BURST_READ_ADDR, data->sample.raw,
 			BMI160_BUF_SIZE) < 0) {
-		return -EIO;
+		ret = -EIO;
+		goto out;
 	}
 
 	/* convert samples to cpu endianness */
@@ -736,7 +750,8 @@ static int bmi160_sample_fetch(const struct device *dev,
 		*sample = sys_le16_to_cpu(*sample);
 	}
 
-	return 0;
+out:
+	return ret;
 }
 
 static void bmi160_to_fixed_point(int16_t raw_val, uint16_t scale,
@@ -872,6 +887,33 @@ static const struct sensor_driver_api bmi160_api = {
 	.channel_get = bmi160_channel_get,
 };
 
+
+static inline int bmi160_resume(const struct device *dev)
+{
+	struct bmi160_data *data = dev->data;
+
+	return bmi160_pmu_set(dev, &data->pmu_sts);
+}
+
+static inline int bmi160_suspend(const struct device *dev)
+{
+	struct bmi160_data *data = dev->data;
+
+	/* Suspend everything */
+	union bmi160_pmu_status st = {
+		.acc = BMI160_PMU_SUSPEND,
+		.gyr = BMI160_PMU_SUSPEND,
+		.mag = BMI160_PMU_SUSPEND,
+	};
+
+	int ret = bmi160_pmu_set(dev, &st);
+
+	if (ret == 0) {
+		memset(data->sample.raw, 0, sizeof(data->sample.raw));
+	}
+	return ret;
+}
+
 int bmi160_init(const struct device *dev)
 {
 	const struct bmi160_cfg *cfg = dev->config;
@@ -913,8 +955,23 @@ int bmi160_init(const struct device *dev)
 	/* set default PMU for gyro, accelerometer */
 	data->pmu_sts.gyr = BMI160_DEFAULT_PMU_GYR;
 	data->pmu_sts.acc = BMI160_DEFAULT_PMU_ACC;
+
 	/* compass not supported, yet */
 	data->pmu_sts.mag = BMI160_PMU_SUSPEND;
+
+	/* Start in a suspended state (never turning on the mems sensors) if
+	 * PM_DEVICE_RUNTIME is enabled.
+	 */
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	pm_device_init_suspended(dev);
+
+	int ret = pm_device_runtime_enable(dev);
+
+	if (ret < 0 && ret != -ENOSYS) {
+		LOG_ERR("Failed to enabled runtime power management");
+		return -EIO;
+	}
+#else
 
 	/*
 	 * The next command will take around 100ms (contains some necessary busy
@@ -926,6 +983,7 @@ int bmi160_init(const struct device *dev)
 		LOG_DBG("Failed to set power mode.");
 		return -EIO;
 	}
+#endif
 
 	/* set accelerometer default range */
 	if (bmi160_byte_write(dev, BMI160_REG_ACC_RANGE,
@@ -975,6 +1033,24 @@ int bmi160_init(const struct device *dev)
 	return 0;
 }
 
+int bmi160_pm(const struct device *dev, enum pm_device_action action)
+{
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		bmi160_resume(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		bmi160_suspend(dev);
+		break;
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+
 #if defined(CONFIG_BMI160_TRIGGER)
 #define BMI160_TRIGGER_CFG(inst) \
 	.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),
@@ -982,11 +1058,13 @@ int bmi160_init(const struct device *dev)
 #define BMI160_TRIGGER_CFG(inst)
 #endif
 
-#define BMI160_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi160_init, NULL,		\
-			      &bmi160_data_##inst, &bmi160_cfg_##inst,	\
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,	\
-			      &bmi160_api);
+#define BMI160_DEVICE_INIT(inst)								\
+	IF_ENABLED(CONFIG_PM_DEVICE_RUNTIME, (PM_DEVICE_DT_INST_DEFINE(inst, bmi160_pm)));	\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi160_init,						\
+		COND_CODE_1(CONFIG_PM_DEVICE_RUNTIME, (PM_DEVICE_DT_INST_GET(inst)), (NULL)),	\
+		&bmi160_data_##inst, &bmi160_cfg_##inst,					\
+		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,					\
+		&bmi160_api);
 
 /* Instantiation macros used when a device is on a SPI bus */
 #define BMI160_DEFINE_SPI(inst)						   \
@@ -1003,6 +1081,7 @@ int bmi160_init(const struct device *dev)
 	{					       \
 		.bus.i2c = I2C_DT_SPEC_INST_GET(inst), \
 		.bus_io = &bmi160_bus_io_i2c,	       \
+		BMI160_TRIGGER_CFG(inst)	       \
 	}
 
 #define BMI160_DEFINE_I2C(inst)							    \

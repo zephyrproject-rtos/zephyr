@@ -1,4 +1,6 @@
 &arduino_i2c {
+	status = "okay";
+
 	w1: w1@18 {
 		compatible = "maxim,ds2484";
 		reg = <0x18>;

@@ -1,7 +1,10 @@
 tests:
   benchmark.kernel.scheduler_userspace:
     arch_allow: arm64
-    tags: benchmark userspace
+    tags:
+      - kernel
+      - benchmark
+      - userspace
     slow: true
     filter: CONFIG_ARCH_HAS_USERSPACE
     harness: console

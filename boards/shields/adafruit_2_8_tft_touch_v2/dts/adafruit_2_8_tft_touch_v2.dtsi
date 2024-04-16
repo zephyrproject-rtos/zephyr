@@ -9,7 +9,14 @@
 / {
 	chosen {
 		zephyr,display = &ili9340;
-		zephyr,keyboard-scan = &touch_controller;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336_adafruit_2_8_tft_touch_v2>;
+		swap-xy;
+		invert-x;
+		invert-y;
 	};
 };
 
@@ -49,7 +56,7 @@
 };
 
 &arduino_i2c {
-	touch_controller: ft5336@38 {
+	ft5336_adafruit_2_8_tft_touch_v2: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		/* Uncomment if IRQ line is available (requires to solder jumper) */

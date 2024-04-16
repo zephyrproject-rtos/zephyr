@@ -1,0 +1,42 @@
+# Copyright 2023 Daniel DeGrasse <daniel@degrasse.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: TCN75A ambient temperature sensor
+
+compatible: "microchip,tcn75a"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  alert-gpios:
+    type: phandle-array
+    description: |
+      ALERT pin
+      This pin defaults to active low when produced by the sensor.
+      The property value should ensure the gpio flags properly describe
+      the signal that is presented to the driver. Required in order to use
+      triggering support.
+
+  resolution:
+    type: string
+    default: "9-bit"
+    enum:
+      - "9-bit"
+      - "10-bit"
+      - "11-bit"
+      - "12-bit"
+    description: |
+      Sensor resolution. Higher resolutions will result in longer conversion
+      times. Note: datasheet's claim about the ambient temperature register:
+      > When the 0.5°C, 0.25°C or 0.125°C resolutions are selected,
+      > bit 6, bit 7 or bit 8 will remain clear <0>,
+      > respectively.
+      appears to be incorrect. Only conversion times seem to be affected by
+      resolution selection.
+
+  oneshot-mode:
+    type: boolean
+    description: |
+      Oneshot sampling mode. Reduces power consumption, but disables triggering
+      feature as well as high resolution sampling. Only supported with 9 bit
+      resolution.

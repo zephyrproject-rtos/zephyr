@@ -6,18 +6,18 @@ include: [interrupt-controller.yaml, base.yaml]
 
 properties:
   reg:
-      required: true
+    required: true
 
   interrupts:
-      required: true
+    required: true
 
   "#interrupt-cells":
-      const: 3
+    const: 3
 
   num-irqs:
-      type: int
-      required: true
-      description: Number of irq the controller manages
+    type: int
+    required: true
+    description: Number of irq the controller manages
 
 interrupt-cells:
   - irq

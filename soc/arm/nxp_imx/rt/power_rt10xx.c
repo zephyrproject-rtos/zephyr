@@ -7,13 +7,14 @@
  * sleep mode must be defined within this file, or linked to RAM.
  */
 #include <zephyr/kernel.h>
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/pm/pm.h>
 #include <fsl_dcdc.h>
 #include <fsl_pmu.h>
 #include <fsl_gpc.h>
 #include <fsl_clock.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/barrier.h>
 
 #include "power_rt10xx.h"
 
@@ -97,8 +98,8 @@ static void lpm_enter_sleep_mode(clock_mode_t mode)
 	__disable_irq();
 	/* Set BASEPRI to 0 */
 	irq_unlock(0);
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 
 	if (mode == kCLOCK_ModeWait) {
 		/* Clear the SLEEPDEEP bit to go into sleep mode (WAIT) */
@@ -182,7 +183,7 @@ static void lpm_raise_voltage(void)
 
 
 /* Sets device into low power mode */
-__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
+void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 
@@ -212,7 +213,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 
@@ -239,11 +240,10 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 }
 
 /* Initialize power system */
-static int rt10xx_power_init(const struct device *dev)
+static int rt10xx_power_init(void)
 {
 	dcdc_internal_regulator_config_t reg_config;
 
-	ARG_UNUSED(dev);
 
 	/* Ensure clocks to ARM core memory will not be gated in low power mode
 	 * if interrupt is pending

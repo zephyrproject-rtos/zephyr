@@ -5,11 +5,11 @@ description: LiteX Ethernet
 
 compatible: "litex,eth0"
 
-include: ethernet.yaml
+include: ethernet-controller.yaml
 
 properties:
-    reg:
-        required: true
+  reg:
+    required: true
 
-    interrupts:
-        required: true
+  interrupts:
+    required: true

@@ -3,4 +3,8 @@
 
 config BOARD_XIAO_ESP32C3
 	bool "XIAO ESP32C3 Board"
-	depends on SOC_ESP32C3
+	depends on SOC_SERIES_ESP32C3
+
+choice SOC_PART_NUMBER
+	default SOC_ESP32C3_FX4
+endchoice

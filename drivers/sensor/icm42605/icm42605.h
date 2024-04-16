@@ -47,13 +47,13 @@ struct icm42605_data {
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
 
-	struct sensor_trigger data_ready_trigger;
+	const struct sensor_trigger *data_ready_trigger;
 	sensor_trigger_handler_t data_ready_handler;
 
-	struct sensor_trigger tap_trigger;
+	const struct sensor_trigger *tap_trigger;
 	sensor_trigger_handler_t tap_handler;
 
-	struct sensor_trigger double_tap_trigger;
+	const struct sensor_trigger *double_tap_trigger;
 	sensor_trigger_handler_t double_tap_handler;
 
 #ifdef CONFIG_ICM42605_TRIGGER

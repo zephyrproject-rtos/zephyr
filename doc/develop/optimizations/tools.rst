@@ -16,38 +16,6 @@ stack usage analysis:
 
 Tools that are available as build system targets:
 
-Build Target: puncover
-======================
-
-This target uses a 3rd party tools called puncover which can be found `here
-<https://github.com/HBehrens/puncover>`_. When this target is built, it will
-launch a local web server which will allow you to open a web client and browse
-the files and view their ROM, RAM and stack usage. Before you can use this
-target, you will have to install the puncover python module::
-
-    pip3 install git+https://github.com/HBehrens/puncover --user
-
-
-Then:
-
-.. zephyr-app-commands::
-    :tool: all
-    :app: samples/hello_world
-    :board: reel_board
-    :goals: puncover
-
-
-To view worst-case stack usage analysis, build this with the
-:kconfig:option:`CONFIG_STACK_USAGE` enabled.
-
-.. zephyr-app-commands::
-    :tool: all
-    :app: samples/hello_world
-    :board: reel_board
-    :goals: puncover
-    :gen-args: -DCONFIG_STACK_USAGE=y
-
-
 Build Target: ram_report
 ========================
 
@@ -155,6 +123,42 @@ which will generate something similar to the output below::
                 76     0.37%
     ...
     ...
+
+Build Target: puncover
+======================
+
+This target uses a third-party tool called puncover which can be found at
+https://github.com/HBehrens/puncover. When this target is built, it will
+launch a local web server which will allow you to open a web client and browse
+the files and view their ROM, RAM, and stack usage. Before you can use this
+target, you will have to install the puncover python module::
+
+    pip3 install git+https://github.com/HBehrens/puncover --user
+
+.. warning::
+
+   This is a third-party tool that might or might not be working at any given
+   time. Please check the GitHub issues, and report new problems to the
+   project maintainer.
+
+Then:
+
+.. zephyr-app-commands::
+    :tool: all
+    :app: samples/hello_world
+    :board: reel_board
+    :goals: puncover
+
+
+To view worst-case stack usage analysis, build this with the
+:kconfig:option:`CONFIG_STACK_USAGE` enabled.
+
+.. zephyr-app-commands::
+    :tool: all
+    :app: samples/hello_world
+    :board: reel_board
+    :goals: puncover
+    :gen-args: -DCONFIG_STACK_USAGE=y
 
 
 Data Structures

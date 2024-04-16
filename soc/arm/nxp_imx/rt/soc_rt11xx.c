@@ -14,8 +14,6 @@
 #include <fsl_gpc.h>
 #include <fsl_pmu.h>
 #include <fsl_dcdc.h>
-#include <zephyr/arch/cpu.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
 #include <fsl_flexspi_nor_boot.h>
 #endif
@@ -35,6 +33,8 @@
 #include "usb_phy.h"
 #include "usb.h"
 #endif
+
+#include <cmsis_core.h>
 
 #define DUAL_CORE_MU_ENABLED \
 	(CONFIG_SECOND_CORE_MCUX && CONFIG_IPM && CONFIG_IPM_IMX_REV2)
@@ -120,8 +120,13 @@ static const clock_video_pll_config_t videoPllConfig = {
 
 #ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
 const __imx_boot_data_section BOOT_DATA_T boot_data = {
+#ifdef CONFIG_XIP
 	.start = CONFIG_FLASH_BASE_ADDRESS,
-	.size = KB(CONFIG_FLASH_SIZE),
+	.size = (uint32_t)&_flash_used,
+#else
+	.start = CONFIG_SRAM_BASE_ADDRESS,
+	.size = (uint32_t)&_image_ram_size,
+#endif
 	.plugin = PLUGIN_FLAG,
 	.placeholder = 0xFFFFFFFF,
 };
@@ -454,7 +459,13 @@ static ALWAYS_INLINE void clock_init(void)
 
 #ifdef CONFIG_DISPLAY_MCUX_ELCDIF
 	rootCfg.mux = kCLOCK_LCDIF_ClockRoot_MuxSysPll2Out;
-	rootCfg.div = 9;
+	/*
+	 * PLL2 is fixed at 528MHz. Use desired panel clock clock to
+	 * calculate LCDIF clock.
+	 */
+	rootCfg.div = ((SYS_PLL2_FREQ /
+			DT_PROP(DT_CHILD(DT_NODELABEL(lcdif), display_timings),
+			clock_frequency)) + 1);
 	CLOCK_SetRootClock(kCLOCK_Root_Lcdif, &rootCfg);
 #endif
 
@@ -622,20 +633,8 @@ void imxrt_post_init_display_interface(void)
  * @return 0
  */
 
-static int imxrt_init(const struct device *arg)
+static int imxrt_init(void)
 {
-	ARG_UNUSED(arg);
-
-	unsigned int oldLevel; /* old interrupt lock level */
-
-	/* disable interrupts */
-	oldLevel = irq_lock();
-
-	/* Disable Systick which might be enabled by bootrom */
-	if ((SysTick->CTRL & SysTick_CTRL_ENABLE_Msk) != 0) {
-		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
-	}
-
 #if  defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M7)
 	/**
 	 * Copy CM4 core from flash to memory. Note that depending on where the
@@ -659,75 +658,37 @@ static int imxrt_init(const struct device *arg)
 	MU_SetFlags(MU_BASE, BOOT_FLAG);
 #endif
 
+
 #if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
-	if (SCB_CCR_IC_Msk != (SCB_CCR_IC_Msk & SCB->CCR)) {
-		SCB_EnableICache();
-	}
-	if (SCB_CCR_DC_Msk != (SCB_CCR_DC_Msk & SCB->CCR)) {
-		SCB_EnableDCache();
-	}
+#ifndef CONFIG_IMXRT1XXX_CODE_CACHE
+	/* SystemInit enables code cache, disable it here */
+	SCB_DisableICache();
+#else
+	/* z_arm_init_arch_hw_at_boot() disables code cache if CONFIG_ARCH_CACHE is enabled,
+	 * enable it here.
+	 */
+	SCB_EnableICache();
 #endif
 
-#if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1166_CM4)
-	/* Initialize Cache */
-	/* Enable Code Bus Cache */
-	if (0U == (LMEM->PCCCR & LMEM_PCCCR_ENCACHE_MASK)) {
-		/*
-		 * set command to invalidate all ways,
-		 * and write GO bit to initiate command
-		 */
-		LMEM->PCCCR |= LMEM_PCCCR_INVW1_MASK
-			| LMEM_PCCCR_INVW0_MASK | LMEM_PCCCR_GO_MASK;
-		/* Wait until the command completes */
-		while ((LMEM->PCCCR & LMEM_PCCCR_GO_MASK) != 0U) {
+	if (IS_ENABLED(CONFIG_IMXRT1XXX_DATA_CACHE)) {
+		if ((SCB->CCR & SCB_CCR_DC_Msk) == 0) {
+			SCB_EnableDCache();
 		}
-		/* Enable cache, enable write buffer */
-		LMEM->PCCCR |= (LMEM_PCCCR_ENWRBUF_MASK
-				| LMEM_PCCCR_ENCACHE_MASK);
-	}
-
-	/* Enable System Bus Cache */
-	if (0U == (LMEM->PSCCR & LMEM_PSCCR_ENCACHE_MASK)) {
-		/*
-		 * set command to invalidate all ways,
-		 * and write GO bit to initiate command
-		 */
-		LMEM->PSCCR |= LMEM_PSCCR_INVW1_MASK
-			| LMEM_PSCCR_INVW0_MASK | LMEM_PSCCR_GO_MASK;
-		/* Wait until the command completes */
-		while ((LMEM->PSCCR & LMEM_PSCCR_GO_MASK) != 0U) {
-		}
-		/* Enable cache, enable write buffer */
-		LMEM->PSCCR |= (LMEM_PSCCR_ENWRBUF_MASK
-				| LMEM_PSCCR_ENCACHE_MASK);
+	} else {
+		SCB_DisableDCache();
 	}
 #endif
 
 	/* Initialize system clock */
 	clock_init();
 
-	/*
-	 * install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	/* restore interrupt state */
-	irq_unlock(oldLevel);
 	return 0;
 }
 
 #ifdef CONFIG_PLATFORM_SPECIFIC_INIT
 void z_arm_platform_init(void)
 {
-#if (DT_DEP_ORD(DT_NODELABEL(ocram)) != DT_DEP_ORD(DT_CHOSEN(zephyr_sram))) && \
-	CONFIG_OCRAM_NOCACHE
-	/* Copy data from flash to OCRAM */
-	memcpy(&__ocram_data_start, &__ocram_data_load_start,
-		(&__ocram_data_end - &__ocram_data_start));
-	/* Zero BSS region */
-	memset(&__ocram_bss_start, 0, (&__ocram_bss_end - &__ocram_bss_start));
-#endif
+	SystemInit();
 }
 #endif
 
@@ -743,7 +704,7 @@ SYS_INIT(imxrt_init, PRE_KERNEL_1, 0);
  *
  * @return 0
  */
-static int second_core_boot(const struct device *arg)
+static int second_core_boot(void)
 {
 	/* Kick CM4 core out of reset */
 	SRC->CTRL_M4CORE = SRC_CTRL_M4CORE_SW_RESET_MASK;

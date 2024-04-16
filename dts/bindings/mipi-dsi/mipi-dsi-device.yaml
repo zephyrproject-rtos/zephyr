@@ -8,17 +8,17 @@ include: base.yaml
 on-bus: mipi-dsi
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    data-lanes:
-      type: array
-      required: true
-      description:
-        Number of data lanes.
+  data-lanes:
+    type: array
+    required: true
+    description:
+      Number of data lanes.
 
-    pixel-format:
-      type: int
-      required: true
-      description:
-        Pixel format. Available formats in dt-bindings/mipi_dsi/mipi_dsi.h.
+  pixel-format:
+    type: int
+    required: true
+    description:
+      Pixel format. Available formats in dt-bindings/mipi_dsi/mipi_dsi.h.

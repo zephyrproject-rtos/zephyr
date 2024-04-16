@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+common:
+  tags:
+    - handler_demo
+    - mcumgr
+    - mgmt
+tests:
+  mgmt.mcumgr.handler.demo:
+    platform_allow:
+      - nrf52840dk_nrf52840
+    integration_platforms:
+      - nrf52840dk_nrf52840
+    build_only: true
+  mgmt.mcumgr.handler.demo.module:
+    extra_args:
+      - OVERLAY_CONFIG="module.conf"
+    platform_allow:
+      - nrf52840dk_nrf52840
+    integration_platforms:
+      - nrf52840dk_nrf52840
+    build_only: true

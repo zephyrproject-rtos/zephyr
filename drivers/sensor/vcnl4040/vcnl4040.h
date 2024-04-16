@@ -113,7 +113,9 @@ struct vcnl4040_data {
 	struct gpio_callback gpio_cb;
 	enum interrupt_type int_type;
 	sensor_trigger_handler_t proxy_handler;
+	const struct sensor_trigger *proxy_trigger;
 	sensor_trigger_handler_t als_handler;
+	const struct sensor_trigger *als_trigger;
 #endif
 #ifdef CONFIG_VCNL4040_TRIGGER_OWN_THREAD
 	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_VCNL4040_THREAD_STACK_SIZE);

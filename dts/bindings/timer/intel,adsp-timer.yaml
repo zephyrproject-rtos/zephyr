@@ -8,8 +8,8 @@ compatible: "intel,adsp-timer"
 include: base.yaml
 
 properties:
-    syscon:
-      type: phandle
-      required: true
-      description: |
-        phandle to syscon node.
+  syscon:
+    type: phandle
+    required: true
+    description: |
+      phandle to syscon node.

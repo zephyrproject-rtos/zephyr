@@ -1,0 +1,7 @@
+tests:
+  boards.mec172xevb_assy6906.qspi:
+    platform_allow: mec172xevb_assy6906
+    tags:
+      - drivers
+      - spi
+      - qspi

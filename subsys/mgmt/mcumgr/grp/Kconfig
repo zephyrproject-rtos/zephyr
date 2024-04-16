@@ -6,10 +6,16 @@ rsource "fs_mgmt/Kconfig"
 
 rsource "img_mgmt/Kconfig"
 
+rsource "img_mgmt_client/Kconfig"
+
 rsource "os_mgmt/Kconfig"
+
+rsource "os_mgmt_client/Kconfig"
 
 rsource "shell_mgmt/Kconfig"
 
 rsource "stat_mgmt/Kconfig"
 
 rsource "zephyr_basic/Kconfig"
+
+rsource "settings_mgmt/Kconfig"

@@ -13,3 +13,5 @@ toolchain:
   - xtools
 supported:
   - watchdog
+  - dma
+vendor: gd

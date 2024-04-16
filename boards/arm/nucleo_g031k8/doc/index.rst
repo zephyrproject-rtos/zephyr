@@ -123,7 +123,7 @@ This interface is supported by the openocd version included in the Zephyr SDK.
 Flashing an application to Nucleo G031K8
 ----------------------------------------
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -159,7 +159,7 @@ References
 .. target-notes::
 
 .. _Nucleo G031K8 website:
-   http://www.st.com/en/evaluation-tools/nucleo-g031k8.html
+   https://www.st.com/en/evaluation-tools/nucleo-g031k8.html
 
 .. _STM32G0x1 reference manual:
    https://www.st.com/resource/en/reference_manual/rm0444-stm32g0x1-advanced-armbased-32bit-mcus-stmicroelectronics.pdf

@@ -95,7 +95,7 @@ References
 .. target-notes::
 
 .. _X-NUCLEO-IDB05A1 website:
-   http://www.st.com/en/ecosystems/x-nucleo-idb05a1.html
+   https://www.st.com/en/ecosystems/x-nucleo-idb05a1.html
 
 .. _X-NUCLEO-IDB05A1 databrief:
    https://www.st.com/resource/en/data_brief/x-nucleo-idb05a1.pdf

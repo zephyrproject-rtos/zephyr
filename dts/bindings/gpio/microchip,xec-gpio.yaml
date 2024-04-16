@@ -8,21 +8,21 @@ compatible: "microchip,xec-gpio"
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    port-id:
-      type: int
-      required: true
-      description: Zero based GPIO port number
+  port-id:
+    type: int
+    required: true
+    description: Zero based GPIO port number
 
-    girq-id:
-      type: int
-      required: true
-      description: Aggregated GIRQ number for this bank of 32 GPIO pins.
+  girq-id:
+    type: int
+    required: true
+    description: Aggregated GIRQ number for this bank of 32 GPIO pins.
 
-    "#gpio-cells":
-      const: 2
+  "#gpio-cells":
+    const: 2
 
 gpio-cells:
   - pin

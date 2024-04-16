@@ -53,7 +53,8 @@ struct l2ch {
 	struct bt_l2cap_le_chan ch;
 };
 #define L2CH_CHAN(_chan) CONTAINER_OF(_chan, struct l2ch, ch.chan)
-#define L2CH_WORK(_work) CONTAINER_OF(_work, struct l2ch, recv_work)
+#define L2CH_WORK(_work) CONTAINER_OF(k_work_delayable_from_work(_work), \
+				      struct l2ch, recv_work)
 #define L2CAP_CHAN(_chan) _chan->ch.chan
 
 static bool metrics;
@@ -211,7 +212,8 @@ static int l2cap_accept_policy(struct bt_conn *conn)
 	return 0;
 }
 
-static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+			struct bt_l2cap_chan **chan)
 {
 	int err;
 

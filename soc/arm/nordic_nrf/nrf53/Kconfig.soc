@@ -9,10 +9,16 @@ config SOC_NRF5340_CPUAPP
 	select CPU_HAS_NRF_IDAU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
+	select HAS_POWEROFF
+	select SOC_COMPATIBLE_NRF5340_CPUAPP
+	imply SOC_NRF53_RTC_PRETICK
 
 config SOC_NRF5340_CPUNET
 	bool
-	select HAS_NO_PM
+	select ARM_ON_EXIT_CPU_IDLE
+	select SOC_COMPATIBLE_NRF5340_CPUNET
+	imply SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
+	imply SOC_NRF53_RTC_PRETICK if !WDT_NRFX
 
 choice
 	prompt "nRF53x MCU Selection"
@@ -27,16 +33,58 @@ config SOC_NRF5340_CPUNET_QKAA
 
 endchoice
 
+config SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
+	bool "Workaround for nRF5340 anomaly 160"
+	imply SOC_NRF53_ANOMALY_160_WORKAROUND
+	help
+	  Indicates that the workaround for the anomaly 160 that affects
+	  the nRF5340 SoC should be applied.
+	  This option is enabled by default for the Application MCU when
+	  DC/DC mode is enabled for the VREGMAIN or VREGRADIO regulator
+	  and always for the Network MCU.
+	  If this option is enabled, but the workaround cannot be applied,
+	  because the system clock is disabled, a related cmake warning is
+	  issued.
+
+config SOC_NRF53_ANOMALY_160_WORKAROUND
+	bool
+	depends on SYS_CLOCK_EXISTS
+	select ARM_ON_ENTER_CPU_IDLE_HOOK
+
+config SOC_NRF53_RTC_PRETICK
+	bool "Pre-tick workaround for nRF5340 anomaly 165"
+	select NRFX_DPPI
+	select ARM_ON_ENTER_CPU_IDLE_HOOK if SOC_NRF5340_CPUNET
+	select ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK if SOC_NRF5340_CPUNET
+	help
+	  Indicates that the pre-tick workaround for the anomaly 165 that affects
+	  the nRF5340 SoC should be applied.
+
+if SOC_NRF53_RTC_PRETICK
+
+config SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET
+	int "IPC 0 channel for RTC pretick"
+	range 0 15
+	default 10
+
+config SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET
+	int "IPC 1 channel for RTC pretick"
+	range 0 15
+	default 11
+
+endif
 
 if SOC_NRF5340_CPUAPP
 
 config SOC_DCDC_NRF53X_APP
 	bool
+	imply SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
 	help
 	  Enable nRF53 series System on Chip Application MCU DC/DC converter.
 
 config SOC_DCDC_NRF53X_NET
 	bool
+	imply SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
 	help
 	  Enable nRF53 series System on Chip Network MCU DC/DC converter.
 
@@ -155,6 +203,7 @@ config NRF53_SYNC_RTC_INIT_PRIORITY
 	  nRF53 Synchronized RTC initialization priority.
 
 config NRF_RTC_TIMER_USER_CHAN_COUNT
+	default 2 if NRF_802154_RADIO_DRIVER && SOC_NRF5340_CPUNET
 	default 3 if NRF_802154_RADIO_DRIVER
 	default 1
 

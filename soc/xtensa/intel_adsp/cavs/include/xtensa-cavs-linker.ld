@@ -260,7 +260,7 @@ SECTIONS {
 #endif
 
   .text : {
-    _text_start = .;
+    __text_region_start = .;
     *(.iram1 .iram1.*)
     *(.entry.text)
     *(.init.literal)
@@ -271,7 +271,7 @@ SECTIONS {
     *(.fini.literal)
     KEEP(*(.fini))
     *(.gnu.version)
-    _text_end = .;
+    __text_region_end = .;
   } >RAM
 
   .rodata : ALIGN(4096)

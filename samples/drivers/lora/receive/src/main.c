@@ -38,7 +38,7 @@ void lora_receive_cb(const struct device *dev, uint8_t *data, uint16_t size,
 	}
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const lora_dev = DEVICE_DT_GET(DEFAULT_RADIO_NODE);
 	struct lora_modem_config config;
@@ -49,7 +49,7 @@ void main(void)
 
 	if (!device_is_ready(lora_dev)) {
 		LOG_ERR("%s Device not ready", lora_dev->name);
-		return;
+		return 0;
 	}
 
 	config.frequency = 865100000;
@@ -65,7 +65,7 @@ void main(void)
 	ret = lora_config(lora_dev, &config);
 	if (ret < 0) {
 		LOG_ERR("LoRa config failed");
-		return;
+		return 0;
 	}
 
 	/* Receive 4 packets synchronously */
@@ -76,7 +76,7 @@ void main(void)
 				&rssi, &snr);
 		if (len < 0) {
 			LOG_ERR("LoRa receive failed");
-			return;
+			return 0;
 		}
 
 		LOG_INF("Received data: %s (RSSI:%ddBm, SNR:%ddBm)",
@@ -87,4 +87,5 @@ void main(void)
 	LOG_INF("Asynchronous reception");
 	lora_recv_async(lora_dev, lora_receive_cb);
 	k_sleep(K_FOREVER);
+	return 0;
 }

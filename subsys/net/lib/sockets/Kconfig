@@ -5,6 +5,7 @@
 
 menuconfig NET_SOCKETS
 	bool "BSD Sockets compatible API"
+	select FDTABLE
 	help
 	  Provide BSD Sockets like API on top of native Zephyr networking API.
 
@@ -63,6 +64,13 @@ config NET_SOCKETS_DNS_TIMEOUT
 	  This variable specifies time in milliseconds after which DNS
 	  query is considered timeout. Minimum timeout is 1 second and
 	  maximum timeout is 5 min.
+
+config NET_SOCKET_MAX_SEND_WAIT
+	int "Max time in milliseconds waiting for a send command"
+	default 10000
+	help
+	  The maximum time a socket is waiting for a blocked connection before
+	  returning an ENOBUFS error.
 
 config NET_SOCKETS_SOCKOPT_TLS
 	bool "TCP TLS socket option support [EXPERIMENTAL]"
@@ -149,7 +157,7 @@ config NET_SOCKETS_TLS_MAX_APP_PROTOCOLS
 	depends on NET_SOCKETS_SOCKOPT_TLS && MBEDTLS_SSL_ALPN
 	help
 	  This variable sets maximum number of supported application layer
-	  protocols over TLS/DTL that can be set explicitly by a socket option.
+	  protocols over TLS/DTLS that can be set explicitly by a socket option.
 	  By default, no supported application layer protocol is set.
 
 config NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT
@@ -244,21 +252,39 @@ config NET_SOCKETS_CAN_RECEIVERS
 	  Socket-CAN interface.
 
 config NET_SOCKETPAIR
-	bool "Support for the socketpair syscall [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Support for socketpair"
 	select PIPES
-	depends on HEAP_MEM_POOL_SIZE != 0
 	help
-	  Choose y here if you would like to use the socketpair(2)
-	  system call.
+	  Communicate over a pair of connected, unnamed UNIX domain sockets.
+
+if NET_SOCKETPAIR
 
 config NET_SOCKETPAIR_BUFFER_SIZE
 	int "Size of the intermediate buffer, in bytes"
 	default 64
 	range 1 4096
-	depends on NET_SOCKETPAIR
 	help
 	  Buffer size for socketpair(2)
+
+choice
+	prompt "Memory management for socketpair"
+	default NET_SOCKETPAIR_HEAP if HEAP_MEM_POOL_SIZE != 0
+
+config NET_SOCKETPAIR_STATIC
+	bool "Pre-allocate memory statically"
+
+config NET_SOCKETPAIR_HEAP
+	bool "Use heap for allocating socketpairs"
+	depends on HEAP_MEM_POOL_SIZE != 0
+
+endchoice
+
+if NET_SOCKETPAIR_STATIC
+config NET_SOCKETPAIR_MAX
+	int "How many socketpairs to pre-allocate"
+	default 1
+endif
+endif
 
 config NET_SOCKETS_NET_MGMT
 	bool "Network management socket support [EXPERIMENTAL]"

@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_ESP32
+
+config ESPTOOLPY_FLASHFREQ_80M
+	bool
+
+config FLASH_SIZE
+	int
+
+config FLASH_BASE_ADDRESS
+	hex
+
+endif # SOC_FAMILY_ESP32

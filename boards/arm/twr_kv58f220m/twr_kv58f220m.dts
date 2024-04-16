@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_kv58f1m0vlx24.dtsi>
 #include "twr_kv58f220m-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NXP Kinetis KV58 MCU Tower System Module";
@@ -60,18 +61,22 @@
 		user_button_0: button_0 {
 			label = "User SW2";
 			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		user_button_1: button_1 {
 			label = "User SW3";
 			gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		user_button_2: button_2 {
 			label = "User SW4";
 			gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_2>;
 		};
 		user_button_3: button_3 {
 			label = "User SW5";
 			gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_3>;
 		};
 	};
 };

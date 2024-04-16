@@ -142,35 +142,35 @@ void philosopher(void *id, void *unused1, void *unused2)
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
 
-	fork_t fork1;
-	fork_t fork2;
+	fork_t my_fork1;
+	fork_t my_fork2;
 
 	int my_id = POINTER_TO_INT(id);
 
 	/* Djkstra's solution: always pick up the lowest numbered fork first */
 	if (is_last_philosopher(my_id)) {
-		fork1 = fork(0);
-		fork2 = fork(my_id);
+		my_fork1 = fork(0);
+		my_fork2 = fork(my_id);
 	} else {
-		fork1 = fork(my_id);
-		fork2 = fork(my_id + 1);
+		my_fork1 = fork(my_id);
+		my_fork2 = fork(my_id + 1);
 	}
 
 	while (1) {
 		int32_t delay;
 
 		print_phil_state(my_id, "       STARVING       ", 0);
-		take(fork1);
+		take(my_fork1);
 		print_phil_state(my_id, "   HOLDING ONE FORK   ", 0);
-		take(fork2);
+		take(my_fork2);
 
 		delay = get_random_delay(my_id, 25);
 		print_phil_state(my_id, "  EATING  [ %s%d ms ] ", delay);
 		k_msleep(delay);
 
-		drop(fork2);
+		drop(my_fork2);
 		print_phil_state(my_id, "   DROPPED ONE FORK   ", 0);
-		drop(fork1);
+		drop(my_fork1);
 
 		delay = get_random_delay(my_id, 25);
 		print_phil_state(my_id, " THINKING [ %s%d ms ] ", delay);
@@ -249,7 +249,7 @@ static void display_demo_description(void)
 #endif
 }
 
-void main(void)
+int main(void)
 {
 	display_demo_description();
 #if CONFIG_TIMESLICING
@@ -265,4 +265,5 @@ void main(void)
 	 */
 	k_sleep(K_MSEC(5000));
 #endif
+	return 0;
 }

@@ -55,6 +55,7 @@ int iis2dh_trigger_set(const struct device *dev,
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
 		iis2dh->drdy_handler = handler;
+		iis2dh->drdy_trig = trig;
 		if (state) {
 			/* dummy read: re-trigger interrupt */
 			iis2dh_acceleration_raw_get(iis2dh->ctx, raw);
@@ -70,13 +71,8 @@ static int iis2dh_handle_drdy_int(const struct device *dev)
 {
 	struct iis2dh_data *data = dev->data;
 
-	struct sensor_trigger drdy_trig = {
-		.type = SENSOR_TRIG_DATA_READY,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (data->drdy_handler) {
-		data->drdy_handler(dev, &drdy_trig);
+		data->drdy_handler(dev, data->drdy_trig);
 	}
 
 	return 0;
@@ -141,7 +137,7 @@ int iis2dh_init_interrupt(const struct device *dev)
 	const struct iis2dh_device_config *cfg = dev->config;
 	int ret;
 
-	if (!device_is_ready(cfg->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&cfg->int_gpio)) {
 		LOG_ERR("%s: device %s is not ready", dev->name, cfg->int_gpio.port->name);
 		return -ENODEV;
 	}

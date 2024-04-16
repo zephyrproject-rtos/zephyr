@@ -40,6 +40,9 @@ config SOC_NSIM_HS_MPUV6
 	select CPU_HAS_MPU
 	select CPU_HAS_FPU
 
+config SOC_NSIM_VPX5
+	bool "Synopsys ARC VPX5 in nSIM"
+
 config SOC_NSIM_HS6X
 	bool "Synopsys ARC HS6x in nSIM"
 

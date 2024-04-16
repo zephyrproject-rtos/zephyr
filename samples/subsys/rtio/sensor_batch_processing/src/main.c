@@ -6,10 +6,9 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/rtio/rtio.h>
-#include <zephyr/rtio/rtio_executor_simple.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(main);
+LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #define N		(8)
 #define M		(N/2)
@@ -21,28 +20,24 @@ LOG_MODULE_REGISTER(main);
 #define SAMPLE_SIZE	DT_PROP(NODE_ID, sample_size)
 #define PROCESS_TIME	((M - 1) * SAMPLE_PERIOD)
 
-RTIO_EXECUTOR_SIMPLE_DEFINE(simple_exec);
-RTIO_DEFINE(ez_io, (struct rtio_executor *)&simple_exec, SQ_SZ, CQ_SZ);
+RTIO_DEFINE_WITH_MEMPOOL(ez_io, SQ_SZ, CQ_SZ, N, SAMPLE_SIZE, 4);
 
-static uint8_t bufs[N][SAMPLE_SIZE];
-
-void main(void)
+int main(void)
 {
 	const struct device *const vnd_sensor = DEVICE_DT_GET(NODE_ID);
 	struct rtio_iodev *iodev = vnd_sensor->data;
 
 	/* Fill the entire submission queue. */
 	for (int n = 0; n < N; n++) {
-		struct rtio_sqe *sqe = rtio_spsc_acquire(ez_io.sq);
+		struct rtio_sqe *sqe = rtio_sqe_acquire(&ez_io);
 
-		rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_HIGH, bufs[n],
-				   SAMPLE_SIZE, bufs[n]);
-		rtio_spsc_produce(ez_io.sq);
+		rtio_sqe_prep_read_with_pool(sqe, iodev, RTIO_PRIO_HIGH, NULL);
 	}
 
 	while (true) {
 		int m = 0;
-		uint8_t *userdata[M];
+		uint8_t *userdata[M] = {0};
+		uint32_t data_len[M] = {0};
 
 		LOG_INF("Submitting %d read requests", M);
 		rtio_submit(&ez_io, M);
@@ -52,7 +47,7 @@ void main(void)
 		 * an FFT.
 		 */
 		while (m < M) {
-			struct rtio_cqe *cqe = rtio_spsc_consume(ez_io.cq);
+			struct rtio_cqe *cqe = rtio_cqe_consume(&ez_io);
 
 			if (cqe == NULL) {
 				LOG_DBG("No completion events available");
@@ -65,8 +60,10 @@ void main(void)
 				LOG_ERR("Operation failed");
 			}
 
-			userdata[m] = cqe->userdata;
-			rtio_spsc_release(ez_io.cq);
+			if (rtio_cqe_get_mempool_buffer(&ez_io, cqe, &userdata[m], &data_len[m])) {
+				LOG_ERR("Failed to get mempool buffer info");
+			}
+			rtio_cqe_release(&ez_io, cqe);
 			m++;
 		}
 
@@ -87,12 +84,11 @@ void main(void)
 		 * queue.
 		 */
 		for (m = 0; m < M; m++) {
-			struct rtio_sqe *sqe = rtio_spsc_acquire(ez_io.sq);
+			struct rtio_sqe *sqe = rtio_sqe_acquire(&ez_io);
 
-			rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_HIGH,
-					   userdata[m], SAMPLE_SIZE,
-					   userdata[m]);
-			rtio_spsc_produce(ez_io.sq);
+			rtio_release_buffer(&ez_io, userdata[m], data_len[m]);
+			rtio_sqe_prep_read_with_pool(sqe, iodev, RTIO_PRIO_HIGH, NULL);
 		}
 	}
+	return 0;
 }

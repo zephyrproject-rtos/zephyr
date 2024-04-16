@@ -2,7 +2,6 @@
 
 zephyr_library()
 zephyr_library_sources(src/errno.c)
-zephyr_library_sources(src/string.c)
 zephyr_library_sources(src/libc-hooks.c)
 zephyr_library_sources_ifndef(CONFIG_MULTITHREADING src/threading_weak.c)
 

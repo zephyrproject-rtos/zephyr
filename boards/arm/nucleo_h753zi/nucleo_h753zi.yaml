@@ -21,4 +21,4 @@ supported:
   - spi
   - usb_device
   - can
-  - canfd
+vendor: st

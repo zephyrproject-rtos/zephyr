@@ -65,7 +65,7 @@ struct ipso_timer_data {
 
 static struct ipso_timer_data timer_data[MAX_INSTANCE_COUNT];
 
-static struct lwm2m_engine_obj timer;
+static struct lwm2m_engine_obj ipso_timer;
 static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(DELAY_DURATION_RID, RW, FLOAT),
 	OBJ_FIELD_DATA(REMAINING_TIME_RID, R_OPT, FLOAT),
@@ -104,7 +104,8 @@ static int get_timer_index(uint16_t obj_inst_id)
 static int start_timer(struct ipso_timer_data *timer)
 {
 	uint32_t temp = 0U;
-	char path[MAX_RESOURCE_LEN];
+	struct lwm2m_obj_path path = LWM2M_OBJ(IPSO_OBJECT_TIMER_ID, timer->obj_inst_id,
+					       DIGITAL_STATE_RID);
 
 	/* make sure timer is enabled and not already active */
 	if (timer->timer_mode == TIMER_MODE_OFF || timer->active ||
@@ -123,9 +124,7 @@ static int start_timer(struct ipso_timer_data *timer)
 	timer->trigger_offset = k_uptime_get();
 	timer->trigger_counter += 1U;
 
-	snprintk(path, MAX_RESOURCE_LEN, "%d/%u/%d", IPSO_OBJECT_TIMER_ID,
-		 timer->obj_inst_id, DIGITAL_STATE_RID);
-	lwm2m_engine_set_bool(path, true);
+	lwm2m_set_bool(&path, true);
 
 	temp = timer->delay_duration * MSEC_PER_SEC;
 	k_work_reschedule(&timer->timer_work, K_MSEC(temp));
@@ -135,7 +134,8 @@ static int start_timer(struct ipso_timer_data *timer)
 
 static int stop_timer(struct ipso_timer_data *timer, bool cancel)
 {
-	char path[MAX_RESOURCE_LEN];
+	struct lwm2m_obj_path path = LWM2M_OBJ(IPSO_OBJECT_TIMER_ID, timer->obj_inst_id,
+					       DIGITAL_STATE_RID);
 
 	/* make sure timer is active */
 	if (!timer->active) {
@@ -143,9 +143,7 @@ static int stop_timer(struct ipso_timer_data *timer, bool cancel)
 	}
 
 	timer->cumulative_time_ms += k_uptime_get() - timer->trigger_offset;
-	snprintk(path, MAX_RESOURCE_LEN, "%d/%u/%d", IPSO_OBJECT_TIMER_ID,
-		 timer->obj_inst_id, DIGITAL_STATE_RID);
-	lwm2m_engine_set_bool(path, false);
+	lwm2m_set_bool(&path, false);
 
 	if (cancel) {
 		k_work_cancel_delayable(&timer->timer_work);
@@ -353,17 +351,17 @@ static struct lwm2m_engine_obj_inst *timer_inst_create(uint16_t obj_inst_id)
 	return &inst[avail];
 }
 
-static int ipso_timer_init(const struct device *dev)
+static int ipso_timer_init(void)
 {
-	timer.obj_id = IPSO_OBJECT_TIMER_ID;
-	timer.version_major = TIMER_VERSION_MAJOR;
-	timer.version_minor = TIMER_VERSION_MINOR;
-	timer.is_core = false;
-	timer.fields = fields;
-	timer.field_count = ARRAY_SIZE(fields);
-	timer.max_instance_count = MAX_INSTANCE_COUNT;
-	timer.create_cb = timer_inst_create;
-	lwm2m_register_obj(&timer);
+	ipso_timer.obj_id = IPSO_OBJECT_TIMER_ID;
+	ipso_timer.version_major = TIMER_VERSION_MAJOR;
+	ipso_timer.version_minor = TIMER_VERSION_MINOR;
+	ipso_timer.is_core = false;
+	ipso_timer.fields = fields;
+	ipso_timer.field_count = ARRAY_SIZE(fields);
+	ipso_timer.max_instance_count = MAX_INSTANCE_COUNT;
+	ipso_timer.create_cb = timer_inst_create;
+	lwm2m_register_obj(&ipso_timer);
 
 	return 0;
 }

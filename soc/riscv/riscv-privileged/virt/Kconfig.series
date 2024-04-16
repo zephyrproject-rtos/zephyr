@@ -1,0 +1,7 @@
+# Copyright (c) 2020 Cobham Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RISCV_VIRT
+	bool "QEMU RISC-V VirtIO Board"
+	select RISCV
+	select SOC_FAMILY_RISCV_PRIVILEGED

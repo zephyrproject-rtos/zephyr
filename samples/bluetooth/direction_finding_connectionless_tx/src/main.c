@@ -72,7 +72,7 @@ static void adv_sent_cb(struct bt_le_ext_adv *adv,
 	       adv, info->num_sent);
 }
 
-void main(void)
+int main(void)
 {
 	char addr_s[BT_ADDR_LE_STR_LEN];
 	struct bt_le_oob oob_local;
@@ -85,7 +85,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		printk("failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 	printk("success\n");
 
@@ -93,7 +93,7 @@ void main(void)
 	err = bt_le_ext_adv_create(&param, &adv_callbacks, &adv_set);
 	if (err) {
 		printk("failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 	printk("success\n");
 
@@ -101,7 +101,7 @@ void main(void)
 	err = bt_df_set_adv_cte_tx_param(adv_set, &cte_params);
 	if (err) {
 		printk("failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 	printk("success\n");
 
@@ -109,7 +109,7 @@ void main(void)
 	err = bt_le_per_adv_set_param(adv_set, &per_adv_param);
 	if (err) {
 		printk("failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 	printk("success\n");
 
@@ -117,7 +117,7 @@ void main(void)
 	err = bt_df_adv_cte_tx_enable(adv_set);
 	if (err) {
 		printk("failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 	printk("success\n");
 
@@ -125,7 +125,7 @@ void main(void)
 	err = bt_le_per_adv_start(adv_set);
 	if (err) {
 		printk("failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 	printk("success\n");
 
@@ -133,7 +133,7 @@ void main(void)
 	err = bt_le_ext_adv_start(adv_set, &ext_adv_start_param);
 	if (err) {
 		printk("failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 	printk("success\n");
 
@@ -141,11 +141,12 @@ void main(void)
 	err = bt_le_ext_adv_oob_get_local(adv_set, &oob_local);
 	if (err) {
 		printk("failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 	printk("success\n");
 
 	bt_addr_le_to_str(&oob_local.addr, addr_s, sizeof(addr_s));
 
 	printk("Started extended advertising as %s\n", addr_s);
+	return 0;
 }

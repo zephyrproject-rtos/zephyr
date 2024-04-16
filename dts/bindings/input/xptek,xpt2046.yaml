@@ -1,0 +1,53 @@
+# Copyright (c) 2023 Seppo Takalo
+# SPDX-License-Identifier: Apache-2.0
+
+description: Driver for XPT2046 touch IC
+compatible: "xptek,xpt2046"
+
+include: spi-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt GPIO.
+
+  touchscreen-size-x:
+    type: int
+    required: true
+    description: horizontal resolution of screen
+
+  touchscreen-size-y:
+    type: int
+    required: true
+    description: vertical resolution of screen
+
+  min-x:
+    type: int
+    required: true
+    description: minimum raw X value reported.
+
+  min-y:
+    type: int
+    required: true
+    description: minimum raw Y value reported.
+
+  max-x:
+    type: int
+    required: true
+    description: maximum raw X value reported.
+
+  max-y:
+    type: int
+    required: true
+    description: maximum raw Y value reported.
+
+  z-threshold:
+    type: int
+    description: Z value threshold to trigger a touch
+    default: 100
+
+  reads:
+    type: int
+    description: How many reads per touch to average the value
+    default: 1

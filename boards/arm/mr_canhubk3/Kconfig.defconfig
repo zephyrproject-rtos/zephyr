@@ -1,0 +1,30 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MR_CANHUBK3
+
+config BOARD
+	default "mr_canhubk3"
+
+if SERIAL
+
+config UART_CONSOLE
+	default y
+
+endif # SERIAL
+
+if CAN
+
+config GPIO
+	default y
+
+endif # CAN
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y if !NET_LOOPBACK && !NET_TEST
+
+endif # NETWORKING
+
+endif # BOARD_MR_CANHUBK3

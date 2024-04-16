@@ -18,6 +18,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
+#include <stmemsc.h>
 #include "iis3dhhc_reg.h"
 
 struct iis3dhhc_config {
@@ -39,6 +40,7 @@ struct iis3dhhc_data {
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t handler_drdy;
+	const struct sensor_trigger *trig_drdy;
 	const struct device *dev;
 
 #if defined(CONFIG_IIS3DHHC_TRIGGER_OWN_THREAD)

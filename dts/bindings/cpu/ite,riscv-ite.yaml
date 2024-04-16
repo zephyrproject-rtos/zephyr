@@ -5,4 +5,4 @@ description: ITE IT8XXX2 RISC-V CPU
 
 compatible: "ite,riscv-ite"
 
-include: cpu.yaml
+include: riscv,cpus.yaml

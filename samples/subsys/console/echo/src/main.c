@@ -8,7 +8,7 @@
 
 static const char prompt[] = "Start typing characters to see them echoed back\r\n";
 
-void main(void)
+int main(void)
 {
 	console_init();
 
@@ -24,4 +24,5 @@ void main(void)
 			console_putchar('\n');
 		}
 	}
+	return 0;
 }

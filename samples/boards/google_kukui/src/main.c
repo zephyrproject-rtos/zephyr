@@ -7,7 +7,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
-void main(void)
+int main(void)
 {
 	printk("Welcome to Google Kukui\n");
+	return 0;
 }

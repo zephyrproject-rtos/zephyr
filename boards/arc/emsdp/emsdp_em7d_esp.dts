@@ -15,6 +15,7 @@
 
 	aliases {
 		uart-0 = &uart0;
+		spi-flash0 = &s25fl256s;
 	};
 
 	chosen {
@@ -40,5 +41,13 @@
 			interrupts = <86 1>;
 		};
 
+		/* IRQ line in em7d_esp is different to others */
+		spi@f0008000 {
+			interrupts = <84 1>;
+		};
+
+		spi@f1000000 {
+			interrupts = <85 1>;
+		};
 	};
 };

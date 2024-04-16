@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32s2.dtsi>
+#include <espressif/esp32s2/esp32s2_wroom.dtsi>
 #include "esp32s2_franzininho-pinctrl.dtsi"
 
 / {

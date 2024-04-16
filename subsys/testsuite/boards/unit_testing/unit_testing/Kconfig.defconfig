@@ -2,4 +2,7 @@
 #
 # Copyright (c) 2022 Nordic Semiconductor
 
-# Intentionally left empty
+# Bluetooth unit tests expect this backend
+choice BT_HCI_BUS_TYPE
+	default BT_NO_DRIVER
+endchoice

@@ -6,6 +6,7 @@
 
 #include <freq.h>
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/adc/gd32f3x0.h>
 #include <zephyr/dt-bindings/clock/gd32f3x0-clocks.h>
@@ -97,7 +98,7 @@
 			interrupts = <9 0>, <10 0>, <11 0>, <48 0>;
 			clocks = <&cctl GD32_CLOCK_DMA>;
 			dma-channels = <7>;
-			#dma-cells = <1>;
+			#dma-cells = <2>;
 			status = "disabled";
 		};
 

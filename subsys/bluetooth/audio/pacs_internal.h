@@ -17,11 +17,6 @@ struct bt_pac_codec {
 	uint16_t vid;			/* Vendor specific Codec ID */
 } __packed;
 
-/* TODO: Figure out the capabilities types */
-#define BT_CODEC_CAP_PARAMS		0x01
-#define BT_CODEC_CAP_DRM		0x0a
-#define BT_CODEC_CAP_DRM_VALUE		0x0b
-
 struct bt_pac_ltv {
 	uint8_t  len;
 	uint8_t  type;

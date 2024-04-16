@@ -35,16 +35,16 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32
+   :board: esp32_devkitc_wroom
    :goals: build
 
-The usual ``flash`` target will work with the ``esp32`` board
+The usual ``flash`` target will work with the ``esp32_devkitc_wroom`` board
 configuration. Here is an example for the :ref:`hello_world`
 application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32
+   :board: esp32_devkitc_wroom
    :goals: flash
 
 Open the serial monitor using the following command:
@@ -59,7 +59,7 @@ message in the monitor:
 .. code-block:: console
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! esp32
+   Hello World! esp32_devkitc_wroom
 
 Debugging
 ---------
@@ -76,7 +76,7 @@ Here is an example for building the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32
+   :board: esp32_devkitc_wroom
    :goals: build flash
    :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
@@ -84,7 +84,7 @@ You can debug an application in the usual way. Here is an example for the :ref:`
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: esp32
+   :board: esp32_devkitc_wroom
    :goals: debug
 
 Using JTAG
@@ -165,5 +165,5 @@ References
 .. _`ESP32 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
 .. _`JTAG debugging for ESP32`: http://esp-idf.readthedocs.io/en/latest/api-guides/jtag-debugging/index.html
 .. _`Hardware Reference`: https://esp-idf.readthedocs.io/en/latest/hw-reference/index.html
-.. _`ESP-WROVER-32 V3 Getting Started Guide`: https://dl.espressif.com/doc/esp-idf/latest/get-started/get-started-wrover-kit.html
+.. _`ESP-WROVER-32 V3 Getting Started Guide`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-wrover-kit.html
 .. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases

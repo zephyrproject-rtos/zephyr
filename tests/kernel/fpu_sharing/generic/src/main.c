@@ -17,10 +17,6 @@
 #error Rebuild with the FPU_SHARING config option enabled
 #endif
 
-#if defined(CONFIG_X86) && !defined(CONFIG_X86_SSE)
-#error Rebuild with the SSE config option enabled
-#endif
-
 static void *generic_setup(void)
 {
 	/*

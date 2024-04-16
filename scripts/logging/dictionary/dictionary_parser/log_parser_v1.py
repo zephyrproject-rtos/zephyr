@@ -79,9 +79,12 @@ def formalize_fmt_string(fmt_str):
     """Replace unsupported formatter"""
     new_str = fmt_str
 
-    # Python doesn't support %lld or %llu so need to remove extra 'l'
-    new_str = new_str.replace("%lld", "%ld")
-    new_str = new_str.replace("%llu", "%lu")
+    for spec in ['d', 'i', 'o', 'u', 'x', 'X']:
+        # Python doesn't support %ll for integer specifiers, so remove extra 'l'
+        new_str = new_str.replace("%ll" + spec, "%l" + spec)
+
+        # Python doesn't support %hh for integer specifiers, so remove extra 'h'
+        new_str = new_str.replace("%hh" + spec, "%h" + spec)
 
     # No %p for pointer either, so use %x
     new_str = new_str.replace("%p", "0x%x")

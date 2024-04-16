@@ -145,6 +145,17 @@ struct adc_channel_cfg {
 	 */
 	uint8_t input_negative;
 #endif /* CONFIG_ADC_CONFIGURABLE_INPUTS */
+
+#ifdef CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
+	uint8_t current_source_pin_set : 1;
+	/**
+	 * Output pin for the current sources.
+	 * This is only available if the driver enables this feature
+	 * via the hidden configuration option ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN.
+	 * The meaning itself is then defined by the driver itself.
+	 */
+	uint8_t current_source_pin[2];
+#endif /* CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN */
 };
 
 /**
@@ -220,6 +231,11 @@ IF_ENABLED(CONFIG_ADC_CONFIGURABLE_INPUTS, \
 	(.differential    = DT_NODE_HAS_PROP(node_id, zephyr_input_negative), \
 	 .input_positive  = DT_PROP_OR(node_id, zephyr_input_positive, 0), \
 	 .input_negative  = DT_PROP_OR(node_id, zephyr_input_negative, 0),)) \
+IF_ENABLED(DT_PROP(node_id, zephyr_differential), \
+	(.differential    = true,)) \
+IF_ENABLED(CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN, \
+	(.current_source_pin_set = DT_NODE_HAS_PROP(node_id, zephyr_current_source_pin), \
+	 .current_source_pin = DT_PROP_OR(node_id, zephyr_current_source_pin, {0}),)) \
 }
 
 /**
@@ -666,6 +682,21 @@ static inline int z_impl_adc_read(const struct device *dev,
 }
 
 /**
+ * @brief Set a read request from a struct adc_dt_spec.
+ *
+ * @param spec ADC specification from Devicetree.
+ * @param sequence  Structure specifying requested sequence of samplings.
+ *
+ * @return A value from adc_read().
+ * @see adc_read()
+ */
+static inline int adc_read_dt(const struct adc_dt_spec *spec,
+			      const struct adc_sequence *sequence)
+{
+	return adc_read(spec->dev, sequence);
+}
+
+/**
  * @brief Set an asynchronous read request.
  *
  * @note This function is available only if @kconfig{CONFIG_ADC_ASYNC}
@@ -830,6 +861,18 @@ static inline int adc_sequence_init_dt(const struct adc_dt_spec *spec,
 	seq->oversampling = spec->oversampling;
 
 	return 0;
+}
+
+/**
+ * @brief Validate that the ADC device is ready.
+ *
+ * @param spec ADC specification from devicetree
+ *
+ * @retval true if the ADC device is ready for use and false otherwise.
+ */
+static inline bool adc_is_ready_dt(const struct adc_dt_spec *spec)
+{
+	return device_is_ready(spec->dev);
 }
 
 /**

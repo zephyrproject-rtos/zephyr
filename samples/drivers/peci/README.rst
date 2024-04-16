@@ -1,7 +1,8 @@
-.. _peci-sample:
+.. zephyr:code-sample:: peci
+   :name: PECI interface
+   :relevant-api: peci_interface
 
-PECI Interface
-####################################
+   Monitor CPU temperature using PECI.
 
 Overview
 ********

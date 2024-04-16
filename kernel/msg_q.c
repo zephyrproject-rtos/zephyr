@@ -17,13 +17,17 @@
 #include <zephyr/linker/sections.h>
 #include <string.h>
 #include <ksched.h>
-#include <zephyr/wait_q.h>
+#include <wait_q.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/init.h>
 #include <zephyr/syscall_handler.h>
 #include <kernel_internal.h>
 #include <zephyr/sys/check.h>
+
+#ifdef CONFIG_OBJ_CORE_MSGQ
+static struct k_obj_type obj_type_msgq;
+#endif
 
 #ifdef CONFIG_POLL
 static inline void handle_poll_events(struct k_msgq *msgq, uint32_t state)
@@ -48,6 +52,10 @@ void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 #ifdef CONFIG_POLL
 	sys_dlist_init(&msgq->poll_events);
 #endif	/* CONFIG_POLL */
+
+#ifdef CONFIG_OBJ_CORE_MSGQ
+	k_obj_core_init_and_link(K_OBJ_CORE(msgq), &obj_type_msgq);
+#endif
 
 	SYS_PORT_TRACING_OBJ_INIT(k_msgq, msgq);
 
@@ -141,6 +149,8 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 			return 0;
 		} else {
 			/* put message in queue */
+			__ASSERT_NO_MSG(msgq->write_ptr >= msgq->buffer_start &&
+					msgq->write_ptr < msgq->buffer_end);
 			(void)memcpy(msgq->write_ptr, data, msgq->msg_size);
 			msgq->write_ptr += msgq->msg_size;
 			if (msgq->write_ptr == msgq->buffer_end) {
@@ -230,6 +240,8 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, get, msgq, timeout);
 
 			/* add thread's message to queue */
+			__ASSERT_NO_MSG(msgq->write_ptr >= msgq->buffer_start &&
+					msgq->write_ptr < msgq->buffer_end);
 			(void)memcpy(msgq->write_ptr, pending_thread->base.swap_data,
 			       msgq->msg_size);
 			msgq->write_ptr += msgq->msg_size;
@@ -315,6 +327,52 @@ static inline int z_vrfy_k_msgq_peek(struct k_msgq *msgq, void *data)
 #include <syscalls/k_msgq_peek_mrsh.c>
 #endif
 
+int z_impl_k_msgq_peek_at(struct k_msgq *msgq, void *data, uint32_t idx)
+{
+	k_spinlock_key_t key;
+	int result;
+	uint32_t bytes_to_end;
+	uint32_t byte_offset;
+	char *start_addr;
+
+	key = k_spin_lock(&msgq->lock);
+
+	if (msgq->used_msgs > idx) {
+		bytes_to_end = (msgq->buffer_end - msgq->read_ptr);
+		byte_offset = idx * msgq->msg_size;
+		start_addr = msgq->read_ptr;
+		/* check item available in start/end of ring buffer */
+		if (bytes_to_end <= byte_offset) {
+			/* Tweak the values in case */
+			byte_offset -= bytes_to_end;
+			/* wrap-around is required */
+			start_addr = msgq->buffer_start;
+		}
+		(void)memcpy(data, start_addr + byte_offset, msgq->msg_size);
+		result = 0;
+	} else {
+		/* don't wait for a message to become available */
+		result = -ENOMSG;
+	}
+
+	SYS_PORT_TRACING_OBJ_FUNC(k_msgq, peek, msgq, result);
+
+	k_spin_unlock(&msgq->lock, key);
+
+	return result;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_msgq_peek_at(struct k_msgq *msgq, void *data, uint32_t idx)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, msgq->msg_size));
+
+	return z_impl_k_msgq_peek_at(msgq, data, idx);
+}
+#include <syscalls/k_msgq_peek_at_mrsh.c>
+#endif
+
 void z_impl_k_msgq_purge(struct k_msgq *msgq)
 {
 	k_spinlock_key_t key;
@@ -357,5 +415,27 @@ static inline uint32_t z_vrfy_k_msgq_num_used_get(struct k_msgq *msgq)
 	return z_impl_k_msgq_num_used_get(msgq);
 }
 #include <syscalls/k_msgq_num_used_get_mrsh.c>
+
+#endif
+
+#ifdef CONFIG_OBJ_CORE_MSGQ
+static int init_msgq_obj_core_list(void)
+{
+	/* Initialize msgq object type */
+
+	z_obj_type_init(&obj_type_msgq, K_OBJ_TYPE_MSGQ_ID,
+			offsetof(struct k_msgq, obj_core));
+
+	/* Initialize and link statically defined message queues */
+
+	STRUCT_SECTION_FOREACH(k_msgq, msgq) {
+		k_obj_core_init_and_link(K_OBJ_CORE(msgq), &obj_type_msgq);
+	}
+
+	return 0;
+};
+
+SYS_INIT(init_msgq_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif

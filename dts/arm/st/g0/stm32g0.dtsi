@@ -13,7 +13,9 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 #include <zephyr/dt-bindings/reset/stm32g0_reset.h>
 #include <freq.h>
@@ -31,6 +33,22 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m0+";
 			reg = <0>;
+			cpu-power-states = <&stop0 &stop1>;
+		};
+
+		power-states {
+			stop0: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <20>;
+			};
+			stop1: state1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
+				min-residency-us = <100>;
+			};
 		};
 	};
 
@@ -107,10 +125,15 @@
 		};
 
 		exti: interrupt-controller@40021800 {
-			compatible = "st,stm32-exti";
+			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
+			#address-cells = <1>;
 			reg = <0x40021800 0x400>;
+			num-lines = <16>;
+			interrupts = <5 0>, <6 0>, <7 0>;
+			interrupt-names = "line0-1", "line2-3", "line4-15";
+			line-ranges = <0 2>, <2 2>, <4 12>;
 		};
 
 		pinctrl: pin-controller@50000000 {
@@ -227,6 +250,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers3: timers@40000400 {
@@ -243,6 +271,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -261,6 +294,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers16: timers@40014400 {
@@ -278,6 +316,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers17: timers@40014800 {
@@ -294,6 +337,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -347,11 +395,20 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00100000>;
 			interrupts = <12 0>;
 			status = "disabled";
-			vref-mv = <3300>;
 			#io-channel-cells = <1>;
-			has-temp-channel;
-			has-vref-channel;
-			has-vbat-channel;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			/* Errata ES0418: For sampling time set to 1.5 or 3.5
+			 * cycles, the sampling in a single ADC conversion or in
+			 * the first conversion of a sequence takes one extra
+			 * cycle.
+			 * So instead of 2 4, we set 3 5.
+			 */
+			sampling-times = <3 5 8 13 20 40 80 161>;
+			num-sampling-time-common-channels = <2>;
+			st,adc-sequencer = <NOT_FULLY_CONFIGURABLE>;
 		};
 
 		dma1: dma@40020000 {
@@ -386,6 +443,21 @@
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3000>;
 		io-channels = <&adc1 12>;
+		status = "disabled";
+	};
+
+	vref: vref {
+		compatible = "st,stm32-vref";
+		vrefint-cal-addr = <0x1FFF75AA>;
+		vrefint-cal-mv = <3000>;
+		io-channels = <&adc1 13>;
+		status = "disabled";
+	};
+
+	vbat: vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <3>;
+		io-channels = <&adc1 14>;
 		status = "disabled";
 	};
 };

@@ -18,6 +18,8 @@ void lll_chan_set(uint32_t chan);
 
 void lll_isr_tx_status_reset(void);
 void lll_isr_rx_status_reset(void);
+void lll_isr_tx_sub_status_reset(void);
+void lll_isr_rx_sub_status_reset(void);
 void lll_isr_status_reset(void);
 void lll_isr_abort(void *param);
 void lll_isr_done(void *param);

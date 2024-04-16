@@ -134,23 +134,23 @@ int icm42605_tap_fetch(const struct device *dev)
 			result = inv_spi_read(&cfg->spi, REG_APEX_DATA4,
 					      drv_data->fifo_data, 1);
 			if (drv_data->fifo_data[0] & APEX_TAP) {
-				if (drv_data->tap_trigger.type ==
+				if (drv_data->tap_trigger->type ==
 				    SENSOR_TRIG_TAP) {
 					if (drv_data->tap_handler) {
 						LOG_DBG("Single Tap detected");
 						drv_data->tap_handler(dev
-						      , &drv_data->tap_trigger);
+						      , drv_data->tap_trigger);
 					}
 				} else {
 					LOG_ERR("Trigger type is mismatched");
 				}
 			} else if (drv_data->fifo_data[0] & APEX_DOUBLE_TAP) {
-				if (drv_data->double_tap_trigger.type ==
+				if (drv_data->double_tap_trigger->type ==
 				    SENSOR_TRIG_DOUBLE_TAP) {
 					if (drv_data->double_tap_handler) {
 						LOG_DBG("Double Tap detected");
 						drv_data->double_tap_handler(dev
-						     , &drv_data->tap_trigger);
+						     , drv_data->tap_trigger);
 					}
 				} else {
 					LOG_ERR("Trigger type is mismatched");

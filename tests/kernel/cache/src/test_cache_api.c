@@ -46,6 +46,16 @@ ZTEST(cache_api, test_data_cache_api)
 
 	ret = sys_cache_data_flush_and_invd_all();
 	zassert_true((ret == 0) || (ret == -ENOTSUP));
+
+	ret = sys_cache_data_flush_range(user_buffer, SIZE);
+	zassert_true((ret == 0) || (ret == -ENOTSUP));
+
+	ret = sys_cache_data_invd_range(user_buffer, SIZE);
+	zassert_true((ret == 0) || (ret == -ENOTSUP));
+
+	ret = sys_cache_data_flush_and_invd_range(user_buffer, SIZE);
+	zassert_true((ret == 0) || (ret == -ENOTSUP));
+
 }
 
 ZTEST_USER(cache_api, test_data_cache_api_user)

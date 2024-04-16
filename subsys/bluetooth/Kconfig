@@ -15,10 +15,6 @@ menuconfig BT
 
 if BT
 
-module = BT
-module-str = bt
-source "subsys/logging/Kconfig.template.log_config"
-
 choice BT_STACK_SELECTION
 	prompt "Bluetooth Stack Selection"
 	default BT_HCI
@@ -167,11 +163,11 @@ config BT_DATA_LEN_UPDATE
 
 config BT_PER_ADV_SYNC_TRANSFER_RECEIVER
 	bool "Periodic Advertising Sync Transfer receiver"
-	depends on !BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
+	depends on BT_PER_ADV_SYNC && (!BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT)
 
 config BT_PER_ADV_SYNC_TRANSFER_SENDER
 	bool "Periodic Advertising Sync Transfer sender"
-	depends on !BT_CTLR || BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
+	depends on (BT_PER_ADV_SYNC || BT_PER_ADV) && (!BT_CTLR || BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT)
 
 config BT_SCA_UPDATE
 	bool "Sleep Clock Accuracy Update"
@@ -187,6 +183,8 @@ rsource "host/Kconfig"
 rsource "controller/Kconfig"
 rsource "shell/Kconfig"
 rsource "crypto/Kconfig"
+rsource "lib/Kconfig"
+rsource "Kconfig.logging"
 
 endif # BT_HCI
 

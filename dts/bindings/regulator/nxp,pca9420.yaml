@@ -74,32 +74,32 @@ child-binding:
 
   description: Voltage output of PMIC controller regulator
   properties:
-      enable-inverted:
-          type: boolean
-          description: |
-            If the enable bit should be zero to turn the regulator on, add this
-            property.
+    enable-inverted:
+      type: boolean
+      description: |
+        If the enable bit should be zero to turn the regulator on, add this
+        property.
 
-      nxp,mode0-microvolt:
-        type: int
-        description: |
-          The voltage level to be configured for mode 0, in microvolts. Setting
-          this value to zero will disable the source in mode 0.
+    nxp,mode0-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for mode 0, in microvolts. Setting
+        this value to zero will disable the source in mode 0.
 
-      nxp,mode1-microvolt:
-        type: int
-        description: |
-          The voltage level to be configured for mode 1, in microvolts. Setting
-          this value to zero will disable the source in mode 1.
+    nxp,mode1-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for mode 1, in microvolts. Setting
+        this value to zero will disable the source in mode 1.
 
-      nxp,mode2-microvolt:
-        type: int
-        description: |
-          The voltage level to be configured for mode 2, in microvolts. Setting
-          this value to zero will disable the source in mode 2.
+    nxp,mode2-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for mode 2, in microvolts. Setting
+        this value to zero will disable the source in mode 2.
 
-      nxp,mode3-microvolt:
-        type: int
-        description: |
-          The voltage level to be configured for mode 3, in microvolts. Setting
-          this value to zero will disable the source in mode 3.
+    nxp,mode3-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for mode 3, in microvolts. Setting
+        this value to zero will disable the source in mode 3.

@@ -1,0 +1,12 @@
+# M5StickC PLUS board configuration
+
+# Copyright (c) 2022 AVSystem Sławomir Wolf Sp.j. (AVSystem)
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_M5STICKC_PLUS
+	bool "M5StickC PLUS Development Board"
+	depends on SOC_SERIES_ESP32
+
+choice SOC_PART_NUMBER
+	default SOC_ESP32_PICO_D4
+endchoice

@@ -20,9 +20,9 @@ static int fs_mgmt_hash_checksum_crc32(struct fs_file_t *file, uint8_t *output,
 				       size_t *out_len, size_t len)
 {
 	/* Calculate IEEE CRC32 checksum of target file */
-	uint8_t buffer[CONFIG_FS_MGMT_CHECKSUM_HASH_CHUNK_SIZE];
+	uint8_t buffer[CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_CHUNK_SIZE];
 	ssize_t bytes_read = 0;
-	size_t read_size = CONFIG_FS_MGMT_CHECKSUM_HASH_CHUNK_SIZE;
+	size_t read_size = CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_CHUNK_SIZE;
 	uint32_t crc32 = 0;
 
 	/* Clear length prior to calculation */

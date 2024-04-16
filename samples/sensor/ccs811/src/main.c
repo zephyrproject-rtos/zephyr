@@ -111,7 +111,7 @@ static void do_main(const struct device *dev)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ONE(ams_ccs811);
 	struct ccs811_configver_type cfgver;
@@ -119,7 +119,7 @@ void main(void)
 
 	if (!device_is_ready(dev)) {
 		printk("Device %s is not ready\n", dev->name);
-		return;
+		return 0;
 	}
 
 	printk("device is %p, name is %s\n", dev, dev->name);
@@ -188,4 +188,5 @@ void main(void)
 	if (rc == 0) {
 		do_main(dev);
 	}
+	return 0;
 }

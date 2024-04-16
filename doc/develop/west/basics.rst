@@ -29,7 +29,7 @@ workspace looks like this:
    │   # Projects managed by west:
    ├── modules/
    │   └── lib/
-   │       └── tinycbor/          # .git/ project
+   │       └── zcbor/             # .git/ project
    ├── net-tools/                 # .git/ project
    └── [ ... other projects ...]
 
@@ -84,11 +84,12 @@ manifest file
 projects
   Projects are Git repositories managed by west. Projects are defined in the
   manifest file and can be located anywhere inside the workspace. In the above
-  example workspace, ``tinycbor`` and ``net-tools`` are projects.
+  example workspace, ``zcbor`` and ``net-tools`` are projects.
 
   By default, the Zephyr :ref:`build system <build_overview>` uses west to get
   the locations of all the projects in the workspace, so any code they contain
-  can be used as :ref:`modules`.
+  can be used as :ref:`modules`. Note however that modules and projects
+  :ref:`are conceptually different <modules-vs-projects>`.
 
 extensions
   Any repository known to west (either the manifest repository or any project

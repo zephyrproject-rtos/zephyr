@@ -24,12 +24,12 @@ Sample Criteria
 
   * If a sample can provide output that can be verified, then output should be evaluated against
     expected value to have some level of testing for the sample itself.
-    Refer to :zephyr_file:`doc/develop/test/twister.rst` for more details.
+    Refer to :ref:`twister_script` for more details.
   * Samples are optional.
 
 2. Twister should be able to build every sample.
 ++++++++++++++++++++++++++++++++++++++++++++++++
-  * Every sample must have a YAML file. Reference: :zephyr_file:`doc/develop/test/twister.rst`.
+  * Every sample must have a YAML file. Reference: :ref:`twister_script`.
 
     **For example:**
 
@@ -62,7 +62,7 @@ Sample Criteria
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   * Minimize the use of ``platform_allow`` and architecture filters as it limits the scope
     of testing to the mentioned platforms and architectures.
-    Reference: :zephyr_file:`doc/develop/test/twister.rst`
+    Reference: :ref:`twister_script`
   * Make use of ``integration_platforms`` to limit the scope when there are timing or
     resource constraints.
   * Make the sample as generic as possible. Avoid making a sample platform specific unless it is
@@ -91,11 +91,6 @@ Sample Criteria
     * SW/HW requirements
     * Building & Running instructions
     * Sample output, if applicable.
-
-6. A sample should be a reference, not a tutorial.
-++++++++++++++++++++++++++++++++++++++++++++++++++
-  * Should have minimal comments, when applicable.
-  * Should concisely demonstrate HOW to solve a problem, not WHY.
 
 
 As a starting point, this sample is a good example to refer to

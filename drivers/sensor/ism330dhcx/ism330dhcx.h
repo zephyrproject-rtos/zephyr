@@ -18,6 +18,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
+#include <stmemsc.h>
 #include "ism330dhcx_reg.h"
 
 #define ISM330DHCX_EN_BIT					0x01
@@ -96,8 +97,11 @@ struct ism330dhcx_data {
 #ifdef CONFIG_ISM330DHCX_TRIGGER
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t handler_drdy_acc;
+	const struct sensor_trigger *trig_drdy_acc;
 	sensor_trigger_handler_t handler_drdy_gyr;
+	const struct sensor_trigger *trig_drdy_gyr;
 	sensor_trigger_handler_t handler_drdy_temp;
+	const struct sensor_trigger *trig_drdy_temp;
 
 #if defined(CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ISM330DHCX_THREAD_STACK_SIZE);

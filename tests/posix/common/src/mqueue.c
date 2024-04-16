@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
-#include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
 #include <fcntl.h>
-#include <zephyr/sys/util.h>
 #include <mqueue.h>
 #include <pthread.h>
+
+#include <zephyr/sys/util.h>
+#include <zephyr/ztest.h>
 
 #define N_THR 2
 #define STACKSZ (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
@@ -22,7 +21,17 @@
 K_THREAD_STACK_ARRAY_DEFINE(stacks, N_THR, STACKSZ);
 
 char queue[16] = "server";
+
 char send_data[MESSAGE_SIZE] = "timed data send";
+
+/*
+ * For platforms that select CONFIG_KERNEL_COHERENCE, the receive buffer can
+ * not be on the stack as the k_msgq that underlies the mq_timedsend() will
+ * copy directly to the receiver's buffer when there is already a waiting
+ * receiver.
+ */
+
+char rec_data[MESSAGE_SIZE];
 
 void *sender_thread(void *p1)
 {
@@ -45,7 +54,6 @@ void *sender_thread(void *p1)
 void *receiver_thread(void *p1)
 {
 	mqd_t mqd;
-	char rec_data[MESSAGE_SIZE];
 	struct timespec curtime;
 
 	mqd = mq_open(queue, O_RDONLY);
@@ -60,7 +68,7 @@ void *receiver_thread(void *p1)
 	return NULL;
 }
 
-ZTEST(posix_apis, test_posix_mqueue)
+ZTEST(posix_apis, test_mqueue)
 {
 	mqd_t mqd;
 	struct mq_attr attrs;
@@ -76,11 +84,7 @@ ZTEST(posix_apis, test_posix_mqueue)
 
 	for (i = 0; i < N_THR; i++) {
 		/* Creating threads */
-		if (pthread_attr_init(&attr[i]) != 0) {
-			zassert_equal(pthread_attr_destroy(&attr[i]), 0);
-			zassert_false(pthread_attr_init(&attr[i]),
-				      "pthread attr init failed");
-		}
+		zassert_ok(pthread_attr_init(&attr[i]));
 		pthread_attr_setstack(&attr[i], &stacks[i][0], STACKSZ);
 
 		if (i % 2) {

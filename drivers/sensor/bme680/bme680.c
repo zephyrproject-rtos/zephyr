@@ -291,7 +291,7 @@ static int bme680_channel_get(const struct device *dev,
 		val->val2 = 0;
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;

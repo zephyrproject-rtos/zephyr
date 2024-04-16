@@ -80,6 +80,8 @@ source "subsys/net/pkt_filter/Kconfig"
 
 source "subsys/net/lib/Kconfig"
 
+source "subsys/net/conn_mgr/Kconfig"
+
 endif
 
 endmenu

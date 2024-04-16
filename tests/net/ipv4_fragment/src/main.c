@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_ipv4_test, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <string.h>
 #include <errno.h>
 #include <zephyr/linker/sections.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/ztest.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
@@ -147,10 +147,9 @@ static uint8_t upper_layer_packet_count;
 static uint16_t lower_layer_total_size;
 static uint16_t upper_layer_total_size;
 
-static uint8_t tmp_buf[256];
+static uint8_t test_tmp_buf[256];
 static uint8_t net_iface_dummy_data;
 
-static int net_iface_dev_init(const struct device *dev);
 static void net_iface_init(struct net_if *iface);
 static int sender_iface(const struct device *dev, struct net_pkt *pkt);
 
@@ -162,7 +161,7 @@ static struct dummy_api net_iface_api = {
 NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 "iface1",
 			 iface1,
-			 net_iface_dev_init,
+			 NULL,
 			 NULL,
 			 &net_iface_dummy_data,
 			 NULL,
@@ -172,11 +171,6 @@ NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 NET_L2_GET_CTX_TYPE(DUMMY_L2),
 			 NET_IPV4_MTU);
 
-
-static int net_iface_dev_init(const struct device *dev)
-{
-	return 0;
-}
 
 static void net_iface_init(struct net_if *iface)
 {
@@ -596,7 +590,7 @@ static void *test_setup(void)
 	setup_tcp_handler(&my_addr1, &my_addr2, 4092, 19551);
 
 	/* Generate test data */
-	generate_dummy_data(tmp_buf, sizeof(tmp_buf));
+	generate_dummy_data(test_tmp_buf, sizeof(test_tmp_buf));
 
 	return NULL;
 }
@@ -624,9 +618,9 @@ ZTEST(net_ipv4_fragment, test_udp)
 	/* Add enough data until we have 4 packets */
 	i = 0;
 	while (i < IPV4_TEST_PACKET_SIZE) {
-		ret = net_pkt_write(pkt, tmp_buf, sizeof(tmp_buf));
+		ret = net_pkt_write(pkt, test_tmp_buf, sizeof(test_tmp_buf));
 		zassert_equal(ret, 0, "IPv4 data append failed");
-		i += sizeof(tmp_buf);
+		i += sizeof(test_tmp_buf);
 	}
 
 	/* Setup packet for insertion */

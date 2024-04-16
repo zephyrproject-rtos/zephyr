@@ -1,0 +1,15 @@
+# Infineon CAT1 ADC configuration options
+
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_INFINEON_CAT1
+	bool "Infineon CAT1 ADC driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_ADC_ENABLED
+	select USE_INFINEON_ADC
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  This option enables the ADC driver for Infineon CAT1 family.

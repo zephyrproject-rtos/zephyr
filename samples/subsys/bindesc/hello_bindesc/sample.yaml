@@ -1,0 +1,9 @@
+sample:
+  name: Hello Bindesc
+tests:
+  sample.bindesc:
+    tags: bindesc
+    filter: CONFIG_ARCH_SUPPORTS_ROM_START
+    build_only: true
+    integration_platforms:
+      - native_posix

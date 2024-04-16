@@ -52,5 +52,72 @@ static inline int z_vrfy_ivshmem_register_handler(const struct device *dev,
 
 	return z_impl_ivshmem_register_handler(dev, signal, vector);
 }
-
 #include <syscalls/ivshmem_register_handler_mrsh.c>
+
+#ifdef CONFIG_IVSHMEM_V2
+
+static inline size_t z_vrfy_ivshmem_get_rw_mem_section(const struct device *dev,
+						       uintptr_t *memmap)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, get_rw_mem_section));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(memmap, sizeof(uintptr_t)));
+
+	return z_impl_ivshmem_get_rw_mem_section(dev, memmap);
+}
+#include <syscalls/ivshmem_get_rw_mem_section_mrsh.c>
+
+static inline size_t z_vrfy_ivshmem_get_output_mem_section(const struct device *dev,
+							   uint32_t peer_id,
+							   uintptr_t *memmap)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, get_output_mem_section));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(memmap, sizeof(uintptr_t)));
+
+	return z_impl_ivshmem_get_output_mem_section(dev, peer_id, memmap);
+}
+#include <syscalls/ivshmem_get_output_mem_section_mrsh.c>
+
+static inline uint32_t z_vrfy_ivshmem_get_state(const struct device *dev,
+						uint32_t peer_id)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, get_state));
+
+	return z_impl_ivshmem_get_state(dev, peer_id);
+}
+#include <syscalls/ivshmem_get_state_mrsh.c>
+
+static inline int z_vrfy_ivshmem_set_state(const struct device *dev,
+					   uint32_t state)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, set_state));
+
+	return z_impl_ivshmem_set_state(dev, state);
+}
+#include <syscalls/ivshmem_set_state_mrsh.c>
+
+static inline uint32_t z_vrfy_ivshmem_get_max_peers(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, get_max_peers));
+
+	return z_impl_ivshmem_get_max_peers(dev);
+}
+#include <syscalls/ivshmem_get_max_peers_mrsh.c>
+
+static inline uint16_t z_vrfy_ivshmem_get_protocol(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, get_protocol));
+
+	return z_impl_ivshmem_get_protocol(dev);
+}
+#include <syscalls/ivshmem_get_protocol_mrsh.c>
+
+static inline int z_vrfy_ivshmem_enable_interrupts(const struct device *dev,
+						   bool enable)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, enable_interrupts));
+
+	return z_impl_ivshmem_enable_interrupts(dev, enable);
+}
+#include <syscalls/ivshmem_enable_interrupts_mrsh.c>
+
+#endif /* CONFIG_IVSHMEM_V2 */

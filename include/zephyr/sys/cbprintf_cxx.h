@@ -96,17 +96,12 @@ static inline size_t z_cbprintf_cxx_arg_size(float f)
 	return sizeof(double);
 }
 
-static inline size_t z_cbprintf_cxx_arg_size(void *p)
-{
-	ARG_UNUSED(p);
-
-	return sizeof(void *);
-}
-
 template < typename T >
 static inline size_t z_cbprintf_cxx_arg_size(T arg)
 {
-	return sizeof(arg + 0);
+	ARG_UNUSED(arg);
+
+	return MAX(sizeof(T), sizeof(int));
 }
 
 /* C++ version for storing arguments. */
@@ -249,10 +244,12 @@ struct z_cbprintf_cxx_remove_reference < T & > {
 	typedef T type;
 };
 
+#if __cplusplus >= 201103L
 template < typename T >
 struct z_cbprintf_cxx_remove_reference < T && > {
 	typedef T type;
 };
+#endif
 
 template < typename T >
 struct z_cbprintf_cxx_remove_cv {

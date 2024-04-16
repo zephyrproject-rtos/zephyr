@@ -35,7 +35,7 @@ typedef struct zsock_fd_set {
  * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html>`__
  * for normative description. This function is provided to ease porting of
  * existing code and not recommended for usage due to its inefficiency,
- * use :c:func:`zsock_poll()` instead. In Zephyr this function works only with
+ * use zsock_poll() instead. In Zephyr this function works only with
  * sockets, not arbitrary file descriptors.
  * This function is also exposed as ``select()``
  * if :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined (in which case

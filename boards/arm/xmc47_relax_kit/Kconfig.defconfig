@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Schlumberger
+
+if BOARD_XMC47_RELAX_KIT
+
+config BOARD
+	default "xmc47_relax_kit"
+
+endif

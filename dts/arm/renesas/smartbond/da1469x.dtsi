@@ -1,13 +1,21 @@
 /*
- * Copyright (c) 2022 Renesas Electronics Corporation
+ * Copyright (c) 2022 Renesas Electronics Corporation and/or its affiliates
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <arm/armv8-m.dtsi>
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/adc/smartbond-adc.h>
+#include <zephyr/dt-bindings/pinctrl/smartbond-pinctrl.h>
 
 / {
+	chosen {
+		zephyr,entropy = &trng;
+		zephyr,flash-controller = &flash_controller;
+	};
+
 	cpus: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -16,6 +24,67 @@
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
 			clock-frequency = <32000000>;
+		};
+	};
+
+	crg {
+		osc: osc {
+			rc32k: rc32k {
+				compatible = "renesas,smartbond-lp-osc";
+				clock-frequency = <DT_FREQ_K(32)>;
+				calibration-interval = <1>;
+				#clock-cells = <0>;
+				status = "okay";
+			};
+			xtal32k: xtal32k {
+				compatible = "renesas,smartbond-lp-osc";
+				clock-frequency = <32768>;
+				settle-time = <8000>;
+				#clock-cells = <0>;
+				status = "disabled";
+			};
+			rcx: rcx {
+				compatible = "renesas,smartbond-lp-osc";
+				clock-frequency = <DT_FREQ_K(15)>;
+				calibration-interval = <1>;
+				#clock-cells = <0>;
+				status = "disabled";
+			};
+			rc32m: rc32m {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(32)>;
+				#clock-cells = <0>;
+				status = "okay";
+			};
+			xtal32m: xtal32m {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(32)>;
+				#clock-cells = <0>;
+				status = "disabled";
+			};
+			pll: pll {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(96)>;
+				#clock-cells = <0>;
+				status = "disabled";
+			};
+		};
+		divn_clk: divn_clk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(32)>;
+			#clock-cells = <0>;
+			status = "okay";
+		};
+		sys_clk: sys_clk {
+			compatible = "renesas,smartbond-sys-clk";
+			status = "okay";
+			clock-src = <&rc32m>;
+			status = "okay";
+		};
+		lp_clk: lp_clk {
+			compatible = "renesas,smartbond-lp-clk";
+			clock-src = <&rc32k>;
+			status = "okay";
 		};
 	};
 
@@ -37,7 +106,10 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			flash0: flash@0 {
+			read-cs-idle-delay = <50>;
+			erase-cs-idle-delay = <50>;
+
+			flash0: flash@16000000 {
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
 				write-block-size = <1>;
@@ -77,11 +149,128 @@
 			};
 		};
 
+		wdog: watchdog@50000700 {
+			compatible = "renesas,smartbond-watchdog";
+			reg = <0x50000700 0x8>;
+			status = "okay";
+		};
+
+		timer1: timer@50010200 {
+			compatible = "renesas,smartbond-timer";
+			reg = <0x50010200 0x300>;
+			clock-src = <&lp_clk>;
+			interrupts = <16 0>;
+			prescaler = <1>;
+			status = "disabled";
+		};
+
+		timer2: timer@50010300 {
+			compatible = "renesas,smartbond-timer";
+			reg = <0x50010300 0x300>;
+			clock-src = <&divn_clk>;
+			interrupts = <17 0>;
+			prescaler = <32>;
+			status = "disabled";
+		};
+
+		timer3: timer@50040a00 {
+			compatible = "renesas,smartbond-timer";
+			reg = <0x50040a00 0x300>;
+			clock-src = <&lp_clk>;
+			interrupts = <34 0>;
+			prescaler = <31>;
+			status = "disabled";
+		};
+
+		timer4: timer@50040b00 {
+			compatible = "renesas,smartbond-timer";
+			reg = <0x50040b00 0x300>;
+			clock-src = <&divn_clk>;
+			interrupts = <35 0>;
+			prescaler = <32>;
+			status = "disabled";
+		};
+
 		uart: uart@50020000 {
 			compatible = "renesas,smartbond-uart";
 			reg = <0x50020000 0x100>;
 			periph-clock-config = <0x01>;
 			interrupts = <5 0>;
+			status = "disabled";
+		};
+
+		adc: adc@50030900 {
+			compatible = "renesas,smartbond-adc";
+			reg = <0x50030900 0x1C>;
+			interrupts = <27 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+
+		sdadc: sdadc@50020800 {
+			compatible = "renesas,smartbond-sdadc";
+			reg = <0x50020800 0x1C>;
+			interrupts = <28 0>;
+			clock-freq = <2>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		trng: trng@50040c00 {
+			compatible = "renesas,smartbond-trng";
+			reg = <0x50040c00 0x0C>;
+			interrupts = <24 0>;
+			status = "okay";
+		};
+
+		i2c: i2c@50020600 {
+			compatible = "renesas,smartbond-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50020600 0x100>;
+			periph-clock-config = <0x0200>;
+			interrupts = <8 0>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@50020700 {
+			compatible = "renesas,smartbond-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50020700 0x100>;
+			periph-clock-config = <0x0800>;
+			interrupts = <9 0>;
+		};
+
+		spi: spi@50020300 {
+			compatible = "renesas,smartbond-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50020300 0x100>;
+			periph-clock-config = <0x20>;
+			interrupts = <10 0>;
+			status = "disabled";
+		};
+
+		spi2: spi@50020400 {
+			compatible = "renesas,smartbond-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50020400 0x100>;
+			periph-clock-config = <0x80>;
+			interrupts = <11 0>;
+			status = "disabled";
+		};
+		usbd: usb@50040000 {
+			compatible = "renesas,smartbond-usbd";
+			reg = <0x50040000 0x1B0>;
+			dma-chan-rx = <6>;
+			dma-chan-tx = <7>;
+			dma-min-transfer-size = <65>;
+			fifo-read-threshold = <4>;
+			ep-out-buf-size = <8 64 64 64>;
+			interrupts = <15 0>, <21 0>;
 			status = "disabled";
 		};
 	};

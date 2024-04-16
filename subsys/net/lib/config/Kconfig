@@ -71,6 +71,13 @@ menuconfig NET_CONFIG_SETTINGS
 
 if NET_CONFIG_SETTINGS
 
+config NET_CONFIG_MY_VLAN_ID
+	int "My VLAN identifier"
+	default 0
+	depends on NET_VLAN
+	help
+	  Use 0 here if uncertain.
+
 if NET_IPV6
 
 config NET_CONFIG_MY_IPV6_ADDR
@@ -164,10 +171,17 @@ config NET_CONFIG_IEEE802154_SECURITY_LEVEL
 	  1 authentication only with a 4 bytes length tag
 	  2 authentication only with a 8 bytes length tag
 	  3 authentication only with a 16 bytes length tag
-	  4 encryption only
+	  4 deprecated since IEEE 802.15.4-2015
 	  5 encryption/authentication with a 4 bytes length tag
 	  6 encryption/authentication with a 8 bytes length tag
 	  7 encryption/authentication with a 16 bytes length tag
+
+config NET_CONFIG_IEEE802154_ACK_REQUIRED
+	bool "IEEE 802.15.4 acknowledgment"
+	default y
+	help
+	  Whether or not to request and require IEEE 802.15.4 acknowledgment
+	  packets.
 
 endif # NET_L2_IEEE802154 || IEEE802154_RAW_MODE
 
@@ -180,6 +194,23 @@ config NET_CONFIG_BT_NODE
 	  service to be registered and start advertising as peripheral.
 
 endif # NET_CONFIG_SETTINGS
+
+if NET_DHCPV6
+
+config NET_CONFIG_DHCPV6_REQUEST_ADDR
+	bool "Request IPv6 address when configuring DHCPv6 client"
+	default y
+	help
+	  When DHCPv6 is enabled this will configure the DHCPv6 client to
+	  request IPv6 address from the DHCPv6 server.
+
+config NET_CONFIG_DHCPV6_REQUEST_PREFIX
+	bool "Request IPv6 prefix when configuring DHCPv6 client"
+	help
+	  When DHCPv6 is enabled this will configure the DHCPv6 client to
+	  request IPv6 prefix from the DHCPv6 server.
+
+endif # NET_DHCPV6
 
 config NET_CONFIG_CLOCK_SNTP_INIT
 	bool "Initialize system clock using SNTP on application startup"

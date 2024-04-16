@@ -1,7 +1,7 @@
 .. _mec172xmodular_6930:
 
-MEC172x Modular Card ASSY6930 (Rev. B)
-######################################
+Microchip MEC172x Modular Card ASSY6930 (Rev. B)
+################################################
 
 Overview
 ********

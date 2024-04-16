@@ -51,11 +51,7 @@ static void make_int(void)
 {
 	flag_var = 0;
 	irq_offload(latency_test_isr, NULL);
-	if (flag_var != 1) {
-		printk(" Flag variable has not changed. FAILED\n");
-	} else {
-		timestamp_end = timing_counter_get();
-	}
+	timestamp_end = timing_counter_get();
 }
 
 /**
@@ -67,14 +63,21 @@ static void make_int(void)
 int int_to_thread(void)
 {
 	uint32_t diff;
+	bool  failed = false;
+	const char *notes = "";
 
 	timing_start();
 	TICK_SYNCH();
 	make_int();
-	if (flag_var == 1) {
-		diff = timing_cycles_get(&timestamp_start, &timestamp_end);
-		PRINT_STATS("Switch from ISR back to interrupted thread", diff);
+	if (flag_var != 1) {
+		error_count++;
+		notes = "Flag variable did not change";
+		failed = true;
 	}
+
+	diff = timing_cycles_get(&timestamp_start, &timestamp_end);
+	PRINT_STATS("Switch from ISR back to interrupted thread",
+		    diff, failed, notes);
 	timing_stop();
 	return 0;
 }

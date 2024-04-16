@@ -7,9 +7,8 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 
-static int board_init(const struct device *dev)
+static int board_init(void)
 {
-	ARG_UNUSED(dev);
 
 	int res;
 	static const struct gpio_dt_spec pull_up =
@@ -17,11 +16,11 @@ static int board_init(const struct device *dev)
 	static const struct gpio_dt_spec user_led =
 		GPIO_DT_SPEC_GET(DT_ALIAS(led4), gpios);
 
-	if (!device_is_ready(pull_up.port)) {
+	if (!gpio_is_ready_dt(&pull_up)) {
 		return -ENODEV;
 	}
 
-	if (!device_is_ready(user_led.port)) {
+	if (!gpio_is_ready_dt(&user_led)) {
 		return -ENODEV;
 	}
 

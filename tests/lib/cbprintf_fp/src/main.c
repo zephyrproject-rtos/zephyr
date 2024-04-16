@@ -36,7 +36,8 @@
 #error Unsupported configuration
 #endif
 
-void main(void)
+int main(void)
 {
 	PRINT("Hello with %s on %s\nComplete\n", PRINT_S, CONFIG_BOARD);
+	return 0;
 }

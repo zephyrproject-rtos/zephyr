@@ -1,5 +1,0 @@
-description: STM32 F0 flash controller
-
-compatible: "st,stm32f0-flash-controller"
-
-include: flash-controller.yaml

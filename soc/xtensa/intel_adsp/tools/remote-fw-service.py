@@ -143,7 +143,23 @@ class adsp_log_handler(socketserver.BaseRequestHandler):
 
         log.info("FW is ready...")
 
-        with subprocess.Popen(runner.get_script(), stdout=subprocess.PIPE) as proc:
+        # start_new_session=True in order to get a different Process Group
+        # ID. When the PGID is the same, sudo does NOT propagate signals out of
+        # fear of "accidentally killing itself" (man sudo).
+        # Compare:
+        #
+        # - Different PGID: signal is propagated and sleep is terminated
+        #
+        #    sudo sleep 15 & kill $!
+        #
+        # - Same PGID, sleep is NOT terminated
+        #
+        #    sudo bash -c 'sleep 15 & killall sudo'
+        #
+        #    ps  xfao pid,ppid,pgid,sid,comm | grep -C 5 -e PID -e sleep -e sudo
+
+        with subprocess.Popen(runner.get_script(), stdout=subprocess.PIPE,
+                              start_new_session=True) as proc:
             # Thread for monitoring the conntection
             t = threading.Thread(target=self.check_connection, args=(proc,))
             t.start()
@@ -183,19 +199,33 @@ class adsp_log_handler(socketserver.BaseRequestHandler):
         # the first 10 secs.
         time.sleep(10)
 
-        log.info("Checking result...")
+        poll_interval = 1
+        log.info("Now checking client connection every %ds", poll_interval)
         while True:
             if not self.is_connection_alive():
-                log.info(f"Do kill {proc.pid}")
+                # cavstool
+                child_desc = " ".join(runner.script) + f", PID={proc.pid}"
+                log.info("Terminating %s", child_desc)
 
                 try:
-                    proc.kill()
+                    # sudo does _not_ propagate SIGKILL (man sudo)
+                    proc.terminate()
+                    try:
+                        proc.wait(timeout=0.5)
+                    except subprocess.TimeoutExpired:
+                        log.error("SIGTERM failed on child %s", child_desc)
+                        if os.geteuid() == 0: # sudo not needed and not used
+                            log.error("Sending %d SIGKILL", proc.pid)
+                            proc.kill()
+                        else:
+                            log.error("Try: sudo pkill -9 -f %s", runner.load_cmd)
+
                 except PermissionError:
                     log.info("cannot kill proc due to it start with sudo...")
                     os.system(f"sudo kill -9 {proc.pid} ")
                 return
 
-            time.sleep(1)
+            time.sleep(poll_interval)
 
 class device_runner():
     def __init__(self, args):
@@ -227,9 +257,9 @@ class device_runner():
 
     def get_script(self):
         if os.geteuid() != 0:
-            self.script = ([f'sudo', f'{self.load_cmd}'])
+            self.script = [f'sudo', f'{self.load_cmd}']
         else:
-            self.script = ([f'{self.load_cmd}'])
+            self.script = [f'{self.load_cmd}']
 
         self.script.append(f'{self.fw_file}')
 
@@ -260,7 +290,7 @@ class board_config():
         return self.params
 
 
-ap = argparse.ArgumentParser(description="RemoteHW service tool")
+ap = argparse.ArgumentParser(description="RemoteHW service tool", allow_abbrev=False)
 ap.add_argument("-q", "--quiet", action="store_true",
                 help="No loader output, just DSP logging")
 ap.add_argument("-v", "--verbose", action="store_true",

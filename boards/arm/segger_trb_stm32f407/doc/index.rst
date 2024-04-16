@@ -109,7 +109,7 @@ Flashing an application to the SEGGER-TRB-STM32F407
 Connect the J-Trace/J-Link USB dongle to your host computer and to the JTAG
 port of the SEGGER-TRB-STM32F407 board. Then build and flash an application.
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -121,7 +121,7 @@ After resetting the board, you should see LED0 blink with a 1 second interval.
 Debugging
 =========
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

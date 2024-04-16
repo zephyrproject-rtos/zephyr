@@ -134,23 +134,10 @@ static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
-	LOG_INF("Starting application");
-
-	ret = usb_enable(status_cb);
-	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
-		return;
-	}
-
-	k_work_init(&report_send, send_report);
-}
-
-static int composite_pre_init(const struct device *dev)
-{
 	hdev = device_get_binding("HID_0");
 	if (hdev == NULL) {
 		LOG_ERR("Cannot get USB HID Device");
@@ -169,7 +156,20 @@ static int composite_pre_init(const struct device *dev)
 		LOG_WRN("Failed to set Protocol Code");
 	}
 
-	return usb_hid_init(hdev);
-}
+	ret = usb_hid_init(hdev);
+	if (ret != 0) {
+		return ret;
+	}
 
-SYS_INIT(composite_pre_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+	LOG_INF("Starting application");
+
+	ret = usb_enable(status_cb);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return ret;
+	}
+
+	k_work_init(&report_send, send_report);
+
+	return 0;
+}

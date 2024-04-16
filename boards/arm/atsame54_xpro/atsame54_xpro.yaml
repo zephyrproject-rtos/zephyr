@@ -16,5 +16,7 @@ supported:
   - pwm
   - spi
   - i2c
+  - uart
   - usb_device
   - netif:eth
+vendor: atmel

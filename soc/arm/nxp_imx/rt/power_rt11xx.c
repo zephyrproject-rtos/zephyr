@@ -283,7 +283,7 @@ void cpu_mode_transition(gpc_cpu_mode_t mode, bool enable_standby)
  * SOC specific low power mode implementation
  * Drop to lowest power state possible given system's request
  */
-__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
+void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
 
@@ -306,7 +306,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	}
 }
 
-__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
@@ -320,9 +320,8 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 }
 
 /* Initialize RT11xx Power */
-static int rt11xx_power_init(const struct device *dev)
+static int rt11xx_power_init(void)
 {
-	ARG_UNUSED(dev);
 	/* Drop SOC target voltage to 1.0 V */
 	DCDC_SetVDD1P0BuckModeTargetVoltage(DCDC, kDCDC_1P0BuckTarget1P0V);
 	/* Initialize general power controller */

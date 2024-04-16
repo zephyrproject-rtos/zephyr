@@ -1,0 +1,16 @@
+common:
+  platform_allow:
+    - native_posix
+  tags:
+    - pm
+tests:
+  pm.device_driver_init: {}
+  pm.device_driver_init.pm:
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_POWER_DOMAIN=y
+  pm.device_driver_init.pm_device_runtime:
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_POWER_DOMAIN=y
+      - CONFIG_PM_DEVICE_RUNTIME=y

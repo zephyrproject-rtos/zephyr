@@ -8,12 +8,13 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/drivers/timer/system_timer.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/pm/pm.h>
 #include <stdbool.h>
 #include <zephyr/logging/log.h>
+/* private kernel APIs */
 #include <ksched.h>
 #include <kswap.h>
+#include <wait_q.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -27,7 +28,9 @@ void z_pm_save_idle_exit(void)
 	 */
 	pm_system_resume();
 #endif	/* CONFIG_PM */
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 	sys_clock_idle_exit();
+#endif
 }
 
 void idle(void *unused1, void *unused2, void *unused3)
@@ -103,4 +106,12 @@ void idle(void *unused1, void *unused2, void *unused3)
 # endif
 #endif
 	}
+}
+
+void __weak arch_spin_relax(void)
+{
+	__ASSERT(!arch_irq_unlocked(arch_irq_lock()),
+		 "this is meant to be called with IRQs disabled");
+
+	arch_nop();
 }

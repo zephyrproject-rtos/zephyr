@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 common:
-  tags: ztest
+  tags:
+    - test_framework
   # test has dependencies on host libc
   platform_allow: native_posix
 tests:

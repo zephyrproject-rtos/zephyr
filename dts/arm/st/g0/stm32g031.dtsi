@@ -9,6 +9,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32g031", "st,stm32g0", "simple-bus";
+
 		lpuart1: serial@40008000 {
 			compatible = "st,stm32-lpuart", "st,stm32-uart";
 			reg = <0x40008000 0x400>;

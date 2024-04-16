@@ -219,11 +219,128 @@ For more information about the Keyestudio CAN-BUS shield:
 - `MCP2515 Datasheet`_
 - `MCP2551 Datasheet`_
 
+Adafruit PiCowbell CAN Bus Shield for Pico
+******************************************
+
+Overview
+--------
+
+The Adafruit PiCowbell CAN Bus Shield uses the Microchip MCP2515 controller
+with an TJA1051/3 transceiver. This shield is built for the Raspberry Pi Pico
+and uses the SPI interface. It also contains a Qwiic connector to add support
+for a sensor.
+
+.. figure:: adafruit_can_picowbell.jpg
+   :align: center
+   :alt: Adafruit PiCowbell CAN Bus Shield
+
+   Adafruit PiCowbell CAN Bus Shield
+
+Hardware
+--------
+
+- MCP2515
+
+        - Stand-Alone CAN 2.0B Controller
+        - Up to 1Mb/s baud rate
+        - Standard and extended data and remote frames
+        - 3x Tx Buffers
+        - 2x Rx Buffers
+        - 6x 29-bit Filters
+        - 2x 29-bit Masks
+        - Interrupt output
+        - One shot mode
+        - High speed SPI interface (10 MHz)
+
+- TJA1051
+
+        - Fully compatible with the “ISO 11898-2:2016”, "SAE J2284-1" & "SAE J2284-5"  standards
+        - Supports CAN FD
+        - Fast data rates (up to 5 Mbit/s)
+
+- Connectivity
+
+        - Terminal Block - 3-pin 3.5mm (CAN)
+        - Raspberry Pi Pico compatible (SPI)
+
++-------+-----------------------+---------------------------+
+| Name  | Function              | Usage                     |
++=======+=======================+===========================+
+| GP0   | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP1   | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP2   | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP3   | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP4   | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP5   | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP6   | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP7   | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP8   | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP9   | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP10  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP11  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP12  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP13  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP14  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP15  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP16  | SPI-MISO              | MCP2515                   |
++-------+-----------------------+---------------------------+
+| GP17  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP18  | SPI-SCK               | MCP2515                   |
++-------+-----------------------+---------------------------+
+| GP19  | SPI-MOSI              | MCP2515                   |
++-------+-----------------------+---------------------------+
+| GP20  | SPI-CS                | MCP2515                   |
++-------+-----------------------+---------------------------+
+| GP21  | GPIO_ACTIVE_LOW       | MCP2515 - INT             |
++-------+-----------------------+---------------------------+
+| GP22  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP23  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP24  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP25  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP26  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP27  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP28  | None                  |                           |
++-------+-----------------------+---------------------------+
+
+
+- Power Supply
+
+        - 3.3V ~ 5V
+
+For more information about the Adafruit PiCowbell CAN Bus shield:
+
+- `Adafruit Website`_
+- `MCP2515 Datasheet`_
+- `TJA1051 Datasheet`_
+
 Programming
 ***********
 
 Set ``-DSHIELD=dfrobot_can_bus_v2_0`` or ``-DSHIELD=keyestudio_can_bus_ks0411``
-when you invoke ``west build`` or ``cmake`` in your Zephyr application. For
+or ``-DSHIELD=adafruit_can_picowbell`` when you invoke ``west build`` or ``cmake`` in your Zephyr application. For
 example:
 
 .. zephyr-app-commands::
@@ -239,6 +356,13 @@ example:
    :board: nrf52840dk_nrf52840
    :shield: keyestudio_can_bus_ks0411
    :goals: build flash
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/can/counter
+   :tool: all
+   :board: rpi_pico
+   :shield: adafruit_can_picowbell
+   :goals: build
 
 .. _DFRobot Website:
    https://www.dfrobot.com/product-1444.html
@@ -263,3 +387,9 @@ example:
 
 .. _MCP2551 Datasheet:
    https://ww1.microchip.com/downloads/en/DeviceDoc/20001667G.pdf
+
+.. _Adafruit Website:
+   https://www.adafruit.com/product/5728#technical-details
+
+.. _TJA1051 Datasheet:
+   https://www.nxp.com/docs/en/data-sheet/TJA1051.pdf

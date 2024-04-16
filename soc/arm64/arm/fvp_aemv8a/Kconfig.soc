@@ -8,6 +8,5 @@ choice
 config SOC_FVP_BASE_REVC_2XAEMV8A
 	bool "ARM FVP Base RevC 2xAEMv8A AArch64 simulation"
 	select CPU_CORTEX_A53
-	select GIC_V3
 
 endchoice

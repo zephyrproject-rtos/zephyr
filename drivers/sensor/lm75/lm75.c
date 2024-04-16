@@ -10,6 +10,8 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(LM75, CONFIG_SENSOR_LOG_LEVEL);
@@ -62,14 +64,26 @@ static int lm75_sample_fetch(const struct device *dev,
 {
 	struct lm75_data *data = dev->data;
 	const struct lm75_config *cfg = dev->config;
+	enum pm_device_state pm_state;
+	int ret;
+
+	(void)pm_device_state_get(dev, &pm_state);
+	if (pm_state != PM_DEVICE_STATE_ACTIVE) {
+		ret = -EIO;
+		return ret;
+	}
 
 	switch (chan) {
 	case SENSOR_CHAN_ALL:
 	case SENSOR_CHAN_AMBIENT_TEMP:
-		return lm75_fetch_temp(cfg, data);
+		ret = lm75_fetch_temp(cfg, data);
+		break;
 	default:
-		return -ENOTSUP;
+		ret = -ENOTSUP;
+		break;
 	}
+
+	return ret;
 }
 
 static int lm75_channel_get(const struct device *dev,
@@ -96,21 +110,52 @@ static const struct sensor_driver_api lm75_driver_api = {
 int lm75_init(const struct device *dev)
 {
 	const struct lm75_config *cfg = dev->config;
+	int ret = 0;
 
-	if (device_is_ready(cfg->i2c.bus)) {
-		return 0;
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("I2C dev not ready");
+		return -ENODEV;
 	}
 
-	LOG_ERR("I2C dev not ready");
-	return -ENODEV;
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	pm_device_init_suspended(dev);
+
+	ret = pm_device_runtime_enable(dev);
+	if (ret < 0 && ret != -ENOTSUP) {
+		LOG_ERR("Failed to enable runtime power management");
+		return ret;
+	}
+#endif
+
+	return ret;
 }
+
+#ifdef CONFIG_PM_DEVICE
+
+static int lm75_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_TURN_OFF:
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+#endif
 
 #define LM75_INST(inst)                                             \
 static struct lm75_data lm75_data_##inst;                           \
 static const struct lm75_config lm75_config_##inst = {              \
 	.i2c = I2C_DT_SPEC_INST_GET(inst),                          \
 };                                                                  \
-SENSOR_DEVICE_DT_INST_DEFINE(inst, lm75_init, NULL, &lm75_data_##inst,     \
+PM_DEVICE_DT_INST_DEFINE(inst, lm75_pm_action);						\
+SENSOR_DEVICE_DT_INST_DEFINE(inst, lm75_init, PM_DEVICE_DT_INST_GET(inst), &lm75_data_##inst,	\
 		      &lm75_config_##inst, POST_KERNEL,             \
 		      CONFIG_SENSOR_INIT_PRIORITY, &lm75_driver_api);
 

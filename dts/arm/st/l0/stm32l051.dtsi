@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32l051", "st,stm32l0", "simple-bus";
+
 		i2c2: i2c@40005800 {
 			compatible = "st,stm32-i2c-v2";
 			clock-frequency = <I2C_BITRATE_STANDARD>;

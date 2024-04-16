@@ -6,8 +6,10 @@ simulation: nsim
 simulation_exec: nsimdrv
 toolchain:
   - zephyr
+  - cross-compile
   - arcmwdt
 testing:
   ignore_tags:
     - net
     - bluetooth
+vendor: snps

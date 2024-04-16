@@ -7,6 +7,8 @@ config HAS_NRFX
 menu "nrfx drivers"
 	depends on HAS_NRFX
 
+rsource "Kconfig.logging"
+
 config NRFX_ADC
 	bool "ADC driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_ADC))
@@ -73,8 +75,12 @@ config NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
 	  by the user.
 
 config NRFX_I2S
-	bool "I2S driver"
-	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_I2S))
+	bool
+
+config NRFX_I2S0
+	bool "I2S0 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2s0,$(DT_COMPAT_NORDIC_NRF_I2S))
+	select NRFX_I2S
 
 config NRFX_IPC
 	bool "IPC driver"
@@ -136,8 +142,17 @@ config NRFX_PWM3
 	select NRFX_PWM
 
 config NRFX_QDEC
-	bool "QDEC driver"
-	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_QDEC))
+	bool
+
+config NRFX_QDEC0
+	bool "QDEC0 driver instance"
+	depends on $(dt_nodelabel_has_compat,qdec0,$(DT_COMPAT_NORDIC_NRF_QDEC))
+	select NRFX_QDEC
+
+config NRFX_QDEC1
+	bool "QDEC1 driver instance"
+	depends on $(dt_nodelabel_has_compat,qdec1,$(DT_COMPAT_NORDIC_NRF_QDEC))
+	select NRFX_QDEC
 
 config NRFX_QSPI
 	bool "QSPI driver"
@@ -367,6 +382,15 @@ config NRFX_UARTE3
 config NRFX_USBD
 	bool "USBD driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_USBD))
+
+config NRFX_USBD_ISO_IN_ZLP
+	bool "Send ZLP on ISO IN when not ready"
+	depends on NRFX_USBD
+	default y
+	help
+	  Controls the response of the ISO IN endpoint to an IN token when no
+	  data is ready to be sent. When enabled, ZLP is sent when no data is
+	  ready. When disabled, no response is sent (bus timeout occurs).
 
 config NRFX_USBREG
 	bool "USBREG driver"

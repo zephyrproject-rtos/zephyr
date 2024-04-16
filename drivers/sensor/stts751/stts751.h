@@ -18,6 +18,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
+#include <stmemsc.h>
 #include "stts751_reg.h"
 
 struct stts751_config {
@@ -43,7 +44,7 @@ struct stts751_data {
 #ifdef CONFIG_STTS751_TRIGGER
 	struct gpio_callback gpio_cb;
 
-	struct sensor_trigger data_ready_trigger;
+	const struct sensor_trigger *thsld_trigger;
 	sensor_trigger_handler_t thsld_handler;
 
 #if defined(CONFIG_STTS751_TRIGGER_OWN_THREAD)

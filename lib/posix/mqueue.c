@@ -61,7 +61,7 @@ mqd_t mq_open(const char *name, int oflags, ...)
 {
 	va_list va;
 	mode_t mode;
-	mq_attr *attrs = NULL;
+	struct mq_attr *attrs = NULL;
 	long msg_size = 0U, max_msgs = 0U;
 	mqueue_object *msg_queue;
 	mqueue_desc *msg_queue_desc = NULL, *mqd = (mqueue_desc *)(-1);
@@ -70,7 +70,7 @@ mqd_t mq_open(const char *name, int oflags, ...)
 	va_start(va, oflags);
 	if ((oflags & O_CREAT) != 0) {
 		mode = va_arg(va, PROMOTED_MODE_T);
-		attrs = va_arg(va, mq_attr*);
+		attrs = va_arg(va, struct mq_attr*);
 	}
 	va_end(va);
 

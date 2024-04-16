@@ -1,0 +1,80 @@
+# Copyright (c) 2018-2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Input device settings"
+
+config LV_Z_POINTER_KSCAN
+	bool "Keyboard scan pointer input"
+	depends on KSCAN
+	help
+	  Enable keyboard scan pointer input
+
+if LV_Z_POINTER_KSCAN
+
+config LV_Z_POINTER_KSCAN_MSGQ_COUNT
+	int "Keyboard scan message queue count maximum"
+	default 10
+	help
+	  Maximum number of items in the keyboard scan message queue.
+
+config LV_Z_POINTER_KSCAN_SWAP_XY
+	bool "Swap keyboard scan X,Y axes"
+	help
+	  Swap keyboard scan X,Y axes. This option can be used to align keyboard
+	  scan coordinates with the display.
+
+config LV_Z_POINTER_KSCAN_INVERT_X
+	bool "Invert keyboard scan X axis"
+	help
+	  Invert keyboard scan X axis. This option can be used to align keyboard
+	  scan coordinates with the display.
+
+config LV_Z_POINTER_KSCAN_INVERT_Y
+	bool "Invert keyboard scan Y axis"
+	help
+	  Invert keyboard scan Y axis. This option can be used to align keyboard
+	  scan coordinates with the display.
+
+endif # LV_Z_POINTER_KSCAN
+
+config LV_Z_POINTER_INPUT
+	bool "Input lvgl pointer"
+	default y
+	depends on INPUT
+	depends on DT_HAS_ZEPHYR_LVGL_POINTER_INPUT_ENABLED
+
+config LV_Z_POINTER_INPUT_MSGQ_COUNT
+	int "Input pointer queue message count"
+	default 10
+	depends on LV_Z_POINTER_INPUT
+	help
+	  Size of the pointer message queue buffering input events.
+
+config LV_Z_BUTTON_INPUT
+	bool "Input lvgl button"
+	default y
+	depends on INPUT
+	depends on DT_HAS_ZEPHYR_LVGL_BUTTON_INPUT_ENABLED
+
+config LV_Z_BUTTON_INPUT_MSGQ_COUNT
+	int "Input button queue message count"
+	default 4
+	depends on LV_Z_BUTTON_INPUT
+	help
+	  Size of the button message queue buffering input events.
+
+config LV_Z_ENCODER_INPUT
+	bool "Input lvgl encoder"
+	default y
+	depends on INPUT
+	depends on DT_HAS_ZEPHYR_LVGL_ENCODER_INPUT_ENABLED
+
+config LV_Z_ENCODER_INPUT_MSGQ_COUNT
+	int "Input encoder queue message count"
+	default 4
+	depends on LV_Z_ENCODER_INPUT
+	help
+	  Size of the encoder message queue buffering input events.
+
+endmenu

@@ -9,4 +9,10 @@ toolchain:
   - xtools
 supported:
   - arduino_gpio
+  - counter
   - gpio
+  - watchdog
+  - i2c
+  - spi
+  - usb_device
+vendor: renesas

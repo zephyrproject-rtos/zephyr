@@ -245,7 +245,7 @@ Partition alignment
 When :ref:`devicetree` is used:
 
 Device dependencies
-   The *gen_handles.py* script scans the unfixed size binary to determine
+   The *gen_device_deps.py* script scans the unfixed size binary to determine
    relationships between devices that were recorded from devicetree data,
    and replaces the encoded relationships with values that are optimized to
    locate the devices actually present in the application.
@@ -257,7 +257,7 @@ Device dependencies
     :width: 80%
 
 When :kconfig:option:`CONFIG_GEN_ISR_TABLES` is enabled:
-   The *gen_isr_tables.py* script scant the fixed size binary and creates
+   The *gen_isr_tables.py* script scans the fixed size binary and creates
    an isr_tables.c source file with a hardware vector table and/or software
    IRQ table.
 
@@ -330,12 +330,12 @@ The following is a detailed description of the scripts used during the build pro
    :start-after: """
    :end-before: """
 
-.. _gen_handles.py:
+.. _gen_device_deps.py:
 
-:zephyr_file:`scripts/build/gen_handles.py`
--------------------------------------------
+:zephyr_file:`scripts/build/gen_device_deps.py`
+-----------------------------------------------
 
-.. include:: ../../../scripts/build/gen_handles.py
+.. include:: ../../../scripts/build/gen_device_deps.py
    :start-after: """
    :end-before: """
 
@@ -407,5 +407,14 @@ The following is a detailed description of the scripts used during the build pro
 --------------------------------------------------
 
 .. include:: ../../../scripts/build/gen_app_partitions.py
+   :start-after: """
+   :end-before: """
+
+.. _check_init_priorities.py:
+
+:zephyr_file:`scripts/build/check_init_priorities.py`
+-----------------------------------------------------
+
+.. include:: ../../../scripts/build/check_init_priorities.py
    :start-after: """
    :end-before: """

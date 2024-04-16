@@ -29,12 +29,12 @@ LOG_MODULE_REGISTER(pcnt_esp32, CONFIG_SENSOR_LOG_LEVEL);
 #define PCNT_INTR_UNIT_1  BIT(1)
 #define PCNT_INTR_UNIT_2  BIT(2)
 #define PCNT_INTR_UNIT_3  BIT(3)
-#ifdef CONFIG_SOC_ESP32
+#ifdef CONFIG_SOC_SERIES_ESP32
 #define PCNT_INTR_UNIT_4  BIT(4)
 #define PCNT_INTR_UNIT_5  BIT(5)
 #define PCNT_INTR_UNIT_6  BIT(6)
 #define PCNT_INTR_UNIT_7  BIT(7)
-#endif /* CONFIG_SOC_ESP32 */
+#endif /* CONFIG_SOC_SERIES_ESP32 */
 
 #ifdef CONFIG_PCNT_ESP32_TRIGGER
 #define PCNT_INTR_THRES_1 BIT(2)
@@ -46,6 +46,7 @@ struct pcnt_esp32_data {
 	struct k_mutex cmd_mux;
 #ifdef CONFIG_PCNT_ESP32_TRIGGER
 	sensor_trigger_handler_t trigger_handler;
+	const struct sensor_trigger *trigger;
 #endif /* CONFIG_PCNT_ESP32_TRIGGER */
 };
 
@@ -280,7 +281,6 @@ static void IRAM_ATTR pcnt_esp32_isr(const struct device *dev)
 
 	uint32_t pcnt_intr_status;
 	uint32_t pcnt_unit_status;
-	struct sensor_trigger trigger;
 
 	pcnt_intr_status = pcnt_ll_get_intr_status(data->hal.dev);
 	pcnt_ll_clear_intr_status(data->hal.dev, pcnt_intr_status);
@@ -293,7 +293,7 @@ static void IRAM_ATTR pcnt_esp32_isr(const struct device *dev)
 		pcnt_unit_status = pcnt_ll_get_unit_status(data->hal.dev, 2);
 	} else if (pcnt_intr_status & PCNT_INTR_UNIT_3) {
 		pcnt_unit_status = pcnt_ll_get_unit_status(data->hal.dev, 3);
-#ifdef CONFIG_SOC_ESP32
+#ifdef CONFIG_SOC_SERIES_ESP32
 	} else if (pcnt_intr_status & PCNT_INTR_UNIT_4) {
 		pcnt_unit_status = pcnt_ll_get_unit_status(data->hal.dev, 4);
 	} else if (pcnt_intr_status & PCNT_INTR_UNIT_5) {
@@ -302,7 +302,7 @@ static void IRAM_ATTR pcnt_esp32_isr(const struct device *dev)
 		pcnt_unit_status = pcnt_ll_get_unit_status(data->hal.dev, 6);
 	} else if (pcnt_intr_status & PCNT_INTR_UNIT_7) {
 		pcnt_unit_status = pcnt_ll_get_unit_status(data->hal.dev, 7);
-#endif /* CONFIG_SOC_ESP32 */
+#endif /* CONFIG_SOC_SERIES_ESP32 */
 	} else {
 		return;
 	}
@@ -315,9 +315,7 @@ static void IRAM_ATTR pcnt_esp32_isr(const struct device *dev)
 		return;
 	}
 
-	trigger.type = SENSOR_TRIG_THRESHOLD;
-	trigger.chan = SENSOR_CHAN_ROTATION;
-	data->trigger_handler(dev, &trigger);
+	data->trigger_handler(dev, data->trigger);
 }
 
 static int pcnt_esp32_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
@@ -340,6 +338,7 @@ static int pcnt_esp32_trigger_set(const struct device *dev, const struct sensor_
 	}
 
 	data->trigger_handler = handler;
+	data->trigger = trig;
 
 	ret = esp_intr_alloc(config->irq_src, 0, (intr_handler_t)pcnt_esp32_isr, (void *)dev, NULL);
 	if (ret != 0) {

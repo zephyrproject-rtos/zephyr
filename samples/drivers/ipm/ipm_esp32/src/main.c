@@ -26,14 +26,14 @@ static void ipm_receive_callback(const struct device *ipmdev, void *user_data,
 	k_sem_give(&sync);
 }
 
-void main(void)
+int main(void)
 {
 	k_sem_init(&sync, 0, 1);
 
 	ipm_dev = DEVICE_DT_GET(DT_NODELABEL(ipm0));
 	if (!ipm_dev) {
 		printk("Failed to get IPM device.\n\r");
-		return;
+		return 0;
 	}
 
 	ipm_register_callback(ipm_dev, ipm_receive_callback, NULL);
@@ -48,4 +48,5 @@ void main(void)
 
 		k_sleep(K_MSEC(200));
 	}
+	return 0;
 }

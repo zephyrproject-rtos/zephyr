@@ -22,9 +22,8 @@
 
 K_MUTEX_DEFINE(rtt_term_mutex);
 
-static int rtt_init(const struct device *unused)
+static int rtt_init(void)
 {
-	ARG_UNUSED(unused);
 
 	SEGGER_RTT_Init();
 

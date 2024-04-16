@@ -92,17 +92,11 @@ static ALWAYS_INLINE void clk_init(void)
 #endif
 }
 
-static int k8x_init(const struct device *arg)
+static int k8x_init(void)
 {
-	ARG_UNUSED(arg);
-
-	unsigned int old_level; /* old interrupt lock level */
 #if !defined(CONFIG_ARM_MPU)
 	uint32_t temp_reg;
 #endif /* !CONFIG_ARM_MPU */
-
-	/* Disable interrupts */
-	old_level = irq_lock();
 
 	/* release I/O power hold to allow normal run state */
 	PMC->REGSC |= PMC_REGSC_ACKISO_MASK;
@@ -123,16 +117,16 @@ static int k8x_init(const struct device *arg)
 	/* Initialize system clocks and PLL */
 	clk_init();
 
-	/*
-	 * Install default handler that simply resets the CPU if
-	 * configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	/* Restore interrupt state */
-	irq_unlock(old_level);
-
 	return 0;
 }
+
+#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+
+void z_arm_platform_init(void)
+{
+	SystemInit();
+}
+
+#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
 
 SYS_INIT(k8x_init, PRE_KERNEL_1, 0);

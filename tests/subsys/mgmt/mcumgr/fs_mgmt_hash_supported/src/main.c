@@ -35,7 +35,7 @@ ZTEST(fs_mgmt_hash_supported, test_supported)
 {
 	struct net_buf *nb;
 	struct hash_checksum_type expected_types[] = {
-#ifdef CONFIG_FS_MGMT_HASH_SHA256
+#ifdef CONFIG_MCUMGR_GRP_FS_HASH_SHA256
 
 		{
 			.name = "sha256",
@@ -45,7 +45,7 @@ ZTEST(fs_mgmt_hash_supported, test_supported)
 			.entries_matched = false,
 		},
 #endif
-#ifdef CONFIG_FS_MGMT_CHECKSUM_IEEE_CRC32
+#ifdef CONFIG_MCUMGR_GRP_FS_CHECKSUM_IEEE_CRC32
 		{
 			.name = "crc32",
 			.format = 0,
@@ -55,9 +55,6 @@ ZTEST(fs_mgmt_hash_supported, test_supported)
 		},
 #endif
 	};
-
-	/* Register os_mgmt mcumgr group */
-	fs_mgmt_register_group();
 
 	/* Enable dummy SMP backend and ready for usage */
 	smp_dummy_enable();

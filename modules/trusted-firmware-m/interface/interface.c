@@ -8,8 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/fpu.h>
+#include <zephyr/arch/arm/cortex_m/fpu.h>
 
 #include <tfm_ns_interface.h>
 
@@ -31,6 +30,7 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 {
 	int32_t result;
 	bool is_pre_kernel = k_is_pre_kernel();
+	int tfm_ns_saved_prio;
 
 	if (!is_pre_kernel) {
 		/* TF-M request protected by NS lock */
@@ -41,10 +41,15 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 #if !defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
 		/* Prevent the thread from being preempted, while executing a
 		 * Secure function. This is required to prevent system crashes
-		 * that could occur, if a thead context switch is triggered in
-		 * the middle of a Secure call.
+		 * that could occur, if a thread context switch is triggered in
+		 * the middle of a Secure call. Note that the code below takes
+		 * into account MetaIRQ, which can preempt cooperative threads
+		 * of any priority.
 		 */
-		k_sched_lock();
+		tfm_ns_saved_prio = k_thread_priority_get(k_current_get());
+		k_thread_priority_set(k_current_get(), K_HIGHEST_THREAD_PRIO);
+#else
+		ARG_UNUSED(tfm_ns_saved_prio);
 #endif
 	}
 
@@ -58,8 +63,8 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 
 	if (!is_pre_kernel) {
 #if !defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
-		/* Unlock the scheduler, to allow the thread to be preempted. */
-		k_sched_unlock();
+		/* Restore thread priority, to allow the thread to be preempted. */
+		k_thread_priority_set(k_current_get(), tfm_ns_saved_prio);
 #endif
 
 		k_mutex_unlock(&tfm_mutex);
@@ -68,7 +73,7 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 	return result;
 }
 
-enum tfm_status_e tfm_ns_interface_init(void)
+uint32_t tfm_ns_interface_init(void)
 {
 	/*
 	 * The static K_MUTEX_DEFINE handles mutex initialization,
@@ -82,9 +87,8 @@ enum tfm_status_e tfm_ns_interface_init(void)
 #include "psa_manifest/sid.h"
 #endif /* TFM_PSA_API */
 
-static int ns_interface_init(const struct device *arg)
+static int ns_interface_init(void)
 {
-	ARG_UNUSED(arg);
 
 	__ASSERT(tfm_ns_interface_init() == TFM_SUCCESS,
 		"TF-M NS interface init failed");

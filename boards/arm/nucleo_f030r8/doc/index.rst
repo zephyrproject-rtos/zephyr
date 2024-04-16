@@ -93,6 +93,8 @@ The Zephyr nucleo_f030r8 board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c controller                      |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | ADC controller                      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
@@ -124,6 +126,7 @@ Default Zephyr Peripheral Mapping:
 - SPI2 NSS/SCK/MISO/MOSI : PB12/PB13/PB14/PB15
 - USER_PB : PC13
 - LD1 : PA5
+- ADC : PA0
 
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
@@ -146,7 +149,7 @@ This interface is supported by the openocd version included in the Zephyr SDK.
 Flashing an application to Nucleo F030R8
 ----------------------------------------
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -166,7 +169,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`blinky-sample` application.
+:zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

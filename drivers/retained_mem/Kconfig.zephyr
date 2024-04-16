@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config RETAINED_MEM_ZEPHYR_RAM
+	bool "Generic Zephyr RAM retained memory driver"
+	default y
+	depends on DT_HAS_ZEPHYR_RETAINED_RAM_ENABLED
+	help
+	  Enable driver for retained memory in RAM.

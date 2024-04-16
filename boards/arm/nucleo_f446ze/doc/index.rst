@@ -236,13 +236,13 @@ You can debug an application in the usual way.  Here is an example for the
    :goals: debug
 
 .. _Nucleo F446ZE website:
-   http://www.st.com/en/evaluation-tools/nucleo-f446ze.html
+   https://www.st.com/en/evaluation-tools/nucleo-f446ze.html
 
 .. _STM32 Nucleo-144 board User Manual:
    https://www.st.com/resource/en/user_manual/um1974-stm32-nucleo144-boards-mb1137-stmicroelectronics.pdf
 
 .. _STM32F446ZE on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32f446ze.html
+   https://www.st.com/en/microcontrollers/stm32f446ze.html
 
 .. _STM32F446 reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00135183.pdf
+   https://www.st.com/resource/en/reference_manual/dm00135183.pdf

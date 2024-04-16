@@ -14,9 +14,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/policy.h>
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>
 #endif
@@ -37,12 +35,11 @@ struct lpuart_dma_config {
 struct mcux_lpuart_config {
 	LPUART_Type *base;
 	const struct device *clock_dev;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
-#endif
 	clock_control_subsys_t clock_subsys;
 	uint32_t baud_rate;
 	uint8_t flow_ctrl;
+	uint8_t parity;
 	bool rs485_de_active_low;
 	bool loopback_en;
 #ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
@@ -373,6 +370,11 @@ static void mcux_lpuart_irq_callback_set(const struct device *dev,
 
 	data->callback = cb;
 	data->cb_data = cb_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->async.user_callback = NULL;
+	data->async.user_data = NULL;
+#endif
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -596,7 +598,7 @@ static int uart_mcux_lpuart_dma_replace_rx_buffer(const struct device *dev)
 }
 
 static void dma_callback(const struct device *dma_dev, void *callback_arg, uint32_t channel,
-			 int error_code)
+			 int dma_status)
 {
 	struct device *dev = (struct device *)callback_arg;
 	const struct mcux_lpuart_config *config = dev->config;
@@ -614,8 +616,8 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg, uint3
 			status.pending_length);
 	}
 
-	if (error_code != 0) {
-		LOG_ERR("Got error : %d", error_code);
+	if (dma_status < 0) {
+		LOG_ERR("Got error : %d", dma_status);
 	}
 
 
@@ -663,6 +665,11 @@ static int mcux_lpuart_callback_set(const struct device *dev, uart_callback_t ca
 
 	data->async.user_callback = callback;
 	data->async.user_data = user_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->callback = NULL;
+	data->cb_data = NULL;
+#endif
 
 	return 0;
 }
@@ -813,7 +820,8 @@ static int mcux_lpuart_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t
 
 static void mcux_lpuart_async_rx_timeout(struct k_work *work)
 {
-	struct mcux_lpuart_rx_dma_params *rx_params = CONTAINER_OF(work,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct mcux_lpuart_rx_dma_params *rx_params = CONTAINER_OF(dwork,
 								   struct mcux_lpuart_rx_dma_params,
 								   timeout_work);
 	struct mcux_lpuart_async_data *async_data = CONTAINER_OF(rx_params,
@@ -827,7 +835,8 @@ static void mcux_lpuart_async_rx_timeout(struct k_work *work)
 
 static void mcux_lpuart_async_tx_timeout(struct k_work *work)
 {
-	struct mcux_lpuart_tx_dma_params *tx_params = CONTAINER_OF(work,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct mcux_lpuart_tx_dma_params *tx_params = CONTAINER_OF(dwork,
 								   struct mcux_lpuart_tx_dma_params,
 								   timeout_work);
 	struct mcux_lpuart_async_data *async_data = CONTAINER_OF(tx_params,
@@ -858,8 +867,6 @@ static void mcux_lpuart_isr(const struct device *dev)
 			data->tx_poll_stream_on = false;
 			mcux_lpuart_pm_policy_state_lock_put(dev);
 		}
-		assert(LPUART_ClearStatusFlags(config->base,
-			kLPUART_TransmissionCompleteFlag) == 0U);
 	}
 #endif /* CONFIG_PM */
 
@@ -877,7 +884,7 @@ static void mcux_lpuart_isr(const struct device *dev)
 	if (status & kLPUART_IdleLineFlag) {
 		async_timer_start(&data->async.rx_dma_params.timeout_work,
 				  data->async.rx_dma_params.timeout_us);
-		assert(LPUART_ClearStatusFlags(config->base, kLPUART_IdleLineFlag) == 0U);
+		LPUART_ClearStatusFlags(config->base, kLPUART_IdleLineFlag);
 	}
 #endif /* CONFIG_UART_ASYNC_API */
 }
@@ -1043,24 +1050,20 @@ static int mcux_lpuart_init(const struct device *dev)
 	const struct mcux_lpuart_config *config = dev->config;
 	struct mcux_lpuart_data *data = dev->data;
 	struct uart_config *uart_api_config = &data->uart_config;
-#ifdef CONFIG_PINCTRL
 	int err;
-#endif
 
 	uart_api_config->baudrate = config->baud_rate;
-	uart_api_config->parity = UART_CFG_PARITY_NONE;
+	uart_api_config->parity = config->parity;
 	uart_api_config->stop_bits = UART_CFG_STOP_BITS_1;
 	uart_api_config->data_bits = UART_CFG_DATA_BITS_8;
 	uart_api_config->flow_ctrl = config->flow_ctrl;
 
 	/* set initial configuration */
 	mcux_lpuart_configure_init(dev, uart_api_config);
-#ifdef CONFIG_PINCTRL
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
 		return err;
 	}
-#endif
 
 #ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
 	config->irq_config_func(dev);
@@ -1185,14 +1188,6 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 #define TX_DMA_CONFIG(n)
 #endif /* CONFIG_UART_ASYNC_API */
 
-#if CONFIG_PINCTRL
-#define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
-#define PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
-#else
-#define PINCTRL_DEFINE(n)
-#define PINCTRL_INIT(n)
-#endif /* CONFIG_PINCTRL */
-
 #define FLOW_CONTROL(n) \
 	DT_INST_PROP(n, hw_flow_control)   \
 		? UART_CFG_FLOW_CTRL_RTS_CTS     \
@@ -1207,9 +1202,10 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
 	.baud_rate = DT_INST_PROP(n, current_speed),                          \
 	.flow_ctrl = FLOW_CONTROL(n),                                         \
+	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),       \
 	.rs485_de_active_low = DT_INST_PROP(n, nxp_rs485_de_active_low),      \
 	.loopback_en = DT_INST_PROP(n, nxp_loopback),                         \
-	PINCTRL_INIT(n)         \
+	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                          \
 	MCUX_LPUART_IRQ_INIT(n) \
 	RX_DMA_CONFIG(n)        \
 	TX_DMA_CONFIG(n)        \
@@ -1219,7 +1215,7 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 									\
 	static struct mcux_lpuart_data mcux_lpuart_##n##_data;		\
 									\
-	PINCTRL_DEFINE(n)						\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	MCUX_LPUART_IRQ_DEFINE(n)					\
 									\
 	LPUART_MCUX_DECLARE_CFG(n)					\

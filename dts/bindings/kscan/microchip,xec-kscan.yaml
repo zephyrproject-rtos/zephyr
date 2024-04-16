@@ -9,24 +9,24 @@ compatible: "microchip,xec-kscan"
 include: [kscan.yaml, pinctrl-device.yaml]
 
 properties:
-    "#address-cells":
-      required: true
-      const: 1
-    "#size-cells":
-      type: int
-      const: 0
-    reg:
-      required: true
+  "#address-cells":
+    required: true
+    const: 1
+  "#size-cells":
+    type: int
+    const: 0
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    girqs:
-      type: array
-      required: true
-      description: Array of pairs of GIRQ number and bit position
+  girqs:
+    type: array
+    required: true
+    description: Array of pairs of GIRQ number and bit position
 
-    pcrs:
-      type: array
-      required: true
-      description: ADC PCR register index and bit position
+  pcrs:
+    type: array
+    required: true
+    description: ADC PCR register index and bit position

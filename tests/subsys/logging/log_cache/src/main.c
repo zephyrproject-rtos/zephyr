@@ -114,7 +114,7 @@ ZTEST(test_log_cache, test_log_cache_basic)
 
 	/* Try to find id0 with success. */
 	cache_get(&cache, id0.raw, &buf, true, __LINE__);
-	buf_check(buf, 1);
+	zassert_true(buf_check(buf, 1), "Buffer check failed");
 
 	/* Miss id1 in cache then put it */
 	cache_get(&cache, id1.raw, &buf, false, __LINE__);
@@ -139,7 +139,7 @@ ZTEST(test_log_cache, test_log_cache_basic)
 
 	/* id0 is evicted since it is the oldest one. */
 	cache_get(&cache, id0.raw, &buf, false, __LINE__);
-	buf_check(buf, 1);
+	zassert_true(buf_check(buf, 2), "Buffer check failed");
 	log_cache_put(&cache, buf);
 
 	/* And id0 is now in cache */
@@ -147,7 +147,7 @@ ZTEST(test_log_cache, test_log_cache_basic)
 
 	/* buf id1 got evicted */
 	cache_get(&cache, id1.raw, &buf, false, __LINE__);
-	buf_check(buf, 2);
+	zassert_true(buf_check(buf, 3), "Buffer check failed");
 	log_cache_put(&cache, buf);
 }
 

@@ -84,7 +84,7 @@ Programming and Debugging
 *************************
 
 Use the following configuration to run basic Zephyr applications and
-kernel tests on LS1046A RDB board. For example, with the :ref:`synchronization_sample`:
+kernel tests on LS1046A RDB board. For example, with the :zephyr:code-sample:`synchronization` sample:
 
 1. Non-SMP mode
 

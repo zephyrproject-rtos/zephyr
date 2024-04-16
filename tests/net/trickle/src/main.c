@@ -198,22 +198,21 @@ static void test_init(void)
 	k_sem_init(&wait2, 0, UINT_MAX);
 }
 
-/*test case main entry*/
-void test_main(void)
+ZTEST(net_trickle, test_trickle)
 {
-	ztest_test_suite(test_tickle,
-			ztest_unit_test(test_init),
-			ztest_unit_test(test_trickle_create),
-			ztest_unit_test(test_trickle_start),
-			ztest_unit_test(test_trickle_1_status),
-			ztest_unit_test(test_trickle_2_status),
-			ztest_unit_test(test_trickle_1_wait),
-			ztest_unit_test(test_trickle_2_wait),
-			ztest_unit_test(test_trickle_1_update),
-			ztest_unit_test(test_trickle_2_inc),
-			ztest_unit_test(test_trickle_1_status),
-			ztest_unit_test(test_trickle_1_wait_long),
-			ztest_unit_test(test_trickle_stop),
-			ztest_unit_test(test_trickle_1_stopped));
-	ztest_run_test_suite(test_tickle);
+	test_init();
+	test_trickle_create();
+	test_trickle_start();
+	test_trickle_1_status();
+	test_trickle_2_status();
+	test_trickle_1_wait();
+	test_trickle_2_wait();
+	test_trickle_1_update();
+	test_trickle_2_inc();
+	test_trickle_1_status();
+	test_trickle_1_wait_long();
+	test_trickle_stop();
+	test_trickle_1_stopped();
 }
+
+ZTEST_SUITE(net_trickle, NULL, NULL, NULL, NULL, NULL);

@@ -69,13 +69,16 @@ struct spi_flash_at45_config {
 #if ANY_INST_HAS_WP_GPIOS
 	const struct gpio_dt_spec *wp;
 #endif
-#if IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT)
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout pages_layout;
 #endif
 	uint32_t chip_size;
 	uint32_t sector_size;
+	uint32_t sector_0a_size;
 	uint16_t block_size;
 	uint16_t page_size;
+	bool no_chip_erase;
+	bool no_sector_erase;
 	uint16_t t_enter_dpd; /* in microseconds */
 	uint16_t t_exit_dpd;  /* in microseconds */
 	bool use_udpd;
@@ -454,16 +457,28 @@ static int spi_flash_at45_erase(const struct device *dev, off_t offset,
 	}
 #endif
 
-	if (size == cfg->chip_size) {
+	if (!cfg->no_chip_erase && size == cfg->chip_size) {
 		err = perform_chip_erase(dev);
 	} else {
 		while (size) {
-			if (is_erase_possible(cfg->sector_size,
+			size_t sector_size = cfg->sector_size;
+
+			if (cfg->sector_0a_size) {
+				if (offset < cfg->sector_0a_size) {
+					sector_size = cfg->sector_0a_size;
+				} else if (offset < cfg->sector_size) {
+					/* Sector 0b. Calculate its size. */
+					sector_size -= cfg->sector_0a_size;
+				}
+			}
+
+			if (!cfg->no_sector_erase &&
+			    is_erase_possible(sector_size,
 					      offset, size)) {
 				err = perform_erase_op(dev, CMD_SECTOR_ERASE,
 						       offset);
-				offset += cfg->sector_size;
-				size   -= cfg->sector_size;
+				offset += sector_size;
+				size   -= sector_size;
 			} else if (is_erase_possible(cfg->block_size,
 						     offset, size)) {
 				err = perform_erase_op(dev, CMD_BLOCK_ERASE,
@@ -500,7 +515,7 @@ static int spi_flash_at45_erase(const struct device *dev, off_t offset,
 	return err;
 }
 
-#if IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT)
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static void spi_flash_at45_pages_layout(const struct device *dev,
 					const struct flash_pages_layout **layout,
 					size_t *layout_size)
@@ -594,7 +609,7 @@ static int spi_flash_at45_init(const struct device *dev)
 	return err;
 }
 
-#if IS_ENABLED(CONFIG_PM_DEVICE)
+#if defined(CONFIG_PM_DEVICE)
 static int spi_flash_at45_pm_action(const struct device *dev,
 				    enum pm_device_action action)
 {
@@ -636,7 +651,7 @@ static const struct flash_driver_api spi_flash_at45_api = {
 	.write = spi_flash_at45_write,
 	.erase = spi_flash_at45_erase,
 	.get_parameters = flash_at45_get_parameters,
-#if IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT)
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_flash_at45_pages_layout,
 #endif
 };
@@ -681,14 +696,18 @@ static const struct flash_driver_api spi_flash_at45_api = {
 				.pages_count = INST_##idx##_PAGES,	     \
 				.pages_size  = DT_INST_PROP(idx, page_size), \
 			},))						     \
-		.chip_size   = INST_##idx##_BYTES,			     \
-		.sector_size = DT_INST_PROP(idx, sector_size),		     \
-		.block_size  = DT_INST_PROP(idx, block_size),		     \
-		.page_size   = DT_INST_PROP(idx, page_size),		     \
-		.t_enter_dpd = ceiling_fraction(			     \
+		.chip_size      = INST_##idx##_BYTES,			     \
+		.sector_size    = DT_INST_PROP(idx, sector_size),	     \
+		.sector_0a_size = DT_INST_PROP(idx, sector_0a_pages)	     \
+				* DT_INST_PROP(idx, page_size),		     \
+		.block_size     = DT_INST_PROP(idx, block_size),	     \
+		.page_size      = DT_INST_PROP(idx, page_size),		     \
+		.no_chip_erase  = DT_INST_PROP(idx, no_chip_erase),	     \
+		.no_sector_erase = DT_INST_PROP(idx, no_sector_erase),	     \
+		.t_enter_dpd = DIV_ROUND_UP(				     \
 					DT_INST_PROP(idx, enter_dpd_delay),  \
 					NSEC_PER_USEC),			     \
-		.t_exit_dpd  = ceiling_fraction(			     \
+		.t_exit_dpd  = DIV_ROUND_UP(				     \
 					DT_INST_PROP(idx, exit_dpd_delay),   \
 					NSEC_PER_USEC),			     \
 		.use_udpd    = DT_INST_PROP(idx, use_udpd),		     \

@@ -10,26 +10,26 @@
 zephyr_library(mgmt_mcumgr_transport)
 zephyr_library_sources(src/smp.c)
 
-zephyr_library_sources_ifdef(CONFIG_MCUMGR_SMP_REASSEMBLY
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_REASSEMBLY
   src/smp_reassembly.c
 )
-zephyr_library_sources_ifdef(CONFIG_MCUMGR_SMP_BT
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_BT
   src/smp_bt.c
 )
-zephyr_library_sources_ifdef(CONFIG_MCUMGR_SMP_SHELL
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_SHELL
   src/smp_shell.c
 )
-zephyr_library_sources_ifdef(CONFIG_MCUMGR_SMP_UART
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_UART
   src/smp_uart.c
 )
-zephyr_library_sources_ifdef(CONFIG_MCUMGR_SMP_UDP
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_UDP
   src/smp_udp.c
 )
-zephyr_library_sources_ifdef(CONFIG_MCUMGR_SMP_DUMMY
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_DUMMY
   src/smp_dummy.c
 )
 
-if (CONFIG_MCUMGR_SMP_SHELL OR CONFIG_MCUMGR_SMP_UART)
+if (CONFIG_MCUMGR_TRANSPORT_SHELL OR CONFIG_MCUMGR_TRANSPORT_UART)
   zephyr_library_sources(src/serial_util.c)
 endif()
 

@@ -142,7 +142,7 @@ static int divider_setup(void)
 
 static bool battery_ok;
 
-static int battery_setup(const struct device *arg)
+static int battery_setup(void)
 {
 	int rc = divider_setup();
 

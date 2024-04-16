@@ -6,14 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/dlist.h>
+#include <stdint.h>
+
+#include <zephyr/dt-bindings/interrupt-controller/openisa-intmux.h>
 
 #include "hal/cntr.h"
-
 #include "hal/debug.h"
-#include <zephyr/dt-bindings/interrupt-controller/openisa-intmux.h>
-#include "ll_irqs.h"
 
+#include "ll_irqs.h"
 
 #define PCS_SOURCE_RTC 2
 

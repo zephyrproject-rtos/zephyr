@@ -1,6 +1,6 @@
 # MIMXRT595-EVK board
 
-# Copyright (c) 2022, NXP
+# Copyright 2022-2023, NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_MIMXRT595_EVK
@@ -10,10 +10,6 @@ config BOARD
 
 config FLASH_MCUX_FLEXSPI_MX25UM51345G
 	default y if FLASH
-
-config FLASH_MCUX_FLEXSPI_XIP
-	default y if FLASH
-	depends on MEMC_MCUX_FLEXSPI
 
 choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
 	default FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM
@@ -32,5 +28,14 @@ config HEAP_MEM_POOL_SIZE
 	default 4096
 
 endif # DMA_MCUX_LPC
+
+# Turn on Device Level Power Management as we wish
+# to reconfigure the FlexSPI pins for power savings
+# when transitioning the SoC to Deep Low Power modes.
+config PM_DEVICE
+	default y if PM
+
+config REGULATOR
+	default y if PM || POWEROFF
 
 endif # BOARD_MIMXRT595_EVK

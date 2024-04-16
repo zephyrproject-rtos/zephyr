@@ -34,7 +34,7 @@ static const struct bt_has_preset_ops ops = {
 	.name_changed = name_changed_cb,
 };
 
-int has_server_init(void)
+int has_server_preset_init(void)
 {
 	int err;
 
@@ -70,6 +70,34 @@ int has_server_init(void)
 		if (err != 0) {
 			return err;
 		}
+	}
+
+	return 0;
+}
+
+static struct bt_has_features_param features = {
+	.type = BT_HAS_HEARING_AID_TYPE_MONAURAL,
+	.preset_sync_support = false,
+	.independent_presets = false
+};
+
+int has_server_init(void)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_HAP_HA_HEARING_AID_BINAURAL)) {
+		features.type = BT_HAS_HEARING_AID_TYPE_BINAURAL;
+	} else if (IS_ENABLED(CONFIG_HAP_HA_HEARING_AID_BANDED)) {
+		features.type = BT_HAS_HEARING_AID_TYPE_BANDED;
+	}
+
+	err = bt_has_register(&features);
+	if (err) {
+		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SUPPORT)) {
+		return has_server_preset_init();
 	}
 
 	return 0;

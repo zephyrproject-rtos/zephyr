@@ -20,7 +20,7 @@
 
 LOG_MODULE_REGISTER(main);
 
-void main(void)
+int main(void)
 {
 	int ret = -1;
 
@@ -83,4 +83,5 @@ void main(void)
 	}
 
 #endif
+	return 0;
 }

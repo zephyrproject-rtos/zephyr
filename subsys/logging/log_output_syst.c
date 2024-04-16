@@ -629,11 +629,11 @@ static int mipi_vprintf_formatter(cbprintf_cb out, void *ctx,
 
 static inline bool is_in_log_strings_section(const void *addr)
 {
-	extern const char __log_strings_start[];
-	extern const char __log_strings_end[];
+	TYPE_SECTION_START_EXTERN(const char *, log_strings);
+	TYPE_SECTION_END_EXTERN(const char *, log_strings);
 
-	if (((const char *)addr >= (const char *)__log_strings_start) &&
-	    ((const char *)addr < (const char *)__log_strings_end)) {
+	if (((const char *)addr >= (const char *)TYPE_SECTION_START(log_strings)) &&
+	    ((const char *)addr < (const char *)TYPE_SECTION_END(log_strings))) {
 		return true;
 	}
 
@@ -751,11 +751,11 @@ static int mipi_catalog_formatter(cbprintf_cb out, void *ctx,
 		}
 
 		if (arg_sz == sizeof(mipi_syst_u64)) {
-			*((mipi_syst_u64 *)argp) =
-				(mipi_syst_u64)MIPI_SYST_HTOLE64(val.v64);
+			val.v64 = MIPI_SYST_HTOLE64(val.v64);
+			memcpy(argp, &val.v64, sizeof(val.v64));
 		} else {
-			*((mipi_syst_u32 *)argp) =
-				(mipi_syst_u32)MIPI_SYST_HTOLE32(val.v32);
+			val.v32 = MIPI_SYST_HTOLE32(val.v32);
+			memcpy(argp, &val.v32, sizeof(val.v32));
 		}
 		argp += arg_sz;
 	}
@@ -847,9 +847,9 @@ void log_output_msg_syst_process(const struct log_output *output,
 #endif
 		{
 #ifdef CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
-			struct cbprintf_package_desc *pkg_hdr = (void *)data;
+			struct cbprintf_package_desc *pkg_desc = (void *)data;
 
-			CHECKIF((pkg_hdr->pkg_flags & CBPRINTF_PACKAGE_ARGS_ARE_TAGGED) ==
+			CHECKIF((pkg_desc->pkg_flags & CBPRINTF_PACKAGE_ARGS_ARE_TAGGED) ==
 				CBPRINTF_PACKAGE_ARGS_ARE_TAGGED) {
 				/*
 				 * Tagged arguments are to be used with catalog messages,
@@ -874,9 +874,8 @@ void log_output_msg_syst_process(const struct log_output *output,
 	}
 }
 
-static int syst_init(const struct device *arg)
+static int syst_init(void)
 {
-	ARG_UNUSED(arg);
 
 	MIPI_SYST_INIT_STATE(&log_syst_header,
 			     mipi_syst_platform_init, (void *)0);

@@ -8,11 +8,11 @@ include: base.yaml
 bus: ps2
 
 properties:
-    "#address-cells":
-      type: int
-      required: true
-      const: 1
-    "#size-cells":
-      type: int
-      required: true
-      const: 0
+  "#address-cells":
+    type: int
+    required: true
+    const: 1
+  "#size-cells":
+    type: int
+    required: true
+    const: 0

@@ -39,7 +39,7 @@ ZBUS_LISTENER_DEFINE(filter_lis, filter_callback);
 
 ZBUS_SUBSCRIBER_DEFINE(state_change_sub, 5);
 
-void main(void)
+int main(void)
 {
 	LOG_INF("System started");
 
@@ -64,4 +64,5 @@ void main(void)
 
 		zbus_sub_wait(&state_change_sub, &chan, K_FOREVER);
 	}
+	return 0;
 }

@@ -18,8 +18,10 @@ supported:
   - netif
   - pwm
   - spi
+  - uart
   - usb_device
   - xpro_gpio
   - xpro_i2c
   - xpro_serial
   - xpro_spi
+vendor: atmel

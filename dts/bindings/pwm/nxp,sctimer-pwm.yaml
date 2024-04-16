@@ -8,22 +8,22 @@ compatible: "nxp,sctimer-pwm"
 include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
 
 properties:
-    prescaler:
-      type: int
-      default: 1
-      description: prescaling factor from the SCT clock. Default to 1 which is the reset value
-      enum:
-        - 1
-        - 2
-        - 4
-        - 8
-        - 16
-        - 32
-        - 64
-        - 128
+  prescaler:
+    type: int
+    default: 1
+    description: prescaling factor from the SCT clock. Default to 1 which is the reset value
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
 
-    "#pwm-cells":
-      const: 3
+  "#pwm-cells":
+    const: 3
 
 pwm-cells:
   - channel

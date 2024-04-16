@@ -6,6 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
+#include <zephyr/cache.h>
 
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/printk.h>
@@ -59,7 +60,7 @@ ZTEST(adsp_mem, test_adsp_mem_map_region)
 		 * Make sure it is written back to the mapped
 		 * physical memory.
 		 */
-		z_xtensa_cache_flush(&vps[i].mem[0], PAGE_SZ);
+		sys_cache_data_flush_range(&vps[i].mem[0], PAGE_SZ);
 
 		/*
 		 * pa[i] is a cached address which means that the cached
@@ -67,7 +68,7 @@ ZTEST(adsp_mem, test_adsp_mem_map_region)
 		 * above. So we need to invalidate the cache to reload
 		 * the new value.
 		 */
-		z_xtensa_cache_inv(UINT_TO_POINTER(pa[i]), PAGE_SZ);
+		sys_cache_data_invd_range(UINT_TO_POINTER(pa[i]), PAGE_SZ);
 	}
 
 	/* Verify the originals reflect the change */
@@ -132,7 +133,7 @@ ZTEST(adsp_mem, test_adsp_mem_map_region)
 		 * Make sure it is written back to the mapped
 		 * physical memory.
 		 */
-		z_xtensa_cache_flush(&vps3[i].mem[0], PAGE_SZ);
+		sys_cache_data_flush_range(&vps3[i].mem[0], PAGE_SZ);
 
 		zassert_equal(*(int *)pa[i], markers[i],
 			      "page copy modified original");
@@ -185,7 +186,7 @@ ZTEST(adsp_mem, test_adsp_mem_map_array)
 		 * Make sure it is written back to the mapped
 		 * physical memory.
 		 */
-		z_xtensa_cache_flush(&vps[i].mem[0], PAGE_SZ);
+		sys_cache_data_flush_range(&vps[i].mem[0], PAGE_SZ);
 
 		/*
 		 * pa[i] is a cached address which means that the cached
@@ -193,7 +194,7 @@ ZTEST(adsp_mem, test_adsp_mem_map_array)
 		 * above. So we need to invalidate the cache to reload
 		 * the new value.
 		 */
-		z_xtensa_cache_inv(UINT_TO_POINTER(pa[i]), PAGE_SZ);
+		sys_cache_data_invd_range(UINT_TO_POINTER(pa[i]), PAGE_SZ);
 	}
 
 	/* Verify the originals reflect the change */
@@ -258,7 +259,7 @@ ZTEST(adsp_mem, test_adsp_mem_map_array)
 		 * Make sure it is written back to the mapped
 		 * physical memory.
 		 */
-		z_xtensa_cache_flush(&vps3[i].mem[0], PAGE_SZ);
+		sys_cache_data_flush_range(&vps3[i].mem[0], PAGE_SZ);
 
 		zassert_equal(*(int *)pa[i], markers[i],
 			      "page copy modified original");

@@ -20,11 +20,11 @@ export PYTHON=python3
 
 prepare() {
   if [[ ! -d ./src ]]; then
-    git clone http://git.savannah.gnu.org/r/grub.git src
+    git clone https://git.savannah.gnu.org/git/grub.git src
   fi
 
   pushd src
-  git checkout grub-2.04
+  git checkout grub-2.12-rc1
   git clean -fdx
   popd
 }

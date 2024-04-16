@@ -3,4 +3,6 @@ common:
 tests:
   net.shell:
     min_ram: 20
-    tags: net net-shell
+    tags:
+      - net
+      - net-shell

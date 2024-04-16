@@ -306,9 +306,9 @@ struct adxl372_data {
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t th_handler;
-	struct sensor_trigger th_trigger;
+	const struct sensor_trigger *th_trigger;
 	sensor_trigger_handler_t drdy_handler;
-	struct sensor_trigger drdy_trigger;
+	const struct sensor_trigger *drdy_trigger;
 	const struct device *dev;
 
 #if defined(CONFIG_ADXL372_TRIGGER_OWN_THREAD)

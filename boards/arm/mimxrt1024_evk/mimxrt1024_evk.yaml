@@ -24,3 +24,5 @@ supported:
   - sdhc
   - adc
   - usb_device
+  - pwm
+vendor: nxp

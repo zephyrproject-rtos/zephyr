@@ -1,0 +1,39 @@
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon CAT1 I2C
+
+compatible: "infineon,cat1-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml, "infineon,cat1-scb.yaml"]
+
+properties:
+  reg:
+    type: array
+    required: true
+
+  interrupts:
+    type: array
+    required: true
+
+  pinctrl-0:
+    description: |
+      PORT pin configuration for SCL, SDA signals.
+      We expect that the phandles will reference pinctrl nodes. These
+      nodes will have a nodelabel that matches the Infineon SoC Pinctrl
+      defines and have following
+      format: p<port>_<pin>_<peripheral inst>_<signal>.
+
+      Examples:
+        pinctrl-0 = <&p6_0_scb3_i2c_scl &p6_1_scb3_i2c_sda>;
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clock-frequency:
+    type: int
+    description: |
+      Frequency that the I2C bus runs

@@ -7,7 +7,6 @@
 
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
-#include "kconfig.h"
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
@@ -21,13 +20,15 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 #include "ll.h"
 #include "ll_settings.h"
 #include "ll_feat.h"
 
 #include "lll.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "ull_tx_queue.h"
 #include "ull_conn_types.h"

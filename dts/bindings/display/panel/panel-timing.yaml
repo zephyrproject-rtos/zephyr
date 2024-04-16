@@ -1,0 +1,134 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for panel timings
+# inherited from Linux panel bindings.
+
+description: |
+  Common timing settings for display panels. These timings can be added to
+  a panel under display-timings node. For example:
+
+  &lcdif {
+    display-timings {
+      compatible = "zephyr,panel-timing";
+      hsync-len = <8>;
+      hfront-porch = <32>;
+      hback-porch = <32>;
+      vsync-len = <2>;
+      vfront-porch = <16>;
+      vback-porch = <14>;
+      hsync-active = <0>;
+      vsync-active = <0>;
+      de-active = <1>;
+      pixelclk-active = <0>;
+      clock-frequency = <62346240>;
+    };
+  };
+
+compatible: "zephyr,panel-timing"
+
+properties:
+  clock-frequency:
+    type: int
+    description: |
+      Pixel clock for display controller in Hz. Must be at least as large as:
+      (height + vsync-len + vfront-porch + vback-porch) *
+      (width + hsync-len + hfront-porch + hback-porch) *
+      desired frame rate
+
+  hsync-len:
+    type: int
+    required: true
+    description: |
+      Horizontal synchronization pulse duration of panel driven by this
+      controller, in pixels
+
+  vsync-len:
+    type: int
+    required: true
+    description: |
+      Vertical synchronization pulse duration of panel driven by this
+      controller, in lines
+
+  hback-porch:
+    type: int
+    required: true
+    description: |
+      Horizontal back porch duration of panel driven by this controller,
+      in pixels
+
+  vback-porch:
+    type: int
+    required: true
+    description: |
+      Vertical back porch duration of panel driven by this controller, in lines
+
+  hfront-porch:
+    type: int
+    required: true
+    description: |
+      Horizontal front porch duration of panel driven by this controller,
+      in pixels
+
+  vfront-porch:
+    type: int
+    required: true
+    description: |
+      Vertical front porch duration of panel driven by this controller, in lines
+
+  hsync-active:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+    description: |
+      Polarity of horizontal sync pulse
+      0 selects active low
+      1 selects active high
+
+  vsync-active:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+    description: |
+      Polarity of vertical sync pulse
+      0 selects active low
+      1 selects active high
+
+  de-active:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+    description: |
+      Polarity of data enable, sent with each horizontal interval.
+      0 selects active low
+      1 selects active high.
+
+  pixelclk-active:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+    description: |
+      Polarity of pixel clock. Selects which edge to drive data to display on.
+      0 drives pixel data on falling edge, and samples on rising edge.
+      1 drives pixel data on rising edge, and samples data on falling edge
+
+  syncclk-active:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Drive sync on rising or sample sync on falling edge. If not specified
+      then the controller uses the setup specified by pixelclk-active.
+      Use 0 to drive sync on falling edge
+      and sample sync on rising edge of pixel clock.
+      Use 1 to drive sync on rising edge
+      and sample sync on falling edge of pixel clock.

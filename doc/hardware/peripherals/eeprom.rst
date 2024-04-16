@@ -1,7 +1,7 @@
 .. _eeprom_api:
 
-EEPROM
-######
+Electrically Erasable Programmable Read-Only Memory (EEPROM)
+############################################################
 
 Overview
 ********

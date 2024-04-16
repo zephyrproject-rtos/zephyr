@@ -20,3 +20,4 @@ testing:
     - bluetooth
 supported:
   - uart
+vendor: nxp

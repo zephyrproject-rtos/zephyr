@@ -5,9 +5,11 @@ arch: xtensa
 toolchain:
   - zephyr
   - xcc
+  - xt-clang
 supported:
   - dma
 testing:
   ignore_tags:
     - net
     - bluetooth
+vendor: intel

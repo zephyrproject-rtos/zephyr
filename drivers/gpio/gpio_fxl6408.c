@@ -377,15 +377,6 @@ static int gpio_fxl6408_port_toggle_bits(const struct device *dev,
 	return ret;
 }
 
-static int gpio_fxl6408_pin_interrupt_configure(const struct device *port,
-						gpio_pin_t pin,
-						enum gpio_int_mode mode,
-						enum gpio_int_trig trig)
-{
-	LOG_DBG("Pin interrupts not supported.");
-	return -ENOTSUP;
-}
-
 int gpio_fxl6408_init(const struct device *dev)
 {
 	struct gpio_fxl6408_drv_data *const drv_data =
@@ -409,7 +400,6 @@ static const struct gpio_driver_api gpio_fxl_driver = {
 	.port_set_bits_raw = gpio_fxl6408_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_fxl6408_port_clear_bits_raw,
 	.port_toggle_bits = gpio_fxl6408_port_toggle_bits,
-	.pin_interrupt_configure = gpio_fxl6408_pin_interrupt_configure
 };
 
 #define GPIO_FXL6408_DEVICE_INSTANCE(inst)                                     \

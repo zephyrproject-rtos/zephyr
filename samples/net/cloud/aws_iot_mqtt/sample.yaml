@@ -1,0 +1,14 @@
+sample:
+  description: MQTT sample app to AWS IoT Core
+  name: aws_iot_mqtt
+common:
+  tags: net mqtt cloud
+  harness: net
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  extra_args: USE_DUMMY_CREDS=1
+tests:
+  sample.net.cloud.aws_iot_mqtt:
+    depends_on: netif
+    platform_allow: qemu_x86 nucleo_f429zi
+    integration_platforms:
+      - qemu_x86

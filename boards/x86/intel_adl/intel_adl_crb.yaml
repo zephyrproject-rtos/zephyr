@@ -1,0 +1,21 @@
+identifier: intel_adl_crb
+name: Alder Lake CRB
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+ram: 2048
+supported:
+  - watchdog
+  - pwm
+  - gpio
+  - rtc
+  - i2c
+  - spi
+  - smp
+testing:
+  timeout_multiplier: 4
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: intel

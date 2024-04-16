@@ -12,6 +12,7 @@ if BT_AUDIO
 config BT_TBS
 	bool "Telephone Bearer Service Support"
 	select BT_CCID
+	select BT_GATT_DYNAMIC_DB
 	help
 	  This option enables support for Telephone Bearer Service.
 
@@ -126,41 +127,27 @@ config BT_TBS_AUTHORIZATION
 	  If set to true, then any writable characteristics will require
 	  authorization per connection.
 
-
-############# DEBUG #############
-
-config BT_DEBUG_TBS
-	bool "Telephone Bearer Service debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Telephone Bearer Service debug logs for the
-	  Bluetooth Audio functionality.
-
-module = BT_TBS
-legacy-debug-sym = BT_DEBUG_TBS
-module-str = "Telephone Bearer Service"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
 endif # BT_TBS
 
 
 ##################### Call Control Client #####################
 
+config BT_TBS_CLIENT_GTBS
+	bool "Generic Telephone Bearer Service client support"
+	help
+	  This option enables support for the GTBS-oriented Call Control client.
+
+config BT_TBS_CLIENT_TBS
+	bool "Telephone Bearer Service client support"
+	help
+	  This option enables support for the TBS-oriented Call Control client.
+
 config BT_TBS_CLIENT
-	bool "Telephone Bearer Service client"
+	def_bool BT_TBS_CLIENT_GTBS || BT_TBS_CLIENT_TBS
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
-	help
-	  This option enables support for Telephone Bearer Service client.
 
 if BT_TBS_CLIENT
-
-config BT_TBS_CLIENT_GTBS
-	bool "Telephone Bearer Service client GTBS support"
-	default y
-	help
-	  This option enables support for the generic TBS for the
-	  Call Control client.
 
 config BT_TBS_CLIENT_MAX_CALLS
 	int "Maximum Number Of Calls Supported"
@@ -170,8 +157,8 @@ config BT_TBS_CLIENT_MAX_CALLS
 
 config BT_TBS_CLIENT_MAX_TBS_INSTANCES
 	int "Maximum number of TBS instances to setup"
+	depends on BT_TBS_CLIENT_TBS
 	default 1
-	range 0 3 if BT_TBS_CLIENT_GTBS
 	range 1 3
 	help
 	  Sets the maximum number of Telephone Bearer Service (TBS)
@@ -321,20 +308,6 @@ config BT_TBS_CLIENT_CALL_FRIENDLY_NAME
 	default !BT_TBS_CLIENT_MINIMAL
 	help
 	  This option enables support for reading Call Friendly Name.
-
-############# DEBUG #############
-
-config BT_DEBUG_TBS_CLIENT
-	bool "Telephone Bearer Service client debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Telephone Bearer Service client debug logs
-	  for the Bluetooth Audio functionality.
-
-module = BT_TBS_CLIENT
-legacy-debug-sym = BT_DEBUG_TBS_CLIENT
-module-str = "Telephone Bearer Service client"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 endif # BT_TBS_CLIENT
 

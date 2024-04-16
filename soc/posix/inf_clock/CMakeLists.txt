@@ -6,6 +6,7 @@ zephyr_library_compile_definitions(NO_POSIX_CHEATS)
 
 zephyr_library_sources(
 	soc.c
+	native_tasks.c
 	)
 
 zephyr_library_include_directories(

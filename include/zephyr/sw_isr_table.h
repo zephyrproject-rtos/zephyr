@@ -61,6 +61,32 @@ struct _isr_list {
 	const void *param;
 };
 
+#ifdef CONFIG_SHARED_INTERRUPTS
+struct z_shared_isr_client {
+	void (*isr)(const void *arg);
+	const void *arg;
+};
+
+struct z_shared_isr_table_entry {
+	struct z_shared_isr_client clients[CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS];
+	size_t client_num;
+};
+
+void z_shared_isr(const void *data);
+
+extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
+#endif /* CONFIG_SHARED_INTERRUPTS */
+
+/**
+ * @brief Helper function used to compute the index in _sw_isr_table
+ * based on passed IRQ.
+ *
+ * @param irq IRQ number in its zephyr format
+ *
+ * @return corresponding index in _sw_isr_table
+ */
+unsigned int z_get_sw_isr_table_idx(unsigned int irq);
+
 /** This interrupt gets put directly in the vector table */
 #define ISR_FLAG_DIRECT BIT(0)
 
@@ -81,6 +107,11 @@ struct _isr_list {
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 void z_isr_install(unsigned int irq, void (*routine)(const void *),
 		   const void *param);
+
+#ifdef CONFIG_SHARED_INTERRUPTS
+int z_isr_uninstall(unsigned int irq, void (*routine)(const void *),
+		    const void *param);
+#endif /* CONFIG_SHARED_INTERRUPTS */
 #endif
 
 #ifdef __cplusplus

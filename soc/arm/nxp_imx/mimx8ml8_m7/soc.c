@@ -106,11 +106,31 @@ static void SOC_ClockInit(void)
 	/* switch AHB to SYSTEM PLL1 DIV6 */
 	CLOCK_SetRootMux(kCLOCK_RootAhb, kCLOCK_AhbRootmuxSysPll1Div6);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart4), okay) && CONFIG_UART_MCUX_IUART
+#if defined(CONFIG_UART_MCUX_IUART)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
+	/* Set UART source to SysPLL1 Div10 80MHZ */
+	CLOCK_SetRootMux(kCLOCK_RootUart1, kCLOCK_UartRootmuxSysPll1Div10);
+	/* Set root clock to 80MHZ/ 1= 80MHZ */
+	CLOCK_SetRootDivider(kCLOCK_RootUart1, 1U, 1U);
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
+	/* Set UART source to SysPLL1 Div10 80MHZ */
+	CLOCK_SetRootMux(kCLOCK_RootUart2, kCLOCK_UartRootmuxSysPll1Div10);
+	/* Set root clock to 80MHZ/ 1= 80MHZ */
+	CLOCK_SetRootDivider(kCLOCK_RootUart2, 1U, 1U);
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart3), okay)
+	/* Set UART source to SysPLL1 Div10 80MHZ */
+	CLOCK_SetRootMux(kCLOCK_RootUart3, kCLOCK_UartRootmuxSysPll1Div10);
+	/* Set root clock to 80MHZ/ 1= 80MHZ */
+	CLOCK_SetRootDivider(kCLOCK_RootUart3, 1U, 1U);
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart4), okay)
 	/* Set UART source to SysPLL1 Div10 80MHZ */
 	CLOCK_SetRootMux(kCLOCK_RootUart4, kCLOCK_UartRootmuxSysPll1Div10);
 	/* Set root clock to 80MHZ/ 1= 80MHZ */
 	CLOCK_SetRootDivider(kCLOCK_RootUart4, 1U, 1U);
+#endif
 #endif
 
 	CLOCK_EnableClock(kCLOCK_Rdc);   /* Enable RDC clock */
@@ -126,15 +146,10 @@ static void SOC_ClockInit(void)
 	CLOCK_EnableClock(kCLOCK_Debug);
 	CLOCK_EnableClock(kCLOCK_Dram);
 	CLOCK_EnableClock(kCLOCK_Sec_Debug);
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart4), okay) && CONFIG_UART_MCUX_IUART
-	CLOCK_EnableClock(kCLOCK_Uart4);
-#endif
 }
 
-static int nxp_mimx8ml8_init(const struct device *arg)
+static int nxp_mimx8ml8_init(void)
 {
-	ARG_UNUSED(arg);
 
 	/* SoC specific RDC settings */
 	SOC_RdcInit();

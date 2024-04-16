@@ -3,4 +3,6 @@ common:
 tests:
   net.route:
     min_ram: 16
-    tags: net route
+    tags:
+      - net
+      - route

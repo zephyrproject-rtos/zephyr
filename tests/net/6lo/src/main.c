@@ -1167,7 +1167,7 @@ ZTEST(t_6lo, test_loop)
 #endif
 
 	for (count = 0; count < ARRAY_SIZE(tests); count++) {
-		TC_START(tests[count].name);
+		TC_PRINT("Starting %s\n", tests[count].name);
 
 		test_6lo(tests[count].data);
 	}

@@ -45,7 +45,7 @@ static void process_drdy(const struct device *dev)
 	struct hts221_data *data = dev->data;
 
 	if (data->data_ready_handler != NULL) {
-		data->data_ready_handler(dev, &data->data_ready_trigger);
+		data->data_ready_handler(dev, data->data_ready_trigger);
 	}
 
 	if (data->data_ready_handler != NULL) {
@@ -69,7 +69,7 @@ int hts221_trigger_set(const struct device *dev,
 		return 0;
 	}
 
-	data->data_ready_trigger = *trig;
+	data->data_ready_trigger = trig;
 
 	setup_drdy(dev, true);
 
@@ -126,7 +126,7 @@ int hts221_init_interrupt(const struct device *dev)
 		return 0;
 	}
 
-	if (!device_is_ready(cfg->gpio_drdy.port)) {
+	if (!gpio_is_ready_dt(&cfg->gpio_drdy)) {
 		LOG_ERR("device %s is not ready", cfg->gpio_drdy.port->name);
 		return -ENODEV;
 	}

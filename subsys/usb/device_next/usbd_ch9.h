@@ -78,9 +78,9 @@ static inline void usbd_set_config_value(struct usbd_contex *const uds_ctx,
  *
  * @return 0 on success, other values on fail.
  */
-static inline uint8_t usbd_get_alt_value(const struct usbd_contex *const uds_ctx,
-					 const uint8_t iface,
-					 uint8_t *const alt)
+static inline int usbd_get_alt_value(const struct usbd_contex *const uds_ctx,
+				     const uint8_t iface,
+				     uint8_t *const alt)
 {
 	if (iface >= USBD_NUMOF_INTERFACES_MAX) {
 		return -ENOENT;
@@ -100,9 +100,9 @@ static inline uint8_t usbd_get_alt_value(const struct usbd_contex *const uds_ctx
  *
  * @return 0 on success, other values on fail.
  */
-static inline uint8_t usbd_set_alt_value(struct usbd_contex *const uds_ctx,
-					 const uint8_t iface,
-					 const uint8_t alt)
+static inline int usbd_set_alt_value(struct usbd_contex *const uds_ctx,
+				     const uint8_t iface,
+				     const uint8_t alt)
 {
 	if (iface >= USBD_NUMOF_INTERFACES_MAX) {
 		return -ENOENT;
@@ -131,7 +131,7 @@ usbd_get_setup_pkt(struct usbd_contex *const uds_ctx)
  *
  * @param[in] uds_ctx Pointer to a device context
  * @param[in] buf     Pointer to UDC request buffer
- * @param[in] err     Trasnfer status
+ * @param[in] err     Transfer status
  *
  * @return 0 on success, other values on fail.
  */

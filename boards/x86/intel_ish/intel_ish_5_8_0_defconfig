@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+CONFIG_SOC_FAMILY_INTEL_ISH=y
+CONFIG_SOC_SERIES_INTEL_ISH5=y
+CONFIG_SOC_INTEL_ISH_5_8_0=y
+CONFIG_BOARD_INTEL_ISH_5_8_0=y
+
+# uart & console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_SERIAL=y

@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2023, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "hsdk4xd.dtsi"
+
+/ {
+	model = "hsdk4xd";
+	compatible = "snps,hsdk4xd";
+};

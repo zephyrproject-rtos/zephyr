@@ -1,13 +1,16 @@
 #
 # Copyright (c) 2018-2021 mcumgr authors
-# Copyright (c) 2022 Nordic Semiconductor ASA
+# Copyright (c) 2022-2023 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-add_subdirectory_ifdef(CONFIG_MCUMGR_CMD_FS_MGMT        fs_mgmt)
-add_subdirectory_ifdef(CONFIG_MCUMGR_CMD_IMG_MGMT       img_mgmt)
-add_subdirectory_ifdef(CONFIG_MCUMGR_CMD_OS_MGMT        os_mgmt)
-add_subdirectory_ifdef(CONFIG_MCUMGR_CMD_STAT_MGMT      stat_mgmt)
-add_subdirectory_ifdef(CONFIG_MCUMGR_CMD_SHELL_MGMT     shell_mgmt)
-add_subdirectory_ifdef(CONFIG_MCUMGR_GRP_ZEPHYR_BASIC   zephyr_basic)
+add_subdirectory_ifdef(CONFIG_MCUMGR_GRP_FS             fs_mgmt)
+add_subdirectory_ifdef(CONFIG_MCUMGR_GRP_IMG            img_mgmt)
+add_subdirectory_ifdef(CONFIG_MCUMGR_GRP_IMG_CLIENT     img_mgmt_client)
+add_subdirectory_ifdef(CONFIG_MCUMGR_GRP_OS             os_mgmt)
+add_subdirectory_ifdef(CONFIG_MCUMGR_GRP_OS_CLIENT      os_mgmt_client)
+add_subdirectory_ifdef(CONFIG_MCUMGR_GRP_STAT           stat_mgmt)
+add_subdirectory_ifdef(CONFIG_MCUMGR_GRP_SHELL          shell_mgmt)
+add_subdirectory_ifdef(CONFIG_MCUMGR_GRP_ZBASIC         zephyr_basic)
+add_subdirectory_ifdef(CONFIG_MCUMGR_GRP_SETTINGS       settings_mgmt)

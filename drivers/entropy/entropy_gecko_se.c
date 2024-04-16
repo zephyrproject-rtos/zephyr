@@ -40,13 +40,6 @@ static int entropy_gecko_se_get_entropy(const struct device *dev,
 	return err;
 }
 
-static int entropy_gecko_se_get_entropy_isr(const struct device *dev,
-					    uint8_t *buf,
-					    uint16_t len, uint32_t flags)
-{
-	return -ENOTSUP;
-}
-
 static int entropy_gecko_se_init(const struct device *dev)
 {
 	if (sl_se_init()) {
@@ -58,7 +51,6 @@ static int entropy_gecko_se_init(const struct device *dev)
 
 static const struct entropy_driver_api entropy_gecko_se_api_funcs = {
 	.get_entropy = entropy_gecko_se_get_entropy,
-	.get_entropy_isr = entropy_gecko_se_get_entropy_isr
 };
 
 #define GECKO_SE_INIT(n) \

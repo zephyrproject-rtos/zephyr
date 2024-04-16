@@ -1,0 +1,87 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config WIFI_MGMT_RAW_SCAN_RESULTS
+	bool "Raw scan results"
+	help
+	  This option enables raw scan results. When enabled, the raw scan
+	  results (beacons or probe responses) are provided to the application.
+	  Enabling this config will increase the net_mgmt event size
+	  considerably.
+
+if WIFI_MGMT_RAW_SCAN_RESULTS
+
+config WIFI_MGMT_RAW_SCAN_RESULT_LENGTH
+	int "Maximum length of raw scan results"
+	default 512
+	help
+	  This option defines the maximum length of raw scan results.
+
+config WIFI_MGMT_RAW_SCAN_RESULTS_ONLY
+	bool "Only raw scan results"
+	help
+	  This option enables only raw scan results. When enabled, the raw scan
+	  results (beacons or probe responses) are provided to the application.
+	  The scan results are not parsed and the application is responsible
+	  for parsing the scan results. Normal scan results are not provided
+	  to the application.
+
+endif # WIFI_MGMT_RAW_SCAN_RESULTS
+
+config WIFI_MGMT_TWT_CHECK_IP
+	bool "Check IP Assignment for TWT"
+	default y
+	help
+	  This option enables check for valid IP address before TWT setup.
+	  If TWT setup is triggered early in the connection, then device might
+	  enter deep sleep without having a valid IP, this can result in device
+	  being unreachable (IP Level) or unable to receive down link traffic
+	  even when it is awake intervals. Rejecting TWT setup till Wi-Fi
+	  interface has a valid IP address might be desirable in most scenarios.
+
+config WIFI_MGMT_FORCED_PASSIVE_SCAN
+	bool "Force passive Wi-Fi scanning"
+	help
+	  Always request a passive scan, regardless of the user supplied parameters.
+	  This is typically used when the underlying hardware is not certified for
+	  RF transmissions. This doesn't guarantee that passive scan will be used,
+	  it depends on the underlying chip implementation to support and honour
+	  scan type.
+
+config WIFI_MGMT_SCAN_SSID_FILT_MAX
+	int "Maximum number of SSIDs that can be specified for SSID filtering"
+	default 1
+	range 1 4
+	help
+	  Maximum number of SSIDs that can be specified for SSID filtering.
+	  This can be set based on the underlying chipsets limitations.
+
+config WIFI_MGMT_SCAN_CHAN_MAX_MANUAL
+	int "Maximum number of channels that can be manually specified"
+	range 1 110
+	default 3
+	help
+	  There are approximately 100 channels allocated across the three supported bands.
+	  The default of 3 allows the 3 most common channels (2.4GHz: 1, 6, 11) to be specified.
+
+config WIFI_NM
+	bool "Wi-Fi Network manager support"
+	help
+	  This option enables using the Wi-Fi Network managers (e.g. wpa_supplicant) to
+	  manage the Wi-Fi network interfaces.
+
+if WIFI_NM
+
+config WIFI_NM_MAX_MANAGED_INTERFACES
+	int "Maximum number of managed interfaces per Wi-Fi network manager"
+	default 1
+	help
+	  This option defines the maximum number of managed interfaces per Wi-Fi
+	  network manager instance that can be used simultaneously.
+
+module = WIFI_NM
+module-dep = NET_LOG
+module-str = Log level for Wi-Fi Network manager module
+module-help = Enables using the Wi-Fi Network managers to manage the Wi-Fi network interfaces.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # WIFI_NM

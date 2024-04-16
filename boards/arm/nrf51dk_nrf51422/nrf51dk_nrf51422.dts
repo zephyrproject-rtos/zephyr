@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <nordic/nrf51822_qfac.dtsi>
 #include "nrf51dk_nrf51422-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Nordic nRF51 DK NRF51422";
@@ -55,18 +56,22 @@
 		button0: button_0 {
 			gpios = <&gpio0 17 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		button1: button_1 {
 			gpios = <&gpio0 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		button2: button_2 {
 			gpios = <&gpio0 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_2>;
 		};
 		button3: button_3 {
 			gpios = <&gpio0 20 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 3";
+			zephyr,code = <INPUT_KEY_3>;
 		};
 	};
 
@@ -158,15 +163,11 @@
 		};
 		slot0_partition: partition@8000 {
 			label = "image-0";
-			reg = <0x00008000 0x1a000>;
+			reg = <0x00008000 0x1b000>;
 		};
-		slot1_partition: partition@22000 {
+		slot1_partition: partition@23000 {
 			label = "image-1";
-			reg = <0x00022000 0x1a000>;
-		};
-		scratch_partition: partition@3c000 {
-			label = "image-scratch";
-			reg = <0x0003c000 0x2000>;
+			reg = <0x00023000 0x1b000>;
 		};
 		storage_partition: partition@3e000 {
 			label = "storage";

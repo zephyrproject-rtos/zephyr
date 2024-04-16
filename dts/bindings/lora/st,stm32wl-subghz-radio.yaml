@@ -8,7 +8,49 @@ compatible: "st,stm32wl-subghz-radio"
 include: semtech,sx126x-base.yaml
 
 properties:
-    interrupts:
-      required: true
-      description: |
-        Position of the "Radio IRQ, Busy" interrupt line.
+  interrupts:
+    required: true
+    description: |
+      Position of the "Radio IRQ, Busy" interrupt line.
+
+  power-amplifier-output:
+    type: string
+    required: true
+    description: |
+      Selects between the low- and high-power power amplifier output pin.
+    enum:
+      - "rfo-lp"
+      - "rfo-hp"
+
+  rfo-lp-max-power:
+    type: int
+    default: 14
+    description: |
+      Maximum design power for the board's RFO_LP output matching network.
+
+      The default setting of +14 dBm is a prevalent board configuration;
+      however, for optimal performance, it is advisable to align the value with
+      the board's RF design.
+
+      See ST application note AN5457, chapter 5.1.2 for more information.
+    enum:
+      - 10
+      - 14
+      - 15
+
+  rfo-hp-max-power:
+    type: int
+    default: 22
+    description: |
+      Maximum design power for the board's RFO_HP output matching network.
+
+      The default setting of +22 dBm is a prevalent board configuration;
+      however, for optimal performance, it is advisable to align the value with
+      the board's RF design.
+
+      See ST application note AN5457, chapter 5.1.2 for more information.
+    enum:
+      - 14
+      - 17
+      - 20
+      - 22

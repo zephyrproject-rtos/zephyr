@@ -1,0 +1,3 @@
+&dmc {
+	status = "okay";
+};

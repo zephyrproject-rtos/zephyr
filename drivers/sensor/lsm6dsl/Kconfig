@@ -72,6 +72,9 @@ choice LSM6DSL_EXTERNAL_SENSOR_0
 config LSM6DSL_EXT0_LIS2MDL
 	bool "LIS2MDL"
 
+config LSM6DSL_EXT0_LIS3MDL
+	bool "LIS3MDL"
+
 config LSM6DSL_EXT0_LPS22HB
 	bool "LPS22HB"
 
@@ -88,7 +91,7 @@ config LSM6DSL_GYRO_FS
 	  second. Valid values are:
 	  0:  Full Scale selected at runtime
 	  125:   +/- 125dps
-	  245:   +/- 245dps
+	  250:   +/- 250dps
 	  500:   +/- 500dps
 	  1000:  +/- 1000dps
 	  2000:  +/- 2000dps
@@ -140,9 +143,9 @@ config LSM6DSL_ACCEL_ODR
 	  5: 208Hz
 	  6: 416Hz
 	  7: 833Hz
-	  8: 1660Hz
-	  9: 3330Hz
-	  10: 6660Hz
+	  8: 1666Hz
+	  9: 3332Hz
+	  10: 6664Hz
 endmenu
 
 endif # LSM6DSL

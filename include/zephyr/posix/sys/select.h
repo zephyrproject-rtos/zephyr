@@ -9,6 +9,12 @@
 #include <zephyr/net/socket_select.h>
 #include <sys/_timeval.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef CONFIG_NET_SOCKETS_POSIX_NAMES
+
 #define fd_set zsock_fd_set
 #define FD_SETSIZE ZSOCK_FD_SETSIZE
 #define FD_ZERO ZSOCK_FD_ZERO
@@ -25,5 +31,11 @@ static inline int select(int nfds, fd_set *readfds,
 	return zsock_select(nfds, readfds, writefds, exceptfds,
 			    (struct zsock_timeval *)timeout);
 }
+
+#endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_POSIX_SYS_SELECT_H_ */

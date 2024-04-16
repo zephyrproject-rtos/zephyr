@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2023 Aleksandr Senin
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing driver builds
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_mdio0: mdio@11112222 {
+			compatible = "zephyr,mdio-gpio";
+			reg = <0x11112222 1>;
+			mdc-gpios = <&test_gpio 0 0>;
+			mdio-gpios = <&test_gpio 0 0>;
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		test_mdio1: mdio@33334444 {
+			compatible = "zephyr,mdio-gpio";
+			reg = <0x33334444 1>;
+			mdc-gpios = <&test_gpio 0 0>;
+			mdio-gpios = <&test_gpio 0 0>;
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};

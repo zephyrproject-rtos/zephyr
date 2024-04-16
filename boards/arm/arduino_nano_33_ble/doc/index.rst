@@ -103,6 +103,13 @@ For example
 
     west flash --bossac=$HOME/.arduino15/packages/arduino/tools/bossac/1.9.1-arduino2/bossac
 
+On Windows you need to use the :file:`bossac.exe` from the `Arduino IDE`_
+You will also need to specify the COM port using the --bossac-port argument:
+
+.. code-block:: bash
+
+    west flash --bossac=%USERPROFILE%\AppData\Local\Arduino15\packages\arduino\tools\bossac\1.9.1-arduino2\bossac.exe --bossac-port="COMx"
+
 Flashing
 ========
 
@@ -221,3 +228,6 @@ References
 
 .. _TRACE32 as GDB Front-End:
     https://www2.lauterbach.com/pdf/frontend_gdb.pdf
+
+.. _Arduino IDE:
+	https://www.arduino.cc/en/Main/Software

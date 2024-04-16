@@ -3,8 +3,8 @@
 
 config LOG_BACKEND_XTENSA_SIM
 	bool "Xtensa simulator backend"
-	depends on SOC_XTENSA_SAMPLE_CONTROLLER || SOC_FAMILY_INTEL_ADSP
-	default y if SOC_XTENSA_SAMPLE_CONTROLLER
+	depends on SOC_XTENSA_SAMPLE_CONTROLLER || SOC_XTENSA_DC233C || SOC_FAMILY_INTEL_ADSP
+	default y if SOC_XTENSA_SAMPLE_CONTROLLER || SOC_XTENSA_DC233C
 	select LOG_OUTPUT
 	help
 	  Enable backend in xtensa simulator

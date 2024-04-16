@@ -114,7 +114,7 @@ static void change_mode(const struct device *dev, struct gpio_callback *cb, uint
 }
 
 
-void main(void)
+int main(void)
 {
 	struct gpio_callback button_cb_data;
 	const uint8_t Hello[4] = { CHAR_H, CHAR_E, CHAR_PIPE | CHAR_1, CHAR_0 };
@@ -123,10 +123,10 @@ void main(void)
 	display_chars(Hello);
 	k_sleep(K_MSEC(1000));
 
-	if (!device_is_ready(button.port)) {
+	if (!gpio_is_ready_dt(&button)) {
 		printk("Error: button device %s is not ready\n",
 		       button.port->name);
-		return;
+		return 0;
 	}
 
 	gpio_pin_configure_dt(&button, GPIO_INPUT);
@@ -137,4 +137,5 @@ void main(void)
 	while (1) {
 		modes[current_mode]();
 	}
+	return 0;
 }

@@ -8,10 +8,10 @@ compatible: "st,lis3mdl-magn"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-    irq-gpios:
-      type: phandle-array
-      description: DRDY pin
+  irq-gpios:
+    type: phandle-array
+    description: DRDY pin
 
-        This pin defaults to active high when produced by the sensor.
-        The property value should ensure the flags properly describe
-        the signal that is presented to the driver.
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.

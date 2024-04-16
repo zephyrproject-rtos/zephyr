@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, NXP
+ * Copyright 2021-22, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/irq.h>
 #include <fsl_rtc.h>
+#include "fsl_power.h"
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(mcux_rtc, CONFIG_COUNTER_LOG_LEVEL);
@@ -24,6 +25,8 @@ struct mcux_lpc_rtc_config {
 	struct counter_config_info info;
 	RTC_Type *base;
 	void (*irq_config_func)(const struct device *dev);
+	/* Device defined as wake-up source */
+	bool wakeup_source;
 };
 
 static int mcux_lpc_rtc_start(const struct device *dev)
@@ -209,6 +212,11 @@ static int mcux_lpc_rtc_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
+	if (config->wakeup_source) {
+		/* Enable the bit to wakeup from Deep Power Down mode */
+		RTC_EnableAlarmTimerInterruptFromDPD(config->base, true);
+	}
+
 	return 0;
 }
 
@@ -234,6 +242,7 @@ static const struct counter_driver_api mcux_rtc_driver_api = {
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
 			.channels = 1,					\
 		},							\
+		.wakeup_source = DT_INST_PROP(id, wakeup_source)	\
 	};								\
 	static struct mcux_lpc_rtc_data mcux_lpc_rtc_data_##id;		\
 	DEVICE_DT_INST_DEFINE(id, &mcux_lpc_rtc_init, NULL,		\
@@ -246,6 +255,9 @@ static const struct counter_driver_api mcux_rtc_driver_api = {
 			DT_INST_IRQ(id, priority),				\
 			mcux_lpc_rtc_isr, DEVICE_DT_INST_GET(id), 0);		\
 		irq_enable(DT_INST_IRQN(id));					\
+		if (DT_INST_PROP(id, wakeup_source)) {				\
+			EnableDeepSleepIRQ(DT_INST_IRQN(id));			\
+		}								\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_LPC_RTC_DEVICE)

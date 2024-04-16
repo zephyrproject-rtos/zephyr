@@ -14,13 +14,16 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/net/icmp.h>
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 
 #include <zephyr/net/net_event.h>
 
+#ifdef CONFIG_NET_L2_WIFI_MGMT
 /* For struct wifi_scan_result */
 #include <zephyr/net/wifi_mgmt.h>
+#endif /* CONFIG_NET_L2_WIFI_MGMT */
 
 #define DEFAULT_NET_EVENT_INFO_SIZE 32
 /* NOTE: Update this union with all *big* event info structs */
@@ -28,12 +31,18 @@ union net_mgmt_events {
 #if defined(CONFIG_NET_DHCPV4)
 	struct net_if_dhcpv4 dhcpv4;
 #endif /* CONFIG_NET_DHCPV4 */
+#if defined(CONFIG_NET_DHCPV6)
+	struct net_if_dhcpv6 dhcpv6;
+#endif /* CONFIG_NET_DHCPV6 */
 #if defined(CONFIG_NET_L2_WIFI_MGMT)
-	struct wifi_scan_result wifi_scan_result;
+	union wifi_mgmt_events wifi;
 #endif /* CONFIG_NET_L2_WIFI_MGMT */
-#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV6_MLD)
+#if defined(CONFIG_NET_IPV6)
+	struct net_event_ipv6_prefix ipv6_prefix;
+#if defined(CONFIG_NET_IPV6_MLD)
 	struct net_event_ipv6_route ipv6_route;
-#endif /* CONFIG_NET_IPV6 && CONFIG_NET_IPV6_MLD */
+#endif /* CONFIG_NET_IPV6_MLD */
+#endif /* CONFIG_NET_IPV6 */
 	char default_event[DEFAULT_NET_EVENT_INFO_SIZE];
 };
 
@@ -50,9 +59,18 @@ extern void net_if_stats_reset_all(void);
 extern void net_process_rx_packet(struct net_pkt *pkt);
 extern void net_process_tx_packet(struct net_pkt *pkt);
 
+extern int net_icmp_call_ipv4_handlers(struct net_pkt *pkt,
+				       struct net_ipv4_hdr *ipv4_hdr,
+				       struct net_icmp_hdr *icmp_hdr);
+extern int net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
+				       struct net_ipv6_hdr *ipv6_hdr,
+				       struct net_icmp_hdr *icmp_hdr);
+
 #if defined(CONFIG_NET_NATIVE) || defined(CONFIG_NET_OFFLOAD)
 extern void net_context_init(void);
 extern const char *net_context_state(struct net_context *context);
+extern bool net_context_is_reuseaddr_set(struct net_context *context);
+extern bool net_context_is_reuseport_set(struct net_context *context);
 extern void net_pkt_init(void);
 extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
@@ -65,6 +83,16 @@ static inline const char *net_context_state(struct net_context *context)
 {
 	ARG_UNUSED(context);
 	return NULL;
+}
+static inline bool net_context_is_reuseaddr_set(struct net_context *context)
+{
+	ARG_UNUSED(context);
+	return false;
+}
+static inline bool net_context_is_reuseport_set(struct net_context *context)
+{
+	ARG_UNUSED(context);
+	return false;
 }
 #endif
 
@@ -172,6 +200,15 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 #if defined(CONFIG_NET_IPV4)
 extern uint16_t net_calc_chksum_ipv4(struct net_pkt *pkt);
 #endif /* CONFIG_NET_IPV4 */
+
+#if defined(CONFIG_NET_IPV4_IGMP)
+/**
+ * @brief Initialise the IGMP module for a given interface
+ *
+ * @param iface		Interface to init IGMP
+ */
+void net_ipv4_igmp_init(struct net_if *iface);
+#endif /* CONFIG_NET_IPV4_IGMP */
 
 #if defined(CONFIG_NET_IPV4_IGMP)
 uint16_t net_calc_chksum_igmp(uint8_t *data, size_t len);

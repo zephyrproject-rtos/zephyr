@@ -4,9 +4,13 @@ type: mcu
 arch: arc
 toolchain:
   - zephyr
+  - cross-compile
   - xtools
   - arcmwdt
+supported:
+  - smp
 testing:
   ignore_tags:
     - net
     - bluetooth
+vendor: snps

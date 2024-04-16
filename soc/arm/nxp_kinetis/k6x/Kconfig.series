@@ -12,5 +12,6 @@ config SOC_SERIES_KINETIS_K6X
 	select CPU_HAS_NXP_MPU
 	select HAS_MCUX_PIT
 	select CLOCK_CONTROL
+	select PLATFORM_SPECIFIC_INIT
 	help
 	  Enable support for Kinetis K6x MCU series

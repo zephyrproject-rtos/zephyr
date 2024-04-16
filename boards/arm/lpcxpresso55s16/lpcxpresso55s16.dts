@@ -13,3 +13,7 @@
 	model = "NXP LPCXpresso55S16 board";
 	compatible = "nxp,lpc55xxx", "nxp,lpc";
 };
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};

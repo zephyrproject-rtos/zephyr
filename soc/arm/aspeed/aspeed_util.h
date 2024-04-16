@@ -7,7 +7,7 @@
 #define ZEPHYR_SOC_ARM_ASPEED_UTIL_H_
 #include <zephyr/sys/util.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/toolchain/gcc.h>
+#include <zephyr/toolchain.h>
 
 /* gcc.h doesn't define __section but checkpatch.pl will complain for this. so
  * temporarily add a macro here.
@@ -28,8 +28,6 @@
 #define NON_CACHED_BSS
 #define NON_CACHED_BSS_ALIGN16          __aligned(16)
 #endif
-
-#define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
 
 #define reg_read_poll_timeout(map, reg, val, cond, sleep_ms, timeout_ms)	    \
 	({									    \

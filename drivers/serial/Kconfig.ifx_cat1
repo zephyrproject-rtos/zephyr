@@ -1,0 +1,15 @@
+# Infineon CAT1 UART configuration options
+
+# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_INFINEON_CAT1
+	bool "Infineon CAT1 UART driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select USE_INFINEON_UART
+	help
+	  This option enables the UART driver for Infineon CAT1 family.

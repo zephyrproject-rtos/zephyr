@@ -4,11 +4,11 @@
 # Common fields for interrupt controllers
 
 properties:
-    "interrupt-controller":
-      type: boolean
-      required: true
-      description: Convey's this node is an interrupt controller
-    "#interrupt-cells":
-      type: int
-      required: true
-      description: Number of items to expect in an interrupt specifier
+  "interrupt-controller":
+    type: boolean
+    required: true
+    description: Convey's this node is an interrupt controller
+  "#interrupt-cells":
+    type: int
+    required: true
+    description: Number of items to expect in an interrupt specifier

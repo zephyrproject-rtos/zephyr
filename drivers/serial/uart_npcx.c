@@ -47,7 +47,8 @@ enum uart_pm_policy_state_flag {
 struct uart_npcx_data {
 	/* Baud rate */
 	uint32_t baud_rate;
-	struct miwu_dev_callback uart_rx_cb;
+	struct miwu_callback uart_rx_cb;
+	struct k_spinlock lock;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;
@@ -144,21 +145,21 @@ static int uart_npcx_fifo_fill(const struct device *dev, const uint8_t *tx_data,
 {
 	const struct uart_npcx_config *const config = dev->config;
 	struct uart_reg *const inst = config->inst;
+	struct uart_npcx_data *data = dev->data;
 	uint8_t tx_bytes = 0U;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	/* If Tx FIFO is still ready to send */
 	while ((size - tx_bytes > 0) && uart_npcx_tx_fifo_ready(dev)) {
 		/* Put a character into Tx FIFO */
-#ifdef CONFIG_PM
-		struct uart_npcx_data *data = dev->data;
-
-		uart_npcx_pm_policy_state_lock_get(data, UART_PM_POLICY_STATE_TX_FLAG);
 		inst->UTBUF = tx_data[tx_bytes++];
-		inst->UFTCTL |= BIT(NPCX_UFTCTL_NXMIP_EN);
-#else
-		inst->UTBUF = tx_data[tx_bytes++];
-#endif /* CONFIG_PM */
 	}
+#ifdef CONFIG_PM
+	uart_npcx_pm_policy_state_lock_get(data, UART_PM_POLICY_STATE_TX_FLAG);
+	/* Enable NXMIP interrupt in case ec enters deep sleep early */
+	inst->UFTCTL |= BIT(NPCX_UFTCTL_NXMIP_EN);
+#endif /* CONFIG_PM */
+	k_spin_unlock(&data->lock, key);
 
 	return tx_bytes;
 }
@@ -182,21 +183,35 @@ static void uart_npcx_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_npcx_config *const config = dev->config;
 	struct uart_reg *const inst = config->inst;
+	struct uart_npcx_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	inst->UFTCTL |= BIT(NPCX_UFTCTL_TEMPTY_EN);
+	k_spin_unlock(&data->lock, key);
 }
 
 static void uart_npcx_irq_tx_disable(const struct device *dev)
 {
 	const struct uart_npcx_config *const config = dev->config;
 	struct uart_reg *const inst = config->inst;
+	struct uart_npcx_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	inst->UFTCTL &= ~(BIT(NPCX_UFTCTL_TEMPTY_EN));
+	k_spin_unlock(&data->lock, key);
+}
+
+static bool uart_npcx_irq_tx_is_enabled(const struct device *dev)
+{
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
+
+	return IS_BIT_SET(inst->UFTCTL, NPCX_UFTCTL_TEMPTY_EN);
 }
 
 static int uart_npcx_irq_tx_ready(const struct device *dev)
 {
-	return uart_npcx_tx_fifo_ready(dev);
+	return uart_npcx_tx_fifo_ready(dev) && uart_npcx_irq_tx_is_enabled(dev);
 }
 
 static int uart_npcx_irq_tx_complete(const struct device *dev)
@@ -224,6 +239,14 @@ static void uart_npcx_irq_rx_disable(const struct device *dev)
 	inst->UFRCTL &= ~(BIT(NPCX_UFRCTL_RNEMPTY_EN));
 }
 
+static bool uart_npcx_irq_rx_is_enabled(const struct device *dev)
+{
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
+
+	return IS_BIT_SET(inst->UFRCTL, NPCX_UFRCTL_RNEMPTY_EN);
+}
+
 static int uart_npcx_irq_rx_ready(const struct device *dev)
 {
 	return uart_npcx_rx_fifo_available(dev);
@@ -247,7 +270,8 @@ static void uart_npcx_irq_err_disable(const struct device *dev)
 
 static int uart_npcx_irq_is_pending(const struct device *dev)
 {
-	return (uart_npcx_irq_tx_ready(dev) || uart_npcx_irq_rx_ready(dev));
+	return uart_npcx_irq_tx_ready(dev) ||
+		(uart_npcx_irq_rx_ready(dev) && uart_npcx_irq_rx_is_enabled(dev));
 }
 
 static int uart_npcx_irq_update(const struct device *dev)
@@ -292,8 +316,12 @@ static void uart_npcx_isr(const struct device *dev)
 
 	if (IS_BIT_SET(inst->UFTCTL, NPCX_UFTCTL_NXMIP_EN) &&
 	    IS_BIT_SET(inst->UFTSTS, NPCX_UFTSTS_NXMIP)) {
-		uart_npcx_pm_policy_state_lock_put(data, UART_PM_POLICY_STATE_TX_FLAG);
+		k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+		/* Disable NXMIP interrupt */
 		inst->UFTCTL &= ~BIT(NPCX_UFTCTL_NXMIP_EN);
+		k_spin_unlock(&data->lock, key);
+		uart_npcx_pm_policy_state_lock_put(data, UART_PM_POLICY_STATE_TX_FLAG);
 	}
 #endif /* CONFIG_PM */
 }
@@ -396,8 +424,9 @@ static __unused void uart_npcx_rx_wk_isr(const struct device *dev, struct npcx_w
 #ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
 static void uart_npcx_rx_refresh_timeout(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct uart_npcx_data *data =
-		CONTAINER_OF(work, struct uart_npcx_data, rx_refresh_timeout_work);
+		CONTAINER_OF(dwork, struct uart_npcx_data, rx_refresh_timeout_work);
 
 	uart_npcx_pm_policy_state_lock_put(data, UART_PM_POLICY_STATE_RX_FLAG);
 }
@@ -441,7 +470,7 @@ static int uart_npcx_init(const struct device *dev)
 	}
 
 	/* Turn on device clock first and get source clock freq. */
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)&config->clk_cfg);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on UART clock fail %d", ret);
 		return ret;
@@ -451,7 +480,7 @@ static int uart_npcx_init(const struct device *dev)
 	 * If apb2's clock is not 15MHz, we need to find the other optimized
 	 * values of UPSR and UBAUD for baud rate 115200.
 	 */
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)&config->clk_cfg,
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clk_cfg,
 				     &uart_rate);
 	if (ret < 0) {
 		LOG_ERR("Get UART clock rate error %d", ret);
@@ -491,7 +520,7 @@ static int uart_npcx_init(const struct device *dev)
 		/* Initialize a miwu device input and its callback function */
 		npcx_miwu_init_dev_callback(&data->uart_rx_cb, &config->uart_rx_wui,
 					    uart_npcx_rx_wk_isr, dev);
-		npcx_miwu_manage_dev_callback(&data->uart_rx_cb, true);
+		npcx_miwu_manage_callback(&data->uart_rx_cb, true);
 		/*
 		 * Configure the UART wake-up event triggered from a falling
 		 * edge on CR_SIN pin. No need for callback function.

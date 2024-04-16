@@ -7548,7 +7548,6 @@ ZTEST(hmac_prng_fn, test_hmac_prng)
 {
 	unsigned int result = TC_PASS;
 
-	TC_START("Performing HMAC-PRNG tests:");
 
 	result = test_1();
 	zassert_false(result == TC_FAIL, "HMAC test 1 failed");

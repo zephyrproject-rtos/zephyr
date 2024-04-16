@@ -1,0 +1,70 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Input longpress pseudo-device
+
+  Listens for key events as an input and produces key events as output
+  corresponding to short and long press.
+
+  Can be optionally be associated to a specific device to listen for events
+  only from that device. Example configuration:
+
+  #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+  longpress {
+          input = <&buttons>;
+          compatible = "zephyr,input-longpress";
+          input-codes = <INPUT_KEY_0>, <INPUT_KEY_1>;
+          short-codes = <INPUT_KEY_A>, <INPUT_KEY_B>;
+          long-codes = <INPUT_KEY_X>, <INPUT_KEY_Y>;
+          long-delay-ms = <1000>;
+  };
+
+  Example output:
+
+  input event: dev=buttons          SYN type= 1 code= 11 value=1 # INPUT_KEY_0 press
+  # release before one second
+  input event: dev=buttons          SYN type= 1 code= 11 value=0 # INPUT_KEY_0 release
+  input event: dev=longpress        SYN type= 1 code= 30 value=1 # INPUT_KEY_A press
+  input event: dev=longpress        SYN type= 1 code= 30 value=0 # INPUT_KEY_A release
+
+  input event: dev=buttons          SYN type= 1 code= 11 value=1 # INPUT_KEY_0 press
+  # hold for more than one second
+  input event: dev=longpress        SYN type= 1 code= 45 value=1 # INPUT_KEY_X press
+  # wait for release
+  input event: dev=buttons          SYN type= 1 code= 11 value=0 # INPUT_KEY_0 release
+  input event: dev=longpress        SYN type= 1 code= 45 value=0 # INPUT_KEY_X release
+
+compatible: "zephyr,input-longpress"
+
+properties:
+  input:
+    type: phandle
+    description: |
+      Input device phandle, if not specified listen for input from all devices.
+
+  input-codes:
+    type: array
+    required: true
+    description: |
+      Array of input event key codes (INPUT_KEY_* or INPUT_BTN_*).
+
+  short-codes:
+    type: array
+    required: true
+    description: |
+      Array of key codes to be generated for short press (INPUT_KEY_* or
+      INPUT_BTN_*).
+
+  long-codes:
+    type: array
+    required: true
+    description: |
+      Array of key codes to be generated for long press (INPUT_KEY_* or
+      INPUT_BTN_*).
+
+  long-delay-ms:
+    type: int
+    required: true
+    description: Time delay to register a long press in milliseconds.

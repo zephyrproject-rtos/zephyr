@@ -65,7 +65,7 @@ static struct nvs_fs fs;
 #define LONG_ID 5
 
 
-void main(void)
+int main(void)
 {
 	int rc = 0, cnt = 0, cnt_his = 0;
 	char buf[16];
@@ -81,13 +81,13 @@ void main(void)
 	fs.flash_device = NVS_PARTITION_DEVICE;
 	if (!device_is_ready(fs.flash_device)) {
 		printk("Flash device %s is not ready\n", fs.flash_device->name);
-		return;
+		return 0;
 	}
 	fs.offset = NVS_PARTITION_OFFSET;
 	rc = flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
 	if (rc) {
 		printk("Unable to get page info\n");
-		return;
+		return 0;
 	}
 	fs.sector_size = info.size;
 	fs.sector_count = 3U;
@@ -95,7 +95,7 @@ void main(void)
 	rc = nvs_mount(&fs);
 	if (rc) {
 		printk("Flash Init failed\n");
-		return;
+		return 0;
 	}
 
 	/* ADDRESS_ID is used to store an address, lets see if we can
@@ -244,4 +244,5 @@ void main(void)
 			break;
 		}
 	}
+	return 0;
 }

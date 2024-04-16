@@ -1,7 +1,8 @@
-.. _openAMP_rsc_table_sample:
+.. zephyr:code-sample:: openamp-rsc-table
+   :name: OpenAMP using resource table
+   :relevant-api: ipm_interface
 
-OpenAMP Sample Application using resource table
-###############################################
+   Send messages between two cores using OpenAMP and a resource table.
 
 Overview
 ********

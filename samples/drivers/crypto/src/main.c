@@ -25,13 +25,15 @@ LOG_MODULE_REGISTER(main);
 #define CRYPTO_DEV_COMPAT st_stm32_cryp
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
 #define CRYPTO_DEV_COMPAT st_stm32_aes
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_dcp)
+#define CRYPTO_DEV_COMPAT nxp_mcux_dcp
 #elif CONFIG_CRYPTO_NRF_ECB
 #define CRYPTO_DEV_COMPAT nordic_nrf_ecb
 #else
 #error "You need to enable one crypto device"
 #endif
 
-static uint8_t key[16] = {
+static uint8_t key[16] __aligned(32) = {
 	0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88,
 	0x09, 0xcf, 0x4f, 0x3c
 };
@@ -603,21 +605,21 @@ struct mode_test {
 	void (*mode_func)(const struct device *dev);
 };
 
-void main(void)
+int main(void)
 {
 #ifdef CRYPTO_DRV_NAME
 	const struct device *dev = device_get_binding(CRYPTO_DRV_NAME);
 
 	if (!dev) {
 		LOG_ERR("%s pseudo device not found", CRYPTO_DRV_NAME);
-		return;
+		return 0;
 	}
 #else
 	const struct device *const dev = DEVICE_DT_GET_ONE(CRYPTO_DEV_COMPAT);
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Crypto device is not ready\n");
-		return;
+		return 0;
 	}
 #endif
 	const struct mode_test modes[] = {
@@ -632,7 +634,7 @@ void main(void)
 
 	if (validate_hw_compatibility(dev)) {
 		LOG_ERR("Incompatible h/w");
-		return;
+		return 0;
 	}
 
 	LOG_INF("Cipher Sample");
@@ -641,4 +643,5 @@ void main(void)
 		LOG_INF("%s", modes[i].mode);
 		modes[i].mode_func(dev);
 	}
+	return 0;
 }

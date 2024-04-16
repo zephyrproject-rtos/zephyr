@@ -107,15 +107,14 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 
 	k_sem_give(&cpuhold_sem);
 
-#if defined(CONFIG_ARM64) && defined(CONFIG_FPU_SHARING)
+#if (defined(CONFIG_ARM64) || defined(CONFIG_RISCV)) && defined(CONFIG_FPU_SHARING)
 	/*
 	 * We'll be spinning with IRQs disabled. The flush-your-FPU request
 	 * IPI will never be serviced during that time. Therefore we flush
 	 * the FPU preemptively here to prevent any other CPU waiting after
 	 * this CPU forever and deadlock the system.
 	 */
-	extern void z_arm64_flush_local_fpu(void);
-	z_arm64_flush_local_fpu();
+	k_float_disable(_current_cpu->arch.fpu_owner);
 #endif
 
 	while (cpuhold_active) {
@@ -524,7 +523,7 @@ int main(void)
 	return test_status;
 }
 #else
-void main(void)
+int main(void)
 {
 #ifdef CONFIG_USERSPACE
 	int ret;
@@ -593,5 +592,6 @@ void main(void)
 	}
 	irq_unlock(key);
 #endif
+	return 0;
 }
 #endif

@@ -62,7 +62,7 @@ The function used by a real application can be as complex as needed.
 
 .. code-block:: c
 
-    void main(void)
+    int main(void)
     {
         /* initialize a semaphore */
 	...

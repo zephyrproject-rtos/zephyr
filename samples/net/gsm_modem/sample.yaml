@@ -1,7 +1,11 @@
 common:
   harness: net
   depends_on: serial-net
-  tags: net ppp modem gsm
+  tags:
+    - net
+    - ppp
+    - modem
+    - gsm
   platform_allow: frdm_k64f
   extra_args: DTC_OVERLAY_FILE="boards/frdm_uart2_dts.overlay"
 sample:

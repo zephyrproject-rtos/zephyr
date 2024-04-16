@@ -136,4 +136,4 @@ References
 - `STM32F070 reference manual`_
 
 .. _STM32F070 reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00031936.pdf
+   https://www.st.com/resource/en/reference_manual/dm00031936.pdf

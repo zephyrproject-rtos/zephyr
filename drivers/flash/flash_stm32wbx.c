@@ -26,17 +26,6 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #define STM32WBX_PAGE_SHIFT	12
 
-/* offset and len must be aligned on 8 for write,
- * positive and not beyond end of flash
- */
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
-			     uint32_t len,
-			     bool write)
-{
-	return (!write || (offset % 8 == 0 && len % 8 == 0U)) &&
-	       flash_stm32_range_exists(dev, offset, len);
-}
-
 /*
  * Up to 255 4K pages
  */

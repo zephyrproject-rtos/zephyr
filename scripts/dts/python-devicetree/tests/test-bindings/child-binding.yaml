@@ -5,15 +5,15 @@ description: child-binding test
 compatible: "top-binding"
 
 child-binding:
-    description: child node
-    properties:
-        child-prop:
-            type: int
-            required: true
+  description: child node
+  properties:
+    child-prop:
+      type: int
+      required: true
 
-    child-binding:
-        description: grandchild node
-        properties:
-            grandchild-prop:
-                type: int
-                required: true
+  child-binding:
+    description: grandchild node
+    properties:
+      grandchild-prop:
+        type: int
+        required: true

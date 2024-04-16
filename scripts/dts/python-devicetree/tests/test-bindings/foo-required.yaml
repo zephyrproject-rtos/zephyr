@@ -1,4 +1,4 @@
 properties:
-    foo:
-        type: int
-        required: true
+  foo:
+    type: int
+    required: true

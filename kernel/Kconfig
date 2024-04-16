@@ -203,6 +203,68 @@ config THREAD_USERSPACE_LOCAL_DATA
 	depends on USERSPACE
 	default y if ERRNO && !ERRNO_IN_TLS
 
+config DYNAMIC_THREAD
+	bool "Support for dynamic threads [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on THREAD_STACK_INFO
+	select DYNAMIC_OBJECTS if USERSPACE
+	help
+	  Enable support for dynamic threads and stacks.
+
+if DYNAMIC_THREAD
+
+config DYNAMIC_THREAD_STACK_SIZE
+	int "Size of each pre-allocated thread stack"
+	default 1024 if !64BIT
+	default 2048 if 64BIT
+	help
+	  Default stack size (in bytes) for dynamic threads.
+
+config DYNAMIC_THREAD_ALLOC
+	bool "Support heap-allocated thread objects and stacks"
+	help
+	  Select this option to enable allocating thread object and
+	  thread stacks from the system heap.
+
+	  Only use this type of allocation in situations
+	  where malloc is permitted.
+
+config DYNAMIC_THREAD_POOL_SIZE
+	int "Number of statically pre-allocated threads"
+	default 0
+	range 0 8192
+	help
+	  Pre-allocate a fixed number of thread objects and
+	  stacks at build time.
+
+	  This type of "dynamic" stack is usually suitable in
+	  situations where malloc is not permitted.
+
+choice DYNAMIC_THREAD_PREFER
+	prompt "Preferred dynamic thread allocator"
+	default DYNAMIC_THREAD_PREFER_POOL
+	help
+	  If both CONFIG_DYNAMIC_THREAD_ALLOC=y and
+	  CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0, then the user may
+	  specify the order in which allocation is attmpted.
+
+config DYNAMIC_THREAD_PREFER_ALLOC
+	bool "Prefer heap-based allocation"
+	depends on DYNAMIC_THREAD_ALLOC
+	help
+	  Select this option to attempt a heap-based allocation
+	  prior to any pool-based allocation.
+
+config DYNAMIC_THREAD_PREFER_POOL
+	bool "Prefer pool-based allocation"
+	help
+	  Select this option to attempt a pool-based allocation
+	  prior to any heap-based allocation.
+
+endchoice # DYNAMIC_THREAD_PREFER
+
+endif # DYNAMIC_THREADS
+
 config LIBC_ERRNO
 	bool
 	help
@@ -328,6 +390,13 @@ config BOOT_BANNER
 	help
 	  This option outputs a banner to the console device during boot up.
 
+config BOOT_BANNER_STRING
+	string "Boot banner string"
+	depends on BOOT_BANNER
+	default "Booting Zephyr OS build"
+	help
+	  Use this option to set the boot banner.
+
 config BOOT_DELAY
 	int "Boot delay in milliseconds"
 	depends on MULTITHREADING
@@ -425,10 +494,163 @@ endif # THREAD_RUNTIME_STATS
 
 endmenu
 
+menuconfig OBJ_CORE
+	bool "Object core framework"
+	default n
+	help
+	  This option enables the object core framework. This will link
+	  participating kernel objects and their respective types together
+	  in a way that allows them to both have common information stored
+	  together and for that information to be easily retrieved by
+	  automated means.
+
+if OBJ_CORE
+config OBJ_CORE_CONDVAR
+	bool "Integrate condition variables into object core framework"
+	default y
+	help
+	  When enabled, this option integrates condition variables into the
+	  object core framework.
+
+config OBJ_CORE_EVENT
+	bool "Integrate events into object core framework"
+	default y if EVENTS
+	help
+	  When enabled, this option integrate kernel events into the object
+	  core framework.
+
+config OBJ_CORE_FIFO
+	bool "Integrate FIFOs into object core framework"
+	default y
+	help
+	  When enabled, this option integrates FIFOs into the object core
+	  framework.
+
+config OBJ_CORE_LIFO
+	bool "Integrate LIFOs into object core framework"
+	default y
+	help
+	  When enabled, this option integrates LIFOs into the object core
+	  framework.
+
+config OBJ_CORE_MAILBOX
+	bool "Integrate mailboxes into object core framework"
+	default y
+	help
+	  When enabled, this option integrates mailboxes into the object core
+	  framework.
+
+config OBJ_CORE_MEM_SLAB
+	bool "Integrate memory slabs into object core framework"
+	default y
+	help
+	  When enabled, this option integrates memory slabs into the object
+	  core framework.
+
+config OBJ_CORE_MUTEX
+	bool "Integrate mutexes into object core framework"
+	default y
+	help
+	  When enabled, this option integrates mutexes into the object core
+	  framework.
+
+config OBJ_CORE_MSGQ
+	bool "Integrate message queues into object core framework"
+	default y
+	help
+	  When enabled, this option integrates message queues into the object
+	  core framework.
+
+config OBJ_CORE_SEM
+	bool "Integrate semaphores into object core framework"
+	default y
+	help
+	  When enabled, this option integrates semaphores into the object core
+	  framework.
+
+config OBJ_CORE_PIPE
+	bool "Integrate pipe into object core framework"
+	default y if PIPES
+	help
+	  When enabled, this option integrates pipes into the object core
+	  framework.
+
+config OBJ_CORE_SEM
+	bool "Integrate semaphores into object core framework"
+	default y
+	help
+	  When enabled, this option integrates semaphores into the object core
+	  framework.
+
+config OBJ_CORE_STACK
+	bool "Integrate stacks into object core framework"
+	default y
+	help
+	  When enabled, this option integrates stacks into the object core
+	  framework.
+
+config OBJ_CORE_THREAD
+	bool "Integrate threads into object core framework"
+	default y
+	help
+	  When enabled, this option integrates threads into the object core
+	  framework.
+
+config OBJ_CORE_TIMER
+	bool "Integrate timers into object core framework"
+	default y
+	help
+	  When enabled, this option integrates timers into the object core
+	  framework.
+
+config OBJ_CORE_SYSTEM
+	bool
+	default y
+	help
+	  When enabled, this option integrates the internal CPU and kernel
+	  system objects into the object core framework. As these are internal
+	  structures, this option is hidden by default and only available to
+	  advanced users.
+
+menuconfig OBJ_CORE_STATS
+	bool "Object core statistics"
+	default n
+	help
+	  This option integrates statistics gathering into the object core
+	  framework.
+
+if OBJ_CORE_STATS
+config OBJ_CORE_STATS_MEM_SLAB
+	bool "Object core statistics for memory slabs"
+	default y if OBJ_CORE_MEM_SLAB
+	help
+	  When enabled, this allows memory slab statistics to be integrated
+	  into kernel objects.
+
+config OBJ_CORE_STATS_THREAD
+	bool "Object core statistics for threads"
+	default y if OBJ_CORE_THREAD
+	select THREAD_RUNTIME_STATS
+	help
+	  When enabled, this integrates thread runtime statistics into the
+	  object core statistics framework.
+
+config OBJ_CORE_STATS_SYSTEM
+	bool "Object core statistics for system level objects"
+	default y if OBJ_CORE_SYSTEM
+	select SCHED_THREAD_USAGE_ALL
+	help
+	  When enabled, this integrates thread runtime statistics at the
+	  CPU and system level into the object core statistics framework.
+
+endif  # OBJ_CORE_STATS
+
+endif  # OBJ_CORE
+
 menu "Work Queue Options"
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	int "System workqueue stack size"
-	default 4096 if COVERAGE
+	default 4096 if COVERAGE_GCOV
 	default 1024
 
 config SYSTEM_WORKQUEUE_PRIORITY
@@ -450,6 +672,21 @@ config SYSTEM_WORKQUEUE_NO_YIELD
 	  cooperative and a sequence of work items is expected to complete
 	  without yielding.
 
+endmenu
+
+menu "Barrier Operations"
+config BARRIER_OPERATIONS_BUILTIN
+	bool
+	help
+	  Use the compiler builtin functions for barrier operations. This is
+	  the preferred method. However, support for all arches in GCC is
+	  incomplete.
+
+config BARRIER_OPERATIONS_ARCH
+	bool
+	help
+	  Use when there isn't support for compiler built-ins, but you have
+	  written optimized assembly code under arch/ which implements these.
 endmenu
 
 menu "Atomic Operations"
@@ -678,6 +915,18 @@ config SYS_CLOCK_MAX_TIMEOUT_DAYS
 	  algorithm is selected for conversion if maximum timeout represented in
 	  source frequency domain multiplied by target frequency fits in 64 bits.
 
+config BUSYWAIT_CPU_LOOPS_PER_USEC
+	int "Number of CPU loops per microsecond for crude busy looping"
+	depends on !SYS_CLOCK_EXISTS && !ARCH_HAS_CUSTOM_BUSY_WAIT
+	default 500
+	help
+	  Calibration for crude CPU based busy loop duration. The default
+	  is assuming 1 GHz CPU and 2 cycles per loop. Reality is certainly
+	  much worse but all we want here is a ball-park figure that ought
+	  to be good enough for the purpose of being able to configure out
+	  system timer support. If accuracy is very important then
+	  implementing arch_busy_wait() should be considered.
+
 config XIP
 	bool "Execute in place"
 	help
@@ -726,6 +975,7 @@ menu "Security Options"
 config STACK_CANARIES
 	bool "Compiler stack canaries"
 	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
 	help
 	  This option enables compiler stack canaries.
 
@@ -739,6 +989,24 @@ config STACK_CANARIES
 
 	  If stack canaries are not supported by the compiler an error
 	  will occur at build time.
+
+if STACK_CANARIES
+
+config STACK_CANARIES_TLS
+	bool "Stack canaries using thread local storage"
+	depends on THREAD_LOCAL_STORAGE
+	depends on ARCH_HAS_STACK_CANARIES_TLS
+	help
+	  This option enables compiler stack canaries on TLS.
+
+	  Stack canaries will leave in the thread local storage and
+	  each thread will have its own canary. This makes harder
+	  to predict the canary location and value.
+
+	  When enabled this causes an additional performance penalty
+	  during thread creations because it needs a new random value
+	  per thread.
+endif
 
 config EXECUTE_XOR_WRITE
 	bool "W^X for memory partitions"
@@ -841,6 +1109,7 @@ menu "SMP Options"
 config SMP
 	bool "Symmetric multiprocessing support"
 	depends on USE_SWITCH
+	depends on !ATOMIC_OPERATIONS_C
 	help
 	  When true, kernel will be built with SMP support, allowing
 	  more than one CPU to schedule Zephyr tasks at a time.
@@ -872,17 +1141,16 @@ config SMP_BOOT_DELAY
 	  secondary CPUs at a later time.
 
 config MP_NUM_CPUS
-	int "Number of CPUs/cores"
+	int "Number of CPUs/cores [DEPRECATED]"
 	default MP_MAX_NUM_CPUS
-	range 1 4
+	range 1 12
 	help
-	  Number of multiprocessing-capable cores available to the
-	  multicpu API and SMP features.
+	  This is deprecated, please use MP_MAX_NUM_CPUS instead.
 
 config MP_MAX_NUM_CPUS
 	int "Maximum number of CPUs/cores"
 	default 1
-	range 1 4
+	range 1 12
 	help
 	  Maximum number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.
@@ -905,12 +1173,12 @@ config TRACE_SCHED_IPI
 	  to check if schedule IPI has called or not, for testing
 	  purpose.
 	depends on SCHED_IPI_SUPPORTED
-	depends on MP_NUM_CPUS>1
+	depends on MP_MAX_NUM_CPUS>1
 
 config KERNEL_COHERENCE
 	bool "Place all shared data into coherent memory"
 	depends on ARCH_HAS_COHERENCE
-	default y if SMP && MP_NUM_CPUS > 1
+	default y if SMP && MP_MAX_NUM_CPUS > 1
 	select THREAD_STACK_INFO
 	help
 	  When available and selected, the kernel will build in a mode
@@ -953,10 +1221,19 @@ endmenu
 
 menu "Device Options"
 
-config HAS_DYNAMIC_DEVICE_HANDLES
-	bool
+config DEVICE_DEPS
+	bool "Store device dependencies"
 	help
-	  Hidden option that makes possible to manipulate device handles at
+	  When enabled, device dependencies will be stored so that they can be
+	  queried at runtime. Device dependencies are typically inferred from
+	  devicetree. Enabling this option will increase ROM usage (or RAM if
+	  dynamic device dependencies are enabled).
+
+config DEVICE_DEPS_DYNAMIC
+	bool "Dynamic device dependencies"
+	depends on DEVICE_DEPS
+	help
+	  Option that makes it possible to manipulate device dependencies at
 	  runtime.
 
 endmenu

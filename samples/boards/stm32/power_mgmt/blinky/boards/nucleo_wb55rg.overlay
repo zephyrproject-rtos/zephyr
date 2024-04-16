@@ -1,0 +1,9 @@
+ /*
+  * give a prescaler to the lptim clock : LSE / 32 = 1024Hz
+  * so that the sleep period is of 64s in the sample application
+  *
+  */
+
+&lptim1 {
+	st,prescaler = <32>;
+};

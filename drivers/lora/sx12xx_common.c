@@ -163,6 +163,12 @@ static void sx12xx_ev_tx_done(void)
 	}
 }
 
+static void sx12xx_ev_tx_timed_out(void)
+{
+	/* Just release the modem */
+	modem_release(&dev_data);
+}
+
 int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 		     uint32_t data_len)
 {
@@ -351,6 +357,8 @@ int sx12xx_init(const struct device *dev)
 	dev_data.dev = dev;
 	dev_data.events.TxDone = sx12xx_ev_tx_done;
 	dev_data.events.RxDone = sx12xx_ev_rx_done;
+	/* TX timeout event raises at the end of the test CW transmission */
+	dev_data.events.TxTimeout = sx12xx_ev_tx_timed_out;
 	Radio.Init(&dev_data.events);
 
 	/*

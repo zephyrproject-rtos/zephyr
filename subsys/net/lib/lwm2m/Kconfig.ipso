@@ -215,7 +215,7 @@ config LWM2M_IPSO_BUZZER_VERSION_1_1
 endchoice
 
 config LWM2M_IPSO_TIMER
-	bool "IPSO Light Control Support"
+	bool "IPSO Timer Support"
 	help
 	  This Object is used to time events / actions
 
@@ -313,6 +313,39 @@ config LWM2M_IPSO_CURRENT_SENSOR_VERSION_1_0
 
 config LWM2M_IPSO_CURRENT_SENSOR_VERSION_1_1
 	bool "IPSO Current object version 1.1"
+	help
+	  Adds timestamp and measurement quality
+
+endchoice
+
+config LWM2M_IPSO_VOLTAGE_SENSOR
+	bool "IPSO Voltage Sensor Support"
+	help
+	  This IPSO object should be used with a voltage sensor to
+	  report a voltage measurement. It also provides resources for
+	  minimum/maximum measured values and the minimum/maximum range
+	  that can be measured by the sensor.
+
+config LWM2M_IPSO_VOLTAGE_SENSOR_INSTANCE_COUNT
+	int "Maximum # of IPSO Voltage Sensor object instances"
+	default 1
+	depends on LWM2M_IPSO_VOLTAGE_SENSOR
+	help
+	  This setting establishes the total count of IPSO Voltage
+	  Sensor instances available to the LWM2M client.
+
+choice LWM2M_IPSO_VOLTAGE_SENSOR_VERSION
+	prompt "IPSO Voltage object version"
+	default LWM2M_IPSO_VOLTAGE_SENSOR_VERSION_1_0
+	depends on LWM2M_IPSO_VOLTAGE_SENSOR
+	help
+	  Select which version of the IPSO Voltage object should be used.
+
+config LWM2M_IPSO_VOLTAGE_SENSOR_VERSION_1_0
+	bool "IPSO Voltage object version 1.0"
+
+config LWM2M_IPSO_VOLTAGE_SENSOR_VERSION_1_1
+	bool "IPSO Voltage object version 1.1"
 	help
 	  Adds timestamp and measurement quality
 

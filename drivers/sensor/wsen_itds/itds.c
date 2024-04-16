@@ -25,7 +25,7 @@ static const struct itds_odr itds_odr_map[ITDS_ODR_MAX] = {
 	{400}, {800}, {1600}
 };
 
-static const unsigned int itds_sensitivity_scale[][ITDS_ACCL_RANGE_END] = {
+static const int16_t itds_sensitivity_scale[][ITDS_ACCL_RANGE_END] = {
 	{976, 1952, 3904, 7808},
 
 	/* high performance mode */
@@ -146,7 +146,7 @@ static int itds_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 }
 
-static int itds_fetch_temprature(struct itds_device_data *ddata,
+static int itds_fetch_temperature(struct itds_device_data *ddata,
 				 const struct itds_device_config *cfg)
 {
 	uint8_t rval;
@@ -169,7 +169,7 @@ static int itds_fetch_temprature(struct itds_device_data *ddata,
 		return ret;
 	}
 
-	ddata->temprature = sys_le16_to_cpu(temp_raw);
+	ddata->temperature = sys_le16_to_cpu(temp_raw);
 
 	return 0;
 }
@@ -228,7 +228,11 @@ static int itds_sample_fetch(const struct device *dev,
 		return itds_fetch_accel(ddata, cfg);
 
 	case SENSOR_CHAN_DIE_TEMP:
-		return itds_fetch_temprature(ddata, cfg);
+		return itds_fetch_temperature(ddata, cfg);
+
+	case SENSOR_CHAN_ALL:
+		return itds_fetch_accel(ddata, cfg) ||
+		       itds_fetch_temperature(ddata, cfg);
 
 	default:
 		return -EINVAL;
@@ -276,7 +280,7 @@ static int itds_temp_channel_get(const struct device *dev,
 	int32_t temp_processed;
 	struct itds_device_data *ddata = dev->data;
 
-	temp_processed = (ddata->temprature >> 4) * ITDS_TEMP_CONST;
+	temp_processed = (ddata->temperature >> 4) * ITDS_TEMP_CONST;
 
 	val->val1 = ITDS_TEMP_OFFSET;
 	val->val2 = temp_processed;

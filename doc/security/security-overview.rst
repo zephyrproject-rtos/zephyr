@@ -33,7 +33,7 @@ in detail. As depicted in Figure 1, these main steps are:
    countermeasures designed. Their correct implementation and the
    validity of the threat models are checked by code reviews.
    Finally, a process shall be defined for reporting, classifying,
-   and mitigating security issues..
+   and mitigating security issues.
 
 3. **Security Certification:** Defines the certifiable part of the
    Zephyr RTOS. This includes an evaluation target, its assets, and
@@ -97,8 +97,8 @@ The three major security measures currently implemented are:
 
 -  **Security** **Functionality** with a focus on cryptographic
    algorithms and protocols. Support for cryptographic hardware is
-   scoped for future releases.The Zephyr runtime architecture is a
-   monolithic binary and removes the need for dynamic loaders ,
+   scoped for future releases. The Zephyr runtime architecture is a
+   monolithic binary and removes the need for dynamic loaders,
    thereby reducing the exposed attack surface.
 
 -  **Quality Assurance** is driven by using a development process that
@@ -111,7 +111,7 @@ The three major security measures currently implemented are:
 -  **Execution Protection** including thread separation, stack and
    memory protection is currently available in the upstream
    Zephyr RTOS starting with version 1.9.0 (stack protection).  Memory
-   protection and thread separation was added in version 1.10.0 for X86
+   protection and thread separation were added in version 1.10.0 for X86
    and in version 1.11.0 for ARM and ARC.
 
 These topics are discussed in more detail in the following subsections.
@@ -123,10 +123,10 @@ The security functionality in Zephyr hinges mainly on the inclusion of
 cryptographic algorithms, and on its monolithic system design.
 
 The cryptographic features are provided through a set of cryptographic
-libraries. Applications can choose TinyCrypt2 or mbedTLS based on their
+libraries. Applications can choose TinyCrypt2 or Mbed TLS based on their
 needs. TinyCrypt2 supports key cryptographic algorithms required by the
-connectivity stacks. Tinycrypt2, however, only provides a limited set of
-algorithms. mbedTLS supports a wider range of algorithms, but at the
+connectivity stacks. TinyCrypt2, however, only provides a limited set of
+algorithms. Mbed TLS supports a wider range of algorithms, but at the
 cost of additional requirements such as malloc support. Applications can
 choose the solution that matches their individual requirements. Future
 work may include APIs to abstract the underlying crypto library choice.
@@ -147,7 +147,7 @@ protection mechanisms are provided to protect against stack overruns.
 In addition, applications can take advantage of thread separation
 features to split the system into privileged and unprivileged execution
 environments.  Memory protection features provide the capability to
-partition system resources (memory, peripheral address space, etc) and
+partition system resources (memory, peripheral address space, etc.) and
 assign resources to individual threads or groups of threads.  Stack,
 thread execution level, and memory protection constraints are enforced
 at the time of context switch.
@@ -191,7 +191,7 @@ started on the definition of vulnerability categorization and mitigation
 processes within Jira.
 
 Issues determined by Coverity should have more stringent reviews before
-they are closed as non issues (at least another person educated in
+they are closed as non-issues (at least another person educated in
 security processes need to agree on non-issue before closing).
 
 A security subcommittee has been formed to develop a security process in
@@ -433,12 +433,12 @@ Lifecycle management contains several aspects:
    cycle, documenting releases, and maintaining a record of known
    vulnerabilities and mitigations. Especially for certification
    purposes the integrity of the release needs to be ensured in a
-   way that later manipulation (e.g. inserting of backdoors, etc.)
+   way that later manipulation (e.g., inserting of backdoors, etc.)
    can be easily detected.
 
 -  **Rights management and NDAs:** if required by the chosen
    certification, the confidentiality and integrity of the system
-   needs to be ensured by an appropriate rights management (e.g.
+   needs to be ensured by an appropriate rights management (e.g.,
    separate source code repository) and non-disclosure agreements
    between the relevant parties. In case of a repository shared
    between several parties, measures shall be taken that no
@@ -523,7 +523,7 @@ this, the individual steps include:
    confidentiality, manipulation of user data, etc.
 
 3. **Definition of requirements** regarding security and protection of
-   the assets, e.g. countermeasures or memory protection schemes.
+   the assets, e.g., countermeasures or memory protection schemes.
 
 The security architecture shall be harmonized with the existing system
 architecture and implementation to determine potential deviations and
@@ -553,7 +553,7 @@ vulnerabilities, as well as the description of the potential exploits of
 these vulnerabilities. Additionally, the impact on the asset, the module
 it resides in, and the overall system is to be estimated. This threat
 model is then considered in the module and system security architecture
-and appropriate counter-measures are defined to mitigate the threat or
+and appropriate countermeasures are defined to mitigate the threat or
 limit the impact of exploits.
 
 In short, the threat modeling process can be separated into these steps
@@ -571,7 +571,7 @@ In short, the threat modeling process can be separated into these steps
 
 This procedure shall be carried out during the design phase of modules
 and before major changes of the module or system architecture.
-Additionally, new models shall be created or existing ones shall be
+Additionally, new models shall be created, or existing ones shall be
 updated whenever new vulnerabilities or exploits are discovered. During
 security reviews, the threat models and the mitigation techniques shall
 be evaluated by the responsible security architect.
@@ -619,7 +619,7 @@ Security Certification
 
 One goal of creating a secure branch of the Zephyr RTOS is to create a
 certifiable system or certifiable submodules thereof. The certification
-scope and scheme is yet to be decided. However, many certification such
+scope and scheme are yet to be decided. However, many certifications such
 as Common Criteria [CCITSE12]_ require evidence that the evaluation
 claims are indeed fulfilled, so a general certification process is
 outlined in the following. Based on the final choices for the
@@ -685,7 +685,7 @@ pursued:
    including a specific hardware, the Zephyr RTOS, and an
    application is certified.
 
-In all three cases, the certification scheme (e.g. FIPS 140-2 [NIST02]_
+In all three cases, the certification scheme (e.g., FIPS 140-2 [NIST02]_
 or Common Criteria [CCITSE12]_), the scope of the certification
 (main-stream Zephyr, security branch, or certain modules), and the
 certification/assurance level need to be determined.

@@ -163,7 +163,7 @@ static struct lwm2m_engine_obj_inst *lpwan_create(uint16_t obj_inst_id)
 	return &inst[index];
 }
 
-static int ucifi_lpwan_init(const struct device *dev)
+static int ucifi_lpwan_init(void)
 {
 	lpwan.obj_id = LWM2M_UCIFI_LPWAN_ID;
 	lpwan.version_major = LPWAN_VERSION_MAJOR;

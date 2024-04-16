@@ -37,6 +37,7 @@ LOG_MODULE_REGISTER(pca9633);
 #define PCA9633_LEDOUT          0x08
 
 /* PCA9633 mode register 1 */
+#define PCA9633_MODE1_ALLCAL    0x01    /* All Call Address enabled */
 #define PCA9633_MODE1_SLEEP     0x10    /* Sleep Mode */
 /* PCA9633 mode register 2 */
 #define PCA9633_MODE2_DMBLNK    0x20    /* Enable blinking */
@@ -45,6 +46,7 @@ LOG_MODULE_REGISTER(pca9633);
 
 struct pca9633_config {
 	struct i2c_dt_spec i2c;
+	bool disable_allcall;
 };
 
 struct pca9633_data {
@@ -192,11 +194,16 @@ static int pca9633_led_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/* Take the LED driver out from Sleep mode. */
-	if (i2c_reg_update_byte_dt(&config->i2c,
-				PCA9633_MODE1,
-				PCA9633_MODE1_SLEEP,
-				~PCA9633_MODE1_SLEEP)) {
+	/*
+	 * Take the LED driver out from Sleep mode and disable All Call Address
+	 * if specified in DT.
+	 */
+	if (i2c_reg_update_byte_dt(
+		    &config->i2c, PCA9633_MODE1,
+		    config->disable_allcall ? PCA9633_MODE1_SLEEP | PCA9633_MODE1_ALLCAL
+					    : PCA9633_MODE1_SLEEP,
+		    config->disable_allcall ? ~(PCA9633_MODE1_SLEEP | PCA9633_MODE1_ALLCAL)
+					    : ~PCA9633_MODE1_SLEEP)) {
 		LOG_ERR("LED reg update failed");
 		return -EIO;
 	}
@@ -218,7 +225,8 @@ static const struct led_driver_api pca9633_led_api = {
 
 #define PCA9633_DEVICE(id)						\
 	static const struct pca9633_config pca9633_##id##_cfg = {	\
-		.i2c = I2C_DT_SPEC_INST_GET(id)				\
+		.i2c = I2C_DT_SPEC_INST_GET(id),			\
+		.disable_allcall = DT_INST_PROP(id, disable_allcall),	\
 	};								\
 	static struct pca9633_data pca9633_##id##_data;			\
 									\

@@ -29,6 +29,17 @@ config FLASH_BASE_ADDRESS
 	default 0
 endif # !XIP
 
+if NET_L2_ETHERNET
+
+# NETC drops TCP/UDP packets with invalid checksum
+config NET_TCP_CHECKSUM
+	default n
+
+config NET_UDP_CHECKSUM
+	default n
+
+endif # NET_L2_ETHERNET
+
 source "soc/arm/nxp_s32/s32ze/Kconfig.defconfig.s32*"
 
 endif # SOC_SERIES_S32ZE_R52

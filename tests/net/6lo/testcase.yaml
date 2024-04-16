@@ -1,5 +1,7 @@
 common:
-  tags: net 6loWPAN
+  tags:
+    - net
+    - 6loWPAN
   min_ram: 32
   depends_on: netif
 tests:

@@ -13,7 +13,7 @@
 #define EXC_RETURN_S               (0x00000040UL)
 #endif
 
-#define HASH_LEN 64
+#define HASH_LEN 32
 
 static struct k_work_delayable interrupting_work;
 static volatile bool work_done;
@@ -27,7 +27,7 @@ static void do_hash(char *hash)
 	size_t len;
 
 	/* Calculate correct hash. */
-	psa_status_t status = psa_hash_compute(PSA_ALG_SHA_512, dummy_string,
+	psa_status_t status = psa_hash_compute(PSA_ALG_SHA_256, dummy_string,
 			sizeof(dummy_string), hash, HASH_LEN, &len);
 
 	zassert_equal(PSA_SUCCESS, status, "psa_hash_compute_fail: %d\n", status);
@@ -70,7 +70,7 @@ static void work_func(struct k_work *work)
 	/* Call a secure service here as well, to test the added complexity of
 	 * calling secure services from two threads.
 	 */
-	psa_status_t status = psa_hash_compare(PSA_ALG_SHA_512, dummy_string,
+	psa_status_t status = psa_hash_compare(PSA_ALG_SHA_256, dummy_string,
 			sizeof(dummy_string), dummy_digest_correct, HASH_LEN);
 
 	zassert_equal(PSA_SUCCESS, status, "psa_hash_compare failed\n");

@@ -1,0 +1,64 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  FS26 System Basis Chip (SBC) watchdog driver.
+
+  The FS26 features multiple voltage regulators to supply the microcontroller,
+  peripheral ICs and communication interfaces. The FS26 also offers various
+  functionalities for system control and monitoring, including a configurable
+  watchdog counter to ensure the microcontroller is able to communicate with the
+  FS26, which can react to any failure condition and place the system in a safe
+  state. This driver covers only the watchdog functionality of FS26. The rest
+  of the functionalities are not implemented.
+
+  The FS26 uses a 32-bit SPI interface. The MCU is the primary driving MOSI and
+  FS26 is the secondary driving MISO. Therefore the FS26 devicetree node must be
+  in a SPI bus. For example, if FS26 is connected to spi3 bus, on Chip Select 0:
+
+    &spi3 {
+      // here there should be spi3 properties as needed
+      status = "okay";
+
+      fs26_wdt: watchdog@0 {
+        compatible = "nxp,fs26-wdog";
+        reg = <0>;
+        spi-max-frequency = <DT_FREQ_M(5)>;
+        type = "challenger";
+        int-gpios = <&gpioa_h 3 GPIO_ACTIVE_LOW>;
+        status = "okay";
+      };
+    };
+
+  When an FS26 internal interrupt occurs, the INTB pin generates a pulse to
+  inform the microcontroller. The driver masks all interrupt sources except for
+  bad watchdog refresh (BAD_WD_M). The GPIO pin where the interrupt signal is
+  received must be configured from devicetree. In the example above, this is
+  indicated through int-gpios property. It is also required to configure the
+  external interrupt controller to receive interrupts on this pin.
+
+compatible: "nxp,fs26-wdog"
+
+include: spi-device.yaml
+
+properties:
+  type:
+    required: true
+    type: string
+    enum:
+      - simple
+      - challenger
+    description: |
+      Watchdog type enabled on this device.
+
+      The Challenger watchdog monitoring feature is enabled for ASIL D devices.
+      This mode is based on a question/answer process with the microcontroller.
+
+      The Simple watchdog monitoring feature is enabled for ASIL B devices. This
+      mode uses a unique seed.
+
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO to use to receive external interrupts from INTB signal.

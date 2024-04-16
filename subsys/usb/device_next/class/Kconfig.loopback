@@ -14,5 +14,5 @@ module-str = usbd loopback
 default-count = 1
 source "subsys/logging/Kconfig.template.log_config"
 
-rsource "Kconfig.template.composite_device_number"
+rsource "Kconfig.template.instances_count"
 endif

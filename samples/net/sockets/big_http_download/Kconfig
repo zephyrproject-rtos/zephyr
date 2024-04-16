@@ -11,6 +11,10 @@ config SAMPLE_BIG_HTTP_DL_URL
 	help
 	  URL to download.
 
+config SAMPLE_BIG_HTTP_DL_MAX_URL_LENGTH
+	int "Maximum length of the download URL"
+	default 256
+
 config SAMPLE_BIG_HTTP_DL_NUM_ITER
 	int "Limit number of iterations"
 	default 0

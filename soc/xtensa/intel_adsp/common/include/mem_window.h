@@ -42,6 +42,12 @@ struct mem_win_config {
 	bool read_only;
 };
 
+/**
+ * @brief Reinitializes device after power state change.
+ * Should be run on Primary Core only.
+ */
+void mem_window_idle_exit(void);
+
 #endif
 
 #endif

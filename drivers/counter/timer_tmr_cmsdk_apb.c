@@ -155,9 +155,9 @@ static int tmr_cmsdk_apb_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_SOC_SERIES_BEETLE
-	clock_control_on(clk, (clock_control_subsys_t *) &cfg->timer_cc_as);
-	clock_control_on(clk, (clock_control_subsys_t *) &cfg->timer_cc_ss);
-	clock_control_on(clk, (clock_control_subsys_t *) &cfg->timer_cc_dss);
+	clock_control_on(clk, (clock_control_subsys_t) &cfg->timer_cc_as);
+	clock_control_on(clk, (clock_control_subsys_t) &cfg->timer_cc_ss);
+	clock_control_on(clk, (clock_control_subsys_t) &cfg->timer_cc_dss);
 #endif /* CONFIG_SOC_SERIES_BEETLE */
 #endif /* CONFIG_CLOCK_CONTROL */
 

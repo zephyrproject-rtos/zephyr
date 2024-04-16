@@ -370,15 +370,15 @@ static int init(const struct shell_transport *transport,
 
 	sh_telnet = (struct shell_telnet *)transport->ctx;
 
-	err = telnet_init();
-	if (err != 0) {
-		return err;
-	}
-
 	memset(sh_telnet, 0, sizeof(struct shell_telnet));
 
 	sh_telnet->shell_handler = evt_handler;
 	sh_telnet->shell_context = context;
+
+	err = telnet_init();
+	if (err != 0) {
+		return err;
+	}
 
 	k_fifo_init(&sh_telnet->rx_fifo);
 	k_work_init_delayable(&sh_telnet->send_work, telnet_send_prematurely);
@@ -526,9 +526,8 @@ const struct shell_transport_api shell_telnet_transport_api = {
 	.read = read
 };
 
-static int enable_shell_telnet(const struct device *arg)
+static int enable_shell_telnet(void)
 {
-	ARG_UNUSED(arg);
 
 	bool log_backend = CONFIG_SHELL_TELNET_INIT_LOG_LEVEL > 0;
 	uint32_t level = (CONFIG_SHELL_TELNET_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?

@@ -11,9 +11,8 @@
 
 #ifdef CONFIG_UART_NS16550
 
-static int uart_ns16550_init(const struct device *dev)
+static int uart_ns16550_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/* On ARC EM Starter kit board,
 	 * send the UART the command to clear the interrupt

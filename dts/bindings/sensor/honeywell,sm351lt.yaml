@@ -8,7 +8,7 @@ compatible: "honeywell,sm351lt"
 include: sensor-device.yaml
 
 properties:
-   gpios:
-      type: phandle-array
-      required: true
-      description: GPIO connected to the sensor
+  gpios:
+    type: phandle-array
+    required: true
+    description: GPIO connected to the sensor

@@ -16,6 +16,13 @@ DT_STM32_RCC_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_RCC_PATH),clock-fre
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default "$(DT_STM32_RCC_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,rcc)"
 
+if LOG_BACKEND_SWO
+
+config LOG_BACKEND_SWO_REF_FREQ_HZ
+	default "$(DT_STM32_RCC_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,rcc)"
+
+endif # LOG_BACKEND_SWO
+
 # set the tick per sec as a divider of the LPTIM clock source
 config SYS_CLOCK_TICKS_PER_SEC
 	default 4096 if STM32_LPTIM_TIMER && STM32_LPTIM_CLOCK_LSE
@@ -28,10 +35,6 @@ config CLOCK_CONTROL_STM32_CUBE
 config CLOCK_CONTROL_INIT_PRIORITY
 	default 1
 	depends on CLOCK_CONTROL
-
-config PINMUX_STM32
-	default y
-	depends on PINMUX
 
 config MEMC_STM32
 	default y

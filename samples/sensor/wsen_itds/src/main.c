@@ -125,7 +125,7 @@ static void test_trigger_mode(const struct device *itds)
 
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const itds = DEVICE_DT_GET_ONE(we_wsen_itds);
 	struct sensor_value attr;
@@ -133,7 +133,7 @@ void main(void)
 	printf("get device wsen-itds\n");
 	if (!device_is_ready(itds)) {
 		printk("sensor: device not ready.\n");
-		return;
+		return 0;
 	}
 
 	/*
@@ -145,7 +145,7 @@ void main(void)
 	if (sensor_attr_set(itds, SENSOR_CHAN_ACCEL_XYZ,
 			    SENSOR_ATTR_FULL_SCALE, &attr) < 0) {
 		printf("Cannot set accl range.\n");
-		return;
+		return 0;
 	}
 
 	printf("Testing the polling mode.\n");
@@ -155,4 +155,5 @@ void main(void)
 	printf("Testing the trigger mode.\n");
 	test_trigger_mode(itds);
 	printf("Trigger mode test finished.\n");
+	return 0;
 }

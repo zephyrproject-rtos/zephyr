@@ -1,0 +1,28 @@
+# Texas Instruments Sitara AM62x-SK-M4
+#
+# Copyright (c) 2023 Texas Instruments Incorporated
+# Copyright (c) 2023 L Lakshmanan
+#
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+prompt "TI AM62X M4 Selection"
+depends on SOC_SERIES_AM62X_M4
+
+config SOC_AM62x_M4
+	bool "TI AM62x M4"
+	select SOC_PART_NUMBER_AM62x
+
+endchoice
+
+config SOC_PART_NUMBER_AM62x
+	bool
+
+config SOC_PART_NUMBER_AM62X_M4
+	string
+	default "AM62x" if SOC_PART_NUMBER_AM62x
+	help
+	  Full part number of the SoC. Do not select directly.
+
+config SOC_PART_NUMBER
+	default SOC_PART_NUMBER_AM62X_M4 if SOC_SERIES_AM62X_M4

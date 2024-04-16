@@ -7,6 +7,7 @@
 
 #include <atmel/sam4lx4.dtsi>
 #include "sam4l_ek-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Atmel SAM4L-EK Board with an Atmel SAM4LC4C SoC";
@@ -39,6 +40,7 @@
 		sw0_dfu: button_1 {
 			label = "SW0_DFU";
 			gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };

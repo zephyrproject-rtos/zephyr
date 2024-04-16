@@ -12,9 +12,8 @@
 #include "em_cmu.h"
 #include "board.h"
 
-static int efm32gg_slwstk6121a_init(const struct device *dev)
+static int efm32gg_slwstk6121a_init(void)
 {
-	ARG_UNUSED(dev);
 
 	const struct device *cur_dev;
 

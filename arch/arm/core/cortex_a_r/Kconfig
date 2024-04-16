@@ -1,0 +1,190 @@
+# ARM Cortex-A and Cortex-R platform configuration options
+
+# Copyright (c) 2018 Marvell
+# Copyright (c) 2018 Lexmark International, Inc.
+# Copyright (c) 2021 Weidmueller Interface GmbH & Co. KG
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# NOTE: We have the specific core implementations first and outside of the
+# if CPU_AARCH32_CORTEX_A / if CPU_AARCH32_CORTEX_R block so that SoCs can
+# select which core they are using without having to select all the options
+# related to that core. Everything else is captured inside the if
+# CPU_AARCH32_CORTEX_A / if CPU_AARCH32_CORTEX_R blocks so they are not
+# exposed if one selects a different ARM Cortex Family (Cortex-M).
+
+config CPU_CORTEX_A9
+	bool
+	select CPU_AARCH32_CORTEX_A
+	select ARMV7_A
+	help
+	  This option signifies the use of a Cortex-A9 CPU.
+
+if CPU_AARCH32_CORTEX_A
+
+config ARMV7_A
+	bool
+	select ATOMIC_OPERATIONS_BUILTIN
+	select ISA_ARM
+
+config ARMV7_EXCEPTION_STACK_SIZE
+	int "Undefined Instruction and Abort stack size (in bytes)"
+	default 256
+	help
+	  This option specifies the size of the stack used by the undefined
+	  instruction and data abort exception handlers.
+
+config ARMV7_FIQ_STACK_SIZE
+	int "FIQ stack size (in bytes)"
+	default 256
+	help
+	  This option specifies the size of the stack used by the FIQ handler.
+
+config ARMV7_SVC_STACK_SIZE
+	int "SVC stack size (in bytes)"
+	default 512
+	help
+	  This option specifies the size of the stack used by the SVC handler.
+
+config ARMV7_SYS_STACK_SIZE
+	int "SYS stack size (in bytes)"
+	default 1024
+	help
+	  This option specifies the size of the stack used by the system mode.
+
+config RUNTIME_NMI
+	default y
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config DCACHE_LINE_SIZE
+	default 32
+
+config ICACHE_LINE_SIZE
+	default 32
+
+endif # CPU_AARCH32_CORTEX_A
+
+config CPU_CORTEX_R4
+	bool
+	select CPU_AARCH32_CORTEX_R
+	select ARMV7_R
+	select ARMV7_R_FP if CPU_HAS_FPU
+	help
+	  This option signifies the use of a Cortex-R4 CPU
+
+config CPU_CORTEX_R5
+	bool
+	select CPU_AARCH32_CORTEX_R
+	select ARMV7_R
+	select ARMV7_R_FP if CPU_HAS_FPU
+	help
+	  This option signifies the use of a Cortex-R5 CPU
+
+config CPU_CORTEX_R7
+	bool
+	select CPU_AARCH32_CORTEX_R
+	select ARMV7_R
+	select ARMV7_R_FP if CPU_HAS_FPU
+	help
+	  This option signifies the use of a Cortex-R7 CPU
+
+config CPU_CORTEX_R52
+	bool
+	select CPU_AARCH32_CORTEX_R
+	select AARCH32_ARMV8_R
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	select VFP_SP_D16
+	help
+	  This option signifies the use of a Cortex-R52 CPU
+
+if CPU_AARCH32_CORTEX_R
+
+config ARMV7_R
+	bool
+	select ATOMIC_OPERATIONS_BUILTIN
+	select ISA_ARM
+	select ISA_THUMB2
+	help
+	  This option signifies the use of an ARMv7-R processor
+	  implementation.
+
+	  From https://developer.arm.com/products/architecture/cpu-architecture/r-profile:
+	  The Armv7-R architecture implements a traditional Arm architecture with
+	  multiple modes and supports a Protected Memory System Architecture
+	  (PMSA) based on a Memory Protection Unit (MPU). It supports the Arm (32)
+	  and Thumb (T32) instruction sets.
+
+config ARMV7_R_FP
+	bool
+	depends on ARMV7_R
+	help
+	  This option signifies the use of an ARMv7-R processor
+	  implementation supporting the Floating-Point Extension.
+
+config AARCH32_ARMV8_R
+	bool
+	select ATOMIC_OPERATIONS_BUILTIN
+	help
+	  This option signifies the use of an ARMv8-R AArch32 processor
+	  implementation.
+
+	  From https://developer.arm.com/products/architecture/cpu-architecture/r-profile:
+	  The Armv8-R architecture targets at the Real-time profile. It introduces
+	  virtualization at the highest security level while retaining the
+	  Protected Memory System Architecture (PMSA) based on a Memory Protection
+	  Unit (MPU). It supports the A32 and T32 instruction sets.
+
+config ARMV7_EXCEPTION_STACK_SIZE
+	int "Undefined Instruction and Abort stack size (in bytes)"
+	default 256
+	help
+	  This option specifies the size of the stack used by the undefined
+	  instruction and data abort exception handlers.
+
+config ARMV7_FIQ_STACK_SIZE
+	int "FIQ stack size (in bytes)"
+	default 256
+	help
+	  This option specifies the size of the stack used by the FIQ handler.
+
+config ARMV7_SVC_STACK_SIZE
+	int "SVC stack size (in bytes)"
+	default 512
+	help
+	  This option specifies the size of the stack used by the SVC handler.
+
+config ARMV7_SYS_STACK_SIZE
+	int "SYS stack size (in bytes)"
+	default 1024
+	help
+	  This option specifies the size of the stack used by the system mode.
+
+config RUNTIME_NMI
+	default y
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config DISABLE_TCM_ECC
+	bool "Disable ECC on TCM"
+	help
+	  This option disables ECC checks on Tightly Coupled Memory.
+
+config DCACHE_LINE_SIZE
+	default 64 if CPU_CORTEX_R52
+	default 32
+
+config ICACHE_LINE_SIZE
+	default 64 if CPU_CORTEX_R52
+	default 32
+
+endif # CPU_AARCH32_CORTEX_R

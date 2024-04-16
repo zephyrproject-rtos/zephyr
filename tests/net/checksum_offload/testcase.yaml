@@ -3,4 +3,6 @@ common:
 tests:
   net.offload:
     min_ram: 16
-    tags: net checksum_offload
+    tags:
+      - net
+      - checksum_offload

@@ -9,7 +9,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app);
 
-void main(void)
+int main(void)
 {
 	int cnt = 0;
 
@@ -17,4 +17,5 @@ void main(void)
 		LOG_INF("loop: %d", cnt++);
 		k_sleep(K_MSEC(500));
 	}
+	return 0;
 }

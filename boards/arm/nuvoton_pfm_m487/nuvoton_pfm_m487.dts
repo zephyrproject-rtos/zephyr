@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <nuvoton/m48x.dtsi>
 #include "nuvoton_pfm_m487-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Nuvoton PFM M487 board";
@@ -48,10 +49,12 @@
 		sw2: button_0 {
 			gpios = <&gpiog 15 GPIO_ACTIVE_LOW>;
 			label = "User SW2";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		sw3: button_1 {
 			gpios = <&gpiof 11 GPIO_ACTIVE_LOW>;
 			label = "User SW3";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 };

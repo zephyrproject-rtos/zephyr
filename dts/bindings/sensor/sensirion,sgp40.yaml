@@ -10,8 +10,8 @@ compatible: "sensirion,sgp40"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-    enable-selftest:
-      type: boolean
-      description: |
-        Enabling this will run a selftest when the driver initializes.
-        The selftest takes ~250ms.
+  enable-selftest:
+    type: boolean
+    description: |
+      Enabling this will run a selftest when the driver initializes.
+      The selftest takes ~250ms.

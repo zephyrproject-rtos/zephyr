@@ -12,7 +12,7 @@
 #include <stddef.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/pm/pm.h>
+#include <zephyr/sys/poweroff.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
@@ -108,7 +108,7 @@ static void bt_ready(int err)
 	printk("Beacon stopped\n");
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -146,6 +146,8 @@ void main(void)
 		printk("Bluetooth disable failed (err %d)\n", err);
 	}
 
-	printk("Shutdown\n");
-	pm_state_force(0u, &(struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
+	printk("Powering off\n");
+	sys_poweroff();
+
+	return 0;
 }

@@ -2,6 +2,7 @@
  * Copyright (c) 2019 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
+#define LOAPIC_BASE_ADDRESS DT_REG_ADDR(DT_NODELABEL(intc_loapic))
 
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/x86/multiboot.h>
@@ -142,7 +143,7 @@ x86_ap_start:
 	 * so we can locate our x86_cpuboot[] bundle. Put it in EBP.
 	 */
 
-	movl CONFIG_LOAPIC_BASE_ADDRESS+LOAPIC_ID, %eax
+	movl LOAPIC_BASE_ADDRESS+LOAPIC_ID, %eax
 	shrl $24, %eax
 	andl $0x0F, %eax		/* local APIC ID -> EAX */
 
@@ -261,6 +262,11 @@ enter_code64:
 
 	/* Enter C domain now that we have a stack set up, never to return */
 	movq %rbp, %rdi
+#ifdef CONFIG_STACK_CANARIES_TLS
+	pushq %rsp
+	call z_x86_early_tls_update_gdt
+	popq %rsp
+#endif
 	call z_x86_cpu_init
 
 	/* 64 bit OS entry point, used by EFI support.  UEFI
@@ -805,7 +811,7 @@ irq_dispatch:
 	movl $(X86_X2APIC_BASE_MSR + (LOAPIC_EOI >> 4)), %ecx
 	wrmsr
 #else /* xAPIC */
-	movq z_loapic_regs, %rdx
+	movq Z_TOPLEVEL_RAM_NAME(LOAPIC_REGS_STR), %rdx
 	movl %eax, LOAPIC_EOI(%rdx)
 #endif /* CONFIG_X2APIC */
 

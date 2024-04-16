@@ -12,6 +12,16 @@ config SEGGER_SYSVIEW_RTT_BUFFER_SIZE
 	depends on SEGGER_SYSTEMVIEW
 	default 4096
 
+config SEGGER_SYSVIEW_RTT_CHANNEL
+	int "RTT channel for SystemView"
+	depends on SEGGER_SYSTEMVIEW
+	default 0
+
+config SEGGER_SYSVIEW_APP_NAME
+	string "Application name to be displayed in SystemView"
+	depends on SEGGER_SYSTEMVIEW
+	default "ZephyrSysView"
+
 config SEGGER_SYSVIEW_POST_MORTEM_MODE
 	bool "Post-mortem mode for SystemView"
 	depends on SEGGER_SYSTEMVIEW

@@ -1,0 +1,12 @@
+tests:
+  dummy.agnostic.group1.subgroup2:
+    build_only: true
+    platform_allow:
+      - native_posix
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - native_posix
+    tags:
+      - agnostic
+      - subgrouped

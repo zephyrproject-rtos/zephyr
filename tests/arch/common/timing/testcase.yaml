@@ -5,4 +5,6 @@ common:
     - native
 tests:
   arch.common.timing:
-    tags: timing arch
+    tags:
+      - timing
+      - arch

@@ -21,7 +21,12 @@
 #include "wdt_iwdg_stm32.h"
 
 #define IWDG_PRESCALER_MIN	(4U)
-#define IWDG_PRESCALER_MAX	(256U)
+
+#if defined(LL_IWDG_PRESCALER_1024)
+#define IWDG_PRESCALER_MAX (1024U)
+#else
+#define IWDG_PRESCALER_MAX (256U)
+#endif
 
 #define IWDG_RELOAD_MIN		(0x0000U)
 #define IWDG_RELOAD_MAX		(0x0FFFU)
@@ -41,7 +46,7 @@
 
 /*
  * Status register needs 5 LSI clock cycles divided by prescaler to be updated.
- * With highest prescaler (256) and considering clock variation, we will wait
+ * With highest prescaler and considering clock variation, we will wait
  * maximum 6 cycles (48 ms at 32 kHz) for register update.
  */
 #define IWDG_SR_UPDATE_TIMEOUT	(6U * IWDG_PRESCALER_MAX * \
@@ -79,13 +84,15 @@ static void iwdg_stm32_convert_timeout(uint32_t timeout,
 
 static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 {
-	ARG_UNUSED(dev);
+	struct iwdg_stm32_data *data = IWDG_STM32_DATA(dev);
+	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
+	uint32_t tickstart;
 
 	/* Deactivate running when debugger is attached. */
 	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
 #if defined(CONFIG_SOC_SERIES_STM32F0X)
 		LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_DBGMCU);
-#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+#elif defined(CONFIG_SOC_SERIES_STM32C0X) || defined(CONFIG_SOC_SERIES_STM32G0X)
 		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
 #elif defined(CONFIG_SOC_SERIES_STM32L0X)
 		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
@@ -101,7 +108,25 @@ static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 		return -ENOTSUP;
 	}
 
-	/* Enable the IWDG only when the timeout is installed */
+	/* Enable the IWDG now and write IWDG registers at the same time */
+	LL_IWDG_Enable(iwdg);
+	LL_IWDG_EnableWriteAccess(iwdg);
+	/* Write the prescaler and reload counter to the IWDG registers*/
+	LL_IWDG_SetPrescaler(iwdg, data->prescaler);
+	LL_IWDG_SetReloadCounter(iwdg, data->reload);
+
+	tickstart = k_uptime_get_32();
+
+	/* Wait for the update operation completed */
+	while (LL_IWDG_IsReady(iwdg) == 0) {
+		if ((k_uptime_get_32() - tickstart) > IWDG_SR_UPDATE_TIMEOUT) {
+			return -ENODEV;
+		}
+	}
+
+	/* Reload counter just before leaving */
+	LL_IWDG_ReloadCounter(iwdg);
+
 	return 0;
 }
 
@@ -116,16 +141,16 @@ static int iwdg_stm32_disable(const struct device *dev)
 static int iwdg_stm32_install_timeout(const struct device *dev,
 				      const struct wdt_timeout_cfg *config)
 {
-	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
+	struct iwdg_stm32_data *data = IWDG_STM32_DATA(dev);
 	uint32_t timeout = config->window.max * USEC_PER_MSEC;
 	uint32_t prescaler = 0U;
 	uint32_t reload = 0U;
-	uint32_t tickstart;
 
 	if (config->callback != NULL) {
 		return -ENOTSUP;
 	}
 
+	/* Calculating parameters to be applied later, on setup */
 	iwdg_stm32_convert_timeout(timeout, &prescaler, &reload);
 
 	if (!(IS_IWDG_TIMEOUT(timeout) && IS_IWDG_PRESCALER(prescaler) &&
@@ -134,24 +159,11 @@ static int iwdg_stm32_install_timeout(const struct device *dev,
 		return -EINVAL;
 	}
 
-	tickstart = k_uptime_get_32();
+	/* Store the calculated values to write in the iwdg registers */
+	data->prescaler = prescaler;
+	data->reload = reload;
 
-	LL_IWDG_Enable(iwdg);
-	LL_IWDG_EnableWriteAccess(iwdg);
-
-	LL_IWDG_SetPrescaler(iwdg, prescaler);
-	LL_IWDG_SetReloadCounter(iwdg, reload);
-
-	/* Wait for the update operation completed */
-	while (LL_IWDG_IsReady(iwdg) == 0) {
-		if ((k_uptime_get_32() - tickstart) > IWDG_SR_UPDATE_TIMEOUT) {
-			return -ENODEV;
-		}
-	}
-
-	/* Reload counter just before leaving */
-	LL_IWDG_ReloadCounter(iwdg);
-
+	/* Do not enable and update the iwdg here but during wdt_setup() */
 	return 0;
 }
 

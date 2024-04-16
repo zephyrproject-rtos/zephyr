@@ -5,5 +5,12 @@ compatible: "altr,jtag-uart"
 include: uart-controller.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
+
+  write-fifo-depth:
+    type: int
+    default: 64
+    description: |
+      Buffer size of transmit fifo. This used to implement irq_tx_complete.
+      Must be same as Write FIFO: Buffer depth (bytes) in platform designer.

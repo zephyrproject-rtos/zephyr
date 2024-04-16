@@ -47,8 +47,8 @@ struct sx9500_data {
 
 #ifdef CONFIG_SX9500_TRIGGER
 	const struct device *dev;
-	struct sensor_trigger trigger_drdy;
-	struct sensor_trigger trigger_near_far;
+	const struct sensor_trigger *trigger_drdy;
+	const struct sensor_trigger *trigger_near_far;
 
 	sensor_trigger_handler_t handler_drdy;
 	sensor_trigger_handler_t handler_near_far;

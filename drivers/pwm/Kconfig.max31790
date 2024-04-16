@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2023 SILA Embedded Solutions GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config PWM_MAX31790
+	bool "MAX31790 6-channel I2C-bus PWM controller"
+	default y
+	depends on DT_HAS_MAXIM_MAX31790_ENABLED
+	select I2C
+	help
+	  Enable driver for MAX31790 6-channel I2C-bus PWM controller.

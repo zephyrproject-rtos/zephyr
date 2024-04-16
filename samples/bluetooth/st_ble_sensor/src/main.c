@@ -74,7 +74,7 @@ static const struct bt_data ad[] = {
 };
 
 /* BLE connection */
-struct bt_conn *conn;
+struct bt_conn *ble_conn;
 /* Notification state */
 volatile bool notify_enable;
 
@@ -116,7 +116,7 @@ static void button_callback(const struct device *gpiob, struct gpio_callback *cb
 	int err;
 
 	LOG_INF("Button pressed");
-	if (conn) {
+	if (ble_conn) {
 		if (notify_enable) {
 			err = bt_gatt_notify(NULL, &stsensor_svc.attrs[4],
 					     &but_val, sizeof(but_val));
@@ -157,17 +157,17 @@ static void connected(struct bt_conn *connected, uint8_t err)
 		LOG_ERR("Connection failed (err %u)", err);
 	} else {
 		LOG_INF("Connected");
-		if (!conn) {
-			conn = bt_conn_ref(connected);
+		if (!ble_conn) {
+			ble_conn = bt_conn_ref(connected);
 		}
 	}
 }
 
 static void disconnected(struct bt_conn *disconn, uint8_t reason)
 {
-	if (conn) {
-		bt_conn_unref(conn);
-		conn = NULL;
+	if (ble_conn) {
+		bt_conn_unref(ble_conn);
+		ble_conn = NULL;
 	}
 
 	LOG_INF("Disconnected (reason %u)", reason);
@@ -178,18 +178,18 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
-void main(void)
+int main(void)
 {
 	int err;
 
 	err = button_init(button_callback);
 	if (err) {
-		return;
+		return 0;
 	}
 
 	err = led_init();
 	if (err) {
-		return;
+		return 0;
 	}
 
 	/* Initialize the Bluetooth Subsystem */
@@ -197,4 +197,5 @@ void main(void)
 	if (err) {
 		LOG_ERR("Bluetooth init failed (err %d)", err);
 	}
+	return 0;
 }

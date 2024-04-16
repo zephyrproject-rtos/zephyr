@@ -21,7 +21,7 @@
 		external_flash_pins_routing: switch-ext-mem-ctrl {
 			compatible = "nordic,nrf9160dk-optional-routing";
 			control-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
-			status = "disabled";
+			status = "okay";
 		};
 	};
 };

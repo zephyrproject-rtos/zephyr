@@ -20,3 +20,4 @@ supported:
   - dma
   - nvs
   - counter
+vendor: st

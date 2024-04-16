@@ -16,7 +16,7 @@
  *   terminal_offset	Requested left margin.
  *   offset_first_line	Add margin to the first printed line.
  */
-static void formatted_text_print(const struct shell *shell, const char *str,
+static void formatted_text_print(const struct shell *sh, const char *str,
 				 size_t terminal_offset, bool offset_first_line)
 {
 	size_t offset = 0;
@@ -27,12 +27,12 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 	}
 
 	if (offset_first_line) {
-		z_shell_op_cursor_horiz_move(shell, terminal_offset);
+		z_shell_op_cursor_horiz_move(sh, terminal_offset);
 	}
 
 
 	/* Skipping whitespace. */
-	while (isspace((int) *(str + offset))) {
+	while (isspace((int) *(str + offset)) != 0) {
 		++offset;
 	}
 
@@ -42,21 +42,21 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 		length = z_shell_strlen(str) - offset;
 
 		if (length <=
-		    shell->ctx->vt100_ctx.cons.terminal_wid - terminal_offset) {
+		    sh->ctx->vt100_ctx.cons.terminal_wid - terminal_offset) {
 			for (idx = 0; idx < length; idx++) {
 				if (*(str + offset + idx) == '\n') {
-					z_transport_buffer_flush(shell);
-					z_shell_write(shell, str + offset, idx);
+					z_transport_buffer_flush(sh);
+					z_shell_write(sh, str + offset, idx);
 					offset += idx + 1;
-					z_cursor_next_line_move(shell);
-					z_shell_op_cursor_horiz_move(shell,
+					z_cursor_next_line_move(sh);
+					z_shell_op_cursor_horiz_move(sh,
 							terminal_offset);
 					break;
 				}
 			}
 
 			/* String will fit in one line. */
-			z_shell_raw_fprintf(shell->fprintf_ctx, str + offset);
+			z_shell_raw_fprintf(sh->fprintf_ctx, str + offset);
 
 			break;
 		}
@@ -64,12 +64,12 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 		/* String is longer than terminal line so text needs to
 		 * divide in the way to not divide words.
 		 */
-		length = shell->ctx->vt100_ctx.cons.terminal_wid
+		length = sh->ctx->vt100_ctx.cons.terminal_wid
 				- terminal_offset;
 
 		while (true) {
 			/* Determining line break. */
-			if (isspace((int) (*(str + offset + idx)))) {
+			if (isspace((int) (*(str + offset + idx))) != 0) {
 				length = idx;
 				if (*(str + offset + idx) == '\n') {
 					break;
@@ -77,7 +77,7 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 			}
 
 			if ((idx + terminal_offset) >=
-			    shell->ctx->vt100_ctx.cons.terminal_wid) {
+			    sh->ctx->vt100_ctx.cons.terminal_wid) {
 				/* End of line reached. */
 				break;
 			}
@@ -88,25 +88,25 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 		/* Writing one line, fprintf IO buffer must be flushed
 		 * before calling shell_write.
 		 */
-		z_transport_buffer_flush(shell);
-		z_shell_write(shell, str + offset, length);
+		z_transport_buffer_flush(sh);
+		z_shell_write(sh, str + offset, length);
 		offset += length;
 
 		/* Calculating text offset to ensure that next line will
 		 * not begin with a space.
 		 */
-		while (isspace((int) (*(str + offset)))) {
+		while (isspace((int) (*(str + offset))) != 0) {
 			++offset;
 		}
 
-		z_cursor_next_line_move(shell);
-		z_shell_op_cursor_horiz_move(shell, terminal_offset);
+		z_cursor_next_line_move(sh);
+		z_shell_op_cursor_horiz_move(sh, terminal_offset);
 
 	}
-	z_cursor_next_line_move(shell);
+	z_cursor_next_line_move(sh);
 }
 
-static void help_item_print(const struct shell *shell, const char *item_name,
+static void help_item_print(const struct shell *sh, const char *item_name,
 			    uint16_t item_name_width, const char *item_help)
 {
 	static const uint8_t tabulator[] = "  ";
@@ -119,36 +119,36 @@ static void help_item_print(const struct shell *shell, const char *item_name,
 	if (!IS_ENABLED(CONFIG_NEWLIB_LIBC) &&
 	    !IS_ENABLED(CONFIG_ARCH_POSIX)) {
 		/* print option name */
-		z_shell_fprintf(shell, SHELL_NORMAL, "%s%-*s", tabulator,
+		z_shell_fprintf(sh, SHELL_NORMAL, "%s%-*s", tabulator,
 				item_name_width, item_name);
 	} else {
 		uint16_t tmp = item_name_width - strlen(item_name);
 		char space = ' ';
 
-		z_shell_fprintf(shell, SHELL_NORMAL, "%s%s", tabulator,
+		z_shell_fprintf(sh, SHELL_NORMAL, "%s%s", tabulator,
 				item_name);
 
 		if (item_help) {
 			for (uint16_t i = 0; i < tmp; i++) {
-				z_shell_write(shell, &space, 1);
+				z_shell_write(sh, &space, 1);
 			}
 		}
 	}
 
 	if (item_help == NULL) {
-		z_cursor_next_line_move(shell);
+		z_cursor_next_line_move(sh);
 		return;
 	} else {
-		z_shell_fprintf(shell, SHELL_NORMAL, "%s:", tabulator);
+		z_shell_fprintf(sh, SHELL_NORMAL, "%s:", tabulator);
 	}
 	/* print option help */
-	formatted_text_print(shell, item_help, offset, false);
+	formatted_text_print(sh, item_help, offset, false);
 }
 
 /* Function prints all subcommands of the parent command together with their
  * help string
  */
-void z_shell_help_subcmd_print(const struct shell *shell,
+void z_shell_help_subcmd_print(const struct shell *sh,
 			       const struct shell_static_entry *parent,
 			       const char *description)
 {
@@ -168,18 +168,18 @@ void z_shell_help_subcmd_print(const struct shell *shell,
 	}
 
 	if (description != NULL) {
-		z_shell_fprintf(shell, SHELL_NORMAL, description);
+		z_shell_fprintf(sh, SHELL_NORMAL, description);
 	}
 
 	/* Printing subcommands and help string (if exists). */
 	idx = 0;
 
 	while ((entry = z_shell_cmd_get(parent, idx++, &dloc)) != NULL) {
-		help_item_print(shell, entry->syntax, longest, entry->help);
+		help_item_print(sh, entry->syntax, longest, entry->help);
 	}
 }
 
-void z_shell_help_cmd_print(const struct shell *shell,
+void z_shell_help_cmd_print(const struct shell *sh,
 			    const struct shell_static_entry *cmd)
 {
 	static const char cmd_sep[] = " - "; /* commands separator */
@@ -187,9 +187,9 @@ void z_shell_help_cmd_print(const struct shell *shell,
 
 	field_width = z_shell_strlen(cmd->syntax) + z_shell_strlen(cmd_sep);
 
-	z_shell_fprintf(shell, SHELL_NORMAL, "%s%s", cmd->syntax, cmd_sep);
+	z_shell_fprintf(sh, SHELL_NORMAL, "%s%s", cmd->syntax, cmd_sep);
 
-	formatted_text_print(shell, cmd->help, field_width, false);
+	formatted_text_print(sh, cmd->help, field_width, false);
 }
 
 bool z_shell_help_request(const char *str)

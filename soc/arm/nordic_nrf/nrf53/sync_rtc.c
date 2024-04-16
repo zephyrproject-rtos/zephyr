@@ -8,6 +8,7 @@
 #include <helpers/nrfx_gppi.h>
 #include <zephyr/drivers/timer/nrf_rtc_timer.h>
 #include <zephyr/drivers/mbox.h>
+#include <zephyr/init.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sync_rtc, CONFIG_SYNC_RTC_LOG_LEVEL);
@@ -226,10 +227,8 @@ static int mbox_rx_init(void *user_data)
 }
 
 /* Setup RTC synchronization. */
-static int sync_rtc_setup(const struct device *unused)
+static int sync_rtc_setup(void)
 {
-	ARG_UNUSED(unused);
-
 	nrfx_err_t err;
 	union rtc_sync_channels channels;
 	int32_t sync_rtc_ch;

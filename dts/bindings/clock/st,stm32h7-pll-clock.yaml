@@ -27,41 +27,41 @@ compatible: "st,stm32h7-pll-clock"
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-    "#clock-cells":
-      const: 0
+  "#clock-cells":
+    const: 0
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    div-m:
-      type: int
-      required: true
-      description: |
-          Division factor for PLLx
-          input clock
-          Valid range: 1 - 63
+  div-m:
+    type: int
+    required: true
+    description: |
+        Division factor for PLLx
+        input clock
+        Valid range: 1 - 63
 
-    mul-n:
-      type: int
-      required: true
-      description: |
-          Main PLL multiplication factor for VCOx
-          Valid range: 4 - 512
+  mul-n:
+    type: int
+    required: true
+    description: |
+        Main PLL multiplication factor for VCOx
+        Valid range: 4 - 512
 
-    div-p:
-      type: int
-      description: |
-          PLL division factor for pllx_p_ck
-          Valid range: 1 - 128
+  div-p:
+    type: int
+    description: |
+        PLL division factor for pllx_p_ck
+        Valid range: 1 - 128
 
-    div-q:
-      type: int
-      description: |
-          PLL division factor for pllx_q_ck
-          Valid range: 1 - 128
+  div-q:
+    type: int
+    description: |
+        PLL division factor for pllx_q_ck
+        Valid range: 1 - 128
 
-    div-r:
-      type: int
-      description: |
-          PLL division factor for pllx_r_ck
-          Valid range: 1 - 128
+  div-r:
+    type: int
+    description: |
+        PLL division factor for pllx_r_ck
+        Valid range: 1 - 128

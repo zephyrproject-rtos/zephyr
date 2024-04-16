@@ -1,0 +1,14 @@
+# Copyright (c) 2023 NXP Semiconductors
+# Copyright (c) 2023 Cognipilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+config NCP5623
+	bool "NCP5623 LED driver"
+	default y
+	depends on DT_HAS_ONNN_NCP5623_ENABLED
+	select I2C
+	help
+	  Enable driver for the Onsemi NCP5623 I2C LED controller.
+	  The controller and the driver support two hardware configurations:
+	   - one three-channel (RGB) LED
+	   - or three single-channel LEDs

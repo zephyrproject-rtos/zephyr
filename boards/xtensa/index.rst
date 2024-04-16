@@ -1,10 +1,10 @@
 .. _boards-xtensa:
 
-XTENSA Boards
+Xtensa Boards
 #############
 
 .. toctree::
    :maxdepth: 1
    :glob:
 
-   **/*
+   **/index

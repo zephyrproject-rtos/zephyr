@@ -347,7 +347,7 @@ static int bmc150_magn_channel_get(const struct device *dev,
 		bmc150_magn_convert(val + 2, data->sample_z);
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;

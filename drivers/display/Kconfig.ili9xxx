@@ -28,6 +28,15 @@ config ILI9341
 	help
 	  Enable driver for ILI9341 display driver.
 
+config ILI9342C
+	bool "ILI9342C display driver"
+	default y
+	depends on DT_HAS_ILITEK_ILI9342C_ENABLED
+	select SPI
+	select ILI9XXX
+	help
+	  Enable driver for ILI9342C display driver.
+
 config ILI9488
 	bool "ILI9488 display driver"
 	default y

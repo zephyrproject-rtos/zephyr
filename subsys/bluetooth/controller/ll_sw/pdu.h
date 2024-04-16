@@ -251,6 +251,9 @@
 #define PDU_ADV_DATA_HEADER_TYPE_OFFSET 1U
 #define PDU_ADV_DATA_HEADER_DATA_OFFSET 2U
 
+/* Advertising Data Types in ACAD */
+#define PDU_ADV_DATA_TYPE_CHANNEL_MAP_UPDATE_IND 0x28
+
 /*
  * Macros to return correct Data Channel PDU time
  * Note: formula is valid for 1M, 2M and Coded S8
@@ -264,6 +267,18 @@
 #define PHY_CODED    BIT(2)
 #define PHY_FLAGS_S2 0
 #define PHY_FLAGS_S8 BIT(0)
+
+/* Macros for getting/setting did/sid from pdu_adv_adi */
+#define PDU_ADV_ADI_DID_GET(adi) ((adi)->did_sid_packed[0] | \
+					     (((adi)->did_sid_packed[1] & 0x0F) << 8))
+#define PDU_ADV_ADI_SID_GET(adi) (((adi)->did_sid_packed[1] >> 4) & 0x0F)
+#define PDU_ADV_ADI_SID_SET(adi, sid) (adi)->did_sid_packed[1] = (((sid) << 4) + \
+								 ((adi)->did_sid_packed[1] & 0x0F))
+#define PDU_ADV_ADI_DID_SID_SET(adi, did, sid) \
+	do { \
+		(adi)->did_sid_packed[0] = (did) & 0xFF; \
+		(adi)->did_sid_packed[1] = (((did) >> 8) & 0x0F) + ((sid) << 4); \
+	} while (0)
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #define CODED_PHY_PREAMBLE_TIME_US       80
@@ -339,6 +354,7 @@
 						    ((enc) ? \
 						     (PDU_MIC_SIZE) : 0), \
 						    (phy))
+#define PDU_CIS_OFFSET_MIN_US 500U
 
 struct pdu_adv_adv_ind {
 	uint8_t addr[BDADDR_SIZE];
@@ -429,13 +445,12 @@ enum pdu_adv_mode {
 #define PDU_ADV_SID_COUNT 16
 
 struct pdu_adv_adi {
-#ifdef CONFIG_LITTLE_ENDIAN
-	uint16_t did:12;
-	uint16_t sid:4;
-#else
-	uint16_t sid:4;
-	uint16_t did:12;
-#endif /* CONFIG_LITTLE_ENDIAN */
+	/* did:12
+	 * sid:4
+	 * NOTE: This layout as bitfields is not portable for BE using
+	 * endianness conversion macros.
+	 */
+	uint8_t did_sid_packed[2];
 } __packed;
 
 struct pdu_adv_aux_ptr {
@@ -471,18 +486,6 @@ enum pdu_adv_aux_phy {
 	EXT_ADV_AUX_PHY_LE_2M    = 0x01,
 	EXT_ADV_AUX_PHY_LE_CODED = 0x02,
 };
-
-struct pdu_cte_info {
-#ifdef CONFIG_LITTLE_ENDIAN
-	uint8_t  time:5;
-	uint8_t  rfu:1;
-	uint8_t  type:2;
-#else
-	uint8_t  type:2;
-	uint8_t  rfu:1;
-	uint8_t  time:5;
-#endif /* CONFIG_LITTLE_ENDIAN */
-} __packed;
 
 struct pdu_adv_sync_info {
 #ifdef CONFIG_LITTLE_ENDIAN
@@ -958,14 +961,7 @@ struct pdu_data {
 
 	uint8_t len;
 
-#if !defined(CONFIG_SOC_OPENISA_RV32M1_RISCV32)
-#if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
-	union {
-		uint8_t resv; /* TODO: remove nRF specific code */
-		struct pdu_cte_info cte_info; /* BT 5.1 Core spec. CTEInfo storage */
-	};
-#endif /* !CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
-#endif /* !CONFIG_SOC_OPENISA_RV32M1_RISCV32 */
+	struct pdu_data_vnd_octet3 octet3;
 
 	union {
 		struct pdu_data_llctrl llctrl;
@@ -992,7 +988,11 @@ struct pdu_iso {
 	uint8_t hdr_other:6;
 	uint8_t ll_id:2;
 #endif /* CONFIG_LITTLE_ENDIAN */
-	uint8_t length;
+
+	uint8_t len;
+
+	struct pdu_iso_vnd_octet3 octet3;
+
 	uint8_t payload[0];
 } __packed;
 
@@ -1006,20 +1006,20 @@ struct pdu_iso_sdu_sh {
 	uint8_t cmplt:1;
 	uint8_t rfu:6;
 
-	uint8_t length;
+	uint8_t len;
 	/* Note, timeoffset only available in first segment of sdu */
 	uint32_t timeoffset:24;
 	uint32_t payload:8;
-
 #else
 	uint8_t rfu:6;
 	uint8_t cmplt:1;
 	uint8_t sc:1;
 
-	uint8_t length;
+	uint8_t len;
+
 	/* Note, timeoffset only available in first segment of sdu */
-	uint32_t payload:8;
 	uint32_t timeoffset:24;
+	uint32_t payload:8;
 #endif /* CONFIG_LITTLE_ENDIAN */
 } __packed;
 
@@ -1050,7 +1050,11 @@ struct pdu_cis {
 	uint8_t nesn:1;
 	uint8_t ll_id:2;
 #endif /* CONFIG_LITTLE_ENDIAN */
-	uint8_t length;
+
+	uint8_t len;
+
+	struct pdu_cis_vnd_octet3 octet3;
+
 	uint8_t payload[0];
 } __packed;
 
@@ -1102,7 +1106,11 @@ struct pdu_bis {
 	uint8_t cssn:3;
 	uint8_t ll_id:2;
 #endif /* CONFIG_LITTLE_ENDIAN */
+
 	uint8_t len;
+
+	struct pdu_bis_vnd_octet3 octet3;
+
 	union {
 		uint8_t payload[0];
 		struct pdu_big_ctrl ctrl;
@@ -1187,13 +1195,11 @@ struct pdu_dtm {
 	uint8_t rfu0:1;
 	uint8_t type:4;
 #endif /* CONFIG_LITTLE_ENDIAN */
-	uint8_t length;
-#if defined(CONFIG_BT_CTLR_DF_CTE_TX)
-	union {
-		uint8_t resv; /* TODO: remove nRF specific code */
-		struct pdu_cte_info cte_info; /* BT 5.1 Core spec. CTEInfo storage */
-	};
-#endif
+
+	uint8_t len;
+
+	struct pdu_data_vnd_octet3 octet3;
+
 	uint8_t payload[0];
 } __packed;
 

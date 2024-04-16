@@ -21,14 +21,13 @@
 #include "gesture_predictor.hpp"
 #include "magic_wand_model_data.hpp"
 #include "output_handler.hpp"
-#include <tensorflow/lite/micro/micro_error_reporter.h>
+#include <tensorflow/lite/micro/micro_log.h>
 #include <tensorflow/lite/micro/micro_interpreter.h>
 #include <tensorflow/lite/micro/micro_mutable_op_resolver.h>
 #include <tensorflow/lite/schema/schema_generated.h>
 
 /* Globals, used for compatibility with Arduino-style sketches. */
 namespace {
-	tflite::ErrorReporter *error_reporter = nullptr;
 	const tflite::Model *model = nullptr;
 	tflite::MicroInterpreter *interpreter = nullptr;
 	TfLiteTensor *model_input = nullptr;
@@ -45,22 +44,14 @@ namespace {
 /* The name of this function is important for Arduino compatibility. */
 void setup(void)
 {
-	/* Set up logging. Google style is to avoid globals or statics because of
-	 * lifetime uncertainty, but since this has a trivial destructor it's okay.
-	 */
-	static tflite::MicroErrorReporter micro_error_reporter; /* NOLINT */
-
-	error_reporter = &micro_error_reporter;
-
 	/* Map the model into a usable data structure. This doesn't involve any
 	 * copying or parsing, it's a very lightweight operation.
 	 */
 	model = tflite::GetModel(g_magic_wand_model_data);
 	if (model->version() != TFLITE_SCHEMA_VERSION) {
-		TF_LITE_REPORT_ERROR(error_reporter,
-				     "Model provided is schema version %d not equal "
-				     "to supported version %d.",
-				     model->version(), TFLITE_SCHEMA_VERSION);
+		MicroPrintf("Model provided is schema version %d not equal "
+				    "to supported version %d.",
+				    model->version(), TFLITE_SCHEMA_VERSION);
 		return;
 	}
 
@@ -79,7 +70,7 @@ void setup(void)
 
 	/* Build an interpreter to run the model with. */
 	static tflite::MicroInterpreter static_interpreter(
-		model, micro_op_resolver, tensor_arena, kTensorArenaSize, error_reporter);
+		model, micro_op_resolver, tensor_arena, kTensorArenaSize);
 	interpreter = &static_interpreter;
 
 	/* Allocate memory from the tensor_arena for the model's tensors. */
@@ -91,16 +82,15 @@ void setup(void)
 	    (model_input->dims->data[1] != 128) ||
 	    (model_input->dims->data[2] != kChannelNumber) ||
 	    (model_input->type != kTfLiteFloat32)) {
-		TF_LITE_REPORT_ERROR(error_reporter,
-				     "Bad input tensor parameters in model");
+		MicroPrintf("Bad input tensor parameters in model");
 		return;
 	}
 
 	input_length = model_input->bytes / sizeof(float);
 
-	TfLiteStatus setup_status = SetupAccelerometer(error_reporter);
+	TfLiteStatus setup_status = SetupAccelerometer();
 	if (setup_status != kTfLiteOk) {
-		TF_LITE_REPORT_ERROR(error_reporter, "Set up failed\n");
+		MicroPrintf("Set up failed\n");
 	}
 }
 
@@ -108,7 +98,7 @@ void loop(void)
 {
 	/* Attempt to read new data from the accelerometer. */
 	bool got_data =
-		ReadAccelerometer(error_reporter, model_input->data.f, input_length);
+		ReadAccelerometer(model_input->data.f, input_length);
 
 	/* If there was no new data, wait until next time. */
 	if (!got_data) {
@@ -118,13 +108,12 @@ void loop(void)
 	/* Run inference, and report any error */
 	TfLiteStatus invoke_status = interpreter->Invoke();
 	if (invoke_status != kTfLiteOk) {
-		TF_LITE_REPORT_ERROR(error_reporter, "Invoke failed on index: %d\n",
-				     begin_index);
+		MicroPrintf("Invoke failed on index: %d\n", begin_index);
 		return;
 	}
 	/* Analyze the results to obtain a prediction */
 	int gesture_index = PredictGesture(interpreter->output(0)->data.f);
 
 	/* Produce an output */
-	HandleOutput(error_reporter, gesture_index);
+	HandleOutput(gesture_index);
 }

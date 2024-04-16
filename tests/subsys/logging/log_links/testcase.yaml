@@ -2,5 +2,7 @@ tests:
   logging.log_links:
     integration_platforms:
       - native_posix
-    tags: log_links logging
+    tags:
+      - log_links
+      - logging
     filter: not CONFIG_LOG_MODE_IMMEDIATE

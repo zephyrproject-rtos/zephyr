@@ -10,11 +10,11 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AVDTP_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AVDTP_H_
 
+#include <zephyr/bluetooth/l2cap.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <zephyr/bluetooth/l2cap.h>
 
 /** @brief AVDTP SEID Information */
 struct bt_avdtp_seid_info {

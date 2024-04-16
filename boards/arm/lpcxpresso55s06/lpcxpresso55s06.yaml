@@ -15,3 +15,5 @@ toolchain:
   - xtools
 supported:
   - gpio
+  - can
+vendor: nxp

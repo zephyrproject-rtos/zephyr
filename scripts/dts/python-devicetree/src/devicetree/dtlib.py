@@ -21,7 +21,7 @@ import string
 import sys
 import textwrap
 from typing import Any, Dict, Iterable, List, \
-    NamedTuple, NoReturn, Optional, Set, Tuple, Union
+    NamedTuple, NoReturn, Optional, Set, Tuple, TYPE_CHECKING, Union
 
 # NOTE: tests/test_dtlib.py is the test suite for this library.
 
@@ -90,7 +90,7 @@ class Node:
         """
         # Remember to update DT.__deepcopy__() if you change this.
 
-        self.name = name
+        self._name = name
         self.props: Dict[str, 'Property'] = {}
         self.nodes: Dict[str, 'Node'] = {}
         self.labels: List[str] = []
@@ -109,6 +109,15 @@ class Node:
                                     "in node name")
 
     @property
+    def name(self) -> str:
+        """
+        See the class documentation.
+        """
+        # Converted to a property to discourage renaming -- that has to be done
+        # via DT.move_node.
+        return self._name
+
+    @property
     def unit_addr(self) -> str:
         """
         See the class documentation.
@@ -122,6 +131,8 @@ class Node:
         """
         node_names = []
 
+        # This dynamic computation is required to be able to move
+        # nodes in the DT class.
         cur = self
         while cur.parent:
             node_names.append(cur.name)
@@ -310,7 +321,7 @@ class Property:
     @property
     def type(self) -> Type:
         """
-        See the class docstring.
+        See the class documentation.
         """
         # Data labels (e.g. 'foo = label: <3>') are irrelevant, so filter them
         # out
@@ -754,6 +765,8 @@ class DT:
 
         if filename is not None:
             self._parse_file(filename, include_path)
+        else:
+            self._include_path: List[str] = []
 
     @property
     def root(self) -> Node:
@@ -804,13 +817,60 @@ class DT:
 
     def has_node(self, path: str) -> bool:
         """
-        Returns True if the path or alias 'path' exists. See Node.get_node().
+        Returns True if the path or alias 'path' exists. See DT.get_node().
         """
         try:
             self.get_node(path)
             return True
         except DTError:
             return False
+
+    def move_node(self, node: Node, new_path: str):
+        """
+        Move a node 'node' to a new path 'new_path'. The entire subtree
+        rooted at 'node' is moved along with it.
+
+        You cannot move the root node or provide a 'new_path' value
+        where a node already exists. This method raises an exception
+        in both cases.
+
+        As a restriction on the current implementation, the parent node
+        of the new path must exist.
+        """
+        if node is self.root:
+            _err("the root node can't be moved")
+
+        if self.has_node(new_path):
+            _err(f"can't move '{node.path}' to '{new_path}': "
+                 'destination node exists')
+
+        if not new_path.startswith('/'):
+            _err(f"path '{new_path}' doesn't start with '/'")
+
+        for component in new_path.split('/'):
+            for char in component:
+                if char not in _nodename_chars:
+                    _err(f"new path '{new_path}': bad character '{char}'")
+
+        old_name = node.name
+        old_path = node.path
+
+        new_parent_path, _, new_name = new_path.rpartition('/')
+        if new_parent_path == '':
+            # '/foo'.rpartition('/') is ('', '/', 'foo').
+            new_parent_path = '/'
+        if not self.has_node(new_parent_path):
+            _err(f"can't move '{old_path}' to '{new_path}': "
+                 f"parent node '{new_parent_path}' doesn't exist")
+        new_parent = self.get_node(new_parent_path)
+        if TYPE_CHECKING:
+            assert new_parent is not None
+            assert node.parent is not None
+
+        del node.parent.nodes[old_name]
+        node._name = new_name
+        node.parent = new_parent
+        new_parent.nodes[new_name] = node
 
     def node_iter(self) -> Iterable[Node]:
         """
@@ -952,7 +1012,7 @@ class DT:
     # Parsing
     #
 
-    def _parse_file(self, filename, include_path):
+    def _parse_file(self, filename: str, include_path: Iterable[str]):
         self._include_path = list(include_path)
 
         with open(filename, encoding="utf-8") as f:
@@ -1041,7 +1101,7 @@ class DT:
                     node = self._ref2node(tok.val)
                 except DTError as e:
                     self._parse_error(e)
-                node = self._parse_node(node)
+                self._parse_node(node)
 
                 if label:
                     _append_no_dup(node.labels, label)
@@ -1063,8 +1123,7 @@ class DT:
                 self._parse_error("expected '/' or label reference (&foo)")
 
     def _parse_node(self, node):
-        # Parses the '{ ... };' part of 'node-name { ... };'. Returns the new
-        # Node.
+        # Parses the '{ ... };' part of 'node-name { ... };'.
 
         # We need to track which child nodes were defined in this set
         # of curly braces in order to reject duplicate node names.
@@ -1133,7 +1192,7 @@ class DT:
 
             elif tok.val == "}":
                 self._expect_token(";")
-                return node
+                return
 
             else:
                 self._parse_error("expected node name, property name, or '}'")
@@ -1976,7 +2035,7 @@ def to_nums(data: bytes, length: int = 4, signed: bool = False) -> List[int]:
             for i in range(0, len(data), length)]
 
 #
-# Public constants
+# Private helpers
 #
 
 def _check_is_bytes(data):

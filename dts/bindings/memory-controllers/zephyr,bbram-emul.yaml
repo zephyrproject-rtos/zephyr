@@ -8,7 +8,7 @@ compatible: "zephyr,bbram-emul"
 include: base.yaml
 
 properties:
-    size:
-        type: int
-        required: true
-        description: Size of the BBRAM region in bytes.
+  size:
+    type: int
+    required: true
+    description: Size of the BBRAM region in bytes.

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 ML!PA Consulting GmbH
+ * Copyright (c) 2023 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +10,6 @@
  * @brief Atmel SAMD MCU series initialization code
  */
 
-#include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -105,9 +105,8 @@ static void gclk_connect(uint8_t gclk, uint8_t src, uint8_t div)
 				| GCLK_GENCTRL_GENEN;
 }
 
-static int atmel_samd_init(const struct device *arg)
+void z_arm_platform_init(void)
 {
-	uint32_t key;
 	uint8_t dfll_div;
 
 	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC < SAM0_DFLL_FREQ_HZ) {
@@ -118,12 +117,14 @@ static int atmel_samd_init(const struct device *arg)
 		dfll_div = 1;
 	}
 
-	ARG_UNUSED(arg);
-
-	key = irq_lock();
-
-	/* enable the Cortex M Cache Controller */
-	CMCC->CTRL.bit.CEN = 1;
+	/*
+	 * Force Cortex M Cache Controller disabled
+	 *
+	 * It is not clear if regular Cortex-M instructions can be used to
+	 * perform cache maintenance or this is a proprietary cache controller
+	 * that require special SoC support.
+	 */
+	CMCC->CTRL.bit.CEN = 0;
 
 	gclk_reset();
 	osc32k_init();
@@ -135,15 +136,4 @@ static int atmel_samd_init(const struct device *arg)
 
 	/* connect GCLK2 to 48 MHz DFLL for USB */
 	gclk_connect(2, GCLK_SOURCE_DFLL48M, 0);
-
-	/* Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	irq_unlock(key);
-
-	return 0;
 }
-
-SYS_INIT(atmel_samd_init, PRE_KERNEL_1, 0);

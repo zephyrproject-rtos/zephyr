@@ -1,8 +1,5 @@
 tests:
-  kernel.message_queue_usage:
-    tags: kernel
-  kernel.message_queue_usage.linker_generator:
-    platform_allow: qemu_cortex_m3
-    tags: linker_generator
-    extra_configs:
-      - CONFIG_CMAKE_LINKER_GENERATOR=y
+  kernel.message_queue.usage:
+    tags:
+      - kernel
+      - message queue

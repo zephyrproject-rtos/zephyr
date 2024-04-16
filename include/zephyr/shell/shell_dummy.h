@@ -50,19 +50,19 @@ const struct shell *shell_backend_dummy_get_ptr(void);
  *
  * The returned data is always followed by a nul character at position *sizep
  *
- * @param shell	Shell pointer
+ * @param sh	Shell pointer
  * @param sizep	Returns size of data in shell buffer
  * @returns pointer to buffer containing shell output
  */
-const char *shell_backend_dummy_get_output(const struct shell *shell,
+const char *shell_backend_dummy_get_output(const struct shell *sh,
 					   size_t *sizep);
 
 /**
  * @brief Clears the output buffer in the shell backend.
  *
- * @param shell	Shell pointer
+ * @param sh	Shell pointer
  */
-void shell_backend_dummy_clear_output(const struct shell *shell);
+void shell_backend_dummy_clear_output(const struct shell *sh);
 
 #ifdef __cplusplus
 }

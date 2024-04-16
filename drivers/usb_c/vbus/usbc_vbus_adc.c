@@ -139,6 +139,11 @@ static int adc_vbus_init(const struct device *dev)
 	const struct gpio_dt_spec *gcd = &config->discharge_gpios;
 	int ret;
 
+	if (!adc_is_ready_dt(&config->adc_channel)) {
+		LOG_ERR("ADC controller device is not ready");
+		return -ENODEV;
+	}
+
 	/* Configure VBUS Measurement enable pin if defined */
 	if (gcp->port) {
 		ret = device_is_ready(gcp->port);
@@ -213,7 +218,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 			      &drv_data_##inst,						\
 			      &drv_config_##inst,					\
 			      POST_KERNEL,						\
-			      CONFIG_USBC_INIT_PRIORITY,				\
+			      CONFIG_USBC_VBUS_INIT_PRIORITY,				\
 			      &driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DRIVER_INIT)

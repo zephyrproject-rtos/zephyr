@@ -1,0 +1,15 @@
+# MXChip AZ3166 DevKit board configuration
+
+# Copyright (c) 2023 Benjamin Cabé <benjamin@zephyrproject.org>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_AZ3166_DEVKIT
+
+config BOARD
+	default "az3166_devkit"
+
+choice HTS221_TRIGGER_MODE
+	default HTS221_TRIGGER_NONE
+endchoice
+
+endif # BOARD_AZ3166_DEVKIT

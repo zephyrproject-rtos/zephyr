@@ -11,3 +11,4 @@ flash: 256
 supported:
   - ble
   - nvs
+vendor: nordic

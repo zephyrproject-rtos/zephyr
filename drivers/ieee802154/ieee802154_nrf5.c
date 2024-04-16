@@ -1,7 +1,7 @@
 /* ieee802154_nrf5.c - nRF5 802.15.4 driver */
 
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,11 +34,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #if defined(CONFIG_NET_L2_OPENTHREAD)
 #include <zephyr/net/openthread.h>
+#include <zephyr/net/ieee802154_radio_openthread.h>
 #endif
 
 #include <zephyr/sys/byteorder.h>
 #include <string.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/net/ieee802154_radio.h>
 #include <zephyr/irq.h>
@@ -150,10 +151,12 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		if (IS_ENABLED(CONFIG_IEEE802154_NRF5_FCS_IN_LENGTH)) {
 			pkt_len = rx_frame->psdu[0];
 		} else {
-			pkt_len = rx_frame->psdu[0] -  NRF5_FCS_LENGTH;
+			pkt_len = rx_frame->psdu[0] -  IEEE802154_FCS_LENGTH;
 		}
 
+#if defined(CONFIG_NET_BUF_DATA_SIZE)
 		__ASSERT_NO_MSG(pkt_len <= CONFIG_NET_BUF_DATA_SIZE);
+#endif
 
 		LOG_DBG("Frame received");
 
@@ -171,17 +174,11 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		}
 
 		net_pkt_set_ieee802154_lqi(pkt, rx_frame->lqi);
-		net_pkt_set_ieee802154_rssi(pkt, rx_frame->rssi);
+		net_pkt_set_ieee802154_rssi_dbm(pkt, rx_frame->rssi);
 		net_pkt_set_ieee802154_ack_fpb(pkt, rx_frame->ack_fpb);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-		struct net_ptp_time timestamp = {
-			.second = rx_frame->time / USEC_PER_SEC,
-			.nanosecond =
-				(rx_frame->time % USEC_PER_SEC) * NSEC_PER_USEC
-		};
-
-		net_pkt_set_timestamp(pkt, &timestamp);
+		net_pkt_set_timestamp_ns(pkt, rx_frame->time * NSEC_PER_USEC);
 #endif
 
 		LOG_DBG("Caught a packet (%u) (LQI: %u)",
@@ -220,13 +217,17 @@ static void nrf5_get_capabilities_at_boot(void)
 		IEEE802154_HW_PROMISC |
 		IEEE802154_HW_FILTER |
 		((caps & NRF_802154_CAPABILITY_CSMA) ? IEEE802154_HW_CSMA : 0UL) |
-		IEEE802154_HW_2_4_GHZ |
 		IEEE802154_HW_TX_RX_ACK |
+		IEEE802154_HW_RX_TX_ACK |
 		IEEE802154_HW_ENERGY_SCAN |
 		((caps & NRF_802154_CAPABILITY_DELAYED_TX) ? IEEE802154_HW_TXTIME : 0UL) |
 		((caps & NRF_802154_CAPABILITY_DELAYED_RX) ? IEEE802154_HW_RXTIME : 0UL) |
 		IEEE802154_HW_SLEEP_TO_TX |
-		((caps & NRF_802154_CAPABILITY_SECURITY) ? IEEE802154_HW_TX_SEC : 0UL);
+		((caps & NRF_802154_CAPABILITY_SECURITY) ? IEEE802154_HW_TX_SEC : 0UL)
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+		| IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA
+#endif
+		;
 }
 
 /* Radio device API */
@@ -262,7 +263,7 @@ static int nrf5_set_channel(const struct device *dev, uint16_t channel)
 	LOG_DBG("%u", channel);
 
 	if (channel < 11 || channel > 26) {
-		return -EINVAL;
+		return channel < 11 ? -ENOTSUP : -EINVAL;
 	}
 
 	nrf_802154_channel_set(channel);
@@ -283,7 +284,7 @@ static int nrf5_energy_scan_start(const struct device *dev,
 
 		if (nrf_802154_energy_detection(duration * 1000) == false) {
 			nrf5_data.energy_scan_done = NULL;
-			err = -EPERM;
+			err = -EBUSY;
 		}
 	} else {
 		err = -EALREADY;
@@ -375,7 +376,7 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 	if (IS_ENABLED(CONFIG_IEEE802154_NRF5_FCS_IN_LENGTH)) {
 		ack_len = nrf5_radio->ack_frame.psdu[0];
 	} else {
-		ack_len = nrf5_radio->ack_frame.psdu[0] - NRF5_FCS_LENGTH;
+		ack_len = nrf5_radio->ack_frame.psdu[0] - IEEE802154_FCS_LENGTH;
 	}
 
 	ack_pkt = net_pkt_rx_alloc_with_buffer(nrf5_radio->iface, ack_len,
@@ -397,20 +398,15 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 	}
 
 	net_pkt_set_ieee802154_lqi(ack_pkt, nrf5_radio->ack_frame.lqi);
-	net_pkt_set_ieee802154_rssi(ack_pkt, nrf5_radio->ack_frame.rssi);
+	net_pkt_set_ieee802154_rssi_dbm(ack_pkt, nrf5_radio->ack_frame.rssi);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-	struct net_ptp_time timestamp = {
-		.second = nrf5_radio->ack_frame.time / USEC_PER_SEC,
-		.nanosecond = (nrf5_radio->ack_frame.time % USEC_PER_SEC) * NSEC_PER_USEC
-	};
-
-	net_pkt_set_timestamp(ack_pkt, &timestamp);
+	net_pkt_set_timestamp_ns(ack_pkt, nrf5_radio->ack_frame.time * NSEC_PER_USEC);
 #endif
 
 	net_pkt_cursor_init(ack_pkt);
 
-	if (ieee802154_radio_handle_ack(nrf5_radio->iface, ack_pkt) != NET_OK) {
+	if (ieee802154_handle_ack(nrf5_radio->iface, ack_pkt) != NET_OK) {
 		LOG_INF("ACK packet not handled - releasing.");
 	}
 
@@ -475,76 +471,33 @@ static bool nrf5_tx_csma_ca(struct net_pkt *pkt, uint8_t *payload)
 }
 #endif
 
-#if IS_ENABLED(CONFIG_NET_PKT_TXTIME)
-/**
- * @brief Convert 32-bit target time to absolute 64-bit target time.
- */
-static uint64_t target_time_convert_to_64_bits(uint32_t target_time)
+#if defined(CONFIG_NET_PKT_TXTIME)
+static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
+		   uint8_t *payload, enum ieee802154_tx_mode mode)
 {
-	/**
-	 * Target time is provided as two 32-bit integers defining a moment in time
-	 * in microsecond domain. In order to use bit-shifting instead of modulo
-	 * division, calculations are performed in microsecond domain, not in RTC ticks.
-	 *
-	 * The target time can point to a moment in the future, but can be overdue
-	 * as well. In order to determine what's the case and correctly set the
-	 * absolute target time, it's necessary to compare the least significant
-	 * 32 bits of the current time, 64-bit time with the provided 32-bit target
-	 * time. Let's assume that half of the 32-bit range can be used for specifying
-	 * target times in the future, and the other half - in the past.
-	 */
-	uint64_t now_us = nrf_802154_time_get();
-	uint32_t now_us_wrapped = (uint32_t)now_us;
-	uint32_t time_diff = target_time - now_us_wrapped;
-	uint64_t result = UINT64_C(0);
+	bool cca = false;
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+	uint8_t max_extra_cca_attempts = 0;
+#endif
 
-	if (time_diff < 0x80000000) {
-		/**
-		 * Target time is assumed to be in the future. Check if a 32-bit overflow
-		 * occurs between the current time and the target time.
-		 */
-		if (now_us_wrapped > target_time) {
-			/**
-			 * Add a 32-bit overflow and replace the least significant 32 bits
-			 * with the provided target time.
-			 */
-			result = now_us + UINT32_MAX + 1;
-			result &= ~(uint64_t)UINT32_MAX;
-			result |= target_time;
-		} else {
-			/**
-			 * Leave the most significant 32 bits and replace the least significant
-			 * 32 bits with the provided target time.
-			 */
-			result = (now_us & (~(uint64_t)UINT32_MAX)) | target_time;
-		}
-	} else {
-		/**
-		 * Target time is assumed to be in the past. Check if a 32-bit overflow
-		 * occurs between the target time and the current time.
-		 */
-		if (now_us_wrapped > target_time) {
-			/**
-			 * Leave the most significant 32 bits and replace the least significant
-			 * 32 bits with the provided target time.
-			 */
-			result = (now_us & (~(uint64_t)UINT32_MAX)) | target_time;
-		} else {
-			/**
-			 * Subtract a 32-bit overflow and replace the least significant
-			 * 32 bits with the provided target time.
-			 */
-			result = now_us - UINT32_MAX - 1;
-			result &= ~(uint64_t)UINT32_MAX;
-			result |= target_time;
-		}
+	switch (mode) {
+	case IEEE802154_TX_MODE_TXTIME:
+		break;
+	case IEEE802154_TX_MODE_TXTIME_CCA:
+		cca = true;
+		break;
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+	case IEEE802154_OPENTHREAD_TX_MODE_TXTIME_MULTIPLE_CCA:
+		cca = true;
+		max_extra_cca_attempts = nrf5_data.max_extra_cca_attempts;
+		break;
+#endif
+		break;
+	default:
+		__ASSERT_NO_MSG(false);
+		return false;
 	}
 
-	return result;
-}
-
-static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
-{
 	nrf_802154_transmit_at_metadata_t metadata = {
 		.frame_props = {
 			.is_secured = net_pkt_ieee802154_frame_secured(pkt),
@@ -558,17 +511,18 @@ static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
 			.power = net_pkt_ieee802154_txpwr(pkt),
 #endif
 		},
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+		.extra_cca_attempts = max_extra_cca_attempts,
+#endif
 	};
-	uint64_t tx_at = target_time_convert_to_64_bits(net_pkt_txtime(pkt) / NSEC_PER_USEC);
-	bool ret;
 
-	ret = nrf_802154_transmit_raw_at(payload,
-					 tx_at,
-					 &metadata);
-	if (nrf5_data.event_handler) {
-		LOG_WRN("TX_STARTED event will be triggered without delay");
-	}
-	return ret;
+	/* The timestamp points to the start of PHR but `nrf_802154_transmit_raw_at`
+	 * expects a timestamp pointing to start of SHR.
+	 */
+	uint64_t tx_at = nrf_802154_timestamp_phr_to_shr_convert(
+		net_pkt_timestamp_ns(pkt) / NSEC_PER_USEC);
+
+	return nrf_802154_transmit_raw_at(payload, tx_at, &metadata);
 }
 #endif /* CONFIG_NET_PKT_TXTIME */
 
@@ -582,9 +536,14 @@ static int nrf5_tx(const struct device *dev,
 	uint8_t *payload = frag->data;
 	bool ret = true;
 
+	if (payload_len > IEEE802154_MTU) {
+		LOG_ERR("Payload too large: %d", payload_len);
+		return -EMSGSIZE;
+	}
+
 	LOG_DBG("%p (%u)", payload, payload_len);
 
-	nrf5_radio->tx_psdu[0] = payload_len + NRF5_FCS_LENGTH;
+	nrf5_radio->tx_psdu[0] = payload_len + IEEE802154_FCS_LENGTH;
 	memcpy(nrf5_radio->tx_psdu + 1, payload, payload_len);
 
 	/* Reset semaphore in case ACK was received after timeout */
@@ -601,12 +560,14 @@ static int nrf5_tx(const struct device *dev,
 		ret = nrf5_tx_csma_ca(pkt, nrf5_radio->tx_psdu);
 		break;
 #endif
-#if IS_ENABLED(CONFIG_NET_PKT_TXTIME)
+#if defined(CONFIG_NET_PKT_TXTIME)
 	case IEEE802154_TX_MODE_TXTIME:
 	case IEEE802154_TX_MODE_TXTIME_CCA:
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+	case IEEE802154_OPENTHREAD_TX_MODE_TXTIME_MULTIPLE_CCA:
+#endif
 		__ASSERT_NO_MSG(pkt);
-		ret = nrf5_tx_at(pkt, nrf5_radio->tx_psdu,
-				 mode == IEEE802154_TX_MODE_TXTIME_CCA);
+		ret = nrf5_tx_at(nrf5_radio, pkt, nrf5_radio->tx_psdu, mode);
 		break;
 #endif /* CONFIG_NET_PKT_TXTIME */
 	default:
@@ -629,7 +590,7 @@ static int nrf5_tx(const struct device *dev,
 
 	LOG_DBG("Result: %d", nrf5_data.tx_result);
 
-#if defined(CONFIG_IEEE802154_2015)
+#if defined(CONFIG_NRF_802154_ENCRYPTION)
 	/*
 	 * When frame encryption by the radio driver is enabled, the frame stored in
 	 * the tx_psdu buffer is:
@@ -668,11 +629,11 @@ static int nrf5_tx(const struct device *dev,
 	}
 }
 
-static uint64_t nrf5_get_time(const struct device *dev)
+static net_time_t nrf5_get_time(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return nrf_802154_time_get();
+	return (net_time_t)nrf_802154_time_get() * NSEC_PER_USEC;
 }
 
 static uint8_t nrf5_get_acc(const struct device *dev)
@@ -722,8 +683,25 @@ static int nrf5_stop(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_NRF_802154_CARRIER_FUNCTIONS)
+static int nrf5_continuous_carrier(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	if (!nrf_802154_continuous_carrier()) {
+		LOG_ERR("Failed to enter continuous carrier state");
+		return -EIO;
+	}
+
+	LOG_DBG("Continuous carrier wave transmission started (channel: %d)",
+		nrf_802154_channel_get());
+
+	return 0;
+}
+#endif
+
 #if !IS_ENABLED(CONFIG_IEEE802154_NRF5_EXT_IRQ_MGMT)
-static void nrf5_radio_irq(void *arg)
+static void nrf5_radio_irq(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -783,7 +761,7 @@ static void nrf5_iface_init(struct net_if *iface)
 	ieee802154_init(iface);
 }
 
-#if defined(CONFIG_IEEE802154_2015)
+#if defined(CONFIG_NRF_802154_ENCRYPTION)
 static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
 {
 	static nrf_802154_key_id_t stored_key_ids[NRF_802154_SECURITY_KEY_STORAGE_SIZE];
@@ -818,48 +796,7 @@ static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
 		stored_key_ids[i].p_key_id = &stored_ids[i];
 	};
 }
-#endif /* CONFIG_IEEE802154_2015 */
-
-#if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
-static void nrf5_receive_at(uint32_t start, uint32_t duration, uint8_t channel, uint32_t id)
-{
-	/*
-	 * Workaround until OpenThread (the only CSL user in Zephyr so far) is able to schedule
-	 * RX windows using 64-bit time.
-	 */
-	uint64_t rx_time = target_time_convert_to_64_bits(start);
-
-	nrf_802154_receive_at(rx_time, duration, channel, id);
-}
-
-static void nrf5_config_csl_period(uint16_t period)
-{
-	nrf_802154_csl_writer_period_set(period);
-
-	/* Update the CSL anchor time to match the nearest requested CSL window, so that
-	 * the proper CSL Phase in the transmitted CSL Information Elements can be injected.
-	 */
-	if (period > 0) {
-		nrf_802154_csl_writer_anchor_time_set(nrf5_data.csl_rx_time);
-	}
-}
-
-static void nrf5_schedule_rx(uint8_t channel, uint32_t start, uint32_t duration)
-{
-	nrf5_receive_at(start, duration, channel, DRX_SLOT_RX);
-
-	/* Update the CSL anchor time to match the nearest requested CSL window, so that
-	 * the proper CSL Phase in the transmitted CSL Information Elements can be injected.
-	 *
-	 * Note that even if the nrf5_schedule_rx function is not called in time (for example
-	 * due to the call being blocked by higher priority threads) and the delayed reception
-	 * window is not scheduled, the CSL phase will still be calculated as if the following
-	 * reception windows were at times anchor_time + n * csl_period. The previously set
-	 * anchor_time will be used for calculations.
-	 */
-	nrf_802154_csl_writer_anchor_time_set(nrf5_data.csl_rx_time);
-}
-#endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
+#endif /* CONFIG_NRF_802154_ENCRYPTION */
 
 static int nrf5_configure(const struct device *dev,
 			  enum ieee802154_config_type type,
@@ -925,7 +862,7 @@ static int nrf5_configure(const struct device *dev,
 		nrf5_data.event_handler = config->event_handler;
 		break;
 
-#if defined(CONFIG_IEEE802154_2015)
+#if defined(CONFIG_NRF_802154_ENCRYPTION)
 	case IEEE802154_CONFIG_MAC_KEYS:
 		nrf5_config_mac_keys(config->mac_keys);
 		break;
@@ -933,7 +870,11 @@ static int nrf5_configure(const struct device *dev,
 	case IEEE802154_CONFIG_FRAME_COUNTER:
 		nrf_802154_security_global_frame_counter_set(config->frame_counter);
 		break;
-#endif /* CONFIG_IEEE802154_2015 */
+
+	case IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER:
+		nrf_802154_security_global_frame_counter_set_if_larger(config->frame_counter);
+		break;
+#endif /* CONFIG_NRF_802154_ENCRYPTION */
 
 	case IEEE802154_CONFIG_ENH_ACK_HEADER_IE: {
 		uint8_t short_addr_le[SHORT_ADDRESS_SIZE];
@@ -964,22 +905,72 @@ static int nrf5_configure(const struct device *dev,
 	} break;
 
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
-	case IEEE802154_CONFIG_CSL_RX_TIME:
-		nrf5_data.csl_rx_time = config->csl_rx_time;
-		break;
+	case IEEE802154_CONFIG_CSL_RX_TIME: {
+		nrf_802154_csl_writer_anchor_time_set(config->csl_rx_time / NSEC_PER_USEC);
+	} break;
 
-	case IEEE802154_CONFIG_RX_SLOT:
-		nrf5_schedule_rx(config->rx_slot.channel, config->rx_slot.start,
-				 config->rx_slot.duration);
-		break;
+	case IEEE802154_CONFIG_RX_SLOT: {
+		/* Note that even if the nrf_802154_receive_at function is not called in time
+		 * (for example due to the call being blocked by higher priority threads) and
+		 * the delayed reception window is not scheduled, the CSL phase will still be
+		 * calculated as if the following reception windows were at times
+		 * anchor_time + n * csl_period. The previously set
+		 * anchor_time will be used for calculations.
+		 */
+		nrf_802154_receive_at(config->rx_slot.start / NSEC_PER_USEC,
+				      config->rx_slot.duration / NSEC_PER_USEC,
+				      config->rx_slot.channel, DRX_SLOT_RX);
+	} break;
 
 	case IEEE802154_CONFIG_CSL_PERIOD:
-		nrf5_config_csl_period(config->csl_period);
+		nrf_802154_csl_writer_period_set(config->csl_period);
 		break;
 #endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
 
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+	case IEEE802154_OPENTHREAD_CONFIG_MAX_EXTRA_CCA_ATTEMPTS:
+		nrf5_data.max_extra_cca_attempts =
+			((const struct ieee802154_openthread_config *)config)
+				->max_extra_cca_attempts;
+		break;
+#endif /* CONFIG_IEEE802154_NRF5_MULTIPLE_CCA */
+
 	default:
 		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/* driver-allocated attribute memory - constant across all driver instances */
+IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 11, 26);
+
+static int nrf5_attr_get(const struct device *dev,
+			 enum ieee802154_attr attr,
+			 struct ieee802154_attr_value *value)
+{
+	ARG_UNUSED(dev);
+
+	if (ieee802154_attr_get_channel_page_and_range(
+		    attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915,
+		    &drv_attr.phy_supported_channels, value) == 0) {
+		return 0;
+	}
+
+	switch ((uint32_t)attr) {
+#if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
+	/* TODO: t_recca and t_ccatx should be provided by the public API of the
+	 * nRF 802.15.4 Radio Driver.
+	 */
+	case IEEE802154_OPENTHREAD_ATTR_T_RECCA:
+		((struct ieee802154_openthread_attr_value *)value)->t_recca = 0;
+		break;
+	case IEEE802154_OPENTHREAD_ATTR_T_CCATX:
+		((struct ieee802154_openthread_attr_value *)value)->t_ccatx = 20;
+		break;
+#endif
+	default:
+		return -ENOENT;
 	}
 
 	return 0;
@@ -998,8 +989,9 @@ void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 		nrf5_data.rx_frames[i].rssi = power;
 		nrf5_data.rx_frames[i].lqi = lqi;
 
-#if IS_ENABLED(CONFIG_NET_PKT_TIMESTAMP)
-		nrf5_data.rx_frames[i].time = nrf_802154_mhr_timestamp_get(time, data[0]);
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+		nrf5_data.rx_frames[i].time =
+			nrf_802154_timestamp_end_to_phr_convert(time, data[0]);
 #endif
 
 		if (data[ACK_REQUEST_BYTE] & ACK_REQUEST_BIT) {
@@ -1025,7 +1017,15 @@ void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
 	if (id == DRX_SLOT_RX) {
 		__ASSERT_NO_MSG(nrf5_data.event_handler);
+#if !defined(CONFIG_IEEE802154_CSL_DEBUG)
+		/* When CSL debug option is used we intentionally avoid notifying the higher layer
+		 * about the finalization of a DRX slot, so that the radio stays in receive state
+		 * for receiving "out of slot" frames.
+		 * As a side effect, regular failure notifications would be reported with the
+		 * incorrect ID.
+		 */
 		nrf5_data.event_handler(dev, IEEE802154_EVENT_SLEEP, NULL);
+#endif
 		if (error == NRF_802154_RX_ERROR_DELAYED_TIMEOUT) {
 			return;
 		}
@@ -1085,10 +1085,9 @@ void nrf_802154_transmitted_raw(uint8_t *frame,
 		nrf5_data.ack_frame.rssi = metadata->data.transmitted.power;
 		nrf5_data.ack_frame.lqi = metadata->data.transmitted.lqi;
 
-#if IS_ENABLED(CONFIG_NET_PKT_TIMESTAMP)
-		nrf5_data.ack_frame.time =
-			nrf_802154_mhr_timestamp_get(
-				metadata->data.transmitted.time, nrf5_data.ack_frame.psdu[0]);
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+		nrf5_data.ack_frame.time = nrf_802154_timestamp_end_to_phr_convert(
+			metadata->data.transmitted.time, nrf5_data.ack_frame.psdu[0]);
 #endif
 	}
 
@@ -1124,15 +1123,13 @@ void nrf_802154_cca_failed(nrf_802154_cca_error_t error)
 	k_sem_give(&nrf5_data.cca_wait);
 }
 
-void nrf_802154_energy_detected(uint8_t result)
+void nrf_802154_energy_detected(const nrf_802154_energy_detected_t *result)
 {
 	if (nrf5_data.energy_scan_done != NULL) {
-		int16_t dbm;
 		energy_scan_done_cb_t callback = nrf5_data.energy_scan_done;
 
 		nrf5_data.energy_scan_done = NULL;
-		dbm = nrf_802154_dbm_from_energy_level_calculate(result);
-		callback(net_if_get_device(nrf5_data.iface), dbm);
+		callback(net_if_get_device(nrf5_data.iface), result->ed_dbm);
 	}
 }
 
@@ -1150,6 +1147,7 @@ void nrf_802154_energy_detection_failed(nrf_802154_ed_error_t error)
 void nrf_802154_serialization_error(const nrf_802154_ser_err_data_t *err)
 {
 	__ASSERT(false, "802.15.4 serialization error: %d", err->reason);
+	k_oops();
 }
 #endif
 
@@ -1167,11 +1165,15 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 	.set_txpower = nrf5_set_txpower,
 	.start = nrf5_start,
 	.stop = nrf5_stop,
+#if defined(CONFIG_NRF_802154_CARRIER_FUNCTIONS)
+	.continuous_carrier = nrf5_continuous_carrier,
+#endif
 	.tx = nrf5_tx,
 	.ed_scan = nrf5_energy_scan_start,
 	.get_time = nrf5_get_time,
 	.get_sch_acc = nrf5_get_acc,
 	.configure = nrf5_configure,
+	.attr_get = nrf5_attr_get
 };
 
 #if defined(CONFIG_NET_L2_IEEE802154)

@@ -1,0 +1,33 @@
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+config MODEM_CELLULAR
+	bool "Generic cellular modem support"
+	select MODEM_MODULES
+	select MODEM_PPP
+	select MODEM_CMUX
+	select MODEM_CHAT
+	select MODEM_PIPE
+	select MODEM_BACKEND_UART
+	select RING_BUFFER
+	select NET_L2_PPP_OPTION_MRU
+	depends on (DT_HAS_QUECTEL_BG95_ENABLED || DT_HAS_ZEPHYR_GSM_PPP_ENABLED || \
+		    DT_HAS_SIMCOM_SIM7080_ENABLED || DT_HAS_U_BLOX_SARA_R4_ENABLED || \
+		    DT_HAS_SWIR_HL7800_ENABLED)
+	help
+	  This driver uses the generic 3gpp AT commands, along
+	  with the standard protocols CMUX and PPP, to configure
+	  cellular modems to establish a point-to-point
+	  network connection. It is a plug-in replacement for the
+	  existing GSM_PPP driver, and a template for tailored
+	  drivers for the ublox, quectel and other modems, which
+	  include power management and more complex device specific
+	  features.
+
+if MODEM_CELLULAR
+
+config MODEM_CELLULAR_APN
+	string "APN"
+	default "internet"
+
+endif

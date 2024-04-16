@@ -140,7 +140,7 @@ Tested Boards
 Sample usage
 ************
 
-The reference sample for WIFI is :ref:`wifi_sample`.  It allows you use WIFI
+The reference sample for WIFI is :zephyr:code-sample:`wifi-shell`.  It allows you to use WIFI
 shell to scan local Wireless networks.  With the password you can pick,
 connect and send ping.
 

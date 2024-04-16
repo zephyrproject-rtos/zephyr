@@ -1,5 +1,14 @@
 common:
-  tags: adc drivers userspace
+  tags:
+    - adc
+    - drivers
+    - userspace
 tests:
   drivers.adc:
     depends_on: adc
+    min_flash: 40
+  drivers.adc.b_u585i_iot02a_adc4:
+    extra_args:
+      DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"
+    platform_allow:
+      - b_u585i_iot02a

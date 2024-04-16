@@ -58,7 +58,7 @@ struct ccs811_data {
 	 */
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t handler;
-	struct sensor_trigger trigger;
+	const struct sensor_trigger *trigger;
 #if defined(CONFIG_CCS811_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_CCS811_THREAD_STACK_SIZE);
 	struct k_sem gpio_sem;

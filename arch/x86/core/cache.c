@@ -18,23 +18,73 @@
 #include <zephyr/cache.h>
 #include <stdbool.h>
 
+static inline void z_x86_wbinvd(void)
+{
+	__asm__ volatile("wbinvd;\n\t" : : : "memory");
+}
+
+void arch_dcache_enable(void)
+{
+	uint32_t cr0;
+
+	/* Enable write-back caching by clearing the NW and CD bits */
+	__asm__ volatile("movl %%cr0, %0;\n\t"
+			"andl $0x9fffffff, %0;\n\t"
+			"movl %0, %%cr0;\n\t"
+			: "=r" (cr0));
+}
+
+void arch_dcache_disable(void)
+{
+	uint32_t cr0;
+
+	/* Enter the no-fill mode by setting NW=0 and CD=1 */
+	__asm__ volatile("movl %%cr0, %0;\n\t"
+			"andl $0xdfffffff, %0;\n\t"
+			"orl $0x40000000, %0;\n\t"
+			"movl %0, %%cr0;\n\t"
+			: "=r" (cr0));
+
+	/* Flush all caches */
+	z_x86_wbinvd();
+}
+
+int arch_dcache_flush_all(void)
+{
+	z_x86_wbinvd();
+
+	return 0;
+}
+
+int arch_dcache_invd_all(void)
+{
+	z_x86_wbinvd();
+
+	return 0;
+}
+
+int arch_dcache_flush_and_invd_all(void)
+{
+	z_x86_wbinvd();
+
+	return 0;
+}
+
 /**
- * @brief Flush cache lines to main memory
- *
  * No alignment is required for either <virt> or <size>, but since
  * sys_cache_flush() iterates on the cache lines, a cache line alignment for
  * both is optimal.
  *
  * The cache line size is specified via the d-cache-line-size DTS property.
  */
-static void arch_dcache_flush(void *start_addr, size_t size)
+int arch_dcache_flush_range(void *start_addr, size_t size)
 {
 	size_t line_size = sys_cache_data_line_size_get();
 	uintptr_t start = (uintptr_t)start_addr;
 	uintptr_t end = start + size;
 
 	if (line_size == 0U) {
-		return;
+		return -ENOTSUP;
 	}
 
 	end = ROUND_UP(end, line_size);
@@ -49,14 +99,15 @@ static void arch_dcache_flush(void *start_addr, size_t size)
 #else
 	__asm__ volatile("lock; addl $0,-4(%%esp);\n\t":::"memory", "cc");
 #endif
+	return 0;
 }
 
-int arch_dcache_range(void *addr, size_t size, int op)
+int arch_dcache_invd_range(void *start_addr, size_t size)
 {
-	if (op & K_CACHE_WB) {
-		arch_dcache_flush(addr, size);
-		return 0;
-	}
+	return arch_dcache_flush_range(start_addr, size);
+}
 
-	return -ENOTSUP;
+int arch_dcache_flush_and_invd_range(void *start_addr, size_t size)
+{
+	return arch_dcache_flush_range(start_addr, size);
 }
