@@ -149,7 +149,8 @@
 	compatible = "nxp,kinetis-ftm-pwm";
 	pinctrl-0 = <&ftm0_default>;
 	pinctrl-names = "default";
-	prescaler = <128>;
+	clock-source = "system";
+	prescaler = <4>;
 	#pwm-cells = <3>;
 	status = "okay";
 };
@@ -158,6 +159,8 @@
 	compatible = "nxp,kinetis-ftm-pwm";
 	pinctrl-0 = <&ftm1_default>;
 	pinctrl-names = "default";
+	clock-source = "system";
+	prescaler = <4>;
 	#pwm-cells = <3>;
 	status = "okay";
 };
@@ -166,6 +169,8 @@
 	compatible = "nxp,kinetis-ftm-pwm";
 	pinctrl-0 = <&ftm2_default>;
 	pinctrl-names = "default";
+	clock-source = "system";
+	prescaler = <4>;
 	#pwm-cells = <3>;
 	status = "okay";
 };
