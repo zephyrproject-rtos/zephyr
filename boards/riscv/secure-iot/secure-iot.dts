@@ -9,13 +9,11 @@
 chosen {
 		zephyr,console = &uart0;
 	};
-
-
 };
 
 
 &uart0 {
-	status = "ok";
+	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <100000000>;
 };
@@ -35,5 +33,6 @@ chosen {
 };
 
 
-
-	
+&gpio0 {
+	status = "okay";
+};

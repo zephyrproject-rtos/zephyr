@@ -1,0 +1,25 @@
+/dts-v1/;
+
+#include <riscv64-secure-iot.dtsi>
+
+/ {
+	model = "shakti,spike-bare";
+	compatible = "shakti,spike-bare-dev";
+
+chosen {
+		zephyr,console = &uart0;
+		zephyr,console = &GPIO
+	};
+
+
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <19200>;
+	clock-frequency = <40000000>;
+};
+
+&GPIO {
+	status = "okay";
+};
