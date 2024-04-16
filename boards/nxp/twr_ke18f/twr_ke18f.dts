@@ -226,6 +226,7 @@
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm0_default>;
 	pinctrl-names = "default";
+	clock-source = "fixed";
 };
 
 &ftm3 {
@@ -234,6 +235,7 @@
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm3_default>;
 	pinctrl-names = "default";
+	clock-source = "fixed";
 };
 
 &lpi2c0 {

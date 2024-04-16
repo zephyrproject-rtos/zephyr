@@ -145,6 +145,7 @@
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm0_default>;
 	pinctrl-names = "default";
+	clock-source = "fixed";
 };
 
 
@@ -155,6 +156,7 @@
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm3_default>;
 	pinctrl-names = "default";
+	clock-source = "fixed";
 };
 
 /* LPUART connected to debug header */

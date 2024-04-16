@@ -46,4 +46,5 @@
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm2_default>;
 	pinctrl-names = "default";
+	clock-source = "fixed";
 };
