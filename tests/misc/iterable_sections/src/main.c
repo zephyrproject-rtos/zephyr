@@ -8,15 +8,15 @@
 #include <zephyr/sys/iterable_sections.h>
 
 struct test_ram {
-	int i;
+	long i;
 };
 
 struct test_ram_named {
-	int i;
+	long i;
 };
 
 struct test_ram_numeric {
-	int i;
+	long i;
 };
 
 #define CHECK_BIT 0x80
@@ -105,15 +105,15 @@ ZTEST(iterable_sections, test_ram)
 }
 
 struct test_rom {
-	int i;
+	long i;
 };
 
 struct test_rom_named {
-	int i;
+	long i;
 };
 
 struct test_rom_numeric {
-	int i;
+	long i;
 };
 
 /* declare in random order to check that the linker is sorting by name */
