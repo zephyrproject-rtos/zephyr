@@ -51,7 +51,7 @@
 
 /* LLCP Local Procedure PHY Update FSM states */
 enum {
-	LP_PU_STATE_IDLE,
+	LP_PU_STATE_IDLE = LLCP_STATE_IDLE,
 	LP_PU_STATE_WAIT_TX_PHY_REQ,
 	LP_PU_STATE_WAIT_TX_ACK_PHY_REQ,
 	LP_PU_STATE_WAIT_RX_PHY_RSP,
@@ -89,7 +89,7 @@ enum {
 
 /* LLCP Remote Procedure PHY Update FSM states */
 enum {
-	RP_PU_STATE_IDLE,
+	RP_PU_STATE_IDLE = LLCP_STATE_IDLE,
 	RP_PU_STATE_WAIT_RX_PHY_REQ,
 	RP_PU_STATE_WAIT_TX_PHY_RSP,
 	RP_PU_STATE_WAIT_TX_ACK_PHY_RSP,
@@ -905,11 +905,6 @@ void llcp_lp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 	}
 }
 
-void llcp_lp_pu_init_proc(struct proc_ctx *ctx)
-{
-	ctx->state = LP_PU_STATE_IDLE;
-}
-
 void llcp_lp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	lp_pu_execute_fsm(conn, ctx, LP_PU_EVT_RUN, param);
@@ -1321,11 +1316,6 @@ void llcp_rp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		ctx->state = RP_PU_STATE_IDLE;
 		break;
 	}
-}
-
-void llcp_rp_pu_init_proc(struct proc_ctx *ctx)
-{
-	ctx->state = RP_PU_STATE_IDLE;
 }
 
 void llcp_rp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
