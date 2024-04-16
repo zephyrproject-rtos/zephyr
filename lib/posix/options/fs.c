@@ -423,11 +423,18 @@ int mkdir(const char *path, mode_t mode)
  */
 int ftruncate(int fd, off_t length)
 {
+	int rc;
 	struct posix_fs_desc *ptr = NULL;
 
 	ptr = z_get_fd_obj(fd, NULL, EBADF);
 	if (!ptr)
 		return -1;
 
-	return fs_truncate(&ptr->file, length);
+	rc = fs_truncate(&ptr->file, length);
+	if (rc < 0) {
+		errno = -rc;
+		return -1;
+	}
+
+	return 0;
 }
