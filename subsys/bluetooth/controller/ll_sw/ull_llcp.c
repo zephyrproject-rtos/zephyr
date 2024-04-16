@@ -331,8 +331,9 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc, struct llcp_mem_po
 	ctx->rx_greedy = 0U;
 	ctx->node_ref.rx = NULL;
 	ctx->node_ref.tx_ack = NULL;
+	ctx->state = LLCP_STATE_IDLE;
 
-	/* Clear procedure data */
+	/* Clear procedure context data */
 	memset((void *)&ctx->data, 0, sizeof(ctx->data));
 
 	/* Initialize opcodes fields to known values */
@@ -345,172 +346,12 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc, struct llcp_mem_po
 
 struct proc_ctx *llcp_create_local_procedure(enum llcp_proc proc)
 {
-	struct proc_ctx *ctx;
-
-	ctx = create_procedure(proc, &mem_local_ctx);
-	if (!ctx) {
-		return NULL;
-	}
-
-	switch (ctx->proc) {
-#if defined(CONFIG_BT_CTLR_LE_PING)
-	case PROC_LE_PING:
-		llcp_lp_comm_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_CTLR_LE_PING */
-	case PROC_FEATURE_EXCHANGE:
-		llcp_lp_comm_init_proc(ctx);
-		break;
-#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
-	case PROC_MIN_USED_CHANS:
-		llcp_lp_comm_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
-	case PROC_VERSION_EXCHANGE:
-		llcp_lp_comm_init_proc(ctx);
-		break;
-#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
-	case PROC_ENCRYPTION_START:
-	case PROC_ENCRYPTION_PAUSE:
-		llcp_lp_enc_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_CENTRAL */
-#ifdef CONFIG_BT_CTLR_PHY
-	case PROC_PHY_UPDATE:
-		llcp_lp_pu_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_CTLR_PHY */
-	case PROC_CONN_UPDATE:
-	case PROC_CONN_PARAM_REQ:
-		llcp_lp_cu_init_proc(ctx);
-		break;
-	case PROC_TERMINATE:
-		llcp_lp_comm_init_proc(ctx);
-		break;
-#if defined(CONFIG_BT_CENTRAL)
-	case PROC_CHAN_MAP_UPDATE:
-		llcp_lp_chmu_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_CENTRAL */
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	case PROC_DATA_LENGTH_UPDATE:
-		llcp_lp_comm_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
-	case PROC_CTE_REQ:
-		llcp_lp_comm_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
-#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
-	case PROC_CIS_TERMINATE:
-		llcp_lp_comm_init_proc(ctx);
-		break;
-#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
-#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
-	case PROC_CIS_CREATE:
-		llcp_lp_comm_init_proc(ctx);
-		break;
-#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
-#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
-	case PROC_SCA_UPDATE:
-		llcp_lp_comm_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
-	default:
-		/* Unknown procedure */
-		LL_ASSERT(0);
-		break;
-	}
-
-	return ctx;
+	return create_procedure(proc, &mem_local_ctx);
 }
 
 struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc)
 {
-	struct proc_ctx *ctx;
-
-	ctx = create_procedure(proc, &mem_remote_ctx);
-	if (!ctx) {
-		return NULL;
-	}
-
-	switch (ctx->proc) {
-	case PROC_UNKNOWN:
-		/* Nothing to do */
-		break;
-#if defined(CONFIG_BT_CTLR_LE_PING)
-	case PROC_LE_PING:
-		llcp_rp_comm_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_CTLR_LE_PING */
-	case PROC_FEATURE_EXCHANGE:
-		llcp_rp_comm_init_proc(ctx);
-		break;
-#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
-	case PROC_MIN_USED_CHANS:
-		llcp_rp_comm_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
-	case PROC_VERSION_EXCHANGE:
-		llcp_rp_comm_init_proc(ctx);
-		break;
-#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
-	case PROC_ENCRYPTION_START:
-	case PROC_ENCRYPTION_PAUSE:
-		llcp_rp_enc_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_PERIPHERAL */
-#ifdef CONFIG_BT_CTLR_PHY
-	case PROC_PHY_UPDATE:
-		llcp_rp_pu_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_CTLR_PHY */
-	case PROC_CONN_UPDATE:
-	case PROC_CONN_PARAM_REQ:
-		llcp_rp_cu_init_proc(ctx);
-		break;
-	case PROC_TERMINATE:
-		llcp_rp_comm_init_proc(ctx);
-		break;
-#if defined(CONFIG_BT_PERIPHERAL)
-	case PROC_CHAN_MAP_UPDATE:
-		llcp_rp_chmu_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_PERIPHERAL */
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	case PROC_DATA_LENGTH_UPDATE:
-		llcp_rp_comm_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
-	case PROC_CTE_REQ:
-		llcp_rp_comm_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
-#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
-	case PROC_CIS_CREATE:
-		llcp_rp_cc_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_PERIPHERAL_ISO */
-#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
-	case PROC_CIS_TERMINATE:
-		llcp_rp_comm_init_proc(ctx);
-		break;
-#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
-#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
-	case PROC_SCA_UPDATE:
-		llcp_rp_comm_init_proc(ctx);
-		break;
-#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
-
-	default:
-		/* Unknown procedure */
-		LL_ASSERT(0);
-		break;
-	}
-
-	return ctx;
+	return create_procedure(proc, &mem_remote_ctx);
 }
 
 /*
