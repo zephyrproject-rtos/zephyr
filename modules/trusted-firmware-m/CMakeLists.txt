@@ -366,6 +366,11 @@ if (CONFIG_BUILD_WITH_TFM)
   target_include_directories(tfm_api PRIVATE
     ${TFM_INTERFACE_INCLUDE_DIR}
     ${TFM_INTERFACE_INCLUDE_DIR}/crypto_keys
+    ${ZEPHYR_BASE}/modules/mbedtls/configs
+    )
+  # Pass down the MbedTLS configuration file to use.
+  target_compile_definitions(tfm_api PRIVATE
+    MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
     )
 
   zephyr_library_link_libraries(
