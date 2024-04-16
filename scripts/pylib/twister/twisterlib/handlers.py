@@ -113,10 +113,12 @@ class Handler:
             return
         if not detected_suite_names:
             self._missing_suite_name(expected_suite_names, handler_time)
-        for detected_suite_name in detected_suite_names:
-            if detected_suite_name not in expected_suite_names:
+            return
+        # compare the expect and detect from end one by one without order
+        _d_suite = detected_suite_names[-len(expected_suite_names):]
+        if set(_d_suite) != set(expected_suite_names):
+            if not set(_d_suite).issubset(set(expected_suite_names)):
                 self._missing_suite_name(expected_suite_names, handler_time)
-                break
 
     def _missing_suite_name(self, expected_suite_names, handler_time):
         """
