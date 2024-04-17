@@ -3086,6 +3086,17 @@ static void le_read_supp_states_complete(struct net_buf *buf)
 	bt_dev.le.states = sys_get_le64(rp->le_states);
 }
 
+#if defined(CONFIG_BT_BROADCASTER)
+static void le_read_maximum_adv_data_len_complete(struct net_buf *buf)
+{
+	struct bt_hci_rp_le_read_max_adv_data_len *rp = (void *)buf->data;
+
+	LOG_DBG("status 0x%02x", rp->status);
+
+	bt_dev.le.max_adv_data_len = sys_le16_to_cpu(rp->max_adv_data_len);
+}
+#endif /* CONFIG_BT_BROADCASTER */
+
 #if defined(CONFIG_BT_SMP)
 static void le_read_resolving_list_size_complete(struct net_buf *buf)
 {
@@ -3386,6 +3397,25 @@ static int le_init(void)
 
 		net_buf_unref(rsp);
 	}
+
+#if defined(CONFIG_BT_BROADCASTER)
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+		/* Read LE Max Adv Data Len */
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_MAX_ADV_DATA_LEN, NULL, &rsp);
+		if (err == 0) {
+			le_read_maximum_adv_data_len_complete(rsp);
+			net_buf_unref(rsp);
+		} else if (err == -EIO) {
+			LOG_WRN("Controller does not support 'LE_READ_MAX_ADV_DATA_LEN'. "
+				"Assuming maximum length is 31 bytes.");
+			bt_dev.le.max_adv_data_len = 31;
+		} else {
+			return err;
+		}
+	} else {
+		bt_dev.le.max_adv_data_len = 31;
+	}
+#endif /* CONFIG_BT_BROADCASTER */
 
 	if (BT_FEAT_BREDR(bt_dev.features)) {
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP,

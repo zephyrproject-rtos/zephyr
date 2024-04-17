@@ -294,6 +294,9 @@ struct bt_dev_le {
 	uint8_t			iso_limit;
 	struct k_sem		iso_pkts;
 #endif /* CONFIG_BT_ISO */
+#if defined(CONFIG_BT_BROADCASTER)
+	uint16_t max_adv_data_len;
+#endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_SMP)
 	/* Size of the the controller resolving list */
