@@ -14,12 +14,11 @@ common:
       - "mcuboot_status: 1"
       - "mcuboot_status: 2"
       - "Waiting..."
+      - "Starting bootloader"
       - "mcuboot_status: 0"
       - "mcuboot_status: 1"
       - "mcuboot_status: 8"
-      - "Starting bootloader"
-      - "Secondary image: magic"
-      - "Boot source: none"
+      - "Enter the serial recovery mode"
 tests:
   bootloader.mcuboot.recovery.retention:
     platform_allow: nrf52840dk/nrf52840
