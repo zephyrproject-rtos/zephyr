@@ -87,4 +87,17 @@
 			#clock-cells = <0>;
 		};
 	};
+
+	axi {
+		#address-cells = <2>;
+		#size-cells = <1>;
+
+		rp1@1000120000 {
+			compatible = "raspberrypi,rp1";
+			reg = <0x10 0x120000 0x9310>;
+			#address-cells = <2>;
+			#size-cells = <1>;
+			status = "okay";
+		};
+	};
 };
