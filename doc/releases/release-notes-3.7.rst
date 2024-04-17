@@ -28,6 +28,27 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 * CVE-2024-3077 `Zephyr project bug tracker GHSA-gmfv-4vfh-2mh8
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-gmfv-4vfh-2mh8>`_
 
+API Changes
+***********
+
+Deprecated in this release
+==========================
+
+ * Bluetooth advertiser options :code:`BT_LE_ADV_OPT_USE_NAME` and
+   :code:`BT_LE_ADV_OPT_FORCE_NAME_IN_AD` are now deprecated. That means the following macro are
+   deprecated:
+
+    * :c:macro:`BT_LE_ADV_CONN_NAME`
+    * :c:macro:`BT_LE_ADV_CONN_NAME_AD`
+    * :c:macro:`BT_LE_ADV_NCONN_NAME`
+    * :c:macro:`BT_LE_EXT_ADV_CONN_NAME`
+    * :c:macro:`BT_LE_EXT_ADV_SCAN_NAME`
+    * :c:macro:`BT_LE_EXT_ADV_NCONN_NAME`
+    * :c:macro:`BT_LE_EXT_ADV_CODED_NCONN_NAME`
+
+   Application developer will now need to set the advertised name themselves by updating the advertising data
+   or the scan response data.
+
 Architectures
 *************
 
