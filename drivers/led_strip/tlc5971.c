@@ -253,15 +253,6 @@ static int tlc5971_update_rgb(const struct device *dev, struct led_rgb *pixels, 
 	return tlc5971_transmit_data(dev, num_pixels);
 }
 
-static int tlc5971_update_channels(const struct device *dev, uint8_t *channels, size_t num_channels)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(channels);
-	ARG_UNUSED(num_channels);
-
-	return -ENOTSUP;
-}
-
 static size_t tlc5971_length(const struct device *dev)
 {
 	const struct tlc5971_config *cfg = dev->config;
@@ -333,7 +324,6 @@ static int tlc5971_init(const struct device *dev)
 
 static const struct led_strip_driver_api tlc5971_api = {
 	.update_rgb = tlc5971_update_rgb,
-	.update_channels = tlc5971_update_channels,
 	.length = tlc5971_length,
 };
 
