@@ -48,6 +48,7 @@
 
 &uart30 {
 	status = "okay";
+	hw-flow-control;
 };
 
 &gpio0 {
