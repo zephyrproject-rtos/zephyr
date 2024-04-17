@@ -4,4 +4,3 @@ family:
       - name: rmx500
         socs:
           - name: rmx500
-

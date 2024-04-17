@@ -1,5 +1,5 @@
-identifier: snps_rmx500
-name: Synopsys rmx500 
+identifier: nsim_rmx500
+name: Synopsys rmx500
 simulation: nsim
 simulation_exec: nsimdrv
 type: sim

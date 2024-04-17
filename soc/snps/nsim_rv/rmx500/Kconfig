@@ -3,7 +3,7 @@
 
 config SOC_SERIES_NSIM_RV_RMX500
 	bool
-	
+
 	select RISCV
 	select RISCV_PRIVILEGED
 	select RISCV_HAS_PLIC
