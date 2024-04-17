@@ -45,7 +45,7 @@ static void create_ext_adv_set(struct bt_le_ext_adv **adv, bool connectable)
 	printk("Creating extended advertising set...");
 
 	const struct bt_le_adv_param *adv_param = connectable ?
-		BT_LE_EXT_ADV_CONN_NAME : BT_LE_EXT_ADV_NCONN_NAME;
+		BT_LE_EXT_ADV_CONN : BT_LE_EXT_ADV_NCONN;
 
 	err = bt_le_ext_adv_create(adv_param, NULL, adv);
 	if (err) {

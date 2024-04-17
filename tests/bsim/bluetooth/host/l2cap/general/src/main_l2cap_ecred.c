@@ -449,7 +449,7 @@ static void test_peripheral_main(void)
 
 	LOG_DBG("Peripheral Bluetooth initialized.");
 	LOG_DBG("Connectable advertising...");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		FAIL("Advertising failed to start (err %d)", err);
 		return;

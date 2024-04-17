@@ -167,6 +167,7 @@ static void test_advx_main(void)
 	struct bt_le_ext_adv_start_param ext_adv_param;
 	struct bt_le_ext_adv *adv;
 	uint8_t num_sent_expected;
+	struct bt_data sd[1];
 	uint16_t evt_prop;
 	uint8_t adv_type;
 	uint16_t handle;
@@ -184,7 +185,7 @@ static void test_advx_main(void)
 	printk("success.\n");
 
 	printk("Connectable advertising...");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;
@@ -299,8 +300,19 @@ static void test_advx_main(void)
 	printk("success.\n");
 
 	printk("Create scannable extended advertising set...");
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_SCAN_NAME, &adv_callbacks,
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_SCAN, &adv_callbacks,
 				   &adv);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	/* Scannable advertiser need to have scan response data */
+	printk("Set scan response data...");
+	sd[0].type = BT_DATA_NAME_COMPLETE;
+	sd[0].data_len = sizeof(CONFIG_BT_DEVICE_NAME) - 1;
+	sd[0].data = CONFIG_BT_DEVICE_NAME;
+	err = bt_le_ext_adv_set_data(adv, NULL, 0, sd, 1);
 	if (err) {
 		goto exit;
 	}
@@ -334,7 +346,7 @@ static void test_advx_main(void)
 	printk("Create connectable extended advertising set...");
 	is_connected = false;
 	is_disconnected = false;
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, &adv_callbacks, &adv);
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, &adv_callbacks, &adv);
 	if (err) {
 		goto exit;
 	}
@@ -389,7 +401,7 @@ static void test_advx_main(void)
 	k_sleep(K_MSEC(1000));
 
 	printk("Create connectable advertising set...");
-	err = bt_le_ext_adv_create(BT_LE_ADV_CONN_NAME, &adv_callbacks, &adv);
+	err = bt_le_ext_adv_create(BT_LE_ADV_CONN, &adv_callbacks, &adv);
 	if (err) {
 		goto exit;
 	}

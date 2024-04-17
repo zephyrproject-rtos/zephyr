@@ -70,13 +70,24 @@ int main(void)
 	err = bt_set_name("dut");
 	__ASSERT_NO_MSG(!err);
 
+	struct bt_data ad[1] = {0};
+
+	const char *dev_name = bt_get_name();
+
+	ad[0].type = BT_DATA_NAME_COMPLETE;
+	ad[0].data_len = strlen(dev_name);
+	ad[0].data = (const uint8_t *)dev_name;
+
 	LOG_INF("---------- Test setup ----------");
 
 	LOG_INF("Environment test: Advertiser fills connection capacity.");
 
 	/* `bt_le_adv_start` is invoked once, and.. */
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME_AD, NULL, 0, NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN, NULL, 0, NULL, 0);
+	__ASSERT_NO_MSG(!err);
+
+	err = bt_le_adv_update_data(ad, 1, NULL, 0);
 	__ASSERT_NO_MSG(!err);
 
 	/* .. the advertiser shall autoresume. Since it's not
@@ -154,7 +165,10 @@ int main(void)
 
 	/* With one connection slot taken by the central role, we fill the rest. */
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME_AD, NULL, 0, NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN, NULL, 0, NULL, 0);
+	__ASSERT_NO_MSG(!err);
+
+	err = bt_le_adv_update_data(ad, 1, NULL, 0);
 	__ASSERT_NO_MSG(!err);
 
 	LOG_INF("Waiting for connections...");
