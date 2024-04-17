@@ -39,7 +39,6 @@ LOG_MODULE_REGISTER(ws2812_spi);
 struct ws2812_spi_cfg {
 	struct spi_dt_spec bus;
 	uint8_t *px_buf;
-	size_t px_buf_size;
 	uint8_t one_frame;
 	uint8_t zero_frame;
 	uint8_t num_colors;
@@ -69,20 +68,6 @@ static inline void ws2812_spi_ser(uint8_t buf[8], uint8_t color,
 }
 
 /*
- * Returns true if and only if cfg->px_buf is big enough to convert
- * num_pixels RGB color values into SPI frames.
- */
-static inline bool num_pixels_ok(const struct ws2812_spi_cfg *cfg,
-				 size_t num_pixels)
-{
-	size_t nbytes;
-	bool overflow;
-
-	overflow = size_mul_overflow(num_pixels, cfg->num_colors * 8, &nbytes);
-	return !overflow && (nbytes <= cfg->px_buf_size);
-}
-
-/*
  * Latch current color values on strip and reset its state machines.
  */
 static inline void ws2812_reset_delay(uint16_t delay)
@@ -98,7 +83,7 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 	const uint8_t one = cfg->one_frame, zero = cfg->zero_frame;
 	struct spi_buf buf = {
 		.buf = cfg->px_buf,
-		.len = cfg->px_buf_size,
+		.len = (cfg->length * 8 * cfg->num_colors),
 	};
 	const struct spi_buf_set tx = {
 		.buffers = &buf,
@@ -107,10 +92,6 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 	uint8_t *px_buf = cfg->px_buf;
 	size_t i;
 	int rc;
-
-	if (!num_pixels_ok(cfg, num_pixels)) {
-		return -ENOMEM;
-	}
 
 	/*
 	 * Convert pixel data into SPI frames. Each frame has pixel data
@@ -235,7 +216,6 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 	static const struct ws2812_spi_cfg ws2812_spi_##idx##_cfg = {	 \
 		.bus = SPI_DT_SPEC_INST_GET(idx, SPI_OPER(idx), 0),	 \
 		.px_buf = ws2812_spi_##idx##_px_buf,			 \
-		.px_buf_size = WS2812_SPI_BUFSZ(idx),			 \
 		.one_frame = WS2812_SPI_ONE_FRAME(idx),			 \
 		.zero_frame = WS2812_SPI_ZERO_FRAME(idx),		 \
 		.num_colors = WS2812_NUM_COLORS(idx),			 \
