@@ -25,7 +25,7 @@
 #ifndef ZEPHYR_INCLUDE_SYS_SFLIST_H_
 #define ZEPHYR_INCLUDE_SYS_SFLIST_H_
 
-#include <stddef.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include <zephyr/sys/__assert.h>
 #include "list_gen.h"
@@ -34,15 +34,9 @@
 extern "C" {
 #endif
 
-#ifdef __LP64__
-typedef uint64_t unative_t;
-#else
-typedef uint32_t unative_t;
-#endif
-
 /** @cond INTERNAL_HIDDEN */
 struct _sfnode {
-	unative_t next_and_flags;
+	uintptr_t next_and_flags;
 };
 /** @endcond */
 
@@ -218,7 +212,8 @@ static inline void sys_sflist_init(sys_sflist_t *list)
  * @param ptr_to_list A pointer on the list to initialize
  */
 #define SYS_SFLIST_STATIC_INIT(ptr_to_list) {NULL, NULL}
-#define SYS_SFLIST_FLAGS_MASK	0x3UL
+
+#define SYS_SFLIST_FLAGS_MASK	((uintptr_t)0x3)
 
 static inline sys_sfnode_t *z_sfnode_next_peek(sys_sfnode_t *node)
 {
@@ -232,7 +227,7 @@ static inline void z_sfnode_next_set(sys_sfnode_t *parent,
 {
 	uint8_t cur_flags = sys_sfnode_flags_get(parent);
 
-	parent->next_and_flags = cur_flags | (unative_t)child;
+	parent->next_and_flags = cur_flags | (uintptr_t)child;
 }
 
 static inline void z_sflist_head_set(sys_sflist_t *list, sys_sfnode_t *node)
@@ -316,7 +311,7 @@ static inline void sys_sfnode_init(sys_sfnode_t *node, uint8_t flags)
 static inline void sys_sfnode_flags_set(sys_sfnode_t *node, uint8_t flags)
 {
 	__ASSERT((flags & ~SYS_SFLIST_FLAGS_MASK) == 0UL, "flags too large");
-	node->next_and_flags = (unative_t)(z_sfnode_next_peek(node)) | flags;
+	node->next_and_flags = (uintptr_t)(z_sfnode_next_peek(node)) | flags;
 }
 
 /*
