@@ -74,7 +74,7 @@ static struct bst_test_instance *bst_test_find(struct bst_test_list *tests,
 	return NULL;
 }
 
-void bst_install_tests(void)
+__noubsan void bst_install_tests(void)
 {
 	int idx = 0;
 
