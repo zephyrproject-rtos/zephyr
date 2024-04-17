@@ -248,13 +248,6 @@ static int tlc5971_transmit_data(const struct device *dev, size_t num_pixels)
 
 static int tlc5971_update_rgb(const struct device *dev, struct led_rgb *pixels, size_t num_pixels)
 {
-	const struct tlc5971_config *cfg = dev->config;
-
-	if (num_pixels > cfg->num_pixels) {
-		LOG_ERR("invalid number of pixels, %zu vs actual %i", num_pixels, cfg->num_pixels);
-		return -EINVAL;
-	}
-
 	tlc5971_fill_data_buffer(dev, pixels, num_pixels);
 
 	return tlc5971_transmit_data(dev, num_pixels);
