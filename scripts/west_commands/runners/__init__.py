@@ -47,6 +47,7 @@ _names = [
     'nsim',
     'nxp_s32dbg',
     'openocd',
+    'probe_rs',
     'pyocd',
     'renode',
     'renode-robot',
