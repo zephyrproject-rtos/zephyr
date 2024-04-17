@@ -973,7 +973,7 @@ def test_testplan_report_tag_list(capfd):
 
 def test_testplan_report_test_tree(capfd):
     testplan = TestPlan(env=mock.Mock())
-    testplan.get_all_tests = mock.Mock(
+    testplan.get_tests_list = mock.Mock(
         return_value=['1.dummy.case.1', '1.dummy.case.2',
                       '2.dummy.case.1', '2.dummy.case.2',
                       '3.dummy.case.1', '3.dummy.case.2',
@@ -1031,7 +1031,7 @@ Testsuite
 
 def test_testplan_report_test_list(capfd):
     testplan = TestPlan(env=mock.Mock())
-    testplan.get_all_tests = mock.Mock(
+    testplan.get_tests_list = mock.Mock(
         return_value=['4.dummy.case.1', '4.dummy.case.2',
                       '3.dummy.case.2', '2.dummy.case.2',
                       '1.dummy.case.1', '1.dummy.case.2',
