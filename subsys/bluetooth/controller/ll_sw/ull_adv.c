@@ -117,6 +117,9 @@ static void init_set(struct ll_adv_set *adv);
 
 static struct ll_adv_set ll_adv[BT_CTLR_ADV_SET];
 
+static uint8_t ticker_update_req;
+static uint8_t ticker_update_ack;
+
 #if defined(CONFIG_BT_TICKER_EXT)
 static struct ticker_ext ll_adv_ticker_ext[BT_CTLR_ADV_SET];
 #endif /* CONFIG_BT_TICKER_EXT */
@@ -1965,9 +1968,6 @@ static uint32_t ticker_update_rand(struct ll_adv_set *adv, uint32_t ticks_delay_
 		  (ret == TICKER_STATUS_BUSY) ||
 		  (fp_op_func == NULL));
 
-#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-	adv->delay = random_delay;
-#endif
 	return random_delay;
 }
 
@@ -2017,8 +2017,9 @@ void ull_adv_done(struct node_rx_event_done *done)
 
 		/* Check if we have enough time to re-schedule */
 		if (delay_remain > prepare_overhead) {
-			uint32_t ticks_adjust_minus;
 			uint32_t interval_us = adv->interval * ADV_INT_UNIT_US;
+			uint32_t ticks_adjust_minus;
+			uint32_t random_delay;
 
 			/* Get negative ticker adjustment needed to pull back ADV one
 			 * interval plus the randomized delay. This means that the ticker
@@ -2043,10 +2044,12 @@ void ull_adv_done(struct node_rx_event_done *done)
 			 * ticker_stop, e.g. from ull_periph_setup. This is not a problem
 			 * and we can safely ignore the operation result.
 			 */
-			ticker_update_rand(adv, delay_remain - prepare_overhead,
-					   prepare_overhead, ticks_adjust_minus, NULL);
+			random_delay = ticker_update_rand(adv, delay_remain - prepare_overhead,
+							  prepare_overhead, ticks_adjust_minus,
+							  NULL);
 
 			/* Delay from ticker_update_rand is in addition to the last random delay */
+			adv->delay = random_delay;
 			adv->delay += adv->delay_at_expire;
 
 			/* Score of the event was increased due to the result, but since
@@ -2430,11 +2433,31 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	if (!lll->is_hdcd)
 #endif /* CONFIG_BT_PERIPHERAL */
 	{
-		/* Apply random delay in range [0..ULL_ADV_RANDOM_DELAY] */
-		random_delay = ticker_update_rand(adv, ULL_ADV_RANDOM_DELAY,
-						  0, 0, ticker_update_op_cb);
+		if (IS_ENABLED(CONFIG_BT_CTLR_JIT_SCHEDULING) ||
+		    (ticker_update_req == ticker_update_ack)) {
+			/* Ticker update requested */
+			ticker_update_req++;
+
+			/* Apply random delay in range [0..ULL_ADV_RANDOM_DELAY] */
+			random_delay = ticker_update_rand(adv, ULL_ADV_RANDOM_DELAY, 0U, 0U,
+							  ticker_update_op_cb);
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+			adv->delay = random_delay;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+		} else {
+			random_delay = 0U;
+		}
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+		uint16_t event_counter_inc;
+
+		if (lazy == TICKER_LAZY_MUST_EXPIRE) {
+			lazy = 0U;
+			event_counter_inc = 0U;
+		} else {
+			event_counter_inc = (lazy + 1U);
+		}
+
 		if (adv->remain_duration_us && adv->event_counter > 0U) {
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 			/* ticks_drift is always 0 with JIT scheduling, populate manually */
@@ -2453,7 +2476,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			}
 		}
 
-		adv->event_counter += (lazy + 1U);
+		adv->event_counter += event_counter_inc;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	}
 
@@ -2462,6 +2485,9 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 static void ticker_update_op_cb(uint32_t status, void *param)
 {
+	/* Reset update requested */
+	ticker_update_ack = ticker_update_req;
+
 #if defined(CONFIG_BT_PERIPHERAL) && (defined(CONFIG_BT_ASSERT) || defined(CONFIG_ASSERT))
 	struct ll_adv_set *adv = param;
 	struct pdu_adv *pdu = lll_adv_data_peek(&adv->lll);
