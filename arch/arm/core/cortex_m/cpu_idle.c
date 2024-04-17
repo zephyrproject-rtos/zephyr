@@ -35,9 +35,13 @@ void z_arm_cpu_idle_init(void)
 
 #if defined(CONFIG_ARM_ON_ENTER_CPU_IDLE_HOOK)
 #define SLEEP_IF_ALLOWED(wait_instr) do { \
-	if (!z_arm_on_enter_cpu_idle()) { \
+	/* Skip the wait instr if on_enter_cpu_idle returns false */ \
+	if (z_arm_on_enter_cpu_idle()) { \
+		/* Wait for all memory transaction to complete */ \
+		/* before entering low power state. */ \
 		__DSB(); \
 		wait_instr(); \
+		/* Inline the macro provided by SoC-specific code */ \
 		ON_EXIT_IDLE_HOOK; \
 	} \
 } while (false)
