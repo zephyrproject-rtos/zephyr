@@ -189,6 +189,11 @@
 				interrupts = <21 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
+			cpuapp_resetinfo: resetinfo@1e000 {
+				compatible = "nordic,nrf-resetinfo";
+				reg = <0x1e000 0x1000>;
+			};
+
 			cpuapp_ieee802154: ieee802154 {
 				compatible = "nordic,nrf-ieee802154";
 				status = "disabled";
@@ -225,6 +230,11 @@
 				reg = <0x14000 0x1000>;
 				status = "disabled";
 				interrupts = <20 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			cpurad_resetinfo: resetinfo@1e000 {
+				compatible = "nordic,nrf-resetinfo";
+				reg = <0x1e000 0x1000>;
 			};
 
 			dppic020: dppic@22000 {
