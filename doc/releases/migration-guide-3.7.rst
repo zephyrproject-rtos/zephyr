@@ -243,6 +243,14 @@ LED Strip
 * The property ``in-gpios`` defined in :dtcompatible:`worldsemi,ws2812-gpio` has been
   renamed to ``gpios``.
 
+* The ``chain-length`` and ``color-mapping`` properties have been added to all LED strip bindings
+  and are now mandatory.
+
+* Added a new mandatory ``length`` function which returns the length (number of pixels) of an LED
+  strip device.
+
+* Made ``update_channels`` function optional and removed unimplemented functions.
+
 Sensors
 =======
 
