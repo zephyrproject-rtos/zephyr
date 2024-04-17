@@ -76,7 +76,7 @@ void arch_cpu_idle(void)
 	__disable_irq();
 
 	/*
-	 * Set wake-up interrupt priority to the lowest and synchronise to
+	 * Set wake-up interrupt priority to the lowest and synchronize to
 	 * ensure that this is visible to the WFI instruction.
 	 */
 	__set_BASEPRI(0);
@@ -91,10 +91,6 @@ void arch_cpu_idle(void)
 	 */
 #endif
 
-	/*
-	 * Wait for all memory transactions to complete before entering low
-	 * power state.
-	 */
 	SLEEP_IF_ALLOWED(__WFI);
 
 	__enable_irq();
@@ -122,11 +118,20 @@ void arch_cpu_atomic_idle(unsigned int key)
 	 * and never touched again.
 	 */
 
-	/*
-	 * Wait for all memory transactions to complete before entering low
-	 * power state.
-	 */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	/* No BASEPRI, call wfe directly. (SEVONPEND is set in z_arm_cpu_idle_init()) */
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	/* unlock BASEPRI so wfe gets interrupted by incoming interrupts  */
+	__set_BASEPRI(0);
+	__ISB();
+#else
+#error Unsupported architecture
+#endif
+
 	SLEEP_IF_ALLOWED(__WFE);
 
 	arch_irq_unlock(key);
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	__enable_irq();
+#endif
 }
