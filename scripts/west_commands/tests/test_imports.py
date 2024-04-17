@@ -37,6 +37,7 @@ def test_runner_imports():
                     'nrfutil',
                     'nxp_s32dbg',
                     'openocd',
+                    'probe-rs',
                     'pyocd',
                     'qemu',
                     'silabs_commander',
