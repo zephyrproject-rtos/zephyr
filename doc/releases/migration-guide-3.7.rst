@@ -208,6 +208,20 @@ Bluetooth Classic
   Removed the :kconfig:option:`CONFIG_BT_BREDR`. It is replaced by new option
   :kconfig:option:`CONFIG_BT_CLASSIC`. (:github:`69651`)
 
+Bluetooth Host
+==============
+
+* The advertiser options :code:`BT_LE_ADV_OPT_USE_NAME` and :code:`BT_LE_ADV_OPT_FORCE_NAME_IN_AD`
+  are deprecated in this release. The application need to include the device name explicitly. One
+  way to do it is by adding the following to the advertising data or scan response data passed to
+  the host:
+
+  .. code-block:: c
+
+   BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1)
+
+  (:github:`71686`)
+
 Networking
 **********
 
