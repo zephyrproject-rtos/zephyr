@@ -111,7 +111,6 @@ static const struct mbox_driver_api vevif_local_driver_api = {
 
 static int vevif_local_init(const struct device *dev)
 {
-	nrf_vpr_csr_rtperiph_enable_set(true);
 	nrf_vpr_csr_vevif_tasks_clear(NRF_VPR_TASK_TRIGGER_ALL_MASK);
 
 	LISTIFY(DT_NUM_IRQS(DT_DRV_INST(0)), VEVIF_IRQ_CONNECT, (;));
