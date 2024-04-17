@@ -1,9 +1,9 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if (CONFIG_BOARD_NRF54L15PDK_NRF54L15_CPUAPP)
+if (CONFIG_SOC_NRF54L15_ENGA_CPUAPP)
   board_runner_args(jlink "--device=cortex-m33" "--speed=4000")
-elseif (CONFIG_BOARD_NRF54L15PDK_NRF54L15_CPUFLPR)
+elseif (CONFIG_SOC_NRF54L15_ENGA_CPUFLPR)
   board_runner_args(jlink "--speed=4000")
 endif()
 
