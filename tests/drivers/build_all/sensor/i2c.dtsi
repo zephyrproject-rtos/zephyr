@@ -1030,3 +1030,10 @@ test_i2c_iis328dq: iis328dq@8a {
 	int2-gpios = <&test_gpio 0 0>;
 	threshold-int-pad = <2>;
 };
+
+test_i2c_bmp085: bmp085@8b {
+	compatible = "bosch,bmp085";
+	status = "okay";
+	reg = <0x8b>;
+	oversampling=<1>;
+};

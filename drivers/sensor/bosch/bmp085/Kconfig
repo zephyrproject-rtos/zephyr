@@ -1,0 +1,12 @@
+# Bosch BMP085 pressure sensor
+
+# Copyright (c) 2024, Mario Paja
+# SPDX-License-Identifier: Apache-2.0
+
+config BMP085
+	bool "Bosch BMP085 pressure sensor"
+	default y
+	depends on DT_HAS_BOSCH_BMP085_ENABLED
+	select I2C
+	help
+	  Enable driver for the Bosch BMP085 pressure sensor.

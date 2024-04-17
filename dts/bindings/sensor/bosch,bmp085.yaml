@@ -1,0 +1,22 @@
+# Copyright (c) 2024, Mario Paja
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bosch BMP085 pressure sensor
+
+compatible: "bosch,bmp085"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  oversampling:
+    type: int
+    required: true
+    description: |
+      The oversampling rate. Required for the pressure measurement
+
+      - 0 # BMP085_MODE_1_ULTRALOWPOWER
+      - 1 # BMP085_MODE_2_STANDARD
+      - 2 # BMP085_MODE_3_HIGHRES
+      - 3 # BMP085_MODE_4_ULTRAHIGHRES
+
+    enum: [0, 1, 2, 3]
