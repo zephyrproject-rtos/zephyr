@@ -62,36 +62,35 @@
     };
 
     uart0: serial@11300 {
-        compatible = "shakti,uart0";
-        reg= < 0x0 0x11300 0x0 0x100>;
+      compatible = "shakti,uart0";
+      reg= < 0x0 0x11300 0x0 0x100>;
     };
 
     spi0: spi@20000 {
-            compatible = "shakti,spi";
-            reg = <0x0 0x20000 0x0 0x100>;
+      compatible = "shakti,spi";
+      reg = <0x0 0x20000 0x0 0x100>;
     };
 
     spi1: spi@20100 {
-           compatible = "shakti,spi";
-           reg = <0x0 0x20100 0x0 0x100>;
+      compatible = "shakti,spi";
+      reg = <0x0 0x20100 0x0 0x100>;
     };
 
     gpio0: gpio@40200 {
-                compatible = "shakti,gpio0";
-                reg = < 0x0 0x40200 0x0 0x08>;
+      compatible = "shakti,gpio0";
+      reg = < 0x0 0x40200 0x0 0x08>;
     };
     
     i2c0: i2c@44000 {
-           compatible = "shakti,i2c0";
-           reg= <0x0 0x44000 0x0 0x100>;
+      compatible = "shakti,i2c0";
+      reg= <0x0 0x44000 0x0 0x100>;
     };
 
-  };
+    pwm0: pwm@30000 {
+      compatible = "shakti,pwm";
+      reg= < 0x0 0x30000 0x0 0x100>;
+    };
 
-pwm0: pwm@30000 {
-  compatible = "shakti,pwm";
-         reg= < 0x0 0x30000 0x0 0x100>;
-         status = "okay";
   };
 
 };
