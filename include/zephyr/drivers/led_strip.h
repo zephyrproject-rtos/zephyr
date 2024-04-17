@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2024 Jamie McCrae
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,6 +73,14 @@ typedef int (*led_api_update_channels)(const struct device *dev,
 				       size_t num_channels);
 
 /**
+ * @typedef led_api_length
+ * @brief Callback API for getting length of an LED strip.
+ *
+ * @see led_strip_length() for argument descriptions.
+ */
+typedef size_t (*led_api_length)(const struct device *dev);
+
+/**
  * @brief LED strip driver API
  *
  * This is the mandatory API any LED strip driver needs to expose.
@@ -79,6 +88,7 @@ typedef int (*led_api_update_channels)(const struct device *dev,
 __subsystem struct led_strip_driver_api {
 	led_api_update_rgb update_rgb;
 	led_api_update_channels update_channels;
+	led_api_length length;
 };
 
 /**
@@ -129,6 +139,21 @@ static inline int led_strip_update_channels(const struct device *dev,
 		(const struct led_strip_driver_api *)dev->api;
 
 	return api->update_channels(dev, channels, num_channels);
+}
+
+/**
+ * @brief	Mandatory function to get chain length (in pixels) of an LED strip device.
+ *
+ * @param dev	LED strip device.
+ *
+ * @retval	Length of LED strip device.
+ */
+static inline size_t led_strip_length(const struct device *dev)
+{
+	const struct led_strip_driver_api *api =
+		(const struct led_strip_driver_api *)dev->api;
+
+	return api->length(dev);
 }
 
 #ifdef __cplusplus

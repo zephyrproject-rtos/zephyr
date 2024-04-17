@@ -36,6 +36,7 @@ LOG_MODULE_REGISTER(lpd880x);
 
 struct lpd880x_config {
 	struct spi_dt_spec bus;
+	size_t length;
 };
 
 static int lpd880x_update(const struct device *dev, void *data, size_t size)
@@ -125,6 +126,13 @@ static int lpd880x_strip_update_channels(const struct device *dev,
 	return lpd880x_update(dev, channels, num_channels);
 }
 
+static size_t lpd880x_strip_length(const struct device *dev)
+{
+	const struct lpd880x_config *config = dev->config;
+
+	return config->length;
+}
+
 static int lpd880x_strip_init(const struct device *dev)
 {
 	const struct lpd880x_config *config = dev->config;
@@ -138,12 +146,14 @@ static int lpd880x_strip_init(const struct device *dev)
 }
 
 static const struct lpd880x_config lpd880x_config = {
-	.bus = SPI_DT_SPEC_INST_GET(0, LPD880X_SPI_OPERATION, 0)
+	.bus = SPI_DT_SPEC_INST_GET(0, LPD880X_SPI_OPERATION, 0),
+	.length = DT_INST_PROP(0, chain_length),
 };
 
 static const struct led_strip_driver_api lpd880x_strip_api = {
 	.update_rgb = lpd880x_strip_update_rgb,
 	.update_channels = lpd880x_strip_update_channels,
+	.length = lpd880x_strip_length,
 };
 
 DEVICE_DT_INST_DEFINE(0, lpd880x_strip_init, NULL,
