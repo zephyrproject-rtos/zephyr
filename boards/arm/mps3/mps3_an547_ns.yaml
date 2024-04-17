@@ -18,4 +18,4 @@ toolchain:
 testing:
   default: true
   only_tags:
-    - tfm
+    - trusted-firmware-m
