@@ -92,23 +92,21 @@ __subsystem struct led_strip_driver_api {
 };
 
 /**
- * @brief Update an LED strip made of RGB pixels
+ * @brief		Mandatory function to update an LED strip with the given RGB array.
  *
- * Important:
- *     This routine may overwrite @a pixels.
+ * @param dev		LED strip device.
+ * @param pixels	Array of pixel data.
+ * @param num_pixels	Length of pixels array.
  *
- * This routine immediately updates the strip display according to the
- * given pixels array.
+ * @retval		0 on success.
+ * @retval		-errno negative errno code on failure.
  *
- * @param dev LED strip device
- * @param pixels Array of pixel data
- * @param num_pixels Length of pixels array
- * @return 0 on success, negative on error
- * @warning May overwrite @a pixels
+ * @warning		This routine may overwrite @a pixels.
  */
 static inline int led_strip_update_rgb(const struct device *dev,
 				       struct led_rgb *pixels,
-				       size_t num_pixels) {
+				       size_t num_pixels)
+{
 	const struct led_strip_driver_api *api =
 		(const struct led_strip_driver_api *)dev->api;
 
@@ -116,25 +114,23 @@ static inline int led_strip_update_rgb(const struct device *dev,
 }
 
 /**
- * @brief Update an LED strip on a per-channel basis.
+ * @brief		Function to update an LED strip with the given channel array
+ *			(each channel byte corresponding to an individually addressable color
+ *			channel or LED. Channels are updated linearly in strip order.
  *
- * Important:
- *     This routine may overwrite @a channels.
+ * @param dev		LED strip device.
+ * @param channels	Array of per-channel data.
+ * @param num_channels	Length of channels array.
  *
- * This routine immediately updates the strip display according to the
- * given channels array. Each channel byte corresponds to an
- * individually addressable color channel or LED. Channels
- * are updated linearly in strip order.
+ * @retval		0 on success.
+ * @retval		-errno negative errno code on failure.
  *
- * @param dev LED strip device
- * @param channels Array of per-channel data
- * @param num_channels Length of channels array
- * @return 0 on success, negative on error
- * @warning May overwrite @a channels
+ * @warning		This routine may overwrite @a channels.
  */
 static inline int led_strip_update_channels(const struct device *dev,
 					    uint8_t *channels,
-					    size_t num_channels) {
+					    size_t num_channels)
+{
 	const struct led_strip_driver_api *api =
 		(const struct led_strip_driver_api *)dev->api;
 
