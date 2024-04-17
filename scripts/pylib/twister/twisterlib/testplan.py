@@ -349,13 +349,13 @@ class TestPlan:
             print("- {}".format(t))
 
     def report_test_tree(self):
-        all_tests = self.get_all_tests()
+        tests_list = self.get_tests_list()
 
         testsuite = Node("Testsuite")
         samples = Node("Samples", parent=testsuite)
         tests = Node("Tests", parent=testsuite)
 
-        for test in sorted(all_tests):
+        for test in sorted(tests_list):
             if test.startswith("sample."):
                 sec = test.split(".")
                 area = find(samples, lambda node: node.name == sec[1] and node.parent == samples)
@@ -379,13 +379,12 @@ class TestPlan:
             print("%s%s" % (pre, node.name))
 
     def report_test_list(self):
-        cnt = 0
-        all_tests = self.get_all_tests()
+        tests_list = self.get_tests_list()
 
-        for test in sorted(all_tests):
+        cnt = 0
+        for test in sorted(tests_list):
             cnt = cnt + 1
             print(" - {}".format(test))
-
         print("{} total.".format(cnt))
 
     def config(self):
@@ -479,6 +478,26 @@ class TestPlan:
             for case in ts.testcases:
                 testcases.append(case.name)
 
+        return testcases
+
+    def get_tests_list(self):
+        testcases = []
+        if tag_filter := self.options.tag:
+            for _, ts in self.testsuites.items():
+                if ts.tags.intersection(tag_filter):
+                    for case in ts.testcases:
+                        testcases.append(case.name)
+        else:
+            for _, ts in self.testsuites.items():
+                for case in ts.testcases:
+                    testcases.append(case.name)
+
+        if exclude_tag := self.options.exclude_tag:
+            for _, ts in self.testsuites.items():
+                if ts.tags.intersection(exclude_tag):
+                    for case in ts.testcases:
+                        if case.name in testcases:
+                            testcases.remove(case.name)
         return testcases
 
     def add_testsuites(self, testsuite_filter=[]):
