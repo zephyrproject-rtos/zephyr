@@ -14,6 +14,8 @@
 #include "npcx4/npcx4-espi-vws-map.dtsi"
 /* npcx4 series low-voltage io controls mapping table */
 #include "npcx4/npcx4-lvol-ctrl-map.dtsi"
+/* npcx4 series reset mapping table*/
+#include "zephyr/dt-bindings/reset/npcx4_reset.h"
 
 /* Device tree declarations of npcx soc family */
 #include "npcx.dtsi"
@@ -323,6 +325,81 @@
 			reg = <0x400c3100 0x14>;
 			#reset-cells = <1>;
 			status = "disabled";
+		};
+
+		i3c0: i3c@400f0000 {
+			compatible = "nuvoton,npcx-i3c";
+
+			/* reg[0]: I3C_1 register, reg[1]: MDMA5 register */
+			reg-names = "i3c1", "mdma5";
+			reg = <0x400f0000 0x2000>,
+			      <0x40011500 0x100>;
+
+			interrupts = <29 3>;
+
+			/* Reset controller */
+			resets = <&rctl NPCX_RESET_I3C_1>;
+
+			/* clk[0]: I3C source clock, clk[1]: timeout reference clock */
+			/* clk[2]: MDMA5 */
+			clock-names = "mclkd", "apb4", "mdma5";
+			clocks = <&pcc NPCX_CLOCK_BUS_MCLKD NPCX_PWDWN_CTL8 0>,
+				 <&pcc NPCX_CLOCK_BUS_APB4 0 0>,
+				 <&pcc NPCX_CLOCK_BUS_CORE NPCX_PWDWN_CTL9 4>;
+
+			status = "disabled";
+			#address-cells = <3>;
+			#size-cells = <0>;
+		};
+
+		i3c1: i3c@400f2000 {
+			compatible = "nuvoton,npcx-i3c";
+
+			/* reg[0]: I3C_2 register, reg[1]: MDMA6 register */
+			reg-names = "i3c2", "mdma6";
+			reg = <0x400f2000 0x2000>,
+			      <0x40011600 0x100>;
+
+			interrupts = <66 3>;
+
+			/* Reset controller */
+			resets = <&rctl NPCX_RESET_I3C_2>;
+
+			/* clk[0]: I3C source clock, clk[1]: timeout reference clock */
+			/* clk[2]: MDMA6 */
+			clock-names = "mclkd", "apb4", "mdma6";
+			clocks = <&pcc NPCX_CLOCK_BUS_MCLKD NPCX_PWDWN_CTL8 2>,
+				 <&pcc NPCX_CLOCK_BUS_APB4 0 0>,
+				 <&pcc NPCX_CLOCK_BUS_CORE NPCX_PWDWN_CTL9 5>;
+
+			status = "disabled";
+			#address-cells = <3>;
+			#size-cells = <0>;
+		};
+
+		i3c2: i3c@400f4000 {
+			compatible = "nuvoton,npcx-i3c";
+
+			/* reg[0]: I3C_3 register, reg[1]: MDMA7 register */
+			reg-names = "i3c1", "mdma7";
+			reg = <0x400f4000 0x2000>,
+			      <0x40011700 0x100>;
+
+			interrupts = <67 3>;
+
+			/* Reset controller */
+			resets = <&rctl NPCX_RESET_I3C_3>;
+
+			/* clk[0]: I3C source clock, clk[1]: timeout reference clock */
+			/* clk[2]: MDMA7 */
+			clock-names = "mclkd", "apb4", "mdma7";
+			clocks = <&pcc NPCX_CLOCK_BUS_MCLKD NPCX_PWDWN_CTL8 3>,
+				 <&pcc NPCX_CLOCK_BUS_APB4 0 0>,
+				 <&pcc NPCX_CLOCK_BUS_CORE NPCX_PWDWN_CTL9 6>;
+
+			status = "disabled";
+			#address-cells = <3>;
+			#size-cells = <0>;
 		};
 	};
 
