@@ -35,6 +35,7 @@
 		led1 = &led1;
 		led2 = &led2;
 		led3 = &led3;
+		resetinfo = &cpuapp_resetinfo;
 		sw0 = &button0;
 		sw1 = &button1;
 		sw2 = &button2;
