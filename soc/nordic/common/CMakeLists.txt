@@ -3,6 +3,8 @@
 
 add_subdirectory_ifdef(CONFIG_RISCV_CORE_NORDIC_VPR vpr)
 
+zephyr_linker_sources_ifdef(CONFIG_ARM SECTIONS arm_platform_init.ld)
+
 zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
 zephyr_include_directories(.)
