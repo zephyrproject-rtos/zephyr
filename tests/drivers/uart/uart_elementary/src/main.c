@@ -66,14 +66,12 @@ static void uart_rx_interrupt_service(const struct device *dev, uint8_t *receive
 				      int *rx_byte_offset)
 {
 	int rx_data_length = 0;
-	int bytes_received = 0;
 
 	do {
 		rx_data_length = uart_fifo_read(dev, receive_buffer_pointer + *rx_byte_offset,
 						TEST_BUFFER_LEN);
-		bytes_received += rx_data_length;
+		*rx_byte_offset += rx_data_length;
 	} while (rx_data_length);
-	*rx_byte_offset += bytes_received;
 }
 
 /*
