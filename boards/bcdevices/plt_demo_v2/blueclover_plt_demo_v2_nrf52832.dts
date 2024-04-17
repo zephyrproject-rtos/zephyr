@@ -8,6 +8,7 @@
 #include <nordic/nrf52832_qfaa.dtsi>
 #include "blueclover_plt_demo_v2_nrf52832-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
 
 / {
 	model = "Blue Clover PLT Demo Board V2";
@@ -107,6 +108,10 @@
 		compatible = "apa,apa102";
 		reg = <0>;
 		spi-max-frequency = <5250000>;
+		chain-length = <4>;
+		color-mapping = <LED_COLOR_ID_BLUE
+				 LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED>;
 	};
 };
 

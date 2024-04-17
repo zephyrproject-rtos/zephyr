@@ -10,6 +10,8 @@
  * (and be extended to test) real hardware.
  */
 
+#include <zephyr/dt-bindings/led/led.h>
+
 / {
 	test {
 		#address-cells = <1>;
@@ -83,6 +85,10 @@
 				compatible = "greeled,lpd8806";
 				reg = <2>;
 				spi-max-frequency = <2000000>;
+				chain-length = <1>;
+				color-mapping = <LED_COLOR_ID_RED
+						 LED_COLOR_ID_GREEN
+						 LED_COLOR_ID_BLUE>;
 			};
 
 			test_led_strip_1: ws2812_spi@3 {
