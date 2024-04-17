@@ -33,6 +33,10 @@
 		compatible = "nordic,entropy-prng";
 		status = "okay";
 	};
+
+	aliases {
+		resetinfo = &cpurad_resetinfo;
+	};
 };
 
 &shared_ram3x_region {
