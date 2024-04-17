@@ -172,8 +172,7 @@ void entrypoint_peer(void)
 
 	LOG_DBG("Bluetooth initialized");
 
-	err = bt_testlib_adv_conn(&conn, BT_ID_DEFAULT,
-				  (BT_LE_ADV_OPT_USE_NAME | BT_LE_ADV_OPT_FORCE_NAME_IN_AD));
+	err = bt_testlib_adv_conn(&conn, BT_ID_DEFAULT, bt_get_name());
 	TEST_ASSERT(!err, "Failed to start connectable advertising (err %d)", err);
 
 	LOG_DBG("Discover test characteristic");

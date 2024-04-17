@@ -494,7 +494,7 @@ static void test_main(void)
 
 	printk("Audio Server: Bluetooth discovered\n");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, AD_SIZE, NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, AD_SIZE, NULL, 0);
 	if (err != 0) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 		return;

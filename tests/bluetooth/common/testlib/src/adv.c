@@ -35,7 +35,7 @@ static void connected_cb(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_connect
 	k_mutex_unlock(&g_ctx_lock);
 }
 
-int bt_testlib_adv_conn(struct bt_conn **conn, int id, uint32_t adv_options)
+int bt_testlib_adv_conn(struct bt_conn **conn, int id, const char *name)
 {
 	int api_err;
 	struct bt_le_ext_adv *adv = NULL;
@@ -51,7 +51,6 @@ int bt_testlib_adv_conn(struct bt_conn **conn, int id, uint32_t adv_options)
 	param.interval_min = BT_GAP_ADV_FAST_INT_MIN_1;
 	param.interval_max = BT_GAP_ADV_FAST_INT_MAX_1;
 	param.options |= BT_LE_ADV_OPT_CONNECTABLE;
-	param.options |= adv_options;
 
 	k_condvar_init(&ctx.done);
 
@@ -60,6 +59,16 @@ int bt_testlib_adv_conn(struct bt_conn **conn, int id, uint32_t adv_options)
 	g_ctx = &ctx;
 
 	api_err = bt_le_ext_adv_create(&param, &cb, &adv);
+	if (!api_err && name != NULL) {
+		struct bt_data ad;
+
+		ad.type = BT_DATA_NAME_COMPLETE;
+		ad.data_len = strlen(name);
+		ad.data = (const uint8_t *)name;
+
+		api_err = bt_le_ext_adv_set_data(adv, &ad, 1, NULL, 0);
+	}
+
 	if (!api_err) {
 		api_err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
 	}
