@@ -205,6 +205,8 @@ source "drivers/flash/Kconfig.stm32_xspi"
 source "drivers/flash/Kconfig.xmc4xxx"
 # zephyr-keep-sorted-stop
 
+source "drivers/flash/Kconfig.renesas_ra_flash_qspi"
+
 module = FLASH
 module-str = flash
 source "subsys/logging/Kconfig.template.log_config"

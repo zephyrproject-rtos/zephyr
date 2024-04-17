@@ -142,6 +142,11 @@ config USE_RA_FSP_SDHI
 	help
 	  Enable RA FSP SDHI driver
 
+config USE_RA_FSP_QSPI_NOR_FLASH
+	bool
+	help
+	  Enable RA FSP Quad-SPI driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
