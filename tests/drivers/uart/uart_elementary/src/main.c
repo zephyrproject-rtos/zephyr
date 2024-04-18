@@ -40,6 +40,7 @@ static volatile uint8_t uart_error_counter;
 static const struct device *const uart_dev_aux = DEVICE_DT_GET(UART_NODE_AUX);
 static uint8_t test_buffer_aux[TEST_BUFFER_LEN];
 static volatile uint8_t aux_uart_error;
+static volatile uint8_t aux_uart_error_counter;
 #endif
 
 /*
@@ -110,12 +111,9 @@ static void interrupt_driven_uart_callback_aux_uart(const struct device *dev, vo
 
 	uart_irq_update(dev);
 	err = uart_err_check(dev);
-#if !defined(CONFIG_COVERAGE)
-	/* This assetion will fail with coverge enabled
-	 * When in coverage mode it has no impact on test case execution
-	 */
-	zassert_equal(err, 0, "Unexpected UART device: %s error: %d", dev->name, err);
-#endif /* CONFIG_COVERAGE */
+	if (err != 0) {
+		aux_uart_error_counter++;
+	}
 	while (uart_irq_is_pending(dev)) {
 		if (uart_irq_rx_ready(dev)) {
 			uart_rx_interrupt_service(dev, (uint8_t *)user_data, &rx_byte_offset_aux);
@@ -290,7 +288,10 @@ ZTEST(uart_elementary, test_uart_dual_port_transmission)
 	uart_irq_err_disable(uart_dev_aux);
 
 #if defined(CONFIG_SETUP_MISMATCH_TEST)
-	zassert_not_equal(uart_error_counter, 0);
+	TC_PRINT("Mismatched configuration test\n");
+	zassert_not_equal(uart_error_counter + aux_uart_error_counter, 0,
+			  "UART configuration mismatch error not detected");
+
 #else
 	for (int index = 0; index < TEST_BUFFER_LEN; index++) {
 		zassert_equal(test_buffer[index], test_pattern[index],
