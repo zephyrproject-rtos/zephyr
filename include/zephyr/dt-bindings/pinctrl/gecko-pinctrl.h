@@ -66,6 +66,11 @@
 #define GECKO_FUN_SPI_CSN  7U
 #define GECKO_FUN_SPI_SCK  8U
 
+#define GECKO_FUN_I2C_SDA 9U
+#define GECKO_FUN_I2C_SCL 10U
+#define GECKO_FUN_I2C_SDA_LOC 11U
+#define GECKO_FUN_I2C_SCL_LOC 12U
+
 /** @} */
 
 /**
