@@ -2722,7 +2722,15 @@ void ull_adv_aux_offset_get(struct ll_adv_set *adv)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, mfy_aux_offset_get};
+	struct lll_adv_aux *lll_aux;
 	uint32_t ret;
+
+	/* Reset primary PDU to auxiliary PDU offset, so that we can check
+	 * for its population being complete before transmission in LLL.
+	 */
+	lll_aux = adv->lll.aux;
+	lll_aux->ticks_pri_pdu_offset = 0U;
+	lll_aux->us_pri_pdu_offset = 0U;
 
 	/* NOTE: Single mayfly instance is sufficient as primary channel PDUs
 	 *       use time reservation, and this mayfly shall complete within
@@ -2768,8 +2776,14 @@ struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(struct pdu_adv *pdu,
 		ptr += sizeof(struct pdu_adv_adi);
 	}
 
+	/* Reference to aux ptr structure in the PDU */
 	aux_ptr = (void *)ptr;
+
+	/* Aux offset value in micro seconds */
 	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) + remainder_us - start_us;
+	LL_ASSERT(offs >= EVENT_MAFS_US);
+
+	/* Fill aux offset in offset units 30 or 300 us */
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> OFFS_UNIT_BITS)) {
 		offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);

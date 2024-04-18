@@ -959,6 +959,13 @@ static int prepare_cb(struct lll_prepare_param *p)
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	/* Check for aux offset calculation and population completed in
+	 * ULL_LOW context.
+	 */
+	LL_ASSERT(!lll->aux || lll->aux->ticks_pri_pdu_offset || lll->aux->us_pri_pdu_offset);
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 	radio_reset();
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
