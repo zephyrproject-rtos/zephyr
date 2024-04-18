@@ -417,6 +417,18 @@ class TestPlan:
         platform_config = self.test_config.get('platforms', {})
         for folder in board_dirs:
             for file in glob.glob(os.path.join(folder, "*.yaml")):
+                # If the user set a platform filter, we can, if no other option would increase
+                # the allowed platform pool, save on time by not loading YAMLs of any boards
+                # that do not start with the required names.
+                if self.options.platform and \
+                    not self.options.all and \
+                    not self.options.integration and \
+                    not any([
+                        os.path.basename(file).startswith(
+                            re.split('[/@]', p)[0]
+                        ) for p in self.options.platform
+                    ]):
+                    continue
                 try:
                     platform = Platform()
                     platform.load(file)
@@ -702,15 +714,17 @@ class TestPlan:
             if ts.build_on_all and not platform_filter and platform_config.get('increased_platform_scope', True):
                 platform_scope = self.platforms
             elif ts.integration_platforms:
-                self.verify_platforms_existence(
-                    ts.integration_platforms, f"{ts_name} - integration_platforms")
                 integration_platforms = list(filter(lambda item: item.name in ts.integration_platforms,
                                                     self.platforms))
                 if self.options.integration:
+                    self.verify_platforms_existence(
+                        ts.integration_platforms, f"{ts_name} - integration_platforms")
                     platform_scope = integration_platforms
                 else:
                     # if not in integration mode, still add integration platforms to the list
                     if not platform_filter:
+                        self.verify_platforms_existence(
+                            ts.integration_platforms, f"{ts_name} - integration_platforms")
                         platform_scope = platforms + integration_platforms
                     else:
                         platform_scope = platforms
