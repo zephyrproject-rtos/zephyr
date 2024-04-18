@@ -2768,8 +2768,13 @@ struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(struct pdu_adv *pdu,
 		ptr += sizeof(struct pdu_adv_adi);
 	}
 
+	/* Reference to aux ptr structure in the PDU */
 	aux_ptr = (void *)ptr;
+
+	/* Aux offset value in micro seconds */
 	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) + remainder_us - start_us;
+
+	/* Fill aux offset in offset units 30 or 300 us */
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> OFFS_UNIT_BITS)) {
 		offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
@@ -3147,11 +3152,14 @@ static void mfy_aux_offset_get(void *param)
 	struct lll_adv_aux *lll_aux;
 	struct ll_adv_aux_set *aux;
 	uint32_t ticks_to_expire;
+	uint32_t ticks_to_start;
 	uint8_t data_chan_count;
 	uint8_t *data_chan_map;
 	uint32_t ticks_current;
+	uint32_t ticks_elapsed;
 	struct ll_adv_set *adv;
 	struct pdu_adv *pdu;
+	uint32_t ticks_now;
 	uint32_t remainder;
 	uint8_t ticker_id;
 	uint8_t retry;
@@ -3164,8 +3172,8 @@ static void mfy_aux_offset_get(void *param)
 
 	id = TICKER_NULL;
 	ticks_to_expire = 0U;
-	ticks_current = 0U;
-	retry = 4U;
+	ticks_current = adv->ticks_at_expire;
+	retry = 1U; /* Assert on first ticks_current change */
 	do {
 		uint32_t volatile ret_cb;
 		uint32_t ticks_previous;
@@ -3191,6 +3199,13 @@ static void mfy_aux_offset_get(void *param)
 		success = (ret_cb == TICKER_STATUS_SUCCESS);
 		LL_ASSERT(success);
 
+		/* FIXME: If the reference ticks change then implement the
+		 *        compensation by adding the difference to the
+		 *        calculated ticks_to_expire.
+		 *        The ticks current can change if there are overlapping
+		 *        ticker expiry that update the ticks_current.
+		 *        For now assert until the fix implementation is added.
+		 */
 		LL_ASSERT((ticks_current == ticks_previous) || retry--);
 
 		LL_ASSERT(id != TICKER_NULL);
@@ -3234,6 +3249,13 @@ static void mfy_aux_offset_get(void *param)
 	aux_ptr->chan_idx = lll_chan_sel_2(lll_aux->data_chan_counter,
 					   aux->data_chan_id,
 					   data_chan_map, data_chan_count);
+
+	ticks_now = ticker_ticks_now_get();
+	ticks_elapsed = ticker_ticks_diff_get(ticks_now, ticks_current);
+	ticks_to_start = MAX(adv->ull.ticks_active_to_start,
+			     adv->ull.ticks_prepare_to_start) -
+			 adv->ull.ticks_preempt_to_start;
+	LL_ASSERT(ticks_elapsed < ticks_to_start);
 }
 
 static void ticker_op_cb(uint32_t status, void *param)
