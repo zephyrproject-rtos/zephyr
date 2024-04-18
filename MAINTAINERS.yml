@@ -4007,6 +4007,102 @@ West:
   labels:
     - "area: ACPI"
 
+"West project: bsim":
+  status: maintained
+  maintainers:
+    - aescolar
+  files: []
+  labels:
+    - "platform: nRF BSIM"
+
+"West project: babblesim_base":
+  status: maintained
+  maintainers:
+    - aescolar
+  files: []
+  labels:
+    - "platform: nRF BSIM"
+
+"West project: babblesim_ext_2G4_libPhyComv1":
+  status: maintained
+  maintainers:
+    - aescolar
+  files: []
+  labels:
+    - "platform: nRF BSIM"
+
+"West project: babblesim_ext_2G4_phy_v1":
+  status: maintained
+  maintainers:
+    - aescolar
+  files: []
+  labels:
+    - "platform: nRF BSIM"
+
+"West project: babblesim_ext_2G4_channel_NtNcable":
+  status: maintained
+  maintainers:
+    - aescolar
+  files: []
+  labels:
+    - "platform: nRF BSIM"
+
+"West project: babblesim_ext_2G4_channel_multiatt":
+  status: maintained
+  maintainers:
+    - aescolar
+  files: []
+  labels:
+    - "platform: nRF BSIM"
+
+"West project: babblesim_ext_2G4_modem_magic":
+  status: maintained
+  maintainers:
+    - aescolar
+  files: []
+  labels:
+    - "platform: nRF BSIM"
+
+"West project: babblesim_ext_2G4_modem_BLE_simple":
+  status: maintained
+  maintainers:
+    - aescolar
+  files: []
+  labels:
+    - "platform: nRF BSIM"
+
+"West project: babblesim_ext_2G4_device_burst_interferer":
+  status: maintained
+  maintainers:
+    - aescolar
+  files: []
+  labels:
+    - "platform: nRF BSIM"
+
+"West project: babblesim_ext_2G4_device_WLAN_actmod":
+  status: maintained
+  maintainers:
+    - aescolar
+  files: []
+  labels:
+    - "platform: nRF BSIM"
+
+"West project: babblesim_ext_2G4_device_playback":
+  status: maintained
+  maintainers:
+    - aescolar
+  files: []
+  labels:
+    - "platform: nRF BSIM"
+
+"West project: babblesim_ext_libCryptov1":
+  status: maintained
+  maintainers:
+    - aescolar
+  files: []
+  labels:
+    - "platform: nRF BSIM"
+
 "West project: canopennode":
   status: maintained
   maintainers:
