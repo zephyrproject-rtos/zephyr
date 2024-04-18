@@ -521,6 +521,10 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 				      sizeof(*req) +
 				      (channels * sizeof(uint16_t)));
 
+	if (!buf) {
+		return -ENOMEM;
+	}
+
 	req = net_buf_add(buf, sizeof(*req));
 
 	ch = BT_L2CAP_LE_CHAN(chan[0]);
@@ -1407,6 +1411,9 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 response:
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_ECRED_RECONF_RSP, ident,
 				      sizeof(*rsp));
+	if (!buf) {
+		return;
+	}
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	rsp->result = sys_cpu_to_le16(result);
