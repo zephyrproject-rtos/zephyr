@@ -461,7 +461,7 @@ static int release_tx_buffer(struct backend_data *dev_data, const uint8_t *buffe
 			     int new_size)
 {
 	const struct icbmsg_config *conf = dev_data->conf;
-	size_t size;
+	size_t size = 0;
 	int tx_block_index;
 
 	tx_block_index = buffer_to_index_validate(&conf->tx, buffer, &size);
