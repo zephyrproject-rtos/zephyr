@@ -492,7 +492,8 @@ static int sys_clock_driver_init(void)
 	nrfy_grtc_waketime_set(NRF_GRTC, WAKETIME);
 #endif /* CONFIG_NRF_GRTC_START_SYSCOUNTER */
 
-	IRQ_CONNECT(DT_IRQN(GRTC_NODE), DT_IRQ(GRTC_NODE, priority), nrfx_grtc_irq_handler, 0, 0);
+	IRQ_CONNECT(DT_IRQN(GRTC_NODE), DT_IRQ(GRTC_NODE, priority), nrfx_isr,
+		    nrfx_grtc_irq_handler, 0);
 
 	err_code = nrfx_grtc_init(0);
 	if (err_code != NRFX_SUCCESS) {
