@@ -35,7 +35,7 @@ config ESPI_PERIPHERAL_UART
 config ESPI_PERIPHERAL_UART_SOC_MAPPING
 	int "SoC port exposed as logical eSPI UART"
 	default 2 if SOC_SERIES_MEC174X || SOC_SERIES_MEC175X
-	default 1 if SOC_SERIES_MEC172XH || SOC_SERIES_MEC520X
+	default 1 if SOC_SERIES_MECH172X
 	depends on ESPI_PERIPHERAL_UART
 	help
 	  This tells the driver to which SoC UART to direct the UART traffic
