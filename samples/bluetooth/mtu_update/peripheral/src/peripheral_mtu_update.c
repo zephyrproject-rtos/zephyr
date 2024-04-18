@@ -23,7 +23,9 @@ static const struct bt_uuid_128 notify_characteristic_uuid =
 
 static const struct bt_data adv_ad_data[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID128_ALL, MTU_TEST_SERVICE_TYPE)};
+	BT_DATA_BYTES(BT_DATA_UUID128_ALL, MTU_TEST_SERVICE_TYPE),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
 
 static void ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
@@ -61,8 +63,7 @@ void run_peripheral_sample(uint8_t *notify_data, size_t notify_data_size, uint16
 	struct bt_gatt_attr *notify_crch =
 		bt_gatt_find_by_uuid(mtu_test.attrs, 0xffff, &notify_characteristic_uuid.uuid);
 
-	/* Advertise. Auto include name in adv data. Connectable. */
-	bt_le_adv_start(BT_LE_ADV_CONN_NAME, adv_ad_data, ARRAY_SIZE(adv_ad_data), NULL, 0);
+	bt_le_adv_start(BT_LE_ADV_CONN, adv_ad_data, ARRAY_SIZE(adv_ad_data), NULL, 0);
 
 	bool infinite = seconds == 0;
 

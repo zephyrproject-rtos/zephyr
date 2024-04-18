@@ -38,6 +38,10 @@ static const struct bt_data ad[] = {
 		      0xdf, 0x4b, 0xd3, 0x8e, 0x00, 0x75, 0xc8, 0xa3),
 };
 
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 /* Eddystone Service Variables */
 /* Service UUID a3c87500-8ed3-4bdf-8a39-a01bebede295 */
 static const struct bt_uuid_128 eds_uuid = BT_UUID_INIT_128(
@@ -427,7 +431,7 @@ static int eds_slot_restart(struct eds_slot *slot, uint8_t type)
 			addr = oob.addr;
 		}
 
-		err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad),
+		err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
 				      NULL, 0);
 	} else {
 		size_t count = 1;
@@ -631,7 +635,7 @@ static void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	/* Start advertising */
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;

@@ -195,6 +195,10 @@ BT_CONN_CB_DEFINE(conn_cb) = {
 	.disconnected = disconnected,
 };
 
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 int main(void)
 {
 	struct bt_le_per_adv_sync_transfer_param past_param;
@@ -223,11 +227,9 @@ int main(void)
 
 	do {
 		err = bt_le_adv_start(
-			BT_LE_ADV_PARAM(BT_LE_ADV_OPT_ONE_TIME | BT_LE_ADV_OPT_CONNECTABLE |
-						BT_LE_ADV_OPT_USE_NAME |
-						BT_LE_ADV_OPT_FORCE_NAME_IN_AD,
+			BT_LE_ADV_PARAM(BT_LE_ADV_OPT_ONE_TIME | BT_LE_ADV_OPT_CONNECTABLE,
 					BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL),
-			NULL, 0, NULL, 0);
+			NULL, 0, sd, ARRAY_SIZE(sd));
 		if (err && err != -EALREADY) {
 			printk("Advertising failed to start (err %d)\n", err);
 
