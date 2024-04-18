@@ -313,11 +313,13 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 			far = read_far_el1();
 			elr = read_elr_el1();
 			break;
+#if !defined(CONFIG_ARMV8_R)
 		case MODE_EL3:
 			esr = read_esr_el3();
 			far = read_far_el3();
 			elr = read_elr_el3();
 			break;
+#endif /* CONFIG_ARMV8_R */
 		}
 
 #ifdef CONFIG_ARM64_STACK_PROTECTION
