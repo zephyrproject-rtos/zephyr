@@ -31,7 +31,7 @@
 #else /* !CONFIG_BT_OBSERVER */
 /* Active connection in peripheral role with legacy scanning on 1M.
  */
-#define EVENT_OVERHEAD_START_US       275 /* 9 RTC ticks */
+#define EVENT_OVERHEAD_START_US       733 /* 9 RTC ticks */
 #endif /* !CONFIG_BT_OBSERVER */
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 /* Active connection in peripheral role with additional advertising state.
