@@ -1,0 +1,9 @@
+sample:
+  name: Exercise eSPI driver connected to real eSPI Host controller
+tests:
+  sample.boards.mec_assy6906.espi_target:
+    build_only: true
+    platform_allow:
+      - mec_assy6906_mech1723nlj
+      - mec_assy6906_mech1723nsz
+    tags: drivers espi
