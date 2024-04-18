@@ -43,6 +43,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset_prep_c)
 
 	switch_el x0, 3f, 2f, 1f
 3:
+#if !defined(CONFIG_ARMV8_R)
 	/* Reinitialize SCTLR from scratch in EL3 */
 	ldr	w0, =(SCTLR_EL3_RES1 | SCTLR_I_BIT | SCTLR_SA_BIT)
 	msr	sctlr_el3, x0
@@ -55,6 +56,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset_prep_c)
 	msr     sp_el1, x24
 
 	b	out
+#endif /* CONFIG_ARMV8_R */
 2:
 	/* Disable alignment fault checking */
 	mrs	x0, sctlr_el2
@@ -216,7 +218,9 @@ stack_init_done:
 
 switch_el:
 	switch_el x0, 3f, 2f, 1f
+
 3:
+#if !defined(CONFIG_ARMV8_R)
 	/* EL3 init */
 	bl	z_arm64_el3_init
 
@@ -224,6 +228,7 @@ switch_el:
 	adr	x0, switch_el
 	bl	z_arm64_el3_get_next_el
 	eret
+#endif /* CONFIG_ARMV8_R */
 
 2:
 	/* EL2 init */
