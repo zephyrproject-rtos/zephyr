@@ -275,6 +275,9 @@ class Reporting:
             if used_rom:
                 suite["used_rom"] = used_rom
 
+            if self.env.options.enable_size_report:
+                suite["rom_ram_from_buildlog"] = self.env.options.footprint_from_buildlog
+
             suite['retries'] = instance.retries
 
             if instance.dut:
