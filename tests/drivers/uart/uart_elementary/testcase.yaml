@@ -33,3 +33,11 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54l15pdk_nrf54l15_cpuapp_dual_uart.overlay"
     extra_configs:
       - CONFIG_DUAL_UART_TEST=y
+  drivers.uart.uart_elementary_dual_setup_mismatch_nrf54l:
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - nrf54l15pdk/nrf54l15/cpuapp
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15pdk_nrf54l15_cpuapp_dual_uart.overlay"
+    extra_configs:
+      - CONFIG_DUAL_UART_TEST=y
+      - CONFIG_SETUP_MISMATCH_TEST=y
