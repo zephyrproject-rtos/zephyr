@@ -1048,6 +1048,11 @@ static int bt_gatt_store_cf(uint8_t id, const bt_addr_le_t *peer)
 
 }
 
+static bool is_host_managed_ccc(const struct bt_gatt_attr *attr)
+{
+	return (attr->write == bt_gatt_attr_write_ccc);
+}
+
 #if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP)
 /** Struct used to store both the id and the random address of a device when replacing
  * random addresses in the ccc attribute's cfg array with the device's id address after
@@ -1064,8 +1069,7 @@ static uint8_t convert_to_id_on_match(const struct bt_gatt_attr *attr,
 	struct _bt_gatt_ccc *ccc;
 	struct addr_match *match = user_data;
 
-	/* Check if attribute is a CCC */
-	if (attr->write != bt_gatt_attr_write_ccc) {
+	if (!is_host_managed_ccc(attr)) {
 		return BT_GATT_ITER_CONTINUE;
 	}
 
@@ -1630,7 +1634,7 @@ static int gatt_unregister(struct bt_gatt_service *svc)
 	for (uint16_t i = 0; i < svc->attr_count; i++) {
 		struct bt_gatt_attr *attr = &svc->attrs[i];
 
-		if (attr->write == bt_gatt_attr_write_ccc) {
+		if (is_host_managed_ccc(attr)) {
 			gatt_unregister_ccc(attr->user_data);
 		}
 	}
@@ -2652,8 +2656,7 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	struct _bt_gatt_ccc *ccc;
 	size_t i;
 
-	/* Check attribute user_data must be of type struct _bt_gatt_ccc */
-	if (attr->write != bt_gatt_attr_write_ccc) {
+	if (!is_host_managed_ccc(attr)) {
 		return BT_GATT_ITER_CONTINUE;
 	}
 
@@ -3230,8 +3233,7 @@ static uint8_t update_ccc(const struct bt_gatt_attr *attr, uint16_t handle,
 	size_t i;
 	uint8_t err;
 
-	/* Check attribute user_data must be of type struct _bt_gatt_ccc */
-	if (attr->write != bt_gatt_attr_write_ccc) {
+	if (!is_host_managed_ccc(attr)) {
 		return BT_GATT_ITER_CONTINUE;
 	}
 
@@ -3293,8 +3295,7 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	bool value_used;
 	size_t i;
 
-	/* Check attribute user_data must be of type struct _bt_gatt_ccc */
-	if (attr->write != bt_gatt_attr_write_ccc) {
+	if (!is_host_managed_ccc(attr)) {
 		return BT_GATT_ITER_CONTINUE;
 	}
 
@@ -5649,8 +5650,7 @@ static uint8_t ccc_load(const struct bt_gatt_attr *attr, uint16_t handle,
 	struct _bt_gatt_ccc *ccc;
 	struct bt_gatt_ccc_cfg *cfg;
 
-	/* Check if attribute is a CCC */
-	if (attr->write != bt_gatt_attr_write_ccc) {
+	if (!is_host_managed_ccc(attr)) {
 		return BT_GATT_ITER_CONTINUE;
 	}
 
@@ -5987,8 +5987,7 @@ static uint8_t ccc_save(const struct bt_gatt_attr *attr, uint16_t handle,
 	struct _bt_gatt_ccc *ccc;
 	struct bt_gatt_ccc_cfg *cfg;
 
-	/* Check if attribute is a CCC */
-	if (attr->write != bt_gatt_attr_write_ccc) {
+	if (!is_host_managed_ccc(attr)) {
 		return BT_GATT_ITER_CONTINUE;
 	}
 
@@ -6265,8 +6264,7 @@ static uint8_t remove_peer_from_attr(const struct bt_gatt_attr *attr,
 	struct _bt_gatt_ccc *ccc;
 	struct bt_gatt_ccc_cfg *cfg;
 
-	/* Check if attribute is a CCC */
-	if (attr->write != bt_gatt_attr_write_ccc) {
+	if (!is_host_managed_ccc(attr)) {
 		return BT_GATT_ITER_CONTINUE;
 	}
 
