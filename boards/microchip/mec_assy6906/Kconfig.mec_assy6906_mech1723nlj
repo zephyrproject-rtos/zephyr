@@ -1,0 +1,5 @@
+# Copyright (c) 2024, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MEC_ASSY6906_MECH1723NLJ
+	select SOC_MECH1723_NLJ

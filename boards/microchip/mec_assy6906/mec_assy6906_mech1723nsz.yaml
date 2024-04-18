@@ -1,0 +1,27 @@
+#
+# Copyright (c) 2024, Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mec_assy6906_mech1723nsz
+name: MEC172x Assembly 6906 EVB with MECH1723-NSZ (MEC1723-NSZ using MEC5 HAL)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 60
+flash: 416
+supported:
+  - gpio
+  - pinctrl
+  - i2c
+  - spi
+testing:
+  binaries:
+    - spi_image.bin
+  ignore_tags:
+    - bluetooth
+    - net
+vendor: microchip

@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2023, Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <microchip/mec5_mec1723nsz.dtsi>
+#include <microchip/mec5/mec1723nsz-b0-pinctrl.dtsi>
+
+/ {
+	model = "Microchip MEC_ASSY6906_MECH1723NSZ evaluation board";
+	compatible = "microchip,mec_assy6906_mech1723nsz", "microchip,mec_mech1723nsz";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart1;
+	};
+
+	power-states {
+		idle: idle {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <1000000>;
+		};
+
+		suspend_to_ram: suspend_to_ram {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			min-residency-us = <2000000>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <96000000>;
+	status = "okay";
+	cpu-power-states = <&idle &suspend_to_ram>;
+};
+
+&systick {
+	status = "okay";
+};
+
+&uart1 {
+	compatible = "microchip,mec5-uart";
+	status = "okay";
+	clock-frequency = <1843200>;
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_tx_gpio170 &uart1_rx_gpio171>;
+	pinctrl-names = "default";
+};
