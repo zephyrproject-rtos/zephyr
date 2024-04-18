@@ -2396,6 +2396,25 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 				     TICKER_USER_ID_LLL, 0, &mfy);
 		LL_ASSERT(!ret);
 
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING) || \
+	(defined(CONFIG_BT_CTLR_ADV_EXT) && \
+	 (CONFIG_BT_CTLR_ADV_AUX_SET > 0) && \
+	 !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO))
+		/* Remember the ticks_at_expire, will be used by JIT scheduling
+		 * and for checking latency calculating the aux offset for
+		 * extended advertising.
+		 */
+		adv->ticks_at_expire = ticks_at_expire;
+
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+		adv->delay_at_expire = adv->delay;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING ||
+	* (CONFIG_BT_CTLR_ADV_EXT &&
+	*  (CONFIG_BT_CTLR_ADV_AUX_SET > 0) &&
+	*  !CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	*/
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) && \
 	!defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		if (adv->lll.aux) {
@@ -2404,11 +2423,6 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 #endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 	* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO
 	*/
-
-#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-		adv->ticks_at_expire = ticks_at_expire;
-		adv->delay_at_expire = adv->delay;
-#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 	}
 
 	/* Apply adv random delay */
