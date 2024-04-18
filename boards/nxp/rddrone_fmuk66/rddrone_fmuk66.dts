@@ -239,28 +239,20 @@ zephyr_udc0: &usbotg {
 			reg = <0x00000000 0x00010000>;
 			read-only;
 		};
-
-		/*
-		 * The flash starting at 0x00010000 and ending at
-		 * 0x0001ffff (sectors 16-31) is reserved for use
-		 * by the application.
+		/* Note slot 0 has one additional sector,
+		 * this is intended for use with the swap move algorithm
 		 */
-		storage_partition: partition@1e000 {
-			label = "storage";
-			reg = <0x0001e000 0x00002000>;
-		};
-
-		slot0_partition: partition@20000 {
+		slot0_partition: partition@10000 {
 			label = "image-0";
-			reg = <0x00020000 0x00060000>;
+			reg = <0x00010000 0x000E9000>;
 		};
-		slot1_partition: partition@80000 {
+		slot1_partition: partition@F9000 {
 			label = "image-1";
-			reg = <0x00080000 0x00060000>;
+			reg = <0x000F9000 0x000E8000>;
 		};
-		scratch_partition: partition@e0000 {
-			label = "image-scratch";
-			reg = <0x000e0000 0x00020000>;
+		storage_partition: partition@1e1000 {
+			label = "storage";
+			reg = <0x001e1000 0x0001f000>;
 		};
 	};
 };
