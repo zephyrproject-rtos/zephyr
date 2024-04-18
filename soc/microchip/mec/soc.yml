@@ -16,3 +16,7 @@ family:
     socs:
     - name: mec1753_qlj
     - name: mec1753_qsz
+  - name: mech172x
+    socs:
+    - name: mech1723_nlj
+    - name: mech1723_nsz
