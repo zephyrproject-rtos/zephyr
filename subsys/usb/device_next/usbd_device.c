@@ -149,6 +149,7 @@ set_code_triple_exit:
 int usbd_wakeup_request(struct usbd_contex *const uds_ctx)
 {
 	struct udc_device_caps caps = udc_caps(uds_ctx->dev);
+	const k_timeout_t resume_timeout = K_MSEC(25);
 	int ret = 0;
 
 	usbd_device_lock(uds_ctx);
@@ -165,7 +166,19 @@ int usbd_wakeup_request(struct usbd_contex *const uds_ctx)
 		goto wakeup_request_error;
 	}
 
+	k_sem_reset(&uds_ctx->rwup_sem);
 	ret = udc_host_wakeup(uds_ctx->dev);
+	if (ret) {
+		LOG_ERR("Failed to signal remote wakekup, %d", ret);
+		goto wakeup_request_error;
+	}
+
+	ret = k_sem_take(&uds_ctx->rwup_sem, resume_timeout);
+	if (ret) {
+		LOG_ERR("Remote wakeup timeout");
+	} else {
+		LOG_DBG("Resumed after remote wakeup");
+	}
 
 wakeup_request_error:
 	usbd_device_unlock(uds_ctx);
