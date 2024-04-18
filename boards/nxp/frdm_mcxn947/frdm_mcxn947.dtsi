@@ -6,6 +6,7 @@
 
 #include "frdm_mcxn947-pinctrl.dtsi"
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	aliases{
@@ -41,11 +42,13 @@
 		user_button_2: button_0 {
 			label = "User SW2";
 			gpios = <&gpio0 23 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
 			status = "disabled";
 		};
 		user_button_3: button_1 {
 			label = "User SW3";
 			gpios = <&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_1>;
 			status = "disabled";
 		};
 	};
