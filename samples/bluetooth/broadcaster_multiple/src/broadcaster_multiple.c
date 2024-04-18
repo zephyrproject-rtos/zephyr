@@ -70,8 +70,8 @@ int broadcaster_multiple(void)
 		.sid = 0U, /* Supply unique SID when creating advertising set */
 		.secondary_max_skip = 0U,
 		.options = (BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_USE_NAME),
-		.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
-		.interval_max = BT_GAP_ADV_FAST_INT_MAX_2,
+		.interval_min = 0x0140,
+		.interval_max = 0x0140,
 		.peer = NULL,
 	};
 	int err;
@@ -112,9 +112,10 @@ int broadcaster_multiple(void)
 			       "(err %d)\n", index, err);
 			return err;
 		}
-
-		printk("Started Extended Advertising Set %d.\n", index);
 	}
+
+	printk("Started %u Extended Advertising Sets.\n",
+	       CONFIG_BT_EXT_ADV_MAX_ADV_SET);
 
 	return 0;
 }
