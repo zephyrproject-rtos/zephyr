@@ -59,6 +59,7 @@ static const struct bt_data ad[] = {
 #if CONFIG_BT_CTLR_ADV_DATA_LEN_MAX > 255
 	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, sizeof(mfg_data)),
 #endif
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
 static struct bt_le_ext_adv *adv[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
@@ -69,7 +70,7 @@ int broadcaster_multiple(void)
 		.id = BT_ID_DEFAULT,
 		.sid = 0U, /* Supply unique SID when creating advertising set */
 		.secondary_max_skip = 0U,
-		.options = (BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_USE_NAME),
+		.options = BT_LE_ADV_OPT_EXT_ADV,
 		.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
 		.interval_max = BT_GAP_ADV_FAST_INT_MAX_2,
 		.peer = NULL,

@@ -60,6 +60,10 @@ static struct bt_iso_big_create_param big_create_param = {
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
+static const struct bt_data ad[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 static void iso_connected(struct bt_iso_chan *chan)
 {
 	LOG_INF("ISO Channel %p connected", chan);
@@ -615,10 +619,17 @@ static int create_big(struct bt_le_ext_adv **adv, struct bt_iso_big **big)
 
 	/* Create a non-connectable non-scannable advertising set */
 	LOG_INF("Creating Extended Advertising set");
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, adv);
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, adv);
 	if (err != 0) {
 		LOG_ERR("Failed to create advertising set (err %d)", err);
 		return err;
+	}
+
+	/* Set advertising data to have complete local name set */
+	err = bt_le_ext_adv_set_data(*adv, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err) {
+		LOG_ERR("Failed to set advertising data (err %d)", err);
+		return 0;
 	}
 
 	LOG_INF("Setting Periodic Advertising parameters");
