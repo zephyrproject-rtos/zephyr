@@ -14,7 +14,6 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys_clock.h>
-#include <soc.h>
 
 struct nxp_enet_mdio_config {
 	ENET_Type *base;
