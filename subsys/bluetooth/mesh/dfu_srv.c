@@ -78,7 +78,9 @@ static void apply_rsp_sent(int err, void *cb_params)
 	struct bt_mesh_dfu_srv *srv = cb_params;
 
 	if (err) {
-		LOG_WRN("Apply response failed, wait for retry");
+		/* return phase back to give client one more chance. */
+		srv->update.phase = BT_MESH_DFU_PHASE_VERIFY_OK;
+		LOG_WRN("Apply response failed, wait for retry (err %d)", err);
 		return;
 	}
 
@@ -87,15 +89,18 @@ static void apply_rsp_sent(int err, void *cb_params)
 	if (!srv->cb->apply || srv->update.idx == UPDATE_IDX_NONE) {
 		srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
 		store_state(srv);
+		LOG_DBG("Prerequisites for apply callback are wrong");
 		return;
 	}
+
+	store_state(srv);
 
 	err = srv->cb->apply(srv, &srv->imgs[srv->update.idx]);
 	if (err) {
 		srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
+		store_state(srv);
+		LOG_DBG("Application apply callback failed (err %d)", err);
 	}
-
-	store_state(srv);
 }
 
 static void apply_rsp_sending(uint16_t duration, int err, void *cb_params)
@@ -418,8 +423,6 @@ static int handle_apply(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	 * case it triggers a reboot:
 	 */
 	srv->update.phase = BT_MESH_DFU_PHASE_APPLYING;
-	store_state(srv);
-
 	update_status_rsp(srv, ctx, BT_MESH_DFU_SUCCESS, &send_cb);
 
 	return 0;
