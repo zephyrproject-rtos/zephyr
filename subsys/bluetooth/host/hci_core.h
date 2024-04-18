@@ -35,12 +35,40 @@ enum {
 	BT_DEV_HAS_PUB_KEY,
 	BT_DEV_PUB_KEY_BUSY,
 
-	BT_DEV_SCANNING,
+	/** The application explicitly instructed the stack to scan for advertisers
+	 * using the API @ref bt_le_scan_start().
+	 */
 	BT_DEV_EXPLICIT_SCAN,
+
+	/** The application either explicitly or implicitly instructed the stack to scan
+	 * for advertisers.
+	 *
+	 * Examples of such cases
+	 *  - Explicit scanning, @ref BT_DEV_EXPLICIT_SCAN.
+	 *  - The application instructed the stack to automatically connect if a given device
+	 *    is detected.
+	 *  - The application wants to connect to a peer device using private addresses, but
+	 *    the controller resolving list is too small. The host will fallback to using
+	 *    host-based privacy and first scan for the device before it initiates a connection.
+	 *  - The application wants to synchronize to a periodic advertiser.
+	 *    The host will implicitly start scanning if it is not already doing so.
+	 *
+	 * The host needs to keep track of this state to ensure it can restart scanning
+	 * when a connection is established/lost, explicit scanning is started or stopped etc.
+	 * Also, when the scanner and advertiser share the same identity, the scanner may need
+	 * to be restarted upon RPA refresh.
+	 */
+	BT_DEV_SCANNING,
+
+	/* Cached parameters used when initially enabling the scanner.
+	 * These are needed to ensure the same parameters are used when restarting
+	 * the scanner after refreshing an RPA.
+	 */
 	BT_DEV_ACTIVE_SCAN,
 	BT_DEV_SCAN_FILTER_DUP,
 	BT_DEV_SCAN_FILTERED,
 	BT_DEV_SCAN_LIMITED,
+
 	BT_DEV_INITIATING,
 
 	BT_DEV_RPA_VALID,
