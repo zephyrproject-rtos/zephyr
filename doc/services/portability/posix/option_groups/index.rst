@@ -406,11 +406,21 @@ POSIX_TIMERS
     timer_getoverrun(),yes
     timer_settime(),yes
 
-
 .. _posix_options:
 
 Additional POSIX Options
 ========================
+
+.. _posix_option_fsync:
+
+_POSIX_FSYNC
+++++++++++++
+
+.. csv-table:: _POSIX_FSYNC
+   :header: API, Supported
+   :widths: 50,10
+
+    fsync(),yes
 
 .. _posix_option_message_passing:
 
@@ -468,6 +478,19 @@ _POSIX_READER_WRITER_LOCKS
     pthread_rwlockattr_getpshared(),yes
     pthread_rwlockattr_init(),yes
     pthread_rwlockattr_setpshared(),yes
+
+.. _posix_option_synchronized_io:
+
+_POSIX_SYNCHRONIZED_IO
+++++++++++++++++++++++
+
+.. csv-table:: _POSIX_SYNCHRONIZED_IO
+   :header: API, Supported
+   :widths: 50,10
+
+    fdatasync(),
+    fsync(),yes
+    msync(),
 
 .. _posix_option_thread_attr_stackaddr:
 
@@ -575,7 +598,6 @@ _XOPEN_STREAMS
     isastream(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     putmsg(), yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     putpmsg(),
-
 
 .. _Subprofiling Considerations:
     https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
