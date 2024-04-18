@@ -29,6 +29,10 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_HRS_VAL)),
 };
 
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 #define DEVICE_BEACON_TXPOWER_NUM  8
@@ -39,7 +43,7 @@ static K_THREAD_STACK_DEFINE(pwr_thread_stack, 512);
 static const int8_t txpower[DEVICE_BEACON_TXPOWER_NUM] = {4, 0, -3, -8,
 							  -15, -18, -23, -30};
 static const struct bt_le_adv_param *param =
-	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME,
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE,
 			0x0020, 0x0020, NULL);
 
 static void read_conn_rssi(uint16_t handle, int8_t *rssi)
@@ -206,7 +210,7 @@ static void bt_ready(int err)
 
 	/* Start advertising */
 	err = bt_le_adv_start(param, ad, ARRAY_SIZE(ad),
-			      NULL, 0);
+			      sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;

@@ -84,6 +84,10 @@ static int start_advertising(struct bt_le_ext_adv *adv)
 	return err;
 }
 
+static const struct bt_data ad[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 int main(void)
 {
 	int err;
@@ -99,10 +103,17 @@ int main(void)
 	}
 
 	/* Create a non-connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, NULL, &adv);
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &adv);
 	if (err) {
 		printk("Failed to create advertising set (err %d)\n", err);
 		return err;
+	}
+
+	/* Set advertising data to have complete local name set */
+	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err) {
+		printk("Failed to set advertising data (err %d)\n", err);
+		return 0;
 	}
 
 	err = start_advertising(adv);

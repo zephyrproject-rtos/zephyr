@@ -23,7 +23,7 @@ BUILD_ASSERT(strlen(CONFIG_BROADCAST_CODE) <= BT_AUDIO_BROADCAST_CODE_SIZE,
  * interval.
  */
 #define BT_LE_EXT_ADV_CUSTOM                                                                       \
-	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_USE_NAME, 0x0080, 0x0080, NULL)
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, 0x0080, 0x0080, NULL)
 
 /* When BROADCAST_ENQUEUE_COUNT > 1 we can enqueue enough buffers to ensure that
  * the controller is never idle
@@ -432,6 +432,10 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	return 0;
 }
 
+static const struct bt_data ad[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 int main(void)
 {
 	struct bt_le_ext_adv *adv;
@@ -498,6 +502,12 @@ int main(void)
 		if (err != 0) {
 			printk("Unable to create extended advertising set: %d\n",
 			       err);
+			return 0;
+		}
+
+		err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
+		if (err) {
+			printk("Failed to set advertising data (err %d)\n", err);
 			return 0;
 		}
 

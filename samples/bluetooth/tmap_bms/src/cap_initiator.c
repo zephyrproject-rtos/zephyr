@@ -107,15 +107,26 @@ static struct bt_bap_stream_ops broadcast_stream_ops = {
 	.sent = broadcast_sent_cb
 };
 
+static const struct bt_data ad[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 static int setup_extended_adv(struct bt_le_ext_adv **adv)
 {
 	int err;
 
 	/* Create a non-connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, adv);
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, adv);
 	if (err != 0) {
 		printk("Unable to create extended advertising set: %d\n", err);
 		return err;
+	}
+
+	/* Set advertising data to have complete local name set */
+	err = bt_le_ext_adv_set_data(*adv, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err) {
+		printk("Failed to set advertising data (err %d)\n", err);
+		return 0;
 	}
 
 	/* Set periodic advertising parameters */
