@@ -200,15 +200,48 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 }
 
 #if defined(CONFIG_I2C_TARGET)
+
+static struct mcux_flexcomm_target_data *mcux_flexcomm_find_free_target(
+		struct mcux_flexcomm_data *data)
+{
+	struct mcux_flexcomm_target_data *target = &data->target_data;
+
+	if (!target->target_attached) {
+		return target;
+	}
+	return NULL;
+}
+
+static struct mcux_flexcomm_target_data *mcux_flexcomm_find_target_by_address(
+		struct mcux_flexcomm_data *data, uint16_t address)
+{
+	struct mcux_flexcomm_target_data *target = &data->target_data;
+
+	if (target->target_attached && target->target_cfg->address == address) {
+		return target;
+	}
+	return NULL;
+}
+
 static void i2c_target_transfer_callback(I2C_Type *base,
 		volatile i2c_slave_transfer_t *transfer, void *userData)
 {
+	/* Convert 8-bit received address to 7-bit address */
+	uint8_t address = transfer->receivedAddress >> 1;
 	struct mcux_flexcomm_data *data = userData;
-	struct mcux_flexcomm_target_data *target = &data->target_data;
-	const struct i2c_target_callbacks *target_cb = target->target_cfg->callbacks;
+	struct mcux_flexcomm_target_data *target;
+	const struct i2c_target_callbacks *target_cb;
 	static uint8_t rxVal, txVal;
 
 	ARG_UNUSED(base);
+
+	target = mcux_flexcomm_find_target_by_address(data, address);
+	if (!target) {
+		LOG_ERR("No target found for address: 0x%x", address);
+		return;
+	}
+
+	target_cb = target->target_cfg->callbacks;
 
 	switch (transfer->event) {
 	case kI2C_SlaveTransmitEvent:
@@ -264,7 +297,7 @@ int mcux_flexcomm_target_register(const struct device *dev,
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
-	struct mcux_flexcomm_target_data *target = &data->target_data;
+	struct mcux_flexcomm_target_data *target;
 	I2C_Type *base = config->base;
 	uint32_t clock_freq;
 	i2c_slave_config_t i2c_cfg;
@@ -281,7 +314,8 @@ int mcux_flexcomm_target_register(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (target->target_attached) {
+	target = mcux_flexcomm_find_free_target(data);
+	if (!target) {
 		return -EBUSY;
 	}
 
@@ -309,10 +343,11 @@ int mcux_flexcomm_target_unregister(const struct device *dev,
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
-	struct mcux_flexcomm_target_data *target = &data->target_data;
+	struct mcux_flexcomm_target_data *target;
 	I2C_Type *base = config->base;
 
-	if (!target->target_attached) {
+	target = mcux_flexcomm_find_target_by_address(data, target_config->address);
+	if (!target || !target->target_attached) {
 		return -EINVAL;
 	}
 
