@@ -78,7 +78,7 @@ Realtime Controller System Profile (PSE52)
     POSIX_C_LANG_MATH, yes, :ref:`POSIX_C_LANG_MATH <posix_option_group_c_lang_math>`
     POSIX_C_LANG_SUPPORT, yes, :ref:`POSIX_C_LANG_SUPPORT <posix_option_group_c_lang_support>`
     POSIX_DEVICE_IO,, :ref:`†<posix_undefined_behaviour>`
-    POSIX_FD_MGMT,,
+    POSIX_FD_MGMT,, :ref:`POSIX_FD_MGMT <posix_option_group_fd_mgmt>`
     POSIX_FILE_LOCKING,,
     POSIX_FILE_SYSTEM,,
     POSIX_SIGNALS,, :ref:`†<posix_undefined_behaviour>`
@@ -135,7 +135,7 @@ Dedicated Realtime System Profile (PSE53)
     POSIX_C_LANG_MATH, yes, :ref:`POSIX_C_LANG_MATH <posix_option_group_c_lang_math>`
     POSIX_C_LANG_SUPPORT, yes, :ref:`POSIX_C_LANG_SUPPORT <posix_option_group_c_lang_support>`
     POSIX_DEVICE_IO,, :ref:`†<posix_undefined_behaviour>`
-    POSIX_FD_MGMT,,
+    POSIX_FD_MGMT,, :ref:`POSIX_FD_MGMT <posix_option_group_fd_mgmt>`
     POSIX_FILE_LOCKING,,
     POSIX_FILE_SYSTEM,,
     POSIX_MULTI_PROCESS,, :ref:`†<posix_undefined_behaviour>`
