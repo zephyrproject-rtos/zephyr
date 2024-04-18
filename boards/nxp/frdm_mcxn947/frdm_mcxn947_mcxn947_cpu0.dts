@@ -157,3 +157,7 @@
 &vref {
 	status = "okay";
 };
+
+&lpadc0 {
+	status = "okay";
+};
