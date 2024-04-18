@@ -1,0 +1,90 @@
+/*
+ * Copyright (c) 2023 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/microchip-xec-gpio.h>
+#include <zephyr/dt-bindings/espi/mchp-mec5-espi.h>
+
+/* Sample for MEC_ASSY6906 board with MEC1723N LJ(176-pin) or SZ(144-pin) CPU card
+ * Emulate eSPI using QSPI controller and QSPI SHD_xxx pins.
+ * SHD_xxx pins are on VTR2 voltage domain.
+ * ESPI pins are on VTR3 (+1.8V) voltage domain on all MEC parts.
+ * Configure Assy6906 VTR2 for +1.8V
+ * JP42 1-2, JP59 1-2, JP60 2-3, JP61 1-2, JP62 1-2
+ *
+ * QSPI SHD_xxx pin jumpers:
+ * JP156 1-2 Select VTR2 for QSPI header J34
+ * JP25 1-2 Select SHD_nCS1 for GPIO002
+ * JP23 3x6 2-3, 5-6, 8-9, 11-12, 14-15, 17-18 Select SHD_CLK, SHD_IOn, SHD_nCS0 pins
+ *
+ * Assy6906 J34 QSPI SHD/PVT SPI header J34
+ * We choose SHD_nCS1 because it is not used as a strap.
+ * pins 19,20 = VTR2
+ * pins 1,5,17,18 = GND		GND
+ * pin 10 SHD_nCS1		ESPI_nCS
+ * pin 2  SHD_CLK		ESPI_CLK
+ * pin 6  SHD_IO0		ESPI_IO0
+ * pin 7  SHD_IO1		ESPI_IO1
+ * pin 8  SHD_IO2		ESPI_IO2
+ * pin 9  SHD_IO3		ESPI_IO3
+ *
+ * GPIO012(VTR2) J19-3		ESPI_nRESET
+ *   output init value = High
+ *
+ * GPIO013(VTR2) J19-1		ESPI_nALERT
+ *   output init value = High
+ *
+ * NOTE1: Target EVB has 10K pull-ups to VTR3 on all ESPI_xxx pins.
+ * Do not enable pull-ups on Assy6906 for these pins.
+ * NOTE2: eSPI Target will be configured to use its default in-band reset
+ * on ESPI_IO1.  ESPI_nALERT may be used for debug.
+ *
+ * Emulated Host to Target VCC_PWRGD
+ * GPIO030 (VTR1) on J9-1 or J40-6
+ * No not install JP77 1-2 7.5K pull-up.
+ * Configure GPIO030 as GPIO output initial state = Low
+ *
+ * Target Ready Input active Low
+ * GPIO031 (VTR1) on J40-7
+ * Install JP71 21-22 pull-up to VTR1
+ * Configure GPIO031 as GPIO input
+ *
+ */
+
+/ {
+	aliases {
+		spi0 = &qspi0;
+		led0 = &led4;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led4: led_0 {
+			gpios = <MCHP_GPIO_DECODE_175 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	/* zephyr,user is a special case node for application & test use
+	 * This node does not require a YAML binding file.
+	 * espi-gpio pins
+	 * index 0 = pin connected to ESPI_nRESET allowing app to control reset.
+	 * index 1 = eSPI IO[1] GPIO used as eSPI ALERT. eSPI Target controller
+	 * drives this pin low when it requires attention. Note: Target can drive
+	 * eSPI ALERT pin when eSPI nCS is not asserted.
+	 * index 2 = GPIO063 unused dedicated eSPI_nALERT pin. We use as GPIO to
+	 * help measure code sequences.
+	 * index 3 = GPIO030 used as GPIO output Host-to-Target VCC_PWRGD
+	 * index 4 = GPIO031 used as GPIO input Target-nReady
+	 * In application code use GPIO_DT_SPEC_GET_BY_IDX() macro.
+	 */
+	zephyr,user {
+		espi-gpios = <MCHP_GPIO_DECODE_012 GPIO_ACTIVE_HIGH>,
+			     <MCHP_GPIO_DECODE_071 GPIO_ACTIVE_HIGH>,
+			     <MCHP_GPIO_DECODE_013 GPIO_ACTIVE_HIGH>,
+			     <MCHP_GPIO_DECODE_030 GPIO_ACTIVE_HIGH>,
+			     <MCHP_GPIO_DECODE_031 GPIO_ACTIVE_HIGH>;
+	};
+};
