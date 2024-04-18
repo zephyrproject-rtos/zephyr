@@ -210,6 +210,11 @@ static int frdm_mcxn947_init(void)
 	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlVref);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpadc0), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, 1U);
+	CLOCK_AttachClk(kFRO_HF_to_ADC0);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
