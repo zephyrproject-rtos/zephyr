@@ -30,6 +30,17 @@ config SOC_FAMILY_MAX32_M4
 	select HAS_PM
 	select CLOCK_CONTROL
 
+config SOC_FAMILY_MAX32_RV32
+	select RISCV
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_PRIVILEGED
+	select ATOMIC_OPERATIONS_C
+	select INCLUDE_RESET_VECTOR
+	imply XIP
+
 config SOC_MAX32655_M4
 	select MAX32_HAS_SECONDARY_RV32
 
@@ -51,6 +62,7 @@ config MAX32_ON_ENTER_CPU_IDLE_HOOK
 	bool "CPU idle hook enable"
 	default y if !PM
 	imply ARM_ON_ENTER_CPU_IDLE_HOOK
+	depends on ARM
 	help
 	  Enables a hook (z_arm_on_enter_cpu_idle()) that is called when
 	  the CPU is made idle (by k_cpu_idle() or k_cpu_atomic_idle()).
