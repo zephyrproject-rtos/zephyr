@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <adi/max32/max32690.dtsi>
+#include <adi/max32/max32690-m4.dtsi>
 #include <adi/max32/max32690-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -179,6 +179,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		code_partition: partition@0 {
 			label = "image";
