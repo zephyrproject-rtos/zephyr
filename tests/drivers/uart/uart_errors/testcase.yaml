@@ -1,0 +1,23 @@
+common:
+  tags: drivers uart
+  depends_on: gpio
+  harness: ztest
+  harness_config:
+    fixture: gpio_loopback
+tests:
+  drivers.uart.uart_errors.int_driven:
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf5340dk/nrf5340/cpuapp
+  drivers.uart.uart_errors.async:
+    filter: CONFIG_SERIAL_SUPPORT_ASYNC
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf5340dk/nrf5340/cpuapp
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_PM_DEVICE=n
