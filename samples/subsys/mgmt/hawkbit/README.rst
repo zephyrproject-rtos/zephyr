@@ -168,24 +168,14 @@ following command:
 
 And then wait. The board will ping the server, check if there are any new
 updates, and then download the update you've just created. If everything goes
-fine the message ``Image flashed successfully, you can reboot now`` will be
-printed on the terminal.
+fine the message ``Update installed`` will be printed on the terminal.
 
-Step 9: Reboot the system
-=========================
-
-In the terminal you used for debugging the board, type the following command:
-
-.. code-block:: console
-
-   kernel reboot cold
-
-Your board will reboot and then start with the new image. After rebooting, the
+Your board will reboot automatically and then start with the new image. After rebooting, the
 board will print a different image build time then automatically ping the server
-again and the message ``No update available`` will be printed on the terminal.
+again and the message ``Image is already updated`` will be printed on the terminal.
 
-Step 10: Clone and build hawkbit with https
-===========================================
+Step 9: Clone and build hawkbit with https
+==========================================
 
 Below steps clone and build the hawkbit with self-signed certificate
 to support https.
@@ -287,7 +277,7 @@ Change authentication security from false to true.
    java -jar ./hawkbit-runtime/hawkbit-update-server/target/ \
         hawkbit-update-server-#version#-SNAPSHOT.jar
 
-Step 11: Build hawkBit HTTPS
+Step 10: Build hawkBit HTTPS
 ============================
 
 * Convert the server.pem file to self_sign.der and place the der file in
