@@ -796,6 +796,17 @@
 		max-bus-freq = <52000000>;
 		min-bus-freq = <400000>;
 	};
+
+	vref: vref@111000 {
+		compatible = "nxp,vref";
+		regulator-name = "mcxn94x-vref";
+		reg = <0x111000 0x14>;
+		status = "disabled";
+		nxp,buffer-startup-delay-us = <400>;
+		nxp,bandgap-startup-time-us = <20>;
+		regulator-min-microvolt = <1000000>;
+		regulator-max-microvolt = <2100000>;
+	};
 };
 
 &systick {
