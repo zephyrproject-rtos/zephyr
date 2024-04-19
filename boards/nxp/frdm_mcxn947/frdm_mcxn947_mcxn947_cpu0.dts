@@ -153,3 +153,7 @@
 		status = "okay";
 	};
 };
+
+&vref {
+	status = "okay";
+};

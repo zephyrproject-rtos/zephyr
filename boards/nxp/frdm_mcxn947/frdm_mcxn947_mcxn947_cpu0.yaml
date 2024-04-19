@@ -24,4 +24,5 @@ supported:
   - pwm
   - counter
   - sdhc
+  - regulator
 vendor: nxp
