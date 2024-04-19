@@ -9,6 +9,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/clocks/clk_ipo,clock-frequency)
 
 config NUM_IRQS
-	default 104
+	default 104 if SOC_MAX32680_M4
+	default 60 if SOC_MAX32680_RV32
 
 endif # SOC_MAX32680
