@@ -199,6 +199,12 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		set_pm = true;
 		zassert_equal(state, forced_state, NULL);
 		testing_force_state = false;
+
+		/* We have forced a state that does not trigger device power management.
+		 * The device should still be active.
+		 */
+		pm_device_state_get(device_c, &device_power_state);
+		zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE);
 	}
 
 	/* at this point, notify_pm_state_entry() implemented in
@@ -244,7 +250,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
 	const struct pm_state_info *cpu_states;
 
-	zassert_true(pm_state_cpu_get_all(cpu, &cpu_states) == 1,
+	zassert_true(pm_state_cpu_get_all(cpu, &cpu_states) == 2,
 		     "There is no power state defined");
 
 	/* make sure this is idle thread */
@@ -457,8 +463,11 @@ ZTEST(power_management_1cpu, test_empty_states)
 
 ZTEST(power_management_1cpu, test_force_state)
 {
-	forced_state = PM_STATE_STANDBY;
-	bool ret = pm_state_force(0, &(struct pm_state_info) {forced_state, 0, 0});
+	const struct pm_state_info *cpu_states;
+
+	pm_state_cpu_get_all(0, &cpu_states);
+	forced_state = cpu_states[1].state;
+	bool ret = pm_state_force(0, &cpu_states[1]);
 
 	zassert_equal(ret, true, "Error in force state");
 
