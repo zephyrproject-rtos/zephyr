@@ -12,14 +12,19 @@ from typing import List
 import yaml
 import re
 
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
+
 
 SOC_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'soc-schema.yml')
 with open(SOC_SCHEMA_PATH, 'r') as f:
-    soc_schema = yaml.safe_load(f.read())
+    soc_schema = yaml.load(f.read(), Loader=SafeLoader)
 
 ARCH_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'arch-schema.yml')
 with open(ARCH_SCHEMA_PATH, 'r') as f:
-    arch_schema = yaml.safe_load(f.read())
+    arch_schema = yaml.load(f.read(), Loader=SafeLoader)
 
 SOC_YML = 'soc.yml'
 ARCHS_YML_PATH = PurePath('arch/archs.yml')
@@ -35,7 +40,7 @@ class Systems:
             return
 
         try:
-            data = yaml.safe_load(soc_yaml)
+            data = yaml.load(soc_yaml, Loader=SafeLoader)
             pykwalify.core.Core(source_data=data,
                                 schema_data=soc_schema).validate()
         except (yaml.YAMLError, pykwalify.errors.SchemaError) as e:
@@ -188,7 +193,7 @@ def find_v2_archs(args):
 
         if Path(archs_yml).is_file():
             with Path(archs_yml).open('r') as f:
-                archs = yaml.safe_load(f.read())
+                archs = yaml.load(f.read(), Loader=SafeLoader)
 
             try:
                 pykwalify.core.Core(source_data=archs, schema_data=arch_schema).validate()
