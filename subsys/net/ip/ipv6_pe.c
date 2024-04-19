@@ -348,6 +348,7 @@ void net_ipv6_pe_start(struct net_if *iface, const struct in6_addr *prefix,
 			 net_if_get_by_iface(iface));
 		NET_WARN("Disabling IPv6 PE for interface %d",
 			 net_if_get_by_iface(iface));
+		net_mgmt_event_notify(NET_EVENT_IPV6_PE_DISABLED, iface);
 		iface->pe_enabled = false;
 		goto out;
 	}
@@ -468,6 +469,26 @@ static void ipv6_pe_recheck_filters(bool is_denylist)
 }
 #endif /* CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0 */
 
+#if CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0
+static void send_filter_event(struct in6_addr *addr, bool is_denylist,
+			      int event_type)
+{
+	if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
+		struct net_event_ipv6_pe_filter info;
+
+		net_ipaddr_copy(&info.prefix, addr);
+		info.is_deny_list = is_denylist;
+
+		net_mgmt_event_notify_with_info(event_type,
+						NULL,
+						(const void *)&info,
+						sizeof(info));
+	} else {
+		net_mgmt_event_notify(event_type, NULL);
+	}
+}
+#endif
+
 int net_ipv6_pe_add_filter(struct in6_addr *addr, bool is_denylist)
 {
 #if CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0
@@ -517,6 +538,9 @@ int net_ipv6_pe_add_filter(struct in6_addr *addr, bool is_denylist)
 		ipv6_pe_denylist ? "deny" : "allow",
 		net_sprint_ipv6_addr(&ipv6_pe_filter[free_slot]));
 
+	send_filter_event(&ipv6_pe_filter[free_slot],
+			  is_denylist,
+			  NET_EVENT_IPV6_PE_FILTER_ADD);
 out:
 	k_mutex_unlock(&lock);
 
@@ -542,8 +566,13 @@ int net_ipv6_pe_del_filter(struct in6_addr *addr)
 				ipv6_pe_denylist ? "deny" : "allow",
 				net_sprint_ipv6_addr(&ipv6_pe_filter[i]));
 
+			send_filter_event(&ipv6_pe_filter[i],
+					  ipv6_pe_denylist,
+					  NET_EVENT_IPV6_PE_FILTER_DEL);
+
 			net_ipaddr_copy(&ipv6_pe_filter[i],
 					net_ipv6_unspecified_address());
+
 			ret = 0;
 			goto out;
 		}
@@ -699,11 +728,14 @@ int net_ipv6_pe_init(struct net_if *iface)
 	int32_t lifetime;
 	int ret = 0;
 
+	net_mgmt_event_notify(NET_EVENT_IPV6_PE_ENABLED, iface);
+
 	lifetime = TEMP_VALID_LIFETIME -
 		REGEN_ADVANCE(net_if_ipv6_get_retrans_timer(iface), 1U);
 
 	if (lifetime <= 0) {
 		iface->pe_enabled = false;
+		net_mgmt_event_notify(NET_EVENT_IPV6_PE_DISABLED, iface);
 		ret = -EINVAL;
 		goto out;
 	}

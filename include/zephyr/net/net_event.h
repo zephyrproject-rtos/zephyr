@@ -82,6 +82,10 @@ enum net_event_ipv6_cmd {
 	NET_EVENT_IPV6_CMD_DHCP_BOUND,
 	NET_EVENT_IPV6_CMD_DHCP_STOP,
 	NET_EVENT_IPV6_CMD_ADDR_DEPRECATED,
+	NET_EVENT_IPV6_CMD_PE_ENABLED,
+	NET_EVENT_IPV6_CMD_PE_DISABLED,
+	NET_EVENT_IPV6_CMD_PE_FILTER_ADD,
+	NET_EVENT_IPV6_CMD_PE_FILTER_DEL,
 };
 
 #define NET_EVENT_IPV6_ADDR_ADD					\
@@ -143,6 +147,18 @@ enum net_event_ipv6_cmd {
 
 #define NET_EVENT_IPV6_ADDR_DEPRECATED				\
 	(_NET_EVENT_IPV6_BASE | NET_EVENT_IPV6_CMD_ADDR_DEPRECATED)
+
+#define NET_EVENT_IPV6_PE_ENABLED				\
+	(_NET_EVENT_IPV6_BASE | NET_EVENT_IPV6_CMD_PE_ENABLED)
+
+#define NET_EVENT_IPV6_PE_DISABLED				\
+	(_NET_EVENT_IPV6_BASE | NET_EVENT_IPV6_CMD_PE_DISABLED)
+
+#define NET_EVENT_IPV6_PE_FILTER_ADD				\
+	(_NET_EVENT_IPV6_BASE | NET_EVENT_IPV6_CMD_PE_FILTER_ADD)
+
+#define NET_EVENT_IPV6_PE_FILTER_DEL				\
+	(_NET_EVENT_IPV6_BASE | NET_EVENT_IPV6_CMD_PE_FILTER_DEL)
 
 /* IPv4 Events*/
 #define _NET_IPV4_LAYER		NET_MGMT_LAYER_L3
@@ -305,6 +321,21 @@ struct net_event_ipv6_prefix {
  */
 struct net_event_l4_hostname {
 	char hostname[NET_HOSTNAME_SIZE];
+};
+
+/**
+ * @brief Network Management event information structure
+ * Used to pass information on network events like
+ *   NET_EVENT_IPV6_PE_FILTER_ADD and
+ *   NET_EVENT_IPV6_PE_FILTER_DEL
+ * when CONFIG_NET_MGMT_EVENT_INFO is enabled and event generator pass the
+ * information.
+ *
+ * This is only available if CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT is >0.
+ */
+struct net_event_ipv6_pe_filter {
+	struct in6_addr prefix;
+	bool is_deny_list;
 };
 
 #ifdef __cplusplus
