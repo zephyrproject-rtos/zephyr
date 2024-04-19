@@ -33,16 +33,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_pb_gatt_srv);
 
-#if defined(CONFIG_BT_MESH_PB_GATT_USE_DEVICE_NAME)
-#define ADV_OPT_USE_NAME BT_LE_ADV_OPT_USE_NAME
-#else
-#define ADV_OPT_USE_NAME 0
-#endif
-
 #define ADV_OPT_PROV                                                           \
 	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE |                 \
-	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_IDENTITY |                       \
-	 ADV_OPT_USE_NAME)
+	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_IDENTITY)
 
 #define FAST_ADV_TIME (60LL * MSEC_PER_SEC)
 
@@ -222,8 +215,10 @@ static const struct bt_data prov_ad[] = {
 	BT_DATA(BT_DATA_SVC_DATA16, prov_svc_data, sizeof(prov_svc_data)),
 };
 
-static size_t gatt_prov_adv_create(struct bt_data prov_sd[1])
+static size_t gatt_prov_adv_create(struct bt_data prov_sd[2])
 {
+	size_t prov_sd_len = 0;
+
 	const struct bt_mesh_prov *prov = bt_mesh_prov_get();
 	size_t uri_len;
 
@@ -245,7 +240,17 @@ static size_t gatt_prov_adv_create(struct bt_data prov_sd[1])
 	prov_sd[0].data_len = uri_len;
 	prov_sd[0].data = (const uint8_t *)prov->uri;
 
-	return 1;
+	prov_sd_len += 1;
+
+#if defined(CONFIG_BT_MESH_PB_GATT_USE_DEVICE_NAME)
+	prov_sd[1].type = BT_DATA_NAME_COMPLETE;
+	prov_sd[1].data_len = sizeof(CONFIG_BT_DEVICE_NAME) - 1;
+	prov_sd[1].data = CONFIG_BT_DEVICE_NAME;
+
+	prov_sd_len += 1;
+#endif
+
+	return prov_sd_len;
 }
 
 static int gatt_send(struct bt_conn *conn,
@@ -279,7 +284,7 @@ int bt_mesh_pb_gatt_srv_adv_start(void)
 		.options = ADV_OPT_PROV,
 		ADV_FAST_INT,
 	};
-	struct bt_data prov_sd[1];
+	struct bt_data prov_sd[2];
 	size_t prov_sd_len;
 	int64_t timestamp = fast_adv_timestamp;
 	int64_t elapsed_time = k_uptime_delta(&timestamp);
