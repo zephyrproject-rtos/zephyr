@@ -17,6 +17,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram2;
 		zephyr,flash = &m4_partition;
+		zephyr,code-rv32-partition = &rv32_partition;
 	};
 };
 

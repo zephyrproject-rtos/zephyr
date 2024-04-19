@@ -1,0 +1,9 @@
+identifier: max32655evkit/max32655/rv32
+name: max32655evkit rv32
+vendor: adi
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 16
+flash: 256
