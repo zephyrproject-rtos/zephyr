@@ -65,7 +65,7 @@ static int vcnl36825t_update(const struct i2c_dt_spec *spec, uint8_t reg_addr, u
 static int vcnl36825t_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct vcnl36825t_config *config = dev->config;
-	int rc = 0;
+	int rc;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -74,6 +74,24 @@ static int vcnl36825t_pm_action(const struct device *dev, enum pm_device_action 
 		if (rc < 0) {
 			return rc;
 		}
+
+		if (config->low_power) {
+			rc = vcnl36825t_update(&config->i2c, VCNL36825T_REG_PS_CONF4,
+					       VCNL36825T_PS_LPEN_MSK, VCNL36825T_PS_LPEN_ENABLED);
+			if (rc < 0) {
+				return rc;
+			}
+		}
+
+		if (config->operation_mode == VCNL36825T_OPERATION_MODE_AUTO) {
+			rc = vcnl36825t_update(&config->i2c, VCNL36825T_REG_PS_CONF3,
+					       VCNL36825T_PS_AF_MSK, VCNL36825T_PS_AF_AUTO);
+			if (rc < 0) {
+				return rc;
+			}
+		}
+
+		k_usleep(VCNL36825T_POWER_UP_US);
 
 		rc = vcnl36825t_update(&config->i2c, VCNL36825T_REG_PS_CONF2, VCNL36825T_PS_ST_MSK,
 				       VCNL36825T_PS_ST_START);
@@ -86,6 +104,23 @@ static int vcnl36825t_pm_action(const struct device *dev, enum pm_device_action 
 				       VCNL36825T_PS_ST_STOP);
 		if (rc < 0) {
 			return rc;
+		}
+
+		if (config->operation_mode == VCNL36825T_OPERATION_MODE_AUTO) {
+			rc = vcnl36825t_update(&config->i2c, VCNL36825T_REG_PS_CONF3,
+					       VCNL36825T_PS_AF_MSK, VCNL36825T_PS_AF_FORCE);
+			if (rc < 0) {
+				return rc;
+			}
+		}
+
+		/* unset LPEN-bit if active, otherwise high current draw can be observed */
+		if (config->low_power) {
+			rc = vcnl36825t_update(&config->i2c, VCNL36825T_REG_PS_CONF4,
+					       VCNL36825T_PS_LPEN_MSK, VCNL36825T_PS_LPEN_DISABLED);
+			if (rc < 0) {
+				return rc;
+			}
 		}
 
 		rc = vcnl36825t_update(&config->i2c, VCNL36825T_REG_PS_CONF1, VCNL36825T_PS_ON_MSK,
@@ -207,12 +242,14 @@ static int vcnl36825t_init_registers(const struct device *dev)
 	}
 
 	reg_value |= VCNL36825T_PS_CAL;
-	reg_value |= FIELD_PREP(1 << 9, 1); /* reserved, must be set by datasheet */
+	reg_value |= 1 << 9; /* reserved, must be set by datasheet */
 
 	rc = vcnl36825t_write(&config->i2c, VCNL36825T_REG_PS_CONF1, reg_value);
 	if (rc < 0) {
 		LOG_ERR("I2C for PS_CAL returned %d", rc);
 	}
+
+	k_usleep(VCNL36825T_POWER_UP_US);
 
 	/* PS_CONF2 */
 	reg_value = 0;
@@ -413,13 +450,11 @@ static int vcnl36825t_init(const struct device *dev)
 		return rc;
 	}
 
-	if (config->operation_mode == VCNL36825T_OPERATION_MODE_AUTO) {
-		rc = vcnl36825t_update(&config->i2c, VCNL36825T_REG_PS_CONF2, VCNL36825T_PS_ST_MSK,
-				       VCNL36825T_PS_ST_START);
-		if (rc < 0) {
-			LOG_ERR("error starting measurement");
-			return -EIO;
-		}
+	rc = vcnl36825t_update(&config->i2c, VCNL36825T_REG_PS_CONF2, VCNL36825T_PS_ST_MSK,
+			       VCNL36825T_PS_ST_START);
+	if (rc < 0) {
+		LOG_ERR("error starting measurement");
+		return -EIO;
 	}
 
 	return 0;
