@@ -276,6 +276,10 @@ static inline int mipi_dbi_reset(const struct device *dev, uint32_t delay)
  * locked.
  * @param dev mipi dbi controller
  * @param config MIPI DBI configuration
+ * @retval 0 reset succeeded
+ * @retval -EIO I/O error
+ * @retval -ENOSYS not implemented
+ * @retval -ENOTSUP not supported
  */
 static inline int mipi_dbi_release(const struct device *dev,
 				   const struct mipi_dbi_config *config)
