@@ -1040,6 +1040,58 @@ struct i3c_device_desc {
 		uint8_t max_ibi;
 	} data_length;
 
+	/** Describes advanced (Target) capabilities and features */
+	struct {
+		union {
+			/**
+			 * I3C v1.0 HDR Capabilities (@c I3C_CCC_GETCAPS1_*)
+			 * - Bit[0]: HDR-DDR
+			 * - Bit[1]: HDR-TSP
+			 * - Bit[2]: HDR-TSL
+			 * - Bit[7:3]: Reserved
+			 */
+			uint8_t gethdrcap;
+
+			/**
+			 * I3C v1.1+ GETCAPS1 (@c I3C_CCC_GETCAPS1_*)
+			 * - Bit[0]: HDR-DDR
+			 * - Bit[1]: HDR-TSP
+			 * - Bit[2]: HDR-TSL
+			 * - Bit[3]: HDR-BT
+			 * - Bit[7:4]: Reserved
+			 */
+			uint8_t getcap1;
+		};
+
+		/**
+		 *  GETCAPS2 (@c I3C_CCC_GETCAPS2_*)
+		 * - Bit[3:0]: I3C 1.x Specification Version
+		 * - Bit[5:4]: Group Address Capabilities
+		 * - Bit[6]: HDR-DDR Write Abort
+		 * - Bit[7]: HDR-DDR Abort CRC
+		 */
+		uint8_t getcap2;
+
+		/**
+		 * GETCAPS3 (@c I3C_CCC_GETCAPS3_*)
+		 * - Bit[0]: Multi-Lane (ML) Data Transfer Support
+		 * - Bit[1]: Device to Device Transfer (D2DXFER) Support
+		 * - Bit[2]: Device to Device Transfer (D2DXFER) IBI Capable
+		 * - Bit[3]: Defining Byte Support in GETCAPS
+		 * - Bit[4]: Defining Byte Support in GETSTATUS
+		 * - Bit[5]: HDR-BT CRC-32 Support
+		 * - Bit[6]: IBI MDB Support for Pending Read Notification
+		 * - Bit[7]: Reserved
+		 */
+		uint8_t getcap3;
+
+		/**
+		 * GETCAPS4
+		 * - Bit[7:0]: Reserved
+		 */
+		uint8_t getcap4;
+	} getcaps;
+
 	/**
 	 * Private data by the controller to aid in transactions. Do not modify.
 	 *
