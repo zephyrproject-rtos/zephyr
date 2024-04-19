@@ -154,10 +154,73 @@ Debugging
 Please refer to the `Flashing`_ section and run the ``west debug`` command
 instead of ``west flash``.
 
+Dual Core Support
+*****************
+
+An experimental board configuration for the secondary RISC-V core can be found
+in
+:zephyr_file:`boards/adi/max32655evkit/max32655evkit_max32655_rv32_defconfig`.
+
+It can boot Zephyr and print "hello world" to a RAM console, but it currently
+has significant limitations:
+
+- **Kernel timer**: The zero-riscy core doesn't implement a machine timer and we
+  have not yet implemented a Zephyr driver for a system-level timer peripheral
+  on this SoC, therefore kernel functions that take a :c:type:`k_timeout_t`
+  argument, such as :c:func:`k_sleep` are not expected to work.
+
+- **Interrupts**: The zero-riscy core only allows enabling/disabling interrupts
+  globally and assumes there is an interrupt controller outside of the core. We
+  have not yet implemented support for a system-level interrupt controller,
+  therefore kernel interrupt services are not expected to work.
+
+- **Peripheral drivers**: Without interrupts, the existing UART, GPIO, and
+  other peripheral drivers won't work.
+
+The primary Arm core uses Kconfig options,
+:kconfig:option:`CONFIG_MAX32_SECONDARY_RV32` and
+:kconfig:option:`CONFIG_MAX32_SECONDARY_RV32_BOOT_ADDRESS`, to enable and
+configure the boot address for the secondary RISC-V core. The devicetree chosen
+node, ``zephyr,code-rv32-partition``, specifies the default value for the boot
+address.
+
+:zephyr:code-sample:`sysbuild_hello_world` supports building the Arm and RISC-V
+images:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sysbuild/hello_world
+   :board: max32655evkit/max32655/m4
+   :west-args: -T sample.sysbuild.hello_world.max32655evkit_m4_rv32
+   :goals: build
+   :compact:
+
+The build system hasn't yet been instrumented to merge the two images into one
+combined image, so you can use :zephyr_file:`scripts/build/mergehex.py` to
+merge them:
+
+.. code-block:: console
+
+   $ python scripts/build/mergehex.py -o build/merged.hex \
+        build/hello_world/zephyr/zephyr.hex build/remote/zephyr/zephyr.hex
+
+Likewise, west runners aren't aware of combined image, so you can use JLink to
+program it to flash:
+
+.. code-block:: console
+
+   $ JLinkExe -device MAX32655 -if SWD -speed 4000 -autoconnect 1
+
+   J-Link>loadfile build/merged.hex
+
 References
 **********
 
 - `MAX32655EVKIT web page`_
 
+- `zero-riscy user manual`_
+
 .. _MAX32655EVKIT web page:
    https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-boards-kits/max32655evkit.html#eb-overview
+
+.. _zero-riscy user manual:
+   https://pulp-platform.org/docs/user_manual.pdf
