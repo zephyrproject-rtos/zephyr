@@ -300,6 +300,14 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x5f000000 0x1000000>;
 
+			usbhs: usbhs@86000 {
+				compatible = "snps,dwc2";
+				reg = <0x86000 0x1000>, <0x2f700000 0x40000>;
+				reg-names = "wrapper", "core";
+				interrupts = <134 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+			};
+
 			cpusec_bellboard: mailbox@99000 {
 				reg = <0x99000 0x1000>;
 				status = "disabled";
