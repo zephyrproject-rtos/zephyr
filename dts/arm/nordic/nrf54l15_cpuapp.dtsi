@@ -38,3 +38,11 @@ cpuflpr_vevif: &cpuflpr_vevif_remote {};
 	interrupts = <228 NRF_DEFAULT_IRQ_PRIORITY>,
 			<229 NRF_DEFAULT_IRQ_PRIORITY>; /* reserved for Zero Latency IRQs */
 };
+
+&gpiote20 {
+	interrupts = <219 NRF_DEFAULT_IRQ_PRIORITY>;
+};
+
+&gpiote30 {
+	interrupts = <269 NRF_DEFAULT_IRQ_PRIORITY>;
+};
