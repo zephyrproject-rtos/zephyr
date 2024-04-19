@@ -599,11 +599,17 @@ ZTEST(lwm2m_registry, test_null_strings)
 
 ZTEST(lwm2m_registry, test_obj_version)
 {
-
+#if defined(CONFIG_LWM2M_ENGINE_ALWAYS_REPORT_OBJ_VERSION)
+	zassert_true(lwm2m_engine_shall_report_obj_version(lwm2m_engine_get_obj(&LWM2M_OBJ(0))));
+	zassert_true(
+		lwm2m_engine_shall_report_obj_version(lwm2m_engine_get_obj(&LWM2M_OBJ(32768))));
+	zassert_true(lwm2m_engine_shall_report_obj_version(lwm2m_engine_get_obj(&LWM2M_OBJ(3303))));
+#else
 	zassert_false(lwm2m_engine_shall_report_obj_version(lwm2m_engine_get_obj(&LWM2M_OBJ(0))));
 	zassert_false(
 		lwm2m_engine_shall_report_obj_version(lwm2m_engine_get_obj(&LWM2M_OBJ(32768))));
 	zassert_true(lwm2m_engine_shall_report_obj_version(lwm2m_engine_get_obj(&LWM2M_OBJ(3303))));
+#endif
 }
 
 ZTEST(lwm2m_registry, test_resource_cache)
