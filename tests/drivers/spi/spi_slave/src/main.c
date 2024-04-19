@@ -8,6 +8,7 @@
 #include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/ztest.h>
 
 #define SPI_MODE (SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE)
