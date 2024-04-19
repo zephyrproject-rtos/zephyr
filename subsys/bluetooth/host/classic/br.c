@@ -98,7 +98,7 @@ void bt_hci_conn_req(struct net_buf *buf)
 
 	accept_conn(&evt->bdaddr);
 	conn->role = BT_HCI_ROLE_PERIPHERAL;
-	bt_conn_set_state(conn, BT_CONN_CONNECTING);
+	bt_conn_set_state(conn, BT_CONN_INITIATING);
 	bt_conn_unref(conn);
 }
 

@@ -669,7 +669,7 @@ static void rpa_timeout(struct k_work *work)
 	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
 		struct bt_conn *conn =
 			bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
-						BT_CONN_CONNECTING_SCAN);
+						BT_CONN_SCAN_BEFORE_INITIATING);
 
 		if (conn) {
 			bt_conn_unref(conn);
@@ -998,7 +998,7 @@ void bt_id_add(struct bt_keys *keys)
 		return;
 	}
 
-	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_CONNECTING);
+	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_INITIATING);
 	if (conn) {
 		bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_ADD);
 		bt_conn_unref(conn);
@@ -1147,7 +1147,7 @@ void bt_id_del(struct bt_keys *keys)
 		return;
 	}
 
-	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_CONNECTING);
+	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_INITIATING);
 	if (conn) {
 		bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_DEL);
 		bt_conn_unref(conn);
@@ -1985,7 +1985,7 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 			struct bt_conn *conn;
 
 			conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
-						       BT_CONN_CONNECTING_SCAN);
+						       BT_CONN_SCAN_BEFORE_INITIATING);
 			if (conn) {
 				/* Cannot set new RPA while creating
 				 * connections.
@@ -2061,7 +2061,7 @@ int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
 
 				conn = bt_conn_lookup_state_le(
 					BT_ID_DEFAULT, NULL,
-					BT_CONN_CONNECTING_SCAN);
+					BT_CONN_SCAN_BEFORE_INITIATING);
 
 				if (conn) {
 					/* Cannot set new RPA while creating

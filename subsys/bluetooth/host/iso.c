@@ -1371,7 +1371,7 @@ void hci_le_cis_req(struct net_buf *buf)
 
 	iso->handle = cis_handle;
 	iso->role = BT_HCI_ROLE_PERIPHERAL;
-	bt_conn_set_state(iso, BT_CONN_CONNECTING);
+	bt_conn_set_state(iso, BT_CONN_INITIATING);
 
 	err = hci_le_accept_cis(cis_handle);
 	if (err) {
@@ -2247,7 +2247,7 @@ void bt_iso_security_changed(struct bt_conn *acl, uint8_t hci_status)
 		__ASSERT(cig != NULL, "CIG was NULL");
 		cig->state = BT_ISO_CIG_STATE_ACTIVE;
 
-		bt_conn_set_state(iso_chan->iso, BT_CONN_CONNECTING);
+		bt_conn_set_state(iso_chan->iso, BT_CONN_INITIATING);
 		bt_iso_chan_set_state(iso_chan, BT_ISO_STATE_CONNECTING);
 	}
 }
@@ -2454,7 +2454,7 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 		}
 
 		iso_chan->iso->iso.acl = bt_conn_ref(param[i].acl);
-		bt_conn_set_state(iso_chan->iso, BT_CONN_CONNECTING);
+		bt_conn_set_state(iso_chan->iso, BT_CONN_INITIATING);
 		bt_iso_chan_set_state(iso_chan, BT_ISO_STATE_CONNECTING);
 
 		cig = get_cig(iso_chan);
