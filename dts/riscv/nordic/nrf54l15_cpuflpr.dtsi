@@ -30,3 +30,11 @@ cpuflpr_vevif: &cpuflpr_vevif_local {};
 &grtc {
 	interrupts = <226 NRF_DEFAULT_IRQ_PRIORITY>;
 };
+
+&gpiote20 {
+	interrupts = <218 NRF_DEFAULT_IRQ_PRIORITY>;
+};
+
+&gpiote30 {
+	interrupts = <268 NRF_DEFAULT_IRQ_PRIORITY>;
+};
