@@ -195,6 +195,7 @@ static inline bool is_halting(struct k_thread *thread)
 /* Clear the halting bits (_THREAD_ABORTING and _THREAD_SUSPENDING) */
 static inline void clear_halting(struct k_thread *thread)
 {
+	barrier_dmem_fence_full(); /* Other cpus spin on this locklessly! */
 	thread->base.thread_state &= ~(_THREAD_ABORTING | _THREAD_SUSPENDING);
 }
 
@@ -1296,7 +1297,6 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state)
 	 */
 	if ((thread->base.thread_state & new_state) == 0U) {
 		thread->base.thread_state |= new_state;
-		clear_halting(thread);
 		if (z_is_thread_queued(thread)) {
 			dequeue_thread(thread);
 		}
@@ -1324,6 +1324,7 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state)
 		update_cache(1);
 
 		if (new_state == _THREAD_SUSPENDED) {
+			clear_halting(thread);
 			return;
 		}
 
@@ -1365,6 +1366,12 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state)
 		if (dummify && !IS_ENABLED(CONFIG_ARCH_POSIX)) {
 			z_dummy_thread_init(&_thread_dummy);
 		}
+
+		/* Finally update the halting thread state, on which
+		 * other CPUs might be spinning (see
+		 * thread_halt_spin()).
+		 */
+		clear_halting(thread);
 	}
 }
 
