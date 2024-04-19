@@ -105,14 +105,6 @@ int main(void)
 		LOG_INF("No update found");
 		break;
 
-	case HAWKBIT_CANCEL_UPDATE:
-		LOG_INF("hawkBit update cancelled from server");
-		break;
-
-	case HAWKBIT_OK:
-		LOG_INF("Image is already updated");
-		break;
-
 	case HAWKBIT_UPDATE_INSTALLED:
 		LOG_INF("Update installed");
 		break;
