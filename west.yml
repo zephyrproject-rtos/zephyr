@@ -136,6 +136,11 @@ manifest:
       path: modules/fs/fatfs
       groups:
         - fs
+    - name: hal_adi
+      revision: 674d10b0a1aad4cf4b7b90ca52dfd4a494ab9e52
+      path: modules/hal/adi
+      groups:
+        - hal
     - name: hal_altera
       revision: 0d225ddd314379b32355a00fb669eacf911e750d
       path: modules/hal/altera
