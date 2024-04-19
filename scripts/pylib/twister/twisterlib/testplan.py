@@ -740,9 +740,12 @@ class TestPlan:
 
                 if self.options.level:
                     tl = self.get_level(self.options.level)
-                    planned_scenarios = tl.scenarios
-                    if ts.id not in planned_scenarios and not set(ts.levels).intersection(set(tl.levels)):
-                        instance.add_filter("Not part of requested test plan", Filters.TESTPLAN)
+                    if tl is None:
+                        instance.add_filter(f"Unknown test level '{self.options.level}'", Filters.TESTPLAN)
+                    else:
+                        planned_scenarios = tl.scenarios
+                        if ts.id not in planned_scenarios and not set(ts.levels).intersection(set(tl.levels)):
+                            instance.add_filter("Not part of requested test plan", Filters.TESTPLAN)
 
                 if runnable and not instance.run:
                     instance.add_filter("Not runnable on device", Filters.CMD_LINE)
