@@ -16,7 +16,6 @@ import logging
 import copy
 import shutil
 import random
-
 import snippets
 from pathlib import Path
 from argparse import Namespace
