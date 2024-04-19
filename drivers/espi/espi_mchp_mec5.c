@@ -40,7 +40,7 @@ LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
  * signal is a enum espi_vwire_signal from espi.h, we hope this enum remains
  * zero based and actual numeric values do not exceed 255.
  * host_idx is the Host Index containing this vwire as defined in the eSPI specification.
- * source is the bit postion [0:3] in the host index and MEC5 HW.
+ * source-bit is the bit postion [0:3] in the host index and MEC5 HW.
  * reg_idx is the index of the MEC5 vwire register group for this Host Index
  * flags indicate the group is Controller-to-Target or Target-to-Controller, reset source,
  * interrupt detection, etc.
@@ -48,7 +48,7 @@ LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 struct espi_mec5_vwire {
 	uint8_t signal;
 	uint8_t host_idx;
-	uint8_t source;
+	uint8_t source_bit;
 	uint8_t reg_idx;
 	uint8_t flags;
 };
@@ -82,7 +82,7 @@ struct espi_mec5_vwire {
 #define MCHP_DT_ESPI_TCVW_BY_NAME(name) DT_CHILD(MEC5_DT_ESPI_TC_VWIRES_NODE, name)
 
 #define MEC5_VW_SIGNAL(node_id) DT_STRING_UPPER_TOKEN(node_id, vw_name)
-#define MEC5_VW_SOURCE(node_id) DT_PROP(node_id, source)
+#define MEC5_VW_SOURCE_BIT(node_id) DT_PROP(node_id, source_bit)
 
 #define MEC5_VW_HOST_IDX(node_id) \
 	DT_PROP_BY_PHANDLE(node_id, vw_group, host_index)
@@ -107,7 +107,7 @@ struct espi_mec5_vwire {
 	{\
 		.signal = MEC5_VW_SIGNAL(node_id), \
 		.host_idx = MEC5_VW_HOST_IDX(node_id), \
-		.source = MEC5_VW_SOURCE(node_id), \
+		.source_bit = MEC5_VW_SOURCE_BIT(node_id), \
 		.reg_idx = MEC5_VW_HW_REG_IDX(node_id), \
 		.flags = MEC5_VW_CT_FLAGS(node_id), \
 	},
@@ -116,7 +116,7 @@ struct espi_mec5_vwire {
 	{\
 		.signal = MEC5_VW_SIGNAL(node_id), \
 		.host_idx = MEC5_VW_HOST_IDX(node_id), \
-		.source = MEC5_VW_SOURCE(node_id), \
+		.source_bit = MEC5_VW_SOURCE_BIT(node_id), \
 		.reg_idx = MEC5_VW_HW_REG_IDX(node_id), \
 		.flags = MEC5_VW_TC_FLAGS(node_id), \
 	},
@@ -154,7 +154,7 @@ static int find_ct_vw_signal(uint8_t ctidx, uint8_t ctpos)
 	for (size_t n = 0; n < nct; n++) {
 		const struct espi_mec5_vwire *p = &espi_mec5_vw_tbl[n];
 
-		if ((ctidx == (uint8_t)p->reg_idx) && (ctpos == (uint8_t)p->source)) {
+		if ((ctidx == (uint8_t)p->reg_idx) && (ctpos == (uint8_t)p->source_bit)) {
 			return (int)p->signal;
 		}
 	}
@@ -185,7 +185,7 @@ static int espi_mec5_init_vwires(const struct device *dev)
 				  & MEC_ESPI_VW_CFG_IRQSEL_MSK);
 			vwcfg |= BIT(MEC_ESPI_VW_CFG_IRQSEL_DO_POS);
 		}
-		ret = mec_espi_vw_config(vw_regs, vw->reg_idx, vw->source, vw->host_idx, vwcfg);
+		ret = mec_espi_vw_config(vw_regs, vw->reg_idx, vw->source_bit, vw->host_idx, vwcfg);
 		if (ret) {
 			break;
 		}
@@ -560,7 +560,7 @@ static int espi_mec5_vw_send(const struct device *dev, enum espi_vwire_signal si
 	}
 
 	mvw.vwidx = vw->reg_idx;
-	mvw.srcidx = vw->source;
+	mvw.srcidx = vw->source_bit;
 	mvw.val = level;
 
 	ret = mec_espi_vw_set_src_cs(regs, &mvw, &vwp);
@@ -591,7 +591,7 @@ static int espi_mec5_vw_receive(const struct device *dev, enum espi_vwire_signal
 	}
 
 	mvw.vwidx = vw->reg_idx;
-	mvw.srcidx = vw->source;
+	mvw.srcidx = vw->source_bit;
 
 	ret = mec_espi_vw_get_src(regs, &mvw, 0);
 	if (ret == MEC_RET_OK) {
@@ -762,7 +762,7 @@ static void send_boot_done_to_host(const struct device *dev)
 		const struct espi_mec5_vwire *bsts_vw =
 			find_vw(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_STS);
 
-		groupval = BIT(bdone_vw->source) | BIT(bsts_vw->source);
+		groupval = BIT(bdone_vw->source_bit) | BIT(bsts_vw->source_bit);
 		groupmsk = groupval;
 		ret = mec_espi_vw_set_group(vwregs, bdone_vw->host_idx, groupval, groupmsk, 0);
 	}
@@ -1065,8 +1065,8 @@ void espi_mec5_debug_vw_table(void)
 	for (n = 0; n < tbl_size; n++) {
 		const struct espi_mec5_vwire *p = &espi_mec5_vw_tbl[n];
 
-		LOG_DBG("VW[%u] signal=%u host_idx=0x%x source=%u reg_idx=%u flags=0x%x",
-			n, p->signal, p->host_idx, p->source, p->reg_idx, p->flags);
+		LOG_DBG("VW[%u] signal=%u host_idx=0x%x source_bit=%u reg_idx=%u flags=0x%x",
+			n, p->signal, p->host_idx, p->source_bit, p->reg_idx, p->flags);
 	}
 }
 #endif /* MEC5_ESPI_DEBUG_VW_TABLE */

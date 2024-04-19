@@ -10,7 +10,7 @@ child-binding:
     Child node containing the routing of an eSPI virtual wire to the SoC
     VW registers and ECIA GIRQ registers.
   properties:
-    source:
+    source-bit:
       type: int
       required: true
       description: |
