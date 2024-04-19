@@ -15,7 +15,7 @@ properties:
   mipi-mode:
     type: int
     description: |
-      MIPI DBI mode in use. Use the macros not the actual enum value, here is
+      MIPI DBI mode in use. Use the macros, not the actual enum value. Here is
       the concordance list (see dt-bindings/mipi_dbi/mipi_dbi.h)
         1     MIPI_DBI_MODE_SPI_3WIRE
         2     MIPI_DBI_MODE_SPI_4WIRE
