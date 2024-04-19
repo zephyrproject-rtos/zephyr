@@ -185,6 +185,7 @@ zephyr_udc0: &usbotg_fs {
 		     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
 		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
 	pinctrl-names = "default";
+	flash-id = <1>;  /* One quad NOR : single flash mode */
 	status = "okay";
 
 	n25q128a1: qspi-nor-flash@90000000 {
