@@ -465,13 +465,16 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 		return 0;
 	}
 
+	words = MIN(ep->mps, cfg->ep_mps) / 4;
+	words = (words <= 64) ? words * 2 : words;
+
 	if (!enable) {
+		if (priv->occupied_mem >= (words * 4)) {
+			priv->occupied_mem -= (words * 4);
+		}
 		HAL_PCDEx_SetTxFiFo(&priv->pcd, USB_EP_GET_IDX(ep->addr), 0);
 		return 0;
 	}
-
-	words = MIN(ep->mps, cfg->ep_mps) / 4;
-	words = (words <= 64) ? words * 2 : words;
 
 	if (cfg->dram_size - priv->occupied_mem < words * 4) {
 		LOG_ERR("Unable to allocate FIFO for 0x%02x", ep->addr);
