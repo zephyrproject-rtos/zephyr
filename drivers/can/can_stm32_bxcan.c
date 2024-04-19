@@ -761,7 +761,7 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 	const struct can_stm32_config *cfg = dev->config;
 	struct can_stm32_data *data = dev->data;
 	CAN_TypeDef *can = cfg->can;
-	uint32_t transmit_status_register = can->TSR;
+	uint32_t transmit_status_register = 0;
 	CAN_TxMailBox_TypeDef *mailbox = NULL;
 	struct can_stm32_mailbox *mb = NULL;
 
@@ -793,6 +793,7 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 	}
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
+	transmit_status_register = can->TSR;
 	while (!(transmit_status_register & CAN_TSR_TME)) {
 		k_mutex_unlock(&data->inst_mutex);
 		LOG_DBG("Transmit buffer full");
