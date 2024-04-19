@@ -15,6 +15,7 @@ typedef enum __packed {
 	BT_CONN_DISCONNECTED,         /* Disconnected, conn is completely down */
 	BT_CONN_DISCONNECT_COMPLETE,  /* Received disconn comp event, transition to DISCONNECTED */
 
+	BT_CONN_INITIATING,           /* Central connection establishment */
 	/** Central scans for a device preceding establishing a connection to it.
 	 *
 	 * This can happen when:
@@ -28,7 +29,7 @@ typedef enum __packed {
 	 *   scanning while automatic connection establishment in ongoing.
 	 *   It also allows the stack to use host based privacy for cases where this is needed.
 	 */
-	BT_CONN_CONNECTING_SCAN,
+	BT_CONN_SCAN_BEFORE_INITIATING,
 
 	/** Central initiates a connection to a device in the filter accept list.
 	 *
@@ -36,10 +37,10 @@ typedef enum __packed {
 	 * immediately. That is, it is assumed that the controller resolving list
 	 * holds all entries that are part of the filter accept list if private addresses are used.
 	 */
-	BT_CONN_CONNECTING_AUTO,
-	BT_CONN_CONNECTING_ADV,       /* Peripheral connectable advertising */
-	BT_CONN_CONNECTING_DIR_ADV,   /* Peripheral directed advertising */
-	BT_CONN_CONNECTING,           /* Central connection establishment */
+	BT_CONN_INITIATING_FILTER_LIST,
+
+	BT_CONN_ADV_CONNECTABLE,       /* Peripheral connectable advertising */
+	BT_CONN_ADV_DIR_CONNECTABLE,   /* Peripheral directed advertising */
 	BT_CONN_CONNECTED,            /* Peripheral or Central connected */
 	BT_CONN_DISCONNECTING,        /* Peripheral or Central issued disconnection command */
 } bt_conn_state_t;
@@ -355,7 +356,7 @@ static inline bool bt_conn_is_handle_valid(struct bt_conn *conn)
 	case BT_CONN_DISCONNECTING:
 	case BT_CONN_DISCONNECT_COMPLETE:
 		return true;
-	case BT_CONN_CONNECTING:
+	case BT_CONN_INITIATING:
 		/* ISO connection handle assigned at connect state */
 		if (IS_ENABLED(CONFIG_BT_ISO) &&
 		    conn->type == BT_CONN_TYPE_ISO) {
