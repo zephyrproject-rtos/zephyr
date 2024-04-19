@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arm/armv7-m.dtsi>
 #include <adi/max32/max32xxx.dtsi>
-#include <zephyr/dt-bindings/dma/max32680_dma.h>
+#include <zephyr/dt-bindings/dma/max32655_dma.h>
 
 &pinctrl {
 	reg = <0x40008000 0x2400>;
@@ -31,8 +30,14 @@
 	};
 };
 
+/* MAX32655 extra peripherals. */
 / {
 	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(32)>;
+		};
+
 		sram1: memory@20008000 {
 			compatible = "mmio-sram";
 			reg = <0x20008000 DT_SIZE_K(32)>;
@@ -76,16 +81,6 @@
 			status = "disabled";
 		};
 
-		spi0: spi@400be000 {
-			compatible = "adi,max32-spi";
-			reg = <0x400be000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 16>;
-			interrupts = <56 0>;
-			status = "disabled";
-		};
-
 		spi1: spi@40046000 {
 			compatible = "adi,max32-spi";
 			reg = <0x40046000 0x1000>;
@@ -102,7 +97,7 @@
 			interrupts = <9 0>;
 			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 2>;
-			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
 
 			counter {
@@ -117,7 +112,7 @@
 			interrupts = <10 0>;
 			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 3>;
-			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
 
 			counter {
@@ -145,6 +140,24 @@
 				compatible = "adi,max32-wut";
 				status = "disabled";
 			};
+		};
+
+		i2s0: i2s0@40060000 {
+			compatible = "adi,max32-i2s";
+			reg = <0x40060000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			/*
+			 * DMA Configuration is provided as an example.
+			 * user is free to change dma channel index,
+			 * but tx and rx slot should be kept same as below
+			 *
+			 * ref to MAX32655 User Guide
+			 * Table 9-2: DMA Source and Destination by Peripheral
+			 */
+			dmas = <&dma0 0 MAX32_DMA_SLOT_I2S_TX>, <&dma0 1 MAX32_DMA_SLOT_I2S_RX>;
+			dma-names = "tx", "rx";
+			status = "disabled";
 		};
 	};
 };
