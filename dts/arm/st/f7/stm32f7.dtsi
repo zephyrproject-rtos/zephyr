@@ -46,9 +46,9 @@
 
 	quadspi_memory: memory@90000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x90000000 DT_SIZE_M(256)>;
+		reg = <0x90000000 DT_SIZE_M(16)>;
 		zephyr,memory-region = "QSPI";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_EXTMEM) )>;
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
 	};
 
 	clocks {
