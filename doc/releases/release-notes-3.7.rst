@@ -35,6 +35,10 @@ Architectures
 
 * ARM
 
+* RISC-V
+
+  * Implemented frame-pointer based stack unwinding.
+
 * Xtensa
 
 Bluetooth
