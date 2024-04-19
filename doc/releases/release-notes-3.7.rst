@@ -242,6 +242,17 @@ Libraries / Subsystems
       configuration. It can also be set via the hawkBit shell, by using the ``hawkbit set``
       command.
 
+    * When using the hawkBit autohandler and an update is installed, the device will now
+      automatically reboot after the installation is complete.
+
+    * By enabling :kconfig:option:`CONFIG_HAWKBIT_CUSTOM_DEVICE_ID`, a callback function can be
+      registered to set the device ID. Use the :c:func:`hawkbit_set_device_identity_cb` function to
+      register the callback.
+
+    * By enabling :kconfig:option:`CONFIG_HAWKBIT_CUSTOM_ATTRIBUTES`, a callback function can be
+      registered to set the device attributes that are sent to the hawkBit server. Use the
+      :c:func:`hawkbit_set_custom_data_cb` function to register the callback.
+
 * Logging
 
   * By enabling :kconfig:option:`CONFIG_LOG_BACKEND_NET_USE_DHCPV4_OPTION`, the IP address of the
