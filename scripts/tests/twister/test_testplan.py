@@ -109,6 +109,7 @@ TESTDATA_PART1 = [
     ("min_ram", "500", "ram", "256", "Not enough RAM"),
     ("None", "None", "env", ['BSIM_OUT_PATH', 'demo_env'], "Environment (BSIM_OUT_PATH, demo_env) not satisfied"),
     ("build_on_all", True, None, None, "Platform is excluded on command line."),
+    ("build_on_all", True, "level", "foobar", "Unknown test level 'foobar'"),
     (None, None, "supported_toolchains", ['gcc'], "Not supported by the toolchain"),
 ]
 
@@ -161,6 +162,9 @@ def test_apply_filters_part1(class_testplan, all_testsuites_dict, platforms_list
             testcase.min_flash = tc_value
         if tc_attribute == "min_ram":
             testcase.min_ram = tc_value
+
+    if plat_attribute == "level":
+        plan.options.level = plat_value
 
     if tc_attribute == "build_on_all":
         for _, testcase in plan.testsuites.items():
@@ -416,6 +420,11 @@ def test_testplan_get_level():
 
     res = testplan.get_level(name)
     assert res == lvl1
+
+    lvl_missed = mock.Mock()
+    lvl_missed.name = 'missed lvl'
+    res = testplan.get_level('missed_lvl')
+    assert res is None
 
     testplan.levels.remove(lvl1)
     testplan.levels.remove(lvl2)
