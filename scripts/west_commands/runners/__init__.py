@@ -30,6 +30,7 @@ _names = [
     'blackmagicprobe',
     'bossac',
     'canopen_program',
+    'cvi-fiptool',
     'dediprog',
     'dfu',
     'ecpprog',
