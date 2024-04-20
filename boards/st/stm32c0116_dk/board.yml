@@ -1,0 +1,5 @@
+board:
+  name: stm32c0116_dk
+  vendor: st
+  socs:
+    - name: stm32c011xx
