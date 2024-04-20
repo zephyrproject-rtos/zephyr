@@ -49,6 +49,12 @@ config HAWKBIT_SHELL
 	help
 	  Activate shell module that provides hawkBit commands.
 
+config HAWKBIT_TENANT
+	string "Tenant name for the hawkbit server"
+	default "default"
+	help
+	  Configure the tenant name for the hawkbit server.
+
 config HAWKBIT_SERVER
 	string "User address for the hawkbit server"
 	help
