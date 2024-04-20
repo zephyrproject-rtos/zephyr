@@ -54,18 +54,14 @@
 		pinmux = <SPIM3_CSEL_GPIO5>;
 	};
 
-	i2c0_sda_gpio21: i2c0_sda_gpio21 {
-		pinmux = <I2C0_SDA_GPIO21>;
-		bias-pull-up;
-		drive-open-drain;
-		output-high;
-	};
 
-	i2c0_scl_gpio22: i2c0_scl_gpio22 {
-		pinmux = <I2C0_SCL_GPIO22>;
-		bias-pull-up;
-		drive-open-drain;
-		output-high;
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO21>,
+				 <I2C0_SCL_GPIO22>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
 	};
-
 };

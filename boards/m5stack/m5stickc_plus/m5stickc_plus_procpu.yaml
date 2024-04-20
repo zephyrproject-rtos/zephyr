@@ -12,6 +12,7 @@ supported:
   - uart
   - pinmux
   - nvs
+  - regulator
 testing:
   ignore_tags:
     - net
