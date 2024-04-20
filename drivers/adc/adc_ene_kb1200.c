@@ -67,7 +67,7 @@ static int adc_kb1200_start_read(const struct device *dev, const struct adc_sequ
 {
 	const struct adc_kb1200_config *config = dev->config;
 	struct adc_kb1200_data *data = dev->data;
-	int error;
+	int error = 0;
 
 	if (!sequence->channels || (sequence->channels & ~BIT_MASK(ADC_MAX_CHAN))) {
 		printk("Invalid ADC channels.\n");
