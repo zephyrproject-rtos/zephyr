@@ -124,7 +124,7 @@ manifest:
       revision: 6489e771e9c405f1763b52d64a3f17a1ec488ace
       path: modules/lib/cmsis-dsp
     - name: cmsis-nn
-      revision: 0c8669d81381ccf3b1a01d699f3b68b50134a99f
+      revision: ea987c1ca661be723de83bd159aed815d6cbd430
       path: modules/lib/cmsis-nn
     - name: edtt
       revision: 8d7b543d4d2f2be0f78481e4e1d8d73a88024803
