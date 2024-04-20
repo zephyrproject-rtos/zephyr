@@ -278,6 +278,14 @@ Serial
 Timer
 =====
 
+regulator
+=========
+
+* The :dtcompatible:`nxp,vref` driver no longer supports the ground selection function,
+  as this setting should not be modified by the user. The DT property ``nxp,ground-select``
+  has been removed, users should remove this property from their devicetree if it is present.
+  (:github:`70642`)
+
 Bluetooth
 *********
 
