@@ -36,18 +36,15 @@
 
 LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 
-#define CANCEL_BASE_SIZE 50
 #define RECV_BUFFER_SIZE 640
 #define URL_BUFFER_SIZE 300
 #define SHA256_HASH_SIZE 32
-#define DOWNLOAD_HTTP_SIZE 200
-#define DEPLOYMENT_BASE_SIZE 50
 #define RESPONSE_BUFFER_SIZE 1100
 #define DDI_SECURITY_TOKEN_SIZE 32
 #define HAWKBIT_RECV_TIMEOUT (300 * MSEC_PER_SEC)
 #define HAWKBIT_SET_SERVER_TIMEOUT K_MSEC(300)
 
-#define HAWKBIT_JSON_URL "/default/controller/v1"
+#define HAWKBIT_JSON_URL "/" CONFIG_HAWKBIT_TENANT "/controller/v1"
 
 #define HTTP_HEADER_CONTENT_TYPE_JSON "application/json;charset=UTF-8"
 
@@ -547,95 +544,45 @@ static void hawkbit_update_sleep(struct hawkbit_ctl_res *hawkbit_res)
 	}
 }
 
+static char *hawkbit_get_url(const char *href)
+{
+	char *helper;
+
+	helper = strstr(href, "//");
+	if (helper != NULL) {
+		helper = strstr(helper + 2u, "/");
+	}
+
+	if (!helper) {
+		LOG_ERR("Unexpected href format: %s", helper);
+		return NULL;
+	}
+	return helper;
+}
+
 /*
- * Find URL component for the device cancel operation and action id
+ * Find URL component for the device cancel action id
  */
-static int hawkbit_find_cancelAction_base(struct hawkbit_context *hb_context,
-					  struct hawkbit_ctl_res *res, char *cancel_base,
+static int hawkbit_find_cancel_action_id(struct hawkbit_ctl_res *res,
 					  int32_t *cancel_action_id)
 {
-	size_t len;
-	const char *href;
-	char *helper, *endptr;
+	char *helper;
 
-	href = res->_links.cancelAction.href;
-	if (!href) {
-		*cancel_base = '\0';
-		return 0;
-	}
-
-	LOG_DBG("_links.%s.href=%s", "cancelAction", href);
-
-	helper = strstr(href, "cancelAction/");
+	helper = strstr(res->_links.cancelAction.href, "cancelAction/");
 	if (!helper) {
 		/* A badly formatted cancel base is a server error */
-		LOG_ERR("Missing %s/ in href %s", "cancelAction", href);
+		LOG_ERR("Missing %s/ in href %s", "cancelAction", res->_links.cancelAction.href);
 		return -EINVAL;
 	}
 
-	len = strlen(helper);
-	if (len > CANCEL_BASE_SIZE - 1) {
-		/* Lack of memory is an application error */
-		LOG_ERR("%s %s is too big (len %zu, max %zu)", "cancelAction", helper, len,
-			CANCEL_BASE_SIZE - 1);
-		return -ENOMEM;
-	}
+	helper += sizeof("cancelAction/");
 
-	strncpy(cancel_base, helper, CANCEL_BASE_SIZE);
-
-	helper = strtok(helper, "/");
-	if (helper == 0) {
-		return -EINVAL;
-	}
-
-	helper = strtok(NULL, "/");
-	if (helper == 0) {
-		return -EINVAL;
-	}
-
-	*cancel_action_id = strtol(helper, &endptr, 10);
+	*cancel_action_id = strtol(helper, NULL, 10);
 	if (*cancel_action_id <= 0) {
 		LOG_ERR("Invalid action_id: %d", *cancel_action_id);
 		return -EINVAL;
 	}
 
-	return 0;
-}
-
-/*
- * Find URL component for the device's deployment operations
- * resource
- */
-static int hawkbit_find_deployment_base(struct hawkbit_ctl_res *res, char *deployment_base)
-{
-	const char *href;
-	const char *helper;
-	size_t len;
-
-	href = res->_links.deploymentBase.href;
-	if (!href) {
-		*deployment_base = '\0';
-		return 0;
-	}
-
-	LOG_DBG("_links.%s.href=%s", "deploymentBase", href);
-
-	helper = strstr(href, "deploymentBase/");
-	if (!helper) {
-		/* A badly formatted deployment base is a server error */
-		LOG_ERR("Missing %s/ in href %s", "deploymentBase", href);
-		return -EINVAL;
-	}
-
-	len = strlen(helper);
-	if (len > DEPLOYMENT_BASE_SIZE - 1) {
-		/* Lack of memory is an application error */
-		LOG_ERR("%s %s is too big (len %zu, max %zu)", "deploymentBase", helper, len,
-			DEPLOYMENT_BASE_SIZE - 1);
-		return -ENOMEM;
-	}
-
-	strncpy(deployment_base, helper, DEPLOYMENT_BASE_SIZE);
 	return 0;
 }
 
@@ -659,12 +606,11 @@ static int hawkbit_deployment_get_action_id(struct hawkbit_dep_res *res, int32_t
  * resource.
  */
 static int hawkbit_parse_deployment(struct hawkbit_context *hb_context, struct hawkbit_dep_res *res,
-				    char *download_http)
+				    char **download_http)
 {
 	const char *href;
-	const char *helper;
 	struct hawkbit_dep_res_chunk *chunk;
-	size_t len, num_chunks, num_artifacts;
+	size_t num_chunks, num_artifacts;
 	struct hawkbit_dep_res_arts *artifact;
 
 	num_chunks = res->deployment.num_chunks;
@@ -700,8 +646,7 @@ static int hawkbit_parse_deployment(struct hawkbit_context *hb_context, struct h
 	}
 
 	/*
-	 * Find the download-http href. We only support the DEFAULT
-	 * tenant on the same hawkBit server.
+	 * Find the download-http href.
 	 */
 	href = artifact->_links.download_http.href;
 	if (!href) {
@@ -709,25 +654,13 @@ static int hawkbit_parse_deployment(struct hawkbit_context *hb_context, struct h
 		return -EINVAL;
 	}
 
-	helper = strstr(href, "/DEFAULT/controller/v1");
-	if (!helper) {
-		LOG_ERR("Unexpected %s href format: %s", "download-http", helper);
-		return -EINVAL;
-	}
-
-	len = strlen(helper);
-	if (len == 0) {
-		LOG_ERR("Empty %s", "download-http");
-		return -EINVAL;
-	} else if (len > DOWNLOAD_HTTP_SIZE - 1) {
-		LOG_ERR("%s %s is too big (len %zu, max %zu)", "download-http", helper, len,
-			DOWNLOAD_HTTP_SIZE - 1);
-		return -ENOMEM;
-	}
-
 	/* Success. */
 	if (download_http != NULL) {
-		strncpy(download_http, helper, DOWNLOAD_HTTP_SIZE);
+		*download_http = hawkbit_get_url(href);
+		if (*download_http == NULL) {
+			LOG_ERR("Failed to parse %s url", "deploymentBase");
+			return -EINVAL;
+		}
 	}
 	return 0;
 }
@@ -996,7 +929,7 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 }
 
 static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_request type,
-			 uint8_t *url_buffer, uint8_t *status_buffer)
+			 char *url_buffer, uint8_t *status_buffer)
 {
 	int ret = 0;
 	uint8_t recv_buf_tcp[RECV_BUFFER_SIZE] = {0};
@@ -1209,7 +1142,7 @@ static void s_http_end(void *o)
 static void s_probe(void *o)
 {
 	struct s_object *s = (struct s_object *)o;
-	uint8_t url_buffer[URL_BUFFER_SIZE] = {0};
+	char url_buffer[URL_BUFFER_SIZE] = {0};
 
 	LOG_INF("Polling target data from hawkBit");
 
@@ -1255,22 +1188,28 @@ static void s_hawbit_close(void *o)
 	int ret = 0;
 	int32_t cancel_action_id = 0;
 	struct s_object *s = (struct s_object *)o;
-	char cancel_base[CANCEL_BASE_SIZE] = {0};
+	char *cancel_base;
 	uint8_t status_buffer[CONFIG_HAWKBIT_STATUS_BUFFER_SIZE] = {0};
-	uint8_t url_buffer[URL_BUFFER_SIZE] = {0};
+	char url_buffer[URL_BUFFER_SIZE] = {0};
 	struct hawkbit_close close = {0};
 
-	ret = hawkbit_find_cancelAction_base(&s->hb_context, &s->hb_context.results.base,
-					     cancel_base, &cancel_action_id);
-	if (ret < 0) {
-		LOG_ERR("Can't find cancelAction base: %d", ret);
+	cancel_base = hawkbit_get_url(s->hb_context.results.base._links.cancelAction.href);
+	if (cancel_base == NULL) {
+		LOG_ERR("Can't find %s url", "cancelAction");
 		s->hb_context.code_status = HAWKBIT_METADATA_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
 		return;
 	}
 
-	snprintk(url_buffer, sizeof(url_buffer), "%s/%s-%s/%s/%s", HAWKBIT_JSON_URL, CONFIG_BOARD,
-		 s->device_id, cancel_base, "feedback");
+	snprintk(url_buffer, sizeof(url_buffer), "%s/%s", cancel_base, "feedback");
+
+	ret = hawkbit_find_cancel_action_id(&s->hb_context.results.base, &cancel_action_id);
+	if (ret < 0) {
+		LOG_ERR("Can't find %s id: %d", "cancelAction", ret);
+		s->hb_context.code_status = HAWKBIT_METADATA_ERROR;
+		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
+		return;
+	}
 
 	close.status.execution = hawkbit_status_execution(HAWKBIT_STATUS_EXEC_CLOSED);
 	close.status.result.finished = hawkbit_status_finished(
@@ -1307,10 +1246,15 @@ static void s_config_device(void *o)
 	int ret = 0;
 	struct s_object *s = (struct s_object *)o;
 	uint8_t status_buffer[CONFIG_HAWKBIT_STATUS_BUFFER_SIZE] = {0};
-	uint8_t url_buffer[URL_BUFFER_SIZE] = {0};
+	char *url_buffer;
 
-	snprintk(url_buffer, sizeof(url_buffer), "%s/%s-%s/%s", HAWKBIT_JSON_URL, CONFIG_BOARD,
-		 s->device_id, "configData");
+	url_buffer = hawkbit_get_url(s->hb_context.results.base._links.configData.href);
+	if (url_buffer == NULL) {
+		LOG_ERR("Can't find %s url", "configData");
+		s->hb_context.code_status = HAWKBIT_METADATA_ERROR;
+		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
+		return;
+	}
 
 	ret = hawkbit_config_device_data_cb_handler(s->device_id, status_buffer,
 						    sizeof(status_buffer));
@@ -1338,19 +1282,15 @@ static void s_probe_deployment_base(void *o)
 {
 	int ret = 0;
 	struct s_object *s = (struct s_object *)o;
-	char deployment_base[DEPLOYMENT_BASE_SIZE] = {0};
-	uint8_t url_buffer[URL_BUFFER_SIZE] = {0};
+	char *url_buffer;
 
-	ret = hawkbit_find_deployment_base(&s->hb_context.results.base, deployment_base);
-	if (ret < 0) {
-		LOG_ERR("Unable to find URL for the device's deploymentBase: %d", ret);
+	url_buffer = hawkbit_get_url(s->hb_context.results.base._links.deploymentBase.href);
+	if (url_buffer == NULL) {
+		LOG_ERR("Can't find %s url", "deploymentBase");
 		s->hb_context.code_status = HAWKBIT_METADATA_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
 		return;
 	}
-
-	snprintk(url_buffer, sizeof(url_buffer), "%s/%s-%s/%s", HAWKBIT_JSON_URL, CONFIG_BOARD,
-		 s->device_id, deployment_base);
 
 	if (!send_request(&s->hb_context, HAWKBIT_PROBE_DEPLOYMENT_BASE, url_buffer, NULL)) {
 		LOG_ERR("Send request failed (%s)", "HAWKBIT_PROBE_DEPLOYMENT_BASE");
@@ -1390,7 +1330,7 @@ static void s_report(void *o)
 		.status.result.finished = hawkbit_status_finished(HAWKBIT_STATUS_FINISHED_SUCCESS),
 	};
 	uint8_t status_buffer[CONFIG_HAWKBIT_STATUS_BUFFER_SIZE] = {0};
-	uint8_t url_buffer[URL_BUFFER_SIZE] = {0};
+	char url_buffer[URL_BUFFER_SIZE] = {0};
 
 	snprintk(url_buffer, sizeof(url_buffer), "%s/%s-%s/%s/%d/%s", HAWKBIT_JSON_URL,
 		 CONFIG_BOARD, s->device_id, "deploymentBase", s->hb_context.json_action_id,
@@ -1427,12 +1367,12 @@ static void s_download(void *o)
 {
 	int ret = 0;
 	struct s_object *s = (struct s_object *)o;
-	uint8_t url_buffer[DOWNLOAD_HTTP_SIZE] = {0};
 	struct flash_img_check fic = {0};
+	char *url_buffer;
 
-	ret = hawkbit_parse_deployment(&s->hb_context, &s->hb_context.results.dep, url_buffer);
+	ret = hawkbit_parse_deployment(&s->hb_context, &s->hb_context.results.dep, &url_buffer);
 	if (ret < 0) {
-		LOG_ERR("Failed to parse deploymentBase: %d", ret);
+		LOG_ERR("Failed to parse %s: %d", "deploymentBase", ret);
 		s->hb_context.code_status = HAWKBIT_METADATA_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
 		return;
