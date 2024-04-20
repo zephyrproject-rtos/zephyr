@@ -15,6 +15,7 @@ config I2C_DW_CLOCK_SPEED
 
 config I2C_DW_LPSS_DMA
 	bool "Use I2C integrated DMA for asynchronous transfer"
+	depends on I2C_DW
 	select DMA
 	select DMA_INTEL_LPSS
 	help
