@@ -574,6 +574,16 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	if (params->psk && !secure_connection) {
 		PR_WARNING("Passphrase provided without security configuration\n");
 	}
+
+	if (!params->ssid) {
+		PR_ERROR("SSID not provided\n");
+		return -EINVAL;
+	}
+
+	if (iface_mode == WIFI_MODE_AP && params->channel == WIFI_CHANNEL_ANY) {
+		PR_ERROR("Channel not provided\n");
+		return -EINVAL;
+	}
 	return 0;
 }
 
