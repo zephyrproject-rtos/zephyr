@@ -8,6 +8,7 @@
 #include <espressif/esp32/esp32_pico_d4.dtsi>
 #include "m5stickc_plus-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/regulator/axp192.h>
 
 / {
 	model = "M5StickC Plus PROCPU";
@@ -20,6 +21,8 @@
 		uart-0 = &uart0;
 		i2c-0 = &i2c0;
 		watchdog0 = &wdt0;
+		accel0 = &mpu6886;
+		rtc = &bm8563;
 	};
 
 	chosen {
@@ -28,6 +31,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,rtc = &bm8563;
 	};
 
 	leds {
@@ -81,11 +85,62 @@
 /* IMU MPU-6886, RTC BM8563, PMU AXP192 */
 &i2c0 {
 	status = "okay";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
+	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-gpios = <&gpio0 21 GPIO_OPEN_DRAIN>;
 	scl-gpios = <&gpio0 22 GPIO_OPEN_DRAIN>;
-	pinctrl-0 = <&i2c0_sda_gpio21 &i2c0_scl_gpio22>;
+	pinctrl-0 = <&i2c0_default>;
+	scl-timeout-us = <0>;
 	pinctrl-names = "default";
+
+	axp192_pmic: axp192@34 {
+		compatible = "x-powers,axp192";
+		reg = <0x34>;
+		status = "okay";
+
+		axp192_regulator: axp192_regulator {
+			compatible = "x-powers,axp192-regulator";
+			status = "okay";
+
+			vdd_mcu: DCDC1 {
+				regulator-init-microvolt = <3350000>;
+				regulator-min-microvolt = <3200000>;
+				regulator-max-microvolt = <3400000>;
+				regulator-initial-mode = <AXP192_DCDC_MODE_AUTO>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			lcd_bl: LDO2 {
+				regulator-init-microvolt = <2800000>;
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3000000>;
+				regulator-boot-on;
+			};
+
+			lcd_logic: LDO3 {
+				regulator-init-microvolt = <3000000>;
+			};
+		};
+		axp192_gpio: axp192_gpio {
+			compatible = "x-powers,axp192-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <6>;
+			status = "okay";
+		};
+	};
+
+	mpu6886: mpu6886@68 {
+		status = "okay";
+		compatible = "invensense,mpu6050";
+		reg = <0x68>;
+	};
+
+	bm8563: bm8563@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+		status = "okay";
+	};
 };
 
 &spi2 {
