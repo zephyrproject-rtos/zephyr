@@ -582,6 +582,7 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_connect_req_params cnx_params = { 0 };
+	int ret;
 
 	context.sh = sh;
 	if (__wifi_args_to_params(sh, argc, argv, &cnx_params, WIFI_MODE_INFRA)) {
@@ -590,12 +591,11 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 	}
 
 	context.connecting = true;
-
-	if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface,
-		     &cnx_params, sizeof(struct wifi_connect_req_params))) {
-		PR_WARNING("Connection request failed\n");
+	ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface,
+		       &cnx_params, sizeof(struct wifi_connect_req_params));
+	if (ret) {
+		printk("Connection request failed with error: %d\n", ret);
 		context.connecting = false;
-
 		return -ENOEXEC;
 	}
 
@@ -621,7 +621,7 @@ static int cmd_wifi_disconnect(const struct shell *sh, size_t argc,
 		if (status == -EALREADY) {
 			PR_INFO("Already disconnected\n");
 		} else {
-			PR_WARNING("Disconnect request failed\n");
+			PR_WARNING("Disconnect request failed: %d\n", status);
 			return -ENOEXEC;
 		}
 	} else {
