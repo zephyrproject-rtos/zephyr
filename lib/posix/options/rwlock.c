@@ -11,6 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/sys/bitarray.h>
+#include <zephyr/sys/sem.h>
 
 #define CONCURRENT_READER_LIMIT  (CONFIG_MAX_PTHREAD_COUNT + 1)
 
@@ -32,7 +33,7 @@ static uint32_t write_lock_acquire(struct posix_rwlock *rwl, int32_t timeout);
 
 LOG_MODULE_REGISTER(pthread_rwlock, CONFIG_PTHREAD_RWLOCK_LOG_LEVEL);
 
-static struct k_spinlock posix_rwlock_spinlock;
+static SYS_SEM_DEFINE(posix_rwlock_lock, 1, 1);
 
 static struct posix_rwlock posix_rwlock_pool[CONFIG_MAX_PTHREAD_RWLOCK_COUNT];
 SYS_BITARRAY_DEFINE_STATIC(posix_rwlock_bitarray, CONFIG_MAX_PTHREAD_RWLOCK_COUNT);
@@ -150,10 +151,10 @@ int pthread_rwlock_destroy(pthread_rwlock_t *rwlock)
 		return EINVAL;
 	}
 
-	K_SPINLOCK(&posix_rwlock_spinlock) {
+	SYS_SEM_LOCK(&posix_rwlock_lock) {
 		if (rwl->wr_owner != NULL) {
 			ret = EBUSY;
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		bit = posix_rwlock_to_offset(rwl);
