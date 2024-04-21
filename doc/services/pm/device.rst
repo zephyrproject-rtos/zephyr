@@ -302,3 +302,13 @@ later calling :c:func:`pm_device_wakeup_enable`.
    devices that should not be suspended.
    It is responsibility of driver or the application to do any additional
    configuration required by the device to support it.
+
+Examples
+********
+
+Some helpful examples showing device power management features:
+
+* :zephyr_file:`samples/subsys/pm/device_pm/`
+* :zephyr_file:`tests/subsys/pm/power_mgmt/`
+* :zephyr_file:`tests/subsys/pm/device_wakeup_api/`
+* :zephyr_file:`tests/subsys/pm/device_driver_init/`
