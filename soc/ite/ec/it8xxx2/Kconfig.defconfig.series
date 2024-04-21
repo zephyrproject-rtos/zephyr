@@ -1,7 +1,7 @@
 # Copyright (c) 2020 ITE Corporation. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_ITE_IT8XXX2
+if SOC_SERIES_IT8XXX2
 
 config RISCV_GP
 	default y
@@ -53,4 +53,4 @@ config RISCV_SOC_INTERRUPT_INIT
 
 rsource "Kconfig.defconfig.it8*"
 
-endif # SOC_SERIES_ITE_IT8XXX2
+endif # SOC_SERIES_IT8XXX2
