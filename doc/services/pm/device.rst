@@ -302,10 +302,3 @@ later calling :c:func:`pm_device_wakeup_enable`.
    devices that should not be suspended.
    It is responsibility of driver or the application to do any additional
    configuration required by the device to support it.
-
-Power Domain
-************
-
-Power domain on Zephyr is represented as a regular device. The power management
-subsystem ensures that a domain is resumed before and suspended after devices
-using it. For more details, see :ref:`pm-power-domain`.
