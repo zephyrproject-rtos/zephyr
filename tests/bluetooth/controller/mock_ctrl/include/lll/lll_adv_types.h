@@ -26,3 +26,14 @@ struct lll_adv_pdu {
 	void *extra_data[DOUBLE_BUFFER_SIZE];
 #endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 };
+
+/* Vendor specific data in Broadcast ISO context */
+struct lll_adv_iso_vendor {
+	union {
+#if defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
+		struct ccm ccm_tx;
+#endif /* CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
+
+		uint8_t rfi[0];
+	};
+};

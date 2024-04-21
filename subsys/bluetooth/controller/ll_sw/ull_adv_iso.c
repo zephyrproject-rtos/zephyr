@@ -564,7 +564,6 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		const uint8_t BIG1[16] = {0x31, 0x47, 0x49, 0x42, };
 		const uint8_t BIG2[4]  = {0x32, 0x47, 0x49, 0x42};
 		const uint8_t BIG3[4]  = {0x33, 0x47, 0x49, 0x42};
-		struct ccm *ccm_tx;
 		uint8_t igltk[16];
 		uint8_t gltk[16];
 		uint8_t gsk[16];
@@ -585,10 +584,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		LL_ASSERT(!err);
 
 		/* Prepare the CCM parameters */
-		ccm_tx = &lll_adv_iso->ccm_tx;
-		ccm_tx->direction = 1U;
-		(void)memcpy(&ccm_tx->iv[4], &lll_adv_iso->giv[4], 4U);
-		(void)mem_rcopy(ccm_tx->key, gsk, sizeof(ccm_tx->key));
+		lll_adv_iso_enc_param_set(lll_adv_iso, gsk);
 
 		/* NOTE: counter is filled in LLL */
 

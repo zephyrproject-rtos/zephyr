@@ -17,3 +17,8 @@ struct lll_adv_pdu {
 	uint8_t          last;
 	uint8_t          *pdu[DOUBLE_BUFFER_SIZE];
 };
+
+/* Vendor specific data in Broadcast ISO context */
+struct lll_adv_iso_vendor {
+	uint8_t rfi[0];
+};

@@ -85,6 +85,18 @@ int lll_adv_iso_reset(void)
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
+void lll_adv_iso_enc_param_set(struct lll_adv_iso *lll, uint8_t *gsk)
+{
+	struct ccm *ccm_tx;
+
+	ccm_tx = &lll->vendor.ccm_tx;
+	ccm_tx->direction = 1U;
+	(void)memcpy(&ccm_tx->iv[4], &lll->giv[4], 4U);
+	(void)mem_rcopy(ccm_tx->key, gsk, sizeof(ccm_tx->key));
+}
+#endif /* CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
+
 void lll_adv_iso_create_prepare(void *param)
 {
 	prepare(param);
@@ -351,20 +363,26 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	/* Radio packet configuration */
 	pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_BIS, phy,
 					 RADIO_PKT_CONF_CTE_DISABLED);
-	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
-	    pdu->len && lll->enc) {
-		/* Encryption */
-		lll->ccm_tx.counter = payload_count;
+	if (false) {
 
-		(void)memcpy(lll->ccm_tx.iv, lll->giv, 4U);
-		mem_xor_32(lll->ccm_tx.iv, lll->ccm_tx.iv, access_addr);
+#if defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
+	} else if (pdu->len && lll->enc) {
+		struct ccm *ccm_tx = &lll->vendor.ccm_tx;
+
+		/* Encryption */
+
+		ccm_tx->counter = payload_count;
+		(void)memcpy(ccm_tx->iv, lll->giv, 4U);
+		mem_xor_32(ccm_tx->iv, ccm_tx->iv, access_addr);
 
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
 				    (lll->max_pdu + PDU_MIC_SIZE), pkt_flags);
 
-		radio_pkt_tx_set(radio_ccm_iso_tx_pkt_set(&lll->ccm_tx,
+		radio_pkt_tx_set(radio_ccm_iso_tx_pkt_set(ccm_tx,
 						RADIO_PKT_CONF_PDU_TYPE_BIS,
 						pdu));
+#endif /* CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
+
 	} else {
 		if (lll->enc) {
 			radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
@@ -700,16 +718,21 @@ static void isr_tx_common(void *param,
 	lll_chan_set(data_chan_use);
 
 	/* Encryption */
-	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
-	    pdu->len && lll->enc) {
-		lll->ccm_tx.counter = payload_count;
+	if (false) {
 
-		(void)memcpy(lll->ccm_tx.iv, lll->giv, 4U);
-		mem_xor_32(lll->ccm_tx.iv, lll->ccm_tx.iv, access_addr);
+#if defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
+	} else if (pdu->len && lll->enc) {
+		struct ccm *ccm_tx = &lll->vendor.ccm_tx;
 
-		radio_pkt_tx_set(radio_ccm_iso_tx_pkt_set(&lll->ccm_tx,
+		ccm_tx->counter = payload_count;
+		(void)memcpy(ccm_tx->iv, lll->giv, 4U);
+		mem_xor_32(ccm_tx->iv, ccm_tx->iv, access_addr);
+
+		radio_pkt_tx_set(radio_ccm_iso_tx_pkt_set(ccm_tx,
 						RADIO_PKT_CONF_PDU_TYPE_BIS,
 						pdu));
+#endif /* CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
+
 	} else {
 		radio_pkt_tx_set(pdu);
 	}
