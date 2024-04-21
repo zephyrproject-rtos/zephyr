@@ -905,11 +905,15 @@ static int litex_clk_calc_duty_normal(struct litex_clk_clkout *lcko,
 	uint32_t ht_aprox, synth_duty, min_d;
 	uint8_t high_time_it, edge_it, high_duty,
 	   divider = lcko->config.div;
+	int err;
 
 	if (calc_new) {
 		duty = lcko->ts_config.duty;
 	} else {
-		litex_clk_get_duty_cycle(lcko, &duty);
+		err = litex_clk_get_duty_cycle(lcko, &duty);
+		if (err != 0) {
+			return err;
+		}
 	}
 
 	high_duty = litex_clk_calc_duty_percent(&duty);
@@ -1127,9 +1131,13 @@ int litex_clk_get_phase(struct litex_clk_clkout *lcko)
 	uint32_t divider = 0, fract_cnt, post_glob_div_f,
 	    pm, global_period, clkout_period, period;
 	uint8_t phase_mux = 0, delay_time = 0;
+	int err = 0;
 
 	litex_clk_get_phase_data(lcko, &phase_mux, &delay_time);
-	litex_clk_get_clkout_divider(lcko, &divider, &fract_cnt);
+	err = litex_clk_get_clkout_divider(lcko, &divider, &fract_cnt);
+	if (err != 0) {
+		return err;
+	}
 
 	post_glob_div_f = (uint32_t)litex_clk_get_real_global_frequency();
 	period_buff = PICOS_IN_SEC;
