@@ -464,8 +464,6 @@ static int can_nxp_s32_add_rx_filter(const struct device *dev,
 	int mb_indx;
 	uint32_t mask;
 
-	__ASSERT_NO_MSG(callback != NULL);
-
 	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
@@ -554,8 +552,6 @@ static int can_nxp_s32_send(const struct device *dev,
 	Canexcel_Ip_StatusType status;
 	enum can_state state;
 	int alloc, mb_indx;
-
-	__ASSERT_NO_MSG(callback != NULL);
 
 #ifdef CAN_NXP_S32_FD_MODE
 	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_FDF | CAN_FRAME_BRS)) != 0) {
