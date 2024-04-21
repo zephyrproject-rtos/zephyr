@@ -671,8 +671,6 @@ static int mcux_flexcan_send(const struct device *dev,
 	uint8_t max_dlc = CAN_MAX_DLC;
 	int alloc;
 
-	__ASSERT_NO_MSG(callback != NULL);
-
 	if (UTIL_AND(IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD),
 		     ((data->common.mode & CAN_MODE_FD) != 0U))) {
 		if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR |
@@ -771,8 +769,6 @@ static int mcux_flexcan_add_rx_filter(const struct device *dev,
 	uint32_t mask;
 	int alloc = -ENOSPC;
 	int i;
-
-	__ASSERT_NO_MSG(callback);
 
 	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);

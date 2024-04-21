@@ -138,8 +138,6 @@ static int can_native_linux_send(const struct device *dev, const struct can_fram
 		(frame->flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
 		(frame->flags & CAN_FRAME_RTR) != 0 ? ", RTR frame" : "");
 
-	__ASSERT_NO_MSG(callback != NULL);
-
 #ifdef CONFIG_CAN_FD_MODE
 	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR |
 		CAN_FRAME_FDF | CAN_FRAME_BRS)) != 0) {
