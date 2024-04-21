@@ -1,7 +1,7 @@
 # Copyright (c) 2020 ITE Corporation. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_ITE_IT8XXX2
+config SOC_SERIES_IT8XXX2
 	bool
 	select SOC_FAMILY_ITE_EC
 	help
@@ -9,44 +9,44 @@ config SOC_SERIES_ITE_IT8XXX2
 
 config SOC_IT8XXX2
 	bool
-	select SOC_SERIES_ITE_IT8XXX2
+	select SOC_SERIES_IT8XXX2
 
-config SOC_IT81302_BX
+config SOC_IT81302BX
 	bool
 	select SOC_IT8XXX2
 
-config SOC_IT81202_BX
+config SOC_IT81202BX
 	bool
 	select SOC_IT8XXX2
 
-config SOC_IT81302_CX
+config SOC_IT81302CX
 	bool
 	select SOC_IT8XXX2
 
-config SOC_IT81202_CX
+config SOC_IT81202CX
 	bool
 	select SOC_IT8XXX2
 
-config SOC_IT82202_AX
+config SOC_IT82202AX
 	bool
 	select SOC_IT8XXX2
 
-config SOC_IT82302_AX
+config SOC_IT82302AX
 	bool
 	select SOC_IT8XXX2
 
-config SOC_IT82002_AW
+config SOC_IT82002AW
 	bool
 	select SOC_IT8XXX2
 
 config SOC_SERIES
-	default "it8xxx2" if SOC_SERIES_ITE_IT8XXX2
+	default "it8xxx2" if SOC_SERIES_IT8XXX2
 
 config SOC
-	default "it81202bx" if SOC_IT81202_BX
-	default "it81202cx" if SOC_IT81202_CX
-	default "it81302bx" if SOC_IT81302_BX
-	default "it81302cx" if SOC_IT81302_CX
-	default "it82002aw" if SOC_IT82002_AW
-	default "it82202ax" if SOC_IT82202_AX
-	default "it82302ax" if SOC_IT82302_AX
+	default "it81202bx" if SOC_IT81202BX
+	default "it81202cx" if SOC_IT81202CX
+	default "it81302bx" if SOC_IT81302BX
+	default "it81302cx" if SOC_IT81302CX
+	default "it82002aw" if SOC_IT82002AW
+	default "it82202ax" if SOC_IT82202AX
+	default "it82302ax" if SOC_IT82302AX
