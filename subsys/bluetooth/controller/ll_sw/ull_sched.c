@@ -33,6 +33,7 @@
 #include "lll_adv_sync.h"
 #include "lll_scan.h"
 #include "lll/lll_df_types.h"
+#include "lll/lll_conn_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 

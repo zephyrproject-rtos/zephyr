@@ -29,6 +29,7 @@
 #include "lll.h"
 #include "ll_feat.h"
 #include "lll/lll_df_types.h"
+#include "lll/lll_conn_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 

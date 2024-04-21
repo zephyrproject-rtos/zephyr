@@ -119,9 +119,6 @@ struct lll_conn {
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	uint8_t enc_rx:1;
 	uint8_t enc_tx:1;
-
-	struct ccm ccm_rx;
-	struct ccm ccm_tx;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE)
@@ -153,6 +150,11 @@ struct lll_conn {
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 	struct lll_df_conn_tx_cfg df_tx_cfg;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
+
+	/* Vendor specific data
+	 * Example, nRF CCM `struct ccm`
+	 */
+	struct lll_conn_vendor vendor;
 };
 
 int lll_conn_init(void);

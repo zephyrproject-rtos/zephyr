@@ -46,6 +46,7 @@
 #include "lll/lll_df_types.h"
 #include "ll_sw/lll_sync.h"
 #include "ll_sw/lll_sync_iso.h"
+#include "lll/lll_conn_types.h"
 #include "ll_sw/lll_conn.h"
 #include "ll_sw/lll_conn_iso.h"
 #include "ll_sw/lll_iso_tx.h"

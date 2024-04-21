@@ -28,6 +28,7 @@
 #include "lll_clock.h"
 #include "lll/lll_vendor.h"
 #include "lll/lll_df_types.h"
+#include "lll/lll_conn_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 #include "lll_peripheral_iso.h"

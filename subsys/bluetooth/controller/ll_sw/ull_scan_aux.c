@@ -27,6 +27,7 @@
 #include "lll_scan.h"
 #include "lll_scan_aux.h"
 #include "lll/lll_df_types.h"
+#include "lll/lll_conn_types.h"
 #include "lll_conn.h"
 #include "lll_sync.h"
 #include "lll_sync_iso.h"

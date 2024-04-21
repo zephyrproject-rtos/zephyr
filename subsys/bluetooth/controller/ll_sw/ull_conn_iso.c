@@ -28,6 +28,7 @@
 #include "lll/lll_vendor.h"
 #include "lll_clock.h"
 #include "lll/lll_df_types.h"
+#include "lll/lll_conn_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 #include "lll_central_iso.h"
@@ -908,16 +909,16 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	if (conn->lll.enc_tx) {
+		struct ccm *ccm_tx = &conn->lll.vendor.ccm_tx;
+
 		/* copy the Session Key */
-		memcpy(cis->lll.tx.ccm.key, conn->lll.ccm_tx.key,
-		       sizeof(cis->lll.tx.ccm.key));
+		memcpy(cis->lll.tx.ccm.key, ccm_tx->key, sizeof(cis->lll.tx.ccm.key));
 
 		/* copy the MSbits of IV Base */
-		memcpy(&cis->lll.tx.ccm.iv[4], &conn->lll.ccm_tx.iv[4], 4);
+		memcpy(&cis->lll.tx.ccm.iv[4], &ccm_tx->iv[4], 4);
 
 		/* XOR the CIS access address to get IV */
-		mem_xor_32(cis->lll.tx.ccm.iv, conn->lll.ccm_tx.iv,
-			   cis->lll.access_addr);
+		mem_xor_32(cis->lll.tx.ccm.iv, ccm_tx->iv, cis->lll.access_addr);
 
 		/* initialise counter */
 		cis->lll.tx.ccm.counter = 0U;
@@ -929,16 +930,16 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 	}
 
 	if (conn->lll.enc_rx) {
+		struct ccm *ccm_rx = &conn->lll.vendor.ccm_rx;
+
 		/* copy the Session Key */
-		memcpy(cis->lll.rx.ccm.key, conn->lll.ccm_rx.key,
-		       sizeof(cis->lll.rx.ccm.key));
+		memcpy(cis->lll.rx.ccm.key, ccm_rx->key, sizeof(cis->lll.rx.ccm.key));
 
 		/* copy the MSbits of IV Base */
-		memcpy(&cis->lll.rx.ccm.iv[4], &conn->lll.ccm_rx.iv[4], 4);
+		memcpy(&cis->lll.rx.ccm.iv[4], &ccm_rx->iv[4], 4);
 
 		/* XOR the CIS access address to get IV */
-		mem_xor_32(cis->lll.rx.ccm.iv, conn->lll.ccm_rx.iv,
-			   cis->lll.access_addr);
+		mem_xor_32(cis->lll.rx.ccm.iv, ccm_rx->iv, cis->lll.access_addr);
 
 		/* initialise counter */
 		cis->lll.rx.ccm.counter = 0U;

@@ -32,6 +32,7 @@
 #include "lll_clock.h"
 #include "lll_df_types.h"
 #include "lll_df.h"
+#include "lll_conn_types.h"
 #include "lll_conn.h"
 
 #include "lll_internal.h"
@@ -698,12 +699,12 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 	defined(HAL_RADIO_PDU_LEN_MAX) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
 	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < (HAL_RADIO_PDU_LEN_MAX - 4)))
-		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&lll->ccm_rx, phy,
+		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&lll->vendor.ccm_rx, phy,
 						      radio_pkt_decrypt_get()));
 #elif !defined(HAL_RADIO_PDU_LEN_MAX)
 #error "Undefined HAL_RADIO_PDU_LEN_MAX."
 #else
-		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&lll->ccm_rx, phy,
+		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&lll->vendor.ccm_rx, phy,
 						      pdu_data_rx));
 #endif
 #endif /* CONFIG_BT_CTLR_LE_ENC */
@@ -759,7 +760,7 @@ void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx)
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, (max_tx_octets + PDU_MIC_SIZE),
 				    pkt_flags);
 
-		radio_pkt_tx_set(radio_ccm_tx_pkt_set(&lll->ccm_tx, pdu_data_tx));
+		radio_pkt_tx_set(radio_ccm_tx_pkt_set(&lll->vendor.ccm_tx, pdu_data_tx));
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 	} else {
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, max_tx_octets, pkt_flags);
@@ -977,7 +978,7 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 			if (pdu_data_tx_len != 0U) {
 				/* if encrypted increment tx counter */
 				if (lll->enc_tx) {
-					lll->ccm_tx.counter++;
+					lll->vendor.ccm_tx.counter++;
 				}
 			}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
@@ -1034,7 +1035,7 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 				bool mic_failure = !radio_ccm_mic_is_valid();
 
 				if (mic_failure &&
-				    lll->ccm_rx.counter == 0 &&
+				    lll->vendor.ccm_rx.counter == 0 &&
 				    (pdu_data_rx->ll_id ==
 				     PDU_DATA_LLID_CTRL)) {
 					/* Received an LL control packet in the
@@ -1053,7 +1054,7 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 						       offsetof(struct pdu_data,
 							llctrl));
 						mic_failure = false;
-						lll->ccm_rx.counter--;
+						lll->vendor.ccm_rx.counter--;
 					}
 				}
 
@@ -1065,7 +1066,7 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 				}
 
 				/* Increment counter */
-				lll->ccm_rx.counter++;
+				lll->vendor.ccm_rx.counter++;
 
 				/* Record MIC valid */
 				mic_state = LLL_CONN_MIC_PASS;

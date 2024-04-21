@@ -35,6 +35,7 @@
 #include "lll_df_internal.h"
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
+#include "lll_conn_types.h"
 #include "lll_conn.h"
 #include "lll_sched.h"
 

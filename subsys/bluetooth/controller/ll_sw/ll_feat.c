@@ -19,6 +19,7 @@
 
 #include "lll.h"
 #include "lll/lll_df_types.h"
+#include "lll/lll_conn_types.h"
 #include "lll_conn.h"
 
 #include "ull_conn_internal.h"

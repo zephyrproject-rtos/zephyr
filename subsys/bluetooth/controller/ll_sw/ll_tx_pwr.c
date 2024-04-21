@@ -29,6 +29,7 @@
 #include "lll/lll_adv_pdu.h"
 #include "lll_scan.h"
 #include "lll/lll_df_types.h"
+#include "lll/lll_conn_types.h"
 #include "lll_conn.h"
 
 #include "ll_sw/ull_tx_queue.h"

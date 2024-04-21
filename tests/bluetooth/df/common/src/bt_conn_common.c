@@ -20,6 +20,7 @@
 #include <pdu.h>
 #include <lll.h>
 #include <lll/lll_df_types.h>
+#include <lll/lll_conn_types.h>
 #include <lll_conn.h>
 
 #include <ull_tx_queue.h>

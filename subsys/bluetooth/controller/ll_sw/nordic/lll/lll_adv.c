@@ -38,6 +38,7 @@
 #include "lll_adv_aux.h"
 #include "lll_adv_sync.h"
 #include "lll_df_types.h"
+#include "lll_conn_types.h"
 #include "lll_conn.h"
 #include "lll_chan.h"
 #include "lll_filter.h"

@@ -29,6 +29,7 @@
 
 #include "lll.h"
 #include "lll/lll_df_types.h"
+#include "lll/lll_conn_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
@@ -147,31 +148,34 @@ enum {
 
 static void enc_setup_lll(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t role)
 {
+	struct ccm *ccm_tx = &conn->lll.vendor.ccm_tx;
+	struct ccm *ccm_rx = &conn->lll.vendor.ccm_rx;
+
 	/* TODO(thoh): Move LLL/CCM manipulation to ULL? */
 
 	/* Calculate the Session Key */
-	ecb_encrypt(&ctx->data.enc.ltk[0], &ctx->data.enc.skd[0], NULL, &conn->lll.ccm_rx.key[0]);
+	ecb_encrypt(&ctx->data.enc.ltk[0], &ctx->data.enc.skd[0], NULL, &ccm_rx->key[0]);
 
 	/* Copy the Session Key */
-	memcpy(&conn->lll.ccm_tx.key[0], &conn->lll.ccm_rx.key[0], sizeof(conn->lll.ccm_tx.key));
+	memcpy(&ccm_tx->key[0], &ccm_rx->key[0], sizeof(ccm_tx->key));
 
 	/* Copy the IV */
-	memcpy(&conn->lll.ccm_tx.iv[0], &conn->lll.ccm_rx.iv[0], sizeof(conn->lll.ccm_tx.iv));
+	memcpy(&ccm_tx->iv[0], &ccm_rx->iv[0], sizeof(ccm_tx->iv));
 
 	/* Reset CCM counter */
-	conn->lll.ccm_tx.counter = 0U;
-	conn->lll.ccm_rx.counter = 0U;
+	ccm_tx->counter = 0U;
+	ccm_rx->counter = 0U;
 
 	/* Set CCM direction:
 	 *	periph to central = 0,
 	 *	central to periph = 1
 	 */
 	if (role == BT_HCI_ROLE_PERIPHERAL) {
-		conn->lll.ccm_tx.direction = 0U;
-		conn->lll.ccm_rx.direction = 1U;
+		ccm_tx->direction = 0U;
+		ccm_rx->direction = 1U;
 	} else {
-		conn->lll.ccm_tx.direction = 1U;
-		conn->lll.ccm_rx.direction = 0U;
+		ccm_tx->direction = 1U;
+		ccm_rx->direction = 0U;
 	}
 }
 
@@ -260,13 +264,15 @@ static void lp_enc_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t 
 
 static void lp_enc_store_m(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
+	struct ccm *ccm_rx = &conn->lll.vendor.ccm_rx;
+
 	/* Store SKDm */
 	memcpy(&ctx->data.enc.skd[0], pdu->llctrl.enc_req.skdm, sizeof(pdu->llctrl.enc_req.skdm));
 	/* Store IVm in the LLL CCM RX
 	 * TODO(thoh): Should this be made into a ULL function, as it
 	 * interacts with data outside of LLCP?
 	 */
-	memcpy(&conn->lll.ccm_rx.iv[0], pdu->llctrl.enc_req.ivm, sizeof(pdu->llctrl.enc_req.ivm));
+	memcpy(&ccm_rx->iv[0], pdu->llctrl.enc_req.ivm, sizeof(pdu->llctrl.enc_req.ivm));
 }
 
 static void lp_enc_send_enc_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
@@ -358,13 +364,15 @@ static void lp_enc_st_wait_tx_enc_req(struct ll_conn *conn, struct proc_ctx *ctx
 
 static void lp_enc_store_s(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
+	struct ccm *ccm_rx = &conn->lll.vendor.ccm_rx;
+
 	/* Store SKDs */
 	memcpy(&ctx->data.enc.skd[8], pdu->llctrl.enc_rsp.skds, sizeof(pdu->llctrl.enc_rsp.skds));
 	/* Store IVs in the LLL CCM RX
 	 * TODO(thoh): Should this be made into a ULL function, as it
 	 * interacts with data outside of LLCP?
 	 */
-	memcpy(&conn->lll.ccm_rx.iv[4], pdu->llctrl.enc_rsp.ivs, sizeof(pdu->llctrl.enc_rsp.ivs));
+	memcpy(&ccm_rx->iv[4], pdu->llctrl.enc_rsp.ivs, sizeof(pdu->llctrl.enc_rsp.ivs));
 }
 
 static inline uint8_t reject_error_code(struct pdu_data *pdu)
@@ -810,13 +818,15 @@ static void rp_enc_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t 
 
 static void rp_enc_store_s(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
+	struct ccm *ccm_rx = &conn->lll.vendor.ccm_rx;
+
 	/* Store SKDs */
 	memcpy(&ctx->data.enc.skds, pdu->llctrl.enc_rsp.skds, sizeof(pdu->llctrl.enc_rsp.skds));
 	/* Store IVs in the LLL CCM RX
 	 * TODO(thoh): Should this be made into a ULL function, as it
 	 * interacts with data outside of LLCP?
 	 */
-	memcpy(&conn->lll.ccm_rx.iv[4], pdu->llctrl.enc_rsp.ivs, sizeof(pdu->llctrl.enc_rsp.ivs));
+	memcpy(&ccm_rx->iv[4], pdu->llctrl.enc_rsp.ivs, sizeof(pdu->llctrl.enc_rsp.ivs));
 }
 
 static void rp_enc_send_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
@@ -930,6 +940,8 @@ static void rp_enc_send_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 
 static void rp_enc_store_m(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
+	struct ccm *ccm_rx = &conn->lll.vendor.ccm_rx;
+
 	/* Store Rand */
 	memcpy(ctx->data.enc.rand, pdu->llctrl.enc_req.rand, sizeof(ctx->data.enc.rand));
 
@@ -944,7 +956,7 @@ static void rp_enc_store_m(struct ll_conn *conn, struct proc_ctx *ctx, struct pd
 	 * TODO(thoh): Should this be made into a ULL function, as it
 	 * interacts with data outside of LLCP?
 	 */
-	memcpy(&conn->lll.ccm_rx.iv[0], pdu->llctrl.enc_req.ivm, sizeof(pdu->llctrl.enc_req.ivm));
+	memcpy(&ccm_rx->iv[0], pdu->llctrl.enc_req.ivm, sizeof(pdu->llctrl.enc_req.ivm));
 }
 
 static void rp_enc_state_wait_rx_enc_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
