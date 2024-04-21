@@ -463,7 +463,10 @@ static void can_mcan_state_change_handler(const struct device *dev)
 	uint32_t cccr;
 	int err;
 
-	(void)can_mcan_get_state(dev, &state, &err_cnt);
+	err = can_mcan_get_state(dev, &state, &err_cnt);
+	if (err != 0) {
+		return;
+	}
 
 	if (state_cb != NULL) {
 		state_cb(dev, state, err_cnt, state_cb_data);
