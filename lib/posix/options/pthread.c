@@ -16,6 +16,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/posix/unistd.h>
+#include <zephyr/sys/sem.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 
@@ -87,7 +88,7 @@ static sys_dlist_t posix_thread_q[] = {
 	SYS_DLIST_STATIC_INIT(&posix_thread_q[POSIX_THREAD_DONE_Q]),
 };
 static struct posix_thread posix_thread_pool[CONFIG_MAX_PTHREAD_COUNT];
-static struct k_spinlock pthread_pool_lock;
+static SYS_SEM_DEFINE(pthread_pool_lock, 1, 1);
 static int pthread_concurrency;
 
 static inline void posix_thread_q_set(struct posix_thread *t, enum posix_thread_qid qid)
@@ -219,7 +220,7 @@ void __z_pthread_cleanup_push(void *cleanup[3], void (*routine)(void *arg), void
 	struct posix_thread *t = NULL;
 	struct __pthread_cleanup *const c = (struct __pthread_cleanup *)cleanup;
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		t = to_posix_thread(pthread_self());
 		BUILD_ASSERT(3 * sizeof(void *) == sizeof(*c));
 		__ASSERT_NO_MSG(t != NULL);
@@ -236,7 +237,7 @@ void __z_pthread_cleanup_pop(int execute)
 	struct __pthread_cleanup *c = NULL;
 	struct posix_thread *t = NULL;
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		t = to_posix_thread(pthread_self());
 		__ASSERT_NO_MSG(t != NULL);
 		node = sys_slist_get(&t->cleanup_list);
@@ -476,7 +477,6 @@ static K_WORK_DELAYABLE_DEFINE(posix_thread_recycle_work, posix_thread_recycle_w
 static void posix_thread_finalize(struct posix_thread *t, void *retval)
 {
 	sys_snode_t *node_l;
-	k_spinlock_key_t key;
 	pthread_key_obj *key_obj;
 	pthread_thread_data *thread_spec_data;
 
@@ -491,11 +491,11 @@ static void posix_thread_finalize(struct posix_thread *t, void *retval)
 	}
 
 	/* move thread from run_q to done_q */
-	key = k_spin_lock(&pthread_pool_lock);
-	sys_dlist_remove(&t->q_node);
-	posix_thread_q_set(t, POSIX_THREAD_DONE_Q);
-	t->retval = retval;
-	k_spin_unlock(&pthread_pool_lock, key);
+	SYS_SEM_LOCK(&pthread_pool_lock) {
+		sys_dlist_remove(&t->q_node);
+		posix_thread_q_set(t, POSIX_THREAD_DONE_Q);
+		t->retval = retval;
+	}
 
 	/* trigger recycle work */
 	(void)k_work_schedule(&posix_thread_recycle_work, K_MSEC(CONFIG_PTHREAD_RECYCLER_DELAY_MS));
@@ -526,22 +526,22 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 
 static void posix_thread_recycle(void)
 {
-	k_spinlock_key_t key;
 	struct posix_thread *t;
 	struct posix_thread *safe_t;
 	sys_dlist_t recyclables = SYS_DLIST_STATIC_INIT(&recyclables);
 
-	key = k_spin_lock(&pthread_pool_lock);
-	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&posix_thread_q[POSIX_THREAD_DONE_Q], t, safe_t, q_node) {
-		if (t->attr.detachstate == PTHREAD_CREATE_JOINABLE) {
-			/* thread has not been joined yet */
-			continue;
-		}
+	SYS_SEM_LOCK(&pthread_pool_lock) {
+		SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&posix_thread_q[POSIX_THREAD_DONE_Q], t, safe_t,
+						  q_node) {
+			if (t->attr.detachstate == PTHREAD_CREATE_JOINABLE) {
+				/* thread has not been joined yet */
+				continue;
+			}
 
-		sys_dlist_remove(&t->q_node);
-		sys_dlist_append(&recyclables, &t->q_node);
+			sys_dlist_remove(&t->q_node);
+			sys_dlist_append(&recyclables, &t->q_node);
+		}
 	}
-	k_spin_unlock(&pthread_pool_lock, key);
 
 	if (sys_dlist_is_empty(&recyclables)) {
 		return;
@@ -557,12 +557,12 @@ static void posix_thread_recycle(void)
 		}
 	}
 
-	key = k_spin_lock(&pthread_pool_lock);
-	while (!sys_dlist_is_empty(&recyclables)) {
-		t = CONTAINER_OF(sys_dlist_get(&recyclables), struct posix_thread, q_node);
-		posix_thread_q_set(t, POSIX_THREAD_READY_Q);
+	SYS_SEM_LOCK(&pthread_pool_lock) {
+		while (!sys_dlist_is_empty(&recyclables)) {
+			t = CONTAINER_OF(sys_dlist_get(&recyclables), struct posix_thread, q_node);
+			posix_thread_q_set(t, POSIX_THREAD_READY_Q);
+		}
 	}
-	k_spin_unlock(&pthread_pool_lock, key);
 }
 
 /**
@@ -587,7 +587,7 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 	/* reclaim resources greedily */
 	posix_thread_recycle();
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		if (!sys_dlist_is_empty(&posix_thread_q[POSIX_THREAD_READY_Q])) {
 			t = CONTAINER_OF(sys_dlist_get(&posix_thread_q[POSIX_THREAD_READY_Q]),
 					 struct posix_thread, q_node);
@@ -603,7 +603,7 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 		err = pthread_barrier_init(&barrier, NULL, 2);
 		if (err != 0) {
 			/* cannot allocate barrier. move thread back to ready_q */
-			K_SPINLOCK(&pthread_pool_lock) {
+			SYS_SEM_LOCK(&pthread_pool_lock) {
 				sys_dlist_remove(&t->q_node);
 				posix_thread_q_set(t, POSIX_THREAD_READY_Q);
 			}
@@ -625,7 +625,7 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 		}
 		if (err != 0) {
 			/* cannot allocate pthread attributes (e.g. stack) */
-			K_SPINLOCK(&pthread_pool_lock) {
+			SYS_SEM_LOCK(&pthread_pool_lock) {
 				sys_dlist_remove(&t->q_node);
 				posix_thread_q_set(t, POSIX_THREAD_READY_Q);
 			}
@@ -673,7 +673,7 @@ int pthread_getconcurrency(void)
 {
 	int ret = 0;
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		ret = pthread_concurrency;
 	}
 
@@ -690,7 +690,7 @@ int pthread_setconcurrency(int new_level)
 		return EAGAIN;
 	}
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		pthread_concurrency = new_level;
 	}
 
@@ -705,8 +705,8 @@ int pthread_setconcurrency(int new_level)
 int pthread_setcancelstate(int state, int *oldstate)
 {
 	int ret = 0;
-	struct posix_thread *t;
 	bool cancel_pending = false;
+	struct posix_thread *t = NULL;
 	bool cancel_type = PTHREAD_CANCEL_ENABLE;
 
 	if (state != PTHREAD_CANCEL_ENABLE && state != PTHREAD_CANCEL_DISABLE) {
@@ -714,11 +714,11 @@ int pthread_setcancelstate(int state, int *oldstate)
 		return EINVAL;
 	}
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		t = to_posix_thread(pthread_self());
 		if (t == NULL) {
 			ret = EINVAL;
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		if (oldstate != NULL) {
@@ -753,11 +753,11 @@ int pthread_setcanceltype(int type, int *oldtype)
 		return EINVAL;
 	}
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		t = to_posix_thread(pthread_self());
 		if (t == NULL) {
 			ret = EINVAL;
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		if (oldtype != NULL) {
@@ -776,16 +776,16 @@ int pthread_setcanceltype(int type, int *oldtype)
  */
 void pthread_testcancel(void)
 {
-	struct posix_thread *t;
 	bool cancel_pended = false;
+	struct posix_thread *t = NULL;
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		t = to_posix_thread(pthread_self());
 		if (t == NULL) {
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 		if (t->attr.cancelstate != PTHREAD_CANCEL_ENABLE) {
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 		if (t->attr.cancelpending) {
 			cancel_pended = true;
@@ -810,17 +810,17 @@ int pthread_cancel(pthread_t pthread)
 	bool cancel_type = PTHREAD_CANCEL_DEFERRED;
 	struct posix_thread *t = NULL;
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		t = to_posix_thread(pthread);
 		if (t == NULL) {
 			ret = ESRCH;
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		if (!__attr_is_initialized(&t->attr)) {
 			/* thread has already terminated */
 			ret = ESRCH;
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		t->attr.cancelpending = true;
@@ -852,11 +852,11 @@ int pthread_setschedparam(pthread_t pthread, int policy, const struct sched_para
 		return EINVAL;
 	}
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		t = to_posix_thread(pthread);
 		if (t == NULL) {
 			ret = ESRCH;
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		new_prio = posix_to_zephyr_priority(param->sched_priority, policy);
@@ -892,11 +892,11 @@ int pthread_setschedprio(pthread_t thread, int prio)
 		return EINVAL;
 	}
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		t = to_posix_thread(thread);
 		if (t == NULL) {
 			ret = ESRCH;
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		new_prio = posix_to_zephyr_priority(prio, policy);
@@ -965,16 +965,16 @@ int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *pa
 		return EINVAL;
 	}
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		t = to_posix_thread(pthread);
 		if (t == NULL) {
 			ret = ESRCH;
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		if (!__attr_is_initialized(&t->attr)) {
 			ret = ESRCH;
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		param->sched_priority =
@@ -999,7 +999,7 @@ int pthread_once(pthread_once_t *once, void (*init_func)(void))
 		return EINVAL;
 	}
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		if (!_once->flag) {
 			run_init_func = true;
 			_once->flag = true;
@@ -1023,10 +1023,10 @@ void pthread_exit(void *retval)
 {
 	struct posix_thread *self = NULL;
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		self = to_posix_thread(pthread_self());
 		if (self == NULL) {
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		/* Mark a thread as cancellable before exiting */
@@ -1060,11 +1060,11 @@ int pthread_join(pthread_t pthread, void **status)
 		return EDEADLK;
 	}
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		t = to_posix_thread(pthread);
 		if (t == NULL) {
 			ret = ESRCH;
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		LOG_DBG("Pthread %p joining..", &t->thread);
@@ -1072,12 +1072,12 @@ int pthread_join(pthread_t pthread, void **status)
 		if (t->attr.detachstate != PTHREAD_CREATE_JOINABLE) {
 			/* undefined behaviour */
 			ret = EINVAL;
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		if (posix_thread_q_get(t) == POSIX_THREAD_READY_Q) {
 			ret = ESRCH;
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		/*
@@ -1124,18 +1124,18 @@ int pthread_detach(pthread_t pthread)
 	int ret = 0;
 	struct posix_thread *t;
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		t = to_posix_thread(pthread);
 		if (t == NULL) {
 			ret = ESRCH;
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		if (posix_thread_q_get(t) == POSIX_THREAD_READY_Q ||
 		    t->attr.detachstate != PTHREAD_CREATE_JOINABLE) {
 			LOG_DBG("Pthread %p cannot be detached", &t->thread);
 			ret = EINVAL;
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		t->attr.detachstate = PTHREAD_CREATE_DETACHED;
@@ -1437,11 +1437,11 @@ int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT 
 		return EINVAL;
 	}
 
-	K_SPINLOCK(&pthread_pool_lock) {
+	SYS_SEM_LOCK(&pthread_pool_lock) {
 		t = to_posix_thread(pthread_self());
 		if (t == NULL) {
 			ret = ESRCH;
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		if (oset != NULL) {
@@ -1449,7 +1449,7 @@ int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT 
 		}
 
 		if (set == NULL) {
-			K_SPINLOCK_BREAK;
+			SYS_SEM_LOCK_BREAK;
 		}
 
 		switch (how) {
