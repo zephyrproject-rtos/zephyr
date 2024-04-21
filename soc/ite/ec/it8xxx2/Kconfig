@@ -1,11 +1,11 @@
 # Copyright (c) 2020 ITE Corporation. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_ITE_IT8XXX2
+config SOC_SERIES_IT8XXX2
 	select CPU_HAS_FPU if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "zephyr" || RISCV_ISA_EXT_M
 	select HAS_PM
 
-if SOC_SERIES_ITE_IT8XXX2
+if SOC_SERIES_IT8XXX2
 
 config SOC_IT8XXX2
 	select RISCV
@@ -15,7 +15,7 @@ config SOC_IT8XXX2
 	select RISCV_ISA_EXT_ZIFENCEI
 	# Workaround mul instruction bug, see:
 	# https://www.ite.com.tw/uploads/product_download/it81202-bx-chip-errata.pdf
-	select RISCV_ISA_EXT_M if !(SOC_IT81302_BX || SOC_IT81202_BX)
+	select RISCV_ISA_EXT_M if !(SOC_IT81302BX || SOC_IT81202BX)
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_C
 
@@ -43,33 +43,33 @@ config SOC_IT8XXX2_USBPD_PHY_V2
 	  This option is automatically selected by variant soc and sets
 	  the USBPD PHY version.
 
-config SOC_IT81302_BX
+config SOC_IT81302BX
 	select SOC_IT8XXX2_REG_SET_V1
 	select SOC_IT8XXX2_USBPD_PHY_V1
 
-config SOC_IT81202_BX
+config SOC_IT81202BX
 	select SOC_IT8XXX2_REG_SET_V1
 	select SOC_IT8XXX2_USBPD_PHY_V1
 
-config SOC_IT81302_CX
+config SOC_IT81302CX
 	select SOC_IT8XXX2_REG_SET_V1
 	select SOC_IT8XXX2_USBPD_PHY_V2
 
-config SOC_IT81202_CX
+config SOC_IT81202CX
 	select SOC_IT8XXX2_REG_SET_V1
 	select SOC_IT8XXX2_USBPD_PHY_V2
 
-config SOC_IT82202_AX
+config SOC_IT82202AX
 	select SOC_IT8XXX2_REG_SET_V2
 	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
 	select SOC_IT8XXX2_USBPD_PHY_V2
 
-config SOC_IT82302_AX
+config SOC_IT82302AX
 	select SOC_IT8XXX2_REG_SET_V2
 	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
 	select SOC_IT8XXX2_USBPD_PHY_V2
 
-config SOC_IT82002_AW
+config SOC_IT82002AW
 	select SOC_IT8XXX2_REG_SET_V2
 	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
 	select SOC_IT8XXX2_USBPD_PHY_V2
@@ -183,7 +183,7 @@ config SOC_IT8XXX2_FLASH_SIZE_BYTES
 
 config ILM_MAX_SIZE
 	int "ILM Size in kB"
-	default 60 if SOC_IT81202_CX || SOC_IT81302_CX
+	default 60 if SOC_IT81202CX || SOC_IT81302CX
 	default SRAM_SIZE
 
-endif # SOC_SERIES_ITE_IT8XXX2
+endif # SOC_SERIES_IT8XXX2
