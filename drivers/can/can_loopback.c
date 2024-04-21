@@ -112,8 +112,6 @@ static int can_loopback_send(const struct device *dev,
 	uint8_t max_dlc = CAN_MAX_DLC;
 	int ret;
 
-	__ASSERT_NO_MSG(callback != NULL);
-
 	LOG_DBG("Sending %d bytes on %s. Id: 0x%x, ID type: %s %s",
 		frame->dlc, dev->name, frame->id,
 		(frame->flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
