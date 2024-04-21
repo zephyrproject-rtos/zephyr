@@ -79,7 +79,6 @@ struct lll_adv_iso {
 
 	/* Encryption */
 	uint8_t giv[8];
-	struct ccm ccm_tx;
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	/* contains the offset in ticks from the adv_sync pointing to this ISO */
@@ -88,6 +87,11 @@ struct lll_adv_iso {
 #endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 	uint16_t stream_handle[BT_CTLR_ADV_ISO_STREAM_MAX];
+
+	/* Vendor specific data
+	 * Example, nRF CCM `struct ccm`
+	 */
+	struct lll_adv_iso_vendor vendor;
 };
 
 struct lll_adv_sync {
