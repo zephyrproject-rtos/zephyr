@@ -23,6 +23,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/__assert.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -137,6 +138,82 @@ int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout);
  * @return Current value of sys_sem.
  */
 unsigned int sys_sem_count_get(struct sys_sem *sem);
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+#if defined(__GNUC__)
+static ALWAYS_INLINE void z_sys_sem_lock_onexit(__maybe_unused int *rc)
+{
+	__ASSERT(*rc == 1, "SYS_SEM_LOCK exited with goto, break or return, "
+			   "use SYS_SEM_LOCK_BREAK instead.");
+}
+#define SYS_SEM_LOCK_ONEXIT __attribute__((__cleanup__(z_sys_sem_lock_onexit)))
+#else
+#define SYS_SEM_LOCK_ONEXIT
+#endif
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @brief Leaves a code block guarded with @ref SYS_SEM_LOCK after releasing the
+ * lock.
+ *
+ * See @ref SYS_SEM_LOCK for details.
+ */
+#define SYS_SEM_LOCK_BREAK continue
+
+/**
+ * @brief Guards a code block with the given sys_sem, automatically acquiring
+ * the semaphore before executing the code block. The semaphore will be
+ * released either when reaching the end of the code block or when leaving the
+ * block with @ref SYS_SEM_LOCK_BREAK.
+ *
+ * @details Example usage:
+ *
+ * @code{.c}
+ * SYS_SEM_LOCK(&sem) {
+ *
+ *   ...execute statements with the semaphore held...
+ *
+ *   if (some_condition) {
+ *     ...release the lock and leave the guarded section prematurely:
+ *     SYS_SEM_LOCK_BREAK;
+ *   }
+ *
+ *   ...execute statements with the lock held...
+ *
+ * }
+ * @endcode
+ *
+ * Behind the scenes this pattern expands to a for-loop whose body is executed
+ * exactly once:
+ *
+ * @code{.c}
+ * for (sys_sem_take(&sem, K_FOREVER); ...; sys_sem_give(&sem)) {
+ *     ...
+ * }
+ * @endcode
+ *
+ * @warning The code block must execute to its end or be left by calling
+ * @ref SYS_SEM_LOCK_BREAK. Otherwise, e.g. if exiting the block with a break,
+ * goto or return statement, the semaphore will not be released on exit.
+ *
+ * @param sem Semaphore (@ref sys_sem) used to guard the enclosed code block.
+ */
+#define SYS_SEM_LOCK(sem)                                                                          \
+	for (int __rc SYS_SEM_LOCK_ONEXIT = sys_sem_take((sem), K_FOREVER); ({                     \
+		     __ASSERT(__rc >= 0, "Failed to take sem: %d", __rc);                          \
+		     __rc == 0;                                                                    \
+	     });                                                                                   \
+	     ({                                                                                    \
+		     __rc = sys_sem_give((sem));                                                   \
+		     __ASSERT(__rc == 0, "Failed to give sem: %d", __rc);                          \
+	     }),                                                                                   \
+		      __rc = 1)
 
 /**
  * @}
