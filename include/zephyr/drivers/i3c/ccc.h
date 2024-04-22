@@ -761,7 +761,7 @@ union i3c_ccc_getmxds {
 
 /** Get Max Data Speed (GETMXDS) - Max Sustained Data Rate bitmask. */
 #define I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL_MASK			\
-	(0x07U << I3C_CCC_GET_MXDS_MAXWR_MAX_SDR_FSCL_SHIFT)
+	(0x07U << I3C_CCC_GETMXDS_MAXWR_MAX_SDR_FSCL_SHIFT)
 
 /**
  * @brief Get Max Data Speed (GETMXDS) - maxWr - Max Sustained Data Rate
@@ -803,7 +803,7 @@ union i3c_ccc_getmxds {
 
 /** Get Max Data Speed (GETMXDS) - maxRd - Max Sustained Data Rate bitmask. */
 #define I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL_MASK			\
-	(0x07U << I3C_CCC_GET_MXDS_MAXRD_MAX_SDR_FSCL_SHIFT)
+	(0x07U << I3C_CCC_GETMXDS_MAXRD_MAX_SDR_FSCL_SHIFT)
 
 /**
  * @brief Get Max Data Speed (GETMXDS) - maxRd - Max Sustained Data Rate
@@ -826,7 +826,7 @@ union i3c_ccc_getmxds {
 
 /** Get Max Data Speed (GETMXDS) - CRDHLY1 - Controller Handoff Activity State bitmask. */
 #define I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_MASK	\
-	(0x03U << I3C_CCC_GETMXDS_CRDHLY1_SET_BUS_ACT_STATE_SHIFT)
+	(0x03U << I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_SHIFT)
 
 /**
  * @brief Get Max Data Speed (GETMXDS) - CRDHLY1 - Controller Handoff Activity State
@@ -838,8 +838,8 @@ union i3c_ccc_getmxds {
  */
 #define I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE(crhdly1)	\
 	(((crhdly1) &						\
-	  I3C_CCC_GETMXDS_CRDHLY1_SET_BUS_ACT_STATE_MASK)	\
-	 >> I3C_CCC_GETMXDS_CRDHLY1_SET_BUS_ACT_STATE_SHIFT)
+	  I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_MASK)	\
+	 >> I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE_SHIFT)
 
 /**
  * @brief Payload for GETCAPS CCC (Get Optional Feature Capabilities).
