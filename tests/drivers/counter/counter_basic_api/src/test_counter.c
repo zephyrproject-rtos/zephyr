@@ -109,6 +109,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_AMBIQ
 	DEVS_FOR_DT_COMPAT(ambiq_counter)
 #endif
+#ifdef CONFIG_COUNTER_MEC5_BTMR
+	DEVS_FOR_DT_COMPAT(microchip_mec5_btmr_counter)
+#endif
 };
 
 static const struct device *const period_devs[] = {

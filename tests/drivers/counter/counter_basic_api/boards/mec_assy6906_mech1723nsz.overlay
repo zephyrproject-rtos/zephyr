@@ -1,0 +1,22 @@
+
+/* 16-bit basic timer 0 at 24 MHz
+ * Test program uses 20,000 ticks for many test which
+ * exceeds 16-bits at frequencies above 3 MHz.
+ * Set prescaler to 15 for a divider of 16 = 3 MHz.
+ */
+&timer0 {
+	status = "okay";
+	prescaler = <15>;
+};
+
+/* 32-bit basic timer 4 at 48 MHz */
+&timer4 {
+	status = "okay";
+	prescaler = <0>;
+};
+
+/* 32-bit basic timer 5 at 48 / (2+1) = 16 MHz */
+&timer5 {
+	status = "okay";
+	prescaler = <2>;
+};
