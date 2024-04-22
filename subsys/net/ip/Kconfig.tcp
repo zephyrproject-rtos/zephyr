@@ -231,7 +231,8 @@ config NET_TCP_ISN_RFC6528
 	depends on NET_TCP
 	select MBEDTLS
 	select MBEDTLS_MD
-	select MBEDTLS_MAC_SHA256_ENABLED
+	select MBEDTLS_MAC_SHA256_ENABLED if !BUILD_WITH_TFM
+	select PSA_WANT_ALG_SHA_256 if BUILD_WITH_TFM
 	help
 	  Implement Initial Sequence Number calculation as described in
 	  RFC 6528 chapter 3. https://tools.ietf.org/html/rfc6528

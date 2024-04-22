@@ -2241,8 +2241,15 @@ static uint32_t tcpv6_init_isn(struct in6_addr *saddr,
 	memcpy(buf.key, unique_key, sizeof(buf.key));
 
 #if defined(CONFIG_NET_TCP_ISN_RFC6528)
+#if defined(CONFIG_BUILD_WITH_TFM)
+	size_t hash_len;
+
+	psa_hash_compute(PSA_ALG_SHA_256, (const unsigned char *)&buf, sizeof(buf),
+					 hash, sizeof(hash), &hash_len);
+#else /* CONFIG_BUILD_WITH_TFM */
 	mbedtls_sha256((const unsigned char *)&buf, sizeof(buf), hash, 0);
-#endif
+#endif /* CONFIG_BUILD_WITH_TFM */
+#endif /* CONFIG_NET_TCP_ISN_RFC6528 */
 
 	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
 }
@@ -2276,8 +2283,15 @@ static uint32_t tcpv4_init_isn(struct in_addr *saddr,
 	memcpy(buf.key, unique_key, sizeof(unique_key));
 
 #if defined(CONFIG_NET_TCP_ISN_RFC6528)
+#if defined(CONFIG_BUILD_WITH_TFM)
+	size_t hash_len;
+
+	psa_hash_compute(PSA_ALG_SHA_256, (const unsigned char *)&buf, sizeof(buf),
+					 hash, sizeof(hash), &hash_len);
+#else /* CONFIG_BUILD_WITH_TFM */
 	mbedtls_sha256((const unsigned char *)&buf, sizeof(buf), hash, 0);
-#endif
+#endif /* CONFIG_BUILD_WITH_TFM */
+#endif /* CONFIG_NET_TCP_ISN_RFC6528 */
 
 	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
 }
