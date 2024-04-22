@@ -37,6 +37,9 @@ int stm32wba_init(void)
 	/* Enable instruction cache in 1-way (direct mapped cache) */
 	LL_ICACHE_SetMode(LL_ICACHE_1WAY);
 	LL_ICACHE_Enable();
+#ifdef CONFIG_STM32_FLASH_PREFETCH
+	__HAL_FLASH_PREFETCH_BUFFER_ENABLE();
+#endif
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 16 MHz from HSI */
