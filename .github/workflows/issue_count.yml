@@ -42,7 +42,7 @@ jobs:
         path: ${{ env.OUTPUT_FILE_NAME }}
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
+      uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ vars.AWS_TESTING_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_TESTING_SECRET_ACCESS_KEY }}
