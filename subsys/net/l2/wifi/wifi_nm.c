@@ -27,7 +27,7 @@ struct wifi_nm_instance *wifi_nm_get_instance(const char *name)
 struct wifi_nm_instance *wifi_nm_get_instance_iface(struct net_if *iface)
 {
 	if (!iface || !net_if_is_wifi(iface)) {
-		return false;
+		return NULL;
 	}
 
 	k_mutex_lock(&wifi_nm_lock, K_FOREVER);
