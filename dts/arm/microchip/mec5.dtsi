@@ -230,51 +230,57 @@
 			status = "disabled";
 		};
 		timer0: timer@40000c00 {
+			compatible = "microchip,mec5-btmr-counter";
 			reg = <0x40000c00 0x20>;
-			clock-frequency = <48000000>;
 			interrupts = <136 0>;
-			max-value = <0xFFFF>;
+			clock-frequency = <48000000>;
 			prescaler = <0>;
+			max-value = <0xffff>;
 			status = "disabled";
 		};
 		timer1: timer@40000c20 {
+			compatible = "microchip,mec5-btmr-counter";
 			reg = <0x40000c20 0x20>;
-			clock-frequency = <48000000>;
 			interrupts = <137 0>;
-			max-value = <0xFFFF>;
+			clock-frequency = <48000000>;
 			prescaler = <0>;
+			max-value = <0xffff>;
 			status = "disabled";
 		};
 		timer2: timer@40000c40 {
+			compatible = "microchip,mec5-btmr-counter";
 			reg = <0x40000c40 0x20>;
-			clock-frequency = <48000000>;
 			interrupts = <138 0>;
-			max-value = <0xFFFF>;
+			clock-frequency = <48000000>;
 			prescaler = <0>;
+			max-value = <0xffff>;
 			status = "disabled";
 		};
 		timer3: timer@40000c60 {
+			compatible = "microchip,mec5-btmr-counter";
 			reg = <0x40000c60 0x20>;
-			clock-frequency = <48000000>;
 			interrupts = <139 0>;
-			max-value = <0xFFFF>;
+			clock-frequency = <48000000>;
 			prescaler = <0>;
+			max-value = <0xffff>;
 			status = "disabled";
 		};
 		timer4: timer@40000c80 {
+			compatible = "microchip,mec5-btmr-counter";
 			reg = <0x40000c80 0x20>;
-			clock-frequency = <48000000>;
 			interrupts = <140 0>;
-			max-value = <0xFFFFFFFF>;
+			clock-frequency = <48000000>;
 			prescaler = <0>;
+			max-value = <0xffffffff>;
 			status = "disabled";
 		};
 		timer5: timer@40000ca0 {
+			compatible = "microchip,mec5-btmr-counter";
 			reg = <0x40000ca0 0x20>;
-			clock-frequency = <48000000>;
 			interrupts = <141 0>;
-			max-value = <0xFFFFFFFF>;
+			clock-frequency = <48000000>;
 			prescaler = <0>;
+			max-value = <0xffffffff>;
 			status = "disabled";
 		};
 		cntr0: timer@40000d00 {

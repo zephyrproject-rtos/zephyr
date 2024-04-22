@@ -1,0 +1,12 @@
+# Microchip MEC5 basic timer counter configuration options
+
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_MEC5_BTMR
+	bool "Microchip MEC5 series counter driver using basic timer"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_BTMR_COUNTER_ENABLED
+	help
+	  Enable counter driver for Microchip XEC MCU series. Such driver
+	  will expose the basic timer devices present on the MCU.

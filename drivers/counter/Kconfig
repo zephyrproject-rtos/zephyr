@@ -98,4 +98,6 @@ source "drivers/counter/Kconfig.rpi_pico"
 
 source "drivers/counter/Kconfig.nxp_mrt"
 
+source "drivers/counter/Kconfig.mec5"
+
 endif # COUNTER

@@ -1,0 +1,37 @@
+# Copyright 2024 Microchip Technologies Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 HAL based Basic Timer
+
+compatible: "microchip,mec5-btmr-counter"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    default: 48000000
+    required: true
+    description: |
+      Basic timer core clock input in Hertz. The current MEC5 family
+      value is 48 MHz.
+
+  prescaler:
+    type: int
+    required: true
+    description: |
+      Basic timer input clock 16-bit precaler value. The counter
+      frequency is divider by (precaler + 1).
+
+  max-value:
+    type: int
+    required: true
+    description: |
+      Maximum value of the count and preload registers. Some instances
+      have 16-bit counters and others 32-bit.
