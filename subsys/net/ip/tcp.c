@@ -2234,7 +2234,11 @@ static uint32_t tcpv6_init_isn(struct in6_addr *saddr,
 	static bool once;
 
 	if (!once) {
+#if defined(CONFIG_CSPRNG_ENABLED)
+		sys_csrand_get(unique_key, sizeof(unique_key));
+#else
 		sys_rand_get(unique_key, sizeof(unique_key));
+#endif
 		once = true;
 	}
 
@@ -2276,7 +2280,11 @@ static uint32_t tcpv4_init_isn(struct in_addr *saddr,
 	static bool once;
 
 	if (!once) {
+#if defined(CONFIG_CSPRNG_ENABLED)
+		sys_csrand_get(unique_key, sizeof(unique_key));
+#else
 		sys_rand_get(unique_key, sizeof(unique_key));
+#endif
 		once = true;
 	}
 
