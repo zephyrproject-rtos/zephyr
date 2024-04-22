@@ -10,6 +10,8 @@
 #include "soc.h"
 
 #define N22_CORE_START (DT_REG_ADDR(DT_CHOSEN(zephyr_flash)) + DT_REG_SIZE(DT_CHOSEN(zephyr_flash)))
+#define IPC_REMOTE_TX_START (DT_REG_ADDR(DT_N_NODELABEL_sram_rx))
+#define IPC_REMOTE_TX_END (IPC_REMOTE_TX_START + DT_REG_SIZE(DT_N_NODELABEL_sram_rx))
 
 	.option push
 	.option norelax
@@ -23,16 +25,30 @@ reset_vector:
 	.global _start
 	.type _start,@function
 
-	.word (0x31707848)	               #/ magic
+#if !defined(CONFIG_BOOTLOADER_MCUBOOT)
+	.word (0x31707848)                 #/ magic
 	.word (0x33e90d91)                 #/ header crc32
 	.org 0x14
 	.word (0xa0000080)                 #/ start address
 
 	.org 0xa0
+#endif
+
 _start:                                #/ after reset starts on D25 core
 
+	lui    t0, 0
+	la     t2, IPC_REMOTE_TX_START
+	la     t3, IPC_REMOTE_TX_END
+_ZERO_IPC_REMOTE_TX_BEGIN:
+	bleu   t3, t2, _start_n22
+	sw     t0, 0(t2)
+	addi   t2, t2, 4
+	j      _ZERO_IPC_REMOTE_TX_BEGIN
+
+_start_n22:
+
 	lui    t0, 0xf0100
-	lui	   t1, %hi(N22_CORE_START)
+	lui    t1, %hi(N22_CORE_START)
 	addi   t1, t1, %lo(N22_CORE_START)
 	sw     t1, 0x204(t0)               #/ N22 core address: 0xf0100204 <- N22_CORE_START
 	lui    t0, 0xf1700

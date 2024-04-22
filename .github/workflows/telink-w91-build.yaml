@@ -58,12 +58,25 @@ jobs:
         cd ..
         west build -b tlsr9118bdk40d             -d build_nvs_w91                       zephyr/samples/subsys/nvs
 
+    - name: Build W91 bootloader/mcuboot/boot
+      run: |
+        cd ..
+        west build -b tlsr9118bdk40d             -d build_mcuboot_w91                   bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_LOG_DEFAULT_LEVEL=3
+
+    - name: Build W91 basic/blinky for DFU
+      run: |
+        cd ..
+        west build -b tlsr9118bdk40d             -d build_blinky_dfu_w91                zephyr/samples/basic/blinky                              -- -DCONFIG_BOOTLOADER_MCUBOOT=y
+
     - name: Collect artifacts
       run: |
         mkdir telink_build_artifacts
         cp ../build_blinky_w91/zephyr/zephyr.bin                    telink_build_artifacts/w91_blinky.bin
         cp ../build_button_w91/zephyr/zephyr.bin                    telink_build_artifacts/w91_button.bin
         cp ../build_mpu6050_w91/zephyr/zephyr.bin                   telink_build_artifacts/w91_mpu6050.bin
+        cp ../build_nvs_w91/zephyr/zephyr.bin                       telink_build_artifacts/w91_nvs.bin
+        cp ../build_mcuboot_w91/zephyr/zephyr.bin                   telink_build_artifacts/w91_mcuboot.bin
+        cp ../build_blinky_dfu_w91/zephyr/zephyr.signed.bin         telink_build_artifacts/w91_blinky_dfu.signed.bin
 
     - name: Publish artifacts
       uses: actions/upload-artifact@v3
