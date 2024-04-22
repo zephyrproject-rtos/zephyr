@@ -88,7 +88,7 @@ The ``EMUL_DT_DEFINE()`` function accepts two API types:
 
   #. ``bus_api`` - This points to the API for the upstream bus that the emulator
      connects to. The ``bus_api`` parameter is required.  The supported
-     emulated bus types include I2C, SPI, and eSPI.
+     emulated bus types include I2C, SPI, eSPI, and MSPI.
   #. ``_backend_api`` - This points to the device-class specific backend API for
      the emulator. The ``_backend_api`` parameter is optional.
 
@@ -140,6 +140,9 @@ Zephyr includes the following emulators:
 
 * eSPI emulator driver, which does the same for eSPI. The emulator is being
   developed to support more functionalities.
+
+* MSPI emulator driver, allowing drivers to be connected to an emulator so that
+  tests can be performed without access to the real hardware.
 
 Samples
 =======
