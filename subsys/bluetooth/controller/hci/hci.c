@@ -7864,7 +7864,7 @@ static void le_big_sync_established(struct pdu_data *pdu,
 	sync_iso = node_rx->rx_ftr.param;
 	lll = &sync_iso->lll;
 
-	evt_size = sizeof(*sep) + (lll->num_bis * sizeof(uint16_t));
+	evt_size = sizeof(*sep) + (lll->stream_count * sizeof(uint16_t));
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_SYNC_ESTABLISHED, evt_size);
 	sep->big_handle = (uint8_t)node_rx->hdr.handle;
