@@ -282,7 +282,12 @@ static int tls_ctr_drbg_random(void *ctx, unsigned char *buf, size_t len)
 {
 	ARG_UNUSED(ctx);
 
-#if defined(CONFIG_CSPRNG_ENABLED)
+#if defined(CONFIG_BUILD_WITH_TFM)
+	if (psa_generate_random(buf, len) != PSA_SUCCESS) {
+		return -EIO;
+	}
+	return 0;
+#elif defined(CONFIG_CSPRNG_ENABLED)
 	return sys_csrand_get(buf, len);
 #else
 	sys_rand_get(buf, len);
