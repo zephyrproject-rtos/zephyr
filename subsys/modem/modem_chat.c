@@ -12,6 +12,10 @@ LOG_MODULE_REGISTER(modem_chat, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
 #include <zephyr/modem/chat.h>
 
+const struct modem_chat_match modem_chat_any_match = MODEM_CHAT_MATCH("", "", NULL);
+const struct modem_chat_match modem_chat_empty_matches[0];
+const struct modem_chat_script_chat modem_chat_empty_script_chats[0];
+
 #define MODEM_CHAT_MATCHES_INDEX_RESPONSE (0)
 #define MODEM_CHAT_MATCHES_INDEX_ABORT	  (1)
 #define MODEM_CHAT_MATCHES_INDEX_UNSOL	  (2)
@@ -227,7 +231,7 @@ static bool modem_chat_script_chat_is_no_response(struct modem_chat *chat)
 	const struct modem_chat_script_chat *script_chat =
 		&chat->script->script_chats[chat->script_chat_it];
 
-	return (script_chat->response_matches_size == 0) ? true : false;
+	return (script_chat->response_matches_size == 0);
 }
 
 static uint16_t modem_chat_script_chat_get_send_timeout(struct modem_chat *chat)
@@ -267,6 +271,9 @@ static bool modem_chat_send_script_request_part(struct modem_chat *chat)
 	request_part_size = request_size - chat->script_send_pos;
 	ret = modem_pipe_transmit(chat->pipe, request_part, request_part_size);
 	if (ret < 1) {
+		if (ret < 0) {
+			LOG_ERR("Failed to %s %u bytes. (%d)", "transmit", request_part_size, ret);
+		}
 		return false;
 	}
 
@@ -754,8 +761,12 @@ int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat
 	}
 
 	/* Validate script */
-	if ((script->script_chats == NULL) || (script->script_chats_size == 0) ||
-	    ((script->abort_matches != NULL) && (script->abort_matches_size == 0))) {
+	if (script->script_chats == NULL ||
+	   (script->script_chats_size == 0
+	    && script->script_chats != modem_chat_empty_script_chats) ||
+	   (script->abort_matches_size == 0
+	    && script->abort_matches != NULL
+	    && script->abort_matches != modem_chat_empty_matches)) {
 		return -EINVAL;
 	}
 
@@ -795,7 +806,7 @@ int modem_chat_run_script(struct modem_chat *chat, const struct modem_chat_scrip
 		return ret;
 	}
 
-	return chat->script_result == MODEM_CHAT_SCRIPT_RESULT_SUCCESS ? 0 : -EAGAIN;
+	return (chat->script_result == MODEM_CHAT_SCRIPT_RESULT_SUCCESS) ? 0 : -EAGAIN;
 }
 
 void modem_chat_script_abort(struct modem_chat *chat)
