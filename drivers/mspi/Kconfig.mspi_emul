@@ -1,0 +1,17 @@
+# Copyright (c) 2024, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config MSPI_EMUL
+	bool "MSPI emulator"
+	default y
+	depends on DT_HAS_ZEPHYR_MSPI_EMUL_CONTROLLER_ENABLED
+	depends on EMUL
+	select MSPI_XIP
+	select MSPI_SCRAMBLE
+	select MSPI_TIMING
+	select GPIO
+	help
+	  Enable the MSPI emulator driver. This is a fake driver in that it
+	  does not talk to real hardware. Instead it talks to emulation
+	  drivers that pretend to be devices on the emulated MSPI bus. It is
+	  used for testing drivers for MSPI devices.
