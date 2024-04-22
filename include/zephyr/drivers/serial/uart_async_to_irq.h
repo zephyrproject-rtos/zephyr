@@ -109,13 +109,11 @@ void uart_async_to_irq_trampoline_cb(const struct device *dev);
 
 /** @brief Initialize the adaptation layer.
  *
- * @param data Data associated with the given adaptation layer instance.
- * @param config Configuration structure. Must be persistent.
+ * @param dev UART device. Device must support asynchronous API.
  *
  * @retval 0 On successful initialization.
  */
-int uart_async_to_irq_init(struct uart_async_to_irq_data *data,
-			   const struct uart_async_to_irq_config *config);
+int uart_async_to_irq_init(const struct device *dev);
 
 /* @brief Enable RX for interrupt driven API.
  *
