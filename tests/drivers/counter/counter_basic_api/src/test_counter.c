@@ -181,6 +181,7 @@ static void test_all_instances(counter_test_func_t func,
 			func(devices[i]);
 		} else {
 			TC_PRINT("Skipped for %s\n", devices[i]->name);
+			ztest_test_skip();
 		}
 		counter_tear_down_instance(devices[i]);
 		/* Allow logs to be printed. */
