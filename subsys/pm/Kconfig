@@ -122,6 +122,13 @@ config PM_DEVICE_RUNTIME_EXCLUSIVE
 	  On system suspend / resume do not trigger the Device PM hooks but
 	  only rely on Runtime PM to manage the devices power states.
 
+config PM_DEVICE_SHELL
+	bool "Device Power Management shell"
+	depends on SHELL
+	help
+	  Enable the device power management shell, for triggering device power
+	  management events through the shell interface.
+
 endif # PM_DEVICE
 
 endmenu
