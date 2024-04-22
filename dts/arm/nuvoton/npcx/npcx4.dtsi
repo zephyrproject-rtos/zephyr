@@ -14,7 +14,7 @@
 #include "npcx4/npcx4-espi-vws-map.dtsi"
 /* npcx4 series low-voltage io controls mapping table */
 #include "npcx4/npcx4-lvol-ctrl-map.dtsi"
-/* npcx4 series reset mapping table*/
+/* npcx4 series reset mapping table */
 #include "zephyr/dt-bindings/reset/npcx4_reset.h"
 
 /* Device tree declarations of npcx soc family */
