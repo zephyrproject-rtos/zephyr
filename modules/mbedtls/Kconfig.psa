@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config MBEDTLS_PSA_CRYPTO_CLIENT
+	bool
+	default y
+	depends on BUILD_WITH_TFM || MBEDTLS_PSA_CRYPTO_C
+
+if MBEDTLS_PSA_CRYPTO_CLIENT
+
+config PSA_WANT_ALG_SHA_256
+	bool "SHA-256 hash algorithm through PSA"
+
+endif # MBEDTLS_PSA_CRYPTO_CLIENT
