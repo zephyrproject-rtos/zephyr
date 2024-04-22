@@ -1859,7 +1859,7 @@ struct gatt_chrc {
 	union {
 		uint16_t uuid16;
 		uint8_t  uuid[16];
-	};
+	} __packed;
 } __packed;
 
 uint16_t bt_gatt_attr_value_handle(const struct bt_gatt_attr *attr)
