@@ -179,21 +179,9 @@ static int nxp_enet_mdio_write(const struct device *dev,
 	return ret;
 }
 
-/* MDIO bus enable/disable "implementation" */
-static void nxp_enet_mdio_bus_fn(const struct device *dev)
-{
-	/*
-	 * MDIO bus device is actually part of ethernet device, and
-	 * does not support ability to disable/enable MDIO bus hardware
-	 * independently of the ethernet/MAC hardware, so do nothing.
-	 */
-}
-
 static const struct mdio_driver_api nxp_enet_mdio_api = {
 	.read = nxp_enet_mdio_read,
 	.write = nxp_enet_mdio_write,
-	.bus_enable = nxp_enet_mdio_bus_fn,
-	.bus_disable = nxp_enet_mdio_bus_fn,
 };
 
 static void nxp_enet_mdio_isr_cb(const struct device *dev)
