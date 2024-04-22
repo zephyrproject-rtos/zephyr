@@ -28,7 +28,6 @@ LOG_MODULE_REGISTER(cdc_ecm, CONFIG_USBD_CDC_ECM_LOG_LEVEL);
 enum {
 	CDC_ECM_IFACE_UP,
 	CDC_ECM_CLASS_ENABLED,
-	CDC_ECM_CLASS_SUSPENDED,
 	CDC_ECM_OUT_ENGAGED,
 };
 
@@ -334,11 +333,6 @@ static int cdc_ecm_send_notification(const struct device *dev,
 		return 0;
 	}
 
-	if (atomic_test_bit(&data->state, CDC_ECM_CLASS_SUSPENDED)) {
-		LOG_INF("USB device is suspended (FIXME)");
-		return 0;
-	}
-
 	ep = cdc_ecm_get_int_in(c_data);
 	buf = usbd_ep_buf_alloc(c_data, ep, sizeof(struct cdc_ecm_notification));
 	if (buf == NULL) {
@@ -401,24 +395,21 @@ static void usbd_cdc_ecm_disable(struct usbd_class_data *const c_data)
 		net_if_carrier_off(data->iface);
 	}
 
-	atomic_clear_bit(&data->state, CDC_ECM_CLASS_SUSPENDED);
 	LOG_INF("Configuration disabled");
 }
 
 static void usbd_cdc_ecm_suspended(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct cdc_ecm_eth_data *data = dev->data;
 
-	atomic_set_bit(&data->state, CDC_ECM_CLASS_SUSPENDED);
+	LOG_DBG("CDC ECM device %s suspended", dev->name);
 }
 
 static void usbd_cdc_ecm_resumed(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct cdc_ecm_eth_data *data = dev->data;
 
-	atomic_clear_bit(&data->state, CDC_ECM_CLASS_SUSPENDED);
+	LOG_DBG("CDC ECM device %s resumed", dev->name);
 }
 
 static int usbd_cdc_ecm_ctd(struct usbd_class_data *const c_data,

@@ -41,12 +41,13 @@ NET_BUF_POOL_FIXED_DEFINE(cdc_acm_ep_pool,
 #define CDC_ACM_FS_INT_EP_INTERVAL	USB_FS_INT_EP_INTERVAL(10000U)
 #define CDC_ACM_HS_INT_EP_INTERVAL	USB_HS_INT_EP_INTERVAL(10000U)
 
-#define CDC_ACM_CLASS_ENABLED		0
-#define CDC_ACM_CLASS_SUSPENDED		1
-#define CDC_ACM_IRQ_RX_ENABLED		2
-#define CDC_ACM_IRQ_TX_ENABLED		3
-#define CDC_ACM_RX_FIFO_BUSY		4
-#define CDC_ACM_LOCK			5
+enum {
+	CDC_ACM_CLASS_ENABLED,
+	CDC_ACM_IRQ_RX_ENABLED,
+	CDC_ACM_IRQ_TX_ENABLED,
+	CDC_ACM_RX_FIFO_BUSY,
+	CDC_ACM_LOCK,
+};
 
 static struct k_work_q cdc_acm_work_q;
 static K_KERNEL_STACK_DEFINE(cdc_acm_stack,
@@ -278,25 +279,21 @@ static void usbd_cdc_acm_disable(struct usbd_class_data *const c_data)
 	struct cdc_acm_uart_data *data = dev->data;
 
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_ENABLED);
-	atomic_clear_bit(&data->state, CDC_ACM_CLASS_SUSPENDED);
 	LOG_INF("Configuration disabled");
 }
 
 static void usbd_cdc_acm_suspended(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct cdc_acm_uart_data *data = dev->data;
 
-	/* FIXME: filter stray suspended events earlier */
-	atomic_set_bit(&data->state, CDC_ACM_CLASS_SUSPENDED);
+	LOG_DBG("CDC ACM device %s suspended", dev->name);
 }
 
 static void usbd_cdc_acm_resumed(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct cdc_acm_uart_data *data = dev->data;
 
-	atomic_clear_bit(&data->state, CDC_ACM_CLASS_SUSPENDED);
+	LOG_DBG("CDC ACM device %s resumed", dev->name);
 }
 
 static void *usbd_cdc_acm_get_desc(struct usbd_class_data *const c_data,
@@ -485,11 +482,6 @@ static int cdc_acm_send_notification(const struct device *dev,
 		return -EACCES;
 	}
 
-	if (atomic_test_bit(&data->state, CDC_ACM_CLASS_SUSPENDED)) {
-		LOG_INF("USB support is suspended (FIXME)");
-		return -EACCES;
-	}
-
 	ep = cdc_acm_get_int_in(c_data);
 	buf = usbd_ep_buf_alloc(c_data, ep, sizeof(struct cdc_acm_notification));
 	if (buf == NULL) {
@@ -523,11 +515,6 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	if (atomic_test_bit(&data->state, CDC_ACM_CLASS_SUSPENDED)) {
-		LOG_INF("USB support is suspended (FIXME: submit rwup)");
-		return;
-	}
-
 	if (atomic_test_and_set_bit(&data->state, CDC_ACM_LOCK)) {
 		cdc_acm_work_submit(&data->tx_fifo_work);
 		return;
@@ -558,7 +545,6 @@ tx_fifo_handler_exit:
  *  - (x) RX transfer completion
  *  - (x) the end of cdc_acm_irq_cb_handler
  *  - (x) USBD class API enable call
- *  - ( ) USBD class API resumed call (TODO)
  */
 static void cdc_acm_rx_fifo_handler(struct k_work *work)
 {
@@ -571,9 +557,8 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 	data = CONTAINER_OF(work, struct cdc_acm_uart_data, rx_fifo_work);
 	c_data = data->c_data;
 
-	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED) ||
-	    atomic_test_bit(&data->state, CDC_ACM_CLASS_SUSPENDED)) {
-		LOG_INF("USB configuration is not enabled or suspended");
+	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
+		LOG_INF("USB configuration is not enabled");
 		return;
 	}
 
