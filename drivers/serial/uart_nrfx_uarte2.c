@@ -359,6 +359,9 @@ static void evt_handler(nrfx_uarte_event_t const *event, void *context)
 		break;
 	case NRFX_UARTE_EVT_ERROR:
 		data->async->err = event->data.error.error_mask;
+		if (IS_ASYNC_API(dev)) {
+			(void)uart_rx_disable(dev);
+		}
 		break;
 	case NRFX_UARTE_EVT_RX_BUF_REQUEST:
 		on_rx_buf_req(dev);
