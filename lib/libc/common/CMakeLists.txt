@@ -19,6 +19,7 @@ zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_THRD
     source/thrd/thrd.c
     source/thrd/tss.c
     )
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_REMOVE source/stdio/remove.c)
 
 # Prevent compiler from optimizing calloc into an infinite recursive call
 zephyr_library_compile_options($<TARGET_PROPERTY:compiler,no_builtin_malloc>)
