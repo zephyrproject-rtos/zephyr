@@ -269,7 +269,7 @@ static int mcux_adc12_init(const struct device *dev)
 				 (kADC12_ReferenceVoltageSourceVref))
 
 #define ADC12_MCUX_DRIVER_API(n)				\
-	static const struct adc_driver_api mcux_adc12_driver_api_##n = {	\
+	static DEVICE_API(adc, mcux_adc12_driver_api_##n) = {	\
 		.channel_setup = mcux_adc12_channel_setup,	\
 		.read = mcux_adc12_read,	\
 		IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = mcux_adc12_read_async,))	\

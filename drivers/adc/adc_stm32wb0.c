@@ -1056,7 +1056,7 @@ int adc_stm32wb0_read_async(const struct device *dev,
 }
 #endif /* CONFIG_ADC_ASYNC */
 
-static const struct adc_driver_api api_stm32wb0_driver_api = {
+static DEVICE_API(adc, api_stm32wb0_driver_api) = {
 	.channel_setup = adc_stm32wb0_channel_setup,
 	.read = adc_stm32wb0_read,
 #if defined(CONFIG_ADC_ASYNC)

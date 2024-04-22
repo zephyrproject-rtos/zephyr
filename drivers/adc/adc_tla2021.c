@@ -295,7 +295,7 @@ static int tla2021_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api tla2021_driver_api = {
+static DEVICE_API(adc, tla2021_driver_api) = {
 	.channel_setup = tla2021_channel_setup,
 	.read = tla2021_read,
 	.ref_internal = 4096,

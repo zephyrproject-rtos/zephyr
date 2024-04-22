@@ -543,7 +543,7 @@ static int mcux_lpadc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api mcux_lpadc_driver_api = {
+static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 	.channel_setup = mcux_lpadc_channel_setup,
 	.read = mcux_lpadc_read,
 #ifdef CONFIG_ADC_ASYNC

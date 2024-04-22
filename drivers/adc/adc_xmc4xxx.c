@@ -300,7 +300,7 @@ static int adc_xmc4xxx_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api api_xmc4xxx_driver_api = {
+static DEVICE_API(adc, api_xmc4xxx_driver_api) = {
 	.channel_setup = adc_xmc4xxx_channel_setup,
 	.read = adc_xmc4xxx_read,
 #ifdef CONFIG_ADC_ASYNC
