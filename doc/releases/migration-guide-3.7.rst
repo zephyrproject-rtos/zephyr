@@ -343,5 +343,11 @@ Architectures
     are deprecated. Use :kconfig:option:`CONFIG_X86_DISABLE_SSBD` and
     :kconfig:option:`CONFIG_X86_ENABLE_EXTENDED_IBRS` instead.
 
+* POSIX arch:
+
+  * LLVM fuzzing support has been refactored. A test application now needs to provide its own
+    ``LLVMFuzzerTestOneInput()`` hook instead of relying on a board provided one. Check
+    ``samples/subsys/debug/fuzz/`` for an example.
+
 Xtensa
 ======
