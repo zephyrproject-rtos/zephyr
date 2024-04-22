@@ -782,6 +782,8 @@ Devicetree:
     - include/zephyr/devicetree/
     - scripts/kconfig/kconfigfunctions.py
     - include/zephyr/devicetree.h
+  files-exclude:
+    - dts/common/nordic/
   labels:
     - "area: Devicetree"
   tests:
