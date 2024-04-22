@@ -133,6 +133,15 @@
 		#size-cells = <0>;
 	};
 
+	mspi0: mspi@400 {
+		status = "okay";
+		compatible = "zephyr,mspi-emul-controller";
+		clock-frequency = <250000000>;
+		reg = <0x400 4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
 	uart0: uart {
 		status = "okay";
 		compatible = "zephyr,native-posix-uart";
