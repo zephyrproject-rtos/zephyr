@@ -731,6 +731,16 @@ static void tcp_conn_release(struct k_work *work)
 		conn->context->conn_handler = NULL;
 	}
 
+	/* As the TCP socket could be closed without connect being called,
+	 * check if the address reference is done before releasing the address.
+	 */
+	if (conn->iface != NULL && conn->addr_ref_done) {
+		net_if_addr_unref(conn->iface, conn->src.sa.sa_family,
+				  conn->src.sa.sa_family == AF_INET ?
+				  (const void *)&conn->src.sin.sin_addr :
+				  (const void *)&conn->src.sin6.sin6_addr);
+	}
+
 	conn->context->tcp = NULL;
 	conn->state = TCP_UNUSED;
 
@@ -2060,6 +2070,7 @@ static struct tcp *tcp_conn_alloc(void)
 	conn->send_win_max = MAX(tcp_tx_window, NET_IPV6_MTU);
 	conn->send_win = conn->send_win_max;
 	conn->tcp_nodelay = false;
+	conn->addr_ref_done = false;
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
 	conn->dup_ack_cnt = 0;
 #endif
@@ -2413,6 +2424,13 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 		conn = NULL;
 		goto err;
 	}
+
+	net_if_addr_ref(conn->iface, conn->dst.sa.sa_family,
+			conn->src.sa.sa_family == AF_INET ?
+			(const void *)&conn->src.sin.sin_addr :
+			(const void *)&conn->src.sin6.sin6_addr);
+	conn->addr_ref_done = true;
+
 err:
 	if (!conn) {
 		net_stats_update_tcp_seg_conndrop(net_pkt_iface(pkt));
@@ -3832,6 +3850,12 @@ int net_tcp_connect(struct net_context *context,
 	if (ret < 0) {
 		goto out;
 	}
+
+	net_if_addr_ref(conn->iface, conn->src.sa.sa_family,
+			conn->src.sa.sa_family == AF_INET ?
+			(const void *)&conn->src.sin.sin_addr :
+			(const void *)&conn->src.sin6.sin6_addr);
+	conn->addr_ref_done = true;
 
 	conn->connect_cb = cb;
 	context->user_data = user_data;
