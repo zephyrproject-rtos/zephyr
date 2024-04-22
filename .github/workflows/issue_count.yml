@@ -27,7 +27,7 @@ jobs:
         sudo apt-get update || true
         sudo apt-get install discount
 
-    - uses: brcrista/summarize-issues@v3
+    - uses: brcrista/summarize-issues@v4
       with:
         title: 'Issues Report for ${{ github.repository }}'
         configPath: 'issues-report-config.json'
