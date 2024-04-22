@@ -44,6 +44,11 @@ void soc_port_configure(const struct soc_port_pin *pin)
 	pg->DIRCLR.reg = (1 << pin->pinum);
 	pg->OUTCLR.reg = (1 << pin->pinum);
 
+	if (flags & SOC_PORT_STRENGTH_STRONGER) {
+		pincfg.bit.DRVSTR = 1;
+		pg->PINCFG[pin->pinum] = pincfg;
+	}
+
 	if (flags & SOC_PORT_PMUXEN_ENABLE) {
 		soc_port_pinmux_set(pg, pin->pinum, func);
 		return;
@@ -63,10 +68,6 @@ void soc_port_configure(const struct soc_port_pin *pin)
 
 	if (flags & SOC_PORT_OUTPUT_ENABLE) {
 		pg->DIRSET.reg = (1 << pin->pinum);
-	}
-
-	if (flags & SOC_PORT_STRENGTH_STRONGER) {
-		pincfg.bit.DRVSTR = 1;
 	}
 
 	pg->PINCFG[pin->pinum] = pincfg;
