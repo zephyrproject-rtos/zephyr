@@ -25,6 +25,9 @@ LOG_MODULE_REGISTER(UART_ASYNC_TO_IRQ_LOG_NAME, CONFIG_UART_LOG_LEVEL);
 /* TX busy. */
 #define A2I_TX_BUSY		BIT(4)
 
+/* Error pending. */
+#define A2I_ERR_PENDING		BIT(5)
+
 static struct uart_async_to_irq_data *get_data(const struct device *dev)
 {
 	struct uart_async_to_irq_data **data = dev->data;
@@ -148,6 +151,7 @@ static void uart_async_to_irq_callback(const struct device *dev,
 		uart_async_rx_on_buf_rel(&data->rx.async_rx, evt->data.rx_buf.buf);
 		break;
 	case UART_RX_STOPPED:
+		atomic_or(&data->flags, A2I_ERR_PENDING);
 		call_handler = data->flags & A2I_ERR_IRQ_ENABLED;
 		break;
 	case UART_RX_DISABLED:
@@ -304,7 +308,12 @@ void z_uart_async_to_irq_irq_err_disable(const struct device *dev)
 /** Interrupt driven pending status function */
 int z_uart_async_to_irq_irq_is_pending(const struct device *dev)
 {
-	return z_uart_async_to_irq_irq_tx_ready(dev) || z_uart_async_to_irq_irq_rx_ready(dev);
+	bool tx_rdy = z_uart_async_to_irq_irq_tx_ready(dev);
+	bool rx_rdy = z_uart_async_to_irq_irq_rx_ready(dev);
+	struct uart_async_to_irq_data *data = get_data(dev);
+	bool err_pending = atomic_and(&data->flags, ~A2I_ERR_PENDING) & A2I_ERR_PENDING;
+
+	return tx_rdy || rx_rdy || err_pending;
 }
 
 /** Interrupt driven interrupt update function */
