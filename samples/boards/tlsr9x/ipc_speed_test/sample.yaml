@@ -1,0 +1,10 @@
+sample:
+  name: IPC Speed Test
+tests:
+  sample.basic.blinky:
+    tags: IPS LED gpio
+    filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds")
+    depends_on: gpio
+    harness: IPC
+    integration_platforms:
+      - frdm_k64f
