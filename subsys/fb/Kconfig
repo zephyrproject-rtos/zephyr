@@ -31,6 +31,20 @@ config CHARACTER_FRAMEBUFFER_SHELL_DRIVER_NAME
 	help
 	  Character Framebuffer Display Driver Name
 
+if CHARACTER_FRAMEBUFFER_SHELL
+
+config CHARACTER_FRAMEBUFFER_SHELL_TRANSFER_BUFFER_SIZE
+	int "Set size of buffer for image transfer"
+	default 0
+	help
+	  Dynamically allocate display object if set 0
+
+config CHARACTER_FRAMEBUFFER_SHELL_COMMAND_BUFFER_SIZE
+	int "Set size of buffer for store commands"
+	default 0
+
+endif # CFB_SHELL
+
 module = CFB
 module-str = cfb
 source "subsys/logging/Kconfig.template.log_config"
