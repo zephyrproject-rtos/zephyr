@@ -119,6 +119,26 @@ void config_plli2s(void)
 
 #endif /* STM32_PLLI2S_ENABLED */
 
+#ifdef STM32_PLLSAI_ENABLED
+
+/**
+ * @brief Set up PLL SAI configuration
+ */
+__unused
+void config_pllsai(void)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_pllsai_clock)
+	LL_RCC_PLLSAI_ConfigDomain_LTDC(get_pll_source(),
+				       pllm(STM32_PLLSAI_M_DIVISOR),
+				       STM32_PLLSAI_N_MULTIPLIER,
+				       pllsair(STM32_PLLSAI_R_DIVISOR),
+				       pllsaidivr(STM32_PLLSAI_DIVR_DIVISOR)
+				       );
+#endif
+}
+
+#endif /* STM32_PLLSAI_ENABLED */
+
 /**
  * @brief Activate default clocks
  */

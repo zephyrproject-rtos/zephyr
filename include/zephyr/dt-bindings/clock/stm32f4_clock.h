@@ -33,8 +33,10 @@
 #define STM32_SRC_PLL_P		(STM32_SRC_HSE + 1)
 #define STM32_SRC_PLL_Q		(STM32_SRC_PLL_P + 1)
 #define STM32_SRC_PLL_R		(STM32_SRC_PLL_Q + 1)
+/** PLLSAI sources */
+#define STM32_SRC_PLLSAI_R	(STM32_SRC_PLL_R + 1)
 /** I2S sources */
-#define STM32_SRC_PLLI2S_R	(STM32_SRC_PLL_R + 1)
+#define STM32_SRC_PLLI2S_R	(STM32_SRC_PLLSAI_R + 1)
 /* I2S_CKIN not supported yet */
 /* #define STM32_SRC_I2S_CKIN	TBD */
 
