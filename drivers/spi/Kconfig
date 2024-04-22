@@ -54,7 +54,7 @@ config SPI_EXTENDED_MODES
 
 config SPI_INIT_PRIORITY
 	int "Init priority"
-	default 70
+	default KERNEL_INIT_PRIORITY_DEVICE
 	help
 	  Device driver initialization priority.
 
