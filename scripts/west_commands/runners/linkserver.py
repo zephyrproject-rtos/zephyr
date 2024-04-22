@@ -186,12 +186,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
 
     def flash(self, **kwargs):
 
-        if self.core is not None:
-            _cmd_core = ":"+self.core
-        else:
-            _cmd_core = ""
-
-        linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", str(self.probe)] + self.override_cli + [self.device+_cmd_core])
+        linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", str(self.probe)] + self.override_cli + [self.device])
         self.logger.debug(f'LinkServer cmd:  + {linkserver_cmd}')
 
         if self.erase:
