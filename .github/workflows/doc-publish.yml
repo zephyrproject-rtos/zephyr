@@ -37,7 +37,7 @@ jobs:
         fi
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
+      uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ vars.AWS_DOCS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_DOCS_SECRET_ACCESS_KEY }}
