@@ -78,17 +78,6 @@ struct quectel_lcx6g_data {
 	k_timeout_t pm_timeout;
 };
 
-#define MODEM_CHAT_SCRIPT_NO_ABORT_DEFINE(_sym, _script_chats, _callback, _timeout)             \
-	static struct modem_chat_script _sym = {                                                \
-		.name = #_sym,                                                                  \
-		.script_chats = _script_chats,                                                  \
-		.script_chats_size = ARRAY_SIZE(_script_chats),                                 \
-		.abort_matches = NULL,                                                          \
-		.abort_matches_size = 0,                                                        \
-		.callback = _callback,                                                          \
-		.timeout = _timeout,                                                            \
-	}
-
 #ifdef CONFIG_PM_DEVICE
 MODEM_CHAT_MATCH_DEFINE(pair003_success_match, "$PAIR001,003,0*38", "", NULL);
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
@@ -100,11 +89,10 @@ MODEM_CHAT_SCRIPT_NO_ABORT_DEFINE(suspend_script, suspend_script_cmds,
 				  NULL, QUECTEL_LCX6G_SCRIPT_TIMEOUT_S);
 #endif /* CONFIG_PM_DEVICE */
 
-MODEM_CHAT_MATCH_DEFINE(any_match, "", "", NULL);
 MODEM_CHAT_MATCH_DEFINE(pair062_ack_match, "$PAIR001,062,0*3F", "", NULL);
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	resume_script_cmds,
-	MODEM_CHAT_SCRIPT_CMD_RESP("$PAIR002*38", any_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("$PAIR002*38", modem_chat_any_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("$PAIR062,0,1*3F", pair062_ack_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("$PAIR062,1,0*3F", pair062_ack_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("$PAIR062,2,0*3C", pair062_ack_match),
