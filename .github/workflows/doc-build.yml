@@ -34,20 +34,20 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
     - name: Check if Documentation related files changed
-      uses: tj-actions/changed-files@v42
+      uses: tj-actions/changed-files@v44
       id: check-doc-files
       with:
         files: |
-          doc/**
+          doc/
           **.rst
-          include/**
+          include/
           kernel/include/kernel_arch_interface.h
           lib/libc/**
           subsys/testsuite/ztest/include/**
-          tests/**
+          tests/
           **/Kconfig*
           west.yml
-          scripts/dts/**
+          scripts/dts/
           doc/requirements.txt
           .github/workflows/doc-build.yml
 
