@@ -59,4 +59,6 @@ module = MSPI
 module-str = mspi
 source "subsys/logging/Kconfig.template.log_config"
 
+source "drivers/mspi/Kconfig.mspi_emul"
+
 endif # MSPI
