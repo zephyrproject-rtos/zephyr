@@ -2,6 +2,8 @@
 
 #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
 
+#include <zephyr/linker/common-rom/common-rom-api.ld>
+
 #include <zephyr/linker/common-rom/common-rom-ztest.ld>
 
 #include <zephyr/linker/common-rom/common-rom-cpp.ld>

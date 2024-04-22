@@ -282,7 +282,7 @@ static int adc_smartbond_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api adc_smartbond_driver_api = {
+static DRIVER_API(adc_driver_api, adc_smartbond_driver_api) = {
 	.channel_setup = adc_smartbond_channel_setup,
 	.read          = adc_smartbond_read,
 #ifdef CONFIG_ADC_ASYNC
