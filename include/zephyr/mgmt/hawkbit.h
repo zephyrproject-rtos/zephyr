@@ -92,8 +92,10 @@ int hawkbit_init(void);
  *
  * @details The hawkbit_autohandler handles the whole process
  * in pre-determined time intervals.
+ *
+ * @param auto_reschedule If true, the handler will reschedule itself
  */
-void hawkbit_autohandler(void);
+void hawkbit_autohandler(bool auto_reschedule);
 
 /**
  * @brief The hawkBit probe verify if there is some update to be performed.

@@ -147,6 +147,7 @@ static hawkbit_config_device_data_cb_handler_t hawkbit_config_device_data_cb_han
 static void autohandler(struct k_work *work);
 
 static K_WORK_DELAYABLE_DEFINE(hawkbit_work_handle, autohandler);
+static K_WORK_DELAYABLE_DEFINE(hawkbit_work_handle_once, autohandler);
 
 K_SEM_DEFINE(probe_sem, 1, 1);
 
@@ -1513,10 +1514,17 @@ static void autohandler(struct k_work *work)
 		break;
 	}
 
-	k_work_reschedule(&hawkbit_work_handle, K_SECONDS(poll_sleep));
+	if (k_work_delayable_from_work(work) == &hawkbit_work_handle) {
+		k_work_reschedule(&hawkbit_work_handle, K_SECONDS(poll_sleep));
+	}
+}
 }
 
-void hawkbit_autohandler(void)
+void hawkbit_autohandler(bool auto_reschedule)
 {
-	k_work_reschedule(&hawkbit_work_handle, K_NO_WAIT);
+	if (auto_reschedule) {
+		k_work_reschedule(&hawkbit_work_handle, K_NO_WAIT);
+	} else {
+		k_work_reschedule(&hawkbit_work_handle_once, K_NO_WAIT);
+	}
 }
