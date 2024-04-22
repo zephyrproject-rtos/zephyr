@@ -857,7 +857,7 @@ static int uarte_nrfx_init(const struct device *dev)
 
 	if (UARTE_ANY_INTERRUPT_DRIVEN) {
 		if (cfg->a2i_config) {
-			err = uart_async_to_irq_init(data->a2i_data, cfg->a2i_config);
+			err = uart_async_to_irq_init(dev);
 			if (err < 0) {
 				return err;
 			}

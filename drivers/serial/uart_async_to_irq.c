@@ -336,14 +336,7 @@ void z_uart_async_to_irq_irq_callback_set(const struct device *dev,
 int uart_async_to_irq_rx_enable(const struct device *dev)
 {
 	struct uart_async_to_irq_data *data = get_data(dev);
-	const struct uart_async_to_irq_config *config = get_config(dev);
 	int err;
-
-	err = config->api->callback_set(dev, uart_async_to_irq_callback, data);
-	if (err < 0) {
-		return err;
-	}
-
 
 	err = try_rx_enable(dev, data);
 	if (err == 0) {
@@ -381,13 +374,21 @@ void uart_async_to_irq_trampoline_cb(const struct device *dev)
 	} while (atomic_dec(&data->irq_req) > 1);
 }
 
-int uart_async_to_irq_init(struct uart_async_to_irq_data *data,
-			   const struct uart_async_to_irq_config *config)
+int uart_async_to_irq_init(const struct device *dev)
 {
+	struct uart_async_to_irq_data *data = get_data(dev);
+	const struct uart_async_to_irq_config *config = get_config(dev);
+	int err;
+
 	data->tx.buf = config->tx_buf;
 	data->tx.len = config->tx_len;
 
 	k_sem_init(&data->rx.sem, 0, 1);
+
+	err = config->api->callback_set(dev, uart_async_to_irq_callback, data);
+	if (err < 0) {
+		return err;
+	}
 
 	return uart_async_rx_init(&data->rx.async_rx, &config->async_rx);
 }
