@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+#
+# Copyright (c) 2024, Tomasz Bursztyka
+#
+# SPDX-License-Identifier: Apache-2.0
+
+import os
+import sys
+import yaml
+import argparse
+import pykwalify.core
+from pathlib import Path
+
+try:
+    # Use the C LibYAML parser if available, rather than the Python parser.
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader     # type: ignore
+
+def load_schemas():
+    schemas = {}
+    p = Path(os.path.abspath(os.path.dirname(__file__)) + "/modules")
+    for sch_p in sorted(p.glob('*.yaml')):
+        sch_n = Path(sch_p).stem
+        if sch_n in schemas:
+            raise Exception(f"Duplicate schema file name {sch_n}")
+
+        with open(sch_p, 'r', encoding='utf-8') as sch_f:
+            schemas[sch_n] = yaml.load(sch_f, SafeLoader)
+
+    return schemas
+
+def validate_input(fwconfig_files):
+    schemas = load_schemas()
+    if len(schemas) == 0:
+        return
+
+    for fw_p in fwconfig_files:
+         with open(fw_p, 'r', encoding="utf-8") as fw_f:
+             try:
+                 content = yaml.load(fw_f, SafeLoader)
+                 for sch in schemas:
+                     pykwalify.core.Core(source_data=content,
+                                         schema_data=schemas[sch]).validate()
+             except (yaml.YAMLError, pykwalify.errors.SchemaError) as e:
+                 sys.exit(f"ERROR: malformed fwconfig file {fw_p}")
+
+def main():
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+
+    parser.add_argument('--debug', action='store_true',
+                        help='Print debug messages')
+    parser.add_argument('--validate', action='store_true',
+                        help='Validate the input files prior to using them')
+    parser.add_argument('--fwconfig-files', required=True, nargs='+',
+                        help='files to load')
+    # Below is a trick to by-pass this old bug:
+    # https://github.com/python/cpython/issues/53584
+    # or else, we would need to get all modules to have their own parameter
+    # for loading the common fwconfig files, becoming an hassle for the input
+    # validation part.
+    parser.add_argument('-', dest='__into_the_void', action="store_true",
+                        help='Mandatory separation for using a module as below')
+
+    sub_parsers = parser.add_subparsers(title='Modules')
+
+    # 1 - Update arg parser on modules
+    # <module>.add_arguments(sub_parsers)
+
+    # 2 - Parse the arguments
+    args = parser.parse_args()
+
+    # 3 - Should we validate the input files?
+    if args.validate:
+        validate_input(args.fwconfig_files)
+
+    # 4 - Run the relevant module
+    args.func(args)
+
+if __name__ == "__main__":
+    main()
