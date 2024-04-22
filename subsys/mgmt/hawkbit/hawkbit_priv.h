@@ -20,7 +20,7 @@
 enum hawkbit_http_request {
 	HAWKBIT_PROBE,
 	HAWKBIT_CONFIG_DEVICE,
-	HAWKBIT_CLOSE,
+	HAWKBIT_CANCEL,
 	HAWKBIT_PROBE_DEPLOYMENT_BASE,
 	HAWKBIT_REPORT,
 	HAWKBIT_DOWNLOAD,
@@ -83,7 +83,7 @@ struct hawkbit_cfg {
 	struct hawkbit_cfg_data data;
 };
 
-struct hawkbit_close {
+struct hawkbit_cancel {
 	struct hawkbit_status status;
 };
 
