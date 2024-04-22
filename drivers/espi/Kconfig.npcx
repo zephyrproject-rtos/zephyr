@@ -61,6 +61,7 @@ config ESPI_NPCX_PERIPHERAL_DEBUG_PORT_80_RING_BUF_SIZE
 config ESPI_TAF_NPCX
 	bool "Nuvoton NPCX embedded controller (EC) ESPI TAF driver"
 	depends on SOC_SERIES_NPCX4
+	depends on FLASH
 	help
 	  This option enables the Intel Enhanced Serial Peripheral Interface
 	  Target Attached Flash (eSPI TAF) for NPCX4 family of processors.
