@@ -883,11 +883,11 @@ static int cmd_i3c_ccc_setmrl_bc(const struct shell *shell_ctx, size_t argc, cha
 	}
 
 	mrl.len = strtol(argv[2], NULL, 16);
-	if (argc > 2) {
+	if (argc > 3) {
 		mrl.ibi_len = strtol(argv[3], NULL, 16);
 	}
 
-	ret = i3c_ccc_do_setmrl_all(dev, &mrl, argc > 2);
+	ret = i3c_ccc_do_setmrl_all(dev, &mrl, argc > 3);
 	if (ret < 0) {
 		shell_error(shell_ctx, "I3C: unable to send CCC SETMRL BC.");
 		return ret;
@@ -1089,7 +1089,7 @@ static int cmd_i3c_ccc_getstatus(const struct shell *shell_ctx, size_t argc, cha
 	}
 
 	/* If there is a defining byte, then it is assumed to be Format 2*/
-	if (argc > 2) {
+	if (argc > 3) {
 		fmt = GETSTATUS_FORMAT_2;
 		defbyte = strtol(argv[3], NULL, 16);
 		if (defbyte != GETSTATUS_FORMAT_2_TGTSTAT || defbyte != GETSTATUS_FORMAT_2_PRECR) {
