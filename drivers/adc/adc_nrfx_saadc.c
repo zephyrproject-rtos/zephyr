@@ -661,7 +661,7 @@ static int init_saadc(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api adc_nrfx_driver_api = {
+static DEVICE_API(adc, adc_nrfx_driver_api) = {
 	.channel_setup = adc_nrfx_channel_setup,
 	.read          = adc_nrfx_read,
 #ifdef CONFIG_ADC_ASYNC

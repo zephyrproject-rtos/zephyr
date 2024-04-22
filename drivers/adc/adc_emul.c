@@ -546,7 +546,7 @@ static int adc_emul_init(const struct device *dev)
 }
 
 #define ADC_EMUL_INIT(_num)						\
-	static const struct adc_driver_api adc_emul_api_##_num = {	\
+	static DEVICE_API(adc, adc_emul_api_##_num) = {			\
 		.channel_setup = adc_emul_channel_setup,		\
 		.read = adc_emul_read,					\
 		.ref_internal = DT_INST_PROP(_num, ref_internal_mv),	\

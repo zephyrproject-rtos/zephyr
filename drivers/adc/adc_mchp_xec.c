@@ -397,7 +397,7 @@ static int adc_xec_pm_action(const struct device *dev, enum pm_device_action act
 }
 #endif /* CONFIG_PM_DEVICE */
 
-struct adc_driver_api adc_xec_api = {
+static DEVICE_API(adc, adc_xec_api) = {
 	.channel_setup = adc_xec_channel_setup,
 	.read = adc_xec_read,
 #if defined(CONFIG_ADC_ASYNC)
