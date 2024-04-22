@@ -83,7 +83,7 @@ int main(void)
 
 #if defined(CONFIG_HAWKBIT_POLLING)
 	LOG_INF("Starting hawkBit polling mode");
-	hawkbit_autohandler();
+	hawkbit_autohandler(true);
 #endif
 
 #if defined(CONFIG_HAWKBIT_MANUAL)
