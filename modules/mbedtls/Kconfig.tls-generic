@@ -327,6 +327,10 @@ config MBEDTLS_MAC_SHA256_ENABLED
 	bool "SHA-224 and SHA-256 hash algorithms"
 	default y
 
+config PSA_WANT_ALG_SHA_256
+	depends on BUILD_WITH_TFM
+	bool "SHA-256 hash algorithm through PSA"
+
 config MBEDTLS_SHA256_SMALLER
 	bool "Smaller SHA-256 implementation"
 	depends on MBEDTLS_MAC_SHA256_ENABLED

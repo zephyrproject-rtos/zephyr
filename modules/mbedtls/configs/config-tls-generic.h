@@ -288,6 +288,10 @@
 #define MBEDTLS_SHA256_C
 #endif
 
+#if defined(CONFIG_PSA_WANT_ALG_SHA_256)
+#define PSA_WANT_ALG_SHA_256 1
+#endif
+
 #if defined(CONFIG_MBEDTLS_SHA256_SMALLER)
 #define MBEDTLS_SHA256_SMALLER
 #endif
