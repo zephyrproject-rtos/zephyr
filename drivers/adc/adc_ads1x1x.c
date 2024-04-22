@@ -786,7 +786,7 @@ static int ads1x1x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api ads1x1x_api = {
+static DEVICE_API(adc, ads1x1x_api) = {
 	.channel_setup = ads1x1x_channel_setup,
 	.read = ads1x1x_read,
 	.ref_internal = 2048,

@@ -342,7 +342,7 @@ const adc_extended_cfg_t g_adc_cfg_extend = {
 #define ADC_RA_INIT(idx)                                                                           \
 	IRQ_CONFIGURE_FUNC(idx)                                                                    \
 	PINCTRL_DT_INST_DEFINE(idx);                                                               \
-	static struct adc_driver_api adc_ra_api_##idx = {                                          \
+	static DEVICE_API(adc, adc_ra_api_##idx) = {                                               \
 		.channel_setup = adc_ra_channel_setup,                                             \
 		.read = adc_ra_read,                                                               \
 		.ref_internal = DT_INST_PROP(idx, vref_mv),                                        \

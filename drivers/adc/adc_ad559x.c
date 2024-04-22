@@ -297,7 +297,7 @@ static int adc_ad559x_init(const struct device *dev)
 #endif
 
 #define ADC_AD559X_DRIVER_API(inst)                                                                \
-	static const struct adc_driver_api adc_ad559x_api##inst = {                                \
+	static DEVICE_API(adc, adc_ad559x_api##inst) = {                                           \
 		.channel_setup = adc_ad559x_channel_setup,                                         \
 		.read = adc_ad559x_read,                                                           \
 		.ref_internal = AD559X_ADC_VREF_MV * (1 + DT_INST_PROP(inst, double_input_range)), \
