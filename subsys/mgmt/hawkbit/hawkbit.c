@@ -151,7 +151,7 @@ enum hawkbit_state {
 	S_HAWKBIT_HTTP,
 	S_HAWKBIT_PROBE,
 	S_HAWKBIT_CONFIG_DEVICE,
-	S_HAWKBIT_CLOSE,
+	S_HAWKBIT_CANCEL,
 	S_HAWKBIT_PROBE_DEPLOYMENT_BASE,
 	S_HAWKBIT_REPORT,
 	S_HAWKBIT_DOWNLOAD,
@@ -207,8 +207,8 @@ static const struct json_obj_descr json_cfg_descr[] = {
 	JSON_OBJ_DESCR_OBJECT(struct hawkbit_cfg, data, json_cfg_data_descr),
 };
 
-static const struct json_obj_descr json_close_descr[] = {
-	JSON_OBJ_DESCR_OBJECT(struct hawkbit_close, status, json_status_descr),
+static const struct json_obj_descr json_cancel_descr[] = {
+	JSON_OBJ_DESCR_OBJECT(struct hawkbit_cancel, status, json_status_descr),
 };
 
 static const struct json_obj_descr json_dep_res_hashes_descr[] = {
@@ -971,7 +971,7 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 
 		break;
 
-	case HAWKBIT_CLOSE:
+	case HAWKBIT_CANCEL:
 		/*
 		 * Feedback channel for cancel actions
 		 * POST: /{tenant}/controller/v1/{controllerId}/cancelAction/{actionId}/feedback
@@ -1164,7 +1164,7 @@ static void s_probe(void *o)
 	if (s->hb_context.results.base._links.cancelAction.href) {
 		LOG_DBG("_links.%s.href=%s", "cancelAction",
 			s->hb_context.results.base._links.cancelAction.href);
-		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_CLOSE]);
+		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_CANCEL]);
 	} else if (s->hb_context.results.base._links.configData.href) {
 		LOG_DBG("_links.%s.href=%s", "configData",
 			s->hb_context.results.base._links.configData.href);
@@ -1183,7 +1183,7 @@ static void s_probe(void *o)
  * Feedback channel for cancel actions
  * POST: /{tenant}/controller/v1/{controllerId}/cancelAction/{actionId}/feedback
  */
-static void s_hawbit_close(void *o)
+static void s_cancel(void *o)
 {
 	int ret = 0;
 	int32_t cancel_action_id = 0;
@@ -1191,7 +1191,7 @@ static void s_hawbit_close(void *o)
 	char *cancel_base;
 	uint8_t status_buffer[CONFIG_HAWKBIT_STATUS_BUFFER_SIZE] = {0};
 	char url_buffer[URL_BUFFER_SIZE] = {0};
-	struct hawkbit_close close = {0};
+	struct hawkbit_cancel cancel = {0};
 
 	cancel_base = hawkbit_get_url(s->hb_context.results.base._links.cancelAction.href);
 	if (cancel_base == NULL) {
@@ -1211,22 +1211,22 @@ static void s_hawbit_close(void *o)
 		return;
 	}
 
-	close.status.execution = hawkbit_status_execution(HAWKBIT_STATUS_EXEC_CLOSED);
-	close.status.result.finished = hawkbit_status_finished(
+	cancel.status.execution = hawkbit_status_execution(HAWKBIT_STATUS_EXEC_CLOSED);
+	cancel.status.result.finished = hawkbit_status_finished(
 		hb_cfg.action_id == cancel_action_id ? HAWKBIT_STATUS_FINISHED_FAILURE
 						     : HAWKBIT_STATUS_FINISHED_SUCCESS);
 
-	ret = json_obj_encode_buf(json_close_descr, ARRAY_SIZE(json_close_descr), &close,
+	ret = json_obj_encode_buf(json_cancel_descr, ARRAY_SIZE(json_cancel_descr), &cancel,
 				  status_buffer, sizeof(status_buffer));
 	if (ret) {
-		LOG_ERR("Can't encode the JSON script (%s): %d", "HAWKBIT_CLOSE", ret);
+		LOG_ERR("Can't encode the JSON script (%s): %d", "HAWKBIT_CANCEL", ret);
 		s->hb_context.code_status = HAWKBIT_METADATA_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
 		return;
 	}
 
-	if (!send_request(&s->hb_context, HAWKBIT_CLOSE, url_buffer, status_buffer)) {
-		LOG_ERR("Send request failed (%s)", "HAWKBIT_CLOSE");
+	if (!send_request(&s->hb_context, HAWKBIT_CANCEL, url_buffer, status_buffer)) {
+		LOG_ERR("Send request failed (%s)", "HAWKBIT_CANCEL");
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
 		return;
 	}
@@ -1451,9 +1451,9 @@ static const struct smf_state hawkbit_states[] = {
 		NULL,
 		&hawkbit_states[S_HAWKBIT_HTTP],
 		NULL),
-	[S_HAWKBIT_CLOSE] = SMF_CREATE_STATE(
+	[S_HAWKBIT_CANCEL] = SMF_CREATE_STATE(
 		NULL,
-		s_hawbit_close,
+		s_cancel,
 		NULL,
 		&hawkbit_states[S_HAWKBIT_HTTP],
 		NULL),
