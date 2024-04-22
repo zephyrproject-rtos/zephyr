@@ -159,6 +159,14 @@ Flash
 General Purpose I/O (GPIO)
 ==========================
 
+GNSS
+====
+
+* Basic power management support has been added to the ``gnss-nmea-generic`` driver.
+  If ``CONFIG_PM_DEVICE=y`` the driver is now initialized in suspended mode and the
+  application needs to call :c:func:`pm_device_action_run` with :c:macro:`PM_DEVICE_ACTION_RESUME`
+  to start up the driver.
+
 Input
 =====
 
