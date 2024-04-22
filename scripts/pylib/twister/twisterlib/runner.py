@@ -731,7 +731,7 @@ class ProjectBuilder(FilterBuilder):
                     if matches:
                         for m in matches:
                             # new_ztest_suite = m[0] # not used for now
-                            test_func_name = m[1].replace("test_", "")
+                            test_func_name = m[1].replace("test_", "", 1)
                             testcase_id = f"{yaml_testsuite_name}.{test_func_name}"
                             detected_cases.append(testcase_id)
 
