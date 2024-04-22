@@ -13,6 +13,7 @@ config MBEDTLS_PROMPTLESS
 	  mbed TLS menu prompt and instead handle the selection of MBEDTLS from
 	  dependent sub-configurations and thus prevent stuck symbol behavior.
 
+rsource "Kconfig.psa"
 
 menuconfig MBEDTLS
 	bool "mbed TLS Support" if !MBEDTLS_PROMPTLESS
