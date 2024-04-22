@@ -22,9 +22,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gnss_nmea_generic, CONFIG_GNSS_LOG_LEVEL);
 
-#define DT_DRV_COMPAT gnss_nmea_generic
-
-#define UART_RECV_BUF_SZ 128
+#define UART_RX_BUF_SZ (256 + IS_ENABLED(CONFIG_GNSS_SATELLITES) * 512)
+#define UART_TX_BUF_SZ 64
 #define CHAT_RECV_BUF_SZ 256
 #define CHAT_ARGV_SZ 32
 
@@ -42,14 +41,13 @@ struct gnss_nmea_generic_data {
 	/* UART backend */
 	struct modem_pipe *uart_pipe;
 	struct modem_backend_uart uart_backend;
-	uint8_t uart_backend_receive_buf[UART_RECV_BUF_SZ];
+	uint8_t uart_backend_receive_buf[UART_RX_BUF_SZ];
+	uint8_t uart_backend_transmit_buf[UART_TX_BUF_SZ];
 
 	/* Modem chat */
 	struct modem_chat chat;
 	uint8_t chat_receive_buf[CHAT_RECV_BUF_SZ];
 	uint8_t *chat_argv[CHAT_ARGV_SZ];
-
-	struct k_spinlock lock;
 };
 
 MODEM_CHAT_MATCHES_DEFINE(unsol_matches,
@@ -110,6 +108,8 @@ static void gnss_nmea_generic_init_pipe(const struct device *dev)
 		.uart = cfg->uart,
 		.receive_buf = data->uart_backend_receive_buf,
 		.receive_buf_size = sizeof(data->uart_backend_receive_buf),
+		.transmit_buf = data->uart_backend_transmit_buf,
+		.transmit_buf_size = sizeof(data->uart_backend_transmit_buf),
 	};
 
 	data->uart_pipe = modem_backend_uart_init(&data->uart_backend, &uart_backend_config);
