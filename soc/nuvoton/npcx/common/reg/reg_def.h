@@ -78,7 +78,10 @@ struct cdcg_reg {
 	volatile uint8_t reserved7;
 	/* 0x014: HFCG Bus Clock Dividers */
 	volatile uint8_t HFCBCD2;
-	volatile uint8_t reserved8[235];
+	volatile uint8_t reserved12[8];
+	/* 0x01d: HFCG Bus Clock Dividers */
+	volatile uint8_t HFCBCD3;
+	volatile uint8_t reserved8[226];
 
 	/* Low Frequency Clock Generator (LFCG) registers */
 	/* 0x100: LFCG Control */
@@ -1763,5 +1766,224 @@ struct swrst_reg {
 	volatile uint8_t reserved1[2];
 	volatile uint32_t SWRST_CTL[4];
 };
+
+/* Improved Inter Integrated Circuit  (I3C) device registers */
+struct i3c_reg {
+	/* 0x000: Controller Configuration */
+	volatile uint32_t MCONFIG;
+	/* 0x004: Target Configuration */
+	volatile uint32_t CONFIG;
+	volatile uint32_t reserved1[31];
+	/* 0x084: Controller Control  */
+	volatile uint32_t MCTRL;
+	/* 0x088: Controller Status */
+	volatile uint32_t MSTATUS;
+	/* 0x08C: IBI Registry and Rules */
+	volatile uint32_t IBIRULES;
+	/* 0x090: Controller Interrupt Enable Set  */
+	volatile uint32_t MINTSET;
+	/* 0x094: Controller Interrupt Enable Clear */
+	volatile uint32_t MINTCLR;
+	/* 0x098: Controller Interrupt Masked */
+	volatile uint32_t MINTMASKED;
+	/* 0x09C: Controller Error and Warning */
+	volatile uint32_t MERRWARN;
+	/* 0x0A0: Controller DMA Control */
+	volatile uint32_t MDMACTRL;
+	volatile uint32_t reserved2[2];
+	/* 0x0AC: Controller Data Control */
+	volatile uint32_t MDATACTRL;
+	/* 0x0B0: Controller Write Byte Data */
+	volatile uint32_t MWDATAB;
+	/* 0x0B4: Controller Write Byte Data as End */
+	volatile uint32_t MWDATABE;
+	/* 0x0B8: Controller Write Half-Word Data */
+	volatile uint32_t MWDATAH;
+	/* 0x0BC: Controller Write Half-Word Data as End */
+	volatile uint32_t MWDATAHE;
+	/* 0x0C0: Controller Read Byte Data */
+	volatile uint32_t MRDATAB;
+	volatile uint32_t reserved3;
+	/* 0x0C8: Controller Read Half-Word Data */
+	volatile uint32_t MRDATAH;
+	volatile uint32_t reserved4[3];
+	/* 0x0D8: Start or Continue DDR Message */
+	volatile uint32_t MWMSG_DDR;
+	/* 0x0DC: Read DDR Message Data */
+	volatile uint32_t MRMSG_DDR;
+	volatile uint32_t reserved5;
+	/* 0x0E4: Controller Dynamic Address */
+	volatile uint32_t MDYNADDR;
+};
+
+/* I3C register fields */
+#define NPCX_I3C_CONFIG_BAMATCH    FIELD(16, 7)
+#define NPCX_I3C_MCONFIG_CTRENA    FIELD(0, 2)
+#define NPCX_I3C_MCONFIG_DISTO     3
+#define NPCX_I3C_MCONFIG_HKEEP     FIELD(4, 2) /* Must be '11' */
+#define NPCX_I3C_MCONFIG_ODSTOP    6
+#define NPCX_I3C_MCONFIG_PPBAUD    FIELD(8, 4)
+#define NPCX_I3C_MCONFIG_PPLOW     FIELD(12, 4)
+#define NPCX_I3C_MCONFIG_ODBAUD    FIELD(16, 8)
+#define NPCX_I3C_MCONFIG_ODHPP     24
+#define NPCX_I3C_MCONFIG_SKEW      FIELD(25, 3)
+#define NPCX_I3C_MCONFIG_I2CBAUD   FIELD(28, 4)
+#define NPCX_I3C_MCTRL_REQUEST     FIELD(0, 3)
+#define NPCX_I3C_MCTRL_TYPE        FIELD(4, 2)
+#define NPCX_I3C_MCTRL_IBIRESP     FIELD(6, 2)
+#define NPCX_I3C_MCTRL_DIR         8
+#define NPCX_I3C_MCTRL_ADDR        FIELD(9, 7)
+#define NPCX_I3C_MCTRL_RDTERM      FIELD(16, 8)
+#define NPCX_I3C_MSTATUS_STATE     FIELD(0, 3)
+#define NPCX_I3C_MSTATUS_BETWEEN   4
+#define NPCX_I3C_MSTATUS_NACKED    5
+#define NPCX_I3C_MSTATUS_IBITYPE   FIELD(6, 2)
+#define NPCX_I3C_MSTATUS_TGTSTART  8
+#define NPCX_I3C_MSTATUS_MCTRLDONE 9
+#define NPCX_I3C_MSTATUS_COMPLETE  10
+#define NPCX_I3C_MSTATUS_RXPEND    11
+#define NPCX_I3C_MSTATUS_TXNOTFULL 12
+#define NPCX_I3C_MSTATUS_IBIWON    13
+#define NPCX_I3C_MSTATUS_ERRWARN   15
+#define NPCX_I3C_MSTATUS_NOWCNTLR  19
+#define NPCX_I3C_MSTATUS_IBIADDR   FIELD(24, 7)
+#define NPCX_I3C_IBIRULES_MSB0     30
+#define NPCX_I3C_IBIRULES_NOBYTE   31
+#define NPCX_I3C_MINTSET_TGTSTART  8
+#define NPCX_I3C_MINTSET_MCTRLDONE 9
+#define NPCX_I3C_MINTSET_COMPLETE  10
+#define NPCX_I3C_MINTSET_RXPEND    11
+#define NPCX_I3C_MINTSET_TXNOTFULL 12
+#define NPCX_I3C_MINTSET_IBIWON    13
+#define NPCX_I3C_MINTSET_ERRWARN   15
+#define NPCX_I3C_MINTSET_NOWCNTLR  19
+#define NPCX_I3C_MINTCLR_TGTSTART  8
+#define NPCX_I3C_MINTCLR_MCTRLDONE 9
+#define NPCX_I3C_MINTCLR_COMPLETE  10
+#define NPCX_I3C_MINTCLR_RXPEND    11
+#define NPCX_I3C_MINTCLR_TXNOTFULL 12
+#define NPCX_I3C_MINTCLR_IBIWON    13
+#define NPCX_I3C_MINTCLR_ERRWARN   15
+#define NPCX_I3C_MINTCLR_NOWCNTLR  19
+#define NPCX_I3C_MDATACTRL_FLUSHTB 0
+#define NPCX_I3C_MDATACTRL_FLUSHFB 1
+#define NPCX_I3C_MDATACTRL_UNLOCK  3
+#define NPCX_I3C_MDATACTRL_TXTRIG  FIELD(4, 2)
+#define NPCX_I3C_MDATACTRL_RXTRIG  FIELD(6, 2)
+#define NPCX_I3C_MDATACTRL_TXCOUNT FIELD(16, 5)
+#define NPCX_I3C_MDATACTRL_RXCOUNT FIELD(24, 5)
+#define NPCX_I3C_MDATACTRL_TXFULL  30
+#define NPCX_I3C_MDATACTRL_RXEMPTY 31
+#define NPCX_I3C_MERRWARN_NACK     2
+#define NPCX_I3C_MERRWARN_WRABT    3
+#define NPCX_I3C_MERRWARN_TERM     4
+#define NPCX_I3C_MERRWARN_HPAR     9
+#define NPCX_I3C_MERRWARN_HCRC     10
+#define NPCX_I3C_MERRWARN_OREAD    16
+#define NPCX_I3C_MERRWARN_OWRITE   17
+#define NPCX_I3C_MERRWARN_MSGERR   18
+#define NPCX_I3C_MERRWARN_INVERQ   19
+#define NPCX_I3C_MERRWARN_TIMEOUT  20
+#define NPCX_I3C_MDMACTRL_DMAFB    FIELD(0, 2)
+#define NPCX_I3C_MDMACTRL_DMATB    FIELD(2, 2)
+
+
+/* MCONFIG options */
+#define MCONFIG_CTRENA_OFF        0x0
+#define MCONFIG_CTRENA_ON         0x1
+#define MCONFIG_CTRENA_CAPABLE    0x2
+#define MCONFIG_HKEEP_EXT_SDA_SCL 0x3
+
+/* MCTRL options */
+#define MCTRL_REQUEST_NONE          0 /* None */
+#define MCTRL_REQUEST_EMITSTARTADDR 1 /* Emit a START */
+#define MCTRL_REQUEST_EMITSTOP      2 /* Emit a STOP */
+#define MCTRL_REQUEST_IBIACKNACK    3 /* Manually ACK or NACK an IBI */
+#define MCTRL_REQUEST_PROCESSDAA    4 /* Starts the DAA process */
+#define MCTRL_REQUEST_FORCEEXIT     6 /* Emit HDR Exit Pattern  */
+/* Emits a START with address 7Eh when a slave pulls I3C_SDA low to request an IBI */
+#define MCTRL_REQUEST_AUTOIBI       7
+
+/* ACK with mandatory byte determined by IBIRULES or ACK with no mandatory byte */
+#define MCTRL_IBIRESP_ACK           0
+#define MCTRL_IBIRESP_NACK          1 /* NACK */
+#define MCTRL_IBIRESP_ACK_MANDATORY 2 /* ACK with mandatory byte  */
+#define MCTRL_IBIRESP_MANUAL        3
+
+enum npcx_i3c_mctrl_type {
+	NPCX_I3C_MCTRL_TYPE_I3C,
+	NPCX_I3C_MCTRL_TYPE_I2C,
+	NPCX_I3C_MCTRL_TYPE_I3C_HDR_DDR,
+};
+
+/* MSTATUS options */
+#define MSTATUS_STATE_IDLE    0x0
+#define MSTATUS_STATE_TGTREQ  0x1
+#define MSTATUS_STATE_NORMACT 0x3 /* SDR message mode */
+#define MSTATUS_STATE_MSGDDR  0x4
+#define MSTATUS_STATE_DAA     0x5
+#define MSTATUS_STATE_IBIACK  0x6
+#define MSTATUS_STATE_IBIRCV  0x7
+#define MSTATUS_IBITYPE_NONE  0x0
+#define MSTATUS_IBITYPE_IBI   0x1
+#define MSTATUS_IBITYPE_CR    0x2
+#define MSTATUS_IBITYPE_HJ    0x3
+
+/* IBIRULES */
+#define IBIRULES_ADDR_MSK   0x3F
+#define IBIRULES_ADDR_SHIFT 0x6
+
+/* MDMACTRL options */
+#define MDMA_DMAFB_DISABLE      0x0
+#define MDMA_DMAFB_EN_ONE_FRAME 0x1
+#define MDMA_DMAFB_EN_MANUAL    0x2
+#define MDMA_DMATB_DISABLE      0x0
+#define MDMA_DMATB_EN_ONE_FRAME 0x1
+#define MDMA_DMATB_EN_MANUAL    0x2
+
+/* MDMA Controller registers */
+struct mdma_reg {
+	/* Channel 0 */
+	/* 0x000: Channel 0 Control */
+	volatile uint32_t MDMA_CTL0;
+	/* 0x004: Channel 0 Source Base Address */
+	volatile uint32_t MDMA_SRCB0;
+	/* 0x008: Channel 0 Destination Base Address */
+	volatile uint32_t MDMA_DSTB0;
+	/* 0x00C: Channel 0 Transfer Count */
+	volatile uint32_t MDMA_TCNT0;
+	/* 0x010: reserved1 */
+	volatile uint32_t reserved1;
+	/* 0x014: Channel 0 Current Destination */
+	volatile uint32_t MDMA_CDST0;
+	/* 0x018: Channel 0 Current Transfer Count */
+	volatile uint32_t MDMA_CTCNT0;
+	/* 0x01C: reserved2 */
+	volatile uint32_t reserved2;
+
+	/* Channel 1 */
+	/* 0x020: Channel 1 Control */
+	volatile uint32_t MDMA_CTL1;
+	/* 0x024: Channel 1 Source Base Address */
+	volatile uint32_t MDMA_SRCB1;
+	/* 0x028: Channel 1 Destination Base Address */
+	volatile uint32_t MDMA_DSTB1;
+	/* 0x02C: Channel 1 Transfer Count */
+	volatile uint32_t MDMA_TCNT1;
+	/* 0x030: Channel 1 Current Source */
+	volatile uint32_t MDMA_CSRC1;
+	/* 0x034: reserved3 */
+	volatile uint32_t reserved3;
+	/* 0x038: Channel 1 Current Transfer Count */
+	volatile uint32_t MDMA_CTCNT1;
+};
+
+/* MDMA register fields */
+#define NPCX_MDMA_CTL_MDMAEN    0
+#define NPCX_MDMA_CTL_MPD       1
+#define NPCX_MDMA_CTL_SIEN      8
+#define NPCX_MDMA_CTL_MPS       14
+#define NPCX_MDMA_CTL_TC        18
+#define NPCX_MDMA_TCNT_TFR_CNT  FIELD(0, 12)
 
 #endif /* _NUVOTON_NPCX_REG_DEF_H */
