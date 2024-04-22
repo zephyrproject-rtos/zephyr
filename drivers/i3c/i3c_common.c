@@ -454,7 +454,7 @@ int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
 		goto out;
 	}
 
-	if (desc->dynamic_addr != 0U) {
+	if (desc != NULL && desc->dynamic_addr != 0U) {
 		if (assigned_okay) {
 			/* Return the already assigned address if desired so. */
 			dyn_addr = desc->dynamic_addr;
@@ -477,9 +477,8 @@ int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
 	 * Use the desired dynamic address as the new dynamic address
 	 * if the slot is free.
 	 */
-	if (desc->init_dynamic_addr != 0U) {
-		if (i3c_addr_slots_is_free(addr_slots,
-					   desc->init_dynamic_addr)) {
+	if (desc != NULL && desc->init_dynamic_addr != 0U) {
+		if (i3c_addr_slots_is_free(addr_slots, desc->init_dynamic_addr)) {
 			dyn_addr = desc->init_dynamic_addr;
 			goto out;
 		}
