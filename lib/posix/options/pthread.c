@@ -1122,7 +1122,7 @@ int pthread_join(pthread_t pthread, void **status)
 int pthread_detach(pthread_t pthread)
 {
 	int ret = 0;
-	struct posix_thread *t;
+	struct posix_thread *t = NULL;
 
 	SYS_SEM_LOCK(&pthread_pool_lock) {
 		t = to_posix_thread(pthread);
