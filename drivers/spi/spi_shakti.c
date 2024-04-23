@@ -35,11 +35,22 @@ LOG_MODULE_REGISTER(spi_shakti);
 /*HELPER FUNCTIONS*/
 
 int spi_number;
-
 sspi_struct *sspi_instance[SSPI_MAX_COUNT];
 
-int sclk_config[5] = DT_PROP(DT_NODELABEL(spi0), sclk_configure);
-int comm_config[5] = DT_PROP(DT_NODELABEL(spi0), comm_configure);
+/* configuration from device tree */
+// int sclk_config[5] = DT_PROP(DT_NODELABEL(spi0), sclk_configure);
+// int comm_config[5] = DT_PROP(DT_NODELABEL(spi0), comm_configure);
+
+/* variables used to configure spi */
+int pol;
+int pha;
+int prescale = 0x10;
+int setup_time = 0x0;
+int hold_time = 0x0;
+int master_mode;
+int lsb_first;
+int comm_mode;
+int spi_size;
 
 /**
  * @fn int sspi_shakti_init(const struct device *dev)
@@ -73,6 +84,92 @@ int sspi_shakti_init(const struct device *dev)
   else{
     printk("\nInvalid SPI instance %d. This SoC supports only SPI-0 to SPI-3", spi_number);
     return -1;
+  }
+}
+
+
+/**
+ * @fn int sspi_shakti_configure(const struct device *dev, const struct spi_config *config)
+ * @details This function configures the spi device.
+ * @param dev in the `sspi_shakti_configure` function is a pointer to a structure of type `device`.
+ * It is used to access information about the device being initialized.
+ * @param config in the `sspi_shakti_configure` function is a pointer to a structure of type `spi_config`.
+ * It is used to access the information about the configurations of the spi device.
+ * @return -EINVAL if the invalid configuration is set.
+ */
+
+// To know about the bit fields in the operation refer to spi.h
+int sspi_shakti_configure(const struct device *dev, const struct spi_config *config)
+{   
+  // if spi is configured as master 0th bit in the operation is set to 0.
+  if ((config->operation & 0x1) == 0){ 
+    printk("master is supported\n");
+    master_mode = MASTER; 
+  }
+  else {
+    printk("Slave is not supported\n");
+    return -EINVAL;
+  }
+  // spi.h have 3 modes, but secure-iot spi only supports 2 modes pol and pha. 
+  if((config->operation & POL_AND_PHA) == POL_AND_PHA){
+    printk("pol 1 pha 1 \n");
+    pol = 1;
+    pha = 1;
+  } else if((config -> operation & i_POLANDPHA) == i_POLANDPHA){
+    printk("pol 0 and pha 0 \n");
+    pol = 0;
+    pha = 0;
+  }
+  else{
+    printk("Invalid pol and pha combination \n");
+    return -EINVAL;
+  }
+
+  // If lsb is set, then 4th bit in the operation is set to 1 or if msb is set the 4th bit in the operation is set to 0.
+  if((config -> operation & SPI_TRANSFER_LSB) == SPI_TRANSFER_MSB){
+    printk("MSB FIRST \n");   
+    lsb_first = MSB_FIRST;
+  }
+  else {
+    printk("LSB FIRST\n");    
+    lsb_first = LSB_FIRST;
+  }
+  
+  // spi data size fields in operation is from 5 to 10, if the word size is set to 8 then 8th bit is set to 1.
+  if( config -> operation & SPI_WORD_SET(8))
+  {
+    printk("SPI size 8 \n");
+    spi_size = DATA_SIZE_8;
+  }
+  // spi data size fields in operation is from 5 to 10, if the word size is set to 16 then 9th bit is set to 1.
+  else if(config -> operation & SPI_WORD_SET(16))
+  { 
+    printk("SPI size 16 \n");
+    spi_size = DATA_SIZE_16;
+  }
+  // spi data size fields in operation is from 5 to 10, if the word size is set to 32 then 10th bit is set to 1.
+  else if(config -> operation & SPI_WORD_SET(32))
+  {
+    printk("SPI size 32 \n");
+    spi_size = DATA_SIZE_32;
+  }
+  else {
+    printk("Invalid data size \n");
+    return -EINVAL;
+  }
+
+  // If spi mode is set to full duplex then 11th bit in operation is set to 0, else if spi mode is set to half duplex then 11th bit in operation is set to 1.
+  if((config -> operation & HALFDUPLEX) ==  HALFDUPLEX){
+    printk("Half duplex \n");
+    comm_mode = HALF_DUPLEX;
+  }
+  else if((config -> operation & FULLDUPLEX) == FULLDUPLEX){
+    printk("Full duplex \n"); // default spi works in full duplex.
+    comm_mode = FULL_DUPLEX;
+  }
+  else{
+    printk("SPI supports only fullduplex or halfduplex mode \n");
+    return -EINVAL;
   }
 }
 
@@ -772,120 +869,65 @@ static int spi_shakti_transceive(const struct device *dev,
         
 {
   // spi_context_lock(&SPI_DATA(dev)->ctx, false, NULL, NULL, config);
+  sspi_shakti_configure(dev, config);
 
-  int spi_number;
-  int pol = sclk_config[0];
-  int pha = sclk_config[1];
-  int prescale = sclk_config[2];
-  int setup_time = sclk_config[3];
-  int hold_time = sclk_config[4];
-
-  int master_mode = comm_config[0];
-  int lsb_first = comm_config[1];
-  int comm_mode = comm_config[2];
-  int spi_size = comm_config[3];
-
-  printk("pol %d\n", pol);
-  printk("pha %d\n", pha);
-  printk("prescale %d\n", prescale);
-  printk("setup_time %d\n", setup_time);
-  printk("hold_time %d\n", hold_time);
-  printk("master_mode %d\n", master_mode);
-  printk("lsb_first %d\n", lsb_first);
-  printk("comm_mode %d\n", comm_mode);
-  printk("spi_size %d\n", spi_size);
+  #ifdef SPI_DEBUG
+    printk("pol %d\n", pol);
+    printk("pha %d\n", pha);
+    printk("prescale %d\n", prescale);
+    printk("setup_time %d\n", setup_time);
+    printk("hold_time %d\n", hold_time);
+    printk("master_mode %d\n", master_mode);
+    printk("lsb_first %d\n", lsb_first);
+    printk("comm_mode %d\n", comm_mode);
+    printk("spi_size %d\n", spi_size);
+  #endif
 
   sspi_shakti_init(dev);
   sclk_shakti_config(dev, pol, pha, prescale, setup_time, hold_time);
-  
-  if(comm_config[2] == SIMPLEX_TX)
-  {
-    sspi_shakti_comm_control_config(dev, master_mode, lsb_first, comm_mode, spi_size);
-    // sspi_shakti_enable(dev);
-    spi_context_buffers_setup(&SPI_DATA(dev)->ctx, tx_bufs, NULL, 1);
 
-    // printk("simplex_tx2 \n");
-
-    if (comm_config[3] == DATA_SIZE_8)
-    {
-      printf("basic_write_8bit_words \n");
-      sspi8_shakti_transmit_data(dev, tx_bufs->buffers);
-    }
-
-    else if (comm_config[3] == DATA_SIZE_16)
-    {
-      sspi16_shakti_transmit_data(dev, tx_bufs->buffers);
-    }
-
-    else if (comm_config[3] == DATA_SIZE_32)
-    {
-      sspi32_shakti_transmit_data(dev, tx_bufs->buffers);
-    }
-  }
-
-  if (comm_config[2] == SIMPLEX_RX)
-  {
-    sspi_shakti_comm_control_config(dev, master_mode, lsb_first, comm_mode, spi_size);
-    spi_context_buffers_setup(&SPI_DATA(dev)->ctx, NULL, rx_bufs, 1);
-
-    if (comm_config[3] == DATA_SIZE_8)
-    {
-      sspi8_shakti_receive_data(dev, rx_bufs->buffers);  
-    }
-
-    if (comm_config[3] == DATA_SIZE_16)
-    {
-      sspi16_shakti_receive_data(dev, rx_bufs->buffers);
-    }
-
-    if (comm_config[3] == DATA_SIZE_32)
-    {
-      sspi32_shakti_receive_data(dev, rx_bufs->buffers);
-    }
-  }
-
-  if (comm_config[2] == FULL_DUPLEX)
+  if (comm_mode == FULL_DUPLEX)
   {
     sspi_shakti_comm_control_config(dev, master_mode, lsb_first, comm_mode, spi_size);
     spi_context_buffers_setup(&SPI_DATA(dev)->ctx, tx_bufs, rx_bufs, 1);
 
-    if (comm_config[3] == DATA_SIZE_8)
+    if (spi_size == DATA_SIZE_8)
     {
       sspi8_shakti_transmit_data(dev, tx_bufs->buffers);
       sspi8_shakti_receive_data(dev, rx_bufs->buffers);  
     }
 
-    if (comm_config[3] == DATA_SIZE_16)
+    if (spi_size == DATA_SIZE_16)
     {
       sspi16_shakti_transmit_data(dev, tx_bufs->buffers);
       sspi16_shakti_receive_data(dev, rx_bufs->buffers);  
     }
 
-    if (comm_config[3] == DATA_SIZE_32)
+    if (spi_size == DATA_SIZE_32)
     {
       sspi32_shakti_transmit_data(dev, tx_bufs->buffers);
       sspi32_shakti_receive_data(dev, rx_bufs->buffers);  
     }
   }
 
-  if (comm_config[2] == HALF_DUPLEX)
+  if (comm_mode == HALF_DUPLEX)
   {
     sspi_shakti_comm_control_config(dev, master_mode, lsb_first, comm_mode, spi_size);
     spi_context_buffers_setup(&SPI_DATA(dev)->ctx, tx_bufs, rx_bufs, 1);
 
-    if (comm_config[3] == DATA_SIZE_8)
+    if (spi_size == DATA_SIZE_8)
     {
       sspi8_shakti_transmit_data(dev, tx_bufs->buffers);
       sspi8_shakti_receive_data(dev, rx_bufs->buffers);  
     }
 
-    if (comm_config[3] == DATA_SIZE_16)
+    if (spi_size == DATA_SIZE_16)
     {
       sspi16_shakti_transmit_data(dev, tx_bufs->buffers);
       sspi16_shakti_receive_data(dev, rx_bufs->buffers);  
     }
 
-    if (comm_config[3] == DATA_SIZE_32)
+    if (spi_size == DATA_SIZE_32)
     {
       sspi32_shakti_transmit_data(dev, tx_bufs->buffers);
       sspi32_shakti_receive_data(dev, rx_bufs->buffers);  
@@ -915,7 +957,6 @@ static struct spi_driver_api spi_shakti_api = {
     .base = SPI_START_##n , \ 
     .f_sys = CLOCK_FREQUENCY, \
   }; \
-
   DEVICE_DT_INST_DEFINE(n, \
         sspi_shakti_init, \
         NULL, \

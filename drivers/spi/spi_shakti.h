@@ -171,6 +171,11 @@ extern "C" {
 #define DATA_SIZE_16 16
 #define DATA_SIZE_32 32
 
+#define POL_AND_PHA 0b0000000000000110
+#define i_POLANDPHA 0b0000000000000000
+#define HALFDUPLEX  0b0000100000000000
+#define FULLDUPLEX  0b0000000000000000
+
 /**
  * The below code defines a union type named "Data" that can hold a 32-bit integer, a 16-bit integer,
  * or an 8-bit integer.
@@ -276,8 +281,6 @@ typedef struct{
     uint16_t    reserve2;
 }sspi_struct;
 
-
-The `struct spi_shakti_data` is defining a structure that contains a member `ctx` of type `struct spi_context`. This structure is likely used to hold data related to the SPI device driver implementation. The `struct spi_context` may include context information or state related to the SPI communication, such as buffer pointers, transfer status, or configuration settings. By encapsulating this information within `struct spi_shakti_data`, it helps in organizing and managing the data associated with the SPI driver in a structured manner.
 struct spi_shakti_data {
 	struct spi_context ctx;
 };
@@ -287,7 +290,6 @@ struct spi_shakti_cfg {
 	uint32_t f_sys;
     const struct pinctrl_dev_config *pcfg;
 };
-
 
 #endif
 
