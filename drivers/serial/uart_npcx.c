@@ -71,7 +71,7 @@ static void uart_npcx_pm_policy_state_lock_get(struct uart_npcx_data *data,
 }
 
 static void uart_npcx_pm_policy_state_lock_put(struct uart_npcx_data *data,
-					    enum uart_pm_policy_state_flag flag)
+					       enum uart_pm_policy_state_flag flag)
 {
 	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, flag) == 1) {
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -125,8 +125,7 @@ static void uart_npcx_dis_all_tx_interrupts(const struct device *dev)
 	struct uart_reg *const inst = config->inst;
 
 	/* Disable all Tx interrupts */
-	inst->UFTCTL &= ~(BIT(NPCX_UFTCTL_TEMPTY_LVL_EN) |
-			  BIT(NPCX_UFTCTL_TEMPTY_EN) |
+	inst->UFTCTL &= ~(BIT(NPCX_UFTCTL_TEMPTY_LVL_EN) | BIT(NPCX_UFTCTL_TEMPTY_EN) |
 			  BIT(NPCX_UFTCTL_NXMIP_EN));
 }
 
@@ -137,8 +136,9 @@ static void uart_npcx_clear_rx_fifo(const struct device *dev)
 	uint8_t scratch;
 
 	/* Read all dummy bytes out from Rx FIFO */
-	while (uart_npcx_rx_fifo_available(dev))
+	while (uart_npcx_rx_fifo_available(dev)) {
 		scratch = inst->URBUF;
+	}
 }
 
 static int uart_npcx_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
@@ -271,7 +271,7 @@ static void uart_npcx_irq_err_disable(const struct device *dev)
 static int uart_npcx_irq_is_pending(const struct device *dev)
 {
 	return uart_npcx_irq_tx_ready(dev) ||
-		(uart_npcx_irq_rx_ready(dev) && uart_npcx_irq_rx_is_enabled(dev));
+	       (uart_npcx_irq_rx_ready(dev) && uart_npcx_irq_rx_is_enabled(dev));
 }
 
 static int uart_npcx_irq_update(const struct device *dev)
@@ -341,11 +341,12 @@ static int uart_npcx_poll_in(const struct device *dev, unsigned char *c)
  */
 static void uart_npcx_poll_out(const struct device *dev, unsigned char c)
 {
-	while (!uart_npcx_fifo_fill(dev, &c, 1))
+	while (!uart_npcx_fifo_fill(dev, &c, 1)) {
 		continue;
+	}
 }
 
-#else /* !CONFIG_UART_INTERRUPT_DRIVEN */
+#else  /* !CONFIG_UART_INTERRUPT_DRIVEN */
 
 /*
  * Poll-in implementation for byte mode config, read byte from URBUF if
@@ -357,8 +358,9 @@ static int uart_npcx_poll_in(const struct device *dev, unsigned char *c)
 	struct uart_reg *const inst = config->inst;
 
 	/* Rx single byte buffer is not full */
-	if (!IS_BIT_SET(inst->UICTRL, NPCX_UICTRL_RBF))
+	if (!IS_BIT_SET(inst->UICTRL, NPCX_UICTRL_RBF)) {
 		return -1;
+	}
 
 	*c = inst->URBUF;
 	return 0;
@@ -373,8 +375,9 @@ static void uart_npcx_poll_out(const struct device *dev, unsigned char c)
 	struct uart_reg *const inst = config->inst;
 
 	/* Wait while Tx single byte buffer is ready to send */
-	while (!IS_BIT_SET(inst->UICTRL, NPCX_UICTRL_TBE))
+	while (!IS_BIT_SET(inst->UICTRL, NPCX_UICTRL_TBE)) {
 		continue;
+	}
 
 	inst->UTBUF = c;
 }
@@ -388,14 +391,17 @@ static int uart_npcx_err_check(const struct device *dev)
 	uint32_t err = 0U;
 	uint8_t stat = inst->USTAT;
 
-	if (IS_BIT_SET(stat, NPCX_USTAT_DOE))
+	if (IS_BIT_SET(stat, NPCX_USTAT_DOE)) {
 		err |= UART_ERROR_OVERRUN;
+	}
 
-	if (IS_BIT_SET(stat, NPCX_USTAT_PE))
+	if (IS_BIT_SET(stat, NPCX_USTAT_PE)) {
 		err |= UART_ERROR_PARITY;
+	}
 
-	if (IS_BIT_SET(stat, NPCX_USTAT_FE))
+	if (IS_BIT_SET(stat, NPCX_USTAT_FE)) {
 		err |= UART_ERROR_FRAMING;
+	}
 
 	return err;
 }
@@ -480,8 +486,7 @@ static int uart_npcx_init(const struct device *dev)
 	 * If apb2's clock is not 15MHz, we need to find the other optimized
 	 * values of UPSR and UBAUD for baud rate 115200.
 	 */
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clk_cfg,
-				     &uart_rate);
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clk_cfg, &uart_rate);
 	if (ret < 0) {
 		LOG_ERR("Get UART clock rate error %d", ret);
 		return ret;
@@ -560,32 +565,30 @@ static int uart_npcx_init(const struct device *dev)
 #define NPCX_UART_IRQ_CONFIG_FUNC(inst)
 #endif
 
-#define NPCX_UART_INIT(i)                                                                       \
-	NPCX_UART_IRQ_CONFIG_FUNC_DECL(i);                                                      \
-												\
-	PINCTRL_DT_INST_DEFINE(i);                                                              \
-												\
-	static const struct uart_npcx_config uart_npcx_cfg_##i = {                              \
-		.inst = (struct uart_reg *)DT_INST_REG_ADDR(i),                                 \
-		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(i),                                             \
-		.uart_rx_wui = NPCX_DT_WUI_ITEM_BY_NAME(0, uart_rx),                            \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),                                      \
-		NPCX_UART_IRQ_CONFIG_FUNC_INIT(i)                                               \
-	};                                                                                      \
-												\
-	static struct uart_npcx_data uart_npcx_data_##i = { .baud_rate = DT_INST_PROP(          \
-								       i, current_speed) };     \
-												\
-	DEVICE_DT_INST_DEFINE(i, &uart_npcx_init, NULL, &uart_npcx_data_##i,                    \
-			      &uart_npcx_cfg_##i, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,    \
-			      &uart_npcx_driver_api);                                           \
-												\
+#define NPCX_UART_INIT(i)                                                                          \
+	NPCX_UART_IRQ_CONFIG_FUNC_DECL(i);                                                         \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(i);                                                                 \
+                                                                                                   \
+	static const struct uart_npcx_config uart_npcx_cfg_##i = {                                 \
+		.inst = (struct uart_reg *)DT_INST_REG_ADDR(i),                                    \
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(i),                                                \
+		.uart_rx_wui = NPCX_DT_WUI_ITEM_BY_NAME(0, uart_rx),                               \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),                                         \
+		NPCX_UART_IRQ_CONFIG_FUNC_INIT(i)};                                                \
+                                                                                                   \
+	static struct uart_npcx_data uart_npcx_data_##i = {                                        \
+		.baud_rate = DT_INST_PROP(i, current_speed)};                                      \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(i, &uart_npcx_init, NULL, &uart_npcx_data_##i, &uart_npcx_cfg_##i,   \
+			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_npcx_driver_api);   \
+                                                                                                   \
 	NPCX_UART_IRQ_CONFIG_FUNC(i)
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_UART_INIT)
 
-#define ENABLE_MIWU_CRIN_IRQ(i)                                                                 \
-	npcx_miwu_irq_get_and_clear_pending(&uart_npcx_cfg_##i.uart_rx_wui);                    \
+#define ENABLE_MIWU_CRIN_IRQ(i)                                                                    \
+	npcx_miwu_irq_get_and_clear_pending(&uart_npcx_cfg_##i.uart_rx_wui);                       \
 	npcx_miwu_irq_enable(&uart_npcx_cfg_##i.uart_rx_wui);
 
 #define DISABLE_MIWU_CRIN_IRQ(i) npcx_miwu_irq_disable(&uart_npcx_cfg_##i.uart_rx_wui);
