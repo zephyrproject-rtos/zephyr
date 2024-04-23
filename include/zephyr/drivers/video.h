@@ -561,9 +561,19 @@ static inline int video_set_signal(const struct device *dev,
 }
 
 /**
+ * @brief Allocate aligned video buffer.
+ *
+ * @param size Size of the video buffer (in bytes).
+ * @param align Alignment of the requested memory, must be a power of two.
+ *
+ * @retval pointer to allocated video buffer
+ */
+struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align);
+
+/**
  * @brief Allocate video buffer.
  *
- * @param size Size of the video buffer.
+ * @param size Size of the video buffer (in bytes).
  *
  * @retval pointer to allocated video buffer
  */
