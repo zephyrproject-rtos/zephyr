@@ -287,8 +287,7 @@ int cfb_invert_area(struct cfb_framebuffer *fb, int16_t x, int16_t y, uint16_t w
 		    uint16_t height);
 
 /**
- * @brief Finalize framebuffer and write it to display RAM,
- * invert or reorder pixels if necessary.
+ * @brief Finalize framebuffer and write it to display.
  *
  * @param fb Pointer to framebuffer to rendering
  *
@@ -331,9 +330,6 @@ int cfb_set_kerning(struct cfb_framebuffer *fb, int8_t kerning);
  *
  * Set foreground color with RGBA values in 32-bit color representation.
  *
- * This function immediately draws to the buffer if the buffer is large enough
- * to store the entire screen. Otherwise, store the command in the command buffer.
- *
  * @param fb A framebuffer to set.
  * @param r The red component of the foreground color in 32-bit color representation.
  * @param g The green component of the foreground color in 32-bit color representation.
@@ -351,9 +347,6 @@ int cfb_set_fg_color(struct cfb_framebuffer *fb, uint8_t r, uint8_t g,
  * Set background color.
  *
  * Set background color with RGBA values in 32-bit color representation.
- *
- * This function immediately draws to the buffer if the buffer is large enough
- * to store the entire screen. Otherwise, store the command in the command buffer.
  *
  * @param fb A framebuffer to set.
  * @param r The red component of the foreground color in 32-bit color representation.
