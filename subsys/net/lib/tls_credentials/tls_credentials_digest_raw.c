@@ -55,19 +55,24 @@ int credential_digest_raw(struct tls_credential *credential, void *dest, size_t 
 	return err;
 }
 
-#elif defined(MBEDTLS_SHA256_C) && defined(CONFIG_BASE64)
+#elif defined(CONFIG_PSA_WANT_ALG_SHA_256) && defined(CONFIG_BASE64)
 
-#include <mbedtls/sha256.h>
-#include <zephyr/sys/base64.h>
+#include <psa/crypto.h>
 
 int credential_digest_raw(struct tls_credential *credential, void *dest, size_t *len)
 {
 	int err = 0;
 	size_t written = 0;
 	uint8_t digest_buf[32];
+	size_t digest_len;
+	psa_status_t status;
 
-	/* Compute digest. The '0' indicates to mbedtls to use SHA256 instead of 224. */
-	mbedtls_sha256(credential->buf, credential->len, digest_buf, 0);
+	/* Compute digest. */
+	status = psa_hash_compute(PSA_ALG_SHA_256, credential->buf, credential->len,
+				  digest_buf, sizeof(digest_buf), &digest_len);
+	if (status != PSA_SUCCESS) {
+		return -EIO;
+	}
 
 	/* Attempt to encode digest to destination.
 	 * Will return -ENOMEM if there is not enough space in the destination buffer.
