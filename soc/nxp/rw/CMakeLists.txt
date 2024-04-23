@@ -17,3 +17,5 @@ zephyr_linker_sources_ifdef(CONFIG_NXP_RW6XX_BOOT_HEADER
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
 
 zephyr_include_directories(.)
+
+zephyr_linker_sources(RAM_SECTIONS sections.ld)
