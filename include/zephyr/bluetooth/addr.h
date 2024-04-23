@@ -288,6 +288,14 @@ int bt_addr_from_str(const char *str, bt_addr_t *addr);
  */
 int bt_addr_le_from_str(const char *str, const char *type, bt_addr_le_t *addr);
 
+/** @brief Check if address is valid.
+ *
+ *  @param[in]  addr  Address of buffer to store the LE Bluetooth address
+ *
+ *  @return True if the address is valid. False otherwise.
+ */
+bool bt_addr_le_is_valid(const bt_addr_le_t *addr);
+
 /**
  * @}
  */

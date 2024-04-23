@@ -120,3 +120,18 @@ bool bt_addr_le_is_resolved(const bt_addr_le_t *addr)
 {
 	return (addr->type & ADDR_RESOLVED_BITMASK) != 0;
 }
+
+bool bt_addr_le_is_valid(const bt_addr_le_t *addr)
+{
+	if (addr == NULL) {
+		return false;
+	}
+
+	if (addr->type != BT_ADDR_LE_PUBLIC && addr->type != BT_ADDR_LE_RANDOM) {
+		return false;
+	}
+
+	/* Additional checks for validity can be added here based on the core spec */
+
+	return true;
+}
