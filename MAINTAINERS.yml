@@ -3462,6 +3462,12 @@ nRF Platforms:
   status: maintained
   maintainers:
     - anangl
+  collaborators:
+    - jaz1-nordic
+    - kl-cruz
+    - magp-nordic
+    - masz-nordic
+    - nika-nordic
   files:
     - boards/nordic/
     - drivers/*/*nrf*.c
