@@ -11,6 +11,40 @@
 
 const char test_str[] = "hello world!";
 int file = -1;
+FILE *file_ptr;
+
+static int test_file_fopen(void)
+{
+	FILE *fp;
+
+	fp = fopen(TEST_FILE, "w+");
+	if (fp == NULL) {
+		TC_PRINT("Failed opening file\n");
+		return TC_FAIL;
+	}
+
+	file_ptr = fp;
+
+	return TC_PASS;
+}
+
+static int test_file_fclose(void)
+{
+	int res = 0;
+
+	if (file_ptr != NULL) {
+		res = fclose(file_ptr);
+		if (res) {
+			TC_PRINT("Failed closing file [%d]\n", res);
+			return TC_FAIL;
+		}
+
+		file_ptr = NULL;
+	}
+
+	return res;
+}
+
 
 static int test_file_open(void)
 {
@@ -301,4 +335,38 @@ ZTEST(posix_fs_file_test, test_fs_fd_leak)
 			zassert_true(test_file_close() == TC_PASS);
 		}
 	}
+}
+
+static void after_fn_stream(void *unused)
+{
+	ARG_UNUSED(unused);
+
+	test_file_fclose();
+	unlink(TEST_FILE);
+}
+
+ZTEST_SUITE(posix_fs_file_test_stream, NULL, test_mount, NULL, after_fn_stream,
+	    test_unmount);
+
+/**
+ * @brief Test for POSIX fopen API
+ *
+ * @details Test opens new file through POSIX fopen API.
+ */
+ZTEST(posix_fs_file_test_stream, test_fs_fopen)
+{
+	/* FIXME: restructure tests as per #46897 */
+	zassert_true(test_file_fopen() == TC_PASS);
+}
+
+/**
+ * @brief Test for POSIX fclose API
+ *
+ * @details Test closes the open file through POSIX fclose API.
+ */
+ZTEST(posix_fs_file_test_stream, test_fs_fclose)
+{
+	/* FIXME: restructure tests as per #46897 */
+	zassert_true(test_file_fopen() == TC_PASS);
+	zassert_true(test_file_fclose() == TC_PASS);
 }
