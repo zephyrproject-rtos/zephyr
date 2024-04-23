@@ -158,6 +158,17 @@ int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay);
  */
 bool pm_device_runtime_is_enabled(const struct device *dev);
 
+/**
+ * @brief Return the current device usage counter.
+ *
+ * @param dev Device instance.
+ *
+ * @returns the current usage counter.
+ * @retval -ENOTSUP If the device is not using runtime PM.
+ * @retval -ENOSYS If the runtime PM is not enabled at all.
+ */
+int pm_device_runtime_usage(const struct device *dev);
+
 #else
 
 static inline int pm_device_runtime_auto_enable(const struct device *dev)
@@ -202,6 +213,12 @@ static inline bool pm_device_runtime_is_enabled(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return false;
+}
+
+static inline int pm_device_runtime_usage(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return -ENOSYS;
 }
 
 #endif
