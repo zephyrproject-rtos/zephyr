@@ -183,6 +183,8 @@ source "drivers/flash/Kconfig.lpc"
 
 source "drivers/flash/Kconfig.mcux"
 
+source "drivers/flash/Kconfig.mspi"
+
 source "drivers/flash/Kconfig.nios2_qspi"
 
 source "drivers/flash/Kconfig.npcx_fiu"
