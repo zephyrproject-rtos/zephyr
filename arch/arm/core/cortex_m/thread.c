@@ -595,6 +595,10 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 
 __used void arch_irq_unlock_outlined(unsigned int key)
 {
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	__enable_fault_irq(); /* alters FAULTMASK */
+	__enable_irq(); /* alters PRIMASK */
+#endif
 	arch_irq_unlock(key);
 }
 
@@ -646,9 +650,8 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(
 	"mov r2, %[_p3]\n"
 	"blx  %[_main_entry]\n"     /* main_entry(p1, p2, p3) */
 
-	"mov r0, #0\n"
-	"ldr r1, =arch_irq_unlock_outlined\n"
-	"blx r1\n"
+	"ldr r0, =arch_irq_lock_outlined\n"
+	"blx r0\n"
 	"loop: b loop\n\t"    /* while (true); */
 	:
 	: [_p1]"r" (p1), [_p2]"r" (p2), [_p3]"r" (p3),
