@@ -68,7 +68,7 @@ static enum wifi_conn_status wpas_to_wifi_mgmt_conn_status(int status)
 	}
 }
 
-static enum wifi_disconn_reason wpas_to_wifi_mgmt_diconn_status(int status)
+static enum wifi_disconn_reason wpas_to_wifi_mgmt_disconn_status(int status)
 {
 	switch (status) {
 	case WLAN_REASON_DEAUTH_LEAVING:
@@ -221,7 +221,7 @@ int supplicant_send_wifi_mgmt_conn_event(void *ctx, int status_code)
 int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code)
 {
 	struct wpa_supplicant *wpa_s = ctx;
-	int status = wpas_to_wifi_mgmt_diconn_status(reason_code);
+	int status = wpas_to_wifi_mgmt_disconn_status(reason_code);
 	enum net_event_wifi_cmd event;
 
 	if (!wpa_s || !wpa_s->current_ssid) {
