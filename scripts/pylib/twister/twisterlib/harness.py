@@ -382,8 +382,9 @@ class Pytest(Harness):
         if runner := hardware.runner or options.west_runner:
             command.append(f'--runner={runner}')
 
-        for param in hardware.runner_params:
-            command.append(f'--runner-params={param}')
+        if hardware.runner_params:
+            for param in hardware.runner_params:
+                command.append(f'--runner-params={param}')
 
         if options.west_flash and options.west_flash != []:
             command.append(f'--west-flash-extra-args={options.west_flash}')
