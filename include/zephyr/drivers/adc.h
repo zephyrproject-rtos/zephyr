@@ -709,6 +709,18 @@ __subsystem struct adc_driver_api {
 };
 
 /**
+ * @brief Verify that a device has an ADC driver API.
+ *
+ * @param dev a device pointer
+ *
+ * @return true if the device's API is located in the ADC API section.
+ */
+static inline bool device_has_adc_driver_api(const struct device *dev)
+{
+	return DRIVER_API_IS(adc_driver_api, dev->api);
+}
+
+/**
  * @brief Configure an ADC channel.
  *
  * It is required to call this function and configure each channel before it is
