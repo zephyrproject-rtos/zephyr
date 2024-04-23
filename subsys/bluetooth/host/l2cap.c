@@ -545,7 +545,10 @@ static struct net_buf *l2cap_create_le_sig_pdu(uint8_t code, uint8_t ident,
  */
 static int l2cap_send_sig(struct bt_conn *conn, struct net_buf *buf)
 {
-	int err = bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+	struct bt_l2cap_chan *ch = bt_l2cap_le_lookup_tx_cid(conn, BT_L2CAP_CID_LE_SIG);
+	struct bt_l2cap_le_chan *chan = BT_L2CAP_LE_CHAN(ch);
+
+	int err = bt_l2cap_send_pdu(chan, buf, NULL, NULL);
 
 	if (err) {
 		net_buf_unref(buf);
@@ -771,46 +774,41 @@ static void cancel_data_ready(struct bt_l2cap_le_chan *le_chan)
 	atomic_set(&le_chan->_pdu_ready_lock, 0);
 }
 
-int bt_l2cap_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *seg,
-		     bt_conn_tx_cb_t cb, void *user_data)
+int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
+		      bt_conn_tx_cb_t cb, void *user_data)
 {
 	struct bt_l2cap_hdr *hdr;
 
-	LOG_DBG("conn %p cid %u len %zu", conn, cid, seg->len);
+	LOG_DBG("chan %p len %zu", le_chan, pdu->len);
 
-	hdr = net_buf_push(seg, sizeof(*hdr));
-	hdr->len = sys_cpu_to_le16(seg->len - sizeof(*hdr));
-	hdr->cid = sys_cpu_to_le16(cid);
+	hdr = net_buf_push(pdu, sizeof(*hdr));
+	hdr->len = sys_cpu_to_le16(pdu->len - sizeof(*hdr));
+	hdr->cid = sys_cpu_to_le16(le_chan->tx.cid);
 
-	/* TODO: un-foreach this: ATT, SMP & L2CAP CoC _know_ the channel */
-	struct bt_l2cap_chan *ch = bt_l2cap_le_lookup_tx_cid(conn, cid);
-
-	struct bt_l2cap_le_chan *chan = CONTAINER_OF(ch, struct bt_l2cap_le_chan, chan);
-
-	if (seg->ref != 1) {
+	if (pdu->ref != 1) {
 		/* The host may alter the buf contents when fragmenting. Higher
 		 * layers cannot expect the buf contents to stay intact. Extra
 		 * refs suggests a silent data corruption would occur if not for
 		 * this error.
 		 */
-		LOG_ERR("Expecting 1 ref, got %d", seg->ref);
+		LOG_ERR("Expecting 1 ref, got %d", pdu->ref);
 		return -EINVAL;
 	}
 
-	if (seg->user_data_size < sizeof(struct closure)) {
+	if (pdu->user_data_size < sizeof(struct closure)) {
 		LOG_DBG("not enough room in user_data %d < %d pool %u",
-			seg->user_data_size,
+			pdu->user_data_size,
 			CONFIG_BT_CONN_TX_USER_DATA_SIZE,
-			seg->pool_id);
+			pdu->pool_id);
 		return -EINVAL;
 	}
 
-	make_closure(seg->user_data, cb, user_data);
+	make_closure(pdu->user_data, cb, user_data);
 	LOG_DBG("push: cb %p userdata %p", cb, user_data);
 
-	net_buf_put(&chan->_pdu_tx_queue, seg);
+	net_buf_put(&le_chan->_pdu_tx_queue, pdu);
 
-	raise_data_ready(chan); /* tis just a flag */
+	raise_data_ready(le_chan); /* tis just a flag */
 
 	return 0;		/* look ma, no failures */
 }
@@ -2210,8 +2208,7 @@ static int l2cap_chan_le_send_seg(struct bt_l2cap_le_chan *ch, struct net_buf *b
 	 * considered lost, as the lower layers are free to re-use it as they
 	 * see fit. Reading from it later is obviously a no-no.
 	 */
-	err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
-			       cb, UINT_TO_POINTER(ch->tx.cid));
+	err = bt_l2cap_send_pdu(ch, seg, cb, UINT_TO_POINTER(ch->tx.cid));
 
 	/* The only possible error is enotconn, in that case the data will be discarded anyways */
 	__ASSERT_NO_MSG(!err || err == -ENOTCONN);
@@ -2221,7 +2218,7 @@ static int l2cap_chan_le_send_seg(struct bt_l2cap_le_chan *ch, struct net_buf *b
 		atomic_inc(&ch->tx.credits);
 
 		/* The host takes ownership of the reference in seg when
-		 * bt_l2cap_send_cb is successful. The call returned an error,
+		 * bt_l2cap_send_pdu is successful. The call returned an error,
 		 * so we must get rid of the reference that was taken above.
 		 */
 		LOG_DBG("unref %p (%s)", seg,
@@ -3365,8 +3362,7 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 
 	/* Sending over static channels is not supported by this fn. Use
-	 * `bt_l2cap_send()` if external to this file, or `l2cap_send` if
-	 * internal.
+	 * `bt_l2cap_send_pdu()` instead.
 	 */
 	if (IS_ENABLED(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)) {
 		struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
