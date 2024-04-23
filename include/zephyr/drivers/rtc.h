@@ -24,6 +24,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/api.h>
 #include <errno.h>
 
 #ifdef __cplusplus
@@ -183,6 +184,15 @@ __subsystem struct rtc_driver_api {
 #endif /* CONFIG_RTC_CALIBRATION */
 };
 
+#define RTC_DRIVER_API(_name) DRIVER_API(rtc_driver_api, _name)
+#define RTC_DRIVER_API_IS_RTC(_api) DRIVER_API_IS(rtc_driver_api, _api)
+#define RTC_DRIVER_API_EVAL(_api) DRIVER_API_EVAL(rtc_driver_api, _api)
+
+static inline bool device_is_rtc(const struct device *dev)
+{
+	return COND_CODE_1(CONFIG_RTC, (RTC_DRIVER_API_IS_RTC(dev->api)), (false));
+}
+
 /** @endcond */
 
 /**
@@ -200,6 +210,8 @@ __syscall int rtc_set_time(const struct device *dev, const struct rtc_time *time
 static inline int z_impl_rtc_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
 	const struct rtc_driver_api *api = (const struct rtc_driver_api *)dev->api;
+
+	RTC_DRIVER_API_EVAL(api);
 
 	return api->set_time(dev, timeptr);
 }
@@ -219,6 +231,8 @@ __syscall int rtc_get_time(const struct device *dev, struct rtc_time *timeptr);
 static inline int z_impl_rtc_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
 	const struct rtc_driver_api *api = (const struct rtc_driver_api *)dev->api;
+
+	RTC_DRIVER_API_EVAL(api);
 
 	return api->get_time(dev, timeptr);
 }
@@ -250,6 +264,8 @@ static inline int z_impl_rtc_alarm_get_supported_fields(const struct device *dev
 							uint16_t *mask)
 {
 	const struct rtc_driver_api *api = (const struct rtc_driver_api *)dev->api;
+
+	RTC_DRIVER_API_EVAL(api);
 
 	if (api->alarm_get_supported_fields == NULL) {
 		return -ENOSYS;
@@ -289,6 +305,8 @@ static inline int z_impl_rtc_alarm_set_time(const struct device *dev, uint16_t i
 {
 	const struct rtc_driver_api *api = (const struct rtc_driver_api *)dev->api;
 
+	RTC_DRIVER_API_EVAL(api);
+
 	if (api->alarm_set_time == NULL) {
 		return -ENOSYS;
 	}
@@ -319,6 +337,8 @@ static inline int z_impl_rtc_alarm_get_time(const struct device *dev, uint16_t i
 {
 	const struct rtc_driver_api *api = (const struct rtc_driver_api *)dev->api;
 
+	RTC_DRIVER_API_EVAL(api);
+
 	if (api->alarm_get_time == NULL) {
 		return -ENOSYS;
 	}
@@ -346,6 +366,8 @@ __syscall int rtc_alarm_is_pending(const struct device *dev, uint16_t id);
 static inline int z_impl_rtc_alarm_is_pending(const struct device *dev, uint16_t id)
 {
 	const struct rtc_driver_api *api = (const struct rtc_driver_api *)dev->api;
+
+	RTC_DRIVER_API_EVAL(api);
 
 	if (api->alarm_is_pending == NULL) {
 		return -ENOSYS;
@@ -387,6 +409,8 @@ static inline int z_impl_rtc_alarm_set_callback(const struct device *dev, uint16
 						rtc_alarm_callback callback, void *user_data)
 {
 	const struct rtc_driver_api *api = (const struct rtc_driver_api *)dev->api;
+
+	RTC_DRIVER_API_EVAL(api);
 
 	if (api->alarm_set_callback == NULL) {
 		return -ENOSYS;
@@ -433,6 +457,8 @@ static inline int z_impl_rtc_update_set_callback(const struct device *dev,
 {
 	const struct rtc_driver_api *api = (const struct rtc_driver_api *)dev->api;
 
+	RTC_DRIVER_API_EVAL(api);
+
 	if (api->update_set_callback == NULL) {
 		return -ENOSYS;
 	}
@@ -473,6 +499,8 @@ static inline int z_impl_rtc_set_calibration(const struct device *dev, int32_t c
 {
 	const struct rtc_driver_api *api = (const struct rtc_driver_api *)dev->api;
 
+	RTC_DRIVER_API_EVAL(api);
+
 	if (api->set_calibration == NULL) {
 		return -ENOSYS;
 	}
@@ -495,6 +523,8 @@ __syscall int rtc_get_calibration(const struct device *dev, int32_t *calibration
 static inline int z_impl_rtc_get_calibration(const struct device *dev, int32_t *calibration)
 {
 	const struct rtc_driver_api *api = (const struct rtc_driver_api *)dev->api;
+
+	RTC_DRIVER_API_EVAL(api);
 
 	if (api->get_calibration == NULL) {
 		return -ENOSYS;
