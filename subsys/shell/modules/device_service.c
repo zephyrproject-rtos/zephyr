@@ -64,6 +64,7 @@ static int cmd_device_list(const struct shell *sh,
 		char buf[20];
 		const char *name = get_device_name(dev, buf, sizeof(buf));
 		const char *state = "READY";
+		int usage;
 
 		shell_fprintf(sh, SHELL_NORMAL, "- %s", name);
 		if (!device_is_ready(dev)) {
@@ -79,7 +80,13 @@ static int cmd_device_list(const struct shell *sh,
 #endif /* CONFIG_PM_DEVICE */
 		}
 
-		shell_fprintf(sh, SHELL_NORMAL, " (%s)\n", state);
+		usage = pm_device_runtime_usage(dev);
+		if (usage >= 0) {
+			shell_fprintf(sh, SHELL_NORMAL, " (%s, usage=%d)\n", state, usage);
+		} else {
+			shell_fprintf(sh, SHELL_NORMAL, " (%s)\n", state);
+		}
+
 #ifdef CONFIG_DEVICE_DEPS
 		if (!k_is_user_context()) {
 			struct cmd_device_list_visitor_context ctx = {
