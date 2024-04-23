@@ -15,16 +15,55 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/display/cfb.h>
 
+#define DISPLAY_CONTROLLER_COMPATIBLES_0   zephyr_sdl_dc
+#define DISPLAY_CONTROLLER_COMPATIBLES_1   nxp_imx_elcdif
+#define DISPLAY_CONTROLLER_COMPATIBLES_2   nordic_nrf_led_matrix
+#define DISPLAY_CONTROLLER_COMPATIBLES_3   zephyr_dummy_dc
+#define DISPLAY_CONTROLLER_COMPATIBLES_4   intel_multiboot_framebuffer
+#define DISPLAY_CONTROLLER_COMPATIBLES_5   nxp_dcnano_lcdif
+#define DISPLAY_CONTROLLER_COMPATIBLES_6   ultrachip_uc8175
+#define DISPLAY_CONTROLLER_COMPATIBLES_7   ultrachip_uc8176
+#define DISPLAY_CONTROLLER_COMPATIBLES_8   ultrachip_uc8179
+#define DISPLAY_CONTROLLER_COMPATIBLES_9   ilitek_ili9340
+#define DISPLAY_CONTROLLER_COMPATIBLES_10  ilitek_ili9341
+#define DISPLAY_CONTROLLER_COMPATIBLES_11  ilitek_ili9342c
+#define DISPLAY_CONTROLLER_COMPATIBLES_12  ilitek_ili9488
+#define DISPLAY_CONTROLLER_COMPATIBLES_13  sharp_ls0xx
+#define DISPLAY_CONTROLLER_COMPATIBLES_14  maxim_max7219
+#define DISPLAY_CONTROLLER_COMPATIBLES_15  orisetech_otm8009a
+#define DISPLAY_CONTROLLER_COMPATIBLES_16  solomon_ssd1306fb
+#define DISPLAY_CONTROLLER_COMPATIBLES_17  sinowealth_sh1106
+#define DISPLAY_CONTROLLER_COMPATIBLES_18  solomon_ssd1608
+#define DISPLAY_CONTROLLER_COMPATIBLES_19  solomon_ssd1673
+#define DISPLAY_CONTROLLER_COMPATIBLES_20  solomon_ssd1675a
+#define DISPLAY_CONTROLLER_COMPATIBLES_21  solomon_ssd1680
+#define DISPLAY_CONTROLLER_COMPATIBLES_22  solomon_ssd1681
+#define DISPLAY_CONTROLLER_COMPATIBLES_23  sitronix_st7789v
+#define DISPLAY_CONTROLLER_COMPATIBLES_24  sitronix_st7735r
+#define DISPLAY_CONTROLLER_COMPATIBLES_25  st_stm32_ltdc
+#define DISPLAY_CONTROLLER_COMPATIBLES_26  raydium_rm68200
+#define DISPLAY_CONTROLLER_COMPATIBLES_27  raydium_rm67162
+#define DISPLAY_CONTROLLER_COMPATIBLES_28  himax_hx8394
+#define DISPLAY_CONTROLLER_COMPATIBLES_29  galaxycore_gc9x01x
+#define DISPLAY_CONTROLLER_COMPATIBLES_MAX 30
+
+#define DEVICE_DT_GET_COMMA(node, _) DEVICE_DT_GET(node),
+#define LIST_DISPLAY_DEVICES(n, _)                                                                 \
+	DT_FOREACH_STATUS_OKAY_VARGS(_CONCAT(DISPLAY_CONTROLLER_COMPATIBLES_, n),                  \
+				     DEVICE_DT_GET_COMMA)
+
 #define HELP_NONE "[none]"
 #define HELP_INIT "call \"cfb init\" first"
+#define HELP_DISPLAY_SELECT "<display_id>"
 #define HELP_PRINT "<col: pos> <row: pos> \"<text>\""
 #define HELP_DRAW_POINT "<x> <y0>"
 #define HELP_DRAW_LINE "<x0> <y0> <x1> <y1>"
 #define HELP_DRAW_RECT "<x0> <y0> <x1> <y1>"
 #define HELP_INVERT "[<x> <y> <width> <height>]"
 
-static const struct device *const dev =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+static const struct device *const devices[] = {
+	LISTIFY(DISPLAY_CONTROLLER_COMPATIBLES_MAX, LIST_DISPLAY_DEVICES, ())};
+static const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 static struct cfb_display *disp;
 static const char * const param_name[] = {
 	"height", "width", "ppt", "rows", "cols"};
@@ -431,21 +470,34 @@ static int cmd_get_fonts(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
-static int cmd_get_device(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_display(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = 0;
+	if (argc == 1) {
+		shell_print(sh, "Displays:");
+		for (size_t i = 0; i < ARRAY_SIZE(devices); i++) {
+			if (devices[i] == dev) {
+				shell_print(sh, "* %2d: %s", i, devices[i]->name);
+			} else {
+				shell_print(sh, "  %2d: %s", i, devices[i]->name);
+			}
+		}
+	} else if (argc == 2) {
+		int idx = strtol(argv[1], NULL, 10);
 
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
+		if (idx < 0 || ARRAY_SIZE(devices) <= idx) {
+			shell_print(sh, "Display: unavailable display id: %d", idx);
+		}
 
-	if (!disp) {
-		shell_error(sh, HELP_INIT);
-		return -ENODEV;
+		if (disp && disp->dev != devices[idx]) {
+			shell_print(sh, "Display: %s deinitialzed.", disp->dev->name);
+			cfb_display_free(disp);
+			disp = NULL;
+		}
+
+		dev = devices[idx];
 	}
 
-	shell_print(sh, "Framebuffer Device: %s", dev->name);
-
-	return err;
+	return 0;
 }
 
 static int cmd_get_param_all(const struct shell *sh, size_t argc,
@@ -621,7 +673,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_cmd_draw,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(cfb_cmds,
 	SHELL_CMD_ARG(init, NULL, HELP_NONE, cmd_init, 1, 0),
-	SHELL_CMD_ARG(get_device, NULL, HELP_NONE, cmd_get_device, 1, 0),
+	SHELL_CMD_ARG(display, NULL, "[<display_id>]", cmd_display, 1, 1),
 	SHELL_CMD(get_param, &sub_cmd_get_param,
 		  "<all, height, width, ppt, rows, cols>", NULL),
 	SHELL_CMD_ARG(get_fonts, NULL, HELP_NONE, cmd_get_fonts, 1, 0),
