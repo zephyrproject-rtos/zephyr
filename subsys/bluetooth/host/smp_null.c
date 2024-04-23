@@ -41,7 +41,7 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 
 static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *req_buf)
 {
-	struct bt_conn *conn = chan->conn;
+	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
 	struct bt_smp_pairing_fail *rsp;
 	struct bt_smp_hdr *hdr;
 	struct net_buf *buf;
@@ -63,7 +63,7 @@ static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *req_buf)
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	rsp->reason = BT_SMP_ERR_PAIRING_NOTSUPP;
 
-	if (bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf)) {
+	if (bt_l2cap_send_pdu(le_chan, buf, NULL, NULL)) {
 		net_buf_unref(buf);
 	}
 
