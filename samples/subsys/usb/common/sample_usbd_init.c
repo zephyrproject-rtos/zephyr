@@ -102,6 +102,7 @@ static int sample_add_configuration(struct usbd_contex *uds_ctx,
 	/* Always use class code information from Interface Descriptors */
 	if (IS_ENABLED(CONFIG_USBD_CDC_ACM_CLASS) ||
 	    IS_ENABLED(CONFIG_USBD_CDC_ECM_CLASS) ||
+        IS_ENABLED(CONFIG_USBD_CDC_NCM_CLASS) ||
 	    IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 		/*
 		 * Class with multiple interfaces have an Interface
