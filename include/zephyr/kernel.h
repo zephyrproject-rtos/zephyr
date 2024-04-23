@@ -3632,6 +3632,8 @@ static inline k_ticks_t k_work_delayable_remaining_get(
  *
  * @retval 0 if work was already scheduled or submitted.
  * @retval 1 if work has been scheduled.
+ * @retval 2 if @p delay is @c K_NO_WAIT and work
+ *         was running and has been queued to the queue that was running it.
  * @retval -EBUSY if @p delay is @c K_NO_WAIT and
  *         k_work_submit_to_queue() fails with this code.
  * @retval -EINVAL if @p delay is @c K_NO_WAIT and
