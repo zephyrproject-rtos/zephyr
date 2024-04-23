@@ -123,7 +123,7 @@ int open(const char *name, int flags, ...)
 	return fd;
 }
 
-#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_PICOLIBC)
+#if defined(CONFIG_POSIX_API) && !defined(CONFIG_PICOLIBC)
 FUNC_ALIAS(open, _open, int);
 #endif
 
