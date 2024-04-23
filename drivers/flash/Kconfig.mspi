@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_MSPI
+	bool "MSPI flash drivers"
+	default y
+	depends on FLASH
+	select FLASH_HAS_DRIVER_ENABLED
+	select MSPI
+
+if FLASH_MSPI
+
+menu "MSPI flash driver"
+
+config FLASH_MSPI_EMUL_DEVICE
+	bool "MSPI flash device emulator"
+	default y
+	depends on DT_HAS_ZEPHYR_MSPI_EMUL_FLASH_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+
+endmenu
+
+endif # FLASH_MSPI
