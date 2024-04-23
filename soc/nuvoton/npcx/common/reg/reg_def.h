@@ -376,6 +376,9 @@ struct uart_reg {
 #define NPCX_UFRS_PSEL_FIELD                  FIELD(4, 2)
 #define NPCX_UFRS_PEN                         6
 #define NPCX_UMDSL_FIFO_MD                    0
+#define NPCX_UMDSL_ETD                        4
+#define NPCX_UMDSL_ERD                        5
+
 #define NPCX_UFTSTS_TEMPTY_LVL                FIELD(0, 5)
 #define NPCX_UFTSTS_TEMPTY_LVL_STS            5
 #define NPCX_UFTSTS_TFIFO_EMPTY_STS           6

@@ -76,16 +76,20 @@
 
 		uart1: serial@400e0000 {
 			compatible = "nuvoton,npcx-uart";
-			reg = <0x400E0000 0x2000>;
+			/* Index 0: UART1 register, Index 1: MDMA1 register */
+			reg = <0x400E0000 0x2000 0x40011100 0x100>;
 			interrupts = <33 3>;
-			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL1 4>;
+			/* Index 0: UART1 clock, Index 1: MDMA1 clock */
+			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL1 4
+				  &pcc NPCX_CLOCK_BUS_CORE NPCX_PWDWN_CTL9 0>;
 			uart-rx = <&wui_cr_sin1>;
 			status = "disabled";
 		};
 
 		uart2: serial@400e2000 {
 			compatible = "nuvoton,npcx-uart";
-			reg = <0x400E2000 0x2000>;
+			/* Index 0: UART2 register, Index 1: MDMA2 register */
+			reg = <0x400E2000 0x2000 0x40011200 0x100>;
 			interrupts = <32 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 6>;
 			uart-rx = <&wui_cr_sin2>;
@@ -94,18 +98,24 @@
 
 		uart3: serial@400e4000 {
 			compatible = "nuvoton,npcx-uart";
-			reg = <0x400E4000 0x2000>;
+			/* Index 0: UART3 register, Index 1: MDMA3 register */
+			reg = <0x400E4000 0x2000 0x40011300 0x100>;
 			interrupts = <38 3>;
-			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 4>;
+			/* Index 0: UART3 clock, Index 1: MDMA3 clock */
+			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 4
+				  &pcc NPCX_CLOCK_BUS_CORE NPCX_PWDWN_CTL9 2>;
 			uart-rx = <&wui_cr_sin3>;
 			status = "disabled";
 		};
 
 		uart4: serial@400e6000 {
 			compatible = "nuvoton,npcx-uart";
-			reg = <0x400E6000 0x2000>;
+			/* Index 0: UART4 register, Index 1: MDMA4 register */
+			reg = <0x400E6000 0x2000 0x40011400 0x100>;
 			interrupts = <39 3>;
-			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 3>;
+			/* Index 0: UART4 clock, Index 1: MDMA4 clock */
+			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 3
+				  &pcc NPCX_CLOCK_BUS_CORE NPCX_PWDWN_CTL9 3>;
 			uart-rx = <&wui_cr_sin4>;
 			status = "disabled";
 		};
