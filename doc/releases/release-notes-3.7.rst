@@ -91,6 +91,8 @@ Boards & SoC Support
 Build system and Infrastructure
 *******************************
 
+* CI-enabled blackbox tests were added in order to verify correctness of the vast majority of Twister flags.
+
 Drivers and Sensors
 *******************
 
