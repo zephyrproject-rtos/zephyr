@@ -174,9 +174,6 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 	int ret;
 
 	if (dir == I2S_DIR_RX) {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
-		return -ENOSYS;
-#endif
 		stream = &dev_data->rx;
 	} else if (dir == I2S_DIR_TX) {
 		stream = &dev_data->tx;
@@ -652,11 +649,6 @@ static uint32_t i2s_stm32_irq_udr_count;
 static void i2s_stm32_isr(const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
-	struct i2s_stm32_data *const dev_data = dev->data;
-	struct stream *stream = &dev_data->rx;
-
-	LOG_ERR("%s: err=%d", __func__, (int)LL_I2S_ReadReg(cfg->i2s, SR));
-	stream->state = I2S_STATE_ERROR;
 
 	/* OVR error must be explicitly cleared */
 	if (LL_I2S_IsActiveFlag_OVR(cfg->i2s)) {
