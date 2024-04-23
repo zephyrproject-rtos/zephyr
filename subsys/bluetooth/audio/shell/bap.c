@@ -3914,6 +3914,11 @@ static ssize_t connectable_ad_data_add(struct bt_data *data_array,
 		ad_len++;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_BAP_SCAN_DELEGATOR)) {
+		ad_len += bap_scan_delegator_ad_data_add(&data_array[ad_len],
+							 data_array_size - ad_len);
+	}
+
 	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR)) {
 		ad_len += cap_acceptor_ad_data_add(&data_array[ad_len], data_array_size - ad_len,
 						   true);
