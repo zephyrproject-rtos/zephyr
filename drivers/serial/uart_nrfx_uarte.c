@@ -143,6 +143,7 @@ struct uarte_nrfx_int_driven {
 	uint8_t *tx_buffer;
 	uint16_t tx_buff_size;
 	volatile bool disable_tx_irq;
+	bool tx_irq_enabled;
 #ifdef CONFIG_PM_DEVICE
 	bool rx_irq_enabled;
 #endif
@@ -1593,6 +1594,7 @@ static void uarte_nrfx_irq_tx_enable(const struct device *dev)
 	unsigned int key = irq_lock();
 
 	data->int_driven->disable_tx_irq = false;
+	data->int_driven->tx_irq_enabled = true;
 	nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 
 	irq_unlock(key);
@@ -1604,6 +1606,7 @@ static void uarte_nrfx_irq_tx_disable(const struct device *dev)
 	struct uarte_nrfx_data *data = dev->data;
 	/* TX IRQ will be disabled after current transmission is finished */
 	data->int_driven->disable_tx_irq = true;
+	data->int_driven->tx_irq_enabled = false;
 }
 
 /** Interrupt driven transfer ready function */
@@ -1617,10 +1620,8 @@ static int uarte_nrfx_irq_tx_ready_complete(const struct device *dev)
 	 * enabled, otherwise this function would always return true no matter
 	 * what would be the source of interrupt.
 	 */
-	bool ready = !data->int_driven->disable_tx_irq &&
-		     nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED) &&
-		     nrf_uarte_int_enable_check(uarte,
-						NRF_UARTE_INT_TXSTOPPED_MASK);
+	bool ready = data->int_driven->tx_irq_enabled &&
+		     nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED);
 
 	if (ready) {
 		data->int_driven->fifo_fill_lock = 0;
