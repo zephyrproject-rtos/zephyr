@@ -1195,7 +1195,46 @@ device_get_dt_nodelabels(const struct device *dev)
 
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
 
+/** @brief Expands to the full type. */
+#define Z_DEVICE_API_TYPE(_class) _CONCAT(_class, _driver_api)
+
 /** @endcond */
+
+/**
+ * @brief Wrapper macro for declaring device API structs inside iterable sections.
+ *
+ * @param _class The device API class.
+ * @param _name The API instance name.
+ */
+#define DEVICE_API(_class, _name) const STRUCT_SECTION_ITERABLE(Z_DEVICE_API_TYPE(_class), _name)
+
+/**
+ * @brief Expands to the pointer of a device's API for a given class.
+ *
+ * @param _class The device API class.
+ * @param _dev The device instance pointer.
+ *
+ * @return the pointer to the device API.
+ */
+#define DEVICE_API_GET(_class, _dev) ((const struct Z_DEVICE_API_TYPE(_class) *)_dev->api)
+
+/**
+ * @brief Macro that evaluates to a boolean that can be used to check if
+ *        a device is of a particular class.
+ *
+ * @param _class The device API class.
+ * @param _dev The device instance pointer.
+ *
+ * @retval true If the device is of the given class
+ * @retval false If the device is not of the given class
+ */
+#define DEVICE_API_IS(_class, _dev)                                                                \
+	({                                                                                         \
+		STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(_class));                            \
+		STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(_class));                              \
+		(DEVICE_API_GET(_class, _dev) < STRUCT_SECTION_END(Z_DEVICE_API_TYPE(_class)) &&   \
+		 DEVICE_API_GET(_class, _dev) >= STRUCT_SECTION_START(Z_DEVICE_API_TYPE(_class))); \
+	})
 
 #ifdef __cplusplus
 }
