@@ -839,14 +839,17 @@ static const struct ethernet_api api_funcs = {
 #define _nxp_enet_dma_desc_section __dtcm_bss_section
 #define _nxp_enet_dma_buffer_section __dtcm_noinit_section
 #define _nxp_enet_driver_buffer_section __dtcm_noinit_section
+#define driver_cache_maintain	false
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define _nxp_enet_dma_desc_section __nocache
 #define _nxp_enet_dma_buffer_section __nocache
 #define _nxp_enet_driver_buffer_section
+#define driver_cache_maintain	false
 #else
 #define _nxp_enet_dma_desc_section
 #define _nxp_enet_dma_buffer_section
 #define _nxp_enet_driver_buffer_section
+#define driver_cache_maintain	true
 #endif
 
 /* Use ENET_FRAME_MAX_VLANFRAMELEN for VLAN frame size
@@ -957,8 +960,8 @@ BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||		\
 				.txBdStartAddrAlign = nxp_enet_##n##_tx_buffer_desc,	\
 				.rxBufferAlign = nxp_enet_##n##_rx_buffer[0],		\
 				.txBufferAlign = nxp_enet_##n##_tx_buffer[0],		\
-				.rxMaintainEnable = true,				\
-				.txMaintainEnable = true,				\
+				.rxMaintainEnable = driver_cache_maintain,		\
+				.txMaintainEnable = driver_cache_maintain,		\
 				NXP_ENET_FRAMEINFO(n)					\
 			},								\
 			.phy_mode = NXP_ENET_PHY_MODE(DT_DRV_INST(n)),			\
