@@ -808,6 +808,7 @@ int bt_hci_disconnect(uint16_t handle, uint8_t reason)
 
 static uint16_t disconnected_handles[CONFIG_BT_MAX_CONN];
 static uint8_t disconnected_handles_reason[CONFIG_BT_MAX_CONN];
+
 static void disconnected_handles_reset(void)
 {
 	(void)memset(disconnected_handles, 0, sizeof(disconnected_handles));
