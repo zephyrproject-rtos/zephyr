@@ -111,6 +111,40 @@ config HAWKBIT_DEVICE_ID_MAX_LENGTH
 	help
 	  Maximum length of the device id.
 
+config HAWKBIT_USE_TLS
+	bool "Use TLS for hawkBit server connection"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Use TLS for hawkBit connection.
+
+if HAWKBIT_USE_TLS
+
+choice HAWKBIT_CERT_TAG
+	prompt "hawkBit certificate tag"
+	default HAWKBIT_USE_STATIC_CERT_TAG
+
+config HAWKBIT_USE_STATIC_CERT_TAG
+	bool "Use static certificate tag"
+	help
+	  Use static certificate tag for TLS connection to the hawkBit server.
+
+config HAWKBIT_USE_DYNAMIC_CERT_TAG
+	bool "Use dynamic certificate tag"
+	depends on HAWKBIT_SET_SETTINGS_RUNTIME
+	help
+	  Use dynamic certificate tag for TLS connection to the hawkBit server.
+
+endchoice
+
+config HAWKBIT_STATIC_CERT_TAG
+	int "Static certificate tag"
+	depends on HAWKBIT_USE_STATIC_CERT_TAG
+	default 1
+	help
+	  Static certificate tag for TLS connection to the hawkBit server.
+
+endif
+
 module = HAWKBIT
 module-str = Log Level for hawkbit
 module-help = Enables logging for hawkBit code.
