@@ -167,6 +167,11 @@ static int cmd_adc_ch_id(const struct shell *sh, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
+	if (!device_has_adc_driver_api(adc->dev)) {
+		shell_error(sh, "Not an ADC device");
+		return -EINVAL;
+	}
+
 	if (isdigit((unsigned char)argv[1][0]) == 0) {
 		shell_error(sh, "<channel> must be digits");
 		return -EINVAL;
@@ -190,6 +195,11 @@ static int cmd_adc_ch_diff(const struct shell *sh, size_t argc, char **argv)
 	if (!device_is_ready(adc->dev)) {
 		shell_error(sh, "ADC device not ready");
 		return -ENODEV;
+	}
+
+	if (!device_has_adc_driver_api(adc->dev)) {
+		shell_error(sh, "Not an ADC device");
+		return -EINVAL;
 	}
 
 	endptr = argv[1];
@@ -216,6 +226,11 @@ static int cmd_adc_ch_neg(const struct shell *sh, size_t argc, char **argv)
 	if (!device_is_ready(adc->dev)) {
 		shell_error(sh, "ADC device not ready");
 		return -ENODEV;
+	}
+
+	if (!device_has_adc_driver_api(adc->dev)) {
+		shell_error(sh, "Not an ADC device");
+		return -EINVAL;
 	}
 
 	if (isdigit((unsigned char)argv[1][0]) == 0) {
@@ -245,6 +260,11 @@ static int cmd_adc_ch_pos(const struct shell *sh, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
+	if (!device_has_adc_driver_api(adc->dev)) {
+		shell_error(sh, "Not an ADC device");
+		return -EINVAL;
+	}
+
 	if (isdigit((unsigned char)argv[1][0]) == 0) {
 		shell_error(sh, "<positive input> must be digits");
 		return -EINVAL;
@@ -272,6 +292,11 @@ static int cmd_adc_gain(const struct shell *sh, size_t argc, char **argv,
 		shell_error(sh, "ADC device not ready");
 		return -ENODEV;
 	}
+	if (!device_has_adc_driver_api(adc->dev)) {
+		shell_error(sh, "Not an ADC device");
+		return -EINVAL;
+	}
+
 
 	adc->channel_config.gain = gain;
 	int len = strlen(argv[0]) > CHOSEN_STR_LEN ? CHOSEN_STR_LEN
@@ -295,6 +320,11 @@ static int cmd_adc_acq(const struct shell *sh, size_t argc, char **argv)
 		shell_error(sh, "ADC device not ready");
 		return -ENODEV;
 	}
+	if (!device_has_adc_driver_api(adc->dev)) {
+		shell_error(sh, "Not an ADC device");
+		return -EINVAL;
+	}
+
 
 	if (isdigit((unsigned char)argv[1][0]) == 0) {
 		shell_error(sh, "<time> must be digits");
@@ -331,6 +361,11 @@ static int cmd_adc_reso(const struct shell *sh, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
+	if (!device_has_adc_driver_api(adc->dev)) {
+		shell_error(sh, "Not an ADC device");
+		return -EINVAL;
+	}
+
 	if (isdigit((unsigned char)argv[1][0]) == 0) {
 		shell_error(sh, "<resolution> must be digits");
 		return -EINVAL;
@@ -353,6 +388,11 @@ static int cmd_adc_ref(const struct shell *sh, size_t argc, char **argv,
 	if (!device_is_ready(adc->dev)) {
 		shell_error(sh, "ADC device not ready");
 		return -ENODEV;
+	}
+
+	if (!device_has_adc_driver_api(adc->dev)) {
+		shell_error(sh, "Not an ADC device");
+		return -EINVAL;
 	}
 
 	int len = strlen(argv[0]) > CHOSEN_STR_LEN ? CHOSEN_STR_LEN
@@ -379,6 +419,11 @@ static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv)
 	if (!device_is_ready(adc->dev)) {
 		shell_error(sh, "ADC device not ready");
 		return -ENODEV;
+	}
+
+	if (!device_has_adc_driver_api(adc->dev)) {
+		shell_error(sh, "Not an ADC device");
+		return -EINVAL;
 	}
 
 	adc->channel_config.channel_id = adc_channel_id;
