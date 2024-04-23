@@ -30,10 +30,11 @@ config TELINK_B95_PMP
 	help
 		This option enables Telink B95 PMP(memory protection) module.
 
-config TELINK_B9x_HWDSP
+config TELINK_B9X_HWDSP
 	bool "Support Hardware DSP"
 	select RISCV_SOC_CONTEXT_SAVE
 	depends on SOC_SERIES_RISCV_TELINK_B9X
+	default n
 
 config TELINK_B9X_MBEDTLS_HW_ACCELERATION
 	bool "Use Telink B9x platform mbedtls HW acceleration"
@@ -81,16 +82,16 @@ config PM_DEVICE
 config SHELL_BACKENDS
 	default n if PM
 
-config TELINK_B9X_REBOOT_ON_FAULT
+config TELINK_SOC_REBOOT_ON_FAULT
 	bool "Reboot system when fault happened"
 	depends on SOC_SERIES_RISCV_TELINK_B9X
 	default n
 	help
 		This option enables Telink B9x chip reboot after fault.
 
-config TELINK_B9X_REBOOT_ON_FAULT_DELAY
+config TELINK_SOC_REBOOT_ON_FAULT_DELAY
 	int "Reboot system delay in mS"
-	depends on SOC_SERIES_RISCV_TELINK_B9X && TELINK_B9X_REBOOT_ON_FAULT
+	depends on SOC_SERIES_RISCV_TELINK_B9X && TELINK_SOC_REBOOT_ON_FAULT
 	default 1000
 	range 0 30000
 	help
@@ -117,7 +118,7 @@ config TELINK_B9X_MALLOC_FAILED_HOOK
 	help
 		This option stops SW execution when system heap allocation failed.
 
-config TELINK_B9x_MATTER_RETENTION_LAYOUT
+config TELINK_B9X_MATTER_RETENTION_LAYOUT
 	bool "Support Matter retention layout"
 	depends on SOC_SERIES_RISCV_TELINK_B9X_RETENTION
 	default n

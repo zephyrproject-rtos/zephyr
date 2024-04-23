@@ -20,6 +20,7 @@ config TELINK_W91_HWDSP
 	bool "Support Hardware DSP"
 	select RISCV_SOC_CONTEXT_SAVE
 	depends on SOC_SERIES_RISCV_TELINK_W91
+	default n
 
 config TELINK_W91_MBEDTLS_HW_ACCELERATION
 	bool "Use Telink W91 platform mbedtls HW acceleration"
@@ -49,16 +50,16 @@ config SOC_RISCV_TELINK_W91
 
 endchoice
 
-config TELINK_W91_REBOOT_ON_FAULT
+config TELINK_SOC_REBOOT_ON_FAULT
 	bool "Reboot system when fault happened"
 	depends on SOC_SERIES_RISCV_TELINK_W91
 	default n
 	help
 		This option enables Telink W91 chip reboot after fault.
 
-config TELINK_W91_REBOOT_ON_FAULT_DELAY
+config TELINK_SOC_REBOOT_ON_FAULT_DELAY
 	int "Reboot system delay in mS"
-	depends on SOC_SERIES_RISCV_TELINK_W91 && TELINK_W91_REBOOT_ON_FAULT
+	depends on SOC_SERIES_RISCV_TELINK_W91 && TELINK_SOC_REBOOT_ON_FAULT
 	default 1000
 	range 0 30000
 	help
@@ -80,6 +81,7 @@ config TELINK_W91_MALLOC_FAILED_HOOK
 
 config TELINK_W91_DEBUG_ENABLE
 	bool "Telink W91 debug enable"
+	depends on SOC_SERIES_RISCV_TELINK_W91
 	default y
 	help
 		This option enables Telink W91 debug feature.

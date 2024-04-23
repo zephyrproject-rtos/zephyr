@@ -3,9 +3,12 @@
 
 config TELINK_W91_BLOCKING_CORE
 	bool "Telink W91 blocking core"
+	depends on SOC_SERIES_RISCV_TELINK_W91
 	default y
 	help
 		This option enables Telink W91 blocking core.
+
+if TELINK_W91_BLOCKING_CORE
 
 config TELINK_W91_BLOCKING_CORE_THREAD_STACK_SIZE
 	int "Blocking thread stack size"
@@ -30,3 +33,5 @@ config BLOCKING_CORE_TELINK_W91_CORE_STOP_TIMEOUT_MS
 	default 100
 	help
 	  This option sets core stop timeout in uS.
+
+endif # TELINK_W91_BLOCKING_CORE
