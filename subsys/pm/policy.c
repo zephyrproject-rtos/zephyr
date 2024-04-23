@@ -113,7 +113,7 @@ static void update_next_event(uint32_t cyc)
 		 * the comparison.
 		 */
 		if (cyc_evt < cyc) {
-			cyc_evt += UINT32_MAX + 1U;
+			cyc_evt += (uint64_t)UINT32_MAX + 1U;
 		}
 
 		if ((new_next_event_cyc < 0) ||
@@ -124,7 +124,7 @@ static void update_next_event(uint32_t cyc)
 
 	/* undo padding for events in the [0, cyc) range */
 	if (new_next_event_cyc > UINT32_MAX) {
-		new_next_event_cyc -= UINT32_MAX + 1U;
+		new_next_event_cyc -= (uint64_t)UINT32_MAX + 1U;
 	}
 
 	next_event_cyc = new_next_event_cyc;
