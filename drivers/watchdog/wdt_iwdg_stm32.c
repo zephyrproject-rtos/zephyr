@@ -190,8 +190,9 @@ static int iwdg_stm32_init(const struct device *dev)
 	struct wdt_timeout_cfg config = {
 		.window.max = CONFIG_IWDG_STM32_INITIAL_TIMEOUT
 	};
-
+	/* Watchdog should be configured and started by `wdt_setup`*/
 	iwdg_stm32_install_timeout(dev, &config);
+	iwdg_stm32_setup(dev, 0); /* no option specified */
 #endif
 
 	/*
