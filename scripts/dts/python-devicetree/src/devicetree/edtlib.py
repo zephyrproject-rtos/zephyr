@@ -1953,6 +1953,13 @@ class EDT:
       /chosen node which can't be converted to a Node are not included in
       the value.
 
+    aliases_nodes:
+      A dict that maps the properties defined on the devicetree's /aliases
+      node to their values. 'aliases' is indexed by property name (a string),
+      and values are converted to Node objects. Note that properties of the
+      /aliases node which can't be converted to a Node are not included in
+      the value.
+
     dts_path:
       The .dts path passed to __init__()
 
@@ -2116,6 +2123,33 @@ class EDT:
         None if the property is missing
         """
         return self.chosen_nodes.get(name)
+
+    @property
+    def aliases_nodes(self) -> Dict[str, Node]:
+        ret: Dict[str, Node] = {}
+
+        try:
+            aliases = self._dt.get_node("/aliases")
+        except DTError:
+            return ret
+
+        for name, prop in aliases.props.items():
+            try:
+                node = prop.to_path()
+            except DTError:
+                # DTS value is not phandle or string, or path doesn't exist
+                continue
+
+            ret[name] = self._node2enode[node]
+
+        return ret
+
+    def aliases_node(self, name: str) -> Optional[Node]:
+        """
+        Returns the Node pointed at by the property named 'name' in /aliases, or
+        None if the property is missing
+        """
+        return self.aliases_nodes.get(name)
 
     @property
     def dts_source(self) -> str:
