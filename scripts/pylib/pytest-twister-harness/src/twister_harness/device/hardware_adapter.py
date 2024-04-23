@@ -66,8 +66,9 @@ class HardwareAdapter(DeviceAdapter):
         extra_args: list[str] = []
         runner = self.device_config.runner
         base_args.extend(['--runner', runner])
-        for param in self.device_config.runner_params:
-            extra_args.append(param)
+        if self.device_config.runner_params:
+            for param in self.device_config.runner_params:
+                extra_args.append(param)
         if board_id := self.device_config.id:
             if runner == 'pyocd':
                 extra_args.append('--board-id')
