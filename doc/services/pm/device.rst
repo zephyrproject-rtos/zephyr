@@ -231,6 +231,24 @@ support in a device driver.
         PM_DEVICE_DT_INST_GET(0), NULL, NULL, POST_KERNEL,
         CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
+.. _pm-device-shell:
+
+Shell Commands
+**************
+
+Power management actions can be triggered from shell commands for testing
+purposes. To do that, enable the :kconfig:option:`CONFIG_PM_DEVICE_SHELL`
+option and issue a ``pm`` command on a device from the shell, for example:
+
+.. code-block:: console
+
+        uart:~$ device list
+        - buttons (active)
+        uart:~$ pm suspend buttons
+        uart:~$ device list
+        devices:
+        - buttons (suspended)
+
 .. _pm-device-busy:
 
 Busy Status Indication
