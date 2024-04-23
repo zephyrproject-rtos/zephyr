@@ -36,6 +36,20 @@ struct sync_state {
 
 static bool past_preference = true;
 
+size_t bap_scan_delegator_ad_data_add(struct bt_data data[], size_t data_size)
+{
+	static uint8_t ad_bap_scan_delegator[2] = {
+		BT_UUID_16_ENCODE(BT_UUID_BASS_VAL),
+	};
+
+	__ASSERT(data_size > 0, "No space for ad_bap_scan_delegator");
+	data[0].type = BT_DATA_SVC_DATA16;
+	data[0].data_len = ARRAY_SIZE(ad_bap_scan_delegator);
+	data[0].data = &ad_bap_scan_delegator[0];
+
+	return 1U;
+}
+
 static struct sync_state *sync_state_get(const struct bt_bap_scan_delegator_recv_state *recv_state)
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {

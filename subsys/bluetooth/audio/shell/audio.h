@@ -31,6 +31,7 @@ ssize_t audio_ad_data_add(struct bt_data *data, const size_t data_size, const bo
 ssize_t audio_pa_data_add(struct bt_data *data_array, const size_t data_array_size);
 ssize_t csis_ad_data_add(struct bt_data *data, const size_t data_size, const bool discoverable);
 size_t cap_acceptor_ad_data_add(struct bt_data data[], size_t data_size, bool discoverable);
+size_t bap_scan_delegator_ad_data_add(struct bt_data data[], size_t data_size);
 size_t gmap_ad_data_add(struct bt_data data[], size_t data_size);
 size_t pbp_ad_data_add(struct bt_data data[], size_t data_size);
 ssize_t cap_initiator_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
