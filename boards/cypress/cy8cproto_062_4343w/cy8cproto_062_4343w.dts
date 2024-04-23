@@ -45,15 +45,18 @@ uart5: &scb5 {
 uart2: &scb2 {
 	compatible = "infineon,cat1-uart";
 	status = "okay";
+
 	/* The UART bus speed (current_speed) for zephyr_bt_uart should be the same
 	 * as the default baudrate defined in CYW43xx firmware (default 115200).
 	 */
-
 	current-speed = <115200>;
 
 	/* HCI-UART pins */
 	pinctrl-0 = <&p3_1_scb2_uart_tx &p3_0_scb2_uart_rx &p3_2_scb2_uart_rts &p3_3_scb2_uart_cts>;
 	pinctrl-names = "default";
+
+	/* HW Flow control must be enabled for HCI H4 */
+	hw-flow-control;
 
 	bt-hci {
 		status = "okay";

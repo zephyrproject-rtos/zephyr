@@ -29,6 +29,7 @@
 #define MAIN_OFFSET_INTENCLR 0x03U
 
 #define SHIP_OFFSET_HIBERNATE 0x00U
+#define SHIP_OFFSET_CFGSTROBE 0x01U
 #define SHIP_OFFSET_CONFIG    0x04U
 #define SHIP_OFFSET_LPCONFIG  0x06U
 
@@ -175,7 +176,12 @@ static int mfd_npm1300_init(const struct device *dev)
 		return ret;
 	}
 
-	return mfd_npm1300_reg_write(dev, SHIP_BASE, SHIP_OFFSET_LPCONFIG, config->lp_reset);
+	ret = mfd_npm1300_reg_write(dev, SHIP_BASE, SHIP_OFFSET_LPCONFIG, config->lp_reset);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return mfd_npm1300_reg_write(dev, SHIP_BASE, SHIP_OFFSET_CFGSTROBE, 1U);
 }
 
 int mfd_npm1300_reg_read_burst(const struct device *dev, uint8_t base, uint8_t offset, void *data,

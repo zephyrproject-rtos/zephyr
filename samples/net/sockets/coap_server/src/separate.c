@@ -57,7 +57,7 @@ static int separate_get(struct coap_resource *resource,
 	/* Re-use the buffer */
 	r = coap_packet_init(&response, data, sizeof(data),
 			     COAP_VERSION_1, type, tkl, token,
-			     COAP_RESPONSE_CODE_CONTENT, id);
+			     COAP_RESPONSE_CODE_CONTENT, coap_next_id());
 	if (r < 0) {
 		return r;
 	}

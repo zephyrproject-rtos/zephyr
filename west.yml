@@ -183,7 +183,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: fc2bab706f195c64d40016c9855b8acd7c235ded
+      revision: 827224f29e99972cd3b999dba913ae4649790671
       path: modules/hal/nordic
       groups:
         - hal
@@ -193,7 +193,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: f6c7108caf50684742689bfab838048208963f4f
+      revision: cd046faf8a3dc879982ff6079fc48a80a0d53e7c
       path: modules/hal/nxp
       groups:
         - hal
@@ -312,7 +312,7 @@ manifest:
       path: modules/lib/picolibc
       revision: 764ef4e401a8f4c6a86ab723533841f072885a5b
     - name: segger
-      revision: 9d0191285956cef43daf411edc2f1a7788346def
+      revision: b011c45b585e097d95d9cf93edf4f2e01588d3cd
       path: modules/debug/segger
       groups:
         - debug

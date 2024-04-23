@@ -1,0 +1,8 @@
+identifier: phyboard_lyra/am6234/m4
+name: PHYTEC phyBOARD-Lyra AM62x M4
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 192
+vendor: phytec

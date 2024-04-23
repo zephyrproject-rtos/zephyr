@@ -475,18 +475,30 @@
 		};
 
 		enet: ethernet@400c0000 {
-			compatible = "nxp,kinetis-ethernet";
+			compatible = "nxp,enet";
 			reg = <0x400c0000 0x620>;
-			interrupts = <83 0>, <84 0>, <85 0>;
-			interrupt-names = "TX", "RX", "ERR";
-			status = "disabled";
-			phy-addr = <0>;
-			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0 0>;
-			ptp: ptp {
-				compatible = "nxp,kinetis-ptp";
+			clocks = <&sim KINETIS_SIM_ENET_CLK 0 0>;
+			enet_mac: ethernet {
+				compatible = "nxp,enet-mac";
+				interrupts = <83 0>, <84 0>, <85 0>;
+				interrupt-names = "TX", "RX", "ERR";
+				nxp,mdio = <&enet_mdio>;
+				nxp,ptp-clock = <&enet_ptp_clock>;
+				phy-connection-type = "rmii";
 				status = "disabled";
+			};
+			enet_mdio: mdio {
+				compatible = "nxp,enet-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+			enet_ptp_clock: ptp_clock {
+				compatible = "nxp,enet-ptp-clock";
 				interrupts = <82 0>;
 				interrupt-names = "IEEE1588_TMR";
+				clocks = <&sim KINETIS_SIM_ENET_1588_CLK 0 0>;
+				status = "disabled";
 			};
 		};
 

@@ -14,18 +14,30 @@
 #include <zephyr/storage/disk_access.h>
 #include <zephyr/device.h>
 
+#ifdef CONFIG_DISK_DRIVER_LOOPBACK
+#include <ff.h>
+#include <zephyr/fs/fs.h>
+#include <zephyr/drivers/loopback_disk.h>
+#endif
+
 #if defined(CONFIG_DISK_DRIVER_SDMMC)
-#define DISK_NAME CONFIG_SDMMC_VOLUME_NAME
+#define DISK_NAME_PHYS CONFIG_SDMMC_VOLUME_NAME
 #elif IS_ENABLED(CONFIG_DISK_DRIVER_MMC)
-#define DISK_NAME CONFIG_MMC_VOLUME_NAME
+#define DISK_NAME_PHYS CONFIG_MMC_VOLUME_NAME
 #elif IS_ENABLED(CONFIG_DISK_DRIVER_RAM)
-#define DISK_NAME "RAM"
+#define DISK_NAME_PHYS "RAM"
 #elif IS_ENABLED(CONFIG_DISK_DRIVER_FLASH)
-#define DISK_NAME "NAND"
+#define DISK_NAME_PHYS "NAND"
 #elif IS_ENABLED(CONFIG_NVME)
-#define DISK_NAME "nvme0n0"
+#define DISK_NAME_PHYS "nvme0n0"
 #else
 #error "No disk device defined, is your board supported?"
+#endif
+
+#ifdef CONFIG_DISK_DRIVER_LOOPBACK
+#define DISK_NAME "loopback0"
+#else
+#define DISK_NAME DISK_NAME_PHYS
 #endif
 
 /* Assume the largest sector we will encounter is 512 bytes */
@@ -46,6 +58,43 @@ static uint32_t disk_sector_size;
 /* + 4 to make sure the second buffer is dword-aligned for NVME */
 static uint8_t scratch_buf[2][SECTOR_COUNT4 * SECTOR_SIZE + 4];
 
+#ifdef CONFIG_DISK_DRIVER_LOOPBACK
+#define BACKING_PATH "/"DISK_NAME_PHYS":"
+
+static struct loopback_disk_access lo_access;
+static FATFS fat_fs;
+static struct fs_mount_t backing_mount = {
+	.type = FS_FATFS,
+	.mnt_point = BACKING_PATH,
+	.fs_data = &fat_fs,
+};
+static const uint8_t zero_kb[1024] = {};
+static void setup_loopback_backing(void)
+{
+	int rc;
+
+	rc = fs_mkfs(FS_FATFS, (uintptr_t)&BACKING_PATH[1], NULL, 0);
+	zassert_equal(rc, 0, "Failed to format backing file system");
+
+	rc = fs_mount(&backing_mount);
+	zassert_equal(rc, 0, "Failed to mount backing file system");
+
+	struct fs_file_t f;
+
+	fs_file_t_init(&f);
+	rc = fs_open(&f, BACKING_PATH "/loopback.img", FS_O_WRITE | FS_O_CREATE);
+	zassert_equal(rc, 0, "Failed to create backing file");
+	for (int i = 0; i < 64; i++) {
+		rc = fs_write(&f, zero_kb, sizeof(zero_kb));
+		zassert_equal(rc, sizeof(zero_kb), "Failed to enlarge backing file");
+	}
+	rc = fs_close(&f);
+	zassert_equal(rc, 0, "Failed to close backing file");
+
+	rc = loopback_disk_access_register(&lo_access, BACKING_PATH "/loopback.img", DISK_NAME);
+	zassert_equal(rc, 0, "Loopback disk access initialization failed");
+}
+#endif
 
 /* Sets up test by initializing disk */
 static void test_setup(void)
@@ -223,9 +272,11 @@ ZTEST(disk_driver, test_write)
 	}
 }
 
-
 static void *disk_driver_setup(void)
 {
+#ifdef CONFIG_DISK_DRIVER_LOOPBACK
+	setup_loopback_backing();
+#endif
 	test_setup();
 
 	return NULL;

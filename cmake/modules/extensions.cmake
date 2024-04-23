@@ -2865,9 +2865,9 @@ endfunction()
 #
 function(zephyr_file_suffix filename)
   set(single_args SUFFIX)
-  cmake_parse_arguments(FILE "" "${single_args}" "" ${ARGN})
+  cmake_parse_arguments(SFILE "" "${single_args}" "" ${ARGN})
 
-  if(NOT DEFINED FILE_SUFFIX OR NOT DEFINED ${filename})
+  if(NOT DEFINED SFILE_SUFFIX OR NOT DEFINED ${filename})
     # If the file suffix variable is not known then there is nothing to do, return early
     return()
   endif()
@@ -2883,7 +2883,7 @@ function(zephyr_file_suffix filename)
     # Search for the full stop so we know where to add the file suffix before the file extension
     cmake_path(GET file EXTENSION file_ext)
     cmake_path(REMOVE_EXTENSION file OUTPUT_VARIABLE new_filename)
-    cmake_path(APPEND_STRING new_filename "_${FILE_SUFFIX}${file_ext}")
+    cmake_path(APPEND_STRING new_filename "_${SFILE_SUFFIX}${file_ext}")
 
     # Use the filename with the suffix if it exists, if not then fall back to the default
     if(EXISTS "${new_filename}")
@@ -5302,6 +5302,11 @@ function(add_llext_target target_name)
        OUTPUT_VARIABLE llext_remove_flags_regexp
   )
   string(REPLACE ";" "|" llext_remove_flags_regexp "${llext_remove_flags_regexp}")
+  if ("${llext_remove_flags_regexp}" STREQUAL "")
+    # an empty regexp would match anything, we actually need the opposite
+    # so set it to match empty strings
+    set(llext_remove_flags_regexp "^$")
+  endif()
   set(zephyr_flags
       "$<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>"
   )
@@ -5328,7 +5333,8 @@ function(add_llext_target target_name)
     # output a relocatable file. The output file suffix is changed so
     # the result looks like the object file it actually is.
     add_executable(${llext_lib_target} EXCLUDE_FROM_ALL ${source_files})
-    target_link_options(${llext_lib_target} PRIVATE -r)
+    target_link_options(${llext_lib_target} PRIVATE
+      $<TARGET_PROPERTY:linker,partial_linking>)
     set_target_properties(${llext_lib_target} PROPERTIES
       SUFFIX ${CMAKE_C_OUTPUT_EXTENSION})
     set(llext_lib_output $<TARGET_FILE:${llext_lib_target}>)

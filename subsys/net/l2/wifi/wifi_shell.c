@@ -565,7 +565,6 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'h':
 			return -ENOEXEC;
-			break;
 		default:
 			PR_ERROR("Invalid option %c\n", opt);
 			shell_help(sh);
@@ -1477,6 +1476,40 @@ static int cmd_wifi_ps_wakeup_mode(const struct shell *sh, size_t argc, char *ar
 	return 0;
 }
 
+static int cmd_wifi_set_rts_threshold(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	unsigned int rts_threshold = -1; /* Default value if user supplies "off" argument */
+	int err = 0;
+
+	context.sh = sh;
+
+	if (strcmp(argv[1], "off") != 0) {
+		long rts_val = shell_strtol(argv[1], 10, &err);
+
+		if (err) {
+			shell_error(sh, "Unable to parse input (err %d)", err);
+			return err;
+		}
+
+		rts_threshold = (unsigned int)rts_val;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_RTS_THRESHOLD, iface,
+		     &rts_threshold, sizeof(rts_threshold))) {
+		shell_fprintf(sh, SHELL_WARNING,
+			      "Setting RTS threshold failed.\n");
+		return -ENOEXEC;
+	}
+
+	if ((int)rts_threshold >= 0)
+		shell_fprintf(sh, SHELL_NORMAL, "RTS threshold: %d\n", rts_threshold);
+	else
+		shell_fprintf(sh, SHELL_NORMAL, "RTS threshold is off\n");
+
+	return 0;
+}
+
 void parse_mode_args_to_params(const struct shell *sh, int argc,
 			       char *argv[], struct wifi_mode_info *mode,
 			       bool *do_mode_oper)
@@ -1870,7 +1903,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "[-b, --band] 0: any band (2:2.4GHz, 5:5GHz, 6:6GHz]\n"
 		  "[-p, --psk]: Passphrase (valid only for secure SSIDs)\n"
 		  "[-k, --key-mgmt]: Key Management type (valid only for secure SSIDs)\n"
-		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP, 7: WPA-PSK\n"
+		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP,"
+		  " 7: WPA-PSK, 8: WPA-Auto-Personal\n"
 		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n"
 		  "[-m, --bssid]: MAC address of the AP (BSSID).\n"
@@ -1975,6 +2009,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		     NULL,
 		     "<wakeup_mode: DTIM/Listen Interval>.\n",
 		     cmd_wifi_ps_wakeup_mode,
+		     2,
+		     0),
+	SHELL_CMD_ARG(rts_threshold,
+		     NULL,
+		     "<rts_threshold: rts threshold/off>.\n",
+		     cmd_wifi_set_rts_threshold,
 		     2,
 		     0),
 	SHELL_SUBCMD_SET_END

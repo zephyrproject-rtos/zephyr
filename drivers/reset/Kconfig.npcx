@@ -1,0 +1,11 @@
+# NPCX reset controller driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config RESET_NPCX
+	bool "Nuvoton NPCX embedded controller (EC) reset controller driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_RST_ENABLED
+	help
+	  This option enables the reset controller driver for Nuvoton NPCX MCUs.

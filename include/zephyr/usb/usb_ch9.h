@@ -14,6 +14,7 @@
 
 #include <version.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/math/ilog2.h>
 #include <zephyr/usb/class/usb_hub.h>
 
 #ifndef ZEPHYR_INCLUDE_USB_CH9_H_
@@ -161,6 +162,19 @@ struct usb_device_descriptor {
 	uint8_t iProduct;
 	uint8_t iSerialNumber;
 	uint8_t bNumConfigurations;
+} __packed;
+
+/** USB Device Qualifier Descriptor defined in spec. Table 9-9 */
+struct usb_device_qualifier_descriptor {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint16_t bcdUSB;
+	uint8_t bDeviceClass;
+	uint8_t bDeviceSubClass;
+	uint8_t bDeviceProtocol;
+	uint8_t bMaxPacketSize0;
+	uint8_t bNumConfigurations;
+	uint8_t bReserved;
 } __packed;
 
 /** USB Standard Configuration Descriptor defined in spec. Table 9-10 */
@@ -320,6 +334,18 @@ struct usb_association_descriptor {
 
 /** USB endpoint transfer type interrupt */
 #define USB_EP_TYPE_INTERRUPT		3U
+
+/** Calculate full speed interrupt endpoint bInterval from a value in microseconds */
+#define USB_FS_INT_EP_INTERVAL(us)	CLAMP(((us) / 1000U), 1U, 255U)
+
+/** Calculate high speed interrupt endpoint bInterval from a value in microseconds */
+#define USB_HS_INT_EP_INTERVAL(us)	CLAMP((ilog2((us) / 125U) + 1U), 1U, 16U)
+
+/** Calculate high speed isochronous endpoint bInterval from a value in microseconds */
+#define USB_FS_ISO_EP_INTERVAL(us)	CLAMP(((us) / 1000U), 1U, 16U)
+
+/** Calculate high speed isochronous endpoint bInterval from a value in microseconds */
+#define USB_HS_ISO_EP_INTERVAL(us)	CLAMP((ilog2((us) / 125U) + 1U), 1U, 16U)
 
 #ifdef __cplusplus
 }

@@ -316,6 +316,7 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
     hardware.serial = 'serial'
     hardware.baud = 115200
     hardware.runner = "runner"
+    hardware.runner_params = ["--runner-param1", "runner-param2"]
 
     options = handler.options
     options.west_flash = "args"
@@ -349,6 +350,8 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
             assert '--device-serial=serial' in command
             assert '--device-serial-baud=115200' in command
         assert '--runner=runner' in command
+        assert '--runner-params=--runner-param1' in command
+        assert '--runner-params=runner-param2' in command
         assert '--west-flash-extra-args=args' in command
         assert '--device-id=123' in command
         assert '--device-product=product' in command

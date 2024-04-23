@@ -18,19 +18,23 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/cache.h>
 
+#if defined(NRF_APPLICATION)
 #include <cmsis_core.h>
 #include <hal/nrf_glitchdet.h>
 #include <hal/nrf_oscillators.h>
 #include <hal/nrf_power.h>
 #include <hal/nrf_regulators.h>
+#endif
 #include <soc/nrfx_coredep.h>
 
 #include <system_nrf54l.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
+#if defined(NRF_APPLICATION)
 #define LFXO_NODE DT_NODELABEL(lfxo)
 #define HFXO_NODE DT_NODELABEL(hfxo)
+#endif
 
 static int nordicsemi_nrf54l_init(void)
 {
@@ -39,6 +43,7 @@ static int nordicsemi_nrf54l_init(void)
 	 */
 	SystemCoreClockUpdate();
 
+#if defined(NRF_APPLICATION)
 	/* Enable ICACHE */
 	sys_cache_instr_enable();
 
@@ -120,6 +125,7 @@ static int nordicsemi_nrf54l_init(void)
 #if defined(CONFIG_ELV_GRTC_LFXO_ALLOWED)
 	nrf_regulators_elv_mode_allow_set(NRF_REGULATORS, NRF_REGULATORS_ELV_ELVGRTCLFXO_MASK);
 #endif /* CONFIG_ELV_GRTC_LFXO_ALLOWED */
+#endif /* NRF_APPLICATION */
 
 	return 0;
 }

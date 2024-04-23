@@ -85,7 +85,7 @@ static void cc_ntf_established(struct ll_conn *conn, struct proc_ctx *ctx)
 /* LLCP Remote Procedure FSM states */
 enum {
 	/* Establish Procedure */
-	RP_CC_STATE_IDLE,
+	RP_CC_STATE_IDLE = LLCP_STATE_IDLE,
 	RP_CC_STATE_WAIT_RX_CIS_REQ,
 	RP_CC_STATE_WAIT_REPLY,
 	RP_CC_STATE_WAIT_TX_CIS_RSP,
@@ -590,17 +590,6 @@ void llcp_rp_cc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 	}
 }
 
-void llcp_rp_cc_init_proc(struct proc_ctx *ctx)
-{
-	switch (ctx->proc) {
-	case PROC_CIS_CREATE:
-		ctx->state = RP_CC_STATE_IDLE;
-		break;
-	default:
-		LL_ASSERT(0);
-	}
-}
-
 bool llcp_rp_cc_awaiting_reply(struct proc_ctx *ctx)
 {
 	return (ctx->state == RP_CC_STATE_WAIT_REPLY);
@@ -642,7 +631,7 @@ static void lp_cc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 
 /* LLCP Local Procedure FSM states */
 enum {
-	LP_CC_STATE_IDLE,
+	LP_CC_STATE_IDLE = LLCP_STATE_IDLE,
 	LP_CC_STATE_WAIT_NTF_AVAIL,
 	LP_CC_STATE_WAIT_OFFSET_CALC,
 	LP_CC_STATE_WAIT_OFFSET_CALC_TX_REQ,

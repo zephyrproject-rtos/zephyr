@@ -103,6 +103,19 @@ static struct bt_cap_commander_cb cbs = {
 #endif /* CONFIG_BT_MICP_MIC_CTLR */
 };
 
+static int cmd_cap_commander_cancel(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	err = bt_cap_commander_cancel();
+	if (err != 0) {
+		shell_print(sh, "Failed to cancel CAP commander procedure: %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 static int cmd_cap_commander_discover(const struct shell *sh, size_t argc, char *argv[])
 {
 	static bool cbs_registered;
@@ -472,6 +485,8 @@ static int cmd_cap_commander(const struct shell *sh, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	cap_commander_cmds,
 	SHELL_CMD_ARG(discover, NULL, "Discover CAS", cmd_cap_commander_discover, 1, 0),
+	SHELL_CMD_ARG(cancel, NULL, "CAP commander cancel current procedure",
+		      cmd_cap_commander_cancel, 1, 0),
 #if defined(CONFIG_BT_VCP_VOL_CTLR)
 	SHELL_CMD_ARG(change_volume, NULL, "Change volume on all connections <volume>",
 		      cmd_cap_commander_change_volume, 2, 0),

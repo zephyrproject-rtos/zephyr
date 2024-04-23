@@ -16,7 +16,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/ethernet/eth_nxp_enet.h>
 
-#include "fsl_enet.h"
+#include <fsl_enet.h>
 
 struct ptp_clock_nxp_enet_config {
 	ENET_Type *base;

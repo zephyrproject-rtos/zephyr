@@ -648,6 +648,99 @@ static void test_route_mcast_scenario3(void)
 	zassert_equal(forwarding_counter, 0, "wrong count forwarded packets");
 }
 
+void test_route_mcast_multiple_route_ifaces(void)
+{
+	/*
+	 * Scenario:
+	 *    1. Verify that multicast packet sent to site-local scoped address
+	 *       to the iface_3 is forwarded only to iface_2 as configured in
+	 *       test_route_mcast_route_add() test case.
+	 *    2. Verify that interface without NET_IF_FORWARD_MULTICASTS flag
+	 *       enabled cannot be added to multicast routing entry.
+	 *    3. Add iface_1 to multicast routing entry for site-local scope.
+	 *    4. Verify that packet sent to the same scope as before is now
+	 *       forwarded also to iface_1.
+	 *    5. Remove iface_1 from the multicast routing entry.
+	 *    6. Verify that packet sent to the same scope is before is now
+	 *       NOT forwarded to iface_1 as it was removed from the list.
+	 */
+	struct net_route_entry_mcast *route;
+	bool res;
+
+	reset_counters();
+	memcpy(&active_scenario.src, &iface_3_addr, sizeof(struct in6_addr));
+	active_scenario.src.s6_addr[15] = 0x02;
+
+	memcpy(&active_scenario.mcast, &mcast_prefix_site_local, sizeof(struct in6_addr));
+	active_scenario.mcast.s6_addr[15] = 0x01;
+
+	struct net_pkt *pkt = setup_ipv6_udp(iface_3, &active_scenario.src, &active_scenario.mcast,
+					     20015, 20001);
+
+	active_scenario.is_active = true;
+	if (net_recv_data(iface_3, pkt) < 0) {
+		net_pkt_unref(pkt);
+		zassert_true(0, "failed to receive initial packet!");
+	}
+	k_sleep(WAIT_TIME);
+	net_pkt_unref(pkt);
+	active_scenario.is_active = false;
+
+	zassert_true(iface_2_forwarded, "iface_2 did not forward");
+	zassert_false(iface_1_forwarded, "iface_1 forwarded");
+	zassert_false(iface_3_forwarded, "iface_3 forwarded");
+	zassert_equal(forwarding_counter, 1, "unexpected forwarded packet count");
+
+	reset_counters();
+
+	route = net_route_mcast_lookup(&mcast_prefix_site_local);
+	zassert_not_null(route, "failed to find the route entry");
+
+	/* Add iface_1 to the entry */
+	res = net_route_mcast_iface_add(route, iface_1);
+	zassert_true(res, "failed to add iface_1 to the entry");
+
+	struct net_pkt *pkt2 = setup_ipv6_udp(iface_3, &active_scenario.src,
+					      &active_scenario.mcast, 215, 201);
+
+	active_scenario.is_active = true;
+	if (net_recv_data(iface_3, pkt2) < 0) {
+		net_pkt_unref(pkt2);
+		zassert_true(0, "failed to receive initial packet!");
+	}
+	k_sleep(WAIT_TIME);
+	net_pkt_unref(pkt2);
+	active_scenario.is_active = false;
+
+	zassert_true(iface_2_forwarded, "iface_2 did not forward");
+	zassert_true(iface_1_forwarded, "iface_1 did not forward");
+	zassert_false(iface_3_forwarded, "iface_3 forwarded");
+	zassert_equal(forwarding_counter, 2, "unexpected forwarded packet count");
+
+	reset_counters();
+
+	/* Remove iface_1 from the entry */
+	res = net_route_mcast_iface_del(route, iface_1);
+	zassert_true(res, "failed to remove iface_1 from the entry");
+
+	struct net_pkt *pkt3 = setup_ipv6_udp(iface_3, &active_scenario.src,
+					      &active_scenario.mcast, 215, 201);
+
+	active_scenario.is_active = true;
+	if (net_recv_data(iface_3, pkt3) < 0) {
+		net_pkt_unref(pkt3);
+		zassert_true(0, "failed to receive initial packet!");
+	}
+	k_sleep(WAIT_TIME);
+	net_pkt_unref(pkt3);
+	active_scenario.is_active = false;
+
+	zassert_true(iface_2_forwarded, "iface_2 did not forward");
+	zassert_false(iface_1_forwarded, "iface_1 forwarded");
+	zassert_false(iface_3_forwarded, "iface_3 forwarded");
+	zassert_equal(forwarding_counter, 1, "unexpected forwarded packet count");
+}
+
 /*test case main entry*/
 ZTEST(route_mcast_test_suite, test_route_mcast)
 {
@@ -657,6 +750,7 @@ ZTEST(route_mcast_test_suite, test_route_mcast)
 	test_route_mcast_scenario1();
 	test_route_mcast_scenario2();
 	test_route_mcast_scenario3();
+	test_route_mcast_multiple_route_ifaces();
 	test_route_mcast_lookup();
 	test_route_mcast_route_del();
 }

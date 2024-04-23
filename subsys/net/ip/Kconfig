@@ -426,6 +426,15 @@ config NET_MAX_MCAST_ROUTES
 	  This determines how many entries can be stored in multicast
 	  routing table.
 
+config NET_MCAST_ROUTE_MAX_IFACES
+	int "Max number of network interfaces per multicast routing entry"
+	default 1
+	range 1 8
+	depends on NET_ROUTE_MCAST
+	help
+	  Determines how many network interfaces can be assigned to a
+	  single multicast route entry.
+
 source "subsys/net/ip/Kconfig.tcp"
 
 config NET_TEST_PROTOCOL

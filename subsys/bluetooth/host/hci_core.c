@@ -807,12 +807,13 @@ int bt_hci_disconnect(uint16_t handle, uint8_t reason)
 }
 
 static uint16_t disconnected_handles[CONFIG_BT_MAX_CONN];
+static uint8_t disconnected_handles_reason[CONFIG_BT_MAX_CONN];
 static void disconnected_handles_reset(void)
 {
 	(void)memset(disconnected_handles, 0, sizeof(disconnected_handles));
 }
 
-static void conn_handle_disconnected(uint16_t handle)
+static void conn_handle_disconnected(uint16_t handle, uint8_t disconnect_reason)
 {
 	for (int i = 0; i < ARRAY_SIZE(disconnected_handles); i++) {
 		if (!disconnected_handles[i]) {
@@ -820,22 +821,24 @@ static void conn_handle_disconnected(uint16_t handle)
 			 * handle 0 can be used as a valid non-zero handle.
 			 */
 			disconnected_handles[i] = ~BT_ACL_HANDLE_MASK | handle;
+			disconnected_handles_reason[i] = disconnect_reason;
 		}
 	}
 }
 
-static bool conn_handle_is_disconnected(uint16_t handle)
+/** @returns the disconnect reason. */
+static uint8_t conn_handle_is_disconnected(uint16_t handle)
 {
 	handle |= ~BT_ACL_HANDLE_MASK;
 
 	for (int i = 0; i < ARRAY_SIZE(disconnected_handles); i++) {
 		if (disconnected_handles[i] == handle) {
 			disconnected_handles[i] = 0;
-			return true;
+			return disconnected_handles_reason[i];
 		}
 	}
 
-	return false;
+	return 0;
 }
 
 static void hci_disconn_complete_prio(struct net_buf *buf)
@@ -855,7 +858,7 @@ static void hci_disconn_complete_prio(struct net_buf *buf)
 		/* Priority disconnect complete event received before normal
 		 * connection complete event.
 		 */
-		conn_handle_disconnected(handle);
+		conn_handle_disconnected(handle, evt->reason);
 		return;
 	}
 
@@ -906,7 +909,7 @@ static void hci_disconn_complete(struct net_buf *buf)
 
 #if defined(CONFIG_BT_CENTRAL) && !defined(CONFIG_BT_FILTER_ACCEPT_LIST)
 	if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
-		bt_conn_set_state(conn, BT_CONN_CONNECTING_SCAN);
+		bt_conn_set_state(conn, BT_CONN_SCAN_BEFORE_INITIATING);
 		bt_le_scan_update(false);
 	}
 #endif /* defined(CONFIG_BT_CENTRAL) && !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
@@ -1039,11 +1042,11 @@ static struct bt_conn *find_pending_connect(uint8_t role, bt_addr_le_t *peer_add
 	 */
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) && role == BT_HCI_ROLE_CENTRAL) {
 		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, peer_addr,
-					       BT_CONN_CONNECTING);
+					       BT_CONN_INITIATING);
 		if (IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST) && !conn) {
 			conn = bt_conn_lookup_state_le(BT_ID_DEFAULT,
 						       BT_ADDR_LE_NONE,
-						       BT_CONN_CONNECTING_AUTO);
+						       BT_CONN_INITIATING_FILTER_LIST);
 		}
 
 		return conn;
@@ -1051,11 +1054,11 @@ static struct bt_conn *find_pending_connect(uint8_t role, bt_addr_le_t *peer_add
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && role == BT_HCI_ROLE_PERIPHERAL) {
 		conn = bt_conn_lookup_state_le(bt_dev.adv_conn_id, peer_addr,
-					       BT_CONN_CONNECTING_DIR_ADV);
+					       BT_CONN_ADV_DIR_CONNECTABLE);
 		if (!conn) {
 			conn = bt_conn_lookup_state_le(bt_dev.adv_conn_id,
 						       BT_ADDR_LE_NONE,
-						       BT_CONN_CONNECTING_ADV);
+						       BT_CONN_ADV_CONNECTABLE);
 		}
 
 		return conn;
@@ -1174,7 +1177,7 @@ static void le_conn_complete_cancel(uint8_t err)
 		/* Check if device is marked for autoconnect. */
 		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
 			/* Restart passive scanner for device */
-			bt_conn_set_state(conn, BT_CONN_CONNECTING_SCAN);
+			bt_conn_set_state(conn, BT_CONN_SCAN_BEFORE_INITIATING);
 		}
 	} else {
 		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
@@ -1293,7 +1296,7 @@ static void update_conn(struct bt_conn *conn, const bt_addr_le_t *id_addr,
 void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 {
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
-	bool is_disconnected = conn_handle_is_disconnected(handle);
+	uint8_t disconnect_reason = conn_handle_is_disconnected(handle);
 	bt_addr_le_t peer_addr, id_addr;
 	struct bt_conn *conn;
 	uint8_t id;
@@ -1459,11 +1462,12 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
-	if (is_disconnected) {
+	if (disconnect_reason) {
 		/* Mark the connection as already disconnected before calling
 		 * the connected callback, so that the application cannot
 		 * start sending packets
 		 */
+		conn->err = disconnect_reason;
 		bt_conn_set_state(conn, BT_CONN_DISCONNECT_COMPLETE);
 	}
 
@@ -1485,7 +1489,7 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 				      struct bt_le_per_adv_sync *sync)
 {
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
-	bool is_disconnected = conn_handle_is_disconnected(handle);
+	uint8_t disconnect_reason = conn_handle_is_disconnected(handle);
 	bt_addr_le_t peer_addr, id_addr;
 	struct bt_conn *conn;
 
@@ -1547,11 +1551,12 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
-	if (is_disconnected) {
+	if (disconnect_reason) {
 		/* Mark the connection as already disconnected before calling
 		 * the connected callback, so that the application cannot
 		 * start sending packets
 		 */
+		conn->err = disconnect_reason;
 		bt_conn_set_state(conn, BT_CONN_DISCONNECT_COMPLETE);
 	}
 

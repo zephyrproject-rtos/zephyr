@@ -549,7 +549,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_ROUTE_MCAST) &&
-		net_ipv6_is_addr_mcast((struct in6_addr *)hdr->dst)) {
+		net_ipv6_is_addr_mcast((struct in6_addr *)hdr->dst) && !net_pkt_forwarding(pkt)) {
 		/* If the packet is a multicast packet and multicast routing
 		 * is activated, we give the packet to the routing engine.
 		 *

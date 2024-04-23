@@ -335,14 +335,14 @@ int bt_le_scan_update(bool fast_scan)
 
 		/* don't restart scan if we have pending connection */
 		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
-					       BT_CONN_CONNECTING);
+					       BT_CONN_INITIATING);
 		if (conn) {
 			bt_conn_unref(conn);
 			return 0;
 		}
 
 		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
-					       BT_CONN_CONNECTING_SCAN);
+					       BT_CONN_SCAN_BEFORE_INITIATING);
 		if (conn) {
 			atomic_set_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
 
@@ -378,7 +378,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 	}
 
 	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, id_addr,
-				       BT_CONN_CONNECTING_SCAN);
+				       BT_CONN_SCAN_BEFORE_INITIATING);
 	if (!conn) {
 		return;
 	}
@@ -393,7 +393,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 		goto failed;
 	}
 
-	bt_conn_set_state(conn, BT_CONN_CONNECTING);
+	bt_conn_set_state(conn, BT_CONN_INITIATING);
 	bt_conn_unref(conn);
 	return;
 

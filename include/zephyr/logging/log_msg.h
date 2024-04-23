@@ -788,6 +788,14 @@ static inline const void *log_msg_get_source(struct log_msg *msg)
 	return msg->hdr.source;
 }
 
+/** @brief Get log message source ID.
+ *
+ * @param msg Log message.
+ *
+ * @return Source ID, or -1 if not available.
+ */
+int16_t log_msg_get_source_id(struct log_msg *msg);
+
 /** @brief Get timestamp.
  *
  * @param msg Log message.

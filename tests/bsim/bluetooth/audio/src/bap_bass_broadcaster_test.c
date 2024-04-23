@@ -32,7 +32,7 @@ static void test_main(void)
 	printk("Bluetooth initialized\n");
 
 	/* Create a non-connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, &adv);
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, &adv);
 	if (err) {
 		FAIL("Failed to create advertising set (err %d)\n", err);
 		return;

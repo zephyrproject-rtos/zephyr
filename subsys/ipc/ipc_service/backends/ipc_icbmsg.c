@@ -75,6 +75,9 @@
  * data messages, it calls bound endpoint and it is ready to send data.
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* For strnlen() */
+
 #include <string.h>
 
 #include <zephyr/logging/log.h>
@@ -458,7 +461,7 @@ static int release_tx_buffer(struct backend_data *dev_data, const uint8_t *buffe
 			     int new_size)
 {
 	const struct icbmsg_config *conf = dev_data->conf;
-	size_t size;
+	size_t size = 0;
 	int tx_block_index;
 
 	tx_block_index = buffer_to_index_validate(&conf->tx, buffer, &size);

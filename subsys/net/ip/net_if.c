@@ -1727,6 +1727,12 @@ void net_address_lifetime_timeout(void)
 
 static void address_start_timer(struct net_if_addr *ifaddr, uint32_t vlifetime)
 {
+	/* Make sure that we do not insert the address twice to
+	 * the lifetime timer list.
+	 */
+	sys_slist_find_and_remove(&active_address_lifetime_timers,
+				  &ifaddr->lifetime.node);
+
 	sys_slist_append(&active_address_lifetime_timers,
 			 &ifaddr->lifetime.node);
 

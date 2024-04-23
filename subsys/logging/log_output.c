@@ -717,22 +717,7 @@ void log_output_msg_process(const struct log_output *output,
 	log_timestamp_t timestamp = log_msg_get_timestamp(msg);
 	uint8_t level = log_msg_get_level(msg);
 	uint8_t domain_id = log_msg_get_domain(msg);
-	int16_t source_id;
-
-	if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN) && domain_id != Z_LOG_LOCAL_DOMAIN_ID) {
-		/* Remote domain is converting source pointer to ID */
-		source_id = (int16_t)(uintptr_t)log_msg_get_source(msg);
-	} else {
-		void *source = (void *)log_msg_get_source(msg);
-
-		if (source != NULL) {
-			source_id = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
-					log_dynamic_source_id(source) :
-					log_const_source_id(source);
-		} else {
-			source_id = -1;
-		}
-	}
+	int16_t source_id = log_msg_get_source_id(msg);
 
 	const char *sname = source_id >= 0 ? log_source_name_get(domain_id, source_id) : NULL;
 	size_t plen, dlen;

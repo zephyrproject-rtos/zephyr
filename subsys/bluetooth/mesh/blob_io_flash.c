@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Noioic Semiconductor ASA
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #include "net.h"
 #include "transport.h"
 
-#define WRITE_BLOCK_SIZE 4
+#define WRITE_BLOCK_SIZE DT_PROP(DT_INST(0, soc_nv_flash), write_block_size)
 
 #define FLASH_IO(_io) CONTAINER_OF(_io, struct bt_mesh_blob_io_flash, io)
 
@@ -110,6 +110,13 @@ static int wr_chunk(const struct bt_mesh_blob_io *io,
 		    const struct bt_mesh_blob_chunk *chunk)
 {
 	struct bt_mesh_blob_io_flash *flash = FLASH_IO(io);
+
+	if (IS_ENABLED(CONFIG_SOC_FLASH_NRF_RRAM)) {
+		return flash_area_write(flash->area,
+					flash->offset + block->offset + chunk->offset,
+					chunk->data, chunk->size);
+	}
+
 	uint8_t buf[ROUND_UP(BLOB_CHUNK_SIZE_MAX(BT_MESH_RX_SDU_MAX),
 			  WRITE_BLOCK_SIZE)];
 	off_t area_offset = flash->offset + block->offset + chunk->offset;

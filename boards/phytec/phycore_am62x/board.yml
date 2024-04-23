@@ -1,5 +1,0 @@
-board:
-  name: phycore_am62x
-  vendor: phytec
-  socs:
-  - name: am6234

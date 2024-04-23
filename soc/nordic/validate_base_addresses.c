@@ -310,6 +310,10 @@ CHECK_DT_REG(uicr, NRF_UICR);
 CHECK_DT_REG(usbd, NRF_USBD);
 CHECK_DT_REG(usbreg, NRF_USBREGULATOR);
 CHECK_DT_REG(vmc, NRF_VMC);
+CHECK_DT_REG(cpuflpr_clic, NRF_FLPR_VPRCLIC);
+#if defined(CONFIG_SOC_NRF54L15)
+CHECK_DT_REG(cpuflpr_vpr, NRF_VPR00);
+#endif
 CHECK_DT_REG(wdt, NRF_WDT0);	/* this should be the same node as wdt0 */
 CHECK_DT_REG(wdt0, NRF_WDT0);
 CHECK_DT_REG(wdt1, NRF_WDT1);

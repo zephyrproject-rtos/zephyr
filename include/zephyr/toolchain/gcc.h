@@ -643,6 +643,12 @@ do {                                                                    \
 #define __noasan /**/
 #endif
 
+#if defined(CONFIG_UBSAN)
+#define __noubsan __attribute__((no_sanitize("undefined")))
+#else
+#define __noubsan
+#endif
+
 /**
  * @brief Function attribute to disable stack protector.
  *

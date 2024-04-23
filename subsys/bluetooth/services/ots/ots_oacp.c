@@ -25,16 +25,6 @@
 LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 
 #define OACP_PROC_TYPE_SIZE	1
-/**
- * OTS_v10.pdf Table 3.10: Format of OACP Response V
- * OACP Response Value contains
- * 1 octet Procedure code
- * 1 octet Request op code
- * 1 octet Result Code
- * 4 octet CRC checksum (if present)
- * Execute operation is not supported
- **/
-#define OACP_RES_MAX_SIZE	(3 + sizeof(uint32_t))
 
 #if defined(CONFIG_BT_OTS_OACP_WRITE_SUPPORT)
 static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
@@ -644,14 +634,14 @@ static void oacp_ind_cb(struct bt_conn *conn,
 	}
 }
 
-static int oacp_ind_send(const struct bt_gatt_attr *oacp_attr,
+static void oacp_ind_send(const struct bt_gatt_attr *oacp_attr,
 			 struct bt_gatt_ots_oacp_proc oacp_proc,
 			 enum bt_gatt_ots_oacp_res_code oacp_status,
 			 struct net_buf_simple *resp_param)
 {
-	uint8_t oacp_res[OACP_RES_MAX_SIZE];
-	uint16_t oacp_res_len = 0;
 	struct bt_ots *ots = (struct bt_ots *) oacp_attr->user_data;
+	uint8_t *oacp_res = ots->oacp_ind.res;
+	uint16_t oacp_res_len = 0;
 
 	/* Encode OACP Response */
 	oacp_res[oacp_res_len++] = BT_GATT_OTS_OACP_PROC_RESP;
@@ -673,7 +663,8 @@ static int oacp_ind_send(const struct bt_gatt_attr *oacp_attr,
 
 	LOG_DBG("Sending OACP indication");
 
-	return bt_gatt_indicate(NULL, &ots->oacp_ind.params);
+
+	k_work_submit(&ots->oacp_ind.work);
 }
 
 ssize_t bt_gatt_ots_oacp_write(struct bt_conn *conn,
@@ -697,6 +688,11 @@ ssize_t bt_gatt_ots_oacp_write(struct bt_conn *conn,
 	if (offset != 0) {
 		LOG_ERR("Invalid offset of OACP Write Request");
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	if (k_work_is_pending(&ots->oacp_ind.work)) {
+		LOG_ERR("OACP Write received before indication sent");
+		return BT_GATT_ERR(BT_ATT_ERR_PROCEDURE_IN_PROGRESS);
 	}
 
 	decode_status = oacp_command_decode(buf, len, &oacp_proc);

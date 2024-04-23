@@ -556,6 +556,48 @@ but can also reject the requests.
 The choice of what the return type of the callbacks often depend on the specifications,
 and how much control the role has in a given context.
 
+Things worth knowing or considering when using LE Audio
+=======================================================
+
+This section describes a few tings to consider when contributing to or using LE Audio in Zephyr.
+The things described by this section are not unique to Zephyr as they are defined by the
+specifications.
+
+Security requirements
+---------------------
+
+All LE Audio services require Security Level 2 but where the key must be 128-bit and derived via an
+OOB method or via LE Secure connections.
+There is no Core-spec defined way of reporting this in GATT,
+as ATT does not have a specific error code for missing OOB method or LE Secure Connections
+(although there is a way to report wrong key size).
+
+In Zephyr we do not force the device to always use these, as a device that uses LE Audio may also
+use other profiles and services that do not require such security.
+We guard all access to services using a custom security check implemented in
+:zephyr_file:`subsys/bluetooth/audio/audio.c`, where all LE Audio services must use the
+internal `BT_AUDIO_CHRC` macro for proper security verification.
+
+Access to the LTK for encrypted SIRKs in CSIS
+---------------------------------------------
+
+The Coordinated Set Identification Service (CSIS) may encrypt the SIRK (set identity resolving key).
+The process of encrypting the SIRK requires the LTK as the encryption key,
+which is typically not exposed to higher layer implementations such as CSIS.
+This does not have any effect on the security though.
+
+MTU requirements
+----------------
+
+The Basic Audio Profile (BAP) has a requirement that both sides shall support a minimum ATT_MTU of
+at least 64 on the unenhanced ATT bearer or at least one enhanced ATT bearer.
+The requirement comes from the preferred (or sometimes mandatory) use of GATT Write Without
+Response, and where support for Write Long Characterstic Value is optional in most cases.
+
+If a ASCS device supports values larger than the minimum ATT_MTU of 64 octets, then it shall supoort
+Read long Characterstic Value by setting :kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT` to a
+non-zero value.
+
 LE Audio resources
 ##################
 

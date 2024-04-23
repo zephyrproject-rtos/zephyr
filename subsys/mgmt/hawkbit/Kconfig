@@ -3,7 +3,7 @@
 
 menuconfig HAWKBIT
 	bool "Eclipse hawkBit Firmware Over-the-Air support"
-	depends on NVS
+	depends on SETTINGS
 	depends on FLASH
 	depends on REBOOT
 	depends on HWINFO
@@ -45,10 +45,15 @@ config HAWKBIT_SERVER
 	  Configure the hawkbit server address.
 
 config HAWKBIT_PORT
-	string "Port address for the hawkbit server"
-	default "8080"
+	int "Port number for the hawkbit server"
+	default 8080
 	help
 	  Configure the hawkbit port number.
+
+config HAWKBIT_SET_SETTINGS_RUNTIME
+	bool "Set hawkbit settings at runtime"
+	help
+	  Enable to set hawkbit settings at runtime.
 
 choice HAWKBIT_DDI_SECURITY
 	prompt "hawkBit DDI API authentication modes"
@@ -78,6 +83,33 @@ config HAWKBIT_DDI_SECURITY_TOKEN
 	help
 	  Authentication security token for the configured hawkBit DDI
 	  authentication mode.
+
+config HAWKBIT_CUSTOM_ATTRIBUTES
+	bool "Custom device attributes"
+	help
+	  Use custom definition of device attributes.
+
+config HAWKBIT_STATUS_BUFFER_SIZE
+	int "hawkBit status buffer size"
+	default 200
+	help
+	  Set the size of the buffer, which is used to store the
+	  json strings, that are sent to the hawkBit server. It might
+	  be increased if the custom attributes are used extensively.
+
+config HAWKBIT_CUSTOM_DEVICE_ID
+	bool "Custom device id through callback function"
+	help
+	  Be able to customize the device id during runtime to a custom value,
+	  by configuring the callback function. See `hawkbit_set_device_identity_cb`
+
+config HAWKBIT_DEVICE_ID_MAX_LENGTH
+	int "Maximum length of the device id"
+	depends on HAWKBIT_CUSTOM_DEVICE_ID
+	range 1 128
+	default 32
+	help
+	  Maximum length of the device id.
 
 module = HAWKBIT
 module-str = Log Level for hawkbit

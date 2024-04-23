@@ -52,8 +52,9 @@
 #if defined(CONFIG_BT_CENTRAL)
 /* LLCP Local Procedure Encryption FSM states */
 enum {
-	/* Start Procedure */
+	LP_ENC_STATE_IDLE = LLCP_STATE_IDLE,
 	LP_ENC_STATE_UNENCRYPTED,
+	/* Start Procedure */
 	LP_ENC_STATE_WAIT_TX_ENC_REQ,
 	LP_ENC_STATE_WAIT_RX_ENC_RSP,
 	LP_ENC_STATE_WAIT_RX_START_ENC_REQ,
@@ -94,8 +95,9 @@ enum {
 #if defined(CONFIG_BT_PERIPHERAL)
 /* LLCP Remote Procedure Encryption FSM states */
 enum {
-	/* Start Procedure */
+	RP_ENC_STATE_IDLE = LLCP_STATE_IDLE,
 	RP_ENC_STATE_UNENCRYPTED,
+	/* Start Procedure */
 	RP_ENC_STATE_WAIT_RX_ENC_REQ,
 	RP_ENC_STATE_WAIT_TX_ENC_RSP,
 	RP_ENC_STATE_WAIT_LTK_REPLY,
@@ -252,7 +254,7 @@ static void lp_enc_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t 
 {
 	lp_enc_ntf(conn, ctx);
 	llcp_lr_complete(conn);
-	ctx->state = LP_ENC_STATE_UNENCRYPTED;
+	ctx->state = LP_ENC_STATE_IDLE;
 }
 
 static void lp_enc_store_m(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -337,21 +339,6 @@ static void lp_enc_send_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 
 		/* Rx Decryption enabled */
 		conn->lll.enc_rx = 1U;
-	}
-}
-
-static void lp_enc_st_unencrypted(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
-				  void *param)
-{
-	switch (evt) {
-	case LP_ENC_EVT_RUN:
-		/* Pause Tx data */
-		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
-		lp_enc_send_enc_req(conn, ctx, evt, param);
-		break;
-	default:
-		/* Ignore other evts */
-		break;
 	}
 }
 
@@ -510,6 +497,21 @@ static void lp_enc_st_wait_rx_start_enc_rsp(struct ll_conn *conn, struct proc_ct
 	}
 }
 
+static void lp_enc_st_unencrypted(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				   void *param)
+{
+	switch (evt) {
+	case LP_ENC_EVT_RUN:
+		/* Pause Tx data */
+		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
+		lp_enc_send_enc_req(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
 static void lp_enc_state_encrypted(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				   void *param)
 {
@@ -518,6 +520,23 @@ static void lp_enc_state_encrypted(struct ll_conn *conn, struct proc_ctx *ctx, u
 		/* Pause Tx data */
 		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
 		lp_enc_send_pause_enc_req(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void lp_enc_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				   void *param)
+{
+	switch (evt) {
+	case LP_ENC_EVT_RUN:
+		if (ctx->proc == PROC_ENCRYPTION_PAUSE) {
+			lp_enc_state_encrypted(conn, ctx, evt, param);
+		} else {
+			lp_enc_st_unencrypted(conn, ctx, evt, param);
+		}
 		break;
 	default:
 		/* Ignore other evts */
@@ -572,6 +591,9 @@ static void lp_enc_state_wait_tx_pause_enc_rsp(struct ll_conn *conn, struct proc
 static void lp_enc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->state) {
+	case LP_ENC_STATE_IDLE:
+		lp_enc_st_idle(conn, ctx, evt, param);
+		break;
 	/* Start Procedure */
 	case LP_ENC_STATE_UNENCRYPTED:
 		lp_enc_st_unencrypted(conn, ctx, evt, param);
@@ -650,20 +672,6 @@ void llcp_lp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_p
 		 */
 
 		conn->llcp_terminate.reason_final = BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
-	}
-}
-
-void llcp_lp_enc_init_proc(struct proc_ctx *ctx)
-{
-	switch (ctx->proc) {
-	case PROC_ENCRYPTION_START:
-		ctx->state = LP_ENC_STATE_UNENCRYPTED;
-		break;
-	case PROC_ENCRYPTION_PAUSE:
-		ctx->state = LP_ENC_STATE_ENCRYPTED;
-		break;
-	default:
-		LL_ASSERT(0);
 	}
 }
 
@@ -878,7 +886,7 @@ static void rp_enc_send_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 	} else {
 		llcp_rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_START_ENC_RSP);
 		llcp_rr_complete(conn);
-		ctx->state = RP_ENC_STATE_UNENCRYPTED;
+		ctx->state = RP_ENC_STATE_IDLE;
 
 		/* Resume Tx data */
 		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
@@ -906,19 +914,6 @@ static void rp_enc_send_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 
 		/* Rx Decryption disabled */
 		conn->lll.enc_rx = 0U;
-	}
-}
-
-static void rp_enc_state_unencrypted(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
-				     void *param)
-{
-	switch (evt) {
-	case RP_ENC_EVT_RUN:
-		ctx->state = RP_ENC_STATE_WAIT_RX_ENC_REQ;
-		break;
-	default:
-		/* Ignore other evts */
-		break;
 	}
 }
 
@@ -1076,6 +1071,35 @@ static void rp_enc_state_encrypted(struct ll_conn *conn, struct proc_ctx *ctx, u
 	}
 }
 
+static void rp_enc_state_unencrypted(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				   void *param)
+{
+	switch (evt) {
+	case RP_ENC_EVT_RUN:
+		ctx->state = RP_ENC_STATE_WAIT_RX_ENC_REQ;
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void rp_enc_state_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				   void *param)
+{
+	switch (evt) {
+	case RP_ENC_EVT_RUN:
+		if (ctx->proc == PROC_ENCRYPTION_PAUSE) {
+			rp_enc_state_encrypted(conn, ctx, evt, param);
+		} else {
+			rp_enc_state_unencrypted(conn, ctx, evt, param);
+		}
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
 static void rp_enc_state_wait_rx_pause_enc_req(struct ll_conn *conn, struct proc_ctx *ctx,
 					       uint8_t evt, void *param)
 {
@@ -1151,6 +1175,9 @@ static void rp_enc_state_wait_rx_pause_enc_rsp(struct ll_conn *conn, struct proc
 static void rp_enc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->state) {
+	case RP_ENC_STATE_IDLE:
+		rp_enc_state_idle(conn, ctx, evt, param);
+		break;
 	/* Start Procedure */
 	case RP_ENC_STATE_UNENCRYPTED:
 		rp_enc_state_unencrypted(conn, ctx, evt, param);
@@ -1234,20 +1261,6 @@ void llcp_rp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_p
 		 */
 
 		conn->llcp_terminate.reason_final = BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
-	}
-}
-
-void llcp_rp_enc_init_proc(struct proc_ctx *ctx)
-{
-	switch (ctx->proc) {
-	case PROC_ENCRYPTION_START:
-		ctx->state = RP_ENC_STATE_UNENCRYPTED;
-		break;
-	case PROC_ENCRYPTION_PAUSE:
-		ctx->state = RP_ENC_STATE_ENCRYPTED;
-		break;
-	default:
-		LL_ASSERT(0);
 	}
 }
 

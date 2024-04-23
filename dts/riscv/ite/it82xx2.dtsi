@@ -467,10 +467,14 @@
 		pinctrlb: pinctrl@f01668 {
 			compatible = "ite,it8xxx2-pinctrl-func";
 			reg = <0x00f01668 8>;   /* GPCR */
-			func3-gcr =     <0xf03e15 0xf03e15 0xf03e16 NO_FUNC
+			func3-gcr =     <0xf03e15 0xf03e15 0xf03e11 NO_FUNC
+					 NO_FUNC  0xf03e11 NO_FUNC  NO_FUNC>;
+			func3-en-mask = <0x01     0x02     0x20     0
+					 0        0x20     0        0      >;
+			func3-ext =     <NO_FUNC  NO_FUNC  0xf03e16 NO_FUNC
 					 NO_FUNC  0xf03e16 NO_FUNC  NO_FUNC>;
-			func3-en-mask = <0x01     0x02     0x40     0
-					 0        0x40     0        0      >;
+			func3-ext-mask = <0       0        0x40     0
+					  0       0x40     0        0      >;
 			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
 					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
 			func4-en-mask = <0        0        0        0

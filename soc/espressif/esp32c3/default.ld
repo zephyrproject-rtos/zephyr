@@ -658,7 +658,7 @@ SECTIONS
     *(.rodata_desc .rodata_desc.*)
     *(.rodata_custom_desc .rodata_custom_desc.*)
 
-    __rodata_region_start = .;
+    __rodata_region_start = ABSOLUTE(.);
 
     . = ALIGN(4);
     #include <snippets-rodata.ld>
@@ -684,7 +684,7 @@ SECTIONS
     *(.xt_except_desc_end)
     *(.dynamic)
     *(.gnu.version_d)
-    __rodata_region_end = .;
+    __rodata_region_end = ABSOLUTE(.);
     _rodata_end = ABSOLUTE(.);
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
@@ -745,6 +745,7 @@ SECTIONS
     _instruction_reserved_start = ABSOLUTE(.);
     _text_start = ABSOLUTE(.);
     _instruction_reserved_start = ABSOLUTE(.);
+    __text_region_start = ABSOLUTE(.);
 
 #if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
@@ -765,24 +766,19 @@ SECTIONS
 
     *(.gnu.version)
 
-    /** CPU will try to prefetch up to 16 bytes of
-      * of instructions. This means that any configuration (e.g. MMU, PMS) must allow
-      * safe access to up to 16 bytes after the last real instruction, add
-      * dummy bytes to ensure this
-      */
+    /* CPU will try to prefetch up to 16 bytes of
+     * of instructions. This means that any configuration (e.g. MMU, PMS) must allow
+     * safe access to up to 16 bytes after the last real instruction, add
+     * dummy bytes to ensure this
+     */
     . += 16;
 
     _instruction_reserved_end = ABSOLUTE(.);
     _text_end = ABSOLUTE(.);
     _instruction_reserved_end = ABSOLUTE(.);
+    __text_region_end = ABSOLUTE(.);
     _etext = .;
 
-    /**
-     * Similar to _iram_start, this symbol goes here so it is
-     * resolved by addr2line in preference to the first symbol in
-     * the flash.text segment.
-     */
-    //_flash_cache_start = ABSOLUTE(0);
   } GROUP_DATA_LINK_IN(FLASH_CODE_REGION, ROMABLE_REGION)
 
   /* --- END OF .flash.text --- */

@@ -1349,11 +1349,13 @@ static int start_adv(void)
 			      BT_UUID_16_ENCODE(BT_UUID_BASS_VAL),
 			      BT_UUID_16_ENCODE(BT_UUID_PACS_VAL)),
 		BT_DATA_BYTES(BT_DATA_SVC_DATA16, BT_UUID_16_ENCODE(BT_UUID_BASS_VAL)),
+		BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME,
+			sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 	};
 	int err;
 
 	/* Create a non-connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, NULL, &ext_adv);
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &ext_adv);
 	if (err != 0) {
 		printk("Failed to create advertising set (err %d)\n", err);
 

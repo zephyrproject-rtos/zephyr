@@ -166,19 +166,20 @@ For example, if you want to create a connectable and scannable advertiser and st
         Advertiser[0] 0x200022f0 set started
 
 You may notice that with this, the custom advertiser does not advertise the device name; you need to
-enable it. Continuing from the previous example:
+add it. Continuing from the previous example:
 
 .. code-block:: console
 
         uart:~$ bt adv-stop
         Advertiser set stopped
-        uart:~$ bt adv-param conn-scan name
+        uart:~$ bt adv-data dev-name
         uart:~$ bt adv-start
         Advertiser[0] 0x200022f0 set started
 
-You should now see the name of the device in the advertising data. You can also set the advertising
-data manually by using the :code:`bt adv-data` command. The following example shows how to set the
-advertiser name with it:
+You should now see the name of the device in the advertising data. You can also set a custom name by
+using :code:`name <custom name>` instead of :code:`dev-name`. It is also possible to set the
+advertising data manually with the :code:`bt adv-data` command. The following example shows how
+to set the advertiser name with it using raw advertising data:
 
 .. code-block:: console
 

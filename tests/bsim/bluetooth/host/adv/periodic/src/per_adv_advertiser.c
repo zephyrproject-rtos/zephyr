@@ -89,7 +89,7 @@ static void create_per_adv_set(struct bt_le_ext_adv **adv)
 	int err;
 
 	printk("Creating extended advertising set...");
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, adv);
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, adv);
 	if (err) {
 		printk("Failed to create advertising set: %d\n", err);
 		return;
@@ -111,7 +111,7 @@ static void create_conn_adv_set(struct bt_le_ext_adv **adv)
 	int err;
 
 	printk("Creating connectable extended advertising set...");
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, NULL, adv);
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, adv);
 	if (err) {
 		printk("Failed to create advertising set: %d\n", err);
 		return;

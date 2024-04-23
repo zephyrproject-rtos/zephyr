@@ -242,22 +242,21 @@ static void on_rx_done(const struct device *dev, const nrfx_uarte_event_t *event
 	struct uarte_nrfx_data *data = dev->data;
 	struct uart_event evt;
 
-	if (event->data.rx.length) {
-		if (data->async->err) {
-			evt.type = UART_RX_STOPPED;
-			evt.data.rx_stop.reason = UARTE_ERROR_FROM_MASK(data->async->err);
-			evt.data.rx_stop.data.buf = event->data.rx.p_buffer;
-			evt.data.rx_stop.data.len = event->data.rx.length;
-			/* Keep error code for uart_err_check(). */
-			if (!IS_INT_DRIVEN_API(dev)) {
-				data->async->err = 0;
-			}
-		} else {
-			evt.type = UART_RX_RDY,
-			evt.data.rx.buf = event->data.rx.p_buffer,
-			evt.data.rx.len = event->data.rx.length,
-			evt.data.rx.offset = 0;
+	if (data->async->err) {
+		evt.type = UART_RX_STOPPED;
+		evt.data.rx_stop.reason = UARTE_ERROR_FROM_MASK(data->async->err);
+		evt.data.rx_stop.data.buf = event->data.rx.p_buffer;
+		evt.data.rx_stop.data.len = event->data.rx.length;
+		/* Keep error code for uart_err_check(). */
+		if (!IS_INT_DRIVEN_API(dev)) {
+			data->async->err = 0;
 		}
+		data->async->user_callback(dev, &evt, data->async->user_data);
+	} else if (event->data.rx.length) {
+		evt.type = UART_RX_RDY,
+		evt.data.rx.buf = event->data.rx.p_buffer,
+		evt.data.rx.len = event->data.rx.length,
+		evt.data.rx.offset = 0;
 		data->async->user_callback(dev, &evt, data->async->user_data);
 	}
 
@@ -385,6 +384,15 @@ static int api_tx(const struct device *dev, const uint8_t *buf, size_t len, int3
 	nrfx_err_t err;
 	bool hwfc;
 
+#if CONFIG_PM_DEVICE
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+	if (state != PM_DEVICE_STATE_ACTIVE) {
+		return -ECANCELED;
+	}
+#endif
+
 #if CONFIG_UART_USE_RUNTIME_CONFIGURE
 	hwfc = data->uart_config.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS;
 #else
@@ -497,6 +505,7 @@ static int api_rx_enable(const struct device *dev, uint8_t *buf, size_t len, int
 	 * flags are already known to the driver (e.g. if flushed data shall be
 	 * kept or not).
 	 */
+	adata->err = 0;
 	adata->en_rx_buf = buf;
 	adata->en_rx_len = len;
 
@@ -573,6 +582,15 @@ static void api_poll_out(const struct device *dev, unsigned char out_char)
 {
 	const nrfx_uarte_t *nrfx_dev = get_nrfx_dev(dev);
 	nrfx_err_t err;
+
+#if CONFIG_PM_DEVICE
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+	if (state != PM_DEVICE_STATE_ACTIVE) {
+		return;
+	}
+#endif
 
 	do {
 		/* When runtime PM is used we cannot use early return because then

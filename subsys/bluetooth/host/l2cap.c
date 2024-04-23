@@ -521,6 +521,10 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 				      sizeof(*req) +
 				      (channels * sizeof(uint16_t)));
 
+	if (!buf) {
+		return -ENOMEM;
+	}
+
 	req = net_buf_add(buf, sizeof(*req));
 
 	ch = BT_L2CAP_LE_CHAN(chan[0]);
@@ -895,6 +899,22 @@ static struct net_buf *l2cap_chan_le_get_tx_buf(struct bt_l2cap_le_chan *ch)
 static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 				  struct net_buf *buf);
 
+/** @brief Get @c chan->state.
+ *
+ * This field does not exist when @kconfig{CONFIG_BT_L2CAP_DYNAMIC_CHANNEL} is
+ * disabled. In that case, this function returns @ref BT_L2CAP_CONNECTED since
+ * the struct can only represent static channels in that case and static
+ * channels are always connected.
+ */
+static bt_l2cap_chan_state_t bt_l2cap_chan_get_state(struct bt_l2cap_chan *chan)
+{
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	return BT_L2CAP_LE_CHAN(chan)->state;
+#else
+	return BT_L2CAP_CONNECTED;
+#endif
+}
+
 static void l2cap_chan_tx_process(struct k_work *work)
 {
 	struct bt_l2cap_le_chan *ch;
@@ -902,6 +922,11 @@ static void l2cap_chan_tx_process(struct k_work *work)
 	int ret;
 
 	ch = CONTAINER_OF(k_work_delayable_from_work(work), struct bt_l2cap_le_chan, tx_work);
+
+	if (bt_l2cap_chan_get_state(&ch->chan) != BT_L2CAP_CONNECTED) {
+		LOG_DBG("Cannot send on non-connected channel");
+		return;
+	}
 
 	/* Resume tx in case there are buffers in the queue */
 	while ((buf = l2cap_chan_le_get_tx_buf(ch))) {
@@ -1407,6 +1432,9 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 response:
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_ECRED_RECONF_RSP, ident,
 				      sizeof(*rsp));
+	if (!buf) {
+		return;
+	}
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	rsp->result = sys_cpu_to_le16(result);
@@ -2017,7 +2045,7 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 		sent += ret;
 
 		/* If the current buffer has been fully consumed, destroy it */
-		if (ret == rem_len) {
+		if (sent == rem_len) {
 			net_buf_unref(buf);
 		}
 	}
@@ -2205,22 +2233,6 @@ static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
 	if (chan->ops->status) {
 		chan->ops->status(chan, chan->status);
 	}
-}
-
-/** @brief Get @c chan->state.
- *
- * This field does not exist when @kconfig{CONFIG_BT_L2CAP_DYNAMIC_CHANNEL} is
- * disabled. In that case, this function returns @ref BT_L2CAP_CONNECTED since
- * the struct can only represent static channels in that case and static
- * channels are always connected.
- */
-static inline bt_l2cap_chan_state_t bt_l2cap_chan_get_state(struct bt_l2cap_chan *chan)
-{
-#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-	return BT_L2CAP_LE_CHAN(chan)->state;
-#else
-	return BT_L2CAP_CONNECTED;
-#endif
 }
 
 static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,

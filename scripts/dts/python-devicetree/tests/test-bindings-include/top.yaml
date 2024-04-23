@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: |
+  Top-level binding file for testing included property spec paths.
+
+  base.yaml: specifies properties "x" and "y"
+  modified.yaml: includes base.yaml, modifies property "x"
+  top.yaml (this file): includes modified.yaml, specifies property "p"
+
+  From the top-level binding, we expect:
+  - "x" was last modified in modified.yaml
+  - "y" was last modified in base.yaml
+  - "p" was last modified in top.yaml
+
+compatible: top-level
+
+include: modified.yaml
+
+properties:
+  p:
+    type: int

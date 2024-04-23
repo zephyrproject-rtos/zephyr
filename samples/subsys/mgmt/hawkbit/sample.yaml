@@ -30,3 +30,6 @@ tests:
   sample.net.hawkbit.tls:
     extra_configs:
       - CONFIG_NET_SOCKETS_SOCKOPT_TLS=y
+  sample.net.hawkbit.set_settings_runtime:
+    extra_configs:
+      - CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME=y

@@ -12,6 +12,7 @@
 #include "nrf54h20dk_nrf54h20-pinctrl.dtsi"
 
 /delete-node/ &cpuapp_cpuppr_ipc;
+/delete-node/ &cpuapp_cpusys_ipc;
 /delete-node/ &cpusec_cpuapp_ipc;
 
 / {
@@ -23,6 +24,8 @@
 		zephyr,code-partition = &cpurad_slot0_partition;
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpurad_ram0;
+		zephyr,shell-uart = &uart135;
+		zephyr,bt-hci-ipc = &ipc0;
 	};
 };
 
@@ -30,11 +33,20 @@
 	status = "okay";
 };
 
+&cpuapp_cpurad_ram0x_region {
+	status = "okay";
+};
+
 &cpurad_bellboard {
+	status = "okay";
 	interrupts = <96 NRF_DEFAULT_IRQ_PRIORITY>;
 	interrupt-names = "irq0";
-	/* irq0: 0: cpurad-cpusec, 12: cpurad-cpuapp */
-	nordic,interrupt-mapping = <0x00001001 0>;
+	/* irq0: 0: cpurad-cpusec, 6: cpurad-cpusys, 12: cpurad-cpuapp */
+	nordic,interrupt-mapping = <0x00001041 0>;
+};
+
+&cpuapp_bellboard {
+	status = "okay";
 };
 
 &cpusec_cpurad_ipc {
@@ -43,11 +55,19 @@
 	rx-region = <&cpusec_cpurad_ipc_shm>;
 };
 
-&cpuapp_cpurad_ipc {
-	compatible = "zephyr,ipc-icmsg-me-follower";
+ipc0: &cpuapp_cpurad_ipc {
+	status = "okay";
 	mbox-names = "tx", "rx";
 	tx-region = <&cpurad_cpuapp_ipc_shm>;
 	rx-region = <&cpuapp_cpurad_ipc_shm>;
+	tx-blocks = <32>;
+	rx-blocks = <32>;
+};
+
+&cpurad_cpusys_ipc {
+	mbox-names = "rx", "tx";
+	tx-region = <&cpurad_cpusys_ipc_shm>;
+	rx-region = <&cpusys_cpurad_ipc_shm>;
 };
 
 &cpurad_dma_region {

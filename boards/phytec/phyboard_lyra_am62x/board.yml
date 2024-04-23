@@ -1,5 +1,0 @@
-board:
-  name: phyboard_lyra_am62x
-  vendor: phytec
-  socs:
-  - name: am6234
