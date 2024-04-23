@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/power/nxp_rw_pmu.h>
 #include <dt-bindings/adc/nxp,gau-adc.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	chosen {
@@ -56,6 +57,15 @@
 			};
 		};
 	};
+
+	smu1: sram@41380000 {
+		ranges = <0x0 0x41380000 DT_SIZE_K(510)>;
+	};
+
+	smu2: sram@443C0000 {
+		ranges = <0x0 0x443C0000 DT_SIZE_K(140)>;
+	};
+
 };
 
 &sram {
@@ -70,6 +80,30 @@
 	sram_code: memory@0 {
 		compatible = "mmio-sram";
 		reg = <0x00000000 DT_SIZE_K(256)>;
+	};
+};
+
+&smu1 {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	smu1_data: memory@0 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x0 DT_SIZE_K(510)>;
+		zephyr,memory-region = "SMU1";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+};
+
+&smu2 {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	smu2_data: memory@0 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x0 DT_SIZE_K(140)>;
+		zephyr,memory-region = "SMU2";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
 	};
 };
 
@@ -442,6 +476,13 @@
 		reg = <0x13b000 0x1000>;
 		interrupts = <41 0>;
 		status = "disabled";
+	};
+
+	hci: hci_ble {
+		compatible = "nxp,hci-ble";
+		/* first index is the hci interrupt, the second is the wake up done interrupt */
+		interrupts = <90 2>, <82 2>;
+		interrupt-names = "hci_int", "wakeup_int";
 	};
 };
 

@@ -80,4 +80,39 @@ choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_EHCI
 endchoice
 
+if BT
+
+config FLASH
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_NXP
+endchoice
+
+config BT_DIS_MANUF
+	default "NXP"
+
+config BT_BUF_EVT_DISCARDABLE_SIZE
+	default 84
+
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+config HCI_NXP_ENABLE_AUTO_SLEEP
+	default y
+
+config HCI_NXP_SET_CAL_DATA
+	default y
+
+config HEAP_MEM_POOL_SIZE
+	default 256
+
+endif # BT
+
+config NXP_FW_LOADER
+	default y if (BT || WIFI)
+
+config NXP_RF_IMU
+	default y if (BT || WIFI)
+
 endif # SOC_SERIES_RW6XX
