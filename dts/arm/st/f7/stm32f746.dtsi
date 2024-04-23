@@ -8,6 +8,13 @@
 #include <zephyr/dt-bindings/display/panel.h>
 
 / {
+	clocks {
+		pllsai: pllsai {
+			#clock-cells = <0>;
+			compatible = "st,stm32f4-pllsai-clock";
+			status = "disabled";
+		};
+	};
 	soc {
 		compatible = "st,stm32f746", "st,stm32f7", "simple-bus";
 
