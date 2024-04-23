@@ -6,11 +6,14 @@
 #define IOMUX_BASE_ADDR	(GPIO_BASE_ADDR + 0x0020)
 
 /* 1000 msec = 1 sec */
+#define SLEEP_TIME_10_MS      10u
 #define SLEEP_TIME_100_MS     100u
 #define SLEEP_TIME_1_SEC      1000u
 #define SLEEP_TIME_2_SEC      2000u
 #define SLEEP_TIME_5_SEC      5000u
 #define SLEEP_TIME_10_SEC     10000u
+
+#define SYS_TICK_TO_US_DIV    (10.0)
 
 #define SEND_DATA_HEADER_SIZE (uint16_t)8
 #define SEND_DATA_16B         (uint16_t)(16 - SEND_DATA_HEADER_SIZE)
@@ -24,6 +27,7 @@
 #define SEND_DATA_SIZE_MAX    SEND_DATA_1KB
 #define RECEIVE_BUFF_SIZE     (uint16_t)(SEND_DATA_SIZE_MAX + SEND_DATA_HEADER_SIZE)
 #define IPC_DEV_INSTANCE      (uint8_t)0
+#define IPC_SEND_DATA_TIMES   (uint8_t)10
 
 #define RED_LED_PIN           (uint8_t)20
 #define GREEN_LED_PIN         (uint8_t)19
@@ -31,7 +35,7 @@
 #define PIN_STATE_OFF         false
 
 enum {
-	IPC_DISPATCHER_TRNG_GET_TEST = IPC_DISPATCHER_ENTROPY_TRNG,
+	IPC_DISPATCHER_TRNG_GET_TEST = 0xF00,
 };
 
 typedef enum

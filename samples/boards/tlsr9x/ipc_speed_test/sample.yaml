@@ -1,7 +1,7 @@
 sample:
   name: IPC Speed Test
 tests:
-  sample.basic.blinky:
+  samples.boards.tlsr9x.ipc_speed_test:
     tags: IPS LED gpio
     filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds")
     depends_on: gpio
