@@ -73,6 +73,16 @@ void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 		esf_dump(esf);
 	}
 #endif /* CONFIG_EXCEPTION_DEBUG */
+
+	/* LOG the IRQn that was unhandled */
+#if defined(CONFIG_CPU_CORTEX_M)
+	if (reason == K_ERR_SPURIOUS_IRQ) {
+		uint32_t irqn = __get_IPSR() - 16;
+
+		LOG_ERR("Unhandled IRQn: %d", irqn);
+	}
+#endif
+
 	z_fatal_error(reason, esf);
 }
 
