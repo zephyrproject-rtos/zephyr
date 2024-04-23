@@ -1750,7 +1750,9 @@ static void smp_timeout(struct k_work *work)
 static void smp_send(struct bt_smp *smp, struct net_buf *buf,
 		     bt_conn_tx_cb_t cb, void *user_data)
 {
-	int err = bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf, cb, NULL);
+	__ASSERT_NO_MSG(user_data == NULL);
+
+	int err = bt_l2cap_send_pdu(&smp->chan, buf, cb, NULL);
 
 	if (err) {
 		if (err == -ENOBUFS) {
@@ -1805,7 +1807,7 @@ static int smp_error(struct bt_smp *smp, uint8_t reason)
 	rsp->reason = reason;
 
 	/* SMP timer is not restarted for PairingFailed so don't use smp_send */
-	if (bt_l2cap_send(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf)) {
+	if (bt_l2cap_send_pdu(&smp->chan, buf, NULL, NULL)) {
 		net_buf_unref(buf);
 	}
 
@@ -2824,7 +2826,7 @@ static int smp_send_security_req(struct bt_conn *conn)
 	req->auth_req = get_auth(smp, BT_SMP_AUTH_DEFAULT);
 
 	/* SMP timer is not restarted for SecRequest so don't use smp_send */
-	err = bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
+	err = bt_l2cap_send_pdu(&smp->chan, req_buf, NULL, NULL);
 	if (err) {
 		net_buf_unref(req_buf);
 		return err;
