@@ -214,6 +214,8 @@ Drivers and Sensors
 
 * Sensor
 
+  * Added TMP114 driver
+
 * Serial
 
   * Added driver to support UART over Bluetooth LE using NUS (Nordic UART Service). This driver
