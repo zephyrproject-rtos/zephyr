@@ -37,23 +37,17 @@
 		pinmux = <SPIM2_CSEL_GPIO16>;
 	};
 
-	spim3_miso_gpio25: spim3_miso_gpio25 {
-		pinmux = <SPIM3_MISO_GPIO25>;
+	spim3_default: spim3_default {
+		group1 {
+			pinmux = <SPIM3_MISO_GPIO36>,
+				 <SPIM3_SCLK_GPIO13>,
+				 <SPIM3_CSEL_GPIO5>;
+		};
+		group2 {
+			pinmux = <SPIM3_MOSI_GPIO15>;
+			output-low;
+		};
 	};
-
-	spim3_mosi_gpio15: spim3_mosi_gpio15 {
-		pinmux = <SPIM3_MOSI_GPIO15>;
-		output-low;
-	};
-
-	spim3_sclk_gpio13: spim3_sclk_gpio13 {
-		pinmux = <SPIM3_SCLK_GPIO13>;
-	};
-
-	spim3_csel_gpio5: spim3_csel_gpio5 {
-		pinmux = <SPIM3_CSEL_GPIO5>;
-	};
-
 
 	i2c0_default: i2c0_default {
 		group1 {
