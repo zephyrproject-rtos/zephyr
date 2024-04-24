@@ -53,7 +53,7 @@ jobs:
 
       - name: Install packages
         run: |
-          sudo apt-get update
+          sudo apt-get update || true
           sudo apt-get install -y python3-venv
           sudo pip3 install -U setuptools wheel pip gitpython
 
