@@ -332,7 +332,7 @@ void pm_policy_event_unregister(struct pm_policy_event *evt)
 
 void pm_policy_device_power_lock_get(const struct device *dev)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state) && defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
 	for (size_t i = 0; i < dev->pm_constraints_size; i++) {
 		pm_policy_state_lock_get(dev->pm_constraints[i].state,
 					dev->pm_constraints[i].substate_id);
@@ -342,7 +342,7 @@ void pm_policy_device_power_lock_get(const struct device *dev)
 
 void pm_policy_device_power_lock_put(const struct device *dev)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state) && defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
 	for (size_t i = 0; i < dev->pm_constraints_size; i++) {
 		pm_policy_state_lock_put(dev->pm_constraints[i].state,
 					dev->pm_constraints[i].substate_id);

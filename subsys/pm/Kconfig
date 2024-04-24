@@ -72,6 +72,14 @@ config PM_POLICY_CUSTOM
 
 endchoice
 
+config PM_POLICY_DEVICE_CONSTRAINTS
+	bool "Power state constraints per device"
+	help
+	  This option allows devices to have a list of power states
+	  that when the system transition to them, cause power loss in the device.
+	  This used to set and release power state constraints when
+	  it is needed by the device.
+
 endif # PM
 
 config PM_DEVICE
