@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/virtual.h>
+#include <zephyr/net/socket.h>
 #include <zephyr/sys/iterable_sections.h>
 
 #include "net_private.h"
@@ -2920,12 +2921,23 @@ static inline bool is_proper_ipv6_address(struct net_if_addr *addr)
 	return false;
 }
 
-static bool use_public_address(bool prefer_public, bool is_temporary)
+static bool use_public_address(bool prefer_public, bool is_temporary,
+			       int flags)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV6_PE)) {
 		if (!prefer_public && is_temporary) {
+
+			/* Allow socket to override the kconfig option */
+			if (flags & IPV6_PREFER_SRC_PUBLIC) {
+				return true;
+			}
+
 			return false;
 		}
+	}
+
+	if (flags & IPV6_PREFER_SRC_TMP) {
+		return false;
 	}
 
 	return true;
@@ -2934,14 +2946,15 @@ static bool use_public_address(bool prefer_public, bool is_temporary)
 static struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 						   const struct in6_addr *dst,
 						   uint8_t prefix_len,
-						   uint8_t *best_so_far)
+						   uint8_t *best_so_far,
+						   int flags)
 {
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	struct net_if_addr *public_addr = NULL;
 	struct in6_addr *src = NULL;
 	uint8_t public_addr_len = 0;
-	struct in6_addr *temp_addr;
-	uint8_t len, temp_addr_len;
+	struct in6_addr *temp_addr = NULL;
+	uint8_t len, temp_addr_len = 0;
 	bool ret;
 
 	net_if_lock(iface);
@@ -2949,14 +2962,6 @@ static struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 	ipv6 = iface->config.ip.ipv6;
 	if (!ipv6) {
 		goto out;
-	}
-
-	if (IS_ENABLED(CONFIG_NET_IPV6_PE)) {
-		temp_addr = NULL;
-		temp_addr_len = 0;
-	} else {
-		ARG_UNUSED(temp_addr);
-		ARG_UNUSED(temp_addr_len);
 	}
 
 	ARRAY_FOR_EACH(ipv6->unicast, i) {
@@ -2979,10 +2984,14 @@ static struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 			}
 
 			ret = use_public_address(iface->pe_prefer_public,
-						 ipv6->unicast[i].is_temporary);
+						 ipv6->unicast[i].is_temporary,
+						 flags);
 			if (!ret) {
 				temp_addr = &ipv6->unicast[i].address.in6_addr;
 				temp_addr_len = len;
+
+				*best_so_far = len;
+				src = &ipv6->unicast[i].address.in6_addr;
 				continue;
 			}
 
@@ -3003,10 +3012,20 @@ static struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 		}
 	} else {
 		/* By default prefer always public address if found */
-		if (public_addr &&
-		    !net_ipv6_addr_cmp(&public_addr->address.in6_addr, src)) {
-			src = &public_addr->address.in6_addr;
-			*best_so_far = public_addr_len;
+		if (flags & IPV6_PREFER_SRC_PUBLIC) {
+use_public:
+			if (public_addr &&
+			    !net_ipv6_addr_cmp(&public_addr->address.in6_addr, src)) {
+				src = &public_addr->address.in6_addr;
+				*best_so_far = public_addr_len;
+			}
+		} else if (flags & IPV6_PREFER_SRC_TMP) {
+			if (temp_addr && !net_ipv6_addr_cmp(temp_addr, src)) {
+				src = temp_addr;
+				*best_so_far = temp_addr_len;
+			}
+		} else if (flags & IPV6_PREFER_SRC_PUBTMP_DEFAULT) {
+			goto use_public;
 		}
 	}
 
@@ -3016,8 +3035,9 @@ out:
 	return src;
 }
 
-const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
-						   const struct in6_addr *dst)
+const struct in6_addr *net_if_ipv6_select_src_addr_hint(struct net_if *dst_iface,
+							const struct in6_addr *dst,
+							int flags)
 {
 	const struct in6_addr *src = NULL;
 	uint8_t best_match = 0U;
@@ -3037,14 +3057,16 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 		if (dst_iface) {
 			src = net_if_ipv6_get_best_match(dst_iface, dst,
 							 prefix_len,
-							 &best_match);
+							 &best_match,
+							 flags);
 		} else {
 			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct in6_addr *addr;
 
 				addr = net_if_ipv6_get_best_match(iface, dst,
 								  prefix_len,
-								  &best_match);
+								  &best_match,
+								  flags);
 				if (addr) {
 					src = addr;
 				}
@@ -3080,6 +3102,14 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 
 out:
 	return src;
+}
+
+const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
+						   const struct in6_addr *dst)
+{
+	return net_if_ipv6_select_src_addr_hint(dst_iface,
+						dst,
+						IPV6_PREFER_SRC_PUBTMP_DEFAULT);
 }
 
 struct net_if *net_if_ipv6_select_src_iface(const struct in6_addr *dst)
