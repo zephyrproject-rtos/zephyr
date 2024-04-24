@@ -1036,3 +1036,8 @@ test_i2c_nct75: test_i2c_nct75@8b {
 	reg = <0x8b>;
 	status = "okay";
 };
+
+test_i2c_tmp114: tmp114@8c {
+	compatible = "ti,tmp114";
+	reg = <0x8c>;
+};
