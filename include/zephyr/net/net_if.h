@@ -1996,6 +1996,35 @@ static inline const struct in6_addr *net_if_ipv6_select_src_addr(
 #endif
 
 /**
+ * @brief Get a IPv6 source address that should be used when sending
+ * network data to destination. Use a hint set to the socket to select
+ * the proper address.
+ *
+ * @param iface Interface that was used when packet was received.
+ * If the interface is not known, then NULL can be given.
+ * @param dst IPv6 destination address
+ * @param flags Hint from the related socket. See RFC 5014 for value details.
+ *
+ * @return Pointer to IPv6 address to use, NULL if no IPv6 address
+ * could be found.
+ */
+#if defined(CONFIG_NET_NATIVE_IPV6)
+const struct in6_addr *net_if_ipv6_select_src_addr_hint(struct net_if *iface,
+							const struct in6_addr *dst,
+							int flags);
+#else
+static inline const struct in6_addr *net_if_ipv6_select_src_addr_hint(
+	struct net_if *iface, const struct in6_addr *dst, int flags)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(dst);
+	ARG_UNUSED(flags);
+
+	return NULL;
+}
+#endif
+
+/**
  * @brief Get a network interface that should be used when sending
  * IPv6 network data to destination.
  *
