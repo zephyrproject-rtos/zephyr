@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,8 +16,8 @@
 #include <zephyr/sys_clock.h>
 
 struct nxp_enet_mdio_config {
-	ENET_Type *base;
 	const struct pinctrl_dev_config *pincfg;
+	const struct device *module_dev;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	uint32_t mdc_freq;
@@ -26,6 +26,7 @@ struct nxp_enet_mdio_config {
 };
 
 struct nxp_enet_mdio_data {
+	ENET_Type *base;
 	struct k_mutex mdio_mutex;
 	struct k_sem mdio_sem;
 	bool interrupt_up;
@@ -42,7 +43,7 @@ static int nxp_enet_mdio_wait_xfer(const struct device *dev)
 {
 	const struct nxp_enet_mdio_config *config = dev->config;
 	struct nxp_enet_mdio_data *data = dev->data;
-	ENET_Type *base = config->base;
+	ENET_Type *base = data->base;
 	int ret = 0;
 
 	/* This function will not make sense from IRQ context */
@@ -82,7 +83,6 @@ static int nxp_enet_mdio_wait_xfer(const struct device *dev)
 static int nxp_enet_mdio_read(const struct device *dev,
 			uint8_t prtad, uint8_t regad, uint16_t *read_data)
 {
-	const struct nxp_enet_mdio_config *config = dev->config;
 	struct nxp_enet_mdio_data *data = dev->data;
 	int ret;
 
@@ -93,7 +93,7 @@ static int nxp_enet_mdio_read(const struct device *dev,
 	 * Clear the bit (W1C) that indicates MDIO transfer is ready to
 	 * prepare to wait for it to be set once this read is done
 	 */
-	config->base->EIR |= ENET_EIR_MII_MASK;
+	data->base->EIR |= ENET_EIR_MII_MASK;
 
 	/*
 	 * Write MDIO frame to MII management register which will
@@ -105,7 +105,7 @@ static int nxp_enet_mdio_read(const struct device *dev,
 	 * TA = Turnaround, must be 2 to be valid
 	 * data = data to be written to the PHY register
 	 */
-	config->base->MMFR = ENET_MMFR_ST(0x1U) |
+	data->base->MMFR = ENET_MMFR_ST(0x1U) |
 				ENET_MMFR_OP(MDIO_OP_C22_READ) |
 				ENET_MMFR_PA(prtad) |
 				ENET_MMFR_RA(regad) |
@@ -118,10 +118,10 @@ static int nxp_enet_mdio_read(const struct device *dev,
 	}
 
 	/* The data is received in the same register that we wrote the command to */
-	*read_data = (config->base->MMFR & ENET_MMFR_DATA_MASK) >> ENET_MMFR_DATA_SHIFT;
+	*read_data = (data->base->MMFR & ENET_MMFR_DATA_MASK) >> ENET_MMFR_DATA_SHIFT;
 
 	/* Clear the same bit as before because the event has been handled */
-	config->base->EIR |= ENET_EIR_MII_MASK;
+	data->base->EIR |= ENET_EIR_MII_MASK;
 
 	/* This MDIO interaction is finished */
 	(void)k_mutex_unlock(&data->mdio_mutex);
@@ -133,7 +133,6 @@ static int nxp_enet_mdio_read(const struct device *dev,
 static int nxp_enet_mdio_write(const struct device *dev,
 			uint8_t prtad, uint8_t regad, uint16_t write_data)
 {
-	const struct nxp_enet_mdio_config *config = dev->config;
 	struct nxp_enet_mdio_data *data = dev->data;
 	int ret;
 
@@ -144,7 +143,7 @@ static int nxp_enet_mdio_write(const struct device *dev,
 	 * Clear the bit (W1C) that indicates MDIO transfer is ready to
 	 * prepare to wait for it to be set once this write is done
 	 */
-	config->base->EIR |= ENET_EIR_MII_MASK;
+	data->base->EIR |= ENET_EIR_MII_MASK;
 
 	/*
 	 * Write MDIO frame to MII management register which will
@@ -156,7 +155,7 @@ static int nxp_enet_mdio_write(const struct device *dev,
 	 * TA = Turnaround, must be 2 to be valid
 	 * data = data to be written to the PHY register
 	 */
-	config->base->MMFR = ENET_MMFR_ST(0x1U) |
+	data->base->MMFR = ENET_MMFR_ST(0x1U) |
 				ENET_MMFR_OP(MDIO_OP_C22_WRITE) |
 				ENET_MMFR_PA(prtad) |
 				ENET_MMFR_RA(regad) |
@@ -170,7 +169,7 @@ static int nxp_enet_mdio_write(const struct device *dev,
 	}
 
 	/* Clear the same bit as before because the event has been handled */
-	config->base->EIR |= ENET_EIR_MII_MASK;
+	data->base->EIR |= ENET_EIR_MII_MASK;
 
 	/* This MDIO interaction is finished */
 	(void)k_mutex_unlock(&data->mdio_mutex);
@@ -185,19 +184,19 @@ static const struct mdio_driver_api nxp_enet_mdio_api = {
 
 static void nxp_enet_mdio_isr_cb(const struct device *dev)
 {
-	const struct nxp_enet_mdio_config *config = dev->config;
 	struct nxp_enet_mdio_data *data = dev->data;
 
 	/* Signal that operation finished */
 	k_sem_give(&data->mdio_sem);
 
 	/* Disable the interrupt */
-	config->base->EIMR &= ~ENET_EIMR_MII_MASK;
+	data->base->EIMR &= ~ENET_EIMR_MII_MASK;
 }
 
 static void nxp_enet_mdio_post_module_reset_init(const struct device *dev)
 {
 	const struct nxp_enet_mdio_config *config = dev->config;
+	struct nxp_enet_mdio_data *data = dev->data;
 	uint32_t enet_module_clock_rate;
 
 	/* Set up MSCR register */
@@ -209,7 +208,7 @@ static void nxp_enet_mdio_post_module_reset_init(const struct device *dev)
 					(NSEC_PER_SEC / enet_module_clock_rate) - 1;
 	uint32_t mscr = ENET_MSCR_MII_SPEED(mii_speed) | ENET_MSCR_HOLDTIME(holdtime) |
 			(config->disable_preamble ? ENET_MSCR_DIS_PRE_MASK : 0);
-	config->base->MSCR = mscr;
+	data->base->MSCR = mscr;
 }
 
 void nxp_enet_mdio_callback(const struct device *dev,
@@ -240,6 +239,8 @@ static int nxp_enet_mdio_init(const struct device *dev)
 	struct nxp_enet_mdio_data *data = dev->data;
 	int ret = 0;
 
+	data->base = (ENET_Type *)DEVICE_MMIO_GET(config->module_dev);
+
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		return ret;
@@ -265,7 +266,7 @@ static int nxp_enet_mdio_init(const struct device *dev)
 	PINCTRL_DT_INST_DEFINE(inst);							\
 											\
 	static const struct nxp_enet_mdio_config nxp_enet_mdio_cfg_##inst = {		\
-		.base = (ENET_Type *) DT_REG_ADDR(DT_INST_PARENT(inst)),		\
+		.module_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),			\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
 		.timeout = CONFIG_MDIO_NXP_ENET_TIMEOUT,				\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(inst))),	\
