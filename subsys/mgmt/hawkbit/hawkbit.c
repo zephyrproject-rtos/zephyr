@@ -1543,6 +1543,24 @@ enum hawkbit_response hawkbit_autohandler_wait(uint32_t events, k_timeout_t time
 	return HAWKBIT_NO_RESPONSE;
 }
 
+int hawkbit_autohandler_cancel(void)
+{
+	return k_work_cancel_delayable(&hawkbit_work_handle);
+}
+
+int hawkbit_autohandler_set_delay(k_timeout_t timeout, bool if_bigger)
+{
+	if (!if_bigger || timeout.ticks > k_work_delayable_remaining_get(&hawkbit_work_handle)) {
+		hawkbit_autohandler_cancel();
+		LOG_INF("Setting new delay for next run: %02u:%02u:%02u",
+			(uint32_t)(timeout.ticks / CONFIG_SYS_CLOCK_TICKS_PER_SEC) / 3600,
+			(uint32_t)((timeout.ticks / CONFIG_SYS_CLOCK_TICKS_PER_SEC) % 3600) / 60,
+			(uint32_t)(timeout.ticks / CONFIG_SYS_CLOCK_TICKS_PER_SEC) % 60);
+		return k_work_reschedule(&hawkbit_work_handle, timeout);
+	}
+	return 0;
+}
+
 void hawkbit_autohandler(bool auto_reschedule)
 {
 	if (auto_reschedule) {
