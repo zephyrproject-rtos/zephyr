@@ -123,6 +123,28 @@ void hawkbit_autohandler(bool auto_reschedule);
 enum hawkbit_response hawkbit_autohandler_wait(uint32_t events, k_timeout_t timeout);
 
 /**
+ * @brief Cancel the run of the hawkBit autohandler.
+ *
+ * @return a value from k_work_cancel_delayable().
+ */
+int hawkbit_autohandler_cancel(void);
+
+/**
+ * @brief Set the delay for the next run of the autohandler.
+ *
+ * @details This function will only delay the next run of the autohandler. The delay will not
+ * persist after the autohandler runs.
+ *
+ * @param timeout The delay to set.
+ * @param if_bigger If true, the delay will be set only if the new delay is bigger than the current
+ * one.
+ *
+ * @retval 0 if @a if_bigger was true and the current delay was bigger than the new one.
+ * @retval otherwise, a value from k_work_reschedule().
+ */
+int hawkbit_autohandler_set_delay(k_timeout_t timeout, bool if_bigger);
+
+/**
  * @brief The hawkBit probe verify if there is some update to be performed.
  *
  * @retval HAWKBIT_NETWORKING_ERROR fail to connect to the hawkBit server.
