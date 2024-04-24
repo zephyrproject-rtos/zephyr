@@ -190,14 +190,18 @@ ARM64 arch:
     - arch.arm64
 
 ARM Platforms:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - ithinuel
   files:
     - boards/arm/mps*/
     - boards/arm/v2m_*/
+    - boards/arm/fvp_base*/
     - soc/arm/mps*/
     - soc/arm/musca/
     - soc/arm/beetle/
-    - soc/arm/fvp_aemv8r/aarch32/
+    - soc/arm/designstart/
+    - soc/arm/fvp_aemv8*/
     - dts/arm/armv*.dtsi
   labels:
     - "platform: ARM"
