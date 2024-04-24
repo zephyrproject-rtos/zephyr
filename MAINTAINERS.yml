@@ -237,12 +237,8 @@ MIPS arch:
     - arch.mips
 
 Ambiq Platforms:
-  status: maintained
-  maintainers:
-    - fkokosinski
+  status: odd fixes
   collaborators:
-    - tgorochowik
-    - msobkowski
     - aaronyegx
     - RichardSWheatley
   files:
@@ -4186,12 +4182,8 @@ West:
     - "platform: Altera"
 
 "West project: hal_ambiq":
-  status: maintained
-  maintainers:
-    - fkokosinski
+  status: odd fixes
   collaborators:
-    - tgorochowik
-    - msobkowski
     - aaronyegx
     - RichardSWheatley
   files:
