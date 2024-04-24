@@ -94,8 +94,8 @@ POSIX System Interfaces
     _POSIX_SPORADIC_SERVER, -1,
     _POSIX_SYNCHRONIZED_IO, -1, :kconfig:option:`CONFIG_POSIX_FS`
     :ref:`_POSIX_THREAD_ATTR_STACKADDR<posix_option_thread_attr_stackaddr>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
-    _POSIX_THREAD_CPUTIME, -1,
     :ref:`_POSIX_THREAD_ATTR_STACKSIZE<posix_option_thread_attr_stacksize>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
+    _POSIX_THREAD_CPUTIME, -1,
     _POSIX_THREAD_PRIO_INHERIT, 200809L, :kconfig:option:`CONFIG_PTHREAD_MUTEX`
     _POSIX_THREAD_PRIO_PROTECT, -1,
     :ref:`_POSIX_THREAD_PRIORITY_SCHEDULING<posix_option_thread_priority_scheduling>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
