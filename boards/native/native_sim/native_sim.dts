@@ -190,7 +190,6 @@
 	can_loopback0: can_loopback0 {
 		status = "okay";
 		compatible = "zephyr,can-loopback";
-		bus-speed = <125000>;
 	};
 
 	can0: can {
@@ -200,7 +199,6 @@
 		 * name, e.g.: sudo ip link property add dev vcan0 altname zcan0
 		 */
 		host-interface = "zcan0";
-		bus-speed = <125000>;
 	};
 
 	rtc: rtc {

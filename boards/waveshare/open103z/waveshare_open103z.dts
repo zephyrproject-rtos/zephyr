@@ -156,7 +156,6 @@
 	 * reference: RM0008 rev20 page 205
 	 */
 	status = "disabled";
-	bus-speed = <125000>;
 };
 
 zephyr_udc0: &usb {

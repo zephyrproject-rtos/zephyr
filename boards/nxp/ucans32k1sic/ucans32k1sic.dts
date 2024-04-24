@@ -179,8 +179,6 @@
 	pinctrl-0 = <&flexcan0_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy0>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	status = "okay";
 };
 
@@ -188,7 +186,5 @@
 	pinctrl-0 = <&flexcan1_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy1>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	status = "okay";
 };

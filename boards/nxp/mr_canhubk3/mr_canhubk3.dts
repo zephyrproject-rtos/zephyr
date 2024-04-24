@@ -358,8 +358,6 @@
 	pinctrl-0 = <&flexcan0_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy0>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	status = "okay";
 };
 
@@ -367,40 +365,30 @@
 	pinctrl-0 = <&flexcan1_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy1>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 };
 
 &flexcan2 {
 	pinctrl-0 = <&flexcan2_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy2>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 };
 
 &flexcan3 {
 	pinctrl-0 = <&flexcan3_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy3>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 };
 
 &flexcan4 {
 	pinctrl-0 = <&flexcan4_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy4>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 };
 
 &flexcan5 {
 	pinctrl-0 = <&flexcan5_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy5>;
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 };
 
 &lpi2c0 {
