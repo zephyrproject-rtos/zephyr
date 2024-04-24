@@ -319,7 +319,7 @@ elseif(HWMv2)
       unset(CACHED_BOARD CACHE)
       message(FATAL_ERROR "Board qualifiers `${BOARD_QUALIFIERS}` for board \
             `${BOARD}` not found. Please specify a valid board target.\n"
-            "Valid board targets for ${BOARD_NAME} are:\n${board_targets}\n")
+            "Valid board targets for ${LIST_BOARD_NAME} are:\n${board_targets}\n")
     endif()
   endif()
 else()
