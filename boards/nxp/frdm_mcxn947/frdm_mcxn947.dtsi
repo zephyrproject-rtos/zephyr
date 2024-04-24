@@ -191,3 +191,8 @@
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
 };
+
+&lpcmp0 {
+	pinctrl-0 = <&pinmux_lpcmp0>;
+	pinctrl-names = "default";
+};

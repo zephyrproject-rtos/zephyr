@@ -90,6 +90,8 @@ The FRDM-MCXN947 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | USBHS     | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
+| LPCMP     | on-chip    | sensor(comparator)                  |
++-----------+------------+-------------------------------------+
 
 Targets available
 ==================

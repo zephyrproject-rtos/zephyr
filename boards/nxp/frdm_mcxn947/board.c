@@ -268,6 +268,12 @@ static int frdm_mcxn947_init(void)
 	USB_EhciPhyInit(kUSB_ControllerEhci0, BOARD_XTAL0_CLK_HZ, &usbPhyConfig);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpcmp0), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivCmp0FClk, 1U);
+	CLOCK_AttachClk(kFRO12M_to_CMP0F);
+	SPC_EnableActiveModeAnalogModules(SPC0, (kSPC_controlCmp0 | kSPC_controlCmp0Dac));
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
