@@ -8,6 +8,7 @@ menuconfig SOC_FLASH_NRF_RRAM
 	bool "Nordic Semiconductor flash driver for nRF RRAM"
 	default y
 	depends on DT_HAS_NORDIC_RRAM_CONTROLLER_ENABLED
+	select NRFX_RRAMC
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_NRF_FORCE_ALT
