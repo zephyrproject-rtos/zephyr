@@ -14,6 +14,13 @@ System Interfaces
 The required POSIX :ref:`System Interfaces<posix_system_interfaces_required>` are supported for
 each Application Environment Profile.
 
+..  figure:: si.svg
+    :align: center
+    :scale: 150%
+    :alt: Required System Interfaces
+
+    System Interfaces
+
 .. _posix_aep_pse51:
 
 Minimal Realtime System Profile (PSE51)
@@ -21,6 +28,13 @@ Minimal Realtime System Profile (PSE51)
 
 The *Minimal Realtime System Profile* (PSE51) includes all of the
 :ref:`System Interfaces<posix_system_interfaces_required>` along with several additional features.
+
+..  figure:: aep-pse51.svg
+    :align: center
+    :scale: 150%
+    :alt: Minimal Realtime System Profile (PSE51)
+
+    Minimal Realtime System Profile (PSE51)
 
 .. Conforming implementations shall define _POSIX_AEP_REALTIME_MINIMAL to the value 200312L
 
@@ -68,6 +82,13 @@ Realtime Controller System Profile (PSE52)
 The *Realtime Controller System Profile* (PSE52) includes all features from PSE51 and the
 :ref:`System Interfaces<posix_system_interfaces_required>`.
 
+..  figure:: aep-pse52.svg
+    :align: center
+    :scale: 150%
+    :alt: Realtime Controller System Profile (PSE52)
+
+    Realtime Controller System Profile (PSE52)
+
 .. Conforming implementations shall define _POSIX_AEP_REALTIME_CONTROLLER to the value 200312L
 
 .. csv-table:: PSE52 System Interfaces
@@ -100,6 +121,13 @@ Dedicated Realtime System Profile (PSE53)
 
 The *Dedicated Realtime System Profile* (PSE53) includes all features from PSE52, PSE51, and the
 :ref:`System Interfaces<posix_system_interfaces_required>`.
+
+..  figure:: aep-pse53.svg
+    :align: center
+    :scale: 150%
+    :alt: Dedicated Realtime System Profile (PSE53)
+
+    Dedicated Realtime System Profile (PSE53)
 
 .. Conforming implementations shall define _POSIX_AEP_REALTIME_DEDICATED to the value 200312L
 
