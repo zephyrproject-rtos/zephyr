@@ -4144,7 +4144,7 @@ West:
   files:
     - modules/cmsis-dsp/
   labels:
-    - "area: ARM"
+    - "area: CMSIS-DSP"
 
 "West project: cmsis-nn":
   status: maintained
@@ -4155,7 +4155,7 @@ West:
   files:
     - modules/cmsis-nn/
   labels:
-    - "area: ARM"
+    - "area: CMSIS-NN"
 
 "West project: edtt":
   status: maintained
