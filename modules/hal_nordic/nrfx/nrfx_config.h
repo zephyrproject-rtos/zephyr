@@ -312,6 +312,10 @@
 #define NRFX_RNG_CONFIG_LOG_ENABLED 1
 #endif
 
+#ifdef CONFIG_NRFX_RRAMC
+#define NRFX_RRAMC_ENABLED 1
+#endif
+
 #ifdef CONFIG_NRFX_RTC
 #define NRFX_RTC_ENABLED 1
 #endif
