@@ -84,6 +84,7 @@ struct coap_client_internal_request {
 	uint32_t last_id;
 	uint8_t request_tkl;
 	bool request_ongoing;
+	atomic_t in_callback;
 	struct coap_block_context recv_blk_ctx;
 	struct coap_block_context send_blk_ctx;
 	struct coap_pending pending;
@@ -140,13 +141,13 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 /**
  * @brief Cancel all current requests.
  *
- * This is intended for canceling long-running requests (e.g. GETs with the OBSERVE option set)
- * which has gone stale for some reason.
+ * This is intended for canceling long-running requests (e.g. GETs with the OBSERVE option set,
+ * or a block transfer) which have gone stale for some reason. It is also intended for responding
+ * to network connectivity issues.
  *
  * @param client Client instance.
  */
 void coap_client_cancel_requests(struct coap_client *client);
-
 
 /**
  * @}
