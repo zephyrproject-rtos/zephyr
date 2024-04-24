@@ -8,11 +8,11 @@
 
 static uint8_t mfg_data[] = { 0xff, 0xff, 0x00 };
 
-static const struct bt_data ad[] = {
+static const struct bt_data per_adv_ad[] = {
 	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, 3),
 };
 
-static const struct bt_data sd[] = {
+static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
@@ -38,7 +38,7 @@ int main(void)
 	}
 
 	/* Set advertising data to have complete local name set */
-	err = bt_le_ext_adv_set_data(adv, NULL, 0, sd, ARRAY_SIZE(sd));
+	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		printk("Failed to set advertising data (err %d)\n", err);
 		return 0;
@@ -75,7 +75,7 @@ int main(void)
 			mfg_data[2]++;
 
 			printk("Set Periodic Advertising Data...");
-			err = bt_le_per_adv_set_data(adv, ad, ARRAY_SIZE(ad));
+			err = bt_le_per_adv_set_data(adv, per_adv_ad, ARRAY_SIZE(per_adv_ad));
 			if (err) {
 				printk("Failed (err %d)\n", err);
 				return 0;
