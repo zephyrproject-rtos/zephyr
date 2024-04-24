@@ -61,6 +61,15 @@ static void cfb_test_after(void *test_fixture)
 	cfb_framebuffer_deinit(dev);
 }
 
+static void verify_rectspace1016_bottom_half_at_origin(void)
+{
+	zassert_true(verify_color_inside_rect(0, 0, 1, 8, 0xFFFFFF));
+	zassert_true(verify_color_inside_rect(9, 0, 1, 8, 0xFFFFFF));
+	zassert_true(verify_color_inside_rect(1, 0, 8, 7, 0x0));
+	zassert_true(verify_color_inside_rect(0, 7, 10, 1, 0xFFFFFF));
+	zassert_true(verify_color_outside_rect(0, 0, 10, 8, 0x0));
+}
+
 /*
  * normal rendering
  */
@@ -180,6 +189,14 @@ ZTEST(print_rectspace1016, test_print_outside_top_left)
 	zassert_ok(cfb_framebuffer_finalize(dev));
 
 	zassert_true(verify_image_and_bg(0, 0, outside_top_left, 3, 4, 0));
+}
+
+ZTEST(print_rectspace1016, test_print_outside_top_tile_aligned)
+{
+	zassert_ok(cfb_print(dev, " ", 0, -8));
+	zassert_ok(cfb_framebuffer_finalize(dev));
+
+	verify_rectspace1016_bottom_half_at_origin();
 }
 
 ZTEST(print_rectspace1016, test_print_outside_top_right)
