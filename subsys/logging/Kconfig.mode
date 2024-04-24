@@ -4,6 +4,7 @@
 choice LOG_MODE
 	prompt "Mode"
 	depends on !LOG_FRONTEND_ONLY
+	default LOG_MODE_IMMEDIATE if ARCH_POSIX
 	default LOG_MODE_MINIMAL if LOG_DEFAULT_MINIMAL
 	default LOG_MODE_DEFERRED
 
