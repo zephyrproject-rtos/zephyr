@@ -945,6 +945,8 @@ static ZTEST_BMEM bool test_failed;
 static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 static struct in_addr my_addr2 = { { { 192, 0, 2, 2 } } };
+static struct in6_addr my_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x3 } } };
 static uint8_t server_lladdr[] = { 0x01, 0x02, 0x03, 0xff, 0xfe,
 				0x04, 0x05, 0x06 };
 static struct net_linkaddr server_link_addr = {
@@ -2447,6 +2449,83 @@ ZTEST(net_socket_udp, test_36_v6_address_removal)
 		      iface, eth_iface);
 	zassert_is_null(ifaddr, "Address %s found",
 			net_sprint_ipv6_addr(&my_addr1));
+}
+
+static void check_ipv6_address_preferences(struct net_if *iface,
+					   uint16_t preference,
+					   const struct in6_addr *addr,
+					   const struct in6_addr *dest)
+{
+	const struct in6_addr *selected;
+	size_t optlen;
+	int optval;
+	int sock;
+	int ret;
+
+	sock = zsock_socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+	zassert_true(sock >= 0, "Cannot create socket (%d)", -errno);
+
+	optval = preference;
+	ret = zsock_setsockopt(sock, IPPROTO_IPV6, IPV6_ADDR_PREFERENCES,
+			       &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	optval = 0; optlen = 0U;
+	ret = zsock_getsockopt(sock, IPPROTO_IPV6, IPV6_ADDR_PREFERENCES,
+			       &optval, &optlen);
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+	zassert_equal(optlen, sizeof(optval), "invalid optlen %d vs %d",
+		      optlen, sizeof(optval));
+	zassert_equal(optval, preference,
+		      "getsockopt address preferences");
+
+	selected = net_if_ipv6_select_src_addr_hint(iface,
+						    dest,
+						    preference);
+	ret = net_ipv6_addr_cmp(addr, selected);
+	zassert_true(ret, "Wrong address %s selected, expected %s",
+		     net_sprint_ipv6_addr(selected),
+		     net_sprint_ipv6_addr(addr));
+
+	ret = zsock_close(sock);
+	zassert_equal(sock, 0, "Cannot close socket (%d)", -errno);
+}
+
+ZTEST(net_socket_udp, test_37_ipv6_src_addr_select)
+{
+	struct net_if_addr *ifaddr;
+	const struct in6_addr dest = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x2 } } };
+
+	net_if_foreach(iface_cb, &eth_iface);
+	zassert_not_null(eth_iface, "No ethernet interface found");
+
+	ifaddr = net_if_ipv6_addr_add(eth_iface, &my_addr1,
+				      NET_ADDR_AUTOCONF, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv6 address %s\n",
+		       net_sprint_ipv6_addr(&my_addr1));
+		zassert_not_null(ifaddr, "addr1");
+	}
+
+	ifaddr->is_temporary = false;
+
+	ifaddr = net_if_ipv6_addr_add(eth_iface, &my_addr3,
+				      NET_ADDR_AUTOCONF, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv6 address %s\n",
+		       net_sprint_ipv6_addr(&my_addr3));
+		zassert_not_null(ifaddr, "addr1");
+	}
+
+	ifaddr->is_temporary = true;
+
+	net_if_up(eth_iface);
+
+	check_ipv6_address_preferences(NULL, IPV6_PREFER_SRC_PUBLIC,
+				       &my_addr1, &dest);
+	check_ipv6_address_preferences(NULL, IPV6_PREFER_SRC_TMP,
+				       &my_addr3, &dest);
 }
 
 static void after(void *arg)
