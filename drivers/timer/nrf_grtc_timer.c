@@ -365,7 +365,7 @@ int z_nrf_grtc_timer_capture_read(int32_t chan, uint64_t *captured_time)
 	return 0;
 }
 
-#if defined(CONFIG_NRF_GRTC_SLEEP_ALLOWED)
+#if defined(CONFIG_NRF_GRTC_SLEEP_ALLOWED) && defined(CONFIG_NRF_GRTC_START_SYSCOUNTER)
 int z_nrf_grtc_wakeup_prepare(uint64_t wake_time_us)
 {
 	nrfx_err_t err_code;
