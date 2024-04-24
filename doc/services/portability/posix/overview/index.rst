@@ -51,7 +51,8 @@ and experience limited user interaction. In such systems, full POSIX conformance
 impractical and unnecessary.
 
 For that reason, POSIX defined the following :ref:`Application Environment Profiles (AEP)<posix_aep>`
-as part of `IEEE 1003.13-2003`_ (also known as POSIX.13-2003).
+as part of `IEEE 1003.13-2003`_ (also known as POSIX.13-2003). Each AEP adds incrementally more
+features over the required :ref:`POSIX System Interfaces <posix_system_interfaces>`.
 
 * Minimal Realtime System Profile (:ref:`PSE51 <posix_aep_pse51>`)
 * Realtime Controller System Profile (:ref:`PSE52 <posix_aep_pse52>`)

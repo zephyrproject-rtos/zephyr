@@ -54,6 +54,8 @@ POSIX System Interfaces
    modification is clearly documented. The implementation is not required for PSE51 or PSE52
    and beyond that POSIX async I/O functions are rarely used in practice.
 
+.. _posix_system_interfaces_required:
+
 .. csv-table:: POSIX System Interfaces
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
