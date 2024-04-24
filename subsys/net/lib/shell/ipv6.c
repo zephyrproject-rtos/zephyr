@@ -96,12 +96,12 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
-	PR("Type      \tState    \tLifetime (sec)\tAddress\n");
+	PR("Type      \tState    \tLifetime (sec)\tRef\tAddress\n");
 
 	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		struct net_if_ipv6_prefix *prefix;
 		char remaining_str[sizeof("01234567890")];
-		uint64_t remaining;
+		uint32_t remaining;
 		uint8_t prefix_len;
 
 		if (!ipv6->unicast[i].is_used ||
@@ -125,13 +125,13 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 				 "infinite");
 		} else {
 			snprintk(remaining_str, sizeof(remaining_str) - 1,
-				 "%u", (uint32_t)(remaining / 1000U));
+				 "%u", remaining);
 		}
 
-		PR("%s  \t%s\t%s    \t%s/%d%s\n",
+		PR("%s  \t%s\t%14s\t%ld\t%s/%d%s\n",
 		   addrtype2str(ipv6->unicast[i].addr_type),
 		   addrstate2str(ipv6->unicast[i].addr_state),
-		   remaining_str,
+		   remaining_str, atomic_get(&ipv6->unicast[i].atomic_ref),
 		   net_sprint_ipv6_addr(&ipv6->unicast[i].address.in6_addr),
 		   prefix_len,
 		   ipv6->unicast[i].is_temporary ? " (temporary)" : "");
