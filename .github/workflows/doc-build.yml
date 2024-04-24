@@ -73,7 +73,7 @@ jobs:
 
     - name: install-pkgs
       run: |
-        sudo apt-get update || true
+        sudo apt-get update
         sudo apt-get install -y wget python3-pip git ninja-build graphviz lcov
         wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
         sudo tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz -C /opt
