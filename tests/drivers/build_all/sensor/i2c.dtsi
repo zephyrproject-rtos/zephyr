@@ -1067,3 +1067,8 @@ test_i2c_sht21@90 {
 	compatible = "sensirion,sht21";
 	reg = <0x90>;
 };
+
+test_i2c_lsm9ds1: lsm9ds1@91 {
+	compatible = "st,lsm9ds1";
+	reg = <0x8e>;
+};
