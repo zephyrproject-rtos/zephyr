@@ -2101,13 +2101,9 @@ static void reject_cmd(struct bt_l2cap *l2cap, uint8_t ident,
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_le_chan *chan;
 
-	/* Check if there is a outstanding channel */
-	chan = l2cap_remove_ident(conn, ident);
-	if (!chan) {
-		return;
+	while ((chan = l2cap_remove_ident(conn, ident))) {
+		bt_l2cap_chan_del(&chan->chan);
 	}
-
-	bt_l2cap_chan_del(&chan->chan);
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
