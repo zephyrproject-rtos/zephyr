@@ -66,6 +66,10 @@
 #define PWM_START_6 0x00030600 /* Pulse Width Modulation 6 */
 #define PWM_START_7 0x00030700 /* Pulse Width Modulation 7 */
 
+/*pinmux*/
+#define PINMUX_START 0x40300 
+#define PINMUX_CONFIGURE_REG 0x40300
+
 typedef enum
 {
 	rise_interrupt,				//Enable interrupt only on rise
@@ -77,7 +81,6 @@ typedef enum
 /* Structure Declarations */
 typedef struct
 {
-  uint8_t n;
   uint16_t clock;       /*! pwm clock register 16 bits*/
   uint16_t reserved0;
   uint16_t control;     /*! pwm control register 16 bits*/
@@ -98,14 +101,18 @@ struct pwm_shakti_cfg {
 };
 
 volatile pwm_struct *pwm_instance[PWM_MAX_COUNT];
+volatile unsigned int* pinmux_config_reg = (volatile unsigned int* ) PINMUX_CONFIGURE_REG;
 
-int db_config[2] = DT_PROP(DT_NODELABEL(pwm0), db_configure);
+int db_config[] = DT_PROP(DT_NODELABEL(pwm0), db_configure);
 
 /* Functions */
 static int pwm_shakti_init(const struct device *dev,int pwm_number)
 {
+	pwm_struct *instance;
 	const struct pwm_shakti_cfg *cfg = dev->config;
 	pwm_instance[pwm_number] = (pwm_struct *) (PWM_BASE_ADDRESS + (pwm_number * PWM_MODULE_OFFSET) );
+	printk("\nInitialisation of PWM is done");
+	printk("\npwm %u",pwm_instance[pwm_number]);
 	// printf("\n pwm_instance[%x]: %x",  i, pwm_instance[i]);
 	//log_info("\n Initilization Done");
 }
@@ -140,12 +147,16 @@ void pwm_set_prescalar_value(const struct device *dev,int pwm_number, uint16_t p
 {
 	printk("\n2");
 	const struct pwm_shakti_cfg *cfg = dev->config;
+	printk("\n2.1");
 	if( 32768 < prescalar_value )
 	{
+		printk("\n2.2");
 		//log_error("Prescaler value should be less than 32768");
 		return;
 	}
+	printk("\n2.3");
 	pwm_instance[pwm_number]->clock = (prescalar_value << 1);
+	printk("\n2.4");
 }
 
 inline int configure_control(bool update, pwm_interrupt_modes interrupt_mode, bool change_output_polarity)
@@ -184,7 +195,9 @@ void pwm_configure(const struct device *dev,int pwm_number, uint32_t period, uin
 {
 	printk("\n3");
 	const struct pwm_shakti_cfg *cfg = dev->config;
-	pwm_instance[pwm_number]->duty=duty;
+	printk("\npwm %u",pwm_instance[pwm_number]->duty);
+	pwm_instance[pwm_number]->duty=duty;                    
+	printk("\n3");
 	pwm_instance[pwm_number]->period=period;
 	pwm_instance[pwm_number]->deadband_delay = deadband_delay;
 
@@ -215,6 +228,18 @@ void pwm_stop(const struct device *dev,int pwm_number)
 	//log_debug("\n PWM module number %d has been stopped", pwm_number);
 }
 
+void pinmux_enable_pwm(int num)
+{
+	// const struct pwm_shakti_cfg *cfg = dev->config;
+	if (num < 8)
+	{
+		*(pinmux_config_reg + num) = 1;
+		printf("\npinmux");
+	}
+	else
+		printf("Max pinmuxed PWMs are 8");
+}
+
 static int pwm_shakti_set_cycles(const struct device *dev, uint32_t channel,
 				 uint32_t period_cycles, uint32_t pulse_cycles)
 {
@@ -225,6 +250,13 @@ static int pwm_shakti_set_cycles(const struct device *dev, uint32_t channel,
 	uint16_t prescale = db_config[2];
 	bool polarity = 0;
 
+	printf("\ndeadband_delay %u",deadband_delay);
+	printf("\ncontrol_reg %u",control_reg);
+	printf("\nprescale value %u",prescale);
+
+	// printf("\npwm %u",pwm_instance[0]->duty);
+
+	pinmux_enable_pwm(PWM_0);
 	pwm_set_prescalar_value(dev,PWM_0, prescale);
     pwm_configure(dev,PWM_0, period_cycles, pulse_cycles, no_interrupt, deadband_delay, polarity);
     pwm_set_control(dev,PWM_0, control_reg);

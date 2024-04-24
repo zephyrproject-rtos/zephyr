@@ -43,5 +43,5 @@ chosen {
 
 &pwm0 {
 	status = "okay";
-	db_configure = <0x1 0x0 4>;
+	db_configure = <0 4 5000>;
 };
