@@ -128,6 +128,7 @@
 			compatible = "nxp,enet1g";
 			reg = <0x30be0000 DT_SIZE_K(64)>;
 			clocks = <&ccm IMX_CCM_ENET_CLK 0 0>;
+			rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
 			status = "disabled";
 
 			enet_mac: ethernet {

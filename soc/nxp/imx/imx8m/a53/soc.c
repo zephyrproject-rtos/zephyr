@@ -35,6 +35,12 @@ static void soc_rdc_init(void)
 	periphConfig.policy = RDC_DT_VAL(uart4);
 	RDC_SetPeriphAccessConfig(RDC, &periphConfig);
 #endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && DT_NODE_HAS_PROP(DT_NODELABEL(enet), rdc)
+	periphConfig.periph = kRDC_Periph_ENET1;
+	periphConfig.policy = RDC_DT_VAL(enet);
+	RDC_SetPeriphAccessConfig(RDC, &periphConfig);
+#endif
 }
 
 static int soc_init(void)
