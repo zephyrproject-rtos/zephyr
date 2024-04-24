@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <string.h>
+#include <zephyr/drivers/mspi.h>
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_flexspi)
 /* Use memc API to get AHB base address for the device */
@@ -18,6 +19,11 @@
 #include <da1469x_config.h>
 #define MEMC_BASE ((void *)MCU_QSPIR_M_BASE)
 #define MEMC_SIZE (DT_PROP(DT_ALIAS(sram_ext), dev_size) / 8)
+#elif DT_HAS_COMPAT_STATUS_OKAY(ambiq_mspi_controller)
+#define MSPI_ DT_BUS(DT_ALIAS(psram0))
+#define mspi_get_xip_address(controller) DT_REG_ADDR_BY_IDX(controller, 1)
+#define MEMC_BASE (void *)(mspi_get_xip_address(MSPI_))
+#define MEMC_SIZE (DT_PROP(DT_ALIAS(psram0), size) / 8)
 #else
 #error At least one driver should be selected!
 #endif
