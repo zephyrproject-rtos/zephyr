@@ -310,7 +310,6 @@ zephyr_udc0: &usb1 {
 
 &flexcan2 {
 	status = "okay";
-	bus-speed = <125000>;
 	pinctrl-0 = <&pinmux_flexcan2>;
 	pinctrl-names = "default";
 

@@ -488,7 +488,6 @@ controller and sets the bus speed:
 
    &can0 {
         status = "okay";
-        bus-speed = <125000>;
    };
 
 The ``&can0 { ... };`` syntax adds/overrides properties on the node with label

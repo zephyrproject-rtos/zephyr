@@ -19,8 +19,6 @@ description: |
           reg = <0x0>;
           osc-freq = <40000000>;
 
-          bus-speed = <125000>;
-          bus-speed-data = <1000000>;
       };
   };
 
