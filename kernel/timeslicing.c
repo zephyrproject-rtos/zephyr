@@ -95,6 +95,7 @@ void k_thread_time_slice_set(struct k_thread *thread, int32_t thread_slice_ticks
 		thread->base.slice_ticks = thread_slice_ticks;
 		thread->base.slice_expired = expired;
 		thread->base.slice_data = data;
+		z_reset_time_slice(thread);
 	}
 }
 #endif
