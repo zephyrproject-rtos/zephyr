@@ -793,7 +793,7 @@ static const struct bmi270_feature_config bmi270_feature_base = {
 };
 
 #define BMI270_FEATURE(inst) (						\
-	DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), bosch_bmi270_base) ?	\
+	DT_INST_NODE_HAS_COMPAT(inst, bosch_bmi270_base) ?	        \
 		&bmi270_feature_base :					\
 		&bmi270_feature_max_fifo)
 
