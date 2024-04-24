@@ -78,6 +78,8 @@ Boards & SoC Support
 
 * Made these changes in other SoC series:
 
+  * ITE: Rename the Kconfig symbol for all ITE SoC variants.
+
 * Added support for these ARM boards:
 
 * Added support for these Xtensa boards:
