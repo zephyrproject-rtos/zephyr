@@ -272,6 +272,7 @@ static int nxp_rw600_init(void)
 	POWER_EnableResetSource(kPOWER_ResetSourceWdt);
 #endif
 
+#if DT_NODE_HAS_PROP(DT_NODELABEL(pmu), reset_causes_en)
 #define PMU_RESET_CAUSES_ \
 	DT_FOREACH_PROP_ELEM_SEP(DT_NODELABEL(pmu), reset_causes_en, DT_PROP_BY_IDX, (|))
 #define PMU_RESET_CAUSES \
@@ -280,6 +281,9 @@ static int nxp_rw600_init(void)
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(wwdt), (kPOWER_ResetSourceWdt), (0))
 #define RESET_CAUSES \
 	(PMU_RESET_CAUSES | WDT_RESET)
+#else
+#define RESET_CAUSES 0
+#endif
 
 	POWER_EnableResetSource(RESET_CAUSES);
 
