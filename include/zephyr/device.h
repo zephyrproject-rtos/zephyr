@@ -419,7 +419,7 @@ struct device {
 	 */
 	Z_DEVICE_DEPS_CONST device_handle_t *deps;
 #endif /* CONFIG_DEVICE_DEPS */
-#if defined(CONFIG_PM) || defined(__DOXYGEN__)
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS) || defined(__DOXYGEN__)
 	struct pm_state_constraint const *pm_constraints;
 	size_t pm_constraints_size;
 #endif /* CONFIG_PM */
@@ -871,7 +871,7 @@ __syscall int device_init(const struct device *dev);
 
 #endif /* CONFIG_DEVICE_DEPS */
 
-#if defined(CONFIG_PM) || defined(__DOXYGEN__)
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS) || defined(__DOXYGEN__)
 
 /**
  * @brief Synthesize the name of the object that holds a device pm constraint.
@@ -921,7 +921,7 @@ __syscall int device_init(const struct device *dev);
 		Z_DEVICE_PM_CONSTRAINTS_NAME(dev_id)[] =             \
 		Z_PM_STATE_CONSTRAINTS_FROM_DT_DEVICE(node_id);
 
-#endif /* CONFIG_PM */
+#endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
 
 /**
  * @brief Init sub-priority of the device
@@ -971,8 +971,10 @@ __syscall int device_init(const struct device *dev);
 		.state = (state_),                                                       \
 		.data = (data_),                                                         \
 		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/                  \
-		IF_ENABLED(CONFIG_PM, (.pm_constraints = (constraints_),))               \
-		IF_ENABLED(CONFIG_PM, (.pm_constraints_size = (constraints_size_),))     \
+		IF_ENABLED(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS,                          \
+			(.pm_constraints = (constraints_),))                             \
+		IF_ENABLED(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS,                          \
+			(.pm_constraints_size = (constraints_size_),))                   \
 		IF_ENABLED(CONFIG_PM_DEVICE, ({ .pm_base = (pm_),})) /**/                \
 	}
 
@@ -1094,7 +1096,7 @@ __syscall int device_init(const struct device *dev);
 	IF_ENABLED(CONFIG_DEVICE_DEPS,                                          \
 		   (Z_DEVICE_DEPS_DEFINE(node_id, dev_id, __VA_ARGS__);))       \
                                                                                 \
-	IF_ENABLED(CONFIG_PM,                                                   \
+	IF_ENABLED(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS,                         \
 		(Z_DEVICE_PM_CONSTRAINTS_DEFINE(node_id, dev_id, __VA_ARGS__);))\
 	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,    \
 		prio, api, state, Z_DEVICE_DEPS_NAME(dev_id),                   \
