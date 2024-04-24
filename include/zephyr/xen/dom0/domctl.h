@@ -196,11 +196,15 @@ int xen_domctl_max_vcpus(int domid, int max_vcpus);
 /**
  * @brief Creates a new domain with the specified domain ID and configuration.
  *
- * @param domid The domain ID of the new domain.
+ * NB. domid is an IN/OUT parameter for this operation.
+ * If it is specified as an invalid value (0 or >= DOMID_FIRST_RESERVED),
+ * an id is auto-allocated and returned.
+
+ * @param[in,out] domid Pointer to domain ID of the new domain.
  * @param config Pointer to a structure containing the configuration for the new domain.
  * @return 0 on success, or a negative error code on failure.
  */
-int xen_domctl_createdomain(int domid, struct xen_domctl_createdomain *config);
+int xen_domctl_createdomain(int *domid, struct xen_domctl_createdomain *config);
 
 /**
  * @brief Clean and invalidate caches associated with given region of
