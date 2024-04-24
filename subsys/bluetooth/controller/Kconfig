@@ -547,6 +547,7 @@ config BT_CTLR_PRIVACY
 	bool "LE Controller-based Privacy"
 	depends on BT_CTLR_PRIVACY_SUPPORT
 	select BT_CTLR_FILTER_ACCEPT_LIST if BT_LL_SW_SPLIT
+	select BT_CTLR_CRYPTO if BT_LL_SW_SPLIT
 	select BT_RPA
 	default y if BT_HCI_RAW || BT_SMP
 	help
