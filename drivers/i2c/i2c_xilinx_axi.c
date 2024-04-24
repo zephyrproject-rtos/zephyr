@@ -629,7 +629,7 @@ static const struct i2c_driver_api i2c_xilinx_axi_driver_api = {
 	static const struct i2c_xilinx_axi_config i2c_xilinx_axi_config_##compat##_##n = {         \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.irq_config_func = i2c_xilinx_axi_config_func_##compat##_##n,                      \
-		.dyn_read_working = DT_NODE_HAS_COMPAT(DT_DRV_INST(n), xlnx_xps_iic_2_1)};         \
+		.dyn_read_working = DT_INST_NODE_HAS_COMPAT(n, xlnx_xps_iic_2_1)};                 \
                                                                                                    \
 	static struct i2c_xilinx_axi_data i2c_xilinx_axi_data_##compat##_##n;                      \
                                                                                                    \

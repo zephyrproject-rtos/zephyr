@@ -1373,7 +1373,7 @@ static const struct can_driver_api mcux_flexcan_fd_driver_api = {
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 #define FLEXCAN_MAX_BITRATE(id)							\
-	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(id), FLEXCAN_FD_DRV_COMPAT),	\
+	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(id, FLEXCAN_FD_DRV_COMPAT),		\
 		    (8000000), (1000000))
 #else /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 #define FLEXCAN_MAX_BITRATE(id) 1000000
@@ -1381,7 +1381,7 @@ static const struct can_driver_api mcux_flexcan_fd_driver_api = {
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 #define FLEXCAN_DRIVER_API(id)							\
-	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(id), FLEXCAN_FD_DRV_COMPAT),	\
+	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(id, FLEXCAN_FD_DRV_COMPAT),		\
 		    (mcux_flexcan_fd_driver_api),				\
 		    (mcux_flexcan_driver_api))
 #else /* CONFIG_CAN_MCUX_FLEXCAN_FD */
@@ -1403,7 +1403,7 @@ static const struct can_driver_api mcux_flexcan_fd_driver_api = {
 			DT_INST_CLOCKS_CELL(id, name),			\
 		.clk_source = DT_INST_PROP(id, clk_source),		\
 		IF_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD, (		\
-			.flexcan_fd = DT_NODE_HAS_COMPAT(DT_DRV_INST(id), FLEXCAN_FD_DRV_COMPAT), \
+			.flexcan_fd = DT_INST_NODE_HAS_COMPAT(id, FLEXCAN_FD_DRV_COMPAT), \
 		))							\
 		.irq_config_func = mcux_flexcan_irq_config_##id,	\
 		.irq_enable_func = mcux_flexcan_irq_enable_##id,	\
