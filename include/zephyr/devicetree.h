@@ -4358,6 +4358,15 @@
 	DT_NODE_HAS_PROP(DT_DRV_INST(inst), prop)
 
 /**
+ * @brief Does a DT_DRV_COMPAT instance have the compatible?
+ * @param inst instance number
+ * @param compat lowercase-and-underscores compatible, without quotes
+ * @return 1 if the instance matches the compatible, 0 otherwise.
+ */
+#define DT_INST_NODE_HAS_COMPAT(inst, compat) \
+	DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), compat)
+
+/**
  * @brief Does a phandle array have a named cell specifier at an index
  *        for a `DT_DRV_COMPAT` instance?
  * @param inst instance number
