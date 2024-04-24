@@ -125,7 +125,7 @@ static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
 
 			const int16_t fb_y = y + g_y;
 			const size_t fb_index = (fb_y / 8U) * fb->x_res + fb_x;
-			const size_t offset = y % 8;
+			const size_t offset = (y >= 0) ? y % 8 : (8 + (y % 8));
 			const uint8_t bottom_lines = ((offset + fptr->height) % 8);
 			uint8_t bg_mask;
 			uint8_t byte;
@@ -427,41 +427,46 @@ int cfb_draw_text(const struct device *dev, const char *const str, int16_t x, in
 	return draw_text(dev, str, x, y, false);
 }
 
-int cfb_print(const struct device *dev, const char *const str, uint16_t x, uint16_t y)
+int cfb_print(const struct device *dev, const char *const str, int16_t x, int16_t y)
 {
 	return draw_text(dev, str, x, y, true);
 }
 
-int cfb_invert_area(const struct device *dev, uint16_t x, uint16_t y,
+int cfb_invert_area(const struct device *dev, int16_t x, int16_t y,
 		    uint16_t width, uint16_t height)
 {
 	const struct char_framebuffer *fb = &char_fb;
 	const bool need_reverse = ((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0);
 
-	if (x >= fb->x_res || y >= fb->y_res) {
-		LOG_ERR("Coordinates outside of framebuffer");
-
-		return -EINVAL;
+	if ((x + width) < 0 || x >= fb->x_res) {
+		return 0;
 	}
 
-	if (x > fb->x_res) {
-		x = fb->x_res;
+	if ((y + height) < 0 || y >= fb->y_res) {
+		return 0;
 	}
 
-	if (y > fb->y_res) {
-		y = fb->y_res;
+	if (x < 0) {
+		width += x;
+		x = 0;
 	}
 
-	if (x + width > fb->x_res) {
+	if (y < 0) {
+		height += y;
+		y = 0;
+	}
+
+	if (width > (fb->x_res - x)) {
 		width = fb->x_res - x;
 	}
 
-	if (y + height > fb->y_res) {
+	if (height > (fb->y_res - y)) {
 		height = fb->y_res - y;
 	}
 
+
 	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED)) {
-		for (size_t i = x; i < x + width; i++) {
+		for (size_t i = x; i < (x + width); i++) {
 			for (size_t j = y; j < (y + height); j++) {
 				/*
 				 * Process inversion in the y direction
