@@ -273,15 +273,23 @@ int xen_domctl_max_vcpus(int domid, int max_vcpus)
 	return do_domctl(&domctl);
 }
 
-int xen_domctl_createdomain(int domid, struct xen_domctl_createdomain *config)
+int xen_domctl_createdomain(int *domid, struct xen_domctl_createdomain *config)
 {
-	xen_domctl_t domctl = {
-		.cmd = XEN_DOMCTL_createdomain,
-		.domain = domid,
-		.u.createdomain = *config,
-	};
+	int ret;
+	xen_domctl_t domctl;
 
-	return do_domctl(&domctl);
+	if (!domid || !config) {
+		return -EINVAL;
+	}
+
+	domctl.cmd = XEN_DOMCTL_createdomain,
+	domctl.domain = *domid,
+	domctl.u.createdomain = *config,
+
+	ret = do_domctl(&domctl);
+	*domid = domctl.domain;
+
+	return ret;
 }
 
 int xen_domctl_destroydomain(int domid)
