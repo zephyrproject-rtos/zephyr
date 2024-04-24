@@ -351,6 +351,21 @@ efforts into the specific module in question. This will speed up testing since
 only the module will have to be compiled in, and the tested functions will be
 called directly.
 
+Examples of unit tests can be found in ``tests/unit/``. In the following
+example CMakeLists.txt, note the use of ``COMPONENTS unittest`` in the
+``find_package()`` command and the use of ``testbinary`` in the
+``target_sources()`` command.
+
+.. code-block:: cmake
+
+   # SPDX-License-Identifier: Apache-2.0
+
+   cmake_minimum_required(VERSION 3.20.0)
+
+   project(app)
+   find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
+   target_sources(testbinary PRIVATE main.c)
+
 Since you won't be including basic kernel data structures that most code
 depends on, you have to provide function stubs in the test. Ztest provides
 some helpers for mocking functions, as demonstrated below.
@@ -361,7 +376,7 @@ interaction with an object occurred, and if required, to assert the order of
 that interaction.
 
 Best practices for declaring the test suite
-===========================================
+*******************************************
 
 *twister* and other validation tools need to obtain the list of
 subcases that a Zephyr *ztest* test image will expose.
