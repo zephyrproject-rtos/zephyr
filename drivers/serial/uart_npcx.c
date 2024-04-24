@@ -119,14 +119,37 @@ static void uart_npcx_pm_policy_state_lock_put(struct uart_npcx_data *data,
 /* UART local functions */
 static int uart_set_npcx_baud_rate(struct uart_reg *const inst, int baud_rate, int src_clk)
 {
-	/* Fix baud rate to 115200 so far */
+	/*
+	 * Support two baud rate setting so far:
+	 *   -  115200
+	 *   - 3000000
+	 */
 	if (baud_rate == 115200) {
-		if (src_clk == 15000000) {
+		if (src_clk == MHZ(15)) {
 			inst->UPSR = 0x38;
 			inst->UBAUD = 0x01;
-		} else if (src_clk == 20000000) {
+		} else if (src_clk == MHZ(20)) {
 			inst->UPSR = 0x08;
 			inst->UBAUD = 0x0a;
+		} else if (src_clk == MHZ(25)) {
+			inst->UPSR = 0x10;
+			inst->UBAUD = 0x08;
+		} else if (src_clk == MHZ(30)) {
+			inst->UPSR = 0x10;
+			inst->UBAUD = 0x0a;
+		} else if (src_clk == MHZ(48)) {
+			inst->UPSR = 0x08;
+			inst->UBAUD = 0x19;
+		} else if (src_clk == MHZ(50)) {
+			inst->UPSR = 0x08;
+			inst->UBAUD = 0x1a;
+		} else {
+			return -EINVAL;
+		}
+	} else if (baud_rate == MHZ(3)) {
+		if (src_clk == MHZ(48)) {
+			inst->UPSR = 0x08;
+			inst->UBAUD = 0x0;
 		} else {
 			return -EINVAL;
 		}
