@@ -1,0 +1,22 @@
+# Copyright (c) 2024, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config MEMC_MSPI
+	bool "MSPI memory controller drivers"
+	default y
+	depends on MEMC
+	select MSPI
+
+if MEMC_MSPI
+
+menu "MSPI memory controller driver"
+
+config MEMC_MSPI_APS6404L
+	bool "MSPI AP Memory APS6404L pSRAM driver"
+	default y
+	depends on DT_HAS_MSPI_APS6404L_ENABLED
+	select MSPI_AMBIQ_AP3 if SOC_SERIES_APOLLO3X
+
+endmenu
+
+endif # MEMC_MSPI
