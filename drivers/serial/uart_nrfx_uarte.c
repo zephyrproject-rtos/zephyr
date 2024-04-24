@@ -1208,7 +1208,7 @@ static void endrx_isr(const struct device *dev)
  *
  * @param dev Device.
  * @param buf Buffer for flushed data, null indicates that flushed data can be
- *	      dropped.
+ *	      dropped but we still want to get amount of data flushed.
  * @param len Buffer size, not used if @p buf is null.
  *
  * @return number of bytes flushed from the fifo.
@@ -1224,7 +1224,6 @@ static uint8_t rx_flush(const struct device *dev, uint8_t *buf, uint32_t len)
 	size_t flush_len = buf ? len : sizeof(tmp_buf);
 
 	if (buf) {
-		memset(buf, dirty, len);
 		flush_buf = buf;
 		flush_len = len;
 	} else {
@@ -1232,6 +1231,7 @@ static uint8_t rx_flush(const struct device *dev, uint8_t *buf, uint32_t len)
 		flush_len = sizeof(tmp_buf);
 	}
 
+	memset(flush_buf, dirty, flush_len);
 	nrf_uarte_rx_buffer_set(uarte, flush_buf, flush_len);
 	/* Final part of handling RXTO event is in ENDRX interrupt
 	 * handler. ENDRX is generated as a result of FLUSHRX task.
@@ -1243,10 +1243,6 @@ static uint8_t rx_flush(const struct device *dev, uint8_t *buf, uint32_t len)
 	}
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
 
-	if (!buf) {
-		return nrf_uarte_rx_amount_get(uarte);
-	}
-
 	uint32_t rx_amount = nrf_uarte_rx_amount_get(uarte);
 
 	if (rx_amount != prev_rx_amount) {
@@ -1254,7 +1250,7 @@ static uint8_t rx_flush(const struct device *dev, uint8_t *buf, uint32_t len)
 	}
 
 	for (int i = 0; i < flush_len; i++) {
-		if (buf[i] != dirty) {
+		if (flush_buf[i] != dirty) {
 			return rx_amount;
 		}
 	}
@@ -1306,8 +1302,16 @@ static void rxto_isr(const struct device *dev)
 	 */
 	data->async->rx_enabled = false;
 	if (data->async->discard_rx_fifo) {
+		uint8_t flushed;
+
 		data->async->discard_rx_fifo = false;
-		(void)rx_flush(dev, NULL, 0);
+		flushed = rx_flush(dev, NULL, 0);
+		if (HW_RX_COUNTING_ENABLED(data)) {
+			/* It need to be included because TIMER+PPI got RXDRDY events
+			 * and counted those flushed bytes.
+			 */
+			data->async->rx_total_user_byte_cnt += flushed;
+		}
 	}
 
 	if (config->flags & UARTE_CFG_FLAG_LOW_POWER) {
