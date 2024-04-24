@@ -27,7 +27,7 @@ jobs:
 
     - name: Install Packages
       run: |
-        sudo apt-get update
+        sudo apt-get update || true
         sudo apt-get install coccinelle
 
     - name: Run Coding Guildeines Checks
