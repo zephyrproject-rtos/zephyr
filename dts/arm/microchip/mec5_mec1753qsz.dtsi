@@ -21,6 +21,7 @@
 
 	soc {
 		#include "mec5/mec5_gpspi_v2.dtsi"
+		#include "mec5/mec5_i3c.dtsi"
 
 		eeprom: eeprom@40002c00 {
 			reg = <0x40002c00 0x400>;

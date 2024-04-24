@@ -1,0 +1,72 @@
+# Copyright (c) 2024 Microchip Inc.
+#
+# There are two I3C blocks in the SOC.
+#     I3C0 - Primary Host alone.
+#     I3C1 - Secondary Host or Target.
+# Default mode for the I3C1 is Target.
+# But we shall change the mode using DTS.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 I3C controller
+
+compatible: "microchip,mec5-i3c"
+
+include: [i3c-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    type: phandles
+    required: true
+
+  pinctrl-names:
+    type: string-array
+    required: true
+
+  input-clock-frequency:
+    type: int
+    required: true
+    description: The controller input clock frequency
+
+  i3c1-as-tgt-pid:
+    type: array
+    description:  |
+        I3C1(secondary host) boot as Target by default.
+        This property shall be used to set Provisioned ID (PID)
+        value for the Target. 48bit required to hold PID.
+            Ex., PID -> 0xB0123456789B
+                 i3c1-as-tgt-pid = < 0xB012 0x3456789B >
+
+  i3c1-as-tgt-pid-random:
+    type: boolean
+    description:  |
+        I3C1(secondary host) boot as Target by default.
+        This property shall be used to set PID Radom value for the Target.
+        True if lower 32-bit of Provisioned ID is random.
+        This sets the bit 32 of Provisioned ID which means, the lower
+        32-bit is random value.
+
+  i3c1-as-tgt-static-addr:
+    type: int
+    description:  |
+        I3C1(secondary host) boot as Target by default.
+        This property shall be used to set static address to it.
+
+  i3c1-as-tgt-mrl:
+    type: int
+    description:  |
+        I3C1(secondary host) boot as Target by default.
+        This property shall be used to set Target maximum read length(MRL).
+
+  i3c1-as-tgt-mwl:
+    type: int
+    description:  |
+        I3C1(secondary host) boot as Target by default.
+        This property shall be used to set Target maximum write length(MWL).
+

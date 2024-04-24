@@ -42,6 +42,11 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_sources_ifdef(
+  CONFIG_I3C_MCHP_MEC5
+  i3c_mchp.c
+)
+
+zephyr_library_sources_ifdef(
   CONFIG_I3C_TEST
   i3c_test.c
 )
