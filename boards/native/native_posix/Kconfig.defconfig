@@ -27,16 +27,6 @@ choice BT_HCI_BUS_TYPE
 	depends on BT_HCI
 endchoice
 
-if LOG
-
-# For native_posix we can log synchronously without any problem
-# Doing so will be nicer for debugging
-choice LOG_MODE
-	default LOG_MODE_IMMEDIATE
-endchoice
-
-endif # LOG
-
 if CONSOLE
 
 config POSIX_ARCH_CONSOLE
