@@ -37,10 +37,6 @@ config UART_CONSOLE
 
 endif # CONSOLE
 
-config USB_NATIVE_POSIX
-	default y
-	depends on USB_DEVICE_DRIVER
-
 if I2C
 
 config EMUL
