@@ -14,6 +14,7 @@ supported:
   - gpio
   - spi
   - i2c
+  - mspi
 testing:
   ignore_tags:
     - net
