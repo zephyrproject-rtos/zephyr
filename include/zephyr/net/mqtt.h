@@ -558,6 +558,9 @@ struct mqtt_client {
 	 *  Default is CONFIG_MQTT_CLEAN_SESSION.
 	 */
 	uint8_t clean_session : 1;
+
+	/* Userdata */
+	void *user_data;
 };
 
 /**
