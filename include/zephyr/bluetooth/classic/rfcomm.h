@@ -104,7 +104,9 @@ struct bt_rfcomm_dlc {
 
 	/* Stack & kernel data for TX thread */
 	struct k_thread            tx_thread;
-	K_KERNEL_STACK_MEMBER(stack, 256);
+#if defined(CONFIG_BT_RFCOMM_DLC_STACK_SIZE)
+	K_KERNEL_STACK_MEMBER(stack, CONFIG_BT_RFCOMM_DLC_STACK_SIZE);
+#endif /* CONFIG_BT_RFCOMM_DLC_STACK_SIZE */
 };
 
 struct bt_rfcomm_server {
