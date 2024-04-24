@@ -8,10 +8,19 @@ subprofiling options of `IEEE 1003.1-2017`_. The single-purpose realtime system 
 are listed below, for reference, in terms that agree with the current POSIX-1 standard. PSE54
 is not considered at this time.
 
+System Interfaces
+=================
+
+The required POSIX :ref:`System Interfaces<posix_system_interfaces_required>` are supported for
+each Application Environment Profile.
+
 .. _posix_aep_pse51:
 
 Minimal Realtime System Profile (PSE51)
 =======================================
+
+The *Minimal Realtime System Profile* (PSE51) includes all of the
+:ref:`System Interfaces<posix_system_interfaces_required>` along with several additional features.
 
 .. Conforming implementations shall define _POSIX_AEP_REALTIME_MINIMAL to the value 200312L
 
@@ -25,42 +34,39 @@ Minimal Realtime System Profile (PSE51)
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
 
-    POSIX_C_LANG_JUMP, yes, :ref:`POSIX_C_LANG_JUMP <posix_option_group_c_lang_jump>`
-    POSIX_C_LANG_SUPPORT, yes, :ref:`POSIX_C_LANG_SUPPORT <posix_option_group_c_lang_support>`
-    POSIX_DEVICE_IO,, :ref:`†<posix_undefined_behaviour>`
-    POSIX_FILE_LOCKING,,
-    POSIX_SIGNALS,, :ref:`†<posix_undefined_behaviour>`
-    POSIX_SINGLE_PROCESS, yes,
-    POSIX_THREADS_BASE, yes, :ref:`†<posix_undefined_behaviour>`
-    XSI_THREADS_EXT, yes,
+    :ref:`POSIX_C_LANG_JUMP <posix_option_group_c_lang_jump>`, yes,
+    :ref:`POSIX_C_LANG_SUPPORT <posix_option_group_c_lang_support>`, yes,
+    :ref:`POSIX_DEVICE_IO <posix_option_group_device_io>`,,
+    :ref:`POSIX_SIGNALS <posix_option_group_signals>`,,
+    :ref:`POSIX_SINGLE_PROCESS <posix_option_group_single_process>`, yes,
+    :ref:`POSIX_THREADS_BASE <posix_option_group_threads_base>`, yes,
+    :ref:`XSI_THREADS_EXT <posix_option_group_xsi_threads_ext>`, yes,
 
 .. csv-table:: PSE51 Option Requirements
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
 
-    _POSIX_CLOCK_SELECTION, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
-    _POSIX_FSYNC, -1,
-    _POSIX_MEMLOCK, -1,
-    _POSIX_MEMLOCK_RANGE, -1,
-    _POSIX_MONOTONIC_CLOCK, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
-    _POSIX_REALTIME_SIGNALS, -1,
-    _POSIX_SEMAPHORES, 200809L, :kconfig:option:`CONFIG_PTHREAD_IPC`
-    _POSIX_SHARED_MEMORY_OBJECTS, -1,
-    _POSIX_SYNCHRONIZED_IO, -1,
-    _POSIX_THREAD_ATTR_STACKADDR, 200809L, :kconfig:option:`CONFIG_PTHREAD`
-    _POSIX_THREAD_ATTR_STACKSIZE, 200809L, :kconfig:option:`CONFIG_PTHREAD`
-    _POSIX_THREAD_CPUTIME, -1,
+    :ref:`_POSIX_FSYNC <posix_option_fsync>`, -1,
+    :ref:`_POSIX_MEMLOCK <posix_option_memlock>`, -1,
+    :ref:`_POSIX_MEMLOCK_RANGE <posix_option_memlock_range>`, -1,
+    :ref:`_POSIX_MONOTONIC_CLOCK <posix_option_monotonic_clock>`, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
+    :ref:`_POSIX_SHARED_MEMORY_OBJECTS <posix_shared_memory_objects>`, -1,
+    :ref:`_POSIX_SYNCHRONIZED_IO <posix_option_synchronized_io>`, -1,
+    :ref:`_POSIX_THREAD_ATTR_STACKADDR<posix_option_thread_attr_stackaddr>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
+    :ref:`_POSIX_THREAD_ATTR_STACKSIZE<posix_option_thread_attr_stacksize>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
+    :ref:`_POSIX_THREAD_CPUTIME <posix_option_thread_cputime>`, -1,
     _POSIX_THREAD_PRIO_INHERIT, 200809L, :kconfig:option:`CONFIG_PTHREAD_MUTEX`
     _POSIX_THREAD_PRIO_PROTECT, -1,
-    _POSIX_THREAD_PRIORITY_SCHEDULING, -1, :kconfig:option:`CONFIG_POSIX_PRIORITY_SCHEDULING` (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    :ref:`_POSIX_THREAD_PRIORITY_SCHEDULING<posix_option_thread_priority_scheduling>`, 200809L, :kconfig:option:`CONFIG_POSIX_PRIORITY_SCHEDULING` (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     _POSIX_THREAD_SPORADIC_SERVER, -1,
-    _POSIX_TIMEOUTS, 200809L, :kconfig:option:`CONFIG_PTHREAD_IPC`
-    _POSIX_TIMERS, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
 
 .. _posix_aep_pse52:
 
 Realtime Controller System Profile (PSE52)
 ==========================================
+
+The *Realtime Controller System Profile* (PSE52) includes all features from PSE51 and the
+:ref:`System Interfaces<posix_system_interfaces_required>`.
 
 .. Conforming implementations shall define _POSIX_AEP_REALTIME_CONTROLLER to the value 200312L
 
@@ -74,42 +80,15 @@ Realtime Controller System Profile (PSE52)
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
 
-    POSIX_C_LANG_JUMP, yes, :ref:`POSIX_C_LANG_JUMP <posix_option_group_c_lang_jump>`
-    POSIX_C_LANG_MATH, yes, :ref:`POSIX_C_LANG_MATH <posix_option_group_c_lang_math>`
-    POSIX_C_LANG_SUPPORT, yes, :ref:`POSIX_C_LANG_SUPPORT <posix_option_group_c_lang_support>`
-    POSIX_DEVICE_IO,, :ref:`†<posix_undefined_behaviour>`
-    POSIX_FD_MGMT,, :ref:`POSIX_FD_MGMT <posix_option_group_fd_mgmt>`
-    POSIX_FILE_LOCKING,,
-    POSIX_FILE_SYSTEM,,
-    POSIX_SIGNALS,, :ref:`†<posix_undefined_behaviour>`
-    POSIX_SINGLE_PROCESS, yes,
-    POSIX_THREADS_BASE, yes, :ref:`†<posix_undefined_behaviour>`
-    XSI_THREADS_EXT, yes,
+    :ref:`POSIX_C_LANG_MATH <posix_option_group_c_lang_math>`, yes,
+    :ref:`POSIX_FD_MGMT <posix_option_group_fd_mgmt>`,,
+    :ref:`POSIX_FILE_SYSTEM <posix_option_group_file_system>`,,
 
 .. csv-table:: PSE52 Option Requirements
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
 
-    _POSIX_CLOCK_SELECTION, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
-    _POSIX_FSYNC, -1,
-    _POSIX_MAPPED_FILES, -1,
-    _POSIX_MEMLOCK, -1,
-    _POSIX_MEMLOCK_RANGE, -1,
-    _POSIX_MESSAGE_PASSING, 200809L, :kconfig:option:`CONFIG_POSIX_MQUEUE`
-    _POSIX_MONOTONIC_CLOCK, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
-    _POSIX_REALTIME_SIGNALS, -1,
-    _POSIX_SEMAPHORES, 200809L, :kconfig:option:`CONFIG_PTHREAD_IPC`
-    _POSIX_SHARED_MEMORY_OBJECTS, -1,
-    _POSIX_SYNCHRONIZED_IO, -1,
-    _POSIX_THREAD_ATTR_STACKADDR, 200809L, :kconfig:option:`CONFIG_PTHREAD`
-    _POSIX_THREAD_ATTR_STACKSIZE, 200809L, :kconfig:option:`CONFIG_PTHREAD`
-    _POSIX_THREAD_CPUTIME, -1,
-    _POSIX_THREAD_PRIO_INHERIT, 200809L, :kconfig:option:`CONFIG_PTHREAD_MUTEX`
-    _POSIX_THREAD_PRIO_PROTECT, -1,
-    _POSIX_THREAD_PRIORITY_SCHEDULING, -1,
-    _POSIX_THREAD_SPORADIC_SERVER, -1,
-    _POSIX_TIMEOUTS, 200809L, :kconfig:option:`CONFIG_PTHREAD_IPC`
-    _POSIX_TIMERS, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
+    :ref:`_POSIX_MESSAGE_PASSING <posix_option_message_passing>`, 200809L, :kconfig:option:`CONFIG_POSIX_MQUEUE`
     _POSIX_TRACE, -1,
     _POSIX_TRACE_EVENT_FILTER, -1,
     _POSIX_TRACE_LOG, -1,
@@ -118,6 +97,9 @@ Realtime Controller System Profile (PSE52)
 
 Dedicated Realtime System Profile (PSE53)
 =========================================
+
+The *Dedicated Realtime System Profile* (PSE53) includes all features from PSE52, PSE51, and the
+:ref:`System Interfaces<posix_system_interfaces_required>`.
 
 .. Conforming implementations shall define _POSIX_AEP_REALTIME_DEDICATED to the value 200312L
 
@@ -131,58 +113,21 @@ Dedicated Realtime System Profile (PSE53)
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
 
-    POSIX_C_LANG_JUMP, yes, :ref:`POSIX_C_LANG_JUMP <posix_option_group_c_lang_jump>`
-    POSIX_C_LANG_MATH, yes, :ref:`POSIX_C_LANG_MATH <posix_option_group_c_lang_math>`
-    POSIX_C_LANG_SUPPORT, yes, :ref:`POSIX_C_LANG_SUPPORT <posix_option_group_c_lang_support>`
-    POSIX_DEVICE_IO,, :ref:`†<posix_undefined_behaviour>`
-    POSIX_FD_MGMT,, :ref:`POSIX_FD_MGMT <posix_option_group_fd_mgmt>`
-    POSIX_FILE_LOCKING,,
-    POSIX_FILE_SYSTEM,,
     POSIX_MULTI_PROCESS,, :ref:`†<posix_undefined_behaviour>`
-    POSIX_NETWORKING, yes, :ref:`POSIX_NETWORKING <posix_option_group_networking>`
-    POSIX_PIPE,, :ref:`†<posix_undefined_behaviour>`
-    POSIX_SIGNALS,, :ref:`†<posix_undefined_behaviour>`
-    POSIX_SIGNAL_JUMP,, :ref:`†<posix_undefined_behaviour>`
-    POSIX_SINGLE_PROCESS, yes,
-    POSIX_THREADS_BASE, yes, :ref:`†<posix_undefined_behaviour>`
-    XSI_THREADS_EXT, yes,
+    :ref:`POSIX_NETWORKING <posix_option_group_networking>`, yes,
+    :ref:`POSIX_PIPE <posix_option_group_pipe>`,,
+    :ref:`POSIX_SIGNAL_JUMP <posix_option_group_signal_jump>`,,
 
 .. csv-table:: PSE53 Option Requirements
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
 
-    _POSIX_ASYNCHRONOUS_IO, -1,
-    _POSIX_CLOCK_SELECTION, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
     _POSIX_CPUTIME, -1,
-    _POSIX_FSYNC, -1,
-    _POSIX_MAPPED_FILES, -1,
-    _POSIX_MEMLOCK, -1,
-    _POSIX_MEMLOCK_RANGE, -1,
-    _POSIX_MEMORY_PROTECTION, -1,
-    _POSIX_MESSAGE_PASSING, 200809L, :kconfig:option:`CONFIG_POSIX_MQUEUE`
-    _POSIX_MONOTONIC_CLOCK, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
     _POSIX_PRIORITIZED_IO, -1,
-    _POSIX_PRIORITY_SCHEDULING, -1,
+    :ref:`_POSIX_PRIORITY_SCHEDULING <posix_option_priority_scheduling>`, -1,
     _POSIX_RAW_SOCKETS, 200809L, :kconfig:option:`CONFIG_NET_SOCKETS`
-    _POSIX_REALTIME_SIGNALS, -1,
-    _POSIX_SEMAPHORES, 200809L, :kconfig:option:`CONFIG_PTHREAD_IPC`
-    _POSIX_SHARED_MEMORY_OBJECTS, -1,
     _POSIX_SPAWN, -1,
     _POSIX_SPORADIC_SERVER, -1,
-    _POSIX_SYNCHRONIZED_IO, -1,
-    _POSIX_THREAD_ATTR_STACKADDR, 200809L, :kconfig:option:`CONFIG_PTHREAD`
-    _POSIX_THREAD_ATTR_STACKSIZE, 200809L, :kconfig:option:`CONFIG_PTHREAD`
-    _POSIX_THREAD_CPUTIME, -1,
-    _POSIX_THREAD_PRIO_INHERIT, 200809L, :kconfig:option:`CONFIG_PTHREAD_MUTEX`
-    _POSIX_THREAD_PRIO_PROTECT, -1,
-    _POSIX_THREAD_PRIORITY_SCHEDULING, -1,
-    _POSIX_THREAD_PROCESS_SHARED, -1,
-    _POSIX_THREAD_SPORADIC_SERVER, -1,
-    _POSIX_TIMEOUTS, 200809L, :kconfig:option:`CONFIG_PTHREAD_IPC`
-    _POSIX_TIMERS, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
-    _POSIX_TRACE, -1,
-    _POSIX_TRACE_EVENT_FILTER, -1,
-    _POSIX_TRACE_LOG, -1,
 
 .. _IEEE 1003.1-2017: https://standards.ieee.org/ieee/1003.1/7101/
 .. _IEEE 1003.13-2003: https://standards.ieee.org/ieee/1003.13/3322/
