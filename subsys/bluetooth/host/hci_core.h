@@ -468,6 +468,29 @@ uint8_t bt_get_phy(uint8_t hci_phy);
  * @return CTE type (@ref bt_df_cte_type).
  */
 int bt_get_df_cte_type(uint8_t hci_cte_type);
+
+/** Start or restart scanner if needed
+ *
+ * Examples of cases where it may be required to start/restart a scanner:
+ * - When the auto-connection establishement feature is used:
+ *   - When the host sets a connection context for auto-connection establishment.
+ *   - When a connection was established.
+ *     The host may now be able to retry to automatically set up a connection.
+ *   - When a connection was disconnected/lost.
+ *     The host may now be able to retry to automatically set up a connection.
+ *   - When the application stops explicit scanning.
+ *     The host may now be able to retry to automatically set up a connection.
+ *   - The application tries to connect to another device, but fails.
+ *     The host may now be able to retry to automatically set up a connection.
+ * - When the application wants to connect to a device, but we need
+ *   to fallback to host privacy.
+ * - When the application wants to establish a periodic sync to a device
+ *   and the application has not already started scanning.
+ *
+ * @param fast_scan Use fast scan parameters or slow scan parameters
+ *
+ * @return 0 in case of success, or a negative error code on failure.
+ */
 int bt_le_scan_update(bool fast_scan);
 
 int bt_le_create_conn(const struct bt_conn *conn);
