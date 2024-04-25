@@ -23,6 +23,7 @@
 		watchdog0 = &wdt0;
 		rtc = &pfc8563_rtc;
 		led0 = &led_pwr;
+		sdhc0 = &sd0;
 	};
 
 	chosen {
@@ -215,7 +216,7 @@
 	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>,
 			   <&gpio0 4 GPIO_ACTIVE_LOW>;
 
-	sdhc0: sdhc@1 {
+	sd0: sd@1 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
 		status = "okay";
