@@ -6,9 +6,9 @@
 
 #include <stdlib.h>
 #include <zephyr/sys/slist.h>
-#include <zephyr/random/random.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/mesh/rpr_srv.h>
 #include <common/bt_str.h>
 #include <zephyr/bluetooth/mesh/sar_cfg.h>
@@ -193,14 +193,15 @@ static void link_report_send(void)
 
 static void scan_report_schedule(void)
 {
-	uint32_t delay;
+	uint32_t delay = 0;
 
 	if (k_work_delayable_remaining_get(&srv.scan.report) ||
 	    atomic_test_bit(srv.flags, SCAN_REPORT_PENDING)) {
 		return;
 	}
 
-	delay = (sys_rand32_get() % 480) + 20;
+	(void)bt_rand(&delay, sizeof(uint32_t));
+	delay = (delay % 480) + 20;
 
 	k_work_reschedule(&srv.scan.report, K_MSEC(delay));
 }
