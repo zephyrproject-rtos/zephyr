@@ -1,0 +1,14 @@
+# NUMAKER RTC Driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_NUMAKER
+	bool "Nuvoton NuMaker MCU RTC driver"
+	default y
+	select HAS_NUMAKER_RTC
+	depends on DT_HAS_NUVOTON_NUMAKER_RTC_ENABLED
+	help
+	  This option enables the RTC driver for Nuvoton NuMaker family of
+	  processors.
+	  Say y if you wish to enable NuMaker RTC.
