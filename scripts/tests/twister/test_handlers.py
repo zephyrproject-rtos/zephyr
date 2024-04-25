@@ -442,28 +442,25 @@ def test_binaryhandler_output_handler(
 
 
 TESTDATA_4 = [
-    (True, False, False, True, None, None,
+    (True, False, True, None, None,
      ['valgrind', '--error-exitcode=2', '--leak-check=full',
       f'--suppressions={ZEPHYR_BASE}/scripts/valgrind.supp',
       '--log-file=build_dir/valgrind.log', '--track-origins=yes',
       'generator', 'run_renode_test']),
-    (False, True, False, False, 123, None, ['generator', 'run', '--seed=123']),
-    (False, False, True, False, None, None,
-     ['west', 'flash', '--skip-rebuild', '-d', 'build_dir']),
-    (False, False, False, False, None, ['ex1', 'ex2'], ['bin', 'ex1', 'ex2']),
+    (False, True, False, 123, None, ['generator', 'run', '--seed=123']),
+    (False, False, False, None, ['ex1', 'ex2'], ['bin', 'ex1', 'ex2']),
 ]
 
 @pytest.mark.parametrize(
-    'robot_test, call_make_run, call_west_flash, enable_valgrind, seed,' \
+    'robot_test, call_make_run, enable_valgrind, seed,' \
     ' extra_args, expected',
     TESTDATA_4,
-    ids=['robot, valgrind', 'make run, seed', 'west flash', 'binary, extra']
+    ids=['robot, valgrind', 'make run, seed', 'binary, extra']
 )
 def test_binaryhandler_create_command(
     mocked_instance,
     robot_test,
     call_make_run,
-    call_west_flash,
     enable_valgrind,
     seed,
     extra_args,
@@ -473,7 +470,6 @@ def test_binaryhandler_create_command(
     handler.generator_cmd = 'generator'
     handler.binary = 'bin'
     handler.call_make_run = call_make_run
-    handler.call_west_flash = call_west_flash
     handler.options = mock.Mock(enable_valgrind=enable_valgrind)
     handler.seed = seed
     handler.extra_test_args = extra_args
@@ -1893,7 +1889,6 @@ def test_qemuhandler_thread(
 
     type(mocked_instance.testsuite).timeout = mock.PropertyMock(return_value=timeout)
     handler = QEMUHandler(mocked_instance, 'build')
-    handler.results = {}
     handler.ignore_unexpected_eof = False
     handler.pid_fn = 'pid_fn'
     handler.fifo_fn = 'fifo_fn'
@@ -1953,7 +1948,6 @@ def test_qemuhandler_thread(
             handler.log,
             handler.fifo_fn,
             handler.pid_fn,
-            handler.results,
             harness,
             handler.ignore_unexpected_eof
         )

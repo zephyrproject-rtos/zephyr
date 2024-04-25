@@ -72,7 +72,6 @@ class Handler:
         """
         self.options = None
 
-        self.state = "waiting"
         self.run = False
         self.type_str = type_str
 
@@ -86,7 +85,6 @@ class Handler:
         self.build_dir = instance.build_dir
         self.log = os.path.join(self.build_dir, "handler.log")
         self.returncode = 0
-        self.generator = None
         self.generator_cmd = None
         self.suite_name_check = True
         self.ready = False
@@ -178,7 +176,6 @@ class BinaryHandler(Handler):
         """
         super().__init__(instance, type_str)
 
-        self.call_west_flash = False
         self.seed = None
         self.extra_test_args = None
         self.line = b""
@@ -241,8 +238,6 @@ class BinaryHandler(Handler):
             command = [self.generator_cmd, "run_renode_test"]
         elif self.call_make_run:
             command = [self.generator_cmd, "run"]
-        elif self.call_west_flash:
-            command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
         else:
             command = [self.binary]
 
@@ -856,7 +851,7 @@ class QEMUHandler(Handler):
             handler.instance.reason = "Unknown"
 
     @staticmethod
-    def _thread(handler, timeout, outdir, logfile, fifo_fn, pid_fn, results,
+    def _thread(handler, timeout, outdir, logfile, fifo_fn, pid_fn,
                 harness, ignore_unexpected_eof=False):
         fifo_in, fifo_out = QEMUHandler._thread_get_fifo_names(fifo_fn)
 
@@ -997,7 +992,6 @@ class QEMUHandler(Handler):
             self.instance.add_missing_case_status("blocked")
 
     def handle(self, harness):
-        self.results = {}
         self.run = True
 
         sysbuild_build_dir = self._get_sysbuild_build_dir()
@@ -1009,7 +1003,7 @@ class QEMUHandler(Handler):
         self.thread = threading.Thread(name=self.name, target=QEMUHandler._thread,
                                        args=(self, self.get_test_timeout(), self.build_dir,
                                              self.log_fn, self.fifo_fn,
-                                             self.pid_fn, self.results, harness,
+                                             self.pid_fn, harness,
                                              self.ignore_unexpected_eof))
 
         self.thread.daemon = True
@@ -1088,7 +1082,6 @@ class QEMUWinHandler(Handler):
         self.pid = 0
         self.thread = None
         self.stop_thread = False
-        self.results = {}
 
         if instance.testsuite.ignore_qemu_crash:
             self.ignore_qemu_crash = True
@@ -1296,7 +1289,6 @@ class QEMUWinHandler(Handler):
         self._stop_qemu_process(self.pid)
 
     def handle(self, harness):
-        self.results = {}
         self.run = True
 
         sysbuild_build_dir = self._get_sysbuild_build_dir()
