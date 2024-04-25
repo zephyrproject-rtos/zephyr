@@ -188,6 +188,12 @@ config HAWKBIT_EVENT_CALLBACKS
 	help
 	  Be able to set event callbacks for hawkBit.
 
+config HAWKBIT_SAVE_PROGRESS
+	bool "Save the hawkBit update download progress"
+	depends on STREAM_FLASH_PROGRESS
+	help
+	  Save the hawkBit update download progress.
+
 module = HAWKBIT
 module-str = Log Level for hawkbit
 module-help = Enables logging for hawkBit code.
