@@ -177,6 +177,8 @@ The Zephyr nucleo_wba55cg board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | RADIO     | on-chip    | Bluetooth Low Energy                |
 +-----------+------------+-------------------------------------+
+| RTC       | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 

@@ -20,4 +20,5 @@ supported:
   - pwm
   - adc
   - dac
+  - rtc
 vendor: st

@@ -24,4 +24,5 @@ supported:
   - dac
   - dma
   - can
+  - rtc
 vendor: st

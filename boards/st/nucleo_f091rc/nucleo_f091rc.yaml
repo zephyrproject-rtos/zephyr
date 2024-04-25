@@ -23,6 +23,7 @@ supported:
   - dma
   - pwm
   - can
+  - rtc
 testing:
   ignore_tags:
     - net

@@ -14,6 +14,7 @@ supported:
   - adc
   - i2c
   - dma
+  - rtc
 ram: 12
 flash: 32
 vendor: st
