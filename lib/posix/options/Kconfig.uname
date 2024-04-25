@@ -12,7 +12,7 @@ menuconfig POSIX_UNAME
 if POSIX_UNAME
 config POSIX_UNAME_VERSION_LEN
 	int "uname version string length"
-	default 60
+	default 70
 	help
 	  Defines the maximum string length of uname version.
 
