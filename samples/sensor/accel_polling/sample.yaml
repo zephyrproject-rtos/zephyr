@@ -39,3 +39,17 @@ tests:
     extra_args:
       - SHIELD=pca63566
     platform_allow: nrf54h20dk/nrf54h20/cpuapp
+
+  sample.sensor.accel_polling.nrf54l:
+    depends_on: spi
+    tags: drivers spi sensors
+    harness: console
+    harness_config:
+      fixture: pca63565
+      type: one_line
+      regex:
+        - "^\\s*[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]* \\[m\/s\\^2\\]:    \
+           \\(\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*\\)$"
+    extra_args:
+      - SHIELD=pca63565
+    platform_allow: nrf54l15pdk/nrf54l15/cpuapp
