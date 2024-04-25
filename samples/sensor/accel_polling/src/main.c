@@ -51,6 +51,29 @@ static int print_accels(const struct device *dev)
 	return 0;
 }
 
+static int set_sampling_freq(const struct device *dev)
+{
+	int ret;
+	struct sensor_value odr;
+
+	ret = sensor_attr_get(dev, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY, &odr);
+
+	/* If we don't get a frequency > 0, we set one */
+	if (ret != 0 || (odr.val1 == 0 && odr.val2 == 0)) {
+		odr.val1 = 100;
+		odr.val2 = 0;
+
+		ret = sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+				      &odr);
+
+		if (ret != 0) {
+			printk("%s : failed to set sampling frequency\n", dev->name);
+		}
+	}
+
+	return 0;
+}
+
 int main(void)
 {
 	int ret;
@@ -60,6 +83,7 @@ int main(void)
 			printk("sensor: device %s not ready.\n", sensors[i]->name);
 			return 0;
 		}
+		set_sampling_freq(sensors[i]);
 	}
 
 #ifndef CONFIG_COVERAGE
