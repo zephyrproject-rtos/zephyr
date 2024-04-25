@@ -2410,6 +2410,8 @@ Mbed TLS:
   maintainers:
     - d3zd3z
     - ceolin
+  collaborators:
+    - ithinuel
   files:
     - tests/crypto/mbedtls/
     - doc/services/crypto/
@@ -3812,6 +3814,7 @@ TF-M Integration:
     - d3zd3z
   collaborators:
     - SebastianBoe
+    - ithinuel
   files:
     - samples/tfm_integration/
     - modules/trusted-firmware-m/
@@ -4504,6 +4507,8 @@ West:
   maintainers:
     - d3zd3z
     - ceolin
+  collaborators:
+    - ithinuel
   files:
     - modules/mbedtls/
   labels:
@@ -4670,6 +4675,7 @@ West:
     - d3zd3z
   collaborators:
     - SebastianBoe
+    - ithinuel
   files:
     - modules/trusted-firmware-m/
   labels:
@@ -4681,6 +4687,7 @@ West:
     - d3zd3z
   collaborators:
     - SebastianBoe
+    - ithinuel
   files: []
   labels:
     - "area: TF-M"
@@ -4692,6 +4699,7 @@ West:
     - sgrrzhf
   collaborators:
     - carlocaione
+    - ithinuel
   files:
     - modules/trusted-firmware-a/
   labels:
@@ -4703,6 +4711,7 @@ West:
     - d3zd3z
   collaborators:
     - SebastianBoe
+    - ithinuel
   files: []
   labels:
     - "area: TF-M"
