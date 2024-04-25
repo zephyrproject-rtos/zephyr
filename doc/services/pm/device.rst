@@ -249,6 +249,22 @@ option and issue a ``pm`` command on a device from the shell, for example:
         devices:
         - buttons (suspended)
 
+To print the power management state of a device, enable
+:kconfig:option:`CONFIG_DEVICE_SHELL` and use the ``device list`` command, for
+example:
+
+.. code-block:: console
+
+        uart:~$ device list
+        devices:
+        - i2c@40003000 (active)
+        - buttons (active, usage=1)
+        - leds (READY)
+
+In this case, ``leds`` does not support PM, ``i2c`` supports PM with manual
+suspend and resume actions and it's currently active, ``buttons`` supports
+runtime PM and it's currently active with one user.
+
 .. _pm-device-busy:
 
 Busy Status Indication
