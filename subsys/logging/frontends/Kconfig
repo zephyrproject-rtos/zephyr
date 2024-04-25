@@ -29,4 +29,53 @@ config LOG_FRONTEND_DICT_UART_DROPPED_NOTIFY_PERIOD
 	  in milliseconds.
 
 endif
+
+config LOG_FRONTEND_STMESP
+	bool "Coresight STM frontend"
+	imply ARM_ON_ENTER_CPU_IDLE_HOOK if LOG_FRONTEND_STMESP_FLUSH_COUNT > 0
+
+if LOG_FRONTEND_STMESP
+
+config LOG_FRONTEND_STMESP_DICT
+	bool
+	default y
+	select LOG_FRONTEND_OPT_API
+	select LOG_DICTIONARY_DB
+	imply LOG_FMT_SECTION
+	imply LOG_FMT_SECTION_STRIP
+
+config LOG_FRONTEND_STMESP_FLUSH_COUNT
+	int "Number of flushing words"
+	default 4
+	help
+	  Before going to sleep CPU shall write to STM some dummy data to ensure
+	  that any buffered data goes to TPIU/ETR.
+
+config LOG_FRONTEND_STMESP_FLUSH_PORT_ID
+	def_int 0
+
+config LOG_FRONTEND_STMESP_EARLY_BUF_SIZE
+	int "Buffer size to store early messages"
+	default 0
+	help
+	  Frontend cannot write to STM if it is used with ETR buffer unless ETR is
+	  initialized and memory is properly configured (privileges). Data is stored
+	  in the buffer and flushed to the STMESP once the pipeline is ready.
+
+config LOG_FRONTEND_STMESP_DICT_VER
+	def_int 0
+
+config LOG_FRONTEND_STMESP_GUARANTEED_ACCESS
+	bool "Use STMESP guaranteed access"
+	help
+	  When enabled, accessing STMESP registers will stall if write cannot be
+	  performed (e.g. ETR buffer is full).
+
+config LOG_FRONTEND_STMESP_TP_CHAN_BASE
+	def_int 255
+	help
+	  Do not change this value as it is aligned with host decoder (nrfutil trace).
+
+endif # LOG_FRONTEND_STMESP
+
 endmenu
