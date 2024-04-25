@@ -839,6 +839,34 @@
 			};
 		};
 
+		i2s1: i2s@40015400 {
+			compatible = "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00200000>,
+				<&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
+			dmas = <&gpdma1 0 29 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
+				&gpdma1 1 30 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+			dma-names = "tx", "rx";
+			interrupts = <90 0>;
+			status = "disabled";
+		};
+
+		i2s2: i2s@40015800 {
+			compatible = "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00400000>,
+				<&rcc STM32_SRC_PLL2_P SAI2_SEL(0)>;
+			dmas = <&gpdma1 0 31 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
+				&gpdma1 1 32 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+			dma-names = "tx", "rx";
+			interrupts = <36 0>;
+			status = "disabled";
+		};
+
 	};
 
 	swj_port: swj_port {
