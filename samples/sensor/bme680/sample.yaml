@@ -11,3 +11,16 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - adafruit_feather/nrf52840
+
+  sample.sensor.bme680.nrf54l:
+    depends_on: i2c
+    tags: drivers i2c sensors
+    harness: console
+    harness_config:
+      fixture: pca63565
+      type: one_line
+      regex:
+        - "^\\s*T:\\s*-?[0-9\\.]*; P:\\s*-?[0-9\\.]*; H: \\s*-?[0-9\\.]*; G:\\s*-?[0-9\\.]*$"
+    extra_args:
+      - SHIELD=pca63565
+    platform_allow: nrf54l15pdk/nrf54l15/cpuapp
