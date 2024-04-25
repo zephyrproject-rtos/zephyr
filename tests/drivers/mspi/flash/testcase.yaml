@@ -7,10 +7,12 @@ tests:
       - drivers
       - mspi
       - flash
-    filter: dt_compat_enabled("zephyr,mspi-emul-controller")
-      and dt_compat_enabled("zephyr,mspi-emul-flash")
+    filter: dt_compat_enabled("zephyr,mspi-emul-flash") or
+            dt_compat_enabled("mspi-atxp032")
     harness: ztest
     platform_allow:
       - native_sim
+      - apollo3p_evb
     integration_platforms:
       - native_sim
+      - apollo3p_evb
