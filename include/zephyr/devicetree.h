@@ -29,7 +29,7 @@
  * @brief devicetree.h API
  * @defgroup devicetree Devicetree
  * @since 2.2
- * @version 1.0.0
+ * @version 1.1.0
  * @{
  * @}
  */
@@ -592,6 +592,33 @@
  */
 #define DT_SAME_NODE(node_id1, node_id2) \
 	(DT_DEP_ORD(node_id1) == (DT_DEP_ORD(node_id2)))
+
+/**
+ * @brief Get a devicetree node's node labels as an array of strings
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     foo: bar: node@deadbeef {};
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     DT_NODELABEL_STRING_ARRAY(DT_NODELABEL(foo))
+ * @endcode
+ *
+ * This expands to:
+ *
+ * @code{.c}
+ *     { "foo", "bar", }
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @return an array initializer for an array of the node's node labels as strings
+ */
+#define DT_NODELABEL_STRING_ARRAY(node_id) \
+	{ DT_FOREACH_NODELABEL(node_id, DT_NODELABEL_STRING_ARRAY_ENTRY_INTERNAL) }
 
 /**
  * @}
@@ -2309,6 +2336,32 @@
 #define DT_NUM_IRQS(node_id) DT_CAT(node_id, _IRQ_NUM)
 
 /**
+ * @brief Get the number of node labels that a node has
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     / {
+ *         foo {};
+ *         bar: bar@1000 {};
+ *         baz: baz2: baz@2000 {};
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     DT_NUM_NODELABELS(DT_PATH(foo))      // 0
+ *     DT_NUM_NODELABELS(DT_NODELABEL(bar)) // 1
+ *     DT_NUM_NODELABELS(DT_NODELABEL(baz)) // 2
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @return number of node labels that the node has
+ */
+#define DT_NUM_NODELABELS(node_id) DT_CAT(node_id, _NODELABEL_NUM)
+
+/**
  * @brief Get the interrupt level for the node
  *
  * @param node_id node identifier
@@ -3163,6 +3216,86 @@
 		    ())
 
 /**
+ * @brief Invokes @p fn for each node label of a given node
+ *
+ * The order of the node labels in this macro's expansion matches
+ * the order in the final devicetree, with duplicates removed.
+ *
+ * Node labels are passed to @p fn as tokens. Note that devicetree
+ * node labels are always valid C tokens (see "6.2 Labels" in
+ * Devicetree Specification v0.4 for details). The node labels are
+ * passed as tokens to @p fn as-is, without any lowercasing or
+ * conversion of special characters to underscores.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     foo: bar: FOO: node@deadbeef {};
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     int foo = 1;
+ *     int bar = 2;
+ *     int FOO = 3;
+ *
+ *     #define FN(nodelabel) + nodelabel
+ *     int sum = 0 DT_FOREACH_NODELABEL(DT_NODELABEL(foo), FN)
+ * @endcode
+ *
+ * This expands to:
+ *
+ * @code{.c}
+ *     int sum = 0 + 1 + 2 + 3;
+ * @endcode
+ *
+ * @param node_id node identifier whose node labels to use
+ * @param fn macro which will be passed each node label in order
+ */
+#define DT_FOREACH_NODELABEL(node_id, fn) DT_CAT(node_id, _FOREACH_NODELABEL)(fn)
+
+/**
+ * @brief Invokes @p fn for each node label of a given node with
+ *        multiple arguments.
+ *
+ * This is like DT_FOREACH_NODELABEL() except you can also pass
+ * additional arguments to @p fn.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     foo: bar: node@deadbeef {};
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     int foo = 0;
+ *     int bar = 1;
+ *
+ *     #define VAR_PLUS(nodelabel, to_add) int nodelabel ## _added = nodelabel + to_add;
+ *
+ *     DT_FOREACH_NODELABEL_VARGS(DT_NODELABEL(foo), VAR_PLUS, 1)
+ * @endcode
+ *
+ * This expands to:
+ *
+ * @code{.c}
+ *     int foo = 0;
+ *     int bar = 1;
+ *     int foo_added = foo + 1;
+ *     int bar_added = bar + 1;
+ * @endcode
+ *
+ * @param node_id node identifier whose node labels to use
+ * @param fn macro which will be passed each node label in order
+ * @param ... additional arguments to pass to @p fn
+ */
+#define DT_FOREACH_NODELABEL_VARGS(node_id, fn, ...) \
+	DT_CAT(node_id, _FOREACH_NODELABEL_VARGS)(fn, __VA_ARGS__)
+
+/**
  * @}
  */
 
@@ -3483,6 +3616,26 @@
  */
 #define DT_INST_CHILD_NUM_STATUS_OKAY(inst) \
 	DT_CHILD_NUM_STATUS_OKAY(DT_DRV_INST(inst))
+
+/**
+ * @brief Get a string array of DT_DRV_INST(inst)'s node labels
+ *
+ * Equivalent to DT_NODELABEL_STRING_ARRAY(DT_DRV_INST(inst)).
+ *
+ * @param inst instance number
+ * @return an array initializer for an array of the instance's node labels as strings
+ */
+#define DT_INST_NODELABEL_STRING_ARRAY(inst) DT_NODELABEL_STRING_ARRAY(DT_DRV_INST(inst))
+
+/**
+ * @brief Get the number of node labels by instance number
+ *
+ * Equivalent to DT_NUM_NODELABELS(DT_DRV_INST(inst)).
+ *
+ * @param inst instance number
+ * @return the number of node labels that the node with that instance number has
+ */
+#define DT_INST_NUM_NODELABELS(inst) DT_NUM_NODELABELS(DT_DRV_INST(inst))
 
 /**
  * @brief Call @p fn on all child nodes of DT_DRV_INST(inst).
@@ -4325,6 +4478,32 @@
 		    ())
 
 /**
+ * @brief Call @p fn on all node labels for a given `DT_DRV_COMPAT` instance
+ *
+ * Equivalent to DT_FOREACH_NODELABEL(DT_DRV_INST(inst), fn).
+ *
+ * @param inst instance number
+ * @param fn macro which will be passed each node label for the node
+ *           with that instance number
+ */
+#define DT_INST_FOREACH_NODELABEL(inst, fn) \
+	DT_FOREACH_NODELABEL(DT_DRV_INST(inst), fn)
+
+/**
+ * @brief Call @p fn on all node labels for a given `DT_DRV_COMPAT` instance
+ *        with multiple arguments
+ *
+ * Equivalent to DT_FOREACH_NODELABEL_VARGS(DT_DRV_INST(inst), fn, ...).
+ *
+ * @param inst instance number
+ * @param fn macro which will be passed each node label for the node
+ *           with that instance number
+ * @param ... additional arguments to pass to @p fn
+ */
+#define DT_INST_FOREACH_NODELABEL_VARGS(inst, fn, ...) \
+	DT_FOREACH_NODELABEL_VARGS(DT_DRV_INST(inst), fn, __VA_ARGS__)
+
+/**
  * @brief Invokes @p fn for each element of property @p prop for
  *        a `DT_DRV_COMPAT` instance.
  *
@@ -4566,6 +4745,13 @@
 #else
 #define DT_U64_C(_v) UINT64_C(_v)
 #endif
+
+/* Helpers for DT_NODELABEL_STRING_ARRAY. We define our own stringify
+ * in order to avoid adding a dependency on toolchain.h..
+ */
+#define DT_NODELABEL_STRING_ARRAY_ENTRY_INTERNAL(nodelabel) DT_STRINGIFY_INTERNAL(nodelabel),
+#define DT_STRINGIFY_INTERNAL(arg) DT_STRINGIFY_INTERNAL_HELPER(arg)
+#define DT_STRINGIFY_INTERNAL_HELPER(arg) #arg
 
 /** @endcond */
 
