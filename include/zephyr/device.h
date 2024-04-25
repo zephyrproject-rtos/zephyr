@@ -26,7 +26,7 @@ extern "C" {
  * @brief Device Model
  * @defgroup device_model Device Model
  * @since 1.0
- * @version 1.0.0
+ * @version 1.1.0
  * @{
  */
 
@@ -387,6 +387,9 @@ struct device_state {
 struct pm_device_base;
 struct pm_device;
 struct pm_device_isr;
+#if defined(CONFIG_DEVICE_DT_METADATA) || defined(__DOXYGEN__)
+struct device_dt_metadata;
+#endif
 
 #ifdef CONFIG_DEVICE_DEPS_DYNAMIC
 #define Z_DEVICE_DEPS_CONST
@@ -434,6 +437,9 @@ struct device {
 		struct pm_device_isr *pm_isr;
 	};
 #endif
+#if defined(CONFIG_DEVICE_DT_METADATA) || defined(__DOXYGEN__)
+	const struct device_dt_metadata *dt_meta;
+#endif /* CONFIG_DEVICE_DT_METADATA */
 };
 
 /**
@@ -923,6 +929,104 @@ __syscall int device_init(const struct device *dev);
 
 #endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
 
+#if defined(CONFIG_DEVICE_DT_METADATA) || defined(__DOXYGEN__)
+/**
+ * @brief Devicetree node labels associated with a device
+ */
+struct device_dt_nodelabels {
+	/* @brief number of elements in the nodelabels array */
+	size_t num_nodelabels;
+	/* @brief array of node labels as strings, exactly as they
+	 *        appear in the final devicetree
+	 */
+	const char *nodelabels[];
+};
+
+/**
+ * @brief Devicetree metadata associated with a device
+ *
+ * This is currently limited to node labels, but the structure is
+ * generic enough to be extended later without requiring breaking
+ * changes.
+ */
+struct device_dt_metadata {
+	/**
+	 * @brief Node labels associated with the device
+	 * @see device_get_dt_nodelabels()
+	 */
+	const struct device_dt_nodelabels *nl;
+};
+
+/**
+ * @brief Get a @ref device reference from a devicetree node label.
+ *
+ * If:
+ *
+ * 1. a device was defined from a devicetree node, for example
+ *    with DEVICE_DT_DEFINE() or another similar macro, and
+ * 2. that devicetree node has @p nodelabel as one of its node labels, and
+ * 3. the device initialized successfully at boot time,
+ *
+ * then this function returns a pointer to the device. Otherwise, it
+ * returns NULL.
+ *
+ * @param nodelabel a devicetree node label
+ * @return a device reference for a device created from a node with that
+ *         node label, or NULL if either no such device exists or the device
+ *         failed to initialize
+ */
+__syscall const struct device *device_get_by_dt_nodelabel(const char *nodelabel);
+
+/**
+ * @brief Get the devicetree node labels associated with a device
+ * @param dev device whose metadata to look up
+ * @return information about the devicetree node labels
+ */
+static inline const struct device_dt_nodelabels *
+device_get_dt_nodelabels(const struct device *dev)
+{
+	return dev->dt_meta->nl;
+}
+
+/**
+ * @brief Maximum devicetree node label length.
+ *
+ * The maximum length is set so that device_get_by_dt_nodelabel() can
+ * be used from userspace.
+ */
+#define Z_DEVICE_MAX_NODELABEL_LEN Z_DEVICE_MAX_NAME_LEN
+
+/**
+ * @brief Name of the identifier for a device's DT metadata structure
+ * @param dev_id device identifier
+ */
+#define Z_DEVICE_DT_METADATA_NAME_GET(dev_id) UTIL_CAT(__dev_dt_meta_, dev_id)
+
+/**
+ * @brief Name of the identifier for the array of node label strings
+ *        saved for a device.
+ */
+#define Z_DEVICE_DT_NODELABELS_NAME_GET(dev_id) UTIL_CAT(__dev_dt_nodelabels_, dev_id)
+
+/**
+ * @brief Initialize an entry in the device DT node label lookup table
+ *
+ * Allocates and initializes a struct device_dt_metadata in the
+ * appropriate iterable section for use finding devices.
+ */
+#define Z_DEVICE_DT_METADATA_DEFINE(node_id, dev_id)			\
+	static const struct device_dt_nodelabels			\
+	Z_DEVICE_DT_NODELABELS_NAME_GET(dev_id) = {			\
+		.num_nodelabels = DT_NUM_NODELABELS(node_id),		\
+		.nodelabels = DT_NODELABEL_STRING_ARRAY(node_id),	\
+	};								\
+									\
+	static const struct device_dt_metadata				\
+	Z_DEVICE_DT_METADATA_NAME_GET(dev_id) = {			\
+		.nl = &Z_DEVICE_DT_NODELABELS_NAME_GET(dev_id),			\
+	};
+#endif  /* CONFIG_DEVICE_DT_METADATA */
+
 /**
  * @brief Init sub-priority of the device
  *
@@ -961,21 +1065,24 @@ __syscall int device_init(const struct device *dev);
  * @param api_ Reference to device API ops.
  * @param state_ Reference to device state.
  * @param deps_ Reference to device dependencies.
+ * @param dev_id_ Device identifier token, as passed to Z_DEVICE_BASE_DEFINE
  */
-#define Z_DEVICE_INIT(name_, pm_, data_, config_, api_, state_, deps_,                   \
-			constraints_size_, constraints_)                                 \
-	{                                                                                \
-		.name = name_,                                                           \
-		.config = (config_),                                                     \
-		.api = (api_),                                                           \
-		.state = (state_),                                                       \
-		.data = (data_),                                                         \
-		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/                  \
-		IF_ENABLED(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS,                          \
-			(.pm_constraints = (constraints_),))                             \
-		IF_ENABLED(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS,                          \
-			(.pm_constraints_size = (constraints_size_),))                   \
-		IF_ENABLED(CONFIG_PM_DEVICE, ({ .pm_base = (pm_),})) /**/                \
+#define Z_DEVICE_INIT(name_, pm_, data_, config_, api_, state_, deps_,			\
+			constraints_size_, constraints_, dev_id_)			\
+	{										\
+		.name = name_,								\
+		.config = (config_),							\
+		.api = (api_),								\
+		.state = (state_),							\
+		.data = (data_),							\
+		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/			\
+		IF_ENABLED(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS,				\
+			(.pm_constraints = (constraints_),))				\
+		IF_ENABLED(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS,				\
+			(.pm_constraints_size = (constraints_size_),))			\
+		IF_ENABLED(CONFIG_PM_DEVICE, ({ .pm_base = (pm_),})) /**/		\
+		IF_ENABLED(CONFIG_DEVICE_DT_METADATA,					\
+			   (.dt_meta = &Z_DEVICE_DT_METADATA_NAME_GET(dev_id_),))	\
 	}
 
 /**
@@ -1011,7 +1118,7 @@ __syscall int device_init(const struct device *dev);
 		device, COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (device_mutable), (device)),     \
 		Z_DEVICE_SECTION_NAME(level, prio), DEVICE_NAME_GET(dev_id)) =                     \
 		Z_DEVICE_INIT(name, pm, data, config, api, state, deps,                            \
-			DT_PROP_LEN_OR(node_id, zephyr_disabling_power_states, 0), constraints)
+		DT_PROP_LEN_OR(node_id, zephyr_disabling_power_states, 0), constraints, dev_id)
 
 /* deprecated device initialization levels */
 #define Z_DEVICE_LEVEL_DEPRECATED_EARLY                                        \
@@ -1098,13 +1205,17 @@ __syscall int device_init(const struct device *dev);
                                                                                 \
 	IF_ENABLED(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS,                         \
 		(Z_DEVICE_PM_CONSTRAINTS_DEFINE(node_id, dev_id, __VA_ARGS__);))\
+                                                                                \
+	IF_ENABLED(CONFIG_DEVICE_DT_METADATA,                                   \
+		   (Z_DEVICE_DT_METADATA_DEFINE(node_id, dev_id);))             \
+                                                                                \
 	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,    \
 		prio, api, state, Z_DEVICE_DEPS_NAME(dev_id),                   \
 		Z_DEVICE_PM_CONSTRAINTS_NAME(dev_id));                          \
-	COND_CODE_1(DEVICE_DT_DEFER(node_id),                                  \
-		    (Z_DEFER_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id,         \
-						      init_fn)),               \
-		    (Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn,      \
+	COND_CODE_1(DEVICE_DT_DEFER(node_id),                                   \
+		    (Z_DEFER_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id,          \
+						      init_fn)),                \
+		    (Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn,       \
 						level, prio)));
 
 /**
