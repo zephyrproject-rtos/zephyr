@@ -12,4 +12,6 @@ supported:
   - arduino_gpio
   - gpio
   - dma
+  - flash
+  - rtc
 vendor: st

@@ -173,6 +173,8 @@ The Zephyr nucleo_u575zi_q board configuration supports the following hardware f
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | True Random number generator        |
 +-----------+------------+-------------------------------------+
+| RTC       | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 
 
 Other hardware features are not yet supported on this Zephyr port.

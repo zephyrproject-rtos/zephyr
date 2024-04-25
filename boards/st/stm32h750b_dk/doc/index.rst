@@ -55,6 +55,10 @@ The current Zephyr stm32h750b_dk board configuration supports the following hard
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| QSPI NOR  | on-chip    | off-chip flash                      |
++-----------+------------+-------------------------------------+
+| RTC       | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 
 
 Other hardware features are not yet supported on Zephyr porting.

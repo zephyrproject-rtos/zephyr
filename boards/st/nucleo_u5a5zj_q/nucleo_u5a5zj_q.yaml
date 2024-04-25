@@ -20,5 +20,6 @@ supported:
   - watchdog
   - backup_sram
   - dma
+  - rtc
 ram: 2450
 flash: 4096
