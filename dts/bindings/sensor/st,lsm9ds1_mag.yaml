@@ -1,0 +1,89 @@
+# Copyright (c) 2024 Bootlin
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics LSM9DS1 9-axis IMU (Inertial Measurement Unit) sensor
+    accessed through I2C bus.
+
+    This binding describes only the magnetometer.
+
+    When setting the mag-range and mag-odr properties in
+    a .dts or .dtsi file you may include lsm9ds1.h and use the macros
+    defined here.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/lsm9ds1.h>
+
+    lsm9ds1_mag: lsm9ds1_mag@0 {
+      ...
+
+      mag-range = <LSM9DS1_DT_FS_4Ga>;
+      mag-odr = <LSM9DS1_MAG_MP_40Hz>;
+    };
+
+compatible: "st,lsm9ds1_mag"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  mag-range:
+    type: int
+    default: 0
+    description: |
+      Range of the magnetometer in gauss. Default is power-up configuration.
+
+      - 0 # LSM9DS1_DT_FS_4Ga   (0.14  mgauss/LSB)
+      - 1 # LSM9DS1_DT_FS_8Ga   (0.29  mgauss/LSB)
+      - 2 # LSM9DS1_DT_FS_12Ga  (0.43  mgauss/LSB)
+      - 3 # LSM9DS1_DT_FS_16Ga  (0.58  mgauss/LSB)
+
+    enum: [0, 1, 2, 3]
+
+  mag-odr:
+    type: int
+    default: 0
+    description: |
+      Specify the default output data rate of the magnetometer (samples/second).
+      Default is power-up configuration.
+      - 0xC0 # LSM9DS1_MAG_POWER_DOWN
+      - 0x00 # LSM9DS1_MAG_LP_0Hz625
+      - 0x01 # LSM9DS1_MAG_LP_1Hz25
+      - 0x02 # LSM9DS1_MAG_LP_2Hz5
+      - 0x03 # LSM9DS1_MAG_LP_5Hz
+      - 0x04 # LSM9DS1_MAG_LP_10Hz
+      - 0x05 # LSM9DS1_MAG_LP_20Hz
+      - 0x06 # LSM9DS1_MAG_LP_40Hz
+      - 0x07 # LSM9DS1_MAG_LP_80Hz
+      - 0x10 # LSM9DS1_MAG_MP_0Hz625
+      - 0x11 # LSM9DS1_MAG_MP_1Hz25
+      - 0x12 # LSM9DS1_MAG_MP_2Hz5
+      - 0x13 # LSM9DS1_MAG_MP_5Hz
+      - 0x14 # LSM9DS1_MAG_MP_10Hz
+      - 0x15 # LSM9DS1_MAG_MP_20Hz
+      - 0x16 # LSM9DS1_MAG_MP_40Hz
+      - 0x17 # LSM9DS1_MAG_MP_80Hz
+      - 0x20 # LSM9DS1_MAG_HP_0Hz625
+      - 0x21 # LSM9DS1_MAG_HP_1Hz25
+      - 0x22 # LSM9DS1_MAG_HP_2Hz5
+      - 0x23 # LSM9DS1_MAG_HP_5Hz
+      - 0x24 # LSM9DS1_MAG_HP_10Hz
+      - 0x25 # LSM9DS1_MAG_HP_20Hz
+      - 0x26 # LSM9DS1_MAG_HP_40Hz
+      - 0x27 # LSM9DS1_MAG_HP_80Hz
+      - 0x30 # LSM9DS1_MAG_UHP_0Hz625
+      - 0x31 # LSM9DS1_MAG_UHP_1Hz25
+      - 0x32 # LSM9DS1_MAG_UHP_2Hz5
+      - 0x33 # LSM9DS1_MAG_UHP_5Hz
+      - 0x34 # LSM9DS1_MAG_UHP_10Hz
+      - 0x35 # LSM9DS1_MAG_UHP_20Hz
+      - 0x36 # LSM9DS1_MAG_UHP_40Hz
+      - 0x37 # LSM9DS1_MAG_UHP_80Hz
+      - 0x38 # LSM9DS1_MAG_UHP_155Hz
+      - 0x28 # LSM9DS1_MAG_HP_300Hz
+      - 0x18 # LSM9DS1_MAG_MP_560Hz
+      - 0x08 # LSM9DS1_MAG_LP_1000Hz
+      - 0x70 # LSM9DS1_MAG_ONE_SHOT
+
+    enum: [0xC0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x10, 0x11, 0x12, 0x13,
+           0x14, 0x15, 0x16, 0x17, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x30, 0x31,
+           0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x28, 0x18, 0x08, 0x70]
