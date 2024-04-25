@@ -132,6 +132,34 @@ const struct device *shell_device_lookup(size_t idx,
 				   const char *prefix);
 
 /**
+ * @brief Filter callback type, for use with shell_device_lookup_filter
+ *
+ * This is used as an argument of shell_device_lookup_filter to only return
+ * devices that match a specific condition, implemented by the filter.
+ *
+ * @param dev pointer to a struct device.
+ *
+ * @return bool, true if the filter matches the device type.
+ */
+typedef bool (*shell_device_filter_t)(const struct device *dev);
+
+/**
+ * @brief Get a device by index and filter.
+ *
+ * This can be used to return devices matching a specific type.
+ *
+ * Devices that the filter returns false for, failed to initialize or do not
+ * have a non-empty name are excluded from the candidates for a match.
+ *
+ * @param idx the device number starting from zero.
+ *
+ * @param filter a pointer to a shell_device_filter_t function that returns
+ * true if the device matches the filter.
+ */
+const struct device *shell_device_filter(size_t idx,
+					 shell_device_filter_t filter);
+
+/**
  * @brief Shell command handler prototype.
  *
  * @param sh Shell instance.
