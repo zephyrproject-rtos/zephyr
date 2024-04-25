@@ -17,6 +17,9 @@ try:
 except ImportError:
     from yaml import SafeLoader     # type: ignore
 
+# Importing relevant modules
+import modules.fwconfig_init as fwconfig_init
+
 def load_schemas():
     schemas = {}
     p = Path(os.path.abspath(os.path.dirname(__file__)) + "/modules")
@@ -66,6 +69,7 @@ def main():
 
     # 1 - Update arg parser on modules
     # <module>.add_arguments(sub_parsers)
+    fwconfig_init.add_arguments(sub_parsers)
 
     # 2 - Parse the arguments
     args = parser.parse_args()

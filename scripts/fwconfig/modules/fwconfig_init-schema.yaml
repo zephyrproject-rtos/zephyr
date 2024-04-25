@@ -1,0 +1,43 @@
+# Schema file for init object in fw_config.yaml files
+#
+# Copyright (c) 2024, Tomasz Bursztyka
+#
+# SPDX-License-Identifier: Apache-2.0
+
+type: map
+mapping:
+  "init":
+    type: map
+    mapping:
+      =:
+        type: map
+        mapping:
+          "level":
+            type: str
+            enum: ['EARLY', 'PRE_KERNEL_1', 'PRE_KERNEL_2',
+                   'POST_KERNEL', 'APPLICATION', 'SMP']
+            required: false
+
+          "dependencies":
+            type: seq
+            seq:
+              - type: str
+            required: false
+
+          "if":
+            type: str
+            required: false
+          "then":
+            required: false
+            type: map
+            mapping:
+              "level":
+                type: str
+                enum: ['EARLY', 'PRE_KERNEL_1', 'PRE_KERNEL_2',
+                       'POST_KERNEL', 'APPLICATION', 'SMP']
+                required: false
+              "dependencies":
+                type: seq
+                seq:
+                  - type: str
+                required: false
