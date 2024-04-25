@@ -581,6 +581,11 @@ static void test_vlan_enable(void)
 		ARRAY_FOR_EACH_PTR(vlan_interfaces, vlan_iface) {
 			uint16_t tag;
 
+			ret = net_eth_is_vlan_interface(*vlan_iface);
+			zassert_equal(ret, true,
+				      "Not identified as VLAN interface %d",
+				      net_if_get_by_iface(*vlan_iface));
+
 			if (*vlan_iface == iface) {
 				tag = net_eth_get_vlan_tag(*vlan_iface);
 
