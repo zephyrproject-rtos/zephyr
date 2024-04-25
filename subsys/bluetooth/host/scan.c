@@ -318,6 +318,9 @@ static int start_passive_scan(bool fast_scan)
 int bt_le_scan_update(bool fast_scan)
 {
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
+		/* The application has already explicitly started scanning.
+		 * We should keep the scanner running to avoid changing scan parameters.
+		 */
 		return 0;
 	}
 
@@ -348,12 +351,14 @@ int bt_le_scan_update(bool fast_scan)
 
 			bt_conn_unref(conn);
 
+			/* Start/Restart the scanner */
 			return start_passive_scan(fast_scan);
 		}
 	}
 
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 	if (get_pending_per_adv_sync()) {
+		/* Start/Restart the scanner. */
 		return start_passive_scan(fast_scan);
 	}
 #endif
