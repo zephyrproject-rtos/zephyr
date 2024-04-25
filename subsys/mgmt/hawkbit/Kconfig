@@ -188,6 +188,17 @@ config HAWKBIT_EVENT_CALLBACKS
 	help
 	  Be able to set event callbacks for hawkBit.
 
+config HAWKBIT_SAVE_PROGRESS
+	bool "Save the hawkBit update download progress"
+	depends on STREAM_FLASH_PROGRESS
+	help
+	  Regularly save progress of hawkBit update download operation.
+	  When enabled, the download progress is periodically saved to
+	  non-volatile storage. If a download is interrupted, it can be resumed from
+	  the last saved point rather than starting over, saving bandwidth and time.
+	  This is especially useful for large updates over unreliable networks or in
+	  resource-constrained environments.
+
 module = HAWKBIT
 module-str = Log Level for hawkbit
 module-help = Enables logging for hawkBit code.

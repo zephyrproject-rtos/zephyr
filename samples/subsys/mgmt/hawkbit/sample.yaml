@@ -34,3 +34,7 @@ tests:
   sample.net.hawkbit.set_settings_runtime:
     extra_configs:
       - CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME=y
+  sample.net.hawkbit.save_progress:
+    extra_configs:
+      - CONFIG_HAWKBIT_SAVE_PROGRESS=y
+      - CONFIG_STREAM_FLASH_PROGRESS=y
