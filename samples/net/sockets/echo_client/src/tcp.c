@@ -63,8 +63,10 @@ static int send_tcp_data(struct data *data)
 		LOG_ERR("%s TCP: Failed to send data, errno %d", data->proto,
 			errno);
 	} else {
-		LOG_DBG("%s TCP: Sent %d bytes", data->proto,
-			data->tcp.expecting);
+		if (PRINT_PROGRESS) {
+			LOG_DBG("%s TCP: Sent %d bytes", data->proto,
+				data->tcp.expecting);
+		}
 	}
 
 	return ret;
@@ -210,10 +212,11 @@ static int process_tcp_proto(struct data *data)
 			continue;
 		}
 
-		/* Response complete */
-		LOG_DBG("%s TCP: Received and compared %d bytes, all ok",
-			data->proto, data->tcp.received);
-
+		if (PRINT_PROGRESS) {
+			/* Response complete */
+			LOG_DBG("%s TCP: Received and compared %d bytes, all ok",
+				data->proto, data->tcp.received);
+		}
 
 		if (++data->tcp.counter % 1000 == 0U) {
 			LOG_INF("%s TCP: Exchanged %u packets", data->proto,
