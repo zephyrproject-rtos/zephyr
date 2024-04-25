@@ -201,6 +201,9 @@ static const struct cmd_handler cmds[] = {
 	{ BT_HCI_OP_LE_SET_RANDOM_ADDRESS,
 	  sizeof(struct bt_hci_cp_le_set_random_address),
 	  generic_success },
+	{ BT_HCI_OP_LE_READ_MAX_ADV_DATA_LEN,
+	  sizeof(struct bt_hci_rp_le_read_max_adv_data_len),
+	  generic_success },
 };
 
 /* HCI driver open. */
