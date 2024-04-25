@@ -41,7 +41,7 @@
 			device_type = "cpu";
 			reg = < 0x00 >;
 			status = "okay";
-			compatible = "riscv";
+			compatible = "qemu,riscv-virt", "riscv";
 
 			hlic0: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -55,7 +55,7 @@
 			device_type = "cpu";
 			reg = < 0x01 >;
 			status = "okay";
-			compatible = "riscv";
+			compatible = "qemu,riscv-virt", "riscv";
 
 			hlic1: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -69,7 +69,7 @@
 			device_type = "cpu";
 			reg = < 0x02 >;
 			status = "okay";
-			compatible = "riscv";
+			compatible = "qemu,riscv-virt", "riscv";
 
 			hlic2: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -83,7 +83,7 @@
 			device_type = "cpu";
 			reg = < 0x03 >;
 			status = "okay";
-			compatible = "riscv";
+			compatible = "qemu,riscv-virt", "riscv";
 
 			hlic3: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -97,7 +97,7 @@
 			device_type = "cpu";
 			reg = < 0x04 >;
 			status = "okay";
-			compatible = "riscv";
+			compatible = "qemu,riscv-virt", "riscv";
 
 			hlic4: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -111,7 +111,7 @@
 			device_type = "cpu";
 			reg = < 0x05 >;
 			status = "okay";
-			compatible = "riscv";
+			compatible = "qemu,riscv-virt", "riscv";
 
 			hlic5: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -125,7 +125,7 @@
 			device_type = "cpu";
 			reg = < 0x06 >;
 			status = "okay";
-			compatible = "riscv";
+			compatible = "qemu,riscv-virt", "riscv";
 
 			hlic6: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -139,7 +139,7 @@
 			device_type = "cpu";
 			reg = < 0x07 >;
 			status = "okay";
-			compatible = "riscv";
+			compatible = "qemu,riscv-virt", "riscv";
 
 			hlic7: interrupt-controller {
 				compatible = "riscv,cpu-intc";
