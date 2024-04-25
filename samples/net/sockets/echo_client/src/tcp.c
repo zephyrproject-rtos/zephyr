@@ -239,7 +239,8 @@ int start_tcp(void)
 		inet_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
 			  &addr6.sin6_addr);
 
-		ret = start_tcp_proto(&conf.ipv6, (struct sockaddr *)&addr6,
+		ret = start_tcp_proto(&conf.ipv6,
+				      (struct sockaddr *)&addr6,
 				      sizeof(addr6));
 		if (ret < 0) {
 			return ret;
