@@ -27,6 +27,11 @@ wdt011: &cpuapp_wdt011 {};
 		compatible = "simple-bus";
 		interrupt-parent = <&cpuapp_nvic>;
 		ranges;
+
+		stmesp: memory@a2000000 {
+			compatible = "arm,stmesp";
+			reg = <0xa2000000 0x1000000>;
+		};
 	};
 };
 
