@@ -11,3 +11,4 @@ ram: 62
 flash: 62
 supported:
   - gpio
+  - pwm
