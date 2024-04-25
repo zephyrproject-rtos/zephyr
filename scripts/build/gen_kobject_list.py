@@ -138,6 +138,9 @@ subsystems = [
 net_sockets = [ ]
 
 def subsystem_to_enum(subsys):
+    if not subsys.endswith("_driver_api"):
+        raise Exception("__subsystem is missing _driver_api suffix: (%s)" % subsys)
+
     return "K_OBJ_DRIVER_" + subsys[:-11].upper()
 
 # --- debug stuff ---
