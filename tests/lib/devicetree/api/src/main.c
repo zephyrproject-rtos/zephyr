@@ -1600,6 +1600,64 @@ ZTEST(devicetree_api, test_foreach_status_okay)
 #undef BUILD_BUG_ON_EXPANSION
 }
 
+ZTEST(devicetree_api, test_foreach_nodelabel)
+{
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_adc_temp_sensor
+#define ENTRY(nodelabel) enum_ ## nodelabel,
+#define VAR_PLUS(nodelabel, to_add) int nodelabel ## _added = enum_ ## nodelabel + to_add;
+
+	/* DT_FOREACH_NODELABEL */
+	enum {
+		DT_FOREACH_NODELABEL(DT_NODELABEL(test_nodelabel), ENTRY)
+	};
+	zassert_equal(enum_test_nodelabel, 0, "");
+	zassert_equal(enum_TEST_NODELABEL_ALLCAPS, 1, "");
+	zassert_equal(enum_test_gpio_1, 2, "");
+
+	/* DT_FOREACH_NODELABEL_VARGS */
+	DT_FOREACH_NODELABEL_VARGS(DT_NODELABEL(test_nodelabel), VAR_PLUS, 1);
+	zassert_equal(test_nodelabel_added, 1, "");
+	zassert_equal(TEST_NODELABEL_ALLCAPS_added, 2, "");
+	zassert_equal(test_gpio_1_added, 3, "");
+
+	/* DT_NODELABEL_STRING_ARRAY is tested here since it's closely related */
+	const char *nodelabels[] = DT_NODELABEL_STRING_ARRAY(DT_NODELABEL(test_nodelabel));
+
+	zassert_equal(ARRAY_SIZE(nodelabels), 3);
+	zassert_true(!strcmp(nodelabels[0], "test_nodelabel"), "");
+	zassert_true(!strcmp(nodelabels[1], "TEST_NODELABEL_ALLCAPS"), "");
+	zassert_true(!strcmp(nodelabels[2], "test_gpio_1"), "");
+
+	/* DT_NUM_NODELABELS */
+	zassert_equal(DT_NUM_NODELABELS(DT_NODELABEL(test_nodelabel)), 3, "");
+	zassert_equal(DT_NUM_NODELABELS(DT_PATH(chosen)), 0, "");
+	zassert_equal(DT_NUM_NODELABELS(DT_ROOT), 0, "");
+
+	/* DT_INST_FOREACH_NODELABEL */
+	enum {
+		DT_INST_FOREACH_NODELABEL(0, ENTRY)
+	};
+	zassert_equal(enum_test_temp_sensor, 0, "");
+
+	/* DT_INST_FOREACH_NODELABEL_VARGS */
+	DT_INST_FOREACH_NODELABEL_VARGS(0, VAR_PLUS, 1);
+	zassert_equal(test_temp_sensor_added, 1, "");
+
+	/* DT_INST_NODELABEL_STRING_ARRAY */
+	const char *inst_nodelabels[] = DT_INST_NODELABEL_STRING_ARRAY(0);
+
+	zassert_equal(ARRAY_SIZE(inst_nodelabels), 1);
+	zassert_true(!strcmp(inst_nodelabels[0], "test_temp_sensor"), "");
+
+	/* DT_INST_NUM_NODELABELS */
+	zassert_equal(DT_INST_NUM_NODELABELS(0), 1, "");
+
+#undef VAR_PLUS
+#undef ENTRY
+#undef DT_DRV_COMPAT
+}
+
 ZTEST(devicetree_api, test_foreach_prop_elem)
 {
 #define TIMES_TWO(node_id, prop, idx) \

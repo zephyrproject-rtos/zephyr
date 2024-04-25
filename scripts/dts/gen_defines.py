@@ -132,6 +132,13 @@ def main():
                 out_dt_define(f"{node.z_path_id}_CHILD_IDX",
                               node.parent.child_index(node))
 
+            out_comment("Helpers for dealing with node labels:")
+            out_dt_define(f"{node.z_path_id}_NODELABEL_NUM", len(node.labels))
+            out_dt_define(f"{node.z_path_id}_FOREACH_NODELABEL(fn)",
+                          " ".join(f"fn({nodelabel})" for nodelabel in node.labels))
+            out_dt_define(f"{node.z_path_id}_FOREACH_NODELABEL_VARGS(fn, ...)",
+                          " ".join(f"fn({nodelabel}, __VA_ARGS__)" for nodelabel in node.labels))
+
             write_children(node)
             write_dep_info(node)
             write_idents_and_existence(node)

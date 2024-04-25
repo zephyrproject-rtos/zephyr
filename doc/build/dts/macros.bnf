@@ -88,6 +88,11 @@ node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_STATUS_OKAY"
 node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_STATUS_OKAY_SEP"
 node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_STATUS_OKAY_VARGS"
 node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS"
+; These are used internally by DT_FOREACH_NODELABEL and
+; DT_FOREACH_NODELABEL_VARGS, which iterate over a node's node labels.
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_NODELABEL" [ %s"_VARGS" ]
+; These are used internally by DT_NUM_NODELABELS
+node-macro =/ %s"DT_N" path-id %s"_NODELABEL_NUM"
 ; The node's zero-based index in the list of it's parent's child nodes.
 node-macro =/ %s"DT_N" path-id %s"_CHILD_IDX"
 ; The node's status macro; dt-name in this case is something like "okay"
