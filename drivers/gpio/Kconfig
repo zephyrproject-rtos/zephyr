@@ -17,6 +17,7 @@ source "subsys/logging/Kconfig.template.log_config"
 config GPIO_SHELL
 	bool "GPIO Shell"
 	depends on SHELL
+	imply DEVICE_DT_METADATA
 	help
 	  Enable GPIO Shell for testing.
 
