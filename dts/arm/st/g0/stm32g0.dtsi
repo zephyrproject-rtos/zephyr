@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Philippe Retornaz <philippe@shapescale.com>
- * Copyright (c) 2019 ST Microelectronics
+ * Copyright (c) 2019-2024 STMicroelectronics
  * Copyright (c) 2019 Centaur Analytics, Inc
  * Copyright (C) 2020 Framework Computer LLC <ktl@frame.work>
  * Copyright (c) 2021 G-Technologies Sdn. Bhd.
@@ -189,6 +189,7 @@
 			interrupts = <2 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>;
 			prescaler = <32768>;
+			alarms-count = <2>;
 			status = "disabled";
 		};
 

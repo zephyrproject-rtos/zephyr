@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 STMicroelectronics
+ * Copyright (c) 2023-2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -212,6 +212,7 @@
 			reg = <0x46007800 0x400>;
 			interrupts = <2 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB7 0x00200000>;
+			alarms-count = <2>;
 			status = "disabled";
 		};
 
