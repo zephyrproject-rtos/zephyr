@@ -158,8 +158,11 @@ struct proc_ctx {
 	/* Last transmitted opcode used for unknown/reject */
 	enum pdu_data_llctrl_type tx_opcode;
 
-	/* Instant collision */
-	int collision;
+	/*
+	 * This flag is set to 1 when we are finished with the control
+	 * procedure and it is safe to release the context ctx
+	 */
+	uint8_t done;
 
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
 	/* Procedure wait reason */
@@ -176,11 +179,6 @@ struct proc_ctx {
 		/* pre-allocated TX node */
 		struct node_tx *tx;
 	} node_ref;
-	/*
-	 * This flag is set to 1 when we are finished with the control
-	 * procedure and it is safe to release the context ctx
-	 */
-	int done;
 
 	/* Procedure data */
 	union {
