@@ -336,6 +336,22 @@ uint16_t net_eth_get_vlan_tag(struct net_if *iface)
 	return tag;
 }
 
+bool net_eth_is_vlan_interface(struct net_if *iface)
+{
+	enum virtual_interface_caps caps;
+
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
+		return false;
+	}
+
+	caps = net_virtual_get_iface_capabilities(iface);
+	if (!(caps & VIRTUAL_INTERFACE_VLAN)) {
+		return false;
+	}
+
+	return true;
+}
+
 bool net_eth_get_vlan_status(struct net_if *iface)
 {
 	bool status = false;
