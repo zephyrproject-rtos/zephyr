@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RMX5XX
+	bool
+
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_G
+#	G by-default includes the following:
+#			RISCV_ISA_EXT_M
+#			RISCV_ISA_EXT_A
+#			RISCV_ISA_EXT_F
+#			RISCV_ISA_EXT_D
+#			RISCV_ISA_EXT_ZICSR
+#			RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_ISA_EXT_C
+#	select RISCV_ISA_EXT_V # V is not supported by zephyr
+	select ATOMIC_OPERATIONS_BUILTIN
+	select INCLUDE_RESET_VECTOR

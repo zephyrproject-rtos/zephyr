@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_NSIM_RISCV
+	bool
+
+config SOC_FAMILY
+	default "nsim_riscv" if SOC_FAMILY_NSIM_RISCV
+
+rsource "*/Kconfig.soc"

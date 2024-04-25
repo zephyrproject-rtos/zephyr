@@ -1,0 +1,14 @@
+identifier: nsim_riscv/rmx500
+name: Synopsys rmx500
+simulation: nsim
+simulation_exec: nsimdrv
+type: sim
+arch: riscv
+toolchain:
+  - zephyr
+  - cross-compile
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: snps

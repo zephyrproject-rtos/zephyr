@@ -1,0 +1,4 @@
+series:
+- name: rmx5xx
+  socs:
+  - name: rmx500
