@@ -553,17 +553,16 @@ ZTEST_USER(userspace, test_read_other_stack)
 	/* Try to read from another thread's stack. */
 	unsigned int val;
 
-#if defined(CONFIG_MMU) || defined(CONFIG_MPU)
-#if defined(CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API)
-	/* With memory domain enabled, all threads within the same domain
-	 * have access to each other threads' stacks, especially with
-	 * CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API=y (as it is expected
-	 * behavior). The access would not fault which the test expects.
-	 * So skip this test.
+#if !defined(CONFIG_MEM_DOMAIN_ISOLATED_STACKS)
+	/* The minimal requirement to support memory domain permits
+	 * threads of the same memory domain to access each others' stacks.
+	 * Some architectures supports further restricting access which
+	 * can be enabled via a kconfig. So if the kconfig is not enabled,
+	 * skip the test.
 	 */
 	ztest_test_skip();
 #endif
-#endif
+
 	k_thread_create(&test_thread, test_stack, STACKSIZE,
 			uthread_read_body, &val, NULL, NULL,
 			-1, K_USER | K_INHERIT_PERMS,
@@ -583,17 +582,16 @@ ZTEST_USER(userspace, test_write_other_stack)
 	/* Try to write to another thread's stack. */
 	unsigned int val;
 
-#if defined(CONFIG_MMU) || defined(CONFIG_MPU)
-#if defined(CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API)
-	/* With memory domain enabled, all threads within the same domain
-	 * have access to each other threads' stacks, especially with
-	 * CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API=y (as it is expected
-	 * behavior). The access would not fault which the test expects.
-	 * So skip this test.
+#if !defined(CONFIG_MEM_DOMAIN_ISOLATED_STACKS)
+	/* The minimal requirement to support memory domain permits
+	 * threads of the same memory domain to access each others' stacks.
+	 * Some architectures supports further restricting access which
+	 * can be enabled via a kconfig. So if the kconfig is not enabled,
+	 * skip the test.
 	 */
 	ztest_test_skip();
 #endif
-#endif
+
 	k_thread_create(&test_thread, test_stack, STACKSIZE,
 			uthread_write_body, &val, NULL, NULL,
 			-1, K_USER | K_INHERIT_PERMS,
