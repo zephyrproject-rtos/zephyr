@@ -191,6 +191,7 @@ static void wait_transmit(struct k_timer *timer)
 static int start_udp_proto(struct data *data, struct sockaddr *addr,
 			   socklen_t addrlen)
 {
+	int optval;
 	int ret;
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
@@ -228,6 +229,14 @@ static int start_udp_proto(struct data *data, struct sockaddr *addr,
 		ret = -errno;
 	}
 #endif
+
+	/* Prefer IPv6 temporary addresses */
+	if (addr->sa_family == AF_INET6) {
+		optval = IPV6_PREFER_SRC_TMP;
+		(void)setsockopt(data->udp.sock, IPPROTO_IPV6,
+				 IPV6_ADDR_PREFERENCES,
+				 &optval, sizeof(optval));
+	}
 
 	/* Call connect so we can use send and recv. */
 	ret = connect(data->udp.sock, addr, addrlen);
