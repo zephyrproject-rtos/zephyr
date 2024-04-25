@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_sources_ifdef(
+  CONFIG_LOG_FRONTEND_DICT_UART
+  log_frontend_dict_uart.c
+)
