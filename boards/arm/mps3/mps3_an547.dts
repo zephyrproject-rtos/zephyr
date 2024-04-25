@@ -132,8 +132,9 @@
 	};
 
 	sram: sram@11000000 {	/* alias @ 0x01000000 */
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x11000000 DT_SIZE_M(2)>;
+		zephyr,memory-region = "SRAM";
 	};
 
 	dtcm: dtcm@30000000 {	/* alias @ 0x20000000 */
@@ -143,8 +144,9 @@
 	};
 
 	isram: sram@31000000 {/* alias @ 0x21000000 */
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x31000000 DT_SIZE_M(4)>;
+		zephyr,memory-region = "ISRAM";
 	};
 
 	/* DDR4 - 2G, alternates non-secure/secure every 256M */
