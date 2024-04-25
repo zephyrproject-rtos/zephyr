@@ -201,7 +201,6 @@ class TestInstance:
         if handler:
             handler.options = options
             handler.generator_cmd = env.generator_cmd
-            handler.generator = env.generator
             handler.suite_name_check = not options.disable_suite_name_check
         self.handler = handler
 
