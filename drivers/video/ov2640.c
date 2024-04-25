@@ -435,6 +435,7 @@ struct ov2640_config {
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	struct gpio_dt_spec reset_gpio;
 #endif
+	uint8_t clock_rate_control;
 };
 
 struct ov2640_data {
@@ -821,7 +822,7 @@ static int ov2640_set_resolution(const struct device *dev,
 
 	/* Set CLKRC */
 	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
-	ret |= ov2640_write_reg(&cfg->i2c, CLKRC, 0x87);
+	ret |= ov2640_write_reg(&cfg->i2c, CLKRC, cfg->clock_rate_control);
 
 	/* Write DSP input registers */
 	ov2640_write_all(dev, uxga_regs, ARRAY_SIZE(uxga_regs));
@@ -1030,6 +1031,7 @@ static const struct ov2640_config ov2640_cfg_0 = {
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 #endif
+	.clock_rate_control = DT_INST_PROP(0, clock_rate_control),
 };
 static struct ov2640_data ov2640_data_0;
 
