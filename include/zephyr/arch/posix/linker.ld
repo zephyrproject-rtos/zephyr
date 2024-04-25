@@ -34,6 +34,10 @@ SECTION_PROLOGUE(rom_start,,)
 } GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 
 SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 {

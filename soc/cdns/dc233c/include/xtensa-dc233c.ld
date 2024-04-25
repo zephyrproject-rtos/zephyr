@@ -235,6 +235,10 @@ SECTIONS
   } >RAMABLE_REGION
 
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 
 #include <zephyr/linker/thread-local-storage.ld>
 
