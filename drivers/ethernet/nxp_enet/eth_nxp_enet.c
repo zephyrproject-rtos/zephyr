@@ -65,7 +65,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #elif defined(CONFIG_SOC_SERIES_RW6XX)
 #define ETH_NXP_ENET_UNIQUE_ID	(OCOTP->OTP_SHADOW[46])
 #else
-#error "Unsupported SOC"
+#define ETH_NXP_ENET_UNIQUE_ID 0xFFFFFF
 #endif
 
 #define RING_ID 0
@@ -611,6 +611,9 @@ static void eth_nxp_enet_isr(const struct device *dev)
 static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
 {
 	uint32_t id = ETH_NXP_ENET_UNIQUE_ID;
+
+	if (id == 0xFFFFFF)
+		LOG_ERR("No unique MAC can be provided in this platform");
 
 	/* Setting LAA bit because it is not guaranteed universally unique */
 	mac_addr[0] = FREESCALE_OUI_B0 | 0x02;
