@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Luis Ubieda
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# Assume we start console by default
+CONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=y
+
+# Console over USB CDC-ACM
+CONFIG_USB_DEVICE_STACK=y
+CONFIG_SERIAL=y
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+CONFIG_UART_LINE_CTRL=y
