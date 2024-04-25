@@ -122,6 +122,8 @@ features:
 +-------------+------------+-------------------------------------+
 | Backup SRAM | on-chip    | Backup SRAM                         |
 +-------------+------------+-------------------------------------+
+| RTC         | on-chip    | rtc                                 |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 

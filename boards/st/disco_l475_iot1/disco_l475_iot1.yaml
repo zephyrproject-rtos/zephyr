@@ -25,6 +25,7 @@ supported:
   - dac
   - qspi
   - dma
+  - rtc
 ram: 96
 flash: 1024
 vendor: st

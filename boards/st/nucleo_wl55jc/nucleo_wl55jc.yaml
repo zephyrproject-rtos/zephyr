@@ -23,4 +23,5 @@ supported:
   - watchdog
   - nvs
   - lora
+  - rtc
 vendor: st
