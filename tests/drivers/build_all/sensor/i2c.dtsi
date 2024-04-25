@@ -1377,3 +1377,8 @@ test_i2c_adxl366: adxl366@b8 {
 	odr = <4>;
 	fifo-mode = <0>;
 };
+
+test_i2c_lsm9ds1_mag: lsm9ds1_mag@b9 {
+	compatible = "st,lsm9ds1_mag";
+	reg = <0xb9>;
+};
