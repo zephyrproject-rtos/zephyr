@@ -1076,4 +1076,9 @@
 			#address-cells = <1>;
 		};
 	};
+
+	temp_nrfs: temp {
+		compatible = "nordic,nrf-temp-nrfs";
+		status = "disabled";
+	};
 };
