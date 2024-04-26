@@ -1,0 +1,165 @@
+# SPDX -License-Identifier: Apache-2.0
+
+description: |
+  NXP PCA9422 PMIC
+
+  The PMIC has one buck-boost converter, three buck converters, and four LDOs.
+  All need to be defined as children nodes, strictly following the BUCK-BOOST,
+  BUCK1, BUCK2, BUCK3, LDO1, LDO2, LDO3, and LDO4 node names.
+  For example:
+
+  pmic@61 {
+    reg = <0x61>;
+    ...
+    BUCK1 {
+      /* all properties for BUCK1 */
+    };
+    BUCK2 {
+      /* all properties for BUCK2 */
+    };
+    BUCK3 {
+      /* all properties for BUCK3 */
+    };
+    BUCKBOOST {
+      /* all properties for BUCKBOOST */
+    };
+    LDO1 {
+      /* all properties for LDO1 */
+    };
+    LDO2 {
+      /* all properties for LDO2 */
+    };
+    LDO3 {
+      /* all properties for LDO3 */
+    };
+    LDO4 {
+      /* all properties for LDO4 */
+    };
+  };
+
+
+compatible: "nxp,pca9422"
+
+include: base.yaml
+
+properties:
+  nxp,vin-ilim-microamp:
+    type: int
+    default: 470000
+    enum:
+      - 45000
+      - 70000
+      - 95000
+      - 120000
+      - 145000
+      - 170000
+      - 195000
+      - 220000
+      - 245000
+      - 270000
+      - 295000
+      - 320000
+      - 345000
+      - 370000
+      - 395000
+      - 420000
+      - 445000
+      - 470000
+      - 495000
+      - 520000
+      - 545000
+      - 570000
+      - 595000
+      - 620000
+      - 645000
+      - 670000
+      - 695000
+      - 795000
+      - 895000
+      - 995000
+      - 1095000
+      - 1195000
+    description: |
+      VIN input current limit, in microamperes. Value reflects typical value,
+      with accuraccy at +/-10%.
+
+      Defaults to 470mA, the IC default value.
+
+  nxp,vsys-uvlo-sel-millivolt:
+    type: int
+    default: 2700
+    enum:
+      - 2600
+      - 2700
+      - 2800
+    description: |
+      VSYS UVLO (under voltage lock out) threshold, in millivolts. Defaults to
+      2700mV to match the IC default value.
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+
+  description: Voltage output of PMIC controller regulator
+  properties:
+    enable-inverted:
+      type: boolean
+      description: |
+        If the enable bit should be zero to turn the regulator on, add this
+        property.
+
+    nxp,mode0-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for mode 0, in microvolts. Setting
+        this value to zero will disable the source in mode 0.
+
+    nxp,mode1-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for mode 1, in microvolts. Setting
+        this value to zero will disable the source in mode 1.
+
+    nxp,mode2-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for mode 2, in microvolts. Setting
+        this value to zero will disable the source in mode 2.
+
+    nxp,mode3-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for mode 3, in microvolts. Setting
+        this value to zero will disable the source in mode 3.
+
+    nxp,lpmode:
+      type: int
+      required: true
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+      description: |
+        The low power mode. Meaning depends whether the child is a buck
+        or an ldo.
+
+        For buck (default is 0):
+        0 - buck runs in normal mode in ACTIVE, SLEEP, STANDBY, DPSTANDBY
+        1 - buck operates in normal mode in ACTIVE and SLEEP, low
+            power mode in STANDBY and DPSTANDBY
+        2 - buck operates in low power mode only in DPSTANDBY
+        3 - buck operates forced in low power mode in ACTIVE, SLEEP, STANDBY, DPSTANDBY
+
+        For ldo (default is 3):
+        0 - ldo operates forced in low power mode in ACTIVE, SLEEP, STANDBY, DPSTANDBY
+        1 - ldo operates in normal mode in ACTIVE and SLEEP, low
+            power mode in STANDBY and DPSTANDBY
+        2 - ldo operates in low power mode only in DPSTANDBY
+        3 - ldo runs in normal mode in ACTIVE, SLEEP, STANBDY, DPSTANDBY
+        Note: LDO1 and LDO4 are always 3 and are not modifiable.
