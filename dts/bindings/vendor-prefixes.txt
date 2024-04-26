@@ -497,7 +497,7 @@ pda	Precision Design Associates, Inc.
 pericom	Pericom Technology Inc.
 pervasive	Pervasive Displays, Inc.
 phicomm	PHICOMM Co., Ltd.
-phytec	PHYTEC Messtechnik GmbH
+phytec	PHYTEC
 picochip	Picochip Ltd
 pine64	Pine64
 pineriver	Shenzhen PineRiver Designs Co., Ltd.
