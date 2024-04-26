@@ -11,6 +11,8 @@
 #ifndef ZEPHYR_INCLUDE_NET_DHCPV6_H_
 #define ZEPHYR_INCLUDE_NET_DHCPV6_H_
 
+#include <zephyr/net/net_ip.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -96,6 +98,39 @@ void net_dhcpv6_stop(struct net_if *iface);
  *  @param iface A valid pointer to a network interface
  */
 void net_dhcpv6_restart(struct net_if *iface);
+
+/**
+ *  @brief Allocates 64-bit subnet prefix
+ *
+ *  @details When CONFIG_NET_CONFIG_DHCPV6_PREFIX_DELEGATION is enabled this
+ *  function allows to allocate a subnet's prefix based on the one received
+ *  from DHCPv6 server.
+ *
+ *  @param iface Network interface that has a bound prefix
+ *  @param prefix Pointer to an address to store the subnet's prefix
+ *
+ *  @return 0 on success
+ *  @return -ENOTSUP If the prefix delegation is disabled
+ *  @return -EINVAL If client does not request a prefix
+ *  @return -EINPROGRESS If a prefix is not yet bound
+ *  @return -ENOBUFS If there are no more subnets to be allocated
+ */
+int net_dhcpv6_subnet_alloc(struct net_if *iface, struct in6_addr *prefix);
+
+/**
+ *  @brief Frees 64-bit subnet prefix
+ *
+ *  @details When CONFIG_NET_CONFIG_DHCPV6_PREFIX_DELEGATION is enabled this
+ *  function allows to free a previously allocated subnet's prefix.
+ *
+ *  @param iface Network interface that allocated the subnet
+ *  @param prefix Subnet's prefix
+ *
+ *  @return 0 on success
+ *  @return -ENOTSUP If the prefix delegation is disabled
+ *  @return -EALREADY If the subnet is not currently allocated
+ */
+int net_dhcpv6_subnet_free(struct net_if *iface, struct in6_addr *prefix);
 
 /** @cond INTERNAL_HIDDEN */
 

@@ -352,6 +352,11 @@ struct net_if_dhcpv6 {
 	/** Prefix length. */
 	uint8_t prefix_len;
 
+	/** Delegated subnets, used only when
+	 *  NET_CONFIG_DHCPV6_PREFIX_DELEGATION is enabled.
+	 */
+	uint32_t delegated_subnets_mask;
+
 	/** Assigned IPv6 prefix. */
 	struct in6_addr prefix;
 

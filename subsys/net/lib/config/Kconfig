@@ -202,6 +202,23 @@ config NET_CONFIG_DHCPV6_REQUEST_PREFIX
 	  When DHCPv6 is enabled this will configure the DHCPv6 client to
 	  request IPv6 prefix from the DHCPv6 server.
 
+config NET_CONFIG_DHCPV6_PREFIX_DELEGATION
+	bool "Delegate 64-bit IPv6 prefixes"
+	depends on NET_CONFIG_DHCPV6_REQUEST_PREFIX
+	help
+	  Allow delegation of 64-bit subnet prefixes based on prefix
+	  received from DHCPv6 server. Number of available subnets depend
+	  on length of the base prefix delegated by the DHCPv6 server.
+
+config NET_CONFIG_DHCPV6_REQUESTED_PREFIX_LEN
+	int "Requested prefix length"
+	depends on NET_CONFIG_DHCPV6_REQUEST_PREFIX
+	range 1 128
+	range 1 63 if NET_CONFIG_DHCPV6_PREFIX_DELEGATION
+	default 64
+	help
+	  Prefix length option in DHCPv6 request.
+
 endif # NET_DHCPV6
 
 config NET_CONFIG_CLOCK_SNTP_INIT

@@ -24,6 +24,10 @@ LOG_MODULE_REGISTER(net_dhcpv6, CONFIG_NET_DHCPV6_LOG_LEVEL);
 /* Maximum number of options client can request. */
 #define DHCPV6_MAX_OPTION_REQUEST 2
 
+#define IPV6_SUBNET_BITS 64
+#define SUBNET_ID_POS 7
+#define SUBNET_MASK_LEN (sizeof(uint32_t) * CHAR_BIT)
+
 struct dhcpv6_options_include {
 	bool clientid : 1;
 	bool serverid : 1;
@@ -535,7 +539,7 @@ static int dhcpv6_add_options(struct net_if *iface, struct net_pkt *pkt,
 		if (options->iaprefix) {
 			memcpy(&ia_pd.iaprefix.prefix, &iface->config.dhcpv6.prefix,
 			       sizeof(ia_pd.iaprefix.prefix));
-			ia_pd.iaprefix.prefix_len = iface->config.dhcpv6.prefix_len;
+			ia_pd.iaprefix.prefix_len = CONFIG_NET_CONFIG_DHCPV6_REQUESTED_PREFIX_LEN;
 		}
 
 		ret = dhcpv6_add_option_ia_pd(pkt, &ia_pd, options->iaprefix);
@@ -1433,6 +1437,71 @@ static void dhcpv6_enter_state(struct net_if *iface, enum net_dhcpv6_state state
 	}
 }
 
+static void dhcpv6_subnet_free_all(struct net_if *iface)
+{
+	struct net_if_dhcpv6 *dhcp = &iface->config.dhcpv6;
+	struct in6_addr prefix;
+	size_t max;
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	max = MIN(SUBNET_MASK_LEN, 1 << (IPV6_SUBNET_BITS - iface->config.dhcpv6.prefix_len));
+
+	memcpy(&prefix, &iface->config.dhcpv6.prefix, sizeof(struct in6_addr));
+
+	for (size_t i = 0; i < max; ++i) {
+		if ((dhcp->delegated_subnets_mask & BIT(i)) == 1) {
+			dhcp->delegated_subnets_mask  &= ~BIT(i);
+			prefix.s6_addr[SUBNET_ID_POS] |= (uint8_t)i;
+
+			net_if_ipv6_prefix_rm(iface, &prefix, IPV6_SUBNET_BITS);
+		}
+	}
+}
+
+static struct net_if_ipv6_prefix *dhcpv6_prefix_add(struct net_if *iface, struct in6_addr *prefix,
+						    uint8_t prefix_len, uint32_t valid_lifetime)
+{
+	struct net_if_ipv6_prefix *ret_prefix;
+
+	if (IS_ENABLED(CONFIG_NET_CONFIG_DHCPV6_PREFIX_DELEGATION)) {
+		if (net_dhcpv6_subnet_alloc(iface, prefix) < 0) {
+			return NULL;
+		}
+
+		prefix_len = IPV6_SUBNET_BITS;
+	}
+
+	ret_prefix = net_if_ipv6_prefix_add(iface, prefix, prefix_len, valid_lifetime);
+
+	if (!ret_prefix) {
+		if (IS_ENABLED(CONFIG_NET_CONFIG_DHCPV6_PREFIX_DELEGATION)) {
+			net_dhcpv6_subnet_free(iface, prefix);
+		}
+
+		return NULL;
+	}
+
+	if (!net_ipv6_autoconf_addr_add(iface, prefix, valid_lifetime)) {
+		net_if_ipv6_prefix_rm(iface, prefix, prefix_len);
+
+		return NULL;
+	}
+
+	return ret_prefix;
+}
+
+static int dhcpv6_prefix_rm(struct net_if *iface, struct in6_addr *prefix, uint8_t prefix_len)
+{
+	if (IS_ENABLED(CONFIG_NET_CONFIG_DHCPV6_PREFIX_DELEGATION)) {
+		dhcpv6_subnet_free_all(iface);
+
+		return 0;
+	}
+
+	return net_if_ipv6_prefix_rm(iface, prefix, prefix_len);
+}
+
 /* DHCPv6 input processing */
 
 static int dhcpv6_handle_advertise(struct net_if *iface, struct net_pkt *pkt,
@@ -1717,8 +1786,8 @@ prefix:
 		    ia_pd.iaprefix.status == DHCPV6_STATUS_NO_PREFIX_AVAIL ||
 		    ia_pd.iaprefix.valid_lifetime == 0) {
 			/* Remove old lease. */
-			net_if_ipv6_prefix_rm(iface, &iface->config.dhcpv6.prefix,
-					      iface->config.dhcpv6.prefix_len);
+			dhcpv6_prefix_rm(iface, &iface->config.dhcpv6.prefix,
+					 iface->config.dhcpv6.prefix_len);
 			memset(&iface->config.dhcpv6.prefix, 0, sizeof(struct in6_addr));
 			iface->config.dhcpv6.prefix_len = 0;
 			rediscover = true;
@@ -1731,8 +1800,8 @@ prefix:
 					&ia_pd.iaprefix.prefix) ||
 		     iface->config.dhcpv6.prefix_len != ia_pd.iaprefix.prefix_len)) {
 			/* Remove old lease. */
-			net_if_ipv6_prefix_rm(iface, &iface->config.dhcpv6.prefix,
-					      iface->config.dhcpv6.prefix_len);
+			dhcpv6_prefix_rm(iface, &iface->config.dhcpv6.prefix,
+					 iface->config.dhcpv6.prefix_len);
 		}
 
 		iface->config.dhcpv6.prefix_len = ia_pd.iaprefix.prefix_len;
@@ -1748,7 +1817,7 @@ prefix:
 						     ia_pd.iaprefix.prefix_len);
 		if (ifprefix != NULL) {
 			net_if_ipv6_prefix_set_timer(ifprefix, ia_pd.iaprefix.valid_lifetime);
-		} else if (net_if_ipv6_prefix_add(iface, &ia_pd.iaprefix.prefix,
+		} else if (dhcpv6_prefix_add(iface, &ia_pd.iaprefix.prefix,
 						  ia_pd.iaprefix.prefix_len,
 						  ia_pd.iaprefix.valid_lifetime) == NULL) {
 			NET_ERR("Failed to configure DHCPv6 prefix");
@@ -2225,4 +2294,78 @@ int net_dhcpv6_init(void)
 				     NET_EVENT_IF_DOWN | NET_EVENT_IF_UP);
 
 	return 0;
+}
+
+int net_dhcpv6_subnet_alloc(struct net_if *iface, struct in6_addr *prefix)
+{
+	struct net_if_dhcpv6 *dhcp = &iface->config.dhcpv6;
+	size_t max;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_NET_CONFIG_DHCPV6_PREFIX_DELEGATION)) {
+		return -ENOTSUP;
+	}
+
+	if (dhcp->params.request_prefix) {
+		return -EINVAL;
+	}
+
+	if (dhcp->state != NET_DHCPV6_BOUND) {
+		return -EINPROGRESS;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	max = MIN(SUBNET_MASK_LEN, 1 << (IPV6_SUBNET_BITS - iface->config.dhcpv6.prefix_len));
+
+	for (size_t i = 0; i < max; ++i) {
+		if ((dhcp->delegated_subnets_mask & BIT(i)) == 0) {
+			memcpy(prefix, &iface->config.dhcpv6.prefix, sizeof(struct in6_addr));
+
+			dhcp->delegated_subnets_mask |= BIT(i);
+			prefix->s6_addr[SUBNET_ID_POS] |= (uint8_t)i;
+
+			ret = 0;
+
+			goto out;
+		}
+	}
+
+	ret = -ENOBUFS;
+
+out:
+	k_mutex_unlock(&lock);
+
+	return ret;
+}
+
+int net_dhcpv6_subnet_free(struct net_if *iface, struct in6_addr *prefix)
+{
+	struct net_if_dhcpv6 *dhcp = &iface->config.dhcpv6;
+	size_t mask_len;
+	uint8_t subnet_id;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_NET_CONFIG_DHCPV6_PREFIX_DELEGATION)) {
+		return -ENOTSUP;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	mask_len = (IPV6_SUBNET_BITS - iface->config.dhcpv6.prefix_len);
+	subnet_id = prefix->s6_addr[SUBNET_ID_POS] & BIT_MASK(mask_len);
+
+	if (mask_len == 0 || (dhcp->delegated_subnets_mask & BIT(subnet_id)) == 0) {
+		ret = -EALREADY;
+
+		goto out;
+	}
+
+	dhcp->delegated_subnets_mask &= ~BIT(subnet_id);
+
+	ret = 0;
+out:
+	k_mutex_unlock(&lock);
+
+	return ret;
 }
