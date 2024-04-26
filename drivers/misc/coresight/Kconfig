@@ -1,0 +1,45 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_NORDIC_NRF_TBM := nordic,nrf-tbm
+
+config NRF_ETR
+	bool "Coresight ETR handler (with Nordic TBM)"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_TBM))
+	select NRFX_TBM
+	default y
+	help
+	  Module handles data stored in the ETR circular buffer (e.g. STM logging
+	  data). Busyness is tracked using TBM (Trace Buffer Monitor) peripheral
+	  which is specific to Nordic Semiconductor SoCs.
+
+if NRF_ETR
+
+config NRF_ETR_STACK_SIZE
+	int "ETR thread stack size"
+	default 1024
+
+config NRF_ETR_BACKOFF
+	int "Thread backoff time (ms)"
+	default 10
+	help
+	  Determines how often attempt to dump the data is performed.
+
+config NRF_ETR_FLUSH_TIMEOUT
+	int "Backoff time during flushing (ms)"
+	default 100
+	help
+	  When thread triggers flushing of ETR data, it periodically checks if
+	  there is still a pending ETR data. This option specifies how often
+	  thread is waking up to check. Given in milliseconds.
+
+config NRF_ETR_SYNC_PERIOD
+	int "Period of custom synchronization frame"
+	default 16
+	help
+	  To help find the synchronization when decoding the ETR content
+	  by a host tool a synchronization pattern (16 bytes of 0xFF) can be
+	  sent on regular intervals. This frame is sent between Coresight formatter
+	  frames. Use 0 to disable.
+
+endif # NRF_ETR

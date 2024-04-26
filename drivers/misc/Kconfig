@@ -13,5 +13,6 @@ source "drivers/misc/timeaware_gpio/Kconfig"
 source "drivers/misc/devmux/Kconfig"
 source "drivers/misc/nordic_vpr_launcher/Kconfig"
 source "drivers/misc/mcux_flexio/Kconfig"
+source "drivers/misc/coresight/Kconfig"
 
 endmenu
