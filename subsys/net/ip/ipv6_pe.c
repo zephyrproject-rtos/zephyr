@@ -52,9 +52,15 @@ static uint32_t temp_preferred_lifetime =
 
 /* This is the upper bound on DESYNC_FACTOR. The value is in seconds.
  * See RFC 8981 ch 3.8 for details.
+ *
+ * RFC says the DESYNC_FACTOR should be 0.4 times the preferred lifetime.
+ * This is too short for Zephyr as it means that the address is very long
+ * time in deprecated state and not being used. Make this 7% of the preferred
+ * time to deprecate the addresses later.
  */
-#define MAX_DESYNC_FACTOR       ((TEMP_PREFERRED_LIFETIME * 2U) / 5U)
-#define DESYNC_FACTOR(ipv6)     ((ipv6)->desync_factor)
+#define MAX_DESYNC_FACTOR   ((uint32_t)((uint64_t)TEMP_PREFERRED_LIFETIME * \
+				       (uint64_t)7U) / (uint64_t)100U)
+#define DESYNC_FACTOR(ipv6) ((ipv6)->desync_factor)
 
 #define TEMP_IDGEN_RETRIES      CONFIG_NET_IPV6_PE_TEMP_IDGEN_RETRIES
 
