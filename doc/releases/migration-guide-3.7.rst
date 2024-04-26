@@ -213,6 +213,11 @@ Bluetooth Mesh
 Bluetooth Audio
 ===============
 
+* :kconfig:option:`CONFIG_BT_ASCS`, :kconfig:option:`CONFIG_BT_PERIPHERAL` and
+  :kconfig:option:`CONFIG_BT_ISO_PERIPHERAL` are not longer `select`ed automatically when
+  enabling :kconfig:option:`CONFIG_BT_BAP_UNICAST_SERVER`, and these must now be set explicitly
+  in the project configuration file. (:github:`71993`)
+
 Bluetooth Classic
 =================
 
