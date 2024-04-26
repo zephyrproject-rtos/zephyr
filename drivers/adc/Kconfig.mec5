@@ -1,0 +1,11 @@
+# Microchip MEC5 HAL ADC SAR configuration
+
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_MEC5_SAR
+	bool "Microchip MEC5 HAL based ADC SAR driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_ADC_SAR_ENABLED
+	help
+	  Enable ADC SAR driver for Microchip MEC5 HAL based MCU series.

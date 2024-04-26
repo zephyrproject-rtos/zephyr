@@ -1,0 +1,70 @@
+# Copyright 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 HAL based ADC SAR controller
+
+compatible: "microchip,mec5-adc-sar"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clktime:
+    type: int
+    description: |
+      ADC sampling clock high and low time in units of
+      48 MHz clocks <1:255>. The default value of 1 produces
+      a 24 MHz ADC sampling clock.
+
+  warm-up-delay:
+    type: int
+    description: |
+      ADC warm up delay expressed as ADC sampling clocks.
+      Warm up delay takes effect both Single and Repeat
+      enables are clear and firmware sets one or both.
+      For single conversion mode the warm up delay is performed
+      each time firmware sets the Start Single bit. For repeat
+      mode warm up delay is performed when the Start Repeat bit
+      is set the first time. If the ADC is in performing a set of
+      single or repeat conversions and the other mode's start bit
+      is set the warm up delay is not performed. Note: the default
+      warm up delay is 514 ADC sample clocks.
+
+  repeat-cycle-start-delay:
+    type: int
+    description: |
+      An additional delay before the set of channels selected for
+      repeat conversion is begun. This delay is in units of 40
+      microseconds and uses a 16-bit field. Zero is no additional
+      delay and 0xffff is 2.6 seconds. Default value is 0 (no delay).
+
+  repeat-cycle-delay:
+    type: int
+    description: |
+      A delay before the second and all subsequent set of repeat mode
+      channels is converted. This delay in in units of 40 microseconds
+      and uses a 16-bit field. Default value is 0 (no delay).
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  sar-config:
+    type: int
+    description: |
+      Optional 32-bit value for overriding the ADC SAR configuration
+      register set by the Boot-ROM from OTP. Contact Microchip for
+      support in using this override.
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input
