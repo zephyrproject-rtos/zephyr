@@ -241,4 +241,4 @@ DEVICE_DT_INST_DEFINE(0, &it8xxx2_kbd_init, NULL,
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "only one ite,it8xxx2-kbd compatible node can be supported");
 BUILD_ASSERT(IN_RANGE(DT_INST_PROP(0, row_size), 1, 8), "invalid row-size");
-BUILD_ASSERT(IN_RANGE(DT_INST_PROP(0, col_size), 16, 18), "invalid col-size");
+BUILD_ASSERT(IN_RANGE(DT_INST_PROP(0, col_size), 1, 18), "invalid col-size");
