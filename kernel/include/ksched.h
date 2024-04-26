@@ -37,8 +37,6 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 #define Z_ASSERT_VALID_PRIO(prio, entry_point) __ASSERT((prio) == -1, "")
 #endif /* CONFIG_MULTITHREADING */
 
-extern struct k_thread _thread_dummies[CONFIG_MP_MAX_NUM_CPUS];
-
 void z_sched_init(void);
 void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
 void z_unpend_thread_no_timeout(struct k_thread *thread);
