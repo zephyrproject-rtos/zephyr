@@ -1182,12 +1182,6 @@ static void l2cap_chan_tx_process(struct k_work *work)
 				LOG_DBG("out of credits/windows");
 
 				ch->tx_buf = buf;
-				/* If we don't reschedule, and the app doesn't nudge l2cap (e.g. by
-				 * sending another SDU), the channel will be stuck in limbo. To
-				 * prevent this, we reschedule with a configurable delay.
-				 * FIXME: is this still necessary?
-				 */
-				k_work_schedule(&ch->tx_work, K_MSEC(CONFIG_BT_L2CAP_RESCHED_MS));
 			} else {
 				LOG_WRN("Failed to send (err %d), dropping buf %p", ret, buf);
 				l2cap_tx_buf_destroy(ch->chan.conn, buf, ret);
