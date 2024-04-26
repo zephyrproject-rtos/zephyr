@@ -52,7 +52,6 @@
 		};
 
 		etr_buf_ram0x_region: memory@2f0be000 {
-			/* TODO to be reworked when SDFW with STM support is released.*/
 			compatible = "nordic,owned-memory";
 			reg = <0x2f0be000 DT_SIZE_K(4)>;
 			status = "disabled";
@@ -63,6 +62,7 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x2f0be000 0x1000>;
 
+			/* TODO In future move this region to cpuapp_ram0x_region. */
 			etr_buffer: memory@0 {
 				reg = <0x0 DT_SIZE_K(4)>;
 			};
