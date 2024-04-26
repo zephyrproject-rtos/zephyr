@@ -439,6 +439,19 @@
 			};
 		};
 
+		tdd_peripherals: peripheral@bf000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xbf000000 0x1000000>;
+
+			tbm: tbm@3000 {
+				compatible = "nordic,nrf-tbm";
+				reg = <0x3000 0x408>;
+				status = "disabled";
+				interrupts = <127 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+		};
+
 		global_peripherals: peripheral@5f000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
