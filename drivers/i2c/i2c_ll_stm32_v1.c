@@ -359,6 +359,14 @@ static inline void handle_rxne(const struct device *dev)
 			k_sem_give(&data->device_sync_sem);
 			break;
 		case 2:
+			/*
+			 * 2-byte reception for N > 3 has already set the NACK
+			 * bit, and must not set the POS bit. See pg. 854 in
+			 * the F4 reference manual (RM0090).
+			 */
+			if (data->current.msg->len > 2) {
+				break;
+			}
 			LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
 			LL_I2C_EnableBitPOS(i2c);
 			__fallthrough;
