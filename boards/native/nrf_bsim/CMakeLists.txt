@@ -15,6 +15,15 @@ zephyr_compile_options(
 # as both the HW models and embedded SW use them.
 target_compile_options(native_simulator INTERFACE -fshort-enums)
 
+# nrf_bsim is used to simulate ARM devices.
+# On these devices doubles and 8 byte words are 8-byte aligned.
+# As different x86 GNU compilers may have different alignment defaults,
+# set the alignment explicitly to match how data is aligned on target.
+zephyr_compile_options(
+  -malign-double
+)
+target_compile_options(native_simulator INTERFACE -malign-double)
+
 zephyr_library_sources(
 	irq_handler.c
 	cpu_wait.c
