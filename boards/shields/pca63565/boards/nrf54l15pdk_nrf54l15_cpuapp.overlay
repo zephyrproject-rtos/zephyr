@@ -1,0 +1,90 @@
+/*
+ * Copyright (C) 2024 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		accel0 = &adxl362;
+		/delete-property/ led2;
+		/delete-property/ led3;
+		/delete-property/ sw3;
+	};
+};
+
+/delete-node/ &led2;	// P1.13 is bmi270 chip select signal
+/delete-node/ &led3;	// P1.14 is adxl362 interrupt signal
+/delete-node/ &button3; // P2.10 is adxl362 chip select signal
+
+&pinctrl {
+	i2c22_default: i2c22_default {
+		group1  {
+			psels = <NRF_PSEL(TWIM_SCL, 1, 11)>,
+				<NRF_PSEL(TWIM_SDA, 1, 12)>;
+		};
+	};
+
+	i2c22_sleep: i2c22_sleep {
+		group1  {
+			psels = <NRF_PSEL(TWIM_SCL, 1, 11)>,
+				<NRF_PSEL(TWIM_SDA, 1, 12)>;
+			low-power-enable;
+		};
+	};
+
+	spi00_default: spi00_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 2, 6)>,
+				<NRF_PSEL(SPIM_MISO, 2, 9)>,
+				<NRF_PSEL(SPIM_MOSI, 2, 8)>;
+		};
+	};
+
+	spi00_sleep: spi00_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 2, 6)>,
+				<NRF_PSEL(SPIM_MISO, 2, 9)>,
+				<NRF_PSEL(SPIM_MOSI, 2, 8)>;
+			low-power-enable;
+		};
+	};
+};
+
+&i2c22 {
+	status = "okay";
+	zephyr,concat-buf-size = <512>;
+	pinctrl-0 = <&i2c22_default>;
+	pinctrl-1 = <&i2c22_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	bme688: bme688@76 {
+		compatible = "bosch,bme680";
+		status = "okay";
+		reg = <0x76>;
+	};
+};
+
+&spi00 {
+	status = "okay";
+	pinctrl-0 = <&spi00_default>;
+	pinctrl-1 = <&spi00_sleep>;
+	pinctrl-names = "default", "sleep";
+	cs-gpios = <&gpio1 13 GPIO_ACTIVE_LOW>,
+		   <&gpio2 10 GPIO_ACTIVE_LOW>;
+
+
+	bmi270: bmi270@0 {
+		compatible = "bosch,bmi270";
+		status = "okay";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+	};
+
+	adxl362: adxl362@1 {
+		compatible = "adi,adxl362";
+		status = "okay";
+		reg = <1>;
+		int1-gpios = <&gpio1 14 (GPIO_ACTIVE_HIGH)>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+	};
+};
