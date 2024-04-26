@@ -16,25 +16,35 @@
 #include "nvm/lorawan_nvm.h"
 
 #ifdef CONFIG_LORAMAC_REGION_AS923
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_AS923
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_AS923
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_AS923
 #elif CONFIG_LORAMAC_REGION_AU915
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_AU915
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_AU915
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_AU915
 #elif CONFIG_LORAMAC_REGION_CN470
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_CN470
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_CN470
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_CN470
 #elif CONFIG_LORAMAC_REGION_CN779
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_CN779
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_CN779
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_CN779
 #elif CONFIG_LORAMAC_REGION_EU433
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_EU433
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_EU433
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_EU433
 #elif CONFIG_LORAMAC_REGION_EU868
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_EU868
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_EU868
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_EU868
 #elif CONFIG_LORAMAC_REGION_KR920
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_KR920
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_KR920
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_KR920
 #elif CONFIG_LORAMAC_REGION_IN865
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_IN865
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_IN865
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_IN865
 #elif CONFIG_LORAMAC_REGION_US915
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_US915
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_US915
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_US915
 #elif CONFIG_LORAMAC_REGION_RU864
-#define DEFAULT_LORAWAN_REGION LORAMAC_REGION_RU864
+#define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_RU864
+#define DEFAULT_LORAWAN_CHANNELS_MASK_SIZE LORAWAN_CHANNELS_MASK_SIZE_RU864
 #else
 #error "At least one LoRaWAN region should be selected"
 #endif
@@ -71,6 +81,9 @@ static LoRaMacEventInfoStatus_t last_mcps_indication_status;
 static LoRaMacEventInfoStatus_t last_mlme_indication_status;
 
 static LoRaMacRegion_t selected_region = DEFAULT_LORAWAN_REGION;
+
+static enum lorawan_channels_mask_size region_channels_mask_size =
+	DEFAULT_LORAWAN_CHANNELS_MASK_SIZE;
 
 static lorawan_battery_level_cb_t battery_level_cb;
 static lorawan_dr_changed_cb_t dr_changed_cb;
@@ -292,60 +305,70 @@ int lorawan_set_region(enum lorawan_region region)
 #if defined(CONFIG_LORAMAC_REGION_AS923)
 	case LORAWAN_REGION_AS923:
 		selected_region = LORAMAC_REGION_AS923;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_AS923;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_AU915)
 	case LORAWAN_REGION_AU915:
 		selected_region = LORAMAC_REGION_AU915;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_AU915;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_CN470)
 	case LORAWAN_REGION_CN470:
 		selected_region = LORAMAC_REGION_CN470;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_CN470;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_CN779)
 	case LORAWAN_REGION_CN779:
 		selected_region = LORAMAC_REGION_CN779;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_CN779;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_EU433)
 	case LORAWAN_REGION_EU433:
 		selected_region = LORAMAC_REGION_EU433;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_EU433;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_EU868)
 	case LORAWAN_REGION_EU868:
 		selected_region = LORAMAC_REGION_EU868;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_EU868;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_KR920)
 	case LORAWAN_REGION_KR920:
 		selected_region = LORAMAC_REGION_KR920;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_KR920;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_IN865)
 	case LORAWAN_REGION_IN865:
 		selected_region = LORAMAC_REGION_IN865;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_IN865;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_US915)
 	case LORAWAN_REGION_US915:
 		selected_region = LORAMAC_REGION_US915;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_US915;
 		break;
 #endif
 
 #if defined(CONFIG_LORAMAC_REGION_RU864)
 	case LORAWAN_REGION_RU864:
 		selected_region = LORAMAC_REGION_RU864;
+		region_channels_mask_size = LORAWAN_CHANNELS_MASK_SIZE_RU864;
 		break;
 #endif
 
@@ -467,6 +490,26 @@ int lorawan_set_class(enum lorawan_class dev_class)
 				lorawan_status2str(status));
 			return lorawan_status2errno(status);
 		}
+	}
+
+	return 0;
+}
+
+int lorawan_set_channels_mask(uint16_t *channels_mask, size_t channels_mask_size)
+{
+	MibRequestConfirm_t mib_req;
+
+	if ((channels_mask == NULL) || (channels_mask_size != region_channels_mask_size)) {
+		return -EINVAL;
+	}
+
+	/* Notify MAC layer of the requested channel mask. */
+	mib_req.Type = MIB_CHANNELS_MASK;
+	mib_req.Param.ChannelsMask = channels_mask;
+
+	if (LoRaMacMibSetRequestConfirm(&mib_req) != LORAMAC_STATUS_OK) {
+		/* Channels mask is invalid for this region. */
+		return -EINVAL;
 	}
 
 	return 0;
