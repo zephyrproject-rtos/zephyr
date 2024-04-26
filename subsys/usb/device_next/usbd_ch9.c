@@ -523,37 +523,81 @@ static int sreq_get_desc_cfg(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
-static int sreq_get_desc(struct usbd_contex *const uds_ctx,
-			 struct net_buf *const buf,
-			 const uint8_t type, const uint8_t idx)
+/* Copy and convert ASCII-7 string descriptor to UTF16-LE */
+static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
+				     struct net_buf *const buf, const uint16_t wLength)
+{
+	struct usb_string_descriptor *desc = dn->desc;
+	uint8_t *ascii7_str = (uint8_t *)&desc->bString;
+	size_t len;
+
+	LOG_DBG("wLength %u, bLength %u, tailroom %u",
+		wLength, desc->bLength, net_buf_tailroom(buf));
+
+	len = MIN(net_buf_tailroom(buf), MIN(desc->bLength,  wLength));
+
+	/* Add bLength and bDescriptorType */
+	net_buf_add_mem(buf, desc, MIN(len, 2U));
+	len -= MIN(len, 2U);
+
+	for (size_t i = 0; i < len; i++) {
+		__ASSERT(ascii7_str[i] > 0x1F && ascii7_str[i] < 0x7F,
+			 "Only printable ascii-7 characters are allowed in USB "
+			 "string descriptors");
+		net_buf_add_le16(buf, ascii7_str[i]);
+	}
+}
+
+static int sreq_get_desc_dev(struct usbd_contex *const uds_ctx,
+			     struct net_buf *const buf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
 	struct usb_desc_header *head;
 	size_t len;
 
-	if (type == USB_DESC_DEVICE) {
-		switch (usbd_bus_speed(uds_ctx)) {
-		case USBD_SPEED_FS:
-			head = uds_ctx->fs_desc;
-			break;
-		case USBD_SPEED_HS:
-			head = uds_ctx->hs_desc;
-			break;
-		default:
-			errno = -ENOTSUP;
-			return 0;
-		}
-	} else {
-		head = usbd_get_descriptor(uds_ctx, type, idx);
-	}
+	len = MIN(setup->wLength, net_buf_tailroom(buf));
 
-	if (head == NULL) {
+	switch (usbd_bus_speed(uds_ctx)) {
+	case USBD_SPEED_FS:
+		head = uds_ctx->fs_desc;
+		break;
+	case USBD_SPEED_HS:
+		head = uds_ctx->hs_desc;
+		break;
+	default:
 		errno = -ENOTSUP;
 		return 0;
 	}
 
-	len = MIN(setup->wLength, net_buf_tailroom(buf));
 	net_buf_add_mem(buf, head, MIN(len, head->bLength));
+
+	return 0;
+}
+
+static int sreq_get_desc_str(struct usbd_contex *const uds_ctx,
+			     struct net_buf *const buf, const uint8_t idx)
+{
+	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
+	struct usb_desc_header *head;
+	struct usbd_desc_node *d_nd;
+	size_t len;
+
+	/* Get string descriptor */
+	d_nd = usbd_get_descriptor(uds_ctx, USB_DESC_STRING, idx);
+	if (d_nd == NULL) {
+		errno = -ENOTSUP;
+		return 0;
+	}
+
+	if (d_nd->idx == 0U) {
+		/* Language ID string descriptor */
+		head = d_nd->desc;
+		len = MIN(setup->wLength, net_buf_tailroom(buf));
+		net_buf_add_mem(buf, head, MIN(len, head->bLength));
+	} else {
+		/* String descriptors in ASCII7 format */
+		string_ascii7_to_utf16le(d_nd, buf, setup->wLength);
+	}
 
 	return 0;
 }
@@ -617,13 +661,13 @@ static int sreq_get_descriptor(struct usbd_contex *const uds_ctx,
 
 	switch (desc_type) {
 	case USB_DESC_DEVICE:
-		return sreq_get_desc(uds_ctx, buf, USB_DESC_DEVICE, 0);
+		return sreq_get_desc_dev(uds_ctx, buf);
 	case USB_DESC_CONFIGURATION:
 		return sreq_get_desc_cfg(uds_ctx, buf, desc_idx, false);
 	case USB_DESC_OTHER_SPEED:
 		return sreq_get_desc_cfg(uds_ctx, buf, desc_idx, true);
 	case USB_DESC_STRING:
-		return sreq_get_desc(uds_ctx, buf, USB_DESC_STRING, desc_idx);
+		return sreq_get_desc_str(uds_ctx, buf, desc_idx);
 	case USB_DESC_DEVICE_QUALIFIER:
 		return sreq_get_dev_qualifier(uds_ctx, buf);
 	case USB_DESC_INTERFACE:
