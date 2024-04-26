@@ -99,11 +99,13 @@ elseif (CONFIG_NATIVE_LIBRARY)
     get_filename_component(COMPILER_OWN_INCLUDE_PATH "${_OUTPUT}" DIRECTORY)
 
     # Do not use the C library from this compiler/host,
-    # but still use the basic compiler headers
+    # but still use the basic compiler headers,
+    # remove all operating system specific predefined macros,
     # no_builtin to avoid the compiler using builtin replacements for std library functions
     zephyr_compile_options(
       -nostdinc
       -isystem ${COMPILER_OWN_INCLUDE_PATH}
+      "SHELL:-include ${ZEPHYR_BASE}/arch/posix/include/undef_system_defines.h"
       $<TARGET_PROPERTY:compiler,freestanding>
       $<TARGET_PROPERTY:compiler,no_builtin>
     )
