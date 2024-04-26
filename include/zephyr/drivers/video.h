@@ -119,6 +119,66 @@ struct video_buffer {
 };
 
 /**
+ * @brief video_frmival_type enum
+ *
+ * Supported frame interval type of a video device.
+ */
+enum video_frmival_type {
+	/** discrete frame interval type */
+	VIDEO_FRMIVAL_TYPE_DISCRETE = 1,
+	/** stepwise frame interval type */
+	VIDEO_FRMIVAL_TYPE_STEPWISE = 2,
+};
+
+/**
+ * @struct video_frmival
+ * @brief Video frame interval structure
+ *
+ * Used to describe a video frame interval.
+ */
+struct video_frmival {
+	/** numerator of the frame interval */
+	uint32_t numerator;
+	/** denominator of the frame interval */
+	uint32_t denominator;
+};
+
+/**
+ * @struct video_frmival_stepwise
+ * @brief Video frame interval stepwise structure
+ *
+ * Used to describe the video frame interval stepwise type.
+ */
+struct video_frmival_stepwise {
+	/** minimum frame interval in seconds */
+	struct video_frmival min;
+	/** maximum frame interval in seconds */
+	struct video_frmival max;
+	/** frame interval step size in seconds */
+	struct video_frmival step;
+};
+
+/**
+ * @struct video_frmival_enum
+ * @brief Video frame interval enumeration structure
+ *
+ * Used to describe the supported video frame intervals of a given video format.
+ */
+struct video_frmival_enum {
+	/** frame interval index during enumeration */
+	uint32_t index;
+	/** video format for which the query is made */
+	const struct video_format *format;
+	/** frame interval type the device supports */
+	enum video_frmival_type type;
+	/** the actual frame interval */
+	union {
+		struct video_frmival discrete;
+		struct video_frmival_stepwise stepwise;
+	};
+};
+
+/**
  * @brief video_endpoint_id enum
  *
  * Identify the video device endpoint.
@@ -164,6 +224,33 @@ typedef int (*video_api_set_format_t)(const struct device *dev,
 typedef int (*video_api_get_format_t)(const struct device *dev,
 				      enum video_endpoint_id ep,
 				      struct video_format *fmt);
+
+/**
+ * @typedef video_api_set_frmival_t
+ * @brief Set video frame interval
+ *
+ * See video_set_frmival() for argument descriptions.
+ */
+typedef int (*video_api_set_frmival_t)(const struct device *dev, enum video_endpoint_id ep,
+				       struct video_frmival *frmival);
+
+/**
+ * @typedef video_api_get_frmival_t
+ * @brief Get current video frame interval
+ *
+ * See video_get_frmival() for argument descriptions.
+ */
+typedef int (*video_api_get_frmival_t)(const struct device *dev, enum video_endpoint_id ep,
+				       struct video_frmival *frmival);
+
+/**
+ * @typedef video_api_enum_frmival_t
+ * @brief List all supported frame intervals of a given format
+ *
+ * See video_enum_frmival() for argument descriptions.
+ */
+typedef int (*video_api_enum_frmival_t)(const struct device *dev, enum video_endpoint_id ep,
+					struct video_frmival_enum *fie);
 
 /**
  * @typedef video_api_enqueue_t
@@ -267,6 +354,9 @@ __subsystem struct video_driver_api {
 	video_api_set_ctrl_t set_ctrl;
 	video_api_set_ctrl_t get_ctrl;
 	video_api_set_signal_t set_signal;
+	video_api_set_frmival_t set_frmival;
+	video_api_get_frmival_t get_frmival;
+	video_api_enum_frmival_t enum_frmival;
 };
 
 /**
@@ -320,6 +410,91 @@ static inline int video_get_format(const struct device *dev,
 	}
 
 	return api->get_format(dev, ep, fmt);
+}
+
+/**
+ * @brief Set video frame interval.
+ *
+ * Configure video device with a specific frame interval.
+ *
+ * Drivers must not return an error solely because the requested interval doesn’t match the device
+ * capabilities. They must instead modify the interval to match what the hardware can provide.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param ep Endpoint ID.
+ * @param frmival Pointer to a video frame interval struct.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If API is not implemented.
+ * @retval -EINVAL If parameters are invalid.
+ * @retval -EIO General input / output error.
+ */
+static inline int video_set_frmival(const struct device *dev, enum video_endpoint_id ep,
+				    struct video_frmival *frmival)
+{
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+
+	if (api->set_frmival == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_frmival(dev, ep, frmival);
+}
+
+/**
+ * @brief Get video frame interval.
+ *
+ * Get current frame interval of the video device.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param ep Endpoint ID.
+ * @param frmival Pointer to a video frame interval struct.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If API is not implemented.
+ * @retval -EINVAL If parameters are invalid.
+ * @retval -EIO General input / output error.
+ */
+static inline int video_get_frmival(const struct device *dev, enum video_endpoint_id ep,
+				    struct video_frmival *frmival)
+{
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+
+	if (api->get_frmival == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_frmival(dev, ep, frmival);
+}
+
+/**
+ * @brief List video frame intervals.
+ *
+ * List all supported video frame intervals of a given format.
+ *
+ * Applications should fill the pixelformat, width and height fields of the
+ * video_frmival_enum struct first to form a query. Then, the index field is
+ * used to iterate through the supported frame intervals list.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param ep Endpoint ID.
+ * @param fie Pointer to a video frame interval enumeration struct.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If API is not implemented.
+ * @retval -EINVAL If parameters are invalid.
+ * @retval -EIO General input / output error.
+ */
+static inline int video_enum_frmival(const struct device *dev, enum video_endpoint_id ep,
+				     struct video_frmival_enum *fie)
+{
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+
+	if (api->enum_frmival == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->enum_frmival(dev, ep, fie);
 }
 
 /**
