@@ -42,6 +42,22 @@ enum lorawan_act_type {
 };
 
 /**
+ * @brief LoRaWAN channels mask sizes.
+ */
+enum lorawan_channels_mask_size {
+	LORAWAN_CHANNELS_MASK_SIZE_AS923 = 1, /**< Region AS923 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_AU915 = 6, /**< Region AU915 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_CN470 = 6, /**< Region CN470 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_CN779 = 1, /**< Region CN779 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_EU433 = 1, /**< Region EU433 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_EU868 = 1, /**< Region EU868 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_KR920 = 1, /**< Region KR920 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_IN865 = 1, /**< Region IN865 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_US915 = 6, /**< Region US915 mask size */
+	LORAWAN_CHANNELS_MASK_SIZE_RU864 = 1, /**< Region RU864 mask size */
+};
+
+/**
  * @brief LoRaWAN datarate types.
  */
 enum lorawan_datarate {
@@ -294,6 +310,21 @@ int lorawan_set_conf_msg_tries(uint8_t tries);
  * @param enable Enable or Disable adaptive data rate.
  */
 void lorawan_enable_adr(bool enable);
+
+/**
+ * @brief Set the channels mask.
+ *
+ * Change the default channels mask. When mask is not changed, all the channels
+ * can be used for data transmission. Some Network Servers don't use all the channels,
+ * in this case, the channels mask must be provided.
+ *
+ * @param channels_mask Buffer with channels mask to be used.
+ * @param channels_mask_size Size of channels mask buffer.
+ *
+ * @retval 0 successful
+ * @retval -EINVAL channels mask or channels mask size is wrong
+ */
+int lorawan_set_channels_mask(uint16_t *channels_mask, size_t channels_mask_size);
 
 /**
  * @brief Set the default data rate
