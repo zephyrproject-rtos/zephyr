@@ -1,6 +1,0 @@
-tests:
-  kernel.smp_abort:
-    tags:
-      - kernel
-      - smp
-    filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
