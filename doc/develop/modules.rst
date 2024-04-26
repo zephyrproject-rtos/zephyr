@@ -1148,7 +1148,26 @@ Where 23 in the example above indicated the pull request number submitted to the
 *my_module* repository. Once the module changes are reviewed and merged, the
 revision needs to be changed to the commit hash from the module repository.
 
+.. _optional_modules:
 
+Enabling optional modules
+=========================
+
+Some of the modules are marked as optional. In order to use such modules, they
+need to be explicitly enabled in local west configuration.
+To enable a module run:
+
+.. code-block:: console
+
+    west config manifest.project-filter -- +<module name>
+    west update
+
+e.g. to use LZ4 compression module execute:
+
+.. code-block:: console
+
+    west config manifest.project-filter -- +lz4
+    west update
 
 .. _CMake list: https://cmake.org/cmake/help/latest/manual/cmake-language.7.html#lists
 .. _add_subdirectory(): https://cmake.org/cmake/help/latest/command/add_subdirectory.html
