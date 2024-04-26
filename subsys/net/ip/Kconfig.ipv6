@@ -191,6 +191,13 @@ config NET_MAX_6LO_CONTEXTS
 	  6lowpan context options table size. The value depends on your
 	  network and memory consumption. More 6CO options uses more memory.
 
+config NET_IPV6_AUTOCONF
+	bool
+	default y if NET_DHCPV6 || NET_IPV6_ND
+	help
+	  Hidden value enabling autoconfiguration of IPv6 addresses based on
+	  prefixes received from DHCPv6 server or with Router Advertisements.
+
 if NET_6LO
 module = NET_6LO
 module-dep = NET_LOG

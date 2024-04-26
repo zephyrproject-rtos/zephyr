@@ -538,6 +538,31 @@ void net_ipv6_mld_init(void);
 #endif
 
 /**
+ * @brief Add auto configured IPv6 address
+ *
+ * @param iface Network interface
+ * @param prefix Subnet prefix
+ * @param valid_lifetime Lifetime of the subnet prefix
+ *
+ * @return Pointer to the address on success, NULL otherwise
+ */
+#if defined(CONFIG_NET_IPV6_AUTOCONF)
+struct net_if_addr *net_ipv6_autoconf_addr_add(struct net_if *iface, const struct in6_addr *prefix,
+					       uint32_t valid_lifetime);
+#else
+static inline
+struct net_if_addr *net_ipv6_autoconf_addr_add(struct net_if *iface, const struct in6_addr *prefix,
+					       uint32_t valid_lifetime)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(prefix);
+	ARG_UNUSED(valid_lifetime);
+
+	return NULL;
+}
+#endif
+
+/**
  * @brief Decode DSCP value from TC field.
  *
  * @param tc TC field value from the IPv6 header.

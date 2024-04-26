@@ -2221,67 +2221,11 @@ static inline void handle_prefix_onlink(struct net_pkt *pkt,
 	}
 }
 
-#define TWO_HOURS (2 * 60 * 60)
-
-static inline uint32_t remaining_lifetime(struct net_if_addr *ifaddr)
-{
-	return net_timeout_remaining(&ifaddr->lifetime, k_uptime_get_32());
-}
-
 static inline void handle_prefix_autonomous(struct net_pkt *pkt,
-			struct net_icmpv6_nd_opt_prefix_info *prefix_info)
+					    struct net_icmpv6_nd_opt_prefix_info *prefix_info)
 {
-	struct in6_addr addr = { };
-	struct net_if_addr *ifaddr;
-
-	/* Create IPv6 address using the given prefix and iid. We first
-	 * setup link local address, and then copy prefix over first 8
-	 * bytes of that address.
-	 */
-	net_ipv6_addr_create_iid(&addr,
-				 net_if_get_link_addr(net_pkt_iface(pkt)));
-	memcpy(&addr, prefix_info->prefix, sizeof(prefix_info->prefix) / 2);
-
-	ifaddr = net_if_ipv6_addr_lookup(&addr, NULL);
-	if (ifaddr && ifaddr->addr_type == NET_ADDR_AUTOCONF) {
-		if (prefix_info->valid_lifetime ==
-		    NET_IPV6_ND_INFINITE_LIFETIME) {
-			net_if_addr_set_lf(ifaddr, true);
-			return;
-		}
-
-		/* RFC 4862 ch 5.5.3 */
-		if ((prefix_info->valid_lifetime > TWO_HOURS) ||
-		    (prefix_info->valid_lifetime >
-		     remaining_lifetime(ifaddr))) {
-			NET_DBG("Timer updating for address %s "
-				"long lifetime %u secs",
-				net_sprint_ipv6_addr(&addr),
-				prefix_info->valid_lifetime);
-
-			net_if_ipv6_addr_update_lifetime(
-				ifaddr, prefix_info->valid_lifetime);
-		} else {
-			NET_DBG("Timer updating for address %s "
-				"lifetime %u secs",
-				net_sprint_ipv6_addr(&addr),
-				TWO_HOURS);
-
-			net_if_ipv6_addr_update_lifetime(ifaddr, TWO_HOURS);
-		}
-
-		net_if_addr_set_lf(ifaddr, false);
-	} else {
-		if (prefix_info->valid_lifetime ==
-		    NET_IPV6_ND_INFINITE_LIFETIME) {
-			net_if_ipv6_addr_add(net_pkt_iface(pkt),
-					     &addr, NET_ADDR_AUTOCONF, 0);
-		} else {
-			net_if_ipv6_addr_add(net_pkt_iface(pkt),
-					     &addr, NET_ADDR_AUTOCONF,
-					     prefix_info->valid_lifetime);
-		}
-	}
+	net_ipv6_autoconf_addr_add(net_pkt_iface(pkt), (const struct in6_addr *)prefix_info->prefix,
+				   prefix_info->valid_lifetime);
 }
 
 static inline bool handle_ra_prefix(struct net_pkt *pkt)
