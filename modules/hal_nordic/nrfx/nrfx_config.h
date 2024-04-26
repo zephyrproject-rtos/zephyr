@@ -505,6 +505,10 @@
 #define NRFX_SYSTICK_CONFIG_LOG_ENABLED 1
 #endif
 
+#ifdef CONFIG_NRFX_TBM
+#define NRFX_TBM_ENABLED 1
+#endif
+
 #ifdef CONFIG_NRFX_TEMP
 #define NRFX_TEMP_ENABLED 1
 #endif
