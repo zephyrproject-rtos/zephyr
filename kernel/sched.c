@@ -898,6 +898,7 @@ void *z_get_next_switch_handle(void *interrupted)
 			arch_cohere_stacks(old_thread, interrupted, new_thread);
 
 			_current_cpu->swap_ok = 0;
+			new_thread->base.cpu = arch_curr_cpu()->id;
 			set_current(new_thread);
 
 #ifdef CONFIG_TIMESLICING
