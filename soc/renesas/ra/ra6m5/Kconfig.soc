@@ -18,4 +18,4 @@ config SOC_SERIES
 	default "ra6m5" if SOC_SERIES_RA6M5
 
 config SOC
-	default "ra6m5" if SOC_R7FA6M5BH3CFC
+	default "r7fa6m5bh3cfc" if SOC_R7FA6M5BH3CFC
