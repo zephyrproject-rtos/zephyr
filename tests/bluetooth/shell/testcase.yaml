@@ -230,6 +230,7 @@ tests:
     build_only: true
     extra_configs:
       - CONFIG_BT_BAP_UNICAST_SERVER=n
+      - CONFIG_BT_ASCS=n
       - CONFIG_BT_BAP_UNICAST_CLIENT=n
       - CONFIG_BT_BAP_BROADCAST_SOURCE=n
   bluetooth.audio_shell.no_unicast_client:
