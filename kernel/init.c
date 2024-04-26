@@ -650,7 +650,12 @@ FUNC_NORETURN void z_cstart(void)
 	LOG_CORE_INIT();
 
 #if defined(CONFIG_MULTITHREADING)
-	z_dummy_thread_init(&_thread_dummies[0]);
+	/* Note: The z_ready_thread() call in prepare_multithreading() requires
+	 * a dummy thread even if CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN=y
+	 */
+	struct k_thread dummy_thread;
+
+	z_dummy_thread_init(&dummy_thread);
 #endif /* CONFIG_MULTITHREADING */
 	/* do any necessary initialization of static devices */
 	z_device_state_init();
