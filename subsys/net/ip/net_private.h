@@ -81,6 +81,9 @@ extern bool net_context_is_recv_pktinfo_set(struct net_context *context);
 extern void net_pkt_init(void);
 extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
+int net_context_get_local_addr(struct net_context *context,
+			       struct sockaddr *addr,
+			       socklen_t *addrlen);
 #else
 static inline void net_context_init(void) { }
 static inline void net_pkt_init(void) { }
@@ -105,6 +108,17 @@ static inline bool net_context_is_recv_pktinfo_set(struct net_context *context)
 {
 	ARG_UNUSED(context);
 	return false;
+}
+
+static inline int net_context_get_local_addr(struct net_context *context,
+					     struct sockaddr *addr,
+					     socklen_t *addrlen)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(addrlen);
+
+	return -ENOTSUP;
 }
 #endif
 

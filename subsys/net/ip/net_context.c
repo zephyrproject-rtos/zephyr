@@ -3181,6 +3181,51 @@ int net_context_get_option(struct net_context *context,
 	return ret;
 }
 
+int net_context_get_local_addr(struct net_context *ctx,
+			       struct sockaddr *addr,
+			       socklen_t *addrlen)
+{
+	if (ctx == NULL || addr == NULL || addrlen == NULL) {
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_TCP) &&
+	    net_context_get_type(ctx) == SOCK_STREAM) {
+		return net_tcp_endpoint_copy(ctx, addr, NULL, addrlen);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_UDP) && net_context_get_type(ctx) == SOCK_DGRAM) {
+		socklen_t newlen;
+
+		if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == AF_INET) {
+			newlen = MIN(*addrlen, sizeof(struct sockaddr_in));
+
+			net_sin(addr)->sin_family = AF_INET;
+			net_sin(addr)->sin_port = net_sin_ptr(&ctx->local)->sin_port;
+			memcpy(&net_sin(addr)->sin_addr,
+			       net_sin_ptr(&ctx->local)->sin_addr,
+			       sizeof(struct in_addr));
+
+		} else if (IS_ENABLED(CONFIG_NET_IPV6) && ctx->local.family == AF_INET6) {
+			newlen = MIN(*addrlen, sizeof(struct sockaddr_in6));
+
+			net_sin6(addr)->sin6_family = AF_INET6;
+			net_sin6(addr)->sin6_port = net_sin6_ptr(&ctx->local)->sin6_port;
+			memcpy(&net_sin6(addr)->sin6_addr,
+			       net_sin6_ptr(&ctx->local)->sin6_addr,
+			       sizeof(struct in6_addr));
+		} else {
+			return -EAFNOSUPPORT;
+		}
+
+		*addrlen = newlen;
+
+		return 0;
+	}
+
+	return -ENOPROTOOPT;
+}
+
 void net_context_foreach(net_context_cb_t cb, void *user_data)
 {
 	int i;
