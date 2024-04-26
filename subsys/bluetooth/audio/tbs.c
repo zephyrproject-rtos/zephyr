@@ -1725,7 +1725,7 @@ int bt_tbs_originate(uint8_t bearer_index, char *remote_uri,
 		(struct bt_tbs_call_cp_originate *)buf;
 	size_t uri_len;
 
-	if (tbs == NULL || inst_is_gtbs(tbs)) {
+	if (tbs == NULL) {
 		return -EINVAL;
 	} else if (!bt_tbs_valid_uri(remote_uri, strlen(remote_uri))) {
 		LOG_DBG("Invalid URI %s", remote_uri);
@@ -1921,7 +1921,7 @@ int bt_tbs_remote_incoming(uint8_t bearer_index, const char *to,
 	struct tbs_service_inst *service_inst;
 	struct bt_tbs_call *call = NULL;
 
-	if (inst == NULL || inst_is_gtbs(inst)) {
+	if (inst == NULL) {
 		return -EINVAL;
 	} else if (!bt_tbs_valid_uri(to, strlen(to))) {
 		LOG_DBG("Invalid \"to\" URI: %s", to);
