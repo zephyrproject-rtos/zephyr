@@ -1345,7 +1345,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_cap_initiator_unicast_update, 2, CAP_UNICAST_CLIENT_STREAM_COUNT),
 	SHELL_CMD_ARG(unicast_stop, NULL,
 		      "Unicast stop streams [stream [stream [stream...]]] (all by default)",
-		      cmd_cap_initiator_unicast_stop, 2, CAP_UNICAST_CLIENT_STREAM_COUNT),
+		      cmd_cap_initiator_unicast_stop, 1, CAP_UNICAST_CLIENT_STREAM_COUNT),
 	SHELL_CMD_ARG(unicast_cancel, NULL, "Unicast cancel current procedure",
 		      cmd_cap_initiator_unicast_cancel, 1, 0),
 #if UNICAST_SINK_SUPPORTED
