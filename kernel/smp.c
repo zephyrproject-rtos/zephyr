@@ -122,7 +122,7 @@ static inline void smp_init_top(void *arg)
 		/* Initialize the dummy thread struct so that
 		 * the scheduler can schedule actual threads to run.
 		 */
-		z_dummy_thread_init(&_thread_dummy);
+		z_dummy_thread_init(&_thread_dummies[arch_curr_cpu()->id]);
 	}
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
