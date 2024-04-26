@@ -1118,7 +1118,11 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 				cmd_erase.Address, cmd_erase.AddressSize,
 				cmd_erase.AddressMode, cmd_erase.Instruction);
 
-			ospi_send_cmd(dev, &cmd_erase);
+			ret = ospi_send_cmd(dev, &cmd_erase);
+			if (ret < 0) {
+				LOG_ERR("Sector/Block Erase addr 0x%x failed", cmd_erase.Address);
+				break;
+			}
 
 			if (bet != NULL) {
 				addr += BIT(bet->exp);
