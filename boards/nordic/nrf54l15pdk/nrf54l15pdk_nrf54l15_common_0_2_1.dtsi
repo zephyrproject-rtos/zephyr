@@ -35,3 +35,18 @@
 &button3 {
 	gpios = <&gpio2 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 };
+
+&pinctrl {
+	/omit-if-no-ref/ pwm20_default: pwm20_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 8)>;
+		};
+	};
+
+	/omit-if-no-ref/ pwm20_sleep: pwm20_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 8)>;
+			low-power-enable;
+		};
+	};
+};
