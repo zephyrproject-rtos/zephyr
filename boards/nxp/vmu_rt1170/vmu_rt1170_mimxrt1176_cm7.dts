@@ -402,6 +402,7 @@
 	status = "okay";
 	no-1-8-v;
 	pwr-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio3 31 (GPIO_ACTIVE_LOW | GPIO_PULL_DOWN)>;
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		status = "okay";
