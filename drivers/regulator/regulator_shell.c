@@ -398,9 +398,9 @@ static int cmd_adset(const struct shell *sh, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
-	if (strcmp(argv[2], "enable")) {
+	if (strcmp(argv[2], "enable") == 0) {
 		ad = true;
-	} else if (strcmp(argv[2], "disable")) {
+	} else if (strcmp(argv[2], "disable") == 0) {
 		ad = false;
 	} else {
 		shell_error(sh, "Invalid parameter");
