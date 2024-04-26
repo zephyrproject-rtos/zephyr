@@ -499,9 +499,6 @@ harness_config: <harness configuration options>
     ordered: <True|False> (default False)
         Check the regular expression strings in orderly or randomly fashion
 
-    repeat: <integer>
-        Number of times to validate the repeated regex expression
-
     record: <recording options> (optional)
       regex: <regular expression> (required)
         The regular expression with named subgroups to match data fields
