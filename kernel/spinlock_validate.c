@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel_internal.h>
+#include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 
 bool z_spin_lock_valid(struct k_spinlock *l)
@@ -20,17 +20,10 @@ bool z_spin_lock_valid(struct k_spinlock *l)
 
 bool z_spin_unlock_valid(struct k_spinlock *l)
 {
-	uintptr_t tcpu = l->thread_cpu;
-
-	l->thread_cpu = 0;
-
-	if (arch_is_in_isr() && _current->base.thread_state & _THREAD_DUMMY) {
-		/* Edge case where an ISR aborted _current */
-		return true;
-	}
-	if (tcpu != (_current_cpu->id | (uintptr_t)_current)) {
+	if (l->thread_cpu != (_current_cpu->id | (uintptr_t)_current)) {
 		return false;
 	}
+	l->thread_cpu = 0;
 	return true;
 }
 
