@@ -1,0 +1,5 @@
+if (DEFINED BOARD_REVISION)
+  if (NOT (BOARD_REVISION STREQUAL "pca9422"))
+    message(FATAL_ERROR "Invalid board revision, ${BOARD_REVISION}, valid revisions are: pca9422")
+  endif()
+endif()

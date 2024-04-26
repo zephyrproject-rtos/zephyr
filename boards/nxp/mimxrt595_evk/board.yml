@@ -3,3 +3,5 @@ board:
   vendor: nxp
   socs:
     - name: mimxrt595s
+  revision:
+    format: "custom"

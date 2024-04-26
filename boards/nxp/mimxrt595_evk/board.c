@@ -32,12 +32,24 @@ static uint32_t sc_trim_192, rd_trim_192, sc_trim_96, rd_trim_96;
 #if CONFIG_REGULATOR
 #include <zephyr/drivers/regulator.h>
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_pca9420)
 #define NODE_PCA9420	DT_NODELABEL(pca9420)
 #define NODE_SW1	DT_NODELABEL(pca9420_sw1)
 #define NODE_SW2	DT_NODELABEL(pca9420_sw2)
 #define NODE_LDO1	DT_NODELABEL(pca9420_ldo1)
 #define NODE_LDO2	DT_NODELABEL(pca9420_ldo2)
-static const struct device *pca9420 = DEVICE_DT_GET(NODE_PCA9420);
+static const struct device *pmic_dev = DEVICE_DT_GET(NODE_PCA9420);
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_pca9422)
+#define NODE_PCA9422	DT_NODELABEL(pca9422)
+#define NODE_SW1	DT_NODELABEL(pca9422_sw1)
+#define NODE_SW2	DT_NODELABEL(pca9422_sw2)
+#define NODE_LDO1	DT_NODELABEL(pca9422_ldo1)
+#define NODE_LDO2	DT_NODELABEL(pca9422_ldo2)
+static const struct device *pmic_dev = DEVICE_DT_GET(NODE_PCA9422);
+#else
+#error Unsupported PMIC
+#endif
+
 static const struct device *sw1 = DEVICE_DT_GET(NODE_SW1);
 static const struct device *sw2 = DEVICE_DT_GET(NODE_SW2);
 static const struct device *ldo1 = DEVICE_DT_GET(NODE_LDO1);
@@ -128,7 +140,7 @@ static int board_pmic_change_mode(uint8_t pmic_mode)
 		return -ERANGE;
 	}
 
-	ret = regulator_parent_dvs_state_set(pca9420, pmic_mode);
+	ret = regulator_parent_dvs_state_set(pmic_dev, pmic_mode);
 	if (ret != -EPERM) {
 		return ret;
 	}

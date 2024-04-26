@@ -1,0 +1,80 @@
+&pmic_i2c {
+	  /delete-node/ pca9420@61;
+
+	  pca9422: pca9422@61 {
+		compatible = "nxp,pca9422";
+		reg = <0x61>;
+
+		/* default is 1.0V */
+		pca9422_sw1: BUCK1 {
+			nxp,lpmode = <0>;
+			nxp,mode0-microvolt = <1100000>;
+			nxp,mode1-microvolt = <600000>;
+			nxp,mode2-microvolt = <900000>;
+			nxp,mode3-microvolt = <900000>;
+		};
+
+		/* default is 1.0V. not used, turn off */
+		pca9422_sw2: BUCK2 {
+			nxp,lpmode = <0>;
+			nxp,mode0-microvolt = <0>;
+			nxp,mode1-microvolt = <0>;
+			nxp,mode2-microvolt = <0>;
+			nxp,mode3-microvolt = <0>;
+		};
+
+		/* default is 1.8V */
+		pca9422_sw3: BUCK3 {
+			nxp,lpmode = <0>;
+			nxp,mode0-microvolt = <1800000>;
+			nxp,mode1-microvolt = <1800000>;
+			nxp,mode2-microvolt = <1800000>;
+			nxp,mode3-microvolt = <1800000>;
+		};
+
+		/* default is 5.0V. not used, turn off */
+		pca9422_sw4: BUCKBOOST {
+			nxp,lpmode = <0>;
+			nxp,mode0-microvolt = <0>;
+			nxp,mode1-microvolt = <0>;
+			nxp,mode2-microvolt = <0>;
+			nxp,mode3-microvolt = <0>;
+		};
+
+		/* default is 1.8V */
+		pca9422_ldo1: LDO1 {
+			nxp,lpmode = <3>;
+			nxp,mode0-microvolt = <1800000>;
+			nxp,mode1-microvolt = <1800000>;
+			nxp,mode2-microvolt = <1800000>;
+			nxp,mode3-microvolt = <1800000>;
+		};
+
+		/* default is 1.8V */
+		pca9422_ldo2: LDO2 {
+			nxp,lpmode = <3>;
+			nxp,mode0-microvolt = <1800000>;
+			nxp,mode1-microvolt = <1800000>;
+			nxp,mode2-microvolt = <1800000>;
+			nxp,mode3-microvolt = <0>;
+		};
+
+		/* default is 1.8V. not used, turn off */
+		pca9422_ldo3: LDO3 {
+			nxp,lpmode = <3>;
+			nxp,mode0-microvolt = <0>;
+			nxp,mode1-microvolt = <0>;
+			nxp,mode2-microvolt = <0>;
+			nxp,mode3-microvolt = <0>;
+		};
+
+		/* default is 3.3V. */
+		pca9422_ldo4: LDO4 {
+			nxp,lpmode = <3>;
+			nxp,mode0-microvolt = <3300000>;
+			nxp,mode1-microvolt = <3300000>;
+			nxp,mode2-microvolt = <3300000>;
+			nxp,mode3-microvolt = <3300000>;
+		};
+	};
+};
