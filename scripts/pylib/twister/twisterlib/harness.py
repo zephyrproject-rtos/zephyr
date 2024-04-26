@@ -49,7 +49,6 @@ class Harness:
         self.regex = []
         self.matches = OrderedDict()
         self.ordered = True
-        self.repeat = 1
         self.id = None
         self.fail_on_fault = True
         self.fault = False
@@ -78,7 +77,6 @@ class Harness:
         if config:
             self.type = config.get('type', None)
             self.regex = config.get('regex', [])
-            self.repeat = config.get('repeat', 1)
             self.ordered = config.get('ordered', True)
             self.record = config.get('record', {})
             if self.record:
