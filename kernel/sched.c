@@ -33,7 +33,7 @@ struct k_spinlock _sched_spinlock;
 /* Storage to "complete" the context switch from an invalid/incomplete thread
  * context (ex: exiting an ISR that aborted _current)
  */
-__incoherent struct k_thread _thread_dummy;
+__incoherent struct k_thread _thread_dummies[CONFIG_MP_MAX_NUM_CPUS];
 
 static void update_cache(int preempt_ok);
 static void halt_thread(struct k_thread *thread, uint8_t new_state);
@@ -1363,7 +1363,7 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state)
 		 * code.
 		 */
 		if (dummify && !IS_ENABLED(CONFIG_ARCH_POSIX)) {
-			z_dummy_thread_init(&_thread_dummy);
+			z_dummy_thread_init(&_thread_dummies[_current_cpu->id]);
 		}
 	}
 }
