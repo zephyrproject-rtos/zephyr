@@ -1695,13 +1695,23 @@ out:
 
 static void address_expired(struct net_if_addr *ifaddr)
 {
-	NET_DBG("IPv6 address %s is deprecated",
+	NET_DBG("IPv6 address %s is expired",
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
 
 	sys_slist_find_and_remove(&active_address_lifetime_timers,
 				  &ifaddr->lifetime.node);
 
 	net_timeout_set(&ifaddr->lifetime, 0, 0);
+
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		ARRAY_FOR_EACH(iface->config.ip.ipv6->unicast, i) {
+			if (&iface->config.ip.ipv6->unicast[i] == ifaddr) {
+				net_if_ipv6_addr_rm(iface,
+					&iface->config.ip.ipv6->unicast[i].address.in6_addr);
+				return;
+			}
+		}
+	}
 }
 
 static void address_lifetime_timeout(struct k_work *work)
