@@ -810,6 +810,7 @@ static inline bool add_pa_sync_base_subgroup_cb(const struct bt_bap_base_subgrou
 
 	ret = bt_bap_base_subgroup_foreach_bis(subgroup, add_pa_sync_base_subgroup_bis_cb,
 					       subgroup_param);
+
 	if (ret < 0) {
 		return false;
 	}
@@ -847,6 +848,8 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 	bt_addr_le_copy(&param.addr, &pa_info.addr);
 	param.adv_sid = pa_info.sid;
 	param.pa_interval = pa_info.interval;
+
+	memset(&subgroup_params, 0, sizeof(subgroup_params));
 
 	param.pa_sync = shell_strtobool(argv[1], 0, &err);
 	if (err != 0) {
@@ -896,6 +899,22 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 		if (err < 0) {
 			shell_error(ctx_shell, "Could not add BASE to params %d", err);
 
+			return -ENOEXEC;
+		}
+	}
+
+	/* use the BASE to verify the BIS indexes set by command */
+	for (size_t j = 0U; j < param.num_subgroups; j++) {
+		if (bis_bitfield_req == 0) {
+			/* Not set the BIS indexes by command, use BASE directly */
+			break;
+		} else if ((subgroup_params[j].bis_sync & bis_bitfield_req) != 0) {
+			subgroup_params[j].bis_sync &= bis_bitfield_req;
+		} else {
+			/* Command is rejected when BASE does not support BIS index in command */
+			shell_error(ctx_shell, "Cannot set BIS index 0x%06X when BASE subgroup %d "
+				    "only supports %d", bis_bitfield_req, j,
+				    subgroup_params[j].bis_sync);
 			return -ENOEXEC;
 		}
 	}
