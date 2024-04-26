@@ -43,6 +43,7 @@ tests:
       - stm32l562e_dk
       - twr_ke18f
       - lpcxpresso55s36
+      - rd_rw612_bga
     depends_on: dac
     integration_platforms:
       - nucleo_l152re
