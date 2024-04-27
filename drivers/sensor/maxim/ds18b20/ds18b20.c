@@ -9,9 +9,11 @@
  * A datasheet is available at:
  * https://datasheets.maximintegrated.com/en/ds/DS18B20.pdf
  *
+ * Driver also support the older DS18S20 1-Wire temperature sensors.
+ * https://www.analog.com/media/en/technical-documentation/data-sheets/ds18b20.pdf
+ *
  * Parasite power configuration is not supported by the driver.
  */
-#define DT_DRV_COMPAT maxim_ds18b20
 
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/w1_sensor.h>
@@ -25,15 +27,25 @@ LOG_MODULE_REGISTER(DS18B20, CONFIG_SENSOR_LOG_LEVEL);
 static int ds18b20_configure(const struct device *dev);
 
 /* measure wait time for 9-bit, 10-bit, 11-bit, 12-bit resolution respectively */
-static const uint16_t measure_wait_ms[4] = { 94, 188, 376, 750 };
+static const uint16_t measure_wait_ds18b20_ms[4] = { 94, 188, 376, 750 };
 
-static inline void ds18b20_temperature_from_raw(uint8_t *temp_raw,
+/* ds18s20 always needs 750ms */
+static const uint16_t measure_wait_ds18s20_ms = { 750 };
+
+static inline void ds18b20_temperature_from_raw(const struct device *dev,
+						uint8_t *temp_raw,
 						struct sensor_value *val)
 {
-	int16_t temp = sys_get_le16(temp_raw);
+	const struct ds18b20_config *cfg = dev->config;
+	int16_t temp = sys_get_le16 (temp_raw);
 
-	val->val1 = temp / 16;
-	val->val2 = (temp % 16) * 1000000 / 16;
+	if (cfg->chip == type_ds18s20) {
+		val->val1 = temp / 2;
+		val->val2 = (temp % 2) * 5000000;
+	} else {
+		val->val1 = temp / 16;
+		val->val2 = (temp % 16) * 1000000 / 16;
+	}
 }
 
 /*
@@ -95,10 +107,20 @@ static void ds18b20_set_resolution(const struct device *dev, uint8_t resolution)
 	data->scratchpad.config |= DS18B20_RESOLUTION(resolution);
 }
 
+static uint16_t measure_wait_ms(const struct device *dev)
+{
+	const struct ds18b20_config *cfg = dev->config;
+
+	if (cfg->chip == type_ds18s20) {
+		return measure_wait_ds18s20_ms;
+	}
+
+	return measure_wait_ds18b20_ms[DS18B20_RESOLUTION_INDEX(cfg->resolution)];
+}
+
 static int ds18b20_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
-	const struct ds18b20_config *cfg = dev->config;
 	struct ds18b20_data *data = dev->data;
 	int status;
 
@@ -118,7 +140,7 @@ static int ds18b20_sample_fetch(const struct device *dev,
 		LOG_DBG("W1 fetch error");
 		return status;
 	}
-	k_msleep(measure_wait_ms[DS18B20_RESOLUTION_INDEX(cfg->resolution)]);
+	k_msleep(measure_wait_ms(dev));
 	return ds18b20_read_scratchpad(dev, &data->scratchpad);
 }
 
@@ -132,7 +154,7 @@ static int ds18b20_channel_get(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	ds18b20_temperature_from_raw((uint8_t *)&data->scratchpad.temp, val);
+	ds18b20_temperature_from_raw(dev, (uint8_t *)&data->scratchpad.temp, val);
 	return 0;
 }
 
@@ -159,17 +181,19 @@ static int ds18b20_configure(const struct device *dev)
 	}
 
 	if ((cfg->family != 0) && (cfg->family != data->config.rom.family)) {
-		LOG_ERR("Found 1-Wire slave is not a DS18B20");
+		LOG_ERR("Found 1-Wire slave is not a %s", dev->name);
 		return -EINVAL;
 	}
 
 	/* write default configuration */
-	ds18b20_set_resolution(dev, cfg->resolution);
-	ret = ds18b20_write_scratchpad(dev, data->scratchpad);
-	if (ret < 0) {
-		return ret;
+	if (cfg->chip == type_ds18b20) {
+		ds18b20_set_resolution(dev, cfg->resolution);
+		ret = ds18b20_write_scratchpad(dev, data->scratchpad);
+		if (ret < 0) {
+			return ret;
+		}
 	}
-	LOG_DBG("Init DS18B20: ROM=%016llx\n",
+	LOG_DBG("Init %s: ROM=%016llx\n", dev->name,
 		w1_rom_to_uint64(&data->config.rom));
 
 	return 0;
@@ -214,24 +238,35 @@ static int ds18b20_init(const struct device *dev)
 	return 0;
 }
 
-#define DS18B20_CONFIG_INIT(inst)					       \
-	{								       \
+#define DS18B20_CONFIG_INIT(inst, default_family_code, chip_type)    \
+	{								\
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		       \
-		.family = (uint8_t)DT_INST_PROP_OR(inst, family_code, 0x28),   \
-		.resolution = DT_INST_PROP(inst, resolution),		       \
+		.family = (uint8_t)DT_INST_PROP_OR(inst, family_code, default_family_code),   \
+		.resolution = DT_INST_PROP_OR(inst, resolution, 12),		\
+		.chip = chip_type,	\
 	}
 
-#define DS18B20_DEFINE(inst)						\
-	static struct ds18b20_data ds18b20_data_##inst;			\
-	static const struct ds18b20_config ds18b20_config_##inst =	\
-		DS18B20_CONFIG_INIT(inst);				\
+#define DS18B20_DEFINE(inst, name, family_code, chip_type)		\
+	static struct ds18b20_data data_##name##_##inst;			\
+	static const struct ds18b20_config config_##name##_##inst =	\
+		DS18B20_CONFIG_INIT(inst, family_code, chip_type);	\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			      ds18b20_init,				\
 			      NULL,					\
-			      &ds18b20_data_##inst,			\
-			      &ds18b20_config_##inst,			\
+			      &data_##name##_##inst,			\
+			      &config_##name##_##inst,			\
 			      POST_KERNEL,				\
 			      CONFIG_SENSOR_INIT_PRIORITY,		\
 			      &ds18b20_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(DS18B20_DEFINE)
+#define DT_DRV_COMPAT maxim_ds18b20
+DT_INST_FOREACH_STATUS_OKAY_VARGS(DS18B20_DEFINE, DT_DRV_COMPAT,
+				DS18B20_FAMILYCODE,
+				type_ds18b20)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT maxim_ds18s20
+DT_INST_FOREACH_STATUS_OKAY_VARGS(DS18B20_DEFINE, DT_DRV_COMPAT,
+				DS18S20_FAMILYCODE,
+				type_ds18s20)
+#undef DT_DRV_COMPAT
