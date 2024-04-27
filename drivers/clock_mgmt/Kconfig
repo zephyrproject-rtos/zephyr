@@ -1,0 +1,37 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# Clock controller drivers
+#
+menuconfig CLOCK_MGMT
+	bool "Clock management drivers"
+	help
+	  Enable support for clock management drivers. These drivers provide
+	  clock configuration to the system via a series of setpoints, which
+	  allow drivers to configure clocks based on their desired power
+	  state
+
+if CLOCK_MGMT
+
+module = CLOCK_MGMT
+module-str = clock management
+source "subsys/logging/Kconfig.template.log_config"
+
+config CLOCK_MGMT_SET_RATE
+	bool "Support runtime rate setting"
+	help
+	  Allow clock consumers to request a given clock frequency via the
+	  clock management framework. The framework will then configure the
+	  clock tree so that the consumer is supplied with the closest
+	  possible frequency to its request. Note that enabling this feature
+	  will result in increased flash utilization
+
+config CLOCK_MGMT_NOTIFY
+	bool "Support clock rate change notifications"
+	help
+	  Support clock rate change notifications. When enabled, clock
+	  consumers can register for a callback when the frequency of their
+	  output clock changes.
+
+endif # CLOCK_MGMT
