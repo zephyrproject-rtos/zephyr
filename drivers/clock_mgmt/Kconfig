@@ -49,4 +49,6 @@ config CLOCK_MGMT_OUTPUT
 	  Output clock driver. Allows users to request clock rates directly
 	  when support is enabled by the clock management subsystem
 
+source "drivers/clock_mgmt/nxp_syscon/Kconfig"
+
 endif # CLOCK_MGMT

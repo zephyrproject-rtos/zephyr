@@ -25,6 +25,10 @@ extern "C" {
 
 /* Include individual clock driver headers here */
 
+#ifdef CONFIG_CLOCK_MGMT_NXP_SYSCON
+#include "nxp_syscon/nxp_syscon.h"
+#endif
+
 /** @endcond */
 
 #ifdef __cplusplus

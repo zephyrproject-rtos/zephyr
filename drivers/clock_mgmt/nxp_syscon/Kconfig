@@ -1,0 +1,55 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_MGMT_NXP_SYSCON
+	bool
+	help
+	  NXP SYSCON clock drivers
+
+config CLOCK_MGMT_NXP_SYSCON_SOURCE
+	bool "NXP syscon clock source driver"
+	default y
+	depends on DT_HAS_NXP_SYSCON_CLOCK_SOURCE_ENABLED
+	select CLOCK_MGMT_NXP_SYSCON
+	help
+	  NXP SYSCON clock source driver
+
+config CLOCK_MGMT_NXP_SYSCON_GATE
+	bool "NXP syscon clock gate driver"
+	default y
+	depends on DT_HAS_NXP_SYSCON_CLOCK_GATE_ENABLED
+	select CLOCK_MGMT_NXP_SYSCON
+	help
+	  NXP SYSCON clock gate driver
+
+config CLOCK_MGMT_NXP_SYSCON_DIV
+	bool "NXP syscon clock divider driver"
+	default y
+	depends on DT_HAS_NXP_SYSCON_CLOCK_DIV_ENABLED
+	select CLOCK_MGMT_NXP_SYSCON
+	help
+	  NXP SYSCON clock divider driver
+
+config CLOCK_MGMT_NXP_SYSCON_MUX
+	bool "NXP syscon clock multiplexer driver"
+	default y
+	depends on DT_HAS_NXP_SYSCON_CLOCK_MUX_ENABLED
+	select CLOCK_MGMT_NXP_SYSCON
+	help
+	  NXP SYSCON clock multiplexer driver
+
+config CLOCK_MGMT_NXP_SYSCON_FLEXFRG
+	bool "NXP syscon Flexcomm fractional rate generator driver"
+	default y
+	depends on DT_HAS_NXP_SYSCON_FLEXFRG_ENABLED
+	select CLOCK_MGMT_NXP_SYSCON
+	help
+	  NXP SYSCON FLEXFRG driver
+
+config CLOCK_MGMT_NXP_SYSCON_RTCCLK
+	bool "NXP syscon rtc clock divider driver"
+	default y
+	depends on DT_HAS_NXP_SYSCON_RTCCLK_ENABLED
+	select CLOCK_MGMT_NXP_SYSCON
+	help
+	  NXP SYSCON RTCCLK driver
