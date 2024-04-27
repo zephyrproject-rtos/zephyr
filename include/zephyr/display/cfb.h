@@ -124,6 +124,18 @@ struct cfb_framebuffer {
 	 * Framebuffer height in pixels.
 	 */
 	uint16_t height;
+
+	/**
+	 * @private
+	 * The top-left of partial-framebuffer.
+	 */
+	struct cfb_position pos;
+
+	/**
+	 * @private
+	 * Resolution of a framebuffer in pixels in X direction.
+	 */
+	struct cfb_position res;
 };
 
 /**

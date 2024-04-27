@@ -81,6 +81,43 @@ static inline uint8_t bytes_per_pixel(const enum display_pixel_format pixel_form
 	return (bits_per_pixel < 8) ? 1 : (bits_per_pixel / 8);
 }
 
+static inline uint16_t fb_top(const struct cfb_framebuffer *fb)
+{
+	return fb->pos.y;
+}
+
+static inline uint16_t fb_left(const struct cfb_framebuffer *fb)
+{
+	return fb->pos.x;
+}
+
+static inline uint16_t fb_bottom(const struct cfb_framebuffer *fb)
+{
+	return fb->pos.y + fb->height;
+}
+
+static inline uint16_t fb_right(const struct cfb_framebuffer *fb)
+{
+	return fb->pos.x + fb->width;
+}
+
+static inline uint32_t fb_screen_buf_size(const struct cfb_framebuffer *fb)
+{
+	return fb->res.x * fb->res.y * bytes_per_pixel(fb->pixel_format) /
+	       pixels_per_tile(fb->pixel_format);
+}
+
+static bool check_font_in_rect(int16_t x, int16_t y, const struct cfb_font *fptr,
+			       const struct cfb_framebuffer *fb)
+{
+	if ((x > fb_right(fb)) || (y > fb_bottom(fb)) || (x + fptr->width <= fb_left(fb)) ||
+	    (y + fptr->height <= fb_top(fb))) {
+		return false;
+	}
+
+	return true;
+}
+
 static inline bool fb_is_tiled(const struct cfb_framebuffer *fb)
 {
 	if ((fb->pixel_format == PIXEL_FORMAT_MONO01) ||
@@ -231,28 +268,38 @@ static uint8_t draw_char_vtmono(struct cfb_framebuffer *fb, char c, int16_t x, i
 				const struct cfb_font *fptr, bool draw_bg, uint32_t fg_color)
 {
 	const uint8_t *glyph_ptr = get_glyph_ptr(fptr, c);
+	const uint8_t draw_width = MIN(fptr->width, fb_right(fb) - x);
+	const uint8_t draw_height = MIN(fptr->height, fb_bottom(fb) - y);
 	const bool font_is_msbfirst = ((fptr->caps & CFB_FONT_MSB_FIRST) != 0);
 	const bool need_reverse =
 		(((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0) != font_is_msbfirst);
 
-	for (size_t g_x = 0; g_x < fptr->width; g_x++) {
-		const int16_t fb_x = x + g_x;
+	if (!check_font_in_rect(x, y, fptr, fb)) {
+		return fptr->width;
+	}
 
-		for (size_t g_y = 0; g_y < fptr->height;) {
+	for (size_t g_x = 0; g_x < draw_width; g_x++) {
+		const int16_t fb_x = x + g_x - fb->pos.x;
+
+		if (fb_x < 0 || fb->res.x <= fb_x) {
+			continue;
+		}
+
+		for (size_t g_y = 0; g_y < draw_height;) {
 			/*
 			 * Process glyph rendering in the y direction
 			 * by separating per 8-line boundaries.
 			 */
 
-			const int16_t fb_y = y + g_y;
+			const int16_t fb_y = y + g_y - fb->pos.y;
 			const size_t fb_index = (fb_y / 8U) * fb->width + fb_x;
-			const size_t offset = (y >= 0) ? y % 8 : (8 + (y % 8));
-			const uint8_t bottom_lines = ((offset + fptr->height) % 8);
+			const size_t offset = (y >= 0) ? y % 8 : 8 + (y % 8);
+			const uint8_t bottom_lines = (offset + fptr->height) % 8;
 			uint8_t bg_mask;
 			uint8_t byte;
 			uint8_t next_byte;
 
-			if (fb_x < 0 || fb->width <= fb_x || fb_y < 0 || fb->height <= fb_y) {
+			if (fb_y < 0 || fb->height <= fb_y) {
 				g_y++;
 				continue;
 			}
@@ -355,18 +402,24 @@ static uint8_t draw_char_color(struct cfb_framebuffer *fb, char c, int16_t x, in
 			       uint32_t bg_color)
 {
 	const uint8_t *glyph_ptr = get_glyph_ptr(fptr, c);
+	const uint8_t draw_width = MIN(fptr->width, fb_right(fb) - x);
+	const uint8_t draw_height = MIN(fptr->height, fb_bottom(fb) - y);
 
-	for (size_t g_x = 0; g_x < fptr->width; g_x++) {
-		const int16_t fb_x = x + g_x;
+	if (!check_font_in_rect(x, y, fptr, fb)) {
+		return fptr->width;
+	}
 
-		if ((fb_x < 0) || (fb->width <= fb_x)) {
+	for (size_t g_x = 0; g_x < draw_width; g_x++) {
+		const int16_t fb_x = x + g_x - fb->pos.x;
+
+		if ((fb_x < 0) || (fb->res.x <= fb_x)) {
 			continue;
 		}
 
-		for (size_t g_y = 0; g_y < fptr->height; g_y++) {
+		for (size_t g_y = 0; g_y < draw_height; g_y++) {
 			const size_t b = g_y % 8;
 			const uint8_t pos = (fptr->caps & CFB_FONT_MSB_FIRST) ? BIT(7 - b) : BIT(b);
-			const int16_t fb_y = y + g_y;
+			const int16_t fb_y = y + g_y - fb->pos.y;
 			const size_t fb_index =
 				(fb_y * fb->width + fb_x) * bytes_per_pixel(fb->pixel_format);
 			const uint8_t byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8);
@@ -394,30 +447,29 @@ static uint8_t draw_char_color(struct cfb_framebuffer *fb, char c, int16_t x, in
 static inline void draw_point(struct cfb_framebuffer *fb, int16_t x, int16_t y, uint32_t fg_color)
 {
 	const bool need_reverse = ((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0);
+	const int16_t x_off = x - fb->pos.x;
+	const int16_t y_off = y - fb->pos.y;
 
-	if (x < 0 || x >= fb->width) {
+	if (x < fb_left(fb) || x >= fb_right(fb)) {
 		return;
 	}
 
-	if (y < 0 || y >= fb->height) {
+	if (y < fb_top(fb) || y >= fb_bottom(fb)) {
 		return;
 	}
 
 	if (fb_is_tiled(fb)) {
-		const size_t index = (y / 8) * fb->width;
-		uint8_t m = BIT(y % 8);
-
-		if (need_reverse) {
-			m = byte_reverse(m);
-		}
+		const size_t index = (y_off / 8) * fb->width;
+		const uint8_t m = BIT(y_off % 8);
 
 		if (fg_color) {
-			fb->buf[index + x] |= m;
+			fb->buf[index + x_off] |= (need_reverse ? byte_reverse(m) : m);
 		} else {
-			fb->buf[index + x] &= ~m;
+			fb->buf[index + x_off] &= ~(need_reverse ? byte_reverse(m) : m);
 		}
 	} else {
-		const size_t index = (y * fb->width + x) * bytes_per_pixel(fb->pixel_format);
+		const size_t index =
+			(y_off * fb->width + x_off) * bytes_per_pixel(fb->pixel_format);
 
 		set_color_bytes(&fb->buf[index], bytes_per_pixel(fb->pixel_format), fg_color);
 	}
@@ -459,7 +511,7 @@ static void draw_text(struct cfb_framebuffer *fb, const char *const str, int16_t
 		      uint32_t bg_color)
 {
 	for (size_t i = 0; i < strlen(str); i++) {
-		if ((x + fptr->width > fb->width) && print) {
+		if ((x + fptr->width > fb->res.x) && print) {
 			x = 0U;
 			y += fptr->height;
 		}
@@ -531,13 +583,29 @@ int cfb_invert_area(struct cfb_framebuffer *fb, int16_t x, int16_t y, uint16_t w
 {
 	const bool need_reverse = ((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0);
 
-	if ((x + width) < 0 || x >= fb->width) {
+	if ((x + width) < fb_left(fb) || x >= fb_right(fb)) {
 		return 0;
 	}
 
-	if ((y + height) < 0 || y >= fb->height) {
+	if ((y + height) < fb_top(fb) || y >= fb_bottom(fb)) {
 		return 0;
 	}
+
+	x -= fb->pos.x;
+	y -= fb->pos.y;
+
+	if (x < 0) {
+		width += x;
+		x = 0;
+	}
+
+	if (y < 0) {
+		height += y;
+		y = 0;
+	}
+
+	width = MIN(width, fb->width - x);
+	height = MIN(height, fb->height - y);
 
 	for (int i = x; i < x + width; i++) {
 		if (i < 0 || i >= fb->width) {
@@ -788,6 +856,10 @@ int cfb_display_init(struct cfb_display *disp, const struct cfb_display_init_par
 
 	disp->fb.pixel_format = cfg.current_pixel_format;
 	disp->fb.screen_info = cfg.screen_info;
+	disp->fb.pos.x = 0;
+	disp->fb.pos.y = 0;
+	disp->fb.res.x = cfg.x_resolution;
+	disp->fb.res.y = cfg.y_resolution;
 	disp->fb.width = cfg.x_resolution;
 	disp->fb.height = cfg.y_resolution;
 	disp->fb.size = param->transfer_buf_size;
