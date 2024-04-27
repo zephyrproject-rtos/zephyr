@@ -34,4 +34,19 @@ config CLOCK_MGMT_NOTIFY
 	  consumers can register for a callback when the frequency of their
 	  output clock changes.
 
+config CLOCK_MGMT_FIXED_SOURCE
+	bool "Fixed clock source driver"
+	default y
+	depends on DT_HAS_FIXED_CLOCK_SOURCE_ENABLED
+	help
+	  Fixed clock source driver, for non configurable clock sources
+
+config CLOCK_MGMT_OUTPUT
+	bool "Output clock driver"
+	default y
+	depends on DT_HAS_CLOCK_OUTPUT_ENABLED
+	help
+	  Output clock driver. Allows users to request clock rates directly
+	  when support is enabled by the clock management subsystem
+
 endif # CLOCK_MGMT
