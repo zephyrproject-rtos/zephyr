@@ -86,162 +86,86 @@ config GPIO_ENABLE_DISABLE_INTERRUPT
 	  on/off the interrupt signal without changing other registers, such as
 	  pending register, etc. The driver must implement it to work.
 
-
+# zephyr-keep-sorted-start
 source "drivers/gpio/Kconfig.ad559x"
-
-source "drivers/gpio/Kconfig.axp192"
-
-source "drivers/gpio/Kconfig.b91"
-
-source "drivers/gpio/Kconfig.dw"
-
-source "drivers/gpio/Kconfig.pca95xx"
-
-source "drivers/gpio/Kconfig.mcp23s17"
-
-source "drivers/gpio/Kconfig.mcp23xxx"
-
-source "drivers/gpio/Kconfig.mcux"
-
-source "drivers/gpio/Kconfig.mcux_igpio"
-
-source "drivers/gpio/Kconfig.mcux_rgpio"
-
-source "drivers/gpio/Kconfig.mcux_lpc"
-
-source "drivers/gpio/Kconfig.mmio32"
-
-source "drivers/gpio/Kconfig.stm32"
-
-source "drivers/gpio/Kconfig.nrfx"
-
-source "drivers/gpio/Kconfig.cmsdk_ahb"
-
-source "drivers/gpio/Kconfig.cc13xx_cc26xx"
-
-source "drivers/gpio/Kconfig.cc32xx"
-
-source "drivers/gpio/Kconfig.sifive"
-
-source "drivers/gpio/Kconfig.esp32"
-
-source "drivers/gpio/Kconfig.gecko"
-
-source "drivers/gpio/Kconfig.sam0"
-
-source "drivers/gpio/Kconfig.sam"
-
-source "drivers/gpio/Kconfig.sx1509b"
-
-source "drivers/gpio/Kconfig.imx"
-
-source "drivers/gpio/Kconfig.it8xxx2"
-
-source "drivers/gpio/Kconfig.ifx_cat1"
-
-source "drivers/gpio/Kconfig.intel"
-
-source "drivers/gpio/Kconfig.xec"
-
-source "drivers/gpio/Kconfig.stellaris"
-
-source "drivers/gpio/Kconfig.rpi_pico"
-
-source "drivers/gpio/Kconfig.rv32m1"
-
-source "drivers/gpio/Kconfig.lmp90xxx"
-
 source "drivers/gpio/Kconfig.ads114s0x"
-
-source "drivers/gpio/Kconfig.litex"
-
-source "drivers/gpio/Kconfig.lpc11u6x"
-
-source "drivers/gpio/Kconfig.xlnx"
-
-source "drivers/gpio/Kconfig.npcx"
-
-source "drivers/gpio/Kconfig.emul"
-
-source "drivers/gpio/Kconfig.emul_sdl"
-
-source "drivers/gpio/Kconfig.psoc6"
-
-source "drivers/gpio/Kconfig.pcal64xxa"
-
-source "drivers/gpio/Kconfig.eos_s3"
-
-source "drivers/gpio/Kconfig.rcar"
-
-source "drivers/gpio/Kconfig.cy8c95xx"
-
-source "drivers/gpio/Kconfig.creg_gpio"
-
-source "drivers/gpio/Kconfig.stmpe1600"
-
-source "drivers/gpio/Kconfig.pca953x"
-
-source "drivers/gpio/Kconfig.pcf857x"
-
-source "drivers/gpio/Kconfig.fxl6408"
-
-source "drivers/gpio/Kconfig.andes_atcgpio100"
-
-source "drivers/gpio/Kconfig.neorv32"
-
-source "drivers/gpio/Kconfig.nct38xx"
-
-source "drivers/gpio/Kconfig.test"
-
-source "drivers/gpio/Kconfig.gd32"
-
-source "drivers/gpio/Kconfig.xlnx_ps"
-
-source "drivers/gpio/Kconfig.sn74hc595"
-
-source "drivers/gpio/Kconfig.mchp_mss"
-
-source "drivers/gpio/Kconfig.xmc4xxx"
-
-source "drivers/gpio/Kconfig.smartbond"
-
-source "drivers/gpio/Kconfig.nxp_s32"
-
-source "drivers/gpio/Kconfig.tca6424a"
-
-source "drivers/gpio/Kconfig.npm1300"
-
-source "drivers/gpio/Kconfig.npm6001"
-
-source "drivers/gpio/Kconfig.rt1718s"
-
-source "drivers/gpio/Kconfig.numicro"
-
-source "drivers/gpio/Kconfig.bd8lb600fs"
-
-source "drivers/gpio/Kconfig.sc18im704"
-
-source "drivers/gpio/Kconfig.numaker"
-
-source "drivers/gpio/Kconfig.efinix_sapphire"
-
-source "drivers/gpio/Kconfig.davinci"
-source "drivers/gpio/Kconfig.sedi"
-
-source "drivers/gpio/Kconfig.tle9104"
-
 source "drivers/gpio/Kconfig.altera"
-
-source "drivers/gpio/Kconfig.bcm2711"
-
-source "drivers/gpio/Kconfig.renesas_ra"
-
-source "drivers/gpio/Kconfig.ene"
-
-source "drivers/gpio/Kconfig.rzt2m"
-
 source "drivers/gpio/Kconfig.ambiq"
-
+source "drivers/gpio/Kconfig.andes_atcgpio100"
+source "drivers/gpio/Kconfig.axp192"
+source "drivers/gpio/Kconfig.b91"
+source "drivers/gpio/Kconfig.bcm2711"
+source "drivers/gpio/Kconfig.bd8lb600fs"
 source "drivers/gpio/Kconfig.brcmstb"
+source "drivers/gpio/Kconfig.cc13xx_cc26xx"
+source "drivers/gpio/Kconfig.cc32xx"
+source "drivers/gpio/Kconfig.cmsdk_ahb"
+source "drivers/gpio/Kconfig.creg_gpio"
+source "drivers/gpio/Kconfig.cy8c95xx"
+source "drivers/gpio/Kconfig.davinci"
+source "drivers/gpio/Kconfig.dw"
+source "drivers/gpio/Kconfig.efinix_sapphire"
+source "drivers/gpio/Kconfig.emul"
+source "drivers/gpio/Kconfig.emul_sdl"
+source "drivers/gpio/Kconfig.ene"
+source "drivers/gpio/Kconfig.eos_s3"
+source "drivers/gpio/Kconfig.esp32"
+source "drivers/gpio/Kconfig.fxl6408"
+source "drivers/gpio/Kconfig.gd32"
+source "drivers/gpio/Kconfig.gecko"
+source "drivers/gpio/Kconfig.ifx_cat1"
+source "drivers/gpio/Kconfig.imx"
+source "drivers/gpio/Kconfig.intel"
+source "drivers/gpio/Kconfig.it8xxx2"
+source "drivers/gpio/Kconfig.litex"
+source "drivers/gpio/Kconfig.lmp90xxx"
+source "drivers/gpio/Kconfig.lpc11u6x"
+source "drivers/gpio/Kconfig.mchp_mss"
+source "drivers/gpio/Kconfig.mcp23s17"
+source "drivers/gpio/Kconfig.mcp23xxx"
+source "drivers/gpio/Kconfig.mcux"
+source "drivers/gpio/Kconfig.mcux_igpio"
+source "drivers/gpio/Kconfig.mcux_lpc"
+source "drivers/gpio/Kconfig.mcux_rgpio"
+source "drivers/gpio/Kconfig.mmio32"
+source "drivers/gpio/Kconfig.nct38xx"
+source "drivers/gpio/Kconfig.neorv32"
+source "drivers/gpio/Kconfig.npcx"
+source "drivers/gpio/Kconfig.npm1300"
+source "drivers/gpio/Kconfig.npm6001"
+source "drivers/gpio/Kconfig.nrfx"
+source "drivers/gpio/Kconfig.numaker"
+source "drivers/gpio/Kconfig.numicro"
+source "drivers/gpio/Kconfig.nxp_s32"
+source "drivers/gpio/Kconfig.pca953x"
+source "drivers/gpio/Kconfig.pca95xx"
+source "drivers/gpio/Kconfig.pcal64xxa"
+source "drivers/gpio/Kconfig.pcf857x"
+source "drivers/gpio/Kconfig.psoc6"
+source "drivers/gpio/Kconfig.rcar"
+source "drivers/gpio/Kconfig.renesas_ra"
+source "drivers/gpio/Kconfig.rpi_pico"
+source "drivers/gpio/Kconfig.rt1718s"
+source "drivers/gpio/Kconfig.rv32m1"
+source "drivers/gpio/Kconfig.rzt2m"
+source "drivers/gpio/Kconfig.sam"
+source "drivers/gpio/Kconfig.sam0"
+source "drivers/gpio/Kconfig.sc18im704"
+source "drivers/gpio/Kconfig.sedi"
+source "drivers/gpio/Kconfig.sifive"
+source "drivers/gpio/Kconfig.smartbond"
+source "drivers/gpio/Kconfig.sn74hc595"
+source "drivers/gpio/Kconfig.stellaris"
+source "drivers/gpio/Kconfig.stm32"
+source "drivers/gpio/Kconfig.stmpe1600"
+source "drivers/gpio/Kconfig.sx1509b"
+source "drivers/gpio/Kconfig.tca6424a"
+source "drivers/gpio/Kconfig.test"
+source "drivers/gpio/Kconfig.tle9104"
+source "drivers/gpio/Kconfig.xec"
+source "drivers/gpio/Kconfig.xlnx"
+source "drivers/gpio/Kconfig.xlnx_ps"
+source "drivers/gpio/Kconfig.xmc4xxx"
+# zephyr-keep-sorted-stop
 
 endif # GPIO
