@@ -354,6 +354,9 @@ def write_special_props(node):
     write_fixed_partitions(node)
     write_gpio_hogs(node)
 
+    # Macros special to Zephyr's clock support implementation
+    write_clocks(node)
+
 def write_ranges(node):
     # ranges property: edtlib knows the right #address-cells and
     # #size-cells of parent and child, and can therefore pack the
@@ -627,6 +630,25 @@ def write_gpio_hogs(node):
         for macro, val in macro2val.items():
             out_dt_define(macro, val)
 
+
+def write_clocks(node):
+    out_comment("Clock control (clock-state-<i>) properties:")
+
+    # Find clock-state-<index> properties
+    clock_state_props = [prop for name, prop in node.props.items()
+                         if re.match("clock-state-[0-9]+", name)]
+    clock_state_props.sort(key=lambda prop: prop.name)
+
+    # Check indices
+    for i, prop in enumerate(clock_state_props):
+        if prop.name != "clock-state-" + str(i):
+            sys.exit(f"missing 'clock-state-{i}' property on {node!r} "
+                     "- indices should be contiguous and start from zero")
+
+    # Write the number of CLOCK_STATE properties
+    out_dt_define(f"{node.z_path_id}_CLOCK_STATE_NUM", len(clock_state_props))
+
+
 def write_vanilla_props(node):
     # Writes macros for any and all properties defined in the
     # "properties" section of the binding for the node.
@@ -765,6 +787,25 @@ def write_dep_info(node):
     out_comment("Ordinals for what depends directly on this node:")
     out_dt_define(f"{node.z_path_id}_SUPPORTS_ORDS",
                   fmt_dep_list(node.required_by))
+
+    # Generate supported clock ordinals. This list looks similar to
+    # the standard "required by" for a given node, but will exclude
+    # dependents that contain a clock-output property, unless the node
+    # in question is referenced there. This way, nodes that have a dependency
+    # via the "clock-state-n" property will  not be in this list
+    clock_ords = []
+    for dep in node.required_by:
+        clock_state_props = [prop for name, prop in dep.props.items()
+                             if re.match("clock-state-[0-9]+", name)]
+        if (len(clock_state_props) > 0) or ("clock-outputs" in dep.props):
+            # Check if clock-outputs property references this node
+            if ("clock-outputs" in dep.props) and (node in dep.props["clock-outputs"].val):
+                clock_ords.append(dep)
+        else:
+            clock_ords.append(dep)
+    out_comment("Ordinals for clock dependencies:")
+    out_dt_define(f"{node.z_path_id}_SUPPORTS_CLK_ORDS",
+                  fmt_dep_list(clock_ords))
 
 
 def prop2value(prop):
