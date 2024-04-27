@@ -231,6 +231,7 @@
 		clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 11)>;
 		status = "disabled";
+		clock-outputs = <&frgctrl0_mul>;
 	};
 
 	flexcomm1: flexcomm@87000 {
@@ -240,6 +241,7 @@
 		clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 12)>;
 		status = "disabled";
+		clock-outputs = <&frgctrl1_mul>;
 	};
 
 	flexcomm2: flexcomm@88000 {
@@ -249,6 +251,7 @@
 		clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 13)>;
 		status = "disabled";
+		clock-outputs = <&frgctrl2_mul>;
 	};
 
 	flexcomm3: flexcomm@89000 {
@@ -258,6 +261,7 @@
 		clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 14)>;
 		status = "disabled";
+		clock-outputs = <&frgctrl3_mul>;
 	};
 
 	flexcomm4: flexcomm@8a000 {
@@ -267,6 +271,7 @@
 		clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 15)>;
 		status = "disabled";
+		clock-outputs = <&frgctrl4_mul>;
 	};
 
 	flexcomm5: flexcomm@96000 {
@@ -276,6 +281,7 @@
 		clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 16)>;
 		status = "disabled";
+		clock-outputs = <&frgctrl5_mul>;
 	};
 
 	flexcomm6: flexcomm@97000 {
@@ -285,6 +291,7 @@
 		clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 17)>;
 		status = "disabled";
+		clock-outputs = <&frgctrl6_mul>;
 	};
 
 	flexcomm7: flexcomm@98000 {
@@ -294,6 +301,7 @@
 		clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 18)>;
 		status = "disabled";
+		clock-outputs = <&frgctrl7_mul>;
 	};
 
 	sdif: sdif@9b000 {
