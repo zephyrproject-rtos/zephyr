@@ -1,0 +1,7 @@
+&spi2 {
+	status = "okay";
+	cs-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+	spidev: spi-device@0 {
+		reg = <0>;
+	};
+};
