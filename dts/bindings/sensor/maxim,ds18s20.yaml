@@ -1,0 +1,8 @@
+# Copyright (c) 2024, Fredrik Gihl
+# SPDX-License-Identifier: Apache-2.0
+
+description: Maxim 1-Wire ds18s20 temperature sensor
+
+compatible: "maxim,ds18s20"
+
+include: [sensor-device.yaml, w1-slave.yaml]
