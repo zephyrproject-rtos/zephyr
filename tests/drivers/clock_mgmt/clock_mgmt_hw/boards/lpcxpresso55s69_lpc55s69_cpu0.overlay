@@ -1,0 +1,39 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	emul_dev: emul-dev {
+		compatible = "vnd,emul-clock-consumer";
+		clock-outputs = <&clkout_clock>;
+		clock-state-0 = <
+				/* Default core clock uses PLL1, so switch
+				 * core clock to use FROHF before we try to touch
+				 * PLL1
+				 */
+				&fro_hf 1 &mainclksela 3 &mainclkselb 0
+				/* Enable PLL1 */
+				&xtal32m 1 &clk_in_en 1 &pll1clksel 1
+				&pll1_pdec 2 &pll1_directo 0
+				&pll1 300000000 4 75 0 39 19
+				&pll1_bypass 0 &clkoutsel 5
+				&clkoutdiv 2>;
+		default-freq = <75000000>;
+		clock-state-1 = <&fro_hf 1 &clkoutsel 3 &clkoutdiv 1>;
+		sleep-freq = <96000000>;
+		/* Setup system clock first- this way, the system clock
+		 * will not be reconfigured when the clock output
+		 * requests a given rate
+		 */
+		clock-state-2 = <&system_clock 96000000 &clkout_clock 75000000>;
+		test1-freq = <75000000>;
+		clock-state-3 = <&clkout_clock 147640000>;
+		test2-freq = <147640000>;
+		clock-state-4 = <&clkout_clock 1000000>;
+		test3-freq = <1000000>;
+		clock-state-names= "default", "sleep", "test1",
+				"test2", "test3";
+	};
+};
