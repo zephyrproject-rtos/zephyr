@@ -187,7 +187,11 @@ static void test_con2_main(void)
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
-		k_sleep(K_SECONDS(1));
+		if (IS_ENABLED(CONFIG_TEST_CONN_INTERVAL_1MS)) {
+			k_sleep(K_MSEC(1));
+		} else {
+			k_sleep(K_SECONDS(1));
+		}
 
 		/* Heartrate measurements simulation */
 		hrs_notify();
