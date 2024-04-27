@@ -1,0 +1,8 @@
+tests:
+  drivers.clock_mgmt.api:
+    tags:
+      - drivers
+      - clock_mgmt
+    integration_platforms:
+      - native_sim
+    filter: dt_compat_enabled("vnd,emul-clock-consumer")

@@ -1,0 +1,127 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Define clock tree with emulated clock nodes.
+ * These node labels are chosen so that they won't conflict with SOC clock
+ * tree nodelabels. The clock driver implementations used by this tree are
+ * stored within the test itself
+ */
+
+/ {
+	emul_clock_root {
+		emul_source1: emul-source1 {
+			compatible = "fixed-clock-source";
+			frequency = <10000000>;
+			#clock-cells = <0>;
+
+			emul_div1: emul-div1 {
+				compatible = "vnd,emul-clock-div";
+				max-div = <64>;
+				#clock-cells = <1>;
+			};
+		};
+
+		emul_source2: emul-source2 {
+			compatible = "fixed-clock-source";
+			frequency = <50000000>;
+			#clock-cells = <0>;
+
+			emul_div2: emul-div2 {
+				compatible = "vnd,emul-clock-div";
+				max-div = <256>;
+				#clock-cells = <1>;
+			};
+		};
+
+		emul_source3: emul-source3 {
+			compatible = "fixed-clock-source";
+			frequency = <100000000>;
+			#clock-cells = <0>;
+		};
+
+		emul_mux1: emul-mux1 {
+			compatible = "vnd,emul-clock-mux";
+			inputs = <&emul_div1 &emul_div2>;
+			#clock-cells = <1>;
+
+			emul_dev1_out: emul-dev1-out {
+				compatible = "clock-output";
+				#clock-cells = <1>;
+			};
+		};
+
+		emul_mux2: emul-mux2 {
+			compatible = "vnd,emul-clock-mux";
+			inputs = <&emul_mux1 &emul_source3>;
+			#clock-cells = <1>;
+
+			emul_dev2_out: emul-dev2-out {
+				compatible = "clock-output";
+				#clock-cells = <1>;
+			};
+		};
+	};
+
+	/* Emulated device clock consumers */
+	emul_devices {
+		emul_dev1: emul-dev1 {
+			compatible = "vnd,emul-clock-consumer";
+			clock-outputs = <&emul_dev1_out>;
+			/* Expect a clock frequency of 3.333333 MHz */
+			clock-state-0 = <&emul_div1 3 &emul_mux1 0>;
+			default-freq = <3333333>;
+			/* Expect error when applying this invalid state */
+			clock-state-1 = <&emul_div1 65 &emul_mux1 0>;
+			/* Expect notification on first device only,
+			 * as emul_mux2 is not selecting emul_mux1 as an input.
+			 * frequency should be 50 MHz
+			 */
+			clock-state-2 = <&emul_mux1 1 &emul_div2 1>;
+			shared-freq = <10000000>;
+			/* Request 10MHz. We expect emul_source1 to be used to
+			 * produce this clock rate.
+			 */
+			clock-state-3 = <&emul_dev1_out 10000000>;
+			setrate-freq = <10000000>;
+			/* Request 20MHz. We should be switched to
+			 * emul_div2, which will produce 25Mhz
+			 */
+			clock-state-4 = <&emul_dev1_out 20000000>;
+			setrate1-freq = <25000000>;
+			clock-state-names = "default", "sleep",
+					"shared", "setrate", "setrate1";
+		};
+
+		emul_dev2: emul-dev2 {
+			compatible = "vnd,emul-clock-consumer";
+			clock-outputs = <&emul_dev2_out>;
+			/* Expect a clock frequency of 100 MHz */
+			clock-state-0 = <&emul_mux2 1>;
+			default-freq = <100000000>;
+			/* Expect error when applying this invalid state */
+			clock-state-1 = <&emul_div2 257 &emul_mux1 0>;
+			/* Expect notification on both devices with this state.
+			 * frequency should be 10 MHz for each
+			 */
+			clock-state-2 = <&emul_mux2 0 &emul_mux1 0 &emul_div1 1>;
+			shared-freq = <10000000>;
+			/* Request 50MHz. The best source for this would be
+			 * emul_source2, but since emul_mux1 is locked we
+			 * expect to be forced to use 10MHz
+			 */
+			clock-state-3 = <&emul_dev2_out 50000000>;
+			setrate-freq = <10000000>;
+			/* Request 100MHz. We should be switched to
+			 * emul_source3.
+			 */
+			clock-state-4 = <&emul_dev2_out 100000000>;
+			setrate1-freq = <100000000>;
+			clock-state-names = "default", "sleep",
+					"shared", "setrate", "setrate1";
+		};
+	};
+};
