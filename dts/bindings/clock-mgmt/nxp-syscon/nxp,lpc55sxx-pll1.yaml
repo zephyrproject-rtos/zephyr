@@ -1,0 +1,35 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LPC SYSCON LPC55Sxx PLL1. The node configures PLL1 on the LPC55Sxx series.
+  The node accepts six specifiers, which have the following meanings:
+  - frequency: output frequency (before postdiv) this PLL will generate.
+    Set to 0 to power down.
+  - ndec: PLL pre divider setting
+  - mdec: PLL multiplier setting
+  - selr: Bandwidth select R value. Should be 0 for normal applications
+  - seli: Bandwidth select I value. See reference manual to calculate this
+  - selp: Bandwidth select P value. See reference manual to calculate this
+  PLL1 operates as a fractional PLL, with the following
+  output equation: (input_clock * (mdec / ndec))
+
+compatible: "nxp,lpc55sxx-pll1"
+
+include: [clock-node.yaml]
+
+properties:
+  reg:
+    required: true
+    description: PLL1CTRL register address for this block
+
+  "#clock-cells":
+    const: 6
+
+clock-cells:
+  - frequency
+  - ndec
+  - mdec
+  - selr
+  - seli
+  - selp

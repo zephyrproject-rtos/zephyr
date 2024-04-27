@@ -14,6 +14,10 @@ extern "C" {
 
 /** @cond INTERNAL_HIDDEN */
 
+#ifdef CONFIG_SOC_SERIES_LPC55XXX
+#include "nxp_lpc55sxx_pll.h"
+#endif
+
 /* No data structure needed for mux */
 #define Z_CLOCK_MGMT_NXP_SYSCON_CLOCK_MUX_DATA_DEFINE(node_id, prop, idx)
 /* Get mux configuration value */
