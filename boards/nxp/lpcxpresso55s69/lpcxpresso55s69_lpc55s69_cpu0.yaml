@@ -19,6 +19,7 @@ supported:
   - arduino_i2c
   - arduino_serial
   - arduino_spi
+  - clock_mgmt
   - counter
   - gpio
   - i2c
