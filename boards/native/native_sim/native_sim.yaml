@@ -11,6 +11,7 @@ toolchain:
 supported:
   - can
   - counter
+  - clock_mgmt
   - dma
   - eeprom
   - netif:eth
