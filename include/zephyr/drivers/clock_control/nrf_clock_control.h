@@ -99,7 +99,7 @@ void z_nrf_clock_calibration_force_start(void);
 
 /** @brief Return number of calibrations performed.
  *
- * Valid when @ref CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG is set.
+ * Valid when @kconfig{CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG} is set.
  *
  * @return Number of calibrations or -1 if feature is disabled.
  */
@@ -107,7 +107,7 @@ int z_nrf_clock_calibration_count(void);
 
 /** @brief Return number of attempts when calibration was skipped.
  *
- * Valid when @ref CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG is set.
+ * Valid when @kconfig{CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG} is set.
  *
  * @return Number of calibrations or -1 if feature is disabled.
  */
