@@ -474,9 +474,7 @@ static int decode(const uint8_t *buffer, enum sensor_channel channel, size_t cha
 {
 	const struct sensor_data_generic_header *header =
 		(const struct sensor_data_generic_header *)buffer;
-	const q31_t *q =
-		(const q31_t *)(buffer + sizeof(struct sensor_data_generic_header) +
-				header->num_channels * sizeof(enum sensor_channel));
+	const q31_t *q = (const q31_t *)(buffer + compute_header_size(header->num_channels));
 	int count = 0;
 
 	if (*fit != 0 || max_count < 1) {
