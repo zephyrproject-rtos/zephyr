@@ -652,7 +652,7 @@ __syscall void z_log_msg_simple_create_2(const void *source, uint32_t level,
  *
  * @param package Package.
  *
- * @oaram data Data.
+ * @param data Data.
  */
 __syscall void z_log_msg_static_create(const void *source,
 					const struct log_msg_desc desc,
