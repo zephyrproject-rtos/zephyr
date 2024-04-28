@@ -231,10 +231,9 @@ test_i2c_sht4xd: sht4x@20 {
 	repeatability = <2>;
 };
 
-test_i2c_shtc3: SHTC3@21 {
-	compatible = "sensirion,shtcx";
+test_i2c_shtc3: shtc3@21 {
+	compatible = "sensirion,shtc3", "sensirion,shtcx";
 	reg = <0x21>;
-	chip = "shtc3";
 	measure-mode = "normal";
 	clock-stretching;
 };
@@ -1048,4 +1047,11 @@ test_i2c_ina226: ina226@8d {
 	reg = <0x8d>;
 	current-lsb-microamps = <5000>;
 	rshunt-micro-ohms = <500>;
+};
+
+test_i2c_shtc1: shtc1@8e {
+	compatible = "sensirion,shtc1", "sensirion,shtcx";
+	reg = <0x8e>;
+	measure-mode = "low-power";
+	clock-stretching;
 };
