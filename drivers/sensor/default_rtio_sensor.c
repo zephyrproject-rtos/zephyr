@@ -165,7 +165,6 @@ static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_s
 		}
 
 		if (rc != 0) {
-			LOG_DBG("Failed to get channel %d, skipping", channels[i]);
 			continue;
 		}
 
