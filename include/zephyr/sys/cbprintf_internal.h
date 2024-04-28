@@ -548,7 +548,7 @@ extern "C" {
  * Floats are promoted to double so they use size of double, others int storage
  * or it's own storage size if it is bigger than int.
  *
- * @param x argument.
+ * @param v argument.
  *
  * @return Number of bytes used for storing the argument.
  */
