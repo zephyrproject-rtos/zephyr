@@ -1,0 +1,9 @@
+description: Dummy Sensor
+
+compatible: "dummy-sensor"
+
+properties:
+  i2c-address:
+    type: int
+  i2c-name:
+    type: string

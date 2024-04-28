@@ -1,0 +1,9 @@
+tests:
+  drivers.sensor.shell:
+    tags:
+      - drivers
+      - sensor
+      - shell
+    platform_allow:
+      - native_sim
+      - qemu_x86
