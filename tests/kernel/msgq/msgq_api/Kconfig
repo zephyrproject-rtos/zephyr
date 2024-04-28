@@ -1,0 +1,9 @@
+# Copyright (c) 2024
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_MSGQ_PREPEND
+	bool "Test message queue prepend feature"
+	default n
+
+# Include Zephyr's Kconfig.
+source "Kconfig"
