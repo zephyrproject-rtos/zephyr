@@ -230,10 +230,11 @@ static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_s
 			q[sample_idx + sample] =
 				((value_u * ((INT64_C(1) << 31) - 1)) / 1000000) >> header->shift;
 
-			LOG_DBG("value[%d]=%s%d.%06d, q[%d]@%p=%d", sample, value_u < 0 ? "-" : "",
+			LOG_DBG("value[%d]=%s%d.%06d, q[%d]@%p=%d, shift: %d",
+				sample, value_u < 0 ? "-" : "",
 				abs((int)value[sample].val1), abs((int)value[sample].val2),
 				(int)(sample_idx + sample), (void *)&q[sample_idx + sample],
-				q[sample_idx + sample]);
+				q[sample_idx + sample], header->shift);
 		}
 		sample_idx += num_samples;
 	}
