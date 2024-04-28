@@ -105,7 +105,6 @@ static inline int _zbus_notify_observer(const struct zbus_channel *chan,
 		if (cloned_buf == NULL) {
 			return -ENOMEM;
 		}
-		memcpy(net_buf_user_data(cloned_buf), &chan, sizeof(struct zbus_channel *));
 
 		net_buf_put(obs->message_fifo, cloned_buf);
 
@@ -135,6 +134,8 @@ static inline int _zbus_vded_exec(const struct zbus_channel *chan, k_timepoint_t
 
 	_ZBUS_ASSERT(buf != NULL, "net_buf zbus_msg_subscribers_pool is "
 				  "unavailable or heap is full");
+
+	memcpy(net_buf_user_data(buf), &chan, sizeof(struct zbus_channel *));
 
 	net_buf_add_mem(buf, zbus_chan_msg(chan), zbus_chan_msg_size(chan));
 #endif /* CONFIG_ZBUS_MSG_SUBSCRIBER */
