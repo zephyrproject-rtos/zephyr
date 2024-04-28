@@ -453,3 +453,6 @@ device.
    * - zephyr,usb-device
      - USB device node. If defined and has a ``vbus-gpios`` property, these
        will be used by the USB subsystem to enable/disable VBUS
+   * - zephyr,led-strip
+     - A LED-strip node which is used to determine the timings of the
+       WS2812 GPIO driver

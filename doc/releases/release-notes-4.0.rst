@@ -170,6 +170,8 @@ Drivers and Sensors
 
 * LED Strip
 
+  * Updated ws2812 GPIO driver to support dynamic bus timings
+
 * LoRa
 
 * Mailbox
