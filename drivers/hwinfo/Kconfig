@@ -189,6 +189,7 @@ config HWINFO_ANDES
 	bool "Andes system ID"
 	default y
 	depends on SOC_FAMILY_ANDES_V5
+	depends on SYSCON
 	help
 	  Enable Andes hwinfo driver
 
