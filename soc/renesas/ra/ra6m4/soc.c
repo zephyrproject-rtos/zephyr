@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief System/hardware module for Renesas RA8 family processor
+ * @brief System/hardware module for Renesas RA6M4 family processor
  */
 
 #include <zephyr/device.h>
@@ -22,14 +22,9 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #include "bsp_cfg.h"
 #include <bsp_api.h>
 
-#ifdef CONFIG_RUNTIME_NMI
-extern void z_arm_nmi_init(void);
-#define NMI_INIT() z_arm_nmi_init()
-#else
-#define NMI_INIT()
-#endif
-
 uint32_t SystemCoreClock BSP_SECTION_EARLY_INIT;
+
+volatile uint32_t g_protect_pfswe_counter BSP_SECTION_EARLY_INIT;
 
 /**
  * @brief Perform basic hardware initialization at boot.
@@ -39,19 +34,13 @@ uint32_t SystemCoreClock BSP_SECTION_EARLY_INIT;
  *
  * @return 0
  */
-static int renesas_ra6_init(void)
+static int renesas_ra6m4_init(void)
 {
-	uint32_t key;
-
-	key = irq_lock();
-
 	SystemCoreClock = BSP_MOCO_HZ;
+	g_protect_pfswe_counter = 0;
 	bsp_clock_init();
-	NMI_INIT();
-
-	irq_unlock(key);
 
 	return 0;
 }
 
-SYS_INIT(renesas_ra6_init, PRE_KERNEL_1, 0);
+SYS_INIT(renesas_ra6m4_init, PRE_KERNEL_1, 0);
