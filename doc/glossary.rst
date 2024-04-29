@@ -180,4 +180,9 @@ Glossary of Terms
       term storage rather than copying it into RAM, saving writable memory for
       dynamic data and not the static program code.
 
+   Zephyr FSM Plan
+      This Safety Plan / Functional Safety Management Plan contains the planning
+      and mapping of methods and resources of the activities of the Zephyr Safety
+      Lifecycle.
+
 .. _System on a chip: https://en.wikipedia.org/wiki/System_on_a_chip
