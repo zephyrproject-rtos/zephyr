@@ -386,6 +386,22 @@
 				#mbox-cells = <1>;
 			};
 
+			canpll: clock-controller@8c2000{
+				compatible = "nordic,nrf-auxpll";
+				reg = <0x8c2000 0x1000>;
+				interrupts = <194 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hfxo>;
+				#clock-cells = <0>;
+				nordic,ficrs = <&ficr NRF_FICR_TRIM_GLOBAL_CANPLL_TRIM_CTUNE>;
+				nordic,frequency = <0>;
+				nordic,out-div = <2>;
+				nordic,out-drive = <0>;
+				nordic,current-tune = <6>;
+				nordic,sdm-disable;
+				nordic,range = "high";
+				status = "disabled";
+			};
+
 			cpusys_vevif_remote: mailbox@8c8000 {
 				compatible = "nordic,nrf-vevif-remote";
 				reg = <0x8c8000 0x1000>;
