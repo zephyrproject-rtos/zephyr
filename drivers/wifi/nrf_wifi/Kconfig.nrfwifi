@@ -66,12 +66,6 @@ endchoice
 config NET_L2_ETHERNET
 	default y if (!NRF70_RADIO_TEST && !NRF70_OFFLOADED_RAW_TX)
 
-config HEAP_MEM_POOL_ADD_SIZE_NRF70
-	# Use a maximum that works for typical use cases and boards, each sample/app can override
-	# this value if needed by using CONFIG_HEAP_MEM_POOL_IGNORE_MIN
-	def_int 25000 if NRF70_SCAN_ONLY
-	def_int 150000
-
 if NRF70_SYSTEM_MODE
 config NRF70_STA_MODE
 	bool "nRF70 STA mode"
@@ -529,8 +523,19 @@ config NRF70_RSSI_STALE_TIMEOUT_MS
 	  value as the driver does not store it and requires RPU to provide the
 	  information.
 
+config NRF_WIFI_CTRL_HEAP_SIZE
+	int "Dedicated memory pool for control plane"
+	default 20000
+
+config NRF_WIFI_DATA_HEAP_SIZE
+	int "Dedicated memory pool for data plane"
+	default 6000 if NRF70_SCAN_ONLY
+	default 110000 if !SOC_FAMILY_NORDIC_NRF
+	default 130000
+
 if NETWORKING
 # Finetune defaults for certain system components used by the driver
+
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	default 4096
 
