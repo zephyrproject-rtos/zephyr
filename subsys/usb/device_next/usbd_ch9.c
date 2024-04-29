@@ -526,6 +526,7 @@ static int sreq_get_desc_cfg(struct usbd_contex *const uds_ctx,
 
 #define USBD_HWID_SN_MAX 32U
 
+/* Generate valid USB device serial number from hwid */
 static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_HWID_SN_MAX])
 {
 	static const char hex[] = "0123456789ABCDEF";
@@ -556,30 +557,36 @@ static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_HWID_SN_MAX])
 static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 				     struct net_buf *const buf, const uint16_t wLength)
 {
-	struct usb_string_descriptor *desc = dn->desc;
 	uint8_t hwid_sn[USBD_HWID_SN_MAX];
+	struct usb_desc_header head = {
+		.bDescriptorType = dn->bDescriptorType,
+	};
 	uint8_t *ascii7_str;
 	size_t len;
 
-	LOG_DBG("wLength %u, bLength %u, tailroom %u",
-		wLength, desc->bLength, net_buf_tailroom(buf));
+	if (dn->str.utype == USBD_DUT_STRING_SERIAL_NUMBER && dn->str.use_hwinfo) {
+		ssize_t hwid_len = get_sn_from_hwid(hwid_sn);
 
-	if (dn->str.utype == USBD_DUT_STRING_SERIAL_NUMBER && !dn->str.custom_sn) {
-		if (get_sn_from_hwid(hwid_sn) < 0) {
+		if (hwid_len < 0) {
 			errno = -ENOTSUP;
 			return;
 		}
 
+		head.bLength = sizeof(head) + hwid_len * 2;
 		ascii7_str = hwid_sn;
 	} else {
-		ascii7_str = (uint8_t *)&desc->bString;
+		head.bLength = dn->bLength,
+		ascii7_str = (uint8_t *)dn->ptr;
 	}
 
-	len = MIN(net_buf_tailroom(buf), MIN(desc->bLength,  wLength));
+	LOG_DBG("wLength %u, bLength %u, tailroom %u",
+		wLength, head.bLength, net_buf_tailroom(buf));
+
+	len = MIN(net_buf_tailroom(buf), MIN(head.bLength,  wLength));
 
 	/* Add bLength and bDescriptorType */
-	net_buf_add_mem(buf, desc, MIN(len, 2U));
-	len -= MIN(len, 2U);
+	net_buf_add_mem(buf, &head, MIN(len, sizeof(head)));
+	len -= MIN(len, sizeof(head));
 
 	for (size_t i = 0; i < len; i++) {
 		__ASSERT(ascii7_str[i] > 0x1F && ascii7_str[i] < 0x7F,
@@ -619,7 +626,6 @@ static int sreq_get_desc_str(struct usbd_contex *const uds_ctx,
 			     struct net_buf *const buf, const uint8_t idx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
-	struct usb_desc_header *head;
 	struct usbd_desc_node *d_nd;
 	size_t len;
 
@@ -632,9 +638,14 @@ static int sreq_get_desc_str(struct usbd_contex *const uds_ctx,
 
 	if (usbd_str_desc_get_idx(d_nd) == 0U) {
 		/* Language ID string descriptor */
-		head = d_nd->desc;
+		struct usb_string_descriptor langid = {
+			.bLength = d_nd->bLength,
+			.bDescriptorType = d_nd->bDescriptorType,
+			.bString =  *(uint16_t *)d_nd->ptr,
+		};
+
 		len = MIN(setup->wLength, net_buf_tailroom(buf));
-		net_buf_add_mem(buf, head, MIN(len, head->bLength));
+		net_buf_add_mem(buf, &langid, MIN(len, langid.bLength));
 	} else {
 		/* String descriptors in ASCII7 format */
 		string_ascii7_to_utf16le(d_nd, buf, setup->wLength);
