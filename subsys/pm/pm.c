@@ -151,6 +151,9 @@ void pm_system_resume(void)
 #endif
 		pm_state_exit_post_ops(z_cpus_pm_state[id].state, z_cpus_pm_state[id].substate_id);
 		pm_state_notify(false);
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+		sys_clock_idle_exit();
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
 		z_cpus_pm_state[id] = (struct pm_state_info){PM_STATE_ACTIVE,
 			0, 0};
 	}
@@ -289,7 +292,4 @@ void z_pm_save_idle_exit(void)
 	 * This can be simply ignored if not required.
 	 */
 	pm_system_resume();
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	sys_clock_idle_exit();
-#endif /* CONFIG_SYS_CLOCK_EXISTS */
 }
