@@ -112,9 +112,15 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MEC5_BTMR
 	DEVS_FOR_DT_COMPAT(microchip_mec5_btmr_counter)
 #endif
+#ifdef CONFIG_COUNTER_MEC5_RTMR
+	DEVS_FOR_DT_COMPAT(microchip_mec5_rtmr_counter)
+#endif
 };
 
 static const struct device *const period_devs[] = {
+#ifdef CONFIG_COUNTER_MEC5_RTMR
+	DEVS_FOR_DT_COMPAT(microchip_mec5_rtmr_counter)
+#endif
 #ifdef CONFIG_COUNTER_MCUX_RTC
 	DEVS_FOR_DT_COMPAT(nxp_kinetis_rtc)
 #endif

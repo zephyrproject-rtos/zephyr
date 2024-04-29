@@ -20,3 +20,8 @@
 	status = "okay";
 	prescaler = <2>;
 };
+
+/* 32 KHz RTOS 32-bit timer */
+&rtimer {
+	status = "okay";
+};
