@@ -28,10 +28,10 @@ LOG_MODULE_REGISTER(gt911, CONFIG_INPUT_LOG_LEVEL);
 #define TOUCH_STATUS_MSK (1 << 7U)
 
 /* The GT911's config */
-#define GT911_CONFIG_REG   BSWAP_16(0x8047U)
-#define REG_CONFIG_VERSION GT911_CONFIG_REG
-#define REG_CONFIG_SIZE    (186U)
-#define GT911_PRODUCT_ID   (0x00313139U)
+#define REG_GT911_CONFIG   BSWAP_16(0x8047U)
+#define REG_CONFIG_VERSION REG_GT911_CONFIG
+#define REG_CONFIG_SIZE    186U
+#define GT911_PRODUCT_ID   0x00313139U
 
 /** GT911 configuration (DT). */
 struct gt911_config {
@@ -62,15 +62,15 @@ struct gt911_data {
 };
 
 /** gt911 point reg */
-struct gt911_point_reg_t {
-	uint8_t id;       /*!< Track ID. */
-	uint8_t lowX;     /*!< Low byte of x coordinate. */
-	uint8_t highX;    /*!< High byte of x coordinate. */
-	uint8_t lowY;     /*!< Low byte of y coordinate. */
-	uint8_t highY;    /*!< High byte of x coordinate. */
-	uint8_t lowSize;  /*!< Low byte of point size. */
-	uint8_t highSize; /*!< High byte of point size. */
-	uint8_t reserved; /*!< Reserved. */
+struct gt911_point_reg {
+	uint8_t id;        /*!< Track ID. */
+	uint8_t low_x;     /*!< Low byte of x coordinate. */
+	uint8_t high_x;    /*!< High byte of x coordinate. */
+	uint8_t low_y;     /*!< Low byte of y coordinate. */
+	uint8_t high_y;    /*!< High byte of x coordinate. */
+	uint8_t low_size;  /*!< Low byte of point size. */
+	uint8_t high_size; /*!< High byte of point size. */
+	uint8_t reserved;  /*!< Reserved. */
 };
 
 /*
@@ -102,7 +102,7 @@ static int gt911_process(const struct device *dev)
 	uint16_t reg_addr;
 	uint8_t status;
 	uint8_t points;
-	struct gt911_point_reg_t pointRegs;
+	struct gt911_point_reg point_reg;
 	uint16_t row, col;
 	bool pressed;
 
@@ -134,14 +134,14 @@ static int gt911_process(const struct device *dev)
 	 * REG_P1_XH, REG_P1_XL, REG_P1_YH, REG_P1_YL.
 	 */
 	reg_addr = REG_FIRST_POINT;
-	r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), &pointRegs, sizeof(pointRegs));
+	r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), &point_reg, sizeof(point_reg));
 	if (r < 0) {
 		return r;
 	}
 
 	pressed = (points == 1);
-	row = ((pointRegs.highY) << 8U) | pointRegs.lowY;
-	col = ((pointRegs.highX) << 8U) | pointRegs.lowX;
+	row = ((point_reg.high_y) << 8U) | point_reg.low_y;
+	col = ((point_reg.high_x) << 8U) | point_reg.low_x;
 
 	LOG_DBG("pressed: %d, row: %d, col: %d", pressed, row, col);
 
@@ -194,7 +194,7 @@ static uint8_t gt911_get_firmware_checksum(const uint8_t *firmware)
 
 static bool gt911_verify_firmware(const uint8_t *firmware)
 {
-	return ((firmware[REG_CONFIG_VERSION - GT911_CONFIG_REG] != 0U) &&
+	return ((firmware[REG_CONFIG_VERSION - REG_GT911_CONFIG] != 0U) &&
 		(gt911_get_firmware_checksum(firmware) == firmware[REG_CONFIG_SIZE - 2U]));
 }
 
@@ -315,23 +315,24 @@ static int gt911_init(const struct device *dev)
 	}
 
 	/* need to setup the firmware first: read and write */
-	uint8_t gt911Config[REG_CONFIG_SIZE + 2] = {(uint8_t)GT911_CONFIG_REG,
-						    (uint8_t)(GT911_CONFIG_REG >> 8)};
+	uint8_t gt911_config_firmware[REG_CONFIG_SIZE + 2] = {(uint8_t)REG_GT911_CONFIG,
+							      (uint8_t)(REG_GT911_CONFIG >> 8)};
 
-	reg_addr = GT911_CONFIG_REG;
-	r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), gt911Config + 2,
+	reg_addr = REG_GT911_CONFIG;
+	r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), gt911_config_firmware + 2,
 				 REG_CONFIG_SIZE);
 	if (r < 0) {
 		return r;
 	}
-	if (!gt911_verify_firmware(gt911Config + 2)) {
+	if (!gt911_verify_firmware(gt911_config_firmware + 2)) {
 		return -ENODEV;
 	}
 
-	gt911Config[REG_CONFIG_SIZE] = gt911_get_firmware_checksum(gt911Config + 2);
-	gt911Config[REG_CONFIG_SIZE + 1] = 1;
+	gt911_config_firmware[REG_CONFIG_SIZE] =
+		gt911_get_firmware_checksum(gt911_config_firmware + 2);
+	gt911_config_firmware[REG_CONFIG_SIZE + 1] = 1;
 
-	r = gt911_i2c_write(dev, gt911Config, sizeof(gt911Config));
+	r = gt911_i2c_write(dev, gt911_config_firmware, sizeof(gt911_config_firmware));
 	if (r < 0) {
 		return r;
 	}
