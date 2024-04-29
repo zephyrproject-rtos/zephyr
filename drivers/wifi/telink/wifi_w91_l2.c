@@ -29,92 +29,111 @@ static int wifi_w91_send(struct net_if *iface, struct net_pkt *pkt)
 	int ret = 0;
 
 	do {
+		if (!pkt) {
+			LOG_ERR("tx no packet");
+			break;
+		}
+
 		const struct device *dev = net_if_get_device(iface);
 		struct wifi_w91_data *data = dev->data;
+		const struct wifi_w91_config *config = dev->config;
+
 		size_t tx_len = net_pkt_get_len(pkt);
 
 		if (!tx_len) {
 			break;
 		}
-		if (tx_len > sizeof(data->l2.ipc_tx.tx)) {
-			LOG_ERR("data exceeds MTU size");
+		if (tx_len > sizeof(data->l2.ipc_tx.data)) {
+			LOG_ERR("tx data exceeds MTU size");
 			ret = -ENOBUFS;
 			break;
 		}
-		ret = net_pkt_read(pkt, data->l2.ipc_tx.tx, tx_len);
+		ret = net_pkt_read(pkt, data->l2.ipc_tx.data, tx_len);
 		if (ret < 0) {
-			LOG_ERR("data read error");
+			LOG_ERR("tx data read error");
 			break;
 		}
 		net_capture_pkt(iface, pkt);
-		LOG_HEXDUMP_DBG(data->l2.ipc_tx.tx, tx_len, "TX");
-		/* TODO: IPC data send */
-#if CONFIG_WIFI_W91_L2_ECHO
-	/*******************************************************
-	 * We need to swap the IP addresses because otherwise
-	 * the packet will be dropped.
-	 *******************************************************/
-#if CONFIG_NET_IPV6
-	if (net_pkt_family(pkt) == AF_INET6) {
-		struct in6_addr addr;
 
-		net_ipv6_addr_copy_raw((uint8_t *)&addr, NET_IPV6_HDR(pkt)->src);
-		net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->src,
-				       NET_IPV6_HDR(pkt)->dst);
-		net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->dst, (uint8_t *)&addr);
-	}
-#endif /* CONFIG_NET_IPV6 */
-#if CONFIG_NET_IPV4
-	if (net_pkt_family(pkt) == AF_INET) {
-		struct in_addr addr;
-
-		net_ipv4_addr_copy_raw((uint8_t *)&addr, NET_IPV4_HDR(pkt)->src);
-		net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt)->src,
-				       NET_IPV4_HDR(pkt)->dst);
-		net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt)->dst, (uint8_t *)&addr);
-	}
-#endif /* CONFIG_NET_IPV4 */
-	/*******************************************************
-	 * We should simulate normal driver meaning that if the packet is
-	 * properly sent (which is always in this driver), then the packet
-	 * must be dropped. This is very much needed for TCP packets where
-	 * the packet is reference counted in various stages of sending.
-	 *******************************************************/
-	struct net_pkt *cloned = net_pkt_rx_clone(pkt, K_MSEC(100));
-
-	if (!cloned) {
-		LOG_ERR("create packet failed");
-		ret = -ENOMEM;
-		break;
-	}
-
-	ret = net_recv_data(net_pkt_iface(cloned), cloned);
-	if (ret < 0) {
-		LOG_ERR("data receive failed");
-		break;
-	}
-
-#endif /* CONFIG_WIFI_W91_L2_ECHO */
+		data->l2.ipc_tx.id = IPC_DISPATCHER_MK_ID(
+			IPC_DISPATCHER_WIFI_L2_DATA, config->instance_id);
+		ret = ipc_dispatcher_send(&data->l2.ipc_tx,
+			sizeof(uint32_t) + tx_len);
+		if (ret < 0) {
+			LOG_ERR("tx ipc send failed");
+			break;
+		}
 	} while (0);
 
-	if (ret >= 0) {
+	if (ret >= 0 && pkt) {
 		net_pkt_unref(pkt);
 	}
 
 	return ret;
 }
 
+static void wifi_w91_on_rx_data(const void *data, size_t len, void *ctx)
+{
+	bool rx_done = false;
+	struct net_pkt *rx = NULL;
+
+	do {
+		if (len < sizeof(uint32_t) + 1) {   /* ID, IP protocol */
+			LOG_ERR("rx malformed ip packet");
+			break;
+		}
+
+		struct ipc_msg *ipc_rx = (struct ipc_msg *)data;
+		size_t rx_len = len - sizeof(uint32_t);
+		struct net_if *iface = (struct net_if *)ctx;
+
+#if CONFIG_NET_IPV6
+		if ((ipc_rx->data[0] & 0xf0) == 0x60) {
+			rx = net_pkt_rx_alloc_with_buffer(iface, rx_len, AF_INET6, 0, K_NO_WAIT);
+		}
+#endif /* CONFIG_NET_IPV6 */
+#if CONFIG_NET_IPV4
+		if ((ipc_rx->data[0] & 0xf0) == 0x40) {
+			rx = net_pkt_rx_alloc_with_buffer(iface, rx_len, AF_INET, 0, K_NO_WAIT);
+		}
+#endif /* CONFIG_NET_IPV4 */
+		if (!rx) {
+			LOG_ERR("rx ip packet not allocated");
+			break;
+		}
+		if (net_pkt_write(rx, ipc_rx->data, rx_len) < 0) {
+			LOG_ERR("rx write to a packet failed");
+			break;
+		}
+		if (net_recv_data(net_pkt_iface(rx), rx) < 0) {
+			LOG_ERR("rx data receive failed");
+			break;
+		}
+		rx_done = true;
+	} while (0);
+
+	if (!rx_done && rx) {
+		net_pkt_unref(rx);
+	}
+}
+
 static int wifi_w91_enable(struct net_if *iface, bool state)
 {
 	LOG_INF("%s [%u]", __func__, state);
+	const struct device *dev = net_if_get_device(iface);
+	struct wifi_w91_data *data = dev->data;
+	const struct wifi_w91_config *config = dev->config;
 
 	if (state) {
-		const struct device *dev = net_if_get_device(iface);
-		struct wifi_w91_data *data = dev->data;
-
 		/* TODO: Foll MAC address here */
 		(void) net_if_set_link_addr(iface, data->l2.mac,
 			WIFI_MAC_ADDR_LEN, NET_LINK_ETHERNET);
+		ipc_dispatcher_add(IPC_DISPATCHER_MK_ID(
+			IPC_DISPATCHER_WIFI_L2_DATA, config->instance_id),
+			wifi_w91_on_rx_data, iface);
+	} else {
+		ipc_dispatcher_rm(IPC_DISPATCHER_MK_ID(
+			IPC_DISPATCHER_WIFI_L2_DATA, config->instance_id));
 	}
 
 	return 0;

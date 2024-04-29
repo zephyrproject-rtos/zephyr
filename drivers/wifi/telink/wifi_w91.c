@@ -20,8 +20,9 @@ LOG_MODULE_REGISTER(w91_wifi, CONFIG_WIFI_LOG_LEVEL);
 
 static int wifi_w91_init(const struct device *dev)
 {
-	LOG_INF("%s", __func__);
-	ARG_UNUSED(dev);
+	struct wifi_w91_data *data = dev->data;
+
+	ipc_based_driver_init(&data->ipc);
 
 	return 0;
 }
@@ -102,14 +103,18 @@ static const struct net_wifi_mgmt_offload wifi_w91_driver_api = {
 	.ap_disable                 = wifi_w91_ap_disable,
 };
 
-#define NET_W91_DEFINE(n)                                   \
-                                                            \
-	struct wifi_w91_data wifi_data_##n;                     \
-                                                            \
-	NET_DEVICE_DT_INST_DEFINE(n, wifi_w91_init,             \
-		NULL, &wifi_data_##n, NULL,                         \
-		CONFIG_TELINK_W91_IPC_DRIVERS_INIT_PRIORITY,        \
-		&wifi_w91_driver_api, W91_WIFI_L2,                  \
+#define NET_W91_DEFINE(n)                                       \
+                                                                \
+	static const struct wifi_w91_config wifi_config_##n = {     \
+		.instance_id = n,                                       \
+	};                                                          \
+                                                                \
+	static struct wifi_w91_data wifi_data_##n;                  \
+                                                                \
+	NET_DEVICE_DT_INST_DEFINE(n, wifi_w91_init,                 \
+		NULL, &wifi_data_##n, &wifi_config_##n,                 \
+		CONFIG_TELINK_W91_IPC_DRIVERS_INIT_PRIORITY,            \
+		&wifi_w91_driver_api, W91_WIFI_L2,                      \
 		NET_L2_GET_CTX_TYPE(W91_WIFI_L2), W91_WIFI_L2_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(NET_W91_DEFINE)

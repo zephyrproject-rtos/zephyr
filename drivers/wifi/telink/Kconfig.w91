@@ -7,12 +7,3 @@ config WIFI_W91
 	select NET_L2_WIFI_MGMT
 	help
 		Enable Telink SoC WiFi support.
-
-if WIFI_W91
-
-config WIFI_W91_L2_ECHO
-	bool "Echo on L2 WiFi interface"
-	help
-		Enable echo on L2 WiFi interface for testing.
-
-endif # WIFI_W91
