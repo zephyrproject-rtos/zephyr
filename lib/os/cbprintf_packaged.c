@@ -436,7 +436,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 						return -ENOSPC;
 					}
 					if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
-						memcpy(buf, &v, size);
+						memcpy(buf, (uint8_t *)&v, size);
 					} else if (fmt[-1] == 'L') {
 						*(long double *)buf = v.ld;
 					} else {
@@ -583,7 +583,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 						return -ENOSPC;
 					}
 					if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
-						memcpy(buf, &v, size);
+						memcpy(buf, (uint8_t *)&v, size);
 					} else if (fmt[-1] == 'L') {
 						*(long double *)buf = v.ld;
 					} else {
@@ -699,7 +699,7 @@ process_string:
 
 			if (buf0 != NULL) {
 				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
-					memcpy(buf, &v, sizeof(long long));
+					memcpy(buf, (uint8_t *)&v, sizeof(long long));
 				} else {
 					*(long long *)buf = v;
 				}
@@ -796,7 +796,7 @@ process_string:
 		/* store the pointer position prefix */
 		*buf++ = str_ptr_pos[i];
 		/* copy the string with its terminating '\0' */
-		memcpy(buf, s, size);
+		memcpy(buf, (uint8_t *)s, size);
 		buf += size;
 	}
 
