@@ -548,10 +548,10 @@ static int spi_nor_process_sfdp(const struct device *dev)
 		/* We only process BFP so use one parameter block */
 		uint8_t raw[JESD216_SFDP_SIZE(decl_nph)];
 		struct jesd216_sfdp_header sfdp;
-	} u;
-	const struct jesd216_sfdp_header *hp = &u.sfdp;
+	} u_header;
+	const struct jesd216_sfdp_header *hp = &u_header.sfdp;
 
-	ret = read_sfdp(dev, 0, u.raw, sizeof(u.raw));
+	ret = read_sfdp(dev, 0, u_header.raw, sizeof(u_header.raw));
 	if (ret != 0) {
 		LOG_ERR("SFDP read failed: %d", ret);
 		return ret;
@@ -582,11 +582,11 @@ static int spi_nor_process_sfdp(const struct device *dev)
 			union {
 				uint32_t dw[MIN(php->len_dw, 20)];
 				struct jesd216_bfp bfp;
-			} u;
-			const struct jesd216_bfp *bfp = &u.bfp;
+			} u_param;
+			const struct jesd216_bfp *bfp = &u_param.bfp;
 
 			ret = read_sfdp(dev,
-				jesd216_param_addr(php), u.dw, sizeof(u.dw));
+				jesd216_param_addr(php), u_param.dw, sizeof(u_param.dw));
 
 			if (ret != 0) {
 				break;
