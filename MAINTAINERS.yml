@@ -3569,7 +3569,6 @@ STM32 Platforms:
     - GeorgeCGV
   files:
     - boards/st/
-    - drivers/*/*stm32*/
     - drivers/*/*stm32*.c
     - drivers/*/*stm32*.h
     - drivers/*/*/*stm32*
@@ -3698,8 +3697,7 @@ Infineon Platforms:
     - boards/cypress/
     - boards/infineon/
     - drivers/*/*ifx_cat1*
-    - drivers/*/*xmc*/
-    - drivers/*/*xmc*.c
+    - drivers/*/*xmc*
     - drivers/sensor/infineon/
     - dts/arm/infineon/
     - dts/arm/cypress/
