@@ -19,8 +19,8 @@ int xen_domctl_resumedomain(int domid);
 int xen_domctl_getvcpucontext(int domid, int vcpu, vcpu_guest_context_t *ctxt);
 int xen_domctl_setvcpucontext(int domid, int vcpu, vcpu_guest_context_t *ctxt);
 int xen_domctl_getdomaininfo(int domid, xen_domctl_getdomaininfo_t *dom_info);
-int xen_domctl_get_paging_mempool_size(int domid, uint64_t *size_mb);
-int xen_domctl_set_paging_mempool_size(int domid, uint64_t size_mb);
+int xen_domctl_get_paging_mempool_size(int domid, uint64_t *size);
+int xen_domctl_set_paging_mempool_size(int domid, uint64_t size);
 int xen_domctl_max_mem(int domid, uint64_t max_memkb);
 int xen_domctl_set_address_size(int domid, int addr_size);
 int xen_domctl_iomem_permission(int domid, uint64_t first_mfn,
