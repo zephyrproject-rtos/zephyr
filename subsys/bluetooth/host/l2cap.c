@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <errno.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/byteorder.h>
@@ -2031,9 +2032,13 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 {
 	int ret;
 	size_t sent = 0;
-	size_t rem_len = buf->len;
+	size_t rem_len;
 
-	while (buf && sent != rem_len) {
+	__ASSERT_NO_MSG(buf);
+
+	rem_len = buf->len;
+
+	while (sent != rem_len) {
 		ret = l2cap_chan_le_send(ch, buf, 0);
 		if (ret < 0) {
 			LOG_DBG("failed to send buf (ch %p cid 0x%04x sent %d)",
