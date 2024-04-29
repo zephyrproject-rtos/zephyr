@@ -9,52 +9,12 @@
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usbd.h>
-#include <zephyr/drivers/hwinfo.h>
 
 #include "usbd_desc.h"
 #include "usbd_device.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_desc, CONFIG_USBD_LOG_LEVEL);
-
-/**
- * @brief Get common USB descriptor
- *
- * Get descriptor from internal descriptor list.
- *
- * @param[in] dn     Pointer to descriptor node
- *
- * @return 0 on success, other values on fail.
- */
-static int usbd_get_sn_from_hwid(struct usbd_desc_node *const dn)
-{
-	static const char hex[] = "0123456789ABCDEF";
-	struct usb_string_descriptor *desc = dn->desc;
-	uint8_t *desc_data = (uint8_t *)&desc->bString;
-	uint8_t hwid[16];
-	ssize_t hwid_len;
-	ssize_t min_len;
-
-	hwid_len = hwinfo_get_device_id(hwid, sizeof(hwid));
-	if (hwid_len < 0) {
-		if (hwid_len == -ENOSYS) {
-			LOG_WRN("hwinfo not implemented");
-			return 0;
-		}
-
-		return hwid_len;
-	}
-
-	min_len = MIN(hwid_len, desc->bLength / 2);
-	for (size_t i = 0; i < min_len; i++) {
-		desc_data[i * 2] = hex[hwid[i] >> 4];
-		desc_data[i * 2 + 1] = hex[hwid[i] & 0xF];
-	}
-
-	LOG_HEXDUMP_DBG(&desc->bString, desc->bLength, "SerialNumber");
-
-	return 0;
-}
 
 static inline bool desc_type_equal(const struct usbd_desc_node *const a,
 				   const struct usbd_desc_node *const b)
@@ -199,10 +159,6 @@ int usbd_add_descriptor(struct usbd_contex *const uds_ctx,
 			fs_desc->iProduct = desc_nd->str.idx;
 			break;
 		case USBD_DUT_STRING_SERIAL_NUMBER:
-			if (!desc_nd->str.custom_sn) {
-				ret = usbd_get_sn_from_hwid(desc_nd);
-			}
-
 			hs_desc->iSerialNumber = desc_nd->str.idx;
 			fs_desc->iSerialNumber = desc_nd->str.idx;
 			break;
