@@ -57,11 +57,18 @@ const struct device *get_adc_device(void)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(test_counter), okay) && \
 	defined(CONFIG_COUNTER)
+
+static void top_handler(const struct device *dev, void *user_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(user_data);
+}
+
 static void init_counter(void)
 {
 	int err;
 	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(test_counter));
-	struct counter_top_cfg top_cfg = { .callback = NULL,
+	struct counter_top_cfg top_cfg = { .callback = top_handler,
 					   .user_data = NULL,
 					   .flags = 0 };
 
