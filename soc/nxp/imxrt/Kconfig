@@ -184,6 +184,9 @@ config INIT_ENET_PLL
 	  MIMXRT1021 - see commit 17f4d6bec7 ("soc: nxp_imx: fix ENET_PLL selection
 	  for MIMXRT1021").
 
+config INIT_SYS_PLL
+	bool "Initialize System PLL"
+
 endif # SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
 
 endif # SOC_FAMILY_NXP_IMXRT
