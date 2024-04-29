@@ -6,7 +6,7 @@ menuconfig USB_DEVICE_STACK_NEXT
 	bool "New USB device stack [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select UDC_DRIVER
-	select HWINFO
+	imply HWINFO
 	help
 	  New experimental USB device stack.
 
