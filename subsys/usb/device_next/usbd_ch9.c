@@ -10,6 +10,7 @@
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/drivers/hwinfo.h>
 
 #include "usbd_device.h"
 #include "usbd_desc.h"
@@ -523,16 +524,56 @@ static int sreq_get_desc_cfg(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
+#define USBD_HWID_SN_MAX 32U
+
+static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_HWID_SN_MAX])
+{
+	static const char hex[] = "0123456789ABCDEF";
+	uint8_t hwid[USBD_HWID_SN_MAX / 2U];
+	ssize_t hwid_len = -ENOSYS;
+
+	if (IS_ENABLED(CONFIG_HWINFO)) {
+		hwid_len = hwinfo_get_device_id(hwid, sizeof(hwid));
+	}
+
+	if (hwid_len < 0) {
+		if (hwid_len == -ENOSYS) {
+			LOG_ERR("HWINFO not implemented or enabled");
+		}
+
+		return hwid_len;
+	}
+
+	for (ssize_t i = 0; i < hwid_len; i++) {
+		sn[i * 2] = hex[hwid[i] >> 4];
+		sn[i * 2 + 1] = hex[hwid[i] & 0xF];
+	}
+
+	return hwid_len * 2;
+}
+
 /* Copy and convert ASCII-7 string descriptor to UTF16-LE */
 static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 				     struct net_buf *const buf, const uint16_t wLength)
 {
 	struct usb_string_descriptor *desc = dn->desc;
-	uint8_t *ascii7_str = (uint8_t *)&desc->bString;
+	uint8_t hwid_sn[USBD_HWID_SN_MAX];
+	uint8_t *ascii7_str;
 	size_t len;
 
 	LOG_DBG("wLength %u, bLength %u, tailroom %u",
 		wLength, desc->bLength, net_buf_tailroom(buf));
+
+	if (dn->str.utype == USBD_DUT_STRING_SERIAL_NUMBER && !dn->str.custom_sn) {
+		if (get_sn_from_hwid(hwid_sn) < 0) {
+			errno = -ENOTSUP;
+			return;
+		}
+
+		ascii7_str = hwid_sn;
+	} else {
+		ascii7_str = (uint8_t *)&desc->bString;
+	}
 
 	len = MIN(net_buf_tailroom(buf), MIN(desc->bLength,  wLength));
 
