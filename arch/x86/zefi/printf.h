@@ -117,8 +117,9 @@ static int vpf(struct _pfr *r, const char *f, va_list ap)
 				int d = (v >> (i*4)) & 0xf;
 
 				sig += !!d;
-				if (sig || i == 0)
+				if (sig || i == 0) {
 					pc(r, "0123456789abcdef"[d]);
+				}
 			}
 			break;
 		}
