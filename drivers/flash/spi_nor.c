@@ -1038,40 +1038,40 @@ static int spi_nor_set_address_mode(const struct device *dev,
 	int ret = -ENOSYS;
 
 	if (cfg->enter_4byte_addr_exist) {
-	/* Do nothing if not provided (either no bits or all bits
-	 * set).
-	 */
-	if ((enter_4byte_addr == 0)
-	    || (enter_4byte_addr == 0xff)) {
-		return 0;
-	}
+		/* Do nothing if not provided (either no bits or all bits
+		 * set).
+		 */
+		if ((enter_4byte_addr == 0)
+		    || (enter_4byte_addr == 0xff)) {
+			return 0;
+		}
 
-	LOG_DBG("Checking enter-4byte-addr %02x", enter_4byte_addr);
+		LOG_DBG("Checking enter-4byte-addr %02x", enter_4byte_addr);
 
-	/* This currently only supports command 0xB7 (Enter 4-Byte
-	 * Address Mode), with or without preceding WREN.
-	 */
-	if ((enter_4byte_addr & 0x03) == 0) {
-		return -ENOTSUP;
-	}
+		/* This currently only supports command 0xB7 (Enter 4-Byte
+		 * Address Mode), with or without preceding WREN.
+		 */
+		if ((enter_4byte_addr & 0x03) == 0) {
+			return -ENOTSUP;
+		}
 
-	acquire_device(dev);
+		acquire_device(dev);
 
-	if ((enter_4byte_addr & 0x02) != 0) {
-		/* Enter after WREN. */
-		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
-	}
-	if (ret == 0) {
-		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_4BA);
-	}
+		if ((enter_4byte_addr & 0x02) != 0) {
+			/* Enter after WREN. */
+			ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+		}
+		if (ret == 0) {
+			ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_4BA);
+		}
 
-	if (ret == 0) {
-		struct spi_nor_data *data = dev->data;
+		if (ret == 0) {
+			struct spi_nor_data *data = dev->data;
 
-		data->flag_access_32bit = true;
-	}
+			data->flag_access_32bit = true;
+		}
 
-	release_device(dev);
+		release_device(dev);
 	}
 
 	return ret;
