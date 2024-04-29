@@ -1355,7 +1355,7 @@ void z_x86_mmu_init(void)
 #endif
 }
 
-#if CONFIG_X86_STACK_PROTECTION
+#ifdef CONFIG_X86_STACK_PROTECTION
 __pinned_func
 void z_x86_set_stack_guard(k_thread_stack_t *stack)
 {
