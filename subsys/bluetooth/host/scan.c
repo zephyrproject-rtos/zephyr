@@ -289,7 +289,7 @@ static int start_le_scan_legacy(uint8_t scan_type, uint16_t interval, uint16_t w
 	return 0;
 }
 
-static int start_passive_scan(bool fast_scan)
+static int start_host_initiated_scan(bool fast_scan)
 {
 	uint16_t interval, window;
 
@@ -303,13 +303,19 @@ static int start_passive_scan(bool fast_scan)
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-		struct bt_hci_ext_scan_phy scan;
+		struct bt_hci_ext_scan_phy scan_phy_params;
 
-		scan.type = BT_HCI_LE_SCAN_PASSIVE;
-		scan.interval = sys_cpu_to_le16(interval);
-		scan.window = sys_cpu_to_le16(window);
+		scan_phy_params.type = BT_HCI_LE_SCAN_PASSIVE;
+		scan_phy_params.interval = sys_cpu_to_le16(interval);
+		scan_phy_params.window = sys_cpu_to_le16(window);
 
-		return start_le_scan_ext(&scan, NULL, 0);
+		/* Scan on 1M + Coded if the controller supports it*/
+		if (BT_FEAT_LE_PHY_CODED(bt_dev.le.features)) {
+			return start_le_scan_ext(&scan_phy_params, &scan_phy_params, 0);
+		} else {
+			return start_le_scan_ext(&scan_phy_params, NULL, 0);
+		}
+
 	}
 
 	return start_le_scan_legacy(BT_HCI_LE_SCAN_PASSIVE, interval, window);
@@ -352,14 +358,14 @@ int bt_le_scan_update(bool fast_scan)
 			bt_conn_unref(conn);
 
 			/* Start/Restart the scanner */
-			return start_passive_scan(fast_scan);
+			return start_host_initiated_scan(fast_scan);
 		}
 	}
 
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 	if (get_pending_per_adv_sync()) {
 		/* Start/Restart the scanner. */
-		return start_passive_scan(fast_scan);
+		return start_host_initiated_scan(fast_scan);
 	}
 #endif
 
