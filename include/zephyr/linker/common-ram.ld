@@ -43,7 +43,7 @@
                 __device_states_end = .;
         } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#if CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE
 	ITERABLE_SECTION_RAM(pm_device_slots, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 
