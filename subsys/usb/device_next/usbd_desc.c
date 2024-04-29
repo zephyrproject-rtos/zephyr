@@ -89,36 +89,36 @@ static int desc_add_and_update_idx(struct usbd_contex *const uds_ctx,
 
 		if (next_nd == NULL) {
 			/* Last node of the same bDescriptorType or tail */
-			new_nd->idx = tmp_nd->idx + 1;
+			new_nd->str.idx = tmp_nd->str.idx + 1;
 			sys_dlist_append(&uds_ctx->descriptors, &new_nd->node);
-			LOG_DBG("Add %u behind %u", new_nd->idx, tmp_nd->idx);
+			LOG_DBG("Add %u behind %u", new_nd->str.idx, tmp_nd->str.idx);
 
 			return 0;
 		}
 
 		if (!desc_type_equal(next_nd, new_nd)) {
 			/* Last node of the same bDescriptorType */
-			new_nd->idx = tmp_nd->idx + 1;
+			new_nd->str.idx = tmp_nd->str.idx + 1;
 			sys_dlist_insert(&next_nd->node, &new_nd->node);
-			LOG_DBG("Add %u before %u", new_nd->idx, next_nd->idx);
+			LOG_DBG("Add %u before %u", new_nd->str.idx, next_nd->str.idx);
 
 			return 0;
 		}
 
-		if (tmp_nd->idx != (next_nd->idx - 1)) {
+		if (tmp_nd->str.idx != (next_nd->str.idx - 1)) {
 			/* Add between nodes of the same bDescriptorType */
-			new_nd->idx = tmp_nd->idx + 1;
+			new_nd->str.idx = tmp_nd->str.idx + 1;
 			sys_dlist_insert(&next_nd->node, &new_nd->node);
 			LOG_DBG("Add %u between %u and %u",
-				tmp_nd->idx, next_nd->idx, new_nd->idx);
+				tmp_nd->str.idx, next_nd->str.idx, new_nd->str.idx);
 			return 0;
 		}
 	}
 
 	/* If there are none of same bDescriptorType, node idx is set to 0. */
-	new_nd->idx = 0;
+	new_nd->str.idx = 0;
 	sys_dlist_append(&uds_ctx->descriptors, &new_nd->node);
-	LOG_DBG("Added first descriptor node (usage type %u)", new_nd->utype);
+	LOG_DBG("Added first descriptor node (usage type %u)", new_nd->str.utype);
 
 	return 0;
 }
@@ -126,13 +126,13 @@ static int desc_add_and_update_idx(struct usbd_contex *const uds_ctx,
 struct usbd_desc_node *usbd_get_descriptor(struct usbd_contex *const uds_ctx,
 					   const uint8_t type, const uint8_t idx)
 {
-	struct usbd_desc_node *tmp;
+	struct usbd_desc_node *desc_nd;
 	struct usb_desc_header *dh;
 
-	SYS_DLIST_FOR_EACH_CONTAINER(&uds_ctx->descriptors, tmp, node) {
-		dh = tmp->desc;
-		if (tmp->idx == idx && dh->bDescriptorType == type) {
-			return tmp;
+	SYS_DLIST_FOR_EACH_CONTAINER(&uds_ctx->descriptors, desc_nd, node) {
+		dh = desc_nd->desc;
+		if (desc_nd->str.idx == idx && dh->bDescriptorType == type) {
+			return desc_nd;
 		}
 	}
 
@@ -187,25 +187,24 @@ int usbd_add_descriptor(struct usbd_contex *const uds_ctx,
 	}
 
 	if (head->bDescriptorType == USB_DESC_STRING) {
-		switch (desc_nd->utype) {
+		switch (desc_nd->str.utype) {
 		case USBD_DUT_STRING_LANG:
 			break;
 		case USBD_DUT_STRING_MANUFACTURER:
-			hs_desc->iManufacturer = desc_nd->idx;
-			fs_desc->iManufacturer = desc_nd->idx;
+			hs_desc->iManufacturer = desc_nd->str.idx;
+			fs_desc->iManufacturer = desc_nd->str.idx;
 			break;
 		case USBD_DUT_STRING_PRODUCT:
-			hs_desc->iProduct = desc_nd->idx;
-			fs_desc->iProduct = desc_nd->idx;
+			hs_desc->iProduct = desc_nd->str.idx;
+			fs_desc->iProduct = desc_nd->str.idx;
 			break;
 		case USBD_DUT_STRING_SERIAL_NUMBER:
-			if (!desc_nd->custom_sn) {
+			if (!desc_nd->str.custom_sn) {
 				ret = usbd_get_sn_from_hwid(desc_nd);
-				desc_nd->utf16le = false;
 			}
 
-			hs_desc->iSerialNumber = desc_nd->idx;
-			fs_desc->iSerialNumber = desc_nd->idx;
+			hs_desc->iSerialNumber = desc_nd->str.idx;
+			fs_desc->iSerialNumber = desc_nd->str.idx;
 			break;
 		default:
 			break;
@@ -220,7 +219,7 @@ add_descriptor_error:
 uint8_t usbd_str_desc_get_idx(const struct usbd_desc_node *const desc_nd)
 {
 	if (sys_dnode_is_linked(&desc_nd->node)) {
-		return desc_nd->idx;
+		return desc_nd->str.idx;
 	}
 
 	return 0;
@@ -230,6 +229,6 @@ void usbd_remove_descriptor(struct usbd_desc_node *const desc_nd)
 {
 	if (sys_dnode_is_linked(&desc_nd->node)) {
 		sys_dlist_remove(&desc_nd->node);
-		desc_nd->idx = 0;
+		desc_nd->str.idx = 0;
 	}
 }
