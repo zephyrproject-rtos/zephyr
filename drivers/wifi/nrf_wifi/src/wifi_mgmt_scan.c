@@ -109,10 +109,9 @@ int nrf_wifi_disp_scan_zep(const struct device *dev, struct wifi_scan_params *pa
 
 	vif_ctx_zep->disp_scan_cb = cb;
 
-	scan_info = k_calloc(sizeof(*scan_info) +
+	scan_info = nrf_wifi_osal_mem_zalloc(sizeof(*scan_info) +
 			     (num_scan_channels *
-			      sizeof(scan_info->scan_params.center_frequency[0])),
-			     sizeof(char));
+			      sizeof(scan_info->scan_params.center_frequency[0])));
 
 	if (!scan_info) {
 		LOG_ERR("%s: Unable to allocate memory for scan_info (size: %d bytes)",
@@ -226,7 +225,7 @@ int nrf_wifi_disp_scan_zep(const struct device *dev, struct wifi_scan_params *pa
 	ret = 0;
 out:
 	if (scan_info) {
-		k_free(scan_info);
+		nrf_wifi_osal_mem_free(scan_info);
 	}
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 	return ret;
