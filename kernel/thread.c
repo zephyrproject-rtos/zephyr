@@ -356,7 +356,7 @@ static inline void z_vrfy_k_thread_start(struct k_thread *thread)
 #include <syscalls/k_thread_start_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-#if CONFIG_STACK_POINTER_RANDOM
+#if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 int z_stack_adjust_initialized;
 
 static size_t random_offset(size_t stack_size)
@@ -487,7 +487,7 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	new_thread->userspace_local_data =
 		(struct _thread_userspace_local_data *)(stack_ptr - delta);
 #endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */
-#if CONFIG_STACK_POINTER_RANDOM
+#if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 	delta += random_offset(stack_buf_size);
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 	delta = ROUND_UP(delta, ARCH_STACK_PTR_ALIGN);
