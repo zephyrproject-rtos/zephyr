@@ -609,7 +609,7 @@ static int spi_nor_process_sfdp(const struct device *dev)
 		.len_dw = config->bfp_len,
 	};
 
-	ret = spi_nor_process_bfp(dev, &bfp_hdr, cfg->bfp);
+	ret = spi_nor_process_bfp(dev, &bfp_hdr, config->bfp);
 #else
 #error Unhandled SFDP choice
 #endif
@@ -825,10 +825,10 @@ static int flash_andes_qspi_init(const struct device *dev)
 
 #ifndef CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME
 
-	if (memcmp(jedec_id, cfg->jedec_id, sizeof(jedec_id)) != 0) {
+	if (memcmp(jedec_id, config->jedec_id, sizeof(jedec_id)) != 0) {
 		LOG_ERR("Device id %02x %02x %02x does not match config"
 			"%02x %02x %02x", jedec_id[0], jedec_id[1], jedec_id[2],
-			cfg->jedec_id[0], cfg->jedec_id[1], cfg->jedec_id[2]);
+			config->jedec_id[0], config->jedec_id[1], config->jedec_id[2]);
 		return -EINVAL;
 	}
 #endif
