@@ -123,7 +123,8 @@ get_as_data_ep(struct usbd_class_data *const c_data, int as_idx)
 	const struct uac2_cfg *cfg = dev->config;
 	const struct usb_desc_header *desc = NULL;
 
-	if ((as_idx < cfg->num_ifaces) && cfg->ep_indexes[as_idx]) {
+	if ((as_idx >= 0) && (as_idx < cfg->num_ifaces) &&
+	    cfg->ep_indexes[as_idx]) {
 		desc = cfg->descriptors[cfg->ep_indexes[as_idx]];
 	}
 
@@ -343,6 +344,8 @@ static void write_explicit_feedback(struct usbd_class_data *const c_data,
 	uint32_t fb_value;
 	int as_idx = terminal_to_as_interface(dev, terminal);
 	int ret;
+
+	__ASSERT_NO_MSG(as_idx >= 0);
 
 	buf = net_buf_alloc(&uac2_pool, K_NO_WAIT);
 	if (!buf) {
