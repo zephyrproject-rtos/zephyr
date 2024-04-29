@@ -110,6 +110,12 @@ LOG_MODULE_REGISTER(ipc_icbmsg,
 /** Registered endpoints count mask in flags. */
 #define FLAG_EPT_COUNT_MASK 0xFFFF
 
+/** Workqueue stack size for bounding processing (this configuration is not optimized). */
+#define EP_BOUND_WORK_Q_STACK_SIZE (512U)
+
+/** Workqueue priority for bounding processing. */
+#define EP_BOUND_WORK_Q_PRIORITY (CONFIG_SYSTEM_WORKQUEUE_PRIORITY)
+
 enum msg_type {
 	MSG_DATA = 0,		/* Data message. */
 	MSG_RELEASE_DATA,	/* Release data buffer message. */
@@ -193,6 +199,9 @@ struct control_message {
 };
 
 BUILD_ASSERT(NUM_EPT <= EPT_ADDR_INVALID, "Too many endpoints");
+
+/* Work queue for bounding processing. */
+static struct k_work_q ep_bound_work_q;
 
 /**
  * Calculate pointer to block from its index and channel configuration (RX or TX).
@@ -672,7 +681,7 @@ static int send_bound_message(struct backend_data *dev_data, struct ept_data *ep
  */
 static void schedule_ept_bound_process(struct backend_data *dev_data)
 {
-	k_work_submit(&dev_data->ep_bound_work);
+	k_work_submit_to_queue(&ep_bound_work_q, &dev_data->ep_bound_work);
 }
 
 /**
@@ -1117,6 +1126,17 @@ static int backend_init(const struct device *instance)
 {
 	const struct icbmsg_config *conf = instance->config;
 	struct backend_data *dev_data = instance->data;
+	static K_THREAD_STACK_DEFINE(ep_bound_work_q_stack, EP_BOUND_WORK_Q_STACK_SIZE);
+	static bool is_work_q_started;
+
+	if (!is_work_q_started) {
+		k_work_queue_init(&ep_bound_work_q);
+		k_work_queue_start(&ep_bound_work_q, ep_bound_work_q_stack,
+				   K_THREAD_STACK_SIZEOF(ep_bound_work_q_stack),
+				   EP_BOUND_WORK_Q_PRIORITY, NULL);
+
+		is_work_q_started = true;
+	}
 
 	dev_data->conf = conf;
 	dev_data->is_initiator = (conf->rx.blocks_ptr < conf->tx.blocks_ptr);
