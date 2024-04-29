@@ -1,0 +1,6 @@
+family:
+- name: rapidsi
+  series:
+  - name: virgo
+    socs:
+    - name: virgo

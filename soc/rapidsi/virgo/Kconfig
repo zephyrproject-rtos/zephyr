@@ -1,0 +1,57 @@
+# Copyright (c) 2024 Rapid Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_VIRGO
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_CLIC
+
+config SOC_VIRGO
+	select ATOMIC_OPERATIONS_BUILTIN
+	select INCLUDE_RESET_VECTOR
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_PMP
+
+if SOC_SERIES_VIRGO
+
+choice
+prompt "Base CPU ISA options"
+default RV32I_CPU
+
+config RV32I_CPU
+	bool "RISCV32 CPU ISA"
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_ZICSR
+
+endchoice
+
+choice
+prompt "FPU options"
+default NO_FPU
+
+config NO_FPU
+	bool "No FPU"
+
+config SINGLE_PRECISION_FPU
+	bool "Single precision FPU"
+	select CPU_HAS_FPU
+
+config DOUBLE_PRECISION_FPU
+	bool "Double precision FPU"
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+
+endchoice
+
+config SOC_ANDES_V5_EXECIT
+	bool "Andes V5 EXEC.IT extension"
+	depends on RISCV_ISA_EXT_C
+	depends on !RISCV_GENERIC_TOOLCHAIN
+	depends on !LINKER_USE_NO_RELAX
+	help
+		The EXEC.IT extension (Execution on Instruction Table) generate
+		a look-up table and replaces suitable 32-bit instructions with
+		the 16-bit "exec.it <INDEX>".
+
+endif # SOC_SERIES_ANDES_AE350
