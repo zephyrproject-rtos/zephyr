@@ -116,6 +116,10 @@ int pm_notifier_unregister(struct pm_notifier *notifier);
  */
 const struct pm_state_info *pm_state_next_get(uint8_t cpu);
 
+/** @cond INTERNAL_HIDDEN */
+void z_pm_save_idle_exit(void);
+/** @endcond */
+
 /**
  * @}
  */
@@ -175,9 +179,10 @@ static inline const struct pm_state_info *pm_state_next_get(uint8_t cpu)
 
 	return NULL;
 }
+static inline void z_pm_save_idle_exit(void)
+{
+}
 #endif /* CONFIG_PM */
-
-void z_pm_save_idle_exit(void);
 
 #ifdef __cplusplus
 }
