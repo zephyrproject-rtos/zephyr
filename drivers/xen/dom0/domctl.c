@@ -123,12 +123,12 @@ int xen_domctl_get_paging_mempool_size(int domid, uint64_t *size_mb)
 	return 0;
 }
 
-int xen_domctl_set_paging_mempool_size(int domid, uint64_t size_mb)
+int xen_domctl_set_paging_mempool_size(int domid, uint64_t size)
 {
 	xen_domctl_t domctl = {
 		.cmd = XEN_DOMCTL_set_paging_mempool_size,
 		.domain = domid,
-		.u.paging_mempool.size = size_mb,
+		.u.paging_mempool.size = size,
 	};
 
 	return do_domctl(&domctl);
