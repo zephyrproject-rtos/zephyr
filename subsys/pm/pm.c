@@ -144,6 +144,11 @@ void pm_system_resume(void)
 	 * and it may schedule another thread.
 	 */
 	if (atomic_test_and_clear_bit(z_post_ops_required, id)) {
+#if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
+		if (atomic_add(&_cpus_active, 1) == 0) {
+			pm_resume_devices();
+		}
+#endif
 		pm_state_exit_post_ops(z_cpus_pm_state[id].state, z_cpus_pm_state[id].substate_id);
 		pm_state_notify(false);
 		z_cpus_pm_state[id] = (struct pm_state_info){PM_STATE_ACTIVE,
@@ -240,11 +245,6 @@ bool pm_system_suspend(int32_t ticks)
 	pm_stats_stop();
 
 	/* Wake up sequence starts here */
-#if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
-	if (atomic_add(&_cpus_active, 1) == 0) {
-		pm_resume_devices();
-	}
-#endif
 	pm_stats_update(z_cpus_pm_state[id].state);
 	pm_system_resume();
 	k_sched_unlock();
