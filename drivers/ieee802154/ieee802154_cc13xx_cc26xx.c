@@ -791,7 +791,11 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 			.bNoFsPowerUp = 0x0,
 		},
 		.txPower = 0x2853, /* 0 dBm */
-		.pRegOverride = overrides
+		.pRegOverride = overrides,
+#if defined(CONFIG_SOC_CC1352P) || defined(CONFIG_SOC_CC1352P7)
+		.pRegOverrideTxStd = NULL,
+		.pRegOverrideTx20 = NULL,
+#endif /* CONFIG_SOC_CC1352P, CONFIG_SOC_CC1352P7 */
 	},
 };
 
