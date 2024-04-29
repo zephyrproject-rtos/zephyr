@@ -14,10 +14,8 @@ LOG_MODULE_REGISTER(cache_nrfx, CONFIG_CACHE_LOG_LEVEL);
 #define NRF_ICACHE NRF_CACHE
 #endif
 
-#define CACHE_LINE_SIZE		     32
 #define CACHE_BUSY_RETRY_INTERVAL_US 10
 
-static struct k_spinlock lock;
 
 enum k_nrf_cache_op {
 	/*
@@ -55,7 +53,6 @@ static inline bool is_cache_busy(NRF_CACHE_Type *cache)
 static inline void wait_for_cache(NRF_CACHE_Type *cache)
 {
 	while (is_cache_busy(cache)) {
-		k_busy_wait(CACHE_BUSY_RETRY_INTERVAL_US);
 	}
 }
 
@@ -67,14 +64,6 @@ static inline int _cache_all(NRF_CACHE_Type *cache, enum k_nrf_cache_op op)
 	if (op == K_NRF_CACHE_INVD) {
 		return -ENOTSUP;
 	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	/*
-	 * Invalidating the whole cache is dangerous. For good measure
-	 * disable the cache.
-	 */
-	nrf_cache_disable(cache);
 
 	wait_for_cache(cache);
 
@@ -102,65 +91,67 @@ static inline int _cache_all(NRF_CACHE_Type *cache, enum k_nrf_cache_op op)
 
 	wait_for_cache(cache);
 
-	nrf_cache_enable(cache);
-
-	k_spin_unlock(&lock, key);
-
 	return 0;
 }
 
 static inline void _cache_line(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, uintptr_t line_addr)
 {
-	wait_for_cache(cache);
+	do {
+		wait_for_cache(cache);
 
-	nrf_cache_lineaddr_set(cache, line_addr);
+		nrf_cache_lineaddr_set(cache, line_addr);
 
-	switch (op) {
+		switch (op) {
 
 #if NRF_CACHE_HAS_TASK_CLEAN
-	case K_NRF_CACHE_CLEAN:
-		nrf_cache_task_trigger(cache, NRF_CACHE_TASK_CLEANLINE);
-		break;
+		case K_NRF_CACHE_CLEAN:
+			nrf_cache_task_trigger(cache, NRF_CACHE_TASK_CLEANLINE);
+			break;
 #endif
 
-	case K_NRF_CACHE_INVD:
-		nrf_cache_task_trigger(cache, NRF_CACHE_TASK_INVALIDATELINE);
-		break;
+		case K_NRF_CACHE_INVD:
+			nrf_cache_task_trigger(cache, NRF_CACHE_TASK_INVALIDATELINE);
+			break;
 
 #if NRF_CACHE_HAS_TASK_FLUSH
-	case K_NRF_CACHE_FLUSH:
-		nrf_cache_task_trigger(cache, NRF_CACHE_TASK_FLUSHLINE);
-		break;
+		case K_NRF_CACHE_FLUSH:
+			nrf_cache_task_trigger(cache, NRF_CACHE_TASK_FLUSHLINE);
+			break;
 #endif
 
-	default:
-		break;
-	}
-
-	wait_for_cache(cache);
+		default:
+			break;
+		}
+	} while (nrf_cache_lineaddr_get(cache) != line_addr);
 }
 
 static inline int _cache_range(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, void *addr,
 			       size_t size)
 {
 	uintptr_t line_addr = (uintptr_t)addr;
-	uintptr_t end_addr = line_addr + size;
+	uintptr_t end_addr;
+
+	/* Some SOCs has a bug that requires to set 28th bit in the address on
+	 * Trustzone secure builds.
+	 */
+	if (IS_ENABLED(CONFIG_CACHE_NRF_PATCH_LINEADDR) &&
+	    !IS_ENABLED(CONFIG_TRUSTED_EXECUTION_NONSECURE)) {
+		line_addr |= BIT(28);
+	}
+
+	end_addr = line_addr + size;
 
 	/*
 	 * Align address to line size
 	 */
-	line_addr &= ~(CACHE_LINE_SIZE - 1);
+	line_addr &= ~(CONFIG_DCACHE_LINE_SIZE - 1);
 
 	do {
-		k_spinlock_key_t key = k_spin_lock(&lock);
-
 		_cache_line(cache, op, line_addr);
-
-		k_spin_unlock(&lock, key);
-
-		line_addr += CACHE_LINE_SIZE;
-
+		line_addr += CONFIG_DCACHE_LINE_SIZE;
 	} while (line_addr < end_addr);
+
+	wait_for_cache(cache);
 
 	return 0;
 }
@@ -192,11 +183,6 @@ void cache_data_enable(void)
 	nrf_cache_enable(NRF_DCACHE);
 }
 
-void cache_data_disable(void)
-{
-	nrf_cache_disable(NRF_DCACHE);
-}
-
 int cache_data_flush_all(void)
 {
 #if NRF_CACHE_HAS_TASK_CLEAN
@@ -204,6 +190,14 @@ int cache_data_flush_all(void)
 #else
 	return -ENOTSUP;
 #endif
+}
+
+void cache_data_disable(void)
+{
+	if (nrf_cache_enable_check(NRF_DCACHE)) {
+		(void)cache_data_flush_all();
+	}
+	nrf_cache_disable(NRF_DCACHE);
 }
 
 int cache_data_invd_all(void)

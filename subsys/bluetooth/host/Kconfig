@@ -72,27 +72,6 @@ config BT_HCI_TX_PRIO
 	int
 	default 7
 
-config BT_HCI_RESERVE
-	int
-	default 0 if BT_H4
-	default 1 if BT_H5
-	default 1 if BT_HCI_IPC
-	default 1 if BT_SPI
-	default 1 if BT_STM32_IPM
-	default 1 if BT_STM32WBA
-	default 1 if BT_USERCHAN
-	default 1 if BT_ESP32
-	default 0 if BT_B91
-	default 1 if BT_AMBIQ_HCI
-	default 1 if BT_SILABS_HCI
-	# Even if no driver is selected the following default is still
-	# needed e.g. for unit tests.
-	default 0
-	help
-	  Headroom that the driver needs for sending and receiving buffers. Add a
-	  new 'default' entry for each new driver.
-
-
 choice BT_RECV_CONTEXT
 	prompt "BT RX Thread Selection"
 	default BT_RECV_WORKQ_SYS if SOC_SERIES_NRF51X

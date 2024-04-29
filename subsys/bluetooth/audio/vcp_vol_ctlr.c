@@ -1182,7 +1182,6 @@ int bt_vcp_vol_ctlr_set_vol(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t volume)
 	vol_ctlr->cp_val.cp.counter = vol_ctlr->state.change_counter;
 	vol_ctlr->cp_val.volume = volume;
 
-	vol_ctlr->busy = true;
 	vol_ctlr->write_params.offset = 0;
 	vol_ctlr->write_params.data = &vol_ctlr->cp_val;
 	vol_ctlr->write_params.length = sizeof(vol_ctlr->cp_val);
