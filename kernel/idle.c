@@ -18,21 +18,6 @@
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
-void z_pm_save_idle_exit(void)
-{
-#ifdef CONFIG_PM
-	/* Some CPU low power states require notification at the ISR
-	 * to allow any operations that needs to be done before kernel
-	 * switches task or processes nested interrupts.
-	 * This can be simply ignored if not required.
-	 */
-	pm_system_resume();
-#endif	/* CONFIG_PM */
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	sys_clock_idle_exit();
-#endif /* CONFIG_SYS_CLOCK_EXISTS */
-}
-
 void idle(void *unused1, void *unused2, void *unused3)
 {
 	ARG_UNUSED(unused1);
