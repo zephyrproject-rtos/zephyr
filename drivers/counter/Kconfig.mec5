@@ -8,5 +8,12 @@ config COUNTER_MEC5_BTMR
 	default y
 	depends on DT_HAS_MICROCHIP_MEC5_BTMR_COUNTER_ENABLED
 	help
-	  Enable counter driver for Microchip XEC MCU series. Such driver
-	  will expose the basic timer devices present on the MCU.
+	  Enable counter driver using the Microchip MEC5 SoC series
+	  basic timer.
+
+config COUNTER_MEC5_RTMR
+	bool "Microchip MEC5 series counter driver using the 32KHz RTOS timer"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_RTMR_COUNTER_ENABLED
+	help
+	  Enable counter driver using the Microchip MEC5 SoC series RTOS timer.

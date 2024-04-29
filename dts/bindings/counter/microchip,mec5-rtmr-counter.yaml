@@ -1,0 +1,27 @@
+# Copyright 2024 Microchip Technologies Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 HAL based RTOS timer counter driver
+
+compatible: "microchip,mec5-rtmr-counter"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    const: 32768
+    description: RTOS timer input clock is fixed at 32 KHz.
+
+  max-value:
+    type: int
+    required: true
+    const: 0xffffffff
+    description: Maximum value of the count and preload 32-bit registers.
