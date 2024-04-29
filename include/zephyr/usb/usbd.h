@@ -58,13 +58,31 @@ extern "C" {
  */
 #define USB_STRING_DESCRIPTOR_LENGTH(s)	(sizeof(s) * 2)
 
-/* Used internally to keep descriptors in order */
-enum usbd_desc_usage_type {
+/** Used internally to keep descriptors in order
+ * @cond INTERNAL_HIDDEN
+ */
+enum usbd_str_desc_utype {
 	USBD_DUT_STRING_LANG,
 	USBD_DUT_STRING_MANUFACTURER,
 	USBD_DUT_STRING_PRODUCT,
 	USBD_DUT_STRING_SERIAL_NUMBER,
 	USBD_DUT_STRING_INTERFACE,
+};
+
+/** @endcond */
+
+/**
+ * USBD string descriptor data
+ */
+struct usbd_str_desc_data {
+	/** Descriptor index, required for string descriptors */
+	uint8_t idx;
+	/** Descriptor usage type (not bDescriptorType) */
+	enum usbd_str_desc_utype utype : 8;
+	/** If not set, device stack obtains SN using the hwinfo API */
+	unsigned int custom_sn : 1;
+	/** The string descriptor is in ASCII7 format */
+	unsigned int ascii7 : 1;
 };
 
 /**
@@ -76,16 +94,11 @@ enum usbd_desc_usage_type {
 struct usbd_desc_node {
 	/** slist node struct */
 	sys_dnode_t node;
-	/** Descriptor index, required for string descriptors */
-	unsigned int idx : 8;
-	/** Descriptor usage type (not bDescriptorType) */
-	unsigned int utype : 8;
-	/** If not set, string descriptor must be converted to UTF16LE */
-	unsigned int utf16le : 1;
-	/** If not set, device stack obtains SN using the hwinfo API */
-	unsigned int custom_sn : 1;
+	union {
+		struct usbd_str_desc_data str;
+	};
 	/** Pointer to a descriptor */
-	void *desc;
+	void *const desc;
 };
 
 /**
@@ -438,11 +451,24 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		.bString = sys_cpu_to_le16(0x0409),			\
 	};								\
 	static struct usbd_desc_node name = {				\
-		.idx = 0,						\
-		.utype = USBD_DUT_STRING_LANG,				\
+		.str = {						\
+			.idx = 0,					\
+			.utype = USBD_DUT_STRING_LANG,			\
+		},							\
 		.desc = &string_desc_##name,				\
 	}
 
+/**
+ * @brief Create a string descriptor
+ *
+ * This macro defines a descriptor node and a string descriptor.
+ * The string literal passed to the macro should be in the ASCII7 format. It
+ * is converted to UTF16LE format on the host request.
+ *
+ * @param d_name   Internal string descriptor node identifier name
+ * @param d_string ASCII7 encoded string literal
+ * @param d_utype  String descriptor usage type
+ */
 #define USBD_DESC_STRING_DEFINE(d_name, d_string, d_utype)		\
 	struct usb_string_descriptor_##d_name {				\
 		uint8_t bLength;					\
@@ -456,7 +482,10 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		.bString = d_string,					\
 	};								\
 	static struct usbd_desc_node d_name = {				\
-		.utype = d_utype,					\
+		.str = {						\
+			.utype = d_utype,				\
+			.ascii7 = true,					\
+		},							\
 		.desc = &string_desc_##d_name,				\
 	}
 
