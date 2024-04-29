@@ -259,6 +259,10 @@ static int i2c_eeprom_target_init(const struct device *dev)
 	static uint8_t							\
 	i2c_eeprom_target_##inst##_buffer[(DT_INST_PROP(inst, size))];	\
 									\
+	BUILD_ASSERT(DT_INST_PROP(inst, size) <=			\
+			(1 << DT_INST_PROP_OR(inst, address_width, 8)), \
+			"size must be <= than 2^address_width");	\
+									\
 	static const struct i2c_eeprom_target_config			\
 		i2c_eeprom_target_##inst##_cfg = {			\
 		.bus = I2C_DT_SPEC_INST_GET(inst),			\
