@@ -589,7 +589,7 @@ static int sreq_get_desc_str(struct usbd_contex *const uds_ctx,
 		return 0;
 	}
 
-	if (d_nd->idx == 0U) {
+	if (usbd_str_desc_get_idx(d_nd) == 0U) {
 		/* Language ID string descriptor */
 		head = d_nd->desc;
 		len = MIN(setup->wLength, net_buf_tailroom(buf));
