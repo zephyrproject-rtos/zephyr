@@ -1,4 +1,4 @@
-identifier: qemu_malta//be
+identifier: qemu_malta/qemu_malta/be
 name: QEMU emulation for MIPS (big endian)
 type: qemu
 simulation: qemu
