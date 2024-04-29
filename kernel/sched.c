@@ -1362,10 +1362,17 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state)
 		 * subsystems above can rely on _current being
 		 * unchanged.  Disabled for posix as that arch
 		 * continues to use the _current pointer in its swap
-		 * code.
+		 * code.  Note that we must leave a non-null switch
+		 * handle for any threads spinning in join() (this can
+		 * never be used, as our thread is flagged dead, but
+		 * it must not be NULL otherwise join can deadlock).
 		 */
 		if (dummify && !IS_ENABLED(CONFIG_ARCH_POSIX)) {
+#ifdef CONFIG_USE_SWITCH
+			_current->switch_handle = _current;
+#endif
 			z_dummy_thread_init(&_thread_dummy);
+
 		}
 
 		/* Finally update the halting thread state, on which
@@ -1401,6 +1408,8 @@ void z_impl_k_thread_abort(struct k_thread *thread)
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, abort, thread);
 
 	z_thread_abort(thread);
+
+	__ASSERT_NO_MSG((thread->base.thread_state & _THREAD_DEAD) != 0);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_thread, abort, thread);
 }
