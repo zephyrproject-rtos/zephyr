@@ -143,7 +143,7 @@ static int vpf(struct _pfr *r, const char *f, va_list ap)
 
 static inline int snprintf(char *buf, unsigned long len, const char *f, ...)
 {
-	int ret = 0;
+	int ret;
 	struct _pfr r = { .buf = buf, .len = len };
 
 	CALL_VPF(&r);
@@ -152,7 +152,7 @@ static inline int snprintf(char *buf, unsigned long len, const char *f, ...)
 
 static inline int sprintf(char *buf, const char *f, ...)
 {
-	int ret = 0;
+	int ret;
 	struct _pfr r = { .buf = buf, .len = 0x7fffffff };
 
 	CALL_VPF(&r);
@@ -161,7 +161,7 @@ static inline int sprintf(char *buf, const char *f, ...)
 
 static inline int printf(const char *f, ...)
 {
-	int ret = 0;
+	int ret;
 	struct _pfr r = {0};
 
 	CALL_VPF(&r);
