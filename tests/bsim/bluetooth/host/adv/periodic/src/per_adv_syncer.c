@@ -253,6 +253,33 @@ static void main_per_adv_syncer(void)
 	PASS("Periodic advertising syncer passed\n");
 }
 
+static void main_per_adv_syncer_app_not_scanning(void)
+{
+	int err;
+	struct bt_le_per_adv_sync *sync = NULL;
+
+	common_init();
+	start_scan();
+
+	printk("Waiting for periodic advertising...\n");
+	WAIT_FOR_FLAG(flag_per_adv);
+	printk("Found periodic advertising.\n");
+
+	printk("Stopping scan\n");
+	err = bt_le_scan_stop();
+	if (err != 0) {
+		FAIL("Failed to stop scan: %d", err);
+		return;
+	}
+
+	create_pa_sync(&sync);
+
+	printk("Waiting for periodic sync lost...\n");
+	WAIT_FOR_FLAG(flag_per_adv_sync_lost);
+
+	PASS("Periodic advertising syncer passed\n");
+}
+
 static void main_per_adv_conn_syncer(void)
 {
 	struct bt_le_per_adv_sync *sync = NULL;
@@ -340,6 +367,15 @@ static const struct bst_test_instance per_adv_syncer[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_syncer
+	},
+	{
+		.test_id = "per_adv_syncer_app_not_scanning",
+		.test_descr = "Basic periodic advertising sync test but where "
+			      "the app stopped scanning before creating sync."
+			      "Expect the host to start scanning automatically.",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = main_per_adv_syncer_app_not_scanning
 	},
 	{
 		.test_id = "per_adv_conn_syncer",
