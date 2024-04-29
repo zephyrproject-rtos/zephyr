@@ -470,6 +470,9 @@ Flash map
 hawkBit
 =======
 
+* :c:func:`hawkbit_autohandler` now takes one argument. This argument has to be set to
+  ``true`` for the same behavior as before the change. (:github:`71037`)
+
 MCUmgr
 ======
 
