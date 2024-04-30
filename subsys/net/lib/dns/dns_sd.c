@@ -667,40 +667,33 @@ static bool port_in_use_sockaddr(uint16_t proto, uint16_t port,
 		|| net_context_port_in_use(proto, port, anyp);
 }
 
-static bool port_in_use(uint16_t proto, uint16_t port,
-			const struct in_addr *addr4,
-			const struct in6_addr *addr6)
+static bool port_in_use(uint16_t proto, uint16_t port, const struct in_addr *addr4,
+	const struct in6_addr *addr6)
 {
-	bool ret = false;
+	bool r;
+	struct sockaddr sa;
 
 	if (addr4 != NULL) {
-		struct sockaddr_in sa = { 0 };
+		net_sin(&sa)->sin_family = AF_INET;
+		net_sin(&sa)->sin_addr = *addr4;
 
-		sa.sin_family = AF_INET;
-		sa.sin_addr = *addr4;
-
-		ret = port_in_use_sockaddr(proto, port,
-					   (struct sockaddr *)&sa);
-		if (ret) {
-			goto out;
+		r = port_in_use_sockaddr(proto, port, &sa);
+		if (r) {
+			return true;
 		}
 	}
 
 	if (addr6 != NULL) {
-		struct sockaddr_in6 sa = { 0 };
+		net_sin6(&sa)->sin6_family = AF_INET6;
+		net_sin6(&sa)->sin6_addr = *addr6;
 
-		sa.sin6_family = AF_INET6;
-		sa.sin6_addr = *addr6;
-
-		ret = port_in_use_sockaddr(proto, port,
-					   (struct sockaddr *)&sa);
-		if (ret) {
-			goto out;
+		r = port_in_use_sockaddr(proto, port, &sa);
+		if (r) {
+			return true;
 		}
 	}
 
-out:
-	return ret;
+	return false;
 }
 #else /* CONFIG_NET_TEST */
 static inline bool port_in_use(uint16_t proto, uint16_t port, const struct in_addr *addr4,
