@@ -118,7 +118,7 @@ static void set_mode_suspend_to_ram(void)
 
 	/* Execution is restored at this point after wake up */
 	/* Restore system clock as soon as we exit standby mode */
-	sys_clock_idle_exit();
+	stm32_clock_control_standby_exit();
 }
 #endif
 
