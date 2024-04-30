@@ -40,14 +40,14 @@ static struct _timeout *first(void)
 {
 	sys_dnode_t *t = sys_dlist_peek_head(&timeout_list);
 
-	return t == NULL ? NULL : CONTAINER_OF(t, struct _timeout, node);
+	return (t == NULL) ? NULL : CONTAINER_OF(t, struct _timeout, node);
 }
 
 static struct _timeout *next(struct _timeout *t)
 {
 	sys_dnode_t *n = sys_dlist_peek_next(&timeout_list, &t->node);
 
-	return n == NULL ? NULL : CONTAINER_OF(n, struct _timeout, node);
+	return (n == NULL) ? NULL : CONTAINER_OF(n, struct _timeout, node);
 }
 
 static void remove_timeout(struct _timeout *t)
@@ -114,7 +114,7 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 		struct _timeout *t;
 
 		if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) &&
-		    Z_TICK_ABS(timeout.ticks) >= 0) {
+		    (Z_TICK_ABS(timeout.ticks) >= 0)) {
 			k_ticks_t ticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
 
 			to->dticks = MAX(1, ticks);
