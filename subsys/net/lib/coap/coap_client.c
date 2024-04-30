@@ -811,8 +811,17 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	}
 fail:
 	client->response_ready = false;
-	internal_req->request_ongoing = false;
+	if (ret != 0 || !coap_request_is_observe(&internal_req->request)) {
+		internal_req->request_ongoing = false;
+	}
 	return ret;
+}
+
+void coap_client_cancel_requests(struct coap_client *client)
+{
+	for (int i = 0; i < ARRAY_SIZE(client->requests); i++) {
+		client->requests[i].request_ongoing = false;
+	}
 }
 
 void coap_client_recv(void *coap_cl, void *a, void *b)
