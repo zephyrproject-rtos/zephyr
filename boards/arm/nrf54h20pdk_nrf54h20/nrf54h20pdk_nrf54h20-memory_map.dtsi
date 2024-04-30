@@ -1,0 +1,177 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	reserved-memory {
+		cpuapp_ram0x_region: memory@2f000000 {
+			compatible = "nordic,owned-memory";
+			reg = <0x2f000000 DT_SIZE_K(260)>;
+			status = "disabled";
+			perm-read;
+			perm-write;
+			perm-secure;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x2f000000 0x41000>;
+
+			cpusec_cpuapp_ipc_shm: memory@0 {
+				reg = <0x0 DT_SIZE_K(2)>;
+			};
+
+			cpuapp_cpusec_ipc_shm: memory@800 {
+				reg = <0x800 DT_SIZE_K(2)>;
+			};
+
+			cpuapp_data: memory@1000 {
+				reg = <0x1000 DT_SIZE_K(256)>;
+			};
+		};
+
+		cpurad_ram0x_region: memory@2f041000 {
+			compatible = "nordic,owned-memory";
+			reg = <0x2f041000 DT_SIZE_K(4)>;
+			status = "disabled";
+			perm-read;
+			perm-write;
+			perm-secure;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x2f041000 0x1000>;
+
+			cpusec_cpurad_ipc_shm: memory@0 {
+				reg = <0x0 DT_SIZE_K(2)>;
+			};
+
+			cpurad_cpusec_ipc_shm: memory@800 {
+				reg = <0x800 DT_SIZE_K(2)>;
+			};
+		};
+
+		cpuapp_cpurad_ram0x_region: memory@2f0bf000 {
+			compatible = "nordic,owned-memory";
+			reg = <0x2f0bf000 DT_SIZE_K(4)>;
+			status = "disabled";
+			perm-read;
+			perm-write;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x2f0bf000 0x1000>;
+
+			cpuapp_cpurad_ipc_shm: memory@0 {
+				reg = <0x0 DT_SIZE_K(2)>;
+			};
+
+			cpurad_cpuapp_ipc_shm: memory@800 {
+				reg = <0x800 DT_SIZE_K(2)>;
+			};
+		};
+
+		shared_ram20_region: memory@2f88f000 {
+			compatible = "nordic,owned-memory";
+			reg = <0x2f88f000 DT_SIZE_K(4)>;
+			status = "disabled";
+			perm-read;
+			perm-write;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x2f88f000 0x1000>;
+
+			cpuapp_cpusys_ipc_shm: memory@ce0 {
+				reg = <0xce0 0x80>;
+			};
+
+			cpusys_cpuapp_ipc_shm: memory@d60 {
+				reg = <0xd60 0x80>;
+			};
+
+			cpurad_cpusys_ipc_shm: memory@e00 {
+				reg = <0xe00 0x80>;
+			};
+
+			cpusys_cpurad_ipc_shm: memory@e80 {
+				reg = <0xe80 0x80>;
+			};
+		};
+
+		cpuppr_ram3x_region: memory@2fc00000 {
+			compatible = "nordic,owned-memory";
+			reg = <0x2fc00000 DT_SIZE_K(28)>;
+			status = "disabled";
+			perm-read;
+			perm-write;
+			perm-execute;
+		};
+
+		shared_ram3x_region: memory@2fc07000 {
+			compatible = "nordic,owned-memory";
+			reg = <0x2fc07000 DT_SIZE_K(4)>;
+			status = "disabled";
+			perm-read;
+			perm-write;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x2fc07000 0x1000>;
+
+			cpuapp_cpuppr_ipc_shm: memory@0 {
+				reg = <0x0 0x340>;
+			};
+
+			cpuppr_cpuapp_ipc_shm: memory@340 {
+				reg = <0x340 0x340>;
+			};
+
+			cpuapp_dma_region: memory@680 {
+				compatible = "zephyr,memory-region";
+				reg = <0x680 DT_SIZE_K(2)>;
+				status = "disabled";
+				#memory-region-cells = <0>;
+				zephyr,memory-region = "DMA_RAM3x_APP";
+			};
+
+			cpurad_dma_region: memory@e80 {
+				compatible = "zephyr,memory-region";
+				reg = <0xe80 0x80>;
+				status = "disabled";
+				#memory-region-cells = <0>;
+				zephyr,memory-region = "DMA_RAM3x_RAD";
+			};
+		};
+	};
+};
+
+&mram1x {
+	cpurad_rx_partitions: cpurad-rx-partitions {
+		compatible = "nordic,owned-partitions", "fixed-partitions";
+		status = "disabled";
+		perm-read;
+		perm-execute;
+		perm-secure;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cpurad_slot0_partition: partition@66000 {
+			reg = <0x66000 DT_SIZE_K(256)>;
+		};
+	};
+
+	cpuapp_rx_partitions: cpuapp-rx-partitions {
+		compatible = "nordic,owned-partitions", "fixed-partitions";
+		status = "disabled";
+		perm-read;
+		perm-execute;
+		perm-secure;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cpuapp_slot0_partition: partition@a6000 {
+			reg = <0xa6000 DT_SIZE_K(512)>;
+		};
+
+		cpuppr_code_partition: partition@126000 {
+			reg = <0x126000 DT_SIZE_K(64)>;
+		};
+	};
+};
