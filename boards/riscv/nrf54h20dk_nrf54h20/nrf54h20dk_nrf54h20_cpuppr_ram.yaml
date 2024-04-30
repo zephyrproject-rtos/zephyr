@@ -1,13 +1,13 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: nrf54h20dk_nrf54h20_cpuppr_xip
-name: nRF54H20-DK-nRF54H20-PPR (MRAM XIP)
+identifier: nrf54h20dk_nrf54h20_cpuppr_ram
+name: nRF54H20-DK-nRF54H20-PPR-RAM
 type: mcu
 arch: riscv
 toolchain:
   - zephyr
 ram: 62
-flash: 64
+flash: 62
 supported:
   - gpio

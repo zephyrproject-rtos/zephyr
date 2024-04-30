@@ -131,8 +131,7 @@
 };
 
 &cpuppr_vpr {
-	execution-memory = <&cpuppr_code_data>;
-	source-memory = <&cpuppr_code_partition>;
+	execution-memory = <&cpuppr_code_partition>;
 };
 
 &gpiote130 {
