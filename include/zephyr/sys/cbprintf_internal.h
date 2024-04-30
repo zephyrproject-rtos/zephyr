@@ -676,7 +676,7 @@ do { \
 			Z_CBPRINTF_IS_LONGDOUBLE(_arg) && \
 			!IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE)),\
 			"Packaging of long double not enabled in Kconfig."); \
-	while (_align_offset % Z_CBPRINTF_ALIGNMENT(_arg) != 0UL) { \
+	while ((_align_offset % Z_CBPRINTF_ALIGNMENT(_arg)) != 0UL) { \
 		_idx += sizeof(int); \
 		_align_offset += sizeof(int); \
 	} \
