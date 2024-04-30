@@ -2536,6 +2536,10 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_get(struct net_if *iface,
 		iface = net_if_get_default();
 	}
 
+	if (!iface) {
+		return NULL;
+	}
+
 	net_if_lock(iface);
 
 	ipv6 = iface->config.ip.ipv6;
