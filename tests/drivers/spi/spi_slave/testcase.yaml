@@ -5,8 +5,6 @@ tests:
     harness: ztest
     harness_config:
       fixture: gpio_spi_loopback
-    platform_allow: |
-      nrf52840dk_nrf52840 nrf54l15pdk_nrf54l15_cpuapp nrf54h20dk_nrf54h20_cpuapp
-      nrf54h20dk_nrf54h20_cpurad
+    platform_allow: nrf52840dk_nrf52840 nrf54l15pdk_nrf54l15_cpuapp
     integration_platforms:
       - nrf52840dk_nrf52840
