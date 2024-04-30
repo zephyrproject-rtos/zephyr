@@ -8,7 +8,6 @@
 
 #include <nxp/nxp_rt1060.dtsi>
 #include "mimxrt1060_evk-pinctrl.dtsi"
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -30,7 +29,6 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan3;
-		zephyr,display = &lcdif;
 	};
 
 	sdram0: memory@80000000 {
@@ -90,11 +88,6 @@
 		};
 	};
 
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft5336>;
-	};
-
 	arduino_header: connector {
 		compatible = "arduino-header-r3";
 		#gpio-cells = <2>;
@@ -123,15 +116,6 @@
 			   <20 0 &gpio1 17 0>,	/* D14 */
 			   <21 0 &gpio1 16 0>;	/* D15 */
 	};
-
-	panel {
-		compatible = "rocktech,rk043fn02h-ct";
-		port {
-			lcd_panel_in: endpoint {
-				remote-endpoint = <&lcd_panel_out>;
-			};
-		};
-	};
 };
 
 arduino_serial: &lpuart3 {
@@ -142,33 +126,8 @@ arduino_serial: &lpuart3 {
 };
 
 zephyr_lcdif: &lcdif {
-	status = "okay";
-	width = <480>;
-	height = <272>;
-	display-timings {
-		compatible = "zephyr,panel-timing";
-		hsync-len = <41>;
-		hfront-porch = <4>;
-		hback-porch = <8>;
-		vsync-len = <10>;
-		vfront-porch = <4>;
-		vback-porch = <2>;
-		de-active= <1>;
-		pixelclk-active = <1>;
-		hsync-active = <0>;
-		vsync-active = <0>;
-		clock-frequency = <9210240>;
-	};
-	pixel-format = <PANEL_PIXEL_FORMAT_BGR_565>;
-	data-bus-width = "16-bit";
 	pinctrl-0 = <&pinmux_lcdif>;
 	pinctrl-names = "default";
-	backlight-gpios = <&gpio2 31 GPIO_ACTIVE_HIGH>;
-	port {
-		lcd_panel_out: endpoint {
-			remote-endpoint = <&lcd_panel_in>;
-		};
-	};
 };
 
 nxp_touch_i2c: &lpi2c1 {};
@@ -177,12 +136,6 @@ arduino_i2c: &lpi2c1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
-
-	ft5336: ft5336@38 {
-		compatible = "focaltech,ft5336";
-		reg = <0x38>;
-		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
-	};
 };
 
 &lpuart1 {
