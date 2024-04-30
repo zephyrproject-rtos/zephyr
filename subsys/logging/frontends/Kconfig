@@ -51,9 +51,6 @@ config LOG_FRONTEND_STMESP_FLUSH_COUNT
 	  Before going to sleep CPU shall write to STM some dummy data to ensure
 	  that any buffered data goes to TPIU/ETR.
 
-config LOG_FRONTEND_STMESP_FLUSH_PORT_ID
-	def_int 0
-
 config LOG_FRONTEND_STMESP_EARLY_BUF_SIZE
 	int "Buffer size to store early messages"
 	default 0
@@ -71,11 +68,40 @@ config LOG_FRONTEND_STMESP_GUARANTEED_ACCESS
 	  When enabled, accessing STMESP registers will stall if write cannot be
 	  performed (e.g. ETR buffer is full).
 
+endif # LOG_FRONTEND_STMESP
+
+config LOG_FRONTEND_STMESP_DEMUX
+	bool "Demultiplexer of logging packets from STM stream"
+	select MPSC_PBUF
+	help
+	  Module demultiplexes messages encoded in STPv2 stream. Messages may
+	  be interleaved because they may come from multiple cores (majors).
+	  There are 3 types of messages: logging, tracepoints and HW events.
+
+if LOG_FRONTEND_STMESP_DEMUX
+
+config LOG_FRONTEND_STMESP_DEMUX_ACTIVE_PACKETS
+	int "Active packets"
+	default 12
+
+config LOG_FRONTEND_STMESP_DEMUX_BUFFER_SIZE
+	int "Buffer size"
+	default 1024
+
+config LOG_FRONTEND_STMESP_DEMUX_MAX_UTILIZATION
+	bool "Track maximum utilization"
+
+endif # LOG_FRONTEND_STMESP_DEMUX
+
+config LOG_FRONTEND_STMESP_FLUSH_PORT_ID
+	def_int 0
+	depends on LOG_FRONTEND_STMESP_DEMUX || LOG_FRONTEND_STMESP
+
 config LOG_FRONTEND_STMESP_TP_CHAN_BASE
 	def_int 255
+	depends on LOG_FRONTEND_STMESP_DEMUX || LOG_FRONTEND_STMESP
 	help
 	  Do not change this value as it is aligned with host decoder (nrfutil trace).
 
-endif # LOG_FRONTEND_STMESP
 
 endmenu
