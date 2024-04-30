@@ -1,8 +1,0 @@
-/*
- * Copyright 2024 Nordic Semiconductor ASA
- * SPDX-License-Identifier: Apache-2.0
- */
-
-mbox: &cpuppr_vevif {
-	status = "okay";
-};
