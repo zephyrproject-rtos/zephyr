@@ -1,4 +1,0 @@
-tests:
-  drivers.timer.nrf_grtc_timer:
-    tags: drivers
-    platform_allow: nrf54l15pdk_nrf54l15_cpuapp
