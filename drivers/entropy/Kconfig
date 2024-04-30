@@ -35,7 +35,6 @@ source "drivers/entropy/Kconfig.gecko"
 source "drivers/entropy/Kconfig.neorv32"
 source "drivers/entropy/Kconfig.bt_hci"
 source "drivers/entropy/Kconfig.psa_crypto"
-source "drivers/entropy/Kconfig.nrf_prng"
 
 config ENTROPY_HAS_DRIVER
 	bool

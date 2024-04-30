@@ -23,12 +23,6 @@
 		zephyr,code-partition = &cpurad_slot0_partition;
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpurad_ram0;
-		zephyr,entropy = &prng;
-	};
-
-	prng: prng {
-		compatible = "nordic,entropy-prng";
-		status = "okay";
 	};
 };
 

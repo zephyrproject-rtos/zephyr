@@ -1,8 +1,0 @@
-# Copyright (c) 2024 Nordic Semiconductor ASA
-# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
-
-description: This is a super simple PRNG
-
-compatible: "nordic,entropy-prng"
-
-include: base.yaml

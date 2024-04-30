@@ -22,7 +22,6 @@
 		zephyr,code-partition = &cpuapp_slot0_partition;
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpuapp_data;
-		zephyr,entropy = &prng;
 	};
 
 	aliases {
@@ -86,11 +85,6 @@
 			gpios = <&gpio9 3 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 3";
 		};
-	};
-
-	prng: prng {
-		compatible = "nordic,entropy-prng";
-		status = "okay";
 	};
 };
 
