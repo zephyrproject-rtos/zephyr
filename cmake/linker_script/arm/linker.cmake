@@ -129,7 +129,7 @@ include(${COMMON_ZEPHYR_LINKER_DIR}/common-ram.cmake)
 #include(kobject.ld)
 
 if(NOT CONFIG_USERSPACE)
-  zephyr_linker_section(NAME .bss VMA RAM LMA FLASH TYPE BSS)
+  zephyr_linker_section(NAME .bss GROUP RAM_REGION TYPE BSS)
   zephyr_linker_section_configure(SECTION .bss INPUT COMMON)
   zephyr_linker_section_configure(SECTION .bss INPUT ".kernel_bss.*")
   # As memory is cleared in words only, it is simpler to ensure the BSS
