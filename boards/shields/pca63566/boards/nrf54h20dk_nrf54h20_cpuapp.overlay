@@ -1,0 +1,83 @@
+/ {
+	aliases {
+		sensor-bme688 = &i2c130;
+		accel0 = &adxl362;
+		accel-gyro = &bmi270;
+	};
+};
+
+&cpuapp_dma_region {
+	status="okay";
+};
+
+&pinctrl {
+	i2c130_default: i2c130_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 2, 8)>,
+				<NRF_PSEL(TWIM_SCL, 2, 3)>;
+				bias-pull-up;
+		};
+	};
+
+	i2c130_sleep: i2c130_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 2, 8)>,
+				<NRF_PSEL(TWIM_SCL, 2, 3)>;
+			low-power-enable;
+			bias-pull-up;
+		};
+	};
+
+	spi130_default: spi130_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_MISO, 1, 6)>,
+				<NRF_PSEL(SPIM_MOSI, 1, 5)>;
+		};
+	};
+
+	spi130_sleep: spi130_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_MISO, 1, 6)>,
+				<NRF_PSEL(SPIM_MOSI, 1, 5)>;
+				low-power-enable;
+		};
+	};
+};
+
+&i2c130 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c130_default>;
+	pinctrl-1 = <&i2c130_sleep>;
+	pinctrl-names = "default", "sleep";
+	memory-regions = <&cpuapp_dma_region>;
+	bme688: bme688@76 {
+		reg = <0x76>;
+	};
+};
+
+&spi130 {
+	status = "okay";
+	pinctrl-0 = <&spi130_default>;
+	pinctrl-1 = <&spi130_sleep>;
+	pinctrl-names = "default", "sleep";
+	cs-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>,
+				<&gpio1 2 GPIO_ACTIVE_LOW>;
+
+
+	bmi270: bmi270@0 {
+		compatible = "bosch,bmi270";
+		status = "okay";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+	};
+
+	adxl362: adxl362@1 {
+		compatible = "adi,adxl362";
+		status = "okay";
+		reg = <1>;
+		int1-gpios = <&gpio1 8 (GPIO_ACTIVE_HIGH)>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+	};
+};
