@@ -250,18 +250,6 @@ ZTEST(device_runtime_api, test_api)
 	/* Put operation should fail due the state be locked. */
 	ret = pm_device_runtime_disable(test_dev);
 	zassert_equal(ret, 0);
-
-	pm_device_state_lock(test_dev);
-
-	/* This operation should not succeed.  */
-	ret = pm_device_runtime_enable(test_dev);
-	zassert_equal(ret, -EPERM);
-
-	/* After unlock the state, enable runtime should work. */
-	pm_device_state_unlock(test_dev);
-
-	ret = pm_device_runtime_enable(test_dev);
-	zassert_equal(ret, 0);
 }
 
 DEVICE_DEFINE(pm_unsupported_device, "PM Unsupported", NULL, NULL, NULL, NULL,

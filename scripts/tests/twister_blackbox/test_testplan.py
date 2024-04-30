@@ -20,10 +20,6 @@ from twisterlib.error import TwisterRuntimeError
 
 class TestTestPlan:
     TESTDATA_1 = [
-        ('smoke', 5),
-        ('acceptance', 6),
-    ]
-    TESTDATA_2 = [
         ('dummy.agnostic.group2.assert1', SystemExit, 3),
         (
             os.path.join('scripts', 'tests', 'twister_blackbox', 'test_data', 'tests',
@@ -33,11 +29,11 @@ class TestTestPlan:
             None
         ),
     ]
-    TESTDATA_3 = [
+    TESTDATA_2 = [
         ('buildable', 6),
         ('runnable', 5),
     ]
-    TESTDATA_4 = [
+    TESTDATA_3 = [
         (True, 1),
         (False, 6),
     ]
@@ -54,40 +50,8 @@ class TestTestPlan:
         pass
 
     @pytest.mark.parametrize(
-        'level, expected_tests',
-        TESTDATA_1,
-        ids=['smoke', 'acceptance']
-    )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
-    def test_level(self, out_path, level, expected_tests):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
-        path = os.path.join(TEST_DATA, 'tests', 'dummy')
-        config_path = os.path.join(TEST_DATA, 'test_config.yaml')
-        args = ['-i','--outdir', out_path, '-T', path, '--level', level, '-y',
-                '--test-config', config_path] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-                pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        with open(os.path.join(out_path, 'testplan.json')) as f:
-            j = json.load(f)
-        filtered_j = [
-            (ts['platform'], ts['name'], tc['identifier']) \
-                for ts in j['testsuites'] \
-                for tc in ts['testcases'] if 'reason' not in tc
-        ]
-
-        assert str(sys_exit.value) == '0'
-
-        assert expected_tests == len(filtered_j)
-
-    @pytest.mark.parametrize(
         'test, expected_exception, expected_subtest_count',
-        TESTDATA_2,
+        TESTDATA_1,
         ids=['valid', 'invalid']
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
@@ -120,7 +84,7 @@ class TestTestPlan:
 
     @pytest.mark.parametrize(
         'filter, expected_count',
-        TESTDATA_3,
+        TESTDATA_2,
         ids=['buildable', 'runnable']
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
@@ -150,7 +114,7 @@ class TestTestPlan:
 
     @pytest.mark.parametrize(
         'integration, expected_count',
-        TESTDATA_4,
+        TESTDATA_3,
         ids=['integration', 'no integration']
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)

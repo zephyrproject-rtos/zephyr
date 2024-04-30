@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <fcntl.h>
+#include <zephyr/posix/fcntl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/net_if.h>

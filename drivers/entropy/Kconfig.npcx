@@ -1,0 +1,59 @@
+# NPCX DRBG driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ENTROPY_NPCX_DRBG
+	bool "NPCX DRBG driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_DRBG_ENABLED && SOC_NPCX9MFP
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables the deterministic random bit generator (DRBG)
+	  driver for NPCX family of processors.
+
+if ENTROPY_NPCX_DRBG
+
+choice
+	prompt "DRBG Security Strength Selection"
+	default ENTROPY_NPCX_DRBG_SECURITY_STRENGTH_128B
+	help
+	  The chosen security strength defines the amount of entropy bits
+	  generated internally and passed to the conditioning component.
+
+config ENTROPY_NPCX_DRBG_SECURITY_STRENGTH_112B
+	bool "DRBG security strength 112 bits"
+
+config ENTROPY_NPCX_DRBG_SECURITY_STRENGTH_128B
+	bool "DRBG security strength 128 bits"
+
+config ENTROPY_NPCX_DRBG_SECURITY_STRENGTH_192B
+	bool "DRBG security strength 192 bits"
+
+config ENTROPY_NPCX_DRBG_SECURITY_STRENGTH_256B
+	bool "DRBG security strength 256 bits"
+
+config ENTROPY_NPCX_DRBG_SECURITY_STRENGTH_128B_TEST
+	bool "DRBG security strength 12b bits test"
+
+config ENTROPY_NPCX_DRBG_SECURITY_STRENGTH_256B_TEST
+	bool "DRBG security strength 256 bits test"
+
+endchoice
+
+config ENTROPY_NPCX_DRBG_SECURITY_STRENGTH
+	int
+	default 0 if ENTROPY_NPCX_DRBG_SECURITY_STRENGTH_112B
+	default 1 if ENTROPY_NPCX_DRBG_SECURITY_STRENGTH_128B
+	default 2 if ENTROPY_NPCX_DRBG_SECURITY_STRENGTH_192B
+	default 3 if ENTROPY_NPCX_DRBG_SECURITY_STRENGTH_256B
+	default 4 if ENTROPY_NPCX_DRBG_SECURITY_STRENGTH_128B_TEST
+	default 5 if ENTROPY_NPCX_DRBG_SECURITY_STRENGTH_256B_TEST
+
+config ENTROPY_NPCX_DRBG_RESEED_INTERVAL
+	int "DRBG Reseed Interval"
+	default 100
+	help
+	   Number of gererations allowed until next reseeding.
+
+endif

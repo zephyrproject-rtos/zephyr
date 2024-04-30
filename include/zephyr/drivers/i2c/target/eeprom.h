@@ -15,6 +15,8 @@
 /**
  * @brief I2C EEPROM Target Driver API
  * @defgroup i2c_eeprom_target_api I2C EEPROM Target Driver API
+ * @since 1.13
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */

@@ -1,0 +1,16 @@
+identifier: st25dv_mb1283_disco
+name: ST ST25DV MB1283 Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 192
+flash: 1024
+supported:
+  - gpio
+  - i2c
+  - spi
+  - usb_device
+vendor: st

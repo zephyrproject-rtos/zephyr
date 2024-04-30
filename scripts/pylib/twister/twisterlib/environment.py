@@ -43,6 +43,9 @@ canonical_zephyr_base = os.path.realpath(ZEPHYR_BASE)
 installed_packages = [pkg.project_name for pkg in pkg_resources.working_set]  # pylint: disable=not-an-iterable
 PYTEST_PLUGIN_INSTALLED = 'pytest-twister-harness' in installed_packages
 
+def norm_path(astring):
+    newstring = os.path.normpath(astring).replace(os.sep, '/')
+    return newstring
 
 def add_parse_arguments(parser = None):
     if parser is None:
@@ -65,8 +68,6 @@ Artificially long but functional example:
                                  __/fifo_api/testcase.yaml
     """)
 
-    compare_group_option = parser.add_mutually_exclusive_group()
-
     platform_group_option = parser.add_mutually_exclusive_group()
 
     run_group_option = parser.add_mutually_exclusive_group()
@@ -80,6 +81,10 @@ Artificially long but functional example:
     test_xor_generator = case_select.add_mutually_exclusive_group()
 
     valgrind_asan_group = parser.add_mutually_exclusive_group()
+
+    footprint_group = parser.add_argument_group(
+       title="Memory footprint",
+       description="Collect and report ROM/RAM size footprint for the test instance images built.")
 
     case_select.add_argument(
         "-E",
@@ -96,7 +101,7 @@ Artificially long but functional example:
         help="Load a list of tests and platforms to be run from file.")
 
     case_select.add_argument(
-        "-T", "--testsuite-root", action="append", default=[],
+        "-T", "--testsuite-root", action="append", default=[], type = norm_path,
         help="Base directory to recursively search for test cases. All "
              "testcase.yaml files under here will be processed. May be "
              "called multiple times. Defaults to the 'samples/' and "
@@ -120,14 +125,6 @@ Artificially long but functional example:
 
     case_select.add_argument("--test-tree", action="store_true",
                              help="""Output the test plan in a tree form""")
-
-    compare_group_option.add_argument("--compare-report",
-                        help="Use this report file for size comparison")
-
-    compare_group_option.add_argument(
-        "-m", "--last-metrics", action="store_true",
-        help="Compare with the results of the previous twister "
-             "invocation")
 
     platform_group_option.add_argument(
         "-G",
@@ -178,6 +175,12 @@ Artificially long but functional example:
                         when flash operation also executes test case on the platform.
                         """)
 
+    parser.add_argument("--flash-before", action="store_true", default=False,
+                        help="""Flash device before attaching to serial port.
+                        This is useful for devices that share the same port for programming
+                        and serial console, where flash must come first.
+                        """)
+
     test_or_build.add_argument(
         "-b", "--build-only", action="store_true", default="--prep-artifacts-for-testing" in sys.argv,
         help="Only build the code, do not attempt to run the code on targets.")
@@ -203,7 +206,7 @@ Artificially long but functional example:
         and global timeout multiplier (this parameter)""")
 
     test_xor_subtest.add_argument(
-        "-s", "--test", "--scenario", action="append",
+        "-s", "--test", "--scenario", action="append", type = norm_path,
         help="Run only the specified testsuite scenario. These are named by "
              "<path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
 
@@ -242,7 +245,7 @@ Artificially long but functional example:
     # Start of individual args place them in alpha-beta order
 
     board_root_list = ["%s/boards" % ZEPHYR_BASE,
-                       "%s/scripts/pylib/twister/boards" % ZEPHYR_BASE]
+                       "%s/subsys/testsuite/boards" % ZEPHYR_BASE]
 
     modules = zephyr_module.parse_modules(ZEPHYR_BASE)
     for module in modules:
@@ -324,22 +327,8 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
              "and do the selection based on existing filters.")
 
     parser.add_argument(
-        "-D", "--all-deltas", action="store_true",
-        help="Show all footprint deltas, positive or negative. Implies "
-             "--footprint-threshold=0")
-
-    parser.add_argument(
         "--device-serial-baud", action="store", default=None,
         help="Serial device baud rate (default 115200)")
-
-    parser.add_argument("--disable-asserts", action="store_false",
-                        dest="enable_asserts",
-                        help="deprecated, left for compatibility")
-
-    parser.add_argument(
-        "--disable-unrecognized-section-test", action="store_true",
-        default=False,
-        help="Skip the 'unrecognized section' test.")
 
     parser.add_argument(
         "--disable-suite-name-check", action="store_true", default=False,
@@ -370,14 +359,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         binaries such as those generated for the native_sim configuration.
         """)
 
-    parser.add_argument("--enable-size-report", action="store_true",
-                        help="Enable expensive computation of RAM/ROM segment sizes.")
-
-    parser.add_argument("--create-rom-ram-report", action="store_true",
-                        help="Generate detailed ram/rom json reports for "
-                             "each build, via cmake build calls with the "
-                             "`--target footprint` argument")
-
     parser.add_argument(
         "--filter", choices=['buildable', 'runnable'],
         default='buildable',
@@ -398,12 +379,73 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         help="Path to the gcov tool to use for code coverage "
                              "reports")
 
+    footprint_group.add_argument(
+        "--create-rom-ram-report",
+        action="store_true",
+        help="Generate detailed json reports with ROM/RAM symbol sizes for each test image built "
+             "using additional build option `--target footprint`.")
+
+    footprint_group.add_argument(
+        "--enable-size-report",
+        action="store_true",
+        help="Collect and report ROM/RAM section sizes for each test image built.")
+
     parser.add_argument(
-        "-H", "--footprint-threshold", type=float, default=5,
-        help="When checking test case footprint sizes, warn the user if "
-             "the new app size is greater then the specified percentage "
-             "from the last release. Default is 5. 0 to warn on any "
-             "increase on app size.")
+        "--disable-unrecognized-section-test",
+        action="store_true",
+        default=False,
+        help="Don't error on unrecognized sections in the binary images.")
+
+    footprint_group.add_argument(
+        "--footprint-from-buildlog",
+        action = "store_true",
+        help="Take ROM/RAM sections footprint summary values from the 'build.log' "
+             "instead of 'objdump' results used otherwise."
+             "Requires --enable-size-report or one of the baseline comparison modes.")
+
+    compare_group_option = footprint_group.add_mutually_exclusive_group()
+
+    compare_group_option.add_argument(
+        "-m", "--last-metrics",
+        action="store_true",
+        help="Compare footprints to the previous twister invocation as a baseline "
+             "running in the same output directory. "
+             "Implies --enable-size-report option.")
+
+    compare_group_option.add_argument(
+        "--compare-report",
+        help="Use this report file as a baseline for footprint comparison. "
+             "The file should be of 'twister.json' schema. "
+             "Implies --enable-size-report option.")
+
+    footprint_group.add_argument(
+        "--show-footprint",
+        action="store_true",
+        help="With footprint comparison to a baseline, log ROM/RAM section deltas. ")
+
+    footprint_group.add_argument(
+        "-H", "--footprint-threshold",
+        type=float,
+        default=5.0,
+        help="With footprint comparison to a baseline, "
+             "warn the user for any of the footprint metric change which is greater or equal "
+             "to the specified percentage value. "
+             "Default is %(default)s for %(default)s%% delta from the new footprint value. "
+             "Use zero to warn on any footprint metric increase.")
+
+    footprint_group.add_argument(
+        "-D", "--all-deltas",
+        action="store_true",
+        help="With footprint comparison to a baseline, "
+             "warn on any footprint change, increase or decrease. "
+             "Implies --footprint-threshold=0")
+
+    footprint_group.add_argument(
+        "-z", "--size",
+        action="append",
+        metavar='FILENAME',
+        help="Ignore all other command line options and just produce a report to "
+             "stdout with ROM/RAM section sizes on the specified binary images.")
 
     parser.add_argument(
         "-i", "--inline-logs", action="store_true",
@@ -480,12 +522,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     # Include paths in names by default.
     parser.set_defaults(detailed_test_id=True)
 
-    # To be removed in favor of --detailed-skipped-report
-    parser.add_argument(
-        "--no-skipped-report", action="store_true",
-        help="""Do not report skipped test cases in junit output. [Experimental]
-        """)
-
     parser.add_argument(
         "--detailed-skipped-report", action="store_true",
         help="Generate a detailed report with all skipped test cases"
@@ -546,9 +582,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         before device handler open serial port and invoke runner.
                         """)
 
-    parser.add_argument("-Q", "--error-on-deprecations", action="store_false",
-                        help="Error on deprecation warnings.")
-
     parser.add_argument(
         "--quarantine-list",
         action="append",
@@ -563,10 +596,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         action="store_true",
         help="Use the list of test scenarios under quarantine and run them"
              "to verify their current status.")
-
-    parser.add_argument("-R", "--enable-asserts", action="store_true",
-                        default=True,
-                        help="deprecated, left for compatibility")
 
     parser.add_argument(
         "--report-name",
@@ -617,13 +646,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
              "'--ninja' argument (to use Ninja build generator).")
 
     parser.add_argument(
-        "--show-footprint",
-        action="store_true",
-        required = "--footprint-from-buildlog" in sys.argv,
-        help="Show footprint statistics and deltas since last release."
-    )
-
-    parser.add_argument(
         "-t", "--tag", action="append",
         help="Specify tags to restrict which tests to run by tag value. "
              "Default is to not do any tag filtering. Multiple invocations "
@@ -637,7 +659,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         "-u",
         "--no-update",
         action="store_true",
-         help="Do not update the results of the last run of twister.")
+         help="Do not update the results of the last run. This option "
+              "is only useful when reusing the same output directory of "
+              "twister, for example when re-running failed tests with --only-failed "
+              "or --no-clean. This option is for debugging purposes only.")
 
     parser.add_argument(
         "-v",
@@ -700,18 +725,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         directory (testplan.json).
         """)
 
-    parser.add_argument(
-        "-z", "--size", action="append",
-        help="Don't run twister. Instead, produce a report to "
-             "stdout detailing RAM/ROM sizes on the specified filenames. "
-             "All other command line arguments ignored.")
-
-    parser.add_argument(
-        "--footprint-from-buildlog",
-        action = "store_true",
-        help="Get information about memory footprint from generated build.log. "
-             "Requires using --show-footprint option.")
-
     parser.add_argument("extra_test_args", nargs=argparse.REMAINDER,
         help="Additional args following a '--' are passed to the test binary")
 
@@ -760,7 +773,7 @@ def parse_arguments(parser, args, options = None):
             options.testsuite_root = [os.path.join(ZEPHYR_BASE, "tests"),
                                      os.path.join(ZEPHYR_BASE, "samples")]
 
-    if options.show_footprint or options.compare_report:
+    if options.last_metrics or options.compare_report:
         options.enable_size_report = True
 
     if options.aggressive_no_clean:
@@ -783,14 +796,22 @@ def parse_arguments(parser, args, options = None):
         logger.error("valgrind enabled but valgrind executable not found")
         sys.exit(1)
 
-    if options.device_testing and (options.device_serial or options.device_serial_pty) and len(options.platform) > 1:
-        logger.error("""When --device-testing is used with
-                        --device-serial or --device-serial-pty,
-                        only one platform is allowed""")
+    if options.device_testing and (options.device_serial or options.device_serial_pty) and len(options.platform) != 1:
+        logger.error("When --device-testing is used with --device-serial "
+                     "or --device-serial-pty, exactly one platform must "
+                     "be specified")
         sys.exit(1)
 
     if options.device_flash_with_test and not options.device_testing:
         logger.error("--device-flash-with-test requires --device_testing")
+        sys.exit(1)
+
+    if options.flash_before and options.device_flash_with_test:
+        logger.error("--device-flash-with-test does not apply when --flash-before is used")
+        sys.exit(1)
+
+    if options.flash_before and options.device_serial_pty:
+        logger.error("--device-serial-pty cannot be used when --flash-before is set (for now)")
         sys.exit(1)
 
     if options.shuffle_tests and options.subset is None:
@@ -807,6 +828,10 @@ def parse_arguments(parser, args, options = None):
             sc = SizeCalculator(fn, [])
             sc.size_report()
         sys.exit(0)
+
+    if options.footprint_from_buildlog and not options.enable_size_report:
+        logger.error("--footprint-from-buildlog requires --enable-size-report")
+        sys.exit(1)
 
     if len(options.extra_test_args) > 0:
         # extra_test_args is a list of CLI args that Twister did not recognize
@@ -843,6 +868,9 @@ def parse_arguments(parser, args, options = None):
 
     return options
 
+def strip_ansi_sequences(s: str) -> str:
+    """Remove ANSI escape sequences from a string."""
+    return re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', "", s)
 
 class TwisterEnv:
 
@@ -947,8 +975,7 @@ class TwisterEnv:
         # for instance if twister is executed from inside a makefile. In such a
         # scenario it is then necessary to remove them, as otherwise the JSON decoding
         # will fail.
-        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-        out = ansi_escape.sub('', out.decode())
+        out = strip_ansi_sequences(out.decode())
 
         if p.returncode == 0:
             msg = "Finished running %s" % (args[0])

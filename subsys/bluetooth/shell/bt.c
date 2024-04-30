@@ -29,9 +29,10 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/rfcomm.h>
-#include <zephyr/bluetooth/sdp.h>
+#include <zephyr/bluetooth/classic/rfcomm.h>
+#include <zephyr/bluetooth/classic/sdp.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/ead.h>
 
 #include <zephyr/shell/shell.h>
 
@@ -52,9 +53,9 @@ struct bt_conn *default_conn;
 static struct bt_conn *pairing_conn;
 
 static struct bt_le_oob oob_local;
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 static struct bt_le_oob oob_remote;
-#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC) */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_SMP)
@@ -215,6 +216,30 @@ static struct bt_scan_filter {
 
 static const char scan_response_label[] = "[DEVICE]: ";
 static bool scan_verbose_output;
+
+#if defined(CONFIG_BT_EAD)
+static uint8_t bt_shell_ead_session_key[BT_EAD_KEY_SIZE] = {0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5,
+							    0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xCB,
+							    0xCC, 0xCD, 0xCE, 0xCF};
+static uint8_t bt_shell_ead_iv[BT_EAD_IV_SIZE] = {0xFB, 0x56, 0xE1, 0xDA, 0xDC, 0x7E, 0xAD, 0xF5};
+
+/* this is the number of ad struct allowed */
+#define BT_SHELL_EAD_MAX_AD 10
+static size_t bt_shell_ead_ad_len;
+
+#if defined(CONFIG_BT_CTLR_ADV_DATA_LEN_MAX)
+/* this is the maximum total size of the ad data */
+#define BT_SHELL_EAD_DATA_MAX_SIZE CONFIG_BT_CTLR_ADV_DATA_LEN_MAX
+#else
+#define BT_SHELL_EAD_DATA_MAX_SIZE 31
+#endif
+static size_t bt_shell_ead_data_size;
+static uint8_t bt_shell_ead_data[BT_SHELL_EAD_DATA_MAX_SIZE] = {0};
+
+int ead_update_ad(void);
+#endif
+
+static bool bt_shell_ead_decrypt_scan;
 
 /**
  * @brief Compares two strings without case sensitivy
@@ -382,6 +407,36 @@ static bool data_verbose_cb(struct bt_data *data, void *user_data)
 		break;
 	case BT_DATA_CSIS_RSI:
 		print_data_set(3, data->data, data->data_len);
+		break;
+	case BT_DATA_ENCRYPTED_AD_DATA:
+		shell_fprintf(ctx_shell, SHELL_INFO, "Encrypted Advertising Data: ");
+		print_data_set(1, data->data, data->data_len);
+
+		if (bt_shell_ead_decrypt_scan) {
+#if defined(CONFIG_BT_EAD)
+			shell_fprintf(ctx_shell, SHELL_INFO, "\n%*s[START DECRYPTED DATA]\n",
+				      strlen(scan_response_label), "");
+
+			int ead_err;
+			struct net_buf_simple decrypted_buf;
+			size_t decrypted_data_size = BT_EAD_DECRYPTED_PAYLOAD_SIZE(data->data_len);
+			uint8_t decrypted_data[decrypted_data_size];
+
+			ead_err = bt_ead_decrypt(bt_shell_ead_session_key, bt_shell_ead_iv,
+						 data->data, data->data_len, decrypted_data);
+			if (ead_err) {
+				shell_error(ctx_shell, "Error during decryption (err %d)", ead_err);
+			}
+
+			net_buf_simple_init_with_data(&decrypted_buf, &decrypted_data[0],
+						      decrypted_data_size);
+
+			bt_data_parse(&decrypted_buf, &data_verbose_cb, user_data);
+
+			shell_fprintf(ctx_shell, SHELL_INFO, "%*s[END DECRYPTED DATA]",
+				      strlen(scan_response_label), "");
+#endif
+		}
 		break;
 	default:
 		print_data_set(1, data->data, data->data_len);
@@ -581,6 +636,13 @@ static bool adv_rpa_expired(struct bt_le_ext_adv *adv)
 		    adv_index, adv,
 		    keep_rpa ? "not expired" : "expired");
 
+#if defined(CONFIG_BT_EAD)
+	/* EAD must be updated each time the RPA is updated */
+	if (!keep_rpa) {
+		ead_update_ad();
+	}
+#endif
+
 	return keep_rpa;
 }
 #endif /* defined(CONFIG_BT_PRIVACY) */
@@ -631,7 +693,7 @@ void conn_addr_str(struct bt_conn *conn, char *addr, size_t len)
 	}
 
 	switch (info.type) {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	case BT_CONN_TYPE_BR:
 		bt_addr_to_str(info.br.dst, addr, len);
 		break;
@@ -773,7 +835,7 @@ static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 }
 #endif
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 static const char *security_err_str(enum bt_security_err err)
 {
 	switch (err) {
@@ -902,7 +964,7 @@ static struct bt_conn_cb conn_callbacks = {
 #if defined(CONFIG_BT_SMP)
 	.identity_resolved = identity_resolved,
 #endif
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 	.security_changed = security_changed,
 #endif
 #if defined(CONFIG_BT_REMOTE_INFO)
@@ -1636,7 +1698,7 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 	size_t ad_len = 0;
 
 	/* Set BR/EDR Not Supported if LE-only device */
-	ad_flags = IS_ENABLED(CONFIG_BT_BREDR) ? 0 : BT_LE_AD_NO_BREDR;
+	ad_flags = IS_ENABLED(CONFIG_BT_CLASSIC) ? 0 : BT_LE_AD_NO_BREDR;
 
 	if (discoverable) {
 		/* A privacy-enabled Set Member should advertise RSI values only when in
@@ -3096,14 +3158,14 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 #endif
 	}
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	if (info.type == BT_CONN_TYPE_BR) {
 		char addr_str[BT_ADDR_STR_LEN];
 
 		bt_addr_to_str(info.br.dst, addr_str, sizeof(addr_str));
 		shell_print(ctx_shell, "Peer address %s", addr_str);
 	}
-#endif /* defined(CONFIG_BT_BREDR) */
+#endif /* defined(CONFIG_BT_CLASSIC) */
 
 done:
 	bt_conn_unref(conn);
@@ -3284,7 +3346,7 @@ static int cmd_oob(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 static int cmd_oob_remote(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
@@ -3320,7 +3382,7 @@ static int cmd_oob_clear(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
-#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC) */
 
 static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -3341,7 +3403,7 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc < 3) {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 		addr.type = BT_ADDR_LE_PUBLIC;
 		err = bt_addr_from_str(argv[1], &addr.a);
 #else
@@ -3368,7 +3430,7 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 static int cmd_security(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err, sec;
@@ -3478,7 +3540,7 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 	}
 
 	switch (info.type) {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	case BT_CONN_TYPE_BR:
 		bt_addr_to_str(info.br.dst, addr, sizeof(addr));
 		shell_print(ctx_shell, " #%u [BR][%s] %s", info.id, role_str(info.role), addr);
@@ -3677,7 +3739,7 @@ static void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err err)
 		    security_err_str(err), err);
 }
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 {
 	char addr[BT_ADDR_STR_LEN];
@@ -3740,7 +3802,7 @@ static struct bt_conn_auth_cb auth_cb_display = {
 #endif
 	.passkey_entry = NULL,
 	.passkey_confirm = NULL,
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.oob_data_request = NULL,
@@ -3755,7 +3817,7 @@ static struct bt_conn_auth_cb auth_cb_display_yes_no = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = NULL,
 	.passkey_confirm = auth_passkey_confirm,
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.oob_data_request = NULL,
@@ -3770,7 +3832,7 @@ static struct bt_conn_auth_cb auth_cb_input = {
 	.passkey_display = NULL,
 	.passkey_entry = auth_passkey_entry,
 	.passkey_confirm = NULL,
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.oob_data_request = NULL,
@@ -3782,7 +3844,7 @@ static struct bt_conn_auth_cb auth_cb_input = {
 };
 
 static struct bt_conn_auth_cb auth_cb_confirm = {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.oob_data_request = NULL,
@@ -3797,7 +3859,7 @@ static struct bt_conn_auth_cb auth_cb_all = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = auth_passkey_entry,
 	.passkey_confirm = auth_passkey_confirm,
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.oob_data_request = auth_pairing_oob_data_request,
@@ -3812,7 +3874,7 @@ static struct bt_conn_auth_cb auth_cb_oob = {
 	.passkey_display = NULL,
 	.passkey_entry = NULL,
 	.passkey_confirm = NULL,
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = NULL,
 #endif
 	.oob_data_request = auth_pairing_oob_data_request,
@@ -4125,7 +4187,268 @@ static int cmd_auth_oob_tk(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 #endif /* !defined(CONFIG_BT_SMP_SC_PAIR_ONLY) */
-#endif /* CONFIG_BT_SMP) || CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_SMP) || CONFIG_BT_CLASSIC */
+
+#if defined(CONFIG_BT_EAD)
+static int cmd_encrypted_ad_set_keys(const struct shell *sh, size_t argc, char *argv[])
+{
+	size_t len;
+
+	const char *session_key = argv[1];
+	const char *iv = argv[2];
+
+	len = hex2bin(session_key, strlen(session_key), bt_shell_ead_session_key, BT_EAD_KEY_SIZE);
+	if (len != BT_EAD_KEY_SIZE) {
+		shell_error(sh, "Failed to set session key");
+		return -ENOEXEC;
+	}
+
+	len = hex2bin(iv, strlen(iv), bt_shell_ead_iv, BT_EAD_IV_SIZE);
+	if (len != BT_EAD_IV_SIZE) {
+		shell_error(sh, "Failed to set initialisation vector");
+		return -ENOEXEC;
+	}
+
+	shell_info(sh, "session key set to:");
+	shell_hexdump(sh, bt_shell_ead_session_key, BT_EAD_KEY_SIZE);
+	shell_info(sh, "initialisation vector set to:");
+	shell_hexdump(sh, bt_shell_ead_iv, BT_EAD_IV_SIZE);
+
+	return 0;
+}
+
+int encrypted_ad_store_ad(const struct shell *sh, uint8_t type, const uint8_t *data,
+			  uint8_t data_len)
+{
+	/* data_len is the size of the data, add two bytes for the size of the type
+	 * and the length that will be stored with the data
+	 */
+	uint8_t new_data_size = data_len + 2;
+
+	if (bt_shell_ead_data_size + new_data_size > BT_SHELL_EAD_DATA_MAX_SIZE) {
+		shell_error(sh, "Failed to add data (trying to add %d but %d already used on %d)",
+			    new_data_size, bt_shell_ead_data_size, BT_SHELL_EAD_DATA_MAX_SIZE);
+		return -ENOEXEC;
+	}
+
+	/* the length is the size of the data + the size of the type */
+	bt_shell_ead_data[bt_shell_ead_data_size] = data_len + 1;
+	bt_shell_ead_data[bt_shell_ead_data_size + 1] = type;
+	memcpy(&bt_shell_ead_data[bt_shell_ead_data_size + 2], data, data_len);
+
+	bt_shell_ead_data_size += new_data_size;
+	bt_shell_ead_ad_len += 1;
+
+	return 0;
+}
+
+bool is_payload_valid_ad(uint8_t *payload, size_t payload_size)
+{
+	size_t idx = 0;
+	bool is_valid = true;
+
+	uint8_t ad_len;
+
+	while (idx < payload_size) {
+		ad_len = payload[idx];
+
+		if (payload_size <= ad_len) {
+			is_valid = false;
+			break;
+		}
+
+		idx += ad_len + 1;
+	}
+
+	if (idx != payload_size) {
+		is_valid = false;
+	}
+
+	return is_valid;
+}
+
+static int cmd_encrypted_ad_add_ead(const struct shell *sh, size_t argc, char *argv[])
+{
+	size_t len;
+
+	char *hex_payload = argv[1];
+	size_t hex_payload_size = strlen(hex_payload);
+
+	uint8_t payload[BT_SHELL_EAD_DATA_MAX_SIZE] = {0};
+	uint8_t payload_size = hex_payload_size / 2 + hex_payload_size % 2;
+
+	uint8_t ead_size = BT_EAD_ENCRYPTED_PAYLOAD_SIZE(payload_size);
+
+	if (ead_size > BT_SHELL_EAD_DATA_MAX_SIZE) {
+		shell_error(sh,
+			    "Failed to add data. Maximum AD size is %d, passed data size after "
+			    "encryption is %d",
+			    BT_SHELL_EAD_DATA_MAX_SIZE, ead_size);
+		return -ENOEXEC;
+	}
+
+	len = hex2bin(hex_payload, hex_payload_size, payload, BT_SHELL_EAD_DATA_MAX_SIZE);
+	if (len != payload_size) {
+		shell_error(sh, "Failed to add data");
+		return -ENOEXEC;
+	}
+
+	/* check that the given advertising data structures are valid before encrypting them */
+	if (!is_payload_valid_ad(payload, payload_size)) {
+		shell_error(sh, "Failed to add data. Advertising structure are malformed.");
+		return -ENOEXEC;
+	}
+
+	/* store not-yet encrypted AD but claim the expected size of encrypted AD */
+	return encrypted_ad_store_ad(sh, BT_DATA_ENCRYPTED_AD_DATA, payload, ead_size);
+}
+
+static int cmd_encrypted_ad_add_ad(const struct shell *sh, size_t argc, char *argv[])
+{
+	size_t len;
+	uint8_t ad_len;
+	uint8_t ad_type;
+
+	char *hex_payload = argv[1];
+	size_t hex_payload_size = strlen(hex_payload);
+
+	uint8_t payload[BT_SHELL_EAD_DATA_MAX_SIZE] = {0};
+	uint8_t payload_size = hex_payload_size / 2 + hex_payload_size % 2;
+
+	len = hex2bin(hex_payload, hex_payload_size, payload, BT_SHELL_EAD_DATA_MAX_SIZE);
+	if (len != payload_size) {
+		shell_error(sh, "Failed to add data");
+		return -ENOEXEC;
+	}
+
+	/* the length received is the length of ad data + the length of the data
+	 * type but `bt_data` struct `data_len` field is only the size of the
+	 * data
+	 */
+	ad_len = payload[0] - 1;
+	ad_type = payload[1];
+
+	/* if the ad data is malformed or there is more than 1 ad data passed we
+	 * fail
+	 */
+	if (len != ad_len + 2) {
+		shell_error(sh,
+			    "Failed to add data. Data need to be formated as specified in the "
+			    "Core Spec. Only one non-encrypted AD payload can be added at a time.");
+		return -ENOEXEC;
+	}
+
+	return encrypted_ad_store_ad(sh, ad_type, payload, payload_size);
+}
+
+static int cmd_encrypted_ad_clear_ad(const struct shell *sh, size_t argc, char *argv[])
+{
+	memset(bt_shell_ead_data, 0, BT_SHELL_EAD_DATA_MAX_SIZE);
+
+	bt_shell_ead_ad_len = 0;
+	bt_shell_ead_data_size = 0;
+
+	shell_info(sh, "Advertising data has been cleared.");
+
+	return 0;
+}
+
+int ead_encrypt_ad(const uint8_t *payload, uint8_t payload_size, uint8_t *encrypted_payload)
+{
+	int err;
+
+	err = bt_ead_encrypt(bt_shell_ead_session_key, bt_shell_ead_iv, payload, payload_size,
+			     encrypted_payload);
+	if (err != 0) {
+		shell_error(ctx_shell, "Failed to encrypt AD.");
+		return -1;
+	}
+
+	return 0;
+}
+
+int ead_update_ad(void)
+{
+	int err;
+	size_t idx = 0;
+	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
+
+	struct bt_data *ad;
+	size_t ad_structs_idx = 0;
+	struct bt_data ad_structs[BT_SHELL_EAD_MAX_AD] = {0};
+
+	size_t encrypted_data_buf_len = 0;
+	uint8_t encrypted_data_buf[BT_SHELL_EAD_DATA_MAX_SIZE] = {0};
+
+	while (idx < bt_shell_ead_data_size && ad_structs_idx < BT_SHELL_EAD_MAX_AD) {
+		ad = &ad_structs[ad_structs_idx];
+
+		/* the data_len from bt_data struct doesn't include the size of the type */
+		ad->data_len = bt_shell_ead_data[idx] - 1;
+
+		if (ad->data_len < 0) {
+			/* if the len is less than 0 that mean there is not even a type field */
+			shell_error(ctx_shell, "Failed to update AD due to malformed AD.");
+			return -ENOEXEC;
+		}
+
+		ad->type = bt_shell_ead_data[idx + 1];
+
+		if (ad->data_len > 0) {
+			if (ad->type == BT_DATA_ENCRYPTED_AD_DATA) {
+				/* for EAD the size used to store the non-encrypted data
+				 * is the size of those data when encrypted
+				 */
+				ead_encrypt_ad(&bt_shell_ead_data[idx + 2],
+					       BT_EAD_DECRYPTED_PAYLOAD_SIZE(ad->data_len),
+					       &encrypted_data_buf[encrypted_data_buf_len]);
+
+				ad->data = &encrypted_data_buf[encrypted_data_buf_len];
+				encrypted_data_buf_len += ad->data_len;
+			} else {
+				ad->data = &bt_shell_ead_data[idx + 2];
+			}
+		}
+
+		ad_structs_idx += 1;
+		idx += ad->data_len + 2;
+	}
+
+	err = bt_le_ext_adv_set_data(adv, ad_structs, bt_shell_ead_ad_len, NULL, 0);
+	if (err != 0) {
+		shell_error(ctx_shell, "Failed to set advertising data (err %d)", err);
+		return -ENOEXEC;
+	}
+
+	shell_info(ctx_shell, "Advertising data for Advertiser[%d] %p updated.", selected_adv, adv);
+
+	return 0;
+}
+
+static int cmd_encrypted_ad_commit_ad(const struct shell *sh, size_t argc, char *argv[])
+{
+	return ead_update_ad();
+}
+
+static int cmd_encrypted_ad_decrypt_scan(const struct shell *sh, size_t argc, char *argv[])
+{
+	const char *action = argv[1];
+
+	if (strcmp(action, "on") == 0) {
+		bt_shell_ead_decrypt_scan = true;
+		shell_info(sh, "Received encrypted advertising data will now be decrypted using "
+			       "provided key materials.");
+	} else if (strcmp(action, "off") == 0) {
+		bt_shell_ead_decrypt_scan = false;
+		shell_info(sh, "Received encrypted advertising data will now longer be decrypted.");
+	} else {
+		shell_error(sh, "Invalid option.");
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif
 
 static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 {
@@ -4173,6 +4496,19 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_scan_filter_clear_cmds,
 	SHELL_SUBCMD_SET_END
 );
 #endif /* CONFIG_BT_OBSERVER */
+
+#if defined(CONFIG_BT_EAD)
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	bt_encrypted_ad_cmds,
+	SHELL_CMD_ARG(set-keys, NULL, "<session key> <init vector>", cmd_encrypted_ad_set_keys, 3,
+		      0),
+	SHELL_CMD_ARG(add-ead, NULL, "<advertising data>", cmd_encrypted_ad_add_ead, 2, 0),
+	SHELL_CMD_ARG(add-ad, NULL, "<advertising data>", cmd_encrypted_ad_add_ad, 2, 0),
+	SHELL_CMD(clear-ad, NULL, HELP_NONE, cmd_encrypted_ad_clear_ad),
+	SHELL_CMD(commit-ad, NULL, HELP_NONE, cmd_encrypted_ad_commit_ad),
+	SHELL_CMD_ARG(decrypt-scan, NULL, HELP_ONOFF, cmd_encrypted_ad_decrypt_scan, 2, 0),
+	SHELL_SUBCMD_SET_END);
+#endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(init, NULL, "[no-settings-load], [sync]",
@@ -4262,6 +4598,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_per_adv_sync_delete, 1, 1),
 	SHELL_CMD_ARG(per-adv-sync-select, NULL, "[adv]", cmd_per_adv_sync_select, 1, 1),
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
+#if defined(CONFIG_BT_EAD)
+	SHELL_CMD(encrypted-ad, &bt_encrypted_ad_cmds, "Manage advertiser with encrypted data",
+		  cmd_default_handler),
+#endif /* CONFIG_BT_EAD */
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
 	SHELL_CMD_ARG(past-subscribe, NULL, "[conn] [skip <count>] "
@@ -4308,7 +4648,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #endif /* CONFIG_BT_CENTRAL */
 	SHELL_CMD_ARG(oob, NULL, HELP_NONE, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(clear, NULL, "[all] ["HELP_ADDR_LE"]", cmd_clear, 2, 1),
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 	SHELL_CMD_ARG(security, NULL, "<security level BR/EDR: 0 - 3, "
 				      "LE: 1 - 4> [force-pair]",
 		      cmd_security, 1, 2),
@@ -4351,7 +4691,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(fixed-passkey, NULL, "[passkey]", cmd_fixed_passkey,
 		      1, 1),
 #endif
-#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC) */
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	SHELL_CMD(mesh_adv, NULL, HELP_ONOFF, cmd_mesh_adv),

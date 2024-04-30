@@ -72,7 +72,7 @@ static void stress_handler(struct k_p4wq_work *item)
 	/* Pick 0-3 random item slots and submit them if they aren't
 	 * already.  Make sure we always have at least one active.
 	 */
-	int num_tries = sys_rand32_get() % 4;
+	int num_tries = sys_rand8_get() % 4;
 
 	for (int i = 0; (active_items == 0) || (i < num_tries); i++) {
 		int ii = sys_rand32_get() % MAX_ITEMS;

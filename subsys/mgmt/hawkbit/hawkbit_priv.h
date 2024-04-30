@@ -7,7 +7,7 @@
 /** @file
  *
  * @brief This file contains structures representing JSON messages
- * exchanged with a hawkbit
+ * exchanged with a hawkBit server
  */
 
 #ifndef __HAWKBIT_PRIV_H__

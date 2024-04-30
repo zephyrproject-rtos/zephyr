@@ -15,6 +15,8 @@
 /**
  * @brief SPI Interface
  * @defgroup spi_interface SPI Interface
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */

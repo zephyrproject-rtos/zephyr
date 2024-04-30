@@ -163,8 +163,8 @@ supported by a CMake file with content like this:
 
    # Variable foo_BOARD_ALIAS=bar replaces BOARD=foo with BOARD=bar and
    # sets BOARD_ALIAS=foo in the CMake cache.
-   set(pca10028_BOARD_ALIAS nrf51dk_nrf51422)
-   set(pca10056_BOARD_ALIAS nrf52840dk_nrf52840)
+   set(pca10028_BOARD_ALIAS nrf51dk/nrf51822)
+   set(pca10056_BOARD_ALIAS nrf52840dk/nrf52840)
    set(k64f_BOARD_ALIAS frdm_k64f)
    set(sltb004a_BOARD_ALIAS efr32mg_sltb004a)
 
@@ -306,7 +306,7 @@ Run a Sample Application natively (Linux)
 
 You can compile some samples to run as host programs
 on Linux. See :ref:`native_sim` for more information. On 64-bit host operating systems, you
-need to install a 32-bit C library, or build targeting :ref:`native_sim_64 <native_sim32_64>`.
+need to install a 32-bit C library, or build targeting :ref:`native_sim/native/64<native_sim32_64>`.
 
 First, build Hello World for ``native_sim``.
 

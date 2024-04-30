@@ -99,6 +99,15 @@ config LOG_MEM_UTILIZATION
 config LOG_DICTIONARY_DB
 	bool
 
+config LOG_DICTIONARY_DB_TARGET
+	bool "Only generated log dictionary database from target"
+	depends on LOG_DICTIONARY_DB
+	help
+	  Enable this option to make generating the log dictionary database
+	  only done by its own build target.
+	  This removes the target from the ALL make target and the target
+	  'log_dict_db_gen' has to be called in addition.
+
 config LOG_MSG_APPEND_RO_STRING_LOC
 	bool
 	help

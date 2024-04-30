@@ -109,6 +109,7 @@ kconfig_to_ot_option(CONFIG_OPENTHREAD_REFERENCE_DEVICE OT_REFERENCE_DEVICE "Ena
 kconfig_to_ot_option(CONFIG_OPENTHREAD_SETTINGS_RAM OT_SETTINGS_RAM "Enable volatile-only storage of settings")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_SLAAC OT_SLAAC "Enable SLAAC")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_SNTP_CLIENT OT_SNTP_CLIENT "Enable SNTP Client support")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_SRP_ADV_PROXY OT_SRP_ADV_PROXY "Enable SRP Server Advertising Proxy support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_SRP_CLIENT OT_SRP_CLIENT "Enable SRP Client support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_SRP_SERVER OT_SRP_SERVER "Enable SRP Server support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_TCP_ENABLE OT_TCP "Enable TCP support")

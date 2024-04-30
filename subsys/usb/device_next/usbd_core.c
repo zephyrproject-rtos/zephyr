@@ -20,6 +20,7 @@
 #include "usbd_ch9.h"
 #include "usbd_class.h"
 #include "usbd_class_api.h"
+#include "usbd_msg.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_core, CONFIG_USBD_LOG_LEVEL);
@@ -53,8 +54,6 @@ static int event_handler_ep_request(struct usbd_contex *const uds_ctx,
 	if (ret) {
 		LOG_ERR("unrecoverable error %d, ep 0x%02x, buf %p",
 			ret, bi->ep, event->buf);
-		/* TODO: Shutdown USB device gracefully */
-		k_panic();
 	}
 
 	return ret;
@@ -97,8 +96,6 @@ static int event_handler_bus_reset(struct usbd_contex *const uds_ctx)
 {
 	int ret;
 
-	LOG_WRN("Bus reset event");
-
 	usbd_status_suspended(uds_ctx, false);
 	ret = udc_set_address(uds_ctx->dev, 0);
 	if (ret) {
@@ -123,47 +120,55 @@ static int event_handler_bus_reset(struct usbd_contex *const uds_ctx)
 	return 0;
 }
 
-/* TODO: Add event broadcaster to user application */
-static ALWAYS_INLINE int usbd_event_handler(struct usbd_contex *const uds_ctx,
-					    struct udc_event *const event)
+
+static ALWAYS_INLINE void usbd_event_handler(struct usbd_contex *const uds_ctx,
+					     struct udc_event *const event)
 {
-	int ret = 0;
+	int err = 0;
 
 	switch (event->type) {
 	case UDC_EVT_VBUS_REMOVED:
-		LOG_WRN("VBUS remove event");
+		LOG_DBG("VBUS remove event");
+		usbd_msg_pub_simple(uds_ctx, USBD_MSG_VBUS_REMOVED, 0);
 		break;
 	case UDC_EVT_VBUS_READY:
-		LOG_WRN("VBUS detected event");
+		LOG_DBG("VBUS detected event");
+		usbd_msg_pub_simple(uds_ctx, USBD_MSG_VBUS_READY, 0);
 		break;
 	case UDC_EVT_SUSPEND:
-		LOG_WRN("SUSPEND event");
+		LOG_DBG("SUSPEND event");
 		usbd_status_suspended(uds_ctx, true);
 		usbd_class_bcast_event(uds_ctx, event);
+		usbd_msg_pub_simple(uds_ctx, USBD_MSG_SUSPEND, 0);
 		break;
 	case UDC_EVT_RESUME:
-		LOG_WRN("RESUME event");
+		LOG_DBG("RESUME event");
 		usbd_status_suspended(uds_ctx, false);
 		usbd_class_bcast_event(uds_ctx, event);
+		usbd_msg_pub_simple(uds_ctx, USBD_MSG_RESUME, 0);
 		break;
 	case UDC_EVT_SOF:
 		usbd_class_bcast_event(uds_ctx, event);
 		break;
 	case UDC_EVT_RESET:
-		LOG_WRN("RESET event");
-		ret = event_handler_bus_reset(uds_ctx);
+		LOG_DBG("RESET event");
+		err = event_handler_bus_reset(uds_ctx);
+		usbd_msg_pub_simple(uds_ctx, USBD_MSG_RESET, 0);
 		break;
 	case UDC_EVT_EP_REQUEST:
-		ret = event_handler_ep_request(uds_ctx, event);
+		err = event_handler_ep_request(uds_ctx, event);
 		break;
 	case UDC_EVT_ERROR:
-		LOG_ERR("Error event");
+		LOG_ERR("UDC error event");
+		usbd_msg_pub_simple(uds_ctx, USBD_MSG_UDC_ERROR, event->status);
 		break;
 	default:
 		break;
 	};
 
-	return ret;
+	if (err) {
+		usbd_msg_pub_simple(uds_ctx, USBD_MSG_STACK_ERROR, err);
+	}
 }
 
 static void usbd_thread(void *p1, void *p2, void *p3)

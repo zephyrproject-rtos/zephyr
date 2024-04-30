@@ -1,0 +1,5 @@
+# Copyright (c) 2018, Reto Schneider <code@reto-schneider.ch>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_OLIMEX_STM32_H407
+	select SOC_STM32F407XG

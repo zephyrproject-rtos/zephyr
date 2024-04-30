@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Intel Corporation
+ * Copyright (c) 2024 Schneider Electric
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +22,8 @@ extern "C" {
 /**
  * @brief Linkable loadable extensions
  * @defgroup llext Linkable loadable extensions
+ * @since 3.5
+ * @version 0.1.0
  * @ingroup os_services
  * @{
  */
@@ -200,11 +203,15 @@ int llext_add_domain(struct llext *ext, struct k_mem_domain *domain);
  * or object.
  *
  * @param[in] rel Relocation data provided by elf
- * @param[in] opaddr Address of operation to rewrite with relocation
- * @param[in] opval Value of looked up symbol to relocate
+ * @param[in] loc Address of operation to rewrite with relocation
+ * @param[in] sym_base_addr Symbol address
+ * @param[in] sym_name Symbol name
+ * @param[in] load_bias .text load address
+ * @retval 0 success
+ * @retval -ENOEXEC invalid relocation
  */
-void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval);
-
+int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
+			     uintptr_t sym_base_addr, const char *sym_name, uintptr_t load_bias);
 /**
  * @brief Find an ELF section
  *
@@ -220,10 +227,11 @@ ssize_t llext_find_section(struct llext_loader *loader, const char *search_name)
  * @param[in] loader Extension loader data and context
  * @param[in] ext Extension to call function in
  * @param[in] rel Relocation data provided by elf
+ * @param[in] sym Corresponding symbol table entry
  * @param[in] got_offset Offset within a relocation table
  */
 void arch_elf_relocate_local(struct llext_loader *loader, struct llext *ext,
-			     elf_rela_t *rel, size_t got_offset);
+			     const elf_rela_t *rel, const elf_sym_t *sym, size_t got_offset);
 
 /**
  * @}

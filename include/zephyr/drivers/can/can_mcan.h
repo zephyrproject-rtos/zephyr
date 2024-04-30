@@ -1237,9 +1237,6 @@ struct can_mcan_config {
 	uint16_t mram_elements[CAN_MCAN_MRAM_CFG_NUM_CELLS];
 	uint16_t mram_offsets[CAN_MCAN_MRAM_CFG_NUM_CELLS];
 	size_t mram_size;
-#ifdef CONFIG_CAN_FD_MODE
-	uint8_t tx_delay_comp_offset;
-#endif
 	const void *custom;
 };
 
@@ -1294,19 +1291,18 @@ struct can_mcan_config {
 #ifdef CONFIG_CAN_FD_MODE
 #define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _ops, _cbs)                                       \
 	{                                                                                          \
-		.common = CAN_DT_DRIVER_CONFIG_GET(node_id, 8000000),                              \
+		.common = CAN_DT_DRIVER_CONFIG_GET(node_id, 0, 8000000),                           \
 		.ops = _ops,                                                                       \
 		.callbacks = _cbs,                                                                 \
 		.mram_elements = CAN_MCAN_DT_MRAM_ELEMENTS_GET(node_id),                           \
 		.mram_offsets = CAN_MCAN_DT_MRAM_OFFSETS_GET(node_id),                             \
 		.mram_size = CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id),                              \
-		.tx_delay_comp_offset = DT_PROP(node_id, tx_delay_comp_offset),                    \
 		.custom = _custom,                                                                 \
 	}
 #else /* CONFIG_CAN_FD_MODE */
 #define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _ops, _cbs)                                       \
 	{                                                                                          \
-		.common = CAN_DT_DRIVER_CONFIG_GET(node_id, 8000000),                              \
+		.common = CAN_DT_DRIVER_CONFIG_GET(node_id, 0, 1000000),                           \
 		.ops = _ops,                                                                       \
 		.callbacks = _cbs,                                                                 \
 		.mram_elements = CAN_MCAN_DT_MRAM_ELEMENTS_GET(node_id),                           \
@@ -1653,13 +1649,13 @@ int can_mcan_set_timing(const struct device *dev, const struct can_timing *timin
  */
 int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *timing_data);
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 /**
  * @brief Bosch M_CAN driver callback API upon recovering the CAN bus
  * See @a can_recover() for argument description
  */
 int can_mcan_recover(const struct device *dev, k_timeout_t timeout);
-#endif /* !CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 
 int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_timeout_t timeout,
 		  can_tx_callback_t callback, void *user_data);

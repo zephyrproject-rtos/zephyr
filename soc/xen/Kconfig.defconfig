@@ -1,0 +1,19 @@
+# Copyright 2020 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_XENVM
+
+config NUM_IRQS
+	int
+	default 500
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 8320000
+
+# We need at least 16M of virtual address space to map memory of Xen node
+# 32M should be enough for basic use-cases
+config KERNEL_VM_SIZE
+	default 0x2000000
+
+endif

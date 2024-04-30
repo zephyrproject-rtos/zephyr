@@ -12,6 +12,10 @@
 };
 
 &adc1 {
+	dmas = <&dma2 0 0 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_16BITS |
+		STM32_DMA_PERIPH_16BITS) STM32_DMA_FIFO_FULL>;
+	dma-names = "dma";
+
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in3_pa3>;
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -31,4 +35,8 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
 		zephyr,resolution = <12>;
 	};
+};
+
+&dma2 {
+	status = "okay";
 };

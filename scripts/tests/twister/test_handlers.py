@@ -1125,13 +1125,13 @@ TESTDATA_14 = [
     ids=['success', 'failed', 'error', 'flash error', 'no status']
 )
 def test_devicehandler_update_instance_info(
-    mocked_instance,
-    harness_state,
-    flash_error,
-    expected_status,
-    expected_reason,
-    do_add_missing
-):
+        mocked_instance,
+        harness_state,
+        flash_error,
+        expected_status,
+        expected_reason,
+        do_add_missing
+        ):
     handler = DeviceHandler(mocked_instance, 'build')
     handler_time = 59
     missing_mock = mock.Mock()
@@ -1145,7 +1145,7 @@ def test_devicehandler_update_instance_info(
     assert handler.instance.reason == expected_reason
 
     if do_add_missing:
-        missing_mock.assert_called_once_with('blocked', expected_reason)
+        missing_mock.assert_called_with('blocked', expected_reason)
 
 
 TESTDATA_15 = [

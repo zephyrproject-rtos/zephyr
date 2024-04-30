@@ -1,0 +1,11 @@
+identifier: numaker_pfm_m487
+name: NUVOTON-PFM-M487
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 160
+flash: 512
+vendor: nuvoton

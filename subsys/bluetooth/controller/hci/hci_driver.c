@@ -35,9 +35,9 @@
 
 #include "hal/ccm.h"
 
-#if defined(CONFIG_SOC_FAMILY_NRF)
+#if defined(CONFIG_SOC_FAMILY_NORDIC_NRF)
 #include "hal/radio.h"
-#endif /* CONFIG_SOC_FAMILY_NRF */
+#endif /* CONFIG_SOC_FAMILY_NORDIC_NRF */
 
 #include "ll_sw/pdu_df.h"
 #include "lll/pdu_vendor.h"
@@ -73,7 +73,7 @@ struct k_thread prio_recv_thread_data;
 static K_KERNEL_STACK_DEFINE(prio_recv_thread_stack,
 			     CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE);
 struct k_thread recv_thread_data;
-static K_KERNEL_STACK_DEFINE(recv_thread_stack, CONFIG_BT_RX_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(recv_thread_stack, CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE);
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 static struct k_poll_signal hbuf_signal;
@@ -81,14 +81,46 @@ static sys_slist_t hbuf_pend;
 static int32_t hbuf_count;
 #endif
 
-#if !defined(CONFIG_BT_RECV_BLOCKING)
+#define BT_HCI_EVT_FLAG_RECV_PRIO BIT(0)
+#define BT_HCI_EVT_FLAG_RECV      BIT(1)
+
+/** @brief Get HCI event flags.
+ *
+ * Helper for the HCI driver to get HCI event flags that describes rules that.
+ * must be followed.
+ *
+ * @param evt HCI event code.
+ *
+ * @return HCI event flags for the specified event.
+ */
+static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
+{
+	switch (evt) {
+	case BT_HCI_EVT_DISCONN_COMPLETE:
+		return BT_HCI_EVT_FLAG_RECV | BT_HCI_EVT_FLAG_RECV_PRIO;
+		/* fallthrough */
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
+	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
+#if defined(CONFIG_BT_CONN)
+	case BT_HCI_EVT_DATA_BUF_OVERFLOW:
+		__fallthrough;
+#endif /* defined(CONFIG_BT_CONN) */
+#endif /* CONFIG_BT_CONN ||  CONFIG_BT_ISO */
+	case BT_HCI_EVT_CMD_COMPLETE:
+	case BT_HCI_EVT_CMD_STATUS:
+		return BT_HCI_EVT_FLAG_RECV_PRIO;
+	default:
+		return BT_HCI_EVT_FLAG_RECV;
+	}
+}
+
 /* Copied here from `hci_raw.c`, which would be used in
  * conjunction with this driver when serializing HCI over wire.
- * This serves as a converter from the more complicated
- * `CONFIG_BT_RECV_BLOCKING` API to the normal single-receiver
+ * This serves as a converter from the historical (removed from
+ * tree) 'recv blocking' API to the normal single-receiver
  * `bt_recv` API.
  */
-int bt_recv_prio(struct net_buf *buf)
+static int bt_recv_prio(struct net_buf *buf)
 {
 	if (bt_buf_get_type(buf) == BT_BUF_EVT) {
 		struct bt_hci_evt_hdr *hdr = (void *)buf->data;
@@ -103,7 +135,6 @@ int bt_recv_prio(struct net_buf *buf)
 
 	return bt_recv(buf);
 }
-#endif /* CONFIG_BT_RECV_BLOCKING */
 
 #if defined(CONFIG_BT_CTLR_ISO)
 
@@ -458,7 +489,8 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 			/* Check validity of the data path sink. FIXME: A channel disconnect race
 			 * may cause ISO data pending without valid data path.
 			 */
-			if (stream && stream->dp) {
+			if (stream && stream->dp &&
+			    (stream->dp->path_id == BT_HCI_DATAPATH_ID_HCI)) {
 				isoal_rx.meta = &node_rx->hdr.rx_iso_meta;
 				isoal_rx.pdu = (void *)node_rx->pdu;
 				err = isoal_rx_pdu_recombine(stream->dp->sink_hdl, &isoal_rx);

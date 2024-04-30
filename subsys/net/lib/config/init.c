@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include <stdlib.h>
 
 #include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_backend_net.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
@@ -30,7 +31,6 @@ LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include "ieee802154_settings.h"
 #include "bt_settings.h"
 
-extern const struct log_backend *log_backend_net_get(void);
 extern int net_init_clock_via_sntp(void);
 
 static K_SEM_DEFINE(waiter, 0, 1);
@@ -62,15 +62,14 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 #if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
 	char hr_addr[NET_IPV4_ADDR_LEN];
 #endif
-	int i;
 
 	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
 		return;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+	ARRAY_FOR_EACH(iface->config.ip.ipv4->unicast, i) {
 		struct net_if_addr *if_addr =
-					&iface->config.ip.ipv4->unicast[i];
+					&iface->config.ip.ipv4->unicast[i].ipv4;
 
 		if (if_addr->addr_type != NET_ADDR_DHCP || !if_addr->is_used) {
 			continue;
@@ -85,7 +84,7 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 			 iface->config.dhcpv4.lease_time);
 		NET_INFO("Subnet: %s",
 			 net_addr_ntop(AF_INET,
-				       &iface->config.ip.ipv4->netmask,
+				       &iface->config.ip.ipv4->unicast[i].netmask,
 				       hr_addr, sizeof(hr_addr)));
 		NET_INFO("Router: %s",
 			 net_addr_ntop(AF_INET,
@@ -141,7 +140,7 @@ static void setup_ipv4(struct net_if *iface)
 #if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
 	char hr_addr[NET_IPV4_ADDR_LEN];
 #endif
-	struct in_addr addr;
+	struct in_addr addr, netmask;
 
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV4_ADDR) == 1) {
 		/* Empty address, skip setting ANY address in this case */
@@ -177,11 +176,11 @@ static void setup_ipv4(struct net_if *iface)
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV4_NETMASK) > 1) {
 		/* If not empty */
 		if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_NETMASK,
-				  &addr)) {
+				  &netmask)) {
 			NET_ERR("Invalid netmask: %s",
 				CONFIG_NET_CONFIG_MY_IPV4_NETMASK);
 		} else {
-			net_if_ipv4_set_netmask(iface, &addr);
+			net_if_ipv4_set_netmask_by_addr(iface, &addr, &netmask);
 		}
 	}
 
@@ -298,9 +297,6 @@ static void setup_ipv6(struct net_if *iface, uint32_t flags)
 	struct net_if_addr *ifaddr;
 	uint32_t mask = NET_EVENT_IPV6_DAD_SUCCEED;
 
-	net_mgmt_init_event_callback(&mgmt6_cb, ipv6_event_handler, mask);
-	net_mgmt_add_event_callback(&mgmt6_cb);
-
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV6_ADDR) == 1) {
 		/* Empty address, skip setting ANY address in this case */
 		goto exit;
@@ -315,6 +311,9 @@ static void setup_ipv6(struct net_if *iface, uint32_t flags)
 	if (flags & NET_CONFIG_NEED_ROUTER) {
 		mask |= NET_EVENT_IPV6_ROUTER_ADD;
 	}
+
+	net_mgmt_init_event_callback(&mgmt6_cb, ipv6_event_handler, mask);
+	net_mgmt_add_event_callback(&mgmt6_cb);
 
 	/*
 	 * check for CMD_ADDR_ADD bit here, NET_EVENT_IPV6_ADDR_ADD is

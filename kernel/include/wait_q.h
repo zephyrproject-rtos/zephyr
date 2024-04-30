@@ -12,8 +12,8 @@
 #include <zephyr/kernel_structs.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/rb.h>
-#include <zephyr/kernel/internal/sched_priq.h>
 #include <timeout_q.h>
+#include <priority_q.h>
 
 #ifdef __cplusplus
 extern "C" {

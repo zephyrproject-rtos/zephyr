@@ -58,7 +58,7 @@ class Shell:
         timeout = timeout or self.base_timeout
         command_ext = f'{command}\n\n'
         regex_prompt = re.escape(self.prompt)
-        regex_command = f'.*{command}'
+        regex_command = f'.*{re.escape(command)}'
         self._device.clear_buffer()
         self._device.write(command_ext.encode())
         lines: list[str] = []

@@ -1,0 +1,20 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MIMX8UD7_ADSP
+	select XTENSA
+	select XTENSA_HAL if ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc" && "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xt-clang")
+	select XTENSA_RESET_VECTOR
+	select XTENSA_USE_CORE_CRT1
+	select ATOMIC_OPERATIONS_BUILTIN
+	select GEN_ISR_TABLES
+	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
+	select CPU_HAS_DCACHE
+	select HAS_MCUX
+	select HAS_MCUX_IOMUXC
+
+# note: the NXP HAL refers to the HIFI4 DSP as
+# `dsp1` and the Fusion DSP as `dsp0`, thus the
+# suffix(es) below
+config MCUX_CORE_SUFFIX
+	default "_dsp1" if SOC_MIMX8UD7_ADSP

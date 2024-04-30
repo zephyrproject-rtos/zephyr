@@ -120,12 +120,16 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,	/* 0x25 */
-				   <&test_gpio 0 0>,	/* 0x26 */
-				   <&test_gpio 0 0>,	/* 0x27 */
-				   <&test_gpio 0 0>,	/* 0x28 */
-				   <&test_gpio 0 0>,	/* 0x29 */
-				   <&test_gpio 0 0>;	/* 0x2A */
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>;	/* 0x2e */
 
 			#include "spi.dtsi"
 		};

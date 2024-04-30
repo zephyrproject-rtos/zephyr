@@ -1,0 +1,13 @@
+sample:
+  name: IPC Service example integration (rpmsg backend)
+tests:
+  sample.ipc.rpmsg_service:
+    platform_allow:
+      - mps2/an521/cpu0
+      - v2m_musca_b1/musca_b1
+    integration_platforms:
+      - mps2/an521/cpu0
+      - v2m_musca_b1/musca_b1
+    tags: ipc
+    sysbuild: true
+    harness: remote

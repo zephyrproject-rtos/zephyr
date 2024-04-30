@@ -1,6 +1,0 @@
-# Copyright (c) 2023 Meta
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD
-	default "riscv32_virtual"
-	depends on BOARD_RISCV32_VIRTUAL

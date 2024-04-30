@@ -15,4 +15,7 @@ target_sources(testbinary
   PRIVATE
     ${ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
     src/main.c
+    src/test_common.c
+    src/test_vcp.c
+    src/test_micp.c
 )

@@ -46,6 +46,14 @@ config NET_DHCPV4_MAX_REQUESTED_OPTIONS
 	  DHCPv4 request message. The options are added using the
 	  net_dhcpv4_add_option_callback() API.
 
+config NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
+	bool "Encapsulated vendor specific option callbacks"
+	depends on NET_DHCPV4
+	select NET_DHCPV4_OPTION_CALLBACKS
+	help
+	  If set, custom callbacks for encapsulated vendor-specific
+	  information in DHCP option 43 can be added.
+
 config NET_DHCPV4_ACCEPT_UNICAST
 	bool "Accept unicast DHCPv4 traffic"
 	depends on NET_DHCPV4
@@ -139,5 +147,18 @@ config NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT
 	  DHCPv4 server will probe the offered IP address (send ICMP echo
 	  request) and wait for the time specific by this config before offering
 	  the address. If set to 0, ICMP probing will be disabled.
+
+config NET_DHCPV4_SERVER_NAK_UNRECOGNIZED_REQUESTS
+	bool "Reply with NAK for DHCP Requests from clients we do not recognize"
+	default y
+	help
+	  Zephyr's DHCPv4 server does not implement persistent storage of address
+	  leases. As a result, all leases are lost on reboot, which can cause
+	  delays with clients starting in INIT-REBOOT state and thus sending
+	  (potentially several) Requests before attempting full Discover-Request
+	  procedure. Enabling this config will violate the RFC in this regard, as
+	  instead of staying silent for unrecognized Request messages, the server
+	  will send a NAK, informing the client it should proceed with a full
+	  procedure.
 
 endif # NET_DHCPV4_SERVER

@@ -44,7 +44,7 @@ config MODBUS_SERIAL
 	default y
 	depends on SERIAL && SERIAL_HAS_DRIVER
 	depends on DT_HAS_ZEPHYR_MODBUS_SERIAL_ENABLED
-	select UART_USE_RUNTIME_CONFIGURE
+	imply UART_USE_RUNTIME_CONFIGURE
 	help
 	  Enable Modbus over serial line support.
 

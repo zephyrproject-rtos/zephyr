@@ -1,0 +1,11 @@
+common:
+  tags:
+    - dns
+    - net
+  min_ram: 21
+  depends_on: netif
+  integration_platforms:
+    - native_sim
+tests:
+  net.dns.cache:
+    build_only: false

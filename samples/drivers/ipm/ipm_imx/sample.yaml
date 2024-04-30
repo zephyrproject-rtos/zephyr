@@ -5,13 +5,13 @@ sample:
 tests:
   sample.ipm.ipm_imx:
     build_only: true
-    filter: CONFIG_SOC_FAMILY_IMX
+    filter: CONFIG_SOC_FAMILY_NXP_IMX
     platform_allow:
-      - udoo_neo_full_m4
-      - colibri_imx7d_m4
-      - warp7_m4
+      - udoo_neo_full/mcimx6x/m4
+      - colibri_imx7d/mcimx7d/m4
+      - warp7/mcimx7d/m4
     integration_platforms:
-      - udoo_neo_full_m4
+      - udoo_neo_full/mcimx6x/m4
     tags:
       - samples
       - ipm

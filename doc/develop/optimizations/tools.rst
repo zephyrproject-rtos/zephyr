@@ -59,48 +59,48 @@ Use the ``ram_report`` target with your board, as in the following example.
 
 These commands will generate something similar to the output below::
 
-    Path                                                                       Size    %
+    Path                                                           Size    %      Address
     ========================================================================================
-    Root                                                                       4637 100.00%
-    ├── (hidden)                                                                  4   0.09%
-    ├── (no paths)                                                             2748  59.26%
-    │   ├── _cpus_active                                                          4   0.09%
-    │   ├── _kernel                                                              32   0.69%
-    │   ├── _sw_isr_table                                                       384   8.28%
-    │   ├── cli.1                                                                16   0.35%
-    │   ├── on.2                                                                  4   0.09%
-    │   ├── poll_out_lock.0                                                       4   0.09%
-    │   ├── z_idle_threads                                                      128   2.76%
-    │   ├── z_interrupt_stacks                                                 2048  44.17%
-    │   └── z_main_thread                                                       128   2.76%
-    ├── WORKSPACE                                                               184   3.97%
-    │   └── modules                                                             184   3.97%
-    │       └── hal                                                             184   3.97%
-    │           └── nordic                                                      184   3.97%
-    │               └── nrfx                                                    184   3.97%
-    │                   └── drivers                                             184   3.97%
-    │                       └── src                                             184   3.97%
-    │                           ├── nrfx_clock.c                                  8   0.17%
-    │                           │   └── m_clock_cb                                8   0.17%
-    │                           ├── nrfx_gpiote.c                               132   2.85%
-    │                           │   └── m_cb                                    132   2.85%
-    │                           ├── nrfx_ppi.c                                    4   0.09%
-    │                           │   └── m_channels_allocated                      4   0.09%
-    │                           └── nrfx_twim.c                                  40   0.86%
-    │                               └── m_cb                                     40   0.86%
-    └── ZEPHYR_BASE                                                            1701  36.68%
-        ├── arch                                                                  5   0.11%
-        │   └── arm                                                               5   0.11%
-        │       └── core                                                          5   0.11%
-        │           ├── mpu                                                       1   0.02%
-        │           │   └── arm_mpu.c                                             1   0.02%
-        │           │       └── static_regions_num                                1   0.02%
-        │           └── tls.c                                                     4   0.09%
-        │               └── z_arm_tls_ptr                                         4   0.09%
-        ├── drivers                                                             258   5.56%
-        │   ├── ...                                                             ...    ...%
+    Root                                                           4637 100.00%  -
+    ├── (hidden)                                                      4   0.09%  -
+    ├── (no paths)                                                 2748  59.26%  -
+    │   ├── _cpus_active                                              4   0.09%  0x20000314
+    │   ├── _kernel                                                  32   0.69%  0x20000318
+    │   ├── _sw_isr_table                                           384   8.28%  0x00006474
+    │   ├── cli.1                                                    16   0.35%  0x20000254
+    │   ├── on.2                                                      4   0.09%  0x20000264
+    │   ├── poll_out_lock.0                                           4   0.09%  0x200002d4
+    │   ├── z_idle_threads                                          128   2.76%  0x20000120
+    │   ├── z_interrupt_stacks                                     2048  44.17%  0x20000360
+    │   └── z_main_thread                                           128   2.76%  0x200001a0
+    ├── WORKSPACE                                                   184   3.97%  -
+    │   └── modules                                                 184   3.97%  -
+    │       └── hal                                                 184   3.97%  -
+    │           └── nordic                                          184   3.97%  -
+    │               └── nrfx                                        184   3.97%  -
+    │                   └── drivers                                 184   3.97%  -
+    │                       └── src                                 184   3.97%  -
+    │                           ├── nrfx_clock.c                      8   0.17%  -
+    │                           │   └── m_clock_cb                    8   0.17%  0x200002e4
+    │                           ├── nrfx_gpiote.c                   132   2.85%  -
+    │                           │   └── m_cb                        132   2.85%  0x20000060
+    │                           ├── nrfx_ppi.c                        4   0.09%  -
+    │                           │   └── m_channels_allocated          4   0.09%  0x200000e4
+    │                           └── nrfx_twim.c                      40   0.86%  -
+    │                               └── m_cb                         40   0.86%  0x200002ec
+    └── ZEPHYR_BASE                                                1701  36.68%  -
+        ├── arch                                                      5   0.11%  -
+        │   └── arm                                                   5   0.11%  -
+        │       └── core                                              5   0.11%  -
+        │           ├── mpu                                           1   0.02%  -
+        │           │   └── arm_mpu.c                                 1   0.02%  -
+        │           │       └── static_regions_num                    1   0.02%  0x20000348
+        │           └── tls.c                                         4   0.09%  -
+        │               └── z_arm_tls_ptr                             4   0.09%  0x20000240
+        ├── drivers                                                 258   5.56%  -
+        │   ├── ...                                                 ...    ...%
     ========================================================================================
-                                                                               4637
+                                                                   4637
 
 
 Build Target: rom_report
@@ -120,40 +120,40 @@ Use the ``rom_report`` target with your board, as in the following example.
 
 These commands will generate something similar to the output below::
 
-    Path                                                                       Size    %
+    Path                                                           Size    %      Address
     ========================================================================================
-    Root                                                                      21652 100.00%
-    ├── ...                                                                     ...    ...%
-    └── ZEPHYR_BASE                                                           13378  61.79%
-        ├── arch                                                               1718   7.93%
-        │   └── arm                                                            1718   7.93%
-        │       └── core                                                       1718   7.93%
-        │           ├── cortex_m                                               1020   4.71%
-        │           │   ├── fault.c                                             620   2.86%
-        │           │   │   ├── bus_fault.constprop.0                           108   0.50%
-        │           │   │   ├── mem_manage_fault.constprop.0                    120   0.55%
-        │           │   │   ├── usage_fault.constprop.0                          84   0.39%
-        │           │   │   ├── z_arm_fault                                     292   1.35%
-        │           │   │   └── z_arm_fault_init                                 16   0.07%
-        │           │   ├── ...                                                 ...    ...%
-        ├── boards                                                               32   0.15%
-        │   └── arm                                                              32   0.15%
-        │       └── reel_board                                                   32   0.15%
-        │           └── board.c                                                  32   0.15%
-        │               ├── __init_board_reel_board_init                          8   0.04%
-        │               └── board_reel_board_init                                24   0.11%
-        ├── build                                                               194   0.90%
-        │   └── zephyr                                                          194   0.90%
-        │       ├── isr_tables.c                                                192   0.89%
-        │       │   └── _irq_vector_table                                       192   0.89%
-        │       └── misc                                                          2   0.01%
-        │           └── generated                                                 2   0.01%
-        │               └── configs.c                                             2   0.01%
-        │                   └── _ConfigAbsSyms                                    2   0.01%
-        ├── drivers                                                            6162  28.46%
-        │   ├── ...                                                             ...    ...%
+    Root                                                          27828 100.00%  -
+    ├── ...                                                         ...    ...%
+    └── ZEPHYR_BASE                                               13558  48.72%  -
+        ├── arch                                                   1766   6.35%  -
+        │   └── arm                                                1766   6.35%  -
+        │       └── core                                           1766   6.35%  -
+        │           ├── cortex_m                                   1020   3.67%  -
+        │           │   ├── fault.c                                 620   2.23%  -
+        │           │   │   ├── bus_fault.constprop.0               108   0.39%  0x00000749
+        │           │   │   ├── mem_manage_fault.constprop.0        120   0.43%  0x000007b5
+        │           │   │   ├── usage_fault.constprop.0              84   0.30%  0x000006f5
+        │           │   │   ├── z_arm_fault                         292   1.05%  0x0000082d
+        │           │   │   └── z_arm_fault_init                     16   0.06%  0x00000951
+        │           │   ├── ...                                     ...    ...%
+        ├── boards                                                   32   0.11%  -
+        │   └── arm                                                  32   0.11%  -
+        │       └── reel_board                                       32   0.11%  -
+        │           └── board.c                                      32   0.11%  -
+        │               ├── __init_board_reel_board_init              8   0.03%  0x000063e4
+        │               └── board_reel_board_init                    24   0.09%  0x00000ed5
+        ├── build                                                   194   0.70%  -
+        │   └── zephyr                                              194   0.70%  -
+        │       ├── isr_tables.c                                    192   0.69%  -
+        │       │   └── _irq_vector_table                           192   0.69%  0x00000040
+        │       └── misc                                              2   0.01%  -
+        │           └── generated                                     2   0.01%  -
+        │               └── configs.c                                 2   0.01%  -
+        │                   └── _ConfigAbsSyms                        2   0.01%  0x00005945
+        ├── drivers                                                6282  22.57%  -
+        │   ├── ...                                                 ...    ...%
     ========================================================================================
-                                                                                    21652
+                                                                  21652
 
 Build Target: puncover
 ======================

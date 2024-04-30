@@ -1,0 +1,155 @@
+# Copyright (c) 2024 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+#
+menuconfig OBJ_CORE
+	bool "Object core framework"
+	default n
+	help
+	  This option enables the object core framework. This will link
+	  participating kernel objects and their respective types together
+	  in a way that allows them to both have common information stored
+	  together and for that information to be easily retrieved by
+	  automated means.
+
+if OBJ_CORE
+config OBJ_CORE_CONDVAR
+	bool "Integrate condition variables into object core framework"
+	default y
+	help
+	  When enabled, this option integrates condition variables into the
+	  object core framework.
+
+config OBJ_CORE_EVENT
+	bool "Integrate events into object core framework"
+	default y if EVENTS
+	help
+	  When enabled, this option integrate kernel events into the object
+	  core framework.
+
+config OBJ_CORE_FIFO
+	bool "Integrate FIFOs into object core framework"
+	default y
+	help
+	  When enabled, this option integrates FIFOs into the object core
+	  framework.
+
+config OBJ_CORE_LIFO
+	bool "Integrate LIFOs into object core framework"
+	default y
+	help
+	  When enabled, this option integrates LIFOs into the object core
+	  framework.
+
+config OBJ_CORE_MAILBOX
+	bool "Integrate mailboxes into object core framework"
+	default y
+	help
+	  When enabled, this option integrates mailboxes into the object core
+	  framework.
+
+config OBJ_CORE_MEM_SLAB
+	bool "Integrate memory slabs into object core framework"
+	default y
+	help
+	  When enabled, this option integrates memory slabs into the object
+	  core framework.
+
+config OBJ_CORE_MUTEX
+	bool "Integrate mutexes into object core framework"
+	default y
+	help
+	  When enabled, this option integrates mutexes into the object core
+	  framework.
+
+config OBJ_CORE_MSGQ
+	bool "Integrate message queues into object core framework"
+	default y
+	help
+	  When enabled, this option integrates message queues into the object
+	  core framework.
+
+config OBJ_CORE_SEM
+	bool "Integrate semaphores into object core framework"
+	default y
+	help
+	  When enabled, this option integrates semaphores into the object core
+	  framework.
+
+config OBJ_CORE_PIPE
+	bool "Integrate pipe into object core framework"
+	default y if PIPES
+	help
+	  When enabled, this option integrates pipes into the object core
+	  framework.
+
+config OBJ_CORE_SEM
+	bool "Integrate semaphores into object core framework"
+	default y
+	help
+	  When enabled, this option integrates semaphores into the object core
+	  framework.
+
+config OBJ_CORE_STACK
+	bool "Integrate stacks into object core framework"
+	default y
+	help
+	  When enabled, this option integrates stacks into the object core
+	  framework.
+
+config OBJ_CORE_THREAD
+	bool "Integrate threads into object core framework"
+	default y
+	help
+	  When enabled, this option integrates threads into the object core
+	  framework.
+
+config OBJ_CORE_TIMER
+	bool "Integrate timers into object core framework"
+	default y
+	help
+	  When enabled, this option integrates timers into the object core
+	  framework.
+
+config OBJ_CORE_SYSTEM
+	bool
+	default y
+	help
+	  When enabled, this option integrates the internal CPU and kernel
+	  system objects into the object core framework. As these are internal
+	  structures, this option is hidden by default and only available to
+	  advanced users.
+
+menuconfig OBJ_CORE_STATS
+	bool "Object core statistics"
+	default n
+	help
+	  This option integrates statistics gathering into the object core
+	  framework.
+
+if OBJ_CORE_STATS
+config OBJ_CORE_STATS_MEM_SLAB
+	bool "Object core statistics for memory slabs"
+	default y if OBJ_CORE_MEM_SLAB
+	help
+	  When enabled, this allows memory slab statistics to be integrated
+	  into kernel objects.
+
+config OBJ_CORE_STATS_THREAD
+	bool "Object core statistics for threads"
+	default y if OBJ_CORE_THREAD
+	select THREAD_RUNTIME_STATS
+	help
+	  When enabled, this integrates thread runtime statistics into the
+	  object core statistics framework.
+
+config OBJ_CORE_STATS_SYSTEM
+	bool "Object core statistics for system level objects"
+	default y if OBJ_CORE_SYSTEM
+	select SCHED_THREAD_USAGE_ALL
+	help
+	  When enabled, this integrates thread runtime statistics at the
+	  CPU and system level into the object core statistics framework.
+
+endif  # OBJ_CORE_STATS
+
+endif  # OBJ_CORE

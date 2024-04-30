@@ -21,6 +21,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/device.h>
 #include <zephyr/irq.h>
+#include <soc.h>
 
 #define LOG_MODULE_NAME counter_mrt
 #include <zephyr/logging/log.h>

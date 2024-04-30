@@ -15,11 +15,11 @@ cd ${BSIM_OUT_PATH}/bin
 function Execute_AC_7_I() {
     printf "\n\n======== Running CAP AC_7_I with %s =========\n\n" $1
 
-    Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+    Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
         -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=cap_initiator_ac_7_i \
         -RealEncryption=1 -rs=23 -D=2 -argstest sink_preset $1 source_preset $2
 
-    Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+    Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
         -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=cap_acceptor_unicast \
         -RealEncryption=1 -rs=46 -D=2
 

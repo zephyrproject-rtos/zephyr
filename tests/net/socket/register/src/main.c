@@ -245,9 +245,9 @@ ZTEST(net_socket_register, test_create_sockets)
 	for (i = 0; i < ARRAY_SIZE(expected_result); i++, current_test++) {
 		errno = 0;
 
-		fd = socket(expected_result[i].test_case.family,
-			    expected_result[i].test_case.type,
-			    expected_result[i].test_case.proto);
+		fd = zsock_socket(expected_result[i].test_case.family,
+				  expected_result[i].test_case.type,
+				  expected_result[i].test_case.proto);
 
 		if (errno == EPROTONOSUPPORT) {
 			func_called--;
@@ -271,7 +271,7 @@ ZTEST(net_socket_register, test_create_sockets)
 		}
 
 		if (fd >= 0) {
-			close(fd);
+			zsock_close(fd);
 		}
 	}
 

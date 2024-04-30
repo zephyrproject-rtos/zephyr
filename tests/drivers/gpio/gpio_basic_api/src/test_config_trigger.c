@@ -40,7 +40,12 @@ ZTEST(after_flash_gpio_config_trigger, test_gpio_config_twice_trigger)
 
 	/* 2. Enable PIN callback as both edges */
 	ret = gpio_pin_interrupt_configure(dev, PIN_IN, GPIO_INT_EDGE_BOTH);
-	zassert_ok(ret, "enable callback failed");
+	if (ret == -ENOTSUP) {
+		TC_PRINT("Both edge GPIO interrupt not supported.\n");
+		gpio_remove_callback(dev, &drv_data->gpio_cb);
+	} else {
+		zassert_ok(ret, "enable callback failed");
+	}
 
 	/* 3. Configure PIN_OUT as open drain, internal pull-up (may trigger
 	 * callback)
@@ -87,7 +92,12 @@ ZTEST(after_flash_gpio_config_trigger, test_gpio_config_trigger)
 
 	/* 2. Enable PIN callback as both edges */
 	ret = gpio_pin_interrupt_configure(dev, PIN_IN, GPIO_INT_EDGE_BOTH);
-	zassert_ok(ret, "enable callback failed");
+	if (ret == -ENOTSUP) {
+		TC_PRINT("Both edge GPIO interrupt not supported.\n");
+		gpio_remove_callback(dev, &drv_data->gpio_cb);
+	} else {
+		zassert_ok(ret, "enable callback failed");
+	}
 
 	/* 3. Configure PIN_OUT as open drain, internal pull-up (may trigger
 	 * callback)

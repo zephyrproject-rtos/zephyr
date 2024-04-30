@@ -1,0 +1,5 @@
+board:
+  name: rak5010
+  vendor: rakwireless
+  socs:
+  - name: nrf52840

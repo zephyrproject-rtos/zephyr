@@ -12,7 +12,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 {
 	USART_TypeDef *base = (USART_TypeDef *)reg;
 	uint8_t loc;
-#ifdef CONFIG_SOC_GECKO_SERIES1
+#ifdef CONFIG_SOC_FAMILY_SILABS_S1
 	LEUART_TypeDef *lebase = (LEUART_TypeDef *)reg;
 #else
 	int usart_num = USART_NUM(base);
@@ -50,7 +50,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 					txpin.out);
 			break;
 
-#ifdef CONFIG_SOC_GECKO_SERIES1
+#ifdef CONFIG_SOC_FAMILY_SILABS_S1
 		case GECKO_FUN_UART_RTS:
 			pin_config.mode = gpioModePushPull;
 			pin_config.out = 1;
@@ -100,7 +100,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			lebase->ROUTELOC0 &= ~_LEUART_ROUTELOC0_TXLOC_MASK;
 			lebase->ROUTELOC0 |= (loc << _LEUART_ROUTELOC0_TXLOC_SHIFT);
 			break;
-#else /* CONFIG_SOC_GECKO_SERIES1 */
+#else /* CONFIG_SOC_FAMILY_SILABS_S1 */
 		case GECKO_FUN_UART_LOC:
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
 			/* For SOCs with configurable pin_cfg locations (set in SOC Kconfig) */
@@ -156,11 +156,11 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			}
 #endif /* UART_GECKO_HW_FLOW_CONTROL */
 			break;
-#endif /* CONFIG_SOC_GECKO_SERIES1 */
+#endif /* CONFIG_SOC_FAMILY_SILABS_S1 */
 #endif /* CONFIG_UART_GECKO */
 
 #ifdef CONFIG_SPI_GECKO
-#ifdef CONFIG_SOC_GECKO_SERIES1
+#ifdef CONFIG_SOC_FAMILY_SILABS_S1
 		case GECKO_FUN_SPIM_SCK:
 			pin_config.mode = gpioModePushPull;
 			pin_config.out = 1;
@@ -241,7 +241,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			base->ROUTELOC0 |= (loc << _USART_ROUTELOC0_CSLOC_SHIFT);
 			break;
 
-#else /* CONFIG_SOC_GECKO_SERIES1 */
+#else /* CONFIG_SOC_FAMILY_SILABS_S1 */
 		case GECKO_FUN_SPI_SCK:
 			pin_config.mode = gpioModePushPull;
 			pin_config.out = 1;
@@ -274,7 +274,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
 					pin_config.out);
 			break;
-#endif /* CONFIG_SOC_GECKO_SERIES1 */
+#endif /* CONFIG_SOC_FAMILY_SILABS_S1 */
 #endif /* CONFIG_SPI_GECKO */
 
 		default:

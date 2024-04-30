@@ -87,7 +87,7 @@ config GPIO_ENABLE_DISABLE_INTERRUPT
 	  pending register, etc. The driver must implement it to work.
 
 
-source "drivers/gpio/Kconfig.ad5592"
+source "drivers/gpio/Kconfig.ad559x"
 
 source "drivers/gpio/Kconfig.axp192"
 
@@ -235,6 +235,8 @@ source "drivers/gpio/Kconfig.altera"
 source "drivers/gpio/Kconfig.bcm2711"
 
 source "drivers/gpio/Kconfig.renesas_ra"
+
+source "drivers/gpio/Kconfig.ene"
 
 source "drivers/gpio/Kconfig.rzt2m"
 

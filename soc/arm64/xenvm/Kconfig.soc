@@ -1,8 +1,0 @@
-# Copyright 2020 EPAM Systems
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC_XENVM
-	bool "Xen virtual machine on aarch64"
-	select ARM64
-	select ARM_ARCH_TIMER if SYS_CLOCK_EXISTS
-	select CPU_CORTEX_A72

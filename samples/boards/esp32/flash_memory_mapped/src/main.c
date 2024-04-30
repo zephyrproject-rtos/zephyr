@@ -10,7 +10,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
 
-#include <esp_spi_flash.h>
+#include <spi_flash_mmap.h>
 #include <soc.h>
 
 #include <zephyr/logging/log.h>
@@ -52,6 +52,12 @@ int main(void)
 	LOG_HEXDUMP_INF(buffer, 32, "flash read using flash API");
 
 	LOG_HEXDUMP_INF(mem_ptr, 32, "flash read using memory-mapped pointer");
+
+	if (memcmp(buffer, mem_ptr, 32) == 0) {
+		LOG_INF("memory-mapped reading matches flash API read");
+	} else {
+		LOG_ERR("memory-mapped reading does not match flash API read");
+	}
 
 	/* unmap mapped region */
 	spi_flash_munmap(handle);

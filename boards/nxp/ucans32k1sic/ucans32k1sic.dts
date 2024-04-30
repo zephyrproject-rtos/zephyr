@@ -1,0 +1,189 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <arm/nxp/nxp_s32k146.dtsi>
+#include "ucans32k1sic-pinctrl.dtsi"
+
+/ {
+	model = "NXP UCANS32K1SIC";
+	compatible = "nxp,ucans32k1sic";
+
+	chosen {
+		zephyr,sram = &sram_l;
+		zephyr,flash = &flash0;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,uart-pipe = &lpuart1;
+		zephyr,canbus = &flexcan0;
+	};
+
+	aliases {
+		led0 = &led1_red;
+		led1 = &led1_green;
+		led2 = &led1_blue;
+		pwm-led0 = &led1_red_pwm;
+		pwm-led1 = &led1_green_pwm;
+		pwm-led2 = &led1_blue_pwm;
+		red-pwm-led = &led1_red_pwm;
+		green-pwm-led = &led1_green_pwm;
+		blue-pwm-led = &led1_blue_pwm;
+		pwm-0 = &ftm0;
+		sw0 = &button_3;
+		i2c-0 = &lpi2c0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1_red: led_0 {
+			gpios = <&gpiod 15 GPIO_ACTIVE_LOW>;
+			label = "LED1_RGB_RED";
+		};
+		led1_green: led_1 {
+			gpios = <&gpiod 16 GPIO_ACTIVE_LOW>;
+			label = "LED1_RGB_GREEN";
+		};
+		led1_blue: led_2 {
+			gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
+			label = "LED1_RGB_BLUE";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		led1_red_pwm: led_pwm_0 {
+			pwms = <&ftm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "LED1_RGB_RED_PWM";
+		};
+		led1_green_pwm: led_pwm_1 {
+			pwms = <&ftm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "LED1_RGB_GREEN_PWM";
+		};
+		led1_blue_pwm: led_pwm_2 {
+			pwms = <&ftm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "LED1_RGB_BLUE_PWM";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		button_3: button_0 {
+			label = "SW3";
+			gpios = <&gpioc 14 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	can_phy0: can-phy0 {
+		compatible = "nxp,tja1463", "nxp,tja1443", "nxp,tja1153", "can-transceiver-gpio";
+		enable-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+	};
+
+	can_phy1: can-phy1 {
+		compatible = "nxp,tja1463", "nxp,tja1443", "nxp,tja1153", "can-transceiver-gpio";
+		enable-gpios = <&gpioe 2 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&lpuart0 {
+	pinctrl-0 = <&lpuart0_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&lpi2c0 {
+	pinctrl-0 = <&lpi2c0_default>;
+	pinctrl-names = "default";
+	scl-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+};
+
+&lpspi0 {
+	pinctrl-0 = <&lpspi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&ftm0 {
+	compatible = "nxp,kinetis-ftm-pwm";
+	pinctrl-0 = <&ftm0_default>;
+	pinctrl-names = "default";
+	prescaler = <128>;
+	#pwm-cells = <3>;
+	status = "okay";
+};
+
+&ftm1 {
+	compatible = "nxp,kinetis-ftm-pwm";
+	pinctrl-0 = <&ftm1_default>;
+	pinctrl-names = "default";
+	#pwm-cells = <3>;
+	status = "okay";
+};
+
+&ftm2 {
+	compatible = "nxp,kinetis-ftm-pwm";
+	pinctrl-0 = <&ftm2_default>;
+	pinctrl-names = "default";
+	#pwm-cells = <3>;
+	status = "okay";
+};
+
+&flexcan0 {
+	pinctrl-0 = <&flexcan0_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy0>;
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	status = "okay";
+};
+
+&flexcan1 {
+	pinctrl-0 = <&flexcan1_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy1>;
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	status = "okay";
+};

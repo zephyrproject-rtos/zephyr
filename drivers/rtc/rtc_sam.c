@@ -26,6 +26,11 @@
 #define RTC_SAM_CALIBRATE_PPB_QUANTA (1500)
 #define RTC_SAM_CALIBRATE_PPB_LOW_SCALE (30500)
 
+#define RTC_SAM_TIME_MASK                                                                          \
+	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |      \
+	 RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_YEAR |     \
+	 RTC_ALARM_TIME_MASK_WEEKDAY)
+
 typedef void (*rtc_sam_irq_init_fn_ptr)(void);
 
 struct rtc_sam_config {
@@ -56,41 +61,6 @@ static void rtc_sam_disable_wp(void)
 static void rtc_sam_enable_wp(void)
 {
 	REG_RTC_WPMR = RTC_SAM_WPMR_ENABLE;
-}
-
-static bool rtc_sam_validate_tm(const struct rtc_time *timeptr, uint32_t mask)
-{
-	if ((mask & RTC_ALARM_TIME_MASK_SECOND) &&
-	    (timeptr->tm_sec < 0 || timeptr->tm_sec > 59)) {
-		return false;
-	}
-
-	if ((mask & RTC_ALARM_TIME_MASK_MINUTE) &&
-	    (timeptr->tm_min < 0 || timeptr->tm_min > 59)) {
-		return false;
-	}
-
-	if ((mask & RTC_ALARM_TIME_MASK_HOUR) &&
-	    (timeptr->tm_hour < 0 || timeptr->tm_hour > 23)) {
-		return false;
-	}
-
-	if ((mask & RTC_ALARM_TIME_MASK_MONTH) &&
-	    (timeptr->tm_mon < 0 || timeptr->tm_mon > 11)) {
-		return false;
-	}
-
-	if ((mask & RTC_ALARM_TIME_MASK_MONTHDAY) &&
-	    (timeptr->tm_mday < 1 || timeptr->tm_mday > 31)) {
-		return false;
-	}
-
-	if ((mask & RTC_ALARM_TIME_MASK_YEAR) &&
-	    (timeptr->tm_year < 0 || timeptr->tm_year > 199)) {
-		return false;
-	}
-
-	return true;
 }
 
 static uint32_t rtc_sam_timr_from_tm(const struct rtc_time *timeptr)
@@ -126,7 +96,7 @@ static int rtc_sam_set_time(const struct device *dev, const struct rtc_time *tim
 	const struct rtc_sam_config *config = dev->config;
 	Rtc *regs = config->regs;
 
-	if (rtc_sam_validate_tm(timeptr, UINT32_MAX) == false) {
+	if (rtc_utils_validate_rtc_time(timeptr, RTC_SAM_TIME_MASK) == false) {
 		return -EINVAL;
 	}
 

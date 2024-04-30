@@ -1,0 +1,129 @@
+/*
+ * Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h745Xi_m7.dtsi>
+#include "nucleo_h745zi_q.dtsi"
+
+/*
+ * WARNING:
+ * Possible pin conflicts: The pins PA2 and PB13 may conflict on selection of
+ * ETH_STM32_HAL, since they are used in ST Zio or ST morpho connectors. To
+ * avoid conflicting states the jumpers JP6 and JP7 must be in ON state.
+ */
+
+/ {
+	model = "STMicroelectronics STM32H745ZI-Q-NUCLEO board";
+	compatible = "st,stm32h745zi-q-nucleo";
+
+	/* HW resources belonging to CM7 */
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+		zephyr,dtcm = &dtcm;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: red_pwm_led {
+			pwms = <&pwm12 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "User LD3 - PWM12";
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+		pwm-led0 = &red_pwm_led;
+		sw0 = &user_button;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hse {
+	hse-bypass;
+	clock-frequency = <DT_FREQ_M(8)>; /* STLink 8MHz clock */
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <120>;
+	div-p = <2>;
+	div-q = <8>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(480)>;
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&timers12 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm12: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim12_ch1_pb14>;
+		pinctrl-names = "default";
+	};
+};
+
+&mac {
+	status = "okay";
+	pinctrl-0 = <&eth_ref_clk_pa1
+		     &eth_mdio_pa2
+		     &eth_crs_dv_pa7
+		     &eth_mdc_pc1
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_tx_en_pg11
+		     &eth_txd0_pg13
+		     &eth_txd1_pb13>;
+	pinctrl-names = "default";
+};
+
+&rng {
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};

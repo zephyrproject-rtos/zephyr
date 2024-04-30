@@ -59,6 +59,7 @@ const struct bt_mesh_comp *bt_mesh_comp_get(void);
 
 const struct bt_mesh_model *bt_mesh_model_get(bool vnd, uint8_t elem_idx, uint8_t mod_idx);
 
+int bt_mesh_access_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf);
 int bt_mesh_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf);
 
 int bt_mesh_comp_register(const struct bt_mesh_comp *comp);

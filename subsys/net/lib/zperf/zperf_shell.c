@@ -163,9 +163,7 @@ static int parse_ipv6_addr(const struct shell *sh, char *host, char *port,
 
 	ret = net_addr_pton(AF_INET6, host, &addr->sin6_addr);
 	if (ret < 0) {
-		shell_fprintf(sh, SHELL_WARNING,
-			      "Invalid IPv6 address %s\n", host);
-		return -EINVAL;
+		return -EDESTADDRREQ;
 	}
 
 	addr->sin6_port = htons(strtoul(port, NULL, 10));
@@ -189,9 +187,7 @@ static int parse_ipv4_addr(const struct shell *sh, char *host, char *port,
 
 	ret = net_addr_pton(AF_INET, host, &addr->sin_addr);
 	if (ret < 0) {
-		shell_fprintf(sh, SHELL_WARNING,
-			      "Invalid IPv4 address %s\n", host);
-		return -EINVAL;
+		return -EDESTADDRREQ;
 	}
 
 	addr->sin_port = htons(strtoul(port, NULL, 10));
@@ -368,6 +364,53 @@ static void udp_session_cb(enum zperf_status status,
 	}
 }
 
+/*
+ * parse download options with '-'
+ * return < 0 if parse error
+ * return 0 if no '-' options
+ * return > 0 num of argc we parsed
+ * and following parse starts from this num
+ */
+static int shell_cmd_download(const struct shell *sh, size_t argc,
+			      char *argv[],
+			      struct zperf_download_params *param)
+{
+	int opt_cnt = 0;
+	size_t i;
+
+	for (i = 1; i < argc; ++i) {
+		if (*argv[i] != '-') {
+			break;
+		}
+
+		switch (argv[i][1]) {
+		case 'I':
+			/*
+			 * IFNAMSIZ by default CONFIG_NET_INTERFACE_NAME_LEN
+			 * is at least 1 so no overflow risk here
+			 */
+			i++;
+			if (i >= argc) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "-I <interface name>\n");
+				return -ENOEXEC;
+			}
+			(void)memset(param->if_name, 0x0, IFNAMSIZ);
+			strncpy(param->if_name, argv[i], IFNAMSIZ - 1);
+
+			opt_cnt += 2;
+			break;
+
+		default:
+			shell_fprintf(sh, SHELL_WARNING,
+				      "Unrecognized argument: %s\n", argv[i]);
+			return -ENOEXEC;
+		}
+	}
+
+	return opt_cnt;
+}
+
 static int cmd_udp_download_stop(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
@@ -390,8 +433,16 @@ static int cmd_udp_download(const struct shell *sh, size_t argc,
 	if (IS_ENABLED(CONFIG_NET_UDP)) {
 		struct zperf_download_params param = { 0 };
 		int ret;
+		int start;
 
-		ret = zperf_bind_host(sh, argc, argv, &param);
+		start = shell_cmd_download(sh, argc, argv, &param);
+		if (start < 0) {
+			shell_fprintf(sh, SHELL_WARNING,
+				      "Unable to parse option.\n");
+			return -ENOEXEC;
+		}
+
+		ret = zperf_bind_host(sh, argc - start, &argv[start], &param);
 		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Unable to bind host.\n");
@@ -748,6 +799,7 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 	bool is_udp;
 	int start = 0;
 	size_t opt_cnt = 0;
+	int ret;
 
 	param.options.priority = -1;
 	is_udp = proto == IPPROTO_UDP;
@@ -801,6 +853,19 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 			break;
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
 
+		case 'I':
+			i++;
+			if (i >= argc) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "-I <interface name>\n");
+				return -ENOEXEC;
+			}
+			(void)memset(param.if_name, 0x0, IFNAMSIZ);
+			strncpy(param.if_name, argv[i], IFNAMSIZ - 1);
+
+			opt_cnt += 2;
+			break;
+
 		default:
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Unrecognized argument: %s\n", argv[i]);
@@ -839,8 +904,12 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && !IS_ENABLED(CONFIG_NET_IPV4)) {
-		if (parse_ipv6_addr(sh, argv[start + 1], port_str,
-				    &ipv6) < 0) {
+		ret = parse_ipv6_addr(sh, argv[start + 1], port_str, &ipv6);
+		if (ret == -EDESTADDRREQ) {
+			shell_fprintf(sh, SHELL_WARNING,
+				"Invalid IPv6 address %s\n", argv[start + 1]);
+		}
+		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Please specify the IP address of the "
 				      "remote server.\n");
@@ -854,8 +923,12 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && !IS_ENABLED(CONFIG_NET_IPV6)) {
-		if (parse_ipv4_addr(sh, argv[start + 1], port_str,
-				    &ipv4) < 0) {
+		ret = parse_ipv4_addr(sh, argv[start + 1], port_str, &ipv4);
+		if (ret == -EDESTADDRREQ) {
+			shell_fprintf(sh, SHELL_WARNING,
+				"Invalid IPv4 address %s\n", argv[start + 1]);
+		}
+		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Please specify the IP address of the "
 				      "remote server.\n");
@@ -869,10 +942,14 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && IS_ENABLED(CONFIG_NET_IPV4)) {
-		if (parse_ipv6_addr(sh, argv[start + 1], port_str,
-				    &ipv6) < 0) {
-			if (parse_ipv4_addr(sh, argv[start + 1], port_str,
-					    &ipv4) < 0) {
+		ret = parse_ipv6_addr(sh, argv[start + 1], port_str, &ipv6);
+		if (ret < 0) {
+			ret = parse_ipv4_addr(sh, argv[start + 1], port_str, &ipv4);
+			if (ret == -EDESTADDRREQ) {
+				shell_fprintf(sh, SHELL_WARNING,
+					"Invalid IP address %s\n", argv[start + 1]);
+			}
+			if (ret < 0) {
 				shell_fprintf(sh, SHELL_WARNING,
 					      "Please specify the IP address "
 					      "of the remote server.\n");
@@ -986,6 +1063,19 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 			opt_cnt += 2;
 			break;
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
+
+		case 'I':
+			i++;
+			if (i >= argc) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "-I <interface name>\n");
+				return -ENOEXEC;
+			}
+			(void)memset(param.if_name, 0x0, IFNAMSIZ);
+			strncpy(param.if_name, argv[i], IFNAMSIZ - 1);
+
+			opt_cnt += 2;
+			break;
 
 		default:
 			shell_fprintf(sh, SHELL_WARNING,
@@ -1177,8 +1267,16 @@ static int cmd_tcp_download(const struct shell *sh, size_t argc,
 	if (IS_ENABLED(CONFIG_NET_TCP)) {
 		struct zperf_download_params param = { 0 };
 		int ret;
+		int start;
 
-		ret = zperf_bind_host(sh, argc, argv, &param);
+		start = shell_cmd_download(sh, argc, argv, &param);
+		if (start < 0) {
+			shell_fprintf(sh, SHELL_WARNING,
+				      "Unable to parse option.\n");
+			return -ENOEXEC;
+		}
+
+		ret = zperf_bind_host(sh, argc - start, &argv[start], &param);
 		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Unable to bind host.\n");
@@ -1345,6 +1443,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 #ifdef CONFIG_NET_CONTEXT_PRIORITY
 		  "-p: Specify custom packet priority\n"
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
+		  "-I: Specify host interface name\n"
 		  "Example: udp upload 192.0.2.2 1111 1 1K 1M\n"
 		  "Example: udp upload 2001:db8::2\n",
 		  cmd_udp_upload),
@@ -1362,6 +1461,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 #ifdef CONFIG_NET_CONTEXT_PRIORITY
 		  "-p: Specify custom packet priority\n"
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
+		  "-I: Specify host interface name\n"
 		  "Example: udp upload2 v4 1 1K 1M\n"
 		  "Example: udp upload2 v6\n"
 #if defined(CONFIG_NET_IPV6) && defined(MY_IP6ADDR_SET)
@@ -1375,8 +1475,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  ,
 		  cmd_udp_upload2),
 	SHELL_CMD(download, &zperf_cmd_udp_download,
+		  "[<options>] command options (optional): [-I eth0]\n"
 		  "[<port>]:  Server port to listen on/connect to\n"
 		  "[<host>]:  Bind to <host>, an interface address\n"
+		  "Available options:\n"
+		  "-I <interface name>: Specify host interface name\n"
 		  "Example: udp download 5001 192.168.0.1\n",
 		  cmd_udp_download),
 	SHELL_SUBCMD_SET_END

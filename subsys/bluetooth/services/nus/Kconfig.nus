@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Croxel, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_ZEPHYR_NUS
+	bool "GATT Nordic UART Service"
+
+if BT_ZEPHYR_NUS
+
+config BT_ZEPHYR_NUS_DEFAULT_INSTANCE
+	bool "Use default NUS Service instance"
+	default y if !UART_BT
+	help
+	  Enable default Nordic UART Service Instance. Allows using the NUS as
+	  the other services, where the Service is hosted by the subsystem itself.
+	  If the user wishes to declare NUS instances externally by using
+	  BT_NUS_INST_DEFINE(), it may not be beneficial having an internal
+	  instance as well.
+
+config BT_ZEPHYR_NUS_AUTO_START_BLUETOOTH
+	bool "Auto-enable Bluetooth stack and start LE advertisements"
+	help
+	  Auto-Enable the Bluetooth stack and start advertising with the NUS
+	  UUID. Useful to run applications that inherently do not deal with
+	  Bluetooth (e.g: Non-Bluetooth samples using UART over Bluetooth LE).
+
+endif # BT_ZEPHYR_NUS

@@ -11,3 +11,13 @@ config MCUX_OS_TIMER
 	help
 	  This module implements a kernel device driver for the NXP OS
 	  event timer and provides the standard "system clock driver" interfaces.
+
+if MCUX_OS_TIMER
+
+config MCUX_OS_TIMER_PM_POWERED_OFF
+	bool "Reinitialize the OS Timer"
+	help
+	  OS Timer is turned off in certain low power modes. When this option is
+	  picked, OS Timer will take steps to store state and reinitialize on wakeups.
+
+endif # MCUX_OS_TIMER

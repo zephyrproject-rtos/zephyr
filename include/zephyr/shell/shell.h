@@ -26,6 +26,10 @@
 extern "C" {
 #endif
 
+#ifndef CONFIG_SHELL_PROMPT_BUFF_SIZE
+#define CONFIG_SHELL_PROMPT_BUFF_SIZE 0
+#endif
+
 #ifndef CONFIG_SHELL_CMD_BUFF_SIZE
 #define CONFIG_SHELL_CMD_BUFF_SIZE 0
 #endif
@@ -69,6 +73,8 @@ extern "C" {
 /**
  * @brief Shell API
  * @defgroup shell_api Shell API
+ * @since 1.14
+ * @version 1.0.0
  * @ingroup os_services
  * @{
  */
@@ -777,7 +783,11 @@ enum shell_signal {
  * @brief Shell instance context.
  */
 struct shell_ctx {
-	const char *prompt; /*!< shell current prompt. */
+#if defined(CONFIG_SHELL_PROMPT_CHANGE) && CONFIG_SHELL_PROMPT_CHANGE
+	char prompt[CONFIG_SHELL_PROMPT_BUFF_SIZE]; /*!< shell current prompt. */
+#else
+	const char *prompt;
+#endif
 
 	enum shell_state state; /*!< Internal module state.*/
 	enum shell_receive_state receive_state;/*!< Escape sequence indicator.*/

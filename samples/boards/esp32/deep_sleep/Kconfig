@@ -5,7 +5,7 @@ mainmenu "Espressif Deep Sleep demo"
 
 config EXAMPLE_EXT1_WAKEUP
 	bool "Enable wakeup from GPIO"
-	depends on !SOC_ESP32C3
+	depends on !SOC_SERIES_ESP32C3
 	help
 	  This option enables wake up from deep sleep from GPIO2 and
 	  GPIO4. They should be connected to LOW to avoid floating pins.
@@ -14,7 +14,7 @@ config EXAMPLE_EXT1_WAKEUP
 
 config EXAMPLE_GPIO_WAKEUP
 	bool "Enable wakeup from GPIO"
-	depends on SOC_ESP32C3
+	depends on SOC_SERIES_ESP32C3
 	help
 	  This option enables wake up from GPIO, only GPIO0~5 can be used
 	  to wake up. Be aware that when low level is used to trigger wakeup,

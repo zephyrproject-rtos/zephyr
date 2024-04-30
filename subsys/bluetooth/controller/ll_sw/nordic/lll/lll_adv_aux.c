@@ -509,9 +509,10 @@ static void isr_tx_rx(void *param)
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	/* +/- 2us active clock jitter, +1 us hcto compensation */
+	/* +/- 2us active clock jitter, +1 us PPI to timer start compensation */
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
-	       (EVENT_CLOCK_JITTER_US << 1U) + 1U;
+	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
+	       HAL_RADIO_TMR_START_DELAY_US;
 	hcto += radio_rx_chain_delay_get(lll->phy_s, PHY_FLAGS_S8);
 	hcto += addr_us_get(lll->phy_s);
 	hcto -= radio_tx_chain_delay_get(lll->phy_s, PHY_FLAGS_S8);

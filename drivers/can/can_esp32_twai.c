@@ -224,9 +224,9 @@ const struct can_driver_api can_esp32_twai_driver_api = {
 	.set_state_change_callback = can_sja1000_set_state_change_callback,
 	.get_core_clock = can_esp32_twai_get_core_clock,
 	.get_max_filters = can_sja1000_get_max_filters,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = can_sja1000_recover,
-#endif /* !CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.timing_min = CAN_SJA1000_TIMING_MIN_INITIALIZER,
 #ifdef CONFIG_SOC_SERIES_ESP32
 	.timing_max = CAN_SJA1000_TIMING_MAX_INITIALIZER,
@@ -280,7 +280,7 @@ const struct can_driver_api can_esp32_twai_driver_api = {
 					can_esp32_twai_read_reg, can_esp32_twai_write_reg,         \
 					CAN_SJA1000_OCR_OCMODE_BIPHASE,                            \
 					COND_CODE_0(IS_ENABLED(CONFIG_SOC_SERIES_ESP32), (0),      \
-					(CAN_ESP32_TWAI_DT_CDR_INST_GET(inst))));                  \
+					(CAN_ESP32_TWAI_DT_CDR_INST_GET(inst))), 25000);           \
                                                                                                    \
 	static struct can_sja1000_data can_sja1000_data_##inst =                                   \
 		CAN_SJA1000_DATA_INITIALIZER(NULL);                                                \

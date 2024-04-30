@@ -1,0 +1,5 @@
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_NIOS2
+	select SOC_QEMU_NIOS2

@@ -13,6 +13,11 @@
 &adc0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
+	clk-source = <0>;
+	hw-trigger-src = <4>;
+	continuous-convert;
+	high-speed;
+	periodic-trigger;
 	status = "okay";
 
 	channel@f {
@@ -22,4 +27,12 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
 	};
+};
+
+test_counter: &pit0_channel0 {
+	status = "okay";
+};
+
+&edma0 {
+	dma-buf-addr-alignment = <4>;
 };

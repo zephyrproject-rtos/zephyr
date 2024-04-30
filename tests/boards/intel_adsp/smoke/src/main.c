@@ -42,6 +42,30 @@ ZTEST(intel_adsp, test_clock_calibrate)
 	zassert_true((hz / MIN(1, diff)) > 100, "clock rate wrong");
 }
 
+#if XCHAL_HAVE_VECBASE
+ZTEST(intel_adsp, test_vecbase_lock)
+{
+	uintptr_t vecbase;
+
+	/* Unfortunately there is not symbol to check if the target
+	 * supports locking VECBASE. The best we can do is checking if
+	 * the first is not set and skip the test.
+	 */
+	__asm__ volatile("rsr.vecbase %0" : "=r"(vecbase));
+	if ((vecbase & 0x1) == 0) {
+		ztest_test_skip();
+	}
+
+	/* VECBASE register should have been locked during the cpu
+	 * start up. Trying to change its location should fail.
+	 */
+	__asm__ volatile("wsr.vecbase %0; rsync" : : "r"(0x0));
+	__asm__ volatile("rsr.vecbase %0" : "=r"(vecbase));
+
+	zassert_not_equal(vecbase, 0x0, "VECBASE was changed");
+}
+#endif
+
 static void *intel_adsp_setup(void)
 {
 	struct intel_adsp_ipc_data *devdata = INTEL_ADSP_IPC_HOST_DEV->data;

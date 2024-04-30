@@ -11,11 +11,6 @@ import os
 from os import path
 from pathlib import Path
 
-try:
-    from elftools.elf.elffile import ELFFile
-except ImportError:
-    ELFFile = None
-
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
 DEFAULT_OPENOCD_TCL_PORT = 6333
@@ -195,7 +190,7 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
     def read_version(self):
         self.require(self.openocd_cmd[0])
 
-	# OpenOCD prints in stderr, need redirect to get output
+        # OpenOCD prints in stderr, need redirect to get output
         out = self.check_output([self.openocd_cmd[0], '--version'],
                                 stderr=subprocess.STDOUT).decode()
 
@@ -210,9 +205,6 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         self.require(self.openocd_cmd[0])
-        if ELFFile is None:
-            raise RuntimeError(
-                'elftools missing; please "pip3 install elftools"')
 
         self.cfg_cmd = []
         if self.openocd_config is not None:
@@ -272,11 +264,11 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
         self.require(gdb_cmd[0])
         self.print_gdbserver_message()
 
-        cmd1 = (echo + server_cmd)
+        cmd1 = echo + server_cmd
         self.check_call(cmd1)
-        cmd2 = (echo + gdb_cmd)
+        cmd2 = echo + gdb_cmd
         self.check_call(cmd2)
-        cmd3 = (echo + gdb_cmd2)
+        cmd3 = echo + gdb_cmd2
         self.check_call(cmd3)
 
         self.run_server_and_client(server_cmd, gdb_cmd)

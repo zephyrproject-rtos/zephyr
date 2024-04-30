@@ -63,6 +63,8 @@ tmp_res_file=tmp.xml
 
 all_cases_a=( $all_cases )
 n_cases=$((${#all_cases_a[@]}))
+
+mkdir -p $(dirname ${RESULTS_FILE})
 touch ${RESULTS_FILE}
 echo "Attempting to run ${n_cases} cases (logging to \
  `realpath ${RESULTS_FILE}`)"
@@ -75,9 +77,12 @@ echo -n "" > $tmp_res_file
 if [ `command -v parallel` ]; then
   parallel '
   echo "<testcase name=\"{}\" time=\"0\">"
+  start=$(date +%s%N)
   {} $@ &> {#}.log
+  dur=$(($(date +%s%N) - $start))
+  dur_s=$(awk -vdur=$dur "BEGIN { printf(\"%0.3f\", dur/1000000000)}")
   if [ $? -ne 0 ]; then
-    (>&2 echo -e "\e[91m{} FAILED\e[39m")
+    (>&2 echo -e "\e[91m{} FAILED\e[39m ($dur_s s)")
     (>&2 cat {#}.log)
     echo "<failure message=\"failed\" type=\"failure\">"
     cat {#}.log | eval $CLEAN_XML
@@ -86,7 +91,7 @@ if [ `command -v parallel` ]; then
     echo "</testcase>"
     exit 1
   else
-    (>&2 echo -e "{} PASSED")
+    (>&2 echo -e "{} PASSED ($dur_s s)")
     rm {#}.log
     echo "</testcase>"
   fi

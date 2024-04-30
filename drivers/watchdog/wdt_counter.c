@@ -33,7 +33,7 @@ static int wdt_counter_setup(const struct device *dev, uint8_t options)
 	const struct wdt_counter_config *config = dev->config;
 	const struct device *counter = config->counter;
 
-	if ((options & WDT_OPT_PAUSE_IN_SLEEP) || (options & WDT_OPT_PAUSE_IN_SLEEP)) {
+	if ((options & WDT_OPT_PAUSE_IN_SLEEP) || (options & WDT_OPT_PAUSE_HALTED_BY_DBG)) {
 		return -ENOTSUP;
 	}
 

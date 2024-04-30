@@ -1,0 +1,5 @@
+board:
+  name: nucleo_f412zg
+  vendor: st
+  socs:
+    - name: stm32f412zx

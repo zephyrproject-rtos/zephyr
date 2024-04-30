@@ -30,7 +30,7 @@ static void happy_path(
 		 * Test with send() / recv()
 		 */
 
-		res = send(fixture->sv[i], expected_msg, expected_msg_len, 0);
+		res = zsock_send(fixture->sv[i], expected_msg, expected_msg_len, 0);
 
 		zassert_not_equal(res, -1, "send() failed: %d", errno);
 		actual_msg_len = res;
@@ -39,7 +39,7 @@ static void happy_path(
 
 		memset(actual_msg, 0, sizeof(actual_msg));
 
-		res = recv(fixture->sv[(!i) & 1], actual_msg, sizeof(actual_msg), 0);
+		res = zsock_recv(fixture->sv[(!i) & 1], actual_msg, sizeof(actual_msg), 0);
 
 		zassert_not_equal(res, -1, "recv() failed: %d", errno);
 		actual_msg_len = res;
@@ -54,7 +54,7 @@ static void happy_path(
 		 * Test with sendto(2) / recvfrom(2)
 		 */
 
-		res = sendto(fixture->sv[i], expected_msg, expected_msg_len, 0, NULL, 0);
+		res = zsock_sendto(fixture->sv[i], expected_msg, expected_msg_len, 0, NULL, 0);
 
 		zassert_not_equal(res, -1, "sendto() failed: %d", errno);
 		actual_msg_len = res;
@@ -64,8 +64,8 @@ static void happy_path(
 		memset(actual_msg, 0, sizeof(actual_msg));
 
 		len = 0;
-		res = recvfrom(fixture->sv[(!i) & 1], actual_msg, sizeof(actual_msg), 0,
-			NULL, &len);
+		res = zsock_recvfrom(fixture->sv[(!i) & 1], actual_msg, sizeof(actual_msg), 0,
+				     NULL, &len);
 		zassert_true(res >= 0, "recvfrom() failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
@@ -85,14 +85,14 @@ static void happy_path(
 		iovec.iov_base = (void *)expected_msg;
 		iovec.iov_len = expected_msg_len;
 
-		res = sendmsg(fixture->sv[i], &msghdr, 0);
+		res = zsock_sendmsg(fixture->sv[i], &msghdr, 0);
 
 		zassert_not_equal(res, -1, "sendmsg() failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 				  "did not sendmsg entire message");
 
-		res = recv(fixture->sv[(!i) & 1], actual_msg, sizeof(actual_msg), 0);
+		res = zsock_recv(fixture->sv[(!i) & 1], actual_msg, sizeof(actual_msg), 0);
 
 		zassert_not_equal(res, -1, "recv() failed: %d", errno);
 		actual_msg_len = res;

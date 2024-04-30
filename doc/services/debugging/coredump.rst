@@ -55,7 +55,8 @@ This usually involves the following steps:
 
 3. Start the custom GDB server using the script
    :zephyr_file:`scripts/coredump/coredump_gdbserver.py` with the core dump
-   binary log file, and the Zephyr ELF file as parameters.
+   binary log file, and the Zephyr ELF file as parameters. The GDB server
+   can also be started from within GDB, see below.
 
 4. Start the debugger corresponding to the target architecture.
 
@@ -219,6 +220,25 @@ in :file:`coredump.log`:
       #1  0x00100477 in func_2 (addr=0x0) at zephyr/rtos/zephyr/samples/hello_world/src/main.c:21
       #2  0x00100492 in func_1 (addr=0x0) at zephyr/rtos/zephyr/samples/hello_world/src/main.c:28
       #3  0x001004c8 in main () at zephyr/rtos/zephyr/samples/hello_world/src/main.c:42
+
+Starting the GDB server from within GDB
+---------------------------------------
+
+You can use ``target remote |`` to start the custom GDB server from inside
+GDB, instead of in a separate shell.
+
+1. Start GDB:
+
+   .. code-block:: console
+
+      <path to SDK>/x86_64-zephyr-elf/bin/x86_64-zephyr-elf-gdb build/zephyr/zephyr.elf
+
+2. Inside GDB, start the GDB server using the ``--pipe`` option:
+
+   .. code-block:: console
+
+      (gdb) target remote | ./scripts/coredump/coredump_gdbserver.py --pipe build/zephyr/zephyr.elf coredump.bin
+
 
 File Format
 ***********

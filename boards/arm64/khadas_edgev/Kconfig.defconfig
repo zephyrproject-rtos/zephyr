@@ -1,8 +1,0 @@
-#
-# Copyright 2022 Huawei France Technologies SASU
-# SPDX-License-Identifier: Apache-2.0
-#
-
-config BOARD
-	default "khadas_edgev"
-	depends on BOARD_KHADAS_EDGEV

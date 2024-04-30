@@ -1,0 +1,7 @@
+board:
+  name: bl654_dvk
+  vendor: lairdconnect
+  socs:
+  - name: nrf52840
+    variants:
+    - name: pa

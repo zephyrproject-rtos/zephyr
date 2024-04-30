@@ -1,0 +1,152 @@
+/*
+ * Copyright (c) 2023 Charles Dias <charlesdias.cd@outlook.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h7b0Xb.dtsi>
+#include <st/h7/stm32h7b0vbtx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "FANKE FK7B0M1-VBT6 board";
+	compatible = "fanke,fk7b0m1-vbt6";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		user_led: led_0 {
+			gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			label = "User PB";
+			gpios = <&gpioc 13 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &user_led;
+		sw0 = &user_button;
+		spi-flash0 = &w25q64jvssiq_spi;
+	};
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+/* PLL1P is used for system clock (280 MHz) */
+&pll {
+	div-m = <5>;
+	mul-n = <112>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(280)>;
+	d1cpre = <1>;
+	hpre = <1>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&octospi1 {
+	pinctrl-0 = <&octospim_p1_clk_pb2 &octospim_p1_ncs_pb6
+		     &octospim_p1_io0_pd11 &octospim_p1_io1_pd12
+		     &octospim_p1_io2_pe2 &octospim_p1_io3_pd13>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	/* Winbond external flash */
+	w25q64jvssiq_qspi: qspi-nor-flash@0 {
+		compatible = "st,stm32-ospi-nor";
+		reg = <0 DT_SIZE_M(8)>; /* 64 Mbits */
+		ospi-max-frequency = <DT_FREQ_M(133)>;
+		spi-bus-width = <OSPI_QUAD_MODE>;
+		data-rate = <OSPI_STR_TRANSFER>;
+		writeoc = "PP_1_1_4";
+		status = "okay";
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			slot0_partition: partition@0 {
+				reg = <0x00000000 DT_SIZE_M(8)>; /* 64 Mbits */
+			};
+		};
+	};
+};
+
+&spi6 {
+	pinctrl-0 = <&spi6_sck_pb3 &spi6_miso_pb4 &spi6_mosi_pb5>;
+	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+	status = "okay";
+	w25q64jvssiq_spi: spi-nor-flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(40)>;
+		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		status = "okay";
+		jedec-id = [ef 40 17];
+		has-dpd;
+		t-enter-dpd = <3500>;
+		t-exit-dpd = <3500>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x00000000 DT_SIZE_M(8)>; /* 64 Mbits */
+			};
+		};
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&backup_sram {
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};

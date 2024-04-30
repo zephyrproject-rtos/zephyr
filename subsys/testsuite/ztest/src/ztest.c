@@ -15,6 +15,8 @@
 
 #include <zephyr/llext/symbol.h>
 
+#include <zephyr/sys/barrier.h>
+
 #ifdef KERNEL
 static struct k_thread ztest_thread;
 #endif
@@ -103,11 +105,57 @@ static int cleanup_test(struct ztest_unit_test *test)
 #if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 #define MAX_NUM_CPUHOLD (CONFIG_MP_MAX_NUM_CPUS - 1)
 #define CPUHOLD_STACK_SZ (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
-static struct k_thread cpuhold_threads[MAX_NUM_CPUHOLD];
-K_KERNEL_STACK_ARRAY_DEFINE(cpuhold_stacks, MAX_NUM_CPUHOLD, CPUHOLD_STACK_SZ);
+
+struct cpuhold_pool_item {
+	struct k_thread  thread;
+	bool             used;
+};
+
+static struct cpuhold_pool_item cpuhold_pool_items[MAX_NUM_CPUHOLD + 1];
+
+K_KERNEL_STACK_ARRAY_DEFINE(cpuhold_stacks, MAX_NUM_CPUHOLD + 1, CPUHOLD_STACK_SZ);
 
 static struct k_sem cpuhold_sem;
+
 volatile int cpuhold_active;
+volatile bool cpuhold_spawned;
+
+static int find_unused_thread(void)
+{
+	for (unsigned int i = 0; i <= MAX_NUM_CPUHOLD; i++) {
+		if (!cpuhold_pool_items[i].used) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+static void mark_thread_unused(struct k_thread *thread)
+{
+	for (unsigned int i = 0; i <= MAX_NUM_CPUHOLD; i++) {
+		if (&cpuhold_pool_items[i].thread == thread) {
+			cpuhold_pool_items[i].used = false;
+		}
+	}
+}
+
+static inline void wait_for_thread_to_switch_out(struct k_thread *thread)
+{
+	unsigned int key = arch_irq_lock();
+	volatile void **shp = (void *)&thread->switch_handle;
+
+	while (*shp == NULL) {
+		arch_spin_relax();
+	}
+	/* Read barrier: don't allow any subsequent loads in the
+	 * calling code to reorder before we saw switch_handle go
+	 * non-null.
+	 */
+	barrier_dmem_fence_full();
+
+	arch_irq_unlock(key);
+}
 
 /* "Holds" a CPU for use with the "1cpu" test cases.  Note that we
  * can't use tools like the cpumask feature because we have tests that
@@ -116,12 +164,58 @@ volatile int cpuhold_active;
  */
 static void cpu_hold(void *arg1, void *arg2, void *arg3)
 {
-	ARG_UNUSED(arg1);
-	ARG_UNUSED(arg2);
+	struct k_thread *thread = arg1;
+	unsigned int idx = (unsigned int)(uintptr_t)arg2;
+	char tname[CONFIG_THREAD_MAX_NAME_LEN];
+
 	ARG_UNUSED(arg3);
 
-	unsigned int key = arch_irq_lock();
+	if (arch_proc_id() == 0) {
+		int i;
+
+		i = find_unused_thread();
+
+		__ASSERT_NO_MSG(i != -1);
+
+		cpuhold_spawned = false;
+
+		cpuhold_pool_items[i].used = true;
+		k_thread_create(&cpuhold_pool_items[i].thread,
+				cpuhold_stacks[i], CPUHOLD_STACK_SZ,
+				cpu_hold, k_current_get(),
+				(void *)(uintptr_t)idx, NULL,
+				K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+
+		/*
+		 * Busy-wait until we know the spawned thread is running to
+		 * ensure it does not spawn on CPU0.
+		 */
+
+		while (!cpuhold_spawned) {
+			k_busy_wait(1000);
+		}
+
+		return;
+	}
+
+	if (thread != NULL) {
+		cpuhold_spawned = true;
+
+		/* Busywait until a new thread is scheduled in on CPU0 */
+
+		wait_for_thread_to_switch_out(thread);
+
+		mark_thread_unused(thread);
+	}
+
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		snprintk(tname, CONFIG_THREAD_MAX_NAME_LEN, "cpuhold%02d", idx);
+		k_thread_name_set(k_current_get(), tname);
+	}
+
+
 	uint32_t dt, start_ms = k_uptime_get_32();
+	unsigned int key = arch_irq_lock();
 
 	k_sem_give(&cpuhold_sem);
 
@@ -155,9 +249,9 @@ void z_impl_z_test_1cpu_start(void)
 {
 #if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 	unsigned int num_cpus = arch_num_cpus();
+	int j;
 
 	cpuhold_active = 1;
-	char tname[CONFIG_THREAD_MAX_NAME_LEN];
 
 	k_sem_init(&cpuhold_sem, 0, 999);
 
@@ -165,13 +259,15 @@ void z_impl_z_test_1cpu_start(void)
 	 * each to signal us that it's locked and spinning.
 	 */
 	for (int i = 0; i < num_cpus - 1; i++) {
-		k_thread_create(&cpuhold_threads[i], cpuhold_stacks[i], CPUHOLD_STACK_SZ,
-				cpu_hold, NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO,
-				0, K_NO_WAIT);
-		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
-			snprintk(tname, CONFIG_THREAD_MAX_NAME_LEN, "cpuhold%02d", i);
-			k_thread_name_set(&cpuhold_threads[i], tname);
-		}
+		j = find_unused_thread();
+
+		__ASSERT_NO_MSG(j != -1);
+
+		cpuhold_pool_items[j].used = true;
+		k_thread_create(&cpuhold_pool_items[j].thread,
+				cpuhold_stacks[j], CPUHOLD_STACK_SZ,
+				cpu_hold, NULL, (void *)(uintptr_t)i, NULL,
+				K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
 		k_sem_take(&cpuhold_sem, K_FOREVER);
 	}
 #endif
@@ -180,12 +276,13 @@ void z_impl_z_test_1cpu_start(void)
 void z_impl_z_test_1cpu_stop(void)
 {
 #if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
-	unsigned int num_cpus = arch_num_cpus();
-
 	cpuhold_active = 0;
 
-	for (int i = 0; i < num_cpus - 1; i++) {
-		k_thread_abort(&cpuhold_threads[i]);
+	for (int i = 0; i <= MAX_NUM_CPUHOLD; i++) {
+		if (cpuhold_pool_items[i].used) {
+			k_thread_abort(&cpuhold_pool_items[i].thread);
+			cpuhold_pool_items[i].used = false;
+		}
 	}
 #endif
 }

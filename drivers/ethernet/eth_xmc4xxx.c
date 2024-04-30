@@ -129,22 +129,9 @@ K_MEM_SLAB_DEFINE_STATIC(tx_frame_slab, sizeof(struct eth_xmc4xxx_tx_frame),
 static XMC_ETH_MAC_DMA_DESC_t __aligned(4) tx_dma_desc[NUM_TX_DMA_DESCRIPTORS];
 static XMC_ETH_MAC_DMA_DESC_t __aligned(4) rx_dma_desc[NUM_RX_DMA_DESCRIPTORS];
 
-static inline struct net_if *get_iface(struct eth_xmc4xxx_data *ctx, uint16_t vlan_tag)
+static inline struct net_if *get_iface(struct eth_xmc4xxx_data *ctx)
 {
-#if defined(CONFIG_NET_VLAN)
-	struct net_if *iface;
-
-	iface = net_eth_get_vlan_iface(ctx->iface, vlan_tag);
-	if (!iface) {
-		return ctx->iface;
-	}
-
-	return iface;
-#else
-	ARG_UNUSED(vlan_tag);
-
 	return ctx->iface;
-#endif
 }
 
 static void eth_xmc4xxx_tx_dma_descriptors_init(const struct device *dev)
@@ -494,31 +481,13 @@ static void eth_xmc4xxx_handle_rx(const struct device *dev)
 	struct net_pkt *pkt = NULL;
 
 	for (;;) {
-		uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
-
 		pkt = eth_xmc4xxx_rx_pkt(dev);
 		if (!pkt) {
 			return;
 		}
-#if defined(CONFIG_NET_VLAN)
-		struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 
-		if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
-			struct net_eth_vlan_hdr *hdr_vlan = (struct net_eth_vlan_hdr *)hdr;
-
-			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
-			vlan_tag = net_pkt_vlan_tag(pkt);
-
-#if CONFIG_NET_TC_RX_COUNT > 1
-			enum net_priority prio;
-
-			prio = net_vlan2priority(net_pkt_vlan_priority(pkt));
-			net_pkt_set_priority(pkt, prio);
-#endif
-		}
-#endif /* CONFIG_NET_VLAN */
-		if (net_recv_data(get_iface(dev_data, vlan_tag), pkt) < 0) {
-			eth_stats_update_errors_rx(get_iface(dev_data, vlan_tag));
+		if (net_recv_data(get_iface(dev_data), pkt) < 0) {
+			eth_stats_update_errors_rx(get_iface(dev_data));
 			net_pkt_unref(pkt);
 		}
 	}

@@ -1,5 +1,0 @@
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_ALTERA_MAX10
-	bool "Altera MAX10 Board"
-	depends on SOC_NIOS2F_ZEPHYR

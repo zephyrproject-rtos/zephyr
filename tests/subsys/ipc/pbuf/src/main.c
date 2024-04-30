@@ -211,7 +211,7 @@ bool stress_read(void *user_data, uint32_t cnt, bool last, int prio)
 	struct stress_data *ctx = (struct stress_data *)user_data;
 	char buf[STRESS_LEN_MAX];
 	int len;
-	int rpt = (sys_rand32_get() & 3) + 1;
+	int rpt = (sys_rand8_get() & 3) + 1;
 
 	for (int i = 0; i < rpt; i++) {
 		len = pbuf_read(ctx->pbuf, buf, (uint16_t)sizeof(buf));
@@ -235,8 +235,8 @@ bool stress_write(void *user_data, uint32_t cnt, bool last, int prio)
 	struct stress_data *ctx = (struct stress_data *)user_data;
 	char buf[STRESS_LEN_MAX];
 
-	uint16_t len = STRESS_LEN_MIN + (sys_rand32_get() % STRESS_LEN_MOD);
-	int rpt = (sys_rand32_get() & 1) + 1;
+	uint16_t len = STRESS_LEN_MIN + (sys_rand8_get() % STRESS_LEN_MOD);
+	int rpt = (sys_rand8_get() & 1) + 1;
 
 	zassert_true(len < sizeof(buf));
 

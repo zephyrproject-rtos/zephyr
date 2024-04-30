@@ -76,7 +76,7 @@ FUNC_NORETURN void cpu_fn(void *arg)
  *
  * Test Procedure:
  * -# In main thread, given and set a global variable cpu_arg to 12345.
- * -# Call arch_start_cpu() with parameters
+ * -# Call arch_cpu_start() with parameters
  * -# Enter a while loop and wait for cpu_running equals to 1.
  * -# In target function, check if the address is &cpu_arg and its content
  *  equal to 12345.
@@ -94,7 +94,7 @@ FUNC_NORETURN void cpu_fn(void *arg)
  * - This test using for the platform that support MP or SMP, in our current
  *   scenario which own over two CPUs.
  *
- * @see arch_start_cpu()
+ * @see arch_cpu_start()
  */
 ZTEST(multiprocessing, test_mp_start)
 {
@@ -105,7 +105,7 @@ ZTEST(multiprocessing, test_mp_start)
 
 		cpu_arg = 12345 * i;
 
-		arch_start_cpu(i, cpu_stacks[i], CPU_STACK_SIZE, cpu_fn, &cpu_arg);
+		arch_cpu_start(i, cpu_stacks[i], CPU_STACK_SIZE, cpu_fn, &cpu_arg);
 
 		/* Wait for about 5 (500 * 10ms) seconds for CPU to start. */
 		wait_count = 500;

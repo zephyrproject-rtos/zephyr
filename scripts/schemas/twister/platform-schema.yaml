@@ -41,6 +41,23 @@ mapping:
     type: str
   "arch":
     type: str
+    enum:
+      [
+        # architectures
+        "arc",
+        "arm",
+        "arm64",
+        "mips",
+        "nios2",
+        "posix",
+        "riscv",
+        "sparc",
+        "x86",
+        "xtensa",
+
+        # unit testing
+        "unit",
+      ]
   "vendor":
     type: str
   "tier":

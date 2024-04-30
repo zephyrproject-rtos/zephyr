@@ -63,9 +63,9 @@ extern "C" {
  * @param irq_number IRQ number.
  * @param priority   Priority to be set.
  */
-#define NRFX_IRQ_PRIORITY_SET(irq_number, priority)  // Intentionally empty.
-                                                     // Priorities of IRQs are
-                                                     // set through IRQ_CONNECT.
+#define NRFX_IRQ_PRIORITY_SET(irq_number, priority)                                                \
+	ARG_UNUSED(priority)                                                                       \
+	/* Intentionally empty. Priorities of IRQs are set through IRQ_CONNECT. */
 
 /**
  * @brief Macro for enabling a specific IRQ.
@@ -362,6 +362,10 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 #define NRFX_PPI_GROUPS_USED_BY_802154_DRV     NRF_802154_PPI_GROUPS_USED_MASK
 #elif defined(NRF53_SERIES)
 #include <../src/nrf_802154_peripherals_nrf53.h>
+#define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   NRF_802154_DPPI_CHANNELS_USED_MASK
+#define NRFX_PPI_GROUPS_USED_BY_802154_DRV     NRF_802154_DPPI_GROUPS_USED_MASK
+#elif defined(NRF54L_SERIES)
+#include <../src/nrf_802154_peripherals_nrf54l.h>
 #define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   NRF_802154_DPPI_CHANNELS_USED_MASK
 #define NRFX_PPI_GROUPS_USED_BY_802154_DRV     NRF_802154_DPPI_GROUPS_USED_MASK
 #else

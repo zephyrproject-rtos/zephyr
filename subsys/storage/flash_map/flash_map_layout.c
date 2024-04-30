@@ -59,47 +59,6 @@ static bool should_bail(const struct flash_pages_info *info,
 	return false;
 }
 
-/*
- * Generic page layout discovery routine. This is kept separate to
- * support both the deprecated flash_area_to_sectors() and the current
- * flash_area_get_sectors(). A lot of this can be inlined once
- * flash_area_to_sectors() is removed.
- */
-static int flash_area_layout(int idx, uint32_t *cnt, void *ret,
-flash_page_cb cb, struct layout_data *cb_data)
-{
-	const struct device *flash_dev;
-	const struct flash_area *fa;
-	int rc = flash_area_open(idx, &fa);
-
-	if (rc < 0 || fa == NULL) {
-		return -EINVAL;
-	}
-
-	cb_data->area_idx = idx;
-	cb_data->area_off = fa->fa_off;
-	cb_data->area_len = fa->fa_size;
-
-	cb_data->ret = ret;
-	cb_data->ret_idx = 0U;
-	cb_data->ret_len = *cnt;
-	cb_data->status = 0;
-
-	flash_dev = fa->fa_dev;
-	flash_area_close(fa);
-	if (flash_dev == NULL) {
-		return -ENODEV;
-	}
-
-	flash_page_foreach(flash_dev, cb, cb_data);
-
-	if (cb_data->status == 0) {
-		*cnt = cb_data->ret_idx;
-	}
-
-	return cb_data->status;
-}
-
 static bool get_sectors_cb(const struct flash_pages_info *info, void *datav)
 {
 	struct layout_data *data = datav;
@@ -120,6 +79,34 @@ static bool get_sectors_cb(const struct flash_pages_info *info, void *datav)
 int flash_area_get_sectors(int idx, uint32_t *cnt, struct flash_sector *ret)
 {
 	struct layout_data data;
+	const struct device *flash_dev;
+	const struct flash_area *fa;
+	int rc = flash_area_open(idx, &fa);
 
-	return flash_area_layout(idx, cnt, ret, get_sectors_cb, &data);
+	if (rc < 0 || fa == NULL) {
+		return -EINVAL;
+	}
+
+	data.area_idx = idx;
+	data.area_off = fa->fa_off;
+	data.area_len = fa->fa_size;
+
+	data.ret = ret;
+	data.ret_idx = 0U;
+	data.ret_len = *cnt;
+	data.status = 0;
+
+	flash_dev = fa->fa_dev;
+	flash_area_close(fa);
+	if (flash_dev == NULL) {
+		return -ENODEV;
+	}
+
+	flash_page_foreach(flash_dev, get_sectors_cb, &data);
+
+	if (data.status == 0) {
+		*cnt = data.ret_idx;
+	}
+
+	return data.status;
 }

@@ -40,6 +40,23 @@ properties:
     description: |
       DSI host data enable is active high.
 
+  loosely-packed:
+    type: boolean
+    description: |
+      Enable or disable loosely packed stream
+      (needed only when using 18-bit configuration).
+
+  largest-packet-size:
+    type: int
+    description: |
+      The size, in bytes, of the low power largest packet that
+      can fit in a line during VSA, VBP, VFP and VACT regions
+
+  bta-ack-disable:
+    type: boolean
+    description: |
+      Disable frame bus-turn-around acknowledge enable
+
   non-continuous:
     type: boolean
     description: |

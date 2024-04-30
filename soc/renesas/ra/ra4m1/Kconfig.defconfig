@@ -1,0 +1,9 @@
+# Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RA4M1
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_SERIES_RA4M1

@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nordic/nrf54h20.dtsi>
+
+cpu: &cpuapp {};
+systick: &cpuapp_systick {};
+nvic: &cpuapp_nvic {};
+cpuppr_vevif: &cpuppr_vevif_remote {};
+
+/delete-node/ &cpuppr;
+/delete-node/ &cpurad;
+/delete-node/ &cpurad_peripherals;
+/delete-node/ &cpurad_ppb;
+/delete-node/ &cpurad_ram0;
+
+/ {
+	soc {
+		compatible = "simple-bus";
+		interrupt-parent = <&cpuapp_nvic>;
+		ranges;
+	};
+};
+
+&cpuapp_ppb {
+	compatible = "simple-bus";
+	ranges;
+};
+
+&cpusec_bellboard {
+	compatible = "nordic,nrf-bellboard-remote";
+};
+
+&cpuapp_bellboard {
+	compatible = "nordic,nrf-bellboard-local";
+};
+
+&cpurad_bellboard {
+	compatible = "nordic,nrf-bellboard-remote";
+};
+
+&gpiote130 {
+	interrupts = <105 NRF_DEFAULT_IRQ_PRIORITY>;
+};
+
+&grtc {
+	interrupts = <109 NRF_DEFAULT_IRQ_PRIORITY>;
+};

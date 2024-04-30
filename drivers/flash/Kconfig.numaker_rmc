@@ -1,0 +1,16 @@
+# NUMAKER GPIO driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_NUMAKER_RMC
+	bool "Nuvoton NuMaker MCU embedded RRAM memory controller"
+	default y
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select HAS_NUMAKER_RMC
+	depends on DT_HAS_NUVOTON_NUMAKER_RMC_ENABLED
+	help
+	  This option enables the RMC driver for Nuvoton NuMaker family of
+	  processors.
+	  Say y if you wish to enable NuMaker RMC.

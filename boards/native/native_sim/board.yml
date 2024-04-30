@@ -1,0 +1,7 @@
+boards:
+- name: native_sim
+  vendor: zephyr
+  socs:
+  - name: native
+    variants:
+    - name: "64"

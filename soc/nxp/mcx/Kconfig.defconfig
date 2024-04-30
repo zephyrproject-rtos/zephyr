@@ -1,0 +1,12 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_NXP_MCX
+
+config SERIAL_INIT_PRIORITY
+	default 55
+	depends on SERIAL
+
+rsource "*/Kconfig.defconfig"
+
+endif # SOC_FAMILY_NXP_MCX

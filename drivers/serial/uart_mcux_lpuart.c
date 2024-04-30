@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017,2021 NXP
+ * Copyright 2017,2021,2023-2024 NXP
  * Copyright (c) 2020 Softube
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -21,8 +21,13 @@
 #include <zephyr/logging/log.h>
 
 #include <fsl_lpuart.h>
+#if CONFIG_NXP_LP_FLEXCOMM
+#include <zephyr/drivers/mfd/nxp_lp_flexcomm.h>
+#endif
 
 LOG_MODULE_REGISTER(uart_mcux_lpuart, LOG_LEVEL_ERR);
+
+#define PINCTRL_STATE_FLOWCONTROL PINCTRL_STATE_PRIV_START
 
 #ifdef CONFIG_UART_ASYNC_API
 struct lpuart_dma_config {
@@ -34,6 +39,9 @@ struct lpuart_dma_config {
 
 struct mcux_lpuart_config {
 	LPUART_Type *base;
+#ifdef CONFIG_NXP_LP_FLEXCOMM
+	const struct device *parent_dev;
+#endif
 	const struct device *clock_dev;
 	const struct pinctrl_dev_config *pincfg;
 	clock_control_subsys_t clock_subsys;
@@ -142,7 +150,7 @@ static void mcux_lpuart_poll_out(const struct device *dev, unsigned char c)
 #endif
 
 	while (!(LPUART_GetStatusFlags(config->base)
-		& kLPUART_TxDataRegEmptyFlag)) {
+		& LPUART_STAT_TDRE_MASK)) {
 	}
 	/* Lock interrupts while we send data */
 	key = irq_lock();
@@ -207,7 +215,7 @@ static int mcux_lpuart_fifo_fill(const struct device *dev,
 
 	while ((len - num_tx > 0) &&
 	       (LPUART_GetStatusFlags(config->base)
-		& kLPUART_TxDataRegEmptyFlag)) {
+		& LPUART_STAT_TDRE_MASK)) {
 
 		LPUART_WriteByte(config->base, tx_data[num_tx++]);
 	}
@@ -293,7 +301,7 @@ static int mcux_lpuart_irq_tx_ready(const struct device *dev)
 	uint32_t flags = LPUART_GetStatusFlags(config->base);
 
 	return (LPUART_GetEnabledInterrupts(config->base) & mask)
-		&& (flags & kLPUART_TxDataRegEmptyFlag);
+		&& (flags & LPUART_STAT_TDRE_MASK);
 }
 
 static void mcux_lpuart_irq_rx_enable(const struct device *dev)
@@ -1060,13 +1068,31 @@ static int mcux_lpuart_init(const struct device *dev)
 
 	/* set initial configuration */
 	mcux_lpuart_configure_init(dev, uart_api_config);
-	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (config->flow_ctrl) {
+		const struct pinctrl_state *state;
+
+		err = pinctrl_lookup_state(config->pincfg, PINCTRL_STATE_FLOWCONTROL, &state);
+		if (err < 0) {
+			err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		}
+	} else {
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	}
 	if (err < 0) {
 		return err;
 	}
 
 #ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
+#if CONFIG_NXP_LP_FLEXCOMM
+	/* When using LP Flexcomm driver, register the interrupt handler
+	 * so we receive notification from the LP Flexcomm interrupt handler.
+	 */
+	nxp_lp_flexcomm_setirqhandler(config->parent_dev, dev,
+				      LP_FLEXCOMM_PERIPH_LPUART, mcux_lpuart_isr);
+#else
+	/* Interrupt is managed by this driver */
 	config->irq_config_func(dev);
+#endif
 #endif
 
 #ifdef CONFIG_PM
@@ -1126,7 +1152,8 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 #define MCUX_LPUART_IRQ_DEFINE(n)						\
 	static void mcux_lpuart_config_func_##n(const struct device *dev)	\
 	{									\
-		MCUX_LPUART_IRQ_INSTALL(n, 0);				\
+		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),			\
+			   (MCUX_LPUART_IRQ_INSTALL(n, 0);))		\
 									\
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 1),			\
 			   (MCUX_LPUART_IRQ_INSTALL(n, 1);))		\
@@ -1194,10 +1221,17 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 		: DT_INST_PROP(n, nxp_rs485_mode)\
 				? UART_CFG_FLOW_CTRL_RS485   \
 				: UART_CFG_FLOW_CTRL_NONE
+#ifdef CONFIG_NXP_LP_FLEXCOMM
+#define PARENT_DEV(n) \
+	.parent_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),
+#else
+#define PARENT_DEV(n)
+#endif /* CONFIG_NXP_LP_FLEXCOMM */
 
 #define LPUART_MCUX_DECLARE_CFG(n)                                      \
 static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 	.base = (LPUART_Type *) DT_INST_REG_ADDR(n),                          \
+	PARENT_DEV(n)		\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                   \
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
 	.baud_rate = DT_INST_PROP(n, current_speed),                          \

@@ -132,7 +132,7 @@ The current minimum required version for the main dependencies are:
 
          .. code-block:: bash
 
-            brew install cmake ninja gperf python3 ccache qemu dtc libmagic wget
+            brew install cmake ninja gperf python3 ccache qemu dtc libmagic wget openocd
 
       #. Add the Homebrew Python folder to the path, in order to be able to
          execute ``python`` and ``pip`` as well ``python3`` and ``pip3``.
@@ -170,7 +170,7 @@ The current minimum required version for the main dependencies are:
       #. `Install chocolatey`_.
 
       #. Open a ``cmd.exe`` terminal window as **Administrator**. To do so, press the Windows key,
-         type ``cmd.exe``, right-click the :guilabel:`Command Prompt`` search result, and choose
+         type ``cmd.exe``, right-click the :guilabel:`Command Prompt` search result, and choose
          :guilabel:`Run as Administrator`.
 
       #. Disable global confirmation to avoid having to confirm the
@@ -559,6 +559,17 @@ The ``-p always`` option forces a pristine build, and is recommended for new
 users. Users may also use the ``-p auto`` option, which will use
 heuristics to determine if a pristine build is required, such as when building
 another sample.
+
+.. note::
+
+   A board may contain one or multiple SoCs, Also, each SoC may contain one or
+   more CPU clusters.
+   When building for such boards it is necessary to specify the SoC or CPU
+   cluster for which the sample must be built.
+   For example to build :zephyr:code-sample:`blinky` for the ``cpuapp`` core on
+   the :ref:`nRF5340DK <nrf5340dk_nrf5340>` the board must be provided as:
+   ``nrf5340dk/nrf5340/cpuapp``. See also :ref:`board_terminology` for more
+   details.
 
 Flash the Sample
 ****************

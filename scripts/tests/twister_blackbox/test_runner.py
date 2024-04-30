@@ -5,6 +5,7 @@
 """
 Blackbox tests for twister's command line functions
 """
+# pylint: disable=duplicate-code
 
 import importlib
 import mock
@@ -25,46 +26,6 @@ class TestRunner:
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
             ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
             {
-                'selected_test_scenarios': 3,
-                'selected_test_instances': 9,
-                'skipped_configurations': 3,
-                'skipped_by_static_filter': 3,
-                'skipped_at_runtime': 0,
-                'passed_configurations': 6,
-                'failed_configurations': 0,
-                'errored_configurations': 0,
-                'executed_test_cases': 10,
-                'skipped_test_cases': 5,
-                'platform_count': 3,
-                'executed_on_platform': 4,
-                'only_built': 2
-            }
-        ),
-        (
-            os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
-            {
-                'selected_test_scenarios': 1,
-                'selected_test_instances': 3,
-                'skipped_configurations': 3,
-                'skipped_by_static_filter': 3,
-                'skipped_at_runtime': 0,
-                'passed_configurations': 0,
-                'failed_configurations': 0,
-                'errored_configurations': 0,
-                'executed_test_cases': 0,
-                'skipped_test_cases': 3,
-                'platform_count': 3,
-                'executed_on_platform': 0,
-                'only_built': 0
-            }
-        ),
-    ]
-    TESTDATA_2 = [
-        (
-            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
-            {
                 'executed_on_platform': 0,
                 'only_built': 6
             }
@@ -78,7 +39,7 @@ class TestRunner:
             }
         ),
     ]
-    TESTDATA_3 = [
+    TESTDATA_2 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
             ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
@@ -99,13 +60,13 @@ class TestRunner:
             }
         )
     ]
-    TESTDATA_4 = [
+    TESTDATA_3 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
             ['qemu_x86'],
         ),
     ]
-    TESTDATA_5 = [
+    TESTDATA_4 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
             ['qemu_x86', 'qemu_x86_64'],
@@ -117,26 +78,14 @@ class TestRunner:
             }
         ),
     ]
-    TESTDATA_6 = [
+    TESTDATA_5 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
             ['qemu_x86'],
             os.path.join(TEST_DATA, "pre_script.sh")
         ),
     ]
-    TESTDATA_7 = [
-        (
-            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64'],
-            {
-                'passed_configurations': 3,
-                'selected_test_instances': 6,
-                'executed_on_platform': 2,
-                'only_built': 1,
-            }
-        ),
-    ]
-    TESTDATA_8 = [
+    TESTDATA_6 = [
         (
             os.path.join(TEST_DATA, 'tests', 'always_fail', 'dummy'),
             ['qemu_x86_64'],
@@ -148,7 +97,7 @@ class TestRunner:
             '2',
         ),
     ]
-    TESTDATA_9 = [
+    TESTDATA_7 = [
         (
             os.path.join(TEST_DATA, 'tests', 'always_fail', 'dummy'),
             ['qemu_x86'],
@@ -160,7 +109,7 @@ class TestRunner:
             '30',
         ),
     ]
-    TESTDATA_10 = [
+    TESTDATA_8 = [
         (
             os.path.join(TEST_DATA, 'tests', 'always_timeout', 'dummy'),
             ['qemu_x86'],
@@ -172,14 +121,7 @@ class TestRunner:
             '0.5',
         ),
     ]
-    TESTDATA_11 = [
-        (
-            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
-            os.path.join(TEST_DATA, 'twister-quarantine-list.yml'),
-        ),
-    ]
-    TESTDATA_12 = [
+    TESTDATA_9 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
             ['qemu_x86'],
@@ -205,7 +147,7 @@ class TestRunner:
             [r'3 of 4 test configurations passed \(100.00%\), 0 failed, 0 errored, 1 skipped']
         ),
     ]
-    TESTDATA_13 = [
+    TESTDATA_10 = [
         (
             os.path.join(TEST_DATA, 'tests', 'one_fail_one_pass'),
             ['qemu_x86'],
@@ -218,8 +160,7 @@ class TestRunner:
             }
         )
     ]
-
-    TESTDATA_14 = [
+    TESTDATA_11 = [
         (
             os.path.join(TEST_DATA, 'tests', 'always_build_error'),
             ['qemu_x86_64'],
@@ -246,98 +187,6 @@ class TestRunner:
     @pytest.mark.parametrize(
         'test_path, test_platforms, expected',
         TESTDATA_1,
-        ids=[
-            'emulation_only tests/dummy/agnostic',
-            'emulation_only tests/dummy/device',
-        ]
-    )
-    def test_emulation_only(self, capfd, out_path, test_path, test_platforms, expected):
-        args = ['-i', '--outdir', out_path, '-T', test_path, '--emulation-only'] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        select_regex = r'^INFO    - (?P<test_scenarios>[0-9]+) test scenarios' \
-                       r' \((?P<test_instances>[0-9]+) test instances\) selected,' \
-                       r' (?P<skipped_configurations>[0-9]+) configurations skipped' \
-                       r' \((?P<skipped_by_static_filter>[0-9]+) by static filter,' \
-                       r' (?P<skipped_at_runtime>[0-9]+) at runtime\)\.$'
-
-        pass_regex = r'^INFO    - (?P<passed_configurations>[0-9]+) of' \
-                     r' (?P<test_instances>[0-9]+) test configurations passed' \
-                     r' \([0-9]+\.[0-9]+%\), (?P<failed_configurations>[0-9]+) failed,' \
-                     r' (?P<errored_configurations>[0-9]+) errored,' \
-                     r' (?P<skipped_configurations>[0-9]+) skipped with' \
-                     r' [0-9]+ warnings in [0-9]+\.[0-9]+ seconds$'
-
-        case_regex = r'^INFO    - In total (?P<executed_test_cases>[0-9]+)' \
-                     r' test cases were executed, (?P<skipped_test_cases>[0-9]+) skipped' \
-                     r' on (?P<platform_count>[0-9]+) out of total [0-9]+ platforms' \
-                     r' \([0-9]+\.[0-9]+%\)$'
-
-        built_regex = r'^INFO    - (?P<executed_on_platform>[0-9]+)' \
-                      r' test configurations executed on platforms, (?P<only_built>[0-9]+)' \
-                      r' test configurations were only built.$'
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        select_search = re.search(select_regex, err, re.MULTILINE)
-
-        assert select_search
-        assert int(select_search.group('test_scenarios')) == \
-               expected['selected_test_scenarios']
-        assert int(select_search.group('test_instances')) == \
-               expected['selected_test_instances']
-        assert int(select_search.group('skipped_configurations')) == \
-               expected['skipped_configurations']
-        assert int(select_search.group('skipped_by_static_filter')) == \
-               expected['skipped_by_static_filter']
-        assert int(select_search.group('skipped_at_runtime')) == \
-               expected['skipped_at_runtime']
-
-        pass_search = re.search(pass_regex, err, re.MULTILINE)
-
-        assert pass_search
-        assert int(pass_search.group('passed_configurations')) == \
-               expected['passed_configurations']
-        assert int(pass_search.group('test_instances')) == \
-               expected['selected_test_instances']
-        assert int(pass_search.group('failed_configurations')) == \
-               expected['failed_configurations']
-        assert int(pass_search.group('errored_configurations')) == \
-               expected['errored_configurations']
-        assert int(pass_search.group('skipped_configurations')) == \
-               expected['skipped_configurations']
-
-        case_search = re.search(case_regex, err, re.MULTILINE)
-
-        assert case_search
-        assert int(case_search.group('executed_test_cases')) == \
-               expected['executed_test_cases']
-        assert int(case_search.group('skipped_test_cases')) == \
-               expected['skipped_test_cases']
-        assert int(case_search.group('platform_count')) == \
-               expected['platform_count']
-
-        built_search = re.search(built_regex, err, re.MULTILINE)
-
-        assert built_search
-        assert int(built_search.group('executed_on_platform')) == \
-               expected['executed_on_platform']
-        assert int(built_search.group('only_built')) == \
-               expected['only_built']
-
-        assert str(sys_exit.value) == '0'
-
-    @pytest.mark.parametrize(
-        'test_path, test_platforms, expected',
-        TESTDATA_2,
         ids=[
             'build_only tests/dummy/agnostic',
             'build_only tests/dummy/device',
@@ -377,7 +226,7 @@ class TestRunner:
 
     @pytest.mark.parametrize(
         'test_path, test_platforms, expected',
-        TESTDATA_3,
+        TESTDATA_2,
         ids=[
             'test_only'
         ],
@@ -432,11 +281,6 @@ class TestRunner:
         sys.stdout.write(out)
         sys.stderr.write(err)
 
-        path = os.path.join(out_path, 'twister.log')
-        with open(path, "r") as log_file:
-            text_content = log_file.read()
-        print(text_content)
-
         select_search = re.search(select_regex, err, re.MULTILINE)
 
         assert select_search
@@ -487,34 +331,7 @@ class TestRunner:
 
     @pytest.mark.parametrize(
         'test_path, test_platforms',
-        TESTDATA_4,
-        ids=[
-            'ninja',
-        ]
-    )
-    @pytest.mark.parametrize(
-        'flag',
-        ['--ninja', '-N']
-    )
-    def test_ninja(self, capfd, out_path, test_path, test_platforms, flag):
-        args = ['--outdir', out_path, '-T', test_path, flag] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        assert str(sys_exit.value) == '0'
-
-    @pytest.mark.parametrize(
-        'test_path, test_platforms',
-        TESTDATA_4,
+        TESTDATA_3,
         ids=[
             'dry_run',
         ],
@@ -540,35 +357,8 @@ class TestRunner:
         assert str(sys_exit.value) == '0'
 
     @pytest.mark.parametrize(
-        'test_path, test_platforms',
-        TESTDATA_4,
-        ids=[
-            'any_platform',
-        ],
-    )
-    @pytest.mark.parametrize(
-        'flag',
-        ['-l', '--all']
-    )
-    def test_any_platform(self, capfd, out_path, test_path, test_platforms, flag):
-        args = ['--outdir', out_path, '-T', test_path, flag] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        assert str(sys_exit.value) == '0'
-
-    @pytest.mark.parametrize(
         'test_path, test_platforms, expected',
-        TESTDATA_5,
+        TESTDATA_4,
         ids=[
             'cmake_only',
         ],
@@ -614,7 +404,7 @@ class TestRunner:
 
     @pytest.mark.parametrize(
         'test_path, test_platforms, file_name',
-        TESTDATA_6,
+        TESTDATA_5,
         ids=[
             'pre_script',
         ],
@@ -636,54 +426,8 @@ class TestRunner:
         assert str(sys_exit.value) == '0'
 
     @pytest.mark.parametrize(
-        'test_path, test_platforms, expected',
-        TESTDATA_7,
-        ids=[
-            'exclude_platform',
-        ],
-    )
-    def test_exclude_platform(self, capfd, out_path, test_path, test_platforms, expected):
-        args = ['--outdir', out_path, '-T', test_path, '--exclude-platform', "qemu_x86"] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        pass_regex = r'^INFO    - (?P<passed_configurations>[0-9]+) of' \
-                     r' (?P<test_instances>[0-9]+) test configurations passed'
-
-        built_regex = r'^INFO    - (?P<executed_on_platform>[0-9]+)' \
-                      r' test configurations executed on platforms, (?P<only_built>[0-9]+)' \
-                      r' test configurations were only built.$'
-
-        pass_search = re.search(pass_regex, err, re.MULTILINE)
-
-        assert pass_search
-        assert int(pass_search.group('passed_configurations')) == \
-               expected['passed_configurations']
-        assert int(pass_search.group('test_instances')) == \
-               expected['selected_test_instances']
-
-        built_search = re.search(built_regex, err, re.MULTILINE)
-
-        assert built_search
-        assert int(built_search.group('executed_on_platform')) == \
-               expected['executed_on_platform']
-        assert int(built_search.group('only_built')) == \
-               expected['only_built']
-
-        assert str(sys_exit.value) == '0'
-
-    @pytest.mark.parametrize(
         'test_path, test_platforms',
-        TESTDATA_4,
+        TESTDATA_3,
         ids=[
             'device_flash_timeout',
         ],
@@ -706,7 +450,7 @@ class TestRunner:
 
     @pytest.mark.parametrize(
         'test_path, test_platforms, iterations',
-        TESTDATA_8,
+        TESTDATA_6,
         ids=[
             'retry 2',
             'retry 3'
@@ -742,7 +486,7 @@ class TestRunner:
 
     @pytest.mark.parametrize(
         'test_path, test_platforms, interval',
-        TESTDATA_9,
+        TESTDATA_7,
         ids=[
             'retry interval 15',
             'retry interval 30'
@@ -766,7 +510,6 @@ class TestRunner:
 
         end_time = time.time()
         elapsed_time = end_time - start_time
-        print(f"Time elapsed: {elapsed_time:.2f} seconds")
         if elapsed_time < int(interval):
             assert 'interval was too short'
 
@@ -774,7 +517,7 @@ class TestRunner:
 
     @pytest.mark.parametrize(
         'test_path, test_platforms, timeout',
-        TESTDATA_10,
+        TESTDATA_8,
         ids=[
             'timeout-multiplier 2 - 20s',
             'timeout-multiplier 0.5 - 5s'
@@ -804,61 +547,8 @@ class TestRunner:
         assert str(sys_exit.value) == '1'
 
     @pytest.mark.parametrize(
-        'test_path, test_platforms, quarantine_directory',
-        TESTDATA_11,
-        ids=[
-            'quarantine',
-        ],
-    )
-    def test_quarantine_list(self, capfd, out_path, test_path, test_platforms, quarantine_directory):
-        args = ['--outdir', out_path, '-T', test_path, '--quarantine-list', quarantine_directory, '-vv'] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        frdm_match = re.search('agnostic/group2/dummy.agnostic.group2 SKIPPED: Quarantine: test '
-                               'frdm_k64f', err)
-        frdm_match2 = re.search(
-            'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 SKIPPED: Quarantine: test '
-            'frdm_k64f',
-            err)
-        qemu_64_match = re.search(
-            'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 SKIPPED: Quarantine: test '
-            'qemu_x86_64',
-            err)
-        all_platforms_match = re.search(
-            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 SKIPPED: Quarantine: test '
-            'all platforms',
-            err)
-        all_platforms_match2 = re.search(
-            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 SKIPPED: Quarantine: test '
-            'all platforms',
-            err)
-        all_platforms_match3 = re.search(
-            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 SKIPPED: Quarantine: test '
-            'all platforms',
-            err)
-
-        assert frdm_match and frdm_match2, 'platform quarantine not work properly'
-        assert qemu_64_match, 'platform quarantine on scenario not work properly'
-        assert all_platforms_match and all_platforms_match2 and all_platforms_match3, 'scenario ' \
-                                                                                      'quarantine' \
-                                                                                      ' not work ' \
-                                                                                      'properly'
-
-        assert str(sys_exit.value) == '0'
-
-    @pytest.mark.parametrize(
         'test_path, test_platforms, tags, expected',
-        TESTDATA_12,
+        TESTDATA_9,
         ids=[
             'tags device',
             'tags subgruped',
@@ -883,14 +573,13 @@ class TestRunner:
         sys.stderr.write(err)
 
         for line in expected:
-            print(line)
             assert re.search(line, err)
 
         assert str(sys_exit.value) == '0'
 
     @pytest.mark.parametrize(
         'test_path, test_platforms, expected',
-        TESTDATA_13,
+        TESTDATA_10,
         ids=[
             'only_failed'
         ],
@@ -953,7 +642,7 @@ class TestRunner:
 
     @pytest.mark.parametrize(
         'test_path, test_platforms, iterations',
-        TESTDATA_14,
+        TESTDATA_11,
         ids=[
             'retry 2',
             'retry 3'

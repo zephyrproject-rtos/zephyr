@@ -1,0 +1,4 @@
+vendor: intel
+comment: "Intel Lakemont SoC"
+socs:
+- name: lakemont

@@ -1,9 +1,0 @@
-# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
-# SPDX-License-Identifier: Apache-2.0
-
-if SOC_ARM_DESIGNSTART_FPGA_CORTEX_M1
-
-config SOC
-	default "designstart_cortex_m1"
-
-endif # SOC_ARM_DESIGNSTART_FPGA_CORTEX_M1

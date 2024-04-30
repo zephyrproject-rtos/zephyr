@@ -1,0 +1,19 @@
+identifier: m5stack_atom_lite/esp32/procpu
+name: M5Stack ATOM Lite
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - uart
+  - pinmux
+  - nvs
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: m5stack

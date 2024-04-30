@@ -59,8 +59,8 @@ void test_main(void)
 	printk("ARM no-multithreading test\n");
 
 	uint32_t psp = (uint32_t)__get_PSP();
-	uint32_t main_stack_base = (uint32_t)Z_THREAD_STACK_BUFFER(z_main_stack);
-	uint32_t main_stack_top = (uint32_t)(Z_THREAD_STACK_BUFFER(z_main_stack) +
+	uint32_t main_stack_base = (uint32_t)K_THREAD_STACK_BUFFER(z_main_stack);
+	uint32_t main_stack_top = (uint32_t)(K_THREAD_STACK_BUFFER(z_main_stack) +
 		K_THREAD_STACK_SIZEOF(z_main_stack));
 
 	__ASSERT(

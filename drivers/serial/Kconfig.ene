@@ -1,0 +1,12 @@
+# Copyright (c) 2023 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_ENE_KB1200
+	bool "ENE KB1200 serial driver"
+	default y
+	depends on DT_HAS_ENE_KB1200_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
+	help
+	  This option enables the KB1200 serial driver.

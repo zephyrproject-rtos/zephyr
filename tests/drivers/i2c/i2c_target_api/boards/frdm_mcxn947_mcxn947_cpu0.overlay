@@ -1,0 +1,51 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+&pinctrl {
+	pinmux_flexcomm1_lpi2c: pinmux_flexcomm1_lpi2c {
+		group0 {
+			pinmux = <FC1_P0_PIO0_24>,
+				<FC1_P1_PIO0_25>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+};
+
+&flexcomm1 {
+	status = "okay";
+};
+
+/* We cannot enable SPI and I2C on the same flexcomm */
+&flexcomm1_lpspi1 {
+	status = "disabled";
+};
+
+/* To test this sample, connect
+ * LPI2C1 SCL(J2-12, P1_25/FC1_P1)    -->        LPI2C2 SCL(J2-20, P4_1/FC2_P1)
+ * LPI2C1 SDA(J2-8, P1_24/FC1_P0)     -->        LPI2C2 SDA(J2-18, P4_0/FC2_P0)
+ */
+&flexcomm1_lpi2c1 {
+	pinctrl-0 = <&pinmux_flexcomm1_lpi2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <1024>;
+	};
+};
+
+&flexcomm2_lpi2c2 {
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <1024>;
+	};
+};

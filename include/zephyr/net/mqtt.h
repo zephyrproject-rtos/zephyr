@@ -7,6 +7,8 @@
 /** @file mqtt.h
  *
  * @defgroup mqtt_socket MQTT Client library
+ * @since 1.14
+ * @version 0.8.0
  * @ingroup networking
  * @{
  * @brief MQTT Client Implementation
@@ -355,6 +357,19 @@ struct mqtt_sec_config {
 
 	/** Indicates the list of security tags to be used for the session. */
 	const sec_tag_t *sec_tag_list;
+
+#if defined(CONFIG_MQTT_LIB_TLS_USE_ALPN)
+	/**
+	 * Pointer to array of string indicating the ALPN protocol name.
+	 * May be NULL to skip ALPN protocol negotiation.
+	 */
+	const char **alpn_protocol_name_list;
+
+	/**
+	 * Indicate number of ALPN protocol name in alpn protocol name list.
+	 */
+	uint32_t alpn_protocol_name_count;
+#endif
 
 	/** Peer hostname for ceritificate verification.
 	 *  May be NULL to skip hostname verification.

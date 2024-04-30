@@ -10,4 +10,4 @@ tests:
     tags: sdhc
     min_ram: 32
     integration_platforms:
-      - mimxrt595_evk_cm33
+      - mimxrt595_evk/mimxrt595s/cm33

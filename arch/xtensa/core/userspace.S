@@ -10,6 +10,8 @@
 #include <zephyr/syscall.h>
 #include <zsr.h>
 
+#include <xtensa/config/core-isa.h>
+
 /**
  *  syscall number     arg1, arg2, arg3, arg4, arg5, arg6
  *  --------------     ----------------------------------
@@ -20,6 +22,37 @@
 .global	xtensa_do_syscall
 .align	4
 xtensa_do_syscall:
+#if XCHAL_HAVE_THREADPTR == 0
+	wsr a2, ZSR_SYSCALL_SCRATCH
+	rsync
+
+	movi a0, xtensa_is_user_context_epc
+	rsr.epc1 a2
+	bne a0, a2, _not_checking_user_context
+
+	addi a2, a2, 3
+	wsr.epc1 a2
+
+	movi a0, PS_RING_MASK
+	rsr.ps a2
+	and a2, a2, a0
+
+	/* Need to set return to 1 if RING != 0,
+	 * so we won't be leaking which ring we are in
+	 * right now.
+	 */
+	beqz a2, _is_user_context_return
+
+	movi a2, 1
+
+_is_user_context_return:
+	rsr a0, ZSR_A0SAVE
+
+	rfe
+
+_not_checking_user_context:
+	rsr a2, ZSR_SYSCALL_SCRATCH
+#endif
 	rsr a0, ZSR_CPU
 	l32i a0, a0, ___cpu_t_current_OFFSET
 	l32i a0, a0, _thread_offset_to_psp
@@ -87,6 +120,10 @@ end_loop:
 	s32i a3, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 	ODD_REG_SAVE
 
+#if defined(CONFIG_XTENSA_HIFI_SHARING)
+	call0 _xtensa_hifi_save
+#endif
+
 	call0 xtensa_save_high_regs
 
 	l32i a2, a1, 0
@@ -101,6 +138,7 @@ _id_ok:
 	add a2, a2, a3
 	l32i a2, a2, 0
 
+#if XCHAL_HAVE_THREADPTR
 	/* Clear up the threadptr because it is used
 	 * to check if a thread is running on user mode. Since
 	 * we are in a interruption we don't want the system
@@ -117,16 +155,30 @@ _id_ok:
 	movi a0, 0
 	wur.THREADPTR a0
 #endif
+#endif /* XCHAL_HAVE_THREADPTR */
 
-	/* Set syscall parameters. We have an initial call4 to set up the
-	 * the stack and then a new call4 for the syscall function itself.
-	 * So parameters should be put as if it was a call8.
+	/* Set syscall parameters by moving them into place before we do
+	 * a call4 for the syscall function itself.
+	 * arg1 = a6
+	 * arg2 = a3 (clobbered above, so we need to reload it)
+	 * arg3 = a4
+	 * arg4 = a5
+	 * arg5 = a8
+	 * arg6 = a9
 	 */
 	mov a10, a8
 	mov a11, a9
 	mov a8, a4
 	mov a9, a5
-	l32i a3, a1, 0
+
+	/* Stack frame pointer is the 7th argument to z_mrsh_*()
+	 * as ssf, and must be put on stack to be consumed.
+	 */
+	mov a3, a1
+	addi a1, a1, -4
+	s32i a3, a1, 0
+
+	l32i a3, a1, 4
 	l32i a7, a3, ___xtensa_irq_bsa_t_a3_OFFSET
 
 
@@ -137,7 +189,13 @@ _id_ok:
 	wsr.ps a0
 	rsync
 
-	call4 _syscall_call0
+	callx4 a2
+
+	/* Going back before stack frame pointer on stack to
+	 * actual the stack frame. So restoration of registers
+	 * can be done properly when finishing syscalls.
+	 */
+	addi a1, a1, 4
 
 	/* copy return value. Lets put it in the top of stack
 	 * because registers will be clobbered in
@@ -147,12 +205,6 @@ _id_ok:
 	s32i a6, a3, ___xtensa_irq_bsa_t_a2_OFFSET
 
 	j _syscall_returned
-
-.align 4
-_syscall_call0:
-	/* We want an ENTRY to set a bit in windowstart */
-	jx a2
-
 
 _syscall_returned:
 	call0 xtensa_restore_high_regs
@@ -172,6 +224,7 @@ _syscall_returned:
 	wsr a3, SCOMPARE1
 #endif
 
+#if XCHAL_HAVE_THREADPTR
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	l32i a3, a1, ___xtensa_irq_bsa_t_threadptr_OFFSET
 	movi a0, is_user_mode@tpoff
@@ -183,6 +236,7 @@ _syscall_returned:
 	l32i a3, a3, ___cpu_t_current_OFFSET
 	wur.THREADPTR a3
 #endif
+#endif /* XCHAL_HAVE_THREADPTR */
 
 	l32i a3, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 	wsr.ps a3
@@ -222,13 +276,12 @@ xtensa_userspace_enter:
 	 */
 	entry a1, 16
 
+	SPILL_ALL_WINDOWS
+
 	/* We have to switch to kernel stack before spill kernel data and
 	 * erase user stack to avoid leak from previous context.
 	 */
 	mov a1, a7 /* stack start (low address) */
-	addi a1, a1, -16
-
-	SPILL_ALL_WINDOWS
 
 	rsr a0, ZSR_CPU
 	l32i a0, a0, ___cpu_t_current_OFFSET
@@ -246,8 +299,14 @@ xtensa_userspace_enter:
 	call4 xtensa_user_stack_perms
 
 	l32i a6, a1, 24
+#ifdef CONFIG_XTENSA_MMU
 	call4 xtensa_swap_update_page_tables
+#endif
+#ifdef CONFIG_XTENSA_MPU
+	call4 xtensa_mpu_map_write
+#endif
 
+#if XCHAL_HAVE_THREADPTR
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	rur.threadptr a3
 	movi a0, is_user_mode@tpoff
@@ -259,6 +318,7 @@ xtensa_userspace_enter:
 	l32i a3, a3, ___cpu_t_current_OFFSET
 	wur.THREADPTR a3
 #endif
+#endif /* XCHAL_HAVE_THREADPTR */
 
 	/* Set now z_thread_entry parameters, we are simulating a call4
 	 * call, so parameters start at a6, a7, ...
@@ -268,11 +328,8 @@ xtensa_userspace_enter:
 	l32i a8, a1, 12
 	l32i a9, a1, 8
 
-	/* stash user stack */
-	l32i a0, a1, 4
-
 	/* Go back to user stack */
-	mov a1, a0
+	l32i a1, a1, 4
 
 	movi a0, z_thread_entry
 	wsr.epc2 a0
@@ -281,9 +338,17 @@ xtensa_userspace_enter:
 	 * We have to set callinc as well, since the called
 	 * function will do "entry"
 	 */
+#ifdef CONFIG_XTENSA_MMU
 	movi a0, PS_WOE|PS_CALLINC(1)|PS_UM|PS_RING(2)
+#endif
+#ifdef CONFIG_XTENSA_MPU
+	/* MPU only has RING 0 and 1. */
+	movi a0, PS_WOE|PS_CALLINC(1)|PS_UM|PS_RING(1)
+#endif
+
 	wsr a0, EPS2
 
+	/* Wipe out a0 (thre is no return from this function */
 	movi a0, 0
 
 	rfi 2

@@ -28,13 +28,15 @@ struct can_shell_mode_mapping {
 #define CAN_SHELL_MODE_MAPPING(_name, _mode) { .name = _name, .mode = _mode }
 
 static const struct can_shell_mode_mapping can_shell_mode_map[] = {
-	/* Array sorted alphabetically based on name */
+	/* zephyr-keep-sorted-start */
 	CAN_SHELL_MODE_MAPPING("fd",              CAN_MODE_FD),
 	CAN_SHELL_MODE_MAPPING("listen-only",     CAN_MODE_LISTENONLY),
 	CAN_SHELL_MODE_MAPPING("loopback",        CAN_MODE_LOOPBACK),
+	CAN_SHELL_MODE_MAPPING("manual-recovery", CAN_MODE_MANUAL_RECOVERY),
 	CAN_SHELL_MODE_MAPPING("normal",          CAN_MODE_NORMAL),
 	CAN_SHELL_MODE_MAPPING("one-shot",        CAN_MODE_ONE_SHOT),
 	CAN_SHELL_MODE_MAPPING("triple-sampling", CAN_MODE_3_SAMPLES),
+	/* zephyr-keep-sorted-stop */
 };
 
 K_MSGQ_DEFINE(can_shell_tx_msgq, sizeof(struct can_shell_tx_event),
@@ -677,7 +679,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 	static unsigned int frame_counter;
 	unsigned int frame_no;
 	struct can_frame frame;
-	uint32_t max_id;
+	uint32_t id_mask;
 	int argidx = 2;
 	uint32_t val;
 	char *endptr;
@@ -691,7 +693,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	/* Defaults */
-	max_id = CAN_MAX_STD_ID;
+	id_mask = CAN_STD_ID_MASK;
 	frame.flags = 0;
 	frame.dlc = 0;
 
@@ -702,7 +704,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 			break;
 		} else if (strcmp(argv[argidx], "-e") == 0) {
 			frame.flags |= CAN_FRAME_IDE;
-			max_id = CAN_MAX_EXT_ID;
+			id_mask = CAN_EXT_ID_MASK;
 			argidx++;
 		} else if (strcmp(argv[argidx], "-r") == 0) {
 			frame.flags |= CAN_FRAME_RTR;
@@ -733,7 +735,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	if (val > max_id) {
+	if (val > id_mask) {
 		shell_error(sh, "CAN ID 0x%0*x out of range",
 			    (frame.flags & CAN_FRAME_IDE) != 0 ? 8 : 3,
 			    val);
@@ -796,7 +798,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = device_get_binding(argv[1]);
 	struct can_filter filter;
-	uint32_t max_id;
+	uint32_t id_mask;
 	int argidx = 2;
 	uint32_t val;
 	char *endptr;
@@ -808,7 +810,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	/* Defaults */
-	max_id = CAN_MAX_STD_ID;
+	id_mask = CAN_STD_ID_MASK;
 	filter.flags = 0U;
 
 	/* Parse options */
@@ -818,7 +820,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 			break;
 		} else if (strcmp(argv[argidx], "-e") == 0) {
 			filter.flags |= CAN_FILTER_IDE;
-			max_id = CAN_MAX_EXT_ID;
+			id_mask = CAN_EXT_ID_MASK;
 			argidx++;
 		} else {
 			shell_error(sh, "unsupported argument %s", argv[argidx]);
@@ -840,7 +842,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	if (val > max_id) {
+	if (val > id_mask) {
 		shell_error(sh, "CAN ID 0x%0*x out of range",
 			    (filter.flags & CAN_FILTER_IDE) != 0 ? 8 : 3,
 			    val);
@@ -857,7 +859,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 			return -EINVAL;
 		}
 
-		if (val > max_id) {
+		if (val > id_mask) {
 			shell_error(sh, "CAN ID mask 0x%0*x out of range",
 				    (filter.flags & CAN_FILTER_IDE) != 0 ? 8 : 3,
 				    val);
@@ -865,7 +867,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 		}
 
 	} else {
-		val = max_id;
+		val = id_mask;
 	}
 
 	filter.mask = val;
@@ -1054,9 +1056,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_cmds,
 		"CAN rx filter commands\n"
 		"Usage: can filter <add|remove> <device> ...",
 		NULL),
-	SHELL_EXPR_CMD_ARG(!IS_ENABLED(CONFIG_CAN_AUTO_BUS_OFF_RECOVERY),
+	SHELL_COND_CMD_ARG(CONFIG_CAN_MANUAL_RECOVERY_MODE,
 		recover, &dsub_can_device_name,
-		"Recover CAN controller from bus-off state\n"
+		"Manually recover CAN controller from bus-off state\n"
 		"Usage: can recover <device> [timeout ms]",
 		cmd_can_recover, 2, 1),
 	SHELL_SUBCMD_SET_END

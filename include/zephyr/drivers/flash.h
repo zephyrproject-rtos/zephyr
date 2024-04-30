@@ -45,6 +45,8 @@ struct flash_pages_layout {
 /**
  * @brief FLASH Interface
  * @defgroup flash_interface FLASH Interface
+ * @since 1.2
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */

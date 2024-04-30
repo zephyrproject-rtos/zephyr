@@ -1,0 +1,51 @@
+/*
+ * Copyright 2022-2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	/* Switch to lpuart2, since primary core uses lpuart1 */
+	chosen {
+		zephyr,flash = &ocram;
+		zephyr,console = &lpuart2;
+		zephyr,shell-uart = &lpuart2;
+		zephyr,ipc_shm = &ocram2_overlay;
+	};
+
+	soc {
+		/delete-node/ gpt@400f0000;
+
+		/* Replace GPT2 with another GPT kernel timer */
+		gpt2_hw_timer:gpt@400f0000 {
+			compatible = "nxp,gpt-hw-timer";
+			reg = <0x400f0000 0x4000>;
+			interrupts = <120 0>;
+			status = "okay";
+		};
+	};
+
+	/* OpenAMP fails with full 512K OCRAM2 memory region as shared memory.
+	 * Define a subset of the OCRAM2 region for demo to use
+	 * Note that shared memory must have specific MPU attributes set
+	 */
+	ocram2_overlay: memory@202c0000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x202c0000 DT_SIZE_K(16)>;
+		zephyr,memory-region="OCRAM2_OVERLAY";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+	};
+};
+
+/* Enable secondary LPUART */
+&lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+/* Disable primary GPT timer */
+&gpt_hw_timer {
+	status = "disabled";
+};

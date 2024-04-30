@@ -519,7 +519,7 @@ struct net_buf *net_buf_clone(struct net_buf *buf, k_timeout_t timeout)
 	 * we need to allocate new data and make a copy.
 	 */
 	if (pool->alloc->cb->ref && !(buf->flags & NET_BUF_EXTERNAL_DATA)) {
-		clone->__buf = data_ref(buf, buf->__buf);
+		clone->__buf = buf->__buf ? data_ref(buf, buf->__buf) : NULL;
 		clone->data = buf->data;
 		clone->len = buf->len;
 		clone->size = buf->size;
@@ -539,7 +539,30 @@ struct net_buf *net_buf_clone(struct net_buf *buf, k_timeout_t timeout)
 		net_buf_add_mem(clone, buf->data, buf->len);
 	}
 
+	/* user_data_size should be the same for buffers from the same pool */
+	__ASSERT(buf->user_data_size == clone->user_data_size, "Unexpected user data size");
+
+	memcpy(clone->user_data, buf->user_data, clone->user_data_size);
+
 	return clone;
+}
+
+int net_buf_user_data_copy(struct net_buf *dst, const struct net_buf *src)
+{
+	__ASSERT_NO_MSG(dst);
+	__ASSERT_NO_MSG(src);
+
+	if (dst == src) {
+		return 0;
+	}
+
+	if (dst->user_data_size < src->user_data_size) {
+		return -EINVAL;
+	}
+
+	memcpy(dst->user_data, src->user_data, src->user_data_size);
+
+	return 0;
 }
 
 struct net_buf *net_buf_frag_last(struct net_buf *buf)

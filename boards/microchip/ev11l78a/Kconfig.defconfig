@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if USBC_STACK
+
+# Kernel Options due to Low Memory (4k)
+CONFIG_LOG_BUFFER_SIZE=256
+CONFIG_MAIN_STACK_SIZE=640
+CONFIG_IDLE_STACK_SIZE=200
+CONFIG_ISR_STACK_SIZE=512
+CONFIG_USBC_STACK_SIZE=512
+# Prevent Interrupt Vector Table in RAM
+CONFIG_SRAM_VECTOR_TABLE=n
+
+# This board only supports the sink role, so
+# no need to ever implement source for it.
+CONFIG_USBC_CSM_SINK_ONLY=y
+
+endif # USBC_STACK

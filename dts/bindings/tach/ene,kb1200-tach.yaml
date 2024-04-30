@@ -1,0 +1,34 @@
+# Copyright (c) 2024 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ENE, KB1200-Tachometer node
+
+compatible: "ene,kb1200-tach"
+
+include: [tach.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pulses-per-round:
+    required: true
+    type: int
+    description: number of pulses (holes) per round of tachometer's input (encoder)
+
+  sample-time-us:
+    required: true
+    type: int
+    enum:
+      - 2
+      - 8
+      - 16
+      - 64
+    description: |
+      sampling time of tachometer. Please notice that it must be 2/8/16/64 us.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

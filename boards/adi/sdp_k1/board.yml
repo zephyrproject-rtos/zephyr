@@ -1,0 +1,5 @@
+board:
+  name: adi_sdp_k1
+  vendor: adi
+  socs:
+    - name: stm32f469xx

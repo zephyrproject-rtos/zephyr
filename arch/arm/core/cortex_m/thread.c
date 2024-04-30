@@ -14,6 +14,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/llext/symbol.h>
 #include <ksched.h>
 #include <zephyr/sys/barrier.h>
 #include <stdbool.h>
@@ -277,6 +278,7 @@ bool z_arm_thread_is_in_user_mode(void)
 	value = __get_CONTROL();
 	return (value & CONTROL_nPRIV_Msk) != 0;
 }
+EXPORT_SYMBOL(z_arm_thread_is_in_user_mode);
 #endif
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
@@ -437,7 +439,7 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 			guard_len,
 			fault_addr, psp)) {
 		/* Thread stack corruption */
-		return (uint32_t)Z_THREAD_STACK_BUFFER(z_main_stack);
+		return (uint32_t)K_THREAD_STACK_BUFFER(z_main_stack);
 	}
 #endif
 #endif /* CONFIG_USERSPACE */
@@ -593,11 +595,11 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(
 	z_arm_prepare_switch_to_main();
 
 	/* Set PSP to the highest address of the main stack. */
-	char *psp =	Z_THREAD_STACK_BUFFER(z_main_stack) +
+	char *psp =	K_THREAD_STACK_BUFFER(z_main_stack) +
 		K_THREAD_STACK_SIZEOF(z_main_stack);
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
-	char *psplim = (Z_THREAD_STACK_BUFFER(z_main_stack));
+	char *psplim = (K_THREAD_STACK_BUFFER(z_main_stack));
 	/* Clear PSPLIM before setting it to guard the main stack area. */
 	__set_PSPLIM(0);
 #endif

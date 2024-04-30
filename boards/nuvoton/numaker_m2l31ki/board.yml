@@ -1,0 +1,5 @@
+board:
+  name: numaker_m2l31ki
+  vendor: nuvoton
+  socs:
+  - name: m2l31xxx

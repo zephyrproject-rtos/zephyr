@@ -103,7 +103,7 @@ static inline void reschedule(struct net_trickle *trickle)
 	k_work_reschedule(&trickle->timer, K_MSEC(diff));
 }
 
-static void inteval_timeout(struct net_trickle *trickle)
+static void interval_timeout(struct net_trickle *trickle)
 {
 	NET_DBG("Trickle timeout at %d", k_uptime_get_32());
 
@@ -130,7 +130,7 @@ static void trickle_timeout(struct k_work *work)
 	if (trickle->double_to) {
 		double_interval_timeout(trickle);
 	} else {
-		inteval_timeout(trickle);
+		interval_timeout(trickle);
 	}
 }
 

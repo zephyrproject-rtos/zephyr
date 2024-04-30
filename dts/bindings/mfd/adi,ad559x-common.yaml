@@ -1,0 +1,9 @@
+# Copyright (C) 2023 Grinn
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analog AD559x ADC/DAC/GPIO chip common properties
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: RESET pin

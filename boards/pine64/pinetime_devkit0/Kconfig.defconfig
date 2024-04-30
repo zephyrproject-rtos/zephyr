@@ -1,0 +1,21 @@
+# PineTime DevKit0 board configuration
+
+# Copyright (c) 2020 Stephane Dorre <stephane.dorre@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PINETIME_DEVKIT0
+
+config BT_CTLR
+	default BT
+
+config INPUT
+	default y if LVGL
+
+if FLASH
+
+config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
+	default 4096
+
+endif # FLASH
+
+endif # BOARD_PINETIME_DEVKIT0

@@ -1,0 +1,11 @@
+boards:
+- name: nrf52_bsim
+  vendor: zephyr
+  socs:
+  - name: native
+- name: nrf5340bsim
+  vendor: zephyr
+  socs:
+  # Note this is referring to the real SOC yaml, but we only use its name and cpu-cluster definition
+  # In practice this board uses the same native SOC (SOC_POSIX) as the nrf52_bsim
+  - name: nrf5340

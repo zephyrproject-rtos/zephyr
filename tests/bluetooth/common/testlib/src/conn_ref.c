@@ -3,8 +3,11 @@
  */
 
 #include <stddef.h>
-#include <testlib/conn.h>
+
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/sys/atomic_builtin.h>
+
+#include <testlib/conn.h>
 
 /**
  * @file
@@ -35,4 +38,30 @@ void bt_testlib_conn_unref(struct bt_conn **connp)
 	conn = atomic_ptr_set((void **)connp, NULL);
 	__ASSERT_NO_MSG(conn);
 	bt_conn_unref(conn);
+}
+
+struct find_by_index_data {
+	uint8_t wanted_index;
+	struct bt_conn *found_conn;
+};
+
+static void find_by_index(struct bt_conn *conn, void *user_data)
+{
+	struct find_by_index_data *data = user_data;
+	uint8_t index = bt_conn_index(conn);
+
+	if (index == data->wanted_index) {
+		data->found_conn = bt_conn_ref(conn);
+	}
+}
+
+struct bt_conn *bt_testlib_conn_unindex(enum bt_conn_type conn_type, uint8_t conn_index)
+{
+	struct find_by_index_data data = {
+		.wanted_index = conn_index,
+	};
+
+	bt_conn_foreach(conn_type, find_by_index, &data);
+
+	return data.found_conn;
 }

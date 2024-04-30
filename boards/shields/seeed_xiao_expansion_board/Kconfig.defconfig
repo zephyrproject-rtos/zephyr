@@ -1,0 +1,27 @@
+# Copyright (c) 2024 Charles Dias <charlesdias.cd@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_SEEED_XIAO_EXPANSION_BOARD
+
+if DISPLAY
+
+if LVGL
+
+config LV_Z_VDB_SIZE
+	default 64
+
+config LV_DPI_DEF
+	default 148
+
+config LV_Z_BITS_PER_PIXEL
+	default 1
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_1
+endchoice
+
+endif # LVGL
+
+endif # DISPLAY
+
+endif # SHIELD_SEEED_XIAO_EXPANSION_BOARD

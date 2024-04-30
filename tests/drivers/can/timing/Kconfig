@@ -1,0 +1,40 @@
+# Copyright (c) 2024 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "CAN timing test"
+
+config TEST_ALL_BITRATES
+	bool "Test all CAN in Automation (CiA) recommended bitrates"
+	help
+	  Enable test of all bitrates recommended by CAN in Automation (CiA). Not all CAN
+	  controllers can meet all of the bitrates listed below, and some board configurations may
+	  impose limits on which bitrates can be met due to limitations in the CAN core clock
+	  frequency selection.
+
+	  CiA 301 lists the following nominal bitrates as recommended:
+	  - 10 kbit/s
+	  - 20 kbit/s
+	  - 50 kbit/s
+	  - 125 kbit/s
+	  - 250 kbit/s
+	  - 500 kbit/s
+	  - 800 kbit/s
+	  - 1 Mbit/s
+
+	  CiA 601-2 lists the following exemplary CAN FD data phase bitrates:
+	  - 1.0 Mbit/s
+	  - 2.0 Mbit/s
+	  - 4.0 Mbit/s
+	  - 5.0 Mbit/s
+	  - 8.0 Mbit/s
+
+	  CiA 601-3 recommends the following CAN FD core clock frequencies for good node
+	  interoperability. The higher the frequency, the better:
+	  - 20 MHz
+	  - 40 MHz
+	  - 80 MHz
+
+	  If this option is not enabled, the tests will be limited to a historical, safe set of CAN
+	  bitrates.
+
+source "Kconfig.zephyr"

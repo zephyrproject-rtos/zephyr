@@ -25,13 +25,18 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 	k_fatal_halt(reason);
 }
 
-void func_3(uint32_t *addr)
+/* Turn off optimizations to prevent the compiler from optimizing this away
+ * due to the null pointer dereference.
+ */
+__no_optimization void func_3(uint32_t *addr)
 {
 #if defined(CONFIG_BOARD_M2GL025_MIV) || \
 	defined(CONFIG_BOARD_HIFIVE1) || \
+	defined(CONFIG_BOARD_HIFIVE_UNLEASHED) || \
+	defined(CONFIG_BOARD_HIFIVE_UNMATCHED) || \
 	defined(CONFIG_BOARD_LONGAN_NANO) || \
-	defined(CONFIG_BOARD_LONGAN_NANO_LITE) || \
 	defined(CONFIG_BOARD_QEMU_XTENSA) || \
+	defined(CONFIG_BOARD_RISCV32_VIRTUAL) || \
 	defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
 	ARG_UNUSED(addr);
 	/* Call k_panic() directly so Renode doesn't pause execution.

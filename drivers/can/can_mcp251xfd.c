@@ -740,21 +740,6 @@ static int mcp251xfd_get_max_filters(const struct device *dev, bool ide)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static int mcp251xfd_recover(const struct device *dev, k_timeout_t timeout)
-{
-	struct mcp251xfd_data *dev_data = dev->data;
-
-	ARG_UNUSED(timeout);
-
-	if (!dev_data->common.started) {
-		return -ENETDOWN;
-	}
-
-	return -ENOTSUP;
-}
-#endif
-
 static int mcp251xfd_handle_fifo_read(const struct device *dev, const struct mcp251xfd_fifo *fifo,
 				      uint8_t fifo_type)
 {
@@ -973,6 +958,7 @@ static int mcp251xfd_handle_ivmif(const struct device *dev)
 	uint32_t *reg;
 	struct mcp251xfd_data *dev_data = dev->data;
 	int ret;
+	uint32_t tmp;
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
@@ -982,9 +968,9 @@ static int mcp251xfd_handle_ivmif(const struct device *dev)
 		goto done;
 	}
 
-	*reg = sys_le32_to_cpu(*reg);
+	tmp = sys_le32_to_cpu(*reg);
 
-	if ((*reg & MCP251XFD_REG_BDIAG1_TXBOERR) != 0) {
+	if ((tmp & MCP251XFD_REG_BDIAG1_TXBOERR) != 0) {
 		LOG_INF("ivmif bus-off error");
 		mcp251xfd_reset_tx_fifos(dev, -ENETDOWN);
 	}
@@ -993,11 +979,64 @@ static int mcp251xfd_handle_ivmif(const struct device *dev)
 	reg = mcp251xfd_get_spi_buf_ptr(dev);
 	reg[0] = 0;
 	ret = mcp251xfd_write(dev, MCP251XFD_REG_BDIAG1, MCP251XFD_REG_SIZE);
+	if (ret < 0) {
+		goto done;
+	}
+
+	/* There's no flag for DACKERR */
+	if ((tmp & MCP251XFD_REG_BDIAG1_NACKERR) != 0) {
+		CAN_STATS_ACK_ERROR_INC(dev);
+	}
+
+	if ((tmp & (MCP251XFD_REG_BDIAG1_NBIT0ERR | MCP251XFD_REG_BDIAG1_DBIT0ERR)) != 0) {
+		CAN_STATS_BIT0_ERROR_INC(dev);
+	}
+
+	if ((tmp & (MCP251XFD_REG_BDIAG1_NBIT1ERR | MCP251XFD_REG_BDIAG1_DBIT1ERR)) != 0) {
+		CAN_STATS_BIT1_ERROR_INC(dev);
+	}
+
+	if ((tmp & (MCP251XFD_REG_BDIAG1_NCRCERR | MCP251XFD_REG_BDIAG1_DCRCERR)) != 0) {
+		CAN_STATS_CRC_ERROR_INC(dev);
+	}
+
+	if ((tmp & (MCP251XFD_REG_BDIAG1_NFORMERR | MCP251XFD_REG_BDIAG1_DFORMERR)) != 0) {
+		CAN_STATS_FORM_ERROR_INC(dev);
+	}
+
+	if ((tmp & (MCP251XFD_REG_BDIAG1_NSTUFERR | MCP251XFD_REG_BDIAG1_DSTUFERR)) != 0) {
+		CAN_STATS_STUFF_ERROR_INC(dev);
+	}
 
 done:
 	k_mutex_unlock(&dev_data->mutex);
 	return ret;
 }
+
+#if defined(CONFIG_CAN_STATS)
+static int mcp251xfd_handle_rxovif(const struct device *dev)
+{
+	uint8_t *reg_byte;
+	struct mcp251xfd_data *dev_data = dev->data;
+	int ret;
+
+	k_mutex_lock(&dev_data->mutex, K_FOREVER);
+
+	reg_byte = mcp251xfd_get_spi_buf_ptr(dev);
+	*reg_byte = 0;
+
+	ret = mcp251xfd_write(dev, MCP251XFD_REG_FIFOSTA(MCP251XFD_RX_FIFO_IDX), 1);
+	if (ret < 0) {
+		goto done;
+	}
+
+	CAN_STATS_RX_OVERRUN_INC(dev);
+
+done:
+	k_mutex_unlock(&dev_data->mutex);
+	return ret;
+}
+#endif
 
 static void mcp251xfd_handle_interrupts(const struct device *dev)
 {
@@ -1078,6 +1117,15 @@ static void mcp251xfd_handle_interrupts(const struct device *dev)
 				LOG_ERR("Error handling CERRIF [%d]", ret);
 			}
 		}
+
+#if defined(CONFIG_CAN_STATS)
+		if ((reg_int & MCP251XFD_REG_INT_RXOVIF) != 0) {
+			ret = mcp251xfd_handle_rxovif(dev);
+			if (ret < 0) {
+				LOG_ERR("Error handling RXOVIF [%d]", ret);
+			}
+		}
+#endif
 
 		/* Break from loop if INT pin is inactive */
 		consecutive_calls++;
@@ -1170,6 +1218,8 @@ static int mcp251xfd_start(const struct device *dev)
 	}
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
+
+	CAN_STATS_RESET(dev);
 
 	ret = mcp251xfd_set_mode_internal(dev, dev_data->next_mcp251xfd_mode);
 	if (ret < 0) {
@@ -1362,6 +1412,9 @@ static inline int mcp251xfd_init_int_reg(const struct device *dev)
 
 	tmp = MCP251XFD_REG_INT_RXIE | MCP251XFD_REG_INT_MODIE | MCP251XFD_REG_INT_TEFIE |
 	      MCP251XFD_REG_INT_CERRIE;
+#if defined(CONFIG_CAN_STATS)
+	tmp |= MCP251XFD_REG_INT_RXOVIE;
+#endif
 
 	*reg = sys_cpu_to_le32(tmp);
 
@@ -1403,6 +1456,9 @@ static inline int mcp251xfd_init_rx_fifo(const struct device *dev)
 	uint32_t tmp;
 
 	tmp = MCP251XFD_REG_FIFOCON_TFNRFNIE | MCP251XFD_REG_FIFOCON_FRESET;
+#if defined(CONFIG_CAN_STATS)
+	tmp |= MCP251XFD_REG_FIFOCON_RXOVIE;
+#endif
 	tmp |= FIELD_PREP(MCP251XFD_REG_FIFOCON_FSIZE_MASK, MCP251XFD_RX_FIFO_ITEMS - 1);
 	tmp |= FIELD_PREP(MCP251XFD_REG_FIFOCON_PLSIZE_MASK,
 			  can_bytes_to_dlc(MCP251XFD_PAYLOAD_SIZE) - 8);
@@ -1646,9 +1702,6 @@ static const struct can_driver_api mcp251xfd_api_funcs = {
 	.send = mcp251xfd_send,
 	.add_rx_filter = mcp251xfd_add_rx_filter,
 	.remove_rx_filter = mcp251xfd_remove_rx_filter,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	.recover = mcp251xfd_recover,
-#endif
 	.get_state = mcp251xfd_get_state,
 	.set_state_change_callback = mcp251xfd_set_state_change_callback,
 	.get_core_clock = mcp251xfd_get_core_clock,
@@ -1699,7 +1752,7 @@ static const struct can_driver_api mcp251xfd_api_funcs = {
 		.int_thread_stack = mcp251xfd_int_stack_##inst,                                    \
 	};                                                                                         \
 	static const struct mcp251xfd_config mcp251xfd_config_##inst = {                           \
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 8000000),                            \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 8000000),                         \
 		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
 		.int_gpio_dt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                             \
                                                                                                    \

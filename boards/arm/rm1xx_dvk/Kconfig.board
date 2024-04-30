@@ -1,8 +1,0 @@
-# rm1xx_dvk board configuration
-
-# Copyright (c) 2021 Laird Connectivity
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_RM1XX_DVK
-	bool "RM1XX_DVK"
-	depends on SOC_NRF51822_QFAC

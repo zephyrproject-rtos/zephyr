@@ -1,0 +1,7 @@
+# RAKWIRELESS RAK5010 selection
+
+# Copyright (c) 2020 Guillaume Paquet <guillaume.paquet@smile.fr>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RAK5010_NRF52840
+	select SOC_NRF52840_QIAA

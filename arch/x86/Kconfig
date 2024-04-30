@@ -397,7 +397,7 @@ config X86_NO_SPECULATIVE_VULNERABILITIES
 	  or is a newer chip which is immune to the class of vulnerabilities
 	  which exploit speculative execution side channel attacks.
 
-config DISABLE_SSBD
+config X86_DISABLE_SSBD
 	bool "Disable Speculative Store Bypass"
 	depends on USERSPACE
 	default y if !X86_NO_SPECTRE_V4
@@ -417,7 +417,16 @@ config DISABLE_SSBD
 	  Even if enabled, will have no effect on CPUs that do not
 	  require this feature.
 
-config ENABLE_EXTENDED_IBRS
+config DISABLE_SSBD
+	bool "Disable Speculative Store Bypass [DEPRECATED]"
+	depends on USERSPACE
+	default y if !X86_NO_SPECTRE_V4
+	select X86_DISABLE_SSBD
+	select DEPRECATED
+	help
+	  Deprecated. Use CONFIG_X86_DISABLE_SSBD instead.
+
+config X86_ENABLE_EXTENDED_IBRS
 	bool "Extended IBRS"
 	depends on USERSPACE
 	default y if !X86_NO_SPECTRE_V2
@@ -425,6 +434,15 @@ config ENABLE_EXTENDED_IBRS
 	  This option will enable the Extended Indirect Branch Restricted
 	  Speculation 'always on' feature. This mitigates Indirect Branch
 	  Control vulnerabilities (aka Spectre V2).
+
+config ENABLE_EXTENDED_IBRS
+	bool "Extended IBRS [DEPRECATED]"
+	depends on USERSPACE
+	default y if !X86_NO_SPECTRE_V2
+	select X86_ENABLE_EXTENDED_IBRS
+	select DEPRECATED
+	help
+	  Deprecated. Use CONFIG_X86_ENABLE_EXTENDED_IBRS instead.
 
 config X86_BOUNDS_CHECK_BYPASS_MITIGATION
 	bool
@@ -470,6 +488,10 @@ config X86_EFI_CONSOLE
 	  but no automatic checking exists at runtime to verify.
 	  Likewise be sure to disable any other console/printk
 	  drivers!
+
+config PRIVILEGED_STACK_SIZE
+	# Must be multiple of CONFIG_MMU_PAGE_SIZE
+	default 4096 if X86_MMU
 
 source "arch/x86/core/Kconfig.ia32"
 source "arch/x86/core/Kconfig.intel64"

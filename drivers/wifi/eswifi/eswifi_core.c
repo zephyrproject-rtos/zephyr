@@ -141,6 +141,13 @@ int eswifi_at_cmd_rsp(struct eswifi_dev *eswifi, char *cmd, char **rsp)
 		return -EIO;
 	}
 
+	if (len >= CONFIG_WIFI_ESWIFI_MAX_DATA_SIZE) {
+		LOG_WRN("Buffer might be too small for response!");
+		LOG_WRN("Data length %d", len);
+		LOG_WRN("See CONFIG_WIFI_ESWIFI_MAX_DATA_SIZE (in build: %d)",
+			CONFIG_WIFI_ESWIFI_MAX_DATA_SIZE);
+	}
+
 	/*
 	 * Check response, format should be "\r\n[DATA]\r\nOK\r\n>"
 	 * Data is in arbitrary format (not only ASCII)
@@ -677,8 +684,8 @@ static int eswifi_mgmt_ap_enable(const struct device *dev,
 
 	/* Set IP Address */
 	for (i = 0; ipv4 && i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (ipv4->unicast[i].is_used) {
-			unicast = &ipv4->unicast[i];
+		if (ipv4->unicast[i].ipv4.is_used) {
+			unicast = &ipv4->unicast[i].ipv4;
 			break;
 		}
 	}

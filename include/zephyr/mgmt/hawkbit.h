@@ -64,6 +64,11 @@ void hawkbit_autohandler(void);
 enum hawkbit_response hawkbit_probe(void);
 
 /**
+ * @brief Request system to reboot.
+ */
+void hawkbit_reboot(void);
+
+/**
  * @}
  */
 

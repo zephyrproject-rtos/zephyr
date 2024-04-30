@@ -56,7 +56,7 @@ class Snippet:
                 path = pathobj.parent / value
                 if not path.is_file():
                     _err(f'snippet file {pathobj}: {variable}: file not found: {path}')
-                return f'"{path}"'
+                return f'"{path.as_posix()}"'
             if variable in ('DTS_EXTRA_CPPFLAGS'):
                 return f'"{value}"'
             _err(f'unknown append variable: {variable}')
@@ -159,11 +159,11 @@ zephyr_create_scope(snippets)
             board_re = board[1:-1]
             self.print(f'''\
 # Appends for board regular expression '{board_re}'
-if("${{BOARD}}" MATCHES "^{board_re}$")''')
+if("${{BOARD}}${{BOARD_QUALIFIERS}}" MATCHES "^{board_re}$")''')
         else:
             self.print(f'''\
 # Appends for board '{board}'
-if("${{BOARD}}" STREQUAL "{board}")''')
+if("${{BOARD}}${{BOARD_QUALIFIERS}}" STREQUAL "{board}")''')
         self.print_appends(appends, 1)
         self.print('endif()')
 

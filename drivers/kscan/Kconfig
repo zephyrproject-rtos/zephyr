@@ -10,7 +10,6 @@ menuconfig KSCAN
 
 if KSCAN
 
-source "drivers/kscan/Kconfig.xec"
 source "drivers/kscan/Kconfig.ht16k33"
 source "drivers/kscan/Kconfig.input"
 

@@ -29,10 +29,6 @@ UICR_RANGES = {
         'NRFDL_DEVICE_CORE_APPLICATION': (0x00FF8000, 0x00FF8800),
         'NRFDL_DEVICE_CORE_NETWORK': (0x01FF8000, 0x01FF8800),
     },
-    'NRF54H_FAMILY': {
-        'NRFDL_DEVICE_CORE_APPLICATION': (0x0FFF8000, 0x0FFF8800),
-        'NRFDL_DEVICE_CORE_NETWORK': (0x0FFFA000, 0x0FFFA800),
-    },
     'NRF91_FAMILY': {
         'NRFDL_DEVICE_CORE_APPLICATION': (0x00FF8000, 0x00FF8800),
     }
@@ -42,8 +38,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end base class for nrf tools.'''
 
     def __init__(self, cfg, family, softreset, dev_id, erase=False,
-                 reset=True, tool_opt=[], force=False, recover=False,
-                 erase_all_uicrs=False):
+                 reset=True, tool_opt=[], force=False, recover=False):
         super().__init__(cfg)
         self.hex_ = cfg.hex_file
         if family and not family.endswith('_FAMILY'):
@@ -55,7 +50,6 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         self.reset = bool(reset)
         self.force = force
         self.recover = bool(recover)
-        self.erase_all_uicrs = bool(erase_all_uicrs)
 
         self.tool_opt = []
         for opts in [shlex.split(opt) for opt in tool_opt]:
@@ -92,11 +86,6 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                             help='''erase all user available non-volatile
                             memory and disable read back protection before
                             flashing (erases flash for both cores on nRF53)''')
-        parser.add_argument('--erase-all-uicrs', required=False,
-                            action='store_true',
-                            help='''Erase all UICR registers before flashing
-                            (nRF54H only). When not set, only UICR registers
-                            present in the hex file will be erased.''')
 
         parser.set_defaults(reset=True)
 
@@ -261,14 +250,36 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         # Get the command use to actually program self.hex_.
         self.logger.info('Flashing file: {}'.format(self.hex_))
 
-        # What type of erase argument should we pass to the tool?
-        if self.erase:
-            erase_arg = 'ERASE_ALL'
+        # What type of erase/core arguments should we pass to the tool?
+        core = None
+
+        if self.family == 'NRF54H_FAMILY':
+            erase_arg = 'ERASE_NONE'
+
+            if self.erase:
+                self.exec_op('erase', core='NRFDL_DEVICE_CORE_APPLICATION')
+                self.exec_op('erase', core='NRFDL_DEVICE_CORE_NETWORK')
+
+            if self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUAPP'):
+                if not self.erase:
+                    self.exec_op('erase', core='NRFDL_DEVICE_CORE_APPLICATION',
+                                 chip_erase_mode='ERASE_UICR',
+                                 qspi_erase_mode='ERASE_NONE')
+                core = 'NRFDL_DEVICE_CORE_APPLICATION'
+            elif self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPURAD'):
+                if not self.erase:
+                    self.exec_op('erase', core='NRFDL_DEVICE_CORE_NETWORK',
+                                 chip_erase_mode='ERASE_UICR',
+                                 qspi_erase_mode='ERASE_NONE')
+                core = 'NRFDL_DEVICE_CORE_NETWORK'
         else:
-            if self.family == 'NRF52_FAMILY':
-                erase_arg = 'ERASE_PAGES_INCLUDING_UICR'
+            if self.erase:
+                erase_arg = 'ERASE_ALL'
             else:
-                erase_arg = 'ERASE_PAGES'
+                if self.family == 'NRF52_FAMILY':
+                    erase_arg = 'ERASE_PAGES_INCLUDING_UICR'
+                else:
+                    erase_arg = 'ERASE_PAGES'
 
         xip_ranges = {
             'NRF52_FAMILY': (0x12000000, 0x19FFFFFF),
@@ -284,23 +295,10 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         if self.family == 'NRF53_FAMILY':
             # nRF53 requires special treatment due to the extra coprocessor.
             self.program_hex_nrf53(erase_arg, qspi_erase_opt)
-        elif self.family == 'NRF54H_FAMILY':
-            self.program_hex_nrf54h()
         else:
-            self.op_program(self.hex_, erase_arg, qspi_erase_opt, defer=True)
+            self.op_program(self.hex_, erase_arg, qspi_erase_opt, defer=True, core=core)
 
         self.flush(force=False)
-
-    def program_hex_nrf54h(self):
-        if self.erase_all_uicrs:
-            uicrs = UICR_RANGES['NRF54H_FAMILY']
-        else:
-            uicrs = self.hex_get_uicrs()
-
-        for uicr_core, range in uicrs.items():
-            self.exec_op('erasepage', defer=True, core=uicr_core, page=range[0])
-
-        self.op_program(self.hex_, 'NO_ERASE', None, defer=True)
 
     def program_hex_nrf53(self, erase_arg, qspi_erase_opt):
         # program_hex() helper for nRF53.

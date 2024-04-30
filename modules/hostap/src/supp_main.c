@@ -11,6 +11,10 @@ LOG_MODULE_REGISTER(wifi_supplicant, CONFIG_WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL);
 #include <zephyr/init.h>
 #include <poll.h>
 
+#if !defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE) && !defined(CONFIG_MBEDTLS_ENABLE_HEAP)
+#include <mbedtls/platform.h>
+#endif /* !CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE && !CONFIG_MBEDTLS_ENABLE_HEAP */
+
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_nm.h>
 #include <zephyr/net/socket.h>
@@ -49,6 +53,14 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.set_twt = supplicant_set_twt,
 	.get_power_save_config = supplicant_get_power_save_config,
 	.reg_domain = supplicant_reg_domain,
+	.mode = supplicant_mode,
+	.filter = supplicant_filter,
+	.channel = supplicant_channel,
+#ifdef CONFIG_AP
+	.ap_enable = supplicant_ap_enable,
+	.ap_disable = supplicant_ap_disable,
+	.ap_sta_disconnect = supplicant_ap_sta_disconnect,
+#endif /* CONFIG_AP */
 };
 
 DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);
@@ -77,6 +89,11 @@ static struct supplicant_context *get_default_context(void)
 struct wpa_global *zephyr_get_default_supplicant_context(void)
 {
 	return get_default_context()->supplicant;
+}
+
+struct k_work_q *get_workq(void)
+{
+	return &get_default_context()->iface_wq;
 }
 
 int zephyr_wifi_send_event(const struct wpa_supplicant_event_msg *msg)
@@ -143,7 +160,6 @@ struct wpa_supplicant *zephyr_get_handle_by_ifname(const char *ifname)
 {
 	struct wpa_supplicant *wpa_s = NULL;
 	struct supplicant_context *ctx = get_default_context();
-	int ret;
 
 	wpa_s = wpa_supplicant_get_iface(ctx->supplicant, ifname);
 	if (!wpa_s) {
@@ -264,7 +280,13 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 
 	supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVING, 0);
 
-	os_memcpy(event->interface_status.ifname, ifname, IFNAMSIZ);
+	if (sizeof(event->interface_status.ifname) < strlen(ifname)) {
+		wpa_printf(MSG_ERROR, "Interface name too long: %s (max: %d)",
+			ifname, sizeof(event->interface_status.ifname));
+		goto out;
+	}
+
+	os_memcpy(event->interface_status.ifname, ifname, strlen(ifname));
 	event->interface_status.ievent = EVENT_INTERFACE_REMOVED;
 
 	msg.global = true;
@@ -272,7 +294,15 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 	msg.event = EVENT_INTERFACE_STATUS;
 	msg.data = event;
 
-	send_event(&msg);
+	ret = send_event(&msg);
+	if (ret) {
+		/* We failed notify WPA supplicant about interface removal.
+		 * There is not much we can do, interface is still registered
+		 * with WPA supplicant so we cannot unregister NM etc.
+		 */
+		wpa_printf(MSG_ERROR, "Failed to send event: %d", ret);
+		goto out;
+	}
 
 	while (retry++ < count && wpa_s->wpa_state != WPA_INTERFACE_DISABLED) {
 		k_sleep(K_MSEC(IFACE_NOTIFY_RETRY_MS));
@@ -283,6 +313,8 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 		supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVED, -1);
 		goto out;
 	}
+
+	zephyr_wpa_ctrl_deinit(wpa_s);
 
 	ret = zephyr_wpa_cli_global_cmd_v("interface_remove %s", ifname);
 	if (ret) {
@@ -430,10 +462,35 @@ static void event_socket_handler(int sock, void *eloop_ctx, void *user_data)
 	}
 
 	if (msg.data) {
-		if (msg.event == EVENT_AUTH) {
-			union wpa_event_data *data = msg.data;
+		union wpa_event_data *data = msg.data;
 
+		/* Free up deep copied data */
+		if (msg.event == EVENT_AUTH) {
 			os_free((char *)data->auth.ies);
+		} else if (msg.event == EVENT_RX_MGMT) {
+			os_free((char *)data->rx_mgmt.frame);
+		} else if (msg.event == EVENT_TX_STATUS) {
+			os_free((char *)data->tx_status.data);
+		} else if (msg.event == EVENT_ASSOC) {
+			os_free((char *)data->assoc_info.addr);
+			os_free((char *)data->assoc_info.req_ies);
+			os_free((char *)data->assoc_info.resp_ies);
+			os_free((char *)data->assoc_info.resp_frame);
+		} else if (msg.event == EVENT_ASSOC_REJECT) {
+			os_free((char *)data->assoc_reject.bssid);
+			os_free((char *)data->assoc_reject.resp_ies);
+		} else if (msg.event == EVENT_DEAUTH) {
+			os_free((char *)data->deauth_info.addr);
+			os_free((char *)data->deauth_info.ie);
+		} else if (msg.event == EVENT_DISASSOC) {
+			os_free((char *)data->disassoc_info.addr);
+			os_free((char *)data->disassoc_info.ie);
+		} else if (msg.event == EVENT_UNPROT_DEAUTH) {
+			os_free((char *)data->unprot_deauth.sa);
+			os_free((char *)data->unprot_deauth.da);
+		} else if (msg.event == EVENT_UNPROT_DISASSOC) {
+			os_free((char *)data->unprot_disassoc.sa);
+			os_free((char *)data->unprot_disassoc.da);
 		}
 
 		os_free(msg.data);
@@ -461,10 +518,10 @@ static void handler(void)
 	struct supplicant_context *ctx;
 	struct wpa_params params;
 
-#if defined(CONFIG_WPA_SUPP_CRYPTO) && !defined(CONFIG_MBEDTLS_ENABLE_HEAP)
+#if !defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE) && !defined(CONFIG_MBEDTLS_ENABLE_HEAP)
 	/* Needed for crypto operation as default is no-op and fails */
 	mbedtls_platform_set_calloc_free(calloc, free);
-#endif /* CONFIG_WPA_SUPP_CRYPTO */
+#endif /* !CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE && !CONFIG_MBEDTLS_ENABLE_HEAP */
 
 	ctx = get_default_context();
 
@@ -509,7 +566,6 @@ static void handler(void)
 
 	eloop_unregister_read_sock(ctx->event_socketpair[0]);
 
-	zephyr_wpa_ctrl_deinit(ctx->supplicant);
 	zephyr_global_wpa_ctrl_deinit();
 
 	fst_global_deinit();

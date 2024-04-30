@@ -1,0 +1,15 @@
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_DESIGNSTART
+	select ARM
+
+config SOC_DESIGNSTART_FPGA_CORTEX_M1
+	select CPU_CORTEX_M1
+	imply XIP
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+
+config SOC_DESIGNSTART_FPGA_CORTEX_M3
+	select CPU_CORTEX_M3
+	imply XIP
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE

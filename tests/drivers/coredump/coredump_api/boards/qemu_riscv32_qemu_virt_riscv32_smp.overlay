@@ -1,0 +1,6 @@
+/*
+ * Copyright Meta Platforms, Inc. and its affiliates.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "qemu_riscv32.overlay"

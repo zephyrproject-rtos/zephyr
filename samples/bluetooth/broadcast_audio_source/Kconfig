@@ -38,4 +38,11 @@ config USE_USB_AUDIO_INPUT
 	select USB_DEVICE_AUDIO
 	select RING_BUFFER
 
+config BROADCAST_CODE
+	string "The broadcast code (if any) to use for encrypted broadcast"
+	default ""
+	help
+	   Setting a non-empty string for this option will encrypt the broadcast using this
+	   string as the broadcast code. The length of the string shall be between 1 and 16 octets.
+
 source "Kconfig.zephyr"

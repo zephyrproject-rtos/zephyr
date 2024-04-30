@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Please connect J4.3 and J4.11 together to run this test.
+ * J4.3 will be the ADC input and J4.11 the DAC output
+ */
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 20>;
+		dac = <&dac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};
+
+&adc0{
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@14 {
+		reg = <20>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};

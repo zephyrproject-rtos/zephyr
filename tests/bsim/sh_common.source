@@ -9,6 +9,9 @@ _process_ids="";
 #Give a default value to BOARD if it does not have one yet:
 BOARD="${BOARD:-nrf52_bsim}"
 
+#The board target full string (with qualifiers):
+BOARD_TS="${BOARD//\//_}"
+
 function run_in_background(){
   $@ & _process_ids="$_process_ids $!"
 }
@@ -44,4 +47,24 @@ function Execute() {
 
   check_program_exists $1
   run_in_background timeout --kill-after=5 -v ${EXECUTE_TIMEOUT} $@
+}
+
+function _guess_test_relpath(){
+  local PA="$(cd -- "$(dirname "${BASH_SOURCE[2]}")" && pwd)"
+  PA="$(realpath --relative-to "${ZEPHYR_BASE}" "${PA}")"
+  echo $PA | sed -E 's/\/tests?_scripts//'
+}
+
+# For a caller running from a tests_script/ folder, get the path of its parent
+# relative to $ZEPHYR_BASE
+# This must be run without/before cd'ing into another directory
+function guess_test_relpath(){
+  echo $(_guess_test_relpath)
+}
+
+# For a caller running from a tests_script/ folder, get the path of its parent
+# relative to $ZEPHYR_BASE, replacing "/" with "_"
+# This must be run without/before cd'ing into another directory
+function guess_test_long_name(){
+  echo $(_guess_test_relpath) | tr / _
 }

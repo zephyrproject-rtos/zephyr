@@ -1,0 +1,5 @@
+board:
+  name: litex_vexriscv
+  vendor: litex
+  socs:
+  - name: litex_vexriscv

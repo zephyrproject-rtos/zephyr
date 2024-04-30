@@ -376,6 +376,78 @@ ZTEST_USER(canfd, test_filters_preserved_through_fd_to_classic_mode_change)
 }
 
 /**
+ * @brief Test that the minimum timing values for the data phase can be set.
+ */
+ZTEST_USER(canfd, test_set_timing_data_min)
+{
+	int err;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_set_timing_data(can_dev, can_get_timing_data_min(can_dev));
+	zassert_equal(err, 0, "failed to set minimum timing data parameters (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test setting a too high data phase bitrate.
+ */
+ZTEST_USER(canfd, test_set_bitrate_too_high)
+{
+	uint32_t max = 8000000U;
+	int expected = -EINVAL;
+	int err;
+
+	err = can_get_max_bitrate(can_dev, &max);
+	if (err != -ENOSYS) {
+		zassert_equal(err, 0, "failed to get max bitrate (err %d)", err);
+		zassert_not_equal(max, 0, "max bitrate is 0");
+		expected = -ENOTSUP;
+	}
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_set_bitrate_data(can_dev, max + 1);
+	zassert_equal(err, expected, "too high data phase bitrate accepted");
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test using an invalid sample point.
+ */
+ZTEST_USER(canfd, test_invalid_sample_point)
+{
+	struct can_timing timing;
+	int err;
+
+	err = can_calc_timing_data(can_dev, &timing, TEST_BITRATE_3, 1000);
+	zassert_equal(err, -EINVAL, "invalid sample point of 100.0% accepted (err %d)", err);
+}
+
+/**
+ * @brief Test that the maximum timing values for the data phase can be set.
+ */
+ZTEST_USER(canfd, test_set_timing_data_max)
+{
+	int err;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_set_timing_data(can_dev, can_get_timing_data_max(can_dev));
+	zassert_equal(err, 0, "failed to set maximum timing data parameters (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
  * @brief Test setting data phase bitrate is not allowed while started.
  */
 ZTEST_USER(canfd, test_set_bitrate_data_while_started)

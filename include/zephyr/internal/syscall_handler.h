@@ -17,7 +17,7 @@
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/kernel.h>
-#include <zephyr/sys/arch_interface.h>
+#include <zephyr/arch/arch_interface.h>
 #include <zephyr/sys/math_extras.h>
 #include <stdbool.h>
 #include <zephyr/logging/log.h>

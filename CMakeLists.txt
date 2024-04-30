@@ -118,7 +118,7 @@ zephyr_include_directories(
 
 include(${ZEPHYR_BASE}/cmake/linker_script/${ARCH}/linker.cmake OPTIONAL)
 
-zephyr_include_directories(${SOC_DIR}/${ARCH}/${SOC_PATH})
+zephyr_include_directories(${SOC_FULL_DIR})
 
 # Don't inherit compiler flags from the environment
 foreach(var AFLAGS CFLAGS CXXFLAGS CPPFLAGS LDFLAGS)
@@ -214,7 +214,7 @@ endif()
 zephyr_compile_options(${OPTIMIZATION_FLAG})
 
 if(CONFIG_LTO)
-  add_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
   add_link_options($<TARGET_PROPERTY:linker,lto_arguments>)
 endif()
 
@@ -694,6 +694,13 @@ if(CONFIG_ZTEST)
 
 endif()
 
+get_property(
+  syscalls_include_list
+  TARGET syscalls_interface
+  PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+)
+list(APPEND SYSCALL_INCLUDE_DIRS ${syscalls_include_list})
+
 foreach(d ${SYSCALL_INCLUDE_DIRS})
   list(APPEND parse_syscalls_include_args
     --include ${d}
@@ -759,6 +766,7 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   --json-file        ${syscalls_json}                     # Read this file
   --base-output      include/generated/syscalls           # Write to this dir
   --syscall-dispatch include/generated/syscall_dispatch.c # Write this file
+  --syscall-export-llext  include/generated/syscall_export_llext.c
   --syscall-list     ${syscall_list_h}
   $<$<BOOL:${CONFIG_USERSPACE}>:--gen-mrsh-files>
   ${SYSCALL_LONG_REGISTERS_ARG}
@@ -839,7 +847,7 @@ add_subdirectory(kernel)
 get_property(
   syscalls_file_list
   TARGET syscalls_interface
-  PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+  PROPERTY INTERFACE_SOURCES
 )
 file(CONFIGURE OUTPUT ${syscalls_file_list_output}
      CONTENT "@syscalls_file_list@" @ONLY)
@@ -875,6 +883,13 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   # TODO: Could this become an INTERFACE property of zephyr_interface?
   add_dependencies(${zephyr_lib} zephyr_generated_headers)
 endforeach()
+
+if(CONFIG_LLEXT)
+  set(WHOLE_ARCHIVE_LIBS ${ZEPHYR_LIBS_PROPERTY} kernel)
+else()
+  set(WHOLE_ARCHIVE_LIBS ${ZEPHYR_LIBS_PROPERTY})
+  set(NO_WHOLE_ARCHIVE_LIBS kernel)
+endif()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
@@ -1812,12 +1827,13 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
   )
 
   if(CONFIG_CHECK_INIT_PRIORITIES)
-    add_custom_target(
-      check_init_priorities
-      ALL
-      COMMAND ${check_init_priorities_command}
-      DEPENDS ${check_init_priorities_dependencies}
-    )
+    if(TARGET native_runner_executable)
+      add_custom_command(TARGET native_runner_executable POST_BUILD
+                         COMMAND ${check_init_priorities_command}
+      )
+    else()
+      list(APPEND post_build_commands COMMAND ${check_init_priorities_command})
+    endif()
   endif()
 
   add_custom_target(
@@ -1875,27 +1891,30 @@ list(APPEND
   )
 
 if(CONFIG_LOG_DICTIONARY_DB)
-  set(log_dict_db_output --json=${PROJECT_BINARY_DIR}/log_dictionary.json)
+  set(LOG_DICT_DB_NAME ${PROJECT_BINARY_DIR}/log_dictionary.json)
+  set(LOG_DICT_DB_NAME_ARG --json)
 elseif(CONFIG_LOG_MIPI_SYST_USE_CATALOG)
-  set(log_dict_db_output --syst=${PROJECT_BINARY_DIR}/mipi_syst_collateral.xml)
+  set(LOG_DICT_DB_NAME ${PROJECT_BINARY_DIR}/mipi_syst_collateral.xml)
+  set(LOG_DICT_DB_NAME_ARG --syst)
 endif()
 
-if(log_dict_db_output)
-  list(APPEND
-    post_build_commands
+if(LOG_DICT_DB_NAME_ARG)
+  if (NOT CONFIG_LOG_DICTIONARY_DB_TARGET)
+    set(LOG_DICT_DB_ALL_TARGET ALL)
+  endif()
+  add_custom_command(
+    OUTPUT ${LOG_DICT_DB_NAME}
     COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/logging/dictionary/database_gen.py
-    ${KERNEL_ELF_NAME}
-    ${log_dict_db_output}
-    --build-header ${PROJECT_BINARY_DIR}/include/generated/version.h
-    )
-  list(APPEND
-    post_build_byproducts
-    ${LOG_DICT_DB_NAME}
-    )
-
-  unset(log_dict_db_output)
+      ${PYTHON_EXECUTABLE}
+      ${ZEPHYR_BASE}/scripts/logging/dictionary/database_gen.py
+      ${KERNEL_ELF_NAME}
+      ${LOG_DICT_DB_NAME_ARG}=${LOG_DICT_DB_NAME}
+      --build-header ${PROJECT_BINARY_DIR}/include/generated/version.h
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    COMMENT "Generating logging dictionary database: ${LOG_DICT_DB_NAME}"
+    DEPENDS ${logical_target_for_zephyr_elf}
+  )
+  add_custom_target(log_dict_db_gen ${LOG_DICT_DB_ALL_TARGET} DEPENDS ${LOG_DICT_DB_NAME})
 endif()
 
 # Add post_build_commands to post-process the final .elf file produced by

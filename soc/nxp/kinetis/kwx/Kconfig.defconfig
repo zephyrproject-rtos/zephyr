@@ -1,0 +1,34 @@
+# Kinetis KWx series configuration options
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_KINETIS_KWX
+
+config NUM_IRQS
+	default 65 if SOC_MKW22D5 || SOC_MKW24D5
+	default 32 if SOC_MKW40Z4 || SOC_MKW41Z4
+
+config SPI
+	default y if SOC_MKW22D5 || SOC_MKW24D5
+
+config NET_L2_IEEE802154
+	default y if !NET_L2_OPENTHREAD && SOC_MKW41Z4
+
+if SOC_MKW40Z4 || SOC_MKW41Z4
+
+choice CSPRNG_GENERATOR_CHOICE
+	default CTR_DRBG_CSPRNG_GENERATOR
+endchoice
+
+choice RNG_GENERATOR_CHOICE
+	default XOSHIRO_RANDOM_GENERATOR
+endchoice
+
+config TINYCRYPT
+	default y
+	depends on ENTROPY_GENERATOR && SOC_MKW41Z4
+
+endif # SOC_MKW40Z4 || SOC_MKW41Z4
+
+endif # SOC_SERIES_KINETIS_KWX

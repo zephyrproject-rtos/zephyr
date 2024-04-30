@@ -16,10 +16,10 @@ EXECUTE_TIMEOUT=100
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD}_samples_bluetooth_unicast_audio_server_prj_conf \
+Execute ./bs_${BOARD_TS}_samples_bluetooth_unicast_audio_server_prj_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=0 -RealEncryption=1
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_samples_unicast_audio_client_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_samples_unicast_audio_client_prj_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=1 -RealEncryption=1 \
   -testid=unicast_client
 

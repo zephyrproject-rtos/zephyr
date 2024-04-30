@@ -1,0 +1,5 @@
+board:
+  name: rpi_4b
+  vendor: raspberrypi
+  socs:
+  - name: bcm2711

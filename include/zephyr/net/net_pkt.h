@@ -290,12 +290,26 @@ struct net_pkt {
 	 */
 	uint8_t priority;
 
-#if defined(CONFIG_NET_OFFLOAD)
+#if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_L2_IPIP)
 	/* Remote address of the recived packet. This is only used by
-	 * network interfaces with an offloaded TCP/IP stack.
+	 * network interfaces with an offloaded TCP/IP stack, or if we
+	 * have network tunneling in use.
 	 */
-	struct sockaddr remote;
+	union {
+		struct sockaddr remote;
+
+		/* This will make sure that there is enough storage to store
+		 * the address struct. The access to value is via remote
+		 * address.
+		 */
+		struct sockaddr_storage remote_storage;
+	};
 #endif /* CONFIG_NET_OFFLOAD */
+
+#if defined(CONFIG_NET_CAPTURE_COOKED_MODE)
+	/* Tell the capture api that this is a captured packet */
+	uint8_t cooked_mode_pkt : 1;
+#endif /* CONFIG_NET_CAPTURE_COOKED_MODE */
 
 	/* @endcond */
 };
@@ -883,6 +897,31 @@ static inline void net_pkt_set_priority(struct net_pkt *pkt,
 	pkt->priority = priority;
 }
 
+#if defined(CONFIG_NET_CAPTURE_COOKED_MODE)
+static inline bool net_pkt_is_cooked_mode(struct net_pkt *pkt)
+{
+	return pkt->cooked_mode_pkt;
+}
+
+static inline void net_pkt_set_cooked_mode(struct net_pkt *pkt, bool value)
+{
+	pkt->cooked_mode_pkt = value;
+}
+#else
+static inline bool net_pkt_is_cooked_mode(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return false;
+}
+
+static inline void net_pkt_set_cooked_mode(struct net_pkt *pkt, bool value)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(value);
+}
+#endif /* CONFIG_NET_CAPTURE_COOKED_MODE */
+
 #if defined(CONFIG_NET_VLAN)
 static inline uint16_t net_pkt_vlan_tag(struct net_pkt *pkt)
 {
@@ -1355,6 +1394,20 @@ static inline bool net_pkt_filter_local_in_recv_ok(struct net_pkt *pkt)
 
 #endif /* CONFIG_NET_PKT_FILTER && CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK */
 
+#if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_L2_IPIP)
+static inline struct sockaddr *net_pkt_remote_address(struct net_pkt *pkt)
+{
+	return &pkt->remote;
+}
+
+static inline void net_pkt_set_remote_address(struct net_pkt *pkt,
+					      struct sockaddr *address,
+					      socklen_t len)
+{
+	memcpy(&pkt->remote, address, len);
+}
+#endif /* CONFIG_NET_OFFLOAD || CONFIG_NET_L2_IPIP */
+
 /* @endcond */
 
 /**
@@ -1483,6 +1536,25 @@ void net_pkt_frag_insert_debug(struct net_pkt *pkt, struct net_buf *frag,
 void net_pkt_print_frags(struct net_pkt *pkt);
 #else
 #define net_pkt_print_frags(pkt)
+#endif
+
+/**
+ * @brief Get a data buffer from a given pool.
+ *
+ * @details Normally this version is not useful for applications
+ * but is mainly used by network fragmentation code.
+ *
+ * @param pool The net_buf pool to use.
+ * @param min_len Minimum length of the requested fragment.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified time.
+ *
+ * @return Network buffer if successful, NULL otherwise.
+ */
+#if !defined(NET_PKT_DEBUG_ENABLED)
+struct net_buf *net_pkt_get_reserve_data(struct net_buf_pool *pool,
+					 size_t min_len, k_timeout_t timeout);
 #endif
 
 /**

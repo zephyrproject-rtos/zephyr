@@ -1,0 +1,68 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics STTS22H temperature sensor connected to I2C bus
+    When setting the sampling-rate property in a .dts or .dtsi file you
+    may include stts22h.h and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/stts22h.h>
+
+    stts22h: stts22h@0 {
+      ...
+
+      sampling-rate = <STTS22H_100Hz>;
+    };
+
+compatible: "st,stts22h"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: interrupt pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  temperature-hi-threshold:
+    type: int
+    default: 0
+    description: |
+      HIGH temperature threshold above which an alarm is triggered.
+      Valid range is 0 to 255. It defaults to 0 (alarm off) which is
+      the configuration at power-up. This threshold must be calculated
+      from a temperature T in Celsius using the formula
+      temperature-hi-threshold = 63 + T/0.64 C.
+
+
+  temperature-lo-threshold:
+    type: int
+    default: 0
+    description: |
+      LOW temperature threshold below which an alarm is triggered.
+      Valid range is 0 to 255. It defaults to 0 (alarm off) which is
+      the configuration at power-up. This threshold must be calculated
+      from a temperature T in Celsius using the formula
+      temperature-lo-threshold = 63 + T/0.64 C.
+
+  sampling-rate:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default output data rate expressed in samples per second (Hz).
+      The values are taken in accordance to stts22h_odr_temp_t enumerative in hal/st
+      module. Default 0x0 (power down) matches the power-up configuration.
+
+      - 0x00 # STTS22H_POWER_DOWN
+      - 0x01 # STTS22H_ONE_SHOT
+      - 0x04 # STTS22H_1Hz
+      - 0x02 # STTS22H_25Hz
+      - 0x12 # STTS22H_50Hz
+      - 0x22 # STTS22H_100Hz
+      - 0x32 # STTS22H_200Hz
+
+    enum: [0x00, 0x01, 0x02, 0x04, 0x12, 0x22, 0x32]

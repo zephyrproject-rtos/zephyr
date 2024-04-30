@@ -16,6 +16,10 @@
 		zephyr,flash-controller = &flash_controller;
 	};
 
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+	};
+
 	cpus: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -317,6 +321,13 @@
 			reg = <0x50020700 0x100>;
 			periph-clock-config = <0x0800>;
 			interrupts = <9 0>;
+		};
+
+		lcdc: lcdc@30030000 {
+			compatible = "renesas,smartbond-display";
+			reg = <0x30030000 0x18C>;
+			interrupts = <32 0>;
+			status = "disabled";
 		};
 
 		spi: spi@50020300 {

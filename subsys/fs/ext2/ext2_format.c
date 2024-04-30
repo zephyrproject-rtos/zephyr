@@ -117,6 +117,8 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 		return -ENOSPC;
 	}
 
+	/* Assume whole disk may be used minus CONFIG_EXT2_DISK_STARTING_SECTOR sectors. */
+	fs_memory -= CONFIG_EXT2_DISK_STARTING_SECTOR * fs->write_size;
 
 	uint32_t blocks_count = fs_memory / cfg->block_size;
 	uint32_t blocks_per_group = cfg->block_size * 8;

@@ -1,0 +1,5 @@
+board:
+  name: mimxrt685_evk
+  vendor: nxp
+  socs:
+    - name: mimxrt685s

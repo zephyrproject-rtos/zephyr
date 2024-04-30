@@ -1031,7 +1031,7 @@ static int mcux_i3c_do_one_xfer(I3C_Type *base, struct mcux_i3c_data *data,
 		ret = mcux_i3c_do_one_xfer_write(base, buf, buf_sz, no_ending);
 	}
 
-	if (ret) {
+	if (ret < 0) {
 		goto out_one_xfer;
 	}
 

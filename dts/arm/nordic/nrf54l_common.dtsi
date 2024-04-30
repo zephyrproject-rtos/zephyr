@@ -18,7 +18,7 @@
 			rram0: rram@0 {
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
-				write-block-size = <1>;
+				write-block-size = <16>;
 			};
 		};
 	};

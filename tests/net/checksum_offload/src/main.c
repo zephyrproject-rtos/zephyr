@@ -72,7 +72,7 @@ static struct in_addr in4addr_dst = { { { 192, 0, 2, 2 } } };
 static struct in_addr in4addr_my2 = { { { 192, 0, 42, 1 } } };
 static struct in_addr in4addr_dst2 = { { { 192, 0, 42, 2 } } };
 
-/* Keep track of all ethernet interfaces. For native_posix board, we need
+/* Keep track of all ethernet interfaces. For native_sim board, we need
  * to increase the count as it has one extra network interface defined in
  * eth_native_posix driver.
  */
@@ -446,7 +446,7 @@ static void generate_mac(uint8_t *mac_addr)
 	mac_addr[2] = 0x5E;
 	mac_addr[3] = 0x00;
 	mac_addr[4] = 0x53;
-	mac_addr[5] = sys_rand32_get();
+	mac_addr[5] = sys_rand8_get();
 }
 
 static int eth_init(const struct device *dev)
@@ -578,7 +578,7 @@ static void test_address_setup(void)
 				      NET_ADDR_MANUAL, 0);
 	zassert_not_null(ifaddr, "Cannot add IPv4 address");
 
-	net_if_ipv4_set_netmask(iface1, &netmask);
+	net_if_ipv4_set_netmask_by_addr(iface1, &in4addr_my, &netmask);
 
 	ifaddr = net_if_ipv6_addr_add(iface2, &my_addr2,
 				      NET_ADDR_MANUAL, 0);
@@ -594,7 +594,7 @@ static void test_address_setup(void)
 				      NET_ADDR_MANUAL, 0);
 	zassert_not_null(ifaddr, "Cannot add IPv4 address");
 
-	net_if_ipv4_set_netmask(iface2, &netmask);
+	net_if_ipv4_set_netmask_by_addr(iface2, &in4addr_my2, &netmask);
 
 	net_if_up(iface1);
 	net_if_up(iface2);

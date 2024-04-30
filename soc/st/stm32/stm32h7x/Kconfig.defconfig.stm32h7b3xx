@@ -1,0 +1,11 @@
+# ST STM32H7B3X MCU configuration options
+
+# Copyright (c) 2022 Byte-Lab d.o.o <dev@byte-lab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32H7B3XX || SOC_STM32H7B3XXQ
+
+config NUM_IRQS
+	default 155
+
+endif # SOC_STM32H7B3XX || SOC_STM32H7B3XXQ

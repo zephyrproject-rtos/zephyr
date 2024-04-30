@@ -205,6 +205,12 @@ testing:
     power-efficient but slow CPU or simulation platform which can perform instruction accurate
     simulation but does it slowly.
 
+env:
+  A list of environment variables. Twister will check if all these environment variables are set,
+  and otherwise skip this platform. This allows the user to define a platform which should be
+  used, for example, only if some required software or hardware is present, and to signal that
+  presence to twister using these environment variables.
+
 Test Cases
 **********
 
@@ -839,7 +845,7 @@ In this case you can run twister with the following options:
       .. code-block:: bash
 
          scripts/twister --device-testing --device-serial-pty "script.py" \
-         -p intel_adsp_cavs25 -T tests/kernel
+         -p intel_adsp/cavs25 -T tests/kernel
 
    .. group-tab:: Windows
 
@@ -923,7 +929,7 @@ devices, for example:
 Any options marked as ``unknown`` need to be changed and set with the correct
 values, in the above example the platform names, the products and the runners need
 to be replaced with the correct values corresponding to the connected hardware.
-In this example we are using a reel_board and an nrf52840dk_nrf52840:
+In this example we are using a reel_board and an nrf52840dk/nrf52840:
 
 .. tabs::
 
@@ -940,7 +946,7 @@ In this example we are using a reel_board and an nrf52840dk_nrf52840:
            baud: 9600
          - connected: true
            id: 000683759358
-           platform: nrf52840dk_nrf52840
+           platform: nrf52840dk/nrf52840
            product: J-Link
            runner: nrfjprog
            serial: /dev/cu.usbmodem0006837593581
@@ -959,7 +965,7 @@ In this example we are using a reel_board and an nrf52840dk_nrf52840:
            baud: 9600
          - connected: true
            id: 000683759358
-           platform: nrf52840dk_nrf52840
+           platform: nrf52840dk/nrf52840
            product: J-Link
            runner: nrfjprog
            serial: COM2
@@ -1008,7 +1014,7 @@ hardware map:
 
    - connected: true
      id: None
-     platform: intel_adsp_cavs25
+     platform: intel_adsp/cavs25
      product: None
      runner: intel_adsp
      serial_pty: path/to/script.py
@@ -1029,7 +1035,7 @@ work. It is equivalent to following west and twister commands.
 
          west flash --remote-host remote_host_ip_addr --key /path/to/key.pem
 
-         twister -p intel_adsp_cavs25 --device-testing --device-serial-pty script.py
+         twister -p intel_adsp/cavs25 --device-testing --device-serial-pty script.py
          --west-flash="--remote-host=remote_host_ip_addr,--key=/path/to/key.pem"
 
    .. group-tab:: Windows
@@ -1092,12 +1098,12 @@ example:
       fixtures:
         - gpio_loopback
       id: 000683290670
-      notes: An nrf5340dk_nrf5340 is detected as an nrf52840dk_nrf52840 with no serial
+      notes: An nrf5340dk/nrf5340 is detected as an nrf52840dk/nrf52840 with no serial
         port, and three serial ports with an unknown platform.  The board id of the serial
         ports is not the same as the board id of the development kit.  If you regenerate
         this file you will need to update serial to reference the third port, and platform
-        to nrf5340dk_nrf5340_cpuapp or another supported board target.
-      platform: nrf52840dk_nrf52840
+        to nrf5340dk/nrf5340/cpuapp or another supported board target.
+      platform: nrf52840dk/nrf52840
       product: J-Link
       runner: jlink
       serial: null

@@ -12,11 +12,6 @@ common:
 tests:
   sample.net.sockets.big_http_download:
     extra_configs:
-      - CONFIG_NET_SOCKETS_POSIX_NAMES=y
-  sample.net.sockets.big_http_download.posix:
-    filter: not CONFIG_NET_SOCKETS_OFFLOAD
-    extra_configs:
-      - CONFIG_NET_SOCKETS_POSIX_NAMES=n
       - CONFIG_POSIX_API=y
   sample.net.sockets.big_http_download.ci:
     extra_args: OVERLAY_CONFIG=overlay-ci.conf

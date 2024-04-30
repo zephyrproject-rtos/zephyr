@@ -1,0 +1,24 @@
+# Copyright (c) 2020-2024 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_INTEL_ADSP_CAVS
+	bool
+	select SOC_FAMILY_INTEL_ADSP
+	help
+	  Intel ADSP CAVS
+
+config SOC_SERIES
+	default "intel_adsp_cavs" if SOC_SERIES_INTEL_ADSP_CAVS
+
+config SOC_INTEL_CAVS_V25
+	bool
+	select SOC_SERIES_INTEL_ADSP_CAVS
+	help
+	  Intel Tiger Lake
+
+config SOC
+	default "cavs25" if SOC_INTEL_CAVS_V25
+
+config SOC_TOOLCHAIN_NAME
+	default "intel_tgl_adsp" if SOC_INTEL_CAVS_V25

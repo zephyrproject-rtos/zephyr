@@ -54,7 +54,7 @@ static int enable_usb_device_next(void)
 {
 	int err;
 
-	sample_usbd = sample_usbd_init_device();
+	sample_usbd = sample_usbd_init_device(NULL);
 	if (sample_usbd == NULL) {
 		LOG_ERR("Failed to initialize USB device");
 		return -ENODEV;

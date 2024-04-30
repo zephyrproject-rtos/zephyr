@@ -69,6 +69,8 @@ extern int net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
 				       struct net_ipv6_hdr *ipv6_hdr,
 				       struct net_icmp_hdr *icmp_hdr);
 
+extern struct net_if *net_ipip_get_virtual_interface(struct net_if *input_iface);
+
 #if defined(CONFIG_NET_NATIVE) || defined(CONFIG_NET_OFFLOAD)
 extern void net_context_init(void);
 extern const char *net_context_state(struct net_context *context);
@@ -201,6 +203,7 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 				 uint16_t pkt_len);
 #endif
 
+extern const char *net_verdict2str(enum net_verdict verdict);
 extern const char *net_proto2str(int family, int proto);
 extern char *net_byte_to_hex(char *ptr, uint8_t byte, char base, bool pad);
 extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,

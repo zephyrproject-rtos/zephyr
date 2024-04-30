@@ -1,0 +1,10 @@
+# Copyright (c) 2024 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_ENE_KB1200
+	bool "ENE KB1200 PWM driver"
+	default y
+	depends on DT_HAS_ENE_KB1200_PWM_ENABLED
+	select PINCTRL
+	help
+	  This option enables the PWM driver for KB1200 processors.

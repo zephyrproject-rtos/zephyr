@@ -138,6 +138,18 @@ enum wifi_iface_state {
 	WIFI_STATE_UNKNOWN
 };
 
+/* We rely on the strict order of the enum values, so, let's check it */
+BUILD_ASSERT(WIFI_STATE_DISCONNECTED < WIFI_STATE_INTERFACE_DISABLED &&
+	     WIFI_STATE_INTERFACE_DISABLED < WIFI_STATE_INACTIVE &&
+	     WIFI_STATE_INACTIVE < WIFI_STATE_SCANNING &&
+	     WIFI_STATE_SCANNING < WIFI_STATE_AUTHENTICATING &&
+	     WIFI_STATE_AUTHENTICATING < WIFI_STATE_ASSOCIATING &&
+	     WIFI_STATE_ASSOCIATING < WIFI_STATE_ASSOCIATED &&
+	     WIFI_STATE_ASSOCIATED < WIFI_STATE_4WAY_HANDSHAKE &&
+	     WIFI_STATE_4WAY_HANDSHAKE < WIFI_STATE_GROUP_HANDSHAKE &&
+	     WIFI_STATE_GROUP_HANDSHAKE < WIFI_STATE_COMPLETED);
+
+
 /** Helper function to get user-friendly interface state name. */
 const char *wifi_state_txt(enum wifi_iface_state state);
 

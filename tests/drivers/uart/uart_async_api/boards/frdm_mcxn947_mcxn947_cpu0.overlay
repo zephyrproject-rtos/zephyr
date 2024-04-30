@@ -1,0 +1,9 @@
+/*
+ * Copyright 2024 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * To test this sample connect P4_2 to P4_3
+ */
+dut: &flexcomm2_lpuart2 {};

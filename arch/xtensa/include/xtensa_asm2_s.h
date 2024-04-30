@@ -16,6 +16,10 @@
  * only by the assembler.
  */
 
+#if defined(CONFIG_XTENSA_HIFI_SHARING)
+.extern _xtensa_hifi_save
+#endif
+
 /*
  * SPILL_ALL_WINDOWS
  *
@@ -184,6 +188,7 @@
 #if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
 	FPU_REG_SAVE
 #endif
+
 .endm
 
 #ifdef CONFIG_XTENSA_MMU
@@ -405,6 +410,11 @@ _xstack_returned_\@:
 	s32i a2, a1, ___xtensa_irq_bsa_t_scratch_OFFSET
 
 	ODD_REG_SAVE
+
+#if defined(CONFIG_XTENSA_HIFI_SHARING)
+	call0 _xtensa_hifi_save    /* Save HiFi registers */
+#endif
+
 	call0 xtensa_save_high_regs
 
 	l32i a2, a1, 0
@@ -539,7 +549,12 @@ _do_call_\@:
 	rsr a6, ZSR_CPU
 	l32i a6, a6, ___cpu_t_current_OFFSET
 
+#ifdef CONFIG_XTENSA_MMU
 	call4 xtensa_swap_update_page_tables
+#endif
+#ifdef CONFIG_XTENSA_MPU
+	call4 xtensa_mpu_map_write
+#endif
 	l32i a1, a1, 0
 	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF
@@ -593,6 +608,11 @@ _Level\LVL\()Vector:
 	s32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	s32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET
 	s32i a3, a1, ___xtensa_irq_bsa_t_a3_OFFSET
+
+#ifdef CONFIG_ADSP_IDLE_CLOCK_GATING
+	/* Needed when waking from low-power waiti state */
+	isync
+#endif
 
 	/* Level "1" is the exception handler, which uses a different
 	 * calling convention.  No special register holds the

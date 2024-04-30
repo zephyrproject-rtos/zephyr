@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2024 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nuvoton/m2l31kid.dtsi>
+#include "numaker_m2l31ki-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Nuvoton NuMaker M2L31KI board";
+	compatible = "nuvoton,numaker-m2l31ki";
+
+	aliases {
+		led0 = &red_led;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpioc 14 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+	};
+};
+
+&scc {
+	/* For USB 1.1 Host/Device/OTG, configure to 192MHz, which can generate necessary 48MHz. */
+	/* For USB 2.0 Host/Device/OTG or no USB application, comment out to use default. */
+	core-clock = <DT_FREQ_M(192)>;
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00008000>;
+		};
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 0x00038000>;
+		};
+		slot1_partition: partition@40000 {
+			label = "image-1";
+			reg = <0x00040000 0x00038000>;
+		};
+		storage_partition: partition@78000 {
+			label = "storage";
+			reg = <0x00078000 0x00008000>;
+		};
+	};
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(168)>;
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

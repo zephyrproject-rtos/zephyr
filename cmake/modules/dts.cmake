@@ -122,12 +122,39 @@ set(DTS_CMAKE                   ${PROJECT_BINARY_DIR}/dts.cmake)
 # modules.
 set(VENDOR_PREFIXES             dts/bindings/vendor-prefixes.txt)
 
-set_ifndef(DTS_SOURCE ${BOARD_DIR}/${BOARD}.dts)
-if(EXISTS ${DTS_SOURCE})
-  # We found a devicetree. Check for a board revision overlay.
-  if(DEFINED BOARD_REVISION AND EXISTS ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.overlay)
-    list(APPEND DTS_SOURCE ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.overlay)
+if(NOT DEFINED DTS_SOURCE)
+  zephyr_build_string(board_string SHORT shortened_board_string
+                      BOARD ${BOARD} BOARD_QUALIFIERS ${BOARD_QUALIFIERS}
+  )
+  if(EXISTS ${BOARD_DIR}/${shortened_board_string}.dts AND NOT BOARD_${BOARD}_SINGLE_SOC)
+    message(FATAL_ERROR "Board ${ZFILE_BOARD} defines multiple SoCs.\nShortened file name "
+            "(${shortened_board_string}.dts) not allowed, use '<board>_<soc>.dts' naming"
+    )
+  elseif(EXISTS ${BOARD_DIR}/${board_string}.dts AND EXISTS ${BOARD_DIR}/${shortened_board_string}.dts)
+    message(FATAL_ERROR "Conflicting file names discovered. Cannot use both "
+            "${board_string}.dts and ${shortened_board_string}.dts. "
+            "Please choose one naming style, ${board_string}.dts is recommended."
+    )
+  elseif(EXISTS ${BOARD_DIR}/${board_string}.dts)
+    set(DTS_SOURCE ${BOARD_DIR}/${board_string}.dts)
+  elseif(EXISTS ${BOARD_DIR}/${shortened_board_string}.dts)
+    set(DTS_SOURCE ${BOARD_DIR}/${shortened_board_string}.dts)
   endif()
+endif()
+
+if(EXISTS ${DTS_SOURCE})
+  # We found a devicetree. Append all relevant dts overlays we can find...
+  zephyr_file(CONF_FILES ${BOARD_DIR} DTS DTS_SOURCE)
+
+  zephyr_file(
+    CONF_FILES ${BOARD_DIR}
+    DTS no_rev_suffix_dts_board_overlays
+    BOARD ${BOARD}
+    BOARD_QUALIFIERS ${BOARD_QUALIFIERS}
+  )
+
+  # ...but remove the ones that do not include the revision suffix
+  list(REMOVE_ITEM DTS_SOURCE ${no_rev_suffix_dts_board_overlays})
 else()
   # If we don't have a devicetree, provide an empty stub
   set(DTS_SOURCE ${ZEPHYR_BASE}/boards/common/stub.dts)

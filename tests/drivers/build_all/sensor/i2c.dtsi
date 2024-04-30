@@ -18,8 +18,10 @@
 #include <zephyr/dt-bindings/sensor/lis2dh.h>
 #include <zephyr/dt-bindings/sensor/iis2iclx.h>
 #include <zephyr/dt-bindings/sensor/lis2du12.h>
+#include <zephyr/dt-bindings/sensor/lis2dux12.h>
 #include <zephyr/dt-bindings/sensor/lis2de12.h>
 #include <zephyr/dt-bindings/sensor/tmag5273.h>
+#include <zephyr/dt-bindings/sensor/stts22h.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -931,4 +933,100 @@ test_i2c_ens160: ens160@83 {
 	compatible = "sciosense,ens160";
 	reg = <0x83>;
 	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_tsl2591: tsl2591@84 {
+	compatible = "ams,tsl2591";
+	reg = <0x84>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_max31790: max31790@85 {
+	compatible = "maxim,max31790";
+	status = "okay";
+	reg = <0x85>;
+
+	max31790_fan_fault: max31790_fan_fault {
+		compatible = "maxim,max31790-fan-fault";
+		status = "okay";
+	};
+
+	max31790_fan_speed_1: max31790_fan_speed_1 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <1>;
+	};
+
+	max31790_fan_speed_2: max31790_fan_speed_2 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <2>;
+	};
+
+	max31790_fan_speed_3: max31790_fan_speed_3 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <3>;
+	};
+
+	max31790_fan_speed_4: max31790_fan_speed_4 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <4>;
+	};
+
+	max31790_fan_speed_5: max31790_fan_speed_5 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <5>;
+	};
+
+	max31790_fan_speed_6: max31790_fan_speed_6 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <6>;
+	};
+};
+
+test_i2c_stts22h: stts22h@86 {
+	compatible = "st,stts22h";
+	reg = <0x86>;
+	int-gpios = <&test_gpio 0 0>;
+	sampling-rate = <STTS22H_100Hz>;
+};
+
+test_i2c_dht20: dht20@87 {
+	compatible = "aosong,dht20";
+	reg = <0x87>;
+	status = "okay";
+};
+
+test_i2c_aht20: aht20@88 {
+	compatible = "aosong,aht20";
+	reg = <0x88>;
+	status = "okay";
+};
+
+test_i2c_am2301b: am2301b@89 {
+	compatible = "aosong,am2301b";
+	reg = <0x89>;
+};
+
+test_i2c_lis2dux12: lis2dux12@8a {
+	compatible = "st,lis2dux12";
+	reg = <0x8a>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	range = <LIS2DUX12_DT_FS_16G>;
+	odr = <LIS2DUX12_DT_ODR_100Hz>;
+	power-mode = <LIS2DUX12_OPER_MODE_HIGH_FREQUENCY>;
+	status = "okay";
+};
+
+test_i2c_iis328dq: iis328dq@8a {
+	compatible = "st,iis328dq";
+	status = "okay";
+	reg = <0x8a>;
+	int2-gpios = <&test_gpio 0 0>;
+	threshold-int-pad = <2>;
 };

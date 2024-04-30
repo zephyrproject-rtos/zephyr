@@ -1,0 +1,5 @@
+board:
+  name: bcm958401m2
+  vendor: brcm
+  socs:
+  - name: bcm58400

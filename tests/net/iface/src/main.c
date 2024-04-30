@@ -41,7 +41,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 /* Interface 1 addresses */
 static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
-static struct in_addr my_ipv4_addr1 = { { { 192, 0, 2, 1 } } };
+static ZTEST_BMEM struct in_addr my_ipv4_addr1 = { { { 192, 0, 2, 1 } } };
 
 /* Interface 2 addresses */
 static struct in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 2, 0, 0, 0,
@@ -88,7 +88,7 @@ static uint8_t *net_iface_get_mac(const struct device *dev)
 		data->mac_addr[2] = 0x5E;
 		data->mac_addr[3] = 0x00;
 		data->mac_addr[4] = 0x53;
-		data->mac_addr[5] = sys_rand32_get();
+		data->mac_addr[5] = sys_rand8_get();
 	}
 
 	data->ll_addr.addr = data->mac_addr;
@@ -297,7 +297,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		const struct ethernet_api *api =
 			net_if_get_device(iface)->api;
 
-		/* As native_posix board will introduce another ethernet
+		/* As native_sim board will introduce another ethernet
 		 * interface, make sure that we only use our own in this test.
 		 */
 		if (api->get_capabilities ==
@@ -1076,7 +1076,7 @@ static void netmask_addr_add(void *p1, void *p2, void *p3)
 	struct in_addr my_netmask = { { { 255, 255, 255, 0 } } };
 	bool ret;
 
-	ret = net_if_ipv4_set_netmask_by_index(1, &my_netmask);
+	ret = net_if_ipv4_set_netmask_by_addr_by_index(1, &my_ipv4_addr1, &my_netmask);
 	zassert_true(ret, "Cannot add IPv4 netmask");
 }
 
@@ -1301,6 +1301,16 @@ ZTEST(net_iface, test_interface_name)
 	ret = net_if_set_name(iface, name);
 	zassert_equal(ret, 0, "Unexpected value (%d) returned", ret);
 
+	name = "abc0";
+	ret = net_if_set_name(iface2, name);
+	zassert_equal(ret, -EALREADY, "Unexpected value (%d) returned", ret);
+
+	name = "abc";
+	ret = net_if_set_name(iface2, name);
+	zassert_equal(ret, 0, "Unexpected value (%d) returned", ret);
+
+	name = "abc0";
+
 	ret = net_if_get_name(iface, buf, 1);
 	zassert_equal(ret, -ERANGE, "Unexpected value (%d) returned", ret);
 
@@ -1308,7 +1318,8 @@ ZTEST(net_iface, test_interface_name)
 	zassert_equal(ret, -ERANGE, "Unexpected value (%d) returned", ret);
 
 	ret = net_if_get_name(iface, buf, sizeof(buf) - 1);
-	zassert_equal(ret, strlen(name), "Unexpected value (%d) returned", ret);
+	zassert_equal(ret, strlen(name), "Unexpected value (%d) returned, expected %d",
+		      ret, strlen(name));
 
 	ret = net_if_get_by_name(name);
 	zassert_equal(ret, net_if_get_by_iface(iface), "Unexpected value (%d) returned", ret);

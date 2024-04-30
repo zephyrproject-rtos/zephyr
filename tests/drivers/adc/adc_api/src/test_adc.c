@@ -7,6 +7,8 @@
 
 
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/counter.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
@@ -18,8 +20,18 @@
 #define INVALID_ADC_VALUE SHRT_MIN
 #endif
 
+#if CONFIG_NOCACHE_MEMORY
+#define __NOCACHE	__attribute__((__section__(".nocache")))
+#else /* CONFIG_NOCACHE_MEMORY */
+#define __NOCACHE
+#endif /* CONFIG_NOCACHE_MEMORY */
+
 #define BUFFER_SIZE  6
+#ifdef CONFIG_TEST_USERSPACE
 static ZTEST_BMEM int16_t m_sample_buffer[BUFFER_SIZE];
+#else
+static __aligned(32) int16_t m_sample_buffer[BUFFER_SIZE] __NOCACHE;
+#endif
 
 #define DT_SPEC_AND_COMMA(node_id, prop, idx) ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
 
@@ -43,6 +55,26 @@ const struct device *get_adc_device(void)
 	return adc_channels[0].dev;
 }
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(test_counter), okay) && \
+	defined(CONFIG_COUNTER)
+static void init_counter(void)
+{
+	int err;
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(test_counter));
+	struct counter_top_cfg top_cfg = { .callback = NULL,
+					   .user_data = NULL,
+					   .flags = 0 };
+
+	zassert_true(device_is_ready(dev), "Counter device is not ready");
+
+	counter_start(dev);
+	top_cfg.ticks = counter_us_to_ticks(dev, CONFIG_ADC_API_SAMPLE_INTERVAL_US);
+	err = counter_set_top_value(dev, &top_cfg);
+	zassert_equal(0, err, "%s: Counter failed to set top value (err: %d)",
+		      dev->name, err);
+}
+#endif
+
 static void init_adc(void)
 {
 	int i, ret;
@@ -57,6 +89,11 @@ static void init_adc(void)
 	for (i = 0; i < BUFFER_SIZE; ++i) {
 		m_sample_buffer[i] = INVALID_ADC_VALUE;
 	}
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(test_counter), okay) && \
+	defined(CONFIG_COUNTER)
+	init_counter();
+#endif
 }
 
 static void check_samples(int expected_count)
@@ -156,7 +193,7 @@ static int test_task_asynchronous_call(void)
 	const struct adc_sequence_options options = {
 		.extra_samplings = 4,
 		/* Start consecutive samplings as fast as possible. */
-		.interval_us     = 0,
+		.interval_us     = CONFIG_ADC_API_SAMPLE_INTERVAL_US,
 	};
 	struct adc_sequence sequence = {
 		.options     = &options,
@@ -295,7 +332,7 @@ static int test_task_repeated_samplings(void)
 		 */
 		.extra_samplings = 2,
 		/* Start consecutive samplings as fast as possible. */
-		.interval_us     = 0,
+		.interval_us     = CONFIG_ADC_API_SAMPLE_INTERVAL_US,
 	};
 	struct adc_sequence sequence = {
 		.options     = &options,

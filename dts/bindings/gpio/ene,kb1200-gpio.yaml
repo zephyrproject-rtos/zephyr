@@ -1,0 +1,33 @@
+# Copyright (c) 2023 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    ENE KB1200 GPIO(General purpose IO) Port node
+
+    The GPIO controller provides group control of GPIO functions. Each port
+    group contains 32 pins. GPIO_00~GPIO_1F belong to the Port0 group,
+    GPIO_20~GPIO_3F belong to the Port1 group, and so on.
+
+    In particular, the 32 pins of the port group do not share the same IRQ
+    interrupt, but are assigned to two different IRQ interrupts in groups of 16
+    pins. This means that single port group provide two interrupt source.
+    ex.Port0 group GPIO_00~GPIO_0F shares IRQ18, and Port0 group
+    GPIO_10~GPIO_1F shares IRQ19.
+
+compatible: "ene,kb1200-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

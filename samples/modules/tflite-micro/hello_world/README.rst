@@ -34,6 +34,13 @@ Building and Running
 The sample should work on most boards since it does not rely
 on any sensors.
 
+Add the tflite-micro module to your West manifest and pull it:
+
+.. code-block:: console
+
+    west config manifest.project-filter -- +tflite-micro
+    west update
+
 The reference kernel application can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
@@ -58,7 +65,7 @@ the `PATH` variable, then building and testing can be done with following
 commands.
 
 ```
-$ west build -p auto -b mps3_an547 samples/modules/tflite-micro/hello_world/ -T sample.tensorflow.helloworld.cmsis_nn
+$ west build -p auto -b mps3/an547 samples/modules/tflite-micro/hello_world/ -T sample.tensorflow.helloworld.cmsis_nn
 $ FVP_Corstone_SSE-300_Ethos-U55 build/zephyr/zephyr.elf
 ```
 

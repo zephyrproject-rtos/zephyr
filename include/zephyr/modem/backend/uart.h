@@ -42,7 +42,7 @@ struct modem_backend_uart_async {
 struct modem_backend_uart {
 	const struct device *uart;
 	struct modem_pipe pipe;
-	struct k_work receive_ready_work;
+	struct k_work_delayable receive_ready_work;
 	struct k_work transmit_idle_work;
 
 	union {

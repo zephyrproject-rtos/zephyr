@@ -28,8 +28,8 @@ description: |
          filter-smooth-level = <ESP32_TOUCH_FILTER_SMOOTH_MODE_IIR_2>;
 
          touch_sensor_0 {
-                 channel_num = <1>;
-                 channel_sens = <20>;
+                 channel-num = <1>;
+                 channel-sens = <20>;
                  zephyr,code = <INPUT_KEY_0>;
          };
   };

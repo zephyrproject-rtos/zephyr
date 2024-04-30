@@ -160,6 +160,11 @@ _restore_context:
 	FPU_REG_RESTORE
 #endif
 
+#if defined(CONFIG_XTENSA_HIFI_SHARING)
+.extern _xtensa_hifi_load
+	call0 _xtensa_hifi_load
+#endif
+
 	l32i a0, a1, ___xtensa_irq_bsa_t_sar_OFFSET
 	wsr a0, SAR
 #if XCHAL_HAVE_LOOPS
@@ -248,6 +253,10 @@ xtensa_switch:
 	movi a0, _switch_restore_pc
 	s32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 
+#if defined(CONFIG_XTENSA_HIFI_SHARING)
+	call0 _xtensa_hifi_save
+#endif
+
 	/* Now the high registers */
 	call0 xtensa_save_high_regs
 
@@ -277,7 +286,12 @@ noflush:
 	/* Switch page tables */
 	rsr a6, ZSR_CPU
 	l32i a6, a6, ___cpu_t_current_OFFSET
+#ifdef CONFIG_XTENSA_MMU
 	call4 xtensa_swap_update_page_tables
+#endif
+#ifdef CONFIG_XTENSA_MPU
+	call4 xtensa_mpu_map_write
+#endif
 
 	l32i a2, a3, 0
 	l32i a2, a2, 0
@@ -385,9 +399,11 @@ _Level1RealVector:
 	rsr.exccause a0
 #ifdef CONFIG_XTENSA_MMU
 	beqi a0, EXCCAUSE_ITLB_MISS, _handle_tlb_miss_user
+#endif /* CONFIG_XTENSA_MMU */
 #ifdef CONFIG_USERSPACE
 	beqi a0, EXCCAUSE_SYSCALL, _syscall
 #endif /* CONFIG_USERSPACE */
+#ifdef CONFIG_XTENSA_MMU
 	addi a0, a0, -EXCCAUSE_DTLB_MISS
 	beqz a0, _handle_tlb_miss_user
 	rsr.exccause a0
@@ -417,12 +433,12 @@ _handle_tlb_miss_user:
 	l32i a0, a0, 0
 	rsr a0, ZSR_A0SAVE
 	rfe
+#endif /* CONFIG_XTENSA_MMU */
 #ifdef CONFIG_USERSPACE
 _syscall:
 	rsr a0, ZSR_A0SAVE
 	j xtensa_do_syscall
 #endif /* CONFIG_USERSPACE */
-#endif /* CONFIG_XTENSA_MMU */
 .popsection
 
 /* In theory you can have levels up to 15, but known hardware only uses 7. */

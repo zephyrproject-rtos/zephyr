@@ -796,23 +796,22 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, uint8_t hdr, uint8_t aszmic,
 	LOG_DBG("AKF %u AID 0x%02x", !ctx.crypto.dev_key, AID(&hdr));
 
 	if (!rx->local_match) {
-		return 0;
+		/* if friend_match was set the frame is for LPN which we are friends. */
+		return rx->friend_match ? 0 : -ENXIO;
 	}
 
 	rx->ctx.app_idx = bt_mesh_app_key_find(ctx.crypto.dev_key, AID(&hdr),
 					       rx, sdu_try_decrypt, &ctx);
 	if (rx->ctx.app_idx == BT_MESH_KEY_UNUSED) {
 		LOG_DBG("No matching AppKey");
-		return 0;
+		return -EACCES;
 	}
 
 	rx->ctx.uuid = ctx.crypto.ad;
 
 	LOG_DBG("Decrypted (AppIdx: 0x%03x)", rx->ctx.app_idx);
 
-	(void)bt_mesh_model_recv(&rx->ctx, sdu);
-
-	return 0;
+	return bt_mesh_access_recv(&rx->ctx, sdu);
 }
 
 static struct seg_tx *seg_tx_lookup(uint16_t seq_zero, uint8_t obo, uint16_t addr)
@@ -1027,6 +1026,8 @@ static int trans_unseg(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx,
 {
 	NET_BUF_SIMPLE_DEFINE_STATIC(sdu, BT_MESH_SDU_UNSEG_MAX);
 	uint8_t hdr;
+	struct bt_mesh_rpl *rpl = NULL;
+	int err;
 
 	LOG_DBG("AFK %u AID 0x%02x", AKF(buf->data), AID(buf->data));
 
@@ -1035,7 +1036,7 @@ static int trans_unseg(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx,
 		return -EBADMSG;
 	}
 
-	if (bt_mesh_rpl_check(rx, NULL)) {
+	if (bt_mesh_rpl_check(rx, &rpl)) {
 		LOG_WRN("Replay: src 0x%04x dst 0x%04x seq 0x%06x", rx->ctx.addr, rx->ctx.recv_dst,
 			rx->seq);
 		return -EINVAL;
@@ -1044,18 +1045,22 @@ static int trans_unseg(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx,
 	hdr = net_buf_simple_pull_u8(buf);
 
 	if (rx->ctl) {
-		return ctl_recv(rx, hdr, buf, seq_auth);
-	}
-
-	if (buf->len < 1 + APP_MIC_LEN(0)) {
+		err = ctl_recv(rx, hdr, buf, seq_auth);
+	} else if (buf->len < 1 + APP_MIC_LEN(0)) {
 		LOG_ERR("Too short SDU + MIC");
-		return -EINVAL;
+		err = -EINVAL;
+	} else {
+		/* Adjust the length to not contain the MIC at the end */
+		buf->len -= APP_MIC_LEN(0);
+		err = sdu_recv(rx, hdr, 0, buf, &sdu, NULL);
 	}
 
-	/* Adjust the length to not contain the MIC at the end */
-	buf->len -= APP_MIC_LEN(0);
+	/* Update rpl only if there is place and upper logic accepted incoming data. */
+	if (err == 0 && rpl != NULL) {
+		bt_mesh_rpl_update(rpl, rx);
+	}
 
-	return sdu_recv(rx, hdr, 0, buf, &sdu, NULL);
+	return err;
 }
 
 int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, uint8_t ctl_op, void *data,
@@ -1558,17 +1563,6 @@ found_rx:
 	}
 
 	LOG_DBG("Complete SDU");
-
-	if (rpl) {
-		bt_mesh_rpl_update(rpl, net_rx);
-		/* Update the seg, unless it has already been surpassed:
-		 * This needs to happen after rpl_update to ensure that the IV
-		 * update reset logic inside rpl_update doesn't overwrite the
-		 * change.
-		 */
-		rpl->seg = MAX(rpl->seg, auth_seqnum);
-	}
-
 	*pdu_type = BT_MESH_FRIEND_PDU_COMPLETE;
 
 	/* If this fails, the work handler will either exit early because the
@@ -1600,6 +1594,17 @@ found_rx:
 			&sdu, seg_buf.data, rx->len - APP_MIC_LEN(ASZMIC(hdr)));
 
 		err = sdu_recv(net_rx, *hdr, ASZMIC(hdr), &seg_buf, &sdu, rx);
+	}
+
+	/* Update rpl only if there is place and upper logic accepted incoming data. */
+	if (err == 0 && rpl != NULL) {
+		bt_mesh_rpl_update(rpl, net_rx);
+		/* Update the seg, unless it has already been surpassed:
+		 * This needs to happen after rpl_update to ensure that the IV
+		 * update reset logic inside rpl_update doesn't overwrite the
+		 * change.
+		 */
+		rpl->seg = MAX(rpl->seg, auth_seqnum);
 	}
 
 	seg_rx_reset(rx, false);

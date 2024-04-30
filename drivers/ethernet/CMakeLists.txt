@@ -2,6 +2,11 @@
 
 zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
+zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/l2)
+
+zephyr_library_sources_ifdef(CONFIG_ETH_DRIVER_RAW_MODE
+  eth_raw.c
+  )
 
 zephyr_library_sources_ifdef(CONFIG_ETH_GECKO
 	eth_gecko.c
@@ -62,3 +67,4 @@ if(CONFIG_ETH_NATIVE_POSIX)
 endif()
 
 add_subdirectory(phy)
+add_subdirectory(eth_nxp_enet_qos)

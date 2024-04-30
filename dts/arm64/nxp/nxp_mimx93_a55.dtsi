@@ -320,6 +320,32 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 	};
+
+	edma4: dma@42000000 {
+		compatible = "nxp,edma";
+		reg = <0x42000000 (DT_SIZE_K(64) * 32)>;
+		valid-channels = <0>, <1>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			<GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		#dma-cells = <2>;
+		hal-cfg-index = <1>;
+		status = "disabled";
+	};
+
+	sai3: dai@42660000 {
+		compatible = "nxp,dai-sai";
+		reg = <0x42660000 DT_SIZE_K(64)>;
+		mclk-is-output;
+		clocks = <&ccm IMX_CCM_SAI3_CLK 0x0 0x0>;
+		clock-names = "mclk1";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 171 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		dai-index = <3>;
+		dmas = <&edma4 0 60>, <&edma4 1 61>;
+		dma-names = "tx", "rx";
+		status = "disabled";
+	};
 };
 
 &gpio1{

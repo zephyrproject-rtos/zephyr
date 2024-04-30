@@ -27,11 +27,14 @@ LOG_MODULE_REGISTER(test, CONFIG_SAMPLE_MODULE_LOG_LEVEL);
 #define LOG_SIMPLE_MSG_LEN \
 	ROUND_UP(sizeof(struct log_msg) + \
 		 sizeof(struct cbprintf_package_hdr_ext) + \
-		 sizeof(int), CBPRINTF_PACKAGE_ALIGNMENT)
+		 sizeof(int) + (IS_ENABLED(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC) ? 1 : 0), \
+		 CBPRINTF_PACKAGE_ALIGNMENT)
 #else
 #define LOG_SIMPLE_MSG_LEN \
 	ROUND_UP(sizeof(struct log_msg) + \
-		 sizeof(struct cbprintf_package_hdr_ext), CBPRINTF_PACKAGE_ALIGNMENT)
+		 sizeof(struct cbprintf_package_hdr_ext) + \
+		 (IS_ENABLED(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC) ? 1 : 0), \
+		 CBPRINTF_PACKAGE_ALIGNMENT)
 #endif
 
 #ifdef CONFIG_LOG_TIMESTAMP_64BIT
@@ -365,6 +368,9 @@ static size_t get_long_hexdump(void)
 		 * as argument => 1 tag.
 		 */
 		extra_hexdump_sz = sizeof(int);
+	}
+	if (IS_ENABLED(CONFIG_TEST_LOG_MSG_APPEND_RO_STRING_LOC)) {
+		extra_msg_sz += sizeof(uint8_t); /* Location of format string. */
 	}
 
 	return CONFIG_LOG_BUFFER_SIZE -
@@ -789,6 +795,29 @@ ZTEST(test_log_api, test_log_arg_evaluation)
 	process_and_validate(false, false);
 #undef TEST_MSG_0
 #undef TEST_MSG_0_PREFIX
+}
+
+static void log_wrn_once_run(int i)
+{
+	LOG_WRN_ONCE("once %d", i);
+}
+
+ZTEST(test_log_api, test_log_wrn_once)
+{
+	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
+
+	log_setup(false);
+
+	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_WRN, "once 0");
+	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_WRN,
+				exp_timestamp++, "once 0");
+
+	log_wrn_once_run(0);
+	log_wrn_once_run(1);
+	log_wrn_once_run(2);
+
+	process_and_validate(false, false);
 }
 
 ZTEST(test_log_api, test_log_override_level)

@@ -117,34 +117,9 @@ struct nxp_enet_mac_data {
  ********************
  */
 
-static inline struct net_if *get_iface(struct nxp_enet_mac_data *data, uint16_t vlan_tag)
+static inline struct net_if *get_iface(struct nxp_enet_mac_data *data)
 {
-	struct net_if *iface = net_eth_get_vlan_iface(data->iface, vlan_tag);
-
-	return iface ? iface : data->iface;
-}
-
-static void net_if_mcast_cb(struct net_if *iface,
-			    const struct net_addr *addr,
-			    bool is_joined)
-{
-	const struct device *dev = net_if_get_device(iface);
-	const struct nxp_enet_mac_config *config = dev->config;
-	struct net_eth_addr mac_addr;
-
-	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->family == AF_INET) {
-		net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &mac_addr);
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) && addr->family == AF_INET6) {
-		net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &mac_addr);
-	} else {
-		return;
-	}
-
-	if (is_joined) {
-		ENET_AddMulticastGroup(config->base, mac_addr.addr);
-	} else {
-		ENET_LeaveMulticastGroup(config->base, mac_addr.addr);
-	}
+	return data->iface;
 }
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
@@ -266,18 +241,11 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct nxp_enet_mac_data *data = dev->data;
 	const struct nxp_enet_mac_config *config = dev->config;
-	static struct net_if_mcast_monitor mon;
-
-	net_if_mcast_mon_register(&mon, iface, net_if_mcast_cb);
 
 	net_if_set_link_addr(iface, data->mac_addr,
 			     sizeof(data->mac_addr),
 			     NET_LINK_ETHERNET);
 
-	/* For VLAN, this value is only used to get the correct L2 driver.
-	 * The iface pointer in context should contain the main interface
-	 * if the VLANs are enabled.
-	 */
 	if (data->iface == NULL) {
 		data->iface = iface;
 	}
@@ -296,7 +264,11 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
+	return ETHERNET_LINK_10BASE_T |
+		ETHERNET_HW_FILTERING |
+#if defined(CONFIG_NET_VLAN)
+		ETHERNET_HW_VLAN |
+#endif
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 		ETHERNET_PTP |
 #endif
@@ -332,6 +304,16 @@ static int eth_nxp_enet_set_config(const struct device *dev,
 			data->mac_addr[2], data->mac_addr[3],
 			data->mac_addr[4], data->mac_addr[5]);
 		return 0;
+	case ETHERNET_CONFIG_TYPE_FILTER:
+		/* The ENET driver does not modify the address buffer but the API is not const */
+		if (cfg->filter.set) {
+			ENET_AddMulticastGroup(config->base,
+					       (uint8_t *)cfg->filter.mac_address.addr);
+		} else {
+			ENET_LeaveMulticastGroup(config->base,
+						 (uint8_t *)cfg->filter.mac_address.addr);
+		}
+		return 0;
 	default:
 		break;
 	}
@@ -349,7 +331,6 @@ static int eth_nxp_enet_rx(const struct device *dev)
 {
 	const struct nxp_enet_mac_config *config = dev->config;
 	struct nxp_enet_mac_data *data = dev->data;
-	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	uint32_t frame_length = 0U;
 	struct net_if *iface;
 	struct net_pkt *pkt = NULL;
@@ -397,19 +378,6 @@ static int eth_nxp_enet_rx(const struct device *dev)
 		goto error;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_VLAN) && ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_VLAN) {
-		struct net_eth_vlan_hdr *hdr_vlan = (struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-
-		net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
-		vlan_tag = net_pkt_vlan_tag(pkt);
-
-#if CONFIG_NET_TC_RX_COUNT > 1
-		enum net_priority prio = net_vlan2priority(net_pkt_vlan_priority(pkt));
-
-		net_pkt_set_priority(pkt, prio);
-#endif /* CONFIG_NET_TC_RX_COUNT > 1 */
-	}
-
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	k_mutex_lock(data->ptp_mutex, K_FOREVER);
 
@@ -418,7 +386,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	pkt->timestamp.second = UINT64_MAX;
 
 	/* Timestamp the packet using PTP clock */
-	if (eth_get_ptp_data(get_iface(data, vlan_tag), pkt)) {
+	if (eth_get_ptp_data(get_iface(data), pkt)) {
 		struct net_ptp_time ptp_time;
 
 		ptp_clock_get(config->ptp_clock, &ptp_time);
@@ -436,7 +404,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	k_mutex_unlock(data->ptp_mutex);
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
-	iface = get_iface(data, vlan_tag);
+	iface = get_iface(data);
 #if defined(CONFIG_NET_DSA)
 	iface = dsa_net_recv(iface, &pkt);
 #endif
@@ -457,7 +425,7 @@ error:
 	if (pkt) {
 		net_pkt_unref(pkt);
 	}
-	eth_stats_update_errors_rx(get_iface(data, vlan_tag));
+	eth_stats_update_errors_rx(get_iface(data));
 	return -EIO;
 }
 
@@ -772,9 +740,9 @@ static const struct ethernet_api api_funcs = {
 #define FREESCALE_OUI_B1 0x04
 #define FREESCALE_OUI_B2 0x9f
 
-#if defined(CONFIG_SOC_SERIES_IMX_RT10XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX)
 #define ETH_NXP_ENET_UNIQUE_ID	(OCOTP->CFG1 ^ OCOTP->CFG2)
-#elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+#elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
 #define ETH_NXP_ENET_UNIQUE_ID	(OCOTP->FUSEN[40].FUSE)
 #elif defined(CONFIG_SOC_SERIES_KINETIS_K6X)
 #define ETH_NXP_ENET_UNIQUE_ID	(SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL)

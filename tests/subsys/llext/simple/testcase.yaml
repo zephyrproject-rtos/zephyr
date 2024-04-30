@@ -1,0 +1,79 @@
+common:
+  tags: llext
+  arch_allow:
+    - arm
+    - xtensa
+  platform_exclude:
+    - numaker_pfm_m487 # See #63167
+    - qemu_cortex_r5 # unsupported relocations
+
+tests:
+  # add_llext_target() supports a fairly limited number of
+  # CONFIG_urations.  For instance, invoking add_llext_target()
+  # currently blocks us from compiling subsys/llext/*.c in 64bits mode;
+  # CMake aborts before even invoking the compiler.
+  #
+  # While there is in practice no value in compiling subsys/llext/*.c
+  # without actually running it to load some extension, let's keep it in
+  # good shape and ready to be used when add_llext_target()
+  # limitations get lifted in the future.
+  llext.simple.loader_build:
+    build_only: true
+    # How to override the above and allow ANY arch?
+    arch_allow: arm arm64 x86 x86_64 xtensa posix
+    extra_args:
+      - LOADER_BUILD_ONLY=1
+      - EXTRA_CFLAGS=-DLOADER_BUILD_ONLY=1
+
+  llext.simple.readonly:
+    arch_exclude: xtensa # for now
+    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
+    extra_configs:
+      - arch:arm:CONFIG_ARM_MPU=n
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+  llext.simple.readonly_mpu:
+    min_ram: 128
+    arch_exclude: xtensa # for now
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_USERSPACE=y
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+  llext.simple.writable:
+    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
+    extra_configs:
+      - arch:arm:CONFIG_ARM_MPU=n
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
+  llext.simple.modules_enabled_writable:
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    platform_key:
+      - simulation
+      - arch
+    platform_exclude:
+      - qemu_cortex_a9 # MMU
+    extra_configs:
+      - arch:arm:CONFIG_ARM_MPU=n
+      - CONFIG_MODULES=y
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
+      - CONFIG_LLEXT_TEST_HELLO=m
+  llext.simple.modules_enabled_readonly:
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    arch_exclude: xtensa # for now
+    platform_key:
+      - simulation
+      - arch
+    platform_exclude:
+      - qemu_cortex_a9 # MMU
+    extra_configs:
+      - arch:arm:CONFIG_ARM_MPU=n
+      - CONFIG_MODULES=y
+      - CONFIG_LLEXT_TEST_HELLO=m
+  llext.simple.modules_enabled_readonly_mpu:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    arch_exclude: xtensa # for now
+    platform_key:
+      - simulation
+      - arch
+    extra_configs:
+      - CONFIG_USERSPACE=y
+      - CONFIG_MODULES=y
+      - CONFIG_LLEXT_TEST_HELLO=m

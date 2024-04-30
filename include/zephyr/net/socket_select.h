@@ -38,7 +38,7 @@ typedef struct zsock_fd_set {
  * use zsock_poll() instead. In Zephyr this function works only with
  * sockets, not arbitrary file descriptors.
  * This function is also exposed as ``select()``
- * if :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined (in which case
+ * if :kconfig:option:`CONFIG_POSIX_API` is defined (in which case
  * it may conflict with generic POSIX ``select()`` function).
  * @endrst
  */
@@ -59,7 +59,7 @@ __syscall int zsock_select(int nfds, zsock_fd_set *readfds,
  * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html>`__
  * for normative description.
  * This function is also exposed as ``FD_ZERO()``
- * if :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
+ * if :kconfig:option:`CONFIG_POSIX_API` is defined.
  * @endrst
  */
 void ZSOCK_FD_ZERO(zsock_fd_set *set);
@@ -73,7 +73,7 @@ void ZSOCK_FD_ZERO(zsock_fd_set *set);
  * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html>`__
  * for normative description.
  * This function is also exposed as ``FD_ISSET()``
- * if :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
+ * if :kconfig:option:`CONFIG_POSIX_API` is defined.
  * @endrst
  */
 int ZSOCK_FD_ISSET(int fd, zsock_fd_set *set);
@@ -87,7 +87,7 @@ int ZSOCK_FD_ISSET(int fd, zsock_fd_set *set);
  * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html>`__
  * for normative description.
  * This function is also exposed as ``FD_CLR()``
- * if :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
+ * if :kconfig:option:`CONFIG_POSIX_API` is defined.
  * @endrst
  */
 void ZSOCK_FD_CLR(int fd, zsock_fd_set *set);
@@ -101,7 +101,7 @@ void ZSOCK_FD_CLR(int fd, zsock_fd_set *set);
  * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html>`__
  * for normative description.
  * This function is also exposed as ``FD_SET()``
- * if :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
+ * if :kconfig:option:`CONFIG_POSIX_API` is defined.
  * @endrst
  */
 void ZSOCK_FD_SET(int fd, zsock_fd_set *set);

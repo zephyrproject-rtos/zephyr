@@ -15,5 +15,5 @@ config GPIO_EMUL
 	  available in drivers/gpio/gpio_emul.h . Configuration for each
 	  GPIO instance is accomplished using device tree and an example of
 	  such a configuration is in
-	  tests/drivers/gpio/gpio_basic_api/boards/native_posix_64.overlay
+	  tests/drivers/gpio/gpio_basic_api/boards/native_sim.overlay
 	  If unsure, say N.

@@ -364,14 +364,14 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		_current_cpu->nested = 1;
 	}
 
-#ifdef CONFIG_XTENSA_MMU
+#if defined(CONFIG_XTENSA_MMU) || defined(CONFIG_XTENSA_MPU)
 #ifdef CONFIG_USERSPACE
 fixup_out:
 #endif
 	if (is_dblexc) {
 		__asm__ volatile("wsr.depc %0" : : "r"(0));
 	}
-#endif /* CONFIG_XTENSA_MMU */
+#endif /* CONFIG_XTENSA_MMU || CONFIG_XTENSA_MPU */
 
 
 	return return_to(interrupted_stack);

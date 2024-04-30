@@ -9,7 +9,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_CPU_H_
 #define ZEPHYR_INCLUDE_ARCH_CPU_H_
 
-#include <zephyr/sys/arch_interface.h>
+#include <zephyr/arch/arch_interface.h>
 
 #if defined(CONFIG_X86)
 #include <zephyr/arch/x86/arch.h>

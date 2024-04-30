@@ -1,0 +1,13 @@
+description: CHSC6X touchscreen sensor
+
+compatible: "chipsemi,chsc6x"
+
+include: i2c-device.yaml
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Interrupt GPIO. Used by the controller to signal touch data is
+      available. Active low.

@@ -260,13 +260,16 @@ enter_code64:
 	rep stosq
 #endif
 
-	/* Enter C domain now that we have a stack set up, never to return */
-	movq %rbp, %rdi
 #ifdef CONFIG_STACK_CANARIES_TLS
+	movq %rsp, %rdi
 	pushq %rsp
 	call z_x86_early_tls_update_gdt
 	popq %rsp
 #endif
+
+	/* Enter C domain now that we have a stack set up, never to return */
+	movq %rbp, %rdi
+
 	call z_x86_cpu_init
 
 	/* 64 bit OS entry point, used by EFI support.  UEFI

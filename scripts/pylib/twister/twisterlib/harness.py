@@ -348,7 +348,7 @@ class Pytest(Harness):
         elif handler.type_str == 'build':
             command.append('--device-type=custom')
         else:
-            raise PytestHarnessException(f'Handling of handler {handler.type_str} not implemented yet')
+            raise PytestHarnessException(f'Support for handler {handler.type_str} not implemented yet')
 
         if handler.options.pytest_args:
             command.extend(handler.options.pytest_args)
@@ -608,7 +608,7 @@ class Test(Harness):
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
     test_suite_start_pattern = r"Running TESTSUITE (?P<suite_name>.*)"
-    ZTEST_START_PATTERN = r"START - (test_)?(.*)"
+    ZTEST_START_PATTERN = r"START - (test_)?([a-zA-Z0-9_-]+)"
 
     def handle(self, line):
         test_suite_match = re.search(self.test_suite_start_pattern, line)
@@ -706,8 +706,9 @@ class Bsim(Harness):
             new_exe_name = f'bs_{self.instance.platform.name}_{new_exe_name}'
         else:
             new_exe_name = self.instance.name
-            new_exe_name = new_exe_name.replace(os.path.sep, '_').replace('.', '_')
             new_exe_name = f'bs_{new_exe_name}'
+
+        new_exe_name = new_exe_name.replace(os.path.sep, '_').replace('.', '_').replace('@', '_')
 
         new_exe_path: str = os.path.join(bsim_out_path, 'bin', new_exe_name)
         logger.debug(f'Copying executable from {original_exe_path} to {new_exe_path}')

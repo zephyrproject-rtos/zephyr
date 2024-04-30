@@ -149,6 +149,7 @@ static inline int stm32_clock_control_on(const struct device *dev,
 					 clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
+	volatile int temp;
 
 	ARG_UNUSED(dev);
 
@@ -159,6 +160,9 @@ static inline int stm32_clock_control_on(const struct device *dev,
 
 	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus,
 		     pclken->enr);
+	/* Delay after enabling the clock, to allow it to become active */
+	temp = sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
+	UNUSED(temp);
 
 	return 0;
 }

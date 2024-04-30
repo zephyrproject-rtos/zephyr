@@ -7,15 +7,7 @@
 #set -x #uncomment this line for debugging
 set -ue
 
-: "${BSIM_COMPONENTS_PATH:?BSIM_COMPONENTS_PATH must be defined}"
-: "${ZEPHYR_BASE:?ZEPHYR_BASE must be set to point to the zephyr root\
- directory}"
-
-WORK_DIR="${WORK_DIR:-${ZEPHYR_BASE}/bsim_out}"
-
-BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
-
-mkdir -p ${WORK_DIR}
+: "${ZEPHYR_BASE:?ZEPHYR_BASE must be set to point to the zephyr root directory}"
 
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
@@ -34,9 +26,11 @@ app=tests/bsim/bluetooth/host/misc/conn_stress/central compile
 app=tests/bsim/bluetooth/host/misc/conn_stress/peripheral compile
 app=tests/bsim/bluetooth/host/misc/hfc compile
 app=tests/bsim/bluetooth/host/misc/unregister_conn_cb compile
+app=tests/bsim/bluetooth/host/misc/sample_test compile
 
 app=tests/bsim/bluetooth/host/privacy/central compile
 app=tests/bsim/bluetooth/host/privacy/peripheral compile
+app=tests/bsim/bluetooth/host/privacy/peripheral conf_file=prj_rpa_expired.conf compile
 app=tests/bsim/bluetooth/host/privacy/peripheral conf_file=prj_rpa_sharing.conf compile
 app=tests/bsim/bluetooth/host/privacy/device compile
 app=tests/bsim/bluetooth/host/privacy/legacy compile

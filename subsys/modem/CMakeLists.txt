@@ -9,6 +9,7 @@ zephyr_library_sources_ifdef(CONFIG_MODEM_CHAT modem_chat.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_CMUX modem_cmux.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_PIPE modem_pipe.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_PPP modem_ppp.c)
+zephyr_library_sources_ifdef(CONFIG_MODEM_UBX modem_ubx.c)
 
 add_subdirectory(backends)
 

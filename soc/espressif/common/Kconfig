@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_SIZE
+	int
+
+config FLASH_BASE_ADDRESS
+	hex
+
+rsource "Kconfig.spiram"
+rsource "Kconfig.esptool"
+rsource "Kconfig.flash"

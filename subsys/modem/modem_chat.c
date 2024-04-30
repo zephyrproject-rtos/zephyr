@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(modem_chat, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
 #if defined(CONFIG_LOG) && (CONFIG_MODEM_MODULES_LOG_LEVEL == LOG_LEVEL_DBG)
 
-static char log_buffer[CONFIG_MODEM_CHAT_LOG_BUFFER];
+static char log_buffer[CONFIG_MODEM_CHAT_LOG_BUFFER_SIZE];
 
 static void modem_chat_log_received_command(struct modem_chat *chat)
 {

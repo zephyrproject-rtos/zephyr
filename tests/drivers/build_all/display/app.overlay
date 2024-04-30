@@ -40,6 +40,19 @@
 				width = <320>;
 				height = <240>;
 			};
+
+			test_mipi_dbi_st7796s: st7796s@1 {
+				compatible = "sitronix,st7796s";
+				reg = <1>;
+				mipi-max-frequency = <25000000>;
+				height = <320>;
+				width = <480>;
+				/* Use dummy values for PCG and NGC,
+				 * As this won't drive a real panel
+				 */
+				pgc = [F0 06 0B 07 06 05 2E 33 47 3A 17 16 2E 31];
+				ngc = [F0 09 0D 09 08 23 2E 33 46 38 13 13 2C 32];
+			};
 		};
 
 
@@ -65,6 +78,37 @@
 				width = <240>;
 				height = <240>;
 			};
+
+			test_led_strip_0: lpd8806@2 {
+				compatible = "greeled,lpd8806";
+				reg = <2>;
+				spi-max-frequency = <2000000>;
+			};
+
+			test_led_strip_1: ws2812_spi@3 {
+				compatible = "worldsemi,ws2812-spi";
+				reg = <3>;
+				spi-max-frequency = <2000000>;
+				spi-one-frame = <1>;
+				spi-zero-frame = <1>;
+				chain-length = <256>;
+				color-mapping = <0 1 2>;
+				reset-delay = <280>;
+			};
+		};
+
+		test_led_strip_matrix {
+			compatible = "led-strip-matrix";
+			status = "okay";
+
+			led-strips = <&test_led_strip_0>, <&test_led_strip_1>;
+			chain-lengths = <256>, <256>;
+			width = <32>;
+			height = <16>;
+			horizontal-modules = <2>;
+			vertical-modules = <1>;
+			circulative;
+			start-from-right;
 		};
 	};
 };

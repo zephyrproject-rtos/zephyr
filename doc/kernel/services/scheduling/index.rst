@@ -82,7 +82,7 @@ runtime overhead and performance scaling when many threads are added.
 * Traditional multi-queue ready queue (:kconfig:option:`CONFIG_SCHED_MULTIQ`)
 
   When selected, the scheduler ready queue will be implemented as the
-  classic/textbook array of lists, one per priority (max 32 priorities).
+  classic/textbook array of lists, one per priority.
 
   This corresponds to the scheduler algorithm used in Zephyr versions prior to
   1.12.

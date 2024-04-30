@@ -2,6 +2,8 @@
 
 zephyr_library()
 
+zephyr_library_compile_definitions(_POSIX_C_SOURCE=200809L)
+
 zephyr_include_directories(.)
 
 zephyr_library_sources(

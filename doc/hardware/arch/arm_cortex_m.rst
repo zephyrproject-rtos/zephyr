@@ -99,7 +99,7 @@ Thread stack alignment
 Each Zephyr thread is defined with its own stack memory. By default, Cortex-M enforces a double word thread stack alignment, see
 :kconfig:option:`CONFIG_STACK_ALIGN_DOUBLE_WORD`. If MPU-based HW-assisted stack overflow detection (:kconfig:option:`CONFIG_MPU_STACK_GUARD`)
 is enabled, thread stacks need to be aligned with a larger value, reflected by :kconfig:option:`CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE`.
-In Arm v6-M and Arm v7-M architecture variants, thread stacks are additionally required to be align with a value equal to their size,
+In Arm v6-M and Arm v7-M architecture variants, thread stacks are additionally required to align with a value equal to their size,
 in applications that need to support user mode (:kconfig:option:`CONFIG_USERSPACE`). The thread stack sizes in that case need to be a power
 of two. This is all reflected by :kconfig:option:`CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT`, that is enforced in Arm v6-M and Arm v7-M
 builds with user mode support.

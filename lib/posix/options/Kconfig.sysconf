@@ -21,4 +21,28 @@ config POSIX_PAGE_SIZE_BITS
 	  PAGE_SIZE is supported in the range [64, 65536]
 	  If CONFIG_POSIX_API=y, PAGE_SIZE defaults to 4096, otherwise, it is 64 bytes.
 
+if POSIX_SYSCONF
+
+choice POSIX_SYSCONF_IMPL_CHOICE
+	default POSIX_SYSCONF_IMPL_FULL if CPP
+	default POSIX_SYSCONF_IMPL_MACRO
+	prompt "Sysconf implementation method"
+
+config POSIX_SYSCONF_IMPL_MACRO
+	bool "Macro"
+	help
+	  The sysconf() function is implemented compile-time constant via macros. This is the option
+	  with the least overhead. The downside is that sysconf() is not an addressable function.
+
+config POSIX_SYSCONF_IMPL_FULL
+	bool "Full"
+	help
+	  The sysconf() function is implemented as a large integer-integer array. The advantage if this
+	  option is that all sysconf() options can be queried and that the sysconf() symbol is
+	  addressable.
+
+endchoice
+
+endif # POSIX_SYSCONF
+
 endmenu # "Sysconf support"

@@ -17,6 +17,8 @@
 /**
  * @brief COAP library
  * @defgroup coap COAP Library
+ * @since 1.10
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -83,6 +85,8 @@ enum coap_method {
 #define COAP_REQUEST_MASK 0x07
 
 #define COAP_VERSION_1 1U
+
+#define COAP_OBSERVE_MAX_AGE 0xFFFFFF
 
 /**
  * @brief CoAP packets may be of one of these types.
@@ -752,6 +756,15 @@ bool coap_has_descriptive_block_option(struct coap_packet *cpkt);
  * @return 0 in case of success or negative in case of error.
  */
 int coap_remove_descriptive_block_option(struct coap_packet *cpkt);
+
+/**
+ * @brief Check if BLOCK1 or BLOCK2 option has more flag set
+ *
+ * @param cpkt Packet to be checked.
+ * @return true If more flag is set in BLOCK1 or BLOCK2
+ * @return false If MORE flag is not set or BLOCK header not found.
+ */
+bool coap_block_has_more(struct coap_packet *cpkt);
 
 /**
  * @brief Append BLOCK1 option to the packet.

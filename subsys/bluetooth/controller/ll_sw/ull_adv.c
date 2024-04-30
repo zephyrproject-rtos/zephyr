@@ -340,7 +340,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	adv->lll.chan_map = chan_map;
 	adv->lll.filter_policy = filter_policy;
 
-#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY) && defined(CONFIG_BT_CTLR_ADV_EXT)
 	adv->lll.scan_req_notify = sreq;
 #endif
 

@@ -1,0 +1,214 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2023 Schlumberger
+ *
+ */
+
+/dts-v1/;
+
+#include <infineon/xmc4700_F144x2048.dtsi>
+#include <infineon/xmc4700_F144x2048-intc.dtsi>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "xmc47_relax_kit-pinctrl.dtsi"
+#include "arduino_r3_connector.dtsi"
+
+/ {
+	model = "Infineon XMC4700 Relax Kit board";
+	compatible = "infineon,xmc4700", "infineon,xmc4xxx";
+
+	aliases {
+		led0 = &led1;
+		die-temp0 = &die_temp;
+		pwm-led0 = &pwm_led1;
+		watchdog0 = &wdt0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		/* leds are labelled LED1 and LED2 in the relax kit documentation */
+		led1: led1 {
+			gpios = <&gpio5 9 GPIO_ACTIVE_HIGH>;
+		};
+		led2: led2 {
+			gpios = <&gpio5 8 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led1: pwm_led1 {
+			pwms = <&pwm_ccu80 4 PWM_SEC(1) PWM_POLARITY_NORMAL>;
+			label = "PWM LED1";
+		};
+		pwm_led2: pwm_led2 {
+			pwms = <&pwm_ccu80 0 PWM_SEC(1) PWM_POLARITY_NORMAL>;
+			label = "PWM LED2";
+		};
+	};
+
+	chosen {
+		zephyr,sram = &dsram_joined;
+		zephyr,flash = &flash0;
+		zephyr,console = &usic0ch0;
+		zephyr,shell-uart = &usic0ch0;
+		zephyr,flash-controller = &flash_controller;
+		zephyr,code-partition = &code_partition;
+		zephyr,canbus = &can_node1;
+	};
+
+};
+
+&psram1 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	zephyr,memory-region = "PSRAM1";
+};
+
+&cpu0 {
+	clock-frequency = <144000000>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@0 {
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		storage_partition: partition@80000 {
+			label = "storage";
+			reg = <0x80000 0x80000>;
+		};
+	};
+};
+
+&usic0ch0 {
+	compatible = "infineon,xmc4xxx-uart";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart_tx_p1_5_u0c0 &uart_rx_p1_4_u0c0>;
+	pinctrl-names = "default";
+	input-src = "DX0B";
+	interrupts = <84 1 85 1>;
+	interrupt-names = "tx", "rx";
+	fifo-start-offset = <0>;
+	fifo-tx-size = <16>;
+	fifo-rx-size = <16>;
+	status = "okay";
+};
+
+&usic1ch0 {
+	compatible = "infineon,xmc4xxx-uart";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart_tx_p2_14_u1c0 &uart_rx_p2_15_u1c0>;
+	pinctrl-names = "default";
+	input-src = "DX0C";
+	interrupts = <92 1 93 1>;
+	interrupt-names = "tx", "rx";
+	fifo-start-offset = <0>;
+	fifo-tx-size = <0>;
+	fifo-rx-size = <0>;
+	status = "okay";
+};
+
+&usic2ch0 {
+	compatible = "infineon,xmc4xxx-spi";
+	pinctrl-0 = <&spi_mosi_p3_8_u2c0 &spi_miso_p3_7_u2c0 &spi_sclk_p3_9_u2c0>;
+	pinctrl-names = "default";
+	miso-src = "DX0C";
+	interrupts = <96 1 97 1>;
+	interrupt-names = "tx", "rx";
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+&usic1ch1 {
+	compatible = "infineon,xmc4xxx-i2c";
+	status = "okay";
+
+	pinctrl-0 = <&i2c_scl_p0_13_u1c1 &i2c_sda_p3_15_u1c1>;
+	pinctrl-names = "default";
+	scl-src = "DX1B";
+	sda-src = "DX0A";
+	interrupts = <94 1>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+&adc0 {
+	vref-internal-mv = <3300>;
+};
+
+&adc1 {
+	vref-internal-mv = <3300>;
+};
+
+&adc2 {
+	vref-internal-mv = <3300>;
+};
+
+&adc3 {
+	vref-internal-mv = <3300>;
+};
+
+&gpio5 {
+	status = "okay";
+};
+
+/* this example is not using the high-side/low-side signals of the same channel */
+/* the PWM signals are only used for the blink led example */
+&pwm_ccu80 {
+	slice-prescaler = <15 15 15 15>;
+	slice-deadtime-prescaler = <3 3 3 3>;
+	channel-deadtime-high = <0 0 0 0 0 0 0 0>;
+	channel-deadtime-low = <0 0 0 0 0 0 0 0>;
+	pinctrl-0 = <&pwm_out_p5_9_ccu80_ch4_high &pwm_out_p5_8_ccu80_ch0_low>;
+	pinctrl-names = "default";
+};
+
+&eth {
+	status = "okay";
+	pinctrl-0 = <&eth_p2_4_rxer &eth_p2_2_rxd0 &eth_p2_3_rxd1
+		     &eth_p15_8_clk_rmii &eth_p15_9_crs_dv &eth_p2_5_tx_en
+		     &eth_p2_8_txd0 &eth_p2_9_txd1>;
+	pinctrl-names = "default";
+
+	rxer-port-ctrl = "P2_4";
+	rxd0-port-ctrl = "P2_2";
+	rxd1-port-ctrl = "P2_3";
+	rmii-rx-clk-port-ctrl = "P15_8";
+	crs-rx-dv-port-ctrl = "P15_9";
+
+	phy-connection-type = "rmii";
+	phy-handle = <&phy>;
+};
+
+&mdio {
+	status = "okay";
+	mdi-port-ctrl = "P2_0";
+	pinctrl-0 = <&eth_p2_0_mdo &eth_p2_7_mdc>;
+	pinctrl-names = "default";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+	};
+};
+
+&can {
+	clock-prescaler = <6>;
+};
+
+&can_node1 {
+	status = "okay";
+	bus-speed = <125000>;
+	input-src = "RXDC";
+	pinctrl-0 = <&can_tx_p1_12_node1 &can_rx_p1_13_node1>;
+	pinctrl-names = "default";
+};

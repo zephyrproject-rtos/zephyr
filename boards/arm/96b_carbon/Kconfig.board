@@ -1,8 +1,0 @@
-# 96boards Carbon STMF401RE board configuration
-
-# Copyright (c) 2016 Linaro Limited.
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_96B_CARBON
-	bool "96Boards Carbon (STM32F401)"
-	depends on SOC_STM32F401XE

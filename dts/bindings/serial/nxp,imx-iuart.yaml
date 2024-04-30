@@ -17,3 +17,7 @@ properties:
 
   pinctrl-names:
     required: true
+
+  rdc:
+    type: int
+    description: Set the RDC permission for this peripheral

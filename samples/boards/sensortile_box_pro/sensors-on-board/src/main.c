@@ -75,6 +75,16 @@ static void lis2du12_trigger_handler(const struct device *dev,
 }
 #endif
 
+#ifdef CONFIG_STTS22H_TRIGGER
+static int stts22h_trig_cnt;
+
+static void stts22h_trigger_handler(const struct device *dev,
+				    const struct sensor_trigger *trig)
+{
+	stts22h_trig_cnt++;
+}
+#endif
+
 static void lps22df_config(const struct device *lps22df)
 {
 	struct sensor_value odr_attr;
@@ -201,6 +211,29 @@ static void lis2du12_config(const struct device *lis2du12)
 #endif
 }
 
+static void stts22h_config(const struct device *stts22h)
+{
+	struct sensor_value odr_attr;
+
+	/* set STTS22H sampling frequency to 100 Hz */
+	odr_attr.val1 = 100;
+	odr_attr.val2 = 0;
+
+	if (sensor_attr_set(stts22h, SENSOR_CHAN_AMBIENT_TEMP,
+			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+		printk("Cannot set sampling frequency for STTS22H\n");
+		return;
+	}
+
+#ifdef CONFIG_STTS22H_TRIGGER
+	struct sensor_trigger trig;
+
+	trig.type = SENSOR_TRIG_DATA_READY;
+	trig.chan = SENSOR_CHAN_AMBIENT_TEMP;
+	sensor_trigger_set(stts22h, &trig, stts22h_trigger_handler);
+#endif
+}
+
 static int led_pattern_out(void)
 {
 	const struct gpio_dt_spec led0_gpio = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
@@ -271,6 +304,7 @@ int main(void)
 	const struct device *const lsm6dsv16x = DEVICE_DT_GET_ONE(st_lsm6dsv16x);
 	const struct device *const lis2mdl = DEVICE_DT_GET_ONE(st_lis2mdl);
 	const struct device *const lis2du12 = DEVICE_DT_GET_ONE(st_lis2du12);
+	const struct device *const stts22h = DEVICE_DT_GET_ONE(st_stts22h);
 
 	if (!device_is_ready(hts221)) {
 		printk("%s: device not ready.\n", hts221->name);
@@ -292,7 +326,12 @@ int main(void)
 		printk("%s: device not ready.\n", lis2du12->name);
 		return 0;
 	}
+	if (!device_is_ready(stts22h)) {
+		printk("%s: device not ready.\n", stts22h->name);
+		return 0;
+	}
 
+	stts22h_config(stts22h);
 	lis2du12_config(lis2du12);
 	lis2mdl_config(lis2mdl);
 	lps22df_config(lps22df);
@@ -305,6 +344,7 @@ int main(void)
 		struct sensor_value lis2mdl_magn[3];
 		struct sensor_value lis2mdl_temp;
 		struct sensor_value lis2du12_accel[3];
+		struct sensor_value stts22h_temp;
 
 		/* handle HTS221 sensor */
 		if (sensor_sample_fetch(hts221) < 0) {
@@ -340,6 +380,13 @@ int main(void)
 		}
 #endif
 
+#ifndef CONFIG_STTS22H_TRIGGER
+		if (sensor_sample_fetch(stts22h) < 0) {
+			printf("STTS22H Sensor sample update error\n");
+			return 0;
+		}
+#endif
+
 		sensor_channel_get(hts221, SENSOR_CHAN_HUMIDITY, &hts221_hum);
 		sensor_channel_get(hts221, SENSOR_CHAN_AMBIENT_TEMP, &hts221_temp);
 		sensor_channel_get(lps22df, SENSOR_CHAN_AMBIENT_TEMP, &lps22df_temp);
@@ -349,6 +396,7 @@ int main(void)
 		sensor_channel_get(lis2mdl, SENSOR_CHAN_MAGN_XYZ, lis2mdl_magn);
 		sensor_channel_get(lis2mdl, SENSOR_CHAN_DIE_TEMP, &lis2mdl_temp);
 		sensor_channel_get(lis2du12, SENSOR_CHAN_ACCEL_XYZ, lis2du12_accel);
+		sensor_channel_get(stts22h, SENSOR_CHAN_AMBIENT_TEMP, &stts22h_temp);
 
 		/* Display sensor data */
 
@@ -397,6 +445,10 @@ int main(void)
 			sensor_value_to_double(&lis2du12_accel[1]),
 			sensor_value_to_double(&lis2du12_accel[2]));
 
+		/* STTS22H temperature */
+		printf("STTS22H: Temperature: %.1f C\n",
+		       sensor_value_to_double(&stts22h_temp));
+
 #ifdef CONFIG_LPS2XDF_TRIGGER
 		printk("%d:: lps22df trig %d\n", cnt, lps22df_trig_cnt);
 #endif
@@ -412,6 +464,10 @@ int main(void)
 
 #ifdef CONFIG_LIS2DU12_TRIGGER
 		printk("%d:: lis2du12 trig %d\n", cnt, lis2du12_trig_cnt);
+#endif
+
+#ifdef CONFIG_STTS22H_TRIGGER
+		printk("%d:: stts22h trig %d\n", cnt, stts22h_trig_cnt);
 #endif
 
 		k_sleep(K_MSEC(2000));

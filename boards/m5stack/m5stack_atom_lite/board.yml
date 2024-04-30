@@ -1,0 +1,5 @@
+board:
+  name: m5stack_atom_lite
+  vendor: m5stack
+  socs:
+  - name: esp32

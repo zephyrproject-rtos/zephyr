@@ -1,9 +1,10 @@
 /*
- * Copyright 2021-2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
- *
+ * SPDX-FileCopyrightText: <text>Copyright 2021-2022, 2024 Arm Limited and/or its
+ * affiliates <open-source-office@arm.com></text>
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "zephyr/sys_clock.h"
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
@@ -72,13 +73,26 @@ void *ethosu_semaphore_create(void)
 	return (void *)sem;
 }
 
-int ethosu_semaphore_take(void *sem)
+int ethosu_semaphore_take(void *sem, uint64_t timeout)
 {
 	int status;
 
-	status = k_sem_take((struct k_sem *)sem, K_FOREVER);
+	status = k_sem_take((struct k_sem *)sem, (timeout == ETHOSU_SEMAPHORE_WAIT_FOREVER)
+							 ? K_FOREVER
+							 : Z_TIMEOUT_TICKS(timeout));
+
 	if (status != 0) {
-		LOG_ERR("Failed to take semaphore with error - %d", status);
+		/* The Ethos-U driver expects the semaphore implementation to never fail except for
+		 * when a timeout occurs, and the current ethosu_semaphore_take implementation makes
+		 * no distinction, in terms of return codes, between a timeout and other semaphore
+		 * take failures. Also, note that a timeout is virtually indistinguishable from
+		 * other failures if the driver logging is disabled. Handling errors other than a
+		 * timeout is therefore not covered here and is deferred to the application
+		 * developer if necessary.
+		 */
+		if (status != -EAGAIN) {
+			LOG_ERR("Failed to take semaphore with error - %d", status);
+		}
 		return -1;
 	}
 
@@ -136,25 +150,23 @@ static int ethosu_zephyr_init(const struct device *dev)
 	return 0;
 }
 
-#define ETHOSU_DEVICE_INIT(n)									   \
-	static struct ethosu_data ethosu_data_##n;						   \
-												   \
-	static void ethosu_zephyr_irq_config_##n(void)						   \
-	{											   \
-		IRQ_CONNECT(DT_INST_IRQN(n),							   \
-				   DT_INST_IRQ(n, priority),					   \
-				   ethosu_zephyr_irq_handler,					   \
-				   DEVICE_DT_INST_GET(n), 0);					   \
-		irq_enable(DT_INST_IRQN(n));							   \
-	}											   \
-												   \
-	static const struct ethosu_dts_info ethosu_dts_info_##n = {				   \
-		.base_addr = (void *)DT_INST_REG_ADDR(n),					   \
-		.secure_enable = DT_INST_PROP(n, secure_enable),				   \
-		.privilege_enable = DT_INST_PROP(n, privilege_enable),				   \
-		.irq_config = &ethosu_zephyr_irq_config_##n,					   \
-	};											   \
-												   \
+#define ETHOSU_DEVICE_INIT(n)                                                                      \
+	static struct ethosu_data ethosu_data_##n;                                                 \
+                                                                                                   \
+	static void ethosu_zephyr_irq_config_##n(void)                                             \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), ethosu_zephyr_irq_handler,  \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}                                                                                          \
+                                                                                                   \
+	static const struct ethosu_dts_info ethosu_dts_info_##n = {                                \
+		.base_addr = (void *)DT_INST_REG_ADDR(n),                                          \
+		.secure_enable = DT_INST_PROP(n, secure_enable),                                   \
+		.privilege_enable = DT_INST_PROP(n, privilege_enable),                             \
+		.irq_config = &ethosu_zephyr_irq_config_##n,                                       \
+	};                                                                                         \
+                                                                                                   \
 	DEVICE_DT_INST_DEFINE(n, ethosu_zephyr_init, NULL, &ethosu_data_##n, &ethosu_dts_info_##n, \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 

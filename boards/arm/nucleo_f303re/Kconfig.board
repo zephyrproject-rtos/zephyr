@@ -1,8 +1,0 @@
-# NUCLEO-64 F303RE board configuration
-
-# Copyright (c) 2020 Paul M. Bendixen
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NUCLEO_F303RE
-	bool "NUCLEO-64 F303RE Development Board"
-	depends on SOC_STM32F303XE

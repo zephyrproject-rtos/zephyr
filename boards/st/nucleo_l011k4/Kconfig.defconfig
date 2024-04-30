@@ -1,0 +1,12 @@
+# STM32 Nucleo-32 development board with STM32L011K4 MCU
+
+# Copyright (c) 2020 Steven Daglish <s.c.daglish@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_L011K4
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_NUCLEO_L011K4

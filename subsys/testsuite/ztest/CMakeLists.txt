@@ -15,6 +15,10 @@ if(DEFINED TC_RUNID)
 endif()
 
 zephyr_library()
+
+# For strtok_r() and strdup()
+zephyr_library_compile_options(-D_POSIX_C_SOURCE=200809L)
+
 zephyr_library_sources(
   src/ztest.c
   src/ztest_error_hook.c

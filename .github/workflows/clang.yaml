@@ -9,17 +9,19 @@ concurrency:
 jobs:
   clang-build:
     if: github.repository_owner == 'zephyrproject-rtos'
-    runs-on: zephyr-runner-linux-x64-4xlarge
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.7
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.11.20240324
       options: '--entrypoint /bin/bash'
-      volumes:
-        - /repo-cache/zephyrproject:/github/cache/zephyrproject
     strategy:
       fail-fast: false
       matrix:
         platform: ["native_sim"]
     env:
+      CCACHE_DIR: /node-cache/ccache-zephyr
+      CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
+      CCACHE_REMOTE_ONLY: "true"
       LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-16
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
@@ -34,10 +36,16 @@ jobs:
           #        GitHub comes up with a fundamental fix for this problem.
           git config --global --add safe.directory ${GITHUB_WORKSPACE}
 
+      - name: Print cloud service information
+        run: |
+          echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
+          echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
+          echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
+
       - name: Clone cached Zephyr repository
         continue-on-error: true
         run: |
-          git clone --shared /github/cache/zephyrproject/zephyr .
+          git clone --shared /repo-cache/zephyrproject/zephyr .
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
@@ -63,7 +71,7 @@ jobs:
           # So first retry to update, if that does not work, remove all modules
           # and start over. (Workaround until we implement more robust module
           # west caching).
-          west update --path-cache /github/cache/zephyrproject 2>&1 1> west.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west2.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
+          west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.log || west update --path-cache /repo-cache/zephyrproject 2>&1 1> west2.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /repo-cache/zephyrproject)
 
           echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
@@ -74,31 +82,22 @@ jobs:
           gcc --version
           ls -la
 
-      - name: Prepare ccache timestamp/data
-        id: ccache_cache_timestamp
-        shell: cmake -P {0}
+      - name: Set up ccache
         run: |
-          string(TIMESTAMP current_date "%Y-%m-%d-%H;%M;%S" UTC)
-          string(REPLACE "/" "_" repo ${{github.repository}})
-          string(REPLACE "-" "_" repo2 ${repo})
-          file(APPEND $ENV{GITHUB_OUTPUT} "repo=${repo2}\n")
+          mkdir -p ${CCACHE_DIR}
+          ccache -M 10G
+          ccache -p
+          ccache -z -s -vv
 
-      - name: use cache
-        id: cache-ccache
-        uses: zephyrproject-rtos/action-s3-cache@v1.2.0
-        with:
-          key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-clang-${{ matrix.platform }}-ccache
-          path: /github/home/.cache/ccache
-          aws-s3-bucket: ccache.zephyrproject.org
-          aws-access-key-id: ${{ vars.AWS_CCACHE_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_CCACHE_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
-
-      - name: ccache stats initial
+      - name: Update BabbleSim to manifest revision
         run: |
-          mkdir -p /github/home/.cache
-          test -d github/home/.cache/ccache && rm -rf /github/home/.cache/ccache && mv github/home/.cache/ccache /github/home/.cache/ccache
-          ccache -M 10G -s
+          export BSIM_VERSION=$( west list bsim -f {revision} )
+          echo "Manifest points to bsim sha $BSIM_VERSION"
+          cd /opt/bsim_west/bsim
+          git fetch -n origin ${BSIM_VERSION}
+          git -c advice.detachedHead=false checkout ${BSIM_VERSION}
+          west update
+          make everything -s -j 8
 
       - name: Run Tests with Twister
         id: twister
@@ -119,10 +118,10 @@ jobs:
             echo "report_needed=0" >> $GITHUB_OUTPUT
           fi
 
-      - name: ccache stats post
+      - name: Print ccache stats
+        if: always()
         run: |
-          ccache -s
-          ccache -p
+          ccache -s -vv
 
       - name: Upload Unit Test Results
         if: always() && steps.twister.outputs.report_needed != 0

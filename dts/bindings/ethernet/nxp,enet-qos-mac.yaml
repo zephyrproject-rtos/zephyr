@@ -1,0 +1,15 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP ENET QOS MAC
+
+compatible: "nxp,enet-qos-mac"
+
+include: ethernet-controller.yaml
+
+properties:
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true

@@ -19,15 +19,15 @@
  */
 ZTEST(posix_headers, test_net_if_h)
 {
-	/* zassert_not_equal(-1, offsetof(struct if_nameindex, if_index)); */ /* not implemented */
-	/* zassert_not_equal(-1, offsetof(struct if_nameindex, if_name)); */ /* not implemented */
+	zassert_not_equal(-1, offsetof(struct if_nameindex, if_index));
+	zassert_not_equal(-1, offsetof(struct if_nameindex, if_name));
 
-	/* zassert_not_equal(-1, IF_NAMESIZE); */ /* not implemented */
+	zassert_not_equal(-1, IF_NAMESIZE);
 
 	if (IS_ENABLED(CONFIG_POSIX_API)) {
-		/* zassert_not_null(if_freenameindex); */ /* not implemented */
-		/* zassert_not_null(if_indextoname); */ /* not implemented */
-		/* zassert_not_null(if_nameindex); */ /* not implemented */
-		/* zassert_not_null(if_nametoindex); */ /* not implemented */
+		zassert_not_null(if_freenameindex);
+		zassert_not_null(if_indextoname);
+		zassert_not_null(if_nameindex);
+		zassert_not_null(if_nametoindex);
 	}
 }

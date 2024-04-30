@@ -35,10 +35,14 @@ Glossary of Terms
       Both application code and kernel code execute as privileged code
       within a single shared address space.
 
+   architecture
+      An instruction set architecture (ISA) along with a programming model.
+
    board
       A target system with a defined set of devices and capabilities,
       which can load and execute an application image. It may be an actual
-      hardware system or a simulated system running under QEMU.
+      hardware system or a simulated system running under QEMU. A board can
+      contain one or more :term:`SoCs <SoC>`.
       The Zephyr kernel supports a :ref:`variety of boards <boards>`.
 
    board configuration
@@ -48,6 +52,45 @@ Glossary of Terms
       for each board it supports. The kernel configuration settings that are
       specified by the build system can be over-ridden by the application,
       if desired.
+
+   board name
+      The human-readable name of a :term:`board`. Uniquely and descriptively
+      identifies a particular system, but does not include additional
+      information that may be required to actually build a Zephyr image for it.
+      See :ref:`board_terminology` for additional details.
+
+   board qualifiers
+      The set of additional tokens, separated by a forward slash (`/`) that
+      follow the :term:`board name` (and optionally :term:`board revision`) to
+      form the :term:`board target`. The currently accepted qualifiers are
+      :term:`SoC`, :term:`CPU cluster` and :term:`variant`.
+      See :ref:`board_terminology` for additional details.
+
+   board revision
+      An optional version string that identifies a particular revision of a
+      hardware system. This is useful to avoid duplication of board files
+      whenever small changes are introduced to a hardware system.
+      See :ref:`porting_board_revisions` and :ref:`application_board_version`
+      for more information.
+
+   board target
+     The full string that can be provided to any of the Zephyr build tools to
+     compile and link an image for a particular hardware system. This string
+     uniquely identifies the combination of :term:`board name`, :term:`board
+     revision` and :term:`board qualifiers`.
+     See :ref:`board_terminology` for additional details.
+
+   CPU cluster
+     A group of one or more :term:`CPU cores <CPU core>`, all executing the same image
+     within the same address space and in a symmetrical (SMP) configuration.
+     Only :term:`CPU cores <CPU core>` of the same :term:`architecture` can be in a single
+     cluster. Multiple CPU clusters (each of one or more cores) can coexist in
+     the same :term:`SoC`.
+
+   CPU core
+     A single processing unit, with its own Program Counter, executing program
+     instructions sequentially. CPU cores are part of a :term:`CPU cluster`,
+     which can contain one or more cores.
 
    device runtime power management
       Device Runtime Power Management (PM) refers the capability of devices to
@@ -85,11 +128,29 @@ Glossary of Terms
       integrated circuit that are not in use.
 
    SoC
-      `System on a chip`_
+      A `System on a chip`_, that is, an integrated circuit that contains at
+      least one :term:`CPU cluster` (in turn with at least one :term:`CPU core`),
+      as well as peripherals and memory.
+
+   SoC family
+      One or more :term:`SoCs <SoC>` or :term:`SoC series` that share enough
+      in common to consider them related and under a single family denomination.
+
+   SoC series
+      A number of different :term:`SoCs <SoC>` that share similar characteristics and
+      features, and that the vendor typically names and markets together.
 
    system power state
       System power states describe the power consumption of the system as a
       whole. System power states are represented by :c:enum:`pm_state`.
+
+   variant
+      In the context of :term:`board qualifiers`, a variant designates a
+      particular type or configuration of a build for a combination of :term:`SoC`
+      and :term:`CPU cluster`. Common uses of the variant concept include
+      introducing both secure and non-secure builds for platforms with Trusted
+      Execution Environment support, or selecting the type of RAM used in a
+      build.
 
    west
       A multi-repo meta-tool developed for the Zephyr project. See :ref:`west`.

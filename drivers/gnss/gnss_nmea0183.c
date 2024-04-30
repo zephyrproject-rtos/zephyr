@@ -530,7 +530,7 @@ int gnss_nmea0183_parse_gga(const char **argv, uint16_t argc, struct gnss_data *
 
 	/* Parse HDOP */
 	if ((gnss_parse_dec_to_milli(argv[8], &tmp64) < 0) ||
-	    (tmp64 > UINT16_MAX) ||
+	    (tmp64 > UINT32_MAX) ||
 	    (tmp64 < 0)) {
 		return -EINVAL;
 	}

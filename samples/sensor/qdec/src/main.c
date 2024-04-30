@@ -85,7 +85,11 @@ int main(void)
 
 	qenc_emulate_init();
 
+#ifndef CONFIG_COVERAGE
 	while (true) {
+#else
+	for (int i = 0; i < 3; i++) {
+#endif
 		rc = sensor_sample_fetch(dev);
 		if (rc != 0) {
 			printk("Failed to fetch sample (%d)\n", rc);

@@ -18,6 +18,8 @@ extern "C" {
 /**
  * @brief Logging
  * @defgroup logging Logging
+ * @since 1.13
+ * @version 1.0.0
  * @ingroup os_services
  * @{
  * @}
@@ -71,6 +73,24 @@ extern "C" {
  * followed by as many values as specifiers.
  */
 #define LOG_DBG(...)    Z_LOG(LOG_LEVEL_DBG, __VA_ARGS__)
+
+/**
+ * @brief Writes a WARNING level message to the log on the first execution only.
+ *
+ * @details It's meant for situations that warrant investigation but could clutter
+ * the logs if output on every execution.
+ *
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_WRN_ONCE(...)					\
+	do {							\
+		static uint8_t __warned;			\
+		if (unlikely(__warned == 0)) {			\
+			Z_LOG(LOG_LEVEL_WRN, __VA_ARGS__);	\
+			__warned = 1;				\
+		}						\
+	} while (0)
 
 /**
  * @brief Unconditionally print raw log message.

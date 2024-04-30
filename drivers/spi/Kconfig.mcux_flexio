@@ -1,0 +1,11 @@
+# Copyright (c) 2024, STRIM, ALC
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_MCUX_FLEXIO
+	bool "MCUX FlexIO SPI driver"
+	default y
+	depends on DT_HAS_NXP_FLEXIO_SPI_ENABLED
+	depends on CLOCK_CONTROL
+	select MCUX_FLEXIO
+	help
+	  Enable support for MCUX FlexIO SPI driver.

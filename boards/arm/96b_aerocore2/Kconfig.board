@@ -1,6 +1,0 @@
-#  Copyright (c) 2020 Linaro Limited
-#  SPDX-License-Identifier: Apache-2.0
-
-config BOARD_96B_AEROCORE2
-	bool "96Boards AEROCORE2 (STM32F427)"
-	depends on SOC_STM32F427XX

@@ -3,6 +3,10 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
+: "${BSIM_COMPONENTS_PATH:?BSIM_COMPONENTS_PATH must be defined}"
+
+WORK_DIR="${WORK_DIR:-${ZEPHYR_BASE}/bsim_out}"
+
 function print_error_info(){
   echo -e "\033[0;31mFailure building ${app} ${conf_file} for ${BOARD}\033[0m\n\
   You can rebuild it with\n\

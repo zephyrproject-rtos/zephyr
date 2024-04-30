@@ -21,8 +21,7 @@ STRUCT_SECTION_START_EXTERN(net_socket_service_desc);
 STRUCT_SECTION_END_EXTERN(net_socket_service_desc);
 
 static struct service {
-	/* The +1 is for triggering events from register function */
-	struct zsock_pollfd events[1 + CONFIG_NET_SOCKETS_POLL_MAX];
+	struct zsock_pollfd events[CONFIG_NET_SOCKETS_POLL_MAX];
 	int count;
 } ctx;
 
@@ -190,6 +189,10 @@ static void socket_service_thread(void)
 
 	/* Create contiguous poll event array to enable socket polling */
 	STRUCT_SECTION_FOREACH(net_socket_service_desc, svc) {
+		NET_DBG("Service %s has %d pollable sockets",
+			COND_CODE_1(CONFIG_NET_SOCKETS_LOG_LEVEL_DBG,
+				    (svc->owner), ("")),
+			svc->pev_len);
 		get_idx(svc) = count + 1;
 		count += svc->pev_len;
 	}

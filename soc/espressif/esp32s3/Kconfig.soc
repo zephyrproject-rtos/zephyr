@@ -1,0 +1,156 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32S3
+	bool
+	select SOC_FAMILY_ESPRESSIF_ESP32
+	help
+	  ESP32-S3 Series
+
+config SOC_ESP32S3_R2
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_R2
+
+config SOC_ESP32S3_R8
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_R8
+
+config SOC_ESP32S3_R8V
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_R8V
+
+config SOC_ESP32S3_FN8
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_FN8
+
+config SOC_ESP32S3_PICO_N8R2
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_PICO_N8R2
+
+config SOC_ESP32S3_PICO_N8R8
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_PICO_N8R8
+
+# SiP with flash and/or psram
+config SOC_ESP32S3_MINI_N8
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_MINI_N8
+
+config SOC_ESP32S3_MINI_N4R2
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_MINI_N4R2
+
+config SOC_ESP32S3_WROOM_N4
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_WROOM_N4
+
+config SOC_ESP32S3_WROOM_N8
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_WROOM_N8
+
+config SOC_ESP32S3_WROOM_N16
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_WROOM_N16
+
+config SOC_ESP32S3_WROOM_N4R8
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_WROOM_N4R8
+
+config SOC_ESP32S3_WROOM_N8R8
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_WROOM_N8R8
+
+config SOC_ESP32S3_WROOM_N16R8
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_WROOM_N16R8
+
+config SOC_ESP32S3_WROOM_N4R2
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_WROOM_N4R2
+
+config SOC_ESP32S3_WROOM_N8R2
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_WROOM_N8R2
+
+config SOC_ESP32S3_WROOM_N16R2
+	bool
+	select SOC_ESP32S3
+	help
+	  ESP32S3_WROOM_N16R2
+
+config SOC_ESP32S3
+	bool
+	select SOC_SERIES_ESP32S3
+	help
+	  ESP32S3
+
+config SOC_ESP32S3_PROCPU
+	bool
+	help
+	  This hidden configuration defines that build is targeted for PROCPU (core 0).
+
+config SOC_ESP32S3_APPCPU
+	bool
+	help
+	  This hidden configuration defines that build is targeted for APPCPU (core 1).
+
+config SOC_SERIES
+	default "esp32s3" if SOC_SERIES_ESP32S3
+
+config SOC
+	default "esp32s3" if SOC_SERIES_ESP32S3
+
+config SOC_PART_NUMBER
+	default "ESP32S3_R2" if SOC_ESP32S3_R2
+	default "ESP32S3_R8" if SOC_ESP32S3_R8
+	default "ESP32S3_R8V" if SOC_ESP32S3_R8V
+	default "ESP32S3_FN8" if SOC_ESP32S3_FN8
+	default "ESP32S3_PICO_N8R2" if SOC_ESP32S3_PICO_N8R2
+	default "ESP32S3_PICO_N8R8" if SOC_ESP32S3_PICO_N8R8
+	default "ESP32S3_MINI_N8" if SOC_ESP32S3_MINI_N8
+	default "ESP32S3_MINI_N4R2" if SOC_ESP32S3_MINI_N4R2
+	default "ESP32S3_WROOM_N4" if SOC_ESP32S3_WROOM_N4
+	default "ESP32S3_WROOM_N8" if SOC_ESP32S3_WROOM_N8
+	default "ESP32S3_WROOM_N16" if SOC_ESP32S3_WROOM_N16
+	default "ESP32S3_WROOM_N4R8" if SOC_ESP32S3_WROOM_N4R8
+	default "ESP32S3_WROOM_N8R8" if SOC_ESP32S3_WROOM_N8R8
+	default "ESP32S3_WROOM_N16R8" if SOC_ESP32S3_WROOM_N16R8
+	default "ESP32S3_WROOM_N4R2" if SOC_ESP32S3_WROOM_N4R2
+	default "ESP32S3_WROOM_N8R2" if SOC_ESP32S3_WROOM_N8R2
+	default "ESP32S3_WROOM_N16R2" if SOC_ESP32S3_WROOM_N16R2
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "espressif_esp32s3" if SOC_SERIES_ESP32S3

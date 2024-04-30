@@ -12,11 +12,11 @@ tests:
     harness: console
     integration_platforms:
       - qemu_x86
-      - qemu_arc_em
+      - qemu_arc/qemu_arc_em
     harness_config:
       type: one_line
       record:
-        regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+        regex: "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"
 
@@ -30,14 +30,14 @@ tests:
     harness: console
     integration_platforms:
       - qemu_x86
-      - qemu_arc_em
+      - qemu_arc/qemu_arc_em
     extra_configs:
       - CONFIG_OBJ_CORE=y
       - CONFIG_OBJ_CORE_STATS=y
     harness_config:
       type: one_line
       record:
-        regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+        regex: "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"
 
@@ -54,7 +54,7 @@ tests:
     harness_config:
       type: one_line
       record:
-        regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+        regex: "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"
 
@@ -72,7 +72,7 @@ tests:
     harness_config:
       type: one_line
       record:
-        regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+        regex: "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"
 
@@ -93,7 +93,7 @@ tests:
     harness_config:
       type: one_line
       record:
-        regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+        regex: "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"
 
@@ -107,13 +107,13 @@ tests:
     harness: console
     integration_platforms:
       - qemu_x86
-      - qemu_arc_em
+      - qemu_arc/qemu_arc_em
     extra_configs:
       - CONFIG_TIMESLICING=y
     harness_config:
       type: one_line
       record:
-        regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+        regex: "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"
 
@@ -131,6 +131,6 @@ tests:
     harness_config:
       type: one_line
       record:
-        regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+        regex: "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"

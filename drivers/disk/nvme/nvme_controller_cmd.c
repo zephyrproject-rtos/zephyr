@@ -1,6 +1,8 @@
 /*
+ * Copyright (c) 2022 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (c) 2022 Intel Corp.
+ *
+ * Derived from FreeBSD original driver made by Jim Harris
  */
 
 #include <zephyr/logging/log.h>

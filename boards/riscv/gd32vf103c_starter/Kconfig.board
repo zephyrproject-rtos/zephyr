@@ -1,6 +1,0 @@
-# Copyright (c) 2022 YuLong Yao <feilongphone@gmail.com>
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_GD32VF103C_STARTER
-	bool "GigaDevice GD32VF103C-STARTER"
-	depends on SOC_GD32VF103

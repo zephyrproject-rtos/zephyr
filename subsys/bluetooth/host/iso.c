@@ -34,14 +34,14 @@ LOG_MODULE_REGISTER(bt_iso);
 
 #define iso_chan(_iso) ((_iso)->iso.chan);
 
-#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_SYNC_RECEIVER)
+#if defined(CONFIG_BT_ISO_RX)
 NET_BUF_POOL_FIXED_DEFINE(iso_rx_pool, CONFIG_BT_ISO_RX_BUF_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_RX_MTU),
 			  sizeof(struct iso_data), NULL);
 
 static struct bt_iso_recv_info iso_info_data[CONFIG_BT_ISO_RX_BUF_COUNT];
 #define iso_info(buf) (&iso_info_data[net_buf_id(buf)])
-#endif /* CONFIG_BT_ISO_UNICAST || CONFIG_BT_ISO_SYNC_RECEIVER */
+#endif /* CONFIG_BT_ISO_RX */
 
 #if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCAST)
 NET_BUF_POOL_FIXED_DEFINE(iso_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
@@ -80,7 +80,7 @@ struct bt_iso_big bigs[CONFIG_BT_ISO_MAX_BIG];
 static struct bt_iso_big *lookup_big_by_handle(uint8_t big_handle);
 #endif /* CONFIG_BT_ISO_BROADCAST */
 
-#if defined(CONFIG_BT_CONN_TX)
+#if defined(CONFIG_BT_ISO_TX)
 static void bt_iso_send_cb(struct bt_conn *iso, void *user_data, int err)
 {
 	struct bt_iso_chan *chan = iso->iso.chan;
@@ -94,7 +94,7 @@ static void bt_iso_send_cb(struct bt_conn *iso, void *user_data, int err)
 		ops->sent(chan);
 	}
 }
-#endif /* CONFIG_BT_CONN_TX */
+#endif /* CONFIG_BT_ISO_TX */
 
 void hci_iso(struct net_buf *buf)
 {
@@ -570,7 +570,7 @@ int bt_iso_chan_get_info(const struct bt_iso_chan *chan,
 	return 0;
 }
 
-#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_SYNC_RECEIVER)
+#if defined(CONFIG_BT_ISO_RX)
 struct net_buf *bt_iso_get_rx(k_timeout_t timeout)
 {
 	struct net_buf *buf = net_buf_alloc(&iso_rx_pool, timeout);
@@ -727,9 +727,9 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 
 	bt_conn_reset_rx_state(iso);
 }
-#endif /* CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_SYNC_RECEIVER */
+#endif /* CONFIG_BT_ISO_RX */
 
-#if defined(CONFIG_BT_CONN_TX)
+#if defined(CONFIG_BT_ISO_TX)
 static uint16_t iso_chan_max_data_len(const struct bt_iso_chan *chan)
 {
 	size_t max_controller_data_len;
@@ -954,7 +954,7 @@ int bt_iso_chan_get_tx_sync(const struct bt_iso_chan *chan, struct bt_iso_tx_inf
 
 	return 0;
 }
-#endif /* CONFIG_BT_CONN_TX */
+#endif /* CONFIG_BT_ISO_TX */
 
 #if defined(CONFIG_BT_ISO_UNICAST)
 int bt_iso_chan_disconnect(struct bt_iso_chan *chan)

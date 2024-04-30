@@ -188,7 +188,7 @@ BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_ARC_MPU_ALIGN == 0,
  * in another area of memory generated at build time by gen_kobject_list.py
  *
  * +------------+ <- thread.arch.priv_stack_start
- * | Priv Stack | } Z_KERNEL_STACK_LEN(CONFIG_PRIVILEGED_STACK_SIZE)
+ * | Priv Stack | } K_KERNEL_STACK_LEN(CONFIG_PRIVILEGED_STACK_SIZE)
  * +------------+
  *
  * +------------+ <- thread.stack_obj = thread.stack_info.start

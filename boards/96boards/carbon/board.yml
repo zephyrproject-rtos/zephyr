@@ -1,0 +1,6 @@
+board:
+  name: 96b_carbon
+  vendor: 96boards
+  socs:
+  - name: stm32f401xe
+  - name: nrf51822

@@ -1,0 +1,35 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/* Delete ipc chosen property where old IPM mailbox driver bellow is
+		 * configured.
+		 */
+		/delete-property/ zephyr,ipc;
+	};
+
+	soc {
+		/* Delete IPM Driver node nxp,lpc-mailbox */
+		/delete-node/ mailbox@8b000;
+
+		/* Attach MBOX driver to Mailbox Unit */
+		mbox:mbox@5008b000 {
+			compatible = "nxp,mbox-mailbox";
+			reg = <0x5008b000 0xEC>;
+			interrupts = <31 0>;
+			rx-channels = <4>;
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+	};
+
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox 2>, <&mbox 3>;
+		mbox-names = "tx", "rx";
+	};
+};

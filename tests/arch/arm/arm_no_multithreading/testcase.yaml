@@ -8,11 +8,11 @@ tests:
     platform_allow:
       - qemu_cortex_m0
       - qemu_cortex_m3
-      - mps2_an385
-      - mps2_an521
-      - mps3_an547
-      - nrf52840dk_nrf52840
-      - nrf9160dk_nrf9160
-      - nrf51dk_nrf51422
+      - mps2/an385
+      - mps2/an521/cpu0
+      - mps3/an547
+      - nrf52840dk/nrf52840
+      - nrf9160dk/nrf9160
+      - nrf51dk/nrf51822
     integration_platforms:
       - qemu_cortex_m0

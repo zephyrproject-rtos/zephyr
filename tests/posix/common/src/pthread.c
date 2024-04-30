@@ -539,6 +539,32 @@ ZTEST(pthread, test_pthread_testcancel)
 	zassert_false(testcancel_failed);
 }
 
+static void *test_pthread_setschedprio_fn(void *arg)
+{
+	int policy;
+	int prio = 0;
+	struct sched_param param;
+	pthread_t self = pthread_self();
+
+	zassert_equal(pthread_setschedprio(self, PRIO_INVALID), EINVAL, "EINVAL was expected");
+	zassert_equal(pthread_setschedprio(PTHREAD_INVALID, prio), ESRCH, "ESRCH was expected");
+
+	zassert_ok(pthread_setschedprio(self, prio));
+	param.sched_priority = ~prio;
+	zassert_ok(pthread_getschedparam(self, &policy, &param));
+	zassert_equal(param.sched_priority, prio, "Priority unchanged");
+
+	return NULL;
+}
+
+ZTEST(pthread, test_pthread_setschedprio)
+{
+	pthread_t th;
+
+	zassert_ok(pthread_create(&th, NULL, test_pthread_setschedprio_fn, NULL));
+	zassert_ok(pthread_join(th, NULL));
+}
+
 static void before(void *arg)
 {
 	ARG_UNUSED(arg);

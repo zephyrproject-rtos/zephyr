@@ -1,0 +1,5 @@
+# Copyright (c) 2020 Stefano Manni
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_WAVESHARE_OPEN103Z
+	select SOC_STM32F103XE

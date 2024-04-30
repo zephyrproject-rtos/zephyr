@@ -13,6 +13,10 @@ properties:
   "#gpio-cells":
     const: 2
 
+  irqs:
+    type: array
+    description: pin-irq pairs
+
 gpio-cells:
   - pin
   - flags

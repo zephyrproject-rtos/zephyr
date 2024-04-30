@@ -9,13 +9,12 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 SIMULATION_ID="tbs_ccp"
 VERBOSITY_LEVEL=2
-EXECUTE_TIMEOUT=20
 
 cd ${BSIM_OUT_PATH}/bin
 
 printf "\n\n==== Running TBS Server Only (API) test ====n\n"
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=tbs_test_server_only -rs=23 -D=1
 
 # Simulation time should be larger than the WAIT_TIME in common.h
@@ -26,10 +25,10 @@ wait_for_background_jobs
 
 printf "\n\n==== Running TBS server & client tests ====n\n"
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=tbs -rs=23 -D=2
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=tbs_client -rs=6 -D=2
 
 # Simulation time should be larger than the WAIT_TIME in common.h

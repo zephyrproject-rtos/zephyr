@@ -31,6 +31,7 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&sleep>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
@@ -40,6 +41,15 @@
 		cpu@1 {
 			compatible = "arm,cortex-m33";
 			reg = <1>;
+		};
+
+		power-states {
+			sleep: sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <4>;
+				exit-latency-us = <4>;
+			};
 		};
 	};
 };

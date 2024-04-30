@@ -70,7 +70,7 @@ static inline int32_t adc_keys_read(const struct device *dev)
 static inline void adc_keys_process(const struct device *dev)
 {
 	const struct adc_keys_config *cfg = dev->config;
-	int32_t sample_mv, closest_mv;
+	int32_t sample_mv, closest_mv = 0;
 	uint32_t diff, closest_diff = UINT32_MAX;
 	const struct adc_keys_code_config *code_cfg;
 	struct adc_keys_key_state *key_state;

@@ -29,7 +29,7 @@
 #include <kernel_internal.h>
 #include <zephyr/linker/linker-defs.h>
 #include <pmp.h>
-#include <zephyr/sys/arch_interface.h>
+#include <zephyr/arch/arch_interface.h>
 #include <zephyr/arch/riscv/csr.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL

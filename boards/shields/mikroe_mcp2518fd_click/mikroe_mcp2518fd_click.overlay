@@ -11,9 +11,7 @@
 		osc-freq = <40000000>;
 
 		bus-speed = <125000>;
-		sample-point = <875>;
 		bus-speed-data = <1000000>;
-		sample-point-data = <875>;
 	};
 };
 

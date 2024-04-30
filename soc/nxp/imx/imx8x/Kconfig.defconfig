@@ -1,0 +1,45 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_IMX8X
+
+if SOC_MIMX8QX6_ADSP
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 640000000
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 50000
+
+config DCACHE_LINE_SIZE
+	default 128
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config CACHE_MANAGEMENT
+	default y
+
+config SMP
+	default n
+
+config XTENSA_TIMER
+	default y
+
+config KERNEL_ENTRY
+	default "__start"
+
+config MULTI_LEVEL_INTERRUPTS
+	default n
+
+config 2ND_LEVEL_INTERRUPTS
+	default n
+
+# To prevent test uses TEST_LOGGING_MINIMAL
+config TEST_LOGGING_DEFAULTS
+	default n
+	depends on TEST
+
+endif # SOC_MIMX8QX6_ADSP
+
+endif # SOC_SERIES_IMX8X

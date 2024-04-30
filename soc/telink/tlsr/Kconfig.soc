@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_TELINK_TLSR
+	bool
+
+config SOC_FAMILY
+	default "telink_tlsr" if SOC_FAMILY_TELINK_TLSR
+
+rsource "*/Kconfig.soc"

@@ -74,7 +74,6 @@ struct lll_adv_iso {
 	uint8_t term_ack:1;
 	uint8_t term_reason;
 
-	uint8_t  ctrl_chan_use;
 	uint8_t  ctrl_expire;
 	uint16_t ctrl_instant;
 

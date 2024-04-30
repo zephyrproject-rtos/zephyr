@@ -5,7 +5,7 @@ tests:
   sample.bluetooth.broadcast_audio_assistant:
     harness: bluetooth
     platform_allow:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     tags: bluetooth

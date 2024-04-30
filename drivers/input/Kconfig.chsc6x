@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Nicolas Goualard <nicolas.goualard@sfr.fr>
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_CHSC6X
+	bool "Use CHSC6X capacitive touch panel driver"
+	default y
+	depends on DT_HAS_CHIPSEMI_CHSC6X_ENABLED
+	select GPIO
+	select I2C
+	help
+	  Enable out of tree driver for CHSC6X touch panel.

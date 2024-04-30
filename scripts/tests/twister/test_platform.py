@@ -21,11 +21,11 @@ TESTDATA_1 = [
     (
 """\
 identifier: dummy empty
-arch: arch0
+arch: arc
 """,
         {
             'name': 'dummy empty',
-            'arch': 'arch0',
+            'arch': 'arc',
             'twister': True,
             'ram': 128,
             'timeout_multiplier': 1.0,
@@ -44,7 +44,7 @@ arch: arch0
             'env': [],
             'env_satisfied': True
         },
-        '<dummy empty on arch0>'
+        '<dummy empty on arc>'
     ),
     (
 """\

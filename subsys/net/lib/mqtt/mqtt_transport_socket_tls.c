@@ -69,6 +69,19 @@ int mqtt_client_tls_connect(struct mqtt_client *client)
 		}
 	}
 
+#if defined(CONFIG_MQTT_LIB_TLS_USE_ALPN)
+	if (tls_config->alpn_protocol_name_list != NULL &&
+		tls_config->alpn_protocol_name_count > 0) {
+		ret = zsock_setsockopt(client->transport.tls.sock, SOL_TLS,
+				TLS_ALPN_LIST, tls_config->alpn_protocol_name_list,
+				sizeof(const char *) * tls_config->alpn_protocol_name_count);
+		if (ret < 0) {
+			goto error;
+		}
+	}
+
+#endif
+
 	if (tls_config->hostname) {
 		ret = zsock_setsockopt(client->transport.tls.sock, SOL_TLS,
 				       TLS_HOSTNAME, tls_config->hostname,

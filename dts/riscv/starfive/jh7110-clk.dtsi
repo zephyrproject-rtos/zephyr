@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2024 Pratik Farkase <pratik.farkase@wsisweden.com>
+ * Copyright (c) 2024 Sigma Connectivity WSI AB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	apb2clk: apb2clk {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+		clock-frequency = <125000000>;
+	};
+
+	uartclk: uartclk {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+		clock-frequency = <100000000>;
+	};
+};

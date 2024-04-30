@@ -295,7 +295,8 @@ int main(void)
 	}
 
 	while (num_synced < MAX_SYNCS) {
-		err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+		/* Enable continuous scanning */
+		err = bt_le_scan_start(BT_LE_SCAN_PASSIVE_CONTINUOUS, device_found);
 		if (err) {
 			printk("Scanning failed to start (err %d)\n", err);
 			return 0;

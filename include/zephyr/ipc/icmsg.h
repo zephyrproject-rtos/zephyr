@@ -33,8 +33,8 @@ enum icmsg_state {
 };
 
 struct icmsg_config_t {
-	struct mbox_channel mbox_tx;
-	struct mbox_channel mbox_rx;
+	struct mbox_dt_spec mbox_tx;
+	struct mbox_dt_spec mbox_rx;
 };
 
 struct icmsg_data_t {

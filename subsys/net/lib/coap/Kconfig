@@ -80,7 +80,7 @@ config COAP_ACK_RANDOM_PERCENT
 config COAP_MAX_RETRANSMIT
 	int "Max retransmission of a CoAP packet"
 	default 4
-	range 1 10
+	range 1 100
 
 config COAP_BACKOFF_PERCENT
 	int "Retransmission backoff factor for ACK timeout described as percentage"

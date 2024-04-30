@@ -8,7 +8,7 @@ project(mesh)
 
 target_sources(app PRIVATE src/main.c)
 
-if (BOARD STREQUAL bbc_microbit)
+if(CONFIG_BOARD_BBC_MICROBIT)
   target_sources(app PRIVATE src/microbit.c)
 else()
   target_sources(app PRIVATE src/board.c)

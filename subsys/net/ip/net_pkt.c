@@ -129,9 +129,9 @@ NET_BUF_POOL_FIXED_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT, CONFIG_NET_BUF_DATA_
 
 #else /* !CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
-NET_BUF_POOL_VAR_DEFINE(rx_bufs, CONFIG_NET_BUF_RX_COUNT, CONFIG_NET_BUF_DATA_POOL_SIZE,
+NET_BUF_POOL_VAR_DEFINE(rx_bufs, CONFIG_NET_BUF_RX_COUNT, CONFIG_NET_PKT_BUF_RX_DATA_POOL_SIZE,
 			CONFIG_NET_PKT_BUF_USER_DATA_SIZE, NULL);
-NET_BUF_POOL_VAR_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT, CONFIG_NET_BUF_DATA_POOL_SIZE,
+NET_BUF_POOL_VAR_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT, CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE,
 			CONFIG_NET_PKT_BUF_USER_DATA_SIZE, NULL);
 
 #endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
@@ -1817,7 +1817,7 @@ static int32_t net_pkt_find_offset(struct net_pkt *pkt, uint8_t *ptr)
 	buf = pkt->buffer;
 
 	while (buf) {
-		if (buf->data <= ptr && ptr <= (buf->data + buf->len)) {
+		if (buf->data <= ptr && ptr < (buf->data + buf->len)) {
 			ret = offset + (ptr - buf->data);
 			break;
 		}

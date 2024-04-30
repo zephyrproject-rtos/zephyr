@@ -19,7 +19,7 @@ tests:
     modules:
       - lvgl
     integration_platforms:
-      - native_sim_64
+      - native_sim/native/64
   sample.display.lvgl.rk055hdmipi4m:
     # This sample is intended to test the RT1170 and RT595, which require
     # a display shield to work with LVGL
@@ -36,13 +36,29 @@ tests:
       - lvgl
     extra_args: SHIELD="rk055hdmipi4m"
     platform_allow:
-      - mimxrt1170_evk_cm7
-      - mimxrt595_evk_cm33
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt595_evk/mimxrt595s/cm33
     integration_platforms:
-      - mimxrt1170_evk_cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
   sample.subsys.display.lvgl.st_b_lcd40_dsi1_mb1166:
-    platform_allow: stm32h747i_disco_m7
+    filter: dt_compat_enabled("orisetech,otm8009a")
+    platform_allow: stm32h747i_disco/stm32h747xx/m7
     extra_args: SHIELD=st_b_lcd40_dsi1_mb1166
+    harness: console
+    harness_config:
+      fixture: fixture_display
+    modules:
+      - lvgl
+    tags:
+      - samples
+      - display
+      - shield
+      - lvgl
+      - gui
+  sample.subsys.display.lvgl.st_b_lcd40_dsi1_mb1166_a09:
+    filter: dt_compat_enabled("frida,nt35510")
+    platform_allow: stm32h747i_disco/stm32h747xx/m7
+    extra_args: SHIELD=st_b_lcd40_dsi1_mb1166_a09
     harness: console
     harness_config:
       fixture: fixture_display

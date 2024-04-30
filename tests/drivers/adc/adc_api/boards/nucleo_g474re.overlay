@@ -12,6 +12,10 @@
 };
 
 &adc1 {
+	dmas = <&dmamux1 0 5 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_16BITS |
+		STM32_DMA_PERIPH_16BITS)>;
+	dma-names = "dmamux";
+
 	pinctrl-0 = <&adc1_in1_pa0 &adc1_in2_pa1>;
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -31,4 +35,12 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
 	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
 };

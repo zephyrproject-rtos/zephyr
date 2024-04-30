@@ -24,8 +24,12 @@ max20335@1 {
 	charger: charger {
 		compatible = "maxim,max20335-charger";
 
-		constant-charge-current-max-microamp = <100000>;
+		chgin-to-sys-current-limit-microamp = <100000>;
 		constant-charge-voltage-max-microvolt = <4050000>;
+		system-voltage-min-threshold-microvolt = <3600000>;
+		re-charge-threshold-microvolt = <170000>;
+		thermistor-monitoring-mode = "JEITA-2";
+		int-gpios = <&test_gpio 0 0>;
 	};
 };
 

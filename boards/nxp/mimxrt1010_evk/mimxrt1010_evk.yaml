@@ -1,0 +1,30 @@
+#
+# Copyright (c) 2023 TiaC Systems
+# Copyright (c) 2019, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mimxrt1010_evk
+name: NXP MIMXRT1010-EVK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 16384
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
+  - i2c
+  - counter
+  - dma
+  - usb_device
+  - spi
+  - adc
+  - gpio
+vendor: nxp

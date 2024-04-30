@@ -30,10 +30,10 @@ tests:
       fixture: fixture_shield_adafruit_2_8_tft_touch_v2
   sample.filesystem.fat_fs.nrf52840dk_nrf52840:
     build_only: true
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
   sample.filesystem.fat_fs.nrf52840dk_nrf52840.qspi:
     build_only: true
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840
     extra_args:
       - OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_qspi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_qspi.overlay
@@ -46,9 +46,7 @@ tests:
     simulation_exclude:
       - renode
     extra_args: CONF_FILE="prj_ext.conf"
-    platform_allow: hifive_unmatched bl5340_dvk_cpuapp
+    platform_allow: hifive_unmatched bl5340_dvk/nrf5340/cpuapp
   sample.filesystem.fat_fs.stm32h747i_disco_m7_sdmmc:
     build_only: true
-    platform_allow: stm32h747i_disco_m7
-    extra_args:
-      - OVERLAY_CONFIG=boards/stm32h747i_disco_m7.conf
+    platform_allow: stm32h747i_disco/stm32h747xx/m7

@@ -347,12 +347,9 @@ static inline uint8_t *get_mac(const struct device *dev)
 {
 	const struct rf2xx_config *conf = dev->config;
 	struct rf2xx_context *ctx = dev->data;
-	uint32_t *ptr = (uint32_t *)(ctx->mac_addr);
 
 	if (!conf->has_mac) {
-		UNALIGNED_PUT(sys_rand32_get(), ptr);
-		ptr = (uint32_t *)(ctx->mac_addr + 4);
-		UNALIGNED_PUT(sys_rand32_get(), ptr);
+		sys_rand_get(ctx->mac_addr, sizeof(ctx->mac_addr));
 	}
 
 	/*

@@ -26,7 +26,7 @@ static int cmd_tmap_init(const struct shell *sh, size_t argc, char **argv)
 				       (BT_TMAP_BMR_SUPPORTED ? BT_TMAP_ROLE_BMR : 0U);
 	int err;
 
-	shell_info(sh, "Registering TMAS with role: %u", role);
+	shell_info(sh, "Registering TMAS with role: 0x%04X", role);
 
 	err = bt_tmap_register(role);
 	if (err != 0) {
@@ -45,7 +45,7 @@ static void tmap_discover_cb(enum bt_tmap_role role, struct bt_conn *conn, int e
 		return;
 	}
 
-	shell_print(ctx_shell, "tmap discovered for conn %p: role 0x%02x", conn, role);
+	shell_print(ctx_shell, "tmap discovered for conn %p: role 0x%04x", conn, role);
 }
 
 static const struct bt_tmap_cb tmap_cb = {

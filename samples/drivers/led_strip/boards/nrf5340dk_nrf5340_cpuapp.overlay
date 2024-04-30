@@ -1,0 +1,36 @@
+#include <zephyr/dt-bindings/led/led.h>
+
+&pinctrl {
+	i2s0_default_alt: i2s0_default_alt {
+		group1 {
+			/* Default I2S config for the nRF5340, P1.13 is the output */
+			psels = <NRF_PSEL(I2S_SCK_M, 1, 15)>,
+				<NRF_PSEL(I2S_LRCK_M, 1, 12)>,
+				<NRF_PSEL(I2S_SDOUT, 1, 13)>,
+				<NRF_PSEL(I2S_SDIN, 1, 14)>;
+		};
+	};
+};
+
+i2s_led: &i2s0 {
+	status = "okay";
+	pinctrl-0 = <&i2s0_default_alt>;
+	pinctrl-names = "default";
+
+	led_strip: ws2812 {
+		compatible = "worldsemi,ws2812-i2s";
+
+		i2s-dev = <&i2s_led>;
+		chain-length = <42>; /* arbitrary; change at will */
+		color-mapping = <LED_COLOR_ID_GREEN
+					LED_COLOR_ID_RED
+					LED_COLOR_ID_BLUE>;
+		reset-delay = <500>;
+	};
+};
+
+/ {
+	aliases {
+		led-strip = &led_strip;
+	};
+};

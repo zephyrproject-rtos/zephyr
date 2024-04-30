@@ -24,7 +24,6 @@ implementation of the POSIX API.
 * :kconfig:option:`CONFIG_NET_SOCKETPAIR`
 * :kconfig:option:`CONFIG_NET_SOCKETS`
 * :kconfig:option:`CONFIG_NET_SOCKETS_POLL_MAX`
-* :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES`
 * :kconfig:option:`CONFIG_POSIX_API`
 * :kconfig:option:`CONFIG_POSIX_CLOCK`
 * :kconfig:option:`CONFIG_POSIX_FS`

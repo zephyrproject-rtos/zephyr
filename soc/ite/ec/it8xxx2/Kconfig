@@ -1,0 +1,165 @@
+# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ITE_IT8XXX2
+	select CPU_HAS_FPU if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "zephyr" || RISCV_ISA_EXT_M
+	select HAS_PM
+
+if SOC_SERIES_ITE_IT8XXX2
+
+config SOC_IT8XXX2
+	select RISCV
+	select ATOMIC_OPERATIONS_BUILTIN
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	# Workaround mul instruction bug, see:
+	# https://www.ite.com.tw/uploads/product_download/it81202-bx-chip-errata.pdf
+	select RISCV_ISA_EXT_M if !(SOC_IT81302_BX || SOC_IT81202_BX)
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+
+config SOC_IT8XXX2_REG_SET_V1
+	bool
+	help
+	  This option is selected by a variable of which soc, and will
+	  determine the register for the IT81xx2 specification.
+
+config SOC_IT8XXX2_REG_SET_V2
+	bool
+	help
+	  This option is selected by a variable of which soc, and will
+	  determine the register for the IT82xx2 specification.
+
+config SOC_IT81302_BX
+	select SOC_IT8XXX2_REG_SET_V1
+
+config SOC_IT81202_BX
+	select SOC_IT8XXX2_REG_SET_V1
+
+config SOC_IT81302_CX
+	select SOC_IT8XXX2_REG_SET_V1
+
+config SOC_IT81202_CX
+	select SOC_IT8XXX2_REG_SET_V1
+
+config SOC_IT82202_AX
+	select SOC_IT8XXX2_REG_SET_V2
+	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
+
+config SOC_IT82302_AX
+	select SOC_IT8XXX2_REG_SET_V2
+	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
+
+config SOC_IT82002_AW
+	select SOC_IT8XXX2_REG_SET_V2
+	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
+
+config SOC_IT8XXX2_PLL_FLASH_48M
+	bool "Flash frequency is 48MHz"
+	default y
+	select FLASH
+	help
+	  Change frequency of PLL, CPU, and flash to 48MHz during initialization.
+
+	  Set n to use the default settings.
+	  (PLL and CPU run at 48MHz, flash frequency is 16MHz)
+
+config SOC_IT8XXX2_GPIO_GROUP_K_L_DEFAULT_PULL_DOWN
+	bool "The pins of GPIO group K and L aren't bonding with pad"
+	default y
+	help
+	  On IT81202 (128-pins package), the pins of GPIO group K and L aren't
+	  bonding with pad. So we configure these pins as internal pull-down
+	  at default to prevent leakage current due to floating.
+
+config SOC_IT8XXX2_GPIO_H7_DEFAULT_OUTPUT_LOW
+	bool "The GPIOH7 isn't bonding with pad and is left floating internally"
+	default y
+	help
+	  On IT81202/IT81302, the GPIOH7 isn't bonding with pad and is left
+	  floating internally. We need to enable internal pull-down for the pin
+	  to prevent leakage current, but IT81202/IT81302 doesn't have the
+	  capability to pull it down. We can only set it as output low,
+	  so we enable output low for it at initialization to prevent leakage.
+
+config SOC_IT8XXX2_CPU_IDLE_GATING
+	bool
+	help
+	  This option determines whether the entering CPU idle mode can be
+	  gated by individual drivers. When this option is disabled, CPU idle
+	  mode is always permitted.
+
+config SOC_IT8XXX2_EC_BUS_24MHZ
+	bool "EC bus is 24MHz"
+	help
+	  Raise EC bus to 24MHz (default is 8MHz).
+	  This reduces read/write EC registers latency by 50%.
+	  NOTE: There is limitation to enabling this config on it81xx2 series.
+	  The clock_frequency of ite,it8xxx2-i2c node (i2c0, i2c1, and i2c2) will
+	  be fixed at 400KHz.
+
+config SOC_IT8XXX2_JTAG_DEBUG_INTERFACE
+	bool "JTAG debug interface"
+	help
+	  If enabled, the below five pins are configured as JTAG debug interface:
+	  - GPIOA0 -> TCK
+	  - GPIOA1 -> TDI
+	  - GPIOA4 -> TDO
+	  - GPIOA5 -> TMS
+	  - GPIOA6 -> TRST
+	  Supported I/O voltage is 3.3V.
+
+choice
+	prompt "Clock source for PLL reference clock"
+
+config SOC_IT8XXX2_INT_32K
+	bool "Use the +/-2.3% internal clock generator"
+
+config SOC_IT8XXX2_EXT_32K
+	bool "Use external 32.768 kHz clock source"
+
+endchoice
+
+config SOC_IT8XXX2_USE_ILM
+	bool
+	default y
+	help
+	  If enabled, Instruction Local Memory (ILM) will be configured to execute
+	  code placed in the .__ram_code section out of RAM. This consumes RAM in
+	  blocks of 4 kilobytes, but performance of code in ILM is much more
+	  predictable than executing from Flash directly, and some code (such as code
+	  that writes to the internal Flash) must execute out of RAM.
+
+config SOC_IT8XXX2_EXCEPTIONS_IN_RAM
+	bool "Place exception handling code in RAM"
+	default y
+	select SOC_IT8XXX2_USE_ILM
+	help
+	  Place exception handling (ISR entry/exit and related) code in ILM, which
+	  has more reliable performance characteristics than executing directly from
+	  Flash. This can significantly improve performance when under I-cache
+	  pressure.
+
+config SOC_IT8XXX2_SHA256_HW_ACCELERATE
+	bool "HW SHA256 calculation"
+	help
+	  IT8XXX2 HW support sha256 calculation, and its calculation is faster than FW.
+	  We place SHA256 message, hash and key data (total 512bytes) in RAM.
+	  If we enable this config, because HW limits, the sha256 data must place in
+	  first 4KB of RAM.
+
+DT_CHOSEN_ZEPHYR_FLASH := zephyr,flash
+
+config SOC_IT8XXX2_FLASH_SIZE_BYTES
+	hex
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_ZEPHYR_FLASH))
+	help
+	  Total size of writable flash.
+
+config ILM_MAX_SIZE
+	int "ILM Size in kB"
+	default 60 if SOC_IT81202_CX || SOC_IT81302_CX
+	default SRAM_SIZE
+
+endif # SOC_SERIES_ITE_IT8XXX2

@@ -446,7 +446,7 @@ config BT_DEBUG_A2DP
 config BT_DEBUG_SDP
 	bool "[DEPRECATED] Bluetooth Service Discovery Protocol (SDP) debug"
 	select DEPRECATED
-	depends on BT_BREDR
+	depends on BT_CLASSIC
 	help
 	  This option enables debug support for the Bluetooth
 	  Service Discovery Protocol (SDP).

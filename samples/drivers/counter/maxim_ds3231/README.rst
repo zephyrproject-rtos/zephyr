@@ -15,7 +15,7 @@ test it.
 Annotated Example Output
 ************************
 
-The sample first displays the boot banner, board identifier and
+The sample first displays the boot banner, board name and
 frequency of the local clock used for synchronization, and whether the
 DS3231 has recorded a loss-of-oscillator::
 

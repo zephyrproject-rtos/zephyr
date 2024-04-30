@@ -82,6 +82,18 @@
 #define IP2SR7(shift, func) IPnSR(2, 7, shift, func)
 #define IP3SR7(shift, func) IPnSR(3, 7, shift, func)
 
+/**
+ * @brief Macro to define a dummy IPSR flag for a pin
+ *
+ * This macro is used to define a dummy IPSR flag for a pin in the R-Car PFC
+ * driver. It is intended for pins that do not have a specific function
+ * defined in IPSR but always act as a peripheral. The dummy IPSR flag ensures
+ * that the driver sets the 'peripheral' bit for such pins.
+ *
+ * @see RCAR_PIN_FLAGS_FUNC_DUMMY
+ */
+#define IPSR_DUMMY IPnSR(0x1f, 7, 0x1f, 0xf)
+
 #define PIN_VOLTAGE_NONE 0
 #define PIN_VOLTAGE_1P8V 1
 #define PIN_VOLTAGE_3P3V 2

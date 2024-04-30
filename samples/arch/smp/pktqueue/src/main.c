@@ -45,7 +45,7 @@ void init_datagram_queue(struct phdr_desc_queue *queue, int queue_num)
 		for (int j = 0; j < SIZE_OF_HEADER; j++) {
 			/* leave crc field zeroed */
 			if (j < CRC_BYTE_1 || j > CRC_BYTE_2) {
-				descriptors[queue_num][i].ptr[j] = (uint8_t)sys_rand32_get();
+				descriptors[queue_num][i].ptr[j] = sys_rand8_get();
 			} else {
 				descriptors[queue_num][i].ptr[j] = 0;
 			}

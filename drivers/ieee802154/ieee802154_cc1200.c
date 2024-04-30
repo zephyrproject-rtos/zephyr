@@ -129,9 +129,7 @@ static inline uint8_t *get_mac(const struct device *dev)
 	struct cc1200_context *cc1200 = dev->data;
 
 #if defined(CONFIG_IEEE802154_CC1200_RANDOM_MAC)
-	uint32_t *ptr = (uint32_t *)(cc1200->mac_addr + 4);
-
-	UNALIGNED_PUT(sys_rand32_get(), ptr);
+	sys_rand_get(&cc1200->mac_addr[4], 4U);
 
 	cc1200->mac_addr[7] = (cc1200->mac_addr[7] & ~0x01) | 0x02;
 #else

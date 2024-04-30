@@ -357,7 +357,7 @@ void bt_l2cap_connected(struct bt_conn *conn)
 {
 	struct bt_l2cap_chan *chan;
 
-	if (IS_ENABLED(CONFIG_BT_BREDR) &&
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) &&
 	    conn->type == BT_CONN_TYPE_BR) {
 		bt_l2cap_br_connected(conn);
 		return;
@@ -399,7 +399,7 @@ void bt_l2cap_disconnected(struct bt_conn *conn)
 {
 	struct bt_l2cap_chan *chan, *next;
 
-	if (IS_ENABLED(CONFIG_BT_BREDR) &&
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) &&
 	    conn->type == BT_CONN_TYPE_BR) {
 		bt_l2cap_br_disconnected(conn);
 		return;
@@ -606,7 +606,7 @@ void bt_l2cap_security_changed(struct bt_conn *conn, uint8_t hci_status)
 {
 	struct bt_l2cap_chan *chan, *next;
 
-	if (IS_ENABLED(CONFIG_BT_BREDR) &&
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) &&
 	    conn->type == BT_CONN_TYPE_BR) {
 		l2cap_br_encrypt_change(conn, hci_status);
 		return;
@@ -2671,7 +2671,7 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf, bool complete)
 	struct bt_l2cap_chan *chan;
 	uint16_t cid;
 
-	if (IS_ENABLED(CONFIG_BT_BREDR) &&
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) &&
 	    conn->type == BT_CONN_TYPE_BR) {
 		bt_l2cap_br_recv(conn, buf);
 		return;
@@ -2772,7 +2772,7 @@ BT_L2CAP_CHANNEL_DEFINE(le_fixed_chan, BT_L2CAP_CID_LE_SIG, l2cap_accept, NULL);
 
 void bt_l2cap_init(void)
 {
-	if (IS_ENABLED(CONFIG_BT_BREDR)) {
+	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
 		bt_l2cap_br_init();
 	}
 }
@@ -3000,7 +3000,7 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BREDR) &&
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) &&
 	    conn->type == BT_CONN_TYPE_BR) {
 		return bt_l2cap_br_chan_connect(conn, chan, psm);
 	}
@@ -3025,7 +3025,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 		return -ENOTCONN;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BREDR) &&
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) &&
 	    conn->type == BT_CONN_TYPE_BR) {
 		return bt_l2cap_br_chan_disconnect(chan);
 	}
@@ -3072,25 +3072,24 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 		return -EINVAL;
 	}
 
-	/* Prepend SDU "header".
+	/* Prepend SDU length.
 	 *
-	 * L2CAP LE CoC SDUs are segmented into PDUs and sent over so-called
-	 * K-frames that each have their own L2CAP header (ie channel, PDU
-	 * length).
+	 * L2CAP LE CoC SDUs are segmented and put into K-frames PDUs which have
+	 * their own L2CAP header (i.e. PDU length, channel id).
 	 *
-	 * The SDU header is right before the data that will be segmented and is
-	 * only present in the first segment/PDU. Here's an example:
+	 * The SDU length is right before the data that will be segmented and is
+	 * only present in the first PDU. Here's an example:
 	 *
 	 * Sent data payload of 50 bytes over channel 0x4040 with MPS of 30 bytes:
-	 * First PDU / segment / K-frame:
+	 * First PDU (K-frame):
 	 * | L2CAP K-frame header        | K-frame payload                 |
-	 * | PDU length  | Channel ID    | SDU header   | SDU payload      |
-	 * | 30          | 0x4040        | 50           | 28 bytes of data |
+	 * | PDU length  | Channel ID    | SDU length   | SDU payload      |
+	 * | 0x001e      | 0x4040        | 0x0032       | 28 bytes of data |
 	 *
-	 * Second and last PDU / segment / K-frame:
+	 * Second and last PDU (K-frame):
 	 * | L2CAP K-frame header        | K-frame payload     |
 	 * | PDU length  | Channel ID    | rest of SDU payload |
-	 * | 22          | 0x4040        | 22 bytes of data    |
+	 * | 0x0016      | 0x4040        | 22 bytes of data    |
 	 */
 	net_buf_push_le16(buf, sdu_len);
 
@@ -3119,7 +3118,7 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return -ESHUTDOWN;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BREDR) &&
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) &&
 	    chan->conn->type == BT_CONN_TYPE_BR) {
 		return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
 	}

@@ -1,0 +1,13 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier Apache-2.0
+
+description: |
+  Child node for the Periodic Interrupt Timer node, intended for an individual timer channel
+
+compatible: "nxp,pit-channel"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

@@ -1272,6 +1272,17 @@ struct bt_hci_cp_le_set_rpa_timeout {
 	uint16_t rpa_timeout;
 } __packed;
 
+/* All limits according to BT Core spec 5.4 [Vol 4, Part E, 7.8.46] */
+#define BT_HCI_LE_MAX_TX_OCTETS_MIN             0x001B
+#define BT_HCI_LE_MAX_TX_OCTETS_MAX             0x00FB
+#define BT_HCI_LE_MAX_RX_OCTETS_MIN             0x001B
+#define BT_HCI_LE_MAX_RX_OCTETS_MAX             0x00FB
+
+#define BT_HCI_LE_MAX_TX_TIME_MIN               0x0148
+#define BT_HCI_LE_MAX_TX_TIME_MAX               0x4290
+#define BT_HCI_LE_MAX_RX_TIME_MIN               0x0148
+#define BT_HCI_LE_MAX_RX_TIME_MAX               0x4290
+
 #define BT_HCI_OP_LE_READ_MAX_DATA_LEN          BT_OP(BT_OGF_LE, 0x002f) /* 0x202f */
 struct bt_hci_rp_le_read_max_data_len {
 	uint8_t  status;

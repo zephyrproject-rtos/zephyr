@@ -182,7 +182,9 @@ static inline void ipv4_autoconf_addr_set(struct net_if_ipv4_autoconf *ipv4auto)
 		return;
 	}
 
-	net_if_ipv4_set_netmask(ipv4auto->iface, &netmask);
+	net_if_ipv4_set_netmask_by_addr(ipv4auto->iface,
+					&ipv4auto->requested_ip,
+					&netmask);
 
 	ipv4auto->state = NET_IPV4_AUTOCONF_ASSIGNED;
 }
@@ -197,8 +199,8 @@ static void ipv4_autoconf_send(struct net_if_ipv4_autoconf *ipv4auto)
 		(void)memset(&ipv4auto->current_ip, 0, sizeof(struct in_addr));
 		ipv4auto->requested_ip.s4_addr[0] = 169U;
 		ipv4auto->requested_ip.s4_addr[1] = 254U;
-		ipv4auto->requested_ip.s4_addr[2] = sys_rand32_get() % 254;
-		ipv4auto->requested_ip.s4_addr[3] = sys_rand32_get() % 254;
+		ipv4auto->requested_ip.s4_addr[2] = sys_rand8_get() % 254;
+		ipv4auto->requested_ip.s4_addr[3] = sys_rand8_get() % 254;
 
 		NET_DBG("%s: Starting probe for 169.254.%d.%d", "Init",
 			ipv4auto->requested_ip.s4_addr[2],

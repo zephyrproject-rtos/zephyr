@@ -24,7 +24,7 @@ int main(void)
 {
 	int ret = -1;
 
-	LOG_INF("Hawkbit sample app started");
+	LOG_INF("hawkBit sample app started");
 	LOG_INF("Image build time: " __DATE__ " " __TIME__);
 
 	app_dhcpv4_startup();
@@ -37,16 +37,16 @@ int main(void)
 	ret = hawkbit_init();
 
 	if (ret < 0) {
-		LOG_ERR("Failed to init hawkbit");
+		LOG_ERR("Failed to init hawkBit");
 	}
 
 #if defined(CONFIG_HAWKBIT_POLLING)
-	LOG_INF("Starting hawkbit polling mode");
+	LOG_INF("Starting hawkBit polling mode");
 	hawkbit_autohandler();
 #endif
 
 #if defined(CONFIG_HAWKBIT_MANUAL)
-	LOG_INF("Starting hawkbit manual mode");
+	LOG_INF("Starting hawkBit manual mode");
 
 	switch (hawkbit_probe()) {
 	case HAWKBIT_UNCONFIRMED_IMAGE:
@@ -63,7 +63,7 @@ int main(void)
 		break;
 
 	case HAWKBIT_CANCEL_UPDATE:
-		LOG_INF("Hawkbit update cancelled from server");
+		LOG_INF("hawkBit update cancelled from server");
 		break;
 
 	case HAWKBIT_OK:
@@ -75,7 +75,7 @@ int main(void)
 		break;
 
 	case HAWKBIT_PROBE_IN_PROGRESS:
-		LOG_INF("Hawkbit is already running");
+		LOG_INF("hawkBit is already running");
 		break;
 
 	default:

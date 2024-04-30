@@ -22,11 +22,11 @@ Execute ./src/edttool.py -s=${SIMULATION_ID} -d=0 --transport bsim \
 cd ${BSIM_OUT_PATH}/bin
 
 Execute \
- ./bs_${BOARD}_tests_bsim_bluetooth_ll_edtt_hci_test_app_prj_tst_llcp_conf\
+ ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_edtt_hci_test_app_prj_tst_llcp_conf\
   -s=${SIMULATION_ID} -d=1 -v=${VERBOSITY_LEVEL} -RealEncryption=1
 
 Execute \
- ./bs_${BOARD}_tests_bsim_bluetooth_ll_edtt_gatt_test_app_prj_llcp_conf\
+ ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_edtt_gatt_test_app_prj_llcp_conf\
   -s=${SIMULATION_ID} -d=2 -v=${VERBOSITY_LEVEL} -RealEncryption=1
 
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \

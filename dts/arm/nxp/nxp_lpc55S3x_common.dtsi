@@ -13,10 +13,6 @@
 #include <mem.h>
 
 / {
-	chosen {
-		zephyr,entropy = &css;
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -270,12 +266,6 @@
 		#size-cells = <0>;
 	};
 
-	css: css@4003000 {
-		compatible = "nxp,css-v2";
-		reg = <0x4003000 0x200>;
-		status = "okay";
-	};
-
 	adc0: adc@A0000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0xA0000 0x1000>;
@@ -328,8 +318,6 @@
 		interrupt-names = "int0", "int1";
 		clocks = <&syscon MCUX_MCAN_CLK>;
 		bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
-		sample-point = <875>;
-		sample-point-data = <875>;
 		status = "disabled";
 	};
 

@@ -151,6 +151,39 @@ struct init_entry {
 	__attribute__((__section__(                                           \
 		".z_init_" #level STRINGIFY(prio)"_" STRINGIFY(sub_prio)"_")))
 
+
+/* Designated initializers where added to C in C99. There were added to
+ * C++ 20 years later in a much more restricted form. C99 allows many
+ * variations: out of order, mix of designated and not, overlap,
+ * override,... but C++ allows none of these. See differences detailed
+ * in the P0329R0.pdf C++ proposal.
+ * Note __STDC_VERSION__ is undefined when compiling C++.
+ */
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__) < 201100
+
+/* Anonymous unions require C11. Some pre-C11 gcc versions have early
+ * support for anonymous unions but they require these braces when
+ * combined with C99 designated initializers, see longer discussion in
+ * #69411.
+ * These braces are compatible with any C version but not with C++20.
+ */
+#  define Z_INIT_SYS_INIT_DEV_NULL  { .dev = NULL }
+
+#else
+
+/* When using -std=c++20 or higher, g++ (v12.2.0) reject braces for
+ * initializing anonymous unions because it is technically a mix of
+ * designated and not designated initializers which is not allowed in
+ * C++. Interestingly, the _same_ g++ version does accept the braces above
+ * when using -std=c++17 or lower!
+ * The tests/lib/cpp/cxx/ added by commit 3d9c428d57bf invoke the C++
+ * compiler with a range of different `-std=...` parameters without needing
+ * any manual configuration.
+ */
+#  define Z_INIT_SYS_INIT_DEV_NULL    .dev = NULL
+
+#endif
+
 /** @endcond */
 
 /**
@@ -205,7 +238,8 @@ struct init_entry {
 #define SYS_INIT_NAMED(name, init_fn_, level, prio)                                       \
 	static const Z_DECL_ALIGN(struct init_entry)                                      \
 		Z_INIT_ENTRY_SECTION(level, prio, 0) __used __noasan                      \
-		Z_INIT_ENTRY_NAME(name) = {{ (init_fn_) }, { NULL } }
+		Z_INIT_ENTRY_NAME(name) = {.init_fn = {.sys = (init_fn_)},                \
+			Z_INIT_SYS_INIT_DEV_NULL}
 
 /** @} */
 

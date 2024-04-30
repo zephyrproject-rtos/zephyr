@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/posix/syslog.h>
-#include <zephyr/posix/unistd.h>
 #undef LOG_ERR
+#include <zephyr/posix/unistd.h>
 #include <zephyr/ztest.h>
 
 #define N_PRIOS 8

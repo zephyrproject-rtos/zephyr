@@ -89,12 +89,50 @@
 		};
 
 		pit0: pit@76950000 {
-			compatible = "nxp,kinetis-pit";
+			compatible = "nxp,pit";
 			reg = <0x76950000 0x10000>;
 			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			clocks = <&clock NXP_S32_P1_REG_INTF_CLK>;
 			max-load-value = <0x00ffffff>;
 			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pit0_channel0: pit0_channel@0 {
+				compatible = "nxp,pit-channel";
+				reg = <0>;
+				status = "disabled";
+			};
+
+			pit0_channel1: pit0_channel@1 {
+				compatible = "nxp,pit-channel";
+				reg = <1>;
+				status = "disabled";
+			};
+
+			pit0_channel2: pit0_channel@2 {
+				compatible = "nxp,pit-channel";
+				reg = <2>;
+				status = "disabled";
+			};
+
+			pit0_channel3: pit0_channel@3 {
+				compatible = "nxp,pit-channel";
+				reg = <3>;
+				status = "disabled";
+			};
+
+			pit0_channel4: pit0_channel@4 {
+				compatible = "nxp,pit-channel";
+				reg = <4>;
+				status = "disabled";
+			};
+
+			pit0_channel5: pit0_channel@5 {
+				compatible = "nxp,pit-channel";
+				reg = <5>;
+				status = "disabled";
+			};
 		};
 	};
 };

@@ -7,7 +7,6 @@ compatible: "nuvoton,numaker-ethernet"
 
 include:
   - ethernet-controller.yaml
-  - ethernet,fixed-link.yaml
   - reset-device.yaml
   - pinctrl-device.yaml
 

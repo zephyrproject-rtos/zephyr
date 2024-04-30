@@ -309,7 +309,6 @@ int bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg,
 	}
 
 	if (!param.found) {
-		LOG_DBG("Could not find the type %u", type);
 		return -ENODATA;
 	}
 
@@ -621,7 +620,6 @@ static int codec_meta_get_val(const uint8_t meta[], size_t meta_len,
 	}
 
 	if (!param.found) {
-		LOG_DBG("Could not find the type %u", type);
 		return -ENODATA;
 	}
 
@@ -1823,7 +1821,6 @@ int bt_audio_codec_cap_get_val(const struct bt_audio_codec_cap *codec_cap,
 	}
 
 	if (!param.found) {
-		LOG_DBG("Could not find the type %u", type);
 		return -ENODATA;
 	}
 

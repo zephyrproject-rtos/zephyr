@@ -31,7 +31,7 @@ systems.
 The management subsystem is located in :zephyr_file:`subsys/mgmt/` inside of
 the Zephyr tree.
 
-Additionally, there is a :zephyr:code-sample:`sample <smp-svr>` sample that provides
+Additionally, there is a :zephyr:code-sample:`sample <smp-svr>` server that provides
 management functionality over BLE and serial.
 
 .. _mcumgr_tools_libraries:
@@ -319,7 +319,7 @@ On boards where a J-Link OB is present which has both CDC and MSC (virtual Mass
 Storage Device, also known as drag-and-drop) support, the MSD functionality can
 prevent MCUmgr commands over the CDC UART port from working due to how USB
 endpoints are configured in the J-Link firmware (for example on the
-:ref:`Nordic nrf52840dk_nrf52840 board <nrf52840dk_nrf52840>`) because of
+:ref:`Nordic nrf52840dk/nrf52840 board <nrf52840dk_nrf52840>`) because of
 limiting the maximum packet size (most likely to occur when using image
 management commands for updating firmware). This issue can be
 resolved by disabling MSD functionality on the J-Link device, follow the

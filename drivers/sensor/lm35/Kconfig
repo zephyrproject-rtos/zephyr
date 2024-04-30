@@ -1,0 +1,12 @@
+# LM35 temperature sensor config
+
+# Copyright (c) 2024 Renato Soma <renatoys08@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config LM35
+	bool "LM35 Temperature Sensor"
+	default y
+	depends on DT_HAS_LM35_ENABLED
+	select ADC
+	help
+	  Enable the driver for the LM35 digital temperature Sensor

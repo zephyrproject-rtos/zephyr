@@ -22,10 +22,13 @@ tests:
   sensors.build:
     tags: sensors
     extra_args: OVERLAY_CONFIG=sensors_die_temp.conf
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
   sensors.build.pm:
     extra_configs:
       - CONFIG_PM=y
       - CONFIG_PM_DEVICE=y
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
   sensors.generic_test:
     build_only: false
     extra_configs:

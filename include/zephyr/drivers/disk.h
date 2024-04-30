@@ -21,6 +21,8 @@
 /**
  * @brief Disk Driver Interface
  * @defgroup disk_driver_interface Disk Driver Interface
+ * @since 1.6
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -70,7 +72,7 @@ struct disk_info {
 	/** Internally used list node */
 	sys_dnode_t node;
 	/** Disk name */
-	char *name;
+	const char *name;
 	/** Disk operations */
 	const struct disk_operations *ops;
 	/** Device associated to this disk */

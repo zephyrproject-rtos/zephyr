@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, NXP
+ * Copyright 2018, 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,9 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/clock_control.h>
 #include <fsl_lpspi.h>
+#if CONFIG_NXP_LP_FLEXCOMM
+#include <zephyr/drivers/mfd/nxp_lp_flexcomm.h>
+#endif
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
@@ -35,6 +38,9 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
 
 struct spi_mcux_config {
 	DEVICE_MMIO_NAMED_ROM(reg_base);
+#ifdef CONFIG_NXP_LP_FLEXCOMM
+	const struct device *parent_dev;
+#endif
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
@@ -163,7 +169,11 @@ static void spi_mcux_isr(const struct device *dev)
 	struct spi_mcux_data *data = dev->data;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
+#if CONFIG_NXP_LP_FLEXCOMM
+	LPSPI_MasterTransferHandleIRQ(LPSPI_GetInstance(base), &data->handle);
+#else
 	LPSPI_MasterTransferHandleIRQ(base, &data->handle);
+#endif
 }
 
 #ifdef CONFIG_SPI_RTIO
@@ -660,7 +670,16 @@ static int spi_mcux_init(const struct device *dev)
 
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
+#if CONFIG_NXP_LP_FLEXCOMM
+	/* When using LP Flexcomm driver, register the interrupt handler
+	 * so we receive notification from the LP Flexcomm interrupt handler.
+	 */
+	nxp_lp_flexcomm_setirqhandler(config->parent_dev, dev,
+				      LP_FLEXCOMM_PERIPH_LPSPI, spi_mcux_isr);
+#else
+	/* Interrupt is managed by this driver */
 	config->irq_config_func(dev);
+#endif
 
 	err = spi_context_cs_configure_all(&data->ctx);
 	if (err < 0) {
@@ -896,6 +915,26 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 #define SPI_DMA_CHANNELS(n)
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
+#define SPI_MCUX_LPSPI_MODULE_IRQ_CONNECT(n)				\
+	do {								\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+			DT_INST_IRQ(n, priority),			\
+			spi_mcux_isr,					\
+			DEVICE_DT_INST_GET(n), 0);			\
+		irq_enable(DT_INST_IRQN(n));				\
+	} while (false)
+
+#define SPI_MCUX_LPSPI_MODULE_IRQ(n)					\
+	IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),				\
+		(SPI_MCUX_LPSPI_MODULE_IRQ_CONNECT(n)))
+
+#ifdef CONFIG_NXP_LP_FLEXCOMM
+#define PARENT_DEV(n)							\
+	.parent_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),
+#else
+#define PARENT_DEV(n)
+#endif /* CONFIG_NXP_LP_FLEXCOMM */
+
 #define SPI_MCUX_LPSPI_INIT(n)						\
 	PINCTRL_DT_INST_DEFINE(n);					\
 	COND_CODE_1(CONFIG_SPI_RTIO, (SPI_MCUX_RTIO_DEFINE(n)), ());	\
@@ -903,7 +942,8 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	static void spi_mcux_config_func_##n(const struct device *dev);	\
 									\
 	static const struct spi_mcux_config spi_mcux_config_##n = {	\
-		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)), \
+		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),	\
+		PARENT_DEV(n)						\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
 		.clock_subsys =						\
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
@@ -939,10 +979,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 									\
 	static void spi_mcux_config_func_##n(const struct device *dev)	\
 	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
-				spi_mcux_isr, DEVICE_DT_INST_GET(n), 0);	\
-									\
-		irq_enable(DT_INST_IRQN(n));				\
+		SPI_MCUX_LPSPI_MODULE_IRQ(n);				\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_MCUX_LPSPI_INIT)

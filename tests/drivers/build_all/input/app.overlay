@@ -136,7 +136,7 @@
 				io-channels = <&test_adc 0>;
 				out-min = <(-127)>;
 				out-max = <127>;
-				out-deadzone = <8>;
+				in-deadzone = <8>;
 				in-min = <(-100)>;
 				in-max = <100>;
 				zephyr,axis = <0>;
@@ -204,6 +204,33 @@
 				motion-gpios = <&test_gpio 0 0>;
 				zephyr,axis-x = <0>;
 				zephyr,axis-y = <1>;
+				res-x-cpi = <0>;
+				res-y-cpi = <0>;
+				invert-x;
+				invert-y;
+				sleep1-enable;
+				sleep2-enable;
+			};
+
+			cf1133@6 {
+				compatible = "sitronix,cf1133";
+				reg = <0x6>;
+				int-gpios = <&test_gpio 0 0>;
+			};
+
+			chsc6x@7 {
+				compatible = "chipsemi,chsc6x";
+				reg = <0x7>;
+				irq-gpios = <&test_gpio 0 0>;
+			};
+
+			pinnacle@2a {
+				compatible = "cirque,pinnacle";
+				reg = <0x2a>;
+				data-ready-gpios = <&test_gpio 0 0>;
+				data-mode = "relative";
+				primary-tap-enable;
+				swap-xy;
 			};
 		};
 
@@ -216,7 +243,9 @@
 			clock-frequency = <2000000>;
 
 			/* one entry for every devices */
-			cs-gpios = <&test_gpio 0 0>;
+			cs-gpios = <&test_gpio 0 0>,
+				   <&test_gpio 1 0>,
+				   <&test_gpio 2 0>;
 
 			xpt2046@0 {
 				compatible = "xptek,xpt2046";
@@ -229,6 +258,33 @@
 				min-y = <0>;
 				max-x = <1>;
 				max-y = <1>;
+			};
+
+			pmw3610@1 {
+				compatible = "pixart,pmw3610";
+				spi-max-frequency = <0>;
+				reg = <0x1>;
+				motion-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 1 0>;
+				zephyr,axis-x = <0>;
+				zephyr,axis-y = <1>;
+				invert-x;
+				invert-y;
+				force-awake;
+				smart-mode;
+			};
+
+			pinnacle@2 {
+				compatible = "cirque,pinnacle";
+				reg = <0x2>;
+				spi-max-frequency = <0>;
+				data-ready-gpios = <&test_gpio 0 0>;
+				data-mode = "absolute";
+				idle-packets-count = <20>;
+				clipping-enable;
+				scaling-enable;
+				invert-x;
+				invert-y;
 			};
 		};
 	};

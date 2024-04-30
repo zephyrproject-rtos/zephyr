@@ -32,6 +32,12 @@ struct dummy_api {
 	/** Send a network packet */
 	int (*send)(const struct device *dev, struct net_pkt *pkt);
 
+	/**
+	 * Receive a network packet (only limited use for this, for example
+	 * receiving capturing packets and post processing them).
+	 */
+	enum net_verdict (*recv)(struct net_if *iface, struct net_pkt *pkt);
+
 	/** Start the device. Called when the bound network interface is brought up. */
 	int (*start)(const struct device *dev);
 

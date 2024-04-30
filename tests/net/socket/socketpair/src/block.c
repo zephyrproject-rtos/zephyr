@@ -45,9 +45,9 @@ static void work_handler(struct k_work *w)
 	LOG_DBG("%sing 1 byte %s fd %d", ctx.write ? "read" : "writ",
 		ctx.write ? "from" : "to", ctx.fd);
 	if (ctx.write) {
-		res = recv(ctx.fd, &c, 1, 0);
+		res = zsock_recv(ctx.fd, &c, 1, 0);
 	} else {
-		res = send(ctx.fd, "x", 1, 0);
+		res = zsock_send(ctx.fd, "x", 1, 0);
 	}
 	if (-1 == res || 1 != res) {
 		LOG_DBG("%s() failed: %d", ctx.write ? "recv" : "send", errno);
@@ -77,7 +77,7 @@ ZTEST_F(net_socketpair, test_write_block)
 		for (ctx.m = 0; atomic_get(&ctx.m)
 			< CONFIG_NET_SOCKETPAIR_BUFFER_SIZE;) {
 
-			res = send(fixture->sv[i], "x", 1, 0);
+			res = zsock_send(fixture->sv[i], "x", 1, 0);
 			zassert_not_equal(res, -1, "send() failed: %d", errno);
 			zassert_equal(res, 1, "wrote %d bytes instead of 1",
 				res);
@@ -88,7 +88,7 @@ ZTEST_F(net_socketpair, test_write_block)
 
 		/* try to write one more byte */
 		LOG_DBG("writing to fd %d", fixture->sv[i]);
-		res = send(fixture->sv[i], "x", 1, 0);
+		res = zsock_send(fixture->sv[i], "x", 1, 0);
 		zassert_not_equal(res, -1, "send() failed: %d", errno);
 		zassert_equal(res, 1, "wrote %d bytes instead of 1", res);
 
@@ -117,7 +117,7 @@ ZTEST_F(net_socketpair, test_read_block)
 		/* try to read one byte */
 		LOG_DBG("reading from fd %d", fixture->sv[i]);
 		x = '\0';
-		res = recv(fixture->sv[i], &x, 1, 0);
+		res = zsock_recv(fixture->sv[i], &x, 1, 0);
 		zassert_not_equal(res, -1, "recv() failed: %d", errno);
 		zassert_equal(res, 1, "read %d bytes instead of 1", res);
 

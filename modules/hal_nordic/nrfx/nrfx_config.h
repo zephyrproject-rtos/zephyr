@@ -8,6 +8,7 @@
 #define NRFX_CONFIG_H__
 
 #include <zephyr/devicetree.h>
+#include <zephyr/sys/util_macro.h>
 
 /*
  * These are mappings of Kconfig options enabling nrfx drivers and particular
@@ -247,6 +248,30 @@
 #ifdef CONFIG_NRFX_PWM3
 #define NRFX_PWM3_ENABLED 1
 #endif
+#ifdef CONFIG_NRFX_PWM20
+#define NRFX_PWM20_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PWM21
+#define NRFX_PWM21_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PWM22
+#define NRFX_PWM22_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PWM120
+#define NRFX_PWM120_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PWM130
+#define NRFX_PWM130_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PWM131
+#define NRFX_PWM131_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PWM132
+#define NRFX_PWM132_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PWM133
+#define NRFX_PWM133_ENABLED 1
+#endif
 
 #ifdef CONFIG_NRFX_QDEC
 #define NRFX_QDEC_ENABLED 1
@@ -425,6 +450,48 @@
 #endif
 #ifdef CONFIG_NRFX_SPIS3
 #define NRFX_SPIS3_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_SPIS00
+#define NRFX_SPIS00_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_SPIS20
+#define NRFX_SPIS20_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_SPIS21
+#define NRFX_SPIS21_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_SPIS22
+#define NRFX_SPIS22_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_SPIS30
+#define NRFX_SPIS30_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_SPIS120
+#define NRFX_SPIS120_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_SPIS130
+#define NRFX_SPIS130_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_SPIS131
+#define NRFX_SPIS131_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_SPIS132
+#define NRFX_SPIS132_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_SPIS133
+#define NRFX_SPIS133_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_SPIS134
+#define NRFX_SPIS134_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_SPIS135
+#define NRFX_SPIS135_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_SPIS136
+#define NRFX_SPIS136_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_SPIS137
+#define NRFX_SPIS130_ENABLED 1
 #endif
 
 #ifdef CONFIG_NRFX_SYSTICK
@@ -794,26 +861,126 @@
 #define NRF_PERIPH(P) P##_S
 #endif
 
+#define NRFX_CONFIG_BIT_DT(node_id, prop, idx) BIT(DT_PROP_BY_IDX(node_id, prop, idx))
+#define NRFX_CONFIG_MASK_DT(node_id, prop) \
+	(COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
+		(DT_FOREACH_PROP_ELEM_SEP(node_id, prop, NRFX_CONFIG_BIT_DT, (|))), \
+		(0)))
+
 /* If the GRTC system timer driver is to be used, prepare definitions required
  * by the nrfx_grtc driver (NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK and
  * NRFX_GRTC_CONFIG_NUM_OF_CC_CHANNELS) based on information from devicetree.
  */
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_grtc)
-#define NRFX_CONFIG_BIT_DT(node_id, prop, idx) \
-	BIT(DT_PROP_BY_IDX(node_id, prop, idx))
-#define NRFX_CONFIG_GRTC_MASK_DT(prop) \
-	(COND_CODE_1(DT_NODE_HAS_PROP(DT_INST(0, nordic_nrf_grtc), prop), \
-		(DT_FOREACH_PROP_ELEM_SEP(DT_INST(0, nordic_nrf_grtc), prop, \
-					  NRFX_CONFIG_BIT_DT, (|))), \
-		(0)))
-
 #define NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK \
-	(NRFX_CONFIG_GRTC_MASK_DT(owned_channels) & \
-	 ~NRFX_CONFIG_GRTC_MASK_DT(child_owned_channels))
+	(NRFX_CONFIG_MASK_DT(DT_INST(0, nordic_nrf_grtc), owned_channels) & \
+	 ~NRFX_CONFIG_MASK_DT(DT_INST(0, nordic_nrf_grtc), child_owned_channels))
 #define NRFX_GRTC_CONFIG_NUM_OF_CC_CHANNELS \
 	(DT_PROP_LEN_OR(DT_INST(0, nordic_nrf_grtc), owned_channels, 0) - \
 	 DT_PROP_LEN_OR(DT_INST(0, nordic_nrf_grtc), child_owned_channels, 0))
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_grtc) */
+
+/* If global of local DPPIC peripherals are used, provide the following macro
+ * definitions required by the interconnect/apb layer:
+ * - NRFX_DPPI_PUB_CONFIG_ALLOWED_CHANNELS_MASK_BY_INST_NUM(inst_num)
+ * - NRFX_DPPI_SUB_CONFIG_ALLOWED_CHANNELS_MASK_BY_INST_NUM(inst_num)
+ * - NRFX_DPPI_PUB_OR_SUB_MASK(inst_num)
+ * - NRFX_DPPI_CHANNELS_SINGLE_VAR_NAME_BY_INST_NUM(inst_num)
+ * - NRFX_INTERCONNECT_APB_GLOBAL_DPPI_DEFINE
+ * - NRFX_INTERCONNECT_APB_LOCAL_DPPI_DEFINE
+ * based on information from devicetree.
+ */
+#if	DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_dppic_global) || \
+	DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_dppic_local)
+#ifndef NRFX_DPPI_ENABLED
+#define NRFX_DPPI_ENABLED 1
+#endif
+/* Source (publish) channels masks generation. */
+#define NRFX_DPPI_PUB_CONFIG_ALLOWED_CHANNELS_MASK_BY_INST_NUM(inst_num) \
+	NRFX_CONFIG_MASK_DT(DT_NODELABEL(_CONCAT(dppic, inst_num)), source_channels)
+
+/* Sink (subscribe) channels masks generation. */
+#define NRFX_DPPI_SUB_CONFIG_ALLOWED_CHANNELS_MASK_BY_INST_NUM(inst_num) \
+	NRFX_CONFIG_MASK_DT(DT_NODELABEL(_CONCAT(dppic, inst_num)), sink_channels)
+
+#define NRFX_DPPI_PUB_OR_SUB_MASK(inst_num) \
+	UTIL_OR(DT_NODE_HAS_PROP(DT_NODELABEL(_CONCAT(dppic, inst_num)), source_channels), \
+		DT_NODE_HAS_PROP(DT_NODELABEL(_CONCAT(dppic, inst_num)), sink_channels))
+
+/* Variables names generation. */
+#define NRFX_CONFIG_DPPI_CHANNELS_ENTRY_NAME(node_id) _CONCAT(_CONCAT(m_, node_id), _channels)
+#define NRFX_DPPI_CHANNELS_SINGLE_VAR_NAME_BY_INST_NUM(inst_num) \
+	NRFX_CONFIG_DPPI_CHANNELS_ENTRY_NAME(DT_NODELABEL(_CONCAT(dppic, inst_num)))
+
+/* Variables entries generation. */
+#define NRFX_CONFIG_DPPI_CHANNELS_ENTRY(node_id) \
+	static nrfx_atomic_t NRFX_CONFIG_DPPI_CHANNELS_ENTRY_NAME(node_id) \
+		__attribute__((used)) = \
+		NRFX_CONFIG_MASK_DT(node_id, source_channels) | \
+		NRFX_CONFIG_MASK_DT(node_id, sink_channels);
+#define NRFX_INTERCONNECT_APB_GLOBAL_DPPI_DEFINE \
+	DT_FOREACH_STATUS_OKAY(nordic_nrf_dppic_global, NRFX_CONFIG_DPPI_CHANNELS_ENTRY)
+#define NRFX_INTERCONNECT_APB_LOCAL_DPPI_DEFINE \
+	DT_FOREACH_STATUS_OKAY(nordic_nrf_dppic_local, NRFX_CONFIG_DPPI_CHANNELS_ENTRY)
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_dppic_global) || ... */
+
+/* If local or global DPPIC peripherals are used, provide the following macro
+ * definitions required by the interconnect/ipct layer:
+ * - NRFX_IPCTx_PUB_CONFIG_ALLOWED_CHANNELS_MASK_BY_INST_NUM(inst_num)
+ * - NRFX_IPCTx_SUB_CONFIG_ALLOWED_CHANNELS_MASK_BY_INST_NUM(inst_num)
+ * - NRFX_IPCT_PUB_OR_SUB_MASK(inst_num)
+ * - NRFX_IPCTx_CHANNELS_SINGLE_VAR_NAME_BY_INST_NUM(inst_num)
+ * - NRFX_INTERCONNECT_IPCT_GLOBAL_DEFINE
+ * - NRFX_INTERCONNECT_IPCT_LOCAL_DEFINE
+ * based on information from devicetree.
+ */
+#if	DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_ipct_global) || \
+	DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_ipct_local)
+/* Channels masks generation. */
+#define NRFX_CONFIG_IPCT_MASK_DT(node_id) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, owned_channels), \
+		(NRFX_CONFIG_MASK_DT(node_id, owned_channels)), \
+		(COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, nordic_nrf_ipct_local), \
+			(BIT_MASK(DT_PROP(node_id, channels))), (0))))
+
+#if defined(NRF_APPLICATION)
+#define NRFX_CONFIG_IPCT_LOCAL_NODE DT_NODELABEL(cpuapp_ipct)
+#elif defined(NRF_RADIOCORE)
+#define NRFX_CONFIG_IPCT_LOCAL_NODE DT_NODELABEL(cpurad_ipct)
+#endif
+#define NRFX_CONFIG_IPCT_NODE_BY_INST_NUM(inst_num) \
+	COND_CODE_1(IS_EMPTY(inst_num), \
+		(NRFX_CONFIG_IPCT_LOCAL_NODE), \
+		(DT_NODELABEL(_CONCAT(ipct, inst_num))))
+
+#define NRFX_IPCTx_PUB_CONFIG_ALLOWED_CHANNELS_MASK_BY_INST_NUM(inst_num) \
+	NRFX_CONFIG_IPCT_MASK_DT(NRFX_CONFIG_IPCT_NODE_BY_INST_NUM(inst_num))
+
+#define NRFX_IPCTx_SUB_CONFIG_ALLOWED_CHANNELS_MASK_BY_INST_NUM(inst_num) \
+	NRFX_CONFIG_IPCT_MASK_DT(NRFX_CONFIG_IPCT_NODE_BY_INST_NUM(inst_num))
+
+#define NRFX_IPCT_PUB_OR_SUB_MASK(inst_num) \
+	COND_CODE_1(IS_EMPTY(inst_num), \
+		(DT_NODE_HAS_STATUS(NRFX_CONFIG_IPCT_LOCAL_NODE, okay)), \
+		(DT_NODE_HAS_PROP(DT_NODELABEL(_CONCAT(ipct, inst_num)), owned_channels)))
+
+/* Variables names generation. */
+#define NRFX_CONFIG_IPCT_CHANNELS_ENTRY_NAME(node_id) _CONCAT(_CONCAT(m_, node_id), _channels)
+#define NRFX_IPCTx_CHANNELS_SINGLE_VAR_NAME_BY_INST_NUM(inst_num) \
+	COND_CODE_1(IS_EMPTY(inst_num), \
+		(NRFX_CONFIG_IPCT_CHANNELS_ENTRY_NAME(NRFX_CONFIG_IPCT_LOCAL_NODE)), \
+		(NRFX_CONFIG_IPCT_CHANNELS_ENTRY_NAME(DT_NODELABEL(_CONCAT(ipct, inst_num)))))
+
+/* Variables entries generation. */
+#define NRFX_CONFIG_IPCT_CHANNELS_ENTRY(node_id) \
+	static nrfx_atomic_t NRFX_CONFIG_IPCT_CHANNELS_ENTRY_NAME(node_id) \
+		__attribute__((used)) = \
+		NRFX_CONFIG_IPCT_MASK_DT(node_id);
+#define NRFX_INTERCONNECT_IPCT_LOCAL_DEFINE \
+	DT_FOREACH_STATUS_OKAY(nordic_nrf_ipct_local, NRFX_CONFIG_IPCT_CHANNELS_ENTRY)
+#define NRFX_INTERCONNECT_IPCT_GLOBAL_DEFINE \
+	DT_FOREACH_STATUS_OKAY(nordic_nrf_ipct_global, NRFX_CONFIG_IPCT_CHANNELS_ENTRY)
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_ipct_global) || ... */
 
 #include <nrfx_config_common.h>
 #if defined(NRF51)
@@ -836,16 +1003,16 @@
     #include <nrfx_config_nrf5340_application.h>
 #elif defined(NRF5340_XXAA_NETWORK)
     #include <nrfx_config_nrf5340_network.h>
-#elif defined(NRF54H20_ENGA_XXAA) && defined(NRF_APPLICATION)
-    #include <nrfx_config_nrf54h20_enga_application.h>
-#elif defined(NRF54H20_ENGA_XXAA) && defined(NRF_RADIOCORE)
-    #include <nrfx_config_nrf54h20_enga_radiocore.h>
-#elif defined(NRF54H20_ENGA_XXAA) && defined(NRF_PPR)
-    #include <nrfx_config_nrf54h20_enga_ppr.h>
+#elif defined(NRF54H20_XXAA) && defined(NRF_APPLICATION)
+    #include <nrfx_config_nrf54h20_application.h>
+#elif defined(NRF54H20_XXAA) && defined(NRF_RADIOCORE)
+    #include <nrfx_config_nrf54h20_radiocore.h>
+#elif defined(NRF54H20_XXAA) && defined(NRF_PPR)
+    #include <nrfx_config_nrf54h20_ppr.h>
+#elif (defined(NRF54L15_XXAA) || defined(NRF54L15_ENGA_XXAA)) && defined(NRF_APPLICATION)
+    #include <nrfx_config_nrf54l15_enga_application.h>
 #elif defined(NRF9120_XXAA) || defined(NRF9160_XXAA)
     #include <nrfx_config_nrf91.h>
-#elif defined(NRF54L15_ENGA_XXAA) && defined(NRF_APPLICATION)
-    #include <nrfx_config_nrf54l15_enga_application.h>
 #else
     #error "Unknown device."
 #endif

@@ -19,25 +19,25 @@
  */
 ZTEST(posix_headers, test_netdb_h)
 {
-	/* zassert_not_equal(-1, offsetof(struct hostent, h_name)); */ /* not implemented */
-	/* zassert_not_equal(-1, offsetof(struct hostent, h_aliases)); */ /* not implemented */
-	/* zassert_not_equal(-1, offsetof(struct hostent, h_addrtype)); */ /* not implemented */
-	/* zassert_not_equal(-1, offsetof(struct hostent, h_length)); */ /* not implemented */
-	/* zassert_not_equal(-1, offsetof(struct hostent, h_addr_list)); */ /* not implemented */
+	zassert_not_equal(-1, offsetof(struct hostent, h_name));
+	zassert_not_equal(-1, offsetof(struct hostent, h_aliases));
+	zassert_not_equal(-1, offsetof(struct hostent, h_addrtype));
+	zassert_not_equal(-1, offsetof(struct hostent, h_length));
+	zassert_not_equal(-1, offsetof(struct hostent, h_addr_list));
 
-	/* zassert_not_equal(-1, offsetof(struct netent, n_name)); */ /* not implemented */
-	/* zassert_not_equal(-1, offsetof(struct netent, n_aliases)); */ /* not implemented */
-	/* zassert_not_equal(-1, offsetof(struct netent, n_addrtype)); */ /* not implemented */
-	/* zassert_not_equal(-1, offsetof(struct netent, n_net)); */ /* not implemented */
+	zassert_not_equal(-1, offsetof(struct netent, n_name));
+	zassert_not_equal(-1, offsetof(struct netent, n_aliases));
+	zassert_not_equal(-1, offsetof(struct netent, n_addrtype));
+	zassert_not_equal(-1, offsetof(struct netent, n_net));
 
-	/* zassert_not_equal(-1, offsetof(struct protoent, p_name)); */ /* not implemented */
-	/* zassert_not_equal(-1, offsetof(struct protoent, p_aliases)); */ /* not implemented */
-	/* zassert_not_equal(-1, offsetof(struct protoent, p_proto)); */ /* not implemented */
+	zassert_not_equal(-1, offsetof(struct protoent, p_name));
+	zassert_not_equal(-1, offsetof(struct protoent, p_aliases));
+	zassert_not_equal(-1, offsetof(struct protoent, p_proto));
 
-	/* zassert_not_equal(-1, offsetof(struct servent, s_name)); */ /* not implemented */
-	/* zassert_not_equal(-1, offsetof(struct servent, s_aliases)); */ /* not implemented */
-	/* zassert_not_equal(-1, offsetof(struct servent, s_port)); */ /* not implemented */
-	/* zassert_not_equal(-1, offsetof(struct servent, s_proto)); */ /* not implemented */
+	zassert_not_equal(-1, offsetof(struct servent, s_name));
+	zassert_not_equal(-1, offsetof(struct servent, s_aliases));
+	zassert_not_equal(-1, offsetof(struct servent, s_port));
+	zassert_not_equal(-1, offsetof(struct servent, s_proto));
 
 	/* zassert_equal(IPPORT_RESERVED, UINT16_MAX); */ /* not implemented */
 
@@ -77,27 +77,27 @@ ZTEST(posix_headers, test_netdb_h)
 	zassert_not_equal(-1, EAI_OVERFLOW);
 
 	if (IS_ENABLED(CONFIG_POSIX_API)) {
-		/* zassert_not_null(endhostent); */ /* not implemented */
-		/* zassert_not_null(endnetent); */ /* not implemented */
-		/* zassert_not_null(endprotoent); */ /* not implemented */
-		/* zassert_not_null(endservent); */ /* not implemented */
+		zassert_not_null(endhostent);
+		zassert_not_null(endnetent);
+		zassert_not_null(endprotoent);
+		zassert_not_null(endservent);
 		zassert_not_null(freeaddrinfo);
 		zassert_not_null(gai_strerror);
 		zassert_not_null(getaddrinfo);
-		/* zassert_not_null(gethostent); */ /* not implemented */
+		zassert_not_null(gethostent);
 		zassert_not_null(getnameinfo);
-		/* zassert_not_null(getnetbyaddr); */ /* not implemented */
-		/* zassert_not_null(getnetbyname); */ /* not implemented */
-		/* zassert_not_null(getnetent); */ /* not implemented */
-		/* zassert_not_null(getprotobyname); */ /* not implemented */
-		/* zassert_not_null(getprotobynumber); */ /* not implemented */
-		/* zassert_not_null(getprotoent); */ /* not implemented */
-		/* zassert_not_null(getservbyname); */ /* not implemented */
-		/* zassert_not_null(getservbyport); */ /* not implemented */
-		/* zassert_not_null(getservent); */ /* not implemented */
-		/* zassert_not_null(sethostent); */ /* not implemented */
-		/* zassert_not_null(setnetent); */ /* not implemented */
-		/* zassert_not_null(setprotoent); */ /* not implemented */
-		/* zassert_not_null(setservent); */ /* not implemented */
+		zassert_not_null(getnetbyaddr);
+		zassert_not_null(getnetbyname);
+		zassert_not_null(getnetent);
+		zassert_not_null(getprotobyname);
+		zassert_not_null(getprotobynumber);
+		zassert_not_null(getprotoent);
+		zassert_not_null(getservbyname);
+		zassert_not_null(getservbyport);
+		zassert_not_null(getservent);
+		zassert_not_null(sethostent);
+		zassert_not_null(setnetent);
+		zassert_not_null(setprotoent);
+		zassert_not_null(setservent);
 	}
 }

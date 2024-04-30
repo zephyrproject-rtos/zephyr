@@ -1,3 +1,23 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pit0_channel0 {
+	status = "okay";
+};
+
+&pit0_channel1 {
+	status = "okay";
+};
+
+/* channel 2 disabled to test disabled channel not breaking things */
+
+&pit0_channel3 {
+	status = "okay";
+};
+
 &qtmr1_timer0 {
 	status = "okay";
 	primary_source = "kQTMR_ClockDivide_128";

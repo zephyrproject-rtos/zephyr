@@ -86,6 +86,7 @@ extensions = [
     "zephyr.dtcompatible-role",
     "zephyr.link-roles",
     "sphinx_tabs.tabs",
+    "sphinx_sitemap",
     "zephyr.warnings_filter",
     "zephyr.doxyrunner",
     "zephyr.gh_utils",
@@ -95,6 +96,7 @@ extensions = [
     "sphinx_togglebutton",
     "zephyr.external_content",
     "zephyr.domain",
+    "zephyr.api_overview",
 ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
@@ -189,7 +191,7 @@ html_context = {
         ("latest", "/"),
         ("3.6.0", "/3.6.0/"),
         ("3.5.0", "/3.5.0/"),
-        ("2.7.5 (LTS)", "/2.7.5/"),
+        ("2.7.6 (LTS)", "/2.7.6/"),
     ),
     "display_gh_links": True,
     "reference_links": {
@@ -350,6 +352,10 @@ graphviz_dot_args = [
 copybutton_prompt_text = r"\$ |uart:~\$ "
 copybutton_prompt_is_regexp = True
 
+# -- Options for sphinx-sitemap ----------------------------------------
+
+sitemap_url_scheme = "{link}"
+
 # -- Linkcheck options ----------------------------------------------------
 
 linkcheck_ignore = [
@@ -364,6 +370,9 @@ linkcheck_timeout = 30
 linkcheck_workers = 10
 linkcheck_anchors = False
 
+# -- Options for zephyr.api_overview --------------------------------------
+
+api_overview_doxygen_base_url = "../../doxygen/html"
 
 def setup(app):
     # theme customizations

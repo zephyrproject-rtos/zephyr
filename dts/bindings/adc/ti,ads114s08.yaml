@@ -45,5 +45,14 @@ properties:
     description: |
       IDAC current in microampere, the default value turns the current source off
 
+  vbias-level:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      bias voltage level: 0 - (AVDD+AVSS)/2, 1 - (AVDD+AVSS)/12
+
 io-channel-cells:
   - input

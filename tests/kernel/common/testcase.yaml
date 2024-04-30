@@ -48,7 +48,8 @@ tests:
     extra_configs:
       - CONFIG_PICOLIBC=y
   kernel.common.lto:
-    filter: CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+    # CONFIG_CODE_DATA_RELOCATION causes a build error (issue #69730)
+    filter: CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED and not CONFIG_CODE_DATA_RELOCATION
     tags: lto
     extra_configs:
       - CONFIG_TEST_USERSPACE=n

@@ -55,7 +55,7 @@ static int k_mem_slab_stats_query(struct k_obj_core *obj_core, void *stats)
 	ptr->max_allocated_bytes = slab->info.max_used * slab->info.block_size;
 #else
 	ptr->max_allocated_bytes = 0;
-#endif
+#endif /* CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION */
 	k_spin_unlock(&slab->lock, key);
 
 	return 0;
@@ -73,7 +73,7 @@ static int k_mem_slab_stats_reset(struct k_obj_core *obj_core)
 
 #ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
 	slab->info.max_used = slab->info.num_used;
-#endif
+#endif /* CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION */
 
 	k_spin_unlock(&slab->lock, key);
 
@@ -89,8 +89,8 @@ static struct k_obj_core_stats_desc mem_slab_stats_desc = {
 	.disable = NULL,
 	.enable = NULL,
 };
-#endif
-#endif
+#endif /* CONFIG_OBJ_CORE_STATS_MEM_SLAB */
+#endif /* CONFIG_OBJ_CORE_MEM_SLAB */
 
 /**
  * @brief Initialize kernel memory slab subsystem.
@@ -141,8 +141,8 @@ static int init_mem_slab_obj_core_list(void)
 			offsetof(struct k_mem_slab, obj_core));
 #ifdef CONFIG_OBJ_CORE_STATS_MEM_SLAB
 	k_obj_type_stats_init(&obj_type_mem_slab, &mem_slab_stats_desc);
-#endif
-#endif
+#endif /* CONFIG_OBJ_CORE_STATS_MEM_SLAB */
+#endif /* CONFIG_OBJ_CORE_MEM_SLAB */
 
 	/* Initialize statically defined mem_slabs */
 
@@ -158,8 +158,8 @@ static int init_mem_slab_obj_core_list(void)
 #ifdef CONFIG_OBJ_CORE_STATS_MEM_SLAB
 		k_obj_core_stats_register(K_OBJ_CORE(slab), &slab->info,
 					  sizeof(struct k_mem_slab_info));
-#endif
-#endif
+#endif /* CONFIG_OBJ_CORE_STATS_MEM_SLAB */
+#endif /* CONFIG_OBJ_CORE_MEM_SLAB */
 	}
 
 out:
@@ -182,7 +182,7 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 
 #ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
 	slab->info.max_used = 0U;
-#endif
+#endif /* CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION */
 
 	rc = create_free_list(slab);
 	if (rc < 0) {
@@ -191,11 +191,11 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 
 #ifdef CONFIG_OBJ_CORE_MEM_SLAB
 	k_obj_core_init_and_link(K_OBJ_CORE(slab), &obj_type_mem_slab);
-#endif
+#endif /* CONFIG_OBJ_CORE_MEM_SLAB */
 #ifdef CONFIG_OBJ_CORE_STATS_MEM_SLAB
 	k_obj_core_stats_register(K_OBJ_CORE(slab), &slab->info,
 				  sizeof(struct k_mem_slab_info));
-#endif
+#endif /* CONFIG_OBJ_CORE_STATS_MEM_SLAB */
 
 	z_waitq_init(&slab->wait_q);
 	k_object_init(slab);
@@ -221,7 +221,7 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 #ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
 		slab->info.max_used = MAX(slab->info.num_used,
 					  slab->info.max_used);
-#endif
+#endif /* CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION */
 
 		result = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT) ||
@@ -298,7 +298,7 @@ int k_mem_slab_runtime_stats_get(struct k_mem_slab *slab, struct sys_memory_stat
 				     slab->info.block_size;
 #else
 	stats->max_allocated_bytes = 0;
-#endif
+#endif /* CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION */
 
 	k_spin_unlock(&slab->lock, key);
 
@@ -320,4 +320,4 @@ int k_mem_slab_runtime_stats_reset_max(struct k_mem_slab *slab)
 
 	return 0;
 }
-#endif
+#endif /* CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION */

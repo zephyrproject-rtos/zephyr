@@ -78,6 +78,10 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 
 	bt_data_parse(buf, data_cb, name);
 
+	if (strlen(CONFIG_PER_ADV_NAME) > 0 && strcmp(name, CONFIG_PER_ADV_NAME) != 0) {
+		return;
+	}
+
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i %s "
 	       "C:%u S:%u D:%u SR:%u E:%u Prim: %s, Secn: %s, "

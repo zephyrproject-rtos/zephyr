@@ -1,8 +1,0 @@
-# STM32F410RB Nucleo board configuration
-
-# Copyright (c) 2020 Hans Unzner
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NUCLEO_F410RB
-	bool "Nucleo F410RB Development Board"
-	depends on SOC_STM32F410RX

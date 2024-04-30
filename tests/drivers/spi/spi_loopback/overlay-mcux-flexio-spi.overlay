@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2024, STRIM, ALC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	pinmux_flexio3spi0: pinmux_flexio3spi0 {
+		group0 {
+			pinmux =
+				<&iomuxc_gpio_ad_b0_03_gpio1_io03>, /* cs */
+				<&iomuxc_gpio_ad_b1_10_flexio3_flexio10>, /* sck */
+				<&iomuxc_gpio_ad_b1_01_flexio3_flexio01>, /* sdo */
+				<&iomuxc_gpio_ad_b1_04_flexio3_flexio04>; /* sdi */
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "150-mhz";
+		};
+	};
+	pinmux_flexio3spi1: pinmux_flexio3spi1 {
+		group0 {
+			pinmux =
+				<&iomuxc_gpio_ad_b0_02_gpio1_io02>, /* cs */
+				<&iomuxc_gpio_ad_b1_11_flexio3_flexio11>, /* sck */
+				<&iomuxc_gpio_ad_b1_00_flexio3_flexio00>, /* sdo */
+				<&iomuxc_gpio_ad_b1_05_flexio3_flexio05>; /* sdi */
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "150-mhz";
+		};
+	};
+};
+
+&flexio3 {
+	status = "okay";
+	flexio3_spi0: flexio3_spi0 {
+		compatible = "nxp,flexio-spi";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cs-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+		sdo-pin = <1>;
+		sdi-pin = <4>;
+		sck-pin = <10>;
+		pinctrl-0 = <&pinmux_flexio3spi0>;
+		pinctrl-names = "default";
+		slow@0 {
+			status = "okay";
+			compatible = "test-spi-loopback-slow";
+			reg = <0>;
+			spi-max-frequency = <500000>;
+		};
+	};
+	flexio3_spi1: flexio3_spi1 {
+		compatible = "nxp,flexio-spi";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cs-gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+		sdo-pin = <0>;
+		sdi-pin = <5>;
+		sck-pin = <11>;
+		pinctrl-0 = <&pinmux_flexio3spi1>;
+		pinctrl-names = "default";
+		fast@0 {
+			status = "okay";
+			compatible = "test-spi-loopback-fast";
+			reg = <0>;
+			spi-max-frequency = <4000000>;
+		};
+	};
+};
+
+/* pinmux_lpspi3 overlaps pinmux_flexio3spi1 */
+&lpspi3 {
+	status = "disabled";
+};

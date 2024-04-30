@@ -33,6 +33,10 @@
 #define ADIN2111_CONFIG0_SYNC			BIT(15)
 /* Transmit Frame Check Sequence Validation Enable */
 #define ADIN2111_CONFIG0_TXFCSVE		BIT(14)
+/* Zero Align Receive Frame Enable */
+#define ADIN2111_CONFIG0_ZARFE			BIT(12)
+/* New packet received only after a new CS assertion */
+#define ADIN2111_CONFIG0_CSARFE			BIT(13)
 /* Transmit Cut Through Enable */
 #define ADIN2111_CONFIG0_TXCTE			BIT(9)
 /* Receive Cut Through Enable. Must be 0 for Generic SPI */
@@ -44,10 +48,14 @@
 #define ADIN2111_CONFIG2_P2_FWD_UNK2P1		BIT(14)
 /* Forward Frames from Port 1 Not Matching a MAC Address to Port 2 */
 #define ADIN2111_CONFIG2_P1_FWD_UNK2P2		BIT(13)
+/* Forward Frames Not Matching Any MAC Address to the Host */
+#define ADIN2111_CONFIG2_P2_FWD_UNK2HOST	BIT(12)
 /* Enable Cut Through from Port to Port */
 #define ADIN2111_CONFIG2_PORT_CUT_THRU_EN	BIT(11)
 /* Enable CRC Append */
 #define ADIN2111_CONFIG2_CRC_APPEND		BIT(5)
+/* Forward Frames Not Matching Any MAC Address to the Host */
+#define ADIN2111_CONFIG2_P1_FWD_UNK2HOST	BIT(2)
 
 /* Status Register 0 */
 #define ADIN2111_STATUS0			0x08U
@@ -72,9 +80,18 @@
 #define ADIN2111_STATUS1_SPI_ERR		BIT(10)
 /* Port 1 RX FIFO Contains Data */
 #define ADIN2111_STATUS1_P1_RX_RDY		BIT(4)
+/* Frame transmitted */
+#define ADIN2111_STATUS1_TX_RDY			BIT(3)
 /* Value to completely clear status register 1 */
 #define ADIN2111_STATUS1_CLEAR			0xFFF01F08U
 
+/* Buffer Status Register */
+#define ADIN2111_BUFSTS				0x0BU
+/* Rx chunks available */
+#define ADIN2111_BUFSTS_RCA_MASK		GENMASK(7, 0)
+/* Tx credits */
+#define ADIN2111_BUFSTS_TXC			8U
+#define ADIN2111_BUFSTS_TXC_MASK		GENMASK(15, 8)
 
 /* Interrupt Mask Register 0 */
 #define ADIN2111_IMASK0				0x0CU
@@ -92,7 +109,7 @@
 /*!< Mask Bit for P1_RX_RDY. Generic SPI only.*/
 #define ADIN2111_IMASK1_P1_RX_RDY_MASK		BIT(4)
 /*!< Mask Bit for TX_FRM_DONE. Generic SPI only.*/
-#define ADIN2111_IMASK1_TX_RDY_MASK		BIT(4)
+#define ADIN2111_IMASK1_TX_RDY_MASK		BIT(3)
 
 /* MAC Tx Frame Size Register */
 #define ADIN2111_TX_FSIZE			0x30U
@@ -122,6 +139,16 @@
 #define ADIN2111_P2_RX_FSIZE			0xC0U
 /* P2 MAC Receive Register */
 #define ADIN2111_P2_RX				0xC1U
+
+/* MAC reset status */
+#define ADIN1110_MAC_RST_STATUS_REG		0x3BU
+
+/* MAC reset */
+#define ADIN2111_SOFT_RST_REG			0x3CU
+#define ADIN2111_SWRESET_KEY1			0x4F1CU
+#define ADIN2111_SWRESET_KEY2			0xC1F4U
+#define ADIN2111_SWRELEASE_KEY1			0x6F1AU
+#define ADIN2111_SWRELEASE_KEY2			0xA1F6U
 
 /* SPI header size in bytes */
 #define ADIN2111_SPI_HEADER_SIZE		2U
@@ -158,6 +185,37 @@
 /* Number of buffer bytes in TxFIFO to provide frame margin upon writes */
 #define ADIN2111_TX_FIFO_BUFFER_MARGIN		4U
 
+/* Manufacturer unique ID */
+#define ADIN2111_PHYID_OUI			0xa0ef
+
+/* Open Alliance definitions */
+#define ADIN2111_OA_ALLOC_TIMEOUT		K_MSEC(10)
+/* Max setting to a max RCA of 255 68-bytes ckunks */
+#define ADIN2111_OA_BUF_SZ			(255U * 64U)
+
+#define ADIN2111_OA_CTL_LEN_PROT		16U
+#define ADIN2111_OA_CTL_LEN			12U
+#define ADIN2111_OA_CTL_MMS			BIT(24)
+#define ADIN2111_OA_CTL_WNR			BIT(29)
+
+#define ADIN2111_OA_DATA_HDR_DNC		BIT(31)
+#define ADIN2111_OA_DATA_HDR_NORX		BIT(29)
+#define ADIN2111_OA_DATA_HDR_VS			22U
+#define ADIN2111_OA_DATA_HDR_DV			BIT(21)
+#define ADIN2111_OA_DATA_HDR_SV			BIT(20)
+#define ADIN2111_OA_DATA_HDR_EV			BIT(14)
+#define ADIN2111_OA_DATA_HDR_EBO		8U
+
+#define ADIN2111_OA_DATA_FTR_SYNC		BIT(29)
+#define ADIN2111_OA_DATA_FTR_EBO		8U
+#define ADIN2111_OA_DATA_FTR_DV			BIT(21)
+#define ADIN2111_OA_DATA_FTR_SV			BIT(20)
+#define ADIN2111_OA_DATA_FTR_EV			BIT(14)
+#define ADIN2111_OA_DATA_FTR_SWO		16U
+#define ADIN2111_OA_DATA_FTR_SWO_MSK		GENMASK(19, 16)
+#define ADIN2111_OA_DATA_FTR_EBO		8U
+#define ADIN2111_OA_DATA_FTR_EBO_MSK		GENMASK(13, 8)
+
 enum adin2111_chips_id {
 	ADIN2111_MAC = 0,
 	ADIN1110_MAC,
@@ -180,6 +238,12 @@ struct adin2111_data {
 	uint32_t imask1;
 	uint16_t ifaces_left_to_init;
 	uint8_t *buf;
+	uint16_t scur;
+	bool oa;
+	bool oa_prot;
+	uint8_t oa_cps;
+	uint8_t oa_tx_buf[ADIN2111_OA_BUF_SZ];
+	uint8_t oa_rx_buf[ADIN2111_OA_BUF_SZ];
 
 	K_KERNEL_STACK_MEMBER(rx_thread_stack, CONFIG_ETH_ADIN2111_IRQ_THREAD_STACK_SIZE);
 	struct k_thread rx_thread;

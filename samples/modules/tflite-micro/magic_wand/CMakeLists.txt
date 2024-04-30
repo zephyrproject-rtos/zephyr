@@ -10,4 +10,4 @@ set(NO_THREADSAFE_STATICS $<TARGET_PROPERTY:compiler-cpp,no_threadsafe_statics>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${NO_THREADSAFE_STATICS}>)
 
 file(GLOB app_sources src/*)
-target_sources(app PRIVATE ${app_sources} boards/litex_vexriscv.overlay)
+target_sources(app PRIVATE ${app_sources})

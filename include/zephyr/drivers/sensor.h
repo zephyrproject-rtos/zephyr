@@ -15,6 +15,8 @@
 /**
  * @brief Sensor Interface
  * @defgroup sensor_interface Sensor Interface
+ * @since 1.2
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -118,6 +120,8 @@ enum sensor_channel {
 
 	/** CO2 level, in parts per million (ppm) **/
 	SENSOR_CHAN_CO2,
+	/** O2 level, in parts per million (ppm) **/
+	SENSOR_CHAN_O2,
 	/** VOC level, in parts per billion (ppb) **/
 	SENSOR_CHAN_VOC,
 	/** Gas sensor resistance in ohms. */

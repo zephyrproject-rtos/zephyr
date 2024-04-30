@@ -325,7 +325,7 @@ static int test_subscribe(void)
 	topic.qos = MQTT_QOS_1_AT_LEAST_ONCE;
 	sub.list = &topic;
 	sub.list_count = 1U;
-	sub.message_id = sys_rand32_get();
+	sub.message_id = sys_rand16_get();
 
 	rc = mqtt_subscribe(&client_ctx, &sub);
 	if (rc != 0) {
@@ -354,7 +354,7 @@ static int test_publish(enum mqtt_qos qos)
 			strlen(param.message.topic.topic.utf8);
 	param.message.payload.data = (uint8_t *)payload;
 	param.message.payload.len = payload_left;
-	param.message_id = sys_rand32_get();
+	param.message_id = sys_rand16_get();
 	param.dup_flag = 0U;
 	param.retain_flag = 0U;
 
@@ -388,7 +388,7 @@ static int test_unsubscribe(void)
 	topic.topic.size = strlen(topic.topic.utf8);
 	unsub.list = &topic;
 	unsub.list_count = 1U;
-	unsub.message_id = sys_rand32_get();
+	unsub.message_id = sys_rand16_get();
 
 	rc = mqtt_unsubscribe(&client_ctx, &unsub);
 	if (rc != 0) {

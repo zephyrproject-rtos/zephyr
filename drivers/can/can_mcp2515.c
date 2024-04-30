@@ -789,21 +789,6 @@ static void mcp2515_handle_errors(const struct device *dev)
 	}
 }
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static int mcp2515_recover(const struct device *dev, k_timeout_t timeout)
-{
-	struct mcp2515_data *dev_data = dev->data;
-
-	ARG_UNUSED(timeout);
-
-	if (!dev_data->common.started) {
-		return -ENETDOWN;
-	}
-
-	return -ENOTSUP;
-}
-#endif
-
 static void mcp2515_handle_interrupts(const struct device *dev)
 {
 	const struct mcp2515_config *dev_cfg = dev->config;
@@ -904,9 +889,6 @@ static const struct can_driver_api can_api_funcs = {
 	.add_rx_filter = mcp2515_add_rx_filter,
 	.remove_rx_filter = mcp2515_remove_rx_filter,
 	.get_state = mcp2515_get_state,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	.recover = mcp2515_recover,
-#endif
 	.set_state_change_callback = mcp2515_set_state_change_callback,
 	.get_core_clock = mcp2515_get_core_clock,
 	.get_max_filters = mcp2515_get_max_filters,
@@ -1026,7 +1008,7 @@ static int mcp2515_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	static const struct mcp2515_config mcp2515_config_##inst = {                               \
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 1000000),                            \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 1000000),                         \
 		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
 		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                                \
 		.int_thread_stack_size = CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE,                 \

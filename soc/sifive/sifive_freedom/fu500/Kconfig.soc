@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SIFIVE_FREEDOM_FU500
+	bool
+	select SOC_FAMILY_SIFIVE_FREEDOM
+
+config SOC_SERIES
+	default "fu500" if SOC_SERIES_SIFIVE_FREEDOM_FU500
+
+config SOC_SIFIVE_FREEDOM_FU540
+	bool
+	select SOC_SERIES_SIFIVE_FREEDOM_FU500
+
+config SOC
+	default "fu540" if SOC_SIFIVE_FREEDOM_FU540

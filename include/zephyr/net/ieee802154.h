@@ -26,6 +26,8 @@ extern "C" {
 
 /**
  * @defgroup ieee802154 IEEE 802.15.4 and Thread APIs
+ * @since 1.0
+ * @version 0.8.0
  * @ingroup connectivity
  *
  * @brief IEEE 802.15.4 native and OpenThread L2, configuration, management and
@@ -76,6 +78,8 @@ extern "C" {
 
 /**
  * @defgroup ieee802154_l2 IEEE 802.15.4 L2
+ * @since 1.0
+ * @version 0.8.0
  * @ingroup ieee802154
  *
  * @brief IEEE 802.15.4 L2 APIs

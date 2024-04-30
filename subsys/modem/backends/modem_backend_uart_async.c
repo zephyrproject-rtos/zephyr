@@ -7,7 +7,7 @@
 #include "modem_backend_uart_async.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(modem_backend_uart, CONFIG_MODEM_MODULES_LOG_LEVEL);
+LOG_MODULE_REGISTER(modem_backend_uart_async, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <string.h>
@@ -112,14 +112,18 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 					evt->data.rx.len);
 
 		if (received < evt->data.rx.len) {
+			const unsigned int buf_size = ring_buf_size_get(&backend->async.receive_rb);
+
 			ring_buf_reset(&backend->async.receive_rb);
 			k_spin_unlock(&backend->async.receive_rb_lock, key);
-			LOG_WRN("Receive buffer overrun");
+
+			LOG_WRN("Receive buffer overrun (dropped %u + %u)",
+				buf_size - received, (unsigned int)evt->data.rx.len);
 			break;
 		}
 
 		k_spin_unlock(&backend->async.receive_rb_lock, key);
-		k_work_submit(&backend->receive_ready_work);
+		k_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
 		break;
 
 	case UART_RX_DISABLED:
@@ -145,29 +149,23 @@ static int modem_backend_uart_async_open(void *data)
 	struct modem_backend_uart *backend = (struct modem_backend_uart *)data;
 	int ret;
 
-	atomic_set(&backend->async.state, 0);
+	atomic_clear(&backend->async.state);
 	ring_buf_reset(&backend->async.receive_rb);
 
-	/* Reserve receive buffer 0 */
-	atomic_set_bit(&backend->async.state,
-		       MODEM_BACKEND_UART_ASYNC_STATE_RX_BUF0_USED_BIT);
+	atomic_set_bit(&backend->async.state, MODEM_BACKEND_UART_ASYNC_STATE_RX_BUF0_USED_BIT);
+	atomic_set_bit(&backend->async.state, MODEM_BACKEND_UART_ASYNC_STATE_RECEIVING_BIT);
+	atomic_set_bit(&backend->async.state, MODEM_BACKEND_UART_ASYNC_STATE_OPEN_BIT);
 
-	/*
-	 * Receive buffer 0 is used internally by UART, receive ring buffer 0 is
+	/* Receive buffers are used internally by UART, receive ring buffer is
 	 * used to store received data.
 	 */
 	ret = uart_rx_enable(backend->uart, backend->async.receive_bufs[0],
 			     backend->async.receive_buf_size,
 			     CONFIG_MODEM_BACKEND_UART_ASYNC_RECEIVE_IDLE_TIMEOUT_MS * 1000L);
-
 	if (ret < 0) {
+		atomic_clear(&backend->async.state);
 		return ret;
 	}
-
-	atomic_set_bit(&backend->async.state,
-		       MODEM_BACKEND_UART_ASYNC_STATE_RECEIVING_BIT);
-	atomic_set_bit(&backend->async.state,
-		       MODEM_BACKEND_UART_ASYNC_STATE_OPEN_BIT);
 
 	modem_pipe_notify_opened(&backend->pipe);
 	return 0;
@@ -182,15 +180,12 @@ static int modem_backend_uart_async_transmit(void *data, const uint8_t *buf, siz
 
 	transmitting = atomic_test_and_set_bit(&backend->async.state,
 					       MODEM_BACKEND_UART_ASYNC_STATE_TRANSMITTING_BIT);
-
 	if (transmitting) {
 		return 0;
 	}
 
 	/* Determine amount of bytes to transmit */
-	bytes_to_transmit = (size < backend->async.transmit_buf_size)
-			  ? size
-			  : backend->async.transmit_buf_size;
+	bytes_to_transmit = MIN(size, backend->async.transmit_buf_size);
 
 	/* Copy buf to transmit buffer which is passed to UART */
 	memcpy(backend->async.transmit_buf, buf, bytes_to_transmit);
@@ -220,7 +215,7 @@ static int modem_backend_uart_async_receive(void *data, uint8_t *buf, size_t siz
 	k_spin_unlock(&backend->async.receive_rb_lock, key);
 
 	if (!empty) {
-		k_work_submit(&backend->receive_ready_work);
+		k_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
 	}
 
 	return (int)received;

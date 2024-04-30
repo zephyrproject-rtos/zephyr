@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2018 SiFive, Inc.
+
+CONFIG_BUILD_OUTPUT_HEX=y

@@ -1,0 +1,113 @@
+# Copyright (c) 2024 Ilia Kharin
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cirque Pinnacle 1CA027 ASIC trackpad
+
+properties:
+  data-ready-gpios:
+    type: phandle-array
+    description: |
+      Data Ready (DR) GPIO pin. The DR pin is connected to Pinnacle HW_DR
+      which is active high when SW_DR or SW_CC are asserted. If connected
+      directly, the MCU pin should be configured as active low.
+
+  sensitivity:
+    type: string
+    default: "4x"
+    description: |
+      ADC attenuation, 1x is the most sensitive and 4x is the least sensitive.
+    enum:
+      - "1x"
+      - "2x"
+      - "3x"
+      - "4x"
+
+  data-mode:
+    type: string
+    default: "relative"
+    description: |
+      Data output mode in which position is reported. In the relative mode
+      each position is reported as relative to the last position. In the
+      absolute mode absolute coordinates are reported.
+    enum:
+      - "absolute"
+      - "relative"
+
+  idle-packets-count:
+    type: int
+    default: 0
+    description: |
+      The number of empty packets where both X and Y are set to 0. They are
+      started to be sent when a finger presence is detected missing (no touch
+      detected) every 10 ms. They are stopped to be sent when a finger presence
+      it detected. An application can count these packets in order to detect
+      taps. When set to 0, no empty packets are sent. Supported values from 0
+      to 255.
+
+  clipping-enable:
+    type: boolean
+    description: |
+      In the absolute mode enable clipping of reported coordinates which are
+      outside of the active range.
+
+  active-range-x-min:
+    type: int
+    default: 128
+    description: |
+      The minimum X value which can be reported.
+
+  active-range-x-max:
+    type: int
+    default: 1920
+    description: |
+      The maximum X value which can be reported.
+
+  active-range-y-min:
+    type: int
+    default: 64
+    description: |
+      The minimum Y value which can be reported.
+
+  active-range-y-max:
+    type: int
+    default: 1472
+    description: |
+      The maximum Y value which can be reported.
+
+  scaling-enable:
+    type: boolean
+    description: |
+      In the absolute mode enable scaling of coordinates according to
+      the specified resolution for X and Y axises. The scaling is applied only
+      when the clipping is enabled.
+
+  scaling-x-resolution:
+    type: int
+    default: 1024
+    description: Resolution for the X axis.
+
+  scaling-y-resolution:
+    type: int
+    default: 1024
+    description: Resolution for the Y axis.
+
+  invert-x:
+    type: boolean
+    description: |
+      In the absolute mode invert X coordinate.
+
+  invert-y:
+    type: boolean
+    description: |
+      In the absolute mode invert Y coordinate.
+
+  primary-tap-enable:
+    type: boolean
+    description: |
+      In the relative mode enable the primary tap.
+
+  swap-xy:
+    type: boolean
+    description: |
+      In the relative mode swap X and Y coordinates. This is equivalent for
+      rotating coordinates by 90 degrees.

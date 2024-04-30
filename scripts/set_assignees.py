@@ -191,9 +191,15 @@ def process_pr(gh, maintainer_file, number):
         for collaborator in collab:
             try:
                 gh_user = gh.get_user(collaborator)
-                if pr.user != gh_user and gh_repo.has_in_collaborators(gh_user):
-                    if gh_user not in existing_reviewers and gh_user not in self_removal:
-                        reviewers.append(collaborator)
+                if pr.user == gh_user or gh_user in existing_reviewers:
+                    continue
+                if not gh_repo.has_in_collaborators(gh_user):
+                    log(f"Skip '{collaborator}': not in collaborators")
+                    continue
+                if gh_user in self_removal:
+                    log(f"Skip '{collaborator}': self removed")
+                    continue
+                reviewers.append(collaborator)
             except UnknownObjectException as e:
                 log(f"Can't get user '{collaborator}', account does not exist anymore? ({e})")
 

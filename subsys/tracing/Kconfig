@@ -160,6 +160,14 @@ config TRACING_BACKEND_RAM
 	  Use a ram buffer to output tracing data which can
 	  be dumped to a file at runtime with a debugger.
 	  See gdb dump binary memory documentation for example.
+
+config TRACING_BACKEND_ADSP_MEMORY_WINDOW
+	bool "Memory window in RAM"
+	depends on SOC_FAMILY_INTEL_ADSP
+	depends on TRACING_SYNC
+	help
+	  Use ADSP memory debug memory window to output tracing data
+
 endchoice
 
 config RAM_TRACING_BUFFER_SIZE

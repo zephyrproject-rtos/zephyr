@@ -1,0 +1,11 @@
+#
+# Copyright 2022 Huawei France Technologies SASU
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_RK3399
+
+rsource "Kconfig.defconfig.rk3399"
+
+endif # SOC_SERIES_RK3399

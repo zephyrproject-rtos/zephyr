@@ -1,8 +1,0 @@
-# STM32MP157C Discovery board configuration
-
-# Copyright (c) 2019 STMicroelectronics
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_STM32MP157C_DK2
-	bool "STM32MP157C Discovery Development 2 Board"
-	depends on SOC_STM32MP15_M4

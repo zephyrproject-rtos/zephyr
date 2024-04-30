@@ -70,6 +70,16 @@ static inline long long llabs(long long __n)
 	return (__n < 0LL) ? -__n : __n;
 }
 
+char *getenv(const char *name);
+#if _POSIX_C_SOURCE >= 200112L
+int setenv(const char *name, const char *val, int overwrite);
+int unsetenv(const char *name);
+#endif
+
+#ifdef _BSD_SOURCE
+int getenv_r(const char *name, char *buf, size_t len);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

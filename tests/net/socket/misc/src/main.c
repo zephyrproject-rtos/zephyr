@@ -23,7 +23,7 @@ ZTEST_USER(socket_misc_test_suite, test_gethostname)
 	static ZTEST_BMEM char buf[80];
 	int res;
 
-	res = gethostname(buf, sizeof(buf));
+	res = zsock_gethostname(buf, sizeof(buf));
 	zassert_equal(res, 0, "");
 	printk("%s\n", buf);
 	zassert_equal(strcmp(buf, "ztest_hostname"), 0, "");
@@ -34,22 +34,22 @@ ZTEST_USER(socket_misc_test_suite, test_inet_pton)
 	int res;
 	uint8_t buf[32];
 
-	res = inet_pton(AF_INET, "127.0.0.1", buf);
+	res = zsock_inet_pton(AF_INET, "127.0.0.1", buf);
 	zassert_equal(res, 1, "");
 
-	res = inet_pton(AF_INET, "127.0.0.1a", buf);
+	res = zsock_inet_pton(AF_INET, "127.0.0.1a", buf);
 	zassert_equal(res, 0, "");
 
-	res = inet_pton(AF_INET6, "a:b:c:d:0:1:2:3", buf);
+	res = zsock_inet_pton(AF_INET6, "a:b:c:d:0:1:2:3", buf);
 	zassert_equal(res, 1, "");
 
-	res = inet_pton(AF_INET6, "::1", buf);
+	res = zsock_inet_pton(AF_INET6, "::1", buf);
 	zassert_equal(res, 1, "");
 
-	res = inet_pton(AF_INET6, "1::", buf);
+	res = zsock_inet_pton(AF_INET6, "1::", buf);
 	zassert_equal(res, 1, "");
 
-	res = inet_pton(AF_INET6, "a:b:c:d:0:1:2:3z", buf);
+	res = zsock_inet_pton(AF_INET6, "a:b:c:d:0:1:2:3z", buf);
 	zassert_equal(res, 0, "");
 }
 
@@ -181,14 +181,14 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 	uint8_t send_buf[32];
 	uint8_t recv_buf[sizeof(send_buf)] = { 0 };
 
-	ret = bind(sock_s, bind_addr, bind_addrlen);
+	ret = zsock_bind(sock_s, bind_addr, bind_addrlen);
 	zassert_equal(ret, 0, "bind failed, %d", errno);
 
 	/* Bind server socket with interface 2. */
 
 	strcpy(ifreq.ifr_name, DEV2_NAME);
-	ret = setsockopt(sock_s, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
-			 sizeof(ifreq));
+	ret = zsock_setsockopt(sock_s, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
+			       sizeof(ifreq));
 	zassert_equal(ret, 0, "SO_BINDTODEVICE failed, %d", errno);
 
 	/* Bind client socket with interface 1 and send a packet. */
@@ -198,12 +198,12 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 	strcpy(ifreq.ifr_name, DEV1_NAME);
 	strcpy(send_buf, DEV1_NAME);
 
-	ret = setsockopt(sock_c, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
-			 sizeof(ifreq));
+	ret = zsock_setsockopt(sock_c, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
+			       sizeof(ifreq));
 	zassert_equal(ret, 0, "SO_BINDTODEVICE failed, %d", errno);
 
-	ret = sendto(sock_c, send_buf, strlen(send_buf) + 1, 0,
-		     peer_addr, peer_addrlen);
+	ret = zsock_sendto(sock_c, send_buf, strlen(send_buf) + 1, 0,
+			   peer_addr, peer_addrlen);
 	zassert_equal(ret, strlen(send_buf) + 1, "sendto failed, %d", errno);
 
 	ret = sys_sem_take(&send_sem, K_MSEC(100));
@@ -223,12 +223,12 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 	strcpy(ifreq.ifr_name, DEV2_NAME);
 	strcpy(send_buf, DEV2_NAME);
 
-	ret = setsockopt(sock_c, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
-			 sizeof(ifreq));
+	ret = zsock_setsockopt(sock_c, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
+			       sizeof(ifreq));
 	zassert_equal(ret, 0, "SO_BINDTODEVICE failed, %d", errno);
 
-	ret = sendto(sock_c, send_buf, strlen(send_buf) + 1, 0,
-		     peer_addr, peer_addrlen);
+	ret = zsock_sendto(sock_c, send_buf, strlen(send_buf) + 1, 0,
+			   peer_addr, peer_addrlen);
 	zassert_equal(ret, strlen(send_buf) + 1, "sendto failed, %d", errno);
 
 	ret = sys_sem_take(&send_sem, K_MSEC(100));
@@ -243,7 +243,7 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 
 	k_msleep(10);
 
-	ret = recv(sock_s, recv_buf, sizeof(recv_buf), MSG_DONTWAIT);
+	ret = zsock_recv(sock_s, recv_buf, sizeof(recv_buf), ZSOCK_MSG_DONTWAIT);
 	zassert_true(ret > 0, "recv failed, %d", errno);
 	zassert_mem_equal(recv_buf, DEV2_NAME, strlen(DEV2_NAME),
 			 "received datagram from invalid interface");
@@ -251,8 +251,8 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 	/* Remove the binding from the server socket. */
 
 	strcpy(ifreq.ifr_name, "");
-	ret = setsockopt(sock_s, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
-			 sizeof(ifreq));
+	ret = zsock_setsockopt(sock_s, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
+			       sizeof(ifreq));
 	zassert_equal(ret, 0, "SO_BINDTODEVICE failed, %d", errno);
 
 	/* Bind client socket with interface 1 again. */
@@ -261,12 +261,12 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 	strcpy(ifreq.ifr_name, DEV1_NAME);
 	strcpy(send_buf, DEV1_NAME);
 
-	ret = setsockopt(sock_c, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
-			 sizeof(ifreq));
+	ret = zsock_setsockopt(sock_c, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
+			       sizeof(ifreq));
 	zassert_equal(ret, 0, "SO_BINDTODEVICE failed, %d", errno);
 
-	ret = sendto(sock_c, send_buf, strlen(send_buf) + 1, 0,
-		     peer_addr, peer_addrlen);
+	ret = zsock_sendto(sock_c, send_buf, strlen(send_buf) + 1, 0,
+			   peer_addr, peer_addrlen);
 	zassert_equal(ret, strlen(send_buf) + 1, "sendto failed, %d", errno);
 
 	ret = sys_sem_take(&send_sem, K_MSEC(100));
@@ -280,14 +280,14 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 
 	k_msleep(10);
 
-	ret = recv(sock_s, recv_buf, sizeof(recv_buf), MSG_DONTWAIT);
+	ret = zsock_recv(sock_s, recv_buf, sizeof(recv_buf), ZSOCK_MSG_DONTWAIT);
 	zassert_true(ret > 0, "recv failed, %d", errno);
 	zassert_mem_equal(recv_buf, DEV1_NAME, strlen(DEV1_NAME),
 			 "received datagram from invalid interface");
 
-	ret = close(sock_c);
+	ret = zsock_close(sock_c);
 	zassert_equal(ret, 0, "close failed, %d", errno);
-	ret = close(sock_s);
+	ret = zsock_close(sock_s);
 	zassert_equal(ret, 0, "close failed, %d", errno);
 
 	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
@@ -305,15 +305,15 @@ void test_ipv4_so_bindtodevice(void)
 		.sin_addr = INADDR_ANY_INIT,
 	};
 
-	sock_c = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	sock_c = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(sock_c >= 0, "socket open failed");
-	sock_s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	sock_s = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(sock_s >= 0, "socket open failed");
 
 	peer_addr.sin_family = AF_INET;
 	peer_addr.sin_port = htons(DST_PORT);
-	ret = inet_pton(AF_INET, TEST_PEER_IPV4_ADDR,
-			&peer_addr.sin_addr);
+	ret = zsock_inet_pton(AF_INET, TEST_PEER_IPV4_ADDR,
+			      &peer_addr.sin_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
 	test_so_bindtodevice(sock_c, sock_s, (struct sockaddr *)&peer_addr,
@@ -333,15 +333,15 @@ void test_ipv6_so_bindtodevice(void)
 		.sin6_addr = IN6ADDR_ANY_INIT,
 	};
 
-	sock_c = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+	sock_c = zsock_socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(sock_c >= 0, "socket open failed");
-	sock_s = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+	sock_s = zsock_socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(sock_s >= 0, "socket open failed");
 
 	peer_addr.sin6_family = AF_INET6;
 	peer_addr.sin6_port = htons(DST_PORT);
-	ret = inet_pton(AF_INET6, TEST_PEER_IPV6_ADDR,
-			&peer_addr.sin6_addr);
+	ret = zsock_inet_pton(AF_INET6, TEST_PEER_IPV6_ADDR,
+			      &peer_addr.sin6_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
 	test_so_bindtodevice(sock_c, sock_s, (struct sockaddr *)&peer_addr,
@@ -365,67 +365,67 @@ void test_getpeername(int family)
 	srv_addr.sa_family = family;
 	if (family == AF_INET) {
 		net_sin(&srv_addr)->sin_port = htons(DST_PORT);
-		ret = inet_pton(AF_INET, TEST_MY_IPV4_ADDR,
-				&net_sin(&srv_addr)->sin_addr);
+		ret = zsock_inet_pton(AF_INET, TEST_MY_IPV4_ADDR,
+				      &net_sin(&srv_addr)->sin_addr);
 	} else {
 		net_sin6(&srv_addr)->sin6_port = htons(DST_PORT);
-		ret = inet_pton(AF_INET6, TEST_MY_IPV6_ADDR,
-				&net_sin6(&srv_addr)->sin6_addr);
+		ret = zsock_inet_pton(AF_INET6, TEST_MY_IPV6_ADDR,
+				      &net_sin6(&srv_addr)->sin6_addr);
 	}
 	zassert_equal(ret, 1, "inet_pton failed");
 
 	/* UDP socket */
-	sock_c = socket(family, SOCK_DGRAM, IPPROTO_UDP);
+	sock_c = zsock_socket(family, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(sock_c >= 0, "socket open failed");
 
 	peer_addr_len = ADDR_SIZE(family);
-	ret = getpeername(sock_c, &peer_addr, &peer_addr_len);
+	ret = zsock_getpeername(sock_c, &peer_addr, &peer_addr_len);
 	zassert_equal(ret, -1, "getpeername shouldn've failed");
 	zassert_equal(errno, ENOTCONN, "getpeername returned invalid error");
 
-	ret = connect(sock_c, &srv_addr, ADDR_SIZE(family));
+	ret = zsock_connect(sock_c, &srv_addr, ADDR_SIZE(family));
 	zassert_equal(ret, 0, "connect failed");
 
 	memset(&peer_addr, 0, sizeof(peer_addr));
 	peer_addr_len = ADDR_SIZE(family);
-	ret = getpeername(sock_c, &peer_addr, &peer_addr_len);
+	ret = zsock_getpeername(sock_c, &peer_addr, &peer_addr_len);
 	zassert_equal(ret, 0, "getpeername failed");
 	zassert_mem_equal(&peer_addr, &srv_addr, ADDR_SIZE(family),
 			 "obtained wrong address");
 
-	ret = close(sock_c);
+	ret = zsock_close(sock_c);
 	zassert_equal(ret, 0, "close failed, %d", errno);
 
 	/* TCP socket */
-	sock_c = socket(family, SOCK_STREAM, IPPROTO_TCP);
+	sock_c = zsock_socket(family, SOCK_STREAM, IPPROTO_TCP);
 	zassert_true(sock_c >= 0, "socket open failed");
-	sock_s = socket(family, SOCK_STREAM, IPPROTO_TCP);
+	sock_s = zsock_socket(family, SOCK_STREAM, IPPROTO_TCP);
 	zassert_true(sock_s >= 0, "socket open failed");
 
-	ret = bind(sock_s, &srv_addr, ADDR_SIZE(family));
+	ret = zsock_bind(sock_s, &srv_addr, ADDR_SIZE(family));
 	zassert_equal(ret, 0, "bind failed, %d", errno);
 
-	ret = listen(sock_s, 1);
+	ret = zsock_listen(sock_s, 1);
 	zassert_equal(ret, 0, "listen failed, %d", errno);
 
 	peer_addr_len = ADDR_SIZE(family);
-	ret = getpeername(sock_c, &peer_addr, &peer_addr_len);
+	ret = zsock_getpeername(sock_c, &peer_addr, &peer_addr_len);
 	zassert_equal(ret, -1, "getpeername shouldn've failed");
 	zassert_equal(errno, ENOTCONN, "getpeername returned invalid error");
 
-	ret = connect(sock_c, &srv_addr, ADDR_SIZE(family));
+	ret = zsock_connect(sock_c, &srv_addr, ADDR_SIZE(family));
 	zassert_equal(ret, 0, "connect failed");
 
 	memset(&peer_addr, 0, sizeof(peer_addr));
 	peer_addr_len = ADDR_SIZE(family);
-	ret = getpeername(sock_c, &peer_addr, &peer_addr_len);
+	ret = zsock_getpeername(sock_c, &peer_addr, &peer_addr_len);
 	zassert_equal(ret, 0, "getpeername failed");
 	zassert_mem_equal(&peer_addr, &srv_addr, ADDR_SIZE(family),
 			 "obtained wrong address");
 
-	ret = close(sock_c);
+	ret = zsock_close(sock_c);
 	zassert_equal(ret, 0, "close failed, %d", errno);
-	ret = close(sock_s);
+	ret = zsock_close(sock_s);
 	zassert_equal(ret, 0, "close failed, %d", errno);
 
 	k_sleep(K_MSEC(2 * CONFIG_NET_TCP_TIME_WAIT_DELAY));
@@ -454,58 +454,58 @@ void test_getsockname_tcp(int family)
 	srv_addr.sa_family = family;
 	if (family == AF_INET) {
 		net_sin(&srv_addr)->sin_port = htons(DST_PORT);
-		ret = inet_pton(AF_INET, TEST_MY_IPV4_ADDR,
-				&net_sin(&srv_addr)->sin_addr);
+		ret = zsock_inet_pton(AF_INET, TEST_MY_IPV4_ADDR,
+				      &net_sin(&srv_addr)->sin_addr);
 	} else {
 		net_sin6(&srv_addr)->sin6_port = htons(DST_PORT);
-		ret = inet_pton(AF_INET6, TEST_MY_IPV6_ADDR,
-				&net_sin6(&srv_addr)->sin6_addr);
+		ret = zsock_inet_pton(AF_INET6, TEST_MY_IPV6_ADDR,
+				      &net_sin6(&srv_addr)->sin6_addr);
 	}
 	zassert_equal(ret, 1, "inet_pton failed");
 
-	sock_c = socket(family, SOCK_STREAM, IPPROTO_TCP);
+	sock_c = zsock_socket(family, SOCK_STREAM, IPPROTO_TCP);
 	zassert_true(sock_c >= 0, "socket open failed");
-	sock_s = socket(family, SOCK_STREAM, IPPROTO_TCP);
+	sock_s = zsock_socket(family, SOCK_STREAM, IPPROTO_TCP);
 	zassert_true(sock_s >= 0, "socket open failed");
 
 	/* Verify that unbound/unconnected socket has no local address set */
-	ret = getsockname(sock_c, &local_addr, &local_addr_len);
+	ret = zsock_getsockname(sock_c, &local_addr, &local_addr_len);
 	zassert_equal(ret, -1, "getsockname shouldn've failed");
 	zassert_equal(errno, EINVAL, "getsockname returned invalid error");
-	ret = getsockname(sock_s, &local_addr, &local_addr_len);
+	ret = zsock_getsockname(sock_s, &local_addr, &local_addr_len);
 	zassert_equal(ret, -1, "getsockname shouldn've failed");
 	zassert_equal(errno, EINVAL, "getsockname returned invalid error");
 
 	/* Verify that getsockname() can read local address of a bound socket */
-	ret = bind(sock_s, &srv_addr, ADDR_SIZE(family));
+	ret = zsock_bind(sock_s, &srv_addr, ADDR_SIZE(family));
 	zassert_equal(ret, 0, "bind failed, %d", errno);
 
 	memset(&local_addr, 0, sizeof(local_addr));
 	local_addr_len = ADDR_SIZE(family);
-	ret = getsockname(sock_s, &local_addr, &local_addr_len);
+	ret = zsock_getsockname(sock_s, &local_addr, &local_addr_len);
 	zassert_equal(ret, 0, "getsockname failed");
 	zassert_mem_equal(&local_addr, &srv_addr, ADDR_SIZE(family),
 			 "obtained wrong address");
 
-	ret = listen(sock_s, 1);
+	ret = zsock_listen(sock_s, 1);
 	zassert_equal(ret, 0, "listen failed, %d", errno);
 
 	/* Verify that getsockname() can read local address of a connected socket */
-	ret = connect(sock_c, &srv_addr, ADDR_SIZE(family));
+	ret = zsock_connect(sock_c, &srv_addr, ADDR_SIZE(family));
 	zassert_equal(ret, 0, "connect failed");
 
 	memset(&local_addr, 0, sizeof(local_addr));
 	local_addr_len = ADDR_SIZE(family);
-	ret = getsockname(sock_c, &local_addr, &local_addr_len);
+	ret = zsock_getsockname(sock_c, &local_addr, &local_addr_len);
 	zassert_equal(ret, 0, "getsockname failed");
 	zassert_equal(local_addr.sa_family, family, "wrong family");
 	/* Can't verify address/port of client socket here reliably as they're
 	 * chosen by net stack
 	 */
 
-	ret = close(sock_c);
+	ret = zsock_close(sock_c);
 	zassert_equal(ret, 0, "close failed, %d", errno);
-	ret = close(sock_s);
+	ret = zsock_close(sock_s);
 	zassert_equal(ret, 0, "close failed, %d", errno);
 
 	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
@@ -523,55 +523,55 @@ void test_getsockname_udp(int family)
 	srv_addr.sa_family = family;
 	if (family == AF_INET) {
 		net_sin(&srv_addr)->sin_port = htons(DST_PORT);
-		ret = inet_pton(AF_INET, TEST_MY_IPV4_ADDR,
-				&net_sin(&srv_addr)->sin_addr);
+		ret = zsock_inet_pton(AF_INET, TEST_MY_IPV4_ADDR,
+				      &net_sin(&srv_addr)->sin_addr);
 	} else {
 		net_sin6(&srv_addr)->sin6_port = htons(DST_PORT);
-		ret = inet_pton(AF_INET6, TEST_MY_IPV6_ADDR,
-				&net_sin6(&srv_addr)->sin6_addr);
+		ret = zsock_inet_pton(AF_INET6, TEST_MY_IPV6_ADDR,
+				      &net_sin6(&srv_addr)->sin6_addr);
 	}
 	zassert_equal(ret, 1, "inet_pton failed");
 
-	sock_c = socket(family, SOCK_DGRAM, IPPROTO_UDP);
+	sock_c = zsock_socket(family, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(sock_c >= 0, "socket open failed");
-	sock_s = socket(family, SOCK_DGRAM, IPPROTO_UDP);
+	sock_s = zsock_socket(family, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(sock_s >= 0, "socket open failed");
 
 	/* Verify that unbound/unconnected socket has no local address set */
-	ret = getsockname(sock_c, &local_addr, &local_addr_len);
+	ret = zsock_getsockname(sock_c, &local_addr, &local_addr_len);
 	zassert_equal(ret, -1, "getsockname shouldn've failed");
 	zassert_equal(errno, EINVAL, "getsockname returned invalid error");
-	ret = getsockname(sock_s, &local_addr, &local_addr_len);
+	ret = zsock_getsockname(sock_s, &local_addr, &local_addr_len);
 	zassert_equal(ret, -1, "getsockname shouldn've failed");
 	zassert_equal(errno, EINVAL, "getsockname returned invalid error");
 
 	/* Verify that getsockname() can read local address of a bound socket */
-	ret = bind(sock_s, &srv_addr, ADDR_SIZE(family));
+	ret = zsock_bind(sock_s, &srv_addr, ADDR_SIZE(family));
 	zassert_equal(ret, 0, "bind failed, %d", errno);
 
 	memset(&local_addr, 0, sizeof(local_addr));
 	local_addr_len = ADDR_SIZE(family);
-	ret = getsockname(sock_s, &local_addr, &local_addr_len);
+	ret = zsock_getsockname(sock_s, &local_addr, &local_addr_len);
 	zassert_equal(ret, 0, "getsockname failed");
 	zassert_mem_equal(&local_addr, &srv_addr, ADDR_SIZE(family),
 			 "obtained wrong address");
 
 	/* Verify that getsockname() can read local address of a connected socket */
-	ret = connect(sock_c, &srv_addr, ADDR_SIZE(family));
+	ret = zsock_connect(sock_c, &srv_addr, ADDR_SIZE(family));
 	zassert_equal(ret, 0, "connect failed");
 
 	memset(&local_addr, 0, sizeof(local_addr));
 	local_addr_len = ADDR_SIZE(family);
-	ret = getsockname(sock_c, &local_addr, &local_addr_len);
+	ret = zsock_getsockname(sock_c, &local_addr, &local_addr_len);
 	zassert_equal(ret, 0, "getsockname failed");
 	zassert_equal(local_addr.sa_family, family, "wrong family");
 	/* Can't verify address/port of client socket here reliably as they're
 	 * chosen by net stack
 	 */
 
-	ret = close(sock_c);
+	ret = zsock_close(sock_c);
 	zassert_equal(ret, 0, "close failed, %d", errno);
-	ret = close(sock_s);
+	ret = zsock_close(sock_s);
 	zassert_equal(ret, 0, "close failed, %d", errno);
 }
 
@@ -590,34 +590,34 @@ void test_ipv4_mapped_to_ipv6_disabled(void)
 
 	srv_addr4.sa_family = AF_INET;
 	net_sin(&srv_addr4)->sin_port = htons(MAPPING_PORT);
-	ret = inet_pton(AF_INET, TEST_MY_IPV4_ADDR,
-			&net_sin(&srv_addr4)->sin_addr);
+	ret = zsock_inet_pton(AF_INET, TEST_MY_IPV4_ADDR,
+			      &net_sin(&srv_addr4)->sin_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
 	srv_addr6.sa_family = AF_INET6;
 	net_sin6(&srv_addr6)->sin6_port = htons(MAPPING_PORT);
-	ret = inet_pton(AF_INET6, TEST_MY_IPV6_ADDR,
-			&net_sin6(&srv_addr6)->sin6_addr);
+	ret = zsock_inet_pton(AF_INET6, TEST_MY_IPV6_ADDR,
+			      &net_sin6(&srv_addr6)->sin6_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
-	sock_s4 = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	sock_s4 = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	zassert_true(sock_s4 >= 0, "socket open failed");
 
-	ret = bind(sock_s4, &srv_addr4, ADDR_SIZE(AF_INET));
+	ret = zsock_bind(sock_s4, &srv_addr4, ADDR_SIZE(AF_INET));
 	zassert_equal(ret, 0, "bind failed, %d", errno);
 
-	ret = listen(sock_s4, 1);
+	ret = zsock_listen(sock_s4, 1);
 	zassert_equal(ret, 0, "listen failed, %d", errno);
 
-	sock_s6 = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	sock_s6 = zsock_socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
 	zassert_true(sock_s6 >= 0, "socket open failed");
 
-	ret = bind(sock_s6, &srv_addr6, ADDR_SIZE(AF_INET6));
+	ret = zsock_bind(sock_s6, &srv_addr6, ADDR_SIZE(AF_INET6));
 	zassert_equal(ret, 0, "bind failed, %d", errno);
 
-	ret = close(sock_s4);
+	ret = zsock_close(sock_s4);
 	zassert_equal(ret, 0, "close failed, %d", errno);
-	ret = close(sock_s6);
+	ret = zsock_close(sock_s6);
 	zassert_equal(ret, 0, "close failed, %d", errno);
 }
 
@@ -639,58 +639,58 @@ void test_ipv4_mapped_to_ipv6_enabled(void)
 	 */
 	srv_addr4.sa_family = AF_INET;
 	net_sin(&srv_addr4)->sin_port = htons(MAPPING_PORT);
-	ret = inet_pton(AF_INET, "0.0.0.0",
-			&net_sin(&srv_addr4)->sin_addr);
+	ret = zsock_inet_pton(AF_INET, "0.0.0.0",
+			      &net_sin(&srv_addr4)->sin_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
 	srv_addr6.sa_family = AF_INET6;
 	net_sin6(&srv_addr6)->sin6_port = htons(MAPPING_PORT);
-	ret = inet_pton(AF_INET6, "::",
-			&net_sin6(&srv_addr6)->sin6_addr);
+	ret = zsock_inet_pton(AF_INET6, "::",
+			      &net_sin6(&srv_addr6)->sin6_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
 	/* First create IPv6 socket */
-	sock_s6 = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	sock_s6 = zsock_socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
 	zassert_true(sock_s6 >= 0, "socket open failed");
 
-	ret = bind(sock_s6, &srv_addr6, ADDR_SIZE(AF_INET6));
+	ret = zsock_bind(sock_s6, &srv_addr6, ADDR_SIZE(AF_INET6));
 	zassert_equal(ret, 0, "bind failed, %d", errno);
 
-	ret = listen(sock_s6, 1);
+	ret = zsock_listen(sock_s6, 1);
 	zassert_equal(ret, 0, "listen failed, %d", errno);
 
 	/* Then try to create IPv4 socket to the same port */
-	sock_s4 = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	sock_s4 = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	zassert_true(sock_s4 >= 0, "socket open failed");
 
 	/* Initially the IPV6_V6ONLY is set so the next bind is ok */
-	ret = bind(sock_s4, &srv_addr4, ADDR_SIZE(AF_INET));
+	ret = zsock_bind(sock_s4, &srv_addr4, ADDR_SIZE(AF_INET));
 	zassert_equal(ret, 0, "bind failed, %d", errno);
 
-	ret = close(sock_s4);
+	ret = zsock_close(sock_s4);
 	zassert_equal(ret, 0, "close failed, %d", errno);
 
 	/* Then we turn off IPV6_V6ONLY which means that IPv4 and IPv6
 	 * will have same port space and the next bind should fail.
 	 */
-	ret = setsockopt(sock_s6, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
+	ret = zsock_setsockopt(sock_s6, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
 	zassert_equal(ret, 0, "setsockopt failed, %d", errno);
 
-	ret = getsockopt(sock_s6, IPPROTO_IPV6, IPV6_V6ONLY, &off, &optlen);
+	ret = zsock_getsockopt(sock_s6, IPPROTO_IPV6, IPV6_V6ONLY, &off, &optlen);
 	zassert_equal(ret, 0, "getsockopt failed, %d", errno);
 	zassert_equal(off, 0, "IPV6_V6ONLY option setting failed");
 
-	sock_s4 = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	sock_s4 = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	zassert_true(sock_s4 >= 0, "socket open failed");
 
 	/* Now v4 bind should fail */
-	ret = bind(sock_s4, &srv_addr4, ADDR_SIZE(AF_INET));
+	ret = zsock_bind(sock_s4, &srv_addr4, ADDR_SIZE(AF_INET));
 	zassert_equal(ret, -1, "bind failed, %d", errno);
 	zassert_equal(errno, EADDRINUSE, "bind failed");
 
-	ret = close(sock_s4);
+	ret = zsock_close(sock_s4);
 	zassert_equal(ret, 0, "close failed, %d", errno);
-	ret = close(sock_s6);
+	ret = zsock_close(sock_s6);
 	zassert_equal(ret, 0, "close failed, %d", errno);
 }
 
@@ -723,14 +723,14 @@ void test_ipv4_mapped_to_ipv6_server(void)
 	 */
 	srv_addr.sa_family = AF_INET;
 	net_sin(&srv_addr)->sin_port = htons(MAPPING_PORT);
-	ret = inet_pton(AF_INET, "192.0.2.1",
-				&net_sin(&srv_addr)->sin_addr);
+	ret = zsock_inet_pton(AF_INET, "192.0.2.1",
+			      &net_sin(&srv_addr)->sin_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
 	connect_addr6.sa_family = AF_INET6;
 	net_sin6(&connect_addr6)->sin6_port = htons(MAPPING_PORT);
-	ret = inet_pton(AF_INET6, TEST_PEER_IPV6_ADDR,
-				&net_sin6(&connect_addr6)->sin6_addr);
+	ret = zsock_inet_pton(AF_INET6, TEST_PEER_IPV6_ADDR,
+			      &net_sin6(&connect_addr6)->sin6_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
 	net_ipv6_addr_create_v4_mapped(&net_sin(&srv_addr)->sin_addr,
@@ -741,16 +741,16 @@ void test_ipv4_mapped_to_ipv6_server(void)
 	 */
 	srv_addr6.sa_family = AF_INET6;
 	net_sin6(&srv_addr6)->sin6_port = htons(MAPPING_PORT);
-	ret = inet_pton(AF_INET6, "::",
-			&net_sin6(&srv_addr6)->sin6_addr);
+	ret = zsock_inet_pton(AF_INET6, "::",
+			      &net_sin6(&srv_addr6)->sin6_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
 	/* First create IPv6 socket */
-	sock_s6 = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	sock_s6 = zsock_socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
 	zassert_true(sock_s6 >= 0, "socket open failed");
 
 	/* Verify that by default the IPV6_V6ONLY option is set */
-	ret = getsockopt(sock_s6, IPPROTO_IPV6, IPV6_V6ONLY, &off, &optlen);
+	ret = zsock_getsockopt(sock_s6, IPPROTO_IPV6, IPV6_V6ONLY, &off, &optlen);
 	zassert_equal(ret, 0, "getsockopt failed, %d", errno);
 	zassert_not_equal(off, 0, "IPV6_V6ONLY option setting failed");
 
@@ -758,27 +758,27 @@ void test_ipv4_mapped_to_ipv6_server(void)
 	 * will have same port space.
 	 */
 	off = 0;
-	ret = setsockopt(sock_s6, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
+	ret = zsock_setsockopt(sock_s6, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
 	zassert_equal(ret, 0, "setsockopt failed, %d", errno);
 
-	ret = getsockopt(sock_s6, IPPROTO_IPV6, IPV6_V6ONLY, &off, &optlen);
+	ret = zsock_getsockopt(sock_s6, IPPROTO_IPV6, IPV6_V6ONLY, &off, &optlen);
 	zassert_equal(ret, 0, "getsockopt failed, %d", errno);
 	zassert_equal(off, 0, "IPV6_V6ONLY option setting failed, %d", off);
 
-	ret = bind(sock_s6, &srv_addr6, ADDR_SIZE(AF_INET6));
+	ret = zsock_bind(sock_s6, &srv_addr6, ADDR_SIZE(AF_INET6));
 	zassert_equal(ret, 0, "bind failed, %d", errno);
 
-	ret = listen(sock_s6, 1);
+	ret = zsock_listen(sock_s6, 1);
 	zassert_equal(ret, 0, "listen failed, %d", errno);
 
 	/* Then create IPv4 socket and connect to the IPv6 port */
-	sock_c4 = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	sock_c4 = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	zassert_true(sock_c4 >= 0, "socket open failed");
 
-	ret = connect(sock_c4, &srv_addr, ADDR_SIZE(AF_INET));
+	ret = zsock_connect(sock_c4, &srv_addr, ADDR_SIZE(AF_INET));
 	zassert_equal(ret, 0, "connect failed");
 
-	new_sock = accept(sock_s6, &addr, &addrlen);
+	new_sock = zsock_accept(sock_s6, &addr, &addrlen);
 	zassert_true(new_sock >= 0, "accept failed, %d", errno);
 
 	/* Note that we should get IPv6 address here (mapped from IPv4) */
@@ -793,44 +793,44 @@ void test_ipv4_mapped_to_ipv6_server(void)
 			  net_sprint_ipv6_addr(&net_sin6(&addr)->sin6_addr));
 
 	/* Send data back to IPv4 client from IPv6 socket */
-	ret = send(new_sock, "foobar", len, 0);
+	ret = zsock_send(new_sock, "foobar", len, 0);
 	zassert_equal(ret, len, "cannot send (%d vs %d), errno %d", ret, len, errno);
 
 	addrlen = sizeof(struct sockaddr_in);
-	ret = recv(sock_c4, buf, sizeof(buf), 0);
+	ret = zsock_recv(sock_c4, buf, sizeof(buf), 0);
 	zassert_equal(ret, strlen("foobar"), "cannot recv");
 
-	ret = close(sock_c4);
+	ret = zsock_close(sock_c4);
 	zassert_equal(ret, 0, "close failed, %d", errno);
 
-	(void)close(new_sock);
+	(void)zsock_close(new_sock);
 
 	/* Let the system stabilize and cleanup itself */
 	k_sleep(K_MSEC(200));
 
 	/* Then create IPv6 socket and make sure it works ok too */
-	sock_c6 = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	sock_c6 = zsock_socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
 	zassert_true(sock_c6 >= 0, "socket open failed");
 
-	ret = connect(sock_c6, &connect_addr6, ADDR_SIZE(AF_INET6));
+	ret = zsock_connect(sock_c6, &connect_addr6, ADDR_SIZE(AF_INET6));
 	zassert_equal(ret, 0, "connect failed, %d", errno);
 
-	new_sock = accept(sock_s6, &addr, &addrlen);
+	new_sock = zsock_accept(sock_s6, &addr, &addrlen);
 	zassert_true(new_sock >= 0, "accept failed, %d", errno);
 
-	ret = send(new_sock, "foobar", len, 0);
+	ret = zsock_send(new_sock, "foobar", len, 0);
 	zassert_equal(ret, len, "cannot send (%d vs %d), errno %d", ret, len, errno);
 
 	addrlen = sizeof(struct sockaddr_in);
-	ret = recv(sock_c6, buf, sizeof(buf), 0);
+	ret = zsock_recv(sock_c6, buf, sizeof(buf), 0);
 	zassert_equal(ret, strlen("foobar"), "cannot recv");
 
-	ret = close(sock_c6);
+	ret = zsock_close(sock_c6);
 	zassert_equal(ret, 0, "close failed, %d", errno);
 
-	ret = close(sock_s6);
+	ret = zsock_close(sock_s6);
 	zassert_equal(ret, 0, "close failed, %d", errno);
-	ret = close(new_sock);
+	ret = zsock_close(new_sock);
 	zassert_equal(ret, 0, "close failed, %d", errno);
 }
 
@@ -895,30 +895,30 @@ ZTEST(socket_misc_test_suite, test_so_domain_socket_option)
 	socklen_t optlen = sizeof(int);
 	int domain;
 
-	sock_t = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	sock_t = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	zassert_true(sock_t >= 0, "TCP socket open failed");
-	sock_u = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+	sock_u = zsock_socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(sock_u >= 0, "UDP socket open failed");
 
-	ret = getsockopt(sock_t, SOL_SOCKET, SO_DOMAIN, &domain, &optlen);
+	ret = zsock_getsockopt(sock_t, SOL_SOCKET, SO_DOMAIN, &domain, &optlen);
 	zassert_equal(ret, 0, "getsockopt failed, %d", -errno);
 	zassert_equal(domain, AF_INET, "Mismatch domain value %d vs %d",
 		      AF_INET, domain);
 
-	ret = getsockopt(sock_u, SOL_SOCKET, SO_DOMAIN, &domain, &optlen);
+	ret = zsock_getsockopt(sock_u, SOL_SOCKET, SO_DOMAIN, &domain, &optlen);
 	zassert_equal(ret, 0, "getsockopt failed, %d", -errno);
 	zassert_equal(domain, AF_INET6, "Mismatch domain value %d vs %d",
 		      AF_INET6, domain);
 
 	/* setsockopt() is not supported for this option */
 	domain = AF_INET;
-	ret = setsockopt(sock_u, SOL_SOCKET, SO_DOMAIN, &domain, optlen);
+	ret = zsock_setsockopt(sock_u, SOL_SOCKET, SO_DOMAIN, &domain, optlen);
 	zassert_equal(ret, -1, "setsockopt succeed");
 	zassert_equal(errno, ENOPROTOOPT, "Invalid errno %d", errno);
 
-	ret = close(sock_t);
+	ret = zsock_close(sock_t);
 	zassert_equal(ret, 0, "close failed, %d", -errno);
-	ret = close(sock_u);
+	ret = zsock_close(sock_u);
 	zassert_equal(ret, 0, "close failed, %d", -errno);
 }
 

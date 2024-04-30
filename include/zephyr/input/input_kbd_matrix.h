@@ -32,10 +32,10 @@
 /** Row entry data type */
 #if CONFIG_INPUT_KBD_MATRIX_16_BIT_ROW
 typedef uint16_t kbd_row_t;
-#define PRIkbdrow "%04x"
+#define PRIkbdrow "04" PRIx16
 #else
 typedef uint8_t kbd_row_t;
-#define PRIkbdrow "%02x"
+#define PRIkbdrow "02" PRIx8
 #endif
 
 #if defined(CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC) || defined(__DOXYGEN__)

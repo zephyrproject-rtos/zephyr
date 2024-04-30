@@ -18,6 +18,8 @@
 
 #include <zephyr/drivers/usb/udc.h>
 
+#include "usbd_msg.h"
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 
@@ -359,6 +361,7 @@ static int usbd_cdc_acm_ctd(struct usbd_class_node *const c_nd,
 			    const struct usb_setup_packet *const setup,
 			    const struct net_buf *const buf)
 {
+	struct usbd_contex *uds_ctx = c_nd->data->uds_ctx;
 	const struct device *dev = c_nd->data->priv;
 	struct cdc_acm_uart_data *data = dev->data;
 	size_t len;
@@ -373,11 +376,13 @@ static int usbd_cdc_acm_ctd(struct usbd_class_node *const c_nd,
 
 		memcpy(&data->line_coding, buf->data, len);
 		cdc_acm_update_uart_cfg(data);
+		usbd_msg_pub_device(uds_ctx, USBD_MSG_CDC_ACM_LINE_CODING, dev);
 		return 0;
 
 	case SET_CONTROL_LINE_STATE:
 		data->line_state = setup->wValue;
 		cdc_acm_update_linestate(data);
+		usbd_msg_pub_device(uds_ctx, USBD_MSG_CDC_ACM_CONTROL_LINE_STATE, dev);
 		return 0;
 
 	default:

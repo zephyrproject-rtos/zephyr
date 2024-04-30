@@ -22,10 +22,15 @@ config NET_SOCKETS_PRIORITY_DEFAULT
 	  socket creation over the native one, or vice versa.
 
 config NET_SOCKETS_POSIX_NAMES
-	bool "POSIX names for Sockets API (without full POSIX API)"
-	default y if !POSIX_API
+	bool "[DEPRECATED] POSIX names for Sockets API (without full POSIX API)"
 	depends on !POSIX_API
+	select DEPRECATED
 	help
+	  This option is marked as deprecated in favor of using normal
+	  POSIX socket API includes found under the include/zephyr/posix
+	  directory. If you want to use BSD socket API calls, you need
+	  to select POSIX_API and use the socket headers in POSIX subsystem.
+
 	  With this option, Socket API functions are available under the
 	  standard POSIX names like socket(), recv(), and close(), etc.,
 	  even if full POSIX API (CONFIG_POSIX_API) is not enabled. (Note
@@ -43,6 +48,7 @@ config NET_SOCKETS_POSIX_NAMES
 config NET_SOCKETS_POLL_MAX
 	int "Max number of supported poll() entries"
 	default 6 if WIFI_NM_WPA_SUPPLICANT
+	default 4 if SHELL_BACKEND_TELNET
 	default 3
 	help
 	  Maximum number of entries supported for poll() call.
@@ -64,7 +70,27 @@ config NET_SOCKETS_DNS_TIMEOUT
 	help
 	  This variable specifies time in milliseconds after which DNS
 	  query is considered timeout. Minimum timeout is 1 second and
-	  maximum timeout is 5 min.
+	  maximum timeout is 5 min. If the value is higher than
+	  CONFIG_NET_SOCKETS_DNS_BACKOFF_INTERVAL, then we try multiple
+	  times with exponential backoff until the timeout is reached.
+
+config NET_SOCKETS_DNS_BACKOFF_INTERVAL
+	int "Backoff interval for the DNS timeout"
+	default 5000
+	range 1000 300000
+	depends on DNS_RESOLVER
+	help
+	  This variable is related to the DNS timeout. If the DNS timeout is
+	  smaller than this value, then this value is ignored. If the timeout
+	  is larger, then this variable specifies time in milliseconds after
+	  which DNS query is re-tried. If there is no reply, the backoff
+	  interval is doubled and query is retried.
+	  Example:
+	     The CONFIG_NET_SOCKETS_DNS_TIMEOUT is set to 17000 (17 secs).
+	     This value is 5000 (5 sec). If there is no reply from DNS server
+	     within 5 secs, a 2nd query is done with timeout set to 10 sec (5 * 2).
+	     If no reply is received, a 3rd query is done after 15 sec (5 + 5 * 2),
+	     and the timeout is set to 2 sec so that the total timeout is 17 seconds.
 
 config NET_SOCKET_MAX_SEND_WAIT
 	int "Max time in milliseconds waiting for a send command"
@@ -187,6 +213,20 @@ config NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH
 
 	  With DTLS the MFL should be kept under the network MTU, to avoid
 	  IP fragmentation.
+
+config NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE
+	int "Intermediate buffer size for DTLS sendmsg()"
+	depends on NET_SOCKETS_ENABLE_DTLS
+	range 0 65535
+	default 0
+	help
+	  Size of the intermediate buffer for DTLS sendmsg() function. The
+	  intermediate buffer is needed, as sendmsg() for DGRAM is expected to
+	  send all of the data in a single datagram, therefore all data provided
+	  in msghdr strucure need to be linearized before passing to mbed TLS.
+	  The buffer size can be set to 0, in that case data linearizing for
+	  DTLS sockets is disabled. In result, sendmsg() will only accept msghdr
+	  with a single non-empty iov buffer.
 
 config NET_SOCKETS_TLS_MAX_CONTEXTS
 	int "Maximum number of TLS/DTLS contexts"

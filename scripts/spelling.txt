@@ -589,6 +589,7 @@ embeded||embedded
 enabledi||enabled
 enbale||enable
 enble||enable
+enabeld||enabled
 enchanced||enhanced
 encorporating||incorporating
 encrupted||encrypted

@@ -26,18 +26,18 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include "net_private.h"
 #include "tcp_internal.h"
 
-#define ACK_TIMEOUT_MS CONFIG_NET_TCP_ACK_TIMEOUT
+#define ACK_TIMEOUT_MS tcp_max_timeout_ms
 #define ACK_TIMEOUT K_MSEC(ACK_TIMEOUT_MS)
-#define LAST_ACK_TIMEOUT_MS tcp_fin_timeout_ms
+#define LAST_ACK_TIMEOUT_MS tcp_max_timeout_ms
 #define LAST_ACK_TIMEOUT K_MSEC(LAST_ACK_TIMEOUT_MS)
-#define FIN_TIMEOUT K_MSEC(tcp_fin_timeout_ms)
+#define FIN_TIMEOUT K_MSEC(tcp_max_timeout_ms)
 #define ACK_DELAY K_MSEC(100)
 #define ZWP_MAX_DELAY_MS 120000
 #define DUPLICATE_ACK_RETRANSMIT_TRHESHOLD 3
 
 static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 static int tcp_retries = CONFIG_NET_TCP_RETRY_COUNT;
-static int tcp_fin_timeout_ms;
+static int tcp_max_timeout_ms;
 static int tcp_rx_window =
 #if (CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE != 0)
 	CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE;
@@ -45,7 +45,7 @@ static int tcp_rx_window =
 #if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 	(CONFIG_NET_BUF_RX_COUNT * CONFIG_NET_BUF_DATA_SIZE) / 3;
 #else
-	CONFIG_NET_BUF_DATA_POOL_SIZE / 3;
+	CONFIG_NET_PKT_BUF_RX_DATA_POOL_SIZE / 3;
 #endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 #endif
 static int tcp_tx_window =
@@ -55,7 +55,7 @@ static int tcp_tx_window =
 #if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 	(CONFIG_NET_BUF_TX_COUNT * CONFIG_NET_BUF_DATA_SIZE) / 3;
 #else
-	CONFIG_NET_BUF_DATA_POOL_SIZE / 3;
+	CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE / 3;
 #endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 #endif
 #ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
@@ -324,8 +324,6 @@ end:
 
 static void tcp_send(struct net_pkt *pkt)
 {
-	NET_DBG("%s", tcp_th(pkt));
-
 	tcp_pkt_ref(pkt);
 
 	if (tcp_send_cb) {
@@ -355,6 +353,7 @@ static void tcp_send(struct net_pkt *pkt)
 			 * free the net_pkt.
 			 */
 			tcp_pkt_unref(pkt);
+			NET_WARN("net_pkt alloc failure");
 			goto out;
 		}
 
@@ -720,8 +719,6 @@ static void tcp_conn_release(struct k_work *work)
 	}
 #endif
 
-	k_mutex_lock(&tcp_lock, K_FOREVER);
-
 	/* Application is no longer there, unref any remaining packets on the
 	 * fifo (although there shouldn't be any at this point.)
 	 */
@@ -761,11 +758,11 @@ static void tcp_conn_release(struct k_work *work)
 	net_context_unref(conn->context);
 	conn->context = NULL;
 
+	k_mutex_lock(&tcp_lock, K_FOREVER);
 	sys_slist_find_and_remove(&tcp_conns, &conn->next);
+	k_mutex_unlock(&tcp_lock);
 
 	k_mem_slab_free(&tcp_conns_slab, (void *)conn);
-
-	k_mutex_unlock(&tcp_lock);
 }
 
 #if defined(CONFIG_NET_TEST)
@@ -870,6 +867,8 @@ static bool tcp_send_process_no_lock(struct tcp *conn)
 			if (clone) {
 				tcp_send(clone);
 				conn->send_retries--;
+			} else {
+				NET_WARN("net_pkt alloc failure");
 			}
 		} else {
 			unref = true;
@@ -884,7 +883,7 @@ static bool tcp_send_process_no_lock(struct tcp *conn)
 					 struct net_pkt, next) :
 			tcp_pkt_clone(pkt);
 		if (!pkt) {
-			NET_ERR("net_pkt alloc failure");
+			NET_WARN("net_pkt alloc failure");
 			goto out;
 		}
 
@@ -1465,6 +1464,8 @@ void net_tcp_reply_rst(struct net_pkt *pkt)
 		goto err;
 	}
 
+	NET_DBG("%s", tcp_th(rst));
+
 	tcp_send(rst);
 
 	return;
@@ -1521,8 +1522,6 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 		tcp_pkt_unref(pkt);
 		goto out;
 	}
-
-	NET_DBG("%s", tcp_th(pkt));
 
 	if (tcp_send_cb) {
 		ret = tcp_send_cb(pkt);
@@ -1633,7 +1632,9 @@ static bool tcp_window_full(struct tcp *conn)
 	window_full = window_full || (conn->send_data_total >= conn->ca.cwnd);
 #endif
 
-	NET_DBG("conn: %p window_full=%hu", conn, window_full);
+	if (window_full) {
+		NET_DBG("conn: %p TX window_full", conn);
+	}
 
 	return window_full;
 }
@@ -1664,8 +1665,6 @@ static int tcp_unsent_len(struct tcp *conn)
 #endif
 	}
  out:
-	NET_DBG("unsent_len=%d", unsent_len);
-
 	return unsent_len;
 }
 
@@ -1825,7 +1824,7 @@ static void tcp_resend_data(struct k_work *work)
 		if (conn->in_close && conn->send_data_total == 0) {
 			NET_DBG("TCP connection in %s close, "
 				"not disposing yet (waiting %dms)",
-				"active", tcp_fin_timeout_ms);
+				"active", tcp_max_timeout_ms);
 			k_work_reschedule_for_queue(&tcp_work_q,
 						    &conn->fin_timer,
 						    FIN_TIMEOUT);
@@ -1900,7 +1899,7 @@ static void tcp_fin_timeout(struct k_work *work)
 		return;
 	}
 
-	NET_DBG("Did not receive %s in %dms", "FIN", tcp_fin_timeout_ms);
+	NET_DBG("Did not receive %s in %dms", "FIN", tcp_max_timeout_ms);
 	NET_DBG("conn: %p %s", conn, tcp_conn_state(conn, NULL));
 
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
@@ -2092,7 +2091,9 @@ static struct tcp *tcp_conn_alloc(void)
 
 	tcp_conn_ref(conn);
 
+	k_mutex_lock(&tcp_lock, K_FOREVER);
 	sys_slist_append(&tcp_conns, &conn->next);
+	k_mutex_unlock(&tcp_lock);
 out:
 	NET_DBG("conn: %p", conn);
 
@@ -2113,19 +2114,15 @@ int net_tcp_get(struct net_context *context)
 	int ret = 0;
 	struct tcp *conn;
 
-	k_mutex_lock(&tcp_lock, K_FOREVER);
-
 	conn = tcp_conn_alloc();
 	if (conn == NULL) {
 		ret = -ENOMEM;
-		goto out;
+		return ret;
 	}
 
 	/* Mutually link the net_context and tcp connection */
 	conn->context = context;
 	context->tcp = conn;
-out:
-	k_mutex_unlock(&tcp_lock);
 
 	return ret;
 }
@@ -2154,12 +2151,16 @@ static struct tcp *tcp_conn_search(struct net_pkt *pkt)
 	struct tcp *conn;
 	struct tcp *tmp;
 
+	k_mutex_lock(&tcp_lock, K_FOREVER);
+
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp_conns, conn, tmp, next) {
 		found = tcp_conn_cmp(conn, pkt);
 		if (found) {
 			break;
 		}
 	}
+
+	k_mutex_unlock(&tcp_lock);
 
 	return found ? conn : NULL;
 }
@@ -2178,8 +2179,6 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 
 	ARG_UNUSED(net_conn);
 	ARG_UNUSED(proto);
-
-	k_mutex_lock(&tcp_lock, K_FOREVER);
 
 	conn = tcp_conn_search(pkt);
 	if (conn) {
@@ -2200,8 +2199,6 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 		conn->accepted_conn = conn_old;
 	}
 in:
-	k_mutex_unlock(&tcp_lock);
-
 	if (conn) {
 		verdict = tcp_in(conn, pkt);
 	} else {
@@ -3012,6 +3009,7 @@ next_state:
 
 			conn_ack(conn, + 1);
 			tcp_out(conn, FIN | ACK);
+			conn_seq(conn, + 1);
 			next = TCP_LAST_ACK;
 			verdict = NET_OK;
 			keep_alive_timer_stop(conn);
@@ -3038,6 +3036,7 @@ next_state:
 
 			conn_ack(conn, + len + 1);
 			tcp_out(conn, FIN | ACK);
+			conn_seq(conn, + 1);
 			next = TCP_LAST_ACK;
 			keep_alive_timer_stop(conn);
 			tcp_setup_last_ack_timer(conn);
@@ -3230,11 +3229,12 @@ next_state:
 		break;
 	case TCP_CLOSE_WAIT:
 		tcp_out(conn, FIN);
+		conn_seq(conn, + 1);
 		next = TCP_LAST_ACK;
 		tcp_setup_last_ack_timer(conn);
 		break;
 	case TCP_LAST_ACK:
-		if (th && FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
+		if (th && FL(&fl, ==, ACK, th_ack(th) == conn->seq)) {
 			tcp_send_timer_cancel(conn);
 			do_close = true;
 			verdict = NET_OK;
@@ -3567,7 +3567,7 @@ int net_tcp_put(struct net_context *context)
 
 			NET_DBG("TCP connection in %s close, "
 				"not disposing yet (waiting %dms)",
-				"active", tcp_fin_timeout_ms);
+				"active", tcp_max_timeout_ms);
 			k_work_reschedule_for_queue(&tcp_work_q,
 						    &conn->fin_timer,
 						    FIN_TIMEOUT);
@@ -4270,7 +4270,6 @@ void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 	k_mutex_lock(&tcp_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp_conns, conn, tmp, next) {
-
 		if (atomic_get(&conn->ref_count) > 0) {
 			k_mutex_unlock(&tcp_lock);
 			cb(conn, user_data);
@@ -4449,18 +4448,18 @@ void net_tcp_init(void)
 			   NULL);
 
 	/* Compute the largest possible retransmission timeout */
-	tcp_fin_timeout_ms = 0;
+	tcp_max_timeout_ms = 0;
 	rto = tcp_rto;
 	for (i = 0; i < tcp_retries; i++) {
-		tcp_fin_timeout_ms += rto;
+		tcp_max_timeout_ms += rto;
 		rto += rto >> 1;
 	}
 	/* At the last timeout cicle */
-	tcp_fin_timeout_ms += tcp_rto;
+	tcp_max_timeout_ms += tcp_rto;
 
 	/* When CONFIG_NET_TCP_RANDOMIZED_RTO is active in can be worse case 1.5 times larger */
 	if (IS_ENABLED(CONFIG_NET_TCP_RANDOMIZED_RTO)) {
-		tcp_fin_timeout_ms += tcp_fin_timeout_ms >> 1;
+		tcp_max_timeout_ms += tcp_max_timeout_ms >> 1;
 	}
 
 	k_thread_name_set(&tcp_work_q.thread, "tcp_work");

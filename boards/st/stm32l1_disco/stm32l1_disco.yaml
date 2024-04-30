@@ -1,0 +1,17 @@
+identifier: stm32l1_disco
+name: ST STM32L1 Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 16
+flash: 128
+supported:
+  - gpio
+  - i2c
+  - spi
+  - eeprom
+  - watchdog
+vendor: st

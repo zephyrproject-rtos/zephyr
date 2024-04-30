@@ -33,6 +33,11 @@ config NET_NATIVE
 # Hidden options for enabling native IPv6/IPv4. Using these options
 # avoids having "defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_NATIVE)"
 # in the code as we can have "defined(CONFIG_NET_NATIVE_IPV6)" instead.
+config NET_NATIVE_IP
+	bool
+	depends on NET_NATIVE
+	default y if NET_IP
+
 config NET_NATIVE_IPV6
 	bool
 	depends on NET_NATIVE
@@ -83,8 +88,6 @@ config NET_RAW_MODE
 	  net_pkt part. It is currently used only by IEEE 802.15.4 drivers,
 	  though any type of net drivers could use it.
 
-if !NET_RAW_MODE
-
 choice NET_QEMU_NETWORKING
 	prompt "Qemu networking"
 	default NET_QEMU_PPP if NET_PPP
@@ -129,6 +132,8 @@ config NET_QEMU_USER_EXTRA_ARGS
 	  include host / guest port forwarding, device id, Network address
 	  information etc. This string is appended to the QEMU "-net user" option.
 
+if !NET_RAW_MODE
+
 config NET_INIT_PRIO
 	int
 	default 90
@@ -164,7 +169,6 @@ config NET_SHELL
 	bool "Network shell utilities"
 	select SHELL
 	select NET_IPV4_IGMP if NET_IPV4
-	select NET_IPV6_MLD if NET_IPV6
 	select REQUIRES_FLOAT_PRINTF
 	help
 	  Activate shell module that provides network commands like
@@ -579,11 +583,7 @@ config NET_CONTEXT_RECV_PKTINFO
 	  This way user can get extra information about the received data in the
 	  socket.
 
-config NET_TEST
-	bool "Network Testing"
-	help
-	  Used for self-contained networking tests that do not require a
-	  network device.
+endif # NET_RAW_MODE
 
 config NET_SLIP_TAP
 	bool "TAP SLIP driver"
@@ -593,14 +593,19 @@ config NET_SLIP_TAP
 	select UART_PIPE
 	select UART_INTERRUPT_DRIVEN
 	select SLIP_TAP
-	default y if (QEMU_TARGET && !NET_TEST && !NET_L2_BT)
+	select NET_L2_ETHERNET
+	default y if (QEMU_TARGET && !NET_TEST)
 	help
 	  SLIP TAP support is necessary when testing with QEMU. The host
 	  needs to have tunslip6 with TAP support running in order to
 	  communicate via the SLIP driver. See net-tools project at
 	  https://github.com/zephyrproject-rtos/net-tools for more details.
 
-endif # NET_RAW_MODE
+config NET_TEST
+	bool "Network Testing"
+	help
+	  Used for self-contained networking tests that do not require a
+	  network device.
 
 config NET_PKT_RX_COUNT
 	int "How many packet receives can be pending at the same time"
@@ -664,12 +669,28 @@ config NET_BUF_DATA_SIZE
 	  This value tells what is the fixed size of each network buffer.
 
 config NET_BUF_DATA_POOL_SIZE
-	int "Size of the memory pool where buffers are allocated from"
+	int "[DEPRECATED] Size of the memory pool where buffers are allocated from"
 	default 4096 if NET_L2_ETHERNET
 	default 2048
 	depends on NET_BUF_VARIABLE_DATA_SIZE
 	help
-	  This value tell what is the size of the memory pool where each
+	  This config is deprecated, use NET_PKT_BUF_RX_DATA_POOL_SIZE and
+	  NET_PKT_BUF_TX_DATA_POOL_SIZE instead.
+
+config NET_PKT_BUF_RX_DATA_POOL_SIZE
+	int "Size of the RX memory pool where buffers are allocated from"
+	default NET_BUF_DATA_POOL_SIZE
+	depends on NET_BUF_VARIABLE_DATA_SIZE
+	help
+	  This value tell what is the size of the RX memory pool where each
+	  network buffer is allocated from.
+
+config NET_PKT_BUF_TX_DATA_POOL_SIZE
+	int "Size of the TX memory pool where buffers are allocated from"
+	default NET_BUF_DATA_POOL_SIZE
+	depends on NET_BUF_VARIABLE_DATA_SIZE
+	help
+	  This value tell what is the size of the TX memory pool where each
 	  network buffer is allocated from.
 
 config NET_PKT_BUF_USER_DATA_SIZE

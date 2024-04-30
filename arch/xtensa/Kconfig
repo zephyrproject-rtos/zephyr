@@ -93,6 +93,53 @@ config XTENSA_NUM_SPIN_RELAX_NOPS
 	  Specify the number of NOPs in Xtensa specific
 	  arch_spin_relax().
 
+menu "Xtensa HiFi Options"
+
+config XTENSA_CPU_HAS_HIFI
+	bool
+
+config XTENSA_CPU_HAS_HIFI3
+	select XTENSA_CPU_HAS_HIFI
+	bool
+
+config XTENSA_CPU_HAS_HIFI4
+	select XTENSA_CPU_HAS_HIFI
+	bool
+
+# Selected when at least one XTENSA_HIFIn version has been configured
+config XTENSA_HIFI
+	bool
+
+if XTENSA_CPU_HAS_HIFI
+
+config XTENSA_HIFI3
+	bool "HiFi3 AudioEngine instructions"
+	depends on XTENSA_CPU_HAS_HIFI3
+	default y
+	select XTENSA_HIFI
+	help
+	  This option enables HiFi 3 instruction support.
+
+config XTENSA_HIFI4
+	bool "HiFi4 AudioEngine instructions"
+	depends on XTENSA_CPU_HAS_HIFI4
+	default y
+	select XTENSA_HIFI
+	help
+	  This option enables HiFi 4 instruction support.
+
+config XTENSA_HIFI_SHARING
+	bool "HiFi register sharing"
+	depends on XTENSA_HIFI
+	help
+	  This option enables preservation of the hardware HiFi registers
+	  across context switches to allow multiple threads to perform
+	  concurrent HiFi operations.
+
+endif    # XTENSA_CPU_HAS_HIFI
+
+endmenu  # Xtensa HiFi Options
+
 if CPU_HAS_MMU
 
 config XTENSA_MMU
@@ -159,12 +206,59 @@ config XTENSA_MMU_DOUBLE_MAP
 		  This invalidates all TLBs referred by the incoming thread's
 		  memory domain when swapping page tables.
 
+config PRIVILEGED_STACK_SIZE
+	# Must be multiple of CONFIG_MMU_PAGE_SIZE
+	default 4096
+
 endif # XTENSA_MMU
+
+endif # CPU_HAS_MMU
+
+if CPU_HAS_MPU
+
+menuconfig XTENSA_MPU
+	bool "Xtensa MPU Support"
+	select MPU
+	select SRAM_REGION_PERMISSIONS
+	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select CURRENT_THREAD_USE_NO_TLS if USERSPACE
+	select EXPERIMENTAL
+	# TODO: the target the MPU code developed on (basically sample_controller
+	#       plus MPU minus s32c1i) does not have cache or SMP capability.
+	#       Need to verify functionalities with targets supporting these.
+	depends on !CACHE && !SMP
+	help
+	  Enable support for Xtensa Memory Protection Unit.
+
+if XTENSA_MPU
+
+config XTENSA_MPU_DEFAULT_MEM_TYPE
+	hex "Default Memory Type"
+	default 0x18
+	help
+	  Default memory type for memory regions: non-cacheable memory,
+	  non-shareable, non-bufferable and interruptible.
+
+	  If userspace is enabled, it will be used to restore the memory type of
+	  the region being removed from a memory domain.
+
+config XTENSA_MPU_ONLY_SOC_RANGES
+	bool
+	help
+	  Enable this by the SoC to indicate to the architecture code to use
+	  the MPU ranges specified by SoC only, and skip the common ranges
+	  defined in the core architecture code. This gives total control to
+	  the SoC on the MPU ranges.
+
+endif # XTENSA_MPU
+
+endif # CPU_HAS_MPU
 
 config XTENSA_SYSCALL_USE_HELPER
 	bool "Use userspace syscall helper"
 	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xt-clang"
-	depends on USERSPACE
+	depends on (XTENSA_MMU || XTENSA_MPU) && USERSPACE
 	help
 	  Use syscall helpers for passing more then 3 arguments.
 	  This is a workaround for toolchains where they have
@@ -172,9 +266,7 @@ config XTENSA_SYSCALL_USE_HELPER
 
 config XTENSA_INSECURE_USERSPACE
 	bool
-	default y if USERSPACE
-	depends on XTENSA_MMU
-
-endif # CPU_HAS_MMU
+	default y
+	depends on (XTENSA_MMU || XTENSA_MPU) && USERSPACE
 
 endmenu

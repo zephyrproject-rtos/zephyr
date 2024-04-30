@@ -10,6 +10,7 @@
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/audio/micp.h>
 #include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/sys/byteorder.h>
 #include "common.h"
@@ -150,10 +151,10 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 	SET_FLAG(flag_base_received);
 }
 
-static void syncable_cb(struct bt_bap_broadcast_sink *sink, bool encrypted)
+static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo)
 {
 	printk("Broadcast sink %p syncable with%s encryption\n",
-	       sink, encrypted ? "" : "out");
+	       sink, biginfo->encryption ? "" : "out");
 	SET_FLAG(flag_syncable);
 }
 
@@ -672,7 +673,7 @@ static void init(void)
 
 		for (size_t i = 0U; i < ARRAY_SIZE(vcp_param.aics_param); i++) {
 			vcp_param.aics_param[i].desc_writable = true;
-			snprintf(input_desc[i], sizeof(input_desc[i]), "Input %d", i + 1);
+			snprintf(input_desc[i], sizeof(input_desc[i]), "VCP Input %d", i + 1);
 			vcp_param.aics_param[i].description = input_desc[i];
 			vcp_param.aics_param[i].type = BT_AICS_INPUT_TYPE_DIGITAL;
 			vcp_param.aics_param[i].status = true;
@@ -691,6 +692,33 @@ static void init(void)
 		if (err != 0) {
 			FAIL("Failed to register VCS (err %d)\n", err);
 
+			return;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MICP_MIC_DEV)) {
+		struct bt_micp_mic_dev_register_param micp_param = {0};
+
+#if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
+		char input_desc[CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT][16];
+
+		for (int i = 0; i < ARRAY_SIZE(micp_param.aics_param); i++) {
+			micp_param.aics_param[i].desc_writable = true;
+			snprintf(input_desc[i], sizeof(input_desc[i]), "MICP Input %d", i + 1);
+			micp_param.aics_param[i].description = input_desc[i];
+			micp_param.aics_param[i].type = BT_AICS_INPUT_TYPE_DIGITAL;
+			micp_param.aics_param[i].status = true;
+			micp_param.aics_param[i].gain_mode = BT_AICS_MODE_MANUAL;
+			micp_param.aics_param[i].units = 1;
+			micp_param.aics_param[i].min_gain = 0;
+			micp_param.aics_param[i].max_gain = 100;
+			micp_param.aics_param[i].cb = NULL;
+		}
+#endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
+
+		err = bt_micp_mic_dev_register(&micp_param);
+		if (err != 0) {
+			FAIL("Failed to register MICS (err %d)\n", err);
 			return;
 		}
 	}
@@ -730,15 +758,15 @@ static uint16_t interval_to_sync_timeout(uint16_t pa_interval)
 		/* Use maximum value to maximize chance of success */
 		pa_timeout = BT_GAP_PER_ADV_MAX_TIMEOUT;
 	} else {
-		/* Ensure that the following calculation does not overflow silently */
-		__ASSERT(SYNC_RETRY_COUNT < 10, "SYNC_RETRY_COUNT shall be less than 10");
+		uint32_t interval_ms;
+		uint32_t timeout;
 
 		/* Add retries and convert to unit in 10's of ms */
-		pa_timeout = ((uint32_t)pa_interval * SYNC_RETRY_COUNT) / 10;
+		interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(pa_interval);
+		timeout = (interval_ms * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO) / 10;
 
 		/* Enforce restraints */
-		pa_timeout =
-			CLAMP(pa_timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
+		pa_timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
 	}
 
 	return pa_timeout;

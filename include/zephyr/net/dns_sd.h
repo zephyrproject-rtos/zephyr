@@ -198,8 +198,6 @@ extern "C" {
 /** Empty DNS-SD TXT specifier */
 #define DNS_SD_EMPTY_TXT dns_sd_empty_txt
 
-/** @cond INTERNAL_HIDDEN */
-
 /**
  * @brief DNS Service Discovery record
  *
@@ -214,18 +212,16 @@ extern "C" {
  * Thus, it is possible for multiple services to advertise on a
  * particular port if they hard-code the port.
  *
- * @internal
- *
  * @see <a href="https://tools.ietf.org/html/rfc6763">RFC 6763</a>
  */
 struct dns_sd_rec {
-	/** <Instance> - e.g. "My HTTP Server" */
+	/** "<Instance>" - e.g. "My HTTP Server" */
 	const char *instance;
-	/** Top half of the <Service> such as "_http" */
+	/** Top half of the "<Service>" such as "_http" */
 	const char *service;
-	/** Bottom half of the <Service> "_tcp" or "_udp" */
+	/** Bottom half of the "<Service>" "_tcp" or "_udp" */
 	const char *proto;
-	/** <Domain> such as "local" or "zephyrproject.org" */
+	/** "<Domain>" such as "local" or "zephyrproject.org" */
 	const char *domain;
 	/** DNS TXT record */
 	const char *text;
@@ -234,6 +230,8 @@ struct dns_sd_rec {
 	/** A pointer to the port number used by the service */
 	const uint16_t *port;
 };
+
+/** @cond INTERNAL_HIDDEN */
 
 /**
  * @brief Empty TXT specifier for DNS-SD

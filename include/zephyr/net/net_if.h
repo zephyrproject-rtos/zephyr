@@ -71,6 +71,8 @@ struct net_if_addr {
 #if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
 	/** How many times we have done DAD */
 	uint8_t dad_count;
+	/* What interface the DAD is running */
+	uint8_t ifindex;
 #endif
 
 	/** Is the IP address valid forever */
@@ -368,18 +370,27 @@ struct net_if_dhcpv6 {
 #endif
 /** @endcond */
 
+/**
+ * @brief Network Interface unicast IPv4 address and netmask
+ *
+ * Stores the unicast IPv4 address and related netmask.
+ */
+struct net_if_addr_ipv4 {
+	/** IPv4 address */
+	struct net_if_addr ipv4;
+	/** Netmask */
+	struct in_addr netmask;
+};
+
 struct net_if_ipv4 {
 	/** Unicast IP addresses */
-	struct net_if_addr unicast[NET_IF_MAX_IPV4_ADDR];
+	struct net_if_addr_ipv4 unicast[NET_IF_MAX_IPV4_ADDR];
 
 	/** Multicast IP addresses */
 	struct net_if_mcast_addr mcast[NET_IF_MAX_IPV4_MADDR];
 
 	/** Gateway */
 	struct in_addr gw;
-
-	/** Netmask */
-	struct in_addr netmask;
 
 	/** IPv4 time-to-live */
 	uint8_t ttl;
@@ -415,6 +426,9 @@ struct net_if_dhcpv4 {
 
 	/** Requested IP addr */
 	struct in_addr requested_ip;
+
+	/** Received netmask from the server */
+	struct in_addr netmask;
 
 	/**
 	 *  DHCPv4 client state in the process of network
@@ -1486,7 +1500,7 @@ struct net_if_mcast_monitor {
  *
  * @param mon Monitor handle. This is a pointer to a monitor storage structure
  * which should be allocated by caller, but does not need to be initialized.
- * @param iface Network interface
+ * @param iface Network interface or NULL for all interfaces
  * @param cb Monitor callback
  */
 void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
@@ -1776,6 +1790,10 @@ static inline void net_if_ipv6_set_base_reachable_time(struct net_if *iface,
 	}
 
 	iface->config.ip.ipv6->base_reachable_time = reachable_time;
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(reachable_time);
+
 #endif
 }
 
@@ -1797,6 +1815,7 @@ static inline uint32_t net_if_ipv6_get_reachable_time(struct net_if *iface)
 
 	return iface->config.ip.ipv6->reachable_time;
 #else
+	ARG_UNUSED(iface);
 	return 0;
 #endif
 }
@@ -1824,6 +1843,8 @@ static inline void net_if_ipv6_set_reachable_time(struct net_if_ipv6 *ipv6)
 	}
 
 	ipv6->reachable_time = net_if_ipv6_calc_reachable_time(ipv6);
+#else
+	ARG_UNUSED(ipv6);
 #endif
 }
 
@@ -1844,6 +1865,9 @@ static inline void net_if_ipv6_set_retrans_timer(struct net_if *iface,
 	}
 
 	iface->config.ip.ipv6->retrans_timer = retrans_timer;
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(retrans_timer);
 #endif
 }
 
@@ -1865,6 +1889,7 @@ static inline uint32_t net_if_ipv6_get_retrans_timer(struct net_if *iface)
 
 	return iface->config.ip.ipv6->retrans_timer;
 #else
+	ARG_UNUSED(iface);
 	return 0;
 #endif
 }
@@ -2342,33 +2367,77 @@ struct in_addr *net_if_ipv4_get_global_addr(struct net_if *iface,
 					    enum net_addr_state addr_state);
 
 /**
+ * @brief Get IPv4 netmask related to an address of an interface.
+ *
+ * @param iface Interface to use.
+ * @param addr IPv4 address to check.
+ *
+ * @return The netmask set on the interface related to the give address,
+ *         unspecified address if not found.
+ */
+struct in_addr net_if_ipv4_get_netmask_by_addr(struct net_if *iface,
+					       const struct in_addr *addr);
+
+/**
  * @brief Get IPv4 netmask of an interface.
+ *
+ * @deprecated Use net_if_ipv4_get_netmask_by_addr() instead.
  *
  * @param iface Interface to use.
  *
  * @return The netmask set on the interface, unspecified address if not found.
  */
-struct in_addr net_if_ipv4_get_netmask(struct net_if *iface);
+__deprecated struct in_addr net_if_ipv4_get_netmask(struct net_if *iface);
 
 /**
  * @brief Set IPv4 netmask for an interface.
  *
+ * @deprecated Use net_if_ipv4_set_netmask_by_addr() instead.
+ *
  * @param iface Interface to use.
  * @param netmask IPv4 netmask
  */
-void net_if_ipv4_set_netmask(struct net_if *iface,
-			     const struct in_addr *netmask);
+__deprecated void net_if_ipv4_set_netmask(struct net_if *iface,
+					  const struct in_addr *netmask);
 
 /**
  * @brief Set IPv4 netmask for an interface index.
+ *
+ * @deprecated Use net_if_ipv4_set_netmask_by_addr() instead.
  *
  * @param index Network interface index
  * @param netmask IPv4 netmask
  *
  * @return True if netmask was added, false otherwise.
  */
-__syscall bool net_if_ipv4_set_netmask_by_index(int index,
-						const struct in_addr *netmask);
+__deprecated __syscall bool net_if_ipv4_set_netmask_by_index(int index,
+							     const struct in_addr *netmask);
+
+/**
+ * @brief Set IPv4 netmask for an interface index for a given address.
+ *
+ * @param index Network interface index
+ * @param addr IPv4 address related to this netmask
+ * @param netmask IPv4 netmask
+ *
+ * @return True if netmask was added, false otherwise.
+ */
+__syscall bool net_if_ipv4_set_netmask_by_addr_by_index(int index,
+							const struct in_addr *addr,
+							const struct in_addr *netmask);
+
+/**
+ * @brief Set IPv4 netmask for an interface index for a given address.
+ *
+ * @param iface Network interface
+ * @param addr IPv4 address related to this netmask
+ * @param netmask IPv4 netmask
+ *
+ * @return True if netmask was added, false otherwise.
+ */
+bool net_if_ipv4_set_netmask_by_addr(struct net_if *iface,
+				     const struct in_addr *addr,
+				     const struct in_addr *netmask);
 
 /**
  * @brief Set IPv4 gateway for an interface.
@@ -2934,14 +3003,21 @@ struct net_if_api {
 
 /* Network device initialization macros */
 
-#define Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
-			  config, prio, api, l2, l2_ctx_type, mtu)	\
+#define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
+				   init_fn, pm, data, config, prio,	\
+				   api, l2, l2_ctx_type, mtu)		\
 	Z_DEVICE_STATE_DEFINE(dev_id);					\
 	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
 			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));			\
-	NET_L2_DATA_INIT(dev_id, 0, l2_ctx_type);			\
-	NET_IF_INIT(dev_id, 0, l2, mtu, NET_IF_MAX_CONFIGS)
+	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
+	NET_IF_INIT(dev_id, instance, l2, mtu, NET_IF_MAX_CONFIGS)
+
+#define Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
+			  config, prio, api, l2, l2_ctx_type, mtu)	\
+	Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, 0, init_fn,	\
+				   pm, data, config, prio, api, l2,	\
+				   l2_ctx_type, mtu)
 
 /**
  * @brief Create a network interface and bind it to network device.
@@ -3001,16 +3077,6 @@ struct net_if_api {
  */
 #define NET_DEVICE_DT_INST_DEFINE(inst, ...) \
 	NET_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
-
-#define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
-				   init_fn, pm, data, config, prio,	\
-				   api, l2, l2_ctx_type, mtu)		\
-	Z_DEVICE_STATE_DEFINE(dev_id);					\
-	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
-			config,	POST_KERNEL, prio, api,			\
-			&Z_DEVICE_STATE_NAME(dev_id));			\
-	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
-	NET_IF_INIT(dev_id, instance, l2, mtu, NET_IF_MAX_CONFIGS)
 
 /**
  * @brief Create multiple network interfaces and bind them to network device.

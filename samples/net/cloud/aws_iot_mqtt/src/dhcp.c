@@ -35,7 +35,7 @@ static void handler(struct net_mgmt_event_callback *cb,
 	}
 
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (iface->config.ip.ipv4->unicast[i].addr_type !=
+		if (iface->config.ip.ipv4->unicast[i].ipv4.addr_type !=
 		    NET_ADDR_DHCP) {
 			continue;
 		}

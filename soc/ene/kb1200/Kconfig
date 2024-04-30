@@ -1,0 +1,9 @@
+# Copyright (c) 2024 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_KB1200
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_HAS_ARM_MPU
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU

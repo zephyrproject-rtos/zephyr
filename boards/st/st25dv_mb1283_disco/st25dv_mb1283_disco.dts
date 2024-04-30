@@ -1,0 +1,167 @@
+/*
+ * Copyright (c) 2024 Eve Redero
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "st/f4/stm32f405Xg.dtsi"
+#include "st/f4/stm32f405vgtx-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/display/ili9xxx.h>
+
+/ {
+	model = "ST ST25DV Discovery Kit with MB1283";
+	compatible = "st,st25dv_mb1283_disco", "st,stm32f405", "st,stm32f4";
+
+	chosen {
+		zephyr,console = &usart6;
+		zephyr,shell-uart = &usart6;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,display = &ili9341;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		orange_led: led_1 {
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+		};
+		yellow_led: led_2 {
+			gpios = <&gpioc 4 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	buttons: gpio_keys {
+		compatible = "gpio-keys";
+		blue_button: button_1 {
+			gpios = <&gpioc 14 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		sel_button: button_2 {
+			gpios = <&gpioe 8 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+		left_button: button_3 {
+			gpios = <&gpioe 9 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+		right_button: button_4 {
+			gpios = <&gpioe 11 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+		up_button: button_5 {
+			gpios = <&gpioe 10 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+		down_button: button_6 {
+			gpios = <&gpioe 12 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+	};
+
+	aliases {
+		led0 = &orange_led;
+		sw0 = &blue_button;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		reset-gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
+		dc-gpios = <&gpioc 0 GPIO_ACTIVE_HIGH>;
+		spi-dev = <&spi2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		write-only;
+
+		ili9341: ili9341@0 {
+			compatible = "ilitek,ili9341";
+			mipi-max-frequency = <DT_FREQ_M(20)>;
+			reg = <0>;
+			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
+			rotation = <0>;
+			width = <240>;
+			height = <320>;
+			duplex = <0x800>;
+	    };
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <4>;
+	mul-n = <168>;
+	div-p = <2>;
+	div-q = <7>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(168)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};
+
+&usart6 {
+	pinctrl-0 = <&usart6_tx_pc6 &usart6_rx_pc7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+&spi2 { /* Max 20 Mbit/s */
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spi2_mosi_pc3 &spi2_sck_pb13>;
+	cs-gpios = <&gpiob 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	stmpe811: stmpe811@41 {
+		compatible = "st,stmpe811";
+		status = "okay";
+		reg = <0x41>;
+		int-gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
+		screen-width = <240>;
+		screen-height = <320>;
+		raw-x-min = <240>;
+		raw-y-min = <200>;
+		raw-x-max = <3680>;
+		raw-y-max = <3800>;
+		panel-driver-settling-time-us = <1000>;
+		touch-detect-delay-us = <5000>;
+		touch-average-control = <8>;
+		tracking-index = <127>;
+	};
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_id_pa10 &usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,7 @@
 #include <zephyr/devicetree.h>
 #include <soc.h>
 
-#define FLEXRAM_DT_NODE DT_INST(0, nxp_flexram)
+#define FLEXRAM_DT_NODE    DT_INST(0, nxp_flexram)
 #define IOMUXC_GPR_DT_NODE DT_NODELABEL(iomuxcgpr)
 
 #if defined(CONFIG_MEMC_NXP_FLEXRAM_MAGIC_ADDR_API) || \
@@ -44,19 +44,26 @@ void memc_flexram_register_callback(flexram_callback_t callback, void *user_data
  * call from platform_init to set up flexram if using runtime map
  * must be inlined because cannot use stack
  */
-#define GPR17_REG_FILL(node_id, prop, idx) + (DT_PROP_BY_IDX(node_id, prop, idx) << (2*idx))
+#define GPR_FLEXRAM_REG_FILL(node_id, prop, idx) \
+	(((uint32_t)DT_PROP_BY_IDX(node_id, prop, idx)) << (2 * idx))
 static inline void memc_flexram_dt_partition(void)
 {
 	/* iomuxc_gpr must be const (in ROM region) because used in reconfiguring ram */
 	static IOMUXC_GPR_Type *const iomuxc_gpr =
-		(IOMUXC_GPR_Type *) DT_REG_ADDR(IOMUXC_GPR_DT_NODE);
+		(IOMUXC_GPR_Type *)DT_REG_ADDR(IOMUXC_GPR_DT_NODE);
 	/* do not create stack variables or use any data from ram in this function */
-	iomuxc_gpr->GPR17 = DT_FOREACH_PROP_ELEM_SEP(FLEXRAM_DT_NODE,
-				flexram_bank_spec, GPR17_REG_FILL, (+));
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX)
+	iomuxc_gpr->GPR17 = (DT_FOREACH_PROP_ELEM_SEP(FLEXRAM_DT_NODE, flexram_bank_spec,
+						GPR_FLEXRAM_REG_FILL, (+))) & 0xFFFF;
+	iomuxc_gpr->GPR18 = (((DT_FOREACH_PROP_ELEM_SEP(FLEXRAM_DT_NODE, flexram_bank_spec,
+						GPR_FLEXRAM_REG_FILL, (+)))) >> 16) & 0xFFFF;
+#elif defined(CONFIG_SOC_SERIES_IMXRT10XX)
+	iomuxc_gpr->GPR17 = DT_FOREACH_PROP_ELEM_SEP(FLEXRAM_DT_NODE, flexram_bank_spec,
+						GPR_FLEXRAM_REG_FILL, (+));
+#endif
 	iomuxc_gpr->GPR16 |= IOMUXC_GPR_GPR16_FLEXRAM_BANK_CFG_SEL_MASK;
 }
 #endif /* FLEXRAM_RUNTIME_BANKS_USED */
-
 
 #ifdef CONFIG_MEMC_NXP_FLEXRAM_MAGIC_ADDR_API
 /** @brief Sets magic address for OCRAM

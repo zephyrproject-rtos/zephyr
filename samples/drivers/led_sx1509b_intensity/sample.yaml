@@ -9,6 +9,6 @@ sample:
   name: SX1509B intensity sample
 tests:
   sample.drivers.led.sx1509b_intensity:
-    platform_allow: thingy52_nrf52832
+    platform_allow: thingy52/nrf52832
     tags: LED
     depends_on: i2c

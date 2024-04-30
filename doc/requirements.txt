@@ -9,10 +9,14 @@ pygments>=2.9
 sphinx-notfound-page
 sphinx-copybutton
 sphinx-togglebutton
+sphinx-sitemap
 
 # YAML validation. Used by zephyr_module.
-PyYAML>=5.1
+PyYAML>=6.0
 pykwalify
 
 # Used by pytest-twister-harness plugin
 pytest
+
+# Doxygen doxmlparser
+doxmlparser

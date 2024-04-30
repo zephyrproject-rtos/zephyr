@@ -10,7 +10,6 @@ menuconfig UPDATEHUB
 	depends on NETWORKING
 	depends on NET_UDP
 	depends on NET_SOCKETS
-	depends on NET_SOCKETS_POSIX_NAMES
 	depends on COAP
 	depends on DNS_RESOLVER
 	depends on JSON_LIBRARY
