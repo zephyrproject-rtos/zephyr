@@ -56,9 +56,10 @@
 			reg = <0x20200000 DT_SIZE_K(128)>;
 		};
 
-		ocram_s_code: code@20180000 {
+		/* OCRAM_S 0x20180000 is aliased at 0 */
+		ocram_s_code: code@0 {
 			compatible = "nxp,imx-code-bus";
-			reg = <0x20180000 DT_SIZE_K(32)>;
+			reg = <0x00000000 DT_SIZE_K(32)>;
 		};
 
 		ocram_s_sys: memory@180000 {
