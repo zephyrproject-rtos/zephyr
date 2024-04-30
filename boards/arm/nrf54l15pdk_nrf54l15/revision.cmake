@@ -5,5 +5,5 @@
 #
 
 board_check_revision(FORMAT MAJOR.MINOR.PATCH
-                     VALID_REVISIONS 0.2.0 0.3.0
+                     VALID_REVISIONS 0.2.0
                      DEFAULT_REVISION 0.2.0)
