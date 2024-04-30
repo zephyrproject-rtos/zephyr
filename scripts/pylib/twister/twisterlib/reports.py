@@ -18,6 +18,16 @@ logger.setLevel(logging.DEBUG)
 
 class Reporting:
 
+    json_filters = {
+        'twister.json': {
+            'deny_suite': ['footprint']
+        },
+        'footprint.json': {
+            'deny_status': ['filtered'],
+            'deny_suite': ['testcases', 'execution_time', 'recording', 'retries', 'runnable']
+        }
+    }
+
     def __init__(self, plan, env) -> None:
         self.plan = plan #FIXME
         self.instances = plan.instances
@@ -28,6 +38,7 @@ class Reporting:
         self.timestamp = datetime.now().isoformat()
         self.outdir = os.path.abspath(env.options.outdir)
         self.instance_fail_count = plan.instance_fail_count
+        self.footprint = None
 
     @staticmethod
     def process_log(log_file):
@@ -374,12 +385,35 @@ class Reporting:
             if instance.recording is not None:
                 suite['recording'] = instance.recording
 
+            if (instance.status
+                    and instance.status not in ["error", "filtered"]
+                    and self.env.options.create_rom_ram_report
+                    and self.env.options.footprint_report is not None):
+                # Init as empty data preparing for filtering properties.
+                suite['footprint'] = {}
+
             # Pass suite properties through the context filters.
             if filters and 'allow_suite' in filters:
                 suite = {k:v for k,v in suite.items() if k in filters['allow_suite']}
 
             if filters and 'deny_suite' in filters:
                 suite = {k:v for k,v in suite.items() if k not in filters['deny_suite']}
+
+            # Compose external data only to these properties which pass filtering.
+            if 'footprint' in suite:
+                do_all = 'all' in self.env.options.footprint_report
+                footprint_files = { 'ROM': 'rom.json', 'RAM': 'ram.json' }
+                for k,v in footprint_files.items():
+                    if do_all or k in self.env.options.footprint_report:
+                        footprint_fname = os.path.join(instance.build_dir, v)
+                        try:
+                            with open(footprint_fname, "rt") as footprint_json:
+                                logger.debug(f"Collect footprint.{k} for '{instance.name}'")
+                                suite['footprint'][k] = json.load(footprint_json)
+                        except FileNotFoundError:
+                            logger.error(f"Missing footprint.{k} for '{instance.name}'")
+                #
+            #
 
             suites.append(suite)
 
@@ -585,7 +619,11 @@ class Reporting:
 
         if not no_update:
             json_file = filename + ".json"
-            self.json_report(json_file, version=self.env.version)
+            self.json_report(json_file, version=self.env.version,
+                             filters=self.json_filters['twister.json'])
+            if self.env.options.footprint_report is not None:
+                self.json_report(filename + "_footprint.json", version=self.env.version,
+                                 filters=self.json_filters['footprint.json'])
             self.xunit_report(json_file, filename + ".xml", full_report=False)
             self.xunit_report(json_file, filename + "_report.xml", full_report=True)
             self.xunit_report_suites(json_file, filename + "_suite_report.xml")
@@ -599,9 +637,15 @@ class Reporting:
         for platform in platforms.values():
             if suffix:
                 filename = os.path.join(outdir,"{}_{}.xml".format(platform.normalized_name, suffix))
-                json_platform_file = os.path.join(outdir,"{}_{}.json".format(platform.normalized_name, suffix))
+                json_platform_file = os.path.join(outdir,"{}_{}".format(platform.normalized_name, suffix))
             else:
                 filename = os.path.join(outdir,"{}.xml".format(platform.normalized_name))
-                json_platform_file = os.path.join(outdir,"{}.json".format(platform.normalized_name))
+                json_platform_file = os.path.join(outdir, platform.normalized_name)
             self.xunit_report(json_file, filename, platform.name, full_report=True)
-            self.json_report(json_platform_file, version=self.env.version, platform=platform.name)
+            self.json_report(json_platform_file + ".json",
+                             version=self.env.version, platform=platform.name,
+                             filters=self.json_filters['twister.json'])
+            if self.env.options.footprint_report is not None:
+                self.json_report(json_platform_file + "_footprint.json",
+                                 version=self.env.version, platform=platform.name,
+                                 filters=self.json_filters['footprint.json'])
