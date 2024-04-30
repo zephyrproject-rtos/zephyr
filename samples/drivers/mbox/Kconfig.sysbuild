@@ -14,4 +14,4 @@ string
 	default "mimxrt1170_evk_cm4" if $(BOARD) = "mimxrt1170_evk_cm7"
 	default "mimxrt1160_evk_cm4" if $(BOARD) = "mimxrt1160_evk_cm7"
 	default "lpcxpresso55s69_cpu1" if $(BOARD) = "lpcxpresso55s69_cpu0"
-	default "nrf54h20dk_nrf54h20_cpuppr" if $(BOARD) = "nrf54h20dk_nrf54h20_cpuapp"
+	default "nrf54h20pdk_nrf54h20_cpuppr" if $(BOARD) = "nrf54h20pdk_nrf54h20_cpuapp"

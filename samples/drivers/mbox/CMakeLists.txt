@@ -18,7 +18,7 @@ if(("${BOARD}" STREQUAL "nrf5340dk_nrf5340_cpuapp") OR
    ("${BOARD}" STREQUAL "mimxrt1170_evk_cm7") OR
    ("${BOARD}" STREQUAL "mimxrt1160_evk_cm7") OR
    ("${BOARD}" STREQUAL "lpcxpresso55s69_cpu0") OR
-   ("${BOARD}" STREQUAL "nrf54h20dk_nrf54h20_cpuapp"))
+   ("${BOARD}" STREQUAL "nrf54h20pdk_nrf54h20_cpuapp"))
   message(STATUS "${BOARD} compile as Main in this sample")
 else()
   message(FATAL_ERROR "${BOARD} is not supported for this sample")

@@ -16,7 +16,7 @@ if(("${BOARD}" STREQUAL "nrf5340dk_nrf5340_cpunet") OR
   ("${BOARD}" STREQUAL "mimxrt1160_evk_cm4") OR
   ("${BOARD}" STREQUAL "lpcxpresso55s69_cpu1") OR
   ("${BOARD}" STREQUAL "adp_xc7k_ae350") OR
-  ("${BOARD}" STREQUAL "nrf54h20dk_nrf54h20_cpuppr"))
+  ("${BOARD}" STREQUAL "nrf54h20pdk_nrf54h20_cpuppr"))
   message(STATUS "${BOARD} compile as remote in this sample")
 else()
   message(FATAL_ERROR "${BOARD} is not supported for this sample")
