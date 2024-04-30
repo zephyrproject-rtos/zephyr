@@ -214,7 +214,7 @@ endif()
 zephyr_compile_options(${OPTIMIZATION_FLAG})
 
 if(CONFIG_LTO)
-  zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
+  add_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
   add_link_options($<TARGET_PROPERTY:linker,lto_arguments>)
 endif()
 
