@@ -141,8 +141,6 @@ __subsystem struct regulator_driver_api {
 /** Regulator active discharge get bits */
 #define REGULATOR_ACTIVE_DISCHARGE_GET_BITS(x) \
 	(((x) & REGULATOR_ACTIVE_DISCHARGE_MASK) >> REGULATOR_ACTIVE_DISCHARGE_POS)
-/** Indicates regulator must be initialized OFF */
-#define REGULATOR_BOOT_OFF BIT(4)
 
 /** @} */
 
@@ -214,9 +212,7 @@ struct regulator_common_config {
 			   REGULATOR_BOOT_ON) |                                \
 			  (REGULATOR_ACTIVE_DISCHARGE_SET_BITS(                \
 			   DT_PROP_OR(node_id, regulator_active_discharge,     \
-			   REGULATOR_ACTIVE_DISCHARGE_DEFAULT))) |             \
-			  (DT_PROP_OR(node_id, regulator_boot_off, 0U) *       \
-			   REGULATOR_BOOT_OFF)),                               \
+			   REGULATOR_ACTIVE_DISCHARGE_DEFAULT)))),             \
 	}
 
 /**
@@ -258,7 +254,6 @@ void regulator_common_data_init(const struct device *dev);
  *
  * - Automatically enable the regulator if it is set to `regulator-boot-on`
  *   or `regulator-always-on` and increase its usage count.
- * - Automatically disable the regulator if it is set to `regulator-boot-off`.
  * - Configure the regulator mode if `regulator-initial-mode` is set.
  * - Ensure regulator voltage is set to a valid range.
  *
