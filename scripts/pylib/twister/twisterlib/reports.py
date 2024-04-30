@@ -259,6 +259,8 @@ class Reporting:
         for instance in self.instances.values():
             if platform and platform != instance.platform.name:
                 continue
+            if instance.status == "filtered" and not self.env.options.report_filtered:
+                continue
             suite = {}
             handler_log = os.path.join(instance.build_dir, "handler.log")
             pytest_log = os.path.join(instance.build_dir, "twister_harness.log")
