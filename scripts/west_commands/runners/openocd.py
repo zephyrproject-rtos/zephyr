@@ -1,8 +1,6 @@
 # Copyright (c) 2017 Linaro Limited.
 #
 # SPDX-License-Identifier: Apache-2.0
-#
-# pylint: disable=duplicate-code
 
 '''Runner for openocd.'''
 
@@ -15,7 +13,7 @@ from pathlib import Path
 try:
     from elftools.elf.elffile import ELFFile
 except ImportError:
-    pass
+    ELFFile = None
 
 from runners.core import ZephyrBinaryRunner
 
@@ -191,7 +189,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     def read_version(self):
         self.require(self.openocd_cmd[0])
 
-        # OpenOCD prints in stderr, need redirect to get output
+	# OpenOCD prints in stderr, need redirect to get output
         out = self.check_output([self.openocd_cmd[0], '--version'],
                                 stderr=subprocess.STDOUT).decode()
 
@@ -206,7 +204,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         self.require(self.openocd_cmd[0])
-        if globals().get('ELFFile') is None:
+        if ELFFile is None:
             raise RuntimeError(
                 'elftools missing; please "pip3 install elftools"')
 
