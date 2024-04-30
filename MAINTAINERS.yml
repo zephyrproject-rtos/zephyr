@@ -1490,6 +1490,8 @@ Release Notes:
 
 "Drivers: Reset":
   status: odd fixes
+  collaborators:
+    - decsny
   files:
     - drivers/reset/
     - include/zephyr/drivers/reset.h
