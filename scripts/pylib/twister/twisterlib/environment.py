@@ -547,6 +547,8 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument("--overflow-as-errors", action="store_true",
                         help="Treat RAM/SRAM overflows as errors.")
 
+    parser.add_argument("--report-filtered", action="store_true",
+                        help="Include filtered tests in the reports.")
 
     parser.add_argument("-P", "--exclude-platform", action="append", default=[],
             help="""Exclude platforms and do not build or run any tests
