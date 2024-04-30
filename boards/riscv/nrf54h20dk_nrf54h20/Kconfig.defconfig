@@ -1,6 +1,0 @@
-# Copyright (c) 2024 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD
-	default "nrf54h20dk_nrf54h20_cpuppr"
-	depends on BOARD_NRF54H20DK_NRF54H20_CPUPPR || BOARD_NRF54H20DK_NRF54H20_CPUPPR_RAM

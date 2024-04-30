@@ -1,6 +1,0 @@
-# Copyright (c) 2024 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD
-	default "nrf54h20dk_nrf54h20_cpuapp" if BOARD_NRF54H20DK_NRF54H20_CPUAPP
-	default "nrf54h20dk_nrf54h20_cpurad" if BOARD_NRF54H20DK_NRF54H20_CPURAD
