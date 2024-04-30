@@ -14,6 +14,10 @@ config SOC_NRF54H20_CPUPPR
 	bool "nRF54H20 CPUPPR"
 	select RISCV
 
+config SOC_NRF54H20_ENGA_CPUPPR
+	bool "nRF54H20 ENGA CPUPPR"
+	depends on RISCV_CORE_NORDIC_VPR
+
 endchoice
 
 endif # SOC_NRF54H20
