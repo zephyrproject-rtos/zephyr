@@ -17,7 +17,7 @@ static struct z_futex_data *k_futex_find_data(struct k_futex *futex)
 	struct k_object *obj;
 
 	obj = k_object_find(futex);
-	if (obj == NULL || obj->type != K_OBJ_FUTEX) {
+	if ((obj == NULL) || (obj->type != K_OBJ_FUTEX)) {
 		return NULL;
 	}
 
