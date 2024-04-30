@@ -138,6 +138,17 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 		    struct coap_client_request *req, struct coap_transmission_parameters *params);
 
 /**
+ * @brief Cancel all current requests.
+ *
+ * This is intended for canceling long-running requests (e.g. GETs with the OBSERVE option set)
+ * which has gone stale for some reason.
+ *
+ * @param client Client instance.
+ */
+void coap_client_cancel_requests(struct coap_client *client);
+
+
+/**
  * @}
  */
 
