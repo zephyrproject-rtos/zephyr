@@ -12,7 +12,6 @@ tests:
       - native_sim
       - native_sim_64
       - mr_canhubk3
-      - nrf54l15pdk_nrf54l15_cpuapp
     integration_platforms:
       - native_sim
     harness: console
