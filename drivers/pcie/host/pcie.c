@@ -179,8 +179,8 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 		reg++;
 		phys_addr |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
 
-		if (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL64 ||
-		    PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE) {
+		if ((PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL64) ||
+		    (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE)) {
 			/* Discard on invalid address */
 			goto err_exit;
 		}
@@ -188,8 +188,8 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 		pcie_conf_write(bdf, reg, 0xFFFFFFFFU);
 		size |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
 		pcie_conf_write(bdf, reg, (uint32_t)((uint64_t)phys_addr >> 32));
-	} else if (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL ||
-		   PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE) {
+	} else if ((PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL) ||
+		   (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE)) {
 		/* Discard on invalid address */
 		goto err_exit;
 	}
@@ -253,7 +253,7 @@ static bool pcie_probe_bar(pcie_bdf_t bdf,
 	uint32_t reg;
 
 	for (reg = PCIE_CONF_BAR0;
-	     index > 0 && reg <= PCIE_CONF_BAR5; reg++, index--) {
+	     (index > 0) && (reg <= PCIE_CONF_BAR5); reg++, index--) {
 		uintptr_t addr = pcie_conf_read(bdf, reg);
 
 		if (PCIE_CONF_BAR_MEM(addr) && PCIE_CONF_BAR_64(addr)) {
@@ -306,8 +306,8 @@ unsigned int pcie_alloc_irq(pcie_bdf_t bdf)
 	data = pcie_conf_read(bdf, PCIE_CONF_INTR);
 	irq = PCIE_CONF_INTR_IRQ(data);
 
-	if (irq == PCIE_CONF_INTR_IRQ_NONE ||
-	    irq >= CONFIG_MAX_IRQ_LINES ||
+	if ((irq == PCIE_CONF_INTR_IRQ_NONE) ||
+	    (irq >= CONFIG_MAX_IRQ_LINES) ||
 	    arch_irq_is_used(irq)) {
 
 		/* In some platforms, PCI interrupts are hardwired to specific interrupt inputs
