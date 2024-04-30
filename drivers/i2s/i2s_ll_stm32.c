@@ -335,11 +335,21 @@ static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 			LOG_ERR("STOP trigger: invalid state");
 			return -EIO;
 		}
+		if(stream->state == I2S_STATE_RUNNING)
+		{
+			stream->state = I2S_STATE_STOPPING;
+			/* indicate that the transition to I2S_STATE_STOPPING*/
+			/* is triggered by STOP command                      */
+			stream->sample_tx_stop_drain = false; 
+		}
+		else
+		{
+			stream->stream_disable(stream, dev);
+			stream->queue_drop(stream);
+			stream->state = I2S_STATE_READY;
+			stream->last_block = true;
+		}	 
 		irq_unlock(key);
-		stream->stream_disable(stream, dev);
-		stream->queue_drop(stream);
-		stream->state = I2S_STATE_READY;
-		stream->last_block = true;
 		break;
 
 	case I2S_TRIGGER_DRAIN:
@@ -349,9 +359,22 @@ static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 			LOG_ERR("DRAIN trigger: invalid state");
 			return -EIO;
 		}
-		stream->stream_disable(stream, dev);
-		stream->queue_drop(stream);
-		stream->state = I2S_STATE_READY;
+		if(dir == I2S_DIR_TX)
+		 {
+			if(stream->state == I2S_STATE_RUNNING)
+			 {
+				 stream->state = I2S_STATE_STOPPING;
+			     /* indicate that the transition to I2S_STATE_STOPPING*/
+				 /* is triggered by DRAIN command                     */
+				 stream->sample_tx_stop_drain = true; 
+			 }
+			 else
+			 {
+		        stream->stream_disable(stream, dev);
+		        stream->queue_drop(stream);
+		        stream->state = I2S_STATE_READY;
+		     }
+		 }
 		irq_unlock(key);
 		break;
 
@@ -528,6 +551,16 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg,
 	}
 
 	mblk_tmp = stream->mem_block;
+	
+	if ((stream->state == I2S_STATE_STOPPING )&& (status == DMA_STATUS_COMPLETE ))
+	{
+		if(stream->sample_tx_stop_drain == false )
+		{
+			/* in case of STOP command, just stop the transmission*/
+			/*at the current. The transmission can be resumed     */
+			goto rx_handle_block;
+		}
+	}
 
 	/* Prepare to receive the next data block */
 	ret = k_mem_slab_alloc(stream->cfg.mem_slab, &stream->mem_block,
@@ -551,6 +584,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg,
 		goto rx_disable;
 	}
 
+rx_handle_block:
 	/* Assure cache coherency after DMA write operation */
 	sys_cache_data_invd_range(mblk_tmp, stream->cfg.block_size);
 
@@ -596,12 +630,40 @@ static void dma_tx_callback(const struct device *dma_dev, void *arg,
 	/* All block data sent */
 	k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
 	stream->mem_block = NULL;
+	
+	/*mark the tx sample completion */
+	stream->sample_tx_block_dma_sent++;
 
 	/* Stop transmission if there was an error */
 	if (stream->state == I2S_STATE_ERROR) {
 		LOG_ERR("TX error detected");
 		goto tx_disable;
 	}
+	
+	/* check if the tx stop command can be handled */
+	/*if True, the tx stop command can be handled  */
+	if ((stream->state == I2S_STATE_STOPPING )&& (status == DMA_STATUS_COMPLETE ))
+	{
+		/* check if all tx samples have been completely handled           */
+		/*As stated in zephyr i2s specification, in case of DRAIN command */
+	   /* Send all data in the transmit queue and stop the transmission.  */
+		if (stream->sample_tx_block_sent == stream->sample_tx_block_dma_sent)
+		{ 
+			stream->queue_drop(stream);
+			stream->state = I2S_STATE_READY;
+			goto tx_disable;
+		}
+		else
+		{
+			if(stream->sample_tx_stop_drain == false )
+			{
+				/* in case of STOP command, just stop the transmission*/
+				/*at the current. The transmission can be resumed     */
+				stream->state = I2S_STATE_READY;
+				goto tx_disable;
+			}
+		}
+    }
 
 	/* Stop transmission if we were requested */
 	if (stream->last_block) {
@@ -652,11 +714,6 @@ static uint32_t i2s_stm32_irq_udr_count;
 static void i2s_stm32_isr(const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
-	struct i2s_stm32_data *const dev_data = dev->data;
-	struct stream *stream = &dev_data->rx;
-
-	LOG_ERR("%s: err=%d", __func__, (int)LL_I2S_ReadReg(cfg->i2s, SR));
-	stream->state = I2S_STATE_ERROR;
 
 	/* OVR error must be explicitly cleared */
 	if (LL_I2S_IsActiveFlag_OVR(cfg->i2s)) {
@@ -677,8 +734,14 @@ static int i2s_stm32_initialize(const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	struct i2s_stm32_data *const dev_data = dev->data;
+	struct stream *stream = &dev_data->tx;
 	int ret, i;
 
+	/* initialize the variables used to handle the TX samples */
+    stream->sample_tx_block_sent = 0;
+	stream->sample_tx_block_dma_sent = 0;
+	stream->sample_tx_stop_drain = false;
+	
 	/* Enable I2S clock propagation */
 	ret = i2s_stm32_enable_clock(dev);
 	if (ret < 0) {
@@ -846,7 +909,8 @@ static void rx_stream_disable(struct stream *stream, const struct device *dev)
 		k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
 		stream->mem_block = NULL;
 	}
-
+    /*Check if the Busy Bit of I2S is still active before disabling IP*/
+    while (LL_SPI_IsActiveFlag_BSY(cfg->i2s)) {}
 	LL_I2S_Disable(cfg->i2s);
 
 	active_dma_rx_channel[stream->dma_channel] = NULL;
@@ -870,7 +934,9 @@ static void tx_stream_disable(struct stream *stream, const struct device *dev)
 		k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
 		stream->mem_block = NULL;
 	}
-
+    /*Check if the Busy Bit of I2S is still active before disabling IP*/
+    while (LL_SPI_IsActiveFlag_BSY(cfg->i2s)) {}
+	
 	LL_I2S_Disable(cfg->i2s);
 
 	active_dma_tx_channel[stream->dma_channel] = NULL;

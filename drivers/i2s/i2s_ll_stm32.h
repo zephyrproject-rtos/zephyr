@@ -41,6 +41,9 @@ struct stream {
 	bool src_addr_increment;
 	bool dst_addr_increment;
 	uint8_t fifo_threshold;
+	uint8_t sample_tx_block_sent;
+	uint8_t sample_tx_block_dma_sent;
+	bool    sample_tx_stop_drain;
 
 	struct i2s_config cfg;
 	struct ring_buf mem_block_queue;
