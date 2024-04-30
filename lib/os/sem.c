@@ -125,7 +125,6 @@ int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout)
 {
 	int ret_value = k_sem_take(&sem->kernel_sem, timeout);
 
-	ret_value = k_sem_take(&sem->kernel_sem, timeout);
 	if (ret_value == -EAGAIN || ret_value == -EBUSY) {
 		ret_value = -ETIMEDOUT;
 	}
