@@ -12,22 +12,6 @@ if SOC_NRF54H20
 choice
 	prompt "nRF54H20 MCU Selection"
 
-config SOC_NRF54H20_CPUAPP
-	bool "nRF54H20 CPUAPP"
-	select CPU_HAS_ARM_MPU
-	select CPU_HAS_ARM_SAU
-	select CPU_HAS_DCACHE
-	select CPU_HAS_ICACHE
-	select CPU_HAS_FPU
-
-config SOC_NRF54H20_CPURAD
-	bool "nRF54H20 CPURAD"
-	select CPU_HAS_ARM_MPU
-	select CPU_HAS_ARM_SAU
-	select CPU_HAS_DCACHE
-	select CPU_HAS_ICACHE
-	select CPU_HAS_FPU
-
 config SOC_NRF54H20_ENGA_CPUAPP
 	bool "nRF54H20 ENGA CPUAPP"
 	select CPU_HAS_ARM_MPU
