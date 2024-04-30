@@ -155,7 +155,6 @@ struct spi_nor_config {
 	bool dpd_exist:1;
 	bool dpd_wakeup_sequence_exist:1;
 	bool mxicy_mx25r_power_mode_exist:1;
-	bool enter_4byte_addr_exist:1;
 	bool reset_gpios_exist:1;
 	bool requires_ulbpr_exist:1;
 	bool wp_gpios_exist:1;
@@ -520,10 +519,11 @@ static int exit_dpd(const struct device *const dev)
 	const struct spi_nor_config *cfg = dev->config;
 
 	if (cfg->dpd_exist) {
+#if ANY_INST_HAS_DPD
 		delay_until_exit_dpd_ok(dev);
 
-#if ANY_INST_HAS_DPD_WAKEUP_SEQUENCE
 		if (cfg->dpd_wakeup_sequence_exist) {
+#if ANY_INST_HAS_DPD_WAKEUP_SEQUENCE
 			/* Assert CSn and wait for tCRDP.
 			 *
 			 * Unfortunately the SPI API doesn't allow us to
@@ -536,6 +536,7 @@ static int exit_dpd(const struct device *const dev)
 
 			/* Deassert CSn and wait for tRDP */
 			k_sleep(K_MSEC(cfg->t_rdp_ms));
+#endif /* DPD_WAKEUP_SEQUENCE */
 		} else {
 			ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_RDPD);
 
@@ -547,7 +548,7 @@ static int exit_dpd(const struct device *const dev)
 			}
 #endif /* T_EXIT_DPD */
 		}
-#endif /* DPD_WAKEUP_SEQUENCE */
+#endif /* ANY_INST_HAS_DPD */
 	}
 	return ret;
 }
@@ -1036,10 +1037,8 @@ static int spi_nor_read_jedec_id(const struct device *dev,
 static int spi_nor_set_address_mode(const struct device *dev,
 				    uint8_t enter_4byte_addr)
 {
-	const struct spi_nor_config *cfg = dev->config;
-	int ret = -ENOSYS;
+	int ret = 0;
 
-	if (cfg->enter_4byte_addr_exist) {
 	/* Do nothing if not provided (either no bits or all bits
 	 * set).
 	 */
@@ -1074,7 +1073,6 @@ static int spi_nor_set_address_mode(const struct device *dev,
 	}
 
 	release_device(dev);
-	}
 
 	return ret;
 }
@@ -1664,7 +1662,6 @@ static const struct flash_driver_api spi_nor_api = {
 	.dpd_exist = DT_INST_PROP(idx, has_dpd),						\
 	.dpd_wakeup_sequence_exist = DT_INST_NODE_HAS_PROP(idx, dpd_wakeup_sequence),		\
 	.mxicy_mx25r_power_mode_exist = DT_INST_NODE_HAS_PROP(idx, mxicy_mx25r_power_mode),	\
-	.enter_4byte_addr_exist = DT_INST_NODE_HAS_PROP(idx, enter_4byte_addr),			\
 	.reset_gpios_exist = DT_INST_NODE_HAS_PROP(idx, reset_gpios),				\
 	.requires_ulbpr_exist =  DT_INST_PROP(idx, requires_ulbpr),				\
 	.wp_gpios_exist = DT_INST_NODE_HAS_PROP(idx, wp_gpios),					\
