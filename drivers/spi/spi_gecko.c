@@ -33,7 +33,10 @@ LOG_MODULE_REGISTER(spi_gecko);
 #define CLOCK_USART(id) _CONCAT(cmuClock_USART, id)
 #define GET_GECKO_USART_CLOCK(n) CLOCK_USART(DT_INST_PROP(n, peripheral_id))
 #else
-#if (USART_COUNT <= 2)
+#if (USART_COUNT == 1)
+#define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
+			       : -1)
+#elif (USART_COUNT == 2)
 #define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
 			       : ((ref) == USART1) ? cmuClock_USART1 \
 			       : -1)
