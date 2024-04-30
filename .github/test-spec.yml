@@ -293,8 +293,6 @@
 
 "CI-test-low-level":
   - "dts/**/*"
-  - "boards/arm/nrf54*/**/*"
-  - "boards/riscv/nrf54*/**/*"
   - "include/zephyr/**/*"
   - "tests/arch/**/*"
   - "arch/**/*"
