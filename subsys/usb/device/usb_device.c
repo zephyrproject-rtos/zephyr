@@ -59,6 +59,7 @@
 
 #include <errno.h>
 #include <stddef.h>
+#include <bos_desc.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/init.h>
