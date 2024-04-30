@@ -18,7 +18,7 @@ Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_host_adv_periodic_prj_conf \
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_host_adv_periodic_prj_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=1 -RealEncryption=0 \
-  -testid=per_adv_syncer -rs=6
+  -testid=per_adv_sync -rs=6
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
   -D=2 -sim_length=20e6 $@
