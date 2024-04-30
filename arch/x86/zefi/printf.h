@@ -79,13 +79,13 @@ static int vpf(struct _pfr *r, const char *f, va_list ap)
 		}
 
 		/* Ignore (but accept) field width and precision values */
-		while (f[1] >= '0' && f[1] <= '9') {
+		while ((f[1] >= '0') && (f[1] <= '9')) {
 			f++;
 		}
 		if (f[1] == '.') {
 			f++;
 		}
-		while (f[1] >= '0' && f[1] <= '9') {
+		while ((f[1] >= '0') && (f[1] <= '9')) {
 			f++;
 		}
 
@@ -117,7 +117,7 @@ static int vpf(struct _pfr *r, const char *f, va_list ap)
 				int d = (v >> (i*4)) & 0xf;
 
 				sig += !!d;
-				if (sig || i == 0)
+				if (sig || (i == 0))
 					pc(r, "0123456789abcdef"[d]);
 			}
 			break;

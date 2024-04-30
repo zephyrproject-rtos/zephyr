@@ -62,7 +62,7 @@ int z_x86_allocate_vector(unsigned int priority, int prev_vector)
 	}
 
 	for (i = 0; i < VECTORS_PER_PRIORITY; ++i, ++vector) {
-		if (prev_vector != 1 && vector == prev_vector) {
+		if ((prev_vector != 1) && (vector == prev_vector)) {
 			continue;
 		}
 
