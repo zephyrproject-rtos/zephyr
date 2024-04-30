@@ -3138,7 +3138,8 @@ int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 	/* Scanning either to connect or explicit scan, either case scanner was
 	 * started by application and should not be stopped.
 	 */
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
+	if (!BT_LE_STATES_SCAN_INIT(bt_dev.le.states) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
 		return -EINVAL;
 	}
 
@@ -3221,7 +3222,8 @@ static int conn_le_create_common_checks(const bt_addr_le_t *peer,
 		return -EINVAL;
 	}
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
+	if (!BT_LE_STATES_SCAN_INIT(bt_dev.le.states) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
 		return -EAGAIN;
 	}
 

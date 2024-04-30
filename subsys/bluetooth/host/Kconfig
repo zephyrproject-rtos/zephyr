@@ -767,6 +767,23 @@ config BT_SCAN_WITH_IDENTITY
 	  for for the local identity. If this use case is required, then enable
 	  this option.
 
+config BT_SCAN_AND_INITIATE_IN_PARALLEL
+	bool "Allow concurrent scanning and initiating"
+	depends on (BT_CENTRAL && BT_OBSERVER)
+	select BT_EXT_ADV if BT_BROADCASTER
+	select BT_SCAN_WITH_IDENTITY if !BT_PRIVACY
+	help
+	  Allow concurrent scanning and initiating.
+	  This will allow the application to initiate a connection
+	  to a peer device without stopping the scanner.
+	  If privacy is disabled, the scanner will use its identity
+	  address.
+	  This feature is only available when extended advertising
+	  HCI commands are used to prevent degraded performance
+	  when the advertiser is used.
+	  Scanning with a timeout is not supported when this
+	  feature is enabled.
+
 config BT_DEVICE_NAME_DYNAMIC
 	bool "Allow to set Bluetooth device name on runtime"
 	help
@@ -810,6 +827,7 @@ config BT_DEVICE_APPEARANCE
 
 config BT_ID_MAX
 	int "Maximum number of local identities"
+	range 1 1 if BT_SCAN_AND_INITIATE_IN_PARALLEL
 	range 1 250
 	default 1
 	help
