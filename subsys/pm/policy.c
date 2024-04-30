@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/timeout_q.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/spinlock.h>
@@ -60,8 +61,8 @@ static sys_slist_t latency_subs;
 static struct k_spinlock events_lock;
 /** List of events. */
 static sys_slist_t events_list;
-/** Next event, in absolute cycles (<0: none, [0, UINT32_MAX]: cycles) */
-static int64_t next_event_cyc = -1;
+/** Next event timeout to be added to the list of system timeouts */
+static struct _timeout next_event_timeout;
 
 /** @brief Update maximum allowed latency. */
 static void update_max_latency(void)
@@ -92,11 +93,15 @@ static void update_max_latency(void)
 	}
 }
 
+static void next_event_timeout_cb(struct _timeout *t);
+
 /** @brief Update next event. */
-static void update_next_event(uint32_t cyc)
+static void update_next_event(void)
 {
-	int64_t new_next_event_cyc = -1;
+	uint64_t next_event_cyc = -1;
 	struct pm_policy_event *evt;
+	k_timeout_t next_event;
+	uint32_t cyc = k_cycle_get_32();
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&events_list, evt, node) {
 		uint64_t cyc_evt = evt->value_cyc;
@@ -112,21 +117,32 @@ static void update_next_event(uint32_t cyc)
 		 * the comparison.
 		 */
 		if (cyc_evt < cyc) {
-			cyc_evt += (uint64_t)UINT32_MAX + 1U;
+			cyc_evt += UINT32_MAX + 1U;
 		}
 
-		if ((new_next_event_cyc < 0) ||
-		    (cyc_evt < new_next_event_cyc)) {
-			new_next_event_cyc = cyc_evt;
+		if (cyc_evt < next_event_cyc) {
+			next_event_cyc = cyc_evt;
 		}
+	}
+
+	/* no event registered */
+	if (next_event_cyc == -1) {
+		return;
 	}
 
 	/* undo padding for events in the [0, cyc) range */
-	if (new_next_event_cyc > UINT32_MAX) {
-		new_next_event_cyc -= (uint64_t)UINT32_MAX + 1U;
+	if (next_event_cyc > UINT32_MAX) {
+		next_event_cyc -= UINT32_MAX + 1U;
 	}
 
-	next_event_cyc = new_next_event_cyc;
+	z_abort_timeout(&next_event_timeout);
+	next_event.ticks = k_cyc_to_ticks_near32(next_event_cyc - cyc);
+	z_add_timeout(&next_event_timeout, &next_event_timeout_cb, next_event);
+}
+
+static void next_event_timeout_cb(struct _timeout *t)
+{
+	update_next_event();
 }
 
 #ifdef CONFIG_PM_POLICY_DEFAULT
@@ -147,27 +163,6 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 	}
 
 	num_cpu_states = pm_state_cpu_get_all(cpu, &cpu_states);
-
-	if (next_event_cyc >= 0) {
-		uint32_t cyc_curr = k_cycle_get_32();
-		int64_t cyc_evt = next_event_cyc - cyc_curr;
-
-		/* event happening after cycle counter max value, pad */
-		if (next_event_cyc <= cyc_curr) {
-			cyc_evt += UINT32_MAX;
-		}
-
-		if (cyc_evt > 0) {
-			/* if there's no system wakeup event always wins,
-			 * otherwise, who comes earlier wins
-			 */
-			if (cyc < 0) {
-				cyc = cyc_evt;
-			} else {
-				cyc = MIN(cyc, cyc_evt);
-			}
-		}
-	}
 
 	for (int16_t i = (int16_t)num_cpu_states - 1; i >= 0; i--) {
 		const struct pm_state_info *state = &cpu_states[i];
@@ -303,7 +298,7 @@ void pm_policy_event_register(struct pm_policy_event *evt, uint32_t time_us)
 
 	evt->value_cyc = cyc + k_us_to_cyc_ceil32(time_us);
 	sys_slist_append(&events_list, &evt->node);
-	update_next_event(cyc);
+	update_next_event();
 
 	k_spin_unlock(&events_lock, key);
 }
@@ -314,7 +309,7 @@ void pm_policy_event_update(struct pm_policy_event *evt, uint32_t time_us)
 	uint32_t cyc = k_cycle_get_32();
 
 	evt->value_cyc = cyc + k_us_to_cyc_ceil32(time_us);
-	update_next_event(cyc);
+	update_next_event();
 
 	k_spin_unlock(&events_lock, key);
 }
@@ -324,7 +319,7 @@ void pm_policy_event_unregister(struct pm_policy_event *evt)
 	k_spinlock_key_t key = k_spin_lock(&events_lock);
 
 	(void)sys_slist_find_and_remove(&events_list, &evt->node);
-	update_next_event(k_cycle_get_32());
+	update_next_event();
 
 	k_spin_unlock(&events_lock, key);
 }
