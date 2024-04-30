@@ -234,7 +234,7 @@ int maxim_ds3231_stat_update(const struct device *dev,
 
 /*
  * Look for current users of the interrupt/square-wave signal and
- * enable monitoring iff at least one consumer is active.
+ * enable monitoring if and only if at least one consumer is active.
  */
 static void validate_isw_monitoring(const struct device *dev)
 {
