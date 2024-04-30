@@ -14,7 +14,6 @@ flash: 1536
 supported:
   - gpio
   - i2c
-  - pwm
   - spi
   - watchdog
   - i2s
