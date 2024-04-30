@@ -38,8 +38,8 @@ jobs:
         git config --global user.name "Your Name"
         git remote -v
         # Ensure there's no merge commits in the PR
-        #[[ "$(git rev-list --merges --count origin/${BASE_REF}..)" == "0" ]] || \
-        #(echo "::error ::Merge commits not allowed, rebase instead";false)
+        [[ "$(git rev-list --merges --count origin/${BASE_REF}..)" == "0" ]] || \
+        (echo "::error ::Merge commits not allowed, rebase instead";false)
         git rebase origin/${BASE_REF}
         # debug
         git log  --pretty=oneline | head -n 10
@@ -57,8 +57,8 @@ jobs:
         # debug
         ls -la
         git log  --pretty=oneline | head -n 10
-        ./scripts/ci/check_compliance.py --annotate -e KconfigBasic -e Kconfig \
-        -e KconfigBasicNoModules -e ModulesMaintainers -c origin/${BASE_REF}..
+        ./scripts/ci/check_compliance.py --annotate -e KconfigBasic \
+        -c origin/${BASE_REF}..
 
     - name: upload-results
       uses: actions/upload-artifact@v4
