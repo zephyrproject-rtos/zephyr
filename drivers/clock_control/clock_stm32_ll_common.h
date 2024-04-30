@@ -50,8 +50,9 @@ void config_plli2s(void);
 #endif
 void config_enable_default_clocks(void);
 
-/* function exported to the soc power.c */
+/* functions exported to the soc power.c */
 int stm32_clock_control_init(const struct device *dev);
+void stm32_clock_control_standby_exit(void);
 
 #ifdef __cplusplus
 }
