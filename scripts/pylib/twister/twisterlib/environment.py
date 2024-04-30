@@ -386,6 +386,15 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
              "using additional build option `--target footprint`.")
 
     footprint_group.add_argument(
+        "--footprint-symbols",
+        nargs="+",
+        default=None,
+        choices=['all', 'ROM', 'RAM'],
+        help="Select which memory area symbols to include into the 'footprint' data object "
+             "in the 'twister.json' for each test suite built. "
+             "Implies '--create-rom-ram-report' with its source data. Default: %(default)s""")
+
+    footprint_group.add_argument(
         "--enable-size-report",
         action="store_true",
         help="Collect and report ROM/RAM section sizes for each test image built.")
@@ -775,6 +784,9 @@ def parse_arguments(parser, args, options = None):
 
     if options.last_metrics or options.compare_report:
         options.enable_size_report = True
+
+    if options.footprint_symbols:
+        options.create_rom_ram_report = True
 
     if options.aggressive_no_clean:
         options.no_clean = True

@@ -26,6 +26,7 @@ class Reporting:
         self.env = env
         self.timestamp = datetime.now().isoformat()
         self.outdir = os.path.abspath(env.options.outdir)
+        self.footprint = None
 
     @staticmethod
     def process_log(log_file):
@@ -350,6 +351,24 @@ class Reporting:
 
             if instance.recording is not None:
                 suite['recording'] = instance.recording
+
+            if (instance.status
+                    and instance.status not in ["error", "filtered"]
+                    and self.env.options.create_rom_ram_report
+                    and self.env.options.footprint_symbols is not None):
+                suite['footprint'] = {}
+                do_all = 'all' in self.env.options.footprint_symbols
+                footprint_files = { 'ROM': 'rom.json', 'RAM': 'ram.json' }
+                for k,v in footprint_files.items():
+                    if do_all or k in self.env.options.footprint_symbols:
+                        footprint_fname = os.path.join(instance.build_dir, v)
+                        try:
+                            with open(footprint_fname, "rt") as footprint_json:
+                                logger.debug(f"Include footprint.{k} to '{instance.name}'")
+                                suite['footprint'][k] = json.load(footprint_json)
+                        except FileNotFoundError:
+                            logger.warning(f"No footprint.{k} for '{instance.name}'")
+                #
 
             suites.append(suite)
 
