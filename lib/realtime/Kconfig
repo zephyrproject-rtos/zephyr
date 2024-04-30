@@ -27,4 +27,13 @@ config SYS_REALTIME_CONVERT_NATIVE_MAX_YEAR
 
 endif # SYS_REALTIME_CONVERT_NATIVE
 
+choice SYS_REALTIME_BASE_CLOCK
+	prompt "System real-time base clock"
+	default SYS_REALTIME_BASE_CLOCK_SYS_CLOCK
+
+config SYS_REALTIME_BASE_CLOCK_SYS_CLOCK
+	bool "Use system clock as base clock for system realtime"
+
+endchoice # SYS_REALTIME_BASE_CLOCK
+
 endif # SYS_REALTIME
