@@ -46,7 +46,7 @@ BUILD_ASSERT(sizeof(intptr_t) == sizeof(long));
 
 #define K_ANY NULL
 
-#if CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES == 0
+#if (CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES) == 0
 #error Zero available thread priorities defined!
 #endif
 
@@ -5383,7 +5383,7 @@ void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
 /* Hand-calculated minimum heap sizes needed to return a successful
  * 1-byte allocation.  See details in lib/os/heap.[ch]
  */
-#define Z_HEAP_MIN_SIZE (sizeof(void *) > 4 ? 56 : 44)
+#define Z_HEAP_MIN_SIZE ((sizeof(void *) > 4) ? 56 : 44)
 
 /**
  * @brief Define a static k_heap in the specified linker section
