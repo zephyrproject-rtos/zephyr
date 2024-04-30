@@ -86,8 +86,16 @@ struct usbd_desc_node *usbd_get_descriptor(struct usbd_contex *const uds_ctx,
 	struct usbd_desc_node *desc_nd;
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&uds_ctx->descriptors, desc_nd, node) {
-		if (desc_nd->str.idx == idx && desc_nd->bDescriptorType == type) {
-			return desc_nd;
+		if (desc_nd->bDescriptorType == type) {
+			if (desc_nd->bDescriptorType == USB_DESC_STRING) {
+				if (desc_nd->str.idx == idx) {
+					return desc_nd;
+				}
+			}
+
+			if (desc_nd->bDescriptorType == USB_DESC_BOS) {
+				return desc_nd;
+			}
 		}
 	}
 
@@ -133,13 +141,17 @@ int usbd_add_descriptor(struct usbd_contex *const uds_ctx,
 		goto add_descriptor_error;
 	}
 
-	ret = desc_add_and_update_idx(uds_ctx, desc_nd);
-	if (ret) {
-		ret = -EINVAL;
-		goto add_descriptor_error;
+	if (desc_nd->bDescriptorType == USB_DESC_BOS) {
+		sys_dlist_append(&uds_ctx->descriptors, &desc_nd->node);
 	}
 
 	if (desc_nd->bDescriptorType == USB_DESC_STRING) {
+		ret = desc_add_and_update_idx(uds_ctx, desc_nd);
+		if (ret) {
+			ret = -EINVAL;
+			goto add_descriptor_error;
+		}
+
 		switch (desc_nd->str.utype) {
 		case USBD_DUT_STRING_LANG:
 			break;
@@ -178,6 +190,9 @@ void usbd_remove_descriptor(struct usbd_desc_node *const desc_nd)
 {
 	if (sys_dnode_is_linked(&desc_nd->node)) {
 		sys_dlist_remove(&desc_nd->node);
-		desc_nd->str.idx = 0;
+
+		if (desc_nd->bDescriptorType == USB_DESC_STRING) {
+			desc_nd->str.idx = 0U;
+		}
 	}
 }
