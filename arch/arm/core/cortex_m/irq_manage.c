@@ -131,7 +131,7 @@ void _arch_isr_direct_pm(void)
 
 	if (_kernel.idle) {
 		_kernel.idle = 0;
-		z_pm_save_idle_exit();
+		pm_system_resume();
 	}
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)

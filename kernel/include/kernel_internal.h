@@ -243,26 +243,6 @@ void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
  */
 bool pm_system_suspend(int32_t ticks);
 
-/**
- * Notify exit from kernel idling after PM operations
- *
- * This function would notify exit from kernel idling if a corresponding
- * pm_system_suspend() notification was handled and did not return
- * PM_STATE_ACTIVE.
- *
- * This function would be called from the ISR context of the event
- * that caused the exit from kernel idling. This will be called immediately
- * after interrupts are enabled. This is called to give a chance to do
- * any operations before the kernel would switch tasks or processes nested
- * interrupts. This is required for cpu low power states that would require
- * interrupts to be enabled while entering low power states. e.g. C1 in x86. In
- * those cases, the ISR would be invoked immediately after the event wakes up
- * the CPU, before code following the CPU wait, gets a chance to execute. This
- * can be ignored if no operation needs to be done at the wake event
- * notification.
- */
-void pm_system_resume(void);
-
 #endif /* CONFIG_PM */
 
 #ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
