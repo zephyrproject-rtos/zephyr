@@ -39,6 +39,33 @@
 		reg = <0x80000000 DT_SIZE_M(32)>;
 	};
 
+	/*
+	 * This node describes the GPIO pins of the parallel FPC interface,
+	 * This interface is standard to several NXP EVKs, and is used with
+	 * several parallel LCD displays (available as zephyr shields)
+	 */
+	nxp_parallel_lcd_connector: parallel-connector {
+		compatible = "nxp,parallel-lcd-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0  0 &gpio2 31 0>;	/* Pin 1, BL+ */
+	};
+
+	/*
+	 * This node describes the GPIO pins of the I2C display FPC interface,
+	 * This interface is standard to several NXP EVKs, and is used with
+	 * several parallel LCD displays (available as zephyr shields)
+	 */
+	nxp_i2c_touch_fpc: i2c-touch-connector {
+		compatible = "nxp,i2c-tsc-fpc";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<1  0 &gpio1 2 0>,	/* Pin 2, LCD touch RST */
+				<2  0 &gpio1 11 0>;	/* Pin 3, LCD touch INT */
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		green_led: led-1 {
@@ -114,7 +141,7 @@ arduino_serial: &lpuart3 {
 	pinctrl-names = "default", "flowcontrol", "sleep";
 };
 
-&lcdif {
+zephyr_lcdif: &lcdif {
 	status = "okay";
 	width = <480>;
 	height = <272>;
@@ -143,6 +170,8 @@ arduino_serial: &lpuart3 {
 		};
 	};
 };
+
+nxp_touch_i2c: &lpi2c1 {};
 
 arduino_i2c: &lpi2c1 {
 	status = "okay";
