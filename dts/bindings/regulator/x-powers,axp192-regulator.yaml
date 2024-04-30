@@ -51,7 +51,6 @@ child-binding:
         - regulator-max-microvolt
         - regulator-always-on
         - regulator-boot-on
-        - regulator-boot-off
         - regulator-initial-mode
         - regulator-allowed-modes
 

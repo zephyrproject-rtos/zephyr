@@ -45,7 +45,6 @@ child-binding:
       property-allowlist:
         - regulator-always-on
         - regulator-boot-on
-        - regulator-boot-off
         - regulator-max-microamp
         - regulator-min-microvolt
         - regulator-max-microvolt
