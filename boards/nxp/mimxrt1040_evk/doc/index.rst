@@ -118,6 +118,10 @@ already supported, which can also be re-used on this mimxrt1040_evk board:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| DISPLAY   | on-chip    | eLCDIF. Tested with                 |
+|           |            | :ref:`rk043fn02h_ct`, and           |
+|           |            | :ref:`rk043fn66hs_ctg` shields      |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in
 :zephyr_file:`boards/nxp/mimxrt1040_evk/mimxrt1040_evk_defconfig`
