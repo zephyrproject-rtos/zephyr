@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/usb/usbd.h>
+#include <zephyr/usb/bos.h>
 #include <zephyr/sys/iterable_sections.h>
 
 #include <zephyr/logging/log.h>
@@ -36,6 +37,19 @@ USBD_CONFIGURATION_DEFINE(sample_fs_config,
 USBD_CONFIGURATION_DEFINE(sample_hs_config,
 			  attributes,
 			  CONFIG_SAMPLE_USBD_MAX_POWER);
+
+/*
+ * This does not yet provide valuable information, but rather serves as an
+ * example, and will be improved in the future.
+ */
+static const struct usb_bos_capability_lpm bos_cap_lpm = {
+	.bLength = sizeof(struct usb_bos_capability_lpm),
+	.bDescriptorType = USB_DESC_DEVICE_CAPABILITY,
+	.bDevCapabilityType = USB_BOS_CAPABILITY_EXTENSION,
+	.bmAttributes = 0UL,
+};
+
+USBD_DESC_BOS_DEFINE(sample_usbext, sizeof(bos_cap_lpm), &bos_cap_lpm);
 
 static int register_fs_classes(struct usbd_contex *uds_ctx)
 {
@@ -165,6 +179,17 @@ struct usbd_contex *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
 		err = usbd_msg_register_cb(&sample_usbd, msg_cb);
 		if (err) {
 			LOG_ERR("Failed to register message callback");
+			return NULL;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_SAMPLE_USBD_20_EXTENSION_DESC)) {
+		(void)usbd_device_set_bcd(&sample_usbd, USBD_SPEED_FS, 0x0201);
+		(void)usbd_device_set_bcd(&sample_usbd, USBD_SPEED_HS, 0x0201);
+
+		err = usbd_add_descriptor(&sample_usbd, &sample_usbext);
+		if (err) {
+			LOG_ERR("Failed to add USB 2.0 Extension Descriptor");
 			return NULL;
 		}
 	}
