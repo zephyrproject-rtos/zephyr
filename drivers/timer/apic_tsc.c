@@ -64,7 +64,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	uint64_t now = rdtsc();
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t expires = now + MAX(ticks - 1, 0) * CYC_PER_TICK;
+	uint64_t expires = now + (MAX(ticks - 1, 0) * CYC_PER_TICK);
 
 	expires = last_announce + (((expires - last_announce + CYC_PER_TICK - 1)
 				    / CYC_PER_TICK) * CYC_PER_TICK);
@@ -77,7 +77,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * real hardware it requires more than a century of uptime,
 	 * but this is cheap and safe.
 	 */
-	if (ticks == K_TICKS_FOREVER || expires < last_announce) {
+	if ((ticks == K_TICKS_FOREVER) || (expires < last_announce)) {
 		expires = UINT64_MAX;
 	}
 
