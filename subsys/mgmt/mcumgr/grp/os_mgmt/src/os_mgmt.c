@@ -469,9 +469,9 @@ os_mgmt_bootloader_info(struct smp_streamer *ctxt)
 
 		ok = zcbor_tstr_put_lit(zse, "mode") &&
 		     zcbor_int32_put(zse, BOOTLOADER_MODE);
-#ifdef CONFIG_MCUBOOT_BOOTLOADER_NO_DOWNGRADE
-		ok = ok && zcbor_tstr_put_lit(zse, "no-downgrade") &&
-		     zcbor_bool_encode(zse, &(bool){true});
+#if IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_NO_DOWNGRADE)
+		ok = zcbor_tstr_put_lit(zse, "no-downgrade") &&
+		     zcbor_bool_encode(zse, true);
 #endif
 	} else {
 		return OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER;
