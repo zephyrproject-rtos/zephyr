@@ -930,6 +930,175 @@ __comp_west_blobs()
 	esac
 }
 
+__comp_west_twister()
+{
+	local bool_opts="
+		--aggressive-no-clean
+		--all -l
+		--all-deltas -D
+		--allow-installed-plugin
+		--build-only -b
+		--clobber-output -c
+		--cmake-only
+		--coverage -C
+		--create-rom-ram-report
+		--detailed-skipped-report
+		--detailed-test-id
+		--device-flash-with-test
+		--device-testing
+		--disable-suite-name-check
+		--disable-unrecognized-section-test
+		--disable-warnings-as-errors -W
+		--dry-run -y
+		--emulation-only
+		--enable-asan
+		--enable-coverage
+		--enable-lsan
+		--enable-size-report
+		--enable-slow -S
+		--enable-slow-only
+		--enable-ubsan
+		--enable-valgrind
+		--flash-before
+		--footprint-from-buildlog
+		--force-color
+		--force-platform -K
+		--force-toolchain
+		--ignore-platform-key
+		--inline-logs -i
+		--integration -G
+		--last-metrics -m
+		--list-tags
+		--list-tests
+		--make -k
+		--ninja -N
+		--no-clean -n
+		--no-detailed-test-id
+		--no-update -u
+		--only-failed -f
+		--overflow-as-errors
+		--persistent-hardware-map
+		--platform-reports
+		--prep-artifacts-for-testing
+		--quarantine-verify
+		--retry-build-errors
+		--short-build-path
+		--show-footprint
+		--shuffle-tests
+		--test-only
+		--test-tree
+		--timestamps
+		--verbose -v
+	"
+
+	local dir_opts="
+		--alt-config-root
+		--board-root -A
+		--coverage-basedir
+		--outdir -O
+		--report-dir -o
+		--testsuite-root -T
+	"
+
+	local file_opts="
+		--compare-report
+		--device-serial
+		--device-serial-pty
+		--gcov-tool
+		--generate-hardware-map
+		--hardware-map
+		--load-tests -F
+		--log-file
+		--package-artifacts
+		--pre-script
+		--quarantine-list
+		--save-tests -E
+		--size -z
+		--test-config
+	"
+
+	local special_opts="
+		--coverage-platform
+		--coverage-tool
+		--exclude-platform -P
+		--filter
+		--platform -p
+		--runtime-artifact-cleanup -M
+	"
+
+	local other_opts="
+		--arch -a
+		--coverage-formats
+		--device-flash-timeout
+		--device-serial-baud
+		--exclude-tag -e
+		--extra-args -x
+		--fixture -X
+		--footprint-threshold -H
+		--jobs -j
+		--level
+		--pytest-args
+		--report-name
+		--report-suffix
+		--retry-failed
+		--retry-interval
+		--scenario --test -s
+		--seed
+		--shuffle-tests-seed
+		--sub-test
+		--subset -B
+		--tag -t
+		--timeout-multiplier
+		--vendor
+		--west-flash
+		--west-runner
+	"
+
+	all_opts="$bool_opts $dir_opts $file_opts $special_opts $other_opts"
+
+	case "$prev" in
+		--platform|-p|--exclude-platform|-P|--coverage-platform)
+			__set_comp_west_boards
+			return
+		        ;;
+
+		--coverage-tool)
+		        __set_comp "gcovr lcov"
+			return
+		        ;;
+
+		--filter)
+		        __set_comp "buildable runnable"
+			return
+		        ;;
+
+		--runtime-artifact-cleanup|-M)
+		        __set_comp "all pass"
+			return
+		        ;;
+
+		$(__west_to_extglob "$dir_opts") )
+			__set_comp_dirs
+			return
+			;;
+
+		$(__west_to_extglob "$file_opts") )
+			__set_comp_files
+			return
+			;;
+
+		# We don't know how to autocomplete those
+		$(__west_to_extglob "$other_opts") )
+			return
+			;;
+	esac
+
+	case "$cur" in
+		-*)
+			__set_comp $all_opts
+			;;
+	esac
+}
 
 __comp_west()
 {
@@ -963,6 +1132,7 @@ __comp_west()
 		zephyr-export
 		spdx
 		blobs
+		twister
 	)
 
 	local cmds=(${builtin_cmds[*]} ${zephyr_ext_cmds[*]})
