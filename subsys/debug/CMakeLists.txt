@@ -34,3 +34,8 @@ add_subdirectory_ifdef(
   CONFIG_SYMTAB
   symtab
   )
+
+zephyr_sources_ifdef(
+  CONFIG_CS_TRACE_DEFMT
+  coresight/cs_trace_defmt.c
+)
