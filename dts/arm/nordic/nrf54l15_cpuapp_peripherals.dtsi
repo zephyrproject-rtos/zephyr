@@ -24,8 +24,6 @@ spi00: spi@4a000 {
 	interrupts = <74 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(32)>;
 	easydma-maxcnt-bits = <16>;
-	rx-delay-supported;
-	rx-delay = <1>;
 	status = "disabled";
 };
 
@@ -126,8 +124,6 @@ spi20: spi@c6000 {
 	interrupts = <198 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(8)>;
 	easydma-maxcnt-bits = <16>;
-	rx-delay-supported;
-	rx-delay = <1>;
 	status = "disabled";
 };
 
@@ -163,8 +159,6 @@ spi21: spi@c7000 {
 	interrupts = <199 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(8)>;
 	easydma-maxcnt-bits = <16>;
-	rx-delay-supported;
-	rx-delay = <1>;
 	status = "disabled";
 };
 
@@ -200,8 +194,6 @@ spi22: spi@c8000 {
 	interrupts = <200 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(8)>;
 	easydma-maxcnt-bits = <16>;
-	rx-delay-supported;
-	rx-delay = <1>;
 	status = "disabled";
 };
 
@@ -399,8 +391,6 @@ spi30: spi@104000 {
 	interrupts = <260 NRF_DEFAULT_IRQ_PRIORITY>;
 	max-frequency = <DT_FREQ_M(8)>;
 	easydma-maxcnt-bits = <16>;
-	rx-delay-supported;
-	rx-delay = <1>;
 	status = "disabled";
 };
 
