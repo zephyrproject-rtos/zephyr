@@ -370,14 +370,15 @@ def process_sysbuildkconfig(module, meta):
                  'not point to a valid Kconfig file.'
                  .format(module_yml, kconfig_setting))
 
-    if kconfig_setting is None:
-        return ""
+    if kconfig_setting is not None:
+        kconfig_file = os.path.join(module, kconfig_setting)
+        if os.path.isfile(kconfig_file):
+            return kconfig_snippet(meta, module_path, Path(kconfig_file))
 
-    kconfig_file = os.path.join(module, kconfig_setting)
-    if os.path.isfile(kconfig_file):
-        return kconfig_snippet(meta, module_path, Path(kconfig_file))
-    else:
-        return ""
+    name_sanitized = meta['name-sanitized']
+    return (f'config ZEPHYR_{name_sanitized.upper()}_MODULE\n'
+            f'   bool\n'
+            f'   default y\n')
 
 
 def process_twister(module, meta):

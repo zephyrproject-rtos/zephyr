@@ -20,4 +20,10 @@ config SPI_DW_ACCESS_WORD_ONLY
 	  DesignWare SPI only allows word access, byte access will raise
 	  exception.
 
+config SPI_DW_HSSI
+	bool "Designware SPI HSSI variant"
+	help
+	  Use register layout compatible with the SPI DW HSSI variant of the
+	  peripheral.
+
 endif # SPI_DW

@@ -661,6 +661,12 @@ static int hci_set_ad_ext(struct bt_le_ext_adv *adv, uint16_t hci_op,
 		return -EAGAIN;
 	}
 
+	if (total_len_bytes > bt_dev.le.max_adv_data_len) {
+		LOG_WRN("adv or scan rsp data too large (%d > max %d)", total_len_bytes,
+			bt_dev.le.max_adv_data_len);
+		return -EDOM;
+	}
+
 	if (total_len_bytes <= BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN) {
 		/* If possible, set all data at once.
 		 * This allows us to update advertising data while advertising.

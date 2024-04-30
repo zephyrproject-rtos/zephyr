@@ -856,6 +856,8 @@ static void print_wifi_stats(struct net_if *iface, struct net_stats_wifi *data,
 	PR("Mcast sent       : %u\n", data->multicast.tx);
 	PR("Beacons received : %u\n", data->sta_mgmt.beacons_rx);
 	PR("Beacons missed   : %u\n", data->sta_mgmt.beacons_miss);
+	PR("Unicast received : %u\n", data->unicast.rx);
+	PR("Unicast sent     : %u\n", data->unicast.tx);
 }
 #endif /* CONFIG_NET_STATISTICS_WIFI && CONFIG_NET_STATISTICS_USER_API */
 

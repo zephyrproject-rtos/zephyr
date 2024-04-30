@@ -326,7 +326,6 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc, struct llcp_mem_po
 	}
 
 	ctx->proc = proc;
-	ctx->collision = 0U;
 	ctx->done = 0U;
 	ctx->rx_greedy = 0U;
 	ctx->node_ref.rx = NULL;
