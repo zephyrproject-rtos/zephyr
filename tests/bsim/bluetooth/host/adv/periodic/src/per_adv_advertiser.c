@@ -407,7 +407,7 @@ static const struct bst_test_instance per_adv_advertiser[] = {
 	{
 		.test_id = "per_adv_long_data_advertiser",
 		.test_descr = "Periodic advertising test with a longer data length. "
-			      "To test the syncers reassembly of large data packets",
+			      "To test the reassembly of large data packets",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_long_data_advertiser
