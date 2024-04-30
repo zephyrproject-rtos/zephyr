@@ -1375,6 +1375,7 @@ Release Notes:
     - include/zephyr/dt-bindings/i2c/
     - tests/boards/*/i2c/
     - tests/drivers/*/i2c/
+    - samples/drivers/i2c/
   labels:
     - "area: I2C"
   tests:
