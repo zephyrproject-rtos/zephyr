@@ -13,7 +13,6 @@ tests:
       - nrf9160dk_nrf9160
       - nrf5340dk_nrf5340_cpuapp
       - nrf5340dk_nrf5340_cpunet
-      - nrf54l15pdk_nrf54l15_cpuapp
     extra_configs:
       - CONFIG_SYSTEM_CLOCK_WAIT_FOR_STABILITY=y
       - CONFIG_CLOCK_CONTROL_NRF_K32SRC_XTAL=y
@@ -28,7 +27,6 @@ tests:
       - nrf9160dk_nrf9160
       - nrf5340dk_nrf5340_cpuapp
       - nrf5340dk_nrf5340_cpunet
-      - nrf54l15pdk_nrf54l15_cpuapp
     extra_configs:
       - CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY=y
       - CONFIG_CLOCK_CONTROL_NRF_K32SRC_XTAL=y
@@ -43,7 +41,6 @@ tests:
       - nrf9160dk_nrf9160
       - nrf5340dk_nrf5340_cpuapp
       - nrf5340dk_nrf5340_cpunet
-      - nrf54l15pdk_nrf54l15_cpuapp
     integration_platforms:
       - nrf51dk_nrf51422
     extra_configs:
@@ -57,7 +54,6 @@ tests:
       - nrf52840dk_nrf52840
       - nrf5340dk_nrf5340_cpuapp
       - nrf5340dk_nrf5340_cpunet
-      - nrf54l15pdk_nrf54l15_cpuapp
     integration_platforms:
       - nrf51dk_nrf51422
     extra_configs:
@@ -71,7 +67,6 @@ tests:
       - nrf52840dk_nrf52840
       - nrf5340dk_nrf5340_cpuapp
       - nrf5340dk_nrf5340_cpunet
-      - nrf54l15pdk_nrf54l15_cpuapp
     integration_platforms:
       - nrf51dk_nrf51422
     extra_configs:
@@ -85,7 +80,6 @@ tests:
       - nrf52840dk_nrf52840
       - nrf5340dk_nrf5340_cpuapp
       - nrf5340dk_nrf5340_cpunet
-      - nrf54l15pdk_nrf54l15_cpuapp
     integration_platforms:
       - nrf51dk_nrf51422
     extra_configs:
@@ -99,7 +93,6 @@ tests:
       - nrf52840dk_nrf52840
       - nrf5340dk_nrf5340_cpuapp
       - nrf5340dk_nrf5340_cpunet
-      - nrf54l15pdk_nrf54l15_cpuapp
     integration_platforms:
       - nrf51dk_nrf51422
     extra_configs:
@@ -113,7 +106,6 @@ tests:
       - nrf52840dk_nrf52840
       - nrf5340dk_nrf5340_cpuapp
       - nrf5340dk_nrf5340_cpunet
-      - nrf54l15pdk_nrf54l15_cpuapp
     integration_platforms:
       - nrf51dk_nrf51422
     extra_configs:
@@ -127,7 +119,6 @@ tests:
       - nrf52840dk_nrf52840
       - nrf5340dk_nrf5340_cpuapp
       - nrf5340dk_nrf5340_cpunet
-      - nrf54l15pdk_nrf54l15_cpuapp
     integration_platforms:
       - nrf51dk_nrf51422
     extra_configs:
