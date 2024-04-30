@@ -276,8 +276,17 @@ struct bt_hci_cmd_hdr {
 #define BT_FEAT_LE_ISO(feat)            (BT_FEAT_LE_CIS(feat) | \
 					BT_FEAT_LE_BIS(feat))
 
-/* LE States */
-#define BT_LE_STATES_PER_CONN_ADV(states)     (states & 0x0000004000000000)
+/* LE States. See Core_v5.4, Vol 4, Part E, Section 7.8.27 */
+#define BT_LE_STATES_PER_CONN_ADV(states)     (states & BIT64_MASK(38))
+
+#if defined(CONFIG_BT_SCAN_AND_INITIATE_IN_PARALLEL)
+/* Both passive and active scanner can be run in parallel with initiator. */
+#define BT_LE_STATES_SCAN_INIT(states) ((states) & BIT64_MASK(22) && \
+					(states) & BIT64_MASK(23))
+
+#else
+#define BT_LE_STATES_SCAN_INIT(states)  0
+#endif
 
 /* Bonding/authentication types */
 #define BT_HCI_NO_BONDING                       0x00
