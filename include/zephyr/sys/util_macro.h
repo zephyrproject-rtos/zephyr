@@ -623,6 +623,8 @@ extern "C" {
 /**
  * @brief Number of arguments in the variable arguments list minus one.
  *
+ * @note Supports up to 64 arguments.
+ *
  * @param ... List of arguments
  * @return  Number of variadic arguments in the argument list, minus one
  */
