@@ -55,12 +55,10 @@ static void test_transfer(const struct device *dev, uint32_t id)
 		dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
 #endif
 
-		zassert_false(dma_config(dev, id, &dma_cfg),
-					"Not able to config transfer %d",
-					transfer_count + 1);
-		zassert_false(dma_start(dev, id),
-					"Not able to start next transfer %d",
-					transfer_count + 1);
+		zassert_ok(dma_config(dev, id, &dma_cfg), "Not able to config transfer %d",
+			   transfer_count + 1);
+		zassert_ok(dma_start(dev, id), "Not able to start next transfer %d",
+			   transfer_count + 1);
 	}
 }
 
