@@ -259,7 +259,7 @@ __subsystem struct i2c_driver_api {
 typedef int (*i2c_target_api_register_t)(const struct device *dev);
 typedef int (*i2c_target_api_unregister_t)(const struct device *dev);
 
-struct i2c_target_driver_api {
+__subsystem struct i2c_target_driver_api {
 	i2c_target_api_register_t driver_register;
 	i2c_target_api_unregister_t driver_unregister;
 };

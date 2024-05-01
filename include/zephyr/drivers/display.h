@@ -217,7 +217,7 @@ typedef int (*display_set_orientation_api)(const struct device *dev,
  * @brief Display driver API
  * API which a display driver should expose
  */
-struct display_driver_api {
+__subsystem struct display_driver_api {
 	display_blanking_on_api blanking_on;
 	display_blanking_off_api blanking_off;
 	display_write_api write;
