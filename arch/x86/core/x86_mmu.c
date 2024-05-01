@@ -2008,9 +2008,7 @@ static void mark_addr_page_reserved(uintptr_t addr, size_t len)
 			continue;
 		}
 
-		struct z_page_frame *pf = z_phys_to_page_frame(pos);
-
-		pf->flags |= Z_PAGE_FRAME_RESERVED;
+		z_page_frame_set(z_phys_to_page_frame(pos), Z_PAGE_FRAME_RESERVED);
 	}
 }
 
