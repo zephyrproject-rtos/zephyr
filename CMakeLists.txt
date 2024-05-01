@@ -200,7 +200,8 @@ elseif(CONFIG_SPEED_OPTIMIZATIONS)
 elseif(CONFIG_SIZE_OPTIMIZATIONS)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_FLAG}) # Default in kconfig
 else()
-  assert(0 "Unreachable code. Expected optimization level to have been chosen. See Kconfig.zephyr")
+  message(FATAL_ERROR
+    "Unreachable code. Expected optimization level to have been chosen. See Kconfig.zephyr")
 endif()
 
 if(NOT CONFIG_ARCH_IS_SET)
@@ -247,7 +248,8 @@ if(CONFIG_CPP)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp2b>)
     list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp20})
   else()
-    assert(0 "Unreachable code. Expected C++ standard to have been chosen. See Kconfig.zephyr.")
+    message(FATAL_ERROR
+      "Unreachable code. Expected C++ standard to have been chosen. See Kconfig.zephyr.")
   endif()
   set(CMAKE_CXX_COMPILE_FEATURES ${CMAKE_CXX_COMPILE_FEATURES} PARENT_SCOPE)
 
@@ -955,7 +957,28 @@ if(CONFIG_USERSPACE)
 endif()
 
 get_property(CSTD GLOBAL PROPERTY CSTD)
-set_ifndef(CSTD c99)
+if(NOT DEFINED CSTD)
+  if(CONFIG_STD_C23)
+    set(CSTD c2x)
+  elseif(CONFIG_STD_C17)
+    set(CSTD c17)
+  elseif(CONFIG_STD_C11)
+    set(CSTD c11)
+  elseif(CONFIG_STD_C99)
+    set(CSTD c99)
+  elseif(CONFIG_STD_C90)
+    set(CSTD c90)
+  else()
+    message(FATAL_ERROR "Unreachable code. Expected C standard to have been chosen.")
+  endif()
+
+  if(CONFIG_GNU_C_EXTENSIONS)
+    string(REPLACE "c" "gnu" CSTD "${CSTD}")
+  endif()
+else()
+  message(DEPRECATION
+    "Global CSTD property is deprecated, see Kconfig.zephyr for C Standard options.")
+endif()
 
 # @Intent: Obtain compiler specific flag for specifying the c standard
 zephyr_compile_options(

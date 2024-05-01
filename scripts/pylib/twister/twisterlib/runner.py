@@ -268,7 +268,7 @@ class CMake:
             p = self.jobserver.popen(cmd, **kwargs)
         else:
             p = subprocess.Popen(cmd, **kwargs)
-        logger.debug(f'Running {"".join(cmd)}')
+        logger.debug(f'Running {" ".join(cmd)}')
 
         out, _ = p.communicate()
 
@@ -299,7 +299,7 @@ class CMake:
                     log.write(log_msg)
 
             if log_msg:
-                overflow_found = re.findall("region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM|dram0_1_seg)' overflowed by", log_msg)
+                overflow_found = re.findall("region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM|dram\\d_\\d_seg)' overflowed by", log_msg)
                 imgtool_overflow_found = re.findall(r"Error: Image size \(.*\) \+ trailer \(.*\) exceeds requested size", log_msg)
                 if overflow_found and not self.options.overflow_as_errors:
                     logger.debug("Test skipped due to {} Overflow".format(overflow_found[0]))
@@ -662,8 +662,12 @@ class ProjectBuilder(FilterBuilder):
                         pipeline.put({"op": "report", "test": self.instance})
 
         elif op == "gather_metrics":
-            self.gather_metrics(self.instance)
-            if self.instance.run and self.instance.handler.ready:
+            ret = self.gather_metrics(self.instance)
+            if not ret or ret.get('returncode', 1) > 0:
+                self.instance.status = "error"
+                self.instance.reason = "Build Failure at gather_metrics."
+                pipeline.put({"op": "report", "test": self.instance})
+            elif self.instance.run and self.instance.handler.ready:
                 pipeline.put({"op": "run", "test": self.instance})
             else:
                 pipeline.put({"op": "report", "test": self.instance})
@@ -731,7 +735,7 @@ class ProjectBuilder(FilterBuilder):
                     if matches:
                         for m in matches:
                             # new_ztest_suite = m[0] # not used for now
-                            test_func_name = m[1].replace("test_", "")
+                            test_func_name = m[1].replace("test_", "", 1)
                             testcase_id = f"{yaml_testsuite_name}.{test_func_name}"
                             detected_cases.append(testcase_id)
 
@@ -1133,8 +1137,9 @@ class ProjectBuilder(FilterBuilder):
         sys.stdout.flush()
 
     def gather_metrics(self, instance: TestInstance):
+        build_result = {"returncode": 0}
         if self.options.create_rom_ram_report:
-            self.run_build(['--build', self.build_dir, "--target", "footprint"])
+            build_result = self.run_build(['--build', self.build_dir, "--target", "footprint"])
         if self.options.enable_size_report and not self.options.cmake_only:
             self.calc_size(instance=instance, from_buildlog=self.options.footprint_from_buildlog)
         else:
@@ -1143,6 +1148,7 @@ class ProjectBuilder(FilterBuilder):
             instance.metrics["available_rom"] = 0
             instance.metrics["available_ram"] = 0
             instance.metrics["unrecognized"] = []
+        return build_result
 
     @staticmethod
     def calc_size(instance: TestInstance, from_buildlog: bool):

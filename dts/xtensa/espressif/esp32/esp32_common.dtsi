@@ -425,5 +425,26 @@
 			status = "disabled";
 		};
 
+		sdhc: sdhc@3ff68000 {
+			compatible = "espressif,esp32-sdhc";
+			reg = <0x3ff68000 0x1000>;
+			interrupts = <SDIO_HOST_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_SDMMC_MODULE>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			sdhc0: sdhc@0 {
+				compatible = "espressif,esp32-sdhc-slot";
+				reg = <0>;
+				status = "disabled";
+			};
+
+			sdhc1: sdhc@1 {
+				compatible = "espressif,esp32-sdhc-slot";
+				reg = <1>;
+				status = "disabled";
+			};
+		};
 	};
 };

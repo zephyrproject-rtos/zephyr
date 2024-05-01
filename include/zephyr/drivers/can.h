@@ -171,10 +171,7 @@ enum can_state {
  */
 struct can_frame {
 	/** Standard (11-bit) or extended (29-bit) CAN identifier. */
-	uint32_t id  : 29;
-	/** @cond INTERNAL_HIDDEN */
-	uint8_t res0 : 3; /* reserved/padding. */
-	/** @endcond */
+	uint32_t id;
 	/** Data Length Code (DLC) indicating data length in bytes. */
 	uint8_t dlc;
 	/** Flags. @see @ref CAN_FRAME_FLAGS. */
@@ -190,7 +187,8 @@ struct can_frame {
 	uint16_t timestamp;
 #else
 	/** @cond INTERNAL_HIDDEN */
-	uint16_t res1;  /* reserved/padding. */
+	/** Padding. */
+	uint16_t reserved;
 	/** @endcond */
 #endif
 	/** The frame payload data. */
@@ -212,7 +210,6 @@ struct can_frame {
 /** Filter matches frames with extended (29-bit) CAN IDs */
 #define CAN_FILTER_IDE  BIT(0)
 
-
 /** @} */
 
 /**
@@ -220,14 +217,11 @@ struct can_frame {
  */
 struct can_filter {
 	/** CAN identifier to match. */
-	uint32_t id           : 29;
-	/** @cond INTERNAL_HIDDEN */
-	uint32_t res0         : 3;
-	/** @endcond */
+	uint32_t id;
 	/** CAN identifier matching mask. If a bit in this mask is 0, the value
 	 * of the corresponding bit in the ``id`` field is ignored by the filter.
 	 */
-	uint32_t mask         : 29;
+	uint32_t mask;
 	/** Flags. @see @ref CAN_FILTER_FLAGS. */
 	uint8_t flags;
 };
@@ -1369,17 +1363,8 @@ __syscall int can_send(const struct device *dev, const struct can_frame *frame,
  * @retval -EINVAL if the requested filter type is invalid.
  * @retval -ENOTSUP if the requested filter type is not supported.
  */
-static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
-				    void *user_data, const struct can_filter *filter)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
-
-	if (filter == NULL) {
-		return -EINVAL;
-	}
-
-	return api->add_rx_filter(dev, callback, user_data, filter);
-}
+int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
+		      void *user_data, const struct can_filter *filter);
 
 /**
  * @brief Statically define and initialize a CAN RX message queue.

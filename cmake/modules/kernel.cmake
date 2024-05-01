@@ -168,6 +168,11 @@ set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
 set(KERNEL_META_NAME  ${KERNEL_NAME}.meta)
 set(KERNEL_SYMBOLS_NAME    ${KERNEL_NAME}.symbols)
 
+# Enable dynamic library support when required by LLEXT.
+if(CONFIG_LLEXT AND CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
+  set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
+endif()
+
 include(${BOARD_DIR}/board.cmake OPTIONAL)
 
 # If we are using a suitable ethernet driver inside qemu, then these options

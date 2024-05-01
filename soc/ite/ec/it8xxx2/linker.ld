@@ -65,10 +65,6 @@
 	#define MPU_ALIGN(region_size) . = ALIGN(4)
 #endif
 
-#ifdef CONFIG_SOC_IT8XXX2_SHA256_HW_ACCELERATE
-#define SHA256_BLOCK_SIZE 0x200
-#endif
-
 #include <zephyr/linker/linker-devnull.h>
 
 MEMORY
@@ -130,6 +126,26 @@ SECTIONS
 		KEEP(*(.reset.*))
     } GROUP_LINK_IN(ROMABLE_REGION)
 
+#ifdef CONFIG_SOC_IT8XXX2_JTAG_DEBUG_INTERFACE
+#define JTAG_DEBUG_RESERVED_ADDR_START 0x80000800
+#define JTAG_DEBUG_RESERVED_ADDR_END 0x800008FF
+	/* The CPU address from 0x80000800 to 0x800008FF is reserved for JTAG
+	 * debug usage. */
+	SECTION_PROLOGUE(jtag_dbg,,)
+	{
+		__jtag_dbg_pad_start = ABSOLUTE(.);
+		ASSERT((__jtag_dbg_pad_start < JTAG_DEBUG_RESERVED_ADDR_START),
+			"The start address of jtag debug section is incorrect.");
+
+		__jtag_dbg_pad_size = JTAG_DEBUG_RESERVED_ADDR_END - __jtag_dbg_pad_start;
+		. = . + __jtag_dbg_pad_size;
+
+		__jtag_dbg_pad_end = ABSOLUTE(.);
+		ASSERT((__jtag_dbg_pad_end == JTAG_DEBUG_RESERVED_ADDR_END),
+			"The end address of jtag debug section is incorrect.");
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
+
 #ifndef CONFIG_SOC_IT8XXX2_EXCEPTIONS_IN_RAM
     SECTION_PROLOGUE(_EXCEPTION_SECTION_NAME,,)
 	{
@@ -161,7 +177,7 @@ SECTIONS
 		/* Pad to match allocation of block in RAM,
 		 * maintaining code alignment against ILM */
 		__sha256_pad_block_start = .;
-		. = . + SHA256_BLOCK_SIZE;
+		. = . + CONFIG_SOC_IT8XXX2_SHA256_BLOCK_SIZE;
 #endif
 		/* Specially-tagged functions in SoC sources */
 		KEEP(*(.__ram_code))
@@ -249,15 +265,18 @@ SECTIONS
 		__sha256_ram_block_size = \
 			ABSOLUTE(. - __sha256_ram_block_start);
 		__sha256_ram_block_end = .;
-		ASSERT((__sha256_ram_block_size == SHA256_BLOCK_SIZE), \
-			"We need 512bytes for HW sha256 module");
+
+		ASSERT((__sha256_ram_block_size == CONFIG_SOC_IT8XXX2_SHA256_BLOCK_SIZE), \
+			"Not compatible ram size for HW sha256 module");
 		ASSERT((__sha256_ram_block_end < (RAM_BASE + 0x1000)), \
-			"512bytes must in SRAM first 4kbytes");
+			"sha256 ram block must in SRAM first 4kbytes");
 		ASSERT(((ABSOLUTE(__sha256_ram_block_start) & 0xfff) == \
 			(ABSOLUTE(__sha256_pad_block_start) & 0xfff)), \
 			"sha256 ram block needs the same offset with sha256 rom block");
+#else
+		__sha256_ram_block_size = 0;
 #endif
-		. += __ilm_flash_end - __ilm_flash_start;
+		. += __ilm_flash_end - __ilm_flash_start - __sha256_ram_block_size;
 		__ilm_ram_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 

@@ -152,7 +152,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: dddb7cf318d931c25623c34ecde20f3150d7f987
+      revision: e554857b07d54e2152c6f1a9b39da6d6c13fe7f7
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -183,17 +183,17 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 827224f29e99972cd3b999dba913ae4649790671
+      revision: bdef8b66d5f59d95c09889918a04ddaecce322c8
       path: modules/hal/nordic
       groups:
         - hal
     - name: hal_nuvoton
-      revision: 34efb92e37bd07043a2cab7fff847d8443d930f9
+      revision: ab342e6915bf7bff2203a20985754f6dbdb5343d
       path: modules/hal/nuvoton
       groups:
         - hal
     - name: hal_nxp
-      revision: cd046faf8a3dc879982ff6079fc48a80a0d53e7c
+      revision: 8c354a918c1272b40ad9b4ffecac1d89125efbe6
       path: modules/hal/nxp
       groups:
         - hal
@@ -210,7 +210,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 991e060b6825f0f6830f4dbccbed8252598f2a6d
+      revision: e3560c79db1a002014f061c611cd84a99e4f33de
       groups:
         - hal
     - name: hal_rpi_pico
@@ -282,7 +282,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 24ac8cc2be9384288829aac7477f522a7a71f3d4
+      revision: 78bfe750cde0f8dfcf81bb4c0a68243d45906def
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t

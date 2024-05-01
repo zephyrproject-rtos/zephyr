@@ -80,7 +80,11 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 		ret = esp_flash_read_encrypted(NULL, address, buffer, length);
 	}
 	flash_esp32_sem_give(dev);
-	return ret;
+	if (ret != 0) {
+		LOG_ERR("esp_flash_read failed %d", ret);
+		return -EIO;
+	}
+	return 0;
 }
 
 static int flash_esp32_write(const struct device *dev,
@@ -97,7 +101,12 @@ static int flash_esp32_write(const struct device *dev,
 		ret = esp_flash_write_encrypted(NULL, address, buffer, length);
 	}
 	flash_esp32_sem_give(dev);
-	return ret;
+
+	if (ret != 0) {
+		LOG_ERR("esp_flash_write failed %d", ret);
+		return -EIO;
+	}
+	return 0;
 }
 
 static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
@@ -105,7 +114,11 @@ static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 	flash_esp32_sem_take(dev);
 	int ret = esp_flash_erase_region(NULL, start, len);
 	flash_esp32_sem_give(dev);
-	return ret;
+	if (ret != 0) {
+		LOG_ERR("esp_flash_erase_region failed %d", ret);
+		return -EIO;
+	}
+	return 0;
 }
 
 #if CONFIG_FLASH_PAGE_LAYOUT

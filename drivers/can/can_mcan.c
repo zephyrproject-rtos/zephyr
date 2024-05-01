@@ -463,7 +463,10 @@ static void can_mcan_state_change_handler(const struct device *dev)
 	uint32_t cccr;
 	int err;
 
-	(void)can_mcan_get_state(dev, &state, &err_cnt);
+	err = can_mcan_get_state(dev, &state, &err_cnt);
+	if (err != 0) {
+		return;
+	}
 
 	if (state_cb != NULL) {
 		state_cb(dev, state, err_cnt, state_cb_data);
@@ -921,8 +924,6 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 		(frame->flags & CAN_FRAME_FDF) != 0U ? "FD frame" : "",
 		(frame->flags & CAN_FRAME_BRS) != 0U ? "BRS" : "");
 
-	__ASSERT_NO_MSG(callback != NULL);
-
 #ifdef CONFIG_CAN_FD_MODE
 	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR | CAN_FRAME_FDF | CAN_FRAME_BRS)) !=
 	    0) {
@@ -1163,10 +1164,6 @@ int can_mcan_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
 	const struct can_mcan_config *config = dev->config;
 	const struct can_mcan_callbacks *cbs = config->callbacks;
 	int filter_id;
-
-	if (callback == NULL) {
-		return -EINVAL;
-	}
 
 	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0U) {
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);

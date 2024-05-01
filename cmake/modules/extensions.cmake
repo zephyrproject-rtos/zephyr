@@ -1532,8 +1532,14 @@ endfunction()
 # Usage:
 #   zephyr_build_string(<out-variable>
 #                       BOARD <board>
+#                       [SHORT <out-variable>]
 #                       [BOARD_QUALIFIERS <qualifiers>]
 #                       [BOARD_REVISION <revision>]
+#                       [BUILD <type>]
+#                       [MERGE [REVERSE]]
+#   )
+#   zephyr_build_string(<out-variable>
+#                       BOARD_QUALIFIERS <qualifiers>
 #                       [BUILD <type>]
 #                       [MERGE [REVERSE]]
 #   )
@@ -1565,10 +1571,14 @@ endfunction()
 # `alpha_soc_bar_1_0_0;alpha_soc_bar` in `build_string` parameter.
 #
 # calling
-#   zephyr_build_string(build_string SHORTENED short_build_string BOARD alpha BOARD_REVISION 1.0.0 BOARD_QUALIFIERS /soc/bar MERGE)
+#   zephyr_build_string(build_string SHORT short_build_string BOARD alpha BOARD_REVISION 1.0.0 BOARD_QUALIFIERS /soc/bar MERGE)
 # will return two lists of the following strings
 # `alpha_soc_bar_1_0_0;alpha_soc_bar` in `build_string` parameter.
 # `alpha_bar_1_0_0;alpha_bar` in `short_build_string` parameter.
+#
+# calling
+#   zephyr_build_string(build_string BOARD_QUALIFIERS /soc/bar/foo)
+# will return the string `soc_bar_foo` in `build_string` parameter.
 #
 function(zephyr_build_string outvar)
   set(options MERGE REVERSE)
@@ -1589,10 +1599,17 @@ function(zephyr_build_string outvar)
     )
   endif()
 
-  if(DEFINED BUILD_STR_BOARD_QUALIFIERS AND NOT BUILD_STR_BOARD)
+  if(DEFINED BUILD_STR_BOARD_REVISION AND NOT DEFINED BUILD_STR_BOARD)
     message(FATAL_ERROR
-      "zephyr_build_string(${ARGV0} <list> BOARD_QUALIFIERS ${BUILD_STR_BOARD_QUALIFIERS} ...)"
-      " given without BOARD argument, please specify BOARD"
+      "zephyr_build_string(${ARGV0} <list> BOARD_REVISION ${BUILD_STR_BOARD_REVISION} ...)"
+      " given without BOARD argument, these must be used together"
+    )
+  endif()
+
+  if(DEFINED BUILD_STR_SHORT AND NOT DEFINED BUILD_STR_BOARD)
+    message(FATAL_ERROR
+      "zephyr_build_string(${ARGV0} <list> SHORT ${BUILD_STR_SHORT} ...)"
+      " given without BOARD argument, these must be used together"
     )
   endif()
 
@@ -2571,7 +2588,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
   if(${ARGV0} STREQUAL APPLICATION_ROOT)
     set(single_args APPLICATION_ROOT)
   elseif(${ARGV0} STREQUAL CONF_FILES)
-    set(options REQUIRED)
+    set(options QUALIFIERS REQUIRED)
     set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG BUILD SUFFIX)
     set(multi_args CONF_FILES NAMES)
   endif()
@@ -2640,14 +2657,22 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
       set(dts_filename_list ${ZFILE_NAMES})
       set(kconf_filename_list ${ZFILE_NAMES})
     else()
-      zephyr_build_string(filename_list
-                          SHORT shortened_filename_list
-                          BOARD ${ZFILE_BOARD}
-                          BOARD_REVISION ${ZFILE_BOARD_REVISION}
-                          BOARD_QUALIFIERS ${ZFILE_BOARD_QUALIFIERS}
-                          BUILD ${ZFILE_BUILD}
-                          MERGE REVERSE
-      )
+      if(NOT ZFILE_QUALIFIERS)
+        zephyr_build_string(filename_list
+                            SHORT shortened_filename_list
+                            BOARD ${ZFILE_BOARD}
+                            BOARD_REVISION ${ZFILE_BOARD_REVISION}
+                            BOARD_QUALIFIERS ${ZFILE_BOARD_QUALIFIERS}
+                            BUILD ${ZFILE_BUILD}
+                            MERGE REVERSE
+        )
+      else()
+        zephyr_build_string(filename_list
+                            BOARD_QUALIFIERS ${ZFILE_BOARD_QUALIFIERS}
+                            BUILD ${ZFILE_BUILD}
+                            MERGE REVERSE
+        )
+      endif()
 
       set(dts_filename_list ${filename_list})
       set(dts_shortened_filename_list ${shortened_filename_list})

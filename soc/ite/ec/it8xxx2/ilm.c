@@ -176,7 +176,7 @@ static const struct ilm_config ilm_config = {
 		SCAR_REG(13),
 		SCAR_REG(14),
 		/*
-		 * Except for CONFIG_SOC_IT81202_CX and CONFIG_SOC_IT81302_CX
+		 * Except for CONFIG_SOC_IT81202CX and CONFIG_SOC_IT81302CX
 		 * maximum ILM size are 60KB, the ILM size of other varients
 		 * are equal to the SRAM size.
 		 */

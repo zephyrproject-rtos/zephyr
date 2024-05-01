@@ -115,7 +115,7 @@
 			clocks = <&ccm IMX_CCM_FLEXSPI_CLK 0x0 0x0>;
 		};
 
-		/* Remove SEMC, it does'nt exist on RT1010 */
+		/* Remove SEMC, it doesn't exist on RT1010 */
 		/delete-node/ semc0@402f0000;
 
 		/* Fixup LPI2C1 and LPI2C2, they have different base addr on RT1010 */
@@ -238,7 +238,7 @@
 		/delete-node/ flexpwm@403e4000;
 		/delete-node/ flexpwm@403e8000;
 
-		/* Remove Ethernet, it does'nt exist on RT1010 */
+		/* Remove Ethernet, it doesn't exist on RT1010 */
 		/delete-node/ enet@402d8000;
 
 		/* Fixup USB it has different base addr and interrupt numbers on RT1010 */
@@ -253,14 +253,14 @@
 			status = "disabled";
 		};
 
-		/* Remove USB2, it does'nt exist on RT1010 */
+		/* Remove USB2, it doesn't exist on RT1010 */
 		/delete-node/ usbd@402e0200;
 
 		/* Remove USDHC, they don't exist on RT1010 */
 		/delete-node/ usdhc@402c0000;
 		/delete-node/ usdhc@402c4000;
 
-		/* Remove CSI, it does'nt exist on RT1010 */
+		/* Remove CSI, it doesn't exist on RT1010 */
 		/delete-node/ csi@402bc000;
 
 		/* Remove FLEXCAN, they don't exist on RT1010 */
@@ -268,7 +268,7 @@
 		/delete-node/ can@401d4000;
 		/delete-node/ can@401d8000;
 
-		/* Remove WDOG2, it does'nt exist on RT1010 */
+		/* Remove WDOG2, it doesn't exist on RT1010 */
 		/delete-node/ wdog@400d0000;
 
 		/* Fix SAI1, 3, it has different base addr on RT1010 */
@@ -341,7 +341,7 @@
 			status = "disabled";
 		};
 
-		/* Remove SAI2, it does'nt exist on RT1010 */
+		/* Remove SAI2, it doesn't exist on RT1010 */
 		/delete-node/ sai@40388000;
 	};
 };

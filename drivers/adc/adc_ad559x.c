@@ -21,6 +21,11 @@ LOG_MODULE_REGISTER(adc_ad559x, CONFIG_ADC_LOG_LEVEL);
 #define AD559X_ADC_RD_POINTER      0x40
 
 #define AD559X_ADC_RESOLUTION 12U
+#define AD559X_ADC_VREF_MV 2500U
+
+#define AD559X_ADC_RES_IND_BIT BIT(15)
+#define AD559X_ADC_RES_CHAN_MASK GENMASK(14, 12)
+#define AD559X_ADC_RES_VAL_MASK GENMASK(11, 0)
 
 struct adc_ad559x_config {
 	const struct device *mfd_dev;
@@ -102,6 +107,7 @@ static int adc_ad559x_read_channel(const struct device *dev, uint8_t channel, ui
 {
 	const struct adc_ad559x_config *config = dev->config;
 	uint16_t val;
+	uint8_t conv_channel;
 	int ret;
 
 	/* Select channel */
@@ -141,11 +147,27 @@ static int adc_ad559x_read_channel(const struct device *dev, uint8_t channel, ui
 		}
 
 		val = sys_be16_to_cpu(val);
-		if (channel >= 1) {
-			val -= channel * BIT(AD559X_ADC_RESOLUTION);
+
+		/*
+		 * Invalid data:
+		 * See "ADC section" in "Theory of operation" chapter.
+		 * Valid ADC result has MSB bit set to 0.
+		 */
+		if ((val & AD559X_ADC_RES_IND_BIT) != 0) {
+			return -EAGAIN;
 		}
 
-		*result = val;
+		/*
+		 * Invalid channel converted:
+		 * See "ADC section" in "Theory of operation" chapter.
+		 * Conversion result contains channel number which should match requested channel.
+		 */
+		conv_channel = FIELD_GET(AD559X_ADC_RES_CHAN_MASK, val);
+		if (conv_channel != channel) {
+			return -EIO;
+		}
+
+		*result = val & AD559X_ADC_RES_VAL_MASK;
 	}
 
 	return 0;
@@ -241,9 +263,11 @@ static int adc_ad559x_init(const struct device *dev)
 			(k_thread_entry_t)adc_ad559x_acquisition_thread, data, NULL, NULL,
 			CONFIG_ADC_AD559X_ACQUISITION_THREAD_PRIO, 0, K_NO_WAIT);
 
-	ret = k_thread_name_set(tid, "adc_ad559x");
-	if (ret < 0) {
-		return ret;
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		ret = k_thread_name_set(tid, "adc_ad559x");
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	adc_context_unlock_unconditionally(&data->ctx);
@@ -257,6 +281,7 @@ static const struct adc_driver_api adc_ad559x_api = {
 #ifdef CONFIG_ADC_ASYNC
 	.read_async = adc_ad559x_read_async,
 #endif
+	.ref_internal = AD559X_ADC_VREF_MV,
 };
 
 #define ADC_AD559X_DEFINE(inst)                                                                    \

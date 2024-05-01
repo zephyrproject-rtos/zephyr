@@ -4,6 +4,7 @@
  */
 #include <zephyr/init.h>
 #include <zephyr/device.h>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <fsl_clock.h>
 #include <fsl_spc.h>
 #include <soc.h>
@@ -164,6 +165,39 @@ static int frdm_mcxn947_init(void)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(wwdt0), okay)
 	CLOCK_SetClkDiv(kCLOCK_DivWdt0Clk, 1u);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer0), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivCtimer0Clk, 1U);
+	CLOCK_AttachClk(kPLL0_to_CTIMER0);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer1), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivCtimer1Clk, 1U);
+	CLOCK_AttachClk(kPLL0_to_CTIMER1);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer2), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivCtimer2Clk, 1U);
+	CLOCK_AttachClk(kPLL0_to_CTIMER2);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer3), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivCtimer3Clk, 1U);
+	CLOCK_AttachClk(kPLL0_to_CTIMER3);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer4), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivCtimer4Clk, 1U);
+	CLOCK_AttachClk(kPLL0_to_CTIMER4);
+#endif
+
+#if CONFIG_FLASH_MCUX_FLEXSPI_NOR
+	/* We downclock the FlexSPI to 50MHz, it will be set to the
+	 * optimum speed supported by the Flash device during FLEXSPI
+	 * Init
+	 */
+	flexspi_clock_set_freq(MCUX_FLEXSPI_CLK, MHZ(50));
 #endif
 
 	/* Set SystemCoreClock variable. */

@@ -488,7 +488,6 @@
 			gpiote20: gpiote@da000 {
 				compatible = "nordic,nrf-gpiote";
 				reg = <0xda000 0x1000>;
-				interrupts = <219 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 				instance = <20>;
 			};
@@ -594,7 +593,6 @@
 			gpiote30: gpiote@10c000 {
 				compatible = "nordic,nrf-gpiote";
 				reg = <0x10c000 0x1000>;
-				interrupts = <269 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 				instance = <30>;
 			};

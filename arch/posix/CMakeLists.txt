@@ -99,11 +99,13 @@ elseif (CONFIG_NATIVE_LIBRARY)
     get_filename_component(COMPILER_OWN_INCLUDE_PATH "${_OUTPUT}" DIRECTORY)
 
     # Do not use the C library from this compiler/host,
-    # but still use the basic compiler headers
+    # but still use the basic compiler headers,
+    # remove all operating system specific predefined macros,
     # no_builtin to avoid the compiler using builtin replacements for std library functions
     zephyr_compile_options(
       -nostdinc
       -isystem ${COMPILER_OWN_INCLUDE_PATH}
+      "SHELL:-include ${ZEPHYR_BASE}/arch/posix/include/undef_system_defines.h"
       $<TARGET_PROPERTY:compiler,freestanding>
       $<TARGET_PROPERTY:compiler,no_builtin>
     )
@@ -195,12 +197,5 @@ if(NOT ${LLVM_SANITIZERS_ARG} STREQUAL "")
   target_link_options(native_simulator INTERFACE ${LLVM_SANITIZERS_ARG})
   target_compile_options(native_simulator INTERFACE ${LLVM_SANITIZERS_ARG})
 endif()
-
-# Override the C standard used for compilation to C 2011
-# This is due to some tests using _Static_assert which is a 2011 feature, but
-# otherwise relying on compilers supporting it also when set to C99.
-# This was in general ok, but with some host compilers and C library versions
-# it led to problems. So we override it to 2011 for the native targets.
-set_property(GLOBAL PROPERTY CSTD c11)
 
 add_subdirectory(core)

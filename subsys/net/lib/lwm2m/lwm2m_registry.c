@@ -2010,6 +2010,10 @@ struct lwm2m_engine_res_inst *lwm2m_engine_get_res_inst(const struct lwm2m_obj_p
 
 bool lwm2m_engine_shall_report_obj_version(const struct lwm2m_engine_obj *obj)
 {
+	if (IS_ENABLED(CONFIG_LWM2M_ENGINE_ALWAYS_REPORT_OBJ_VERSION)) {
+		return true;
+	}
+
 	/* For non-core objects, report version other than 1.0 */
 	if (!obj->is_core) {
 		return obj->version_major != 1 || obj->version_minor != 0;

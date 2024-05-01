@@ -37,7 +37,7 @@ extern "C" {
 
 /* Constants for Options and Option Groups */
 #define _POSIX_ADVISORY_INFO		  (-1L)
-#define _POSIX_ASYNCHRONOUS_IO		  (-1L)
+#define _POSIX_ASYNCHRONOUS_IO Z_SC_VAL_IFDEF(CONFIG_POSIX_ASYNCHRONOUS_IO, _POSIX_VERSION)
 #define _POSIX_BARRIERS			  Z_SC_VAL_IFDEF(CONFIG_PTHREAD_IPC, _POSIX_VERSION)
 #define _POSIX_CHOWN_RESTRICTED		  (-1L)
 #define _POSIX_CLOCK_SELECTION		  Z_SC_VAL_IFDEF(CONFIG_POSIX_CLOCK, _POSIX_VERSION)
@@ -263,6 +263,7 @@ extern char *optarg;
 extern int opterr, optind, optopt;
 #endif
 
+int getentropy(void *buffer, size_t length);
 pid_t getpid(void);
 unsigned sleep(unsigned int seconds);
 int usleep(useconds_t useconds);

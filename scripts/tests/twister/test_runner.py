@@ -884,6 +884,7 @@ TESTDATA_6 = [
         mock.ANY,
         mock.ANY,
         mock.ANY,
+        mock.ANY,
         [],
         {'op': 'report', 'test': mock.ANY},
         'failed',
@@ -902,6 +903,7 @@ TESTDATA_6 = [
         mock.ANY,
         mock.ANY,
         {'filter': { 'dummy instance name': True }},
+        mock.ANY,
         mock.ANY,
         mock.ANY,
         mock.ANY,
@@ -926,6 +928,7 @@ TESTDATA_6 = [
         mock.ANY,
         mock.ANY,
         mock.ANY,
+        mock.ANY,
         [],
         {'op': 'cmake', 'test': mock.ANY},
         'passed',
@@ -937,6 +940,7 @@ TESTDATA_6 = [
         {'op': 'cmake'},
         'error',
         'dummy error',
+        mock.ANY,
         mock.ANY,
         mock.ANY,
         mock.ANY,
@@ -968,6 +972,7 @@ TESTDATA_6 = [
         mock.ANY,
         mock.ANY,
         mock.ANY,
+        mock.ANY,
         [],
         {'op': 'report', 'test': mock.ANY},
         'passed',
@@ -982,6 +987,7 @@ TESTDATA_6 = [
         mock.ANY,
         mock.ANY,
         True,
+        mock.ANY,
         mock.ANY,
         mock.ANY,
         mock.ANY,
@@ -1010,6 +1016,7 @@ TESTDATA_6 = [
         mock.ANY,
         mock.ANY,
         mock.ANY,
+        mock.ANY,
         ['filtering dummy instance name'],
         {'op': 'report', 'test': mock.ANY},
         'filtered',
@@ -1028,6 +1035,7 @@ TESTDATA_6 = [
         mock.ANY,
         mock.ANY,
         {'filter': {}},
+        mock.ANY,
         mock.ANY,
         mock.ANY,
         mock.ANY,
@@ -1052,6 +1060,7 @@ TESTDATA_6 = [
         None,
         mock.ANY,
         mock.ANY,
+        mock.ANY,
         ['build test: dummy instance name'],
         {'op': 'report', 'test': mock.ANY},
         'error',
@@ -1071,6 +1080,7 @@ TESTDATA_6 = [
         mock.ANY,
         mock.ANY,
         {'returncode': 0},
+        mock.ANY,
         mock.ANY,
         mock.ANY,
         ['build test: dummy instance name',
@@ -1095,6 +1105,7 @@ TESTDATA_6 = [
         {'dummy': 'dummy'},
         mock.ANY,
         mock.ANY,
+        mock.ANY,
         ['build test: dummy instance name'],
         {'op': 'report', 'test': mock.ANY},
         'passed',
@@ -1114,6 +1125,7 @@ TESTDATA_6 = [
         mock.ANY,
         mock.ANY,
         {'returncode': 0},
+        mock.ANY,
         mock.ANY,
         mock.ANY,
         ['build test: dummy instance name',
@@ -1137,6 +1149,7 @@ TESTDATA_6 = [
         mock.ANY,
         {'returncode': 0},
         mock.ANY,
+        mock.ANY,
         BuildError,
         ['build test: dummy instance name',
          'Determine test cases for test instance: dummy instance name'],
@@ -1158,6 +1171,7 @@ TESTDATA_6 = [
         mock.ANY,
         mock.ANY,
         mock.ANY,
+        {'returncode': 0},  # metrics_res
         mock.ANY,
         mock.ANY,
         [],
@@ -1166,7 +1180,7 @@ TESTDATA_6 = [
         mock.ANY,
         0,
         None
-    ),
+    ),  # 'gather metrics, run and ready handler'
     (
         {'op': 'gather_metrics'},
         mock.ANY,
@@ -1179,6 +1193,7 @@ TESTDATA_6 = [
         mock.ANY,
         mock.ANY,
         mock.ANY,
+        {'returncode': 0},  # metrics_res
         mock.ANY,
         mock.ANY,
         [],
@@ -1187,11 +1202,34 @@ TESTDATA_6 = [
         mock.ANY,
         0,
         None
-    ),
+    ),  # 'gather metrics'
+    (
+        {'op': 'gather_metrics'},
+        mock.ANY,
+        mock.ANY,
+        False,
+        True,
+        mock.ANY,
+        mock.ANY,
+        mock.ANY,
+        mock.ANY,
+        mock.ANY,
+        {'returncode': 0},  # build_res
+        {'returncode': 1},  # metrics_res
+        mock.ANY,
+        mock.ANY,
+        [],
+        {'op': 'report', 'test': mock.ANY},
+        'error',
+        'Build Failure at gather_metrics.',
+        0,
+        None
+    ),  # 'build ok, gather metrics fail',
     (
         {'op': 'run'},
         'success',
         'OK',
+        mock.ANY,
         mock.ANY,
         mock.ANY,
         mock.ANY,
@@ -1213,6 +1251,7 @@ TESTDATA_6 = [
     (
         {'op': 'run'},
         'failed',
+        mock.ANY,
         mock.ANY,
         mock.ANY,
         mock.ANY,
@@ -1247,6 +1286,7 @@ TESTDATA_6 = [
         mock.ANY,
         mock.ANY,
         mock.ANY,
+        mock.ANY,
         [],
         {'op': 'cleanup', 'mode': 'device', 'test': mock.ANY},
         mock.ANY,
@@ -1264,6 +1304,7 @@ TESTDATA_6 = [
         False,
         False,
         'pass',
+        mock.ANY,
         mock.ANY,
         mock.ANY,
         mock.ANY,
@@ -1289,6 +1330,7 @@ TESTDATA_6 = [
         mock.ANY,
         mock.ANY,
         mock.ANY,
+        mock.ANY,
         [],
         {'op': 'cleanup', 'mode': 'all', 'test': mock.ANY},
         mock.ANY,
@@ -1310,6 +1352,7 @@ TESTDATA_6 = [
         mock.ANY,
         mock.ANY,
         mock.ANY,
+        mock.ANY,
         [],
         None,
         mock.ANY,
@@ -1319,6 +1362,7 @@ TESTDATA_6 = [
     ),
     (
         {'op': 'cleanup', 'mode': 'device'},
+        mock.ANY,
         mock.ANY,
         mock.ANY,
         mock.ANY,
@@ -1352,6 +1396,7 @@ TESTDATA_6 = [
         mock.ANY,
         mock.ANY,
         mock.ANY,
+        mock.ANY,
         [],
         None,
         mock.ANY,
@@ -1363,6 +1408,7 @@ TESTDATA_6 = [
         {'op': 'cleanup', 'mode': 'all'},
         mock.ANY,
         'Valgrind error',
+        mock.ANY,
         mock.ANY,
         mock.ANY,
         mock.ANY,
@@ -1394,6 +1440,7 @@ TESTDATA_6 = [
         mock.ANY,
         mock.ANY,
         mock.ANY,
+        mock.ANY,
         [],
         None,
         mock.ANY,
@@ -1408,7 +1455,7 @@ TESTDATA_6 = [
     ' instance_status, instance_reason, instance_run, instance_handler_ready,' \
     ' options_cmake_only,' \
     ' options_coverage, options_prep_artifacts, options_runtime_artifacts,' \
-    ' cmake_res, build_res,' \
+    ' cmake_res, build_res, metrics_res,' \
     ' pipeline_runtime_error, determine_testcases_build_error,' \
     ' expected_logs, resulting_message,' \
     ' expected_status, expected_reason, expected_skipped, expected_missing',
@@ -1420,6 +1467,7 @@ TESTDATA_6 = [
         'build, no build res', 'build, skipped', 'build, blocked',
         'build, determine testcases', 'build, determine testcases Error',
         'gather metrics, run and ready handler', 'gather metrics',
+        'build ok, gather metrics fail',
         'run', 'run, Pipeline Runtime Error',
         'report, prep artifacts for testing',
         'report, runtime artifact cleanup pass, status passed',
@@ -1442,6 +1490,7 @@ def test_projectbuilder_process(
     options_runtime_artifacts,
     cmake_res,
     build_res,
+    metrics_res,
     pipeline_runtime_error,
     determine_testcases_build_error,
     expected_logs,
@@ -1485,7 +1534,7 @@ def test_projectbuilder_process(
     pb.cleanup_artifacts = mock.Mock()
     pb.cleanup_device_testing_artifacts = mock.Mock()
     pb.run = mock.Mock()
-    pb.gather_metrics = mock.Mock()
+    pb.gather_metrics = mock.Mock(return_value=metrics_res)
 
     pipeline_mock = mock.Mock(put=mock.Mock(side_effect=mock_pipeline_put))
     done_mock = mock.Mock()

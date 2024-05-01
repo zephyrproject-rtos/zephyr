@@ -11,4 +11,5 @@
 
 / {
 	model = "nxp,rd_rw612_bga";
+	compatible = "nxp,rd_rw612_bga";
 };

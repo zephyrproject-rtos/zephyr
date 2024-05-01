@@ -1315,14 +1315,19 @@ int net_buf_id(struct net_buf *buf);
 /**
  * @brief Allocate a new fixed buffer from a pool.
  *
+ * @note Some types of data allocators do not support
+ *       blocking (such as the HEAP type). In this case it's still possible
+ *       for net_buf_alloc() to fail (return NULL) even if it was given
+ *       K_FOREVER.
+ *
+ * @note The timeout value will be overridden to K_NO_WAIT if called from the
+ *       system workqueue.
+ *
  * @param pool Which pool to allocate the buffer from.
  * @param timeout Affects the action taken should the pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait until the specified
- *        timeout. Note that some types of data allocators do not support
- *        blocking (such as the HEAP type). In this case it's still possible
- *        for net_buf_alloc() to fail (return NULL) even if it was given
- *        K_FOREVER.
+ *        timeout.
  *
  * @return New buffer or NULL if out of buffers.
  */
@@ -1350,15 +1355,20 @@ static inline struct net_buf * __must_check net_buf_alloc(struct net_buf_pool *p
 /**
  * @brief Allocate a new variable length buffer from a pool.
  *
+ * @note Some types of data allocators do not support
+ *       blocking (such as the HEAP type). In this case it's still possible
+ *       for net_buf_alloc() to fail (return NULL) even if it was given
+ *       K_FOREVER.
+ *
+ * @note The timeout value will be overridden to K_NO_WAIT if called from the
+ *       system workqueue.
+ *
  * @param pool Which pool to allocate the buffer from.
  * @param size Amount of data the buffer must be able to fit.
  * @param timeout Affects the action taken should the pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait until the specified
- *        timeout. Note that some types of data allocators do not support
- *        blocking (such as the HEAP type). In this case it's still possible
- *        for net_buf_alloc() to fail (return NULL) even if it was given
- *        K_FOREVER.
+ *        timeout.
  *
  * @return New buffer or NULL if out of buffers.
  */
@@ -1382,16 +1392,21 @@ struct net_buf * __must_check net_buf_alloc_len(struct net_buf_pool *pool,
  * Allocate a new buffer from a pool, where the data pointer comes from the
  * user and not from the pool.
  *
+ * @note Some types of data allocators do not support
+ *       blocking (such as the HEAP type). In this case it's still possible
+ *       for net_buf_alloc() to fail (return NULL) even if it was given
+ *       K_FOREVER.
+ *
+ * @note The timeout value will be overridden to K_NO_WAIT if called from the
+ *       system workqueue.
+ *
  * @param pool Which pool to allocate the buffer from.
  * @param data External data pointer
  * @param size Amount of data the pointed data buffer if able to fit.
  * @param timeout Affects the action taken should the pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait until the specified
- *        timeout. Note that some types of data allocators do not support
- *        blocking (such as the HEAP type). In this case it's still possible
- *        for net_buf_alloc() to fail (return NULL) even if it was given
- *        K_FOREVER.
+ *        timeout.
  *
  * @return New buffer or NULL if out of buffers.
  */

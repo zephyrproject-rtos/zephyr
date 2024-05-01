@@ -376,6 +376,16 @@
 			bosch,mram-cfg = <0x350 28 8 3 3 0 3 3>;
 			status = "disabled";
 		};
+
+		sdmmc1: sdmmc@46008000 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x46008000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000800>,
+				 <&rcc STM32_SRC_PLL1_Q SDMMC1_SEL(0)>;
+			resets = <&rctl STM32_RESET(AHB4, 11U)>;
+			interrupts = <79 0>;
+			status = "disabled";
+		};
 	};
 
 	smbus3: smbus3 {

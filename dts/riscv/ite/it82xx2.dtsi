@@ -998,5 +998,11 @@
 			num-in-endpoints = <10>;
 			num-out-endpoints = <5>;
 		};
+
+		sha0: crypto@f03c00 {
+			compatible = "ite,it8xxx2-sha-v2";
+			reg = <0x00f03c00 0x5>;
+			status = "disabled";
+		};
 	};
 };

@@ -357,9 +357,10 @@ External JLink :ref:`jlink-external-debug-probe`
 Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
 path.
 
-Attach a J-Link 20-pin connector to J21. Check that jumpers J32 and J33 are
-**off** (they are on by default when boards ship from the factory) to ensure
-SWD signals are disconnected from the OpenSDA microcontroller.
+Attach a J-Link 20-pin connector to J21. Check that jumpers J32 and J33 with
+schematic rev A0/A1 or J47 and J48 with schematic rev B1 are **off** (they are
+on by default when boards ship from the factory) to ensure SWD signals are
+disconnected from the OpenSDA microcontroller.
 
 Configuring a Console
 =====================

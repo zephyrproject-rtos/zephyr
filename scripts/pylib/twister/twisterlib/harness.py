@@ -49,7 +49,6 @@ class Harness:
         self.regex = []
         self.matches = OrderedDict()
         self.ordered = True
-        self.repeat = 1
         self.id = None
         self.fail_on_fault = True
         self.fault = False
@@ -78,7 +77,6 @@ class Harness:
         if config:
             self.type = config.get('type', None)
             self.regex = config.get('regex', [])
-            self.repeat = config.get('repeat', 1)
             self.ordered = config.get('ordered', True)
             self.record = config.get('record', {})
             if self.record:
@@ -382,8 +380,9 @@ class Pytest(Harness):
         if runner := hardware.runner or options.west_runner:
             command.append(f'--runner={runner}')
 
-        for param in hardware.runner_params:
-            command.append(f'--runner-params={param}')
+        if hardware.runner_params:
+            for param in hardware.runner_params:
+                command.append(f'--runner-params={param}')
 
         if options.west_flash and options.west_flash != []:
             command.append(f'--west-flash-extra-args={options.west_flash}')

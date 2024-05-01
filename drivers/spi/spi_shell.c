@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Astroligt
+ * Copyright (c) 2024 Astrolight
  *
  * SPDX-License-Identifier: Apache-2.0
  */

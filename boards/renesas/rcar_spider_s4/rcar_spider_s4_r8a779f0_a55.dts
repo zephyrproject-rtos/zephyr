@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2023-2024 EPAM Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+#include <mem.h>
+#include <arm64/renesas/r8a779f0.dtsi>
+#include "rcar_spider_s4_r8a779f0_a55-pinctrl.dtsi"
+
+/ {
+	model = "Renesas Spider CA55";
+	chosen {
+		zephyr,sram = &ram;
+		zephyr,console = &hscif0;
+		zephyr,shell-uart = &hscif0;
+	};
+
+	ram: memory@48000000 {
+		device_type = "mmio-sram";
+		reg = <0x0 0x48000000 0x0 DT_SIZE_M(512)>;
+	};
+};
+
+&hscif0 {
+	pinctrl-0 = <&hscif0_data_tx_default &hscif0_data_rx_default>;
+	pinctrl-names = "default";
+	current-speed = <1843200>;
+	status = "okay";
+};

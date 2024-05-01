@@ -28,8 +28,7 @@ if SHELL_BACKEND_SERIAL
 
 config SHELL_BACKEND_SERIAL_INIT_PRIORITY
 	int "Initialization priority"
-	default 55 if ACPI
-	default 0
+	default APPLICATION_INIT_PRIORITY
 	range 0 99
 	help
 	  Initialization priority for UART backend. This must be bigger than

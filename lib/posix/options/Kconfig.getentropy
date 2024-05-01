@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Google LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_ZEPHYR_ENTROPY := zephyr,entropy
+
+config GETENTROPY
+	bool "Support for getentropy"
+	depends on !NATIVE_APPLICATION
+	select NATIVE_LIBC_INCOMPATIBLE
+	depends on ENTROPY_HAS_DRIVER
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_ENTROPY))
+	help
+	  Enable support for getentropy() function.

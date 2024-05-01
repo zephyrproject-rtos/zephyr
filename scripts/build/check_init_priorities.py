@@ -172,7 +172,7 @@ class ZephyrInitLevels:
         elif elfclass == 64:
             ptrsize = 8
         else:
-            ValueError(f"Unknown pointer size for ELF class f{elfclass}")
+            raise ValueError(f"Unknown pointer size for ELF class f{elfclass}")
 
         section = self._elf.get_section(shidx)
         start = section.header.sh_addr

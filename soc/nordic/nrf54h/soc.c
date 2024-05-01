@@ -82,9 +82,8 @@ static int trim_hsfll(void)
 
 static int nordicsemi_nrf54h_init(void)
 {
-#if defined(CONFIG_NRF_ENABLE_ICACHE)
 	sys_cache_instr_enable();
-#endif
+	sys_cache_data_enable();
 
 	power_domain_init();
 

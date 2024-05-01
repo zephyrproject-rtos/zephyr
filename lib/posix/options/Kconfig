@@ -8,6 +8,7 @@ menu "POSIX Options"
 config POSIX_API
 	depends on !NATIVE_APPLICATION
 	bool "POSIX APIs"
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Enable mostly-standards-compliant implementations of
 	  various POSIX (IEEE 1003.1) APIs.
@@ -24,6 +25,7 @@ config PTHREAD_IPC
 
 endif # POSIX_CLOCK
 
+rsource "Kconfig.aio"
 rsource "Kconfig.barrier"
 rsource "Kconfig.clock"
 rsource "Kconfig.cond"
@@ -33,6 +35,7 @@ rsource "Kconfig.eventfd"
 rsource "Kconfig.fdtable"
 rsource "Kconfig.fnmatch"
 rsource "Kconfig.fs"
+rsource "Kconfig.getentropy"
 rsource "Kconfig.getopt"
 rsource "Kconfig.key"
 rsource "Kconfig.mqueue"

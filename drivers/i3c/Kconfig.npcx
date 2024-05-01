@@ -1,0 +1,35 @@
+# NPCX I3C driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+DT_I3C_NPCX := $(dt_nodelabel_path,i3c0)
+
+config I3C_NPCX
+	bool "Nuvoton NPCX embedded controller (EC) I3C driver"
+	depends on DT_HAS_NUVOTON_NPCX_I3C_ENABLED
+	select RESET
+	select I3C_IBI_WORKQUEUE if I3C_USE_IBI
+	default y
+	help
+	  This option enables the I3C driver for NPCX family of
+	  processors.
+	  Say y if you wish to use I3C channels on NPCX MCU.
+
+# Expose this option when the 'reg' property includes the MDMA base address
+# as the second group in the phandle-array.
+# i.e. I3C node example in dtsi file.
+# i3c0: i3c@400f0000 {
+#	....
+#	/* reg[0]: I3C_1 register, reg[1]: MDMA5 register */
+#	reg-names = "i3c1", "mdma5";
+#	reg = <0x400f0000 0x2000>,
+#	      <0x40011500 0x100>;
+#  	....
+# }
+config I3C_NPCX_DMA
+	bool "Nuvoton NPCX embedded controller (EC) serial driver DMA support"
+	depends on I3C_NPCX && "$(dt_node_reg_addr_hex,$(DT_I3C_NPCX),1)" != 0
+	default y
+	help
+	  Enable support for npcx I3C DMA mode.

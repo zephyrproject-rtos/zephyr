@@ -13,3 +13,4 @@ ram: 192
 flash: 256
 supported:
   - gpio
+  - pwm

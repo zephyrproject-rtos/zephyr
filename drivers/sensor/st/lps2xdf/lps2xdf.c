@@ -159,7 +159,7 @@ static const struct sensor_driver_api lps2xdf_driver_api = {
 	.lpf = DT_INST_PROP(inst, lpf),                                        \
 	.avg = DT_INST_PROP(inst, avg),                                        \
 	.chip_api = &name##_chip_api,                                          \
-	IF_ENABLED(DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), st_lps28dfw),         \
+	IF_ENABLED(DT_INST_NODE_HAS_COMPAT(inst, st_lps28dfw),                 \
 		   (.fs = DT_INST_PROP(inst, fs),))                            \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),                    \
 		   (LPS2XDF_CFG_IRQ(inst)))

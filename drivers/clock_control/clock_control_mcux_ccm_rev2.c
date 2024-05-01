@@ -133,6 +133,12 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 		return 0;
 #endif
+#ifdef CONFIG_COUNTER_MCUX_TPM
+	case IMX_CCM_TPM_CLK:
+		clock_root = kCLOCK_Root_Tpm1 + instance;
+		break;
+#endif
+
 #ifdef CONFIG_MEMC_MCUX_FLEXSPI
 	case IMX_CCM_FLEXSPI_CLK:
 		clock_root = kCLOCK_Root_Flexspi1;

@@ -156,8 +156,6 @@ static int can_xmc4xxx_send(const struct device *dev, const struct can_frame *ms
 		msg->flags & CAN_FRAME_FDF ? "FD frame" : "",
 		msg->flags & CAN_FRAME_BRS ? "BRS" : "");
 
-	__ASSERT_NO_MSG(callback != NULL);
-
 	if (msg->dlc > CAN_XMC4XXX_MAX_DLC) {
 		return -EINVAL;
 	}

@@ -165,7 +165,6 @@ static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_s
 		}
 
 		if (rc != 0) {
-			LOG_DBG("Failed to get channel %d, skipping", channels[i]);
 			continue;
 		}
 
@@ -230,10 +229,11 @@ static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_s
 			q[sample_idx + sample] =
 				((value_u * ((INT64_C(1) << 31) - 1)) / 1000000) >> header->shift;
 
-			LOG_DBG("value[%d]=%s%d.%06d, q[%d]@%p=%d", sample, value_u < 0 ? "-" : "",
+			LOG_DBG("value[%d]=%s%d.%06d, q[%d]@%p=%d, shift: %d",
+				sample, value_u < 0 ? "-" : "",
 				abs((int)value[sample].val1), abs((int)value[sample].val2),
 				(int)(sample_idx + sample), (void *)&q[sample_idx + sample],
-				q[sample_idx + sample]);
+				q[sample_idx + sample], header->shift);
 		}
 		sample_idx += num_samples;
 	}
@@ -474,9 +474,7 @@ static int decode(const uint8_t *buffer, enum sensor_channel channel, size_t cha
 {
 	const struct sensor_data_generic_header *header =
 		(const struct sensor_data_generic_header *)buffer;
-	const q31_t *q =
-		(const q31_t *)(buffer + sizeof(struct sensor_data_generic_header) +
-				header->num_channels * sizeof(enum sensor_channel));
+	const q31_t *q = (const q31_t *)(buffer + compute_header_size(header->num_channels));
 	int count = 0;
 
 	if (*fit != 0 || max_count < 1) {

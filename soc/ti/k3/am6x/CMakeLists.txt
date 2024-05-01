@@ -7,7 +7,7 @@ if(CONFIG_SOC_AM6234_A53)
   zephyr_sources_ifdef(CONFIG_ARM_MMU a53/mmu_regions.c)
 
   set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm64/scripts/linker.ld CACHE INTERNAL "")
-elseif(CONFIG_SOC_AM6234_M4)
+elseif(CONFIG_SOC_SERIES_AM6X_M4)
   zephyr_sources(m4/soc.c)
 
   zephyr_include_directories(m4)

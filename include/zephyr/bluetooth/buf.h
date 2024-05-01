@@ -51,11 +51,8 @@ struct bt_buf_data {
 	uint8_t type;
 };
 
-#if defined(CONFIG_BT_HCI_RAW)
-#define BT_BUF_RESERVE MAX(CONFIG_BT_HCI_RESERVE, CONFIG_BT_HCI_RAW_RESERVE)
-#else
-#define BT_BUF_RESERVE CONFIG_BT_HCI_RESERVE
-#endif
+/* Headroom reserved in buffers, primarily for HCI transport encoding purposes */
+#define BT_BUF_RESERVE 1
 
 /** Helper to include reserved HCI data in buffer calculations */
 #define BT_BUF_SIZE(size) (BT_BUF_RESERVE + (size))

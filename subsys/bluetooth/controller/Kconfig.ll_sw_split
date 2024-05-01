@@ -341,9 +341,9 @@ config BT_CTLR_ADV_DATA_CHAIN
 	bool "Advertising Data chaining [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
-	  Enable support for Advertising Data chaining in Extended and
-	  Periodic Advertising. This will allow to have Advertising Data Length
-	  upto 1650 bytes.
+	  Enable support for Advertising Data chaining in Extended
+	  (non-connectable) and Periodic Advertising. This will allow to have
+	  Advertising Data Length up to 1650 bytes.
 
 	  This is experimental and work in progress, does not implement
 	  recombining the AD Data and could return BT_HCI_ERR_PACKET_TOO_LONG

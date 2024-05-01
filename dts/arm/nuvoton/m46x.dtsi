@@ -18,6 +18,10 @@
 		zephyr,flash-controller = &fmc;
 	};
 
+	aliases {
+		rtc = &rtc;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -46,7 +50,7 @@
 			reg = <0x40000200 0x100>;
 			#clock-cells = <0>;
 			/* hxt = "enable"; */
-			/* lxt = "enable"; */
+			lxt = "enable";
 			clk-pclkdiv = <(NUMAKER_CLK_PCLKDIV_APB0DIV_DIV2 |
 					 NUMAKER_CLK_PCLKDIV_APB1DIV_DIV2)>;
 			core-clock = <200000000>;
@@ -615,6 +619,15 @@
 			interrupts = <9 0>;
 			clocks = <&pcc NUMAKER_WWDT_MODULE NUMAKER_CLK_CLKSEL1_WWDTSEL_LIRC 0>;
 			status = "disabled";
+		};
+
+		rtc: rtc@40041000 {
+			compatible = "nuvoton,numaker-rtc";
+			reg = <0x40041000 0x138>;
+			interrupts = <6 0>;
+			oscillator = "lxt";
+			clocks = <&pcc NUMAKER_RTC_MODULE 0 0>;
+			alarms-count = <1>;
 		};
 	};
 };

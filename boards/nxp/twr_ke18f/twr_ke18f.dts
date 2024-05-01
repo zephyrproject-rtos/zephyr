@@ -341,21 +341,20 @@
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
+		/* Note slot 0 has one additional sector,
+		 * this is intended for use with the swap move algorithm
+		 */
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000c000 0x32000>;
+			reg = <0x0000c000 0x37000>;
 		};
-		slot1_partition: partition@3e000 {
+		slot1_partition: partition@43000 {
 			label = "image-1";
-			reg = <0x0003e000 0x32000>;
+			reg = <0x00043000 0x36000>;
 		};
-		scratch_partition: partition@70000 {
-			label = "image-scratch";
-			reg = <0x00070000 0xa000>;
-		};
-		storage_partition: partition@7a000 {
+		storage_partition: partition@79000 {
 			label = "storage";
-			reg = <0x0007a000 0x00006000>;
+			reg = <0x00079000 0x00007000>;
 		};
 	};
 };

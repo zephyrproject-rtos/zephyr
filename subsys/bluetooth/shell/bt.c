@@ -1866,7 +1866,7 @@ static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 	atomic_set_bit_to(adv_opt, SHELL_ADV_OPT_APPEARANCE, appearance);
 
 	err = ad_init(&ad[ad_len], ARRAY_SIZE(ad) - ad_len, adv_opt);
-	if (ad_len < 0) {
+	if (err < 0) {
 		return -ENOEXEC;
 	}
 	ad_len += err;

@@ -24,6 +24,7 @@ config TIMER_TEST_PERIOD
 config TIMER_TEST_MAX_STDDEV
 	int "Maximum standard deviation in microseconds allowed"
 	default 33 if NPCX_ITIM_TIMER
+	default 33 if ITE_IT8XXX2_TIMER
 	default 10
 
 config TIMER_TEST_MAX_DRIFT
