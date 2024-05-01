@@ -36,7 +36,7 @@
         group1 {
             pinmux = <SMARTBOND_PINMUX(GPIO, 0, 19)>,
                 <SMARTBOND_PINMUX(GPIO, 0, 18)>;
-            bias-pull-down;
+            bias-pull-up;
         };
     };
 };
