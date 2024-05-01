@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-struct usbc_vbus_driver_api {
+__subsystem struct usbc_vbus_driver_api {
 	bool (*check_level)(const struct device *dev, enum tc_vbus_level level);
 	int (*measure)(const struct device *dev, int *vbus_meas);
 	int (*discharge)(const struct device *dev, bool enable);
