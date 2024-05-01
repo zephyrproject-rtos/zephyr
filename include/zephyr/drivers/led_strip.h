@@ -76,7 +76,7 @@ typedef int (*led_api_update_channels)(const struct device *dev,
  *
  * This is the mandatory API any LED strip driver needs to expose.
  */
-struct led_strip_driver_api {
+__subsystem struct led_strip_driver_api {
 	led_api_update_rgb update_rgb;
 	led_api_update_channels update_channels;
 };
