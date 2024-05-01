@@ -1687,6 +1687,9 @@ This has been fixed in main for v3.6.0
 - `PR 66887 fix for 2.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/66887>`_
 
+CVE-2024
+========
+
 CVE-2024-1638
 -------------
 
