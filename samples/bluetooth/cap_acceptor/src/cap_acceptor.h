@@ -24,6 +24,8 @@ struct peer_config {
 	struct k_sem sink_stream_sem;
 	/** ACL connection object for the peer device */
 	struct bt_conn *conn;
+	/** Current sequence number for TX */
+	uint16_t tx_seq_num;
 };
 
 /**
