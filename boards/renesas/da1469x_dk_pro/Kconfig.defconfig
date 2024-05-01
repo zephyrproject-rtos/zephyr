@@ -34,4 +34,13 @@ config LV_Z_POINTER_INPUT_MSGQ_COUNT
 
 endif # INPUT
 
+#if PM || PM_DEVICE
+
+# Increase stack size to avoid raising usage-fault
+# exceptions due to stack overflow.
+config IDLE_STACK_SIZE
+	default 2048
+
+#endif # PM || PM_DEVICE
+
 endif # BOARD_DA1469X_DK_PRO
