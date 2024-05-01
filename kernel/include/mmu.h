@@ -162,6 +162,16 @@ static inline bool z_page_frame_is_available(struct z_page_frame *page)
 	return page->flags == 0U;
 }
 
+static inline void z_page_frame_set(struct z_page_frame *pf, uint8_t flags)
+{
+	pf->flags |= flags;
+}
+
+static inline void z_page_frame_clear(struct z_page_frame *pf, uint8_t flags)
+{
+	pf->flags &= ~flags;
+}
+
 static inline void z_assert_phys_aligned(uintptr_t phys)
 {
 	__ASSERT(phys % CONFIG_MMU_PAGE_SIZE == 0U,
