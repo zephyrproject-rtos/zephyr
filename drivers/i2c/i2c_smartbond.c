@@ -11,6 +11,10 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <DA1469xAB.h>
+#include <da1469x_pd.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_smartbond);
@@ -31,7 +35,35 @@ struct i2c_smartbond_data {
 	uint32_t transmit_cnt, receive_cnt;
 	i2c_callback_t cb;
 	void *userdata;
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+	ATOMIC_DEFINE(pm_policy_state_flag, 1);
+#endif
 };
+
+static inline void i2c_smartbond_pm_policy_state_lock_get(struct i2c_smartbond_data *data)
+{
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+	if (atomic_test_and_set_bit(data->pm_policy_state_flag, 0) == 0) {
+		/*
+		 * Prevent the SoC from etering the normal sleep state as PDC does not support
+		 * waking up the application core following I2C events.
+		 */
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+#endif
+}
+
+static inline void i2c_smartbond_pm_policy_state_lock_put(struct i2c_smartbond_data *data)
+{
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, 0) == 1) {
+		/*
+		 * Allow the SoC to enter the nornmal sleep state once I2C transactions are done.
+		 */
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+#endif
+}
 
 static int i2c_smartbond_configure(const struct device *dev, uint32_t dev_config)
 {
@@ -149,6 +181,7 @@ static inline void i2c_smartbond_set_target_address(const struct i2c_smartbond_c
 	} else {
 		config->regs->I2C_CON_REG &= ~(I2C_I2C_CON_REG_I2C_10BITADDR_MASTER_Msk);
 	}
+
 	/* Change the Target Address */
 	config->regs->I2C_TAR_REG = ((config->regs->I2C_TAR_REG & ~I2C_I2C_TAR_REG_IC_TAR_Msk) |
 				     (addr & I2C_I2C_TAR_REG_IC_TAR_Msk));
@@ -294,6 +327,8 @@ static int i2c_smartbond_transfer(const struct device *dev, struct i2c_msg *msgs
 		return ret;
 	}
 
+	i2c_smartbond_pm_policy_state_lock_get(data);
+
 	for (; data->num_msgs > 0; data->num_msgs--, data->msgs++) {
 		data->transmit_cnt = 0;
 		data->receive_cnt = 0;
@@ -323,6 +358,7 @@ static int i2c_smartbond_transfer(const struct device *dev, struct i2c_msg *msgs
 	}
 
 finish:
+	i2c_smartbond_pm_policy_state_lock_put(data);
 
 	return ret;
 }
@@ -376,6 +412,8 @@ static int i2c_smartbond_transfer_cb(const struct device *dev, struct i2c_msg *m
 	if (ret != 0) {
 		return ret;
 	}
+
+	i2c_smartbond_pm_policy_state_lock_get(data);
 
 	i2c_smartbond_enable_msg_interrupts(config, data);
 
@@ -441,6 +479,7 @@ static inline void i2c_smartbond_async_msg_done(const struct device *dev)
 		data->cb = NULL;
 		LOG_INF("async transfer finished");
 		cb(dev, 0, data->userdata);
+		i2c_smartbond_pm_policy_state_lock_put(data);
 	}
 }
 
@@ -493,7 +532,7 @@ static const struct i2c_driver_api i2c_smartbond_driver_api = {
 #endif
 };
 
-static int i2c_smartbond_init(const struct device *dev)
+static int i2c_smartbond_resume(const struct device *dev)
 {
 	const struct i2c_smartbond_cfg *config = dev->config;
 	int err;
@@ -515,7 +554,75 @@ static int i2c_smartbond_init(const struct device *dev)
 				       I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
 }
 
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+static int i2c_smartbond_suspend(const struct device *dev)
+{
+	int ret;
+	const struct i2c_smartbond_cfg *config = dev->config;
+
+	/* Disable the I2C digital block */
+	config->regs->I2C_ENABLE_REG &= ~I2C_I2C_ENABLE_REG_I2C_EN_Msk;
+	/* Gate I2C clocking */
+	CRG_COM->RESET_CLK_COM_REG = config->periph_clock_config;
+
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+	if (ret < 0) {
+		LOG_WRN("Fialid to configure the I2C pins to inactive state");
+	}
+
+	return ret;
+}
+
+static int i2c_smartbond_pm_action(const struct device *dev,
+	enum pm_device_action action)
+{
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/*
+		 * Although the GPIO driver should already be initialized, make sure PD_COM
+		 * is up and running before accessing the I2C block.
+		 */
+		da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
+		ret = i2c_smartbond_resume(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = i2c_smartbond_suspend(dev);
+		/*
+		 * Once the I2C block is turned off its power domain can
+		 * be released, as well.
+		 */
+		da1469x_pd_release(MCU_PD_DOMAIN_COM);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif
+
+
+static int i2c_smartbond_init(const struct device *dev)
+{
+	int ret;
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	/* Make sure device state is marked as suspended */
+	pm_device_init_suspended(dev);
+
+	ret = pm_device_runtime_enable(dev);
+#else
+	da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
+	ret = i2c_smartbond_resume(dev);
+#endif
+
+	return ret;
+}
+
 #define I2C_SMARTBOND_DEVICE(id)                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(id, i2c_smartbond_pm_action);	\
 	PINCTRL_DT_INST_DEFINE(id);                                                                \
 	static const struct i2c_smartbond_cfg i2c_smartbond_##id##_cfg = {                         \
 		.regs = (I2C_Type *)DT_INST_REG_ADDR(id),                                          \
@@ -529,8 +636,9 @@ static int i2c_smartbond_init(const struct device *dev)
 		I2C_SMARTBOND_CONFIGURE(id);                                                       \
 		return ret;                                                                        \
 	}                                                                                          \
-	I2C_DEVICE_DT_INST_DEFINE(id, i2c_smartbond_##id##_init, NULL, &i2c_smartbond_##id##_data, \
-				  &i2c_smartbond_##id##_cfg, POST_KERNEL,                          \
-				  CONFIG_I2C_INIT_PRIORITY, &i2c_smartbond_driver_api);
+	I2C_DEVICE_DT_INST_DEFINE(id, i2c_smartbond_##id##_init, PM_DEVICE_DT_INST_GET(id), \
+				&i2c_smartbond_##id##_data, \
+				&i2c_smartbond_##id##_cfg, POST_KERNEL,                          \
+				CONFIG_I2C_INIT_PRIORITY, &i2c_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_SMARTBOND_DEVICE)
