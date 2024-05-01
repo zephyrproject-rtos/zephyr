@@ -45,7 +45,7 @@ static int npcx_emul_backend_get_data(const struct emul *target, size_t offset, 
 	return 0;
 }
 
-static const struct emul_bbram_backend_api npcx_emul_backend_api = {
+static const struct emul_bbram_driver_api npcx_emul_backend_api = {
 	.set_data = npcx_emul_backend_set_data,
 	.get_data = npcx_emul_backend_get_data,
 };

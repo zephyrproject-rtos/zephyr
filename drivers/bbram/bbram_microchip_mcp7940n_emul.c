@@ -135,7 +135,7 @@ static int mcp7940n_emul_backend_get_data(const struct emul *target, size_t offs
 	return 0;
 }
 
-static const struct emul_bbram_backend_api mcp7940n_emul_backend_api = {
+static const struct emul_bbram_driver_api mcp7940n_emul_backend_api = {
 	.set_data = mcp7940n_emul_backend_set_data,
 	.get_data = mcp7940n_emul_backend_get_data,
 };
