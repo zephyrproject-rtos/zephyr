@@ -24,10 +24,12 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/thread_stack.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
 #include "cap_initiator.h"
@@ -42,6 +44,7 @@ LOG_MODULE_REGISTER(cap_initiator_unicast, LOG_LEVEL_INF);
 static struct bt_bap_lc3_preset unicast_preset_16_2_1 = BT_BAP_LC3_UNICAST_PRESET_16_2_1(
 	BT_AUDIO_LOCATION_MONO_AUDIO, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 static struct bt_bap_unicast_group *unicast_group;
+uint64_t total_rx_iso_packet_count; /* This value is exposed to test code */
 
 /** Struct to contain information for a specific peer (CAP) device */
 struct peer_config {
@@ -59,6 +62,8 @@ struct peer_config {
 	struct bt_bap_ep *sink_ep;
 	/** ACL connection object for the peer device */
 	struct bt_conn *conn;
+	/** Current sequence number for TX */
+	uint16_t tx_seq_num;
 };
 
 /* TODO: Expand to multiple ACL connections */
@@ -97,6 +102,7 @@ static void unicast_stream_enabled_cb(struct bt_bap_stream *stream)
 static void unicast_stream_started_cb(struct bt_bap_stream *stream)
 {
 	LOG_INF("Started stream %p", stream);
+	total_rx_iso_packet_count = 0U;
 }
 
 static void unicast_stream_metadata_updated_cb(struct bt_bap_stream *stream)
@@ -128,7 +134,16 @@ static void unicast_stream_released_cb(struct bt_bap_stream *stream)
 static void unicast_stream_recv_cb(struct bt_bap_stream *stream,
 				   const struct bt_iso_recv_info *info, struct net_buf *buf)
 {
-	/* TODO: Add test code */
+	/* Triggered every time we receive an HCI data packet from the controller.
+	 * A call to this does not indicate valid data
+	 * (see the `info->flags` for which flags to check),
+	 */
+
+	if ((total_rx_iso_packet_count % 100U) == 0U) {
+		LOG_INF("Received %llu HCI ISO data packets", total_rx_iso_packet_count);
+	}
+
+	total_rx_iso_packet_count++;
 }
 
 static struct bt_bap_stream_ops unicast_stream_ops = {
@@ -142,6 +157,52 @@ static struct bt_bap_stream_ops unicast_stream_ops = {
 	.released = unicast_stream_released_cb,
 	.recv = unicast_stream_recv_cb,
 };
+
+static void tx_thread_func(void *arg1, void *arg2, void *arg3)
+{
+	NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
+				  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+				  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+	static uint8_t data[CONFIG_BT_ISO_TX_MTU];
+	struct bt_cap_stream *cap_stream = &peer.sink_stream;
+	struct bt_bap_stream *bap_stream = &cap_stream->bap_stream;
+
+	for (size_t i = 0U; i < ARRAY_SIZE(data); i++) {
+		data[i] = (uint8_t)i;
+	}
+
+	while (true) {
+		/* No-op if stream is not configured */
+		if (bap_stream->ep != NULL) {
+			struct bt_bap_ep_info ep_info;
+			int err;
+
+			err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
+			if (err == 0) {
+				if (ep_info.state == BT_BAP_EP_STATE_STREAMING) {
+					struct net_buf *buf;
+
+					buf = net_buf_alloc(&tx_pool, K_FOREVER);
+					net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+
+					net_buf_add_mem(buf, data, bap_stream->qos->sdu);
+
+					err = bt_cap_stream_send(cap_stream, buf, peer.tx_seq_num);
+					if (err == 0) {
+						peer.tx_seq_num++;
+						continue; /* Attempt to send again ASAP */
+					} else {
+						LOG_ERR("Unable to send: %d", err);
+						net_buf_unref(buf);
+					}
+				}
+			}
+		}
+
+		/* In case of any errors, retry with a delay */
+		k_sleep(K_MSEC(100));
+	}
+}
 
 static bool log_codec_cb(struct bt_data *data, void *user_data)
 {
@@ -673,6 +734,23 @@ static int init_cap_initiator(void)
 
 	k_sem_init(&peer.source_stream_sem, 0, 1);
 	k_sem_init(&peer.sink_stream_sem, 0, 1);
+
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK)) {
+		static bool thread_started;
+
+		if (!thread_started) {
+			static K_KERNEL_STACK_DEFINE(tx_thread_stack, 1024);
+			const int tx_thread_prio = K_PRIO_PREEMPT(5);
+			static struct k_thread tx_thread;
+
+			k_thread_create(&tx_thread, tx_thread_stack,
+					K_KERNEL_STACK_SIZEOF(tx_thread_stack), tx_thread_func,
+					net_buf_pull_be16, NULL, NULL, tx_thread_prio, 0,
+					K_NO_WAIT);
+			k_thread_name_set(&tx_thread, "TX thread");
+			thread_started = true;
+		}
+	}
 
 	return 0;
 }
