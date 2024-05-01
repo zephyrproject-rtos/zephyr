@@ -10,6 +10,11 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/barrier.h>
 #include <DA1469xAB.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(smartbond_entropy, CONFIG_ENTROPY_LOG_LEVEL);
 
 #define DT_DRV_COMPAT renesas_smartbond_trng
 
@@ -334,6 +339,51 @@ static int entropy_smartbond_get_entropy_isr(const struct device *dev, uint8_t *
 	return cnt;
 }
 
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+/*
+ * TRNG is powered by PD_SYS which is the same power domain used to power the SoC.
+ * Entering the sleep state should not be allowed for as long as the ISR and thread
+ * SW FIFOs are being filled with random numbers.
+ */
+static inline bool entropy_is_sleep_allowed(void)
+{
+	return !(TRNG->TRNG_CTRL_REG & TRNG_TRNG_CTRL_REG_TRNG_ENABLE_Msk);
+}
+
+static int entropy_smartbond_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	/* Initialize with an error code that should abort sleeping */
+	int ret = -EBUSY;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		__ASSERT_NO_MSG(entropy_is_sleep_allowed());
+
+		/*
+		 * No need to turn on TRNG. It should be done when we the space in the FIFOs
+		 * are below the defined ISR and thread FIFO's thresholds.
+		 *
+		 * \sa CONFIG_ENTROPY_SMARTBOND_THR_THRESHOLD
+		 * \sa CONFIG_ENTROPY_SMARTBOND_ISR_THRESHOLD
+		 *
+		 */
+		ret = 0;
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Sleep is only allowed when there is no TRNG activity */
+		if (entropy_is_sleep_allowed()) {
+			/* At this point TRNG should be disabled; no need to turn it off. */
+			ret = 0;
+		}
+		break;
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif
+
 static const struct entropy_driver_api entropy_smartbond_api_funcs = {
 	.get_entropy = entropy_smartbond_get_entropy,
 	.get_entropy_isr = entropy_smartbond_get_entropy_isr};
@@ -361,8 +411,18 @@ static int entropy_smartbond_init(const struct device *dev)
 
 	trng_enable(true);
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	/* Make sure device state is marked as suspended */
+	pm_device_init_suspended(dev);
+
+	return pm_device_runtime_enable(dev);
+#endif
+
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, entropy_smartbond_init, NULL, &entropy_smartbond_data, NULL, PRE_KERNEL_1,
-		      CONFIG_ENTROPY_INIT_PRIORITY, &entropy_smartbond_api_funcs);
+PM_DEVICE_DT_INST_DEFINE(0, entropy_smartbond_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, entropy_smartbond_init, PM_DEVICE_DT_INST_GET(0),
+			&entropy_smartbond_data, NULL, PRE_KERNEL_1,
+			CONFIG_ENTROPY_INIT_PRIORITY, &entropy_smartbond_api_funcs);

@@ -34,12 +34,17 @@ config LV_Z_POINTER_INPUT_MSGQ_COUNT
 
 endif # INPUT
 
-#if PM || PM_DEVICE
+#if PM || PM_DEVICE || PM_DEVICE_RUNTIME
 
 # Increase stack size to avoid raising usage-fault
 # exceptions due to stack overflow.
 config IDLE_STACK_SIZE
 	default 2048
+
+# Make sure the serial device has higher
+# initialization priority.
+config SERIAL_INIT_PRIORITY
+	default KERNEL_INIT_PRIORITY_DEFAULT
 
 #endif # PM || PM_DEVICE
 
