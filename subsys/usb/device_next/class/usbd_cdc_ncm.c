@@ -65,7 +65,7 @@ struct usbd_cdc_ncm_desc {
 	struct usb_if_descriptor if0;
 	struct cdc_header_descriptor if0_header;
 	struct cdc_union_descriptor if0_union;
-	struct cdc_ecm_descriptor if0_ncm;
+	struct cdc_eth_functional_descriptor if0_ncm;
 	struct cdc_ncm_functional_descriptor if0_netfun_ncm;
 	struct usb_ep_descriptor if0_int_ep;
 	struct usb_ep_descriptor if0_hs_int_ep;
@@ -687,7 +687,7 @@ static const struct ethernet_api cdc_ncm_eth_api = {
         },                                                                             \
         /* CDC Ethernet Networking Functional descriptor                            */ \
         .if0_ncm = {                                                                   \
-                .bFunctionLength = sizeof(struct cdc_ecm_descriptor),                  \
+                .bFunctionLength = sizeof(struct cdc_eth_functional_descriptor),       \
                 .bDescriptorType = USB_DESC_CS_INTERFACE,                              \
                 .bDescriptorSubtype = ETHERNET_FUNC_DESC,                              \
                 .iMACAddress = 4,                                                      \

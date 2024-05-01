@@ -202,7 +202,7 @@ struct cdc_acm_notification {
 } __packed;
 
 /** Ethernet Networking Functional Descriptor */
-struct cdc_ecm_descriptor {
+struct cdc_eth_functional_descriptor {
 	uint8_t bFunctionLength;
 	uint8_t bDescriptorType;
 	uint8_t bDescriptorSubtype;
