@@ -21,8 +21,12 @@ K_SEM_DEFINE(bound_sem, 0, 1);
 static unsigned char expected_message = 'A';
 static size_t expected_len = PACKET_SIZE_START;
 
+static size_t received;
+
 static void ep_bound(void *priv)
 {
+	received = 0;
+
 	k_sem_give(&bound_sem);
 	LOG_INF("Ep bounded");
 }
@@ -36,6 +40,7 @@ static void ep_recv(const void *data, size_t len, void *priv)
 	__ASSERT(len == expected_len, "Unexpected length. Expected %zu, got %zu",
 		expected_len, len);
 
+	received += len;
 	expected_message++;
 	expected_len++;
 
@@ -128,6 +133,8 @@ int main(void)
 
 	LOG_INF("Wait 500ms. Let net core finish its sends");
 	k_msleep(500);
+
+	LOG_INF("Received %zu [Bytes] in total", received);
 
 	LOG_INF("Stop network core");
 	nrf53_cpunet_enable(false);
