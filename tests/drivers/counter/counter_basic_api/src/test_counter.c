@@ -97,6 +97,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_TMR_ESP32
 	DEVS_FOR_DT_COMPAT(espressif_esp32_timer)
 #endif
+#ifdef CONFIG_COUNTER_TMR_RTC_ESP32
+	DEVS_FOR_DT_COMPAT(espressif_esp32_rtc_timer)
+#endif
 #ifdef CONFIG_COUNTER_NXP_S32_SYS_TIMER
 	DEVS_FOR_DT_COMPAT(nxp_s32_sys_timer)
 #endif
