@@ -43,7 +43,7 @@ static void minimal_hexdump_line_print(const char *data, size_t length)
 		if (i < length) {
 			unsigned char c = data[i];
 
-			printk("%c", isprint((int)c) != 0 ? c : '.');
+			printk("%c", (isprint((int)c) != 0) ? c : '.');
 		} else {
 			printk(" ");
 		}
