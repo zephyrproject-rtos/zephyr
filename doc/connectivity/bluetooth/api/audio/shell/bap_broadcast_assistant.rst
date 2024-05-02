@@ -14,7 +14,8 @@ The Broadcast Assistant will typically be phones or laptops.
 The Broadcast Assistant scans for periodic advertisements and transfer
 information to the server.
 
-It is necessary to have :code:`BT_DEBUG_BAP_BROADCAST_ASSISTANT` enabled for
+It is necessary to have
+:kconfig:option:`CONFIG_BT_BAP_BROADCAST_ASSISTANT_LOG_LEVEL_DBG` enabled for
 using the Broadcast Assistant interactively.
 
 When the Bluetooth stack has been initialized (:code:`bt init`),
