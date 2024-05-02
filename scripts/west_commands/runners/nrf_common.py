@@ -443,7 +443,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
 
         self.ensure_output('hex')
         if IntelHex is None:
-            raise RuntimeError('one or more Python dependencies were missing; '
+            raise RuntimeError('Python dependency intelhex was missing; '
                                'see the getting started guide for details on '
                                'how to fix')
         self.hex_contents = IntelHex()
