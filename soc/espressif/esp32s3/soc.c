@@ -197,8 +197,6 @@ void IRAM_ATTR __esp_platform_start(void)
 
 	esp_reset_reason_init();
 
-	esp_clk_init();
-
 	esp_timer_early_init();
 
 #if CONFIG_SOC_ENABLE_APPCPU

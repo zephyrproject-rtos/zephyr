@@ -11,7 +11,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Espressif ESP32-DevkitM";
+	model = "Espressif ESP32C3-DevkitM";
 	compatible = "espressif,esp32c3";
 
 	chosen {
@@ -36,10 +36,6 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
-};
-
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_160M>;
 };
 
 &uart0 {

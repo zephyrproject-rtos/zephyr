@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -35,6 +36,9 @@
 			riscv,isa = "rv32imc_zicsr";
 			reg = <0>;
 			cpu-power-states = <&light_sleep &deep_sleep>;
+			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
+			clock-frequency = <DT_FREQ_M(160)>;
+			xtal-freq = <DT_FREQ_M(40)>;
 		};
 
 		power-states {
@@ -95,17 +99,19 @@
 		rtc: rtc@60008000 {
 			compatible = "espressif,esp32-rtc";
 			reg = <0x60008000 0x1000>;
-			xtal-freq = <ESP32_CLK_XTAL_40M>;
+			fast-clk-src = <ESP32_RTC_FAST_CLK_SRC_RC_FAST>;
+			slow-clk-src = <ESP32_RTC_SLOW_CLK_SRC_RC_SLOW>;
 			#clock-cells = <1>;
 			status = "okay";
+		};
 
-			rtc_timer: rtc_timer {
-				compatible = "espressif,esp32-rtc-timer";
-				slow-clk-freq = <ESP32_RTC_SLOW_CLK_FREQ_90K>;
-				interrupts = <RTC_CORE_INTR_SOURCE>;
-				interrupt-parent = <&intc>;
-				status = "okay";
-			};
+		rtc_timer: rtc_timer@60008004 {
+			reg = <0x60008004 0xC>;
+			compatible = "espressif,esp32-rtc-timer";
+			clocks = <&rtc ESP32_MODULE_MAX>;
+			interrupts = <RTC_CORE_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			status = "okay";
 		};
 
 		flash: flash-controller@60002000 {

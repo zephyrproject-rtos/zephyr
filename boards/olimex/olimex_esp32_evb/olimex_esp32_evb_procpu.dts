@@ -53,14 +53,6 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
-
-&cpu1 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
-
 uext_serial: &uart1 {};
 uext_i2c: &i2c0 {};
 uext_spi: &spi2 {};
