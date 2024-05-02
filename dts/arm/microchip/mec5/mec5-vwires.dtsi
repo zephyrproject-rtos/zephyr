@@ -150,7 +150,7 @@
 			vw-group = <&tcvw01>;
 			source-bit = <0>;
 			reset-state = <0>;
-			vw-name = "ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE";
+			vw-name = "ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE";
 		};
 		vw_error_fatal: vw_error_fatal {
 			vw-group = <&tcvw01>;
@@ -168,7 +168,7 @@
 			vw-group = <&tcvw01>;
 			source-bit = <3>;
 			reset-state = <0>;
-			vw-name = "ESPI_VWIRE_SIGNAL_SLV_BOOT_STS";
+			vw-name = "ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS";
 		};
 		vw_sci_n: vw_sci_n {
 			vw-group = <&tcvw02>;
@@ -210,73 +210,73 @@
 			vw-group = <&tcvw06>;
 			source-bit = <0>;
 			reset-state = <0>;
-			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_0";
+			vw-name = "ESPI_VWIRE_SIGNAL_TARGET_GPIO_0";
 		};
 		vw_t2c_gpio_1: vw_t2c_gpio_1 {
 			vw-group = <&tcvw06>;
 			source-bit = <1>;
 			reset-state = <0>;
-			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_1";
+			vw-name = "ESPI_VWIRE_SIGNAL_TARGET_GPIO_1";
 		};
 		vw_t2c_gpio_2: vw_t2c_gpio_2 {
 			vw-group = <&tcvw06>;
 			source-bit = <2>;
 			reset-state = <0>;
-			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_2";
+			vw-name = "ESPI_VWIRE_SIGNAL_TARGET_GPIO_2";
 		};
 		vw_t2c_gpio_3: vw_t2c_gpio_3 {
 			vw-group = <&tcvw06>;
 			source-bit = <3>;
 			reset-state = <0>;
-			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_3";
+			vw-name = "ESPI_VWIRE_SIGNAL_TARGET_GPIO_3";
 		};
 		vw_t2c_gpio_4: vw_t2c_gpio_4 {
 			vw-group = <&tcvw07>;
 			source-bit = <0>;
 			reset-state = <0>;
-			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_4";
+			vw-name = "ESPI_VWIRE_SIGNAL_TARGET_GPIO_4";
 		};
 		vw_t2c_gpio_5: vw_t2c_gpio_5 {
 			vw-group = <&tcvw07>;
 			source-bit = <1>;
 			reset-state = <0>;
-			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_5";
+			vw-name = "ESPI_VWIRE_SIGNAL_TARGET_GPIO_5";
 		};
 		vw_t2c_gpio_6: vw_t2c_gpio_6 {
 			vw-group = <&tcvw07>;
 			source-bit = <2>;
 			reset-state = <0>;
-			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_6";
+			vw-name = "ESPI_VWIRE_SIGNAL_TARGET_GPIO_6";
 		};
 		vw_t2c_gpio_7: vw_t2c_gpio_7 {
 			vw-group = <&tcvw07>;
 			source-bit = <3>;
 			reset-state = <0>;
-			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_7";
+			vw-name = "ESPI_VWIRE_SIGNAL_TARGET_GPIO_7";
 		};
 		vw_t2c_gpio_8: vw_t2c_gpio_8 {
 			vw-group = <&tcvw08>;
 			source-bit = <0>;
 			reset-state = <0>;
-			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_8";
+			vw-name = "ESPI_VWIRE_SIGNAL_TARGET_GPIO_8";
 		};
 		vw_t2c_gpio_9: vw_t2c_gpio_9 {
 			vw-group = <&tcvw08>;
 			source-bit = <1>;
 			reset-state = <0>;
-			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_9";
+			vw-name = "ESPI_VWIRE_SIGNAL_TARGET_GPIO_9";
 		};
 		vw_t2c_gpio_10: vw_t2c_gpio_10 {
 			vw-group = <&tcvw08>;
 			source-bit = <2>;
 			reset-state = <0>;
-			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_10";
+			vw-name = "ESPI_VWIRE_SIGNAL_TARGET_GPIO_10";
 		};
 		vw_t2c_gpio_11: vw_t2c_gpio_11 {
 			vw-group = <&tcvw08>;
 			source-bit = <3>;
 			reset-state = <0>;
-			vw-name = "ESPI_VWIRE_SIGNAL_SLV_GPIO_11";
+			vw-name = "ESPI_VWIRE_SIGNAL_TARGET_GPIO_11";
 		};
 	};
 };

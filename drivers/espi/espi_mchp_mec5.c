@@ -755,12 +755,12 @@ static void send_boot_done_to_host(const struct device *dev)
 	int ret = 0;
 	uint8_t boot_done = 0u, groupval = 0u, groupmsk = 0u;
 
-	ret = espi_mec5_vw_receive(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, &boot_done);
+	ret = espi_mec5_vw_receive(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, &boot_done);
 	if (!ret && !boot_done) {
 		const struct espi_mec5_vwire *bdone_vw =
-			find_vw(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE);
+			find_vw(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE);
 		const struct espi_mec5_vwire *bsts_vw =
-			find_vw(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_STS);
+			find_vw(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS);
 
 		groupval = BIT(bdone_vw->source_bit) | BIT(bsts_vw->source_bit);
 		groupmsk = groupval;
