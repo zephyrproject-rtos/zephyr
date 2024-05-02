@@ -30,8 +30,11 @@
 #define Z_PHYS_RAM_END		(Z_PHYS_RAM_START + Z_PHYS_RAM_SIZE)
 #define Z_NUM_PAGE_FRAMES	(Z_PHYS_RAM_SIZE / (size_t)CONFIG_MMU_PAGE_SIZE)
 
+/* The comma operator trick below is needed to avoid to build a null pointer
+ * when CONFIG_KERNEL_VM_BASE is 0
+ */
 /** End virtual address of virtual address space */
-#define Z_VIRT_RAM_START	((uint8_t *)CONFIG_KERNEL_VM_BASE)
+#define Z_VIRT_RAM_START	((uint8_t *)((void) 0, (uintptr_t)CONFIG_KERNEL_VM_BASE))
 #define Z_VIRT_RAM_SIZE		((size_t)CONFIG_KERNEL_VM_SIZE)
 #define Z_VIRT_RAM_END		(Z_VIRT_RAM_START + Z_VIRT_RAM_SIZE)
 
