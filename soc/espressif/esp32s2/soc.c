@@ -129,10 +129,6 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 
 #endif /* CONFIG_ESP_SPIRAM */
 
-	/* Configures the CPU clock, RTC slow and fast clocks, and performs
-	 * RTC slow clock calibration.
-	 */
-	esp_clk_init();
 	esp_timer_early_init();
 
 	/* Scheduler is not started at this point. Hence, guard functions

@@ -47,15 +47,6 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-	cpu-power-states = <&light_sleep &deep_sleep>;
-};
-
-&cpu1 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
-
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
