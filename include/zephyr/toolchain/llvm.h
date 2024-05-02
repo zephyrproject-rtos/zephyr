@@ -30,46 +30,27 @@
 
 #include <zephyr/toolchain/gcc.h>
 
-#ifndef __INT8_C
+/*
+ * Provide these definitions only when minimal libc is used.
+ * Avoid collision with defines from include/zephyr/toolchain/zephyr_stdint.h
+ */
+#ifdef CONFIG_MINIMAL_LIBC
+#ifndef CONFIG_ENFORCE_ZEPHYR_STDINT
+
 #define __INT8_C(x)	x
-#endif
-
-#ifndef __UINT8_C
 #define __UINT8_C(x)	x ## U
-#endif
-
-#ifndef __INT16_C
 #define __INT16_C(x)	x
-#endif
-
-#ifndef __UINT16_C
 #define __UINT16_C(x)	x ## U
-#endif
-
-#ifndef __INT32_C
 #define __INT32_C(x)	x
-#endif
-
-#ifndef __UINT32_C
 #define __UINT32_C(x)	x ## U
-#endif
-
-#ifndef __INT64_C
 #define __INT64_C(x)	x
-#endif
-
-#ifndef __UINT64_C
 #define __UINT64_C(x)	x ## ULL
-#endif
 
-#ifndef __INTMAX_C
+#endif /* !CONFIG_ENFORCE_ZEPHYR_STDINT */
+
 #define __INTMAX_C(x)	x
-#endif
-
-
-#ifndef __UINTMAX_C
 #define __UINTMAX_C(x)	x ## ULL
-#endif
 
+#endif /* CONFIG_MINIMAL_LIBC */
 
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_LLVM_H_ */
