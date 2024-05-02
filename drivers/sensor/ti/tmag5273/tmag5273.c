@@ -65,7 +65,7 @@ struct tmag5273_config {
 
 	struct gpio_dt_spec int_gpio;
 
-#if CONFIG_CRC
+#ifdef CONFIG_CRC
 	bool crc_enabled;
 #endif
 };
@@ -146,7 +146,7 @@ static int tmag5273_check_device_status(const struct tmag5273_config *drv_cfg,
 	if ((*device_status & TMAG5273_VCC_UV_ER_MSK) == TMAG5273_VCC_UV_ERR) {
 		LOG_WRN("VCC undervoltage detected");
 	}
-#if CONFIG_CRC
+#ifdef CONFIG_CRC
 	if (drv_cfg->crc_enabled &&
 	    ((*device_status & TMAG5273_OTP_CRC_ER_MSK) == TMAG5273_OTP_CRC_ERR)) {
 		LOG_WRN("OTP CRC error detected");
@@ -387,7 +387,7 @@ static inline int tmag5273_attr_get_xyz_calc(const struct device *dev, struct se
 static inline uint8_t tmag5273_get_fetch_block_size(const struct tmag5273_config *drv_cfg,
 						    uint8_t remaining_bytes)
 {
-#if CONFIG_CRC
+#ifdef CONFIG_CRC
 	if (drv_cfg->crc_enabled && (remaining_bytes > TMAG5273_CRC_DATA_BYTES)) {
 		return TMAG5273_CRC_DATA_BYTES;
 	}
@@ -398,10 +398,13 @@ static inline uint8_t tmag5273_get_fetch_block_size(const struct tmag5273_config
 /** @brief returns the size of the CRC field if active */
 static inline uint8_t tmag5273_get_crc_size(const struct tmag5273_config *drv_cfg)
 {
+#ifdef CONFIG_CRC
 	if (drv_cfg->crc_enabled) {
 		return TMAG5273_CRC_I2C_SIZE;
 	}
-
+#else
+	ARG_UNUSED(drv_cfg);
+#endif
 	return 0;
 }
 
@@ -624,7 +627,7 @@ static int tmag5273_sample_fetch(const struct device *dev, enum sensor_channel c
 
 	uint32_t nb_bytes = end_address - start_address + 1;
 
-#if CONFIG_CRC
+#ifdef CONFIG_CRC
 	/* if CRC is enabled multiples of TMAG5273_CRC_DATA_BYTES need to be read */
 	if (drv_cfg->crc_enabled && ((nb_bytes % TMAG5273_CRC_DATA_BYTES) != 0)) {
 		const uint8_t diff = TMAG5273_CRC_DATA_BYTES - (nb_bytes % TMAG5273_CRC_DATA_BYTES);
@@ -659,7 +662,7 @@ static int tmag5273_sample_fetch(const struct device *dev, enum sensor_channel c
 			return -EIO;
 		}
 
-#if CONFIG_CRC
+#ifdef CONFIG_CRC
 		/* check data validity, if activated */
 		if (drv_cfg->crc_enabled) {
 			const uint8_t crc = crc8_ccitt(0xFF, &i2c_buffer[offset], block_size);
@@ -891,7 +894,7 @@ static inline int tmag5273_init_device_config(const struct device *dev)
 	/* REG_DEVICE_CONFIG_1 */
 	regdata = 0;
 
-#if CONFIG_CRC
+#ifdef CONFIG_CRC
 	if (drv_cfg->crc_enabled) {
 		regdata |= TMAG5273_CRC_ENABLE;
 	}
