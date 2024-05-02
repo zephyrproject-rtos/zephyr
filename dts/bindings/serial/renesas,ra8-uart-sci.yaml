@@ -1,0 +1,21 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA8 Series SCI based UART controller
+
+compatible: "renesas,ra8-uart-sci"
+
+include: [pinctrl-device.yaml, uart-controller.yaml]
+
+properties:
+  channel:
+    type: int
+    required: true
+
+  tx-dtc:
+    type: boolean
+    description: Enable dtc support for transmit
+
+  rx-dtc:
+    type: boolean
+    description: Enable dtc support for receive

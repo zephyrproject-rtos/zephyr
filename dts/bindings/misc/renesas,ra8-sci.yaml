@@ -1,0 +1,28 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA8 SCI controller
+
+compatible: "renesas,ra8-sci"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  channel:
+    type: int
+    required: true
+
+      #  pinctrl-0:
+      #    required: true
+
+      #  pinctrl-names:
+      #    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true

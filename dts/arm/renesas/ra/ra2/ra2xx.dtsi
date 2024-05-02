@@ -143,6 +143,76 @@
 			status = "disabled";
 		};
 
+		sci0: sci@40070000 {
+			compatible = "renesas,ra-sci";
+			interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40070000 0x20>;
+			clocks = <&pclkb>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra8-uart-sci";
+				channel = <0>;
+				status = "disabled";
+			};
+		};
+
+		sci1: sci@40070020 {
+			compatible = "renesas,ra-sci";
+			interrupts = <8 1>, <9 1>, <10 1>, <11 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40070020 0x20>;
+			clocks = <&pclkb>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra8-uart-sci";
+				channel = <1>;
+				status = "disabled";
+			};
+		};
+
+		sci2: sci@40070040 {
+			compatible = "renesas,ra-sci";
+			interrupts = <12 1>, <13 1>, <14 1>, <15 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40070040 0x20>;
+			clocks = <&pclkb>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra8-uart-sci";
+				channel = <2>;
+				status = "disabled";
+			};
+		};
+
+		sci3: sci@40070060 {
+			compatible = "renesas,ra-sci";
+			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40070060 0x20>;
+			clocks = <&pclkb>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra8-uart-sci";
+				channel = <3>;
+				status = "disabled";
+			};
+		};
+
+		sci9: sci@40070120 {
+			compatible = "renesas,ra-sci";
+			interrupts = <24 1>, <25 1>, <26 1>, <27 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40070120 0x20>;
+			clocks = <&pclkb>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra8-uart-sci";
+				channel = <9>;
+				status = "disabled";
+			};
+		};
+
 		flash-controller@407fe000 {
 			reg = <0x407fe000 0x1000>;
 			#address-cells = <1>;
