@@ -361,6 +361,25 @@ int nsos_adapt_bind(int fd, const struct nsos_mid_sockaddr *addr_mid, size_t add
 		return ret;
 	}
 
+/*
+ * Zephyr allows to bind two sockets separately to IPv4 and IPv6. In order to have that behavior on
+ * Linux set IPV6_V6ONLY socket option.
+ *
+ * See 'man 7 ipv6' for details.
+ */
+#ifdef IPPROTO_IPV6
+#ifdef IPV6_V6ONLY
+	if (addr->sa_family == AF_INET6) {
+		int set = 1;
+
+		ret = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &set, sizeof(set));
+		if (ret < 0) {
+			nsi_print_warning("%s: failed to set IPV6_V6ONLY: %d", __func__, errno);
+		}
+	}
+#endif /* IPV6_V6ONLY */
+#endif /* IPPROTO_IPV6 */
+
 	ret = bind(fd, addr, addrlen);
 	if (ret < 0) {
 		return -errno_to_nsos_mid(errno);
