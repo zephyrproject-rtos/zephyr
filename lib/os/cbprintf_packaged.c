@@ -324,7 +324,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	 * Otherwise we must ensure we can store at least
 	 * the pointer to the format string itself.
 	 */
-	if (buf0 != NULL && BUF_OFFSET + sizeof(char *) > len) {
+	if ((buf0 != NULL) && (BUF_OFFSET + sizeof(char *)) > len) {
 		return -ENOSPC;
 	}
 
@@ -432,7 +432,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 				buf = (void *) ROUND_UP(buf, align);
 				if (buf0 != NULL) {
 					/* make sure it fits */
-					if (BUF_OFFSET + size > len) {
+					if ((BUF_OFFSET + size) > len) {
 						return -ENOSPC;
 					}
 					if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
@@ -605,7 +605,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 		buf = (void *) ROUND_UP(buf, align);
 
 		/* make sure the data fits */
-		if (buf0 != NULL && BUF_OFFSET + size > len) {
+		if ((buf0 != NULL) && (BUF_OFFSET + size) > len) {
 			return -ENOSPC;
 		}
 
@@ -717,7 +717,7 @@ process_string:
 	 * worth of va_list, or about 127 arguments on a 64-bit system
 	 * (twice that on 32-bit systems). That ought to be good enough.
 	 */
-	if (BUF_OFFSET / sizeof(int) > 255) {
+	if ((BUF_OFFSET / sizeof(int)) > 255) {
 		__ASSERT(false, "too many format args");
 		return -EINVAL;
 	}
@@ -762,7 +762,7 @@ process_string:
 			uint8_t pos = str_ptr_pos[i] & STR_POS_MASK;
 
 			/* make sure it fits */
-			if (BUF_OFFSET + 1 > len) {
+			if ((BUF_OFFSET + 1) > len) {
 				return -ENOSPC;
 			}
 			/* store the pointer position prefix */
@@ -790,7 +790,7 @@ process_string:
 		}
 
 		/* make sure it fits */
-		if (BUF_OFFSET + 1 + size > len) {
+		if ((BUF_OFFSET + 1 + size) > len) {
 			return -ENOSPC;
 		}
 		/* store the pointer position prefix */
