@@ -58,7 +58,7 @@ static void efi_putchar(int c)
 
 	efibuf[n++] = c;
 
-	if (c == '\n' || n == PUTCHAR_BUFSZ) {
+	if ((c == '\n') || (n == PUTCHAR_BUFSZ)) {
 		efibuf[n] = 0U;
 		efi->ConOut->OutputString(efi->ConOut, efibuf);
 		n = 0;
@@ -140,7 +140,7 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 
 	efi_prepare_boot_arg();
 
-	for (int i = 0; i < sizeof(zefi_zsegs)/sizeof(zefi_zsegs[0]); i++) {
+	for (int i = 0; i < (sizeof(zefi_zsegs)/sizeof(zefi_zsegs[0])); i++) {
 		int bytes = zefi_zsegs[i].sz;
 		uint8_t *dst = (uint8_t *)zefi_zsegs[i].addr;
 
@@ -150,7 +150,7 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 		}
 	}
 
-	for (int i = 0; i < sizeof(zefi_dsegs)/sizeof(zefi_dsegs[0]); i++) {
+	for (int i = 0; i < (sizeof(zefi_dsegs)/sizeof(zefi_dsegs[0])); i++) {
 		int bytes = zefi_dsegs[i].sz;
 		int off = zefi_dsegs[i].off;
 		uint8_t *dst = (uint8_t *)zefi_dsegs[i].addr;
@@ -170,7 +170,7 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 		 * starts, because the very first thing it does is
 		 * install its own page table that disallows writes.
 		 */
-		if (((long)dst & 0xfff) == 0 && dst < (uint8_t *)0x100000L) {
+		if ((((long)dst & 0xfff) == 0) && (dst < (uint8_t *)0x100000L)) {
 			for (int i = 0; i < 8; i++) {
 				dst[i] = 0x90; /* 0x90 == 1-byte NOP */
 			}

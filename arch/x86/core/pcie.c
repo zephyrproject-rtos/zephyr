@@ -41,7 +41,7 @@ static void pcie_mm_init(void)
 	if (m != NULL) {
 		int n = (m->header.Length - sizeof(*m)) / sizeof(m->pci_segs[0]);
 
-		for (int i = 0; i < n && i < MAX_PCI_BUS_SEGMENTS; i++) {
+		for (int i = 0; (i < n) && (i < MAX_PCI_BUS_SEGMENTS); i++) {
 			size_t size;
 			uintptr_t phys_addr;
 
