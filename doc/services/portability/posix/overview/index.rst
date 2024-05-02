@@ -38,7 +38,7 @@ Benefits of POSIX support in Zephyr include:
 POSIX Subprofiles
 =================
 
-While Zephyr supports running multiple :ref:`thread <threads_v2>` (possibly in an
+While Zephyr supports running multiple :ref:`threads <threads_v2>` (possibly in an
 :ref:`SMP <smp_arch>` configuration), as well as
 :ref:`Virtual Memory and MMUs <memory_management_api>`, Zephyr code and data normally share a
 common address space. The Zephyr kernel executable code and the application executable code are
