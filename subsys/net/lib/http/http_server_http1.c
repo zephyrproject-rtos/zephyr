@@ -331,6 +331,10 @@ static int on_header_field(struct http_parser *parser, const char *at,
 			if (strncasecmp(ctx->header_buffer, "Upgrade",
 					sizeof("Upgrade") - 1) == 0) {
 				ctx->has_upgrade_header = true;
+			} else if (strncasecmp(ctx->header_buffer,
+					       "Sec-WebSocket-Key",
+					       sizeof("Sec-WebSocket-Key") - 1) == 0) {
+				ctx->websocket_sec_key_next = true;
 			}
 
 			ctx->header_buffer[0] = '\0';
@@ -369,6 +373,17 @@ static int on_header_value(struct http_parser *parser,
 						       sizeof("websocket") - 1) == 0) {
 					ctx->websocket_upgrade = true;
 				}
+
+				ctx->has_upgrade_header = false;
+			}
+
+			if (ctx->websocket_sec_key_next) {
+#if defined(CONFIG_WEBSOCKET)
+				strncpy(ctx->ws_sec_key, ctx->header_buffer,
+					MIN(sizeof(ctx->ws_sec_key),
+					    strlen(ctx->header_buffer)));
+#endif
+				ctx->websocket_sec_key_next = false;
 			}
 
 			ctx->header_buffer[0] = '\0';
@@ -514,6 +529,10 @@ int handle_http1_request(struct http_client_ctx *client)
 		const char *needed_upgrade = "h2c\r\n";
 
 		if (client->websocket_upgrade) {
+			if (IS_ENABLED(CONFIG_WEBSOCKET)) {
+				return handle_http1_to_websocket_upgrade(client);
+			}
+
 			goto upgrade_not_found;
 		}
 
