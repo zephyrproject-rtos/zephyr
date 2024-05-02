@@ -22,9 +22,8 @@ properties:
     const: 32768
     description: RTOS timer runs at fixed 32 KHz.
 
-  busy-wait-timer:
-    type: phandle
+  max-value:
+    type: int
     required: true
-    description: |
-      Handle to basic timer used for custom kernel busy wait.
-      Please choose handle of a 32-bit basic timer.
+    const: 0xffffffff
+    description: RTOS timer counter maximum value.

@@ -75,7 +75,7 @@ BUILD_ASSERT(0, "MCHP MEC5 ktimer requires ARCH_HAS_CUSTOM_BUSY_WAIT");
 static struct rtmr_regs *const rtimer = (struct rtmr_regs *)DT_INST_REG_ADDR(0);
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
-#define BTIMER_NODE_ID		DT_PHANDLE(RTIMER_NODE_ID, busy_wait_timer)
+#define BTIMER_NODE_ID		DT_CHOSEN(rtimer_busy_wait_timer)
 #define MEC5_BTIMER_FDIV	(MEC5_BTIMER_MAX_FREQ_HZ / 1000000u)
 
 static struct btmr_regs *const btimer = (struct btmr_regs *)DT_REG_ADDR(BTIMER_NODE_ID);

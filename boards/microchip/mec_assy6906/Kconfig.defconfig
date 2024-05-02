@@ -3,6 +3,16 @@
 
 if BOARD_MEC_ASSY6906_MECH1723NSZ || BOARD_MEC_ASSY6906_MECH1723NLJ
 
+if MCHP_MEC5_KTIMER
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 32768
+
+endif # MCHP_MEC5_KTIMER
+
+if !MCHP_MEC5_KTIMER
 # Use ARM Cortex-M SYSTICK. SYSTICK frequency is 96 MHz divided down by the MEC174x PCR
 # processor clock divider register. Boot-ROM sets PCR processor clock divider to 1.
 # Refer to SOC_MEC_PROC_CLK_DIV
@@ -13,4 +23,5 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1000
 
+endif # !MCHP_MEC5_KTIMER
 endif # BOARD_MEC_ASSY6906_MECH1723NSZ or _MECH1723NLJ
