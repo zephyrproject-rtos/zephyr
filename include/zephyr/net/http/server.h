@@ -130,6 +130,7 @@ enum http1_parser_state {
 };
 
 #define HTTP_SERVER_INITIAL_WINDOW_SIZE 65536
+#define HTTP_SERVER_WS_MAX_SEC_KEY_LEN 32
 
 struct http_stream_ctx {
 	int stream_id;
@@ -166,11 +167,13 @@ struct http_client_ctx {
 	enum http1_parser_state parser_state;
 	int http1_frag_data_len;
 	struct k_work_delayable inactivity_timer;
+	IF_ENABLED(CONFIG_WEBSOCKET, (uint8_t ws_sec_key[HTTP_SERVER_WS_MAX_SEC_KEY_LEN]));
 	bool headers_sent : 1;
 	bool preface_sent : 1;
 	bool has_upgrade_header : 1;
 	bool http2_upgrade : 1;
 	bool websocket_upgrade : 1;
+	bool websocket_sec_key_next : 1;
 };
 
 /* Starts the HTTP2 server */
