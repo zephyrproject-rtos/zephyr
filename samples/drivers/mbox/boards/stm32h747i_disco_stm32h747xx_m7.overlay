@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2024 Celina Sophie Kalus <hello@celinakalus.de>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mailbox 11>, <&mailbox 10>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+&mailbox {
+	status = "okay";
+};
