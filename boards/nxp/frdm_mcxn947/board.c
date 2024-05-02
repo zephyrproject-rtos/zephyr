@@ -25,13 +25,6 @@
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
 
-__ramfunc static void enable_lpcac(void)
-{
-	SYSCON->LPCAC_CTRL |= SYSCON_LPCAC_CTRL_CLR_LPCAC_MASK;
-	SYSCON->LPCAC_CTRL &= ~(SYSCON_LPCAC_CTRL_CLR_LPCAC_MASK |
-				SYSCON_LPCAC_CTRL_DIS_LPCAC_MASK);
-}
-
 /* Update Active mode voltage for OverDrive mode. */
 void power_mode_od(void)
 {
@@ -57,10 +50,38 @@ void power_mode_od(void)
 	SPC_SetSRAMOperateVoltage(SPC0, &cfg);
 }
 
+#if CONFIG_FLASH_MCUX_FLEXSPI_NOR || CONFIG_FLASH_MCUX_FLEXSPI_XIP
+__ramfunc static void enable_cache64(void)
+{
+	/* Make sure the FlexSPI clock is enabled before configuring the FlexSPI cache. */
+	SYSCON->AHBCLKCTRLSET[0] |= SYSCON_AHBCLKCTRL0_FLEXSPI_MASK;
+
+	/* Set command to invalidate all ways and write GO bit to initiate command */
+	CACHE64_CTRL0->CCR = CACHE64_CTRL_CCR_INVW1_MASK | CACHE64_CTRL_CCR_INVW0_MASK;
+	CACHE64_CTRL0->CCR |= CACHE64_CTRL_CCR_GO_MASK;
+	/* Wait until the command completes */
+	while ((CACHE64_CTRL0->CCR & CACHE64_CTRL_CCR_GO_MASK) != 0U) {
+	}
+	/* Enable cache, enable write buffer */
+	CACHE64_CTRL0->CCR = (CACHE64_CTRL_CCR_ENWRBUF_MASK | CACHE64_CTRL_CCR_ENCACHE_MASK);
+
+	/* configure reg0, reg1 to cover the whole FlexSPI
+	 * reg 0 covers the space where Zephyr resides in case of XIP from FlexSPI
+	 * reg 1 covers the storage space in case of XIP from FlexSPI
+	 */
+	CACHE64_POLSEL0->REG0_TOP = 0x7FFC00;
+	CACHE64_POLSEL0->REG1_TOP = 0x0;
+	CACHE64_POLSEL0->POLSEL =
+		(CACHE64_POLSEL_POLSEL_REG0_POLICY(1) | CACHE64_POLSEL_POLSEL_REG1_POLICY(0) |
+		 CACHE64_POLSEL_POLSEL_REG2_POLICY(0));
+
+	__ISB();
+	__DSB();
+}
+#endif
+
 static int frdm_mcxn947_init(void)
 {
-	enable_lpcac();
-
 	power_mode_od();
 
 	/* Enable SCG clock */
@@ -232,12 +253,11 @@ static int frdm_mcxn947_init(void)
 	CLOCK_AttachClk(kFRO_HF_to_USDHC);
 #endif
 
-#if CONFIG_FLASH_MCUX_FLEXSPI_NOR
-	/* We downclock the FlexSPI to 50MHz, it will be set to the
-	 * optimum speed supported by the Flash device during FLEXSPI
-	 * Init
-	 */
-	flexspi_clock_set_freq(MCUX_FLEXSPI_CLK, MHZ(50));
+#if CONFIG_FLASH_MCUX_FLEXSPI_NOR || CONFIG_FLASH_MCUX_FLEXSPI_XIP
+	/* Setup the FlexSPI clock */
+	flexspi_clock_set_freq(MCUX_FLEXSPI_CLK,
+			       DT_PROP(DT_NODELABEL(w25q64jvssiq), spi_max_frequency));
+	enable_cache64();
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(vref), okay)
