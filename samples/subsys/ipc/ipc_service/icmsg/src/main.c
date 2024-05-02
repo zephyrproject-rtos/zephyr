@@ -8,7 +8,9 @@
 #include <zephyr/device.h>
 
 #include <zephyr/ipc/ipc_service.h>
+#if CONFIG_NET_CORE_BOARD
 #include <nrf53_cpunet_mgmt.h>
+#endif /* CONFIG_NET_CORE_BOARD */
 #include <string.h>
 
 #include "common.h"
@@ -137,6 +139,7 @@ int main(void)
 
 	LOG_INF("Received %zu [Bytes] in total", received);
 
+#if CONFIG_NET_CORE_BOARD
 	LOG_INF("Stop network core");
 	nrf53_cpunet_enable(false);
 
@@ -175,6 +178,7 @@ int main(void)
 		LOG_ERR("send_for_time() failure");
 		return ret;
 	}
+#endif /* CONFIG_NET_CORE_BOARD */
 
 	LOG_INF("IPC-service HOST demo ended");
 
