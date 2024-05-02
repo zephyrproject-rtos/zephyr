@@ -32,4 +32,29 @@
 	i2c_sda_default: i2c_sda_default {
 		pinmux = <W91_PINMUX_SET(W91_PIN_16, W91_FUNC_I2C0_SDA)>;
 	};
+	/* PWM Channel 0 (P15) */
+
+	pwm_ch0_p15_default: pwm_ch0_p15_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_15, W91_FUNC_PWM_0)>;
+	};
+	/* PWM Channel 1 (P16) */
+
+	pwm_ch1_p16_default: pwm_ch1_p16_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_16, W91_FUNC_PWM_1)>;
+	};
+	/* PWM Channel 2 (P17) */
+
+	pwm_ch2_p17_default: pwm_ch2_p17_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_17, W91_FUNC_PWM_2)>;
+	};
+	/* PWM Channel 3 (P18) */
+
+	pwm_ch3_p18_default: pwm_ch3_p18_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_18, W91_FUNC_PWM_3)>;
+	};
+	/* PWM Channel 4 (P20) */
+
+	pwm_ch4_p20_default: pwm_ch4_p20_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_20, W91_FUNC_PWM_5)>;
+	};
 };

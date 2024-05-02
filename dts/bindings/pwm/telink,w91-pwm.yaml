@@ -1,0 +1,45 @@
+# Copyright (c) 2024, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+
+description: Telink W91 PWM
+
+include: [pwm-controller.yaml, base.yaml]
+
+compatible: "telink,w91-pwm"
+
+properties:
+
+  pinctrl-ch0:
+    type: phandles
+    description: PWM cahnnel 0 pincontrol
+
+  pinctrl-ch1:
+    type: phandles
+    description: PWM cahnnel 1 pincontrol
+
+  pinctrl-ch2:
+    type: phandles
+    description: PWM cahnnel 2 pincontrol
+
+  pinctrl-ch3:
+    type: phandles
+    description: PWM cahnnel 3 pincontrol
+
+  pinctrl-ch4:
+    type: phandles
+    description: PWM cahnnel 4 pincontrol
+
+  channels:
+    type: int
+    const: 5
+    required: true
+    description: Number of channels this PWM has
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

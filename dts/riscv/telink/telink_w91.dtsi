@@ -8,6 +8,7 @@
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	#address-cells = <1>;
@@ -135,6 +136,13 @@
 			#size-cells = <0>;
 			status = "disabled";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
+		};
+
+		pwm0: pwm0 {
+			compatible = "telink,w91-pwm";
+			channels = <5>;
+			#pwm-cells = <3>;
+			status = "disabled";
 		};
 	};
 };
