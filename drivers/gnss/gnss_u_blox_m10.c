@@ -77,7 +77,7 @@ struct ubx_m10_data {
 	uint8_t response_buf[UBX_FRM_BUF_SZ];
 	uint8_t match_buf[UBX_FRM_BUF_SZ];
 
-	struct k_spinlock lock;
+	struct k_sem lock;
 };
 
 MODEM_CHAT_MATCHES_DEFINE(unsol_matches,
@@ -87,6 +87,20 @@ MODEM_CHAT_MATCHES_DEFINE(unsol_matches,
 	MODEM_CHAT_MATCH_WILDCARD("$??GSV,", ",*", gnss_nmea0183_match_gsv_callback),
 #endif
 );
+
+static void ubx_m10_lock(const struct device *dev)
+{
+	struct ubx_m10_data *data = dev->data;
+
+	(void)k_sem_take(&data->lock, K_FOREVER);
+}
+
+static void ubx_m10_unlock(const struct device *dev)
+{
+	struct ubx_m10_data *data = dev->data;
+
+	k_sem_give(&data->lock);
+}
 
 static int ubx_m10_resume(const struct device *dev)
 {
@@ -273,11 +287,10 @@ static int ubx_m10_modem_ubx_script_init(const struct device *dev, void *payload
 static int ubx_m10_ubx_cfg_rate(const struct device *dev)
 {
 	int ret;
-	k_spinlock_key_t key;
 	struct ubx_m10_data *data = dev->data;
 	struct ubx_cfg_rate_payload payload;
 
-	key = k_spin_lock(&data->lock);
+	ubx_m10_lock(dev);
 
 	ubx_cfg_rate_payload_default(&payload);
 
@@ -293,7 +306,7 @@ static int ubx_m10_ubx_cfg_rate(const struct device *dev)
 	}
 
 unlock:
-	k_spin_unlock(&data->lock, key);
+	ubx_m10_unlock(dev);
 
 	return ret;
 }
@@ -302,11 +315,10 @@ static int ubx_m10_ubx_cfg_prt_set(const struct device *dev, uint32_t target_bau
 				   uint8_t retry)
 {
 	int ret;
-	k_spinlock_key_t key;
 	struct ubx_m10_data *data = dev->data;
 	struct ubx_cfg_prt_set_payload payload;
 
-	key = k_spin_lock(&data->lock);
+	ubx_m10_lock(dev);
 
 	ubx_cfg_prt_set_payload_default(&payload);
 	payload.baudrate = target_baudrate;
@@ -329,7 +341,7 @@ static int ubx_m10_ubx_cfg_prt_set(const struct device *dev, uint32_t target_bau
 	}
 
 unlock:
-	k_spin_unlock(&data->lock, key);
+	ubx_m10_unlock(dev);
 
 	return ret;
 }
@@ -337,11 +349,10 @@ unlock:
 static int ubx_m10_ubx_cfg_rst(const struct device *dev, uint8_t reset_mode)
 {
 	int ret;
-	k_spinlock_key_t key;
 	struct ubx_m10_data *data = dev->data;
 	struct ubx_cfg_rst_payload payload;
 
-	key = k_spin_lock(&data->lock);
+	ubx_m10_lock(dev);
 
 	ubx_cfg_rst_payload_default(&payload);
 
@@ -365,7 +376,7 @@ static int ubx_m10_ubx_cfg_rst(const struct device *dev, uint8_t reset_mode)
 	}
 
 unlock:
-	k_spin_unlock(&data->lock, key);
+	ubx_m10_unlock(dev);
 
 	return ret;
 }
@@ -373,12 +384,10 @@ unlock:
 static int ubx_m10_set_uart_baudrate(const struct device *dev, uint32_t baudrate)
 {
 	int ret;
-	k_spinlock_key_t key;
-	struct ubx_m10_data *data = dev->data;
 	const struct ubx_m10_config *config = dev->config;
 	struct uart_config uart_cfg;
 
-	key = k_spin_lock(&data->lock);
+	ubx_m10_lock(dev);
 
 	ret = ubx_m10_turn_off(dev);
 	if (ret < 0) {
@@ -404,7 +413,7 @@ reset_and_unlock:
 	}
 
 unlock:
-	k_spin_unlock(&data->lock, key);
+	ubx_m10_unlock(dev);
 
 	return ret;
 }
@@ -484,11 +493,10 @@ static int ubx_m10_configure_gnss_device_baudrate(const struct device *dev)
 static int ubx_m10_configure_messages(const struct device *dev)
 {
 	int ret;
-	k_spinlock_key_t key;
 	struct ubx_m10_data *data = dev->data;
 	struct ubx_cfg_msg_payload payload;
 
-	key = k_spin_lock(&data->lock);
+	ubx_m10_lock(dev);
 
 	ubx_cfg_msg_payload_default(&payload);
 
@@ -531,7 +539,7 @@ static int ubx_m10_configure_messages(const struct device *dev)
 	}
 
 unlock:
-	k_spin_unlock(&data->lock, key);
+	ubx_m10_unlock(dev);
 
 	return ret;
 }
@@ -585,11 +593,10 @@ static int ubx_m10_ubx_dynamic_model_to_navigation_mode(const struct device *dev
 static int ubx_m10_set_navigation_mode(const struct device *dev, enum gnss_navigation_mode mode)
 {
 	int ret;
-	k_spinlock_key_t key;
 	struct ubx_m10_data *data = dev->data;
 	struct ubx_cfg_nav5_payload payload;
 
-	key = k_spin_lock(&data->lock);
+	ubx_m10_lock(dev);
 
 	ubx_cfg_nav5_payload_default(&payload);
 
@@ -614,7 +621,7 @@ static int ubx_m10_set_navigation_mode(const struct device *dev, enum gnss_navig
 	k_sleep(K_MSEC(UBX_CFG_NAV5_WAIT_MS));
 
 unlock:
-	k_spin_unlock(&data->lock, key);
+	ubx_m10_unlock(dev);
 
 	return ret;
 }
@@ -622,11 +629,10 @@ unlock:
 static int ubx_m10_get_navigation_mode(const struct device *dev, enum gnss_navigation_mode *mode)
 {
 	int ret;
-	k_spinlock_key_t key;
 	struct ubx_m10_data *data = dev->data;
 	enum ubx_dynamic_model dynamic_model;
 
-	key = k_spin_lock(&data->lock);
+	ubx_m10_lock(dev);
 
 	ret = ubx_m10_modem_ubx_script_init(dev, NULL, UBX_FRM_GET_PAYLOAD_SZ, UBX_CLASS_CFG,
 					    UBX_CFG_NAV5);
@@ -650,7 +656,7 @@ static int ubx_m10_get_navigation_mode(const struct device *dev, enum gnss_navig
 	*mode = ret;
 
 unlock:
-	k_spin_unlock(&data->lock, key);
+	ubx_m10_unlock(dev);
 
 	return ret;
 }
@@ -726,10 +732,9 @@ static int ubx_m10_config_block_fill(const struct device *dev, gnss_systems_t gn
 static int ubx_m10_set_enabled_systems(const struct device *dev, gnss_systems_t systems)
 {
 	int ret;
-	k_spinlock_key_t key;
 	struct ubx_m10_data *data = dev->data;
 
-	key = k_spin_lock(&data->lock);
+	ubx_m10_lock(dev);
 
 	struct ubx_cfg_gnss_payload *payload;
 
@@ -821,7 +826,7 @@ free_and_unlock:
 	free(payload);
 
 unlock:
-	k_spin_unlock(&data->lock, key);
+	ubx_m10_unlock(dev);
 
 	return ret;
 }
@@ -829,10 +834,9 @@ unlock:
 static int ubx_m10_get_enabled_systems(const struct device *dev, gnss_systems_t *systems)
 {
 	int ret;
-	k_spinlock_key_t key;
 	struct ubx_m10_data *data = dev->data;
 
-	key = k_spin_lock(&data->lock);
+	ubx_m10_lock(dev);
 
 	ret = ubx_m10_modem_ubx_script_init(dev, NULL, UBX_FRM_GET_PAYLOAD_SZ, UBX_CLASS_CFG,
 					    UBX_CFG_GNSS);
@@ -864,7 +868,7 @@ static int ubx_m10_get_enabled_systems(const struct device *dev, gnss_systems_t 
 	}
 
 unlock:
-	k_spin_unlock(&data->lock, key);
+	ubx_m10_unlock(dev);
 
 	return ret;
 }
@@ -872,7 +876,6 @@ unlock:
 static int ubx_m10_set_fix_rate(const struct device *dev, uint32_t fix_interval_ms)
 {
 	int ret;
-	k_spinlock_key_t key;
 	struct ubx_m10_data *data = dev->data;
 	struct ubx_cfg_rate_payload payload;
 
@@ -880,7 +883,7 @@ static int ubx_m10_set_fix_rate(const struct device *dev, uint32_t fix_interval_
 		return -1;
 	}
 
-	key = k_spin_lock(&data->lock);
+	ubx_m10_lock(dev);
 
 	ubx_cfg_rate_payload_default(&payload);
 	payload.meas_rate_ms = fix_interval_ms;
@@ -897,7 +900,7 @@ static int ubx_m10_set_fix_rate(const struct device *dev, uint32_t fix_interval_
 	}
 
 unlock:
-	k_spin_unlock(&data->lock, key);
+	ubx_m10_unlock(dev);
 
 	return ret;
 }
@@ -905,11 +908,10 @@ unlock:
 static int ubx_m10_get_fix_rate(const struct device *dev, uint32_t *fix_interval_ms)
 {
 	int ret;
-	k_spinlock_key_t key;
 	struct ubx_m10_data *data = dev->data;
 	struct ubx_cfg_rate_payload *payload;
 
-	key = k_spin_lock(&data->lock);
+	ubx_m10_lock(dev);
 
 	ret = ubx_m10_modem_ubx_script_init(dev, NULL, UBX_FRM_GET_PAYLOAD_SZ, UBX_CLASS_CFG,
 					    UBX_CFG_RATE);
@@ -928,7 +930,7 @@ static int ubx_m10_get_fix_rate(const struct device *dev, uint32_t *fix_interval
 	*fix_interval_ms = payload->meas_rate_ms;
 
 unlock:
-	k_spin_unlock(&data->lock, key);
+	ubx_m10_unlock(dev);
 
 	return ret;
 }
@@ -985,9 +987,12 @@ reset:
 
 static int ubx_m10_init(const struct device *dev)
 {
+	struct ubx_m10_data *data = dev->data;
 	int ret;
 
 	k_sleep(K_MSEC(UBX_M10_BOOT_TIME_MS));
+
+	k_sem_init(&data->lock, 1, 1);
 
 	ret = ubx_m10_init_nmea0183_match(dev);
 	if (ret < 0) {
