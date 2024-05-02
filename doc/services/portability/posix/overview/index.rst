@@ -41,9 +41,10 @@ POSIX Subprofiles
 While Zephyr supports running multiple :ref:`threads <threads_v2>` (possibly in an
 :ref:`SMP <smp_arch>` configuration), as well as
 :ref:`Virtual Memory and MMUs <memory_management_api>`, Zephyr code and data normally share a
-common address space. The Zephyr kernel executable code and the application executable code are
-typically compiled into the same binary artifact. From that perspective, Zephyr apps can be seen
-as running in the context of a single process.
+common address space that is partitioned into separate :ref:`Memory Domains <memory_domain>`. The
+Zephyr kernel executable code and the application executable code are typically compiled into the
+same binary artifact. From that perspective, Zephyr apps can be seen as running in the context of
+a single process.
 
 While multi-purpose operating systems (OS) offer full POSIX conformance, Real-Time Operating
 Systems (RTOS) such as Zephyr typically serve a fixed-purpose, have limited hardware resources,
