@@ -224,12 +224,12 @@
 			interrupts = <171 0>;
 			status = "disabled";
 		};
-		rtimer: timer@40007400 {
-			compatible = "microchip,mec5-rtmr-counter";
+		ktimer: timer@40007400 {
+			compatible = "microchip,mec5-ktimer";
 			reg = <0x40007400 0x10>;
 			interrupts = <111 0>;
 			clock-frequency = <32768>;
-			max-value = <0xffffffff>;
+			busy-wait-timer = <&timer5>;
 			status = "disabled";
 		};
 		timer0: timer@40000c00 {

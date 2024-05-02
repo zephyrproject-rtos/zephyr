@@ -14,6 +14,6 @@ config NUM_IRQS
 rsource "Kconfig.defconfig.mec175*"
 
 config CORTEX_M_SYSTICK
-	default y
+	depends on !MCHP_MEC5_KTIMER
 
 endif # SOC_SERIES_MEC175X
