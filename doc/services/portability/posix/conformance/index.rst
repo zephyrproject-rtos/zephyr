@@ -82,7 +82,7 @@ POSIX System Interfaces
 
     _POSIX_ADVISORY_INFO, -1,
     _POSIX_CPUTIME, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
-    _POSIX_FSYNC, 200809L, :kconfig:option:`CONFIG_POSIX_FS`
+    :ref:`_POSIX_FSYNC<posix_option_fsync>`, 200809L, :kconfig:option:`CONFIG_POSIX_FSYNC`
     _POSIX_IPV6, 200809L, :kconfig:option:`CONFIG_NET_IPV6`
     _POSIX_MEMLOCK, -1,
     _POSIX_MEMLOCK_RANGE, -1,
@@ -148,7 +148,7 @@ XSI System Interfaces
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
 
-    _POSIX_FSYNC, 200809L, :kconfig:option:`CONFIG_POSIX_FS`
+    :ref:`_POSIX_FSYNC<posix_option_fsync>`, 200809L, :kconfig:option:`CONFIG_POSIX_FSYNC`
     :ref:`_POSIX_THREAD_ATTR_STACKADDR<posix_option_thread_attr_stackaddr>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
     :ref:`_POSIX_THREAD_ATTR_STACKSIZE<posix_option_thread_attr_stacksize>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
     _POSIX_THREAD_PROCESS_SHARED, -1,
