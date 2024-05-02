@@ -467,6 +467,12 @@ config BOOT_DELAY
 	  achieved by waiting for DCD on the serial port--however, not
 	  all serial ports have DCD.
 
+config BOOT_CLEAR_SCREEN
+	bool "Clear screen"
+	help
+	  Use this option to clear the screen before printing anything else.
+	  Using a VT100 enabled terminal on the client side is required for this to work.
+
 config THREAD_MONITOR
 	bool "Thread monitoring"
 	help
