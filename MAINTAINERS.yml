@@ -4207,6 +4207,16 @@ West:
   labels:
     - "area: Storage"
 
+"West project: hal_adi":
+  status: maintained
+  maintainers:
+    - MaureenHelm
+  collaborators:
+    - ozersa
+  files: []
+  labels:
+    - "platform: ADI"
+
 "West project: hal_altera":
   status: odd fixes
   collaborators:
