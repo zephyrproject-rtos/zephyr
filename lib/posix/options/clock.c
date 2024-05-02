@@ -201,7 +201,7 @@ static int __z_clock_nanosleep(clockid_t clock_id, int flags, const struct times
 	k_spinlock_key_t key;
 	const bool update_rmtp = rmtp != NULL;
 
-	if (!(clock_id == CLOCK_REALTIME || clock_id == CLOCK_MONOTONIC)) {
+	if (!((clock_id == CLOCK_REALTIME) || (clock_id == CLOCK_MONOTONIC))) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -211,7 +211,7 @@ static int __z_clock_nanosleep(clockid_t clock_id, int flags, const struct times
 		return -1;
 	}
 
-	if (rqtp->tv_sec < 0 || rqtp->tv_nsec < 0 || rqtp->tv_nsec >= NSEC_PER_SEC) {
+	if ((rqtp->tv_sec < 0) || (rqtp->tv_nsec < 0) || (rqtp->tv_nsec >= NSEC_PER_SEC)) {
 		errno = EINVAL;
 		return -1;
 	}
