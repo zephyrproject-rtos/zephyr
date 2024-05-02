@@ -101,6 +101,9 @@ struct bt_cap_commander_proc_param {
 	};
 };
 
+typedef void (*bt_cap_common_discover_func_t)(
+	struct bt_conn *conn, int err, const struct bt_csip_set_coordinator_csis_inst *csis_inst);
+
 struct bt_cap_common_proc_param {
 	union {
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
@@ -133,6 +136,7 @@ struct bt_cap_common_proc {
 struct bt_cap_common_client {
 	struct bt_conn *conn;
 	struct bt_gatt_discover_params param;
+	bt_cap_common_discover_func_t discover_cb_func;
 	uint16_t csis_start_handle;
 	const struct bt_csip_set_coordinator_csis_inst *csis_inst;
 	bool cas_found;
@@ -158,7 +162,4 @@ struct bt_cap_common_client *
 bt_cap_common_get_client_by_csis(const struct bt_csip_set_coordinator_csis_inst *csis_inst);
 struct bt_cap_common_client *bt_cap_common_get_client(enum bt_cap_set_type type,
 						      const union bt_cap_set_member *member);
-
-typedef void (*bt_cap_common_discover_func_t)(
-	struct bt_conn *conn, int err, const struct bt_csip_set_coordinator_csis_inst *csis_inst);
 int bt_cap_common_discover(struct bt_conn *conn, bt_cap_common_discover_func_t func);
