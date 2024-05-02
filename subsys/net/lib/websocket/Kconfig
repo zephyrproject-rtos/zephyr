@@ -14,6 +14,12 @@ menuconfig WEBSOCKET_CLIENT
 	help
 	  Enable Websocket client library.
 
+config WEBSOCKET
+	bool
+	default y if WEBSOCKET_CLIENT
+	help
+	  Helper symbol for generic Websocket support.
+
 if WEBSOCKET_CLIENT
 
 config WEBSOCKET_MAX_CONTEXTS
