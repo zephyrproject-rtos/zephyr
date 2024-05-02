@@ -5,6 +5,7 @@
 source "drivers/sensor/ti/bq274xx/Kconfig"
 source "drivers/sensor/ti/fdc2x1x/Kconfig"
 source "drivers/sensor/ti/ina219/Kconfig"
+source "drivers/sensor/ti/ina226/Kconfig"
 source "drivers/sensor/ti/ina23x/Kconfig"
 source "drivers/sensor/ti/ina3221/Kconfig"
 source "drivers/sensor/ti/opt3001/Kconfig"
