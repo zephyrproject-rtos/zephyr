@@ -12,8 +12,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/common/ffs.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>
+#include <string.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
@@ -385,6 +387,66 @@ static bool qspi_address_is_valid(const struct device *dev, off_t addr,
 	return (addr >= 0) && ((uint64_t)addr + (uint64_t)size <= flash_size);
 }
 
+#ifdef CONFIG_STM32_MEMMAP
+/* Must be called inside qspi_lock_thread(). */
+static int stm32_qspi_set_memory_mapped(const struct device *dev)
+{
+	int ret;
+	HAL_StatusTypeDef hal_ret;
+	struct flash_stm32_qspi_data *dev_data = dev->data;
+
+	QSPI_CommandTypeDef cmd = {
+		.Instruction = SPI_NOR_CMD_READ,
+		.Address = 0,
+		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
+		.AddressMode = QSPI_ADDRESS_1_LINE,
+		.DataMode = QSPI_DATA_1_LINE,
+	};
+
+	qspi_set_address_size(dev, &cmd);
+	if (IS_ENABLED(STM32_QSPI_USE_QUAD_IO)) {
+		ret = qspi_prepare_quad_read(dev, &cmd);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	QSPI_MemoryMappedTypeDef mem_mapped = {
+		.TimeOutActivation = QSPI_TIMEOUT_COUNTER_DISABLE,
+	};
+
+	hal_ret = HAL_QSPI_MemoryMapped(&dev_data->hqspi, &cmd, &mem_mapped);
+	if (hal_ret != 0) {
+		LOG_ERR("%d: Failed to enable memory mapped", hal_ret);
+		return -EIO;
+	}
+
+	LOG_DBG("MemoryMap mode enabled");
+	return 0;
+}
+
+static bool stm32_qspi_is_memory_mapped(const struct device *dev)
+{
+	struct flash_stm32_qspi_data *dev_data = dev->data;
+
+	return READ_BIT(dev_data->hqspi.Instance->CCR, QUADSPI_CCR_FMODE) == QUADSPI_CCR_FMODE;
+}
+
+static int stm32_qspi_abort(const struct device *dev)
+{
+	struct flash_stm32_qspi_data *dev_data = dev->data;
+	HAL_StatusTypeDef hal_ret;
+
+	hal_ret = HAL_QSPI_Abort(&dev_data->hqspi);
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("%d: QSPI abort failed", hal_ret);
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif
+
 static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
 				 void *data, size_t size)
 {
@@ -401,6 +463,27 @@ static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
 		return 0;
 	}
 
+#ifdef CONFIG_STM32_MEMMAP
+	qspi_lock_thread(dev);
+
+	/* Do reads through memory-mapping instead of indirect */
+	if (!stm32_qspi_is_memory_mapped(dev)) {
+		ret = stm32_qspi_set_memory_mapped(dev);
+		if (ret != 0) {
+			LOG_ERR("READ: failed to set memory mapped");
+			goto end;
+		}
+	}
+
+	__ASSERT_NO_MSG(stm32_qspi_is_memory_mapped(dev));
+
+	uintptr_t mmap_addr = STM32_QSPI_BASE_ADDRESS + addr;
+
+	LOG_DBG("Memory-mapped read from 0x%08lx, len %zu", mmap_addr, size);
+	memcpy(data, (void *)mmap_addr, size);
+	ret = 0;
+	goto end;
+#else
 	QSPI_CommandTypeDef cmd = {
 		.Instruction = SPI_NOR_CMD_READ,
 		.Address = addr,
@@ -420,7 +503,10 @@ static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
 	qspi_lock_thread(dev);
 
 	ret = qspi_read_access(dev, &cmd, data, size);
+	goto end;
+#endif
 
+end:
 	qspi_unlock_thread(dev);
 
 	return ret;
@@ -482,6 +568,17 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 
 	qspi_lock_thread(dev);
 
+#ifdef CONFIG_STM32_MEMMAP
+	if (stm32_qspi_is_memory_mapped(dev)) {
+		/* Abort ongoing transfer to force CS high/BUSY deasserted */
+		ret = stm32_qspi_abort(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to abort memory-mapped access before write");
+			goto end;
+		}
+	}
+#endif
+
 	while (size > 0) {
 		size_t to_write = size;
 
@@ -517,7 +614,9 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 			break;
 		}
 	}
+	goto end;
 
+end:
 	qspi_unlock_thread(dev);
 
 	return ret;
@@ -554,6 +653,17 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 
 	qspi_set_address_size(dev, &cmd_erase);
 	qspi_lock_thread(dev);
+
+#ifdef CONFIG_STM32_MEMMAP
+	if (stm32_qspi_is_memory_mapped(dev)) {
+		/* Abort ongoing transfer to force CS high/BUSY deasserted */
+		ret = stm32_qspi_abort(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to abort memory-mapped access before erase");
+			goto end;
+		}
+	}
+#endif
 
 	while ((size > 0) && (ret == 0)) {
 		cmd_erase.Address = addr;
@@ -596,7 +706,9 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 		}
 		qspi_wait_until_ready(dev);
 	}
+	goto end;
 
+end:
 	qspi_unlock_thread(dev);
 
 	return ret;
@@ -1372,9 +1484,20 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
+#ifdef CONFIG_STM32_MEMMAP
+	ret = stm32_qspi_set_memory_mapped(dev);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable memory-mapped mode: %d", ret);
+		return ret;
+	}
+	LOG_INF("Memory-mapped NOR quad-flash at 0x%lx (0x%x bytes)",
+		(long)(STM32_QSPI_BASE_ADDRESS),
+		dev_cfg->flash_size);
+#else
 	LOG_INF("NOR quad-flash at 0x%lx (0x%x bytes)",
 		(long)(STM32_QSPI_BASE_ADDRESS),
 		dev_cfg->flash_size);
+#endif
 
 	return 0;
 }
