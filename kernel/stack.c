@@ -29,7 +29,8 @@ void k_stack_init(struct k_stack *stack, stack_data_t *buffer,
 {
 	z_waitq_init(&stack->wait_q);
 	stack->lock = (struct k_spinlock) {};
-	stack->next = stack->base = buffer;
+	stack->next = buffer;
+	stack->base = buffer;
 	stack->top = stack->base + num_entries;
 
 	SYS_PORT_TRACING_OBJ_INIT(k_stack, stack);
