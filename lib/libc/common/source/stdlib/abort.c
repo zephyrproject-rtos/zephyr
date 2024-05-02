@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <zephyr/kernel.h>
 
-void abort(void)
+FUNC_NORETURN void abort(void)
 {
 	printk("abort()\n");
 	k_panic();
