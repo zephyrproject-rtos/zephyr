@@ -9,7 +9,7 @@
 #ifdef CONFIG_MMU
 
 #include <stdint.h>
-#include <zephyr/sys/slist.h>
+#include <zephyr/sys/sflist.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel/mm.h>
@@ -64,13 +64,20 @@
 
 /*
  * z_page_frame flags bits
+ *
+ * Requirements:
+ * - Z_PAGE_FRAME_FREE must be one of the possible sfnode flag bits
+ * - All bit values must be lower than CONFIG_MMU_PAGE_SIZE
  */
 
-/** This page contains critical kernel data and will never be swapped */
-#define Z_PAGE_FRAME_PINNED		BIT(0)
+/** This physical page is free and part of the free list */
+#define Z_PAGE_FRAME_FREE		BIT(0)
 
 /** This physical page is reserved by hardware; we will never use it */
 #define Z_PAGE_FRAME_RESERVED		BIT(1)
+
+/** This page contains critical kernel data and will never be swapped */
+#define Z_PAGE_FRAME_PINNED		BIT(2)
 
 /**
  * This physical page is mapped to some virtual memory address
@@ -78,17 +85,17 @@
  * Currently, we just support one mapping per page frame. If a page frame
  * is mapped to multiple virtual pages then it must be pinned.
  */
-#define Z_PAGE_FRAME_MAPPED		BIT(2)
+#define Z_PAGE_FRAME_MAPPED		BIT(3)
 
 /**
  * This page frame is currently involved in a page-in/out operation
  */
-#define Z_PAGE_FRAME_BUSY		BIT(3)
+#define Z_PAGE_FRAME_BUSY		BIT(4)
 
 /**
  * This page frame has a clean copy in the backing store
  */
-#define Z_PAGE_FRAME_BACKED		BIT(4)
+#define Z_PAGE_FRAME_BACKED		BIT(5)
 
 /**
  * Data structure for physical page frames
@@ -98,78 +105,89 @@
  */
 struct z_page_frame {
 	union {
-		/* If mapped, virtual address this page is mapped to */
-		void *addr;
+		/*
+		 * If mapped, Z_PAGE_FRAME_* flags and virtual address
+		 * this page is mapped to.
+		 */
+		uintptr_t va_and_flags;
 
-		/* If unmapped and available, free pages list membership. */
-		sys_snode_t node;
+		/*
+		 * If unmapped and available, free pages list membership
+		 * with the Z_PAGE_FRAME_FREE flag.
+		 */
+		sys_sfnode_t node;
 	};
 
-	/* Z_PAGE_FRAME_* flags */
-	uint8_t flags;
-
-	/* TODO: Backing store and eviction algorithms may both need to
-	 * introduce custom members for accounting purposes. Come up with
-	 * a layer of abstraction for this. They may also want additional
-	 * flags bits which shouldn't clobber each other. At all costs
-	 * the total size of struct z_page_frame must be minimized.
+	/* Backing store and eviction algorithms may both need to
+	 * require additional per-frame custom data for accounting purposes.
+	 * They should declare their own array with indices matching
+	 * z_page_frames[] ones whenever possible.
+	 * They may also want additional flags bits that could be stored here
+	 * and they shouldn't clobber each other. At all costs the total
+	 * size of struct z_page_frame must be minimized.
 	 */
+};
 
-	/* On Xtensa we can't pack this struct because of the memory alignment.
-	 */
-#ifdef CONFIG_XTENSA
-} __aligned(4);
-#else
-} __packed;
-#endif /* CONFIG_XTENSA */
+/* Note: this must be false for the other flag bits to be valid */
+static inline bool z_page_frame_is_free(struct z_page_frame *pf)
+{
+	return (pf->va_and_flags & Z_PAGE_FRAME_FREE) != 0U;
+}
 
 static inline bool z_page_frame_is_pinned(struct z_page_frame *pf)
 {
-	return (pf->flags & Z_PAGE_FRAME_PINNED) != 0U;
+	return (pf->va_and_flags & Z_PAGE_FRAME_PINNED) != 0U;
 }
 
 static inline bool z_page_frame_is_reserved(struct z_page_frame *pf)
 {
-	return (pf->flags & Z_PAGE_FRAME_RESERVED) != 0U;
+	return (pf->va_and_flags & Z_PAGE_FRAME_RESERVED) != 0U;
 }
 
 static inline bool z_page_frame_is_mapped(struct z_page_frame *pf)
 {
-	return (pf->flags & Z_PAGE_FRAME_MAPPED) != 0U;
+	return (pf->va_and_flags & Z_PAGE_FRAME_MAPPED) != 0U;
 }
 
 static inline bool z_page_frame_is_busy(struct z_page_frame *pf)
 {
-	return (pf->flags & Z_PAGE_FRAME_BUSY) != 0U;
+	return (pf->va_and_flags & Z_PAGE_FRAME_BUSY) != 0U;
 }
 
 static inline bool z_page_frame_is_backed(struct z_page_frame *pf)
 {
-	return (pf->flags & Z_PAGE_FRAME_BACKED) != 0U;
+	return (pf->va_and_flags & Z_PAGE_FRAME_BACKED) != 0U;
 }
 
 static inline bool z_page_frame_is_evictable(struct z_page_frame *pf)
 {
-	return (!z_page_frame_is_reserved(pf) && z_page_frame_is_mapped(pf) &&
-		!z_page_frame_is_pinned(pf) && !z_page_frame_is_busy(pf));
+	return (!z_page_frame_is_free(pf) &&
+		!z_page_frame_is_reserved(pf) &&
+		z_page_frame_is_mapped(pf) &&
+		!z_page_frame_is_pinned(pf) &&
+		!z_page_frame_is_busy(pf));
 }
 
-/* If true, page is not being used for anything, is not reserved, is a member
- * of some free pages list, isn't busy, and may be mapped in memory
+/* If true, page is not being used for anything, is not reserved, is not
+ * a member of some free pages list, isn't busy, and is ready to be mapped
+ * in memory
  */
 static inline bool z_page_frame_is_available(struct z_page_frame *page)
 {
-	return page->flags == 0U;
+	return page->va_and_flags == 0U;
 }
 
 static inline void z_page_frame_set(struct z_page_frame *pf, uint8_t flags)
 {
-	pf->flags |= flags;
+	pf->va_and_flags |= flags;
 }
 
 static inline void z_page_frame_clear(struct z_page_frame *pf, uint8_t flags)
 {
-	pf->flags &= ~flags;
+	/* ensure bit inversion to follow is done on the proper type width */
+	uintptr_t wide_flags = flags;
+
+	pf->va_and_flags &= ~wide_flags;
 }
 
 static inline void z_assert_phys_aligned(uintptr_t phys)
@@ -190,7 +208,9 @@ static inline uintptr_t z_page_frame_to_phys(struct z_page_frame *pf)
 /* Presumes there is but one mapping in the virtual address space */
 static inline void *z_page_frame_to_virt(struct z_page_frame *pf)
 {
-	return pf->addr;
+	uintptr_t flags_mask = CONFIG_MMU_PAGE_SIZE - 1;
+
+	return (void *)(pf->va_and_flags & ~flags_mask);
 }
 
 static inline bool z_is_page_frame(uintptr_t phys)
