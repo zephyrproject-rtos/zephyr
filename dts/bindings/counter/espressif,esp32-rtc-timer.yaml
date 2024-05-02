@@ -15,11 +15,4 @@ description: |
 
 include: base.yaml
 
-properties:
-  slow-clk-freq:
-    description: |
-      The slow clock input frequency for the RTC Timer.
-    type: int
-    required: true
-
 compatible: "espressif,esp32-rtc-timer"
