@@ -313,8 +313,67 @@ static int on_header_field(struct http_parser *parser, const char *at,
 	struct http_client_ctx *ctx = CONTAINER_OF(parser,
 						   struct http_client_ctx,
 						   parser);
+	size_t offset = strlen(ctx->header_buffer);
+
+	if (offset + length > sizeof(ctx->header_buffer) - 1U) {
+		LOG_DBG("Header %s too long (by %zu bytes)", "field",
+			offset + length - sizeof(ctx->header_buffer) - 1U);
+		ctx->header_buffer[0] = '\0';
+	} else {
+		memcpy(ctx->header_buffer + offset, at, length);
+		offset += length;
+		ctx->header_buffer[offset] = '\0';
+
+		if (parser->state == s_header_value_discard_ws) {
+			/* This means that the header field is fully parsed,
+			 * and we can use it directly.
+			 */
+			if (strncasecmp(ctx->header_buffer, "Upgrade",
+					sizeof("Upgrade") - 1) == 0) {
+				ctx->has_upgrade_header = true;
+			}
+
+			ctx->header_buffer[0] = '\0';
+		}
+	}
 
 	ctx->parser_state = HTTP1_RECEIVING_HEADER_STATE;
+
+	return 0;
+}
+
+static int on_header_value(struct http_parser *parser,
+			   const char *at, size_t length)
+{
+	struct http_client_ctx *ctx = CONTAINER_OF(parser,
+						   struct http_client_ctx,
+						   parser);
+	size_t offset = strlen(ctx->header_buffer);
+
+	if (offset + length > sizeof(ctx->header_buffer) - 1U) {
+		LOG_DBG("Header %s too long (by %zu bytes)", "value",
+			offset + length - sizeof(ctx->header_buffer) - 1U);
+		ctx->header_buffer[0] = '\0';
+	} else {
+		memcpy(ctx->header_buffer + offset, at, length);
+		offset += length;
+		ctx->header_buffer[offset] = '\0';
+
+		if (parser->state == s_header_almost_done) {
+			if (ctx->has_upgrade_header) {
+				if (strncasecmp(ctx->header_buffer, "h2c",
+						sizeof("h2c") - 1) == 0) {
+					ctx->http2_upgrade = true;
+				} else if (strncasecmp(ctx->header_buffer,
+						       "websocket",
+						       sizeof("websocket") - 1) == 0) {
+					ctx->websocket_upgrade = true;
+				}
+			}
+
+			ctx->header_buffer[0] = '\0';
+		}
+	}
 
 	return 0;
 }
@@ -383,11 +442,14 @@ int enter_http1_request(struct http_client_ctx *client)
 	http_parser_settings_init(&client->parser_settings);
 
 	client->parser_settings.on_header_field = on_header_field;
+	client->parser_settings.on_header_value = on_header_value;
 	client->parser_settings.on_headers_complete = on_headers_complete;
 	client->parser_settings.on_url = on_url;
 	client->parser_settings.on_body = on_body;
 	client->parser_settings.on_message_complete = on_message_complete;
 	client->parser_state = HTTP1_INIT_HEADER_STATE;
+
+	memset(client->header_buffer, 0, sizeof(client->header_buffer));
 
 	return 0;
 }
@@ -443,7 +505,43 @@ int handle_http1_request(struct http_client_ctx *client)
 	}
 
 	if (client->has_upgrade_header) {
-		return handle_http1_to_http2_upgrade(client);
+		static const char upgrade_required[] =
+			"HTTP/1.1 426 Upgrade required\r\n"
+			"Upgrade: ";
+		static const char upgrade_msg[] =
+			"Content-Length: 13\r\n\r\n"
+			"Wrong upgrade";
+		const char *needed_upgrade = "h2c\r\n";
+
+		if (client->websocket_upgrade) {
+			goto upgrade_not_found;
+		}
+
+		if (client->http2_upgrade) {
+			return handle_http1_to_http2_upgrade(client);
+		}
+
+upgrade_not_found:
+		ret = http_server_sendall(client, upgrade_required,
+					  sizeof(upgrade_required) - 1);
+		if (ret < 0) {
+			LOG_DBG("Cannot write to socket (%d)", ret);
+			return ret;
+		}
+
+		ret = http_server_sendall(client, needed_upgrade,
+					  strlen(needed_upgrade));
+		if (ret < 0) {
+			LOG_DBG("Cannot write to socket (%d)", ret);
+			return ret;
+		}
+
+		ret = http_server_sendall(client, upgrade_msg,
+					  sizeof(upgrade_msg) - 1);
+		if (ret < 0) {
+			LOG_DBG("Cannot write to socket (%d)", ret);
+			return ret;
+		}
 	}
 
 	detail = get_resource_detail(client->url_buffer, &path_len);
