@@ -22,6 +22,7 @@
 #include <zephyr/dt-bindings/sensor/lis2de12.h>
 #include <zephyr/dt-bindings/sensor/tmag5273.h>
 #include <zephyr/dt-bindings/sensor/stts22h.h>
+#include <zephyr/dt-bindings/sensor/ina226.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -1040,4 +1041,11 @@ test_i2c_nct75: test_i2c_nct75@8b {
 test_i2c_tmp114: tmp114@8c {
 	compatible = "ti,tmp114";
 	reg = <0x8c>;
+};
+
+test_i2c_ina226: ina226@8d {
+	compatible = "ti,ina226";
+	reg = <0x8d>;
+	current-lsb-microamps = <5000>;
+	rshunt-micro-ohms = <500>;
 };

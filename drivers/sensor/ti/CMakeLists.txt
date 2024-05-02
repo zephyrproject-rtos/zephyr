@@ -5,6 +5,7 @@
 add_subdirectory_ifdef(CONFIG_BQ274XX bq274xx)
 add_subdirectory_ifdef(CONFIG_FDC2X1X fdc2x1x)
 add_subdirectory_ifdef(CONFIG_INA219 ina219)
+add_subdirectory_ifdef(CONFIG_INA226 ina226)
 add_subdirectory_ifdef(CONFIG_INA23X ina23x)
 add_subdirectory_ifdef(CONFIG_INA3221 ina3221)
 add_subdirectory_ifdef(CONFIG_OPT3001 opt3001)
