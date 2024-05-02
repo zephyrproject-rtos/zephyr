@@ -354,6 +354,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>;
 			prescaler = <32768>;
 			alarms-count = <2>;
+			alrm-exti-line = <17>;
 			status = "disabled";
 		};
 
