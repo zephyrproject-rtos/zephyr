@@ -443,6 +443,8 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 
 				xtensa_mpu_entry_set(entry_slot_s, start_addr, true,
 						     access_rights, memory_type);
+				first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 1;
+				goto end;
 			} else {
 				/*
 				 * Populate the last two entries to indicate
@@ -459,6 +461,8 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 				xtensa_mpu_entry_set(entry_slot_e, end_addr, false,
 						     XTENSA_MPU_ACCESS_P_NA_U_NA,
 						     CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE);
+				first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 2;
+				goto end;
 			}
 
 			ret = 0;
@@ -595,6 +599,7 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 		xtensa_mpu_entry_attributes_set(&entries[idx], access_rights, memory_type);
 	}
 
+end:
 	if (first_idx != NULL) {
 		*first_idx = first_enabled_idx;
 	}
