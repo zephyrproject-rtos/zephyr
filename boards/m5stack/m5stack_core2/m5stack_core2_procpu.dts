@@ -73,14 +73,6 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
-
-&cpu1 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
-
 &psram0 {
 	reg = <0x3f800000 DT_SIZE_M(8)>;
 	status = "disabled";

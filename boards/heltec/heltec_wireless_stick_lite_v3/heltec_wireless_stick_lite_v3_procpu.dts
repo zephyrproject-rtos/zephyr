@@ -75,14 +75,6 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
-
-&cpu1 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
-
 &adc1 {
 	status ="okay";
 };

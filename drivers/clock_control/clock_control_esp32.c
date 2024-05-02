@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 Mohamed ElShahawi.
- * Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2021-2024 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,19 +10,21 @@
 #define CPU_RESET_REASON RTC_SW_CPU_RESET
 
 #if defined(CONFIG_SOC_SERIES_ESP32)
-#define DT_CPU_COMPAT cdns_tensilica_xtensa_lx6
+#define DT_CPU_COMPAT espressif_xtensa_lx6
 #undef CPU_RESET_REASON
 #define CPU_RESET_REASON SW_CPU_RESET
 #include <zephyr/dt-bindings/clock/esp32_clock.h>
 #include <esp32/rom/rtc.h>
 #include <soc/dport_reg.h>
+#include <soc/i2s_reg.h>
 #elif defined(CONFIG_SOC_SERIES_ESP32S2)
-#define DT_CPU_COMPAT cdns_tensilica_xtensa_lx7
+#define DT_CPU_COMPAT espressif_xtensa_lx7
 #include <zephyr/dt-bindings/clock/esp32s2_clock.h>
 #include <esp32s2/rom/rtc.h>
 #include <soc/dport_reg.h>
+#include <soc/i2s_reg.h>
 #elif defined(CONFIG_SOC_SERIES_ESP32S3)
-#define DT_CPU_COMPAT cdns_tensilica_xtensa_lx7
+#define DT_CPU_COMPAT espressif_xtensa_lx7
 #include <zephyr/dt-bindings/clock/esp32s3_clock.h>
 #include <esp32s3/rom/rtc.h>
 #include <soc/dport_reg.h>
@@ -30,67 +32,33 @@
 #define DT_CPU_COMPAT espressif_riscv
 #include <zephyr/dt-bindings/clock/esp32c3_clock.h>
 #include <esp32c3/rom/rtc.h>
-#include <soc/soc_caps.h>
-#include <soc/soc.h>
-#include <soc/rtc.h>
 #endif /* CONFIG_SOC_SERIES_ESP32xx */
+
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/esp32_clock_control.h>
 
 #include <esp_rom_caps.h>
 #include <esp_rom_sys.h>
 #include <esp_rom_uart.h>
+#include <soc/periph_defs.h>
 #include <soc/rtc.h>
-#include <soc/i2s_reg.h>
-#include <soc/apb_ctrl_reg.h>
-#include <soc/timer_group_reg.h>
 #include <hal/clk_gate_ll.h>
-#include <soc.h>
-#include <zephyr/drivers/clock_control.h>
 #include <esp_private/periph_ctrl.h>
 #include <esp_private/esp_clk.h>
 #include <esp_cpu.h>
-#include <esp_rom_caps.h>
+#include <hal/regi2c_ctrl_ll.h>
+#include <hal/clk_tree_hal.h>
+#include <esp_private/esp_clk_tree_common.h>
 
-struct esp32_clock_config {
-	int clk_src_sel;
-	uint32_t cpu_freq;
-	uint32_t xtal_freq_sel;
-	int xtal_div;
-};
-
-static int clock_control_esp32_on(const struct device *dev,
-				  clock_control_subsys_t sys)
-{
-	ARG_UNUSED(dev);
-	periph_module_enable((periph_module_t)sys);
-	return 0;
-}
-
-static int clock_control_esp32_off(const struct device *dev,
-				   clock_control_subsys_t sys)
-{
-	ARG_UNUSED(dev);
-	periph_module_disable((periph_module_t)sys);
-	return 0;
-}
-
-static int clock_control_esp32_async_on(const struct device *dev,
-					clock_control_subsys_t sys,
-					clock_control_cb_t cb,
-					void *user_data)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(sys);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(user_data);
-	return -ENOTSUP;
-}
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 static enum clock_control_status clock_control_esp32_get_status(const struct device *dev,
 								clock_control_subsys_t sys)
 {
 	ARG_UNUSED(dev);
 	uint32_t clk_en_reg = periph_ll_get_clk_en_reg((periph_module_t)sys);
-	uint32_t clk_en_mask =  periph_ll_get_clk_en_mask((periph_module_t)sys);
+	uint32_t clk_en_mask = periph_ll_get_clk_en_mask((periph_module_t)sys);
 
 	if (DPORT_GET_PERI_REG_MASK(clk_en_reg, clk_en_mask)) {
 		return CLOCK_CONTROL_STATUS_ON;
@@ -98,17 +66,45 @@ static enum clock_control_status clock_control_esp32_get_status(const struct dev
 	return CLOCK_CONTROL_STATUS_OFF;
 }
 
-static int clock_control_esp32_get_rate(const struct device *dev,
-					clock_control_subsys_t sub_system,
+static int clock_control_esp32_on(const struct device *dev, clock_control_subsys_t sys)
+{
+	enum clock_control_status status = clock_control_esp32_get_status(dev, sys);
+
+	if (status == CLOCK_CONTROL_STATUS_ON) {
+		return -EALREADY;
+	}
+
+	periph_module_enable((periph_module_t)sys);
+
+	return 0;
+}
+
+static int clock_control_esp32_off(const struct device *dev, clock_control_subsys_t sys)
+{
+	enum clock_control_status status = clock_control_esp32_get_status(dev, sys);
+
+	if (status == CLOCK_CONTROL_STATUS_ON) {
+		periph_module_disable((periph_module_t)sys);
+	}
+
+	return 0;
+}
+
+static int clock_control_esp32_get_rate(const struct device *dev, clock_control_subsys_t sys,
 					uint32_t *rate)
 {
-	ARG_UNUSED(sub_system);
+	ARG_UNUSED(dev);
 
-	rtc_cpu_freq_config_t config;
-
-	rtc_clk_cpu_freq_get_config(&config);
-
-	*rate = config.freq_mhz;
+	switch ((int)sys) {
+	case ESP32_CLOCK_CONTROL_SUBSYS_RTC_FAST:
+		*rate = esp_clk_tree_lp_fast_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX);
+		break;
+	case ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW:
+		*rate = clk_hal_lp_slow_get_freq_hz();
+		break;
+	default:
+		*rate = clk_hal_cpu_get_freq_hz();
+	}
 
 	return 0;
 }
@@ -512,88 +508,218 @@ static void esp32_clock_perip_init(void)
 }
 #endif /* CONFIG_SOC_SERIES_ESP32C3 */
 
+static int esp32_select_rtc_slow_clk(uint8_t slow_clk)
+{
+	soc_rtc_slow_clk_src_t rtc_slow_clk_src = slow_clk & RTC_CNTL_ANA_CLK_RTC_SEL_V;
+	uint32_t cal_val = 0;
+	/* number of times to repeat 32k XTAL calibration
+	 * before giving up and switching to the internal RC
+	 */
+	int retry_32k_xtal = 3;
+
+	do {
+		if (rtc_slow_clk_src == ESP32_RTC_SLOW_CLK_SRC_XTAL32K) {
+			/* 32k XTAL oscillator needs to be enabled and running before it can
+			 * be used. Hardware doesn't have a direct way of checking if the
+			 * oscillator is running. Here we use rtc_clk_cal function to count
+			 * the number of main XTAL cycles in the given number of 32k XTAL
+			 * oscillator cycles. If the 32k XTAL has not started up, calibration
+			 * will time out, returning 0.
+			 */
+			LOG_DBG("waiting for 32k oscillator to start up");
+			if (slow_clk == ESP32_RTC_SLOW_CLK_SRC_XTAL32K) {
+				rtc_clk_32k_enable(true);
+			} else if (slow_clk == ESP32_RTC_SLOW_CLK_32K_EXT_OSC) {
+				rtc_clk_32k_enable_external();
+			}
+			/* When CONFIG_RTC_CLK_CAL_CYCLES is set to 0, clock calibration will not be
+			 * performed at startup.
+			 */
+			if (CONFIG_RTC_CLK_CAL_CYCLES > 0) {
+				cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, CONFIG_RTC_CLK_CAL_CYCLES);
+				if (cal_val == 0) {
+					if (retry_32k_xtal-- > 0) {
+						continue;
+					}
+					LOG_ERR("32 kHz XTAL not found");
+					return -ENODEV;
+				}
+			}
+		} else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
+			rtc_clk_8m_enable(true, true);
+		}
+		rtc_clk_slow_src_set(rtc_slow_clk_src);
+
+		if (CONFIG_RTC_CLK_CAL_CYCLES > 0) {
+			cal_val = rtc_clk_cal(RTC_CAL_RTC_MUX, CONFIG_RTC_CLK_CAL_CYCLES);
+		} else {
+			const uint64_t cal_dividend = (1ULL << RTC_CLK_CAL_FRACT) * 1000000ULL;
+
+			cal_val = (uint32_t)(cal_dividend / rtc_clk_slow_freq_get_hz());
+		}
+	} while (cal_val == 0);
+
+	LOG_DBG("RTC_SLOW_CLK calibration value: %d", cal_val);
+
+	esp_clk_slowclk_cal_set(cal_val);
+
+	return 0;
+}
+
+static int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
+{
+	rtc_cpu_freq_config_t old_config;
+	rtc_cpu_freq_config_t new_config;
+	rtc_clk_config_t rtc_clk_cfg = RTC_CLK_CONFIG_DEFAULT();
+	uint32_t uart_clock_src_hz;
+	bool ret;
+
+	rtc_clk_cfg.xtal_freq = cpu_cfg->xtal_freq;
+	rtc_clk_cfg.cpu_freq_mhz = cpu_cfg->cpu_freq;
+
+	esp_rom_uart_tx_wait_idle(ESP_CONSOLE_UART_NUM);
+
+	REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_SCK_DCAP, rtc_clk_cfg.slow_clk_dcap);
+	REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DFREQ, rtc_clk_cfg.clk_8m_dfreq);
+
+#if !defined(CONFIG_SOC_SERIES_ESP32)
+	/* Configure 150k clock division */
+	rtc_clk_divider_set(rtc_clk_cfg.clk_rtc_clk_div);
+
+	/* Configure 8M clock division */
+	rtc_clk_8m_divider_set(rtc_clk_cfg.clk_8m_clk_div);
+#else
+	REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DIV_SEL, rtc_clk_cfg.clk_8m_div - 1);
+#endif
+	/* Reset (disable) i2c internal bus for all regi2c registers */
+	regi2c_ctrl_ll_i2c_reset();
+	/* Enable the internal bus used to configure BBPLL */
+	regi2c_ctrl_ll_i2c_bbpll_enable();
+#if defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32)
+	regi2c_ctrl_ll_i2c_apll_enable();
+#endif
+
+#if !defined(CONFIG_SOC_SERIES_ESP32S2)
+	rtc_clk_xtal_freq_update(rtc_clk_cfg.xtal_freq);
+#endif
+	rtc_clk_apb_freq_update(rtc_clk_cfg.xtal_freq * MHZ(1));
+
+	/* Set CPU frequency */
+	rtc_clk_cpu_freq_get_config(&old_config);
+
+	ret = rtc_clk_cpu_freq_mhz_to_config(rtc_clk_cfg.cpu_freq_mhz, &new_config);
+	if (!ret || (new_config.source != cpu_cfg->clk_src)) {
+		LOG_ERR("invalid CPU frequency value");
+		return -EINVAL;
+	}
+
+	rtc_clk_cpu_freq_set_config(&new_config);
+
+	/* Re-calculate the ccount to make time calculation correct. */
+	esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * rtc_clk_cfg.cpu_freq_mhz /
+				old_config.freq_mhz);
+
+	uart_clock_src_hz = esp_clk_apb_freq();
+
+#if !defined(ESP_CONSOLE_UART_NONE)
+	esp_rom_uart_set_clock_baudrate(ESP_CONSOLE_UART_NUM, uart_clock_src_hz,
+					ESP_CONSOLE_UART_BAUDRATE);
+#endif
+	return 0;
+}
+
+static int clock_control_esp32_configure(const struct device *dev, clock_control_subsys_t sys,
+					 void *data)
+{
+
+	const struct esp32_clock_config *cfg = dev->config;
+	struct esp32_clock_config *new_cfg = data;
+	int ret = 0;
+
+	switch ((int)sys) {
+	case ESP32_CLOCK_CONTROL_SUBSYS_RTC_FAST:
+		rtc_clk_fast_src_set(new_cfg->rtc.rtc_fast_clock_src);
+		break;
+	case ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW:
+		ret = esp32_select_rtc_slow_clk(new_cfg->rtc.rtc_slow_clock_src);
+		break;
+	case ESP32_CLOCK_CONTROL_SUBSYS_CPU:
+		/* Normalize frequency */
+		new_cfg->cpu.xtal_freq = new_cfg->cpu.xtal_freq > MHZ(1)
+						 ? new_cfg->cpu.xtal_freq / MHZ(1)
+						 : new_cfg->cpu.xtal_freq;
+		new_cfg->cpu.cpu_freq = new_cfg->cpu.cpu_freq > MHZ(1)
+						? new_cfg->cpu.cpu_freq / MHZ(1)
+						: new_cfg->cpu.cpu_freq;
+		ret = esp32_cpu_clock_configure(&new_cfg->cpu);
+		break;
+	default:
+		LOG_ERR("Unsupported subsystem %d", (int)sys);
+		return -EINVAL;
+	}
+	return ret;
+}
+
 static int clock_control_esp32_init(const struct device *dev)
 {
 	const struct esp32_clock_config *cfg = dev->config;
-	rtc_cpu_freq_config_t old_config;
-	rtc_cpu_freq_config_t new_config;
-	bool res;
+	soc_reset_reason_t rst_reas;
+	rtc_config_t rtc_cfg = RTC_CONFIG_DEFAULT();
+	bool ret;
 
-	/* wait uart output to be cleared */
-	esp_rom_uart_tx_wait_idle(ESP_CONSOLE_UART_NUM);
+	rst_reas = esp_rom_get_reset_reason(0);
+#if !defined(CONFIG_SOC_SERIES_ESP32)
+	if (rst_reas == RESET_REASON_CHIP_POWER_ON
+#if SOC_EFUSE_HAS_EFUSE_RST_BUG
+	    || rst_reas == RESET_REASON_CORE_EFUSE_CRC
+#endif
+	) {
+		rtc_cfg.cali_ocode = 1;
+	}
+#endif
+	rtc_init(rtc_cfg);
 
-	/* reset default config to use dts config */
-	if (rtc_clk_apb_freq_get() < APB_CLK_FREQ || rtc_get_reset_reason(0) != CPU_RESET_REASON) {
-		rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
-
-		clk_cfg.xtal_freq = cfg->xtal_freq_sel;
-		clk_cfg.cpu_freq_mhz = cfg->cpu_freq;
-		clk_cfg.slow_clk_src = rtc_clk_slow_freq_get();
-		clk_cfg.fast_clk_src = rtc_clk_fast_freq_get();
-		rtc_clk_init(clk_cfg);
+	ret = esp32_cpu_clock_configure(&cfg->cpu);
+	if (ret) {
+		LOG_ERR("Failed to configure CPU clock");
+		return ret;
 	}
 
-	rtc_clk_fast_freq_set(RTC_FAST_FREQ_8M);
+	rtc_clk_fast_src_set(cfg->rtc.rtc_fast_clock_src);
 
-	rtc_clk_cpu_freq_get_config(&old_config);
-
-	const uint32_t old_freq_mhz = old_config.freq_mhz;
-	const uint32_t new_freq_mhz = cfg->cpu_freq;
-
-	res = rtc_clk_cpu_freq_mhz_to_config(cfg->cpu_freq, &new_config);
-	if (!res) {
-		return -ENOTSUP;
+	ret = esp32_select_rtc_slow_clk(cfg->rtc.rtc_slow_clock_src);
+	if (ret) {
+		LOG_ERR("Failed to configure RTC clock");
+		return ret;
 	}
-
-	if (cfg->xtal_div >= 0) {
-		new_config.div = cfg->xtal_div;
-	}
-
-	if (cfg->clk_src_sel >= 0) {
-		new_config.source = cfg->clk_src_sel;
-	}
-
-	/* set new configuration */
-	rtc_clk_cpu_freq_set_config(&new_config);
-
-	/* Re-calculate the ccount to make time calculation correct */
-	esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz);
 
 	esp32_clock_perip_init();
 
-	uint32_t clock_hz = esp_clk_apb_freq();
-#if ESP_ROM_UART_CLK_IS_XTAL
-	clock_hz = esp_clk_xtal_freq();
-#endif
-
-#if !defined(ESP_CONSOLE_UART_NONE)
-	esp_rom_uart_set_clock_baudrate(ESP_CONSOLE_UART_NUM,
-			clock_hz, ESP_CONSOLE_UART_BAUDRATE);
-#endif
 	return 0;
 }
 
 static const struct clock_control_driver_api clock_control_esp32_api = {
 	.on = clock_control_esp32_on,
 	.off = clock_control_esp32_off,
-	.async_on = clock_control_esp32_async_on,
 	.get_rate = clock_control_esp32_get_rate,
 	.get_status = clock_control_esp32_get_status,
+	.configure = clock_control_esp32_configure,
 };
 
-#define ESP32_CLOCK_SOURCE	\
-	COND_CODE_1(DT_NODE_HAS_PROP(DT_INST(0, DT_CPU_COMPAT), clock_source),	\
-		    (DT_PROP(DT_INST(0, DT_CPU_COMPAT), clock_source)), (-1))
+static const struct esp32_cpu_clock_config esp32_cpu_clock_config0 = {
+	.clk_src = DT_PROP(DT_INST(0, DT_CPU_COMPAT), clock_source),
+	.cpu_freq = (DT_PROP(DT_INST(0, DT_CPU_COMPAT), clock_frequency) / MHZ(1)),
+	.xtal_freq = ((DT_PROP(DT_INST(0, DT_CPU_COMPAT), xtal_freq)) / MHZ(1)),
+};
 
-#define ESP32_CLOCK_XTAL_DIV	\
-	COND_CODE_1(DT_NODE_HAS_PROP(0, xtal_div),	\
-		    (DT_INST_PROP(0, xtal_div)), (-1))
+static const struct esp32_rtc_clock_config esp32_rtc_clock_config0 = {
+	.rtc_fast_clock_src = DT_PROP(DT_INST(0, espressif_esp32_rtc), fast_clk_src),
+	.rtc_slow_clock_src = DT_PROP(DT_INST(0, espressif_esp32_rtc), slow_clk_src)
+};
 
 static const struct esp32_clock_config esp32_clock_config0 = {
-	.clk_src_sel = ESP32_CLOCK_SOURCE,
-	.cpu_freq = DT_PROP(DT_INST(0, DT_CPU_COMPAT), clock_frequency) / 1000000,
-	.xtal_freq_sel = DT_INST_PROP(0, xtal_freq),
-	.xtal_div = ESP32_CLOCK_XTAL_DIV
+	.cpu = esp32_cpu_clock_config0,
+	.rtc = esp32_rtc_clock_config0
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(rtc),

@@ -47,10 +47,6 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_160M>;
-};
-
 &uart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;

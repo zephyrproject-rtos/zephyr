@@ -82,11 +82,6 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 
 #endif /*CONFIG_SOC_FLASH_ESP32*/
 
-	/* Configures the CPU clock, RTC slow and fast clocks, and performs
-	 * RTC slow clock calibration.
-	 */
-	esp_clk_init();
-
 	esp_timer_early_init();
 
 #if CONFIG_SOC_FLASH_ESP32
