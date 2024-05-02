@@ -450,6 +450,8 @@ static inline void assert_addr_aligned(uintptr_t addr)
 #if __ASSERT_ON
 	__ASSERT((addr & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U,
 		 "unaligned address 0x%" PRIxPTR, addr);
+#else
+	ARG_UNUSED(addr);
 #endif
 }
 
@@ -481,6 +483,8 @@ static inline void assert_size_aligned(size_t size)
 #if __ASSERT_ON
 	__ASSERT((size & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U,
 		 "unaligned size %zu", size);
+#else
+	ARG_UNUSED(size);
 #endif
 }
 
@@ -828,6 +832,9 @@ static inline pentry_t pte_finalize_value(pentry_t val, bool user_table,
 	    get_entry_phys(val, level) != shared_phys_addr) {
 		val = ~val;
 	}
+#else
+	ARG_UNUSED(user_table);
+	ARG_UNUSED(level);
 #endif
 	return val;
 }

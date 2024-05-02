@@ -134,6 +134,8 @@ static void disable_hpet(void)
  */
 uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 {
+	(void)img_handle;
+
 	efi = sys_tab;
 	z_putchar = efi_putchar;
 	printf("*** Zephyr EFI Loader ***\n");
