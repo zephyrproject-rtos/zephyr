@@ -36,8 +36,9 @@ read the set information, which is needed to identify other set members.
 The client can then scan for and connect to the remaining set members, and once
 all the members has been connected to, it can lock and release the set.
 
-It is necessary to enable :code:`BT_DEBUG_CSIP_SET_COORDINATOR` to properly use the set
-coordinator.
+It is necessary to enable
+:kconfig:option:`CONFIG_BT_CSIP_SET_COORDINATOR_LOG_LEVEL_DBG` to properly use
+the set coordinator.
 
 .. code-block:: console
 
