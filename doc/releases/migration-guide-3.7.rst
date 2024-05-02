@@ -199,6 +199,10 @@ Input
   ``in-deadzone``) and when migrating to the new definition the value should be
   scaled accordingly.
 
+* The ``holtek,ht16k33-keyscan`` driver has been converted to use the
+  :ref:`input` subsystem, callbacks have to be migrated to use the input APIs,
+  :dtcompatible:`zephyr,kscan-input` can be used for backward compatibility.
+
 Interrupt Controller
 ====================
 
