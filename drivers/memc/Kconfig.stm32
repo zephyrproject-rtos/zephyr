@@ -31,3 +31,12 @@ config MEMC_STM32_NOR_PSRAM
 	  Enable STM32 FMC NOR/PSRAM controller.
 
 endif
+
+config MEMC_STM32_XSPI_PSRAM
+	bool "STM32 XSPI PSRAM"
+	default y
+	depends on DT_HAS_ST_STM32_XSPI_PSRAM_ENABLED
+	select USE_STM32_HAL_XSPI
+	select PINCTRL
+	help
+	  Enable STM32 XSPI Memory Controller.
