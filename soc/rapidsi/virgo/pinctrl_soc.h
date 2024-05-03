@@ -42,38 +42,29 @@ typedef struct pinctrl_soc_pin {
 } pinctrl_soc_pin_t;
 
 /**
- * @brief Utility macro to initialize pin_num field in #pinctrl_pin_t.
- *
- * @param node_id Node identifier.
- */
-#define Z_PINCTRL_VIRGO_PINNUM_INIT(node_id) // here parse the group1 and group2 fields
-
-/**
- * @brief Definitions used to initialize fields in #pinctrl_pin_t
- */
-#define Z_PINCTRL_VIRGO_PINCFG_INIT(node_id) // here parse the group1 and group2 fields
-
-/**
  * @brief Utility macro to initialize each pin.
  *
  * @param node_id Node identifier.
- * @param state_prop State property name.
- * @param idx State property entry index.
+ * @param prop property name.
+ * @param idx property entry index.
  */
-#define Z_PINCTRL_STATE_PIN_INIT(node_id, state_prop, idx)		       \
-	{ .pin_num = Z_PINCTRL_VIRGO_PINNUM_INIT(			       \
-		DT_PROP_BY_IDX(node_id, state_prop, idx)),		       \
-	  .pincfg = Z_PINCTRL_VIRGO_PINCFG_INIT(			       \
-		DT_PROP_BY_IDX(node_id, state_prop, idx)) },
+#define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)	   		\
+	{ .pin_num = DT_PHA_BY_IDX(node_id, prop, idx, pin_num)	  	\
+	  .pincfg = ((DT_PHA_BY_IDX(node_id, prop, idx, pin_mode) << PIN_MODE_OFFSET) & (PIN_MODE_MASK)) | 	\
+	  			((DT_PHA_BY_IDX(node_id, prop, idx, pin_pull_state) << PIN_PULL_STATE_OFFSET) & (PIN_PULL_STATE_MASK)) | \
+				((DT_PHA_BY_IDX(node_id, prop, idx, pin_pull_dir) << PIN_PULL_DIR_OFFSET) & (PIN_PULL_DIR_MASK)) 	\
+	},
 
 /**
  * @brief Utility macro to initialize state pins contained in a given property.
  *
  * @param node_id Node identifier.
- * @param prop Property name describing state pins.
+ * @param prop Property name describing state pins. (pinctrl-N)
  */
-#define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)			       \
-	{DT_FOREACH_PROP_ELEM(node_id, prop, Z_PINCTRL_STATE_PIN_INIT)}
+#define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)   			   \
+			{DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop), \
+				DT_FOREACH_PROP_ELEM, pins,		       		   \
+				Z_PINCTRL_STATE_PIN_INIT)}
 
 /** @endcond */
 
