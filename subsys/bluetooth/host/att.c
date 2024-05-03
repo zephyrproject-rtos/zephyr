@@ -3808,6 +3808,7 @@ struct bt_att_req *bt_att_req_alloc(k_timeout_t timeout)
 		/* No req will be fulfilled while blocking on the bt_recv thread.
 		 * Blocking would cause deadlock.
 		 */
+		LOG_DBG("Timeout discarded. No blocking on bt_recv thread.");
 		timeout = K_NO_WAIT;
 	}
 
