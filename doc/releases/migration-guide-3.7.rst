@@ -158,6 +158,17 @@ Controller Area Network (CAN)
 Display
 =======
 
+Enhanced Serial Peripheral Interface (eSPI)
+===========================================
+  * The macros ``ESPI_SLAVE_TO_MASTER`` and ``ESPI_MASTER_TO_SLAVE`` were renamed to
+    ``ESPI_TARGET_TO_CONTROLLER`` and ``ESPI_CONTROLLER_TO_TARGET`` respectively to reflect
+    the new terminology in eSPI 1.5 specification.
+  * The enum values ``ESPI_VWIRE_SIGNAL_SLV_BOOT_STS``, ``ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE`` and
+    all ``ESPI_VWIRE_SIGNAL_SLV_GPIO_<NUMBER>`` signals were renamed to
+    ``ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS``, ``ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE`` and
+    ``ESPI_VWIRE_SIGNAL_TARGET_GPIO_<NUMBER>`` respectively to reflect the new terminology
+    in eSPI 1.5 specification.
+
 Flash
 =====
 
@@ -209,6 +220,14 @@ Bluetooth Mesh
   to add ``const`` qualifiers. The data pointer of :c:struct:`bt_mesh_models_metadata_entry`
   got ``const`` qualifier too. The model's metadata structure and metadata raw value
   can be declared as permanent constants in the non-volatile memory. (:github:`69679`)
+
+* The model metadata pointer declaration of :c:struct:`bt_mesh_model` has been changed
+  to a single ``const *`` and redundant metadata pointer from :c:struct:`bt_mesh_health_srv`
+  is removed. Consequently, :code:`BT_MESH_MODEL_HEALTH_SRV` definition is changed
+  to use variable argument notation. (:github:`71281`). Now, when your implementation
+  supports :kconfig:option:`CONFIG_BT_MESH_LARGE_COMP_DATA_SRV` and when you need to
+  specify metadata for Health Server model, simply pass metadata as the last argument
+  to the :code:`BT_MESH_MODEL_HEALTH_SRV` macro, otherwise omit the last argument.
 
 Bluetooth Audio
 ===============
@@ -334,6 +353,12 @@ Architectures
   * Kconfigs ``CONFIG_DISABLE_SSBD`` and ``CONFIG_ENABLE_EXTENDED_IBRS``
     are deprecated. Use :kconfig:option:`CONFIG_X86_DISABLE_SSBD` and
     :kconfig:option:`CONFIG_X86_ENABLE_EXTENDED_IBRS` instead.
+
+* POSIX arch:
+
+  * LLVM fuzzing support has been refactored. A test application now needs to provide its own
+    ``LLVMFuzzerTestOneInput()`` hook instead of relying on a board provided one. Check
+    ``samples/subsys/debug/fuzz/`` for an example.
 
 Xtensa
 ======

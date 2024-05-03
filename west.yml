@@ -152,7 +152,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: e554857b07d54e2152c6f1a9b39da6d6c13fe7f7
+      revision: c49581173bab8625d1f08d5c41d5a186afc240b3
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -271,18 +271,18 @@ manifest:
         - fs
       revision: 408c16a909dd6cf128874a76f21c793798c9e423
     - name: loramac-node
-      revision: 1bf2120cffcedae174ae35d695a28a46caefcb23
+      revision: fb00b383072518c918e2258b0916c996f2d4eebe
       path: modules/lib/loramac-node
     - name: lvgl
       revision: 2b498e6f36d6b82ae1da12c8b7742e318624ecf5
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: 6ec4abdcda78dfc47315af568f93e5ad4398dea0
+      revision: 3217c450180fd5e817601c6f479116de69e57461
       path: modules/crypto/mbedtls
       groups:
         - crypto
     - name: mcuboot
-      revision: 78bfe750cde0f8dfcf81bb4c0a68243d45906def
+      revision: d4394c2f9b76e0a7b758441cea3a8ceb896f66c8
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -322,7 +322,7 @@ manifest:
       groups:
         - crypto
     - name: trusted-firmware-m
-      revision: 0b898c9b72171b0a260c0bb64a92ea4713f9e931
+      revision: 785d87492490069b62170159fcf21c385f90f4eb
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

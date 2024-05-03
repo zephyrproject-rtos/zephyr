@@ -38,7 +38,7 @@ struct analog_axis_config {
 };
 
 struct analog_axis_data {
-	struct k_mutex cal_lock;
+	struct k_sem cal_lock;
 	analog_axis_raw_data_t raw_data_cb;
 	struct k_timer timer;
 	struct k_thread thread;
@@ -66,9 +66,9 @@ int analog_axis_calibration_get(const struct device *dev,
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&data->cal_lock, K_FOREVER);
+	k_sem_take(&data->cal_lock, K_FOREVER);
 	memcpy(out_cal, cal, sizeof(struct analog_axis_calibration));
-	k_mutex_unlock(&data->cal_lock);
+	k_sem_give(&data->cal_lock);
 
 	return 0;
 }
@@ -77,9 +77,9 @@ void analog_axis_set_raw_data_cb(const struct device *dev, analog_axis_raw_data_
 {
 	struct analog_axis_data *data = dev->data;
 
-	k_mutex_lock(&data->cal_lock, K_FOREVER);
+	k_sem_take(&data->cal_lock, K_FOREVER);
 	data->raw_data_cb = cb;
-	k_mutex_unlock(&data->cal_lock);
+	k_sem_give(&data->cal_lock);
 }
 
 int analog_axis_calibration_set(const struct device *dev,
@@ -94,9 +94,9 @@ int analog_axis_calibration_set(const struct device *dev,
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&data->cal_lock, K_FOREVER);
+	k_sem_take(&data->cal_lock, K_FOREVER);
 	memcpy(cal, new_cal, sizeof(struct analog_axis_calibration));
-	k_mutex_unlock(&data->cal_lock);
+	k_sem_give(&data->cal_lock);
 
 	return 0;
 }
@@ -171,7 +171,7 @@ static void analog_axis_loop(const struct device *dev)
 		return;
 	}
 
-	k_mutex_lock(&data->cal_lock, K_FOREVER);
+	k_sem_take(&data->cal_lock, K_FOREVER);
 
 	for (i = 0; i < cfg->num_channels; i++) {
 		const struct analog_axis_channel_config *axis_cfg = &cfg->channel_cfg[i];
@@ -203,7 +203,7 @@ static void analog_axis_loop(const struct device *dev)
 		axis_data->last_out = out;
 	}
 
-	k_mutex_unlock(&data->cal_lock);
+	k_sem_give(&data->cal_lock);
 }
 
 static void analog_axis_thread(void *arg1, void *arg2, void *arg3)
@@ -244,7 +244,7 @@ static int analog_axis_init(const struct device *dev)
 	struct analog_axis_data *data = dev->data;
 	k_tid_t tid;
 
-	k_mutex_init(&data->cal_lock);
+	k_sem_init(&data->cal_lock, 1, 1);
 
 	tid = k_thread_create(&data->thread, data->thread_stack,
 			      K_KERNEL_STACK_SIZEOF(data->thread_stack),

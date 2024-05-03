@@ -477,6 +477,23 @@ static int hawkbit_device_acid_update(int32_t new_value)
 	return 0;
 }
 
+int hawkbit_reset_action_id(void)
+{
+	int ret;
+
+	if (k_sem_take(&probe_sem, K_NO_WAIT) == 0) {
+		ret = hawkbit_device_acid_update(0);
+		k_sem_give(&probe_sem);
+		return ret;
+	}
+	return -EAGAIN;
+}
+
+int32_t hawkbit_get_action_id(void)
+{
+	return hb_cfg.action_id;
+}
+
 /*
  * Update sleep interval, based on results from hawkBit base polling
  * resource

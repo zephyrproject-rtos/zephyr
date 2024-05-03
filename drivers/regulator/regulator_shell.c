@@ -127,6 +127,27 @@ static int cmd_disable(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_is_enabled(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+
+	ARG_UNUSED(argc);
+
+	dev = device_get_binding(argv[1]);
+	if (dev == NULL) {
+		shell_error(sh, "Regulator device %s not available", argv[1]);
+		return -ENODEV;
+	}
+
+	if (regulator_is_enabled(dev)) {
+		shell_print(sh, "Regulator is enabled");
+	} else {
+		shell_print(sh, "Regulator is disabled");
+	}
+
+	return 0;
+}
+
 static int cmd_vlist(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -524,6 +545,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Disable regulator\n"
 		      "Usage: disable <device>",
 		      cmd_disable, 2, 0),
+	SHELL_CMD_ARG(is_enabled, &dsub_device_name,
+		      "Report whether regulator is enabled or disabled\n"
+		      "Usage: is_enabled <device>",
+		      cmd_is_enabled, 2, 0),
 	SHELL_CMD_ARG(vlist, &dsub_device_name,
 		      "List all supported voltages\n"
 		      "Usage: vlist <device>",

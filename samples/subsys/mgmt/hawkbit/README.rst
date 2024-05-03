@@ -97,27 +97,13 @@ and port during runtime, you can use the following command:
 
 .. _hawkbit_sample_sign:
 
-Step 5: Sign and confirm the first image
-========================================
+The firmware will be signed automatically by the build system with the
+``root-rsa-2048.pem`` key. The key is located in the MCUboot repository.
 
-From this section onwards you use a binary (``.bin``) image format.
-
-.. code-block:: console
-
-   west sign -t imgtool -- --key \
-   ~/zephyrproject/bootloader/mcuboot/root-rsa-2048.pem --confirm \
-   --version 1.0.0
-
-The command above creates a signed and confirmed image file called
-:file:`zephyr.signed.confirmed.bin` in the build directory. It's important for
-the first image to be confirmed as MCUboot isn't able to confirm an image that
-is flashed using a hardware tool, and hawkBit will reboot to trigger a firmware
-swap if it isn't able to confirm the running image on init.
-
-Step 6: Flash the first image
+Step 5: Flash the first image
 =============================
 
-Upload the :file:`zephyr.signed.confirmed.bin` file from Step 5 to image slot-0
+Upload the :file:`zephyr.signed.confirmed.bin` file to image slot-0
 of your board.
 
 .. code-block:: console
@@ -129,22 +115,13 @@ time to the console. After it connects to the internet, in hawkbit server UI,
 you should see the ``frdm_k64f`` show up in the Targets pane. It's time to
 upload a firmware binary to the server, and update it using this UI.
 
-Step 7: Building and signing the test image
+Step 6: Building and signing the test image
 ===========================================
 
 The easiest way to test the functionality of hawkBit is to repeat step 4 to
-build the sample again, so that the build time will be different. Then, similar
-to step 5, sign the image and assign it a different version number but without
-confirming it like so:
+build the sample again, so that the build time will be different.
 
-.. code-block:: console
-
-   west sign -t imgtool -- --key \
-   ~/zephyrproject/bootloader/mcuboot/root-rsa-2048.pem \
-   --version 1.0.1
-
-The command above creates a signed image file called
-:file:`zephyr.signed.bin` in the build directory.
+This time you need the file :file:`zephyr.signed.bin` from the build directory.
 
 Upload the signed image to the server. Click Upload icon in left pane of UI and
 create a new Software Module with type Apps (``name:hawkbit,version:1.0.1``).
@@ -156,7 +133,7 @@ hawkBit software module to the created distribution. Click on Deployment
 icon in the left pane of UI and assign the ``frdm_k64f_update`` distribution to
 the target ``frdm_k64f``.
 
-Step 8: Run the update
+Step 7: Run the update
 ======================
 
 Back in the terminal session that you used for debugging the board, type the
@@ -168,24 +145,14 @@ following command:
 
 And then wait. The board will ping the server, check if there are any new
 updates, and then download the update you've just created. If everything goes
-fine the message ``Image flashed successfully, you can reboot now`` will be
-printed on the terminal.
+fine the message ``Update installed`` will be printed on the terminal.
 
-Step 9: Reboot the system
-=========================
-
-In the terminal you used for debugging the board, type the following command:
-
-.. code-block:: console
-
-   kernel reboot cold
-
-Your board will reboot and then start with the new image. After rebooting, the
+Your board will reboot automatically and then start with the new image. After rebooting, the
 board will print a different image build time then automatically ping the server
-again and the message ``No update available`` will be printed on the terminal.
+again and the message ``Image is already updated`` will be printed on the terminal.
 
-Step 10: Clone and build hawkbit with https
-===========================================
+Step 8: Clone and build hawkbit with https
+==========================================
 
 Below steps clone and build the hawkbit with self-signed certificate
 to support https.
@@ -287,8 +254,8 @@ Change authentication security from false to true.
    java -jar ./hawkbit-runtime/hawkbit-update-server/target/ \
         hawkbit-update-server-#version#-SNAPSHOT.jar
 
-Step 11: Build hawkBit HTTPS
-============================
+Step 9: Build hawkBit HTTPS
+===========================
 
 * Convert the server.pem file to self_sign.der and place the der file in
   hawkbit/src directory
@@ -301,4 +268,4 @@ Step 11: Build hawkBit HTTPS
     :conf: "prj.conf overlay-tls.conf"
     :goals: build
 
-Repeat the steps from 5 to 9, to update the device over https.
+Repeat the steps from 5 to 7, to update the device over https.

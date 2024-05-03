@@ -446,11 +446,7 @@ Bluetooth Audio:
     - tests/bluetooth/audio/
     - tests/bsim/bluetooth/audio/
     - tests/bluetooth/shell/audio.conf
-    - doc/connectivity/bluetooth/img/ble_audio_arch.svg
-    - doc/connectivity/bluetooth/img/cap_proc.svg
-    - doc/connectivity/bluetooth/img/gaf.svg
-    - doc/connectivity/bluetooth/img/zephyr_gaf.svg
-    - doc/connectivity/bluetooth/bluetooth-le-audio-arch.rst
+    - doc/connectivity/bluetooth/api/audio/
     - samples/bluetooth/broadcast_audio*/
     - samples/bluetooth/hap*/
     - samples/bluetooth/public_broadcast*/
@@ -1375,6 +1371,7 @@ Release Notes:
     - include/zephyr/dt-bindings/i2c/
     - tests/boards/*/i2c/
     - tests/drivers/*/i2c/
+    - samples/drivers/i2c/
   labels:
     - "area: I2C"
   tests:
@@ -3486,6 +3483,7 @@ nRF Platforms:
 Renesas SmartBond Platforms:
   status: maintained
   maintainers:
+    - ioannis-karachalios
     - andrzej-kaczmarek
     - blauret
   files:
@@ -4348,6 +4346,7 @@ West:
 "West project: hal_renesas":
   status: maintained
   maintainers:
+    - KhiemNguyenT
     - andrzej-kaczmarek
   files: []
   labels:

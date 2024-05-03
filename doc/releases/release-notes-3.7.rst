@@ -90,6 +90,8 @@ Boards & SoC Support
 
 * Made these changes for native/POSIX boards:
 
+  * LLVM fuzzing support has been refactored while adding support for it in native_sim.
+
 * Added support for these following shields:
 
 Build system and Infrastructure
@@ -164,6 +166,11 @@ Drivers and Sensors
 * DMA
 
 * Entropy
+
+* eSPI
+
+  * Renamed eSPI virtual wire direction macros and enum values to match the new terminology in
+    eSPI 1.5 specification.
 
 * Ethernet
 

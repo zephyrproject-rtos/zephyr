@@ -122,28 +122,28 @@ static const struct xec_signal vw_tbl[] = {
 	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_PME, vw_pme_n),
 	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_WAKE, vw_wake_n),
 	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_OOB_RST_ACK, vw_oob_rst_ack),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, vw_slave_boot_status),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS, vw_target_boot_status),
 	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_ERR_NON_FATAL, vw_error_non_fatal),
 	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_ERR_FATAL, vw_error_fatal),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, vw_slave_boot_done),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, vw_target_boot_done),
 	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_HOST_RST_ACK, vw_host_rst_ack),
 	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_RST_CPU_INIT, vw_rcin_n),
 	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SMI, vw_smi_n),
 	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SCI, vw_sci_n),
 	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_DNX_ACK, vw_dnx_ack),
 	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SUS_ACK, vw_sus_ack_n),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_0, vw_t2c_gpio_0),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_1, vw_t2c_gpio_1),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_2, vw_t2c_gpio_2),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_3, vw_t2c_gpio_3),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_4, vw_t2c_gpio_4),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_5, vw_t2c_gpio_5),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_6, vw_t2c_gpio_6),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_7, vw_t2c_gpio_7),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_8, vw_t2c_gpio_8),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_9, vw_t2c_gpio_9),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_10, vw_t2c_gpio_10),
-	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_SLV_GPIO_11, vw_t2c_gpio_11),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_TARGET_GPIO_0, vw_t2c_gpio_0),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_TARGET_GPIO_1, vw_t2c_gpio_1),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_TARGET_GPIO_2, vw_t2c_gpio_2),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_TARGET_GPIO_3, vw_t2c_gpio_3),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_TARGET_GPIO_4, vw_t2c_gpio_4),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_TARGET_GPIO_5, vw_t2c_gpio_5),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_TARGET_GPIO_6, vw_t2c_gpio_6),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_TARGET_GPIO_7, vw_t2c_gpio_7),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_TARGET_GPIO_8, vw_t2c_gpio_8),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_TARGET_GPIO_9, vw_t2c_gpio_9),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_TARGET_GPIO_10, vw_t2c_gpio_10),
+	MCHP_DT_ESPI_VW_ENTRY(ESPI_VWIRE_SIGNAL_TARGET_GPIO_11, vw_t2c_gpio_11),
 };
 
 /* Buffer size are expressed in bytes */
@@ -311,13 +311,13 @@ static int espi_xec_send_vwire(const struct device *dev,
 
 	dir = (signal_info.flags >> MCHP_DT_ESPI_VW_FLAG_DIR_POS) & BIT(0);
 
-	if (dir == ESPI_MASTER_TO_SLAVE) {
+	if (dir == ESPI_CONTROLLER_TO_TARGET) {
 		regaddr = xec_msvw_addr(dev, xec_id);
 
 		sys_write8(level, regaddr + MSVW_BI_SRC0 + src_id);
 	}
 
-	if (dir == ESPI_SLAVE_TO_MASTER) {
+	if (dir == ESPI_TARGET_TO_CONTROLLER) {
 		regaddr = xec_smvw_addr(dev, xec_id);
 
 		sys_write8(level, regaddr + SMVW_BI_SRC0 + src_id);
@@ -356,12 +356,12 @@ static int espi_xec_receive_vwire(const struct device *dev,
 
 	dir = (signal_info.flags >> MCHP_DT_ESPI_VW_FLAG_DIR_POS) & BIT(0);
 
-	if (dir == ESPI_MASTER_TO_SLAVE) {
+	if (dir == ESPI_CONTROLLER_TO_TARGET) {
 		regaddr = xec_msvw_addr(dev, xec_id);
 		*level = sys_read8(regaddr + MSVW_BI_SRC0 + src_id) & BIT(0);
 	}
 
-	if (dir == ESPI_SLAVE_TO_MASTER) {
+	if (dir == ESPI_TARGET_TO_CONTROLLER) {
 		regaddr = xec_smvw_addr(dev, xec_id);
 		*level = sys_read8(regaddr + SMVW_BI_SRC0 + src_id) & BIT(0);
 	}
@@ -631,12 +631,12 @@ static void send_slave_bootdone(const struct device *dev)
 	int ret;
 	uint8_t boot_done;
 
-	ret = espi_xec_receive_vwire(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE,
+	ret = espi_xec_receive_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE,
 				     &boot_done);
 	if (!ret && !boot_done) {
 		/* SLAVE_BOOT_DONE & SLAVE_LOAD_STS have to be sent together */
-		espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, 1);
-		espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 1);
+		espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS, 1);
+		espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, 1);
 	}
 }
 #endif
@@ -1414,7 +1414,7 @@ static void xec_vw_cfg_properties(const struct xec_signal *p, uint32_t regaddr, 
  */
 static void xec_vw_config(const struct device *dev)
 {
-	for (int i = ESPI_VWIRE_SIGNAL_SLV_GPIO_0; i < ARRAY_SIZE(vw_tbl); i++) {
+	for (int i = ESPI_VWIRE_SIGNAL_TARGET_GPIO_0; i < ARRAY_SIZE(vw_tbl); i++) {
 		const struct xec_signal *p = &vw_tbl[i];
 		uint32_t regaddr = xec_smvw_addr(dev, p->xec_reg_idx);
 		uint8_t dir = (p->flags >> MCHP_DT_ESPI_VW_FLAG_DIR_POS) & BIT(0);

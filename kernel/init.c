@@ -424,7 +424,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	z_sys_post_kernel = true;
 
 	z_sys_init_run_level(INIT_LEVEL_POST_KERNEL);
-#if CONFIG_STACK_POINTER_RANDOM
+#if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 	z_stack_adjust_initialized = 1;
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 	boot_banner();
@@ -650,12 +650,7 @@ FUNC_NORETURN void z_cstart(void)
 	LOG_CORE_INIT();
 
 #if defined(CONFIG_MULTITHREADING)
-	/* Note: The z_ready_thread() call in prepare_multithreading() requires
-	 * a dummy thread even if CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN=y
-	 */
-	struct k_thread dummy_thread;
-
-	z_dummy_thread_init(&dummy_thread);
+	z_dummy_thread_init(&_thread_dummy);
 #endif /* CONFIG_MULTITHREADING */
 	/* do any necessary initialization of static devices */
 	z_device_state_init();

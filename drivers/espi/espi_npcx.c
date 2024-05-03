@@ -153,10 +153,10 @@ static const struct npcx_vw_out_config vw_out_tbl[] = {
 	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_WAKE, vw_wake),
 	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_PME, vw_pme),
 	/* index 05h (Out) */
-	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, vw_slv_boot_done),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, vw_slv_boot_done),
 	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_ERR_FATAL, vw_err_fatal),
 	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_ERR_NON_FATAL, vw_err_non_fatal),
-	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_BOOT_STS,
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS,
 						vw_slv_boot_sts_with_done),
 	/* index 06h (Out) */
 	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SCI, vw_sci),
@@ -171,15 +171,15 @@ static const struct npcx_vw_out_config vw_out_gpio_tbl1[] = {
 /* Only NPCX9 and later series support this feature */
 #if defined(CONFIG_ESPI_NPCX_SUPP_VW_GPIO)
 	/* index 50h (Out) */
-	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_0, vw_slv_gpio_0),
-	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_1, vw_slv_gpio_1),
-	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_2, vw_slv_gpio_2),
-	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_3, vw_slv_gpio_3),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_TARGET_GPIO_0, vw_slv_gpio_0),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_TARGET_GPIO_1, vw_slv_gpio_1),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_TARGET_GPIO_2, vw_slv_gpio_2),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_TARGET_GPIO_3, vw_slv_gpio_3),
 	/* index 51h (Out) */
-	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_4, vw_slv_gpio_4),
-	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_5, vw_slv_gpio_5),
-	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_6, vw_slv_gpio_6),
-	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_7, vw_slv_gpio_7),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_TARGET_GPIO_4, vw_slv_gpio_4),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_TARGET_GPIO_5, vw_slv_gpio_5),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_TARGET_GPIO_6, vw_slv_gpio_6),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_TARGET_GPIO_7, vw_slv_gpio_7),
 #endif
 };
 
@@ -618,11 +618,11 @@ static void espi_vw_send_bootload_done(const struct device *dev)
 	uint8_t boot_done;
 
 	ret = espi_npcx_receive_vwire(dev,
-			ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, &boot_done);
+			ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, &boot_done);
 	LOG_DBG("%s: %d", __func__, boot_done);
 	if (!ret && !boot_done) {
 		/* Send slave boot status bit with done bit at the same time. */
-		espi_npcx_send_vwire(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, 1);
+		espi_npcx_send_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS, 1);
 	}
 }
 
@@ -773,7 +773,7 @@ static int espi_npcx_send_vwire(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (signal >= ESPI_VWIRE_SIGNAL_SLV_GPIO_0) {
+	if (signal >= ESPI_VWIRE_SIGNAL_TARGET_GPIO_0) {
 		vw_tbl = vw_out_gpio_tbl1;
 		vw_tbl_size = ARRAY_SIZE(vw_out_gpio_tbl1);
 		reg_name = "VWGPSM";
@@ -797,7 +797,7 @@ static int espi_npcx_send_vwire(const struct device *dev,
 	bitmask = vw_tbl[sig_idx].bitmask;
 
 	/* Get wire field and set/clear wire bit */
-	if (signal >= ESPI_VWIRE_SIGNAL_SLV_GPIO_0) {
+	if (signal >= ESPI_VWIRE_SIGNAL_TARGET_GPIO_0) {
 		val = GET_FIELD(inst->VWGPSM[reg_idx], NPCX_VWEVSM_WIRE);
 	} else {
 		val = GET_FIELD(inst->VWEVSM[reg_idx], NPCX_VWEVSM_WIRE);
@@ -809,7 +809,7 @@ static int espi_npcx_send_vwire(const struct device *dev,
 		val &= ~bitmask;
 	}
 
-	if (signal >= ESPI_VWIRE_SIGNAL_SLV_GPIO_0) {
+	if (signal >= ESPI_VWIRE_SIGNAL_TARGET_GPIO_0) {
 		SET_FIELD(inst->VWGPSM[reg_idx], NPCX_VWEVSM_WIRE, val);
 		reg_val = inst->VWGPSM[reg_idx];
 	} else {
