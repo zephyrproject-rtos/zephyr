@@ -265,11 +265,9 @@ Your board directory should look like this:
    │   └── index.rst
    ├── Kconfig.plank
    ├── Kconfig.defconfig
-   ├── plank_defconfig
    ├── plank_<qualifiers>_defconfig
-   ├── plank.dts
    ├── plank_<qualifiers>.dts
-   └── plank.yaml
+   └── plank_<qualifiers>.yaml
 
 Replace ``plank`` with your board's name, of course.
 
@@ -280,7 +278,7 @@ The mandatory files are:
    CPU clusters for multi-core SoCs are not described in this file as they are
    inherited from the SoC's YAML description.
 
-#. :file:`plank.dts` or :file:`plank_<qualifiers>.dts`: a hardware description
+#. :file:`plank_<qualifiers>.dts`: a hardware description
    in :ref:`devicetree <dt-guide>` format. This declares your SoC, connectors,
    and any other hardware components such as LEDs, buttons, sensors, or
    communication peripherals (USB, BLE controller, etc).
@@ -304,8 +302,8 @@ The optional files are:
 - :file:`doc/index.rst`, :file:`doc/plank.png`: documentation for and a picture
   of your board. You only need this if you're :ref:`contributing-your-board` to
   Zephyr.
-- :file:`plank.yaml`: a YAML file with miscellaneous metadata used by the
-  :ref:`twister_script`.
+- :file:`plank_<qualifiers>.yaml`: a YAML file with miscellaneous metadata used
+  by the :ref:`twister_script`.
 
 Board qualifiers of the form ``<soc>/<cpucluster>/<variant>`` are normalized so
 that ``/`` is replaced with ``_`` when used for filenames, for example:
