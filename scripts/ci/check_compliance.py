@@ -910,6 +910,7 @@ flagged.
         "OPT",
         "OPT_0",
         "PEDO_THS_MIN",
+        "PSA_H", # This is used in config-psa.h as guard for the header file
         "REG1",
         "REG2",
         "RIMAGE_SIGNING_SCHEMA",  # Optional module
