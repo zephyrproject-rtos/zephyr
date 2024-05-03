@@ -5,6 +5,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * Specification
+ * -------------
+ * NCM spec can be obtained here: https://www.usb.org/document-library/network-control-model-devices-specification-v10-and-errata-and-adopters-agreement
+ *
+ * Small Glossary (from the spec)
+ * --------------
+ * Datagram - A collection of bytes forming a single item of information, passed as a unit from source to destination.
+ * NCM      - Network Control Model
+ * NDP      - NCM Datagram Pointer: NTB structure that delineates Datagrams (typically Ethernet frames) within an NTB
+ * NTB      - NCM Transfer Block: a data structure for efficient USB encapsulation of one or more datagrams
+ *            Each NTB is designed to be a single USB transfer
+ * NTH      - NTB Header: a data structure at the front of each NTB, which provides the information needed to validate
+ *            the NTB and begin decoding
+ *
+ * Some explanations
+ * -----------------
+ * - itf_data_alt  if != 0 -> data xmit/recv are allowed (see spec)
+ * - ep_in         IN endpoints take data from the device intended to go in to the host (the device transmits)
+ * - ep_out        OUT endpoints send data out of the host to the device (the device receives)
+ */
+
 #define DT_DRV_COMPAT zephyr_cdc_ncm_ethernet
 
 #include <zephyr/net/net_pkt.h>
@@ -20,7 +42,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cdc_ncm, CONFIG_USBD_CDC_NCM_LOG_LEVEL);
 
-#define CDC_NCM_EP_MPS_INT                  16
+#include "usbd_cdc_ncm_local.h"
+
+#define CDC_NCM_EP_MPS_INT                  64
 #define CDC_NCM_INTERVAL_DEFAULT            10000UL
 #define CDC_NCM_FS_INT_EP_INTERVAL          USB_FS_INT_EP_INTERVAL(10000U)
 #define CDC_NCM_HS_INT_EP_INTERVAL          USB_HS_INT_EP_INTERVAL(10000U)
@@ -36,22 +60,58 @@ enum {
  * Transfers through two endpoints proceed in a synchronous manner,
  * with maximum block of NET_ETH_MAX_FRAME_SIZE.
  */
+#if 1    ////
 NET_BUF_POOL_FIXED_DEFINE(cdc_ncm_ep_pool,
 			  DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
 			  NET_ETH_MAX_FRAME_SIZE,
 			  sizeof(struct udc_buf_info), NULL);
+#endif
 
 
-struct cdc_ncm_notification {
-	union {
-		uint8_t bmRequestType;
-		struct usb_req_type_field RequestType;
-	};
-	uint8_t bNotificationType;
-	uint16_t wValue;
-	uint16_t wIndex;
-	uint16_t wLength;
-} __packed;
+/**
+ * This is the NTB parameter structure
+ */
+static ntb_parameters_t ntb_parameters = {
+    .wLength                 = sys_cpu_to_le16(sizeof(ntb_parameters_t)),
+    .bmNtbFormatsSupported   = sys_cpu_to_le16(0x01),                                 // 16-bit NTB supported
+    .dwNtbInMaxSize          = sys_cpu_to_le32(CONFIG_CDC_NCM_XMT_NTB_MAX_SIZE),
+    .wNdbInDivisor           = sys_cpu_to_le16(4),
+    .wNdbInPayloadRemainder  = sys_cpu_to_le16(0),
+    .wNdbInAlignment         = sys_cpu_to_le16(CONFIG_CDC_NCM_ALIGNMENT),
+    .wReserved               = sys_cpu_to_le16(0),
+    .dwNtbOutMaxSize         = sys_cpu_to_le32(CONFIG_CDC_NCM_RCV_NTB_MAX_SIZE),
+    .wNdbOutDivisor          = sys_cpu_to_le16(4),
+    .wNdbOutPayloadRemainder = sys_cpu_to_le16(0),
+    .wNdbOutAlignment        = sys_cpu_to_le16(CONFIG_CDC_NCM_ALIGNMENT),
+    .wNtbOutMaxDatagrams     = sys_cpu_to_le16(1)
+};
+
+static ncm_notify_network_connection_t ncm_notify_connected = {
+        .header = {
+                .RequestType = {
+                        .recipient = USB_REQTYPE_RECIPIENT_INTERFACE,
+                        .type      = USB_REQTYPE_TYPE_CLASS,
+                        .direction = USB_REQTYPE_DIR_TO_HOST
+                },
+                .bRequest = NCM_NOTIFICATION_NETWORK_CONNECTION,
+                .wValue   = sys_cpu_to_le16(1) /* Connected */,
+                .wLength  = sys_cpu_to_le16(0),
+        },
+};
+
+static ncm_notify_connection_speed_change_t ncm_notify_speed_change = {
+        .header = {
+                .RequestType = {
+                        .recipient = USB_REQTYPE_RECIPIENT_INTERFACE,
+                        .type      = USB_REQTYPE_TYPE_CLASS,
+                        .direction = USB_REQTYPE_DIR_TO_HOST
+                },
+                .bRequest = NCM_NOTIFICATION_CONNECTION_SPEED_CHANGE,
+                .wLength  = sys_cpu_to_le16(8),
+        },
+        .downlink = sys_cpu_to_le32(12000000),
+        .uplink   = sys_cpu_to_le32(12000000),
+};
 
 
 /*
@@ -94,14 +154,27 @@ struct cdc_ncm_eth_data {
 	struct k_sem sync_sem;
 	struct k_sem notif_sem;
 	atomic_t state;
+
+    enum {
+        IF_STATE_INIT = 0,
+        IF_STATE_FIRST_SKIPPED,
+        IF_STATE_SPEED_SENT,
+        IF_STATE_DONE,
+    } if_state;                                              //!< interface state
+
+    // misc
+    uint8_t itf_data_alt;                                    //!< ==0 -> no endpoints, i.e. no network traffic, ==1 -> normal operation with two endpoints (spec, chapter 5.3)
 };
+
 
 static uint8_t cdc_ncm_get_ctrl_if(struct cdc_ncm_eth_data *const data)
 {
 	struct usbd_cdc_ncm_desc *desc = data->desc;
 
 	return desc->if0.bInterfaceNumber;
-}
+}   // cdc_ncm_get_ctrl_if
+
+
 
 static uint8_t cdc_ncm_get_int_in(struct usbd_class_data *const c_data)
 {
@@ -115,7 +188,9 @@ static uint8_t cdc_ncm_get_int_in(struct usbd_class_data *const c_data)
 	}
 
 	return desc->if0_int_ep.bEndpointAddress;
-}
+}   // cdc_ncm_get_int_in
+
+
 
 static uint8_t cdc_ncm_get_bulk_in(struct usbd_class_data *const c_data)
 {
@@ -129,7 +204,9 @@ static uint8_t cdc_ncm_get_bulk_in(struct usbd_class_data *const c_data)
 	}
 
 	return desc->if1_1_in_ep.bEndpointAddress;
-}
+}   // cdc_ncm_get_bulk_in
+
+
 
 static uint16_t cdc_ncm_get_bulk_in_mps(struct usbd_class_data *const c_data)
 {
@@ -140,7 +217,9 @@ static uint16_t cdc_ncm_get_bulk_in_mps(struct usbd_class_data *const c_data)
 	}
 
 	return 64U;
-}
+}   // cdc_ncm_get_bulk_in_mps
+
+
 
 static uint8_t cdc_ncm_get_bulk_out(struct usbd_class_data *const c_data)
 {
@@ -154,7 +233,9 @@ static uint8_t cdc_ncm_get_bulk_out(struct usbd_class_data *const c_data)
 	}
 
 	return desc->if1_1_out_ep.bEndpointAddress;
-}
+}   // cdc_ncm_get_bulk_out
+
+
 
 static struct net_buf *cdc_ncm_buf_alloc(const uint8_t ep)
 {
@@ -171,7 +252,9 @@ static struct net_buf *cdc_ncm_buf_alloc(const uint8_t ep)
 	bi->ep = ep;
 
 	return buf;
-}
+}   // cdc_ncm_buf_alloc
+
+
 
 /* Retrieve expected pkt size from ethernet/ip header */
 static size_t ncm_eth_size(void *const ncm_pkt, const size_t len)
@@ -180,6 +263,7 @@ static size_t ncm_eth_size(void *const ncm_pkt, const size_t len)
 	struct net_eth_hdr *hdr = (void *)ncm_pkt;
 	uint16_t ip_len;
 
+    LOG_DBG("");
 	if (len < NET_IPV6H_LEN + sizeof(struct net_eth_hdr)) {
 		/* Too short */
 		return 0;
@@ -200,46 +284,62 @@ static size_t ncm_eth_size(void *const ncm_pkt, const size_t len)
 	}
 
 	return sizeof(struct net_eth_hdr) + ip_len;
-}
+}   // ncm_eth_size
+
+
 
 static int cdc_ncm_out_start(struct usbd_class_data *const c_data)
+/**
+ * Initiate reception
+ */
 {
-	const struct device *dev = usbd_class_get_private(c_data);
-	struct cdc_ncm_eth_data *data = dev->data;
-	struct net_buf *buf;
-	uint8_t ep;
-	int ret;
+    const struct device *dev = usbd_class_get_private(c_data);
+    struct cdc_ncm_eth_data *data = dev->data;
+    struct net_buf *buf;
+    uint8_t ep;
+    int ret;
 
-	if (!atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED)) {
-		return -EACCES;
-	}
+    LOG_DBG("%ld", data->state);
+    if (!atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED)) {
+        LOG_DBG("x1");
+        return -EACCES;
+    }
 
-	if (atomic_test_and_set_bit(&data->state, CDC_NCM_OUT_ENGAGED)) {
-		return -EBUSY;
-	}
+    if (atomic_test_and_set_bit(&data->state, CDC_NCM_OUT_ENGAGED)) {
+        LOG_DBG("x2");
+        return -EBUSY;
+    }
 
-	ep = cdc_ncm_get_bulk_out(c_data);
-	buf = cdc_ncm_buf_alloc(ep);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
+    ep = cdc_ncm_get_bulk_out(c_data);
+    buf = cdc_ncm_buf_alloc(ep);
+    if (buf == NULL) {
+        LOG_DBG("x3");
+        return -ENOMEM;
+    }
 
-	ret = usbd_ep_enqueue(c_data, buf);
-	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
-		net_buf_unref(buf);
-	}
+    LOG_DBG("x4");
+    ret = usbd_ep_enqueue(c_data, buf);
+    if (ret) {
+        LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+        net_buf_unref(buf);
+    }
 
-	return  ret;
-}
+    return  ret;
+}   // cdc_ncm_out_start
+
+
 
 static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
-			      struct net_buf *const buf, const int err)
+                              struct net_buf *const buf, const int err)
+/**
+ * Frame received from host!
+ */
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ncm_eth_data *data = dev->data;
 	struct net_pkt *pkt;
 
+    LOG_DBG("");
 	if (err || buf->len == 0) {
 		goto restart_out_transfer;
 	}
@@ -281,10 +381,15 @@ restart_out_transfer:
 	atomic_clear_bit(&data->state, CDC_NCM_OUT_ENGAGED);
 
 	return cdc_ncm_out_start(c_data);
-}
+}   // cdc_ncm_acl_out_cb
+
+
 
 static int usbd_cdc_ncm_request(struct usbd_class_data *const c_data,
-				struct net_buf *buf, int err)
+                                struct net_buf *buf, int err)
+/**
+ * Endpoint request completion event handler: handle NCM request from host.
+ */
 {
 	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct device *dev = usbd_class_get_private(c_data);
@@ -292,110 +397,289 @@ static int usbd_cdc_ncm_request(struct usbd_class_data *const c_data,
 	struct udc_buf_info *bi;
 
 	bi = udc_get_buf_info(buf);
+    LOG_DBG("ep: 0x%02x", bi->ep);
 
 	if (bi->ep == cdc_ncm_get_bulk_out(c_data)) {
+	    // data received
 		return cdc_ncm_acl_out_cb(c_data, buf, err);
 	}
 
 	if (bi->ep == cdc_ncm_get_bulk_in(c_data)) {
+        LOG_DBG("free sync_sem");
 		k_sem_give(&data->sync_sem);
-
 		return 0;
 	}
 
 	if (bi->ep == cdc_ncm_get_int_in(c_data)) {
+	    LOG_DBG("free notif_sem");
 		k_sem_give(&data->notif_sem);
-
 		return 0;
 	}
 
 	return usbd_ep_buf_free(uds_ctx, buf);
-}
+}   // usbd_cdc_ncm_request
 
-static int cdc_ncm_send_notification(const struct device *dev,
-				     const bool connected)
+
+
+static int cdc_ncm_send_notification_connected(const struct device *dev,
+                                               const bool connected)
 {
-	struct cdc_ncm_eth_data *data = dev->data;
-	struct usbd_class_data *c_data = data->c_data;
-	struct cdc_ncm_notification notification = {
-		.RequestType = {
-			.direction = USB_REQTYPE_DIR_TO_HOST,
-			.type = USB_REQTYPE_TYPE_CLASS,
-			.recipient = USB_REQTYPE_RECIPIENT_INTERFACE,
-		},
-		.bNotificationType = USB_CDC_NETWORK_CONNECTION,
-		.wValue = sys_cpu_to_le16((uint16_t)connected),
-		.wIndex = sys_cpu_to_le16(cdc_ncm_get_ctrl_if(data)),
-		.wLength = 0,
-	};
-	struct net_buf *buf;
-	uint8_t ep;
-	int ret;
+    struct cdc_ncm_eth_data *data = dev->data;
+    struct usbd_class_data *c_data = data->c_data;
+    struct net_buf *buf;
+    uint8_t ep;
+    int ret;
 
-	if (!atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED)) {
-		LOG_INF("USB configuration is not enabled");
-		return 0;
-	}
+    LOG_DBG("%d", connected);
 
-	if (atomic_test_bit(&data->state, CDC_NCM_CLASS_SUSPENDED)) {
-		LOG_INF("USB device is suspended (FIXME)");
-		return 0;
-	}
+    if (!atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED)) {
+        LOG_INF("USB configuration is not enabled");
+        return 0;
+    }
 
-	ep = cdc_ncm_get_int_in(c_data);
-	buf = usbd_ep_buf_alloc(c_data, ep, sizeof(struct cdc_ncm_notification));
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
+    if (atomic_test_bit(&data->state, CDC_NCM_CLASS_SUSPENDED)) {
+        LOG_INF("USB device is suspended (FIXME)");
+        return 0;
+    }
 
-	net_buf_add_mem(buf, &notification, sizeof(struct cdc_ncm_notification));
-	ret = usbd_ep_enqueue(c_data, buf);
-	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
-		net_buf_unref(buf);
-		return ret;
-	}
+    ncm_notify_connected.header.wValue = sys_cpu_to_le16(connected);
+    ncm_notify_connected.header.wIndex = sys_cpu_to_le16(cdc_ncm_get_ctrl_if(data));
 
-	k_sem_take(&data->notif_sem, K_FOREVER);
-	net_buf_unref(buf);
 
-	return 0;
-}
+    ep = cdc_ncm_get_int_in(c_data);
+    buf = usbd_ep_buf_alloc(c_data, ep, sizeof(ncm_notify_network_connection_t));
+    if (buf == NULL) {
+        return -ENOMEM;
+    }
+
+    net_buf_add_mem(buf, &ncm_notify_connected, sizeof(ncm_notify_network_connection_t));
+    ret = usbd_ep_enqueue(c_data, buf);
+    if (ret) {
+        LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+        net_buf_unref(buf);
+        return ret;
+    }
+
+    LOG_DBG("----1");
+//    k_sem_take(&data->notif_sem, K_FOREVER);
+//    net_buf_unref(buf);
+    LOG_DBG("----2");
+
+    return 0;
+}   // cdc_ncm_send_notification_connected
+
+
+
+static int cdc_ncm_send_notification_speed_change(const struct device *dev)
+{
+    struct cdc_ncm_eth_data *data = dev->data;
+    struct usbd_class_data *c_data = data->c_data;
+    struct net_buf *buf;
+    uint8_t ep;
+    int ret;
+
+    LOG_DBG("");
+
+    if (!atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED)) {
+        LOG_INF("USB configuration is not enabled");
+        return 0;
+    }
+
+    if (atomic_test_bit(&data->state, CDC_NCM_CLASS_SUSPENDED)) {
+        LOG_INF("USB device is suspended (FIXME)");
+        return 0;
+    }
+
+    LOG_DBG("if: %d", cdc_ncm_get_ctrl_if(data));
+    ncm_notify_connected.header.wIndex = sys_cpu_to_le16(cdc_ncm_get_ctrl_if(data));
+
+    ep = cdc_ncm_get_int_in(c_data);
+    LOG_DBG("ep: 0x%02x", ep);
+    buf = usbd_ep_buf_alloc(c_data, ep, sizeof(ncm_notify_connection_speed_change_t));
+    if (buf == NULL) {
+        return -ENOMEM;
+    }
+
+    net_buf_add_mem(buf, &ncm_notify_speed_change, sizeof(ncm_notify_connection_speed_change_t));
+    ret = usbd_ep_enqueue(c_data, buf);
+    if (ret) {
+        LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+        net_buf_unref(buf);
+        return ret;
+    }
+
+    LOG_DBG("----1");
+//    k_sem_take(&data->notif_sem, K_FOREVER);
+//    net_buf_unref(buf);
+    LOG_DBG("----2");
+
+    return 0;
+}   // cdc_ncm_send_notification_speed_change
+
+
 
 static void usbd_cdc_ncm_update(struct usbd_class_data *const c_data,
-				const uint8_t iface, const uint8_t alternate)
+                                const uint8_t iface, const uint8_t alternate)
+/**
+ * Configuration update handler.
+ * \param alternate   == 0 -> NCM reset (spec 7.2), == 1 -> normal data exchange (spec 5.3).
+ * According to spec 7.1, first \a ConnectionSpeedChange and the \a NetworkConnection have to be sent.
+ */
 {
-	const struct device *dev = usbd_class_get_private(c_data);
-	struct cdc_ncm_eth_data *data = dev->data;
-	struct usbd_cdc_ncm_desc *desc = data->desc;
-	const uint8_t data_iface = desc->if1_1.bInterfaceNumber;
+    const struct device *dev = usbd_class_get_private(c_data);
+    struct cdc_ncm_eth_data *data = dev->data;
+    struct usbd_cdc_ncm_desc *desc = data->desc;
+    const uint8_t data_iface = desc->if1_1.bInterfaceNumber;
+    const uint8_t first_iface = desc->if0.bInterfaceNumber;
+    const uint8_t alt_set = desc->if0.bAlternateSetting;
 
-	LOG_INF("New configuration, interface %u alternate %u",
-		iface, alternate);
+    LOG_DBG("New configuration, interface %u alternate %u data_iface %d first %u alt_set %u", iface, alternate, data_iface, first_iface, alt_set);
 
-	if (data_iface == iface && alternate == 0) {
-		net_if_carrier_off(data->iface);
-	}
+#if 1
+    if (data_iface == iface && alternate == 0)
+    {
+        LOG_DBG("net carrier off");
+        //net_if_carrier_off(data->iface);
+        //net_if_carrier_on(data->iface);
+        net_if_carrier_on(data->iface);
+        if (cdc_ncm_out_start(c_data))
+        {
+            LOG_ERR("Failed to start OUT transfer");
+        }
+    }
 
-	if (data_iface == iface && alternate == 1) {
-		net_if_carrier_on(data->iface);
-		if (cdc_ncm_out_start(c_data)) {
-			LOG_ERR("Failed to start OUT transfer");
-		}
+    if (data_iface == iface && alternate == 1)
+    {
+        LOG_DBG("net carrier on");
+    }
+    return;
+#endif
 
-	}
-}
+#if 0
+    // best variant currently
+    if (data_iface == iface && alternate == 0)
+    {
+        LOG_DBG("net carrier off");
+        //net_if_carrier_off(data->iface);
+        //net_if_carrier_on(data->iface);
+    }
+
+    if (data_iface == iface && alternate == 1)
+    {
+        LOG_DBG("net carrier on");
+        net_if_carrier_on(data->iface);
+        if (cdc_ncm_out_start(c_data))
+        {
+            LOG_ERR("Failed to start OUT transfer");
+        }
+
+    }
+    return;
+#endif
+
+
+    if (iface == first_iface + 1)
+    {
+        LOG_DBG("set alt");
+        data->itf_data_alt = alternate;
+    }
+
+    if (alternate != 0)
+    {
+        LOG_DBG("transfer selected, return");
+        return;
+    }
+
+    LOG_DBG("enable net_if");
+
+    net_if_carrier_on(data->iface);
+
+    if (cdc_ncm_out_start(c_data))
+    {
+        LOG_ERR("Failed to start OUT transfer");
+    }
+
+    int retx = cdc_ncm_send_notification_speed_change(dev);
+    LOG_DBG("cdc_ncm_send_notification_speed_change %d", retx);
+
+    int rety = cdc_ncm_send_notification_connected(dev, true);
+    LOG_DBG("cdc_ncm_send_notification_connected %d", rety);
+    return;
+
+
+    /* First interface is CDC Comm interface */
+    if (iface != first_iface + 1) //  ||  alternate == 0)
+    {
+        LOG_DBG("Skip iface_num %u alt_set %u", iface, alternate);
+        return;
+    }
+
+    if (data->if_state == IF_STATE_INIT)
+    {
+        data->if_state = IF_STATE_FIRST_SKIPPED;
+        LOG_DBG("Skip first iface enable");
+        return;
+    }
+
+    LOG_DBG("enable netusb");
+
+    net_if_carrier_on(data->iface);
+    atomic_set_bit(&data->state, CDC_NCM_IFACE_UP);
+
+    int ret;
+
+    LOG_DBG("cdc_ncm_send_notification_speed_change");
+    ret = cdc_ncm_send_notification_speed_change(dev);
+//    LOG_DBG("cdc_ncm_send_notification_connected");
+//    ret = cdc_ncm_send_notification_connected(dev, true);
+    if (ret != 0)
+    {
+        LOG_WRN("connect failed: %d", ret);
+    }
+    //    netusb_enable(&ecm_function);
+    //    ncm_status_interface_cb(ecm_ep_data[ECM_INT_EP_IDX].ep_addr, 0, NULL);
+
+    return;
+
+
+
+
+    if (data_iface == iface && alternate == 0)
+    {
+        net_if_carrier_off(data->iface);
+    }
+
+    if (data_iface == iface && alternate == 1)
+    {
+        net_if_carrier_on(data->iface);
+        if (cdc_ncm_out_start(c_data))
+        {
+            LOG_ERR("Failed to start OUT transfer");
+        }
+
+    }
+}   // usbd_cdc_ncm_update
+
+
 
 static void usbd_cdc_ncm_enable(struct usbd_class_data *const c_data)
+/**
+ * Class associated configuration is selected
+ */
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ncm_eth_data *data = dev->data;
 
 	atomic_set_bit(&data->state, CDC_NCM_CLASS_ENABLED);
 	LOG_DBG("Configuration enabled");
-}
+}   // usbd_cdc_ncm_enable
+
+
 
 static void usbd_cdc_ncm_disable(struct usbd_class_data *const c_data)
+/**
+ * Class associated configuration is disabled
+ */
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ncm_eth_data *data = dev->data;
@@ -405,45 +689,154 @@ static void usbd_cdc_ncm_disable(struct usbd_class_data *const c_data)
 	}
 
 	atomic_clear_bit(&data->state, CDC_NCM_CLASS_SUSPENDED);
-	LOG_INF("Configuration disabled");
-}
+	LOG_DBG("Configuration disabled");
+}   // usbd_cdc_ncm_disable
+
+
 
 static void usbd_cdc_ncm_suspended(struct usbd_class_data *const c_data)
+/**
+ * USB power management handler suspended
+ */
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ncm_eth_data *data = dev->data;
 
+    LOG_DBG("");
 	atomic_set_bit(&data->state, CDC_NCM_CLASS_SUSPENDED);
-}
+}   // usbd_cdc_ncm_suspended
+
+
 
 static void usbd_cdc_ncm_resumed(struct usbd_class_data *const c_data)
+/**
+ * USB power management handler resumed
+ */
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ncm_eth_data *data = dev->data;
 
+    LOG_DBG("");
 	atomic_clear_bit(&data->state, CDC_NCM_CLASS_SUSPENDED);
-}
+}   // usbd_cdc_ncm_resumed
 
-static int usbd_cdc_ncm_ctd(struct usbd_class_data *const c_data,
-			    const struct usb_setup_packet *const setup,
-			    const struct net_buf *const buf)
+
+
+static int usbd_cdc_ncm_control_to_device(struct usbd_class_data *const c_data,
+                                          const struct usb_setup_packet *const setup,
+                                          const struct net_buf *const buf)
+/**
+ * USB control request handler to device
+ */
 {
-	if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_INTERFACE &&
-	    setup->bRequest == SET_ETHERNET_PACKET_FILTER) {
-		LOG_INF("bRequest 0x%02x (SetPacketFilter) not implemented",
-			setup->bRequest);
+    LOG_DBG("------------------------------------------------");
+    if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_INTERFACE &&
+        setup->bRequest == SET_ETHERNET_PACKET_FILTER) {
+        LOG_INF("bRequest 0x%02x (SetPacketFilter) not implemented",
+            setup->bRequest);
 
-		return 0;
-	}
+        return 0;
+    }
 
-	LOG_DBG("bmRequestType 0x%02x bRequest 0x%02x unsupported",
-		setup->bmRequestType, setup->bRequest);
-	errno = -ENOTSUP;
+    LOG_WRN("usbd_cdc_ncm_control_to_device - bmRequestType 0x%02x bRequest 0x%02x unsupported",
+            setup->bmRequestType, setup->bRequest);
+    errno = -ENOTSUP;
 
-	return 0;
-}
+    return 0;
+}   // usbd_cdc_ncm_control_to_device
+
+
+
+static int usbd_cdc_ncm_control_to_host(struct usbd_class_data *const c_data,
+                                        const struct usb_setup_packet *const setup,
+                                        const struct net_buf *const buf)
+/**
+ * USB control request handler to host
+ */
+{
+    LOG_DBG("--------------------------------------------------- req_type 0x%x req 0x%x  buf %p",
+            setup->bmRequestType, setup->bRequest, buf);
+
+    switch (setup->RequestType.type)
+    {
+        case USB_REQTYPE_TYPE_STANDARD:
+            LOG_DBG("  USB_REQTYPE_TYPE_STANDARD: %d %d %d %d", setup->bRequest, setup->wValue, setup->wIndex, setup->wLength);
+            break;
+
+        case USB_REQTYPE_TYPE_CLASS:
+            LOG_DBG("  USB_REQTYPE_TYPE_CLASS: %d %d %d %d", setup->bRequest, setup->wLength, setup->wIndex, setup->wValue);
+
+            if (setup->bRequest == NCM_GET_NTB_PARAMETERS)
+            {
+                LOG_DBG("    NCM_GET_NTB_PARAMETERS");
+//                *len = sizeof(ntb_parameters);
+//                *data = (uint8_t *)&ntb_parameters;
+//                return 0;
+                net_buf_add_mem(buf, &ntb_parameters, sizeof(ntb_parameters));
+                return 0;
+            }
+            else if (setup->bRequest == NCM_SET_ETHERNET_PACKET_FILTER)
+            {
+                LOG_WRN("    NCM_SET_ETHERNET_PACKET_FILTER (not supported)");
+                return -ENOTSUP;
+            }
+            else if (setup->bRequest == NCM_GET_NTB_INPUT_SIZE)
+            {
+                LOG_ERR("    NCM_GET_NTB_INPUT_SIZE (not supported, but required)");
+                return -ENOTSUP;
+            }
+            else if (setup->bRequest == NCM_SET_NTB_INPUT_SIZE)
+            {
+//                uint32_t **p = (uint32_t **)data;
+//                LOG_ERR("    NCM_SET_NTB_INPUT_SIZE (not supported, but required), len:%u", (unsigned)**p);
+                return -ENOTSUP;
+            }
+            LOG_WRN("    not supported: %d", setup->bRequest);
+            return -ENOTSUP;
+
+        default:
+            // unsupported request
+            return -ENOTSUP;
+    }
+
+//    if ( !netusb_enabled())
+//    {
+//        LOG_ERR("interface disabled");
+//        return -ENODEV;
+//    }
+
+    if (setup->bRequest == NCM_SET_ETHERNET_PACKET_FILTER) {
+        LOG_DBG("Set Interface %u Packet Filter 0x%04x not supported",
+                setup->wIndex, setup->wValue);
+        return 0;
+    }
+
+    return -ENOTSUP;
+
+#if 0
+    LOG_DBG("------------------------------------------------");
+    if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_INTERFACE &&
+        setup->bRequest == SET_ETHERNET_PACKET_FILTER) {
+        LOG_INF("bRequest 0x%02x (SetPacketFilter) not implemented",
+            setup->bRequest);
+
+        return 0;
+    }
+
+    LOG_WRN("usbd_cdc_ncm_control_to_device - bmRequestType 0x%02x bRequest 0x%02x unsupported",
+            setup->bmRequestType, setup->bRequest);
+    errno = -ENOTSUP;
+
+    return 0;
+#endif
+}   // usbd_cdc_ncm_control_to_host
+
+
 
 static int usbd_cdc_ncm_init(struct usbd_class_data *const c_data)
+/**
+ * Initialization of the class implementation
+ */
 {
 	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct device *dev = usbd_class_get_private(c_data);
@@ -455,47 +848,67 @@ static int usbd_cdc_ncm_init(struct usbd_class_data *const c_data)
 	desc->iad.bFirstInterface = if_num;
 	desc->if0_union.bControlInterface = if_num;
 	desc->if0_union.bSubordinateInterface0 = if_num + 1;
-	LOG_DBG("CDC NCM class initialized");
+	LOG_DBG("CDC NCM class initialized %d", if_num);
 
-	if (usbd_add_descriptor(uds_ctx, data->mac_desc_data)) {
+	if (usbd_add_descriptor(uds_ctx, data->mac_desc_data))
+	{
 		LOG_ERR("Failed to add iMACAddress string descriptor");
-	} else {
+	}
+	else
+	{
 		desc->if0_ncm.iMACAddress = data->mac_desc_data->idx;
 	}
 
 	return 0;
-}
+}   // usbd_cdc_ncm_init
+
+
 
 static void usbd_cdc_ncm_shutdown(struct usbd_class_data *const c_data)
+/**
+ * Shutdown of the class implementation
+ */
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ncm_eth_data *const data = dev->data;
 	struct usbd_cdc_ncm_desc *desc = data->desc;
 
+    LOG_DBG("");
 	desc->if0_ncm.iMACAddress = 0;
 	sys_dlist_remove(&data->mac_desc_data->node);
-}
+}   // usbd_cdc_ncm_shutdown
 
-static void *usbd_cdc_ncm_get_desc(struct usbd_class_data *const c_data,
-				   const enum usbd_speed speed)
+
+
+static void *usbd_cdc_ncm_get_desc(struct usbd_class_data *const c_data, const enum usbd_speed speed)
+/**
+ * Get function descriptor based on speed parameter
+ */
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ncm_eth_data *const data = dev->data;
 
+    //LOG_DBG("");
 	if (speed == USBD_SPEED_HS) {
 		return data->hs_desc;
 	}
 
 	return data->fs_desc;
-}
+}   // usbd_cdc_ncm_get_desc
+
+
 
 static int cdc_ncm_send(const struct device *dev, struct net_pkt *const pkt)
+/**
+ * Send a network packet to the host
+ */
 {
 	struct cdc_ncm_eth_data *const data = dev->data;
 	struct usbd_class_data *c_data = data->c_data;
 	size_t len = net_pkt_get_len(pkt);
 	struct net_buf *buf;
 
+    LOG_DBG("len: %d", len);
 	if (len > NET_ETH_MAX_FRAME_SIZE) {
 		LOG_WRN("Trying to send too large packet, drop");
 		return -ENOMEM;
@@ -503,7 +916,7 @@ static int cdc_ncm_send(const struct device *dev, struct net_pkt *const pkt)
 
 	if (!atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED) ||
 	    !atomic_test_bit(&data->state, CDC_NCM_IFACE_UP)) {
-		LOG_INF("Configuration is not enabled or interface not ready");
+		LOG_INF("Configuration is not enabled or interface not ready %ld", data->state);
 		return -EACCES;
 	}
 
@@ -531,14 +944,20 @@ static int cdc_ncm_send(const struct device *dev, struct net_pkt *const pkt)
 	net_buf_unref(buf);
 
 	return 0;
-}
+}   // cdc_ncm_send
+
+
 
 static int cdc_ncm_set_config(const struct device *dev,
 			      const enum ethernet_config_type type,
 			      const struct ethernet_config *config)
+/**
+ * Set specific hardware configuration
+ */
 {
 	struct cdc_ncm_eth_data *data = dev->data;
 
+    LOG_DBG("");
 	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
 		memcpy(data->mac_addr, config->mac_address.addr,
 		       sizeof(data->mac_addr));
@@ -547,49 +966,74 @@ static int cdc_ncm_set_config(const struct device *dev,
 	}
 
 	return -ENOTSUP;
-}
+}   // cdc_ncm_set_config
+
+
 
 static int cdc_ncm_get_config(const struct device *dev,
 			      enum ethernet_config_type type,
 			      struct ethernet_config *config)
+/**
+ * Get hardware specific configuration
+ */
 {
+    LOG_DBG("");
 	return -ENOTSUP;
-}
+}   // cdc_ncm_get_config
+
+
 
 static enum ethernet_hw_caps cdc_ncm_get_capabilities(const struct device *dev)
+/**
+ * Get the device capabilities
+ */
 {
 	ARG_UNUSED(dev);
 
+	LOG_DBG("");
 	return ETHERNET_LINK_10BASE_T;
-}
+}   // cdc_ncm_get_capabilities
+
+
 
 static int cdc_ncm_iface_start(const struct device *dev)
+/**
+ * Start the device
+ */
 {
 	struct cdc_ncm_eth_data *data = dev->data;
 	int ret;
 
 	LOG_DBG("Start interface %p", data->iface);
-	ret = cdc_ncm_send_notification(dev, true);
-	if (!ret) {
-		atomic_set_bit(&data->state, CDC_NCM_IFACE_UP);
-	}
+//	ret = cdc_ncm_send_notification_connected(dev, true);
+//    if (!ret) {
+        atomic_set_bit(&data->state, CDC_NCM_IFACE_UP);
+//    }
 
-	return ret;
-}
+//	return ret;
+	return 0;
+}   // cdc_ncm_iface_start
+
+
 
 static int cdc_ncm_iface_stop(const struct device *dev)
+/**
+ * Stop the device
+ */
 {
 	struct cdc_ncm_eth_data *data = dev->data;
 	int ret;
 
 	LOG_DBG("Stop interface %p", data->iface);
-	ret = cdc_ncm_send_notification(dev, false);
-	if (!ret) {
+//	ret = cdc_ncm_send_notification_connected(dev, false);
+//	if (!ret) {
 		atomic_clear_bit(&data->state, CDC_NCM_IFACE_UP);
-	}
+//	}
 
 	return ret;
-}
+}   // cdc_ncm_iface_stop
+
+
 
 static void cdc_ncm_iface_init(struct net_if *const iface)
 {
@@ -605,7 +1049,9 @@ static void cdc_ncm_iface_init(struct net_if *const iface)
 	net_if_carrier_off(iface);
 
 	LOG_DBG("CDC NCM interface initialized");
-}
+}   // cdc_ncm_iface_init
+
+
 
 static int usbd_cdc_ncm_preinit(const struct device *dev)
 {
@@ -618,34 +1064,37 @@ static int usbd_cdc_ncm_preinit(const struct device *dev)
 	LOG_DBG("CDC NCM device initialized");
 
 	return 0;
-}
+}   // usbd_cdc_ncm_preinit
+
+
 
 static struct usbd_class_api usbd_cdc_ncm_api = {
-	.request = usbd_cdc_ncm_request,
-	.update = usbd_cdc_ncm_update,
-	.enable = usbd_cdc_ncm_enable,
-	.disable = usbd_cdc_ncm_disable,
-	.suspended = usbd_cdc_ncm_suspended,
-	.resumed = usbd_cdc_ncm_resumed,
-	.control_to_dev = usbd_cdc_ncm_ctd,
-	.init = usbd_cdc_ncm_init,
-	.shutdown = usbd_cdc_ncm_shutdown,
-	.get_desc = usbd_cdc_ncm_get_desc,
+	.request          = usbd_cdc_ncm_request,
+	.update           = usbd_cdc_ncm_update,
+	.enable           = usbd_cdc_ncm_enable,
+	.disable          = usbd_cdc_ncm_disable,
+	.suspended        = usbd_cdc_ncm_suspended,
+	.resumed          = usbd_cdc_ncm_resumed,
+	.control_to_dev   = usbd_cdc_ncm_control_to_device,
+    .control_to_host  = usbd_cdc_ncm_control_to_host,
+	.init             = usbd_cdc_ncm_init,
+	.shutdown         = usbd_cdc_ncm_shutdown,
+	.get_desc         = usbd_cdc_ncm_get_desc,
 };
 
 static const struct ethernet_api cdc_ncm_eth_api = {
-	.iface_api.init = cdc_ncm_iface_init,
-	.get_config = cdc_ncm_get_config,
-	.set_config = cdc_ncm_set_config,
+	.iface_api.init   = cdc_ncm_iface_init,
+	.get_config       = cdc_ncm_get_config,
+	.set_config       = cdc_ncm_set_config,
 	.get_capabilities = cdc_ncm_get_capabilities,
-	.send = cdc_ncm_send,
-	.start = cdc_ncm_iface_start,
-	.stop = cdc_ncm_iface_stop,
+	.send             = cdc_ncm_send,
+	.start            = cdc_ncm_iface_start,
+	.stop             = cdc_ncm_iface_stop,
 };
 
 #define CDC_NCM_DEFINE_DESCRIPTOR(n)                                                   \
-    /* Interface Association Descriptor                                             */ \
     static struct usbd_cdc_ncm_desc cdc_ncm_desc_##n = {                               \
+        /* Interface Association Descriptor                                         */ \
         .iad = {                                                                       \
                 .bLength = sizeof(struct usb_association_descriptor),                  \
                 .bDescriptorType = USB_DESC_INTERFACE_ASSOC,                           \
@@ -696,7 +1145,7 @@ static const struct ethernet_api cdc_ncm_eth_api = {
                 .wNumberMCFilters = sys_cpu_to_le16(0),                                \
                 .bNumberPowerFilters = 0,                                              \
         },                                                                             \
-        /* NCM Functional descriptor                                                */ \
+        /* NCM Functional descriptor  (checked)                                     */ \
         .if0_netfun_ncm = {                                                            \
             .bFunctionLength = sizeof(struct cdc_ncm_functional_descriptor),           \
             .bDescriptorType = USB_DESC_CS_INTERFACE,                                  \
@@ -724,7 +1173,7 @@ static const struct ethernet_api cdc_ncm_eth_api = {
                 .bInterval = CDC_NCM_HS_INT_EP_INTERVAL,                               \
         },                                                                             \
                                                                                        \
-        /* Interface descriptor 1/0                                                 */ \
+        /* Interface descriptor, alternate setting 0                                */ \
         /* CDC Data Interface                                                       */ \
         .if1_0 = {                                                                     \
                 .bLength = sizeof(struct usb_if_descriptor),                           \
@@ -738,7 +1187,7 @@ static const struct ethernet_api cdc_ncm_eth_api = {
                 .iInterface = 0,                                                       \
         },                                                                             \
                                                                                        \
-        /* Interface descriptor 1/1                                                 */ \
+        /* Interface descriptor, alternate setting 1                                */ \
         /* CDC Data Interface                                                       */ \
         .if1_1 = {                                                                     \
                 .bLength = sizeof(struct usb_if_descriptor),                           \

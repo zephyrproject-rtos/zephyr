@@ -11,11 +11,9 @@ config USBD_CDC_NCM_CLASS
 	  USB CDC Network Control Model (NCM) implementation"
 
 if USBD_CDC_NCM_CLASS
-
-module = USBD_CDC_NCM
-module-str = usbd cdc_ncm
-default-count = 1
-source "subsys/logging/Kconfig.template.log_config"
-rsource "Kconfig.template.instances_count"
-
+    module = USBD_CDC_NCM
+    module-str = usbd cdc_ncm
+    default-count = 1
+    source "subsys/logging/Kconfig.template.log_config"
+    rsource "Kconfig.template.instances_count"
 endif
