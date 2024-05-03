@@ -17,6 +17,9 @@
 
 #include <stm32u5xx.h>
 
+/* PAGESIZE is defined by HAL legacy headers, but conflict with POSIX */
+#undef PAGESIZE
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32U5_SOC_H_ */

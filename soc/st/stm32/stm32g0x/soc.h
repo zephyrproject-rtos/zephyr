@@ -22,6 +22,9 @@
 
 #include <stm32g0xx.h>
 
+/* PAGESIZE is defined by HAL legacy headers, but conflict with POSIX */
+#undef PAGESIZE
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32G0_SOC_H_ */

@@ -21,6 +21,9 @@
 
 #include <stm32l1xx.h>
 
+/* PAGESIZE is defined by HAL legacy headers, but conflict with POSIX */
+#undef PAGESIZE
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32L1_SOC_H_ */

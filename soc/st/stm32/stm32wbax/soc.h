@@ -17,6 +17,9 @@
 
 #include <stm32wbaxx.h>
 
+/* PAGESIZE is defined by HAL legacy headers, but conflict with POSIX */
+#undef PAGESIZE
+
 /* function exported to the soc power.c */
 int stm32wba_init(void);
 

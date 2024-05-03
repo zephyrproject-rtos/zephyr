@@ -23,6 +23,9 @@
 
 #include <stm32f3xx.h>
 
+/* PAGESIZE is defined by HAL legacy headers, but conflict with POSIX */
+#undef PAGESIZE
+
 /* The STM32 HAL headers define these, but they conflict with the Zephyr can.h */
 #undef CAN_MODE_NORMAL
 #undef CAN_MODE_LOOPBACK
