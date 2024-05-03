@@ -30,7 +30,8 @@ config HAWKBIT_POLL_INTERVAL
 	range 1 43200
 	help
 	  Set the interval that the hawkbit update server will be polled.
-	  This time interval is zero and 43200 minutes(30 days).
+	  This time interval is zero and 43200 minutes(30 days). This will be overridden
+	  by the value configured in the settings of the hawkBit server.
 
 config HAWKBIT_SHELL
 	bool "hawkBit shell utilities"
@@ -40,7 +41,6 @@ config HAWKBIT_SHELL
 
 config HAWKBIT_SERVER
 	string "User address for the hawkbit server"
-	default ""
 	help
 	  Configure the hawkbit server address.
 
