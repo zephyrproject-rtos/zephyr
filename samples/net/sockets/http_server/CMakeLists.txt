@@ -32,6 +32,8 @@ generate_inc_file_for_target(app ${source_file_index} ${gen_dir}/index.html.gz.i
 set(source_file_not_found src/not_found_page.html)
 generate_inc_file_for_target(app ${source_file_not_found} ${gen_dir}/not_found_page.html.gz.inc --gzip)
 
+target_sources_ifdef(CONFIG_NET_SAMPLE_WEBSOCKET_SERVICE app PRIVATE src/ws.c)
+
 target_link_libraries(app PRIVATE zephyr_interface zephyr)
 
 zephyr_linker_sources(SECTIONS sections-rom.ld)

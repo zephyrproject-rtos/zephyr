@@ -38,4 +38,16 @@ config NET_SAMPLE_CERTS_WITH_SC
 	  Enable this flag, if you are interested to run this
 	  application with signed certificates and keys.
 
+config NET_SAMPLE_WEBSOCKET_SERVICE
+	bool "Enable websocket service"
+	default y if HTTP_SERVER_WEBSOCKET
+
+config NET_SAMPLE_NUM_WEBSOCKET_HANDLERS
+	int "How many websocket connections to serve at the same time"
+	depends on NET_SAMPLE_WEBSOCKET_SERVICE
+	default 1
+	help
+	  Each websocket connection is served by a thread which needs
+	  memory. Only increase the value here if really needed.
+
 source "Kconfig.zephyr"
