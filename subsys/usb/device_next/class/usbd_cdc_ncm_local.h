@@ -40,6 +40,10 @@
 #define CONFIG_CDC_NCM_XMT_NTB_MAX_SIZE           2048    // see discussion in https://github.com/hathach/tinyusb/pull/2227
 #define CONFIG_CDC_NCM_RCV_NTB_MAX_SIZE           2048
 
+#if (CONFIG_CDC_NCM_XMT_NTB_MAX_SIZE != CONFIG_CDC_NCM_RCV_NTB_MAX_SIZE)
+    #error "CONFIG_CDC_NCM_XMT_NTB_MAX_SIZE != CONFIG_CDC_NCM_RCV_NTB_MAX_SIZE"
+#endif
+
 // Table 6.2 Class-Specific Request Codes for Network Control Model subclass
 typedef enum
 {

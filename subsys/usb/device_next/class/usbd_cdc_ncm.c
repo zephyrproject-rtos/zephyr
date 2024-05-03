@@ -47,26 +47,25 @@ LOG_MODULE_REGISTER(cdc_ncm, CONFIG_USBD_CDC_NCM_LOG_LEVEL);
 
 #define CDC_NCM_EP_MPS_INT                  64
 #define CDC_NCM_INTERVAL_DEFAULT            10000UL
-#define CDC_NCM_FS_INT_EP_INTERVAL          USB_FS_INT_EP_INTERVAL(10000U)
-#define CDC_NCM_HS_INT_EP_INTERVAL          USB_HS_INT_EP_INTERVAL(10000U)
+#define CDC_NCM_FS_INT_EP_INTERVAL          USB_FS_INT_EP_INTERVAL(CDC_NCM_INTERVAL_DEFAULT)
+#define CDC_NCM_HS_INT_EP_INTERVAL          USB_HS_INT_EP_INTERVAL(CDC_NCM_INTERVAL_DEFAULT)
 
+/// several flags
 enum {
-	CDC_NCM_IFACE_UP,
-	CDC_NCM_CLASS_ENABLED,
-	CDC_NCM_CLASS_SUSPENDED,
-	CDC_NCM_OUT_ENGAGED,
+    CDC_NCM_IFACE_UP,
+    CDC_NCM_CLASS_ENABLED,
+    CDC_NCM_CLASS_SUSPENDED,
+    CDC_NCM_OUT_ENGAGED,
 };
 
 /*
  * Transfers through two endpoints proceed in a synchronous manner,
- * with maximum block of NET_ETH_MAX_FRAME_SIZE.
+ * with maximum block of CONFIG_CDC_NCM_XMT_NTB_MAX_SIZE.
  */
-#if 1    ////
 NET_BUF_POOL_FIXED_DEFINE(cdc_ncm_ep_pool,
-			  DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
-			  NET_ETH_MAX_FRAME_SIZE,                              /* TODO must be adopted */
-			  sizeof(struct udc_buf_info), NULL);
-#endif
+          DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
+          CONFIG_CDC_NCM_XMT_NTB_MAX_SIZE,
+          sizeof(struct udc_buf_info), NULL);
 
 
 /**
@@ -121,39 +120,39 @@ static ncm_notify_connection_speed_change_t ncm_notify_speed_change = {
  * properties at runtime. We currently support full and high speed.
  */
 struct usbd_cdc_ncm_desc {
-	struct usb_association_descriptor iad;
+    struct usb_association_descriptor iad;
 
-	struct usb_if_descriptor if0;
-	struct cdc_header_descriptor if0_header;
-	struct cdc_union_descriptor if0_union;
-	struct cdc_eth_functional_descriptor if0_ncm;
-	struct cdc_ncm_functional_descriptor if0_netfun_ncm;
-	struct usb_ep_descriptor if0_int_ep;
-	struct usb_ep_descriptor if0_hs_int_ep;
+    struct usb_if_descriptor if0;
+    struct cdc_header_descriptor if0_header;
+    struct cdc_union_descriptor if0_union;
+    struct cdc_eth_functional_descriptor if0_ncm;
+    struct cdc_ncm_functional_descriptor if0_netfun_ncm;
+    struct usb_ep_descriptor if0_int_ep;
+    struct usb_ep_descriptor if0_hs_int_ep;
 
-	struct usb_if_descriptor if1_0;
+    struct usb_if_descriptor if1_0;
 
-	struct usb_if_descriptor if1_1;
-	struct usb_ep_descriptor if1_1_in_ep;
-	struct usb_ep_descriptor if1_1_out_ep;
-	struct usb_ep_descriptor if1_1_hs_in_ep;
-	struct usb_ep_descriptor if1_1_hs_out_ep;
+    struct usb_if_descriptor if1_1;
+    struct usb_ep_descriptor if1_1_in_ep;
+    struct usb_ep_descriptor if1_1_out_ep;
+    struct usb_ep_descriptor if1_1_hs_in_ep;
+    struct usb_ep_descriptor if1_1_hs_out_ep;
 
-	struct usb_desc_header nil_desc;
+    struct usb_desc_header nil_desc;
 };
 
 struct cdc_ncm_eth_data {
-	struct usbd_class_data *c_data;
-	struct usbd_desc_node *const mac_desc_data;
-	struct usbd_cdc_ncm_desc *const desc;
-	const struct usb_desc_header **const fs_desc;
-	const struct usb_desc_header **const hs_desc;
+    struct usbd_class_data *c_data;
+    struct usbd_desc_node *const mac_desc_data;
+    struct usbd_cdc_ncm_desc *const desc;
+    const struct usb_desc_header **const fs_desc;
+    const struct usb_desc_header **const hs_desc;
 
-	struct net_if *iface;
-	uint8_t mac_addr[6];
+    struct net_if *iface;
+    uint8_t mac_addr[6];
 
-	struct k_sem sync_sem;
-	atomic_t state;
+    struct k_sem sync_sem;
+    atomic_t state;
 
     enum {
         IF_STATE_INIT = 0,
@@ -164,6 +163,8 @@ struct cdc_ncm_eth_data {
 
     // misc
     uint8_t itf_data_alt;                                    //!< ==0 -> no endpoints, i.e. no network traffic, ==1 -> normal operation with two endpoints (spec, chapter 5.3)
+
+    uint16_t sequence;                                       //!< sequence counter for transmit frames
 };
 
 
@@ -335,52 +336,71 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
  * Frame received from host!
  */
 {
-	const struct device *dev = usbd_class_get_private(c_data);
-	struct cdc_ncm_eth_data *data = dev->data;
-	struct net_pkt *pkt;
+    const struct device *dev = usbd_class_get_private(c_data);
+    struct cdc_ncm_eth_data *data = dev->data;
+    struct net_pkt *pkt;
+    nth16_t *ntb;
+    ndp16_datagram_t *ndp_datagram;
 
-    LOG_DBG("");
-	if (err || buf->len == 0) {
-		goto restart_out_transfer;
-	}
+    LOG_DBG("len %d err %d", buf->len, err);
+    if (err  ||  buf->len == 0)
+    {
+        goto restart_out_transfer;
+    }
 
-	/* Linux considers by default that network usb device controllers are
-	 * not able to handle Zero Length Packet (ZLP) and then generates
-	 * a short packet containing a null byte. Handle by checking the IP
-	 * header length and dropping the extra byte.
-	 */
-	if (buf->data[buf->len - 1] == 0U) {
-		/* Last byte is null */
-		if (ncm_eth_size(buf->data, buf->len) == (buf->len - 1)) {
-			/* last byte has been appended as delimiter, drop it */
-			net_buf_remove_u8(buf);
-		}
-	}
+//    LOG_HEXDUMP_DBG(buf->data, buf->len, "ntb");
 
-	pkt = net_pkt_rx_alloc_with_buffer(data->iface, buf->len,
-					   AF_UNSPEC, 0, K_FOREVER);
-	if (!pkt) {
-		LOG_ERR("No memory for net_pkt");
-		goto restart_out_transfer;
-	}
+    // NO VALIDITY CHECKING
 
-	if (net_pkt_write(pkt, buf->data, buf->len)) {
-		LOG_ERR("Unable to write into pkt");
-		net_pkt_unref(pkt);
-		goto restart_out_transfer;
-	}
+    ntb = (nth16_t *)buf->data;
+    ndp_datagram = (ndp16_datagram_t *)(buf->data + sys_le16_to_cpu(ntb->wNdpIndex) + sizeof(ndp16_t));
 
-	LOG_DBG("Received packet len %zu", net_pkt_get_len(pkt));
-	if (net_recv_data(data->iface, pkt) < 0) {
-		LOG_ERR("Packet %p dropped by network stack", pkt);
-		net_pkt_unref(pkt);
-	}
+    uint16_t start = sys_le16_to_cpu(ndp_datagram[0].wDatagramIndex);
+    uint16_t len   = sys_le16_to_cpu(ndp_datagram[0].wDatagramLength);
+
+    /* Linux considers by default that network usb device controllers are
+     * not able to handle Zero Length Packet (ZLP) and then generates
+     * a short packet containing a null byte. Handle by checking the IP
+     * header length and dropping the extra byte.
+     */
+    if (buf->data[start + len - 1] == 0U)
+    {
+        /* Last byte is null */
+        if (ncm_eth_size(buf->data + start, len) == (len - 1)) {
+            /* last byte has been appended as delimiter, drop it */
+            LOG_WRN("removed trailing byte");
+            len--;
+        }
+    }
+
+    pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, AF_UNSPEC, 0, K_FOREVER);
+    if (pkt == NULL)
+    {
+        LOG_ERR("No memory for net_pkt");
+        goto restart_out_transfer;
+    }
+
+//    LOG_HEXDUMP_DBG(buf->data + start, len, "frame");
+
+    if (net_pkt_write(pkt, buf->data + start, len))
+    {
+        LOG_ERR("Unable to write into pkt");
+        net_pkt_unref(pkt);
+        goto restart_out_transfer;
+    }
+
+    LOG_DBG("Received packet len %zu", len);
+    if (net_recv_data(data->iface, pkt) < 0)
+    {
+        LOG_ERR("Packet %p dropped by network stack", pkt);
+        net_pkt_unref(pkt);
+    }
 
 restart_out_transfer:
-	net_buf_unref(buf);
-	atomic_clear_bit(&data->state, CDC_NCM_OUT_ENGAGED);
+    net_buf_unref(buf);
+    atomic_clear_bit(&data->state, CDC_NCM_OUT_ENGAGED);
 
-	return cdc_ncm_out_start(c_data);
+    return cdc_ncm_out_start(c_data);
 }   // cdc_ncm_acl_out_cb
 
 
@@ -524,7 +544,11 @@ static void usbd_cdc_ncm_update(struct usbd_class_data *const c_data,
     if (iface != first_iface + 1  ||  alternate == 0)
     {
         LOG_DBG("Skip iface %u alternate %u", iface, alternate);
-        // TODO reset internal status
+
+        //
+        // reset internal status
+        //
+        data->sequence = 0;
         return;
     }
 
@@ -734,15 +758,15 @@ static void *usbd_cdc_ncm_get_desc(struct usbd_class_data *const c_data, const e
  * Get function descriptor based on speed parameter
  */
 {
-	const struct device *dev = usbd_class_get_private(c_data);
-	struct cdc_ncm_eth_data *const data = dev->data;
+    const struct device *dev = usbd_class_get_private(c_data);
+    struct cdc_ncm_eth_data *const data = dev->data;
 
     //LOG_DBG("");
-	if (speed == USBD_SPEED_HS) {
-		return data->hs_desc;
-	}
+    if (speed == USBD_SPEED_HS) {
+        return data->hs_desc;
+    }
 
-	return data->fs_desc;
+    return data->fs_desc;
 }   // usbd_cdc_ncm_get_desc
 
 
@@ -752,47 +776,75 @@ static int cdc_ncm_send(const struct device *dev, struct net_pkt *const pkt)
  * Send a network packet to the host
  */
 {
-	struct cdc_ncm_eth_data *const data = dev->data;
-	struct usbd_class_data *c_data = data->c_data;
-	size_t len = net_pkt_get_len(pkt);
-	struct net_buf *buf;
+    struct cdc_ncm_eth_data *const data = dev->data;
+    struct usbd_class_data *c_data = data->c_data;
+    size_t len = net_pkt_get_len(pkt);
+    struct net_buf *buf;
+    xmit_ntb_t *ntb;
 
     LOG_DBG("len: %d", len);
-	if (len > NET_ETH_MAX_FRAME_SIZE) {
-		LOG_WRN("Trying to send too large packet, drop");
-		return -ENOMEM;
-	}
 
-	if (!atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED) ||
-	    !atomic_test_bit(&data->state, CDC_NCM_IFACE_UP)) {
-		LOG_INF("Configuration is not enabled or interface not ready %ld", data->state);
-		return -EACCES;
-	}
+    if (len > NET_ETH_MAX_FRAME_SIZE)
+    {
+        LOG_WRN("Trying to send too large packet, drop");
+        return -ENOMEM;
+    }
 
-	buf = cdc_ncm_buf_alloc(cdc_ncm_get_bulk_in(c_data));
-	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
-		return -ENOMEM;
-	}
+    if (    !atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED)
+        ||  !atomic_test_bit(&data->state, CDC_NCM_IFACE_UP))
+    {
+        LOG_INF("Configuration is not enabled or interface not ready %ld", data->state);
+        return -EACCES;
+    }
 
-	if (net_pkt_read(pkt, buf->data, len)) {
-		LOG_ERR("Failed copy net_pkt");
-		net_buf_unref(buf);
+    buf = cdc_ncm_buf_alloc(cdc_ncm_get_bulk_in(c_data));
+    if (buf == NULL)
+    {
+        LOG_ERR("Failed to allocate buffer");
+        return -ENOMEM;
+    }
 
-		return -ENOBUFS;
-	}
+    //
+    // create (simple) NTB
+    //
+    ntb = (xmit_ntb_t *)buf->data;
 
-	net_buf_add(buf, len);
+    ntb->nth.dwSignature   = sys_cpu_to_le32(NTH16_SIGNATURE);
+    ntb->nth.wHeaderLength = sys_cpu_to_le16(sizeof(nth16_t));
+    ntb->nth.wSequence     = sys_cpu_to_le16(++data->sequence);
+    ntb->nth.wNdpIndex     = sys_cpu_to_le16(0x0c);
 
-	if (!(buf->len % cdc_ncm_get_bulk_in_mps(c_data))) {
-		udc_ep_buf_set_zlp(buf);
-	}
+    ntb->ndp.dwSignature   = sys_cpu_to_le32(NDP16_SIGNATURE_NCM0);
+    ntb->ndp.wLength       = sys_cpu_to_le16(16);
+    ntb->ndp.wNextNdpIndex = 0;
 
-	usbd_ep_enqueue(c_data, buf);
-	k_sem_take(&data->sync_sem, K_FOREVER);
-	net_buf_unref(buf);
+    ntb->ndp_datagram[0].wDatagramIndex  = sys_cpu_to_le16(sys_le16_to_cpu(ntb->nth.wHeaderLength) + sys_le16_to_cpu(ntb->ndp.wLength));
+    ntb->ndp_datagram[0].wDatagramLength = sys_cpu_to_le16(len);
+    ntb->ndp_datagram[1].wDatagramIndex  = 0;
+    ntb->ndp_datagram[1].wDatagramLength = 0;
 
-	return 0;
+    ntb->nth.wBlockLength = sys_cpu_to_le16(sys_le16_to_cpu(ntb->ndp_datagram[0].wDatagramIndex) + sys_le16_to_cpu(ntb->ndp_datagram[0].wDatagramLength));
+
+    if (net_pkt_read(pkt, ntb->data + sys_le16_to_cpu(ntb->ndp_datagram[0].wDatagramIndex), len))
+    {
+        LOG_ERR("Failed copy net_pkt");
+        net_buf_unref(buf);
+        return -ENOBUFS;
+    }
+
+    net_buf_add(buf, sys_le16_to_cpu(ntb->nth.wBlockLength));
+
+    if ( !(buf->len % cdc_ncm_get_bulk_in_mps(c_data)))
+    {
+        LOG_WRN("xx");
+        udc_ep_buf_set_zlp(buf);
+    }
+
+    usbd_ep_enqueue(c_data, buf);
+    k_sem_take(&data->sync_sem, K_FOREVER);
+    net_buf_unref(buf);
+
+    return 0;
 }   // cdc_ncm_send
 
 
