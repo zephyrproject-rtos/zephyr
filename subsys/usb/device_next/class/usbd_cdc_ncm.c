@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Intel Corporation
  * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Hardy Griech
  *
  * SPDX-License-Identifier: Apache-2.0
  */
