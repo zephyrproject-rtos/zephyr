@@ -63,7 +63,7 @@ enum {
 #if 1    ////
 NET_BUF_POOL_FIXED_DEFINE(cdc_ncm_ep_pool,
 			  DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
-			  NET_ETH_MAX_FRAME_SIZE,
+			  NET_ETH_MAX_FRAME_SIZE,                              /* TODO must be adopted */
 			  sizeof(struct udc_buf_info), NULL);
 #endif
 
@@ -729,27 +729,23 @@ static int usbd_cdc_ncm_control_to_device(struct usbd_class_data *const c_data,
  * USB control request handler to device
  */
 {
-    LOG_DBG("------------------------------------------------");
-    if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_INTERFACE &&
-        setup->bRequest == SET_ETHERNET_PACKET_FILTER) {
-        LOG_INF("bRequest 0x%02x (SetPacketFilter) not implemented",
-            setup->bRequest);
-
+    if (    setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_INTERFACE
+        &&  setup->bRequest == SET_ETHERNET_PACKET_FILTER)
+    {
+        LOG_INF("bRequest 0x%02x (SetPacketFilter) not implemented", setup->bRequest);
         return 0;
     }
 
     LOG_WRN("usbd_cdc_ncm_control_to_device - bmRequestType 0x%02x bRequest 0x%02x unsupported",
             setup->bmRequestType, setup->bRequest);
-    errno = -ENOTSUP;
-
-    return 0;
+    return -ENOTSUP;
 }   // usbd_cdc_ncm_control_to_device
 
 
 
 static int usbd_cdc_ncm_control_to_host(struct usbd_class_data *const c_data,
                                         const struct usb_setup_packet *const setup,
-                                        const struct net_buf *const buf)
+                                        struct net_buf *const buf)
 /**
  * USB control request handler to host
  */
@@ -769,9 +765,6 @@ static int usbd_cdc_ncm_control_to_host(struct usbd_class_data *const c_data,
             if (setup->bRequest == NCM_GET_NTB_PARAMETERS)
             {
                 LOG_DBG("    NCM_GET_NTB_PARAMETERS");
-//                *len = sizeof(ntb_parameters);
-//                *data = (uint8_t *)&ntb_parameters;
-//                return 0;
                 net_buf_add_mem(buf, &ntb_parameters, sizeof(ntb_parameters));
                 return 0;
             }
@@ -787,8 +780,7 @@ static int usbd_cdc_ncm_control_to_host(struct usbd_class_data *const c_data,
             }
             else if (setup->bRequest == NCM_SET_NTB_INPUT_SIZE)
             {
-//                uint32_t **p = (uint32_t **)data;
-//                LOG_ERR("    NCM_SET_NTB_INPUT_SIZE (not supported, but required), len:%u", (unsigned)**p);
+                LOG_ERR("    NCM_SET_NTB_INPUT_SIZE (not supported, but required)");
                 return -ENOTSUP;
             }
             LOG_WRN("    not supported: %d", setup->bRequest);
@@ -805,30 +797,7 @@ static int usbd_cdc_ncm_control_to_host(struct usbd_class_data *const c_data,
 //        return -ENODEV;
 //    }
 
-    if (setup->bRequest == NCM_SET_ETHERNET_PACKET_FILTER) {
-        LOG_DBG("Set Interface %u Packet Filter 0x%04x not supported",
-                setup->wIndex, setup->wValue);
-        return 0;
-    }
-
     return -ENOTSUP;
-
-#if 0
-    LOG_DBG("------------------------------------------------");
-    if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_INTERFACE &&
-        setup->bRequest == SET_ETHERNET_PACKET_FILTER) {
-        LOG_INF("bRequest 0x%02x (SetPacketFilter) not implemented",
-            setup->bRequest);
-
-        return 0;
-    }
-
-    LOG_WRN("usbd_cdc_ncm_control_to_device - bmRequestType 0x%02x bRequest 0x%02x unsupported",
-            setup->bmRequestType, setup->bRequest);
-    errno = -ENOTSUP;
-
-    return 0;
-#endif
 }   // usbd_cdc_ncm_control_to_host
 
 
