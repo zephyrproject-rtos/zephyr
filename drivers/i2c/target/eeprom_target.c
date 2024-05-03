@@ -23,6 +23,8 @@ struct i2c_eeprom_target_data {
 	uint8_t *buffer;
 	uint32_t buffer_idx;
 	bool first_write;
+	bool data_modified;
+	eeprom_target_store_data_cb_t store_data;
 };
 
 struct i2c_eeprom_target_config {
@@ -30,6 +32,14 @@ struct i2c_eeprom_target_config {
 	uint32_t buffer_size;
 	uint8_t *buffer;
 };
+
+void eeprom_target_set_store_data_cb(const struct device *dev,
+				     eeprom_target_store_data_cb_t store_data)
+{
+	struct i2c_eeprom_target_data *data = dev->data;
+
+	data->store_data = store_data;
+}
 
 int eeprom_target_program(const struct device *dev, const uint8_t *eeprom_data,
 			 unsigned int length)
@@ -126,9 +136,18 @@ static int eeprom_target_write_received(struct i2c_target_config *config,
 		data->first_write = false;
 	} else {
 		data->buffer[data->buffer_idx++] = val;
+		data->data_modified = true;
 	}
 
 	data->buffer_idx = data->buffer_idx % data->buffer_size;
+
+	if (data->store_data && data->data_modified) {
+		if (data->store_data(data->buffer, data->buffer_size) < 0) {
+			LOG_ERR("Failed to store data");
+		}
+	}
+
+	data->data_modified = false;
 
 	return 0;
 }
@@ -240,6 +259,7 @@ static int i2c_eeprom_target_init(const struct device *dev)
 	data->buffer = cfg->buffer;
 	data->config.address = cfg->bus.addr;
 	data->config.callbacks = &eeprom_callbacks;
+	data->store_data = NULL;
 
 	return 0;
 }

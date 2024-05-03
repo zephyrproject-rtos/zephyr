@@ -22,6 +22,29 @@
  */
 
 /**
+ * @brief Store data callback handler
+ *
+ * @param data Pointer to the data EEPROM data array
+ * @param length Length of the data array
+ *
+ * @retval 0 If successful.
+ */
+typedef int (*eeprom_target_store_data_cb_t)(const uint8_t *data, unsigned int length);
+
+/**
+ * @brief Set the store data callback function
+ *
+ * When the store callback function is set, the EEPROM target driver will call the handler
+ * when an I2C write is completed. This handler can be used to store the data in persistent
+ * storage.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param store_data Callback function to store data
+ */
+void eeprom_target_set_store_data_cb(const struct device *dev,
+				     eeprom_target_store_data_cb_t store_data);
+
+/**
  * @brief Program memory of the virtual EEPROM
  *
  * @param dev Pointer to the device structure for the driver instance.
