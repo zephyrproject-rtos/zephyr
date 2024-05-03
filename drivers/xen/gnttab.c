@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(xen_gnttab);
 /* Timeout for grant table ops retrying */
 #define GOP_RETRY_DELAY 200
 
+#define GNTTAB_GREF_USED	(UINT32_MAX - 1)
 #define GNTTAB_SIZE DT_REG_SIZE_BY_IDX(DT_INST(0, xen_xen), 0)
 BUILD_ASSERT(!(GNTTAB_SIZE % XEN_PAGE_SIZE), "Size of gnttab have to be aligned on XEN_PAGE_SIZE");
 
@@ -64,6 +65,7 @@ static grant_ref_t get_free_entry(void)
 	__ASSERT((gref >= GNTTAB_NR_RESERVED_ENTRIES &&
 		gref < NR_GRANT_ENTRIES), "Invalid gref = %d", gref);
 	gnttab.gref_list[0] = gnttab.gref_list[gref];
+	gnttab.gref_list[gref] = GNTTAB_GREF_USED;
 	irq_unlock(flags);
 
 	return gref;
@@ -74,6 +76,12 @@ static void put_free_entry(grant_ref_t gref)
 	unsigned int flags;
 
 	flags = irq_lock();
+	if (gnttab.gref_list[gref] != GNTTAB_GREF_USED) {
+		LOG_WRN("Trying to put already free gref = %u", gref);
+
+		return;
+	}
+
 	gnttab.gref_list[gref] = gnttab.gref_list[0];
 	gnttab.gref_list[0] = gref;
 
@@ -304,14 +312,14 @@ static int gnttab_init(void)
 	int rc = 0, i;
 
 	/* Will be taken/given during gnt_refs allocation/release */
-	k_sem_init(&gnttab.sem, 0, NR_GRANT_ENTRIES - GNTTAB_NR_RESERVED_ENTRIES);
+	k_sem_init(&gnttab.sem, NR_GRANT_ENTRIES - GNTTAB_NR_RESERVED_ENTRIES,
+		   NR_GRANT_ENTRIES - GNTTAB_NR_RESERVED_ENTRIES);
 
-	for (
-		gref = GNTTAB_NR_RESERVED_ENTRIES;
-		gref < NR_GRANT_ENTRIES;
-		gref++
-	    ) {
-		put_free_entry(gref);
+	/* Initialize O(1) allocator, gnttab.gref_list[0] always shows first free entry */
+	gnttab.gref_list[0] = GNTTAB_NR_RESERVED_ENTRIES;
+	gnttab.gref_list[NR_GRANT_ENTRIES - 1] = 0;
+	for (gref = GNTTAB_NR_RESERVED_ENTRIES; gref < NR_GRANT_ENTRIES - 1; gref++) {
+		gnttab.gref_list[gref] = gref + 1;
 	}
 
 	for (i = 0; i < NR_GRANT_FRAMES; i++) {
