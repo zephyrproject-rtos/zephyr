@@ -292,7 +292,7 @@ static void client_release_resources(struct http_client_ctx *client)
 	}
 }
 
-static void close_client_connection(struct http_client_ctx *client)
+void http_server_release_client(struct http_client_ctx *client)
 {
 	int i;
 	struct k_work_sync sync;
@@ -300,7 +300,6 @@ static void close_client_connection(struct http_client_ctx *client)
 	__ASSERT_NO_MSG(IS_ARRAY_ELEMENT(server_ctx.clients, client));
 
 	k_work_cancel_delayable_sync(&client->inactivity_timer, &sync);
-	zsock_close(client->fd);
 	client_release_resources(client);
 
 	server_ctx.num_clients--;
@@ -314,7 +313,15 @@ static void close_client_connection(struct http_client_ctx *client)
 
 	memset(client, 0, sizeof(struct http_client_ctx));
 	client->fd = INVALID_SOCK;
+}
 
+static void close_client_connection(struct http_client_ctx *client)
+{
+	int fd = client->fd;
+
+	http_server_release_client(client);
+
+	(void)zsock_close(fd);
 }
 
 static void client_timeout(struct k_work *work)
@@ -625,11 +632,35 @@ static int compare_strings(const char *s1, const char *s2)
 	return 1; /* Strings are not equal */
 }
 
+static bool skip_this(struct http_resource_desc *resource, bool is_websocket)
+{
+	struct http_resource_detail *detail;
+
+	detail = (struct http_resource_detail *)resource->detail;
+
+	if (is_websocket) {
+		if (detail->type != HTTP_RESOURCE_TYPE_WEBSOCKET) {
+			return true;
+		}
+	} else {
+		if (detail->type == HTTP_RESOURCE_TYPE_WEBSOCKET) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 struct http_resource_detail *get_resource_detail(const char *path,
-						 int *path_len)
+						 int *path_len,
+						 bool is_websocket)
 {
 	HTTP_SERVICE_FOREACH(service) {
 		HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
+			if (skip_this(resource, is_websocket)) {
+				continue;
+			}
+
 			if (compare_strings(path, resource->resource) == 0) {
 				NET_DBG("Got match for %s", resource->resource);
 

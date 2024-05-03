@@ -106,6 +106,16 @@ config HTTP_SERVER_CLIENT_INACTIVITY_TIMEOUT
 	  (i. e. not sending or receiving any data) before the server drops the
 	  connection.
 
+config HTTP_SERVER_WEBSOCKET
+	bool "Allow upgrading to Websocket connection"
+	select WEBSOCKET_CLIENT
+	select WEBSOCKET
+	help
+	  If this is enabled, then the user can allow the HTTP connection to be
+	  upgraded to a Websocket connection. The user can then define a Websocket
+	  handler that is called after upgrading to handle the Websocket network
+	  traffic.
+
 endif
 
 # Hidden option to avoid having multiple individual options that are ORed together
