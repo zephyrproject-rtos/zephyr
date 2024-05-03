@@ -4,6 +4,14 @@
 include: [base.yaml]
 
 properties:
+  zephyr,memory-region:
+    type: string
+    description: |
+      Signify that this node should result in a dedicated linker script
+      memory region in the final executable. The region address and size
+      is taken from the <reg> property, while the name is the value of
+      this property.
+
   zephyr,memory-region-mpu:
     type: string
     deprecated: true
