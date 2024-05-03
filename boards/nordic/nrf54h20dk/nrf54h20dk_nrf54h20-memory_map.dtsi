@@ -11,9 +11,7 @@
 			compatible = "nordic,owned-memory";
 			reg = <0x2f010000 DT_SIZE_K(260)>;
 			status = "disabled";
-			perm-read;
-			perm-write;
-			perm-secure;
+			nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RWS>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x2f010000 0x41000>;
@@ -35,9 +33,7 @@
 			compatible = "nordic,owned-memory";
 			reg = <0x2f051000 DT_SIZE_K(4)>;
 			status = "disabled";
-			perm-read;
-			perm-write;
-			perm-secure;
+			nordic,access = <NRF_OWNER_ID_RADIOCORE NRF_PERM_RWS>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x2f051000 0x1000>;
@@ -55,9 +51,7 @@
 			compatible = "nordic,owned-memory";
 			reg = <0x2f0be000 DT_SIZE_K(4)>;
 			status = "disabled";
-			perm-read;
-			perm-write;
-			perm-secure;
+			nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RWS>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x2f0be000 0x1000>;
@@ -72,8 +66,8 @@
 			compatible = "nordic,owned-memory";
 			reg = <0x2f0bf000 DT_SIZE_K(4)>;
 			status = "disabled";
-			perm-read;
-			perm-write;
+			nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RW>,
+					<NRF_OWNER_ID_RADIOCORE NRF_PERM_RW>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x2f0bf000 0x1000>;
@@ -111,16 +105,15 @@
 		};
 
 		/*
-		 * NOTE: perm-execute is not required as FLPR has a direct
-		 * bridge with RAM21, bypassing MPC.
+		 * NOTE: FLPR has a direct bridge with RAM21 that bypasses MPC.
+		 * This means that when this region is marked as non-executable,
+		 * only FLPR can execute code from it.
 		 */
 		ram21_region: memory@2f890000 {
 			compatible = "nordic,owned-memory";
 			status = "disabled";
 			reg = <0x2f890000 DT_SIZE_K(64)>;
-			perm-read;
-			perm-write;
-			perm-secure;
+			nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RWS>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x2f890000 0x10000>;
@@ -151,9 +144,7 @@
 			compatible = "nordic,owned-memory";
 			reg = <0x2fc00000 DT_SIZE_K(64)>;
 			status = "disabled";
-			perm-read;
-			perm-write;
-			perm-execute;
+			nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RWX>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x2fc00000 0x10000>;
@@ -172,29 +163,27 @@
 		};
 
 		shared_ram3x_region: memory@2fc12000 {
-			compatible = "nordic,owned-memory";
 			reg = <0x2fc12000 DT_SIZE_K(8)>;
-			status = "disabled";
-			perm-read;
-			perm-write;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x2fc12000 0x2000>;
 
-			cpuapp_dma_region: memory@e80 {
-				compatible = "zephyr,memory-region";
-				reg = <0xe80 DT_SIZE_K(3)>;
+			cpuapp_dma_region: memory@0 {
+				compatible = "nordic,owned-memory", "zephyr,memory-region";
+				reg = <0x0 DT_SIZE_K(4)>;
 				status = "disabled";
 				#memory-region-cells = <0>;
+				nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RW>;
 				zephyr,memory-region = "DMA_RAM3x_APP";
 				zephyr,memory-attr = <( DT_MEM_DMA )>;
 			};
 
-			cpurad_dma_region: memory@1a80 {
-				compatible = "zephyr,memory-region";
-				reg = <0x1a80 0x480>;
+			cpurad_dma_region: memory@1000 {
+				compatible = "nordic,owned-memory", "zephyr,memory-region";
+				reg = <0x1000 DT_SIZE_K(1)>;
 				status = "disabled";
 				#memory-region-cells = <0>;
+				nordic,access = <NRF_OWNER_ID_RADIOCORE NRF_PERM_RW>;
 				zephyr,memory-region = "DMA_RAM3x_RAD";
 				zephyr,memory-attr = <( DT_MEM_DMA )>;
 			};
@@ -206,9 +195,7 @@
 	cpurad_rx_partitions: cpurad-rx-partitions {
 		compatible = "nordic,owned-partitions", "fixed-partitions";
 		status = "disabled";
-		perm-read;
-		perm-execute;
-		perm-secure;
+		nordic,access = <NRF_OWNER_ID_RADIOCORE NRF_PERM_RXS>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -220,9 +207,7 @@
 	cpuapp_rx_partitions: cpuapp-rx-partitions {
 		compatible = "nordic,owned-partitions", "fixed-partitions";
 		status = "disabled";
-		perm-read;
-		perm-execute;
-		perm-secure;
+		nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RXS>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -242,9 +227,7 @@
 	cpuapp_rw_partitions: cpuapp-rw-partitions {
 		compatible = "nordic,owned-partitions", "fixed-partitions";
 		status = "disabled";
-		perm-read;
-		perm-write;
-		perm-secure;
+		nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RWS>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
