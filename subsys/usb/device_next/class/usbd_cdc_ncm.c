@@ -152,7 +152,6 @@ struct cdc_ncm_eth_data {
 	uint8_t mac_addr[6];
 
 	struct k_sem sync_sem;
-	struct k_sem notif_sem;
 	atomic_t state;
 
     enum {
@@ -385,92 +384,10 @@ restart_out_transfer:
 
 
 
-static int usbd_cdc_ncm_request(struct usbd_class_data *const c_data,
-                                struct net_buf *buf, int err)
+static int _usbd_cdc_ncm_send_notification(const struct device *dev, const void *notification, uint16_t len)
 /**
- * Endpoint request completion event handler: handle NCM request from host.
+ * Send a notification to the host.
  */
-{
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
-	const struct device *dev = usbd_class_get_private(c_data);
-	struct cdc_ncm_eth_data *data = dev->data;
-	struct udc_buf_info *bi;
-
-	bi = udc_get_buf_info(buf);
-    LOG_DBG("ep: 0x%02x", bi->ep);
-
-	if (bi->ep == cdc_ncm_get_bulk_out(c_data)) {
-	    // data received
-		return cdc_ncm_acl_out_cb(c_data, buf, err);
-	}
-
-	if (bi->ep == cdc_ncm_get_bulk_in(c_data)) {
-        LOG_DBG("free sync_sem");
-		k_sem_give(&data->sync_sem);
-		return 0;
-	}
-
-	if (bi->ep == cdc_ncm_get_int_in(c_data)) {
-	    LOG_DBG("free notif_sem");
-		k_sem_give(&data->notif_sem);
-		return 0;
-	}
-
-	return usbd_ep_buf_free(uds_ctx, buf);
-}   // usbd_cdc_ncm_request
-
-
-
-static int cdc_ncm_send_notification_connected(const struct device *dev,
-                                               const bool connected)
-{
-    struct cdc_ncm_eth_data *data = dev->data;
-    struct usbd_class_data *c_data = data->c_data;
-    struct net_buf *buf;
-    uint8_t ep;
-    int ret;
-
-    LOG_DBG("%d", connected);
-
-    if (!atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED)) {
-        LOG_INF("USB configuration is not enabled");
-        return 0;
-    }
-
-    if (atomic_test_bit(&data->state, CDC_NCM_CLASS_SUSPENDED)) {
-        LOG_INF("USB device is suspended (FIXME)");
-        return 0;
-    }
-
-    ncm_notify_connected.header.wValue = sys_cpu_to_le16(connected);
-    ncm_notify_connected.header.wIndex = sys_cpu_to_le16(cdc_ncm_get_ctrl_if(data));
-
-
-    ep = cdc_ncm_get_int_in(c_data);
-    buf = usbd_ep_buf_alloc(c_data, ep, sizeof(ncm_notify_network_connection_t));
-    if (buf == NULL) {
-        return -ENOMEM;
-    }
-
-    net_buf_add_mem(buf, &ncm_notify_connected, sizeof(ncm_notify_network_connection_t));
-    ret = usbd_ep_enqueue(c_data, buf);
-    if (ret) {
-        LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
-        net_buf_unref(buf);
-        return ret;
-    }
-
-    LOG_DBG("----1");
-//    k_sem_take(&data->notif_sem, K_FOREVER);
-//    net_buf_unref(buf);
-    LOG_DBG("----2");
-
-    return 0;
-}   // cdc_ncm_send_notification_connected
-
-
-
-static int cdc_ncm_send_notification_speed_change(const struct device *dev)
 {
     struct cdc_ncm_eth_data *data = dev->data;
     struct usbd_class_data *c_data = data->c_data;
@@ -480,41 +397,105 @@ static int cdc_ncm_send_notification_speed_change(const struct device *dev)
 
     LOG_DBG("");
 
-    if (!atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED)) {
+    if ( !atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED))
+    {
         LOG_INF("USB configuration is not enabled");
         return 0;
     }
 
-    if (atomic_test_bit(&data->state, CDC_NCM_CLASS_SUSPENDED)) {
+    if (atomic_test_bit(&data->state, CDC_NCM_CLASS_SUSPENDED))
+    {
         LOG_INF("USB device is suspended (FIXME)");
         return 0;
     }
 
-    LOG_DBG("if: %d", cdc_ncm_get_ctrl_if(data));
-    ncm_notify_connected.header.wIndex = sys_cpu_to_le16(cdc_ncm_get_ctrl_if(data));
-
     ep = cdc_ncm_get_int_in(c_data);
     LOG_DBG("ep: 0x%02x", ep);
-    buf = usbd_ep_buf_alloc(c_data, ep, sizeof(ncm_notify_connection_speed_change_t));
-    if (buf == NULL) {
+    buf = usbd_ep_buf_alloc(c_data, ep, len);
+    if (buf == NULL)
+    {
         return -ENOMEM;
     }
 
-    net_buf_add_mem(buf, &ncm_notify_speed_change, sizeof(ncm_notify_connection_speed_change_t));
+    net_buf_add_mem(buf, notification, len);
     ret = usbd_ep_enqueue(c_data, buf);
-    if (ret) {
+    if (ret)
+    {
         LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
         net_buf_unref(buf);
         return ret;
     }
 
-    LOG_DBG("----1");
-//    k_sem_take(&data->notif_sem, K_FOREVER);
-//    net_buf_unref(buf);
-    LOG_DBG("----2");
+    // TODO not sure if there is a resource leak here (who frees buf?)
 
     return 0;
-}   // cdc_ncm_send_notification_speed_change
+}   // _usbd_cdc_ncm_send_notification
+
+
+
+static void _usbd_cdc_ncm_notification_next_step(const struct device *dev)
+/**
+ * Send \a ConnectionSpeedChange and then \a NetworkConnection to the host.
+ */
+{
+    struct cdc_ncm_eth_data *data = dev->data;
+    int ret;
+
+    LOG_DBG("%d", data->if_state);
+
+    if (data->if_state == IF_STATE_FIRST_SKIPPED)
+    {
+        data->if_state = IF_STATE_SPEED_SENT;
+
+        ncm_notify_speed_change.header.wIndex = sys_cpu_to_le16(cdc_ncm_get_ctrl_if(data));
+        ret = _usbd_cdc_ncm_send_notification(dev, &ncm_notify_speed_change, sizeof(ncm_notify_speed_change));
+        LOG_DBG("cdc_ncm_send_notification_speed_change %d", ret);
+    }
+    else if (data->if_state == IF_STATE_SPEED_SENT)
+    {
+        data->if_state = IF_STATE_DONE;
+
+        ncm_notify_connected.header.wIndex = sys_cpu_to_le16(cdc_ncm_get_ctrl_if(data));
+        ret = _usbd_cdc_ncm_send_notification(dev, &ncm_notify_connected, sizeof(ncm_notify_connected));
+        LOG_DBG("cdc_ncm_send_notification_connected %d", ret);
+    }
+}   // _usbd_cdc_ncm_notification_next_step
+
+
+
+static int usbd_cdc_ncm_request(struct usbd_class_data *const c_data,
+                                struct net_buf *buf, int err)
+/**
+ * Endpoint request completion event handler: handle NCM request from host.
+ */
+{
+    struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+    const struct device *dev = usbd_class_get_private(c_data);
+    struct cdc_ncm_eth_data *data = dev->data;
+    struct udc_buf_info *bi;
+
+    bi = udc_get_buf_info(buf);
+    LOG_DBG("ep: 0x%02x", bi->ep);
+
+    if (bi->ep == cdc_ncm_get_bulk_out(c_data)) {
+        // data received
+        return cdc_ncm_acl_out_cb(c_data, buf, err);
+    }
+
+    if (bi->ep == cdc_ncm_get_bulk_in(c_data)) {
+        LOG_DBG("free sync_sem");
+        k_sem_give(&data->sync_sem);
+        return 0;
+    }
+
+    if (bi->ep == cdc_ncm_get_int_in(c_data)) {
+        LOG_DBG("notification");
+        _usbd_cdc_ncm_notification_next_step(dev);
+        return 0;
+    }
+
+    return usbd_ep_buf_free(uds_ctx, buf);
+}   // usbd_cdc_ncm_request
 
 
 
@@ -529,88 +510,20 @@ static void usbd_cdc_ncm_update(struct usbd_class_data *const c_data,
     const struct device *dev = usbd_class_get_private(c_data);
     struct cdc_ncm_eth_data *data = dev->data;
     struct usbd_cdc_ncm_desc *desc = data->desc;
-    const uint8_t data_iface = desc->if1_1.bInterfaceNumber;
     const uint8_t first_iface = desc->if0.bInterfaceNumber;
-    const uint8_t alt_set = desc->if0.bAlternateSetting;
 
-    LOG_DBG("New configuration, interface %u alternate %u data_iface %d first %u alt_set %u", iface, alternate, data_iface, first_iface, alt_set);
-
-#if 1
-    if (data_iface == iface && alternate == 0)
-    {
-        LOG_DBG("net carrier off");
-        //net_if_carrier_off(data->iface);
-        //net_if_carrier_on(data->iface);
-        net_if_carrier_on(data->iface);
-        if (cdc_ncm_out_start(c_data))
-        {
-            LOG_ERR("Failed to start OUT transfer");
-        }
-    }
-
-    if (data_iface == iface && alternate == 1)
-    {
-        LOG_DBG("net carrier on");
-    }
-    return;
-#endif
-
-#if 0
-    // best variant currently
-    if (data_iface == iface && alternate == 0)
-    {
-        LOG_DBG("net carrier off");
-        //net_if_carrier_off(data->iface);
-        //net_if_carrier_on(data->iface);
-    }
-
-    if (data_iface == iface && alternate == 1)
-    {
-        LOG_DBG("net carrier on");
-        net_if_carrier_on(data->iface);
-        if (cdc_ncm_out_start(c_data))
-        {
-            LOG_ERR("Failed to start OUT transfer");
-        }
-
-    }
-    return;
-#endif
-
+    LOG_DBG("New configuration, interface %u alternate %u first %u", iface, alternate, first_iface);
 
     if (iface == first_iface + 1)
     {
-        LOG_DBG("set alt");
+        LOG_DBG("set alt: %d", alternate);
         data->itf_data_alt = alternate;
     }
 
-    if (alternate != 0)
+    if (iface != first_iface + 1  ||  alternate == 0)
     {
-        LOG_DBG("transfer selected, return");
-        return;
-    }
-
-    LOG_DBG("enable net_if");
-
-    net_if_carrier_on(data->iface);
-
-    if (cdc_ncm_out_start(c_data))
-    {
-        LOG_ERR("Failed to start OUT transfer");
-    }
-
-    int retx = cdc_ncm_send_notification_speed_change(dev);
-    LOG_DBG("cdc_ncm_send_notification_speed_change %d", retx);
-
-    int rety = cdc_ncm_send_notification_connected(dev, true);
-    LOG_DBG("cdc_ncm_send_notification_connected %d", rety);
-    return;
-
-
-    /* First interface is CDC Comm interface */
-    if (iface != first_iface + 1) //  ||  alternate == 0)
-    {
-        LOG_DBG("Skip iface_num %u alt_set %u", iface, alternate);
+        LOG_DBG("Skip iface %u alternate %u", iface, alternate);
+        // TODO reset internal status
         return;
     }
 
@@ -621,43 +534,15 @@ static void usbd_cdc_ncm_update(struct usbd_class_data *const c_data,
         return;
     }
 
-    LOG_DBG("enable netusb");
-
+    LOG_INF("enable net_if");
     net_if_carrier_on(data->iface);
-    atomic_set_bit(&data->state, CDC_NCM_IFACE_UP);
 
-    int ret;
-
-    LOG_DBG("cdc_ncm_send_notification_speed_change");
-    ret = cdc_ncm_send_notification_speed_change(dev);
-//    LOG_DBG("cdc_ncm_send_notification_connected");
-//    ret = cdc_ncm_send_notification_connected(dev, true);
-    if (ret != 0)
+    if (cdc_ncm_out_start(c_data))
     {
-        LOG_WRN("connect failed: %d", ret);
-    }
-    //    netusb_enable(&ecm_function);
-    //    ncm_status_interface_cb(ecm_ep_data[ECM_INT_EP_IDX].ep_addr, 0, NULL);
-
-    return;
-
-
-
-
-    if (data_iface == iface && alternate == 0)
-    {
-        net_if_carrier_off(data->iface);
+        LOG_ERR("Failed to start OUT transfer");
     }
 
-    if (data_iface == iface && alternate == 1)
-    {
-        net_if_carrier_on(data->iface);
-        if (cdc_ncm_out_start(c_data))
-        {
-            LOG_ERR("Failed to start OUT transfer");
-        }
-
-    }
+    _usbd_cdc_ncm_notification_next_step(dev);
 }   // usbd_cdc_ncm_update
 
 
@@ -790,12 +675,6 @@ static int usbd_cdc_ncm_control_to_host(struct usbd_class_data *const c_data,
             // unsupported request
             return -ENOTSUP;
     }
-
-//    if ( !netusb_enabled())
-//    {
-//        LOG_ERR("interface disabled");
-//        return -ENODEV;
-//    }
 
     return -ENOTSUP;
 }   // usbd_cdc_ncm_control_to_host
@@ -971,15 +850,9 @@ static int cdc_ncm_iface_start(const struct device *dev)
  */
 {
 	struct cdc_ncm_eth_data *data = dev->data;
-	int ret;
 
 	LOG_DBG("Start interface %p", data->iface);
-//	ret = cdc_ncm_send_notification_connected(dev, true);
-//    if (!ret) {
-        atomic_set_bit(&data->state, CDC_NCM_IFACE_UP);
-//    }
-
-//	return ret;
+    atomic_set_bit(&data->state, CDC_NCM_IFACE_UP);
 	return 0;
 }   // cdc_ncm_iface_start
 
@@ -991,15 +864,10 @@ static int cdc_ncm_iface_stop(const struct device *dev)
  */
 {
 	struct cdc_ncm_eth_data *data = dev->data;
-	int ret;
 
 	LOG_DBG("Stop interface %p", data->iface);
-//	ret = cdc_ncm_send_notification_connected(dev, false);
-//	if (!ret) {
-		atomic_clear_bit(&data->state, CDC_NCM_IFACE_UP);
-//	}
-
-	return ret;
+    atomic_clear_bit(&data->state, CDC_NCM_IFACE_UP);
+	return 0;
 }   // cdc_ncm_iface_stop
 
 
@@ -1256,7 +1124,6 @@ static const struct ethernet_api cdc_ncm_eth_api = {
         .c_data = &cdc_ncm_##n,                                                        \
         .mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),                        \
         .sync_sem = Z_SEM_INITIALIZER(eth_data_##n.sync_sem, 0, 1),                    \
-        .notif_sem = Z_SEM_INITIALIZER(eth_data_##n.notif_sem, 0, 1),                  \
         .mac_desc_data = &mac_desc_data_##n,                                           \
         .desc = &cdc_ncm_desc_##n,                                                     \
         .fs_desc = cdc_ncm_fs_desc_##n,                                                \
