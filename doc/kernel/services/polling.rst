@@ -156,7 +156,7 @@ In case of success, :c:func:`k_poll` returns 0. If it times out, it returns
 
     void do_stuff(void)
     {
-        rc = k_poll(events, 2, 1000);
+        rc = k_poll(events, ARRAY_SIZE(events), K_MSEC(1000));
         if (rc == 0) {
             if (events[0].state == K_POLL_STATE_SEM_AVAILABLE) {
                 k_sem_take(events[0].sem, 0);
@@ -183,7 +183,7 @@ to :c:macro:`K_POLL_STATE_NOT_READY` by the user.
     void do_stuff(void)
     {
         for(;;) {
-            rc = k_poll(events, 2, K_FOREVER);
+            rc = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
             if (events[0].state == K_POLL_STATE_SEM_AVAILABLE) {
                 k_sem_take(events[0].sem, 0);
             } else if (events[1].state == K_POLL_STATE_FIFO_DATA_AVAILABLE) {
@@ -243,7 +243,11 @@ pass extra information to the thread waiting on the event.
 
         k_poll(events, 1, K_FOREVER);
 
-        if (events.signal->result == 0x1337) {
+        int signaled, result;
+
+        k_poll_signal_check(&signal, &signaled, &result);
+
+        if (signaled && (result == 0x1337)) {
             // A-OK!
         } else {
             // weird error
@@ -256,8 +260,10 @@ pass extra information to the thread waiting on the event.
         k_poll_signal_raise(&signal, 0x1337);
     }
 
-If the signal is to be polled in a loop, *both* its event state and its
-**signaled** field *must* be reset on each iteration if it has been signaled.
+If the signal is to be polled in a loop, *both* its event state must be
+reset to :c:macro:`K_POLL_STATE_NOT_READY` *and* its ``result`` must be
+reset using :c:func:`k_poll_signal_reset()` on each iteration if it has
+been signaled.
 
 .. code-block:: c
 
@@ -275,13 +281,17 @@ If the signal is to be polled in a loop, *both* its event state and its
         for (;;) {
             k_poll(events, 1, K_FOREVER);
 
-            if (events[0].signal->result == 0x1337) {
+            int signaled, result;
+
+            k_poll_signal_check(&signal, &signaled, &result);
+
+            if (signaled && (result == 0x1337)) {
                 // A-OK!
             } else {
                 // weird error
             }
 
-            events[0].signal->signaled = 0;
+            k_poll_signal_reset(signal);
             events[0].state = K_POLL_STATE_NOT_READY;
         }
     }
