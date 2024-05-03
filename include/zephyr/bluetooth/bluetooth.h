@@ -1530,7 +1530,7 @@ struct bt_le_per_adv_sync_recv_info {
 	/** The value of the event counter where the subevent indication was received. */
 	uint16_t periodic_event_counter;
 
-	/** The subevent where the subevend indication was received. */
+	/** The subevent where the subevent indication was received. */
 	uint8_t subevent;
 #endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 };
