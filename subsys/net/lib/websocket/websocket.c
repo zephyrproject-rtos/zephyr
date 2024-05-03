@@ -1127,6 +1127,57 @@ static ssize_t websocket_recvfrom_ctx(void *obj, void *buf, size_t max_len,
 	return (ssize_t)websocket_recv(ctx, buf, max_len, timeout);
 }
 
+int websocket_register(int sock, uint8_t *recv_buf, size_t recv_buf_len)
+{
+	struct websocket_context *ctx;
+	int ret, fd;
+
+	if (sock < 0) {
+		return -EINVAL;
+	}
+
+	ctx = websocket_find(sock);
+	if (ctx) {
+		NET_DBG("[%p] Websocket for sock %d already exists!", ctx, sock);
+		return -EEXIST;
+	}
+
+	ctx = websocket_get();
+	if (!ctx) {
+		return -ENOENT;
+	}
+
+	ctx->real_sock = sock;
+	ctx->recv_buf.buf = recv_buf;
+	ctx->recv_buf.size = recv_buf_len;
+
+	fd = z_reserve_fd();
+	if (fd < 0) {
+		ret = -ENOSPC;
+		goto out;
+	}
+
+	ctx->sock = fd;
+	z_finalize_fd(fd, ctx,
+		      (const struct fd_op_vtable *)&websocket_fd_op_vtable);
+
+	NET_DBG("[%p] WS connection to peer established (fd %d)", ctx, fd);
+
+	ctx->recv_buf.count = 0;
+	ctx->parser_state = WEBSOCKET_PARSER_STATE_OPCODE;
+
+	return fd;
+
+out:
+	if (fd >= 0) {
+		(void)zsock_close(fd);
+	}
+
+	websocket_context_unref(ctx);
+
+	return ret;
+}
+
 static const struct socket_op_vtable websocket_fd_op_vtable = {
 	.fd_vtable = {
 		.read = websocket_read_vmeth,
