@@ -343,7 +343,7 @@ ZTEST(net_socket_udp, test_07_so_priority)
 			      sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
-	optval = 8;
+	optval = 6;
 	rv = zsock_setsockopt(sock2, SOL_SOCKET, SO_PRIORITY, &optval,
 			      sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed");
