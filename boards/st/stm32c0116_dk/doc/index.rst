@@ -97,8 +97,8 @@ Default Zephyr Peripheral Mapping:
 
 The STM32C0116 Discovery board is configured as follows:
 
-- UART_2 TX/RX : PA2/PA3 (ST-Link Virtual Port Com)
-- UART_1 TX/RX : PA9/PA10
+- UART_2 TX/RX : PA2/PA3
+- UART_1 TX/RX : PA9/PA10 (ST-Link Virtual Port Com)
 - PWM_1_CH3 : PB6
 - ADC1_CH8 : PA8
 - LD3 : PB6
