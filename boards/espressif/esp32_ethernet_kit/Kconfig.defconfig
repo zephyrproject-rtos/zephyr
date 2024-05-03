@@ -6,7 +6,7 @@
 if BOARD_ESP32_ETHERNET_KIT_ESP32_PROCPU
 
 config ESP_SPIRAM
-	default y
+	default y if !MCUBOOT
 
 choice SPIRAM_TYPE
 	default SPIRAM_TYPE_ESPPSRAM64
