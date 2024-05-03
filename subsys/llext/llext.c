@@ -471,7 +471,7 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 
 		name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
-		if (stt == STT_FUNC && stb == STB_GLOBAL) {
+		if ((stt == STT_FUNC || stt == STT_OBJECT) && stb == STB_GLOBAL) {
 			LOG_DBG("function symbol %d, name %s, type tag %d, bind %d, sect %d",
 				i, name, stt, stb, sect);
 			ext->sym_tab.sym_cnt++;
@@ -562,7 +562,8 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext)
 		uint32_t stb = ELF_ST_BIND(sym.st_info);
 		unsigned int sect = sym.st_shndx;
 
-		if (stt == STT_FUNC && stb == STB_GLOBAL && sect != SHN_UNDEF) {
+		if ((stt == STT_FUNC || stt == STT_OBJECT) &&
+		    stb == STB_GLOBAL && sect != SHN_UNDEF) {
 			enum llext_mem mem_idx = ldr->sect_map[sect];
 			const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
@@ -659,6 +660,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 
 		if (stt != STT_FUNC &&
 		    stt != STT_SECTION &&
+		    stt != STT_OBJECT &&
 		    (stt != STT_NOTYPE || sym_tbl.st_shndx != SHN_UNDEF)) {
 			continue;
 		}
