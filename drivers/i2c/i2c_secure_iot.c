@@ -14,14 +14,14 @@
  * @copyright Copyright (c) Mindgrove Technologies Pvt. Ltd 2023. All rights reserved.
  * 
  */
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #define DT_DRV_COMPAT shakti_i2c0
 #include <stdint.h>
 #include <stdlib.h>
-#include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
-#include <soc.h>
 #include <zephyr/sys/sys_io.h>
-
 /**baremetal driver defines*/
 #define I2C_PIN 0x80
 #define I2C_ESO 0x40
@@ -149,6 +149,7 @@ struct i2c_seciot_cfg{
     uint32_t base;
     uint32_t scl_clk;
     uint32_t sys_clk;
+   // struct k_mutex mutex;
 };
 
 
@@ -299,7 +300,7 @@ static int i2c_seciot_init(const struct device *dev)
 }
 static int i2c_seciot_configure(const struct device *dev,uint32_t dev_config)
 {
-   printk("Configuring I2C0!!!");
+   //printk("Configuring I2C0!!!");
    struct i2c_seciot_cfg *confg = (struct i2c_seciot_cfg *)dev->config;
    uint32_t prescale = 1;
    uint32_t scl_div = (confg->sys_clk/((prescale+1)*confg->scl_clk))-1;
@@ -349,6 +350,7 @@ static int i2c_seciot_transfer(const struct device *dev,struct i2c_msg *msgs,uin
 	if (msgs == NULL) {
 		return -EINVAL;
 	}
+  // k_mutex_lock(&(((struct i2c_seciot_cfg*)(dev->config))->mutex),K_FOREVER);
     for (int i = 0; i < num_msgs; i++) {
 	    printk("msg :%d\n",msgs[i].flags);
         if (msgs[i].flags & I2C_MSG_READ) {
@@ -357,7 +359,7 @@ static int i2c_seciot_transfer(const struct device *dev,struct i2c_msg *msgs,uin
 	    } else {
 	    	i2c_seciot_write_msg(dev, &(msgs[i]), addr);
 	    }
-
+  // k_mutex_unlock(&(((struct i2c_seciot_cfg*)(dev->config))->mutex));
     }
 }
 
@@ -367,8 +369,8 @@ static struct i2c_driver_api i2c_seciot_api = {
 };
 
 #define I2C_SECIOT_INIT(n) \
-	static struct i2c_seciot_cfg i2c_seciot_cfg_##n = { \
-		.base = DT_INST_REG_ADDR(n), \
+    static struct i2c_seciot_cfg i2c_seciot_cfg_##n = { \
+		.base = DT_INST_PROP(n, base), \
 		.sys_clk = DT_INST_PROP(n, clock_frequency), \
 		.scl_clk = DT_INST_PROP(n, scl_frequency), \
 	}; \
@@ -382,3 +384,4 @@ static struct i2c_driver_api i2c_seciot_api = {
 			    &i2c_seciot_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_SECIOT_INIT)
+      //  .mutex = Z_MUTEX_INITIALIZER(lock##n),\

@@ -8,11 +8,13 @@
 #include<zephyr/device.h>
 #include<zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
+
 int main(void)
 {
 	//printf("Hello World! %s\n", CONFIG_BOARD);
 	uint8_t msg_arr[1]={0x36};
 	const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
+	printf("Hello world");
 	uint16_t addr = 0x0027;
 	struct i2c_msg msg_obj;
 	msg_obj.buf = msg_arr;
