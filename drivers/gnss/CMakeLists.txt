@@ -4,6 +4,7 @@
 zephyr_library()
 zephyr_library_sources(gnss_publish.c)
 zephyr_library_sources_ifdef(CONFIG_GNSS_DUMP gnss_dump.c)
+zephyr_library_sources_ifdef(CONFIG_GNSS_EMUL gnss_emul.c)
 zephyr_library_sources_ifdef(CONFIG_GNSS_PARSE gnss_parse.c)
 zephyr_library_sources_ifdef(CONFIG_GNSS_NMEA0183 gnss_nmea0183.c)
 zephyr_library_sources_ifdef(CONFIG_GNSS_NMEA0183_MATCH gnss_nmea0183_match.c)
