@@ -59,9 +59,37 @@ the requirements. These are the configurable parameters:
 - ``CONFIG_HTTP_SERVER_MAX_URL_LENGTH``: Specifies the maximum length of an HTTP
   URL that the server can process.
 
+- ``CONFIG_NET_SAMPLE_WEBSOCKET_SERVICE``: Enables Websocket service endpoint.
+  This allows a Websocket client to connect to ``/`` endpoint, all the data that
+  the client sends is echoed back.
+
 To customize these options, we can run ``west build -t menuconfig``, which provides
 us with an interactive configuration interface. Then we could navigate from the top-level
 menu to: ``-> Subsystems and OS Services -> Networking -> Network Protocols``.
+
+Websocket Connectivity
+----------------------
+
+You can use a simple Websocket client application like this to test the Websocket
+connectivity.
+
+.. code-block:: python
+
+   import websocket
+
+   websocket.enableTrace(True)
+   ws = websocket.WebSocket()
+   ws.connect("ws://192.0.2.1/")
+   ws.send("Hello, Server")
+   print(ws.recv())
+   while True:
+     line = input("> ")
+     if line == "quit":
+       break
+     ws.send(line)
+     print(ws.recv())
+   ws.close()
+
 
 Performance Analysis
 --------------------
