@@ -20,12 +20,12 @@ properties:
   remap-pa11:
     type: boolean
     description: Remaps the PA11 pin to operate as PA9 pin.
-      Use of this property is restricted to STM32G0 SoCs.
+      Use of this property is restricted to STM32G0 and STM32C0 SoCs.
 
   remap-pa12:
     type: boolean
     description: Remaps the PA12 pin to operate as PA10 pin.
-      Use of this property is restricted to STM32G0 SoCs.
+      Use of this property is restricted to STM32G0 and STM32C0 SoCs.
 
   remap-pa11-pa12:
     type: boolean
