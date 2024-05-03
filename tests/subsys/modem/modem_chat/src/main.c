@@ -194,6 +194,19 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 MODEM_CHAT_SCRIPT_DEFINE(script_partial, script_partial_cmds, abort_matches, on_script_result, 4);
 
 /*************************************************************************************************/
+/*                         Script containing timeout script chat command                         */
+/*************************************************************************************************/
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	script_timeout_cmd_cmds,
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("", 4000),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
+);
+
+MODEM_CHAT_SCRIPT_DEFINE(script_timeout_cmd, script_timeout_cmd_cmds, abort_matches,
+			 on_script_result, 10);
+
+/*************************************************************************************************/
 /*                           Small echo script and mock transactions                             */
 /*************************************************************************************************/
 static const uint8_t at_echo_data[] = {'A', 'T', '\r', '\n'};
@@ -608,6 +621,59 @@ ZTEST(modem_chat, test_script_run_dynamic_script_sync)
 
 	modem_backend_mock_prime(&mock, &at_echo_transaction);
 	zassert_ok(modem_chat_run_script(&cmd, &stack_script), "Failed to run script");
+}
+
+ZTEST(modem_chat, test_script_chat_timeout_cmd)
+{
+	int ret;
+	bool called;
+
+	zassert_ok(modem_chat_run_script_async(&cmd, &script_timeout_cmd),
+		   "Failed to start script");
+	k_msleep(100);
+
+	/*
+	 * Script sends "AT\r\n";
+	 */
+	ret = modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer));
+	zassert_equal(ret, sizeof("AT\r\n") - 1);
+	zassert_true(memcmp(buffer, "AT\r\n", sizeof("AT\r\n") - 1) == 0,
+		     "Request not sent as expected");
+
+	/*
+	 * Modem responds OK
+	 */
+	modem_backend_mock_put(&mock, ok_response, sizeof(ok_response) - 1);
+
+	/*
+	 * Script waits 4 seconds
+	 */
+	k_msleep(3000);
+	zassert_equal(modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer)), 0);
+	k_msleep(2000);
+
+	/*
+	 * Script sends "AT\r\n";
+	 */
+	ret = modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer));
+	zassert_equal(ret, sizeof("AT\r\n") - 1);
+	zassert_true(memcmp(buffer, "AT\r\n", sizeof("AT\r\n") - 1) == 0,
+		     "Request not sent as expected");
+
+	/*
+	 * Modem responds OK
+	 */
+	modem_backend_mock_put(&mock, ok_response, sizeof(ok_response) - 1);
+	k_msleep(100);
+
+	called = atomic_test_bit(&callback_called, MODEM_CHAT_UTEST_ON_SCRIPT_CALLBACK_BIT);
+	zassert_true(called == true, "Script callback should have been called");
+	zassert_equal(script_result, MODEM_CHAT_SCRIPT_RESULT_SUCCESS,
+		      "Script should have stopped with success");
+
+	/* Assert no data was sent except the request */
+	zassert_equal(modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer)), 0,
+		      "Script sent too many requests");
 }
 
 /*************************************************************************************************/
