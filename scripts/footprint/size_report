@@ -529,13 +529,14 @@ class TreeNode(NodeMixin):
     A symbol node.
     """
 
-    def __init__(self, name, identifier, size=0, parent=None, children=None, address=0):
+    def __init__(self, name, identifier, size=0, parent=None, children=None, address=None):
         super().__init__()
         self._name = name
         self._size = size
         self.parent = parent
         self._identifier = identifier
-        self.address = address
+        if address is not None:
+            self.address = address
         if children:
             self.children = children
 
@@ -599,7 +600,10 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
             else:
                 if node:
                     parent = node
-                node = TreeNode(name=str(part), identifier=cur, size=size, parent=parent, address=addr)
+                node = TreeNode(name=str(part), identifier=cur, size=size, parent=parent)
+        # Set memory block address only on terminal symbol nodes, don't do it at file or directory level.
+        node.address = addr
+    #
 
     # Mapping paths to tree nodes
     path_node_map = [
@@ -691,7 +695,7 @@ def print_any_tree(root, total_size, depth):
         hex_addr = "-"
         cc = cr = ""
         if not row.node.children:
-            if row.node._name != "(hidden)":
+            if hasattr(row.node, 'address'):
                 hex_addr = "0x{:08x}".format(row.node.address)
                 cc = Fore.CYAN
                 cr = Fore.RESET
