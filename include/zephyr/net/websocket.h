@@ -182,6 +182,8 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
  * the connection.
  *
  * @param ws_sock Websocket id returned by websocket_connect().
+ *
+ * @return <0 if error, 0 the connection was closed successfully
  */
 int websocket_disconnect(int ws_sock);
 
