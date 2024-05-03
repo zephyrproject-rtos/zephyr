@@ -20,6 +20,9 @@ tests:
       - lpcxpresso51u68
       - nucleo_h745zi_q/stm32h745xx/m4
       - stm32h747i_disco/stm32h747xx/m4
+      - lpcxpresso55s69/lpc55s69/cpu1
+      - mpfs_icicle
+      - apollo4p_evb
   mgmt.mcumgr.fs.mgmt.hash.supported.sha256:
     extra_args: >
       OVERLAY_CONFIG="configuration/sha256.conf"
@@ -29,6 +32,9 @@ tests:
       - lpcxpresso51u68
       - nucleo_h745zi_q/stm32h745xx/m4
       - stm32h747i_disco/stm32h747xx/m4
+      - lpcxpresso55s69/lpc55s69/cpu1
+      - mpfs_icicle
+      - apollo4p_evb
   mgmt.mcumgr.fs.mgmt.hash.supported.all:
     extra_args: >
       OVERLAY_CONFIG="configuration/all.conf"
@@ -38,3 +44,6 @@ tests:
       - lpcxpresso51u68
       - nucleo_h745zi_q/stm32h745xx/m4
       - stm32h747i_disco/stm32h747xx/m4
+      - lpcxpresso55s69/lpc55s69/cpu1
+      - mpfs_icicle
+      - apollo4p_evb
