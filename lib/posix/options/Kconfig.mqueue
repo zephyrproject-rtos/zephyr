@@ -2,13 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig POSIX_MQUEUE
-	bool "Message queue support"
+menuconfig POSIX_MESSAGE_PASSING
+	bool "POSIX message queue support"
 	default y if POSIX_API
 	help
 	  This enabled POSIX message queue related APIs.
 
-if POSIX_MQUEUE
+if POSIX_MESSAGE_PASSING
 
 config MSG_COUNT_MAX
 	int "Maximum number of messages in message queue"

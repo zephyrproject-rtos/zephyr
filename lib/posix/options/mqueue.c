@@ -4,6 +4,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include "posix_internal.h"
+
 #include <zephyr/kernel.h>
 #include <errno.h>
 #include <string.h>

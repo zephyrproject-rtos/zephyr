@@ -1,0 +1,99 @@
+# Copyright (c) 2024 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# These options shoudl be removed at the end of the deprecation process
+
+menu "Deprecated POSIX options"
+
+config MAX_PTHREAD_COUNT
+	int "Maximum number of pthread_t [DEPRECATED]"
+	default POSIX_THREAD_THREADS_MAX
+	depends on POSIX_THREADS_BASE
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_THREAD_THREADS_MAX instead.
+
+config MAX_PTHREAD_KEY_COUNT
+	int "Maximum number of pthread_key_t [DEPRECATED]"
+	default POSIX_THREAD_KEYS_MAX
+	depends on POSIX_THREADS_BASE
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_THREAD_KEYS_MAX instead.
+
+config POSIX_MQUEUE
+	bool "Message queue support [DEPRECATED]"
+	select DEPRECATED
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_RW_LOCKS instead.
+
+config PTHREAD
+	bool "pthread_t support [DEPRECATED]"
+	select DEPRECATED
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_THREADS_BASE instead.
+
+config PTHREAD_BARRIER
+	bool "pthread_barrier_t support [DEPRECATED]"
+	select DEPRECATED
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_BARRIERS instead.
+
+config PTHREAD_COND
+	bool "pthread_cond_t support [DEPRECATED]"
+	select DEPRECATED
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_THREADS_BASE instead.
+
+config PTHREAD_IPC
+	bool "POSIX pthread IPC API [DEPRECATED]"
+	select DEPRECATED
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_THREADS_BASE instead.
+
+config PTHREAD_KEY
+	bool "pthread_cond_t support [DEPRECATED]"
+	select DEPRECATED
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_THREADS_BASE instead.
+
+config PTHREAD_MUTEX
+	bool "pthread_mutex_t support [DEPRECATED]"
+	select DEPRECATED
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_THREADS_BASE instead.
+
+config PTHREAD_RWLOCK
+	bool "pthread_rwlock_t support [DEPRECATED]"
+	select DEPRECATED
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_RW_LOCKS instead.
+
+config PTHREAD_SPINLOCK
+	bool "pthread_spinlock_t support [DEPRECATED]"
+	select DEPRECATED
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_SPIN_LOCKS instead.
+
+endmenu # POSIX_DEPRECATED

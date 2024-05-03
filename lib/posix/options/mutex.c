@@ -338,6 +338,7 @@ int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
 	return 0;
 }
 
+#ifdef CONFIG_POSIX_THREADS_EXT
 /**
  * @brief Read type attribute for mutex.
  *
@@ -379,6 +380,8 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 		return EINVAL;
 	}
 }
+
+#endif /* CONFIG_POSIX_THREADS_EXT */
 
 static int pthread_mutex_pool_init(void)
 {

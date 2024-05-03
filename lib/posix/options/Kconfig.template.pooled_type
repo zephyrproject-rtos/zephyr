@@ -4,9 +4,9 @@
 
 rsource "Kconfig.template.with_url"
 
-# This is mainly for TIMER currently.
 menuconfig $(TYPE)
 	bool "$(type) support"
+	default y if POSIX_API
 	help
 	  For more info, see
 	  $(posix-url-base)/$(type-function).html

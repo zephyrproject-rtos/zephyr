@@ -4,6 +4,12 @@
 
 menu "sem_t support"
 
+config POSIX_SEMAPHORES
+	bool "Support POSIX Semaphores"
+	default y if POSIX_API
+	help
+	  Enable this option for POSIX semaphore support.
+
 config SEM_VALUE_MAX
 	int "Maximum semaphore limit"
 	default 32767

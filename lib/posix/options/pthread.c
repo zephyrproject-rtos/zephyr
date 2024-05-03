@@ -347,44 +347,6 @@ int pthread_attr_setschedparam(pthread_attr_t *_attr, const struct sched_param *
 }
 
 /**
- * @brief Set stack attributes in thread attributes object.
- *
- * See IEEE 1003.1
- */
-int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksize)
-{
-	int ret;
-	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
-
-	if (stackaddr == NULL) {
-		LOG_DBG("NULL stack address");
-		return EACCES;
-	}
-
-	if (!__attr_is_initialized(attr) || stacksize == 0 || stacksize < PTHREAD_STACK_MIN ||
-	    stacksize > PTHREAD_STACK_MAX) {
-		LOG_DBG("Invalid stacksize %zu", stacksize);
-		return EINVAL;
-	}
-
-	if (attr->stack != NULL) {
-		ret = k_thread_stack_free(attr->stack);
-		if (ret == 0) {
-			LOG_DBG("Freed attr %p thread stack %zu@%p", _attr,
-				__get_attr_stacksize(attr), attr->stack);
-		}
-	}
-
-	attr->stack = stackaddr;
-	__set_attr_stacksize(attr, stacksize);
-
-	LOG_DBG("Assigned thread stack %zu@%p to attr %p", __get_attr_stacksize(attr), attr->stack,
-		_attr);
-
-	return 0;
-}
-
-/**
  * @brief Get scope attributes in thread attributes object.
  *
  * See IEEE 1003.1
@@ -665,34 +627,6 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 	*th = mark_pthread_obj_initialized(posix_thread_to_offset(t));
 
 	LOG_DBG("Created pthread %p", &t->thread);
-
-	return 0;
-}
-
-int pthread_getconcurrency(void)
-{
-	int ret = 0;
-
-	K_SPINLOCK(&pthread_pool_lock) {
-		ret = pthread_concurrency;
-	}
-
-	return ret;
-}
-
-int pthread_setconcurrency(int new_level)
-{
-	if (new_level < 0) {
-		return EINVAL;
-	}
-
-	if (new_level > CONFIG_MP_MAX_NUM_CPUS) {
-		return EAGAIN;
-	}
-
-	K_SPINLOCK(&pthread_pool_lock) {
-		pthread_concurrency = new_level;
-	}
 
 	return 0;
 }
@@ -1217,6 +1151,35 @@ int pthread_attr_setschedpolicy(pthread_attr_t *_attr, int policy)
 	return 0;
 }
 
+#ifdef CONFIG_POSIX_THREAD_ATTR_STACKADDR
+
+int pthread_attr_getstackaddr(const pthread_attr_t *ZRESTRICT _attr, void **ZRESTRICT stackaddr)
+{
+	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
+
+	if (!__attr_is_initialized(attr) || (stackaddr == NULL)) {
+		return EINVAL;
+	}
+
+	*stackaddr = attr->stack;
+	return 0;
+}
+
+int pthread_attr_setstackaddr(pthread_attr_t *attr, void *stackaddr)
+{
+	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
+
+	if (!__attr_is_initialized(attr) || (stackaddr == NULL)) {
+		return EINVAL;
+	}
+
+	attr->stack = *stackaddr;
+	return 0;
+}
+
+#endif /* CONFIG_POSIX_THREAD_ATTR_STACKADDR */
+
+#ifdef CONFIG_POSIX_THREAD_ATTR_STACKSIZE
 /**
  * @brief Get stack size attribute in thread attributes object.
  *
@@ -1281,7 +1244,9 @@ int pthread_attr_setstacksize(pthread_attr_t *_attr, size_t stacksize)
 
 	return 0;
 }
+#endif /* CONFIG_POSIX_THREAD_ATTR_STACKSIZE */
 
+#ifdef CONFIG_XSI_THREADS_EXT
 /**
  * @brief Get stack attributes in thread attributes object.
  *
@@ -1299,6 +1264,76 @@ int pthread_attr_getstack(const pthread_attr_t *_attr, void **stackaddr, size_t 
 	*stacksize = __get_attr_stacksize(attr);
 	return 0;
 }
+
+/**
+ * @brief Set stack attributes in thread attributes object.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksize)
+{
+	int ret;
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
+
+	if (stackaddr == NULL) {
+		LOG_DBG("NULL stack address");
+		return EACCES;
+	}
+
+	if (!__attr_is_initialized(attr) || stacksize == 0 || stacksize < PTHREAD_STACK_MIN ||
+	    stacksize > PTHREAD_STACK_MAX) {
+		LOG_DBG("Invalid stacksize %zu", stacksize);
+		return EINVAL;
+	}
+
+	if (attr->stack != NULL) {
+		ret = k_thread_stack_free(attr->stack);
+		if (ret == 0) {
+			LOG_DBG("Freed attr %p thread stack %zu@%p", _attr,
+				__get_attr_stacksize(attr), attr->stack);
+		}
+	}
+
+	attr->stack = stackaddr;
+	__set_attr_stacksize(attr, stacksize);
+
+	LOG_DBG("Assigned thread stack %zu@%p to attr %p", __get_attr_stacksize(attr), attr->stack,
+		_attr);
+
+	return 0;
+}
+
+int pthread_getconcurrency(void)
+{
+	int ret = 0;
+
+	K_SPINLOCK(&pthread_pool_lock) {
+		ret = pthread_concurrency;
+	}
+
+	return ret;
+}
+
+int pthread_setconcurrency(int new_level)
+{
+	if (new_level < 0) {
+		return EINVAL;
+	}
+
+	if (new_level > CONFIG_MP_MAX_NUM_CPUS) {
+		return EAGAIN;
+	}
+
+	K_SPINLOCK(&pthread_pool_lock) {
+		pthread_concurrency = new_level;
+	}
+
+	return 0;
+}
+
+#endif /* CONFIG_XSI_THREADS_EXT */
+
+#ifdef CONFIG_POSIX_THREADS_EXT
 
 int pthread_attr_getguardsize(const pthread_attr_t *ZRESTRICT _attr, size_t *ZRESTRICT guardsize)
 {
@@ -1325,6 +1360,8 @@ int pthread_attr_setguardsize(pthread_attr_t *_attr, size_t guardsize)
 
 	return 0;
 }
+
+#endif /* CONFIG_POSIX_THREADS_EXT */
 
 /**
  * @brief Get thread attributes object scheduling parameters.
