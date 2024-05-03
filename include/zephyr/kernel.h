@@ -5321,7 +5321,8 @@ struct k_heap {
 void k_heap_init(struct k_heap *h, void *mem,
 		size_t bytes) __attribute_nonnull(1);
 
-/** @brief Allocate aligned memory from a k_heap
+/**
+ * @brief Allocate aligned memory from a k_heap
  *
  * Behaves in all ways like k_heap_alloc(), except that the returned
  * memory (if available) will have a starting address in memory which
@@ -5783,7 +5784,7 @@ __syscall int k_poll(struct k_poll_event *events, int num_events,
 
 __syscall void k_poll_signal_init(struct k_poll_signal *sig);
 
-/*
+/**
  * @brief Reset a poll signal object's state to unsignaled.
  *
  * @param sig A poll signal object
