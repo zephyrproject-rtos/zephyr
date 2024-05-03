@@ -494,8 +494,9 @@ config MBEDTLS_USE_PSA_CRYPTO
 
 config MBEDTLS_LMS
 	bool "Support LMS signature schemes"
-	depends on MBEDTLS_PSA_CRYPTO_C
+	depends on MBEDTLS_PSA_CRYPTO_CLIENT
 	depends on MBEDTLS_HASH_SHA256_ENABLED
+	select PSA_WANT_ALG_SHA_256
 
 config MBEDTLS_SSL_DTLS_CONNECTION_ID
 	bool "DTLS Connection ID extension"
