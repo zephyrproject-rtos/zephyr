@@ -179,6 +179,12 @@ config HTTP_SERVER_RESTART_DELAY
 	  allow any existing connections to finalize to avoid binding errors
 	  during initialization.
 
+config WEBSOCKET_CONSOLE
+	bool
+	default y if HTTP_SERVER_WEBSOCKET && SHELL_BACKEND_WEBSOCKET
+	help
+	  Hidden option that is enabled only when all the necessary options
+	  needed by websocket console are set.
 endif
 
 # Hidden option to avoid having multiple individual options that are ORed together
