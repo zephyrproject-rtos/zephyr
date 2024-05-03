@@ -171,10 +171,10 @@ extern "C" {
 #define DATA_SIZE_16 16
 #define DATA_SIZE_32 32
 
-#define POL_AND_PHA 0b0000000000000110
-#define i_POLANDPHA 0b0000000000000000
-#define HALFDUPLEX  0b0000100000000000
-#define FULLDUPLEX  0b0000000000000000
+#define POL_AND_PHA     0b0000000000000110      // polarity and phase is 1
+#define INV_POLANDPHA   0b0000000000000000      // polarity and phase is 0      
+#define HALFDUPLEX      0b0000100000000000      // if mode bit is 1 then spi is halfduplex      
+#define FULLDUPLEX      0b0000000000000000      // if mode bit is 0 then spi is fullduplex
 
 /**
  * The below code defines a union type named "Data" that can hold a 32-bit integer, a 16-bit integer,
