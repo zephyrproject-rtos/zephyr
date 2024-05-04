@@ -641,16 +641,27 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
             results = findall_by_attr(root, cur, name="_identifier")
             if results:
                 item = results[0]
-                item._size += size
-                parent = item
+                if not hasattr(item, 'address'):
+                    # Passing down through a non-terminal parent node.
+                    parent = item
+                    parent._size += size
+                else:
+                    # Another symbol node here with the same name; stick to its parent as well.
+                    parent = item.parent
+                    node = TreeNode(name=str(part), identifier=cur, size=size, parent=parent)
             else:
+                # There is no such terminal symbol in the tree yet; let's add it.
                 if node:
                     parent = node
                 node = TreeNode(name=str(part), identifier=cur, size=size, parent=parent)
-        # Set memory block address and section only on terminal symbol nodes.
-        # Don't do it on file and directory level nodes.
-        node.address = addr
-        node.section = section
+        if node:
+            # Set memory block address and section name properties only for terminal symbol nodes.
+            # Don't do it on file- and directory- level parent nodes.
+            node.address = addr
+            node.section = section
+        else:
+            # normally this shouldn't happen; just to detect data or logic errors.
+            print(f"ERROR: no end node created for {root}, {path}, 0x{addr:08x}+{size}@{section}")
     #
 
     # Mapping paths to tree nodes
