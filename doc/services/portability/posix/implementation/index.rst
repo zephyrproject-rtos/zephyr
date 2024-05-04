@@ -18,7 +18,7 @@ Unlike other multi-purpose POSIX operating systems
 .. note::
    Unlike the Linux kernel or FreeBSD, Zephyr does not maintain a static table of system call
    numbers for each supported architecture, but instead generates system calls dynamically at
-   build time. See `System Calls <syscalls>` for more information.
+   build time. See :ref:`System Calls <syscalls>` for more information.
 
 Design
 ======
@@ -73,5 +73,5 @@ Some general design considerations:
    }
 
 - POSIX API calls should be provided as regular callable C functions; if a Zephyr
-  `System Call <syscalls>` is needed as part of the implementation, the declaration and the
+  :ref:`System Call <syscalls>` is needed as part of the implementation, the declaration and the
   implementation of that system call should be hidden behind the POSIX API.
