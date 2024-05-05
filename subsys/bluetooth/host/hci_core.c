@@ -27,7 +27,11 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_vs.h>
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+#include <zephyr/drivers/bluetooth.h>
+#else
 #include <zephyr/drivers/bluetooth/hci_driver.h>
+#endif
 
 #include "common/bt_str.h"
 #include "common/assert.h"
@@ -63,6 +67,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_core);
 
+#define BT_HCI_DEV  DT_CHOSEN(zephyr_bt_hci)
+#define BT_HCI_BUS  BT_DT_HCI_BUS_GET(BT_HCI_DEV)
+#define BT_HCI_NAME BT_DT_HCI_NAME_GET(BT_HCI_DEV)
+
 #define HCI_CMD_TIMEOUT      K_SECONDS(10)
 
 /* Stacks for the threads */
@@ -84,6 +92,9 @@ struct bt_dev bt_dev = {
 #endif
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
 	.appearance = CONFIG_BT_DEVICE_APPEARANCE,
+#endif
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	.hci = DEVICE_DT_GET(BT_HCI_DEV),
 #endif
 };
 
@@ -111,6 +122,28 @@ static struct cmd_data cmd_data[CONFIG_BT_BUF_CMD_TX_COUNT];
 
 #define cmd(buf) (&cmd_data[net_buf_id(buf)])
 #define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
+
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+static bool drv_quirk_no_reset(void)
+{
+	return  ((BT_DT_HCI_QUIRKS_GET(DT_CHOSEN(zephyr_bt_hci)) & BT_HCI_QUIRK_NO_RESET) != 0);
+}
+
+__maybe_unused static bool drv_quirk_no_auto_dle(void)
+{
+	return  ((BT_DT_HCI_QUIRKS_GET(DT_CHOSEN(zephyr_bt_hci)) & BT_HCI_QUIRK_NO_AUTO_DLE) != 0);
+}
+#else
+static bool drv_quirk_no_reset(void)
+{
+	return  ((bt_dev.drv->quirks & BT_QUIRK_NO_RESET) != 0);
+}
+
+__maybe_unused static bool drv_quirk_no_auto_dle(void)
+{
+	return  ((bt_dev.drv->quirks & BT_QUIRK_NO_AUTO_DLE) != 0);
+}
+#endif
 
 void bt_hci_cmd_state_set_init(struct net_buf *buf,
 			       struct bt_hci_cmd_state_set *state,
@@ -1155,7 +1188,7 @@ static void conn_auto_initiate(struct bt_conn *conn)
 
 	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
 	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
-		if (IS_BT_QUIRK_NO_AUTO_DLE(&bt_dev)) {
+		if (drv_quirk_no_auto_dle()) {
 			uint16_t tx_octets, tx_time;
 
 			err = hci_le_read_max_data_len(&tx_octets, &tx_time);
@@ -3196,7 +3229,7 @@ static int common_init(void)
 	struct net_buf *rsp;
 	int err;
 
-	if (!(bt_dev.drv->quirks & BT_QUIRK_NO_RESET)) {
+	if (!drv_quirk_no_reset()) {
 		/* Send HCI_RESET */
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, &rsp);
 		if (err) {
@@ -3900,12 +3933,19 @@ static int hci_init(void)
 	}
 #endif /* defined(CONFIG_BT_HCI_SET_PUBLIC_ADDR) */
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	err = bt_hci_setup(bt_dev.hci, &setup_params);
+	if (err && err != -ENOSYS) {
+		return err;
+	}
+#else
 	if (bt_dev.drv->setup) {
 		err = bt_dev.drv->setup(&setup_params);
 		if (err) {
 			return err;
 		}
 	}
+#endif
 #endif /* defined(CONFIG_BT_HCI_SETUP) */
 
 	err = common_init();
@@ -3960,7 +4000,11 @@ int bt_send(struct net_buf *buf)
 		return bt_hci_ecc_send(buf);
 	}
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	return bt_hci_send(bt_dev.hci, buf);
+#else
 	return bt_dev.drv->send(buf);
+#endif
 }
 
 static const struct event_handler prio_events[] = {
@@ -4062,8 +4106,14 @@ static int bt_recv_unsafe(struct net_buf *buf)
 	}
 }
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+int bt_hci_recv(const struct device *dev, struct net_buf *buf)
+{
+	ARG_UNUSED(dev);
+#else
 int bt_recv(struct net_buf *buf)
 {
+#endif
 	int err;
 
 	k_sched_lock();
@@ -4073,6 +4123,8 @@ int bt_recv(struct net_buf *buf)
 	return err;
 }
 
+/* Old-style HCI driver registration */
+#if !DT_HAS_CHOSEN(zephyr_bt_hci)
 int bt_hci_driver_register(const struct bt_hci_driver *drv)
 {
 	if (bt_dev.drv) {
@@ -4092,6 +4144,7 @@ int bt_hci_driver_register(const struct bt_hci_driver *drv)
 
 	return 0;
 }
+#endif /* !DT_HAS_CHOSEN(zephyr_bt_hci) */
 
 void bt_finalize_init(void)
 {
@@ -4213,10 +4266,19 @@ int bt_enable(bt_ready_cb_t cb)
 {
 	int err;
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	if (!device_is_ready(bt_dev.hci)) {
+		LOG_ERR("HCI driver is not ready");
+		return -ENODEV;
+	}
+
+	bt_monitor_new_index(BT_MONITOR_TYPE_PRIMARY, BT_HCI_BUS, BT_ADDR_ANY, BT_HCI_NAME);
+#else /* !DT_HAS_CHONSEN(zephyr_bt_hci) */
 	if (!bt_dev.drv) {
 		LOG_ERR("No HCI driver registered");
 		return -ENODEV;
 	}
+#endif
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLE);
 
@@ -4265,7 +4327,11 @@ int bt_enable(bt_ready_cb_t cb)
 	k_thread_name_set(&bt_workq.thread, "BT RX WQ");
 #endif
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	err = bt_hci_open(bt_dev.hci, bt_hci_recv);
+#else
 	err = bt_dev.drv->open();
+#endif
 	if (err) {
 		LOG_ERR("HCI driver open failed (%d)", err);
 		return err;
@@ -4285,6 +4351,7 @@ int bt_disable(void)
 {
 	int err;
 
+#if !DT_HAS_CHOSEN(zephyr_bt_hci)
 	if (!bt_dev.drv) {
 		LOG_ERR("No HCI driver registered");
 		return -ENODEV;
@@ -4293,6 +4360,7 @@ int bt_disable(void)
 	if (!bt_dev.drv->close) {
 		return -ENOTSUP;
 	}
+#endif
 
 	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_DISABLE)) {
 		return -EALREADY;
@@ -4300,29 +4368,6 @@ int bt_disable(void)
 
 	/* Clear BT_DEV_READY before disabling HCI link */
 	atomic_clear_bit(bt_dev.flags, BT_DEV_READY);
-
-	err = bt_dev.drv->close();
-	if (err) {
-		LOG_ERR("HCI driver close failed (%d)", err);
-
-		/* Re-enable BT_DEV_READY to avoid inconsistent stack state */
-		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-
-		return err;
-	}
-
-	/* Some functions rely on checking this bitfield */
-	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));
-
-	/* Reset IDs and corresponding keys. */
-	bt_dev.id_count = 0;
-#if defined(CONFIG_BT_SMP)
-	bt_dev.le.rl_entries = 0;
-	bt_keys_reset();
-#endif
-
-	/* If random address was set up - clear it */
-	bt_addr_le_copy(&bt_dev.random_addr, BT_ADDR_LE_ANY);
 
 #if defined(CONFIG_BT_BROADCASTER)
 	bt_adv_reset_adv_pool();
@@ -4351,6 +4396,38 @@ int bt_disable(void)
 	/* Abort RX thread */
 	k_thread_abort(&bt_workq.thread);
 #endif
+
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	err = bt_hci_close(bt_dev.hci);
+	if (err == -ENOSYS) {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLE);
+		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+		return -ENOTSUP;
+	}
+#else
+	err = bt_dev.drv->close();
+#endif
+	if (err) {
+		LOG_ERR("HCI driver close failed (%d)", err);
+
+		/* Re-enable BT_DEV_READY to avoid inconsistent stack state */
+		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+
+		return err;
+	}
+
+	/* Some functions rely on checking this bitfield */
+	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));
+
+	/* Reset IDs and corresponding keys. */
+	bt_dev.id_count = 0;
+#if defined(CONFIG_BT_SMP)
+	bt_dev.le.rl_entries = 0;
+	bt_keys_reset();
+#endif
+
+	/* If random address was set up - clear it */
+	bt_addr_le_copy(&bt_dev.random_addr, BT_ADDR_LE_ANY);
 
 	if (IS_ENABLED(CONFIG_BT_ISO)) {
 		bt_iso_reset();
