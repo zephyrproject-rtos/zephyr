@@ -17,6 +17,8 @@ choice BT_HCI_BUS_TYPE
 config BT_H4
 	bool "H:4 UART"
 	select BT_UART
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_UART_ENABLED
 	help
 	  Bluetooth H:4 UART driver. Requires hardware flow control
 	  lines to be available.
