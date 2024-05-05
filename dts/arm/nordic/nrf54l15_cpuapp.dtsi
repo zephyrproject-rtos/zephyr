@@ -17,6 +17,10 @@ cpuflpr_vevif: &cpuflpr_vevif_remote {};
 /delete-node/ &cpuflpr_clic;
 
 / {
+	chosen {
+		zephyr,bt-hci = &bt_hci_controller;
+	};
+
 	soc {
 		compatible = "simple-bus";
 		interrupt-parent = <&cpuapp_nvic>;
@@ -27,6 +31,10 @@ cpuflpr_vevif: &cpuflpr_vevif_remote {};
 		compatible = "zephyr,psa-crypto-rng";
 		status = "disabled";
 	};
+};
+
+&bt_hci_controller {
+	status = "okay";
 };
 
 &cpuapp_ppb {
