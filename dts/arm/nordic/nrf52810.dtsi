@@ -5,6 +5,7 @@
 
 / {
 	chosen {
+		zephyr,bt-hci = &bt_hci_controller;
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash_controller;
 	};
@@ -90,6 +91,11 @@
 			interrupts = <1 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
 			ble-2mbps-supported;
+
+			bt_hci_controller: bt_hci_controller {
+				compatible = "zephyr,bt-hci-ll-sw-split";
+				status = "okay";
+			};
 		};
 
 		uart0: uart@40002000 {
