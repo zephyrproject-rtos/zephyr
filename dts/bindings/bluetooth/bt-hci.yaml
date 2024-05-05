@@ -1,0 +1,25 @@
+# Common fields for Bluetooth HCI devices
+
+include: base.yaml
+
+properties:
+  bt-hci-name:
+    type: string
+    description: Name of the HCI transport
+  bt-hci-bus:
+    type: string
+    description: Bus of the transport
+    enum:
+      - "BT_HCI_BUS_VIRTUAL"
+      - "BT_HCI_BUS_USB"
+      - "BT_HCI_BUS_PCCARD"
+      - "BT_HCI_BUS_UART"
+      - "BT_HCI_BUS_RS232"
+      - "BT_HCI_BUS_PCI"
+      - "BT_HCI_BUS_SDIO"
+      - "BT_HCI_BUS_SPI"
+      - "BT_HCI_BUS_I2C"
+      - "BT_HCI_BUS_IPM"
+  bt-hci-quirks:
+    type: string-array
+    description: HCI device quirks
