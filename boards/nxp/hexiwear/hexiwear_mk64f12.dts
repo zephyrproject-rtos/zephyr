@@ -28,7 +28,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,bt-uart = &uart4;
+		zephyr,bt-hci = &bt_hci_uart;
 	};
 
 	leds {
@@ -153,6 +153,11 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart4_default>;
 	pinctrl-names = "default";
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+	};
 };
 
 &gpioa {

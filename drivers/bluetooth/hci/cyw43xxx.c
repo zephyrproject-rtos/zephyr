@@ -25,10 +25,10 @@ LOG_MODULE_REGISTER(cyw43xxx_driver);
 
 #include <stdint.h>
 
-BUILD_ASSERT(DT_PROP(DT_CHOSEN(zephyr_bt_uart), hw_flow_control) == 1,
-		"hw_flow_control must be enabled for HCI H4 UART");
-
 #define DT_DRV_COMPAT infineon_cyw43xxx_bt_hci
+
+BUILD_ASSERT(DT_PROP(DT_INST_GPARENT(0), hw_flow_control) == 1,
+		"hw_flow_control must be enabled for HCI H4 UART");
 
 /* BT settling time after power on */
 #define BT_POWER_ON_SETTLING_TIME_MS      (500u)

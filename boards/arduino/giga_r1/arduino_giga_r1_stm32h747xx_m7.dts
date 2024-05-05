@@ -18,7 +18,7 @@
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
 		zephyr,uart-mcumgr = &usart1;
-		zephyr,bt-uart = &uart7;
+		zephyr,bt-hci = &bt_hci_uart;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,canbus = &fdcan2;
@@ -98,12 +98,17 @@
 	status = "okay";
 	hw-flow-control;
 
-	murata-1dx {
-		compatible = "infineon,cyw43xxx-bt-hci";
-		bt-reg-on-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
-		bt-host-wake-gpios = <&gpiog 3 GPIO_ACTIVE_HIGH>;
-		bt-dev-wake-gpios = <&gpioh 7 GPIO_ACTIVE_HIGH>;
-		fw-download-speed = <115200>;
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+
+		murata-1dx {
+			compatible = "infineon,cyw43xxx-bt-hci";
+			bt-reg-on-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+			bt-host-wake-gpios = <&gpiog 3 GPIO_ACTIVE_HIGH>;
+			bt-dev-wake-gpios = <&gpioh 7 GPIO_ACTIVE_HIGH>;
+			fw-download-speed = <115200>;
+		};
 	};
 };
 

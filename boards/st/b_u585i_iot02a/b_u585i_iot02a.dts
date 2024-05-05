@@ -17,7 +17,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,bt-uart=&uart4;
+		zephyr,bt-hci = &bt_hci_uart;
 	};
 
 	aliases {
@@ -71,4 +71,9 @@
 	pinctrl-names = "default";
 	current-speed = <100000>;
 	status = "okay";
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+	};
 };
