@@ -19,9 +19,14 @@
 #include <tinycrypt/ecc_dh.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+#include <zephyr/drivers/bluetooth.h>
+#else
 #include <zephyr/drivers/bluetooth/hci_driver.h>
+#endif
 
 #include "common/bt_str.h"
 
@@ -92,7 +97,11 @@ static void send_cmd_status(uint16_t opcode, uint8_t status)
 	evt->opcode = sys_cpu_to_le16(opcode);
 	evt->status = status;
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	bt_hci_recv(bt_dev.hci, buf);
+#else
 	bt_recv(buf);
+#endif
 }
 
 static uint8_t generate_keys(void)
@@ -154,7 +163,11 @@ static void emulate_le_p256_public_key_cmd(void)
 
 	atomic_clear_bit(flags, PENDING_PUB_KEY);
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	bt_hci_recv(bt_dev.hci, buf);
+#else
 	bt_recv(buf);
+#endif
 }
 
 static void emulate_le_generate_dhkey(void)
@@ -202,7 +215,11 @@ static void emulate_le_generate_dhkey(void)
 
 	atomic_clear_bit(flags, PENDING_DHKEY);
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	bt_hci_recv(bt_dev.hci, buf);
+#else
 	bt_recv(buf);
+#endif
 }
 
 static void ecc_process(struct k_work *work)
@@ -327,7 +344,11 @@ int bt_hci_ecc_send(struct net_buf *buf)
 		}
 	}
 
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+	return bt_hci_send(bt_dev.hci, buf);
+#else
 	return bt_dev.drv->send(buf);
+#endif
 }
 
 void bt_hci_ecc_supported_commands(uint8_t *supported_commands)
