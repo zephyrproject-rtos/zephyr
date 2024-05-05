@@ -8,4 +8,8 @@ config TEST_TRANSFER_BUF_SIZE
 	int "transfer buffer size"
 	default 0
 
+config TEST_COMMAND_BUF_SIZE
+	int "command buffer size"
+	default 0
+
 source "Kconfig.zephyr"

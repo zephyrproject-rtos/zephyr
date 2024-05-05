@@ -9,4 +9,8 @@ config CFB_SAMPLE_TRANSFER_BUFFER_SIZE
 	help
 	  Dynamically allocate display object if set 0 to this option,
 
+config CFB_SAMPLE_COMMAND_BUFFER_SIZE
+	int "Buffer size for store commands"
+	default 0
+
 source "Kconfig.zephyr"

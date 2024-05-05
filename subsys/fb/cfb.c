@@ -10,6 +10,7 @@
 #include <zephyr/display/cfb.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #define LOG_LEVEL CONFIG_CFB_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -20,6 +21,16 @@ STRUCT_SECTION_END_EXTERN(cfb_font);
 
 #define LSB_BIT_MASK(x) BIT_MASK(x)
 #define MSB_BIT_MASK(x) (BIT_MASK(x) << (8 - x))
+
+/**
+ * Command List processing mode
+ */
+enum command_process_mode {
+	FINALIZE,
+	IMMEDIATE,
+	CLEAR_COMMANDS,
+	CLEAR_DISPLAY,
+};
 
 static inline uint8_t byte_reverse(uint8_t b)
 {
@@ -526,69 +537,17 @@ static void draw_text(struct cfb_framebuffer *fb, const char *const str, int16_t
 	}
 }
 
-int cfb_draw_point(struct cfb_framebuffer *fb, const struct cfb_position *pos)
-{
-	struct cfb_display *disp = CONTAINER_OF(fb, struct cfb_display, fb);
-
-	draw_point(fb, pos->x, pos->y, disp->fg_color);
-
-	return 0;
-}
-
-int cfb_draw_line(struct cfb_framebuffer *fb, const struct cfb_position *start,
-		  const struct cfb_position *end)
-{
-	struct cfb_display *disp = CONTAINER_OF(fb, struct cfb_display, fb);
-
-	draw_line(fb, start->x, start->y, end->x, end->y, disp->fg_color);
-
-	return 0;
-}
-
-int cfb_draw_rect(struct cfb_framebuffer *fb, const struct cfb_position *start,
-		  const struct cfb_position *end)
-{
-	struct cfb_display *disp = CONTAINER_OF(fb, struct cfb_display, fb);
-
-	draw_line(fb, start->x, start->y, end->x, start->y, disp->fg_color);
-	draw_line(fb, end->x, start->y, end->x, end->y, disp->fg_color);
-	draw_line(fb, end->x, end->y, start->x, end->y, disp->fg_color);
-	draw_line(fb, start->x, end->y, start->x, start->y, disp->fg_color);
-
-	return 0;
-}
-
-int cfb_draw_text(struct cfb_framebuffer *fb, const char *const str, int16_t x, int16_t y)
-{
-	struct cfb_display *disp = CONTAINER_OF(fb, struct cfb_display, fb);
-
-	draw_text(fb, str, x, y, false, font_get(disp->font_idx), disp->kerning, disp->fg_color,
-		  disp->bg_color);
-
-	return 0;
-}
-
-int cfb_print(struct cfb_framebuffer *fb, const char *const str, int16_t x, int16_t y)
-{
-	struct cfb_display *disp = CONTAINER_OF(fb, struct cfb_display, fb);
-
-	draw_text(fb, str, x, y, true, font_get(disp->font_idx), disp->kerning, disp->fg_color,
-		  disp->bg_color);
-
-	return 0;
-}
-
-int cfb_invert_area(struct cfb_framebuffer *fb, int16_t x, int16_t y, uint16_t width,
-		    uint16_t height)
+static void invert_area(struct cfb_framebuffer *fb, int16_t x, int16_t y, uint16_t width,
+			uint16_t height)
 {
 	const bool need_reverse = ((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0);
 
 	if ((x + width) < fb_left(fb) || x >= fb_right(fb)) {
-		return 0;
+		return;
 	}
 
 	if ((y + height) < fb_top(fb) || y >= fb_bottom(fb)) {
-		return 0;
+		return;
 	}
 
 	x -= fb->pos.x;
@@ -688,57 +647,404 @@ int cfb_invert_area(struct cfb_framebuffer *fb, int16_t x, int16_t y, uint16_t w
 			}
 		}
 	}
-
-	return 0;
 }
 
-int cfb_clear(struct cfb_framebuffer *fb, bool clear_display)
+static void execute_command(struct cfb_framebuffer *fb, const struct cfb_command_param *param,
+			    struct cfb_draw_settings *settings)
 {
-	struct cfb_display *disp = CONTAINER_OF(fb, struct cfb_display, fb);
+	uint32_t tmp_color;
 
-	if (!fb || !fb->buf) {
-		return -ENODEV;
+	switch (param->op) {
+	case CFB_OP_FILL:
+		fill_fb(fb, settings->bg_color, bytes_per_pixel(fb->pixel_format));
+		break;
+	case CFB_OP_DRAW_POINT:
+		draw_point(fb, param->draw_figure.start.x, param->draw_figure.start.y,
+			   settings->fg_color);
+		break;
+	case CFB_OP_DRAW_LINE:
+		draw_line(fb, param->draw_figure.start.x, param->draw_figure.start.y,
+			  param->draw_figure.end.x, param->draw_figure.end.y, settings->fg_color);
+		break;
+	case CFB_OP_DRAW_RECT:
+		draw_line(fb, param->draw_figure.start.x, param->draw_figure.start.y,
+			  param->draw_figure.end.x, param->draw_figure.start.y, settings->fg_color);
+		draw_line(fb, param->draw_figure.end.x, param->draw_figure.start.y,
+			  param->draw_figure.end.x, param->draw_figure.end.y, settings->fg_color);
+		draw_line(fb, param->draw_figure.end.x, param->draw_figure.end.y,
+			  param->draw_figure.start.x, param->draw_figure.end.y, settings->fg_color);
+		draw_line(fb, param->draw_figure.start.x, param->draw_figure.end.y,
+			  param->draw_figure.start.x, param->draw_figure.start.y,
+			  settings->fg_color);
+		break;
+	case CFB_OP_DRAW_TEXT:
+		draw_text(fb, param->draw_text.str, param->draw_text.pos.x, param->draw_text.pos.y,
+			  false, font_get(settings->font_idx), settings->kerning,
+			  settings->fg_color, settings->bg_color);
+		break;
+	case CFB_OP_PRINT:
+		draw_text(fb, param->draw_text.str, param->draw_text.pos.x, param->draw_text.pos.y,
+			  true, font_get(settings->font_idx), settings->kerning, settings->fg_color,
+			  settings->bg_color);
+		break;
+	case CFB_OP_DRAW_TEXT_REF:
+		draw_text(fb, param->draw_text.str, param->draw_text.pos.x, param->draw_text.pos.y,
+			  false, font_get(settings->font_idx), settings->kerning,
+			  settings->fg_color, settings->bg_color);
+		break;
+	case CFB_OP_PRINT_REF:
+		draw_text(fb, param->draw_text.str, param->draw_text.pos.x, param->draw_text.pos.y,
+			  true, font_get(settings->font_idx), settings->kerning, settings->fg_color,
+			  settings->bg_color);
+		break;
+	case CFB_OP_INVERT_AREA:
+		invert_area(fb, param->invert_area.x, param->invert_area.y, param->invert_area.w,
+			    param->invert_area.h);
+		break;
+	case CFB_OP_SWAP_FG_BG_COLOR:
+		tmp_color = settings->fg_color;
+		settings->fg_color = settings->bg_color;
+		settings->bg_color = tmp_color;
+		break;
+	case CFB_OP_SET_FONT:
+		settings->font_idx = param->set_font.font_idx;
+		break;
+	case CFB_OP_SET_KERNING:
+		settings->kerning = param->set_kerning.kerning;
+		break;
+	case CFB_OP_SET_FG_COLOR:
+		settings->fg_color = rgba_to_color(fb->pixel_format, param->set_color.red,
+						   param->set_color.green, param->set_color.blue,
+						   param->set_color.alpha);
+		break;
+	case CFB_OP_SET_BG_COLOR:
+		settings->bg_color = rgba_to_color(fb->pixel_format, param->set_color.red,
+						   param->set_color.green, param->set_color.blue,
+						   param->set_color.alpha);
+		break;
+	default:
+		return;
+	}
+}
+
+static bool display_is_last_iterator(struct cfb_command_iterator *ite)
+{
+	return !ite->node &&
+	       (!ite->disp->cmd.buf ||
+		((void *)ite->param >= (void *)(ite->disp->cmd.buf + ite->disp->cmd.pos)));
+}
+
+/**
+ * Advances the iterator by one.
+ *
+ * This iterator handles linked list structures and buffers in a unified manner.
+ * When the end of the linked list is reached, it scans the elements stored in the buffer
+ * and returns NULL when the last element is reached.
+ * This function is called via the next function pointer of cfb_command_iterator.
+ *
+ * @param ite current iterator
+ * @return iterator that is pointing next node
+ */
+static struct cfb_command_iterator *display_next_iterator(struct cfb_command_iterator *ite)
+{
+	if (ite->node != NULL) {
+		struct cfb_command *pcmd;
+
+		ite->node = ite->node->next;
+		if (ite->node == NULL) {
+			ite->param = (void *)ite->disp->cmd.buf;
+		} else {
+			pcmd = CONTAINER_OF(ite->node, struct cfb_command, node);
+			ite->param = &pcmd->param;
+		}
+	} else {
+		uint8_t *buf_ptr = (uint8_t *)(ite->param + 1);
+
+		ite->node = NULL;
+		if (ite->param->op == CFB_OP_DRAW_TEXT || ite->param->op == CFB_OP_PRINT) {
+			buf_ptr += strlen(buf_ptr) + 1;
+		}
+
+		ite->param = (struct cfb_command_param *)buf_ptr;
 	}
 
-	fill_fb(&disp->fb, disp->bg_color, bytes_per_pixel(disp->fb.pixel_format));
-
-	if (clear_display) {
-		cfb_finalize(fb);
-	}
-
-	return 0;
+	return ite;
 }
 
-int cfb_invert(struct cfb_framebuffer *fb)
+/**
+ * Initialize iterator.
+ *
+ * This function initialize command-list iterator.
+ * Iterator traverse linked lists and buffers in a same manner.
+ * This function sets the iterator to the beginning of the linked list.
+ * The iterator cannot process concurrently.
+ *
+ * @param fb framebuffer pointer that is linked to display
+ * @return Pointer that reference the iterator.
+ */
+static struct cfb_command_iterator *display_init_iterator(struct cfb_framebuffer *fb)
 {
 	struct cfb_display *disp = CONTAINER_OF(fb, struct cfb_display, fb);
-	const uint32_t tmp_fg = disp->fg_color;
+	struct cfb_command *pcmd;
 
-	disp->fg_color = disp->bg_color;
-	disp->bg_color = tmp_fg;
+	disp->iterator.disp = disp;
+	disp->iterator.node = sys_slist_peek_head(&disp->cmd_list);
+	pcmd = CONTAINER_OF(disp->iterator.node, struct cfb_command, node);
+	disp->iterator.param = &pcmd->param;
+	disp->iterator.next = display_next_iterator;
+	disp->iterator.is_last = display_is_last_iterator;
 
-	cfb_invert_area(fb, 0, 0, fb->width, fb->height);
-
-	return 0;
+	return &disp->iterator;
 }
 
-int cfb_finalize(struct cfb_framebuffer *fb)
+/**
+ * Executes a list of commands.
+ * Called by cfb_finalize and cfb_clear.
+ * When called from cfb_clear, only apply the settings without executing the drawing command.
+ *
+ * @param fb Framebuffer and rendering info
+ * @param x The start x pos of rendering rect
+ * @param y The start y pos of rendering rect
+ * @param w The width of rendering rect
+ * @param h The height of rendering rect
+ * @param settings Pointer to draw settings
+ * @param mode Execution mode
+ *
+ * @return negative value if failed, otherwise 0
+ */
+static int display_process_commands(struct cfb_display *disp, uint16_t x, uint16_t y, uint16_t w,
+				    uint16_t h, struct cfb_draw_settings *settings,
+				    enum command_process_mode mode)
 {
 	struct display_buffer_descriptor desc;
-	struct cfb_display *disp;
+	const uint16_t draw_width = x + w;
+	const uint16_t draw_height = y + h;
+	const uint16_t start_x = x;
+	const struct cfb_draw_settings restore = *settings;
+	int err = 0;
 
-	if (!fb || !fb->buf) {
-		return -ENODEV;
+	if (disp->fb.size < (w * bytes_per_pixel(disp->fb.pixel_format))) {
+		w = DIV_ROUND_UP(w * bytes_per_pixel(disp->fb.pixel_format),
+				 DIV_ROUND_UP(w * bytes_per_pixel(disp->fb.pixel_format),
+					      disp->fb.size)) /
+		    bytes_per_pixel(disp->fb.pixel_format);
+		h = pixels_per_tile(disp->fb.pixel_format);
+	} else {
+		h = MIN(disp->fb.size / (w * bytes_per_pixel(disp->fb.pixel_format)) *
+				pixels_per_tile(disp->fb.pixel_format),
+			h);
 	}
 
-	disp = CONTAINER_OF(fb, struct cfb_display, fb);
+	for (; y < draw_height; y += h) {
+		for (x = start_x; x < draw_width; x += w) {
+			*settings = restore;
+			for (struct cfb_command_iterator *ite = disp->fb.init_iterator(&disp->fb);
+			     !ite->is_last(ite); ite = ite->next(ite)) {
+				disp->fb.pos.x = x;
+				disp->fb.pos.y = y;
+				disp->fb.width = w;
+				disp->fb.height = h;
 
-	desc.buf_size = fb->size;
-	desc.width = fb->width;
-	desc.height = fb->height;
-	desc.pitch = fb->width;
+				/* Process only settings change commands if clear. */
+				if (mode >= CLEAR_COMMANDS) {
+					if ((ite->param->op != CFB_OP_FILL) &&
+					    (ite->param->op != CFB_OP_SET_FONT) &&
+					    (ite->param->op != CFB_OP_SET_KERNING) &&
+					    (ite->param->op != CFB_OP_SET_FG_COLOR) &&
+					    (ite->param->op != CFB_OP_SET_BG_COLOR) &&
+					    (ite->param->op != CFB_OP_SWAP_FG_BG_COLOR)) {
+						continue;
+					}
+				}
 
-	return display_write(disp->dev, 0, 0, &desc, fb->buf);
+				execute_command(&disp->fb, ite->param, settings);
+			}
+
+			/* Don't update display on clear-command case */
+			if (mode != FINALIZE && mode != CLEAR_DISPLAY) {
+				continue;
+			}
+
+			desc.buf_size = disp->fb.size;
+			desc.height = MIN(h, disp->fb.res.y - y);
+			desc.width = MIN(w, disp->fb.res.x - x);
+			desc.pitch = MIN(w, disp->fb.res.x - x);
+
+			err = display_write(disp->dev, x, y, &desc, disp->fb.buf);
+
+			if (err) {
+				LOG_DBG("display_write(%d %d %d %d) size: %d: err=%d", x, y, w, h,
+					disp->fb.size, err);
+				return err;
+			}
+		}
+	}
+
+	return 0;
+}
+
+/**
+ * Set up an initialization command to be executed every time partial frame buffer drawing.
+ *
+ * @param disp display structure
+ */
+static void display_append_init_commands(struct cfb_display *disp)
+{
+	const struct cfb_draw_settings *settings = &disp->settings;
+	uint8_t r = 0;
+	uint8_t g = 0;
+	uint8_t b = 0;
+	uint8_t a = 0;
+
+	disp->init_cmds[CFB_INIT_CMD_SET_FONT].param.op = CFB_OP_SET_FONT;
+	disp->init_cmds[CFB_INIT_CMD_SET_FONT].param.set_font.font_idx = settings->font_idx;
+
+	disp->init_cmds[CFB_INIT_CMD_SET_KERNING].param.op = CFB_OP_SET_KERNING;
+	disp->init_cmds[CFB_INIT_CMD_SET_KERNING].param.set_kerning.kerning = settings->kerning;
+
+	color_to_rgba(disp->fb.pixel_format, settings->fg_color, &r, &g, &b, &a);
+	disp->init_cmds[CFB_INIT_CMD_SET_FG_COLOR].param.op = CFB_OP_SET_FG_COLOR;
+	disp->init_cmds[CFB_INIT_CMD_SET_FG_COLOR].param.set_color.red = r;
+	disp->init_cmds[CFB_INIT_CMD_SET_FG_COLOR].param.set_color.green = g;
+	disp->init_cmds[CFB_INIT_CMD_SET_FG_COLOR].param.set_color.blue = b;
+	disp->init_cmds[CFB_INIT_CMD_SET_FG_COLOR].param.set_color.alpha = a;
+
+	color_to_rgba(disp->fb.pixel_format, settings->bg_color, &r, &g, &b, &a);
+	disp->init_cmds[CFB_INIT_CMD_SET_BG_COLOR].param.op = CFB_OP_SET_BG_COLOR;
+	disp->init_cmds[CFB_INIT_CMD_SET_BG_COLOR].param.set_color.red = r;
+	disp->init_cmds[CFB_INIT_CMD_SET_BG_COLOR].param.set_color.green = g;
+	disp->init_cmds[CFB_INIT_CMD_SET_BG_COLOR].param.set_color.blue = b;
+	disp->init_cmds[CFB_INIT_CMD_SET_BG_COLOR].param.set_color.alpha = a;
+
+	disp->init_cmds[CFB_INIT_CMD_FILL].param.op = CFB_OP_FILL;
+
+	sys_slist_append(&disp->cmd_list, &disp->init_cmds[CFB_INIT_CMD_SET_FONT].node);
+	sys_slist_append(&disp->cmd_list, &disp->init_cmds[CFB_INIT_CMD_SET_KERNING].node);
+	sys_slist_append(&disp->cmd_list, &disp->init_cmds[CFB_INIT_CMD_SET_FG_COLOR].node);
+	sys_slist_append(&disp->cmd_list, &disp->init_cmds[CFB_INIT_CMD_SET_BG_COLOR].node);
+	sys_slist_append(&disp->cmd_list, &disp->init_cmds[CFB_INIT_CMD_FILL].node);
+}
+
+/**
+ * Run finalizing process.
+ *
+ * This function is called via function-pointer in the cfb_framebuffer
+ * struct on calling cfb_finalize.
+ *
+ * @param fb framebuffer pointer that is linked to display
+ * @param x X pos
+ * @param y Y pos
+ * @param w width
+ * @param h height
+ *
+ * @return negative value if failed, otherwise 0
+ */
+static int display_finalize(struct cfb_framebuffer *fb, int16_t x, int16_t y, uint16_t width,
+			    uint16_t height)
+{
+	struct cfb_display *disp = CONTAINER_OF(fb, struct cfb_display, fb);
+
+	return display_process_commands(disp, MAX(x, 0), MAX(y, 0), MIN(width, fb->res.x - x),
+					MIN(height, fb->res.y - y), &disp->settings, FINALIZE);
+}
+
+/**
+ * Clear commands and display.
+ *
+ * This function is called via function-pointer in the cfb_framebuffer
+ * struct on calling cfb_clear.
+ *
+ * @param fb framebuffer pointer that is linked to display
+ * @param clear_display Clears the display as well as the command buffer
+ *
+ * @return negative value if failed, otherwise 0
+ */
+static int display_clear(struct cfb_framebuffer *fb, bool clear_display)
+{
+	struct cfb_display *disp = CONTAINER_OF(fb, struct cfb_display, fb);
+	int err;
+
+	if (disp->fb.size < fb_screen_buf_size(&disp->fb)) {
+		/* if clear processing, filling with the background color is done last. */
+		sys_slist_find_and_remove(&disp->cmd_list,
+					  &disp->init_cmds[CFB_INIT_CMD_FILL].node);
+		err = display_process_commands(disp, 0, 0, fb->res.x, fb->res.y, &disp->settings,
+					       CLEAR_COMMANDS);
+	} else {
+		sys_slist_init(&disp->cmd_list);
+	}
+
+	sys_slist_init(&disp->cmd_list);
+	sys_slist_append(&disp->cmd_list, &disp->init_cmds[CFB_INIT_CMD_FILL].node);
+	err = display_process_commands(disp, 0, 0, fb->res.x, fb->res.y, &disp->settings,
+				       clear_display ? CLEAR_DISPLAY : CLEAR_COMMANDS);
+
+	/* reset command list */
+	disp->cmd.pos = 0;
+	memset(disp->cmd.buf, 0, disp->cmd.size);
+	sys_slist_init(&disp->cmd_list);
+	if (disp->fb.size < fb_screen_buf_size(&disp->fb)) {
+		display_append_init_commands(disp);
+	}
+
+	return err;
+}
+
+static int display_append_command_to_buffer(struct cfb_display *disp, struct cfb_command *cmd)
+{
+	const bool store_text =
+		(cmd->param.op == CFB_OP_DRAW_TEXT || cmd->param.op == CFB_OP_PRINT);
+	const size_t str_len = store_text ? strlen(cmd->param.draw_text.str) + 1 : 0;
+	const size_t allocate_size = sizeof(struct cfb_command) + str_len + 1;
+	struct cfb_command_param *bufparam =
+		(struct cfb_command_param *)&disp->cmd.buf[disp->cmd.pos];
+
+	if (disp->cmd.size < disp->cmd.pos + allocate_size) {
+		return -ENOBUFS;
+	}
+
+	memcpy(&disp->cmd.buf[disp->cmd.pos], &cmd->param, sizeof(struct cfb_command_param));
+
+	disp->cmd.pos += sizeof(struct cfb_command_param);
+
+	if (store_text) {
+		bufparam->draw_text.str = (const char *)&disp->cmd.buf[disp->cmd.pos];
+		memcpy(&disp->cmd.buf[disp->cmd.pos], cmd->param.draw_text.str, str_len);
+		disp->cmd.pos += str_len;
+		disp->cmd.buf[disp->cmd.pos] = '\0';
+	}
+
+	return 0;
+}
+
+/**
+ * Append a command to buffer or list
+ *
+ * This function is called via function-pointer in the cfb_framebuffer
+ * struct on calling cfb_append_command and rendering functions.
+ *
+ * If the entire screen buffer is allocated, the command is processed immediately
+ * and written to the buffer.
+ *
+ * @param fb Framebuffer pointer that is linked to display
+ * @param cmd A command to append buffer or list
+ *
+ * @retval -ENOBUFS Not enough buffers remain to append the command.
+ * @retval 0 Succeedsed
+ */
+static int display_append_command(struct cfb_framebuffer *fb, struct cfb_command *cmd)
+{
+	struct cfb_display *disp = CONTAINER_OF(fb, struct cfb_display, fb);
+
+	if (!disp->cmd.buf) {
+		sys_slist_append(&disp->cmd_list, &cmd->node);
+		if (disp->fb.size >= fb_screen_buf_size(&disp->fb)) {
+			execute_command(&disp->fb, &cmd->param, &disp->settings);
+		}
+		return 0;
+	} else {
+		return display_append_command_to_buffer(disp, cmd);
+	}
 }
 
 int cfb_get_display_parameter(const struct cfb_display *disp, enum cfb_display_param param)
@@ -768,19 +1074,6 @@ int cfb_get_display_parameter(const struct cfb_display *disp, enum cfb_display_p
 	return 0;
 }
 
-int cfb_set_font(struct cfb_framebuffer *fb, uint8_t idx)
-{
-	struct cfb_display *disp = CONTAINER_OF(fb, struct cfb_display, fb);
-
-	if (idx >= cfb_get_numof_fonts()) {
-		return -EINVAL;
-	}
-
-	disp->font_idx = idx;
-
-	return 0;
-}
-
 int cfb_get_font_size(uint8_t idx, uint8_t *width, uint8_t *height)
 {
 	if (idx >= cfb_get_numof_fonts()) {
@@ -794,33 +1087,6 @@ int cfb_get_font_size(uint8_t idx, uint8_t *width, uint8_t *height)
 	if (height) {
 		*height = TYPE_SECTION_START(cfb_font)[idx].height;
 	}
-
-	return 0;
-}
-
-int cfb_set_kerning(struct cfb_framebuffer *fb, int8_t kerning)
-{
-	struct cfb_display *disp = CONTAINER_OF(fb, struct cfb_display, fb);
-
-	disp->kerning = kerning;
-
-	return 0;
-}
-
-int cfb_set_bg_color(struct cfb_framebuffer *fb, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
-{
-	struct cfb_display *disp = CONTAINER_OF(fb, struct cfb_display, fb);
-
-	disp->bg_color = rgba_to_color(fb->pixel_format, r, g, b, a);
-
-	return 0;
-}
-
-int cfb_set_fg_color(struct cfb_framebuffer *fb, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
-{
-	struct cfb_display *disp = CONTAINER_OF(fb, struct cfb_display, fb);
-
-	disp->fg_color = rgba_to_color(fb->pixel_format, r, g, b, a);
 
 	return 0;
 }
@@ -843,16 +1109,20 @@ int cfb_display_init(struct cfb_display *disp, const struct cfb_display_init_par
 	display_get_capabilities(param->dev, &cfg);
 
 	disp->dev = param->dev;
-	disp->font_idx = 0U;
-	disp->kerning = 0U;
+	disp->settings.font_idx = 0U;
+	disp->settings.kerning = 0U;
 
 	if (cfg.current_pixel_format == PIXEL_FORMAT_MONO10) {
-		disp->bg_color = 0xFFFFFFFFU;
-		disp->fg_color = 0x0U;
+		disp->settings.bg_color = 0xFFFFFFFFU;
+		disp->settings.fg_color = 0x0U;
 	} else {
-		disp->fg_color = 0xFFFFFFFFU;
-		disp->bg_color = 0x0U;
+		disp->settings.fg_color = 0xFFFFFFFFU;
+		disp->settings.bg_color = 0x0U;
 	}
+
+	disp->cmd.buf = param->command_buf;
+	disp->cmd.size = param->command_buf_size;
+	disp->cmd.pos = 0U;
 
 	disp->fb.pixel_format = cfg.current_pixel_format;
 	disp->fb.screen_info = cfg.screen_info;
@@ -865,7 +1135,37 @@ int cfb_display_init(struct cfb_display *disp, const struct cfb_display_init_par
 	disp->fb.size = param->transfer_buf_size;
 	disp->fb.buf = param->transfer_buf;
 
-	fill_fb(&disp->fb, disp->bg_color, bytes_per_pixel(disp->fb.pixel_format));
+	disp->fb.finalize = display_finalize;
+	disp->fb.clear = display_clear;
+	disp->fb.append_command = display_append_command;
+	disp->fb.init_iterator = display_init_iterator;
+
+	if (!disp->fb.buf) {
+		return -EINVAL;
+	}
+
+	if (disp->fb.size < bytes_per_pixel(cfg.current_pixel_format)) {
+		return -EINVAL;
+	}
+
+	if (param->transfer_buf_size < fb_screen_buf_size(&disp->fb)) {
+		if (!disp->cmd.buf) {
+			return -EINVAL;
+		}
+	} else {
+		disp->cmd.buf = NULL;
+		disp->cmd.size = 0;
+	}
+
+	fill_fb(&disp->fb, disp->settings.bg_color, bytes_per_pixel(disp->fb.pixel_format));
+
+	sys_slist_init(&disp->cmd_list);
+
+	if (disp->cmd.buf) {
+		memset(disp->cmd.buf, 0, disp->cmd.size);
+	}
+
+	display_append_init_commands(disp);
 
 	return 0;
 }

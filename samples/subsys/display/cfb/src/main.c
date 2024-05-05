@@ -11,6 +11,7 @@
 
 #if CONFIG_CFB_SAMPLE_TRANSFER_BUFFER_SIZE != 0
 static uint8_t transfer_buffer[CONFIG_CFB_SAMPLE_TRANSFER_BUFFER_SIZE];
+static uint8_t command_buffer[CONFIG_CFB_SAMPLE_COMMAND_BUFFER_SIZE];
 #endif
 
 int main(void)
@@ -30,6 +31,8 @@ int main(void)
 		.dev = dev,
 		.transfer_buf = transfer_buffer,
 		.transfer_buf_size = sizeof(transfer_buffer),
+		.command_buf = command_buffer,
+		.command_buf_size = sizeof(transfer_buffer),
 	};
 #endif
 

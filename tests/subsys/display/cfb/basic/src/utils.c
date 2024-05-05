@@ -21,8 +21,8 @@ const uint32_t display_height = DT_PROP(DT_CHOSEN(zephyr_display), height);
 uint8_t read_buffer[DT_PROP(DT_CHOSEN(zephyr_display), width) *
 		    DT_PROP(DT_CHOSEN(zephyr_display), height) * 4];
 #if CONFIG_TEST_TRANSFER_BUF_SIZE != 0
-uint8_t transfer_buffer[DT_PROP(DT_CHOSEN(zephyr_display), width) *
-			DT_PROP(DT_CHOSEN(zephyr_display), height) * 4];
+static uint8_t transfer_buffer[CONFIG_TEST_TRANSFER_BUF_SIZE];
+static uint8_t command_buffer[CONFIG_TEST_COMMAND_BUF_SIZE];
 static struct cfb_display disp;
 #endif
 
@@ -61,6 +61,8 @@ struct cfb_display *display_init(void)
 		.dev = dev,
 		.transfer_buf = transfer_buffer,
 		.transfer_buf_size = sizeof(transfer_buffer),
+		.command_buf = command_buffer,
+		.command_buf_size = sizeof(command_buffer),
 	};
 #else
 	struct cfb_display *pdisp;

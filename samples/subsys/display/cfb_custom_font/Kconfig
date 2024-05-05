@@ -7,4 +7,8 @@ config CFB_CUSTOM_FONT_SAMPLE_TRANSFER_BUFFER_SIZE
 	int "Buffer size for image transfer"
 	default 0
 
+config CFB_CUSTOM_FONT_SAMPLE_COMMAND_BUFFER_SIZE
+	int "Buffer size for store commands"
+	default 0
+
 source "Kconfig.zephyr"
