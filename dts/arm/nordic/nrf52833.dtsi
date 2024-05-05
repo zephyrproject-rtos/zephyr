@@ -9,6 +9,7 @@
 
 / {
 	chosen {
+		zephyr,bt-hci = &bt_hci_controller;
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash_controller;
 	};
@@ -96,6 +97,11 @@
 			ieee802154: ieee802154 {
 				compatible = "nordic,nrf-ieee802154";
 				status = "disabled";
+			};
+
+			bt_hci_controller: bt_hci_controller {
+				compatible = "zephyr,bt-hci-ll-sw-split";
+				status = "okay";
 			};
 		};
 

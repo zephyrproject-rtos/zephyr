@@ -135,6 +135,7 @@ endchoice
 config BT_CTLR_HCI
 	bool "Host Controller Interface (HCI)"
 	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_LL_SW_SPLIT_ENABLED
 	help
 	  Enable the Host Controller interface (HCI) in the Controller.
 	  This should almost always be enabled, except in a few special

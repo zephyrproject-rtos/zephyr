@@ -264,6 +264,11 @@
 					compatible = "nordic,nrf-ieee802154";
 					status = "disabled";
 				};
+
+				bt_hci_controller: bt_hci_controller {
+					compatible = "zephyr,bt-hci-ll-sw-split";
+					status = "disabled";
+				};
 			};
 
 			dppic20: dppic@c2000 {
