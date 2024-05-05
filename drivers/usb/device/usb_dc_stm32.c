@@ -883,7 +883,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	read_count = ep_state->read_count;
 
 	LOG_DBG("ep 0x%02x, %u bytes, %u+%u, %p", ep, max_data_len,
-		ep_state->read_offset, read_count, data);
+		ep_state->read_offset, read_count, (void *)data);
 
 	if (!USB_EP_DIR_IS_OUT(ep)) { /* check if OUT ep */
 		LOG_ERR("Wrong endpoint direction: 0x%02x", ep);
