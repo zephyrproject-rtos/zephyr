@@ -1,0 +1,39 @@
+description: Microchip PIC32CXSG DMA controller
+
+compatible: "microchip,pic32cxsg-dmac"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#dma-cells":
+    const: 2
+
+# #dma-cells : Must be <2>.
+# The 1st cell specifies the DMAC channel to be used for the data transfer.
+#   This channel should be unique between all peripherals that are using the
+#   DMAC instance.
+# The 2nd cell defines the peripheral trigger which is the source of the transfer.
+#   For details on trigger selection and trigger modes, refer to
+#   "Transfer Triggers and Actions".
+#   See the SoC's reference manual for all the supported request sources.
+#
+# Example of devicetree dma channel configuration:
+#
+# &sercom3 {
+#     /* Configure DMA channels for async operation */
+#     dmas = <&dmac 10 7>, <&dmac 11 8>;
+#     dma-names = "rx", "tx";
+# };
+#
+# In above fragment 10 and 11 represents the different channels used to
+# transfer data between peripheral and ram. The numbers 7/8 are, for instance,
+# uart_rx/tx peripheral trigger for sercom3.
+dma-cells:
+  - channel
+  - trigsrc

@@ -1,0 +1,47 @@
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip PIC32CXSG SUPC (Supply-Controller) controller
+
+  The supply controller manages the voltage reference, power supply and supply
+  monitoring of the device. It have a special feature that it can wake-up the
+  device from a low-power state using special peripherals as wake-up sources.
+
+  The dedicated peripherals that can wake-up the core supply domain are: RTC,
+  RTT, Supply Monitor and GPIOs. In the first three peripherals it is necessary
+  inform the wakeup-source-id property on their respective nodes.
+
+    rtc: rtc@xxx {
+      ...
+      wakeup-source-id = <&supc SUPC_WAKEUP_SOURCE_RTC>;
+      ...
+    };
+
+  The special peripheral will wake-up the device only when the standard property
+  wakeup-source is defined, e.g.:
+
+    &rtc {
+      ...
+      wakeup-source;
+      ...
+    };
+
+  The SUPC wakeup source ids that can be enabled are defined in the
+  zephyr/include/zephyr/dt-bindings/power/microchip_pic32cxsg_supc.h header file.
+
+compatible: "microchip,pic32cxsg-supc"
+
+include:
+  - name: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#wakeup-source-id-cells":
+    type: int
+    const: 1
+
+wakeup-source-id-cells:
+  - wakeup-source-id

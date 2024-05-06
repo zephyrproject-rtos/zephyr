@@ -1,0 +1,40 @@
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip PIC32CXSG series SERCOM I2C node
+
+compatible: "microchip,pic32cxsg-i2c"
+
+include:
+  - name: i2c-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  dmas:
+    description: |
+      Optional TX & RX dma specifiers.  Each specifier will have a phandle
+      reference to the dmac controller, the channel number, and peripheral
+      trigger source.
+
+      For example dmas for TX, RX on SERCOM3
+         dmas = <&dmac 0 0xb>, <&dmac 0 0xa>;
+
+  dma-names:
+    description: |
+      Required if the dmas property exists.  This should be "tx" and "rx"
+      to match the dmas property.
+
+      For example
+         dma-names = "tx", "rx";

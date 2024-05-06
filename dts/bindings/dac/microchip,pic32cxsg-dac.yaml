@@ -1,0 +1,31 @@
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip PIC32CXSG family DAC
+
+compatible: "microchip,pic32cxsg-dac"
+
+include:
+  - name: dac-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  reference:
+    type: string
+    description: Reference voltage source
+    enum:
+      - "intref"
+      - "vddana"
+      - "vrefa"
+
+  "#io-channel-cells":
+    const: 0

@@ -1,0 +1,12 @@
+description: Microchip PIC32CXSG series External Interrupt Controller
+
+compatible: "microchip,pic32cxsg-eic"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

@@ -1,0 +1,63 @@
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip PIC32CXSG TCC in PWM mode
+
+compatible: "microchip,pic32cxsg-tcc-pwm"
+
+include:
+  - name: base.yaml
+  - name: pwm-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  channels:
+    type: int
+    required: true
+    description: Number of channels this TCC has
+    enum:
+      - 2
+      - 3
+      - 4
+      - 6
+
+  counter-size:
+    type: int
+    required: true
+    description: Width of the TCC counter in bits
+    enum:
+      - 16
+      - 24
+
+  prescaler:
+    type: int
+    required: true
+    description: PWM prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 64
+      - 256
+      - 1024
+
+  "#pwm-cells":
+    const: 2
+
+pwm-cells:
+  - channel
+  - period
