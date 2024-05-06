@@ -29,6 +29,13 @@ config GPIO_SHELL_INFO_CMD
 	  This command provides a shell user extra information about gpio
 	  controller reserved pins and line names.
 
+config GPIO_SHELL_TOGGLE_CMD
+	bool "GPIO Shell toggle command"
+	default y
+	depends on GPIO_SHELL
+	help
+	  Enable GPIO Shell toggle command.
+
 config GPIO_SHELL_BLINK_CMD
 	bool "GPIO Shell blink command"
 	default y
