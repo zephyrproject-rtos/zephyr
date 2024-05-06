@@ -7,6 +7,8 @@
 #ifndef __DRIVERS_NET_NSOS_SOCKET_H__
 #define __DRIVERS_NET_NSOS_SOCKET_H__
 
+#include <stdint.h>
+
 /**
  * @name Socket level options (NSOS_MID_SOL_SOCKET)
  * @{
@@ -77,6 +79,11 @@
 
 /** Socket TX time (when the data should be sent) */
 #define NSOS_MID_SO_TXTIME 61
+
+struct nsos_mid_timeval {
+	int64_t tv_sec;
+	int64_t tv_usec;
+};
 
 /** @} */
 

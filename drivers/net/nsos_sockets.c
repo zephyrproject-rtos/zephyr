@@ -42,6 +42,8 @@ struct nsos_socket {
 	struct nsos_mid_pollfd pollfd;
 	struct k_poll_signal poll;
 
+	k_timeout_t recv_timeout;
+
 	sys_dnode_t node;
 };
 
@@ -180,6 +182,7 @@ static int nsos_socket_create(int family, int type, int proto)
 	}
 
 	sock->fd = fd;
+	sock->recv_timeout = K_FOREVER;
 
 	sock->pollfd.fd = nsos_adapt_socket(family_mid, type_mid, proto_mid);
 	if (sock->pollfd.fd < 0) {
@@ -550,7 +553,7 @@ static int nsos_wait_for_pollin(struct nsos_socket *sock)
 		return ret;
 	}
 
-	ret = k_poll(poll_events, ARRAY_SIZE(poll_events), K_FOREVER);
+	ret = k_poll(poll_events, ARRAY_SIZE(poll_events), sock->recv_timeout);
 	if (ret != 0 && ret != -EAGAIN && ret != -EINTR) {
 		return ret;
 	}
@@ -1063,6 +1066,35 @@ static int nsos_setsockopt(void *obj, int level, int optname,
 			if (err) {
 				errno = errno_from_nsos_mid(-err);
 				return -1;
+			}
+
+			return 0;
+		}
+		case SO_RCVTIMEO: {
+			const struct zsock_timeval *tv = optval;
+			struct nsos_mid_timeval nsos_mid_tv;
+			int err;
+
+			if (optlen != sizeof(struct zsock_timeval)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			nsos_mid_tv.tv_sec = tv->tv_sec;
+			nsos_mid_tv.tv_usec = tv->tv_usec;
+
+			err = nsos_adapt_setsockopt(sock->pollfd.fd, NSOS_MID_SOL_SOCKET,
+						    NSOS_MID_SO_RCVTIMEO, &nsos_mid_tv,
+						    sizeof(nsos_mid_tv));
+			if (err) {
+				errno = errno_from_nsos_mid(-err);
+				return -1;
+			}
+
+			if (tv->tv_sec == 0 && tv->tv_usec == 0) {
+				sock->recv_timeout = K_FOREVER;
+			} else {
+				sock->recv_timeout = K_USEC(tv->tv_sec * 1000000LL + tv->tv_usec);
 			}
 
 			return 0;
