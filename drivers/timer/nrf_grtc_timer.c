@@ -65,7 +65,7 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQN(GRTC_NODE);
 static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_context);
 
 static struct k_spinlock lock;
-static uint64_t last_count;
+static uint64_t last_count; /* Time (SYSCOUNTER value) @last sys_clock_announce() */
 static atomic_t int_mask;
 static uint8_t ext_channels_allocated;
 static nrfx_grtc_channel_t system_clock_channel_data = {
@@ -137,7 +137,10 @@ static inline int get_comparator(uint32_t chan, uint64_t *cc)
 	return 0;
 }
 
-static void system_timeout_set(uint64_t value)
+/*
+ * Program a new callback <value> microseconds in the future
+ */
+static void system_timeout_set_relative(uint64_t value)
 {
 	if (value <= NRF_GRTC_SYSCOUNTER_CCADD_MASK) {
 		grtc_wakeup();
@@ -148,6 +151,15 @@ static void system_timeout_set(uint64_t value)
 		nrfx_grtc_syscounter_cc_absolute_set(&system_clock_channel_data, value + counter(),
 						     true);
 	}
+}
+
+/*
+ * Program a new callback in the absolute time given by <value>
+ */
+static void system_timeout_set_abs(uint64_t value)
+{
+	nrfx_grtc_syscounter_cc_absolute_set(&system_clock_channel_data, value,
+					     true);
 }
 
 static bool compare_int_lock(int32_t chan)
@@ -172,22 +184,19 @@ static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_conte
 	ARG_UNUSED(id);
 	ARG_UNUSED(p_context);
 	uint64_t dticks;
-	uint64_t now = counter();
 
-	if (unlikely(now < cc_val)) {
-		return;
-	}
+	dticks = counter_sub(cc_val, last_count) / CYC_PER_TICK;
+
+	last_count += dticks * CYC_PER_TICK;
+
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* protection is not needed because we are in the GRTC interrupt
 		 * so it won't get preempted by the interrupt.
 		 */
-		system_timeout_set(CYC_PER_TICK);
+		system_timeout_set_abs(last_count + CYC_PER_TICK);
 	}
 
-	dticks = counter_sub(now, last_count) / CYC_PER_TICK;
-
-	last_count += dticks * CYC_PER_TICK;
-	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? (int32_t)dticks : (dticks > 0));
+	sys_clock_announce((int32_t)dticks);
 }
 
 int32_t z_nrf_grtc_timer_chan_alloc(void)
@@ -520,7 +529,7 @@ static int sys_clock_driver_init(void)
 
 	int_mask = NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK;
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		system_timeout_set(CYC_PER_TICK);
+		system_timeout_set_relative(CYC_PER_TICK);
 	}
 
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
@@ -540,34 +549,23 @@ static int sys_clock_driver_init(void)
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
-	uint64_t cyc, off, now;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : MIN(MAX_TICKS, MAX(ticks - 1, 0));
+	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : MIN(MAX_TICKS, MAX(ticks, 0));
 
-	now = counter();
+	uint64_t delta_time = ticks * CYC_PER_TICK;
 
-	/* Round up to the next tick boundary */
-	off = (now - last_count) + (CYC_PER_TICK - 1);
-	off = (off / CYC_PER_TICK) * CYC_PER_TICK;
+	uint64_t target_time = counter() + delta_time;
 
-	/* Get the offset with respect to now */
-	off -= (now - last_count);
-
-	/* Add the offset to get to the next tick boundary */
-	cyc = (uint64_t)ticks * CYC_PER_TICK + off;
-
-	/* Due to elapsed time the calculation above might produce a
-	 * duration that laps the counter.  Don't let it.
+	/* Rounded down target_time to the tick boundary
+	 * (but not less than one tick after the last)
 	 */
-	if (cyc > MAX_CYCLES) {
-		cyc = MAX_CYCLES;
-	}
+	target_time = MAX((target_time - last_count)/CYC_PER_TICK, 1)*CYC_PER_TICK + last_count;
 
-	system_timeout_set(cyc == 0 ? 1 : cyc);
+	system_timeout_set_abs(target_time);
 }
 
 #if defined(CONFIG_NRF_GRTC_TIMER_APP_DEFINED_INIT)
