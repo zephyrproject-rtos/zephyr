@@ -43,6 +43,7 @@
 
 /* debug window slots usage */
 #define ADSP_DW_SLOT_NUM_TRACE		1
+#define ADSP_DW_SLOT_NUM_SHELL		0
 
 /* debug log slot types */
 #define ADSP_DW_SLOT_UNUSED		0x00000000
@@ -51,6 +52,7 @@
 #define ADSP_DW_SLOT_GDB_STUB		0x42444700
 #define ADSP_DW_SLOT_TELEMETRY		0x4c455400
 #define ADSP_DW_SLOT_TRACE		0x54524143
+#define ADSP_DW_SLOT_SHELL		0x73686c6c
 #define ADSP_DW_SLOT_BROKEN		0x44414544
 
  /* for debug and critical types */
