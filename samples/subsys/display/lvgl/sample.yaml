@@ -72,6 +72,7 @@ tests:
       - gui
   samples.subsys.display.lvgl.rk043fn66hs_ctg:
     platform_allow:
+      - mimxrt1064_evk
       - mimxrt1060_evk
       - mimxrt1050_evk
       - mimxrt1040_evk
@@ -82,6 +83,7 @@ tests:
       fixture: fixture_display
   samples.subsys.display.lvgl.rk043fn02h_ct:
     platform_allow:
+      - mimxrt1064_evk
       - mimxrt1060_evk
       - mimxrt1050_evk
       - mimxrt1040_evk
