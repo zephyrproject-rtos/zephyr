@@ -384,4 +384,4 @@ static struct i2c_driver_api i2c_seciot_api = {
 			    &i2c_seciot_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_SECIOT_INIT)
-      //  .mutex = Z_MUTEX_INITIALIZER(lock##n),\
+      //  .mutex = Z_MUTEX_INITIALIZER(lock##n),
