@@ -371,6 +371,15 @@ static int nsos_ioctl(void *obj, unsigned int request, va_list args)
 
 		return -errno_from_nsos_mid(-ret);
 	}
+
+	case ZFD_IOCTL_FIONREAD: {
+		int *avail = va_arg(args, int *);
+		int ret;
+
+		ret = nsos_adapt_fionread(sock->pollfd.fd, avail);
+
+		return -errno_from_nsos_mid(-ret);
+	}
 	}
 
 	return -EINVAL;
