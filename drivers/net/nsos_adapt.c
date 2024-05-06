@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/epoll.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -932,6 +933,18 @@ int nsos_adapt_fcntl_setfl(int fd, int flags)
 	int ret;
 
 	ret = fcntl(fd, F_SETFL, fl_from_nsos_mid(flags));
+	if (ret < 0) {
+		return -errno_to_nsos_mid(errno);
+	}
+
+	return 0;
+}
+
+int nsos_adapt_fionread(int fd, int *avail)
+{
+	int ret;
+
+	ret = ioctl(fd, FIONREAD, avail);
 	if (ret < 0) {
 		return -errno_to_nsos_mid(errno);
 	}
