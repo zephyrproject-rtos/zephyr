@@ -448,6 +448,7 @@ Bluetooth Audio:
     - tests/bluetooth/tester/overlay-le-audio.conf
     - doc/connectivity/bluetooth/api/audio/
     - samples/bluetooth/bap*/
+    - samples/bluetooth/cap*/
     - samples/bluetooth/hap*/
     - samples/bluetooth/pbp*/
     - samples/bluetooth/tmap*/
