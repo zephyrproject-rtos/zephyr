@@ -250,11 +250,6 @@ __ramfunc void clock_init(void)
 #endif
 #endif /* CONFIG_COUNTER_MCUX_CTIMER */
 
-#ifdef CONFIG_COUNTER_NXP_MRT
-	RESET_PeripheralReset(kMRT_RST_SHIFT_RSTn);
-	RESET_PeripheralReset(kFREEMRT_RST_SHIFT_RSTn);
-#endif
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usb_otg), okay) && CONFIG_USB_DC_NXP_EHCI
 	/* Enable system xtal from Analog */
 	SYSCTL2->ANA_GRP_CTRL |= SYSCTL2_ANA_GRP_CTRL_PU_AG_MASK;
