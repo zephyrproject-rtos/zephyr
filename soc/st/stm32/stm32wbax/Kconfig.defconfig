@@ -13,10 +13,9 @@ config STM32_LPTIM_TIMER
 config STM32_FLASH_PREFETCH
 	default y
 
-choice BT_HCI_BUS_TYPE
-	default BT_STM32WBA
+config BT_STM32WBA
 	depends on BT
-endchoice
+	default y
 
 config BT_STM32WBA
 	select DYNAMIC_INTERRUPTS

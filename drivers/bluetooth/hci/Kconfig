@@ -10,10 +10,6 @@ config BT_UART
 	select SERIAL
 	select UART_INTERRUPT_DRIVEN
 
-
-choice BT_HCI_BUS_TYPE
-	prompt "Bluetooth HCI driver"
-
 config BT_H4
 	bool "H:4 UART"
 	select BT_UART
@@ -130,8 +126,6 @@ config BT_AMBIQ_HCI
 	help
 	  Supports Ambiq Bluetooth SoC using SPI as the communication protocol.
 	  HCI packets are sent and received as single Byte transfers.
-
-endchoice
 
 if BT_SPI
 

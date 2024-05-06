@@ -10,9 +10,8 @@ if BT
 config SPI
 	default y
 
-choice BT_HCI_BUS_TYPE
-	default BT_SPI
-endchoice
+config BT_SPI
+	default y
 
 config BT_BLUENRG_ACI
 	default y

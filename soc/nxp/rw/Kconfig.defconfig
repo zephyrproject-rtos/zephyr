@@ -85,9 +85,8 @@ if BT
 config FLASH
 	default y
 
-choice BT_HCI_BUS_TYPE
-	default BT_NXP
-endchoice
+config BT_NXP
+	default y
 
 config BT_DIS_MANUF
 	default "NXP"
