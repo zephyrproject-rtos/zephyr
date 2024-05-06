@@ -103,4 +103,32 @@ struct nsos_mid_timeval {
 
 /** @} */
 
+/**
+ * @name IPv6 level options (NSOS_MID_IPPROTO_IPV6)
+ * @{
+ */
+/* Socket options for NSOS_MID_IPPROTO_IPV6 level */
+/** Set the unicast hop limit for the socket. */
+#define NSOS_MID_IPV6_UNICAST_HOPS	16
+
+/** Set the multicast hop limit for the socket. */
+#define NSOS_MID_IPV6_MULTICAST_HOPS 18
+
+/** Join IPv6 multicast group. */
+#define NSOS_MID_IPV6_ADD_MEMBERSHIP 20
+
+/** Leave IPv6 multicast group. */
+#define NSOS_MID_IPV6_DROP_MEMBERSHIP 21
+
+/** Don't support IPv4 access */
+#define NSOS_MID_IPV6_V6ONLY 26
+
+/** Pass an IPV6_RECVPKTINFO ancillary message that contains a
+ *  in6_pktinfo structure that supplies some information about the
+ *  incoming packet. See RFC 3542.
+ */
+#define NSOS_MID_IPV6_RECVPKTINFO 49
+
+/** @} */
+
 #endif /* __DRIVERS_NET_NSOS_SOCKET_H__ */
