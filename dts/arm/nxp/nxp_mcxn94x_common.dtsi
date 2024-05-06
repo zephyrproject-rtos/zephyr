@@ -840,6 +840,15 @@
 		#io-channel-cells = <1>;
 		clocks = <&syscon MCUX_LPADC2_CLK>;
 	};
+
+	usb1: usbd@10b000 {
+		compatible = "nxp,ehci";
+		reg = <0x10b000 0x1000>;
+		interrupts = <67 0>;
+		interrupt-names = "usb_otg";
+		num-bidir-endpoints = <8>;
+		status = "disabled";
+	};
 };
 
 &systick {
