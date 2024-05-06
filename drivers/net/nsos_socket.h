@@ -87,4 +87,20 @@ struct nsos_mid_timeval {
 
 /** @} */
 
+/**
+ * @name TCP level options (NSOS_MID_IPPROTO_TCP)
+ * @{
+ */
+/* Socket options for NSOS_MID_IPPROTO_TCP level */
+/** Disable TCP buffering (ignored, for compatibility) */
+#define NSOS_MID_TCP_NODELAY 1
+/** Start keepalives after this period (seconds) */
+#define NSOS_MID_TCP_KEEPIDLE 2
+/** Interval between keepalives (seconds) */
+#define NSOS_MID_TCP_KEEPINTVL 3
+/** Number of keepalives before dropping connection */
+#define NSOS_MID_TCP_KEEPCNT 4
+
+/** @} */
+
 #endif /* __DRIVERS_NET_NSOS_SOCKET_H__ */
