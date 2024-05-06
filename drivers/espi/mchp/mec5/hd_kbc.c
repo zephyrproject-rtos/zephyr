@@ -165,7 +165,7 @@ static void mec5_kbc_ibf_isr(struct device *dev)
 	data->cmd_data = cmd_data;
 
 #ifdef CONFIG_ESPI_PERIPHERAL_KBC_IBF_EVT_DATA
-	struct espi_evt_data_kbc *kbc_evt = (struct espi_evt_data *)&evt.evt_data;
+	struct espi_evt_data_kbc *kbc_evt = (struct espi_evt_data_kbc *)&evt.evt_data;
 
 	kbc_evt->type = (status & MEC_KBC_STS_CMD) ? 1 : 0;
 	kbc_evt->data = cmd_data;
