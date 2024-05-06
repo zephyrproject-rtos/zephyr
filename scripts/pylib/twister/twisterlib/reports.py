@@ -26,6 +26,7 @@ class Reporting:
         self.env = env
         self.timestamp = datetime.now().isoformat()
         self.outdir = os.path.abspath(env.options.outdir)
+        self.instance_fail_count = plan.instance_fail_count
 
     @staticmethod
     def process_log(log_file):
@@ -432,20 +433,36 @@ class Reporting:
                            (report if not last_metrics else "the last twister run.")))
 
     def synopsis(self):
+        if self.env.options.report_summary == 0:
+            count = self.instance_fail_count
+            log_txt = f"The following issues were found (showing the all {count} items):"
+        elif self.env.options.report_summary:
+            count = self.env.options.report_summary
+            log_txt = f"The following issues were found "
+            if count > self.instance_fail_count:
+                log_txt += f"(presenting {self.instance_fail_count} out of the {count} items requested):"
+            else:
+                log_txt += f"(showing the {count} of {self.instance_fail_count} items):"
+        else:
+            count = 10
+            log_txt = f"The following issues were found (showing the top {count} items):"
         cnt = 0
         example_instance = None
         detailed_test_id = self.env.options.detailed_test_id
         for instance in self.instances.values():
             if instance.status not in ["passed", "filtered", "skipped"]:
-                cnt = cnt + 1
+                cnt += 1
                 if cnt == 1:
                     logger.info("-+" * 40)
-                    logger.info("The following issues were found (showing the top 10 items):")
+                    logger.info(log_txt)
 
                 logger.info(f"{cnt}) {instance.testsuite.name} on {instance.platform.name} {instance.status} ({instance.reason})")
                 example_instance = instance
-            if cnt == 10:
+            if cnt == count:
                 break
+        if cnt == 0 and self.env.options.report_summary is not None:
+            logger.info("-+" * 40)
+            logger.info(f"No errors/fails found")
 
         if cnt and example_instance:
             logger.info("")

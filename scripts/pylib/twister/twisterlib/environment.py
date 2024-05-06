@@ -603,6 +603,12 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         """)
 
     parser.add_argument(
+        "--report-summary", action="store", nargs='?', type=int, const=0,
+        help="Show failed/error report from latest run. Default shows all items found. "
+             "However, you can specify the number of items (e.g. --report-summary 15). "
+             "It also works well with the --outdir switch.")
+
+    parser.add_argument(
         "--report-suffix",
         help="""Add a suffix to all generated file names, for example to add a
         version or a commit ID.
