@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RMX
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+config RISCV_GP
+	default y
+
+config MULTI_LEVEL_INTERRUPTS
+	default n
+
+config NUM_IRQS
+	default 18
+
+endif # SOC_SERIES_RMX
