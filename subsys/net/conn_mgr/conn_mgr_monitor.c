@@ -34,11 +34,15 @@ static struct k_thread conn_mgr_mon_thread;
  */
 uint16_t iface_states[CONN_MGR_IFACE_MAX];
 
-/* Tracks the most recent total quantity of L4-ready ifaces */
+/* Tracks the most recent total quantity of L4-ready ifaces (any, IPv4, IPv6) */
 static uint16_t last_ready_count;
+static uint16_t last_ready_count_ipv4;
+static uint16_t last_ready_count_ipv6;
 
-/* Tracks the last iface to cause a major state change */
+/* Tracks the last ifaces to cause a major state change (any, IPv4, IPv6) */
 static struct net_if *last_blame;
+static struct net_if *last_blame_ipv4;
+static struct net_if *last_blame_ipv6;
 
 /* Used to signal when modifications have been made that need to be responded to */
 K_SEM_DEFINE(conn_mgr_mon_updated, 1, 1);
@@ -72,61 +76,100 @@ static int conn_mgr_get_index_for_if(struct net_if *iface)
  * @brief Conveniently update iface readiness state
  *
  * @param idx - index (in iface_states) of the iface to mark ready or unready
- * @param readiness - true if the iface should be considered ready, otherwise false
+ * @param ready - true if the iface should be considered ready, otherwise false
+ * @param ready_ipv4 - true if the iface is ready with IPv4, otherwise false
+ * @param ready_ipv6 - true if the iface is ready with IPv6, otherwise false
  */
-static void conn_mgr_mon_set_ready(int idx, bool readiness)
+static void conn_mgr_mon_set_ready(int idx, bool ready, bool ready_ipv4, bool ready_ipv6)
 {
 	/* Clear and then update the L4-readiness bit */
 	iface_states[idx] &= ~CONN_MGR_IF_READY;
+	iface_states[idx] &= ~CONN_MGR_IF_READY_IPV4;
+	iface_states[idx] &= ~CONN_MGR_IF_READY_IPV6;
 
-	if (readiness) {
+	if (ready) {
 		iface_states[idx] |= CONN_MGR_IF_READY;
+	}
+
+	if (ready_ipv4) {
+		iface_states[idx] |= CONN_MGR_IF_READY_IPV4;
+	}
+
+	if (ready_ipv6) {
+		iface_states[idx] |= CONN_MGR_IF_READY_IPV6;
 	}
 }
 
 static void conn_mgr_mon_handle_update(void)
 {
 	int idx;
-	bool is_ip_ready;
+	bool has_ip;
+	bool has_ipv6;
+	bool has_ipv4;
+	bool is_l4_ready;
 	bool is_ipv6_ready;
 	bool is_ipv4_ready;
-	bool is_l4_ready;
 	bool is_oper_up;
 	bool was_l4_ready;
+	bool was_ipv6_ready;
+	bool was_ipv4_ready;
 	bool is_ignored;
 	int ready_count = 0;
+	int ready_count_ipv4 = 0;
+	int ready_count_ipv6 = 0;
 	struct net_if *blame = NULL;
+	struct net_if *blame_ipv4 = NULL;
+	struct net_if *blame_ipv6 = NULL;
 
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
 
-	ready_count = 0;
 	for (idx = 0; idx < ARRAY_SIZE(iface_states); idx++) {
 		if (iface_states[idx] == 0) {
 			/* This interface is not used */
 			continue;
 		}
 
-		/* Detect whether the iface is currently or was L4 ready */
+		/* Detect whether iface was previously considered ready */
 		was_l4_ready	= iface_states[idx] & CONN_MGR_IF_READY;
-		is_ipv6_ready	= iface_states[idx] & CONN_MGR_IF_IPV6_SET;
-		is_ipv4_ready	= iface_states[idx] & CONN_MGR_IF_IPV4_SET;
+		was_ipv6_ready	= iface_states[idx] & CONN_MGR_IF_READY_IPV6;
+		was_ipv4_ready	= iface_states[idx] & CONN_MGR_IF_READY_IPV4;
+
+		/* Collect iface readiness requirements */
+		has_ipv6	= iface_states[idx] & CONN_MGR_IF_IPV6_SET;
+		has_ipv4	= iface_states[idx] & CONN_MGR_IF_IPV4_SET;
+		has_ip		= has_ipv6 || has_ipv4;
 		is_oper_up	= iface_states[idx] & CONN_MGR_IF_UP;
 		is_ignored	= iface_states[idx] & CONN_MGR_IF_IGNORED;
-		is_ip_ready	= is_ipv6_ready || is_ipv4_ready;
-		is_l4_ready	= is_oper_up && is_ip_ready && !is_ignored;
+
+		/* Determine whether iface is currently considered ready */
+		is_l4_ready	= is_oper_up && has_ip   && !is_ignored;
+		is_ipv6_ready	= is_oper_up && has_ipv6 && !is_ignored;
+		is_ipv4_ready	= is_oper_up && has_ipv4 && !is_ignored;
 
 		/* Track ready iface count */
 		if (is_l4_ready) {
 			ready_count += 1;
 		}
+		if (is_ipv6_ready) {
+			ready_count_ipv6 += 1;
+		}
+		if (is_ipv4_ready) {
+			ready_count_ipv4 += 1;
+		}
 
-		/* If readiness changed, track blame for possibly triggered events */
+		/* If any states changed, track blame for possibly triggered events */
 		if (was_l4_ready != is_l4_ready) {
 			blame = conn_mgr_mon_get_if_by_index(idx);
 		}
+		if (was_ipv6_ready != is_ipv6_ready) {
+			blame_ipv6 = conn_mgr_mon_get_if_by_index(idx);
+		}
+		if (was_ipv4_ready != is_ipv4_ready) {
+			blame_ipv4 = conn_mgr_mon_get_if_by_index(idx);
+		}
 
-		/* Update readiness state flag with the (possibly) new value */
-		conn_mgr_mon_set_ready(idx, is_l4_ready);
+		/* Update readiness state flags with the (possibly) new values */
+		conn_mgr_mon_set_ready(idx, is_l4_ready, is_ipv4_ready, is_ipv6_ready);
 	}
 
 	/* If the total number of ready ifaces changed, possibly send an event */
@@ -140,6 +183,32 @@ static void conn_mgr_mon_handle_update(void)
 		}
 		last_ready_count = ready_count;
 		last_blame = blame;
+	}
+
+	/* Same, but specifically for IPv4 */
+	if (ready_count_ipv4 != last_ready_count_ipv4) {
+		if (ready_count_ipv4 == 0) {
+			/* We just lost IPv4 connectivity */
+			net_mgmt_event_notify(NET_EVENT_L4_IPV4_DISCONNECTED, blame_ipv4);
+		} else if (last_ready_count_ipv4 == 0) {
+			/* We just gained IPv4 connectivity */
+			net_mgmt_event_notify(NET_EVENT_L4_IPV4_CONNECTED, blame_ipv4);
+		}
+		last_ready_count_ipv4 = ready_count_ipv4;
+		last_blame_ipv4 = blame_ipv4;
+	}
+
+	/* Same, but specifically for IPv6 */
+	if (ready_count_ipv6 != last_ready_count_ipv6) {
+		if (ready_count_ipv6 == 0) {
+			/* We just lost IPv6 connectivity */
+			net_mgmt_event_notify(NET_EVENT_L4_IPV6_DISCONNECTED, blame_ipv6);
+		} else if (last_ready_count_ipv6 == 0) {
+			/* We just gained IPv6 connectivity */
+			net_mgmt_event_notify(NET_EVENT_L4_IPV6_CONNECTED, blame_ipv6);
+		}
+		last_ready_count_ipv6 = ready_count_ipv6;
+		last_blame_ipv6 = blame_ipv6;
 	}
 
 	k_mutex_unlock(&conn_mgr_mon_lock);
@@ -221,6 +290,18 @@ void conn_mgr_mon_resend_status(void)
 		net_mgmt_event_notify(NET_EVENT_L4_DISCONNECTED, last_blame);
 	} else {
 		net_mgmt_event_notify(NET_EVENT_L4_CONNECTED, last_blame);
+	}
+
+	if (last_ready_count_ipv6 == 0) {
+		net_mgmt_event_notify(NET_EVENT_L4_IPV6_DISCONNECTED, last_blame_ipv6);
+	} else {
+		net_mgmt_event_notify(NET_EVENT_L4_IPV6_CONNECTED, last_blame_ipv6);
+	}
+
+	if (last_ready_count_ipv4 == 0) {
+		net_mgmt_event_notify(NET_EVENT_L4_IPV4_DISCONNECTED, last_blame_ipv4);
+	} else {
+		net_mgmt_event_notify(NET_EVENT_L4_IPV4_CONNECTED, last_blame_ipv4);
 	}
 
 	k_mutex_unlock(&conn_mgr_mon_lock);
