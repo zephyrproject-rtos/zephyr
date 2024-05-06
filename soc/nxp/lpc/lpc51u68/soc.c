@@ -31,17 +31,11 @@ int soc_init(void)
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay)
 	/* attach 12 MHz clock for flexcomm4 */
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
-
-	/* reset FLEXCOMM for I2C */
-	RESET_PeripheralReset(kFC4_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_spi, okay)
 	/* attach 12MHz clock to flexcomm5 */
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM5);
-
-	/* reset FLEXCOMM for SPI */
-	RESET_PeripheralReset(kFC5_RST_SHIFT_RSTn);
 #endif
 
 	POWER_DisablePD(kPDRUNCFG_PD_ADC0);
