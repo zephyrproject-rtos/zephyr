@@ -30,8 +30,6 @@
 /* Internal state flags */
 #define CONN_MGR_IF_READY		BIT(14)
 
-/* Event flags */
-#define CONN_MGR_IF_CHANGED		BIT(15)
 
 /* NET_MGMT event masks */
 #define CONN_MGR_IFACE_EVENTS_MASK	(NET_EVENT_IF_DOWN		| \
