@@ -1954,11 +1954,14 @@ int ull_disable(void *lll)
 	if (!ull_ref_get(hdr)) {
 		return -EALREADY;
 	}
+	cpu_dmb(); /* Ensure synchronized data access */
 
 	k_sem_init(&sem, 0, 1);
 
 	hdr->disabled_param = &sem;
 	hdr->disabled_cb = disabled_cb;
+
+	cpu_dmb(); /* Ensure synchronized data access */
 
 	/* ULL_HIGH can run after we have call `ull_ref_get` and it can
 	 * decrement the ref count. Hence, handle this race condition by
