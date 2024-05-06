@@ -164,13 +164,8 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
 
     def do_erase(self, **kwargs):
 
-        if self.core is not None:
-            _cmd_core = ":"+self.core
-        else:
-            _cmd_core = ""
-
         linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", str(self.probe)] +
-                          [self.device+_cmd_core] + ["erase"])
+                          [self.device] + ["erase"])
         self.logger.debug("flash erase command = " + str(linkserver_cmd))
         self.check_call(linkserver_cmd)
 
