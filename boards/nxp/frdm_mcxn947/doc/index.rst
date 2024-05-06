@@ -88,6 +88,8 @@ The FRDM-MCXN947 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| USBHS     | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 Targets available
 ==================
