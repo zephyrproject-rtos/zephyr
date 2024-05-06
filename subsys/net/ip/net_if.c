@@ -4979,6 +4979,18 @@ bool net_if_is_offloaded(struct net_if *iface)
 		net_if_is_socket_offloaded(iface));
 }
 
+static void rejoin_multicast_groups(struct net_if *iface)
+{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	rejoin_ipv6_mcast_groups(iface);
+	if (l2_flags_get(iface) & NET_L2_MULTICAST) {
+		join_mcast_allnodes(iface);
+	}
+#else
+	ARG_UNUSED(iface);
+#endif
+}
+
 static void notify_iface_up(struct net_if *iface)
 {
 	/* In many places it's assumed that link address was set with
@@ -5005,6 +5017,10 @@ static void notify_iface_up(struct net_if *iface)
 	 */
 	if (!net_if_is_offloaded(iface) &&
 	    !(l2_flags_get(iface) & NET_L2_POINT_TO_POINT)) {
+		/* Make sure that we update the IPv6 addresses and join the
+		 * multicast groups.
+		 */
+		rejoin_multicast_groups(iface);
 		iface_ipv6_start(iface);
 		net_ipv4_autoconf_start(iface);
 	}
@@ -5126,13 +5142,6 @@ static void init_igmp(struct net_if *iface)
 #endif
 }
 
-static void rejoin_multicast_groups(struct net_if *iface)
-{
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	rejoin_ipv6_mcast_groups(iface);
-#endif
-}
-
 int net_if_up(struct net_if *iface)
 {
 	int status = 0;
@@ -5189,14 +5198,6 @@ done:
 	net_if_flag_set(iface, NET_IF_UP);
 	net_mgmt_event_notify(NET_EVENT_IF_ADMIN_UP, iface);
 	update_operational_state(iface);
-
-	if (!net_if_is_offloaded(iface)) {
-		/* Make sure that we update the IPv6 addresses and join the
-		 * multicast groups.
-		 */
-		rejoin_multicast_groups(iface);
-		net_if_start_dad(iface);
-	}
 
 out:
 	net_if_unlock(iface);
