@@ -47,8 +47,6 @@ static void conn_mgr_iface_events_handler(struct net_mgmt_event_callback *cb,
 	default:
 		goto done;
 	}
-
-	iface_states[idx] |= CONN_MGR_IF_CHANGED;
 	k_sem_give(&conn_mgr_mon_updated);
 
 done:
@@ -95,7 +93,6 @@ static void conn_mgr_ipv6_events_handler(struct net_mgmt_event_callback *cb,
 		goto done;
 	}
 
-	iface_states[idx] |= CONN_MGR_IF_CHANGED;
 	k_sem_give(&conn_mgr_mon_updated);
 
 done:
@@ -148,7 +145,6 @@ static void conn_mgr_ipv4_events_handler(struct net_mgmt_event_callback *cb,
 		goto done;
 	}
 
-	iface_states[idx] |= CONN_MGR_IF_CHANGED;
 	k_sem_give(&conn_mgr_mon_updated);
 
 done:
