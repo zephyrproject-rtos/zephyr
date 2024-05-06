@@ -27,6 +27,8 @@ config BT_H5
 	bool "H:5 UART [EXPERIMENTAL]"
 	select BT_UART
 	select EXPERIMENTAL
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_3WIRE_UART_ENABLED
 	help
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.

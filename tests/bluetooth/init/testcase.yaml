@@ -326,10 +326,14 @@ tests:
       - nrf52840dk/nrf52840
       - nrf51dk/nrf51822
   bluetooth.init.test_h5:
-    extra_args: CONF_FILE=prj_h5.conf
+    extra_args:
+      - CONF_FILE=prj_h5.conf
+      - DTC_OVERLAY_FILE=h5.overlay
     platform_allow: qemu_cortex_m3
   bluetooth.init.test_h5_dbg:
-    extra_args: CONF_FILE=prj_h5_dbg.conf
+    extra_args:
+      - CONF_FILE=prj_h5_dbg.conf
+      - DTC_OVERLAY_FILE=h5.overlay
     platform_allow: qemu_cortex_m3
   bluetooth.init.test_llcp:
     extra_args: CONF_FILE=prj_llcp.conf
