@@ -10,4 +10,4 @@ zephyr_library_sources(
 	)
 
 zephyr_linker_sources(DATA_SECTIONS conn_mgr.ld)
-zephyr_iterable_section(NAME conn_mgr_conn_binding GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+zephyr_iterable_section(NAME conn_mgr_conn_binding GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
