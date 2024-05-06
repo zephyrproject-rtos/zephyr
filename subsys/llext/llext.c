@@ -24,6 +24,12 @@ LOG_MODULE_REGISTER(llext, CONFIG_LLEXT_LOG_LEVEL);
 #define LLEXT_PAGE_SIZE 32
 #endif
 
+#ifdef CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID
+#define SYM_NAME_OR_SLID(name, slid) ((const char *)slid)
+#else
+#define SYM_NAME_OR_SLID(name, slid) name
+#endif
+
 K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * 1024);
 
 static const char ELF_MAGIC[] = {0x7f, 'E', 'L', 'F'};
@@ -118,11 +124,27 @@ const void *llext_find_sym(const struct llext_symtable *sym_table, const char *s
 {
 	if (sym_table == NULL) {
 		/* Built-in symbol table */
+#ifdef CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID
+		/* 'sym_name' is actually a SLID to search for */
+		uintptr_t slid = (uintptr_t)sym_name;
+
+		/* TODO: perform a binary search instead of linear.
+		 * Note that - as of writing - the llext_const_symbol_area
+		 * section is sorted in ascending SLID order.
+		 * (see scripts/build/llext_prepare_exptab.py)
+		 */
+		STRUCT_SECTION_FOREACH(llext_const_symbol, sym) {
+			if (slid == sym->slid) {
+				return sym->addr;
+			}
+		}
+#else
 		STRUCT_SECTION_FOREACH(llext_const_symbol, sym) {
 			if (strcmp(sym->name, sym_name) == 0) {
 				return sym->addr;
 			}
 		}
+#endif
 	} else {
 		/* find symbols in module */
 		for (size_t i = 0; i < sym_table->sym_cnt; i++) {
@@ -728,7 +750,8 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 
 		switch (stb) {
 		case STB_GLOBAL:
-			link_addr = llext_find_sym(NULL, name);
+			link_addr = llext_find_sym(NULL,
+				SYM_NAME_OR_SLID(name, sym_tbl.st_value));
 
 			if (!link_addr)
 				link_addr = llext_find_sym(&ext->sym_tab, name);
@@ -864,7 +887,8 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 				link_addr = 0;
 			} else if (sym.st_shndx == SHN_UNDEF) {
 				/* If symbol is undefined, then we need to look it up */
-				link_addr = (uintptr_t)llext_find_sym(NULL, name);
+				link_addr = (uintptr_t)llext_find_sym(NULL,
+					SYM_NAME_OR_SLID(name, sym.st_value));
 
 				if (link_addr == 0) {
 					LOG_ERR("Undefined symbol with no entry in "

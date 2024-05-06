@@ -24,6 +24,20 @@ LOG_MODULE_REGISTER(test_llext_simple);
 #define LLEXT_CONST const
 #endif
 
+#ifdef CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID
+#define LLEXT_FIND_BUILTIN_SYM(symbol_name) llext_find_sym(NULL, symbol_name ## _SLID)
+
+#ifdef CONFIG_64BIT
+#define printk_SLID ((const char *)0x87B3105268827052ull)
+#define z_impl_ext_syscall_fail_SLID ((const char *)0xD58BC0E7C64CD965ull)
+#else
+#define printk_SLID ((const char *)0x87B31052ull)
+#define z_impl_ext_syscall_fail_SLID ((const char *)0xD58BC0E7ull)
+#endif
+#else
+#define LLEXT_FIND_BUILTIN_SYM(symbol_name) llext_find_sym(NULL, # symbol_name)
+#endif
+
 struct llext_test {
 	const char *name;
 	bool try_userspace;
@@ -271,7 +285,7 @@ ZTEST(llext, test_pre_located)
  */
 ZTEST(llext, test_printk_exported)
 {
-	const void * const printk_fn = llext_find_sym(NULL, "printk");
+	const void * const printk_fn = LLEXT_FIND_BUILTIN_SYM(printk);
 
 	zassert_equal(printk_fn, printk, "printk should be an exported symbol");
 }
@@ -282,8 +296,9 @@ ZTEST(llext, test_printk_exported)
  */
 ZTEST(llext, test_ext_syscall_fail)
 {
-	const void * const esf_fn = llext_find_sym(NULL,
-						   "z_impl_ext_syscall_fail");
+	const void * const esf_fn = LLEXT_FIND_BUILTIN_SYM(z_impl_ext_syscall_fail);
+
+	zassert_not_null(esf_fn, "est_fn should not be NULL");
 
 	zassert_is_null(*(uintptr_t **)esf_fn, NULL,
 			"ext_syscall_fail should be NULL");
