@@ -50,4 +50,13 @@
 				<NRF_PSEL(UART_CTS, 2, 5)>;
 		};
 	};
+
+	/omit-if-no-ref/ exmif_default: exmif_default {
+		group1 {
+			psels = <NRF_PSEL(EXMIF_CK, 6, 0)>,
+				<NRF_PSEL(EXMIF_DQ0, 6, 7)>,
+				<NRF_PSEL(EXMIF_DQ1, 6, 5)>;
+			nordic,drive-mode = <NRF_DRIVE_H0H1>;
+		};
+	};
 };
