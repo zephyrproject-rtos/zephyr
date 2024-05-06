@@ -73,6 +73,17 @@ Afterwards, ifaces can become ready or unready without firing additional events,
 
 When there are no longer any ready ifaces left, the :c:macro:`NET_EVENT_L4_DISCONNECTED` :ref:`network management <net_mgmt_interface>` event is triggered, and IP connectivity is said to be unready.
 
+.. note::
+
+   Connection Manager also fires the following more specific ``CONNECTED`` / ``DISCONNECTED`` events:
+
+   - :c:macro:`NET_EVENT_L4_IPV4_CONNECTED`
+   - :c:macro:`NET_EVENT_L4_IPV4_DISCONNECTED`
+   - :c:macro:`NET_EVENT_L4_IPV6_CONNECTED`
+   - :c:macro:`NET_EVENT_L4_IPV6_DISCONNECTED`
+
+   These are similar to :c:macro:`NET_EVENT_L4_CONNECTED` and :c:macro:`NET_EVENT_L4_DISCONNECTED`, but specifically track whether IPv4- and IPv6-capable ifaces are ready.
+
 .. _conn_mgr_monitoring_usage:
 
 Usage
