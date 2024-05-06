@@ -80,3 +80,71 @@ tests:
       - CONFIG_USERSPACE=y
       - CONFIG_MODULES=y
       - CONFIG_LLEXT_TEST_HELLO=m
+  llext.simple.readonly_slid_linking:
+    arch_exclude: xtensa # for now
+    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
+    extra_configs:
+      - arch:arm:CONFIG_ARM_MPU=n
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
+  llext.simple.readonly_mpu_slid_linking:
+    min_ram: 128
+    arch_exclude: xtensa # for now
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_USERSPACE=y
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
+  llext.simple.writable_slid_linking:
+    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
+    extra_configs:
+      - arch:arm:CONFIG_ARM_MPU=n
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
+  llext.simple.modules_enabled_writable_slid_linking:
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    platform_key:
+      - simulation
+      - arch
+    platform_exclude:
+      - qemu_cortex_a9 # MMU
+    extra_configs:
+      - arch:arm:CONFIG_ARM_MPU=n
+      - CONFIG_MODULES=y
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
+      - CONFIG_LLEXT_TEST_HELLO=m
+      - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
+  llext.simple.modules_enabled_writable_relocatable_slid_linking:
+    arch_exclude: arm arm64
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    integration_platforms:
+      - qemu_xtensa
+    extra_configs:
+      - CONFIG_MODULES=y
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
+      - CONFIG_LLEXT_TYPE_ELF_RELOCATABLE=y
+      - CONFIG_LLEXT_TEST_HELLO=m
+      - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
+  llext.simple.modules_enabled_readonly_slid_linking:
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    arch_exclude: xtensa # for now
+    platform_key:
+      - simulation
+      - arch
+    platform_exclude:
+      - qemu_cortex_a9 # MMU
+    extra_configs:
+      - arch:arm:CONFIG_ARM_MPU=n
+      - CONFIG_MODULES=y
+      - CONFIG_LLEXT_TEST_HELLO=m
+      - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
+  llext.simple.modules_enabled_readonly_mpu_slid_linking:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    arch_exclude: xtensa # for now
+    platform_key:
+      - simulation
+      - arch
+    extra_configs:
+      - CONFIG_USERSPACE=y
+      - CONFIG_MODULES=y
+      - CONFIG_LLEXT_TEST_HELLO=m
+      - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y

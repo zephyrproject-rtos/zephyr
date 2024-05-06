@@ -5431,6 +5431,23 @@ function(add_llext_target target_name)
     COMMAND_EXPAND_LISTS
   )
 
+  # LLEXT ELF processing for importing via SLID
+  #
+  # This command must be executed as last step of the packaging process,
+  # to ensure that the ELF processed for binary generation contains SLIDs.
+  # If executed too early, it is possible that some tools executed to modify
+  # the ELF file (e.g., strip) undo the work performed here.
+  if (CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
+    set(slid_inject_cmd
+      ${PYTHON_EXECUTABLE}
+      ${ZEPHYR_BASE}/scripts/build/llext_inject_slids.py
+      --elf-file ${llext_pkg_output}
+      -vvv
+    )
+  else()
+    set(slid_inject_cmd ${CMAKE_COMMAND} -E true)
+  endif()
+
   # Type-specific packaging of the built binary file into an .llext file
   if(CONFIG_LLEXT_TYPE_ELF_OBJECT)
 
@@ -5438,6 +5455,7 @@ function(add_llext_target target_name)
     add_custom_command(
       OUTPUT ${llext_pkg_output}
       COMMAND ${CMAKE_COMMAND} -E copy ${llext_pkg_input} ${llext_pkg_output}
+      COMMAND ${slid_inject_cmd}
       DEPENDS ${llext_proc_target} ${llext_pkg_input}
     )
 
@@ -5453,6 +5471,7 @@ function(add_llext_target target_name)
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${llext_pkg_input}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+      COMMAND ${slid_inject_cmd}
       DEPENDS ${llext_proc_target} ${llext_pkg_input}
     )
 
@@ -5467,6 +5486,7 @@ function(add_llext_target target_name)
               $<TARGET_PROPERTY:bintools,strip_flag_infile>${llext_pkg_input}
               $<TARGET_PROPERTY:bintools,strip_flag_outfile>${llext_pkg_output}
               $<TARGET_PROPERTY:bintools,strip_flag_final>
+      COMMAND ${slid_inject_cmd}
       DEPENDS ${llext_proc_target} ${llext_pkg_input}
     )
 
