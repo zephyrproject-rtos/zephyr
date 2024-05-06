@@ -435,12 +435,12 @@ static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t
 			len = sizeof(iso_hdr) + bt_iso_hdr_len(sys_le16_to_cpu(iso_hdr.len));
 		} else {
 			LOG_ERR("No available ISO buffers!");
-			return NULL;
+			return -ENOMEM;
 		}
 		if (len > net_buf_tailroom(buf)) {
 			LOG_ERR("ISO too long: %d", len);
 			net_buf_unref(buf);
-			return NULL;
+			return -ENOMEM;
 		}
 		net_buf_add_mem(buf, &msg[1], len);
 		break;
