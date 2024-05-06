@@ -1283,7 +1283,12 @@ static int flash_stm32_qspi_init(const struct device *dev)
 
 	HAL_QSPI_Init(&dev_data->hqspi);
 
-#if DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id) && \
+	defined(QUADSPI_CR_FSEL)
+	/*
+	 * Some stm32 mcu with quadspi (like stm32l47x or stm32l48x)
+	 * does not support Dual-Flash Mode
+	 */
 	uint8_t qspi_flash_id = DT_PROP(DT_NODELABEL(quadspi), flash_id);
 
 	HAL_QSPI_SetFlashID(&dev_data->hqspi,
