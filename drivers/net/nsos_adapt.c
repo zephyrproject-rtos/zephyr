@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <poll.h>
 #include <stdlib.h>
 #include <string.h>
@@ -624,6 +625,22 @@ int nsos_adapt_getsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_KEEPALIVE,
 							 nsos_mid_optval, nsos_mid_optlen);
 		}
+
+	case NSOS_MID_IPPROTO_TCP:
+		switch (nsos_mid_optname) {
+		case NSOS_MID_TCP_NODELAY:
+			return nsos_adapt_getsockopt_int(fd, IPPROTO_TCP, TCP_NODELAY,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_TCP_KEEPIDLE:
+			return nsos_adapt_getsockopt_int(fd, IPPROTO_TCP, TCP_KEEPIDLE,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_TCP_KEEPINTVL:
+			return nsos_adapt_getsockopt_int(fd, IPPROTO_TCP, TCP_KEEPINTVL,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_TCP_KEEPCNT:
+			return nsos_adapt_getsockopt_int(fd, IPPROTO_TCP, TCP_KEEPCNT,
+							 nsos_mid_optval, nsos_mid_optlen);
+		}
 	}
 
 	return -NSOS_MID_EOPNOTSUPP;
@@ -685,6 +702,22 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 							 nsos_mid_optval, nsos_mid_optlen);
 		case NSOS_MID_SO_KEEPALIVE:
 			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_KEEPALIVE,
+							 nsos_mid_optval, nsos_mid_optlen);
+		}
+
+	case NSOS_MID_IPPROTO_TCP:
+		switch (nsos_mid_optname) {
+		case NSOS_MID_TCP_NODELAY:
+			return nsos_adapt_setsockopt_int(fd, IPPROTO_TCP, TCP_NODELAY,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_TCP_KEEPIDLE:
+			return nsos_adapt_setsockopt_int(fd, IPPROTO_TCP, TCP_KEEPIDLE,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_TCP_KEEPINTVL:
+			return nsos_adapt_setsockopt_int(fd, IPPROTO_TCP, TCP_KEEPINTVL,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_TCP_KEEPCNT:
+			return nsos_adapt_setsockopt_int(fd, IPPROTO_TCP, TCP_KEEPCNT,
 							 nsos_mid_optval, nsos_mid_optlen);
 		}
 	}
