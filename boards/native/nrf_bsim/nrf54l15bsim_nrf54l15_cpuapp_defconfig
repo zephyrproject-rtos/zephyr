@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Nordic Semiconductor ASA
+
+CONFIG_CONSOLE=y
+CONFIG_NO_OPTIMIZATIONS=y
+
+# Start SYSCOUNTER on driver init
+CONFIG_NRF_GRTC_START_SYSCOUNTER=y
