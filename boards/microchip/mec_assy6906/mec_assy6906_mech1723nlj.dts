@@ -47,7 +47,8 @@
 };
 
 /* Enable MCHP kernel timer driver using 32KHz RTOS timer and 1MHz basic timer */
-&ktimer {
+&rtimer {
+	compatible = "microchip,mec5-ktimer";
 	status = "okay";
 };
 

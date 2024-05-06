@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Microchip Technology Inc.
+ * Copyright (c) 2024, Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,7 +47,8 @@
 };
 
 /* Enable MCHP kernel timer driver using 32KHz RTOS timer and 1MHz basic timer */
-&ktimer {
+&rtimer {
+	compatible = "microchip,mec5-ktimer";
 	status = "okay";
 };
 
