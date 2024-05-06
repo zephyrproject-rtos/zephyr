@@ -6,5 +6,6 @@ config COUNTER_NXP_MRT
 	default y
 	depends on DT_HAS_NXP_MRT_CHANNEL_ENABLED && \
 			DT_HAS_NXP_MRT_ENABLED
+	select RESET
 	help
 	  Enable driver for the NXP Multirate Timer (MRT).
