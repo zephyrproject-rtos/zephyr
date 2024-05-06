@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(spi_mec5, CONFIG_SPI_LOG_LEVEL);
 /* MEC5 HAL */
 #include <device_mec5.h>
 #include <mec_ecia_api.h>
+#include <mec_espi_taf.h>
 #include <mec_qspi_api.h>
 
 /* microseconds for busy wait and total wait interval */
@@ -167,6 +168,10 @@ static int mec5_qspi_xfr_sync(const struct device *dev,
 	size_t total_rx = 0, total_tx = 0;
 	int ret = 0;
 
+	if (mec_espi_taf_is_activated()) {
+		return -EPERM;
+	}
+
 	if (!config) {
 		return -EINVAL;
 	}
@@ -265,7 +270,13 @@ static int mec5_qspi_release(const struct device *dev,
 {
 	struct mec5_qspi_data *qdata = dev->data;
 	const struct mec5_qspi_config *cfg = dev->config;
-	int ret = mec_qspi_force_stop(cfg->regs);
+	int ret = 0;
+
+	if (mec_espi_taf_is_activated()) {
+		return -EPERM;
+	}
+
+	ret = mec_qspi_force_stop(cfg->regs);
 
 	/* increments lock semphare in ctx up to initial limit */
 	spi_context_unlock_unconditionally(&qdata->ctx);
