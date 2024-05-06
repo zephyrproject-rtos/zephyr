@@ -202,12 +202,19 @@ config BT_CTLR_ISO_TX_BUFFERS
 config BT_CTLR_ISO_TX_BUFFER_SIZE
 	int "Isochronous Tx buffer size"
 	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
-	range 1 4095
-	default BT_ISO_TX_MTU if BT_ISO
+	range 9 4103 if BT_LL_SW_SPLIT
+	range 1 65535
+	default 9 if BT_LL_SW_SPLIT
 	default 1
 	help
 	  Size of the Isochronous Tx buffers and the value returned in HCI LE
-	  Read Buffer Size V2 command response.
+	  Read Buffer Size V2 command response. This is the data portion of the
+	  HCI ISO Data packet, corresponding to the Data_Total_Length field.
+
+	  Currently the maximum SDU length is 4095 bytes, hence add HCI ISO
+	  Data packet overhead (the Packet_Sequence_Number, ISO_SDU_Length,
+	  Packet_Status_Flag fields; and the optional Time_Stamp field, if
+	  supplied) of 8 bytes.
 
 config BT_CTLR_ISOAL_SOURCES
 	int "Number of Isochronous Adaptation Layer sources"
@@ -929,7 +936,7 @@ config BT_CTLR_CONN_ISO_PDU_LEN_MAX
 config BT_CTLR_CONN_ISO_SDU_LEN_MAX
 	int "Maximum Connected Isochronous Channel SDU Length"
 	depends on BT_CTLR_CONN_ISO
-	range BT_CTLR_CONN_ISO_PDU_LEN_MAX 4095
+	range 1 4095
 	default 251
 	help
 	  Maximum Connected Isochronous Channel SDU Length.

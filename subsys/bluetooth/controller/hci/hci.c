@@ -1398,7 +1398,7 @@ static void le_read_buffer_size_v2(struct net_buf *buf, struct net_buf **evt)
 
 	rp->acl_max_len = sys_cpu_to_le16(LL_LENGTH_OCTETS_TX_MAX);
 	rp->acl_max_num = CONFIG_BT_BUF_ACL_TX_COUNT;
-	rp->iso_max_len = sys_cpu_to_le16(CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE);
+	rp->iso_max_len = sys_cpu_to_le16(BT_CTLR_ISO_TX_BUFFER_SIZE);
 	rp->iso_max_num = CONFIG_BT_CTLR_ISO_TX_BUFFERS;
 }
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
