@@ -381,6 +381,26 @@ static int cmd_gpio_set(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_gpio_toggle(const struct shell *sh, size_t argc, char **argv)
+{
+	struct sh_gpio gpio;
+	int ret = 0;
+
+	ret = get_sh_gpio(sh, argv, &gpio);
+	if (ret != 0) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	ret = gpio_pin_toggle(gpio.dev, gpio.pin);
+	if (ret != 0) {
+		shell_error(sh, "error: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 /* 500 msec = 1/2 sec */
 #define SLEEP_TIME_MS   500
 
@@ -595,6 +615,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_gpio,
 	SHELL_CMD_ARG(set, &sub_gpio_dev,
 		"Set GPIO pin value\n"
 		"Usage: gpio set <device> <pin> <level 0|1>", cmd_gpio_set, 4, 0),
+	SHELL_COND_CMD_ARG(CONFIG_GPIO_SHELL_TOGGLE_CMD, toggle, &sub_gpio_dev,
+		"Toggle GPIO pin\n"
+		"Usage: gpio toggle <device> <pin>", cmd_gpio_toggle, 3, 0),
 	SHELL_COND_CMD_ARG(CONFIG_GPIO_SHELL_BLINK_CMD, blink, &sub_gpio_dev,
 		"Blink GPIO pin\n"
 		"Usage: gpio blink <device> <pin>", cmd_gpio_blink, 3, 0),
