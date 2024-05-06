@@ -1,0 +1,12 @@
+family:
+- name: microchip_pic32cx
+  series:
+  - name: pic32cxsg
+    socs:
+    - name: pic32cx1025sg41064
+    - name: pic32cx1025sg41100
+    - name: pic32cx1025sg41128
+    - name: pic32cx1025sg60100
+    - name: pic32cx1025sg60128
+    - name: pic32cx1025sg61100
+    - name: pic32cx1025sg61128
