@@ -830,14 +830,23 @@ If the change addresses a GitHub issue, include a line of the form:
 
 .. code-block:: none
 
-   Fixes #[issue number]
+   Fixes: https://github.com/zephyrproject-rtos/zephyr/issues/[issue number]
 
 Where ``[issue number]`` is the relevant GitHub issue's number. For
 example:
 
 .. code-block:: none
 
-   Fixes: #1234
+   Fixes: https://github.com/zephyrproject-rtos/zephyr/issues/1234
+
+.. note::
+   References to issue or PRs in GitHub or any other bug tracking system in the
+   commit message must use a full URL rather than just the reference number.
+   This is because the number alone is meaningless in any fork of the
+   repository other than the one in the zephyrproject-rtos org.
+
+   This does not apply to PR comments, as PRs themselves are tied to a specific
+   fork.
 
 Signed-off-by: ...
 ==================
