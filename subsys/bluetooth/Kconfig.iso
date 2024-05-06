@@ -105,14 +105,15 @@ config BT_ISO_TX_FRAG_COUNT
 
 config BT_ISO_TX_MTU
 	int "Maximum supported MTU for Isochronous TX buffers"
-	default 251
 	range 1 4095
+	default 247
 	help
 	  Maximum MTU for Isochronous channels TX buffers.
 	  This is the actual data payload. It doesn't include the optional
 	  HCI ISO Data packet fields (e.g. `struct bt_hci_iso_sdu_ts_hdr`).
 	  Set this value to 247 to fit 247 bytes of data within a single
-	  HCI ISO Data packet with a size of 255, without utilizing timestamps.
+	  HCI ISO Data packet with Data_Total_Length of 255, utilizing
+	  timestamps.
 
 config BT_ISO_RX_BUF_COUNT
 	int "Number of Isochronous RX buffers"
