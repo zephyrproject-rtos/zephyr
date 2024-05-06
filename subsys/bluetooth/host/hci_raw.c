@@ -31,12 +31,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_raw);
 
-#define H4_CMD 0x01
-#define H4_ACL 0x02
-#define H4_SCO 0x03
-#define H4_EVT 0x04
-#define H4_ISO 0x05
-
 static struct k_fifo *raw_rx;
 
 #if defined(CONFIG_BT_HCI_RAW_H4_ENABLE)
@@ -142,16 +136,16 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 			uint8_t h4_type = ((uint8_t *)data)[0];
 
 			switch (h4_type) {
-			case H4_CMD:
+			case BT_HCI_H4_CMD:
 				type = BT_BUF_CMD;
 				pool = &hci_cmd_pool;
 				break;
-			case H4_ACL:
+			case BT_HCI_H4_ACL:
 				type = BT_BUF_ACL_OUT;
 				pool = &hci_acl_pool;
 				break;
 #if defined(CONFIG_BT_ISO)
-			case H4_ISO:
+			case BT_HCI_H4_ISO:
 				type = BT_BUF_ISO_OUT;
 				pool = &hci_iso_pool;
 				break;
@@ -213,14 +207,14 @@ int bt_recv(struct net_buf *buf)
 	    raw_mode == BT_HCI_RAW_MODE_H4) {
 		switch (bt_buf_get_type(buf)) {
 		case BT_BUF_EVT:
-			net_buf_push_u8(buf, H4_EVT);
+			net_buf_push_u8(buf, BT_HCI_H4_EVT);
 			break;
 		case BT_BUF_ACL_IN:
-			net_buf_push_u8(buf, H4_ACL);
+			net_buf_push_u8(buf, BT_HCI_H4_ACL);
 			break;
 		case BT_BUF_ISO_IN:
 			if (IS_ENABLED(CONFIG_BT_ISO)) {
-				net_buf_push_u8(buf, H4_ISO);
+				net_buf_push_u8(buf, BT_HCI_H4_ISO);
 				break;
 			}
 			__fallthrough;
