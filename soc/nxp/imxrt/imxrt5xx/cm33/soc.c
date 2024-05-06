@@ -423,10 +423,6 @@ void __weak rt5xx_clock_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, 1);
 #endif
 
-#if CONFIG_COUNTER_NXP_MRT
-	RESET_PeripheralReset(kMRT0_RST_SHIFT_RSTn);
-#endif
-
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dmic0), nxp_dmic, okay)
 	/* Using the Audio PLL as input clock leads to better clock dividers
 	 * for typical PCM sample rates ({8,16,24,32,48,96} kHz.
