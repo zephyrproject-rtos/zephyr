@@ -28,8 +28,9 @@
 #define CONN_MGR_IF_IGNORED		BIT(7)
 
 /* Internal state flags */
-#define CONN_MGR_IF_READY		BIT(14)
-
+#define CONN_MGR_IF_READY		BIT(13)
+#define CONN_MGR_IF_READY_IPV4		BIT(14)
+#define CONN_MGR_IF_READY_IPV6		BIT(15)
 
 /* NET_MGMT event masks */
 #define CONN_MGR_IFACE_EVENTS_MASK	(NET_EVENT_IF_DOWN		| \

@@ -112,6 +112,10 @@ enum net_event_ipv4_cmd {
 enum net_event_l4_cmd {
 	NET_EVENT_L4_CMD_CONNECTED = 1,
 	NET_EVENT_L4_CMD_DISCONNECTED,
+	NET_EVENT_L4_CMD_IPV4_CONNECTED,
+	NET_EVENT_L4_CMD_IPV4_DISCONNECTED,
+	NET_EVENT_L4_CMD_IPV6_CONNECTED,
+	NET_EVENT_L4_CMD_IPV6_DISCONNECTED,
 	NET_EVENT_L4_CMD_DNS_SERVER_ADD,
 	NET_EVENT_L4_CMD_DNS_SERVER_DEL,
 	NET_EVENT_L4_CMD_HOSTNAME_CHANGED,
@@ -306,6 +310,23 @@ enum net_event_l4_cmd {
  */
 #define NET_EVENT_L4_DISCONNECTED			\
 	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_DISCONNECTED)
+
+
+/** Event raised when IPv4 network connectivity becomes available. */
+#define NET_EVENT_L4_IPV4_CONNECTED			\
+	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_IPV4_CONNECTED)
+
+/** Event emitted when IPv4 network connectivity becomes lost. */
+#define NET_EVENT_L4_IPV4_DISCONNECTED			\
+	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_IPV4_DISCONNECTED)
+
+/** Event emitted when IPv6 network connectivity becomes available. */
+#define NET_EVENT_L4_IPV6_CONNECTED			\
+	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_IPV6_CONNECTED)
+
+/** Event emitted when IPv6 network connectivity becomes available. */
+#define NET_EVENT_L4_IPV6_DISCONNECTED			\
+	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_IPV6_DISCONNECTED)
 
 /** Event emitted when a DNS server is added to the system. */
 #define NET_EVENT_DNS_SERVER_ADD			\
