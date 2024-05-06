@@ -38,3 +38,6 @@ tests:
   application_development.code_relocation.xtensa:
     extra_args: CONF_FILE="prj_xtensa.conf"
     platform_allow: qemu_xtensa
+  application_development.code_relocation.stm32_non_xip_copy:
+    extra_args: CONF_FILE="prj_stm32_non_xip_copy.conf"
+    platform_allow: nucleo_h7a3zi_q

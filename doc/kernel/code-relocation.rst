@@ -130,6 +130,26 @@ to the ``EXTFLASH`` memory region where it will be executed from (XIP). The
      zephyr_code_relocate(FILES src/xip_external_flash.c LOCATION EXTFLASH_TEXT NOCOPY)
      zephyr_code_relocate(FILES src/xip_external_flash.c LOCATION SRAM_DATA)
 
+config CODE_DATA_RELOCATION_COPY_ALL
+====================================
+
+When :kconfig:option:`CONFIG_CODE_DATA_RELOCATION_COPY_ALL` is enabled, non-XIP
+has the same code/data relocation behavior as XIP. The code/data will be copied
+to the destination memory region during startup. Unless the ``NOCOPY`` flag is
+set, then the code/data will be put directly into the destination memory region.
+
+This is useful for non-XIP builds to relocate code/data to other RAM regions
+(e.g. TCM), while keeping the image as a single contiguous blob. Some
+bootloaders can only load a single contiguous blob.
+
++----------------+-----------------------------+------------+
+| ``CONFIG_XIP`` | Default                     | ``NOCOPY`` |
++================+=============================+============+
+| Yes            | Copy                        | No copy    |
++----------------+-----------------------------+------------+
+| No             | **Copy** (normally No copy) | No copy    |
++----------------+-----------------------------+------------+
+
 Relocating libraries
 ====================
 

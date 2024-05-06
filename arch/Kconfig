@@ -878,6 +878,16 @@ config CODE_DATA_RELOCATION
 	  the target regions should be specified in CMakeLists.txt using
 	  zephyr_code_relocate().
 
+config CODE_DATA_RELOCATION_COPY_ALL
+	bool "Code/data relocation copy all"
+	depends on CODE_DATA_RELOCATION
+	help
+	  Enabling this option gives non-XIP the same code relocation behavior as
+	  XIP. Relocated code/data will be copied into place from RAM during
+	  startup, rather than placed directly into the destination regions.
+	  This is useful for non-XIP builds to relocate code/data to other RAM
+	  regions, while keeping the image as a single contiguous blob.
+
 menu "DSP Options"
 
 config DSP_SHARING

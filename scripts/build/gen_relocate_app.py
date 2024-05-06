@@ -112,7 +112,9 @@ SECTION_LOAD_MEMORY_SEQ = """
 """
 
 LOAD_ADDRESS_LOCATION_FLASH = """
-#ifdef CONFIG_XIP
+#ifdef CONFIG_CODE_DATA_RELOCATION_COPY_ALL
+GROUP_LINK_IN({0} AT> ROMABLE_REGION)
+#elif defined(CONFIG_XIP)
 GROUP_DATA_LINK_IN({0}, ROMABLE_REGION)
 #else
 GROUP_DATA_LINK_IN({0}, {0})
@@ -187,7 +189,7 @@ extern char __{0}_{1}_reloc_size[];
 
 
 DATA_COPY_FUNCTION = """
-void data_copy_xip_relocation(void)
+void data_copy_relocation(void)
 {{
 {0}
 }}

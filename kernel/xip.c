@@ -44,9 +44,9 @@ void z_data_copy(void)
 		       __dtcm_data_end - __dtcm_data_start);
 #endif
 #ifdef CONFIG_CODE_DATA_RELOCATION
-	extern void data_copy_xip_relocation(void);
+	extern void data_copy_relocation(void);
 
-	data_copy_xip_relocation();
+	data_copy_relocation();
 #endif	/* CONFIG_CODE_DATA_RELOCATION */
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_STACK_CANARIES

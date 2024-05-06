@@ -41,7 +41,11 @@ void z_data_copy(void);
 #else
 static inline void z_data_copy(void)
 {
-	/* Do nothing */
+#ifdef CONFIG_CODE_DATA_RELOCATION_COPY_ALL
+	extern void data_copy_relocation(void);
+
+	data_copy_relocation();
+#endif	/* CONFIG_CODE_DATA_RELOCATION_COPY_ALL */
 }
 #endif /* CONFIG_XIP */
 
