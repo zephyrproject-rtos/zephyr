@@ -111,7 +111,9 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
 +-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | display                             |
+| DISPLAY   | on-chip    | eLCDIF. Tested with                 |
+|           |            | :ref:`rk043fn02h_ct`, and           |
+|           |            | :ref:`rk043fn66hs_ctg` shields      |
 +-----------+------------+-------------------------------------+
 | VIDEO     | on-chip    | video, using CSI                    |
 +-----------+------------+-------------------------------------+
