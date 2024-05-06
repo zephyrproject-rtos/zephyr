@@ -33,9 +33,8 @@ config MINIMAL_LIBC_MALLOC_ARENA_SIZE
 config MAIN_STACK_SIZE
 	default 2304
 
-choice BT_HCI_BUS_TYPE
-	default BT_SILABS_HCI
-endchoice
+config BT_SILABS_HCI
+	default y
 
 if SHELL
 
