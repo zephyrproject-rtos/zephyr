@@ -671,6 +671,16 @@ config BT_CTLR_ASSERT_OVERHEAD_START
 	  otherwise leading to remote supervision timeout and possible missing
 	  local disconnect events.
 
+config BT_CTLR_ASSERT_VENDOR
+	bool "Vendor Defined Assertion Information Handler"
+	help
+	  This option enables a vendor specific sink for the controller assertion
+	  mechanism, where parameter information is provided. This must be defined in
+	  vendor debug HAL interface as \"BT_ASSERT_VND(cond, param1, param2)\", and
+	  will be invoked whenever the controller code encounters an unrecoverable error
+	  with parameter information. Implementation shall include the equivalent of
+	  BT_ASSERT_DIE for halting the kernel.
+
 config BT_CTLR_CENTRAL_SPACING
 	int "Central Connection Spacing"
 	depends on BT_CTLR_SCHED_ADVANCED
