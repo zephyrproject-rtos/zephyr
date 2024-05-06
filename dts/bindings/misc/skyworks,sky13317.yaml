@@ -1,0 +1,26 @@
+# Copyright (c) 2022 Stancu Florin
+# SPDX-License-Identifier: Apache-2.0
+
+description: Skyworks SKY13317 pHEMT GaAs SP3T Antenna Switch
+
+compatible: "skyworks,sky13317"
+
+include: [pinctrl-device.yaml, base.yaml]
+
+properties:
+  v1-gpios:
+    type: phandle-array
+    required: true
+    description: control pin for rf1
+  v2-gpios:
+    type: phandle-array
+    required: true
+    description: control pin for rf2
+  v3-gpios:
+    type: phandle-array
+    required: true
+    description: control pin for rf3
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true
