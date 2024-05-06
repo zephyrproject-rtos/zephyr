@@ -316,6 +316,13 @@ config LINKER_USE_RELAX
 
 endmenu # "Linker Sections"
 
+config LINKER_ITERABLE_SUBALIGN
+	int
+	default 8 if 64BIT
+	default 4
+	help
+	  Hidden option for the default subalignment of iterable sections.
+
 config LINKER_DEVNULL_SUPPORT
 	bool
 	default y if CPU_CORTEX_M || (RISCV && !64BIT)
