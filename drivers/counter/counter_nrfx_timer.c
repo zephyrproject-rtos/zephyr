@@ -15,8 +15,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
 #define DT_DRV_COMPAT nordic_nrf_timer
 
-#define TIMER_CLOCK(timer_instance) NRF_TIMER_BASE_FREQUENCY_GET(timer_instance)
-
 #define CC_TO_ID(cc_num) (cc_num - 2)
 
 #define ID_TO_CC(idx) (nrf_timer_cc_channel_t)(idx + 2)
@@ -448,7 +446,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	static MAYBE_CONST_CONFIG struct counter_nrfx_config nrfx_counter_##idx##_config = {	\
 		.info = {									\
 			.max_top_value = (uint32_t)BIT64_MASK(DT_INST_PROP(idx, max_bit_width)),\
-			.freq = TIMER_CLOCK((NRF_TIMER_Type *)DT_INST_REG_ADDR(idx)) /		\
+			.freq = DT_INST_PROP(idx, max_frequency) /				\
 				BIT(DT_INST_PROP(idx, prescaler)),				\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,					\
 			.channels = CC_TO_ID(DT_INST_PROP(idx, cc_num)),			\
