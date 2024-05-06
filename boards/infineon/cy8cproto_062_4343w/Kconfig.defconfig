@@ -36,13 +36,6 @@ config UART
 	bool
 	default y
 
-config BT_UART
-	default y
-
-choice BT_HCI_BUS_TYPE
-	default BT_H4
-endchoice
-
 endif # BT
 
 # Heap Pool Size

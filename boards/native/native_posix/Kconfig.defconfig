@@ -22,10 +22,9 @@ config ETH_NATIVE_POSIX
 
 endif # NETWORKING
 
-choice BT_HCI_BUS_TYPE
-	default BT_USERCHAN
+config BT_USERCHAN
+	default y
 	depends on BT_HCI
-endchoice
 
 if CONSOLE
 

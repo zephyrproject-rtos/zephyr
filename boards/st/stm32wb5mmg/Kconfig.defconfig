@@ -5,9 +5,8 @@
 
 if BOARD_STM32WB5MMG
 
-choice BT_HCI_BUS_TYPE
-	default BT_STM32_IPM
+config BT_STM32_IPM
+	default y
 	depends on BT
-endchoice
 
 endif

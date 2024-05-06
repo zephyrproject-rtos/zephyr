@@ -12,8 +12,7 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 
 if BT
 
-choice BT_HCI_BUS_TYPE
-	default BT_ESP32
-endchoice
+config BT_ESP32
+	default y
 
 endif # BT
