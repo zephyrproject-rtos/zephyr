@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NSIM_ARC_V
+	select SOC_RMX100 if BOARD_NSIM_ARC_V_RMX100
