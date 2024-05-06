@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NSIM_SEM
+	bool
+	select SOC_FAMILY_NSIM_ARC_CLASSIC
+
+config SOC_SERIES
+	default "nsim_sem" if SOC_SERIES_NSIM_SEM
+
+config SOC_NSIM_SEM
+	bool
+	select SOC_SERIES_NSIM_SEM
+
+config SOC
+	default "nsim_sem" if SOC_NSIM_SEM
