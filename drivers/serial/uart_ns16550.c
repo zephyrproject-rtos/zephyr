@@ -47,7 +47,7 @@ LOG_MODULE_REGISTER(uart_ns16550, CONFIG_UART_LOG_LEVEL);
 #define UART_NS16550_DLF_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(dlf)
 #define UART_NS16550_DMAS_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(dmas)
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
+#if (DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie))
 BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #include <zephyr/drivers/pcie/pcie.h>
 #endif
@@ -339,7 +339,7 @@ struct uart_ns16550_device_config {
 	uint32_t pcp;
 #endif
 	uint8_t reg_interval;
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
+#if (DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie))
 	struct pcie_dev *pcie;
 #endif
 #if defined(CONFIG_PINCTRL)
@@ -796,7 +796,7 @@ static int uart_ns16550_init(const struct device *dev)
 	}
 #endif
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
+#if (DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie))
 	if (dev_cfg->pcie) {
 		struct pcie_bar mbar;
 
