@@ -493,8 +493,14 @@ static uint8_t set_connectable(const void *cmd, uint16_t cmd_len,
 
 	if (cp->connectable) {
 		atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_CONNECTABLE);
+#ifdef CONFIG_BT_CLASSIC
+		bt_br_set_connectable(true);
+#endif /* CONFIG_BT_CLASSIC */
 	} else {
 		atomic_clear_bit(&current_settings, BTP_GAP_SETTINGS_CONNECTABLE);
+#ifdef CONFIG_BT_CLASSIC
+		bt_br_set_connectable(false);
+#endif /* CONFIG_BT_CLASSIC */
 	}
 
 	rp->current_settings = sys_cpu_to_le32(current_settings);
