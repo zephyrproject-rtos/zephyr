@@ -101,11 +101,19 @@ static int start_tcp_proto(struct data *data,
 	}
 #endif
 
-	/* Prefer IPv6 temporary addresses */
 	if (bind_addr->sa_family == AF_INET6) {
+		/* Prefer IPv6 temporary addresses */
 		optval = IPV6_PREFER_SRC_PUBLIC;
 		(void)setsockopt(data->tcp.sock, IPPROTO_IPV6,
 				 IPV6_ADDR_PREFERENCES,
+				 &optval, sizeof(optval));
+
+		/*
+		 * Bind only to IPv6 without mapping to IPv4, since we bind to
+		 * IPv4 using another socket
+		 */
+		optval = 1;
+		(void)setsockopt(data->tcp.sock, IPPROTO_IPV6, IPV6_V6ONLY,
 				 &optval, sizeof(optval));
 	}
 
