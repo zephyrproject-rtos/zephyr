@@ -22,6 +22,14 @@
 		dev-ctl = <0x0 6 1 0x01>;
 	};
 
+	/omit-if-no-ref/ sio_full_ck48: devctl4-sio-full-ck48 {
+		dev-ctl = <0x6 3 1 0x00>;
+	};
+
+	/omit-if-no-ref/ sio_full_ck50: devctl4-sio-full-ck50 {
+		dev-ctl = <0x6 3 1 0x01>;
+	};
+
 	/* Prebuild nodes for peripheral device's pin-muxing and pad properties */
 	/* Flash Interface Unit (FIU) */
 	/omit-if-no-ref/ fiu_ext_io0_io1_clk_cs_gpa4_96_a2_a0: periph-fiu-ext {
