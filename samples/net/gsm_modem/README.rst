@@ -6,6 +6,11 @@
 Overview
 ********
 
+.. warning::
+
+   This code sample and associated legacy GSM modem driver are deprecated.
+   You may refer to :zephyr:code-sample:`cellular-modem` sample instead.
+
 The Zephyr GSM modem sample application allows user to have a connection
 to GPRS network. The connection to GSM modem is done using
 :ref:`PPP (Point-to-Point Protocol) <ppp>`.
