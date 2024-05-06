@@ -1,0 +1,5 @@
+board:
+  name: pic32cx_sg61_cult
+  vendor: microchip
+  socs:
+    - name: pic32cx1025sg61128

@@ -1,5 +1,0 @@
-board:
-  name: samd21_xpro
-  vendor: atmel
-  socs:
-    - name: samd21j18a
