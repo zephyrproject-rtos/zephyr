@@ -247,6 +247,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 
 			group_stream_params[start_param.count].stream =
 				&stream_param[start_param.count].stream->bap_stream;
+			group_stream_params[start_param.count].qos = &uni_stream->qos;
 			pair_params[pair_cnt + j].tx_param =
 				&group_stream_params[start_param.count];
 
@@ -277,6 +278,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 			stream_param[start_param.count].codec_cfg = &uni_stream->codec_cfg;
 			group_stream_params[start_param.count].stream =
 				&stream_param[start_param.count].stream->bap_stream;
+			group_stream_params[start_param.count].qos = &uni_stream->qos;
 			pair_params[pair_cnt + j].rx_param =
 				&group_stream_params[start_param.count];
 
