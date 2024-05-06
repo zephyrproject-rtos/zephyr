@@ -12,10 +12,6 @@
 
 LOG_MODULE_REGISTER(lora_shell, CONFIG_LORA_LOG_LEVEL);
 
-#define DEFAULT_RADIO_NODE DT_ALIAS(lora0)
-BUILD_ASSERT(DT_NODE_HAS_STATUS(DEFAULT_RADIO_NODE, okay),
-	     "No default LoRa radio specified in DT");
-
 static struct lora_modem_config modem_config = {
 	.frequency = 0,
 	.bandwidth = BW_125_KHZ,
@@ -86,44 +82,6 @@ static int parse_freq(uint32_t *out, const struct shell *sh, const char *arg)
 
 	*out = (uint32_t)val;
 	return 0;
-}
-
-static const struct device *get_modem(const struct shell *sh)
-{
-	const struct device *dev;
-
-	dev = DEVICE_DT_GET(DEFAULT_RADIO_NODE);
-
-	if (!device_is_ready(dev)) {
-		shell_error(sh, "LORA Radio device not ready");
-		return NULL;
-	}
-
-	return dev;
-}
-
-static const struct device *get_configured_modem(const struct shell *sh)
-{
-	int ret;
-	const struct device *dev;
-
-	dev = get_modem(sh);
-	if (!dev) {
-		return NULL;
-	}
-
-	if (modem_config.frequency == 0) {
-		shell_error(sh, "No frequency specified.");
-		return NULL;
-	}
-
-	ret = lora_config(dev, &modem_config);
-	if (ret < 0) {
-		shell_error(sh, "LoRa config failed");
-		return NULL;
-	}
-
-	return dev;
 }
 
 static int lora_conf_dump(const struct shell *sh)
@@ -233,13 +191,24 @@ static int cmd_lora_send(const struct shell *sh,
 	int ret;
 	const struct device *dev;
 
-	modem_config.tx = true;
-	dev = get_configured_modem(sh);
+	dev = device_get_binding(argv[1]);
 	if (!dev) {
 		return -ENODEV;
 	}
 
-	ret = lora_send(dev, argv[1], strlen(argv[1]));
+	if (modem_config.frequency == 0) {
+		shell_error(sh, "No frequency specified.");
+		return -EINVAL;
+	}
+
+	modem_config.tx = true;
+	ret = lora_config(dev, &modem_config);
+	if (ret < 0) {
+		shell_error(sh, "LoRa %s config failed", dev->name);
+		return ret;
+	}
+
+	ret = lora_send(dev, argv[2], strlen(argv[2]));
 	if (ret < 0) {
 		shell_error(sh, "LoRa send failed: %i", ret);
 		return ret;
@@ -257,13 +226,24 @@ static int cmd_lora_recv(const struct shell *sh, size_t argc, char **argv)
 	int16_t rssi;
 	int8_t snr;
 
-	modem_config.tx = false;
-	dev = get_configured_modem(sh);
+	dev = device_get_binding(argv[1]);
 	if (!dev) {
 		return -ENODEV;
 	}
 
-	if (argc >= 2 && parse_long_range(&timeout, sh, argv[1],
+	if (modem_config.frequency == 0) {
+		shell_error(sh, "No frequency specified.");
+		return -EINVAL;
+	}
+
+	modem_config.tx = false;
+	ret = lora_config(dev, &modem_config);
+	if (ret < 0) {
+		shell_error(sh, "LoRa %s config failed", dev->name);
+		return ret;
+	}
+
+	if (argc >= 3 && parse_long_range(&timeout, sh, argv[2],
 					  "timeout", 0, INT_MAX) < 0) {
 		return -EINVAL;
 	}
@@ -290,15 +270,15 @@ static int cmd_lora_test_cw(const struct shell *sh,
 	uint32_t freq;
 	long power, duration;
 
-	dev = get_modem(sh);
+	dev = device_get_binding(argv[1]);
 	if (!dev) {
 		return -ENODEV;
 	}
 
-	if (parse_freq(&freq, sh, argv[1]) < 0 ||
-	    parse_long_range(&power, sh, argv[2],
+	if (parse_freq(&freq, sh, argv[2]) < 0 ||
+	    parse_long_range(&power, sh, argv[3],
 			     "power", INT8_MIN, INT8_MAX) < 0 ||
-	    parse_long_range(&duration, sh, argv[3],
+	    parse_long_range(&duration, sh, argv[4],
 			     "duration", 0, UINT16_MAX) < 0) {
 		return -EINVAL;
 	}
@@ -312,24 +292,37 @@ static int cmd_lora_test_cw(const struct shell *sh,
 	return 0;
 }
 
+static void device_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_lookup(idx, NULL);
+
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_lora,
 	SHELL_CMD(config, NULL,
 		  "Configure the LoRa radio\n"
 		  " Usage: config [freq <Hz>] [tx-power <dBm>] [bw <kHz>] "
 		  "[sf <int>] [cr <int>] [pre-len <int>]\n",
 		  cmd_lora_conf),
-	SHELL_CMD_ARG(send, NULL,
+	SHELL_CMD_ARG(send, &dsub_device_name,
 		      "Send LoRa packet\n"
-		      " Usage: send <data>",
-		      cmd_lora_send, 2, 0),
-	SHELL_CMD_ARG(recv, NULL,
+		      " Usage: send <device> <data>",
+		      cmd_lora_send, 3, 0),
+	SHELL_CMD_ARG(recv, &dsub_device_name,
 		      "Receive LoRa packet\n"
-		      " Usage: recv [timeout (ms)]",
-		      cmd_lora_recv, 1, 1),
-	SHELL_CMD_ARG(test_cw, NULL,
+		      " Usage: recv <device> [timeout (ms)]",
+		      cmd_lora_recv, 2, 1),
+	SHELL_CMD_ARG(test_cw, &dsub_device_name,
 		  "Send a continuous wave\n"
-		  " Usage: test_cw <freq (Hz)> <power (dBm)> <duration (s)>",
-		  cmd_lora_test_cw, 4, 0),
+		  " Usage: test_cw <device> <freq (Hz)> <power (dBm)> "
+		  "<duration (s)>",
+		  cmd_lora_test_cw, 5, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
