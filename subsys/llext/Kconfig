@@ -66,6 +66,21 @@ config LLEXT_STORAGE_WRITABLE
 	  Select if LLEXT storage is writable, i.e. if extensions are stored in
 	  RAM and can be modified in place
 
+config LLEXT_EXPORT_BUILTINS_BY_SLID
+	bool "Export built-in symbols to llexts via SLIDs"
+	help
+	  When enabled, symbols exported from the Zephyr kernel
+	  or application (via EXPORT_SYMBOL) are linked to LLEXTs
+	  via Symbol Link Identifiers (SLIDs) instead of name.
+
+	  Enabling this option provides a huge size reduction,
+	  makes the linking process faster and provides more
+	  confidentiality, as exported symbol names are dropped
+	  from the binary. However, it can make LLEXT debugging
+	  harder and prevents usage of 'llext_find_sym' to look
+	  up symbols from the built-in table by name. It also
+	  requires the LLEXTs to be post-processed after build.
+
 module = LLEXT
 module-str = llext
 source "subsys/logging/Kconfig.template.log_config"

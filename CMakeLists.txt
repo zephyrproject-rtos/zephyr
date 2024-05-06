@@ -1888,6 +1888,21 @@ if(CONFIG_BUILD_OUTPUT_INFO_HEADER)
     )
 endif()
 
+if (CONFIG_LLEXT AND CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
+  #slidgen must be the first post-build command to be executed
+  #on the Zephyr ELF to ensure that all other commands, such as
+  #binary file generation, are operating on a preparated ELF.
+  list(PREPEND
+    post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/build/llext_prepare_exptab.py
+    --elf-file ${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}
+    --slid-listing ${PROJECT_BINARY_DIR}/slid_listing.txt
+    -vvv
+  )
+
+endif()
+
 if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
   set(check_init_priorities_input
       $<IF:$<TARGET_EXISTS:native_runner_executable>,${BYPRODUCT_KERNEL_EXE_NAME},${BYPRODUCT_KERNEL_ELF_NAME}>

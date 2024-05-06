@@ -13,6 +13,11 @@ SECTIONS
     {
 
 #include <zephyr/linker/rel-sections.ld>
+
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
+#endif
+
 #ifdef CONFIG_OPENAMP_RSC_TABLE
 
 	SECTION_PROLOGUE(.resource_table,, SUBALIGN(4))
