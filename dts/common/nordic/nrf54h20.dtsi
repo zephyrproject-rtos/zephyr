@@ -217,6 +217,7 @@
 				cc-num = <8>;
 				interrupts = <40 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
+				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -227,6 +228,7 @@
 				cc-num = <8>;
 				interrupts = <41 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
+				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -237,6 +239,7 @@
 				cc-num = <8>;
 				interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
+				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -369,6 +372,7 @@
 				cc-num = <6>;
 				interrupts = <226 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
+				max-frequency = <DT_FREQ_M(320)>;
 				prescaler = <0>;
 			};
 
@@ -379,6 +383,7 @@
 				cc-num = <6>;
 				interrupts = <227 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
+				max-frequency = <DT_FREQ_M(320)>;
 				prescaler = <0>;
 			};
 
