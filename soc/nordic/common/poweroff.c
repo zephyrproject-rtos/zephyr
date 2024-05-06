@@ -8,6 +8,8 @@
 
 #if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF52X)
 #include <hal/nrf_power.h>
+#elif defined(CONFIG_SOC_SERIES_NRF54HX)
+#include <power.h>
 #else
 #include <hal/nrf_regulators.h>
 #endif
@@ -16,6 +18,8 @@ void z_sys_poweroff(void)
 {
 #if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF52X)
 	nrf_power_system_off(NRF_POWER);
+#elif defined(CONFIG_SOC_SERIES_NRF54HX)
+	nrf_poweroff();
 #else
 	nrf_regulators_system_off(NRF_REGULATORS);
 #endif

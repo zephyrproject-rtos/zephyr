@@ -3,7 +3,12 @@
 
 if(CONFIG_ARM)
   zephyr_library_sources(soc.c)
+  if(CONFIG_PM OR CONFIG_POWEROFF)
+    zephyr_library_sources(power.c)
+  endif()
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_PM_S2RAM pm_s2ram.c)
 
 zephyr_include_directories(.)
 
