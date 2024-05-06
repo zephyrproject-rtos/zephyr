@@ -39,4 +39,8 @@ config MFD
 	default y
 	depends on DT_HAS_NXP_LP_FLEXCOMM_ENABLED
 
+choice USB_MCUX_CONTROLLER_TYPE
+	default USB_DC_NXP_EHCI
+endchoice
+
 endif # SOC_FAMILY_NXP_MCX
