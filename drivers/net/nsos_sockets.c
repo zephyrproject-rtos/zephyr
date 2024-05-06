@@ -1024,6 +1024,26 @@ static int nsos_getsockopt(void *obj, int level, int optname,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_KEEPALIVE,
 						   optval, optlen);
 		}
+
+	case IPPROTO_TCP:
+		switch (optname) {
+		case TCP_NODELAY:
+			return nsos_getsockopt_int(sock,
+						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_NODELAY,
+						   optval, optlen);
+		case TCP_KEEPIDLE:
+			return nsos_getsockopt_int(sock,
+						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPIDLE,
+						   optval, optlen);
+		case TCP_KEEPINTVL:
+			return nsos_getsockopt_int(sock,
+						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPINTVL,
+						   optval, optlen);
+		case TCP_KEEPCNT:
+			return nsos_getsockopt_int(sock,
+						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPCNT,
+						   optval, optlen);
+		}
 	}
 
 	errno = EOPNOTSUPP;
@@ -1131,6 +1151,26 @@ static int nsos_setsockopt(void *obj, int level, int optname,
 		case SO_KEEPALIVE:
 			return nsos_setsockopt_int(sock,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_KEEPALIVE,
+						   optval, optlen);
+		}
+
+	case IPPROTO_TCP:
+		switch (optname) {
+		case TCP_NODELAY:
+			return nsos_setsockopt_int(sock,
+						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_NODELAY,
+						   optval, optlen);
+		case TCP_KEEPIDLE:
+			return nsos_setsockopt_int(sock,
+						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPIDLE,
+						   optval, optlen);
+		case TCP_KEEPINTVL:
+			return nsos_setsockopt_int(sock,
+						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPINTVL,
+						   optval, optlen);
+		case TCP_KEEPCNT:
+			return nsos_setsockopt_int(sock,
+						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPCNT,
 						   optval, optlen);
 		}
 	}
