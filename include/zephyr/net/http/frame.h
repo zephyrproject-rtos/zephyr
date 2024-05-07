@@ -9,6 +9,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum http_frame_type {
 	HTTP_SERVER_DATA_FRAME = 0x00,
 	HTTP_SERVER_HEADERS_FRAME = 0x01,
@@ -48,5 +52,9 @@ enum http_settings {
 	HTTP_SETTINGS_MAX_FRAME_SIZE = 5,
 	HTTP_SETTINGS_MAX_HEADER_LIST_SIZE = 6,
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
