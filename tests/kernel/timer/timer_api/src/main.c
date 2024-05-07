@@ -803,10 +803,30 @@ ZTEST_USER(timer_api, test_sleep_abs)
 	 *  time slop or more depending on the time to resume
 	 */
 	k_ticks_t late = end - (start + sleep_ticks);
+	int slop = MAX(2, k_us_to_ticks_ceil32(250));
 
-	zassert_true(late >= 0 && late <= MAX(2, k_us_to_ticks_ceil32(250)),
+	zassert_true(late >= 0 && late <= slop,
 		     "expected wakeup at %lld, got %lld (late %lld)",
 		     start + sleep_ticks, end, late);
+
+	/* Let's test that an absolute delay awakes at the correct time
+	 * even if the system did not get some ticks announcements
+	 */
+	int tickless_wait = 5;
+
+	start = end;
+	k_busy_wait(k_ticks_to_us_ceil32(tickless_wait));
+	/* We expect to not have got <tickless_wait> tick announcements,
+	 * as there is currently nothing scheduled
+	 */
+	k_sleep(K_TIMEOUT_ABS_TICKS(start + sleep_ticks));
+	end = k_uptime_ticks();
+	late = end - (start + sleep_ticks);
+
+	zassert_true(late >= 0 && late <= slop,
+		     "expected wakeup at %lld, got %lld (late %lld)",
+		     start + sleep_ticks, end, late);
+
 }
 
 static void timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
