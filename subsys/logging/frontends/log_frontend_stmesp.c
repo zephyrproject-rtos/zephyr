@@ -6,10 +6,14 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log_frontend.h>
 #include <zephyr/logging/log_frontend_stmesp.h>
+#include <zephyr/logging/log_frontend_stmesp_demux.h>
 #include <zephyr/logging/log_output_dict.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log_msg.h>
 #include <zephyr/sys/cbprintf.h>
+#ifdef CONFIG_NRF_ETR
+#include <zephyr/drivers/misc/coresight/nrf_etr.h>
+#endif
 
 /* Only 32 bit platforms supported. */
 BUILD_ASSERT(sizeof(void *) == sizeof(uint32_t));
@@ -186,16 +190,21 @@ static inline uint32_t early_buf_get_data(void **buf)
 	return 0;
 }
 
-static int early_package_cb(const void *buf, size_t len, void *ctx)
+static void early_buf_put_data(const void *buf, size_t len)
 {
-	ARG_UNUSED(ctx);
-
 	if (early_buf_has_space(len)) {
 		memcpy(&early_buf[early_buf_idx], buf, len);
 		early_buf_idx += len;
 	} else {
 		early_buf_idx = EARLY_BUF_SIZE;
 	}
+}
+
+static int early_package_cb(const void *buf, size_t len, void *ctx)
+{
+	ARG_UNUSED(ctx);
+
+	early_buf_put_data(buf, len);
 
 	return 0;
 }
@@ -259,6 +268,77 @@ static inline void early_msg_end(uint32_t *len_loc)
 		dropped++;
 	}
 }
+
+#if CONFIG_LOG_FRONTEND_STMESP_FSC
+void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_t *package,
+		      const void *data)
+{
+	uint16_t strl[4];
+	union log_frontend_stmesp_demux_header hdr = {.log = {.level = desc.level}};
+	bool use_timestamp = desc.level != LOG_LEVEL_INTERNAL_RAW_STRING;
+	const char *sname;
+	static const char null_c = '\0';
+	size_t sname_len;
+	int package_len;
+	int total_len;
+	static const uint32_t flags = CBPRINTF_PACKAGE_CONVERT_RW_STR |
+				      CBPRINTF_PACKAGE_CONVERT_RO_STR;
+
+	sname = log_source_name_get(0, get_source_id(source));
+	if (sname) {
+		sname_len = strlen(sname) + 1;
+	} else {
+		sname = &null_c;
+		sname_len = 1;
+	}
+	total_len = desc.data_len + sname_len /* null terminator */;
+
+	package_len = cbprintf_package_convert(package, desc.package_len, NULL, NULL, flags,
+					       strl, ARRAY_SIZE(strl));
+	hdr.log.total_len = total_len + package_len;
+	hdr.log.package_len = package_len;
+
+	if ((EARLY_BUF_SIZE == 0) || etr_rdy) {
+		STMESP_Type *stm_esp;
+		int err;
+
+		err = stmesp_get_port(get_channel(), &stm_esp);
+		if (err < 0) {
+			return;
+		}
+
+		STM_D32(stm_esp, hdr.raw, use_timestamp, true);
+		(void)cbprintf_package_convert(package, desc.package_len,
+					       package_cb, stm_esp, flags, strl, ARRAY_SIZE(strl));
+		write_data(sname, sname_len, stm_esp);
+		if (data) {
+			write_data(data, desc.data_len, stm_esp);
+		}
+		packet_end(stm_esp);
+
+	} else {
+		k_spinlock_key_t key = k_spin_lock(&lock);
+
+		if ((EARLY_BUF_SIZE == 0) ||
+		    (early_buf_alloc(hdr.log.total_len + sizeof(hdr)) == false)) {
+			dropped++;
+			k_spin_unlock(&lock, key);
+			return;
+		}
+
+		early_buf_put_data((const uint8_t *)&hdr, sizeof(hdr));
+		(void)cbprintf_package_convert(package, desc.package_len, early_package_cb,
+					       NULL, flags, strl, ARRAY_SIZE(strl));
+		early_buf_put_data(sname, sname_len);
+		if (data) {
+			early_buf_put_data(data, desc.data_len);
+		}
+
+		k_spin_unlock(&lock, key);
+	}
+}
+
+#else /* CONFIG_LOG_FRONTEND_STMESP_FSC  */
 
 void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_t *package,
 		      const void *data)
@@ -417,9 +497,14 @@ void log_frontend_simple_2(const void *source, uint32_t level, const char *fmt, 
 	k_spin_unlock(&lock, key);
 }
 
+#endif /* CONFIG_LOG_FRONTEND_STMESP_FSC */
+
 void log_frontend_panic(void)
 {
 	in_panic = true;
+#ifdef CONFIG_NRF_ETR
+	nrf_etr_flush();
+#endif
 }
 
 void log_frontend_init(void)
