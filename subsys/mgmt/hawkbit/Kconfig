@@ -183,6 +183,11 @@ config HEAP_MEM_POOL_ADD_SIZE_HAWKBIT
 	help
 	  Set the size of the heap memory pool for hawkBit.
 
+config HAWKBIT_EVENT_CALLBACKS
+	bool "Set hawkBit event callbacks"
+	help
+	  Be able to set event callbacks for hawkBit.
+
 module = HAWKBIT
 module-str = Log Level for hawkbit
 module-help = Enables logging for hawkBit code.
