@@ -149,7 +149,7 @@ struct i2c_seciot_cfg{
     uint32_t base;
     uint32_t scl_clk;
     uint32_t sys_clk;
-   // struct k_mutex mutex;
+ //   struct k_mutex mutex;
 };
 
 
@@ -308,6 +308,7 @@ static int i2c_seciot_configure(const struct device *dev,uint32_t dev_config)
    WRITE_TO_REG(confg,I2C_PRESCALE,prescale);
    WRITE_TO_REG(confg,I2C_SCL_DIV,scl_div);
    WRITE_TO_REG(confg,I2C_CONTROL,I2C_IDLE);
+  // k_mutex_init(&(confg->mutex));
 }
 
 
@@ -350,7 +351,7 @@ static int i2c_seciot_transfer(const struct device *dev,struct i2c_msg *msgs,uin
 	if (msgs == NULL) {
 		return -EINVAL;
 	}
-  // k_mutex_lock(&(((struct i2c_seciot_cfg*)(dev->config))->mutex),K_FOREVER);
+// k_mutex_lock(&(((struct i2c_seciot_cfg*)(dev->config))->mutex),K_FOREVER);
     for (int i = 0; i < num_msgs; i++) {
 	    printk("msg :%d\n",msgs[i].flags);
         if (msgs[i].flags & I2C_MSG_READ) {
@@ -359,7 +360,7 @@ static int i2c_seciot_transfer(const struct device *dev,struct i2c_msg *msgs,uin
 	    } else {
 	    	i2c_seciot_write_msg(dev, &(msgs[i]), addr);
 	    }
-  // k_mutex_unlock(&(((struct i2c_seciot_cfg*)(dev->config))->mutex));
+  //k_mutex_unlock(&(((struct i2c_seciot_cfg*)(dev->config))->mutex));
     }
 }
 

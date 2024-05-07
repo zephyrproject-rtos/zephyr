@@ -1078,12 +1078,19 @@ va_end(vl);
     return done;
 }
 
-
-int main(){
+void lcd_run(){
   const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
   printf("Hello world");
   lcd_init(dev,0x27,2,1);
   lcd_setCursor(dev,0x27,0,0);
   lcd_printf(dev,0x27,"Hello world");
-  return 0;
+while(1);
  }
+
+K_THREAD_DEFINE(my_tid, 512,
+                lcd_run, NULL, NULL, NULL,
+                1, 0, 0);
+
+
+
+
