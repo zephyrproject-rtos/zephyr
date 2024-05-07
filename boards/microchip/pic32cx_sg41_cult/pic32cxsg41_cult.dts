@@ -72,7 +72,6 @@
 	clock-frequency = <120000000>;
 };
 
-/*
 &tcc0 {
 	status = "okay";
 	compatible = "atmel,sam0-tcc-pwm";
@@ -83,7 +82,6 @@
 	pinctrl-0 = <&pwm_default>;
 	pinctrl-names = "default";
 };
-*/
 
 &sercom4 {
 	status = "okay";
