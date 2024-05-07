@@ -13,10 +13,12 @@ import os
 import pytest
 import shutil
 import sys
+import re
 
 from lxml import etree
 
-from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock
+# pylint: disable=no-name-in-module
+from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
 
@@ -105,6 +107,15 @@ class TestReport:
             ['qemu_x86'],
             "TEST_LOG_FILE.log"
         ),
+    ]
+    TESTDATA_7 = [
+        (
+            os.path.join(TEST_DATA, 'tests', 'one_fail_two_error_one_pass'),
+            ['qemu_x86'],
+            [r'one_fail_two_error_one_pass.agnostic.group1.subgroup2 on qemu_x86 FAILED \(Failed\)',
+            r'one_fail_two_error_one_pass.agnostic.group1.subgroup3 on qemu_x86 ERROR \(Build failure\)',
+            r'one_fail_two_error_one_pass.agnostic.group1.subgroup4 on qemu_x86 ERROR \(Build failure\)'],
+        )
     ]
 
     @classmethod
@@ -397,3 +408,65 @@ class TestReport:
                 if ts['name'] == expected_rel_path and not 'reason' in ts
             ]
         )
+
+    @pytest.mark.parametrize(
+        'test_path, test_platforms, expected_content',
+        TESTDATA_7,
+        ids=[
+            'Report summary test'
+        ]
+    )
+
+    def test_report_summary(self, out_path, capfd, test_path, test_platforms, expected_content):
+        args = ['-i', '--outdir', out_path, '-T', test_path] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        assert str(sys_exit.value) == '1'
+
+        capfd.readouterr()
+
+        clear_log_in_test()
+
+        args += ['--report-summary']
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+        for line in expected_content:
+            result = re.search(line, err)
+            assert result, f'missing information in log: {line}'
+
+        capfd.readouterr()
+
+        clear_log_in_test()
+
+        args = ['-i', '--outdir', out_path, '-T', test_path] + \
+               ['--report-summary', '2'] + \
+               [val for pair in zip(
+                   ['-p'] * len(test_platforms), test_platforms
+               ) for val in pair]
+
+        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
+                pytest.raises(SystemExit) as sys_exit:
+            self.loader.exec_module(self.twister_module)
+
+        out, err = capfd.readouterr()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+        lines=0
+        for line in expected_content:
+            result = re.search(line, err)
+            if result: lines += 1
+        assert lines == 2, f'too many or too few lines'
