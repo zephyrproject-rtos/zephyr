@@ -708,7 +708,7 @@ static ssize_t nsos_sendmsg(void *obj, const struct msghdr *msg, int flags)
 
 	msg_iov = k_calloc(msg->msg_iovlen, sizeof(*msg_iov));
 	if (!msg_iov) {
-		ret = -ENOMEM;
+		ret = -NSOS_MID_ENOMEM;
 		goto return_ret;
 	}
 
