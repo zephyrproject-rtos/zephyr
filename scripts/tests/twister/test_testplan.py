@@ -709,6 +709,7 @@ def test_testplan_load(
     testplan.testsuites['ts1'].name = 'ts1'
     testplan.testsuites['ts2'].name = 'ts2'
     testplan.options = mock.Mock(
+        report_summary=None,
         outdir=tmp_path,
         report_suffix=report_suffix,
         only_failed=only_failed,
@@ -1451,7 +1452,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
     ts5.name = 'TestSuite 5'
 
     testplan = TestPlan(env=mock.Mock(outdir=os.path.join('out', 'dir')))
-    testplan.options = mock.Mock(device_testing=device_testing, test_only=True)
+    testplan.options = mock.Mock(device_testing=device_testing, test_only=True, report_summary=None)
     testplan.testsuites = {
         'TestSuite 1': ts1,
         'TestSuite 2': ts2,
