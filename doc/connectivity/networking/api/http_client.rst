@@ -1,6 +1,6 @@
-.. _http_interface:
+.. _http_client_interface:
 
-HTTP client
+HTTP Client
 ###########
 
 .. contents::
