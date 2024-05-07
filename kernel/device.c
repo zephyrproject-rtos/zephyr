@@ -59,7 +59,7 @@ static inline const struct device *z_vrfy_device_get_binding(const char *name)
 {
 	char name_copy[Z_DEVICE_MAX_NAME_LEN];
 
-	if (k_usermode_string_copy(name_copy, (char *)name, sizeof(name_copy))
+	if (k_usermode_string_copy(name_copy, name, sizeof(name_copy))
 	    != 0) {
 		return NULL;
 	}

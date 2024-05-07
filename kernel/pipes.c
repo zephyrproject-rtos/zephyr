@@ -519,9 +519,9 @@ int z_vrfy_k_pipe_put(struct k_pipe *pipe, const void *data,
 {
 	K_OOPS(K_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(bytes_written, sizeof(*bytes_written)));
-	K_OOPS(K_SYSCALL_MEMORY_READ((void *)data, bytes_to_write));
+	K_OOPS(K_SYSCALL_MEMORY_READ(data, bytes_to_write));
 
-	return z_impl_k_pipe_put((struct k_pipe *)pipe, data,
+	return z_impl_k_pipe_put(pipe, data,
 				 bytes_to_write, bytes_written, min_xfer,
 				 timeout);
 }
@@ -727,9 +727,9 @@ int z_vrfy_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 {
 	K_OOPS(K_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(bytes_read, sizeof(*bytes_read)));
-	K_OOPS(K_SYSCALL_MEMORY_WRITE((void *)data, bytes_to_read));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(data, bytes_to_read));
 
-	return z_impl_k_pipe_get((struct k_pipe *)pipe, (void *)data,
+	return z_impl_k_pipe_get(pipe, data,
 				bytes_to_read, bytes_read, min_xfer,
 				timeout);
 }
