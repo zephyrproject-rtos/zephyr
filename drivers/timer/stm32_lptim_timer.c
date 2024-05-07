@@ -204,7 +204,22 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	next = pm_policy_next_state(CURRENT_CPU, ticks);
 
-	if ((next != NULL) && idle && (next->state == PM_STATE_SUSPEND_TO_RAM)) {
+	/* Check if STANBY or STOP3 is requested */
+	timeout_stdby = false;
+	if ((next != NULL) && idle) {
+#ifdef CONFIG_PM_S2RAM
+		if (next->state == PM_STATE_SUSPEND_TO_RAM) {
+			timeout_stdby = true;
+		}
+#endif
+#ifdef CONFIG_STM32_STOP3_LP_MODE
+		if ((next->state == PM_STATE_SUSPEND_TO_IDLE) && (next->substate_id == 4)) {
+			timeout_stdby = true;
+		}
+#endif
+	}
+
+	if (timeout_stdby) {
 		uint64_t timeout_us =
 			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
@@ -214,8 +229,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 			.user_data = NULL,
 			.flags = 0,
 		};
-
-		timeout_stdby = true;
 
 		/* Set the alarm using timer that runs the standby.
 		 * Needed rump-up/setting time, lower accurency etc. should be

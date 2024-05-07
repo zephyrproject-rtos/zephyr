@@ -65,6 +65,13 @@
 				substate-id = <3>;
 				min-residency-us = <900>;
 			};
+			/omit-if-no-ref/ stop3: state3 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <4>;
+				min-residency-us = <200000>;
+				exit-latency-us = <130>;
+			};
 		};
 	};
 
