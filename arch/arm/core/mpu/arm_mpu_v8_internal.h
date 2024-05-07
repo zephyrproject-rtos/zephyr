@@ -408,7 +408,7 @@ static inline int is_user_accessible_region(uint32_t rnr, int write)
  * This internal function validates whether a given memory buffer
  * is user accessible or not.
  */
-static inline int mpu_buffer_validate(void *addr, size_t size, int write)
+static inline int mpu_buffer_validate(const void *addr, size_t size, int write)
 {
 	int32_t rnr;
 	int rc = -EPERM;
@@ -455,7 +455,7 @@ static inline int mpu_buffer_validate(void *addr, size_t size, int write)
  * in case the fast address range check fails.
  *
  */
-static inline int mpu_buffer_validate(void *addr, size_t size, int write)
+static inline int mpu_buffer_validate(const void *addr, size_t size, int write)
 {
 	uint32_t _addr = (uint32_t)addr;
 	uint32_t _size = (uint32_t)size;
