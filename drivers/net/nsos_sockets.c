@@ -481,6 +481,65 @@ static int sockaddr_from_nsos_mid(struct sockaddr *addr, socklen_t *addrlen,
 	return -NSOS_MID_EINVAL;
 }
 
+static int nsos_wait_for_poll(struct nsos_socket *sock, int events,
+			      k_timeout_t timeout)
+{
+	struct zsock_pollfd pfd = {
+		.fd = sock->fd,
+		.events = events,
+	};
+	struct k_poll_event poll_events[1];
+	struct k_poll_event *pev = poll_events;
+	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
+	int ret;
+
+	ret = nsos_poll_prepare(sock, &pfd, &pev, pev_end);
+	if (ret == -EALREADY) {
+		ret = 0;
+		goto poll_update;
+	} else if (ret < 0) {
+		goto return_ret;
+	}
+
+	ret = k_poll(poll_events, ARRAY_SIZE(poll_events), timeout);
+	if (ret != 0 && ret != -EAGAIN && ret != -EINTR) {
+		goto poll_update;
+	}
+
+	ret = 0;
+
+poll_update:
+	pev = poll_events;
+	nsos_poll_update(sock, &pfd, &pev);
+
+return_ret:
+	if (ret < 0) {
+		return -errno_to_nsos_mid(-ret);
+	}
+
+	return 0;
+}
+
+static int nsos_poll_if_blocking(struct nsos_socket *sock, int events,
+				 k_timeout_t timeout, int flags)
+{
+	int sock_flags;
+	bool non_blocking;
+
+	if (flags & ZSOCK_MSG_DONTWAIT) {
+		non_blocking = true;
+	} else {
+		sock_flags = nsos_adapt_fcntl_getfl(sock->pollfd.fd);
+		non_blocking = sock_flags & NSOS_MID_O_NONBLOCK;
+	}
+
+	if (!non_blocking) {
+		return nsos_wait_for_poll(sock, events, timeout);
+	}
+
+	return 0;
+}
+
 static int nsos_bind(void *obj, const struct sockaddr *addr, socklen_t addrlen)
 {
 	struct nsos_socket *sock = obj;
@@ -543,59 +602,6 @@ static int nsos_listen(void *obj, int backlog)
 	return ret;
 }
 
-static int nsos_wait_for_pollin(struct nsos_socket *sock)
-{
-	struct zsock_pollfd pfd = {
-		.fd = sock->fd,
-		.events = ZSOCK_POLLIN,
-	};
-	struct k_poll_event poll_events[1];
-	struct k_poll_event *pev = poll_events;
-	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
-	int ret;
-
-	ret = nsos_poll_prepare(sock, &pfd, &pev, pev_end);
-	if (ret == -EALREADY) {
-		return 0;
-	} else if (ret < 0) {
-		return ret;
-	}
-
-	ret = k_poll(poll_events, ARRAY_SIZE(poll_events), sock->recv_timeout);
-	if (ret != 0 && ret != -EAGAIN && ret != -EINTR) {
-		return ret;
-	}
-
-	pev = poll_events;
-	nsos_poll_update(sock, &pfd, &pev);
-
-	return 0;
-}
-
-static int nsos_accept_with_poll(struct nsos_socket *sock,
-				 struct nsos_mid_sockaddr *addr_mid,
-				 size_t *addrlen_mid)
-{
-	int ret = 0;
-	int flags;
-
-	flags = nsos_adapt_fcntl_getfl(sock->pollfd.fd);
-
-	if (!(flags & NSOS_MID_O_NONBLOCK)) {
-		ret = nsos_wait_for_pollin(sock);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	ret = nsos_adapt_accept(sock->pollfd.fd, addr_mid, addrlen_mid);
-	if (ret < 0) {
-		return -errno_from_nsos_mid(-ret);
-	}
-
-	return ret;
-}
-
 static int nsos_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
 {
 	struct nsos_socket *accept_sock = obj;
@@ -607,29 +613,33 @@ static int nsos_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
 	struct nsos_socket *conn_sock;
 	int ret;
 
-	ret = nsos_accept_with_poll(accept_sock, addr_mid, &addrlen_mid);
+	ret = nsos_poll_if_blocking(accept_sock, ZSOCK_POLLIN,
+				    accept_sock->recv_timeout, 0);
 	if (ret < 0) {
-		errno = errno_from_nsos_mid(-ret);
-		return -1;
+		goto return_ret;
+	}
+
+	ret = nsos_adapt_accept(accept_sock->pollfd.fd, addr_mid, &addrlen_mid);
+	if (ret < 0) {
+		goto return_ret;
 	}
 
 	adapt_fd = ret;
 
 	ret = sockaddr_from_nsos_mid(addr, addrlen, addr_mid, addrlen_mid);
 	if (ret < 0) {
-		errno = errno_from_nsos_mid(-ret);
 		goto close_adapt_fd;
 	}
 
 	zephyr_fd = z_reserve_fd();
 	if (zephyr_fd < 0) {
-		errno = -zephyr_fd;
+		ret = -errno_to_nsos_mid(-zephyr_fd);
 		goto close_adapt_fd;
 	}
 
 	conn_sock = k_malloc(sizeof(*conn_sock));
 	if (!conn_sock) {
-		errno = ENOMEM;
+		ret = -NSOS_MID_ENOMEM;
 		goto free_zephyr_fd;
 	}
 
@@ -646,6 +656,8 @@ free_zephyr_fd:
 close_adapt_fd:
 	nsi_host_close(adapt_fd);
 
+return_ret:
+	errno = errno_from_nsos_mid(-ret);
 	return -1;
 }
 
@@ -738,36 +750,6 @@ return_ret:
 	return ret;
 }
 
-static int nsos_recvfrom_with_poll(struct nsos_socket *sock, void *buf, size_t len, int flags,
-				   struct nsos_mid_sockaddr *addr_mid, size_t *addrlen_mid)
-{
-	int ret = 0;
-	int sock_flags;
-	bool non_blocking;
-
-	if (flags & ZSOCK_MSG_DONTWAIT) {
-		non_blocking = true;
-	} else {
-		sock_flags = nsos_adapt_fcntl_getfl(sock->pollfd.fd);
-		non_blocking = sock_flags & NSOS_MID_O_NONBLOCK;
-	}
-
-	if (!non_blocking) {
-		ret = nsos_wait_for_pollin(sock);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	ret = nsos_adapt_recvfrom(sock->pollfd.fd, buf, len, flags,
-				  addr_mid, addrlen_mid);
-	if (ret < 0) {
-		return -errno_from_nsos_mid(-ret);
-	}
-
-	return ret;
-}
-
 static ssize_t nsos_recvfrom(void *obj, void *buf, size_t len, int flags,
 			     struct sockaddr *addr, socklen_t *addrlen)
 {
@@ -785,8 +767,13 @@ static ssize_t nsos_recvfrom(void *obj, void *buf, size_t len, int flags,
 
 	flags_mid = ret;
 
-	ret = nsos_recvfrom_with_poll(sock, buf, len, flags_mid,
-				      addr_mid, &addrlen_mid);
+	ret = nsos_poll_if_blocking(sock, ZSOCK_POLLIN, sock->recv_timeout, flags);
+	if (ret < 0) {
+		goto return_ret;
+	}
+
+	ret = nsos_adapt_recvfrom(sock->pollfd.fd, buf, len, flags_mid,
+				  addr_mid, &addrlen_mid);
 	if (ret < 0) {
 		goto return_ret;
 	}
