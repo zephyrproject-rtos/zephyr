@@ -79,19 +79,20 @@
 #define PWM_MODULE_OFFSET 0x00000100 /*Offset value to be incremented for each interface*/
 
 /*!Pulse Width Modulation Offsets */
-#define PWM_START_0 0x00030000 /* Pulse Width Modulation 0 */
-#define PWM_START_1 0x00030100 /* Pulse Width Modulation 1 */
-#define PWM_START_2 0x00030200 /* Pulse Width Modulation 2 */
-#define PWM_START_3 0x00030300 /* Pulse Width Modulation 3 */
-#define PWM_START_4 0x00030400 /* Pulse Width Modulation 4 */
-#define PWM_START_5 0x00030500 /* Pulse Width Modulation 5 */
-#define PWM_START_6 0x00030600 /* Pulse Width Modulation 6 */
-#define PWM_START_7 0x00030700 /* Pulse Width Modulation 7 */
+#define PWM_START_0 0x00030000 	/* Pulse Width Modulation 0 */
+#define PWM_START_1 0x00030100 	/* Pulse Width Modulation 1 */
+#define PWM_START_2 0x00030200 	/* Pulse Width Modulation 2 */
+#define PWM_START_3 0x00030300 	/* Pulse Width Modulation 3 */
+#define PWM_START_4 0x00030400 	/* Pulse Width Modulation 4 */
+#define PWM_START_5 0x00030500	/* Pulse Width Modulation 5 */
+#define PWM_START_6 0x00030600 	/* Pulse Width Modulation 6 */
+#define PWM_START_7 0x00030700 	/* Pulse Width Modulation 7 */
 
 /*pinmux*/
 #define PINMUX_START 0x40300 			/*Pinmux start address*/
 #define PINMUX_CONFIGURE_REG 0x40300	/*Pinmux configuration register*/
 
+/*Interrupt enum*/
 typedef enum
 {
 	rise_interrupt,				//Enable interrupt only on rise
@@ -101,20 +102,23 @@ typedef enum
 }pwm_interrupt_modes;
 
 /* Structure Declarations */
+/* PWM registers*/
 typedef struct
 {
-  uint16_t clock;       	/*! pwm clock register 16 bits*/
-  uint16_t reserved0;		/*! reserved for future use and currently has no defined purpose 16 bits*/
-  uint16_t control;     	/*! pwm control register 16 bits*/
-  uint16_t reserved1;   	/*! reserved for future use and currently has no defined purpose 16 bits*/
-  uint32_t period;      	/*! pwm period register 32 bits */
-  uint32_t duty;        	/*! pwm duty cycle register 32 bits*/
-  uint16_t deadband_delay;	/*! pwm deadband delay register 16 bits */
-  uint16_t reserved2;		/*! reserved for future use and currently has no defined purpose 16 bits*/
+  uint16_t clock;       	/*pwm clock register 16 bits*/
+  uint16_t reserved0;		/*reserved for future use and currently has no defined purpose 16 bits*/
+  uint16_t control;     	/*pwm control register 16 bits*/
+  uint16_t reserved1;   	/*reserved for future use and currently has no defined purpose 16 bits*/
+  uint32_t period;      	/*pwm period register 32 bits */
+  uint32_t duty;        	/*pwm duty cycle register 32 bits*/
+  uint16_t deadband_delay;	/*pwm deadband delay register 16 bits */
+  uint16_t reserved2;		/*reserved for future use and currently has no defined purpose 16 bits*/
 }pwm_struct;
 
+/*Data structure*/
 struct pwm_shakti_data {};
 
+/*Zephyr configuration structure*/
 struct pwm_shakti_cfg {
 	uint32_t base;
 	uint32_t f_sys;
@@ -122,10 +126,8 @@ struct pwm_shakti_cfg {
 	const struct pinctrl_dev_config *pcfg;
 };
 
-
 volatile pwm_struct *pwm_instance[PWM_MAX_COUNT];
 volatile unsigned int* pinmux_config_reg = (volatile unsigned int* ) PINMUX_CONFIGURE_REG;
-int db_config[] = DT_PROP(DT_NODELABEL(pwm0), db_configure);
 
 /* Functions */
 
@@ -153,7 +155,7 @@ static int pwm_shakti_init(const struct device *dev)
  *            uint32_t (value - value to be set between 0x0000 to 0xffff.)
  * @param[Out] uint32_t (returns 1 on success, 0 on failure.)
  */
-int pwm_set_control(const struct device *dev,int channel, uint32_t value)
+int pwm_set_control(int channel, uint32_t value)
 {
 	pwm_instance[channel]->control |= value;
 	return 1;
@@ -163,11 +165,11 @@ int pwm_set_control(const struct device *dev,int channel, uint32_t value)
  * @brief Function to set the prescalar value of a specific pwm cluster		
  * @details This function will set the prescalar value of a specific pwm cluster
  * @param[in] dev The device declared in devicetree
- *            uint32_t (cluster_number-  the pwm cluster to be selected)
+ *            uint32_t (channel-  the pwm channel to be selected)
  *            uint32_t (prescalar_value-  value of prescalar values which is used to divide the clock frequency.)
  * @param[Out] No output parameter
  */
-void pwm_set_prescalar_value(const struct device *dev,int channel, uint16_t prescalar_value)
+void pwm_set_prescalar_value(int channel, uint16_t prescalar_value)
 {
 	printf("\nchannel %d",channel);
 	printf("\n1");
@@ -231,7 +233,7 @@ inline int configure_control(bool update, pwm_interrupt_modes interrupt_mode, bo
  *           bool (change_output_polarity - value of change_output_polarity. It specifies if output polarity is to be changed.)
  * @param[Out] No output parameter
  */
-void pwm_configure(const struct device *dev,int channel, uint32_t period, uint32_t duty, pwm_interrupt_modes interrupt_mode, uint32_t deadband_delay, bool change_output_polarity)
+void pwm_configure(int channel, uint32_t period, uint32_t duty, pwm_interrupt_modes interrupt_mode, uint32_t deadband_delay, bool change_output_polarity)
 {
 	printf("\n3");
 	pwm_instance[channel]->duty=duty;                    
@@ -249,7 +251,7 @@ void pwm_configure(const struct device *dev,int channel, uint32_t period, uint32
  * @param[in] uint32_t (channel-  the pwm module to be selected)
  * @param[Out] No output parameter
  */
-void pwm_start(const struct device *dev,int channel)
+void pwm_start(int channel)
 {
 	printf("\n4");
 	int value= 0x0;
@@ -260,7 +262,12 @@ void pwm_start(const struct device *dev,int channel)
 	pwm_instance[channel]->control = value;
 }
 
-
+/** @fn pinmux_enable_pwm
+ * @brief Function to configure the pin as pwm module
+ * @details This function will be called to configure the pin as pwm module
+ * @param[in] uint32_t (num - specifies the pwm module to be selected)
+ * @param[Out] No output parameter
+ */
 void pinmux_enable_pwm(int num)
 {
 	if (num < 8)
@@ -269,6 +276,20 @@ void pinmux_enable_pwm(int num)
 	}
 	else
 		printf("Max pinmuxed PWMs are 8");
+}
+
+/** @fn pwm_clear
+ * @brief Function to clear all registers in a specific pwm module
+ * @details This function will be called to clear all registers in a specific pwm module
+ * @param[in] uint32_t (pwm_number- specifies the pwm module to be selected)
+ * @param[Out] No output parameter
+ */
+void pwm_clear(const struct device *dev, int channel)
+{
+	pwm_instance[channel]->control=0;
+	pwm_instance[channel]->duty=0;
+	pwm_instance[channel]->period=0;
+	pwm_instance[channel]->deadband_delay=0;
 }
 
 /** @fn pwm_shakti_set_cycles
@@ -284,21 +305,74 @@ void pinmux_enable_pwm(int num)
 static int pwm_shakti_set_cycles(const struct device *dev, uint32_t channel,uint32_t period_cycles, uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_shakti_cfg *cfg = dev->config;
-	//db_configure(deadband_delay,polarity,control_reg,prescale)
-	uint32_t deadband_delay = db_config[0];
-	uint32_t control_reg = db_config[1];
-	uint16_t prescale = db_config[2];
-	bool polarity = 0;
+	uint32_t deadband_delay;	/*32bit field to store deadband delay value*/ 
+	uint32_t control_reg;		/*32bit field to store control register value*/
+	uint16_t prescale;			/*32bit field to store prescale value*/
+
+	/*Switch case to obtain deadband delay, control register value and prescale from the devicetree for the given channel*/
+	switch (channel)
+	{
+	case PWM_0:
+		int db_config0[] = DT_PROP(DT_NODELABEL(pwm0), db_configure);
+		deadband_delay = db_config0[0];
+		control_reg = db_config0[1];
+		prescale = db_config0[2];
+		break;
+	case PWM_1:
+		int db_config1[] = DT_PROP(DT_NODELABEL(pwm1), db_configure);
+		deadband_delay = db_config1[0];
+		control_reg = db_config1[1];
+		prescale = db_config1[2];
+		break;
+	case PWM_2:
+		int db_config2[] = DT_PROP(DT_NODELABEL(pwm2), db_configure);
+		deadband_delay = db_config2[0];
+		control_reg = db_config2[1];
+		prescale = db_config2[2];
+		break;
+	case PWM_3:
+		int db_config3[] = DT_PROP(DT_NODELABEL(pwm3), db_configure);
+		deadband_delay = db_config3[0];
+		control_reg = db_config3[1];
+		prescale = db_config3[2];
+		break;
+	case PWM_4:
+		int db_config4[] = DT_PROP(DT_NODELABEL(pwm4), db_configure);
+		deadband_delay = db_config4[0];
+		control_reg = db_config4[1];
+		prescale = db_config4[2];
+		break;
+	case PWM_5:
+		int db_config5[] = DT_PROP(DT_NODELABEL(pwm5), db_configure);
+		deadband_delay = db_config5[0];
+		control_reg = db_config5[1];
+		prescale = db_config5[2];
+		break;
+	case PWM_6:
+		int db_config6[] = DT_PROP(DT_NODELABEL(pwm6), db_configure);
+		deadband_delay = db_config6[0];
+		control_reg = db_config6[1];
+		prescale = db_config6[2];
+		break;
+	case PWM_7:
+		int db_config7[] = DT_PROP(DT_NODELABEL(pwm7), db_configure);
+		deadband_delay = db_config7[0];
+		control_reg = db_config7[1];
+		prescale = db_config7[2];
+		break;
+	default:
+		break;
+	}
 
 	printf("\ndeadband_delay %u",deadband_delay);
 	printf("\ncontrol_reg %u",control_reg);
 	printf("\nprescale value %u",prescale);
 
 	pinmux_enable_pwm(channel);
-	pwm_set_prescalar_value(dev,channel, prescale);
-    pwm_configure(dev,channel, period_cycles, pulse_cycles, no_interrupt, deadband_delay, polarity);
-    pwm_set_control(dev,channel, control_reg);
-    pwm_start(dev,channel);
+	pwm_set_prescalar_value(channel, prescale);
+    pwm_configure(channel, period_cycles, pulse_cycles, no_interrupt, deadband_delay, flags);
+    pwm_set_control(channel, control_reg);
+    pwm_start(channel);
 }
 
 /* Device Instantiation */
