@@ -410,6 +410,9 @@ struct bt_bap_ep_info {
 	 *  otherwise NULL
 	 */
 	struct bt_bap_ep *paired_ep;
+
+	/** Pointer to the preferred QoS settings associated with the endpoint */
+	const struct bt_audio_codec_qos_pref *qos_pref;
 };
 
 /**
