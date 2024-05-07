@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2024 Microchip
  *
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -13,7 +14,9 @@
 
 #include <zephyr/types.h>
 
-#if defined(CONFIG_SOC_PIC32CX1025SG41100)
+#if defined(CONFIG_SOC_PIC32CX1025SG41064)
+#include <pic32cx1025sg41064.h>
+#elif defined(CONFIG_SOC_PIC32CX1025SG41100)
 #include <pic32cx1025sg41100.h>
 #elif defined(CONFIG_SOC_PIC32CX1025SG41128)
 #include <pic32cx1025sg41128.h>

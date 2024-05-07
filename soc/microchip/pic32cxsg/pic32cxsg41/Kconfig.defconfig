@@ -1,6 +1,7 @@
 # Microchip PIC32CXSG MCU series configuration options
 
 # Copyright (c) 2024 Microchip
+
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_PIC32CXSG
