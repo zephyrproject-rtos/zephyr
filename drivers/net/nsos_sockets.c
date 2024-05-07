@@ -624,6 +624,7 @@ static int nsos_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
 
 	zephyr_fd = z_reserve_fd();
 	if (zephyr_fd < 0) {
+		errno = -zephyr_fd;
 		goto close_adapt_fd;
 	}
 
