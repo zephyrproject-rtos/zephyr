@@ -40,7 +40,11 @@ bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
 
 #define _priq_run_add		z_priq_mq_add
 #define _priq_run_remove	z_priq_mq_remove
-#define _priq_run_best		z_priq_mq_best
+# if defined(CONFIG_SCHED_CPU_MASK)
+#  define _priq_run_best	_priq_mq_mask_best
+# else
+#  define _priq_run_best	z_priq_mq_best
+#endif
 static ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq, struct k_thread *thread);
 static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq, struct k_thread *thread);
 #endif
@@ -199,6 +203,66 @@ static ALWAYS_INLINE struct k_thread *z_priq_dumb_mask_best(sys_dlist_t *pq)
 	}
 	return NULL;
 }
+
+#if defined(CONFIG_SCHED_MULTIQ)
+
+static ALWAYS_INLINE struct k_thread *_priq_mq_mask_best_idx(struct _priq_mq *pq,
+									uint32_t bitmask_idx)
+{
+	/* Search a specific bitmask to find a thread which can run on the
+	 * cpu.
+	 */
+	sys_dlist_t *l;
+	struct k_thread *thread = NULL;
+	uint32_t q_idx = 0;
+
+#ifdef CONFIG_64BIT
+	uint64_t bit;
+	uint64_t mask = pq->bitmask[bitmask_idx];
+#else
+	uint32_t bit;
+	uint32_t mask = pq->bitmask[bitmask_idx];
+#endif
+
+	for (; mask != 0; mask &= ~BIT(bit)) {
+
+#ifdef CONFIG_64BIT
+		bit = u64_count_trailing_zeros(pq->bitmask[bitmask_idx] & mask);
+		q_idx = bitmask_idx * 64 + bit;
+#else
+		bit = u32_count_trailing_zeros(pq->bitmask[bitmask_idx] & mask);
+		q_idx = bitmask_idx * 32 + bit;
+#endif
+
+		l = &pq->queues[q_idx];
+		thread = z_priq_dumb_mask_best(l);
+
+		if (thread != NULL) {
+			break;
+		}
+	}
+
+	return thread;
+}
+
+static ALWAYS_INLINE struct k_thread *_priq_mq_mask_best(struct _priq_mq *pq)
+{
+	/* Iterator each bitmask to find a thread which can run on
+	 * this cpu.
+	 */
+	struct k_thread *thread = NULL;
+
+	for (int i = 0; i < PRIQ_BITMAP_SIZE; ++i) {
+		thread = _priq_mq_mask_best_idx(pq, i);
+		if (thread != NULL) {
+			break;
+		}
+	}
+
+	return thread;
+}
+
+#endif /* CONFIG_SCHED_MULTIQ */
 #endif /* CONFIG_SCHED_CPU_MASK */
 
 

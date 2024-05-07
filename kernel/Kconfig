@@ -120,15 +120,15 @@ config SCHED_DEADLINE
 
 config SCHED_CPU_MASK
 	bool "CPU mask affinity/pinning API"
-	depends on SCHED_DUMB
+	depends on SCHED_DUMB || SCHED_MULTIQ
 	help
 	  When true, the application will have access to the
 	  k_thread_cpu_mask_*() APIs which control per-CPU affinity masks in
 	  SMP mode, allowing applications to pin threads to specific CPUs or
 	  disallow threads from running on given CPUs.  Note that as currently
 	  implemented, this involves an inherent O(N) scaling in the number of
-	  idle-but-runnable threads, and thus works only with the DUMB
-	  scheduler (as SCALABLE and MULTIQ would see no benefit).
+	  idle-but-runnable threads, and thus works with the DUMB and MULTIQ
+	  scheduler (as SCALABLE would see no benefit).
 
 	  Note that this setting does not technically depend on SMP and is
 	  implemented without it for testing purposes, but for obvious reasons
@@ -138,7 +138,7 @@ config SCHED_CPU_MASK
 
 config SCHED_CPU_MASK_PIN_ONLY
 	bool "CPU mask variant with single-CPU pinning only"
-	depends on SMP && SCHED_CPU_MASK
+	depends on SMP && SCHED_CPU_MASK && !SCHED_MULTIQ
 	help
 	  When true, enables a variant of SCHED_CPU_MASK where only
 	  one CPU may be specified for every thread.  Effectively, all
