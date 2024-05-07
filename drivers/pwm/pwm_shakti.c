@@ -150,9 +150,8 @@ static int pwm_shakti_init(const struct device *dev)
 /** @fn  pwm_set_control
  * @brief Function to set the control register of the selected pwm module
  * @details This function will be called to set the value of the control register for the selected module
- * @param[in] dev The device declared in devicetree
- * 			  uint32_t (channel- specifies the pwm smodule to be selected)
- *            uint32_t (value - value to be set between 0x0000 to 0xffff.)
+ * @param[in] uint32_t (channel- specifies the pwm smodule to be selected)
+ * @param[in] uint32_t (value - value to be set between 0x0000 to 0xffff.)
  * @param[Out] uint32_t (returns 1 on success, 0 on failure.)
  */
 int pwm_set_control(int channel, uint32_t value)
@@ -164,9 +163,8 @@ int pwm_set_control(int channel, uint32_t value)
 /** @fn pwm_set_prescalar_value
  * @brief Function to set the prescalar value of a specific pwm cluster		
  * @details This function will set the prescalar value of a specific pwm cluster
- * @param[in] dev The device declared in devicetree
- *            uint32_t (channel-  the pwm channel to be selected)
- *            uint32_t (prescalar_value-  value of prescalar values which is used to divide the clock frequency.)
+ * @param[in] uint32_t (channel-  the pwm channel to be selected)
+ * @param[in] uint32_t (prescalar_value-  value of prescalar values which is used to divide the clock frequency.)
  * @param[Out] No output parameter
  */
 void pwm_set_prescalar_value(int channel, uint16_t prescalar_value)
@@ -224,13 +222,12 @@ inline int configure_control(bool update, pwm_interrupt_modes interrupt_mode, bo
 /** @fn  pwm_configure
  * @brief Function to configure the pwm module with all the values required like channel, period, duty, interrupt_mode, deadband_delay, change_output_polarity_
  * @details This function configure the pwm module
- * @param[in] dev The device declared in devicetree
- * 			 uint32_t (channel - the pwm module to be selected)
- *           uint32_t(period - value of periodic cycle to be used. the signal resets after every count of the periodic cycle)
- *           uint32_t(duty - value of duty cycle. It specifies how many cycles the signal is active out of the periodic cycle )
- *           pwm_interrupt_modes(interrupt_mode - value of interrupt mode. It specifies the interrupt mode to be used)
- *           uint32_t(deadband_delay - value of deadband_delay. It specifies the deadband_delay to be used.)
- *           bool (change_output_polarity - value of change_output_polarity. It specifies if output polarity is to be changed.)
+ * @param[in] uint32_t (channel - the pwm module to be selected)
+ * @param[in] uint32_t(period - value of periodic cycle to be used. the signal resets after every count of the periodic cycle)
+ * @param[in] uint32_t(duty - value of duty cycle. It specifies how many cycles the signal is active out of the periodic cycle )
+ * @param[in] pwm_interrupt_modes(interrupt_mode - value of interrupt mode. It specifies the interrupt mode to be used)
+ * @param[in] uint32_t(deadband_delay - value of deadband_delay. It specifies the deadband_delay to be used.)
+ * @param[in] bool (change_output_polarity - value of change_output_polarity. It specifies if output polarity is to be changed.)
  * @param[Out] No output parameter
  */
 void pwm_configure(int channel, uint32_t period, uint32_t duty, pwm_interrupt_modes interrupt_mode, uint32_t deadband_delay, bool change_output_polarity)
