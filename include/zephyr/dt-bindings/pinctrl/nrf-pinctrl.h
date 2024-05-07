@@ -147,6 +147,10 @@
 #define NRF_FUN_EXMIF_CS0 44U
 /** EXMIF CS1 */
 #define NRF_FUN_EXMIF_CS1 45U
+/** CAN TX */
+#define NRF_FUN_CAN_TX 46U
+/** CAN RX */
+#define NRF_FUN_CAN_RX 47U
 
 /** @} */
 
