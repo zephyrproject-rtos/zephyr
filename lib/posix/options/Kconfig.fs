@@ -2,15 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig POSIX_FS
+menuconfig POSIX_FILE_SYSTEM
 	bool "POSIX file system API support"
 	default y if POSIX_API
-	depends on FILE_SYSTEM
+	select FILE_SYSTEM
 	select FDTABLE
 	help
 	  This enables POSIX style file system related APIs.
 
-if POSIX_FS
+if POSIX_FILE_SYSTEM
 
 config POSIX_MAX_OPEN_FILES
 	int "Maximum number of open file descriptors"
@@ -25,4 +25,4 @@ config POSIX_FSYNC
 	help
 	  This enables fsync() support.
 
-endif # POSIX_FS
+endif # POSIX_FILE_SYSTEM

@@ -6,6 +6,13 @@
 
 menu "Deprecated POSIX options"
 
+config POSIX_CLOCK
+	bool "clock and sleep APIs"
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_TIMERS instead.
+
 config MAX_PTHREAD_COUNT
 	int "Maximum number of pthread_t [DEPRECATED]"
 	default POSIX_THREAD_THREADS_MAX
@@ -95,5 +102,37 @@ config PTHREAD_SPINLOCK
 	  This option is deprecated.
 
 	  Please use CONFIG_POSIX_SPIN_LOCKS instead.
+
+config POSIX_MAX_FDS
+	int "Maximum number of open file descriptors [DEPRECATED]"
+	default 0
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_OPEN_MAX instead.
+
+config MSG_COUNT_MAX
+	int "Maximum number of messages in message queue [DEPRECATED]"
+	default 0
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_OPEN_MAX instead.
+
+config SEM_NAMELEN_MAX
+	int "Maximum name length [DEPRECATED]"
+	default 0
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_SEM_NAMELEN_MAX instead.
+
+config SEM_VALUE_MAX
+	int "Maximum semaphore limit [DEPRECATED]"
+	default 0
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_SEM_VALUE_MAX instead.
 
 endmenu # POSIX_DEPRECATED

@@ -60,21 +60,23 @@ struct itimerspec {
 #include <errno.h>
 #include "posix_types.h"
 #include <zephyr/posix/signal.h>
+#include <zephyr/posix/sys/features.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifndef CLOCK_REALTIME
-#define CLOCK_REALTIME 1
-#endif
+#undef CLOCK_REALTIME
+#define CLOCK_REALTIME ((clockid_t)1)
 
-#ifndef CLOCK_PROCESS_CPUTIME_ID
-#define CLOCK_PROCESS_CPUTIME_ID 2
-#endif
+#if defined(_POSIX_CPUTIME) || defined(__DOXYGEN__)
+#undef CLOCK_PROCESS_CPUTIME_ID
+#define CLOCK_PROCESS_CPUTIME_ID ((clockid_t)2)
+#endif /* defined(_POSIX_CPUTIME) || defined(__DOXYGEN__) */
 
-#ifndef CLOCK_MONOTONIC
-#define CLOCK_MONOTONIC 4
+#if defined(_POSIX_MONOTONIC_CLOCK) || defined(__DOXYGEN__)
+#undef CLOCK_MONOTONIC
+#define CLOCK_MONOTONIC ((clockid_t)4)
 #endif
 
 #ifndef TIMER_ABSTIME
@@ -86,11 +88,12 @@ static inline int32_t _ts_to_ms(const struct timespec *to)
 	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC);
 }
 
+#if defined(_POSIX_TIMERS) || defined(__DOXYGEN__)
+
+/* Timer APIs */
 int clock_gettime(clockid_t clock_id, struct timespec *ts);
 int clock_getres(clockid_t clock_id, struct timespec *ts);
 int clock_settime(clockid_t clock_id, const struct timespec *ts);
-int clock_getcpuclockid(pid_t pid, clockid_t *clock_id);
-/* Timer APIs */
 int timer_create(clockid_t clockId, struct sigevent *evp, timer_t *timerid);
 int timer_delete(timer_t timerid);
 int timer_gettime(timer_t timerid, struct itimerspec *its);
@@ -98,8 +101,23 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 		  struct itimerspec *ovalue);
 int timer_getoverrun(timer_t timerid);
 int nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
+
+#endif /* defined(_POSIX_TIMERS) || defined(__DOXYGEN__) */
+
+#if defined(_POSIX_CLOCK_SELECTION)
 int clock_nanosleep(clockid_t clock_id, int flags,
 		    const struct timespec *rqtp, struct timespec *rmtp);
+#endif /* defined(_POSIX_CLOCK_SELECTION) */
+
+#if defined(_POSIX_CPUTIME) || defined(__DOXYGEN__)
+
+#ifndef CLOCK_PROCESS_CPUTIME_ID
+#define CLOCK_PROCESS_CPUTIME_ID ((clockid_t)2)
+#endif
+
+int clock_getcpuclockid(pid_t pid, clockid_t *clock_id);
+
+#endif /* defined(_POSIX_CPUTIME) || defined(__DOXYGEN__) */
 
 #ifdef __cplusplus
 }

@@ -120,7 +120,7 @@ int sem_getvalue(sem_t *semaphore, int *value)
  */
 int sem_init(sem_t *semaphore, int pshared, unsigned int value)
 {
-	if (value > CONFIG_SEM_VALUE_MAX) {
+	if (value > CONFIG_POSIX_SEM_VALUE_MAX) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -131,7 +131,7 @@ int sem_init(sem_t *semaphore, int pshared, unsigned int value)
 	 */
 	__ASSERT(pshared == 0, "pshared should be 0");
 
-	k_sem_init(semaphore, value, CONFIG_SEM_VALUE_MAX);
+	k_sem_init(semaphore, value, CONFIG_POSIX_SEM_VALUE_MAX);
 
 	return 0;
 }
@@ -232,7 +232,7 @@ sem_t *sem_open(const char *name, int oflags, ...)
 	value = va_arg(va, unsigned int);
 	va_end(va);
 
-	if (value > CONFIG_SEM_VALUE_MAX) {
+	if (value > CONFIG_POSIX_SEM_VALUE_MAX) {
 		errno = EINVAL;
 		return (sem_t *)SEM_FAILED;
 	}
@@ -243,7 +243,7 @@ sem_t *sem_open(const char *name, int oflags, ...)
 	}
 
 	namelen = strlen(name);
-	if ((namelen + 1) > CONFIG_SEM_NAMELEN_MAX) {
+	if ((namelen + 1) > CONFIG_POSIX_SEM_NAMELEN_MAX) {
 		errno = ENAMETOOLONG;
 		return (sem_t *)SEM_FAILED;
 	}
@@ -272,6 +272,11 @@ sem_t *sem_open(const char *name, int oflags, ...)
 		goto error_unlock;
 	}
 
+	if (sys_slist_len(&nsem_list) + 1 >= CONFIG_POSIX_SEM_NSEMS_MAX) {
+		errno = ENOSPC;
+		goto error_unlock;
+	}
+
 	nsem = k_calloc(1, sizeof(struct nsem_obj));
 	if (nsem == NULL) {
 		errno = ENOSPC;
@@ -291,7 +296,7 @@ sem_t *sem_open(const char *name, int oflags, ...)
 	/* 1 for this open instance, +1 for the linked name */
 	nsem->ref_count = 2;
 
-	(void)k_sem_init(&nsem->sem, value, CONFIG_SEM_VALUE_MAX);
+	(void)k_sem_init(&nsem->sem, value, CONFIG_POSIX_SEM_VALUE_MAX);
 
 	sys_slist_append(&nsem_list, (sys_snode_t *)&(nsem->snode));
 
@@ -318,7 +323,7 @@ int sem_unlink(const char *name)
 		return -1;
 	}
 
-	if ((strlen(name) + 1)  > CONFIG_SEM_NAMELEN_MAX) {
+	if ((strlen(name) + 1)  > CONFIG_POSIX_SEM_NAMELEN_MAX) {
 		errno = ENAMETOOLONG;
 		return -1;
 	}

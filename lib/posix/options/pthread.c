@@ -10,11 +10,14 @@
 
 #include <stdio.h>
 
+BUILD_ASSERT(_POSIX_THREADS == 200809L, "Invalid _POSIX_THREADS value");
+
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/posix/pthread.h>
+#include <zephyr/posix/sched.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
@@ -88,7 +91,7 @@ static sys_dlist_t posix_thread_q[] = {
 };
 static struct posix_thread posix_thread_pool[CONFIG_MAX_PTHREAD_COUNT];
 static struct k_spinlock pthread_pool_lock;
-static int pthread_concurrency;
+static int __maybe_unused pthread_concurrency;
 
 static inline void posix_thread_q_set(struct posix_thread *t, enum posix_thread_qid qid)
 {
@@ -252,8 +255,8 @@ void __z_pthread_cleanup_pop(int execute)
 
 static bool is_posix_policy_prio_valid(int priority, int policy)
 {
-	if (priority >= sched_get_priority_min(policy) &&
-	    priority <= sched_get_priority_max(policy)) {
+	if (priority >= z_posix_sched_priority_min(policy) &&
+	    priority <= z_posix_sched_priority_max(policy)) {
 		return true;
 	}
 
@@ -469,17 +472,18 @@ static void posix_thread_finalize(struct posix_thread *t, void *retval)
 FUNC_NORETURN
 static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 {
-	int err;
-	int barrier;
 	void *(*fun_ptr)(void *arg) = arg2;
 	struct posix_thread *t = CONTAINER_OF(k_current_get(), struct posix_thread, thread);
 
+#if defined(_POSIX_BARRIERS)
 	if (IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER)) {
+		pthread_barrier_t barrier = POINTER_TO_UINT(arg3);
+
 		/* cross the barrier so that pthread_create() can continue */
-		barrier = POINTER_TO_UINT(arg3);
-		err = pthread_barrier_wait(&barrier);
+		int __maybe_unused err = pthread_barrier_wait(&barrier);
 		__ASSERT_NO_MSG(err == 0 || err == PTHREAD_BARRIER_SERIAL_THREAD);
 	}
+#endif /* defined(_POSIX_BARRIERS) */
 
 	posix_thread_finalize(t, fun_ptr(arg1));
 
@@ -539,7 +543,13 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 		   void *arg)
 {
 	int err;
+#if defined(_POSIX_BARRIERS)
 	pthread_barrier_t barrier;
+	void *const zephyr_thread_wrapper_arg =
+		IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER) ? UINT_TO_POINTER(barrier) : NULL;
+#else
+	void * __maybe_unused const zephyr_thread_wrapper_arg = NULL;
+#endif /* defined(_POSIX_BARRIERS) */
 	struct posix_thread *t = NULL;
 
 	if (!(_attr == NULL || __attr_is_runnable((struct posix_thread_attr *)_attr))) {
@@ -561,6 +571,7 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 		}
 	}
 
+#if defined(_POSIX_BARRIERS)
 	if (t != NULL && IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER)) {
 		err = pthread_barrier_init(&barrier, NULL, 2);
 		if (err != 0) {
@@ -572,6 +583,7 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 			t = NULL;
 		}
 	}
+#endif /* defined(_POSIX_BARRIERS) */
 
 	if (t == NULL) {
 		/* no threads are ready */
@@ -612,9 +624,10 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 	k_thread_create(
 		&t->thread, t->attr.stack, __get_attr_stacksize(&t->attr) + t->attr.guardsize,
 		zephyr_thread_wrapper, (void *)arg, threadroutine,
-		IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER) ? UINT_TO_POINTER(barrier) : NULL,
+		zephyr_thread_wrapper_arg,
 		posix_to_zephyr_priority(t->attr.priority, t->attr.schedpolicy), 0, K_NO_WAIT);
 
+#if defined(_POSIX_BARRIERS)
 	if (IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER)) {
 		/* wait for the spawned thread to cross our barrier */
 		err = pthread_barrier_wait(&barrier);
@@ -622,6 +635,7 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 		err = pthread_barrier_destroy(&barrier);
 		__ASSERT_NO_MSG(err == 0);
 	}
+#endif /* defined(_POSIX_BARRIERS) */
 
 	/* finally provide the initialized thread to the caller */
 	*th = mark_pthread_obj_initialized(posix_thread_to_offset(t));

@@ -216,6 +216,7 @@ ZTEST(clock, test_realtime)
 
 ZTEST(clock, test_clock_getcpuclockid)
 {
+#if defined(_POSIX_CPUTIME)
 	int ret = 0;
 	clockid_t clock_id = CLOCK_INVALID;
 
@@ -225,6 +226,7 @@ ZTEST(clock, test_clock_getcpuclockid)
 
 	ret = clock_getcpuclockid((pid_t)2482, &clock_id);
 	zassert_equal(ret, EPERM, "POSIX clock_getcpuclock id failed");
+#endif /* defined(_POSIX_CPUTIME) */
 }
 
 ZTEST(clock, test_clock_getres)
@@ -247,13 +249,21 @@ ZTEST(clock, test_clock_getres)
 		{CLOCK_INVALID, NULL, -1},
 		{CLOCK_INVALID, &res, -1},
 		{CLOCK_REALTIME, NULL, 0},
+#if defined(_POSIX_MONOTONIC_CLOCK)
 		{CLOCK_MONOTONIC, NULL, 0},
+#endif /* defined(_POSIX_MONOTONIC_CLOCK) */
+#if defined(_POSIX_CPUTIME)
 		{CLOCK_PROCESS_CPUTIME_ID, NULL, 0},
+#endif /* defined(_POSIX_CPUTIME) */
 
 		/* all valid inputs */
 		{CLOCK_REALTIME, &res, 0},
+#if defined(_POSIX_MONOTONIC_CLOCK)
 		{CLOCK_MONOTONIC, &res, 0},
+#endif /* defined(_POSIX_MONOTONIC_CLOCK) */
+#if defined(_POSIX_CPUTIME)
 		{CLOCK_PROCESS_CPUTIME_ID, &res, 0},
+#endif /* defined(_POSIX_CPUTIME) */
 	};
 
 	ARRAY_FOR_EACH_PTR(args, arg) {

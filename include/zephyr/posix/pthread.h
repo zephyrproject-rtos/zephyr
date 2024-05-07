@@ -14,10 +14,18 @@
 #include <zephyr/posix/time.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/posix/sched.h>
+#include <zephyr/posix/sys/features.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if defined(_POSIX_THREADS) || defined(__DOXYGEN__)
+/*
+ * Object visibility
+ */
+#define PTHREAD_PROCESS_PRIVATE		0
+#define PTHREAD_PROCESS_PUBLIC		1
 
 /*
  * Pthread detach/joinable
@@ -276,13 +284,9 @@ int pthread_mutexattr_init(pthread_mutexattr_t *attr);
  */
 int pthread_mutexattr_destroy(pthread_mutexattr_t *attr);
 
-#define PTHREAD_BARRIER_SERIAL_THREAD 1
+#if defined(_POSIX_BARRIERS) || defined(__DOXYGEN__)
 
-/*
- *  Barrier attributes - type
- */
-#define PTHREAD_PROCESS_PRIVATE		0
-#define PTHREAD_PROCESS_PUBLIC		1
+#define PTHREAD_BARRIER_SERIAL_THREAD 1
 
 /**
  * @brief POSIX threading compatibility API
@@ -335,6 +339,8 @@ int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared);
 int pthread_barrierattr_getpshared(const pthread_barrierattr_t *ZRESTRICT attr,
 				   int *ZRESTRICT pshared);
 
+#endif /* defined(_POSIX_BARRIERS) || defined(__DOXYGEN__) */
+
 /* Predicates and setters for various pthread attribute values that we
  * don't support (or always support: the "process shared" attribute
  * can only be true given the way Zephyr implements these
@@ -377,24 +383,6 @@ pthread_t pthread_self(void);
  */
 int pthread_equal(pthread_t pt1, pthread_t pt2);
 
-/**
- * @brief Destroy the read-write lock attributes object.
- *
- * See IEEE 1003.1
- */
-int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr);
-
-/**
- * @brief initialize the read-write lock attributes object.
- *
- * See IEEE 1003.1
- */
-int pthread_rwlockattr_init(pthread_rwlockattr_t *attr);
-
-int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *ZRESTRICT attr,
-				  int *ZRESTRICT pshared);
-int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared);
-
 int pthread_attr_getguardsize(const pthread_attr_t *ZRESTRICT attr, size_t *ZRESTRICT guardsize);
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);
 int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize);
@@ -432,18 +420,7 @@ int pthread_attr_setschedparam(pthread_attr_t *attr,
 int pthread_setschedparam(pthread_t pthread, int policy,
 			  const struct sched_param *param);
 int pthread_setschedprio(pthread_t thread, int prio);
-int pthread_rwlock_destroy(pthread_rwlock_t *rwlock);
-int pthread_rwlock_init(pthread_rwlock_t *rwlock,
-			const pthread_rwlockattr_t *attr);
-int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock);
-int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
-			       const struct timespec *abstime);
-int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
-			       const struct timespec *abstime);
-int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock);
-int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock);
-int pthread_rwlock_unlock(pthread_rwlock_t *rwlock);
-int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock);
+
 int pthread_key_create(pthread_key_t *key,
 		void (*destructor)(void *));
 int pthread_key_delete(pthread_key_t key);
@@ -464,6 +441,41 @@ void __z_pthread_cleanup_pop(int execute);
 #define pthread_cleanup_pop(_ex)                                                                   \
 		__z_pthread_cleanup_pop(_ex);                                                      \
 	} /* enforce '}'-like behaviour */ while (0)
+
+#if defined(_POSIX_READER_WRITER_LOCKS) || defined(__DOXYGEN__)
+
+int pthread_rwlock_destroy(pthread_rwlock_t *rwlock);
+int pthread_rwlock_init(pthread_rwlock_t *rwlock,
+			const pthread_rwlockattr_t *attr);
+int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock);
+int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
+			       const struct timespec *abstime);
+int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
+			       const struct timespec *abstime);
+int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock);
+int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock);
+int pthread_rwlock_unlock(pthread_rwlock_t *rwlock);
+int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock);
+
+/**
+ * @brief Destroy the read-write lock attributes object.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr);
+
+/**
+ * @brief initialize the read-write lock attributes object.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_rwlockattr_init(pthread_rwlockattr_t *attr);
+
+int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *ZRESTRICT attr,
+				  int *ZRESTRICT pshared);
+int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared);
+
+#endif /* defined(_POSIX_READER_WRITER_LOCKS) */
 
 /* Glibc / Oracle Extension Functions */
 
@@ -500,6 +512,8 @@ int pthread_setname_np(pthread_t thread, const char *name);
  */
 int pthread_getname_np(pthread_t thread, char *name, size_t len);
 
+#if defined(_POSIX_SPIN_LOCKS) || defined(__DOXYGEN__)
+
 /**
  * @brief Destroy a pthread_spinlock_t.
  *
@@ -534,6 +548,10 @@ int pthread_spin_trylock(pthread_spinlock_t *lock);
  * See IEEE 1003.1
  */
 int pthread_spin_unlock(pthread_spinlock_t *lock);
+
+#endif /* defined(_POSIX_SPIN_LOCKS) || defined(__DOXYGEN__) */
+
+#endif /* defined(_POSIX_THREADS) || defined(__DOXYGEN__) */
 
 #ifdef __cplusplus
 }

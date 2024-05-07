@@ -11,11 +11,8 @@
 #include <sys/types.h>
 #endif
 
-#ifdef CONFIG_NEWLIB_LIBC
-#include <sys/_pthreadtypes.h>
-#endif
-
 #include <zephyr/kernel.h>
+#include <zephyr/posix/sys/features.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,74 +34,69 @@ typedef uint32_t clockid_t;
 typedef unsigned long timer_t;
 #endif
 
-/* Thread attributes */
-struct pthread_attr {
-	void *stack;
-	uint32_t details[2];
-};
-
-#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
-	|| defined(CONFIG_ARCMWDT_LIBC)
-typedef struct pthread_attr pthread_attr_t;
-#endif
-
-BUILD_ASSERT(sizeof(pthread_attr_t) >= sizeof(struct pthread_attr));
-
-typedef uint32_t pthread_t;
-typedef uint32_t pthread_spinlock_t;
-
 /* Semaphore */
 typedef struct k_sem sem_t;
 
-/* Mutex */
-typedef uint32_t pthread_mutex_t;
-
-struct pthread_mutexattr {
-	unsigned char type: 2;
-	bool initialized: 1;
-};
-#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
-	|| defined(CONFIG_ARCMWDT_LIBC)
-typedef struct pthread_mutexattr pthread_mutexattr_t;
-#endif
-BUILD_ASSERT(sizeof(pthread_mutexattr_t) >= sizeof(struct pthread_mutexattr));
-
-/* Condition variables */
-typedef uint32_t pthread_cond_t;
-
-struct pthread_condattr {
-	clockid_t clock;
-};
-
-#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
-	|| defined(CONFIG_ARCMWDT_LIBC)
-typedef struct pthread_condattr pthread_condattr_t;
-#endif
-BUILD_ASSERT(sizeof(pthread_condattr_t) >= sizeof(struct pthread_condattr));
-
-/* Barrier */
-typedef uint32_t pthread_barrier_t;
-
-typedef struct pthread_barrierattr {
-	int pshared;
-} pthread_barrierattr_t;
-
-typedef uint32_t pthread_rwlockattr_t;
-
-typedef uint32_t pthread_rwlock_t;
+#ifdef CONFIG_NEWLIB_LIBC
+#include <sys/_pthreadtypes.h>
 
 struct pthread_once {
 	bool flag;
 };
 
-#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
-	|| defined(CONFIG_ARCMWDT_LIBC)
-typedef uint32_t pthread_key_t;
-typedef struct pthread_once pthread_once_t;
-#endif
+#else
 
-/* Newlib typedefs pthread_once_t as a struct with two ints */
-BUILD_ASSERT(sizeof(pthread_once_t) >= sizeof(struct pthread_once));
+#if defined(_POSIX_THREADS)
+
+/* Thread attributes */
+typedef struct pthread_attr {
+	void *stack;
+	uint32_t details[2];
+} pthread_attr_t;
+
+typedef uint32_t pthread_t;
+typedef uint32_t pthread_cond_t;
+typedef uint32_t pthread_key_t;
+typedef uint32_t pthread_mutex_t;
+
+typedef struct pthread_mutexattr {
+	unsigned char type: 2;
+	bool initialized: 1;
+} pthread_mutexattr_t;
+
+typedef struct pthread_condattr {
+	clockid_t clock;
+} pthread_condattr_t;
+
+typedef struct pthread_once {
+	bool flag;
+} pthread_once_t;
+
+#endif /* defined(_POSIX_THREADS) */
+
+#if defined(_POSIX_SPIN_LOCKS)
+
+typedef uint32_t pthread_spinlock_t;
+
+#endif /* defined(_POSIX_SPIN_LOCKS) */
+
+#if defined(_POSIX_BARRIERS)
+
+typedef uint32_t pthread_barrier_t;
+typedef struct pthread_barrierattr {
+	int pshared;
+} pthread_barrierattr_t;
+
+#endif /* _POSIX_BARRIERS */
+
+#if defined(_POSIX_READER_WRITER_LOCKS)
+
+typedef uint32_t pthread_rwlockattr_t;
+typedef uint32_t pthread_rwlock_t;
+
+#endif /* defined(_POSIX_READER_WRITER_LOCKS) */
+
+#endif /* CONFIG_NEWLIB_LIBC */
 
 #ifdef __cplusplus
 }

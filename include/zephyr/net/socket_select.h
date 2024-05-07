@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 typedef struct zsock_fd_set {
-	uint32_t bitset[(CONFIG_POSIX_MAX_FDS + 31) / 32];
+	uint32_t bitset[(CONFIG_POSIX_OPEN_MAX + 31) / 32];
 } zsock_fd_set;
 
 

@@ -10,6 +10,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/posix/signal.h>
+#include <zephyr/posix/sys/features.h>
 #include <zephyr/posix/time.h>
 
 #define ACTIVE 1
@@ -23,14 +24,16 @@ struct timer_obj {
 	struct k_timer ztimer;
 	struct sigevent evp;
 	struct k_sem sem_cond;
+#if defined(_POSIX_THREADS)
 	pthread_t thread;
+#endif /* defined(_POSIX_THREADS) */
 	struct timespec interval;	/* Reload value */
 	uint32_t reload;			/* Reload value in ms */
 	uint32_t status;
 };
 
-K_MEM_SLAB_DEFINE(posix_timer_slab, sizeof(struct timer_obj),
-		  CONFIG_MAX_TIMER_COUNT, __alignof__(struct timer_obj));
+K_MEM_SLAB_DEFINE(posix_timer_slab, sizeof(struct timer_obj), CONFIG_POSIX_TIMER_MAX,
+		  __alignof__(struct timer_obj));
 
 static void zephyr_timer_wrapper(struct k_timer *ztimer)
 {
@@ -44,6 +47,7 @@ static void zephyr_timer_wrapper(struct k_timer *ztimer)
 		return;
 	}
 
+#if defined(_POSIX_THREADS)
 	if (timer->evp.sigev_notify == SIGEV_NONE) {
 		LOG_DBG("SIGEV_NONE");
 		return;
@@ -56,8 +60,10 @@ static void zephyr_timer_wrapper(struct k_timer *ztimer)
 
 	LOG_DBG("calling sigev_notify_function %p", timer->evp.sigev_notify_function);
 	(timer->evp.sigev_notify_function)(timer->evp.sigev_value);
+#endif /* defined(_POSIX_THREADS) */
 }
 
+#if defined(_POSIX_THREADS)
 static void *zephyr_thread_wrapper(void *arg)
 {
 	int ret;
@@ -99,6 +105,7 @@ static void zephyr_timer_interrupt(struct k_timer *ztimer)
 	timer = (struct timer_obj *)ztimer;
 	k_sem_give(&timer->sem_cond);
 }
+#endif /* defined(_POSIX_THREADS) */
 
 /**
  * @brief Create a per-process timer.
@@ -111,7 +118,7 @@ static void zephyr_timer_interrupt(struct k_timer *ztimer)
 int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 {
 	int ret = 0;
-	int detachstate;
+	int __maybe_unused detachstate;
 	struct timer_obj *timer;
 	const k_timeout_t alloc_timeout = K_MSEC(CONFIG_TIMER_CREATE_WAIT);
 
@@ -137,6 +144,7 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 	case SIGEV_SIGNAL:
 		k_timer_init(&timer->ztimer, zephyr_timer_wrapper, NULL);
 		break;
+#if defined(_POSIX_THREADS)
 	case SIGEV_THREAD:
 		if (evp->sigev_notify_attributes != NULL) {
 			ret = pthread_attr_getdetachstate(evp->sigev_notify_attributes,
@@ -179,6 +187,7 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 
 		k_timer_init(&timer->ztimer, zephyr_timer_interrupt, NULL);
 		break;
+#endif /* defined(_POSIX_THREADS) */
 	default:
 		ret = -1;
 		errno = EINVAL;
@@ -332,9 +341,11 @@ int timer_delete(timer_t timerid)
 		k_timer_stop(&timer->ztimer);
 	}
 
+#if defined(_POSIX_THREADS)
 	if (timer->evp.sigev_notify == SIGEV_THREAD) {
 		(void)pthread_cancel(timer->thread);
 	}
+#endif /* defined(_POSIX_THREADS) */
 
 	k_mem_slab_free(&posix_timer_slab, (void *)timer);
 

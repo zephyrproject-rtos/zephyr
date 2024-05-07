@@ -6,7 +6,12 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SIGNAL_H_
 #define ZEPHYR_INCLUDE_POSIX_SIGNAL_H_
 
+#define _SYS_SIGNAL_H
+#define _SIGNAL_H_
+
 #include "posix_types.h"
+
+#include <zephyr/posix/sys/features.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,9 +56,14 @@ extern "C" {
 
 BUILD_ASSERT(RTSIG_MAX >= 0);
 
+#ifndef _SIGSET_T_DECLARED
+#define _SIGSET_T_DECLARED
 typedef struct {
 	unsigned long sig[DIV_ROUND_UP(_NSIG, BITS_PER_LONG)];
 } sigset_t;
+#endif
+
+#if defined(_POSIX_REALTIME_SIGNALS) || (_POSIX_VERSION >= 199309L) || defined(__DOXYGEN__)
 
 #ifndef SIGEV_NONE
 #define SIGEV_NONE 1
@@ -67,6 +77,24 @@ typedef struct {
 #define SIGEV_THREAD 3
 #endif
 
+union sigval {
+	void *sival_ptr;
+	int sival_int;
+};
+
+struct sigevent {
+	union sigval sigev_value;
+	int sigev_notify;
+	int sigev_signo;
+#if defined(_POSIX_THREADS)
+	void (*sigev_notify_function)(union sigval val);
+	pthread_attr_t *sigev_notify_attributes;
+#endif /* defined(_POSIX_THREADS) */
+};
+
+#endif /* defined(_POSIX_REALTIME_SIGNALS) || (_POSIX_VERSION >= 199309L) || defined(__DOXYGEN__)  \
+	*/
+
 #ifndef SIG_BLOCK
 #define SIG_BLOCK 0
 #endif
@@ -77,20 +105,7 @@ typedef struct {
 #define SIG_UNBLOCK 2
 #endif
 
-typedef int	sig_atomic_t;		/* Atomic entity type (ANSI) */
-
-union sigval {
-	void *sival_ptr;
-	int sival_int;
-};
-
-struct sigevent {
-	void (*sigev_notify_function)(union sigval val);
-	pthread_attr_t *sigev_notify_attributes;
-	union sigval sigev_value;
-	int sigev_notify;
-	int sigev_signo;
-};
+typedef int sig_atomic_t; /* Atomic entity type (ANSI) */
 
 #ifdef CONFIG_POSIX_SIGNAL
 char *strsignal(int signum);

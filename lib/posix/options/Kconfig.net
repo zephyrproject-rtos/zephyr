@@ -5,7 +5,8 @@
 config POSIX_NETWORKING
 	bool "POSIX Networking API"
 	default y if POSIX_API
-	depends on NETWORKING
+	select NETWORKING
+	select NET_HOSTNAME_ENABLE
 	help
 	  Enable this option to support the POSIX networking API. This includes
 	  support for BSD Sockets.

@@ -13,9 +13,12 @@
 #include <zephyr/kernel.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/posix/signal.h>
+#include <zephyr/posix/sys/features.h>
 #include <zephyr/posix/time.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/slist.h>
+
+/* #if defined(_POSIX_THREADS) */
 
 /*
  * Bit used to mark a pthread object as initialized. Initialization status is
@@ -100,6 +103,11 @@ static inline uint32_t mark_pthread_obj_uninitialized(uint32_t obj)
 	return obj & ~PTHREAD_OBJ_MASK_INIT;
 }
 
+struct posix_thread *to_posix_thread(pthread_t pth);
+
+/* get and possibly initialize a posix_mutex */
+struct k_mutex *to_posix_mutex(pthread_mutex_t *mu);
+
 static inline int64_t timespec_to_timeoutms(const struct timespec *abstime)
 {
 	int64_t milli_secs, secs, nsecs;
@@ -122,12 +130,6 @@ static inline int64_t timespec_to_timeoutms(const struct timespec *abstime)
 	return milli_secs;
 }
 
-struct posix_thread *to_posix_thread(pthread_t pth);
+/* #endif defined(_POSIX_THREADS) */
 
-/* get and possibly initialize a posix_mutex */
-struct k_mutex *to_posix_mutex(pthread_mutex_t *mu);
-
-int posix_to_zephyr_priority(int priority, int policy);
-int zephyr_to_posix_priority(int priority, int *policy);
-
-#endif
+#endif /* ZEPHYR_LIB_POSIX_POSIX_INTERNAL_H_ */

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2018 Friedt Professional Engineering Services, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <errno.h>
 #include <zephyr/posix/time.h>
+#include <zephyr/posix/sys/features.h>
 #include <zephyr/posix/sys/time.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/internal/syscall_handler.h>
@@ -32,10 +34,12 @@ static struct k_spinlock rt_clock_base_lock;
 int z_impl___posix_clock_get_base(clockid_t clock_id, struct timespec *base)
 {
 	switch (clock_id) {
+#if defined(_POSIX_MONOTONIC_CLOCK)
 	case CLOCK_MONOTONIC:
 		base->tv_sec = 0;
 		base->tv_nsec = 0;
 		break;
+#endif /* defined(_POSIX_MONOTONIC_CLOCK) */
 
 	case CLOCK_REALTIME:
 		K_SPINLOCK(&rt_clock_base_lock) {
@@ -65,10 +69,12 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts)
 	struct timespec base;
 
 	switch (clock_id) {
+#if defined(_POSIX_MONOTONIC_CLOCK)
 	case CLOCK_MONOTONIC:
 		base.tv_sec = 0;
 		base.tv_nsec = 0;
 		break;
+#endif /* defined(_POSIX_MONOTONIC_CLOCK) */
 
 	case CLOCK_REALTIME:
 		(void)__posix_clock_get_base(clock_id, &base);
@@ -103,8 +109,11 @@ int clock_getres(clockid_t clock_id, struct timespec *res)
 			     CONFIG_SYS_CLOCK_TICKS_PER_SEC <= NSEC_PER_SEC,
 		     "CONFIG_SYS_CLOCK_TICKS_PER_SEC must be > 0 and <= NSEC_PER_SEC");
 
-	if (!(clock_id == CLOCK_MONOTONIC || clock_id == CLOCK_REALTIME ||
-	      clock_id == CLOCK_PROCESS_CPUTIME_ID)) {
+	if (!((clock_id == CLOCK_MONOTONIC) || (clock_id == CLOCK_REALTIME)
+#if defined(_POSIX_CPUTIME)
+	      || (clock_id == CLOCK_PROCESS_CPUTIME_ID)
+#endif /* defined(_POSIX_CPUTIME) */
+		      )) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -156,14 +165,8 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 	return 0;
 }
 
-/**
- * @brief Suspend execution for a nanosecond interval, or
- * until some absolute time relative to the specified clock.
- *
- * See IEEE 1003.1
- */
-int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
-		    struct timespec *rmtp)
+static int z_clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
+			     struct timespec *rmtp)
 {
 	uint64_t ns;
 	uint64_t us;
@@ -171,7 +174,11 @@ int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
 	k_spinlock_key_t key;
 	const bool update_rmtp = rmtp != NULL;
 
-	if (!(clock_id == CLOCK_REALTIME || clock_id == CLOCK_MONOTONIC)) {
+	if (!(clock_id == CLOCK_REALTIME
+#if defined(_POSIX_MONOTONIC_CLOCK)
+		|| clock_id == CLOCK_MONOTONIC)
+#endif /* _POSIX_MONOTONIC_CLOCK */
+		) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -226,6 +233,73 @@ do_rmtp_update:
 }
 
 /**
+ * @brief Suspend execution for nanosecond intervals.
+ *
+ * See IEEE 1003.1
+ */
+int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
+{
+#if defined(_POSIX_MONOTONIC_CLOCK)
+	return z_clock_nanosleep(CLOCK_MONOTONIC, 0, rqtp, rmtp);
+#else
+	return z_clock_nanosleep(CLOCK_REALTIME, 0, rqtp, rmtp);
+#endif
+}
+
+#if defined(_POSIX_CLOCK_SELECTION)
+/**
+ * @brief Suspend execution for a nanosecond interval, or
+ * until some absolute time relative to the specified clock.
+ *
+ * See IEEE 1003.1
+ */
+int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
+		    struct timespec *rmtp)
+{
+	return z_clock_nanosleep(clock_id, flags, rqtp, rmtp);
+}
+#endif /* defined(_POSIX_CLOCK_SELECTION) */
+
+/**
+ * @brief Sleep for a specified number of seconds.
+ *
+ * See IEEE 1003.1
+ */
+unsigned sleep(unsigned int seconds)
+{
+	int rem;
+
+	rem = k_sleep(K_SECONDS(seconds));
+	__ASSERT_NO_MSG(rem >= 0);
+
+	return rem / MSEC_PER_SEC;
+}
+/**
+ * @brief Suspend execution for microsecond intervals.
+ *
+ * See IEEE 1003.1
+ */
+int usleep(useconds_t useconds)
+{
+	int32_t rem;
+
+	if (useconds >= USEC_PER_SEC) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	rem = k_usleep(useconds);
+	__ASSERT_NO_MSG(rem >= 0);
+	if (rem > 0) {
+		/* sleep was interrupted by a call to k_wakeup() */
+		errno = EINTR;
+		return -1;
+	}
+
+	return 0;
+}
+
+/**
  * @brief Get current real time.
  *
  * See IEEE 1003.1
@@ -246,6 +320,7 @@ int gettimeofday(struct timeval *tv, void *tz)
 	return res;
 }
 
+#if defined(_POSIX_CPUTIME)
 int clock_getcpuclockid(pid_t pid, clockid_t *clock_id)
 {
 	/* We don't allow any process ID but our own.  */
@@ -257,6 +332,7 @@ int clock_getcpuclockid(pid_t pid, clockid_t *clock_id)
 
 	return 0;
 }
+#endif /* defined(_POSIX_CPUTIME) */
 
 #ifdef CONFIG_ZTEST
 #include <zephyr/ztest.h>

@@ -6,16 +6,23 @@
  */
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/posix/arpa/inet.h>
 #include <zephyr/posix/netinet/in.h>
 #include <zephyr/posix/net/if.h>
 #include <zephyr/posix/poll.h>
+#include <zephyr/posix/sys/features.h>
 #include <zephyr/posix/sys/select.h>
 #include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/unistd.h>
+
+#include <zephyr/net/socket.h>
+#include <zephyr/net/hostname.h>
 
 /* From arpa/inet.h */
 
@@ -230,6 +237,34 @@ int getaddrinfo(const char *host, const char *service, const struct zsock_addrin
 struct hostent *gethostent(void)
 {
 	return NULL;
+}
+
+int gethostname(char *buf, size_t len)
+{
+
+	if ((buf == NULL) || (len == 0)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_SOCKETS) && !IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD)) {
+		/* z_impl_zsock_gethostname() is only built when the above options are set */
+		zsock_gethostname(buf, len);
+
+		/*
+		 * If hostname is truncated because len is of insufficient size, always
+		 * '\0'-terminate buf, to avoid unspecified behaviour.
+		 */
+		buf[len - 1] = '\0';
+
+		return 0;
+	}
+
+	/* When !NET_SOCKETS || NET_SOCKETS_OFFLOAD */
+	strncpy(buf, "zephyr", MIN(HOST_NAME_MAX, MIN(6 /* strlen("zephyr") */, len)));
+	buf[len - 1] = '\0';
+
+	return 0;
 }
 
 int getnameinfo(const struct sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,

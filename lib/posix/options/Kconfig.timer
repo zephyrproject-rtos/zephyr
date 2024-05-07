@@ -2,12 +2,31 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-TYPE = TIMER
-type = timer_t
-type-function = timer_create
-rsource "Kconfig.template.pooled_type"
+menuconfig POSIX_TIMERS
+	bool "POSIX timers, clocks, and sleep functions"
+	default y if POSIX_API
+	help
+	  This enables POSIX clock, timer, and sleep functions.
 
-if TIMER
+if POSIX_TIMERS
+
+config POSIX_TIMER_MAX
+	int "Maximum number of timer_t"
+	default 5
+	help
+	  Maximum simultaneously active timer_t in a POSIX application.
+
+config POSIX_MONOTONIC_CLOCK
+	bool "POSIX Monotonic clock support"
+	default y
+	help
+	  This enables CLOCK_MONOTONIC.
+
+config POSIX_CLOCK_SELECTION
+	bool "POSIX Clock selection"
+	default y
+	help
+	  This enables POSIX clock selection.
 
 config TIMER_CREATE_WAIT
 	int "Time to wait for timer availability (in msec) in POSIX application"
@@ -24,4 +43,8 @@ config TIMER_DELAYTIMER_MAX
 	  This controls the maximum number of times a timer can overrun before
 	  timer_getoverrun() in POSIX compliant application.
 
-endif # TIMER
+module = TIMER
+module-str = POSIX Timers
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # POSIX_TIMERS

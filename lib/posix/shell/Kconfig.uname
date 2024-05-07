@@ -7,6 +7,7 @@ config POSIX_UNAME_SHELL
 	bool "Support for `uname` command"
 	select SHELL_GETOPT
 	select POSIX_SHELL
+	depends on POSIX_SINGLE_PROCESS
 	help
 	  Support for `uname` command in the terminal.
 

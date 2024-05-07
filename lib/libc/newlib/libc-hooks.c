@@ -565,7 +565,7 @@ void *_sbrk_r(struct _reent *r, int count)
 
 int _gettimeofday(struct timeval *__tp, void *__tzp)
 {
-#ifdef CONFIG_POSIX_CLOCK
+#ifdef CONFIG_POSIX_TIMERS
 	return gettimeofday(__tp, __tzp);
 #else
 	/* Non-posix systems should not call gettimeofday() here as it will

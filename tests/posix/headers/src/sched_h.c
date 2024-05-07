@@ -26,7 +26,7 @@ ZTEST(posix_headers, test_sched_h)
 	/* zassert_not_equal(-1, SCHED_SPORADIC); */ /* not implemented */
 	/* zassert_not_equal(-1, SCHED_OTHER); */ /* not implemented */
 
-	if (IS_ENABLED(CONFIG_POSIX_API)) {
+	#if defined(_POSIX_PRIORITY_SCHEDULING)
 		zassert_not_null(sched_get_priority_max);
 		zassert_not_null(sched_get_priority_min);
 
@@ -39,5 +39,5 @@ ZTEST(posix_headers, test_sched_h)
 		zassert_not_null(sched_setscheduler);
 
 		zassert_not_null(sched_yield);
-	}
+	#endif
 }

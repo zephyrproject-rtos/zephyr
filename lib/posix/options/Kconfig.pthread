@@ -30,15 +30,11 @@ config MAX_PTHREAD_MUTEX_COUNT
 	help
 	  Maximum simultaneously active pthread_mutex_t in a POSIX application.
 
-	  Note: this is a non-standard option.
-
 config MAX_PTHREAD_COND_COUNT
 	int "Maximum number of pthread_cond_t"
 	default 5
 	help
 	  Maximum simultaneously active pthread_cond_t in a POSIX application.
-
-	  Note: this is a non-standard option.
 
 config POSIX_THREAD_KEYS_MAX
 	int "Maximum number of pthread_key_t"

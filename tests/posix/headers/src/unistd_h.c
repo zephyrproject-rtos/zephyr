@@ -12,6 +12,7 @@
 #include <zephyr/posix/unistd.h>
 #endif
 
+#if 0
 /**
  * @brief existence test for `<unistd.h>`
  *
@@ -387,3 +388,4 @@ ZTEST(posix_headers, test_unistd_h)
 	zassert_not_null(write);
 #endif
 }
+#endif

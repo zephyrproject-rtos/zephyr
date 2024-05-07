@@ -31,12 +31,7 @@ zephyr_library_sources_ifdef(CONFIG_FNMATCH fnmatch.c)
 zephyr_library_sources_ifdef(CONFIG_GETENTROPY getentropy.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_API perror.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_ASYNCHRONOUS_IO aio.c)
-zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK clock.c)
-zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK nanosleep.c)
-zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK sleep.c)
-zephyr_library_sources_ifdef(CONFIG_POSIX_CONFSTR confstr.c)
-zephyr_library_sources_ifdef(CONFIG_POSIX_ENV env.c)
-zephyr_library_sources_ifdef(CONFIG_POSIX_FS fs.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_FILE_SYSTEM fs.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MESSAGE_PASSING mqueue.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_NETWORKING net.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_PUTMSG stropts.c)
@@ -49,17 +44,21 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_THREADS_BASE
   mutex.c
   pthread.c
 )
-# zephyr_compile_options_ifdef(CONFIG_POSIX_THREADS_BASE
-#   $<$<COMPILE_LANGUAGE:C>:-U_POSIX_THREADS -D_POSIX_THREADS=200809L>
-#   $<$<COMPILE_LANGUAGE:CXX>:-U_POSIX_THREADS -D_POSIX_THREADS=200809L>
-# )
-zephyr_library_sources_ifdef(CONFIG_POSIX_UNAME uname.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_BARRIERS barrier.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_READER_WRITER_LOCKS rwlock.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_PRIORITY_SCHEDULING sched.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_SEMAPHORES semaphore.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_SINGLE_PROCESS
+  confstr.c
+  env.c
+  sysconf.c
+  uname.c
+)
 zephyr_library_sources_ifdef(CONFIG_POSIX_SPIN_LOCKS spinlock.c)
-zephyr_library_sources_ifdef(CONFIG_TIMER timer.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_TIMERS
+  clock.c
+  timer.c
+)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include

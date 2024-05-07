@@ -24,14 +24,17 @@ ZTEST(posix_headers, test_signal_h)
 	/* zassert_not_equal(-1, SIG_HOLD); */ /* not implemented */
 	/* zassert_not_equal(-1, SIG_IGN); */ /* not implemented */
 
+#if defined(_POSIX_REALTIME_SIGNALS)
 	zassert_not_equal((sig_atomic_t)-1, (sig_atomic_t)0);
 	/* zassert_not_equal((pid_t)-1, (pid_t)0); */ /* not implemented */
 
 	zassert_not_equal(-1, offsetof(struct sigevent, sigev_notify));
 	zassert_not_equal(-1, offsetof(struct sigevent, sigev_signo));
 	zassert_not_equal(-1, offsetof(struct sigevent, sigev_value));
+#if defined(_POSIX_THREADS)
 	zassert_not_equal(-1, offsetof(struct sigevent, sigev_notify_function));
 	zassert_not_equal(-1, offsetof(struct sigevent, sigev_notify_attributes));
+#endif /* defined(_POSIX_THREADS) */
 
 	zassert_not_equal(-1, SIGEV_NONE);
 	zassert_not_equal(-1, SIGEV_SIGNAL);
@@ -42,6 +45,7 @@ ZTEST(posix_headers, test_signal_h)
 
 	zassert_not_equal(-1, RTSIG_MAX);
 	zassert_true(SIGRTMAX - SIGRTMIN >= RTSIG_MAX);
+#endif /* defined(_POSIX_REALTIME_SIGNALS) */
 
 	zassert_not_equal(-1, SIG_BLOCK);
 	zassert_not_equal(-1, SIG_UNBLOCK);

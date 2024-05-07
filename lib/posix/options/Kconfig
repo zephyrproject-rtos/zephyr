@@ -13,11 +13,18 @@ config POSIX_API
 	  Enable mostly-standards-compliant implementations of
 	  various POSIX (IEEE 1003.1) APIs.
 
+config POSIX_PAGE_SIZE_BITS
+	int "Number of bits to use for PAGE_SIZE"
+	range 6 16
+	default 12 if POSIX_API
+	default 6
+	help
+	  Define PAGE_SIZE as BIT(n), where n is the value configured here.
+	  PAGE_SIZE is supported in the range [64, 65536]
+	  If CONFIG_POSIX_API=y, PAGE_SIZE defaults to 4096, otherwise, it is 64 bytes.
+
 rsource "Kconfig.aio"
 rsource "Kconfig.barrier"
-rsource "Kconfig.clock"
-rsource "Kconfig.confstr"
-rsource "Kconfig.env"
 rsource "Kconfig.eventfd"
 rsource "Kconfig.fdtable"
 rsource "Kconfig.fnmatch"
@@ -26,6 +33,8 @@ rsource "Kconfig.getentropy"
 rsource "Kconfig.getopt"
 rsource "Kconfig.mqueue"
 rsource "Kconfig.net"
+rsource "Kconfig.proc1"
+rsource "Kconfig.procN"
 rsource "Kconfig.pthread"
 rsource "Kconfig.rwlock"
 rsource "Kconfig.sched"
@@ -33,10 +42,8 @@ rsource "Kconfig.semaphore"
 rsource "Kconfig.signal"
 rsource "Kconfig.spinlock"
 rsource "Kconfig.stropts"
-rsource "Kconfig.sysconf"
 rsource "Kconfig.syslog"
 rsource "Kconfig.timer"
-rsource "Kconfig.uname"
 rsource "Kconfig.xsi"
 
 # To be removed at the end of the deprecation process

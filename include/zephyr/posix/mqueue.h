@@ -18,6 +18,9 @@
 extern "C" {
 #endif
 
+/* forward declaration */
+struct sigevent;
+
 typedef void *mqd_t;
 
 struct mq_attr {

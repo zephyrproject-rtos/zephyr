@@ -14,7 +14,10 @@ config SIMPLELINK_HOST_DRIVER
 	depends on MULTITHREADING
 	select REQUIRES_FULL_LIBC
 	select ERRNO
-	select POSIX_CLOCK
+	select POSIX_MONOTONIC_CLOCK
+	select POSIX_SEMAPHORES
+	select POSIX_THREADS_BASE
+	select POSIX_TIMERS
 	help
 	  Build the SimpleLink host driver
 
