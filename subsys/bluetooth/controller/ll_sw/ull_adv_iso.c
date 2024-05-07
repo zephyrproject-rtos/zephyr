@@ -192,7 +192,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
-			if (!IN_RANGE(irc, 0x01, 0x07)) {
+			if (!IN_RANGE(irc, 0x01, 0x0F)) {
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
