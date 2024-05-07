@@ -557,6 +557,45 @@ int tester_gap_stop_ext_adv(void)
 }
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
+#ifdef CONFIG_BT_CLASSIC
+void limited_discoverable_work_handler(struct k_work *work)
+{
+	struct btp_gap_set_discoverable_rp rsp;
+
+	bt_br_set_discoverable(false);
+	bt_br_set_connectable(false);
+
+	ad_flags &= ~(BT_LE_AD_GENERAL | BT_LE_AD_LIMITED);
+	atomic_clear_bit(&current_settings, BTP_GAP_SETTINGS_DISCOVERABLE);
+
+	rsp.current_settings = sys_cpu_to_le32(current_settings);
+
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_NEW_SETTINGS, &rsp, sizeof(rsp));
+}
+
+static int limited_discoverable_work_start(void)
+{
+	static bool init;
+	static struct k_work_delayable limited_discoverable_work;
+
+	if (!init) {
+		k_work_init_delayable(&limited_discoverable_work,
+				      limited_discoverable_work_handler);
+		init = true;
+	} else {
+		k_work_cancel_delayable(&limited_discoverable_work);
+	}
+
+	/* In core v5.4 Vol 3, Part C, section 4.1.2 Limited Discoverable mode,
+	 * The Maximum time span that a device is in limited discoverable mode
+	 * is TGAP(104). The Minimum time span that a device is in discoverable
+	 * mode is TGAP(103).
+	 * Here set the timeout to 32s.
+	 */
+	return k_work_schedule(&limited_discoverable_work, K_SECONDS(32));
+}
+#endif /* CONFIG_BT_CLASSIC */
+
 static uint8_t set_discoverable(const void *cmd, uint16_t cmd_len,
 			       void *rsp, uint16_t *rsp_len)
 {
@@ -567,6 +606,11 @@ static uint8_t set_discoverable(const void *cmd, uint16_t cmd_len,
 	case BTP_GAP_NON_DISCOVERABLE:
 		ad_flags &= ~(BT_LE_AD_GENERAL | BT_LE_AD_LIMITED);
 		atomic_clear_bit(&current_settings, BTP_GAP_SETTINGS_DISCOVERABLE);
+#ifdef CONFIG_BT_CLASSIC
+		if (bt_br_set_discoverable(false) < 0) {
+			return BTP_STATUS_FAILED;
+		}
+#endif /* CONFIG_BT_CLASSIC */
 		break;
 	case BTP_GAP_GENERAL_DISCOVERABLE:
 		ad_flags &= ~BT_LE_AD_LIMITED;
@@ -582,10 +626,100 @@ static uint8_t set_discoverable(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
+#ifdef CONFIG_BT_CLASSIC
+	if ((cp->discoverable == BTP_GAP_GENERAL_DISCOVERABLE) ||
+	    (cp->discoverable == BTP_GAP_LIMITED_DISCOVERABLE)) {
+		int err;
+		struct net_buf *buf;
+		struct bt_hci_cp_write_class_of_device *cod;
+		struct bt_hci_cp_write_current_iac_lap *iac;
+		uint32_t cod_value = CONFIG_BT_COD;
+		uint32_t num_iacs = 1U;
+
+		if (cp->discoverable == BTP_GAP_LIMITED_DISCOVERABLE) {
+			/* In core v5.4 Vol 3, Part C, section 4.1.2.2 Conditions,
+			 * When a device is in limited discoverable mode it shall set bit number 13
+			 * in the Major Service Class part of the Class of Device/Service field.
+			 */
+			cod_value |= 0x2000U;
+			num_iacs = 2U;
+		}
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_CLASS_OF_DEVICE, sizeof(*cod));
+		if (!buf) {
+			goto set_discoverable_failed;
+		}
+
+		cod = net_buf_add(buf, sizeof(*cod));
+		sys_put_le24(cod_value, &cod->class_of_device[0]);
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CLASS_OF_DEVICE, buf, NULL);
+		if (err < 0) {
+			goto set_discoverable_failed;
+		}
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_CURRENT_IAC_LAP,
+					sizeof(*iac) + 3 * num_iacs);
+		if (!buf) {
+			goto set_discoverable_failed;
+		}
+
+		iac = net_buf_add(buf, sizeof(*iac) + 3 * num_iacs);
+		iac->num_current_iac = num_iacs;
+		/* In core v5.4 Vol 2, Part B, section 1.2.1 Reserved addresses,
+		 * The general inquiry LAP is 0x9E8B33.
+		 * In Assigned Numbers, section 2.2 Special LAPs,
+		 * The value of General Inquiry Access Code (GIAC) is 0x9E8B33.
+		 */
+		sys_put_le24(0x9e8b33U, &iac->lap[0].iac[0]);
+		if (num_iacs > 1U) {
+			/* In Assigned Numbers, section 2.2 Special LAPs,
+			 * The value of Limited Inquiry Access Code (LIAC) is 0x9e8b00.
+			 */
+			sys_put_le24(0x9e8b00U, &iac->lap[1].iac[0]);
+		}
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CURRENT_IAC_LAP, buf, NULL);
+		if (err < 0) {
+			goto set_discoverable_failed;
+		}
+
+		bt_br_set_discoverable(false);
+		bt_br_set_connectable(false);
+
+		err = bt_br_set_connectable(true);
+		if (err < 0) {
+			goto set_discoverable_failed;
+		}
+
+		err = bt_br_set_discoverable(true);
+		if (err < 0) {
+			goto set_discoverable_failed;
+		}
+
+		if (cp->discoverable == BTP_GAP_LIMITED_DISCOVERABLE) {
+			err = limited_discoverable_work_start();
+			if (err < 0) {
+				goto set_discoverable_failed;
+			}
+		}
+	}
+#endif /* CONFIG_BT_CLASSIC */
+
 	rp->current_settings = sys_cpu_to_le32(current_settings);
 
 	*rsp_len = sizeof(*rp);
 	return BTP_STATUS_SUCCESS;
+
+#ifdef CONFIG_BT_CLASSIC
+set_discoverable_failed:
+	ad_flags &= ~(BT_LE_AD_GENERAL | BT_LE_AD_LIMITED);
+	atomic_clear_bit(&current_settings, BTP_GAP_SETTINGS_DISCOVERABLE);
+	bt_br_set_discoverable(false);
+	bt_br_set_connectable(false);
+
+	return BTP_STATUS_FAILED;
+#endif /* CONFIG_BT_CLASSIC */
 }
 
 static uint8_t set_bondable(const void *cmd, uint16_t cmd_len,
