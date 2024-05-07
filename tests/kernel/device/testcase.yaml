@@ -1,28 +1,32 @@
 common:
   tags:
     - device
+    - kernel
     - userspace
-  integration_platforms:
-    - native_sim
 tests:
   kernel.device:
-    tags:
-      - kernel
-      - device
+    integration_platforms:
+      - native_sim
     platform_exclude: xenvm
   kernel.device.minimallibc:
+    integration_platforms:
+      - native_sim
     filter: CONFIG_MINIMAL_LIBC_SUPPORTED
     tags:
-      - kernel
-      - device
       - libc
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
     platform_exclude: xenvm
   kernel.device.pm:
-    tags:
-      - kernel
-      - device
+    integration_platforms:
+      - native_sim
     platform_exclude: mec15xxevb_assy6853 xenvm
     extra_configs:
       - CONFIG_PM_DEVICE=y
+  kernel.device.linker_generator:
+    platform_allow:
+      - qemu_cortex_m3
+    tags:
+      - linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
