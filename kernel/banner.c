@@ -24,7 +24,7 @@
 #endif /* BUILD_VERSION */
 #endif /* !BANNER_VERSION */
 
-void boot_banner(void)
+__weak void boot_banner(void)
 {
 #if defined(CONFIG_BOOT_DELAY) && (CONFIG_BOOT_DELAY > 0)
 #ifdef CONFIG_BOOT_BANNER
