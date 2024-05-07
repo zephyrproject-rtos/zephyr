@@ -417,6 +417,14 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 			    irq_handler, DEVICE_DT_INST_GET(idx), 0))		\
 	)
 
+#if !defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+#define CHECK_MAX_FREQ(idx)									\
+		BUILD_ASSERT(DT_INST_PROP(idx, max_frequency) ==				\
+			NRF_TIMER_BASE_FREQUENCY_GET((NRF_TIMER_Type *)DT_INST_REG_ADDR(idx)))
+#else
+#define CHECK_MAX_FREQ(idx)
+#endif
+
 #define COUNTER_NRFX_TIMER_DEVICE(idx)								\
 	BUILD_ASSERT(DT_INST_PROP(idx, prescaler) <=						\
 			TIMER_PRESCALER_PRESCALER_Msk,						\
@@ -455,6 +463,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 		.timer = (NRF_TIMER_Type *)DT_INST_REG_ADDR(idx),				\
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)				\
 	};											\
+	CHECK_MAX_FREQ(idx);									\
 	DEVICE_DT_INST_DEFINE(idx,								\
 			    counter_##idx##_init,						\
 			    NULL,								\
