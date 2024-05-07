@@ -13,6 +13,7 @@
 
 #include <offsets_short.h>
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/banner.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/random/random.h>
@@ -397,9 +398,6 @@ static inline int z_vrfy_device_init(const struct device *dev)
 #include <syscalls/device_init_mrsh.c>
 #endif
 
-extern void boot_banner(void);
-
-
 /**
  * @brief Mainline for kernel's background thread
  *
@@ -427,7 +425,10 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 	z_stack_adjust_initialized = 1;
 #endif /* CONFIG_STACK_POINTER_RANDOM */
+
+#if defined(CONFIG_BOOT_BANNER)
 	boot_banner();
+#endif /* CONFIG_BOOT_BANNER */
 
 #if defined(CONFIG_CPP)
 	void z_cpp_init_static(void);

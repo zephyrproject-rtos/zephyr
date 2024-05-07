@@ -446,9 +446,18 @@ config BOOT_BANNER
 	help
 	  This option outputs a banner to the console device during boot up.
 
+config BOOT_BANNER_EXTERNAL_IMPLEMENTATION
+	bool
+	depends on BOOT_BANNER
+	help
+	  Use an external boot banner implementation, this allows external applications/modules
+	  to implement their own boot banner, see `include/zephyr/kernel/banner.h` for function
+	  definition.
+
 config BOOT_BANNER_STRING
 	string "Boot banner string"
 	depends on BOOT_BANNER
+	depends on !BOOT_BANNER_EXTERNAL_IMPLEMENTATION
 	default "Booting Zephyr OS build"
 	help
 	  Use this option to set the boot banner.

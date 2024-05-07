@@ -49,7 +49,6 @@ add_compile_options($<TARGET_PROPERTY:compiler,warning_shadow_variables>)
 
 list(APPEND kernel_files
   main_weak.c
-  banner.c
   busy_wait.c
   device.c
   errno.c
@@ -60,6 +59,12 @@ list(APPEND kernel_files
   float.c
   version.c
   )
+
+if(CONFIG_BOOT_BANNER AND NOT CONFIG_BOOT_BANNER_EXTERNAL_IMPLEMENTATION)
+list(APPEND kernel_files
+  banner.c
+  )
+endif()
 
 if(CONFIG_SCHED_CPU_MASK)
 list(APPEND kernel_files
