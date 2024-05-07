@@ -70,26 +70,6 @@ const static struct virtio_dispatch dispatch = {
 	.notify = ipc_virtio_notify,
 };
 
-static int libmetal_setup(struct ipc_static_vrings *vr)
-{
-	struct metal_init_params metal_params = METAL_INIT_DEFAULTS;
-	int err;
-
-	err = metal_init(&metal_params);
-	if (err != 0) {
-		return err;
-	}
-
-	return 0;
-}
-
-static int libmetal_teardown(struct ipc_static_vrings *vr)
-{
-	metal_finish();
-
-	return 0;
-}
-
 static int vq_setup(struct ipc_static_vrings *vr, unsigned int role)
 {
 	vr->vq[RPMSG_VQ_0] = virtqueue_allocate(vr->vring_size);
@@ -138,21 +118,22 @@ static int vq_teardown(struct ipc_static_vrings *vr, unsigned int role)
 
 int ipc_static_vrings_init(struct ipc_static_vrings *vr, unsigned int role)
 {
+	struct metal_init_params metal_params = METAL_INIT_DEFAULTS;
 	int err = 0;
 
 	if (!vr) {
 		return -EINVAL;
 	}
 
+	err = metal_init(&metal_params);
+	if (err != 0) {
+		return err;
+	}
+
 	vr->shm_physmap[0] = vr->shm_addr;
 
 	metal_io_init(&vr->shm_io, (void *)vr->shm_addr,
 		      vr->shm_physmap, vr->shm_size, -1, 0, NULL);
-
-	err = libmetal_setup(vr);
-	if (err != 0) {
-		return err;
-	}
 
 	return vq_setup(vr, role);
 }
@@ -166,12 +147,9 @@ int ipc_static_vrings_deinit(struct ipc_static_vrings *vr, unsigned int role)
 		return err;
 	}
 
-	err = libmetal_teardown(vr);
-	if (err != 0) {
-		return err;
-	}
-
 	metal_io_finish(&vr->shm_io);
+
+	metal_finish();
 
 	return 0;
 }
