@@ -7,7 +7,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
+
+#ifdef CONFIG_LOG_FRONTEND_STMESP
 #include <zephyr/logging/log_frontend_stmesp.h>
+#endif
+
 LOG_MODULE_REGISTER(app);
 
 #define TEST_LOG(rpt, item)                                                                        \
@@ -51,8 +55,7 @@ int main(void)
 	uint32_t t;
 	uint32_t delta;
 	uint32_t rpt = 10;
-	uint32_t rpt_tp = 20;
-	uint32_t t0, t1, t2, t3, t_s, t_tp, t_tpd;
+	uint32_t t0, t1, t2, t3, t_s;
 	char str[] = "test string";
 
 	get_core_name();
@@ -75,13 +78,16 @@ int main(void)
 	t_s = TEST_LOG(rpt, (LOG_INF("test with string %s", str)));
 	t_s -= delta;
 
-	if (IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP)) {
-		t_tp = TEST_LOG(rpt_tp, (log_frontend_stmesp_tp(5)));
-		t_tp -= delta;
+#ifdef CONFIG_LOG_FRONTEND_STMESP
+	uint32_t rpt_tp = 20;
+	uint32_t t_tp, t_tpd;
 
-		t_tpd = TEST_LOG(rpt_tp, (log_frontend_stmesp_tp_d32(6, 10)));
-		t_tpd -= delta;
-	}
+	t_tp = TEST_LOG(rpt_tp, (log_frontend_stmesp_tp(5)));
+	t_tp -= delta;
+
+	t_tpd = TEST_LOG(rpt_tp, (log_frontend_stmesp_tp_d32(6, 10)));
+	t_tpd -= delta;
+#endif
 
 	timing_report(t0, rpt, "log message with 0 arguments");
 	timing_report(t1, rpt, "log message with 1 argument");
@@ -89,10 +95,10 @@ int main(void)
 	timing_report(t3, rpt, "log message with 3 arguments");
 	timing_report(t_s, rpt, "log_message with string");
 
-	if (IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP)) {
-		timing_report(t_tp, rpt_tp, "tracepoint");
-		timing_report(t_tpd, rpt_tp, "tracepoint_d32");
-	}
+#ifdef CONFIG_LOG_FRONTEND_STMESP
+	timing_report(t_tp, rpt_tp, "tracepoint");
+	timing_report(t_tpd, rpt_tp, "tracepoint_d32");
+#endif
 
 	return 0;
 }
