@@ -20,6 +20,7 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/mgmt/hawkbit/hawkbit.h>
 #include <zephyr/mgmt/hawkbit/config.h>
+#include <zephyr/mgmt/hawkbit/event.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/http/client.h>
 #include <zephyr/net/net_ip.h>
@@ -165,6 +166,10 @@ static hawkbit_config_device_data_cb_handler_t hawkbit_config_device_data_cb_han
 	hawkbit_default_config_data_cb;
 
 K_SEM_DEFINE(probe_sem, 1, 1);
+
+#ifdef CONFIG_HAWKBIT_EVENT_CALLBACKS
+static sys_slist_t event_callbacks = SYS_SLIST_STATIC_INIT(&event_callbacks);
+#endif
 
 static const struct json_obj_descr json_href_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct hawkbit_href, href, JSON_TOK_STRING),
@@ -358,6 +363,56 @@ static int hawkbit_settings_export(int (*cb)(const char *name, const void *value
 
 SETTINGS_STATIC_HANDLER_DEFINE(hawkbit, "hawkbit", NULL, hawkbit_settings_set, NULL,
 			       hawkbit_settings_export);
+
+static void hawkbit_event_raise(enum hawkbit_event_type event)
+{
+#ifdef CONFIG_HAWKBIT_EVENT_CALLBACKS
+	struct hawkbit_event_callback *cb, *tmp;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&event_callbacks, cb, tmp, node) {
+		if (cb->event == event && cb->handler) {
+			cb->handler(cb, event);
+		}
+	}
+#endif
+}
+
+#ifdef CONFIG_HAWKBIT_EVENT_CALLBACKS
+int hawkbit_event_add_callback(struct hawkbit_event_callback *cb)
+{
+	int ret = 0;
+
+	if (cb == NULL || cb->handler == NULL) {
+		return -EINVAL;
+	}
+
+	ret = k_sem_take(&probe_sem, K_FOREVER);
+	if (ret == 0) {
+		sys_slist_prepend(&event_callbacks, &cb->node);
+		k_sem_give(&probe_sem);
+	}
+	return ret;
+}
+
+int hawkbit_event_remove_callback(struct hawkbit_event_callback *cb)
+{
+	int ret = 0;
+
+	if (cb == NULL || cb->handler == NULL) {
+		return -EINVAL;
+	}
+
+	ret = k_sem_take(&probe_sem, K_FOREVER);
+	if (ret == 0) {
+		if (!sys_slist_find_and_remove(&event_callbacks, &cb->node)) {
+			ret = -EINVAL;
+		}
+		k_sem_give(&probe_sem);
+	}
+
+	return ret;
+}
+#endif /* CONFIG_HAWKBIT_EVENT_CALLBACKS */
 
 static bool start_http_client(int *hb_sock)
 {
@@ -1030,6 +1085,7 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 
 void hawkbit_reboot(void)
 {
+	hawkbit_event_raise(HAWKBIT_EVENT_BEFORE_REBOOT);
 	LOG_PANIC();
 	sys_reboot(IS_ENABLED(CONFIG_HAWKBIT_REBOOT_COLD) ? SYS_REBOOT_COLD : SYS_REBOOT_WARM);
 }
@@ -1175,6 +1231,7 @@ static void s_probe(void *o)
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_PROBE_DEPLOYMENT_BASE]);
 	} else {
 		s->hb_context.code_status = HAWKBIT_NO_UPDATE;
+		hawkbit_event_raise(HAWKBIT_EVENT_NO_UPDATE);
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
 	}
 }
@@ -1233,6 +1290,10 @@ static void s_cancel(void *o)
 
 	LOG_INF("From hawkBit server requested update cancellation %s",
 		hb_cfg.action_id == cancel_action_id ? "rejected" : "accepted");
+
+	if (hb_cfg.action_id != cancel_action_id) {
+		hawkbit_event_raise(HAWKBIT_EVENT_CANCEL_UPDATE);
+	}
 
 	smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_PROBE]);
 }
@@ -1358,6 +1419,16 @@ static void s_report(void *o)
 	smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_PROBE]);
 }
 
+static void s_download_start(void *o)
+{
+	hawkbit_event_raise(HAWKBIT_EVENT_START_DOWNLOAD);
+}
+
+static void s_download_end(void *o)
+{
+	hawkbit_event_raise(HAWKBIT_EVENT_END_DOWNLOAD);
+}
+
 /*
  * Resource for software module (Deployment Base)
  * GET: /{tenant}/controller/v1/{controllerId}/softwaremodules/{softwareModuleId}/
@@ -1415,6 +1486,7 @@ static void s_download(void *o)
 	/* If everything is successful */
 	s->hb_context.code_status = HAWKBIT_UPDATE_INSTALLED;
 	hawkbit_device_acid_update(s->hb_context.json_action_id);
+	hawkbit_event_raise(HAWKBIT_EVENT_UPDATE_DOWNLOADED);
 
 	smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
 }
@@ -1422,6 +1494,36 @@ static void s_download(void *o)
 static void s_terminate(void *o)
 {
 	struct s_object *s = (struct s_object *)o;
+
+#ifdef CONFIG_HAWKBIT_EVENT_CALLBACKS
+	if (IN_RANGE(s->hb_context.code_status, HAWKBIT_NETWORKING_ERROR,
+		     HAWKBIT_PROBE_IN_PROGRESS)) {
+		hawkbit_event_raise(HAWKBIT_EVENT_ERROR);
+		switch (s->hb_context.code_status) {
+		case HAWKBIT_NETWORKING_ERROR:
+			hawkbit_event_raise(HAWKBIT_EVENT_ERROR_NETWORKING);
+			break;
+
+		case HAWKBIT_PERMISSION_ERROR:
+			hawkbit_event_raise(HAWKBIT_EVENT_ERROR_PERMISSION);
+			break;
+
+		case HAWKBIT_METADATA_ERROR:
+			hawkbit_event_raise(HAWKBIT_EVENT_ERROR_METADATA);
+			break;
+
+		case HAWKBIT_DOWNLOAD_ERROR:
+			hawkbit_event_raise(HAWKBIT_EVENT_ERROR_DOWNLOAD);
+			break;
+
+		case HAWKBIT_ALLOC_ERROR:
+			hawkbit_event_raise(HAWKBIT_EVENT_ERROR_ALLOC);
+			break;
+		default:
+			break;
+		}
+	}
+#endif
 
 	smf_set_terminate(SMF_CTX(s), s->hb_context.code_status);
 }
@@ -1470,9 +1572,9 @@ static const struct smf_state hawkbit_states[] = {
 		&hawkbit_states[S_HAWKBIT_HTTP],
 		NULL),
 	[S_HAWKBIT_DOWNLOAD] = SMF_CREATE_STATE(
-		NULL,
+		s_download_start,
 		s_download,
-		NULL,
+		s_download_end,
 		&hawkbit_states[S_HAWKBIT_HTTP],
 		NULL),
 	[S_HAWKBIT_TERMINATE] = SMF_CREATE_STATE(
@@ -1489,10 +1591,12 @@ enum hawkbit_response hawkbit_probe(void)
 	struct s_object s_obj = {0};
 
 	smf_set_initial(SMF_CTX(&s_obj), &hawkbit_states[S_HAWKBIT_PROBE]);
+	hawkbit_event_raise(HAWKBIT_EVENT_START_RUN);
 
 	while (1) {
 		ret = smf_run_state(SMF_CTX(&s_obj));
 		if (ret != 0) {
+			hawkbit_event_raise(HAWKBIT_EVENT_END_RUN);
 			return (enum hawkbit_response)ret;
 		}
 	}
