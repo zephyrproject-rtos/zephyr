@@ -341,7 +341,7 @@ int arm_core_mpu_get_max_available_dyn_regions(void)
  *
  * Presumes the background mapping is NOT user accessible.
  */
-int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
+int arm_core_mpu_buffer_validate(const void *addr, size_t size, int write)
 {
 	return mpu_buffer_validate(addr, size, write);
 }
