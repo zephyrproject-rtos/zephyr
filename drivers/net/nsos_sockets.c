@@ -702,6 +702,11 @@ static ssize_t nsos_sendto(void *obj, const void *buf, size_t len, int flags,
 		goto return_ret;
 	}
 
+	ret = nsos_poll_if_blocking(sock, ZSOCK_POLLOUT, K_FOREVER, flags);
+	if (ret < 0) {
+		goto return_ret;
+	}
+
 	ret = nsos_adapt_sendto(sock->poll.mid.fd, buf, len, flags_mid,
 				addr_mid, addrlen_mid);
 
