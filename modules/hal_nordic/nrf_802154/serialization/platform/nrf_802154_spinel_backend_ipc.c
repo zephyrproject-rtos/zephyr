@@ -15,6 +15,10 @@
 #include "../../spinel_base/spinel.h"
 #include "../../src/include/nrf_802154_spinel.h"
 
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+#include <nrf53_cpunet_mgmt.h>
+#endif
+
 #define LOG_LEVEL LOG_LEVEL_INFO
 #define LOG_MODULE_NAME spinel_ipc_backend
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -49,6 +53,10 @@ nrf_802154_ser_err_t nrf_802154_backend_init(void)
 	const struct device *const ipc_instance =
 		DEVICE_DT_GET(DT_CHOSEN(nordic_802154_spinel_ipc));
 	int err;
+
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+	nrf53_cpunet_enable(true);
+#endif
 
 	err = ipc_service_open_instance(ipc_instance);
 	if (err < 0 && err != -EALREADY) {
