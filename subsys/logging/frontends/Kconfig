@@ -38,11 +38,15 @@ if LOG_FRONTEND_STMESP
 
 config LOG_FRONTEND_STMESP_DICT
 	bool
-	default y
+	default y if !LOG_FRONTEND_STMESP_FSC
 	select LOG_FRONTEND_OPT_API
 	select LOG_DICTIONARY_DB
 	imply LOG_FMT_SECTION
 	imply LOG_FMT_SECTION_STRIP
+
+config LOG_FRONTEND_STMESP_FSC
+	bool "Send fully self-contained messages"
+	select LOG_MSG_APPEND_RO_STRING_LOC if !NRF_ETR
 
 config LOG_FRONTEND_STMESP_FLUSH_COUNT
 	int "Number of flushing words"
