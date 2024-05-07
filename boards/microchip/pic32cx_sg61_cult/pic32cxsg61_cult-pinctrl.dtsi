@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/mchp-pic32cxsg-pinctrl.h>
+#include <dt-bindings/pinctrl/microchip-pic32cxsg-pinctrl.h>
 
 &pinctrl {
 /*
