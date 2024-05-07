@@ -32,5 +32,3 @@ void main() {
     pwm_set_cycles(dev,PWM_6, 1000, 750, PWM_POLARITY_NORMAL);
     pwm_set_cycles(dev,PWM_7, 1000, 750, PWM_POLARITY_NORMAL);
 }
-
-
