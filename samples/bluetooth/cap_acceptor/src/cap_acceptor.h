@@ -39,6 +39,14 @@ struct peer_config {
 int init_cap_acceptor_unicast(struct peer_config *peer);
 
 /**
+ * @brief Initialize the unicast part of the CAP Acceptor
+ *
+ * @retval 0 if success
+ * @retval -ENOEXEC if callbacks failed to be registered
+ */
+int init_cap_acceptor_broadcast(void);
+
+/**
  * @brief Request to allocate a CAP stream
  *
  * @param dir Audio direction of the stream to allocate

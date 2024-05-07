@@ -9,8 +9,10 @@ set(cap_acceptor_path ${ZEPHYR_BASE}/samples/bluetooth/cap_acceptor)
 
 target_sources(app PRIVATE
   ${cap_acceptor_path}/src/main.c
-  ${cap_acceptor_path}/src/cap_acceptor_unicast.c
 )
+
+zephyr_sources_ifdef(CONFIG_SAMPLE_UNICAST ${cap_acceptor_path}/src/cap_acceptor_unicast.c)
+zephyr_sources_ifdef(CONFIG_SAMPLE_BROADCAST ${cap_acceptor_path}/src/cap_acceptor_broadcast.c)
 
 target_sources(app PRIVATE
 	src/cap_acceptor_sample_test.c
