@@ -234,7 +234,7 @@ class Reporting:
         with open(filename, 'wb') as report:
             report.write(result)
 
-    def json_report(self, filename, version="NA", platform=None):
+    def json_report(self, filename, version="NA", platform=None, filters=None):
         logger.info(f"Writing JSON report {filename}")
 
         if self.env.options.report_all_options:
@@ -260,6 +260,14 @@ class Reporting:
             if platform and platform != instance.platform.name:
                 continue
             if instance.status == "filtered" and not self.env.options.report_filtered:
+                continue
+            if (filters and 'allow_status' in filters and instance.status not in filters['allow_status']):
+                logger.debug(f"Skip test suite '{instance.testsuite.name}' status '{instance.status}' "
+                             f"not allowed for {filename}")
+                continue
+            if (filters and 'deny_status' in filters and instance.status in filters['deny_status']):
+                logger.debug(f"Skip test suite '{instance.testsuite.name}' status '{instance.status}' "
+                             f"denied for {filename}")
                 continue
             suite = {}
             handler_log = os.path.join(instance.build_dir, "handler.log")
@@ -365,6 +373,13 @@ class Reporting:
 
             if instance.recording is not None:
                 suite['recording'] = instance.recording
+
+            # Pass suite properties through the context filters.
+            if filters and 'allow_suite' in filters:
+                suite = {k:v for k,v in suite.items() if k in filters['allow_suite']}
+
+            if filters and 'deny_suite' in filters:
+                suite = {k:v for k,v in suite.items() if k not in filters['deny_suite']}
 
             suites.append(suite)
 
