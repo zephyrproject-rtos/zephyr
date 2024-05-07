@@ -70,9 +70,8 @@ static inline void z_vrfy_k_object_release(const void *object)
 {
 	struct k_object *ko;
 
-	ko = validate_any_object((void *)object);
-	K_OOPS(K_SYSCALL_VERIFY_MSG(ko != NULL, "object %p access denied",
-				    (void *)object));
+	ko = validate_any_object(object);
+	K_OOPS(K_SYSCALL_VERIFY_MSG(ko != NULL, "object %p access denied", object));
 	k_thread_perms_clear(ko, _current);
 }
 #include <syscalls/k_object_release_mrsh.c>
