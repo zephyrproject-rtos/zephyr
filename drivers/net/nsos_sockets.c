@@ -761,8 +761,14 @@ static ssize_t nsos_sendmsg(void *obj, const struct msghdr *msg, int flags)
 	msg_mid.msg_controllen = 0;
 	msg_mid.msg_flags = 0;
 
+	ret = nsos_poll_if_blocking(sock, ZSOCK_POLLOUT, K_FOREVER, flags);
+	if (ret < 0) {
+		goto free_msg_iov;
+	}
+
 	ret = nsos_adapt_sendmsg(sock->poll.mid.fd, &msg_mid, flags_mid);
 
+free_msg_iov:
 	k_free(msg_iov);
 
 return_ret:
