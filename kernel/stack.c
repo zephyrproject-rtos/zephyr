@@ -51,7 +51,7 @@ int32_t z_impl_k_stack_alloc_init(struct k_stack *stack, uint32_t num_entries)
 	if (buffer != NULL) {
 		k_stack_init(stack, buffer, num_entries);
 		stack->flags = K_STACK_FLAG_ALLOC;
-		ret = (int32_t)0;
+		ret = 0;
 	} else {
 		ret = -ENOMEM;
 	}
