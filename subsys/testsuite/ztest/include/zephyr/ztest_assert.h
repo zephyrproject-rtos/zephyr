@@ -15,9 +15,12 @@
 
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/printk_hexdump.h>
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
 
@@ -393,7 +396,14 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
  * @param ... Optional message and variables to print if the assertion fails
  */
 #define zassert_mem_equal__(buf, exp, size, ...)                                                   \
-	zassert(memcmp(buf, exp, size) == 0, #buf " not equal to " #exp, ##__VA_ARGS__)
+	do {                                                                                       \
+		const bool mem_is_equal = memcmp(buf, exp, size) == 0;                             \
+		if (!mem_is_equal) {                                                               \
+			printk_hexdump("expected", (const uint8_t *)exp, size);                    \
+			printk_hexdump("actually", (const uint8_t *)buf, size);                    \
+		}                                                                                  \
+		zassert(mem_is_equal, #buf " not equal to " #exp, ##__VA_ARGS__);                  \
+	} while (0)
 
 /**
  * @brief Assert that 2 strings have the same contents
