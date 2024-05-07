@@ -14,43 +14,30 @@ endif # BOARD_NRF54L15PDK_NRF54L15_CPUAPP
 
 if BOARD_NRF54L15PDK_NRF54L15_CPUAPP_NS
 
-# TODO: Remove the options bellow when (NCSDK-25023) is done
-config NRF_SPU_FLASH_REGION_SIZE
-	hex
-	default 0x4000
-	# This option does not apply to 54, but we pretend the HW has this limitation
-	# for now for easier porting. NCSDK-25023
-	help
-	  FLASH region size for the NRF_SPU peripheral. For nrf54 the
-	  region size is configurable per-region so this option does
-	  not apply.
-
-config NRF_SPU_FLASH_REGION_ALIGNMENT
-	hex
-	default 0x4000
-	# This option does not apply to 54, but we pretend the HW has this limitation
-	# for now for easier porting. NCSDK-25023
-	help
-	  FLASH region size for the NRF_SPU peripheral. For nrf54 the
-	  region size is configurable per-region so this option does
-	  not apply.
-
-config NRF_SPU_RAM_REGION_SIZE
-	hex
-	default 0x2000
-	# This HW limitation does not apply to 54, but we pretend
-	# it does for now for easier porting. NCSDK-25023
-	help
-	  RAM region size for the NRF_SPU peripheral. For nrf54 the
-	  region size is configurable per-region so this option does
-	  not apply.
-
-
-config NRF_SPU_RAM_REGION_ALIGNMENT
+config NRF_MPC_REGION_SIZE
 	hex
 	default 0x1000
 	help
-	  RAM regions must be aligned to this value due to SPU HW
-	  limitations.
+	  Region size for the Memory Protection Controller (MPC) in bytes.
+
+config NRF_TRUSTZONE_FLASH_REGION_SIZE
+	hex
+	default NRF_MPC_REGION_SIZE
+	help
+	  This defines the flash region size from the TRUSTZONE perspective.
+	  It is used when configuring the TRUSTZONE and when setting alignments
+	  requirements for the partitions.
+	  This abstraction allows us to configure TRUSTZONE without depending
+	  on peripheral specific symbols.
+
+config NRF_TRUSTZONE_RAM_REGION_SIZE
+	hex
+	default NRF_MPC_REGION_SIZE
+	help
+	  This defines the RAM region size from the TRUSTZONE perspective.
+	  It is used when configuring the TRUSTZONE and when setting alignments
+	  requirements for the partitions.
+	  This abstraction allows us to configure TRUSTZONE without depending
+	  on peripheral specific symbols.
 
 endif #BOARD_NRF54L15PDK_NRF54L15_CPUAPP_NS
