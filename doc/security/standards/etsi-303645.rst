@@ -365,7 +365,7 @@ Provisions Assessment
         support and a defined support period should be published by the manufacturer in an
         accessible way that is clear and transparent to the user.
       - R C
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_3_15:
