@@ -659,7 +659,7 @@ Provisions Assessment
       - Installation and maintenance of consumer IoT should involve minimal decisions by the
         user and should follow security best practice on usability.
       - R
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_12_2:
