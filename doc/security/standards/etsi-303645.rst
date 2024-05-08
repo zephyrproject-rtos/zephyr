@@ -254,8 +254,8 @@ Provisions Assessment
         vulnerabilities within products and services they sell, produce, have produced
         and services they operate during the defined support period.
       - R
-      -
-      -
+      - Y
+      - `Modules <https://github.com/zephyrproject-rtos/>`_ are covered
 
         .. _ETSI_Provision_5_3_1:
     * - Provision 5.3-1
