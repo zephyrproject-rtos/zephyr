@@ -651,7 +651,7 @@ Provisions Assessment
       - Users should be provided with clear confirmation that personal data has been deleted
         from services, devices and applications.
       - R
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_12_1:
