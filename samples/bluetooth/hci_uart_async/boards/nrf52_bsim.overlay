@@ -1,1 +1,3 @@
-/* Purposely empty. To avoid using the one provided by the application */
+&bt_hci_uart {
+	status = "disabled";
+};
