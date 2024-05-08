@@ -44,6 +44,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_mod_raw.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_mod.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/block_cipher.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/camellia.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ccm.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/chacha20.c

@@ -25,7 +25,6 @@ config MBEDTLS_TLS_VERSION_1_1
 
 config MBEDTLS_TLS_VERSION_1_2
 	bool "Support for TLS 1.2 (DTLS 1.2)"
-	default y if !NET_L2_OPENTHREAD
 	select MBEDTLS_CIPHER
 	select MBEDTLS_MD
 
@@ -76,7 +75,9 @@ config MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
 	bool
-	default y if MBEDTLS_KEY_EXCHANGE_PSK_ENABLED || \
+	default y
+	depends on \
+		MBEDTLS_KEY_EXCHANGE_PSK_ENABLED || \
 		MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED || \
 		MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED || \
 		MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
@@ -90,7 +91,8 @@ config MBEDTLS_PSK_MAX_LEN
 
 config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "RSA-only based ciphersuite modes"
-	default y if !NET_L2_OPENTHREAD
+	default y if UOSCORE || UEDHOC
+	select MBEDTLS_MD
 
 config MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 	bool "DHE-RSA based ciphersuite modes"
@@ -209,7 +211,7 @@ endif
 comment "Supported ciphers and cipher modes"
 
 config MBEDTLS_CIPHER_ALL_ENABLED
-	bool "All available ciphers"
+	bool "All available ciphers and modes"
 	select MBEDTLS_CIPHER_AES_ENABLED
 	select MBEDTLS_CIPHER_CAMELLIA_ENABLED
 	select MBEDTLS_CIPHER_DES_ENABLED
@@ -223,30 +225,49 @@ config MBEDTLS_CIPHER_ALL_ENABLED
 	select MBEDTLS_CIPHER_MODE_CTR_ENABLED
 	select MBEDTLS_CHACHAPOLY_AEAD_ENABLED
 
+config MBEDTLS_SOME_AEAD_CIPHER_ENABLED
+	bool
+	default y
+	depends on \
+		MBEDTLS_CIPHER_AES_ENABLED || \
+		MBEDTLS_CIPHER_CAMELLIA_ENABLED
+
+config MBEDTLS_SOME_CIPHER_ENABLED
+	bool
+	default y
+	depends on \
+		MBEDTLS_SOME_AEAD_CIPHER_ENABLED || \
+		MBEDTLS_CIPHER_DES_ENABLED || \
+		MBEDTLS_CIPHER_CHACHA20_ENABLED
+
 config MBEDTLS_CIPHER_AES_ENABLED
 	bool "AES block cipher"
-	default y
+
+if MBEDTLS_CIPHER_AES_ENABLED
 
 config MBEDTLS_AES_ROM_TABLES
-	depends on MBEDTLS_CIPHER_AES_ENABLED
 	bool "Use precomputed AES tables stored in ROM."
-	default y
 
 config MBEDTLS_AES_FEWER_TABLES
-	depends on MBEDTLS_CIPHER_AES_ENABLED
 	bool "Reduce the size of precomputed AES tables by ~6kB"
+	default y
+	depends on MBEDTLS_AES_ROM_TABLES
 	help
 	  Reduce the size of the AES tables at a tradeoff of more
 	  arithmetic operations at runtime. Specifically 4 table
 	  lookups are converted to 1 table lookup, 3 additions
 	  and 6 bit shifts.
 
+config MBEDTLS_CIPHER_MODE_XTS_ENABLED
+	bool "Xor-encrypt-xor with ciphertext stealing mode (XTS) for AES"
+
+endif # MBEDTLS_CIPHER_AES_ENABLED
+
 config MBEDTLS_CIPHER_CAMELLIA_ENABLED
 	bool "Camellia block cipher"
 
 config MBEDTLS_CIPHER_DES_ENABLED
 	bool "DES block cipher"
-	default y if !NET_L2_OPENTHREAD
 
 config MBEDTLS_CIPHER_ARC4_ENABLED
 	bool "ARC4 stream cipher"
@@ -257,25 +278,27 @@ config MBEDTLS_CIPHER_CHACHA20_ENABLED
 config MBEDTLS_CIPHER_BLOWFISH_ENABLED
 	bool "Blowfish block cipher"
 
+if MBEDTLS_SOME_AEAD_CIPHER_ENABLED
+
 config MBEDTLS_CIPHER_CCM_ENABLED
 	bool "Counter with CBC-MAC (CCM) mode for 128-bit block cipher"
-	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_CAMELLIA_ENABLED
 	default y if UOSCORE || UEDHOC
 
 config MBEDTLS_CIPHER_GCM_ENABLED
-	bool "Galois/Counter Mode (GCM) for AES"
-	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_CAMELLIA_ENABLED
+	bool "Galois/Counter Mode (GCM) for symmetric ciphers"
 
-config MBEDTLS_CIPHER_MODE_XTS_ENABLED
-	bool "Xor-encrypt-xor with ciphertext stealing mode (XTS) for AES"
-	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_CAMELLIA_ENABLED
+endif # MBEDTLS_SOME_AEAD_CIPHER_ENABLED
+
+if MBEDTLS_SOME_CIPHER_ENABLED
 
 config MBEDTLS_CIPHER_MODE_CBC_ENABLED
 	bool "Cipher Block Chaining mode (CBC) for symmetric ciphers"
 	default y if !NET_L2_OPENTHREAD
 
 config MBEDTLS_CIPHER_MODE_CTR_ENABLED
-	bool "Counter Block Cipher mode (CTR) for symmetric ciphers."
+	bool "Counter Block Cipher mode (CTR) for symmetric ciphers"
+
+endif # MBEDTLS_SOME_CIPHER_ENABLED
 
 config MBEDTLS_CHACHAPOLY_AEAD_ENABLED
 	bool "ChaCha20-Poly1305 AEAD algorithm"
@@ -348,6 +371,7 @@ comment "Other configurations"
 
 config MBEDTLS_CIPHER
 	bool "generic cipher layer."
+	default y if PSA_WANT_ALG_CMAC
 
 config MBEDTLS_MD
 	bool "generic message digest layer."
@@ -404,7 +428,6 @@ config MBEDTLS_SERVER_NAME_INDICATION
 
 config MBEDTLS_PK_WRITE_C
 	bool "The generic public (asymmetric) key writer"
-	default y if MBEDTLS_PSA_CRYPTO_C
 	help
 	  Enable generic public key write functions.
 
@@ -426,15 +449,17 @@ config MBEDTLS_SSL_CACHE_C
 	help
 	  "This option enables simple SSL cache implementation (server side)."
 
+if MBEDTLS_SSL_CACHE_C
+
 config MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT
 	int "Default timeout for SSL cache entires"
-	depends on MBEDTLS_SSL_CACHE_C
 	default 86400
 
 config MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES
 	int "Maximum number of SSL cache entires"
-	depends on MBEDTLS_SSL_CACHE_C
 	default 5
+
+endif # MBEDTLS_SSL_CACHE_C
 
 config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 	bool "(D)TLS Extended Master Secret extension"
@@ -459,7 +484,7 @@ config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 	bool "Use legacy modules to generate random data"
 	select MBEDTLS_ENTROPY_ENABLED
-	select MBEDTLS_CTR_DRBG_ENABLED if !MBEDTLS_HMAC_DRBG_ENABLED
+	select MBEDTLS_HMAC_DRBG_ENABLED if !MBEDTLS_CTR_DRBG_ENABLED
 	help
 	  Use legacy MbedTLS modules (ENTROPY + CTR_DRBG/HMAC_DRBG) as random
 	  source generators.

@@ -373,12 +373,6 @@
     defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED) || \
     defined(MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED)
 #define MBEDTLS_RSA_C
-#endif
-
-#if defined(MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED) || \
-    defined(MBEDTLS_KEY_EXCHANGE_RSA_ENABLED) || \
-    defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED) || \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED)
 #define MBEDTLS_PKCS1_V15
 #define MBEDTLS_PKCS1_V21
 #endif
@@ -428,7 +422,7 @@
 #define MBEDTLS_PK_C
 #endif
 
-#if defined(MBEDTLS_ECDSA_C) || defined(MBEDTLS_RSA_C) || defined(MBEDTLS_X509_USE_C)
+#if defined(MBEDTLS_ECDSA_C) || defined(MBEDTLS_X509_USE_C)
 #define MBEDTLS_ASN1_PARSE_C
 #endif
 
