@@ -211,7 +211,7 @@ Provisions Assessment
         device shall use best practice cryptography, appropriate to
         the properties of the technology, risk and usage.
       - M
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_1_4:
