@@ -335,6 +335,8 @@ If any check fails, the macros will return a nonzero value. The macro
 calling thread. This is done instead of returning some error condition to
 keep the APIs the same when calling from supervisor mode.
 
+.. _syscall_verification:
+
 Verifier Definition
 ===================
 
