@@ -498,6 +498,9 @@ struct i3c_msg {
 	 * Use SDR mode if none is set.
 	 */
 	uint8_t			hdr_mode;
+
+	/** HDR command code field (7-bit) for HDR-DDR, HDR-TSP and HDR-TSL */
+	uint8_t			hdr_cmd_code;
 };
 
 /** @} */
@@ -1827,6 +1830,7 @@ static inline int i3c_write(struct i3c_device_desc *target,
 	msg.buf = (uint8_t *)buf;
 	msg.len = num_bytes;
 	msg.flags = I3C_MSG_WRITE | I3C_MSG_STOP;
+	msg.hdr_cmd_code = 0;
 
 	return i3c_transfer(target, &msg, 1);
 }
@@ -1852,6 +1856,7 @@ static inline int i3c_read(struct i3c_device_desc *target,
 	msg.buf = buf;
 	msg.len = num_bytes;
 	msg.flags = I3C_MSG_READ | I3C_MSG_STOP;
+	msg.hdr_cmd_code = 0;
 
 	return i3c_transfer(target, &msg, 1);
 }
@@ -1882,10 +1887,12 @@ static inline int i3c_write_read(struct i3c_device_desc *target,
 	msg[0].buf = (uint8_t *)write_buf;
 	msg[0].len = num_write;
 	msg[0].flags = I3C_MSG_WRITE;
+	msg[0].hdr_cmd_code = 0;
 
 	msg[1].buf = (uint8_t *)read_buf;
 	msg[1].len = num_read;
 	msg[1].flags = I3C_MSG_RESTART | I3C_MSG_READ | I3C_MSG_STOP;
+	msg[1].hdr_cmd_code = 0;
 
 	return i3c_transfer(target, msg, 2);
 }
@@ -1947,10 +1954,12 @@ static inline int i3c_burst_write(struct i3c_device_desc *target,
 	msg[0].buf = &start_addr;
 	msg[0].len = 1U;
 	msg[0].flags = I3C_MSG_WRITE;
+	msg[0].hdr_cmd_code = 0;
 
 	msg[1].buf = (uint8_t *)buf;
 	msg[1].len = num_bytes;
 	msg[1].flags = I3C_MSG_WRITE | I3C_MSG_STOP;
+	msg[1].hdr_cmd_code = 0;
 
 	return i3c_transfer(target, msg, 2);
 }
