@@ -173,7 +173,9 @@ if(CONFIG_LLEXT AND CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
   set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
 endif()
 
-include(${BOARD_DIR}/board.cmake OPTIONAL)
+foreach(dir ${BOARD_DIRECTORIES})
+  include(${dir}/board.cmake OPTIONAL)
+endforeach()
 
 # If we are using a suitable ethernet driver inside qemu, then these options
 # must be set, otherwise a zephyr instance cannot receive any network packets.
