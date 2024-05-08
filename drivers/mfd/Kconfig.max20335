@@ -1,5 +1,5 @@
 # Copyright (c) 2023 Grinn
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 config MFD_MAX20335
 	bool "MAX20335 PMIC multi-function device driver"

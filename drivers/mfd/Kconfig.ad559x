@@ -1,5 +1,5 @@
 # Copyright (c) 2023 Grinn
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 menuconfig MFD_AD559X
 	bool "Analog AD559x I2C/SPI configurable ADC/DAC/GPIO chip"
