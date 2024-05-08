@@ -545,8 +545,8 @@ Provisions Assessment
       - The manufacturer should follow secure development processes for software deployed on
         the device.
       - R
-      -
-      -
+      - Y
+      - :ref:`Security Overview  <security-overview>` and :ref:`Coding guidelines <coding_guidelines>`
 
         .. _ETSI_Provision_5_7_1:
     * - Provision 5.7-1
