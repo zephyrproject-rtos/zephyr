@@ -815,10 +815,15 @@ static void propagate_mld_event(struct net_route_entry_mcast *route, bool route_
 #define propagate_mld_event(...)
 #endif /* CONFIG_NET_MCAST_ROUTE_MLD_REPORTS */
 
-int net_route_mcast_forward_packet(struct net_pkt *pkt,
-				   const struct net_ipv6_hdr *hdr)
+int net_route_mcast_forward_packet(struct net_pkt *pkt, struct net_ipv6_hdr *hdr)
 {
 	int ret = 0, err = 0;
+
+	/* At this point, the original pkt has already stored the hop limit in its metadata.
+	 * Change its value in a common buffer so the forwardee has a proper count. As we have
+	 * a direct access to the buffer there is no need to perform read/write operations.
+	 */
+	hdr->hop_limit--;
 
 	ARRAY_FOR_EACH_PTR(route_mcast_entries, route) {
 		struct net_pkt *pkt_cpy = NULL;
