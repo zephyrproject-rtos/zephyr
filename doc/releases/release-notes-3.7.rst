@@ -319,6 +319,9 @@ Libraries / Subsystems
 
 * Crypto
 
+  * MbedTLS was updated to 3.6.0. Release notes can be found at:
+    https://github.com/Mbed-TLS/mbedtls/releases/tag/v3.6.0
+
 * Random
 
   * Besides the existing :c:func:`sys_rand32_get` function, :c:func:`sys_rand8_get`,
