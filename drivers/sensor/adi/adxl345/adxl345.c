@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT adi_adxl345
 
-#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/adxl345.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
@@ -85,12 +85,12 @@ static inline int adxl345_reg_read(const struct device *dev, uint8_t addr, uint8
 	return adxl345_reg_access(dev, ADXL345_READ_CMD, addr, data, len);
 }
 
-static inline int adxl345_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val)
+int adxl345_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val)
 {
 	return adxl345_reg_write(dev, addr, &val, 1);
 }
 
-static inline int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf)
+int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf)
 
 {
 	return adxl345_reg_read(dev, addr, buf, 1);
@@ -217,9 +217,42 @@ static int adxl345_channel_get(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_ADXL345_TRIGGER
+static int adxl345_attr_set(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, const struct sensor_value *val)
+{
+	switch (attr) {
+	case SENSOR_ATTR_ACTIVE_THRESH: {
+		int16_t milli_g = sensor_ms2_to_ug(val) / 1000;
+		return adxl345_reg_write_byte(dev, ADXL345_THRESH_ACT_REG, milli_g * 2 / 125);
+	}
+	case SENSOR_ATTR_INACTIVE_THRESH: {
+		int16_t milli_g = sensor_ms2_to_ug(val) / 1000;
+		return adxl345_reg_write_byte(dev, ADXL345_THRESH_INACT_REG, milli_g * 2 / 125);
+	}
+	case SENSOR_ATTR_INACTIVE_TIME: {
+		uint16_t milli_seconds = (((int64_t)val->val1) * 1000) + (val->val2 / 1000);
+		return adxl345_reg_write_byte(dev, ADXL345_TIME_INACT_REG, milli_seconds / 1000);
+	}
+	case SENSOR_ATTR_LINK_MOVEMENT: {
+		return adxl345_reg_write_mask(dev, ADXL345_POWER_CTL_REG,
+					      ADXL345_POWER_CTL_LINK_BIT,
+					      ADXL345_POWER_CTL_LINK_BIT);
+	}
+	default: {
+		return -ENOTSUP;
+	}
+	}
+}
+#endif
+
 static const struct sensor_driver_api adxl345_api_funcs = {
 	.sample_fetch = adxl345_sample_fetch,
 	.channel_get = adxl345_channel_get,
+#ifdef CONFIG_ADXL345_TRIGGER
+	.attr_set = adxl345_attr_set,
+	.trigger_set = adxl345_trigger_set,
+#endif
 };
 
 static int adxl345_set_output_rate(const struct device *dev, const enum adxl345_odr odr)
@@ -367,13 +400,26 @@ static int adxl345_init(const struct device *dev)
 		return -EIO;
 	}
 
+#ifdef CONFIG_ADXL345_TRIGGER
+	rc = adxl345_init_interrupt(dev);
+	if (rc != 0) {
+		LOG_ERR("Failed to initialize interrupt!");
+		return -EIO;
+	}
+#endif
+
 	return 0;
 }
 
+#ifdef CONFIG_ADXL345_TRIGGER
+#define ADXL345_CFG_IRQ(inst) .interrupt = GPIO_DT_SPEC_INST_GET(inst, int1_gpios),
+#else
+#define ADXL345_CFG_IRQ(inst)
+#endif /* CONFIG_ADXL345_TRIGGER */
+
 #define ADXL345_CONFIG(inst)                                                                       \
 	.frequency = DT_INST_PROP(inst, frequency), .range = DT_INST_PROP(inst, range),            \
-	.fifo_mode = DT_INST_PROP(inst, fifo),
-
+	.fifo_mode = DT_INST_PROP(inst, fifo), ADXL345_CFG_IRQ(inst)
 
 #define ADXL345_CONFIG_SPI(inst)                                       \
 	{                                                              \
@@ -398,11 +444,11 @@ static int adxl345_init(const struct device *dev)
 
 #define ADXL345_DEFINE(inst)								\
 	static struct adxl345_dev_data adxl345_data_##inst;				\
-											\
+                                                                                                   \
 	static const struct adxl345_dev_config adxl345_config_##inst =                  \
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (ADXL345_CONFIG_SPI(inst)),      \
 			    (ADXL345_CONFIG_I2C(inst)));                                \
-                                                                                        \
+                                                                                                   \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl345_init, NULL,				\
 			      &adxl345_data_##inst, &adxl345_config_##inst, POST_KERNEL,\
 			      CONFIG_SENSOR_INIT_PRIORITY, &adxl345_api_funcs);		\

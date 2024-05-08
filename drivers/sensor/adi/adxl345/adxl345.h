@@ -155,6 +155,27 @@ struct adxl345_dev_data {
 	enum adxl345_range range;
 	enum adxl345_fifo fifo_mode;
 	uint16_t scale_factor;
+
+#if defined(CONFIG_ADXL345_TRIGGER)
+	struct gpio_callback gpio_cb;
+
+	sensor_trigger_handler_t drdy_handler;
+	const struct sensor_trigger *drdy_trigger;
+	sensor_trigger_handler_t active_handler;
+	const struct sensor_trigger *active_trigger;
+	sensor_trigger_handler_t inactive_handler;
+	const struct sensor_trigger *inactive_trigger;
+
+	const struct device *dev;
+
+#if defined(CONFIG_ADXL345_TRIGGER_OWN_THREAD)
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ADXL345_THREAD_STACK_SIZE);
+	struct k_sem gpio_sem;
+	struct k_thread thread;
+#elif defined(CONFIG_ADXL345_TRIGGER_GLOBAL_THREAD)
+	struct k_work work;
+#endif
+#endif /* CONFIG_ADXL345_TRIGGER */
 };
 
 union adxl345_bus {
@@ -175,9 +196,23 @@ struct adxl345_dev_config {
 	adxl345_bus_is_ready_fn bus_is_ready;
 	adxl345_reg_access_fn reg_access;
 
+#ifdef CONFIG_ADXL345_TRIGGER
+	struct gpio_dt_spec interrupt;
+#endif
+
 	uint16_t frequency;
 	uint8_t range;
 	uint8_t fifo_mode;
 };
+
+#ifdef CONFIG_ADXL345_TRIGGER
+int adxl345_init_interrupt(const struct device *dev);
+int adxl345_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			sensor_trigger_handler_t handle);
+
+int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf);
+int adxl345_reg_write_mask(const struct device *dev, uint8_t reg_addr, uint32_t mask, uint8_t data);
+int adxl345_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val);
+#endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADX345_ADX345_H_ */
