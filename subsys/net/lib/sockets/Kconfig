@@ -147,10 +147,9 @@ config NET_SOCKETS_SERVICE_INIT_PRIO
 	depends on NET_SOCKETS_SERVICE
 
 config NET_SOCKETS_SOCKOPT_TLS
-	bool "TCP TLS socket option support [EXPERIMENTAL]"
+	bool "TCP TLS socket option support"
 	imply TLS_CREDENTIALS
 	select MBEDTLS if NET_NATIVE
-	select EXPERIMENTAL
 	help
 	  Enable TLS socket option support which automatically establishes
 	  a TLS connection to the remote host.
@@ -180,10 +179,9 @@ config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 	  the maximum supported receive record length.
 
 config NET_SOCKETS_ENABLE_DTLS
-	bool "DTLS socket support [EXPERIMENTAL]"
+	bool "DTLS socket support"
 	depends on NET_SOCKETS_SOCKOPT_TLS
 	select MBEDTLS_DTLS if NET_NATIVE
-	select EXPERIMENTAL
 	help
 	  Enable DTLS socket support. By default only TLS over TCP is supported.
 
