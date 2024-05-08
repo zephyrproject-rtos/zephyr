@@ -709,7 +709,7 @@ Provisions Assessment
       - Consumers who gave consent for the processing of their personal data shall have
         the capability to withdraw it at any time.
       - M
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_6_1_4:
