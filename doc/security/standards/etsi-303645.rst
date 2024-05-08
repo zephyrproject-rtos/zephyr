@@ -283,7 +283,7 @@ Provisions Assessment
     * - Provision 5.3-4
       - Automatic mechanisms should be used for software updates.
       - R C
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_3_5:
