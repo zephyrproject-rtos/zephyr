@@ -569,7 +569,7 @@ Provisions Assessment
       - The confidentiality of personal data transiting between a device and a service,
         especially associated services, should be protected, with best practice cryptography.
       - R
-      -
+      - Y
       -
 
         .. _ETSI_Provision_5_8_2:
