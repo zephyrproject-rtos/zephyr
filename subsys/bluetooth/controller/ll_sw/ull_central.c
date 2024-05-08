@@ -311,6 +311,11 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	/* Re-initialize the Tx Q */
 	ull_tx_q_init(&conn->tx_q);
 
+	conn_lll->tifs_tx_us = EVENT_IFS_DEFAULT_US;
+	conn_lll->tifs_rx_us = EVENT_IFS_DEFAULT_US;
+	conn_lll->tifs_hcto_us = EVENT_IFS_DEFAULT_US;
+	conn_lll->tifs_cis_us = EVENT_IFS_DEFAULT_US;
+
 	/* TODO: active_to_start feature port */
 	conn->ull.ticks_active_to_start = 0U;
 	conn->ull.ticks_prepare_to_start =
@@ -363,7 +368,7 @@ conn_is_valid:
 
 	/* Calculate event time reservation */
 	slot_us = max_tx_time + max_rx_time;
-	slot_us += EVENT_IFS_US + (EVENT_CLOCK_JITTER_US << 1);
+	slot_us += conn_lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 	slot_us += ready_delay_us;
 	slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 

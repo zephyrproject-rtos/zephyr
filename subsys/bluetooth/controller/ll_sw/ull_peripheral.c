@@ -386,9 +386,14 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	ready_delay_us = lll_radio_rx_ready_delay_get(0U, 0U);
 #endif /* CONFIG_BT_CTLR_PHY */
 
+	lll->tifs_tx_us = EVENT_IFS_DEFAULT_US;
+	lll->tifs_rx_us = EVENT_IFS_DEFAULT_US;
+	lll->tifs_hcto_us = EVENT_IFS_DEFAULT_US;
+	lll->tifs_cis_us = EVENT_IFS_DEFAULT_US;
+
 	/* Calculate event time reservation */
 	slot_us = max_rx_time + max_tx_time;
-	slot_us += EVENT_IFS_US + (EVENT_CLOCK_JITTER_US << 1);
+	slot_us += lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 	slot_us += ready_delay_us;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
