@@ -507,8 +507,8 @@ Provisions Assessment
     * - Provision 5.6-4
       - Where a debug interface is physically accessible, it shall be disabled in software.
       - M C
-      -
-      -
+      - Y
+      - :ref:`Hardening Tool <hardening>`
 
         .. _ETSI_Provision_5_6_5:
     * - Provision 5.6-5
