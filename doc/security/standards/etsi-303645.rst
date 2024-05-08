@@ -701,7 +701,7 @@ Provisions Assessment
       - Where personal data is processed on the basis of consumers' consent, this consent
         shall be obtained in a valid way.
       - M C
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_6_1_3:
