@@ -95,11 +95,15 @@ endwhile()
 list(REMOVE_DUPLICATES kconfig_soc_source_dir)
 
 # Support multiple ARCH_ROOT, SOC_ROOT and BOARD_ROOT
-kconfig_gen("arch" "Kconfig"           "${kconfig_arch_source_dir}" "Zephyr Arch Kconfig")
-kconfig_gen("soc"  "Kconfig.defconfig" "${kconfig_soc_source_dir}"  "Zephyr SoC defconfig")
-kconfig_gen("soc"  "Kconfig"           "${kconfig_soc_source_dir}"  "Zephyr SoC Kconfig")
-kconfig_gen("soc"  "Kconfig.soc"       "${kconfig_soc_source_dir}"  "SoC Kconfig")
-kconfig_gen("soc"  "Kconfig.sysbuild"  "${kconfig_soc_source_dir}"  "Sysbuild SoC Kconfig")
+kconfig_gen("arch" "Kconfig"             "${kconfig_arch_source_dir}" "Zephyr Arch Kconfig")
+kconfig_gen("soc"  "Kconfig.defconfig"   "${kconfig_soc_source_dir}"  "Zephyr SoC defconfig")
+kconfig_gen("soc"  "Kconfig"             "${kconfig_soc_source_dir}"  "Zephyr SoC Kconfig")
+kconfig_gen("soc"  "Kconfig.soc"         "${kconfig_soc_source_dir}"  "SoC Kconfig")
+kconfig_gen("soc"  "Kconfig.sysbuild"    "${kconfig_soc_source_dir}"  "Sysbuild SoC Kconfig")
+kconfig_gen("boards" "Kconfig.defconfig" "${BOARD_DIRECTORIES}"       "Zephyr board defconfig")
+kconfig_gen("boards" "Kconfig.${BOARD}"  "${BOARD_DIRECTORIES}"       "board Kconfig")
+kconfig_gen("boards" "Kconfig"           "${BOARD_DIRECTORIES}"       "Zephyr board Kconfig")
+kconfig_gen("boards" "Kconfig.sysbuild"  "${BOARD_DIRECTORIES}"       "Sysbuild board Kconfig")
 
 # Clear variables created by cmake_parse_arguments
 unset(SOC_V2_NAME)

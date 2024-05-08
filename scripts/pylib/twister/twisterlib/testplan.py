@@ -442,7 +442,7 @@ class TestPlan:
             logger.debug(f"Adding platform {platform.name} with aliases {platform.aliases}")
             self.platforms.append(platform)
 
-        for board in known_boards:
+        for board in known_boards.values():
             new_config_found = False
             # don't load the same board data twice
             if not bdirs.get(board.dir):
