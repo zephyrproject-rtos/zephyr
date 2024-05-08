@@ -347,8 +347,8 @@ Provisions Assessment
       - The device should notify the user when the application of a software update
         will disrupt the basic functioning of the device.
       - R C
-      -
-      -
+      - N/A
+      - Zephyr provides this information for its updates. Anyone using Zephyr in their products must check if they are affected
 
         .. _ETSI_Provision_5_3_13:
     * - Provision 5.3-13
