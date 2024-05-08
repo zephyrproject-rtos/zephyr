@@ -15,6 +15,8 @@ The technical documentation for current and past releases is available at
 https://docs.zephyrproject.org/ (use the version selector to select your release
 of interest).
 
+.. _zephyr_release_cycle:
+
 Release Life Cycle and Maintenance
 **********************************
 
