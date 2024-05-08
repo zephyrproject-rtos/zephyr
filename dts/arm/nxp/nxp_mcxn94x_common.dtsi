@@ -874,6 +874,26 @@
 		status = "disabled";
 		#io-channel-cells = <2>;
 	};
+
+	flexcan0: can@d4000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0xd4000 0x4000>;
+		interrupts = <62 0>;
+		interrupt-names = "common";
+		clocks = <&syscon MCUX_FLEXCAN0_CLK>;
+		clk-source = <0>;
+		status = "disabled";
+	};
+
+	flexcan1: can@d8000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0xd8000 0x4000>;
+		interrupts = <63 0>;
+		interrupt-names = "common";
+		clocks = <&syscon MCUX_FLEXCAN1_CLK>;
+		clk-source = <0>;
+		status = "disabled";
+	};
 };
 
 &systick {
