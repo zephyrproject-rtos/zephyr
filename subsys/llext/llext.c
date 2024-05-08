@@ -165,8 +165,7 @@ static int llext_find_tables(struct llext_loader *ldr)
 		}
 
 		LOG_DBG("section %d at %zx: name %d, type %d, flags %zx, addr %zx, size %zd",
-			i,
-			(size_t)ldr->hdr.e_shoff + i * ldr->hdr.e_shentsize,
+			i, pos,
 			shdr.sh_name,
 			shdr.sh_type,
 			(size_t)shdr.sh_flags,
