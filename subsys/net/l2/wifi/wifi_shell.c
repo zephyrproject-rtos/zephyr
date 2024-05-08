@@ -1370,6 +1370,65 @@ static int cmd_wifi_ap_sta_disconnect(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, char *argv[],
+					 struct wifi_ap_config_params *params)
+{
+	struct getopt_state *state;
+	int opt;
+	static struct option long_options[] = {{"max_inactivity", required_argument, 0, 'i'},
+					       {"help", no_argument, 0, 'h'},
+					       {0, 0, 0, 0}};
+	int opt_index = 0;
+	long val;
+
+	while ((opt = getopt_long(argc, argv, "i:h", long_options, &opt_index)) != -1) {
+		state = getopt_state_get();
+		switch (opt) {
+		case 'i':
+			if (!parse_number(sh, &val, optarg, "max_inactivity",
+					  0, WIFI_AP_STA_MAX_INACTIVITY)) {
+				return -EINVAL;
+			}
+			params->max_inactivity = (uint32_t)val;
+			params->type |= WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY;
+			break;
+		case 'h':
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		default:
+			PR_ERROR("Invalid option %c\n", optopt);
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	return 0;
+}
+
+static int cmd_wifi_ap_config_params(const struct shell *sh, size_t argc,
+				     char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	struct wifi_ap_config_params ap_config_params = { 0 };
+	int ret = -1;
+
+	context.sh = sh;
+
+	if (wifi_ap_config_args_to_params(sh, argc, argv, &ap_config_params)) {
+		return -ENOEXEC;
+	}
+
+	ret = net_mgmt(NET_REQUEST_WIFI_AP_CONFIG_PARAM, iface,
+		       &ap_config_params, sizeof(struct wifi_ap_config_params));
+	if (ret) {
+		PR_WARNING("Setting AP parameter failed: %s\n",
+			   strerror(-ret));
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
@@ -1893,6 +1952,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  "<MAC address of the station>\n",
 		  cmd_wifi_ap_sta_disconnect,
 		  2, 0),
+	SHELL_CMD_ARG(config, NULL,
+		  "Configure AP parameters.\n"
+		  "-i --max_inactivity=<time duration (in seconds)>\n"
+		  "-h --help (prints help)",
+		  cmd_wifi_ap_config_params,
+		  2, 3),
 	SHELL_SUBCMD_SET_END
 );
 
