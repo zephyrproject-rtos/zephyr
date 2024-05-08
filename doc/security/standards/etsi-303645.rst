@@ -193,7 +193,7 @@ Provisions Assessment
         factory default, all consumer IoT device passwords shall be
         unique per device or defined by the user.
       - M C
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_1_2:
