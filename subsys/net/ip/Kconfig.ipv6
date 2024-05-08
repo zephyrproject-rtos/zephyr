@@ -168,6 +168,7 @@ config NET_IPV6_RA_RDNSS
 config NET_IPV6_PE
 	bool "Privacy extension (RFC 8981) support [EXPERIMENTAL]"
 	select MBEDTLS
+	select MBEDTLS_MD
 	select EXPERIMENTAL
 	select NET_MGMT
 	select NET_MGMT_EVENT

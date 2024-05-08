@@ -79,10 +79,11 @@ Boards
 Modules
 *******
 
-MbedTLS
-=======
+Mbed TLS
+========
 
-* The hash algorithms SHA-384, SHA-512, MD5 and SHA-1 are not enabled by default anymore.
+* TLS 1.2, RSA, AES, DES, and all the hash algorithms except SHA-256
+  (SHA-224, SHA-384, SHA-512, MD5 and SHA-1) are not enabled by default anymore.
   Their respective Kconfig options now need to be explicitly enabled to be able to use them.
 * The Kconfig options previously named `CONFIG_MBEDTLS_MAC_*_ENABLED` have been renamed.
   The `_MAC` and `_ENABLED` parts have been removed from their names.
@@ -560,10 +561,10 @@ MCUmgr
 ======
 
 * The support for SHA-256 (when using checksum/hash functions), previously provided
-  by either TinyCrypt or MbedTLS, is now provided by either PSA or MbedTLS.
+  by either TinyCrypt or Mbed TLS, is now provided by either PSA or Mbed TLS.
   PSA is the recommended API going forward, however, if it is not already enabled
   (:kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT`) and you have tight code size
-  constraints, you may be able to save 1.3 KB by using MbedTLS instead.
+  constraints, you may be able to save 1.3 KB by using Mbed TLS instead.
 
 Modem
 =====
