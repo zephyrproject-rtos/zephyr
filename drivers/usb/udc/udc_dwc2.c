@@ -888,14 +888,14 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 			udc_submit_event(dev, UDC_EVT_RESUME, 0);
 		}
 
-		if (int_status & USB_DWC2_GINTSTS_RXFLVL) {
-			/* Handle RxFIFO Non-Empty interrupt */
-			dwc2_handle_rxflvl(dev);
-		}
-
 		if (int_status & USB_DWC2_GINTSTS_IEPINT) {
 			/* Handle IN Endpoints interrupt */
 			dwc2_handle_iepint(dev);
+		}
+
+		if (int_status & USB_DWC2_GINTSTS_RXFLVL) {
+			/* Handle RxFIFO Non-Empty interrupt */
+			dwc2_handle_rxflvl(dev);
 		}
 
 		if (int_status & USB_DWC2_GINTSTS_OEPINT) {
