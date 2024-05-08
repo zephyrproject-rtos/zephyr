@@ -1308,7 +1308,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 
 		/* Calculate event time reservation */
 		slot_us = tx_time + rx_time;
-		slot_us += EVENT_IFS_US + (EVENT_CLOCK_JITTER_US << 1);
+		slot_us += lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 		slot_us += ready_delay;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX) ||

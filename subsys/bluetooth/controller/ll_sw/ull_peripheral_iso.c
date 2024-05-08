@@ -294,6 +294,7 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 {
 	struct ll_conn_iso_stream *cis = NULL;
 	struct ll_conn_iso_group *cig;
+	struct ll_conn *conn;
 	uint32_t cis_offset;
 
 	/* Get CIG by id */
@@ -309,6 +310,8 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	if (!cis) {
 		return BT_HCI_ERR_UNSPECIFIED;
 	}
+
+	conn = ll_conn_get(cis->lll.acl_handle);
 
 	cis_offset = sys_get_le24(ind->cis_offset);
 
@@ -332,6 +335,7 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 #endif /* CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
 	cis->lll.event_count = LLL_CONN_ISO_EVENT_COUNT_MAX;
 	cis->lll.next_subevent = 0U;
+	cis->lll.tifs_us = conn->lll.tifs_cis_us;
 	cis->lll.sn = 0U;
 	cis->lll.nesn = 0U;
 	cis->lll.cie = 0U;
