@@ -666,7 +666,7 @@ Provisions Assessment
     * - Provision 5.12-2
       - The manufacturer should provide users with guidance on how to securely set up their device.
       - R
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_12_3:
