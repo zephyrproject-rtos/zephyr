@@ -674,7 +674,7 @@ Provisions Assessment
       - The manufacturer should provide users with guidance on how to check whether their
         device is securely set up.
       - R
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_13_1:
