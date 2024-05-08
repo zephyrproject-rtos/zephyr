@@ -718,7 +718,7 @@ Provisions Assessment
         processing of personal data should be kept to the minimum necessary for the
         intended functionality.
       - R C
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_6_1_5:
