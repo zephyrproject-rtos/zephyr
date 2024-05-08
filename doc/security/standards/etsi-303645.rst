@@ -245,8 +245,8 @@ Provisions Assessment
     * - Provision 5.2-2
       - Disclosed vulnerabilities should be acted on in a timely manner.
       - R
-      -
-      -
+      - Y
+      - :ref:`Vulnerability Timeline  <vulnerability_timeline>`
 
         .. _ETSI_Provision_5_2_3:
     * - Provision 5.2-3
