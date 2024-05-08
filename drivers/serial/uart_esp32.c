@@ -888,7 +888,7 @@ static int uart_esp32_async_rx_disable(const struct device *dev)
 	/*Release next buffer*/
 	if (data->async.rx_next_len) {
 		evt.type = UART_RX_BUF_RELEASED;
-		evt.data.rx_buf.buf = data->async.rx_buf;
+		evt.data.rx_buf.buf = data->async.rx_next_buf;
 		if (data->async.cb) {
 			data->async.cb(dev, &evt, data->async.user_data);
 		}
