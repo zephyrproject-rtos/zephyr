@@ -5,8 +5,6 @@
 
 config SOC_SERIES_NRF51X
 	select SOC_FAMILY_NORDIC_NRF
-	help
-	  Enable support for NRF51 MCU series
 
 config SOC_NRF51822_QFAA
 	bool

@@ -5,8 +5,6 @@
 
 config SOC_SERIES_NRF52X
 	select SOC_FAMILY_NORDIC_NRF
-	help
-	  Enable support for NRF52 MCU series
 
 config SOC_NRF52805
 	bool

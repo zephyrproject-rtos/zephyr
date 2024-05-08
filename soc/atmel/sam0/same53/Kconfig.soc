@@ -7,8 +7,6 @@
 config SOC_SERIES_SAME53
 	bool
 	select SOC_FAMILY_ATMEL_SAM0
-	help
-	  Enable support for Atmel SAME53 Cortex-M4F microcontrollers.
 
 config SOC_SERIES
 	default "same53" if SOC_SERIES_SAME53

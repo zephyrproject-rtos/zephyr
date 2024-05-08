@@ -4,8 +4,6 @@
 config SOC_SERIES_CYCLONEV
 	bool
 	select SOC_FAMILY_INTEL_SOCFPGA_STD
-	help
-	  Intel SoC FPGA Cyclone V Series
 
 config SOC_SERIES
 	default "cyclonev" if SOC_SERIES_CYCLONEV
@@ -13,8 +11,6 @@ config SOC_SERIES
 config SOC_CYCLONEV
 	bool
 	select SOC_SERIES_CYCLONEV
-	help
-	  Intel SoC FPGA Cyclone V
 
 config SOC
 	default "cyclonev" if SOC_CYCLONEV

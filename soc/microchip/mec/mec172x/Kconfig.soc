@@ -6,8 +6,6 @@
 config SOC_SERIES_MEC172X
 	bool
 	select SOC_FAMILY_MICROCHIP_MEC
-	help
-	  Enable support for Microchip MEC Cortex-M4F MCU series
 
 config SOC_SERIES
 	default "mec172x" if SOC_SERIES_MEC172X

@@ -6,20 +6,14 @@
 config SOC_SERIES_APOLLO4X
 	bool
 	select SOC_FAMILY_AMBIQ
-	help
-	  Apollo4 Series MCU
 
 config SOC_APOLLO4P
 	bool
 	select SOC_SERIES_APOLLO4X
-	help
-	  Apollo4P
 
 config SOC_APOLLO4P_BLUE
 	bool
 	select SOC_SERIES_APOLLO4X
-	help
-	  Apollo4 Blue Plus
 
 config SOC_SERIES
 	default "apollo4x" if SOC_SERIES_APOLLO4X

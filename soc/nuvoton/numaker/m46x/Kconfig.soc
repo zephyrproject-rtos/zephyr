@@ -5,8 +5,6 @@
 config SOC_SERIES_M46X
 	bool
 	select SOC_FAMILY_NUMAKER
-	help
-	  Enable support for Nuvoton M46X MCU series
 
 config SOC_M467
 	bool

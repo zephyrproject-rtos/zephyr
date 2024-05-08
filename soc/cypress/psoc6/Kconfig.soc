@@ -10,45 +10,31 @@ config SOC_SERIES_PSOC6
 config SOC_SERIES_PSOC62
 	bool
 	select SOC_FAMILY_PSOC6
-	help
-	  Enable support for Cypress PSoC6 MCU series
 
 config SOC_SERIES_PSOC63
 	bool
 	select SOC_FAMILY_PSOC6
-	help
-	  Enable support for Cypress PSoC6-BLE MCU series
 
 # Cypress PSoC™ 6 MCU lines
 config SOC_SERIES_PSOC_60
 	bool
 	select SOC_SERIES_PSOC6
-	help
-	  Enable support for Infineon PSoC™ 60 MCU series
 
 config SOC_SERIES_PSOC_61
 	bool
 	select SOC_SERIES_PSOC6
-	help
-	  Enable support for Infineon PSoC™ 61 MCU series
 
 config SOC_SERIES_PSOC_62
 	bool
 	select SOC_SERIES_PSOC6
-	help
-	  Enable support for Infineon PSoC™ 62 MCU series
 
 config SOC_SERIES_PSOC_63
 	bool
 	select SOC_SERIES_PSOC6
-	help
-	  Enable support for Infineon PSoC™ 63 MCU series
 
 config SOC_SERIES_PSOC_64
 	bool
 	select SOC_SERIES_PSOC6
-	help
-	  Enable support for Infineon PSoC™ 64 MCU series
 
 config SOC_CY8C6247_M0
 	bool

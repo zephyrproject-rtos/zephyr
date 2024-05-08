@@ -5,8 +5,6 @@
 config SOC_SERIES_M2L31X
 	bool
 	select SOC_FAMILY_NUMAKER
-	help
-	  Enable support for Nuvoton M2L31X MCU series
 
 config SOC_M2L31XXX
 	bool

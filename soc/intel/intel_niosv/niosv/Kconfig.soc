@@ -5,8 +5,6 @@
 config SOC_SERIES_NIOSV
 	bool
 	select SOC_FAMILY_INTEL_NIOSV
-	help
-	  Intel FPGA NIOSV
 
 config SOC_SERIES
 	default "niosv" if SOC_SERIES_NIOSV

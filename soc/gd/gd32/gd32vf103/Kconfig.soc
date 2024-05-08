@@ -6,8 +6,6 @@
 config SOC_SERIES_GD32VF103
 	bool
 	select SOC_FAMILY_GD_GD32
-	help
-	  Enable support for GigaDevice GD32VF103 MCU series
 
 config SOC_SERIES
 	default "gd32vf103" if SOC_SERIES_GD32VF103

@@ -8,14 +8,10 @@ config SOC_SERIES_AM6X
 config SOC_SERIES_AM6X_A53
 	bool
 	select SOC_SERIES_AM6X
-	help
-	  Enable support for AM6X A53 Series.
 
 config SOC_SERIES_AM6X_M4
 	bool
 	select SOC_SERIES_AM6X
-	help
-	  Enable support for AM62X M4 Series.
 
 config SOC_AM6234_A53
 	bool

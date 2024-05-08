@@ -3,8 +3,6 @@
 
 config SOC_KB1200
 	bool
-	help
-	  ENE KB1200
 
 config SOC
 	default "kb1200" if SOC_KB1200

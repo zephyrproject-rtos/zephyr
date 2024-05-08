@@ -9,9 +9,6 @@
 config SOC_SERIES_XC7ZXXXS
 	bool
 	select SOC_FAMILY_XILINX_ZYNQ7000
-	help
-	  Enable support for the Xilinx Zynq-7000S (XC7ZxxxS)
-	  SoC series (single core ARM Cortex-A9).
 
 config SOC_XILINX_XC7Z007S
 	bool

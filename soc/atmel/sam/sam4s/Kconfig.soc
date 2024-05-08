@@ -8,10 +8,6 @@
 config SOC_SERIES_SAM4S
 	bool
 	select SOC_FAMILY_ATMEL_SAM
-	help
-	  Enable support for Atmel SAM4S Cortex-M4 microcontrollers.
-	  Part No.: SAM4S16C, SAM4S16B, SAM4S8C, SAM4S8B,
-	  SAM4S4C, SAM4S4B, SAM4S4A, SAM4S2C, SAM4S2B, SAM4S2A
 
 config SOC_SERIES
 	default "sam4s" if SOC_SERIES_SAM4S

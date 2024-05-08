@@ -6,14 +6,10 @@
 config SOC_SERIES_POLARFIRE
 	bool
 	select SOC_FAMILY_MICROCHIP_MIV
-	help
-	  Microchip RV64 implementation
 
 config SOC_POLARFIRE
 	bool
 	select SOC_SERIES_POLARFIRE
-	help
-	  Microchip MPFS system implementation
 
 config SOC_SERIES
 	default "polarfire" if SOC_SERIES_POLARFIRE

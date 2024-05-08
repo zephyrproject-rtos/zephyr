@@ -5,20 +5,14 @@
 config SOC_SERIES_CC32XX
 	bool
 	select SOC_FAMILY_TI_SIMPLELINK
-	help
-	  Enable support for TI SimpleLink CC32xx
 
 config SOC_CC3220SF
 	bool
 	select SOC_SERIES_CC32XX
-	help
-	  CC3220SF
 
 config SOC_CC3235SF
 	bool
 	select SOC_SERIES_CC32XX
-	help
-	  CC3235SF
 
 config SOC_SERIES
 	default "cc32xx" if SOC_SERIES_CC32XX

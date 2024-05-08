@@ -4,8 +4,6 @@
 config SOC_SERIES_IT8XXX2
 	bool
 	select SOC_FAMILY_ITE_EC
-	help
-	    Enable support for ITE IT8XXX2
 
 config SOC_IT8XXX2
 	bool

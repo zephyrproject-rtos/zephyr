@@ -3,8 +3,6 @@
 
 config SOC_TI_LM3S6965
 	bool
-	help
-	  TI LM3S6965
 
 config SOC_TI_LM3S6965_QEMU
 	def_bool y

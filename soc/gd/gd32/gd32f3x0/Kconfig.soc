@@ -4,8 +4,6 @@
 config SOC_SERIES_GD32F3X0
 	bool
 	select SOC_FAMILY_GD_GD32
-	help
-	  Enable support for GigaDevice GD32F3X0 MCU series
 
 config SOC_SERIES
 	default "gd32f3x0" if SOC_SERIES_GD32F3X0

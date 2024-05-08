@@ -4,8 +4,6 @@
 config SOC_SERIES_MPS3
 	bool
 	select SOC_FAMILY_ARM
-	help
-	  Enable support for ARM MPS3 MCU Series
 
 config SOC_SERIES
 	default "mps3" if SOC_SERIES_MPS3

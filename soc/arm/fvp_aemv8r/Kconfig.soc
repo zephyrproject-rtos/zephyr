@@ -3,8 +3,6 @@
 
 config SOC_SERIES_FVP_AEMV8R
 	bool
-	help
-	  Enable support for ARM FVP AEMv8R AArch64 Series
 
 config SOC_FVP_AEMV8R_AARCH64
 	bool

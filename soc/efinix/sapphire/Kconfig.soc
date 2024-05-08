@@ -3,8 +3,6 @@
 
 config SOC_EFINIX_SAPPHIRE
 	bool
-	help
-	  Efinix Sapphire VexRiscv system implementation
 
 config SOC
 	default "efinix_sapphire" if SOC_EFINIX_SAPPHIRE

@@ -5,8 +5,6 @@
 
 config SOC_SERIES_NRF91X
 	select SOC_FAMILY_NORDIC_NRF
-	help
-	  Enable support for NRF91 MCU series
 
 config SOC_NRF9120
 	bool

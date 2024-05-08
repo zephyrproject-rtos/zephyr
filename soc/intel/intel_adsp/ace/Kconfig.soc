@@ -5,8 +5,6 @@
 config SOC_SERIES_INTEL_ADSP_ACE
 	bool
 	select SOC_FAMILY_INTEL_ADSP
-	help
-	  Intel ADSP ACE
 
 config SOC_INTEL_ACE15_MTPM
 	bool

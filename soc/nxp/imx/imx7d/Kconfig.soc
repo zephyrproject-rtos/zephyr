@@ -6,8 +6,6 @@
 config SOC_SERIES_IMX7D
 	bool
 	select SOC_FAMILY_NXP_IMX
-	help
-	  Enable support for iMX7D MCU series
 
 config SOC_MCIMX7D
 	bool
@@ -16,8 +14,6 @@ config SOC_MCIMX7D
 config SOC_MCIMX7D_M4
 	bool
 	select SOC_MCIMX7D
-	help
-	  NXP iMX7 Dual M4 Core
 
 config SOC_SERIES
 	default "imx7d" if SOC_SERIES_IMX7D

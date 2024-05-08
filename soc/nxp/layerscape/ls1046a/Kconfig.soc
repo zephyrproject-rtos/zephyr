@@ -11,8 +11,6 @@ config SOC_SERIES_LS1046A
 config SOC_LS1046A
 	bool
 	select SOC_SERIES_LS1046A
-	help
-	  NXP Layerscape ls1046a
 
 config SOC
 	default "ls1046a" if SOC_LS1046A

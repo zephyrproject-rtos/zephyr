@@ -6,8 +6,6 @@
 config SOC_SERIES_NRF53X
 	bool
 	select SOC_FAMILY_NORDIC_NRF
-	help
-	 Enable support for NRF53 MCU series
 
 config SOC_NRF5340_CPUAPP
 	bool

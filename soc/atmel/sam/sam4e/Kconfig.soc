@@ -8,8 +8,6 @@
 config SOC_SERIES_SAM4E
 	bool
 	select SOC_FAMILY_ATMEL_SAM
-	help
-	  Enable support for Atmel SAM4E MCU series
 
 config SOC_SERIES
 	default "sam4e" if SOC_SERIES_SAM4E

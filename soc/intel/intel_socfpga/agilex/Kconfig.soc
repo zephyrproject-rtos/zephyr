@@ -4,8 +4,6 @@
 config SOC_SERIES_AGILEX
 	bool
 	select SOC_FAMILY_INTEL_SOCFPGA
-	help
-	  Intel SoC FPGA Agilex Series
 
 config SOC_SERIES
 	default "agilex" if SOC_SERIES_AGILEX
@@ -13,8 +11,6 @@ config SOC_SERIES
 config SOC_AGILEX
 	bool
 	select SOC_SERIES_AGILEX
-	help
-	  Intel SoC FPGA Agilex
 
 config SOC
 	default "agilex" if SOC_AGILEX

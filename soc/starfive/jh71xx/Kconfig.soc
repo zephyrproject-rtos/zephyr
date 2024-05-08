@@ -3,20 +3,14 @@
 
 config SOC_SERIES_STARFIVE_JH71XX
 	bool
-	help
-	  Starfive JH71XX series
 
 config SOC_JH7100
 	bool
 	select SOC_SERIES_STARFIVE_JH71XX
-	help
-	  Starfive JH7100
 
 config SOC_JH7110
 	bool
 	select SOC_SERIES_STARFIVE_JH71XX
-	help
-	  Starfive JH7110
 
 config SOC_SERIES
 	default "starfive_jh71xx" if SOC_SERIES_STARFIVE_JH71XX

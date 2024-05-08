@@ -15,8 +15,6 @@ config SOC_SERIES_NRF53X
 	select HAS_NORDIC_DRIVERS
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select HAS_SWO
-	help
-	 Enable support for NRF53 MCU series
 
 config SOC_NRF5340_CPUAPP
 	select CPU_HAS_NRF_IDAU

@@ -9,8 +9,6 @@
 config SOC_SERIES_SAM3X
 	bool
 	select SOC_FAMILY_ATMEL_SAM
-	help
-	  Enable support for Atmel SAM3X MCU Series
 
 config SOC_SERIES
 	default "sam3x" if SOC_SERIES_SAM3X

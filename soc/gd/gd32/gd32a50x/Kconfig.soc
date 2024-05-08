@@ -4,8 +4,6 @@
 config SOC_SERIES_GD32A50X
 	bool
 	select SOC_FAMILY_GD_GD32
-	help
-	  Enable support for GigaDevice GD32A50X MCU series
 
 config SOC_SERIES
 	default "gd32a50x" if SOC_SERIES_GD32A50X

@@ -7,20 +7,14 @@
 config SOC_SERIES_XMC4XXX
 	bool
 	select SOC_FAMILY_INFINEON_XMC
-	help
-	  XMC 4xxx Series MCU
 
 config SOC_XMC4500
 	bool
 	select SOC_SERIES_XMC4XXX
-	help
-	 SOC_XMC4500
 
 config SOC_XMC4700
 	bool
 	select SOC_SERIES_XMC4XXX
-	help
-	  SOC_XMC4700
 
 config SOC_PART_NUMBER_F100X1024
 	bool

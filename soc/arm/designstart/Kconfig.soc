@@ -4,20 +4,14 @@
 config SOC_SERIES_DESIGNSTART
 	bool
 	select SOC_FAMILY_ARM
-	help
-	  ARM DesignStart SoC Series
 
 config SOC_DESIGNSTART_FPGA_CORTEX_M1
 	bool
 	select SOC_SERIES_DESIGNSTART
-	help
-	  ARM Cortex-M1 DesignStart FPGA
 
 config SOC_DESIGNSTART_FPGA_CORTEX_M3
 	bool
 	select SOC_SERIES_DESIGNSTART
-	help
-	  ARM Cortex-M3 DesignStart FPGA
 
 config SOC_SERIES
 	default "designstart" if SOC_SERIES_DESIGNSTART
