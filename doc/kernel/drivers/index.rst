@@ -373,6 +373,24 @@ Drivers and other system utilities can determine whether startup is
 still in pre-kernel states by using the :c:func:`k_is_pre_kernel`
 function.
 
+Deferred initialization
+***********************
+
+Initialization of devices can also be deferred to a later time. In this case,
+the device is not automatically initialized by Zephyr at boot time. Instead,
+the device is initialized when the application calls :c:func:`device_init`.
+To defer a device driver initialization, add the property ``zephyr,deferred-init``
+to the associated device node in the DTS file. For example:
+
+.. code-block:: devicetree
+
+   / {
+           a-driver@40000000 {
+                   reg = <0x40000000 0x1000>;
+                   zephyr,deferred-init;
+           };
+   };
+
 System Drivers
 **************
 
