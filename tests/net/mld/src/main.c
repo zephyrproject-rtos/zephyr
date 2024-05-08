@@ -708,7 +708,7 @@ static void add_mcast_route_and_verify(struct net_if *iface, struct in6_addr *ad
 	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting for a report");
 
 	zassert_equal(info->records_count, 1, "Invalid number of reported addresses");
-	zassert_equal(info->records[0].record_type, NET_IPV6_MLDv2_MODE_IS_EXCLUDE,
+	zassert_equal(info->records[0].record_type, NET_IPV6_MLDv2_CHANGE_TO_EXCLUDE_MODE,
 		      "Invalid MLDv2 record type");
 	zassert_mem_equal(&info->records[0].mcast_addr, addr,
 			  sizeof(struct in6_addr), "Invalid reported address");
@@ -731,7 +731,7 @@ static void del_mcast_route_and_verify(struct net_if *iface, struct in6_addr *ad
 	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting for a report");
 
 	zassert_equal(info->records_count, 1, "Invalid number of reported addresses");
-	zassert_equal(info->records[0].record_type, NET_IPV6_MLDv2_MODE_IS_INCLUDE,
+	zassert_equal(info->records[0].record_type, NET_IPV6_MLDv2_CHANGE_TO_INCLUDE_MODE,
 		      "Invalid MLDv2 record type");
 	zassert_mem_equal(&info->records[0].mcast_addr, addr,
 			  sizeof(struct in6_addr), "Invalid reported address");
