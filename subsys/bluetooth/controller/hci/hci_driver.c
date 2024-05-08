@@ -138,7 +138,7 @@ static int bt_recv_prio(struct net_buf *buf)
 
 #if defined(CONFIG_BT_CTLR_ISO)
 
-#define SDU_HCI_HDR_SIZE (BT_HCI_ISO_HDR_SIZE + BT_HCI_ISO_TS_DATA_HDR_SIZE)
+#define SDU_HCI_HDR_SIZE (BT_HCI_ISO_HDR_SIZE + BT_HCI_ISO_SDU_TS_HDR_SIZE)
 
 isoal_status_t sink_sdu_alloc_hci(const struct isoal_sink    *sink_ctx,
 				  const struct isoal_pdu_rx  *valid_pdu,
@@ -167,7 +167,7 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink             *sink_ctx,
 				 const struct isoal_emitted_sdu_frag *sdu_frag,
 				 const struct isoal_emitted_sdu      *sdu)
 {
-	struct bt_hci_iso_ts_data_hdr *data_hdr;
+	struct bt_hci_iso_sdu_ts_hdr *sdu_hdr;
 	uint16_t packet_status_flag;
 	struct bt_hci_iso_hdr *hdr;
 	uint16_t handle_packed;
@@ -230,14 +230,14 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink             *sink_ctx,
 		ts = (pb & 0x1) == 0x0;
 
 		if (ts) {
-			data_hdr = net_buf_push(buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
+			sdu_hdr = net_buf_push(buf, BT_HCI_ISO_SDU_TS_HDR_SIZE);
 			slen_packed = bt_iso_pkt_len_pack(total_len, packet_status_flag);
 
-			data_hdr->ts = sys_cpu_to_le32((uint32_t) sdu_frag->sdu.timestamp);
-			data_hdr->data.sn   = sys_cpu_to_le16((uint16_t) sdu_frag->sdu.sn);
-			data_hdr->data.slen = sys_cpu_to_le16(slen_packed);
+			sdu_hdr->ts = sys_cpu_to_le32((uint32_t) sdu_frag->sdu.timestamp);
+			sdu_hdr->sdu.sn   = sys_cpu_to_le16((uint16_t) sdu_frag->sdu.sn);
+			sdu_hdr->sdu.slen = sys_cpu_to_le16(slen_packed);
 
-			len += BT_HCI_ISO_TS_DATA_HDR_SIZE;
+			len += BT_HCI_ISO_SDU_TS_HDR_SIZE;
 		}
 
 		hdr = net_buf_push(buf, BT_HCI_ISO_HDR_SIZE);
