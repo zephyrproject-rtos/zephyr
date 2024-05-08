@@ -15,8 +15,36 @@ config NRF_ETR
 
 if NRF_ETR
 
+config NRF_ETR_DECODE
+	bool "Decode ETR content"
+	default y if LOG_FRONTEND_STMESP_FSC
+	select MIPI_STP_DECODER
+	select CS_TRACE_DEFMT
+	select LOG_FRONTEND_STMESP_DEMUX
+	select LOG_OUTPUT
+	imply CBPRINTF_FP_SUPPORT
+	help
+	  In this mode, log messages stored by Coresight STM logging frontends are
+	  decoded and printed in the human readable form.
+
+config NRF_ETR_DECODE_DROP_PERIOD
+	int "Period of dropped messages notification"
+	default 5000
+	help
+	  Period (in milliseconds) how often it is checked if any dropped messages
+	  have occurred.
+
+config NRF_ETR_DEBUG
+	bool "Debug mode"
+	depends on !LOG_PRINTK
+	select MIPI_STP_DECODER
+	select CS_TRACE_DEFMT
+	help
+	  In debug mode STPv2 decoded data is printed.
+
 config NRF_ETR_STACK_SIZE
 	int "ETR thread stack size"
+	default 2048 if NRF_ETR_DECODE || NRF_ETR_DEBUG
 	default 1024
 
 config NRF_ETR_BACKOFF
@@ -35,6 +63,8 @@ config NRF_ETR_FLUSH_TIMEOUT
 
 config NRF_ETR_SYNC_PERIOD
 	int "Period of custom synchronization frame"
+	default 0 if NRF_ETR_DECODE
+	default 0 if NRF_ETR_DEBUG
 	default 16
 	help
 	  To help find the synchronization when decoding the ETR content
