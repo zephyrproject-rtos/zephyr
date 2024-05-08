@@ -238,8 +238,8 @@ Provisions Assessment
       - The manufacture shall make a vulnerability disclosure policy publicly
         available.
       - M
-      -
-      -
+      - Y
+      - :ref:`Vulnerability Management <reporting>`
 
         .. _ETSI_Provision_5_2_2:
     * - Provision 5.2-2
