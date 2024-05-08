@@ -301,7 +301,7 @@ Provisions Assessment
         can enable, disable, or postpone installation of security updates and/or
         update notifications.
       - R C
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_3_7:
