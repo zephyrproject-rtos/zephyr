@@ -132,13 +132,23 @@ static int _msgq_put_internal(struct k_msgq *msgq, const void *data,
 
 	key = k_spin_lock(&msgq->lock);
 
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, put, msgq, timeout);
+	if (is_prepend) {
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, prepend, msgq, timeout);
+	} else {
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, put, msgq, timeout);
+	}
+
 
 	if (msgq->used_msgs < msgq->max_msgs) {
 		/* message queue isn't full */
 		pending_thread = z_unpend_first_thread(&msgq->wait_q);
 		if (pending_thread != NULL) {
-			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, 0);
+
+			if (is_prepend) {
+				SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, prepend, msgq, timeout, 0);
+			} else {
+				SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, 0);
+			}
 
 			/* give message to waiting thread */
 			(void)memcpy(pending_thread->base.swap_data, data,
@@ -190,11 +200,21 @@ static int _msgq_put_internal(struct k_msgq *msgq, const void *data,
 		_current->base.swap_data = (void *) data;
 
 		result = z_pend_curr(&msgq->lock, key, &msgq->wait_q, timeout);
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
+
+		if (is_prepend) {
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, prepend, msgq, timeout, result);
+		} else {
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
+		}
+
 		return result;
 	}
 
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
+	if (is_prepend) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, prepend, msgq, timeout, result);
+	} else {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
+	}
 
 	k_spin_unlock(&msgq->lock, key);
 
