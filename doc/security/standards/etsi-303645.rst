@@ -693,7 +693,7 @@ Provisions Assessment
         for each device and service. This also applies to third parties that can be involved,
         including advertisers.
       - M
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_6_1_2:
