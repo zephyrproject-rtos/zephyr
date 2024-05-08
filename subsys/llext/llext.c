@@ -738,11 +738,6 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 				continue;
 			}
 
-			if (!rela.r_offset) {
-				LOG_WRN("PLT: zero offset idx %u name %s", j, name);
-				continue;
-			}
-
 			/* Resolve the symbol */
 			*(const void **)(text + got_offset) = link_addr;
 			break;
