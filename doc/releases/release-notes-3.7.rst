@@ -116,6 +116,11 @@ Build system and Infrastructure
     choice to select the C Standard version. Additionally subsystems can select a minimum
     required C Standard version, with for example :kconfig:option:`CONFIG_REQUIRES_STD_C11`.
 
+  * Added external boot banner feature which allows for applications/modules to have a custom boot
+    banner implementation which can be enabled with
+    :kconfig:option:`CONFIG_BOOT_BANNER_EXTERNAL_IMPLEMENTATION` with function
+    :c:func:`boot_banner`.
+
 Drivers and Sensors
 *******************
 
