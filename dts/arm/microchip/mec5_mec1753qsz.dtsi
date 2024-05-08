@@ -20,8 +20,19 @@
 	};
 
 	soc {
-		#include "mec5/mec5_gpspi_v2.dtsi"
-		#include "mec5/mec5_i3c.dtsi"
+		dmac: dmac@40002400 {
+			compatible = "microchip,mec5-dmac";
+			reg = <0x40002400 0xc00>;
+			interrupts = <24 1>, <25 1>, <26 1>, <27 1>,
+				     <28 1>, <29 1>, <30 1>, <31 1>,
+				     <32 1>, <33 1>, <34 1>, <35 1>,
+				     <36 1>, <37 1>, <38 1>, <39 1>,
+				     <194 1>, <195 1>, <196 1>, <197 1>;
+			#dma-cells = <2>;
+			dma-channels = <20>;
+			dma-requests = <20>;
+			status = "disabled";
+		};
 
 		eeprom: eeprom@40002c00 {
 			reg = <0x40002c00 0x400>;
@@ -35,6 +46,9 @@
 			interrupts = <135 0>;
 			status = "disabled";
 		};
+
+		#include "mec5/mec5_gpspi_v2.dtsi"
+		#include "mec5/mec5_i3c.dtsi"
 
 		/* Yet another exception. After MEC172x the 144-pin package has 3 UARTs */
 		uart2: uart@400f2c00 {

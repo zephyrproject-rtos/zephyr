@@ -343,18 +343,6 @@
 				     <124 0>, <125 0>;
 			status = "disabled";
 		};
-		dmac: dmac@40002400 {
-			compatible = "microchip,mec5-dmac";
-			reg = <0x40002400 0xc00>;
-			interrupts = <24 1>, <25 1>, <26 1>, <27 1>,
-				     <28 1>, <29 1>, <30 1>, <31 1>,
-				     <32 1>, <33 1>, <34 1>, <35 1>,
-				     <36 1>, <37 1>, <38 1>, <39 1>;
-			#dma-cells = <2>;
-			dma-channels = <16>;
-			dma-requests = <16>;
-			status = "disabled";
-		};
 		i2c_smb_0: i2c@40004000 {
 			compatible = "microchip,mec5-i2c";
 			reg = <0x40004000 0x80>;

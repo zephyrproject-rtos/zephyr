@@ -11,6 +11,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/util_macro.h>
 
 #include <zephyr/logging/log.h>
@@ -20,14 +21,6 @@ LOG_MODULE_REGISTER(dma_mchp_mec5, CONFIG_DMA_LOG_LEVEL);
 #include <device_mec5.h>
 #include <mec_ecia_api.h>
 #include <mec_dmac_api.h>
-
-#define MEC5_DMA_DEBUG	0
-#ifdef MEC5_DMA_DEBUG
-#include <string.h>
-#endif
-
-BUILD_ASSERT(IS_ENABLED(CONFIG_DMA_MEC5_AGGREGATED_INTERRUPT),
-	     "Driver does not support direct mode interrupts at this time");
 
 struct dma_mec5_config {
 	struct dma_regs *regs;
@@ -58,6 +51,7 @@ struct dma_mec5_channel {
 struct dma_mec5_data {
 	struct dma_context ctx;
 	struct dma_mec5_channel *channels;
+	atomic_t *channels_atomic;
 };
 
 static int is_dma_data_size_valid(uint32_t datasz)
@@ -111,17 +105,15 @@ static int is_dma_config_valid(const struct device *dev, struct dma_config *conf
 		return 0;
 	}
 
-	if (config->block_count != 1) {
-		LOG_ERR("XEC DMA block count != 1");
-		return 0;
-	}
-
 	return 1;
 }
 
 static int check_blocks(struct dma_mec5_channel *chdata, struct dma_block_config *block,
 			uint32_t block_count, uint32_t unit_size)
 {
+	struct dma_block_config *pb = block;
+	uint32_t n = 0, total_len = 0;
+
 	if (!block || !chdata) {
 		LOG_ERR("bad pointer");
 		return -EINVAL;
@@ -129,19 +121,32 @@ static int check_blocks(struct dma_mec5_channel *chdata, struct dma_block_config
 
 	chdata->total_req_xfr_len = 0;
 
-	for (uint32_t i = 0; i < block_count; i++) {
-		if ((block->source_addr_adj == DMA_ADDR_ADJ_DECREMENT) ||
-		    (block->dest_addr_adj == DMA_ADDR_ADJ_DECREMENT)) {
-			LOG_ERR("XEC DMA HW does not support address decrement. Block index %u", i);
+	for (n = 0; n < block_count; n++) {
+		if (!pb) {
+			LOG_ERR("Block %u config is NULL", n);
 			return -EINVAL;
 		}
 
-		if (!is_data_aligned(block->source_address, block->dest_address, unit_size)) {
-			LOG_ERR("XEC DMA block at index %u violates source/dest unit size", i);
+		if ((pb->source_addr_adj == DMA_ADDR_ADJ_DECREMENT) ||
+		    (pb->dest_addr_adj == DMA_ADDR_ADJ_DECREMENT)) {
+			LOG_ERR("Block %u: HW does not support address decrement", n);
 			return -EINVAL;
 		}
 
-		chdata->total_req_xfr_len += block->block_size;
+		if (!is_data_aligned(pb->source_address, pb->dest_address, unit_size)) {
+			LOG_ERR("Block %u: violates source/dest unit size", n);
+			return -EINVAL;
+		}
+
+		total_len += block->block_size;
+		pb = pb->next_block;
+	}
+
+	chdata->total_req_xfr_len = total_len;
+
+	if (!total_len) {
+		LOG_ERR("%u blocks no data", block_count);
+		return -EINVAL;
 	}
 
 	return 0;
@@ -215,9 +220,9 @@ static int check_blocks(struct dma_mec5_channel *chdata, struct dma_block_config
 static int dma_mec5_configure(const struct device *dev, uint32_t channel,
 			      struct dma_config *config)
 {
-	const struct dma_mec5_config * const devcfg = dev->config;
-	struct dma_regs * const regs = devcfg->regs;
-	struct dma_mec5_data * const data = dev->data;
+	const struct dma_mec5_config *const devcfg = dev->config;
+	struct dma_regs *const regs = devcfg->regs;
+	struct dma_mec5_data *const data = dev->data;
 	int ret;
 
 	if (!config || (channel >= (uint32_t)devcfg->dma_channels)) {
@@ -282,11 +287,11 @@ static int dma_mec5_configure(const struct device *dev, uint32_t channel,
 	chdata->cb = config->dma_callback;
 	chdata->user_data = config->user_data;
 
-	/* invoke callback on completion of each block instead of all blocks ? */
+	/* invoke callback on completion of each block instead of all blocks? */
 	if (config->complete_callback_en) {
 		chdata->flags |= BIT(DMA_MEC5_CHAN_FLAGS_CB_EOB_POS);
 	}
-	if (config->error_callback_en) { /* disable callback on errors ? */
+	if (config->error_callback_dis) { /* disable callback on errors ? */
 		chdata->flags |= BIT(DMA_MEC5_CHAN_FLAGS_CB_ERR_DIS_POS);
 	}
 
@@ -312,7 +317,6 @@ static int dma_mec5_reload(const struct device *dev, uint32_t channel,
 	const struct dma_mec5_config * const devcfg = dev->config;
 	struct dma_regs * const regs = devcfg->regs;
 	struct dma_mec5_data * const data = dev->data;
-	enum mec_dmac_dir dir = MEC_DMAC_DIR_DEV_TO_MEM;
 	int ret = 0;
 
 	if (channel >= (uint32_t)devcfg->dma_channels) {
@@ -321,11 +325,6 @@ static int dma_mec5_reload(const struct device *dev, uint32_t channel,
 
 	if (mec_dma_chan_is_busy(regs, (enum mec_dmac_channel)channel)) {
 		return -EBUSY;
-	}
-
-	ret = mec_dma_chan_dir_get(regs, (enum mec_dmac_channel)channel, &dir);
-	if (ret != MEC_RET_OK) {
-		return -EIO;
 	}
 
 	struct dma_mec5_channel *chdata = &data->channels[channel];
@@ -349,8 +348,8 @@ static int dma_mec5_reload(const struct device *dev, uint32_t channel,
 
 static int dma_mec5_start(const struct device *dev, uint32_t channel)
 {
-	const struct dma_mec5_config * const devcfg = dev->config;
-	struct dma_regs * const regs = devcfg->regs;
+	const struct dma_mec5_config *const devcfg = dev->config;
+	struct dma_regs *const regs = devcfg->regs;
 
 	if (channel >= (uint32_t)devcfg->dma_channels) {
 		return -EINVAL;
@@ -362,8 +361,13 @@ static int dma_mec5_start(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
+	/* Block PM transition until DMA completes */
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
 	ret = mec_dma_chan_start(regs, (enum mec_dmac_channel)channel);
 	if (ret != MEC_RET_OK) {
+		/* Release PM lock */
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		return -EINVAL;
 	}
 
@@ -381,13 +385,18 @@ static int dma_mec5_stop(const struct device *dev, uint32_t channel)
 	}
 
 	ret = mec_dma_chan_stop(regs, (enum mec_dmac_channel)channel);
-	if (ret == MEC_RET_ERR_TIMEOUT) {
-		return -ETIMEDOUT;
-	} else if (ret != MEC_RET_OK) {
-		return -EINVAL;
+	if (ret == MEC_RET_OK) {
+		ret = 0;
+	} else if (ret == MEC_RET_ERR_TIMEOUT) {
+		ret = -ETIMEDOUT;
+	} else {
+		ret = -EINVAL;
 	}
 
-	return 0;
+	/* Release PM lock */
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
+	return ret;
 }
 
 /* Get DMA transfer status.
@@ -487,23 +496,27 @@ static const struct dma_driver_api dma_mec5_api = {
 };
 
 #ifdef CONFIG_PM_DEVICE
-/* TODO DMA channel cannot be suspended and restarted.
- * Hardware will only allow aborting an in progress transfer.
- * We must implement a method to prevent the kernel from
- * trigger PM transition to suspend if DMA is active.
+/* When PM policy allows suspend or resume this function will be called
+ * by the kernel PM subsystem. On suspend we clear the DMA block activate
+ * bit which clock gates the block and should cause its CLK_REQ signal to
+ * go inactive. On resume we set the DMA block activate ungating clocks in
+ * the block. For light sleep (non-suspend) the DMA block can continue
+ * operation and its interrupts will wake the CPU.
  */
 static int dma_mec5_pm_action(const struct device *dev,
 			      enum pm_device_action action)
 {
-	const struct dma_mec5_config * const devcfg = dev->config;
-	struct dma_regs * const regs = devcfg->regs;
+	const struct dma_mec5_config *const devcfg = dev->config;
+	struct dma_regs *const regs = devcfg->regs;
 	int ret = 0;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		mec_dmac_enable(regs, 1);
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
+		mec_dmac_enable(regs, 0);
 		break;
 
 	default:
@@ -514,13 +527,60 @@ static int dma_mec5_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
+static void dma_mec5_irq_handler(const struct device *dev, uint8_t chan_id)
+{
+	struct dma_mec5_data *const data = dev->data;
+	const struct dma_mec5_config *const devcfg = dev->config;
+	struct dma_regs *const regs = devcfg->regs;
+	struct dma_mec5_channel *chan_data = &data->channels[chan_id];
+	struct dma_block_config *block = chan_data->curr;
+	uint32_t istatus = 0u;
+
+	mec_dma_chan_intr_en(regs, (enum mec_dmac_channel)chan_id, 0);
+	mec_dma_chan_halt(regs, (enum mec_dmac_channel)chan_id);
+	mec_dma_chan_intr_status(regs, (enum mec_dmac_channel)chan_id, &istatus);
+	mec_dma_chan_intr_status_clr(regs, (enum mec_dmac_channel)chan_id);
+
+	if (istatus & BIT(MEC_DMA_CHAN_STS_BUS_ERR_POS)) {
+		if (!(chan_data->flags & BIT(DMA_MEC5_CHAN_FLAGS_CB_ERR_DIS_POS))) {
+			chan_data->cb(dev, chan_data->user_data, chan_id, -EIO);
+		}
+		return;
+	}
+
+	chan_data->block_count--;
+	if (chan_data->block_count) {
+		if ((chan_data->flags & BIT(DMA_MEC5_CHAN_FLAGS_CB_EOB_POS)) && chan_data->cb) {
+			chan_data->cb(dev, chan_data->user_data, chan_id, DMA_STATUS_BLOCK);
+		}
+		block = block->next_block;
+		if (block) {
+			chan_data->curr = block;
+			dma_mec5_reload(dev, chan_id, block->source_address,
+					block->dest_address, block->block_size);
+			dma_mec5_start(dev, chan_id);
+		}
+	} else {
+		if (chan_data->cb) {
+			chan_data->cb(dev, chan_data->user_data, chan_id, DMA_STATUS_COMPLETE);
+		}
+		/* Release PM lock */
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+
 static int dma_mec5_init(const struct device *dev)
 {
+	struct dma_mec5_data *const data = dev->data;
 	const struct dma_mec5_config * const devcfg = dev->config;
 	struct dma_regs *regs = devcfg->regs;
 	int ret;
 
 	LOG_DBG("driver init");
+
+	data->ctx.magic = DMA_MAGIC;
+	data->ctx.dma_channels = devcfg->dma_channels;
+	data->ctx.atomic = data->channels_atomic;
 
 	ret = mec_dmac_init(regs, devcfg->chmsk);
 
@@ -535,96 +595,50 @@ static int dma_mec5_init(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_DMA_MEC5_AGGREGATED_INTERRUPT
+#define DMA_MEC5_NUM_CHAN(inst) DT_INST_PROP(inst, dma_channels)
 
-/* DMA channel interrupt handler called by ISR.
- * TODO implement callback flags logic
- * Callback flags in struct dma_config
- * completion_callback_en
- *	0 = invoke at completion of all blocks
- *	1 = invoke at completion of each block
- * error_callback_en
- *	0 = invoke on all errors
- *	1 = disabled, do not invoke on errors
- */
-static void dma_mec5_aggr_irq_handler(const struct device *dev)
-{
-	const struct dma_mec5_config * const devcfg = dev->config;
-	struct dma_mec5_data * const data = dev->data;
-	struct dma_regs *regs = devcfg->regs;
-	uint32_t chmsk = devcfg->chmsk;
-	uint32_t result = 0u;
-	uint32_t istatus = 0u;
-	int bpos = 0;
-	int cb_status = 0;
+#define DMA_MEC5_IRQ_DECLARE(idx, p2) \
+	static void dma_mec5_chan_##idx##_isr(const struct device *dev)	\
+	{								\
+		dma_mec5_irq_handler(dev, idx);				\
+	}								\
 
-	mec_dma_chan_ia_result(regs, &result);
-	result &= chmsk;
-	mec_dma_chan_ia_status_clr_mask(regs, result);
-
-	bpos = find_lsb_set(result);
-	while (bpos > 0) {
-		bpos--;
-
-		mec_dma_chan_intr_status(regs, (enum mec_dmac_channel)bpos, &istatus);
-		mec_dma_chan_intr_status_clr(regs, (enum mec_dmac_channel)bpos);
-		mec_dma_chan_ia_status_clr(regs, (enum mec_dmac_channel)bpos);
-
-		if (istatus & BIT(MEC_DMA_CHAN_STS_BUS_ERR_POS)) {
-			cb_status = -EIO;
-		}
-
-		struct dma_mec5_channel *chan_data = &data->channels[bpos];
-
-		if (chan_data->cb) {
-			chan_data->cb(dev, chan_data->user_data, bpos, cb_status);
-		}
-
-		result &= BIT(bpos);
-		bpos = find_lsb_set(result);
-	}
-}
-
-/* i = instance */
-#define DMA_MEC5_IRQ_CONNECT_DEF(i)				\
-	void dma_mec5_inst##i##_irq_connect(void)               \
-	{							\
-		IRQ_CONNECT(DT_INST_IRQN(i),			\
-			    DT_INST_IRQ(i, priority),		\
-			    dma_mec5_aggr_irq_handler,		\
-			    DEVICE_DT_INST_GET(i), 0);		\
-		irq_enable(DT_INST_IRQN(i));			\
-	}
-
-#define DMA_MEC5_IRQ_CONNECT_MEMBER(i)				\
-	.irq_connect = dma_mec5_inst##i##_irq_connect,
-
-#endif /* CONFIG_DMA_MEC5_AGGREGATED_INTERRUPT */
+#define DMA_MEC5_IRQ_CONNECT_SUB(idx, node_id)					\
+	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),				\
+		    DT_IRQ_BY_IDX(node_id, idx, priority),			\
+		    dma_mec5_chan_##idx##_isr,					\
+		    DEVICE_DT_GET(node_id), 0);					\
+	irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));
 
 #define DMA_MEC5_DEVICE(i)						\
-	BUILD_ASSERT(DT_INST_PROP(i, dma_channels) <= 16, "MEC5 DMA dma-channels > 16");	\
-	BUILD_ASSERT(DT_INST_PROP(i, dma_requests) <= 16, "MEC5 DMA dma-requests > 16");	\
-											\
 	static struct dma_mec5_channel							\
 		dma_mec5_ctrl##i##_chans[DT_INST_PROP(i, dma_channels)];		\
-	ATOMIC_DEFINE(dma_mec5_atomic##i, DT_INST_PROP(i, dma_channels));		\
+											\
+	static ATOMIC_DEFINE(dma_mec5_atomic##i, DT_INST_PROP(i, dma_channels));	\
 											\
 	static struct dma_mec5_data dma_mec5_data##i = {				\
 		.ctx.magic = DMA_MAGIC,							\
 		.ctx.dma_channels = DT_INST_PROP(i, dma_channels),			\
 		.ctx.atomic = dma_mec5_atomic##i,					\
 		.channels = dma_mec5_ctrl##i##_chans,					\
+		.channels_atomic = dma_mec5_atomic##i,					\
 	};										\
 											\
-	DMA_MEC5_IRQ_CONNECT_DEF(i)							\
+	LISTIFY(DMA_MEC5_NUM_CHAN(i), DMA_MEC5_IRQ_DECLARE, (;))			\
+	void dma_mec5_irq_connect_##i(void)						\
+	{										\
+		LISTIFY(DMA_MEC5_NUM_CHAN(i), DMA_MEC5_IRQ_CONNECT_SUB, (;),		\
+			DT_INST(i, DT_DRV_COMPAT))					\
+	}										\
 											\
 	static const struct dma_mec5_config dma_mec5_cfg##i = {				\
 		.regs = (struct dma_regs *)DT_INST_REG_ADDR(i),				\
 		.chmsk = DT_INST_PROP_OR(i, dma_channel_mask, MEC_DMAC_ALL_CHAN_MASK),	\
 		.dma_channels = DT_INST_PROP(i, dma_channels),				\
 		.dma_requests = DT_INST_PROP(i, dma_requests),				\
-		DMA_MEC5_IRQ_CONNECT_MEMBER(i)						\
+		.irq_connect = dma_mec5_irq_connect_##i,				\
 	};										\
+											\
 	PM_DEVICE_DT_DEFINE(i, dma_mec5_pm_action);					\
 	DEVICE_DT_INST_DEFINE(i, &dma_mec5_init,					\
 		PM_DEVICE_DT_GET(i),							\

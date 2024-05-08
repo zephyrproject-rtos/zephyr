@@ -8,15 +8,3 @@ config DMA_MCHP_MEC5
 	depends on DT_HAS_MICROCHIP_MEC5_DMAC_ENABLED
 	help
 	  DMA driver for Microchip MEC5 series MCUs.
-
-if DMA_MCHP_MEC5
-
-config DMA_MEC5_AGGREGATED_INTERRUPT
-	bool "Microchip MEC5 DMA channels use an aggregated interrupt"
-	default y
-	help
-	  Microchip MEC5 DMA controller channel interrupts
-	  will be aggregated into one interrupt handler. If disabled
-	  then each channel will have a separate ISR.
-
-endif # DMA_MCHP_MEC5
