@@ -211,7 +211,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_isr_set(lll_conn_isr_rx, lll);
 
-	radio_tmr_tifs_set(EVENT_IFS_US);
+	radio_tmr_tifs_set(lll->tifs_tx_us);
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)

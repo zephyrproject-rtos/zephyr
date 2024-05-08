@@ -186,7 +186,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_isr_set(lll_conn_isr_tx, lll);
 
-	radio_tmr_tifs_set(EVENT_IFS_US);
+	radio_tmr_tifs_set(lll->tifs_rx_us);
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	/* If CTE RX is enabled and the PHY is not CODED, store channel used for
