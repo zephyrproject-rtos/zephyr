@@ -93,3 +93,12 @@ module-str = Log level for Wi-Fi Network manager module
 module-help = Enables using the Wi-Fi Network managers to manage the Wi-Fi network interfaces.
 source "subsys/net/Kconfig.template.log_config.net"
 endif # WIFI_NM
+
+config WIFI_MGMT_AP_STA_INACTIVITY_TIMEOUT
+	int "Station inactivity timeout in seconds"
+	default 300
+	help
+	  Station inactivity timeout is the period for which AP may keep a client
+	  in associated state while there is no traffic from that particular
+	  client. If a non-zero value is set, AP may choose to disassociate the
+	  client after the timeout.
