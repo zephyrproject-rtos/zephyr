@@ -124,10 +124,11 @@ static isoal_status_t test_sink_sdu_emit(const struct isoal_sink             *si
 }
 
 static isoal_status_t test_sink_sdu_write(void *dbuf,
+					  const size_t sdu_written,
 					  const uint8_t *pdu_payload,
 					  const size_t consume_len)
 {
-	memcpy(dbuf, pdu_payload, consume_len);
+	memcpy((uint8_t *)dbuf + sdu_written, pdu_payload, consume_len);
 
 	return ISOAL_STATUS_OK;
 }
