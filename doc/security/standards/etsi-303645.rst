@@ -683,8 +683,8 @@ Provisions Assessment
         transferred via Application Programming Interfaces (APIs) or between networks in
         services and devices.
       - M
-      -
-      -
+      - Y
+      - :ref:`Syscall verification <syscall_verification>` and :ref:`Coding guidelines <coding_guidelines>`
 
         .. _ETSI_Provision_6_1_1:
     * - Provision 6.1-1
