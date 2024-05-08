@@ -276,7 +276,7 @@ Provisions Assessment
     * - Provision 5.3-3
       - An update shall be simple for the user to apply.
       - M C
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_3_4:
