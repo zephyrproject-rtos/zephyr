@@ -220,7 +220,7 @@ Provisions Assessment
         shall provide to the user or an administrator a simple
         mechanism to change the authentication value used.
       - M C
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_1_5:
