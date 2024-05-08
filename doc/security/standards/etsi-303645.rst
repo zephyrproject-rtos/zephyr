@@ -628,7 +628,7 @@ Provisions Assessment
       - The user shall be provided with functionality such that user data can be erased from
         the device in a simple manner.
       - M
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_11_2:
