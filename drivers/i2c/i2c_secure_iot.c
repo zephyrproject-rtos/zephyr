@@ -68,7 +68,7 @@
 #define I2C_SCL_DIV  0x38
 #define WRITE_TO_REG(confg,offset,value)   *((uint32_t*)((((struct i2c_seciot_cfg*)(confg))->base)+offset)) = value
 #define READ_REG(confg,offset) *((uint32_t*)((((struct i2c_seciot_cfg*)(confg))->base)+offset))
-
+#define READ_REG_8BIT(confg,offset) *((uint8_t*)((((struct i2c_seciot_cfg*)(confg))->base)+offset))
 /* Struct to access I2C registers as 32 bit registers */
 
 typedef struct
@@ -149,7 +149,7 @@ struct i2c_seciot_cfg{
     uint32_t base;
     uint32_t scl_clk;
     uint32_t sys_clk;
- //   struct k_mutex mutex;
+   struct k_mutex mutex;
 };
 
 
@@ -241,7 +241,7 @@ static void i2c_target_address(const struct device *dev,uint8_t slave_address,ui
   uint8_t dummy;
    struct i2c_seciot_cfg *confg = (struct i2c_seciot_cfg *)dev->config;
   wait_till_I2c_bus_free_(dev);//wait till bus is free
-  printf("slave addr:%#x mode:%d ",slave_address,mode);
+  //printf("slave addr:%#x mode:%d ",slave_address,mode);
   WRITE_TO_REG(confg,I2C_DATA,(slave_address<<1)|(mode));//write data in data register
   i2c_start_bit_(dev);// as soon as start is initiated after start bit is given slave address along with r/~w is transmitted
   wait_till_txrx_operation_Completes_(dev);// wait till the eight bits completely get transmitted
@@ -249,7 +249,9 @@ static void i2c_target_address(const struct device *dev,uint8_t slave_address,ui
   //waitfor(2000);
   if(mode==I2C_READ){
   WRITE_TO_REG(confg,I2C_CONTROL,I2C_NACK);
-  dummy=READ_REG(confg,I2C_DATA);
+  //printf("NACK is set\n");
+  volatile uint8_t dummy=READ_REG_8BIT(confg,I2C_DATA);
+  //printf("dummy read complete:%#x\n",dummy);
   wait_till_txrx_operation_Completes_(dev);
   delayms(DELAY);
   //waitfor(1000);
@@ -286,7 +288,8 @@ static void i2c_write_byte(const struct device *dev,uint8_t data){
 
 static uint8_t i2c_read_byte(const struct device *dev){
   struct i2c_seciot_cfg *confg = (struct i2c_seciot_cfg *)dev->config;
-  uint8_t data = READ_REG(confg,I2C_DATA);// write the data in data register
+  uint8_t data = READ_REG_8BIT(confg,I2C_DATA);// write the data in data register
+ // printf("Data recieved: %#x",data);
   delayms(DELAY);
   //waitfor(1000);
   return data;
@@ -308,7 +311,7 @@ static int i2c_seciot_configure(const struct device *dev,uint32_t dev_config)
    WRITE_TO_REG(confg,I2C_PRESCALE,prescale);
    WRITE_TO_REG(confg,I2C_SCL_DIV,scl_div);
    WRITE_TO_REG(confg,I2C_CONTROL,I2C_IDLE);
-  // k_mutex_init(&(confg->mutex));
+   k_mutex_init(&(confg->mutex));
 }
 
 
@@ -351,16 +354,16 @@ static int i2c_seciot_transfer(const struct device *dev,struct i2c_msg *msgs,uin
 	if (msgs == NULL) {
 		return -EINVAL;
 	}
-// k_mutex_lock(&(((struct i2c_seciot_cfg*)(dev->config))->mutex),K_FOREVER);
+k_mutex_lock(&(((struct i2c_seciot_cfg*)(dev->config))->mutex),K_FOREVER);
     for (int i = 0; i < num_msgs; i++) {
-	    printk("msg :%d\n",msgs[i].flags);
+        delayms(10);
         if (msgs[i].flags & I2C_MSG_READ) {
             
 	    	i2c_seciot_read_msg(dev, &(msgs[i]), addr);
 	    } else {
 	    	i2c_seciot_write_msg(dev, &(msgs[i]), addr);
 	    }
-  //k_mutex_unlock(&(((struct i2c_seciot_cfg*)(dev->config))->mutex));
+  k_mutex_unlock(&(((struct i2c_seciot_cfg*)(dev->config))->mutex));
     }
 }
 
@@ -385,4 +388,3 @@ static struct i2c_driver_api i2c_seciot_api = {
 			    &i2c_seciot_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_SECIOT_INIT)
-      //  .mutex = Z_MUTEX_INITIALIZER(lock##n),
