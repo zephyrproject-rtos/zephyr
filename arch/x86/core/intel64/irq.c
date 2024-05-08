@@ -17,7 +17,7 @@
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
-unsigned char _irq_to_interrupt_vector[CONFIG_MAX_IRQ_LINES];
+uint8_t _irq_to_interrupt_vector[CONFIG_MAX_IRQ_LINES];
 #define NR_IRQ_VECTORS (IV_NR_VECTORS - IV_IRQS)  /* # vectors free for IRQs */
 
 void (*x86_irq_funcs[NR_IRQ_VECTORS])(const void *arg);
@@ -100,8 +100,8 @@ void z_x86_irq_connect_on_vector(unsigned int irq,
  */
 
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*func)(const void *arg),
-			     const void *arg, uint32_t flags)
+		     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags)
 {
 	uint32_t key;
 	int vector;
@@ -124,7 +124,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 #endif /* CONFIG_INTEL_VTD_ICTL */
 
 		z_irq_controller_irq_config(vector, irq, flags);
-		z_x86_irq_connect_on_vector(irq, vector, func, arg);
+		z_x86_irq_connect_on_vector(irq, (uint8_t)vector, routine, parameter, flags);
 	}
 
 	irq_unlock(key);

@@ -42,18 +42,18 @@ void z_x86_spurious_irq(const z_arch_esf_t *esf)
 }
 
 __pinned_func
-void arch_syscall_oops(void *ssf)
+void arch_syscall_oops(void *ssf_ptr)
 {
-	struct _x86_syscall_stack_frame *ssf_ptr =
-		(struct _x86_syscall_stack_frame *)ssf;
+	struct _x86_syscall_stack_frame *ssf =
+		(struct _x86_syscall_stack_frame *)ssf_ptr;
 	z_arch_esf_t oops = {
-		.eip = ssf_ptr->eip,
-		.cs = ssf_ptr->cs,
-		.eflags = ssf_ptr->eflags
+		.eip = ssf->eip,
+		.cs = ssf->cs,
+		.eflags = ssf->eflags
 	};
 
 	if (oops.cs == USER_CODE_SEG) {
-		oops.esp = ssf_ptr->esp;
+		oops.esp = ssf->esp;
 	}
 
 	z_x86_fatal_error(K_ERR_KERNEL_OOPS, &oops);
