@@ -209,6 +209,7 @@
 
 /*
  * gem.net_ctrl:
+ * [18]		  Flush the next packet from the external RX DPRAM
  * [15]       Store 1588 receive timestamp in CRC field
  * [12]       Transmit zero quantum pause frame
  * [11]       Transmit pause frame
@@ -222,6 +223,7 @@
  * [02]       Enable receive
  * [01]       Local loopback mode
  */
+#define ETH_XLNX_GEM_NWCTRL_FLUSH_DPRAM_BIT		0x00040000
 #define ETH_XLNX_GEM_NWCTRL_RXTSTAMP_BIT		0x00008000
 #define ETH_XLNX_GEM_NWCTRL_ZEROPAUSETX_BIT		0x00001000
 #define ETH_XLNX_GEM_NWCTRL_PAUSETX_BIT			0x00000800

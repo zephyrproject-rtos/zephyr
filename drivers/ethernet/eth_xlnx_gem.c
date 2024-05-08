@@ -312,6 +312,28 @@ static void eth_xlnx_gem_isr(const struct device *dev)
 		}
 	}
 
+	/* DMA Rx buffer used bit not clear error handling */
+
+	if ((reg_val & ETH_XLNX_GEM_IXR_RX_USED_BIT) != 0x00000000U) {
+			reg_val =
+			sys_read32(dev_conf->base_addr +
+						ETH_XLNX_GEM_NWCTRL_OFFSET);
+			reg_val |= ETH_XLNX_GEM_NWCTRL_FLUSH_DPRAM_BIT;
+			sys_write32(reg_val, dev_conf->base_addr +
+						ETH_XLNX_GEM_NWCTRL_OFFSET);
+		struct eth_xlnx_gem_bd *bdptr;
+		uint32_t buf_iter;
+			bdptr = dev_data->rxbd_ring.first_bd;
+
+		for (buf_iter = 0; buf_iter < (dev_conf->rxbd_count - 1); buf_iter++) {
+			/* Clear 'used' bit -> BD is owned by the controller */
+			bdptr->ctrl = 0;
+			bdptr->addr = (uint32_t)dev_data->first_rx_buffer +
+			      (buf_iter * (uint32_t)dev_conf->rx_buffer_size);
+			++bdptr;
+		}
+	}
+
 	/*
 	 * Clear all interrupt status bits so that the interrupt is de-asserted
 	 * by the GEM. -> TXSR/RXSR are read/cleared by either eth_xlnx_gem_-
