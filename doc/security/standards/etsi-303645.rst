@@ -355,8 +355,8 @@ Provisions Assessment
       - The manufacturer shall publish, in an accessible way that is clear and
         transparent to the user, the defined support period.
       - M
-      -
-      -
+      - Y
+      - :ref:`Release Life Cycle and Maintenance  <zephyr_release_cycle>`
 
         .. _ETSI_Provision_5_3_14:
     * - Provision 5.3-14
