@@ -36,6 +36,9 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 		    (_CONCAT(HAL_OSPIM_, DT_STRING_TOKEN(STM32_OSPI_NODE, prop))),	\
 		    ((default_value)))
 
+#define DT_OSPI_PROP_OR(prop, default_value) \
+	DT_PROP_OR(STM32_OSPI_NODE, prop, default_value)
+
 /* Get the base address of the flash from the DTS node */
 #define STM32_OSPI_BASE_ADDRESS DT_INST_REG_ADDR(0)
 
@@ -2094,17 +2097,17 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	OSPIM_CfgTypeDef ospi_mgr_cfg = {0};
 
 	if (dev_data->hospi.Instance == OCTOSPI1) {
-		ospi_mgr_cfg.ClkPort = 1;
-		ospi_mgr_cfg.DQSPort = 1;
-		ospi_mgr_cfg.NCSPort = 1;
+		ospi_mgr_cfg.ClkPort = DT_OSPI_PROP_OR(clk_port, 1);
+		ospi_mgr_cfg.DQSPort = DT_OSPI_PROP_OR(dqs_port, 1);
+		ospi_mgr_cfg.NCSPort = DT_OSPI_PROP_OR(ncs_port, 1);
 		ospi_mgr_cfg.IOLowPort = DT_OSPI_IO_PORT_PROP_OR(io_low_port,
 								 HAL_OSPIM_IOPORT_1_LOW);
 		ospi_mgr_cfg.IOHighPort = DT_OSPI_IO_PORT_PROP_OR(io_high_port,
 								  HAL_OSPIM_IOPORT_1_HIGH);
 	} else if (dev_data->hospi.Instance == OCTOSPI2) {
-		ospi_mgr_cfg.ClkPort = 2;
-		ospi_mgr_cfg.DQSPort = 2;
-		ospi_mgr_cfg.NCSPort = 2;
+		ospi_mgr_cfg.ClkPort = DT_OSPI_PROP_OR(clk_port, 2);
+		ospi_mgr_cfg.DQSPort = DT_OSPI_PROP_OR(dqs_port, 2);
+		ospi_mgr_cfg.NCSPort = DT_OSPI_PROP_OR(ncs_port, 2);
 		ospi_mgr_cfg.IOLowPort = DT_OSPI_IO_PORT_PROP_OR(io_low_port,
 								 HAL_OSPIM_IOPORT_2_LOW);
 		ospi_mgr_cfg.IOHighPort = DT_OSPI_IO_PORT_PROP_OR(io_high_port,
