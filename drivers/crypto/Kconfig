@@ -53,6 +53,7 @@ config CRYPTO_MBEDTLS_SHIM
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
 	select MBEDTLS_SHA512
+	select MBEDTLS_CIPHER_AES_ENABLED
 	select EXPERIMENTAL
 	help
 	  Enable mbedTLS shim layer compliant with crypto APIs. You will need
