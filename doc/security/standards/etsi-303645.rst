@@ -561,8 +561,8 @@ Provisions Assessment
         user and/or administrator to the issue and should not connect to wider networks than
         those necessary to perform the alerting function.
       - R
-      -
-      -
+      - N
+      - Zephyr does not provide runtime detection / notification.
 
         .. _ETSI_Provision_5_8_1:
     * - Provision 5.8-1
