@@ -727,5 +727,5 @@ Provisions Assessment
         shall be provided with information on what telemetry data is collected, how it is
         being used, by whom, and for what purposes.
       - M C
-      -
+      - N/A
       -
