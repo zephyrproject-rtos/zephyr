@@ -620,7 +620,7 @@ Provisions Assessment
       - If telemetry data is collected from consumer IoT devices and services, such as usage
         and measurement data, it should be examined for security anomalies.
       - R C
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_11_1:
