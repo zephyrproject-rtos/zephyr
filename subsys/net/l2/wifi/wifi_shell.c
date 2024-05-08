@@ -460,6 +460,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					       {"help", no_argument, 0, 'h'},
 					       {0, 0, 0, 0}};
 	int opt_index = 0;
+	int opt_num = 0;
 	uint8_t band;
 	const uint8_t all_bands[] = {
 		WIFI_FREQ_BAND_2_4_GHZ,
@@ -488,16 +489,19 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					    WIFI_SSID_MAX_LEN);
 				return -EINVAL;
 			}
+			opt_num++;
 			break;
 		case 'k':
 			params->security = atoi(optarg);
 			if (params->security) {
 				secure_connection = true;
 			}
+			opt_num++;
 			break;
 		case 'p':
 			params->psk = optarg;
 			params->psk_length = strlen(params->psk);
+			opt_num++;
 			break;
 		case 'c':
 			channel = strtol(optarg, &endptr, 10);
@@ -529,6 +533,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			}
 
 			params->channel = channel;
+			opt_num++;
 			break;
 		case 'b':
 			if (iface_mode == WIFI_MODE_INFRA) {
@@ -547,6 +552,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					return -EINVAL;
 				}
 			}
+			opt_num++;
 			break;
 		case 'w':
 			if (params->security == WIFI_SECURITY_TYPE_NONE ||
@@ -556,12 +562,14 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 				return -EINVAL;
 			}
 			params->mfp = atoi(optarg);
+			opt_num++;
 			break;
 		case 'm':
 			sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
 				&params->bssid[0], &params->bssid[1],
 				&params->bssid[2], &params->bssid[3],
 				&params->bssid[4], &params->bssid[5]);
+			opt_num++;
 			break;
 		case 'h':
 			return -ENOEXEC;
@@ -584,7 +592,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		PR_ERROR("Channel not provided\n");
 		return -EINVAL;
 	}
-	return 0;
+	return opt_num;
 }
 
 static int cmd_wifi_connect(const struct shell *sh, size_t argc,
@@ -595,7 +603,7 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 	int ret;
 
 	context.sh = sh;
-	if (__wifi_args_to_params(sh, argc, argv, &cnx_params, WIFI_MODE_INFRA)) {
+	if (__wifi_args_to_params(sh, argc, argv, &cnx_params, WIFI_MODE_INFRA) <= 0) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
@@ -1251,7 +1259,7 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 	int ret;
 
 	context.sh = sh;
-	if (__wifi_args_to_params(sh, argc, &argv[0], &cnx_params, WIFI_MODE_AP)) {
+	if (__wifi_args_to_params(sh, argc, &argv[0], &cnx_params, WIFI_MODE_AP) <= 0) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
