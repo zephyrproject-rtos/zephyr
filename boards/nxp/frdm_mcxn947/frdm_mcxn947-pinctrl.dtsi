@@ -166,4 +166,14 @@
 			bias-pull-up;
 		};
 	};
+
+	pinmux_flexcan0: pinmux_flexcan0 {
+		group0 {
+			pinmux = <CAN0_TXD_PIO1_10>,
+				<CAN0_RXD_PIO1_11>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
 };

@@ -24,6 +24,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &flexcomm4_lpuart4;
 		zephyr,shell-uart = &flexcomm4_lpuart4;
+		zephyr,canbus = &flexcan0;
 	};
 
 	aliases{
@@ -139,6 +140,10 @@
 };
 
 &flexpwm1_pwm0 {
+	status = "okay";
+};
+
+&flexcan0 {
 	status = "okay";
 };
 
