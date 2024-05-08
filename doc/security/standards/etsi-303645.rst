@@ -330,7 +330,7 @@ Provisions Assessment
       - Where updates are delivered over a network interface, the device shall verify
         the authenticity and integrity of each update via a trust relationship.
       - M
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_3_11:
