@@ -291,7 +291,7 @@ Provisions Assessment
       - The device should check after initialization, and then periodically, whether
         security updates are available.
       - R C
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_3_6:
