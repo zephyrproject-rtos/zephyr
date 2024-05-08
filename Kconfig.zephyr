@@ -17,13 +17,13 @@ osource "${APPLICATION_SOURCE_DIR}/VERSION"
 # Shield defaults should have precedence over board defaults, which should have
 # precedence over SoC defaults, so include them in that order.
 #
-# $ARCH and $BOARD_DIR will be glob patterns when building documentation.
+# $ARCH and $KCONFIG_BOARD_DIR will be glob patterns when building documentation.
 # This loads custom shields defconfigs (from BOARD_ROOT)
 osource "$(KCONFIG_BINARY_DIR)/Kconfig.shield.defconfig"
 # This loads Zephyr base shield defconfigs
 source "boards/shields/*/Kconfig.defconfig"
 
-osource "$(BOARD_DIR)/Kconfig.defconfig"
+osource "$(KCONFIG_BOARD_DIR)/Kconfig.defconfig"
 
 # This loads Zephyr specific SoC root defconfigs
 source "$(KCONFIG_BINARY_DIR)/soc/Kconfig.defconfig"
