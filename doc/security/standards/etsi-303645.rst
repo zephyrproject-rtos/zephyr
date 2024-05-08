@@ -636,7 +636,7 @@ Provisions Assessment
       - The consumer should be provided with functionality on the device such that personal
         data can be removed from associated services in a simple manner.
       - R
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_11_3:
