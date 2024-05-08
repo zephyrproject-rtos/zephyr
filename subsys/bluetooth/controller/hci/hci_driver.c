@@ -256,9 +256,12 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink             *sink_ctx,
 }
 
 isoal_status_t sink_sdu_write_hci(void *dbuf,
+				  const size_t sdu_written,
 				  const uint8_t *pdu_payload,
 				  const size_t consume_len)
 {
+	ARG_UNUSED(sdu_written);
+
 	struct net_buf *buf = (struct net_buf *) dbuf;
 
 	LL_ASSERT(buf);

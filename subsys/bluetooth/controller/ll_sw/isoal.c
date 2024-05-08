@@ -694,6 +694,7 @@ static isoal_status_t isoal_rx_append_to_sdu(struct isoal_sink *sink,
 			const struct isoal_sink_session *session = &sink->session;
 
 			err |= session->sdu_write(sdu->contents.dbuf,
+						  sp->sdu_written,
 						  pdu_payload,
 						  consume_len);
 			pdu_payload += consume_len;
