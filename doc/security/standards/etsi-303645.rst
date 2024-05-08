@@ -537,8 +537,8 @@ Provisions Assessment
     * - Provision 5.6-8
       - The device should include a hardware-level access control mechanism for memory.
       - R
-      -
-      -
+      - Y
+      - :ref:`Memory protection <memory_domain>`
 
         .. _ETSI_Provision_5_6_9:
     * - Provision 5.6-9
