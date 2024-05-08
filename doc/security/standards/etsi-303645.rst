@@ -373,7 +373,7 @@ Provisions Assessment
       - For constrained devices that cannot have their software updated, the product
         should be isolable and the hardware replaceable.
       - R C
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_3_16:
