@@ -643,7 +643,7 @@ Provisions Assessment
     * - Provision 5.11-3
       - Users should be given clear instructions on how to delete their personal data.
       - R
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_11_4:
