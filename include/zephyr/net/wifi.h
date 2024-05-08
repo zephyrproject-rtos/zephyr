@@ -494,6 +494,12 @@ static inline const char *wifi_ps_get_config_err_code_str(int16_t err_no)
 	return "<unknown>";
 }
 
+/** @brief Wi-Fi AP mode configuration parameter */
+enum wifi_ap_config_param {
+	/** Used for AP mode configuration parameter ap_max_inactivity */
+	WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY = BIT(0),
+};
+
 #ifdef __cplusplus
 }
 #endif
