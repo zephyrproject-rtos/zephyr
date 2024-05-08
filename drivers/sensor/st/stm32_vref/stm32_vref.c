@@ -81,7 +81,7 @@ static int stm32_vref_channel_get(const struct device *dev, enum sensor_channel 
 {
 	struct stm32_vref_data *data = dev->data;
 	const struct stm32_vref_config *cfg = dev->config;
-	float vref;
+	int32_t vref;
 
 	if (chan != SENSOR_CHAN_VOLTAGE) {
 		return -ENOTSUP;
@@ -112,14 +112,12 @@ static int stm32_vref_channel_get(const struct device *dev, enum sensor_channel 
 #else
 	vref = cfg->cal_mv * (*cfg->cal_addr) / data->raw;
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
-	/* millivolt to volt */
-	vref /= 1000;
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 	LL_ICACHE_Enable();
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
-	return sensor_value_from_double(val, vref);
+	return sensor_value_from_milli(val, vref);
 }
 
 static const struct sensor_driver_api stm32_vref_driver_api = {
