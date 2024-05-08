@@ -5583,6 +5583,7 @@ static void net_tx_ts_thread(void *p1, void *p2, void *p3)
 		if (pkt) {
 			net_if_call_timestamp_cb(pkt);
 		}
+		net_pkt_unref(pkt);
 	}
 }
 
@@ -5635,6 +5636,7 @@ void net_if_call_timestamp_cb(struct net_pkt *pkt)
 void net_if_add_tx_timestamp(struct net_pkt *pkt)
 {
 	k_fifo_put(&tx_ts_queue, pkt);
+	net_pkt_ref(pkt);
 }
 #endif /* CONFIG_NET_PKT_TIMESTAMP_THREAD */
 
