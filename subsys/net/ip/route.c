@@ -805,8 +805,8 @@ static void propagate_mld_event(struct net_route_entry_mcast *route, bool route_
 	/* Apply only for complete addresses */
 	if (route->prefix_len == 128) {
 		mld_event.addr = &route->group;
-		mld_event.mode = route_added ? NET_IPV6_MLDv2_MODE_IS_EXCLUDE :
-					       NET_IPV6_MLDv2_MODE_IS_INCLUDE;
+		mld_event.mode = route_added ? NET_IPV6_MLDv2_CHANGE_TO_EXCLUDE_MODE :
+					       NET_IPV6_MLDv2_CHANGE_TO_INCLUDE_MODE;
 
 		net_if_foreach(send_mld_event, &mld_event);
 	}
