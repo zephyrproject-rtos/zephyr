@@ -202,7 +202,7 @@ Provisions Assessment
         these shall be generated with a mechanism that reduces the
         risk of automated attacks against a class or type of device.
       - M C
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_1_3:
