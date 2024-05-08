@@ -530,7 +530,8 @@ static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext)
 	return 0;
 }
 
-static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext)
+static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
+			      bool pre_located)
 {
 	size_t ent_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize;
 	size_t syms_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_size;
@@ -564,16 +565,58 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext)
 
 		if ((stt == STT_FUNC || stt == STT_OBJECT) &&
 		    stb == STB_GLOBAL && sect != SHN_UNDEF) {
-			enum llext_mem mem_idx = ldr->sect_map[sect];
 			const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
 			__ASSERT(j <= sym_tab->sym_cnt, "Miscalculated symbol number %u\n", j);
 
 			sym_tab->syms[j].name = name;
-			sym_tab->syms[j].addr = (void *)((uintptr_t)ext->mem[mem_idx] +
-							 sym.st_value -
-							 (ldr->hdr.e_type == ET_REL ? 0 :
-							  ldr->sects[mem_idx].sh_addr));
+
+			uintptr_t section_addr;
+			void *base;
+
+			if (sect < LLEXT_MEM_BSS) {
+				/*
+				 * This is just a slight optimisation for cached
+				 * sections, we could use the generic path below
+				 * for all of them
+				 */
+				base = ext->mem[ldr->sect_map[sect]];
+				section_addr = ldr->sects[ldr->sect_map[sect]].sh_addr;
+			} else {
+				/* Section header isn't stored, have to read it */
+				size_t shdr_pos = ldr->hdr.e_shoff + sect * ldr->hdr.e_shentsize;
+				elf_shdr_t shdr;
+
+				ret = llext_seek(ldr, shdr_pos);
+				if (ret != 0) {
+					LOG_ERR("failed seeking to position %zu\n", shdr_pos);
+					return ret;
+				}
+
+				ret = llext_read(ldr, &shdr, sizeof(elf_shdr_t));
+				if (ret != 0) {
+					LOG_ERR("failed reading section header at position %zu\n",
+						shdr_pos);
+					return ret;
+				}
+
+				base = llext_peek(ldr, shdr.sh_offset);
+				if (!base) {
+					LOG_ERR("cannot handle arbitrary sections without .peek\n");
+					return -EOPNOTSUPP;
+				}
+
+				section_addr = shdr.sh_addr;
+			}
+
+			if (pre_located) {
+				sym_tab->syms[j].addr = (uint8_t *)sym.st_value +
+					(ldr->hdr.e_type == ET_REL ? section_addr : 0);
+			} else {
+				sym_tab->syms[j].addr = (uint8_t *)base + sym.st_value -
+					(ldr->hdr.e_type == ET_REL ? 0 : section_addr);
+			}
+
 			LOG_DBG("function symbol %d name %s addr %p",
 				j, name, sym_tab->syms[j].addr);
 			j++;
@@ -954,7 +997,7 @@ static int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	}
 
 	LOG_DBG("Copying symbols...");
-	ret = llext_copy_symbols(ldr, ext);
+	ret = llext_copy_symbols(ldr, ext, ldr_parm ? ldr_parm->pre_located : false);
 	if (ret != 0) {
 		LOG_ERR("Failed to copy symbols, ret %d", ret);
 		goto out;
