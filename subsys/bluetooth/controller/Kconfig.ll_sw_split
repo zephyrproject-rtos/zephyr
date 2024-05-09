@@ -902,6 +902,13 @@ config BT_CTLR_RADIO_ENABLE_FAST
 	help
 	  Enable use of fast radio ramp-up mode.
 
+config BT_CTLR_RADIO_TIMER_ISR
+	# Hidden, enables use of timer ISR callback
+	bool
+	depends on SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X
+	help
+	  Enables use of timer ISR callback.
+
 config BT_CTLR_TIFS_HW
 	bool "H/w Accelerated tIFS Trx switching"
 	depends on !BT_CTLR_RADIO_ENABLE_FAST && BT_CTLR_TIFS_HW_SUPPORT
