@@ -40,6 +40,16 @@ config MEMC_MCUX_FLEXSPI_INIT_PRIORITY
 	  MEMC_MCUX_FLEXSPI_INIT_PRIORITY < FLASH_INIT_PRIORITY <
 	  MEMC_INIT_PRIORITY
 
+config MEMC_MCUX_FLEXSPI_INIT_XIP
+	bool "Initialize FLEXSPI when using device for XIP"
+	help
+	  Initialize the FLEXSPI device even when using it for XIP. If this
+	  Kconfig is enabled, the user must ensure that the pin control
+	  state used does not reconfigure the pins used to interface with
+	  the flash device used for XIP, and that the configuration settings
+	  used for the FLEXSPI are compatible with those needed for XIP from
+	  the flash device.
+
 config MEMC_MCUX_FLEXSPI
 	bool
 	select PINCTRL
