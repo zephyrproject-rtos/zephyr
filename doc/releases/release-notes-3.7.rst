@@ -298,6 +298,19 @@ Drivers and Sensors
   * Added support for configuring RTS threshold. With this, users can set the RTS threshold value or
     disable the RTS mechanism.
 
+  * Added support for configuring AP parameters. With this, users can set AP parameters at
+    build and run time.
+
+  * Added support to configure "max_inactivity" BSS parameter. Users can set this both build and runtime
+    duration to control the maximum time duration after which AP may disconnect a STA due to inactivity
+    from STA.
+
+  * Added support to configure "inactivity_poll" BSS parameter. Users can set build only AP parameter
+    to control whether AP may poll the STA before throwing away STA due to inactivity.
+
+  * Added support to configure "max_num_sta" BSS parameter. Users can set this both build and run time
+    parameter to control the maximum numuber of STA entries.
+
 Networking
 **********
 
