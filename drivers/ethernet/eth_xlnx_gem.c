@@ -335,6 +335,10 @@ static void eth_xlnx_gem_isr(const struct device *dev)
 			      (buf_iter * (uint32_t)dev_conf->rx_buffer_size);
 			++bdptr;
 		}
+		bdptr->ctrl = 0; /* BD is owned by the controller */
+		bdptr->addr = ((uint32_t)dev_data->first_rx_buffer +
+		      (buf_iter * (uint32_t)dev_conf->rx_buffer_size)) |
+		      ETH_XLNX_GEM_RXBD_WRAP_BIT;
 		sys_write32(ETH_XLNX_GEM_IXR_RX_USED_BIT,
 			    dev_conf->base_addr + ETH_XLNX_GEM_IER_OFFSET);
 	}
