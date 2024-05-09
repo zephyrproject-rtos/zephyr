@@ -306,6 +306,18 @@ The MIMXRT1170 SoC has 12 UARTs. ``LPUART1`` is configured for the console,
 ``LPUART2`` for the Bluetooth Host Controller Interface (BT HCI), and the
 remaining are not used.
 
+Fetch Binary Blobs
+==================
+
+The board Bluetooth/WiFi module requires fetching some binary blob files, to do
+that run the command:
+
+.. code-block:: console
+
+   west blobs fetch hal_nxp
+
+.. note:: Only Bluetooth functionality is currently supported.
+
 Programming and Debugging
 *************************
 
