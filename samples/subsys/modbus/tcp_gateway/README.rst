@@ -118,4 +118,4 @@ To read holding registers use FC03 command (read_holding_registers).
        ]
    }
 
-.. _`PyModbus`: https://github.com/riptideio/pymodbus
+.. _`PyModbus`: https://github.com/pymodbus-dev/pymodbus
