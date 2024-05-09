@@ -32,3 +32,6 @@ tests:
       - nucleo_f091rc
     extra_configs:
       - CONFIG_APP_DUAL_ROLE_I2C=y
+  drivers.i2c.target_api.single_role:
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
