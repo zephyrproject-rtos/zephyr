@@ -78,6 +78,12 @@ Kernel
 
 Bluetooth
 *********
+* Audio
+
+  * Removed ``err`` from :c:struct:`bt_bap_broadcast_assistant_cb.recv_state_removed` as it was
+    redundant.
+
+* Host
 
   * Added Nordic UART Service (NUS), enabled by the :kconfig:option:`CONFIG_BT_ZEPHYR_NUS`.
     This Service exposes the ability to declare multiple instances of the GATT service,

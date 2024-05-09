@@ -118,15 +118,14 @@ static void bap_broadcast_assistant_recv_state_changed(
 	}
 }
 
-static void bap_broadcast_assistant_recv_state_removed(struct bt_conn *conn, int err,
-						       uint8_t src_id)
+static void bap_broadcast_assistant_recv_state_removed(struct bt_conn *conn, uint8_t src_id)
 {
 	struct bt_bap_broadcast_assistant_cb *listener, *next;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&broadcast_assistant_cbs,
 					  listener, next, _node) {
 		if (listener->recv_state_removed) {
-			listener->recv_state_removed(conn, err, src_id);
+			listener->recv_state_removed(conn, src_id);
 		}
 	}
 }
@@ -442,8 +441,8 @@ static uint8_t notify_handler(struct bt_conn *conn,
 		}
 	} else {
 		broadcast_assistant.recv_states[index].past_avail = false;
-		bap_broadcast_assistant_recv_state_removed(conn, 0,
-					broadcast_assistant.recv_states[index].src_id);
+		bap_broadcast_assistant_recv_state_removed(
+			conn, broadcast_assistant.recv_states[index].src_id);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
