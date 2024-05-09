@@ -48,11 +48,18 @@ static void isr_done(void *param);
 static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 			     uint8_t *is_rx_enqueue,
 			     struct node_tx **tx_release, uint8_t *is_done);
+
+#if defined(CONFIG_BT_CTLR_TX_DEFER)
+static void isr_tx_deferred_set(void *param);
+#endif /* CONFIG_BT_CTLR_TX_DEFER */
+
 static void empty_tx_init(void);
+
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 static inline bool create_iq_report(struct lll_conn *lll, uint8_t rssi_ready,
 				    uint8_t packet_status);
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 static struct pdu_data *get_last_tx_pdu(struct lll_conn *lll);
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
@@ -365,7 +372,8 @@ void lll_conn_isr_rx(void *param)
 	}
 
 	/* Decide on event continuation and hence Radio Shorts to use */
-	is_done = is_done || ((crc_ok) && (pdu_data_rx->md == 0) &&
+	is_done = is_done || ((crc_ok) &&
+			      (pdu_data_rx->md == 0) &&
 			      (pdu_data_tx->md == 0) &&
 			      (pdu_data_tx->len == 0));
 
@@ -444,6 +452,22 @@ void lll_conn_isr_rx(void *param)
 	} else {
 		LL_ASSERT(!radio_is_address());
 	}
+
+#if defined(CONFIG_BT_CTLR_TX_DEFER)
+	if (!is_empty_pdu_tx_retry && (pdu_data_tx->len == 0U)) {
+		uint32_t tx_defer_us;
+		uint32_t defer_us;
+
+		/* Restore state if transmission setup for empty PDU */
+		lll->empty = 0U;
+
+		/* Setup deferred tx packet set */
+		tx_defer_us = radio_tmr_tifs_base_get() + EVENT_IFS_US -
+			      HAL_RADIO_TMR_DEFERRED_TX_DELAY_US;
+		defer_us = radio_tmr_isr_set(tx_defer_us, isr_tx_deferred_set,
+					     param);
+	}
+#endif /* CONFIG_BT_CTLR_TX_DEFER */
 
 lll_conn_isr_rx_exit:
 	/* Save the AA captured for the first Rx in connection event */
@@ -666,9 +690,11 @@ void lll_conn_isr_tx(void *param)
 	}
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
+	defined(CONFIG_BT_CTLR_TX_DEFER) || \
 	defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_tmr_end_capture();
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR ||
+	* CONFIG_BT_CTLR_TX_DEFER ||
 	* HAL_RADIO_GPIO_HAVE_PA_PIN
 	*/
 
@@ -1124,6 +1150,25 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_CTLR_TX_DEFER)
+static void isr_tx_deferred_set(void *param)
+{
+	struct pdu_data *pdu_data_tx;
+	struct lll_conn *lll;
+
+	/* Prepare Tx PDU, maybe we have non-empty PDU when we check here */
+	lll = param;
+	lll_conn_pdu_tx_prep(lll, &pdu_data_tx);
+
+	/* Fill sn and nesn */
+	pdu_data_tx->sn = lll->sn;
+	pdu_data_tx->nesn = lll->nesn;
+
+	/* setup the radio tx packet buffer */
+	lll_conn_tx_pkt_set(lll, pdu_data_tx);
+}
+#endif /* CONFIG_BT_CTLR_TX_DEFER */
 
 static void empty_tx_init(void)
 {
