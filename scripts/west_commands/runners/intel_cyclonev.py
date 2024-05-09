@@ -194,13 +194,14 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
         out = self.check_output([self.openocd_cmd[0], '--version'],
                                 stderr=subprocess.STDOUT).decode()
 
-        return out.split('\n')[0]
+        version_match = re.search(r"Open On-Chip Debugger (\d+.\d+.\d+)", out)
+        version = version_match.group(1).split('.')
+
+        return [self.to_num(i) for i in version]
 
     def supports_thread_info(self):
         # Zephyr rtos was introduced after 0.11.0
-        version_str = self.read_version().split(' ')[3]
-        version = version_str.split('.')
-        (major, minor, rev) = [self.to_num(i) for i in version]
+        (major, minor, rev) = self.read_version()
         return (major, minor, rev) > (0, 11, 0)
 
     def do_run(self, command, **kwargs):
