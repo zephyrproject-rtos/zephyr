@@ -45,4 +45,9 @@ config AMBIQ_HAL_USE_MSPI
 	help
 	  Use the MSPI driver from Ambiq HAL
 
+config AMBIQ_HAL_USE_HWINFO
+	bool
+	help
+	  Use the HWINFO driver from Ambiq HAL
+
 endif # AMBIQ_HAL
