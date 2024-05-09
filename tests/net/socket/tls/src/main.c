@@ -842,6 +842,7 @@ ZTEST(net_socket_tls, test_close_while_accept)
 	zassert_equal(errno, EINTR, "Unexpected errno value: %d", errno);
 
 	test_work_wait(&close_work_data.work);
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 ZTEST(net_socket_tls, test_close_while_recv)
@@ -1057,6 +1058,7 @@ ZTEST(net_socket_tls, test_accept_non_block)
 	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
 
 	test_sockets_close();
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 ZTEST(net_socket_tls, test_accept_invalid_handshake_data)
@@ -1081,6 +1083,7 @@ ZTEST(net_socket_tls, test_accept_invalid_handshake_data)
 	zassert_equal(errno, ECONNABORTED, "Unexpected errno value: %d", errno);
 
 	test_sockets_close();
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 ZTEST(net_socket_tls, test_recv_non_block)
