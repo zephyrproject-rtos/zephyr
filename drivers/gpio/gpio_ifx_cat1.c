@@ -59,7 +59,15 @@ struct gpio_cat1_data {
 
 /* Map port number to device object */
 static const struct device *const port_dev_obj[IOSS_GPIO_GPIO_PORT_NR] = {
-	LISTIFY(15, GET_DEV_OBJ_FROM_LIST, (,))
+	/* the integer used as the first variable in listify is equivalent to
+	 * IOSS_GPIO_GPIO_PORT_NR for the respective categories, but using
+	 * the macro in LISTIFY causes build failures
+	 */
+	#if CONFIG_SOC_FAMILY_INFINEON_CAT1A
+		LISTIFY(15, GET_DEV_OBJ_FROM_LIST, (,))
+	#elif CONFIG_SOC_FAMILY_INFINEON_CAT1B
+		LISTIFY(6, GET_DEV_OBJ_FROM_LIST, (,))
+	#endif
 };
 
 static int gpio_cat1_configure(const struct device *dev,
