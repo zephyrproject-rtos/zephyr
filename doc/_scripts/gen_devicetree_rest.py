@@ -797,8 +797,10 @@ def binding_filename(binding):
         raise ValueError(f'binding path has no {dts_bindings}: {binding.path}')
 
     # Cut past dts/bindings, strip off the extension (.yaml or .yml), and
-    # replace with .rst.
-    return os.path.splitext(as_posix[idx + len(dts_bindings):])[0] + '.rst'
+    # replace with .rst, and convert vendor separator ',' to '_'.
+    return (
+        os.path.splitext(as_posix[idx + len(dts_bindings):])[0] + '.rst'
+    ).replace(",", "_")
 
 def binding_ref_target(binding):
     # Return the sphinx ':ref:' target name for a binding.
