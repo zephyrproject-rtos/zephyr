@@ -185,8 +185,8 @@ ZTEST(i2c_ram, test_ram_rtio)
 
 	TC_PRINT("submitting write from thread %p addr %x\n", k_current_get(), addr);
 	wr_sqe = rtio_sqe_acquire(&i2c_rtio);
-	wr_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
 	rtio_sqe_prep_write(wr_sqe, &i2c_iodev, 0, tx_data, ARRAY_SIZE(tx_data), tx_data);
+	wr_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
 	zassert_ok(rtio_submit(&i2c_rtio, 1), "submit should succeed");
 
 	wr_cqe = rtio_cqe_consume(&i2c_rtio);
@@ -201,11 +201,11 @@ ZTEST(i2c_ram, test_ram_rtio)
 	msgs[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
 
 	wr_sqe = rtio_sqe_acquire(&i2c_rtio);
-	wr_sqe->flags |= RTIO_SQE_TRANSACTION;
 	rd_sqe = rtio_sqe_acquire(&i2c_rtio);
-	rd_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
 	rtio_sqe_prep_write(wr_sqe, &i2c_iodev, 0, rx_cmd, ARRAY_SIZE(rx_cmd), rx_cmd);
 	rtio_sqe_prep_read(rd_sqe, &i2c_iodev, 0, rx_data, ARRAY_SIZE(rx_data), rx_data);
+	wr_sqe->flags |= RTIO_SQE_TRANSACTION;
+	rd_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
 	zassert_ok(rtio_submit(&i2c_rtio, 2), "submit should succeed");
 
 	wr_cqe = rtio_cqe_consume(&i2c_rtio);
@@ -238,8 +238,8 @@ void ram_rtio_isr(struct k_timer *tid)
 	case INIT:
 		TC_PRINT("timer submitting write, addr %x\n", addr);
 		wr_sqe = rtio_sqe_acquire(&i2c_rtio);
-		wr_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
 		rtio_sqe_prep_write(wr_sqe, &i2c_iodev, 0, tx_data, ARRAY_SIZE(tx_data), tx_data);
+		wr_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
 		zassert_ok(rtio_submit(&i2c_rtio, 0), "submit should succeed");
 		isr_state += 1;
 		break;
@@ -258,13 +258,13 @@ void ram_rtio_isr(struct k_timer *tid)
 			msgs[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
 
 			wr_sqe = rtio_sqe_acquire(&i2c_rtio);
-			wr_sqe->flags |= RTIO_SQE_TRANSACTION;
 			rd_sqe = rtio_sqe_acquire(&i2c_rtio);
-			rd_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
 			rtio_sqe_prep_write(wr_sqe, &i2c_iodev, 0, rx_cmd,
 					    ARRAY_SIZE(rx_cmd), rx_cmd);
 			rtio_sqe_prep_read(rd_sqe, &i2c_iodev, 0, rx_data,
 					   ARRAY_SIZE(rx_data), rx_data);
+			wr_sqe->flags |= RTIO_SQE_TRANSACTION;
+			rd_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
 			zassert_ok(rtio_submit(&i2c_rtio, 0), "submit should succeed");
 			isr_state += 1;
 		}
