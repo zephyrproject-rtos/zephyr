@@ -155,14 +155,8 @@ static void bap_broadcast_assistant_recv_state_cb(
 	SET_FLAG(flag_recv_state_updated);
 }
 
-static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, int err,
-					      uint8_t src_id)
+static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, uint8_t src_id)
 {
-	if (err != 0) {
-		FAIL("BASS recv state removed failed (%d)\n", err);
-		return;
-	}
-
 	printk("BASS recv state %u removed\n", src_id);
 	SET_FLAG(flag_cb_called);
 
