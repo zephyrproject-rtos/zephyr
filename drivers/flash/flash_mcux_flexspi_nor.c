@@ -52,8 +52,10 @@ enum {
 	READ_STATUS_REG,
 	ERASE_CHIP,
 	READ_JESD216,
+	/* Entries after this should be for scratch commands */
+	FLEXSPI_INSTR_PROG_END,
 	/* Used for temporary commands during initialization */
-	SCRATCH_CMD,
+	SCRATCH_CMD = FLEXSPI_INSTR_PROG_END,
 	SCRATCH_CMD2,
 	/* Must be last entry */
 	FLEXSPI_INSTR_END,
@@ -1014,7 +1016,7 @@ _program_lut:
 	 */
 	ret = memc_flexspi_set_device_config(&data->controller, &data->config,
 					(uint32_t *)flexspi_lut,
-					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
+					FLEXSPI_INSTR_PROG_END * MEMC_FLEXSPI_CMD_PER_SEQ,
 					data->port);
 	if (ret < 0) {
 		return ret;
