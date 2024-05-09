@@ -69,7 +69,8 @@ class Json_report:
                                     break
                             sub_component_name = testcase_name[testcase_name.find('.'):]
                             sub_component_name = sub_component_name[1:]
-                            sub_component_name = sub_component_name[:sub_component_name.find(".")]
+                            if sub_component_name.find(".") > 0:
+                                sub_component_name = sub_component_name[:sub_component_name.find(".")]
                             if known_component_flag is False:
 
                                 sub_component = {
