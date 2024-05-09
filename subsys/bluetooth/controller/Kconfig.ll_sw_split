@@ -1022,6 +1022,14 @@ config BT_CTLR_TX_RETRY_DISABLE
 	  would happen in the next connection event instead of repeated retries
 	  in the current connection event.
 
+config BT_CTLR_TX_DEFER
+	bool "Deferred ACL Tx packet transmission setup"
+	select BT_CTLR_RADIO_TIMER_ISR
+	help
+	  Enable deferred ACL Tx packet transmission setup by radio, so that an
+	  enqueued ACL Data packet by the upper layer can be transmitted with
+	  the shortest latency.
+
 config BT_CTLR_THROUGHPUT
 	bool "Measure incoming Tx throughput"
 	help
