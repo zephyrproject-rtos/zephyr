@@ -1,0 +1,17 @@
+identifier: stm32h745i_disco/stm32h745xx/m4
+name: STM32H745XI Discovery (M4)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 288
+flash: 1024
+supported:
+  - arduino_gpio
+  - gpio
+testing:
+  ignore_tags:
+    - mpu
+    - nfc
+vendor: st
