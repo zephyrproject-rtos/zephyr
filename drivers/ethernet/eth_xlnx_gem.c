@@ -317,6 +317,8 @@ static void eth_xlnx_gem_isr(const struct device *dev)
 	if ((reg_val & ETH_XLNX_GEM_IXR_RX_USED_BIT) != 0x00000000U) {
 		sys_write32(ETH_XLNX_GEM_IXR_RX_USED_BIT,
 			dev_conf->base_addr + ETH_XLNX_GEM_IDR_OFFSET);
+		sys_write32(ETH_XLNX_GEM_IXR_RX_USED_BIT,
+			dev_conf->base_addr + ETH_XLNX_GEM_ISR_OFFSET);
 		reg_val = sys_read32(dev_conf->base_addr +
 						ETH_XLNX_GEM_NWCTRL_OFFSET);
 		reg_val |= ETH_XLNX_GEM_NWCTRL_FLUSH_DPRAM_BIT;
