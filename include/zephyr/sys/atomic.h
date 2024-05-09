@@ -31,6 +31,9 @@ extern "C" {
 # ifdef CONFIG_XTENSA
 /* Not all Xtensa toolchains support GCC-style atomic intrinsics */
 # include <zephyr/arch/xtensa/atomic_xtensa.h>
+# elif defined(CONFIG_RISCV) && defined(CONFIG_64BIT)
+/* Use riscv atomics */
+# include <zephyr/arch/riscv/atomic_riscv.h>
 # else
 /* Other arch specific implementation */
 # include <zephyr/sys/atomic_arch.h>
