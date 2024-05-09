@@ -142,8 +142,6 @@ int i2c_rtio_transfer(struct i2c_rtio *ctx, struct i2c_msg *msgs, uint8_t num_ms
 		goto out;
 	}
 
-	sqe->flags &= ~RTIO_SQE_TRANSACTION;
-
 	rtio_submit(r, 1);
 
 	cqe = rtio_cqe_consume(r);
