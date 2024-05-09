@@ -52,6 +52,7 @@ extern "C" {
 #define WIFI_MGMT_BAND_STR_SIZE_MAX 8
 #define WIFI_MGMT_SCAN_MAX_BSS_CNT 65535
 
+#define WIFI_MGMT_SKIP_INACTIVITY_POLL IS_ENABLED(CONFIG_WIFI_MGMT_AP_STA_SKIP_INACTIVITY_POLL)
 /** @endcond */
 
 /** @brief Wi-Fi management commands */
