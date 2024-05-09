@@ -150,4 +150,4 @@ To read holding registers use FC03 command (read_holding_registers).
    }
 
 .. _`joy-it RS-485 shield for Arduino`: https://joy-it.net/en/products/ARD-RS485
-.. _`PyModbus`: https://github.com/riptideio/pymodbus
+.. _`PyModbus`: https://github.com/pymodbus-dev/pymodbus
