@@ -317,7 +317,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
 	defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_tmr_end_capture();
-#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR ||
+	* HAL_RADIO_GPIO_HAVE_PA_PIN
+	*/
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	radio_rssi_measure();

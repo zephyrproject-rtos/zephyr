@@ -1602,7 +1602,7 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 	uint32_t now_us = start_us;
 	uint32_t actual_us;
 
-	/* Setup PPI while determining the latency in doing so */
+	/* Setup timer compare while determining the latency in doing so */
 	do {
 		/* Set start to be, now plus the determined latency */
 		start_us = (now_us << 1) - start_us;
