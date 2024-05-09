@@ -102,6 +102,35 @@ static inline bool is_table_unused(uint64_t *table)
 	return (table_usage(table, 0) & XLAT_PTE_COUNT_MASK) == 0;
 }
 
+#ifdef CONFIG_TEST
+/* Hooks to let test code peek at table states */
+
+int arm64_mmu_nb_free_tables(void)
+{
+	int count = 0;
+
+	for (int i = 0; i < CONFIG_MAX_XLAT_TABLES; i++) {
+		if (xlat_use_count[i] == 0) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+int arm64_mmu_tables_total_usage(void)
+{
+	int count = 0;
+
+	for (int i = 0; i < CONFIG_MAX_XLAT_TABLES; i++) {
+		count += xlat_use_count[i];
+	}
+
+	return count;
+}
+
+#endif /* CONFIG_TEST */
+
 static inline bool is_free_desc(uint64_t desc)
 {
 	return (desc & PTE_DESC_TYPE_MASK) == PTE_INVALID_DESC;
