@@ -102,3 +102,12 @@ config WIFI_MGMT_AP_STA_INACTIVITY_TIMEOUT
 	  in associated state while there is no traffic from that particular
 	  client. If a non-zero value is set, AP may choose to disassociate the
 	  client after the timeout.
+
+config WIFI_MGMT_AP_STA_SKIP_INACTIVITY_POLL
+	bool "Skip inactivity poll for stations after the inactivity timeout"
+	help
+	  Skip inactivity poll for stations after the inactivity timeout. This
+	  will prevent the AP from sending null data frames to the stations after
+	  the inactivity timeout. This is useful to disconnect idle stations even
+	  if they are within the range of the AP.
+	  Note: This is only build time parameter, runtime configuration not supported.
