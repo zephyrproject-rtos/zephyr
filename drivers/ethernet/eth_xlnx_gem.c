@@ -315,11 +315,12 @@ static void eth_xlnx_gem_isr(const struct device *dev)
 	/* DMA Rx buffer used bit not clear error handling */
 
 	if ((reg_val & ETH_XLNX_GEM_IXR_RX_USED_BIT) != 0x00000000U) {
-			reg_val =
-			sys_read32(dev_conf->base_addr +
+		sys_write32(ETH_XLNX_GEM_IXR_RX_USED_BIT,
+			dev_conf->base_addr + ETH_XLNX_GEM_IDR_OFFSET);
+		reg_val = sys_read32(dev_conf->base_addr +
 						ETH_XLNX_GEM_NWCTRL_OFFSET);
-			reg_val |= ETH_XLNX_GEM_NWCTRL_FLUSH_DPRAM_BIT;
-			sys_write32(reg_val, dev_conf->base_addr +
+		reg_val |= ETH_XLNX_GEM_NWCTRL_FLUSH_DPRAM_BIT;
+		sys_write32(reg_val, dev_conf->base_addr +
 						ETH_XLNX_GEM_NWCTRL_OFFSET);
 		struct eth_xlnx_gem_bd *bdptr;
 		uint32_t buf_iter;
@@ -332,6 +333,8 @@ static void eth_xlnx_gem_isr(const struct device *dev)
 			      (buf_iter * (uint32_t)dev_conf->rx_buffer_size);
 			++bdptr;
 		}
+		sys_write32(ETH_XLNX_GEM_IXR_RX_USED_BIT,
+			    dev_conf->base_addr + ETH_XLNX_GEM_IER_OFFSET);
 	}
 
 	/*
