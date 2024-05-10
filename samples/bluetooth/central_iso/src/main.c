@@ -26,14 +26,21 @@
 static void start_scan(void);
 
 static struct bt_conn *default_conn;
-static struct k_work_delayable iso_send_work;
 static struct bt_iso_chan iso_chan;
 static uint32_t seq_num;
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
+static void iso_send_sdu(struct k_work *work);
+
+static K_WORK_DEFINE(iso_send_sdu_work, iso_send_sdu);
+
+static void iso_timer_timeout(struct k_timer *timer);
+
+static K_TIMER_DEFINE(iso_timer, iso_timer_timeout, NULL);
+
 /**
- * @brief Send ISO data on timeout
+ * @brief Send ISO data SDU
  *
  * This will send an increasing amount of ISO data, starting from 1 octet.
  *
@@ -45,20 +52,24 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
  *
  * @param work Pointer to the work structure
  */
-static void iso_timer_timeout(struct k_work *work)
+static void iso_send_sdu(struct k_work *work)
 {
 	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
+	static bool is_first_sdu = true;
 	static size_t len_to_send = 1;
-	static bool data_initialized;
+
 	struct net_buf *buf;
 	int ret;
 
-	if (!data_initialized) {
+	ARG_UNUSED(work);
+
+	if (unlikely(is_first_sdu)) {
+		/* initialize data */
 		for (int i = 0; i < ARRAY_SIZE(buf_data); i++) {
 			buf_data[i] = (uint8_t)i;
 		}
 
-		data_initialized = true;
+		is_first_sdu = false;
 	}
 
 	buf = net_buf_alloc(&tx_pool, K_FOREVER);
@@ -73,12 +84,17 @@ static void iso_timer_timeout(struct k_work *work)
 		net_buf_unref(buf);
 	}
 
-	k_work_schedule(&iso_send_work, K_USEC(INTERVAL_US));
-
 	len_to_send++;
 	if (len_to_send > ARRAY_SIZE(buf_data)) {
 		len_to_send = 1;
 	}
+}
+
+static void iso_timer_timeout(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+
+	k_work_submit(&iso_send_sdu_work);
 }
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
@@ -138,13 +154,13 @@ static void iso_connected(struct bt_iso_chan *chan)
 	seq_num = 0U;
 
 	/* Start send timer */
-	k_work_schedule(&iso_send_work, K_MSEC(0));
+	k_timer_start(&iso_timer, K_NO_WAIT, K_USEC(SDU_INTERVAL_US));
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
 	printk("ISO Channel %p disconnected (reason 0x%02x)\n", chan, reason);
-	k_work_cancel_delayable(&iso_send_work);
+	k_timer_stop(&iso_timer);
 }
 
 static struct bt_iso_chan_ops iso_ops = {
@@ -268,6 +284,5 @@ int main(void)
 
 	start_scan();
 
-	k_work_init_delayable(&iso_send_work, iso_timer_timeout);
 	return 0;
 }
