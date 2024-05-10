@@ -501,16 +501,10 @@ class FilterBuilder(CMake):
         if self.testsuite.sysbuild and self.env.options.device_testing:
             # Verify that twister's arguments support sysbuild.
             # Twister sysbuild flashing currently only works with west, so
-            # --west-flash must be passed. Additionally, erasing the DUT
-            # before each test with --west-flash=--erase will inherently not
-            # work with sysbuild.
+            # --west-flash must be passed.
             if self.env.options.west_flash is None:
                 logger.warning("Sysbuild test will be skipped. " +
                     "West must be used for flashing.")
-                return {os.path.join(self.platform.name, self.testsuite.name): True}
-            elif "--erase" in self.env.options.west_flash:
-                logger.warning("Sysbuild test will be skipped, " +
-                    "--erase is not supported with --west-flash")
                 return {os.path.join(self.platform.name, self.testsuite.name): True}
 
         if self.testsuite and self.testsuite.filter:
