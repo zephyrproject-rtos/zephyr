@@ -2000,17 +2000,15 @@ static ssize_t parse_config_meta_args(const struct shell *sh, size_t argn, size_
 
 			arg = argv[argn];
 
-			if (strlen(arg) != 3) {
+			if (strlen(arg) != BT_AUDIO_LANG_SIZE) {
 				shell_error(sh, "Failed to parse lang from %s", arg);
 
 				return -1;
 			}
 
-			val = sys_get_le24(arg);
-
-			err = bt_audio_codec_cfg_meta_set_lang(codec_cfg, (uint32_t)val);
+			err = bt_audio_codec_cfg_meta_set_lang(codec_cfg, arg);
 			if (err < 0) {
-				shell_error(sh, "Failed to set lang with value %lu: %d", val, err);
+				shell_error(sh, "Failed to set lang with value %s: %d", arg, err);
 
 				return -1;
 			}
