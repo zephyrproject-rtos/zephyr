@@ -54,7 +54,7 @@ Commands
                                     [pref_ctx <context>]
                                     [stream_ctx <context>]
                                     [program_info <program info>]
-                                    [stream_lang <ISO 639-3 lang>]
+                                    [lang <ISO 639-3 lang>]
                                     [ccid_list <ccids>]
                                     [parental_rating <rating>]
                                     [program_info_uri <URI>]
@@ -336,7 +336,7 @@ any stream previously configured.
                   [pref_ctx <context>]
                   [stream_ctx <context>]
                   [program_info <program info>]
-                  [stream_lang <ISO 639-3 lang>]
+                  [lang <ISO 639-3 lang>]
                   [ccid_list <ccids>]
                   [parental_rating <rating>]
                   [program_info_uri <URI>]
@@ -415,7 +415,7 @@ assigned numbers values.
    00000000: 08 00                                            |..               |
    QoS: interval 10000 framing 0x00 phy 0x02 sdu 80 rtn 2 latency 10 pd 40000
 
-   uart:~$ bap preset sink 32_2_1 config freq 10 meta stream_lang "eng" stream_ctx 4
+   uart:~$ bap preset sink 32_2_1 config freq 10 meta lang "eng" stream_ctx 4
    32_2_1
    codec cfg id 0x06 cid 0x0000 vid 0x0000 count 16
    data #0: type 0x01 value_len 1

@@ -1991,7 +1991,7 @@ static ssize_t parse_config_meta_args(const struct shell *sh, size_t argn, size_
 
 				return -1;
 			}
-		} else if (strcmp(arg, "stream_lang") == 0) {
+		} else if (strcmp(arg, "lang") == 0) {
 			if (++argn == argc) {
 				shell_help(sh);
 
@@ -2001,17 +2001,16 @@ static ssize_t parse_config_meta_args(const struct shell *sh, size_t argn, size_
 			arg = argv[argn];
 
 			if (strlen(arg) != 3) {
-				shell_error(sh, "Failed to parse stream lang from %s", arg);
+				shell_error(sh, "Failed to parse lang from %s", arg);
 
 				return -1;
 			}
 
 			val = sys_get_le24(arg);
 
-			err = bt_audio_codec_cfg_meta_set_stream_lang(codec_cfg, (uint32_t)val);
+			err = bt_audio_codec_cfg_meta_set_lang(codec_cfg, (uint32_t)val);
 			if (err < 0) {
-				shell_error(sh, "Failed to set stream lang with value %lu: %d", val,
-					    err);
+				shell_error(sh, "Failed to set lang with value %lu: %d", val, err);
 
 				return -1;
 			}
@@ -3967,7 +3966,7 @@ static int cmd_print_ase_info(const struct shell *sh, size_t argc, char *argv[])
 
 #define HELP_CFG_META                                                                              \
 	"\n[meta" HELP_SEP "[pref_ctx <context>]" HELP_SEP "[stream_ctx <context>]" HELP_SEP       \
-	"[program_info <program info>]" HELP_SEP "[stream_lang <ISO 639-3 lang>]" HELP_SEP         \
+	"[program_info <program info>]" HELP_SEP "[lang <ISO 639-3 lang>]" HELP_SEP         \
 	"[ccid_list <ccids>]" HELP_SEP "[parental_rating <rating>]" HELP_SEP                       \
 	"[program_info_uri <URI>]" HELP_SEP "[audio_active_state <state>]" HELP_SEP                \
 	"[bcast_flag]" HELP_SEP "[extended <meta>]" HELP_SEP "[vendor <meta>]]"
