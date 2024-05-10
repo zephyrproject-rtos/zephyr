@@ -22,7 +22,7 @@ static uint32_t led_state;
 
 /* TODO: Move to a pre write hook that can handle ret codes once available */
 static int led_on_off_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_id, uint8_t *data,
-			 uint16_t data_len, bool last_block, size_t total_size)
+			 uint16_t data_len, bool last_block, size_t total_size, size_t offset)
 {
 	int ret = 0;
 	uint32_t led_val;

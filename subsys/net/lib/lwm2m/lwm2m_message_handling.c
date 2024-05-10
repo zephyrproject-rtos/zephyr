@@ -984,7 +984,8 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 		if (res->validate_cb) {
 			ret = res->validate_cb(obj_inst->obj_inst_id, res->res_id,
 					       res_inst->res_inst_id, write_buf, len,
-					       last_pkt_block && last_block, opaque_ctx.len);
+					       last_pkt_block && last_block, opaque_ctx.len,
+					       msg->in.block_ctx->ctx.current);
 			if (ret < 0) {
 				/* -EEXIST will generate Bad Request LWM2M response. */
 				return -EEXIST;
@@ -997,10 +998,14 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 		if (res->post_write_cb) {
 			ret = res->post_write_cb(obj_inst->obj_inst_id, res->res_id,
 						 res_inst->res_inst_id, data_ptr, len,
-						 last_pkt_block && last_block, opaque_ctx.len);
+						 last_pkt_block && last_block, opaque_ctx.len,
+						 msg->in.block_ctx->ctx.current);
 			if (ret < 0) {
 				return ret;
 			}
+		}
+		if (msg->in.block_ctx) {
+			msg->in.block_ctx->ctx.current += len;
 		}
 	}
 
@@ -1200,11 +1205,13 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 	}
 
 	if (obj_field->data_type != LWM2M_RES_TYPE_OPAQUE) {
+		size_t offset = msg->in.block_ctx ? msg->in.block_ctx->ctx.current : 0;
+
 #if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
 		if (res->validate_cb) {
 			ret = res->validate_cb(obj_inst->obj_inst_id, res->res_id,
 					       res_inst->res_inst_id, write_buf, len, last_block,
-					       total_size);
+					       total_size, offset);
 			if (ret < 0) {
 				/* -EEXIST will generate Bad Request LWM2M response. */
 				return -EEXIST;
@@ -1227,7 +1234,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 		if (res->post_write_cb) {
 			ret = res->post_write_cb(obj_inst->obj_inst_id, res->res_id,
 						 res_inst->res_inst_id, data_ptr, len, last_block,
-						 total_size);
+						 total_size, offset);
 		}
 	}
 
