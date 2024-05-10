@@ -756,6 +756,8 @@ static void ra_message(void)
 ZTEST(net_ipv6, test_rs_ra_message)
 {
 	rs_message();
+	/* Small delay to let the net stack process the generated RA message. */
+	k_sleep(K_MSEC(10));
 	ra_message();
 }
 
