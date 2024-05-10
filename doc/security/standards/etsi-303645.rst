@@ -381,7 +381,7 @@ Provisions Assessment
       - The model designation of the consumer IoT device shall be clearly recognizable,
         either by labelling on the device or via a physical interface.
       - M
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_4_1:
