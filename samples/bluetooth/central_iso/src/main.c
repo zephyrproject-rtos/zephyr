@@ -45,11 +45,11 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
  */
 static void iso_timer_timeout(struct k_work *work)
 {
-	int ret;
 	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
+	static size_t len_to_send = 1;
 	static bool data_initialized;
 	struct net_buf *buf;
-	static size_t len_to_send = 1;
+	int ret;
 
 	if (!data_initialized) {
 		for (int i = 0; i < ARRAY_SIZE(buf_data); i++) {
@@ -164,9 +164,9 @@ static struct bt_iso_chan_qos iso_qos = {
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
+	struct bt_iso_connect_param connect_param;
 	char addr[BT_ADDR_LE_STR_LEN];
 	int iso_err;
-	struct bt_iso_connect_param connect_param;
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
@@ -222,10 +222,10 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 int main(void)
 {
-	int err;
 	struct bt_iso_chan *channels[1];
 	struct bt_iso_cig_param param;
 	struct bt_iso_cig *cig;
+	int err;
 
 	err = bt_enable(NULL);
 	if (err) {
