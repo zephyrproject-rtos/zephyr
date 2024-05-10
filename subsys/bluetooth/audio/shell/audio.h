@@ -912,8 +912,8 @@ static inline void print_codec_cfg(const struct shell *sh, size_t indent,
 						  (enum bt_audio_codec_cfg_frame_dur)ret);
 		}
 
-		ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation);
-		if (ret >= 0) {
+		ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, false);
+		if (ret == 0) {
 			print_codec_cfg_chan_allocation(sh, indent, chan_allocation);
 		}
 

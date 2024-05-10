@@ -345,7 +345,7 @@ static int lc3_enable(struct broadcast_sink_stream *sink_stream)
 	}
 
 	ret = bt_audio_codec_cfg_get_chan_allocation(sink_stream->stream.codec_cfg,
-						     &sink_stream->chan_allocation);
+						     &sink_stream->chan_allocation, true);
 	if (ret != 0) {
 		printk("Error: Channel allocation not set, invalid configuration for LC3");
 		return ret;
@@ -622,18 +622,11 @@ static bool find_valid_bis_cb(const struct bt_bap_base_subgroup_bis *bis,
 		return true;
 	}
 
-	err = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &chan_allocation);
+	err = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &chan_allocation, true);
 	if (err != 0) {
 		printk("Could not find channel allocation for BIS: %d\n", err);
 
-		/* Absence of channel allocation is implicitly mono as per the BAP spec */
-		if (CONFIG_TARGET_BROADCAST_CHANNEL == BT_AUDIO_LOCATION_MONO_AUDIO) {
-			data->bis[0].index = bis->index;
-			data->bis[0].chan_allocation = chan_allocation;
-			data->cnt = 1;
-
-			return false;
-		} else if (err == -ENODATA && strlen(CONFIG_TARGET_BROADCAST_NAME) > 0U) {
+		if (err == -ENODATA && strlen(CONFIG_TARGET_BROADCAST_NAME) > 0U) {
 			/* Accept no channel allocation data available
 			 * if TARGET_BROADCAST_NAME defined. Use current index.
 			 */
@@ -742,7 +735,7 @@ static bool find_valid_bis_in_subgroup_cb(const struct bt_bap_base_subgroup *sub
 		return true;
 	}
 
-	err = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &chan_allocation);
+	err = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &chan_allocation, false);
 	if (err != 0) {
 		printk("Could not find subgroup channel allocation: %d - Looking in the BISes\n",
 		       err);

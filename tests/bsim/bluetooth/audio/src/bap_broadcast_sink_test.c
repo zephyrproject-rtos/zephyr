@@ -134,7 +134,7 @@ static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
 		return false;
 	}
 
-	ret = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &chan_allocation);
+	ret = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &chan_allocation, false);
 	if (ret == 0) {
 		chan_cnt = bt_audio_get_chan_count(chan_allocation);
 	} else {
@@ -444,7 +444,7 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 	/* The broadcast source sets the channel allocation in the BIS to
 	 * BT_AUDIO_LOCATION_FRONT_LEFT
 	 */
-	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation);
+	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, false);
 	if (ret == 0) {
 		if (chan_allocation != BT_AUDIO_LOCATION_FRONT_LEFT) {
 			FAIL("Unexpected channel allocation: 0x%08X", chan_allocation);

@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -719,7 +720,7 @@ static int set_codec_config(const struct shell *sh, struct shell_stream *sh_stre
 		return 0;
 	}
 
-	err = bt_audio_codec_cfg_get_chan_allocation(&sh_stream->codec_cfg, &chan_alloc);
+	err = bt_audio_codec_cfg_get_chan_allocation(&sh_stream->codec_cfg, &chan_alloc, false);
 	if (err != 0) {
 		if (err == -ENODATA) {
 			chan_alloc = BT_AUDIO_LOCATION_MONO_AUDIO;
