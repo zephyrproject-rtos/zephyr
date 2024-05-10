@@ -82,6 +82,8 @@ The FRDM-MCXN947 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | CTIMER    | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| USDHC     | on-chip    | sdhc                                |
++-----------+------------+-------------------------------------+
 
 Targets available
 ==================
