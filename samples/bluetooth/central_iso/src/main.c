@@ -19,6 +19,7 @@
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/byteorder.h>
 
+#define NUM_RETRIES     1U                    /* SDU tx retries, influences ISO interval length */
 static void start_scan(void);
 
 static struct bt_conn *default_conn;
@@ -153,7 +154,7 @@ static struct bt_iso_chan_ops iso_ops = {
 static struct bt_iso_chan_io_qos iso_tx = {
 	.sdu = CONFIG_BT_ISO_TX_MTU,
 	.phy = BT_GAP_LE_PHY_2M,
-	.rtn = 1,
+	.rtn = NUM_RETRIES,
 	.path = NULL,
 };
 
@@ -250,8 +251,8 @@ int main(void)
 	param.cis_channels = channels;
 	param.num_cis = ARRAY_SIZE(channels);
 	param.sca = BT_GAP_SCA_UNKNOWN;
-	param.packing = 0;
-	param.framing = 0;
+	param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	param.framing = BT_ISO_FRAMING_UNFRAMED;
 	param.c_to_p_latency = latency_ms; /* ms */
 	param.p_to_c_latency = latency_ms; /* ms */
 	param.c_to_p_interval = interval_us; /* us */
