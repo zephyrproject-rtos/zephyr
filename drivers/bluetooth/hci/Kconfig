@@ -85,6 +85,8 @@ config BT_SILABS_HCI
 config BT_USERCHAN
 	bool "HCI User Channel based driver"
 	depends on BOARD_NATIVE_POSIX
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_USERCHAN_ENABLED
 	help
 	  This driver provides access to the local Linux host's Bluetooth
 	  adapter using a User Channel HCI socket to the Linux kernel. It
