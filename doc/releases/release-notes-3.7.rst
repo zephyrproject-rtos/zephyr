@@ -13,6 +13,8 @@ Major enhancements with this release include:
   the way both SoCs and boards are named, defined and constructed in Zephyr.
   Additional information can be found in the :ref:`board_porting_guide`.
 * Zephyr now requires Python 3.10 or higher
+* Trusted Firmware-M (TF-M) 2.1.0 and Mbed TLS 3.6.0 have been integrated into Zephyr.
+  Both of these versions are LTS releases.
 
 An overview of the changes required or recommended when migrating your application from Zephyr
 v3.6.0 to Zephyr v3.7.0 can be found in the separate :ref:`migration guide<migration_3.7>`.
@@ -378,7 +380,7 @@ Libraries / Subsystems
 
 * Crypto
 
-  * MbedTLS was updated to 3.6.0. Release notes can be found at:
+  * Mbed TLS was updated to 3.6.0. Release notes can be found at:
     https://github.com/Mbed-TLS/mbedtls/releases/tag/v3.6.0
 
 * Random
@@ -418,6 +420,12 @@ HALs
 
 MCUboot
 *******
+
+Trusted Firmware-M
+******************
+
+* TF-M was updated to 2.1.0. Release notes can be found at:
+  https://tf-m-user-guide.trustedfirmware.org/releases/2.1.0.html
 
 zcbor
 *****
