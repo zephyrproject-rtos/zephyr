@@ -5,7 +5,6 @@
 # Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-import csv
 import logging
 import math
 import os
@@ -97,22 +96,6 @@ class Handler:
                          self.instance.platform.timeout_multiplier *
                          self.options.timeout_multiplier)
 
-    def record(self, harness):
-        if harness.recording:
-            if self.instance.recording is None:
-                self.instance.recording = harness.recording.copy()
-            else:
-                self.instance.recording.extend(harness.recording)
-
-            filename = os.path.join(self.build_dir, "recording.csv")
-            with open(filename, "at") as csvfile:
-                cw = csv.DictWriter(csvfile,
-                                    fieldnames = harness.recording[0].keys(),
-                                    lineterminator = os.linesep,
-                                    quoting = csv.QUOTE_NONNUMERIC)
-                cw.writeheader()
-                cw.writerows(harness.recording)
-
     def terminate(self, proc):
         terminate_process(proc)
         self.terminated = True
@@ -165,7 +148,7 @@ class Handler:
                 for tc in self.instance.testcases:
                     tc.status = "failed"
 
-        self.record(harness)
+        self.instance.record(harness.recording)
 
 
 class BinaryHandler(Handler):
