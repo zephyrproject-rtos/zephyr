@@ -121,7 +121,7 @@ static void update(uint16_t obj_inst_id, uint16_t res_id, int index)
 
 static int update_cb(uint16_t obj_inst_id, uint16_t res_id,
 		     uint16_t res_inst_id, uint8_t *data, uint16_t data_len,
-		     bool last_block, size_t total_size)
+		     bool last_block, size_t total_size, size_t offset)
 {
 	int i;
 
