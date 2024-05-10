@@ -159,6 +159,14 @@ static void card_detect_gpio_cb(const struct device *port,
 	}
 }
 
+static void imx_usdhc_select_1_8v(USDHC_Type *base, bool enable_1_8v)
+{
+#if !(defined(FSL_FEATURE_USDHC_HAS_NO_VOLTAGE_SELECT) && \
+	(FSL_FEATURE_USDHC_HAS_NO_VOLTAGE_SELECT))
+	UDSHC_SelectVoltage(base, enable_1_8v);
+#endif
+}
+
 
 static int imx_usdhc_dat3_pull(const struct usdhc_config *cfg, bool pullup)
 {
@@ -256,7 +264,7 @@ static int imx_usdhc_reset(const struct device *dev)
 {
 	const struct usdhc_config *cfg = dev->config;
 	/* Switch to default I/O voltage of 3.3V */
-	UDSHC_SelectVoltage(cfg->base, false);
+	imx_usdhc_select_1_8v(cfg->base, false);
 	USDHC_EnableDDRMode(cfg->base, false, 0U);
 #if defined(FSL_FEATURE_USDHC_HAS_SDR50_MODE) && (FSL_FEATURE_USDHC_HAS_SDR50_MODE)
 	USDHC_EnableStandardTuning(cfg->base, 0, 0, false);
@@ -353,7 +361,7 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 		switch (ios->signal_voltage) {
 		case SD_VOL_3_3_V:
 		case SD_VOL_3_0_V:
-			UDSHC_SelectVoltage(cfg->base, false);
+			imx_usdhc_select_1_8v(cfg->base, false);
 			break;
 		case SD_VOL_1_8_V:
 			/**
@@ -367,7 +375,7 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 			 * 10 ms, then allow it to be gated again.
 			 */
 			/* Switch to 1.8V */
-			UDSHC_SelectVoltage(cfg->base, true);
+			imx_usdhc_select_1_8v(cfg->base, true);
 			/* Wait 10 ms- clock will be gated during this period */
 			k_msleep(10);
 			/* Force the clock on */
