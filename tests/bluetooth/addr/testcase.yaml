@@ -1,5 +1,7 @@
 tests:
   bluetooth.addr:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
     platform_allow:
       - native_posix
       - native_posix/native/64
