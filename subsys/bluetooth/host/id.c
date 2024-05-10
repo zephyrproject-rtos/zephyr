@@ -1487,7 +1487,7 @@ static void bt_read_identity_root(uint8_t *ir)
 	/* Invalid IR */
 	memset(ir, 0, 16);
 
-#if defined(CONFIG_BT_HCI_VS_EXT)
+#if defined(CONFIG_BT_HCI_VS)
 	struct bt_hci_rp_vs_read_key_hierarchy_roots *rp;
 	struct net_buf *rsp;
 	int err;
@@ -1514,7 +1514,7 @@ static void bt_read_identity_root(uint8_t *ir)
 	memcpy(ir, rp->ir, 16);
 
 	net_buf_unref(rsp);
-#endif /* defined(CONFIG_BT_HCI_VS_EXT) */
+#endif /* defined(CONFIG_BT_HCI_VS) */
 }
 #endif /* defined(CONFIG_BT_PRIVACY) */
 
@@ -1589,7 +1589,7 @@ int bt_setup_public_id_addr(void)
 	return id_create(BT_ID_DEFAULT, &addr, irk);
 }
 
-#if defined(CONFIG_BT_HCI_VS_EXT)
+#if defined(CONFIG_BT_HCI_VS)
 uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t size)
 {
 	struct bt_hci_rp_vs_read_static_addrs *rp;
@@ -1638,11 +1638,11 @@ uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t size)
 
 	return cnt;
 }
-#endif /* CONFIG_BT_HCI_VS_EXT */
+#endif /* CONFIG_BT_HCI_VS */
 
 int bt_setup_random_id_addr(void)
 {
-#if defined(CONFIG_BT_HCI_VS_EXT) || defined(CONFIG_BT_CTLR)
+#if defined(CONFIG_BT_HCI_VS) || defined(CONFIG_BT_CTLR)
 	/* Only read the addresses if the user has not already configured one or
 	 * more identities (!bt_dev.id_count).
 	 */
@@ -1689,7 +1689,7 @@ int bt_setup_random_id_addr(void)
 			return 0;
 		}
 	}
-#endif /* defined(CONFIG_BT_HCI_VS_EXT) || defined(CONFIG_BT_CTLR) */
+#endif /* defined(CONFIG_BT_HCI_VS) || defined(CONFIG_BT_CTLR) */
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) && IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		atomic_set_bit(bt_dev.flags, BT_DEV_STORE_ID);
