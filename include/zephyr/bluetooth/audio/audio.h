@@ -986,24 +986,29 @@ int bt_audio_codec_cfg_get_frame_dur(const struct bt_audio_codec_cfg *codec_cfg)
 int bt_audio_codec_cfg_set_frame_dur(struct bt_audio_codec_cfg *codec_cfg,
 				     enum bt_audio_codec_cfg_frame_dur frame_dur);
 
-/** @brief Extract channel allocation from BT codec config
+/**
+ * @brief Extract channel allocation from BT codec config
  *
- *  The value returned is a bit field representing one or more audio locations as
- *  specified by @ref bt_audio_location
- *  Shall match one or more of the bits set in BT_PAC_SNK_LOC/BT_PAC_SRC_LOC.
+ * The value returned is a bit field representing one or more audio locations as
+ * specified by @ref bt_audio_location
+ * Shall match one or more of the bits set in BT_PAC_SNK_LOC/BT_PAC_SRC_LOC.
  *
- *  Up to the configured @ref BT_AUDIO_CODEC_CAP_TYPE_CHAN_COUNT number of channels can be present.
+ * Up to the configured @ref BT_AUDIO_CODEC_CAP_TYPE_CHAN_COUNT number of channels can be present.
  *
- *  @param codec_cfg The codec configuration to extract data from.
- *  @param chan_allocation Pointer to the variable to store the extracted value in.
+ * @param codec_cfg The codec configuration to extract data from.
+ * @param chan_allocation Pointer to the variable to store the extracted value in.
+ * @param fallback_to_default If true this function will provide the default value of
+ *        @ref BT_AUDIO_LOCATION_MONO_AUDIO if the type is not found when @p codec_cfg.id is @ref
+ *        BT_HCI_CODING_FORMAT_LC3.
  *
- *  @retval 0 if value is found and stored in the pointer provided
- *  @retval -EINVAL if arguments are invalid
- *  @retval -ENODATA if not found
- *  @retval -EBADMSG if found value has invalid size or value
+ * @retval 0 if value is found and stored in the pointer provided
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ * @retval -EBADMSG if found value has invalid size or value
  */
 int bt_audio_codec_cfg_get_chan_allocation(const struct bt_audio_codec_cfg *codec_cfg,
-					   enum bt_audio_location *chan_allocation);
+					   enum bt_audio_location *chan_allocation,
+					   bool fallback_to_default);
 
 /**
  * @brief Set the channel allocation of a codec configuration.
@@ -1051,26 +1056,25 @@ int bt_audio_codec_cfg_get_octets_per_frame(const struct bt_audio_codec_cfg *cod
 int bt_audio_codec_cfg_set_octets_per_frame(struct bt_audio_codec_cfg *codec_cfg,
 					    uint16_t octets_per_frame);
 
-/** @brief Extract number of audio frame blocks in each SDU from BT codec config
+/**
+ * @brief Extract number of audio frame blocks in each SDU from BT codec config
  *
- *  The overall SDU size will be octets_per_frame * frame_blocks_per_sdu * number-of-channels.
+ * The overall SDU size will be octets_per_frame * frame_blocks_per_sdu * number-of-channels.
  *
- *  If this value is not present a default value of 1 shall be used.
+ * If this value is not present a default value of 1 shall be used.
  *
- *  A frame block is one or more frames that represents data for the same period of time but
- *  for different channels. If the stream have two audio channels and this value is two
- *  there will be four frames in the SDU.
+ * A frame block is one or more frames that represents data for the same period of time but
+ * for different channels. If the stream have two audio channels and this value is two
+ * there will be four frames in the SDU.
  *
- *  @param codec_cfg The codec configuration to extract data from.
- *  @param fallback_to_default If true this function will return the default value of 1
- *         if the type is not found. In this case the function will only fail if a NULL
- *         pointer is provided.
+ * @param codec_cfg The codec configuration to extract data from.
+ * @param fallback_to_default If true this function will return the default value of 1
+ *         if the type is not found when @p codec_cfg.id is @ref BT_HCI_CODING_FORMAT_LC3.
  *
- *  @retval The count of codec frames in each SDU if value is found else of @p fallback_to_default
- *          is true then the value 1 is returned if frames per sdu is not found.
- *  @retval -EINVAL if arguments are invalid
- *  @retval -ENODATA if not found
- *  @retval -EBADMSG if found value has invalid size or value
+ * @retval The count of codec frame blocks in each SDU.
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ * @retval -EBADMSG if found value has invalid size or value
  */
 int bt_audio_codec_cfg_get_frame_blocks_per_sdu(const struct bt_audio_codec_cfg *codec_cfg,
 						bool fallback_to_default);

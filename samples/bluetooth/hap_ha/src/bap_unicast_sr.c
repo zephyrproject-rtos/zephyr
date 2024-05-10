@@ -93,7 +93,8 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 			       bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret));
 		}
 
-		if (bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation) == 0) {
+		ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, false);
+		if (ret == 0) {
 			printk("  Channel allocation: 0x%x\n", chan_allocation);
 		}
 
