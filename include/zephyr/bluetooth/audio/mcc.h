@@ -5,11 +5,11 @@
  *
  * @defgroup bt_gatt_mcc Media Control Client (MCC)
  *
+ * @since 3.0
+ * @version 0.8.0
+ *
  * @ingroup bluetooth
  * @{
- *
- * [Experimental] Users should note that the APIs can change
- * as a part of ongoing development.
  */
 
 /*

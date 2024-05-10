@@ -9,8 +9,7 @@
 ########### Microphone Control Profile Microphone Device ###########
 
 config BT_MICP_MIC_DEV
-	bool "Microphone Control Profile Microphone Device Support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Microphone Control Profile Microphone Device Support"
 	select BT_GATT_DYNAMIC_DB
 	help
 	  This option enables support for Microphone Control Profile
@@ -39,10 +38,9 @@ endif # BT_MICP_MIC_DEV
 ########### Microphone Control Profile Microphone Controller ###########
 
 config BT_MICP_MIC_CTLR
-	bool "Microphone Control Profile Microphone Controller Support [EXPERIMENTAL]"
+	bool "Microphone Control Profile Microphone Controller Support"
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
-	select EXPERIMENTAL
 	help
 	  This option enables support for the Microphone Control Profile
 	  Microphone Controller role

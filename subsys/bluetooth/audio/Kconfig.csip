@@ -9,9 +9,8 @@
 #################### Coordinated Set Identification Service ####################
 
 config BT_CSIP_SET_MEMBER
-	bool "Coordinated Set Identification Profile Set Member support [EXPERIMENTAL]"
+	bool "Coordinated Set Identification Profile Set Member support"
 	imply BT_EXT_ADV if BT_PRIVACY
-	select EXPERIMENTAL
 	help
 	  This option enables support for Coordinated Set Identification
 	  Profile Set Member role and the Coordinated Set Identification
@@ -57,10 +56,9 @@ endif # BT_CSIP_SET_MEMBER
 #################### Coordinated Set Identification Client ####################
 
 config BT_CSIP_SET_COORDINATOR
-	bool "Coordinated Set Identification Profile Set Coordinator Support [EXPERIMENTAL]"
+	bool "Coordinated Set Identification Profile Set Coordinator Support"
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
-	select EXPERIMENTAL
 	help
 	  This option enables support for Coordinated Set Identification
 	  Profile Set Coordinator.

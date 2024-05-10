@@ -12,6 +12,9 @@
  *
  * @defgroup bt_gatt_vocs Volume Offset Control Service (VOCS)
  *
+ * @since 2.6
+ * @version 0.8.0
+ *
  * @ingroup bluetooth
  * @{
  *
@@ -22,8 +25,6 @@
  * Note that the API abstracts away the change counter in the volume offset control state and will
  * automatically handle any changes to that. If out of date, the client implementation will
  * autonomously read the change counter value when executing a write request.
- *
- * [Experimental] Users should note that the APIs can change as a part of ongoing development.
  */
 
 #include <stdint.h>

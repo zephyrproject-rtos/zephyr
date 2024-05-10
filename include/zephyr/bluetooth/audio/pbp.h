@@ -12,11 +12,11 @@
  *
  * @defgroup bt_pbp Public Broadcast Profile (PBP)
  *
+ * @since 3.5
+ * @version 0.8.0
+ *
  * @ingroup bluetooth
  * @{
- *
- * [Experimental] Users should note that the APIs can change
- * as a part of ongoing development.
  */
 
 #include <zephyr/sys/util.h>
