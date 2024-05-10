@@ -22,10 +22,6 @@ config ETH_NATIVE_POSIX
 
 endif # NETWORKING
 
-config BT_USERCHAN
-	depends on BT_HCI
-	default y
-
 if CONSOLE
 
 config POSIX_ARCH_CONSOLE
