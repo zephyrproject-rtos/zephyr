@@ -104,7 +104,7 @@ struct sockaddr_in *zperf_get_sin(void);
 extern void connect_ap(char *ssid);
 
 int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, uint8_t tos,
-			      int priority, int proto);
+			      int priority, int tcp_nodelay, int proto);
 
 uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps);
 
