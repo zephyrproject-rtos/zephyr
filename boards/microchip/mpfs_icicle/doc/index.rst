@@ -23,6 +23,11 @@ Applications for the ``mpfs_icicle`` board configuration can be built as usual
    :board: mpfs_icicle
    :goals: build
 
+To build the default SMP capable variant
+
+.. zephyr-app-commands::
+   :board: mpfs_icicle/polarfire/smp
+   :goals: build
 
 Flashing
 ========
