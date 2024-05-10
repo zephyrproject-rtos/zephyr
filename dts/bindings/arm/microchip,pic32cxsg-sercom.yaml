@@ -1,6 +1,6 @@
 description: Microchip PIC32CXSG multi-protocol (UART, SPI, I2C) SERCOM unit
 
-compatible: "microchip,pic32cxsg-sercom"
+compatible: "atmel,sam0-sercom"
 
 include: base.yaml
 

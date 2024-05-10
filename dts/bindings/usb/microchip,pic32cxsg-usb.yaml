@@ -1,7 +1,7 @@
 description: |
     Microchip PIC32CXSG USB in device mode
 
-compatible: "microchip,pic32cxsg-usb"
+compatible: "atmel,sam0-usb"
 
 include:
   - name: usb-ep.yaml

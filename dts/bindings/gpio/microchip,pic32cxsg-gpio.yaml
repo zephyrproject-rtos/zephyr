@@ -1,6 +1,6 @@
 description: Microchip PIC32CXSG GPIO PORT node
 
-compatible: "microchip,pic32cxsg-gpio"
+compatible: "atmel,sam0-gpio"
 
 include: [gpio-controller.yaml, base.yaml]
 
@@ -11,16 +11,16 @@ properties:
   "#gpio-cells":
     const: 2
 
-  "#microchip,pin-cells":
+  "#atmel,pin-cells":
     type: int
     required: true
     const: 2
-    description: Number of items to expect in a microchip,pins specifier
+    description: Number of items to expect in a microchip(atmel),pins specifier
 
 gpio-cells:
   - pin
   - flags
 
-microchip,pin-cells:
+atmel,pin-cells:
   - pin
   - peripheral

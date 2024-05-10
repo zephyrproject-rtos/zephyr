@@ -3,7 +3,7 @@
 
 description: Microchip PIC32CXSG RTC
 
-compatible: "microchip,pic32cxsg-rtc"
+compatible: "atmel,sam0-rtc"
 
 include:
   - name: rtc.yaml

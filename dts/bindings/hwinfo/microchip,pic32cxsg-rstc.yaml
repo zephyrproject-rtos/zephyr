@@ -3,7 +3,7 @@
 
 description: Microchip PIC32CXSG Reset controller
 
-compatible: "microchip,pic32cxsg-rstc"
+compatible: "atmel,sam0-rstc"
 
 include: base.yaml
 

@@ -3,7 +3,7 @@
 
 description: Microchip PIC32CXSG family ADC
 
-compatible: "microchip,pic32cxsg-adc"
+compatible: "atmel,sam0-adc"
 
 include:
   - name: adc-controller.yaml

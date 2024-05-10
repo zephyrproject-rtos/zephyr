@@ -3,7 +3,7 @@
 
 description: Microchip PIC32CXSG RNG
 
-compatible: "microchip,pic32cxsg-trng"
+compatible: "atmel,sam0-trng"
 
 include: base.yaml
 

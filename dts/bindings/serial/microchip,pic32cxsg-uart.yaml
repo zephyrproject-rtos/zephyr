@@ -1,6 +1,6 @@
 description: Microchip PIC32CXSG SERCOM UART driver
 
-compatible: "microchip,pic32cxsg-uart"
+compatible: "atmel,sam0-uart"
 
 include:
   - name: uart-controller.yaml

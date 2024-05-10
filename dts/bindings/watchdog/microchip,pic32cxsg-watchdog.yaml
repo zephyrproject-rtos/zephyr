@@ -1,6 +1,6 @@
 description: Microchip PIC32CXSG watchdog
 
-compatible: "microchip,pic32cxsg-watchdog"
+compatible: "atmel,sam0-watchdog"
 
 include: base.yaml
 

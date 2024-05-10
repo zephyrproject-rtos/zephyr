@@ -1,7 +1,7 @@
 description: |
     For locating the Device ID (serial number) on Microchip PIC32CXSG devices
 
-compatible: "microchip,pic32cxsg-id"
+compatible: "atmel,sam0-id"
 
 include: base.yaml
 
