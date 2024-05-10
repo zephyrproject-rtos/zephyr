@@ -259,6 +259,7 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 	mem_addr_t dieptsiz_reg = (mem_addr_t)&base->in_ep[ep_idx].dieptsiz;
 	/* TODO: use dwc2_get_dxepctl_reg() */
 	mem_addr_t diepctl_reg = (mem_addr_t)&base->in_ep[ep_idx].diepctl;
+	mem_addr_t diepint_reg = (mem_addr_t)&base->in_ep[ep_idx].diepint;
 
 	uint32_t max_xfersize, max_pktcnt, pktcnt, spcavail;
 	const size_t d = sizeof(uint32_t);
@@ -321,6 +322,8 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 
 	/* Clear NAK and set endpoint enable */
 	sys_set_bits(diepctl_reg, USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_CNAK);
+	/* Clear IN Endpoint NAK Effective interrupt in case it was set */
+	sys_write32(USB_DWC2_DIEPINT_INEPNAKEFF, diepint_reg);
 
 	/* FIFO access is always in 32-bit words */
 
@@ -749,6 +752,8 @@ static inline void dwc2_handle_rxflvl(const struct device *dev)
 		break;
 	case USB_DWC2_GRXSTSR_PKTSTS_SETUP_DONE:
 		LOG_DBG("SETUP pktsts DONE");
+	case USB_DWC2_GRXSTSR_PKTSTS_GLOBAL_OUT_NAK:
+		LOG_DBG("Global OUT NAK");
 		break;
 	default:
 		break;
@@ -960,6 +965,9 @@ static int udc_dwc2_ep_dequeue(const struct device *dev,
 	}
 
 	irq_unlock(lock_key);
+
+	udc_ep_set_busy(dev, cfg->addr, false);
+
 	LOG_DBG("dequeue ep 0x%02x", cfg->addr);
 
 	return 0;
@@ -1108,8 +1116,8 @@ static int dwc2_ep_control_enable(const struct device *dev,
 	return 0;
 }
 
-static int udc_dwc2_ep_enable(const struct device *dev,
-			      struct udc_ep_config *const cfg)
+static int udc_dwc2_ep_activate(const struct device *dev,
+				struct udc_ep_config *const cfg)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
@@ -1213,8 +1221,117 @@ static int dwc2_unset_dedicated_fifo(const struct device *dev,
 	return 0;
 }
 
-static int udc_dwc2_ep_disable(const struct device *dev,
-			       struct udc_ep_config *const cfg)
+static void dwc2_wait_for_bit(mem_addr_t addr, uint32_t bit)
+{
+	k_timepoint_t timeout = sys_timepoint_calc(K_MSEC(100));
+
+	/* This could potentially be converted to use proper synchronization
+	 * primitives instead of busy looping, but the number of interrupt bits
+	 * this function can be waiting for is rather high.
+	 *
+	 * Busy looping is most likely fine unless profiling shows otherwise.
+	 */
+	while (!(sys_read32(addr) & bit)) {
+		if (sys_timepoint_expired(timeout)) {
+			LOG_ERR("Timeout waiting for bit 0x%08X at 0x%08X",
+				bit, (uint32_t)addr);
+			return;
+		}
+	}
+}
+
+/* Disabled IN endpoint means that device will send NAK (isochronous: ZLP) after
+ * receiving IN token from host even if there is packet available in TxFIFO.
+ * Disabled OUT endpoint means that device will NAK (isochronous: discard data)
+ * incoming OUT data (or HS PING) even if there is space available in RxFIFO.
+ *
+ * Set stall parameter to true if caller wants to send STALL instead of NAK.
+ */
+static void udc_dwc2_ep_disable(const struct device *dev,
+				struct udc_ep_config *const cfg, bool stall)
+{
+	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
+	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
+	mem_addr_t dxepctl_reg;
+	uint32_t dxepctl;
+
+	dxepctl_reg = dwc2_get_dxepctl_reg(dev, cfg->addr);
+	dxepctl = sys_read32(dxepctl_reg);
+
+	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
+		mem_addr_t dctl_reg, gintsts_reg, doepint_reg;
+		uint32_t dctl;
+
+		dctl_reg = (mem_addr_t)&base->dctl;
+		gintsts_reg = (mem_addr_t)&base->gintsts;
+		doepint_reg = (mem_addr_t)&base->out_ep[ep_idx].doepint;
+
+		dctl = sys_read32(dctl_reg);
+
+		if (sys_read32(gintsts_reg) & USB_DWC2_GINTSTS_GOUTNAKEFF) {
+			LOG_ERR("GOUTNAKEFF already active");
+		} else {
+			dctl |= USB_DWC2_DCTL_SGOUTNAK;
+			sys_write32(dctl, dctl_reg);
+			dctl &= ~USB_DWC2_DCTL_SGOUTNAK;
+		}
+
+		dwc2_wait_for_bit(gintsts_reg, USB_DWC2_GINTSTS_GOUTNAKEFF);
+
+		dxepctl |= USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_EPDIS;
+		if (stall) {
+			/* For OUT endpoints STALL is set instead of SNAK */
+			dxepctl |= USB_DWC2_DEPCTL_STALL;
+		} else {
+			dxepctl |= USB_DWC2_DEPCTL_SNAK;
+		}
+		sys_write32(dxepctl, dxepctl_reg);
+
+		dwc2_wait_for_bit(doepint_reg, USB_DWC2_DOEPINT_EPDISBLD);
+
+		/* Clear Endpoint Disabled interrupt */
+		sys_write32(USB_DWC2_DIEPINT_EPDISBLD, doepint_reg);
+
+		dctl |= USB_DWC2_DCTL_CGOUTNAK;
+		sys_write32(dctl, dctl_reg);
+	} else {
+		mem_addr_t diepint_reg;
+
+		diepint_reg = (mem_addr_t)&base->in_ep[ep_idx].diepint;
+
+		dxepctl |= USB_DWC2_DEPCTL_SNAK;
+		if (stall) {
+			/* For IN endpoints STALL is set in addition to SNAK */
+			dxepctl |= USB_DWC2_DEPCTL_STALL;
+		}
+		sys_write32(dxepctl, dxepctl_reg);
+
+		dwc2_wait_for_bit(diepint_reg, USB_DWC2_DIEPINT_INEPNAKEFF);
+
+		dxepctl |= USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_EPDIS;
+		sys_write32(dxepctl, dxepctl_reg);
+
+		dwc2_wait_for_bit(diepint_reg, USB_DWC2_DIEPINT_EPDISBLD);
+
+		/* Clear Endpoint Disabled interrupt */
+		sys_write32(USB_DWC2_DIEPINT_EPDISBLD, diepint_reg);
+
+		/* TODO: Read DIEPTSIZn here? Programming Guide suggest it to
+		 * let application know how many bytes of interrupted transfer
+		 * were transferred to the host.
+		 */
+
+		dwc2_flush_tx_fifo(dev, ep_idx);
+	}
+
+	udc_ep_set_busy(dev, cfg->addr, false);
+}
+
+/* Deactivated endpoint means that there will be a bus timeout when the host
+ * tries to access the endpoint.
+ */
+static int udc_dwc2_ep_deactivate(const struct device *dev,
+				  struct udc_ep_config *const cfg)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
 	mem_addr_t dxepctl_reg;
@@ -1226,7 +1343,11 @@ static int udc_dwc2_ep_disable(const struct device *dev,
 	if (dxepctl & USB_DWC2_DEPCTL_USBACTEP) {
 		LOG_DBG("Disable ep 0x%02x DxEPCTL%u %x",
 			cfg->addr, ep_idx, dxepctl);
-		dxepctl |= USB_DWC2_DEPCTL_EPDIS | USB_DWC2_DEPCTL_SNAK;
+
+		udc_dwc2_ep_disable(dev, cfg, false);
+
+		dxepctl = sys_read32(dxepctl_reg);
+		dxepctl &= ~USB_DWC2_DEPCTL_USBACTEP;
 	} else {
 		LOG_WRN("ep 0x%02x is not active DxEPCTL%u %x",
 			cfg->addr, ep_idx, dxepctl);
@@ -1247,7 +1368,7 @@ static int udc_dwc2_ep_set_halt(const struct device *dev,
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
 
-	sys_set_bits(dwc2_get_dxepctl_reg(dev, cfg->addr), USB_DWC2_DEPCTL_STALL);
+	udc_dwc2_ep_disable(dev, cfg, true);
 
 	LOG_DBG("Set halt ep 0x%02x", cfg->addr);
 	if (ep_idx != 0) {
@@ -1260,10 +1381,25 @@ static int udc_dwc2_ep_set_halt(const struct device *dev,
 static int udc_dwc2_ep_clear_halt(const struct device *dev,
 				  struct udc_ep_config *const cfg)
 {
-	sys_clear_bits(dwc2_get_dxepctl_reg(dev, cfg->addr), USB_DWC2_DEPCTL_STALL);
+	mem_addr_t dxepctl_reg = dwc2_get_dxepctl_reg(dev, cfg->addr);
+	uint32_t dxepctl;
+	struct dwc2_drv_event evt = {
+		.ep = cfg->addr,
+		.type = DWC2_DRV_EVT_XFER,
+	};
+
+	dxepctl = sys_read32(dxepctl_reg);
+	dxepctl &= ~USB_DWC2_DEPCTL_STALL;
+	dxepctl |= USB_DWC2_DEPCTL_SETD0PID;
+	sys_write32(dxepctl, dxepctl_reg);
 
 	LOG_DBG("Clear halt ep 0x%02x", cfg->addr);
 	cfg->stat.halted = false;
+
+	/* Resume queued transfers if any */
+	if (udc_buf_peek(dev, cfg->addr)) {
+		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+	}
 
 	return 0;
 }
@@ -1753,8 +1889,8 @@ static const struct udc_api udc_dwc2_api = {
 	.set_address = udc_dwc2_set_address,
 	.test_mode = udc_dwc2_test_mode,
 	.host_wakeup = udc_dwc2_host_wakeup,
-	.ep_enable = udc_dwc2_ep_enable,
-	.ep_disable = udc_dwc2_ep_disable,
+	.ep_enable = udc_dwc2_ep_activate,
+	.ep_disable = udc_dwc2_ep_deactivate,
 	.ep_set_halt = udc_dwc2_ep_set_halt,
 	.ep_clear_halt = udc_dwc2_ep_clear_halt,
 	.ep_enqueue = udc_dwc2_ep_enqueue,
