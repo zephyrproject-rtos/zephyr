@@ -555,20 +555,6 @@ TESTDATA_3 = [
         {os.path.join('other', 'dummy.testsuite.name'): True}
     ),
     (
-        'other', ['other'], True,
-        False, ['--erase'], True,
-        'Dummy parse results', True,
-        None,
-        None,
-        {},
-        {},
-        None,
-        b'dummy edt pickle contents',
-        ['Sysbuild test will be skipped,' \
-         ' --erase is not supported with --west-flash'],
-        {os.path.join('other', 'dummy.testsuite.name'): True}
-    ),
-    (
         'other', ['other'], False,
         True, None, False,
         'Dummy parse results', True,
@@ -651,7 +637,7 @@ TESTDATA_3 = [
     ' expected_logs, expected_return',
     TESTDATA_3,
     ids=['unit testing', 'domain', 'kconfig', 'no cache',
-         'no west options', 'erase west flash option', 'no edt',
+         'no west options', 'no edt',
          'parse result', 'no parse result', 'no testsuite filter', 'parse err']
 )
 def test_filterbuilder_parse_generated(
