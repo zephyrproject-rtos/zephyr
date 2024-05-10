@@ -478,6 +478,16 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 	LOG_DBG("conn handle %u buf len %u cb %p user_data %p", conn->handle, buf->len, cb,
 		user_data);
 
+	if (buf->ref != 1) {
+		/* The host may alter the buf contents when fragmenting. Higher
+		 * layers cannot expect the buf contents to stay intact. Extra
+		 * refs suggests a silent data corruption would occur if not for
+		 * this error.
+		 */
+		LOG_ERR("buf given to conn has other refs");
+		return -EINVAL;
+	}
+
 	if (buf->user_data_size < CONFIG_BT_CONN_TX_USER_DATA_SIZE) {
 		LOG_ERR("not enough room in user_data %d < %d pool %u",
 			buf->user_data_size,
