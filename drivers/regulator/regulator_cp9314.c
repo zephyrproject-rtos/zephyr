@@ -520,7 +520,6 @@ static int regulator_cp9314_init(const struct device *dev)
 
 	switch (value) {
 	case CP9314_CHIP_REV_B0:
-		LOG_INF("Found CP9314 REV:0x%x\n", value);
 		ret = regulator_cp9314_b0_init(dev);
 		if (ret < 0) {
 			return ret;
@@ -530,6 +529,8 @@ static int regulator_cp9314_init(const struct device *dev)
 		LOG_ERR("Invalid CP9314 REV:0x%x\n", value);
 		return -ENOTSUP;
 	}
+
+	LOG_INF("Found CP9314 REV:0x%x\n", value);
 
 	ret = regulator_cp9314_otp_init(dev);
 	if (ret < 0) {
