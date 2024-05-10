@@ -73,24 +73,10 @@ LOG_MODULE_REGISTER(wdt_andes);
 #define WDT_ST_INTEXPIRED               0x1
 #define WDT_ST_INTEXPIRED_CLR           0x1
 
-/*
- * SMU(System Management Unit) Registers for hwinfo driver
- */
-
-/* Register offset*/
-#define SMU_RESET_WRSR			0x10
-#define SMU_RESET_REGHI			0x60
-#define SMU_RESET_REGLO			0x50
-#define SMU_CMD				0x14
-
-#define SMU_RESET_CMD			0x3c
-
 #define WDOGCFG_PERIOD_MIN		BIT(7)
 #define WDOGCFG_PERIOD_MAX		BIT(14)
 #define EXT_CLOCK_FREQ			BIT(15)
 
-static const struct device *const syscon_dev =
-				DEVICE_DT_GET(DT_NODELABEL(syscon));
 static const struct device *const pit_counter_dev =
 				DEVICE_DT_GET(DT_NODELABEL(pit0));
 
@@ -326,23 +312,8 @@ static int wdt_atcwdt200_init(const struct device *dev)
 
 	data->timeout_valid = false;
 	data->counter_callback = wdt_counter_cb;
-	uint32_t ret;
 
 	counter_start(pit_counter_dev);
-
-	ret = syscon_write_reg(syscon_dev, SMU_RESET_REGLO,
-				((uint32_t)((unsigned long)
-					K_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY))));
-	if (ret < 0) {
-		return -EINVAL;
-	}
-
-	ret = syscon_write_reg(syscon_dev, SMU_RESET_REGHI,
-				((uint32_t)((uint64_t)((unsigned long)
-						K_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY)) >> 32)));
-	if (ret < 0) {
-		return -EINVAL;
-	}
 
 #ifdef CONFIG_WDT_DISABLE_AT_BOOT
 	wdt_atcwdt200_disable(dev);
