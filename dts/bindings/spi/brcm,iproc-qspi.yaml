@@ -1,0 +1,33 @@
+# Copyright (c) 2020 Broadcom
+# Copyright (c) 2024 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Broadcom iProc QSPI controller
+
+    The reg property describes two register blocks: one for the memory
+    corresponding to the BSPI register range, and another for
+    the MSPI register:
+
+        qspi: qspi@6000e000 {
+                compatible = "brcm,iproc-qspi";
+                reg = <0x6000e000 0x200>, <0x6000e200 0x400>;
+                reg-names = "bspi_regs", "mspi_regs";
+                ...
+        };
+
+compatible: "brcm,iproc-qspi"
+
+include: spi-controller.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Define bases and ranges of the associated I/O address spaces.
+
+  reg-names:
+    required: true
+    description: |
+      - "bspi_regs": BSPI register range
+      - "mspi_regs": MSPI register range
