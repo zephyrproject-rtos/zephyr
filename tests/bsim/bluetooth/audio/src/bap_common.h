@@ -66,7 +66,7 @@ static inline bool valid_metadata_type(uint8_t type, uint8_t len)
 
 		return true;
 	case BT_AUDIO_METADATA_TYPE_LANG:
-		if (len != 3) {
+		if (len != BT_AUDIO_LANG_SIZE) {
 			return false;
 		}
 

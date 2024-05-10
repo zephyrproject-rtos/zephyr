@@ -804,7 +804,7 @@ static int codec_meta_set_program_info(uint8_t meta[], size_t meta_len, size_t m
 				  program_info, program_info_len);
 }
 
-static int codec_meta_get_lang(const uint8_t meta[], size_t meta_len)
+static int codec_meta_get_lang(const uint8_t meta[], size_t meta_len, const uint8_t **lang)
 {
 	const uint8_t *data;
 	int ret;
@@ -814,36 +814,40 @@ static int codec_meta_get_lang(const uint8_t meta[], size_t meta_len)
 		return -EINVAL;
 	}
 
+	CHECKIF(lang == NULL) {
+		LOG_DBG("lang is NULL");
+		return -EINVAL;
+	}
+
 	ret = codec_meta_get_val(meta, meta_len, BT_AUDIO_METADATA_TYPE_LANG, &data);
 	if (data == NULL) {
 		return -ENODATA;
 	}
 
-	if (ret != 3) { /* Language is 3 octets */
+	if (ret != BT_AUDIO_LANG_SIZE) {
 		return -EBADMSG;
 	}
 
-	return sys_get_le24(data);
+	*lang = data;
+
+	return 0;
 }
 
-static int codec_meta_set_lang(uint8_t meta[], size_t meta_len, size_t meta_size, uint32_t lang)
+static int codec_meta_set_lang(uint8_t meta[], size_t meta_len, size_t meta_size,
+			       const uint8_t lang[BT_AUDIO_LANG_SIZE])
 {
-	uint8_t lang_le[3];
-
 	CHECKIF(meta == NULL) {
 		LOG_DBG("meta is NULL");
 		return -EINVAL;
 	}
 
-	if ((lang & 0xFFFFFFU) != lang) {
-		LOG_DBG("Invalid lang value: %d", lang);
+	CHECKIF(lang == NULL) {
+		LOG_DBG("lang is NULL");
 		return -EINVAL;
 	}
 
-	sys_put_le24(lang, lang_le);
-
-	return codec_meta_set_val(meta, meta_len, meta_size, BT_AUDIO_METADATA_TYPE_LANG, lang_le,
-				  sizeof(lang_le));
+	return codec_meta_set_val(meta, meta_len, meta_size, BT_AUDIO_METADATA_TYPE_LANG, lang,
+				  BT_AUDIO_LANG_SIZE);
 }
 
 static int codec_meta_get_ccid_list(const uint8_t meta[], size_t meta_len,
@@ -1255,17 +1259,19 @@ int bt_audio_codec_cfg_meta_set_program_info(struct bt_audio_codec_cfg *codec_cf
 	return ret;
 }
 
-int bt_audio_codec_cfg_meta_get_lang(const struct bt_audio_codec_cfg *codec_cfg)
+int bt_audio_codec_cfg_meta_get_lang(const struct bt_audio_codec_cfg *codec_cfg,
+				     const uint8_t **lang)
 {
 	CHECKIF(codec_cfg == NULL) {
 		LOG_DBG("codec_cfg is NULL");
 		return -EINVAL;
 	}
 
-	return codec_meta_get_lang(codec_cfg->meta, codec_cfg->meta_len);
+	return codec_meta_get_lang(codec_cfg->meta, codec_cfg->meta_len, lang);
 }
 
-int bt_audio_codec_cfg_meta_set_lang(struct bt_audio_codec_cfg *codec_cfg, uint32_t lang)
+int bt_audio_codec_cfg_meta_set_lang(struct bt_audio_codec_cfg *codec_cfg,
+				     const uint8_t lang[BT_AUDIO_LANG_SIZE])
 {
 	int ret;
 
@@ -1581,17 +1587,19 @@ int bt_audio_codec_cap_meta_set_program_info(struct bt_audio_codec_cap *codec_ca
 	return ret;
 }
 
-int bt_audio_codec_cap_meta_get_lang(const struct bt_audio_codec_cap *codec_cap)
+int bt_audio_codec_cap_meta_get_lang(const struct bt_audio_codec_cap *codec_cap,
+				     const uint8_t **lang)
 {
 	CHECKIF(codec_cap == NULL) {
 		LOG_DBG("codec_cap is NULL");
 		return -EINVAL;
 	}
 
-	return codec_meta_get_lang(codec_cap->meta, codec_cap->meta_len);
+	return codec_meta_get_lang(codec_cap->meta, codec_cap->meta_len, lang);
 }
 
-int bt_audio_codec_cap_meta_set_lang(struct bt_audio_codec_cap *codec_cap, uint32_t lang)
+int bt_audio_codec_cap_meta_set_lang(struct bt_audio_codec_cap *codec_cap,
+				     const uint8_t lang[BT_AUDIO_LANG_SIZE])
 {
 	int ret;
 

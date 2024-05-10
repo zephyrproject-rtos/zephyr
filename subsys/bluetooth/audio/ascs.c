@@ -2113,7 +2113,7 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 		break;
 	}
 	case BT_AUDIO_METADATA_TYPE_LANG:
-		if (data_len != 3) {
+		if (data_len != BT_AUDIO_LANG_SIZE) {
 			*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_INVALID,
 						       data_type);
 			result->err = -EBADMSG;
