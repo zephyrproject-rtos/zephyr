@@ -105,7 +105,7 @@ static int extract_lc3_config(struct tx_stream *stream)
 		return ret;
 	}
 
-	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &lc3_tx->chan_allocation);
+	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &lc3_tx->chan_allocation, false);
 	if (ret != 0) {
 		LOG_DBG("Could not get channel allocation: %d", ret);
 		lc3_tx->chan_allocation = BT_AUDIO_LOCATION_MONO_AUDIO;

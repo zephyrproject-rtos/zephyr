@@ -467,7 +467,8 @@ int bt_audio_codec_cfg_set_frame_dur(struct bt_audio_codec_cfg *codec_cfg,
 }
 
 int bt_audio_codec_cfg_get_chan_allocation(const struct bt_audio_codec_cfg *codec_cfg,
-					   enum bt_audio_location *chan_allocation)
+					   enum bt_audio_location *chan_allocation,
+					   bool fallback_to_default)
 {
 	const uint8_t *data;
 	uint8_t data_len;
@@ -486,6 +487,12 @@ int bt_audio_codec_cfg_get_chan_allocation(const struct bt_audio_codec_cfg *code
 	data_len =
 		bt_audio_codec_cfg_get_val(codec_cfg, BT_AUDIO_CODEC_CFG_CHAN_ALLOC, &data);
 	if (data == NULL) {
+		if (fallback_to_default && codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
+			*chan_allocation = BT_AUDIO_LOCATION_MONO_AUDIO;
+
+			return 0;
+		}
+
 		return -ENODATA;
 	}
 
@@ -564,7 +571,7 @@ int bt_audio_codec_cfg_get_frame_blocks_per_sdu(const struct bt_audio_codec_cfg 
 	data_len = bt_audio_codec_cfg_get_val(codec_cfg,
 					      BT_AUDIO_CODEC_CFG_FRAME_BLKS_PER_SDU, &data);
 	if (data == NULL) {
-		if (fallback_to_default) {
+		if (fallback_to_default && codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
 			return 1;
 		}
 

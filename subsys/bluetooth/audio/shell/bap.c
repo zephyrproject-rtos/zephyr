@@ -2901,8 +2901,8 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 			sh_stream->lc3_frame_duration_us = 0U;
 		}
 
-		ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg,
-							     &sh_stream->lc3_chan_allocation);
+		ret = bt_audio_codec_cfg_get_chan_allocation(
+			codec_cfg, &sh_stream->lc3_chan_allocation, false);
 		if (ret == 0) {
 			sh_stream->lc3_chan_cnt =
 				bt_audio_get_chan_count(sh_stream->lc3_chan_allocation);

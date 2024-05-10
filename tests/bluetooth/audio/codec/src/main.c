@@ -6,10 +6,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/fff.h>
+#include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/fff.h>
 #include <zephyr/sys/byteorder.h>
+
+#include <ztest_test.h>
+#include <ztest_assert.h>
 
 DEFINE_FFF_GLOBALS;
 
@@ -228,16 +236,57 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_set_frame_dur)
 
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_chan_allocation)
 {
-	const struct bt_bap_lc3_preset preset =
-		BT_BAP_LC3_UNICAST_PRESET_8_1_1(BT_AUDIO_LOCATION_FRONT_LEFT,
-						BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+	const struct bt_bap_lc3_preset preset = BT_BAP_LC3_UNICAST_PRESET_8_1_1(
+		BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 	enum bt_audio_location chan_allocation = BT_AUDIO_LOCATION_FRONT_RIGHT;
 	int err;
 
-	err = bt_audio_codec_cfg_get_chan_allocation(&preset.codec_cfg, &chan_allocation);
+	err = bt_audio_codec_cfg_get_chan_allocation(&preset.codec_cfg, &chan_allocation, false);
 	zassert_false(err, "unexpected error %d", err);
 	zassert_equal(chan_allocation, BT_AUDIO_LOCATION_FRONT_LEFT, "unexpected return value %d",
 		      chan_allocation);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_chan_allocation_lc3_fallback_true)
+{
+	struct bt_audio_codec_cfg codec_cfg = {.id = BT_HCI_CODING_FORMAT_LC3};
+	enum bt_audio_location chan_allocation;
+	int err;
+
+	err = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &chan_allocation, true);
+	zassert_equal(err, 0, "unexpected error %d", err);
+	zassert_equal(chan_allocation, BT_AUDIO_LOCATION_MONO_AUDIO, "unexpected return value %d",
+		      chan_allocation);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_chan_allocation_lc3_fallback_false)
+{
+	struct bt_audio_codec_cfg codec_cfg = {.id = BT_HCI_CODING_FORMAT_LC3};
+	enum bt_audio_location chan_allocation;
+	int err;
+
+	err = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &chan_allocation, false);
+	zassert_equal(err, -ENODATA, "unexpected error %d", err);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_chan_allocation_fallback_true)
+{
+	struct bt_audio_codec_cfg codec_cfg = {0};
+	enum bt_audio_location chan_allocation;
+	int err;
+
+	err = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &chan_allocation, true);
+	zassert_equal(err, -ENODATA, "unexpected error %d", err);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_chan_allocation_fallback_false)
+{
+	struct bt_audio_codec_cfg codec_cfg = {0};
+	enum bt_audio_location chan_allocation;
+	int err;
+
+	err = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &chan_allocation, false);
+	zassert_equal(err, -ENODATA, "unexpected error %d", err);
 }
 
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_set_chan_allocation)
@@ -247,7 +296,7 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_set_chan_allocation)
 	enum bt_audio_location chan_allocation;
 	int err;
 
-	err = bt_audio_codec_cfg_get_chan_allocation(&preset.codec_cfg, &chan_allocation);
+	err = bt_audio_codec_cfg_get_chan_allocation(&preset.codec_cfg, &chan_allocation, false);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 	zassert_equal(chan_allocation, 0x00000001, "Unexpected chan_allocation value %d",
 		      chan_allocation);
@@ -257,7 +306,7 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_set_chan_allocation)
 	err = bt_audio_codec_cfg_set_chan_allocation(&preset.codec_cfg, chan_allocation);
 	zassert_true(err > 0, "Unexpected return value %d", err);
 
-	err = bt_audio_codec_cfg_get_chan_allocation(&preset.codec_cfg, &chan_allocation);
+	err = bt_audio_codec_cfg_get_chan_allocation(&preset.codec_cfg, &chan_allocation, false);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 	zassert_equal(chan_allocation, 0x8080802, "Unexpected chan_allocation value %d",
 		      chan_allocation);
@@ -299,6 +348,42 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_frame_blocks_per_sdu)
 
 	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(&preset.codec_cfg, true);
 	zassert_equal(ret, 1u, "unexpected return value %d", ret);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_frame_blocks_per_sdu_lc3_fallback_true)
+{
+	struct bt_audio_codec_cfg codec_cfg = {.id = BT_HCI_CODING_FORMAT_LC3};
+	int err;
+
+	err = bt_audio_codec_cfg_get_frame_blocks_per_sdu(&codec_cfg, true);
+	zassert_equal(err, 1, "unexpected error %d", err);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_frame_blocks_per_sdu_lc3_fallback_false)
+{
+	struct bt_audio_codec_cfg codec_cfg = {.id = BT_HCI_CODING_FORMAT_LC3};
+	int err;
+
+	err = bt_audio_codec_cfg_get_frame_blocks_per_sdu(&codec_cfg, false);
+	zassert_equal(err, -ENODATA, "unexpected error %d", err);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_frame_blocks_per_sdu_fallback_true)
+{
+	struct bt_audio_codec_cfg codec_cfg = {0};
+	int err;
+
+	err = bt_audio_codec_cfg_get_frame_blocks_per_sdu(&codec_cfg, true);
+	zassert_equal(err, -ENODATA, "unexpected error %d", err);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_frame_blocks_per_sdu_fallback_false)
+{
+	struct bt_audio_codec_cfg codec_cfg = {0};
+	int err;
+
+	err = bt_audio_codec_cfg_get_frame_blocks_per_sdu(&codec_cfg, false);
+	zassert_equal(err, -ENODATA, "unexpected error %d", err);
 }
 
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_set_frame_blocks_per_sdu)
