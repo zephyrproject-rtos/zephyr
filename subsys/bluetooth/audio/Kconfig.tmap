@@ -6,9 +6,8 @@
 #
 
 config BT_TMAP
-	bool "Telephony and Media Audio Profile [EXPERIMENTAL]"
+	bool "Telephony and Media Audio Profile"
 	depends on BT_CAP_ACCEPTOR || BT_CAP_INITIATOR
-	select EXPERIMENTAL
 	help
 	  Enabling this will enable TMAP.
 

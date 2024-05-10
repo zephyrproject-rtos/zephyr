@@ -8,7 +8,7 @@
 ##################### Volume Offset Control Service #####################
 
 config BT_VOCS_MAX_INSTANCE_COUNT
-	int "Volume Offset Control Service max instance count [EXPERIMENTAL]"
+	int "Volume Offset Control Service max instance count"
 	default 0
 	range 0 15
 	help
@@ -18,7 +18,6 @@ config BT_VOCS_MAX_INSTANCE_COUNT
 config BT_VOCS
 	bool # hidden
 	default y if BT_VOCS_MAX_INSTANCE_COUNT > 0
-	select EXPERIMENTAL
 	help
 	  This hidden option enables support for Volume Control Service.
 
@@ -36,7 +35,7 @@ endif # BT_VOCS
 ##################### Volume Offset Control Service Client #####################
 
 config BT_VOCS_CLIENT_MAX_INSTANCE_COUNT
-	int "Volume Offset Control Service client max instance count [EXPERIMENTAL]"
+	int "Volume Offset Control Service client max instance count"
 	default 0
 	range 0 15
 	help
@@ -46,6 +45,5 @@ config BT_VOCS_CLIENT_MAX_INSTANCE_COUNT
 config BT_VOCS_CLIENT
 	bool # hidden
 	default y if BT_VOCS_CLIENT_MAX_INSTANCE_COUNT > 0
-	select EXPERIMENTAL
 	help
 	  This hidden option enables support for Volume Offset Control Service.
