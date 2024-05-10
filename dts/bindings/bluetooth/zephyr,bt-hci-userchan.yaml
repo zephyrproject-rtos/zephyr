@@ -1,0 +1,11 @@
+description: Bluetooth HCI provided by a Linux HCI user channel socket
+
+compatible: "zephyr,bt-hci-userchan"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "HCI User Channel"
+  bt-hci-bus:
+    default: "BT_HCI_BUS_UART"
