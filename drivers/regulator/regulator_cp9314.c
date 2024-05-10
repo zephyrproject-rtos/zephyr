@@ -118,7 +118,7 @@ LOG_MODULE_REGISTER(CP9314, CONFIG_REGULATOR_LOG_LEVEL);
 
 #define CP9314_REG_BC_STS_C  0x62
 #define CP9314_CHIP_REV_MASK GENMASK(7, 4)
-#define CP9314_CHIP_REV_B0   0x10
+#define CP9314_CHIP_REV_B0   0x1
 
 #define CP9314_REG_FORCE_SC_MISC 0x69
 #define CP9314_FORCE_CSI_EN      BIT(0)
@@ -516,7 +516,7 @@ static int regulator_cp9314_init(const struct device *dev)
 		return ret;
 	}
 
-	value &= CP9314_CHIP_REV_MASK;
+	value = FIELD_GET(CP9314_CHIP_REV_MASK, value);
 
 	switch (value) {
 	case CP9314_CHIP_REV_B0:
