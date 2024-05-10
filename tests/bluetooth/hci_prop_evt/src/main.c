@@ -15,8 +15,14 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/sys/byteorder.h>
+
+#define DT_DRV_COMPAT zephyr_bt_hci_test
+
+struct driver_data {
+	bt_hci_recv_t recv;
+};
 
 /* HCI Proprietary vendor event */
 const uint8_t hci_prop_evt_prefix[2] = { 0xAB, 0xBA };
@@ -84,10 +90,12 @@ static int cmd_handle_helper(uint16_t opcode, struct net_buf *cmd,
 }
 
 /* Lookup the command opcode and invoke handler. */
-static int cmd_handle(struct net_buf *cmd,
+static int cmd_handle(const struct device *dev,
+		      struct net_buf *cmd,
 		      const struct cmd_handler *handlers,
 		      size_t num_handlers)
 {
+	struct driver_data *drv = dev->data;
 	struct net_buf *evt = NULL;
 	struct bt_hci_evt_cc_status *ccst;
 	struct bt_hci_cmd_hdr *chdr;
@@ -105,7 +113,7 @@ static int cmd_handle(struct net_buf *cmd,
 	}
 
 	if (evt) {
-		bt_recv(evt);
+		drv->recv(dev, evt);
 	}
 
 	return err;
@@ -207,15 +215,19 @@ static const struct cmd_handler cmds[] = {
 };
 
 /* HCI driver open. */
-static int driver_open(void)
+static int driver_open(const struct device *dev, bt_hci_recv_t recv)
 {
+	struct driver_data *drv = dev->data;
+
+	drv->recv = recv;
+
 	return 0;
 }
 
 /*  HCI driver send.  */
-static int driver_send(struct net_buf *buf)
+static int driver_send(const struct device *dev, struct net_buf *buf)
 {
-	zassert_true(cmd_handle(buf, cmds, ARRAY_SIZE(cmds)) == 0,
+	zassert_true(cmd_handle(dev, buf, cmds, ARRAY_SIZE(cmds)) == 0,
 		     "Unknown HCI command");
 
 	net_buf_unref(buf);
@@ -223,14 +235,18 @@ static int driver_send(struct net_buf *buf)
 	return 0;
 }
 
-/* HCI driver structure. */
-static const struct bt_hci_driver drv = {
-	.name         = "test",
-	.bus          = BT_HCI_DRIVER_BUS_VIRTUAL,
-	.open         = driver_open,
-	.send         = driver_send,
-	.quirks       = BT_QUIRK_NO_RESET,
+static const struct bt_hci_driver_api driver_api = {
+	.open = driver_open,
+	.send = driver_send,
 };
+
+#define TEST_DEVICE_INIT(inst) \
+	static struct driver_data driver_data_##inst = { \
+	}; \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &driver_data_##inst, NULL, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &driver_api)
+
+DT_INST_FOREACH_STATUS_OKAY(TEST_DEVICE_INIT)
 
 struct bt_recv_job_data {
 	struct k_work work;  /* Work item */
@@ -243,12 +259,14 @@ struct bt_recv_job_data {
 /* Work item handler for bt_recv() jobs. */
 static void bt_recv_job_cb(struct k_work *item)
 {
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct driver_data *drv = dev->data;
 	struct bt_recv_job_data *data =
 		CONTAINER_OF(item, struct bt_recv_job_data, work);
 	struct k_sem *sync = job(data->buf)->sync;
 
 	/* Send net buffer to host */
-	bt_recv(data->buf);
+	drv->recv(dev, data->buf);
 	data->buf = NULL;
 
 	/* Wake up bt_recv_job_submit */
@@ -350,9 +368,6 @@ ZTEST_SUITE(test_hci_prop_evt, NULL, NULL, NULL, NULL, NULL);
 /* Test. */
 ZTEST(test_hci_prop_evt, test_hci_prop_evt_entry)
 {
-	/* Register the test HCI driver */
-	bt_hci_driver_register(&drv);
-
 	/* Go! Wait until Bluetooth initialization is done  */
 	zassert_true((bt_enable(NULL) == 0),
 		     "bt_enable failed");
