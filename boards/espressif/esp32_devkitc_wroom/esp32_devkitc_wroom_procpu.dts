@@ -18,6 +18,7 @@
 		uart-0 = &uart0;
 		i2c-0 = &i2c0;
 		sw0 = &button0;
+		led0 = &led0;
 		watchdog0 = &wdt0;
 	};
 
@@ -29,6 +30,14 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+
+	leds {
+        compatible = "gpio-leds";
+        led0: led_0 {
+            gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+            label = "LED 0";
+        };
+    };
 
 	chosen {
 		zephyr,sram = &sram0;
