@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+ #include <zephyr/dt-bindings/i2c/i2c.h>
+
  / {
     i2c0: i2c@88888888 {
         compatible = "xlnx,xps-iic-2.00.a";
@@ -21,5 +23,15 @@
         reg = <0x88898888 0x10000>;
         interrupt-parent = <&nvic>;
         interrupts = <5 1>;
+    };
+
+    i2c2: i2c@888A8888 {
+	compatible = "brcm,iproc-i2c";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+        reg = <0x888A8888 0x100>;
+        interrupt-parent = <&nvic>;
+        interrupts = <6 1>;
     };
 };
