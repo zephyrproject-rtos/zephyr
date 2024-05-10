@@ -19,3 +19,7 @@
 	pinctrl-names = "default", "sleep";
 	memory-regions = <&cpuapp_dma_region>;
 };
+
+&pwm120 {
+	status = "disabled";
+};
