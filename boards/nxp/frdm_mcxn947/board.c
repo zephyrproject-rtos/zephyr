@@ -192,6 +192,11 @@ static int frdm_mcxn947_init(void)
 	CLOCK_AttachClk(kPLL0_to_CTIMER4);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivUSdhcClk, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_USDHC);
+#endif
+
 #if CONFIG_FLASH_MCUX_FLEXSPI_NOR
 	/* We downclock the FlexSPI to 50MHz, it will be set to the
 	 * optimum speed supported by the Flash device during FLEXSPI

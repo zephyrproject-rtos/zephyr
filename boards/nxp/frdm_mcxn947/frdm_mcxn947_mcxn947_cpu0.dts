@@ -58,6 +58,10 @@
 	status = "okay";
 };
 
+&gpio2 {
+	status = "okay";
+};
+
 &green_led {
 	status = "okay";
 };
@@ -140,4 +144,12 @@
 
 &ctimer0 {
 	status = "okay";
+};
+
+&usdhc0 {
+	status = "okay";
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
 };
