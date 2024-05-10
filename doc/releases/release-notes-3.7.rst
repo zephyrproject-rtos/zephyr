@@ -71,6 +71,11 @@ Architectures
 
 * Xtensa
 
+Kernel
+******
+
+  * Added :c:func:`k_uptime_seconds` function to simplify `k_uptime_get() / 1000` usage.
+
 Bluetooth
 *********
 
