@@ -156,6 +156,15 @@ Analog-to-Digital Converter (ADC)
 Bluetooth HCI
 =============
 
+ * The ``BT_HCI_VS_EXT`` Kconfig option was deleted and the feature is now included in the
+   :kconfig:option:`BT_HCI_VS` Kconfig option.
+ * The ``BT_HCI_VS_EVT`` Kconfig option was removed, since vendor event support is implicit if
+   the :kconfig:option:`BT_HCI_VS` option is enabled.
+ * The bt_read_static_addr() API was removed. This wasn't really a completely public API, but
+   since it was exposed by the public hci_driver.h header file the removal is mentioned here.
+   Enable the :kconfig:option:`BT_HCI_VS` Kconfig option instead, and use vendor specific HCI
+   commands API to get the Controller's Bluetooth static address when available.
+
 Charger
 =======
 
