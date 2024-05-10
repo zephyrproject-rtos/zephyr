@@ -388,8 +388,8 @@ Provisions Assessment
     * - Provision 5.4-1
       - Sensitive security parameters in persistent storage shall be stored securely by the device.
       - M
-      -
-      -
+      - N
+      - There is not secure storage within Zephyr
 
         .. _ETSI_Provision_5_4_2:
     * - Provision 5.4-2
