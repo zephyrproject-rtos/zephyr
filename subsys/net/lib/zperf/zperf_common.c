@@ -110,7 +110,7 @@ int zperf_get_ipv4_addr(char *host, struct in_addr *addr)
 }
 
 int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, uint8_t tos,
-			      int priority, int proto)
+			      int priority, int tcp_nodelay, int proto)
 {
 	socklen_t addrlen = peer_addr->sa_family == AF_INET6 ?
 			    sizeof(struct sockaddr_in6) :
@@ -187,6 +187,14 @@ int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, uint8_t tos,
 			NET_WARN("Failed to set SOL_SOCKET - SO_PRIORITY socket option.");
 			return -EINVAL;
 		}
+	}
+
+	if (proto == IPPROTO_TCP && tcp_nodelay &&
+	    zsock_setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
+			     &tcp_nodelay,
+			     sizeof(tcp_nodelay)) != 0) {
+		NET_WARN("Failed to set IPPROTO_TCP - TCP_NODELAY socket option.");
+		return -EINVAL;
 	}
 
 	ret = zsock_connect(sock, peer_addr, addrlen);
