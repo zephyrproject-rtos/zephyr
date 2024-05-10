@@ -199,6 +199,7 @@ REDIRECTS = [
     ('reference/usermode/overview', 'kernel/usermode/overview'),
     ('reference/usermode/syscalls', 'kernel/usermode/syscalls'),
     ('reference/util/index', 'kernel/util/index'),
+    ('samples/application_development/with_mcuboot/README', 'samples/sysbuild/with_mcuboot/README'),
     ('samples/drivers/adc/README', 'samples/drivers/adc/adc_dt/README'),
     ('samples/drivers/kscan_touch', 'samples/subsys/input/input'),
     ('samples/drivers/led_apa102/README', 'samples/drivers/led_strip/README'),
