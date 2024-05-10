@@ -523,6 +523,7 @@ config LWM2M_SECONDS_TO_UPDATE_EARLY
 config LWM2M_SHELL
 	bool "LwM2M shell utilities"
 	select SHELL
+	select CRC
 	help
 	  Activate shell module that provides LwM2M commands like
 	  send to the console.

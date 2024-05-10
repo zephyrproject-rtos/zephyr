@@ -156,6 +156,8 @@ class Leshan:
             return 'integer'
         if isinstance(value, datetime):
             return 'time'
+        if isinstance(value, bytes):
+            return 'opaque'
         return 'string'
 
     @classmethod
@@ -163,6 +165,8 @@ class Leshan:
         """Wrapper for special types that are not understood by Json"""
         if isinstance(value, datetime):
             return int(value.timestamp())
+        elif isinstance(value, bytes):
+            return binascii.b2a_hex(value).decode()
         else:
             return value
 
