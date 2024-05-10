@@ -1031,6 +1031,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 	bool last_block = true;
 	void *write_buf;
 	size_t write_buf_len;
+	size_t offset = 0;
 
 	if (!obj_inst || !res || !res_inst || !obj_field || !msg) {
 		return -EINVAL;
@@ -1050,19 +1051,26 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 					     res_inst->res_inst_id, &data_len);
 	}
 
-	if (res->post_write_cb
-#if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
-	    || res->validate_cb
-#endif
-	) {
-		if (msg->in.block_ctx != NULL) {
-			/* Get block_ctx for total_size (might be zero) */
-			total_size = msg->in.block_ctx->ctx.total_size;
-			LOG_DBG("BLOCK1: total:%zu current:%zu"
-				" last:%u",
-				msg->in.block_ctx->ctx.total_size, msg->in.block_ctx->ctx.current,
-				msg->in.block_ctx->last_block);
+	if (msg->in.block_ctx != NULL) {
+		/* Get block_ctx for total_size (might be zero) */
+		total_size = msg->in.block_ctx->ctx.total_size;
+		offset = msg->in.block_ctx->ctx.current;
+
+		LOG_DBG("BLOCK1: total:%zu current:%zu"
+			" last:%u",
+			msg->in.block_ctx->ctx.total_size, msg->in.block_ctx->ctx.current,
+			msg->in.block_ctx->last_block);
+	}
+
+	/* Only when post_write callback is set, we allow larger content than our
+	 * buffer sizes. The post-write callback handles assembling of the data
+	 */
+	if (!res->post_write_cb) {
+		if ((offset > 0 && offset >= data_len) || total_size > data_len) {
+			return -ENOMEM;
 		}
+		data_len -= offset;
+		data_ptr = (uint8_t *)data_ptr + offset;
 	}
 
 #if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
@@ -1205,7 +1213,6 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 	}
 
 	if (obj_field->data_type != LWM2M_RES_TYPE_OPAQUE) {
-		size_t offset = msg->in.block_ctx ? msg->in.block_ctx->ctx.current : 0;
 
 #if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
 		if (res->validate_cb) {
