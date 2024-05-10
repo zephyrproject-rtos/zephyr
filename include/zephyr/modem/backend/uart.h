@@ -12,6 +12,7 @@
 #include <zephyr/sys/atomic.h>
 
 #include <zephyr/modem/pipe.h>
+#include <zephyr/modem/stats.h>
 
 #ifndef ZEPHYR_MODEM_BACKEND_UART_
 #define ZEPHYR_MODEM_BACKEND_UART_
@@ -24,6 +25,7 @@ struct modem_backend_uart_isr {
 	struct ring_buf receive_rdb[2];
 	struct ring_buf transmit_rb;
 	atomic_t transmit_buf_len;
+	atomic_t receive_buf_len;
 	uint8_t receive_rdb_used;
 	uint32_t transmit_buf_put_limit;
 };
@@ -44,6 +46,11 @@ struct modem_backend_uart {
 	struct modem_pipe pipe;
 	struct k_work_delayable receive_ready_work;
 	struct k_work transmit_idle_work;
+
+#if CONFIG_MODEM_STATS
+	struct modem_stats_buffer receive_buf_stats;
+	struct modem_stats_buffer transmit_buf_stats;
+#endif
 
 	union {
 		struct modem_backend_uart_isr isr;
