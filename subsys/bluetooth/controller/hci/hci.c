@@ -4790,12 +4790,12 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 
 /* If Zephyr VS HCI commands are not enabled provide this functionality directly
  */
-#if !defined(CONFIG_BT_HCI_VS_EXT)
+#if !defined(CONFIG_BT_HCI_VS)
 uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t size)
 {
 	return hci_vendor_read_static_addr(addrs, size);
 }
-#endif /* !defined(CONFIG_BT_HCI_VS_EXT) */
+#endif /* !defined(CONFIG_BT_HCI_VS) */
 
 
 #if defined(CONFIG_BT_HCI_VS)
@@ -4827,7 +4827,6 @@ static void vs_read_supported_commands(struct net_buf *buf,
 
 	/* Set Version Information, Supported Commands, Supported Features. */
 	rp->commands[0] |= BIT(0) | BIT(1) | BIT(2);
-#if defined(CONFIG_BT_HCI_VS_EXT)
 	/* Write BD_ADDR, Read Build Info */
 	rp->commands[0] |= BIT(5) | BIT(7);
 	/* Read Static Addresses, Read Key Hierarchy Roots */
@@ -4846,7 +4845,6 @@ static void vs_read_supported_commands(struct net_buf *buf,
 	/* Set USB Transport Mode */
 	rp->commands[2] |= BIT(0);
 #endif /* USB_DEVICE_BLUETOOTH_VS_H4 */
-#endif /* CONFIG_BT_HCI_VS_EXT */
 }
 
 static void vs_read_supported_features(struct net_buf *buf,
@@ -4869,7 +4867,6 @@ uint8_t __weak hci_vendor_read_static_addr(struct bt_hci_vs_static_addr addrs[],
 	return 0;
 }
 
-#if defined(CONFIG_BT_HCI_VS_EXT)
 static void vs_write_bd_addr(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_vs_write_bd_addr *cmd = (void *)buf->data;
@@ -5323,8 +5320,6 @@ static void vs_le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct ne
 }
 #endif /* CONFIG_BT_CTLR_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES */
 
-#endif /* CONFIG_BT_HCI_VS_EXT */
-
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 static void mesh_get_opts(struct net_buf *buf, struct net_buf **evt)
 {
@@ -5501,7 +5496,6 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_USB_DEVICE_BLUETOOTH_VS_H4 */
 
-#if defined(CONFIG_BT_HCI_VS_EXT)
 	case BT_OCF(BT_HCI_OP_VS_READ_BUILD_INFO):
 		vs_read_build_info(cmd, evt);
 		break;
@@ -5539,7 +5533,6 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 		vs_set_min_used_chans(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
-#endif /* CONFIG_BT_HCI_VS_EXT */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	case BT_OCF(BT_HCI_OP_VS_MESH):
