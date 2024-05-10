@@ -380,11 +380,11 @@ enum bt_audio_metadata_type {
 	/** UTF-8 encoded title or summary of stream content */
 	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO        = 0x03,
 
-	/** @brief Stream language
+	/** @brief Language
 	 *
 	 * 3 octet lower case language code defined by ISO 639-3
 	 */
-	BT_AUDIO_METADATA_TYPE_STREAM_LANG         = 0x04,
+	BT_AUDIO_METADATA_TYPE_LANG                = 0x04,
 
 	/** Array of 8-bit CCID values */
 	BT_AUDIO_METADATA_TYPE_CCID_LIST           = 0x05,
@@ -1250,31 +1250,30 @@ int bt_audio_codec_cfg_meta_get_program_info(const struct bt_audio_codec_cfg *co
 int bt_audio_codec_cfg_meta_set_program_info(struct bt_audio_codec_cfg *codec_cfg,
 					     const uint8_t *program_info, size_t program_info_len);
 
-/** @brief Extract stream language
+/** @brief Extract language
  *
- *  See @ref BT_AUDIO_METADATA_TYPE_STREAM_LANG for more information about this value.
+ *  See @ref BT_AUDIO_METADATA_TYPE_LANG for more information about this value.
  *
  *  @param codec_cfg The codec data to search in.
  *
- *  @retval The stream language if positive or 0
+ *  @retval The language if positive or 0
  *  @retval -EINVAL if arguments are invalid
  *  @retval -ENODATA if not found
  *  @retval -EBADMSG if found value has invalid size
  */
-int bt_audio_codec_cfg_meta_get_stream_lang(const struct bt_audio_codec_cfg *codec_cfg);
+int bt_audio_codec_cfg_meta_get_lang(const struct bt_audio_codec_cfg *codec_cfg);
 
 /**
- * @brief Set the stream language of a codec configuration metadata.
+ * @brief Set the language of a codec configuration metadata.
  *
  * @param codec_cfg   The codec configuration to set data for.
- * @param stream_lang The 24-bit stream language to set.
+ * @param lang        The 24-bit language to set.
  *
  * @retval The data_len of @p codec_cfg on success
  * @retval -EINVAL if arguments are invalid
  * @retval -ENOMEM if the new value could not set or added due to memory
  */
-int bt_audio_codec_cfg_meta_set_stream_lang(struct bt_audio_codec_cfg *codec_cfg,
-					    uint32_t stream_lang);
+int bt_audio_codec_cfg_meta_set_lang(struct bt_audio_codec_cfg *codec_cfg, uint32_t lang);
 
 /** @brief Extract CCID list
  *
@@ -1773,31 +1772,30 @@ int bt_audio_codec_cap_meta_get_program_info(const struct bt_audio_codec_cap *co
 int bt_audio_codec_cap_meta_set_program_info(struct bt_audio_codec_cap *codec_cap,
 					     const uint8_t *program_info, size_t program_info_len);
 
-/** @brief Extract stream language
+/** @brief Extract language
  *
- *  See @ref BT_AUDIO_METADATA_TYPE_STREAM_LANG for more information about this value.
+ *  See @ref BT_AUDIO_METADATA_TYPE_LANG for more information about this value.
  *
  *  @param codec_cap The codec data to search in.
  *
- *  @retval The stream language if positive or 0
+ *  @retval The language if positive or 0
  *  @retval -EINVAL if arguments are invalid
  *  @retval -ENODATA if not found
  *  @retval -EBADMSG if found value has invalid size
  */
-int bt_audio_codec_cap_meta_get_stream_lang(const struct bt_audio_codec_cap *codec_cap);
+int bt_audio_codec_cap_meta_get_lang(const struct bt_audio_codec_cap *codec_cap);
 
 /**
- * @brief Set the stream language of a codec capability metadata.
+ * @brief Set the language of a codec capability metadata.
  *
  * @param codec_cap   The codec capability to set data for.
- * @param stream_lang The 24-bit stream language to set.
+ * @param lang        The 24-bit language to set.
  *
  * @retval The data_len of @p codec_cap on success
  * @retval -EINVAL if arguments are invalid
  * @retval -ENOMEM if the new value could not set or added due to memory
  */
-int bt_audio_codec_cap_meta_set_stream_lang(struct bt_audio_codec_cap *codec_cap,
-					    uint32_t stream_lang);
+int bt_audio_codec_cap_meta_set_lang(struct bt_audio_codec_cap *codec_cap, uint32_t lang);
 
 /** @brief Extract CCID list
  *

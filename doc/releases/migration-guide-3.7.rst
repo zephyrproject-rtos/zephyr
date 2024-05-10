@@ -504,6 +504,16 @@ Bluetooth Audio
   the :c:func:`bt_bap_stream_connect` shall now be called before :c:func:`bt_bap_stream_start`.
   (:github:`73032`)
 
+* Renamed ``stream_lang`` to just ``lang`` to better fit with the assigned numbers document.
+  This affects the ``BT_AUDIO_METADATA_TYPE_LANG`` macro and the following functions:
+
+  * :c:func:`bt_audio_codec_cap_meta_set_lang`
+  * :c:func:`bt_audio_codec_cap_meta_get_lang`
+  * :c:func:`bt_audio_codec_cfg_meta_set_lang`
+  * :c:func:`bt_audio_codec_cfg_meta_get_lang`
+
+  (:github:`72584`)
+
 * All occurrences of ``set_sirk`` have been changed to just ``sirk`` as the ``s`` in ``sirk`` stands
   for set. (:github:`73413`)
 
