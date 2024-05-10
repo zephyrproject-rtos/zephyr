@@ -34,3 +34,8 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="app.overlay;adc_ads1145s0x_gpio.overlay"
       - CONF_FILE="adc_ads1145s0x_gpio.conf"
+
+  drivers.gpio.build.iproc:
+    platform_allow: qemu_cortex_m3
+    depends_on: gpio
+    extra_args: DTC_OVERLAY_FILE="iproc.overlay"
