@@ -67,6 +67,8 @@ struct uart_esp32_config {
 	const clock_control_subsys_t clock_subsys;
 	int irq_source;
 	int irq_priority;
+	bool tx_invert;
+	bool rx_invert;
 #if CONFIG_UART_ASYNC_API
 	const struct device *dma_dev;
 	uint8_t tx_dma_channel;
@@ -328,6 +330,13 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 
 	uart_hal_set_rx_timeout(&data->hal, 0x16);
 
+	if (config->tx_invert) {
+		uart_hal_inverse_signal(&data->hal, UART_SIGNAL_TXD_INV);
+	}
+
+	if (config->rx_invert) {
+		uart_hal_inverse_signal(&data->hal, UART_SIGNAL_RXD_INV);
+	}
 	return 0;
 }
 
@@ -1004,6 +1013,8 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
 		.irq_source = DT_INST_IRQN(idx),                                                   \
 		.irq_priority = UART_IRQ_PRIORITY,                                                 \
+		.tx_invert = DT_INST_PROP_OR(idx, tx_invert, false),                               \
+		.rx_invert = DT_INST_PROP_OR(idx, rx_invert, false),                               \
 		ESP_UART_DMA_INIT(idx)};                                                           \
                                                                                                    \
 	static struct uart_esp32_data uart_esp32_data_##idx = {                                    \
