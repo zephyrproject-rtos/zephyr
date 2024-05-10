@@ -28,8 +28,12 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 static uint64_t xlat_tables[CONFIG_MAX_XLAT_TABLES * Ln_XLAT_NUM_ENTRIES]
 		__aligned(Ln_XLAT_NUM_ENTRIES * sizeof(uint64_t));
-static uint16_t xlat_use_count[CONFIG_MAX_XLAT_TABLES];
+static int xlat_use_count[CONFIG_MAX_XLAT_TABLES];
 static struct k_spinlock xlat_lock;
+
+/* Usage count value range */
+#define XLAT_PTE_COUNT_MASK	GENMASK(15, 0)
+#define XLAT_REF_COUNT_UNIT	BIT(16)
 
 /* Returns a reference to a free table */
 static uint64_t *new_table(void)
@@ -39,9 +43,9 @@ static uint64_t *new_table(void)
 
 	/* Look for a free table. */
 	for (i = 0U; i < CONFIG_MAX_XLAT_TABLES; i++) {
-		if (xlat_use_count[i] == 0U) {
+		if (xlat_use_count[i] == 0) {
 			table = &xlat_tables[i * Ln_XLAT_NUM_ENTRIES];
-			xlat_use_count[i] = 1U;
+			xlat_use_count[i] = XLAT_REF_COUNT_UNIT;
 			MMU_DEBUG("allocating table [%d]%p\n", i, table);
 			return table;
 		}
@@ -59,29 +63,43 @@ static inline unsigned int table_index(uint64_t *pte)
 	return i;
 }
 
-/* Makes a table free for reuse. */
-static void free_table(uint64_t *table)
-{
-	unsigned int i = table_index(table);
-
-	MMU_DEBUG("freeing table [%d]%p\n", i, table);
-	__ASSERT(xlat_use_count[i] == 1U, "table still in use");
-	xlat_use_count[i] = 0U;
-}
-
 /* Adjusts usage count and returns current count. */
 static int table_usage(uint64_t *table, int adjustment)
 {
 	unsigned int i = table_index(table);
+	int prev_count = xlat_use_count[i];
+	int new_count = prev_count + adjustment;
 
-	xlat_use_count[i] += adjustment;
-	__ASSERT(xlat_use_count[i] > 0, "usage count underflow");
-	return xlat_use_count[i];
+	if (IS_ENABLED(DUMP_PTE) || new_count == 0) {
+		MMU_DEBUG("table [%d]%p: usage %#x -> %#x\n", i, table, prev_count, new_count);
+	}
+
+	__ASSERT(new_count >= 0,
+		 "table use count underflow");
+	__ASSERT(new_count == 0 || new_count >= XLAT_REF_COUNT_UNIT,
+		 "table in use with no reference to it");
+	__ASSERT((new_count & XLAT_PTE_COUNT_MASK) <= Ln_XLAT_NUM_ENTRIES,
+		 "table PTE count overflow");
+
+	xlat_use_count[i] = new_count;
+	return new_count;
+}
+
+static inline void inc_table_ref(uint64_t *table)
+{
+	table_usage(table, XLAT_REF_COUNT_UNIT);
+}
+
+static inline void dec_table_ref(uint64_t *table)
+{
+	int ref_unit = XLAT_REF_COUNT_UNIT;
+
+	table_usage(table, -ref_unit);
 }
 
 static inline bool is_table_unused(uint64_t *table)
 {
-	return table_usage(table, 0) == 1;
+	return (table_usage(table, 0) & XLAT_PTE_COUNT_MASK) == 0;
 }
 
 static inline bool is_free_desc(uint64_t desc)
@@ -225,7 +243,6 @@ static uint64_t *expand_to_table(uint64_t *pte, unsigned int level)
 
 	/* Link the new table in place of the pte it replaces */
 	set_pte_table_desc(pte, table, level);
-	table_usage(table, 1);
 
 	return table;
 }
@@ -300,7 +317,7 @@ static int set_mapping(struct arm_mmu_ptables *ptables,
 		/* recursively free unused tables if any */
 		while (level != BASE_XLAT_LEVEL &&
 		       is_table_unused(pte)) {
-			free_table(pte);
+			dec_table_ref(pte);
 			pte = ptes[--level];
 			set_pte_block_desc(pte, 0, level);
 			table_usage(pte, -1);
@@ -347,8 +364,8 @@ static uint64_t *dup_table(uint64_t *src_table, unsigned int level)
 		}
 
 		dst_table[i] = src_table[i];
-		if (is_table_desc(src_table[i], level)) {
-			table_usage(pte_desc_table(src_table[i]), 1);
+		if (is_table_desc(dst_table[i], level)) {
+			inc_table_ref(pte_desc_table(dst_table[i]));
 		}
 		if (!is_free_desc(dst_table[i])) {
 			table_usage(dst_table, 1);
@@ -388,8 +405,7 @@ static int privatize_table(uint64_t *dst_table, uint64_t *src_table,
 				return -ENOMEM;
 			}
 			set_pte_table_desc(&dst_table[i], dst_subtable, level);
-			table_usage(dst_subtable, 1);
-			table_usage(src_subtable, -1);
+			dec_table_ref(src_subtable);
 		}
 
 		ret = privatize_table(dst_subtable, src_subtable,
@@ -436,15 +452,14 @@ static void discard_table(uint64_t *table, unsigned int level)
 
 	for (i = 0U; i < Ln_XLAT_NUM_ENTRIES; i++) {
 		if (is_table_desc(table[i], level)) {
-			table_usage(pte_desc_table(table[i]), -1);
 			discard_table(pte_desc_table(table[i]), level + 1);
+			dec_table_ref(pte_desc_table(table[i]));
 		}
 		if (!is_free_desc(table[i])) {
 			table[i] = 0U;
 			table_usage(table, -1);
 		}
 	}
-	free_table(table);
 }
 
 static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
@@ -497,15 +512,15 @@ static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
 			table_usage(dst_table, -1);
 		}
 		if (is_table_desc(src_table[i], level)) {
-			table_usage(pte_desc_table(src_table[i]), 1);
+			inc_table_ref(pte_desc_table(src_table[i]));
 		}
 		dst_table[i] = src_table[i];
 		debug_show_pte(&dst_table[i], level);
 
 		if (old_table) {
 			/* we can discard the whole branch */
-			table_usage(old_table, -1);
 			discard_table(old_table, level + 1);
+			dec_table_ref(old_table);
 		}
 	}
 
