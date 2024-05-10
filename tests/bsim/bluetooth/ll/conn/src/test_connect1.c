@@ -60,6 +60,7 @@ static uint8_t connected_signal;
  */
 
 #define WAIT_TIME 6 /*seconds*/
+#define WAIT_TIME_TX_DEFER 800 /* milliseconds */
 #define WAIT_TIME_REPEAT 22 /*seconds*/
 extern enum bst_result_t bst_result;
 
@@ -77,7 +78,11 @@ extern enum bst_result_t bst_result;
 
 static void test_con1_init(void)
 {
-	bst_ticker_set_next_tick_absolute(WAIT_TIME*1e6);
+	if (IS_ENABLED(CONFIG_BT_CTLR_TX_DEFER)) {
+		bst_ticker_set_next_tick_absolute(WAIT_TIME_TX_DEFER*1e3);
+	} else {
+		bst_ticker_set_next_tick_absolute(WAIT_TIME*1e6);
+	}
 	bst_result = In_progress;
 }
 
