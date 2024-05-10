@@ -40,7 +40,7 @@ manifest:
       groups:
         - optional
     - name: tf-m-tests
-      revision: 85f533a4aa5b4fe31247676a923db7453eb4429c
+      revision: d552e4f18b92032bd335d5e3aa312f6acd82a83b
       path: modules/tee/tf-m/tf-m-tests
       remote: upstream
       groups:
