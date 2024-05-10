@@ -156,7 +156,8 @@ static inline bool is_in_tcp_time_wait_state(struct net_context *context)
 #endif
 }
 
-static int check_used_port(struct net_if *iface,
+static int check_used_port(struct net_context *context,
+			   struct net_if *iface,
 			   enum net_ip_protocol proto,
 			   uint16_t local_port,
 			   const struct sockaddr *local_addr,
@@ -167,6 +168,10 @@ static int check_used_port(struct net_if *iface,
 
 	for (i = 0; i < NET_MAX_CONTEXT; i++) {
 		if (!net_context_is_used(&contexts[i])) {
+			continue;
+		}
+
+		if (context != NULL && context == &contexts[i]) {
 			continue;
 		}
 
@@ -313,7 +318,7 @@ static uint16_t find_available_port(struct net_context *context,
 
 	do {
 		local_port = sys_rand16_get() | 0x8000;
-	} while (check_used_port(NULL, net_context_get_proto(context),
+	} while (check_used_port(context, NULL, net_context_get_proto(context),
 				 htons(local_port), addr, false, false) == -EEXIST);
 
 	return htons(local_port);
@@ -327,7 +332,8 @@ bool net_context_port_in_use(enum net_ip_protocol proto,
 			   uint16_t local_port,
 			   const struct sockaddr *local_addr)
 {
-	return check_used_port(NULL, proto, htons(local_port), local_addr, false, false) != 0;
+	return check_used_port(NULL, NULL, proto, htons(local_port),
+			       local_addr, false, false) != 0;
 }
 
 #if defined(CONFIG_NET_CONTEXT_CHECK)
@@ -794,7 +800,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		ret = 0;
 		if (addr6->sin6_port) {
-			ret = check_used_port(iface,
+			ret = check_used_port(context, iface,
 					      context->proto,
 					      addr6->sin6_port,
 					      addr,
@@ -894,7 +900,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		ret = 0;
 		if (addr4->sin_port) {
-			ret = check_used_port(iface,
+			ret = check_used_port(context, iface,
 					      context->proto,
 					      addr4->sin_port,
 					      addr,
