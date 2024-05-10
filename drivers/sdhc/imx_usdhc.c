@@ -279,7 +279,7 @@ static int imx_usdhc_reset(const struct device *dev)
 #endif
 
 	/* Reset data/command/tuning circuit */
-	return USDHC_Reset(cfg->base, kUSDHC_ResetAll, 100U) == true ? 0 : -ETIMEDOUT;
+	return USDHC_Reset(cfg->base, kUSDHC_ResetAll, 1000U) == true ? 0 : -ETIMEDOUT;
 }
 
 /*
