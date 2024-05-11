@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2024 Meta Platforms
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lpi2c2 {
+	status = "okay";
+};
+
+&mfd0 {
+	status = "okay";
+};
+
+&gpio_exp0 {
+	status = "okay";
+};
