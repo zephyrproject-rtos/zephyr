@@ -764,6 +764,8 @@ struct wifi_ap_config_params {
 	enum wifi_ap_config_param type;
 	/** Parameter used for setting maximum inactivity duration for stations */
 	uint32_t max_inactivity;
+	/** Parameter used for setting maximum number of stations */
+	uint32_t max_num_sta;
 };
 
 #include <zephyr/net/net_if.h>
