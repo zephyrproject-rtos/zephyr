@@ -75,7 +75,7 @@ extern "C" {
  * @brief Copy the device id to a buffer
  *
  * This routine copies "length" number of bytes of the device ID to the buffer.
- * If the device ID is smaller then length, the rest of the buffer is left unchanged.
+ * If the device ID is smaller than length, the rest of the buffer is left unchanged.
  * The ID depends on the hardware and is not guaranteed unique.
  *
  * Drivers are responsible for ensuring that the ID data structure is a
