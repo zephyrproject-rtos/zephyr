@@ -1,7 +1,7 @@
 # General configuration options
 
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0 
 
 mainmenu "Zephyr Kernel Configuration"
 
