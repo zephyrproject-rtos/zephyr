@@ -19,7 +19,7 @@ import shlex
 import shutil
 import textwrap
 
-from yamllint import config, linter
+from yamllint import config, linter 
 
 from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure
 import magic
