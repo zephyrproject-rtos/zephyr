@@ -498,6 +498,8 @@ static inline const char *wifi_ps_get_config_err_code_str(int16_t err_no)
 enum wifi_ap_config_param {
 	/** Used for AP mode configuration parameter ap_max_inactivity */
 	WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY = BIT(0),
+	/** Used for AP mode configuration parameter max_num_sta */
+	WIFI_AP_CONFIG_PARAM_MAX_NUM_STA = BIT(1),
 };
 
 #ifdef __cplusplus
