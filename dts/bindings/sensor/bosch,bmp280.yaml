@@ -1,0 +1,86 @@
+# Copyright (c) 2023 Russ Webber
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bosch BMA280 Pressure sensor.  See more info at:
+  https://www.bosch-sensortec.com/products/environmental-sensors/pressure-sensors/bmp280/
+
+compatible: "bosch,bmp280"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+    odr:
+      type: string
+      required: false
+      description: |
+        Default output data rate in Hz. Only the following values are allowed:
+          2000  - 2000    - 0.5ms  (default; chip reset value)
+          16    - 16      - 62.5ms
+          8     - 8       - 125ms
+          4     - 4       - 250ms
+          2     - 2       - 500ms
+          1     - 1       - 1000ms
+          0.5   - 1/2     - 2000ms
+          0.25  - 1/4     - 4000ms
+      default: "2000"
+      enum:
+        - "2000"
+        - "16"
+        - "8"
+        - "4"
+        - "2"
+        - "1"
+        - "0.5"
+        - "0.25"
+
+    osr-pressure:
+      type: int
+      required: false
+      description: |
+        Pressure oversampling rate. Only the following values are
+        allowed:
+          1 sample, 16-bit, 2.64 Pa
+          2 samples, 17-bit, 1.31 Pa
+          4 samples, 18-bit, 0.66 Pa (default; chip reset value)
+          8 samples, 19-bit, 0.33 Pa
+          16 samples, 20-bit, 0.16 Pa
+      default: 4
+      enum:
+        - 1
+        - 2
+        - 4
+        - 8
+        - 16
+
+    osr-temperature:
+      type: int
+      required: false
+      description: |
+        Temperature oversampling rate. Only the following values are
+        allowed:
+          1 sample, 16-bit, .0050 C (default; chip reset value)
+          2 samples, 17-bit, .0025 C
+          4 samples, 18-bit, .0012 C
+          8 samples, 19-bit, .0006 C
+          16 samples, 20-bit, .0003 C
+      default: 1
+      enum:
+        - 1
+        - 2
+        - 4
+        - 8
+        - 16
+
+    iir-filter:
+      type: int
+      required: false
+      description: |
+        IIR filter coefficient. The default 0 is no IIR filtering.
+      default: 0
+      enum:
+        - 0
+        - 2
+        - 4
+        - 8
+        - 16

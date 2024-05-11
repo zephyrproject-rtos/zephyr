@@ -1,0 +1,22 @@
+# Copyright (c) 2023 Russ Webber
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMP280
+	bool "Bosch BMP280 pressure sensor"
+	default y
+	depends on DT_HAS_BOSCH_BMP280_ENABLED
+	select I2C
+	help
+	  Enable driver for the Bosch BMP280 pressure sensor
+
+if BMP280
+
+config BMP280_ODR_RUNTIME
+	bool "Change ODR at runtime."
+	default y
+
+config BMP280_OSR_RUNTIME
+	bool "Change OSR at runtime."
+	default y
+
+endif # BMP280
