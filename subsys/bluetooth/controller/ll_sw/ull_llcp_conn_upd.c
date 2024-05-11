@@ -196,6 +196,22 @@ static bool cu_check_conn_parameters(struct ll_conn *conn, struct proc_ctx *ctx)
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
+static bool cu_check_conn_ind_parameters(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	const uint16_t interval_max = ctx->data.cu.interval_max; /* unit 1.25ms */
+	const uint16_t timeout = ctx->data.cu.timeout; /* unit 10ms */
+	const uint16_t latency = ctx->data.cu.latency;
+
+	/* Valid conn_update_ind parameters */
+	return (interval_max >= CONN_INTERVAL_MIN(conn)) &&
+	       (interval_max <= CONN_UPDATE_CONN_INTV_4SEC) &&
+	       (latency <= CONN_UPDATE_LATENCY_MAX) &&
+	       (timeout >= CONN_UPDATE_TIMEOUT_100MS) &&
+	       (timeout <= CONN_UPDATE_TIMEOUT_32SEC) &&
+	       ((timeout * 4U) > /* *4U re. conn events is equivalent to *2U re. ms */
+		((latency + 1U) * interval_max));
+}
+
 static void cu_prepare_update_ind(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	ctx->data.cu.win_size = 1U;
@@ -585,8 +601,20 @@ static void lp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 	switch (evt) {
 	case LP_CU_EVT_CONN_UPDATE_IND:
 		llcp_pdu_decode_conn_update_ind(ctx, param);
+
+		/* Invalid PDU, mark the connection for termination */
+		if (!cu_check_conn_ind_parameters(conn, ctx)) {
+			llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
+			conn->llcp_terminate.reason_final = BT_HCI_ERR_INVALID_LL_PARAM;
+			lp_cu_complete(conn, ctx);
+			break;
+		}
+
+		llcp_rr_set_incompat(conn, INCOMPAT_RESERVED);
+
 		/* Keep RX node to use for NTF */
 		llcp_rx_node_retain(ctx);
+
 		ctx->state = LP_CU_STATE_WAIT_INSTANT;
 		break;
 	case LP_CU_EVT_UNKNOWN:
@@ -1206,19 +1234,27 @@ static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 		case BT_HCI_ROLE_PERIPHERAL:
 			llcp_pdu_decode_conn_update_ind(ctx, param);
 
-			if (is_instant_not_passed(ctx->data.cu.instant,
-						  ull_conn_event_counter(conn))) {
+			/* Valid PDU */
+			if (cu_check_conn_ind_parameters(conn, ctx)) {
+				if (is_instant_not_passed(ctx->data.cu.instant,
+							  ull_conn_event_counter(conn))) {
+					/* Keep RX node to use for NTF */
+					llcp_rx_node_retain(ctx);
 
-				llcp_rx_node_retain(ctx);
+					ctx->state = RP_CU_STATE_WAIT_INSTANT;
 
-				ctx->state = RP_CU_STATE_WAIT_INSTANT;
-				/* In case we only just received it in time */
-				rp_cu_check_instant(conn, ctx, evt, param);
-			} else {
+					/* In case we only just received it in time */
+					rp_cu_check_instant(conn, ctx, evt, param);
+					break;
+				}
+
 				conn->llcp_terminate.reason_final = BT_HCI_ERR_INSTANT_PASSED;
-				llcp_rr_complete(conn);
-				ctx->state = RP_CU_STATE_IDLE;
+			} else {
+				conn->llcp_terminate.reason_final = BT_HCI_ERR_INVALID_LL_PARAM;
 			}
+
+			llcp_rr_complete(conn);
+			ctx->state = RP_CU_STATE_IDLE;
 			break;
 		default:
 			/* Unknown role */
