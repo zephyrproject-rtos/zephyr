@@ -1094,12 +1094,25 @@ static int spi_nor_set_address_mode(const struct device *dev,
 
 	/* This currently only supports command 0xB7 (Enter 4-Byte
 	 * Address Mode), with or without preceding WREN.
+	 * Or when BIT(3) is set where the 4-byte address mode can be entered
+	 * by setting BIT(7) in a register via a 0x17 write
+	 * instruction. See JEDEC 216F 16th DWORD.
 	 */
-	if ((enter_4byte_addr & 0x03) == 0) {
+	if ((enter_4byte_addr & 0x0b) == 0) {
 		return -ENOTSUP;
 	}
 
 	acquire_device(dev);
+
+	if ((enter_4byte_addr & 0x08) != 0) {
+		/* Enter 4-byte address mode by setting BIT(7) in a register
+		 * via a 0x17 write instruction.
+		 */
+		uint8_t sr = BIT(7);
+
+		ret = spi_nor_access(dev, 0x17, NOR_ACCESS_WRITE, 0, &sr, sizeof(sr));
+		goto done;
+	}
 
 	if ((enter_4byte_addr & 0x02) != 0) {
 		/* Enter after WREN. */
@@ -1108,12 +1121,13 @@ static int spi_nor_set_address_mode(const struct device *dev,
 
 	if (ret == 0) {
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_4BA);
+	}
 
-		if (ret == 0) {
-			struct spi_nor_data *data = dev->data;
+done:
+	if (ret == 0) {
+		struct spi_nor_data *data = dev->data;
 
-			data->flag_access_32bit = true;
-		}
+		data->flag_access_32bit = true;
 	}
 
 	release_device(dev);
