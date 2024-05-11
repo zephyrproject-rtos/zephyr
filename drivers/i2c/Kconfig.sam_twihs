@@ -3,10 +3,29 @@
 # Copyright (c) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-config I2C_SAM_TWIHS
-	bool "Atmel SAM (TWIHS) I2C driver"
+config I2C_SAM_TWIHS_ENABLED
+	bool
 	default y
 	depends on DT_HAS_ATMEL_SAM_I2C_TWIHS_ENABLED
 	select HAS_I2C_RTIO
 	help
+	  Internal helper Kconfig
+
+choice
+	prompt "Atmel SAM (TWIHS) I2C driver implementation"
+	depends on I2C_SAM_TWIHS_ENABLED
+	default I2C_SAM_TWIHS if !I2C_RTIO
+	default I2C_SAM_TWIHS_RTIO if I2C_RTIO
+
+config I2C_SAM_TWIHS
+	bool "Atmel SAM (TWIHS) I2C driver"
+	help
 	  Enable Atmel SAM MCU Family (TWIHS) I2C bus driver.
+
+config I2C_SAM_TWIHS_RTIO
+	bool "Atmel SAM (TWIHS) I2C driver with RTIO"
+	depends on I2C_RTIO
+	help
+	  Enable Atmel SAM MCU Family (TWIHS) I2C bus driver with rtio interface.
+
+endchoice
