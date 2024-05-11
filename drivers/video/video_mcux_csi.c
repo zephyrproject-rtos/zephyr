@@ -44,6 +44,9 @@ static inline unsigned int video_pix_fmt_bpp(uint32_t pixelformat)
 	case VIDEO_PIX_FMT_RGB565:
 	case VIDEO_PIX_FMT_YUYV:
 		return 2;
+	case VIDEO_PIX_FMT_XRGB32:
+	case VIDEO_PIX_FMT_XYUV32:
+		return 4;
 	default:
 		return 0;
 	}
@@ -113,6 +116,36 @@ done:
 	return;
 }
 
+#if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
+K_HEAP_DEFINE(csi_heap, 1000);
+static struct video_format_cap *fmts;
+/*
+ * On i.MX RT11xx SoCs which have MIPI CSI-2 Rx, image data from the camera sensor after passing
+ * through the pipeline (MIPI CSI-2 Rx --> Video Mux --> CSI) will be implicitly converted to a
+ * 32-bits pixel format. For example, an input in RGB565 or YUYV (2-bytes format) will become a
+ * XRGB32 or XYUV32 (4-bytes format) respectively, at the output of the CSI.
+ */
+static inline void video_pix_fmt_convert(struct video_format *fmt, bool isGetFmt)
+{
+	switch (fmt->pixelformat) {
+	case VIDEO_PIX_FMT_XRGB32:
+		fmt->pixelformat = isGetFmt ? VIDEO_PIX_FMT_XRGB32 : VIDEO_PIX_FMT_RGB565;
+		break;
+	case VIDEO_PIX_FMT_XYUV32:
+		fmt->pixelformat = isGetFmt ? VIDEO_PIX_FMT_XYUV32 : VIDEO_PIX_FMT_YUYV;
+		break;
+	case VIDEO_PIX_FMT_RGB565:
+		fmt->pixelformat = isGetFmt ? VIDEO_PIX_FMT_XRGB32 : VIDEO_PIX_FMT_RGB565;
+		break;
+	case VIDEO_PIX_FMT_YUYV:
+		fmt->pixelformat = isGetFmt ? VIDEO_PIX_FMT_XYUV32 : VIDEO_PIX_FMT_YUYV;
+		break;
+	}
+
+	fmt->pitch = fmt->width * video_pix_fmt_bpp(fmt->pixelformat);
+}
+#endif
+
 static int video_mcux_csi_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 				  struct video_format *fmt)
 {
@@ -120,6 +153,7 @@ static int video_mcux_csi_set_fmt(const struct device *dev, enum video_endpoint_
 	struct video_mcux_csi_data *data = dev->data;
 	unsigned int bpp = video_pix_fmt_bpp(fmt->pixelformat);
 	status_t ret;
+	struct video_format format = *fmt;
 
 	if (!bpp || ep != VIDEO_EP_OUT) {
 		return -EINVAL;
@@ -127,9 +161,17 @@ static int video_mcux_csi_set_fmt(const struct device *dev, enum video_endpoint_
 
 	data->csi_config.bytesPerPixel = bpp;
 	data->csi_config.linePitch_Bytes = fmt->pitch;
+#if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
+	if (fmt->pixelformat != VIDEO_PIX_FMT_XRGB32 && fmt->pixelformat != VIDEO_PIX_FMT_XYUV32) {
+		return -ENOTSUP;
+	}
+	video_pix_fmt_convert(&format, false);
+	data->csi_config.dataBus = kCSI_DataBus24Bit;
+#else
+	data->csi_config.dataBus = kCSI_DataBus8Bit;
+#endif
 	data->csi_config.polarityFlags = kCSI_HsyncActiveHigh | kCSI_DataLatchOnRisingEdge;
 	data->csi_config.workMode = kCSI_GatedClockMode; /* use VSYNC, HSYNC, and PIXCLK */
-	data->csi_config.dataBus = kCSI_DataBus8Bit;
 	data->csi_config.useExtVsync = true;
 	data->csi_config.height = fmt->height;
 	data->csi_config.width = fmt->width;
@@ -144,7 +186,7 @@ static int video_mcux_csi_set_fmt(const struct device *dev, enum video_endpoint_
 		return -EIO;
 	}
 
-	if (config->source_dev && video_set_format(config->source_dev, ep, fmt)) {
+	if (config->source_dev && video_set_format(config->source_dev, ep, &format)) {
 		return -EIO;
 	}
 
@@ -161,6 +203,9 @@ static int video_mcux_csi_get_fmt(const struct device *dev, enum video_endpoint_
 	}
 
 	if (config->source_dev && !video_get_format(config->source_dev, ep, fmt)) {
+#if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
+		video_pix_fmt_convert(fmt, true);
+#endif
 		/* align CSI with source fmt */
 		return video_mcux_csi_set_fmt(dev, ep, fmt);
 	}
@@ -317,6 +362,34 @@ static int video_mcux_csi_get_caps(const struct device *dev, enum video_endpoint
 	/* Just forward to source dev for now */
 	if (config->source_dev) {
 		err = video_get_caps(config->source_dev, ep, caps);
+#if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
+		/*
+		 * On i.MX RT11xx SoCs which have MIPI CSI-2 Rx, image data from the camera sensor
+		 * after passing through the pipeline (MIPI CSI-2 Rx --> Video Mux --> CSI) will be
+		 * implicitly converted to a 32-bits pixel format. For example, an input in RGB565
+		 * or YUYV (2-bytes format) will become an XRGB32 or XYUV32 (4-bytes format)
+		 * respectively, at the output of the CSI. So, we change the pixel formats of the
+		 * source caps to reflect this.
+		 */
+		int ind = 0;
+
+		while (caps->format_caps[ind].pixelformat) {
+			ind++;
+		}
+		k_heap_free(&csi_heap, fmts);
+		fmts = k_heap_alloc(&csi_heap, (ind + 1) * sizeof(struct video_format_cap),
+				    K_FOREVER);
+
+		for (int i = 0; i <= ind; i++) {
+			memcpy(&fmts[i], &caps->format_caps[i], sizeof(fmts[i]));
+			if (fmts[i].pixelformat == VIDEO_PIX_FMT_RGB565) {
+				fmts[i].pixelformat = VIDEO_PIX_FMT_XRGB32;
+			} else if (fmts[i].pixelformat == VIDEO_PIX_FMT_YUYV) {
+				fmts[i].pixelformat = VIDEO_PIX_FMT_XYUV32;
+			}
+		}
+		caps->format_caps = fmts;
+#endif
 	}
 
 	/* NXP MCUX CSI request at least 2 buffer before starting */
