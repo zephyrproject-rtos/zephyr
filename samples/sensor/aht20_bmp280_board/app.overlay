@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2023 Russ Webber
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	ht_sensor: aht20@38 {
+		compatible = "aosong,aht21";
+		reg = <0x38>;
+	};
+
+	pressure_sensor: bmp280@77 {
+		compatible = "bosch,bmp280";
+		reg = <0x77>;
+		osr-temperature = <16>;
+		osr-pressure = <16>;
+	};
+};
