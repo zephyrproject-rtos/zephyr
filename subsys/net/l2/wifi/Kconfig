@@ -111,3 +111,11 @@ config WIFI_MGMT_AP_STA_SKIP_INACTIVITY_POLL
 	  the inactivity timeout. This is useful to disconnect idle stations even
 	  if they are within the range of the AP.
 	  Note: This is only build time parameter, runtime configuration not supported.
+
+config WIFI_MGMT_AP_MAX_NUM_STA
+	int "Maximum number of stations allowed in station table"
+	range 1 2007
+	default 4
+	help
+	  Maximum number of stations allowed in station table. New stations will be
+	  rejected after the station table is full.

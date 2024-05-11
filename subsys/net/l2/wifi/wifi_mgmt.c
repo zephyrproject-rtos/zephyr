@@ -455,6 +455,15 @@ static int wifi_ap_config_params(uint32_t mgmt_request, struct net_if *iface,
 		return -EINVAL;
 	}
 
+	if (params->type & WIFI_AP_CONFIG_PARAM_MAX_NUM_STA) {
+		if (params->max_num_sta > CONFIG_WIFI_MGMT_AP_MAX_NUM_STA) {
+			LOG_INF("Maximum number of stations(%d) "
+				"exceeded default configured value = %d.",
+				params->max_num_sta, CONFIG_WIFI_MGMT_AP_MAX_NUM_STA);
+			return -EINVAL;
+		}
+	}
+
 	return wifi_mgmt_api->ap_config_params(dev, params);
 }
 

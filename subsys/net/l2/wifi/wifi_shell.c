@@ -1376,12 +1376,13 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 	struct getopt_state *state;
 	int opt;
 	static struct option long_options[] = {{"max_inactivity", required_argument, 0, 'i'},
+					       {"max_num_sta", required_argument, 0, 's'},
 					       {"help", no_argument, 0, 'h'},
 					       {0, 0, 0, 0}};
 	int opt_index = 0;
 	long val;
 
-	while ((opt = getopt_long(argc, argv, "i:h", long_options, &opt_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "i:s:h", long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'i':
@@ -1391,6 +1392,14 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 			}
 			params->max_inactivity = (uint32_t)val;
 			params->type |= WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY;
+			break;
+		case 's':
+			if (!parse_number(sh, &val, optarg, "max_num_sta",
+					  0, CONFIG_WIFI_MGMT_AP_MAX_NUM_STA)) {
+				return -EINVAL;
+			}
+			params->max_num_sta = (uint32_t)val;
+			params->type |= WIFI_AP_CONFIG_PARAM_MAX_NUM_STA;
 			break;
 		case 'h':
 			shell_help(sh);
@@ -1955,9 +1964,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 	SHELL_CMD_ARG(config, NULL,
 		  "Configure AP parameters.\n"
 		  "-i --max_inactivity=<time duration (in seconds)>\n"
+		  "-s --max_num_sta=<maximum number of stations>\n"
 		  "-h --help (prints help)",
 		  cmd_wifi_ap_config_params,
-		  2, 3),
+		  2, 5),
 	SHELL_SUBCMD_SET_END
 );
 
