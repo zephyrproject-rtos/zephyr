@@ -109,3 +109,12 @@
 		};
 	};
 };
+
+&dma {
+	status = "okay";
+	dma-channels = <8>; /* Crypto DMA channels have ID 5, 6, and 7 */
+};
+
+&crypto {
+	status = "okay";
+};
