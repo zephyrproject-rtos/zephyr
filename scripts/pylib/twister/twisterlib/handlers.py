@@ -882,6 +882,9 @@ class QEMUHandler(Handler):
 
         while True:
             this_timeout = int((timeout_time - time.time()) * 1000)
+            if timeout_extended:
+                # Quit early after timeout extension if no more data is being received
+                this_timeout = min(this_timeout, 1000)
             if this_timeout < 0 or not p.poll(this_timeout):
                 try:
                     if pid and this_timeout > 0:
