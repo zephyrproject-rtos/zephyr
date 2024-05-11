@@ -4859,6 +4859,128 @@ ZTEST(periph_loc_no_param_req, test_conn_update_periph_loc_disallowed_no_param_r
 }
 #endif
 
+/*
+ * Central-initiated Connection Update procedure.
+ * Peripheral receives invalid Connection Update parameters.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |  LL_CONNECTION_UPDATE_IND |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~ TERMINATE CONNECTION ~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ */
+ZTEST(periph_rem_invalid, test_conn_update_periph_rem_invalid_param)
+{
+	uint16_t interval;
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	interval = conn_update_ind.interval;
+	conn_update_ind.interval = 0U;
+	conn_update_ind.instant = event_counter(&conn) + 6U;
+	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_INVALID_LL_PARAM,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* Clear termination flag for subsequent test cycle */
+	conn.llcp_terminate.reason_final = 0;
+
+	/* Restore interval for other tests */
+	conn_update_ind.interval = interval;
+}
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+/*
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Host accepts.
+ * Peripheral receives invalid Connection Update parameters.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    | LE Connection Update      |                           |
+ *    |-------------------------->|                           |
+ *    |                           | LL_CONNECTION_PARAM_REQ   |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |  LL_CONNECTION_UPDATE_IND |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~ TERMINATE CONNECTION ~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ */
+ZTEST(periph_rem_invalid, test_conn_param_req_periph_rem_invalid_param)
+{
+	struct node_tx *tx;
+	uint16_t interval;
+	uint8_t err;
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	/* Prepare */
+	event_prepare(&conn);
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	interval = conn_update_ind.interval;
+	conn_update_ind.interval = 0U;
+	conn_update_ind.instant = event_counter(&conn) + 6U;
+	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_INVALID_LL_PARAM,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* Clear termination flag for subsequent test cycle */
+	conn.llcp_terminate.reason_final = 0;
+
+	/* Restore interval for other tests */
+	conn_update_ind.interval = interval;
+}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 ZTEST_SUITE(central_loc, NULL, NULL, conn_update_setup, NULL, NULL);
 ZTEST_SUITE(central_rem, NULL, NULL, conn_update_setup, NULL, NULL);
@@ -4870,3 +4992,5 @@ ZTEST_SUITE(central_rem_no_param_req, NULL, NULL, conn_update_setup, NULL, NULL)
 ZTEST_SUITE(periph_loc_no_param_req, NULL, NULL, conn_update_setup, NULL, NULL);
 ZTEST_SUITE(periph_rem_no_param_req, NULL, NULL, conn_update_setup, NULL, NULL);
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+ZTEST_SUITE(periph_rem_invalid, NULL, NULL, conn_update_setup, NULL, NULL);
