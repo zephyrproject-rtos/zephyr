@@ -1,0 +1,7 @@
+# Copyright 2024 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  lib.navigation:
+    tags:
+      - navigation
