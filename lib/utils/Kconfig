@@ -58,3 +58,6 @@ config UTF8
 	  handle UTF-8 encoded strings.
 
 endmenu
+
+config NAVIGATION
+	bool "Navigation utilities"
