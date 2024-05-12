@@ -134,13 +134,13 @@ struct modem_cellular_data {
 
 struct modem_cellular_config {
 	const struct device *uart;
-	const struct gpio_dt_spec power_gpio;
-	const struct gpio_dt_spec reset_gpio;
-	const uint16_t power_pulse_duration_ms;
-	const uint16_t reset_pulse_duration_ms;
-	const uint16_t startup_time_ms;
-	const uint16_t shutdown_time_ms;
-	const bool autostarts;
+	struct gpio_dt_spec power_gpio;
+	struct gpio_dt_spec reset_gpio;
+	uint16_t power_pulse_duration_ms;
+	uint16_t reset_pulse_duration_ms;
+	uint16_t startup_time_ms;
+	uint16_t shutdown_time_ms;
+	bool autostarts;
 	const struct modem_chat_script *init_chat_script;
 	const struct modem_chat_script *dial_chat_script;
 	const struct modem_chat_script *periodic_chat_script;
@@ -2089,7 +2089,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2118,7 +2118,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2147,7 +2147,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2176,7 +2176,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2205,7 +2205,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2234,7 +2234,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2264,7 +2264,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2293,7 +2293,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2321,7 +2321,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2350,7 +2350,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
