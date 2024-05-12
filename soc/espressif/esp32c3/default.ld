@@ -786,6 +786,12 @@ SECTIONS
   .flash.rodata_end : ALIGN(0x10)
   {
     . = ALIGN(4);
+
+     /* create explicit symbol for __tdata_start so that it is loaded
+      * into proper DROM region atributted by AT keyword below
+      */
+    __tdata_start = ADDR(tdata);
+
     _rodata_reserved_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
