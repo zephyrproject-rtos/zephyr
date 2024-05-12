@@ -74,6 +74,9 @@ struct http_resource_detail {
 
 	/** Content encoding of the resource. */
 	const char *content_encoding;
+
+	/** Content type of the resource. */
+	const char *content_type;
 };
 
 /** @cond INTERNAL_HIDDEN */
