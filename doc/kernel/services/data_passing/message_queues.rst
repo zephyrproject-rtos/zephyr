@@ -102,7 +102,11 @@ that the macro defines both the message queue and its buffer.
 Writing to a Message Queue
 ==========================
 
-A data item is added to a message queue by calling :c:func:`k_msgq_put`.
+A data item is added to the front of a message queue by calling :c:func:`k_msgq_put`.
+A data item is added to the back of a message queue by calling :c:func:`k_msgq_prepend`.
+
+.. note::
+    When there was no space to add an a data item, LIFO is not guaranteed.
 
 The following code builds on the example above, and uses the message queue
 to pass data items from a producing thread to one or more consuming threads.
