@@ -1184,6 +1184,20 @@ static uint8_t stop_discovery(const void *cmd, uint16_t cmd_len,
 {
 	int err;
 
+	if (discovery_flags & BTP_GAP_DISCOVERY_FLAG_BREDR) {
+#if defined(CONFIG_BT_CLASSIC)
+		err = bt_br_discovery_stop();
+		if (err < 0) {
+			LOG_ERR("Failed to stop discovery (err %d)", err);
+			return BTP_STATUS_FAILED;
+		}
+		return BTP_STATUS_SUCCESS;
+#else
+		LOG_WRN("BR/EDR not supported");
+		return BTP_STATUS_FAILED;
+#endif /* defined(CONFIG_BT_CLASSIC) */
+	}
+
 	err = bt_le_scan_stop();
 	if (err < 0) {
 		LOG_ERR("Failed to stop scanning: %d", err);
