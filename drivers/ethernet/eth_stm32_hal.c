@@ -352,7 +352,8 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	timestamped_frame = eth_is_ptp_pkt(net_pkt_iface(pkt), pkt);
+	timestamped_frame = eth_is_ptp_pkt(net_pkt_iface(pkt), pkt) ||
+			    net_pkt_is_tx_timestamping(pkt);
 	if (timestamped_frame) {
 		/* Enable transmit timestamp */
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
@@ -789,13 +790,10 @@ release_desc:
 	}
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	if (eth_is_ptp_pkt(get_iface(dev_data), pkt)) {
-		pkt->timestamp.second = timestamp.second;
-		pkt->timestamp.nanosecond = timestamp.nanosecond;
-	} else {
-		/* Invalid value */
-		pkt->timestamp.second = UINT64_MAX;
-		pkt->timestamp.nanosecond = UINT32_MAX;
+	pkt->timestamp.second = timestamp.second;
+	pkt->timestamp.nanosecond = timestamp.nanosecond;
+	if (timestamp.second != UINT64_MAX) {
+		net_pkt_set_rx_timestamping(pkt, true);
 	}
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
