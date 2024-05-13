@@ -429,7 +429,7 @@ Provisions Assessment
       - The consumer IoT device should use reviewed or evaluated implementations to deliver
         network and security functionalities, particularly in the field of cryptography.
       - R
-      -
+      - Y
       -
 
         .. _ETSI_Provision_5_5_3:
