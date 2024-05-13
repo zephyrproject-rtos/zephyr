@@ -1922,6 +1922,29 @@ static uint8_t padv_sync_transfer_recv(const void *cmd, uint16_t cmd_len,
 }
 #endif /* defined(CONFIG_BT_PER_ADV) */
 
+#if defined(CONFIG_BT_CLASSIC)
+static uint8_t connect_br(const void *cmd, uint16_t cmd_len,
+		 void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_connect_br_cmd *cp = cmd;
+
+	if (!bt_addr_eq(&cp->address, BT_ADDR_ANY)) {
+		struct bt_conn *conn;
+
+		conn = bt_conn_create_br(&cp->address, BT_BR_CONN_PARAM_DEFAULT);
+		if (conn == NULL) {
+			LOG_ERR("Failed to create connection");
+			return BTP_STATUS_FAILED;
+		}
+		bt_conn_unref(conn);
+		return BTP_STATUS_SUCCESS;
+	}
+
+	LOG_ERR("Invalid address type");
+	return BTP_STATUS_FAILED;
+}
+#endif /* CONFIG_BT_CLASSIC */
+
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_GAP_READ_SUPPORTED_COMMANDS,
@@ -2101,6 +2124,13 @@ static const struct btp_handler handlers[] = {
 	},
 #endif /* defined(CONFIG_BT_PER_ADV) */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
+#if defined(CONFIG_BT_CLASSIC)
+	{
+		.opcode = BTP_GAP_CONNECT_BR,
+		.expect_len = sizeof(struct btp_gap_connect_br_cmd),
+		.func = connect_br,
+	},
+#endif /* CONFIG_BT_CLASSIC */
 };
 
 uint8_t tester_init_gap(void)
