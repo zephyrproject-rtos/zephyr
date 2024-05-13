@@ -72,6 +72,7 @@ static struct in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 static struct in6_addr mcast_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
+static struct in6_addr *exp_mcast_group;
 static struct net_if *net_iface;
 static bool is_group_joined;
 static bool is_group_left;
@@ -84,6 +85,8 @@ static bool ignore_already;
 static struct mld_report_handler *report_handler;
 
 K_SEM_DEFINE(wait_data, 0, UINT_MAX);
+K_SEM_DEFINE(wait_joined, 0, UINT_MAX);
+K_SEM_DEFINE(wait_left, 0, UINT_MAX);
 
 #define WAIT_TIME 500
 #define WAIT_TIME_LONG MSEC_PER_SEC
@@ -209,6 +212,30 @@ NET_DEVICE_INIT(net_test_null_iface, "net_test_null_iface", net_test_dev_init, N
 		&net_test_null_data, NULL, 99, &net_test_null_if_api, _ETH_L2_LAYER,
 		_ETH_L2_CTX_TYPE, 127);
 
+static void test_iface_down_up(void)
+{
+	zassert_ok(net_if_down(net_iface), "Failed to bring iface down");
+	k_msleep(10);
+	zassert_ok(net_if_up(net_iface), "Failed to bring iface up");
+}
+
+static void test_iface_down_up_delayed_carrier(void)
+{
+	zassert_ok(net_if_down(net_iface), "Failed to bring iface down");
+	k_msleep(10);
+	net_if_carrier_off(net_iface);
+	zassert_ok(net_if_up(net_iface), "Failed to bring iface up");
+	k_msleep(10);
+	net_if_carrier_on(net_iface);
+}
+
+static void test_iface_carrier_off_on(void)
+{
+	net_if_carrier_off(net_iface);
+	k_msleep(10);
+	net_if_carrier_on(net_iface);
+}
+
 static void group_joined(struct net_mgmt_event_callback *cb,
 			 uint32_t nm_event, struct net_if *iface)
 {
@@ -217,9 +244,12 @@ static void group_joined(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-	is_group_joined = true;
+	if (exp_mcast_group == NULL ||
+	    net_ipv6_addr_cmp(exp_mcast_group, cb->info)) {
+		is_group_joined = true;
 
-	k_sem_give(&wait_data);
+		k_sem_give(&wait_joined);
+	}
 }
 
 static void group_left(struct net_mgmt_event_callback *cb,
@@ -230,9 +260,12 @@ static void group_left(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-	is_group_left = true;
+	if (exp_mcast_group == NULL ||
+	    net_ipv6_addr_cmp(exp_mcast_group, cb->info)) {
+		is_group_left = true;
 
-	k_sem_give(&wait_data);
+		k_sem_give(&wait_left);
+	}
 }
 
 static struct mgmt_events {
@@ -262,8 +295,6 @@ static void *test_mld_setup(void)
 {
 	struct net_if_addr *ifaddr;
 
-	report_handler = NULL;
-
 	setup_mgmt_events();
 
 	net_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
@@ -276,6 +307,14 @@ static void *test_mld_setup(void)
 	zassert_not_null(ifaddr, "Cannot add IPv6 address");
 
 	return NULL;
+}
+
+static void test_mld_before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	report_handler = NULL;
+	exp_mcast_group = NULL;
 }
 
 static void test_join_group(void)
@@ -319,7 +358,7 @@ static void test_catch_join_group(void)
 
 	test_join_group();
 
-	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
+	if (k_sem_take(&wait_joined, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting join event");
 	}
 
@@ -336,7 +375,7 @@ static void test_catch_leave_group(void)
 
 	test_leave_group();
 
-	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
+	if (k_sem_take(&wait_left, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting leave event");
 	}
 
@@ -355,7 +394,7 @@ static void test_verify_join_group(void)
 
 	test_join_group();
 
-	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
+	if (k_sem_take(&wait_joined, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting join event");
 	}
 
@@ -372,7 +411,7 @@ static void test_verify_leave_group(void)
 
 	test_leave_group();
 
-	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
+	if (k_sem_take(&wait_left, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting leave event");
 	}
 
@@ -598,6 +637,82 @@ ZTEST(net_mld_test_suite, test_allnodes)
 			"allnodes multicast address");
 }
 
+static void expect_exclude_mcast_report(struct net_pkt *pkt, void *user_data)
+{
+	struct mld_report_mcast_record record;
+	uint16_t records_count;
+	uint16_t res_bytes;
+	bool *report_sent = user_data;
+
+	zassert_not_null(exp_mcast_group, "Expected mcast group not sent");
+
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_skip(pkt, sizeof(struct net_icmp_hdr));
+
+	zassert_ok(net_pkt_read_be16(pkt, &res_bytes), "Failed to read reserved bytes");
+	zassert_equal(0, res_bytes, "Reserved bytes must be zeroed");
+
+	zassert_ok(net_pkt_read_be16(pkt, &records_count), "Failed to read addr count");
+	zexpect_equal(records_count, 1, "Incorrect record count ");
+
+	net_pkt_read(pkt, &record, sizeof(struct mld_report_mcast_record));
+
+	if (record.record_type == NET_IPV6_MLDv2_CHANGE_TO_EXCLUDE_MODE &&
+	    net_ipv6_addr_cmp_raw((const uint8_t *)exp_mcast_group,
+				  (const uint8_t *)&record.mcast_addr)) {
+		*report_sent = true;
+	}
+}
+
+static void verify_allnodes_on_iface_event(void (*action)(void))
+{
+	struct net_if *iface = NULL;
+	struct net_if_mcast_addr *ifmaddr;
+	struct in6_addr addr;
+	bool exclude_report_sent = false;
+	struct mld_report_handler handler = {
+		.fn = expect_exclude_mcast_report,
+		.user_data = &exclude_report_sent
+	};
+
+	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
+	k_sem_reset(&wait_joined);
+
+	is_group_joined = false;
+	exp_mcast_group = &addr;
+	report_handler = &handler;
+
+	action();
+
+	zassert_ok(k_sem_take(&wait_joined, K_MSEC(WAIT_TIME)),
+		   "Timeout while waiting for an event");
+
+	ifmaddr = net_if_ipv6_maddr_lookup(&addr, &iface);
+	zassert_not_null(ifmaddr, "Interface does not contain "
+			"allnodes multicast address");
+
+	zassert_true(is_group_joined, "Did not join mcast group");
+	zassert_true(exclude_report_sent, "Did not send report");
+}
+
+/* Verify that mcast all nodes is present after interface admin state toggle */
+ZTEST(net_mld_test_suite, test_allnodes_after_iface_up)
+{
+	verify_allnodes_on_iface_event(test_iface_down_up);
+}
+
+/* Verify that mcast all nodes is present after delayed carrier on */
+ZTEST(net_mld_test_suite, test_allnodes_after_iface_up_carrier_delayed)
+{
+	verify_allnodes_on_iface_event(test_iface_down_up_delayed_carrier);
+}
+
+/* Verify that mcast all nodes is present after carrier toggle */
+ZTEST(net_mld_test_suite, test_allnodes_after_carrier_toggle)
+{
+	verify_allnodes_on_iface_event(test_iface_carrier_off_on);
+}
+
 ZTEST(net_mld_test_suite, test_solicit_node)
 {
 	struct net_if *iface = NULL;
@@ -610,6 +725,55 @@ ZTEST(net_mld_test_suite, test_solicit_node)
 
 	zassert_not_null(ifmaddr, "Interface does not contain "
 			"solicit node multicast address");
+}
+
+static void verify_solicit_node_on_iface_event(void (*action)(void))
+{
+	struct net_if *iface = NULL;
+	struct net_if_mcast_addr *ifmaddr;
+	struct in6_addr addr;
+	bool exclude_report_sent = false;
+	struct mld_report_handler handler = {
+		.fn = expect_exclude_mcast_report,
+		.user_data = &exclude_report_sent
+	};
+
+	net_ipv6_addr_create_solicited_node(&my_addr, &addr);
+	k_sem_reset(&wait_joined);
+
+	is_group_joined = false;
+	exp_mcast_group = &addr;
+	report_handler = &handler;
+
+	action();
+
+	zassert_ok(k_sem_take(&wait_joined, K_MSEC(WAIT_TIME)),
+		   "Timeout while waiting for an event");
+
+	ifmaddr = net_if_ipv6_maddr_lookup(&addr, &iface);
+	zassert_not_null(ifmaddr, "Interface does not contain "
+			"solicit node multicast address");
+
+	zassert_true(is_group_joined, "Did not join mcast group");
+	zassert_true(exclude_report_sent, "Did not send report");
+}
+
+/* Verify that mcast solicited node is present after interface admin state toggle */
+ZTEST(net_mld_test_suite, test_solicit_node_after_iface_up)
+{
+	verify_solicit_node_on_iface_event(test_iface_down_up);
+}
+
+/* Verify that mcast solicited node is present after delayed carrier on */
+ZTEST(net_mld_test_suite, test_solicit_node_after_iface_up_carrier_delayed)
+{
+	verify_solicit_node_on_iface_event(test_iface_down_up_delayed_carrier);
+}
+
+/* Verify that mcast solicited node is present after delayed carrier toggle */
+ZTEST(net_mld_test_suite, test_solicit_node_after_carrier_toggle)
+{
+	verify_solicit_node_on_iface_event(test_iface_carrier_off_on);
 }
 
 ZTEST(net_mld_test_suite, test_join_leave)
@@ -851,9 +1015,6 @@ ZTEST(net_mld_test_suite, test_mcast_routes_in_mld)
 		verify_mcast_routes_in_mld(&info);
 	}
 
-	/* Disable report handler */
-	report_handler = NULL;
-
 	leave_mldv2_capable_routers_group();
 }
 
@@ -941,4 +1102,4 @@ ZTEST_USER(net_mld_test_suite, test_socket_catch_join_with_index)
 	socket_leave_group_with_index(&my_addr);
 }
 
-ZTEST_SUITE(net_mld_test_suite, NULL, test_mld_setup, NULL, NULL, NULL);
+ZTEST_SUITE(net_mld_test_suite, NULL, test_mld_setup, test_mld_before, NULL, NULL);
