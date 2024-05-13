@@ -261,8 +261,8 @@ Provisions Assessment
     * - Provision 5.3-1
       - All software components in consumer IoT devices should be securely updatable.
       - R
-      -
-      -
+      - Y
+      - :ref:`Device firwmware upgrade  <dfu>`
 
         .. _ETSI_Provision_5_3_2:
     * - Provision 5.3-2
