@@ -111,7 +111,15 @@
 			slow-clk-src = <ESP32_RTC_SLOW_CLK_SRC_RC_SLOW>;
 			#clock-cells = <1>;
 			status = "okay";
+		};
 
+		xt_wdt: xt_wdt@60021004 {
+			compatible = "espressif,esp32-xt-wdt";
+			reg = <0x60021004 0x4>;
+			clocks = <&rtc ESP32_MODULE_MAX>;
+			interrupts = <RTC_CORE_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
 		};
 
 		rtc_timer: rtc_timer@60008004 {
@@ -120,7 +128,7 @@
 			clocks = <&rtc ESP32_MODULE_MAX>;
 			interrupts = <RTC_CORE_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		flash: flash-controller@60002000 {
