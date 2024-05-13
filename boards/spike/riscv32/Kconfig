@@ -1,0 +1,4 @@
+# Copyright (c) 2024 Tim-Marek Thomas <thomas@sra.uni-hannover.de>
+# SPDX-License-Identifier: Apache-2.0
+config BOARD_SPIKE_RISCV32
+	select SPIKE_TARGET

@@ -1,0 +1,5 @@
+board:
+  name: spike_riscv32
+  vendor: spike
+  socs:
+    - name: spike_virt_riscv32
