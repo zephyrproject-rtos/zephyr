@@ -308,8 +308,8 @@ Provisions Assessment
     * - Provision 5.3-7
       - The device shall use best practice cryptography to facilitate secure update mechanisms.
       - M C
-      -
-      -
+      - Y
+      - :ref:`West Sign  <west-sign>`
 
         .. _ETSI_Provision_5_3_8:
     * - Provision 5.3-8
