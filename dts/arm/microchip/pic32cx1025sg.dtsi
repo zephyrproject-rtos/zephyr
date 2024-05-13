@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include <microchip/pic32cxsq.dtsi>
+#include <microchip/pic32cxsg.dtsi>
 
 / {
 	soc {
