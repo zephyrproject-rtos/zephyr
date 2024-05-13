@@ -30,7 +30,7 @@ from west.manifest import ManifestProject
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from get_maintainer import Maintainers, MaintainersError
 import list_boards
-import list_hardware
+import list_hardware 
 
 logger = None
 
