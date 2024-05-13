@@ -1,0 +1,12 @@
+# Microchip PIC32CXSG GPIO configuration options
+
+# Copyright (c) 2024 Microchip
+
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_PIC32CXSG
+	bool "Microchip PIC32CXSG GPIO (PORT) driver"
+	default y
+	depends on DT_HAS_PIC32CXSG_GPIO_ENABLED
+	help
+	  Enable support for the Microchip PIC32CXSG 'PORT' GPIO controllers.

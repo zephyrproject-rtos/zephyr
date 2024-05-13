@@ -1,6 +1,7 @@
 # Counter configuration options
 
 # Copyright (c) 2016 Intel Corporation
+
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig COUNTER
@@ -49,6 +50,8 @@ source "drivers/counter/Kconfig.stm32_timer"
 source "drivers/counter/Kconfig.sam"
 
 source "drivers/counter/Kconfig.sam0"
+
+source "drivers/counter/Kconfig.pic32cxsg"
 
 source "drivers/counter/Kconfig.ace"
 

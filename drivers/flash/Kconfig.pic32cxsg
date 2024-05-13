@@ -1,0 +1,22 @@
+# Microchip PIC32CXSG flash driver config
+
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SOC_FLASH_PIC32CXSG
+	bool "Microchip PIC32CXSG flash driver"
+	default y
+	depends on DT_HAS_PIC32CXSG_NVMCTRL_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
+	help
+	  Enable the Microchip PIC32CXSG series internal flash driver.
+
+config SOC_FLASH_PIC32CXSG_EMULATE_BYTE_PAGES
+	bool "Emulate byte-sized pages"
+	depends on SOC_FLASH_PIC32CXSG
+	default y
+	help
+	  Emulate a device with byte-sized pages by doing a
+	  read/modify/erase/write.

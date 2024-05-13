@@ -73,6 +73,13 @@ config USB_DC_SAM0
 	help
 	  SAM0 family USB device controller Driver.
 
+config USB_DC_PIC32CXSG
+	bool "Microchip PIC32CXSG series USB Device Controller driver"
+	default y
+	depends on DT_HAS_PIC32CXSG_USB_ENABLED
+	help
+	  Microchip PIC32CXSG family USB device controller Driver.
+
 config USB_DC_SMARTBOND
 	bool "SmartBond series USB Device Controller driver"
 	default y

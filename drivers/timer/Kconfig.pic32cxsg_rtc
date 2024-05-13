@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+config PIC32CXSG_RTC_TIMER
+	bool "Microchip PIC32CXSG series RTC timer"
+	default y
+	depends on DT_HAS_PIC32CXSG_RTC_ENABLED
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the Microchip PIC32CXSG
+	  series Real Time Counter and provides the standard "system clock
+	  driver" interfaces.

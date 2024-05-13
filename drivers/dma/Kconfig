@@ -36,6 +36,8 @@ source "drivers/dma/Kconfig.nios2_msgdma"
 
 source "drivers/dma/Kconfig.sam0"
 
+source "drivers/dma/Kconfig.pic32cxsg"
+
 source "drivers/dma/Kconfig.mcux_edma"
 
 source "drivers/dma/Kconfig.mcux_lpc"

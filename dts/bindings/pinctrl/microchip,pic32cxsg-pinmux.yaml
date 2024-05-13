@@ -1,6 +1,6 @@
 description: Microchip PIC32CXSG PINMUX
 
-compatible: "microchip,pic32cxsg-pinmux"
+compatible: "atmel,sam0-pinmux"
 
 include: base.yaml
 

@@ -128,6 +128,13 @@ config HWINFO_SAM_RSTC
 	help
 	  Enable Atmel SAM reset cause hwinfo driver.
 
+config HWINFO_PIC32CXSG_RSTC
+	bool "Microchip PIC32CXSG reset cause"
+	default y
+	depends on SOC_FAMILY_MICROCHIP_PIC32CXSG
+	help
+	  Enable Microchip PIC32CXSG reset cause hwinfo driver.
+
 config HWINFO_SAM
 	bool "Atmel SAM device ID"
 	default y
@@ -148,6 +155,13 @@ config HWINFO_SAM0
 	depends on SOC_FAMILY_ATMEL_SAM0
 	help
 	  Enable Atmel SAM0 hwinfo driver.
+
+config HWINFO_PIC32CXSG
+	bool "Microchip PIC32CXSG device ID"
+	default y
+	depends on SOC_FAMILY_MICROCHIP_PIC32CXSG
+	help
+	  Enable Microchip PIC32CXSG hwinfo driver.
 
 config HWINFO_SMARTBOND
 	bool "Smartbond device reset cause"

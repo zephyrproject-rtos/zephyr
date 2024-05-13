@@ -1,0 +1,12 @@
+# PIC32CXSG EIC configuration
+
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+config PIC32CXSG_EIC
+	bool "External Interrupt Controller (EIC) Driver for Microchip PIC32CXSG series devices"
+	default y
+	depends on DT_HAS_PIC32CXSG_EIC_ENABLED
+	help
+	  Enable EIC driver for Microchip PIC32CXSG series of devices.  This is required for
+	  GPIO interrupt support.

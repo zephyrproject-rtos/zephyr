@@ -1,0 +1,9 @@
+# Microchip PIC32CXSG CAN configuration options
+# Copyright (c) 2024 Microchip
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_PIC32CXSG
+	bool "Microchip PIC32CXSG CAN driver"
+	default y
+	depends on DT_HAS_PIC32CXSG_CAN_ENABLED
+	select CAN_MCAN

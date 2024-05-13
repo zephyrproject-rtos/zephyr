@@ -96,6 +96,8 @@ source "drivers/spi/Kconfig.sam"
 
 source "drivers/spi/Kconfig.sam0"
 
+source "drivers/spi/Kconfig.pic32cxsg"
+
 source "drivers/spi/Kconfig.sifive"
 
 source "drivers/spi/Kconfig.spi_emul"
