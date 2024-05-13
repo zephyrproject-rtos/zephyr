@@ -39,8 +39,8 @@ LOG_MODULE_REGISTER(MCP7940N, CONFIG_COUNTER_LOG_LEVEL);
 /* The MCP7940N RTCC compensates for leap years from 2001 to 2399.
  * The tm struct uses years since 1900.
  */
-#define MCP7940N_TM_YEAR_MIN		101
-#define MCP7940N_TM_YEAR_MAX		499
+#define YEAR_MIN		101
+#define YEAR_MAX		499
 
 /* Macro used to decode BCD to UNIX time to avoid potential copy and paste
  * errors.
@@ -171,7 +171,7 @@ static int encode_rtc(const struct device *dev, struct tm *time_buffer)
 	cent = (1900 + time_buffer->tm_year) / 100;
 
 	/* Datasheet states that this RTC is leap year compensated for 2001-2399*/
-	if (time_buffer->tm_year < MCP7940N_TM_YEAR_MIN || time_buffer->tm_year > MCP7940N_TM_YEAR_MAX) {
+	if (time_buffer->tm_year < YEAR_MIN || time_buffer->tm_year > YEAR_MAX) {
 		return -EINVAL;
 	}
 
@@ -315,7 +315,6 @@ static int write_data_block(const struct device *dev, enum mcp7940n_register add
  *
  * Note: This function was originally added with a wrong assumption of the RTC.
  * I am keeping this function due to the following from the datasheet:
- * 
  * Writing to the RTCWKDAY register will always clear the PWRFAIL bit.
  * The PWRFAIL bit must be cleared to log new time-stamp data.
  * This is to ensure previous time-stamp data is not lost.
