@@ -163,6 +163,11 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_NET_SOCKETS_INET_RAW`
 
+* Sensor
+
+  * :c:func:`sensor_value_to_deci`
+  * :c:func:`sensor_value_to_centi`
+
 * Stepper
 
   * :c:func:`stepper_stop()`
