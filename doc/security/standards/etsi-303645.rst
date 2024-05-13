@@ -603,7 +603,7 @@ Provisions Assessment
         loss of network access and should recover cleanly in the case of restoration of a
         loss of power.
       - R
-      -
+      - Y
       -
 
         .. _ETSI_Provision_5_9_3:
