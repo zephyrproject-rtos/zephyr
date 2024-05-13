@@ -339,7 +339,7 @@ Provisions Assessment
         that a security update is required together with information on the risks
         mitigated by that update.
       - R C
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_3_12:
