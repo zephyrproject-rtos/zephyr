@@ -557,8 +557,9 @@ extern "C" {
 #ifdef __cplusplus
 #define Z_CBPRINTF_ARG_SIZE(v) z_cbprintf_cxx_arg_size(v)
 #else
+#define Z_CONSTIFY(v) (_Generic((v), char * : (const char *)(uintptr_t)(v), default : (v)))
 #define Z_CBPRINTF_ARG_SIZE(v) ({\
-	__auto_type __v = (v) + 0; \
+	__auto_type __v = (Z_CONSTIFY(v)) + 0; \
 	/* Static code analysis may complain about unused variable. */ \
 	(void)__v; \
 	size_t __arg_size = _Generic((v), \
@@ -582,7 +583,7 @@ extern "C" {
 #define Z_CBPRINTF_STORE_ARG(buf, arg) do { \
 	if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) { \
 		/* If required, copy arguments by word to avoid unaligned access.*/ \
-		__auto_type _v = (arg) + 0; \
+		__auto_type _v = (Z_CONSTIFY(arg)) + 0; \
 		double _d = _Generic((arg) + 0, \
 				float : (arg) + 0, \
 				default : \
