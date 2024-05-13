@@ -227,6 +227,11 @@ struct bt_cap_common_client *bt_cap_common_get_client(enum bt_cap_set_type type,
 {
 	struct bt_cap_common_client *client = NULL;
 
+	if (member == NULL) {
+		LOG_DBG("member is NULL");
+		return NULL;
+	}
+
 	if (type == BT_CAP_SET_TYPE_AD_HOC) {
 		CHECKIF(member->member == NULL) {
 			LOG_DBG("member->member is NULL");
