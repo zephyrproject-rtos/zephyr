@@ -606,7 +606,6 @@ static void le_update_private_addr(void)
 	}
 #endif
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-	    IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST) &&
 	    atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING)) {
 		/* Canceled initiating procedure will be restarted by
 		 * connection complete event.
