@@ -18,7 +18,6 @@ supported:
   - i2c
   - pwm
   - rtc
-  - sdhc
   - spi
   - uart
   - usb
