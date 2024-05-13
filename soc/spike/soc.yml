@@ -1,0 +1,5 @@
+family:
+- name: spike_virt_riscv
+  socs:
+  - name: spike_virt_riscv32
+  - name: spike_virt_riscv64

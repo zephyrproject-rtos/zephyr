@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Tim-Marek Thomas <thomas@sra.uni-hannover.de>
+# SPDX-License-Identifier: Apache-2.0
+config SOC_SPIKE_VIRT_RISCV64
+	select 64BIT
+	select CPU_HAS_FPU
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
