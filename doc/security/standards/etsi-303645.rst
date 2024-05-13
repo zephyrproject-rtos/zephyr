@@ -269,8 +269,8 @@ Provisions Assessment
       - When the device is not a constrained device, it shall have an update mechanism
         for the secure installation of updates.
       - M C
-      -
-      -
+      - Y
+      - :ref:`Device firwmware upgrade  <dfu>`
 
         .. _ETSI_Provision_5_3_3:
     * - Provision 5.3-3
