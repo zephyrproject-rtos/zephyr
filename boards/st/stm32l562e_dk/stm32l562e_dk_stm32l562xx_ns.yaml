@@ -13,7 +13,6 @@ supported:
   - dac
   - spi
   - arduino_spi
-  - sdhc
   - usb
   - usb_device
 ram: 192
