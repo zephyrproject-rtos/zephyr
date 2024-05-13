@@ -566,6 +566,14 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_heap_free(heap)                                                           \
 	SEGGER_SYSVIEW_RecordU32(TID_HEAP_FREE, (uint32_t)(uintptr_t)heap)
 
+#define sys_port_trace_k_heap_realloc_enter(heap, ptr, bytes, timeout)                             \
+	SEGGER_SYSVIEW_RecordU32x4(TID_HEAP_REALLOC, (uint32_t)(uintptr_t)heap,                    \
+				   (uint32_t)(uintptr_t)ptr, (uint32_t)bytes,                      \
+				   (uint32_t)timeout.ticks)
+
+#define sys_port_trace_k_heap_realloc_exit(heap, ptr, bytes, timeout, ret)                         \
+	SEGGER_SYSVIEW_RecordEndCallU32(TID_HEAP_REALLOC, (uint32_t)ret)
+
 #define sys_port_trace_k_heap_sys_k_aligned_alloc_enter(heap)
 #define sys_port_trace_k_heap_sys_k_aligned_alloc_exit(heap, ret)
 #define sys_port_trace_k_heap_sys_k_malloc_enter(heap)
@@ -574,6 +582,8 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_heap_sys_k_free_exit(heap, heap_ref)
 #define sys_port_trace_k_heap_sys_k_calloc_enter(heap)
 #define sys_port_trace_k_heap_sys_k_calloc_exit(heap, ret)
+#define sys_port_trace_k_heap_sys_k_realloc_enter(heap, ptr)
+#define sys_port_trace_k_heap_sys_k_realloc_exit(heap, ptr, ret)
 
 #define sys_port_trace_k_mem_slab_init(slab, rc)                                                   \
 	SEGGER_SYSVIEW_RecordU32(TID_MSLAB_INIT, (uint32_t)(uintptr_t)slab)
