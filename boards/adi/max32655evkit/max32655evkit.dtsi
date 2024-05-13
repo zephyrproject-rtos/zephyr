@@ -86,6 +86,7 @@
 
 	spi0_cs0_flash: w25q128@0 {
 		compatible = "jedec,spi-nor";
+		status = "disabled";
 		/* 134217728 bits = 16 Mbytes */
 		size = <0x8000000>;
 		reg = <0>;
@@ -93,5 +94,28 @@
 		jedec-id = [ef 40 18];
 		hold-gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 		wp-gpios = <&gpio0 8 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		m4_partition: partition@0 {
+			label = "image-m4";
+			reg = <0x0 DT_SIZE_K(352)>;
+		};
+
+		storage_partition: partition@58000 {
+			label = "storage-m4";
+			reg = <0x50000 DT_SIZE_K(32)>;
+		};
+
+		rv32_partition: partition@60000 {
+			label = "image-rv32";
+			reg = <0x60000 DT_SIZE_K(128)>;
+		};
 	};
 };
