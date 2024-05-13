@@ -286,6 +286,16 @@ regulator
   has been removed, users should remove this property from their devicetree if it is present.
   (:github:`70642`)
 
+Watchdog
+========
+
+* The ``nuvoton,npcx-watchdog`` driver has been changed to extend the max timeout period.
+  The time of one watchdog count varies with the different pre-scalar settings.
+  Removed :kconfig:option:`CONFIG_WDT_NPCX_DELAY_CYCLES` because it is no longer suitable to
+  set the leading warning time.
+  Instead, added the :kconfig:option:`CONFIG_WDT_NPCX_WARNING_LEADING_TIME_MS` to set
+  the leading warning time in milliseconds.
+
 Bluetooth
 *********
 
