@@ -33,6 +33,7 @@ menuconfig BUILD_WITH_TFM
 	imply INIT_ARCH_HW_AT_BOOT
 	imply ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
 	imply MBEDTLS
+	imply PSA_CRYPTO_ENABLE_ALL
 	help
 	  When enabled, this option instructs the Zephyr build process to
 	  additionally generate a TF-M image for the Secure Execution

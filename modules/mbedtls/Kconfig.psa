@@ -5,12 +5,13 @@
 # from: ../../../modules/crypto/mbedtls/include/psa/crypto_config.h.
 # Do not edit it manually.
 
-config MBEDTLS_PSA_CRYPTO_CLIENT
+config PSA_CRYPTO_CLIENT
 	bool
-	default y
-	depends on BUILD_WITH_TFM || MBEDTLS_PSA_CRYPTO_C
+	help
+	  Promptless symbol to state that there is a PSA crypto API provider
+	  enabled in the system. This allows to select desired PSA_WANT features.
 
-if MBEDTLS_PSA_CRYPTO_CLIENT
+if PSA_CRYPTO_CLIENT
 
 config PSA_CRYPTO_ENABLE_ALL
 	bool "All PSA crypto features"
@@ -351,4 +352,4 @@ config PSA_WANT_KEY_TYPE_DH_KEY_PAIR_GENERATE
 	bool "PSA_WANT_KEY_TYPE_DH_KEY_PAIR_GENERATE" if !MBEDTLS_PROMPTLESS
 	default y if PSA_CRYPTO_ENABLE_ALL
 
-endif # MBEDTLS_PSA_CRYPTO_CLIENT
+endif # PSA_CRYPTO_CLIENT
