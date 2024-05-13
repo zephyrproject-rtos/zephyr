@@ -381,6 +381,7 @@ enum hs_max_data_rate {
  */
 enum sd_bus_speed {
 	UHS_SDR12_BUS_SPEED = BIT(0),
+	DEFAULT_BUS_SPEED = BIT(0),
 	HIGH_SPEED_BUS_SPEED = BIT(1),
 	UHS_SDR25_BUS_SPEED = BIT(1),
 	UHS_SDR50_BUS_SPEED = BIT(2),
@@ -395,10 +396,14 @@ enum sd_bus_speed {
  * controller to identify timing of card.
  */
 enum sd_timing_mode {
+	SD_TIMING_DEFAULT = 0U,
+	/*!< Default Mode */
 	SD_TIMING_SDR12 = 0U,
-	/*!< Default mode & SDR12 */
+	/*!< SDR12 mode */
+	SD_TIMING_HIGH_SPEED = 1U,
+	/*!< High speed mode */
 	SD_TIMING_SDR25 = 1U,
-	/*!< High speed mode & SDR25 */
+	/*!< SDR25 mode */
 	SD_TIMING_SDR50 = 2U,
 	/*!< SDR50 mode*/
 	SD_TIMING_SDR104 = 3U,
