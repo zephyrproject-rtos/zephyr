@@ -161,10 +161,9 @@
 		compatible = "zephyr,native-posix-counter";
 	};
 
-	gpio0: gpio@800 {
+	gpio0: gpio_emul {
 		status = "okay";
 		compatible = "zephyr,gpio-emul";
-		reg = <0x800 0x4>;
 		rising-edge;
 		falling-edge;
 		high-level;
