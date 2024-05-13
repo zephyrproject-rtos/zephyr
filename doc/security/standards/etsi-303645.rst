@@ -500,8 +500,8 @@ Provisions Assessment
     * - Provision 5.6-3
       - Device hardware should not unnecessarily expose physical interfaces to attack.
       - R
-      -
-      -
+      - Y
+      - :ref:`Kconfig <kconfig>` and :ref:`Hardening Tool <hardening>`
 
         .. _ETSI_Provision_5_6_4:
     * - Provision 5.6-4
