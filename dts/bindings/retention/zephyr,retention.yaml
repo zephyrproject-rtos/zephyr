@@ -32,6 +32,8 @@ compatible: "zephyr,retention"
 
 include: base.yaml
 
+bus: retention
+
 properties:
   "#address-cells":
     const: 1

@@ -1,0 +1,32 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Device state retention, which has a retention area as a parent.
+
+compatible: "zephyr,device-state-retention"
+
+include: base.yaml
+
+on-bus: retention
+
+properties:
+  "#address-cells":
+    const: 1
+    description: |
+      The address reg cell is used for the offset in the parent retention area.
+
+  "#size-cells":
+    const: 1
+    description: |
+      The size reg cell defines the size of the storage which is available for
+      the states of the drivers.
+
+  device-count:
+    type: int
+    required: true
+    description: |
+      The number of devices which can be stored in the retention area.
+
+  reg:
+    required: true

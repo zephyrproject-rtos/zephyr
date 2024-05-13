@@ -1,0 +1,26 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RETENTION_DEVICE_STATE_MODULE
+	bool "Device state retention module"
+	depends on DT_HAS_ZEPHYR_DEVICE_STATE_RETENTION_ENABLED
+	help
+	  Adds a system which can be used by drivers to retain their state.
+	  This allows for instance a bootloader to configure a port expander
+	  and hand over this state to the firmware.
+
+	  It is strongly recommended for the retention partition which is used
+	  for the driver state to include a header and a checksum.
+
+if RETENTION_DEVICE_STATE_MODULE
+
+config RETENTION_DEVICE_STATE_MODULE_INIT_PRIORITY
+	int "Device state retention module init priority"
+	default 87
+	help
+	  This defines the driver state retention initialization priority.
+	  It is important that the initialization of the driver state retention
+	  happens before the initialization of the drivers which should be
+	  retained.
+
+endif

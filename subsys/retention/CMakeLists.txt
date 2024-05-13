@@ -3,6 +3,7 @@
 zephyr_library()
 zephyr_library_sources(retention.c)
 zephyr_library_sources_ifdef(CONFIG_RETENTION_BOOT_MODE bootmode.c)
+zephyr_library_sources_ifdef(CONFIG_RETENTION_DEVICE_STATE_MODULE device_state.c)
 
 if(CONFIG_RETENTION_BOOTLOADER_INFO_TYPE_MCUBOOT)
   zephyr_library_sources(blinfo_mcuboot.c)
