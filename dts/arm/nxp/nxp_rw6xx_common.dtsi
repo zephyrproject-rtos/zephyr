@@ -19,6 +19,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		cpu-power-states = <&idle &suspend>;
 
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m33f";
@@ -29,6 +30,28 @@
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			/* Idle mode maps to Power Mode 1 */
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <0>;
+				exit-latency-us = <0>;
+			};
+			/* Suspend mode maps to Power Mode 2 */
+			suspend: suspend {
+				compatible = "nxp,pdcfg-power", "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <500>;
+				exit-latency-us = <120>;
+				deep-sleep-config = <0x180000>,
+							<0x0>,
+							<0x4>,
+							<0x100>,
+							<0x0>;
 			};
 		};
 	};
