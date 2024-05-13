@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/stm32-gpio.h>
+
+/ {
+	aliases {
+		wkup-src = &user_button;
+	};
+};
+
+&user_button {
+	gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | STM32_GPIO_WKUP)>;
+};
+
+&pwr {
+	status = "okay";
+};
