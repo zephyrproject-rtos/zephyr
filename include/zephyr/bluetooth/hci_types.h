@@ -765,6 +765,12 @@ struct bt_hci_cp_write_inquiry_mode {
 	uint8_t  mode;
 } __packed;
 
+#define BT_HCI_OP_WRITE_EXT_INQUIRY_RESPONSE    BT_OP(BT_OGF_BASEBAND, 0x0052) /* 0x0c52 */
+struct bt_hci_cp_write_extended_inquiry_response {
+	uint8_t fec_required;
+	uint8_t eir[240];
+} __packed;
+
 #define BT_HCI_OP_WRITE_SSP_MODE                BT_OP(BT_OGF_BASEBAND, 0x0056) /* 0x0c56 */
 struct bt_hci_cp_write_ssp_mode {
 	uint8_t mode;

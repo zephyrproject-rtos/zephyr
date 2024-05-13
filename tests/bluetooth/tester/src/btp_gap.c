@@ -633,6 +633,7 @@ static uint8_t set_discoverable(const void *cmd, uint16_t cmd_len,
 		struct net_buf *buf;
 		struct bt_hci_cp_write_class_of_device *cod;
 		struct bt_hci_cp_write_current_iac_lap *iac;
+		struct bt_hci_cp_write_extended_inquiry_response *ext_inquiry;
 		uint32_t cod_value = CONFIG_BT_COD;
 		uint32_t num_iacs = 1U;
 
@@ -686,6 +687,23 @@ static uint8_t set_discoverable(const void *cmd, uint16_t cmd_len,
 
 		bt_br_set_discoverable(false);
 		bt_br_set_connectable(false);
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_EXT_INQUIRY_RESPONSE, sizeof(*ext_inquiry));
+		if (!buf) {
+			goto set_discoverable_failed;
+		}
+
+		ext_inquiry = net_buf_add(buf, sizeof(*ext_inquiry));
+		ext_inquiry->fec_required = 0x00U;
+		memset(&ext_inquiry->eir[0], 0, sizeof(ext_inquiry->eir));
+		ext_inquiry->eir[0] = 1 + strlen(CONFIG_BT_DEVICE_NAME);
+		ext_inquiry->eir[1] = BT_DATA_NAME_COMPLETE;
+		memcpy(&ext_inquiry->eir[2], CONFIG_BT_DEVICE_NAME, strlen(CONFIG_BT_DEVICE_NAME));
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_EXT_INQUIRY_RESPONSE, buf, NULL);
+		if (err < 0) {
+			goto set_discoverable_failed;
+		}
 
 		err = bt_br_set_connectable(true);
 		if (err < 0) {
