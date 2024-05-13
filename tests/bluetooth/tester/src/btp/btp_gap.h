@@ -319,6 +319,11 @@ struct btp_gap_padv_sync_transfer_recv_cmd {
 	uint8_t flags;
 } __packed;
 
+#define BTP_GAP_CONNECT_BR				0x2a
+struct btp_gap_connect_br_cmd {
+	bt_addr_t address;
+} __packed;
+
 /* events */
 #define BTP_GAP_EV_NEW_SETTINGS			0x80
 struct btp_gap_new_settings_ev {
