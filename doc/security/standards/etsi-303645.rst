@@ -493,7 +493,7 @@ Provisions Assessment
       - In the initialized state, the network interfaces of the device shall minimize the
         unauthenticated disclosure of security-relevant information.
       - M
-      -
+      - Y
       -
 
         .. _ETSI_Provision_5_6_3:
