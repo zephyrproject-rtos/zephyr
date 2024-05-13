@@ -436,8 +436,8 @@ Provisions Assessment
     * - Provision 5.5-3
       - Cryptographic algorithms and primitives should be updatable.
       - R
-      -
-      -
+      - N
+      - The whole image must be updated
 
         .. _ETSI_Provision_5_5_4:
     * - Provision 5.5-4
