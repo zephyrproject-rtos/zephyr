@@ -586,8 +586,8 @@ Provisions Assessment
       - All external sensing capabilities of the device shall be documented in an accessible
         way that is clear and transparent for the user.
       - M
-      -
-      -
+      - Y
+      - :ref:`Sensing Subsystem <sensing_api>`
 
         .. _ETSI_Provision_5_9_1:
     * - Provision 5.9-1
