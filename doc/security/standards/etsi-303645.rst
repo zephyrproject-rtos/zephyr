@@ -612,7 +612,7 @@ Provisions Assessment
         stable state and in an orderly fashion, taking the capability of the infrastructure
         into consideration.
       - R
-      -
+      - Y
       -
 
         .. _ETSI_Provision_5_10_1:
