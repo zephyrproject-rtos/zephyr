@@ -343,6 +343,10 @@ static void long_bap_read(struct bt_conn *conn, uint16_t handle)
 
 	LOG_DBG("conn %p busy %u", conn, broadcast_assistant.busy);
 
+	if (conn == NULL) {
+		return; /* noop */
+	}
+
 	if (broadcast_assistant.busy) {
 		/* If the client is busy reading or writing something else, reschedule the
 		 * long read.
@@ -402,6 +406,11 @@ static uint8_t notify_handler(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
+	if (conn == NULL) {
+		/* Indicates that the CCC has been removed - no-op */
+		return BT_GATT_ITER_CONTINUE;
+	}
+
 	LOG_HEXDUMP_DBG(data, length, "Receive state notification:");
 
 	index = lookup_index_by_handle(handle);
@@ -413,16 +422,10 @@ static uint8_t notify_handler(struct bt_conn *conn,
 
 	if (length != 0) {
 		const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
-		uint16_t max_ntf_size;
+		const uint16_t max_ntf_size = bt_gatt_get_mtu(conn) - att_ntf_header_size;
 
 		/* Cancel any pending long reads containing now obsolete information */
 		(void)k_work_cancel_delayable(&broadcast_assistant.bap_read_work);
-
-		if (conn != NULL) {
-			max_ntf_size = bt_gatt_get_mtu(conn) - att_ntf_header_size;
-		} else {
-			max_ntf_size = MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU) - att_ntf_header_size;
-		}
 
 		if (length == max_ntf_size) {
 			/* TODO: if we are busy we should not overwrite the long_read_handle,
