@@ -25,21 +25,19 @@ config BT_ISO_UNICAST
 	  Isochronous channels.
 
 config BT_ISO_PERIPHERAL
-	bool "Bluetooth Isochronous Channel Unicast Peripheral Support [EXPERIMENTAL]"
+	bool "Bluetooth Isochronous Channel Unicast Peripheral Support"
 	depends on !BT_CTLR || BT_CTLR_PERIPHERAL_ISO_SUPPORT
 	select BT_PERIPHERAL
 	select BT_ISO_UNICAST
-	select EXPERIMENTAL
 	help
 	  This option enables support for Bluetooth Unicast
 	  Isochronous channels for the peripheral role.
 
 config BT_ISO_CENTRAL
-	bool "Bluetooth Isochronous Channel Unicast Central Support [EXPERIMENTAL]"
+	bool "Bluetooth Isochronous Channel Unicast Central Support"
 	depends on !BT_CTLR || BT_CTLR_CENTRAL_ISO_SUPPORT
 	select BT_CENTRAL
 	select BT_ISO_UNICAST
-	select EXPERIMENTAL
 	help
 	  This option enables support for Bluetooth Broadcast
 	  Isochronous channels for the central role.
@@ -50,24 +48,22 @@ config BT_ISO_BROADCAST
 	select BT_EXT_ADV
 
 config BT_ISO_BROADCASTER
-	bool "Bluetooth Isochronous Broadcaster Support [EXPERIMENTAL]"
+	bool "Bluetooth Isochronous Broadcaster Support"
 	depends on !BT_CTLR || BT_CTLR_ADV_ISO_SUPPORT
 	select BT_ISO_BROADCAST
 	select BT_ISO_TX
 	select BT_BROADCASTER
 	select BT_PER_ADV
-	select EXPERIMENTAL
 	help
 	  This option enables support for the Bluetooth Isochronous Broadcaster.
 
 config BT_ISO_SYNC_RECEIVER
-	bool "Bluetooth Isochronous Synchronized Receiver Support [EXPERIMENTAL]"
+	bool "Bluetooth Isochronous Synchronized Receiver Support"
 	depends on !BT_CTLR || BT_CTLR_SYNC_ISO_SUPPORT
 	select BT_ISO_BROADCAST
 	select BT_ISO_RX
 	select BT_OBSERVER
 	select BT_PER_ADV_SYNC
-	select EXPERIMENTAL
 	help
 	  This option enables support for the Bluetooth Isochronous
 	  Synchronized Receiver.
