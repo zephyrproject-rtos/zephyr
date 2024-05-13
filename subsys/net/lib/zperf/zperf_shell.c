@@ -685,7 +685,8 @@ static void send_ping(const struct shell *sh,
 		return;
 	}
 
-	memcpy(&dest_addr.sin6_addr, addr, sizeof(struct in6_addr));
+	dest_addr.sin6_family = AF_INET6;
+	net_ipv6_addr_copy_raw((uint8_t *)&dest_addr.sin6_addr, (uint8_t *)addr);
 
 	k_sem_init(&sem_wait, 0, 1);
 
