@@ -8,9 +8,6 @@ compatible: "zephyr,gpio-emul"
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-  reg:
-    required: true
-
   rising-edge:
     description: Enables support for rising edge interrupt detection
     type: boolean
