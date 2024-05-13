@@ -116,6 +116,32 @@ void *k_heap_alloc(struct k_heap *heap, size_t bytes, k_timeout_t timeout)
 	return ret;
 }
 
+void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t timeout)
+{
+	k_timepoint_t end = sys_timepoint_calc(timeout);
+	void *ret = NULL;
+
+	k_spinlock_key_t key = k_spin_lock(&heap->lock);
+
+	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
+
+	while (ret == NULL) {
+		ret = sys_heap_aligned_realloc(&heap->heap, ptr, sizeof(void *), bytes);
+
+		if (!IS_ENABLED(CONFIG_MULTITHREADING) ||
+		    (ret != NULL) || K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+			break;
+		}
+
+		timeout = sys_timepoint_timeout(end);
+		(void) z_pend_curr(&heap->lock, key, &heap->wait_q, timeout);
+		key = k_spin_lock(&heap->lock);
+	}
+
+	k_spin_unlock(&heap->lock, key);
+	return ret;
+}
+
 void k_heap_free(struct k_heap *heap, void *mem)
 {
 	k_spinlock_key_t key = k_spin_lock(&heap->lock);
