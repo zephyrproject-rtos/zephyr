@@ -28,6 +28,27 @@ static const struct z_exc_handle exceptions[] = {
  #define NO_REG "                "
 #endif
 
+static inline uintptr_t get_sp(const z_arch_esf_t *esf)
+{
+	/*
+	 * Kernel stack pointer prior this exception i.e. before
+	 * storing the exception stack frame.
+	 */
+	uintptr_t sp = (uintptr_t)esf + sizeof(z_arch_esf_t);
+
+#ifdef CONFIG_USERSPACE
+	if ((esf->mstatus & MSTATUS_MPP) == PRV_U) {
+		/*
+		 * Exception happened in user space:
+		 * consider the saved user stack instead.
+		 */
+		sp = esf->sp;
+	}
+#endif
+
+	return sp;
+}
+
 #ifdef CONFIG_RISCV_EXCEPTION_STACK_TRACE
 #define MAX_STACK_FRAMES 8
 
@@ -75,6 +96,7 @@ static inline bool in_text_region(uintptr_t addr)
 	return (addr >= (uintptr_t)&__text_region_start) && (addr < (uintptr_t)&__text_region_end);
 }
 
+#ifdef CONFIG_RISCV_ENABLE_FRAME_POINTER
 static void unwind_stack(const z_arch_esf_t *esf)
 {
 	uintptr_t fp = esf->s0;
@@ -103,6 +125,36 @@ static void unwind_stack(const z_arch_esf_t *esf)
 
 	LOG_ERR("");
 }
+#else /* !CONFIG_RISCV_ENABLE_FRAME_POINTER */
+static void unwind_stack(const z_arch_esf_t *esf)
+{
+	uintptr_t sp = get_sp(esf);
+	uintptr_t ra;
+	uintptr_t *ksp = (uintptr_t *)sp;
+
+	if (esf == NULL) {
+		return;
+	}
+
+	LOG_ERR("call trace:");
+
+	for (int i = 0;
+	     (i < MAX_STACK_FRAMES) && ((uintptr_t)ksp != 0U) && in_stack_bound((uintptr_t)ksp);
+	     ksp++) {
+		ra = *ksp;
+		if (in_text_region(ra)) {
+			LOG_ERR("     %2d: sp: " PR_REG "   ra: " PR_REG, i, (uintptr_t)ksp, ra);
+			/*
+			 * Increment the iterator only if `ra` is within the text region to get the
+			 * most out of it
+			 */
+			i++;
+		}
+	}
+
+	LOG_ERR("");
+}
+#endif /* CONFIG_RISCV_ENABLE_FRAME_POINTER */
 #endif /* CONFIG_RISCV_EXCEPTION_STACK_TRACE */
 
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
@@ -116,12 +168,6 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const z_arch_esf
 {
 #ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
-		/*
-		 * Kernel stack pointer prior this exception i.e. before
-		 * storing the exception stack frame.
-		 */
-		uintptr_t sp = (uintptr_t)esf + sizeof(z_arch_esf_t);
-
 		LOG_ERR("     a0: " PR_REG "    t0: " PR_REG, esf->a0, esf->t0);
 		LOG_ERR("     a1: " PR_REG "    t1: " PR_REG, esf->a1, esf->t1);
 		LOG_ERR("     a2: " PR_REG "    t2: " PR_REG, esf->a2, esf->t2);
@@ -136,16 +182,7 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const z_arch_esf
 		LOG_ERR("     a6: " PR_REG "    t6: " PR_REG, esf->a6, esf->t6);
 		LOG_ERR("     a7: " PR_REG, esf->a7);
 #endif /* CONFIG_RISCV_ISA_RV32E */
-#ifdef CONFIG_USERSPACE
-		if ((esf->mstatus & MSTATUS_MPP) == 0) {
-			/*
-			 * Exception happened in user space:
-			 * consider the saved user stack instead.
-			 */
-			sp = esf->sp;
-		}
-#endif
-		LOG_ERR("     sp: " PR_REG, sp);
+		LOG_ERR("     sp: " PR_REG, get_sp(esf));
 		LOG_ERR("     ra: " PR_REG, esf->ra);
 		LOG_ERR("   mepc: " PR_REG, esf->mepc);
 		LOG_ERR("mstatus: " PR_REG, esf->mstatus);
