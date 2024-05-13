@@ -515,8 +515,8 @@ Provisions Assessment
       - The manufacturer should only enable software services that are used or required for
         the intended use or operation of the device.
       - R
-      -
-      -
+      - Y
+      - :ref:`Kconfig <kconfig>` and :ref:`Hardening Tool <hardening>`
 
         .. _ETSI_Provision_5_6_6:
     * - Provision 5.6-6
