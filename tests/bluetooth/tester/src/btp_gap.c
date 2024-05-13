@@ -1232,6 +1232,24 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+#if defined(CONFIG_BT_CLASSIC)
+extern struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
+#endif /* defined(CONFIG_BT_CLASSIC) */
+
+static struct bt_conn *get_conn_from_addr(const bt_addr_le_t *addr)
+{
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, addr);
+#if defined(CONFIG_BT_CLASSIC)
+	if ((conn == NULL) && (addr->type == BT_ADDR_LE_PUBLIC)) {
+		conn = bt_conn_lookup_addr_br(&addr->a);
+	}
+#endif /* defined(CONFIG_BT_CLASSIC) */
+
+	return conn;
+}
+
 static uint8_t disconnect(const void *cmd, uint16_t cmd_len,
 			  void *rsp, uint16_t *rsp_len)
 {
@@ -1239,7 +1257,7 @@ static uint8_t disconnect(const void *cmd, uint16_t cmd_len,
 	struct bt_conn *conn;
 	uint8_t status;
 
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	conn = get_conn_from_addr(&cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
 		return BTP_STATUS_FAILED;
@@ -1397,7 +1415,7 @@ static uint8_t pair(const void *cmd, uint16_t cmd_len,
 	struct bt_conn *conn;
 	int err;
 
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	conn = get_conn_from_addr(&cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
 		return BTP_STATUS_FAILED;
@@ -1421,7 +1439,7 @@ static uint8_t unpair(const void *cmd, uint16_t cmd_len,
 	struct bt_conn *conn;
 	int err;
 
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	conn = get_conn_from_addr(&cp->address);
 	if (!conn) {
 		LOG_INF("Unknown connection");
 		goto keys;
@@ -1451,7 +1469,7 @@ static uint8_t passkey_entry(const void *cmd, uint16_t cmd_len,
 	struct bt_conn *conn;
 	int err;
 
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	conn = get_conn_from_addr(&cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
 		return BTP_STATUS_FAILED;
@@ -1475,7 +1493,7 @@ static uint8_t passkey_confirm(const void *cmd, uint16_t cmd_len,
 	struct bt_conn *conn;
 	int err;
 
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	conn = get_conn_from_addr(&cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
 		return BTP_STATUS_FAILED;
@@ -1515,7 +1533,7 @@ static uint8_t conn_param_update(const void *cmd, uint16_t cmd_len,
 	struct bt_conn *conn;
 	int err;
 
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	conn = get_conn_from_addr(&cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
 		return BTP_STATUS_FAILED;
