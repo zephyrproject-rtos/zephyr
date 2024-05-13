@@ -578,7 +578,7 @@ Provisions Assessment
         associated services shall be protected, with cryptography appropriate to the
         properties of the technology and usage.
       - M
-      -
+      - Y
       -
 
         .. _ETSI_Provision_5_8_3:
