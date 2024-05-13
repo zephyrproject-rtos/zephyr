@@ -113,6 +113,34 @@ void *k_calloc(size_t nmemb, size_t size)
 	return ret;
 }
 
+void *k_realloc(void *ptr, size_t size)
+{
+	struct k_heap *heap, **heap_ref;
+	void *ret;
+
+	if (size == 0) {
+		k_free(ptr);
+		return NULL;
+	}
+	if (ptr == NULL) {
+		return k_malloc(size);
+	}
+	heap_ref = ptr;
+	ptr = --heap_ref;
+	heap = *heap_ref;
+
+	if (size_add_overflow(size, sizeof(heap_ref), &size)) {
+		return NULL;
+	}
+
+	ret = k_heap_realloc(heap, ptr, size, K_NO_WAIT);
+	if (ret != NULL) {
+		heap_ref = ret;
+		ret = ++heap_ref;
+	}
+	return ret;
+}
+
 void k_thread_system_pool_assign(struct k_thread *thread)
 {
 	thread->resource_pool = _SYSTEM_HEAP;
