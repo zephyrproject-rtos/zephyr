@@ -98,3 +98,8 @@ properties:
     description: |
       Do not initialize device automatically on boot. Device should be manually
       initialized using device_init().
+
+  zephyr,retention-index:
+    type: int
+    description: |
+      Index of device state in retention.

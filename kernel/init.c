@@ -37,6 +37,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/internal/syscall_handler.h>
+#include <zephyr/retention/device_state.h>
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 
 BUILD_ASSERT(CONFIG_MP_NUM_CPUS == CONFIG_MP_MAX_NUM_CPUS,
@@ -131,6 +132,13 @@ enum init_level {
 	INIT_LEVEL_SMP,
 #endif /* CONFIG_SMP */
 };
+
+#ifdef CONFIG_DEVICE_STATE_RETENTION
+extern const struct init_entry __reinit_list_start[];
+extern const struct init_entry __reinit_list_end[];
+const struct device *device_state_retention =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_device_state_retention));
+#endif /* CONFIG_DEVICE_STATE_RETENTION */
 
 #ifdef CONFIG_SMP
 extern const struct init_entry __init_SMP_start[];
@@ -333,6 +341,59 @@ static int do_device_init(const struct init_entry *entry)
 	return rc;
 }
 
+#ifdef CONFIG_DEVICE_STATE_RETENTION
+static void do_device_reinit(const struct init_entry *entry)
+{
+	const struct device *dev = entry->dev;
+	const struct init_entry *reinit_entry = __reinit_list_start;
+	int rc = 0;
+	bool found = false;
+
+	while (reinit_entry != __reinit_list_end) {
+		if (reinit_entry->dev == dev) {
+			found = true;
+			break;
+		}
+
+		++reinit_entry;
+	}
+
+	if (entry->init_fn.dev != NULL) {
+
+		if (found && device_state_retention_check_reinit(device_state_retention,
+								 dev->retention_index)) {
+			rc = reinit_entry->init_fn.dev(dev);
+		} else {
+			rc = entry->init_fn.dev(dev);
+		}
+		/* Mark device initialized. If initialization
+		 * failed, record the error condition.
+		 */
+		if (rc != 0) {
+			if (rc < 0) {
+				rc = -rc;
+			}
+			if (rc > UINT8_MAX) {
+				rc = UINT8_MAX;
+			}
+			dev->state->init_res = rc;
+		}
+	}
+
+	dev->state->initialized = true;
+
+	if (found) {
+		device_state_retention_set_init_done(device_state_retention, dev->retention_index,
+						     rc == 0);
+	}
+
+	if (rc == 0) {
+		/* Run automatic device runtime enablement */
+		(void)pm_device_runtime_auto_enable(dev);
+	}
+}
+#endif /* CONFIG_DEVICE_STATE_RETENTION */
+
 /**
  * @brief Execute all the init entry initialization functions at a given level
  *
@@ -359,18 +420,32 @@ static void z_sys_init_run_level(enum init_level level)
 		__init_end,
 	};
 	const struct init_entry *entry;
+#ifdef CONFIG_DEVICE_STATE_RETENTION
+	bool device_state_retention_initialized = false;
+#endif /* CONFIG_DEVICE_STATE_RETENTION */
 
-	for (entry = levels[level]; entry < levels[level+1]; entry++) {
+	for (entry = levels[level]; entry < levels[level + 1]; entry++) {
 		const struct device *dev = entry->dev;
 
 		if (dev != NULL) {
+#ifdef CONFIG_DEVICE_STATE_RETENTION
+			if (device_state_retention_initialized) {
+				do_device_reinit(entry);
+			} else {
+				do_device_init(entry);
+			}
+
+			if (dev == device_state_retention && z_device_is_ready(dev)) {
+				device_state_retention_initialized = true;
+			}
+#else
 			do_device_init(entry);
+#endif /* CONFIG_DEVICE_STATE_RETENTION */
 		} else {
 			(void)entry->init_fn.sys();
 		}
 	}
 }
-
 
 int z_impl_device_init(const struct device *dev)
 {

@@ -141,6 +141,13 @@ struct init_entry {
 #define Z_INIT_ENTRY_NAME(init_id) _CONCAT(__init_, init_id)
 
 /**
+ * @brief Obtain reinit entry name.
+ *
+ * @param init_id Init entry unique identifier.
+ */
+#define Z_REINIT_ENTRY_NAME(init_id) _CONCAT(__reinit_, init_id)
+
+/**
  * @brief Init entry section.
  *
  * Each init entry is placed in a section with a name crafted so that it allows
