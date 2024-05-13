@@ -254,3 +254,13 @@ zephyr_udc0: &usb_otg {
 &dac0 {
 	status = "okay";
 };
+
+/* OS Timer is the wakeup source for PM mode 2 */
+&os_timer {
+	status = "okay";
+	wakeup-source;
+};
+
+&systick {
+	status = "disabled";
+};
