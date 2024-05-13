@@ -594,7 +594,7 @@ Provisions Assessment
       - Resilience should be built in to consumer IoT devices and services, taking into
         account the possibility of outages of data networks and power.
       - R
-      -
+      - Y
       -
 
         .. _ETSI_Provision_5_9_2:
