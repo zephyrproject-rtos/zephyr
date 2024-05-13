@@ -462,7 +462,7 @@ Provisions Assessment
       - Critical security parameters should be encrypted in transit, with such encryption
         appropriate to the properties of the technology, risk and usage.
       - R
-      -
+      - Y
       -
 
         .. _ETSI_Provision_5_5_7:
