@@ -1,0 +1,67 @@
+/*
+ * Copyright 2024 SILA Embedded Solutions GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,device-state-retention = &device_state_retention;
+	};
+
+	dtcm_retained: dtcm@2000FC00 {
+		compatible = "zephyr,memory-region", "arm,dtcm";
+		reg = <0x2000FC00 DT_SIZE_K(1)>;
+		zephyr,memory-region = "RETAINED";
+		zephyr,memory-attr = <( DT_MEM_ARM_MPU_RAM_NOCACHE )>;
+		status = "okay";
+
+		retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			retention: retention@0 {
+				compatible = "zephyr,retention";
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				reg = <0x0 0x10>;
+				prefix = [42];
+				checksum = <1>;
+
+				device_state_retention: device_state_retention@0 {
+					compatible = "zephyr,device-state-retention";
+					status = "okay";
+					#address-cells = <1>;
+					#size-cells = <1>;
+					reg = <0x0 0xE>;
+					device-count = <1>;
+				};
+			};
+		};
+	};
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	pcal6416a: pcal6416a@20 {
+		compatible = "nxp,pcal6416a";
+		status = "okay";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+		int-gpios = <&gpioc 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		reset-gpios = <&gpiob 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		zephyr,retention-index = <0>;
+	};
+};
+
+&dtcm {
+	reg = < 0x20000000 DT_SIZE_K(63) >;
+	zephyr,memory-attr = <( DT_MEM_ARM_MPU_RAM_NOCACHE )>;
+};
