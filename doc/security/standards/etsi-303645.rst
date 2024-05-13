@@ -397,7 +397,7 @@ Provisions Assessment
         it shall be implemented in such a way that it resists tampering by means such as physical,
         electrical or software.
       - M C
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_4_3:
