@@ -1241,10 +1241,12 @@ static int spi_stm32_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		/* Set pins to active state */
-		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-		if (err < 0) {
-			return err;
+		if (!spi_stm32_is_subghzspi(dev)) {
+			/* Set pins to active state */
+			err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+			if (err < 0) {
+				return err;
+			}
 		}
 
 		/* enable clock */
@@ -1258,21 +1260,24 @@ static int spi_stm32_pm_action(const struct device *dev,
 		/* Stop device clock. */
 		err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
 		if (err != 0) {
-			LOG_ERR("Could not enable SPI clock");
+			LOG_ERR("Could not disable SPI clock");
 			return err;
 		}
 
-		/* Move pins to sleep state */
-		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
-		if ((err < 0) && (err != -ENOENT)) {
-			/*
-			 * If returning -ENOENT, no pins where defined for sleep mode :
-			 * Do not output on console (might sleep already) when going to sleep,
-			 * "SPI pinctrl sleep state not available"
-			 * and don't block PM suspend.
-			 * Else return the error.
-			 */
-			return err;
+		if (!spi_stm32_is_subghzspi(dev)) {
+			/* Move pins to sleep state */
+			err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+			if ((err < 0) && (err != -ENOENT)) {
+				/*
+				 * If returning -ENOENT, no pins where defined for sleep mode :
+				 * Do not output on console (might sleep already) when going to
+				 * sleep,
+				 * "SPI pinctrl sleep state not available"
+				 * and don't block PM suspend.
+				 * Else return the error.
+				 */
+				return err;
+			}
 		}
 		break;
 	default:
