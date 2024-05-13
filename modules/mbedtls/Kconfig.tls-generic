@@ -493,6 +493,12 @@ config MBEDTLS_USE_PSA_CRYPTO
 	  Use PSA APIs instead of legacy MbedTLS functions in TLS/DTLS and other
 	  "intermediate" modules such as PK, MD and Cipher.
 
+config MBEDTLS_PSA_CRYPTO_CLIENT
+	bool
+	default y
+	depends on BUILD_WITH_TFM || MBEDTLS_PSA_CRYPTO_C
+	select PSA_CRYPTO_CLIENT
+
 config MBEDTLS_LMS
 	bool "Support LMS signature schemes"
 	depends on MBEDTLS_PSA_CRYPTO_CLIENT

@@ -25,18 +25,19 @@ KCONFIG_HEADER="""\
 # from: {}.
 # Do not edit it manually.
 
-config MBEDTLS_PSA_CRYPTO_CLIENT
+config PSA_CRYPTO_CLIENT
 	bool
-	default y
-	depends on BUILD_WITH_TFM || MBEDTLS_PSA_CRYPTO_C
+	help
+	  Promptless symbol to state that there is a PSA crypto API provider
+	  enabled in the system. This allows to select desired PSA_WANT features.
 
-if MBEDTLS_PSA_CRYPTO_CLIENT
+if PSA_CRYPTO_CLIENT
 
 config PSA_CRYPTO_ENABLE_ALL
 	bool "All PSA crypto features"
 """.format(os.path.basename(__file__), INPUT_REL_PATH)
 
-KCONFIG_FOOTER="\nendif # MBEDTLS_PSA_CRYPTO_CLIENT\n"
+KCONFIG_FOOTER="\nendif # PSA_CRYPTO_CLIENT\n"
 
 H_HEADER="""\
 /*
