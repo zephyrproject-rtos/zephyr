@@ -11,6 +11,19 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+/*
+ * Define COREDUMP_*_STR as public to allow coredump_backend_other to re-use
+ * these strings if necessary
+ */
+#define COREDUMP_BEGIN_STR      "BEGIN#"
+#define COREDUMP_END_STR        "END#"
+#define COREDUMP_ERROR_STR      "ERROR CANNOT DUMP#"
+
+/*
+ * Need to prefix coredump strings to make it easier to parse
+ * as log module adds its own prefixes.
+ */
+#define COREDUMP_PREFIX_STR     "#CD:"
 
 /**
  * @file
