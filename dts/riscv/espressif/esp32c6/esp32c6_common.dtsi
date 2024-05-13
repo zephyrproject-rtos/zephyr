@@ -78,6 +78,17 @@
 			};
 		};
 
+		spi2: spi@60081000 {
+			compatible = "espressif,esp32-spi";
+			reg = <0x60081000 DT_SIZE_K(4)>;
+			interrupts = <GSPI2_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_SPI2_MODULE>;
+			dma-clk = <ESP32_GDMA_MODULE>;
+			dma-host = <0>;
+			status = "disabled";
+		};
+
 		wdt0: watchdog@6001f048  {
 			compatible = "espressif,esp32-watchdog";
 			reg = <0x6001f048 0x20>;
