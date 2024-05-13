@@ -398,6 +398,13 @@ config NOCACHE_MEMORY
 	  transfers when cache coherence issues are not optimal or can not
 	  be solved using cache maintenance operations.
 
+config FRAME_POINTER
+	bool "Compile the kernel with frame pointers"
+	select OVERRIDE_FRAME_POINTER_DEFAULT
+	help
+	  Select Y here to gain precise stack traces at the expense of slightly
+	  increased size and decreased speed.
+
 menu "Interrupt Configuration"
 
 config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED

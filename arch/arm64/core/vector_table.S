@@ -72,7 +72,7 @@ _ASM_FILE_PROLOGUE
 	.endif
 #endif
 
-#ifdef CONFIG_ARM64_ENABLE_FRAME_POINTER
+#ifdef CONFIG_FRAME_POINTER
 	str	x29, [sp, ___esf_t_fp_OFFSET]
 #endif
 
@@ -339,7 +339,7 @@ SECTION_FUNC(TEXT, z_arm64_exit_exc)
 	ldp	x16, x17, [sp, ___esf_t_x16_x17_OFFSET]
 	ldp	x18, lr, [sp, ___esf_t_x18_lr_OFFSET]
 
-#ifdef CONFIG_ARM64_ENABLE_FRAME_POINTER
+#ifdef CONFIG_FRAME_POINTER
 	ldr	x29, [sp,  ___esf_t_fp_OFFSET]
 #endif
 

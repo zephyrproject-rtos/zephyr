@@ -345,6 +345,7 @@ config OVERRIDE_FRAME_POINTER_DEFAULT
 
 config OMIT_FRAME_POINTER
 	bool "Omit frame pointer"
+	depends on !FRAME_POINTER
 	depends on OVERRIDE_FRAME_POINTER_DEFAULT
 	help
 	  Choose Y for best performance. On some architectures (including x86)
