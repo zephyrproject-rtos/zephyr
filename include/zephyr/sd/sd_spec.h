@@ -369,6 +369,7 @@ enum sd_group_num {
 
 /* Maximum data rate possible for SD high speed cards */
 enum hs_max_data_rate {
+	HS_UNSUPPORTED = 0,
 	HS_MAX_DTR = MHZ(50),
 };
 
