@@ -530,8 +530,8 @@ Provisions Assessment
       - Software should run with least necessary privileges, taking account of both security
         and functionality.
       - R
-      -
-      -
+      - Y
+      - :ref:`Security Overview <security-overview>`
 
         .. _ETSI_Provision_5_6_8:
     * - Provision 5.6-8
