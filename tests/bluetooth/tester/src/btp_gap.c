@@ -99,6 +99,30 @@ static uint8_t read_car_cb(struct bt_conn *conn, uint8_t err,
 }
 #endif
 
+static bt_addr_le_t *bt_conn_get_peer_addr(struct bt_conn *conn)
+{
+	static bt_addr_le_t addr;
+	struct bt_conn_info info = {0};
+
+	(void)bt_conn_get_info(conn, &info);
+
+	memset(&addr, 0, sizeof(addr));
+
+#if defined(CONFIG_BT_CLASSIC)
+	if (info.type == BT_CONN_TYPE_BR) {
+		addr.type = BT_ADDR_LE_PUBLIC;
+		if (info.br.dst != NULL) {
+			bt_addr_copy(&addr.a, info.br.dst);
+		}
+		return &addr;
+	}
+#endif /* defined(CONFIG_BT_CLASSIC) */
+	if (info.le.dst != NULL) {
+		bt_addr_le_copy(&addr, info.le.dst);
+	}
+	return &addr;
+}
+
 static void le_connected(struct bt_conn *conn, uint8_t err)
 {
 	struct btp_gap_device_connected_ev ev;
@@ -110,7 +134,7 @@ static void le_connected(struct bt_conn *conn, uint8_t err)
 
 	bt_conn_get_info(conn, &info);
 
-	bt_addr_le_copy(&ev.address, info.le.dst);
+	bt_addr_le_copy(&ev.address, bt_conn_get_peer_addr(conn));
 	ev.interval = sys_cpu_to_le16(info.le.interval);
 	ev.latency = sys_cpu_to_le16(info.le.latency);
 	ev.timeout = sys_cpu_to_le16(info.le.timeout);
@@ -129,7 +153,7 @@ static void le_connected(struct bt_conn *conn, uint8_t err)
 static void le_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct btp_gap_device_disconnected_ev ev;
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	const bt_addr_le_t *addr = bt_conn_get_peer_addr(conn);
 
 	bt_addr_le_copy(&ev.address, addr);
 
@@ -151,7 +175,7 @@ static void le_param_updated(struct bt_conn *conn, uint16_t interval,
 			     uint16_t latency, uint16_t timeout)
 {
 	struct btp_gap_conn_param_update_ev ev;
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	const bt_addr_le_t *addr = bt_conn_get_peer_addr(conn);
 
 	bt_addr_le_copy(&ev.address, addr);
 	ev.interval = sys_cpu_to_le16(interval);
@@ -177,7 +201,7 @@ static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 static void le_security_changed(struct bt_conn *conn, bt_security_t level,
 				enum bt_security_err err)
 {
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	const bt_addr_le_t *addr = bt_conn_get_peer_addr(conn);
 	struct btp_gap_sec_level_changed_ev sec_ev;
 	struct btp_gap_bond_lost_ev bond_ev;
 	struct bt_conn_info info;
@@ -1300,7 +1324,7 @@ static uint8_t disconnect(const void *cmd, uint16_t cmd_len,
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
 	struct btp_gap_passkey_display_ev ev;
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	const bt_addr_le_t *addr = bt_conn_get_peer_addr(conn);
 
 	bt_addr_le_copy(&ev.address, addr);
 	ev.passkey = sys_cpu_to_le32(passkey);
@@ -1311,7 +1335,7 @@ static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 static void auth_passkey_entry(struct bt_conn *conn)
 {
 	struct btp_gap_passkey_entry_req_ev ev;
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	const bt_addr_le_t *addr = bt_conn_get_peer_addr(conn);
 
 	bt_addr_le_copy(&ev.address, addr);
 
@@ -1321,7 +1345,7 @@ static void auth_passkey_entry(struct bt_conn *conn)
 static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
 {
 	struct btp_gap_passkey_confirm_req_ev ev;
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	const bt_addr_le_t *addr = bt_conn_get_peer_addr(conn);
 
 	bt_addr_le_copy(&ev.address, addr);
 	ev.passkey = sys_cpu_to_le32(passkey);
@@ -1338,7 +1362,7 @@ enum bt_security_err auth_pairing_accept(struct bt_conn *conn,
 					 const struct bt_conn_pairing_feat *const feat)
 {
 	struct btp_gap_bond_lost_ev ev;
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	const bt_addr_le_t *addr = bt_conn_get_peer_addr(conn);
 
 	if (!bt_addr_le_is_bonded(BT_ID_DEFAULT, addr)) {
 		return BT_SECURITY_ERR_SUCCESS;
@@ -1359,7 +1383,7 @@ enum bt_security_err auth_pairing_accept(struct bt_conn *conn,
 void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 {
 	struct btp_gap_bond_pairing_failed_ev ev;
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	const bt_addr_le_t *addr = bt_conn_get_peer_addr(conn);
 
 	bt_addr_le_copy(&ev.address, addr);
 	ev.reason = reason;
