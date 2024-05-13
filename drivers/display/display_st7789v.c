@@ -16,6 +16,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/display.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/display.h>
@@ -52,6 +53,7 @@ struct st7789v_config {
 struct st7789v_data {
 	uint16_t x_offset;
 	uint16_t y_offset;
+	enum display_orientation orientation;
 };
 
 #ifdef CONFIG_ST7789V_RGB565
@@ -168,7 +170,7 @@ static int st7789v_write(const struct device *dev, const uint16_t x, const uint1
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
 	__ASSERT((desc->pitch * ST7789V_PIXEL_SIZE * desc->height) <= desc->buf_size,
-		 "Input buffer to small");
+		 "Input buffer too small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height, x, y);
 	st7789v_set_mem_area(dev, x, y, desc->width, desc->height);
@@ -195,6 +197,7 @@ static void st7789v_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
 	const struct st7789v_config *config = dev->config;
+	const struct st7789v_data *data = dev->data;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->width;
@@ -207,7 +210,7 @@ static void st7789v_get_capabilities(const struct device *dev,
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_888;
 	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_888;
 #endif
-	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->current_orientation = data->orientation;
 }
 
 static int st7789v_set_pixel_format(const struct device *dev,
@@ -227,11 +230,65 @@ static int st7789v_set_pixel_format(const struct device *dev,
 static int st7789v_set_orientation(const struct device *dev,
 				   const enum display_orientation orientation)
 {
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-		return 0;
+	const struct st7789v_config *config = dev->config;
+	struct st7789v_data *data = dev->data;
+
+	/* only modifying the MY, MX, MV bits, keep existing MDAC config */
+	uint8_t tx_data = config->mdac & (ST7789V_MADCTL_ML | ST7789V_MADCTL_BGR |
+					  ST7789V_MADCTL_MH_RIGHT_TO_LEFT);
+
+	uint16_t x_offset = 0;
+	uint16_t y_offset = 0;
+
+	uint16_t row_offset = 0;
+	uint16_t col_offset = 0;
+
+	if (config->width < 240) {
+		/* 135x240 display */
+		row_offset = data->y_offset;
+		col_offset = data->x_offset;
+	} else {
+		/* 240x320 and 240x240 displays */
+		row_offset = (320 - config->height);
+		col_offset = (240 - config->width);
 	}
-	LOG_ERR("Changing display orientation not implemented");
-	return -ENOTSUP;
+
+	switch (orientation) {
+	case DISPLAY_ORIENTATION_NORMAL:
+		tx_data |= ST7789V_MADCTL_MV_NORMAL_MODE;
+		x_offset = data->x_offset;
+		y_offset = data->y_offset;
+		break;
+
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		tx_data |= (ST7789V_MADCTL_MY_BOTTOM_TO_TOP | ST7789V_MADCTL_MV_REVERSE_MODE);
+		x_offset = row_offset;
+		y_offset = col_offset;
+		break;
+
+	case DISPLAY_ORIENTATION_ROTATED_180:
+		tx_data |= (ST7789V_MADCTL_MY_BOTTOM_TO_TOP | ST7789V_MADCTL_MX_RIGHT_TO_LEFT);
+		x_offset = col_offset;
+		y_offset = row_offset;
+		break;
+
+	case DISPLAY_ORIENTATION_ROTATED_270:
+		tx_data |= (ST7789V_MADCTL_MX_RIGHT_TO_LEFT | ST7789V_MADCTL_MV_REVERSE_MODE);
+		x_offset = data->y_offset;
+		y_offset = data->x_offset;
+		break;
+
+	default:
+		LOG_ERR("Error changing display orientation");
+		return -ENOTSUP;
+	}
+
+	st7789v_set_lcd_margins(dev, x_offset, y_offset);
+	st7789v_transmit(dev, ST7789V_CMD_MADCTL, &tx_data, 1U);
+	data->orientation = orientation;
+	LOG_INF("Changed orientation to: '%d'", data->orientation);
+
+	return 0;
 }
 
 static void st7789v_lcd_init(const struct device *dev)
@@ -416,6 +473,7 @@ static const struct display_driver_api st7789v_api = {
 	static struct st7789v_data st7789v_data_##inst = {                                         \
 		.x_offset = DT_INST_PROP(inst, x_offset),                                          \
 		.y_offset = DT_INST_PROP(inst, y_offset),                                          \
+		.orientation = DISPLAY_ORIENTATION_NORMAL,                                         \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, st7789v_pm_action);                                         \
