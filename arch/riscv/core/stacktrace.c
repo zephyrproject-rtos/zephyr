@@ -27,7 +27,7 @@ struct stackframe {
 	uintptr_t ra;
 };
 
-#ifdef CONFIG_RISCV_ENABLE_FRAME_POINTER
+#ifdef CONFIG_FRAME_POINTER
 #define SFP_FMT "fp: "
 #else
 #define SFP_FMT "sp: "
@@ -85,7 +85,7 @@ static inline bool in_text_region(uintptr_t addr)
 	return (addr >= (uintptr_t)&__text_region_start) && (addr < (uintptr_t)&__text_region_end);
 }
 
-#ifdef CONFIG_RISCV_ENABLE_FRAME_POINTER
+#ifdef CONFIG_FRAME_POINTER
 void z_riscv_unwind_stack(const z_arch_esf_t *esf)
 {
 	uintptr_t fp = esf->s0;
@@ -114,7 +114,7 @@ void z_riscv_unwind_stack(const z_arch_esf_t *esf)
 
 	LOG_ERR("");
 }
-#else /* !CONFIG_RISCV_ENABLE_FRAME_POINTER */
+#else /* !CONFIG_FRAME_POINTER */
 void z_riscv_unwind_stack(const z_arch_esf_t *esf)
 {
 	uintptr_t sp = z_riscv_get_sp_before_exc(esf);
@@ -143,4 +143,4 @@ void z_riscv_unwind_stack(const z_arch_esf_t *esf)
 
 	LOG_ERR("");
 }
-#endif /* CONFIG_RISCV_ENABLE_FRAME_POINTER */
+#endif /* CONFIG_FRAME_POINTER */

@@ -47,7 +47,7 @@ struct __esf {
 	uint64_t lr;
 	uint64_t spsr;
 	uint64_t elr;
-#ifdef CONFIG_ARM64_ENABLE_FRAME_POINTER
+#ifdef CONFIG_FRAME_POINTER
 	uint64_t fp;
 #endif
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
