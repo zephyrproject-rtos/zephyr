@@ -60,8 +60,7 @@ struct st7789v_data {
 #define ST7789V_PIXEL_SIZE 3u
 #endif
 
-static void st7789v_set_lcd_margins(const struct device *dev,
-				    uint16_t x_offset, uint16_t y_offset)
+static void st7789v_set_lcd_margins(const struct device *dev, uint16_t x_offset, uint16_t y_offset)
 {
 	struct st7789v_data *data = dev->data;
 
@@ -69,14 +68,14 @@ static void st7789v_set_lcd_margins(const struct device *dev,
 	data->y_offset = y_offset;
 }
 
-static void st7789v_transmit(const struct device *dev, uint8_t cmd,
-			     uint8_t *tx_data, size_t tx_count)
+static void st7789v_transmit(const struct device *dev, uint8_t cmd, uint8_t *tx_data,
+			     size_t tx_count)
 {
 	const struct st7789v_config *config = dev->config;
 	uint16_t data = cmd;
 
-	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
-	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1 };
+	struct spi_buf tx_buf = {.buf = &cmd, .len = 1};
+	struct spi_buf_set tx_bufs = {.buffers = &tx_buf, .count = 1};
 
 	if (config->cmd_data_gpio.port != NULL) {
 		if (cmd != ST7789V_CMD_NONE) {
@@ -142,8 +141,8 @@ static int st7789v_blanking_off(const struct device *dev)
 	return 0;
 }
 
-static void st7789v_set_mem_area(const struct device *dev, const uint16_t x,
-				 const uint16_t y, const uint16_t w, const uint16_t h)
+static void st7789v_set_mem_area(const struct device *dev, const uint16_t x, const uint16_t y,
+				 const uint16_t w, const uint16_t h)
 {
 	struct st7789v_data *data = dev->data;
 	uint16_t spi_data[2];
@@ -160,22 +159,18 @@ static void st7789v_set_mem_area(const struct device *dev, const uint16_t x,
 	st7789v_transmit(dev, ST7789V_CMD_RASET, (uint8_t *)&spi_data[0], 4);
 }
 
-static int st7789v_write(const struct device *dev,
-			 const uint16_t x,
-			 const uint16_t y,
-			 const struct display_buffer_descriptor *desc,
-			 const void *buf)
+static int st7789v_write(const struct device *dev, const uint16_t x, const uint16_t y,
+			 const struct display_buffer_descriptor *desc, const void *buf)
 {
-	const uint8_t *write_data_start = (uint8_t *) buf;
+	const uint8_t *write_data_start = (uint8_t *)buf;
 	uint16_t nbr_of_writes;
 	uint16_t write_h;
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
 	__ASSERT((desc->pitch * ST7789V_PIXEL_SIZE * desc->height) <= desc->buf_size,
-			"Input buffer to small");
+		 "Input buffer to small");
 
-	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)",
-		desc->width, desc->height, x, y);
+	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height, x, y);
 	st7789v_set_mem_area(dev, x, y, desc->width, desc->height);
 
 	if (desc->pitch > desc->width) {
@@ -188,8 +183,8 @@ static int st7789v_write(const struct device *dev,
 
 	for (uint16_t write_cnt = 0U; write_cnt < nbr_of_writes; ++write_cnt) {
 		st7789v_transmit(dev, write_cnt == 0U ? ST7789V_CMD_RAMWR : ST7789V_CMD_NONE,
-				(void *) write_data_start,
-				desc->width * ST7789V_PIXEL_SIZE * write_h);
+				 (void *)write_data_start,
+				 desc->width * ST7789V_PIXEL_SIZE * write_h);
 		write_data_start += (desc->pitch * ST7789V_PIXEL_SIZE);
 	}
 
@@ -197,7 +192,7 @@ static int st7789v_write(const struct device *dev,
 }
 
 static void st7789v_get_capabilities(const struct device *dev,
-			      struct display_capabilities *capabilities)
+				     struct display_capabilities *capabilities)
 {
 	const struct st7789v_config *config = dev->config;
 
@@ -216,7 +211,7 @@ static void st7789v_get_capabilities(const struct device *dev,
 }
 
 static int st7789v_set_pixel_format(const struct device *dev,
-			     const enum display_pixel_format pixel_format)
+				    const enum display_pixel_format pixel_format)
 {
 #ifdef CONFIG_ST7789V_RGB565
 	if (pixel_format == PIXEL_FORMAT_RGB_565) {
@@ -230,7 +225,7 @@ static int st7789v_set_pixel_format(const struct device *dev,
 }
 
 static int st7789v_set_orientation(const struct device *dev,
-			    const enum display_orientation orientation)
+				   const enum display_orientation orientation)
 {
 	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
 		return 0;
@@ -245,15 +240,12 @@ static void st7789v_lcd_init(const struct device *dev)
 	const struct st7789v_config *config = dev->config;
 	uint8_t tmp;
 
-	st7789v_set_lcd_margins(dev, data->x_offset,
-				data->y_offset);
+	st7789v_set_lcd_margins(dev, data->x_offset, data->y_offset);
 
-	st7789v_transmit(dev, ST7789V_CMD_CMD2EN,
-			 (uint8_t *)config->cmd2en_param,
+	st7789v_transmit(dev, ST7789V_CMD_CMD2EN, (uint8_t *)config->cmd2en_param,
 			 sizeof(config->cmd2en_param));
 
-	st7789v_transmit(dev, ST7789V_CMD_PORCTRL,
-			 (uint8_t *)config->porch_param,
+	st7789v_transmit(dev, ST7789V_CMD_PORCTRL, (uint8_t *)config->porch_param,
 			 sizeof(config->porch_param));
 
 	/* Digital Gamma Enable, default disabled */
@@ -281,8 +273,7 @@ static void st7789v_lcd_init(const struct device *dev)
 		st7789v_transmit(dev, ST7789V_CMD_VDS, &tmp, 1);
 	}
 
-	st7789v_transmit(dev, ST7789V_CMD_PWCTRL1,
-			 (uint8_t *)config->pwctrl1_param,
+	st7789v_transmit(dev, ST7789V_CMD_PWCTRL1, (uint8_t *)config->pwctrl1_param,
 			 sizeof(config->pwctrl1_param));
 
 	/* Memory Data Access Control */
@@ -305,20 +296,16 @@ static void st7789v_lcd_init(const struct device *dev)
 		st7789v_transmit(dev, ST7789V_CMD_INV_OFF, NULL, 0);
 	}
 
-	st7789v_transmit(dev, ST7789V_CMD_PVGAMCTRL,
-			 (uint8_t *)config->pvgam_param,
+	st7789v_transmit(dev, ST7789V_CMD_PVGAMCTRL, (uint8_t *)config->pvgam_param,
 			 sizeof(config->pvgam_param));
 
-	st7789v_transmit(dev, ST7789V_CMD_NVGAMCTRL,
-			 (uint8_t *)config->nvgam_param,
+	st7789v_transmit(dev, ST7789V_CMD_NVGAMCTRL, (uint8_t *)config->nvgam_param,
 			 sizeof(config->nvgam_param));
 
-	st7789v_transmit(dev, ST7789V_CMD_RAMCTRL,
-			 (uint8_t *)config->ram_param,
+	st7789v_transmit(dev, ST7789V_CMD_RAMCTRL, (uint8_t *)config->ram_param,
 			 sizeof(config->ram_param));
 
-	st7789v_transmit(dev, ST7789V_CMD_RGBCTRL,
-			 (uint8_t *)config->rgb_param,
+	st7789v_transmit(dev, ST7789V_CMD_RGBCTRL, (uint8_t *)config->rgb_param,
 			 sizeof(config->rgb_param));
 }
 
@@ -367,8 +354,7 @@ static int st7789v_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int st7789v_pm_action(const struct device *dev,
-			     enum pm_device_action action)
+static int st7789v_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret = 0;
 
@@ -397,47 +383,45 @@ static const struct display_driver_api st7789v_api = {
 	.set_orientation = st7789v_set_orientation,
 };
 
-#define ST7789V_WORD_SIZE(inst)								\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, cmd_data_gpios), (8), (9))
+#define ST7789V_WORD_SIZE(inst) COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, cmd_data_gpios), (8), (9))
 
-#define ST7789V_INIT(inst)								\
-	static const struct st7789v_config st7789v_config_ ## inst = {			\
-		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER |			\
-					    SPI_WORD_SET(ST7789V_WORD_SIZE(inst)), 0),	\
-		.cmd_data_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, cmd_data_gpios, {}),	\
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),		\
-		.vcom = DT_INST_PROP(inst, vcom),					\
-		.gctrl = DT_INST_PROP(inst, gctrl),					\
-		.vdv_vrh_enable = (DT_INST_NODE_HAS_PROP(inst, vrhs)			\
-					&& DT_INST_NODE_HAS_PROP(inst, vdvs)),		\
-		.vrh_value = DT_INST_PROP_OR(inst, vrhs, 0),				\
-		.vdv_value = DT_INST_PROP_OR(inst, vdvs, 0),				\
-		.mdac = DT_INST_PROP(inst, mdac),					\
-		.gamma = DT_INST_PROP(inst, gamma),					\
-		.colmod = DT_INST_PROP(inst, colmod),					\
-		.lcm = DT_INST_PROP(inst, lcm),						\
-		.inversion_on = !DT_INST_PROP(inst, inversion_off),			\
-		.porch_param = DT_INST_PROP(inst, porch_param),				\
-		.cmd2en_param = DT_INST_PROP(inst, cmd2en_param),			\
-		.pwctrl1_param = DT_INST_PROP(inst, pwctrl1_param),			\
-		.pvgam_param = DT_INST_PROP(inst, pvgam_param),				\
-		.nvgam_param = DT_INST_PROP(inst, nvgam_param),				\
-		.ram_param = DT_INST_PROP(inst, ram_param),				\
-		.rgb_param = DT_INST_PROP(inst, rgb_param),				\
-		.width = DT_INST_PROP(inst, width),					\
-		.height = DT_INST_PROP(inst, height),					\
-	};										\
-											\
-	static struct st7789v_data st7789v_data_ ## inst = {				\
-		.x_offset = DT_INST_PROP(inst, x_offset),				\
-		.y_offset = DT_INST_PROP(inst, y_offset),				\
-	};										\
-											\
-	PM_DEVICE_DT_INST_DEFINE(inst, st7789v_pm_action);				\
-											\
-	DEVICE_DT_INST_DEFINE(inst, &st7789v_init, PM_DEVICE_DT_INST_GET(inst),		\
-			&st7789v_data_ ## inst, &st7789v_config_ ## inst,		\
-			POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,			\
-			&st7789v_api);
+#define ST7789V_INIT(inst)                                                                         \
+	static const struct st7789v_config st7789v_config_##inst = {                               \
+		.bus = SPI_DT_SPEC_INST_GET(                                                       \
+			inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(ST7789V_WORD_SIZE(inst)), 0),      \
+		.cmd_data_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, cmd_data_gpios, {}),               \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),                     \
+		.vcom = DT_INST_PROP(inst, vcom),                                                  \
+		.gctrl = DT_INST_PROP(inst, gctrl),                                                \
+		.vdv_vrh_enable =                                                                  \
+			(DT_INST_NODE_HAS_PROP(inst, vrhs) && DT_INST_NODE_HAS_PROP(inst, vdvs)),  \
+		.vrh_value = DT_INST_PROP_OR(inst, vrhs, 0),                                       \
+		.vdv_value = DT_INST_PROP_OR(inst, vdvs, 0),                                       \
+		.mdac = DT_INST_PROP(inst, mdac),                                                  \
+		.gamma = DT_INST_PROP(inst, gamma),                                                \
+		.colmod = DT_INST_PROP(inst, colmod),                                              \
+		.lcm = DT_INST_PROP(inst, lcm),                                                    \
+		.inversion_on = !DT_INST_PROP(inst, inversion_off),                                \
+		.porch_param = DT_INST_PROP(inst, porch_param),                                    \
+		.cmd2en_param = DT_INST_PROP(inst, cmd2en_param),                                  \
+		.pwctrl1_param = DT_INST_PROP(inst, pwctrl1_param),                                \
+		.pvgam_param = DT_INST_PROP(inst, pvgam_param),                                    \
+		.nvgam_param = DT_INST_PROP(inst, nvgam_param),                                    \
+		.ram_param = DT_INST_PROP(inst, ram_param),                                        \
+		.rgb_param = DT_INST_PROP(inst, rgb_param),                                        \
+		.width = DT_INST_PROP(inst, width),                                                \
+		.height = DT_INST_PROP(inst, height),                                              \
+	};                                                                                         \
+                                                                                                   \
+	static struct st7789v_data st7789v_data_##inst = {                                         \
+		.x_offset = DT_INST_PROP(inst, x_offset),                                          \
+		.y_offset = DT_INST_PROP(inst, y_offset),                                          \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, st7789v_pm_action);                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &st7789v_init, PM_DEVICE_DT_INST_GET(inst),                    \
+			      &st7789v_data_##inst, &st7789v_config_##inst, POST_KERNEL,           \
+			      CONFIG_DISPLAY_INIT_PRIORITY, &st7789v_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ST7789V_INIT)
