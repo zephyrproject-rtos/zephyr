@@ -315,7 +315,7 @@ Provisions Assessment
     * - Provision 5.3-8
       - Security updates shall be timely.
       - M C
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_3_9:
