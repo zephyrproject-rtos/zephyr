@@ -414,7 +414,7 @@ Provisions Assessment
         shall be unique per device and shall be produced with a mechanism that reduces the risk
         of automated attacks against classes of devices.
       - M
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_5_1:
