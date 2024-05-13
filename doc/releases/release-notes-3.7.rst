@@ -93,6 +93,9 @@ Kernel
 
   * Added :c:func:`k_uptime_seconds` function to simplify `k_uptime_get() / 1000` usage.
 
+  * Added :c:func:`k_realloc`, that uses kernel heap to implement traditional :c:func:`realloc`
+    semantics.
+
 Bluetooth
 *********
 * Audio
