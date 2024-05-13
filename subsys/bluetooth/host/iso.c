@@ -764,25 +764,26 @@ static int validate_send(const struct bt_iso_chan *chan, const struct net_buf *b
 	BT_ISO_DATA_DBG("chan %p len %zu", chan, net_buf_frags_len(buf));
 
 	if (chan->state != BT_ISO_STATE_CONNECTED) {
-		LOG_DBG("Not connected");
+		LOG_DBG("Channel %p not connected", chan);
 		return -ENOTCONN;
 	}
 
 	iso_conn = chan->iso;
 	if (!iso_conn->iso.info.can_send) {
-		LOG_DBG("Channel not able to send");
+		LOG_DBG("Channel %p not able to send", chan);
 		return -EINVAL;
 	}
 
 	if (buf->size < hdr_size) {
-		LOG_DBG("Cannot send ISO packet with buffer size %u", buf->size);
+		LOG_DBG("Channel %p cannot send ISO packet with buffer size %u", chan, buf->size);
 
 		return -EMSGSIZE;
 	}
 
 	max_data_len = iso_chan_max_data_len(chan);
 	if (buf->len > max_data_len) {
-		LOG_DBG("Cannot send %u octets, maximum %u", buf->len, max_data_len);
+		LOG_DBG("Channel %p cannot send %u octets, maximum %u", chan, buf->len,
+			max_data_len);
 		return -EMSGSIZE;
 	}
 
@@ -2194,6 +2195,11 @@ void bt_iso_security_changed(struct bt_conn *acl, uint8_t hci_status)
 			continue;
 		}
 
+		/* Set state to disconnected to indicate that we are no longer waiting for
+		 * encryption.
+		 * TODO: Remove the BT_ISO_STATE_ENCRYPT_PENDING state and replace with a flag to
+		 * avoid these unnecessary state changes
+		 */
 		bt_iso_chan_set_state(iso_chan, BT_ISO_STATE_DISCONNECTED);
 
 		if (hci_status == BT_HCI_ERR_SUCCESS) {
@@ -2528,7 +2534,7 @@ static void big_disconnect(struct bt_iso_big *big, uint8_t reason)
 	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
 		bis->iso->err = reason;
 
-		bt_iso_disconnected(bis->iso);
+		bt_iso_chan_disconnected(bis, reason);
 	}
 }
 
@@ -3278,3 +3284,31 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 }
 #endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
 #endif /* CONFIG_BT_ISO_BROADCAST */
+
+void bt_iso_reset(void)
+{
+#if defined(CONFIG_BT_ISO_CENTRAL)
+	for (size_t i = 0U; i < ARRAY_SIZE(cigs); i++) {
+		struct bt_iso_cig *cig = &cigs[i];
+		struct bt_iso_chan *cis, *tmp;
+
+		/* Call the disconnected callback for each CIS that is no idle */
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cig->cis_channels, cis, tmp, node) {
+			if (cis->state != BT_ISO_STATE_DISCONNECTED) {
+				bt_iso_chan_disconnected(cis, BT_HCI_ERR_UNSPECIFIED);
+			}
+		}
+
+		cleanup_cig(cig);
+	}
+#endif /* CONFIG_BT_ISO_CENTRAL */
+
+#if defined(CONFIG_BT_ISO_BROADCAST)
+	for (size_t i = 0U; i < ARRAY_SIZE(bigs); i++) {
+		struct bt_iso_big *big = &bigs[i];
+
+		big_disconnect(big, BT_HCI_ERR_UNSPECIFIED);
+		cleanup_big(big);
+	}
+#endif /* CONFIG_BT_ISO_BROADCAST */
+}
