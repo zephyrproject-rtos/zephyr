@@ -14,6 +14,10 @@
 /**
  * @brief Isochronous channels (ISO)
  * @defgroup bt_iso Isochronous channels (ISO)
+ *
+ * @since 2.3
+ * @version 0.8.0
+ *
  * @ingroup bluetooth
  * @{
  */
