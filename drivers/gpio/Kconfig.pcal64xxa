@@ -18,3 +18,12 @@ config GPIO_PCAL64XXA_INIT_PRIORITY
 	depends on GPIO_PCAL64XXA
 	help
 	  Device driver initialization priority.
+
+config GPIO_PCAL64XXA_RETENTION
+	bool "PCAL64XXA state retention"
+	default y
+	depends on DEVICE_STATE_RETENTION
+	help
+	  Enable device state retention for PCAL64XXA. This allows the port
+	  expander to retain its state during switch between images, for
+	  instance between a bootloader and a firmware.
