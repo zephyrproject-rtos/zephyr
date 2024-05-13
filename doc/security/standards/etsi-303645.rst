@@ -230,8 +230,8 @@ Provisions Assessment
         authentication mechanisms via network interfaces
         impracticable.
       - M C
-      -
-      -
+      - N
+      - **TODO**
 
         .. _ETSI_Provision_5_2_1:
     * - Provision 5.2-1
