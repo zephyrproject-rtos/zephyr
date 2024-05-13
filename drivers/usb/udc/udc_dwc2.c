@@ -1324,30 +1324,6 @@ static enum udc_bus_speed udc_dwc2_device_speed(const struct device *dev)
 	}
 }
 
-static int udc_dwc2_enable(const struct device *dev)
-{
-	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
-	mem_addr_t dctl_reg = (mem_addr_t)&base->dctl;
-
-	/* Disable soft disconnect */
-	sys_clear_bits(dctl_reg, USB_DWC2_DCTL_SFTDISCON);
-	LOG_DBG("Enable device %p", base);
-
-	return 0;
-}
-
-static int udc_dwc2_disable(const struct device *dev)
-{
-	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
-	mem_addr_t dctl_reg = (mem_addr_t)&base->dctl;
-
-	/* Enable soft disconnect */
-	sys_set_bits(dctl_reg, USB_DWC2_DCTL_SFTDISCON);
-	LOG_DBG("Disable device %p", dev);
-
-	return 0;
-}
-
 static int dwc2_core_soft_reset(const struct device *dev)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
@@ -1386,7 +1362,7 @@ static int dwc2_core_soft_reset(const struct device *dev)
 	return 0;
 }
 
-static int udc_dwc2_init(const struct device *dev)
+static int udc_dwc2_init_controller(const struct device *dev)
 {
 	const struct udc_dwc2_config *const config = dev->config;
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
@@ -1398,19 +1374,6 @@ static int udc_dwc2_init(const struct device *dev)
 	uint32_t ghwcfg3;
 	uint32_t ghwcfg4;
 	int ret;
-
-	if (config->quirks != NULL && config->quirks->clk_enable != NULL) {
-		LOG_DBG("Enable vendor clock");
-		ret = config->quirks->clk_enable(dev);
-		if (ret) {
-			return ret;
-		}
-	}
-
-	ret = dwc2_init_pinctrl(dev);
-	if (ret) {
-		return ret;
-	}
 
 	ret = dwc2_core_soft_reset(dev);
 	if (ret) {
@@ -1551,13 +1514,26 @@ static int udc_dwc2_init(const struct device *dev)
 		    USB_DWC2_GINTSTS_SOF,
 		    (mem_addr_t)&base->gintmsk);
 
+	return 0;
+}
+
+static int udc_dwc2_enable(const struct device *dev)
+{
+	const struct udc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
+	int err;
+
+	err = udc_dwc2_init_controller(dev);
+	if (err) {
+		return err;
+	}
 
 	/* Call vendor-specific function to enable peripheral */
 	if (config->quirks != NULL && config->quirks->pwr_on != NULL) {
 		LOG_DBG("Enable vendor power");
-		ret = config->quirks->pwr_on(dev);
-		if (ret) {
-			return ret;
+		err = config->quirks->pwr_on(dev);
+		if (err) {
+			return err;
 		}
 	}
 
@@ -1565,13 +1541,22 @@ static int udc_dwc2_init(const struct device *dev)
 	sys_set_bits((mem_addr_t)&base->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
 	config->irq_enable_func(dev);
 
+	/* Disable soft disconnect */
+	sys_clear_bits((mem_addr_t)&base->dctl, USB_DWC2_DCTL_SFTDISCON);
+	LOG_DBG("Enable device %p", base);
+
 	return 0;
 }
 
-static int udc_dwc2_shutdown(const struct device *dev)
+static int udc_dwc2_disable(const struct device *dev)
 {
 	const struct udc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
+	mem_addr_t dctl_reg = (mem_addr_t)&base->dctl;
+
+	/* Enable soft disconnect */
+	sys_set_bits(dctl_reg, USB_DWC2_DCTL_SFTDISCON);
+	LOG_DBG("Disable device %p", dev);
 
 	config->irq_disable_func(dev);
 	sys_clear_bits((mem_addr_t)&base->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
@@ -1586,6 +1571,27 @@ static int udc_dwc2_shutdown(const struct device *dev)
 		return -EIO;
 	}
 
+	return 0;
+}
+
+static int udc_dwc2_init(const struct device *dev)
+{
+	const struct udc_dwc2_config *const config = dev->config;
+	int ret;
+
+	if (config->quirks != NULL && config->quirks->clk_enable != NULL) {
+		LOG_DBG("Enable vendor clock");
+		ret = config->quirks->clk_enable(dev);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	return dwc2_init_pinctrl(dev);
+}
+
+static int udc_dwc2_shutdown(const struct device *dev)
+{
 	return 0;
 }
 
