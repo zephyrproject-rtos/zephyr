@@ -256,7 +256,7 @@ MODEM_CMD_DEFINE(on_cmd_cipstamac)
 static int esp_pull_quoted(char **str, char *str_end, char **unquoted)
 {
 	if (**str != '"') {
-		return -EBADMSG;
+		return -EAGAIN;
 	}
 
 	(*str)++;
