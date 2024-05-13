@@ -213,17 +213,41 @@ static int bme680_sample_fetch(const struct device *dev,
 	uint8_t gas_range;
 	uint32_t adc_temp, adc_press;
 	uint16_t adc_hum, adc_gas_res;
+	uint8_t status;
 	int size = BME680_LEN_FIELD;
+	int cnt = 0;
 	int ret;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+
+	/* Trigger the measurement */
+	ret = bme680_reg_write(dev, BME680_REG_CTRL_MEAS, BME680_CTRL_MEAS_VAL);
+	if (ret < 0) {
+		return ret;
+	}
+
+	do {
+		/* Wait for a maximum of 250ms for data.
+		 * Initial delay after boot has been measured at 170ms.
+		 * Subequent triggers are < 1ms.
+		 */
+		if (cnt++ > 250) {
+			return -EAGAIN;
+		}
+		k_sleep(K_MSEC(1));
+		ret = bme680_reg_read(dev, BME680_REG_FIELD0, &status, 1);
+		if (ret < 0) {
+			return ret;
+		}
+	} while (!(status & BME680_MSK_NEW_DATA));
+	LOG_DBG("New data after %d ms", cnt);
 
 	ret = bme680_reg_read(dev, BME680_REG_FIELD0, buff, size);
 	if (ret < 0) {
 		return ret;
 	}
 
-	data->new_data = buff[0] & BME680_MSK_NEW_DATA;
+	data->new_data = true;
 	data->heatr_stab = buff[14] & BME680_MSK_HEATR_STAB;
 
 	adc_press = (uint32_t)(((uint32_t)buff[2] << 12) | ((uint32_t)buff[3] << 4)
@@ -240,14 +264,6 @@ static int bme680_sample_fetch(const struct device *dev,
 		bme680_calc_humidity(data, adc_hum);
 		bme680_calc_gas_resistance(data, gas_range, adc_gas_res);
 	}
-
-	/* Trigger the next measurement */
-	ret = bme680_reg_write(dev, BME680_REG_CTRL_MEAS,
-			       BME680_CTRL_MEAS_VAL);
-	if (ret < 0) {
-		return ret;
-	}
-
 	return 0;
 }
 
