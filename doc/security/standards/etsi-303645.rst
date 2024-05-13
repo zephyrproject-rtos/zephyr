@@ -485,8 +485,8 @@ Provisions Assessment
     * - Provision 5.6-1
       - All unused network and logical interfaces shall be disabled.
       - M
-      -
-      -
+      - Y
+      - :ref:`Kconfig <kconfig>`
 
         .. _ETSI_Provision_5_6_2:
     * - Provision 5.6-2
