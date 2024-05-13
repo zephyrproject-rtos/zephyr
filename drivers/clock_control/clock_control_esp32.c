@@ -620,7 +620,6 @@ static int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cf
 				old_config.freq_mhz);
 
 	uart_clock_src_hz = esp_clk_apb_freq();
-
 #if !defined(ESP_CONSOLE_UART_NONE)
 	esp_rom_uart_set_clock_baudrate(ESP_CONSOLE_UART_NUM, uart_clock_src_hz,
 					ESP_CONSOLE_UART_BAUDRATE);
@@ -663,9 +662,11 @@ static int clock_control_esp32_configure(const struct device *dev, clock_control
 static int clock_control_esp32_init(const struct device *dev)
 {
 	const struct esp32_clock_config *cfg = dev->config;
+	struct esp32_clock_data *data = dev->data;
 	soc_reset_reason_t rst_reas;
 	rtc_config_t rtc_cfg = RTC_CONFIG_DEFAULT();
 	bool ret;
+	uint32_t uart_clock_src_hz;
 
 	rst_reas = esp_rom_get_reset_reason(0);
 #if !defined(CONFIG_SOC_SERIES_ESP32)
@@ -684,6 +685,14 @@ static int clock_control_esp32_init(const struct device *dev)
 		LOG_ERR("Failed to configure CPU clock");
 		return ret;
 	}
+
+#if defined(CONFIG_SOC_SERIES_ESP32S3)
+	uart_clock_src_hz = (uint32_t)rtc_clk_xtal_freq_get() * MHZ(1);
+#if !defined(ESP_CONSOLE_UART_NONE)
+	esp_rom_uart_set_clock_baudrate(ESP_CONSOLE_UART_NUM, uart_clock_src_hz,
+					ESP_CONSOLE_UART_BAUDRATE);
+#endif
+#endif
 
 	rtc_clk_fast_src_set(cfg->rtc.rtc_fast_clock_src);
 
@@ -714,7 +723,7 @@ static const struct esp32_cpu_clock_config esp32_cpu_clock_config0 = {
 
 static const struct esp32_rtc_clock_config esp32_rtc_clock_config0 = {
 	.rtc_fast_clock_src = DT_PROP(DT_INST(0, espressif_esp32_rtc), fast_clk_src),
-	.rtc_slow_clock_src = DT_PROP(DT_INST(0, espressif_esp32_rtc), slow_clk_src)
+	.rtc_slow_clock_src = DT_PROP(DT_INST(0, espressif_esp32_rtc), slow_clk_src),
 };
 
 static const struct esp32_clock_config esp32_clock_config0 = {
