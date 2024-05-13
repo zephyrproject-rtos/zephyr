@@ -395,11 +395,23 @@ static const struct bt_hci_driver_api uc_drv_api = {
 	.send = uc_send,
 };
 
+static int uc_init(const struct device *dev)
+{
+	if (!arg_found) {
+		posix_print_warning("Warning: Bluetooth device missing.\n"
+				    "Specify either a local hci interface --bt-dev=hciN\n"
+				    "or a valid hci tcp server --bt-dev=ip_address:port\n");
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
 #define UC_DEVICE_INIT(inst) \
 	static struct uc_data uc_data_##inst = { \
 		.fd = -1, \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &uc_data_##inst, NULL, \
+	DEVICE_DT_INST_DEFINE(inst, uc_init, NULL, &uc_data_##inst, NULL, \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uc_drv_api)
 
 DT_INST_FOREACH_STATUS_OKAY(UC_DEVICE_INIT)
@@ -456,14 +468,4 @@ static void add_btuserchan_arg(void)
 	native_add_command_line_opts(btuserchan_args);
 }
 
-static void btuserchan_check_arg(void)
-{
-	if (!arg_found) {
-		posix_print_error_and_exit("Error: Bluetooth device missing.\n"
-					   "Specify either a local hci interface --bt-dev=hciN\n"
-					   "or a valid hci tcp server --bt-dev=ip_address:port\n");
-	}
-}
-
 NATIVE_TASK(add_btuserchan_arg, PRE_BOOT_1, 10);
-NATIVE_TASK(btuserchan_check_arg, PRE_BOOT_2, 10);
