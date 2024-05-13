@@ -478,7 +478,7 @@ Provisions Assessment
       - The manufacturer shall follow secure management processes for critical security
         parameters that relate to the device.
       - M
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_6_1:
