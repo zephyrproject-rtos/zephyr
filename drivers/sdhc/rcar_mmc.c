@@ -28,15 +28,6 @@ LOG_MODULE_REGISTER(rcar_mmc, CONFIG_LOG_DEFAULT_LEVEL);
 #define MMC_POLL_FLAGS_TIMEOUT_US 100000
 #define MMC_POLL_FLAGS_ONE_CYCLE_TIMEOUT_US 1
 #define MMC_BUS_CLOCK_FREQ 800000000
-/*
- * SD/MMC clock for Gen3/Gen4 R-car boards can't be equal to 208 MHz,
- * but we can run SDR104 on lower frequencies:
- *    "SDR104: UHS-I 1.8V signaling, Frequency up to 208 MHz"
- * so according to SD card standard it is possible to use lower frequencies,
- * and we need to pass check of frequency in sdmmc in order to use sdr104 mode.
- * This is the reason why it is needed this correction.
- */
-#define MMC_MAX_FREQ_CORRECTION 8000000
 
 #ifdef CONFIG_RCAR_MMC_DMA_SUPPORT
 #define ALIGN_BUF_DMA __aligned(CONFIG_SDHC_BUFFER_ALIGNMENT)
@@ -1941,7 +1932,7 @@ static void rcar_mmc_init_host_props(const struct device *dev)
 
 	/* Note: init only properties that are used for mmc/sdhc */
 
-	props->f_max = cfg->max_frequency + MMC_MAX_FREQ_CORRECTION;
+	props->f_max = cfg->max_frequency;
 	/*
 	 * note: actually, it's possible to get lower frequency
 	 *       if we use divider from cpg too
