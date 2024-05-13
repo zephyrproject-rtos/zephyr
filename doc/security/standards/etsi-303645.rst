@@ -470,7 +470,7 @@ Provisions Assessment
       - The consumer IoT device shall protect the confidentiality of critical security
         parameters that are communicated via remotely accessible network interfaces.
       - M
-      -
+      - Y
       -
 
         .. _ETSI_Provision_5_5_8:
