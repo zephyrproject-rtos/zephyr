@@ -33,7 +33,6 @@ import list_boards
 import list_hardware
 
 logger = None
-
 def git(*args, cwd=None, ignore_non_zero=False):
     # Helper for running a Git command. Returns the rstrip()ed stdout output.
     # Called like git("diff"). Exits with SystemError (raised by sys.exit()) on
