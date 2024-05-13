@@ -82,6 +82,12 @@ struct bt_keys {
 #define BT_KEYS_STORAGE_LEN     (sizeof(struct bt_keys) - \
 				 offsetof(struct bt_keys, storage_start))
 
+/** Clears all keys.
+ *
+ * Keys stored in settings are not cleared.
+ */
+void bt_keys_reset(void);
+
 /**
  * @brief Get a call through the callback for each key with the same type
  *
