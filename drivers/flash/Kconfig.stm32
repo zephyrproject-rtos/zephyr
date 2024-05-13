@@ -64,6 +64,7 @@ config FLASH_STM32_READOUT_PROTECTION_PERMANENT_ALLOW
 
 config FLASH_STM32_BLOCK_REGISTERS
 	bool "Extended operation for blocking option and control registers"
+	select FLASH_HAS_EX_OP
 	default n
 	help
 	  Enables flash extended operations that can be used to disable access
