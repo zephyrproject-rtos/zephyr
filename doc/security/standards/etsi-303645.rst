@@ -522,8 +522,8 @@ Provisions Assessment
     * - Provision 5.6-6
       - Code should be minimized to the functionality necessary for the service/device to operate.
       - R
-      -
-      -
+      - Y
+      - :ref:`Kconfig <kconfig>`
 
         .. _ETSI_Provision_5_6_7:
     * - Provision 5.6-7
