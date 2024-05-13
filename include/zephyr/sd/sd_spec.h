@@ -373,6 +373,16 @@ enum hs_max_data_rate {
 	HS_MAX_DTR = MHZ(50),
 };
 
+/* Maximum data rate possible for SD uhs cards */
+enum uhs_max_data_rate {
+	UHS_UNSUPPORTED = 0,
+	UHS_SDR12_MAX_DTR = MHZ(25),
+	UHS_SDR25_MAX_DTR = MHZ(50),
+	UHS_SDR50_MAX_DTR = MHZ(100),
+	UHS_SDR104_MAX_DTR = MHZ(208),
+	UHS_DDR50_MAX_DTR = MHZ(50),
+};
+
 /**
  * @brief SD bus speed support bit flags
  *
@@ -494,7 +504,7 @@ enum sd_driver_strength {
  */
 struct sd_switch_caps {
 	enum hs_max_data_rate hs_max_dtr;
-	enum sdhc_clock_speed uhs_max_dtr;
+	enum uhs_max_data_rate uhs_max_dtr;
 	enum sd_bus_speed bus_speed;
 	enum sd_driver_type sd_drv_type;
 	enum sd_current_limit sd_current_limit;
