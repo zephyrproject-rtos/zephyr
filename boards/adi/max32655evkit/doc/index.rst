@@ -154,10 +154,49 @@ Debugging
 Please refer to the `Flashing`_ section and run the ``west debug`` command
 instead of ``west flash``.
 
+Dual Core Support
+*****************
+
+An experimental board ID for the secondary RISC-V core is available with ID
+``max32655evkit/max32655/m4``.
+
+The primary Arm core uses Kconfig options,
+:kconfig:option:`CONFIG_MAX32_SECONDARY_RV32` to enable the secondary
+RISC-V core. The devicetree chosen property ``zephyr,code-rv32-partition``,
+is used to determine the address for the RV32 core to start executing.
+
+:zephyr:code-sample:`sysbuild_hello_world` supports building the Arm and RISC-V
+images:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sysbuild/hello_world
+   :board: max32655evkit/max32655/m4
+   :west-args: -T sample.sysbuild.hello_world
+   :goals: build
+   :compact:
+
+Currently, flashing both images requires using the JLink runner with a
+connected JLink device:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sysbuild/hello_world
+   :board: max32655evkit/max32655/m4
+   :flash-args: -r jlink
+   :goals: flash
+   :compact:
+
+To view the console for the RV32 core using the USB connection on the kit, move
+jumpers JP4 and JP5 to their "LP" positions.
+
 References
 **********
 
 - `MAX32655EVKIT web page`_
 
+- `zero-riscy user manual`_
+
 .. _MAX32655EVKIT web page:
    https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-boards-kits/max32655evkit.html#eb-overview
+
+.. _zero-riscy user manual:
+   https://pulp-platform.org/docs/user_manual.pdf

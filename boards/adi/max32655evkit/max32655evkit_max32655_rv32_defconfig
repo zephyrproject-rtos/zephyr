@@ -1,10 +1,8 @@
-# Copyright (c) 2023-2024 Analog Devices, Inc.
+# Copyright (c) 2023-2026 Analog Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-# Enable MPU
-CONFIG_ARM_MPU=y
+CONFIG_SYS_CLOCK_TICKS_PER_SEC=5000
 
-# Enable GPIO
 CONFIG_GPIO=y
 
 # Console

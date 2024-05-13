@@ -22,4 +22,4 @@ supported:
   - w1
   - flash
 ram: 48
-flash: 512
+flash: 352
