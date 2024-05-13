@@ -322,8 +322,8 @@ Provisions Assessment
     * - Provision 5.3-9
       - The device should verify the authenticity and integrity of software updates.
       - R C
-      -
-      -
+      - Y
+      - Functionality provided by `MCUboot <https://github.com/zephyrproject-rtos/mcuboot>`. Also see :ref:`Device Firwmware Upgrade  <dfu>`
 
         .. _ETSI_Provision_5_3_10:
     * - Provision 5.3-10
