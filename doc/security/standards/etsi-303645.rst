@@ -421,7 +421,7 @@ Provisions Assessment
     * - Provision 5.5-1
       - The consumer IoT device shall use best practice cryptography to communicate securely.
       - M
-      -
+      - Y
       -
 
         .. _ETSI_Provision_5_5_2:
