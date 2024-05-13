@@ -462,17 +462,16 @@ void net_buf_unref(struct net_buf *buf)
 		struct net_buf *frags = buf->frags;
 		struct net_buf_pool *pool;
 
-#if defined(CONFIG_NET_BUF_LOG)
 		if (!buf->ref) {
 			NET_BUF_ERR("%s():%d: buf %p double free", func, line,
 				    buf);
 			return;
 		}
-#endif
+
 		NET_BUF_DBG("buf %p ref %u pool_id %u frags %p", buf, buf->ref,
 			    buf->pool_id, buf->frags);
 
-		if (--buf->ref > 0) {
+		if ((atomic_dec(&buf->atomic) & UINT8_MAX) != 1) {
 			return;
 		}
 
@@ -499,10 +498,12 @@ void net_buf_unref(struct net_buf *buf)
 struct net_buf *net_buf_ref(struct net_buf *buf)
 {
 	__ASSERT_NO_MSG(buf);
+	__ASSERT_NO_MSG(buf->ref < UINT8_MAX);
 
 	NET_BUF_DBG("buf %p (old) ref %u pool_id %u",
 		    buf, buf->ref, buf->pool_id);
-	buf->ref++;
+	atomic_inc(&buf->atomic);
+
 	return buf;
 }
 

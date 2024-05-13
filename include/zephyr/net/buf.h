@@ -1008,17 +1008,24 @@ struct net_buf {
 	/** Fragments associated with this buffer. */
 	struct net_buf *frags;
 
-	/** Reference count. */
-	uint8_t ref;
+	/** Union for convenience preserving the old API. */
+	union {
+		struct {
+			/** Reference count. */
+			uint8_t ref;
 
-	/** Bit-field of buffer flags. */
-	uint8_t flags;
+			/** Bit-field of buffer flags. */
+			uint8_t flags;
 
-	/** Where the buffer should go when freed up. */
-	uint8_t pool_id;
+			/** Where the buffer should go when freed up. */
+			uint8_t pool_id;
 
-	/** Size of user data on this buffer */
-	uint8_t user_data_size;
+			/* Size of user data on this buffer */
+			uint8_t user_data_size;
+		};
+
+		atomic_t atomic;
+	};
 
 	/** Union for convenience access to the net_buf_simple members, also
 	 * preserving the old API.
