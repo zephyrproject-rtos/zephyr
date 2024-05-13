@@ -990,6 +990,12 @@ static uint8_t get_ad_flags(struct net_buf_simple *buf_ad)
 
 static uint8_t discovery_flags;
 static struct net_buf_simple *adv_buf = NET_BUF_SIMPLE(ADV_BUF_LEN);
+#if defined(CONFIG_BT_CLASSIC)
+static struct net_buf_simple *adv_buf_br = NET_BUF_SIMPLE(sizeof(struct bt_br_discovery_result));
+#define BT_CLASSIC_INQUIRY_NUM_RESPONSES (20)
+static struct bt_br_discovery_result br_discovery_results[BT_CLASSIC_INQUIRY_NUM_RESPONSES];
+#define BT_CLASSIC_INQUIRY_LENGTH (10)
+#endif
 
 static void store_adv(const bt_addr_le_t *addr, int8_t rssi,
 		      struct net_buf_simple *buf_ad)
@@ -1041,7 +1047,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 			return;
 		}
 
-		ev = (void *) adv_buf->data;
+		ev = (void *)adv_buf->data;
 
 		bt_addr_le_copy(&a, &ev->address);
 
@@ -1088,6 +1094,42 @@ done:
 	net_buf_simple_reset(adv_buf);
 }
 
+#if defined(CONFIG_BT_CLASSIC)
+static void br_discovery_complete(struct bt_br_discovery_result *results, size_t count)
+{
+	size_t index;
+	struct btp_gap_device_found_ev *ev;
+
+	LOG_DBG("BR/EDR discovery complete\r\n");
+
+	for (index = 0; index < count; index++) {
+		/* cleanup simple net buffer adv_buf_br */
+		net_buf_simple_init(adv_buf_br, 0);
+
+		ev = (struct btp_gap_device_found_ev *)net_buf_simple_add(adv_buf_br, sizeof(*ev));
+
+		bt_addr_copy(&ev->address.a, &results[index].addr);
+		ev->address.type = BT_ADDR_LE_PUBLIC;
+		ev->flags = BTP_GAP_DEVICE_FOUND_FLAG_AD | BTP_GAP_DEVICE_FOUND_FLAG_RSSI;
+		ev->rssi = results[index].rssi;
+		ev->eir_data_len = 0U;
+		for (uint32_t i = 0U; i < sizeof(results[index].eir); i = ev->eir_data_len) {
+			if (results[index].eir[i] != 0) {
+				/* Append EIR length and length field itself */
+				ev->eir_data_len += results[index].eir[i] + 1;
+			} else {
+				/* invalid length found, jump out*/
+				break;
+			}
+		}
+		memcpy(net_buf_simple_add(adv_buf_br, ev->eir_data_len), results[index].eir,
+		       ev->eir_data_len);
+		tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_DEVICE_FOUND, adv_buf_br->data,
+			     adv_buf_br->len);
+	}
+}
+#endif /* defined(CONFIG_BT_CLASSIC) */
+
 static uint8_t start_discovery(const void *cmd, uint16_t cmd_len,
 			       void *rsp, uint16_t *rsp_len)
 {
@@ -1095,8 +1137,33 @@ static uint8_t start_discovery(const void *cmd, uint16_t cmd_len,
 
 	/* only LE scan is supported */
 	if (cp->flags & BTP_GAP_DISCOVERY_FLAG_BREDR) {
+#if defined(CONFIG_BT_CLASSIC)
+		int err;
+		struct bt_br_discovery_param param;
+
+		param.length = BT_CLASSIC_INQUIRY_LENGTH;
+		if (cp->flags & BTP_GAP_DISCOVERY_FLAG_LIMITED) {
+			param.limited = true;
+		} else {
+			param.limited = false;
+		}
+
+		memset(br_discovery_results, 0, sizeof(br_discovery_results));
+
+		err = bt_br_discovery_start(&param, br_discovery_results,
+					    BT_CLASSIC_INQUIRY_NUM_RESPONSES,
+					    br_discovery_complete);
+		if (err < 0) {
+			LOG_ERR("Failed to start discovery (err %d)", err);
+			return BTP_STATUS_FAILED;
+		}
+
+		discovery_flags = cp->flags;
+		return BTP_STATUS_SUCCESS;
+#else
 		LOG_WRN("BR/EDR not supported");
 		return BTP_STATUS_FAILED;
+#endif /* defined(CONFIG_BT_CLASSIC) */
 	}
 
 	if (bt_le_scan_start(cp->flags & BTP_GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN ?
