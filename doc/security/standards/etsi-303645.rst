@@ -454,7 +454,7 @@ Provisions Assessment
         network service protocols that are relied upon by the device and where the manufacturer
         cannot guarantee what configuration will be required for the device to operate.
       - M
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_5_6:
