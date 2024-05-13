@@ -638,7 +638,8 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 
 	if (net_ipv6_is_addr_mcast((struct in6_addr *)hdr->dst) &&
 	    !(net_ipv6_is_addr_mcast_iface((struct in6_addr *)hdr->dst) ||
-	      net_ipv6_is_addr_mcast_link_all_nodes((struct in6_addr *)hdr->dst))) {
+	      net_ipv6_is_addr_mcast_link_all_nodes((struct in6_addr *)hdr->dst)) &&
+	    !(net_ipv6_is_addr_solicited_node((struct in6_addr *)hdr->dst))) {
 		/* If we receive a packet with a interface-local or
 		 * link-local all-nodes multicast destination address we
 		 * always have to pass it to the upper layer.
