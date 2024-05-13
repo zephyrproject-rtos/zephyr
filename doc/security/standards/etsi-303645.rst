@@ -552,8 +552,8 @@ Provisions Assessment
     * - Provision 5.7-1
       - The consumer IoT device should verify its software using secure boot mechanisms.
       - R
-      -
-      -
+      - Y
+      - Functionality provided by `MCUboot <https://github.com/zephyrproject-rtos/mcuboot>`. Also see :ref:`Security Overview  <west-sign>`
 
         .. _ETSI_Provision_5_7_2:
     * - Provision 5.7-2
