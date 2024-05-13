@@ -488,6 +488,7 @@ config MBEDTLS_PSA_CRYPTO_C
 
 config MBEDTLS_USE_PSA_CRYPTO
 	bool "Use PSA APIs instead of legacy MbedTLS when possible"
+	default y if MBEDTLS_PSA_CRYPTO_CLIENT
 	help
 	  Use PSA APIs instead of legacy MbedTLS functions in TLS/DTLS and other
 	  "intermediate" modules such as PK, MD and Cipher.
