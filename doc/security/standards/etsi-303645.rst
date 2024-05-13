@@ -444,7 +444,7 @@ Provisions Assessment
       - Access to device functionality via a network interface in the initialized state should
         only be possible after authentication on that interface.
       - R
-      -
+      - N/A
       -
 
         .. _ETSI_Provision_5_5_5:
