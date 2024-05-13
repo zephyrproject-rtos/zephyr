@@ -123,6 +123,8 @@ void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t t
 
 	k_spinlock_key_t key = k_spin_lock(&heap->lock);
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, realloc, heap, ptr, bytes, timeout);
+
 	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
 
 	while (ret == NULL) {
@@ -137,6 +139,8 @@ void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t t
 		(void) z_pend_curr(&heap->lock, key, &heap->wait_q, timeout);
 		key = k_spin_lock(&heap->lock);
 	}
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap, realloc, heap, ptr, bytes, timeout, ret);
 
 	k_spin_unlock(&heap->lock, key);
 	return ret;
