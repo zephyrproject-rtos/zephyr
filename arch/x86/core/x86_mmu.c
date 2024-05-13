@@ -1432,7 +1432,7 @@ static inline void bcb_fence(void)
 }
 
 __pinned_func
-int arch_buffer_validate(const void *addr, size_t size, int write)
+int arch_buffer_validate(const void *addr, size_t size, bool write)
 {
 	pentry_t *ptables = z_x86_thread_page_tables_get(_current);
 	uint8_t *virt;

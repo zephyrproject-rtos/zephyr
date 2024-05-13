@@ -778,12 +778,12 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
  *
  * @param addr start address of the buffer
  * @param size the size of the buffer
- * @param write If non-zero, additionally check if the area is writable.
+ * @param write If true, additionally check if the area is writable.
  *	  Otherwise, just check if the memory can be read.
  *
  * @return nonzero if the permissions don't match.
  */
-int arch_buffer_validate(const void *addr, size_t size, int write);
+int arch_buffer_validate(const void *addr, size_t size, bool write);
 
 /**
  * Get the optimal virtual region alignment to optimize the MMU table layout
