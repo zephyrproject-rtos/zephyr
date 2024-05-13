@@ -15,8 +15,8 @@ class Json_report:
 
     simulators = [
         'unit_testing',
-        'native',
-        'qemu',
+        'native_sim',
+        'qemu_x86',
         'mps2/an385'
     ]
 
