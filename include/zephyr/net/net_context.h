@@ -360,6 +360,10 @@ __net_socket struct net_context {
 		 */
 		uint16_t addr_preferences;
 #endif
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMPING)
+		/** Enable RX, TX or both timestamps of packets send through sockets. */
+		uint8_t timestamping;
+#endif
 	} options;
 
 	/** Protocol (UDP, TCP or IEEE 802.3 protocol value) */
@@ -1285,6 +1289,7 @@ enum net_context_option {
 	NET_OPT_UNICAST_HOP_LIMIT = 15, /**< IPv6 unicast hop limit */
 	NET_OPT_TTL               = 16, /**< IPv4 unicast TTL */
 	NET_OPT_ADDR_PREFERENCES  = 17, /**< IPv6 address preference */
+	NET_OPT_TIMESTAMPING      = 18, /**< Packet timestamping */
 };
 
 /**
