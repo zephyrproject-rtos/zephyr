@@ -265,6 +265,8 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
+	bt_conn_unref(conn);
+
 	for (i = 0U; i < cp->num; i++) {
 #if defined(CONFIG_BT_CLASSIC)
 		if (bredr) {
