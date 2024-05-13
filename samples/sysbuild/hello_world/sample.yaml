@@ -84,3 +84,11 @@ tests:
     extra_args:
       - SB_CONF_FILE=sysbuild/bl54l15u_dvk_nrf54l15_cpuflpr.conf
       - hello_world_SNIPPET=nordic-flpr
+
+  sample.sysbuild.hello_world.max32655evkit_m4_rv32:
+    platform_allow:
+      - max32655evkit/max32655/m4
+    integration_platforms:
+      - max32655evkit/max32655/m4
+    extra_args:
+      - SB_CONF_FILE=sysbuild/max32655evkit_max32655_rv32.conf
