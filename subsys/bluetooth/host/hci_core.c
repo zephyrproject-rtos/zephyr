@@ -4264,6 +4264,10 @@ int bt_disable(void)
 	k_thread_abort(&bt_workq.thread);
 #endif
 
+	if (IS_ENABLED(CONFIG_BT_ISO)) {
+		bt_iso_reset();
+	}
+
 	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
 
 	/* Clear BT_DEV_ENABLE here to prevent early bt_enable() calls, before disable is
