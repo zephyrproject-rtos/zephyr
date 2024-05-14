@@ -15,9 +15,21 @@ Building
 Applications for the ``hifive_unleashed`` board configuration can be built as
 usual (see :ref:`build_an_application`) using the corresponding board name:
 
-.. zephyr-app-commands::
-   :board: hifive_unleashed
-   :goals: build
+.. tabs::
+
+   .. group-tab:: E51
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: hifive_unleashed/fu540/e51
+         :goals: build
+
+   .. group-tab:: U54
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: hifive_unleashed/fu540/u54
+         :goals: build
 
 Flashing
 ========
