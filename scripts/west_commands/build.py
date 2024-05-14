@@ -276,7 +276,7 @@ class Build(Forceable):
             if remainder:
                 self.args.cmake_opts = remainder
         except IndexError:
-            return
+            pass
 
     def _parse_test_item(self, test_item):
         found_test_metadata = False
