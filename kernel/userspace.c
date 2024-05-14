@@ -277,8 +277,10 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 		if (idx != 0) {
 			*tidx = base + (idx - 1);
 
-			sys_bitfield_clear_bit((mem_addr_t)_thread_idx_map,
-					       *tidx);
+			/* Clear the bit. We already know the array index,
+			 * and the bit to be cleared.
+			 */
+			_thread_idx_map[i] &= ~(BIT(idx - 1));
 
 			/* Clear permission from all objects */
 			k_object_wordlist_foreach(clear_perms_cb,
@@ -308,7 +310,11 @@ static void thread_idx_free(uintptr_t tidx)
 	/* To prevent leaked permission when index is recycled */
 	k_object_wordlist_foreach(clear_perms_cb, (void *)tidx);
 
-	sys_bitfield_set_bit((mem_addr_t)_thread_idx_map, tidx);
+	/* Figure out which bits to set in _thread_idx_map[] and set it. */
+	int base = tidx / NUM_BITS(_thread_idx_map[0]);
+	int offset = tidx % NUM_BITS(_thread_idx_map[0]);
+
+	_thread_idx_map[base] |= BIT(offset);
 }
 
 static struct k_object *dynamic_object_create(enum k_objects otype, size_t align,
