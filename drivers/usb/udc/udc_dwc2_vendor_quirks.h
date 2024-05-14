@@ -11,12 +11,12 @@
 
 #include <stdint.h>
 #include <zephyr/device.h>
-#include <zephyr/sys/sys_io.h>
-#include <zephyr/drivers/clock_control/stm32_clock_control.h>
-
-#include <usb_dwc2_hw.h>
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_fsotg)
+
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <usb_dwc2_hw.h>
 
 struct usb_dw_stm32_clk {
 	const struct device *const dev;
@@ -26,7 +26,7 @@ struct usb_dw_stm32_clk {
 
 #define DT_DRV_COMPAT snps_dwc2
 
-static inline int clk_enable_stm32f4_fsotg(const struct usb_dw_stm32_clk *const clk)
+static inline int stm32f4_fsotg_enable_clk(const struct usb_dw_stm32_clk *const clk)
 {
 	int ret;
 
@@ -59,12 +59,22 @@ static inline int clk_enable_stm32f4_fsotg(const struct usb_dw_stm32_clk *const 
 	return clock_control_on(clk->dev, (void *)&clk->pclken[0]);
 }
 
-static inline int pwr_on_stm32f4_fsotg(const struct device *dev)
+static inline int stm32f4_fsotg_enable_phy(const struct device *dev)
 {
 	const struct udc_dwc2_config *const config = dev->config;
 	mem_addr_t ggpio_reg = (mem_addr_t)&config->base->ggpio;
 
 	sys_set_bits(ggpio_reg, USB_DWC2_GGPIO_STM32_PWRDWN | USB_DWC2_GGPIO_STM32_VBDEN);
+
+	return 0;
+}
+
+static inline int stm32f4_fsotg_disable_phy(const struct device *dev)
+{
+	const struct udc_dwc2_config *const config = dev->config;
+	mem_addr_t ggpio_reg = (mem_addr_t)&config->base->ggpio;
+
+	sys_clear_bits(ggpio_reg, USB_DWC2_GGPIO_STM32_PWRDWN | USB_DWC2_GGPIO_STM32_VBDEN);
 
 	return 0;
 }
@@ -78,14 +88,15 @@ static inline int pwr_on_stm32f4_fsotg(const struct device *dev)
 		.pclken_len = DT_INST_NUM_CLOCKS(n),				\
 	};									\
 										\
-	static int clk_enable_stm32f4_fsotg_##n(const struct device *dev)	\
+	static int stm32f4_fsotg_enable_clk_##n(const struct device *dev)	\
 	{									\
-		return clk_enable_stm32f4_fsotg(&stm32f4_clk_##n);		\
+		return stm32f4_fsotg_enable_clk(&stm32f4_clk_##n);		\
 	}									\
 										\
 	struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {			\
-		.clk_enable = clk_enable_stm32f4_fsotg_##n,			\
-		.pwr_on = pwr_on_stm32f4_fsotg,					\
+		.pre_enable = stm32f4_fsotg_enable_clk_##n,			\
+		.post_enable = stm32f4_fsotg_enable_phy,			\
+		.disable = stm32f4_fsotg_disable_phy,				\
 		.irq_clear = NULL,						\
 	};
 
