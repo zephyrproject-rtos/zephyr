@@ -24,6 +24,7 @@ SYSBUILD_PROJ_DIR = pathlib.Path(__file__).resolve().parent.parent.parent \
 
 BUILD_USAGE = '''\
 west build [-h] [-b BOARD[@REV]]] [-d BUILD_DIR]
+           [-S SNIPPET]
            [-t TARGET] [-p {auto, always, never}] [-c] [--cmake-only]
            [-n] [-o BUILD_OPT] [-f]
            [--sysbuild | --no-sysbuild] [--domain DOMAIN]
@@ -135,7 +136,7 @@ class Build(Forceable):
         group.add_argument('-n', '--just-print', '--dry-run', '--recon',
                             dest='dry_run', action='store_true',
                             help="just print build commands; don't run them")
-        group.add_argument('-S', '--snippet', dest='snippets',
+        group.add_argument('-S', '--snippet', dest='snippets', metavar='SNIPPET',
                            action='append', default=[],
                            help='''add the argument to SNIPPET; may be given
                            multiple times. Forces CMake to run again if given.
