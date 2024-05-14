@@ -96,7 +96,7 @@
 	pinctrl-names = "default";
 };
 
-&sercom2 {
+&sercom0 {
 	status = "okay";
 	compatible = "atmel,sam0-spi";
 	dipo = <3>;
@@ -104,7 +104,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	pinctrl-0 = <&sercom2_spi_default>;
+	pinctrl-0 = <&sercom0_spi_default>;
 	pinctrl-names = "default";
 };
 

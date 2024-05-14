@@ -23,20 +23,19 @@ Hardware
 - 32.768 kHz crystal oscillator
 - 12 MHz crystal oscillator
 - 1024 KiB flash memory and 256 KiB of RAM
-- One yellow user LED
-- One mechanical user push button
+- Two yellow user LEDs
+- Two mechanical user push buttons
 - One reset button
 - On-board USB based EDBG unit with serial console
-- One QTouch® PTC button
-- 32 MiB QSPI Flash
-- ATECC508 CryptoAuthentication™  device
+- Embedded Debugger MCU (PKoB4)
+- 64 Mbit QSPI Flash
 - AT24MAC402 serial EEPROM with EUI-48™ MAC address
-- Ethernet
-
-   - RJ45 connector with built-in magnetics
-   - KSZ8091RNA PHY
-   - 10Base-T/100Base-TX IEE 802.3 compliant Ethernet transceiver
-
+- Ethernet transceiver 10/100 Mbps Ethernet MAC, 
+  compatible with the IEEE 802.3 standard.
+- Arduino Uno header connectors
+- X32 Audio Interface Headers
+- mikroBUS header connectors
+- DAC Output header
 - USB interface, host, and device
 - SD/SDIO card connector
 
@@ -97,7 +96,7 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/microchip/pic32cxsg/pic32cxsg41_cult/pic32cxsg41_cult_defconfig`.
+:zephyr_file:`boards/microchip/pic32cxsg41_cult/pic32cxsg41_cult_defconfig`.
 
 Pin Mapping
 ===========
@@ -122,10 +121,12 @@ the `Microchip PIC32CXSG41 Curiosity Ultra Schematic`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
-- SERCOM2 USART TX : PB24
-- SERCOM2 USART RX : PB25
-- GPIO/PWM LED0    : PC18
-- GPIO SW0         : PB31
+- SERCOM2 USART TX : PB13
+- SERCOM2 USART RX : PB12
+- GPIO/PWM LED1    : PC21
+- GPIO/PWM LED2    : PA16
+- GPIO SW1         : PD00
+- GPIO SW2         : PD01
 - GMAC RMII REFCK  : PA14
 - GMAC RMII TXEN   : PA17
 - GMAC RMII TXD0   : PA18
@@ -136,9 +137,10 @@ Default Zephyr Peripheral Mapping:
 - GMAC RMII RXER   : PA15
 - GMAC MDIO MDC    : PC11
 - GMAC MDIO MDIO   : PC12
-- SERCOM4 SPI SCK  : PB26
-- SERCOM4 SPI MOSI : PB27
-- SERCOM4 SPI MISO : PB29
+- SERCOM0 SPI SCK  : PB24
+- SERCOM0 SPI MOSI : PB25
+- SERCOM0 SPI MISO : PC25	
+- SERCOM0 SPI SS   : PC24
 - SERCOM7 I2C SDA  : PD08
 - SERCOM7 I2C SCL  : PD09
 - USB DP           : PA25
@@ -154,9 +156,9 @@ Serial Port
 ===========
 
 The PIC32CXSG41 MCU has 8 SERCOM based USARTs with one configured as USARTs in
-this BSP. SERCOM2 is the default Zephyr console.
+this BSP. SERCOM4 is the default Zephyr console.
 
-- SERCOM2 115200 8n1 connected to the onboard Atmel Embedded Debugger (EDBG)
+- SERCOM4 115200 8n1 connected to the onboard Atmel Embedded Debugger (EDBG)
 
 PWM
 ===
@@ -174,8 +176,7 @@ I2C Port
 ========
 
 The PIC32CXSG41 MCU has 8 SERCOM based I2Cs. On the Microchip PIC32CXSG41 Curiosity Ultra,
-SERCOM7 is connected to a AT24MAC402 EEPROM and a ATECC508A Crypto
-Authentication device.
+SERCOM7 is connected to a AT24MAC402 EEPROM.
 
 Programming and Debugging
 *************************

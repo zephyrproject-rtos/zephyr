@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Microchip
 # SPDX-License-Identifier: Apache-2.0
 identifier: pic32cxsg61_cult
-name: PIC32CX SG61 Curiosiy Ultra
+name: PIC32CX SG61 Curiosity Ultra
 type: mcu
 arch: arm
 toolchain:

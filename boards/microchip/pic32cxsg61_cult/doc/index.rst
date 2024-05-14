@@ -6,7 +6,7 @@ PIC32CX SG61 Curiosity Ultra Evaluation Kit
 Overview
 ********
 
-The PIC32CX SG41 Curiosity Ultra evaluation kit is ideal for evaluation and
+The PIC32CX SG61 Curiosity Ultra evaluation kit is ideal for evaluation and
 prototyping with the PIC32CX SG Cortex®-M4F processor-based
 microcontrollers. The kit includes Microchip’s Embedded Debugger (EDBG),
 which provides a full debug interface without the need for additional
@@ -23,27 +23,27 @@ Hardware
 - 32.768 kHz crystal oscillator
 - 12 MHz crystal oscillator
 - 1024 KiB flash memory and 256 KiB of RAM
-- One yellow user LED
-- One mechanical user push button
+- Two yellow user LEDs
+- Two mechanical user push buttons
 - One reset button
 - On-board USB based EDBG unit with serial console
-- One QTouch® PTC button
-- 32 MiB QSPI Flash
-- ATECC508 CryptoAuthentication™  device
+- Embedded Debugger MCU (PKoB4)
+- 64 Mbit QSPI Flash
 - AT24MAC402 serial EEPROM with EUI-48™ MAC address
-- Ethernet
-
-   - RJ45 connector with built-in magnetics
-   - KSZ8091RNA PHY
-   - 10Base-T/100Base-TX IEE 802.3 compliant Ethernet transceiver
-
+- Ethernet transceiver 10/100 Mbps Ethernet MAC, 
+  compatible with the IEEE 802.3 standard.
+- Arduino Uno header connectors
+- X32 Audio Interface Headers
+- mikroBUS header connectors
+- DAC Output header
 - USB interface, host, and device
 - SD/SDIO card connector
+- TA100 CryptoAuthentication™  device
 
 Supported Features
 ==================
 
-The same54_xpro board configuration supports the following hardware
+The pic32cxsg61_cult board configuration supports the following hardware
 features:
 
 +---------------+------------+----------------------------+
@@ -97,27 +97,37 @@ features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam0/same54_xpro/same54_xpro_defconfig`.
+:zephyr_file:`boards/microchip/pic32cxsg61_cult/pic32cxsg61_cult_defconfig`.
 
 Pin Mapping
 ===========
 
-The SAM E54 Xplained Pro evaluation kit has 4 GPIO controllers. These
+The Microchip PIC32CXSG61 Curiosity Ultra evaluation kit has 4 GPIO controllers. These
 controllers are responsible for pin muxing, input/output, pull-up, etc.
 
-For more details please refer to `SAM D5x/E5x Family Datasheet`_ and the `SAM E54
-Xplained Pro Schematic`_.
+For more details please refer to `Microchip PIC32CX SG41/SG60/SG61 Family Datasheet`_ and 
+the `Microchip PIC32CXSG61 Curiosity Ultra Schematic`_.
 
-.. image:: img/ATSAME54-XPRO-pinout.jpg
+.. image:: img/PIC32CXSG61-pinout1.jpg
      :align: center
-     :alt: SAME54-XPRO-pinout
+     :alt: PIC32CXSG61-CULT-pinout1
+
+.. image:: img/PIC32CXSG61-pinout2.jpg
+     :align: center
+     :alt: PIC32CXSG61-CULT-pinout2
+
+.. image:: img/PIC32CXSG61-pinout3.jpg
+     :align: center
+     :alt: PIC32CXSG61-CULT-pinout3
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
-- SERCOM2 USART TX : PB24
-- SERCOM2 USART RX : PB25
-- GPIO/PWM LED0    : PC18
-- GPIO SW0         : PB31
+- SERCOM2 USART TX : PB13
+- SERCOM2 USART RX : PB12
+- GPIO/PWM LED1    : PC21
+- GPIO/PWM LED2    : PA16
+- GPIO SW1         : PD00
+- GPIO SW2         : PD01
 - GMAC RMII REFCK  : PA14
 - GMAC RMII TXEN   : PA17
 - GMAC RMII TXD0   : PA18
@@ -128,9 +138,10 @@ Default Zephyr Peripheral Mapping:
 - GMAC RMII RXER   : PA15
 - GMAC MDIO MDC    : PC11
 - GMAC MDIO MDIO   : PC12
-- SERCOM4 SPI SCK  : PB26
-- SERCOM4 SPI MOSI : PB27
-- SERCOM4 SPI MISO : PB29
+- SERCOM0 SPI SCK  : PB24
+- SERCOM0 SPI MOSI : PB25
+- SERCOM0 SPI MISO : PC25	
+- SERCOM0 SPI SS   : PC24
 - SERCOM7 I2C SDA  : PD08
 - SERCOM7 I2C SCL  : PD09
 - USB DP           : PA25
@@ -139,41 +150,41 @@ Default Zephyr Peripheral Mapping:
 System Clock
 ============
 
-The SAME54 MCU is configured to use the 32.768 kHz external oscillator
+The PIC32CXSG61 MCU is configured to use the 32.768 kHz external oscillator
 with the on-chip PLL generating the 48 MHz system clock.
 
 Serial Port
 ===========
 
-The SAME54 MCU has 8 SERCOM based USARTs with one configured as USARTs in
+The PIC32CXSG61 MCU has 8 SERCOM based USARTs with one configured as USARTs in
 this BSP. SERCOM2 is the default Zephyr console.
 
-- SERCOM2 115200 8n1 connected to the onboard Atmel Embedded Debugger (EDBG)
+- SERCOM4 115200 8n1 connected to the onboard Atmel Embedded Debugger (EDBG)
 
 PWM
 ===
 
-The SAME54 MCU has 5 TCC based PWM units with up to 6 outputs each and a period
+The PIC32CXSG61 MCU has 5 TCC based PWM units with up to 6 outputs each and a period
 of 24 bits or 16 bits.  If :code:`CONFIG_PWM_SAM0_TCC` is enabled then LED0 is
 driven by TCC0 instead of by GPIO.
 
 SPI Port
 ========
 
-The SAME54 MCU has 8 SERCOM based SPIs.
+The PIC32CXSG61 MCU has 8 SERCOM based SPIs.
 
 I2C Port
 ========
 
-The SAME54 MCU has 8 SERCOM based I2Cs. On the SAM E54 Xplained Pro,
-SERCOM7 is connected to a AT24MAC402 EEPROM and a ATECC508A Crypto
+The PIC32CXSG61 MCU has 8 SERCOM based I2Cs. On the SAM Microchip PIC32CXSG61 Curiosity Ultra,
+SERCOM7 is connected to a AT24MAC402 EEPROM and SERCOM2 is connected to a TA100 Crypto
 Authentication device.
 
 Programming and Debugging
 *************************
 
-The SAM E54 Xplained Pro comes with a Atmel Embedded Debugger (EDBG).  This
-provides a debug interface to the SAME54 chip and is supported by
+The Microchip PIC32CXSG61 Curiosity Ultra comes with a Atmel Embedded Debugger (EDBG).  This
+provides a debug interface to the PIC32CXSG61 chip and is supported by
 OpenOCD.
 
 Flashing
@@ -183,11 +194,11 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: same54_xpro
+      :board: pic32cxsg61_cult
       :goals: build
       :compact:
 
-#. Connect the SAM E54 Xplained Pro to your host computer using the USB debug
+#. Connect the Microchip PIC32CXSG61 Curiosity Ultra to your host computer using the USB debug
    port.
 
 #. Run your favorite terminal program to listen for output. Under Linux the
@@ -209,11 +220,11 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: same54_xpro
+      :board: pic32cxsg61_cult
       :goals: flash
       :compact:
 
-   You should see "Hello World! same54_xpro" in your terminal.
+   You should see "Hello World! pic32cxsg61_cult" in your terminal.
 
 References
 **********
@@ -221,10 +232,7 @@ References
 .. target-notes::
 
 .. _Microchip website:
-    http://www.microchip.com/DevelopmentTools/ProductDetails.aspx?PartNO=ATSAME54-XPRO
-
-.. _SAM D5x/E5x Family Datasheet:
-    http://ww1.microchip.com/downloads/en/DeviceDoc/60001507C.pdf
-
-.. _SAM E54 Xplained Pro Schematic:
-    http://ww1.microchip.com/downloads/en/DeviceDoc/SAME54-Xplained-Pro_Design-Documentation.zip
+    https://www.microchip.com/en-us/development-tool/EV06X38A
+    
+.. _PIC32CX SG41/SG60/SG61 Family Datasheet:
+	https://ww1.microchip.com/downloads/aemDocuments/documents/MCU32/ProductDocuments/DataSheets/PIC32CX-SG41-SG60-SG61-Family-Data-Sheet-DS60001715.pdf
