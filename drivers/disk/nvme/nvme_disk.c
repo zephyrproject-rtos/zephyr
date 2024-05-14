@@ -178,6 +178,7 @@ static int nvme_disk_ioctl(struct disk_info *disk, uint8_t cmd, void *buff)
 		*(uint32_t *)buff = nvme_namespace_get_sector_size(ns);
 
 		break;
+	case DISK_IOCTL_CTRL_DEINIT:
 	case DISK_IOCTL_CTRL_SYNC:
 		ret = nvme_disk_flush(ns);
 		break;
