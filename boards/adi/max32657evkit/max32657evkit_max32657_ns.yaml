@@ -10,5 +10,6 @@ supported:
   - serial
   - gpio
   - watchdog
+  - dma
 ram: 192
 flash: 576
