@@ -1182,12 +1182,7 @@ ZTEST(net_ipv6, test_change_ll_addr)
 	zassert_true(memcmp(ll->addr, ll_iface->addr, ll->len) != 0,
 		     "Wrong link address 2");
 
-	ll_iface->addr[0] = 0x00;
-	ll_iface->addr[1] = 0x00;
-	ll_iface->addr[2] = 0x5E;
-	ll_iface->addr[3] = 0x00;
-	ll_iface->addr[4] = 0x53;
-	ll_iface->addr[5] = sys_rand8_get();
+	ll_iface->addr = net_test_data.mac_addr;
 }
 
 ZTEST(net_ipv6, test_dad_timeout)
