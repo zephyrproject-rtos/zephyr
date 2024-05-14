@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic_builtin.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
@@ -79,12 +81,43 @@ static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
+static atomic_t undirected_adv_enabled;
+static struct k_sem try_start_undirected_adv_req;
+
+static void try_start_undirected_adv(void)
+{
+	int err;
+	struct bt_le_adv_param param;
+
+	param = *BT_LE_ADV_CONN;
+	param.options |= BT_LE_ADV_OPT_ONE_TIME;
+
+	err = bt_le_adv_start(&param, ad, ARRAY_SIZE(ad), NULL, 0);
+
+	if (err == -EALREADY || err == -ENOMEM) {
+		/* Already running, or all connection slots taken.
+		 * We must try again when upon advertiser termination
+		 * (proxied by the connected callback) and the conn
+		 * recycled event.
+		 */
+	} else if (err) {
+		printk("Advertising failed to start (err %d)\n", err);
+	} else {
+		printk("Advertising successfully started\n");
+	}
+}
+
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
 		printk("Connection failed (err 0x%02x)\n", err);
 	} else {
 		printk("Connected\n");
+	}
+
+	/* The legacy advertiser terminated. */
+	if (atomic_get(&undirected_adv_enabled)) {
+		k_sem_give(&try_start_undirected_adv_req);
 	}
 }
 
@@ -93,9 +126,17 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	printk("Disconnected (reason 0x%02x)\n", reason);
 }
 
+static void on_conn_recycled(void)
+{
+	if (atomic_get(&undirected_adv_enabled)) {
+		k_sem_give(&try_start_undirected_adv_req);
+	}
+}
+
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
-	.disconnected = disconnected
+	.disconnected = disconnected,
+	.recycled = on_conn_recycled,
 };
 
 static void copy_last_bonded_addr(const struct bt_bond_info *info, void *data)
@@ -127,15 +168,15 @@ static void bt_ready(void)
 		adv_param = *BT_LE_ADV_CONN_DIR_LOW_DUTY(&bond_addr);
 		adv_param.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
 		err = bt_le_adv_start(&adv_param, NULL, 0, NULL, 0);
-	} else {
-		/* TODO */
-		err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
-	}
 
-	if (err) {
-		printk("Advertising failed to start (err %d)\n", err);
+		if (err) {
+			printk("Advertising failed to start (err %d)\n", err);
+		} else {
+			printk("Advertising successfully started\n");
+		}
 	} else {
-		printk("Advertising successfully started\n");
+		atomic_set(&undirected_adv_enabled, true);
+		k_sem_give(&try_start_undirected_adv_req);
 	}
 }
 
@@ -155,6 +196,8 @@ int main(void)
 {
 	int err;
 
+	k_sem_init(&try_start_undirected_adv_req, 0, 1);
+
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
@@ -165,7 +208,8 @@ int main(void)
 	bt_conn_auth_info_cb_register(&bt_conn_auth_info);
 
 	while (1) {
-		k_sleep(K_FOREVER);
+		k_sem_take(&try_start_undirected_adv_req, K_FOREVER);
+		try_start_undirected_adv();
 	}
 	return 0;
 }
