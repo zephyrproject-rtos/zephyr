@@ -24,7 +24,7 @@ SYSBUILD_PROJ_DIR = pathlib.Path(__file__).resolve().parent.parent.parent \
 
 BUILD_USAGE = '''\
 west build [-h] [-b BOARD[@REV]]] [-d BUILD_DIR]
-           [-S SNIPPET]
+           [-S SNIPPET] [--shield SHIELD]
            [-t TARGET] [-p {auto, always, never}] [-c] [--cmake-only]
            [-n] [-o BUILD_OPT] [-f]
            [--sysbuild | --no-sysbuild] [--domain DOMAIN]
@@ -143,6 +143,13 @@ class Build(Forceable):
                            Do not use this option with manually specified
                            -DSNIPPET... cmake arguments: the results are
                            undefined''')
+        group.add_argument('--shield', dest='shields', metavar='SHIELD',
+                           action='append', default=[],
+                           help='''add the argument to SHIELD; may be given
+                           multiple times. Forces CMake to run again if given.
+                           Do not use this option with manually specified
+                           -DSHIELD... cmake arguments: the results are
+                           undefined''')
 
         group = parser.add_mutually_exclusive_group()
         group.add_argument('--sysbuild', action='store_true',
@@ -215,7 +222,8 @@ class Build(Forceable):
             else:
                 self._update_cache()
                 if (self.args.cmake or self.args.cmake_opts or
-                        self.args.cmake_only or self.args.snippets):
+                        self.args.cmake_only or self.args.snippets or
+                        self.args.shields):
                     self.run_cmake = True
         else:
             self.run_cmake = True
@@ -553,6 +561,8 @@ class Build(Forceable):
             cmake_opts.extend(self.args.cmake_opts)
         if self.args.snippets:
             cmake_opts.append(f'-DSNIPPET={";".join(self.args.snippets)}')
+        if self.args.shields:
+            cmake_opts.append(f'-DSHIELD={";".join(self.args.shields)}')
 
         user_args = config_get('cmake-args', None)
         if user_args:
