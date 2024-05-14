@@ -1,5 +1,5 @@
-identifier: hifive_unleashed
-name: SiFive HiFive Unleashed
+identifier: hifive_unleashed/fu540/u54
+name: SiFive HiFive Unleashed (U54)
 type: mcu
 arch: riscv
 toolchain:
@@ -14,9 +14,6 @@ testing:
     - flash
     - newlib
     - crypto
-  renode:
-    uart: sysbus.uart0
-    resc: boards/sifive/hifive_unleashed/support/hifive_unleashed.resc
 supported:
   - gpio
   - spi
