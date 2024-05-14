@@ -689,6 +689,37 @@ __comp_west_boards()
 	esac
 }
 
+__comp_west_shields()
+{
+	local other_opts="
+		--format -f
+		--name -n
+	"
+
+	local dir_opts="
+		--board-root
+	"
+
+	all_opts="$dir_opts $other_opts"
+
+	case "$prev" in
+		$(__west_to_extglob "$other_opts") )
+			# We don't know how to autocomplete these.
+			return
+			;;
+		$(__west_to_extglob "$dir_opts") )
+			__set_comp_dirs
+			return
+			;;
+	esac
+
+	case "$cur" in
+		-*)
+			__set_comp $all_opts
+			;;
+	esac
+}
+
 __comp_west_build()
 {
 	local bool_opts="
@@ -1124,6 +1155,7 @@ __comp_west()
 	local zephyr_ext_cmds=(
 		completion
 		boards
+		shields
 		build
 		sign
 		flash
