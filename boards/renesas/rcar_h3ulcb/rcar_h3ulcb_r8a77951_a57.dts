@@ -8,6 +8,7 @@
 /dts-v1/;
 #include <mem.h>
 #include <arm64/renesas/r8a77951.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include "rcar_h3ulcb_r8a77951_a57-pinctrl.dtsi"
 
 / {
@@ -28,6 +29,52 @@
 	aliases {
 		sdhc0 = &emmc2;
 	};
+
+	vcc_sd0: regulator-vcc-sd0 {
+		compatible = "regulator-fixed";
+
+		regulator-name = "SD0 Vcc";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+
+		enable-gpios = <&gpio5 2 GPIO_ACTIVE_HIGH>;
+	};
+
+	vccq_sd0: regulator-vccq-sd0 {
+		compatible = "regulator-gpio";
+
+		regulator-name = "SD0 VccQ";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3300000>;
+
+		gpios = <&gpio5 1 GPIO_ACTIVE_HIGH>;
+		states = <3300000 1>, <1800000 0>;
+
+		regulator-always-on;
+	};
+};
+
+&gpio5 {
+	status = "okay";
+};
+
+&sd0 {
+	pinctrl-0 = <&sd0_clk &sd0_cmd &sd0_cd &sd0_wp
+		     &sd0_data0 &sd0_data1 &sd0_data2 &sd0_data3>;
+	pinctrl-1 = <&sd0_clk_uhs &sd0_cmd_uhs &sd0_cd &sd0_wp
+		     &sd0_data0_uhs &sd0_data1_uhs &sd0_data2_uhs &sd0_data3_uhs>;
+	pinctrl-names = "default", "uhs";
+	disk {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
+
+	vmmc-supply = <&vcc_sd0>;
+	vqmmc-supply = <&vccq_sd0>;
+
+	bus-width = <4>;
+	mmc-sdr104-support;
+	status = "okay";
 };
 
 &scif2 {
