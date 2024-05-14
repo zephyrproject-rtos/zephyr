@@ -67,12 +67,12 @@ int sspi_shakti_init(const struct device *dev)
   int spi_base;
   char *spi_inst; 
   spi_inst = dev->name;
-
+  struct spi_shakti_cfg *confg = (struct spi_shakti_cfg *)dev->config;
   printk("SPI: %s\n", spi_inst);
   spi_number = spi_inst[6] - '0';
 
   printk("SPI NUMBER: %d\n", spi_number);
-
+  k_mutex_init(&(confg->mutex));
   if (spi_number < SSPI_MAX_COUNT & spi_number >= 0){
     sspi_instance[spi_number] = (sspi_struct*) ( (SSPI0_BASE_ADDRESS + ( spi_number * SSPI_BASE_OFFSET) ) );
     spi_base = sspi_instance[spi_number];
@@ -115,7 +115,7 @@ int sspi_shakti_configure(const struct device *dev, const struct spi_config *con
     printk("pol 1 pha 1 \n");
     pol = 1;
     pha = 1;
-  } else if((config -> operation & i_POLANDPHA) == i_POLANDPHA){
+  } else if((config -> operation & INV_POLANDPHA) == INV_POLANDPHA){
     printk("pol 0 and pha 0 \n");
     pol = 0;
     pha = 0;
@@ -870,7 +870,6 @@ static int spi_shakti_transceive(const struct device *dev,
 {
   // spi_context_lock(&SPI_DATA(dev)->ctx, false, NULL, NULL, config);
   sspi_shakti_configure(dev, config);
-
   #ifdef SPI_DEBUG
     printk("pol %d\n", pol);
     printk("pha %d\n", pha);
@@ -885,7 +884,7 @@ static int spi_shakti_transceive(const struct device *dev,
 
   sspi_shakti_init(dev);
   sclk_shakti_config(dev, pol, pha, prescale, setup_time, hold_time);
-
+  k_mutex_lock(&(((struct spi_shakti_cfg*)(dev->config))->mutex),K_FOREVER);
   if (comm_mode == FULL_DUPLEX)
   {
     sspi_shakti_comm_control_config(dev, master_mode, lsb_first, comm_mode, spi_size);
@@ -933,6 +932,7 @@ static int spi_shakti_transceive(const struct device *dev,
       sspi32_shakti_receive_data(dev, rx_bufs->buffers);  
     }
   }
+  k_mutex_unlock(&(((struct spi_shakti_cfg*)(dev->config))->mutex));
 }
 
 static int spi_shakti_release(const struct device *dev,
