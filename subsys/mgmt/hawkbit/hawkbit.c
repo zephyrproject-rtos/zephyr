@@ -121,6 +121,7 @@ static struct hawkbit_context {
 	int sock;
 	int32_t action_id;
 	uint8_t *response_data;
+	size_t response_data_size;
 	int32_t json_action_id;
 	struct hawkbit_download dl;
 	struct http_request http_req;
@@ -859,7 +860,6 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 	static size_t body_len;
 	int ret, type, downloaded;
 	uint8_t *body_data = NULL, *rsp_tmp = NULL;
-	static size_t response_buffer_size = RESPONSE_BUFFER_SIZE;
 
 	type = enum_for_http_req_string(userdata);
 
@@ -883,9 +883,12 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 			body_data = rsp->body_frag_start;
 			body_len = rsp->body_frag_len;
 
-			if ((hb_context.dl.downloaded_size + body_len) > response_buffer_size) {
-				response_buffer_size <<= 1;
-				rsp_tmp = realloc(hb_context.response_data, response_buffer_size);
+			if ((hb_context.dl.downloaded_size + body_len) >
+			    hb_context.response_data_size) {
+				hb_context.response_data_size =
+					hb_context.dl.downloaded_size + body_len;
+				rsp_tmp = k_realloc(hb_context.response_data,
+						    hb_context.response_data_size);
 				if (rsp_tmp == NULL) {
 					LOG_ERR("Failed to realloc memory");
 					hb_context.code_status = HAWKBIT_METADATA_ERROR;
@@ -934,9 +937,12 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 			body_data = rsp->body_frag_start;
 			body_len = rsp->body_frag_len;
 
-			if ((hb_context.dl.downloaded_size + body_len) > response_buffer_size) {
-				response_buffer_size <<= 1;
-				rsp_tmp = realloc(hb_context.response_data, response_buffer_size);
+			if ((hb_context.dl.downloaded_size + body_len) >
+			    hb_context.response_data_size) {
+				hb_context.response_data_size =
+					hb_context.dl.downloaded_size + body_len;
+				rsp_tmp = k_realloc(hb_context.response_data,
+						    hb_context.response_data_size);
 				if (rsp_tmp == NULL) {
 					LOG_ERR("Failed to realloc memory");
 					hb_context.code_status = HAWKBIT_METADATA_ERROR;
@@ -1251,7 +1257,14 @@ enum hawkbit_response hawkbit_probe(void)
 	}
 
 	memset(&hb_context, 0, sizeof(hb_context));
-	hb_context.response_data = malloc(RESPONSE_BUFFER_SIZE);
+
+	hb_context.response_data_size = RESPONSE_BUFFER_SIZE;
+	hb_context.response_data = k_calloc(hb_context.response_data_size, sizeof(uint8_t));
+	if (hb_context.response_data == NULL) {
+		LOG_ERR("Failed to allocate memory");
+		hb_context.code_status = HAWKBIT_METADATA_ERROR;
+		goto error;
+	}
 
 	if (!boot_is_img_confirmed()) {
 		LOG_ERR("Current image is not confirmed");
@@ -1359,7 +1372,7 @@ enum hawkbit_response hawkbit_probe(void)
 	snprintk(hb_context.url_buffer, sizeof(hb_context.url_buffer), "%s/%s-%s/%s",
 		 HAWKBIT_JSON_URL, CONFIG_BOARD, device_id, deployment_base);
 	memset(&hawkbit_results.dep, 0, sizeof(hawkbit_results.dep));
-	memset(hb_context.response_data, 0, RESPONSE_BUFFER_SIZE);
+	memset(hb_context.response_data, 0, hb_context.response_data_size);
 
 	if (!send_request(HTTP_GET, HAWKBIT_PROBE_DEPLOYMENT_BASE, HAWKBIT_STATUS_FINISHED_NONE,
 			  HAWKBIT_STATUS_EXEC_NONE)) {
@@ -1453,7 +1466,7 @@ cleanup:
 	cleanup_connection();
 
 error:
-	free(hb_context.response_data);
+	k_free(hb_context.response_data);
 	k_sem_give(&probe_sem);
 	return hb_context.code_status;
 }
