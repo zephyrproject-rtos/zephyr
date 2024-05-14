@@ -3778,7 +3778,7 @@ static void start_sine_stream_cb(struct shell_stream *sh_stream, void *user_data
 		if (err != 0) {
 			shell_error(sh, "Failed to init LC3 %d for stream %p", err, bap_stream);
 
-			return -ENOEXEC;
+			return;
 		}
 
 		sh_stream->tx.active = true;
@@ -3791,7 +3791,6 @@ static void start_sine_stream_cb(struct shell_stream *sh_stream, void *user_data
 static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 {
 	bool start_all = false;
-	int err;
 
 	if (argc > 1) {
 		if (strcmp(argv[1], "all") == 0) {
@@ -3804,11 +3803,11 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (start_all) {
-		bap_foreach_stream(start_sine_stream_cb, sh);
+		bap_foreach_stream(start_sine_stream_cb, (void *)sh);
 	} else {
 		struct shell_stream *sh_stream = shell_stream_from_bap_stream(default_stream);
 
-		start_sine_stream_cb(sh_stream, sh);
+		start_sine_stream_cb(sh_stream, (void *)sh);
 	}
 
 	return 0;
@@ -3817,8 +3816,7 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 static void stop_sine_stream_cb(struct shell_stream *sh_stream, void *user_data)
 {
 	if (sh_stream->is_tx) {
-		struct bt_bap_stream *bap_stream =
-			bap_stream_from_shell_stream(&unicast_streams[i]);
+		struct bt_bap_stream *bap_stream = bap_stream_from_shell_stream(sh_stream);
 		const struct shell *sh = user_data;
 
 		shell_print(sh, "Stopped transmitting on stream %p", bap_stream);
@@ -3842,11 +3840,11 @@ static int cmd_stop_sine(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (stop_all) {
-		bap_foreach_stream(stop_sine_stream_cb, sh);
+		bap_foreach_stream(stop_sine_stream_cb, (void *)sh);
 	} else {
 		struct shell_stream *sh_stream = shell_stream_from_bap_stream(default_stream);
 
-		stop_sine_stream_cb(sh_stream, sh)
+		stop_sine_stream_cb(sh_stream, (void *)sh);
 	}
 
 	return 0;
