@@ -40,6 +40,8 @@ Removed APIs in this release
  * The Bluetooth subsystem specific debug symbols are removed. They have been replaced with the
    Zephyr logging ones.
 
+ * Removed deprecated ``pcie_probe`` and ``pcie_bdf_lookup`` functions from the PCIe APIs.
+
 Deprecated in this release
 ==========================
 
