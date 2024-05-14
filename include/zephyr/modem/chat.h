@@ -10,6 +10,7 @@
 #include <zephyr/sys/ring_buffer.h>
 
 #include <zephyr/modem/pipe.h>
+#include <zephyr/modem/stats.h>
 
 #ifndef ZEPHYR_MODEM_CHAT_
 #define ZEPHYR_MODEM_CHAT_
@@ -269,6 +270,12 @@ struct modem_chat {
 
 	/* Process received data */
 	struct k_work receive_work;
+
+	/* Statistics */
+#if CONFIG_MODEM_STATS
+	struct modem_stats_buffer receive_buf_stats;
+	struct modem_stats_buffer work_buf_stats;
+#endif
 };
 
 /**
