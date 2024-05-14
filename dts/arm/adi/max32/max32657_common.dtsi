@@ -6,6 +6,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <mem.h>
+#include <zephyr/dt-bindings/dma/max32657_dma.h>
 #include <freq.h>
 
 / {

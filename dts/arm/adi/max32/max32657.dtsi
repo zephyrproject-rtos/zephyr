@@ -36,6 +36,16 @@
 					erase-block-size = <8192>;
 				};
 			};
+
+			dma1: dma@35000 {
+				compatible = "adi,max32-dma";
+				reg = <0x35000 0x1000>;
+				clocks = <&gcr ADI_MAX32_CLOCK_BUS1 21>;
+				interrupts = <20 0>, <21 0>, <22 0>, <23 0>;
+				dma-channels = <4>;
+				status = "disabled";
+				#dma-cells = <2>;
+			};
 		};
 	};
 };
