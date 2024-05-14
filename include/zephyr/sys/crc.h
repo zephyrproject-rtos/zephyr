@@ -30,6 +30,14 @@ extern "C" {
  */
 #define CRC8_CCITT_INITIAL_VALUE 0xFF
 
+/* Initial value expected to be used at the beginning of the OpenPGP CRC-24 computation. */
+#define CRC24_PGP_INITIAL_VALUE 0x00B704CEU
+/*
+ * The CRC-24 value is stored on a 32-bit value, only the 3 least significant bytes
+ * are meaningful. Use the following mask to only keep the CRC-24 value.
+ */
+#define CRC24_FINAL_VALUE_MASK 0x00FFFFFFU
+
 /**
  * @defgroup checksum Checksum
  * @ingroup os_services
@@ -56,6 +64,7 @@ enum crc_type {
 	CRC16_ANSI,  /**< Use @ref crc16_ansi */
 	CRC16_CCITT, /**< Use @ref crc16_ccitt */
 	CRC16_ITU_T, /**< Use @ref crc16_itu_t */
+	CRC24_PGP,   /**< Use @ref crc24_pgp */
 	CRC32_C,     /**< Use @ref crc32_c */
 	CRC32_IEEE,  /**< Use @ref crc32_ieee */
 };
@@ -316,15 +325,38 @@ uint8_t crc4(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial
 	  bool reversed);
 
 /**
+ * @brief Generate an OpenPGP CRC-24 checksum as defined in RFC 4880 section 6.1.
+ *
+ * @param data A pointer to the data on which the CRC will be calculated.
+ * @param len Data length in bytes.
+ *
+ * @return The CRC-24 value.
+ */
+uint32_t crc24_pgp(const uint8_t *data, size_t len);
+
+/**
+ * @brief Update an OpenPGP CRC-24 checksum.
+ *
+ * @param crc The CRC-24 checksum that needs to be updated. The full 32-bit value of the CRC needs
+ *            to be used between calls, do not mask the value to keep only the last 24 bits.
+ * @param data A pointer to the data on which the CRC will be calculated.
+ * @param len  Data length in bytes.
+ *
+ * @return The CRC-24 value. When the last buffer of data has been processed, mask the value
+ *         with CRC24_FINAL_VALUE_MASK to keep only the meaningful 24 bits of the CRC result.
+ */
+uint32_t crc24_pgp_update(uint32_t crc, const uint8_t *data, size_t len);
+
+/**
  * @brief Compute a CRC checksum, in a generic way.
  *
  * This is a dispatch function that calls the individual CRC routine
  * determined by @p type.
  *
- * For 7, 8, and 16-bit CRCs, the relevant @p seed and @p poly values should
+ * For 7, 8, 16 and 24-bit CRCs, the relevant @p seed and @p poly values should
  * be passed in via the least-significant byte(s).
  *
- * Similarly, for 7, 8, and 16-bit CRCs, the relevant result is stored in the
+ * Similarly, for 7, 8, 16 and 24-bit CRCs, the relevant result is stored in the
  * least-significant byte(s) of the returned value.
  *
  * @param type CRC algorithm to use.
@@ -364,6 +396,13 @@ static inline uint32_t crc_by_type(enum crc_type type, const uint8_t *src, size_
 		return crc16_ccitt(seed, src, len);
 	case CRC16_ITU_T:
 		return crc16_itu_t(seed, src, len);
+	case CRC24_PGP: {
+		uint32_t crc = crc24_pgp_update(seed, src, len);
+
+		if (last)
+			crc &= CRC24_FINAL_VALUE_MASK;
+		return crc;
+	}
 	case CRC32_C:
 		return crc32_c(seed, src, len, first, last);
 	case CRC32_IEEE:
