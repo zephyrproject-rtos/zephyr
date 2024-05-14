@@ -61,7 +61,11 @@ Supported Features
 +-----------+------------+-----------------------------------+
 | MRT       | on-chip    | counter                           |
 +-----------+------------+-----------------------------------+
-
+| OS_TIMER  | on-chip    | os timer                          |
++-----------+------------+-----------------------------------+
+| PM        | on-chip    | power management; uses SoC Power  |
+|           |            | Modes 1 and 2                     |
++-----------+------------+-----------------------------------+
 
 The default configuration can be found in the defconfig file:
 
