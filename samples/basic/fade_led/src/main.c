@@ -40,6 +40,7 @@ int main(void)
 			printk("Error %d: failed to set pulse width\n", ret);
 			return 0;
 		}
+		printk("Using pulse width %d%%\n", 100 * pulse_width / pwm_led0.period);
 
 		if (dir) {
 			pulse_width += step;
