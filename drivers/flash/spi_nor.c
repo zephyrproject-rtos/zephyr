@@ -515,13 +515,14 @@ static int enter_dpd(const struct device *const dev)
 static int exit_dpd(const struct device *const dev)
 {
 	int ret = 0;
+#if ANY_INST_HAS_DPD
 	const struct spi_nor_config *cfg = dev->config;
 
 	if (cfg->dpd_exist) {
 		delay_until_exit_dpd_ok(dev);
 
-#if ANY_INST_HAS_DPD_WAKEUP_SEQUENCE
 		if (cfg->dpd_wakeup_sequence_exist) {
+#if ANY_INST_HAS_DPD_WAKEUP_SEQUENCE
 			/* Assert CSn and wait for tCRDP.
 			 *
 			 * Unfortunately the SPI API doesn't allow us to
@@ -534,6 +535,7 @@ static int exit_dpd(const struct device *const dev)
 
 			/* Deassert CSn and wait for tRDP */
 			k_sleep(K_MSEC(cfg->t_rdp_ms));
+#endif /* ANY_INST_HAS_DPD_WAKEUP_SEQUENCE */
 		} else {
 			ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_RDPD);
 
@@ -545,8 +547,8 @@ static int exit_dpd(const struct device *const dev)
 			}
 #endif /* T_EXIT_DPD */
 		}
-#endif /* DPD_WAKEUP_SEQUENCE */
 	}
+#endif /* ANY_INST_HAS_DPD */
 	return ret;
 }
 
