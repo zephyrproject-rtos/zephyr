@@ -353,14 +353,24 @@ tests:
   bluetooth.audio_shell.no_lc3:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
-    platform_allow: native_posix
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340_audio_dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340_audio_dk/nrf5340/cpuapp
     extra_configs:
       - CONFIG_FPU=n
       - CONFIG_LIBLC3=n
   bluetooth.audio_shell.no_usb:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
-    platform_allow: native_posix
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340_audio_dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340_audio_dk/nrf5340/cpuapp
     extra_configs:
       - CONFIG_RING_BUFFER=n
       - CONFIG_USB_DEVICE_STACK=n
