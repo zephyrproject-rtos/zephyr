@@ -10,6 +10,7 @@ tests:
       - nucleo_l476rg
       - twr_ke18f
       - mimxrt595_evk/mimxrt595s/cm33
+      - rd_rw612_bga
     tags: pm
     integration_platforms:
       - mec15xxevb_assy6853
