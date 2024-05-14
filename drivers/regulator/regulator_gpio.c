@@ -167,8 +167,6 @@ static int regulator_gpio_init(const struct device *dev)
 	regulator_common_data_init(dev);
 
 	for (unsigned int gpio_idx = 0; gpio_idx < cfg->num_gpios; gpio_idx++) {
-		int ret;
-
 		if (!gpio_is_ready_dt(&cfg->gpios[gpio_idx])) {
 			LOG_ERR("%s: gpio pin: %s not ready", dev->name,
 				cfg->gpios[gpio_idx].port ? cfg->gpios[gpio_idx].port->name
