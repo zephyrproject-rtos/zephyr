@@ -55,6 +55,18 @@ extern "C" {
  * device
  */
 #define DISK_IOCTL_CTRL_INIT			6
+/** Deinitialize the disk. This IOCTL can be used to de-initialize the disk,
+ * enabling it to be removed from the system if the disk is hot-pluggable.
+ * Disk usage is reference counted, so for a given disk the
+ * `DISK_IOCTL_CTRL_DEINIT` IOCTL must be issued as many times as the
+ * `DISK_IOCTL_CTRL_INIT` IOCTL was issued in order to de-initialize it.
+ *
+ * This macro optionally accepts a pointer to a boolean as the `buf` parameter,
+ * which if true indicates the disk should be forcibly stopped, ignoring all
+ * reference counts. The disk driver must report success if a forced stop is
+ * requested, but this operation is inherently unsafe.
+ */
+#define DISK_IOCTL_CTRL_DEINIT			7
 
 /**
  * @brief Possible return bitmasks for disk_status()

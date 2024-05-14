@@ -44,7 +44,8 @@ extern "C" {
  * @ref disk_access_ioctl with the IOCTL @ref DISK_IOCTL_CTRL_INIT.
  *
  * Disk initialization is reference counted, so only the first successful call
- * to initialize a uninitialized disk will actually initialize the disk
+ * to initialize a uninitialized (or previously de-initialized) disk will
+ * actually initialize the disk
  *
  * @param[in] pdrv          Disk name
  *
