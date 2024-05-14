@@ -84,6 +84,13 @@ static int i2c_sbcon_configure(const struct device *dev, uint32_t dev_config)
 	return i2c_bitbang_configure(&context->bitbang, dev_config);
 }
 
+static int i2c_sbcon_get_config(const struct device *dev, uint32_t *config)
+{
+	struct i2c_sbcon_context *context = dev->data;
+
+	return i2c_bitbang_get_config(&context->bitbang, config);
+}
+
 static int i2c_sbcon_transfer(const struct device *dev, struct i2c_msg *msgs,
 				uint8_t num_msgs, uint16_t slave_address)
 {
@@ -93,9 +100,18 @@ static int i2c_sbcon_transfer(const struct device *dev, struct i2c_msg *msgs,
 							slave_address);
 }
 
+static int i2c_sbcon_recover_bus(const struct device *dev)
+{
+	struct i2c_sbcon_context *context = dev->data;
+
+	return i2c_bitbang_recover_bus(&context->bitbang);
+}
+
 static const struct i2c_driver_api api = {
 	.configure = i2c_sbcon_configure,
+	.get_config = i2c_sbcon_get_config,
 	.transfer = i2c_sbcon_transfer,
+	.recover_bus = i2c_sbcon_recover_bus,
 };
 
 static int i2c_sbcon_init(const struct device *dev)
