@@ -7,7 +7,7 @@
 * terms, then you may not retain, install, activate or otherwise use the software.
 */
 
-#include <zephyr/lvgl.h>
+#include<lvgl.h>
 #include <stdio.h>
 #include "gui_guider.h"
 #if LV_USE_FREEMASTER

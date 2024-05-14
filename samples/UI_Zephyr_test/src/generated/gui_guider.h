@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#include <zephyr/lvgl.h>
+#include<lvgl.h>
 
 typedef struct
 {

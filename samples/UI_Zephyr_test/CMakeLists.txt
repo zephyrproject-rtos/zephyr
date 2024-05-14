@@ -6,6 +6,6 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(UI_Zephyr_test)
 
 FILE(GLOB_RECURSE app_sources src/main.c src/generated/*.c src/custom/*.c)
-target_include_directories(app PRIVATE src/generated src/custom src/generated/guider_customer_fonts src/generated/guider_fonts src/generated/images src/core src/hal src/extra src/font src/misc src/widgets src/draw)
+target_include_directories(app PRIVATE src/generated src/custom src/generated/guider_customer_fonts src/generated/guider_fonts src/generated/images)
 target_sources(app PRIVATE ${app_sources})
 target_compile_definitions(app PRIVATE LV_LVGL_H_INCLUDE_SIMPLE)

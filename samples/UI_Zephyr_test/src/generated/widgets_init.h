@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#include <zephyr/lvgl.h>
+#include<lvgl.h>
 #include "gui_guider.h"
 
 __attribute__((unused)) void kb_event_cb(lv_event_t *e);

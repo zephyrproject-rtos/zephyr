@@ -12,7 +12,7 @@
  *      INCLUDES
  *********************/
 #include <stdio.h>
-#include <zephyr/lvgl.h>
+#include<lvgl.h>
 #include "custom.h"
 
 /*********************

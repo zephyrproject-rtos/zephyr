@@ -13,9 +13,9 @@
  ******************************************************************************/
 
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE
-#include <zephyr/lvgl.h>
+#include<lvgl.h>
 #else
-#include <zephyr/lvgl.h>
+#include<lvgl.h>
 #endif
 
 #ifndef LV_FONT_MONTSERRATMEDIUM_15

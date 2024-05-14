@@ -9,7 +9,7 @@
 
 #include "events_init.h"
 #include <stdio.h>
-#include <zephyr/lvgl.h>
+#include<lvgl.h>
 
 #if LV_USE_FREEMASTER
 #include "freemaster_client.h"
