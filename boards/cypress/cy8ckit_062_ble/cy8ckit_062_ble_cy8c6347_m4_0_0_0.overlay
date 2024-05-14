@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "cy8ckit_062_ble_cy8c6347-pinctrl.dtsi"
+
 / {
 	aliases {
 		uart-6 = &uart6;
@@ -19,5 +21,6 @@
 	status = "okay";
 	current-speed = <115200>;
 
-	pinctrl-0 = <&p13_0_uart6_rx &p13_1_uart6_tx>;
+	pinctrl-0 = <&p13_0_scb6_uart_rx &p13_1_scb6_uart_tx>;
+	pinctrl-names = "default";
 };
