@@ -19,6 +19,7 @@
 #include "scan.h"
 
 #include "common/bt_str.h"
+#include "zephyr/sys/__assert.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -1362,6 +1363,13 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 {
 	struct bt_le_ext_adv *adv = adv_get_legacy();
 	int err;
+
+	if (!(param->options & BT_LE_ADV_OPT_ONE_TIME) &&
+	    (param->options & BT_LE_ADV_OPT_CONNECTABLE) && !param->peer) {
+		LOG_WRN("Advertiser auto-resume is deprecated");
+		/* DNM find presence of warning in CI */
+		__ASSERT_NO_MSG(false);
+	}
 
 	if (!adv) {
 		return -ENOMEM;
