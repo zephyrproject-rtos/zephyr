@@ -20,6 +20,16 @@
 			pinctrl: pin-controller@8000 {
 				ranges = <0x8000 0x40008000 0x1000>;
 			};
+
+			dma0: dma@28000 {
+				compatible = "adi,max32-dma";
+				reg = <0x28000 0x1000>;
+				clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
+				interrupts = <16 0>, <17 0>, <18 0>, <19 0>;
+				dma-channels = <4>;
+				status = "disabled";
+				#dma-cells = <2>;
+			};
 		};
 
 		flc0: flash_controller@50029000 {
