@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -143,6 +143,7 @@ static int sdhc_spi_init_card(const struct device *dev)
 	spi_cfg->operation |= SPI_CS_ACTIVE_HIGH;
 	ret = sdhc_spi_rx(config->spi_dev, spi_cfg, data->scratch, 10);
 	if (ret != 0) {
+		spi_release(config->spi_dev, spi_cfg);
 		spi_cfg->operation &= ~SPI_CS_ACTIVE_HIGH;
 		return ret;
 	}
@@ -638,6 +639,8 @@ static int sdhc_spi_request(const struct device *dev,
 		} while ((ret != 0) && (retries-- > 0));
 	}
 	if (ret) {
+		/* Release SPI bus */
+		spi_release(config->spi_dev, dev_data->spi_cfg);
 		return ret;
 	}
 	/* Release SPI bus */
