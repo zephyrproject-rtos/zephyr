@@ -8,6 +8,7 @@
 LOG_MODULE_REGISTER(net_sock_svc, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <zephyr/net/socket_service.h>
 #include <zephyr/posix/sys/eventfd.h>
 

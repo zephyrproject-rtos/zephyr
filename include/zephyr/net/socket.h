@@ -22,29 +22,21 @@
  * @{
  */
 
+#include <zephyr/kernel.h>
 #include <sys/types.h>
 #include <zephyr/types.h>
+#include <zephyr/device.h>
 #include <zephyr/net/net_ip.h>
-#include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/socket_select.h>
+#include <zephyr/net/socket_poll.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/fdtable.h>
+#include <zephyr/net/dns_resolve.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief Definition of the monitored socket/file descriptor.
- *
- * An array of these descriptors is passed as an argument to poll().
- */
-struct zsock_pollfd {
-	int fd;        /**< Socket descriptor */
-	short events;  /**< Requested events */
-	short revents; /**< Returned events */
-};
 
 /**
  * @name Options for poll()
