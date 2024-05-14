@@ -114,6 +114,13 @@ static int i2c_litex_configure(const struct device *dev, uint32_t dev_config)
 	return i2c_bitbang_configure(bitbang, dev_config);
 }
 
+static int i2c_litex_get_config(const struct device *dev, uint32_t *config)
+{
+	struct i2c_bitbang *bitbang = GET_I2C_BITBANG(dev);
+
+	return i2c_bitbang_get_config(bitbang, config);
+}
+
 static int i2c_litex_transfer(const struct device *dev,  struct i2c_msg *msgs,
 			      uint8_t num_msgs, uint16_t addr)
 {
@@ -122,9 +129,18 @@ static int i2c_litex_transfer(const struct device *dev,  struct i2c_msg *msgs,
 	return i2c_bitbang_transfer(bitbang, msgs, num_msgs, addr);
 }
 
+static int i2c_litex_recover_bus(const struct device *dev)
+{
+	struct i2c_bitbang *bitbang = GET_I2C_BITBANG(dev);
+
+	return i2c_bitbang_recover_bus(bitbang);
+}
+
 static const struct i2c_driver_api i2c_litex_driver_api = {
 	.configure = i2c_litex_configure,
+	.get_config = i2c_litex_get_config,
 	.transfer = i2c_litex_transfer,
+	.recover_bus = i2c_litex_recover_bus,
 };
 
 /* Device Instantiation */
