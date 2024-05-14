@@ -535,7 +535,6 @@ static int card_read(struct sd_card *card, uint8_t *rbuf, uint32_t start_block, 
 	ret = sdmmc_wait_ready(card);
 	if (ret) {
 		LOG_ERR("Card did not return to ready state");
-		k_mutex_unlock(&card->lock);
 		return -ETIMEDOUT;
 	}
 	return 0;
