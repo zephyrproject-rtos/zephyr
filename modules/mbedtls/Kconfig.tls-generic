@@ -462,6 +462,7 @@ config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 
 choice MBEDTLS_PSA_CRYPTO_RND_SOURCE
 	prompt "Select random source for built-in PSA crypto"
+	depends on MBEDTLS_PSA_CRYPTO_C
 	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 
 config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
@@ -483,7 +484,6 @@ endchoice
 
 config MBEDTLS_PSA_CRYPTO_C
 	bool "Platform Security Architecture cryptography API"
-	depends on MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG || MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 	default y if UOSCORE || UEDHOC
 
 config MBEDTLS_USE_PSA_CRYPTO
