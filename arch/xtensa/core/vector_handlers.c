@@ -364,7 +364,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 *    thread.
 		 */
 		__asm__ volatile("rsil %0, %1"
-				: "=r" (ignore) : "i"(XCHAL_NMILEVEL));
+				: "=r" (ignore) : "i"(XCHAL_EXCM_LEVEL));
 
 		_current_cpu->nested = 1;
 	}
