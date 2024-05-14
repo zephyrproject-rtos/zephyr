@@ -43,13 +43,28 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #endif
 
 #define TEST_NET_IF net_if_lookup_by_dev(DEVICE_GET(eth_ipv6_net))
+#define TEST_MSG_SIZE 128
 
 static struct in6_addr my_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 static struct in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 static struct in6_addr multicast_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+					      0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct in6_addr all_nodes_mcast = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+					       0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+
+/* Below should match prefix/addr distributed in RA message. */
+static struct in6_addr test_router_addr = { { {
+	0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0x2, 0x60,
+	0x97, 0xff, 0xfe, 0x07, 0x69, 0xea
+} } };
+static struct in6_addr test_ra_prefix = { { { 0x3f, 0xfe, 0x05, 0x07, 0, 0, 0, 1,
+					      0, 0, 0, 0, 0, 0, 0, 0 } } };
+static struct in6_addr test_ra_autoconf_addr = { { {
+	0x3f, 0xfe, 0x05, 0x07, 0x00, 0x00, 0x00, 0x01,
+	0x02, 0x00, 0x5e, 0xff, 0xfe, 0x00, 0x53, 0x00
+} } };
 
 /* ICMPv6 NS frame (74 bytes) */
 static const unsigned char icmpv6_ns_invalid[] = {
@@ -141,12 +156,22 @@ static const unsigned char ipv6_hbho[] = {
 	0x00, 0x00, 0x01, 0x00, 0x00, 0x00,             /* ...... */
 };
 
+static int send_msg(struct in6_addr *src, struct in6_addr *dst);
+
+typedef void (*ns_callback)(struct net_pkt *pkt, void *user_data);
+
+struct test_ns_handler {
+	ns_callback fn;
+	void *user_data;
+};
+
 static bool expecting_ra;
 static uint32_t dad_time[3];
 static bool test_failed;
 static struct k_sem wait_data;
 static bool recv_cb_called;
 struct net_if_addr *ifaddr_record;
+static struct test_ns_handler *ns_handler;
 
 #define WAIT_TIME 250
 #define WAIT_TIME_LONG MSEC_PER_SEC
@@ -221,6 +246,55 @@ static void prepare_ra_message(struct net_pkt *pkt)
 	net_pkt_cursor_init(pkt);
 }
 
+static void inject_na_message(struct net_if *iface, struct in6_addr *src,
+			      struct in6_addr *dst, struct in6_addr *target,
+			      uint8_t flags)
+{
+	struct net_eth_hdr hdr;
+	struct net_pkt *pkt;
+	uint8_t na_flags[] = { flags, 0, 0, 0 };
+	uint8_t na_tlla_opt[] = { 0x02, 0x01, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa };
+
+	pkt = net_pkt_alloc_with_buffer(iface, TEST_MSG_SIZE, AF_INET6,
+					IPPROTO_ICMPV6, K_NO_WAIT);
+	zassert_not_null(pkt, "Failed to allocate packet");
+
+	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_ND_HOP_LIMIT);
+
+	hdr.type = htons(NET_ETH_PTYPE_IPV6);
+	memset(&hdr.src, 0xaa, sizeof(struct net_eth_addr));
+	memcpy(&hdr.dst, net_pkt_iface(pkt)->if_dev->link_addr.addr,
+	       sizeof(struct net_eth_addr));
+
+	/* Reserve space for the L2 header. */
+	net_buf_reserve(pkt->frags, sizeof(struct net_eth_hdr));
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, false);
+
+	zassert_ok(net_ipv6_create(pkt, src, dst));
+	zassert_ok(net_icmpv6_create(pkt, NET_ICMPV6_NA, 0));
+	zassert_ok(net_pkt_write(pkt, na_flags, sizeof(na_flags)));
+	zassert_ok(net_pkt_write(pkt, target, sizeof(struct in6_addr)));
+	zassert_ok(net_pkt_write(pkt, na_tlla_opt, sizeof(na_tlla_opt)));
+
+	net_pkt_cursor_init(pkt);
+	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
+
+	/* Fill L2 header. */
+	net_buf_push_mem(pkt->frags, &hdr, sizeof(struct net_eth_hdr));
+
+	net_pkt_cursor_init(pkt);
+	zassert_ok((net_recv_data(iface, pkt)), "Data receive for NA failed.");
+}
+
+static void skip_headers(struct net_pkt *pkt)
+{
+	net_pkt_cursor_init(pkt);
+	net_pkt_skip(pkt, sizeof(struct net_eth_hdr));
+	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt));
+	net_pkt_skip(pkt, sizeof(struct net_icmp_hdr));
+}
+
 static struct net_icmp_hdr *get_icmp_hdr(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access, struct net_icmp_hdr);
@@ -272,6 +346,10 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	if (icmp->type == NET_ICMPV6_NS) {
+		if (ns_handler != NULL) {
+			ns_handler->fn(pkt, ns_handler->user_data);
+		}
+
 		if (dad_time[0] == 0U) {
 			dad_time[0] = k_uptime_get_32();
 		} else if (dad_time[1] == 0U) {
@@ -314,6 +392,30 @@ NET_DEVICE_INIT(eth_ipv6_net, "eth_ipv6_net",
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_test_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE,
 		NET_ETH_MTU);
+
+static void test_iface_down_up(void)
+{
+	zassert_ok(net_if_down(TEST_NET_IF), "Failed to bring iface down");
+	k_msleep(10);
+	zassert_ok(net_if_up(TEST_NET_IF), "Failed to bring iface up");
+}
+
+static void test_iface_down_up_delayed_carrier(void)
+{
+	zassert_ok(net_if_down(TEST_NET_IF), "Failed to bring iface down");
+	k_msleep(10);
+	net_if_carrier_off(TEST_NET_IF);
+	zassert_ok(net_if_up(TEST_NET_IF), "Failed to bring iface up");
+	k_msleep(10);
+	net_if_carrier_on(TEST_NET_IF);
+}
+
+static void test_iface_carrier_off_on(void)
+{
+	net_if_carrier_off(TEST_NET_IF);
+	k_msleep(10);
+	net_if_carrier_on(TEST_NET_IF);
+}
 
 /* dummy interface for multi-interface tests */
 static int dummy_send(const struct device *dev, struct net_pkt *pkt)
@@ -520,9 +622,20 @@ static void *ipv6_setup(void)
 	nbr_lookup_ok();
 	k_sleep(K_MSEC(50));
 
+	/* Last, randomized MAC byte needs to be copied to the expected autoconf
+	 * address.
+	 */
+	test_ra_autoconf_addr.s6_addr[15] = net_if_get_link_addr(iface)->addr[5];
+
 	return NULL;
 }
 
+static void ipv6_before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	ns_handler = NULL;
+}
 
 static void ipv6_teardown(void *dummy)
 {
@@ -629,6 +742,73 @@ ZTEST(net_ipv6, test_send_ns_no_options)
 		      "Data receive for invalid NS failed.");
 }
 
+struct test_nd_context {
+	struct k_sem wait_ns;
+	struct in6_addr *exp_ns_addr;
+	bool reply;
+};
+
+static void expect_nd_ns(struct net_pkt *pkt, void *user_data)
+{
+	uint32_t res_bytes;
+	struct in6_addr target;
+	struct test_nd_context *ctx = user_data;
+
+	skip_headers(pkt);
+
+	zassert_ok(net_pkt_read_be32(pkt, &res_bytes), "Failed to read reserved bytes");
+	zassert_equal(0, res_bytes, "Reserved bytes must be zeroed");
+	zassert_ok(net_pkt_read(pkt, &target, sizeof(struct in6_addr)),
+		   "Failed to read target address");
+
+	if (net_ipv6_addr_cmp(ctx->exp_ns_addr, &target)) {
+		if (ctx->reply) {
+			inject_na_message(net_pkt_iface(pkt), &target, &my_addr,
+					  &target, NET_ICMPV6_NA_FLAG_SOLICITED);
+		}
+
+		k_sem_give(&ctx->wait_ns);
+	}
+}
+
+ZTEST(net_ipv6, test_send_neighbor_discovery)
+{
+	struct test_nd_context ctx = {
+		.exp_ns_addr = &test_router_addr,
+		.reply = true
+	};
+	struct test_ns_handler handler = {
+		.fn = expect_nd_ns,
+		.user_data = &ctx
+	};
+	enum net_verdict verdict;
+	struct net_nbr *nbr;
+
+	k_sem_init(&ctx.wait_ns, 0, 1);
+	ns_handler = &handler;
+
+	(void)net_ipv6_nbr_rm(TEST_NET_IF, &test_router_addr);
+
+	verdict = send_msg(&my_addr, &test_router_addr);
+	zassert_equal(verdict, NET_OK, "Packet was dropped (%d)", verdict);
+	zassert_ok(k_sem_take(&ctx.wait_ns, K_MSEC(WAIT_TIME)),
+		   "Timeout while waiting for expected NS");
+
+	k_sleep(K_MSEC(10));
+
+	/* Neighbor should be here now. */
+	nbr = net_ipv6_nbr_lookup(TEST_NET_IF, &test_router_addr);
+	zassert_not_null(nbr, "Neighbor not found.");
+	zassert_equal(net_ipv6_nbr_data(nbr)->state, NET_IPV6_NBR_STATE_REACHABLE,
+		      "Neighbor should be reachable at this point.");
+
+	/* Second attempt (neighbor valid) should give no NS. */
+	verdict = send_msg(&my_addr, &test_router_addr);
+	zassert_equal(verdict, NET_OK, "Packet was dropped (%d)", verdict);
+	zassert_equal(k_sem_take(&ctx.wait_ns, K_MSEC(10)), -EAGAIN,
+		      "Should not get NS");
+}
+
 /**
  * @brief IPv6 prefix timeout
  */
@@ -701,10 +881,6 @@ static void rs_message(void)
 
 static void ra_message(void)
 {
-	struct in6_addr addr = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0x2, 0x60,
-				     0x97, 0xff, 0xfe, 0x07, 0x69, 0xea } } };
-	struct in6_addr prefix = { { { 0x3f, 0xfe, 0x05, 0x07, 0, 0, 0, 1,
-				       0, 0, 0, 0, 0, 0, 0, 0 } } };
 	struct in6_addr route_prefix = { { { 0x20, 0x01, 0x0d, 0xb0, 0x0f, 0xff } } };
 	struct sockaddr_in6 dns_addr = {
 		.sin6_family = AF_INET6,
@@ -715,6 +891,7 @@ static void ra_message(void)
 	struct net_route_entry *route;
 	struct dns_resolve_context *ctx;
 	struct sockaddr_in6 *dns_server;
+	struct net_if_addr *ifaddr;
 
 	/* We received RA message earlier, make sure that the information
 	 * in that message is placed to proper prefix and lookup info.
@@ -722,13 +899,21 @@ static void ra_message(void)
 
 	expecting_ra = false;
 
-	zassert_false(!net_if_ipv6_prefix_lookup(TEST_NET_IF, &prefix, 32),
+	zassert_false(!net_if_ipv6_prefix_lookup(TEST_NET_IF, &test_ra_prefix, 64),
 		      "Prefix %s should be here\n",
-		      net_sprint_ipv6_addr(&prefix));
+		      net_sprint_ipv6_addr(&test_ra_prefix));
 
-	zassert_false(!net_if_ipv6_router_lookup(TEST_NET_IF, &addr),
+	zassert_false(!net_if_ipv6_router_lookup(TEST_NET_IF, &test_router_addr),
 		      "Router %s should be here\n",
-		      net_sprint_ipv6_addr(&addr));
+		      net_sprint_ipv6_addr(&test_router_addr));
+
+	/* Check if autoconf address was added correctly. */
+	ifaddr = net_if_ipv6_addr_lookup_by_iface(TEST_NET_IF,
+						  &test_ra_autoconf_addr);
+	zassert_not_null(ifaddr, "Autoconf address %s missing",
+			 net_sprint_ipv6_addr(&test_ra_autoconf_addr));
+	zassert_equal(ifaddr->addr_type, NET_ADDR_AUTOCONF,
+		      "Address type should be autoconf");
 
 	/* Check if route was added correctly. */
 	route = net_route_lookup(TEST_NET_IF, &route_prefix);
@@ -757,6 +942,86 @@ ZTEST(net_ipv6, test_rs_ra_message)
 	/* Small delay to let the net stack process the generated RA message. */
 	k_sleep(K_MSEC(10));
 	ra_message();
+}
+
+struct test_dad_context {
+	struct k_sem wait_dad;
+	struct in6_addr *exp_dad_addr;
+	bool reply;
+};
+
+static void expect_dad_ns(struct net_pkt *pkt, void *user_data)
+{
+	uint32_t res_bytes;
+	struct in6_addr target;
+	struct test_dad_context *ctx = user_data;
+
+	skip_headers(pkt);
+
+	zassert_ok(net_pkt_read_be32(pkt, &res_bytes), "Failed to read reserved bytes");
+	zassert_equal(0, res_bytes, "Reserved bytes must be zeroed");
+	zassert_ok(net_pkt_read(pkt, &target, sizeof(struct in6_addr)),
+		   "Failed to read target address");
+
+	if (net_ipv6_addr_cmp(ctx->exp_dad_addr, &target)) {
+		if (ctx->reply) {
+			inject_na_message(net_pkt_iface(pkt), &target,
+					  &all_nodes_mcast, &target, 0);
+		}
+
+		k_sem_give(&ctx->wait_dad);
+	}
+}
+
+/* Verify that RS is sent after interface state change, RA processed,
+ * prefix added and autoconf address configured.
+ */
+static void verify_rs_on_iface_event(void (*action)(void))
+{
+	struct net_if_router *router;
+	struct test_dad_context ctx = {
+		.exp_dad_addr = &test_ra_autoconf_addr
+	};
+	struct test_ns_handler handler = {
+		.fn = expect_dad_ns,
+		.user_data = &ctx
+	};
+
+	(void)net_if_ipv6_prefix_rm(TEST_NET_IF, &test_ra_prefix, 64);
+
+	router = net_if_ipv6_router_lookup(TEST_NET_IF, &test_router_addr);
+	if (router) {
+		(void)net_if_ipv6_router_rm(router);
+	}
+
+	k_sem_init(&ctx.wait_dad, 0, 1);
+
+	ns_handler = &handler;
+	expecting_ra = true;
+
+	action();
+
+	k_sleep(K_MSEC(10));
+
+	ra_message();
+
+	zassert_ok(k_sem_take(&ctx.wait_dad, K_MSEC(WAIT_TIME)),
+		   "Timeout while waiting for DAD NS");
+}
+
+ZTEST(net_ipv6, test_rs_after_iface_up)
+{
+	verify_rs_on_iface_event(test_iface_down_up);
+}
+
+ZTEST(net_ipv6, test_rs_after_iface_up_carrier_delayed)
+{
+	verify_rs_on_iface_event(test_iface_down_up_delayed_carrier);
+}
+
+ZTEST(net_ipv6, test_rs_after_carrier_toggle)
+{
+	verify_rs_on_iface_event(test_iface_carrier_off_on);
 }
 
 /**
@@ -1136,20 +1401,17 @@ ZTEST(net_ipv6, test_change_ll_addr)
 	static uint8_t new_mac[] = { 00, 01, 02, 03, 04, 05 };
 	struct net_linkaddr_storage *ll;
 	struct net_linkaddr *ll_iface;
-	struct in6_addr dst;
 	struct net_if *iface;
 	struct net_nbr *nbr;
 	uint32_t flags;
 	int ret;
-
-	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 1);
 
 	iface = TEST_NET_IF;
 
 	flags = NET_ICMPV6_NA_FLAG_ROUTER |
 		NET_ICMPV6_NA_FLAG_OVERRIDE;
 
-	ret = net_ipv6_send_na(iface, &peer_addr, &dst,
+	ret = net_ipv6_send_na(iface, &peer_addr, &all_nodes_mcast,
 			       &peer_addr, flags);
 	zassert_false(ret < 0, "Cannot send NA 1");
 
@@ -1168,7 +1430,7 @@ ZTEST(net_ipv6, test_change_ll_addr)
 	 */
 	ll_iface->addr = new_mac;
 
-	ret = net_ipv6_send_na(iface, &peer_addr, &dst,
+	ret = net_ipv6_send_na(iface, &peer_addr, &all_nodes_mcast,
 			       &peer_addr, flags);
 	zassert_false(ret < 0, "Cannot send NA 2");
 
@@ -1221,6 +1483,118 @@ ZTEST(net_ipv6, test_dad_timeout)
 	net_if_ipv6_addr_rm(iface, &addr2);
 	net_if_ipv6_addr_rm(iface, &addr3);
 #endif
+}
+
+
+/* Verify that DAD NS is sent after interface state change, for static address
+ * (added to the interface in ipv6_setup()).
+ */
+static void verify_dad_on_static_addr_on_iface_event(void (*action)(void))
+{
+	struct test_dad_context ctx = {
+		.exp_dad_addr = &my_addr
+	};
+	struct test_ns_handler handler = {
+		.fn = expect_dad_ns,
+		.user_data = &ctx
+	};
+
+	k_sem_init(&ctx.wait_dad, 0, 1);
+
+	ns_handler = &handler;
+
+	action();
+
+	zassert_ok(k_sem_take(&ctx.wait_dad, K_MSEC(WAIT_TIME)),
+		   "Timeout while waiting for DAD NS");
+}
+
+ZTEST(net_ipv6, test_dad_on_static_addr_after_iface_up)
+{
+	verify_dad_on_static_addr_on_iface_event(test_iface_down_up);
+}
+
+ZTEST(net_ipv6, test_dad_on_static_addr_after_iface_up_carrier_delayed)
+{
+	verify_dad_on_static_addr_on_iface_event(test_iface_down_up_delayed_carrier);
+}
+
+ZTEST(net_ipv6, test_dad_on_static_addr_after_carrier_toggle)
+{
+	verify_dad_on_static_addr_on_iface_event(test_iface_carrier_off_on);
+}
+
+/* Verify that DAD NS is sent after interface state change, for link-local
+ * address.
+ */
+static void verify_dad_on_ll_addr_on_iface_event(void (*action)(void))
+{
+	struct in6_addr link_local_addr;
+	struct test_dad_context ctx = {
+		.exp_dad_addr = &link_local_addr
+	};
+	struct test_ns_handler handler = {
+		.fn = expect_dad_ns,
+		.user_data = &ctx
+	};
+
+	net_ipv6_addr_create_iid(&link_local_addr,
+				 net_if_get_link_addr(TEST_NET_IF));
+	k_sem_init(&ctx.wait_dad, 0, 1);
+
+	ns_handler = &handler;
+
+	action();
+
+	zassert_ok(k_sem_take(&ctx.wait_dad, K_MSEC(WAIT_TIME)),
+		   "Timeout while waiting for DAD NS");
+}
+
+ZTEST(net_ipv6, test_dad_on_ll_addr_after_iface_up)
+{
+	verify_dad_on_ll_addr_on_iface_event(test_iface_down_up);
+}
+
+ZTEST(net_ipv6, test_dad_on_ll_addr_after_iface_up_carrier_delayed)
+{
+	verify_dad_on_ll_addr_on_iface_event(test_iface_down_up_delayed_carrier);
+}
+
+ZTEST(net_ipv6, test_dad_on_ll_addr_after_carrier_toggle)
+{
+	verify_dad_on_ll_addr_on_iface_event(test_iface_carrier_off_on);
+}
+
+/* Verify that in case of DAD conflict, address is not used on the interface. */
+ZTEST(net_ipv6, test_dad_conflict)
+{
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0x99, 0x4 } } };
+	struct test_dad_context ctx = {
+		.exp_dad_addr = &addr,
+		.reply = true
+	};
+	struct test_ns_handler handler = {
+		.fn = expect_dad_ns,
+		.user_data = &ctx
+	};
+	struct net_if_addr *ifaddr;
+
+	k_sem_init(&ctx.wait_dad, 0, 1);
+
+	ns_handler = &handler;
+
+	ifaddr = net_if_ipv6_addr_add(TEST_NET_IF, &addr, NET_ADDR_AUTOCONF, 0xffff);
+	zassert_not_null(ifaddr, "Address cannot be added");
+
+	zassert_ok(k_sem_take(&ctx.wait_dad, K_MSEC(WAIT_TIME)),
+		   "Timeout while waiting for DAD NS");
+
+	/* Small delay to let the stack process NA response. */
+	k_sleep(K_MSEC(100));
+
+	ifaddr = net_if_ipv6_addr_lookup_by_iface(TEST_NET_IF, &addr);
+	zassert_is_null(ifaddr, "Address should not be present on the interface");
 }
 
 #define NET_UDP_HDR(pkt)  ((struct net_udp_hdr *)(net_udp_get_hdr(pkt, NULL)))
@@ -1632,6 +2006,122 @@ ZTEST(net_ipv6, test_dst_is_other_iface_mcast_recv)
 	net_context_put(ctx);
 }
 
+/* Verify that after interface state change it's possible to transmit mcast
+ * packets to theoretically joined groups.
+ */
+static void verify_iface_mcast_send_on_iface_event(void (*action)(void))
+{
+	enum net_verdict verdict;
+	struct net_context *ctx;
+	struct in6_addr solicited_node_mcast;
+
+	action();
+
+	/* All nodes */
+	net_ctx_create(&ctx);
+	net_ctx_bind_mcast(ctx, &all_nodes_mcast);
+	net_ctx_listen(ctx);
+	net_ctx_recv(ctx);
+
+	verdict = send_msg(&my_addr, &all_nodes_mcast);
+	zassert_equal(verdict, NET_OK,
+		      "All nodes multicast packet was dropped (%d)",
+		      verdict);
+
+	net_context_put(ctx);
+
+	/* Solicited node */
+	net_ipv6_addr_create_solicited_node(&my_addr, &solicited_node_mcast);
+
+	net_ctx_create(&ctx);
+	net_ctx_bind_mcast(ctx, &solicited_node_mcast);
+	net_ctx_listen(ctx);
+	net_ctx_recv(ctx);
+
+	verdict = send_msg(&my_addr, &solicited_node_mcast);
+	zassert_equal(verdict, NET_OK,
+		      "Solicited node multicast packet was dropped (%d)",
+		      verdict);
+
+	net_context_put(ctx);
+}
+
+ZTEST(net_ipv6, test_iface_mcast_send_after_iface_up)
+{
+	verify_iface_mcast_send_on_iface_event(test_iface_down_up);
+}
+
+ZTEST(net_ipv6, test_iface_mcast_send_after_iface_up_carrier_delayed)
+{
+	verify_iface_mcast_send_on_iface_event(test_iface_down_up_delayed_carrier);
+}
+
+ZTEST(net_ipv6, test_iface_mcast_send_after_carrier_toggle)
+{
+	verify_iface_mcast_send_on_iface_event(test_iface_carrier_off_on);
+}
+
+/* Verify that after interface state change it's possible to receive mcast
+ * packets on theoretically joined groups.
+ */
+static void verify_iface_mcast_recv_on_iface_event(void (*action)(void))
+{
+	enum net_verdict verdict;
+	struct net_context *ctx;
+	struct in6_addr solicited_node_mcast;
+
+	action();
+
+	k_sem_reset(&wait_data);
+
+	/* All nodes */
+	net_ctx_create(&ctx);
+	net_ctx_bind_mcast(ctx, &all_nodes_mcast);
+	net_ctx_listen(ctx);
+	net_ctx_recv(ctx);
+
+	verdict = recv_msg(&peer_addr, &all_nodes_mcast);
+	zassert_equal(verdict, NET_OK,
+		      "All nodes multicast packet was dropped (%d)",
+		      verdict);
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)),
+		   "Timeout while waiting for mcast packet");
+
+	net_context_put(ctx);
+
+	/* Solicited node */
+	net_ipv6_addr_create_solicited_node(&my_addr, &solicited_node_mcast);
+
+	net_ctx_create(&ctx);
+	net_ctx_bind_mcast(ctx, &solicited_node_mcast);
+	net_ctx_listen(ctx);
+	net_ctx_recv(ctx);
+
+	verdict = recv_msg(&peer_addr, &solicited_node_mcast);
+	zassert_equal(verdict, NET_OK,
+		      "Solicited node multicast packet was dropped (%d)",
+		      verdict);
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)),
+		   "Timeout while waiting for mcast packet");
+
+	net_context_put(ctx);
+}
+
+ZTEST(net_ipv6, test_iface_mcast_recv_after_iface_up)
+{
+	verify_iface_mcast_recv_on_iface_event(test_iface_down_up);
+}
+
+ZTEST(net_ipv6, test_iface_mcast_recv_after_iface_up_carrier_delayed)
+{
+	verify_iface_mcast_recv_on_iface_event(test_iface_down_up_delayed_carrier);
+}
+
+ZTEST(net_ipv6, test_iface_mcast_recv_after_carrier_toggle)
+{
+	verify_iface_mcast_recv_on_iface_event(test_iface_carrier_off_on);
+}
+
 ZTEST(net_ipv6, test_no_nd_flag)
 {
 	bool ret;
@@ -1891,4 +2381,4 @@ ZTEST(net_ipv6, test_z_privacy_extension_03_get_addr)
 	}
 }
 
-ZTEST_SUITE(net_ipv6, NULL, ipv6_setup, NULL, NULL, ipv6_teardown);
+ZTEST_SUITE(net_ipv6, NULL, ipv6_setup, ipv6_before, NULL, ipv6_teardown);
