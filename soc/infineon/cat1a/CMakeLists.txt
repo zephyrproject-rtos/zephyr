@@ -21,7 +21,6 @@ endif()
 if(CONFIG_SOC_FAMILY_PSOC6_LEGACY)
   zephyr_include_directories(psoc6_legacy)
   zephyr_sources(psoc6_legacy/soc.c)
-  zephyr_sources(psoc6_legacy/soc_gpio.c)
 
   zephyr_linker_sources(NOINIT psoc6_legacy/noinit.ld)
   zephyr_linker_sources(RWDATA psoc6_legacy/rwdata.ld)
