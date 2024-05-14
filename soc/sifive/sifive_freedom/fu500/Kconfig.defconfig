@@ -25,4 +25,10 @@ config MAX_IRQ_PER_AGGREGATOR
 config NUM_IRQS
 	default 64
 
+config FPU
+	default y if CPU_HAS_FPU
+
+config RISCV_IMPRECISE_FPU_STATE_TRACKING
+	default y if FPU
+
 endif # SOC_SERIES_SIFIVE_FREEDOM_FU500
