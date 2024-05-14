@@ -3157,6 +3157,7 @@ Synopsys Platforms:
     - scripts/west_commands/runners/mdb.py
     - scripts/west_commands/tests/test_mdb.py
     - scripts/west_commands/runners/nsim.py
+    - cmake/emu/nsim.cmake
   labels:
     - "platform: Synopsys"
 
