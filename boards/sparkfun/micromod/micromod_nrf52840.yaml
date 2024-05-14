@@ -1,0 +1,26 @@
+identifier: micromod/nrf52840
+name: Sparkfun Micromod nRF52840 board
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - ble
+  - gpio
+  - spi
+  - qspi
+  - i2c
+  - pwm
+  - adc
+  - usb_device
+  - usb_cdc
+  - watchdog
+  - micromod_gpio
+  - micromod_uart
+  - micromod_i2c
+  - micromod_spi
+vendor: Sparkfun
