@@ -401,6 +401,11 @@ __set_comp_west_boards()
 	__set_comp ${boards[@]}
 }
 
+__set_comp_west_shields()
+{
+	__set_comp "$(__west_x shields "$@")"
+}
+
 __comp_west_west()
 {
 	case "$prev" in
@@ -734,6 +739,7 @@ __comp_west_build()
 	local special_opts="
 		--board -b
 		--snippet -S
+		--shield
 		--pristine -p
 	"
 
@@ -752,6 +758,10 @@ __comp_west_build()
 	case "$prev" in
 		--board|-b)
 			__set_comp_west_boards
+			return
+			;;
+		--shield)
+			__set_comp_west_shields
 			return
 			;;
 		--pristine|-p)
