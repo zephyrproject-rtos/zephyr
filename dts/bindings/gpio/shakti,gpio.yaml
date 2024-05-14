@@ -3,18 +3,21 @@
 
 description: SHAKTI GPIO node
 
-compatible: "shakti,GPIO"
+compatible: "shakti,gpio"
 
-include: [gpio-controller.yaml, base.yaml]
+# include: [gpio-controller.yaml, base.yaml]
 
 properties:
   reg:
+    type: array
     required: true
 
   interrupts:
+    type: int
     required: false
 
   "#gpio-cells":
+    type: int
     const: 2
 
 gpio-cells:

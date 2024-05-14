@@ -67,17 +67,34 @@
     };
 
     spi0: spi@20000 {
+            #address-cells = <1>;
+            #size-cells = <0>;
             compatible = "shakti,spi";
             reg = <0x0 0x20000 0x0 0x100>;
     };
 
     spi1: spi@20100 {
+           #address-cells = <1>;
+			     #size-cells = <0>;
            compatible = "shakti,spi";
            reg = <0x0 0x20100 0x0 0x100>;
+
+           test_spi_gc9x01x: gc9x01x@1 {
+            compatible = "galaxycore,gc9x01x";
+            reg = <1>;
+            spi-max-frequency = <100000000>;
+            cmd-data-gpios = <&gpio0 1 0>;
+            reset-gpios = <&gpio0 2 0>;
+            pixel-format = <16>;
+    
+            width = <240>;
+            height = <240>;
+          };
     };
 
     gpio0: gpio@40200 {
-                compatible = "shakti,gpio0";
+                #gpio-cells = <0x2>;
+                compatible = "shakti,gpio";
                 reg = < 0x0 0x40200 0x0 0x08>;
     };
     

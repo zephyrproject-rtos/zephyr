@@ -1,0 +1,10 @@
+# Copyright 2023, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config RM67162
+	bool "RM67162 display driver"
+	default y
+	select MIPI_DSI
+	depends on DT_HAS_RAYDIUM_RM67162_ENABLED
+	help
+	  Enable driver for RM67162 display driver.

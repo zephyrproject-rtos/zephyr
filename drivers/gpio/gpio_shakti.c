@@ -11,7 +11,7 @@
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
 
-#define DT_DRV_COMPAT shakti_gpio0
+#define DT_DRV_COMPAT shakti_gpio
 
 typedef void (*shakti_cfg_func_t)(void);
 
