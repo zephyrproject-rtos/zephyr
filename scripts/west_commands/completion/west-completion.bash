@@ -702,6 +702,7 @@ __comp_west_build()
 
 	local special_opts="
 		--board -b
+		--snippet -S
 		--pristine -p
 	"
 
