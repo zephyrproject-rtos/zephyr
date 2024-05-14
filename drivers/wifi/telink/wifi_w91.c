@@ -13,11 +13,6 @@ LOG_MODULE_REGISTER(w91_wifi, CONFIG_WIFI_LOG_LEVEL);
 
 #include <zephyr/net/wifi_mgmt.h>
 
-/* Dummy IP addresses */
-#define INADDR_W91_WIFI_INIT           {{{1, 0, 0, 1}}}
-#define IN6ADDR_W91_WIFI_INIT          \
-	{{{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}}}
-
 static int wifi_w91_init(const struct device *dev)
 {
 	struct wifi_w91_data *data = dev->data;
@@ -30,26 +25,6 @@ static int wifi_w91_init(const struct device *dev)
 static void wifi_w91_init_if(struct net_if *iface)
 {
 	LOG_INF("%s", __func__);
-
-	/* For now set dummy address here to allow data propagation to L2 */
-#if CONFIG_NET_IPV4
-		struct in_addr ipv4 = INADDR_W91_WIFI_INIT;
-		struct net_if_addr *ifaddr_ipv4 = net_if_ipv4_addr_add(
-			iface, &ipv4, NET_ADDR_AUTOCONF, 0);
-
-		if (!ifaddr_ipv4) {
-			LOG_ERR("Failed to register IPv4 wifi address");
-		}
-#endif /* CONFIG_NET_IPV4 */
-#if CONFIG_NET_IPV6
-		struct in6_addr ipv6 = IN6ADDR_W91_WIFI_INIT;
-		struct net_if_addr *ifaddr_ipv6 = net_if_ipv6_addr_add(
-			iface, &ipv6, NET_ADDR_AUTOCONF, 0);
-
-		if (!ifaddr_ipv6) {
-			LOG_ERR("Failed to register IPv6 wifi address");
-		}
-#endif /* CONFIG_NET_IPV6 */
 }
 
 static int wifi_w91_scan(const struct device *dev, scan_result_cb_t cb)
