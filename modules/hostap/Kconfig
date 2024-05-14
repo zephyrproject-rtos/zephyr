@@ -396,6 +396,7 @@ config WEP
 
 config WPA_CLI
 	bool
+        default y
 
 config WPA_CRYPTO
 	bool
