@@ -135,7 +135,7 @@ static int max32_dma_config(const struct device *dev, uint32_t channel, struct d
 	}
 
 	/* Enable interrupts for the DMA peripheral */
-	ret = MXC_DMA_EnableInt(ch);
+	ret = Wrap_MXC_DMA_EnableInt(cfg->regs, ch);
 	if (ret != E_NO_ERROR) {
 		return ret;
 	}
