@@ -64,12 +64,10 @@ static int lm75_sample_fetch(const struct device *dev,
 {
 	struct lm75_data *data = dev->data;
 	const struct lm75_config *cfg = dev->config;
-	enum pm_device_state pm_state;
 	int ret;
 
-	(void)pm_device_state_get(dev, &pm_state);
-	if (pm_state != PM_DEVICE_STATE_ACTIVE) {
-		ret = -EIO;
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -83,6 +81,7 @@ static int lm75_sample_fetch(const struct device *dev,
 		break;
 	}
 
+	pm_device_runtime_put(dev);
 	return ret;
 }
 
