@@ -6,7 +6,6 @@
 
 #include "udc_common.h"
 #include "udc_dwc2.h"
-#include "udc_dwc2_vendor_quirks.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -22,6 +21,7 @@
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_dwc2, CONFIG_UDC_DRIVER_LOG_LEVEL);
+#include "udc_dwc2_vendor_quirks.h"
 
 enum dwc2_drv_event_type {
 	/* Trigger next transfer, must not be used for control OUT */
@@ -904,9 +904,7 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 		}
 	}
 
-	if (config->quirks != NULL && config->quirks->irq_clear != NULL) {
-		config->quirks->irq_clear(dev);
-	}
+	(void)dwc2_quirk_irq_clear(dev);
 }
 
 static int udc_dwc2_ep_enqueue(const struct device *dev,
@@ -1523,18 +1521,21 @@ static int udc_dwc2_enable(const struct device *dev)
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	int err;
 
+	err = dwc2_quirk_pre_enable(dev);
+	if (err) {
+		LOG_ERR("Quirk pre enable failed %d", err);
+		return err;
+	}
+
 	err = udc_dwc2_init_controller(dev);
 	if (err) {
 		return err;
 	}
 
-	/* Call vendor-specific function to enable peripheral */
-	if (config->quirks != NULL && config->quirks->pwr_on != NULL) {
-		LOG_DBG("Enable vendor power");
-		err = config->quirks->pwr_on(dev);
-		if (err) {
-			return err;
-		}
+	err = dwc2_quirk_post_enable(dev);
+	if (err) {
+		LOG_ERR("Quirk post enable failed %d", err);
+		return err;
 	}
 
 	/* Enable global interrupt */
@@ -1553,6 +1554,7 @@ static int udc_dwc2_disable(const struct device *dev)
 	const struct udc_dwc2_config *const config = dev->config;
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	mem_addr_t dctl_reg = (mem_addr_t)&base->dctl;
+	int err;
 
 	/* Enable soft disconnect */
 	sys_set_bits(dctl_reg, USB_DWC2_DCTL_SFTDISCON);
@@ -1571,20 +1573,23 @@ static int udc_dwc2_disable(const struct device *dev)
 		return -EIO;
 	}
 
+	err = dwc2_quirk_disable(dev);
+	if (err) {
+		LOG_ERR("Quirk disable failed %d", err);
+		return err;
+	}
+
 	return 0;
 }
 
 static int udc_dwc2_init(const struct device *dev)
 {
-	const struct udc_dwc2_config *const config = dev->config;
 	int ret;
 
-	if (config->quirks != NULL && config->quirks->clk_enable != NULL) {
-		LOG_DBG("Enable vendor clock");
-		ret = config->quirks->clk_enable(dev);
-		if (ret) {
-			return ret;
-		}
+	ret = dwc2_quirk_init(dev);
+	if (ret) {
+		LOG_ERR("Quirk init failed %d", ret);
+		return ret;
 	}
 
 	return dwc2_init_pinctrl(dev);
@@ -1592,6 +1597,14 @@ static int udc_dwc2_init(const struct device *dev)
 
 static int udc_dwc2_shutdown(const struct device *dev)
 {
+	int ret;
+
+	ret = dwc2_quirk_shutdown(dev);
+	if (ret) {
+		LOG_ERR("Quirk shutdown failed %d", ret);
+		return ret;
+	}
+
 	return 0;
 }
 
