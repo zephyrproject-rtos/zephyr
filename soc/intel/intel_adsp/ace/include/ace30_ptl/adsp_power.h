@@ -16,9 +16,8 @@
 
 /* Power Control register - controls the power domain operations. */
 struct ace_pwrctl {
-	uint16_t rsvd0      : 5;
+	uint16_t rsvd4      : 5;
 	uint16_t wphstpg    : 1;
-	uint16_t rsvd6      : 1;
 	uint16_t wphubhppg  : 1;
 	uint16_t wpdspulppg : 1;
 	uint16_t wpioxpg    : 2;
@@ -30,6 +29,7 @@ struct ace_pwrctl {
 
 struct ace_pwrctl2 {
 	uint16_t wpdsphpxpg : 5;
+	uint16_t rsvd15     : 11;
 };
 
 #define ACE_PWRCTL ((volatile struct ace_pwrctl *) &ACE_DfPMCCU.dfpwrctl)
@@ -37,19 +37,20 @@ struct ace_pwrctl2 {
 
 /* Power Status register - reports the power domain status. */
 struct ace_pwrsts {
-	uint16_t rsvd0     : 5;
+	uint16_t rsvd4     : 5;
 	uint16_t hstpgs    : 1;
-	uint16_t rsvd6     : 1;
 	uint16_t hubhppgs  : 1;
 	uint16_t dspulppgs : 1;
-	uint16_t ioxpgs    : 4;
-	uint16_t mlpgs     : 2;
-	uint16_t rsvd14    : 1;
+	uint16_t ioxpgs    : 2;
+	uint16_t rsvd11    : 2;
+	uint16_t mlpgs     : 1;
+	uint16_t rsvd14    : 2;
 	uint16_t hubulppgs : 1;
 };
 
 struct ace_pwrsts2 {
 	uint16_t dsphpxpgs : 5;
+	uint16_t rsvd15    : 11;
 };
 
 #define ACE_PWRSTS ((volatile struct ace_pwrsts *) &ACE_DfPMCCU.dfpwrsts)
