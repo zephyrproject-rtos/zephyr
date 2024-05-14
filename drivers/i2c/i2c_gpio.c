@@ -93,6 +93,23 @@ static int i2c_gpio_configure(const struct device *dev, uint32_t dev_config)
 	return rc;
 }
 
+static int i2c_gpio_get_config(const struct device *dev, uint32_t *config)
+{
+	struct i2c_gpio_context *context = dev->data;
+	int rc;
+
+	k_mutex_lock(&context->mutex, K_FOREVER);
+
+	rc = i2c_bitbang_get_config(&context->bitbang, config);
+	if (rc < 0) {
+		LOG_ERR("I2C controller not configured: %d", rc);
+	}
+
+	k_mutex_unlock(&context->mutex);
+
+	return rc;
+}
+
 static int i2c_gpio_transfer(const struct device *dev, struct i2c_msg *msgs,
 				uint8_t num_msgs, uint16_t slave_address)
 {
@@ -125,6 +142,7 @@ static int i2c_gpio_recover_bus(const struct device *dev)
 
 static const struct i2c_driver_api api = {
 	.configure = i2c_gpio_configure,
+	.get_config = i2c_gpio_get_config,
 	.transfer = i2c_gpio_transfer,
 	.recover_bus = i2c_gpio_recover_bus,
 };
