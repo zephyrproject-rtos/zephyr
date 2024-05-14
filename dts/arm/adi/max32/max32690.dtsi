@@ -189,6 +189,10 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 2>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-counter";
+				status = "disabled";
+			};
 		};
 
 		lptimer1: timer@40081000 {
@@ -199,6 +203,10 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 3>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-counter";
+				status = "disabled";
+			};
 		};
 	};
 };
