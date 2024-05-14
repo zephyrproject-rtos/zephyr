@@ -108,6 +108,8 @@ Boards & SoC Support
 
 * Made these changes for native/POSIX boards:
 
+  * Introduced the simulated :ref:`nrf54l15bsim<nrf54l15bsim>` target.
+
   * LLVM fuzzing support has been refactored while adding support for it in native_sim.
 
 * Added support for these following shields:
