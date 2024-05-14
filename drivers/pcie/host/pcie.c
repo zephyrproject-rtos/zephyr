@@ -37,23 +37,6 @@ static bool prt_en;
 
 /* functions documented in drivers/pcie/pcie.h */
 
-bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id)
-{
-	uint32_t data;
-
-	data = pcie_conf_read(bdf, PCIE_CONF_ID);
-
-	if (!PCIE_ID_IS_VALID(data)) {
-		return false;
-	}
-
-	if (id == PCIE_ID_NONE) {
-		return true;
-	}
-
-	return (id == data);
-}
-
 void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on)
 {
 	uint32_t cmdstat;
