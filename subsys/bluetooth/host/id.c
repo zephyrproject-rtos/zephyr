@@ -792,7 +792,7 @@ bool bt_id_adv_random_addr_check(const struct bt_le_adv_param *param)
 		 * Explicitly stop it here.
 		 */
 
-		if (!(param->options & BT_LE_ADV_OPT_CONNECTABLE) &&
+		if (!(param->options & _BT_LE_ADV_OPT_CONNECTABLE) &&
 		     (param->options & BT_LE_ADV_OPT_USE_IDENTITY)) {
 			/* Attempt to set non-connectable NRPA */
 			return false;
@@ -1870,7 +1870,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 		return 0;
 	}
 
-	if (options & BT_LE_ADV_OPT_CONNECTABLE) {
+	if (options & _BT_LE_ADV_OPT_CONNECTABLE) {
 		if (dir_adv && (options & BT_LE_ADV_OPT_DIR_ADDR_RPA) &&
 		    !BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
 			return -ENOTSUP;

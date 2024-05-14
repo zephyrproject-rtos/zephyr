@@ -525,15 +525,41 @@ enum {
 	/**
 	 * @brief Advertise as connectable.
 	 *
+	 * @deprecated Use @ref BT_LE_ADV_OPT_CONN instead.
+	 *
 	 * Advertise as connectable. If not connectable then the type of
 	 * advertising is determined by providing scan response data.
 	 * The advertiser address is determined by the type of advertising
 	 * and/or enabling privacy @kconfig{CONFIG_BT_PRIVACY}.
+	 *
+	 * Starting connectable advertising preallocates a connection
+	 * object. If this fails, the API returns @c -ENOMEM.
+	 *
+	 * When an advertiser set results in a connection creation, the
+	 * controller automatically disables that advertising set.
+	 *
+	 * If the advertising set was started with @ref bt_le_adv_start
+	 * without @ref BT_LE_ADV_OPT_ONE_TIME, the host will attempt to
+	 * resume the advertiser under some conditions.
 	 */
-	BT_LE_ADV_OPT_CONNECTABLE = BIT(0),
+	BT_LE_ADV_OPT_CONNECTABLE __deprecated = BIT(0),
+
+	/**
+	 * @internal
+	 *
+	 * Internal access to the deprecated value to maintain the
+	 * implementation of the deprecated feature.
+	 *
+	 * At the end of the deprecation period, ABI will change so
+	 * `BT_LE_ADV_OPT_CONN` is just `BIT(0)`, removing the need for this
+	 * symbol.
+	 */
+	_BT_LE_ADV_OPT_CONNECTABLE = BIT(0),
 
 	/**
 	 * @brief Advertise one time.
+	 *
+	 * @deprecated Use @ref BT_LE_ADV_OPT_CONN instead.
 	 *
 	 * Don't try to resume connectable advertising after a connection.
 	 * This option is only meaningful when used together with
@@ -546,7 +572,35 @@ enum {
 	 * @ref bt_le_ext_adv_start then this behavior is the default behavior
 	 * and this flag has no effect.
 	 */
-	BT_LE_ADV_OPT_ONE_TIME = BIT(1),
+	BT_LE_ADV_OPT_ONE_TIME __deprecated = BIT(1),
+
+	/**
+	 * @internal
+	 *
+	 * Internal access to the deprecated value to maintain
+	 * the implementation of the deprecated feature.
+	 */
+	_BT_LE_ADV_OPT_ONE_TIME = BIT(1),
+
+	/**
+	 * @brief Connectable advertising
+	 *
+	 * Starting connectable advertising preallocates a connection
+	 * object. If this fails, the API returns @c -ENOMEM.
+	 *
+	 * The advertising set stops immediately after it creates a
+	 * connection. This happens automatically in the controller.
+	 *
+	 * @note To continue advertising after a connection is created,
+	 * the application should listen for the @ref bt_conn_cb.connected
+	 * event and start the advertising set again. Note that the
+	 * advertiser cannot be started when all connection objects are
+	 * in use. In that case, defer starting the advertiser until
+	 * @ref bt_conn_cb.recycled. To continue after a disconnection,
+	 * listen for @ref bt_conn_cb.recycled.
+
+	 */
+	BT_LE_ADV_OPT_CONN = BIT(0) | BIT(1),
 
 	/**
 	 * @brief Advertise using identity address.
@@ -625,8 +679,7 @@ enum {
 	 * @brief Support scan response data.
 	 *
 	 * When used together with @ref BT_LE_ADV_OPT_EXT_ADV then this option
-	 * cannot be used together with the @ref BT_LE_ADV_OPT_CONNECTABLE
-	 * option.
+	 * cannot be used together with the @ref BT_LE_ADV_OPT_CONN option.
 	 * When used together with @ref BT_LE_ADV_OPT_EXT_ADV then scan
 	 * response data must be set.
 	 */
@@ -914,20 +967,61 @@ struct bt_le_per_adv_param {
 		BT_LE_ADV_PARAM_INIT(_options, _int_min, _int_max, _peer) \
 	 })
 
-#define BT_LE_ADV_CONN_DIR(_peer) BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE |  \
-						  BT_LE_ADV_OPT_ONE_TIME, 0, 0,\
-						  _peer)
+#define BT_LE_ADV_CONN_DIR(_peer) BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN, 0, 0, _peer)
 
-
-#define BT_LE_ADV_CONN BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE, \
-				       BT_GAP_ADV_FAST_INT_MIN_2, \
-				       BT_GAP_ADV_FAST_INT_MAX_2, NULL)
-
-/** This is the recommended default for connectable advertisers.
+/**
+ * @deprecated This is a convenience macro for @ref
+ * BT_LE_ADV_OPT_CONNECTABLE, which is deprecated. Please use
+ * @ref BT_LE_ADV_CONN_FAST_1 or @ref BT_LE_ADV_CONN_FAST_2
+ * instead.
  */
-#define BT_LE_ADV_CONN_ONE_TIME                                                                    \
-	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_ONE_TIME,                        \
-			BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL)
+#define BT_LE_ADV_CONN                                                                             \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE, BT_GAP_ADV_FAST_INT_MIN_2,                      \
+			BT_GAP_ADV_FAST_INT_MAX_2, NULL)                                           \
+	__DEPRECATED_MACRO
+
+/** @brief GAP recommended connectable advertising
+ *
+ * This is the recommended default for when a person is likely
+ * to be waiting the device to connect or be discovered.
+ *
+ * Use a longer interval to conserve battery at the cost of
+ * responsiveness. Consider entering a lower power state with
+ * longer intervals after a timeout.
+ *
+ * GAP recommends advertisers use this "when user-initiated".
+ * The application developer decides what this means. It can by
+ * any time the user interacts with the device, a press on a
+ * dedicated Bluetooth wakeup button, or anything in-between.
+ *
+ * This is the recommended setting for limited discoverable
+ * mode.
+ *
+ * See Bluetooth Core Specification:
+ * - 3.C.A "Timers and Constants", T_GAP(adv_fast_interval1)
+ * - 3.C.9.3.11 "Connection Establishment Timing parameters"
+ */
+#define BT_LE_ADV_CONN_FAST_1                                                                      \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN, BT_GAP_ADV_FAST_INT_MIN_1, BT_GAP_ADV_FAST_INT_MAX_1,  \
+			NULL)
+
+/** @brief Connectable advertising with
+ * T_GAP(adv_fast_interval2)
+ *
+ * The advertising interval corresponds to what was offered as
+ * `BT_LE_ADV_CONN` in Zephyr 3.6 and earlier, but unlike
+ * `BT_LE_ADV_CONN`, the host does not automatically resume the
+ * advertiser after it results in a connection.
+ *
+ * See Bluetooth Core Specification:
+ * - 3.C.A "Timers and Constants", T_GAP(adv_fast_interval1)
+ * - 3.C.9.3.11 "Connection Establishment Timing parameters"
+ */
+#define BT_LE_ADV_CONN_FAST_2                                                                      \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN, BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2,  \
+			NULL)
+
+#define BT_LE_ADV_CONN_ONE_TIME BT_LE_ADV_CONN_FAST_2 __DEPRECATED_MACRO
 
 /**
  * @deprecated This macro will be removed in the near future, see
@@ -950,11 +1044,9 @@ struct bt_le_per_adv_param {
 					    BT_GAP_ADV_FAST_INT_MAX_2, NULL) \
 					    __DEPRECATED_MACRO
 
-#define BT_LE_ADV_CONN_DIR_LOW_DUTY(_peer) \
-	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_ONE_TIME | \
-			BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY, \
-			BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, \
-			_peer)
+#define BT_LE_ADV_CONN_DIR_LOW_DUTY(_peer)                                                         \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY,                      \
+			BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, _peer)
 
 /** Non-connectable advertising with private address */
 #define BT_LE_ADV_NCONN BT_LE_ADV_PARAM(0, BT_GAP_ADV_FAST_INT_MIN_2, \
@@ -978,11 +1070,9 @@ struct bt_le_per_adv_param {
 						 NULL)
 
 /** Connectable extended advertising */
-#define BT_LE_EXT_ADV_CONN BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
-					   BT_LE_ADV_OPT_CONNECTABLE, \
-					   BT_GAP_ADV_FAST_INT_MIN_2, \
-					   BT_GAP_ADV_FAST_INT_MAX_2, \
-					   NULL)
+#define BT_LE_EXT_ADV_CONN                                                                         \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CONN, BT_GAP_ADV_FAST_INT_MIN_2,     \
+			BT_GAP_ADV_FAST_INT_MAX_2, NULL)
 
 /**
  * @deprecated This macro will be removed in the near future, see

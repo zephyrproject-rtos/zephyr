@@ -336,6 +336,78 @@ Bluetooth Classic
 Bluetooth Host
 ==============
 
+Automatic advertiser resumption is deprecated
+---------------------------------------------
+
+.. note::
+
+   This deprecation is compiler-checked. If you get no warnings,
+   you should not be affected.
+
+Deprecated symbols:
+   * :c:enumerator:`BT_LE_ADV_OPT_CONNECTABLE`
+   * :c:enumerator:`BT_LE_ADV_OPT_ONE_TIME`
+   * :c:macro:`BT_LE_ADV_CONN`
+
+New symbols:
+   * :c:enumerator:`BT_LE_ADV_OPT_CONN`
+   * :c:macro:`BT_LE_ADV_CONN_FAST_1`
+   * :c:macro:`BT_LE_ADV_CONN_FAST_2`
+
+:c:enumerator:`BT_LE_ADV_OPT_CONNECTABLE` is a combined
+instruction to make the advertiser connectable and to enable
+automatic resumption. To disable the automatic resumption, use
+:c:enumerator:`BT_LE_ADV_OPT_CONN`.
+
+Extended Advertising API with shorthands
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Extended Advertising API ``bt_le_ext_adv_*`` implicitly assumes
+:c:enumerator:`BT_LE_ADV_OPT_ONE_TIME` and never automatically
+resume advertising. Therefore, the following search/replace can
+be applied without thinking:
+
+Replace all
+
+.. code-block:: diff
+
+   -bt_le_ext_adv_create(BT_LE_ADV_CONN, ...)
+   +bt_le_ext_adv_create(BT_LE_ADV_FAST_2, ...)
+
+.. code-block:: diff
+
+   -bt_le_ext_adv_update_param(..., BT_LE_ADV_CONN)
+   +bt_le_ext_adv_update_param(..., BT_LE_ADV_FAST_2)
+
+Extended Advertising API with custom parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You may have uses of :c:enumerator:`BT_LE_ADV_OPT_CONNECTABLE`
+in assignments to a :c:struct:`bt_le_adv_param`. If your struct
+is never passed to :c:func:`bt_le_adv_start`, you should:
+
+* replace :c:enumerator:`BT_LE_ADV_OPT_CONNECTABLE` with
+  :c:enumerator:`BT_LE_ADV_OPT_CONN`.
+* remove :c:enumerator:`BT_LE_ADV_OPT_ONE_TIME`.
+
+Legacy Advertising API not using automatic resumption
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Any calls to :c:func:`bt_le_adv_start` that use the combination
+:c:enumerator:`BT_LE_ADV_OPT_CONNECTABLE` and
+:c:enumerator:`BT_LE_ADV_OPT_ONE_TIME` should have that
+combination replaced with :c:enumerator:`BT_LE_ADV_OPT_CONN`.
+
+Legacy Advertising API using automatic resumption
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For this case, the application has to take over the
+responsibility of restarting the advertiser.
+
+Refer to the extended advertising sample for an example
+implementation of advertiser restarting. The same technique can
+be used for legacy advertising.
+
 Bluetooth Crypto
 ================
 
