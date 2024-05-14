@@ -1,5 +1,5 @@
-identifier: hifive_unleashed
-name: SiFive HiFive Unleashed
+identifier: hifive_unleashed/fu540/u54
+name: SiFive HiFive Unleashed (U54)
 type: mcu
 arch: riscv
 toolchain:
@@ -8,11 +8,11 @@ ram: 3840
 simulation: renode
 simulation_exec: renode
 testing:
+  timeout_multiplier: 6
   ignore_tags:
     - net
     - bluetooth
     - flash
-    - newlib
     - crypto
   renode:
     uart: sysbus.uart0

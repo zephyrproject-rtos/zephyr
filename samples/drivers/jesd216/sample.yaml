@@ -15,7 +15,8 @@ tests:
   sample.drivers.jesd216:
     platform_exclude:
       - hifive1
-      - hifive_unleashed
+      - hifive_unleashed/fu540/e51
+      - hifive_unleashed/fu540/u54
       - hifive_unmatched
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1170_evk/mimxrt1176/cm4
