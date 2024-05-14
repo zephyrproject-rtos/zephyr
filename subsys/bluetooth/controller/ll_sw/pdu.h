@@ -187,6 +187,8 @@
 #define EVENT_IFS_US            150
 /* Event interframe timings, default */
 #define EVENT_IFS_DEFAULT_US    EVENT_IFS_US
+/* Event interframe timings, low latency mode */
+#define EVENT_IFS_LOW_LAT_US    130
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_IFS_MAX_US        (EVENT_IFS_US + EVENT_CLOCK_JITTER_US)
 /* Specification defined Minimum AUX Frame Space (MAFS) */
@@ -284,6 +286,12 @@
 #define PHY_CODED    BIT(2)
 #define PHY_FLAGS_S2 0
 #define PHY_FLAGS_S8 BIT(0)
+
+#define T_IFS_ACL_CP BIT(0)
+#define T_IFS_ACL_PC BIT(1)
+#define T_MCES       BIT(2)
+#define T_IFS_CIS    BIT(3)
+#define T_MSS_CIS    BIT(4)
 
 /* Macros for getting/setting did/sid from pdu_adv_adi */
 #define PDU_ADV_ADI_DID_GET(adi) ((adi)->did_sid_packed[0] | \
@@ -623,6 +631,9 @@ enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_CIS_RSP = 0x20,
 	PDU_DATA_LLCTRL_TYPE_CIS_IND = 0x21,
 	PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND = 0x22,
+	PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ = 0x3B,
+	PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP = 0x3C,
+
 	PDU_DATA_LLCTRL_TYPE_UNUSED = 0xFF
 };
 
@@ -787,6 +798,19 @@ struct pdu_data_llctrl_length_req_rsp_common {
 	uint16_t max_tx_time;
 } __packed;
 
+struct pdu_data_llctrl_frame_space_req {
+	uint16_t frame_space_min;
+	uint16_t frame_space_max;
+	uint8_t phys;
+	uint16_t spacing_type;
+} __packed;
+
+struct pdu_data_llctrl_frame_space_rsp {
+	uint16_t frame_space;
+	uint8_t phys;
+	uint16_t spacing_type;
+} __packed;
+
 struct pdu_data_llctrl_phy_req {
 	uint8_t tx_phys;
 	uint8_t rx_phys;
@@ -935,6 +959,8 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_ping_rsp ping_rsp;
 		struct pdu_data_llctrl_length_req length_req;
 		struct pdu_data_llctrl_length_rsp length_rsp;
+		struct pdu_data_llctrl_frame_space_req frame_space_req;
+		struct pdu_data_llctrl_frame_space_rsp frame_space_rsp;
 		struct pdu_data_llctrl_phy_req phy_req;
 		struct pdu_data_llctrl_phy_rsp phy_rsp;
 		struct pdu_data_llctrl_phy_upd_ind phy_upd_ind;

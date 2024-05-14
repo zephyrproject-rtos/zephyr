@@ -89,6 +89,9 @@ static uint8_t MALIGN(4) buffer_mem_remote_ctx[PROC_CTX_BUF_SIZE *
 				     CONFIG_BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM];
 static struct llcp_mem_pool mem_remote_ctx = { .pool = buffer_mem_remote_ctx };
 
+uint8_t ull_cp_frame_space(struct ll_conn *conn, uint16_t frame_space_min, uint16_t frame_space_max,
+			   uint8_t phys, uint16_t spacing_type);
+
 /*
  * LLCP Resource Management
  */
@@ -856,6 +859,20 @@ uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis)
 }
 #endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
 
+uint8_t bt_ull_cp_frame_space(uint16_t handle, uint16_t frame_space_min, uint16_t frame_space_max,
+			      uint8_t phys, uint16_t spacing_type)
+{
+	struct ll_conn *conn;
+	uint8_t err;
+
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+	err = ull_cp_frame_space(conn, frame_space_min, frame_space_max, phys, spacing_type);
+	return err;
+}
+
 #if defined(CONFIG_BT_CENTRAL)
 uint8_t ull_cp_chan_map_update(struct ll_conn *conn, const uint8_t chm[5])
 {
@@ -925,6 +942,27 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets,
 	return BT_HCI_ERR_SUCCESS;
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+uint8_t ull_cp_frame_space(struct ll_conn *conn, uint16_t frame_space_min, uint16_t frame_space_max,
+			   uint8_t phys, uint16_t spacing_type)
+{
+	struct proc_ctx *ctx;
+
+	if (!feature_frame_space(conn)) {
+		return BT_HCI_ERR_SUCCESS;
+	}
+
+	ctx = llcp_create_local_procedure(PROC_FRAME_SPACE);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	ull_frame_space_local_tx_update(conn, frame_space_min, frame_space_max, phys, spacing_type);
+
+	llcp_lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
 
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 uint8_t ull_cp_req_peer_sca(struct ll_conn *conn)
@@ -1152,6 +1190,15 @@ uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn)
 	return (ctx && ctx->proc == PROC_DATA_LENGTH_UPDATE);
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+uint8_t ull_cp_remote_frame_space_pending(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_rr_peek(conn);
+
+	return (ctx && ctx->proc == PROC_FRAME_SPACE);
+}
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 void ull_cp_conn_param_req_reply(struct ll_conn *conn)
@@ -1705,6 +1752,16 @@ static bool pdu_validate_length_rsp(struct pdu_data *pdu)
 	return VALIDATE_PDU_LEN(pdu, length_rsp);
 }
 
+static bool pdu_validate_frame_space_req(struct pdu_data *pdu)
+{
+	return VALIDATE_PDU_LEN(pdu, frame_space_req);
+}
+
+static bool pdu_validate_frame_space_rsp(struct pdu_data *pdu)
+{
+	return VALIDATE_PDU_LEN(pdu, frame_space_rsp);
+}
+
 #if defined(CONFIG_BT_CTLR_PHY)
 static bool pdu_validate_phy_req(struct pdu_data *pdu)
 {
@@ -1771,67 +1828,69 @@ struct pdu_validate {
 
 static const struct pdu_validate pdu_validate[] = {
 #if defined(CONFIG_BT_PERIPHERAL)
-	[PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND] = { pdu_validate_conn_update_ind },
-	[PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND] = { pdu_validate_chan_map_ind },
+	[PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND] = {pdu_validate_conn_update_ind},
+	[PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND] = {pdu_validate_chan_map_ind},
 #endif /* CONFIG_BT_PERIPHERAL */
-	[PDU_DATA_LLCTRL_TYPE_TERMINATE_IND] = { pdu_validate_terminate_ind },
+	[PDU_DATA_LLCTRL_TYPE_TERMINATE_IND] = {pdu_validate_terminate_ind},
 #if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
-	[PDU_DATA_LLCTRL_TYPE_ENC_REQ] = { pdu_validate_enc_req },
+	[PDU_DATA_LLCTRL_TYPE_ENC_REQ] = {pdu_validate_enc_req},
 #endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
-	[PDU_DATA_LLCTRL_TYPE_ENC_RSP] = { pdu_validate_enc_rsp },
-	[PDU_DATA_LLCTRL_TYPE_START_ENC_REQ] = { pdu_validate_start_enc_req },
+	[PDU_DATA_LLCTRL_TYPE_ENC_RSP] = {pdu_validate_enc_rsp},
+	[PDU_DATA_LLCTRL_TYPE_START_ENC_REQ] = {pdu_validate_start_enc_req},
 #endif
 #if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
-	[PDU_DATA_LLCTRL_TYPE_START_ENC_RSP] = { pdu_validate_start_enc_rsp },
+	[PDU_DATA_LLCTRL_TYPE_START_ENC_RSP] = {pdu_validate_start_enc_rsp},
 #endif
-	[PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP] = { pdu_validate_unknown_rsp },
+	[PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP] = {pdu_validate_unknown_rsp},
 #if defined(CONFIG_BT_PERIPHERAL)
-	[PDU_DATA_LLCTRL_TYPE_FEATURE_REQ] = { pdu_validate_feature_req },
+	[PDU_DATA_LLCTRL_TYPE_FEATURE_REQ] = {pdu_validate_feature_req},
 #endif
 #if defined(CONFIG_BT_CENTRAL)
-	[PDU_DATA_LLCTRL_TYPE_FEATURE_RSP] = { pdu_validate_feature_rsp },
+	[PDU_DATA_LLCTRL_TYPE_FEATURE_RSP] = {pdu_validate_feature_rsp},
 #endif
 #if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
-	[PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ] = { pdu_validate_pause_enc_req },
+	[PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ] = {pdu_validate_pause_enc_req},
 #endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
-	[PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP] = { pdu_validate_pause_enc_rsp },
+	[PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP] = {pdu_validate_pause_enc_rsp},
 #endif
-	[PDU_DATA_LLCTRL_TYPE_VERSION_IND] = { pdu_validate_version_ind },
-	[PDU_DATA_LLCTRL_TYPE_REJECT_IND] = { pdu_validate_reject_ind },
+	[PDU_DATA_LLCTRL_TYPE_VERSION_IND] = {pdu_validate_version_ind},
+	[PDU_DATA_LLCTRL_TYPE_REJECT_IND] = {pdu_validate_reject_ind},
 #if defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG) && defined(CONFIG_BT_CENTRAL)
-	[PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG] = { pdu_validate_per_init_feat_xchg },
+	[PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG] = {pdu_validate_per_init_feat_xchg},
 #endif /* CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG && CONFIG_BT_CENTRAL */
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-	[PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ] = { pdu_validate_conn_param_req },
+	[PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ] = {pdu_validate_conn_param_req},
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
-	[PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP] = { pdu_validate_conn_param_rsp },
-	[PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND] = { pdu_validate_reject_ext_ind },
+	[PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP] = {pdu_validate_conn_param_rsp},
+	[PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND] = {pdu_validate_reject_ext_ind},
 #if defined(CONFIG_BT_CTLR_LE_PING)
-	[PDU_DATA_LLCTRL_TYPE_PING_REQ] = { pdu_validate_ping_req },
+	[PDU_DATA_LLCTRL_TYPE_PING_REQ] = {pdu_validate_ping_req},
 #endif /* CONFIG_BT_CTLR_LE_PING */
-	[PDU_DATA_LLCTRL_TYPE_PING_RSP] = { pdu_validate_ping_rsp },
+	[PDU_DATA_LLCTRL_TYPE_PING_RSP] = {pdu_validate_ping_rsp},
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	[PDU_DATA_LLCTRL_TYPE_LENGTH_REQ] = { pdu_validate_length_req },
+	[PDU_DATA_LLCTRL_TYPE_LENGTH_REQ] = {pdu_validate_length_req},
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-	[PDU_DATA_LLCTRL_TYPE_LENGTH_RSP] = { pdu_validate_length_rsp },
+	[PDU_DATA_LLCTRL_TYPE_LENGTH_RSP] = {pdu_validate_length_rsp},
+	[PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ] = {pdu_validate_frame_space_req},
+	[PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP] = {pdu_validate_frame_space_rsp},
 #if defined(CONFIG_BT_CTLR_PHY)
-	[PDU_DATA_LLCTRL_TYPE_PHY_REQ] = { pdu_validate_phy_req },
+	[PDU_DATA_LLCTRL_TYPE_PHY_REQ] = {pdu_validate_phy_req},
 #endif /* CONFIG_BT_CTLR_PHY */
-	[PDU_DATA_LLCTRL_TYPE_PHY_RSP] = { pdu_validate_phy_rsp },
-	[PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND] = { pdu_validate_phy_upd_ind },
+	[PDU_DATA_LLCTRL_TYPE_PHY_RSP] = {pdu_validate_phy_rsp},
+	[PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND] = {pdu_validate_phy_upd_ind},
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_CENTRAL)
-	[PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND] = { pdu_validate_min_used_chan_ind },
+	[PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND] = {pdu_validate_min_used_chan_ind},
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_CENTRAL */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
-	[PDU_DATA_LLCTRL_TYPE_CTE_REQ] = { pdu_validate_cte_req },
+	[PDU_DATA_LLCTRL_TYPE_CTE_REQ] = {pdu_validate_cte_req},
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
-	[PDU_DATA_LLCTRL_TYPE_CTE_RSP] = { pdu_validate_cte_resp },
+	[PDU_DATA_LLCTRL_TYPE_CTE_RSP] = {pdu_validate_cte_resp},
 #endif /* PDU_DATA_LLCTRL_TYPE_CTE_RSP */
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
-	[PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_REQ] = { pdu_validate_clock_accuracy_req },
+	[PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_REQ] = {pdu_validate_clock_accuracy_req},
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	[PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_RSP] = { pdu_validate_clock_accuracy_rsp },
 #if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)

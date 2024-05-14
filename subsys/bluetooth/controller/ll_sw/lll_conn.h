@@ -37,6 +37,13 @@ struct data_pdu_length {
 };
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+struct data_pdu_frame_space {
+	uint16_t frame_space_min;
+	uint16_t frame_space_max;
+	uint8_t phys;
+	uint16_t spacing_type;
+};
+
 struct lll_conn {
 	struct lll_hdr hdr;
 
@@ -113,6 +120,12 @@ struct lll_conn {
 		uint8_t update;
 	} dle;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+	struct {
+		struct data_pdu_frame_space local;
+		struct data_pdu_frame_space perphy[4]; /* store frame-space for each PHY */
+		struct data_pdu_frame_space eff;
+		uint8_t update;
+	} frame_space;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	uint8_t phy_tx:3;

@@ -30,6 +30,7 @@ enum llcp_proc {
 	PROC_CIS_TERMINATE,
 	PROC_SCA_UPDATE,
 	PROC_PERIODIC_SYNC,
+	PROC_FRAME_SPACE,
 	/* A helper enum entry, to use in pause procedure context */
 	PROC_NONE = 0x0,
 };
@@ -224,6 +225,9 @@ struct proc_ctx {
 			uint8_t ntf_dle;
 		} dle;
 #endif
+		struct {
+			uint8_t ntf_frame_space;
+		} frame_space;
 
 		/* Connection Update & Connection Parameter Request */
 		struct {
@@ -737,6 +741,15 @@ void llcp_ntf_encode_length_change(struct ll_conn *conn,
 					struct pdu_data *pdu);
 
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+/*
+ * Frame Space  Procedure Helper
+ */
+void llcp_pdu_encode_frame_space_req(struct ll_conn *conn, struct pdu_data *pdu);
+void llcp_pdu_encode_frame_space_rsp(struct ll_conn *conn, struct pdu_data *pdu);
+void llcp_pdu_decode_frame_space_req(struct ll_conn *conn, struct pdu_data *pdu);
+void llcp_pdu_decode_frame_space_rsp(struct ll_conn *conn, struct pdu_data *pdu);
+void llcp_ntf_encode_frame_space_change(struct ll_conn *conn, struct pdu_data *pdu);
 
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 /*

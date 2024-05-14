@@ -40,6 +40,7 @@
 #include "controller/ll_sw/shell/ll.h"
 #include "host/shell/bt.h"
 #include "mesh/shell/hci.h"
+#include "host/conn_internal.h"
 
 static bool no_settings_load;
 
@@ -831,7 +832,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
-static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
+static bool le_param_req_cb(struct bt_conn *conn, struct bt_le_conn_param *param)
 {
 	shell_print(ctx_shell, "LE conn  param req: int (0x%04x, 0x%04x) lat %d"
 		    " to %d", param->interval_min, param->interval_max,
@@ -1131,7 +1132,7 @@ static void le_cs_config_removed(struct bt_conn *conn, uint8_t config_id)
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
-	.le_param_req = le_param_req,
+	.le_param_req = le_param_req_cb,
 	.le_param_updated = le_param_updated,
 #if defined(CONFIG_BT_SMP)
 	.identity_resolved = identity_resolved,
@@ -3646,6 +3647,37 @@ static int cmd_conn_data_len_update(const struct shell *sh, size_t argc,
 }
 #endif
 
+uint8_t bt_ull_cp_frame_space(uint16_t handle, uint16_t frame_space_min, uint16_t frame_space_max,
+			      uint8_t phys, uint16_t spacing_type);
+
+static int cmd_conn_tifs_update(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint16_t tifs_min;
+	uint16_t tifs_max;
+	uint8_t phys;
+	uint16_t direction;
+	int err;
+	uint16_t handle;
+
+	handle = default_conn->handle;
+	tifs_min = strtoul(argv[1], NULL, 10);
+	tifs_max = strtoul(argv[2], NULL, 10);
+	phys = strtoul(argv[3], NULL, 10);
+	direction = strtoul(argv[4], NULL, 10);
+	if (default_conn == NULL) {
+		shell_error(sh, "%s: at least, one connection is required",
+			    sh->ctx->active_cmd.syntax);
+		return -ENOEXEC;
+	}
+	err = bt_ull_cp_frame_space(handle, tifs_min, tifs_max, phys, direction);
+	if (err) {
+		shell_error(sh, "frame space update failed (err %d).", err);
+	} else {
+		shell_print(sh, "frame space update initiated.");
+	}
+	return err;
+}
+
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 static int cmd_conn_phy_update(const struct shell *sh, size_t argc,
 			       char *argv[])
@@ -5061,6 +5093,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(data-len-update, NULL, "<tx_max_len> [tx_max_time]",
 		      cmd_conn_data_len_update, 2, 1),
 #endif
+	SHELL_CMD_ARG(tifs-update, NULL, "tifs_min tifs_max phys direction", cmd_conn_tifs_update,
+		      5, 0),
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	SHELL_CMD_ARG(phy-update, NULL, "<tx_phy> [rx_phy] [s2] [s8]",
 		      cmd_conn_phy_update, 2, 3),

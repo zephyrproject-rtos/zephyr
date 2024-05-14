@@ -201,6 +201,7 @@ struct bt_hci_cmd_hdr {
 
 #define BT_LE_FEAT_BIT_PAWR_ADVERTISER          43
 #define BT_LE_FEAT_BIT_PAWR_SCANNER             44
+#define BT_LE_FEAT_BIT_FRAME_SPACE              45
 
 #define BT_LE_FEAT_BIT_CHANNEL_SOUNDING         46
 #define BT_LE_FEAT_BIT_CHANNEL_SOUNDING_HOST    47
@@ -216,6 +217,7 @@ struct bt_hci_cmd_hdr {
 						  BT_LE_FEAT_BIT_PER_INIT_FEAT_XCHG)
 #define BT_FEAT_LE_DLE(feat)                      BT_LE_FEAT_TEST(feat, \
 						  BT_LE_FEAT_BIT_DLE)
+#define BT_FEAT_LE_FRAME_SPACE(feat)              BT_LE_FEAT_TEST(feat, BT_LE_FEAT_BIT_FRAME_SPACE)
 #define BT_FEAT_LE_PHY_2M(feat)                   BT_LE_FEAT_TEST(feat, \
 						  BT_LE_FEAT_BIT_PHY_2M)
 #define BT_FEAT_LE_PHY_CODED(feat)                BT_LE_FEAT_TEST(feat, \

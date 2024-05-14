@@ -2301,6 +2301,17 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	* !CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE
 	*/
 
+		lll->tifs_tx_us = EVENT_IFS_US;
+		lll->tifs_rx_us = EVENT_IFS_US;
+		lll->tifs_hcto_us = EVENT_IFS_US;
+		for (size_t i = 0; i < 3; i++) {
+			conn->lll.frame_space.perphy[i].frame_space_min = EVENT_IFS_US;
+			conn->lll.frame_space.perphy[i].frame_space_max = EVENT_IFS_US;
+			conn->lll.frame_space.perphy[i].phys = PHY_1M | PHY_2M | PHY_CODED;
+			conn->lll.frame_space.perphy[i].spacing_type =
+				T_IFS_ACL_PC | T_IFS_ACL_CP | T_IFS_CIS;
+		}
+
 		/* Calculate event time reservation */
 		slot_us = max_tx_time + max_rx_time;
 		slot_us += lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
@@ -2319,6 +2330,14 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 		lll->tifs_tx_us = CONFIG_BT_CTLR_EVENT_IFS_LOW_LAT_US;
 		lll->tifs_rx_us = CONFIG_BT_CTLR_EVENT_IFS_LOW_LAT_US;
 		lll->tifs_hcto_us = CONFIG_BT_CTLR_EVENT_IFS_LOW_LAT_US;
+		for (size_t i = 0; i < 3; i++) {
+			conn->lll.frame_space.perphy[i].frame_space_min =
+				CONFIG_BT_CTLR_EVENT_IFS_LOW_LAT_US;
+			conn->lll.frame_space.perphy[i].frame_space_max = EVENT_IFS_US;
+			conn->lll.frame_space.perphy[i].phys = PHY_1M | PHY_2M | PHY_CODED;
+			conn->lll.frame_space.perphy[i].spacing_type =
+				T_IFS_ACL_PC | T_IFS_ACL_CP | T_IFS_CIS;
+		}
 		/* Reserve only the processing overhead, on overlap the
 		 * is_abort_cb mechanism will ensure to continue the event so
 		 * as to not loose anchor point sync.
@@ -2713,6 +2732,132 @@ void ull_conn_default_tx_time_set(uint16_t tx_time)
 	default_tx_time = tx_time;
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+uint8_t ull_frame_space_update_eff(struct ll_conn *conn)
+{
+	uint8_t frame_space_changed = 0U;
+	uint8_t phy_tx;
+	uint8_t phy_rx;
+
+#if defined(CONFIG_BT_PHY_UPDATE)
+	phy_tx = conn->lll.phy_tx;
+	phy_rx = conn->lll.phy_rx;
+#else
+	phy_tx = PHY_1M;
+	phy_rx = PHY_1M;
+#endif /* CONFIG_BT_PHY_UPDATE */
+
+	frame_space_changed = ull_frame_space_update_eff_from_local(conn);
+
+	if (frame_space_changed) {
+		/* TODO: confirm that we do not need to do something here? */
+	}
+
+	if ((conn->lll.frame_space.local.spacing_type & T_IFS_CIS) == T_IFS_CIS) {
+
+		if (conn->lll.tifs_cis_us == conn->lll.frame_space.eff.frame_space_min) {
+			frame_space_changed = 1;
+		}
+		conn->lll.tifs_cis_us = conn->lll.frame_space.eff.frame_space_min;
+	}
+
+	if ((conn->lll.frame_space.local.spacing_type & T_IFS_ACL_CP) == T_IFS_ACL_CP) {
+		if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
+			if (conn->lll.frame_space.local.phys & phy_tx) {
+				if (conn->lll.tifs_tx_us ==
+				    conn->lll.frame_space.eff.frame_space_min) {
+					frame_space_changed = 1;
+				}
+				conn->lll.tifs_tx_us = conn->lll.frame_space.eff.frame_space_min;
+			}
+		} else {
+			if (conn->lll.frame_space.local.phys & phy_rx) {
+				if (conn->lll.tifs_rx_us ==
+				    conn->lll.frame_space.eff.frame_space_min) {
+					frame_space_changed = 1;
+				}
+				conn->lll.tifs_rx_us = conn->lll.frame_space.eff.frame_space_min;
+			}
+		}
+	}
+
+	if ((conn->lll.frame_space.local.spacing_type & T_IFS_ACL_PC) == T_IFS_ACL_PC) {
+		if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
+			if (conn->lll.frame_space.local.phys & phy_rx) {
+				if (conn->lll.tifs_rx_us ==
+				    conn->lll.frame_space.eff.frame_space_min) {
+					frame_space_changed = 1;
+				}
+				conn->lll.tifs_rx_us = conn->lll.frame_space.eff.frame_space_min;
+			}
+		} else {
+			if (conn->lll.frame_space.local.phys & phy_tx) {
+				if (conn->lll.tifs_tx_us ==
+				    conn->lll.frame_space.eff.frame_space_min) {
+					frame_space_changed = 1;
+				}
+				conn->lll.tifs_tx_us = conn->lll.frame_space.eff.frame_space_min;
+			}
+		}
+	}
+	if (frame_space_changed == 1) {
+		conn->lll.frame_space.local.phys = 0;
+		conn->lll.frame_space.local.spacing_type = 0;
+	}
+
+	return frame_space_changed;
+}
+
+uint8_t ull_frame_space_update_eff_from_local(struct ll_conn *conn)
+{
+	uint8_t frame_space_changed = 0U;
+	uint16_t frame_space_min, frame_space_max;
+
+	frame_space_min = MAX(conn->lll.frame_space.local.frame_space_min, EVENT_IFS_LOW_LAT_US);
+	frame_space_max = MAX(conn->lll.frame_space.local.frame_space_max, EVENT_IFS_LOW_LAT_US);
+
+	conn->lll.frame_space.eff.frame_space_min = frame_space_min;
+	conn->lll.frame_space.eff.frame_space_max = frame_space_max;
+	conn->lll.frame_space.local.frame_space_min = frame_space_min;
+	conn->lll.frame_space.local.frame_space_max = frame_space_max;
+
+	return frame_space_changed;
+}
+
+void ull_frame_space_local_tx_update(struct ll_conn *conn, uint16_t frame_space_min,
+				     uint16_t frame_space_max, uint8_t phys, uint16_t spacing_type)
+{
+	conn->lll.frame_space.local.frame_space_min = frame_space_min;
+	if (conn->lll.tifs_rx_us > frame_space_max) {
+		frame_space_max = conn->lll.tifs_rx_us;
+	}
+	if (conn->lll.tifs_tx_us > frame_space_max) {
+		frame_space_max = conn->lll.tifs_tx_us;
+	}
+	conn->lll.frame_space.local.frame_space_max = frame_space_max;
+	conn->lll.frame_space.local.phys = phys;
+	conn->lll.frame_space.local.spacing_type = spacing_type;
+}
+
+uint8_t ull_frame_space_init(struct ll_conn *conn)
+{
+	conn->lll.tifs_rx_us = EVENT_IFS_US;
+	conn->lll.tifs_tx_us = EVENT_IFS_US;
+	conn->lll.tifs_cis_us = EVENT_IFS_US;
+	conn->lll.frame_space.local.frame_space_min = EVENT_IFS_LOW_LAT_US;
+	conn->lll.frame_space.local.frame_space_max = EVENT_IFS_MAX_US;
+	conn->lll.frame_space.eff.frame_space_min = EVENT_IFS_US;
+	conn->lll.frame_space.eff.frame_space_max = EVENT_IFS_US;
+	for (size_t i = 0; i < 3; i++) {
+		conn->lll.frame_space.perphy[i].frame_space_min = EVENT_IFS_US;
+		conn->lll.frame_space.perphy[i].frame_space_max = EVENT_IFS_US;
+		conn->lll.frame_space.perphy[i].phys = PHY_1M | PHY_2M | PHY_CODED;
+		conn->lll.frame_space.perphy[i].spacing_type =
+			T_IFS_ACL_PC | T_IFS_ACL_CP | T_IFS_CIS;
+	}
+
+	return 0;
+}
 
 #if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
 static bool ticker_op_id_match_func(uint8_t ticker_id, uint32_t ticks_slot,

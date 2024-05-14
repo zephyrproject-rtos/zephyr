@@ -318,6 +318,49 @@ static uint8_t pu_update_eff_times(struct ll_conn *conn, struct proc_ctx *ctx)
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+static uint8_t pu_update_eff_tifs(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	uint8_t phy_index_tx, phy_index_rx;
+
+	phy_index_tx =
+		conn->lll.phy_tx == 4 ? 2 : conn->lll.phy_tx - 1; /* a bit tricky but should work */
+	phy_index_rx =
+		conn->lll.phy_rx == 4 ? 2 : conn->lll.phy_rx - 1; /* a bit tricky but should work */
+
+	if (((conn->lll.frame_space.perphy[phy_index_tx].spacing_type & T_IFS_ACL_CP) ==
+	     T_IFS_ACL_CP) &&
+	    (conn->lll.role == BT_HCI_ROLE_PERIPHERAL)) {
+		conn->lll.frame_space.eff.frame_space_min =
+			conn->lll.frame_space.perphy[phy_index_tx].frame_space_min;
+		conn->lll.tifs_tx_us = conn->lll.frame_space.eff.frame_space_min;
+	}
+	if (((conn->lll.frame_space.perphy[phy_index_tx].spacing_type & T_IFS_ACL_PC) ==
+	     T_IFS_ACL_PC) &&
+	    (conn->lll.role == BT_HCI_ROLE_CENTRAL)) {
+		conn->lll.frame_space.eff.frame_space_min =
+			conn->lll.frame_space.perphy[phy_index_tx].frame_space_min;
+		conn->lll.tifs_tx_us = conn->lll.frame_space.eff.frame_space_min;
+	}
+
+	if (((conn->lll.frame_space.perphy[phy_index_rx].spacing_type & T_IFS_ACL_CP) ==
+	     T_IFS_ACL_CP) &&
+	    (conn->lll.role == BT_HCI_ROLE_CENTRAL)) {
+		conn->lll.frame_space.eff.frame_space_min =
+			conn->lll.frame_space.perphy[phy_index_rx].frame_space_min;
+		conn->lll.tifs_rx_us = conn->lll.frame_space.eff.frame_space_min;
+	}
+
+	if (((conn->lll.frame_space.perphy[phy_index_rx].spacing_type & T_IFS_ACL_PC) ==
+	     T_IFS_ACL_PC) &&
+	    (conn->lll.role == BT_HCI_ROLE_PERIPHERAL)) {
+		conn->lll.frame_space.eff.frame_space_min =
+			conn->lll.frame_space.perphy[phy_index_rx].frame_space_min;
+		conn->lll.tifs_rx_us = conn->lll.frame_space.eff.frame_space_min;
+	}
+
+	return 0;
+}
+
 static inline void pu_set_preferred_phys(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	conn->phy_pref_rx = ctx->data.pu.rx;
@@ -777,6 +820,9 @@ static void lp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 			ctx->data.pu.ntf_dle = pu_update_eff_times(conn, ctx);
 		}
 #endif
+		if (phy_changed) {
+			pu_update_eff_tifs(conn, ctx);
+		}
 		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
 		ctx->data.pu.ntf_pu = (phy_changed || ctx->data.pu.host_initiated);
@@ -1199,6 +1245,9 @@ static void rp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 			ctx->data.pu.ntf_dle = pu_update_eff_times(conn, ctx);
 		}
 #endif
+		if (phy_changed) {
+			pu_update_eff_tifs(conn, ctx);
+		}
 		/* if PHY settings changed we should generate NTF */
 		ctx->data.pu.ntf_pu = phy_changed;
 		rp_pu_complete(conn, ctx, evt, param);

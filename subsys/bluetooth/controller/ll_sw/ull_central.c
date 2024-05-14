@@ -227,7 +227,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	ull_dle_init(conn, PHY_1M);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-
+	ull_frame_space_init(conn);
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	conn_lll->rssi_latest = BT_HCI_LE_RSSI_NOT_AVAILABLE;
 #if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)

@@ -68,6 +68,11 @@ static inline bool feature_dle(struct ll_conn *conn)
 #endif
 }
 
+static inline bool feature_frame_space(struct ll_conn *conn)
+{
+	return (conn->llcp.fex.features_used & LL_FEAT_BIT_FRAME_SPACE) != 0;
+}
+
 static inline bool feature_privacy(struct ll_conn *conn)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
