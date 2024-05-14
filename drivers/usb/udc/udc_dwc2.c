@@ -54,12 +54,6 @@ K_MSGQ_DEFINE(drv_msgq, sizeof(struct dwc2_drv_event),
 /* TX FIFO0 depth in 32-bit words (used by control IN endpoint) */
 #define UDC_DWC2_FIFO0_DEPTH		16U
 
-/* Number of endpoints supported by the driver.
- * This must be equal to or greater than the number supported by the hardware.
- * (FIXME)
- */
-#define UDC_DWC2_DRV_EP_NUM		8
-
 /* Get Data FIFO access register */
 #define UDC_DWC2_EP_FIFO(base, idx)	((mem_addr_t)base + 0x1000 * (idx + 1))
 
@@ -1613,6 +1607,8 @@ static int dwc2_driver_preinit(const struct device *dev)
 	const struct udc_dwc2_config *config = dev->config;
 	struct udc_data *data = dev->data;
 	uint16_t mps = 1023;
+	uint32_t numdeveps;
+	uint32_t ineps;
 	int err;
 
 	k_mutex_init(&data->mutex);
@@ -1620,48 +1616,92 @@ static int dwc2_driver_preinit(const struct device *dev)
 	data->caps.rwup = true;
 	data->caps.addr_before_status = true;
 	data->caps.mps0 = UDC_MPS0_64;
-	if (config->speed_idx == 2) {
-		data->caps.hs = true;
+
+	(void)dwc2_quirk_caps(dev);
+	if (data->caps.hs) {
 		mps = 1024;
 	}
 
-	for (int i = 0; i < config->num_of_eps; i++) {
-		config->ep_cfg_out[i].caps.out = 1;
-		if (i == 0) {
-			config->ep_cfg_out[i].caps.control = 1;
-			config->ep_cfg_out[i].caps.mps = 64;
-		} else {
-			config->ep_cfg_out[i].caps.bulk = 1;
-			config->ep_cfg_out[i].caps.interrupt = 1;
-			config->ep_cfg_out[i].caps.iso = 1;
-			config->ep_cfg_out[i].caps.mps = mps;
+	/*
+	 * At this point, we cannot or do not want to access the hardware
+	 * registers to get GHWCFGn values. For now, we will use devicetree to
+	 * get GHWCFGn values and use them to determine the number and type of
+	 * configured endpoints in the hardware. This can be considered a
+	 * workaround, and we may change the upper layer internals to avoid it
+	 * in the future.
+	 */
+	ineps = usb_dwc2_get_ghwcfg4_ineps(config->ghwcfg4) + 1U;
+	numdeveps = usb_dwc2_get_ghwcfg2_numdeveps(config->ghwcfg2) + 1U;
+	LOG_DBG("Number of endpoints (NUMDEVEPS + 1) %u", numdeveps);
+	LOG_DBG("Number of IN endpoints (INEPS + 1) %u", ineps);
+
+	for (uint32_t i = 0, n = 0; i < numdeveps; i++) {
+		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(config->ghwcfg1, i);
+
+		if (epdir != USB_DWC2_GHWCFG1_EPDIR_OUT &&
+		    epdir != USB_DWC2_GHWCFG1_EPDIR_BDIR) {
+			continue;
 		}
 
-		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
-		err = udc_register_ep(dev, &config->ep_cfg_out[i]);
+		if (i == 0) {
+			config->ep_cfg_out[n].caps.control = 1;
+			config->ep_cfg_out[n].caps.mps = 64;
+		} else {
+			config->ep_cfg_out[n].caps.bulk = 1;
+			config->ep_cfg_out[n].caps.interrupt = 1;
+			config->ep_cfg_out[n].caps.iso = 1;
+			config->ep_cfg_out[n].caps.mps = mps;
+		}
+
+		config->ep_cfg_out[n].caps.out = 1;
+		config->ep_cfg_out[n].addr = USB_EP_DIR_OUT | i;
+
+		LOG_DBG("Register ep 0x%02x (%u)", i, n);
+		err = udc_register_ep(dev, &config->ep_cfg_out[n]);
 		if (err != 0) {
 			LOG_ERR("Failed to register endpoint");
 			return err;
+		}
+
+		n++;
+		/* Also check the number of desired OUT endpoints in devicetree. */
+		if (n >= config->num_out_eps) {
+			break;
 		}
 	}
 
-	for (int i = 0; i < config->num_of_eps; i++) {
-		config->ep_cfg_in[i].caps.in = 1;
-		if (i == 0) {
-			config->ep_cfg_in[i].caps.control = 1;
-			config->ep_cfg_in[i].caps.mps = 64;
-		} else {
-			config->ep_cfg_in[i].caps.bulk = 1;
-			config->ep_cfg_in[i].caps.interrupt = 1;
-			config->ep_cfg_in[i].caps.iso = 1;
-			config->ep_cfg_in[i].caps.mps = mps;
+	for (uint32_t i = 0, n = 0; i < numdeveps; i++) {
+		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(config->ghwcfg1, i);
+
+		if (epdir != USB_DWC2_GHWCFG1_EPDIR_IN &&
+		    epdir != USB_DWC2_GHWCFG1_EPDIR_BDIR) {
+			continue;
 		}
 
-		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
-		err = udc_register_ep(dev, &config->ep_cfg_in[i]);
+		if (i == 0) {
+			config->ep_cfg_in[n].caps.control = 1;
+			config->ep_cfg_in[n].caps.mps = 64;
+		} else {
+			config->ep_cfg_in[n].caps.bulk = 1;
+			config->ep_cfg_in[n].caps.interrupt = 1;
+			config->ep_cfg_in[n].caps.iso = 1;
+			config->ep_cfg_in[n].caps.mps = mps;
+		}
+
+		config->ep_cfg_in[n].caps.in = 1;
+		config->ep_cfg_in[n].addr = USB_EP_DIR_IN | i;
+
+		LOG_DBG("Register ep 0x%02x (%u)", USB_EP_DIR_IN | i, n);
+		err = udc_register_ep(dev, &config->ep_cfg_in[n]);
 		if (err != 0) {
 			LOG_ERR("Failed to register endpoint");
 			return err;
+		}
+
+		n++;
+		/* Also check the number of desired IN endpoints in devicetree. */
+		if (n >= MIN(ineps, config->num_in_eps)) {
+			break;
 		}
 	}
 
@@ -1770,19 +1810,23 @@ static const struct udc_api udc_dwc2_api = {
 		irq_disable(DT_INST_IRQN(n));					\
 	}									\
 										\
-	static struct udc_ep_config ep_cfg_out[UDC_DWC2_DRV_EP_NUM];		\
-	static struct udc_ep_config ep_cfg_in[UDC_DWC2_DRV_EP_NUM];		\
+	static struct udc_ep_config ep_cfg_out[DT_INST_PROP(n, num_out_eps)];	\
+	static struct udc_ep_config ep_cfg_in[DT_INST_PROP(n, num_in_eps)];	\
 										\
 	static const struct udc_dwc2_config udc_dwc2_config_##n = {		\
-		.num_of_eps = UDC_DWC2_DRV_EP_NUM,				\
-		.ep_cfg_in = ep_cfg_out,					\
-		.ep_cfg_out = ep_cfg_in,					\
+		.num_out_eps = DT_INST_PROP(n, num_out_eps),			\
+		.num_in_eps = DT_INST_PROP(n, num_in_eps),			\
+		.ep_cfg_in = ep_cfg_in,						\
+		.ep_cfg_out = ep_cfg_out,					\
 		.make_thread = udc_dwc2_make_thread_##n,			\
 		.base = (struct usb_dwc2_reg *)UDC_DWC2_DT_INST_REG_ADDR(n),	\
 		.pcfg = UDC_DWC2_PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		.irq_enable_func = udc_dwc2_irq_enable_func_##n,		\
 		.irq_disable_func = udc_dwc2_irq_disable_func_##n,		\
 		.quirks = UDC_DWC2_VENDOR_QUIRK_GET(n),				\
+		.ghwcfg1 = DT_INST_PROP(n, ghwcfg1),				\
+		.ghwcfg2 = DT_INST_PROP(n, ghwcfg2),				\
+		.ghwcfg4 = DT_INST_PROP(n, ghwcfg4),				\
 	};									\
 										\
 	static struct udc_dwc2_data udc_priv_##n = {				\
