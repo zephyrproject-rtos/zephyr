@@ -90,7 +90,7 @@ static int native_tty_conv_to_bottom_cfg(struct native_tty_bottom_cfg *bottom_cf
 		return -ENOTSUP;
 	}
 
-	switch (cfg->data_bits) {
+	switch (cfg->stop_bits) {
 	case UART_CFG_STOP_BITS_1:
 		bottom_cfg->stop_bits = NTB_STOP_BITS_1;
 		break;
