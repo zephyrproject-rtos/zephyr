@@ -66,6 +66,7 @@ uint32_t peripheral_gatt_write(uint32_t count)
 	(void)bt_conn_auth_cb_register(&auth_callbacks);
 #endif /* CONFIG_BT_SMP */
 
+	/* todo */
 	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);

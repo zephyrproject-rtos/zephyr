@@ -431,6 +431,7 @@ static int eds_slot_restart(struct eds_slot *slot, uint8_t type)
 			addr = oob.addr;
 		}
 
+		/* todo */
 		err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
 				      NULL, 0);
 	} else {
@@ -635,6 +636,7 @@ static void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	/* Start advertising */
+	/* todo */
 	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);

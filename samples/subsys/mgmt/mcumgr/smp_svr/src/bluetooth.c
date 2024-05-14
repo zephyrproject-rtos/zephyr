@@ -33,6 +33,7 @@ static void advertise(struct k_work *work)
 
 	bt_le_adv_stop();
 
+	/* todo */
 	rc = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (rc) {
 		LOG_ERR("Advertising failed to start (rc %d)", rc);

@@ -25,6 +25,7 @@ static void start_adv(void)
 {
 	int err;
 
+	/* todo */
 	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		LOG_ERR("Advertising failed to start (err %d)", err);

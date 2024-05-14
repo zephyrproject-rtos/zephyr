@@ -103,6 +103,7 @@ static int start_advertising(void)
 	}
 
 	enable_legacy_adv_scan_request_event(true);
+	/* todo */
 	err = bt_le_adv_start(&parameters, adv_data, ARRAY_SIZE(adv_data),
 			      scan_rsp_data, ARRAY_SIZE(scan_rsp_data));
 	if (err) {

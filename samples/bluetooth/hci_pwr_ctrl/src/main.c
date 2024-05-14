@@ -209,6 +209,7 @@ static void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	/* Start advertising */
+	/* todo */
 	err = bt_le_adv_start(param, ad, ARRAY_SIZE(ad),
 			      sd, ARRAY_SIZE(sd));
 	if (err) {

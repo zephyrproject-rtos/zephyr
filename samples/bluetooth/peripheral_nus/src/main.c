@@ -61,6 +61,7 @@ int main(void)
 		return err;
 	}
 
+	/* todo */
 	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Failed to start advertising: %d\n", err);
