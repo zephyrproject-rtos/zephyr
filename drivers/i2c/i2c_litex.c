@@ -8,6 +8,11 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(i2c_litex, CONFIG_I2C_LOG_LEVEL);
+
+#include "i2c-priv.h"
 #include "i2c_bitbang.h"
 
 #include <soc.h>
@@ -25,6 +30,7 @@
 struct i2c_litex_cfg {
 	uint32_t write_addr;
 	uint32_t read_addr;
+	uint32_t bitrate;
 };
 
 #define GET_I2C_CFG(dev)						     \
@@ -87,11 +93,18 @@ static int i2c_litex_init(const struct device *dev)
 {
 	const struct i2c_litex_cfg *config = GET_I2C_CFG(dev);
 	struct i2c_bitbang *bitbang = GET_I2C_BITBANG(dev);
+	int ret;
 
 	litex_write8(litex_read8(config->write_addr) | HIGH_STATE_ON_I2C_LINES, config->write_addr);
 	i2c_bitbang_init(bitbang, &i2c_litex_bitbang_io, (void *)config);
 
-	return 0;
+	ret = i2c_bitbang_configure(bitbang,
+				    I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
+	if (ret != 0) {
+		LOG_ERR("failed to configure I2C bitbang: %d", ret);
+	}
+
+	return ret;
 }
 
 static int i2c_litex_configure(const struct device *dev, uint32_t dev_config)
@@ -120,6 +133,7 @@ static const struct i2c_driver_api i2c_litex_driver_api = {
 	static const struct i2c_litex_cfg i2c_litex_cfg_##n = {		       \
 		.write_addr = DT_INST_REG_ADDR_BY_NAME(n, write),	       \
 		.read_addr = DT_INST_REG_ADDR_BY_NAME(n, read),		       \
+		.bitrate = DT_INST_PROP(n, clock_frequency),                   \
 	};								       \
 									       \
 	static struct i2c_bitbang i2c_bitbang_##n;			       \
