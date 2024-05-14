@@ -9,6 +9,11 @@ import shlex
 import sys
 import yaml
 
+from pathlib import Path
+from zephyr_ext_common import ZEPHYR_BASE
+sys.path.append(os.fspath(Path(__file__).parent.parent))
+import zephyr_module
+
 from west import log
 from west.configuration import config
 from zcmake import DEFAULT_CMAKE_GENERATOR, run_cmake, run_build, CMakeCache
@@ -575,7 +580,24 @@ class Build(Forceable):
         if user_args:
             cmake_opts.extend(shlex.split(user_args))
 
-        config_sysbuild = config_getboolean('sysbuild', False)
+        config_sysbuild = config_getboolean('sysbuild', None)
+
+        if config_sysbuild is None:
+            # Check if this is an ncs-repo directory
+            allow_list = [ 'mcuboot', 'sidewalk', 'find-my', 'nrf', 'matter', 'suit-processor',
+                           'memfault-firmware-sdk', 'zscilib', 'uoscore-uedhoc', 'zcbor',
+                           'hal_nordic', 'ncs-example-application', 'ant' ]
+            config_sysbuild = False
+
+            for module in zephyr_module.parse_modules(ZEPHYR_BASE, self.manifest):
+                if module.meta['name'] in allow_list and Path(self.source_dir).is_relative_to(module.project):
+                    config_sysbuild = True
+                    break
+
+            if config_sysbuild is False and Path(self.source_dir).is_relative_to(ZEPHYR_BASE):
+                config_sysbuild = True
+
+
         if self.args.sysbuild or (config_sysbuild and not self.args.no_sysbuild):
             cmake_opts.extend(['-S{}'.format(SYSBUILD_PROJ_DIR),
                                '-DAPP_DIR:PATH={}'.format(self.source_dir)])
