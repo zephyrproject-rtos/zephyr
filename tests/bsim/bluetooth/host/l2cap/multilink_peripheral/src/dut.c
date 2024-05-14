@@ -251,7 +251,7 @@ static void start_advertising(void)
 
 	LOG_DBG("starting advertiser");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
 	TEST_ASSERT(!err, "Advertising failed to start (err %d)", err);
 }
 

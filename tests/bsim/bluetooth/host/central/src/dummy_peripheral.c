@@ -41,7 +41,7 @@ static void test_peripheral_dummy(void)
 	err = bt_enable(NULL);
 	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
 	TEST_ASSERT(err == 0, "Advertising failed to start (err %d)", err);
 
 	err = k_sem_take(&sem_connected, K_FOREVER);

@@ -602,8 +602,8 @@ static void test_main_acl_disconnect(void)
 	 */
 	for (size_t i = 0U; i < ARRAY_SIZE(dummy_ext_adv); i++) {
 		const struct bt_le_adv_param param = BT_LE_ADV_PARAM_INIT(
-			(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CONNECTABLE),
-			BT_GAP_ADV_SLOW_INT_MAX, BT_GAP_ADV_SLOW_INT_MAX, NULL);
+			(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CONN), BT_GAP_ADV_SLOW_INT_MAX,
+			BT_GAP_ADV_SLOW_INT_MAX, NULL);
 		int err;
 
 		err = bt_le_ext_adv_create(&param, NULL, &dummy_ext_adv[i]);

@@ -53,7 +53,7 @@ static int cmd_hrs_simulate(const struct shell *sh,
 		if (!hrs_registered && IS_ENABLED(CONFIG_BT_BROADCASTER)) {
 			shell_print(sh, "Registering HRS Service");
 			hrs_registered = true;
-			err = bt_le_adv_start(BT_LE_ADV_CONN, ad,
+			err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad,
 					      ARRAY_SIZE(ad), NULL, 0);
 			if (err) {
 				shell_error(sh, "Advertising failed to start"
