@@ -161,6 +161,12 @@ config HAWKBIT_REBOOT_COLD
 
 endchoice
 
+config HEAP_MEM_POOL_ADD_SIZE_HAWKBIT
+	int "Heap memory pool size for hawkBit"
+	default 4096
+	help
+	  Set the size of the heap memory pool for hawkBit.
+
 module = HAWKBIT
 module-str = Log Level for hawkbit
 module-help = Enables logging for hawkBit code.
