@@ -36,6 +36,17 @@ chosen {
 		sclk_configure = <0x0 0x0 0x10 0x0 0x0>;
         comm_configure = <0x01 0x00 0x03 0x08>;
 		clock-frequency = <10000000>;
+
+		#address-cells = <0x1>;
+		#size-cells = <0x0>;
+
+		disp: display@0{
+			compatible = "zephyr,dummy-dc";
+			status = "okay";
+			height = <240>;
+			width = <240>;
+			reg = <0x0>;
+		};
 };
 &gpio0 {
 	status = "okay";
