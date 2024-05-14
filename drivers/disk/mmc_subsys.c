@@ -85,6 +85,13 @@ static int disk_mmc_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buf)
 	switch (cmd) {
 	case DISK_IOCTL_CTRL_INIT:
 		return disk_mmc_access_init(disk);
+	case DISK_IOCTL_CTRL_DEINIT:
+		mmc_ioctl(&data->card, DISK_IOCTL_CTRL_SYNC, NULL);
+		/* sd_init() will toggle power to MMC, so we can just mark
+		 * disk as uninitialized
+		 */
+		data->status = SD_UNINIT;
+		return 0;
 	default:
 		return mmc_ioctl(&data->card, cmd, buf);
 	}

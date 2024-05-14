@@ -107,6 +107,7 @@ static int loopback_disk_access_ioctl(struct disk_info *disk, uint8_t cmd, void 
 		*(uint32_t *)buff = LOOPBACK_SECTOR_SIZE;
 		return 0;
 	}
+	case DISK_IOCTL_CTRL_DEINIT:
 	case DISK_IOCTL_CTRL_SYNC:
 		return fs_sync(&ctx->file);
 	case DISK_IOCTL_CTRL_INIT:

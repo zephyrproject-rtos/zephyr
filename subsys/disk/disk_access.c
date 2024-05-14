@@ -139,6 +139,24 @@ int disk_access_ioctl(const char *pdrv, uint8_t cmd, void *buf)
 				LOG_ERR("Disk reference count at max value");
 			}
 			break;
+		case DISK_IOCTL_CTRL_DEINIT:
+			if ((buf != NULL) && (*((bool *)buf))) {
+				/* Force deinit disk */
+				disk->refcnt = 0U;
+				disk->ops->ioctl(disk, cmd, buf);
+				rc = 0;
+			} else if (disk->refcnt == 1U) {
+				rc = disk->ops->ioctl(disk, cmd, buf);
+				if (rc == 0) {
+					disk->refcnt--;
+				}
+			} else if (disk->refcnt > 0) {
+				disk->refcnt--;
+				rc = 0;
+			} else {
+				LOG_WRN("Disk is already deinitialized");
+			}
+			break;
 		default:
 			rc = disk->ops->ioctl(disk, cmd, buf);
 		}

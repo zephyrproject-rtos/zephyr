@@ -94,6 +94,7 @@ static int disk_ram_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buff
 		*(uint32_t *)buff  = 1U;
 		break;
 	case DISK_IOCTL_CTRL_INIT:
+	case DISK_IOCTL_CTRL_DEINIT:
 		break;
 	default:
 		return -EINVAL;
