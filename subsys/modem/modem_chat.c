@@ -356,8 +356,27 @@ static void modem_chat_script_send_timeout_handler(struct k_work *item)
 	modem_chat_script_next(chat, false);
 }
 
+#if CONFIG_MODEM_STATS
+static uint32_t get_receive_buf_length(struct modem_chat *chat)
+{
+	return chat->receive_buf_len;
+}
+
+static void advertise_receive_buf_stats(struct modem_chat *chat)
+{
+	uint32_t length;
+
+	length = get_receive_buf_length(chat);
+	modem_stats_buffer_advertise_length(&chat->receive_buf_stats, length);
+}
+#endif
+
 static void modem_chat_parse_reset(struct modem_chat *chat)
 {
+#if CONFIG_MODEM_STATS
+	advertise_receive_buf_stats(chat);
+#endif
+
 	/* Reset parameters used for parsing */
 	chat->receive_buf_len = 0;
 	chat->delimiter_match_len = 0;
@@ -685,6 +704,21 @@ static void modem_chat_process_bytes(struct modem_chat *chat)
 	}
 }
 
+#if CONFIG_MODEM_STATS
+static uint32_t get_work_buf_length(struct modem_chat *chat)
+{
+	return chat->work_buf_len;
+}
+
+static void advertise_work_buf_stats(struct modem_chat *chat)
+{
+	uint32_t length;
+
+	length = get_work_buf_length(chat);
+	modem_stats_buffer_advertise_length(&chat->work_buf_stats, length);
+}
+#endif
+
 static void modem_chat_process_handler(struct k_work *item)
 {
 	struct modem_chat *chat = CONTAINER_OF(item, struct modem_chat, receive_work);
@@ -698,6 +732,10 @@ static void modem_chat_process_handler(struct k_work *item)
 
 	/* Save received data length */
 	chat->work_buf_len = (size_t)ret;
+
+#if CONFIG_MODEM_STATS
+	advertise_work_buf_stats(chat);
+#endif
 
 	/* Process data */
 	modem_chat_process_bytes(chat);
@@ -722,6 +760,28 @@ static void modem_chat_pipe_callback(struct modem_pipe *pipe, enum modem_pipe_ev
 		break;
 	}
 }
+
+#if CONFIG_MODEM_STATS
+static uint32_t get_receive_buf_size(struct modem_chat *chat)
+{
+	return chat->receive_buf_size;
+}
+
+static uint32_t get_work_buf_size(struct modem_chat *chat)
+{
+	return sizeof(chat->work_buf);
+}
+
+static void init_buf_stats(struct modem_chat *chat)
+{
+	uint32_t size;
+
+	size = get_receive_buf_size(chat);
+	modem_stats_buffer_init(&chat->receive_buf_stats, "chat_rx", size);
+	size = get_work_buf_size(chat);
+	modem_stats_buffer_init(&chat->work_buf_stats, "chat_work", size);
+}
+#endif
 
 int modem_chat_init(struct modem_chat *chat, const struct modem_chat_config *config)
 {
@@ -758,6 +818,10 @@ int modem_chat_init(struct modem_chat *chat, const struct modem_chat_config *con
 	k_work_init(&chat->script_send_work, modem_chat_script_send_handler);
 	k_work_init_delayable(&chat->script_send_timeout_work,
 			      modem_chat_script_send_timeout_handler);
+
+#if CONFIG_MODEM_STATS
+	init_buf_stats(chat);
+#endif
 
 	return 0;
 }
