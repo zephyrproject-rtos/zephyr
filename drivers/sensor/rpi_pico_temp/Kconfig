@@ -7,7 +7,7 @@ config RPI_PICO_TEMP
 	bool "Raspberry Pi Pico CPU Temperature Sensor"
 	default y
 	depends on DT_HAS_RASPBERRYPI_PICO_TEMP_ENABLED
-	depends on ADC
+	select ADC
 
 	help
 	  Enable driver for Raspberry Pi Pico CPU temperature sensor.
