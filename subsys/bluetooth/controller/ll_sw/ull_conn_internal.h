@@ -109,7 +109,14 @@ uint8_t ull_dle_update_eff(struct ll_conn *conn);
 uint8_t ull_dle_update_eff_tx(struct ll_conn *conn);
 uint8_t ull_dle_update_eff_rx(struct ll_conn *conn);
 
+uint8_t ull_fsu_update_eff(struct ll_conn *conn);
+uint8_t ull_fsu_update_eff_from_local(struct ll_conn *conn);
+uint8_t ull_fsu_init(struct ll_conn *conn);
+
 void ull_dle_local_tx_update(struct ll_conn *conn, uint16_t tx_octets, uint16_t tx_time);
+
+void ull_fsu_local_tx_update(struct ll_conn *conn, uint16_t fsu_min,
+				     uint16_t fsu_max, uint8_t phys, uint16_t spacing_type);
 
 void ull_conn_default_phy_tx_set(uint8_t tx);
 
