@@ -9,6 +9,13 @@ config ROM_START_OFFSET
 
 config NUM_IRQS
 	default 129
+if MCUX_OS_TIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000
+
+endif # MCUX_OS_TIMER
+
 if CORTEX_M_SYSTICK
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
