@@ -20,7 +20,6 @@
 #ifndef _ASMLANGUAGE
 
 #include <cy_device_headers.h>
-#include "soc_gpio.h"
 #include "cypress_psoc6_dt.h"
 
 #endif /* !_ASMLANGUAGE */
