@@ -368,40 +368,6 @@ void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq)
 	irq_enable(irq);
 }
 
-struct lookup_data {
-	pcie_bdf_t bdf;
-	pcie_id_t id;
-};
-
-static bool lookup_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
-{
-	struct lookup_data *data = cb_data;
-
-	if (id == data->id) {
-		data->bdf = bdf;
-		return false;
-	}
-
-	return true;
-}
-
-pcie_bdf_t pcie_bdf_lookup(pcie_id_t id)
-{
-	struct lookup_data data = {
-		.bdf = PCIE_BDF_NONE,
-		.id = id,
-	};
-	struct pcie_scan_opt opt = {
-		.cb = lookup_cb,
-		.cb_data = &data,
-		.flags = (PCIE_SCAN_RECURSIVE | PCIE_SCAN_CB_ALL),
-	};
-
-	pcie_scan(&opt);
-
-	return data.bdf;
-}
-
 static bool scan_flag(const struct pcie_scan_opt *opt, uint32_t flag)
 {
 	return ((opt->flags & flag) != 0U);
