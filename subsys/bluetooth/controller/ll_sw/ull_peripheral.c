@@ -379,7 +379,7 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	max_rx_time = PDU_MAX_US(0U, 0U, PHY_1M);
 #endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
-
+	ull_fsu_init(conn);
 #if defined(CONFIG_BT_CTLR_PHY)
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy_rx, PHY_FLAGS_S8);
 #else /* CONFIG_BT_CTLR_PHY */
