@@ -237,3 +237,7 @@ ipc0: &cpuapp_cpurad_ipc {
 &cpuapp_ieee802154 {
 	status = "okay";
 };
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
