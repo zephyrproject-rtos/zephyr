@@ -85,7 +85,6 @@ ZTEST(net_socket_poll, test_poll)
 		     tstamp);
 	zassert_equal(res, 0, "");
 
-
 	/* Send pkt for s_sock and poll with timeout of 10 */
 	len = zsock_send(c_sock, BUF_AND_SIZE(TEST_STR_SMALL), 0);
 	zassert_equal(len, STRLEN(TEST_STR_SMALL), "invalid send len");
@@ -150,9 +149,6 @@ ZTEST(net_socket_poll, test_poll)
 	zassert_true(k_uptime_get_32() - tstamp < 100, "");
 	zassert_equal(res, 1, "");
 	zassert_equal(pollout[0].revents, ZSOCK_POLLOUT, "");
-
-	/* Let the network stack run */
-	k_msleep(10);
 
 	res = zsock_close(c_sock_tcp);
 	zassert_equal(res, 0, "close failed");

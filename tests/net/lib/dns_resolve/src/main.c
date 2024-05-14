@@ -348,7 +348,7 @@ ZTEST(dns_resolve, test_dns_query_server_count)
 			continue;
 		}
 
-		if (!ctx->servers[i].net_ctx) {
+		if (ctx->servers[i].sock < 0) {
 			continue;
 		}
 
@@ -369,7 +369,7 @@ ZTEST(dns_resolve, test_dns_query_ipv4_server_count)
 			continue;
 		}
 
-		if (!ctx->servers[i].net_ctx) {
+		if (ctx->servers[i].sock < 0) {
 			continue;
 		}
 
@@ -399,7 +399,7 @@ ZTEST(dns_resolve, test_dns_query_ipv6_server_count)
 			continue;
 		}
 
-		if (!ctx->servers[i].net_ctx) {
+		if (ctx->servers[i].sock < 0) {
 			continue;
 		}
 

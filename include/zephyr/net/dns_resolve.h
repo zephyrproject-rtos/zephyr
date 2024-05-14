@@ -13,8 +13,10 @@
 #ifndef ZEPHYR_INCLUDE_NET_DNS_RESOLVE_H_
 #define ZEPHYR_INCLUDE_NET_DNS_RESOLVE_H_
 
+#include <zephyr/kernel.h>
 #include <zephyr/net/net_ip.h>
-#include <zephyr/net/net_context.h>
+#include <zephyr/net/socket_poll.h>
+#include <zephyr/net/net_core.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -172,7 +174,7 @@ struct dns_resolve_context {
 		struct sockaddr dns_server;
 
 		/** Connection to the DNS server */
-		struct net_context *net_ctx;
+		int sock;
 
 		/** Is this server mDNS one */
 		uint8_t is_mdns : 1;
@@ -180,6 +182,16 @@ struct dns_resolve_context {
 		/** Is this server LLMNR one */
 		uint8_t is_llmnr : 1;
 	} servers[CONFIG_DNS_RESOLVER_MAX_SERVERS + DNS_MAX_MCAST_SERVERS];
+
+/** @cond INTERNAL_HIDDEN */
+#if (IS_ENABLED(CONFIG_NET_IPV6) && IS_ENABLED(CONFIG_NET_IPV4))
+#define DNS_RESOLVER_MAX_POLL (2 * (CONFIG_DNS_RESOLVER_MAX_SERVERS + DNS_MAX_MCAST_SERVERS))
+#else
+#define DNS_RESOLVER_MAX_POLL (1 * (CONFIG_DNS_RESOLVER_MAX_SERVERS + DNS_MAX_MCAST_SERVERS))
+#endif
+	/** Socket polling for each server connection */
+	struct zsock_pollfd fds[DNS_RESOLVER_MAX_POLL];
+/** @endcond */
 
 	/** Prevent concurrent access */
 	struct k_mutex lock;

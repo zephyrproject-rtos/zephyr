@@ -6,6 +6,7 @@
 
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2024 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +25,7 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/socket_service.h>
 #include "dns_pack.h"
 #include "dns_internal.h"
 #include "dns_cache.h"
@@ -62,6 +64,11 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #define DNS_IPV4_LEN		sizeof(struct in_addr)
 #define DNS_IPV6_LEN		sizeof(struct in6_addr)
 
+static void svc_handler(struct k_work *work);
+static int init_called;
+
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc, NULL, svc_handler, DNS_RESOLVER_MAX_POLL);
+
 NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
 		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
 
@@ -78,7 +85,7 @@ static struct dns_resolve_context dns_default_ctx;
 static int dns_write(struct dns_resolve_context *ctx,
 		     int server_idx,
 		     int query_idx,
-		     struct net_buf *dns_data,
+		     uint8_t *buf, size_t buf_len, size_t max_len,
 		     struct net_buf *dns_qname,
 		     int hop_limit);
 
@@ -213,6 +220,14 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 		goto fail;
 	}
 
+	ARRAY_FOR_EACH(ctx->servers, j) {
+		ctx->servers[j].sock = -1;
+	}
+
+	ARRAY_FOR_EACH(ctx->fds, j) {
+		ctx->fds[j].fd = -1;
+	}
+
 	if (servers) {
 		for (i = 0; idx < SERVER_COUNT && servers[i]; i++) {
 			struct sockaddr *addr = &ctx->servers[idx].dns_server;
@@ -283,22 +298,28 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 			goto fail;
 		}
 
-		ret = net_context_get(ctx->servers[i].dns_server.sa_family,
-				      SOCK_DGRAM, IPPROTO_UDP,
-				      &ctx->servers[i].net_ctx);
+		ret = zsock_socket(ctx->servers[i].dns_server.sa_family,
+				   SOCK_DGRAM, IPPROTO_UDP);
 		if (ret < 0) {
-			NET_DBG("Cannot get net_context (%d)", ret);
+			NET_DBG("Cannot get socket (%d)", ret);
 			goto fail;
 		}
 
-		ret = net_context_bind(ctx->servers[i].net_ctx,
-				       local_addr, addr_len);
+		ctx->servers[i].sock = ret;
+
+		ret = zsock_bind(ctx->servers[i].sock, local_addr, addr_len);
 		if (ret < 0) {
 			NET_DBG("Cannot bind DNS context (%d)", ret);
 			goto fail;
 		}
 
-		iface = net_context_get_iface(ctx->servers[i].net_ctx);
+		if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
+			iface = net_if_ipv6_select_src_iface(
+					&net_sin6(&ctx->servers[i].dns_server)->sin6_addr);
+		} else {
+			iface = net_if_ipv4_select_src_iface(
+					&net_sin(&ctx->servers[i].dns_server)->sin_addr);
+		}
 
 		if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
 			net_mgmt_event_notify_with_info(
@@ -327,6 +348,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 		goto fail;
 	}
 
+	init_called++;
 	ctx->state = DNS_RESOLVE_CONTEXT_ACTIVE;
 	ctx->buf_timeout = DNS_BUF_TIMEOUT;
 	ret = 0;
@@ -714,8 +736,7 @@ quit:
 
 /* Must be invoked with context lock held */
 static int dns_read(struct dns_resolve_context *ctx,
-		    struct net_pkt *pkt,
-		    struct net_buf *dns_data,
+		    struct net_buf *dns_data, size_t buf_len,
 		    uint16_t *dns_id,
 		    struct net_buf *dns_cname,
 		    uint16_t *query_hash)
@@ -726,15 +747,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 	int ret;
 	int query_idx = -1;
 
-	data_len = MIN(net_pkt_remaining_data(pkt), DNS_RESOLVER_MAX_BUF_SIZE);
-
-	/* TODO: Instead of this temporary copy, just use the net_pkt directly.
-	 */
-	ret = net_pkt_read(pkt, dns_data->data, data_len);
-	if (ret < 0) {
-		ret = DNS_EAI_MEMORY;
-		goto quit;
-	}
+	data_len = MIN(buf_len, DNS_RESOLVER_MAX_BUF_SIZE);
 
 	dns_msg.msg = dns_data->data;
 	dns_msg.msg_size = data_len;
@@ -755,8 +768,6 @@ static int dns_read(struct dns_resolve_context *ctx,
 	/* Marks the end of the results */
 	release_query(&ctx->queries[query_idx]);
 
-	net_pkt_unref(pkt);
-
 	return 0;
 
 finished:
@@ -764,26 +775,22 @@ finished:
 				     ctx->queries[query_idx].query,
 				     ctx->queries[query_idx].query_type);
 quit:
-	net_pkt_unref(pkt);
-
 	return ret;
 }
 
-static void cb_recv(struct net_context *net_ctx,
-		    struct net_pkt *pkt,
-		    union net_ip_header *ip_hdr,
-		    union net_proto_header *proto_hdr,
-		    int status,
-		    void *user_data)
+static int recv_data(struct net_socket_service_event *pev)
 {
-	struct dns_resolve_context *ctx = user_data;
+	COND_CODE_1(IS_ENABLED(CONFIG_NET_IPV6),
+		    (struct sockaddr_in6), (struct sockaddr_in)) addr;
+	struct dns_resolve_context *ctx = pev->user_data;
+	socklen_t optlen = sizeof(int);
+	size_t addrlen = sizeof(addr);
 	struct net_buf *dns_cname = NULL;
 	struct net_buf *dns_data = NULL;
 	uint16_t query_hash = 0U;
 	uint16_t dns_id = 0U;
-	int ret, i;
-
-	ARG_UNUSED(net_ctx);
+	int family = AF_UNSPEC, sock_error;
+	int ret = 0, i, len;
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 
@@ -791,24 +798,43 @@ static void cb_recv(struct net_context *net_ctx,
 		goto unlock;
 	}
 
-	if (status) {
+	if ((pev->event.revents & ZSOCK_POLLERR) ||
+	    (pev->event.revents & ZSOCK_POLLNVAL)) {
+		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
+				       SO_DOMAIN, &family, &optlen);
+		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
+				       SO_ERROR, &sock_error, &optlen);
+		NET_ERR("Receiver IPv%d socket error (%d)",
+			family == AF_INET ? 4 : 6, sock_error);
 		ret = DNS_EAI_SYSTEM;
-		goto quit;
+		goto unlock;
 	}
 
 	dns_data = net_buf_alloc(&dns_msg_pool, ctx->buf_timeout);
 	if (!dns_data) {
 		ret = DNS_EAI_MEMORY;
-		goto quit;
+		goto free_buf;
 	}
 
 	dns_cname = net_buf_alloc(&dns_qname_pool, ctx->buf_timeout);
 	if (!dns_cname) {
 		ret = DNS_EAI_MEMORY;
-		goto quit;
+		goto free_buf;
 	}
 
-	ret = dns_read(ctx, pkt, dns_data, &dns_id, dns_cname, &query_hash);
+	ret = zsock_recvfrom(pev->event.fd, dns_data->data,
+			     net_buf_max_len(dns_data), 0,
+			     (struct sockaddr *)&addr, &addrlen);
+	if (ret < 0) {
+		ret = -errno;
+		NET_ERR("recv failed on IPv%d socket (%d)",
+			family == AF_INET ? 4 : 6, -ret);
+		goto free_buf;
+	}
+
+	len = ret;
+
+	ret = dns_read(ctx, dns_data, len, &dns_id, dns_cname, &query_hash);
 	if (!ret) {
 		/* We called the callback already in dns_read() if there
 		 * was no errors.
@@ -827,11 +853,13 @@ static void cb_recv(struct net_context *net_ctx,
 		}
 
 		for (j = 0; j < SERVER_COUNT; j++) {
-			if (!ctx->servers[j].net_ctx) {
+			if (ctx->servers[j].sock < 0) {
 				continue;
 			}
 
-			ret = dns_write(ctx, j, i, dns_data, dns_cname, 0);
+			ret = dns_write(ctx, j, i, dns_data->data, len,
+					net_buf_max_len(dns_data),
+					dns_cname, 0);
 			if (ret < 0) {
 				failure++;
 			}
@@ -871,30 +899,50 @@ free_buf:
 
 unlock:
 	k_mutex_unlock(&ctx->lock);
+
+	return ret;
+}
+
+static void svc_handler(struct k_work *work)
+{
+	struct net_socket_service_event *pev =
+		CONTAINER_OF(work, struct net_socket_service_event, work);
+	int ret;
+
+	ret = recv_data(pev);
+	if (ret < 0) {
+		NET_ERR("DNS recv error (%d)", ret);
+	}
+}
+
+static int set_ttl_hop_limit(int sock, int level, int option, int new_limit)
+{
+	return zsock_setsockopt(sock, level, option, &new_limit, sizeof(new_limit));
 }
 
 /* Must be invoked with context lock held */
 static int dns_write(struct dns_resolve_context *ctx,
 		     int server_idx,
 		     int query_idx,
-		     struct net_buf *dns_data,
+		     uint8_t *buf, size_t buf_len, size_t max_len,
 		     struct net_buf *dns_qname,
 		     int hop_limit)
 {
 	enum dns_query_type query_type;
-	struct net_context *net_ctx;
 	struct sockaddr *server;
 	int server_addr_len;
-	uint16_t dns_id;
-	int ret;
+	uint16_t dns_id, len;
+	int ret, sock, family;
 
-	net_ctx = ctx->servers[server_idx].net_ctx;
+	sock = ctx->servers[server_idx].sock;
+	family = ctx->servers[server_idx].dns_server.sa_family;
 	server = &ctx->servers[server_idx].dns_server;
 	dns_id = ctx->queries[query_idx].id;
 	query_type = ctx->queries[query_idx].query_type;
 
-	ret = dns_msg_pack_query(dns_data->data, &dns_data->len,
-				 net_buf_max_len(dns_data),
+	len = buf_len;
+
+	ret = dns_msg_pack_query(buf, &len, (uint16_t)max_len,
 				 dns_qname->data, dns_qname->len, dns_id,
 				 (enum dns_rr_type)query_type);
 	if (ret < 0) {
@@ -905,26 +953,58 @@ static int dns_write(struct dns_resolve_context *ctx,
 	 * the dns_qname->len contains the length of \0
 	 */
 	ctx->queries[query_idx].query_hash =
-		crc16_ansi(dns_data->data + DNS_MSG_HEADER_SIZE,
-			   dns_qname->len + 2);
+		crc16_ansi(buf + DNS_MSG_HEADER_SIZE, dns_qname->len + 2);
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) &&
-	    net_context_get_family(net_ctx) == AF_INET6 &&
-	    hop_limit > 0) {
-		net_context_set_ipv6_hop_limit(net_ctx, hop_limit);
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-		   net_context_get_family(net_ctx) == AF_INET &&
-		   hop_limit > 0) {
-		net_context_set_ipv4_ttl(net_ctx, hop_limit);
+	if (hop_limit > 0) {
+		if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+			ret = set_ttl_hop_limit(sock, IPPROTO_IPV6,
+						IPV6_UNICAST_HOPS,
+						hop_limit);
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+			ret = set_ttl_hop_limit(sock, IPPROTO_IP, IP_TTL,
+						hop_limit);
+		} else {
+			ret = -ENOTSUP;
+		}
+
+		if (ret < 0) {
+			NET_DBG("Cannot set %s to socket (%d)",
+				family == AF_INET6 ? "hop limit" :
+				(family == AF_INET ? "TTL" : "<unknown>"),
+				ret);
+			return ret;
+		}
 	}
 
-	ret = net_context_recv(net_ctx, cb_recv, K_NO_WAIT, ctx);
-	if (ret < 0 && ret != -EALREADY) {
-		NET_DBG("Could not receive from socket (%d)", ret);
+	ret = -ENOENT;
+
+	ARRAY_FOR_EACH(ctx->fds, i) {
+		if (ctx->fds[i].fd == sock) {
+			/* There was query to this server already */
+			ret = 0;
+			break;
+		}
+
+		if (ctx->fds[i].fd < 0) {
+			ctx->fds[i].fd = sock;
+			ctx->fds[i].events = ZSOCK_POLLIN;
+			ret = 0;
+			break;
+		}
+	}
+
+	if (ret < 0) {
+		NET_DBG("Cannot set %s to socket (%d)", "polling", ret);
 		return ret;
 	}
 
-	if (server->sa_family == AF_INET) {
+	ret = net_socket_service_register(&svc, ctx->fds, ARRAY_SIZE(ctx->fds), ctx);
+	if (ret < 0) {
+		NET_DBG("Cannot register socket service (%d)", ret);
+		return ret;
+	}
+
+	if (family == AF_INET) {
 		server_addr_len = sizeof(struct sockaddr_in);
 	} else {
 		server_addr_len = sizeof(struct sockaddr_in6);
@@ -942,9 +1022,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 		"hash %u", query_idx, server_idx, dns_id,
 		ctx->queries[query_idx].query_hash);
 
-	ret = net_context_sendto(net_ctx, dns_data->data, dns_data->len,
-				 server, server_addr_len, NULL,
-				 K_NO_WAIT, NULL);
+	ret = zsock_sendto(sock, buf, len, 0, server, server_addr_len);
 	if (ret < 0) {
 		NET_DBG("Cannot send query (%d)", ret);
 		return ret;
@@ -1276,7 +1354,7 @@ try_resolve:
 	for (j = 0; j < SERVER_COUNT; j++) {
 		hop_limit = 0U;
 
-		if (!ctx->servers[j].net_ctx) {
+		if (ctx->servers[j].sock < 0) {
 			continue;
 		}
 
@@ -1299,7 +1377,10 @@ try_resolve:
 			hop_limit = 1U;
 		}
 
-		ret = dns_write(ctx, j, i, dns_data, dns_qname, hop_limit);
+		ret = dns_write(ctx, j, i, dns_data->data,
+				net_buf_max_len(dns_data),
+				net_buf_max_len(dns_data),
+				dns_qname, hop_limit);
 		if (ret < 0) {
 			failure++;
 			continue;
@@ -1371,25 +1452,45 @@ static int dns_resolve_close_locked(struct dns_resolve_context *ctx)
 	k_mutex_unlock(&ctx->lock);
 
 	for (i = 0; i < SERVER_COUNT; i++) {
-		if (ctx->servers[i].net_ctx) {
-			struct net_if *iface;
+		struct net_if *iface;
 
-			iface = net_context_get_iface(ctx->servers[i].net_ctx);
-
-			if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
-				net_mgmt_event_notify_with_info(
-					NET_EVENT_DNS_SERVER_DEL,
-					iface,
-					(void *)&ctx->servers[i].dns_server,
-					sizeof(struct sockaddr));
-			} else {
-				net_mgmt_event_notify(NET_EVENT_DNS_SERVER_DEL,
-						      iface);
-			}
-
-			net_context_put(ctx->servers[i].net_ctx);
-			ctx->servers[i].net_ctx = NULL;
+		if (ctx->servers[i].sock < 0) {
+			continue;
 		}
+
+		if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
+			iface = net_if_ipv6_select_src_iface(
+				&net_sin6(&ctx->servers[i].dns_server)->sin6_addr);
+		} else {
+			iface = net_if_ipv4_select_src_iface(
+				&net_sin(&ctx->servers[i].dns_server)->sin_addr);
+		}
+
+		if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
+			net_mgmt_event_notify_with_info(
+				NET_EVENT_DNS_SERVER_DEL,
+				iface,
+				(void *)&ctx->servers[i].dns_server,
+				sizeof(struct sockaddr));
+		} else {
+			net_mgmt_event_notify(NET_EVENT_DNS_SERVER_DEL,
+					      iface);
+		}
+
+		zsock_close(ctx->servers[i].sock);
+
+		ARRAY_FOR_EACH(ctx->fds, j) {
+			if (ctx->fds[j].fd == ctx->servers[i].sock) {
+				ctx->fds[j].fd = -1;
+			}
+		}
+
+		ctx->servers[i].sock = -1;
+	}
+
+	if (--init_called <= 0) {
+		(void)net_socket_service_unregister(&svc);
+		init_called = 0;
 	}
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
