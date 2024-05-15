@@ -98,6 +98,7 @@ static struct bt_bap_lc3_preset unicast_preset_48_2_1 =
 					 BT_AUDIO_CONTEXT_TYPE_MEDIA);
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
+				      const struct bt_csip_set_coordinator_set_member *member,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (err != 0) {

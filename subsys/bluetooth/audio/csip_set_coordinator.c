@@ -1418,6 +1418,22 @@ struct bt_csip_set_coordinator_csis_inst *bt_csip_set_coordinator_csis_inst_by_h
 	return NULL;
 }
 
+struct bt_csip_set_coordinator_set_member *
+bt_csip_set_coordinator_csis_member_by_conn(struct bt_conn *conn)
+{
+	struct bt_csip_set_coordinator_inst *client;
+
+	CHECKIF(conn == NULL) {
+		LOG_DBG("conn is NULL");
+
+		return NULL;
+	}
+
+	client = &client_insts[bt_conn_index(conn)];
+
+	return &client->set_member;
+}
+
 /*************************** PUBLIC FUNCTIONS ***************************/
 int bt_csip_set_coordinator_register_cb(struct bt_csip_set_coordinator_cb *cb)
 {
