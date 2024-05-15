@@ -214,7 +214,7 @@ int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16
 		return -EINVAL;
 	}
 
-	if (get_chan_cnt(chan_allocation) != 1) {
+	if (bt_audio_get_chan_count(chan_allocation) != 1) {
 		LOG_DBG("Invalid channel allocation %d", chan_allocation);
 
 		return -EINVAL;

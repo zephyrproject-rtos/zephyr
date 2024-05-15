@@ -631,6 +631,15 @@ struct bt_audio_codec_cfg {
 int bt_audio_data_parse(const uint8_t ltv[], size_t size,
 			bool (*func)(struct bt_data *data, void *user_data), void *user_data);
 
+/**
+ * @brief Function to get the number of channels from the channel allocation
+ *
+ * @param chan_allocation The channel allocation
+ *
+ * @return The number of channels
+ */
+uint8_t bt_audio_get_chan_count(enum bt_audio_location chan_allocation);
+
 /** @brief Audio Capability type */
 enum bt_audio_dir {
 	BT_AUDIO_DIR_SINK = 0x01,
