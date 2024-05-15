@@ -284,17 +284,21 @@ void llcp_rx_node_retain(struct proc_ctx *ctx)
 {
 	LL_ASSERT(ctx->node_ref.rx);
 
-	/* Mark RX node to NOT release */
-	ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RETAIN;
+	/* Only retain if not already retained */
+	if (ctx->node_ref.rx->hdr.type != NODE_RX_TYPE_RETAIN) {
+		/* Mark RX node to NOT release */
+		ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RETAIN;
 
-	/* store link element reference to use once this node is moved up */
-	ctx->node_ref.rx->hdr.link = ctx->node_ref.link;
+		/* store link element reference to use once this node is moved up */
+		ctx->node_ref.rx->hdr.link = ctx->node_ref.link;
+	}
 }
 
 void llcp_rx_node_release(struct proc_ctx *ctx)
 {
 	LL_ASSERT(ctx->node_ref.rx);
 
+	/* Only release if retained */
 	if (ctx->node_ref.rx->hdr.type == NODE_RX_TYPE_RETAIN) {
 		/* Mark RX node to release and release */
 		ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RELEASE;

@@ -450,15 +450,9 @@ static void pu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	}
 
 	/* Enqueue notification towards LL */
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	/* only 'put' as the 'sched' is handled when handling DLE ntf */
-	ll_rx_put(ntf->hdr.link, ntf);
-#else
 	ll_rx_put_sched(ntf->hdr.link, ntf);
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 	ctx->data.pu.ntf_pu = 0;
-	ctx->node_ref.rx = NULL;
 }
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
