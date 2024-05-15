@@ -398,6 +398,11 @@ static ALWAYS_INLINE void clock_init(void)
 	rootCfg.mux = kCLOCK_LPI2C5_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Lpi2c5, &rootCfg);
+
+	/* Configure Lpi2c6 using Osc24M */
+	rootCfg.mux = kCLOCK_LPI2C6_ClockRoot_MuxOsc24MOut;
+	rootCfg.div = 12;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpi2c6, &rootCfg);
 #endif
 
 
@@ -527,7 +532,7 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 #endif
 
-#if !(DT_NODE_HAS_COMPAT(DT_CHOSEN(flash), nxp_imx_flexspi)) && \
+#if !(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_flash), nxp_imx_flexspi)) && \
 	defined(CONFIG_MEMC_MCUX_FLEXSPI) && \
 	DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi), okay)
 	/* Configure FLEXSPI1 using OSC_RC_48M_DIV2 */

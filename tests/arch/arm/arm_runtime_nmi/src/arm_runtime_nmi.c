@@ -12,6 +12,7 @@
 #include <zephyr/arch/arm/nmi.h>
 #include <zephyr/ztest.h>
 #include <zephyr/tc_util.h>
+#include <zephyr/cache.h>
 
 /* on v8m arch the nmi pend bit is renamed to pend nmi map it to old name */
 #ifndef SCB_ICSR_NMIPENDSET_Msk
@@ -67,7 +68,7 @@ ZTEST(arm_runtime_nmi_fn, test_arm_runtime_nmi)
 #ifdef ARM_CACHEL1_ARMV7_H
 	/* Flush Data Cache now if enabled */
 	if (IS_ENABLED(CONFIG_DCACHE)) {
-		SCB_CleanDCache();
+		sys_cache_data_flush_all();
 	}
 #endif /* ARM_CACHEL1_ARMV7_H */
 	zassert_true(nmi_triggered, "Isr not triggered!\n");

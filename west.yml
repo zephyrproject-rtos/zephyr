@@ -142,7 +142,7 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: ff4ca358d730536addf336c40c3faa4ebf1df00a
+      revision: f6858cb3fe3d44945a23d114b7feeeac22ce71cf
       path: modules/hal/ambiq
       groups:
         - hal
@@ -183,7 +183,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: bdef8b66d5f59d95c09889918a04ddaecce322c8
+      revision: a3aacc7e43dec644a9ddfee4aa578a4f8ff54610
       path: modules/hal/nordic
       groups:
         - hal
@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_quicklogic
-      revision: b3a66fe6d04d87fd1533a5c8de51d0599fcd08d0
+      revision: bad894440fe72c814864798c8e3a76d13edffb6c
       path: modules/hal/quicklogic
       repo-path: hal_quicklogic
       groups:
@@ -219,7 +219,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 442d0fb1d02cc4b2bb159fbff378029998b89049
+      revision: 0c39ee28be31c59a98ed490c3811f68caa1fcbd3
       path: modules/hal/silabs
       groups:
         - hal
@@ -229,7 +229,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 60c9634f61c697e1c310ec648d33529712806069
+      revision: ed93098718d5c727d2fac5ef27023a2a14763e32
       path: modules/hal/stm32
       groups:
         - hal

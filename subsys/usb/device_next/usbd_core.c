@@ -120,6 +120,7 @@ static int event_handler_bus_reset(struct usbd_contex *const uds_ctx)
 	switch (udc_speed) {
 	case UDC_BUS_SPEED_HS:
 		uds_ctx->status.speed = USBD_SPEED_HS;
+		break;
 	default:
 		uds_ctx->status.speed = USBD_SPEED_FS;
 	}

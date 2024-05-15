@@ -203,6 +203,8 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	bnez t1, no_fp
 	/* determine if this is an Illegal Instruction exception */
 	csrr t2, mcause
+	li t1, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
+	and t2, t2, t1
 	li t1, 2		/* 2 = illegal instruction */
 	bne t1, t2, no_fp
 	/* determine if we trapped on an FP instruction. */

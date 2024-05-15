@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/atomic.h>
@@ -13,6 +14,9 @@
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_nus, CONFIG_UART_LOG_LEVEL);
+
+K_THREAD_STACK_DEFINE(nus_work_queue_stack, CONFIG_UART_BT_WORKQUEUE_STACK_SIZE);
+static struct k_work_q nus_work_queue;
 
 struct uart_bt_data {
 	struct {
@@ -47,7 +51,7 @@ static void bt_notif_enabled(bool enabled, void *ctx)
 	LOG_DBG("%s() - %s", __func__, enabled ? "enabled" : "disabled");
 
 	if (!ring_buf_is_empty(dev_data->uart.tx_ringbuf)) {
-		k_work_reschedule(&dev_data->uart.tx_work, K_NO_WAIT);
+		k_work_reschedule_for_queue(&nus_work_queue, &dev_data->uart.tx_work, K_NO_WAIT);
 	}
 }
 
@@ -71,7 +75,7 @@ static void bt_received(struct bt_conn *conn, const void *data, uint16_t len, vo
 		LOG_ERR("RX Ring buffer full. received: %d, added to queue: %d", len, put_len);
 	}
 
-	k_work_submit(&dev_data->uart.cb_work);
+	k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
 }
 
 static void cb_work_handler(struct k_work *work)
@@ -113,7 +117,7 @@ static void tx_work_handler(struct k_work *work)
 	} while (len > 0 && !err);
 
 	if ((ring_buf_space_get(dev_data->uart.tx_ringbuf) > 0) && dev_data->uart.tx_irq_ena) {
-		k_work_submit(&dev_data->uart.cb_work);
+		k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
 	}
 }
 
@@ -128,7 +132,7 @@ static int uart_bt_fifo_fill(const struct device *dev, const uint8_t *tx_data, i
 	}
 
 	if (atomic_get(&dev_data->bt.enabled)) {
-		k_work_reschedule(&dev_data->uart.tx_work, K_NO_WAIT);
+		k_work_reschedule_for_queue(&nus_work_queue, &dev_data->uart.tx_work, K_NO_WAIT);
 	}
 
 	return wrote;
@@ -169,7 +173,7 @@ static void uart_bt_poll_out(const struct device *dev, unsigned char c)
 		 * data, so more than one byte is transmitted (e.g: when poll_out is
 		 * called inside a for-loop).
 		 */
-		k_work_schedule(&dev_data->uart.tx_work, K_MSEC(1));
+		k_work_schedule_for_queue(&nus_work_queue, &dev_data->uart.tx_work, K_MSEC(1));
 	}
 }
 
@@ -191,7 +195,7 @@ static void uart_bt_irq_tx_enable(const struct device *dev)
 	dev_data->uart.tx_irq_ena = true;
 
 	if (uart_bt_irq_tx_ready(dev)) {
-		k_work_submit(&dev_data->uart.cb_work);
+		k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
 	}
 }
 
@@ -219,7 +223,7 @@ static void uart_bt_irq_rx_enable(const struct device *dev)
 
 	dev_data->uart.rx_irq_ena = true;
 
-	k_work_submit(&dev_data->uart.cb_work);
+	k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
 }
 
 static void uart_bt_irq_rx_disable(const struct device *dev)
@@ -266,6 +270,19 @@ static const struct uart_driver_api uart_bt_driver_api = {
 	.irq_update = uart_bt_irq_update,
 	.irq_callback_set = uart_bt_irq_callback_set,
 };
+
+static int uart_bt_workqueue_init(void)
+{
+	k_work_queue_init(&nus_work_queue);
+	k_work_queue_start(&nus_work_queue, nus_work_queue_stack,
+			   K_THREAD_STACK_SIZEOF(nus_work_queue_stack),
+			   CONFIG_UART_BT_WORKQUEUE_PRIORITY, NULL);
+
+	return 0;
+}
+
+/** The work-queue is shared across all instances, hence we initialize it separatedly */
+SYS_INIT(uart_bt_workqueue_init, POST_KERNEL, CONFIG_SERIAL_INIT_PRIORITY);
 
 static int uart_bt_init(const struct device *dev)
 {

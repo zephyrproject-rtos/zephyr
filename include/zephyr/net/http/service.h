@@ -7,6 +7,13 @@
 #ifndef ZEPHYR_INCLUDE_NET_HTTP_SERVICE_H_
 #define ZEPHYR_INCLUDE_NET_HTTP_SERVICE_H_
 
+/**
+ * @brief HTTP service API
+ * @defgroup http_service HTTP service API
+ * @ingroup networking
+ * @{
+ */
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -234,5 +241,9 @@ struct http_service_desc {
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_NET_HTTP_SERVICE_H_ */

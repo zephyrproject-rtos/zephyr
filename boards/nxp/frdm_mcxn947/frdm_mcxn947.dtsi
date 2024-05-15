@@ -14,6 +14,7 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		sdhc0 = &usdhc0;
 	};
 
 	leds {
@@ -172,4 +173,13 @@
 &flexpwm1_pwm0 {
 	pinctrl-0 = <&pinmux_flexpwm1_pwm0>;
 	pinctrl-names = "default";
+};
+
+&usdhc0 {
+	pinctrl-0 = <&pinmux_usdhc0>;
+	pinctrl-1 = <&pinmux_usdhc0>;
+	pinctrl-2 = <&pinmux_usdhc0>;
+	cd-gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default", "slow", "med";
+	no-1-8-v;
 };

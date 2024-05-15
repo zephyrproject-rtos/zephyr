@@ -595,7 +595,7 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len,
 	int ret = 0;
 	bool empty_frame = false;
 
-	if (data == NULL) {
+	if (data == NULL && len > 0) {
 		return -EINVAL;
 	}
 

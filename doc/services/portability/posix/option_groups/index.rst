@@ -151,6 +151,19 @@ Group.
 For more information on developing Zephyr applications in the C programming language, please refer
 to :ref:`details<language_support>`.
 
+.. _posix_option_group_realtime_signals:
+
+POSIX_REALTIME_SIGNALS
+======================
+
+.. csv-table:: POSIX_REALTIME_SIGNALS
+   :header: API, Supported
+   :widths: 50,10
+
+    sigqueue(),
+    sigtimedwait(),
+    sigwaitinfo(),
+
 .. _posix_option_group_signal_jump:
 
 POSIX_SIGNAL_JUMP

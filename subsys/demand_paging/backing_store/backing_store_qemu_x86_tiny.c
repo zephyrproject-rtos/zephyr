@@ -45,7 +45,7 @@ int k_mem_paging_backing_store_location_get(struct z_page_frame *pf,
 					    bool page_fault)
 {
 	/* Simply returns the virtual address */
-	*location = POINTER_TO_UINT(pf->addr);
+	*location = POINTER_TO_UINT(z_page_frame_to_virt(pf));
 
 	return 0;
 }

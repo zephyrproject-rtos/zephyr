@@ -75,8 +75,6 @@ The Zephyr stm32f103_mini board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | COUNTER   | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 

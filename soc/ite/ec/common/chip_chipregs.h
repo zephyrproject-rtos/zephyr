@@ -1661,6 +1661,8 @@ struct gctrl_it8xxx2_regs {
 #define IT8XXX2_GCTRL_ILM0_ENABLE	BIT(0)
 /* Accept Port 80h Cycle */
 #define IT8XXX2_GCTRL_ACP80		BIT(6)
+/* Accept Port 81h Cycle */
+#define IT8XXX2_GCTRL_ACP81		BIT(3)
 /* USB Debug Enable */
 #define IT8XXX2_GCTRL_MCCR_USB_EN	BIT(7)
 /* USB Pad Power-On Enable */

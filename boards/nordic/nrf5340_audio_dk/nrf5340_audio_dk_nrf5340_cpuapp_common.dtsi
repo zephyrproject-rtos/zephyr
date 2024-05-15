@@ -25,6 +25,17 @@
 		};
 	};
 
+	arduino_adc: analog-connector {
+		compatible = "arduino,uno-adc";
+		#io-channel-cells = <1>;
+		io-channel-map = <0 &adc 1>,	/* A0 = P0.4 = AIN1 */
+				 <1 &adc 2>,	/* A1 = P0.5 = AIN2 */
+				 <2 &adc 4>,	/* A2 = P0.6 = AIN4 */
+				 <3 &adc 5>,	/* A3 = P0.7 = AIN5 */
+				 <4 &adc 6>,	/* A4 = P0.25 = AIN6 */
+				 <5 &adc 7>;	/* A5 = P0.26 = AIN7 */
+	};
+
 	pmic {
 		compatible = "nordic,npm1100";
 		nordic,iset-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
@@ -120,7 +131,7 @@ arduino_serial: &uart1 {
 	pinctrl-names = "default", "sleep";
 };
 
-&i2c1 {
+arduino_i2c: &i2c1 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
@@ -172,14 +183,15 @@ arduino_serial: &uart1 {
 	};
 };
 
-&spi4 {
+arduino_spi: &spi4 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
-	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>, <&gpio0 17 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>,
+		<&gpio0 11 GPIO_ACTIVE_LOW>, <&gpio0 17 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi4_default>;
 	pinctrl-1 = <&spi4_sleep>;
 	pinctrl-names = "default", "sleep";
-	sdhc0: sdhc@0 {
+	sdhc0: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
 		status = "okay";
@@ -191,7 +203,7 @@ arduino_serial: &uart1 {
 		spi-max-frequency = <8000000>;
 	};
 
-	cs47l63: cs47l63@1 {
+	cs47l63: cs47l63@2 {
 		compatible = "cirrus,cs47l63";
 		reg = <1>;
 		spi-max-frequency = <8000000>;

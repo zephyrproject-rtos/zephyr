@@ -8,12 +8,8 @@
 #include <nordic/nrf_common.dtsi>
 
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20.h>
-
-/* Domain IDs. Can be used to specify channel links in IPCT nodes. */
-#define NRF_DOMAIN_ID_APPLICATION 2
-#define NRF_DOMAIN_ID_RADIOCORE   3
-#define NRF_DOMAIN_ID_GLOBALFAST  12
-#define NRF_DOMAIN_ID_GLOBALSLOW  13
+#include <zephyr/dt-bindings/misc/nordic-domain-id-nrf54h20.h>
+#include <zephyr/dt-bindings/misc/nordic-owner-id-nrf54h20.h>
 
 /delete-node/ &sw_pwm;
 
@@ -168,6 +164,25 @@
 				interrupts = <64 NRF_DEFAULT_IRQ_PRIORITY>,
 					     <65 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
+
+			cpuapp_wdt010: watchdog@14000 {
+				compatible = "nordic,nrf-wdt";
+				reg = <0x14000 0x1000>;
+				status = "disabled";
+				interrupts = <20 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			cpuapp_wdt011: watchdog@15000 {
+				compatible = "nordic,nrf-wdt";
+				reg = <0x15000 0x1000>;
+				status = "disabled";
+				interrupts = <21 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			cpuapp_ieee802154: ieee802154 {
+				compatible = "nordic,nrf-ieee802154";
+				status = "disabled";
+			};
 		};
 
 		cpurad_peripherals: peripheral@53000000 {
@@ -186,6 +201,20 @@
 					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_COARSE_1>,
 					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_FINE_1>;
 				nordic,ficr-names = "vsup", "coarse", "fine";
+			};
+
+			cpurad_wdt010: watchdog@13000 {
+				compatible = "nordic,nrf-wdt";
+				reg = <0x13000 0x1000>;
+				status = "disabled";
+				interrupts = <19 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			cpurad_wdt011: watchdog@14000 {
+				compatible = "nordic,nrf-wdt";
+				reg = <0x14000 0x1000>;
+				status = "disabled";
+				interrupts = <20 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
 			dppic020: dppic@22000 {
@@ -217,6 +246,7 @@
 				cc-num = <8>;
 				interrupts = <40 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
+				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -227,6 +257,7 @@
 				cc-num = <8>;
 				interrupts = <41 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
+				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -237,6 +268,7 @@
 				cc-num = <8>;
 				interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
+				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -369,6 +401,7 @@
 				cc-num = <6>;
 				interrupts = <226 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
+				max-frequency = <DT_FREQ_M(320)>;
 				prescaler = <0>;
 			};
 
@@ -379,6 +412,7 @@
 				cc-num = <6>;
 				interrupts = <227 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
+				max-frequency = <DT_FREQ_M(320)>;
 				prescaler = <0>;
 			};
 
@@ -1041,5 +1075,10 @@
 			interrupt-controller;
 			#address-cells = <1>;
 		};
+	};
+
+	temp_nrfs: temp {
+		compatible = "nordic,nrf-temp-nrfs";
+		status = "disabled";
 	};
 };

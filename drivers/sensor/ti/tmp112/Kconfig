@@ -15,6 +15,8 @@ config TMP112
 	  The TMP102 is compatible with the TMP112 but is less accurate and has
 	  been successfully tested with this driver.
 
+if TMP112
+
 config TMP112_FULL_SCALE_RUNTIME
 	bool "Allow to set extended mode at runtime"
 	default y
@@ -28,3 +30,5 @@ config TMP112_SAMPLING_FREQUENCY_RUNTIME
 	help
 	  When set conversion rate can be set at runtime using sensor_attr_set
 	  with SENSOR_ATTR_SAMPLING_FREQUENCY
+
+endif # TMP112

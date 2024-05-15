@@ -71,6 +71,11 @@ Architectures
 
 * Xtensa
 
+Kernel
+******
+
+  * Added :c:func:`k_uptime_seconds` function to simplify `k_uptime_get() / 1000` usage.
+
 Bluetooth
 *********
 
@@ -202,6 +207,11 @@ Drivers and Sensors
 
 * Input
 
+* LED Strip
+
+  * The ``chain-length`` and ``color-mapping`` properties have been added to all LED strip
+    bindings.
+
 * MDIO
 
 * MFD
@@ -229,6 +239,7 @@ Drivers and Sensors
 * Sensor
 
   * Added TMP114 driver
+  * Added DS18S20 1-wire temperature sensor driver.
 
 * Serial
 
@@ -319,6 +330,9 @@ Libraries / Subsystems
 
 * Crypto
 
+  * MbedTLS was updated to 3.6.0. Release notes can be found at:
+    https://github.com/Mbed-TLS/mbedtls/releases/tag/v3.6.0
+
 * Random
 
   * Besides the existing :c:func:`sys_rand32_get` function, :c:func:`sys_rand8_get`,
@@ -328,6 +342,10 @@ Libraries / Subsystems
 * Retention
 
 * SD
+
+* State Machine Framework
+
+  * The :c:macro:`SMF_CREATE_STATE` macro now always takes 5 arguments.
 
 * Storage
 

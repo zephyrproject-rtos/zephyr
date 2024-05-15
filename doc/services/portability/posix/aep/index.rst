@@ -60,7 +60,7 @@ The *Minimal Realtime System Profile* (PSE51) includes all of the
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
 
-    :ref:`_POSIX_FSYNC <posix_option_fsync>`, -1,
+    :ref:`_POSIX_FSYNC <posix_option_fsync>`, 200809L, :kconfig:option:`CONFIG_POSIX_FSYNC`
     :ref:`_POSIX_MEMLOCK <posix_option_memlock>`, -1,
     :ref:`_POSIX_MEMLOCK_RANGE <posix_option_memlock_range>`, -1,
     :ref:`_POSIX_MONOTONIC_CLOCK <posix_option_monotonic_clock>`, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
@@ -71,7 +71,7 @@ The *Minimal Realtime System Profile* (PSE51) includes all of the
     :ref:`_POSIX_THREAD_CPUTIME <posix_option_thread_cputime>`, -1,
     _POSIX_THREAD_PRIO_INHERIT, 200809L, :kconfig:option:`CONFIG_PTHREAD_MUTEX`
     _POSIX_THREAD_PRIO_PROTECT, -1,
-    :ref:`_POSIX_THREAD_PRIORITY_SCHEDULING<posix_option_thread_priority_scheduling>`, 200809L, :kconfig:option:`CONFIG_POSIX_PRIORITY_SCHEDULING` (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    :ref:`_POSIX_THREAD_PRIORITY_SCHEDULING<posix_option_thread_priority_scheduling>`, 200809L, :kconfig:option:`CONFIG_POSIX_PRIORITY_SCHEDULING`
     _POSIX_THREAD_SPORADIC_SERVER, -1,
 
 .. _posix_aep_pse52:
@@ -153,9 +153,9 @@ The *Dedicated Realtime System Profile* (PSE53) includes all features from PSE52
     _POSIX_CPUTIME, -1,
     _POSIX_PRIORITIZED_IO, -1,
     :ref:`_POSIX_PRIORITY_SCHEDULING <posix_option_priority_scheduling>`, -1,
-    _POSIX_RAW_SOCKETS, 200809L, :kconfig:option:`CONFIG_NET_SOCKETS`
-    _POSIX_SPAWN, -1,
-    _POSIX_SPORADIC_SERVER, -1,
+    _POSIX_RAW_SOCKETS, 200809L, :kconfig:option:`CONFIG_NET_SOCKETS_PACKET`
+    _POSIX_SPAWN, -1, :ref:`†<posix_undefined_behaviour>`
+    _POSIX_SPORADIC_SERVER, -1, :ref:`†<posix_undefined_behaviour>`
 
 .. _IEEE 1003.1-2017: https://standards.ieee.org/ieee/1003.1/7101/
 .. _IEEE 1003.13-2003: https://standards.ieee.org/ieee/1003.13/3322/

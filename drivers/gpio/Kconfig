@@ -29,6 +29,13 @@ config GPIO_SHELL_INFO_CMD
 	  This command provides a shell user extra information about gpio
 	  controller reserved pins and line names.
 
+config GPIO_SHELL_TOGGLE_CMD
+	bool "GPIO Shell toggle command"
+	default y
+	depends on GPIO_SHELL
+	help
+	  Enable GPIO Shell toggle command.
+
 config GPIO_SHELL_BLINK_CMD
 	bool "GPIO Shell blink command"
 	default y
@@ -88,6 +95,7 @@ config GPIO_ENABLE_DISABLE_INTERRUPT
 
 # zephyr-keep-sorted-start
 source "drivers/gpio/Kconfig.ad559x"
+source "drivers/gpio/Kconfig.adp5585"
 source "drivers/gpio/Kconfig.ads114s0x"
 source "drivers/gpio/Kconfig.altera"
 source "drivers/gpio/Kconfig.ambiq"

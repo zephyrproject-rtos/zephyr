@@ -1730,7 +1730,7 @@ static inline void disable(uint16_t handle)
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_CONN_BASE + handle,
 					conn, &conn->lll);
-	LL_ASSERT(err == 0 || err == -EALREADY);
+	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, handle, err);
 
 	conn->lll.handle = LLL_HANDLE_INVALID;
 	conn->lll.link_tx_free = NULL;

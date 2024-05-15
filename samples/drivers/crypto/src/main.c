@@ -65,7 +65,7 @@ static void print_buffer_comparison(const uint8_t *wanted_result,
 		}
 	}
 
-	printk("\n But got:\n");
+	printk("\nBut got:\n");
 
 	for (i = 0, j = 1; i < length; i++, j++) {
 		printk("0x%02x ", result[i]);

@@ -108,17 +108,17 @@ struct bt_hci_acl_hdr {
 #define bt_iso_pkt_flags(h)              ((h) >> 14)
 #define bt_iso_pkt_len_pack(h, f)        (((h) & BIT_MASK(12)) | ((f) << 14))
 
-struct bt_hci_iso_data_hdr {
+struct bt_hci_iso_sdu_hdr {
 	uint16_t sn;
 	uint16_t slen; /* 12 bit len, 2 bit RFU, 2 bit packet status */
 } __packed;
-#define BT_HCI_ISO_DATA_HDR_SIZE	4
+#define BT_HCI_ISO_SDU_HDR_SIZE          4
 
-struct bt_hci_iso_ts_data_hdr {
+struct bt_hci_iso_sdu_ts_hdr {
 	uint32_t ts;
-	struct bt_hci_iso_data_hdr data;
+	struct bt_hci_iso_sdu_hdr sdu;
 } __packed;
-#define BT_HCI_ISO_TS_DATA_HDR_SIZE     8
+#define BT_HCI_ISO_SDU_TS_HDR_SIZE       8
 
 /* Bluetooth spec v5.4 Vol 4, Part E - 5.4.5 HCI ISO Data Packets */
 struct bt_hci_iso_hdr {

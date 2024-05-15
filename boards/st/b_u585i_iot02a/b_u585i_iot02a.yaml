@@ -23,4 +23,5 @@ supported:
   - pwm
   - counter
   - i2c
+  - rtc
 vendor: st

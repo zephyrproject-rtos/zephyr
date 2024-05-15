@@ -21,4 +21,4 @@ generate_inc_file_for_target(app ${source_file_not_found} ${gen_dir}/not_found_p
 generate_inc_file_for_target(app ${source_file_not_found} ${gen_dir}/not_found_page.html.gz.inc --gzip)
 
 zephyr_linker_sources(SECTIONS sections-rom.ld)
-zephyr_iterable_section(NAME http_resource_desc_test_http_service KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+zephyr_iterable_section(NAME http_resource_desc_test_http_service KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)

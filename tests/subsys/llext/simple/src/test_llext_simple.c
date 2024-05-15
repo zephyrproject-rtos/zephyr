@@ -230,6 +230,13 @@ static LLEXT_CONST uint8_t threads_kernel_objects_ext[] __aligned(4) = {
 LLEXT_LOAD_UNLOAD(threads_kernel_objects, true, threads_objects_perm_setup)
 #endif
 
+#ifndef CONFIG_LLEXT_TYPE_ELF_OBJECT
+static LLEXT_CONST uint8_t multi_file_ext[] __aligned(4) = {
+	#include "multi_file.inc"
+};
+LLEXT_LOAD_UNLOAD(multi_file, true, NULL)
+#endif
+
 
 /*
  * Ensure that EXPORT_SYMBOL does indeed provide a symbol and a valid address

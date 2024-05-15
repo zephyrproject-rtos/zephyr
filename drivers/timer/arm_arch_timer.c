@@ -22,14 +22,45 @@ static uint32_t cyc_per_tick;
 
 #if defined(CONFIG_GDBSTUB)
 /* When interactively debugging, the cycle diff can overflow 32-bit variable */
-#define TO_CYCLE_DIFF(x) (x)
+#define cycle_diff_t uint64_t
 #else
-/* Convert to 32-bit for fast division */
-#define TO_CYCLE_DIFF(x) ((cycle_diff_t)(x))
-#endif
-
 /* the unsigned long cast limits divisors to native CPU register width */
 #define cycle_diff_t unsigned long
+#endif
+#define CYCLE_DIFF_MAX (~(cycle_diff_t)0)
+
+/*
+ * We have two constraints on the maximum number of cycles we can wait for.
+ *
+ * 1) sys_clock_announce() accepts at most INT32_MAX ticks.
+ *
+ * 2) The number of cycles between two reports must fit in a cycle_diff_t
+ *    variable before converting it to ticks.
+ *
+ * Then:
+ *
+ * 3) Pick the smallest between (1) and (2).
+ *
+ * 4) Take into account some room for the unavoidable IRQ servicing latency.
+ *    Let's use 3/4 of the max range.
+ *
+ * Finally let's add the LSB value to the result so to clear out a bunch of
+ * consecutive set bits coming from the original max values to produce a
+ * nicer literal for assembly generation.
+ */
+#define CYCLES_MAX_1	((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
+#define CYCLES_MAX_2	((uint64_t)CYCLE_DIFF_MAX)
+#define CYCLES_MAX_3	MIN(CYCLES_MAX_1, CYCLES_MAX_2)
+#define CYCLES_MAX_4	(CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
+#define CYCLES_MAX_5	(CYCLES_MAX_4 + LSB_GET(CYCLES_MAX_4))
+
+#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+/* precompute CYCLES_MAX at driver init to avoid runtime double divisions */
+static uint64_t cycles_max;
+#define CYCLES_MAX cycles_max
+#else
+#define CYCLES_MAX CYCLES_MAX_5
+#endif
 
 static struct k_spinlock lock;
 static uint64_t last_cycle;
@@ -66,7 +97,7 @@ static void arm_arch_timer_compare_isr(const void *arg)
 
 	uint64_t curr_cycle = arm_arch_timer_count();
 	uint64_t delta_cycles = curr_cycle - last_cycle;
-	uint32_t delta_ticks = TO_CYCLE_DIFF(delta_cycles) / CYC_PER_TICK;
+	uint32_t delta_ticks = (cycle_diff_t)delta_cycles / CYC_PER_TICK;
 
 	last_cycle += (cycle_diff_t)delta_ticks * CYC_PER_TICK;
 	last_tick += delta_ticks;
@@ -109,39 +140,29 @@ static void arm_arch_timer_compare_isr(const void *arg)
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
-#if defined(CONFIG_TICKLESS_KERNEL)
-
-	if (ticks == K_TICKS_FOREVER) {
-		if (idle) {
-			return;
-		}
-		ticks = INT32_MAX;
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
 	}
 
-	/*
-	 * Clamp the max period length to a number of cycles that can fit
-	 * in half the range of a cycle_diff_t for native width divisions
-	 * to be usable elsewhere. Also clamp it to half the range of an
-	 * int32_t as this is the type used for elapsed tick announcements.
-	 * The half range gives us one bit of extra room to cope with the
-	 * unavoidable IRQ servicing latency (we never need as much but this
-	 * is simple). The compiler should optimize away the least restrictive
-	 * of those tests automatically.
-	 */
-	ticks = CLAMP(ticks, 0, (cycle_diff_t)-1 / 2 / CYC_PER_TICK);
-	ticks = CLAMP(ticks, 0, INT32_MAX / 2);
+	if (idle && ticks == K_TICKS_FOREVER) {
+		return;
+	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t next_cycle = (last_tick + last_elapsed + ticks) * CYC_PER_TICK;
+	uint64_t next_cycle;
+
+	if (ticks == K_TICKS_FOREVER) {
+		next_cycle = last_cycle + CYCLES_MAX;
+	} else {
+		next_cycle = (last_tick + last_elapsed + ticks) * CYC_PER_TICK;
+		if ((next_cycle - last_cycle) > CYCLES_MAX) {
+			next_cycle = last_cycle + CYCLES_MAX;
+		}
+	}
 
 	arm_arch_timer_set_compare(next_cycle);
 	arm_arch_timer_set_irq_mask(false);
 	k_spin_unlock(&lock, key);
-
-#else  /* CONFIG_TICKLESS_KERNEL */
-	ARG_UNUSED(ticks);
-	ARG_UNUSED(idle);
-#endif
 }
 
 uint32_t sys_clock_elapsed(void)
@@ -213,6 +234,7 @@ static int sys_clock_driver_init(void)
 	arm_arch_timer_init();
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	cyc_per_tick = sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	cycles_max = CYCLES_MAX_5;
 #endif
 	arm_arch_timer_enable(true);
 	last_tick = arm_arch_timer_count() / CYC_PER_TICK;

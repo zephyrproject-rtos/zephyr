@@ -140,7 +140,7 @@ static ALWAYS_INLINE struct k_thread *runq_best(void)
  */
 static inline bool should_queue_thread(struct k_thread *thread)
 {
-	return !IS_ENABLED(CONFIG_SMP) || thread != _current;
+	return !IS_ENABLED(CONFIG_SMP) || (thread != _current);
 }
 
 static ALWAYS_INLINE void queue_thread(struct k_thread *thread)
@@ -272,7 +272,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	}
 
 	/* Put _current back into the queue */
-	if (thread != _current && active &&
+	if ((thread != _current) && active &&
 		!z_is_idle_thread_object(_current) && !queued) {
 		queue_thread(_current);
 	}
@@ -1007,7 +1007,7 @@ void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
 	bool need_sched = z_thread_prio_set((struct k_thread *)thread, prio);
 
 	flag_ipi();
-	if (need_sched && _current->base.sched_locked == 0U) {
+	if (need_sched && (_current->base.sched_locked == 0U)) {
 		z_reschedule_unlocked();
 	}
 }

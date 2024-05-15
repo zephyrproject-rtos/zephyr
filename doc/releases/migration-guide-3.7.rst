@@ -20,7 +20,7 @@ Build System
 
 * Completely overhauled the way SoCs and boards are defined. This requires all
   out-of-tree SoCs and boards to be ported to the new model. See the
-  :ref:`hw_model_v2` for more detailed information.
+  :ref:`hw_model_v2` for more detailed information. (:github:`69607`)
 
 Kernel
 ******
@@ -29,15 +29,21 @@ Boards
 ******
 
 * Reordered D1 and D0 in the `pro_micro` connector gpio-map for SparkFun Pro Micro RP2040 to match
-  original Pro Micro definition. Out-of-tree shields must be updated to reflect this change.
+  original Pro Micro definition. Out-of-tree shields must be updated to reflect this change. (:github:`69994`)
 * ITE: Rename all SoC variant Kconfig options, e.g., ``CONFIG_SOC_IT82202_AX`` is renamed to
   ``CONFIG_SOC_IT82202AX``.
   All symbols are renamed as follows: ``SOC_IT81202BX``, ``SOC_IT81202CX``, ``SOC_IT81302BX``,
   ``SOC_IT81302CX``, ``SOC_IT82002AW``, ``SOC_IT82202AX``, ``SOC_IT82302AX``.
-  And, rename the ``SOC_SERIES_ITE_IT8XXX2`` to ``SOC_SERIES_IT8XXX2``.
+  And, rename the ``SOC_SERIES_ITE_IT8XXX2`` to ``SOC_SERIES_IT8XXX2``. (:github:`71680`)
 
 Modules
 *******
+
+MbedTLS
+=======
+
+* The hash algorithms SHA-384, SHA-512, MD5 and SHA-1 are not enabled by default anymore.
+  Their respective Kconfig options now need to be explicitly enabled to be able to use them.
 
 MCUboot
 =======
@@ -54,7 +60,7 @@ Device Drivers and Devicetree
   compatible :dtcompatible:`nxp,pit-channel` and configure as below.
   The :kconfig:option:`CONFIG_COUNTER_MCUX_PIT` has also been renamed to
   :kconfig:option:`CONFIG_COUNTER_NXP_PIT` with regards to the renaming
-  of the binding for the pit.
+  of the binding for the pit. (:github:`66336`)
   example:
 
   .. code-block:: devicetree
@@ -81,8 +87,8 @@ Device Drivers and Devicetree
   in DT, which also comes with a different version driver. Alternatively,
   the Ethernet node can be deleted and redefined as the old binding to use
   the deprecated legacy driver. The primary advantage of the new binding
-  is to be able to abstract an arbitrary phy through the mdio API. Example
-  of a basic board level ENET DT definition:
+  is to be able to abstract an arbitrary phy through the mdio API. (:github:`70400`)
+  Example of a basic board level ENET DT definition:
 
   .. code-block:: devicetree
 
@@ -106,7 +112,7 @@ Device Drivers and Devicetree
         };
     };
 
-* Some of the driver API structs have been rename to have the required ``_driver_api`` suffix.
+* Some of the driver API structs have been rename to have the required ``_driver_api`` suffix. (:github:`72182`)
   The following types have been renamed:
 
   * ``emul_sensor_backend_api`` to :c:struct:`emul_sensor_driver_api`
@@ -114,8 +120,8 @@ Device Drivers and Devicetree
   * ``usbc_ppc_drv`` to :c:struct:`usbc_ppc_driver_api`
 
 * The driver for :dtcompatible:`maxim,max31790` got split up into a MFD and an
-  actual PWM driver. Previously, an instance of this device could have been
-  defined like this:
+  actual PWM driver. (:github:`68433`)
+  Previously, an instance of this device could have been defined like this:
 
   .. code-block:: devicetree
 
@@ -150,14 +156,23 @@ Analog-to-Digital Converter (ADC)
 Bluetooth HCI
 =============
 
+ * The ``BT_HCI_VS_EXT`` Kconfig option was deleted and the feature is now included in the
+   :kconfig:option:`BT_HCI_VS` Kconfig option.
+ * The ``BT_HCI_VS_EVT`` Kconfig option was removed, since vendor event support is implicit if
+   the :kconfig:option:`BT_HCI_VS` option is enabled.
+ * The bt_read_static_addr() API was removed. This wasn't really a completely public API, but
+   since it was exposed by the public hci_driver.h header file the removal is mentioned here.
+   Enable the :kconfig:option:`BT_HCI_VS` Kconfig option instead, and use vendor specific HCI
+   commands API to get the Controller's Bluetooth static address when available.
+
 Charger
 =======
 
 * Dropped ``constant-charge-current-max-microamp`` property in ``charger_max20335`` driver because
-  it did not reflect real chip functionality.
+  it did not reflect real chip functionality. (:github:`69910`)
 
 * Added enum key to ``constant-charge-voltage-max-microvolt`` property in ``maxim,max20335-charger``
-  binding to indicate invalid devicetree values at build time.
+  binding to indicate invalid devicetree values at build time. (:github:`69910`)
 
 Controller Area Network (CAN)
 =============================
@@ -175,7 +190,9 @@ Controller Area Network (CAN)
   * ``phase-seg1-data``
   * ``phase-seg1-data``
 
-* Support for manual bus-off recovery was reworked:
+  (:github:`68714`)
+
+* Support for manual bus-off recovery was reworked (:github:`69460`):
 
   * Automatic bus recovery will always be enabled upon driver initialization regardless of Kconfig
     options. Since CAN controllers are initialized in "stopped" state, no unwanted bus-off recovery
@@ -198,14 +215,15 @@ Display
 
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
-  * The macros ``ESPI_SLAVE_TO_MASTER`` and ``ESPI_MASTER_TO_SLAVE`` were renamed to
-    ``ESPI_TARGET_TO_CONTROLLER`` and ``ESPI_CONTROLLER_TO_TARGET`` respectively to reflect
-    the new terminology in eSPI 1.5 specification.
-  * The enum values ``ESPI_VWIRE_SIGNAL_SLV_BOOT_STS``, ``ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE`` and
-    all ``ESPI_VWIRE_SIGNAL_SLV_GPIO_<NUMBER>`` signals were renamed to
-    ``ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS``, ``ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE`` and
-    ``ESPI_VWIRE_SIGNAL_TARGET_GPIO_<NUMBER>`` respectively to reflect the new terminology
-    in eSPI 1.5 specification.
+
+* The macros ``ESPI_SLAVE_TO_MASTER`` and ``ESPI_MASTER_TO_SLAVE`` were renamed to
+  ``ESPI_TARGET_TO_CONTROLLER`` and ``ESPI_CONTROLLER_TO_TARGET`` respectively to reflect
+  the new terminology in eSPI 1.5 specification.
+  The enum values ``ESPI_VWIRE_SIGNAL_SLV_BOOT_STS``, ``ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE`` and
+  all ``ESPI_VWIRE_SIGNAL_SLV_GPIO_<NUMBER>`` signals were renamed to
+  ``ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS``, ``ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE`` and
+  ``ESPI_VWIRE_SIGNAL_TARGET_GPIO_<NUMBER>`` respectively to reflect the new terminology
+  in eSPI 1.5 specification. (:github:`68492`)
 
 Flash
 =====
@@ -219,7 +237,7 @@ GNSS
 * Basic power management support has been added to the ``gnss-nmea-generic`` driver.
   If ``CONFIG_PM_DEVICE=y`` the driver is now initialized in suspended mode and the
   application needs to call :c:func:`pm_device_action_run` with :c:macro:`PM_DEVICE_ACTION_RESUME`
-  to start up the driver.
+  to start up the driver. (:github:`71774`)
 
 Input
 =====
@@ -228,11 +246,11 @@ Input
   relative to the raw ADC values, similarly to min and max. The data structures
   and properties have been renamed to reflect that (from ``out-deadzone`` to
   ``in-deadzone``) and when migrating to the new definition the value should be
-  scaled accordingly.
+  scaled accordingly. (:github:`70377`)
 
 * The ``holtek,ht16k33-keyscan`` driver has been converted to use the
   :ref:`input` subsystem, callbacks have to be migrated to use the input APIs,
-  :dtcompatible:`zephyr,kscan-input` can be used for backward compatibility.
+  :dtcompatible:`zephyr,kscan-input` can be used for backward compatibility. (:github:`69875`)
 
 Interrupt Controller
 ====================
@@ -241,7 +259,15 @@ LED Strip
 =========
 
 * The property ``in-gpios`` defined in :dtcompatible:`worldsemi,ws2812-gpio` has been
-  renamed to ``gpios``.
+  renamed to ``gpios``. (:github:`68514`)
+
+* The ``chain-length`` and ``color-mapping`` properties have been added to all LED strip bindings
+  and are now mandatory.
+
+* Added a new mandatory ``length`` function which returns the length (number of pixels) of an LED
+  strip device.
+
+* Made ``update_channels`` function optional and removed unimplemented functions.
 
 Sensors
 =======
@@ -266,10 +292,10 @@ Bluetooth Mesh
 * The model metadata pointer declaration of :c:struct:`bt_mesh_model` has been changed
   to a single ``const *`` and redundant metadata pointer from :c:struct:`bt_mesh_health_srv`
   is removed. Consequently, :code:`BT_MESH_MODEL_HEALTH_SRV` definition is changed
-  to use variable argument notation. (:github:`71281`). Now, when your implementation
+  to use variable argument notation. Now, when your implementation
   supports :kconfig:option:`CONFIG_BT_MESH_LARGE_COMP_DATA_SRV` and when you need to
   specify metadata for Health Server model, simply pass metadata as the last argument
-  to the :code:`BT_MESH_MODEL_HEALTH_SRV` macro, otherwise omit the last argument.
+  to the :code:`BT_MESH_MODEL_HEALTH_SRV` macro, otherwise omit the last argument. (:github:`71281`)
 
 Bluetooth Audio
 ===============
@@ -318,8 +344,7 @@ Networking
 
 * The zperf zperf_results struct is changed to support 64 bits transferred bytes (total_len)
   and test duration (time_in_us and client_time_in_us), instead of 32 bits. This will make
-  the long-duration zperf test show with correct throughput result.
-  (:github:`69500`)
+  the long-duration zperf test show with correct throughput result. (:github:`69500`)
 
 * Each IPv4 address assigned to a network interface has an IPv4 netmask
   tied to it instead of being set for the whole interface.
@@ -359,10 +384,9 @@ Other Subsystems
 hawkBit
 =======
 
-  * :kconfig:option:`CONFIG_HAWKBIT_PORT` is now an int instead of a string.
-
-  * :kconfig:option:`CONFIG_SETTINGS` needs to be enabled to use hawkBit, as it now uses the
-    settings subsystem to store the hawkBit configuration.
+* :kconfig:option:`CONFIG_HAWKBIT_PORT` is now an int instead of a string.
+  :kconfig:option:`CONFIG_SETTINGS` needs to be enabled to use hawkBit, as it now uses the
+  settings subsystem to store the hawkBit configuration. (:github:`68806`)
 
 LoRaWAN
 =======
@@ -370,14 +394,28 @@ LoRaWAN
 MCUmgr
 ======
 
+* The support for SHA-256 (when using checksum/hash functions), previously provided
+  by either TinyCrypt or MbedTLS, is now provided by either PSA or MbedTLS.
+  PSA is the recommended API going forward, however, if it is not already enabled
+  (:kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT`) and you have tight code size
+  constraints, you may be able to save 1.3 KB by using MbedTLS instead.
+
 Modem
 =====
 
 * The ``CONFIG_MODEM_CHAT_LOG_BUFFER`` Kconfig option was
-  renamed to :kconfig:option:`MODEM_CHAT_LOG_BUFFER_SIZE`.
+  renamed to :kconfig:option:`CONFIG_MODEM_CHAT_LOG_BUFFER_SIZE`. (:github:`70405`)
 
 Shell
 =====
+
+State Machine Framework
+=======================
+
+* The :c:macro:`SMF_CREATE_STATE` macro now always takes 5 arguments. The amount of arguments is
+  now independent of the values of :kconfig:option:`CONFIG_SMF_ANCESTOR_SUPPORT` and
+  :kconfig:option:`CONFIG_SMF_INITIAL_TRANSITION`. If the additional arguments are not used, they
+  have to be set to ``NULL``. (:github:`71250`)
 
 ZBus
 ====
@@ -388,19 +426,19 @@ Userspace
 Architectures
 *************
 
-* Function :c:func:`arch_start_cpu` has been renamed to :c:func:`arch_cpu_start`.
+* Function :c:func:`arch_start_cpu` has been renamed to :c:func:`arch_cpu_start`. (:github:`64987`)
 
 * x86
 
   * Kconfigs ``CONFIG_DISABLE_SSBD`` and ``CONFIG_ENABLE_EXTENDED_IBRS``
     are deprecated. Use :kconfig:option:`CONFIG_X86_DISABLE_SSBD` and
-    :kconfig:option:`CONFIG_X86_ENABLE_EXTENDED_IBRS` instead.
+    :kconfig:option:`CONFIG_X86_ENABLE_EXTENDED_IBRS` instead. (:github:`69690`)
 
 * POSIX arch:
 
   * LLVM fuzzing support has been refactored. A test application now needs to provide its own
     ``LLVMFuzzerTestOneInput()`` hook instead of relying on a board provided one. Check
-    ``samples/subsys/debug/fuzz/`` for an example.
+    ``samples/subsys/debug/fuzz/`` for an example. (:github:`71378`)
 
 Xtensa
 ======

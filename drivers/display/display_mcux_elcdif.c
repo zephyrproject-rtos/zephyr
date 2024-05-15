@@ -190,6 +190,9 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 			return ret;
 		}
 		k_sem_take(&dev_data->pxp_done, K_FOREVER);
+	} else {
+		LOG_WRN("PXP rotation will not work correctly unless a full sized "
+			"framebuffer is provided");
 	}
 #endif /* CONFIG_MCUX_ELCDIF_PXP */
 

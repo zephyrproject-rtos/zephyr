@@ -44,6 +44,32 @@ def process_logs(harness, logs):
         harness.handle(line)
 
 
+TEST_DATA_RECORDING = [
+                ([''], "^START:(?P<foo>.*):END", []),
+                (['START:bar:STOP'], "^START:(?P<foo>.*):END", []),
+                (['START:bar:END'], "^START:(?P<foo>.*):END", [{'foo':'bar'}]),
+                (['START:bar:baz:END'], "^START:(?P<foo>.*):(?P<boo>.*):END", [{'foo':'bar', 'boo':'baz'}]),
+                (['START:bar:baz:END','START:may:jun:END'], "^START:(?P<foo>.*):(?P<boo>.*):END",
+                 [{'foo':'bar', 'boo':'baz'}, {'foo':'may', 'boo':'jun'}]),
+                      ]
+@pytest.mark.parametrize(
+    "lines, pattern, expected_records",
+    TEST_DATA_RECORDING,
+    ids=["empty", "no match", "match 1 field", "match 2 fields", "match 2 records"]
+)
+def test_harness_parse_record(lines, pattern, expected_records):
+    harness = Harness()
+    harness.record = { 'regex': pattern }
+    harness.record_pattern = re.compile(pattern)
+
+    assert not harness.recording
+
+    for line in lines:
+        harness.parse_record(line)
+
+    assert harness.recording == expected_records
+
+
 TEST_DATA_1 = [('RunID: 12345', False, False, False, None, True),
                 ('PROJECT EXECUTION SUCCESSFUL', False, False, False, 'passed', False),
                 ('PROJECT EXECUTION SUCCESSFUL', True, False, False, 'failed', False),
@@ -63,6 +89,7 @@ def test_harness_process_test(line, fault, fail_on_fault, cap_cov, exp_stat, exp
     harness.state = None
     harness.fault = fault
     harness.fail_on_fault = fail_on_fault
+    mock.patch.object(Harness, 'parse_record', return_value=None)
 
     #Act
     harness.process_test(line)
@@ -71,6 +98,7 @@ def test_harness_process_test(line, fault, fail_on_fault, cap_cov, exp_stat, exp
     assert harness.matched_run_id == exp_id
     assert harness.state == exp_stat
     assert harness.capture_coverage == cap_cov
+    assert harness.recording == []
 
 
 def test_robot_configure(tmp_path):

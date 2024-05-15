@@ -786,6 +786,16 @@
 		input = <0>;
 		prescale = <0>;
 	};
+
+	usdhc0: usdhc@109000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x109000 0x1000>;
+		interrupts = <61 0>;
+		status = "disabled";
+		clocks = <&syscon MCUX_USDHC1_CLK>;
+		max-bus-freq = <52000000>;
+		min-bus-freq = <400000>;
+	};
 };
 
 &systick {

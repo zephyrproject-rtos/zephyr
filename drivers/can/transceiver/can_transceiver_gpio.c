@@ -120,6 +120,11 @@ static const struct can_transceiver_driver_api can_transceiver_gpio_driver_api =
 		   (.name##_gpio = GPIO_DT_SPEC_INST_GET(inst, name##_gpios),))
 
 #define CAN_TRANSCEIVER_GPIO_INIT(inst)					\
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, enable_gpios) ||	\
+		     DT_INST_NODE_HAS_PROP(inst, standby_gpios),	\
+		     "Missing GPIO property on "			\
+		     DT_NODE_FULL_NAME(DT_DRV_INST(inst)));		\
+									\
 	static const struct can_transceiver_gpio_config	can_transceiver_gpio_config_##inst = { \
 		CAN_TRANSCEIVER_GPIO_COND(inst, enable)			\
 		CAN_TRANSCEIVER_GPIO_COND(inst, standby)		\

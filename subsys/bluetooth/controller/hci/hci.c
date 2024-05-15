@@ -211,9 +211,9 @@ static uint32_t cis_pending_count;
 static uint64_t event_mask = DEFAULT_EVENT_MASK;
 static uint64_t event_mask_page_2 = DEFAULT_EVENT_MASK_PAGE_2;
 static uint64_t le_event_mask = DEFAULT_LE_EVENT_MASK;
-#if defined(CONFIG_BT_HCI_VS_EVT)
-static uint64_t vs_events_mask = DEFAULT_VS_EVT_MASK;
-#endif /* CONFIG_BT_HCI_VS_EVT */
+#if defined(CONFIG_BT_HCI_VS)
+__maybe_unused static uint64_t vs_events_mask = DEFAULT_VS_EVT_MASK;
+#endif /* CONFIG_BT_HCI_VS */
 
 static struct net_buf *cmd_complete_status(uint8_t status);
 
@@ -339,8 +339,8 @@ static void *meta_evt(struct net_buf *buf, uint8_t subevt, uint8_t melen)
 	return net_buf_add(buf, melen);
 }
 
-#if defined(CONFIG_BT_HCI_VS_EVT)
-static void *vs_event(struct net_buf *buf, uint8_t subevt, uint8_t evt_len)
+#if defined(CONFIG_BT_HCI_VS)
+__maybe_unused static void *vs_event(struct net_buf *buf, uint8_t subevt, uint8_t evt_len)
 {
 	struct bt_hci_evt_vs *evt;
 
@@ -350,7 +350,7 @@ static void *vs_event(struct net_buf *buf, uint8_t subevt, uint8_t evt_len)
 
 	return net_buf_add(buf, evt_len);
 }
-#endif /* CONFIG_BT_HCI_VS_EVT */
+#endif /* CONFIG_BT_HCI_VS */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 static void *mesh_evt(struct net_buf *buf, uint8_t subevt, uint8_t melen)
@@ -1398,7 +1398,7 @@ static void le_read_buffer_size_v2(struct net_buf *buf, struct net_buf **evt)
 
 	rp->acl_max_len = sys_cpu_to_le16(LL_LENGTH_OCTETS_TX_MAX);
 	rp->acl_max_num = CONFIG_BT_BUF_ACL_TX_COUNT;
-	rp->iso_max_len = sys_cpu_to_le16(CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE);
+	rp->iso_max_len = sys_cpu_to_le16(BT_CTLR_ISO_TX_BUFFER_SIZE);
 	rp->iso_max_num = CONFIG_BT_CTLR_ISO_TX_BUFFERS;
 }
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
@@ -4788,16 +4788,6 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	return 0;
 }
 
-/* If Zephyr VS HCI commands are not enabled provide this functionality directly
- */
-#if !defined(CONFIG_BT_HCI_VS_EXT)
-uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t size)
-{
-	return hci_vendor_read_static_addr(addrs, size);
-}
-#endif /* !defined(CONFIG_BT_HCI_VS_EXT) */
-
-
 #if defined(CONFIG_BT_HCI_VS)
 static void vs_read_version_info(struct net_buf *buf, struct net_buf **evt)
 {
@@ -4827,7 +4817,6 @@ static void vs_read_supported_commands(struct net_buf *buf,
 
 	/* Set Version Information, Supported Commands, Supported Features. */
 	rp->commands[0] |= BIT(0) | BIT(1) | BIT(2);
-#if defined(CONFIG_BT_HCI_VS_EXT)
 	/* Write BD_ADDR, Read Build Info */
 	rp->commands[0] |= BIT(5) | BIT(7);
 	/* Read Static Addresses, Read Key Hierarchy Roots */
@@ -4846,7 +4835,6 @@ static void vs_read_supported_commands(struct net_buf *buf,
 	/* Set USB Transport Mode */
 	rp->commands[2] |= BIT(0);
 #endif /* USB_DEVICE_BLUETOOTH_VS_H4 */
-#endif /* CONFIG_BT_HCI_VS_EXT */
 }
 
 static void vs_read_supported_features(struct net_buf *buf,
@@ -4869,7 +4857,6 @@ uint8_t __weak hci_vendor_read_static_addr(struct bt_hci_vs_static_addr addrs[],
 	return 0;
 }
 
-#if defined(CONFIG_BT_HCI_VS_EXT)
 static void vs_write_bd_addr(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_vs_write_bd_addr *cmd = (void *)buf->data;
@@ -5323,8 +5310,6 @@ static void vs_le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct ne
 }
 #endif /* CONFIG_BT_CTLR_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES */
 
-#endif /* CONFIG_BT_HCI_VS_EXT */
-
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 static void mesh_get_opts(struct net_buf *buf, struct net_buf **evt)
 {
@@ -5501,7 +5486,6 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_USB_DEVICE_BLUETOOTH_VS_H4 */
 
-#if defined(CONFIG_BT_HCI_VS_EXT)
 	case BT_OCF(BT_HCI_OP_VS_READ_BUILD_INFO):
 		vs_read_build_info(cmd, evt);
 		break;
@@ -5539,7 +5523,6 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 		vs_set_min_used_chans(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
-#endif /* CONFIG_BT_HCI_VS_EXT */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	case BT_OCF(BT_HCI_OP_VS_MESH):
@@ -5709,7 +5692,7 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 {
-	struct bt_hci_iso_data_hdr *iso_data_hdr;
+	struct bt_hci_iso_sdu_hdr *iso_sdu_hdr;
 	struct isoal_sdu_tx sdu_frag_tx;
 	struct bt_hci_iso_hdr *iso_hdr;
 	uint32_t *time_stamp;
@@ -5719,7 +5702,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	uint8_t flags;
 	uint16_t len;
 
-	iso_data_hdr = NULL;
+	iso_sdu_hdr = NULL;
 	*evt  = NULL;
 
 	if (buf->len < sizeof(*iso_hdr)) {
@@ -5770,11 +5753,11 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 
 	/* Extract ISO data header if included (PB_Flag 0b00 or 0b10) */
 	if ((pb_flag & 0x01) == 0) {
-		iso_data_hdr = net_buf_pull_mem(buf, sizeof(*iso_data_hdr));
-		len -= sizeof(*iso_data_hdr);
-		sdu_frag_tx.packet_sn = sys_le16_to_cpu(iso_data_hdr->sn);
+		iso_sdu_hdr = net_buf_pull_mem(buf, sizeof(*iso_sdu_hdr));
+		len -= sizeof(*iso_sdu_hdr);
+		sdu_frag_tx.packet_sn = sys_le16_to_cpu(iso_sdu_hdr->sn);
 		sdu_frag_tx.iso_sdu_length =
-			sys_le16_to_cpu(bt_iso_pkt_len(iso_data_hdr->slen));
+			sys_le16_to_cpu(bt_iso_pkt_len(iso_sdu_hdr->slen));
 	} else {
 		sdu_frag_tx.packet_sn = 0;
 		sdu_frag_tx.iso_sdu_length = 0;

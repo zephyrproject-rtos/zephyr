@@ -244,6 +244,7 @@ Ambiq Platforms:
   status: odd fixes
   collaborators:
     - aaronyegx
+    - AlessandroLuo
     - RichardSWheatley
   files:
     - soc/ambiq/
@@ -446,6 +447,7 @@ Bluetooth Audio:
     - tests/bluetooth/audio/
     - tests/bsim/bluetooth/audio/
     - tests/bluetooth/shell/audio.conf
+    - tests/bluetooth/tester/overlay-le-audio.conf
     - doc/connectivity/bluetooth/api/audio/
     - samples/bluetooth/broadcast_audio*/
     - samples/bluetooth/hap*/
@@ -1322,6 +1324,9 @@ Release Notes:
   status: maintained
   maintainers:
     - bjarki-trackunit
+  collaborators:
+    - tomi-font
+    - fabiobaltieri
   files:
     - doc/hardware/peripherals/gnss.rst
     - drivers/gnss/
@@ -3462,11 +3467,11 @@ nRF Platforms:
   status: maintained
   maintainers:
     - anangl
+    - masz-nordic
   collaborators:
     - jaz1-nordic
     - kl-cruz
     - magp-nordic
-    - masz-nordic
     - nika-nordic
   files:
     - boards/nordic/
@@ -3756,12 +3761,12 @@ Sysbuild:
     - "57300"
   files:
     - share/sysbuild/
-    - samples/application_development/sysbuild/
+    - samples/sysbuild/
     - doc/build/sysbuild/
   labels:
     - "area: Sysbuild"
   tests:
-    - sample.application_development.sysbuild
+    - sample.sysbuild
 
 Task Watchdog:
   status: maintained
@@ -3819,7 +3824,7 @@ TF-M Integration:
   maintainers:
     - d3zd3z
   collaborators:
-    - SebastianBoe
+    - Vge0rge
     - ithinuel
   files:
     - samples/tfm_integration/
@@ -4198,6 +4203,7 @@ West:
   status: odd fixes
   collaborators:
     - aaronyegx
+    - AlessandroLuo
     - RichardSWheatley
   files:
     - modules/hal_ambiq/
@@ -4677,7 +4683,7 @@ West:
   maintainers:
     - d3zd3z
   collaborators:
-    - SebastianBoe
+    - Vge0rge
     - ithinuel
   files:
     - modules/trusted-firmware-m/
@@ -4689,7 +4695,7 @@ West:
   maintainers:
     - d3zd3z
   collaborators:
-    - SebastianBoe
+    - Vge0rge
     - ithinuel
   files: []
   labels:
@@ -4713,7 +4719,7 @@ West:
   maintainers:
     - d3zd3z
   collaborators:
-    - SebastianBoe
+    - Vge0rge
     - ithinuel
   files: []
   labels:

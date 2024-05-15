@@ -316,6 +316,13 @@ config LINKER_USE_RELAX
 
 endmenu # "Linker Sections"
 
+config LINKER_ITERABLE_SUBALIGN
+	int
+	default 8 if 64BIT
+	default 4
+	help
+	  Hidden option for the default subalignment of iterable sections.
+
 config LINKER_DEVNULL_SUPPORT
 	bool
 	default y if CPU_CORTEX_M || (RISCV && !64BIT)
@@ -776,6 +783,11 @@ config BUILD_OUTPUT_STRIPPED
 	help
 	  Build a stripped binary zephyr/zephyr.strip in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_COMPRESS_DEBUG_SECTIONS
+	bool "Compress debug sections in the ELF file"
+	help
+	  Compress debug sections in the ELF file to reduce the file size.
 
 config BUILD_OUTPUT_ADJUST_LMA
 	string

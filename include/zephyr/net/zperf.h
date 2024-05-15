@@ -26,6 +26,7 @@ extern "C" {
 
 enum zperf_status {
 	ZPERF_SESSION_STARTED,
+	ZPERF_SESSION_PERIODIC_RESULT,
 	ZPERF_SESSION_FINISHED,
 	ZPERF_SESSION_ERROR
 } __packed;
@@ -40,6 +41,7 @@ struct zperf_upload_params {
 		uint8_t tos;
 		int tcp_nodelay;
 		int priority;
+		uint32_t report_interval_ms;
 	} options;
 };
 

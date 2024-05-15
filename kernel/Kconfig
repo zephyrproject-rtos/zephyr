@@ -1020,6 +1020,12 @@ config THREAD_LOCAL_STORAGE
 	help
 	  This option enables thread local storage (TLS) support in kernel.
 
+config KERNEL_WHOLE_ARCHIVE
+	bool
+	help
+	  This option forces every object file in the libkernel.a archive
+	  to be included, rather than searching the archive for required object files.
+
 endmenu
 
 rsource "Kconfig.device"

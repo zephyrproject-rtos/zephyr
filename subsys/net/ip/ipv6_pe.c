@@ -193,8 +193,7 @@ static bool ipv6_pe_prefix_update_lifetimes(struct net_if_ipv6 *ipv6,
 			continue;
 		}
 
-		addr_age = (uint32_t)(k_uptime_get() / 1000UL) -
-			ipv6->unicast[i].addr_create_time;
+		addr_age = k_uptime_seconds() - ipv6->unicast[i].addr_create_time;
 		new_age = abs(addr_age) + vlifetime;
 
 		if ((new_age >= TEMP_VALID_LIFETIME) ||
@@ -382,7 +381,7 @@ void net_ipv6_pe_start(struct net_if *iface, const struct in6_addr *prefix,
 	ifaddr->is_temporary = true;
 	ifaddr->addr_preferred_lifetime = preferred_lifetime;
 	ifaddr->addr_timeout = ifaddr->addr_preferred_lifetime - DESYNC_FACTOR(ipv6);
-	ifaddr->addr_create_time = (uint32_t)(k_uptime_get() / 1000UL);
+	ifaddr->addr_create_time = k_uptime_seconds();
 
 	NET_DBG("Lifetime %d desync %d timeout %d preferred %d valid %d",
 		lifetime, DESYNC_FACTOR(ipv6), ifaddr->addr_timeout,
@@ -674,8 +673,7 @@ static void renewal_cb(struct net_if *iface, void *user_data)
 		/* If the address is too old, then generate a new one
 		 * and remove the old address.
 		 */
-		diff = (int32_t)(ipv6->unicast[i].addr_create_time -
-			       ((uint32_t)(k_uptime_get() / 1000UL)));
+		diff = (int32_t)(ipv6->unicast[i].addr_create_time - k_uptime_seconds());
 		diff = abs(diff);
 
 		if (diff < (ipv6->unicast[i].addr_preferred_lifetime -

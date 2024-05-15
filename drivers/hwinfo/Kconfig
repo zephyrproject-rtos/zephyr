@@ -200,4 +200,13 @@ config HWINFO_RW61X
 	help
 	  Enable RW61X hwinfo driver
 
+config HWINFO_AMBIQ
+	bool "AMBIQ hwinfo"
+	default y
+	depends on SOC_SERIES_APOLLO4X
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_HWINFO
+	help
+	  Enable AMBIQ hwinfo driver
+
 endif

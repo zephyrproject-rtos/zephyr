@@ -253,8 +253,12 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	LOG_DBG("opcode 0x%04x param_len %u", opcode, param_len);
 
+	/* net_buf_alloc(K_FOREVER) can fail when run from the syswq */
 	buf = net_buf_alloc(&hci_cmd_pool, K_FOREVER);
-	__ASSERT_NO_MSG(buf);
+	if (!buf) {
+		LOG_DBG("Unable to allocate a command buffer");
+		return NULL;
+	}
 
 	LOG_DBG("buf %p", buf);
 
@@ -340,6 +344,8 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			return -ENOMEM;
 		case BT_HCI_ERR_INVALID_PARAM:
 			return -EINVAL;
+		case BT_HCI_ERR_CMD_DISALLOWED:
+			return -EACCES;
 		default:
 			return -EIO;
 		}
@@ -2520,7 +2526,7 @@ static void hci_vendor_event(struct net_buf *buf)
 	}
 #endif /* CONFIG_BT_HCI_VS_EVT_USER */
 
-	if (IS_ENABLED(CONFIG_BT_HCI_VS_EVT) && !handled) {
+	if (IS_ENABLED(CONFIG_BT_HCI_VS) && !handled) {
 		struct bt_hci_evt_vs *evt;
 
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
@@ -3659,7 +3665,7 @@ static void bt_dev_show_info(void)
 		bt_dev.lmp_version, bt_dev.lmp_subversion);
 }
 
-#if defined(CONFIG_BT_HCI_VS_EXT)
+#if defined(CONFIG_BT_HCI_VS)
 static const char *vs_hw_platform(uint16_t platform)
 {
 	static const char * const plat_str[] = {
@@ -3797,7 +3803,7 @@ static void hci_vs_init(void)
 		net_buf_unref(rsp);
 	}
 }
-#endif /* CONFIG_BT_HCI_VS_EXT */
+#endif /* CONFIG_BT_HCI_VS */
 
 static int hci_init(void)
 {
@@ -3852,7 +3858,7 @@ static int hci_init(void)
 		return err;
 	}
 
-#if defined(CONFIG_BT_HCI_VS_EXT)
+#if defined(CONFIG_BT_HCI_VS)
 	hci_vs_init();
 #endif
 	err = bt_id_init();

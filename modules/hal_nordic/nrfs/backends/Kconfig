@@ -1,0 +1,28 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+
+menu "NRFS backend settings"
+
+module = NRFS_BACKEND
+module-str = NRFS backend
+source "subsys/logging/Kconfig.template.log_config"
+
+config NRFS_BACKEND_IPC_SERVICE_INIT_PRIO
+	int "Initialization priority for NRFS IPC backend"
+	default 51
+	help
+	  This should be higher than priority of other drivers/subsystems
+	  used by NRFS backend. For example MBOX_INIT_PRIORITY which is 50.
+
+config NRFS_MAX_BACKEND_PACKET_SIZE
+	int "Maximum IPC data packet size in bytes"
+	range 8 128
+	default 32
+
+config NRFS_BACKEND_TX_MSG_QUEUE_SIZE
+	int "Size of TX buffer message queue size"
+	range 1 16
+	default 8
+
+endmenu

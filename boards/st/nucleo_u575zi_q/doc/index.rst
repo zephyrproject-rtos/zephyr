@@ -167,9 +167,13 @@ The Zephyr nucleo_u575zi_q board configuration supports the following hardware f
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| USB FS    | on-chip    | USB Full Speed device               |
++-----------+------------+-------------------------------------+
 | BKP SRAM  | on-chip    | Backup SRAM                         |
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | True Random number generator        |
++-----------+------------+-------------------------------------+
+| RTC       | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
 
 

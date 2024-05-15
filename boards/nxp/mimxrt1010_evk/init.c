@@ -7,7 +7,7 @@
 
 void SystemInitHook(void)
 {
-#if DT_SAME_NODE(DT_NODELABEL(flexspi), DT_PARENT(DT_CHOSEN(flash)))
+#if DT_SAME_NODE(DT_NODELABEL(flexspi), DT_PARENT(DT_CHOSEN(zephyr_flash)))
 	/* AT25SF128A SPI Flash on the RT1010-EVK requires special alignment
 	 * considerations, so set the READADDROPT bit in the FlexSPI so it
 	 * will fetch more data than each AHB burst requires to meet alignment

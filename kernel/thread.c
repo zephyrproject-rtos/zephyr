@@ -174,7 +174,7 @@ static inline int z_vrfy_k_thread_name_set(struct k_thread *thread, const char *
 	 * the current z_vrfy / z_impl split does not provide a
 	 * means of doing so.
 	 */
-	if (k_usermode_string_copy(name, (char *)str, sizeof(name)) != 0) {
+	if (k_usermode_string_copy(name, str, sizeof(name)) != 0) {
 		return -EFAULT;
 	}
 
@@ -284,15 +284,15 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 	/* Special case: we allow reading the names of initialized threads
 	 * even if we don't have permission on them
 	 */
-	if (thread == NULL || ko->type != K_OBJ_THREAD ||
-	    (ko->flags & K_OBJ_FLAG_INITIALIZED) == 0) {
+	if ((thread == NULL) || (ko->type != K_OBJ_THREAD) ||
+		((ko->flags & K_OBJ_FLAG_INITIALIZED) == 0)) {
 		return -EINVAL;
 	}
 	if (K_SYSCALL_MEMORY_WRITE(buf, size) != 0) {
 		return -EFAULT;
 	}
 	len = strlen(thread->name);
-	if (len + 1 > size) {
+	if ((len + 1) > size) {
 		return -ENOSPC;
 	}
 

@@ -12,6 +12,14 @@ tests:
       - CONFIG_FLASH_STM32_READOUT_PROTECTION=y
     filter: dt_compat_enabled("st,stm32f4-flash-controller") and
             dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+  drivers.flash.stm32.f4.block_registers:
+    platform_allow:
+      - nucleo_f429zi
+      - google_dragonclaw
+    extra_configs:
+      - CONFIG_FLASH_STM32_BLOCK_REGISTERS=y
+    filter: dt_compat_enabled("st,stm32f4-flash-controller") and
+            dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
   drivers.flash.stm32.l4:
     platform_allow:
       - nucleo_l452re/stm32l452xx/p

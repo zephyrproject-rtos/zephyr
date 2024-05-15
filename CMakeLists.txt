@@ -219,6 +219,26 @@ if(CONFIG_LTO)
   add_link_options($<TARGET_PROPERTY:linker,lto_arguments>)
 endif()
 
+if(CONFIG_STD_C23)
+  set(CSTD c2x)
+elseif(CONFIG_STD_C17)
+  set(CSTD c17)
+elseif(CONFIG_STD_C11)
+  set(CSTD c11)
+elseif(CONFIG_STD_C99)
+  set(CSTD c99)
+elseif(CONFIG_STD_C90)
+  set(CSTD c90)
+else()
+  message(FATAL_ERROR "Unreachable code. Expected C standard to have been chosen.")
+endif()
+
+if(CONFIG_GNU_C_EXTENSIONS)
+  string(REPLACE "c" "gnu" CSTD "${CSTD}")
+endif()
+
+list(APPEND CMAKE_C_COMPILE_FEATURES ${compile_features_${CSTD}})
+
 # @Intent: Obtain compiler specific flags related to C++ that are not influenced by kconfig
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,required>>)
 
@@ -886,7 +906,7 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   add_dependencies(${zephyr_lib} zephyr_generated_headers)
 endforeach()
 
-if(CONFIG_LLEXT)
+if(CONFIG_KERNEL_WHOLE_ARCHIVE)
   set(WHOLE_ARCHIVE_LIBS ${ZEPHYR_LIBS_PROPERTY} kernel)
 else()
   set(WHOLE_ARCHIVE_LIBS ${ZEPHYR_LIBS_PROPERTY})
@@ -956,35 +976,19 @@ if(CONFIG_USERSPACE)
   set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/build/process_gperf.py)
 endif()
 
-get_property(CSTD GLOBAL PROPERTY CSTD)
-if(NOT DEFINED CSTD)
-  if(CONFIG_STD_C23)
-    set(CSTD c2x)
-  elseif(CONFIG_STD_C17)
-    set(CSTD c17)
-  elseif(CONFIG_STD_C11)
-    set(CSTD c11)
-  elseif(CONFIG_STD_C99)
-    set(CSTD c99)
-  elseif(CONFIG_STD_C90)
-    set(CSTD c90)
-  else()
-    message(FATAL_ERROR "Unreachable code. Expected C standard to have been chosen.")
-  endif()
-
-  if(CONFIG_GNU_C_EXTENSIONS)
-    string(REPLACE "c" "gnu" CSTD "${CSTD}")
-  endif()
-else()
+get_property(GLOBAL_CSTD GLOBAL PROPERTY CSTD)
+if(DEFINED GLOBAL_CSTD)
   message(DEPRECATION
     "Global CSTD property is deprecated, see Kconfig.zephyr for C Standard options.")
+  set(CSTD ${GLOBAL_CSTD})
+  list(APPEND CMAKE_C_COMPILE_FEATURES ${compile_features_${CSTD}})
 endif()
 
 # @Intent: Obtain compiler specific flag for specifying the c standard
 zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,cstd>${CSTD}>
 )
-set(CMAKE_C_COMPILE_FEATURES ${compile_features_${CSTD}} PARENT_SCOPE)
+set(CMAKE_C_COMPILE_FEATURES ${CMAKE_C_COMPILE_FEATURES} PARENT_SCOPE)
 
 # @Intent: Configure linker scripts, i.e. generate linker scripts with variables substituted
 toolchain_ld_configure_files()
@@ -1790,6 +1794,17 @@ if(CONFIG_BUILD_OUTPUT_STRIPPED)
     post_build_byproducts
     ${KERNEL_STRIP_NAME}
     )
+endif()
+
+if(CONFIG_BUILD_OUTPUT_COMPRESS_DEBUG_SECTIONS)
+  list(APPEND
+    post_build_commands
+    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_compress_debug_sections>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+)
 endif()
 
 if(CONFIG_BUILD_OUTPUT_EXE)

@@ -1,5 +1,5 @@
 identifier: esp_wrover_kit/esp32/procpu
-name: ESP WROVER KIT
+name: ESP WROVER KIT PROCPU
 type: mcu
 arch: xtensa
 toolchain:

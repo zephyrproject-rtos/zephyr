@@ -16,7 +16,14 @@
  * symbols.
  */
 
+/*
+ * When building for Zephyr, use Zephyr specific fcntl definitions.
+ */
+#ifdef __ZEPHYR__
+#include <zephyr/posix/fcntl.h>
+#else
 #include <fcntl.h>
+#endif
 
 #include "nsos_errno.h"
 #include "nsos_fcntl.h"

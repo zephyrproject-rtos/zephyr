@@ -7,6 +7,7 @@
 import argparse
 import collections
 from email.utils import parseaddr
+import json
 import logging
 import os
 from pathlib import Path
@@ -177,7 +178,6 @@ class ComplianceTest:
         fail = FmtdFailure(severity, title, file, line, col, desc)
         self._result(fail, fail.text)
         self.fmtd_failures.append(fail)
-
 
 class EndTest(Exception):
     """
@@ -1169,7 +1169,7 @@ class PyLint(ComplianceTest):
         else:
             python_environment["PYTHONPATH"] = check_script_dir
 
-        pylintcmd = ["pylint", "--rcfile=" + pylintrc,
+        pylintcmd = ["pylint", "--output-format=json2", "--rcfile=" + pylintrc,
                      "--load-plugins=argparse-checker"] + py_files
         logger.info(cmd2str(pylintcmd))
         try:
@@ -1181,21 +1181,19 @@ class PyLint(ComplianceTest):
                            env=python_environment)
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
-            regex = r'^\s*(\S+):(\d+):(\d+):\s*([A-Z]\d{4}):\s*(.*)$'
-
-            matches = re.findall(regex, output, re.MULTILINE)
-            for m in matches:
-                # https://pylint.pycqa.org/en/latest/user_guide/messages/messages_overview.html#
+            messages = json.loads(output)['messages']
+            for m in messages:
                 severity = 'unknown'
-                if m[3][0] in ('F', 'E'):
+                if m['messageId'][0] in ('F', 'E'):
                     severity = 'error'
-                elif m[3][0] in ('W','C', 'R', 'I'):
+                elif m['messageId'][0] in ('W','C', 'R', 'I'):
                     severity = 'warning'
-                self.fmtd_failure(severity, m[3], m[0], m[1], col=m[2],
-                        desc=m[4])
+                self.fmtd_failure(severity, m['messageId'], m['path'],
+                                  m['line'], col=str(m['column']), desc=m['message']
+                                  + f" ({m['symbol']})")
 
-            # If the regex has not matched add the whole output as a failure
-            if len(matches) == 0:
+            if len(messages) == 0:
+                # If there are no specific messages add the whole output as a failure
                 self.failure(output)
 
 

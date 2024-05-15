@@ -129,6 +129,7 @@ def test_handler_final_handle_actions(mocked_instance):
     harness.detected_suite_names = mock.Mock()
     harness.matched_run_id = False
     harness.run_id_exists = True
+    harness.recording = mock.Mock()
 
     handler_time = mock.Mock()
 
@@ -142,6 +143,8 @@ def test_handler_final_handle_actions(mocked_instance):
 
     handler.instance.reason = 'This reason shan\'t be changed.'
     handler._final_handle_actions(harness, handler_time)
+
+    instance.assert_has_calls([mock.call.record(harness.recording)])
 
     assert handler.instance.reason == 'This reason shan\'t be changed.'
 
@@ -202,42 +205,6 @@ def test_handler_missing_suite_name(mocked_instance):
     assert all(
         testcase.status == 'failed' for testcase in handler.instance.testcases
     )
-
-
-def test_handler_record(mocked_instance):
-    instance = mocked_instance
-    instance.testcases = [mock.Mock()]
-
-    handler = Handler(instance)
-
-    harness = twisterlib.harness.Harness()
-    harness.recording = [ {'field_1':  'recording_1_1', 'field_2': 'recording_1_2'},
-                          {'field_1':  'recording_2_1', 'field_2': 'recording_2_2'}
-                        ]
-
-    with mock.patch(
-        'builtins.open',
-        mock.mock_open(read_data='')
-    ) as mock_file, \
-        mock.patch(
-        'csv.DictWriter.writerow',
-        mock.Mock()
-    ) as mock_writeheader, \
-        mock.patch(
-        'csv.DictWriter.writerows',
-        mock.Mock()
-    ) as mock_writerows:
-        handler.record(harness)
-
-    print(mock_file.mock_calls)
-
-    mock_file.assert_called_with(
-        os.path.join(instance.build_dir, 'recording.csv'),
-        'at'
-    )
-
-    mock_writeheader.assert_has_calls([mock.call({ k:k for k in harness.recording[0].keys()})])
-    mock_writerows.assert_has_calls([mock.call(harness.recording)])
 
 
 def test_handler_terminate(mocked_instance):
@@ -448,7 +415,7 @@ TESTDATA_4 = [
       '--log-file=build_dir/valgrind.log', '--track-origins=yes',
       'generator', 'run_renode_test']),
     (False, True, False, 123, None, ['generator', 'run', '--seed=123']),
-    (False, False, False, None, ['ex1', 'ex2'], ['bin', 'ex1', 'ex2']),
+    (False, False, False, None, ['ex1', 'ex2'], ['build_dir/zephyr/zephyr.exe', 'ex1', 'ex2']),
 ]
 
 @pytest.mark.parametrize(
@@ -474,6 +441,7 @@ def test_binaryhandler_create_command(
     handler.seed = seed
     handler.extra_test_args = extra_args
     handler.build_dir = 'build_dir'
+    handler.instance.testsuite.sysbuild = False
 
     command = handler._create_command(robot_test)
 
@@ -1478,7 +1446,7 @@ TESTDATA_19 = [
     TESTDATA_19,
     ids=['domains build dir', 'self build dir']
 )
-def test_qemuhandler_get_sysbuild_build_dir(
+def test_qemuhandler_get_default_domain_build_dir(
     mocked_instance,
     self_sysbuild,
     self_build_dir,
@@ -1495,7 +1463,7 @@ def test_qemuhandler_get_sysbuild_build_dir(
     handler.build_dir = self_build_dir
 
     with mock.patch('domains.Domains.from_file', from_file_mock):
-        result = handler._get_sysbuild_build_dir()
+        result = handler.get_default_domain_build_dir()
 
     assert result == expected
 
@@ -2017,7 +1985,7 @@ def test_qemuhandler_handle(
     harness = mock.Mock(state=harness_state)
     handler_options_west_flash = []
 
-    sysbuild_build_dir = os.path.join('sysbuild', 'dummydir')
+    domain_build_dir = os.path.join('sysbuild', 'dummydir')
     command = ['generator_cmd', '-C', os.path.join('cmd', 'path'), 'run']
 
     handler.options = mock.Mock(
@@ -2030,7 +1998,7 @@ def test_qemuhandler_handle(
     handler._final_handle_actions = mock.Mock(return_value=None)
     handler._create_command = mock.Mock(return_value=command)
     handler._set_qemu_filenames = mock.Mock(side_effect=mock_filenames)
-    handler._get_sysbuild_build_dir = mock.Mock(return_value=sysbuild_build_dir)
+    handler.get_default_domain_build_dir = mock.Mock(return_value=domain_build_dir)
     handler.terminate = mock.Mock()
 
     unlink_mock = mock.Mock()

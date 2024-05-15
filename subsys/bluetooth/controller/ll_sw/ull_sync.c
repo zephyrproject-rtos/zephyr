@@ -412,7 +412,7 @@ uint8_t ll_sync_terminate(uint16_t handle)
 	/* Stop periodic sync ticker timeouts */
 	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_SYNC_BASE + handle,
 					sync, &sync->lll);
-	LL_ASSERT(err == 0 || err == -EALREADY);
+	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, handle, err);
 	if (err) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}

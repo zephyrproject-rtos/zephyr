@@ -168,7 +168,7 @@ struct net_buf *bt_iso_create_pdu_timeout(struct net_buf_pool *pool,
 		pool = &iso_tx_pool;
 	}
 
-	reserve += sizeof(struct bt_hci_iso_data_hdr);
+	reserve += sizeof(struct bt_hci_iso_sdu_hdr);
 
 #if defined(CONFIG_NET_BUF_LOG)
 	return bt_conn_create_pdu_timeout_debug(pool, reserve, timeout, func,
@@ -585,7 +585,7 @@ struct net_buf *bt_iso_get_rx(k_timeout_t timeout)
 
 void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 {
-	struct bt_hci_iso_data_hdr *hdr;
+	struct bt_hci_iso_sdu_hdr *hdr;
 	struct bt_iso_chan *chan;
 	uint8_t pb, ts;
 	uint16_t len, pkt_seq_no;
@@ -609,12 +609,12 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 		 * of an SDU or a complete SDU.
 		 */
 		if (ts) {
-			struct bt_hci_iso_ts_data_hdr *ts_hdr;
+			struct bt_hci_iso_sdu_ts_hdr *ts_hdr;
 
 			ts_hdr = net_buf_pull_mem(buf, sizeof(*ts_hdr));
 			iso_info(buf)->ts = sys_le32_to_cpu(ts_hdr->ts);
 
-			hdr = &ts_hdr->data;
+			hdr = &ts_hdr->sdu;
 			iso_info(buf)->flags |= BT_ISO_FLAGS_TS;
 		} else {
 			hdr = net_buf_pull_mem(buf, sizeof(*hdr));
@@ -791,11 +791,11 @@ static int validate_send(const struct bt_iso_chan *chan, const struct net_buf *b
 
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num)
 {
-	struct bt_hci_iso_data_hdr *hdr;
+	struct bt_hci_iso_sdu_hdr *hdr;
 	struct bt_conn *iso_conn;
 	int err;
 
-	err = validate_send(chan, buf, BT_HCI_ISO_DATA_HDR_SIZE);
+	err = validate_send(chan, buf, BT_HCI_ISO_SDU_HDR_SIZE);
 	if (err != 0) {
 		return err;
 	}
@@ -815,11 +815,11 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq
 int bt_iso_chan_send_ts(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num,
 			uint32_t ts)
 {
-	struct bt_hci_iso_ts_data_hdr *hdr;
+	struct bt_hci_iso_sdu_ts_hdr *hdr;
 	struct bt_conn *iso_conn;
 	int err;
 
-	err = validate_send(chan, buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
+	err = validate_send(chan, buf, BT_HCI_ISO_SDU_TS_HDR_SIZE);
 	if (err != 0) {
 		return err;
 	}
@@ -828,8 +828,8 @@ int bt_iso_chan_send_ts(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t 
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->ts = ts;
-	hdr->data.sn = sys_cpu_to_le16(seq_num);
-	hdr->data.slen = sys_cpu_to_le16(
+	hdr->sdu.sn = sys_cpu_to_le16(seq_num);
+	hdr->sdu.slen = sys_cpu_to_le16(
 		bt_iso_pkt_len_pack(net_buf_frags_len(buf) - sizeof(*hdr), BT_ISO_DATA_VALID));
 
 	iso_conn = chan->iso;

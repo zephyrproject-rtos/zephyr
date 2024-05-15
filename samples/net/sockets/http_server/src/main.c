@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Emna Rekik
+ * Copyright (c) 2024, Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +31,7 @@ struct http_resource_detail_static index_html_gz_resource_detail = {
 			.type = HTTP_RESOURCE_TYPE_STATIC,
 			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
 			.content_encoding = "gzip",
+			.content_type = "text/html",
 		},
 	.static_data = index_html_gz,
 	.static_data_len = sizeof(index_html_gz),
@@ -88,6 +90,27 @@ struct http_resource_detail_dynamic dyn_resource_detail = {
 HTTP_RESOURCE_DEFINE(dyn_resource, test_http_service, "/dynamic",
 		     &dyn_resource_detail);
 
+#if defined(CONFIG_NET_SAMPLE_WEBSOCKET_SERVICE)
+extern int ws_setup(int ws_socket, void *user_data);
+
+static uint8_t ws_recv_buffer[1024];
+
+struct http_resource_detail_websocket ws_resource_detail = {
+	.common = {
+			.type = HTTP_RESOURCE_TYPE_WEBSOCKET,
+
+			/* We need HTTP/1.1 Get method for upgrading */
+			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+		},
+	.cb = ws_setup,
+	.data_buffer = ws_recv_buffer,
+	.data_buffer_len = sizeof(ws_recv_buffer),
+	.user_data = NULL, /* Fill this for any user specific data */
+};
+
+HTTP_RESOURCE_DEFINE(ws_resource, test_http_service, "/", &ws_resource_detail);
+
+#endif /* CONFIG_NET_SAMPLE_WEBSOCKET_SERVICE */
 #endif /* CONFIG_NET_SAMPLE_HTTP_SERVICE */
 
 #if defined(CONFIG_NET_SAMPLE_HTTPS_SERVICE)

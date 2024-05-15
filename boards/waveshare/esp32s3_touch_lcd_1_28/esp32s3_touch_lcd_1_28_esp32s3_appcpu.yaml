@@ -5,18 +5,23 @@ arch: xtensa
 toolchain:
   - zephyr
 supported:
-  - gpio
-  - i2c
-  - spi
-  - watchdog
-  - regulator
   - uart
-  - pwm
-  - pinmux
-  - nvs
-  - display
 testing:
   ignore_tags:
     - net
     - bluetooth
+    - flash
+    - cpp
+    - posix
+    - watchdog
+    - logging
+    - kernel
+    - pm
+    - gpio
+    - crypto
+    - eeprom
+    - heap
+    - cmsis_rtos
+    - jwt
+    - zdsp
 vendor: waveshare

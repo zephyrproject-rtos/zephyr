@@ -865,13 +865,13 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 			sys_write32(USB_DWC2_GINTSTS_USBRST, gintsts_reg);
 			dwc2_on_bus_reset(dev);
 			LOG_DBG("USB Reset interrupt");
-			udc_submit_event(dev, UDC_EVT_RESET, 0);
 		}
 
 		if (int_status & USB_DWC2_GINTSTS_ENUMDONE) {
 			/* Clear and handle Enumeration Done interrupt. */
 			sys_write32(USB_DWC2_GINTSTS_ENUMDONE, gintsts_reg);
 			dwc2_handle_enumdone(dev);
+			udc_submit_event(dev, UDC_EVT_RESET, 0);
 		}
 
 		if (int_status & USB_DWC2_GINTSTS_USBSUSP) {
@@ -888,14 +888,14 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 			udc_submit_event(dev, UDC_EVT_RESUME, 0);
 		}
 
-		if (int_status & USB_DWC2_GINTSTS_RXFLVL) {
-			/* Handle RxFIFO Non-Empty interrupt */
-			dwc2_handle_rxflvl(dev);
-		}
-
 		if (int_status & USB_DWC2_GINTSTS_IEPINT) {
 			/* Handle IN Endpoints interrupt */
 			dwc2_handle_iepint(dev);
+		}
+
+		if (int_status & USB_DWC2_GINTSTS_RXFLVL) {
+			/* Handle RxFIFO Non-Empty interrupt */
+			dwc2_handle_rxflvl(dev);
 		}
 
 		if (int_status & USB_DWC2_GINTSTS_OEPINT) {
@@ -1168,7 +1168,7 @@ static int udc_dwc2_ep_enable(const struct device *dev,
 
 	for (uint8_t i = 1U; i < priv->ineps; i++) {
 		LOG_DBG("DIEPTXF%u %08x DIEPCTL%u %08x",
-			i, sys_read32((mem_addr_t)base->dieptxf[i - 1U]), i, dxepctl);
+			i, sys_read32((mem_addr_t)&base->dieptxf[i - 1U]), i, dxepctl);
 	}
 
 	return 0;

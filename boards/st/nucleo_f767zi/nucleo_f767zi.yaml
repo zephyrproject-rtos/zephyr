@@ -25,4 +25,5 @@ supported:
   - counter
   - can
   - dac
+  - rtc
 vendor: st

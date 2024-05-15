@@ -77,18 +77,16 @@ static int stm32_vbat_channel_get(const struct device *dev, enum sensor_channel 
 {
 	struct stm32_vbat_data *data = dev->data;
 	const struct stm32_vbat_config *cfg = dev->config;
-	float voltage;
+	int32_t voltage;
 
 	if (chan != SENSOR_CHAN_VOLTAGE) {
 		return -ENOTSUP;
 	}
 
-	/* Sensor value in millivolts */
-	voltage = data->raw * adc_ref_internal(data->adc) / 0x0FFF;
-	/* considering the vbat input through a resistor bridge */
-	voltage = voltage * cfg->ratio / 1000; /* value of SENSOR_CHAN_VOLTAGE in Volt */
+	/* Sensor value in millivolts considering the vbat input through a resistor bridge */
+	voltage = data->raw * adc_ref_internal(data->adc) * cfg->ratio / 0x0FFF;
 
-	return sensor_value_from_double(val, voltage);
+	return sensor_value_from_milli(val, voltage);
 }
 
 static const struct sensor_driver_api stm32_vbat_driver_api = {

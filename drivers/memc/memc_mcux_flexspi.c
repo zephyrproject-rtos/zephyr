@@ -56,6 +56,10 @@ struct memc_flexspi_data {
 	bool combination_mode;
 	bool sck_differential_clock;
 	flexspi_read_sample_clock_t rx_sample_clock;
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB) && \
+FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
+	flexspi_read_sample_clock_t rx_sample_clock_b;
+#endif
 	const struct pinctrl_dev_config *pincfg;
 	size_t size[kFLEXSPI_PortCount];
 	struct port_lut port_luts[kFLEXSPI_PortCount];
@@ -184,9 +188,12 @@ int memc_flexspi_set_device_config(const struct device *dev,
 		/* Update lut offset with new value */
 		data->port_luts[port].lut_offset = lut_used;
 	}
-	data->port_luts[port].lut_used = lut_count;
-	tmp_config.ARDSeqIndex += data->port_luts[port].lut_offset;
-	tmp_config.AWRSeqIndex += data->port_luts[port].lut_offset;
+	/* LUTs should only be installed on sequence boundaries, every
+	 * 4 entries. Round LUT usage up to nearest sequence
+	 */
+	data->port_luts[port].lut_used = ROUND_UP(lut_count, 4);
+	tmp_config.ARDSeqIndex += data->port_luts[port].lut_offset / MEMC_FLEXSPI_CMD_PER_SEQ;
+	tmp_config.AWRSeqIndex += data->port_luts[port].lut_offset / MEMC_FLEXSPI_CMD_PER_SEQ;
 
 	/* Lock IRQs before reconfiguring FlexSPI, to prevent XIP */
 	key = irq_lock();
@@ -211,12 +218,29 @@ int memc_flexspi_reset(const struct device *dev)
 int memc_flexspi_transfer(const struct device *dev,
 		flexspi_transfer_t *transfer)
 {
+	flexspi_transfer_t tmp;
 	struct memc_flexspi_data *data = dev->data;
 	status_t status;
+	uint32_t seq_off, addr_offset = 0U;
+	int i;
 
-	/* Adjust transfer LUT index based on port */
-	transfer->seqIndex += data->port_luts[transfer->port].lut_offset;
-	status = FLEXSPI_TransferBlocking(data->base, transfer);
+	/* Calculate sequence offset and address offset based on port */
+	seq_off = data->port_luts[transfer->port].lut_offset /
+				MEMC_FLEXSPI_CMD_PER_SEQ;
+	for (i = 0; i < transfer->port; i++) {
+		addr_offset += data->size[i];
+	}
+
+	if ((seq_off != 0) || (addr_offset != 0)) {
+		/* Adjust device address and sequence index for transfer */
+		memcpy(&tmp, transfer, sizeof(tmp));
+		tmp.seqIndex += seq_off;
+		tmp.deviceAddress += addr_offset;
+		status = FLEXSPI_TransferBlocking(data->base, &tmp);
+	} else {
+		/* Transfer does not need adjustment */
+		status = FLEXSPI_TransferBlocking(data->base, transfer);
+	}
 
 	if (status != kStatus_Success) {
 		LOG_ERR("Transfer error: %d", status);
@@ -241,6 +265,14 @@ void *memc_flexspi_get_ahb_address(const struct device *dev,
 		offset += data->size[i];
 	}
 
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_ADDRESS_SHIFT) && \
+	(FSL_FEATURE_FLEXSPI_SUPPORT_ADDRESS_SHIFT)
+	if (data->base->FLSHCR0[port] & FLEXSPI_FLSHCR0_ADDRSHIFT_MASK) {
+		/* Address shift is set, add 0x1000_0000 to AHB address */
+		offset += 0x10000000;
+	}
+#endif
+
 	return data->ahb_base + offset;
 }
 
@@ -248,19 +280,21 @@ static int memc_flexspi_init(const struct device *dev)
 {
 	struct memc_flexspi_data *data = dev->data;
 	flexspi_config_t flexspi_config;
+	uint32_t flash_sizes[kFLEXSPI_PortCount];
+	int ret;
+	uint8_t i;
 
 	/* we should not configure the device we are running on */
 	if (memc_flexspi_is_running_xip(dev)) {
-		LOG_DBG("XIP active on %s, skipping init", dev->name);
-		return 0;
+		if (!IS_ENABLED(CONFIG_MEMC_MCUX_FLEXSPI_INIT_XIP)) {
+			LOG_DBG("XIP active on %s, skipping init", dev->name);
+			return 0;
+		}
 	}
-
 	/*
 	 * SOCs such as the RT1064 and RT1024 have internal flash, and no pinmux
 	 * settings, continue if no pinctrl state found.
 	 */
-	int ret;
-
 	ret = pinctrl_apply_state(data->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0 && ret != -ENOENT) {
 		return ret;
@@ -282,11 +316,21 @@ static int memc_flexspi_init(const struct device *dev)
 	flexspi_config.enableSckBDiffOpt = data->sck_differential_clock;
 #endif
 	flexspi_config.rxSampleClock = data->rx_sample_clock;
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB) && \
+FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
+	flexspi_config.rxSampleClockPortB = data->rx_sample_clock_b;
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_RXCLKSRC_DIFF) && \
+	FSL_FEATURE_FLEXSPI_SUPPORT_RXCLKSRC_DIFF
+	if (flexspi_config.rxSampleClock != flexspi_config.rxSampleClockPortB) {
+		flexspi_config.rxSampleClockDiff = true;
+	}
+#endif
+#endif
 
 	/* Configure AHB RX buffers, if any configuration settings are present */
 	__ASSERT(data->buf_cfg_cnt < FSL_FEATURE_FLEXSPI_AHB_BUFFER_COUNT,
 		"Maximum RX buffer configuration count exceeded");
-	for (uint8_t i = 0; i < data->buf_cfg_cnt; i++) {
+	for (i = 0; i < data->buf_cfg_cnt; i++) {
 		/* Should AHB prefetch up to buffer size? */
 		flexspi_config.ahbConfig.buffer[i].enablePrefetch = data->buf_cfg[i].prefetch;
 		/* AHB access priority (used for suspending control of AHB prefetching )*/
@@ -297,7 +341,24 @@ static int memc_flexspi_init(const struct device *dev)
 		flexspi_config.ahbConfig.buffer[i].bufferSize = data->buf_cfg[i].buf_size;
 	}
 
+	if (memc_flexspi_is_running_xip(dev)) {
+		/* Save flash sizes- FlexSPI init will reset them */
+		for (i = 0; i < kFLEXSPI_PortCount; i++) {
+			flash_sizes[i] = data->base->FLSHCR0[i];
+		}
+	}
+
 	FLEXSPI_Init(data->base, &flexspi_config);
+
+	if (memc_flexspi_is_running_xip(dev)) {
+		/* Restore flash sizes */
+		for (i = 0; i < kFLEXSPI_PortCount; i++) {
+			data->base->FLSHCR0[i] = flash_sizes[i];
+		}
+
+		/* Reenable FLEXSPI module */
+		data->base->MCR0 &= ~FLEXSPI_MCR0_MDIS_MASK;
+	}
 
 	return 0;
 }
@@ -329,6 +390,13 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 }
 #endif
 
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB) && \
+	FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
+#define MEMC_FLEXSPI_RXCLK_B(inst) .rx_sample_clock_b = DT_INST_PROP(inst, rx_clock_source_b),
+#else
+#define MEMC_FLEXSPI_RXCLK_B(inst)
+#endif
+
 #if defined(CONFIG_XIP) && defined(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
 /* Checks if image flash base address is in the FlexSPI AHB base region */
 #define MEMC_FLEXSPI_CFG_XIP(node_id)						\
@@ -357,6 +425,7 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 		.combination_mode = DT_INST_PROP(n, combination_mode),	\
 		.sck_differential_clock = DT_INST_PROP(n, sck_differential_clock),	\
 		.rx_sample_clock = DT_INST_PROP(n, rx_clock_source),	\
+		MEMC_FLEXSPI_RXCLK_B(n)                                 \
 		.buf_cfg = (struct memc_flexspi_buf_cfg *)buf_cfg_##n,	\
 		.buf_cfg_cnt = sizeof(buf_cfg_##n) /			\
 			sizeof(struct memc_flexspi_buf_cfg),		\
@@ -374,7 +443,7 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 			      &memc_flexspi_data_##n,			\
 			      NULL,					\
 			      POST_KERNEL,				\
-			      CONFIG_MEMC_INIT_PRIORITY,	\
+			      CONFIG_MEMC_MCUX_FLEXSPI_INIT_PRIORITY,	\
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MEMC_FLEXSPI)

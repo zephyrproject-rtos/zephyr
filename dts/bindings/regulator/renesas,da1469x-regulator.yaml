@@ -1,5 +1,5 @@
 # Copyright (c), 2023 Renesas Electronics Corporation
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 description: |
   Renesas Smartbond(tm) LDO and DCDC regulators

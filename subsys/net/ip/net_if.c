@@ -1658,37 +1658,68 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 
 	net_if_lock(iface);
 
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6) ||
+	    net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
+		goto out;
+	}
+
 	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
 		goto out;
 	}
 
+	/* Rejoin solicited node multicasts. */
 	ARRAY_FOR_EACH(ipv6->unicast, i) {
-		struct net_if_mcast_addr *maddr;
-		struct in6_addr addr;
-		int ret;
-
 		if (!ipv6->unicast[i].is_used) {
 			continue;
 		}
 
-		net_ipv6_addr_create_solicited_node(
-			&ipv6->unicast[i].address.in6_addr,
-			&addr);
+		join_mcast_nodes(iface, &ipv6->unicast[i].address.in6_addr);
+	}
 
-		maddr = net_if_ipv6_maddr_lookup(&addr, &iface);
-		if (!maddr) {
+	/* Rejoin any mcast address present on the interface, but marked as not joined. */
+	ARRAY_FOR_EACH(ipv6->mcast, i) {
+		int ret;
+
+		if (!ipv6->mcast[i].is_used ||
+		    net_if_ipv4_maddr_is_joined(&ipv6->mcast[i])) {
 			continue;
 		}
 
-		if (net_if_ipv4_maddr_is_joined(maddr)) {
+		ret = net_ipv6_mld_join(iface, &ipv6->mcast[i].address.in6_addr);
+		if (ret < 0) {
+			NET_ERR("Cannot join mcast address %s for %d (%d)",
+				net_sprint_ipv6_addr(&ipv6->mcast[i].address.in6_addr),
+				net_if_get_by_iface(iface), ret);
+		}
+	}
+
+out:
+	net_if_unlock(iface);
+}
+
+/* To be called when interface comes operational down so that multicast
+ * groups are rejoined when back up.
+ */
+static void clear_joined_ipv6_mcast_groups(struct net_if *iface)
+{
+	struct net_if_ipv6 *ipv6;
+
+	net_if_lock(iface);
+
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		goto out;
+	}
+
+	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
+		goto out;
+	}
+
+	ARRAY_FOR_EACH(ipv6->mcast, i) {
+		if (!ipv6->mcast[i].is_used) {
 			continue;
 		}
 
-		ret = net_ipv6_mld_join(iface, &addr);
-		if (ret < 0 && ret != EALREADY) {
-			NET_DBG("Cannot rejoin multicast group %s (%d)",
-				net_sprint_ipv6_addr(&addr), ret);
-		}
+		net_if_ipv6_maddr_leave(iface, &ipv6->mcast[i]);
 	}
 
 out:
@@ -3171,6 +3202,20 @@ static void iface_ipv6_start(struct net_if *iface)
 	net_if_start_rs(iface);
 }
 
+static void iface_ipv6_stop(struct net_if *iface)
+{
+	struct in6_addr addr = { };
+
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6) ||
+	    net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
+		return;
+	}
+
+	net_ipv6_addr_create_iid(&addr, net_if_get_link_addr(iface));
+
+	(void)net_if_ipv6_addr_rm(iface, &addr);
+}
+
 static void iface_ipv6_init(int if_count)
 {
 	iface_ipv6_dad_init();
@@ -3201,8 +3246,10 @@ static void iface_ipv6_init(int if_count)
 #define join_mcast_allnodes(...)
 #define join_mcast_solicit_node(...)
 #define leave_mcast_all(...)
+#define clear_joined_ipv6_mcast_groups(...)
 #define join_mcast_nodes(...)
 #define iface_ipv6_start(...)
+#define iface_ipv6_stop(...)
 #define iface_ipv6_init(...)
 
 struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *addr,
@@ -4979,6 +5026,18 @@ bool net_if_is_offloaded(struct net_if *iface)
 		net_if_is_socket_offloaded(iface));
 }
 
+static void rejoin_multicast_groups(struct net_if *iface)
+{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	rejoin_ipv6_mcast_groups(iface);
+	if (l2_flags_get(iface) & NET_L2_MULTICAST) {
+		join_mcast_allnodes(iface);
+	}
+#else
+	ARG_UNUSED(iface);
+#endif
+}
+
 static void notify_iface_up(struct net_if *iface)
 {
 	/* In many places it's assumed that link address was set with
@@ -5005,6 +5064,10 @@ static void notify_iface_up(struct net_if *iface)
 	 */
 	if (!net_if_is_offloaded(iface) &&
 	    !(l2_flags_get(iface) & NET_L2_POINT_TO_POINT)) {
+		/* Make sure that we update the IPv6 addresses and join the
+		 * multicast groups.
+		 */
+		rejoin_multicast_groups(iface);
 		iface_ipv6_start(iface);
 		net_ipv4_autoconf_start(iface);
 	}
@@ -5018,6 +5081,8 @@ static void notify_iface_down(struct net_if *iface)
 
 	if (!net_if_is_offloaded(iface) &&
 	    !(l2_flags_get(iface) & NET_L2_POINT_TO_POINT)) {
+		iface_ipv6_stop(iface);
+		clear_joined_ipv6_mcast_groups(iface);
 		net_ipv4_autoconf_reset(iface);
 	}
 }
@@ -5126,13 +5191,6 @@ static void init_igmp(struct net_if *iface)
 #endif
 }
 
-static void rejoin_multicast_groups(struct net_if *iface)
-{
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	rejoin_ipv6_mcast_groups(iface);
-#endif
-}
-
 int net_if_up(struct net_if *iface)
 {
 	int status = 0;
@@ -5189,14 +5247,6 @@ done:
 	net_if_flag_set(iface, NET_IF_UP);
 	net_mgmt_event_notify(NET_EVENT_IF_ADMIN_UP, iface);
 	update_operational_state(iface);
-
-	if (!net_if_is_offloaded(iface)) {
-		/* Make sure that we update the IPv6 addresses and join the
-		 * multicast groups.
-		 */
-		rejoin_multicast_groups(iface);
-		net_if_start_dad(iface);
-	}
 
 out:
 	net_if_unlock(iface);
