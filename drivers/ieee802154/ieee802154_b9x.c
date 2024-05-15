@@ -6,7 +6,11 @@
 
 #define DT_DRV_COMPAT telink_b9x_zb
 
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 #include "rf.h"
+#elif CONFIG_SOC_RISCV_TELINK_B95
+#include "rf_common.h"
+#endif
 #include "stimer.h"
 #include "b9x_rf_power.h"
 
@@ -1051,9 +1055,11 @@ static int b9x_stop(const struct device *dev)
 		riscv_plic_irq_disable(DT_INST_IRQN(0) - CONFIG_2ND_LVL_ISR_TBL_OFFSET);
 		rf_set_tx_rx_off();
 #ifdef CONFIG_PM_DEVICE
+#if  CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 		rf_baseband_reset();
-#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 		rf_reset_dma();
+#elif CONFIG_SOC_RISCV_TELINK_B95
+		rf_radio_reset();
 #endif
 		b9x_rf_zigbee_250K_mode = false;
 #endif /* CONFIG_PM_DEVICE */
@@ -1145,6 +1151,11 @@ static int b9x_tx(const struct device *dev,
 			key_id = frame.sec_header[IEEE802154_FRAME_LENGTH_SEC_HEADER_MODE_3];
 			break;
 		default:
+			break;
+		}
+
+		if (key_id == THREAD_DEFAULT_KEY_ID_MODE_2_KEY_INDEX) {
+			key_id = 0;
 			break;
 		}
 

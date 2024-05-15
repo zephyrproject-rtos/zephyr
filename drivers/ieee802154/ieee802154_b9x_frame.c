@@ -67,6 +67,7 @@
 #define IEEE802154_FRAME_SECCTRL_KEY_ID_MODE_1     (0x08)
 #define IEEE802154_FRAME_SECCTRL_KEY_ID_MODE_2     (0x10)
 #define IEEE802154_FRAME_SECCTRL_KEY_ID_MODE_3     (0x18)
+#define THREAD_DEFAULT_KEY_ID_MODE_2_KEY_INDEX     (0xff)
 
 /* IE header byte 0 */
 #define IEEE802154_FRAME_IE_HEADER_LEN_MASK        (0x7f)
@@ -621,8 +622,11 @@ ieee802154_b9x_crypto_ecb(
 #if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 	(void)aes_encrypt((uint8_t *)key, (uint8_t *)inp, out);
 #elif CONFIG_SOC_RISCV_TELINK_B95
+	uint32_t r = core_interrupt_disable();
+
 	(void)ske_lp_crypto(SKE_ALG_AES_128, SKE_MODE_ECB,
 	SKE_CRYPTO_ENCRYPT, (uint8_t *)key, 0, NULL, (uint8_t *)inp, out, 16);
+	core_restore_interrupt(r);
 #endif
 }
 

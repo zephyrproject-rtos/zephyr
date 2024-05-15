@@ -8,10 +8,14 @@
 #include <clock.h>
 #include <gpio.h>
 #include <ext_driver/ext_pm.h>
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 #include "rf.h"
+#elif CONFIG_SOC_RISCV_TELINK_B95
+#include "rf_common.h"
+#endif
+
 #include "flash.h"
 #include <watchdog.h>
-
 #include <zephyr/device.h>
 #include <zephyr/storage/flash_map.h>
 
@@ -233,8 +237,11 @@ static int soc_b9x_init(void)
 void sys_arch_reboot(int type)
 {
 	ARG_UNUSED(type);
-
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 	reg_reset = SOFT_RESET;
+#elif CONFIG_SOC_RISCV_TELINK_B95
+	sys_reboot_lib();
+#endif
 }
 
 /**
@@ -315,14 +322,51 @@ void soc_b9x_restore(void)
 	}
 }
 
-static inline uint32_t read_flash_mid(void)
+#if CONFIG_SOC_RISCV_TELINK_B95
+
+#include "flash/flash_common.h"
+#include "flash_base.h"
+/**
+ * @brief       This function is used to set the use of four lines when reading and writing flash.
+ * @param[in]   device_num	- the number of slave device.
+ * @param[in]   flash_mid	- the mid of flash.
+ * @return      1: success, 0: error, 2: mid is not supported.
+ */
+unsigned char flash_set_4line_read_write(mspi_slave_device_num_e device_num, unsigned int flash_mid)
 {
-#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
-	return flash_read_mid();
-#elif CONFIG_SOC_RISCV_TELINK_B95
-	return flash_read_mid(SLAVE0);
-#endif
+
+	unsigned char status = flash_4line_en_with_device_num(device_num, flash_mid);
+
+	if (status == 1) {
+		flash_read_page = flash_4read;
+		flash_set_rd_xip_config_sram(device_num, FLASH_X4READ_CMD);
+		flash_write_page = flash_quad_page_program;
+	}
+
+	return status;
 }
+
+/**
+ * @brief       This function is used to set the use of two lines when reading and writing flash.
+ * @param[in]   device_num	- the number of slave device.
+ * @param[in]   flash_mid	- the mid of flash.
+ * @return      1: success, 0: error, 2: mid is not supported.
+ */
+unsigned char flash_unset_4line_read_write(mspi_slave_device_num_e device_num,
+							unsigned int flash_mid)
+{
+	unsigned char status = flash_4line_dis_with_device_num(device_num,
+								flash_mid);
+
+	if (status == 1) {
+		flash_read_page = flash_read_data;
+		flash_set_rd_xip_config_sram(device_num, FLASH_READ_CMD);
+		flash_write_page = flash_page_program;
+	}
+	return status;
+}
+#endif
+
 
 /**
  * @brief Check mounted flash size (should be greater than in .dts).
@@ -331,9 +375,17 @@ static int soc_b9x_check_flash(void)
 {
 	static const size_t dts_flash_size = DT_REG_SIZE(DT_CHOSEN(zephyr_flash));
 	size_t hw_flash_size = 0;
-
+	unsigned int  mid = flash_read_mid();
 	const flash_capacity_e hw_flash_cap =
-		(read_flash_mid() & FLASH_MID_SIZE_MASK) >> FLASH_MID_SIZE_OFFSET;
+		(mid & FLASH_MID_SIZE_MASK) >> FLASH_MID_SIZE_OFFSET;
+
+#if CONFIG_SOC_RISCV_TELINK_B95
+	/* Enable 4x SPI read and write */
+
+	if (flash_set_4line_read_write(SLAVE0, mid) != 1) {
+
+	}
+#endif
 
 	switch (hw_flash_cap) {
 	case FLASH_SIZE_1M:
