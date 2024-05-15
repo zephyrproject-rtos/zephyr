@@ -72,6 +72,16 @@
 	status = "okay";
 };
 
+&pll2 {
+	div-m = <5>;
+	mul-n = <192>;
+	div-p = <2>;
+	div-q = <12>;
+	div-r = <4>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(480)>;
@@ -202,6 +212,8 @@
 	status = "okay";
 	pinctrl-0 = <&fdcan1_tx_ph13 &fdcan1_rx_ph14>;
 	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+		<&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	sample-point = <875>;
 	sample-point-data = <875>;
 
@@ -214,6 +226,8 @@
 	status = "okay";
 	pinctrl-0 = <&fdcan2_tx_pb13 &fdcan2_rx_pb5>;
 	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+		<&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	sample-point = <875>;
 	sample-point-data = <875>;
 

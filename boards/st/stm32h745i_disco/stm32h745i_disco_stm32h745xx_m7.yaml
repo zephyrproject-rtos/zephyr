@@ -20,4 +20,5 @@ supported:
   - memc
   - spi
   - rtc
+  - can
 vendor: st
