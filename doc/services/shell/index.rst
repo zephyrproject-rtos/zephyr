@@ -40,6 +40,11 @@ interaction is required. This module is a Unix-like shell with these features:
 	enable :kconfig:option:`CONFIG_SHELL_MINIMAL` and selectively enable just the
 	features you want.
 
+.. _backends:
+
+Backends
+********
+
 The module can be connected to any transport for command input and output.
 At this point, the following transport layers are implemented:
 
@@ -49,34 +54,12 @@ At this point, the following transport layers are implemented:
 * Telnet
 * UART
 * USB
+* Bluetooth LE (NUS)
+* RPMSG
 * DUMMY - not a physical transport layer.
 
-Connecting to Segger RTT via TCP (on macOS, for example)
-========================================================
-
-On macOS JLinkRTTClient won't let you enter input. Instead, please use following
-procedure:
-
-* Open up a first Terminal window and enter:
-
-  .. code-block:: none
-
-     JLinkRTTLogger -Device NRF52840_XXAA -RTTChannel 1 -if SWD -Speed 4000 ~/rtt.log
-
-  (change device if required)
-
-* Open up a second Terminal window and enter:
-
-  .. code-block:: none
-
-     nc localhost 19021
-
-* Now you should have a network connection to RTT that will let you enter input
-  to the shell.
-
-
-Telnet Backend
-==============
+Telnet
+======
 
 Enabling :kconfig:option:`CONFIG_SHELL_BACKEND_TELNET` will allow users to use telnet
 as a shell backend. Connecting to it can be done using PuTTY or any ``telnet`` client.
@@ -97,6 +80,70 @@ considerably. For that cost, it will enable the line editing,
 `tab completion <tab-feature_>`_, and `history <history-feature_>`_
 features of the shell.
 
+USB CDC ACM
+===========
+
+To configure Shell USB CDC ACM backend, simply add the snippet ``cdc-acm-console``
+to your build:
+
+.. code-block:: console
+
+   west build -S cdc-acm-console [...]
+
+Details on the configuration settings are captured in the following files:
+
+- :zephyr_file:`snippets/cdc-acm-console/cdc-acm-console.conf`.
+- :zephyr_file:`snippets/cdc-acm-console/cdc-acm-console.overlay`.
+
+Bluetooth LE (NUS)
+==================
+
+To configure Bluetooth LE (NUS) backend, simply add the snippet ``nus-console``
+to your build:
+
+.. code-block:: console
+
+   west build -S nus-console [...]
+
+Details on the configuration settings are captured in the following files:
+
+- :zephyr_file:`snippets/nus-console/nus-console.conf`.
+- :zephyr_file:`snippets/nus-console/nus-console.overlay`.
+
+Segget RTT
+==========
+
+To configure Segger RTT backend, add the following configurations to your build:
+
+- :kconfig:option:`CONFIG_USE_SEGGER_RTT`
+- :kconfig:option:`CONFIG_SHELL_BACKEND_RTT`
+- :kconfig:option:`CONFIG_SHELL_BACKEND_SERIAL`
+
+Details on additional configuration settings are captured in:
+:zephyr_file:`samples/subsys/shell/shell_module/prj_minimal_rtt.conf`.
+
+Connecting to Segger RTT via TCP (on macOS, for example)
+--------------------------------------------------------
+
+On macOS JLinkRTTClient won't let you enter input. Instead, please use following
+procedure:
+
+* Open up a first Terminal window and enter:
+
+  .. code-block:: none
+
+     JLinkRTTLogger -Device NRF52840_XXAA -RTTChannel 1 -if SWD -Speed 4000 ~/rtt.log
+
+  (change device if required)
+
+* Open up a second Terminal window and enter:
+
+  .. code-block:: none
+
+     nc localhost 19021
+
+* Now you should have a network connection to RTT that will let you enter input
+  to the shell.
 
 Commands
 ********
@@ -671,17 +718,10 @@ while a script interfaces over channel 1.
 This allows interactive use of the shell through JLinkRTTViewer, while the log
 is written to file.
 
-.. warning::
-	Regardless of the channel selection, the RTT log backend must be explicitly
-	enabled using :kconfig:option:`CONFIG_LOG_BACKEND_RTT` set to ``y``, because it
-	defaults to ``n`` when the Shell RTT backend is also enabled using
-	:kconfig:option:`CONFIG_SHELL_BACKEND_RTT` being set to ``y``.
+See `shell backends <backends_>`_ for details on how to enable RTT as a Shell backend.
 
 Usage
 *****
-
-To create a new shell instance user needs to activate requested
-backend using ``menuconfig``.
 
 The following code shows a simple use case of this library:
 
