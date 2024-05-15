@@ -74,6 +74,10 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		suit_storage_partition: memory@e1eb000 {
+			reg = <0xe1eb000 DT_SIZE_K(24)>;
+		};
+
 		cpurad_uicr_ext: memory@e1ff000 {
 			reg = <0xe1ff000 DT_SIZE_K(2)>;
 		};
