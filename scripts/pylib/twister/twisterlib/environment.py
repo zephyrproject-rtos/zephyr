@@ -72,7 +72,7 @@ Artificially long but functional example:
 
     run_group_option = parser.add_mutually_exclusive_group()
 
-    device = parser.add_mutually_exclusive_group(required="--device-testing" in sys.argv)
+    device = parser.add_mutually_exclusive_group()
 
     test_or_build = parser.add_mutually_exclusive_group()
 
@@ -806,6 +806,10 @@ def parse_arguments(parser, args, options = None, on_init=True):
 
     if options.enable_valgrind and not shutil.which("valgrind"):
         logger.error("valgrind enabled but valgrind executable not found")
+        sys.exit(1)
+
+    if (not options.device_testing) and (options.device_serial or options.device_serial_pty or options.hardware_map):
+        logger.error("Use --device-testing with --device-serial, or --device-serial-pty, or --hardware-map.")
         sys.exit(1)
 
     if options.device_testing and (options.device_serial or options.device_serial_pty) and len(options.platform) != 1:
