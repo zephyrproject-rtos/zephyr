@@ -225,6 +225,7 @@ static void lp_enc_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	/* Piggy-back on RX node */
 	ntf = ctx->node_ref.rx;
+	ctx->node_ref.rx = NULL;
 	LL_ASSERT(ntf);
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
