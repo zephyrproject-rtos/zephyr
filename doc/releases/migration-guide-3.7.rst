@@ -312,6 +312,11 @@ Bluetooth Audio
   :kconfig:option:`CONFIG_BT_ISO_PERIPHERAL` are not longer `select`ed automatically when
   enabling :kconfig:option:`CONFIG_BT_BAP_UNICAST_SERVER`, and these must now be set explicitly
   in the project configuration file. (:github:`71993`)
+* The discover callback functions :code:`bt_cap_initiator_cb.unicast_discovery_complete`` and
+  :code:`bt_cap_commander_cb.discovery_complete`` for CAP now contain an additional parameter for
+  the set member.
+  This needs to be added to all instances of CAP discovery callback functions defined.
+  (:github:`72797`)
 
 Bluetooth Classic
 =================

@@ -263,6 +263,7 @@ static struct bt_bap_stream_ops stream_ops = {
 };
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
+				      const struct bt_csip_set_coordinator_set_member *member,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (err != 0) {
