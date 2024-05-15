@@ -52,19 +52,19 @@
 #error "__DSP_PRESENT and CONFIG_ARMV8_M_DSP are not set to the same value"
 #endif
 
-#if  __ICACHE_PRESENT != CONFIG_CPU_HAS_ICACHE
+#if  defined(__ICACHE_PRESENT) && (__ICACHE_PRESENT != CONFIG_CPU_HAS_ICACHE)
 #error "__ICACHE_PRESENT and CONFIG_CPU_HAS_ICACHE are not set to the same value"
 #endif
 
-#if __DCACHE_PRESENT != CONFIG_CPU_HAS_DCACHE
+#if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT != CONFIG_CPU_HAS_DCACHE)
 #error "__DCACHE_PRESENT and CONFIG_CPU_HAS_DCACHE are not set to the same value"
 #endif
 
-#if __MVE_PRESENT != CONFIG_ARMV8_1_M_MVEI
+#if defined(__MVE_PRESENT) && (__MVE_PRESENT != CONFIG_ARMV8_1_M_MVEI)
 #error "__MVE_PRESENT and CONFIG_ARMV8_1_M_MVEI are not set to the same value"
 #endif
 
-#if __SAUREGION_PRESENT != CONFIG_CPU_HAS_ARM_SAU
+#if defined(__SAUREGION_PRESENT) && (__SAUREGION_PRESENT != CONFIG_CPU_HAS_ARM_SAU)
 #error "__SAUREGION_PRESENT and CONFIG_CPU_HAS_ARM_SAU are not set to the same value"
 #endif
 
