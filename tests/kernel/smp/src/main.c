@@ -204,15 +204,21 @@ ZTEST(smp, test_cpu_id_threads)
 	k_thread_join(tid, K_FOREVER);
 }
 
+static void set_tinfo(void *p1)
+{
+	int thread_num = POINTER_TO_INT(p1);
+
+	tinfo[thread_num].executed  = 1;
+	tinfo[thread_num].cpu_id = curr_cpu();
+}
+
 static void thread_entry_fn(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
-	int thread_num = POINTER_TO_INT(p1);
 	int count = 0;
 
-	tinfo[thread_num].executed  = 1;
-	tinfo[thread_num].cpu_id = curr_cpu();
+	set_tinfo(p1);
 
 	/* We use this thread function with spawn_threads helper which increase delay before each
 	 * new thread is spawned. So we need take into account the amount of threads we are going to
@@ -221,6 +227,17 @@ static void thread_entry_fn(void *p1, void *p2, void *p3)
 	 */
 	while (count++ < (5 + arch_num_cpus())) {
 		k_busy_wait(DELAY_US);
+	}
+}
+
+static void thread_entry_inf_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	set_tinfo(p1);
+
+	while (true) {
 	}
 }
 
@@ -384,7 +401,7 @@ ZTEST(smp, test_coop_resched_threads)
 	 * will not get scheduled
 	 */
 	spawn_threads(K_PRIO_COOP(SPAWN_THREADS_MAX_PRIO), num_threads, !EQUAL_PRIORITY,
-		      &thread_entry_fn, THREAD_DELAY);
+		      &thread_entry_inf_fn, THREAD_DELAY);
 
 	/* Wait for some time to let other core's thread run. We spawn threads function with
 	 * spawn_threads helper which increase delay before each new thread is spawned. So we
