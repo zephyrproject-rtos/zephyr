@@ -26,7 +26,7 @@
  *
  */
 
-ZTEST(rand32_common, test_rand32)
+ZTEST(rng_common, test_rand32)
 {
 	uint32_t gen, last_gen, tmp;
 	int rnd_cnt;
@@ -115,4 +115,4 @@ ZTEST(rand32_common, test_rand32)
 #endif /* CONFIG_CSPRNG_ENABLED */
 }
 
-ZTEST_SUITE(rand32_common, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(rng_common, NULL, NULL, NULL, NULL, NULL);
