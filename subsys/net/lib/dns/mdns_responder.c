@@ -35,22 +35,24 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 
 #include "net_private.h"
 
+extern void dns_dispatcher_svc_handler(struct k_work *work);
+
 #define MDNS_LISTEN_PORT 5353
 
 #define MDNS_TTL CONFIG_MDNS_RESPONDER_TTL /* In seconds */
 
 #if defined(CONFIG_NET_IPV4)
-#define MAX_IPV4_IFACE_COUNT CONFIG_NET_IF_MAX_IPV4_COUNT
-static int ipv4[MAX_IPV4_IFACE_COUNT];
-static struct sockaddr_in local_addr4;
-#else
-#define MAX_IPV4_IFACE_COUNT 0
+static struct mdns_responder_context v4_ctx[MAX_IPV4_IFACE_COUNT];
+
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v4_svc, NULL, dns_dispatcher_svc_handler,
+				      MDNS_MAX_IPV4_IFACE_COUNT);
 #endif
+
 #if defined(CONFIG_NET_IPV6)
-#define MAX_IPV6_IFACE_COUNT CONFIG_NET_IF_MAX_IPV6_COUNT
-static int ipv6[MAX_IPV6_IFACE_COUNT];
-#else
-#define MAX_IPV6_IFACE_COUNT 0
+static struct mdns_responder_context v6_ctx[MAX_IPV6_IFACE_COUNT];
+
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v6_svc, NULL, dns_dispatcher_svc_handler,
+				      MDNS_MAX_IPV6_IFACE_COUNT);
 #endif
 
 static struct net_mgmt_event_callback mgmt_cb;
@@ -59,24 +61,14 @@ static size_t external_records_count;
 
 #define BUF_ALLOC_TIMEOUT K_MSEC(100)
 
-/* This value is recommended by RFC 1035 */
-#define DNS_RESOLVER_MAX_BUF_SIZE	512
-#define DNS_RESOLVER_MIN_BUF		2
-#define DNS_RESOLVER_BUF_CTR	(DNS_RESOLVER_MIN_BUF + \
-				 CONFIG_MDNS_RESOLVER_ADDITIONAL_BUF_CTR)
-
-#define MDNS_MAX_POLL (MAX_IPV4_IFACE_COUNT + MAX_IPV6_IFACE_COUNT)
-
-static void svc_handler(struct k_work *work);
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_mdns, NULL, svc_handler, MDNS_MAX_POLL);
-
-/* Socket polling for each server connection */
-static struct zsock_pollfd fds[MDNS_MAX_POLL];
-
 #ifndef CONFIG_NET_TEST
 static int setup_dst_addr(int sock, sa_family_t family,
 			  struct sockaddr *dst, socklen_t *dst_len);
 #endif /* CONFIG_NET_TEST */
+
+#define DNS_RESOLVER_MIN_BUF		2
+#define DNS_RESOLVER_BUF_CTR	(DNS_RESOLVER_MIN_BUF + \
+				 CONFIG_MDNS_RESOLVER_ADDITIONAL_BUF_CTR)
 
 NET_BUF_POOL_DEFINE(mdns_msg_pool, DNS_RESOLVER_BUF_CTR,
 		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
@@ -106,11 +98,14 @@ static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
 #if defined(CONFIG_NET_IPV4)
-		int ret = net_ipv4_igmp_join(iface, &local_addr4.sin_addr, NULL);
-
-		if (ret < 0) {
-			NET_DBG("Cannot add IPv4 multicast address to iface %d",
-				net_if_get_by_iface(iface));
+		ARRAY_FOR_EACH(v4_ctx, i) {
+			int ret = net_ipv4_igmp_join(iface,
+					&net_sin(&v4_ctx[i].dispatcher.local_addr)->sin_addr,
+					NULL);
+			if (ret < 0) {
+				NET_DBG("Cannot add IPv4 multicast address to iface %d",
+					net_if_get_by_iface(iface));
+			}
 		}
 #endif /* defined(CONFIG_NET_IPV4) */
 	}
@@ -156,27 +151,7 @@ static int get_socket(sa_family_t family)
 	ret = zsock_socket(family, SOCK_DGRAM, IPPROTO_UDP);
 	if (ret < 0) {
 		ret = -errno;
-		NET_DBG("Cannot get context (%d)", ret);
-	}
-
-	return ret;
-}
-
-static int bind_ctx(int sock,
-		    struct sockaddr *local_addr,
-		    socklen_t addrlen)
-{
-	int ret;
-
-	if (sock < 0) {
-		return -EINVAL;
-	}
-
-	ret = zsock_bind(sock, local_addr, addrlen);
-	if (ret < 0) {
-		NET_DBG("Cannot bind to %s %s port (%d)", "mDNS",
-			local_addr->sa_family == AF_INET ?
-			"IPv4" : "IPv6", ret);
+		NET_DBG("Cannot get socket (%d)", ret);
 	}
 
 	return ret;
@@ -354,19 +329,6 @@ static int send_response(int sock,
 	return ret;
 }
 
-static const char *qtype_to_string(int qtype)
-{
-	switch (qtype) {
-	case DNS_RR_TYPE_A: return "A";
-	case DNS_RR_TYPE_CNAME: return "CNAME";
-	case DNS_RR_TYPE_PTR: return "PTR";
-	case DNS_RR_TYPE_TXT: return "TXT";
-	case DNS_RR_TYPE_AAAA: return "AAAA";
-	case DNS_RR_TYPE_SRV: return "SRV";
-	default: return "<unknown type>";
-	}
-}
-
 static void send_sd_response(int sock,
 			     sa_family_t family,
 			     struct sockaddr *src_addr,
@@ -528,18 +490,16 @@ static int dns_read(int sock,
 		    struct net_buf *dns_data,
 		    size_t len,
 		    struct sockaddr *src_addr,
-		    size_t addrlen,
-		    struct dns_addrinfo *info)
+		    size_t addrlen)
 {
 	/* Helper struct to track the dns msg received from the server */
 	const char *hostname = net_hostname_get();
 	int hostname_len = strlen(hostname);
+	int family = src_addr->sa_family;
 	struct net_buf *result;
 	struct dns_msg_t dns_msg;
-	socklen_t optlen;
 	int data_len;
 	int queries;
-	int family;
 	int ret;
 
 	data_len = MIN(len, DNS_RESOLVER_MAX_BUF_SIZE);
@@ -563,9 +523,6 @@ static int dns_read(int sock,
 	}
 
 	queries = ret;
-
-	optlen = sizeof(int);
-	(void)zsock_getsockopt(sock, SOL_SOCKET, SO_DOMAIN, &family, &optlen);
 
 	NET_DBG("Received %d %s from %s", queries,
 		queries > 1 ? "queries" : "query",
@@ -594,7 +551,7 @@ static int dns_read(int sock,
 		}
 
 		NET_DBG("[%d] query %s/%s label %s (%d bytes)", queries,
-			qtype_to_string(qtype), "IN",
+			dns_qtype_to_str(qtype), "IN",
 			result->data, ret);
 
 		/* If the query matches to our hostname, then send reply.
@@ -624,71 +581,6 @@ quit:
 	}
 
 	return ret;
-}
-
-static int recv_data(struct net_socket_service_event *pev)
-{
-	COND_CODE_1(IS_ENABLED(CONFIG_NET_IPV6),
-		    (struct sockaddr_in6), (struct sockaddr_in)) addr;
-	struct net_buf *dns_data = NULL;
-	struct dns_addrinfo info = { 0 };
-	size_t addrlen = sizeof(addr);
-	int ret, family, sock_error, len;
-	socklen_t optlen;
-
-	if ((pev->event.revents & ZSOCK_POLLERR) ||
-	    (pev->event.revents & ZSOCK_POLLNVAL)) {
-		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
-				       SO_DOMAIN, &family, &optlen);
-		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
-				       SO_ERROR, &sock_error, &optlen);
-		NET_ERR("Receiver IPv%d socket error (%d)",
-			family == AF_INET ? 4 : 6, sock_error);
-		ret = DNS_EAI_SYSTEM;
-		goto quit;
-	}
-
-	dns_data = net_buf_alloc(&mdns_msg_pool, BUF_ALLOC_TIMEOUT);
-	if (!dns_data) {
-		ret = -ENOENT;
-		goto quit;
-	}
-
-	ret = zsock_recvfrom(pev->event.fd, dns_data->data,
-			     net_buf_max_len(dns_data), 0,
-			     (struct sockaddr *)&addr, &addrlen);
-	if (ret < 0) {
-		ret = -errno;
-		NET_ERR("recv failed on IPv%d socket (%d)",
-			family == AF_INET ? 4 : 6, -ret);
-		goto free_buf;
-	}
-
-	len = ret;
-
-	ret = dns_read(pev->event.fd, dns_data, len,
-		       (struct sockaddr *)&addr, addrlen, &info);
-	if (ret < 0 && ret != -EINVAL) {
-		NET_DBG("%s read failed (%d)", "mDNS", ret);
-	}
-
-free_buf:
-	net_buf_unref(dns_data);
-
-quit:
-	return ret;
-}
-
-static void svc_handler(struct k_work *work)
-{
-	struct net_socket_service_event *pev =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
-	int ret;
-
-	ret = recv_data(pev);
-	if (ret < 0) {
-		NET_ERR("DNS recv error (%d)", ret);
-	}
 }
 
 #if defined(CONFIG_NET_IPV6)
@@ -754,9 +646,53 @@ static void setup_ipv4_addr(struct sockaddr_in *local_addr)
 #define INTERFACE_NAME_LEN 0
 #endif
 
+static int dispatcher_cb(void *my_ctx, int sock,
+			 struct sockaddr *addr, size_t addrlen,
+			 struct net_buf *dns_data, size_t len)
+{
+	int ret;
+
+	ARG_UNUSED(my_ctx);
+
+	ret = dns_read(sock, dns_data, len, addr, addrlen);
+	if (ret < 0 && ret != -EINVAL) {
+		NET_DBG("%s read failed (%d)", "mDNS", ret);
+	}
+
+	net_buf_unref(dns_data);
+
+	return ret;
+}
+
+static int register_dispatcher(struct mdns_responder_context *ctx,
+			       const struct net_socket_service_desc *svc,
+			       struct sockaddr *local)
+{
+	ctx->dispatcher.type = DNS_SOCKET_RESPONDER;
+	ctx->dispatcher.cb = dispatcher_cb;
+	ctx->dispatcher.fds = ctx->fds;
+	ctx->dispatcher.fds_len = ARRAY_SIZE(ctx->fds);
+	ctx->dispatcher.sock = ctx->sock;
+	ctx->dispatcher.svc = svc;
+	ctx->dispatcher.mdns_ctx = ctx;
+	ctx->dispatcher.pair = NULL;
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && local->sa_family == AF_INET6) {
+		memcpy(&ctx->dispatcher.local_addr, local,
+		       sizeof(struct sockaddr_in6));
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && local->sa_family == AF_INET) {
+		memcpy(&ctx->dispatcher.local_addr, local,
+		       sizeof(struct sockaddr_in));
+	} else {
+		return -ENOTSUP;
+	}
+
+	return dns_dispatcher_register(&ctx->dispatcher);
+}
+
 static int init_listener(void)
 {
-	int ret, ok = 0, i, ifindex;
+	int ret, ok = 0, ifindex;
 	char name[INTERFACE_NAME_LEN + 1];
 	struct ifreq if_req;
 	struct net_if *iface;
@@ -774,21 +710,22 @@ static int init_listener(void)
 			     MAX_IPV6_IFACE_COUNT), iface_count);
 	}
 
-	ARRAY_FOR_EACH(fds, j) {
-		fds[j].fd = -1;
-	}
-
 #if defined(CONFIG_NET_IPV6)
 	struct sockaddr_in6 local_addr6;
 	int v6;
 
 	setup_ipv6_addr(&local_addr6);
 
-	for (i = 0; i < MAX_IPV6_IFACE_COUNT; i++) {
+	ARRAY_FOR_EACH(v6_ctx, i) {
+		ARRAY_FOR_EACH(v6_ctx[i].fds, j) {
+			v6_ctx[i].fds[j].fd = -1;
+		}
+
 		v6 = get_socket(AF_INET6);
 		if (v6 < 0) {
-			NET_ERR("Cannot get %s socket out of %d. Max sockets is %d",
-				"IPv6", MAX_IPV6_IFACE_COUNT, CONFIG_NET_MAX_CONTEXTS);
+			NET_ERR("Cannot get %s socket (%d %s interfaces). Max sockets is %d",
+				"IPv6", MAX_IPV6_IFACE_COUNT,
+				"IPv6", CONFIG_NET_MAX_CONTEXTS);
 			continue;
 		}
 
@@ -816,24 +753,18 @@ static int init_listener(void)
 			}
 		}
 
-		ret = bind_ctx(v6, (struct sockaddr *)&local_addr6,
-			       sizeof(local_addr6));
-		if (ret < 0) {
-			zsock_close(v6);
-			goto ipv6_out;
-		}
+		v6_ctx[i].sock = v6;
+		ret = -1;
 
-		ret = -ENOENT;
-
-		ARRAY_FOR_EACH(fds, j) {
-			if (fds[j].fd == v6) {
+		ARRAY_FOR_EACH(v6_ctx[i].fds, j) {
+			if (v6_ctx[i].fds[j].fd == v6) {
 				ret = 0;
 				break;
 			}
 
-			if (fds[j].fd < 0) {
-				fds[j].fd = v6;
-				fds[j].events = ZSOCK_POLLIN;
+			if (v6_ctx[i].fds[j].fd < 0) {
+				v6_ctx[i].fds[j].fd = v6;
+				v6_ctx[i].fds[j].events = ZSOCK_POLLIN;
 				ret = 0;
 				break;
 			}
@@ -845,32 +776,33 @@ static int init_listener(void)
 			continue;
 		}
 
-		ret = net_socket_service_register(&svc_mdns, fds, ARRAY_SIZE(fds), NULL);
+		ret = register_dispatcher(&v6_ctx[i], &v6_svc, (struct sockaddr *)&local_addr6);
 		if (ret < 0) {
 			NET_DBG("Cannot register %s %s socket service (%d)",
 				"IPv6", "mDNS", ret);
 			zsock_close(v6);
 		} else {
-			ipv6[i] = v6;
 			ok++;
 		}
 	}
-ipv6_out:
-	; /* Added ";" to avoid clang compile error because of
-	   * the "struct net_context *v4" after it.
-	   */
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
+	struct sockaddr_in local_addr4;
 	int v4;
 
 	setup_ipv4_addr(&local_addr4);
 
-	for (i = 0; i < MAX_IPV4_IFACE_COUNT; i++) {
+	ARRAY_FOR_EACH(v4_ctx, i) {
+		ARRAY_FOR_EACH(v4_ctx[i].fds, j) {
+			v4_ctx[i].fds[j].fd = -1;
+		}
+
 		v4 = get_socket(AF_INET);
 		if (v4 < 0) {
-			NET_ERR("Cannot get %s socket out of %d. Max sockets is %d",
-				"IPv4", MAX_IPV4_IFACE_COUNT, CONFIG_NET_MAX_CONTEXTS);
+			NET_ERR("Cannot get %s socket (%d %s interfaces). Max sockets is %d",
+				"IPv4", MAX_IPV4_IFACE_COUNT,
+				"IPv4", CONFIG_NET_MAX_CONTEXTS);
 			continue;
 		}
 
@@ -898,24 +830,18 @@ ipv6_out:
 			}
 		}
 
-		ret = bind_ctx(v4, (struct sockaddr *)&local_addr4,
-			       sizeof(local_addr4));
-		if (ret < 0) {
-			zsock_close(v4);
-			goto ipv4_out;
-		}
+		v4_ctx[i].sock = v4;
+		ret = -1;
 
-		ret = -ENOENT;
-
-		ARRAY_FOR_EACH(fds, j) {
-			if (fds[j].fd == v4) {
+		ARRAY_FOR_EACH(v4_ctx[i].fds, j) {
+			if (v4_ctx[i].fds[j].fd == v4) {
 				ret = 0;
 				break;
 			}
 
-			if (fds[j].fd < 0) {
-				fds[j].fd = v4;
-				fds[j].events = ZSOCK_POLLIN;
+			if (v4_ctx[i].fds[j].fd < 0) {
+				v4_ctx[i].fds[j].fd = v4;
+				v4_ctx[i].fds[j].events = ZSOCK_POLLIN;
 				ret = 0;
 				break;
 			}
@@ -927,17 +853,15 @@ ipv6_out:
 			continue;
 		}
 
-		ret = net_socket_service_register(&svc_mdns, fds, ARRAY_SIZE(fds), NULL);
+		ret = register_dispatcher(&v4_ctx[i], &v4_svc, (struct sockaddr *)&local_addr4);
 		if (ret < 0) {
 			NET_DBG("Cannot register %s %s socket service (%d)",
 				"IPv4", "mDNS", ret);
 			zsock_close(v4);
 		} else {
-			ipv4[i] = v4;
 			ok++;
 		}
 	}
-ipv4_out:
 #endif /* CONFIG_NET_IPV4 */
 
 	if (!ok) {
@@ -972,4 +896,7 @@ int mdns_responder_set_ext_records(const struct dns_sd_rec *records, size_t coun
 	return 0;
 }
 
-SYS_INIT(mdns_responder_init, APPLICATION, CONFIG_MDNS_RESPONDER_INIT_PRIO);
+void mdns_init_responder(void)
+{
+	(void)mdns_responder_init();
+}

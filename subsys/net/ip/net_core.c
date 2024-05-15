@@ -561,7 +561,10 @@ static inline int services_init(void)
 
 	net_dhcpv4_server_init();
 
+	dns_dispatcher_init();
 	dns_init_resolver();
+	mdns_init_responder();
+
 	websocket_init();
 
 	net_coap_init();
