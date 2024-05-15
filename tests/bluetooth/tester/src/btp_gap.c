@@ -1406,6 +1406,26 @@ static struct bt_conn_auth_info_cb auth_info_cb = {
 	.pairing_complete = auth_pairing_complete,
 };
 
+#ifdef CONFIG_BT_CLASSIC
+static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
+{
+	char *pincode;
+	int err;
+
+	if (true == highsec) {
+		pincode = (char *)"0000000000000000";
+	} else {
+		/* TSPX_pin_code of GAP pixits is set to '0000' */
+		pincode = (char *)"0000";
+	}
+
+	err = bt_conn_auth_pincode_entry(conn, (char const *)pincode);
+	if (err < 0) {
+		(void)bt_conn_auth_cancel(conn);
+	}
+}
+#endif /* CONFIG_BT_CLASSIC */
+
 static uint8_t set_io_cap(const void *cmd, uint16_t cmd_len,
 			  void *rsp, uint16_t *rsp_len)
 {
@@ -1427,6 +1447,9 @@ static uint8_t set_io_cap(const void *cmd, uint16_t cmd_len,
 		cb.passkey_display = auth_passkey_display;
 		cb.passkey_entry = auth_passkey_entry;
 		cb.passkey_confirm = auth_passkey_confirm;
+#ifdef CONFIG_BT_CLASSIC
+		cb.pincode_entry = auth_pincode_entry;
+#endif /* CONFIG_BT_CLASSIC */
 		break;
 	case BTP_GAP_IO_CAP_NO_INPUT_OUTPUT:
 		cb.cancel = auth_cancel;
@@ -1434,6 +1457,9 @@ static uint8_t set_io_cap(const void *cmd, uint16_t cmd_len,
 	case BTP_GAP_IO_CAP_KEYBOARD_ONLY:
 		cb.cancel = auth_cancel;
 		cb.passkey_entry = auth_passkey_entry;
+#ifdef CONFIG_BT_CLASSIC
+		cb.pincode_entry = auth_pincode_entry;
+#endif /* CONFIG_BT_CLASSIC */
 		break;
 	case BTP_GAP_IO_CAP_DISPLAY_YESNO:
 		cb.cancel = auth_cancel;
