@@ -433,6 +433,7 @@ static void pu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	/* Piggy-back on stored RX node */
 	ntf = ctx->node_ref.rx;
+	ctx->node_ref.rx = NULL;
 	LL_ASSERT(ntf);
 
 	if (ctx->data.pu.ntf_pu) {
