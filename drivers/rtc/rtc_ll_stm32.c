@@ -392,9 +392,7 @@ static int rtc_stm32_init(const struct device *dev)
 static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
 	struct rtc_stm32_data *data = dev->data;
-
 	uint32_t real_year = timeptr->tm_year + TM_YEAR_REF;
-
 	int err = 0;
 
 	if (real_year < RTC_YEAR_REF) {
@@ -423,11 +421,8 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	ErrorStatus status = LL_RTC_EnterInitMode(RTC);
 
 	if (status != SUCCESS) {
-#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
-		LL_PWR_DisableBkUpAccess();
-#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
-		k_mutex_unlock(&data->lock);
-		return -EIO;
+		err = -EIO;
+		goto protect_unlock_return;
 	}
 
 	LL_RTC_DATE_SetYear(RTC, bin2bcd(real_year - RTC_YEAR_REF));
@@ -442,13 +437,13 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 		LL_RTC_DATE_SetWeekDay(RTC, timeptr->tm_wday);
 	}
 
-
 	LL_RTC_TIME_SetHour(RTC, bin2bcd(timeptr->tm_hour));
 	LL_RTC_TIME_SetMinute(RTC, bin2bcd(timeptr->tm_min));
 	LL_RTC_TIME_SetSecond(RTC, bin2bcd(timeptr->tm_sec));
 
 	LL_RTC_DisableInitMode(RTC);
 
+protect_unlock_return:
 	LL_RTC_EnableWriteProtection(RTC);
 
 #if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
