@@ -1403,6 +1403,8 @@ static void recv_cb(struct net_context *context,
 
 	recv_cb_called = true;
 
+	net_pkt_unref(pkt);
+
 	k_sem_give(&wait_data);
 }
 
