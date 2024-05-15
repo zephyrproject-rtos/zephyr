@@ -233,6 +233,8 @@ config LLMNR_RESPONDER
 	select NET_IPV6_MLD if NET_IPV6
 	select NET_MGMT
 	select NET_MGMT_EVENT
+	select NET_SOCKETS
+	select NET_SOCKETS_SERVICE
 	depends on NET_HOSTNAME_ENABLE
 	help
 	  This option enables the LLMNR responder support for Zephyr.
