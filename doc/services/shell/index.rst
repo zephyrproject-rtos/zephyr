@@ -159,6 +159,41 @@ types:
   during compile time. Created in the software module.
 
 
+Commonly-used command groups
+============================
+
+The following list is a set of useful command groups and how to enable them:
+
+GPIO
+----
+
+- :kconfig:option:`CONFIG_GPIO`
+- :kconfig:option:`CONFIG_GPIO_SHELL`
+
+I2C
+---
+
+- :kconfig:option:`CONFIG_I2C`
+- :kconfig:option:`CONFIG_I2C_SHELL`
+
+Sensor
+------
+
+- :kconfig:option:`CONFIG_SENSOR`
+- :kconfig:option:`CONFIG_SENSOR_SHELL`
+
+Flash
+-----
+
+- :kconfig:option:`CONFIG_FLASH`
+- :kconfig:option:`CONFIG_FLASH_SHELL`
+
+File-System
+-----------
+
+- :kconfig:option:`CONFIG_FILE_SYSTEM`
+- :kconfig:option:`CONFIG_FILE_SYSTEM_SHELL`
+
 Creating commands
 =================
 
