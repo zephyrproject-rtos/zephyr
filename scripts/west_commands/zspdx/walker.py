@@ -89,10 +89,6 @@ class Walker:
 
         return purl
 
-    def _normalize_module_name(self, module_name):
-        # Replace "_" by "-" since it's not allowed in spdx ID
-        return module_name.replace("_", "-")
-
     def _add_describe_relationship(self, doc, cfgpackage):
         # create DESCRIBES relationship data
         rd = RelationshipData()
@@ -285,8 +281,6 @@ class Walker:
                 log.err(f"cannot find module name in meta file; bailing")
                 return False
 
-            module_name = self._normalize_module_name(module_name)
-
             # set up zephyr sources package
             cfgPackageZephyrModule = PackageConfig()
             cfgPackageZephyrModule.name = module_name + "-sources"
@@ -350,8 +344,6 @@ class Walker:
             if not module_name:
                 log.err(f"cannot find module name in meta file; bailing")
                 return False
-
-            module_name = self._normalize_module_name(module_name)
 
             module_ext_ref = []
             if module_security:
