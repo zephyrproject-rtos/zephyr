@@ -18,6 +18,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/pm/device_runtime.h>
 #include <soc.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
@@ -613,6 +614,12 @@ static int adc_stm32_calibrate(const struct device *dev)
 	}
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 
+	/* enable device runtime power management */
+	err = pm_device_runtime_enable(dev);
+	if ((err < 0) && (err != -ENOSYS)) {
+		return err;
+	}
+
 	return 0;
 }
 #endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc) */
@@ -1111,6 +1118,7 @@ static void adc_stm32_isr(const struct device *dev)
 	}
 
 	LOG_DBG("%s ISR triggered.", dev->name);
+	pm_device_runtime_put(dev);
 }
 #endif /* !CONFIG_ADC_STM32_DMA */
 
@@ -1140,6 +1148,11 @@ static int adc_stm32_read(const struct device *dev,
 {
 	struct adc_stm32_data *data = dev->data;
 	int error;
+
+	error = pm_device_runtime_get(dev);
+	if (error < 0) {
+		return error;
+	}
 
 	adc_context_lock(&data->ctx, false, NULL);
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
