@@ -164,7 +164,7 @@ static void isr(const void *arg)
 	cached_icr = MAX_TICKS * CYCLES_PER_TICK;
 	total_cycles += cycles;
 	ticks = (total_cycles - last_announcement) / CYCLES_PER_TICK;
-	last_announcement = total_cycles;
+	last_announcement += ticks * CYCLES_PER_TICK;
 	k_spin_unlock(&lock, key);
 	sys_clock_announce(ticks);
 }
