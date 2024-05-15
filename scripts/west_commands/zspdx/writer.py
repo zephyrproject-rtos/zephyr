@@ -17,20 +17,26 @@ CPE23TYPE_REGEX = (
 )
 PURL_REGEX = r"^pkg:.+(\/.+)?\/.+(@.+)?(\?.+)?(#.+)?$"
 
+def _normalize_spdx_name(name):
+    # Replace "_" by "-" since it's not allowed in spdx ID
+    return name.replace("_", "-")
+
 # Output tag-value SPDX 2.3 content for the given Relationship object.
 # Arguments:
 #   1) f: file handle for SPDX document
 #   2) rln: Relationship object being described
 def writeRelationshipSPDX(f, rln):
-    f.write(f"Relationship: {rln.refA} {rln.rlnType} {rln.refB}\n")
+    f.write(f"Relationship: {_normalize_spdx_name(rln.refA)} {rln.rlnType} {_normalize_spdx_name(rln.refB)}\n")
 
 # Output tag-value SPDX 2.3 content for the given File object.
 # Arguments:
 #   1) f: file handle for SPDX document
 #   2) bf: File object being described
 def writeFileSPDX(f, bf):
+    spdx_normalize_spdx_id = _normalize_spdx_name(bf.spdxID)
+
     f.write(f"""FileName: ./{bf.relpath}
-SPDXID: {bf.spdxID}
+SPDXID: {spdx_normalize_spdx_id}
 FileChecksum: SHA1: {bf.sha1}
 """)
     if bf.sha256 != "":
@@ -64,10 +70,13 @@ def generateDowloadUrl(url, revision):
 #   1) f: file handle for SPDX document
 #   2) pkg: Package object being described
 def writePackageSPDX(f, pkg):
-    f.write(f"""##### Package: {pkg.cfg.name}
+    spdx_normalized_name = _normalize_spdx_name(pkg.cfg.name)
+    spdx_normalize_spdx_id = _normalize_spdx_name(pkg.cfg.spdxID)
 
-PackageName: {pkg.cfg.name}
-SPDXID: {pkg.cfg.spdxID}
+    f.write(f"""##### Package: {spdx_normalized_name}
+
+PackageName: {spdx_normalized_name}
+SPDXID: {spdx_normalize_spdx_id}
 PackageLicenseConcluded: {pkg.concludedLicense}
 """)
     f.write(f"""PackageLicenseDeclared: {pkg.cfg.declaredLicense}
@@ -136,10 +145,12 @@ LicenseComment: Corresponds to the license ID `{lic}` detected in an SPDX-Licens
 #   1) f: file handle for SPDX document
 #   2) doc: Document object being described
 def writeDocumentSPDX(f, doc):
+    spdx_normalized_name = _normalize_spdx_name(doc.cfg.name)
+
     f.write(f"""SPDXVersion: SPDX-2.3
 DataLicense: CC0-1.0
 SPDXID: SPDXRef-DOCUMENT
-DocumentName: {doc.cfg.name}
+DocumentName: {spdx_normalized_name}
 DocumentNamespace: {doc.cfg.namespace}
 Creator: Tool: Zephyr SPDX builder
 Created: {datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
