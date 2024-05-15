@@ -803,4 +803,19 @@ ZTEST(util, test_CONCAT)
 	zassert_equal(CONCAT(CAT_PART1, CONCAT(CAT_PART2, CAT_PART3)), 123);
 }
 
+ZTEST(util, test_SIZEOF_FIELD)
+{
+	struct test_t {
+		uint32_t a;
+		uint8_t b;
+		uint8_t c[17];
+		int16_t d;
+	};
+
+	BUILD_ASSERT(SIZEOF_FIELD(struct test_t, a) == 4, "The a member is 4-byte wide.");
+	BUILD_ASSERT(SIZEOF_FIELD(struct test_t, b) == 1, "The b member is 1-byte wide.");
+	BUILD_ASSERT(SIZEOF_FIELD(struct test_t, c) == 17, "The c member is 17-byte wide.");
+	BUILD_ASSERT(SIZEOF_FIELD(struct test_t, d) == 2, "The d member is 2-byte wide.");
+}
+
 ZTEST_SUITE(util, NULL, NULL, NULL, NULL, NULL);
