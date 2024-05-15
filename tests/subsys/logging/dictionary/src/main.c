@@ -71,6 +71,18 @@ int main(void)
 	LOG_DBG("long double %Lf", ld);
 #endif
 #endif
+
+#if defined(CONFIG_STDOUT_CONSOLE)
+	/*
+	 * When running through twister with pytest, we need to add a newline
+	 * at the end of logging output for the output to be registered via
+	 * pipe or FIFO in the pytest harness as reading is on a line-by-line
+	 * basis. So send newline characters to flush the output.
+	 */
+	fputc('\r', stdout);
+	fputc('\n', stdout);
+#endif
+
 	return 0;
 }
 
