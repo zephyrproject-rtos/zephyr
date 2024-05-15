@@ -1139,6 +1139,7 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t gene
 
 	/* Allocate ntf node */
 	ntf = ctx->node_ref.rx;
+	ctx->node_ref.rx = NULL;
 	LL_ASSERT(ntf);
 
 	/* This should be an 'old' RX node, so put/sched when done */
