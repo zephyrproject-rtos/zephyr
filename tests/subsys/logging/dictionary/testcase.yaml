@@ -1,16 +1,34 @@
+common:
+  # For twister runs, the following arch/platforms use logging backends
+  # which do not output dictionary logging in hexidecimal format,
+  # and thus cannot be used for testing. Currently, only UART
+  # logging backend does that.
+  arch_exclude:
+    - posix
+  platform_exclude:
+    - qemu_xtensa
+    - qemu_xtensa/dc233c/mmu
 tests:
   logging.dictionary:
-    build_only: true
     tags: logging
     integration_platforms:
       - qemu_x86
       - qemu_x86_64
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_logging_dictionary.py"
   logging.dictionary.fpu:
-    build_only: true
     tags: logging
     filter: CONFIG_CPU_HAS_FPU
     extra_configs:
       - CONFIG_FPU=y
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_logging_dictionary.py"
+      pytest_args:
+        - "--fpu"
     integration_platforms:
       - qemu_x86
       - qemu_x86_64
