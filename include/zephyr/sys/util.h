@@ -272,6 +272,16 @@ extern "C" {
 	})
 
 /**
+ * @brief Report the size of a struct field in bytes.
+ *
+ * @param type The structure containing the field of interest.
+ * @param member The field to return the size of.
+ *
+ * @return The field size.
+ */
+#define SIZEOF_FIELD(type, member) sizeof((((type *)0)->member))
+
+/**
  * @brief Concatenate input arguments
  *
  * Concatenate provided tokens into a combined token during the preprocessor pass.
