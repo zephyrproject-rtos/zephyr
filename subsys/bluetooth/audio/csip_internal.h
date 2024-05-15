@@ -48,3 +48,5 @@ struct bt_csip_set_coordinator_svc_inst {
 
 struct bt_csip_set_coordinator_csis_inst *bt_csip_set_coordinator_csis_inst_by_handle(
 	struct bt_conn *conn, uint16_t start_handle);
+struct bt_csip_set_coordinator_set_member *
+bt_csip_set_coordinator_csis_member_by_conn(struct bt_conn *conn);

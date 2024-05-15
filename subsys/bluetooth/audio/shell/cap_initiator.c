@@ -25,6 +25,7 @@
 #define CAP_UNICAST_CLIENT_STREAM_COUNT ARRAY_SIZE(unicast_streams)
 
 static void cap_discover_cb(struct bt_conn *conn, int err,
+			    const struct bt_csip_set_coordinator_set_member *member,
 			    const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (err != 0) {
