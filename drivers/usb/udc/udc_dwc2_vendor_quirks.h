@@ -117,6 +117,15 @@ DT_INST_FOREACH_STATUS_OKAY(QUIRK_STM32F4_FSOTG_DEFINE)
 
 #define USBHS_DT_WRAPPER_REG_ADDR(n) UINT_TO_POINTER(DT_INST_REG_ADDR_BY_NAME(n, wrapper))
 
+/*
+ * On USBHS, we cannot access the DWC2 register until VBUS is detected and
+ * valid. If the user tries to force usbd_enable() and the corresponding
+ * udc_enable() without a "VBUS ready" notification, the event wait will block
+ * until a valid VBUS signal is detected.
+ */
+static K_EVENT_DEFINE(usbhs_events);
+#define USBHS_VBUS_READY	BIT(0)
+
 static void usbhs_vbus_handler(nrfs_usb_evt_t const *p_evt, void *const context)
 {
 	const struct device *dev = context;
@@ -127,8 +136,10 @@ static void usbhs_vbus_handler(nrfs_usb_evt_t const *p_evt, void *const context)
 			p_evt->usbhspll_ok, p_evt->vregusb_ok, p_evt->vbus_detected);
 
 		if (p_evt->usbhspll_ok && p_evt->vregusb_ok && p_evt->vbus_detected) {
+			k_event_post(&usbhs_events, USBHS_VBUS_READY);
 			udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
 		} else {
+			k_event_set_masked(&usbhs_events, 0, USBHS_VBUS_READY);
 			udc_submit_event(dev, UDC_EVT_VBUS_REMOVED, 0);
 		}
 
@@ -171,6 +182,11 @@ static inline int usbhs_enable_nrfs_service(const struct device *dev)
 static inline int usbhs_enable_core(const struct device *dev)
 {
 	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
+
+	if (!k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, K_NO_WAIT)) {
+		LOG_WRN("VBUS is not ready, block udc_enable()");
+		k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, K_FOREVER);
+	}
 
 	wrapper->ENABLE = USBHS_ENABLE_PHY_Msk | USBHS_ENABLE_CORE_Msk;
 	wrapper->TASKS_START = 1UL;
