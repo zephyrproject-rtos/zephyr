@@ -35,6 +35,7 @@ class Systems:
         self._socs = []
         self._series = []
         self._families = []
+        self._extended_socs = []
 
         if soc_yaml is None:
             return
@@ -76,17 +77,16 @@ class Systems:
                                                 found_match = True
                                                 break
 
-
                             if found_match is False:
                                 sys.exit(f'ERROR: SoC qualifier match unresolved: {qualifiers}')
 
         for f in data.get('family', []):
-            family = Family(f['name'], folder, [], [])
+            family = Family(f['name'], [folder], [], [])
             for s in f.get('series', []):
-                series = Series(s['name'], folder, f['name'], [])
+                series = Series(s['name'], [folder], f['name'], [])
                 socs = [(Soc(soc['name'],
                              [c['name'] for c in soc.get('cpuclusters', [])],
-                             folder, s['name'], f['name']))
+                             [folder], s['name'], f['name']))
                         for soc in s.get('socs', [])]
                 series.socs.extend(socs)
                 self._series.append(series)
@@ -95,26 +95,36 @@ class Systems:
                 family.socs.extend(socs)
             socs = [(Soc(soc['name'],
                          [c['name'] for c in soc.get('cpuclusters', [])],
-                         folder, None, f['name']))
+                         [folder], None, f['name']))
                     for soc in f.get('socs', [])]
             self._socs.extend(socs)
             self._families.append(family)
 
         for s in data.get('series', []):
-            series = Series(s['name'], folder, '', [])
+            series = Series(s['name'], [folder], '', [])
             socs = [(Soc(soc['name'],
                          [c['name'] for c in soc.get('cpuclusters', [])],
-                         folder, s['name'], ''))
+                         [folder], s['name'], ''))
                     for soc in s.get('socs', [])]
             series.socs.extend(socs)
             self._series.append(series)
             self._socs.extend(socs)
 
-        socs = [(Soc(soc['name'],
-                     [c['name'] for c in soc.get('cpuclusters', [])],
-                     folder, '', ''))
-                for soc in data.get('socs', [])]
-        self._socs.extend(socs)
+        for soc in data.get('socs', []):
+            mutual_exclusive = {'name', 'extend'}
+            if len(mutual_exclusive - soc.keys()) < 1:
+                sys.exit(f'ERROR: Malformed content in SoC file: {soc_yaml}\n'
+                         f'{mutual_exclusive} are mutual exclusive at this level.')
+            if soc.get('name') is not None:
+                self._socs.append(Soc(soc['name'], [c['name'] for c in soc.get('cpuclusters', [])],
+                                  [folder], '', ''))
+            elif soc.get('extend') is not None:
+                self._extended_socs.append(Soc(soc['extend'],
+                                           [c['name'] for c in soc.get('cpuclusters', [])],
+                                           [folder], '', ''))
+            else:
+                sys.exit(f'ERROR: Malformed "socs" section in SoC file: {soc_yaml}\n'
+                         f'Cannot find one of required keys {mutual_exclusive}.')
 
     @staticmethod
     def from_file(socs_file):
@@ -137,7 +147,22 @@ class Systems:
     def extend(self, systems):
         self._families.extend(systems.get_families())
         self._series.extend(systems.get_series())
+
+        for es in self._extended_socs[:]:
+            for s in systems.get_socs():
+                if s.name == es.name:
+                    s.extend(es)
+                    self._extended_socs.remove(es)
+                    break
         self._socs.extend(systems.get_socs())
+
+        for es in systems.get_extended_socs():
+            for s in self._socs:
+                if s.name == es.name:
+                    s.extend(es)
+                    break
+            else:
+                self._extended_socs.append(es)
 
     def get_families(self):
         return self._families
@@ -147,6 +172,9 @@ class Systems:
 
     def get_socs(self):
         return self._socs
+
+    def get_extended_socs(self):
+        return self._extended_socs
 
     def get_soc(self, name):
         try:
@@ -160,15 +188,20 @@ class Systems:
 class Soc:
     name: str
     cpuclusters: List[str]
-    folder: str
+    folder: List[str]
     series: str = ''
     family: str = ''
+
+    def extend(self, soc):
+        if self.name == soc.name:
+            self.cpuclusters.extend(soc.cpuclusters)
+            self.folder.extend(soc.folder)
 
 
 @dataclass
 class Series:
     name: str
-    folder: str
+    folder: List[str]
     family: str
     socs: List[Soc]
 
@@ -176,7 +209,7 @@ class Series:
 @dataclass
 class Family:
     name: str
-    folder: str
+    folder: List[str]
     series: List[Series]
     socs: List[Soc]
 
@@ -293,7 +326,7 @@ def dump_v2_system(args, type, system):
         info = args.cmakeformat.format(
            TYPE='TYPE;' + type,
            NAME='NAME;' + system.name,
-           DIR='DIR;' + Path(system.folder).as_posix(),
+           DIR='DIR;' + ';'.join([Path(x).as_posix() for x in system.folder]),
            HWM='HWM;' + 'v2'
         )
     else:
