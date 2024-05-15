@@ -141,6 +141,31 @@
 		};
 	};
 
+	pinmux_smartdma_camera: pinmux_smartdma_camera {
+		group0 {
+			/*
+			 * SmartDMA pinmux is not defined by SOC header, so
+			 * we encode it manually
+			 */
+			pinmux = <N9X_MUX('1',4,7)>,
+				<N9X_MUX('1',5,7)>,
+				<N9X_MUX('1',6,7)>,
+				<N9X_MUX('1',7,7)>,
+				<N9X_MUX('3',4,7)>,
+				<N9X_MUX('3',5,7)>,
+				<N9X_MUX('1',10,7)>,
+				<N9X_MUX('1',11,7)>,
+				<PIO0_4>,
+				<PIO0_5>,
+				<PIO0_11>,
+				<CLKOUT_PIO2_2>,
+				<CLKOUT_PIO0_6>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
 	pinmux_usdhc0: pinmux_usdhc0 {
 		group0 {
 			pinmux = <SDHC0_CMD_PIO2_5>,

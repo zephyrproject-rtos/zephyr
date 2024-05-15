@@ -265,6 +265,19 @@ static int frdm_mcxn947_init(void)
 	enable_cache64();
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(smartdma))
+	CLOCK_EnableClock(kCLOCK_Smartdma);
+	RESET_PeripheralReset(kSMART_DMA_RST_SHIFT_RSTn);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(video_sdma))
+	/* Drive CLKOUT from main clock, divided by 25 to yield 6MHz clock
+	 * The camera will use this clock signal to generate
+	 * PCLK, HSYNC, and VSYNC
+	 */
+	CLOCK_AttachClk(kMAIN_CLK_to_CLKOUT);
+	CLOCK_SetClkDiv(kCLOCK_DivClkOut, 25U);
+#endif
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(vref))
 	CLOCK_EnableClock(kCLOCK_Vref);
 	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlVref);
