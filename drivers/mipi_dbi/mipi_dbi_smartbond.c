@@ -497,11 +497,24 @@ static int mipi_dbi_smartbond_pm_action(const struct device *dev, enum pm_device
 		/* Sleep is only allowed when there are no active LCDC operations */
 		if (!data->is_active) {
 			(void)mipi_dbi_smartbond_suspend(dev);
+			/*
+			 * Once the display block is turned off, its power domain
+			 * can be released as well.
+			 */
+			da1469x_pd_release_nowait(MCU_PD_DOMAIN_SYS);
 			ret = 0;
 		}
 		break;
 	case PM_DEVICE_ACTION_RESUME:
 		__ASSERT_NO_MSG(!data->is_active);
+
+		/*
+		 * Although PD_SYS should already be turned on, make sure LCD controller's
+		 * power domain is up and running before accessing the display block.
+		 * Acquiring PD_SYS is mandatory when in PM runtime mode.
+		 */
+		da1469x_pd_acquire(MCU_PD_DOMAIN_SYS);
+
 		/*
 		 * The resume error code should not be taken into consideration
 		 * by the PM subsystem.
@@ -546,6 +559,7 @@ static int mipi_dbi_smartbond_init(const struct device *dev)
 
 	ret = pm_device_runtime_enable(dev);
 #else
+	da1469x_pd_acquire(MCU_PD_DOMAIN_SYS);
 	/* Resme if either PM is not used at all or if PM without runtime is used. */
 	ret = mipi_dbi_smartbond_resume(dev);
 #endif
