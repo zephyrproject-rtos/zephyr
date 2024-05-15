@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Plentify (Pty) Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ADI_EV_ADE9153ASHIELDZ
+	def_bool $(shields_list_contains,adi_ev_ade9153ashieldz)
+	select ADE9153A
+	select SENSOR
+	select GPIO
