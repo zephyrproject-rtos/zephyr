@@ -155,6 +155,7 @@ struct net_if_addr *ifaddr_record;
 #define PEER_PORT 16233
 
 struct net_test_ipv6 {
+	struct ethernet_context ctx;
 	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
@@ -187,6 +188,10 @@ static void net_test_iface_init(struct net_if *iface)
 
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
+
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		ethernet_init(iface);
+	}
 }
 
 /**
@@ -471,7 +476,6 @@ static void nbr_lookup_ok(void)
 static void *ipv6_setup(void)
 {
 	struct net_if_addr *ifaddr = NULL, *ifaddr2;
-	struct net_if_mcast_addr *maddr;
 	struct net_if *iface = TEST_NET_IF;
 	struct net_if *iface2 = NULL;
 	struct net_if_ipv6 *ipv6;
@@ -506,12 +510,6 @@ static void *ipv6_setup(void)
 
 	ifaddr2 = net_if_ipv6_addr_lookup(&my_addr, &iface2);
 	zassert_true(ifaddr2 == ifaddr, "Invalid ifaddr (%p vs %p)\n", ifaddr, ifaddr2);
-
-	net_ipv6_addr_create(&multicast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001);
-
-	maddr = net_if_ipv6_maddr_add(iface, &multicast_addr);
-	zassert_not_null(maddr, "Cannot add multicast IPv6 address %s\n",
-			 net_sprint_ipv6_addr(&multicast_addr));
 
 	/* The semaphore is there to wait the data to be received. */
 	k_sem_init(&wait_data, 0, UINT_MAX);
