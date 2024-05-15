@@ -501,7 +501,7 @@ static int send_control_message(struct backend_data *dev_data, enum msg_type msg
 	r = icmsg_send(&conf->control_config, &dev_data->control_data, &message,
 		       sizeof(message));
 	k_mutex_unlock(&dev_data->mutex);
-	if (r < 0) {
+	if (r < sizeof(message)) {
 		LOG_ERR("Cannot send over ICMsg, err %d", r);
 	}
 	return r;
@@ -541,7 +541,7 @@ static int send_release(struct backend_data *dev_data, const uint8_t *buffer,
  * @param[in] size		Actual size of the data, can be smaller than allocated,
  *				but it cannot change number of required blocks.
  *
- * @return			O or negative error code.
+ * @return			number of bytes sent in the message or negative error code.
  */
 static int send_block(struct backend_data *dev_data, enum msg_type msg_type,
 		      uint8_t ept_addr, size_t tx_block_index, size_t size)
@@ -656,7 +656,7 @@ static int match_bound_msg(struct backend_data *dev_data, size_t rx_block_index,
  *
  * @param[in] ept	Endpoint to use.
  *
- * @return		O or negative error code.
+ * @return		non-negative value in case of success or negative error code.
  */
 static int send_bound_message(struct backend_data *dev_data, struct ept_data *ept)
 {
@@ -992,7 +992,12 @@ static int send(const struct device *instance, void *token, const void *msg, siz
 	memcpy(buffer, msg, len);
 
 	/* Send data message. */
-	return send_block(dev_data, MSG_DATA, ept->addr, r, len);
+	r = send_block(dev_data, MSG_DATA, ept->addr, r, len);
+	if (r < 0) {
+		return r;
+	}
+
+	return len;
 }
 
 /**
