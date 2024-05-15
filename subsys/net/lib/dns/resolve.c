@@ -33,22 +33,19 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #define DNS_SERVER_COUNT CONFIG_DNS_RESOLVER_MAX_SERVERS
 #define SERVER_COUNT     (DNS_SERVER_COUNT + DNS_MAX_MCAST_SERVERS)
 
+extern void dns_dispatcher_svc_handler(struct k_work *work);
+
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(resolve_svc, NULL, dns_dispatcher_svc_handler,
+				      DNS_RESOLVER_MAX_POLL);
+
 #define MDNS_IPV4_ADDR "224.0.0.251:5353"
 #define MDNS_IPV6_ADDR "[ff02::fb]:5353"
 
 #define LLMNR_IPV4_ADDR "224.0.0.252:5355"
 #define LLMNR_IPV6_ADDR "[ff02::1:3]:5355"
 
-#define DNS_BUF_TIMEOUT K_MSEC(500) /* ms */
-
 #define DNS_QUERY_MAX_SIZE	(DNS_MSG_HEADER_SIZE + CONFIG_DNS_RESOLVER_MAX_QUERY_LEN + \
 				 DNS_QTYPE_LEN + DNS_QCLASS_LEN)
-
-/* This value is recommended by RFC 1035 */
-#define DNS_RESOLVER_MAX_BUF_SIZE	512
-#define DNS_RESOLVER_MIN_BUF	1
-#define DNS_RESOLVER_BUF_CTR	(DNS_RESOLVER_MIN_BUF + \
-				 CONFIG_DNS_RESOLVER_ADDITIONAL_BUF_CTR)
 
 /* Compressed RR uses a pointer to another RR. So, min size is 12 bytes without
  * considering RR payload.
@@ -64,21 +61,22 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #define DNS_IPV4_LEN		sizeof(struct in_addr)
 #define DNS_IPV6_LEN		sizeof(struct in6_addr)
 
-static void svc_handler(struct k_work *work);
-static int init_called;
-
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc, NULL, svc_handler, DNS_RESOLVER_MAX_POLL);
+#define DNS_RESOLVER_MIN_BUF	1
+#define DNS_RESOLVER_BUF_CTR	(DNS_RESOLVER_MIN_BUF + \
+				 CONFIG_DNS_RESOLVER_ADDITIONAL_BUF_CTR)
 
 NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
 		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
 
-NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR, CONFIG_DNS_RESOLVER_MAX_QUERY_LEN,
+NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR,
+		    CONFIG_DNS_RESOLVER_MAX_QUERY_LEN,
 		    0, NULL);
 
 #ifdef CONFIG_DNS_RESOLVER_CACHE
 DNS_CACHE_DEFINE(dns_cache, CONFIG_DNS_RESOLVER_CACHE_MAX_ENTRIES);
 #endif /* CONFIG_DNS_RESOLVER_CACHE */
 
+static int init_called;
 static struct dns_resolve_context dns_default_ctx;
 
 /* Must be invoked with context lock held */
@@ -88,6 +86,18 @@ static int dns_write(struct dns_resolve_context *ctx,
 		     uint8_t *buf, size_t buf_len, size_t max_len,
 		     struct net_buf *dns_qname,
 		     int hop_limit);
+static int dns_read(struct dns_resolve_context *ctx,
+		    struct net_buf *dns_data, size_t buf_len,
+		    uint16_t *dns_id,
+		    struct net_buf *dns_cname,
+		    uint16_t *query_hash);
+static inline int get_slot_by_id(struct dns_resolve_context *ctx,
+				 uint16_t dns_id,
+				 uint16_t query_hash);
+static inline void invoke_query_callback(int status,
+					 struct dns_addrinfo *info,
+					 struct dns_pending_query *pending_query);
+static void release_query(struct dns_pending_query *pending_query);
 
 static bool server_is_mdns(sa_family_t family, struct sockaddr *addr)
 {
@@ -188,6 +198,129 @@ static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 	}
 }
 
+static int dispatcher_cb(void *my_ctx, int sock,
+			 struct sockaddr *addr, size_t addrlen,
+			 struct net_buf *dns_data, size_t len)
+{
+	struct dns_resolve_context *ctx = my_ctx;
+	struct net_buf *dns_cname = NULL;
+	uint16_t query_hash = 0U;
+	uint16_t dns_id = 0U;
+	int ret = 0, i;
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+
+	if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
+		goto unlock;
+	}
+
+	dns_cname = net_buf_alloc(&dns_qname_pool, ctx->buf_timeout);
+	if (!dns_cname) {
+		ret = DNS_EAI_MEMORY;
+		goto free_buf;
+	}
+
+	ret = dns_read(ctx, dns_data, len, &dns_id, dns_cname, &query_hash);
+	if (!ret) {
+		/* We called the callback already in dns_read() if there
+		 * were no errors.
+		 */
+		goto free_buf;
+	}
+
+	/* Query again if we got CNAME */
+	if (ret == DNS_EAI_AGAIN) {
+		int failure = 0;
+		int j;
+
+		i = get_slot_by_id(ctx, dns_id, query_hash);
+		if (i < 0) {
+			goto free_buf;
+		}
+
+		for (j = 0; j < SERVER_COUNT; j++) {
+			if (ctx->servers[j].sock < 0) {
+				continue;
+			}
+
+			ret = dns_write(ctx, j, i, dns_data->data, len,
+					net_buf_max_len(dns_data),
+					dns_cname, 0);
+			if (ret < 0) {
+				failure++;
+			}
+		}
+
+		if (failure) {
+			NET_DBG("DNS cname query failed %d times", failure);
+
+			if (failure == j) {
+				ret = DNS_EAI_SYSTEM;
+				goto quit;
+			}
+		}
+
+		goto free_buf;
+	}
+
+quit:
+	i = get_slot_by_id(ctx, dns_id, query_hash);
+	if (i < 0) {
+		goto free_buf;
+	}
+
+	invoke_query_callback(ret, NULL, &ctx->queries[i]);
+
+	/* Marks the end of the results */
+	release_query(&ctx->queries[i]);
+
+free_buf:
+	if (dns_data) {
+		net_buf_unref(dns_data);
+	}
+
+	if (dns_cname) {
+		net_buf_unref(dns_cname);
+	}
+
+unlock:
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
+}
+
+static int register_dispatcher(struct dns_resolve_context *ctx,
+			       const struct net_socket_service_desc *svc,
+			       struct dns_server *server,
+			       struct sockaddr *local,
+			       const struct in6_addr *addr6,
+			       const struct in_addr *addr4)
+{
+	server->dispatcher.type = DNS_SOCKET_RESOLVER;
+	server->dispatcher.cb = dispatcher_cb;
+	server->dispatcher.fds = ctx->fds;
+	server->dispatcher.fds_len = ARRAY_SIZE(ctx->fds);
+	server->dispatcher.sock = server->sock;
+	server->dispatcher.svc = svc;
+	server->dispatcher.resolve_ctx = ctx;
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) &&
+	    server->dns_server.sa_family == AF_INET6) {
+		memcpy(&server->dispatcher.local_addr,
+		       local,
+		       sizeof(struct sockaddr_in6));
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		   server->dns_server.sa_family == AF_INET) {
+		memcpy(&server->dispatcher.local_addr,
+		       local,
+		       sizeof(struct sockaddr_in));
+	} else {
+		return -ENOTSUP;
+	}
+
+	return dns_dispatcher_register(&server->dispatcher);
+}
+
 /* Must be invoked with context lock held */
 static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 				   const char *servers[],
@@ -208,6 +341,8 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 	struct sockaddr *local_addr = NULL;
 	socklen_t addr_len = 0;
 	int i = 0, idx = 0;
+	const struct in6_addr *addr6 = NULL;
+	const struct in_addr *addr4 = NULL;
 	struct net_if *iface;
 	int ret, count;
 
@@ -307,18 +442,44 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 
 		ctx->servers[i].sock = ret;
 
-		ret = zsock_bind(ctx->servers[i].sock, local_addr, addr_len);
-		if (ret < 0) {
-			NET_DBG("Cannot bind DNS context (%d)", ret);
-			goto fail;
-		}
-
 		if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
 			iface = net_if_ipv6_select_src_iface(
+					&net_sin6(&ctx->servers[i].dns_server)->sin6_addr);
+			addr6 = net_if_ipv6_select_src_addr(iface,
 					&net_sin6(&ctx->servers[i].dns_server)->sin6_addr);
 		} else {
 			iface = net_if_ipv4_select_src_iface(
 					&net_sin(&ctx->servers[i].dns_server)->sin_addr);
+			addr4 = net_if_ipv4_select_src_addr(iface,
+					&net_sin(&ctx->servers[i].dns_server)->sin_addr);
+		}
+
+		ARRAY_FOR_EACH(ctx->fds, j) {
+			if (ctx->fds[j].fd == ctx->servers[i].sock) {
+				/* There was query to this server already */
+				ret = 0;
+				break;
+			}
+
+			if (ctx->fds[j].fd < 0) {
+				ctx->fds[j].fd = ctx->servers[i].sock;
+				ctx->fds[j].events = ZSOCK_POLLIN;
+				ret = 0;
+				break;
+			}
+		}
+
+		if (ret < 0) {
+			NET_DBG("Cannot set %s to socket (%d)", "polling", ret);
+			zsock_close(ctx->servers[i].sock);
+			continue;
+		}
+
+		ret = register_dispatcher(ctx, &resolve_svc, &ctx->servers[i], local_addr,
+						  addr6, addr4);
+		if (ret < 0) {
+			NET_DBG("Cannot register dispatcher for %s (%d)", "mDNS", ret);
+			goto fail;
 		}
 
 		if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
@@ -758,7 +919,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 		goto finished;
 	}
 
-	if (ret < 0 || query_idx < 0 ||
+	if ((ret < 0 && ret != DNS_EAI_ALLDONE) || query_idx < 0 ||
 	    query_idx > CONFIG_DNS_NUM_CONCUR_QUERIES) {
 		goto quit;
 	}
@@ -776,140 +937,6 @@ finished:
 				     ctx->queries[query_idx].query_type);
 quit:
 	return ret;
-}
-
-static int recv_data(struct net_socket_service_event *pev)
-{
-	struct dns_resolve_context *ctx = pev->user_data;
-	socklen_t optlen = sizeof(int);
-	struct net_buf *dns_cname = NULL;
-	struct net_buf *dns_data = NULL;
-	uint16_t query_hash = 0U;
-	uint16_t dns_id = 0U;
-	int family = AF_UNSPEC, sock_error;
-	int ret = 0, i, len;
-
-	k_mutex_lock(&ctx->lock, K_FOREVER);
-
-	if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
-		goto unlock;
-	}
-
-	if ((pev->event.revents & ZSOCK_POLLERR) ||
-	    (pev->event.revents & ZSOCK_POLLNVAL)) {
-		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
-				       SO_DOMAIN, &family, &optlen);
-		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
-				       SO_ERROR, &sock_error, &optlen);
-		NET_ERR("Receiver IPv%d socket error (%d)",
-			family == AF_INET ? 4 : 6, sock_error);
-		ret = DNS_EAI_SYSTEM;
-		goto unlock;
-	}
-
-	dns_data = net_buf_alloc(&dns_msg_pool, ctx->buf_timeout);
-	if (!dns_data) {
-		ret = DNS_EAI_MEMORY;
-		goto free_buf;
-	}
-
-	dns_cname = net_buf_alloc(&dns_qname_pool, ctx->buf_timeout);
-	if (!dns_cname) {
-		ret = DNS_EAI_MEMORY;
-		goto free_buf;
-	}
-
-	ret = zsock_recvfrom(pev->event.fd, dns_data->data,
-			     net_buf_max_len(dns_data), 0,
-			     NULL, NULL);
-	if (ret < 0) {
-		ret = -errno;
-		NET_ERR("recv failed on IPv%d socket (%d)",
-			family == AF_INET ? 4 : 6, -ret);
-		goto free_buf;
-	}
-
-	len = ret;
-
-	ret = dns_read(ctx, dns_data, len, &dns_id, dns_cname, &query_hash);
-	if (!ret) {
-		/* We called the callback already in dns_read() if there
-		 * was no errors.
-		 */
-		goto free_buf;
-	}
-
-	/* Query again if we got CNAME */
-	if (ret == DNS_EAI_AGAIN) {
-		int failure = 0;
-		int j;
-
-		i = get_slot_by_id(ctx, dns_id, query_hash);
-		if (i < 0) {
-			goto free_buf;
-		}
-
-		for (j = 0; j < SERVER_COUNT; j++) {
-			if (ctx->servers[j].sock < 0) {
-				continue;
-			}
-
-			ret = dns_write(ctx, j, i, dns_data->data, len,
-					net_buf_max_len(dns_data),
-					dns_cname, 0);
-			if (ret < 0) {
-				failure++;
-			}
-		}
-
-		if (failure) {
-			NET_DBG("DNS cname query failed %d times", failure);
-
-			if (failure == j) {
-				ret = DNS_EAI_SYSTEM;
-				goto quit;
-			}
-		}
-
-		goto free_buf;
-	}
-
-quit:
-	i = get_slot_by_id(ctx, dns_id, query_hash);
-	if (i < 0) {
-		goto free_buf;
-	}
-
-	invoke_query_callback(ret, NULL, &ctx->queries[i]);
-
-	/* Marks the end of the results */
-	release_query(&ctx->queries[i]);
-
-free_buf:
-	if (dns_data) {
-		net_buf_unref(dns_data);
-	}
-
-	if (dns_cname) {
-		net_buf_unref(dns_cname);
-	}
-
-unlock:
-	k_mutex_unlock(&ctx->lock);
-
-	return ret;
-}
-
-static void svc_handler(struct k_work *work)
-{
-	struct net_socket_service_event *pev =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
-	int ret;
-
-	ret = recv_data(pev);
-	if (ret < 0 && ret != DNS_EAI_ALLDONE) {
-		NET_ERR("DNS recv error (%d)", ret);
-	}
 }
 
 static int set_ttl_hop_limit(int sock, int level, int option, int new_limit)
@@ -995,12 +1022,6 @@ static int dns_write(struct dns_resolve_context *ctx,
 		return ret;
 	}
 
-	ret = net_socket_service_register(&svc, ctx->fds, ARRAY_SIZE(ctx->fds), ctx);
-	if (ret < 0) {
-		NET_DBG("Cannot register socket service (%d)", ret);
-		return ret;
-	}
-
 	if (family == AF_INET) {
 		server_addr_len = sizeof(struct sockaddr_in);
 	} else {
@@ -1021,7 +1042,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 
 	ret = zsock_sendto(sock, buf, len, 0, server, server_addr_len);
 	if (ret < 0) {
-		NET_DBG("Cannot send query (%d)", ret);
+		NET_DBG("Cannot send query (%d)", -errno);
 		return ret;
 	}
 
@@ -1455,6 +1476,8 @@ static int dns_resolve_close_locked(struct dns_resolve_context *ctx)
 			continue;
 		}
 
+		(void)dns_dispatcher_unregister(&ctx->servers[i].dispatcher);
+
 		if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
 			iface = net_if_ipv6_select_src_iface(
 				&net_sin6(&ctx->servers[i].dns_server)->sin6_addr);
@@ -1482,11 +1505,12 @@ static int dns_resolve_close_locked(struct dns_resolve_context *ctx)
 			}
 		}
 
+		(void)dns_dispatcher_unregister(&ctx->servers[i].dispatcher);
+
 		ctx->servers[i].sock = -1;
 	}
 
 	if (--init_called <= 0) {
-		(void)net_socket_service_unregister(&svc);
 		init_called = 0;
 	}
 
