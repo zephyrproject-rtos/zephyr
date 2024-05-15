@@ -351,14 +351,13 @@ efforts into the specific module in question. This will speed up testing since
 only the module will have to be compiled in, and the tested functions will be
 called directly.
 
-Examples of unit tests can be found in ``tests/unit/``. In the following
-example CMakeLists.txt, note the use of ``COMPONENTS unittest`` in the
-``find_package()`` command and the use of ``testbinary`` in the
-``target_sources()`` command.
+Examples of unit tests can be found in the :zephyr_file:`tests/unit/` folder.
+In order to declare the unit tests present in a source folder, you need to add
+the relevant source files to the ``testbinary`` target from the CMake
+:zephyr_file:`unittest <cmake/modules/unittest.cmake>` component. See a minimal
+example below:
 
 .. code-block:: cmake
-
-   # SPDX-License-Identifier: Apache-2.0
 
    cmake_minimum_required(VERSION 3.20.0)
 
