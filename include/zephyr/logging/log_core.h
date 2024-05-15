@@ -197,7 +197,7 @@ static inline char z_log_minimal_level_to_char(int level)
  * emitted instead. String check may increase compilation time so it is not
  * always performed (could significantly increase CI time).
  */
-#if CONFIG_LOG_FMT_STRING_VALIDATE
+#if defined(CONFIG_LOG_FMT_STRING_VALIDATE) && CONFIG_LOG_FMT_STRING_VALIDATE
 #define LOG_STRING_WARNING(_mode, _src, ...) \
 	    Z_LOG_MSG_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
 			     Z_LOG_LOCAL_DOMAIN_ID, _src, LOG_LEVEL_ERR, NULL, 0, \
