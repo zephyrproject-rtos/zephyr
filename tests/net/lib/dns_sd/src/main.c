@@ -12,6 +12,7 @@
 #include <zephyr/net/dns_sd.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/net/socket.h>
 
 #include "dns_pack.h"
 #include "dns_sd.h"
@@ -51,7 +52,7 @@ extern int add_srv_record(const struct dns_sd_rec *inst, uint32_t ttl,
 			  uint16_t *host_offset);
 extern size_t service_proto_size(const struct dns_sd_rec *ref);
 extern bool rec_is_valid(const struct dns_sd_rec *ref);
-extern int setup_dst_addr(struct net_context *ctx, sa_family_t family,
+extern int setup_dst_addr(int sock, sa_family_t family,
 			  struct sockaddr *dst, socklen_t *dst_len);
 
 
@@ -666,56 +667,69 @@ ZTEST(dns_sd, test_dns_sd_rec_match)
 /** Test @ref setup_dst_addr */
 ZTEST(dns_sd, test_setup_dst_addr)
 {
-	int ret;
 	struct net_if *iface;
 	struct sockaddr dst;
 	socklen_t dst_len;
+	socklen_t optlen;
+	int ttl;
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 	zassert_not_null(iface, "Interface not available");
 
 	/* IPv4 case */
-	struct net_context *ctx_v4;
+	int v4;
 	struct in_addr addr_v4_expect = { { { 224, 0, 0, 251 } } };
 
 	memset(&dst, 0, sizeof(struct sockaddr));
 
-	ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &ctx_v4);
-	zassert_equal(ret, 0, "Create IPv4 UDP context failed");
+	v4 = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	zassert_true(v4 >= 0, "Create IPv4 UDP context failed (%d)", -errno);
 
-	zassert_equal(0, setup_dst_addr(ctx_v4, AF_INET, &dst, &dst_len), "");
-	zassert_equal(255, ctx_v4->ipv4_mcast_ttl, "");
+	zassert_equal(0, setup_dst_addr(v4, AF_INET, &dst, &dst_len), "");
+
+	optlen = sizeof(int);
+	(void)zsock_getsockopt(v4, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, &optlen);
+
+	zassert_equal(255, ttl, "TTL invalid (%d vs %d)", 255, ttl);
 	zassert_true(net_ipv4_addr_cmp(&addr_v4_expect,
 				       &net_sin(&dst)->sin_addr), "");
 	zassert_equal(8, dst_len, "");
 
+	(void)zsock_close(v4);
+
 #if defined(CONFIG_NET_IPV6)
 	/* IPv6 case */
-	struct net_context *ctx_v6;
+	int v6;
 	struct in6_addr addr_v6_expect = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0xfb } } };
 
 	memset(&dst, 0, sizeof(struct sockaddr));
 
-	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &ctx_v6);
-	zassert_equal(ret, 0, "Create IPv6 UDP context failed");
+	v6 = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	zassert_true(v6 >= 0, "Create IPv6 UDP context failed (%d)", -errno);
 
-	zassert_equal(0, setup_dst_addr(ctx_v6, AF_INET6, &dst, &dst_len), "");
-	zassert_equal(255, ctx_v6->ipv6_mcast_hop_limit, "");
+	zassert_equal(0, setup_dst_addr(v6, AF_INET6, &dst, &dst_len), "");
+
+	optlen = sizeof(int);
+	(void)zsock_getsockopt(v6, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &ttl, &optlen);
+
+	zassert_equal(255, ttl, "Hoplimit invalid (%d vs %d)", 255, ttl);
 	zassert_true(net_ipv6_addr_cmp(&addr_v6_expect,
 				       &net_sin6(&dst)->sin6_addr), "");
 	zassert_equal(24, dst_len, "");
+
+	(void)zsock_close(v6);
 #endif
 
 	/* Unknown family case */
 
-	struct net_context *ctx_xx;
+	int xx;
 
-	ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &ctx_xx);
-	zassert_equal(ret, 0, "Create IPV4 udp context failed");
+	xx = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	zassert_true(xx >= 0, "Create IPV4 udp socket failed");
 
 	zassert_equal(-EPFNOSUPPORT,
-		      setup_dst_addr(ctx_xx, AF_PACKET, &dst, &dst_len), "");
+		      setup_dst_addr(xx, AF_PACKET, &dst, &dst_len), "");
 }
 
 /** test for @ref dns_sd_is_service_type_enumeration */
