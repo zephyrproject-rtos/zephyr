@@ -81,6 +81,12 @@ void llcp_lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 		ctx_header = llcp_lr_peek(conn);
 		LL_ASSERT(ctx_header == ctx);
 
+		/* If we have a node rx it must not be marked RETAIN as
+		 * the memory referenced would leak
+		 */
+		LL_ASSERT(ctx->node_ref.rx == NULL ||
+			  ctx->node_ref.rx->hdr.type != NODE_RX_TYPE_RETAIN);
+
 		lr_dequeue(conn);
 
 		llcp_proc_ctx_release(ctx);
