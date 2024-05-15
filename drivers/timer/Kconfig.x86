@@ -68,12 +68,12 @@ config APIC_TIMER_IRQ
 	  a different mechanism.
 
 config APIC_TIMER_TSC
-	bool "Use invariant TSC for sys_clock_cycle_get_32()"
+	bool "Use invariant TSC for Local APIC timer's cycle count"
 	help
 	  If your CPU supports invariant TSC, and you know the ratio of the
 	  TSC frequency to CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC (the local APIC
 	  timer frequency), then enable this for a much faster and more
-	  accurate sys_clock_cycle_get_32().
+	  accurate Local APIC timer's cycle count.
 
 if APIC_TIMER_TSC
 

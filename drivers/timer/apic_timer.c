@@ -9,6 +9,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/drivers/interrupt_controller/loapic.h>
 #include <zephyr/irq.h>
+#include <limits.h>
 
 BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP), "APIC timer doesn't support SMP");
 
@@ -87,10 +88,16 @@ void sys_clock_set_timeout(int32_t n, bool idle)
 {
 	ARG_UNUSED(idle);
 
-	uint32_t ccr;
 	int   full_ticks;	/* number of complete ticks we'll wait */
 	uint32_t full_cycles;	/* full_ticks represented as cycles */
 	uint32_t partial_cycles;	/* number of cycles to first tick boundary */
+
+#ifdef CONFIG_APIC_TIMER_TSC
+	if (n == K_TICKS_FOREVER) {
+		x86_write_loapic(LOAPIC_TIMER_ICR, 0x0);
+		return;
+	}
+#endif
 
 	if (n < 1) {
 		full_ticks = 0;
@@ -113,8 +120,11 @@ void sys_clock_set_timeout(int32_t n, bool idle)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	ccr = x86_read_loapic(LOAPIC_TIMER_CCR);
-	total_cycles += (cached_icr - ccr);
+#ifdef CONFIG_APIC_TIMER_TSC
+	total_cycles = sys_clock_cycle_get_64();
+#else
+	total_cycles += (cached_icr - x86_read_loapic(LOAPIC_TIMER_CCR));
+#endif
 	partial_cycles = CYCLES_PER_TICK - (total_cycles % CYCLES_PER_TICK);
 	cached_icr = full_cycles + partial_cycles;
 	x86_write_loapic(LOAPIC_TIMER_ICR, cached_icr);
@@ -124,13 +134,15 @@ void sys_clock_set_timeout(int32_t n, bool idle)
 
 uint32_t sys_clock_elapsed(void)
 {
-	uint32_t ccr;
-	uint32_t ticks;
+	uint64_t ticks;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	ccr = x86_read_loapic(LOAPIC_TIMER_CCR);
+#ifdef CONFIG_APIC_TIMER_TSC
+	ticks = sys_clock_cycle_get_64() - last_announcement;
+#else
 	ticks = total_cycles - last_announcement;
-	ticks += cached_icr - ccr;
+	ticks += cached_icr - x86_read_loapic(LOAPIC_TIMER_CCR);
+#endif
 	k_spin_unlock(&lock, key);
 	ticks /= CYCLES_PER_TICK;
 
@@ -141,8 +153,8 @@ static void isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	uint32_t cycles;
 	int32_t ticks;
+	uint64_t ticks_u64;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
@@ -152,19 +164,24 @@ static void isr(const void *arg)
 	 * a new counter. Just ignore it. See above for more info.
 	 */
 
-	if (x86_read_loapic(LOAPIC_TIMER_CCR) != 0) {
+	if ((x86_read_loapic(LOAPIC_TIMER_CCR) != 0)
+			|| (x86_read_loapic(LOAPIC_TIMER_ICR) == 0)) {
 		k_spin_unlock(&lock, key);
 		return;
 	}
 
+#ifdef CONFIG_APIC_TIMER_TSC
+	total_cycles = sys_clock_cycle_get_64();
+#else
 	/* Restart the timer as early as possible to minimize drift... */
 	x86_write_loapic(LOAPIC_TIMER_ICR, MAX_TICKS * CYCLES_PER_TICK);
 
-	cycles = cached_icr;
+	total_cycles += cached_icr;
 	cached_icr = MAX_TICKS * CYCLES_PER_TICK;
-	total_cycles += cycles;
-	ticks = (total_cycles - last_announcement) / CYCLES_PER_TICK;
-	last_announcement += ticks * CYCLES_PER_TICK;
+#endif
+	ticks_u64 = (total_cycles - last_announcement) / CYCLES_PER_TICK;
+	ticks = (ticks_u64 > INT_MAX) ? INT_MAX : (int32_t)ticks_u64;
+	last_announcement += ticks_u64 * CYCLES_PER_TICK;
 	k_spin_unlock(&lock, key);
 	sys_clock_announce(ticks);
 }
@@ -242,6 +259,11 @@ static int sys_clock_driver_init(void)
 		CONFIG_APIC_TIMER_IRQ_PRIORITY,
 		isr, 0, 0);
 
+#ifdef CONFIG_APIC_TIMER_TSC
+	total_cycles = sys_clock_cycle_get_64();
+	last_announcement = total_cycles - (total_cycles % CYCLES_PER_TICK);
+	cached_icr = CYCLES_PER_TICK - (total_cycles % CYCLES_PER_TICK);
+#endif
 	x86_write_loapic(LOAPIC_TIMER_ICR, cached_icr);
 	irq_enable(CONFIG_APIC_TIMER_IRQ);
 
