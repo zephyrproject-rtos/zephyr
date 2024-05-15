@@ -233,6 +233,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         rtos = self.thread_info_enabled and self.supports_thread_info
         plugin_dir = os.fspath(Path(self.commander).parent / 'GDBServer' /
                                'RTOSPlugin_Zephyr')
+        big_endian = self.build_conf.getboolean('CONFIG_BIG_ENDIAN')
 
         server_cmd = ([self.gdbserver] +
                       ['-select',
@@ -243,6 +244,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                        '-speed', self.speed,
                        '-device', self.device,
                        '-silent',
+                       '-endian', 'big' if big_endian else 'little',
                        '-singlerun'] +
                       (['-nogui'] if self.supports_nogui else []) +
                       (['-rtos', plugin_dir] if rtos else []) +
@@ -290,6 +292,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         lines = [
             'ExitOnError 1',  # Treat any command-error as fatal
             'r',  # Reset and halt the target
+            'BE' if self.build_conf.getboolean('CONFIG_BIG_ENDIAN') else 'LE'
         ]
 
         if self.erase:
