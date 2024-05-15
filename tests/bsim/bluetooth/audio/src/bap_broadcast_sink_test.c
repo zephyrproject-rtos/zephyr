@@ -66,18 +66,6 @@ static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
 static const uint32_t bis_index_mask = BIT_MASK(ARRAY_SIZE(streams) + 1U);
 static uint32_t bis_index_bitfield;
 
-static uint8_t count_bits(enum bt_audio_location chan_allocation)
-{
-	uint8_t cnt = 0U;
-
-	while (chan_allocation != 0) {
-		cnt += chan_allocation & 1U;
-		chan_allocation >>= 1;
-	}
-
-	return cnt;
-}
-
 static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
 {
 	struct bt_audio_codec_cfg codec_cfg = {0};
@@ -128,7 +116,7 @@ static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
 
 	ret = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &chan_allocation);
 	if (ret == 0) {
-		chan_cnt = count_bits(chan_allocation);
+		chan_cnt = bt_audio_get_chan_count(chan_allocation);
 	} else {
 		printk("Could not get subgroup channel allocation: %d\n", ret);
 		/* Channel allocation is an optional field, and omitting it implicitly means mono */
@@ -444,7 +432,7 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 			return;
 		}
 
-		chan_cnt = count_bits(chan_allocation);
+		chan_cnt = bt_audio_get_chan_count(chan_allocation);
 	} else {
 		FAIL("Could not get subgroup channel allocation: %d\n", ret);
 

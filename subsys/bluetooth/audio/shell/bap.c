@@ -2855,7 +2855,8 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 		ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg,
 							     &sh_stream->lc3_chan_allocation);
 		if (ret == 0) {
-			sh_stream->lc3_chan_cnt = get_chan_cnt(sh_stream->lc3_chan_allocation);
+			sh_stream->lc3_chan_cnt =
+				bt_audio_get_chan_count(sh_stream->lc3_chan_allocation);
 		} else {
 			shell_error(ctx_shell, "Could not get channel allocation: %d", ret);
 			sh_stream->lc3_chan_allocation = BT_AUDIO_LOCATION_MONO_AUDIO;
