@@ -206,10 +206,11 @@ struct esp_socket {
 };
 
 enum esp_data_flag {
-	EDF_STA_CONNECTING = BIT(1),
-	EDF_STA_CONNECTED  = BIT(2),
-	EDF_STA_LOCK       = BIT(3),
-	EDF_AP_ENABLED     = BIT(4),
+	EDF_STA_CONNECTING		= BIT(1),
+	EDF_STA_CONNECTED		= BIT(2),
+	EDF_STA_LOCK			= BIT(3),
+	EDF_AP_ENABLED			= BIT(4),
+	EDF_STA_AUTOCONN_ENABLED	= BIT(6),
 };
 
 /* driver data */

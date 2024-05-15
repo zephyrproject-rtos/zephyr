@@ -105,10 +105,11 @@ static inline uint8_t esp_mode_from_flags(struct esp_data *data)
 
 static int esp_mode_switch(struct esp_data *data, uint8_t mode)
 {
-	char cmd[] = "AT+"_CWMODE"=X";
+	char cmd[] = "AT+"_CWMODE"=X,X";
 	int err;
 
-	cmd[sizeof(cmd) - 2] = ('0' + mode);
+	cmd[sizeof(cmd) - 4] = ('0' + mode);
+	cmd[sizeof(cmd) - 2] = ('0' + esp_flags_are_set(data, EDF_STA_AUTOCONN_ENABLED));
 	LOG_DBG("Switch to mode %hhu", mode);
 
 	err = esp_cmd_send(data, NULL, 0, cmd, ESP_CMD_TIMEOUT);
@@ -1008,6 +1009,21 @@ static int esp_mgmt_iface_status(const struct device *dev,
 	return 0;
 }
 
+static int esp_mgmt_mode(const struct device *dev, struct wifi_mode_info *mode)
+{
+	struct esp_data *data = dev->data;
+
+	if (mode->mode == 0 && mode->oper == WIFI_MGMT_SET) {
+		esp_flags_clear(data, EDF_STA_AUTOCONN_ENABLED);
+	}
+
+	if (mode->mode == 1 && mode->oper == WIFI_MGMT_SET) {
+		esp_flags_set(data, EDF_STA_AUTOCONN_ENABLED);
+	}
+
+	return 0;
+}
+
 static void esp_mgmt_scan_work(struct k_work *work)
 {
 	struct esp_data *dev;
@@ -1472,6 +1488,7 @@ static const struct wifi_mgmt_ops esp_mgmt_ops = {
 	.ap_enable	   = esp_mgmt_ap_enable,
 	.ap_disable	   = esp_mgmt_ap_disable,
 	.iface_status	   = esp_mgmt_iface_status,
+	.mode              = esp_mgmt_mode,
 };
 
 static const struct net_wifi_mgmt_offload esp_api = {
