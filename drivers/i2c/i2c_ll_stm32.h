@@ -56,6 +56,9 @@ struct i2c_stm32_data {
 #endif
 	struct k_sem bus_mutex;
 	uint32_t dev_config;
+#if defined(CONFIG_SOC_SERIES_STM32WLX)
+	uint32_t i2c_clock;
+#endif
 #ifdef CONFIG_I2C_STM32_V1
 	uint16_t slave_address;
 #endif

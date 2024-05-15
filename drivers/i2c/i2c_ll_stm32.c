@@ -98,6 +98,10 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	i2c_stm32_set_smbus_mode(dev, data->mode);
 	ret = stm32_i2c_configure_timing(dev, i2c_clock);
 
+#if defined(CONFIG_SOC_SERIES_STM32WLX)
+	data->i2c_clock = i2c_clock;
+#endif
+
 	if (data->smbalert_active) {
 		LL_I2C_Enable(i2c);
 	}
@@ -426,6 +430,19 @@ static int i2c_stm32_init(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_SOC_SERIES_STM32WLX)
+static int i2c_stm32_reinit_timing(const struct device *dev)
+{
+	struct i2c_stm32_data *data = dev->data;
+	/* Initialize the clock to the previous state. */
+	int ret = stm32_i2c_configure_timing(dev, data->i2c_clock);
+	if (ret < 0) {
+		LOG_ERR("I2C timing configuration failed (%d)", ret);
+	}
+	return ret;
+}
+#endif
+
 #ifdef CONFIG_PM_DEVICE
 
 static int i2c_stm32_pm_action(const struct device *dev, enum pm_device_action action)
@@ -435,6 +452,9 @@ static int i2c_stm32_pm_action(const struct device *dev, enum pm_device_action a
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		err = i2c_stm32_activate(dev);
+#if defined(CONFIG_SOC_SERIES_STM32WLX)
+		i2c_stm32_reinit_timing(dev);
+#endif
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		err = i2c_stm32_suspend(dev);
