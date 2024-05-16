@@ -2612,6 +2612,7 @@ static void reset_pairing(struct bt_conn *conn)
 		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
 		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR);
 		atomic_clear_bit(conn->flags, BT_CONN_BR_LEGACY_SECURE);
+		atomic_clear_bit(conn->flags, BT_CONN_BR_GENERAL_BONDING);
 	}
 #endif /* CONFIG_BT_CLASSIC */
 

@@ -786,6 +786,13 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 	 * since service/profile requires that.
 	 */
 	if (check == 0) {
+		/*
+		 * General Bonding refers to the process of performing bonding
+		 * during connection setup or channel establishment procedures
+		 * as a precursor to accessing a service.
+		 * For current case, it is dedicated bonding.
+		 */
+		atomic_set_bit(chan->conn->flags, BT_CONN_BR_GENERAL_BONDING);
 		return L2CAP_CONN_SECURITY_PENDING;
 	}
 
