@@ -84,6 +84,12 @@
 	};
 };
 
+&bleif {
+	pinctrl-0 = <&bleif_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &uart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
