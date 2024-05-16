@@ -642,6 +642,9 @@ void bt_hci_io_capa_resp(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
+/* Clear Bonding flag */
+#define BT_HCI_SET_NO_BONDING(auth) ((auth) & 0x01)
+
 void bt_hci_io_capa_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_io_capa_req *evt = (void *)buf->data;
@@ -688,6 +691,11 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 		}
 	} else {
 		auth = ssp_get_auth(conn);
+	}
+
+	if (!bt_get_bondable()) {
+		/* If bondable is false, clear bonding flag. */
+		auth = BT_HCI_SET_NO_BONDING(auth);
 	}
 
 	cp = net_buf_add(resp_buf, sizeof(*cp));
