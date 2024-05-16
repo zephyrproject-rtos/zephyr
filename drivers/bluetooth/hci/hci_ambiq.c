@@ -67,6 +67,7 @@ static K_SEM_DEFINE(sem_spi_available, 1, 1);
 void bt_packet_irq_isr(const struct device *unused1, struct gpio_callback *unused2,
 		       uint32_t unused3)
 {
+	bt_apollo_rcv_isr_preprocess();
 	k_sem_give(&sem_irq);
 }
 
