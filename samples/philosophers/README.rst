@@ -6,23 +6,21 @@ Dining Philosophers
 Overview
 ********
 
-An implementation of a solution to the Dining Philosophers problem (a classic
-multi-thread synchronization problem).  This particular implementation
-demonstrates the usage of multiple preemptible and cooperative threads of
-differing priorities, as well as dynamic mutexes and thread sleeping.
+An implementation of a solution to the Dining Philosophers problem (a classic multi-thread
+synchronization problem).  This particular implementation demonstrates the usage of multiple
+preemptible and cooperative threads of differing priorities, as well as dynamic mutexes and thread
+sleeping.
 
-The philosopher always tries to get the lowest fork first (f1 then f2).  When
-done, he will give back the forks in the reverse order (f2 then f1).  If he
-gets two forks, he is EATING.  Otherwise, he is THINKING. Transitional states
-are shown as well, such as STARVING when the philosopher is hungry but the
-forks are not available, and HOLDING ONE FORK when a philosopher is waiting
-for the second fork to be available.
+The philosopher always tries to get the lowest fork first (f1 then f2).  When done, he will give
+back the forks in the reverse order (f2 then f1).  If he gets two forks, he is EATING.  Otherwise,
+he is THINKING. Transitional states are shown as well, such as STARVING when the philosopher is
+hungry but the forks are not available, and HOLDING ONE FORK when a philosopher is waiting for the
+second fork to be available.
 
 Each Philosopher will randomly alternate between the EATING and THINKING state.
 
-It is possible to run the demo in coop-only or preempt-only mode. To achieve
-this, set these values for CONFIG_NUM_COOP_PRIORITIES and
-CONFIG_NUM_PREEMPT_PRIORITIES in prj.conf:
+It is possible to run the demo in coop-only or preempt-only mode. To achieve this, set these values
+for CONFIG_NUM_COOP_PRIORITIES and CONFIG_NUM_PREEMPT_PRIORITIES in prj.conf:
 
 preempt-only:
 
@@ -34,14 +32,13 @@ coop-only:
   CONFIG_NUM_PREEMPT_PRIORITIES 0
   CONFIG_NUM_COOP_PRIORITIES 6
 
-In these cases, the philosopher threads will run with priorities 0 to 5
-(preempt-only) and -7 to -2 (coop-only).
+In these cases, the philosopher threads will run with priorities 0 to 5 (preempt-only) and -7 to -2
+(coop-only).
 
 Building and Running
 ********************
 
-This project outputs to the console.  It can be built and executed
-on QEMU as follows:
+This project outputs to the console.  It can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/philosophers
@@ -67,9 +64,8 @@ Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 Debug Threads
 *************
 
-The philosophers sample by default enables :kconfig:option:`CONFIG_DEBUG_THREAD_INFO`.
-This allows tools like OpenOCD and J-link to inspect thread data using
-``info threads``.
+The philosophers sample by default enables :kconfig:option:`CONFIG_DEBUG_THREAD_INFO`. This allows
+tools like OpenOCD and J-link to inspect thread data using ``info threads``.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/philosophers
