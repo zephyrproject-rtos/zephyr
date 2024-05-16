@@ -1746,6 +1746,17 @@ static inline const char *bt_security_err_to_str(enum bt_security_err err)
  */
 void bt_set_bondable(bool enable);
 
+/** @brief Get bonding flag.
+ *
+ *  Get current bonding flag.
+ *  The initial value of this flag depends on @kconfig{CONFIG_BT_BONDABLE} Kconfig
+ *  setting.
+ *  The Bonding flag can be updated using bt_set_bondable().
+ *
+ *  @return Current bonding flag.
+ */
+bool bt_get_bondable(void);
+
 /** @brief Set/clear the bonding flag for a given connection.
  *
  *  Set/clear the Bonding flag in the Authentication Requirements of
