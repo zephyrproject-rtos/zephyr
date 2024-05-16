@@ -97,6 +97,11 @@ Bluetooth
     This Service exposes the ability to declare multiple instances of the GATT service,
     allowing multiple serial endpoints to be used for different purposes.
 
+  * Implemented Hands-free Audio Gateway (AG), enabled by the :kconfig:option:`CONFIG_BT_HFP_AG`.
+    It works as a device that is the gateway of the audio. Typical device acting as Audio
+    Gateway is cellular phone. It controls the device (Hands-free Unit), that is the remote
+    audio input and output mechanism.
+
 Boards & SoC Support
 ********************
 
