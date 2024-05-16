@@ -912,6 +912,12 @@ struct bt_le_per_adv_param {
 				       BT_GAP_ADV_FAST_INT_MIN_2, \
 				       BT_GAP_ADV_FAST_INT_MAX_2, NULL)
 
+/** This is the recommended default for connectable advertisers.
+ */
+#define BT_LE_ADV_CONN_ONE_TIME                                                                    \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_ONE_TIME,                        \
+			BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL)
+
 /**
  * @deprecated This macro will be removed in the near future, see
  * https://github.com/zephyrproject-rtos/zephyr/issues/71686
