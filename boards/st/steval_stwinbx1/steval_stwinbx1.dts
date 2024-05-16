@@ -14,18 +14,6 @@
 	compatible = "st,steval_stwinbx1";
 
 	chosen {
-		/*
-		 * By default, Zephyr console and shell are assigned to
-		 * USB CDC/ACM. To enable console and shell over UART,
-		 * uncomment the 2 following lines and set the correct
-		 * config in steval_stwinbx1_defconfig.
-		 */
-		/* zephyr,console = &usart2; */
-		/* zephyr,shell-uart = &usart2; */
-		/*
-		 * To enable console and shell over UART,
-		 * comment the 2 following lines
-		 */
 		zephyr,console = &cdc_acm_uart0;
 		zephyr,shell-uart = &cdc_acm_uart0;
 
