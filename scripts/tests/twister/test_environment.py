@@ -26,13 +26,6 @@ TESTDATA_1 = [
         '--short-build-path requires Ninja to be enabled'
     ),
     (
-        'nt',
-        None,
-        None,
-        ['--device-serial-pty', 'dummy'],
-        '--device-serial-pty is not supported on Windows OS'
-    ),
-    (
         None,
         None,
         None,
@@ -129,24 +122,39 @@ TESTDATA_1 = [
     ),
 ]
 
+TESTIDS_1 = [
+    'short build path without ninja',
+    'west runner without west flash',
+    'west-flash without device-testing',
+    'valgrind without executable',
+    'device serial without platform',
+    'device serial with multiple platforms',
+    'device flash with test without device testing',
+    'shuffle-tests without subset',
+    'shuffle-tests-seed without shuffle-tests',
+    'unrecognised argument',
+    'pytest-twister-harness installed'
+]
+
+if os.name == 'nt':
+
+    TESTDATA_1 += [
+        (
+            'nt',
+            None,
+            None,
+            ['--device-serial-pty', 'dummy'],
+            '--device-serial-pty is not supported on Windows OS'
+        )
+    ]
+
+    TESTIDS_1 += ['device-serial-pty on Windows']
+
 
 @pytest.mark.parametrize(
     'os_name, which_dict, pytest_plugin, args, expected_error',
     TESTDATA_1,
-    ids=[
-        'short build path without ninja',
-        'device-serial-pty on Windows',
-        'west runner without west flash',
-        'west-flash without device-testing',
-        'valgrind without executable',
-        'device serial without platform',
-        'device serial with multiple platforms',
-        'device flash with test without device testing',
-        'shuffle-tests without subset',
-        'shuffle-tests-seed without shuffle-tests',
-        'unrecognised argument',
-        'pytest-twister-harness installed'
-    ]
+    ids=TESTIDS_1
 )
 def test_parse_arguments_errors(
     caplog,
@@ -245,8 +253,11 @@ def test_parse_arguments(zephyr_base, additional_args):
 
     options = twisterlib.environment.parse_arguments(parser, args)
 
-    assert os.path.join(zephyr_base, 'tests') in options.testsuite_root
-    assert os.path.join(zephyr_base, 'samples') in options.testsuite_root
+    expected_tests_path = os.path.realpath(os.path.join(zephyr_base, 'tests'))
+    expected_samples_path = os.path.realpath(os.path.join(zephyr_base, 'samples'))
+
+    assert expected_tests_path in options.testsuite_root
+    assert expected_samples_path in options.testsuite_root
 
     assert options.enable_size_report
 
@@ -345,7 +356,7 @@ def test_twisterenv_discover():
         if path == 'dummy_abspath':
             return 'dummy_abspath'
         elif isinstance(path, mock.Mock):
-            return None
+            return ''
         else:
             return original_abspath(path)
 
@@ -449,7 +460,7 @@ def test_twisterenv_check_zephyr_version(
         if path == 'dummy_abspath':
             return 'dummy_abspath'
         elif isinstance(path, mock.Mock):
-            return None
+            return ''
         else:
             return original_abspath(path)
 
@@ -458,8 +469,7 @@ def test_twisterenv_check_zephyr_version(
 
     with mock.patch('subprocess.run', mock.Mock(side_effect=mock_run)):
         twister_env.check_zephyr_version()
-    print(expected_logs)
-    print(caplog.text)
+
     assert twister_env.version == expected_version
     assert twister_env.commit_date == expected_commit_date
     assert all([expected_log in caplog.text for expected_log in expected_logs])
@@ -577,7 +587,7 @@ def test_get_toolchain(caplog, script_result, exit_value, expected_log):
         if path == 'dummy_abspath':
             return 'dummy_abspath'
         elif isinstance(path, mock.Mock):
-            return None
+            return ''
         else:
             return original_abspath(path)
 
