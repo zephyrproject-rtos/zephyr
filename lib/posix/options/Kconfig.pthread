@@ -141,6 +141,26 @@ config POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT
 	  facilitate a more dynamic approach to guard areas (via software or
 	  hardware) but for now it simply increases the size of thread stacks.
 
+config POSIX_THREAD_PRIO_INHERIT
+	bool "POSIX mutex priority inheritance"
+	default y if POSIX_API
+	help
+	  Select 'y' here to enable POSIX mutex priority inheritance.
+
+	  For more information, please see
+
+	  https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_mutexattr_getprotocol.html
+
+config POSIX_THREAD_PRIO_PROTECT
+	bool "POSIX mutex priority inheritance"
+	default y if POSIX_API
+	help
+	  Select 'y' here to enable POSIX mutex priority inheritance.
+
+	  For more information, please see
+
+	  https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_mutexattr_getprotocol.html
+
 module = PTHREAD
 module-str = POSIX thread
 source "subsys/logging/Kconfig.template.log_config"

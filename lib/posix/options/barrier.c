@@ -19,6 +19,13 @@ struct posix_barrier {
 	uint32_t count;
 };
 
+struct posix_barrierattr {
+	bool initialized: 1;
+#if defined(_POSIX_THREAD_PROCESS_SHARED)
+	bool pshared;
+#endif /* defined(_POSIX_THREAD_PROCESS_SHARED) */
+};
+
 static struct posix_barrier posix_barrier_pool[CONFIG_MAX_PTHREAD_BARRIER_COUNT];
 SYS_BITARRAY_DEFINE_STATIC(posix_barrier_bitarray, CONFIG_MAX_PTHREAD_BARRIER_COUNT);
 
@@ -163,34 +170,65 @@ int pthread_barrier_destroy(pthread_barrier_t *b)
 
 int pthread_barrierattr_init(pthread_barrierattr_t *attr)
 {
-	__ASSERT_NO_MSG(attr != NULL);
+	struct posix_barrierattr *a = (struct posix_barrierattr *)attr;
 
-	attr->pshared = PTHREAD_PROCESS_PRIVATE;
+	if (a == NULL) {
+		return EINVAL;
+	}
+
+	*a = (struct posix_barrierattr){
+		.initialized = true,
+#if defined(_POSIX_THREAD_PROCESS_SHARED)
+		.pshared = PTHREAD_PROCESS_PRIVATE,
+#endif /* defined(_POSIX_THREAD_PROCESS_SHARED) */
+	};
 
 	return 0;
 }
 
+#if defined(_POSIX_THREAD_PROCESS_SHARED)
+
 int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared)
 {
+	struct posix_barrierattr *a = (struct posix_barrierattr *)attr;
+
+	if (a == NULL || !a->initialized) {
+		return EINVAL;
+	}
+
 	if (pshared != PTHREAD_PROCESS_PRIVATE && pshared != PTHREAD_PROCESS_PUBLIC) {
 		return -EINVAL;
 	}
 
-	attr->pshared = pshared;
+	a->pshared = pshared;
 	return 0;
 }
 
 int pthread_barrierattr_getpshared(const pthread_barrierattr_t *restrict attr,
 				   int *restrict pshared)
 {
-	*pshared = attr->pshared;
+	struct posix_barrierattr *a = (struct posix_barrierattr *)attr;
+
+	if (a == NULL || pshared == NULL || !a->initialized) {
+		return EINVAL;
+	}
+
+	*pshared = a->pshared;
 
 	return 0;
 }
 
+#endif /* defined(_POSIX_THREAD_PROCESS_SHARED) */
+
 int pthread_barrierattr_destroy(pthread_barrierattr_t *attr)
 {
-	ARG_UNUSED(attr);
+	struct posix_barrierattr *a = (struct posix_barrierattr *)attr;
+
+	if (a == NULL || !a->initialized) {
+		return EINVAL;
+	}
+
+	a->initialized = false;
 
 	return 0;
 }

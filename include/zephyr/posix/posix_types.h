@@ -84,7 +84,9 @@ typedef uint32_t pthread_spinlock_t;
 
 typedef uint32_t pthread_barrier_t;
 typedef struct pthread_barrierattr {
+#if defined(_POSIX_THREAD_PROCESS_SHARED)
 	int pshared;
+#endif /* defined(_POSIX_THREAD_PROCESS_SHARED) */
 } pthread_barrierattr_t;
 
 #endif /* _POSIX_BARRIERS */
@@ -102,4 +104,4 @@ typedef uint32_t pthread_rwlock_t;
 }
 #endif
 
-#endif	/* ZEPHYR_INCLUDE_POSIX_TYPES_H_ */
+#endif /* ZEPHYR_INCLUDE_POSIX_TYPES_H_ */

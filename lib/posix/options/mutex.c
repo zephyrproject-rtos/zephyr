@@ -13,6 +13,18 @@
 #include <zephyr/posix/pthread.h>
 #include <zephyr/sys/bitarray.h>
 
+struct posix_mutexattr {
+#if defined(_POSIX_THREAD_PRIO_INHERIT) || defined(_POSIX_THREAD_PRIO_PROTECT)
+	int16_t prio_ceiling: 16;
+	uint32_t proto: 2;
+#endif /* defined(_POSIX_THREAD_PRIO_PROTECT) */
+#if defined(_POSIX_THREAD_PROCESS_SHARED)
+	bool pshared: 1;
+#endif /* defined(_POSIX_THREAD_PROCESS_SHARED) */
+	uint32_t type: 2;
+	bool initialized: 1;
+};
+
 LOG_MODULE_REGISTER(pthread_mutex, CONFIG_PTHREAD_MUTEX_LOG_LEVEL);
 
 static struct k_spinlock pthread_mutex_spinlock;
@@ -21,15 +33,8 @@ int64_t timespec_to_timeoutms(const struct timespec *abstime);
 
 #define MUTEX_MAX_REC_LOCK 32767
 
-/*
- *  Default mutex attrs.
- */
-static const struct pthread_mutexattr def_attr = {
-	.type = PTHREAD_MUTEX_DEFAULT,
-};
-
 static struct k_mutex posix_mutex_pool[CONFIG_MAX_PTHREAD_MUTEX_COUNT];
-static uint8_t posix_mutex_type[CONFIG_MAX_PTHREAD_MUTEX_COUNT];
+static struct posix_mutexattr posix_mutex_attr[CONFIG_MAX_PTHREAD_MUTEX_COUNT];
 SYS_BITARRAY_DEFINE_STATIC(posix_mutex_bitarray, CONFIG_MAX_PTHREAD_MUTEX_COUNT);
 
 /*
@@ -38,7 +43,7 @@ SYS_BITARRAY_DEFINE_STATIC(posix_mutex_bitarray, CONFIG_MAX_PTHREAD_MUTEX_COUNT)
  * the theoretical pthread_mutex_t range is [0,2147483647].
  */
 BUILD_ASSERT(CONFIG_MAX_PTHREAD_MUTEX_COUNT < PTHREAD_OBJ_MASK_INIT,
-	"CONFIG_MAX_PTHREAD_MUTEX_COUNT is too high");
+	     "CONFIG_MAX_PTHREAD_MUTEX_COUNT is too high");
 
 static inline size_t posix_mutex_to_offset(struct k_mutex *m)
 {
@@ -123,7 +128,7 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 	LOG_DBG("Locking mutex %p with timeout %llx", m, timeout.ticks);
 
 	bit = posix_mutex_to_offset(m);
-	type = posix_mutex_type[bit];
+	type = posix_mutex_attr[bit].type;
 
 	if (m->owner == k_current_get()) {
 		switch (type) {
@@ -199,8 +204,7 @@ int pthread_mutex_trylock(pthread_mutex_t *m)
  *
  * See IEEE 1003.1
  */
-int pthread_mutex_timedlock(pthread_mutex_t *m,
-			    const struct timespec *abstime)
+int pthread_mutex_timedlock(pthread_mutex_t *m, const struct timespec *abstime)
 {
 	int32_t timeout = (int32_t)timespec_to_timeoutms(abstime);
 	return acquire_mutex(m, K_MSEC(timeout));
@@ -215,7 +219,7 @@ int pthread_mutex_init(pthread_mutex_t *mu, const pthread_mutexattr_t *_attr)
 {
 	size_t bit;
 	struct k_mutex *m;
-	const struct pthread_mutexattr *attr = (const struct pthread_mutexattr *)_attr;
+	const struct posix_mutexattr *attr = (const struct posix_mutexattr *)_attr;
 
 	*mu = PTHREAD_MUTEX_INITIALIZER;
 
@@ -226,16 +230,19 @@ int pthread_mutex_init(pthread_mutex_t *mu, const pthread_mutexattr_t *_attr)
 
 	bit = posix_mutex_to_offset(m);
 	if (attr == NULL) {
-		posix_mutex_type[bit] = def_attr.type;
+		(void)pthread_mutexattr_init((pthread_mutexattr_t *)&posix_mutex_attr[bit]);
 	} else {
-		posix_mutex_type[bit] = attr->type;
+		if (!attr->initialized) {
+			(void)sys_bitarray_clear_bit(&posix_mutex_bitarray, bit);
+			return EINVAL;
+		}
+		posix_mutex_attr[bit] = *attr;
 	}
 
 	LOG_DBG("Initialized mutex %p", m);
 
 	return 0;
 }
-
 
 /**
  * @brief Lock POSIX mutex with blocking call.
@@ -299,41 +306,81 @@ int pthread_mutex_destroy(pthread_mutex_t *mu)
 	return 0;
 }
 
+#if defined(_POSIX_THREAD_PRIO_INHERIT) || defined(_POSIX_THREAD_PRIO_PROTECT)
+
 /**
  * @brief Read protocol attribute for mutex.
  *
  * See IEEE 1003.1
  */
-int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
-				  int *protocol)
+int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr, int *protocol)
 {
-	*protocol = PTHREAD_PRIO_NONE;
+	struct posix_mutexattr *const a = (struct posix_mutexattr *)attr;
+
+	if (a == NULL || protocol == NULL || !a->initialized) {
+		return EINVAL;
+	}
+
+	*protocol = a->proto;
 	return 0;
 }
 
+int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr, int protocol)
+{
+	struct posix_mutexattr *const a = (struct posix_mutexattr *)attr;
+
+	if (a == NULL || !a->initialized) {
+		return EINVAL;
+	}
+
+	switch (protocol) {
+	case PTHREAD_PRIO_NONE:
+		break;
+	case PTHREAD_PRIO_INHERIT:
+	case PTHREAD_PRIO_PROTECT:
+		/* Zephyr does not suppport other protocols at the moment */
+		return ENOTSUP;
+	default:
+		return EINVAL;
+	}
+
+	a->proto = protocol;
+	return 0;
+}
+
+#endif /* defined(_POSIX_THREAD_PRIO_INHERIT) || defined(_POSIX_THREAD_PRIO_PROTECT) */
+
 int pthread_mutexattr_init(pthread_mutexattr_t *attr)
 {
-	struct pthread_mutexattr *const a = (struct pthread_mutexattr *)attr;
+	struct posix_mutexattr *const a = (struct posix_mutexattr *)attr;
 
 	if (a == NULL) {
 		return EINVAL;
 	}
 
-	a->type = PTHREAD_MUTEX_DEFAULT;
-	a->initialized = true;
+	*a = (struct posix_mutexattr){
+#if defined(_POSIX_THREAD_PRIO_INHERIT) || defined(_POSIX_THREAD_PRIO_PROTECT)
+		.proto = PTHREAD_PRIO_NONE,
+#endif /* defined(_POSIX_THREAD_PRIO_PROTECT) */
+#if defined(_POSIX_THREAD_PROCESS_SHARED)
+		.pshared = PTHREAD_PROCESS_PRIVATE,
+#endif /* defined(_POSIX_THREAD_PROCESS_SHARED) */
+		.type = PTHREAD_MUTEX_DEFAULT,
+		.initialized = true,
+	};
 
 	return 0;
 }
 
 int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
 {
-	struct pthread_mutexattr *const a = (struct pthread_mutexattr *)attr;
+	struct posix_mutexattr *const a = (struct posix_mutexattr *)attr;
 
 	if (a == NULL || !a->initialized) {
 		return EINVAL;
 	}
 
-	*a = (struct pthread_mutexattr){0};
+	a->initialized = false;
 
 	return 0;
 }
@@ -346,7 +393,7 @@ int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
  */
 int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type)
 {
-	const struct pthread_mutexattr *a = (const struct pthread_mutexattr *)attr;
+	const struct posix_mutexattr *a = (const struct posix_mutexattr *)attr;
 
 	if (a == NULL || type == NULL || !a->initialized) {
 		return EINVAL;
@@ -364,7 +411,7 @@ int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type)
  */
 int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 {
-	struct pthread_mutexattr *const a = (struct pthread_mutexattr *)attr;
+	struct posix_mutexattr *const a = (struct posix_mutexattr *)attr;
 
 	if (a == NULL || !a->initialized) {
 		return EINVAL;

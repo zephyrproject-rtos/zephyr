@@ -45,6 +45,7 @@ ZTEST(mutex_attr, test_pthread_mutexattr_destroy)
 
 ZTEST(mutex_attr, test_pthread_mutexattr_gettype)
 {
+#if defined(_POSIX_THREAD_PRIO_INHERIT) || defined(_POSIX_THREAD_PRIO_PROTECT)
 	int type;
 	pthread_mutexattr_t attr;
 
@@ -63,10 +64,14 @@ ZTEST(mutex_attr, test_pthread_mutexattr_gettype)
 	zassert_ok(pthread_mutexattr_gettype(&attr, &type));
 	zassert_equal(type, PTHREAD_MUTEX_DEFAULT);
 	zassert_ok(pthread_mutexattr_destroy(&attr));
+#else
+	ztest_test_skip();
+#endif /* defined(_POSIX_THREAD_PRIO_INHERIT) || defined(_POSIX_THREAD_PRIO_PROTECT) */
 }
 
 ZTEST(mutex_attr, test_pthread_mutexattr_settype)
 {
+#ifdef CONFIG_POSIX_THREADS_EXT
 	int type;
 	pthread_mutexattr_t attr;
 
@@ -101,6 +106,9 @@ ZTEST(mutex_attr, test_pthread_mutexattr_settype)
 	zassert_equal(type, PTHREAD_MUTEX_ERRORCHECK);
 
 	zassert_ok(pthread_mutexattr_destroy(&attr));
+#else  /* CONFIG_POSIX_THREADS_EXT */
+	ztest_test_skip();
+#endif /* CONFIG_POSIX_THREADS_EXT */
 }
 
 ZTEST_SUITE(mutex_attr, NULL, NULL, NULL, NULL, NULL);
