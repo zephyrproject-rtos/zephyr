@@ -49,6 +49,9 @@ ARCHS = {
     "posix" : {
         "kconfig": "CONFIG_ARCH_POSIX",
     },
+    "riscv32e" : {
+        "kconfig": "CONFIG_RISCV_ISA_RV32E",
+    },
     "riscv" : {
         "kconfig": "CONFIG_RISCV",
     },
