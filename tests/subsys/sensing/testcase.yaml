@@ -1,0 +1,4 @@
+tests:
+  subsys.sensing:
+    platform_allow: native_sim
+    tags: sensing
