@@ -29,16 +29,17 @@ LOG_MODULE_REGISTER(bt_hci_driver);
 #define PACKET_TYPE         0
 #define PACKET_TYPE_SIZE    1
 #define EVT_HEADER_TYPE     0
-#define EVT_HEADER_EVENT    1
-#define EVT_HEADER_SIZE     2
-#define EVT_VENDOR_CODE_LSB 3
-#define EVT_VENDOR_CODE_MSB 4
-#define CMD_OGF             1
-#define CMD_OCF             2
+#define EVT_CMD_COMP_OP_LSB 3
+#define EVT_CMD_COMP_OP_MSB 4
+#define EVT_CMD_COMP_DATA   5
 
 #define EVT_OK      0
 #define EVT_DISCARD 1
 #define EVT_NOP     2
+
+#define BT_FEAT_SET_BIT(feat, octet, bit) (feat[octet] |= BIT(bit))
+#define BT_FEAT_SET_NO_BREDR(feat)        BT_FEAT_SET_BIT(feat, 4, 5)
+#define BT_FEAT_SET_LE(feat)              BT_FEAT_SET_BIT(feat, 4, 6)
 
 /* Max SPI buffer length for transceive operations.
  * The maximum TX packet number is 512 bytes data + 12 bytes header.
@@ -114,7 +115,7 @@ static int spi_receive_packet(uint8_t *data, uint16_t *len)
 
 static int hci_event_filter(const uint8_t *evt_data)
 {
-	uint8_t evt_type = evt_data[0];
+	uint8_t evt_type = evt_data[EVT_HEADER_TYPE];
 
 	switch (evt_type) {
 	case BT_HCI_EVT_LE_META_EVENT: {
@@ -128,11 +129,26 @@ static int hci_event_filter(const uint8_t *evt_data)
 		}
 	}
 	case BT_HCI_EVT_CMD_COMPLETE: {
-		uint16_t opcode = (uint16_t)(evt_data[3] + (evt_data[4] << 8));
+		uint16_t opcode = (uint16_t)(evt_data[EVT_CMD_COMP_OP_LSB] +
+					     (evt_data[EVT_CMD_COMP_OP_MSB] << 8));
 
 		switch (opcode) {
 		case BT_OP_NOP:
 			return EVT_NOP;
+		case BT_HCI_OP_READ_LOCAL_FEATURES: {
+			/* The BLE controller of some Ambiq Apollox Blue SOC may have issue to
+			 * report the expected supported features bitmask successfully, thought the
+			 * features are actually supportive. Need to correct them before going to
+			 * the host stack.
+			 */
+			struct bt_hci_rp_read_local_features *rp =
+				(void *)&evt_data[EVT_CMD_COMP_DATA];
+			if (rp->status == 0) {
+				BT_FEAT_SET_NO_BREDR(rp->features);
+				BT_FEAT_SET_LE(rp->features);
+			}
+			return EVT_OK;
+		}
 		default:
 			return EVT_OK;
 		}
