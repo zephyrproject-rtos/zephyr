@@ -349,7 +349,7 @@ static inline int dwc2_read_fifo(const struct device *dev, const uint8_t ep,
 				 struct net_buf *const buf, const size_t size)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
-	size_t len = MIN(size, net_buf_tailroom(buf));
+	size_t len = buf ? MIN(size, net_buf_tailroom(buf)) : 0;
 	const size_t d = sizeof(uint32_t);
 
 	/* FIFO access is always in 32-bit words */
@@ -389,7 +389,7 @@ static void dwc2_prep_rx(const struct device *dev,
 
 	doeptsiz = (1 << USB_DWC2_DOEPTSIZ0_PKTCNT_POS) | cfg->mps;
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
-		doeptsiz |= (1 << USB_DWC2_DOEPTSIZ0_SUPCNT_POS);
+		doeptsiz |= (3 << USB_DWC2_DOEPTSIZ0_SUPCNT_POS);
 	}
 
 	sys_write32(doeptsiz, doeptsiz_reg);
@@ -650,7 +650,7 @@ static void dwc2_on_bus_reset(const struct device *dev)
 		}
 	}
 
-	sys_write32(0UL, (mem_addr_t)&base->doepmsk);
+	sys_write32(USB_DWC2_DOEPINT_SETUP, (mem_addr_t)&base->doepmsk);
 	sys_set_bits((mem_addr_t)&base->gintmsk, USB_DWC2_GINTSTS_RXFLVL);
 	sys_set_bits((mem_addr_t)&base->diepmsk, USB_DWC2_DIEPINT_XFERCOMPL);
 
@@ -668,12 +668,18 @@ static void dwc2_handle_enumdone(const struct device *dev)
 	priv->enumspd = usb_dwc2_get_dsts_enumspd(dsts);
 }
 
-static inline int dwc2_read_fifo_setup(const struct device *dev)
+static inline int dwc2_read_fifo_setup(const struct device *dev, uint8_t ep,
+				       const size_t size)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	size_t offset;
 
 	/* FIFO access is always in 32-bit words */
+
+	if (size != 8) {
+		LOG_ERR("%d bytes SETUP", size);
+	}
 
 	/*
 	 * We store the setup packet temporarily in the driver's private data
@@ -682,8 +688,16 @@ static inline int dwc2_read_fifo_setup(const struct device *dev)
 	 * bottom-half processing because the events arrive in a queue and
 	 * there will be a next net_buf for the setup packet.
 	 */
-	sys_put_le32(sys_read32(UDC_DWC2_EP_FIFO(base, 0)), priv->setup);
-	sys_put_le32(sys_read32(UDC_DWC2_EP_FIFO(base, 0)), &priv->setup[4]);
+	for (offset = 0; offset < MIN(size, 8); offset += 4) {
+		sys_put_le32(sys_read32(UDC_DWC2_EP_FIFO(base, ep)),
+			     &priv->setup[offset]);
+	}
+
+	/* On protocol error simply discard extra data */
+	while (offset < size) {
+		sys_read32(UDC_DWC2_EP_FIFO(base, ep));
+		offset += 4;
+	}
 
 	return 0;
 }
@@ -706,25 +720,22 @@ static inline void dwc2_handle_rxflvl(const struct device *dev)
 
 	switch (pktsts) {
 	case USB_DWC2_GRXSTSR_PKTSTS_SETUP:
-		evt.type = DWC2_DRV_EVT_SETUP;
-
-		__ASSERT(evt.bcnt == 8, "Incorrect setup packet length");
-		dwc2_read_fifo_setup(dev);
-
-		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+		dwc2_read_fifo_setup(dev, evt.ep, evt.bcnt);
 		break;
 	case USB_DWC2_GRXSTSR_PKTSTS_OUT_DATA:
 		evt.type = DWC2_DRV_EVT_DOUT;
 		ep_cfg = udc_get_ep_cfg(dev, evt.ep);
 
 		buf = udc_buf_peek(dev, ep_cfg->addr);
+
+		/* RxFIFO data must be retrieved even when buf is NULL */
+		dwc2_read_fifo(dev, evt.ep, buf, evt.bcnt);
+
 		if (buf == NULL) {
 			LOG_ERR("No buffer for ep 0x%02x", ep_cfg->addr);
 			udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 			break;
 		}
-
-		dwc2_read_fifo(dev, USB_CONTROL_EP_OUT, buf, evt.bcnt);
 
 		if (net_buf_tailroom(buf) && evt.bcnt == ep_cfg->mps) {
 			dwc2_prep_rx(dev, ep_cfg, 0);
@@ -734,8 +745,10 @@ static inline void dwc2_handle_rxflvl(const struct device *dev)
 
 		break;
 	case USB_DWC2_GRXSTSR_PKTSTS_OUT_DATA_DONE:
-	case USB_DWC2_GRXSTSR_PKTSTS_SETUP_DONE:
 		LOG_DBG("RX pktsts DONE");
+		break;
+	case USB_DWC2_GRXSTSR_PKTSTS_SETUP_DONE:
+		LOG_DBG("SETUP pktsts DONE");
 		break;
 	default:
 		break;
@@ -813,7 +826,6 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 	doepmsk = sys_read32((mem_addr_t)&base->doepmsk);
 	daint = sys_read32((mem_addr_t)&base->daint);
 
-	/* No OUT interrupt expected in FIFO mode, just clear interrupt */
 	for (uint8_t n = 0U; n < n_max; n++) {
 		mem_addr_t doepint_reg = (mem_addr_t)&base->out_ep[n].doepint;
 		uint32_t doepint;
@@ -826,6 +838,16 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 			sys_write32(status, doepint_reg);
 
 			LOG_DBG("ep 0x%02x interrupt status: 0x%x", n, status);
+
+			if (status & USB_DWC2_DOEPINT_SETUP) {
+				struct dwc2_drv_event evt = {
+					.type = DWC2_DRV_EVT_SETUP,
+					.ep = USB_CONTROL_EP_OUT,
+					.bcnt = 8,
+				};
+
+				k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+			}
 		}
 	}
 
