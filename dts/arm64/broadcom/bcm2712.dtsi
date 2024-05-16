@@ -73,6 +73,7 @@
 			reg = <0x10 0x7d001000 0x200>;
 			interrupts = <GIC_SPI 121 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_121";
 			clocks = <&clk_uart>;
 			status = "disabled";
 		};
