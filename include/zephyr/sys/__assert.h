@@ -137,15 +137,15 @@ void assert_post_action(const char *file, unsigned int line);
 #warning "__ASSERT() statements are ENABLED"
 #endif
 #else
-#define __ASSERT(test, fmt, ...) { }
+#define __ASSERT(test, fmt, ...) {(void)(test)}
 #define __ASSERT_EVAL(expr1, expr2, test, fmt, ...) expr1
-#define __ASSERT_NO_MSG(test) { }
+#define __ASSERT_NO_MSG(test) {(void)(test)}
 #define __ASSERT_POST_ACTION() { }
 #endif
 #else
-#define __ASSERT(test, fmt, ...) { }
+#define __ASSERT(test, fmt, ...) {(void)(test)}
 #define __ASSERT_EVAL(expr1, expr2, test, fmt, ...) expr1
-#define __ASSERT_NO_MSG(test) { }
+#define __ASSERT_NO_MSG(test) {(void)(test)}
 #define __ASSERT_POST_ACTION() { }
 #endif
 
