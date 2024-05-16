@@ -48,6 +48,13 @@ LOG_MODULE_REGISTER(bt_hci_driver);
 #define SPI_MAX_TX_MSG_LEN 524
 #define SPI_MAX_RX_MSG_LEN 258
 
+/* The controller may be unavailable to receive packets because it is busy
+ * on processing something or have packets to send to host. Need to free the
+ * SPI bus and wait some moment to try again.
+ */
+#define SPI_BUSY_WAIT_INTERVAL_MS 25
+#define SPI_BUSY_TX_ATTEMPTS      200
+
 static uint8_t __noinit rxmsg[SPI_MAX_RX_MSG_LEN];
 static const struct device *spi_dev = DEVICE_DT_GET(SPI_DEV_NODE);
 static struct spi_config spi_cfg = {
@@ -84,15 +91,27 @@ static inline int bt_spi_transceive(void *tx, uint32_t tx_len, void *rx, uint32_
 static int spi_send_packet(uint8_t *data, uint16_t len)
 {
 	int ret;
+	uint16_t fail_count = 0;
 
-	/* Wait for SPI bus to be available */
-	k_sem_take(&sem_spi_available, K_FOREVER);
+	do {
+		/* Wait for SPI bus to be available */
+		k_sem_take(&sem_spi_available, K_FOREVER);
 
-	/* Send the SPI packet to controller */
-	ret = bt_apollo_spi_send(data, len, bt_spi_transceive);
+		/* Send the SPI packet to controller */
+		ret = bt_apollo_spi_send(data, len, bt_spi_transceive);
 
-	/* Free the SPI bus */
-	k_sem_give(&sem_spi_available);
+		/* Free the SPI bus */
+		k_sem_give(&sem_spi_available);
+
+		if (ret) {
+			/* Give some chance to controller to complete the processing or
+			 * packets sending.
+			 */
+			k_sleep(K_MSEC(SPI_BUSY_WAIT_INTERVAL_MS));
+		} else {
+			break;
+		}
+	} while (fail_count++ < SPI_BUSY_TX_ATTEMPTS);
 
 	return ret;
 }
