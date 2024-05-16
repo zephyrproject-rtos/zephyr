@@ -236,41 +236,9 @@ Console
 
 There are two possible options for Zephyr console output:
 
-- through USART2 which is available on SWD connector (CN4). In this case a JTAG adapter
-  can be used to connect STEVAL-STWINBX1 and have both SWD and console lines available.
 
-  To enable console and shell over UART
-
-  - switch the console lines from cdc_acm to uart4
-    (:file:`boards/st/steval_stwinbx1/steval_stwinbx1.dts`)
-
-  - comment out the USB configuration macros
-    (:file:`boards/st/steval_stwinbx1/steval_stwinbx1_defconfig`)
-
-.. code-block:: dts
-   :caption: boards/st/steval_stwinbx1/steval_stwinbx1.dts
-
-   / {
-       chosen {
-          zephyr,console = &usart2;
-          zephyr,shell-uart = &usart2;
-          //zephyr,console = &cdc_acm_uart0;
-          //zephyr,shell-uart = &cdc_acm_uart0;
-        };
-     };
-
-.. code-block:: Kconfig
-   :caption: boards/st/steval_stwinbx1/steval_stwinbx1_defconfig
-
-   # Comment out following USB config lines when
-   # switching console to UART
-   #CONFIG_USB_DEVICE_STACK=y
-   #CONFIG_USB_DEVICE_VID=0x0483
-   #CONFIG_USB_DEVICE_PID=0x5740
-   #CONFIG_USB_DEVICE_PRODUCT="Zephyr CDC STEval-STWinbx1"
-   #CONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=n
-
-- through USB as USB CDC/ACM class. This is the default case present in the board dts file.
+- through USB as USB CDC/ACM class. This is the default case present in the board dts file
+  and is enabled by :kconfig:option:`CONFIG_BOARD_SERIAL_BACKEND_CDC_ACM`.
 
 .. code-block:: dts
    :caption: boards/st/steval_stwinbx1/steval_stwinbx1.dts
@@ -287,6 +255,23 @@ There are two possible options for Zephyr console output:
         };
      };
 
+- through USART2 which is available on SWD connector (CN4). In this case a JTAG adapter
+  can be used to connect STEVAL-STWINBX1 and have both SWD and console lines available.
+
+  To enable console and shell over UART:
+
+  - in your prj.conf, override the board's default configuration by setting :code:`CONFIG_BOARD_SERIAL_BACKEND_CDC_ACM=n`
+
+  - add an overlay file named ``<board>.overlay``:
+
+.. code-block:: dts
+
+   / {
+       chosen {
+          zephyr,console = &usart2;
+          zephyr,shell-uart = &usart2;
+        };
+     };
 
 
 Console default settings are 115200 8N1.
