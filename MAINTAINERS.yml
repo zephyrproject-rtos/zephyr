@@ -3153,6 +3153,7 @@ Synopsys Platforms:
   files:
     - soc/snps/
     - boards/snps/
+    - boards/qemu/arc/
     - samples/boards/arc_secure_services/
     - scripts/west_commands/runners/mdb.py
     - scripts/west_commands/tests/test_mdb.py
