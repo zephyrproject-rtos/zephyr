@@ -38,8 +38,8 @@ int spi_number;
 sspi_struct *sspi_instance[SSPI_MAX_COUNT];
 
 /* configuration from device tree */
-// int sclk_config[5] = DT_PROP(DT_NODELABEL(spi0), sclk_configure);
-// int comm_config[5] = DT_PROP(DT_NODELABEL(spi0), comm_configure);
+int sclk_config[5] = DT_PROP(DT_NODELABEL(spi0), sclk_configure);
+int comm_config[5] = DT_PROP(DT_NODELABEL(spi0), comm_configure);
 
 /* variables used to configure spi */
 int pol;
@@ -885,6 +885,57 @@ static int spi_shakti_transceive(const struct device *dev,
   sspi_shakti_init(dev);
   sclk_shakti_config(dev, pol, pha, prescale, setup_time, hold_time);
   k_mutex_lock(&(((struct spi_shakti_cfg*)(dev->config))->mutex),K_FOREVER);
+
+#ifdef simplex_rx 
+
+  if (comm_config[2] == SIMPLEX_RX)
+  {
+    sspi_shakti_comm_control_config(dev, master_mode, lsb_first, comm_mode, spi_size);
+    spi_context_buffers_setup(&SPI_DATA(dev)->ctx, NULL, rx_bufs, 1);
+
+    if (spi_size == DATA_SIZE_8)
+    {
+      sspi8_shakti_receive_data(dev, rx_bufs->buffers);  
+    }
+
+    if (spi_size == DATA_SIZE_16)
+    {
+      sspi16_shakti_receive_data(dev, rx_bufs->buffers);
+    }
+
+    if (spi_size == DATA_SIZE_32)
+    {
+      sspi32_shakti_receive_data(dev, rx_bufs->buffers);
+    }
+  }
+
+#endif
+
+#ifdef simplex_tx
+
+  if (comm_config[2] == SIMPLEX_TX)
+  {
+    sspi_shakti_comm_control_config(dev, master_mode, lsb_first, comm_mode, spi_size);
+    spi_context_buffers_setup(&SPI_DATA(dev)->ctx, tx_bufs, NULL, 1);
+
+    if (spi_size == DATA_SIZE_8)
+    {
+      sspi8_shakti_transmit_data(dev, tx_bufs->buffers); 
+    }
+
+    if (spi_size == DATA_SIZE_16)
+    {
+      sspi16_shakti_transmit_data(dev, tx_bufs->buffers);
+    }
+
+    if (spi_size == DATA_SIZE_32)
+    {
+      sspi32_shakti_transmit_data(dev, tx_bufs->buffers);
+    }
+  }
+
+#endif
+
   if (comm_mode == FULL_DUPLEX)
   {
     sspi_shakti_comm_control_config(dev, master_mode, lsb_first, comm_mode, spi_size);
@@ -938,6 +989,7 @@ static int spi_shakti_transceive(const struct device *dev,
 static int spi_shakti_release(const struct device *dev,
 		       const struct spi_config *config)
 {
+  k_mutex_unlock(&(((struct spi_shakti_cfg*)(dev->config))->mutex));
 	// spi_context_unlock_unconditionally(&SPI_DATA(dev)->ctx);
 	return 0;
 }
