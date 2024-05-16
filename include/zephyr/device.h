@@ -732,22 +732,6 @@ size_t z_device_get_all_static(const struct device **devices);
 /**
  * @brief Verify that a device is ready for use.
  *
- * This is the implementation underlying device_is_ready(), without the overhead
- * of a syscall wrapper.
- *
- * @param dev pointer to the device in question.
- *
- * @retval true If the device is ready for use.
- * @retval false If the device is not ready for use or if a NULL device pointer
- * is passed as argument.
- *
- * @see device_is_ready()
- */
-bool z_device_is_ready(const struct device *dev);
-
-/**
- * @brief Verify that a device is ready for use.
- *
  * Indicates whether the provided device pointer is for a device known to be
  * in a state where it can be used with its standard API.
  *
@@ -762,11 +746,6 @@ bool z_device_is_ready(const struct device *dev);
  * is passed as argument.
  */
 __syscall bool device_is_ready(const struct device *dev);
-
-static inline bool z_impl_device_is_ready(const struct device *dev)
-{
-	return z_device_is_ready(dev);
-}
 
 /**
  * @brief Initialize a device.
