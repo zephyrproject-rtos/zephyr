@@ -157,8 +157,6 @@ struct bt_l2cap_le_endpoint {
 	uint16_t				mtu;
 	/** Endpoint Maximum PDU payload Size */
 	uint16_t				mps;
-	/** Endpoint initial credits */
-	uint16_t				init_credits;
 	/** Endpoint credits */
 	atomic_t			credits;
 };

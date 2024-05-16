@@ -350,6 +350,10 @@ Bluetooth Host
 
   (:github:`71686`)
 
+* The field :code:`init_credits` in :c:type:`bt_l2cap_le_endpoint` has been removed as it was no
+  longer used in Zephyr 3.4.0 and later. Any references to this field should be removed. No further
+  action is needed.
+
 Networking
 **********
 
