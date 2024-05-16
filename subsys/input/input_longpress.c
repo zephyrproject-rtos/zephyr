@@ -71,12 +71,14 @@ static void longpress_cb(const struct device *dev, struct input_event *evt)
 	if (evt->value) {
 		entry->long_fired = false;
 		k_work_schedule(&entry->work, K_MSEC(cfg->long_delays_ms));
+		if (cfg->short_codes != NULL) {
+			input_report_key(dev, cfg->short_codes[i], 1, true, K_FOREVER);
+		}
 	} else {
 		k_work_cancel_delayable(&entry->work);
 		if (entry->long_fired) {
 			input_report_key(dev, cfg->long_codes[i], 0, true, K_FOREVER);
 		} else if (cfg->short_codes != NULL) {
-			input_report_key(dev, cfg->short_codes[i], 1, true, K_FOREVER);
 			input_report_key(dev, cfg->short_codes[i], 0, true, K_FOREVER);
 		}
 	}
