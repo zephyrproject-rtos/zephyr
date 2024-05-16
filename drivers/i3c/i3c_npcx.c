@@ -40,9 +40,8 @@ LOG_MODULE_REGISTER(npcx_i3c, CONFIG_I3C_LOG_LEVEL);
 #define MCLKD_FREQ_45_MHZ MHZ(45)
 
 #define I3C_STATUS_CLR_MASK                                                                        \
-	(BIT(NPCX_I3C_MSTATUS_TGTSTART) | BIT(NPCX_I3C_MSTATUS_MCTRLDONE) |                        \
-	 BIT(NPCX_I3C_MSTATUS_COMPLETE) | BIT(NPCX_I3C_MSTATUS_IBIWON) |                           \
-	 BIT(NPCX_I3C_MSTATUS_NOWCNTLR))
+	(BIT(NPCX_I3C_MSTATUS_MCTRLDONE) | BIT(NPCX_I3C_MSTATUS_COMPLETE) |                        \
+	 BIT(NPCX_I3C_MSTATUS_IBIWON) | BIT(NPCX_I3C_MSTATUS_NOWCNTLR))
 
 #define HDR_DDR_CMD_AND_CRC_SZ_WORD 0x2 /* 2 words =  Command(1 word) + CRC(1 word) */
 #define HDR_RD_CMD                  0x80
@@ -358,7 +357,7 @@ static int npcx_i3c_request_emit_start(struct i3c_reg *inst, uint8_t addr,
 
 	/* Check NACK after MCTRLDONE is get */
 	if (IS_BIT_SET(inst->MERRWARN, NPCX_I3C_MERRWARN_NACK)) {
-		LOG_DBG("%s: nack", __func__);
+		LOG_DBG("Address nacked");
 		return -ENODEV;
 	}
 
@@ -384,8 +383,8 @@ static inline int npcx_i3c_request_emit_stop(struct i3c_reg *inst)
 	uint32_t i3c_state = npcx_i3c_state_get(inst);
 
 	/* Make sure we are in a state where we can emit STOP */
-	if ((i3c_state != MSTATUS_STATE_NORMACT) && (i3c_state != MSTATUS_STATE_DAA)) {
-		LOG_ERR("Request stop state error, state= %#x", i3c_state);
+	if (i3c_state == MSTATUS_STATE_IDLE) {
+		LOG_WRN("Request stop in idle state, state= %#x", i3c_state);
 		return -ECANCELED;
 	}
 
@@ -431,7 +430,7 @@ static inline int npcx_i3c_xfer_stop(struct i3c_reg *inst)
 	int ret;
 
 	state = npcx_i3c_state_get(inst);
-	LOG_DBG("%s, state=%d", __func__, state);
+	LOG_DBG("Current working state=%d", state);
 
 	switch (state) {
 	case MSTATUS_STATE_NORMACT: /* SDR */
@@ -589,7 +588,7 @@ static int npcx_i3c_xfer_write_fifo(struct i3c_reg *inst, uint8_t *buf, uint8_t 
 		/* Check tx fifo not full */
 		if (WAIT_FOR(!IS_BIT_SET(inst->MDATACTRL, NPCX_I3C_MDATACTRL_TXFULL),
 			     NPCX_I3C_CHK_TIMEOUT_US, NULL) == false) {
-			LOG_DBG("%s: Check tx fifo not full timed out", __func__);
+			LOG_DBG("Check tx fifo not full timed out");
 			return -ETIMEDOUT;
 		}
 
@@ -696,14 +695,13 @@ static int npcx_i3c_xfer_write_fifo_dma(const struct device *dev, uint8_t *buf, 
 	/* Wait I3C COMPLETE */
 	ret = i3c_ctrl_wait_completion(dev);
 	if (ret < 0) {
-		LOG_DBG("%s: Check complete time out, buf_size:%d", __func__, buf_sz);
+		LOG_DBG("Check complete time out, buf_size:%d", buf_sz);
 		goto out_wr_fifo_dma;
 	}
 
 	/* Check and clear DMA TC after complete */
 	if (!IS_BIT_SET(mdma_inst->MDMA_CTL1, NPCX_MDMA_CTL_TC)) {
-		LOG_DBG("%s: DMA busy, TC=%d", __func__,
-			IS_BIT_SET(mdma_inst->MDMA_CTL1, NPCX_MDMA_CTL_TC));
+		LOG_DBG("DMA busy, TC=%d", IS_BIT_SET(mdma_inst->MDMA_CTL1, NPCX_MDMA_CTL_TC));
 		ret = -EBUSY;
 		goto out_wr_fifo_dma;
 	}
@@ -755,7 +753,7 @@ static int npcx_i3c_xfer_read_fifo_dma(const struct device *dev, uint8_t *buf, u
 	/* Wait MDMA TC */
 	ret = i3c_ctrl_wait_completion(dev);
 	if (ret < 0) {
-		LOG_DBG("%s: Check DMA done time out", __func__);
+		LOG_DBG("Check DMA done time out");
 	} else {
 		ret = buf_sz - mdma_inst->MDMA_CTCNT0; /* Set transferred count */
 		LOG_DBG("Read cnt=%d", ret);
@@ -923,7 +921,7 @@ static int npcx_i3c_do_one_xfer(struct i3c_reg *inst, uint8_t addr,
 		/* Wait message transfer complete */
 		if (WAIT_FOR(IS_BIT_SET(inst->MSTATUS, NPCX_I3C_MSTATUS_COMPLETE),
 			     NPCX_I3C_CHK_TIMEOUT_US, NULL) == false) {
-			LOG_DBG("%s: timed out addr 0x%02x, buf_sz %u", __func__, addr, buf_sz);
+			LOG_DBG("Wait COMPLETE timed out, addr 0x%02x, buf_sz %u", addr, buf_sz);
 
 			ret = -ETIMEDOUT;
 			emit_stop = true;
@@ -1467,9 +1465,10 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 
 	if (npcx_i3c_state_get(inst) != MSTATUS_STATE_TGTREQ) {
 		LOG_DBG("IBI work %p running not because of IBI", work);
+		LOG_ERR("%s: IBI not in TGTREQ state, state : %#x", __func__,
+			npcx_i3c_state_get(inst));
 		LOG_ERR("%s: MSTATUS 0x%08x MERRWARN 0x%08x", __func__, inst->MSTATUS,
 			inst->MERRWARN);
-
 		npcx_i3c_request_emit_stop(inst);
 
 		goto out_ibi_work;
@@ -1482,6 +1481,9 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 	if (WAIT_FOR(IS_BIT_SET(inst->MSTATUS, NPCX_I3C_MSTATUS_IBIWON), NPCX_I3C_CHK_TIMEOUT_US,
 		     NULL) == false) {
 		LOG_ERR("IBI work, IBIWON timeout");
+		LOG_ERR("%s: MSTATUS 0x%08x MERRWARN 0x%08x", __func__, inst->MSTATUS,
+			inst->MERRWARN);
+		npcx_i3c_request_emit_stop(inst);
 
 		goto out_ibi_work;
 	}
@@ -1491,21 +1493,14 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 
 	switch (ibitype) {
 	case MSTATUS_IBITYPE_IBI:
-		target = i3c_dev_list_i3c_addr_find(dev_list, (uint8_t)ibiaddr);
-		if (target != NULL) {
-			ret = npcx_i3c_xfer_read_fifo(inst, &payload[0], sizeof(payload));
-			if (ret >= 0) {
-				payload_sz = (size_t)ret;
-			} else {
-				LOG_ERR("Error reading IBI payload");
-
-				npcx_i3c_request_emit_stop(inst);
-
-				goto out_ibi_work;
-			}
+		ret = npcx_i3c_xfer_read_fifo(inst, &payload[0], sizeof(payload));
+		if (ret >= 0) {
+			payload_sz = (size_t)ret;
 		} else {
-			/* NACK IBI coming from unknown device */
-			npcx_i3c_ibi_respond_nack(inst);
+			LOG_ERR("Error reading IBI payload");
+			npcx_i3c_request_emit_stop(inst);
+
+			goto out_ibi_work;
 		}
 		break;
 	case MSTATUS_IBITYPE_HJ:
@@ -1515,12 +1510,14 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 	case MSTATUS_IBITYPE_CR:
 		LOG_DBG("Controller role handoff not supported");
 		npcx_i3c_ibi_respond_nack(inst);
+		npcx_i3c_request_emit_stop(inst);
 		break;
 	default:
 		break;
 	}
 
 	if (npcx_i3c_has_error(inst)) {
+		LOG_ERR("%s: unexpected error, ibi type:%d", __func__, ibitype);
 		/*
 		 * If the controller detects any errors, simply
 		 * emit a STOP to abort the IBI. The target will
@@ -1533,10 +1530,13 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 
 	switch (ibitype) {
 	case MSTATUS_IBITYPE_IBI:
+		target = i3c_dev_list_i3c_addr_find(dev_list, (uint8_t)ibiaddr);
 		if (target != NULL) {
 			if (i3c_ibi_work_enqueue_target_irq(target, &payload[0], payload_sz) != 0) {
 				LOG_ERR("Error enqueue IBI IRQ work");
 			}
+		} else {
+			LOG_ERR("IBI (MDB) target not in the list");
 		}
 
 		/* Finishing the IBI transaction */
@@ -1548,7 +1548,7 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 		}
 		break;
 	case MSTATUS_IBITYPE_CR:
-		/* Not supported */
+		/* Not supported, for future use. */
 		break;
 	default:
 		break;
@@ -1792,15 +1792,23 @@ static void npcx_i3c_isr(const struct device *dev)
 #endif /* CONFIG_I3C_NPCX_DMA */
 
 #ifdef CONFIG_I3C_USE_IBI
+	int ret;
+
 	/* Target start detected */
 	if (IS_BIT_SET(inst->MSTATUS, NPCX_I3C_MSTATUS_TGTSTART)) {
 		LOG_DBG("ISR TGTSTART !");
 
 		/* Disable further target initiated IBI interrupt */
 		inst->MINTCLR = BIT(NPCX_I3C_MINTCLR_TGTSTART);
+		/* Clear TGTSTART interrupt */
+		inst->MSTATUS = BIT(NPCX_I3C_MSTATUS_TGTSTART);
 
 		/* Handle IBI in workqueue */
-		i3c_ibi_work_enqueue_cb(dev, npcx_i3c_ibi_work);
+		ret = i3c_ibi_work_enqueue_cb(dev, npcx_i3c_ibi_work);
+		if (ret < 0) {
+			LOG_ERR("Enqueuing ibi work fail, ret %d", ret);
+			inst->MINTSET = BIT(NPCX_I3C_MINTSET_TGTSTART);
+		}
 	}
 #endif /* CONFIG_I3C_USE_IBI */
 
