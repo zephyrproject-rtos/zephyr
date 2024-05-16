@@ -217,6 +217,11 @@ class LogParserV1(LogParser):
                 size = self.data_types.get_sizeof(arg_data_type)
                 unpack_fmt = self.data_types.get_formatter(arg_data_type)
 
+                # Align the argument list by rounding up
+                stack_align = self.data_types.get_stack_alignment(arg_data_type)
+                if stack_align > 1:
+                    arg_offset = int((arg_offset + (align - 1)) / align) * align
+
                 one_arg = struct.unpack_from(unpack_fmt, arg_list, arg_offset)[0]
 
                 if fmt == 's':
@@ -226,7 +231,8 @@ class LogParserV1(LogParser):
                 arg_offset += size
 
                 # Align the offset
-                arg_offset = int((arg_offset + align - 1) / align) * align
+                if stack_align > 1:
+                    arg_offset = int((arg_offset + align - 1) / align) * align
 
         return tuple(args)
 
