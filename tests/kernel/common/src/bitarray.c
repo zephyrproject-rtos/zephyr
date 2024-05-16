@@ -760,6 +760,113 @@ ZTEST(bitarray, test_bitarray_xor)
 	zassert_equal(ret, -EINVAL, "sys_bitarray_xor() returned unexpected value: %d", ret);
 }
 
+ZTEST(bitarray, test_bitarray_find_nth_set)
+{
+	int ret;
+	size_t found_at;
+
+	/* Bitarrays have embedded spinlocks and can't on the stack. */
+	if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
+		ztest_test_skip();
+	}
+
+	SYS_BITARRAY_DEFINE(ba, 128);
+
+	printk("Testing bit array nth bit set finding spanning single bundle\n");
+
+	/* Pre-populate the bits */
+	ba.bundles[0] = 0x80000001;
+	ba.bundles[1] = 0x80000001;
+	ba.bundles[2] = 0x80000001;
+	ba.bundles[3] = 0x80000001;
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, 1, 0, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 0, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, 32, 0, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 0, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 2, 32, 0, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 31, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, 31, 1, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 31, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 2, 31, 1, &found_at);
+	zassert_equal(ret, 1, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+
+	printk("Testing bit array nth bit set finding spanning multiple bundles\n");
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, 128, 0, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 0, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 8, 128, 0, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 127, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 8, 128, 1, &found_at);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_find_nth_set() returned unexpected value: %d",
+		      ret);
+
+	ret = sys_bitarray_find_nth_set(&ba, 7, 127, 1, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 127, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 7, 127, 0, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 96, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 6, 127, 1, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 96, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 6, 127, 1, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 96, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, 32, 48, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 63, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	ret = sys_bitarray_find_nth_set(&ba, 2, 32, 48, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+	zassert_equal(found_at, 64, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+		      found_at);
+
+	printk("Testing error cases\n");
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, 128, 0, &found_at);
+	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, 128, 1, &found_at);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_find_nth_set() returned unexpected value: %d",
+		      ret);
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, 129, 0, &found_at);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_find_nth_set() returned unexpected value: %d",
+		      ret);
+
+	ret = sys_bitarray_find_nth_set(&ba, 0, 128, 0, &found_at);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_find_nth_set() returned unexpected value: %d",
+		      ret);
+}
+
 ZTEST(bitarray, test_bitarray_region_set_clear)
 {
 	int ret;

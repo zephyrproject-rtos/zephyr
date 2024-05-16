@@ -185,6 +185,28 @@ int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
 int sys_bitarray_xor(sys_bitarray_t *dst, sys_bitarray_t *other, size_t num_bits, size_t offset);
 
 /**
+ * Find nth bit set in region
+ *
+ * This counts the number of bits set (@p count) in a
+ * region (@p offset, @p num_bits) and returns the index (@p found_at)
+ * of the nth set bit, if it exists, as long with a zero return value.
+ *
+ * If it does not exist, @p found_at is not updated and the method returns
+ *
+ * @param[in]  bitarray Bitarray struct
+ * @param[in]  n        Nth bit set to look for
+ * @param[in]  num_bits Number of bits to check, must be larger than 0
+ * @param[in]  offset   Starting bit position
+ * @param[out] found_at Index of the nth bit set, if found
+ *
+ * @retval 0       Operation successful
+ * @retval 1       Nth bit set was not found in region
+ * @retval -EINVAL Invalid argument (e.g. out-of-bounds access, trying to count 0 bits, etc.)
+ */
+int sys_bitarray_find_nth_set(sys_bitarray_t *bitarray, size_t n, size_t num_bits, size_t offset,
+			      size_t *found_at);
+
+/**
  * Count bits set in a bit array region
  *
  * This counts the number of bits set (@p count) in a
