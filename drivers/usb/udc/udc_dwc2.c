@@ -69,7 +69,7 @@ struct udc_dwc2_data {
 	uint32_t max_pktcnt;
 	uint32_t tx_len[16];
 	unsigned int dynfifosizing : 1;
-	/* Number of endpoints in addition to control endpoint */
+	/* Number of endpoints including control endpoint */
 	uint8_t numdeveps;
 	/* Number of IN endpoints including control endpoint */
 	uint8_t ineps;
@@ -948,7 +948,7 @@ static void dwc2_unset_unused_fifo(const struct device *dev)
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct udc_ep_config *tmp;
 
-	for (uint8_t i = priv->ineps; i > 0; i--) {
+	for (uint8_t i = priv->ineps - 1U; i > 0; i--) {
 		tmp = udc_get_ep_cfg(dev, i | USB_EP_DIR_IN);
 
 		if (tmp->stat.enabled && (priv->txf_set & BIT(i))) {
@@ -1396,10 +1396,10 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	}
 
 	/* Get the number or endpoints and IN endpoints we can use later */
-	priv->numdeveps = usb_dwc2_get_ghwcfg2_numdeveps(ghwcfg2);
-	priv->ineps = usb_dwc2_get_ghwcfg4_ineps(ghwcfg4);
-	LOG_DBG("Number of endpoints (NUMDEVEPS) %u", priv->numdeveps);
-	LOG_DBG("Number of IN endpoints (INEPS) %u", priv->ineps);
+	priv->numdeveps = usb_dwc2_get_ghwcfg2_numdeveps(ghwcfg2) + 1U;
+	priv->ineps = usb_dwc2_get_ghwcfg4_ineps(ghwcfg4) + 1U;
+	LOG_DBG("Number of endpoints (NUMDEVEPS + 1) %u", priv->numdeveps);
+	LOG_DBG("Number of IN endpoints (INEPS + 1) %u", priv->ineps);
 
 	LOG_DBG("Number of periodic IN endpoints (NUMDEVPERIOEPS) %u",
 		usb_dwc2_get_ghwcfg4_numdevperioeps(ghwcfg4));
