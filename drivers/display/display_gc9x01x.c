@@ -46,6 +46,7 @@ struct gc9x01x_config {
 	uint16_t y_resolution;
 	bool inversion;
 	const void *regs;
+	uint8_t ncs;
 };
 
 /* Initialization command data struct  */
@@ -497,6 +498,7 @@ static int gc9x01x_init(const struct device *dev)
 
 	if (!spi_is_ready_dt(&config->spi)) {
 		LOG_ERR("SPI device is not ready");
+		printf("SPi not ready");
 		return -ENODEV;
 	}
 
@@ -679,14 +681,15 @@ static const struct display_driver_api gc9x01x_api = {
 #define GC9X01X_INIT(inst)                                                                         \
 	GC9X01X_REGS_INIT(inst);                                                                   \
 	static const struct gc9x01x_config gc9x01x_config_##inst = {                               \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),        \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0) ,        \
 		.cmd_data = GPIO_DT_SPEC_INST_GET(inst, cmd_data_gpios),                           \
 		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                         \
 		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \
 		.orientation = DT_INST_ENUM_IDX(inst, orientation),                                \
 		.x_resolution = DT_INST_PROP(inst, width),                                         \
 		.y_resolution = DT_INST_PROP(inst, height),                                        \
-		.inversion = DT_INST_PROP(inst, display_inversion),                                \
+		.inversion = DT_INST_PROP(inst, display_inversion),\
+		.ncs = DT_INST_PROP(inst, ncs),							\
 		.regs = &gc9x01x_regs_##inst,                                                      \
 	};                                                                                         \
 	static struct gc9x01x_data gc9x01x_data_##inst;                                            \

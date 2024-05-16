@@ -61,6 +61,11 @@ properties:
     description: |
       Display inversion mode. Every bit is inverted from the frame memory to
       the display.
+  
+  ncs:
+    type: int
+    description: |
+      Chip select pin number.
 
   pwrctrl1:
     type: uint8-array
@@ -144,3 +149,5 @@ properties:
       0x34
     ]
     description: Framerate register value
+    
+on-bus: spi

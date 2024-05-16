@@ -37,6 +37,8 @@ chosen {
 		sclk_configure = <0x0 0x0 0x10 0x0 0x0>;
         comm_configure = <0x01 0x00 0x03 0x08>;
 		clock-frequency = <10000000>;
+
+
 };
 &gpio0 {
 	status = "okay";

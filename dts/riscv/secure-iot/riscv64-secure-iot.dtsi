@@ -78,18 +78,17 @@
 			     #size-cells = <0>;
            compatible = "shakti,spi";
            reg = <0x0 0x20100 0x0 0x100>;
-
-           gc9x01_display: gc9x01x@1 {
-            compatible = "galaxycore,gc9x01x";
-            reg = <1>;
-            spi-max-frequency = <100000000>;
-            cmd-data-gpios = <&gpio0 1 0>;
-            reset-gpios = <&gpio0 2 0>;
-            pixel-format = <16>;
-    
-            width = <240>;
-            height = <240>;
-          };
+          gc9x01_display: gc9x01x@1 {
+          compatible = "galaxycore,gc9x01x";
+          reg = <1>;
+          spi-max-frequency = <2000000>;
+          cmd-data-gpios = <&gpio0 1 0>;
+          reset-gpios = <&gpio0 2 0>;
+          pixel-format = <16>;
+          ncs = <5>;
+          width = <240>;
+          height = <240>;
+        };
     };
 
     gpio0: gpio@40200 {
