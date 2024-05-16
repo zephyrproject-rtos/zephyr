@@ -1131,8 +1131,13 @@ class ProjectBuilder(FilterBuilder):
             if isinstance(harness, Pytest):
                 harness.pytest_run(instance.handler.get_test_timeout())
             else:
-                instance.handler.handle(harness)
-
+                try:
+                    instance.handler.handle(harness)
+                except FileNotFoundError as error:
+                    instance.status = "error"
+                    instance.reason = str(error)
+                    logger.error(instance.reason)
+                    return
         sys.stdout.flush()
 
     def gather_metrics(self, instance: TestInstance):
