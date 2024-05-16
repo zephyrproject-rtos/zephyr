@@ -29,6 +29,20 @@ documentation and are prefixed with :literal:`hci_` in their folder names.
    connections will fail. You can force a re-paring and new key to be created
    by removing the device from the associated devices list on the host.
 
+.. warning::
+   The samples demonstrate the minimum viable code to use a given API or
+   feature. **They do not necessarily use best practices for using that API
+   safely**. This is done in the interest of brevity and readability, keeping
+   boilerplate code to a minimum.
+
+   For example, a lot of samples do blocking actions in callbacks, be it
+   initiating a connection, starting advertising, elevating security or
+   subscribing to GATT characteristics. That is not a good practice.
+
+   Callbacks should (unless otherwise noted) be treated as interrupt requests,
+   and only serve to raise a flag (or set a state) to be serviced from a
+   lower-priority thread.
+
 .. toctree::
    :maxdepth: 1
    :glob:
