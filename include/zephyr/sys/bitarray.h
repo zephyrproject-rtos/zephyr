@@ -169,6 +169,23 @@ int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
 		       size_t *offset);
 
 /**
+ * Count bits set in a bit array region
+ *
+ * This counts the number of bits set (@p count) in a
+ * region (@p offset, @p num_bits).
+ *
+ * @param[in]  bitarray Bitarray struct
+ * @param[in]  num_bits Number of bits to check, must be larger than 0
+ * @param[in]  offset   Starting bit position
+ * @param[out] count    Number of bits set in the region if successful
+ *
+ * @retval 0       Operation successful
+ * @retval -EINVAL Invalid argument (e.g. out-of-bounds access, trying to count 0 bits, etc.)
+ */
+int sys_bitarray_popcount_region(sys_bitarray_t *bitarray, size_t num_bits, size_t offset,
+				 size_t *count);
+
+/**
  * Free bits in a bit array
  *
  * This marks the number of bits (@p num_bits) starting from @p offset

@@ -210,6 +210,55 @@ static void set_region(sys_bitarray_t *bitarray, size_t offset,
 	}
 }
 
+int sys_bitarray_popcount_region(sys_bitarray_t *bitarray, size_t num_bits, size_t offset,
+				 size_t *count)
+{
+	k_spinlock_key_t key;
+	size_t idx;
+	struct bundle_data bd;
+	int ret;
+
+	key = k_spin_lock(&bitarray->lock);
+
+	__ASSERT_NO_MSG(bitarray != NULL);
+	__ASSERT_NO_MSG(bitarray->num_bits > 0);
+
+	if (num_bits == 0 || offset + num_bits > bitarray->num_bits) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	CHECKIF(count == NULL) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	setup_bundle_data(bitarray, &bd, offset, num_bits);
+
+	if (bd.sidx == bd.eidx) {
+		/* Start/end at same bundle */
+		*count = POPCOUNT(bitarray->bundles[bd.sidx] & bd.smask);
+	} else {
+		/* Start/end at different bundle.
+		 * So count the bits in start and end bundles
+		 * separately with correct mask applied. For in-between bundles,
+		 * count all bits.
+		 */
+		*count = 0;
+		*count += POPCOUNT(bitarray->bundles[bd.sidx] & bd.smask);
+		*count += POPCOUNT(bitarray->bundles[bd.eidx] & bd.emask);
+		for (idx = bd.sidx + 1; idx < bd.eidx; idx++) {
+			*count += POPCOUNT(bitarray->bundles[idx]);
+		}
+	}
+
+	ret = 0;
+
+out:
+	k_spin_unlock(&bitarray->lock, key);
+	return ret;
+}
+
 int sys_bitarray_set_bit(sys_bitarray_t *bitarray, size_t bit)
 {
 	k_spinlock_key_t key;
