@@ -682,6 +682,11 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 		auth = ssp_get_auth(conn);
 	}
 
+	if (!bt_get_bondable()) {
+		/* If bondable is false, clear bonding flag. */
+		auth = BT_HCI_SET_NO_BONDING(auth);
+	}
+
 	cp = net_buf_add(resp_buf, sizeof(*cp));
 	bt_addr_copy(&cp->bdaddr, &evt->bdaddr);
 	cp->capability = get_io_capa();
