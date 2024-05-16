@@ -41,7 +41,11 @@ LOG_MODULE_REGISTER(flash_nrf_rram, CONFIG_FLASH_LOG_LEVEL);
 
 #define RRAM DT_INST(0, soc_nv_flash)
 
+#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+#define RRAM_START NRF_RRAM_BASE_ADDR
+#else
 #define RRAM_START DT_REG_ADDR(RRAM)
+#endif
 #define RRAM_SIZE  DT_REG_SIZE(RRAM)
 
 #define PAGE_SIZE  DT_PROP(RRAM, erase_block_size)
