@@ -27,12 +27,14 @@ void gnss_publish_data(const struct device *dev, const struct gnss_data *data)
 void gnss_publish_satellites(const struct device *dev, const struct gnss_satellite *satellites,
 			     uint16_t size)
 {
-	K_SPINLOCK(&lock) {
-		STRUCT_SECTION_FOREACH(gnss_satellites_callback, callback) {
-			if (callback->dev == NULL || callback->dev == dev) {
-				callback->callback(dev, satellites, size);
-			}
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	STRUCT_SECTION_FOREACH(gnss_satellites_callback, callback) {
+		if (callback->dev == NULL || callback->dev == dev) {
+			callback->callback(dev, satellites, size);
 		}
 	}
+
+	k_spin_unlock(&lock, key);
 }
 #endif
