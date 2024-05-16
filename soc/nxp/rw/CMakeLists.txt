@@ -18,4 +18,6 @@ set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/li
 
 zephyr_include_directories(.)
 
+zephyr_linker_sources(RODATA firmwares.ld)
+
 zephyr_linker_sources(RAM_SECTIONS sections.ld)
