@@ -5731,14 +5731,17 @@ struct k_poll_event {
 
 	/** per-type data */
 	union {
-		void *obj;
-		struct k_poll_signal *signal;
-		struct k_sem *sem;
-		struct k_fifo *fifo;
-		struct k_queue *queue;
-		struct k_msgq *msgq;
+		/* The typed_* fields below are used by K_POLL_EVENT_*INITIALIZER() macros to ensure
+		 * type safety of polled objects.
+		 */
+		void *obj, *typed_K_POLL_TYPE_IGNORE;
+		struct k_poll_signal *signal, *typed_K_POLL_TYPE_SIGNAL;
+		struct k_sem *sem, *typed_K_POLL_TYPE_SEM_AVAILABLE;
+		struct k_fifo *fifo, *typed_K_POLL_TYPE_FIFO_DATA_AVAILABLE;
+		struct k_queue *queue, *typed_K_POLL_TYPE_DATA_AVAILABLE;
+		struct k_msgq *msgq, *typed_K_POLL_TYPE_MSGQ_DATA_AVAILABLE;
 #ifdef CONFIG_PIPES
-		struct k_pipe *pipe;
+		struct k_pipe *pipe, *typed_K_POLL_TYPE_PIPE_DATA_AVAILABLE;
 #endif
 	};
 };
@@ -5751,7 +5754,7 @@ struct k_poll_event {
 	.mode = _event_mode, \
 	.unused = 0, \
 	{ \
-		.obj = _event_obj, \
+		.typed_##_event_type = _event_obj, \
 	}, \
 	}
 
@@ -5764,7 +5767,7 @@ struct k_poll_event {
 	.mode = _event_mode, \
 	.unused = 0, \
 	{ \
-		.obj = _event_obj, \
+		.typed_##_event_type = _event_obj, \
 	}, \
 	}
 
