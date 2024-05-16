@@ -2639,6 +2639,11 @@ void bt_set_bondable(bool enable)
 	bondable = enable;
 }
 
+bool bt_get_bondable(void)
+{
+	return bondable;
+}
+
 void bt_le_oob_set_sc_flag(bool enable)
 {
 	sc_oobd_present = enable;
