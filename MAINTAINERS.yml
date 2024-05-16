@@ -1820,6 +1820,7 @@ Release Notes:
     - teburd
     - yperess
     - tristan-google
+    - ubieda
   files:
     - drivers/sensor/
     - include/zephyr/drivers/sensor.h
