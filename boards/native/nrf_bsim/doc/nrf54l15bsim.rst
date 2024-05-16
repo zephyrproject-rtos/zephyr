@@ -38,18 +38,21 @@ This boards include models of some of the nRF54L15 SOC peripherals:
 
 * DPPI (Distributed Programmable Peripheral Interconnect)
 * EGU (Event Generator Unit)
+* FICR (Factory Information Configuration Registers)
 * GRTC (Global Real-time Counter)
 * PPIB (PPI Bridge)
+* RRAMC (Resistive RAM Controller)
 * RTC (Real Time Counter)
 * TEMP (Temperature sensor)
 * TIMER
+* UICR (User Information Configuration Registers)
 
 and will use the same drivers as the nrf54l15pdk targets for these.
 For more information on what is modeled to which level of detail,
 check the `HW models implementation status`_.
 
-Note that unlike a real nrf54l15 device, the nrf54l15bsim boards have unlimited RAM and flash for
-code.
+Note that unlike a real nrf54l15 device, the nrf54l15bsim boards have unlimited RAM, and code does
+not occupy their RRAM.
 
 .. _BabbleSim:
    https://BabbleSim.github.io
