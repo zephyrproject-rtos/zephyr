@@ -16,8 +16,6 @@ if (NOT DEFINED blob_file)
     message(FATAL_ERROR "Unsupported controller. Please select a BT conntroller, refer to ./driver/bluetooth/hci/Kconfig.nxp")
 endif()
 
-if(EXISTS ${blob_file})
-    configure_file(${blob_file} ${blob_gen_file} COPYONLY)
-else()
-    message(FATAL_ERROR "Can't find controller firmware, please fetch blobs by using command: \'west blobs fetch hal_nxp\'")
-endif()
+zephyr_blobs_verify(FILES ${blob_file} REQUIRED)
+
+configure_file(${blob_file} ${blob_gen_file} COPYONLY)
