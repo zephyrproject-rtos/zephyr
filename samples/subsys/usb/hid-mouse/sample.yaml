@@ -8,6 +8,8 @@ common:
     - gpio
 tests:
   sample.usb.hid-mouse:
+    platform_exclude:
+      - frdm_mcxn947/mcxn947/cpu0
     tags: usb
   sample.usb_device_next.hid-mouse:
     platform_allow:
