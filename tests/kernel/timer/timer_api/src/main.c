@@ -28,15 +28,22 @@ struct timer_data {
  */
 #define INEXACT_MS_CONVERT ((CONFIG_SYS_CLOCK_TICKS_PER_SEC % MSEC_PER_SEC) != 0)
 
-#if CONFIG_NRF_RTC_TIMER
-/* On Nordic SOCs one or both of the tick and busy-wait clocks may
- * derive from sources that have slews that sum to +/- 13%.
+#if CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT && CONFIG_NRF_RTC_TIMER
+/* On Nordic SOCs using RTC_TIMER as the system timer and custom k_busy_wait() implementation,
+ * one or both of the tick and busy-wait clocks may derive from sources that have slews that
+ * sum to +/- 13%.
  */
 #define BUSY_TICK_SLEW_PPM 130000U
+#elif CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT && CONFIG_NRF_GRTC_TIMER
+/* On Nordic SOCs using GRTC_TIMER as the system timer and custom k_busy_wait() implementation,
+ * one or both of the tick and busy-wait clocks may derive from sources that have slews that
+ * sum to +/- 2%.
+ */
+#define BUSY_TICK_SLEW_PPM 20000U
 #else
-/* On other platforms assume the clocks are perfectly aligned. */
+/* In other cases assume the clocks are perfectly aligned. */
 #define BUSY_TICK_SLEW_PPM 0U
-#endif
+#endif /* CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT && CONFIG_NRF_RTC_TIMER */
 #define PPM_DIVISOR 1000000U
 
 /* If the tick clock is faster or slower than the busywait clock the
