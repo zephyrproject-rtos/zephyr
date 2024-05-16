@@ -31,6 +31,19 @@ static const struct bt_has_preset_ops preset_ops = {
 	.select = preset_select,
 };
 
+static void start_adv(void)
+{
+	int err;
+
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, AD_SIZE, NULL, 0);
+	if (err) {
+		FAIL("Advertising failed to start (err %d)\n", err);
+		return;
+	}
+
+	LOG_DBG("Advertising successfully started");
+}
+
 static void test_common(void)
 {
 	struct bt_has_features_param has_param = {0};
@@ -46,13 +59,7 @@ static void test_common(void)
 
 	LOG_DBG("Bluetooth initialized");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, AD_SIZE, NULL, 0);
-	if (err) {
-		FAIL("Advertising failed to start (err %d)\n", err);
-		return;
-	}
-
-	LOG_DBG("Advertising successfully started");
+	start_adv();
 
 	has_param.type = BT_HAS_HEARING_AID_TYPE_BINAURAL;
 	has_param.preset_sync_support = true;
@@ -115,6 +122,7 @@ static void test_offline_behavior(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 	WAIT_FOR_UNSET_FLAG(flag_connected);
+	start_adv();
 
 	preset_param.index = test_preset_index_3;
 	preset_param.properties = test_preset_properties;
