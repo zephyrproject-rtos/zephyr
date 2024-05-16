@@ -1821,6 +1821,7 @@ Release Notes:
     - yperess
     - tristan-google
     - ubieda
+    - jeppenodgaard
   files:
     - drivers/sensor/
     - include/zephyr/drivers/sensor.h
