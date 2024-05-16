@@ -28,7 +28,7 @@ static const struct z_exc_handle exceptions[] = {
  #define NO_REG "                "
 #endif
 
-#ifdef CONFIG_RISCV_EXCEPTION_STACK_TRACE
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
 #define MAX_STACK_FRAMES 8
 
 struct stackframe {
@@ -103,7 +103,7 @@ static void unwind_stack(const z_arch_esf_t *esf)
 
 	LOG_ERR("");
 }
-#endif /* CONFIG_RISCV_EXCEPTION_STACK_TRACE */
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */
 
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 				       const z_arch_esf_t *esf)
@@ -167,9 +167,9 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const z_arch_esf
 		LOG_ERR("");
 	}
 
-#ifdef CONFIG_RISCV_EXCEPTION_STACK_TRACE
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
 		unwind_stack(esf);
-#endif /* CONFIG_RISCV_EXCEPTION_STACK_TRACE */
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */
 
 #endif /* CONFIG_EXCEPTION_DEBUG */
 	z_fatal_error(reason, esf);

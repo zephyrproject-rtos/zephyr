@@ -371,9 +371,9 @@ config DEBUG_INFO
 config EXCEPTION_STACK_TRACE
 	bool "Attempt to print stack traces upon exceptions"
 	default y
+	depends on ARCH_HAS_STACK_TRACE
 	depends on PRINTK
 	depends on DEBUG_INFO
-	depends on !OMIT_FRAME_POINTER
 	help
 	  If the architecture fatal handling code supports it, attempt to
 	  print a stack trace of function memory addresses when an

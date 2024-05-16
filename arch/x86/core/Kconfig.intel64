@@ -32,10 +32,11 @@ config X86_EXCEPTION_STACK_SIZE
 config X86_EXCEPTION_STACK_TRACE
 	bool
 	default y
-	depends on EXCEPTION_STACK_TRACE
+	select DEPRECATED
+	depends on !ARCH_HAS_STACK_TRACE
 	depends on NO_OPTIMIZATIONS
 	help
-	  Internal config to enable runtime stack traces on fatal exceptions.
+	  [DEPRECATED] Internal config to enable runtime stack traces on fatal exceptions.
 
 config SCHED_IPI_VECTOR
 	int "IDT vector to use for scheduler IPI"
@@ -87,5 +88,10 @@ config X86_USERSPACE
 	 This option enables APIs to drop a thread's privileges down to ring 3,
 	 supporting user-level threads that are protected from each other and
 	 from crashing the kernel.
+
+config ARCH_HAS_STACK_TRACE
+	default y
+	depends on NO_OPTIMIZATIONS
+	depends on !OMIT_FRAME_POINTER
 
 endif # X86_64

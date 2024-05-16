@@ -666,6 +666,12 @@ config ARCH_SUPPORTS_MEM_MAPPED_STACKS
 	help
 	  Select when the architecture supports memory mapped stacks.
 
+config ARCH_HAS_STACK_TRACE
+	bool
+	help
+	  Enabled when the conditions are met for the architecture to
+	  support stack trace.
+
 #
 # Other architecture related options
 #

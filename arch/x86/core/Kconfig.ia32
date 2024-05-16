@@ -166,9 +166,10 @@ endmenu
 config X86_EXCEPTION_STACK_TRACE
 	bool
 	default y
-	depends on EXCEPTION_STACK_TRACE
+	select DEPRECATED
+	depends on !ARCH_HAS_STACK_TRACE
 	help
-	  Internal config to enable runtime stack traces on fatal exceptions.
+	  [DEPRECATED] Internal config to enable runtime stack traces on fatal exceptions.
 
 config X86_USE_THREAD_LOCAL_STORAGE
 	bool
@@ -192,5 +193,9 @@ config X86_RUNTIME_IRQ_STATS
 	  Add irq runtime statistics to allow runtime profiling irq performance
 	  data with Host tools, enable this and implement platform dependent API
 	  runtime_irq_stats().
+
+config ARCH_HAS_STACK_TRACE
+	default y
+	depends on !OMIT_FRAME_POINTER
 
 endif # !X86_64

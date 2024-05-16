@@ -115,6 +115,10 @@ config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
 config IPM_CONSOLE_STACK_SIZE
 	default 2048
 
+config ARCH_HAS_STACK_TRACE
+	default y
+	depends on ARM64_ENABLE_FRAME_POINTER
+
 config AARCH64_IMAGE_HEADER
 	bool "Add image header"
 	default y if ARM_MMU || ARM_MPU

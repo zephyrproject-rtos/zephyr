@@ -194,7 +194,7 @@ static void esf_dump(const z_arch_esf_t *esf)
 	LOG_ERR("x18: 0x%016llx  lr:  0x%016llx", esf->x18, esf->lr);
 }
 
-#ifdef CONFIG_ARM64_ENABLE_FRAME_POINTER
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
 static void esf_unwind(const z_arch_esf_t *esf)
 {
 	/*
@@ -354,9 +354,9 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 		esf_dump(esf);
 	}
 
-#ifdef CONFIG_ARM64_ENABLE_FRAME_POINTER
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
 	esf_unwind(esf);
-#endif /* CONFIG_ARM64_ENABLE_FRAME_POINTER */
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
 	z_fatal_error(reason, esf);

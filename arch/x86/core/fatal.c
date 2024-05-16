@@ -131,7 +131,7 @@ static inline uintptr_t esf_get_code(const z_arch_esf_t *esf)
 #endif
 }
 
-#if defined(CONFIG_X86_EXCEPTION_STACK_TRACE)
+#if defined(CONFIG_EXCEPTION_STACK_TRACE)
 struct stack_frame {
 	uintptr_t next;
 	uintptr_t ret_addr;
@@ -186,7 +186,7 @@ static void unwind_stack(uintptr_t base_ptr, uint16_t cs)
 		base_ptr = frame->next;
 	}
 }
-#endif /* CONFIG_X86_EXCEPTION_STACK_TRACE */
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */
 
 static inline uintptr_t get_cr3(const z_arch_esf_t *esf)
 {
@@ -226,11 +226,11 @@ static void dump_regs(const z_arch_esf_t *esf)
 	LOG_ERR("RSP: 0x%016lx RFLAGS: 0x%016lx CS: 0x%04lx CR3: 0x%016lx",
 		esf->rsp, esf->rflags, esf->cs & 0xFFFFU, get_cr3(esf));
 
-#ifdef CONFIG_X86_EXCEPTION_STACK_TRACE
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
 	LOG_ERR("call trace:");
 #endif
 	LOG_ERR("RIP: 0x%016lx", esf->rip);
-#ifdef CONFIG_X86_EXCEPTION_STACK_TRACE
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
 	unwind_stack(esf->rbp, esf->cs);
 #endif
 }
@@ -245,11 +245,11 @@ static void dump_regs(const z_arch_esf_t *esf)
 	LOG_ERR("EFLAGS: 0x%08x CS: 0x%04x CR3: 0x%08lx", esf->eflags,
 		esf->cs & 0xFFFFU, get_cr3(esf));
 
-#ifdef CONFIG_X86_EXCEPTION_STACK_TRACE
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
 	LOG_ERR("call trace:");
 #endif
 	LOG_ERR("EIP: 0x%08x", esf->eip);
-#ifdef CONFIG_X86_EXCEPTION_STACK_TRACE
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
 	unwind_stack(esf->ebp, esf->cs);
 #endif
 }
