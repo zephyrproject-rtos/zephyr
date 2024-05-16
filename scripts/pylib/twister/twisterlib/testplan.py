@@ -34,6 +34,7 @@ from twisterlib.error import TwisterRuntimeError
 from twisterlib.platform import Platform
 from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.testinstance import TestInstance
+from twisterlib.twister_path import TPath
 from twisterlib.quarantine import Quarantine
 
 import list_boards
@@ -526,13 +527,13 @@ class TestPlan:
 
                 logger.debug("Found possible testsuite in " + dirpath)
 
-                suite_yaml_path = os.path.join(dirpath, filename)
+                suite_yaml_path = TPath(os.path.join(dirpath, filename))
                 suite_path = os.path.dirname(suite_yaml_path)
 
                 for alt_config_root in self.env.alt_config_root:
-                    alt_config = os.path.join(os.path.abspath(alt_config_root),
+                    alt_config = TPath(os.path.join(os.path.abspath(alt_config_root),
                                               os.path.relpath(suite_path, root),
-                                              filename)
+                                              filename))
                     if os.path.exists(alt_config):
                         logger.info("Using alternative configuration from %s" %
                                     os.path.normpath(alt_config))

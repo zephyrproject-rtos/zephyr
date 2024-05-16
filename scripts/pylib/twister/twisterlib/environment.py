@@ -8,7 +8,6 @@
 import os
 import pkg_resources
 import sys
-from pathlib import Path
 import json
 import logging
 import subprocess
@@ -23,6 +22,7 @@ logger.setLevel(logging.DEBUG)
 
 from twisterlib.error import TwisterRuntimeError
 from twisterlib.log_helper import log_command
+from twisterlib.twister_path import TPath
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -101,7 +101,7 @@ Artificially long but functional example:
         help="Load a list of tests and platforms to be run from file.")
 
     case_select.add_argument(
-        "-T", "--testsuite-root", action="append", default=[], type = norm_path,
+        "-T", "--testsuite-root", action="append", default=[], type = TPath,
         help="Base directory to recursively search for test cases. All "
              "testcase.yaml files under here will be processed. May be "
              "called multiple times. Defaults to the 'samples/' and "
@@ -206,7 +206,7 @@ Artificially long but functional example:
         and global timeout multiplier (this parameter)""")
 
     test_xor_subtest.add_argument(
-        "-s", "--test", "--scenario", action="append", type = norm_path,
+        "-s", "--test", "--scenario", action="append", type = TPath,
         help="Run only the specified testsuite scenario. These are named by "
              "<path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
 
@@ -244,17 +244,17 @@ Artificially long but functional example:
 
     # Start of individual args place them in alpha-beta order
 
-    board_root_list = ["%s/boards" % ZEPHYR_BASE,
-                       "%s/subsys/testsuite/boards" % ZEPHYR_BASE]
+    board_root_list = [TPath("%s/boards" % ZEPHYR_BASE),
+                       TPath("%s/subsys/testsuite/boards" % ZEPHYR_BASE)]
 
     modules = zephyr_module.parse_modules(ZEPHYR_BASE)
     for module in modules:
         board_root = module.meta.get("build", {}).get("settings", {}).get("board_root")
         if board_root:
-            board_root_list.append(os.path.join(module.project, board_root, "boards"))
+            board_root_list.append(TPath(os.path.join(module.project, board_root, "boards")))
 
     parser.add_argument(
-        "-A", "--board-root", action="append", default=board_root_list,
+        "-A", "--board-root", action="append", default=board_root_list, type=TPath,
         help="""Directory to search for board configuration files. All .yaml
 files in the directory will be processed. The directory should have the same
 structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
@@ -301,7 +301,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         "--cmake-only", action="store_true",
         help="Only run cmake, do not build or run.")
 
-    parser.add_argument("--coverage-basedir", default=ZEPHYR_BASE,
+    parser.add_argument("--coverage-basedir", default=ZEPHYR_BASE, type=TPath,
                         help="Base source directory for coverage report.")
 
     parser.add_argument("--coverage-platform", action="append", default=[],
@@ -319,7 +319,8 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
                              " Valid options for 'lcov' tool are: " +
                              ','.join(supported_coverage_formats['lcov']) + " (html,lcov - default).")
 
-    parser.add_argument("--test-config", action="store", default=os.path.join(ZEPHYR_BASE, "tests", "test_config.yaml"),
+    parser.add_argument("--test-config", action="store", type=TPath,
+        default=TPath(os.path.join(ZEPHYR_BASE, "tests", "test_config.yaml")),
         help="Path to file with plans and test configurations.")
 
     parser.add_argument("--level", action="store",
@@ -375,7 +376,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
                         help="Do not filter based on toolchain, use the set "
                              " toolchain unconditionally")
 
-    parser.add_argument("--gcov-tool", type=Path, default=None,
+    parser.add_argument("--gcov-tool", type=TPath, default=None,
                         help="Path to the gcov tool to use for code coverage "
                              "reports")
 
@@ -456,6 +457,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         "-z", "--size",
         action="append",
         metavar='FILENAME',
+        type=TPath,
         help="Ignore all other command line options and just produce a report to "
              "stdout with ROM/RAM section sizes on the specified binary images.")
 
@@ -486,7 +488,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     parser.add_argument("--list-tags", action="store_true",
                         help="List all tags occurring in selected tests.")
 
-    parser.add_argument("--log-file", metavar="FILENAME", action="store",
+    parser.add_argument("--log-file", metavar="FILENAME", action="store", type=TPath,
                         help="Specify a file where to save logs.")
 
     parser.add_argument(
@@ -541,15 +543,15 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         )
 
     parser.add_argument(
-        "-O", "--outdir",
-        default=os.path.join(os.getcwd(), "twister-out"),
+        "-O", "--outdir", type=TPath,
+        default=TPath(os.path.join(os.getcwd(), "twister-out")),
         help="Output directory for logs and binaries. "
              "Default is 'twister-out' in the current directory. "
              "This directory will be cleaned unless '--no-clean' is set. "
              "The '--clobber-output' option controls what cleaning does.")
 
     parser.add_argument(
-        "-o", "--report-dir",
+        "-o", "--report-dir", type=TPath,
         help="""Output reports containing results of the test run into the
         specified directory.
         The output will be both in JSON and JUNIT format
@@ -600,6 +602,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         "--quarantine-list",
         action="append",
         metavar="FILENAME",
+        type=TPath,
         help="Load list of test scenarios under quarantine. The entries in "
              "the file need to correspond to the test scenarios names as in "
              "corresponding tests .yaml files. These scenarios "
@@ -754,7 +757,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     parser.add_argument("extra_test_args", nargs=argparse.REMAINDER,
         help="Additional args following a '--' are passed to the test binary")
 
-    parser.add_argument("--alt-config-root", action="append", default=[],
+    parser.add_argument("--alt-config-root", action="append", default=[], type=TPath,
         help="Alternative test configuration root/s. When a test is found, "
              "Twister will check if a test configuration file exist in any of "
              "the alternative test configuration root folders. For example, "
@@ -796,8 +799,8 @@ def parse_arguments(parser, args, options = None, on_init=True):
 
         # check again and make sure we have something set
         if not options.testsuite_root:
-            options.testsuite_root = [os.path.join(ZEPHYR_BASE, "tests"),
-                                     os.path.join(ZEPHYR_BASE, "samples")]
+            options.testsuite_root = [TPath(os.path.join(ZEPHYR_BASE, "tests")),
+                                     TPath(os.path.join(ZEPHYR_BASE, "samples"))]
 
     if options.last_metrics or options.compare_report:
         options.enable_size_report = True
@@ -930,17 +933,17 @@ class TwisterEnv:
                 self.board_roots = [self.options.board_root]
             else:
                 self.board_roots = self.options.board_root
-            self.outdir = os.path.abspath(options.outdir)
+            self.outdir = TPath(os.path.abspath(options.outdir))
         else:
             self.board_roots = None
             self.outdir = None
 
-        self.snippet_roots = [Path(ZEPHYR_BASE)]
+        self.snippet_roots = [TPath(ZEPHYR_BASE)]
         modules = zephyr_module.parse_modules(ZEPHYR_BASE)
         for module in modules:
             snippet_root = module.meta.get("build", {}).get("settings", {}).get("snippet_root")
             if snippet_root:
-                self.snippet_roots.append(Path(module.project) / snippet_root)
+                self.snippet_roots.append(TPath(module.project) / snippet_root)
 
         self.hwm = None
 
@@ -1035,7 +1038,7 @@ class TwisterEnv:
         return results
 
     def get_toolchain(self):
-        toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/verify-toolchain.cmake')
+        toolchain_script = TPath(ZEPHYR_BASE) / TPath('cmake/verify-toolchain.cmake')
         result = self.run_cmake_script([toolchain_script, "FORMAT=json"])
 
         try:
