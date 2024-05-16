@@ -94,6 +94,7 @@ ZTEST(device_runtime_api, test_api)
 	/* device is initially suspended */
 	(void)pm_device_state_get(test_dev, &state);
 	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+	zassert_equal(pm_device_runtime_usage(test_dev), 0);
 
 	/*** get + put ***/
 
@@ -107,6 +108,7 @@ ZTEST(device_runtime_api, test_api)
 	/* usage: 1, +1, resume: no */
 	ret = pm_device_runtime_get(test_dev);
 	zassert_equal(ret, 0);
+	zassert_equal(pm_device_runtime_usage(test_dev), 2);
 
 	/* usage: 2, -1, suspend: no */
 	ret = pm_device_runtime_put(test_dev);
@@ -118,6 +120,7 @@ ZTEST(device_runtime_api, test_api)
 	/* usage: 1, -1, suspend: yes */
 	ret = pm_device_runtime_put(test_dev);
 	zassert_equal(ret, 0);
+	zassert_equal(pm_device_runtime_usage(test_dev), 0);
 
 	(void)pm_device_state_get(test_dev, &state);
 	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
@@ -125,12 +128,14 @@ ZTEST(device_runtime_api, test_api)
 	/* usage: 0, -1, suspend: no (unbalanced call) */
 	ret = pm_device_runtime_put(test_dev);
 	zassert_equal(ret, -EALREADY);
+	zassert_equal(pm_device_runtime_usage(test_dev), 0);
 
 	/*** get + asynchronous put until suspended ***/
 
 	/* usage: 0, +1, resume: yes */
 	ret = pm_device_runtime_get(test_dev);
 	zassert_equal(ret, 0);
+	zassert_equal(pm_device_runtime_usage(test_dev), 1);
 
 	(void)pm_device_state_get(test_dev, &state);
 	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
@@ -140,11 +145,13 @@ ZTEST(device_runtime_api, test_api)
 	/* usage: 1, -1, suspend: yes (queued) */
 	ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
 	zassert_equal(ret, 0);
+	zassert_equal(pm_device_runtime_usage(test_dev), 0);
 
 	if (IS_ENABLED(CONFIG_TEST_PM_DEVICE_ISR_SAFE)) {
 		/* In sync mode async put is equivalent as normal put. */
 		(void)pm_device_state_get(test_dev, &state);
 		zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+		zassert_equal(pm_device_runtime_usage(test_dev), 0);
 	} else {
 		(void)pm_device_state_get(test_dev, &state);
 		zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
@@ -156,6 +163,7 @@ ZTEST(device_runtime_api, test_api)
 		/* usage: 0, -1, suspend: no (unbalanced call) */
 		ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
 		zassert_equal(ret, -EALREADY);
+		zassert_equal(pm_device_runtime_usage(test_dev), 0);
 
 		/* unblock test driver and let it finish */
 		test_driver_pm_done(test_dev);
@@ -250,6 +258,7 @@ ZTEST(device_runtime_api, test_api)
 	/* Put operation should fail due the state be locked. */
 	ret = pm_device_runtime_disable(test_dev);
 	zassert_equal(ret, 0);
+	zassert_equal(pm_device_runtime_usage(test_dev), -ENOTSUP);
 }
 
 DEVICE_DEFINE(pm_unsupported_device, "PM Unsupported", NULL, NULL, NULL, NULL,
