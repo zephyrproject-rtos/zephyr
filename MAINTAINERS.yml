@@ -3645,7 +3645,7 @@ ITE Platforms:
     - drivers/sensor/ite/
     - drivers/*/*it8xxx2*.c
     - drivers/*/*_ite_*
-    - dts/bindings/*/*ite*
+    - dts/bindings/*/ite*
     - dts/riscv/ite/
     - soc/ite/
   labels:
