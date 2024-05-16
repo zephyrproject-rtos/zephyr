@@ -7,4 +7,8 @@ project(sensor_shell)
 
 target_sources(app PRIVATE src/main.c)
 
+target_sources_ifdef(CONFIG_SAMPLES_SENSOR_SHELL_FAKE_SENSOR app PRIVATE
+  src/fake_sensor.c
+)
+
 target_include_directories(app PRIVATE include)
