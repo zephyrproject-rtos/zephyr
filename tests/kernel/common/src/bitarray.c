@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
@@ -517,6 +518,103 @@ ZTEST(bitarray, test_bitarray_alloc_free)
 	}
 
 	alloc_and_free_interval();
+}
+
+ZTEST(bitarray, test_bitarray_popcount_region)
+{
+	int ret;
+	size_t count;
+
+	/* Bitarrays have embedded spinlocks and can't on the stack. */
+	if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
+		ztest_test_skip();
+	}
+
+	SYS_BITARRAY_DEFINE(ba, 128);
+
+	printk("Testing bit array region popcount spanning single bundle\n");
+
+	/* Pre-populate the bits */
+	ba.bundles[0] = 0x00000005;
+	ba.bundles[1] = 0x00000000;
+	ba.bundles[2] = 0x00000000;
+	ba.bundles[3] = 0x00000000;
+
+	ret = sys_bitarray_popcount_region(&ba, 1, 0, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	ret = sys_bitarray_popcount_region(&ba, 1, 1, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 0, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	ret = sys_bitarray_popcount_region(&ba, 2, 0, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	ret = sys_bitarray_popcount_region(&ba, 3, 0, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 2, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	ret = sys_bitarray_popcount_region(&ba, 3, 1, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	printk("Testing bit array region popcount spanning multiple bundles\n");
+
+	/* Pre-populate the bits.
+	 * First and last bit of bitarray are set
+	 */
+	ba.bundles[0] = 0x00000001;
+	ba.bundles[1] = 0x00000000;
+	ba.bundles[2] = 0x00000000;
+	ba.bundles[3] = 0x80000000;
+
+	ret = sys_bitarray_popcount_region(&ba, 126, 1, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 0, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	ret = sys_bitarray_popcount_region(&ba, 126, 0, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	ret = sys_bitarray_popcount_region(&ba, 127, 1, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+	ret = sys_bitarray_popcount_region(&ba, 1, 127, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	ret = sys_bitarray_popcount_region(&ba, 128, 0, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+	zassert_equal(count, 2, "sys_bitarray_popcount_region() returned unexpected count: %d",
+		      count);
+
+	printk("Testing edge/error cases\n");
+	ret = sys_bitarray_popcount_region(&ba, 0, 0, &count);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_popcount_region() returned unexpected value: %d",
+		      ret);
+	ret = sys_bitarray_popcount_region(&ba, 0, 128, &count);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_popcount_region() returned unexpected value: %d",
+		      ret);
+	ret = sys_bitarray_popcount_region(&ba, 128, 0, &count);
+	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
+
+	ret = sys_bitarray_popcount_region(&ba, 128, 1, &count);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_popcount_region() returned unexpected value: %d",
+		      ret);
+	ret = sys_bitarray_popcount_region(&ba, 129, 0, &count);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_popcount_region() returned unexpected value: %d",
+		      ret);
 }
 
 ZTEST(bitarray, test_bitarray_region_set_clear)
