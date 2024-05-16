@@ -30,10 +30,10 @@ enum log_dict_output_msg_type {
  */
 struct log_dict_output_normal_msg_hdr_t {
 	uint8_t type;
-	uint32_t domain:3;
-	uint32_t level:3;
-	uint32_t package_len:10;
-	uint32_t data_len:12;
+	uint32_t domain:4;
+	uint32_t level:4;
+	uint32_t package_len:16;
+	uint32_t data_len:16;
 	uintptr_t source;
 	log_timestamp_t timestamp;
 } __packed;
