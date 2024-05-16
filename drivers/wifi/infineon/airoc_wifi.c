@@ -220,10 +220,14 @@ static whd_result_t airoc_wifi_host_buffer_get(whd_buffer_t *buffer, whd_buffer_
 	struct net_buf *buf;
 
 	buf = net_buf_alloc_len(&airoc_pool, size, K_NO_WAIT);
-	if (buf == NULL) {
+	if ((buf == NULL) || (buf->size < size)) {
 		return WHD_BUFFER_ALLOC_FAIL;
 	}
 	*buffer = buf;
+
+	/* Set buffer size */
+	(void) airoc_wifi_buffer_set_size(*buffer, size);
+
 	return WHD_SUCCESS;
 }
 
@@ -288,8 +292,9 @@ static int airoc_mgmt_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	/* Allocate Network Buffer from pool with Packet Length + Data Header */
-	buf = net_buf_alloc_len(&airoc_pool, pkt_len + sizeof(data_header_t), K_NO_WAIT);
-	if (buf == NULL) {
+	ret = airoc_wifi_host_buffer_get((whd_buffer_t *) &buf, WHD_NETWORK_TX,
+					 pkt_len + sizeof(data_header_t), 0);
+	if ((ret != WHD_SUCCESS) || (buf == NULL)) {
 		return -EIO;
 	}
 
