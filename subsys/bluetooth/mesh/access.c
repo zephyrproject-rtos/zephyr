@@ -1487,12 +1487,13 @@ static int element_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple
 	}
 
 	if (!bt_mesh_model_has_key(model, ctx->app_idx)) {
-		LOG_ERR("Wrong key");
+		LOG_DBG("Model at 0x%04x is not bound to app idx %d", elem->rt->addr, ctx->app_idx);
 		return ACCESS_STATUS_WRONG_KEY;
 	}
 
 	if (!model_has_dst(model, ctx->recv_dst, ctx->uuid)) {
-		LOG_ERR("Invalid address 0x%02x", ctx->recv_dst);
+		LOG_DBG("Dst addr 0x%02x is invalid for model at 0x%04x", ctx->recv_dst,
+			elem->rt->addr);
 		return ACCESS_STATUS_INVALID_ADDRESS;
 	}
 
