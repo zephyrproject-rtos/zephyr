@@ -259,6 +259,63 @@ out:
 	return ret;
 }
 
+int sys_bitarray_xor(sys_bitarray_t *dst, sys_bitarray_t *other, size_t num_bits, size_t offset)
+{
+	k_spinlock_key_t key_dst, key_other;
+	int ret;
+	size_t idx;
+	struct bundle_data bd;
+
+	key_dst = k_spin_lock(&dst->lock);
+	key_other = k_spin_lock(&other->lock);
+
+	__ASSERT_NO_MSG(dst != NULL);
+	__ASSERT_NO_MSG(dst->num_bits > 0);
+	__ASSERT_NO_MSG(other != NULL);
+	__ASSERT_NO_MSG(other->num_bits > 0);
+
+	if (dst->num_bits != other->num_bits) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (num_bits == 0 || offset + num_bits > dst->num_bits) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	setup_bundle_data(other, &bd, offset, num_bits);
+
+	if (bd.sidx == bd.eidx) {
+		/* Start/end at same bundle */
+		dst->bundles[bd.sidx] =
+			((other->bundles[bd.sidx] ^ dst->bundles[bd.sidx]) & bd.smask) |
+			(dst->bundles[bd.sidx] & ~bd.smask);
+	} else {
+		/* Start/end at different bundle.
+		 * So xor the bits in start and end bundles according to their bitmasks
+		 * separately. For in-between bundles,
+		 * xor all bits.
+		 */
+		dst->bundles[bd.sidx] =
+			((other->bundles[bd.sidx] ^ dst->bundles[bd.sidx]) & bd.smask) |
+			(dst->bundles[bd.sidx] & ~bd.smask);
+		dst->bundles[bd.eidx] =
+			((other->bundles[bd.eidx] ^ dst->bundles[bd.eidx]) & bd.emask) |
+			(dst->bundles[bd.eidx] & ~bd.emask);
+		for (idx = bd.sidx + 1; idx < bd.eidx; idx++) {
+			dst->bundles[idx] ^= other->bundles[idx];
+		}
+	}
+
+	ret = 0;
+
+out:
+	k_spin_unlock(&other->lock, key_other);
+	k_spin_unlock(&dst->lock, key_dst);
+	return ret;
+}
+
 int sys_bitarray_set_bit(sys_bitarray_t *bitarray, size_t bit)
 {
 	k_spinlock_key_t key;
