@@ -88,9 +88,6 @@ static uint8_t buffer_print_rx[BUF_SIZE * 5 + 1];
 static uint8_t buffer_print_tx2[BUF2_SIZE * 5 + 1];
 static uint8_t buffer_print_rx2[BUF2_SIZE * 5 + 1];
 
-static uint8_t large_buffer_print_tx[BUF3_SIZE * 5 + 1];
-static uint8_t large_buffer_print_rx[BUF3_SIZE * 5 + 1];
-
 static void to_display_format(const uint8_t *src, size_t size, char *dst)
 {
 	size_t i;
@@ -558,10 +555,6 @@ static int spi_complete_large_transfers(struct spi_dt_spec *spec)
 	}
 
 	if (memcmp(large_buffer_tx, large_buffer_rx, BUF3_SIZE)) {
-		to_display_format(large_buffer_tx, BUF3_SIZE, large_buffer_print_tx);
-		to_display_format(large_buffer_rx, BUF3_SIZE, large_buffer_print_rx);
-		LOG_ERR("Large Buffer contents are different: %s", large_buffer_print_tx);
-		LOG_ERR("                             vs: %s", large_buffer_print_rx);
 		zassert_false(1, "Large Buffer contents are different");
 		return -1;
 	}
@@ -691,10 +684,6 @@ static int spi_async_call(struct spi_dt_spec *spec)
 	}
 
 	if (memcmp(large_buffer_tx, large_buffer_rx, BUF3_SIZE)) {
-		to_display_format(large_buffer_tx, BUF3_SIZE, large_buffer_print_tx);
-		to_display_format(large_buffer_rx, BUF3_SIZE, large_buffer_print_rx);
-		LOG_ERR("Buffer 3 contents are different: %s", large_buffer_print_tx);
-		LOG_ERR("                             vs: %s", large_buffer_print_rx);
 		zassert_false(1, "Buffer 3 contents are different");
 		return -1;
 	}
