@@ -25,14 +25,6 @@ int arch_printk_char_out(int c)
 	register int ret_err __asm__ ("a3");
 
 	buf[0] = (char)c;
-
-	if (buf[0] == '\n') {
-		buf[1] = buf[0];
-		buf[0] = '\r';
-		a3++;
-		a5++;
-	}
-
 	__asm__ volatile ("simcall"
 				: "=a" (ret_val), "=a" (ret_err)
 				: "a" (a2), "a" (a3), "a" (a4), "a" (a5)
