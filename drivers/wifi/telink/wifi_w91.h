@@ -10,11 +10,10 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/net/wifi.h>
 #include <zephyr/net/net_l2.h>
+#include <zephyr/net/ethernet.h>
 #include <ipc/ipc_based_driver.h>
 
 #define W91_WIFI_L2_CTX_TYPE        void*
-#define W91_WIFI_L2_MTU             \
-	(CONFIG_IPC_SERVICE_ICMSG_CB_BUF_SIZE - sizeof(uint32_t))
 
 enum {
 	IPC_DISPATCHER_WIFI_L2_DATA = IPC_DISPATCHER_WIFI,
@@ -22,7 +21,7 @@ enum {
 
 __packed struct ipc_msg {
 	uint32_t id;
-	uint8_t data[W91_WIFI_L2_MTU];
+	uint8_t data[NET_ETH_MTU];
 };
 
 struct wifi_w91_data_l2 {

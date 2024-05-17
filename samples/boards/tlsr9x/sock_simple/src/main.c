@@ -17,7 +17,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sock_app, LOG_LEVEL_INF);
 
-#define ECHO_SERVER_IP            "192.168.60.89"
+#define ECHO_SERVER_IP            CONFIG_NET_CONFIG_PEER_IPV4_ADDR
 #define ECHO_SERVER_PORT          2024
 #define ECHO_SERVER_TIMEOUT_MS    1000
 #define ECHO_SERVER_BUF_SIZE      300
@@ -56,7 +56,9 @@ int main(void)
 			break;
 		}
 
-		for (bool error = false; !error;) {
+		uint8_t cnt = 0;
+
+		for (bool error = false; !error; cnt++) {
 
 			struct sockaddr_in server_addr = {
 				.sin_family = AF_INET,
@@ -73,7 +75,7 @@ int main(void)
 			size_t transmit_buf_len = sizeof(transmit_buf);
 
 			for (size_t i = 0; i < transmit_buf_len; i++) {
-				transmit_buf[i] = i;
+				transmit_buf[i] = cnt + i;
 			}
 
 			for (size_t i = 0; i < transmit_buf_len;) {
@@ -94,26 +96,28 @@ int main(void)
 			LOG_INF("sent message to: %s:%u",
 				ECHO_SERVER_IP, ntohs(server_addr.sin_port));
 
-			socklen_t server_addr_len = sizeof(server_addr);
-			static uint8_t receive_buf[sizeof(transmit_buf)];
-			ssize_t receive_buf_len =
-				recvfrom(sock, receive_buf, sizeof(receive_buf), 0,
-					(struct sockaddr *)&server_addr, &server_addr_len);
-			if (receive_buf_len == -1) {
-				LOG_ERR("recvfrom failed: (%d) %s", errno, strerror(errno));
-				continue;
-			}
-
-			if (receive_buf_len == transmit_buf_len) {
-				if (!memcmp(receive_buf, transmit_buf, transmit_buf_len)) {
-					LOG_INF("all OK");
+			for (bool rx_done = false; !rx_done;) {
+				socklen_t server_addr_len = sizeof(server_addr);
+				static uint8_t receive_buf[sizeof(transmit_buf)];
+				ssize_t receive_buf_len =
+					recvfrom(sock, receive_buf, sizeof(receive_buf), 0,
+						(struct sockaddr *)&server_addr, &server_addr_len);
+				if (receive_buf_len == -1) {
+					LOG_ERR("recvfrom failed: (%d) %s", errno, strerror(errno));
+					rx_done = true;
+					break;
+				} else if (receive_buf_len == transmit_buf_len) {
+					if (!memcmp(receive_buf, transmit_buf, transmit_buf_len)) {
+						LOG_INF("all OK");
+						rx_done = true;
+					} else {
+						LOG_ERR("transmit and receive mismatch");
+					}
 				} else {
-					LOG_ERR("transmit and receive mismatch");
+					LOG_ERR("transmit and receive lengths mismatch (%u - %u)",
+						(unsigned int)transmit_buf_len,
+						(unsigned int)receive_buf_len);
 				}
-			} else {
-				LOG_ERR("transmit and receive lengths mismatch (%u - %u)",
-					(unsigned int)transmit_buf_len,
-					(unsigned int)receive_buf_len);
 			}
 			k_msleep(ECHO_SERVER_DEADTIME_MS);
 		}

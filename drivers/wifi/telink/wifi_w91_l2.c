@@ -30,14 +30,12 @@ static int wifi_w91_send(struct net_if *iface, struct net_pkt *pkt)
 
 	do {
 		if (!pkt) {
-			LOG_ERR("tx no packet");
 			break;
 		}
 
 		const struct device *dev = net_if_get_device(iface);
 		struct wifi_w91_data *data = dev->data;
 		const struct wifi_w91_config *config = dev->config;
-
 		size_t tx_len = net_pkt_get_len(pkt);
 
 		if (!tx_len) {
@@ -58,7 +56,7 @@ static int wifi_w91_send(struct net_if *iface, struct net_pkt *pkt)
 		data->l2.ipc_tx.id = IPC_DISPATCHER_MK_ID(
 			IPC_DISPATCHER_WIFI_L2_DATA, config->instance_id);
 		ret = ipc_dispatcher_send(&data->l2.ipc_tx,
-			sizeof(uint32_t) + tx_len);
+			offsetof(struct ipc_msg, data) + tx_len);
 		if (ret < 0) {
 			LOG_ERR("tx ipc send failed");
 			break;
@@ -78,30 +76,20 @@ static void wifi_w91_on_rx_data(const void *data, size_t len, void *ctx)
 	struct net_pkt *rx = NULL;
 
 	do {
-		if (len < sizeof(uint32_t) + 1) {   /* ID, IP protocol */
+		if (len < offsetof(struct ipc_msg, data)) {
 			LOG_ERR("rx malformed ip packet");
 			break;
 		}
 
-		struct ipc_msg *ipc_rx = (struct ipc_msg *)data;
-		size_t rx_len = len - sizeof(uint32_t);
-		struct net_if *iface = (struct net_if *)ctx;
+		rx = net_pkt_rx_alloc_with_buffer((struct net_if *)ctx,
+			len - offsetof(struct ipc_msg, data), AF_UNSPEC, 0, K_NO_WAIT);
 
-#if CONFIG_NET_IPV6
-		if ((ipc_rx->data[0] & 0xf0) == 0x60) {
-			rx = net_pkt_rx_alloc_with_buffer(iface, rx_len, AF_INET6, 0, K_NO_WAIT);
-		}
-#endif /* CONFIG_NET_IPV6 */
-#if CONFIG_NET_IPV4
-		if ((ipc_rx->data[0] & 0xf0) == 0x40) {
-			rx = net_pkt_rx_alloc_with_buffer(iface, rx_len, AF_INET, 0, K_NO_WAIT);
-		}
-#endif /* CONFIG_NET_IPV4 */
 		if (!rx) {
 			LOG_ERR("rx ip packet not allocated");
 			break;
 		}
-		if (net_pkt_write(rx, ipc_rx->data, rx_len) < 0) {
+		if (net_pkt_write(rx, ((struct ipc_msg *)data)->data,
+			len - offsetof(struct ipc_msg, data)) < 0) {
 			LOG_ERR("rx write to a packet failed");
 			break;
 		}
@@ -120,6 +108,11 @@ static void wifi_w91_on_rx_data(const void *data, size_t len, void *ctx)
 static int wifi_w91_enable(struct net_if *iface, bool state)
 {
 	LOG_INF("%s [%u]", __func__, state);
+
+	__ASSERT(sizeof(struct ipc_msg) <= CONFIG_IPC_SERVICE_ICMSG_CB_BUF_SIZE,
+		"IPC_SERVICE_ICMSG_CB_BUF_SIZE can't contain Ethernet MTU. %u (at least %u)",
+		CONFIG_IPC_SERVICE_ICMSG_CB_BUF_SIZE, sizeof(struct ipc_msg));
+
 	const struct device *dev = net_if_get_device(iface);
 	struct wifi_w91_data *data = dev->data;
 	const struct wifi_w91_config *config = dev->config;

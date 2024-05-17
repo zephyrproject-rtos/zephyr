@@ -90,6 +90,6 @@ static const struct net_wifi_mgmt_offload wifi_w91_driver_api = {
 		NULL, &wifi_data_##n, &wifi_config_##n,                 \
 		CONFIG_TELINK_W91_IPC_DRIVERS_INIT_PRIORITY,            \
 		&wifi_w91_driver_api, W91_WIFI_L2,                      \
-		NET_L2_GET_CTX_TYPE(W91_WIFI_L2), W91_WIFI_L2_MTU);
+		NET_L2_GET_CTX_TYPE(W91_WIFI_L2), NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(NET_W91_DEFINE)
