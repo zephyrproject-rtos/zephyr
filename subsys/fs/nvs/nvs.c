@@ -359,25 +359,48 @@ static int nvs_flash_erase_sector(struct nvs_fs *fs, uint32_t addr)
 }
 
 /* crc update on allocation entry */
-static void nvs_ate_crc8_update(struct nvs_ate *entry)
+static void nvs_ate_crc_update(struct nvs_ate *entry)
 {
+#ifdef CONFIG_NVS_ATE_CRC8
 	uint8_t crc8;
 
-	crc8 = crc8_ccitt(0xff, entry, offsetof(struct nvs_ate, crc8));
-	entry->crc8 = crc8;
+	crc8 = crc8_ccitt(0xff, entry, offsetof(struct nvs_ate, crc));
+	entry->crc = crc8;
+#else
+	uint32_t crc_24;
+
+	crc_24 = crc24_pgp((uint8_t *) entry, offsetof(struct nvs_ate, crc));
+	/* Manually store the 3 bytes of CRC to the ATE, so it is also possible to
+	 * do retrieve these bytes the same way and this avoids any endianness issue.
+	 */
+	entry->crc[0] = (uint8_t) (crc_24 >> 16);
+	entry->crc[1] = (uint8_t) (crc_24 >> 8);
+	entry->crc[2] = (uint8_t) crc_24;
+#endif
 }
 
 /* crc check on allocation entry
  * returns 0 if OK, 1 on crc fail
  */
-static int nvs_ate_crc8_check(const struct nvs_ate *entry)
+static int nvs_ate_crc_check(const struct nvs_ate *entry)
 {
+#ifdef CONFIG_NVS_ATE_CRC8
 	uint8_t crc8;
 
-	crc8 = crc8_ccitt(0xff, entry, offsetof(struct nvs_ate, crc8));
-	if (crc8 == entry->crc8) {
+	crc8 = crc8_ccitt(0xff, entry, offsetof(struct nvs_ate, crc));
+	if (crc8 == entry->crc) {
 		return 0;
 	}
+#else
+	uint32_t computed_crc_24, stored_crc_24;
+
+	computed_crc_24 = crc24_pgp((uint8_t *) entry, offsetof(struct nvs_ate, crc));
+	stored_crc_24 = (entry->crc[0] << 16) | (entry->crc[1] << 8) | entry->crc[2];
+	if (computed_crc_24 == stored_crc_24) {
+		return 0;
+	}
+#endif
+
 	return 1;
 }
 
@@ -399,7 +422,7 @@ static int nvs_ate_cmp_const(const struct nvs_ate *entry, uint8_t value)
 }
 
 /* nvs_ate_valid validates an ate:
- *     return 1 if crc8 and offset valid,
+ *     return 1 if CRC and offset valid,
  *            0 otherwise
  */
 static int nvs_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry)
@@ -408,7 +431,7 @@ static int nvs_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry)
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 
-	if ((nvs_ate_crc8_check(entry)) ||
+	if ((nvs_ate_crc_check(entry)) ||
 	    (entry->offset >= (fs->sector_size - ate_size))) {
 		return 0;
 	}
@@ -462,7 +485,7 @@ static int nvs_flash_wrt_entry(struct nvs_fs *fs, uint16_t id, const void *data,
 		entry.len += NVS_DATA_CRC_SIZE;
 	}
 #endif
-	nvs_ate_crc8_update(&entry);
+	nvs_ate_crc_update(&entry);
 
 	rc = nvs_flash_ate_wrt(fs, &entry);
 	if (rc) {
@@ -505,6 +528,18 @@ static int nvs_recover_last_ate(struct nvs_fs *fs, uint32_t *addr)
 			data_end_addr &= ADDR_SECT_MASK;
 			data_end_addr += end_ate.offset + end_ate.len;
 			*addr = ate_end_addr;
+		}
+
+		/* The ATE struct size may not be a multiple of the flash sector size.
+		 * An issue can arise here if the data and ATE addresses are very close to zero.
+		 * When decreasing the ate_end_addr, which is an unsigned value, the resulting
+		 * value can overflow. In such case, the resulting value will be really high and
+		 * may be greater than the data_end_addr value, which is still close to zero.
+		 * This may allow one more loop using a bad flash address (for the next
+		 * nvs_flash_ate_rd() call), resulting in a crash.
+		 */
+		if ((data_end_addr < ate_size) && (ate_end_addr < ate_size)) {
+			break;
 		}
 		ate_end_addr -= ate_size;
 	}
@@ -596,7 +631,7 @@ static int nvs_sector_close(struct nvs_fs *fs)
 	fs->ate_wra &= ADDR_SECT_MASK;
 	fs->ate_wra += (fs->sector_size - ate_size);
 
-	nvs_ate_crc8_update(&close_ate);
+	nvs_ate_crc_update(&close_ate);
 
 	(void)nvs_flash_ate_wrt(fs, &close_ate);
 
@@ -616,7 +651,7 @@ static int nvs_add_gc_done_ate(struct nvs_fs *fs)
 	gc_done_ate.len = 0U;
 	gc_done_ate.part = 0xff;
 	gc_done_ate.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
-	nvs_ate_crc8_update(&gc_done_ate);
+	nvs_ate_crc_update(&gc_done_ate);
 
 	return nvs_flash_ate_wrt(fs, &gc_done_ate);
 }
@@ -711,7 +746,7 @@ static int nvs_gc(struct nvs_fs *fs)
 			data_addr += gc_ate.offset;
 
 			gc_ate.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
-			nvs_ate_crc8_update(&gc_ate);
+			nvs_ate_crc_update(&gc_ate);
 
 			rc = nvs_flash_block_move(fs, data_addr, gc_ate.len);
 			if (rc) {
