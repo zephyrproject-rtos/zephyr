@@ -3549,7 +3549,7 @@ static bool ipv4_is_broadcast_address(struct net_if *iface,
 		bcast.s_addr = ipv4->unicast[i].ipv4.address.in_addr.s_addr |
 			       ~ipv4->unicast[i].netmask.s_addr;
 
-		if (bcast.s_addr == addr->s_addr) {
+		if (bcast.s_addr == UNALIGNED_GET(&addr->s_addr)) {
 			ret = true;
 			goto out;
 		}
