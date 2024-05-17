@@ -230,8 +230,8 @@ extern struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
 
 #endif /* defined(CONFIG_BT_CLASSIC) */
 
-static uint8_t connect(const void *cmd, uint16_t cmd_len,
-		       void *rsp, uint16_t *rsp_len)
+static uint8_t _connect(const void *cmd, uint16_t cmd_len, void *rsp,
+		       uint16_t *rsp_len, bool sec, bt_security_t sec_level)
 {
 	const struct btp_l2cap_connect_cmd *cp = cmd;
 	struct btp_l2cap_connect_rp *rp = rsp;
@@ -276,6 +276,9 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 			}
 			br_chan->br.chan.ops = &l2cap_ops;
 			br_chan->br.rx.mtu = mtu;
+			if (sec) {
+				br_chan->br.required_sec_level = sec_level;
+			}
 			rp->chan_id[i] = br_chan->chan_id;
 			allocated_channels[i] = &br_chan->br.chan;
 			br_chan->hold_credit = cp->options & BTP_L2CAP_CONNECT_OPT_HOLD_CREDIT;
@@ -288,6 +291,11 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 		}
 		chan->le.chan.ops = &l2cap_ops;
 		chan->le.rx.mtu = mtu;
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+		if (sec) {
+			chan->le.required_sec_level = sec_level;
+		}
+#endif /* defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL) */
 		rp->chan_id[i] = chan->chan_id;
 		allocated_channels[i] = &chan->le.chan;
 
@@ -345,6 +353,58 @@ fail:
 		}
 	}
 	return BTP_STATUS_FAILED;
+}
+
+static uint8_t connect(const void *cmd, uint16_t cmd_len,
+		       void *rsp, uint16_t *rsp_len)
+{
+	return _connect(cmd, cmd_len, rsp, rsp_len, false,
+					(bt_security_t)BTP_L2CAP_CONNECT_SEC_LEVEL_0);
+}
+
+static int transform_sec_level(uint8_t sec_level, bt_security_t *level)
+{
+	int err = 0;
+
+	switch (sec_level) {
+	case BTP_L2CAP_CONNECT_SEC_LEVEL_0:
+		*level = BT_SECURITY_L0;
+		break;
+	case BTP_L2CAP_CONNECT_SEC_LEVEL_1:
+		*level = BT_SECURITY_L1;
+		break;
+	case BTP_L2CAP_CONNECT_SEC_LEVEL_2:
+		*level = BT_SECURITY_L2;
+		break;
+	case BTP_L2CAP_CONNECT_SEC_LEVEL_3:
+		*level = BT_SECURITY_L3;
+		break;
+	case BTP_L2CAP_CONNECT_SEC_LEVEL_4:
+		*level = BT_SECURITY_L4;
+		break;
+	default:
+		err = -EINVAL;
+		break;
+	}
+
+	return err;
+}
+
+static uint8_t connect_with_sec_level(const void *cmd, uint16_t cmd_len,
+		       void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_l2cap_connect_with_sec_level_cmd *cp = cmd;
+	int err;
+	bt_security_t level;
+
+	err = transform_sec_level(cp->sec_level, &level);
+	if (err < 0) {
+		LOG_ERR("Unsupported sec level %d", cp->sec_level);
+		return BTP_STATUS_FAILED;
+	}
+
+	return _connect(&cp->cmd, cmd_len - sizeof(cp->sec_level), rsp, rsp_len, true,
+					level);
 }
 
 static uint8_t disconnect(const void *cmd, uint16_t cmd_len,
@@ -843,6 +903,11 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_L2CAP_DISCONNECT_EATT_CHANS,
 		.expect_len = sizeof(struct btp_l2cap_disconnect_eatt_chans_cmd),
 		.func = disconnect_eatt_chans,
+	},
+	{
+		.opcode = BTP_L2CAP_CONNECT_WITH_SEC_LEVEL,
+		.expect_len = sizeof(struct btp_l2cap_connect_with_sec_level_cmd),
+		.func = connect_with_sec_level,
 	},
 };
 

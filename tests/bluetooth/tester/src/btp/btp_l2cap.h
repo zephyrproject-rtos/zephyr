@@ -87,6 +87,18 @@ struct btp_l2cap_disconnect_eatt_chans_cmd {
 	uint8_t count;
 } __packed;
 
+#define BTP_L2CAP_CONNECT_SEC_LEVEL_0		0
+#define BTP_L2CAP_CONNECT_SEC_LEVEL_1		1
+#define BTP_L2CAP_CONNECT_SEC_LEVEL_2		2
+#define BTP_L2CAP_CONNECT_SEC_LEVEL_3		3
+#define BTP_L2CAP_CONNECT_SEC_LEVEL_4		4
+
+#define BTP_L2CAP_CONNECT_WITH_SEC_LEVEL		0x0a
+struct btp_l2cap_connect_with_sec_level_cmd {
+	struct btp_l2cap_connect_cmd cmd;
+	uint8_t sec_level;
+} __packed;
+
 /* events */
 #define BTP_L2CAP_EV_CONNECTION_REQ			0x80
 struct btp_l2cap_connection_req_ev {
