@@ -367,12 +367,12 @@ static const struct gpio_driver_api mcux_igpio_driver_api = {
 
 #define MCUX_IGPIO_IRQ_INIT(n, i)					\
 	do {								\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, i, irq),		\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n, i),			\
 			    DT_INST_IRQ_BY_IDX(n, i, priority),		\
 			    mcux_igpio_port_isr,			\
 			    DEVICE_DT_INST_GET(n), 0);			\
 									\
-		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));		\
+		irq_enable(DT_INST_IRQN_BY_IDX(n, i));			\
 	} while (false)
 
 #define MCUX_IGPIO_INIT(n)						\
