@@ -7,7 +7,7 @@ description: |
 
 compatible: "voltage-divider"
 
-include: base.yaml
+include: [base.yaml, battery.yaml]
 
 properties:
   io-channels:
