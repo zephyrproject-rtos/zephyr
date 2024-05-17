@@ -56,7 +56,7 @@ endif()
 
 # Empty files to make kconfig.py happy.
 file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/empty.conf)
-set(APPLICATION_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(APPLICATION_SOURCE_DIR ${sysbuild_toplevel_SOURCE_DIR})
 set(AUTOCONF_H             ${CMAKE_CURRENT_BINARY_DIR}/autoconf.h)
 set(CONF_FILE              ${SB_CONF_FILE})
 set(EXTRA_CONF_FILE        "${SB_EXTRA_CONF_FILE}")
