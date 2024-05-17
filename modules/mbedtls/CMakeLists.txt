@@ -139,6 +139,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pkparse.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pkwrite.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pk.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/pk_ecc.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pk_wrap.c
     )
 
