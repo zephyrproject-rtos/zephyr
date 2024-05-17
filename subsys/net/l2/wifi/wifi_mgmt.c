@@ -628,13 +628,13 @@ static int wifi_set_twt(uint32_t mgmt_request, struct net_if *iface,
 			WIFI_TWT_FAIL_PEER_NOT_HE_CAPAB;
 		goto fail;
 	}
-
+/*
 	if (!info.twt_capable) {
 		twt_params->fail_reason =
 			WIFI_TWT_FAIL_PEER_NOT_TWT_CAPAB;
 		goto fail;
 	}
-
+*/
 	return wifi_mgmt_api->set_twt(dev, twt_params);
 fail:
 	return -ENOEXEC;
