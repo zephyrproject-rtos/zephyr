@@ -1,7 +1,5 @@
 common:
   filter: not CONFIG_NATIVE_LIBC
-  arch_exclude:
-    - posix
   integration_platforms:
     - qemu_riscv64
   tags: posix
