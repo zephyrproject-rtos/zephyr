@@ -1,0 +1,7 @@
+# Copyright (c) 2024 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  math.interpolation:
+    integration_platforms:
+      - native_sim
