@@ -221,6 +221,195 @@ configured in the Zephyr compilation:
    setenv bootm4ddr 'run m4ddr && run bootm4'
    run bootm4ddr
 
+M4<->Linux IPC using RPMSG
+**************************
+
+The IMX7D soc supports the subsys/ipc/openamp_rsc_table sample to demonstrate the
+usage of rpmsg_tty as an inter processor communication.
+
+The board configuration is provided for the colibri_imx7d board.
+The boot process of the M4 core is handled solely by the Linux kernel using the RPROC
+framework.
+
+The sample was tested with Toradex's LTS BSP 6.6.0 Minimal Open Embedded image with
+upstream Linux kernel 6.1.83.
+
+Required kernel modules must be loaded for RPMSG to work:
+
+- imx_rproc
+- virtio_rpmsg_bus
+- rpmsg_tty (requiring rpmsg_core)
+
+You need to modify your Linux device tree to add the M4 definitions:
+
+- Enable MU_A
+- Reserve memory areas for the M4 so Linux won't touch them.
+- Define the M4 remoteproc node for the drivers.
+
+If you have not downloaded the BSP sources, you can modify the board's device tree
+from its currently loaded dtb file.
+
+
+.. code-block:: none
+
+   #Check the which fdtfile is loaded for your board in U-boot
+   printenv
+   #For a Colibri_imx7d on Viola Carrier on BSP 6.6.0
+   fdtfile = imx7d-colibri-emmc-eval-v3.dtb
+
+   #Copy this file to your Linux PC through SSH from /boot
+   #Convert the dtb into a dts
+   dtc -I dtb -O dts -f imx7d-colibri-emmc-eval-v3.dtb -o imx7d-colibri-emmc-eval-v3.dts
+
+   #You need to find the following phandle numbers:
+   # reset-controller
+   # mailbox@30aa0000
+
+   #Note down the phandle value (0xbd)
+   grep -A10 "mailbox@30aa0000 {" imx7d-colibri-emmc-eval-v3.dts
+   # outputs your DTS's mailbox definition
+   #		mailbox@30aa0000 {
+   #			compatible = "fsl,imx7s-mu\0fsl,imx6sx-mu";
+   #			reg = <0x30aa0000 0x10000>;
+   #			interrupts = <0x00 0x58 0x04>;
+   #			clocks = <0x01 0x1b1>;
+   #			#mbox-cells = <0x02>;
+   #			status = "disabled";
+   #			phandle = <0xbd>;
+   #		};
+
+   #Note down the phandle value (0x32)
+   grep -A8 "reset-controller@30390000 {" imx7d-colibri-emmc-eval-v3.dts
+   # outputs your DTS's reset-controller definition
+   #		reset-controller@30390000 {
+   #			compatible = "fsl,imx7d-src\0syscon";
+   #			reg = <0x30390000 0x10000>;
+   #			interrupts = <0x00 0x59 0x04>;
+   #			#reset-cells = <0x01>;
+   #			phandle = <0x32>;
+   #		};
+
+   #Node down the biggest phandle value
+   grep "phandle = <" imx7d-colibri-emmc-eval-v3.dts | sort -r | head -1
+   # outputs your DTS's largest phandle definition
+   #		phandle = <0xca>;
+
+   #Now we can add our nodes to the .dts file:
+   cp imx7d-colibri-emmc-eval-v3.dts imx7d-m4.dts
+   nano imx7d-m4.dts
+
+   #Modify MU_A node to enable it
+   mailbox@30aa0000 {
+      compatible = "fsl,imx7s-mu\0fsl,imx6sx-mu";
+      reg = <0x30aa0000 0x10000>;
+      interrupts = <0x00 0x58 0x04>;
+      clocks = <0x01 0x1b1>;
+      #mbox-cells = <0x02>;
+      status = "okay";
+      phandle = <0xbd>;
+   };
+
+   #Add these definitions under / { } just before the __symbols__
+   #Disgard the comments with #-->
+   reserved-memory {
+      #address-cells = <0x01>;
+      #size-cells = <0x01>;
+      ranges;
+
+      vdev0buffer0@90002000 {
+         compatible = "shared-dma-pool";
+         reg = <0x90002000 0x8000>;
+         no-map;
+         phandle = <0xcb>; #--> biggest phandle +1
+      };
+
+      vdev0vring0@90000000 {
+         compatible = "shared-dma-pool";
+         reg = <0x90000000 0x1000>;
+         no-map;
+         phandle = <0xcc>; #--> biggest phandle +2
+      };
+
+      vdev0vring1@90001000 {
+         compatible = "shared-dma-pool";
+         reg = <0x90001000 0x1000>;
+         no-map;
+         phandle = <0xcd>; #--> biggest phandle +3
+      };
+
+      cm4tcmcode@7f8000 {
+         compatible = "shared-dma-pool";
+         reg = <0x7f8000 0x8000>;
+         no-map;
+         phandle = <0xce>; #--> biggest phandle +4
+      };
+
+      cm4sramcode@900000 {
+         compatible = "shared-dma-pool";
+         reg = <0x900000 0x40000>;
+         no-map;
+         phandle = <0xcf>; #--> biggest phandle +5
+      };
+
+      cm4reserved@8ff00000 {
+         compatible = "shared-dma-pool";
+         reg = <0x8ff00000 0x100000>;
+         no-map;
+         phandle = <0xd0>; #--> biggest phandle +6
+      };
+   };
+
+   imx7d-cm4 {
+      compatible = "fsl,imx7d-cm4";
+      mbox-names = "tx\0rx\0rxdb";
+      mboxes = <0xbd 0x00 0x00 0xbd 0x01 0x00 0xbd 0x03 0x00>; #--> MU_A phandle (0xbd)
+      memory-region = <0xcb 0xcc 0xcd 0xce 0xcf 0xd0>; #--> All the previously defined phandles
+      syscon = <0x32>; #--> phandle for the reset-controller
+      clocks = <0x01 0x42>;
+   };
+
+   #Recompile the dts into a dtb
+   dtc -I dts -O dtb -f imx7d-m4.dts -o imx7d-m4.dtb
+
+   #Copy the new dtb to /boot on the Colibri IMX7 board
+   #Start in U-boot and update the device-tree
+   setenv fdtfile imx7d-m4.dtb
+   saveenv
+   boot
+
+When the OS has finished booting with your new device tree you can enable
+the drivers and start the M4 core.
+
+.. code-block:: console
+
+   #Copy zephyr_openamp_rsc_table.elf to /lib/firmware on your board
+   $ modprobe imx_rproc
+   $ modprobe virtio_rpmsg_bus
+   $ modprobe rpmsg_tty
+
+   #Request RPROC to load the M4 image
+   $ echo stop > /sys/class/remoteproc/remoteproc0/state
+   $ echo zephyr_openamp_rsc_table.elf > /sys/class/remoteproc/remoteproc0/firmware
+   $ echo start > /sys/class/remoteproc/remoteproc0/state
+
+   #dmesg will detail the boot process:
+   $ dmesg
+   [  497.120499] remoteproc remoteproc0: stopped remote processor imx-rproc
+   [  497.138938] remoteproc remoteproc0: powering up imx-rproc
+   [  497.168735] remoteproc remoteproc0: Booting fw image zephyr_openamp_rsc_table.elf, size 1267076
+   [  497.184826] rproc-virtio rproc-virtio.1.auto: assigned reserved memory node vdev0buffer0@90002000
+   [  497.221395] virtio_rpmsg_bus virtio0: rpmsg host is online
+   [  497.233806] virtio_rpmsg_bus virtio0: creating channel rpmsg-tty addr 0x400
+   [  497.236666] rproc-virtio rproc-virtio.1.auto: registered virtio0 (type 7)
+   [  497.259822] remoteproc remoteproc0: remote processor imx-rproc is now up
+   [  497.293913] virtio_rpmsg_bus virtio0: creating channel rpmsg-client-sample addr 0x401
+   [  497.308388] rpmsg_client_sample virtio0.rpmsg-client-sample.-1.1025: new channel: 0x401 -> 0x401!
+   [  497.337969] virtio_rpmsg_bus virtio0: creating channel rpmsg-tty addr 0x402
+
+   $ ls /dev | grep ttyRPMSG
+   ttyRPMSG0 -> used for zephyr shell interface
+   ttyRPMSG1 -> used for sample interface
+
 
 Debugging
 =========
