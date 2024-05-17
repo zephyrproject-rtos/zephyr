@@ -14,6 +14,7 @@
 #include <zephyr/arch/cpu.h>
 #include <stm32_ll_system.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_pwr.h>
 
 /**
  * @brief Perform SoC configuration at boot.
@@ -80,6 +81,8 @@ static int st_stm32_common_config(void)
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
 	LL_DBGMCU_EnableDBGStopMode();
 	LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
+#elif defined(CONFIG_SOC_SERIES_STM32WB0X)
+	LL_PWR_EnableDEEPSTOP2();
 #else /* all other parts */
 	LL_DBGMCU_EnableDBGStopMode();
 #endif
@@ -102,6 +105,8 @@ static int st_stm32_common_config(void)
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
 	LL_DBGMCU_DisableDBGStopMode();
 	LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
+#elif defined(CONFIG_SOC_SERIES_STM32WB0X)
+	LL_PWR_DisableDEEPSTOP2();
 #else /* all other parts */
 	LL_DBGMCU_DisableDBGStopMode();
 #endif
