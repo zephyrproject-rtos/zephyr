@@ -3,6 +3,9 @@ common:
   tags:
     - net
     - dhcpv4
+  platform_exclude:
+    - native_posix/native/64
+    - native_posix
 tests:
   net.dhcpv4_client:
     extra_configs:
