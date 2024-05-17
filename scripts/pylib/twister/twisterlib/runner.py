@@ -536,6 +536,7 @@ class ProjectBuilder(FilterBuilder):
         super().__init__(instance.testsuite, instance.platform, instance.testsuite.source_dir, instance.build_dir, jobserver)
 
         self.log = "build.log"
+        self.pipeline_log = "pipeline.log"
         self.instance = instance
         self.filtered_tests = 0
         self.options = env.options
@@ -574,6 +575,7 @@ class ProjectBuilder(FilterBuilder):
         build_dir = self.instance.build_dir
         h_log = "{}/handler.log".format(build_dir)
         he_log = "{}/handler_stderr.log".format(build_dir)
+        p_log = "{}/pipeline.log".format(build_dir)
         b_log = "{}/build.log".format(build_dir)
         v_log = "{}/valgrind.log".format(build_dir)
         d_log = "{}/device.log".format(build_dir)
@@ -581,6 +583,8 @@ class ProjectBuilder(FilterBuilder):
 
         if os.path.exists(v_log) and "Valgrind" in self.instance.reason:
             self.log_info("{}".format(v_log), inline_logs)
+        elif os.path.exists(p_log) and os.path.getsize(p_log) > 0:
+            self.log_info("{}".format(p_log), inline_logs)
         elif os.path.exists(pytest_log) and os.path.getsize(pytest_log) > 0:
             self.log_info("{}".format(pytest_log), inline_logs, log_testcases=True)
         elif os.path.exists(h_log) and os.path.getsize(h_log) > 0:
@@ -1326,7 +1330,15 @@ class TwisterRunner:
                         instance = task['test']
                         pb = ProjectBuilder(instance, self.env, self.jobserver)
                         pb.duts = self.duts
-                        pb.process(pipeline, done_queue, task, lock, results)
+                        try:
+                            pb.process(pipeline, done_queue, task, lock, results)
+                        except Exception:
+                            instance.status = "error"
+                            instance.reason = "Pipeline error"
+                            pipeline.put({"op": "report", "test": instance})
+                            with open(os.path.join(instance.build_dir, pb.pipeline_log), "a") as log:
+                                traceback.print_exc(file=log)
+
 
                 return True
         else:

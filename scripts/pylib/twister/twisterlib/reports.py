@@ -264,6 +264,7 @@ class Reporting:
             pytest_log = os.path.join(instance.build_dir, "twister_harness.log")
             build_log = os.path.join(instance.build_dir, "build.log")
             device_log = os.path.join(instance.build_dir, "device.log")
+            pipeline_log = os.path.join(instance.build_dir, "pipeline.log")
 
             handler_time = instance.metrics.get('handler_time', 0)
             used_ram = instance.metrics.get ("used_ram", 0)
@@ -300,7 +301,9 @@ class Reporting:
                 suite['status'] = instance.status
                 suite["reason"] = instance.reason
                 # FIXME
-                if os.path.exists(pytest_log):
+                if os.path.exists(pipeline_log):
+                    suite["log"] = self.process_log(pipeline_log)
+                elif os.path.exists(pytest_log):
                     suite["log"] = self.process_log(pytest_log)
                 elif os.path.exists(handler_log):
                     suite["log"] = self.process_log(handler_log)
