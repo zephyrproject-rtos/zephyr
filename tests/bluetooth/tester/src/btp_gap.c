@@ -2031,6 +2031,66 @@ static uint8_t connect_br(const void *cmd, uint16_t cmd_len,
 }
 #endif /* CONFIG_BT_CLASSIC */
 
+static int transform_sec_level(uint8_t sec_level, bt_security_t *level)
+{
+	int err = 0;
+
+	switch (sec_level) {
+	case BTP_GAP_PAIR_LEVEL_0:
+		*level = BT_SECURITY_L0;
+		break;
+	case BTP_GAP_PAIR_LEVEL_1:
+		*level = BT_SECURITY_L1;
+		break;
+	case BTP_GAP_PAIR_LEVEL_2:
+		*level = BT_SECURITY_L2;
+		break;
+	case BTP_GAP_PAIR_LEVEL_3:
+		*level = BT_SECURITY_L3;
+		break;
+	case BTP_GAP_PAIR_LEVEL_4:
+		*level = BT_SECURITY_L4;
+		break;
+	default:
+		err = -EINVAL;
+		break;
+	}
+
+	return err;
+}
+
+static uint8_t pair_with_sec_level(const void *cmd, uint16_t cmd_len,
+		    void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_pair_with_sec_level_cmd *cp = cmd;
+	struct bt_conn *conn;
+	bt_security_t level;
+	int err;
+
+	conn = get_conn_from_addr(&cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = transform_sec_level(cp->sec_level, &level);
+	if (err < 0) {
+		LOG_ERR("Unsupported sec level %d", cp->sec_level);
+		bt_conn_unref(conn);
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_conn_set_security(conn, level);
+	if (err < 0) {
+		LOG_ERR("Failed to set security: %d", err);
+		bt_conn_unref(conn);
+		return BTP_STATUS_FAILED;
+	}
+
+	bt_conn_unref(conn);
+	return BTP_STATUS_SUCCESS;
+}
+
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_GAP_READ_SUPPORTED_COMMANDS,
@@ -2217,6 +2277,11 @@ static const struct btp_handler handlers[] = {
 		.func = connect_br,
 	},
 #endif /* CONFIG_BT_CLASSIC */
+	{
+		.opcode = BTP_GAP_PAIR_WITH_SEC_LEVEL,
+		.expect_len = sizeof(struct btp_gap_pair_with_sec_level_cmd),
+		.func = pair_with_sec_level,
+	},
 };
 
 uint8_t tester_init_gap(void)
