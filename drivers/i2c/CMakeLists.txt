@@ -36,7 +36,10 @@ if(CONFIG_I2C_RTIO)
 	i2c_nrfx_twi_common.c
 	)
 else()
-  zephyr_library_sources_ifdef(CONFIG_I2C_NRFX_TWI	i2c_nrfx_twi.c)
+  zephyr_library_sources_ifdef(CONFIG_I2C_NRFX_TWI
+	i2c_nrfx_twi.c
+	i2c_nrfx_twi_common.c
+	)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_I2C_NRFX_TWIM	i2c_nrfx_twim.c)
