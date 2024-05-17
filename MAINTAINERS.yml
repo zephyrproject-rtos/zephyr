@@ -4352,6 +4352,9 @@ West:
   status: maintained
   maintainers:
     - KhiemNguyenT
+    - ioannis-karachalios
+  collaborators:
+    - blauret
     - andrzej-kaczmarek
   files: []
   labels:
