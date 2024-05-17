@@ -73,6 +73,9 @@ node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_PROP_ELEM"
 node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_PROP_ELEM_SEP"
 node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_PROP_ELEM_VARGS"
 node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_PROP_ELEM_SEP_VARGS"
+; These are used by DT_CHILD_NUM and DT_CHILD_NUM_STATUS_OKAY macros
+node-macro =/ %s"DT_N" path-id %s"_CHILD_NUM"
+node-macro =/ %s"DT_N" path-id %s"_CHILD_NUM_STATUS_OKAY"
 ; These are used internally by DT_FOREACH_CHILD, which iterates over
 ; each child node.
 node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD"
