@@ -66,8 +66,8 @@ static void heap_print_info(struct z_heap *h, bool dump_chunks)
 	overhead = total - free_bytes - allocated_bytes;
 	printk("\n%zd free bytes, %zd allocated bytes, overhead = %zd bytes (%zd.%zd%%)\n",
 	       free_bytes, allocated_bytes, overhead,
-	       (1000 * overhead + total/2) / total / 10,
-	       (1000 * overhead + total/2) / total % 10);
+	       (1000 * overhead + total / 2) / total / 10,
+	       (1000 * overhead + total / 2) / total % 10);
 }
 
 void sys_heap_print_info(struct sys_heap *heap, bool dump_chunks)
