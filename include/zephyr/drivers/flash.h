@@ -59,6 +59,9 @@ struct flash_pages_layout {
 struct flash_parameters {
 	const size_t write_block_size;
 	uint8_t erase_value; /* Byte value of erased flash */
+#if defined(CONFIG_FLASH_HAS_DIRECT_WRITE)
+	bool direct_write;   /* Direct write capability of driver */
+#endif
 };
 
 /**
@@ -219,7 +222,10 @@ static inline int z_impl_flash_write(const struct device *dev, off_t offset,
 /**
  *  @brief  Erase part or all of a flash memory
  *
- *  Acceptable values of erase size and offset are subject to
+ *  The erase operation places the flash memory in a predetermined state
+ *  (the erase-value).
+ *
+ *  Acceptable values of erase size and offset might be subject to
  *  hardware-specific multiples of page size and offset. Please check
  *  the API implemented by the underlying sub driver, for example by
  *  using flash_get_page_info_by_offs() if that is supported by your
@@ -249,6 +255,34 @@ static inline int z_impl_flash_erase(const struct device *dev, off_t offset,
 	rc = api->erase(dev, offset, size);
 
 	return rc;
+}
+
+#if defined(CONFIG_FLASH_HAS_DIRECT_WRITE)
+__syscall bool flash_has_direct_write_sc(const struct device *dev);
+
+static inline bool z_impl_flash_has_direct_write_sc(const struct device *dev)
+{
+	const struct flash_driver_api *api =
+		(const struct flash_driver_api *)dev->api;
+
+	return api->get_parameters(dev)->direct_write;
+}
+
+#endif /* CONFIG_FLASH_HAS_DIRECT_WRITE */
+
+/**
+ *  @brief  Check if flash can write without prior erase.
+ *
+ *  @param  dev flash device
+ *
+ *  @return  true if flash can write without prior erase, false otherwise.
+ */
+static inline bool flash_has_direct_write(const struct device *dev)
+{
+#if defined(CONFIG_FLASH_HAS_DIRECT_WRITE)
+	return flash_has_direct_write_sc(dev);
+#endif
+	return false;
 }
 
 struct flash_pages_info {

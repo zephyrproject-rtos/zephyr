@@ -29,6 +29,7 @@ struct flash_numaker_data {
 static const struct flash_parameters flash_numaker_parameters = {
 	.write_block_size = SOC_NV_FLASH_WRITE_BLOCK_SIZE,
 	.erase_value = 0xff,
+	.direct_write = true,
 };
 
 /* Validate offset and length */
@@ -58,7 +59,6 @@ static bool flash_numaker_is_range_valid(off_t offset, size_t len)
  * return 0       on success
  * return -EINVAL erroneous code
  */
-
 static int flash_numaker_erase(const struct device *dev, off_t offset, size_t len)
 {
 	struct flash_numaker_data *dev_data = dev->data;

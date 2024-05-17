@@ -8,6 +8,7 @@ config FLASH_AMBIQ
 	select AMBIQ_HAL
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_DIRECT_WRITE if SOC_SERIES_APOLLO4X
 	help
 	  Enables Ambiq flash driver on MRAM (e.g. Apollo4x) or
 	  flash (e.g. Apollo3x).

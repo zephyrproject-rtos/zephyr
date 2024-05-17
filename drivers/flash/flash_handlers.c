@@ -36,6 +36,16 @@ static inline int z_vrfy_flash_erase(const struct device *dev, off_t offset,
 }
 #include <syscalls/flash_erase_mrsh.c>
 
+#if defined(CONFIG_FLASH_HAS_DIRECT_WRITE)
+static inline bool z_vrfy_flash_has_direct_write_sc(const struct device *dev)
+{
+	K_OOPS(K_SYSCALL_DRIVER_FLASH(dev, get_parameters));
+	return z_impl_flash_has_direct_write_sc((const struct device *)dev);
+}
+#include <syscalls/flash_has_direct_write_sc_mrsh.c>
+
+#endif /* CONFIG_FLASH_HAS_DIRECT_WRITE */
+
 static inline size_t z_vrfy_flash_get_write_block_size(const struct device *dev)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_FLASH));

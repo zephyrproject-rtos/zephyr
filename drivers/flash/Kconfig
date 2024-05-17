@@ -23,6 +23,11 @@ config FLASH_HAS_PAGE_LAYOUT
 	  This option is enabled when the SoC flash driver supports
 	  retrieving the layout of flash memory pages.
 
+config FLASH_HAS_DIRECT_WRITE
+	bool
+	help
+	  This option is enabled by drivers that support write without erase.
+
 config FLASH_JESD216
 	bool
 	help

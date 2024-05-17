@@ -88,6 +88,9 @@ struct spi_flash_at45_config {
 static const struct flash_parameters flash_at45_parameters = {
 	.write_block_size = 1,
 	.erase_value = 0xff,
+#if CONFIG_SPI_FLASH_AT45_USE_READ_MODIFY_WRITE
+	.direct_write = true,
+#endif
 };
 
 static void acquire(const struct device *dev)

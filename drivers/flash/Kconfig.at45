@@ -23,6 +23,7 @@ if SPI_FLASH_AT45
 
 config SPI_FLASH_AT45_USE_READ_MODIFY_WRITE
 	bool "Use Read-Modify-Write command in flash_write()"
+	select FLASH_HAS_DIRECT_WRITE
 	default y
 	help
 	  Use the Read-Modify-Write command (opcode 0x58) instead of the default
