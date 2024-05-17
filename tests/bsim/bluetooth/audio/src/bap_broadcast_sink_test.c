@@ -446,7 +446,7 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 	 */
 	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, false);
 	if (ret == 0) {
-		if (chan_allocation != BT_AUDIO_LOCATION_FRONT_LEFT) {
+		if (chan_allocation != BT_AUDIO_LOCATION_FRONT_CENTER) {
 			FAIL("Unexpected channel allocation: 0x%08X", chan_allocation);
 
 			return;
