@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(main);
 #define CRYPTO_DEV_COMPAT nxp_mcux_dcp
 #elif CONFIG_CRYPTO_NRF_ECB
 #define CRYPTO_DEV_COMPAT nordic_nrf_ecb
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_smartbond_crypto)
+#define CRYPTO_DEV_COMPAT renesas_smartbond_crypto
 #else
 #error "You need to enable one crypto device"
 #endif
