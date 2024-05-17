@@ -34,6 +34,11 @@
 #define TEST_DATA_ID			1
 #define TEST_SECTOR_COUNT		5U
 
+#define ADDR_SECT_MASK 0xFFFF0000
+#define ADDR_SECT_SHIFT 16
+#define ADDR_OFFS_MASK 0x0000FFFF
+#define NVS_BLOCK_SIZE 32
+
 static const struct device *const flash_dev = TEST_NVS_FLASH_AREA_DEV;
 
 struct nvs_fixture {
@@ -353,10 +358,16 @@ ZTEST_F(nvs, test_nvs_gc_3sectors)
 	const uint16_t max_writes = 51;
 	/* 75th write will trigger 2st GC. */
 	const uint16_t max_writes_2 = 51 + 25;
+#if defined(CONFIG_NVS_DATA_CRC) && defined(CONFIG_NVS_ATE_CRC24)
+	/* Both CRCs use extra data space, so less writes are needed to trigger the GC only once */
+	const uint16_t max_writes_3 = 51 + 25 + 15;
+	const uint16_t max_writes_4 = 51 + 25 + 15 + 15;
+#else
 	/* 100th write will trigger 3st GC. */
 	const uint16_t max_writes_3 = 51 + 25 + 25;
 	/* 125th write will trigger 4st GC. */
 	const uint16_t max_writes_4 = 51 + 25 + 25 + 25;
+#endif
 
 	fixture->fs.sector_count = 3;
 
@@ -638,11 +649,21 @@ ZTEST_F(nvs, test_delete)
 		     " any footprint in the storage");
 }
 
+static inline size_t flash_aligned_size(struct nvs_fs *fs, size_t len)
+{
+	uint8_t write_block_size = fs->flash_parameters->write_block_size;
+
+	if (write_block_size <= 1U) {
+		return len;
+	}
+	return (len + (write_block_size - 1U)) & ~(write_block_size - 1U);
+}
+
 /*
  * Test that garbage-collection can recover all ate's even when the last ate,
  * ie close_ate, is corrupt. In this test the close_ate is set to point to the
  * last ate at -5. A valid ate is however present at -6. Since the close_ate
- * has an invalid crc8, the offset should not be used and a recover of the
+ * has an invalid CRC, the offset should not be used and a recover of the
  * last ate should be done instead.
  */
 ZTEST_F(nvs, test_nvs_gc_corrupt_close_ate)
@@ -658,7 +679,12 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_close_ate)
 	close_ate.id = 0xffff;
 	close_ate.offset = fixture->fs.sector_size - sizeof(struct nvs_ate) * 5;
 	close_ate.len = 0;
-	close_ate.crc8 = 0xff; /* Incorrect crc8 */
+	/* Incorrect CRC */
+#ifdef CONFIG_NVS_ATE_CRC8
+	close_ate.crc = 0xff;
+#else
+	memset(close_ate.crc, 0xff, sizeof(close_ate.crc));
+#endif
 
 	ate.id = 0x1;
 	ate.offset = 0;
@@ -666,18 +692,29 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_close_ate)
 #ifdef CONFIG_NVS_DATA_CRC
 	ate.len += sizeof(data_crc);
 #endif
-	ate.crc8 = crc8_ccitt(0xff, &ate,
-			      offsetof(struct nvs_ate, crc8));
+#ifdef CONFIG_NVS_ATE_CRC8
+	ate.crc = crc8_ccitt(0xff, &ate, offsetof(struct nvs_ate, crc));
+#else
+	{
+		uint32_t crc_24;
+
+		crc_24 = crc24_pgp((uint8_t *) &ate, offsetof(struct nvs_ate, crc));
+		ate.crc[0] = (uint8_t) (crc_24 >> 16);
+		ate.crc[1] = (uint8_t) (crc_24 >> 8);
+		ate.crc[2] = (uint8_t) crc_24;
+	}
+#endif
 
 	/* Mark sector 0 as closed */
 	err = flash_write(fixture->fs.flash_device, fixture->fs.offset + fixture->fs.sector_size -
-			  sizeof(struct nvs_ate), &close_ate,
-			  sizeof(close_ate));
+			  flash_aligned_size(&fixture->fs, sizeof(struct nvs_ate)), &close_ate,
+			  flash_aligned_size(&fixture->fs, sizeof(close_ate)));
 	zassert_true(err == 0,  "flash_write failed: %d", err);
 
 	/* Write valid ate at -6 */
 	err = flash_write(fixture->fs.flash_device, fixture->fs.offset + fixture->fs.sector_size -
-			  sizeof(struct nvs_ate) * 6, &ate, sizeof(ate));
+			  flash_aligned_size(&fixture->fs, sizeof(struct nvs_ate)) * 6, &ate,
+			  flash_aligned_size(&fixture->fs, sizeof(ate)));
 	zassert_true(err == 0,  "flash_write failed: %d", err);
 
 	/* Write data for previous ate */
@@ -694,8 +731,8 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_close_ate)
 	/* Mark sector 1 as closed */
 	err = flash_write(fixture->fs.flash_device,
 			  fixture->fs.offset + (2 * fixture->fs.sector_size) -
-			  sizeof(struct nvs_ate), &close_ate,
-			  sizeof(close_ate));
+			  flash_aligned_size(&fixture->fs, sizeof(struct nvs_ate)), &close_ate,
+			  flash_aligned_size(&fixture->fs, sizeof(close_ate)));
 	zassert_true(err == 0,  "flash_write failed: %d", err);
 
 	fixture->fs.sector_count = 3;
@@ -706,8 +743,9 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_close_ate)
 	data = 0;
 	len = nvs_read(&fixture->fs, 1, &data, sizeof(data));
 	zassert_true(len == sizeof(data),
-		     "nvs_read should have read %d bytes", sizeof(data));
-	zassert_true(data == 0xaa55aa55, "unexpected value %d", data);
+		     "nvs_read should have read %zu bytes but read %zd",
+		     sizeof(data), len);
+	zassert_true(data == 0xaa55aa55, "unexpected value 0x%08X", data);
 }
 
 /*
@@ -721,31 +759,46 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_ate)
 	close_ate.id = 0xffff;
 	close_ate.offset = fixture->fs.sector_size / 2;
 	close_ate.len = 0;
-	close_ate.crc8 = crc8_ccitt(0xff, &close_ate,
-				    offsetof(struct nvs_ate, crc8));
+#ifdef CONFIG_NVS_ATE_CRC8
+	close_ate.crc = crc8_ccitt(0xff, &close_ate, offsetof(struct nvs_ate, crc));
+#else
+	{
+		uint32_t crc_24;
+
+		crc_24 = crc24_pgp((uint8_t *) &close_ate, offsetof(struct nvs_ate, crc));
+		close_ate.crc[0] = (uint8_t) (crc_24 >> 16);
+		close_ate.crc[1] = (uint8_t) (crc_24 >> 8);
+		close_ate.crc[2] = (uint8_t) crc_24;
+	}
+#endif
 
 	corrupt_ate.id = 0xdead;
 	corrupt_ate.offset = 0;
 	corrupt_ate.len = 20;
-	corrupt_ate.crc8 = 0xff; /* Incorrect crc8 */
+	/* Incorrect CRC */
+#ifdef CONFIG_NVS_ATE_CRC8
+	corrupt_ate.crc = 0xff;
+#else
+	memset(corrupt_ate.crc, 0xff, sizeof(corrupt_ate.crc));
+#endif
 
 	/* Mark sector 0 as closed */
 	err = flash_write(fixture->fs.flash_device, fixture->fs.offset + fixture->fs.sector_size -
-			  sizeof(struct nvs_ate), &close_ate,
-			  sizeof(close_ate));
+			  flash_aligned_size(&fixture->fs, sizeof(struct nvs_ate)), &close_ate,
+			  flash_aligned_size(&fixture->fs, sizeof(close_ate)));
 	zassert_true(err == 0,  "flash_write failed: %d", err);
 
 	/* Write a corrupt ate */
-	err = flash_write(fixture->fs.flash_device,
-			  fixture->fs.offset + (fixture->fs.sector_size / 2),
-			  &corrupt_ate, sizeof(corrupt_ate));
+	err = flash_write(fixture->fs.flash_device, fixture->fs.offset +
+			  flash_aligned_size(&fixture->fs, fixture->fs.sector_size / 2),
+			  &corrupt_ate, flash_aligned_size(&fixture->fs, sizeof(corrupt_ate)));
 	zassert_true(err == 0,  "flash_write failed: %d", err);
 
 	/* Mark sector 1 as closed */
 	err = flash_write(fixture->fs.flash_device,
 			  fixture->fs.offset + (2 * fixture->fs.sector_size) -
-			  sizeof(struct nvs_ate), &close_ate,
-			  sizeof(close_ate));
+			  flash_aligned_size(&fixture->fs, sizeof(struct nvs_ate)), &close_ate,
+			  flash_aligned_size(&fixture->fs, sizeof(close_ate)));
 	zassert_true(err == 0,  "flash_write failed: %d", err);
 
 	fixture->fs.sector_count = 3;
