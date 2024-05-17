@@ -356,7 +356,7 @@
 			};
 
 			exmif: spi@95000 {
-				compatible = "nordic,nrf-exmif";
+				compatible = "nordic,nrf-exmif", "snps,designware-spi";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <0x95000 0x500 0x95500 0xb00>;
