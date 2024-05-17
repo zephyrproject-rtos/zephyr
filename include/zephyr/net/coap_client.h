@@ -22,7 +22,7 @@
 #include <zephyr/net/coap.h>
 #include <zephyr/kernel.h>
 
-
+/** Maximum size of a CoAP message */
 #define MAX_COAP_MSG_LEN (CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE + \
 			  CONFIG_COAP_CLIENT_MESSAGE_SIZE)
 
@@ -67,12 +67,17 @@ struct coap_client_request {
  * @brief Representation of extra options for the CoAP client request
  */
 struct coap_client_option {
+	/** Option code */
 	uint16_t code;
 #if defined(CONFIG_COAP_EXTENDED_OPTIONS_LEN)
+	/** Option len */
 	uint16_t len;
+	/** Buffer for the length */
 	uint8_t value[CONFIG_COAP_EXTENDED_OPTIONS_LEN_VALUE];
 #else
+	/** Option len */
 	uint8_t len;
+	/** Buffer for the length */
 	uint8_t value[12];
 #endif
 };
