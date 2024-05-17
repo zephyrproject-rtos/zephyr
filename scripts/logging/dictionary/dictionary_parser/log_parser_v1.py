@@ -110,6 +110,7 @@ class LogParserV1(LogParser):
         Python's string formatting"""
         idx = 0
         arg_offset = 0
+        arg_data_type = None
         is_parsing = False
         do_extract = False
 
