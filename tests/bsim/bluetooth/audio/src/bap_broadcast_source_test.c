@@ -27,6 +27,11 @@
 #include "bstests.h"
 #include "common.h"
 
+#define SUPPORTED_CHAN_COUNTS          BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2)
+#define SUPPORTED_MIN_OCTETS_PER_FRAME 30
+#define SUPPORTED_MAX_OCTETS_PER_FRAME 155
+#define SUPPORTED_MAX_FRAMES_PER_SDU   1
+
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 /* When BROADCAST_ENQUEUE_COUNT > 1 we can enqueue enough buffers to ensure that
  * the controller is never idle
@@ -50,8 +55,122 @@ static struct bt_bap_lc3_preset preset_16_2_1 = BT_BAP_LC3_BROADCAST_PRESET_16_2
 static struct bt_bap_lc3_preset preset_16_1_1 = BT_BAP_LC3_BROADCAST_PRESET_16_1_1(
 	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
+static uint8_t bis_codec_data[] = {
+	BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
+			    BT_BYTES_LIST_LE32(BT_AUDIO_LOCATION_FRONT_CENTER)),
+};
+
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(broadcast_source_streams));
 static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(broadcast_source_streams));
+
+static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
+{
+	const struct bt_audio_codec_cfg *codec_cfg = stream->codec_cfg;
+	const struct bt_audio_codec_cfg *exp_codec_cfg = &preset_16_1_1.codec_cfg;
+	enum bt_audio_location chan_allocation;
+	uint8_t frames_blocks_per_sdu;
+	size_t min_sdu_size_required;
+	uint16_t octets_per_frame;
+	uint8_t chan_cnt;
+	int ret;
+	int exp_ret;
+
+	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
+	exp_ret = bt_audio_codec_cfg_get_freq(exp_codec_cfg);
+	if (ret >= 0) {
+		const int freq = bt_audio_codec_cfg_freq_to_freq_hz(ret);
+		const int exp_freq = bt_audio_codec_cfg_freq_to_freq_hz(exp_ret);
+
+		if (freq != exp_freq) {
+			FAIL("Invalid frequency: %d Expected: %d\n", freq, exp_freq);
+
+			return;
+		}
+	} else {
+		FAIL("Could not get frequency: %d\n", ret);
+
+		return;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+	exp_ret = bt_audio_codec_cfg_get_frame_dur(exp_codec_cfg);
+	if (ret >= 0) {
+		const int frm_dur_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+		const int exp_frm_dur_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(exp_ret);
+
+		if (frm_dur_us != exp_frm_dur_us) {
+			FAIL("Invalid frame duration: %d Exp: %d\n", frm_dur_us, exp_frm_dur_us);
+
+			return;
+		}
+	} else {
+		FAIL("Could not get frame duration: %d\n", ret);
+
+		return;
+	}
+
+	/* The broadcast source sets the channel allocation in the BIS to
+	 * BT_AUDIO_LOCATION_FRONT_CENTER
+	 */
+	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation);
+	if (ret == 0) {
+		if (chan_allocation != BT_AUDIO_LOCATION_FRONT_CENTER) {
+			FAIL("Unexpected channel allocation: 0x%08X", chan_allocation);
+
+			return;
+		}
+
+		chan_cnt = bt_audio_get_chan_count(chan_allocation);
+	} else {
+		FAIL("Could not get subgroup channel allocation: %d\n", ret);
+
+		return;
+	}
+
+	if (chan_cnt == 0 || (BIT(chan_cnt - 1) & SUPPORTED_CHAN_COUNTS) == 0) {
+		FAIL("Unsupported channel count: %u\n", chan_cnt);
+
+		return;
+	}
+
+	ret = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
+	if (ret > 0) {
+		octets_per_frame = (uint16_t)ret;
+	} else {
+		FAIL("Could not get subgroup octets per frame: %d\n", ret);
+
+		return;
+	}
+
+	if (!IN_RANGE(octets_per_frame, SUPPORTED_MIN_OCTETS_PER_FRAME,
+		      SUPPORTED_MAX_OCTETS_PER_FRAME)) {
+		FAIL("Unsupported octets per frame: %u\n", octets_per_frame);
+
+		return;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, false);
+	if (ret > 0) {
+		frames_blocks_per_sdu = (uint8_t)ret;
+	} else {
+		printk("Could not get octets per frame: %d\n", ret);
+		/* Frame blocks per SDU is optional and is implicitly 1 */
+		frames_blocks_per_sdu = 1U;
+	}
+
+	/* An SDU can consist of X frame blocks, each with Y frames (one per channel) of size Z in
+	 * them. The minimum SDU size required for this is X * Y * Z.
+	 */
+	min_sdu_size_required = chan_cnt * octets_per_frame * frames_blocks_per_sdu;
+	if (min_sdu_size_required > stream->qos->sdu) {
+		FAIL("With %zu channels and %u octets per frame and %u frames per block, SDUs "
+		     "shall be at minimum %zu, but the stream has been configured for %u\n",
+		     chan_cnt, octets_per_frame, frames_blocks_per_sdu, min_sdu_size_required,
+		     stream->qos->sdu);
+
+		return;
+	}
+}
 
 static void started_cb(struct bt_bap_stream *stream)
 {
@@ -90,6 +209,7 @@ static void started_cb(struct bt_bap_stream *stream)
 	}
 
 	printk("Stream %p started\n", stream);
+	validate_stream_codec_cfg(stream);
 	k_sem_give(&sem_started);
 }
 
@@ -146,10 +266,6 @@ static struct bt_bap_stream_ops stream_ops = {
 
 static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 {
-	uint8_t bis_codec_data[] = {
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
-				    BT_BYTES_LIST_LE32(BT_AUDIO_LOCATION_FRONT_LEFT)),
-	};
 	struct bt_bap_broadcast_source_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
 	struct bt_bap_broadcast_source_subgroup_param
@@ -297,10 +413,6 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 
 static void test_broadcast_source_reconfig(struct bt_bap_broadcast_source *source)
 {
-	uint8_t bis_codec_data[] = {
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_FREQ,
-				    BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CFG_FREQ_16KHZ)),
-	};
 	struct bt_bap_broadcast_source_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
 	struct bt_bap_broadcast_source_subgroup_param
