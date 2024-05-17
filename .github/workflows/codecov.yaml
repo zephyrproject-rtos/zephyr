@@ -2,7 +2,7 @@ name: Code Coverage with codecov
 
 on:
   schedule:
-    - cron: '25 06,18 * * 1-5'
+    - cron: '25 06,18 * * *'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
