@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(crypto_smartbond_crypto, CONFIG_CRYPTO_LOG_LEVEL);
 #define CRYPTO_HW_CAPS  (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_NO_IV_PREFIX)
 #endif
 
-#define SWAP32(_w)   __builtin_bswap32(_w)
+#define SWAP32(_w)   __REV(_w)
 
 #define CRYPTO_CTRL_REG_SET(_field, _val) \
 	AES_HASH->CRYPTO_CTRL_REG = \
@@ -281,9 +281,7 @@ static uint32_t crypto_smartbond_swap_word(uint8_t *data)
 {
     /* Check word boundaries of given address and if possible accellerate swapping */
 	if ((uint32_t)data & 0x3) {
-		sys_mem_swap(data, sizeof(uint32_t));
-
-		return (*(uint32_t *)data);
+		return SWAP32(sys_get_le32(data));
 	} else {
 		return SWAP32(*(uint32_t *)data);
 	}
@@ -805,16 +803,17 @@ crypto_smartbond_cipher_begin_session(const struct device *dev, struct cipher_ct
 		return -ENOSPC;
 	}
 
-	ret = crypto_smartbond_cipher_key_load(ctx->key.bit_stream, ctx->keylen);
+	/* First check if the requested cryptographic algo is supported */
+	ret = crypto_smartbond_cipher_set_mode(mode);
 	if (ret < 0) {
-		LOG_ERR("Invalid key length or key cannot be accessed");
+		LOG_ERR("Unsupported cipher mode");
 		crypto_smartbond_unlock_session(dev);
 		return ret;
 	}
 
-	ret = crypto_smartbond_cipher_set_mode(mode);
+	ret = crypto_smartbond_cipher_key_load((uint8_t *)ctx->key.bit_stream, ctx->keylen);
 	if (ret < 0) {
-		LOG_ERR("Unsupported cipher mode");
+		LOG_ERR("Invalid key length or key cannot be accessed");
 		crypto_smartbond_unlock_session(dev);
 		return ret;
 	}
