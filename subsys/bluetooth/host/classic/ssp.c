@@ -678,6 +678,11 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 				auth = BT_HCI_DEDICATED_BONDING;
 			}
 		}
+
+		if (conn->required_sec_level < BT_SECURITY_L3) {
+			/* If security level less than L3, clear MITM flag. */
+			auth = BT_HCI_SET_NO_MITM(auth);
+		}
 	} else {
 		auth = ssp_get_auth(conn);
 	}

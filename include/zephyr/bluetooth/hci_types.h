@@ -290,6 +290,9 @@ struct bt_hci_cmd_hdr {
 /* Clear Bonding flag */
 #define BT_HCI_SET_NO_BONDING(auth) ((auth) & 0x01)
 
+/* Clear MITM flag */
+#define BT_HCI_SET_NO_MITM(auth) ((auth) & (~0x01))
+
 /*
  * MITM protection is enabled in SSP authentication requirements octet when
  * LSB bit is set.
