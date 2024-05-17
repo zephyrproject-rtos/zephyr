@@ -24,7 +24,7 @@ if "ZEPHYR_BASE" not in os.environ:
 # however, pylint complains that it doesn't recognized them when used (used-before-assignment).
 zephyr_base = Path(os.environ['ZEPHYR_BASE'])
 repository_path = zephyr_base
-repo_to_scan = zephyr_base
+repo_to_scan = Repo(zephyr_base)
 args = None
 
 
@@ -424,8 +424,8 @@ if __name__ == "__main__":
     errors = 0
     if args.repo_to_scan:
         repository_path = Path(args.repo_to_scan)
-    if args.commits:
         repo_to_scan = Repo(repository_path)
+    if args.commits:
         commit = repo_to_scan.git.diff("--name-only", args.commits)
         files = commit.split("\n")
     elif args.modified_files:
