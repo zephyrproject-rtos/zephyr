@@ -243,7 +243,7 @@ static int cmd_lora_recv(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	if (argc >= 2 && parse_long_range(&timeout, shell, argv[2],
+	if (argc >= 3 && parse_long_range(&timeout, shell, argv[2],
 					  "timeout", 0, INT_MAX) < 0) {
 		return -EINVAL;
 	}
