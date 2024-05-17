@@ -24,7 +24,7 @@ description: |
               STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
               STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
 
-      port {
+      ports {
         dcmi_ep_in: endpoint {
           remote-endpoint = <&ov2640_ep_out>;
         };

@@ -113,7 +113,7 @@
 
 		reset-gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
 
-		port {
+		ports {
 			ov7725_ep_out: endpoint {
 				remote-endpoint = <&csi_ep_in>;
 			};
@@ -196,7 +196,7 @@
 	pinctrl-0 = <&pinmux_csi>;
 	pinctrl-names = "default";
 
-	port {
+	ports {
 		csi_ep_in: endpoint {
 			remote-endpoint = <&ov7725_ep_out>;
 		};
