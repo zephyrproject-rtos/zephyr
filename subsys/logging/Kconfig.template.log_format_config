@@ -20,7 +20,7 @@ config LOG_BACKEND_$(backend)_OUTPUT_DICTIONARY
 	bool "Dictionary"
 	select LOG_DICTIONARY_SUPPORT
 	imply LOG_FMT_SECTION
-	imply LOG_FMT_SECTION_STRIP
+	imply LOG_FMT_SECTION_STRIP if !LOG_ALWAYS_RUNTIME
 	help
 	  Backend is in dictionary-based logging output mode.
 
