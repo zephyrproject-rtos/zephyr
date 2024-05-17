@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_MAX32
-	select CLOCK_CONTROL
 	select BUILD_OUTPUT_HEX
 	select SOC_EARLY_INIT_HOOK
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
@@ -29,6 +28,7 @@ config SOC_FAMILY_MAX32_M4
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select HAS_PM
+	select CLOCK_CONTROL
 
 config SOC_MAX32655_M4
 	select MAX32_HAS_SECONDARY_RV32
