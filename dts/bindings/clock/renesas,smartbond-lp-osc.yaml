@@ -13,16 +13,6 @@ include:
       - clock-frequency
 
 properties:
-  calibration-interval:
-    type: int
-    default: 1
-    description: |
-      Time in seconds between calibration of low power clock RCX or RC32K.
-      For XTAL32K this value is not used.
-      If set to 0 calibration will not be performed. This can be applied
-      when XTAL32K is enabled for low power clock and RCX or RC32K is used
-      for watchdog and strict timing is not required.
-
   settle-time:
     type: int
     default: 8000
