@@ -714,10 +714,9 @@ static int mcux_lpuart_callback_set(const struct device *dev, uart_callback_t ca
 	data->callback = NULL;
 	data->cb_data = NULL;
 	data->api_type = LPUART_ASYNC;
-	return mcux_lpuart_configure_async(dev);
-#else
-	return 0;
 #endif
+
+	return mcux_lpuart_configure_async(dev);
 }
 
 static int mcux_lpuart_tx(const struct device *dev, const uint8_t *buf, size_t len,
