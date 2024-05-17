@@ -14,6 +14,10 @@ config SOC_FAMILY_MAX32_M4
 	bool
 	select SOC_FAMILY_MAX32
 
+config SOC_FAMILY_MAX32_RV32
+	bool
+	select SOC_FAMILY_MAX32
+
 config SOC_FAMILY
 	default "max32" if SOC_FAMILY_MAX32
 
@@ -28,6 +32,11 @@ config SOC_MAX32655_M4
 	bool
 	select SOC_MAX32655
 	select SOC_FAMILY_MAX32_M4
+
+config SOC_MAX32655_RV32
+	bool
+	select SOC_MAX32655
+	select SOC_FAMILY_MAX32_RV32
 
 config SOC_MAX32657
 	bool
@@ -73,6 +82,11 @@ config SOC_MAX32680_M4
 	select SOC_MAX32680
 	select SOC_FAMILY_MAX32_M4
 
+config SOC_MAX32680_RV32
+	bool
+	select SOC_MAX32680
+	select SOC_FAMILY_MAX32_RV32
+
 config SOC_MAX32690
 	bool
 
@@ -80,6 +94,11 @@ config SOC_MAX32690_M4
 	bool
 	select SOC_MAX32690
 	select SOC_FAMILY_MAX32_M4
+
+config SOC_MAX32690_RV32
+	bool
+	select SOC_MAX32690
+	select SOC_FAMILY_MAX32_RV32
 
 config SOC_MAX78000
 	bool
@@ -89,6 +108,11 @@ config SOC_MAX78000_M4
 	select SOC_MAX78000
 	select SOC_FAMILY_MAX32_M4
 
+config SOC_MAX78000_RV32
+	bool
+	select SOC_MAX78000
+	select SOC_FAMILY_MAX32_RV32
+
 config SOC_MAX78002
 	bool
 
@@ -96,6 +120,11 @@ config SOC_MAX78002_M4
 	bool
 	select SOC_MAX78002
 	select SOC_FAMILY_MAX32_M4
+
+config SOC_MAX78002_RV32
+	bool
+	select SOC_MAX78002
+	select SOC_FAMILY_MAX32_RV32
 
 config SOC
 	default "max32650" if SOC_MAX32650
