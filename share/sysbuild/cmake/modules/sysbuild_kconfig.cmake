@@ -13,13 +13,37 @@ set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_sysbuild_guiconfig
 set(KCONFIG_TARGETS sysbuild_menuconfig sysbuild_guiconfig)
 list(TRANSFORM EXTRA_KCONFIG_TARGETS PREPEND "sysbuild_")
 
+if(DEFINED APPLICATION_CONFIG_DIR AND NOT DEFINED CACHE{APPLICATION_CONFIG_DIR})
+  set(APPLICATION_CONFIG_DIR "${APPLICATION_CONFIG_DIR}" CACHE INTERNAL "Application config dir")
+elseif(DEFINED CACHE{APPLICATION_CONFIG_DIR} AND
+       NOT (APPLICATION_CONFIG_DIR STREQUAL "$CACHE{APPLICATION_CONFIG_DIR}"))
+  message(WARNING
+          "Sysbuild scoped APPLICATION_CONFIG_DIR and cached APPLICATION_CONFIG_DIR differs.\n"
+          "Setting value used internally by Sysbuild (sysbuild scoped):\n"
+	  " - ${APPLICATION_CONFIG_DIR}\n"
+	  "Setting value used by images (cached):\n"
+	  " - $CACHE{APPLICATION_CONFIG_DIR}\n"
+  )
+endif()
+
+# If there is a dedicated SB_APPLICATION_CONFIG_DIR, then create a local
+# scoped APPLICATION_CONFIG_DIR hiding any cache variant.
+# The cache setting is the setting passed to sysbuild image cache files
+if(DEFINED SB_APPLICATION_CONFIG_DIR)
+  set(APPLICATION_CONFIG_DIR ${SB_APPLICATION_CONFIG_DIR})
+elseif(NOT DEFINED APPLICATION_CONFIG_DIR)
+  get_filename_component(APP_DIR  ${APP_DIR} ABSOLUTE)
+  set(APPLICATION_CONFIG_DIR ${APP_DIR})
+endif()
+string(CONFIGURE ${APPLICATION_CONFIG_DIR} APPLICATION_CONFIG_DIR)
+
 if(DEFINED SB_CONF_FILE)
   # SB_CONF_FILE already set so nothing to do.
 elseif(DEFINED ENV{SB_CONF_FILE})
   set(SB_CONF_FILE $ENV{SB_CONF_FILE})
 else()
   # sysbuild.conf is an optional file, because sysbuild is an opt-in feature.
-  zephyr_file(CONF_FILES ${APP_DIR} KCONF SB_CONF_FILE NAMES "sysbuild.conf" SUFFIX ${FILE_SUFFIX})
+  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} KCONF SB_CONF_FILE NAMES "sysbuild.conf" SUFFIX ${FILE_SUFFIX})
 endif()
 
 if(NOT DEFINED SB_EXTRA_CONF_FILE AND DEFINED SB_OVERLAY_CONFIG)
