@@ -441,6 +441,7 @@ config SKIP_BSS_CLEAR
 config BOOT_BANNER
 	bool "Boot banner"
 	default y
+	depends on !NCS_BOOT_BANNER
 	select PRINTK
 	select EARLY_CONSOLE
 	help
