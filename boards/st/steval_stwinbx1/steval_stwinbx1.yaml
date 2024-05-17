@@ -12,4 +12,5 @@ supported:
   - gpio
   - pwm
   - watchdog
+  - ble
 vendor: st

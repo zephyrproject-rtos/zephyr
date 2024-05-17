@@ -159,6 +159,23 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 };
 
+&spi3 {
+	pinctrl-0 = <&spi3_sck_pg9 &spi3_miso_pb4 &spi3_mosi_pb5>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
+	bluenrg-2@0 {
+		compatible = "st,hci-spi-v2";
+		reg = <0>;
+		reset-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpiof 14 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		spi-cpha; /* CPHA=1 */
+		spi-hold-cs;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		reset-assert-duration-ms = <6>;
+	};
+};
+
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_pf0>;
 	pinctrl-names = "default";
