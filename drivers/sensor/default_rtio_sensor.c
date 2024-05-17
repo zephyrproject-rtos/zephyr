@@ -294,19 +294,6 @@ static int get_frame_count(const uint8_t *buffer, struct sensor_chan_spec channe
 {
 	struct sensor_data_generic_header *header = (struct sensor_data_generic_header *)buffer;
 
-	switch (channel.chan_type) {
-	case SENSOR_CHAN_ACCEL_XYZ:
-		channel.chan_type = SENSOR_CHAN_ACCEL_X;
-		break;
-	case SENSOR_CHAN_GYRO_XYZ:
-		channel.chan_type = SENSOR_CHAN_GYRO_X;
-		break;
-	case SENSOR_CHAN_MAGN_XYZ:
-		channel.chan_type = SENSOR_CHAN_MAGN_X;
-		break;
-	default:
-		break;
-	}
 	for (size_t i = 0; i < header->num_channels; ++i) {
 		if (sensor_chan_spec_eq(header->channels[i], channel)) {
 			*frame_count = 1;
@@ -328,21 +315,10 @@ int sensor_natively_supported_channel_size_info(struct sensor_chan_spec channel,
 	}
 
 	switch (channel.chan_type) {
-	case SENSOR_CHAN_ACCEL_X:
-	case SENSOR_CHAN_ACCEL_Y:
-	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ:
-	case SENSOR_CHAN_GYRO_X:
-	case SENSOR_CHAN_GYRO_Y:
-	case SENSOR_CHAN_GYRO_Z:
 	case SENSOR_CHAN_GYRO_XYZ:
-	case SENSOR_CHAN_MAGN_X:
-	case SENSOR_CHAN_MAGN_Y:
-	case SENSOR_CHAN_MAGN_Z:
 	case SENSOR_CHAN_MAGN_XYZ:
-	case SENSOR_CHAN_POS_DX:
-	case SENSOR_CHAN_POS_DY:
-	case SENSOR_CHAN_POS_DZ:
+	case SENSOR_CHAN_POS_DXYZ:
 		*base_size = sizeof(struct sensor_three_axis_data);
 		*frame_size = sizeof(struct sensor_three_axis_sample_data);
 		return 0;
@@ -454,33 +430,22 @@ static int decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 
 	/* Check for 3d channel mappings */
 	switch (chan_spec.chan_type) {
-	case SENSOR_CHAN_ACCEL_X:
-	case SENSOR_CHAN_ACCEL_Y:
-	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ:
 		count = decode_three_axis(header, q, data_out, SENSOR_CHAN_ACCEL_X,
 					  SENSOR_CHAN_ACCEL_Y, SENSOR_CHAN_ACCEL_Z,
 					  chan_spec.chan_idx);
 		break;
-	case SENSOR_CHAN_GYRO_X:
-	case SENSOR_CHAN_GYRO_Y:
-	case SENSOR_CHAN_GYRO_Z:
 	case SENSOR_CHAN_GYRO_XYZ:
 		count = decode_three_axis(header, q, data_out, SENSOR_CHAN_GYRO_X,
 					  SENSOR_CHAN_GYRO_Y, SENSOR_CHAN_GYRO_Z,
 					  chan_spec.chan_idx);
 		break;
-	case SENSOR_CHAN_MAGN_X:
-	case SENSOR_CHAN_MAGN_Y:
-	case SENSOR_CHAN_MAGN_Z:
 	case SENSOR_CHAN_MAGN_XYZ:
 		count = decode_three_axis(header, q, data_out, SENSOR_CHAN_MAGN_X,
 					  SENSOR_CHAN_MAGN_Y, SENSOR_CHAN_MAGN_Z,
 					  chan_spec.chan_idx);
 		break;
-	case SENSOR_CHAN_POS_DX:
-	case SENSOR_CHAN_POS_DY:
-	case SENSOR_CHAN_POS_DZ:
+	case SENSOR_CHAN_POS_DXYZ:
 		count = decode_three_axis(header, q, data_out, SENSOR_CHAN_POS_DX,
 					  SENSOR_CHAN_POS_DY, SENSOR_CHAN_POS_DZ,
 					  chan_spec.chan_idx);
