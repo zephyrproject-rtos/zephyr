@@ -290,7 +290,7 @@ static int nxp_rw600_init(void)
 #define PMU_RESET_CAUSES \
 	COND_CODE_0(IS_EMPTY(PMU_RESET_CAUSES_), (PMU_RESET_CAUSES_), (0))
 #define WDT_RESET \
-	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(wwdt), (kPOWER_ResetSourceWdt), (0))
+	COND_CODE_1(DT_NODE_HAS_STATUS(wwdt, okay), (kPOWER_ResetSourceWdt), (0))
 #define RESET_CAUSES \
 	(PMU_RESET_CAUSES | WDT_RESET)
 #else
