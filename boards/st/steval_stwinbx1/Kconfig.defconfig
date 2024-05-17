@@ -5,6 +5,24 @@
 
 if BOARD_STEVAL_STWINBX1
 
+if BT
+
+config SPI
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_SPI
+endchoice
+
+config BT_BLUENRG_ACI
+	default y
+
+# Disable Flow control
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+endif # BT
+
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
