@@ -37,6 +37,9 @@ def formalize_fmt_string(fmt_str):
         # Python doesn't support %ll for integer specifiers, so remove extra 'l'
         new_str = new_str.replace("%ll" + spec, "%l" + spec)
 
+        if spec in ['x', 'X']:
+            new_str = new_str.replace("%#ll" + spec, "%#l" + spec)
+
         # Python doesn't support %hh for integer specifiers, so remove extra 'h'
         new_str = new_str.replace("%hh" + spec, "%h" + spec)
 
