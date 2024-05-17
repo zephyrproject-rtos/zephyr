@@ -66,6 +66,7 @@ static void reset_internal_request(struct coap_client_internal_request *request)
 {
 	request->offset = 0;
 	request->last_id = 0;
+	request->last_response_id = -1;
 	reset_block_contexts(request);
 }
 
@@ -369,6 +370,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 		}
 
 		coap_pending_cycle(&internal_req->pending);
+		internal_req->is_observe = coap_request_is_observe(&internal_req->request);
 	}
 
 	ret = send_request(sock, internal_req->request.data, internal_req->request.offset, 0,
@@ -659,6 +661,7 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	/* CON, NON_CON and piggybacked ACK need to match the token with original request */
 	uint16_t payload_len;
 	uint8_t response_code = coap_header_get_code(response);
+	uint16_t response_id = coap_header_get_id(response);
 	const uint8_t *payload = coap_packet_get_payload(response, &payload_len);
 
 	/* Separate response coming */
@@ -674,6 +677,14 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		LOG_WRN("Not matching tokens");
 		return 1;
 	}
+
+	/* MID-based deduplication */
+	if (response_id == internal_req->last_response_id) {
+		LOG_WRN("Duplicate MID, dropping");
+		goto fail;
+	}
+
+	internal_req->last_response_id = response_id;
 
 	/* Received echo option */
 	if (find_echo_option(response, &client->echo_option)) {
@@ -833,7 +844,7 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	}
 fail:
 	client->response_ready = false;
-	if (ret != 0 || !coap_request_is_observe(&internal_req->request)) {
+	if (ret < 0 || !internal_req->is_observe) {
 		internal_req->request_ongoing = false;
 	}
 	return ret;
@@ -851,6 +862,7 @@ void coap_client_cancel_requests(struct coap_client *client)
 			 */
 			report_callback_error(&client->requests[i], -ECANCELED);
 			client->requests[i].request_ongoing = false;
+			client->requests[i].is_observe = false;
 		}
 	}
 	atomic_clear(&coap_client_recv_active);
