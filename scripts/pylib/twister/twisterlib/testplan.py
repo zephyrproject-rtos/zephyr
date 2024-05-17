@@ -547,6 +547,8 @@ class TestPlan:
                     for name in parsed_data.scenarios.keys():
                         suite_dict = parsed_data.get_scenario(name)
                         suite = TestSuite(root, suite_path, name, data=suite_dict, detailed_test_id=self.options.detailed_test_id)
+                        if self.options.force_sysbuild:
+                            suite.sysbuild = True
                         suite.add_subcases(suite_dict, subcases, ztest_suite_names)
                         if testsuite_filter:
                             scenario = os.path.basename(suite.name)

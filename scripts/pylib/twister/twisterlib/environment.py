@@ -713,6 +713,11 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     )
 
     parser.add_argument(
+        "--force-sysbuild", action="store_true",
+        help="""Use to enforce usage of sysbuild for every test suite"""
+    )
+
+    parser.add_argument(
         "-X", "--fixture", action="append", default=[],
         help="Specify a fixture that a board might support.")
 
