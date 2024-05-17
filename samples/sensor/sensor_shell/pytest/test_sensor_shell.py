@@ -27,6 +27,11 @@ def test_sensor_shell_get(shell: Shell):
     lines = shell.exec_command('sensor get sensor@1 53')
     assert any(['channel type=53(gauge_time_to_empty)' in line for line in lines]), 'expected response not found'
 
+    # Channel should be the last one before 'all' (because 'all' doesn't print anything) so that the
+    # for-loop in `parse_named_int()` will go through everything
+    lines = shell.exec_command('sensor get sensor@0 gauge_desired_charging_current')
+    assert any(['channel type=58(gauge_desired_charging_current)' in line for line in lines]), 'expected response not found'
+
     logger.info('response is valid')
 
 
