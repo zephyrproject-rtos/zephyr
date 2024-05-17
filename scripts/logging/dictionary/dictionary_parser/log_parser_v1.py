@@ -17,19 +17,11 @@ import struct
 import colorama
 from colorama import Fore
 
-from .log_parser import LogParser
+from .log_parser import (LogParser, get_log_level_str_color, formalize_fmt_string)
 from .data_types import DataTypes
 
 
 HEX_BYTES_IN_LINE = 16
-
-LOG_LEVELS = [
-    ('none', Fore.WHITE),
-    ('err', Fore.RED),
-    ('wrn', Fore.YELLOW),
-    ('inf', Fore.GREEN),
-    ('dbg', Fore.BLUE)
-]
 
 # Need to keep sync with struct log_dict_output_msg_hdr in
 # include/logging/log_output_dict.h.
@@ -68,31 +60,6 @@ FMT_DROPPED_CNT = "H"
 logger = logging.getLogger("parser")
 
 
-def get_log_level_str_color(lvl):
-    """Convert numeric log level to string"""
-    if lvl < 0 or lvl >= len(LOG_LEVELS):
-        return ("unk", Fore.WHITE)
-
-    return LOG_LEVELS[lvl]
-
-
-def formalize_fmt_string(fmt_str):
-    """Replace unsupported formatter"""
-    new_str = fmt_str
-
-    for spec in ['d', 'i', 'o', 'u', 'x', 'X']:
-        # Python doesn't support %ll for integer specifiers, so remove extra 'l'
-        new_str = new_str.replace("%ll" + spec, "%l" + spec)
-
-        # Python doesn't support %hh for integer specifiers, so remove extra 'h'
-        new_str = new_str.replace("%hh" + spec, "%h" + spec)
-
-    # No %p for pointer either, so use %x
-    new_str = new_str.replace("%p", "0x%x")
-
-    return new_str
-
-
 class LogParserV1(LogParser):
     """Log Parser V1"""
     def __init__(self, database):
@@ -115,8 +82,6 @@ class LogParserV1(LogParser):
             self.fmt_msg_timestamp = endian + FMT_MSG_TIMESTAMP_64
         else:
             self.fmt_msg_timestamp = endian + FMT_MSG_TIMESTAMP_32
-
-        self.data_types = DataTypes(self.database)
 
 
     def __get_string(self, arg, arg_offset, string_tbl):
