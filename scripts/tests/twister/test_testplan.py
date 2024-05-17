@@ -110,7 +110,7 @@ TESTDATA_PART1 = [
     ("None", "None", "env", ['BSIM_OUT_PATH', 'demo_env'], "Environment (BSIM_OUT_PATH, demo_env) not satisfied"),
     ("build_on_all", True, None, None, "Platform is excluded on command line."),
     ("build_on_all", True, "level", "foobar", "Unknown test level 'foobar'"),
-    (None, None, "supported_toolchains", ['gcc'], "Not supported by the toolchain"),
+    (None, None, "supported_toolchains", ['gcc', 'xcc', 'xt-clang'], "Not supported by the toolchain"),
 ]
 
 
