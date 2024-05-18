@@ -323,6 +323,13 @@ Devicetree
 Libraries / Subsystems
 **********************
 
+* Debug
+
+  * symtab
+
+   * By enabling :kconfig:option:`CONFIG_SYMTAB`, the symbol table will be
+     generated with Zephyr link stage executable on supported architectures.
+
 * Management
 
   * hawkBit
