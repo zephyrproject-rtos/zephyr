@@ -34,3 +34,8 @@ zephyr_sources_ifdef(
   CONFIG_MIPI_STP_DECODER
   mipi_stp_decoder.c
   )
+
+add_subdirectory_ifdef(
+  CONFIG_SYMTAB
+  symtab
+  )
