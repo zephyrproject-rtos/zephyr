@@ -37,7 +37,7 @@ typedef unsigned long timer_t;
 /* Semaphore */
 typedef struct k_sem sem_t;
 
-#ifdef CONFIG_NEWLIB_LIBC
+#if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_PICOLIBC)
 #include <sys/_pthreadtypes.h>
 
 struct pthread_once {

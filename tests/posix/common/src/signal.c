@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Meta
+ * Copyright (c) 2024, Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,7 +86,12 @@ ZTEST(signal, test_sigaddset)
 			      ((i == SIGHUP) || (i == SIGSYS)) ? "expected" : "not expected");
 	}
 
-	if (IS_ENABLED(CONFIG_NEWLIB_LIBC) || IS_ENABLED(CONFIG_PICOLIBC)) {
+	if ((!IS_ENABLED(CONFIG_64BIT) || CONFIG_POSIX_RTSIG_MAX <= 32) &&
+	    (IS_ENABLED(CONFIG_NEWLIB_LIBC) || IS_ENABLED(CONFIG_PICOLIBC))) {
+		/*
+		 * picolibc and newlib hard-code sigset_t to unsigned long, which works (sort of) on
+		 * 64-bit platforms as long as 32 <= SIGRTMAX <= 64
+		 */
 		return;
 	}
 
@@ -149,7 +155,12 @@ ZTEST(signal, test_sigdelset)
 			      !((i == SIGHUP) || (i == SIGSYS)) ? "expected" : "not expected");
 	}
 
-	if (IS_ENABLED(CONFIG_NEWLIB_LIBC) || IS_ENABLED(CONFIG_PICOLIBC)) {
+	if ((!IS_ENABLED(CONFIG_64BIT) || CONFIG_POSIX_RTSIG_MAX <= 32) &&
+	    (IS_ENABLED(CONFIG_NEWLIB_LIBC) || IS_ENABLED(CONFIG_PICOLIBC))) {
+		/*
+		 * picolibc and newlib hard-code sigset_t to unsigned long, which works (sort of) on
+		 * 64-bit platforms as long as 32 <= SIGRTMAX <= 64
+		 */
 		return;
 	}
 
