@@ -149,7 +149,7 @@ static int stm32_temp_channel_get(const struct device *dev, enum sensor_channel 
 	temp += 25;
 #endif
 
-	return sensor_value_from_double(val, temp);
+	return sensor_value_from_float(val, temp);
 }
 
 static const struct sensor_driver_api stm32_temp_driver_api = {
