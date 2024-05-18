@@ -7,6 +7,7 @@
 #include <zephyr/init.h>
 #include <soc.h>
 #include <zephyr/dt-bindings/rdc/imx_rdc.h>
+#include <zephyr/dt-bindings/clock/nxp_imx7d_ccm.h>
 #include <zephyr/devicetree.h>
 #include "wdog_imx.h"
 
@@ -267,6 +268,60 @@ static void nxp_mcimx7_pwm_config(void)
 }
 #endif /* CONFIG_PWM_IMX */
 
+#ifdef CONFIG_GPT_IMX
+static void nxp_mcimx7_gpt_config(void)
+{
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpt1), okay)
+	/* We need to grasp board ftm exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapGpt1, RDC_DT_VAL(gpt1), false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_DisableRoot(CCM, ccmRootGpt1);
+	CCM_UpdateRoot(CCM, ccmRootGpt1, ccmRootmuxGptOsc24m,
+					CCM_DT_ROOT_PRE(gpt1), CCM_DT_ROOT_POST(gpt1));
+	/* Enable pwm clock */
+	CCM_EnableRoot(CCM, ccmRootGpt1);
+	CCM_ControlGate(CCM, ccmCcgrGateGpt1, ccmClockNeededRunWait);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpt2), okay)
+	/* We need to grasp board ftm exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapGpt2, RDC_DT_VAL(gpt2), false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_DisableRoot(CCM, ccmRootGpt2);
+	CCM_UpdateRoot(CCM, ccmRootGpt2, ccmRootmuxGptOsc24m,
+					CCM_DT_ROOT_PRE(gpt2), CCM_DT_ROOT_POST(gpt2));
+	/* Enable pwm clock */
+	CCM_EnableRoot(CCM, ccmRootGpt2);
+	CCM_ControlGate(CCM, ccmCcgrGateGpt2, ccmClockNeededRunWait);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpt3), okay)
+	/* We need to grasp board ftm exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapGpt3, RDC_DT_VAL(gpt3), false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_DisableRoot(CCM, ccmRootGpt3);
+	CCM_UpdateRoot(CCM, ccmRootGpt3, ccmRootmuxGptOsc24m,
+					CCM_DT_ROOT_PRE(gpt3), CCM_DT_ROOT_POST(gpt3));
+	/* Enable pwm clock */
+	CCM_EnableRoot(CCM, ccmRootGpt3);
+	CCM_ControlGate(CCM, ccmCcgrGateGpt3, ccmClockNeededRunWait);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpt4), okay)
+	/* We need to grasp board ftm exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapGpt4, RDC_DT_VAL(gpt4), false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_DisableRoot(CCM, ccmRootGpt4);
+	CCM_UpdateRoot(CCM, ccmRootGpt4, ccmRootmuxGptOsc24m,
+					CCM_DT_ROOT_PRE(gpt4), CCM_DT_ROOT_POST(gpt4));
+	/* Enable pwm clock */
+	CCM_EnableRoot(CCM, ccmRootGpt4);
+	CCM_ControlGate(CCM, ccmCcgrGateGpt4, ccmClockNeededRunWait);
+#endif
+}
+#endif /* CONFIG_GPT_IMX */
+
 #ifdef CONFIG_IPM_IMX
 static void nxp_mcimx7_mu_config(void)
 {
@@ -302,6 +357,10 @@ static int nxp_mcimx7_init(void)
 #ifdef CONFIG_PWM_IMX
 	nxp_mcimx7_pwm_config();
 #endif /* CONFIG_PWM_IMX */
+
+#ifdef CONFIG_GPT_IMX
+	nxp_mcimx7_gpt_config();
+#endif /* CONFIG_GPT_IMX */
 
 #ifdef CONFIG_IPM_IMX
 	nxp_mcimx7_mu_config();

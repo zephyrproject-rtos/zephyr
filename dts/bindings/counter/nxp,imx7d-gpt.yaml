@@ -1,0 +1,25 @@
+# Copyright (c) 2024, MAKEEN Energy A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP IMX7D General-Purpose Timer (GPT)
+
+compatible: "nxp,imx7d-gpt"
+
+include: [base.yaml, pinctrl-device.yaml, "nxp,imx7d-ccm.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  gptfreq:
+    type: int
+    required: true
+    description: gpt frequencies
+
+  rdc:
+    type: int
+    required: true
+    description: Set the RDC permission for this peripheral

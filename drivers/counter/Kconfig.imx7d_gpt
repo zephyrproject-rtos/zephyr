@@ -1,0 +1,17 @@
+# Copyright (c) 2024 MAKEEN Energy A/S
+# SPDX-License-Identifier: Apache-2.0
+
+
+config GPT_IMX
+	bool "i.MX GPT Driver"
+	default y
+	depends on $(dt_compat_enabled,$(DT_COMPAT_NXP_IMX7D_GPT))
+	help
+	  Enable support for i.MX ftm driver.
+
+config COUNTER_GPT_IMX
+	bool "IMX GPT driver"
+	default y
+	depends on GPT_IMX
+	help
+	  Enable support for Flexible Timer (FTM) driver.
