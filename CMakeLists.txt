@@ -1297,6 +1297,20 @@ if(CONFIG_GEN_ISR_TABLES)
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
 endif()
 
+if(CONFIG_SYMTAB)
+  add_custom_command(
+    OUTPUT symtab.c
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/build/gen_symtab.py
+    -k $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
+    -o symtab.c
+    DEPENDS ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+    COMMAND_EXPAND_LISTS
+  )
+  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES symtab.c)
+endif()
+
 if(CONFIG_USERSPACE)
   set(KOBJECT_HASH_LIST               kobject_hash.gperf)
   set(KOBJECT_HASH_OUTPUT_SRC_PRE     kobject_hash_preprocessed.c)

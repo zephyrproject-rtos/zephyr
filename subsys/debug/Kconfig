@@ -368,6 +368,16 @@ config DEBUG_INFO
 	  used by debuggers in debugging the system, or enable additional
 	  debugging information to be reported at runtime.
 
+config SYMTAB
+	bool "Generate symbol table"
+	help
+	  Generate the symbol table with the offset and name of every
+	  function.
+	  The symbol table can be accessed by including the
+	  <zephyr/debug/symtab.h> header.
+
+	  Choose N if you have no idea what is this.
+
 config EXCEPTION_STACK_TRACE
 	bool "Attempt to print stack traces upon exceptions"
 	default y
