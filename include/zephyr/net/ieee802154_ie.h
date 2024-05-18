@@ -40,8 +40,8 @@
  * @details See sections 7.4.2.1 and 7.4.3.1.
  */
 enum ieee802154_ie_type {
-	IEEE802154_IE_TYPE_HEADER = 0x0,
-	IEEE802154_IE_TYPE_PAYLOAD,
+	IEEE802154_IE_TYPE_HEADER = 0x0, /**< Header type */
+	IEEE802154_IE_TYPE_PAYLOAD,      /**< Payload type */
 };
 
 /**
@@ -51,13 +51,13 @@ enum ieee802154_ie_type {
  * are implemented.
  */
 enum ieee802154_header_ie_element_id {
-	IEEE802154_HEADER_IE_ELEMENT_ID_VENDOR_SPECIFIC_IE = 0x00,
-	IEEE802154_HEADER_IE_ELEMENT_ID_CSL_IE = 0x1a,
-	IEEE802154_HEADER_IE_ELEMENT_ID_RIT_IE = 0x1b,
-	IEEE802154_HEADER_IE_ELEMENT_ID_RENDEZVOUS_TIME_IE = 0x1d,
-	IEEE802154_HEADER_IE_ELEMENT_ID_TIME_CORRECTION_IE = 0x1e,
-	IEEE802154_HEADER_IE_ELEMENT_ID_HEADER_TERMINATION_1 = 0x7e,
-	IEEE802154_HEADER_IE_ELEMENT_ID_HEADER_TERMINATION_2 = 0x7f,
+	IEEE802154_HEADER_IE_ELEMENT_ID_VENDOR_SPECIFIC_IE = 0x00,   /**< Vendor specific IE */
+	IEEE802154_HEADER_IE_ELEMENT_ID_CSL_IE = 0x1a,	             /**< CSL IE */
+	IEEE802154_HEADER_IE_ELEMENT_ID_RIT_IE = 0x1b,               /**< RIT IE */
+	IEEE802154_HEADER_IE_ELEMENT_ID_RENDEZVOUS_TIME_IE = 0x1d,   /**< Rendezvous time IE */
+	IEEE802154_HEADER_IE_ELEMENT_ID_TIME_CORRECTION_IE = 0x1e,   /**< Time correction IE */
+	IEEE802154_HEADER_IE_ELEMENT_ID_HEADER_TERMINATION_1 = 0x7e, /**< Header termination 1 */
+	IEEE802154_HEADER_IE_ELEMENT_ID_HEADER_TERMINATION_2 = 0x7f, /**< Header termination 2 */
 	/* partial list, add additional ids as needed */
 };
 
@@ -67,36 +67,40 @@ enum ieee802154_header_ie_element_id {
 
 /** @brief Vendor Specific Header IE, see section 7.4.2.3. */
 struct ieee802154_header_ie_vendor_specific {
+	/** Vendor OUI */
 	uint8_t vendor_oui[IEEE802154_VENDOR_SPECIFIC_IE_OUI_LEN];
+	/** Vendor specific information */
 	uint8_t *vendor_specific_info;
 } __packed;
 
 /** @brief Full CSL IE, see section 7.4.2.3. */
 struct ieee802154_header_ie_csl_full {
-	uint16_t csl_phase;
-	uint16_t csl_period;
-	uint16_t csl_rendezvous_time;
+	uint16_t csl_phase;           /**< CSL phase */
+	uint16_t csl_period;          /**< CSL period */
+	uint16_t csl_rendezvous_time; /**< Rendezvous time */
 } __packed;
 
 /** @brief Reduced CSL IE, see section 7.4.2.3. */
 struct ieee802154_header_ie_csl_reduced {
-	uint16_t csl_phase;
-	uint16_t csl_period;
+	uint16_t csl_phase;  /**< CSL phase */
+	uint16_t csl_period; /**< CSL period */
 } __packed;
 
 /** @brief Generic CSL IE, see section 7.4.2.3. */
 struct ieee802154_header_ie_csl {
 	union {
+		/** CSL full information */
 		struct ieee802154_header_ie_csl_full full;
+		/** CSL reduced information */
 		struct ieee802154_header_ie_csl_reduced reduced;
 	};
 } __packed;
 
 /** @brief RIT IE, see section 7.4.2.4. */
 struct ieee802154_header_ie_rit {
-	uint8_t time_to_first_listen;
-	uint8_t number_of_repeat_listen;
-	uint16_t repeat_listen_interval;
+	uint8_t time_to_first_listen;    /**< Time to First Listen */
+	uint8_t number_of_repeat_listen; /**< Number of Repeat Listen */
+	uint16_t repeat_listen_interval; /**< Repeat listen interval */
 } __packed;
 
 /**
@@ -104,8 +108,8 @@ struct ieee802154_header_ie_rit {
  * (macCslInterval is nonzero).
  */
 struct ieee802154_header_ie_rendezvous_time_full {
-	uint16_t rendezvous_time;
-	uint16_t wakeup_interval;
+	uint16_t rendezvous_time; /**< Rendezvous time */
+	uint16_t wakeup_interval; /**< Wakeup interval */
 } __packed;
 
 /**
@@ -113,21 +117,25 @@ struct ieee802154_header_ie_rendezvous_time_full {
  * (macCslInterval is zero).
  */
 struct ieee802154_header_ie_rendezvous_time_reduced {
-	uint16_t rendezvous_time;
+	uint16_t rendezvous_time; /**< Rendezvous time */
 } __packed;
 
 /** @brief Rendezvous Time IE, see section 7.4.2.6. */
 struct ieee802154_header_ie_rendezvous_time {
 	union {
+		/** Rendezvous time full information */
 		struct ieee802154_header_ie_rendezvous_time_full full;
+		/** Rendezvous time reduced information */
 		struct ieee802154_header_ie_rendezvous_time_reduced reduced;
 	};
 } __packed;
 
 /** @brief Time Correction IE, see section 7.4.2.7. */
 struct ieee802154_header_ie_time_correction {
-	uint16_t time_sync_info;
+	uint16_t time_sync_info;  /**< Time synchronization information */
 } __packed;
+
+/** @cond INTERNAL_HIDDEN */
 
 /* @brief Generic Header IE, see section 7.4.2.1. */
 struct ieee802154_header_ie {
@@ -151,6 +159,8 @@ struct ieee802154_header_ie {
 		/* add additional supported header IEs here */
 	} content;
 } __packed;
+
+/** INTERNAL_HIDDEN @endcond */
 
 /** @brief The header IE's header length (2 bytes). */
 #define IEEE802154_HEADER_IE_HEADER_LENGTH sizeof(uint16_t)
