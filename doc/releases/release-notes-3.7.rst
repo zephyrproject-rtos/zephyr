@@ -71,6 +71,10 @@ Architectures
 
 * ARM
 
+* ARM64
+
+  * Implemented symbol names in the backtraces, enable by selecting :kconfig:option:`CONFIG_SYMTAB`
+
 * RISC-V
 
   * The fatal error message triggered from a fault now contains the callee-saved-registers states.
