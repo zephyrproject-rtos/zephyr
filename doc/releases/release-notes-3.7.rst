@@ -73,9 +73,14 @@ Architectures
 
 * RISC-V
 
-  * Implemented frame-pointer based stack unwinding.
-
   * The fatal error message triggered from a fault now contains the callee-saved-registers states.
+
+  * Implemented stack unwinding
+
+    * Frame-pointer can be selected to enable precise stack traces at the expense of slightly
+      increased size and decreased speed.
+
+    * Symbol names can be enabled by selecting :kconfig:option:`CONFIG_EXCEPTION_STACK_TRACE_SYMTAB`
 
 * Xtensa
 
