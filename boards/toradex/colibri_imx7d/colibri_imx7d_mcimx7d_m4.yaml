@@ -20,4 +20,5 @@ testing:
     - bluetooth
 supported:
   - pwm
+  - counter
 vendor: nxp

@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2024 MAKEEN Energy A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gpt2 {
+	status = "okay";
+};

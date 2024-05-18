@@ -1,12 +1,6 @@
-# Config for counter alarm sample
-
-# Copyright (c) 2019 Nordic Semiconductor ASA
 # Copyright (c) 2024 MAKEEN Energy A/S
 # SPDX-License-Identifier: Apache-2.0
 
-config COUNTER_SAM0_TC32
-	bool
-	default y if BOARD_ATSAMD20_XPRO
 
 #Use ROMSTART_RELOCATION_ROM if booting the image using Linux RPROC
 #If using U-boot disable it and use the bin file instead.
@@ -15,6 +9,5 @@ config ROMSTART_RELOCATION_ROM
 
 config BUILD_OUTPUT_BIN
 	default n if ROMSTART_RELOCATION_ROM
-
 
 source "Kconfig.zephyr"
