@@ -70,6 +70,17 @@ static void nxp_mcimx7_gpio_config(void)
 	CCM_ControlGate(CCM, ccmCcgrGateGpio2, ccmClockNeededRunWait);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio3), okay)
+	RDC_SetPdapAccess(RDC, rdcPdapGpio3, RDC_DT_VAL(gpio3), false, false);
+	/* Enable gpio clock gate */
+	CCM_ControlGate(CCM, ccmCcgrGateGpio3, ccmClockNeededRunWait);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio4), okay)
+	RDC_SetPdapAccess(RDC, rdcPdapGpio4, RDC_DT_VAL(gpio4), false, false);
+	/* Enable gpio clock gate */
+	CCM_ControlGate(CCM, ccmCcgrGateGpio4, ccmClockNeededRunWait);
+#endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio7), okay)
 	RDC_SetPdapAccess(RDC, rdcPdapGpio7, RDC_DT_VAL(gpio7), false, false);
@@ -97,6 +108,51 @@ static void nxp_mcimx7_uart_config(void)
 	 * So we need UART clock all the time
 	 */
 	CCM_ControlGate(CCM, ccmCcgrGateUart2, ccmClockNeededAll);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart3), okay)
+	/* We need to grasp board uart exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapUart3, RDC_DT_VAL(uart3), false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootUart3, ccmRootmuxUartOsc24m, 0, 0);
+	/* Enable uart clock */
+	CCM_EnableRoot(CCM, ccmRootUart3);
+	/*
+	 * IC Limitation
+	 * M4 stop will cause A7 UART lose functionality
+	 * So we need UART clock all the time
+	 */
+	CCM_ControlGate(CCM, ccmCcgrGateUart3, ccmClockNeededAll);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart4), okay)
+	/* We need to grasp board uart exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapUart4, RDC_DT_VAL(uart4), false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootUart4, ccmRootmuxUartOsc24m, 0, 0);
+	/* Enable uart clock */
+	CCM_EnableRoot(CCM, ccmRootUart4);
+	/*
+	 * IC Limitation
+	 * M4 stop will cause A7 UART lose functionality
+	 * So we need UART clock all the time
+	 */
+	CCM_ControlGate(CCM, ccmCcgrGateUart4, ccmClockNeededAll);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart5), okay)
+	/* We need to grasp board uart exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapUart5, RDC_DT_VAL(uart5), false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootUart5, ccmRootmuxUartOsc24m, 0, 0);
+	/* Enable uart clock */
+	CCM_EnableRoot(CCM, ccmRootUart5);
+	/*
+	 * IC Limitation
+	 * M4 stop will cause A7 UART lose functionality
+	 * So we need UART clock all the time
+	 */
+	CCM_ControlGate(CCM, ccmCcgrGateUart5, ccmClockNeededAll);
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart6), okay)
