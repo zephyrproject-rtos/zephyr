@@ -13,6 +13,7 @@
  * exceptions
  */
 
+#include <zephyr/debug/symtab.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/kernel.h>
@@ -224,8 +225,16 @@ static void esf_unwind(const z_arch_esf_t *esf)
 	LOG_ERR("");
 	while (fp != NULL) {
 		lr = fp[1];
+#ifdef CONFIG_SYMTAB
+		uint32_t offset = 0;
+		const char *name = symtab_find_symbol_name(lr, &offset);
+
+		LOG_ERR("backtrace %2d: fp: 0x%016llx lr: 0x%016llx [%s+0x%x]",
+			 count++, (uint64_t) fp, lr, name, offset);
+#else
 		LOG_ERR("backtrace %2d: fp: 0x%016llx lr: 0x%016llx",
 			 count++, (uint64_t) fp, lr);
+#endif
 		fp = (uint64_t *) fp[0];
 	}
 	LOG_ERR("");
