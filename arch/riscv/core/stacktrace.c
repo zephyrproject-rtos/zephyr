@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/debug/symtab.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
@@ -25,6 +26,21 @@ struct stackframe {
 	uintptr_t fp;
 	uintptr_t ra;
 };
+
+#ifdef CONFIG_RISCV_ENABLE_FRAME_POINTER
+#define SFP_FMT "fp: "
+#else
+#define SFP_FMT "sp: "
+#endif
+
+#ifdef CONFIG_EXCEPTION_STACK_TRACE_SYMTAB
+#define LOG_STACK_TRACE(idx, sfp, ra, name, offset)                                                \
+	LOG_ERR("     %2d: " SFP_FMT PR_REG "   ra: " PR_REG " [%s+0x%x]", idx, sfp, ra, name,     \
+		offset)
+#else
+#define LOG_STACK_TRACE(idx, sfp, ra, name, offset)                                                \
+	LOG_ERR("     %2d: " SFP_FMT PR_REG "   ra: " PR_REG, idx, sfp, ra)
+#endif
 
 static bool in_stack_bound(uintptr_t addr)
 {
@@ -82,7 +98,11 @@ void z_riscv_unwind_stack(const z_arch_esf_t *esf)
 		frame = (struct stackframe *)fp - 1;
 		ra = frame->ra;
 		if (in_text_region(ra)) {
-			LOG_ERR("     %2d: fp: " PR_REG "   ra: " PR_REG, i, fp, ra);
+#ifdef CONFIG_EXCEPTION_STACK_TRACE_SYMTAB
+			uint32_t offset = 0;
+			const char *name = symtab_find_symbol_name(ra, &offset);
+#endif
+			LOG_STACK_TRACE(i, fp, ra, name, offset);
 			/*
 			 * Increment the iterator only if `ra` is within the text region to get the
 			 * most out of it
@@ -112,7 +132,11 @@ void z_riscv_unwind_stack(const z_arch_esf_t *esf)
 	     ksp++) {
 		ra = *ksp;
 		if (in_text_region(ra)) {
-			LOG_ERR("     %2d: sp: " PR_REG "   ra: " PR_REG, i, (uintptr_t)ksp, ra);
+#ifdef CONFIG_EXCEPTION_STACK_TRACE_SYMTAB
+			uint32_t offset = 0;
+			const char *name = symtab_find_symbol_name(ra, &offset);
+#endif
+			LOG_STACK_TRACE(i, (uintptr_t)ksp, ra, name, offset);
 			/*
 			 * Increment the iterator only if `ra` is within the text region to get the
 			 * most out of it
