@@ -262,8 +262,8 @@ int sys_bitarray_xor(sys_bitarray_t *dst, sys_bitarray_t *other, size_t num_bits
 	ret = 0;
 
 out:
-	k_spin_unlock(&dst->lock, key_dst);
 	k_spin_unlock(&other->lock, key_other);
+	k_spin_unlock(&dst->lock, key_dst);
 	return ret;
 }
 
