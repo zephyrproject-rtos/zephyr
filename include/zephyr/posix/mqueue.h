@@ -8,9 +8,9 @@
 #define ZEPHYR_INCLUDE_POSIX_MQUEUE_H_
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/time.h>
+#include <time.h>
 #include <zephyr/posix/fcntl.h>
-#include <zephyr/posix/signal.h>
+#include <signal.h>
 #include <zephyr/posix/sys/stat.h>
 #include "posix_types.h"
 

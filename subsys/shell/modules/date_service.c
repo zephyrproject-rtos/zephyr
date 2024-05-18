@@ -14,7 +14,7 @@
 #if defined(CONFIG_ARCH_POSIX) && defined(CONFIG_EXTERNAL_LIBC)
 #include <time.h>
 #else
-#include <zephyr/posix/time.h>
+#include <time.h>
 #endif
 
 #define HELP_NONE      "[none]"

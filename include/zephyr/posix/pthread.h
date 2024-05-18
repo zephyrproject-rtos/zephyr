@@ -11,7 +11,7 @@
 #include <string.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/time.h>
+#include <time.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/posix/sched.h>
 #include <zephyr/posix/sys/features.h>
@@ -174,12 +174,12 @@ int pthread_condattr_setclock(pthread_condattr_t *att, clockid_t clock_id);
  *  PTHREAD_MUTEX_RECURSIVE: Owner can relock the mutex.
  *  PTHREAD_MUTEX_ERRORCHECK: If owner attempts to relock the mutex, an
  *      error is returned.
- *
+ *  PTHREAD_MUTEX_DEFAULT: Effectively the same as PTHREAD_MUTEX_NORMAL
  */
 #define PTHREAD_MUTEX_NORMAL     0
 #define PTHREAD_MUTEX_RECURSIVE  1
 #define PTHREAD_MUTEX_ERRORCHECK 2
-#define PTHREAD_MUTEX_DEFAULT    PTHREAD_MUTEX_NORMAL
+#define PTHREAD_MUTEX_DEFAULT    3
 
 #if defined(_POSIX_THREAD_PRIO_INHERIT) || defined(_POSIX_THREAD_PRIO_PROTECT) ||                  \
 	defined(__DOXYGEN__)

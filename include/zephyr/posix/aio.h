@@ -10,10 +10,13 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <time.h>
+#include <sys/features.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if defined(_POSIX_ASYNCHRONOUS_IO) || defined(__DOXYGEN__)
 
 struct aiocb {
 	int aio_fildes;
@@ -21,7 +24,9 @@ struct aiocb {
 	volatile void *aio_buf;
 	size_t aio_nbytes;
 	int aio_reqprio;
+#if defined(_POSIX_REALTIME_SIGNALS) || (_POSIX_VERSION >= 199309L)
 	struct sigevent aio_sigevent;
+#endif /* #if defined(_POSIX_REALTIME_SIGNALS) || (_POSIX_VERSION >= 199309L) */
 	int aio_lio_opcode;
 };
 
@@ -38,6 +43,8 @@ int lio_listio(int mode, struct aiocb *const ZRESTRICT list[], int nent,
 	       struct sigevent *ZRESTRICT sig);
 
 #endif /* _POSIX_C_SOURCE >= 200112L */
+
+#endif /* defined(_POSIX_ASYNCHRONOUS_IO) || defined(__DOXYGEN__) */
 
 #ifdef __cplusplus
 }

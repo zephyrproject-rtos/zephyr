@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <signal.h>
 #else
-#include <zephyr/posix/signal.h>
+#include <signal.h>
 #endif
 
 /**

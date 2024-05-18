@@ -10,7 +10,7 @@
 
 #include <zephyr/fs/fs.h>
 #include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/signal.h>
+#include <signal.h>
 #include <zephyr/posix/sys/confstr.h>
 #include <zephyr/posix/sys/stat.h>
 #include <zephyr/posix/sys/sysconf.h>

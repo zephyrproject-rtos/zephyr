@@ -4,21 +4,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "posix/strsignal_table.h"
+#include "posix_internal.h"
 
 #include <errno.h>
+#include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 
-#include <zephyr/posix/signal.h>
+#include <zephyr/kernel.h>
 
-#define SIGNO_WORD_IDX(_signo) (signo / BITS_PER_LONG)
-#define SIGNO_WORD_BIT(_signo) (signo & BIT_MASK(LOG2(BITS_PER_LONG)))
+#ifndef SIGRTMIN
+#define SIGRTMIN 32
+#endif
 
-BUILD_ASSERT(CONFIG_POSIX_LIMITS_RTSIG_MAX >= 0);
-BUILD_ASSERT(CONFIG_POSIX_RTSIG_MAX >= CONFIG_POSIX_LIMITS_RTSIG_MAX);
+#ifndef SIGRTMAX
+#define SIGRTMAX (SIGRTMIN + CONFIG_POSIX_RTSIG_MAX)
+#endif
+
+// BUILD_ASSERT(CONFIG_POSIX_RTSIG_MAX >= 0, "");
+
+/* some libcs define these as very non-functional macros */
+#undef sigemptyset
+#undef sigfillset
+#undef sigaddset
+#undef sigdelset
+#undef sigismember
 
 static inline bool signo_valid(int signo)
 {
-	return ((signo > 0) && (signo < _NSIG));
+	return ((signo > 0) && (signo <= SIGRTMAX));
 }
 
 static inline bool signo_is_rt(int signo)
@@ -28,51 +42,73 @@ static inline bool signo_is_rt(int signo)
 
 int sigemptyset(sigset_t *set)
 {
-	*set = (sigset_t){0};
+	if (set == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	z_sigemptyset((struct z_sigset *)set);
 	return 0;
 }
 
 int sigfillset(sigset_t *set)
 {
-	for (int i = 0; i < ARRAY_SIZE(set->sig); i++) {
-		set->sig[i] = -1;
+	if (set == NULL) {
+		errno = EINVAL;
+		return -1;
 	}
 
+	z_sigfillset((struct z_sigset *)set);
 	return 0;
 }
 
 int sigaddset(sigset_t *set, int signo)
 {
+	if (set == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	if (!signo_valid(signo)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	WRITE_BIT(set->sig[SIGNO_WORD_IDX(signo)], SIGNO_WORD_BIT(signo), 1);
+	z_sigaddset((struct z_sigset *)set, signo);
 
 	return 0;
 }
 
 int sigdelset(sigset_t *set, int signo)
 {
+	if (set == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	if (!signo_valid(signo)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	WRITE_BIT(set->sig[SIGNO_WORD_IDX(signo)], SIGNO_WORD_BIT(signo), 0);
+	z_sigdelset((struct z_sigset *)set, signo);
 
 	return 0;
 }
 
 int sigismember(const sigset_t *set, int signo)
 {
+	if (set == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	if (!signo_valid(signo)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	return 1 & (set->sig[SIGNO_WORD_IDX(signo)] >> SIGNO_WORD_BIT(signo));
+	return z_sigismember((const struct z_sigset *)set, signo);
 }
 
 char *strsignal(int signum)

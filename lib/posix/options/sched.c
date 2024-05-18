@@ -9,6 +9,12 @@
 #include <zephyr/kernel.h>
 #include <zephyr/posix/sched.h>
 
+int sched_yield(void)
+{
+	k_yield();
+	return 0;
+}
+
 /**
  * @brief Get minimum priority value for a given policy
  *

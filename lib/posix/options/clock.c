@@ -9,7 +9,7 @@
 
 #include <zephyr/kernel.h>
 #include <errno.h>
-#include <zephyr/posix/time.h>
+#include <time.h>
 #include <zephyr/posix/sys/features.h>
 #include <zephyr/posix/sys/time.h>
 #include <zephyr/posix/unistd.h>

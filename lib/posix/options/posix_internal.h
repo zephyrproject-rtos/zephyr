@@ -12,13 +12,11 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/posix/pthread.h>
-#include <zephyr/posix/signal.h>
+#include <signal.h>
 #include <zephyr/posix/sys/features.h>
-#include <zephyr/posix/time.h>
+#include <time.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/slist.h>
-
-/* #if defined(_POSIX_THREADS) */
 
 /*
  * Bit used to mark a pthread object as initialized. Initialization status is
@@ -68,6 +66,10 @@ struct posix_thread {
 
 	/* Queue ID (internal-only) */
 	uint8_t qid;
+};
+
+struct z_sigset {
+	unsigned long sig[DIV_ROUND_UP(32 + CONFIG_POSIX_RTSIG_MAX, BITS_PER_LONG)];
 };
 
 typedef struct pthread_key_obj {
@@ -130,6 +132,62 @@ static inline int64_t timespec_to_timeoutms(const struct timespec *abstime)
 	return milli_secs;
 }
 
-/* #endif defined(_POSIX_THREADS) */
+static inline int32_t _ts_to_ms(const struct timespec *to)
+{
+	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC);
+}
+
+#define SIGNO_WORD_IDX(_signo) (signo / BITS_PER_LONG)
+#define SIGNO_WORD_BIT(_signo) (signo & BIT_MASK(LOG2(BITS_PER_LONG)))
+
+static inline void z_sigemptyset(struct z_sigset *dst)
+{
+	*dst = (struct z_sigset){0};
+}
+
+static inline void z_sigfillset(struct z_sigset *dst)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(dst->sig); ++i) {
+		dst->sig[i] = -1;
+	}
+}
+
+static inline bool z_sigismember(const struct z_sigset *dst, int signo)
+{
+	return 1 & (dst->sig[SIGNO_WORD_IDX(signo)] >> SIGNO_WORD_BIT(signo));
+}
+
+static inline void z_sigaddset(struct z_sigset *dst, int signo)
+{
+	dst->sig[SIGNO_WORD_IDX(signo)] |= BIT(SIGNO_WORD_BIT(signo));
+}
+
+static inline void z_sigdelset(struct z_sigset *dst, int signo)
+{
+	dst->sig[SIGNO_WORD_IDX(signo)] &= ~BIT(SIGNO_WORD_BIT(signo));
+}
+
+static inline void z_signotset(struct z_sigset *dst, const struct z_sigset *src)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(dst->sig); ++i) {
+		dst->sig[i] = ~src->sig[i];
+	}
+}
+
+static inline void z_sigandset(struct z_sigset *dst, const struct z_sigset *a,
+			       const struct z_sigset *b)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(dst->sig); ++i) {
+		dst->sig[i] = a->sig[i] & b->sig[i];
+	}
+}
+
+static inline void z_sigorset(struct z_sigset *dst, const struct z_sigset *a,
+			      const struct z_sigset *b)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(dst->sig); ++i) {
+		dst->sig[i] = a->sig[i] | b->sig[i];
+	}
+}
 
 #endif /* ZEPHYR_LIB_POSIX_POSIX_INTERNAL_H_ */

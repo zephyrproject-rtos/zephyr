@@ -12,187 +12,189 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
+#ifndef SIGRTMIN
+#define SIGRTMIN (32)
+#endif
+
+#ifndef SIGRTMAX
+#define SIGRTMAX (32 + CONFIG_POSIX_RTSIG_MAX)
+#endif
+
+/* some libcs define these as very non-functional macros */
+#undef sigemptyset
+#undef sigfillset
+#undef sigaddset
+#undef sigdelset
+#undef sigismember
+
 ZTEST(signal, test_sigemptyset)
 {
 	sigset_t set;
 
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		set.sig[i] = -1;
-	}
-
 	zassert_ok(sigemptyset(&set));
 
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], 0u, "set.sig[%d] is not empty: 0x%lx", i, set.sig[i]);
+	for (int i = 1; i <= SIGRTMAX; i++) {
+		zassert_false(sigismember(&set, i), "sigset is not empty (%d)", i);
 	}
 }
 
 ZTEST(signal, test_sigfillset)
 {
-	sigset_t set = (sigset_t){0};
+	sigset_t set;
 
 	zassert_ok(sigfillset(&set));
 
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], -1, "set.sig[%d] is not filled: 0x%lx", i, set.sig[i]);
+	for (int i = 1; i <= SIGRTMAX; i++) {
+		zassert_true(sigismember(&set, i), "sigset is not full (%d)", i);
 	}
-}
-
-ZTEST(signal, test_sigaddset_oor)
-{
-	sigset_t set = (sigset_t){0};
-
-	zassert_equal(sigaddset(&set, -1), -1, "rc should be -1");
-	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
-
-	zassert_equal(sigaddset(&set, 0), -1, "rc should be -1");
-	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
-
-	zassert_equal(sigaddset(&set, _NSIG), -1, "rc should be -1");
-	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
 }
 
 ZTEST(signal, test_sigaddset)
 {
-	int signo;
-	sigset_t set = (sigset_t){0};
-	sigset_t target = (sigset_t){0};
+	sigset_t set;
 
-	signo = SIGHUP;
-	zassert_ok(sigaddset(&set, signo));
-	WRITE_BIT(target.sig[0], signo, 1);
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], target.sig[i],
-			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
+	sigemptyset(&set);
+
+	{
+		if (false) {
+			/* this breaks for newlib */
+			/* zassert_equal(sigaddset(NULL, -1), -1, "rc should be -1"); */
+		}
+
+		/* degenerate cases */
+		zexpect_equal(sigaddset(&set, -1), -1, "rc should be -1");
+		zexpect_equal(errno, EINVAL, "errno should be %s", "EINVAL");
+
+		zexpect_equal(sigaddset(&set, 0), -1, "rc should be -1");
+		zexpect_equal(errno, EINVAL, "errno should be %s", "EINVAL");
+
+		zexpect_equal(sigaddset(&set, SIGRTMAX + 1), -1, "rc should be -1");
+		zexpect_equal(errno, EINVAL, "errno should be %s", "EINVAL");
 	}
 
-	signo = SIGSYS;
-	zassert_ok(sigaddset(&set, signo));
-	WRITE_BIT(target.sig[0], signo, 1);
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], target.sig[i],
-			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
+	zexpect_ok(sigaddset(&set, SIGHUP));
+	for (int i = 1; i <= SIGRTMAX; i++) {
+		zexpect_equal(sigismember(&set, i), (i == SIGHUP), "sig %d %s to be member", i,
+			      (i == SIGHUP) ? "expected" : "not expected");
 	}
 
-	signo = SIGRTMIN; /* >=32, will be in the second sig set for 32bit */
-	zassert_ok(sigaddset(&set, signo));
-#ifdef CONFIG_64BIT
-	WRITE_BIT(target.sig[0], signo, 1);
-#else /* 32BIT */
-	WRITE_BIT(target.sig[1], (signo)-BITS_PER_LONG, 1);
-#endif
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], target.sig[i],
-			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
+	zexpect_ok(sigaddset(&set, SIGSYS));
+	for (int i = 1; i <= SIGRTMAX; i++) {
+		zexpect_equal(sigismember(&set, i), (i == SIGHUP) || (i == SIGSYS),
+			      "sig %d %s to be member", i,
+			      ((i == SIGHUP) || (i == SIGSYS)) ? "expected" : "not expected");
 	}
 
-	signo = SIGRTMAX;
-	zassert_ok(sigaddset(&set, signo));
-	WRITE_BIT(target.sig[signo / BITS_PER_LONG], signo % BITS_PER_LONG, 1);
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], target.sig[i],
-			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
+	if (IS_ENABLED(CONFIG_NEWLIB_LIBC) || IS_ENABLED(CONFIG_PICOLIBC)) {
+		return;
 	}
-}
 
-ZTEST(signal, test_sigdelset_oor)
-{
-	sigset_t set = (sigset_t){0};
+	/* SIGRTMIN is useful to test beyond the 32-bit boundary */
+	zexpect_ok(sigaddset(&set, SIGRTMIN));
+	for (int i = 1; i <= SIGRTMAX; i++) {
+		zexpect_equal(sigismember(&set, i),
+			      (i == SIGHUP) || (i == SIGSYS) || (i == SIGRTMIN),
+			      "sig %d %s to be member", i,
+			      ((i == SIGHUP) || (i == SIGSYS) || (i == SIGRTMIN)) ? "expected"
+										  : "not expected");
+	}
 
-	zassert_equal(sigdelset(&set, -1), -1, "rc should be -1");
-	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
+	/* SIGRTMAX is at the final boundary */
+	zexpect_ok(sigaddset(&set, SIGRTMAX));
+	for (int i = 1; i <= SIGRTMAX; i++) {
+		zexpect_equal(sigismember(&set, i),
+			      (i == SIGHUP) || (i == SIGSYS) || (i == SIGRTMIN) || (i == SIGRTMAX),
+			      "sig %d %s to be member", i,
+			      ((i == SIGHUP) || (i == SIGSYS) || (i == SIGRTMIN) || (i == SIGRTMAX))
+				      ? "expected"
+				      : "not expected");
+	}
 
-	zassert_equal(sigdelset(&set, 0), -1, "rc should be -1");
-	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
-
-	zassert_equal(sigdelset(&set, _NSIG), -1, "rc should be -1");
-	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
+	zexpect_not_ok(sigaddset(&set, SIGRTMAX + 1));
 }
 
 ZTEST(signal, test_sigdelset)
 {
-	int signo;
-	sigset_t set = (sigset_t){0};
-	sigset_t target = (sigset_t){0};
+	sigset_t set;
 
-	signo = SIGHUP;
-	zassert_ok(sigdelset(&set, signo));
-	WRITE_BIT(target.sig[0], signo, 0);
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], target.sig[i],
-			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
+	sigfillset(&set);
+
+	{
+		if (false) {
+			/* this breaks for newlib */
+			/* zassert_equal(sigaddset(NULL, -1), -1, "rc should be -1"); */
+		}
+
+		/* degenerate cases */
+		zexpect_equal(sigdelset(&set, -1), -1, "rc should be -1");
+		zexpect_equal(errno, EINVAL, "errno should be %s", "EINVAL");
+
+		zexpect_equal(sigdelset(&set, 0), -1, "rc should be -1");
+		zexpect_equal(errno, EINVAL, "errno should be %s", "EINVAL");
+
+		zexpect_equal(sigdelset(&set, SIGRTMAX + 1), -1, "rc should be -1");
+		zexpect_equal(errno, EINVAL, "errno should be %s", "EINVAL");
 	}
 
-	signo = SIGSYS;
-	zassert_ok(sigdelset(&set, signo));
-	WRITE_BIT(target.sig[0], signo, 0);
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], target.sig[i],
-			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
+	zexpect_ok(sigdelset(&set, SIGHUP));
+	for (int i = 1; i <= SIGRTMAX; i++) {
+		zexpect_equal(sigismember(&set, i), !(i == SIGHUP), "sig %d %s to be member", i,
+			      !(i == SIGHUP) ? "expected" : "not expected");
 	}
 
-	signo = SIGRTMIN; /* >=32, will be in the second sig set for 32bit */
-	zassert_ok(sigdelset(&set, signo));
-#ifdef CONFIG_64BIT
-	WRITE_BIT(target.sig[0], signo, 0);
-#else /* 32BIT */
-	WRITE_BIT(target.sig[1], (signo)-BITS_PER_LONG, 0);
-#endif
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], target.sig[i],
-			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
+	zexpect_ok(sigdelset(&set, SIGSYS));
+	for (int i = 1; i <= SIGRTMAX; i++) {
+		zexpect_equal(sigismember(&set, i), !((i == SIGHUP) || (i == SIGSYS)),
+			      "sig %d %s to be member", i,
+			      !((i == SIGHUP) || (i == SIGSYS)) ? "expected" : "not expected");
 	}
 
-	signo = SIGRTMAX;
-	zassert_ok(sigdelset(&set, signo));
-	WRITE_BIT(target.sig[signo / BITS_PER_LONG], signo % BITS_PER_LONG, 0);
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], target.sig[i],
-			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
+	if (IS_ENABLED(CONFIG_NEWLIB_LIBC) || IS_ENABLED(CONFIG_PICOLIBC)) {
+		return;
 	}
-}
 
-ZTEST(signal, test_sigismember_oor)
-{
-	sigset_t set = {0};
+	/* SIGRTMIN is useful to test beyond the 32-bit boundary */
+	zexpect_ok(sigdelset(&set, SIGRTMIN));
+	for (int i = 1; i <= SIGRTMAX; i++) {
+		zexpect_equal(
+			sigismember(&set, i), !((i == SIGHUP) || (i == SIGSYS) || (i == SIGRTMIN)),
+			"sig %d %s to be member", i,
+			!((i == SIGHUP) || (i == SIGSYS) || (i == SIGRTMIN)) ? "expected"
+									     : "not expected");
+	}
 
-	zassert_equal(sigismember(&set, -1), -1, "rc should be -1");
-	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
+	/* SIGRTMAX is at the final boundary */
+	zexpect_ok(sigdelset(&set, SIGRTMAX));
+	for (int i = 1; i <= SIGRTMAX; i++) {
+		zexpect_equal(
+			sigismember(&set, i),
+			!((i == SIGHUP) || (i == SIGSYS) || (i == SIGRTMIN) || (i == SIGRTMAX)),
+			"sig %d %s to be member", i,
+			!((i == SIGHUP) || (i == SIGSYS) || (i == SIGRTMIN) || (i == SIGRTMAX))
+				? "expected"
+				: "not expected");
+	}
 
-	zassert_equal(sigismember(&set, 0), -1, "rc should be -1");
-	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
-
-	zassert_equal(sigismember(&set, _NSIG), -1, "rc should be -1");
-	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
+	zexpect_not_ok(sigdelset(&set, SIGRTMAX + 1));
 }
 
 ZTEST(signal, test_sigismember)
 {
-	sigset_t set = (sigset_t){0};
+	sigset_t set;
 
-#ifdef CONFIG_64BIT
-	set.sig[0] = BIT(SIGHUP) | BIT(SIGSYS) | BIT(SIGRTMIN);
-#else /* 32BIT */
-	set.sig[0] = BIT(SIGHUP) | BIT(SIGSYS);
-	set.sig[1] = BIT((SIGRTMIN)-BITS_PER_LONG);
-#endif
-	WRITE_BIT(set.sig[SIGRTMAX / BITS_PER_LONG], SIGRTMAX % BITS_PER_LONG, 1);
+	sigemptyset(&set);
 
-	zassert_equal(sigismember(&set, SIGHUP), 1, "%s expected to be member", "SIGHUP");
-	zassert_equal(sigismember(&set, SIGSYS), 1, "%s expected to be member", "SIGSYS");
-	zassert_equal(sigismember(&set, SIGRTMIN), 1, "%s expected to be member", "SIGRTMIN");
-	zassert_equal(sigismember(&set, SIGRTMAX), 1, "%s expected to be member", "SIGRTMAX");
+	{
+		/* degenerate cases */
+		zassert_equal(sigismember(&set, -1), -1, "rc should be -1");
+		zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
 
-	zassert_equal(sigismember(&set, SIGKILL), 0, "%s not expected to be member", "SIGKILL");
-	zassert_equal(sigismember(&set, SIGTERM), 0, "%s not expected to be member", "SIGTERM");
+		zassert_equal(sigismember(&set, 0), -1, "rc should be -1");
+		zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
+
+		zassert_equal(sigismember(&set, SIGRTMAX + 1), -1, "rc should be -1");
+		zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
+	}
 }
 
 ZTEST(signal, test_signal_strsignal)
@@ -202,7 +204,7 @@ ZTEST(signal, test_signal_strsignal)
 
 	zassert_mem_equal(strsignal(-1), "Invalid signal", sizeof("Invalid signal"));
 	zassert_mem_equal(strsignal(0), "Invalid signal", sizeof("Invalid signal"));
-	zassert_mem_equal(strsignal(_NSIG), "Invalid signal", sizeof("Invalid signal"));
+	zassert_mem_equal(strsignal(SIGRTMAX + 1), "Invalid signal", sizeof("Invalid signal"));
 
 	zassert_mem_equal(strsignal(30), "Signal 30", sizeof("Signal 30"));
 	snprintf(buf, sizeof(buf), "RT signal %d", SIGRTMIN - SIGRTMIN);

@@ -393,6 +393,9 @@
 #define SYMLINK_MAX              _POSIX_SYMLINK_MAX
 
 /* These are for compatibility / practicality */
+#undef __POSIX_VISIBLE
+#define __POSIX_VISIBLE _POSIX_VERSION
+
 #define _UTSNAME_NODENAME_LENGTH                                                                   \
 	COND_CODE_1(CONFIG_POSIX_SINGLE_PROCESS, (CONFIG_POSIX_UNAME_VERSION_LEN), (0))
 #define _UTSNAME_VERSION_LENGTH                                                                    \

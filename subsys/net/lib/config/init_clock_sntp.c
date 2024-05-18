@@ -9,7 +9,7 @@ LOG_MODULE_DECLARE(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 
 #include <errno.h>
 #include <zephyr/net/sntp.h>
-#include <zephyr/posix/time.h>
+#include <time.h>
 
 static int sntp_init_helper(struct sntp_time *tm)
 {

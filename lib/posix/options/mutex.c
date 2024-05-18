@@ -21,7 +21,7 @@ struct posix_mutexattr {
 #if defined(_POSIX_THREAD_PROCESS_SHARED)
 	bool pshared: 1;
 #endif /* defined(_POSIX_THREAD_PROCESS_SHARED) */
-	uint32_t type: 2;
+	uint32_t type: 3;
 	bool initialized: 1;
 };
 
@@ -133,6 +133,7 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 	if (m->owner == k_current_get()) {
 		switch (type) {
 		case PTHREAD_MUTEX_NORMAL:
+		case PTHREAD_MUTEX_DEFAULT:
 			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 				k_spin_unlock(&pthread_mutex_spinlock, key);
 				LOG_DBG("Timeout locking mutex %p", m);
@@ -421,6 +422,7 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 	case PTHREAD_MUTEX_NORMAL:
 	case PTHREAD_MUTEX_RECURSIVE:
 	case PTHREAD_MUTEX_ERRORCHECK:
+	case PTHREAD_MUTEX_DEFAULT:
 		a->type = type;
 		return 0;
 	default:

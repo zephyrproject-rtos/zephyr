@@ -9,8 +9,7 @@
 #include "pthread_sched.h"
 
 #include <stdio.h>
-
-BUILD_ASSERT(_POSIX_THREADS == 200809L, "Invalid _POSIX_THREADS value");
+#include <signal.h>
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -1478,13 +1477,25 @@ int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(vo
 	return ENOSYS;
 }
 
+#ifndef SIG_SETMASK
+#define SIG_SETMASK 0
+#endif
+
+#ifndef SIG_BLOCK
+#define SIG_BLOCK 1
+#endif
+
+#ifndef SIG_UNBLOCK
+#define SIG_UNBLOCK 2
+#endif
+
 /* this should probably go into signal.c but we need access to the lock */
 int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset)
 {
 	int ret = 0;
 	struct posix_thread *t;
 
-	if (!(how == SIG_BLOCK || how == SIG_SETMASK || how == SIG_UNBLOCK)) {
+	if (!((how == SIG_BLOCK) || (how == SIG_SETMASK) || (how == SIG_UNBLOCK))) {
 		return EINVAL;
 	}
 
@@ -1505,18 +1516,19 @@ int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT 
 
 		switch (how) {
 		case SIG_BLOCK:
-			for (size_t i = 0; i < ARRAY_SIZE(set->sig); ++i) {
-				t->sigset.sig[i] |= set->sig[i];
-			}
+			z_sigorset((struct z_sigset *)&t->sigset, (struct z_sigset *)&t->sigset,
+				   (struct z_sigset *)set);
 			break;
 		case SIG_SETMASK:
 			t->sigset = *set;
 			break;
-		case SIG_UNBLOCK:
-			for (size_t i = 0; i < ARRAY_SIZE(set->sig); ++i) {
-				t->sigset.sig[i] &= ~set->sig[i];
-			}
-			break;
+		case SIG_UNBLOCK: {
+			struct z_sigset tmp;
+
+			z_signotset(&tmp, (struct z_sigset *)set);
+			z_sigandset((struct z_sigset *)&t->sigset, (struct z_sigset *)&t->sigset,
+				    &tmp);
+		} break;
 		}
 	}
 

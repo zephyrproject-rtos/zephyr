@@ -8,6 +8,7 @@
 #include <signal.h>
 
 #include <zephyr/posix/aio.h>
+#include <zephyr/toolchain.h>
 
 int aio_cancel(int fildes, struct aiocb *aiocbp)
 {

@@ -24,7 +24,7 @@
 #include <zephyr/linker/utils.h>
 
 #ifdef CONFIG_LOG_TIMESTAMP_USE_REALTIME
-#include <zephyr/posix/time.h>
+#include <time.h>
 #endif
 
 LOG_MODULE_REGISTER(log);

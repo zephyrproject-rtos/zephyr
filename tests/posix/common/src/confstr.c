@@ -10,6 +10,9 @@
 #include <zephyr/ztest.h>
 #include <zephyr/sys/util.h>
 
+/* not declared with newlib due to various macros */
+size_t confstr(int name, char *buf, size_t len);
+
 ZTEST(confstr, test_confstr)
 {
 	char buf[1];

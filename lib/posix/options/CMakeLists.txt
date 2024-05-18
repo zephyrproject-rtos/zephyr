@@ -10,17 +10,18 @@ if(CONFIG_POSIX_API)
   zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr/posix)
 endif()
 
-if(CONFIG_POSIX_SIGNAL)
+if(CONFIG_POSIX_SIGNALS OR CONFIG_POSIX_REALTIME_SIGNALS)
   set(STRSIGNAL_TABLE_H ${GEN_DIR}/posix/strsignal_table.h)
+  set(SIGNAL_H ${ZEPHYR_BASE}/lib/libc/minimal/include/signal.h)
 
   add_custom_command(
     OUTPUT ${STRSIGNAL_TABLE_H}
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/gen_strsignal_table.py
-    -i ${ZEPHYR_BASE}/include/zephyr/posix/signal.h
+    -i ${SIGNAL_H}
     -o ${STRSIGNAL_TABLE_H}
-    DEPENDS ${ZEPHYR_BASE}/include/zephyr/posix/signal.h
+    DEPENDS ${SIGNAL_H}
   )
 endif()
 
@@ -35,7 +36,8 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_FILE_SYSTEM fs.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MESSAGE_PASSING mqueue.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_NETWORKING net.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_PUTMSG stropts.c)
-zephyr_library_sources_ifdef(CONFIG_POSIX_SIGNAL signal.c ${STRSIGNAL_TABLE_H})
+zephyr_library_sources_ifdef(CONFIG_POSIX_SIGNALS signal.c ${STRSIGNAL_TABLE_H})
+zephyr_library_sources_ifdef(CONFIG_POSIX_REALTIME_SIGNALS signal.c ${STRSIGNAL_TABLE_H})
 zephyr_library_sources_ifdef(CONFIG_POSIX_SYSCONF_IMPL_FULL sysconf.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_SYSLOG syslog.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_THREADS_BASE
