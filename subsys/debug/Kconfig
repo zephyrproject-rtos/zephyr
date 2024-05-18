@@ -389,6 +389,15 @@ config EXCEPTION_STACK_TRACE
 	  print a stack trace of function memory addresses when an
 	  exception is reported.
 
+config EXCEPTION_STACK_TRACE_SYMTAB
+	bool "Print function names in the stack trace"
+	select SYMTAB
+	depends on EXCEPTION_STACK_TRACE
+	help
+	  Enable this if you want to print the function names in the
+	  stack trace output. This will generate the symtab and
+	  can consume a lot of ROM if there's a lot of functions.
+
 #
 # Miscellaneous debugging options
 #
