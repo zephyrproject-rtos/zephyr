@@ -15,6 +15,10 @@ manifest:
       remote: upstream
       groups:
         - optional
+    - name: gsoc-2022-arduino-core
+      revision: 9e6adb1c0df4ecc059ad6b0f8b4639134d6a1469
+      path: modules/lib/Arduino-Zephyr-API
+      remote: upstream
     - name: lz4
       revision: 8e303c264fc21c2116dc612658003a22e933124d
       path: modules/lib/lz4
