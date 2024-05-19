@@ -32,9 +32,12 @@ LOG_MODULE_REGISTER(dma_xmc4xxx, CONFIG_DMA_LOG_LEVEL);
 struct dma_xmc4xxx_channel {
 	dma_callback_t cb;
 	void *user_data;
+	uint32_t dest_address;
 	uint16_t block_ts;
 	uint8_t source_data_size;
 	uint8_t dlr_line;
+	uint8_t channel_direction;
+	uint8_t dest_addr_adj;
 };
 
 struct dma_xmc4xxx_config {
@@ -62,7 +65,7 @@ do {                                                                            
 		if (dma_channel->cb) {                                                     \
 			dma_channel->cb(dev, dma_channel->user_data, channel, (ret));      \
 		}                                                                          \
-}                                                                                          \
+	}                                                                                  \
 } while (0)
 
 /* Isr is level triggered, so we don't have to loop over all the channels */
@@ -287,6 +290,9 @@ static int dma_xmc4xxx_config(const struct device *dev, uint32_t channel, struct
 	dev_data->channels[channel].block_ts = block->block_size / config->source_data_size;
 	dev_data->channels[channel].source_data_size = config->source_data_size;
 	dev_data->channels[channel].dlr_line = dlr_line;
+	dev_data->channels[channel].channel_direction = config->channel_direction;
+	dev_data->channels[channel].dest_addr_adj = block->dest_addr_adj;
+	dev_data->channels[channel].dest_address = block->dest_address;
 
 	XMC_DMA_CH_DisableEvent(dma, channel, ALL_EVENTS);
 	XMC_DMA_CH_EnableEvent(dma, channel, XMC_DMA_CH_EVENT_TRANSFER_COMPLETE);
@@ -368,6 +374,7 @@ static int dma_xmc4xxx_reload(const struct device *dev, uint32_t channel, uint32
 		return -EINVAL;
 	}
 	dma_channel->block_ts = block_ts;
+	dma_channel->dest_address = dst;
 
 	/* do we need to clear any errors */
 	dma->CH[channel].SAR = src;
@@ -384,6 +391,7 @@ static int dma_xmc4xxx_get_status(const struct device *dev, uint32_t channel,
 	const struct dma_xmc4xxx_config *dev_cfg = dev->config;
 	XMC_DMA_t *dma = dev_cfg->dma;
 	struct dma_xmc4xxx_channel *dma_channel;
+	uint32_t transferred_bytes;
 
 	if (channel >= dev_data->ctx.dma_channels) {
 		LOG_ERR("Invalid channel number");
@@ -393,8 +401,20 @@ static int dma_xmc4xxx_get_status(const struct device *dev, uint32_t channel,
 
 	stat->busy = XMC_DMA_CH_IsEnabled(dma, channel);
 
-	stat->pending_length  = dma_channel->block_ts - XMC_DMA_CH_GetTransferredData(dma, channel);
-	stat->pending_length *= dma_channel->source_data_size;
+	/* Use DAR to check for transferred bytes when possible. Value CTL.BLOCK_TS does not */
+	/* appear to guarantee that the last value is fully transferred to dest. */
+	if (dma_channel->dest_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
+		transferred_bytes = dma->CH[channel].DAR - dma_channel->dest_address;
+		stat->pending_length = dma_channel->block_ts - transferred_bytes;
+	} else if (dma_channel->dest_addr_adj == DMA_ADDR_ADJ_DECREMENT) {
+		transferred_bytes =  dma_channel->dest_address - dma->CH[channel].DAR;
+		stat->pending_length = dma_channel->block_ts - transferred_bytes;
+	} else {
+		transferred_bytes = XMC_DMA_CH_GetTransferredData(dma, channel);
+		stat->pending_length = dma_channel->block_ts - transferred_bytes;
+		stat->pending_length *= dma_channel->source_data_size;
+	}
+
 	/* stat->dir and other remaining fields are not set. They are not */
 	/* useful for xmc4xxx peripheral drivers. */
 
