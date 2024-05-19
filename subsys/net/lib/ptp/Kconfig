@@ -1,0 +1,43 @@
+# Copyright (c) 2024 BayLibre
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PTP
+	bool "IEEE 1588 (PTP) support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select NET_SOCKETS
+	select NET_L2_PTP
+	depends on NET_L2_ETHERNET
+	depends on !NET_GPTP
+	help
+	  Enable PTP Stack that send and receives PTP packets
+	  and handles network packet timestamps. The protocol's implementation
+	  supports only one PTP Instance in the PTP Node.
+
+if PTP
+
+module = PTP
+module-dep = NET_LOG
+module-str = Log level for PTP
+module-help = Enable logs for the PTP stack.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config PTP_STACK_SIZE
+	int "PTP thread stack size"
+	default 2048
+	help
+	  Set the PTP thread stack size in bytes. The PTP thread handles the
+	  PTP state machine. There is one PTP thread in the system.
+
+config PTP_INIT_PRIO
+	int "Startup priority for the PTP stack init"
+	default 96
+
+config PTP_SERVICE_THREAD_PRIO
+	int "Priority of the PTP service thread"
+	default NUM_PREEMPT_PRIORITIES
+	help
+	  Set the priority of the PTP. This handler polls the sockets and checks
+	  timers, depending on received PTP messeges or timeouts actions defined
+	  in the standard are taken. The value should be selected carefully.
+
+endif # PTP
