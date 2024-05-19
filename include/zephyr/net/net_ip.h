@@ -687,7 +687,7 @@ static inline bool net_ipv6_is_prefix(const uint8_t *addr1,
 	}
 
 	/* Create a mask that has remaining most significant bits set */
-	mask = ((0xff << (8 - remain)) ^ 0xff) << remain;
+	mask = (uint8_t)((0xff << (8 - remain)) ^ 0xff) << remain;
 
 	return (addr1[bytes] & mask) == (addr2[bytes] & mask);
 }
