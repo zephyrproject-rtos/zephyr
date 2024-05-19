@@ -47,7 +47,7 @@ class TestInstance:
         self.platform: Platform = platform
 
         self.status = None
-        self.reason = "Unknown"
+        self.reason = None
         self.metrics = dict()
         self.handler = None
         self.recording = None
