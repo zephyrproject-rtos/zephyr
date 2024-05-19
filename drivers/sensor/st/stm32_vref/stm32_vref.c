@@ -11,6 +11,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device_runtime.h>
 #include <stm32_ll_adc.h>
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 #include <stm32_ll_icache.h>
@@ -45,6 +46,7 @@ static int stm32_vref_sample_fetch(const struct device *dev, enum sensor_channel
 	}
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
+	pm_device_runtime_get(data->adc);
 
 	rc = adc_channel_setup(data->adc, &data->adc_cfg);
 	if (rc) {
@@ -71,6 +73,7 @@ static int stm32_vref_sample_fetch(const struct device *dev, enum sensor_channel
 
 
 unlock:
+	pm_device_runtime_put(data->adc);
 	k_mutex_unlock(&data->mutex);
 
 	return rc;
