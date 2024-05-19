@@ -1314,7 +1314,6 @@ int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout)
 	return 0;
 }
 
-
 static int insert_pktinfo(struct msghdr *msg, int level, int type,
 			  void *pktinfo, size_t pktinfo_len)
 {
@@ -1324,7 +1323,12 @@ static int insert_pktinfo(struct msghdr *msg, int level, int type,
 		return -EINVAL;
 	}
 
-	cmsg = CMSG_FIRSTHDR(msg);
+	for (cmsg = CMSG_FIRSTHDR(msg); cmsg != NULL; cmsg = CMSG_NXTHDR(msg, cmsg)) {
+		if (cmsg->cmsg_len == 0) {
+			break;
+		}
+	}
+
 	if (cmsg == NULL) {
 		return -EINVAL;
 	}
@@ -1336,6 +1340,22 @@ static int insert_pktinfo(struct msghdr *msg, int level, int type,
 	memcpy(CMSG_DATA(cmsg), pktinfo, pktinfo_len);
 
 	return 0;
+}
+
+static int add_timestamping(struct net_context *ctx,
+			    struct net_pkt *pkt,
+			    struct msghdr *msg)
+{
+	uint8_t timestamping = 0;
+
+	net_context_get_option(ctx, NET_OPT_TIMESTAMPING, &timestamping, NULL);
+
+	if (timestamping) {
+		return insert_pktinfo(msg, SOL_SOCKET, SO_TIMESTAMPING,
+				      net_pkt_timestamp(pkt), sizeof(struct net_ptp_time));
+	}
+
+	return -ENOTSUP;
 }
 
 static int add_pktinfo(struct net_context *ctx,
@@ -1548,13 +1568,25 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 	if (msg != NULL) {
 		if (msg->msg_control != NULL) {
 			if (msg->msg_controllen > 0) {
+				bool clear_controllen = true;
+
+				if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMPING)) {
+					clear_controllen = false;
+					if (add_timestamping(ctx, pkt, msg) < 0) {
+						msg->msg_flags |= ZSOCK_MSG_CTRUNC;
+					}
+				}
+
 				if (IS_ENABLED(CONFIG_NET_CONTEXT_RECV_PKTINFO) &&
 				    net_context_is_recv_pktinfo_set(ctx)) {
+					clear_controllen = false;
 					if (add_pktinfo(ctx, pkt, msg) < 0) {
 						msg->msg_flags |= ZSOCK_MSG_CTRUNC;
 					}
-				} else {
-					msg->msg_controllen = 0U;
+				}
+
+				if (clear_controllen) {
+					msg->msg_controllen = 0;
 				}
 			}
 		} else {
