@@ -799,6 +799,10 @@ class QEMUHandler(Handler):
 
         self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
 
+        self.stdout_fn = os.path.join(instance.build_dir, "qemu.stdout")
+
+        self.stderr_fn = os.path.join(instance.build_dir, "qemu.stderr")
+
         if instance.testsuite.ignore_qemu_crash:
             self.ignore_qemu_crash = True
             self.ignore_unexpected_eof = True
@@ -1033,7 +1037,7 @@ class QEMUHandler(Handler):
         is_timeout = False
         qemu_pid = None
 
-        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
+        with subprocess.Popen(command, stdout=open(self.stdout_fn, "wt"), stderr=open(self.stderr_fn, "wt"), cwd=self.build_dir) as proc:
             logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
 
             try:
