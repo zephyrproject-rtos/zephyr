@@ -963,7 +963,7 @@ struct net_buf_simple_state {
 static inline void net_buf_simple_save(struct net_buf_simple *buf,
 				       struct net_buf_simple_state *state)
 {
-	state->offset = net_buf_simple_headroom(buf);
+	state->offset = (uint16_t)net_buf_simple_headroom(buf);
 	state->len = buf->len;
 }
 
