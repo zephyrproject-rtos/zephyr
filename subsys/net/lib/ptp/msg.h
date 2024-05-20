@@ -14,6 +14,8 @@
 #ifndef ZEPHYR_INCLUDE_PTP_MSG_H_
 #define ZEPHYR_INCLUDE_PTP_MSG_H_
 
+#include <zephyr/kernel.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/net/ptp_time.h>
 
 #include "ddt.h"
@@ -237,6 +239,76 @@ struct ptp_management_msg {
 	/** Flexible array of zero or more TLV entities. */
 	uint8_t		   suffix[];
 } __packed;
+
+/**
+ * @brief Generic PTP message structure.
+ */
+struct ptp_msg {
+	union {
+		/** General PTP message header. */
+		struct ptp_header		     header;
+		/** Announce message. */
+		struct ptp_announce_msg		     announce;
+		/** Sync message. */
+		struct ptp_sync_msg		     sync;
+		/** Delay_Req message. */
+		struct ptp_delay_req_msg	     delay_req;
+		/** Follow_Up message. */
+		struct ptp_follow_up_msg	     follow_up;
+		/** Delay_Resp message. */
+		struct ptp_delay_resp_msg	     delay_resp;
+		/** Pdelay_Req message. */
+		struct ptp_pdelay_req_msg	     pdelay_req;
+		/** Pdelay_Resp message. */
+		struct ptp_pdelay_resp_msg	     pdelay_resp;
+		/** Pdelay_Resp_Follow_Up message. */
+		struct ptp_pdelay_resp_follow_up_msg pdelay_resp_follow_up;
+		/** Signaling message. */
+		struct ptp_signaling_msg	     signaling;
+		/** Management message. */
+		struct ptp_management_msg	     management;
+		/** @cond INTERNAL_HIDEN */
+		/** MTU. */
+		uint8_t				     mtu[NET_ETH_MTU];
+		/** @endcond */
+	} __packed;
+	struct {
+		/**
+		 * Timestamp extracted from the message in a host binary format.
+		 * Depending on the message type the value comes from different
+		 * field of the message.
+		 */
+		struct net_ptp_time protocol;
+		 /** Ingress timestamp on the host side. */
+		struct net_ptp_time host;
+
+	} timestamp;
+	/** Refference counter. */
+	atomic_t ref;
+};
+
+/**
+ * @brief Function allocating space for a new PTP message.
+ *
+ * @return Pointer to the new PTP Message.
+ */
+struct ptp_msg *ptp_msg_alloc(void);
+
+/**
+ * @brief Function removing reference to the PTP message.
+ *
+ * @note If the message is not referenced anywhere, the memory space is cleared.
+ *
+ * @param[in] msg Pointer to the PTP message.
+ */
+void ptp_msg_unref(struct ptp_msg *msg);
+
+/**
+ * @brief Function incrementing reference count for the PTP message.
+ *
+ * @param[in] msg Pointer to the PTP message.
+ */
+void ptp_msg_ref(struct ptp_msg *msg);
 
 #ifdef __cplusplus
 }

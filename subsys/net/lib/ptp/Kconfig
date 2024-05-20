@@ -40,6 +40,13 @@ config PTP_SERVICE_THREAD_PRIO
 	  timers, depending on received PTP messeges or timeouts actions defined
 	  in the standard are taken. The value should be selected carefully.
 
+config PTP_MSG_POLL_SIZE
+	int "Number of messages available for allocation"
+	default 10
+	help
+	  PTP messages are allocated dynamically from memory slab. The Kconfig symbol
+	  defines number of blocks in the memory slab.
+
 choice
 	prompt "PTP Clock Type"
 	default PTP_ORDINARY_CLOCK
