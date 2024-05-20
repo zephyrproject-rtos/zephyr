@@ -265,8 +265,7 @@ static int nsos_poll_prepare(struct nsos_socket *sock, struct zsock_pollfd *pfd,
 	sock->pollfd.cb = pollcb;
 
 	if (*pev == pev_end) {
-		errno = ENOMEM;
-		return -1;
+		return -ENOMEM;
 	}
 
 	k_poll_signal_init(&sock->poll);
