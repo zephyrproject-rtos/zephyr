@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_ESP32C3
+if SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
 
 config GEN_ISR_TABLES
 	default y
