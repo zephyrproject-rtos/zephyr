@@ -128,7 +128,7 @@ if(CONFIG_NRFX_TWI OR CONFIG_NRFX_TWIM)
 endif()
 
 if (CONFIG_NRF_GRTC_TIMER AND CONFIG_NRF_GRTC_TIMER_CLOCK_MANAGEMENT)
-  zephyr_compile_definitions(NRF_GRTC_HAS_EXTENDED=1)
+  zephyr_library_compile_definitions(NRF_GRTC_HAS_EXTENDED=1)
 endif()
 
 # Inject HAL "CONFIG_NFCT_PINS_AS_GPIOS" definition if user requests to
