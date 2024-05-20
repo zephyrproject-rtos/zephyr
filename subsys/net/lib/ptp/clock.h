@@ -112,6 +112,13 @@ void ptp_clock_delay(uint64_t egress, uint64_t ingress);
 const struct ptp_default_ds *ptp_clock_default_ds(void);
 
 /**
+ * @brief Function for getting PTP Clock Parent dataset.
+ *
+ * @return Pointer to the structure representing PTP Clock instance's Parent dataset.
+ */
+const struct ptp_parent_ds *ptp_clock_parent_ds(void);
+
+/**
  * @brief Function invalidating PTP Clock's array of file descriptors used for sockets.
  */
 void ptp_clock_pollfd_invalidate(void);

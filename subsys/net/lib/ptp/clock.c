@@ -212,6 +212,11 @@ const struct ptp_default_ds *ptp_clock_default_ds(void)
 	return &clock.default_ds;
 }
 
+const struct ptp_parent_ds *ptp_clock_parent_ds(void)
+{
+	return &clock.parent_ds;
+}
+
 void ptp_clock_pollfd_invalidate(void)
 {
 	clock.pollfd_valid = false;

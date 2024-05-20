@@ -14,6 +14,8 @@
 #ifndef ZEPHYR_INCLUDE_PTP_MSG_H_
 #define ZEPHYR_INCLUDE_PTP_MSG_H_
 
+#include <stdbool.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_ip.h>
@@ -286,6 +288,8 @@ struct ptp_msg {
 	} timestamp;
 	/** Refference counter. */
 	atomic_t ref;
+	/** List object. */
+	sys_snode_t node;
 	/** Single-linked list of TLVs attached to the message. */
 	sys_slist_t tlvs;
 	/** Protocol address of the sender/receiver of the message. */
@@ -361,6 +365,17 @@ struct ptp_tlv *ptp_msg_add_tlv(struct ptp_msg *msg, int length);
  * @return Negative if m1 < m2, 0 if equal, else positive
  */
 int ptp_msg_announce_cmp(const struct ptp_announce_msg *m1, const struct ptp_announce_msg *m2);
+
+/**
+ * @brief Function checking if given message comes from current PTP Port's
+ * TimeTransmitter PTP instance.
+ *
+ * @param[in] msg  Pointer to the message.
+ *
+ * @return True if the message is received from the current PTP Port's TimeTransmitter,
+ * false otherwise.
+ */
+bool ptp_msg_current_parent(const struct ptp_msg *msg);
 
 #ifdef __cplusplus
 }

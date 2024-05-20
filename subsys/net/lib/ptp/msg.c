@@ -429,3 +429,10 @@ int ptp_msg_announce_cmp(const struct ptp_announce_msg *m1, const struct ptp_ann
 
 	return memcmp(&m1->gm_priority1, &m2->gm_priority1, len);
 }
+
+bool ptp_msg_current_parent(const struct ptp_msg *msg)
+{
+	const struct ptp_parent_ds *pds = ptp_clock_parent_ds();
+
+	return ptp_port_id_eq(&pds->port_id, &msg->header.src_port_id);
+}
