@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, Meta
+ * Copyright (c) 2024, Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +22,7 @@ enum {
 	_SC_FSYNC,
 	_SC_IPV6,
 	_SC_JOB_CONTROL,
-	_SC_MAPPED_FILE,
+	_SC_MAPPED_FILES,
 	_SC_MEMLOCK,
 	_SC_MEMLOCK_RANGE,
 	_SC_MEMORY_PROTECTION,
@@ -149,7 +150,7 @@ enum {
 #define __z_posix_sysconf_SC_FSYNC                        _POSIX_FSYNC
 #define __z_posix_sysconf_SC_IPV6                         _POSIX_IPV6
 #define __z_posix_sysconf_SC_JOB_CONTROL                  _POSIX_JOB_CONTROL
-#define __z_posix_sysconf_SC_MAPPED_FILE                  _POSIX_MAPPED_FILES
+#define __z_posix_sysconf_SC_MAPPED_FILES                 _POSIX_MAPPED_FILES
 #define __z_posix_sysconf_SC_MEMLOCK                      _POSIX_MEMLOCK
 #define __z_posix_sysconf_SC_MEMLOCK_RANGE                _POSIX_MEMLOCK_RANGE
 #define __z_posix_sysconf_SC_MEMORY_PROTECTION            _POSIX_MEMORY_PROTECTION
