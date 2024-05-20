@@ -140,6 +140,8 @@ int nsos_adapt_fcntl_setfl(int fd, int flags);
 
 int nsos_adapt_fionread(int fd, int *avail);
 
+int nsos_adapt_dup(int oldfd);
+
 int nsos_adapt_getaddrinfo(const char *node, const char *service,
 			   const struct nsos_mid_addrinfo *hints,
 			   struct nsos_mid_addrinfo **res,

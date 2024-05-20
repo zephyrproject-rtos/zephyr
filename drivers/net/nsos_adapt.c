@@ -1001,6 +1001,18 @@ int nsos_adapt_fionread(int fd, int *avail)
 	return 0;
 }
 
+int nsos_adapt_dup(int oldfd)
+{
+	int ret;
+
+	ret = dup(oldfd);
+	if (ret < 0) {
+		return -errno_to_nsos_mid(errno);
+	}
+
+	return ret;
+}
+
 static void nsos_adapt_init(void)
 {
 	nsos_epoll_fd = epoll_create(1);
