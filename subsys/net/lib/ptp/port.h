@@ -66,6 +66,14 @@ struct ptp_port {
 	struct ptp_foreign_tt_clock *best;
 	/** List of Foreign TimeTransmitters discovered through received Announce messages. */
 	sys_slist_t		    foreign_list;
+	/** List of valid sent Delay_Req messages (in network byte order). */
+	sys_slist_t		    delay_req_list;
+	/** Pointer to the last received Sync or Follow_Up message. */
+	struct ptp_msg		    *last_sync_fup;
+	/** Timestamping callback for sent Delay_Req messages. */
+	struct net_if_timestamp_cb  delay_req_ts_cb;
+	/** Timestamping callback for sent Sync messages. */
+	struct net_if_timestamp_cb  sync_ts_cb;
 };
 
 /**
@@ -75,6 +83,15 @@ struct ptp_port {
  * @param[in] user_data Unused argument needed to comply with @ref net_if_cb_t type.
  */
 void ptp_port_init(struct net_if *iface, void *user_data);
+
+/**
+ * @brief Function returning PTP Port's state.
+ *
+ * @param[in] port Pointer to the PTP Port structure.
+ *
+ * @return PTP Port's current state.
+ */
+enum ptp_port_state ptp_port_state(struct ptp_port *port);
 
 /**
  * @brief Function checking if two port identities are equal.
@@ -102,6 +119,17 @@ int ptp_port_add_foreign_tt(struct ptp_port *port, struct ptp_msg *msg);
  * @param[in] port Pointer to the PTP Port.
  */
 void ptp_port_free_foreign_tts(struct ptp_port *port);
+
+/**
+ * @brief Function updating current PTP TimeTransmitter Clock of the PTP Port
+ * based on specified message.
+ *
+ * @param[in] port Pointer to the PTP Port.
+ * @param[in] msg  Pointer to the announce message containg PTP TimeTransmitter data.
+ *
+ * @return Non-zero if the announce message is different than the last.
+ */
+int ptp_port_update_current_time_transmitter(struct ptp_port *port, struct ptp_msg *msg);
 
 #ifdef __cplusplus
 }
