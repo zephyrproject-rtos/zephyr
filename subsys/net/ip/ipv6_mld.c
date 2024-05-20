@@ -299,10 +299,8 @@ static int send_mld_report(struct net_if *iface)
 
 	ret = mld_send(pkt);
 	if (ret < 0) {
-		goto drop;
+		return ret;
 	}
-
-	return 0;
 
 drop:
 	net_pkt_unref(pkt);
