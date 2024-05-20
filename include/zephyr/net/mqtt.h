@@ -6,16 +6,17 @@
 
 /** @file mqtt.h
  *
- * @defgroup mqtt_socket MQTT Client library
- * @since 1.14
- * @version 0.8.0
- * @ingroup networking
- * @{
  * @brief MQTT Client Implementation
  *
  * @note The implementation assumes TCP module is enabled.
  *
  * @note By default the implementation uses MQTT version 3.1.1.
+ *
+ * @defgroup mqtt_socket MQTT Client library
+ * @since 1.14
+ * @version 0.8.0
+ * @ingroup networking
+ * @{
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_MQTT_H_
@@ -417,15 +418,16 @@ struct mqtt_transport {
 	 */
 	enum mqtt_transport_type type;
 
+	/** Use either unsecured TCP or secured TLS transport */
 	union {
-		/* TCP socket transport for MQTT */
+		/** TCP socket transport for MQTT */
 		struct {
 			/** Socket descriptor. */
 			int sock;
 		} tcp;
 
 #if defined(CONFIG_MQTT_LIB_TLS)
-		/* TLS socket transport for MQTT */
+		/** TLS socket transport for MQTT */
 		struct {
 			/** Socket descriptor. */
 			int sock;
@@ -559,7 +561,7 @@ struct mqtt_client {
 	 */
 	uint8_t clean_session : 1;
 
-	/* Userdata */
+	/** User specific opaque data */
 	void *user_data;
 };
 
