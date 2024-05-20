@@ -50,17 +50,4 @@
 				<NRF_PSEL(UART_CTS, 2, 5)>;
 		};
 	};
-
-	/omit-if-no-ref/ pwm120_default: pwm120_default {
-		group1 {
-			psels = <NRF_PSEL(PWM_OUT0, 9, 0)>;
-		};
-	};
-
-	/omit-if-no-ref/ pwm120_sleep: pwm120_sleep {
-		group1 {
-			psels = <NRF_PSEL(PWM_OUT0, 9, 0)>;
-			low-power-enable;
-		};
-	};
 };
