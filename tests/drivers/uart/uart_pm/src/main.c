@@ -34,10 +34,7 @@ static void polling_verify(const struct device *dev, bool is_async, bool active)
 
 	for (int i = 0; i < ARRAY_SIZE(outs); i++) {
 		uart_poll_out(dev, outs[i]);
-		/* We need to wait until receiver gets the data. Receiver may have
-		 * RX timeout so data is not received instantly.
-		 */
-		k_busy_wait(5000);
+		k_busy_wait(1000);
 
 		if (active) {
 			err = uart_poll_in(dev, &c);
@@ -81,12 +78,6 @@ static bool async_verify(const struct device *dev, bool active)
 
 	zassert_equal(err, 0, "Unexpected err: %d", err);
 
-	/* Wait a bit to ensure that polling transfer is already finished otherwise
-	 * receiver might be enabled when there is an ongoing transfer and bytes
-	 * will get corrupted.
-	 */
-	k_busy_wait(1000);
-
 	if (!DISABLED_RX) {
 		err = uart_rx_enable(dev, rxbuf, sizeof(rxbuf), 1 * USEC_PER_MSEC);
 		zassert_equal(err, 0, "Unexpected err: %d", err);
@@ -99,7 +90,7 @@ static bool async_verify(const struct device *dev, bool active)
 
 	if (!DISABLED_RX) {
 		err = uart_rx_disable(dev);
-		zassert_true((err == 0) || (err == -EFAULT));
+		zassert_equal(err, 0, "Unexpected err: %d", err);
 
 		k_busy_wait(10000);
 
