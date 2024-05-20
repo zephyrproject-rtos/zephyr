@@ -14,6 +14,8 @@
 #ifndef ZEPHYR_INCLUDE_PTP_PORT_H_
 #define ZEPHYR_INCLUDE_PTP_PORT_H_
 
+#include <stdbool.h>
+
 #include <zephyr/kernel.h>
 
 #include "ds.h"
@@ -68,6 +70,16 @@ struct ptp_port {
  * @param[in] user_data Unused argument needed to comply with @ref net_if_cb_t type.
  */
 void ptp_port_init(struct net_if *iface, void *user_data);
+
+/**
+ * @brief Function checking if two port identities are equal.
+ *
+ * @param[in] p1 Pointer to the port identity structure.
+ * @param[in] p2 Pointer to the port identity structure.
+ *
+ * @return True if port identities are equal, False otherwise.
+ */
+bool ptp_port_id_eq(const struct ptp_port_id *p1, const struct ptp_port_id *p2);
 
 #ifdef __cplusplus
 }
