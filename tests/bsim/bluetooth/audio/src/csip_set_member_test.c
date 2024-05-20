@@ -4,11 +4,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifdef CONFIG_BT_CSIP_SET_MEMBER
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
+#include "bstests.h"
 #include "common.h"
-
+#ifdef CONFIG_BT_CSIP_SET_MEMBER
 static struct bt_csip_set_member_svc_inst *svc_inst;
 extern enum bst_result_t bst_result;
 static volatile bool g_locked;

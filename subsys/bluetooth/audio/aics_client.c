@@ -7,23 +7,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/types.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/sys/check.h>
-
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 
 #include "aics_internal.h"
-
-#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_aics_client, CONFIG_BT_AICS_CLIENT_LOG_LEVEL);
 

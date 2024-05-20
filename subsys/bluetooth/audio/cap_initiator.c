@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -16,6 +17,7 @@
 #include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/logging/log.h>
@@ -25,10 +27,10 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
+#include "bap_endpoint.h"
 #include "cap_internal.h"
 #include "ccid_internal.h"
 #include "csip_internal.h"
-#include "bap_endpoint.h"
 
 LOG_MODULE_REGISTER(bt_cap_initiator, CONFIG_BT_CAP_INITIATOR_LOG_LEVEL);
 

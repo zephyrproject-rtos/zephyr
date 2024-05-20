@@ -3,18 +3,34 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-#if defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/lc3.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
+
 #include "bap_common.h"
+#include "bstests.h"
 #include "common.h"
 
+#if defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 /* Zephyr Controller works best while Extended Advertising interval to be a multiple
  * of the ISO Interval minus 10 ms (max. advertising random delay). This is
  * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the

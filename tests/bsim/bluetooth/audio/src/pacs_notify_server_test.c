@@ -4,11 +4,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/audio/pacs.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/lc3.h>
+#include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+
+#include "bstests.h"
 #include "common.h"
 
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pacs_notify_server_test, LOG_LEVEL_DBG);
 
 extern enum bst_result_t bst_result;

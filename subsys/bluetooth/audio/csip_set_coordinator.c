@@ -18,27 +18,41 @@
  * 10) Unlock all members
  */
 
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <zephyr/kernel.h>
-#include <zephyr/types.h>
+#include <string.h>
 
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-#include <zephyr/sys/check.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/types.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/bluetooth/audio/csip.h>
-#include "csip_crypto.h"
-#include "csip_internal.h"
+
 #include "../host/conn_internal.h"
 #include "../host/keys.h"
-#include "common/bt_str.h"
 
-#include <zephyr/logging/log.h>
+#include "csip_crypto.h"
+#include "csip_internal.h"
+#include "common/bt_str.h"
 
 LOG_MODULE_REGISTER(bt_csip_set_coordinator, CONFIG_BT_CSIP_SET_COORDINATOR_LOG_LEVEL);
 

@@ -7,8 +7,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/audio/csip.h>
+#include <stdint.h>
 
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
 
 #define BT_CSIP_SIRK_TYPE_ENCRYPTED             0x00
 #define BT_CSIP_SIRK_TYPE_PLAIN                 0x01

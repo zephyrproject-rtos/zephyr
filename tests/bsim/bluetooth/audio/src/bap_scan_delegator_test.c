@@ -4,14 +4,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_BT_BAP_SCAN_DELEGATOR
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/byteorder.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/buf.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+
+#include "bstests.h"
 #include "common.h"
 
+#ifdef CONFIG_BT_BAP_SCAN_DELEGATOR
 extern enum bst_result_t bst_result;
 
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
