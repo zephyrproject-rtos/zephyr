@@ -22,10 +22,16 @@
 #include <zephyr/drivers/interrupt_controller/exti_stm32.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/drivers/misc/stm32_wkup_pins/stm32_wkup_pins.h>
+#include <zephyr/dt-bindings/gpio/stm32-gpio.h>
 
 #include "stm32_hsem.h"
 #include "gpio_stm32.h"
 #include <zephyr/drivers/gpio/gpio_utils.h>
+
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(stm32, CONFIG_GPIO_LOG_LEVEL);
 
 /**
  * @brief Common GPIO driver for STM32 MCUs.
@@ -540,6 +546,25 @@ static int gpio_stm32_config(const struct device *dev,
 	}
 
 	gpio_stm32_configure_raw(dev, pin, pincfg, 0);
+
+#ifdef CONFIG_STM32_WKUP_PINS
+	if (flags & STM32_GPIO_WKUP) {
+#ifdef CONFIG_POWEROFF
+		struct gpio_dt_spec gpio_dt_cfg = {
+			.port = dev,
+			.pin = pin,
+			.dt_flags = (gpio_dt_flags_t)flags,
+		};
+
+		if (stm32_pwr_wkup_pin_cfg_gpio((const struct gpio_dt_spec *)&gpio_dt_cfg)) {
+			LOG_ERR("Could not configure GPIO %s pin %d as a wake-up source",
+					gpio_dt_cfg.port->name, gpio_dt_cfg.pin);
+		}
+#else
+		LOG_DBG("STM32_GPIO_WKUP flag has no effect when CONFIG_POWEROFF=n");
+#endif /* CONFIG_POWEROFF */
+	}
+#endif /* CONFIG_STM32_WKUP_PINS */
 
 	/* Release clock only if pin is disconnected */
 	if (((flags & GPIO_OUTPUT) == 0) && ((flags & GPIO_INPUT) == 0)) {
