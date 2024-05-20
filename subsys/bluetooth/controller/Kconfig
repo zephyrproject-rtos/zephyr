@@ -111,6 +111,9 @@ config BT_CTLR_LE_PATH_LOSS_MONITORING_SUPPORT
 	depends on BT_CTLR_LE_POWER_CONTROL_SUPPORT
 	bool
 
+config BT_CTLR_SUBRATING_SUPPORT
+	bool
+
 config BT_CTLR
 	bool "Bluetooth Controller"
 	help
@@ -1021,6 +1024,14 @@ config BT_CTLR_HCI_CODEC_AND_DELAY_INFO
 	help
 	  Enable HCI commands to read information about supported
 	  codecs, codec capabilities, and controller delay.
+
+config BT_CTLR_SUBRATING
+	bool "LE Connection Subrating"
+	depends on BT_CTLR_SUBRATING_SUPPORT
+	select BT_CTLR_SET_HOST_FEATURE
+	help
+	  Enable support for Bluetooth v5.3 LE Connection Subrating
+	  in the Controller.
 
 rsource "Kconfig.df"
 rsource "Kconfig.ll_sw_split"
