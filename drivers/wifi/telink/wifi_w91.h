@@ -9,6 +9,7 @@
 
 #include <zephyr/sys/util.h>
 #include <zephyr/net/wifi.h>
+#include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/net_l2.h>
 #include <zephyr/net/ethernet.h>
 #include <ipc/ipc_based_driver.h>
@@ -16,7 +17,14 @@
 #define W91_WIFI_L2_CTX_TYPE        void*
 
 enum {
-	IPC_DISPATCHER_WIFI_L2_DATA = IPC_DISPATCHER_WIFI,
+	IPC_DISPATCHER_WIFI_INIT = IPC_DISPATCHER_WIFI,
+	IPC_DISPATCHER_WIFI_SCAN,
+	IPC_DISPATCHER_WIFI_CONNECT,
+	IPC_DISPATCHER_WIFI_DISCONNECT,
+	IPC_DISPATCHER_WIFI_AP_ENABLE,
+	IPC_DISPATCHER_WIFI_AP_DISABLE,
+	IPC_DISPATCHER_WIFI_L2_DATA,
+	IPC_DISPATCHER_WIFI_EVENT,
 };
 
 __packed struct ipc_msg {
@@ -24,13 +32,21 @@ __packed struct ipc_msg {
 	uint8_t data[NET_ETH_MTU];
 };
 
-struct wifi_w91_data_l2 {
+struct wifi_w91_data_base {
 	uint8_t mac[WIFI_MAC_ADDR_LEN];
+	uint8_t frame_buf[NET_ETH_MAX_FRAME_SIZE];
+	scan_result_cb_t scan_cb;
+	uint8_t state;
+	struct net_if *iface;
+};
+
+struct wifi_w91_data_l2 {
 	struct ipc_msg ipc_tx;
 };
 
 struct wifi_w91_data {
 	struct ipc_based_driver ipc;
+	struct wifi_w91_data_base base;
 	struct wifi_w91_data_l2 l2;
 };
 

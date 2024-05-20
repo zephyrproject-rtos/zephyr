@@ -10,6 +10,7 @@
 #include "ipc_dispatcher.h"
 #include <zephyr/kernel.h>
 #include <string.h>
+#include <assert.h>
 
 enum ipc_dispatcher_id {
 	IPC_DISPATCHER_SYS                      = 0x0,
@@ -120,7 +121,7 @@ do {                                                                           \
 		&ctx, timeout_ms);                                                     \
                                                                                \
 	if (ipc_err) {                                                             \
-		return ipc_err;                                                        \
+		assert(0);                                                             \
 	}                                                                          \
 } while (0)
 

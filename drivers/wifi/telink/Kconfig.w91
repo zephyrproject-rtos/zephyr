@@ -7,3 +7,38 @@ config WIFI_W91
 	select NET_L2_WIFI_MGMT
 	help
 		Enable Telink SoC WiFi support.
+
+if WIFI_W91
+
+config TELINK_W91_WIFI_STA_AUTO_DHCPV4
+	bool "Automatically starts DHCP4 negotiation"
+	depends on NET_DHCPV4
+	depends on NET_IPV4
+	help
+	  WiFi driver will automatically initiate DHCPV4 negotiation when connected.
+
+config TELINK_W91_WIFI_EVENT_THREAD_STACK_SIZE
+	int "WIFI event thread stack size"
+	default 1024
+	help
+	  WIFI event thread stack size.
+
+config TELINK_W91_WIFI_EVENT_THREAD_PRIORITY
+	int "WIFI event thread priority"
+	default 20
+	help
+	  WIFI event thread priority.
+
+config TELINK_W91_WIFI_EVENT_MAX_MSG
+	int "WIFI event max messages"
+	default 16
+	help
+	  WIFI event max messages.
+
+config WIFI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS
+	int "Telink IPC dispatcher timeout while waiting from the endpoint response"
+	default 10
+	help
+	  This option sets Telink IPC dispatcher response driver timeout in mS.
+
+endif # WIFI_W91

@@ -114,13 +114,9 @@ static int wifi_w91_enable(struct net_if *iface, bool state)
 		CONFIG_IPC_SERVICE_ICMSG_CB_BUF_SIZE, sizeof(struct ipc_msg));
 
 	const struct device *dev = net_if_get_device(iface);
-	struct wifi_w91_data *data = dev->data;
 	const struct wifi_w91_config *config = dev->config;
 
 	if (state) {
-		/* TODO: Foll MAC address here */
-		(void) net_if_set_link_addr(iface, data->l2.mac,
-			WIFI_MAC_ADDR_LEN, NET_LINK_ETHERNET);
 		ipc_dispatcher_add(IPC_DISPATCHER_MK_ID(
 			IPC_DISPATCHER_WIFI_L2_DATA, config->instance_id),
 			wifi_w91_on_rx_data, iface);

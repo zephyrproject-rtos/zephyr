@@ -1,0 +1,27 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SAMPLE_CONNECT_PARAM_MANUAL
+	bool "Set connection parameters manually"
+	help
+	  Manual mode requires the user to set connection parameters manually
+
+if SAMPLE_CONNECT_PARAM_MANUAL
+config SAMPLE_CONNECT_PARAM_WIFI_SSID
+	string "WIFI SSID - Network name"
+	default "my_network"
+config SAMPLE_CONNECT_PARAM_WIFI_PSK
+	string "WIFI PSK - Network password key"
+	default "my_passwd"
+config SAMPLE_AP_ENABLE_PARAM_CHANNEL
+	int "WIFI AP channel"
+	default 1
+config SAMPLE_AP_ENABLE_PARAM_WIFI_SSID
+	string "WIFI AP SSID - Network name"
+	default "my_ap_network"
+config SAMPLE_AP_ENABLE_PARAM_WIFI_PSK
+	string "WIFI AP PSK - Network password key"
+	default "my_ap_passwd"
+endif
+
+source "Kconfig.zephyr"
