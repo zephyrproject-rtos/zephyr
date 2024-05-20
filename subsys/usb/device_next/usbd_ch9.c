@@ -708,7 +708,7 @@ static void desc_fill_bos_root(struct usbd_contex *const uds_ctx,
 	SYS_DLIST_FOR_EACH_CONTAINER(&uds_ctx->descriptors, desc_nd, node) {
 		if (desc_nd->bDescriptorType == USB_DESC_BOS) {
 			root->wTotalLength += desc_nd->bLength;
-			root->bNumDeviceCaps += desc_nd->bLength;
+			root->bNumDeviceCaps++;
 		}
 	}
 }
@@ -717,9 +717,27 @@ static int sreq_get_desc_bos(struct usbd_contex *const uds_ctx,
 			     struct net_buf *const buf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
+	struct usb_device_descriptor *dev_dsc;
 	struct usb_bos_descriptor bos;
 	struct usbd_desc_node *desc_nd;
 	size_t len;
+
+	switch (usbd_bus_speed(uds_ctx)) {
+	case USBD_SPEED_FS:
+		dev_dsc = uds_ctx->fs_desc;
+		break;
+	case USBD_SPEED_HS:
+		dev_dsc = uds_ctx->hs_desc;
+		break;
+	default:
+		errno = -ENOTSUP;
+		return 0;
+	}
+
+	if (sys_le16_to_cpu(dev_dsc->bcdUSB) < 0x0201U) {
+		errno = -ENOTSUP;
+		return 0;
+	}
 
 	desc_fill_bos_root(uds_ctx, &bos);
 	len = MIN(net_buf_tailroom(buf), MIN(setup->wLength, bos.wTotalLength));
