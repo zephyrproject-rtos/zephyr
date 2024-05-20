@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(ptp_port, CONFIG_PTP_LOG_LEVEL);
 
 #include "clock.h"
 #include "port.h"
+#include "transport.h"
 
 static struct ptp_port ports[CONFIG_PTP_NUM_PORTS];
 
@@ -75,8 +76,8 @@ void ptp_port_init(struct net_if *iface, void *user_data)
 	port = ports + dds->n_ports;
 
 	port->iface = iface;
-	port->socket[0] = -1;
-	port->socket[1] = -1;
+	port->socket[PTP_SOCKET_EVENT] = -1;
+	port->socket[PTP_SOCKET_GENERAL] = -1;
 
 	port->state_machine = dds->time_receiver_only ? ptp_tr_state_machine : ptp_state_machine;
 	port_ds_init(port);

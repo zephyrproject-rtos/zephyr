@@ -9,4 +9,5 @@ zephyr_library_sources(
   ptp.c
   state_machine.c
   tlv.c
+  transport.c
 )
