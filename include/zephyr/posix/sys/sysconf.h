@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SYS_SYSCONF_H_
 #define ZEPHYR_INCLUDE_POSIX_SYS_SYSCONF_H_
 
+#include <zephyr/sys/util_macro.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -191,47 +193,47 @@ enum {
 #define __z_posix_sysconf_SC_TRACE_NAME_MAX               _POSIX_TRACE_NAME_MAX
 #define __z_posix_sysconf_SC_TRACE_SYS_MAX                _POSIX_TRACE_SYS_MAX
 #define __z_posix_sysconf_SC_TRACE_USER_EVENT_MAX         _POSIX_TRACE_USER_EVENT_MAX
-#define __z_posix_sysconf_SC_TYPED_MEMORY_OBJECTS         _POSIX_TYPED_MEMORY_OBJECTS
+#define __z_posix_sysconf_SC_TYPED_MEMORY_OBJECTS         (-1L)
 #define __z_posix_sysconf_SC_VERSION                      _POSIX_VERSION
-#define __z_posix_sysconf_SC_V7_ILP32_OFF32               _POSIX_V7_ILP32_OFF32
-#define __z_posix_sysconf_SC_V7_ILP32_OFFBIG              _POSIX_V7_ILP32_OFFBIG
-#define __z_posix_sysconf_SC_V7_LP64_OFF64                _POSIX_V7_LP64_OFF64
-#define __z_posix_sysconf_SC_V7_LPBIG_OFFBIG              _POSIX_V7_LPBIG_OFFBIG
-#define __z_posix_sysconf_SC_V6_ILP32_OFF32               _POSIX_V6_ILP32_OFF32
-#define __z_posix_sysconf_SC_V6_ILP32_OFFBIG              _POSIX_V6_ILP32_OFFBIG
-#define __z_posix_sysconf_SC_V6_LP64_OFF64                _POSIX_V6_LP64_OFF64
-#define __z_posix_sysconf_SC_V6_LPBIG_OFFBIG              _POSIX_V6_LPBIG_OFFBIG
+#define __z_posix_sysconf_SC_V6_ILP32_OFF32               (-1L)
+#define __z_posix_sysconf_SC_V6_ILP32_OFFBIG              (-1L)
+#define __z_posix_sysconf_SC_V6_LP64_OFF64                (-1L)
+#define __z_posix_sysconf_SC_V6_LPBIG_OFFBIG              (-1L)
+#define __z_posix_sysconf_SC_V7_ILP32_OFF32               (-1L)
+#define __z_posix_sysconf_SC_V7_ILP32_OFFBIG              (-1L)
+#define __z_posix_sysconf_SC_V7_LP64_OFF64                (-1L)
+#define __z_posix_sysconf_SC_V7_LPBIG_OFFBIG              (-1L)
 #define __z_posix_sysconf_SC_BC_BASE_MAX                  _POSIX2_BC_BASE_MAX
 #define __z_posix_sysconf_SC_BC_DIM_MAX                   _POSIX2_BC_DIM_MAX
 #define __z_posix_sysconf_SC_BC_SCALE_MAX                 _POSIX2_BC_SCALE_MAX
 #define __z_posix_sysconf_SC_BC_STRING_MAX                _POSIX2_BC_STRING_MAX
 #define __z_posix_sysconf_SC_2_C_BIND                     _POSIX2_C_BIND
 #define __z_posix_sysconf_SC_2_C_DEV                      _POSIX2_C_DEV
-#define __z_posix_sysconf_SC_2_CHAR_TERM                  _POSIX2_CHAR_TERM
+#define __z_posix_sysconf_SC_2_CHAR_TERM                  (-1L)
 #define __z_posix_sysconf_SC_COLL_WEIGHTS_MAX             _POSIX2_COLL_WEIGHTS_MAX
 #define __z_posix_sysconf_SC_DELAYTIMER_MAX               _POSIX2_DELAYTIMER_MAX
 #define __z_posix_sysconf_SC_EXPR_NEST_MAX                _POSIX2_EXPR_NEST_MAX
-#define __z_posix_sysconf_SC_2_FORT_DEV                   _POSIX2_FORT_DEV
-#define __z_posix_sysconf_SC_2_FORT_RUN                   _POSIX2_FORT_RUN
-#define __z_posix_sysconf_SC_LINE_MAX                     _POSIX2_LINE_MAX
-#define __z_posix_sysconf_SC_2_LOCALEDEF                  _POSIX2_LOCALEDEF
-#define __z_posix_sysconf_SC_2_PBS                        _POSIX2_PBS
-#define __z_posix_sysconf_SC_2_PBS_ACCOUNTING             _POSIX2_PBS_ACCOUNTING
-#define __z_posix_sysconf_SC_2_PBS_CHECKPOINT             _POSIX2_PBS_CHECKPOINT
-#define __z_posix_sysconf_SC_2_PBS_LOCATE                 _POSIX2_PBS_LOCATE
-#define __z_posix_sysconf_SC_2_PBS_MESSAGE                _POSIX2_PBS_MESSAGE
-#define __z_posix_sysconf_SC_2_PBS_TRACK                  _POSIX2_PBS_TRACK
-#define __z_posix_sysconf_SC_2_SW_DEV                     _POSIX2_SW_DEV
-#define __z_posix_sysconf_SC_2_UPE                        _POSIX2_UPE
+#define __z_posix_sysconf_SC_2_FORT_DEV                   (-1L)
+#define __z_posix_sysconf_SC_2_FORT_RUN                   (-1L)
+#define __z_posix_sysconf_SC_LINE_MAX                     (-1L)
+#define __z_posix_sysconf_SC_2_LOCALEDEF                  (-1L)
+#define __z_posix_sysconf_SC_2_PBS                        (-1L)
+#define __z_posix_sysconf_SC_2_PBS_ACCOUNTING             (-1L)
+#define __z_posix_sysconf_SC_2_PBS_CHECKPOINT             (-1L)
+#define __z_posix_sysconf_SC_2_PBS_LOCATE                 (-1L)
+#define __z_posix_sysconf_SC_2_PBS_MESSAGE                (-1L)
+#define __z_posix_sysconf_SC_2_PBS_TRACK                  (-1L)
+#define __z_posix_sysconf_SC_2_SW_DEV                     (-1L)
+#define __z_posix_sysconf_SC_2_UPE                        (-1L)
 #define __z_posix_sysconf_SC_2_VERSION                    _POSIX2_VERSION
-#define __z_posix_sysconf_SC_XOPEN_CRYPT                  _XOPEN_CRYPT
-#define __z_posix_sysconf_SC_XOPEN_ENH_I18N               _XOPEN_ENH_I18N
-#define __z_posix_sysconf_SC_XOPEN_REALTIME               _XOPEN_REALTIME
-#define __z_posix_sysconf_SC_XOPEN_REALTIME_THREADS       _XOPEN_REALTIME_THREADS
-#define __z_posix_sysconf_SC_XOPEN_SHM                    _XOPEN_SHM
-#define __z_posix_sysconf_SC_XOPEN_STREAMS                _XOPEN_STREAMS
-#define __z_posix_sysconf_SC_XOPEN_UNIX                   _XOPEN_UNIX
-#define __z_posix_sysconf_SC_XOPEN_UUCP                   _XOPEN_UUCP
+#define __z_posix_sysconf_SC_XOPEN_CRYPT                  (-1L)
+#define __z_posix_sysconf_SC_XOPEN_ENH_I18N               (-1L)
+#define __z_posix_sysconf_SC_XOPEN_REALTIME               (-1L)
+#define __z_posix_sysconf_SC_XOPEN_REALTIME_THREADS       (-1L)
+#define __z_posix_sysconf_SC_XOPEN_SHM                    (-1L)
+#define __z_posix_sysconf_SC_XOPEN_STREAMS                (-1L)
+#define __z_posix_sysconf_SC_XOPEN_UNIX                   (-1L)
+#define __z_posix_sysconf_SC_XOPEN_UUCP                   (-1L)
 #define __z_posix_sysconf_SC_XOPEN_VERSION                _XOPEN_VERSION
 #define __z_posix_sysconf_SC_CLK_TCK                      (100L)
 #define __z_posix_sysconf_SC_GETGR_R_SIZE_MAX             (0L)
