@@ -1,5 +1,5 @@
 common:
-  min_ram: 16
+  min_ram: 40
   tags:
     - net
     - http
