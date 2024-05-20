@@ -113,6 +113,7 @@ static inline void hal_radio_ready_time_capture_ppi_config(void)
 				NRF_TIMER_TASK_CAPTURE0, HAL_RADIO_READY_TIME_CAPTURE_PPI);
 }
 
+#if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
 /*******************************************************************************
  * Trigger encryption task upon address reception:
  * wire the RADIO EVENTS_ADDRESS event to the CCM TASKS_CRYPT task.
@@ -134,6 +135,28 @@ static inline void hal_trigger_crypt_ppi_disable(void)
 {
 	nrf_ccm_subscribe_clear(NRF_CCM, NRF_CCM_TASK_CRYPT);
 }
+
+/*******************************************************************************
+ * Trigger automatic address resolution on Bit counter match:
+ * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.
+ */
+static inline void hal_trigger_aar_ppi_config(void)
+{
+	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_BCMATCH, HAL_TRIGGER_AAR_PPI);
+	nrf_aar_subscribe_set(NRF_AAR, NRF_AAR_TASK_START, HAL_TRIGGER_AAR_PPI);
+}
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED) && defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
+/*******************************************************************************
+ * Trigger Radio Rate override upon Rateboost event.
+ */
+static inline void hal_trigger_rateoverride_ppi_config(void)
+{
+	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_RATEBOOST, HAL_TRIGGER_RATEOVERRIDE_PPI);
+	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_RATEOVERRIDE, HAL_TRIGGER_RATEOVERRIDE_PPI);
+}
+#endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
+#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 /*******************************************************************************
@@ -160,27 +183,6 @@ static inline void hal_trigger_crypt_by_bcmatch_ppi_config(void)
 	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_CRYPT, HAL_TRIGGER_CRYPT_DELAY_PPI);
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
-
-/*******************************************************************************
- * Trigger automatic address resolution on Bit counter match:
- * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.
- */
-static inline void hal_trigger_aar_ppi_config(void)
-{
-	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_BCMATCH, HAL_TRIGGER_AAR_PPI);
-	nrf_aar_subscribe_set(NRF_AAR, NRF_AAR_TASK_START, HAL_TRIGGER_AAR_PPI);
-}
-
-#if defined(CONFIG_BT_CTLR_PHY_CODED) && defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
-/*******************************************************************************
- * Trigger Radio Rate override upon Rateboost event.
- */
-static inline void hal_trigger_rateoverride_ppi_config(void)
-{
-	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_RATEBOOST, HAL_TRIGGER_RATEOVERRIDE_PPI);
-	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_RATEOVERRIDE, HAL_TRIGGER_RATEOVERRIDE_PPI);
-}
-#endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 
 /******************************************************************************/
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
