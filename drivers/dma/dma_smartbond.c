@@ -9,10 +9,14 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/irq.h>
 #include <DA1469xAB.h>
+#include <da1469x_pd.h>
 #include <da1469x_config.h>
 #include <system_DA1469x.h>
 #include <da1469x_otp.h>
 #include <zephyr/drivers/dma/dma_smartbond.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(dma_smartbond, CONFIG_DMA_LOG_LEVEL);
@@ -154,6 +158,10 @@ struct dma_smartbond_data {
 
 	ATOMIC_DEFINE(channels_atomic, DMA_CHANNELS_COUNT);
 
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+	ATOMIC_DEFINE(pm_policy_state_flag, 1);
+#endif
+
 	/* User callbacks and data to be stored per channel */
 	struct dma_channel_data channel_data[DMA_CHANNELS_COUNT];
 };
@@ -175,7 +183,31 @@ static bool dma_smartbond_is_dma_active(void)
 	return false;
 }
 
-static void dma_smartbond_set_channel_status(uint32_t channel, bool status)
+static inline void dma_smartbond_pm_policy_state_lock_get(const struct device *dev)
+{
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+	struct dma_smartbond_data *data = dev->data;
+
+	if (atomic_test_and_set_bit(data->pm_policy_state_flag, 0) == 0) {
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+#endif
+}
+
+static inline void dma_smartbond_pm_policy_state_lock_put(const struct device *dev)
+{
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+	struct dma_smartbond_data *data = dev->data;
+
+	/* Make PM lock put has a matched PM lock get invocation */
+	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, 0) == 1) {
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+#endif
+}
+
+static void dma_smartbond_set_channel_status(const struct device *dev,
+	uint32_t channel, bool status)
 {
 	unsigned int key;
 	struct channel_regs *regs = DMA_CHN2REG(channel);
@@ -191,6 +223,8 @@ static void dma_smartbond_set_channel_status(uint32_t channel, bool status)
 		/* Check if this is the first attempt to enable DMA interrupts. */
 		if (!irq_is_enabled(SMARTBOND_IRQN)) {
 			irq_enable(SMARTBOND_IRQN);
+			/* Prevent sleep as long as DMA operations are ongoing */
+			dma_smartbond_pm_policy_state_lock_get(dev);
 		}
 
 		DMA_CTRL_REG_SET_FIELD(DMA_ON, regs->DMA_CTRL_REG, 0x1);
@@ -212,6 +246,8 @@ static void dma_smartbond_set_channel_status(uint32_t channel, bool status)
 		/* DMA interrupts should be disabled only if all channels are disabled. */
 		if (!dma_smartbond_is_dma_active()) {
 			irq_disable(SMARTBOND_IRQN);
+			/* Allow entering sleep once all DMA channels are inactive */
+			dma_smartbond_pm_policy_state_lock_put(dev);
 		}
 	}
 
@@ -707,7 +743,7 @@ static int dma_smartbond_start(const struct device *dev, uint32_t channel)
 		return 0;
 	}
 
-	dma_smartbond_set_channel_status(channel, true);
+	dma_smartbond_set_channel_status(dev, channel, true);
 
 	return 0;
 }
@@ -727,7 +763,7 @@ static int dma_smartbond_stop(const struct device *dev, uint32_t channel)
 	 * the corresponding register mask and disable NVIC if there is no other
 	 * channel in use.
 	 */
-	dma_smartbond_set_channel_status(channel, false);
+	dma_smartbond_set_channel_status(dev, channel, false);
 
 	return 0;
 }
@@ -928,6 +964,57 @@ static void smartbond_dma_isr(const void *arg)
 	}
 }
 
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+static bool dma_smartbond_is_sleep_allowed(const struct device *dev)
+{
+	struct dma_smartbond_data *data = dev->data;
+
+	for (int i = 0; i < data->dma_ctx.dma_channels; i++) {
+		if (atomic_test_bit(data->dma_ctx.atomic, i)) {
+			/* Abort sleeping if at least one dma channel is acquired */
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static int dma_smartbond_pm_action(const struct device *dev,
+	enum pm_device_action action)
+{
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/*
+		 * When we reach this point there should be no ongoing DMA transfers.
+		 * However, a DMA channel can still be acquired and so the configured
+		 * channel(s) should be retained. To avoid reconfiguring DMA or
+		 * read/write DMA channels' registers we assume that sleep is not allowed
+		 * as long as all DMA channels are released.
+		 */
+		if (!dma_smartbond_is_sleep_allowed(dev)) {
+			ret = -EBUSY;
+		}
+		/*
+		 * No need to perform any actions here as the DMA engine
+		 * should already be turned off.
+		 */
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/*
+		 * No need to perform any actions here as the DMA engine
+		 * will be configured by application explicitly.
+		 */
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif
+
 static int dma_smartbond_init(const struct device *dev)
 {
 #ifdef CONFIG_DMA_64BIT
@@ -945,7 +1032,7 @@ static int dma_smartbond_init(const struct device *dev)
 
 	/* Make sure that all channels are disabled. */
 	for (idx = 0; idx < DMA_CHANNELS_COUNT; idx++) {
-		dma_smartbond_set_channel_status(idx, false);
+		dma_smartbond_set_channel_status(dev, idx, false);
 		data->channel_data[idx].is_dma_configured = false;
 	}
 
@@ -958,9 +1045,12 @@ static int dma_smartbond_init(const struct device *dev)
 #define SMARTBOND_DMA_INIT(inst) \
 	BUILD_ASSERT((inst) == 0, "multiple instances are not supported"); \
 	\
+	PM_DEVICE_DT_INST_DEFINE(inst, dma_smartbond_pm_action);	\
+	\
 	static struct dma_smartbond_data dma_smartbond_data_ ## inst; \
 	\
-	DEVICE_DT_INST_DEFINE(0, dma_smartbond_init, NULL, \
+	DEVICE_DT_INST_DEFINE(0, dma_smartbond_init, \
+		PM_DEVICE_DT_INST_GET(inst), \
 		&dma_smartbond_data_ ## inst, NULL,	\
 		POST_KERNEL, \
 		CONFIG_DMA_INIT_PRIORITY, \
