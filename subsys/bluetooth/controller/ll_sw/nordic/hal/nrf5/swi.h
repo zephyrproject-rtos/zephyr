@@ -17,6 +17,8 @@
 #define HAL_SWI_JOB_IRQ    SWI5_IRQn
 #endif
 
+#define HAL_RTC_IRQn       RTC0_IRQn
+
 /* nRF53 Series IRQ mapping */
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF53X)
 
@@ -33,8 +35,11 @@
 #define HAL_SWI_JOB_IRQ    SWI3_IRQn
 #endif
 
-#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET */
+#define HAL_RTC_IRQn       RTC0_IRQn
 
+#elif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET */
+#error Unknown NRF5340 CPU.
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET */
 #endif /* CONFIG_SOC_COMPATIBLE_NRF53X */
 
 static inline void hal_swi_init(void)
