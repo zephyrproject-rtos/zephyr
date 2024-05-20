@@ -6,6 +6,9 @@
 # The following symbols are enabled depending if the controller actually
 # supports the respective features.
 
+config BT_CTLR_CRYPTO_SUPPORT
+	bool
+
 config BT_CTLR_LE_ENC_SUPPORT
 	bool
 
@@ -139,8 +142,9 @@ comment "BLE Controller configuration"
 
 config BT_CTLR_CRYPTO
 	bool "Crypto functions in Controller"
-	default y
+	depends on BT_CTLR_CRYPTO_SUPPORT
 	select ENTROPY_GENERATOR
+	default y
 	help
 	  Use random number generation and AES encryption support functions
 	  provided by the controller.
