@@ -33,7 +33,7 @@ For :ref:`mimxrt1064_evk`, the sample can be built with the following command.
 If a mt9m114 camera shield is missing, video software generator will be used instead.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/video/tcpserversink
+   :zephyr-app: samples/drivers/video/tcpserversink
    :board: mimxrt1064_evk
    :shield: dvp_fpc24_mt9m114
    :goals: build
