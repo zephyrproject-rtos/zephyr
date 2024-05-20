@@ -1466,6 +1466,7 @@ static void le_rem_dev_from_fal(struct net_buf *buf, struct net_buf **evt)
 }
 #endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
+#if defined(CONFIG_BT_CTLR_CRYPTO)
 static void le_encrypt(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_encrypt *cmd = (void *)buf->data;
@@ -1479,6 +1480,7 @@ static void le_encrypt(struct net_buf *buf, struct net_buf **evt)
 	rp->status = 0x00;
 	memcpy(rp->enc_data, enc_data, 16);
 }
+#endif /* CONFIG_BT_CTLR_CRYPTO */
 
 static void le_rand(struct net_buf *buf, struct net_buf **evt)
 {
@@ -4338,9 +4340,11 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
+#if defined(CONFIG_BT_CTLR_CRYPTO)
 	case BT_OCF(BT_HCI_OP_LE_ENCRYPT):
 		le_encrypt(cmd, evt);
 		break;
+#endif /* CONFIG_BT_CTLR_CRYPTO */
 
 	case BT_OCF(BT_HCI_OP_LE_RAND):
 		le_rand(cmd, evt);
