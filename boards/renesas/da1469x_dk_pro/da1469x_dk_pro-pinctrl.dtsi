@@ -64,12 +64,12 @@
 
 	spi_controller: spi_controller {
 		group1 {
-			pinmux = <SMARTBOND_PINMUX(SPI_CLK, 0, 22)>,
-				<SMARTBOND_PINMUX(SPI_DO, 0, 23)>;
+			pinmux = <SMARTBOND_PINMUX(SPI_CLK, 0, 21)>,
+				 <SMARTBOND_PINMUX(SPI_DO, 0, 26)>;
 			output-enable;
 		};
 		group2 {
-			pinmux = <SMARTBOND_PINMUX(SPI_DI, 0, 25)>;
+			pinmux = <SMARTBOND_PINMUX(SPI_DI, 0, 24)>;
 			input-enable;
 		};
 	};
