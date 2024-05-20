@@ -1,0 +1,11 @@
+# Microchip MEC5 GPIO configuration options
+
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_MCHP_MEC5
+	bool "Microchip MEC5 GPIO driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_GPIO_ENABLED
+	help
+	  Enable the Microchip MEC5 gpio driver.
