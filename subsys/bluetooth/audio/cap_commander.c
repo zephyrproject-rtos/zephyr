@@ -358,7 +358,7 @@ int bt_cap_commander_broadcast_reception_start(
 		stored_param->broadcast_reception_start.pa_interval = member_param->pa_interval;
 		stored_param->broadcast_reception_start.num_subgroups = member_param->num_subgroups;
 		memcpy(stored_param->broadcast_reception_start.subgroups, member_param->subgroups,
-		       sizeof(struct bt_bap_bass_subgroup) * add_src_param.num_subgroups);
+		       sizeof(struct bt_bap_bass_subgroup) * member_param->num_subgroups);
 	}
 
 	active_proc->proc_initiated_cnt++;
