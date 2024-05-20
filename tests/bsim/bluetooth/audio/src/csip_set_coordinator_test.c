@@ -4,10 +4,27 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifdef CONFIG_BT_CSIP_SET_COORDINATOR
-#include <zephyr/bluetooth/addr.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+
+#include "bstests.h"
 #include "common.h"
+
+#ifdef CONFIG_BT_CSIP_SET_COORDINATOR
 
 static bool expect_rank = true;
 static bool expect_set_size = true;

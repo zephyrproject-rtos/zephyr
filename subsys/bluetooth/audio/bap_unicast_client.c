@@ -9,28 +9,46 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "../host/hci_core.h"
 #include "../host/conn_internal.h"
 #include "../host/iso_internal.h"
 
-#include "bap_iso.h"
+#include "ascs_internal.h"
 #include "audio_internal.h"
+#include "bap_iso.h"
 #include "bap_endpoint.h"
-#include "pacs_internal.h"
 #include "bap_unicast_client_internal.h"
-
-#include <zephyr/logging/log.h>
+#include "pacs_internal.h"
 
 BUILD_ASSERT(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 ||
 		     CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0,
@@ -1752,7 +1770,6 @@ static int unicast_client_ep_config(struct bt_bap_ep *ep, struct net_buf_simple 
 				    const struct bt_audio_codec_cfg *codec_cfg)
 {
 	struct bt_ascs_config *req;
-	uint8_t cc_len;
 
 	LOG_DBG("ep %p buf %p codec %p", ep, buf, codec_cfg);
 
@@ -1784,7 +1801,6 @@ static int unicast_client_ep_config(struct bt_bap_ep *ep, struct net_buf_simple 
 	req->codec.cid = codec_cfg->cid;
 	req->codec.vid = codec_cfg->vid;
 
-	cc_len = buf->len;
 	req->cc_len = codec_cfg->data_len;
 	net_buf_simple_add_mem(buf, codec_cfg->data, codec_cfg->data_len);
 
@@ -2795,7 +2811,6 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 	struct net_buf_simple *buf;
 	struct bt_bap_ep *ep;
 	bool conn_stream_found;
-	bool cig_connected;
 	int err;
 
 	if (conn == NULL) {
@@ -2808,11 +2823,6 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 	 * was actually found
 	 */
 	conn_stream_found = false;
-
-	/* User to determine if any stream in the group is in
-	 * the connected state
-	 */
-	cig_connected = false;
 
 	/* Validate streams before starting the QoS execution */
 	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
@@ -3292,7 +3302,7 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 	unicast_client_ep_set_status(ep, buf);
 	cb_err = unicast_client_ep_subscribe(conn, ep);
 	if (cb_err != 0) {
-		LOG_DBG("Failed to subcribe to ep %p: %d", ep, cb_err);
+		LOG_DBG("Failed to subscribe to ep %p: %d", ep, cb_err);
 		goto fail;
 	}
 
@@ -3764,7 +3774,6 @@ static uint8_t unicast_client_pacs_context_read_func(struct bt_conn *conn, uint8
 	struct net_buf_simple buf;
 	struct bt_pacs_context *context;
 	int cb_err;
-	int index;
 
 	memset(read, 0, sizeof(*read));
 
@@ -3776,8 +3785,6 @@ static uint8_t unicast_client_pacs_context_read_func(struct bt_conn *conn, uint8
 
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
 	context = net_buf_simple_pull_mem(&buf, sizeof(*context));
-
-	index = bt_conn_index(conn);
 
 discover_loc:
 	/* Read ASE instances */

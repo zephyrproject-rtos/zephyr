@@ -6,36 +6,50 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <zephyr/kernel.h>
-#include <zephyr/types.h>
-
-#include <zephyr/device.h>
-#include <zephyr/init.h>
+#include <sys/types.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
-#include "audio_internal.h"
-#include "csip_internal.h"
-#include "csip_crypto.h"
 #include "../host/conn_internal.h"
 #include "../host/hci_core.h"
 #include "../host/keys.h"
+
+#include "common/bt_str.h"
+#include "audio_internal.h"
+#include "csip_internal.h"
+#include "csip_crypto.h"
 
 #define CSIP_SET_LOCK_TIMER_VALUE       K_SECONDS(60)
 
 #define CSIS_CHAR_ATTR_COUNT	  3 /* declaration + value + cccd */
 #define CSIS_RANK_CHAR_ATTR_COUNT 2 /* declaration + value */
-
-#include "common/bt_str.h"
-
-#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_csip_set_member, CONFIG_BT_CSIP_SET_MEMBER_LOG_LEVEL);
 

@@ -9,8 +9,10 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 /** Call Gateway (CG) supported */
 #define BT_TMAP_CG_SUPPORTED                                                                       \

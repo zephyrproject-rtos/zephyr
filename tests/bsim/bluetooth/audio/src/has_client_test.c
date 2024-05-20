@@ -3,14 +3,28 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/has.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "../../subsys/bluetooth/audio/has_internal.h"
 
+#include "bstests.h"
 #include "common.h"
 
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(has_client_test, LOG_LEVEL_DBG);
 
 extern enum bst_result_t bst_result;

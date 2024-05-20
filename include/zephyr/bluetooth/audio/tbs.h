@@ -14,6 +14,7 @@
 #include <stdbool.h>
 
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/util_macro.h>
 
 /* Call States */
 #define BT_TBS_CALL_STATE_INCOMING                      0x00

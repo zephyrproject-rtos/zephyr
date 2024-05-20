@@ -18,14 +18,21 @@
  * @{
  */
 
-#include <zephyr/sys/atomic.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/lc3.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/iso.h>
-#include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/audio/lc3.h>
-
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -1011,7 +1018,7 @@ int bt_audio_codec_cfg_set_chan_allocation(struct bt_audio_codec_cfg *codec_cfg,
  *
  * The overall SDU size will be octets_per_frame * blocks_per_sdu.
  *
- *  The Bluetooth specificationa are not clear about this value - it does not state that
+ *  The Bluetooth specifications are not clear about this value - it does not state that
  *  the codec shall use this SDU size only. A codec like LC3 supports variable bit-rate
  *  (per SDU) hence it might be allowed for an encoder to reduce the frame size below this
  *  value.
@@ -1040,7 +1047,7 @@ int bt_audio_codec_cfg_get_octets_per_frame(const struct bt_audio_codec_cfg *cod
 int bt_audio_codec_cfg_set_octets_per_frame(struct bt_audio_codec_cfg *codec_cfg,
 					    uint16_t octets_per_frame);
 
-/** @brief Extract number of audio frame blockss in each SDU from BT codec config
+/** @brief Extract number of audio frame blocks in each SDU from BT codec config
  *
  *  The overall SDU size will be octets_per_frame * frame_blocks_per_sdu * number-of-channels.
  *
