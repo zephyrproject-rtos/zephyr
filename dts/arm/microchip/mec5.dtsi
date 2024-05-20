@@ -471,7 +471,6 @@
 		qspi0: spi@40070000 {
 			reg = <0x40070000 0x400>;
 			interrupts = <91 2>;
-			clock-frequency = <12000000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
