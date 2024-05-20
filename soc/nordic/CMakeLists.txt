@@ -2,9 +2,7 @@
 
 zephyr_library()
 
-if(CONFIG_ARM)
-  set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "SoC Linker script")
-endif()
+set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "SoC Linker script")
 
 zephyr_library_sources(
   validate_base_addresses.c
