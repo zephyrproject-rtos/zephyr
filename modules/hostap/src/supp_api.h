@@ -190,6 +190,26 @@ int supplicant_pmksa_flush(const struct device *dev);
 struct wifi_connect_req_params *supplicant_get_wifi_conn_params(void);
 
 #ifdef CONFIG_AP
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+/**
+ * @brief Get Wi-Fi AP Status
+ *
+ * @param dev Wi-Fi device
+ * @param params AP status
+ * @return 0 for OK; -1 for ERROR
+ */
+int hapd_state(const struct device *dev, int *state);
+
+/**
+ * @brief Set/Get Wi-Fi AP Bandwidth
+ *
+ * @param dev Wi-Fi device
+ * @param params AP parameters
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_ap_bandwidth(const struct device *dev, struct wifi_ap_params *params);
+#endif
+
 /**
  * @brief Set Wi-Fi AP configuration
  *
