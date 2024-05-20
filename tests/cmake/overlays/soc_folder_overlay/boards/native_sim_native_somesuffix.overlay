@@ -1,5 +1,0 @@
-/ {
-	aliases {
-		test-board-suffix = &uart0;
-	};
-};
