@@ -1,0 +1,4 @@
+board:
+  name: ctcc
+  socs:
+    - name: nrf52840

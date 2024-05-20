@@ -1,0 +1,21 @@
+# CTHINGS.CO Connectivity Card board configuration
+
+# Copyright (c) 2024 CTHINGS.CO
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CTCC
+
+if BOARD_CTCC_NRF52840
+
+config BOARD_ENABLE_DCDC
+	bool "DCDC mode"
+	select SOC_DCDC_NRF52X
+	default y
+
+config BOARD_SERIAL_BACKEND_CDC_ACM
+	bool "USB CDC"
+	default y
+
+endif # BOARD_CTCC_NRF52840
+
+endif # BOARD_CTCC
