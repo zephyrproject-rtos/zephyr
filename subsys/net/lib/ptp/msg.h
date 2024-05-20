@@ -310,6 +310,33 @@ void ptp_msg_unref(struct ptp_msg *msg);
  */
 void ptp_msg_ref(struct ptp_msg *msg);
 
+/**
+ * @brief Function extracting message type from it.
+ *
+ * @param[in] msg Pointer to the message.
+ *
+ * @return Type of the message.
+ */
+enum ptp_msg_type ptp_msg_type(const struct ptp_msg *msg);
+
+/**
+ * @brief Function preparing message right before transmission.
+ *
+ * @param[in] msg Pointer to the prepared PTP message.
+ */
+void ptp_msg_pre_send(struct ptp_msg *msg);
+
+/**
+ * @brief Function preparing message for further processing after reception.
+ *
+ * @param[in] port Pointer to the PTP Port instance.
+ * @param[in] msg  Pointer to the received PTP message.
+ * @param[in] cnt  Length of the message in bytes.
+ *
+ * @return 0 on success, negative otherwise.
+ */
+int ptp_msg_post_recv(struct ptp_port *port, struct ptp_msg *msg, int cnt);
+
 #ifdef __cplusplus
 }
 #endif
