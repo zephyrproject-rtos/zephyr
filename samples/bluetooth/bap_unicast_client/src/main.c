@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,6 +59,7 @@ static K_SEM_DEFINE(sem_stream_configured, 0, 1);
 static K_SEM_DEFINE(sem_stream_qos, 0, ARRAY_SIZE(sinks) + ARRAY_SIZE(sources));
 static K_SEM_DEFINE(sem_stream_enabled, 0, 1);
 static K_SEM_DEFINE(sem_stream_started, 0, 1);
+static K_SEM_DEFINE(sem_stream_connected, 0, 1);
 
 #define AUDIO_DATA_TIMEOUT_US 1000000UL /* Send data every 1 second */
 
@@ -518,9 +519,9 @@ static void stream_enabled(struct bt_bap_stream *stream)
 	k_sem_give(&sem_stream_enabled);
 }
 
-static void stream_started(struct bt_bap_stream *stream)
+static void stream_connected_cb(struct bt_bap_stream *stream)
 {
-	printk("Audio Stream %p started\n", stream);
+	printk("Audio Stream %p connected\n", stream);
 
 	/* Reset sequence number for sinks */
 	for (size_t i = 0U; i < configured_sink_stream_count; i++) {
@@ -529,6 +530,13 @@ static void stream_started(struct bt_bap_stream *stream)
 			break;
 		}
 	}
+
+	k_sem_give(&sem_stream_connected);
+}
+
+static void stream_started(struct bt_bap_stream *stream)
+{
+	printk("Audio Stream %p started\n", stream);
 
 	k_sem_give(&sem_stream_started);
 }
@@ -576,7 +584,8 @@ static struct bt_bap_stream_ops stream_ops = {
 	.disabled = stream_disabled,
 	.stopped = stream_stopped,
 	.released = stream_released,
-	.recv = stream_recv
+	.recv = stream_recv,
+	.connected = stream_connected_cb,
 };
 
 static void add_remote_source(struct bt_bap_ep *ep)
@@ -1018,16 +1027,61 @@ static int enable_streams(void)
 	return 0;
 }
 
-static int start_streams(void)
+static int connect_streams(void)
 {
 	for (size_t i = 0U; i < configured_stream_count; i++) {
 		int err;
 
-		err = bt_bap_stream_start(&streams[i]);
-		if (err != 0) {
+		k_sem_reset(&sem_stream_connected);
+
+		err = bt_bap_stream_connect(&streams[i]);
+		if (err == -EALREADY) {
+			/* We have already connected a paired stream */
+			continue;
+		} else if (err != 0) {
 			printk("Unable to start stream: %d\n", err);
 			return err;
 		}
+
+		err = k_sem_take(&sem_stream_connected, K_FOREVER);
+		if (err != 0) {
+			printk("failed to take sem_stream_connected (err %d)\n", err);
+			return err;
+		}
+	}
+
+	return 0;
+}
+
+static enum bt_audio_dir stream_dir(const struct bt_bap_stream *stream)
+{
+	struct bt_bap_ep_info ep_info;
+	int err;
+
+	err = bt_bap_ep_get_info(stream->ep, &ep_info);
+	if (err != 0) {
+		printk("Failed to get ep info for %p: %d\n", stream, err);
+		__ASSERT_NO_MSG(false);
+
+		return 0;
+	}
+
+	return ep_info.dir;
+}
+
+static int start_streams(void)
+{
+	for (size_t i = 0U; i < configured_stream_count; i++) {
+		struct bt_bap_stream *stream = &streams[i];
+		int err;
+
+		if (stream_dir(stream) == BT_AUDIO_DIR_SOURCE) {
+			err = bt_bap_stream_start(&streams[i]);
+			if (err != 0) {
+				printk("Unable to start stream: %d\n", err);
+				return err;
+			}
+		} /* Sink streams are started by the unicast server */
 
 		err = k_sem_take(&sem_stream_started, K_FOREVER);
 		if (err != 0) {
@@ -1051,6 +1105,7 @@ static void reset_data(void)
 	k_sem_reset(&sem_stream_qos);
 	k_sem_reset(&sem_stream_enabled);
 	k_sem_reset(&sem_stream_started);
+	k_sem_reset(&sem_stream_connected);
 
 	configured_sink_stream_count = 0;
 	configured_source_stream_count = 0;
@@ -1130,6 +1185,13 @@ int main(void)
 			return 0;
 		}
 		printk("Streams enabled\n");
+
+		printk("Connecting streams\n");
+		err = connect_streams();
+		if (err != 0) {
+			return 0;
+		}
+		printk("Streams connected\n");
 
 		printk("Starting streams\n");
 		err = start_streams();

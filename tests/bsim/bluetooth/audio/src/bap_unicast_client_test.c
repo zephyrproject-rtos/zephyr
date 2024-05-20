@@ -752,6 +752,64 @@ static void metadata_update_streams(size_t stream_cnt)
 	}
 }
 
+static int connect_stream(struct bt_bap_stream *stream)
+{
+	int err;
+
+	UNSET_FLAG(flag_stream_started);
+
+	do {
+		err = bt_bap_stream_connect(stream);
+		if (err == -EALREADY) {
+			SET_FLAG(flag_stream_started);
+		} else if (err != 0) {
+			FAIL("Could not start stream %p: %d\n", stream, err);
+			return err;
+		}
+	} while (err == -EBUSY);
+
+	WAIT_FOR_FLAG(flag_stream_started);
+
+	return 0;
+}
+
+static void connect_streams(void)
+{
+	struct bt_bap_stream *source_stream;
+	struct bt_bap_stream *sink_stream;
+
+	/* We only support a single CIS so far, so only start one. We can use the group pair
+	 * params to start both a sink and source stream that use the same CIS
+	 */
+
+	source_stream = pair_params[0].rx_param == NULL ? NULL : pair_params[0].rx_param->stream;
+	sink_stream = pair_params[0].tx_param == NULL ? NULL : pair_params[0].tx_param->stream;
+
+	UNSET_FLAG(flag_stream_connected);
+
+	if (sink_stream != NULL) {
+		const int err = connect_stream(sink_stream);
+
+		if (err != 0) {
+			FAIL("Unable to connect sink: %d", err);
+
+			return;
+		}
+	}
+
+	if (source_stream != NULL) {
+		const int err = connect_stream(source_stream);
+
+		if (err != 0) {
+			FAIL("Unable to connect source stream: %d", err);
+
+			return;
+		}
+	}
+
+	WAIT_FOR_FLAG(flag_stream_connected);
+}
+
 static int start_stream(struct bt_bap_stream *stream)
 {
 	int err;
@@ -776,26 +834,8 @@ static int start_stream(struct bt_bap_stream *stream)
 static void start_streams(void)
 {
 	struct bt_bap_stream *source_stream;
-	struct bt_bap_stream *sink_stream;
-
-	/* We only support a single CIS so far, so only start one. We can use the group pair
-	 * params to start both a sink and source stream that use the same CIS
-	 */
 
 	source_stream = pair_params[0].rx_param == NULL ? NULL : pair_params[0].rx_param->stream;
-	sink_stream = pair_params[0].tx_param == NULL ? NULL : pair_params[0].tx_param->stream;
-
-	UNSET_FLAG(flag_stream_connected);
-
-	if (sink_stream != NULL) {
-		const int err = start_stream(sink_stream);
-
-		if (err != 0) {
-			FAIL("Unable to start sink: %d", err);
-
-			return;
-		}
-	}
 
 	if (source_stream != NULL) {
 		const int err = start_stream(source_stream);
@@ -806,8 +846,6 @@ static void start_streams(void)
 			return;
 		}
 	}
-
-	WAIT_FOR_FLAG(flag_stream_connected);
 }
 
 static void transceive_streams(void)
@@ -1051,6 +1089,9 @@ static void test_main(void)
 		printk("Metadata update streams\n");
 		metadata_update_streams(stream_cnt);
 
+		printk("Connecting streams\n");
+		connect_streams();
+
 		printk("Starting streams\n");
 		start_streams();
 
@@ -1108,6 +1149,9 @@ static void test_main_acl_disconnect(void)
 
 	printk("Metadata update streams\n");
 	metadata_update_streams(stream_cnt);
+
+	printk("Connecting streams\n");
+	connect_streams();
 
 	printk("Starting streams\n");
 	start_streams();

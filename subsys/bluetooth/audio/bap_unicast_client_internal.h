@@ -20,6 +20,7 @@ int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, const uint8_t m
 int bt_bap_unicast_client_disable(struct bt_bap_stream *stream);
 
 int bt_bap_unicast_client_start(struct bt_bap_stream *stream);
+int bt_bap_unicast_client_connect(struct bt_bap_stream *stream);
 
 int bt_bap_unicast_client_stop(struct bt_bap_stream *stream);
 

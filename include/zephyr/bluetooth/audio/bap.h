@@ -2,7 +2,7 @@
  *  @brief Header for Bluetooth BAP.
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -716,19 +716,42 @@ int bt_bap_stream_metadata(struct bt_bap_stream *stream, const uint8_t meta[], s
 int bt_bap_stream_disable(struct bt_bap_stream *stream);
 
 /**
+ * @brief Connect unicast audio stream
+ *
+ * This procedure is used by a unicast client to connect the connected isochronous stream (CIS)
+ * associated with the audio stream. If two audio streams share a CIS, then this only needs to be
+ * done once for those streams. This can only be done for streams in the QoS configured or enabled
+ * states.
+ *
+ * The bt_bap_stream_ops.connected() callback will be called on the streams once this has finished.
+ *
+ * This shall only be called for unicast streams, and only as the unicast client
+ * (@kconfig{CONFIG_BT_BAP_UNICAST_CLIENT}).
+ *
+ * @param stream Stream object
+ *
+ * @retval 0 in case of success
+ * @retval -EINVAL if the stream, endpoint, ISO channel or connection is NULL
+ * @retval -EBADMSG if the stream or ISO channel is in an invalid state for connection
+ * @retval -EOPNOTSUPP if the role of the stream is not @ref BT_HCI_ROLE_CENTRAL
+ * @retval -EALREADY if the ISO channel is already connecting or connected
+ * @retval -EBUSY if another ISO channel is connecting
+ * @retval -ENOEXEC if otherwise rejected by the ISO layer
+ */
+int bt_bap_stream_connect(struct bt_bap_stream *stream);
+
+/**
  * @brief Start Audio Stream
  *
  * This procedure is used by a unicast client or unicast server to make a stream start streaming.
  *
- * For the unicast client, this will connect the CIS for the stream before
- * sending the start command.
+ * For the unicast client, this will send the receiver start ready command to the unicast server for
+ * @ref BT_AUDIO_DIR_SOURCE ASEs. The CIS is required to be connected first by
+ * bt_bap_stream_connect() before the command can be sent.
  *
- * For the unicast server, this will put a @ref BT_AUDIO_DIR_SINK stream into the streaming state if
- * the CIS is connected (initialized by the unicast client). If the CIS is not connected yet, the
- * stream will go into the streaming state as soon as the CIS is connected.
- * @ref BT_AUDIO_DIR_SOURCE streams will go into the streaming state when the unicast client sends
- * the Receiver Start Ready operation, which will trigger the @ref bt_bap_unicast_server_cb.start()
- * callback.
+ * For the unicast server, this will execute the receiver start ready command on the unicast server
+ * for @ref BT_AUDIO_DIR_SINK ASEs. If the CIS is not connected yet, the stream will go into the
+ * streaming state as soon as the CIS is connected.
  *
  * This shall only be called for unicast streams.
  *
