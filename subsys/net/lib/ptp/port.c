@@ -92,3 +92,8 @@ void ptp_port_init(struct net_if *iface, void *user_data)
 
 	LOG_DBG("Port %d initialized", port->port_ds.id.port_number);
 }
+
+bool ptp_port_id_eq(const struct ptp_port_id *p1, const struct ptp_port_id *p2)
+{
+	return memcmp(p1, p2, sizeof(struct ptp_port_id)) == 0;
+}
