@@ -120,8 +120,8 @@ static void rtc0_nrf5_isr(const void *arg)
 	lll_prof_enter_ull_high();
 
 	/* On compare0 run ticker worker instance0 */
-	if (NRF_RTC0->EVENTS_COMPARE[0]) {
-		nrf_rtc_event_clear(NRF_RTC0, NRF_RTC_EVENT_COMPARE_0);
+	if (NRF_RTC->EVENTS_COMPARE[0]) {
+		nrf_rtc_event_clear(NRF_RTC, NRF_RTC_EVENT_COMPARE_0);
 
 		ticker_trigger(0);
 	}
@@ -210,15 +210,15 @@ int lll_init(void)
 	/* Connect ISRs */
 #if defined(CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS)
 #if defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
-	ARM_IRQ_DIRECT_DYNAMIC_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+	ARM_IRQ_DIRECT_DYNAMIC_CONNECT(HAL_RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
 				       IRQ_CONNECT_FLAGS, no_reschedule);
-	irq_connect_dynamic(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+	irq_connect_dynamic(HAL_RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
 			    radio_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
 #else /* !CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
-	IRQ_DIRECT_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+	IRQ_DIRECT_CONNECT(HAL_RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
 			   radio_nrf5_isr, IRQ_CONNECT_FLAGS);
 #endif /* !CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
-	irq_connect_dynamic(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
+	irq_connect_dynamic(HAL_RTC_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
 			    rtc0_nrf5_isr, NULL, 0U);
 	irq_connect_dynamic(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
 			    swi_lll_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
@@ -229,9 +229,9 @@ int lll_init(void)
 #endif
 
 #else /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
-	IRQ_DIRECT_CONNECT(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+	IRQ_DIRECT_CONNECT(HAL_RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
 			   radio_nrf5_isr, IRQ_CONNECT_FLAGS);
-	IRQ_CONNECT(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
+	IRQ_CONNECT(HAL_RTC_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
 		    rtc0_nrf5_isr, NULL, 0);
 #if defined(CONFIG_BT_CTLR_ZLI)
 	IRQ_DIRECT_CONNECT(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
@@ -248,8 +248,8 @@ int lll_init(void)
 #endif /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
 
 	/* Enable IRQs */
-	irq_enable(RADIO_IRQn);
-	irq_enable(RTC0_IRQn);
+	irq_enable(HAL_RADIO_IRQn);
+	irq_enable(HAL_RTC_IRQn);
 	irq_enable(HAL_SWI_RADIO_IRQ);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) ||
 		(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)) {
@@ -277,8 +277,8 @@ int lll_deinit(void)
 	}
 
 	/* Disable IRQs */
-	irq_disable(RADIO_IRQn);
-	irq_disable(RTC0_IRQn);
+	irq_disable(HAL_RADIO_IRQn);
+	irq_disable(HAL_RTC_IRQn);
 	irq_disable(HAL_SWI_RADIO_IRQ);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) ||
 		(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)) {
@@ -289,10 +289,10 @@ int lll_deinit(void)
 #if defined(CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS)
 #if defined(CONFIG_SHARED_INTERRUPTS)
 #if defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
-	irq_disconnect_dynamic(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+	irq_disconnect_dynamic(HAL_RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
 			       radio_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
 #endif /* CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
-	irq_disconnect_dynamic(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
+	irq_disconnect_dynamic(HAL_RTC_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
 			       rtc0_nrf5_isr, NULL, 0U);
 	irq_disconnect_dynamic(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
 			       swi_lll_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
@@ -303,10 +303,10 @@ int lll_deinit(void)
 #endif
 #else /* !CONFIG_SHARED_INTERRUPTS */
 #if defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
-	irq_connect_dynamic(RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO, NULL, NULL,
+	irq_connect_dynamic(HAL_RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO, NULL, NULL,
 			    IRQ_CONNECT_FLAGS);
 #endif /* CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
-	irq_connect_dynamic(RTC0_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO, NULL, NULL,
+	irq_connect_dynamic(HAL_RTC_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO, NULL, NULL,
 			    0U);
 	irq_connect_dynamic(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO, NULL,
 			    NULL, IRQ_CONNECT_FLAGS);

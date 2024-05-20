@@ -159,7 +159,7 @@ static inline void hal_radio_end_time_capture_ppi_config(void)
 	nrf_ppi_channel_endpoint_setup(
 		NRF_PPI,
 		HAL_RADIO_END_TIME_CAPTURE_PPI,
-		(uint32_t)&(NRF_RADIO->NRF_RADIO_TXRX_END_EVENT),
+		(uint32_t)&(NRF_RADIO->NRF_RADIO_TRX_END_EVENT),
 		(uint32_t)&(EVENT_TIMER->TASKS_CAPTURE[2]));
 }
 
@@ -285,7 +285,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 	nrf_ppi_channel_endpoint_setup(
 		NRF_PPI,
 		HAL_SW_SWITCH_TIMER_CLEAR_PPI,
-		(uint32_t)&(NRF_RADIO->NRF_RADIO_TXRX_END_EVENT),
+		(uint32_t)&(NRF_RADIO->NRF_RADIO_TRX_END_EVENT),
 		(uint32_t)&(SW_SWITCH_TIMER->TASKS_CLEAR));
 }
 
@@ -346,7 +346,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  * 'index' must be 0 or 1.
  */
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT \
-	((uint32_t)&(NRF_RADIO->NRF_RADIO_TXRX_END_EVENT))
+	((uint32_t)&(NRF_RADIO->NRF_RADIO_TRX_END_EVENT))
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_TASK(index) \
 	((uint32_t)&(NRF_PPI->TASKS_CHG[SW_SWITCH_TIMER_TASK_GROUP(index)].EN))
 
