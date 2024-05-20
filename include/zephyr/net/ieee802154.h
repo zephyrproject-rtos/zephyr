@@ -241,10 +241,11 @@ struct ieee802154_security_ctx {
 	/** INTERNAL_HIDDEN @endcond */
 };
 
+/** @brief IEEE 802.15.4 device role */
 enum ieee802154_device_role {
-	IEEE802154_DEVICE_ROLE_ENDDEVICE,
-	IEEE802154_DEVICE_ROLE_COORDINATOR,
-	IEEE802154_DEVICE_ROLE_PAN_COORDINATOR,
+	IEEE802154_DEVICE_ROLE_ENDDEVICE,       /**< End device */
+	IEEE802154_DEVICE_ROLE_COORDINATOR,     /**< Coordinator */
+	IEEE802154_DEVICE_ROLE_PAN_COORDINATOR, /**< PAN coordinator */
 };
 
 /** IEEE 802.15.4 L2 context. */
