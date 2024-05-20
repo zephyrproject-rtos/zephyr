@@ -8505,7 +8505,7 @@ static void le_ltk_request(struct pdu_data *pdu_data, uint16_t handle,
 }
 
 static void encrypt_change(uint8_t err, uint16_t handle,
-			   struct net_buf *buf)
+			   struct net_buf *buf, bool encryption_on)
 {
 	struct bt_hci_evt_encrypt_change *ep;
 
@@ -8518,7 +8518,7 @@ static void encrypt_change(uint8_t err, uint16_t handle,
 
 	ep->status = err;
 	ep->handle = sys_cpu_to_le16(handle);
-	ep->encrypt = !err ? 1 : 0;
+	ep->encrypt = encryption_on ? 1 : 0;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
@@ -8660,7 +8660,7 @@ static void encode_data_ctrl(struct node_rx_pdu *node_rx,
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
-		encrypt_change(0x00, handle, buf);
+		encrypt_change(0x00, handle, buf, true);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
@@ -8677,7 +8677,7 @@ static void encode_data_ctrl(struct node_rx_pdu *node_rx,
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
 		encrypt_change(pdu_data->llctrl.reject_ind.error_code, handle,
-			       buf);
+			       buf, false);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
