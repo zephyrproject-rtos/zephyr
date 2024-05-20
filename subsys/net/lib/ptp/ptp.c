@@ -8,6 +8,7 @@
 LOG_MODULE_REGISTER(ptp, CONFIG_PTP_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/ptp.h>
 
 K_KERNEL_STACK_DEFINE(ptp_stack, CONFIG_PTP_STACK_SIZE);
@@ -28,6 +29,13 @@ static void ptp_thread(void *p1, void *p2, void *p3)
 static int ptp_init(void)
 {
 	k_tid_t tid;
+	const struct ptp_clock *domain = ptp_clock_init();
+
+	if (!domain) {
+		return -ENODEV;
+	}
+
+	net_if_foreach(ptp_port_init, NULL);
 
 	tid = k_thread_create(&ptp_thread_data, ptp_stack, K_KERNEL_STACK_SIZEOF(ptp_stack),
 			      ptp_thread, NULL, NULL, NULL,
