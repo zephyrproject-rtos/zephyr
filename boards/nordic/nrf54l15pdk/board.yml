@@ -3,9 +3,6 @@ board:
   vendor: nordic
   socs:
   - name: nrf54l15
-    variants:
-    - name: ns
-      cpucluster: cpuapp
   revision:
     format: major.minor.patch
     default: "0.2.1"
