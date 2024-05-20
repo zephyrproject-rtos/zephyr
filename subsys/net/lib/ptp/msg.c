@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(ptp_msg, CONFIG_PTP_LOG_LEVEL);
 #include "clock.h"
 #include "msg.h"
 #include "port.h"
+#include "tlv.h"
 
 static struct k_mem_slab msg_slab;
 
@@ -95,6 +96,124 @@ static void msg_header_pre_send(struct ptp_header *header)
 	msg_port_id_pre_send(&header->src_port_id);
 }
 
+static uint8_t *msg_suffix(struct ptp_msg *msg)
+{
+	uint8_t *suffix = NULL;
+
+	switch (ptp_msg_type(msg)) {
+	case PTP_MSG_SYNC:
+		suffix = msg->sync.suffix;
+		break;
+	case PTP_MSG_DELAY_REQ:
+		suffix = msg->delay_req.suffix;
+		break;
+	case PTP_MSG_PDELAY_REQ:
+		suffix = msg->pdelay_req.suffix;
+		break;
+	case PTP_MSG_PDELAY_RESP:
+		suffix = msg->pdelay_resp.suffix;
+		break;
+	case PTP_MSG_FOLLOW_UP:
+		suffix = msg->follow_up.suffix;
+		break;
+	case PTP_MSG_DELAY_RESP:
+		suffix = msg->delay_resp.suffix;
+		break;
+	case PTP_MSG_PDELAY_RESP_FOLLOW_UP:
+		suffix = msg->pdelay_resp_follow_up.suffix;
+		break;
+	case PTP_MSG_ANNOUNCE:
+		suffix = msg->announce.suffix;
+		break;
+	case PTP_MSG_SIGNALING:
+		suffix = msg->signaling.suffix;
+		break;
+	case PTP_MSG_MANAGEMENT:
+		suffix = msg->management.suffix;
+		break;
+	}
+
+	return suffix;
+}
+
+static int msg_tlv_post_recv(struct ptp_msg *msg, int length)
+{
+	int suffix_len = 0, ret = 0;
+	struct ptp_tlv_container *tlv_container;
+	uint8_t *suffix = msg_suffix(msg);
+
+	if (!suffix) {
+		LOG_DBG("No TLV attached to the message");
+		return 0;
+	}
+
+	while (length >= sizeof(struct ptp_tlv)) {
+		tlv_container = ptp_tlv_alloc();
+		if (!tlv_container) {
+			return -ENOMEM;
+		}
+
+		tlv_container->tlv = (struct ptp_tlv *)suffix;
+		tlv_container->tlv->type = ntohs(tlv_container->tlv->type);
+		tlv_container->tlv->length = ntohs(tlv_container->tlv->length);
+
+		if (tlv_container->tlv->length % 2) {
+			/* IEEE 1588-2019 Section 5.3.8 - length is an even number */
+			LOG_ERR("Incorrect length of TLV");
+			ptp_tlv_free(tlv_container);
+			return -EBADMSG;
+		}
+
+		length -= sizeof(struct ptp_tlv);
+		suffix += sizeof(struct ptp_tlv);
+		suffix_len += sizeof(struct ptp_tlv);
+
+		if (tlv_container->tlv->length > length) {
+			LOG_ERR("Incorrect length of TLV");
+			ptp_tlv_free(tlv_container);
+			return -EBADMSG;
+		}
+
+		length -= tlv_container->tlv->length;
+		suffix += tlv_container->tlv->length;
+		suffix_len += tlv_container->tlv->length;
+
+		ret = ptp_tlv_post_recv(tlv_container->tlv);
+		if (ret) {
+			ptp_tlv_free(tlv_container);
+			return ret;
+		}
+
+		sys_slist_append(&msg->tlvs, &tlv_container->node);
+	}
+
+	return suffix_len;
+}
+
+static void msg_tlv_free(struct ptp_msg *msg)
+{
+	struct ptp_tlv_container *tlv_container;
+
+	for (sys_snode_t *iter = sys_slist_get(&msg->tlvs);
+	     iter;
+	     iter = sys_slist_get(&msg->tlvs)) {
+		tlv_container = CONTAINER_OF(iter, struct ptp_tlv_container, node);
+		ptp_tlv_free(tlv_container);
+	}
+}
+
+static void msg_tlv_pre_send(struct ptp_msg *msg)
+{
+	struct ptp_tlv_container *tlv_container;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&msg->tlvs, tlv_container, node) {
+		ptp_tlv_pre_send(tlv_container->tlv);
+	}
+
+	/* No need to track TLVs attached to the message. */
+	msg_tlv_free(msg);
+}
+
 struct ptp_msg *ptp_msg_alloc(void)
 {
 	struct ptp_msg *msg = NULL;
@@ -106,6 +225,7 @@ struct ptp_msg *ptp_msg_alloc(void)
 	}
 
 	memset(msg, 0, sizeof(*msg));
+	sys_slist_init(&msg->tlvs);
 	atomic_inc(&msg->ref);
 
 	return msg;
@@ -121,6 +241,7 @@ void ptp_msg_unref(struct ptp_msg *msg)
 		return;
 	}
 
+	msg_tlv_free(msg);
 	k_mem_slab_free(&msg_slab, (void *)msg);
 }
 
@@ -180,6 +301,8 @@ void ptp_msg_pre_send(struct ptp_msg *msg)
 		msg_port_id_pre_send(&msg->management.target_port_id);
 		break;
 	}
+
+	msg_tlv_pre_send(msg);
 }
 
 int ptp_msg_post_recv(struct ptp_port *port, struct ptp_msg *msg, int cnt)
@@ -198,6 +321,7 @@ int ptp_msg_post_recv(struct ptp_port *port, struct ptp_msg *msg, int cnt)
 	};
 	enum ptp_msg_type type = ptp_msg_type(msg);
 	int64_t current;
+	int tlv_len;
 
 	if (msg_size[type] > cnt) {
 		LOG_ERR("Received message with incorrect length");
@@ -253,5 +377,46 @@ int ptp_msg_post_recv(struct ptp_port *port, struct ptp_msg *msg, int cnt)
 		break;
 	}
 
+	tlv_len = msg_tlv_post_recv(msg, cnt - msg_size[type]);
+	if (tlv_len < 0) {
+		LOG_ERR("Failed processing TLVs");
+		return -EBADMSG;
+	}
+
+	if (msg_size[type] + tlv_len != msg->header.msg_length) {
+		LOG_ERR("Length and TLVs don't correspond with specified in the message");
+		return -EMSGSIZE;
+	}
+
 	return 0;
+}
+
+struct ptp_tlv *ptp_msg_add_tlv(struct ptp_msg *msg, int length)
+{
+	struct ptp_tlv_container *tlv_container;
+	uint8_t *suffix = msg_suffix(msg);
+
+	if (!suffix) {
+		return NULL;
+	}
+
+	tlv_container = (struct ptp_tlv_container *)sys_slist_peek_tail(&msg->tlvs);
+	if (tlv_container) {
+		suffix = (uint8_t *)tlv_container->tlv;
+		suffix += sizeof(*tlv_container->tlv);
+		suffix += tlv_container->tlv->length;
+	}
+
+	if ((intptr_t)(suffix + length) >= (intptr_t)&msg->ref) {
+		LOG_ERR("Not enough space for TLV of %d length", length);
+		return NULL;
+	}
+
+	tlv_container = ptp_tlv_alloc();
+	if (tlv_container) {
+		tlv_container->tlv = (struct ptp_tlv *)suffix;
+		msg->header.msg_length += length;
+	}
+
+	return tlv_container ? tlv_container->tlv : NULL;
 }
