@@ -1,6 +1,6 @@
 common:
   harness: net
-  min_ram: 16
+  min_ram: 80
   tags:
     - http
     - net
