@@ -35,32 +35,37 @@ extern "C" {
  */
 struct ptp_port {
 	/** Object list. */
-	sys_snode_t	       node;
+	sys_snode_t		    node;
 	/** PTP Port Dataset*/
-	struct ptp_port_ds     port_ds;
+	struct ptp_port_ds	    port_ds;
 	/** Interface related to the Port. */
-	struct net_if	       *iface;
+	struct net_if		    *iface;
 	/** Array of BSD sockets. */
-	int		       socket[2];
+	int			    socket[2];
 	/** Structure of system timers used by the Port. */
 	struct {
-		struct k_timer delay;
-		struct k_timer sync;
-		struct k_timer qualification;
+		struct k_timer      announce;
+		struct k_timer      delay;
+		struct k_timer      sync;
+		struct k_timer      qualification;
 	} timers;
 	/** Bitmask of tiemouts. */
-	atomic_t	       timeouts;
+	atomic_t		    timeouts;
 	/** Structure of unique sequence IDs used for messages. */
 	struct {
-		uint16_t       announce;
-		uint16_t       delay;
-		uint16_t       signaling;
-		uint16_t       sync;
+		uint16_t	    announce;
+		uint16_t	    delay;
+		uint16_t	    signaling;
+		uint16_t	    sync;
 	} seq_id;
 	/** Pointer to finite state machine. */
-	enum ptp_port_state    (*state_machine)(enum ptp_port_state state,
-						enum ptp_port_event event,
-						bool tt_diff);
+	enum ptp_port_state	    (*state_machine)(enum ptp_port_state state,
+						     enum ptp_port_event event,
+						     bool tt_diff);
+	/** Pointer to the Port's best Foreign TimeTransmitter. */
+	struct ptp_foreign_tt_clock *best;
+	/** List of Foreign TimeTransmitters discovered through received Announce messages. */
+	sys_slist_t		    foreign_list;
 };
 
 /**
@@ -80,6 +85,23 @@ void ptp_port_init(struct net_if *iface, void *user_data);
  * @return True if port identities are equal, False otherwise.
  */
 bool ptp_port_id_eq(const struct ptp_port_id *p1, const struct ptp_port_id *p2);
+
+/**
+ * @brief Function adding foreign TimeTransmitter Clock for the PTP Port based on specified message.
+ *
+ * @param[in] port Pointer to the PTP Port.
+ * @param[in] msg  Pointer to the announce message containg PTP TimeTransmitter data.
+ *
+ * @return Non-zero if the announce message is different than the last.
+ */
+int ptp_port_add_foreign_tt(struct ptp_port *port, struct ptp_msg *msg);
+
+/**
+ * @brief Function freeing memory used by foreign timeTransmitters assigned to given PTP Port.
+ *
+ * @param[in] port Pointer to the PTP Port.
+ */
+void ptp_port_free_foreign_tts(struct ptp_port *port);
 
 #ifdef __cplusplus
 }

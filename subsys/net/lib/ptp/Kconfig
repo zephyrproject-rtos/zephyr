@@ -247,6 +247,20 @@ config PTP_UNCALIBRATED_PRESENT
 	bool
 	default n
 
+config PTP_FOREIGN_TIME_TRANSMITTER_FEATURE
+	bool
+	default y
+
+config PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE
+	int "Size of an array that stores foreign timeTransmitters data"
+	depends on PTP_FOREIGN_TIME_TRANSMITTER_FEATURE
+	default 5
+	help
+	  The IEEE 1588-2019 standard states that minimum size of the list
+	  is 5 foreign timeTransmitter records per PTP Port. Kconfig does not allow for math
+	  operation so if PTP_FOREIGN_TIME_TRANSMITTER_FEATURE is enabled and PTP_NUM_PORTS
+	  is bigger than 1 the option value should be adjusted accordingly.
+
 choice PTP_DSCP_PRIORITY
 	prompt "Priority of PTP packets classification"
 	default PTP_DSCP_NONE_PRIORITY
