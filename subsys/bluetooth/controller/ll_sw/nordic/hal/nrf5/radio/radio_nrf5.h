@@ -43,7 +43,9 @@
 #elif defined(CONFIG_SOC_NRF5340_CPUNET)
 #include <hal/nrf_vreqctrl.h>
 #include "radio_nrf5340.h"
-#elif
+#elif defined(CONFIG_SOC_SERIES_NRF54LX)
+#include "radio_nrf54lx.h"
+#else /* !CONFIG_SOC_SERIES_NRF54LX */
 #error "Unsupported SoC."
 #endif
 
