@@ -13,12 +13,10 @@ config HAS_HW_NRF_BPROT
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_BPROT))
 
 config HAS_HW_NRF_CC310
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_ARM_CRYPTOCELL_310)) || \
-		 ($(dt_nodelabel_enabled,psa_rng) && SOC_SERIES_NRF91X)
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_ARM_CRYPTOCELL_310))
 
 config HAS_HW_NRF_CC312
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_ARM_CRYPTOCELL_312)) || \
-		 ($(dt_nodelabel_enabled,psa_rng) && SOC_NRF5340_CPUAPP)
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_ARM_CRYPTOCELL_312))
 
 config HAS_HW_NRF_CCM
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CCM))
