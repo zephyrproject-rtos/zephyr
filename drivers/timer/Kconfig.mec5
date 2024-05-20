@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config MCHP_MEC5_KTIMER
+	bool "Microchip MEC5 HAL kernel timer"
+	default y
+	depends on DT_HAS_MICROCHIP_MEC5_KTIMER_ENABLED
+	select TICKLESS_CAPABLE
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	select ARCH_HAS_CUSTOM_BUSY_WAIT
+	help
+	  This module implements a kernel timer device driver for the
+	  Microchip MEC5 SoC. It makes use of two hardware timers.
+	  The 32-bit 32 KHz based RTOS timer which is operational in
+	  full power and deep sleep. Basic timer 5 is a 48 MHz based
+	  32-bit down counter with frequency divider used for the
+	  custom busy wait kernel API.
