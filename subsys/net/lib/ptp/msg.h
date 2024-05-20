@@ -352,6 +352,16 @@ int ptp_msg_post_recv(struct ptp_port *port, struct ptp_msg *msg, int cnt);
  */
 struct ptp_tlv *ptp_msg_add_tlv(struct ptp_msg *msg, int length);
 
+/**
+ * @brief Function compering content of two PTP Announce messages.
+ *
+ * @param[in] m1 Pointer to the Announce message to be compared.
+ * @param[in] m2 Pointer to the Announce message to be compared.
+ *
+ * @return Negative if m1 < m2, 0 if equal, else positive
+ */
+int ptp_msg_announce_cmp(const struct ptp_announce_msg *m1, const struct ptp_announce_msg *m2);
+
 #ifdef __cplusplus
 }
 #endif

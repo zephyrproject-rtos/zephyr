@@ -420,3 +420,12 @@ struct ptp_tlv *ptp_msg_add_tlv(struct ptp_msg *msg, int length)
 
 	return tlv_container ? tlv_container->tlv : NULL;
 }
+
+int ptp_msg_announce_cmp(const struct ptp_announce_msg *m1, const struct ptp_announce_msg *m2)
+{
+	int len = sizeof(m1->gm_priority1) + sizeof(m1->gm_clk_quality) +
+		  sizeof(m1->gm_priority1) + sizeof(m1->gm_id) +
+		  sizeof(m1->steps_rm);
+
+	return memcmp(&m1->gm_priority1, &m2->gm_priority1, len);
+}
