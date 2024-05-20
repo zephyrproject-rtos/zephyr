@@ -16,6 +16,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_ip.h>
 #include <zephyr/net/ptp_time.h>
 
 #include "ddt.h"
@@ -287,6 +288,8 @@ struct ptp_msg {
 	atomic_t ref;
 	/** Single-linked list of TLVs attached to the message. */
 	sys_slist_t tlvs;
+	/** Protocol address of the sender/receiver of the message. */
+	struct sockaddr addr;
 };
 
 /**
