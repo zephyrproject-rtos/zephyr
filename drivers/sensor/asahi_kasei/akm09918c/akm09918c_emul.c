@@ -130,6 +130,10 @@ static int akm09918c_emul_init(const struct emul *target, const struct device *p
 	ARG_UNUSED(parent);
 	akm09918c_emul_reset(target);
 
+	struct akm09918c_emul_data *data = target->data;
+
+  data->reg[AKM09918C_REG_CNTL2] = AKM09918C_CNTL2_CONTINUOUS_4;
+
 	return 0;
 }
 
@@ -204,6 +208,13 @@ static int akm09918c_emul_backend_get_sample_range(const struct emul *target,
 	return 0;
 }
 
+static int akm09918c_emul_backend_set_attribute(const struct emul *target,
+						struct sensor_chan_spec ch,
+						enum sensor_attribute attribute, const void *value)
+{
+	return -ENOTSUP;
+}
+
 static const struct i2c_emul_api akm09918c_emul_api_i2c = {
 	.transfer = akm09918c_emul_transfer_i2c,
 };
@@ -211,6 +222,7 @@ static const struct i2c_emul_api akm09918c_emul_api_i2c = {
 static const struct emul_sensor_driver_api akm09918c_emul_sensor_driver_api = {
 	.set_channel = akm09918c_emul_backend_set_channel,
 	.get_sample_range = akm09918c_emul_backend_get_sample_range,
+	.set_attribute = akm09918c_emul_backend_set_attribute,
 };
 
 #define AKM09918C_EMUL(n)                                                                          \

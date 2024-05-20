@@ -1,0 +1,15 @@
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+compatible:
+  org: "bosch"
+  part: "bma4xx"
+channels:
+  accel_xyz: {}
+  die_temp: {}
+attributes:
+  sampling_frequency: {}
+  full_scale: {}
+  offset: {}
+  configuration: {}

@@ -1,0 +1,97 @@
+attributes:
+  sampling_frequency:
+    name: "sampling rate"
+    description: "Sensor sampling frequency, i.e. how many times a second the sensor takes a measurement."
+    units:
+      name: "frequency"
+      symbol: "Hz"
+  lower_thresh:
+    name: "lower threshold"
+    description: "Lower threshold for trigger."
+    units:
+      name: "unknown"
+      symbol: "unknown"
+  upper_thresh:
+    name: "upper threshold"
+    description: "Upper threshold for trigger."
+    units:
+      name: "unknown"
+      symbol: "unknown"
+  slope_th:
+    name: "any motion threshold"
+    description: "Threshold for any-motion (slope) trigger."
+    units:
+      name: "unknown"
+      symbol: "unknown"
+  slope_dur:
+    name: "slope value threshold duration"
+    description: "Duration for which the slope values needs to be outside the threshold for the trigger to fire."
+    units:
+      name: "time"
+      symbol: "s"
+  hysteresis:
+    name: "hysteresis"
+    description: "Hysteresis for trigger thresholds."
+    units:
+      name: "unknown"
+      symbol: "unknown"
+  oversampling:
+    name: "oversampling factor"
+    description: "Oversampling factor"
+    units:
+      name: "scale"
+      symbol: ""
+  full_scale:
+    name: "range"
+    description: "Sensor range, in SI units."
+    units:
+      name: "unknown"
+      symbol: "unknown"
+  offset:
+    name: "value offset"
+    description: "The sensor value returned will be altered by the amount indicated by offset: final_value = sensor_value + offset."
+    units:
+      name: "unknown"
+      symbol: "unknown"
+  calib_target:
+    name: "calibration target"
+    description: "Calibration target. This will be used by the internal chip's algorithms to calibrate itself on a certain axis, or all of them."
+    units:
+      name: "unknown"
+      symbol: "unknown"
+  configuration:
+    name: "operating mode"
+    description: "Configure the operating modes of a sensor."
+    units:
+      name: "unknown"
+      symbol: "unknown"
+  calibration:
+    name: "calibration value"
+    description: "Set a calibration value needed by a sensor."
+    units:
+      name: "unknown"
+      symbol: "unknown"
+  feature_mask:
+    name: "enabled/disabled feature"
+    description: "Enable/disable sensor features"
+    units:
+      name: "unknown"
+      symbol: "unknown"
+  alert:
+    name: "alert threshold"
+    description: "Alert threshold or alert enable/disable"
+    units:
+      name: "unknown"
+      symbol: "unknown"
+  ff_dur:
+    name: "free-fall duration"
+    description: "Free-fall duration represented in milliseconds. If the sampling frequency is changed during runtime, this attribute should be set to adjust freefall duration to the new sampling frequency."
+    units:
+      name: "time"
+      symbol: "ms"
+  batch_duration:
+    name: "batch duration"
+    description: "Hardware batch duration in ticks"
+    units:
+      name: "time"
+      symbol: "ticks"

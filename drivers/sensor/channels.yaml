@@ -1,0 +1,351 @@
+channels:
+  accel_x:
+    name: "ACCEL_X"
+    description: "Acceleration on the X axis, in m/s^2."
+    units:
+      symbol: "m/s^2"
+  accel_y:
+    name: "ACCEL_Y"
+    description: "Acceleration on the Y axis, in m/s^2."
+    units:
+      symbol: "m/s^2"
+  accel_z:
+    name: "ACCEL_Z"
+    description: "Acceleration on the Z axis, in m/s^2."
+    units:
+      symbol: "m/s^2"
+  accel_xyz:
+    name: "ACCEL_XYZ"
+    description: "Acceleration on the X, Y and Z axes."
+    units:
+      symbol: "m/s^2"
+  gyro_x:
+    name: "GYRO_X"
+    description: "Angular velocity around the X axis, in radians/s."
+    units:
+      name: "angular velocity"
+      symbol: "rad/s"
+  gyro_y:
+    name: "GYRO_Y"
+    description: "Angular velocity around the Y axis, in radians/s."
+    units:
+      name: "angular velocity"
+      symbol: "rad/s"
+  gyro_z:
+    name: "GYRO_Z"
+    description: "Angular velocity around the Z axis, in radians/s."
+    units:
+      name: "angular velocity"
+      symbol: "rad/s"
+  gyro_xyz:
+    name: "GYRO_XYZ"
+    description: "Angular velocity around the X, Y and Z axes."
+    units:
+      name: "angular velocity"
+      symbol: "rad/s"
+  magn_x:
+    name: "MAGN_X"
+    description: "Magnetic field on the X axis, in Gauss."
+    units:
+      name: "magnetic field"
+      symbol: "Gs"
+  magn_y:
+    name: "MAGN_Y"
+    description: "Magnetic field on the Y axis, in Gauss."
+    units:
+      name: "magnetic field"
+      symbol: "Gs"
+  magn_z:
+    name: "MAGN_Z"
+    description: "Magnetic field on the Z axis, in Gauss."
+    units:
+      name: "magnetic field"
+      symbol: "Gs"
+  magn_xyz:
+    name: "MAGN_XYZ"
+    description: "Magnetic field on the X, Y and Z axes."
+    units:
+      name: "magnetic field"
+      symbol: "Gs"
+  die_temp:
+    name: "DIE_TEMP"
+    description: "Device die temperature in degrees Celsius."
+    units:
+      name: "temperature"
+      symbol: "C"
+  ambient_temp:
+    name: "AMBIENT_TEMP"
+    description: "Ambient temperature in degrees Celsius."
+    units:
+      name: "temperature"
+      symbol: "C"
+  press:
+    name: "PRESS"
+    description: "Pressure in kilopascal."
+    units:
+      name: "pressure"
+      symbol: "kPa"
+  prox:
+    name: "PROX"
+    description: "Proximity.  Adimensional.  A value of 1 indicates that an object is close."
+    units:
+      name: "is near"
+      symbol: "near"
+  humidity:
+    name: "HUMIDITY"
+    description: "Humidity, in percent."
+    units:
+      name: "percent"
+      symbol: "%"
+  light:
+    name: "LIGHT"
+    description: "Illuminance in visible spectrum, in lux."
+    units:
+      name: "illuminance"
+      symbol: "lux"
+  ir:
+    name: "IR"
+    description: "Illuminance in infra-red spectrum, in lux."
+    units:
+      name: "illuminance"
+      symbol: "lux"
+  red:
+    name: "RED"
+    description: "Illuminance in red spectrum, in lux."
+    units:
+      name: "illuminance"
+      symbol: "lux"
+  green:
+    name: "GREEN"
+    description: "Illuminance in green spectrum, in lux."
+    units:
+      name: "illuminance"
+      symbol: "lux"
+  blue:
+    name: "BLUE"
+    description: "Illuminance in blue spectrum, in lux."
+    units:
+      name: "illuminance"
+      symbol: "lux"
+  altitude:
+    name: "ALTITUDE"
+    description: "Altitude, in meters"
+    units:
+      name: "distance"
+      symbol: "m"
+  pm_1_0:
+    name: "PM_1_0"
+    description: "1.0 micro-meters Particulate Matter, in ug/m^3"
+    units:
+      name: "density"
+      symbol: "ug/m^3"
+  pm_2_5:
+    name: "PM_2_5"
+    description: "2.5 micro-meters Particulate Matter, in ug/m^3"
+    units:
+      name: "density"
+      symbol: "ug/m^3"
+  pm_10:
+    name: "PM_10"
+    description: "10 micro-meters Particulate Matter, in ug/m^3"
+    units:
+      name: "density"
+      symbol: "ug/m^3"
+  distance:
+    name: "DISTANCE"
+    description: "Distance. From sensor to target, in meters"
+    units:
+      name: "distance"
+      symbol: "m"
+  co2:
+    name: "CO2"
+    description: "CO2 level, in parts per million (ppm)"
+    units:
+      name: "concentration"
+      symbol: "ppm"
+  o2:
+    name: "CO2"
+    description: "O2 level, in parts per million (ppm)"
+    units:
+      name: "concentration"
+      symbol: "ppm"
+  voc:
+    name: "VOC"
+    description: "VOC level, in parts per billion (ppb)"
+    units:
+      name: "concentration"
+      symbol: "ppb"
+  gas_res:
+    name: "GAS_RES"
+    description: "Gas sensor resistance in ohms."
+    units:
+      name: "electrical resistance"
+      symbol: "Ohm"
+  voltage:
+    name: "VOLTAGE"
+    description: "Voltage, in volts"
+    units:
+      name: "volts"
+      symbol: "V"
+  vshunt:
+    name: "VSHUNT"
+    description: "Current Shunt Voltage in milli-volts"
+    units:
+      name: "volts"
+      symbol: "mV"
+  current:
+    name: "CURRENT"
+    description: "Current, in amps"
+    units:
+      name: "current"
+      symbol: "A"
+  power:
+    name: "POWER"
+    description: "Power in watts"
+    units:
+      name: "power"
+      symbol: "W"
+  resistance:
+    name: "RESISTANCE"
+    description: "Resistance , in Ohm"
+    units:
+      name: "electrical resistance"
+      symbol: "Ohm"
+  rotation:
+    name: "ROTATION"
+    description: "Angular rotation, in degrees"
+    units:
+      name: "angle"
+      symbol: "deg"
+  pos_dx:
+    name: "POS_DX"
+    description: "Position change on the X axis, in points."
+    units:
+      name: "points"
+      symbol: "pts"
+  pos_dy:
+    name: "POS_DY"
+    description: "Position change on the Y axis, in points."
+    units:
+      name: "points"
+      symbol: "pts"
+  pos_dz:
+    name: "POS_DZ"
+    description: "Position change on the Z axis, in points."
+    units:
+      name: "points"
+      symbol: "pts"
+  rpm:
+    name: "RPM"
+    description: "Revolutions per minute, in RPM."
+    units:
+      name: "rpms"
+      symbol: "rpm"
+  gauge_voltage:
+    name: "GAUGE_VOLTAGE"
+    description: "Voltage, in volts"
+    units:
+      name: "volts"
+      symbol: "V"
+  gauge_avg_current:
+    name: "GAUGE_AVG_CURRENT"
+    description: "Average current, in amps"
+    units:
+      name: "current"
+      symbol: "A"
+  gauge_stdby_current:
+    name: "GAUGE_STDBY_CURRENT"
+    description: "Standby current, in amps"
+    units:
+      name: "current"
+      symbol: "A"
+  gauge_max_load_current:
+    name: "GAUGE_MAX_LOAD_CURRENT"
+    description: "Max load current, in amps"
+    units:
+      name: "current"
+      symbol: "A"
+  gauge_temp:
+    name: "GAUGE_TEMP"
+    description: "Gauge temperature"
+    units:
+      name: "temperature"
+      symbol: "C"
+  gauge_state_of_charge:
+    name: "GAUGE_STATE_OF_CHARGE"
+    description: "State of charge measurement in %"
+    units:
+      name: "percent"
+      symbol: "%"
+  gauge_full_charge_capacity:
+    name: "GAUGE_FULL_CHARGE_CAPACITY"
+    description: "Full Charge Capacity in mAh"
+    units:
+      name: "energy"
+      symbol: "mAh"
+  gauge_remaining_charge_capacity:
+    name: "GAUGE_REMAINING_CHARGE_CAPACITY"
+    description: "Remaining Charge Capacity in mAh"
+    units:
+      name: "energy"
+      symbol: "mAh"
+  gauge_nom_avail_capacity:
+    name: "GAUGE_NOM_AVAIL_CAPACITY"
+    description: "Nominal Available Capacity in mAh"
+    units:
+      name: "energy"
+      symbol: "mAh"
+  gauge_full_avail_capacity:
+    name: "GAUGE_FULL_AVAIL_CAPACITY"
+    description: "Full Available Capacity in mAh"
+    units:
+      name: "energy"
+      symbol: "mAh"
+  gauge_avg_power:
+    name: "GAUGE_AVG_POWER"
+    description: "Average power in mW"
+    units:
+      name: "power"
+      symbol: "mW"
+  gauge_state_of_health:
+    name: "GAUGE_STATE_OF_HEALTH"
+    description: "State of health measurement in %"
+    units:
+      name: "percent"
+      symbol: "%"
+  gauge_time_to_empty:
+    name: "GAUGE_TIME_TO_EMPTY"
+    description: "Time to empty in minutes"
+    units:
+      name: "time"
+      symbol: "min"
+  gauge_time_to_full:
+    name: "GAUGE_TIME_TO_FULL"
+    description: "Time to full in minutes"
+    units:
+      name: "time"
+      symbol: "min"
+  gauge_cycle_count:
+    name: "GAUGE_CYCLE_COUNT"
+    description: "Cycle count (total number of charge/discharge cycles)"
+    units:
+      name: "cycles"
+      symbol: "cycles"
+  gauge_design_voltage:
+    name: "GAUGE_DESIGN_VOLTAGE"
+    description: "Design voltage of cell in V (max voltage)"
+    units:
+      name: "volts"
+      symbol: "V"
+  gauge_desired_voltage:
+    name: "GAUGE_DESIRED_VOLTAGE"
+    description: "Desired voltage of cell in V (nominal voltage)"
+    units:
+      name: "volts"
+      symbol: "V"
+  gauge_desired_charging_current:
+    name: "GAUGE_DESIRED_CHARGING_CURRENT"
+    description: "Desired charging current in mA"
+    units:
+      name: "current"
+      symbol: "mA"

@@ -143,7 +143,7 @@
 /**
  * Number of all common sensor channels.
  */
-#define SENSOR_CHAN_COMMON_COUNT 60
+#define SENSOR_CHAN_COMMON_COUNT (SENSOR_CHAN_ALL + 1)
 
 /**
  * This and higher values are sensor specific.
@@ -156,4 +156,4 @@
  */
 #define SENSOR_CHAN_MAX INT16_MAX
 
-#endif /* INCLUDE_ZEPHYR_DT_BINDINGS_SENSOR_H_ *
+#endif /* INCLUDE_ZEPHYR_DT_BINDINGS_SENSOR_H_ */
