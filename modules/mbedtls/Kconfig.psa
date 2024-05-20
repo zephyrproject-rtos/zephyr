@@ -517,7 +517,8 @@ menu "PSA Key agreement support"
 config PSA_HAS_KEY_AGREEMENT
 	bool
 	default y
-	depends on PSA_WANT_ALG_ECDH || PSA_WANT_ALG_FFDH
+	depends on PSA_WANT_ALG_ECDH
+	depends on PSA_WANT_ALG_FFDH
 	help
 	  Promt-less configuration that states that key agreement is supported.
 
