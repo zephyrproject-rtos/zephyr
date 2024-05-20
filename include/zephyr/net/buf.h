@@ -1017,10 +1017,10 @@ struct net_buf {
 	/** Where the buffer should go when freed up. */
 	uint8_t pool_id;
 
-	/* Size of user data on this buffer */
+	/** Size of user data on this buffer */
 	uint8_t user_data_size;
 
-	/* Union for convenience access to the net_buf_simple members, also
+	/** Union for convenience access to the net_buf_simple members, also
 	 * preserving the old API.
 	 */
 	union {
@@ -1042,12 +1042,16 @@ struct net_buf {
 			uint8_t *__buf;
 		};
 
+		/** @cond INTERNAL_HIDDEN */
 		struct net_buf_simple b;
+		/** @endcond */
 	};
 
 	/** System metadata for this buffer. */
 	uint8_t user_data[] __net_buf_align;
 };
+
+/** @cond INTERNAL_HIDDEN */
 
 struct net_buf_data_cb {
 	uint8_t * __must_check (*alloc)(struct net_buf *buf, size_t *size,
@@ -1062,6 +1066,8 @@ struct net_buf_data_alloc {
 	size_t max_alloc_size;
 };
 
+/** @endcond */
+
 /**
  * @brief Network buffer pool representation.
  *
@@ -1071,7 +1077,7 @@ struct net_buf_pool {
 	/** LIFO to place the buffer into when free */
 	struct k_lifo free;
 
-	/* to prevent concurrent access/modifications */
+	/** To prevent concurrent access/modifications */
 	struct k_spinlock lock;
 
 	/** Number of buffers in pool */
@@ -1080,7 +1086,7 @@ struct net_buf_pool {
 	/** Number of uninitialized buffers */
 	uint16_t uninit_count;
 
-	/* Size of user data allocated to this pool */
+	/** Size of user data allocated to this pool */
 	uint8_t user_data_size;
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
@@ -1172,12 +1178,14 @@ extern const struct net_buf_data_alloc net_buf_heap_alloc;
 					 _net_buf_##_name, _count, _ud_size, \
 					 _destroy)
 
+/** @cond INTERNAL_HIDDEN */
+
 struct net_buf_pool_fixed {
 	uint8_t *data_pool;
 };
 
-/** @cond INTERNAL_HIDDEN */
 extern const struct net_buf_data_cb net_buf_fixed_cb;
+
 /** @endcond */
 
 /**
