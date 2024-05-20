@@ -13,6 +13,7 @@ Samples and Demos
    classic
    basic/*
    userspace/*
+   sysbuild/*
    subsys/subsys.rst
    net/net.rst
    bluetooth/bluetooth.rst

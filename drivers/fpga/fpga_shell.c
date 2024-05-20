@@ -93,8 +93,11 @@ static int cmd_load(const struct shell *sh, size_t argc, char **argv)
 
 	shell_print(sh, "%s: loading bitstream", dev->name);
 
-	fpga_load(dev, (uint32_t *)strtol(argv[2], NULL, 0),
-		  (uint32_t)atoi(argv[3]));
+	err = fpga_load(dev, (uint32_t *)strtol(argv[2], NULL, 0),
+			(uint32_t)atoi(argv[3]));
+	if (err) {
+		shell_error(sh, "Error: %d", err);
+	}
 
 	return err;
 }

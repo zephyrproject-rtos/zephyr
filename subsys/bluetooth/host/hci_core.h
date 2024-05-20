@@ -35,12 +35,40 @@ enum {
 	BT_DEV_HAS_PUB_KEY,
 	BT_DEV_PUB_KEY_BUSY,
 
-	BT_DEV_SCANNING,
+	/** The application explicitly instructed the stack to scan for advertisers
+	 * using the API @ref bt_le_scan_start().
+	 */
 	BT_DEV_EXPLICIT_SCAN,
+
+	/** The application either explicitly or implicitly instructed the stack to scan
+	 * for advertisers.
+	 *
+	 * Examples of such cases
+	 *  - Explicit scanning, @ref BT_DEV_EXPLICIT_SCAN.
+	 *  - The application instructed the stack to automatically connect if a given device
+	 *    is detected.
+	 *  - The application wants to connect to a peer device using private addresses, but
+	 *    the controller resolving list is too small. The host will fallback to using
+	 *    host-based privacy and first scan for the device before it initiates a connection.
+	 *  - The application wants to synchronize to a periodic advertiser.
+	 *    The host will implicitly start scanning if it is not already doing so.
+	 *
+	 * The host needs to keep track of this state to ensure it can restart scanning
+	 * when a connection is established/lost, explicit scanning is started or stopped etc.
+	 * Also, when the scanner and advertiser share the same identity, the scanner may need
+	 * to be restarted upon RPA refresh.
+	 */
+	BT_DEV_SCANNING,
+
+	/* Cached parameters used when initially enabling the scanner.
+	 * These are needed to ensure the same parameters are used when restarting
+	 * the scanner after refreshing an RPA.
+	 */
 	BT_DEV_ACTIVE_SCAN,
 	BT_DEV_SCAN_FILTER_DUP,
 	BT_DEV_SCAN_FILTERED,
 	BT_DEV_SCAN_LIMITED,
+
 	BT_DEV_INITIATING,
 
 	BT_DEV_RPA_VALID,
@@ -266,6 +294,9 @@ struct bt_dev_le {
 	uint8_t			iso_limit;
 	struct k_sem		iso_pkts;
 #endif /* CONFIG_BT_ISO */
+#if defined(CONFIG_BT_BROADCASTER)
+	uint16_t max_adv_data_len;
+#endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_SMP)
 	/* Size of the the controller resolving list */
@@ -342,7 +373,7 @@ struct bt_dev {
 	/* Supported commands */
 	uint8_t			supported_commands[64];
 
-#if defined(CONFIG_BT_HCI_VS_EXT)
+#if defined(CONFIG_BT_HCI_VS)
 	/* Vendor HCI support */
 	uint8_t                    vs_features[BT_DEV_VS_FEAT_MAX];
 	uint8_t                    vs_commands[BT_DEV_VS_CMDS_MAX];
@@ -440,6 +471,29 @@ uint8_t bt_get_phy(uint8_t hci_phy);
  * @return CTE type (@ref bt_df_cte_type).
  */
 int bt_get_df_cte_type(uint8_t hci_cte_type);
+
+/** Start or restart scanner if needed
+ *
+ * Examples of cases where it may be required to start/restart a scanner:
+ * - When the auto-connection establishement feature is used:
+ *   - When the host sets a connection context for auto-connection establishment.
+ *   - When a connection was established.
+ *     The host may now be able to retry to automatically set up a connection.
+ *   - When a connection was disconnected/lost.
+ *     The host may now be able to retry to automatically set up a connection.
+ *   - When the application stops explicit scanning.
+ *     The host may now be able to retry to automatically set up a connection.
+ *   - The application tries to connect to another device, but fails.
+ *     The host may now be able to retry to automatically set up a connection.
+ * - When the application wants to connect to a device, but we need
+ *   to fallback to host privacy.
+ * - When the application wants to establish a periodic sync to a device
+ *   and the application has not already started scanning.
+ *
+ * @param fast_scan Use fast scan parameters or slow scan parameters
+ *
+ * @return 0 in case of success, or a negative error code on failure.
+ */
 int bt_le_scan_update(bool fast_scan);
 
 int bt_le_create_conn(const struct bt_conn *conn);

@@ -3,6 +3,9 @@ board:
   vendor: nordic
   socs:
   - name: nrf54l15
+    variants:
+    - name: xip
+      cpucluster: cpuflpr
   revision:
     format: major.minor.patch
     default: "0.2.1"

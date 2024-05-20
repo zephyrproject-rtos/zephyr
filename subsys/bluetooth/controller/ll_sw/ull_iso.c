@@ -1634,7 +1634,7 @@ static void iso_rx_demux(void *param)
 					 * HCI context.
 					 */
 					struct isoal_pdu_rx pckt_meta = {
-						.meta = &rx_pdu->hdr.rx_iso_meta,
+						.meta = &rx_pdu->rx_iso_meta,
 						.pdu  = (struct pdu_iso *)&rx_pdu->pdu[0]
 					};
 

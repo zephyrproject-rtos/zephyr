@@ -8,3 +8,14 @@ tests:
     integration_platforms:
       - qemu_x86
     tags: bluetooth
+  sample.bluetooth.central_iso.bt_ll_sw_split:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf52_bsim
+      - nrf52833dk/nrf52833
+    integration_platforms:
+      - nrf52833dk/nrf52833
+    extra_args: OVERLAY_CONFIG=overlay-bt_ll_sw_split.conf
+    tags: bluetooth

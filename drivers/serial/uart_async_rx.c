@@ -126,6 +126,9 @@ void uart_async_rx_reset(struct uart_async_rx *rx_data)
 {
 	rx_data->free_buf_cnt = rx_data->config->buf_cnt;
 	rx_data->rd_idx = 0;
+	rx_data->rd_buf_idx = 0;
+	rx_data->drv_buf_idx = 0;
+	rx_data->pending_bytes = 0;
 	for (uint8_t i = 0; i < rx_data->config->buf_cnt; i++) {
 		buf_reset(get_buf(rx_data, i));
 	}

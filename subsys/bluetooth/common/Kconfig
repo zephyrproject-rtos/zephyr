@@ -79,7 +79,6 @@ config BT_BUF_ACL_RX_SIZE
 
 config BT_BUF_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
-	default NET_BUF_RX_COUNT if NET_L2_BT
 	default 6
 	range 1 64
 	help
@@ -97,7 +96,7 @@ config BT_BUF_ACL_RX_COUNT
 
 config BT_BUF_EVT_RX_SIZE
 	int "Maximum supported HCI Event buffer length"
-	default 255 if (BT_EXT_ADV && BT_OBSERVER) || BT_PER_ADV_SYNC || BT_DF_CONNECTION_CTE_RX
+	default 255 if (BT_EXT_ADV && BT_OBSERVER) || BT_PER_ADV_SYNC || BT_DF_CONNECTION_CTE_RX || BT_CLASSIC
 	# LE Read Supported Commands command complete event.
 	default 68
 	range 68 255
@@ -191,32 +190,16 @@ config BT_HCI_VS
 	  Host and/or Controller. This enables Set Version Information,
 	  Supported Commands, Supported Features vendor commands.
 
-config BT_HCI_VS_EXT
-	bool "Zephyr HCI Vendor-Specific Extensions"
-	depends on BT_HCI_VS
-	default y
-	help
-	  Enable support for the Zephyr HCI Vendor-Specific Extensions in the
-	  Host and/or Controller. This enables  Write BD_ADDR, Read Build Info,
-	  Read Static Addresses and Read Key Hierarchy Roots vendor commands.
-
-config BT_HCI_VS_EVT
-	bool "Zephyr HCI Vendor-Specific Events"
-	depends on BT_HCI_VS_EXT
-	help
-	  Enable support for the Zephyr HCI Vendor-Specific Events in the
-	  Host and/or Controller.
-
 config BT_HCI_VS_FATAL_ERROR
 	bool "Allow vendor specific HCI event Zephyr Fatal Error"
-	depends on BT_HCI_VS_EXT
+	depends on BT_HCI_VS
 	help
 	  Enable emiting HCI Vendor-Specific events for system and Controller
 	  errors that are unrecoverable.
 
 config BT_HCI_VS_EXT_DETECT
 	bool "Use heuristics to guess HCI vendor extensions support in advance"
-	depends on BT_HCI_VS_EXT && !BT_CTLR
+	depends on BT_HCI_VS && !BT_CTLR
 	default y if BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3 || BOARD_NATIVE_POSIX
 	help
 	  Use some heuristics to try to guess in advance whether the controller

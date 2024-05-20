@@ -623,6 +623,8 @@ extern "C" {
 /**
  * @brief Number of arguments in the variable arguments list minus one.
  *
+ * @note Supports up to 64 arguments.
+ *
  * @param ... List of arguments
  * @return  Number of variadic arguments in the argument list, minus one
  */
@@ -634,6 +636,17 @@ extern "C" {
 	30, 29, 28, 27, 26, 25, 24, 23, 22, 21,		 \
 	20, 19, 18, 17, 16, 15, 14, 13, 12, 11,		 \
 	10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, ~)
+
+/**
+ * @brief Number of arguments in the variable arguments list.
+ *
+ * @note Supports up to 63 arguments.
+ *
+ * @param ... List of arguments
+ * @return  Number of variadic arguments in the argument list
+ */
+#define NUM_VA_ARGS(...)                                                                           \
+	COND_CODE_1(IS_EMPTY(__VA_ARGS__), (0), (UTIL_INC(NUM_VA_ARGS_LESS_1(__VA_ARGS__))))
 
 /**
  * @brief Mapping macro that pastes results together

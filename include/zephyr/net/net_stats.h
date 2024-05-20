@@ -494,6 +494,7 @@ struct net_stats_wifi {
 	struct net_stats_pkts broadcast;
 	struct net_stats_pkts multicast;
 	struct net_stats_pkts errors;
+	struct net_stats_pkts unicast;
 };
 
 #if defined(CONFIG_NET_STATISTICS_USER_API)

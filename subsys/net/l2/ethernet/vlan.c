@@ -317,24 +317,39 @@ bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
 uint16_t net_eth_get_vlan_tag(struct net_if *iface)
 {
 	uint16_t tag = NET_VLAN_TAG_UNSPEC;
-	struct vlan_context *ctx;
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	ctx = get_vlan_ctx(iface, tag, true);
-	if (ctx != NULL) {
-		/* The Ethernet interface does not have a tag so if user
-		 * tried to use the main interface, then do not return
-		 * the tag.
-		 */
-		if (ctx->attached_to != iface) {
-			tag = ctx->tag;
+	ARRAY_FOR_EACH(vlan_ctx, i) {
+		if (vlan_ctx[i] == NULL || !vlan_ctx[i]->is_used) {
+			continue;
+		}
+
+		if (vlan_ctx[i]->iface == iface) {
+			tag = vlan_ctx[i]->tag;
+			break;
 		}
 	}
 
 	k_mutex_unlock(&lock);
 
 	return tag;
+}
+
+bool net_eth_is_vlan_interface(struct net_if *iface)
+{
+	enum virtual_interface_caps caps;
+
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
+		return false;
+	}
+
+	caps = net_virtual_get_iface_capabilities(iface);
+	if (!(caps & VIRTUAL_INTERFACE_VLAN)) {
+		return false;
+	}
+
+	return true;
 }
 
 bool net_eth_get_vlan_status(struct net_if *iface)

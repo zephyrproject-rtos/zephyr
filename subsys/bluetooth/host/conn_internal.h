@@ -14,17 +14,47 @@
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,         /* Disconnected, conn is completely down */
 	BT_CONN_DISCONNECT_COMPLETE,  /* Received disconn comp event, transition to DISCONNECTED */
-	BT_CONN_CONNECTING_SCAN,      /* Central passive scanning */
-	BT_CONN_CONNECTING_AUTO,      /* Central connection establishment w/ filter */
-	BT_CONN_CONNECTING_ADV,       /* Peripheral connectable advertising */
-	BT_CONN_CONNECTING_DIR_ADV,   /* Peripheral directed advertising */
-	BT_CONN_CONNECTING,           /* Central connection establishment */
+
+	BT_CONN_INITIATING,           /* Central connection establishment */
+	/** Central scans for a device preceding establishing a connection to it.
+	 *
+	 * This can happen when:
+	 * - The application has explicitly configured the stack to connect to the device,
+	 *   but the controller resolving list is too small. The stack therefore first
+	 *   scans to be able to retrieve the currently used (private) address, resolving
+	 *   the address in the host if needed.
+	 * - The stack uses this connection context for automatic connection establishment
+	 *   without the use of filter accept list. Instead of immediately starting
+	 *   the initiator, it first starts scanning. This allows the application to start
+	 *   scanning while automatic connection establishment in ongoing.
+	 *   It also allows the stack to use host based privacy for cases where this is needed.
+	 */
+	BT_CONN_SCAN_BEFORE_INITIATING,
+
+	/** Central initiates a connection to a device in the filter accept list.
+	 *
+	 * For this type of connection establishment, the controller's initiator is started
+	 * immediately. That is, it is assumed that the controller resolving list
+	 * holds all entries that are part of the filter accept list if private addresses are used.
+	 */
+	BT_CONN_INITIATING_FILTER_LIST,
+
+	BT_CONN_ADV_CONNECTABLE,       /* Peripheral connectable advertising */
+	BT_CONN_ADV_DIR_CONNECTABLE,   /* Peripheral directed advertising */
 	BT_CONN_CONNECTED,            /* Peripheral or Central connected */
 	BT_CONN_DISCONNECTING,        /* Peripheral or Central issued disconnection command */
 } bt_conn_state_t;
 
 /* bt_conn flags: the flags defined here represent connection parameters */
 enum {
+	/** The connection context is used for automatic connection establishment
+	 *
+	 * That is, with @ref bt_conn_le_create_auto() or bt_le_set_auto_conn().
+	 * This flag is set even after the connection has been established so
+	 * that the connection can be reestablished once disconnected.
+	 * The connection establishment may be performed with or without the filter
+	 * accept list.
+	 */
 	BT_CONN_AUTO_CONNECT,
 	BT_CONN_BR_LEGACY_SECURE,             /* 16 digits legacy PIN tracker */
 	BT_CONN_USER,                         /* user I/O when pairing */
@@ -293,6 +323,8 @@ int bt_conn_iso_init(void);
 /* Cleanup ISO references */
 void bt_iso_cleanup_acl(struct bt_conn *iso_conn);
 
+void bt_iso_reset(void);
+
 /* Add a new BR/EDR connection */
 struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
 
@@ -326,7 +358,7 @@ static inline bool bt_conn_is_handle_valid(struct bt_conn *conn)
 	case BT_CONN_DISCONNECTING:
 	case BT_CONN_DISCONNECT_COMPLETE:
 		return true;
-	case BT_CONN_CONNECTING:
+	case BT_CONN_INITIATING:
 		/* ISO connection handle assigned at connect state */
 		if (IS_ENABLED(CONFIG_BT_ISO) &&
 		    conn->type == BT_CONN_TYPE_ISO) {

@@ -1,0 +1,38 @@
+# nRF temperature sensor configuration options
+
+# Copyright (c) 2016 ARM Ltd.
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config TEMP_NRF5_FORCE_ALT
+	bool
+	depends on SOC_COMPATIBLE_NRF
+	help
+	  This option can be enabled to force an alternative implementation
+	  of the temperature sensor driver.
+
+config TEMP_NRF5
+	bool "nRF5 Temperature Sensor"
+	default y
+	depends on DT_HAS_NORDIC_NRF_TEMP_ENABLED
+	depends on MULTITHREADING || TEMP_NRF5_FORCE_ALT
+	help
+	  Enable driver for nRF5 temperature sensor.
+
+config TEMP_NRFS
+	bool "nRF Temperature Sensor accessed via nrfs"
+	default y
+	depends on DT_HAS_NORDIC_NRF_TEMP_NRFS_ENABLED
+	depends on NRFS
+	help
+	  Enable driver for nRF temperature sensor accessed through the nRF
+	  Services (nrfs) layer.
+
+if TEMP_NRFS
+
+module = TEMP_NRFS
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
+
+endif # TEMP_NRFS

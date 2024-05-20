@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&wdt010 {
+	status = "disabled";
+};
+
+&wdt011 {
+	status = "okay";
+};
+
+&wdt131 {
+	status = "disabled";
+};
+
+&wdt132 {
+	status = "disabled";
+};

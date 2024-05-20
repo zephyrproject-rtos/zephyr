@@ -470,12 +470,15 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 			/* CIS was setup and is now expected to be going */
 			if (done->extra.trx_performed_bitmask &
 			    (1U << LL_CIS_IDX_FROM_HANDLE(cis->lll.handle))) {
-				if (done->extra.mic_state == LLL_CONN_MIC_FAIL) {
+				if (false) {
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+				} else if (done->extra.mic_state == LLL_CONN_MIC_FAIL) {
 					/* MIC failure - stop CIS and defer cleanup to after
 					 * teardown.
 					 */
 					ull_conn_iso_cis_stop(cis, NULL,
 							      BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL);
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 				} else {
 					cis->event_expire = 0U;
 				}
@@ -1568,8 +1571,7 @@ static void disable(uint16_t handle)
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_CONN_ISO_BASE + handle,
 					cig, &cig->lll);
-
-	LL_ASSERT(err == 0 || err == -EALREADY);
+	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, handle, err);
 
 	cig->lll.handle = LLL_HANDLE_INVALID;
 	cig->lll.resume_cis = LLL_HANDLE_INVALID;

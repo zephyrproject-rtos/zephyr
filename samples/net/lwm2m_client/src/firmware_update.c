@@ -38,13 +38,13 @@ static void *firmware_get_buf(uint16_t obj_inst_id, uint16_t res_id,
 	return firmware_buf;
 }
 
-static int firmware_block_received_cb(uint16_t obj_inst_id,
-				      uint16_t res_id, uint16_t res_inst_id,
-				      uint8_t *data, uint16_t data_len,
-				      bool last_block, size_t total_size)
+static int firmware_block_received_cb(uint16_t obj_inst_id, uint16_t res_id,
+				      uint16_t res_inst_id, uint8_t *data,
+				      uint16_t data_len, bool last_block,
+				      size_t total_size, size_t offset)
 {
-	LOG_INF("FIRMWARE: BLOCK RECEIVED: len:%u last_block:%d",
-		data_len, last_block);
+	LOG_INF("FIRMWARE: BLOCK RECEIVED: offset:%zd len:%u last_block:%d",
+		offset, data_len, last_block);
 	return 0;
 }
 

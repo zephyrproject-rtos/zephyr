@@ -26,6 +26,14 @@
 #endif
 #define RAMABLE_REGION RAM
 
+/* Region of the irq vectors and boot-vector SP/PC */
+#if defined(CONFIG_ROMSTART_RELOCATION_ROM)
+#define ROMSTART_ADDR CONFIG_ROMSTART_REGION_ADDRESS
+#define ROMSTART_SIZE (CONFIG_ROMSTART_REGION_SIZE * 1K)
+#else
+#define ROMSTART_REGION ROMABLE_REGION
+#endif
+
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
 #define ROM_ADDR RAM_ADDR
 #else
@@ -85,6 +93,9 @@ _region_min_align = 4;
 
 MEMORY
     {
+#if defined(CONFIG_ROMSTART_RELOCATION_ROM)
+    ROMSTART_REGION (rx) : ORIGIN = ROMSTART_ADDR, LENGTH = ROMSTART_SIZE
+#endif
     FLASH (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
     RAM   (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
 #if defined(CONFIG_LINKER_DEVNULL_MEMORY)
@@ -129,7 +140,7 @@ SECTIONS
  */
 #include <snippets-rom-start.ld>
 
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_LINK_IN(ROMSTART_REGION)
 
 #ifdef CONFIG_CODE_DATA_RELOCATION
 
@@ -178,7 +189,7 @@ SECTIONS
 	 * section overlap.
 	 */
 	__exidx_start = .;
-#if defined (__GCC_LINKER_CMD__)
+#if defined (__GCC_LINKER_CMD__) || defined (__LLD_LINKER_CMD__)
 	*(.ARM.exidx* gnu.linkonce.armexidx.*)
 #endif
 	__exidx_end = .;
@@ -468,6 +479,15 @@ GROUP_END(DTCM)
 	KEEP(*(.ARM.attributes))
 	KEEP(*(.gnu.attributes))
 	}
+
+/* Output section descriptions are needed for these sections to suppress
+ * warnings when "--orphan-handling=warn" is set for lld.
+ */
+#if defined(CONFIG_LLVM_USE_LLD)
+    SECTION_PROLOGUE(.symtab, 0,) { *(.symtab) }
+    SECTION_PROLOGUE(.strtab, 0,) { *(.strtab) }
+    SECTION_PROLOGUE(.shstrtab, 0,) { *(.shstrtab) }
+#endif
 
     /* Sections generated from 'zephyr,memory-region' nodes */
     LINKER_DT_SECTIONS()

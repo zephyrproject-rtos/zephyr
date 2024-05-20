@@ -200,7 +200,7 @@ int sys_mm_drv_unmap_page(void *virt);
  *
  * @retval 0 if successful
  * @retval -EINVAL if invalid arguments are provided
- * @retval -EFAULT if virtual addresses have already been mapped
+ * @retval -EFAULT if virtual address is not mapped
  */
 int sys_mm_drv_unmap_region(void *virt, size_t size);
 

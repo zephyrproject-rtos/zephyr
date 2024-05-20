@@ -8,6 +8,6 @@ config CURRENT_AMP
 	bool "Current sense amplifier driver"
 	default y
 	depends on DT_HAS_CURRENT_SENSE_AMPLIFIER_ENABLED
-	depends on ADC
+	select ADC
 	help
 	  Enable current sense amplifier driver.

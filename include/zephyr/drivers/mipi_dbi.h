@@ -34,50 +34,11 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/display/mipi_display.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * SPI 3 wire (Type C1). Uses 9 write clocks to send a byte of data.
- * The bit sent on the 9th clock indicates whether the byte is a
- * command or data byte
- *
- *
- *           .---.   .---.   .---.   .---.   .---.   .---.   .---.   .---.
- *     SCK  -'   '---'   '---'   '---'   '---'   '---'   '---'   '---'   '---
- *
- *          -.---.---.---.---.---.---.---.---.---.---.---.---.---.---.---.
- *     DOUT  |D/C| D7| D6| D5| D4| D3| D2| D1| D0|D/C| D7| D6| D5| D4|...|
- *          -'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'
- *           | Word 1                            | Word n
- *
- *          -.								 .--
- *     CS    '-----------------------------------------------------------'
- */
-#define MIPI_DBI_MODE_SPI_3WIRE 0x1
-/**
- * SPI 4 wire (Type C3). Uses 8 write clocks to send a byte of data.
- * an additional C/D pin will be use to indicate whether the byte is a
- * command or data byte
- *
- *           .---.   .---.   .---.   .---.   .---.   .---.   .---.   .---.
- *     SCK  -'   '---'   '---'   '---'   '---'   '---'   '---'   '---'   '---
- *
- *          -.---.---.---.---.---.---.---.---.---.---.---.---.---.---.---.---.
- *     DOUT  | D7| D6| D5| D4| D3| D2| D1| D0| D7| D6| D5| D4| D3| D2| D1| D0|
- *          -'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'
- *           | Word 1                        | Word n
- *
- *          -.								     .--
- *     CS    '---------------------------------------------------------------'
- *
- *          -.-------------------------------.-------------------------------.-
- *     CD    |             D/C               |             D/C               |
- *          -'-------------------------------'-------------------------------'-
- */
-#define MIPI_DBI_MODE_SPI_4WIRE 0x2
 
 /**
  * @brief initialize a MIPI DBI SPI configuration struct from devicetree
@@ -94,7 +55,7 @@ extern "C" {
 	{								\
 		.frequency = DT_PROP(node_id, mipi_max_frequency),	\
 		.operation = (operation_) |				\
-			DT_PROP(node_id, duplex) |			\
+			DT_PROP_OR(node_id, duplex, 0) |			\
 			COND_CODE_1(DT_PROP(node_id, mipi_cpol), SPI_MODE_CPOL, (0)) |	\
 			COND_CODE_1(DT_PROP(node_id, mipi_cpha), SPI_MODE_CPHA, (0)) |	\
 			COND_CODE_1(DT_PROP(node_id, mipi_hold_cs), SPI_HOLD_ON_CS, (0)),	\
@@ -107,6 +68,49 @@ extern "C" {
 			.delay = (delay_),				\
 		},							\
 	}
+
+/**
+ * @brief Initialize a MIPI DBI SPI configuration from devicetree instance
+ *
+ * This helper initializes a MIPI DBI SPI configuration from a devicetree
+ * instance. It is equivalent to MIPI_DBI_SPI_CONFIG_DT(DT_DRV_INST(inst))
+ * @param inst Instance number to initialize configuration from
+ * @param operation_ the desired operation field in the struct spi_config
+ * @param delay_ the desired delay field in the struct spi_config's
+ *               spi_cs_control, if there is one
+ */
+#define MIPI_DBI_SPI_CONFIG_DT_INST(inst, operation_, delay_)		\
+	MIPI_DBI_SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
+
+/**
+ * @brief Initialize a MIPI DBI configuration from devicetree
+ *
+ * This helper allows drivers to initialize a MIPI DBI configuration
+ * structure from devicetree. It sets the MIPI DBI mode, as well
+ * as configuration fields in the SPI configuration structure
+ * @param node_id Devicetree node identifier for the MIPI DBI device to
+ *                initialize
+ * @param operation_ the desired operation field in the struct spi_config
+ * @param delay_ the desired delay field in the struct spi_config's
+ *               spi_cs_control, if there is one
+ */
+#define MIPI_DBI_CONFIG_DT(node_id, operation_, delay_)			\
+	{								\
+		.mode = DT_PROP(node_id, mipi_mode),			\
+		.config = MIPI_DBI_SPI_CONFIG_DT(node_id, operation_, delay_), \
+	}
+
+/**
+ * @brief Initialize a MIPI DBI configuration from device instance
+ *
+ * Equivalent to MIPI_DBI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
+ * @param inst Instance of the device to initialize a MIPI DBI configuration for
+ * @param operation_ the desired operation field in the struct spi_config
+ * @param delay_ the desired delay field in the struct spi_config's
+ *               spi_cs_control, if there is one
+ */
+#define MIPI_DBI_CONFIG_DT_INST(inst, operation_, delay_)		\
+	MIPI_DBI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
 
 /**
  * @brief MIPI DBI controller configuration
@@ -135,6 +139,8 @@ __subsystem struct mipi_dbi_driver_api {
 			     struct display_buffer_descriptor *desc,
 			     enum display_pixel_format pixfmt);
 	int (*reset)(const struct device *dev, uint32_t delay);
+	int (*release)(const struct device *dev,
+		       const struct mipi_dbi_config *config);
 };
 
 /**
@@ -142,7 +148,9 @@ __subsystem struct mipi_dbi_driver_api {
  *
  * Writes a command, along with an optional data buffer to the display.
  * If data buffer and buffer length are NULL and 0 respectively, then
- * only a command will be sent.
+ * only a command will be sent. Note that if the SPI configuration passed
+ * to this function locks the SPI bus, it is the caller's responsibility
+ * to release it with mipi_dbi_release()
  *
  * @param dev mipi dbi controller
  * @param config MIPI DBI configuration
@@ -254,6 +262,35 @@ static inline int mipi_dbi_reset(const struct device *dev, uint32_t delay)
 		return -ENOSYS;
 	}
 	return api->reset(dev, delay);
+}
+
+/**
+ * @brief Releases a locked MIPI DBI device.
+ *
+ * Releases a lock on a MIPI DBI device and/or the device's CS line if and
+ * only if the given config parameter was the last one to be used in any
+ * of the above functions, and if it has the SPI_LOCK_ON bit set and/or
+ * the SPI_HOLD_ON_CS bit set into its operation bits field.
+ * This lock functions exactly like the SPI lock, and can be used if the caller
+ * needs to keep CS asserted for multiple transactions, or the MIPI DBI device
+ * locked.
+ * @param dev mipi dbi controller
+ * @param config MIPI DBI configuration
+ * @retval 0 reset succeeded
+ * @retval -EIO I/O error
+ * @retval -ENOSYS not implemented
+ * @retval -ENOTSUP not supported
+ */
+static inline int mipi_dbi_release(const struct device *dev,
+				   const struct mipi_dbi_config *config)
+{
+	const struct mipi_dbi_driver_api *api =
+		(const struct mipi_dbi_driver_api *)dev->api;
+
+	if (api->release == NULL) {
+		return -ENOSYS;
+	}
+	return api->release(dev, config);
 }
 
 #ifdef __cplusplus

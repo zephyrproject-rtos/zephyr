@@ -266,6 +266,14 @@ static int mipi_dbi_spi_reset(const struct device *dev, uint32_t delay)
 	return gpio_pin_set_dt(&config->reset, 0);
 }
 
+static int mipi_dbi_spi_release(const struct device *dev,
+				const struct mipi_dbi_config *dbi_config)
+{
+	const struct mipi_dbi_spi_config *config = dev->config;
+
+	return spi_release(config->spi_dev, &dbi_config->config);
+}
+
 static int mipi_dbi_spi_init(const struct device *dev)
 {
 	const struct mipi_dbi_spi_config *config = dev->config;
@@ -308,6 +316,7 @@ static struct mipi_dbi_driver_api mipi_dbi_spi_driver_api = {
 	.reset = mipi_dbi_spi_reset,
 	.command_write = mipi_dbi_spi_command_write,
 	.write_display = mipi_dbi_spi_write_display,
+	.release = mipi_dbi_spi_release,
 #if MIPI_DBI_SPI_READ_REQUIRED
 	.command_read = mipi_dbi_spi_command_read,
 #endif

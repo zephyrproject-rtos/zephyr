@@ -65,7 +65,7 @@ FUNC_NORETURN void z_prep_c(void *arg)
 #endif
 #endif
 
-#if CONFIG_X86_STACK_PROTECTION
+#ifdef CONFIG_X86_STACK_PROTECTION
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int i = 0; i < num_cpus; i++) {

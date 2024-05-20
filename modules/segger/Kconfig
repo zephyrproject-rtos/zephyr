@@ -79,6 +79,9 @@ config SEGGER_RTT_SECTION_NONE
 config SEGGER_RTT_SECTION_DTCM
 	bool "Place RTT data in the DTCM linker section"
 
+config SEGGER_RTT_SECTION_CCM
+	bool "Place RTT data in the CCM linker section"
+
 endchoice
 
 endif

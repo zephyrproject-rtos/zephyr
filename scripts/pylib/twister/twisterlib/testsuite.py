@@ -82,10 +82,10 @@ def scan_file(inf_name):
         re.MULTILINE)
     # Checks if the file contains a definition of "void test_main(void)"
     # Since ztest provides a plain test_main implementation it is OK to:
-    # 1. register test suites and not call the run function iff the test
-    #    doesn't have a custom test_main.
-    # 2. register test suites and a custom test_main definition iff the test
-    #    also calls ztest_run_registered_test_suites.
+    # 1. register test suites and not call the run function if and only if
+    #    the test doesn't have a custom test_main.
+    # 2. register test suites and a custom test_main definition if and only if
+    #    the test also calls ztest_run_registered_test_suites.
     test_main_regex = re.compile(
         br"^\s*void\s+test_main\(void\)",
         re.MULTILINE)
@@ -310,7 +310,13 @@ def scan_testsuite_path(testsuite_path):
         except ValueError as e:
             logger.error("%s: error parsing source file: %s" % (filename, e))
 
+    src_dir_pathlib_path = Path(src_dir_path)
     for filename in find_c_files_in(testsuite_path):
+        # If we have already scanned those files in the src_dir step, skip them.
+        filename_path = Path(filename)
+        if src_dir_pathlib_path in filename_path.parents:
+            continue
+
         try:
             result: ScanPathResult = scan_file(filename)
             if result.warnings:

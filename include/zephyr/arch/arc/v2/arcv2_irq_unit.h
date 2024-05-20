@@ -41,6 +41,8 @@ extern "C" {
  * @brief Enable/disable interrupt
  *
  * Enables or disables the specified interrupt
+ * @param irq IRQ line number
+ * @param enable 1 to enable, 0 to disable
  */
 
 static ALWAYS_INLINE

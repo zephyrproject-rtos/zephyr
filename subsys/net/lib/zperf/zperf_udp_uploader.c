@@ -305,7 +305,7 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 	}
 
 	sock = zperf_prepare_upload_sock(&param->peer_addr, param->options.tos,
-					 param->options.priority, IPPROTO_UDP);
+					 param->options.priority, 0, IPPROTO_UDP);
 	if (sock < 0) {
 		return sock;
 	}

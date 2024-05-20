@@ -689,7 +689,7 @@ query_known:
 			if (dns_cname) {
 				ret = dns_copy_qname(dns_cname->data,
 						     &dns_cname->len,
-						     dns_cname->size,
+						     net_buf_max_len(dns_cname),
 						     dns_msg, pos);
 				if (ret < 0) {
 					ret = DNS_EAI_SYSTEM;
@@ -893,7 +893,8 @@ static int dns_write(struct dns_resolve_context *ctx,
 	dns_id = ctx->queries[query_idx].id;
 	query_type = ctx->queries[query_idx].query_type;
 
-	ret = dns_msg_pack_query(dns_data->data, &dns_data->len, dns_data->size,
+	ret = dns_msg_pack_query(dns_data->data, &dns_data->len,
+				 net_buf_max_len(dns_data),
 				 dns_qname->data, dns_qname->len, dns_id,
 				 (enum dns_rr_type)query_type);
 	if (ret < 0) {
@@ -1028,13 +1029,14 @@ int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,
 			return -ENOMEM;
 		}
 
-		ret = dns_msg_pack_qname(&len, buf->data, buf->size,
+		ret = dns_msg_pack_qname(&len, buf->data,
+					 net_buf_max_len(buf),
 					 query_name);
 		if (ret >= 0) {
 			/* If the query string + \0 + query type (A or AAAA)
 			 * does not fit the tmp buf, then bail out
 			 */
-			if ((len + 2) > buf->size) {
+			if ((len + 2) > net_buf_max_len(buf)) {
 				net_buf_unref(buf);
 				return -ENOMEM;
 			}

@@ -30,10 +30,12 @@ config NATIVE_SIMULATOR_PRIMARY_MCU_INDEX
 	default 0
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000 if NRF_GRTC_TIMER
 	default 32768
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 128 if !TICKLESS_KERNEL
+	default 10000 if NRF_GRTC_TIMER
 	default 32768
 
 config BT_CTLR
@@ -69,16 +71,6 @@ endif # BOARD_NRF5340BSIM_NRF5340_CPUAPP
 # default to encrypt packets on its own.
 config NRF_802154_ENCRYPTION
 	default n
-
-if LOG
-
-# For this board we can log synchronously without any problem
-# Doing so will be nicer for debugging
-choice LOG_MODE
-	default LOG_MODE_IMMEDIATE
-endchoice
-
-endif # LOG
 
 if CONSOLE
 

@@ -242,18 +242,18 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define MSR_RI 0x40   /* complement of ring signal */
 #define MSR_DCD 0x80  /* complement of dcd */
 
-#define THR(dev) (get_port(dev) + REG_THR * reg_interval(dev))
-#define RDR(dev) (get_port(dev) + REG_RDR * reg_interval(dev))
-#define BRDL(dev) (get_port(dev) + REG_BRDL * reg_interval(dev))
-#define BRDH(dev) (get_port(dev) + REG_BRDH * reg_interval(dev))
-#define IER(dev) (get_port(dev) + REG_IER * reg_interval(dev))
-#define IIR(dev) (get_port(dev) + REG_IIR * reg_interval(dev))
-#define FCR(dev) (get_port(dev) + REG_FCR * reg_interval(dev))
-#define LCR(dev) (get_port(dev) + REG_LCR * reg_interval(dev))
-#define MDC(dev) (get_port(dev) + REG_MDC * reg_interval(dev))
-#define LSR(dev) (get_port(dev) + REG_LSR * reg_interval(dev))
-#define MSR(dev) (get_port(dev) + REG_MSR * reg_interval(dev))
-#define MDR1(dev) (get_port(dev) + REG_MDR1 * reg_interval(dev))
+#define THR(dev) (get_port(dev) + (REG_THR * reg_interval(dev)))
+#define RDR(dev) (get_port(dev) + (REG_RDR * reg_interval(dev)))
+#define BRDL(dev) (get_port(dev) + (REG_BRDL * reg_interval(dev)))
+#define BRDH(dev) (get_port(dev) + (REG_BRDH * reg_interval(dev)))
+#define IER(dev) (get_port(dev) + (REG_IER * reg_interval(dev)))
+#define IIR(dev) (get_port(dev) + (REG_IIR * reg_interval(dev)))
+#define FCR(dev) (get_port(dev) + (REG_FCR * reg_interval(dev)))
+#define LCR(dev) (get_port(dev) + (REG_LCR * reg_interval(dev)))
+#define MDC(dev) (get_port(dev) + (REG_MDC * reg_interval(dev)))
+#define LSR(dev) (get_port(dev) + (REG_LSR * reg_interval(dev)))
+#define MSR(dev) (get_port(dev) + (REG_MSR * reg_interval(dev)))
+#define MDR1(dev) (get_port(dev) + (REG_MDR1 * reg_interval(dev)))
 #define DLF(dev) (get_port(dev) + REG_DLF)
 #define PCP(dev) (get_port(dev) + REG_PCP)
 
@@ -1862,7 +1862,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 			.source_data_size = 1,					\
 			.dest_data_size = 1,					\
 			.complete_callback_en = 0,				\
-			.error_callback_en = 1,					\
+			.error_callback_dis = 1,				\
 			.block_count = 1,					\
 			.channel_direction = MEMORY_TO_PERIPHERAL,		\
 			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),	\
@@ -1881,7 +1881,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 			.source_data_size = 1,					\
 			.dest_data_size = 1,					\
 			.complete_callback_en = 0,				\
-			.error_callback_en = 1,					\
+			.error_callback_dis = 1,				\
 			.block_count = 1,					\
 			.channel_direction = PERIPHERAL_TO_MEMORY,		\
 			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),	\

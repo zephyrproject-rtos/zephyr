@@ -264,7 +264,7 @@ static int sam_xdmac_config(const struct device *dev, uint32_t channel,
 	channel_cfg.dus = 0U;
 	channel_cfg.cie =
 		  (cfg->complete_callback_en ? XDMAC_CIE_BIE : XDMAC_CIE_LIE)
-		| (cfg->error_callback_en ? XDMAC_INT_ERR : 0);
+		| (cfg->error_callback_dis ? 0 : XDMAC_INT_ERR);
 
 	ret = sam_xdmac_channel_configure(dev, channel, &channel_cfg);
 	if (ret < 0) {

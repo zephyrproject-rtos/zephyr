@@ -311,7 +311,7 @@ static void isr_done(void *param)
 	 */
 	if ((lll->chm_first != lll->chm_last) &&
 	    is_instant_or_past(lll->event_counter, lll->chm_instant)) {
-		struct node_rx_hdr *rx;
+		struct node_rx_pdu *rx;
 
 		/* Allocate, prepare and dispatch Channel Map Update
 		 * complete message towards ULL, then subsequently to
@@ -320,10 +320,10 @@ static void isr_done(void *param)
 		rx = ull_pdu_rx_alloc();
 		LL_ASSERT(rx);
 
-		rx->type = NODE_RX_TYPE_SYNC_CHM_COMPLETE;
+		rx->hdr.type = NODE_RX_TYPE_SYNC_CHM_COMPLETE;
 		rx->rx_ftr.param = lll;
 
-		ull_rx_put_sched(rx->link, rx);
+		ull_rx_put_sched(rx->hdr.link, rx);
 	}
 
 	lll_isr_done(lll);

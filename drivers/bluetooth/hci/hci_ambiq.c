@@ -25,11 +25,6 @@ LOG_MODULE_REGISTER(bt_hci_driver);
 #define HCI_SPI_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(ambiq_bt_hci_spi)
 #define SPI_DEV_NODE DT_BUS(HCI_SPI_NODE)
 
-#define HCI_CMD 0x01
-#define HCI_ACL 0x02
-#define HCI_SCO 0x03
-#define HCI_EVT 0x04
-
 /* Offset of special item */
 #define PACKET_TYPE         0
 #define PACKET_TYPE_SIZE    1
@@ -272,11 +267,11 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 			}
 
 			switch (rxmsg[PACKET_TYPE]) {
-			case HCI_EVT:
+			case BT_HCI_H4_EVT:
 				buf = bt_hci_evt_recv(&rxmsg[PACKET_TYPE + PACKET_TYPE_SIZE],
 						      (len - PACKET_TYPE_SIZE));
 				break;
-			case HCI_ACL:
+			case BT_HCI_H4_ACL:
 				buf = bt_hci_acl_recv(&rxmsg[PACKET_TYPE + PACKET_TYPE_SIZE],
 						      (len - PACKET_TYPE_SIZE));
 				break;
@@ -306,10 +301,10 @@ static int bt_hci_send(struct net_buf *buf)
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
-		net_buf_push_u8(buf, HCI_ACL);
+		net_buf_push_u8(buf, BT_HCI_H4_ACL);
 		break;
 	case BT_BUF_CMD:
-		net_buf_push_u8(buf, HCI_CMD);
+		net_buf_push_u8(buf, BT_HCI_H4_CMD);
 		break;
 	default:
 		LOG_ERR("Unsupported type");

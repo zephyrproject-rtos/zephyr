@@ -135,12 +135,20 @@ Relocating libraries
 
 Libraries can be relocated using the LIBRARY argument to
 ``zephyr_code_relocation()`` with the library name. For example, the following
-snippet will relocate kernel code to ITCM and serial drivers to SRAM2:
+snippet will relocate serial drivers to SRAM2:
 
   .. code-block:: none
 
-    zephyr_code_relocate(LIBRARY kernel LOCATION ITCM_TEXT)
     zephyr_code_relocate(LIBRARY drivers__serial LOCATION SRAM2)
+
+Tips
+====
+
+Take care if relocating kernel/arch files, some contain early initialization
+code that executes before code relocation takes place.
+
+Additional MPU/MMU configuration may be required to ensure that the
+destination memory region is configured to allow code execution.
 
 Samples/ Tests
 ==============

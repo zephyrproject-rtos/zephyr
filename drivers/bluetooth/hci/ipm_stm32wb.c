@@ -46,11 +46,6 @@ static void sysevt_received(void *pdata);
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(hci_ipm);
 
-#define HCI_CMD                 0x01
-#define HCI_ACL                 0x02
-#define HCI_SCO                 0x03
-#define HCI_EVT                 0x04
-
 #define STM32WB_C2_LOCK_TIMEOUT K_MSEC(500)
 
 static K_SEM_DEFINE(c2_started, 0, 1);
@@ -181,7 +176,7 @@ static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 		k_sem_take(&ipm_busy, K_FOREVER);
 
 		switch (hcievt->evtserial.type) {
-		case HCI_EVT:
+		case BT_HCI_H4_EVT:
 			LOG_DBG("EVT: hcievt->evtserial.evt.evtcode: 0x%02x",
 				hcievt->evtserial.evt.evtcode);
 			switch (hcievt->evtserial.evt.evtcode) {
@@ -222,7 +217,7 @@ static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 			net_buf_add_mem(buf, &hcievt->evtserial.evt,
 					buf_add_len);
 			break;
-		case HCI_ACL:
+		case BT_HCI_H4_ACL:
 			acl = &(((TL_AclDataPacket_t *)hcievt)->AclDataSerial);
 			buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
 			acl_hdr.handle = acl->handle;
@@ -362,7 +357,7 @@ static int bt_ipm_send(struct net_buf *buf)
 	case BT_BUF_ACL_OUT:
 		LOG_DBG("ACL: buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 		k_sem_take(&acl_data_ack, K_FOREVER);
-		net_buf_push_u8(buf, HCI_ACL);
+		net_buf_push_u8(buf, BT_HCI_H4_ACL);
 		memcpy((void *)
 		       &((TL_AclDataPacket_t *)HciAclDataBuffer)->AclDataSerial,
 		       buf->data, buf->len);
@@ -370,7 +365,7 @@ static int bt_ipm_send(struct net_buf *buf)
 		break;
 	case BT_BUF_CMD:
 		LOG_DBG("CMD: buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
-		ble_cmd_buff->cmdserial.type = HCI_CMD;
+		ble_cmd_buff->cmdserial.type = BT_HCI_H4_CMD;
 		ble_cmd_buff->cmdserial.cmd.plen = buf->len;
 		memcpy((void *)&ble_cmd_buff->cmdserial.cmd, buf->data,
 		       buf->len);

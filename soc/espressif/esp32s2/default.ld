@@ -839,7 +839,7 @@ SECTIONS
     *(.dynamic)
     *(.gnu.version_d)
     . = ALIGN(4);
-    __rodata_region_end = ABSOLUTE(.);
+    _rodata_end = ABSOLUTE(.);
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
     *(*.lit4)
@@ -868,8 +868,8 @@ SECTIONS
   {
     . = ALIGN(CACHE_ALIGN);
     _image_rodata_end = ABSOLUTE(.);
-    _rodata_region_end = ABSOLUTE(.);
     _rodata_reserved_end = ABSOLUTE(.);
+    __rodata_region_end = ABSOLUTE(.);
 
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
@@ -891,6 +891,7 @@ SECTIONS
     _stext = .;
     _instruction_reserved_start = ABSOLUTE(.);
     _text_start = ABSOLUTE(.);
+    __text_region_start = ABSOLUTE(.);
 
 #if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
@@ -919,13 +920,9 @@ SECTIONS
 
     _text_end = ABSOLUTE(.);
     _instruction_reserved_end = ABSOLUTE(.);  /* This is a symbol marking the flash.text end, this can be used for mmu driver to maintain virtual address */
+    __text_region_end = ABSOLUTE(.);
     _etext = .;
 
-    /* Similar to _iram_start, this symbol goes here so it is
-     * resolved by addr2line in preference to the first symbol in
-     * the flash.text segment.
-     */
-     _flash_cache_start = ABSOLUTE(0);
   } GROUP_DATA_LINK_IN(ROTEXT_REGION, ROMABLE_REGION)
 
   /* --- END OF .flash.text --- */

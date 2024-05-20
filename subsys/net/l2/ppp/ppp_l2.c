@@ -231,7 +231,9 @@ static int ppp_lcp_close(struct ppp_context *ctx)
 
 	k_sem_reset(&ctx->wait_ppp_link_terminated);
 	ppp_lcp->close(ctx, "L2 Disabled");
-	return k_sem_take(&ctx->wait_ppp_link_terminated, K_MSEC(CONFIG_NET_L2_PPP_TIMEOUT));
+	return k_sem_take(&ctx->wait_ppp_link_terminated,
+			  K_MSEC(CONFIG_NET_L2_PPP_TIMEOUT *
+				 (1 + CONFIG_NET_L2_PPP_MAX_TERMINATE_REQ_RETRANSMITS)));
 }
 
 static void ppp_lcp_lower_down_async(struct ppp_context *ctx)

@@ -80,8 +80,8 @@ int stm32_pinmux_init_remap(void)
 
 #if REMAP_PA11 || REMAP_PA12
 
-#if !defined(CONFIG_SOC_SERIES_STM32G0X)
-#error "Pin remap property available only on STM32G0 SoC series"
+#if !defined(CONFIG_SOC_SERIES_STM32G0X) && !defined(CONFIG_SOC_SERIES_STM32C0X)
+#error "Pin remap property available only on STM32G0 and STM32C0 SoC series"
 #endif
 
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);

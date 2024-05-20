@@ -27,6 +27,7 @@
 		led2 = &blue_led;
 		sw0 = &button0;
 		sw1 = &button1;
+		watchdog0 = &wdog0;
 	};
 
 	leds {
@@ -79,8 +80,8 @@
 };
 
 &i2c0 {
-	location-sda = <GECKO_LOCATION(5) GECKO_PORT_C GECKO_PIN(5)>;
-	location-scl = <GECKO_LOCATION(5) GECKO_PORT_C GECKO_PIN(4)>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 
 	veml6035: veml6035@29 {
@@ -170,5 +171,9 @@
 };
 
 &adc0 {
+	status = "okay";
+};
+
+&stimer0 {
 	status = "okay";
 };

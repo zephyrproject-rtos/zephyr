@@ -38,6 +38,24 @@ config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	  and most people should say n here to minimize context switching
 	  overhead.
 
+config RISCV_ENABLE_FRAME_POINTER
+	bool
+	default y
+	depends on OVERRIDE_FRAME_POINTER_DEFAULT && !OMIT_FRAME_POINTER
+	help
+	  Hidden option to simplify access to OVERRIDE_FRAME_POINTER_DEFAULT
+	  and OMIT_FRAME_POINTER. It is automatically enabled when the frame
+	  pointer unwinding is enabled.
+
+config RISCV_EXCEPTION_STACK_TRACE
+	bool
+	default y
+	depends on RISCV_ENABLE_FRAME_POINTER
+	depends on EXCEPTION_STACK_TRACE
+	imply THREAD_STACK_INFO
+	help
+	  Internal config to enable runtime stack traces on fatal exceptions.
+
 menu "RISCV Processor Options"
 
 config INCLUDE_RESET_VECTOR

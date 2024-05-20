@@ -17,6 +17,26 @@
 
 #include <zephyr/../../drivers/flash/soc_flash_nrf.h>
 
+/* Note that it is supported to compile this driver for both secure
+ * and non-secure images, but non-secure images cannot call
+ * nrf_rramc_config_set because NRF_RRAMC_NS does not exist.
+ *
+ * Instead, when TF-M boots, it will configure RRAMC with this static
+ * configuration:
+ *
+ * nrf_rramc_config_t config = {
+ *   .mode_write = true,
+ *   .write_buff_size = WRITE_BUFFER_SIZE
+ * };
+ *
+ * nrf_rramc_ready_next_timeout_t params = {
+ *   .value = CONFIG_NRF_RRAM_READYNEXT_TIMEOUT_VALUE,
+ *   .enable = true,
+ * };
+ *
+ * For more details see NCSDK-26982.
+ */
+
 LOG_MODULE_REGISTER(flash_nrf_rram, CONFIG_FLASH_LOG_LEVEL);
 
 #define RRAM DT_INST(0, soc_nv_flash)
@@ -85,19 +105,43 @@ static inline bool is_within_bounds(off_t addr, size_t len, off_t boundary_start
 }
 
 #if WRITE_BUFFER_ENABLE
-static void commit_changes(size_t len)
+static void commit_changes(off_t addr, size_t len)
 {
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	if (nrf_rramc_empty_buffer_check(NRF_RRAMC)) {
 		/* The internal write-buffer has been committed to RRAM and is now empty. */
 		return;
 	}
+#endif
 
 	if ((len % (WRITE_BUFFER_MAX_SIZE)) == 0) {
 		/* Our last operation was buffer size-aligned, so we're done. */
 		return;
 	}
 
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	ARG_UNUSED(addr);
+
 	nrf_rramc_task_trigger(NRF_RRAMC, NRF_RRAMC_TASK_COMMIT_WRITEBUF);
+#else
+	/*
+	 * When the commit task is unavailable we need to get creative to
+	 * ensure this is committed.
+	 *
+	 * According to the PS the buffer is committed when "There is a
+	 * read operation from a 128-bit word line in the buffer that has
+	 * already been written to".
+	 *
+	 * So we read the last byte that has been written to trigger this
+	 * commit.
+	 *
+	 * If this approach proves to be problematic, e.g. for writes to
+	 * write-only memory, then one would have to rely on
+	 * READYNEXTTIMEOUT to eventually commit the write.
+	 */
+	volatile uint8_t dummy_read = *(volatile uint8_t *)(addr + len - 1);
+	ARG_UNUSED(dummy_read);
+#endif
 
 	barrier_dmem_fence_full();
 }
@@ -105,9 +149,11 @@ static void commit_changes(size_t len)
 
 static void rram_write(off_t addr, const void *data, size_t len)
 {
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	nrf_rramc_config_t config = {.mode_write = true, .write_buff_size = WRITE_BUFFER_SIZE};
 
 	nrf_rramc_config_set(NRF_RRAMC, &config);
+#endif
 
 	if (data) {
 		memcpy((void *)addr, data, len);
@@ -118,11 +164,13 @@ static void rram_write(off_t addr, const void *data, size_t len)
 	barrier_dmem_fence_full(); /* Barrier following our last write. */
 
 #if WRITE_BUFFER_ENABLE
-	commit_changes(len);
+	commit_changes(addr, len);
 #endif
 
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	config.mode_write = false;
 	nrf_rramc_config_set(NRF_RRAMC, &config);
+#endif
 }
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
@@ -298,11 +346,12 @@ static int nrf_rram_init(const struct device *dev)
 	nrf_flash_sync_init();
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 
-#if CONFIG_NRF_RRAM_READYNEXT_TIMEOUT_VALUE > 0
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && CONFIG_NRF_RRAM_READYNEXT_TIMEOUT_VALUE > 0
 	nrf_rramc_ready_next_timeout_t params = {
 		.value = CONFIG_NRF_RRAM_READYNEXT_TIMEOUT_VALUE,
 		.enable = true,
 	};
+
 	nrf_rramc_ready_next_timeout_set(NRF_RRAMC, &params);
 #endif
 

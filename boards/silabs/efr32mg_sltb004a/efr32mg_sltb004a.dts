@@ -116,16 +116,36 @@
 	status = "okay";
 };
 
+&pinctrl {
+	i2c0_default: i2c0_default {
+		group1 {
+			psels = <GECKO_PSEL(I2C_SDA, C, 10)>,
+				<GECKO_PSEL(I2C_SCL, C, 11)>,
+				<GECKO_LOC(I2C_SDA, 15)>,
+				<GECKO_LOC(I2C_SCL, 15)>;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			psels = <GECKO_PSEL(I2C_SDA, B, 6)>,
+				<GECKO_PSEL(I2C_SCL, B, 7)>,
+				<GECKO_LOC(I2C_SDA, 6)>,
+				<GECKO_LOC(I2C_SCL, 6)>;
+		};
+	};
+};
+
 &i2c0 {
-	location-sda = <GECKO_LOCATION(15) GECKO_PORT_C GECKO_PIN(10)>;
-	location-scl = <GECKO_LOCATION(15) GECKO_PORT_C GECKO_PIN(11)>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &i2c1 {
 	/* This set selects for CCS811_I2C supporting CCS811 */
-	location-sda = <GECKO_LOCATION(6) GECKO_PORT_B GECKO_PIN(6)>;
-	location-scl = <GECKO_LOCATION(6) GECKO_PORT_B GECKO_PIN(7)>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
 	status = "okay";
 
 	ccs811: ccs811@5a {

@@ -2,7 +2,11 @@
  * Copyright (c) 2021 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <cpuid.h> /* Header provided by the toolchain. */
+
 #include <zephyr/init.h>
+#include <zephyr/arch/x86/cpuid.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
@@ -64,7 +68,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	uint64_t now = rdtsc();
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t expires = now + MAX(ticks - 1, 0) * CYC_PER_TICK;
+	uint64_t expires = now + (MAX(ticks - 1, 0) * CYC_PER_TICK);
 
 	expires = last_announce + (((expires - last_announce + CYC_PER_TICK - 1)
 				    / CYC_PER_TICK) * CYC_PER_TICK);
@@ -77,7 +81,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * real hardware it requires more than a century of uptime,
 	 * but this is cheap and safe.
 	 */
-	if (ticks == K_TICKS_FOREVER || expires < last_announce) {
+	if ((ticks == K_TICKS_FOREVER) || (expires < last_announce)) {
 		expires = UINT64_MAX;
 	}
 
@@ -149,28 +153,21 @@ void smp_timer_init(void)
 	irq_enable(timer_irq());
 }
 
-static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
-{
-	__asm__ volatile("cpuid"
-			 : "=b"(*ebx), "=c"(*ecx), "=d"(*edx)
-			 : "a"(*eax), "c"(*ecx));
-}
-
 static int sys_clock_driver_init(void)
 {
 #ifdef CONFIG_ASSERT
 	uint32_t eax, ebx, ecx, edx;
 
-	eax = 1; ecx = 0;
-	cpuid(&eax, &ebx, &ecx, &edx);
+	ecx = 0; /* prevent compiler warning */
+	__get_cpuid(CPUID_BASIC_INFO_1, &eax, &ebx, &ecx, &edx);
 	__ASSERT((ecx & BIT(24)) != 0, "No TSC Deadline support");
 
-	eax = 0x80000007; ecx = 0;
-	cpuid(&eax, &ebx, &ecx, &edx);
+	edx = 0; /* prevent compiler warning */
+	__get_cpuid(0x80000007, &eax, &ebx, &ecx, &edx);
 	__ASSERT((edx & BIT(8)) != 0, "No Invariant TSC support");
 
-	eax = 7; ecx = 0;
-	cpuid(&eax, &ebx, &ecx, &edx);
+	ebx = 0; /* prevent compiler warning */
+	__get_cpuid_count(CPUID_EXTENDED_FEATURES_LVL, 0, &eax, &ebx, &ecx, &edx);
 	__ASSERT((ebx & BIT(1)) != 0, "No TSC_ADJUST MSR support");
 #endif
 

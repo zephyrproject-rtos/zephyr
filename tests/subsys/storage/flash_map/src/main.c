@@ -13,6 +13,7 @@
 #define SLOT1_PARTITION		slot1_partition
 #define SLOT1_PARTITION_ID	FIXED_PARTITION_ID(SLOT1_PARTITION)
 #define SLOT1_PARTITION_DEV	FIXED_PARTITION_DEVICE(SLOT1_PARTITION)
+#define SLOT1_PARTITION_NODE	DT_NODELABEL(SLOT1_PARTITION)
 
 extern int flash_map_entries;
 struct flash_sector fs_sectors[256];
@@ -188,6 +189,17 @@ ZTEST(flash_map, test_flash_area_erased_val)
 		      "value different than the flash erase value");
 
 	flash_area_close(fa);
+}
+
+ZTEST(flash_map, test_fixed_partition_node_macros)
+{
+	/* Test against changes in API */
+	zassert_equal(FIXED_PARTITION_NODE_OFFSET(SLOT1_PARTITION_NODE),
+		DT_REG_ADDR(SLOT1_PARTITION_NODE));
+	zassert_equal(FIXED_PARTITION_NODE_SIZE(SLOT1_PARTITION_NODE),
+		DT_REG_SIZE(SLOT1_PARTITION_NODE));
+	zassert_equal(FIXED_PARTITION_NODE_DEVICE(SLOT1_PARTITION_NODE),
+		DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(SLOT1_PARTITION_NODE)));
 }
 
 ZTEST_SUITE(flash_map, NULL, NULL, NULL, NULL, NULL);

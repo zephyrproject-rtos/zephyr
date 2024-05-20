@@ -274,7 +274,8 @@ TESTDATA_3 = [
             testsuite_root=[
                 os.path.join('dummy', 'path', "tests"),
                 os.path.join('dummy', 'path', "samples")
-            ]
+            ],
+            outdir='dummy_abspath',
         ),
         mock.Mock(
             generator_cmd='ninja',
@@ -294,7 +295,8 @@ TESTDATA_3 = [
             testsuite_root=[
                 os.path.join('dummy', 'path', "tests"),
                 os.path.join('dummy', 'path', "samples")
-            ]
+            ],
+            outdir='dummy_abspath',
         ),
         mock.Mock(
             generator_cmd='make',
@@ -320,9 +322,17 @@ TESTDATA_3 = [
     ]
 )
 def test_twisterenv_init(options, expected_env):
-    with mock.patch(
-            'os.path.abspath',
-            mock.Mock(return_value='dummy_abspath')):
+    original_abspath = os.path.abspath
+
+    def mocked_abspath(path):
+        if path == 'dummy_abspath':
+            return 'dummy_abspath'
+        elif isinstance(path, mock.Mock):
+            return None
+        else:
+            return original_abspath(path)
+
+    with mock.patch('os.path.abspath', side_effect=mocked_abspath):
         twister_env = twisterlib.environment.TwisterEnv(options=options)
 
     assert twister_env.generator_cmd == expected_env.generator_cmd
@@ -339,9 +349,17 @@ def test_twisterenv_discover():
         ninja=True
     )
 
-    abspath_mock = mock.Mock(return_value='dummy_abspath')
+    original_abspath = os.path.abspath
 
-    with mock.patch('os.path.abspath', abspath_mock):
+    def mocked_abspath(path):
+        if path == 'dummy_abspath':
+            return 'dummy_abspath'
+        elif isinstance(path, mock.Mock):
+            return None
+        else:
+            return original_abspath(path)
+
+    with mock.patch('os.path.abspath', side_effect=mocked_abspath):
         twister_env = twisterlib.environment.TwisterEnv(options=options)
 
     mock_datetime = mock.Mock(
@@ -435,9 +453,17 @@ def test_twisterenv_check_zephyr_version(
         ninja=True
     )
 
-    abspath_mock = mock.Mock(return_value='dummy_abspath')
+    original_abspath = os.path.abspath
 
-    with mock.patch('os.path.abspath', abspath_mock):
+    def mocked_abspath(path):
+        if path == 'dummy_abspath':
+            return 'dummy_abspath'
+        elif isinstance(path, mock.Mock):
+            return None
+        else:
+            return original_abspath(path)
+
+    with mock.patch('os.path.abspath', side_effect=mocked_abspath):
         twister_env = twisterlib.environment.TwisterEnv(options=options)
 
     with mock.patch('subprocess.run', mock.Mock(side_effect=mock_run)):
@@ -555,9 +581,17 @@ def test_get_toolchain(caplog, script_result, exit_value, expected_log):
         ninja=True
     )
 
-    abspath_mock = mock.Mock(return_value='dummy_abspath')
+    original_abspath = os.path.abspath
 
-    with mock.patch('os.path.abspath', abspath_mock):
+    def mocked_abspath(path):
+        if path == 'dummy_abspath':
+            return 'dummy_abspath'
+        elif isinstance(path, mock.Mock):
+            return None
+        else:
+            return original_abspath(path)
+
+    with mock.patch('os.path.abspath', side_effect=mocked_abspath):
         twister_env = twisterlib.environment.TwisterEnv(options=options)
 
     with mock.patch.object(

@@ -144,6 +144,10 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	struct posix_fs_desc *ptr = obj;
 
 	switch (request) {
+	case ZFD_IOCTL_FSYNC: {
+		rc = fs_sync(&ptr->file);
+		break;
+	}
 	case ZFD_IOCTL_LSEEK: {
 		off_t offset;
 		int whence;
@@ -405,6 +409,28 @@ int mkdir(const char *path, mode_t mode)
 	ARG_UNUSED(mode);
 
 	rc = fs_mkdir(path);
+	if (rc < 0) {
+		errno = -rc;
+		return -1;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Truncate file to specified length.
+ *
+ */
+int ftruncate(int fd, off_t length)
+{
+	int rc;
+	struct posix_fs_desc *ptr = NULL;
+
+	ptr = z_get_fd_obj(fd, NULL, EBADF);
+	if (!ptr)
+		return -1;
+
+	rc = fs_truncate(&ptr->file, length);
 	if (rc < 0) {
 		errno = -rc;
 		return -1;

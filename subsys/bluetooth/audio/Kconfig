@@ -8,8 +8,7 @@
 #
 
 menuconfig BT_AUDIO
-	bool "Bluetooth Audio support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Bluetooth Audio support"
 	help
 	  This option enables Bluetooth Audio support. The specific
 	  features that are available may depend on other features

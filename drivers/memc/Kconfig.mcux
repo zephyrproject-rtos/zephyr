@@ -24,6 +24,32 @@ config MEMC_MCUX_FLEXSPI_APS6408L
 	depends on DT_HAS_NXP_IMX_FLEXSPI_APS6408L_ENABLED
 	select MEMC_MCUX_FLEXSPI
 
+config MEMC_MCUX_FLEXSPI_IS66WVQ8M4
+	bool "MCUX FlexSPI ISSI IS66WVQ8M4 pSRAM driver"
+	default y
+	depends on DT_HAS_NXP_IMX_FLEXSPI_IS66WVQ8M4_ENABLED
+	select MEMC_MCUX_FLEXSPI
+
+config MEMC_MCUX_FLEXSPI_INIT_PRIORITY
+	int "MCUX FLEXSPI MEMC driver initialization priority"
+	default MEMC_INIT_PRIORITY
+	help
+	  Initialization priority for FlexSPI MEMC driver. In cases where the
+	  flash driver must initialize before the MEMC RAM driver,
+	  initialization priorities can be set such that
+	  MEMC_MCUX_FLEXSPI_INIT_PRIORITY < FLASH_INIT_PRIORITY <
+	  MEMC_INIT_PRIORITY
+
+config MEMC_MCUX_FLEXSPI_INIT_XIP
+	bool "Initialize FLEXSPI when using device for XIP"
+	help
+	  Initialize the FLEXSPI device even when using it for XIP. If this
+	  Kconfig is enabled, the user must ensure that the pin control
+	  state used does not reconfigure the pins used to interface with
+	  the flash device used for XIP, and that the configuration settings
+	  used for the FLEXSPI are compatible with those needed for XIP from
+	  the flash device.
+
 config MEMC_MCUX_FLEXSPI
 	bool
 	select PINCTRL

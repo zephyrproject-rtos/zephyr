@@ -496,8 +496,6 @@ static int mcp251xfd_send(const struct device *dev, const struct can_frame *msg,
 		msg->flags & CAN_FRAME_FDF ? "FD frame" : "",
 		msg->flags & CAN_FRAME_BRS ? "BRS" : "");
 
-	__ASSERT_NO_MSG(callback != NULL);
-
 	if (!dev_data->common.started) {
 		return -ENETDOWN;
 	}
@@ -559,7 +557,6 @@ static int mcp251xfd_add_rx_filter(const struct device *dev, can_rx_callback_t r
 	int filter_idx;
 	int ret;
 
-	__ASSERT(rx_cb != NULL, "rx_cb can not be null");
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
 	for (filter_idx = 0; filter_idx < CONFIG_CAN_MAX_FILTER ; filter_idx++) {

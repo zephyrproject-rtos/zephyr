@@ -37,6 +37,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * which is only needed if the stack is not memory mapped.
 	 */
 	z_x86_set_stack_guard(stack);
+#else
+	ARG_UNUSED(stack);
 #endif
 #ifdef CONFIG_USERSPACE
 	switch_entry = z_x86_userspace_prepare_thread(thread);
@@ -68,11 +70,16 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 int arch_float_disable(struct k_thread *thread)
 {
 	/* x86-64 always has FP/SSE enabled so cannot be disabled */
+	ARG_UNUSED(thread);
+
 	return -ENOTSUP;
 }
 
 int arch_float_enable(struct k_thread *thread, unsigned int options)
 {
 	/* x86-64 always has FP/SSE enabled so nothing to do here */
+	ARG_UNUSED(thread);
+	ARG_UNUSED(options);
+
 	return 0;
 }

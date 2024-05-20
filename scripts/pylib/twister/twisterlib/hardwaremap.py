@@ -119,6 +119,7 @@ class HardwareMap:
         'Atmel Corp.',
         'Texas Instruments',
         'Silicon Labs',
+        'NXP',
         'NXP Semiconductors',
         'Microchip Technology Inc.',
         'FTDI',

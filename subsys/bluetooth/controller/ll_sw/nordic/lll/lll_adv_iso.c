@@ -839,7 +839,7 @@ static void isr_done_term(void *param)
 			sync_lll = adv_lll->sync;
 			if (sync_lll->iso_chm_done_req ==
 			    sync_lll->iso_chm_done_ack) {
-				struct node_rx_hdr *rx;
+				struct node_rx_pdu *rx;
 
 				/* Request ULL to update the channel map in the
 				 * BIGInfo struct present in the current PDU of
@@ -855,10 +855,10 @@ static void isr_done_term(void *param)
 				rx = ull_pdu_rx_alloc();
 				LL_ASSERT(rx);
 
-				rx->type = NODE_RX_TYPE_BIG_CHM_COMPLETE;
+				rx->hdr.type = NODE_RX_TYPE_BIG_CHM_COMPLETE;
 				rx->rx_ftr.param = lll;
 
-				ull_rx_put_sched(rx->link, rx);
+				ull_rx_put_sched(rx->hdr.link, rx);
 			}
 
 			/* Use new channel map */

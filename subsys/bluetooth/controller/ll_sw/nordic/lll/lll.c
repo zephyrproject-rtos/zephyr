@@ -719,6 +719,7 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 			struct lll_prepare_param *prepare_param,
 			uint8_t is_resume, uint8_t is_dequeue)
 {
+	struct lll_event *ready_short = NULL;
 	struct lll_event *ready;
 	struct lll_event *next;
 	uint8_t idx;
@@ -728,9 +729,35 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	idx = UINT8_MAX;
 	ready = prepare_dequeue_iter_ready_get(&idx);
 
+	/* Find any short prepare */
+	if (ready) {
+		uint32_t ticks_at_preempt_min = ready->prepare_param.ticks_at_expire;
+
+		do {
+			uint32_t ticks_at_preempt_next;
+			struct lll_event *ready_next;
+			uint32_t diff;
+
+			ready_next = prepare_dequeue_iter_ready_get(&idx);
+			if (!ready_next) {
+				break;
+			}
+
+			ticks_at_preempt_next = ready_next->prepare_param.ticks_at_expire;
+			diff = ticker_ticks_diff_get(ticks_at_preempt_next,
+						     ticks_at_preempt_min);
+			if ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) {
+				continue;
+			}
+
+			ready_short = ready_next;
+			ticks_at_preempt_min = ticks_at_preempt_next;
+		} while (true);
+	}
+
 	/* Current event active or another prepare is ready in the pipeline */
 	if ((!is_dequeue && !is_done_sync()) ||
-	    event.curr.abort_cb ||
+	    event.curr.abort_cb || ready_short ||
 	    (ready && is_resume)) {
 #if defined(CONFIG_BT_CTLR_LOW_LAT)
 		lll_prepare_cb_t resume_cb;
@@ -749,6 +776,11 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 		if (is_resume) {
 			return -EINPROGRESS;
+		}
+
+		/* Find any short prepare */
+		if (ready_short) {
+			ready = ready_short;
 		}
 
 		/* Always start preempt timeout for first prepare in pipeline */
@@ -898,10 +930,20 @@ static uint8_t volatile preempt_ack;
 static void ticker_stop_op_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
-	ARG_UNUSED(status);
 
 	LL_ASSERT(preempt_stop_req != preempt_stop_ack);
 	preempt_stop_ack = preempt_stop_req;
+
+	/* We do not fail on status not being success because under scenarios
+	 * where there is ticker_start then ticker_stop and then ticker_start,
+	 * the call to ticker_stop will fail and this is acceptable.
+	 * Also, the preempt_req and preempt_ack would not be update as the
+	 * ticker_start was not processed before ticker_stop. Hence, it is
+	 * safe to reset preempt_req and preempt_ack here.
+	 */
+	if (status == TICKER_STATUS_SUCCESS) {
+		LL_ASSERT(preempt_req != preempt_ack);
+	}
 
 	preempt_req = preempt_ack;
 }
@@ -945,13 +987,6 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 	    (preempt_req != preempt_ack)) {
 		uint32_t diff;
 
-		/* preempt timeout already started but no role/state in the head
-		 * of prepare pipeline.
-		 */
-		if (!prev || prev->is_aborted) {
-			return TICKER_STATUS_SUCCESS;
-		}
-
 		/* Calc the preempt timeout */
 		p = &next->prepare_param;
 		ull = HDR_LLL2ULL(p->param);
@@ -985,14 +1020,20 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 		 *        A proper solution will be to re-design the pipeline
 		 *        as a ordered list, instead of the current FIFO.
 		 */
-		/* Set early as we get called again through the call to
-		 * abort_cb().
+		/* preempt timeout already started but no role/state in the head
+		 * of prepare pipeline.
 		 */
-		ticks_at_preempt = ticks_at_preempt_new;
+		if (prev && !prev->is_aborted) {
+			/* Set early as we get called again through the call to
+			 * abort_cb().
+			 */
+			ticks_at_preempt = ticks_at_preempt_new;
 
-		/* Abort previous prepare that set the preempt timeout */
-		prev->is_aborted = 1U;
-		prev->abort_cb(&prev->prepare_param, prev->prepare_param.param);
+			/* Abort previous prepare that set the preempt timeout */
+			prev->is_aborted = 1U;
+			prev->abort_cb(&prev->prepare_param,
+				       prev->prepare_param.param);
+		}
 #endif /* CONFIG_BT_CTLR_EARLY_ABORT_PREVIOUS_PREPARE */
 
 		/* Schedule short preempt timeout */
@@ -1136,6 +1177,8 @@ static void preempt(void *param)
 			/* No ready prepare */
 			return;
 		}
+
+		LL_ASSERT(ready->prepare_param.param == param);
 	}
 
 	/* Check if current event want to continue */

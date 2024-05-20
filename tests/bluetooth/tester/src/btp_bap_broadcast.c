@@ -295,7 +295,7 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	struct bt_audio_codec_cfg codec_cfg;
 	const struct btp_bap_broadcast_source_setup_cmd *cp = cmd;
 	struct btp_bap_broadcast_source_setup_rp *rp = rsp;
-	struct bt_le_adv_param *param = BT_LE_EXT_ADV_NCONN_NAME;
+	struct bt_le_adv_param *param = BT_LE_EXT_ADV_NCONN;
 
 	/* Only one local source/BIG supported for now */
 	struct btp_bap_broadcast_local_source *source = &local_source;
@@ -307,7 +307,7 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
 
 	/* Broadcast Audio Streaming Endpoint advertising data */
-	struct bt_data base_ad;
+	struct bt_data base_ad[2];
 	struct bt_data per_ad;
 
 	LOG_DBG("");
@@ -344,11 +344,14 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	/* Setup extended advertising data */
 	net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
 	net_buf_simple_add_le24(&ad_buf, source->broadcast_id);
-	base_ad.type = BT_DATA_SVC_DATA16;
-	base_ad.data_len = ad_buf.len;
-	base_ad.data = ad_buf.data;
-	err = tester_gap_create_adv_instance(param, BTP_GAP_ADDR_TYPE_IDENTITY, &base_ad, 1, NULL,
-					     0, &gap_settings);
+	base_ad[0].type = BT_DATA_SVC_DATA16;
+	base_ad[0].data_len = ad_buf.len;
+	base_ad[0].data = ad_buf.data;
+	base_ad[1].type = BT_DATA_NAME_COMPLETE;
+	base_ad[1].data_len = sizeof(CONFIG_BT_DEVICE_NAME) - 1;
+	base_ad[1].data = CONFIG_BT_DEVICE_NAME;
+	err = tester_gap_create_adv_instance(param, BTP_GAP_ADDR_TYPE_IDENTITY, base_ad, 2,
+					     NULL, 0, &gap_settings);
 	if (err != 0) {
 		LOG_DBG("Failed to create extended advertising instance: %d", err);
 
@@ -1263,10 +1266,9 @@ static void bap_broadcast_assistant_recv_state_cb(struct bt_conn *conn, int err,
 	btp_send_broadcast_receive_state_ev(conn, state);
 }
 
-static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, int err,
-							  uint8_t src_id)
+static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, uint8_t src_id)
 {
-	LOG_DBG("err: %d", err);
+	LOG_DBG("");
 }
 
 static void bap_broadcast_assistant_scan_start_cb(struct bt_conn *conn, int err)

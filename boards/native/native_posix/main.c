@@ -118,40 +118,4 @@ int main(int argc, char *argv[])
 	return 1; /* LCOV_EXCL_LINE */
 }
 
-#else /* CONFIG_ARCH_POSIX_LIBFUZZER */
-
-const uint8_t *posix_fuzz_buf;
-size_t posix_fuzz_sz;
-
-/**
- * Entry point for fuzzing (when enabled). Works by placing the data
- * into two known symbols, triggering an app-visible interrupt, and
- * then letting the OS run for a fixed amount of time (intended to be
- * "long enough" to handle the event and reach a quiescent state
- * again)
- */
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t sz)
-{
-	static bool posix_initialized;
-
-	if (!posix_initialized) {
-		posix_init(0, NULL);
-		posix_initialized = true;
-	}
-
-	/* Provide the fuzz data to Zephyr as an interrupt, with
-	 * "DMA-like" data placed into posix_fuzz_buf/sz
-	 */
-	posix_fuzz_buf = data;
-	posix_fuzz_sz = sz;
-	hw_irq_ctrl_set_irq(CONFIG_ARCH_POSIX_FUZZ_IRQ);
-
-	/* Give the OS time to process whatever happened in that
-	 * interrupt and reach an idle state.
-	 */
-	posix_exec_for(k_ticks_to_us_ceil64(CONFIG_ARCH_POSIX_FUZZ_TICKS));
-
-	return 0;
-}
-
 #endif

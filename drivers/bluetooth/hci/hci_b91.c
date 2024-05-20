@@ -15,10 +15,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver_b91);
 
-#define HCI_CMD                 0x01
-#define HCI_ACL                 0x02
-#define HCI_EVT                 0x04
-
 #define HCI_BT_B91_TIMEOUT K_MSEC(2000)
 
 static K_SEM_DEFINE(hci_send_sem, 1, 1);
@@ -148,11 +144,11 @@ static void hci_b91_host_rcv_pkt(uint8_t *data, uint16_t len)
 	len -= sizeof(pkt_indicator);
 
 	switch (pkt_indicator) {
-	case HCI_EVT:
+	case BT_HCI_H4_EVT:
 		buf = bt_b91_evt_recv(data, len);
 		break;
 
-	case HCI_ACL:
+	case BT_HCI_H4_ACL:
 		buf = bt_b91_acl_recv(data, len);
 		break;
 
@@ -186,11 +182,11 @@ static int bt_b91_send(struct net_buf *buf)
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
-		type = HCI_ACL;
+		type = BT_HCI_H4_ACL;
 		break;
 
 	case BT_BUF_CMD:
-		type = HCI_CMD;
+		type = BT_HCI_H4_CMD;
 		break;
 
 	default:

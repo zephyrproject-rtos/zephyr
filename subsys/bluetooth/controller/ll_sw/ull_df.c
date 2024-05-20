@@ -569,7 +569,7 @@ void *ull_df_iq_report_alloc(void)
 	return MFIFO_DEQUEUE(iq_report_free);
 }
 
-void ull_df_iq_report_mem_release(struct node_rx_hdr *rx)
+void ull_df_iq_report_mem_release(struct node_rx_pdu *rx)
 {
 #if defined(CONFIG_BT_CTLR_DF_DEBUG_ENABLE)
 	IF_SINGLE_ADV_SYNC_SET(iq_report_alloc_count--);

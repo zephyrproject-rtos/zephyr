@@ -19,12 +19,14 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cyw43xxx_driver);
 
 #include <stdint.h>
+
+BUILD_ASSERT(DT_PROP(DT_CHOSEN(zephyr_bt_uart), hw_flow_control) == 1,
+		"hw_flow_control must be enabled for HCI H4 UART");
 
 #define DT_DRV_COMPAT infineon_cyw43xxx_bt_hci
 

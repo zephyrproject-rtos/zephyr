@@ -472,14 +472,12 @@ static int lsm6dsl_sample_fetch(const struct device *dev,
 static inline void lsm6dsl_accel_convert(struct sensor_value *val, int raw_val,
 					 float sensitivity)
 {
-	double dval;
+	int64_t dval;
 
-	/* Sensitivity is exposed in mg/LSB */
+	/* Sensitivity is exposed in ug/LSB */
 	/* Convert to m/s^2 */
-	dval = (double)(raw_val) * (double)sensitivity * SENSOR_G_DOUBLE / 1000;
-	val->val1 = (int32_t)dval;
-	val->val2 = (((int32_t)(dval * 1000)) % 1000) * 1000;
-
+	dval = (int64_t)raw_val * sensitivity;
+	sensor_ug_to_ms2(dval, val);
 }
 
 static inline int lsm6dsl_accel_get_channel(enum sensor_channel chan,
@@ -522,13 +520,12 @@ static int lsm6dsl_accel_channel_get(enum sensor_channel chan,
 static inline void lsm6dsl_gyro_convert(struct sensor_value *val, int raw_val,
 					float sensitivity)
 {
-	double dval;
+	int64_t dval;
 
-	/* Sensitivity is exposed in mdps/LSB */
-	/* Convert to rad/s */
-	dval = (double)(raw_val * (double)sensitivity * SENSOR_DEG2RAD_DOUBLE / 1000);
-	val->val1 = (int32_t)dval;
-	val->val2 = (((int32_t)(dval * 1000)) % 1000) * 1000;
+	/* Sensitivity is exposed in udps/LSB */
+	/* So, calculate value in 10 udps unit and then to rad/s */
+	dval = (int64_t)raw_val * sensitivity / 10;
+	sensor_10udegrees_to_rad(dval, val);
 }
 
 static inline int lsm6dsl_gyro_get_channel(enum sensor_channel chan,

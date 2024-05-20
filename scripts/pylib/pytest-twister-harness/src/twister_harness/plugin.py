@@ -68,6 +68,11 @@ def pytest_addoption(parser: pytest.Parser):
         help='Use the specified west runner (pyocd, nrfjprog, etc.).'
     )
     twister_harness_group.addoption(
+        '--runner-params',
+        action='append',
+        help='Use the specified west runner params.'
+    )
+    twister_harness_group.addoption(
         '--device-id',
         help='ID of connected hardware device (for example 000682459367).'
     )

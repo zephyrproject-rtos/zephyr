@@ -17,7 +17,7 @@
 #define CSL_MCU_PADCONFIG_LOCK0_KICK0_OFFSET	(0x1008)
 #define CSL_MCU_PADCONFIG_LOCK1_KICK0_OFFSET	(0x5008)
 
-static struct address_trans_region_config region_config[] = {
+static struct address_trans_region_config am6x_region_config[] = {
 	{
 		.system_addr = 0x0u,
 		.local_addr = 0x80000000u,
@@ -44,7 +44,7 @@ static struct address_trans_region_config region_config[] = {
  */
 };
 
-static void mmr_unlock(void)
+static void am6x_mmr_unlock(void)
 {
 	uint32_t baseAddr = PINCTRL_BASE_ADDR;
 	uintptr_t kickAddr;
@@ -62,12 +62,12 @@ static void mmr_unlock(void)
 	sys_write32(KICK1_UNLOCK_VAL, kickAddr);   /* KICK 1 */
 }
 
-static int am62x_m4_init(void)
+static int am6x_m4_init(void)
 {
-	sys_mm_drv_ti_rat_init(
-		region_config, ADDR_TRANSLATE_RAT_BASE_ADDR, ARRAY_SIZE(region_config));
-	mmr_unlock();
+	sys_mm_drv_ti_rat_init(am6x_region_config, ADDR_TRANSLATE_RAT_BASE_ADDR,
+		ARRAY_SIZE(am6x_region_config));
+	am6x_mmr_unlock();
 	return 0;
 }
 
-SYS_INIT(am62x_m4_init, EARLY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(am6x_m4_init, EARLY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

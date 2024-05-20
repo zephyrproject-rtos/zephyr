@@ -44,7 +44,7 @@ struct sof_dai_ssp_params {
 } __packed;
 
 static const struct device *const dev_dai_ssp =
-	DEVICE_DT_GET(DT_NODELABEL(ssp0));
+	DEVICE_DT_GET(DT_NODELABEL(ssp00));
 static const struct device *const dev_dma_dw =
 	DEVICE_DT_GET(DT_NODELABEL(lpgpdma0));
 

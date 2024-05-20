@@ -26,7 +26,6 @@ static bool leave_idle;
 static bool idle_entered;
 static bool testing_device_runtime;
 static bool testing_device_order;
-static bool testing_device_lock;
 static bool testing_force_state;
 
 enum pm_state forced_state;
@@ -167,18 +166,6 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 	/* If testing device order this function does not need to anything */
 	if (testing_device_order) {
-		return;
-	}
-
-	if (testing_device_lock) {
-		pm_device_state_get(device_a, &device_power_state);
-
-		/*
-		 * If the device has its state locked the device has
-		 * to be ACTIVE
-		 */
-		zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE,
-				NULL);
 		return;
 	}
 

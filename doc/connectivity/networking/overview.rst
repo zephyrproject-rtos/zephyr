@@ -32,13 +32,12 @@ can be disabled if not needed.
   * Multicast Listener Discovery v2 support
     (`RFC 3810 <https://tools.ietf.org/html/rfc3810>`_) is enabled by default.
   * IPv6 header compression (6lo) is available for IPv6 connectivity for
-    Bluetooth IPSP (`RFC 7668 <https://tools.ietf.org/html/rfc7668>`_) and
     IEEE 802.15.4 networks (`RFC 4944 <https://tools.ietf.org/html/rfc4944>`_).
 
-* **IPv4** The legacy IPv4 is supported by the networking stack. It cannot be
-  used by IEEE 802.15.4 or Bluetooth IPSP as those network technologies support
-  only IPv6. IPv4 can be used in Ethernet based networks. By default IPv4
-  support is disabled.
+* **IPv4** The legacy IPv4 is supported by the networking stack. It
+  cannot be used by IEEE 802.15.4 as this network technology supports
+  only IPv6. IPv4 can be used in Ethernet based networks. By default
+  IPv4 support is disabled.
 
   * DHCP (Dynamic Host Configuration Protocol) client is supported
     (`RFC 2131 <https://tools.ietf.org/html/rfc2131>`_).
@@ -84,6 +83,13 @@ can be disabled if not needed.
   well as several IPSO Smart Objects. (`LwM2M specification 1.1.1`_) is
   supported in similar manner when enabled with a Kconfig option.
   :zephyr:code-sample:`lwm2m-client` sample implements the library as an example.
+
+* **HTTP** Hypertext Transfer Protocol client and server are supported.
+  :ref:`http_client_interface` library supports HTTP/1.1 (`RFC 2616`_).
+  :ref:`http_server_interface` library supports HTTP/1.1 (`RFC 2616`_) and
+  HTTP/2 (`RFC 9113`_).
+  :zephyr:code-sample:`sockets-http-client` and
+  :zephyr:code-sample:`sockets-http-server` samples are provided.
 
 * **DNS** Domain Name Service
   (`RFC 1035 <https://tools.ietf.org/html/rfc1035>`_) client functionality
@@ -154,7 +160,7 @@ The networking stack source code tree is organized as follows:
 
 ``subsys/net/l2/``
   This is where the IP stack layer 2 code is located. This includes generic
-  support for Bluetooth IPSP adaptation, Ethernet, IEEE 802.15.4 and Wi-Fi.
+  support for Ethernet, IEEE 802.15.4 and Wi-Fi.
 
 ``subsys/net/lib/``
   Application-level protocols (DNS, MQTT, etc.) and additional stack
@@ -178,3 +184,9 @@ The networking stack source code tree is organized as follows:
 
 .. _LwM2M specification 1.1.1:
    http://openmobilealliance.org/release/LightweightM2M/V1_1_1-20190617-A/
+
+.. _RFC 2616:
+   https://tools.ietf.org/html/rfc2616
+
+.. _RFC 9113:
+   https://tools.ietf.org/html/rfc9113

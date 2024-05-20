@@ -32,6 +32,8 @@
 	*(SORT_BY_NAME(._##struct_type.static.*)); \
 	_CONCAT(_##struct_type, _list_end) = .
 
+#define Z_LINK_ITERABLE_SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN
+
 /**
  * @brief Define a read-only iterable section output.
  *

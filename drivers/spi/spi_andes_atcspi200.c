@@ -887,7 +887,7 @@ static void spi_atcspi200_irq_handler(void *arg)
 		.channel_direction = ANDES_DMA_CONFIG_DIRECTION(		\
 				     DMA_CHANNEL_CONFIG(index, dir)),		\
 		.complete_callback_en = 0,					\
-		.error_callback_en = 0,						\
+		.error_callback_dis = 0,					\
 		.source_data_size =						\
 			ANDES_DMA_CONFIG_##src_dev##_DATA_SIZE(			\
 					DMA_CHANNEL_CONFIG(index, dir)		\

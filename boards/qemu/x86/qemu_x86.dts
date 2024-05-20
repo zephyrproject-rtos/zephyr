@@ -61,7 +61,6 @@
 			device-id = <0x8406>;
 			interrupts = <11 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
-			bus-speed = <125000>;
 
 			can-transceiver {
 				max-bitrate = <1000000>;

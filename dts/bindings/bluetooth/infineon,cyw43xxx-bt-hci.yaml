@@ -18,6 +18,9 @@ description: |
                      &p3_2_scb2_uart_rts &p3_3_scb2_uart_cts>;
         pinctrl-names = "default";
 
+        /* HW Flow control must be enabled for HCI H4 */
+        hw-flow-control;
+
         bt-hci {
           status = "okay";
           compatible = "infineon,cyw43xxx-bt-hci";

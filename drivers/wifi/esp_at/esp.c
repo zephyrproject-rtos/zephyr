@@ -256,7 +256,7 @@ MODEM_CMD_DEFINE(on_cmd_cipstamac)
 static int esp_pull_quoted(char **str, char *str_end, char **unquoted)
 {
 	if (**str != '"') {
-		return -EBADMSG;
+		return -EAGAIN;
 	}
 
 	(*str)++;
@@ -381,6 +381,8 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap)
 	if (err) {
 		return err;
 	}
+
+	res.channel = strtol(channel, NULL, 10);
 
 	if (dev->scan_cb) {
 		dev->scan_cb(dev->net_iface, 0, &res);

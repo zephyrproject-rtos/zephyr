@@ -28,6 +28,16 @@
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
 			clock-frequency = <32000000>;
+			cpu-power-states = <&standby>;
+		};
+
+		power-states {
+			standby: standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <500>;
+				exit-latency-us = <100>;
+			};
 		};
 	};
 
@@ -262,6 +272,7 @@
 			reg = <0x50020100 0x100>;
 			periph-clock-config = <0x02>;
 			interrupts = <6 0>;
+			hw-flow-control-supported;
 			status = "disabled";
 		};
 
@@ -270,6 +281,7 @@
 			reg = <0x50020200 0x100>;
 			periph-clock-config = <0x08>;
 			interrupts = <7 0>;
+			hw-flow-control-supported;
 			status = "disabled";
 		};
 

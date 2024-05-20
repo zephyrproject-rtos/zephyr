@@ -538,7 +538,7 @@ int gnss_nmea0183_parse_gga(const char **argv, uint16_t argc, struct gnss_data *
 	data->info.hdop = (uint16_t)tmp64;
 
 	/* Parse altitude */
-	if ((gnss_parse_dec_to_milli(argv[11], &tmp64) < 0) ||
+	if ((gnss_parse_dec_to_milli(argv[9], &tmp64) < 0) ||
 	    (tmp64 > INT32_MAX) ||
 	    (tmp64 < INT32_MIN)) {
 		return -EINVAL;

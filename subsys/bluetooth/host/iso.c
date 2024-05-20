@@ -168,7 +168,7 @@ struct net_buf *bt_iso_create_pdu_timeout(struct net_buf_pool *pool,
 		pool = &iso_tx_pool;
 	}
 
-	reserve += sizeof(struct bt_hci_iso_data_hdr);
+	reserve += sizeof(struct bt_hci_iso_sdu_hdr);
 
 #if defined(CONFIG_NET_BUF_LOG)
 	return bt_conn_create_pdu_timeout_debug(pool, reserve, timeout, func,
@@ -585,7 +585,7 @@ struct net_buf *bt_iso_get_rx(k_timeout_t timeout)
 
 void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 {
-	struct bt_hci_iso_data_hdr *hdr;
+	struct bt_hci_iso_sdu_hdr *hdr;
 	struct bt_iso_chan *chan;
 	uint8_t pb, ts;
 	uint16_t len, pkt_seq_no;
@@ -609,12 +609,12 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 		 * of an SDU or a complete SDU.
 		 */
 		if (ts) {
-			struct bt_hci_iso_ts_data_hdr *ts_hdr;
+			struct bt_hci_iso_sdu_ts_hdr *ts_hdr;
 
 			ts_hdr = net_buf_pull_mem(buf, sizeof(*ts_hdr));
 			iso_info(buf)->ts = sys_le32_to_cpu(ts_hdr->ts);
 
-			hdr = &ts_hdr->data;
+			hdr = &ts_hdr->sdu;
 			iso_info(buf)->flags |= BT_ISO_FLAGS_TS;
 		} else {
 			hdr = net_buf_pull_mem(buf, sizeof(*hdr));
@@ -764,25 +764,26 @@ static int validate_send(const struct bt_iso_chan *chan, const struct net_buf *b
 	BT_ISO_DATA_DBG("chan %p len %zu", chan, net_buf_frags_len(buf));
 
 	if (chan->state != BT_ISO_STATE_CONNECTED) {
-		LOG_DBG("Not connected");
+		LOG_DBG("Channel %p not connected", chan);
 		return -ENOTCONN;
 	}
 
 	iso_conn = chan->iso;
 	if (!iso_conn->iso.info.can_send) {
-		LOG_DBG("Channel not able to send");
+		LOG_DBG("Channel %p not able to send", chan);
 		return -EINVAL;
 	}
 
 	if (buf->size < hdr_size) {
-		LOG_DBG("Cannot send ISO packet with buffer size %u", buf->size);
+		LOG_DBG("Channel %p cannot send ISO packet with buffer size %u", chan, buf->size);
 
 		return -EMSGSIZE;
 	}
 
 	max_data_len = iso_chan_max_data_len(chan);
 	if (buf->len > max_data_len) {
-		LOG_DBG("Cannot send %u octets, maximum %u", buf->len, max_data_len);
+		LOG_DBG("Channel %p cannot send %u octets, maximum %u", chan, buf->len,
+			max_data_len);
 		return -EMSGSIZE;
 	}
 
@@ -791,11 +792,11 @@ static int validate_send(const struct bt_iso_chan *chan, const struct net_buf *b
 
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num)
 {
-	struct bt_hci_iso_data_hdr *hdr;
+	struct bt_hci_iso_sdu_hdr *hdr;
 	struct bt_conn *iso_conn;
 	int err;
 
-	err = validate_send(chan, buf, BT_HCI_ISO_DATA_HDR_SIZE);
+	err = validate_send(chan, buf, BT_HCI_ISO_SDU_HDR_SIZE);
 	if (err != 0) {
 		return err;
 	}
@@ -815,11 +816,11 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq
 int bt_iso_chan_send_ts(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num,
 			uint32_t ts)
 {
-	struct bt_hci_iso_ts_data_hdr *hdr;
+	struct bt_hci_iso_sdu_ts_hdr *hdr;
 	struct bt_conn *iso_conn;
 	int err;
 
-	err = validate_send(chan, buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
+	err = validate_send(chan, buf, BT_HCI_ISO_SDU_TS_HDR_SIZE);
 	if (err != 0) {
 		return err;
 	}
@@ -828,8 +829,8 @@ int bt_iso_chan_send_ts(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t 
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->ts = ts;
-	hdr->data.sn = sys_cpu_to_le16(seq_num);
-	hdr->data.slen = sys_cpu_to_le16(
+	hdr->sdu.sn = sys_cpu_to_le16(seq_num);
+	hdr->sdu.slen = sys_cpu_to_le16(
 		bt_iso_pkt_len_pack(net_buf_frags_len(buf) - sizeof(*hdr), BT_ISO_DATA_VALID));
 
 	iso_conn = chan->iso;
@@ -1371,7 +1372,7 @@ void hci_le_cis_req(struct net_buf *buf)
 
 	iso->handle = cis_handle;
 	iso->role = BT_HCI_ROLE_PERIPHERAL;
-	bt_conn_set_state(iso, BT_CONN_CONNECTING);
+	bt_conn_set_state(iso, BT_CONN_INITIATING);
 
 	err = hci_le_accept_cis(cis_handle);
 	if (err) {
@@ -2194,6 +2195,11 @@ void bt_iso_security_changed(struct bt_conn *acl, uint8_t hci_status)
 			continue;
 		}
 
+		/* Set state to disconnected to indicate that we are no longer waiting for
+		 * encryption.
+		 * TODO: Remove the BT_ISO_STATE_ENCRYPT_PENDING state and replace with a flag to
+		 * avoid these unnecessary state changes
+		 */
 		bt_iso_chan_set_state(iso_chan, BT_ISO_STATE_DISCONNECTED);
 
 		if (hci_status == BT_HCI_ERR_SUCCESS) {
@@ -2247,7 +2253,7 @@ void bt_iso_security_changed(struct bt_conn *acl, uint8_t hci_status)
 		__ASSERT(cig != NULL, "CIG was NULL");
 		cig->state = BT_ISO_CIG_STATE_ACTIVE;
 
-		bt_conn_set_state(iso_chan->iso, BT_CONN_CONNECTING);
+		bt_conn_set_state(iso_chan->iso, BT_CONN_INITIATING);
 		bt_iso_chan_set_state(iso_chan, BT_ISO_STATE_CONNECTING);
 	}
 }
@@ -2454,7 +2460,7 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 		}
 
 		iso_chan->iso->iso.acl = bt_conn_ref(param[i].acl);
-		bt_conn_set_state(iso_chan->iso, BT_CONN_CONNECTING);
+		bt_conn_set_state(iso_chan->iso, BT_CONN_INITIATING);
 		bt_iso_chan_set_state(iso_chan, BT_ISO_STATE_CONNECTING);
 
 		cig = get_cig(iso_chan);
@@ -2528,7 +2534,7 @@ static void big_disconnect(struct bt_iso_big *big, uint8_t reason)
 	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
 		bis->iso->err = reason;
 
-		bt_iso_disconnected(bis->iso);
+		bt_iso_chan_disconnected(bis, reason);
 	}
 }
 
@@ -3278,3 +3284,31 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 }
 #endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
 #endif /* CONFIG_BT_ISO_BROADCAST */
+
+void bt_iso_reset(void)
+{
+#if defined(CONFIG_BT_ISO_CENTRAL)
+	for (size_t i = 0U; i < ARRAY_SIZE(cigs); i++) {
+		struct bt_iso_cig *cig = &cigs[i];
+		struct bt_iso_chan *cis, *tmp;
+
+		/* Call the disconnected callback for each CIS that is no idle */
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cig->cis_channels, cis, tmp, node) {
+			if (cis->state != BT_ISO_STATE_DISCONNECTED) {
+				bt_iso_chan_disconnected(cis, BT_HCI_ERR_UNSPECIFIED);
+			}
+		}
+
+		cleanup_cig(cig);
+	}
+#endif /* CONFIG_BT_ISO_CENTRAL */
+
+#if defined(CONFIG_BT_ISO_BROADCAST)
+	for (size_t i = 0U; i < ARRAY_SIZE(bigs); i++) {
+		struct bt_iso_big *big = &bigs[i];
+
+		big_disconnect(big, BT_HCI_ERR_UNSPECIFIED);
+		cleanup_big(big);
+	}
+#endif /* CONFIG_BT_ISO_BROADCAST */
+}

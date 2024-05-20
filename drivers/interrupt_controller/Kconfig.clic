@@ -10,9 +10,20 @@ config NUCLEI_ECLIC
 	help
 	  Interrupt controller for Nuclei SoC core.
 
+config NRFX_CLIC
+	bool "VPR Core Local Interrpt Controller (CLIC)"
+	default y
+	depends on DT_HAS_NORDIC_NRF_CLIC_ENABLED
+	help
+	  Interrupt controller for Nordic VPR cores.
+
+if NUCLEI_ECLIC
+
 config LEGACY_CLIC
 	bool "Use the legacy clic specification"
 	depends on RISCV_HAS_CLIC
 	help
 	  Enables legacy clic, where smclicshv extension is not supported and
 	  hardware vectoring is set via mode bits of mtvec.
+
+endif # NUCLEI_ECLIC

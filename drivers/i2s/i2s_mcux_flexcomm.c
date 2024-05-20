@@ -449,7 +449,7 @@ static void i2s_mcux_config_dma_blocks(const struct device *dev,
 	LOG_DBG("channel_direction is %d", stream->dma_cfg.channel_direction);
 	LOG_DBG("complete_callback_en is %d",
 		stream->dma_cfg.complete_callback_en);
-	LOG_DBG("error_callback_en is %d", stream->dma_cfg.error_callback_en);
+	LOG_DBG("error_callback_dis is %d", stream->dma_cfg.error_callback_dis);
 	LOG_DBG("source_handshake is %d", stream->dma_cfg.source_handshake);
 	LOG_DBG("dest_handshake is %d", stream->dma_cfg.dest_handshake);
 	LOG_DBG("channel_priority is %d", stream->dma_cfg.channel_priority);

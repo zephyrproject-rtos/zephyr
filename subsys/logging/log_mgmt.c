@@ -450,7 +450,8 @@ uint32_t filter_set(int id, uint32_t domain_id, int16_t source_id, uint32_t leve
 
 		STRUCT_SECTION_COUNT(log_backend, &backend_cnt);
 		for (size_t i = 0; i < backend_cnt; i++) {
-			uint32_t current = filter_set(i, domain_id, source_id, level);
+			uint32_t current = filter_set(log_backend_id_get(log_backend_get(i)),
+							domain_id, source_id, level);
 
 			max = MAX(current, max);
 		}

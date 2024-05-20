@@ -5,6 +5,10 @@ common:
     - http_client
   min_ram: 32
   depends_on: netif
+  # native_posix does not work with CONFIG_POSIX_API
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
 sample:
   description: HTTP client sample
   name: http_client

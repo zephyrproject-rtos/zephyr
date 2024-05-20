@@ -215,16 +215,9 @@ static void bap_broadcast_assistant_recv_state_cb(
 	}
 }
 
-static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn,
-							  int err,
-							  uint8_t src_id)
+static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, uint8_t src_id)
 {
-	if (err != 0) {
-		shell_error(ctx_shell, "BASS recv state removed failed (%d)",
-			    err);
-	} else {
-		shell_print(ctx_shell, "BASS recv state %u removed", src_id);
-	}
+	shell_print(ctx_shell, "BASS recv state %u removed", src_id);
 }
 
 static void bap_broadcast_assistant_scan_start_cb(struct bt_conn *conn, int err)
@@ -810,6 +803,7 @@ static inline bool add_pa_sync_base_subgroup_cb(const struct bt_bap_base_subgrou
 
 	ret = bt_bap_base_subgroup_foreach_bis(subgroup, add_pa_sync_base_subgroup_bis_cb,
 					       subgroup_param);
+
 	if (ret < 0) {
 		return false;
 	}
@@ -829,6 +823,7 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 	struct bt_le_per_adv_sync_info pa_info;
 	unsigned long broadcast_id;
 	uint32_t bis_bitfield_req;
+	uint32_t subgroups_bis_sync;
 	int err;
 
 	if (pa_sync == NULL) {
@@ -847,6 +842,8 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 	bt_addr_le_copy(&param.addr, &pa_info.addr);
 	param.adv_sid = pa_info.sid;
 	param.pa_interval = pa_info.interval;
+
+	memset(&subgroup_params, 0, sizeof(subgroup_params));
 
 	param.pa_sync = shell_strtobool(argv[1], 0, &err);
 	if (err != 0) {
@@ -870,6 +867,7 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 	param.broadcast_id = broadcast_id;
 
 	bis_bitfield_req = 0U;
+	subgroups_bis_sync = 0U;
 	for (size_t i = 3U; i < argc; i++) {
 		const unsigned long index = shell_strtoul(argv[i], 16, &err);
 
@@ -898,6 +896,27 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 
 			return -ENOEXEC;
 		}
+	}
+
+	/* use the BASE to verify the BIS indexes set by command */
+	for (size_t j = 0U; j < param.num_subgroups; j++) {
+		if (bis_bitfield_req == 0) {
+			/* Request a PA sync without BIS sync */
+			subgroup_params[j].bis_sync = 0;
+		} else {
+			subgroups_bis_sync |= subgroup_params[j].bis_sync;
+			/* only set the BIS index field as optional parameters */
+			/* not to whatever is in the BASE */
+			subgroup_params[j].bis_sync &= bis_bitfield_req;
+		}
+	}
+
+	if ((subgroups_bis_sync & bis_bitfield_req) != bis_bitfield_req) {
+		/* bis_sync of all subgroups should contain at least all the bits in request */
+		/* Otherwise Command will be rejected */
+		shell_error(ctx_shell, "Cannot set BIS index 0x%06X when BASE subgroups only "
+			    "supports %d", bis_bitfield_req, subgroups_bis_sync);
+		return -ENOEXEC;
 	}
 
 	err = bt_bap_broadcast_assistant_add_src(default_conn, &param);

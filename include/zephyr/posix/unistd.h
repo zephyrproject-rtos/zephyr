@@ -37,23 +37,23 @@ extern "C" {
 
 /* Constants for Options and Option Groups */
 #define _POSIX_ADVISORY_INFO		  (-1L)
-#define _POSIX_ASYNCHRONOUS_IO		  (-1L)
-#define _POSIX_BARRIERS			  Z_SC_VAL_IFDEF(CONFIG_PTHREAD_IPC, _POSIX_VERSION)
-#define _POSIX_CHOWN_RESTRICTED		  (-1L)
+#define _POSIX_ASYNCHRONOUS_IO Z_SC_VAL_IFDEF(CONFIG_POSIX_ASYNCHRONOUS_IO, _POSIX_VERSION)
+#define _POSIX_BARRIERS			  Z_SC_VAL_IFDEF(CONFIG_PTHREAD_BARRIER, _POSIX_VERSION)
+#define _POSIX_CHOWN_RESTRICTED		  (0)
 #define _POSIX_CLOCK_SELECTION		  Z_SC_VAL_IFDEF(CONFIG_POSIX_CLOCK, _POSIX_VERSION)
 #define _POSIX_CPUTIME			  (-1L)
-#define _POSIX_FSYNC			  (-1L)
+#define _POSIX_FSYNC		  Z_SC_VAL_IFDEF(CONFIG_POSIX_FSYNC, _POSIX_VERSION)
 #define _POSIX_IPV6			  Z_SC_VAL_IFDEF(CONFIG_NET_IPV6, _POSIX_VERSION)
 #define _POSIX_JOB_CONTROL		  (-1L)
-#define _POSIX_MAPPED_FILES		  _POSIX_VERSION
+#define _POSIX_MAPPED_FILES		  (-1L)
 #define _POSIX_MEMLOCK			  (-1L)
 #define _POSIX_MEMLOCK_RANGE		  (-1L)
 #define _POSIX_MEMORY_PROTECTION	  (-1L)
 #define _POSIX_MESSAGE_PASSING		  Z_SC_VAL_IFDEF(CONFIG_POSIX_MQUEUE, _POSIX_VERSION)
 #define _POSIX_MONOTONIC_CLOCK		  Z_SC_VAL_IFDEF(CONFIG_POSIX_CLOCK, _POSIX_VERSION)
-#define _POSIX_NO_TRUNC			  (-1L)
+#define _POSIX_NO_TRUNC			  (0)
 #define _POSIX_PRIORITIZED_IO		  (-1L)
-#define _POSIX_PRIORITY_SCHEDULING	  (-1L)
+#define _POSIX_PRIORITY_SCHEDULING Z_SC_VAL_IFDEF(CONFIG_POSIX_PRIORITY_SCHEDULING, _POSIX_VERSION)
 #define _POSIX_RAW_SOCKETS		  Z_SC_VAL_IFDEF(CONFIG_NET_SOCKETS_PACKET, _POSIX_VERSION)
 #define _POSIX_READER_WRITER_LOCKS	  Z_SC_VAL_IFDEF(CONFIG_PTHREAD_IPC, _POSIX_VERSION)
 #define _POSIX_REALTIME_SIGNALS		  (-1L)
@@ -237,6 +237,8 @@ int close(int file);
 ssize_t write(int file, const void *buffer, size_t count);
 ssize_t read(int file, void *buffer, size_t count);
 off_t lseek(int file, off_t offset, int whence);
+int fsync(int fd);
+int ftruncate(int fd, off_t length);
 
 /* File System related operations */
 int rename(const char *old, const char *newp);
@@ -261,6 +263,7 @@ extern char *optarg;
 extern int opterr, optind, optopt;
 #endif
 
+int getentropy(void *buffer, size_t length);
 pid_t getpid(void);
 unsigned sleep(unsigned int seconds);
 int usleep(useconds_t useconds);

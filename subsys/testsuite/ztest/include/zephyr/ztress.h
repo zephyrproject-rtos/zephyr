@@ -154,7 +154,7 @@ struct ztress_context_data {
 #define Z_ZTRESS_TIMER_IDX(idx, data) \
 	((GET_ARG_N(1, __DEBRACKET data)) == ZTRESS_ID_K_TIMER ? idx : 0)
 
-/** @intenal Macro validates that @ref ZTRESS_TIMER context is not used except for
+/** @internal Macro validates that @ref ZTRESS_TIMER context is not used except for
  * the first item in the list of contexts.
  */
 #define Z_ZTRESS_TIMER_CONTEXT_VALIDATE(...) \

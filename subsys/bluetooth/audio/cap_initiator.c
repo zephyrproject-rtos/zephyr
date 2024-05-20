@@ -315,10 +315,11 @@ int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcas
 
 static void
 bt_cap_initiator_discover_complete(struct bt_conn *conn, int err,
+				   const struct bt_csip_set_coordinator_set_member *member,
 				   const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (cap_cb && cap_cb->unicast_discovery_complete) {
-		cap_cb->unicast_discovery_complete(conn, err, csis_inst);
+		cap_cb->unicast_discovery_complete(conn, err, member, csis_inst);
 	}
 }
 

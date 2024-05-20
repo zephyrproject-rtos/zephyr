@@ -96,11 +96,11 @@ struct iq_sample {
 
 /* Receive node aimed to report collected IQ samples during CTE receive */
 struct node_rx_iq_report {
-	/* hdr member must be a first member of the structure. It can't be moved because
+	/* node_rx_pdu member must be a first member of the structure. It can't be moved because
 	 * it is expected to be in the beginning of a node memory for common handling of
 	 * all node_rx_xxx types.
 	 */
-	struct node_rx_hdr hdr;
+	struct node_rx_pdu rx;
 	uint8_t sample_count;
 	struct pdu_cte_info cte_info;
 	uint8_t local_slot_durations;

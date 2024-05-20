@@ -329,6 +329,10 @@ typedef void *(*lwm2m_engine_get_data_cb_t)(uint16_t obj_inst_id,
  * make use of this callback to pass the data back to the client or LwM2M
  * objects.
  *
+ * On a block-wise transfers the handler is called multiple times with the data blocks
+ * and increasing offset. The last block has the last_block flag set to true.
+ * Beginning of the block transfer has the offset set to 0.
+ *
  * A function of this type can be registered via:
  * lwm2m_engine_register_validate_callback()
  * lwm2m_engine_register_post_write_callback()
@@ -344,6 +348,7 @@ typedef void *(*lwm2m_engine_get_data_cb_t)(uint16_t obj_inst_id,
  *                       false.
  * @param[in] total_size Expected total size of data for a block transfer.
  *                       For non-block transfers this is 0.
+ * @param[in] offset Offset of the data block. For non-block transfers this is always 0.
  *
  * @return Callback returns a negative error code (errno.h) indicating
  *         reason of failure or 0 for success.
@@ -351,7 +356,7 @@ typedef void *(*lwm2m_engine_get_data_cb_t)(uint16_t obj_inst_id,
 typedef int (*lwm2m_engine_set_data_cb_t)(uint16_t obj_inst_id,
 					  uint16_t res_id, uint16_t res_inst_id,
 					  uint8_t *data, uint16_t data_len,
-					  bool last_block, size_t total_size);
+					  bool last_block, size_t total_size, size_t offset);
 
 /**
  * @brief Asynchronous event notification callback.

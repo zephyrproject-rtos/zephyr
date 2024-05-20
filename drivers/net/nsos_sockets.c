@@ -28,6 +28,7 @@
 #include "nsos_errno.h"
 #include "nsos_fcntl.h"
 #include "nsos_netdb.h"
+#include "nsos_socket.h"
 
 #include "nsi_host_trampolines.h"
 
@@ -40,6 +41,8 @@ struct nsos_socket {
 	int fd;
 	struct nsos_mid_pollfd pollfd;
 	struct k_poll_signal poll;
+
+	k_timeout_t recv_timeout;
 
 	sys_dnode_t node;
 };
@@ -179,6 +182,7 @@ static int nsos_socket_create(int family, int type, int proto)
 	}
 
 	sock->fd = fd;
+	sock->recv_timeout = K_FOREVER;
 
 	sock->pollfd.fd = nsos_adapt_socket(family_mid, type_mid, proto_mid);
 	if (sock->pollfd.fd < 0) {
@@ -367,12 +371,21 @@ static int nsos_ioctl(void *obj, unsigned int request, va_list args)
 
 		return -errno_from_nsos_mid(-ret);
 	}
+
+	case ZFD_IOCTL_FIONREAD: {
+		int *avail = va_arg(args, int *);
+		int ret;
+
+		ret = nsos_adapt_fionread(sock->pollfd.fd, avail);
+
+		return -errno_from_nsos_mid(-ret);
+	}
 	}
 
 	return -EINVAL;
 }
 
-static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t *addrlen,
+static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
 				struct nsos_mid_sockaddr **addr_mid, size_t *addrlen_mid)
 {
 	if (!addr || !addrlen) {
@@ -389,7 +402,7 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t *addrlen,
 		struct nsos_mid_sockaddr_in *addr_in_mid =
 			(struct nsos_mid_sockaddr_in *)*addr_mid;
 
-		if (*addrlen < sizeof(*addr_in)) {
+		if (addrlen < sizeof(*addr_in)) {
 			return -NSOS_MID_EINVAL;
 		}
 
@@ -407,7 +420,7 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t *addrlen,
 		struct nsos_mid_sockaddr_in6 *addr_in_mid =
 			(struct nsos_mid_sockaddr_in6 *)*addr_mid;
 
-		if (*addrlen < sizeof(*addr_in)) {
+		if (addrlen < sizeof(*addr_in)) {
 			return -NSOS_MID_EINVAL;
 		}
 
@@ -477,7 +490,7 @@ static int nsos_bind(void *obj, const struct sockaddr *addr, socklen_t addrlen)
 	size_t addrlen_mid;
 	int ret;
 
-	ret = sockaddr_to_nsos_mid(addr, &addrlen, &addr_mid, &addrlen_mid);
+	ret = sockaddr_to_nsos_mid(addr, addrlen, &addr_mid, &addrlen_mid);
 	if (ret < 0) {
 		goto return_ret;
 	}
@@ -501,7 +514,7 @@ static int nsos_connect(void *obj, const struct sockaddr *addr, socklen_t addrle
 	size_t addrlen_mid;
 	int ret;
 
-	ret = sockaddr_to_nsos_mid(addr, &addrlen, &addr_mid, &addrlen_mid);
+	ret = sockaddr_to_nsos_mid(addr, addrlen, &addr_mid, &addrlen_mid);
 	if (ret < 0) {
 		goto return_ret;
 	}
@@ -549,7 +562,7 @@ static int nsos_wait_for_pollin(struct nsos_socket *sock)
 		return ret;
 	}
 
-	ret = k_poll(poll_events, ARRAY_SIZE(poll_events), K_FOREVER);
+	ret = k_poll(poll_events, ARRAY_SIZE(poll_events), sock->recv_timeout);
 	if (ret != 0 && ret != -EAGAIN && ret != -EINTR) {
 		return ret;
 	}
@@ -653,7 +666,7 @@ static ssize_t nsos_sendto(void *obj, const void *buf, size_t len, int flags,
 
 	flags_mid = ret;
 
-	ret = sockaddr_to_nsos_mid(addr, &addrlen, &addr_mid, &addrlen_mid);
+	ret = sockaddr_to_nsos_mid(addr, addrlen, &addr_mid, &addrlen_mid);
 	if (ret < 0) {
 		goto return_ret;
 	}
@@ -672,8 +685,57 @@ return_ret:
 
 static ssize_t nsos_sendmsg(void *obj, const struct msghdr *msg, int flags)
 {
-	errno = ENOTSUP;
-	return -1;
+	struct nsos_socket *sock = obj;
+	struct nsos_mid_sockaddr_storage addr_storage_mid;
+	struct nsos_mid_sockaddr *addr_mid = (struct nsos_mid_sockaddr *)&addr_storage_mid;
+	size_t addrlen_mid = sizeof(addr_storage_mid);
+	struct nsos_mid_msghdr msg_mid;
+	struct nsos_mid_iovec *msg_iov;
+	int flags_mid;
+	int ret;
+
+	ret = socket_flags_to_nsos_mid(flags);
+	if (ret < 0) {
+		goto return_ret;
+	}
+
+	flags_mid = ret;
+
+	ret = sockaddr_to_nsos_mid(msg->msg_name, msg->msg_namelen, &addr_mid, &addrlen_mid);
+	if (ret < 0) {
+		goto return_ret;
+	}
+
+	msg_iov = k_calloc(msg->msg_iovlen, sizeof(*msg_iov));
+	if (!msg_iov) {
+		ret = -ENOMEM;
+		goto return_ret;
+	}
+
+	for (size_t i = 0; i < msg->msg_iovlen; i++) {
+		msg_iov[i].iov_base = msg->msg_iov[i].iov_base;
+		msg_iov[i].iov_len = msg->msg_iov[i].iov_len;
+	}
+
+	msg_mid.msg_name = addr_mid;
+	msg_mid.msg_namelen = addrlen_mid;
+	msg_mid.msg_iov = msg_iov;
+	msg_mid.msg_iovlen = msg->msg_iovlen;
+	msg_mid.msg_control = NULL;
+	msg_mid.msg_controllen = 0;
+	msg_mid.msg_flags = 0;
+
+	ret = nsos_adapt_sendmsg(sock->pollfd.fd, &msg_mid, flags_mid);
+
+	k_free(msg_iov);
+
+return_ret:
+	if (ret < 0) {
+		errno = errno_from_nsos_mid(-ret);
+		return -1;
+	}
+
+	return ret;
 }
 
 static int nsos_recvfrom_with_poll(struct nsos_socket *sock, void *buf, size_t len, int flags,
@@ -746,6 +808,393 @@ static ssize_t nsos_recvmsg(void *obj, struct msghdr *msg, int flags)
 	return -1;
 }
 
+static int socket_type_from_nsos_mid(int type_mid, int *type)
+{
+	switch (type_mid) {
+	case NSOS_MID_SOCK_STREAM:
+		*type = SOCK_STREAM;
+		break;
+	case NSOS_MID_SOCK_DGRAM:
+		*type = SOCK_DGRAM;
+		break;
+	case NSOS_MID_SOCK_RAW:
+		*type = SOCK_RAW;
+		break;
+	default:
+		return -NSOS_MID_ESOCKTNOSUPPORT;
+	}
+
+	return 0;
+}
+
+static int socket_proto_from_nsos_mid(int proto_mid, int *proto)
+{
+	switch (proto_mid) {
+	case NSOS_MID_IPPROTO_IP:
+		*proto = IPPROTO_IP;
+		break;
+	case NSOS_MID_IPPROTO_ICMP:
+		*proto = IPPROTO_ICMP;
+		break;
+	case NSOS_MID_IPPROTO_IGMP:
+		*proto = IPPROTO_IGMP;
+		break;
+	case NSOS_MID_IPPROTO_IPIP:
+		*proto = IPPROTO_IPIP;
+		break;
+	case NSOS_MID_IPPROTO_TCP:
+		*proto = IPPROTO_TCP;
+		break;
+	case NSOS_MID_IPPROTO_UDP:
+		*proto = IPPROTO_UDP;
+		break;
+	case NSOS_MID_IPPROTO_IPV6:
+		*proto = IPPROTO_IPV6;
+		break;
+	case NSOS_MID_IPPROTO_RAW:
+		*proto = IPPROTO_RAW;
+		break;
+	default:
+		return -NSOS_MID_EPROTONOSUPPORT;
+	}
+
+	return 0;
+}
+
+static int socket_family_from_nsos_mid(int family_mid, int *family)
+{
+	switch (family_mid) {
+	case NSOS_MID_AF_UNSPEC:
+		*family = AF_UNSPEC;
+		break;
+	case NSOS_MID_AF_INET:
+		*family = AF_INET;
+		break;
+	case NSOS_MID_AF_INET6:
+		*family = AF_INET6;
+		break;
+	default:
+		return -NSOS_MID_EAFNOSUPPORT;
+	}
+
+	return 0;
+}
+
+static int nsos_getsockopt_int(struct nsos_socket *sock, int nsos_mid_level, int nsos_mid_optname,
+			       void *optval, socklen_t *optlen)
+{
+	size_t nsos_mid_optlen = sizeof(int);
+	int err;
+
+	if (*optlen != sizeof(int)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	err = nsos_adapt_getsockopt(sock->pollfd.fd, NSOS_MID_SOL_SOCKET,
+				    NSOS_MID_SO_KEEPALIVE, optval, &nsos_mid_optlen);
+	if (err) {
+		errno = errno_from_nsos_mid(-err);
+		return -1;
+	}
+
+	*optlen = nsos_mid_optlen;
+
+	return 0;
+}
+
+static int nsos_getsockopt(void *obj, int level, int optname,
+			   void *optval, socklen_t *optlen)
+{
+	struct nsos_socket *sock = obj;
+
+	switch (level) {
+	case SOL_SOCKET:
+		switch (optname) {
+		case SO_ERROR: {
+			int nsos_mid_err;
+			int err;
+
+			if (*optlen != sizeof(int)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			err = nsos_adapt_getsockopt(sock->pollfd.fd, NSOS_MID_SOL_SOCKET,
+						    NSOS_MID_SO_ERROR, &nsos_mid_err, NULL);
+			if (err) {
+				errno = errno_from_nsos_mid(-err);
+				return -1;
+			}
+
+			*(int *)optval = errno_from_nsos_mid(nsos_mid_err);
+
+			return 0;
+		}
+		case SO_TYPE: {
+			int nsos_mid_type;
+			int err;
+
+			if (*optlen != sizeof(nsos_mid_type)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			err = nsos_adapt_getsockopt(sock->pollfd.fd, NSOS_MID_SOL_SOCKET,
+						    NSOS_MID_SO_TYPE, &nsos_mid_type, NULL);
+			if (err) {
+				errno = errno_from_nsos_mid(-err);
+				return -1;
+			}
+
+			err = socket_type_from_nsos_mid(nsos_mid_type, optval);
+			if (err) {
+				errno = errno_from_nsos_mid(-err);
+				return -1;
+			}
+
+			return 0;
+		}
+		case SO_PROTOCOL: {
+			int nsos_mid_proto;
+			int err;
+
+			if (*optlen != sizeof(nsos_mid_proto)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			err = nsos_adapt_getsockopt(sock->pollfd.fd, NSOS_MID_SOL_SOCKET,
+						    NSOS_MID_SO_PROTOCOL, &nsos_mid_proto, NULL);
+			if (err) {
+				errno = errno_from_nsos_mid(-err);
+				return -1;
+			}
+
+			err = socket_proto_from_nsos_mid(nsos_mid_proto, optval);
+			if (err) {
+				errno = errno_from_nsos_mid(-err);
+				return -1;
+			}
+
+			return 0;
+		}
+		case SO_DOMAIN: {
+			int nsos_mid_family;
+			int err;
+
+			if (*optlen != sizeof(nsos_mid_family)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			err = nsos_adapt_getsockopt(sock->pollfd.fd, NSOS_MID_SOL_SOCKET,
+						    NSOS_MID_SO_DOMAIN, &nsos_mid_family, NULL);
+			if (err) {
+				errno = errno_from_nsos_mid(-err);
+				return -1;
+			}
+
+			err = socket_family_from_nsos_mid(nsos_mid_family, optval);
+			if (err) {
+				errno = errno_from_nsos_mid(-err);
+				return -1;
+			}
+
+			return 0;
+		}
+		case SO_RCVBUF:
+			return nsos_getsockopt_int(sock,
+						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_RCVBUF,
+						   optval, optlen);
+		case SO_SNDBUF:
+			return nsos_getsockopt_int(sock,
+						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_SNDBUF,
+						   optval, optlen);
+		case SO_REUSEADDR:
+			return nsos_getsockopt_int(sock,
+						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_REUSEADDR,
+						   optval, optlen);
+		case SO_REUSEPORT:
+			return nsos_getsockopt_int(sock,
+						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_REUSEPORT,
+						   optval, optlen);
+		case SO_KEEPALIVE:
+			return nsos_getsockopt_int(sock,
+						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_KEEPALIVE,
+						   optval, optlen);
+		}
+
+	case IPPROTO_TCP:
+		switch (optname) {
+		case TCP_NODELAY:
+			return nsos_getsockopt_int(sock,
+						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_NODELAY,
+						   optval, optlen);
+		case TCP_KEEPIDLE:
+			return nsos_getsockopt_int(sock,
+						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPIDLE,
+						   optval, optlen);
+		case TCP_KEEPINTVL:
+			return nsos_getsockopt_int(sock,
+						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPINTVL,
+						   optval, optlen);
+		case TCP_KEEPCNT:
+			return nsos_getsockopt_int(sock,
+						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPCNT,
+						   optval, optlen);
+		}
+
+	case IPPROTO_IPV6:
+		switch (optname) {
+		case IPV6_V6ONLY:
+			return nsos_getsockopt_int(sock,
+						   NSOS_MID_IPPROTO_IPV6, NSOS_MID_IPV6_V6ONLY,
+						   optval, optlen);
+		}
+	}
+
+	errno = EOPNOTSUPP;
+	return -1;
+}
+
+static int nsos_setsockopt_int(struct nsos_socket *sock, int nsos_mid_level, int nsos_mid_optname,
+			       const void *optval, socklen_t optlen)
+{
+	int err;
+
+	if (optlen != sizeof(int)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	err = nsos_adapt_setsockopt(sock->pollfd.fd, nsos_mid_level, nsos_mid_optname,
+				    optval, optlen);
+	if (err) {
+		errno = errno_from_nsos_mid(-err);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int nsos_setsockopt(void *obj, int level, int optname,
+			   const void *optval, socklen_t optlen)
+{
+	struct nsos_socket *sock = obj;
+
+	switch (level) {
+	case SOL_SOCKET:
+		switch (optname) {
+		case SO_PRIORITY: {
+			int nsos_mid_priority;
+			int err;
+
+			if (optlen != sizeof(uint8_t)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			nsos_mid_priority = *(uint8_t *)optval;
+
+			err = nsos_adapt_setsockopt(sock->pollfd.fd, NSOS_MID_SOL_SOCKET,
+						    NSOS_MID_SO_PRIORITY, &nsos_mid_priority,
+						    sizeof(nsos_mid_priority));
+			if (err) {
+				errno = errno_from_nsos_mid(-err);
+				return -1;
+			}
+
+			return 0;
+		}
+		case SO_RCVTIMEO: {
+			const struct zsock_timeval *tv = optval;
+			struct nsos_mid_timeval nsos_mid_tv;
+			int err;
+
+			if (optlen != sizeof(struct zsock_timeval)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			nsos_mid_tv.tv_sec = tv->tv_sec;
+			nsos_mid_tv.tv_usec = tv->tv_usec;
+
+			err = nsos_adapt_setsockopt(sock->pollfd.fd, NSOS_MID_SOL_SOCKET,
+						    NSOS_MID_SO_RCVTIMEO, &nsos_mid_tv,
+						    sizeof(nsos_mid_tv));
+			if (err) {
+				errno = errno_from_nsos_mid(-err);
+				return -1;
+			}
+
+			if (tv->tv_sec == 0 && tv->tv_usec == 0) {
+				sock->recv_timeout = K_FOREVER;
+			} else {
+				sock->recv_timeout = K_USEC(tv->tv_sec * 1000000LL + tv->tv_usec);
+			}
+
+			return 0;
+		}
+		case SO_RCVBUF:
+			return nsos_setsockopt_int(sock,
+						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_RCVBUF,
+						   optval, optlen);
+		case SO_SNDBUF:
+			return nsos_setsockopt_int(sock,
+						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_SNDBUF,
+						   optval, optlen);
+		case SO_REUSEADDR:
+			return nsos_setsockopt_int(sock,
+						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_REUSEADDR,
+						   optval, optlen);
+		case SO_REUSEPORT:
+			return nsos_setsockopt_int(sock,
+						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_REUSEPORT,
+						   optval, optlen);
+		case SO_LINGER:
+			return nsos_setsockopt_int(sock,
+						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_LINGER,
+						   optval, optlen);
+		case SO_KEEPALIVE:
+			return nsos_setsockopt_int(sock,
+						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_KEEPALIVE,
+						   optval, optlen);
+		}
+
+	case IPPROTO_TCP:
+		switch (optname) {
+		case TCP_NODELAY:
+			return nsos_setsockopt_int(sock,
+						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_NODELAY,
+						   optval, optlen);
+		case TCP_KEEPIDLE:
+			return nsos_setsockopt_int(sock,
+						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPIDLE,
+						   optval, optlen);
+		case TCP_KEEPINTVL:
+			return nsos_setsockopt_int(sock,
+						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPINTVL,
+						   optval, optlen);
+		case TCP_KEEPCNT:
+			return nsos_setsockopt_int(sock,
+						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPCNT,
+						   optval, optlen);
+		}
+
+	case IPPROTO_IPV6:
+		switch (optname) {
+		case IPV6_V6ONLY:
+			return nsos_setsockopt_int(sock,
+						   NSOS_MID_IPPROTO_IPV6, NSOS_MID_IPV6_V6ONLY,
+						   optval, optlen);
+		}
+	}
+
+	errno = EOPNOTSUPP;
+	return -1;
+}
+
 static const struct socket_op_vtable nsos_socket_fd_op_vtable = {
 	.fd_vtable = {
 		.read = nsos_read,
@@ -761,6 +1210,8 @@ static const struct socket_op_vtable nsos_socket_fd_op_vtable = {
 	.sendmsg = nsos_sendmsg,
 	.recvfrom = nsos_recvfrom,
 	.recvmsg = nsos_recvmsg,
+	.getsockopt = nsos_getsockopt,
+	.setsockopt = nsos_setsockopt,
 };
 
 static bool nsos_is_supported(int family, int type, int proto)

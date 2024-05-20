@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <errno.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/byteorder.h>
@@ -440,13 +441,13 @@ static struct net_buf *l2cap_create_le_sig_pdu(uint8_t code, uint8_t ident,
 	return buf;
 }
 
-/* Send the buffer and release it in case of failure.
+/* Send the buffer over the signalling channel. Release it in case of failure.
  * Any other cleanup in failure to send should be handled by the disconnected
  * handler.
  */
-static inline int l2cap_send(struct bt_conn *conn, uint16_t cid, struct net_buf *buf)
+static int l2cap_send_sig(struct bt_conn *conn, struct net_buf *buf)
 {
-	int err = bt_l2cap_send(conn, cid, buf);
+	int err = bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 
 	if (err) {
 		net_buf_unref(buf);
@@ -459,7 +460,7 @@ static inline int l2cap_send(struct bt_conn *conn, uint16_t cid, struct net_buf 
 static void l2cap_chan_send_req(struct bt_l2cap_chan *chan,
 				struct net_buf *buf, k_timeout_t timeout)
 {
-	if (l2cap_send(chan->conn, BT_L2CAP_CID_LE_SIG, buf)) {
+	if (l2cap_send_sig(chan->conn, buf)) {
 		return;
 	}
 
@@ -520,6 +521,10 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_ECRED_CONN_REQ, ident,
 				      sizeof(*req) +
 				      (channels * sizeof(uint16_t)));
+
+	if (!buf) {
+		return -ENOMEM;
+	}
 
 	req = net_buf_add(buf, sizeof(*req));
 
@@ -637,7 +642,7 @@ int bt_l2cap_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 {
 	struct bt_l2cap_hdr *hdr;
 
-	LOG_DBG("conn %p cid %u len %zu", conn, cid, net_buf_frags_len(buf));
+	LOG_DBG("conn %p cid %u len %zu", conn, cid, buf->len);
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
@@ -665,7 +670,7 @@ static void l2cap_send_reject(struct bt_conn *conn, uint8_t ident,
 		net_buf_add_mem(buf, data, data_len);
 	}
 
-	l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+	l2cap_send_sig(conn, buf);
 }
 
 static void le_conn_param_rsp(struct bt_l2cap *l2cap, struct net_buf *buf)
@@ -728,7 +733,7 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_CONN_PARAM_REJECTED);
 	}
 
-	l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+	l2cap_send_sig(conn, buf);
 
 	if (accepted) {
 		bt_conn_le_conn_update(conn, &param);
@@ -893,7 +898,23 @@ static struct net_buf *l2cap_chan_le_get_tx_buf(struct bt_l2cap_le_chan *ch)
 }
 
 static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
-				  struct net_buf **buf);
+				  struct net_buf *buf);
+
+/** @brief Get @c chan->state.
+ *
+ * This field does not exist when @kconfig{CONFIG_BT_L2CAP_DYNAMIC_CHANNEL} is
+ * disabled. In that case, this function returns @ref BT_L2CAP_CONNECTED since
+ * the struct can only represent static channels in that case and static
+ * channels are always connected.
+ */
+static bt_l2cap_chan_state_t bt_l2cap_chan_get_state(struct bt_l2cap_chan *chan)
+{
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	return BT_L2CAP_LE_CHAN(chan)->state;
+#else
+	return BT_L2CAP_CONNECTED;
+#endif
+}
 
 static void l2cap_chan_tx_process(struct k_work *work)
 {
@@ -903,6 +924,11 @@ static void l2cap_chan_tx_process(struct k_work *work)
 
 	ch = CONTAINER_OF(k_work_delayable_from_work(work), struct bt_l2cap_le_chan, tx_work);
 
+	if (bt_l2cap_chan_get_state(&ch->chan) != BT_L2CAP_CONNECTED) {
+		LOG_DBG("Cannot send on non-connected channel");
+		return;
+	}
+
 	/* Resume tx in case there are buffers in the queue */
 	while ((buf = l2cap_chan_le_get_tx_buf(ch))) {
 		/* Here buf is either:
@@ -911,7 +937,7 @@ static void l2cap_chan_tx_process(struct k_work *work)
 		 */
 		LOG_DBG("chan %p buf %p", ch, buf);
 
-		ret = l2cap_chan_le_send_sdu(ch, &buf);
+		ret = l2cap_chan_le_send_sdu(ch, buf);
 		if (ret < 0) {
 			if (ret == -EAGAIN) {
 				ch->tx_buf = buf;
@@ -1183,7 +1209,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 rsp:
 	rsp->result = sys_cpu_to_le16(result);
 
-	if (l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf)) {
+	if (l2cap_send_sig(conn, buf)) {
 		return;
 	}
 
@@ -1302,7 +1328,7 @@ response:
 
 	net_buf_add_mem(buf, dcid, sizeof(scid) * req_cid_count);
 
-	if (l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf)) {
+	if (l2cap_send_sig(conn, buf)) {
 		goto callback;
 	}
 
@@ -1407,11 +1433,14 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 response:
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_ECRED_RECONF_RSP, ident,
 				      sizeof(*rsp));
+	if (!buf) {
+		return;
+	}
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	rsp->result = sys_cpu_to_le16(result);
 
-	l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+	l2cap_send_sig(conn, buf);
 }
 
 static void le_ecred_reconf_rsp(struct bt_l2cap *l2cap, uint8_t ident,
@@ -1516,7 +1545,7 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	bt_l2cap_chan_del(&chan->chan);
 
-	l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+	l2cap_send_sig(conn, buf);
 }
 
 static int l2cap_change_security(struct bt_l2cap_le_chan *chan, uint16_t err)
@@ -1945,11 +1974,10 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 	len = seg->len - sdu_hdr_len;
 
 	/* SDU will be considered sent when there is no data left in the
-	 * buffers, or if there will be no data left, if we are sending `buf`
+	 * buffer, or if there will be no data left, if we are sending `buf`
 	 * directly.
 	 */
-	if (net_buf_frags_len(buf) == 0 ||
-	    (buf == seg && net_buf_frags_len(buf) == len)) {
+	if (buf->len == 0 || (buf == seg && buf->len == len)) {
 		cb = l2cap_chan_sdu_sent;
 	} else {
 		cb = l2cap_chan_seg_sent;
@@ -2000,28 +2028,20 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 
 /* return next netbuf fragment if present, also assign metadata */
 static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
-				  struct net_buf **buf)
+				  struct net_buf *buf)
 {
 	int ret;
-	size_t sent, rem_len, frag_len;
-	struct net_buf *frag;
+	size_t sent = 0;
+	size_t rem_len;
 
-	frag = *buf;
-	if (!frag->len && frag->frags) {
-		frag = frag->frags;
-	}
+	__ASSERT_NO_MSG(buf);
 
-	rem_len = net_buf_frags_len(frag);
-	sent = 0;
-	while (frag && sent != rem_len) {
-		LOG_DBG("send frag %p (orig buf %p)", frag, *buf);
+	rem_len = buf->len;
 
-		frag_len = frag->len;
-		ret = l2cap_chan_le_send(ch, frag, 0);
+	while (sent != rem_len) {
+		ret = l2cap_chan_le_send(ch, buf, 0);
 		if (ret < 0) {
-			*buf = frag;
-
-			LOG_DBG("failed to send frag (ch %p cid 0x%04x sent %d)",
+			LOG_DBG("failed to send buf (ch %p cid 0x%04x sent %d)",
 				ch, ch->tx.cid, sent);
 
 			return ret;
@@ -2029,11 +2049,9 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 
 		sent += ret;
 
-		/* If the current buffer has been fully consumed, destroy it and
-		 * proceed to the next fragment of the netbuf chain.
-		 */
-		if (ret == frag_len) {
-			frag = net_buf_frag_del(NULL, frag);
+		/* If the current buffer has been fully consumed, destroy it */
+		if (sent == rem_len) {
+			net_buf_unref(buf);
 		}
 	}
 
@@ -2088,13 +2106,9 @@ static void reject_cmd(struct bt_l2cap *l2cap, uint8_t ident,
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_le_chan *chan;
 
-	/* Check if there is a outstanding channel */
-	chan = l2cap_remove_ident(conn, ident);
-	if (!chan) {
-		return;
+	while ((chan = l2cap_remove_ident(conn, ident))) {
+		bt_l2cap_chan_del(&chan->chan);
 	}
-
-	bt_l2cap_chan_del(&chan->chan);
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
@@ -2222,22 +2236,6 @@ static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
 	}
 }
 
-/** @brief Get @c chan->state.
- *
- * This field does not exist when @kconfig{CONFIG_BT_L2CAP_DYNAMIC_CHANNEL} is
- * disabled. In that case, this function returns @ref BT_L2CAP_CONNECTED since
- * the struct can only represent static channels in that case and static
- * channels are always connected.
- */
-static inline bt_l2cap_chan_state_t bt_l2cap_chan_get_state(struct bt_l2cap_chan *chan)
-{
-#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-	return BT_L2CAP_LE_CHAN(chan)->state;
-#else
-	return BT_L2CAP_CONNECTED;
-#endif
-}
-
 static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 				    uint16_t credits)
 {
@@ -2264,7 +2262,7 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 	ev->cid = sys_cpu_to_le16(chan->rx.cid);
 	ev->credits = sys_cpu_to_le16(credits);
 
-	l2cap_send(chan->chan.conn, BT_L2CAP_CID_LE_SIG, buf);
+	l2cap_send_sig(chan->chan.conn, buf);
 
 	LOG_DBG("chan %p credits %lu", chan, atomic_get(&chan->rx.credits));
 }
@@ -2286,7 +2284,7 @@ static int l2cap_chan_send_credits_pdu(struct bt_conn *conn, uint16_t cid, uint1
 		.credits = sys_cpu_to_le16(credits),
 	};
 
-	return l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+	return l2cap_send_sig(conn, buf);
 }
 
 /**
@@ -2398,7 +2396,7 @@ static void l2cap_chan_le_recv_sdu(struct bt_l2cap_le_chan *chan,
 {
 	int err;
 
-	LOG_DBG("chan %p len %zu", chan, net_buf_frags_len(buf));
+	LOG_DBG("chan %p len %zu", chan, buf->len);
 
 	__ASSERT_NO_MSG(bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED);
 	__ASSERT_NO_MSG(atomic_get(&chan->rx.credits) == 0);
@@ -2425,7 +2423,7 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 	uint16_t len;
 	uint16_t seg = 0U;
 
-	len = net_buf_frags_len(chan->_sdu);
+	len = chan->_sdu->len;
 	if (len) {
 		memcpy(&seg, net_buf_user_data(chan->_sdu), sizeof(seg));
 	}
@@ -2440,7 +2438,7 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 	/* Store received segments in user_data */
 	memcpy(net_buf_user_data(chan->_sdu), &seg, sizeof(seg));
 
-	LOG_DBG("chan %p seg %d len %zu", chan, seg, net_buf_frags_len(buf));
+	LOG_DBG("chan %p seg %d len %zu", chan, seg, buf->len);
 
 	/* Append received segment to SDU */
 	len = net_buf_append_bytes(chan->_sdu, buf->len, buf->data, K_NO_WAIT,
@@ -2451,7 +2449,7 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 		return;
 	}
 
-	if (net_buf_frags_len(chan->_sdu) < chan->_sdu_len) {
+	if (chan->_sdu->len < chan->_sdu_len) {
 		/* Give more credits if remote has run out of them, this
 		 * should only happen if the remote cannot fully utilize the
 		 * MPS for some reason.
@@ -2716,7 +2714,7 @@ int bt_l2cap_update_conn_param(struct bt_conn *conn,
 	req->latency = sys_cpu_to_le16(param->latency);
 	req->timeout = sys_cpu_to_le16(param->timeout);
 
-	return l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+	return l2cap_send_sig(conn, buf);
 }
 
 static void l2cap_connected(struct bt_l2cap_chan *chan)
@@ -3054,9 +3052,12 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 
 static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_buf *buf)
 {
-	uint16_t sdu_len = net_buf_frags_len(buf);
+	uint16_t sdu_len = buf->len;
 
 	LOG_DBG("chan %p buf %p", le_chan, buf);
+
+	/* Frags are not supported. */
+	__ASSERT_NO_MSG(buf->frags == NULL);
 
 	if (sdu_len > le_chan->tx.mtu) {
 		LOG_ERR("attempt to send %u bytes on %u MTU chan",
@@ -3108,7 +3109,7 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	LOG_DBG("chan %p buf %p len %zu", chan, buf, net_buf_frags_len(buf));
+	LOG_DBG("chan %p buf %p len %zu", chan, buf, buf->len);
 
 	if (!chan->conn || chan->conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;

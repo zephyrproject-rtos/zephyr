@@ -168,7 +168,7 @@ extern "C" {
  * This API is part of infrastructure still under development and may
  * change.
  *
- * @param[out] virt Output virtual address storage location
+ * @param[out] virt_ptr Output virtual address storage location
  * @param[in]  phys Physical address base of the memory region
  * @param[in]  size Size of the memory region
  * @param[in]  flags Caching mode and access flags, see K_MAP_* macros

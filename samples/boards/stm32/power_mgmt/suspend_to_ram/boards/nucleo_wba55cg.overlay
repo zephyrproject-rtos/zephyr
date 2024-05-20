@@ -50,3 +50,18 @@
 		zephyr,resolution = <12>;
 	};
 };
+
+&spi1 {
+	dmas = <&gpdma1 0 2 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
+		&gpdma1 1 1 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+	fast@0 {
+		compatible = "test-spi-loopback";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+};
+
+&gpdma1 {
+	status = "okay";
+};

@@ -5,8 +5,8 @@
 
 if BOARD_MIMXRT1170_EVK
 
-# Only use DCD when booting primary core (M7)
-config DEVICE_CONFIGURATION_DATA
+# Use External Memory Configuration Data (XMCD) by default when booting primary core (M7)
+config EXTERNAL_MEM_CONFIG_DATA
 	default y if CPU_CORTEX_M7
 
 config NXP_IMX_EXTERNAL_SDRAM

@@ -5,7 +5,6 @@ tests:
       - cache
     filter: CONFIG_CACHE_MANAGEMENT
     platform_exclude:
-      - adp_xc7k/ae350
       - bcm958402m2/bcm58402/m7
       - bcm958401m2
     integration_platforms:
@@ -21,7 +20,6 @@ tests:
       - libc
     filter: CONFIG_CACHE_MANAGEMENT and CONFIG_MINIMAL_LIBC_SUPPORTED
     platform_exclude:
-      - adp_xc7k/ae350
       - bcm958402m2/bcm58402/m7
       - bcm958401m2
     integration_platforms:

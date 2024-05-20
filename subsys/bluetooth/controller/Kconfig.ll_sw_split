@@ -99,9 +99,14 @@ config BT_CTLR_ULL_LLL_PRIO_SUPPORT
 	bool
 
 config BT_CTLR_RX_PRIO_STACK_SIZE
-	# Controller's Co-Operative high priority Rx thread stack size.
-	int "High priority Rx thread stack size"
+	# Hidden, Controller's Co-Operative high priority Rx thread stack size.
+	int
 	default 448
+
+config BT_CTLR_RX_STACK_SIZE
+	# Hidden, Controller's Co-Operative Rx thread stack size.
+	int
+	default 768
 
 config BT_CTLR_SETTINGS
 	bool "Settings System"
@@ -336,9 +341,9 @@ config BT_CTLR_ADV_DATA_CHAIN
 	bool "Advertising Data chaining [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
-	  Enable support for Advertising Data chaining in Extended and
-	  Periodic Advertising. This will allow to have Advertising Data Length
-	  upto 1650 bytes.
+	  Enable support for Advertising Data chaining in Extended
+	  (non-connectable) and Periodic Advertising. This will allow to have
+	  Advertising Data Length up to 1650 bytes.
 
 	  This is experimental and work in progress, does not implement
 	  recombining the AD Data and could return BT_HCI_ERR_PACKET_TOO_LONG
@@ -665,6 +670,16 @@ config BT_CTLR_ASSERT_OVERHEAD_START
 	  radio event skips are not for every consecutive radio event interval,
 	  otherwise leading to remote supervision timeout and possible missing
 	  local disconnect events.
+
+config BT_CTLR_ASSERT_VENDOR
+	bool "Vendor Defined Assertion Information Handler"
+	help
+	  This option enables a vendor specific sink for the controller assertion
+	  mechanism, where parameter information is provided. This must be defined in
+	  vendor debug HAL interface as \"BT_ASSERT_VND(cond, param1, param2)\", and
+	  will be invoked whenever the controller code encounters an unrecoverable error
+	  with parameter information. Implementation shall include the equivalent of
+	  BT_ASSERT_DIE for halting the kernel.
 
 config BT_CTLR_CENTRAL_SPACING
 	int "Central Connection Spacing"
@@ -1086,7 +1101,7 @@ config BT_TICKER_EXT
 config BT_TICKER_EXT_SLOT_WINDOW_YIELD
 	bool "Tickers with slot window always yields"
 	depends on BT_TICKER_EXT
-	default y if BT_CTLR_ADV_ISO
+	default y if BT_MESH || BT_CTLR_ADV_ISO
 	help
 	  This options forces tickers with slot window extensions to yield to
 	  normal tickers and be placed at the end of their slot window.

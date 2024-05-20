@@ -26,6 +26,13 @@ tests:
       - stm32h750b_dk
     integration_platforms:
       - nrf52840dk/nrf52840
+  sample.filesystem.littlefs.blk:
+    build_only: true
+    extra_args:
+      - CONF_FILE=prj_blk.conf
+    platform_allow:
+      - rcar_h3ulcb/r8a77951/a57
+      - rcar_salvator_xs
   sample.filesystem.littlefs.nrf52840dk_spi:
     build_only: true
     platform_allow: nrf52840dk/nrf52840

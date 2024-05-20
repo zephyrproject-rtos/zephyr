@@ -71,21 +71,19 @@ struct ll_sync_set {
 	 * struct node_rx_pdu.
 	 */
 	struct {
-		struct node_rx_hdr hdr;
-		union {
-			uint8_t    pdu[0] __aligned(4);
-			uint8_t    reason;
-		};
+		struct node_rx_pdu rx;
+		/* Dummy declaration to ensure space allocated to hold one pdu bytes */
+		uint8_t dummy;
 	} node_rx_lost;
 
 	/* Not-Null when sync was setup and Controller is waiting for first AUX_SYNC_IND PDU.
 	 * It means the sync was not estalished yet.
 	 */
-	struct node_rx_hdr *node_rx_sync_estab;
+	struct node_rx_pdu *node_rx_sync_estab;
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	struct {
-		struct node_rx_hdr *node_rx_estab;
+		struct node_rx_pdu *node_rx_estab;
 
 		/* Non-Null when creating sync, reset in ISR context on
 		 * synchronisation state and checked in Thread context when
@@ -126,14 +124,9 @@ struct ll_sync_iso_set {
 	 * struct node_rx_pdu.
 	 */
 	struct {
-		struct node_rx_hdr hdr;
-		union {
-			uint8_t pdu[0] __aligned(4);
-			struct {
-				uint8_t handle;
-				uint8_t reason;
-			};
-		};
+		struct node_rx_pdu rx;
+		/* Dummy declaration to ensure space allocated to hold two pdu bytes */
+		uint8_t dummy[2];
 	} node_rx_lost;
 };
 

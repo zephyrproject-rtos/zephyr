@@ -8,12 +8,8 @@
 #include <nordic/nrf_common.dtsi>
 
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20.h>
-
-/* Domain IDs. Can be used to specify channel links in IPCT nodes. */
-#define NRF_DOMAIN_ID_APPLICATION 2
-#define NRF_DOMAIN_ID_RADIOCORE   3
-#define NRF_DOMAIN_ID_GLOBALFAST  12
-#define NRF_DOMAIN_ID_GLOBALSLOW  13
+#include <zephyr/dt-bindings/misc/nordic-domain-id-nrf54h20.h>
+#include <zephyr/dt-bindings/misc/nordic-owner-id-nrf54h20.h>
 
 /delete-node/ &sw_pwm;
 
@@ -168,6 +164,25 @@
 				interrupts = <64 NRF_DEFAULT_IRQ_PRIORITY>,
 					     <65 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
+
+			cpuapp_wdt010: watchdog@14000 {
+				compatible = "nordic,nrf-wdt";
+				reg = <0x14000 0x1000>;
+				status = "disabled";
+				interrupts = <20 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			cpuapp_wdt011: watchdog@15000 {
+				compatible = "nordic,nrf-wdt";
+				reg = <0x15000 0x1000>;
+				status = "disabled";
+				interrupts = <21 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			cpuapp_ieee802154: ieee802154 {
+				compatible = "nordic,nrf-ieee802154";
+				status = "disabled";
+			};
 		};
 
 		cpurad_peripherals: peripheral@53000000 {
@@ -186,6 +201,20 @@
 					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_COARSE_1>,
 					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_FINE_1>;
 				nordic,ficr-names = "vsup", "coarse", "fine";
+			};
+
+			cpurad_wdt010: watchdog@13000 {
+				compatible = "nordic,nrf-wdt";
+				reg = <0x13000 0x1000>;
+				status = "disabled";
+				interrupts = <19 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			cpurad_wdt011: watchdog@14000 {
+				compatible = "nordic,nrf-wdt";
+				reg = <0x14000 0x1000>;
+				status = "disabled";
+				interrupts = <20 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
 			dppic020: dppic@22000 {
@@ -217,6 +246,7 @@
 				cc-num = <8>;
 				interrupts = <40 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
+				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -227,6 +257,7 @@
 				cc-num = <8>;
 				interrupts = <41 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
+				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -237,6 +268,7 @@
 				cc-num = <8>;
 				interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
+				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -300,6 +332,32 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x5f000000 0x1000000>;
 
+			usbhs: usbhs@86000 {
+				compatible = "nordic,nrf-usbhs", "snps,dwc2";
+				reg = <0x86000 0x1000>, <0x2f700000 0x40000>;
+				reg-names = "wrapper", "core";
+				interrupts = <134 NRF_DEFAULT_IRQ_PRIORITY>;
+				num-in-eps = <8>;
+				num-out-eps = <10>;
+				ghwcfg1 = <0xaa555000>;
+				ghwcfg2 = <0x22abfc72>;
+				ghwcfg4 = <0x1e10aa60>;
+				status = "disabled";
+			};
+
+			exmif: spi@95000 {
+				compatible = "nordic,nrf-exmif";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x95000 0x500 0x95500 0xb00>;
+				reg-names = "wrapper", "core";
+				interrupts = <149 NRF_DEFAULT_IRQ_PRIORITY>;
+				clock-frequency = <DT_FREQ_M(400)>;
+				fifo-depth = <32>;
+				max-xfer-size = <16>;
+				status = "disabled";
+			};
+
 			cpusec_bellboard: mailbox@99000 {
 				reg = <0x99000 0x1000>;
 				status = "disabled";
@@ -316,6 +374,15 @@
 				reg = <0x9b000 0x1000>;
 				status = "disabled";
 				#mbox-cells = <1>;
+			};
+
+			cpusys_vevif_remote: mailbox@8c8000 {
+				compatible = "nordic,nrf-vevif-remote";
+				reg = <0x8c8000 0x1000>;
+				status = "disabled";
+				#mbox-cells = <1>;
+				nordic,tasks = <32>;
+				nordic,tasks-mask = <0xfffff0ff>;
 			};
 
 			ipct120: ipct@8d1000 {
@@ -339,6 +406,7 @@
 				cc-num = <6>;
 				interrupts = <226 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
+				max-frequency = <DT_FREQ_M(320)>;
 				prescaler = <0>;
 			};
 
@@ -349,6 +417,7 @@
 				cc-num = <6>;
 				interrupts = <227 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
+				max-frequency = <DT_FREQ_M(320)>;
 				prescaler = <0>;
 			};
 
@@ -369,6 +438,8 @@
 				max-frequency = <DT_FREQ_M(32)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart120: uart@8e6000 {
@@ -387,6 +458,8 @@
 				max-frequency = <DT_FREQ_M(32)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			cpuppr_vpr: vpr@908000 {
@@ -644,6 +717,8 @@
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart130: uart@9a5000 {
@@ -672,6 +747,8 @@
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart131: uart@9a6000 {
@@ -734,6 +811,8 @@
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart132: uart@9b5000 {
@@ -762,6 +841,8 @@
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart133: uart@9b6000 {
@@ -824,6 +905,8 @@
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart134: uart@9c5000 {
@@ -852,6 +935,8 @@
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart135: uart@9c6000 {
@@ -914,6 +999,8 @@
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart136: uart@9d5000 {
@@ -942,6 +1029,8 @@
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				rx-delay-supported;
+				rx-delay = <1>;
 			};
 
 			uart137: uart@9d6000 {
@@ -991,5 +1080,10 @@
 			interrupt-controller;
 			#address-cells = <1>;
 		};
+	};
+
+	temp_nrfs: temp {
+		compatible = "nordic,nrf-temp-nrfs";
+		status = "disabled";
 	};
 };

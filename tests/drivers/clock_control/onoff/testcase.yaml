@@ -7,6 +7,7 @@ tests:
       - nrf51dk/nrf51822
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
+      - nrf54l15pdk/nrf54l15/cpuapp
       - nrf9160dk/nrf9160
     integration_platforms:
       - nrf51dk/nrf51822

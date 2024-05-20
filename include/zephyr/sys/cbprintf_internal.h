@@ -548,7 +548,7 @@ extern "C" {
  * Floats are promoted to double so they use size of double, others int storage
  * or it's own storage size if it is bigger than int.
  *
- * @param x argument.
+ * @param v argument.
  *
  * @return Number of bytes used for storing the argument.
  */
@@ -676,7 +676,7 @@ do { \
 			Z_CBPRINTF_IS_LONGDOUBLE(_arg) && \
 			!IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE)),\
 			"Packaging of long double not enabled in Kconfig."); \
-	while (_align_offset % Z_CBPRINTF_ALIGNMENT(_arg) != 0UL) { \
+	while ((_align_offset % Z_CBPRINTF_ALIGNMENT(_arg)) != 0UL) { \
 		_idx += sizeof(int); \
 		_align_offset += sizeof(int); \
 	} \

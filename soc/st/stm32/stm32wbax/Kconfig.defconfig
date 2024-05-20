@@ -10,6 +10,9 @@ rsource "Kconfig.defconfig.stm32wba*"
 config STM32_LPTIM_TIMER
 	default y if PM
 
+config STM32_FLASH_PREFETCH
+	default y
+
 choice BT_HCI_BUS_TYPE
 	default BT_STM32WBA
 	depends on BT

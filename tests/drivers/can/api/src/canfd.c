@@ -397,22 +397,14 @@ ZTEST_USER(canfd, test_set_timing_data_min)
  */
 ZTEST_USER(canfd, test_set_bitrate_too_high)
 {
-	uint32_t max = 8000000U;
-	int expected = -EINVAL;
+	uint32_t max = can_get_bitrate_max(can_dev);
 	int err;
-
-	err = can_get_max_bitrate(can_dev, &max);
-	if (err != -ENOSYS) {
-		zassert_equal(err, 0, "failed to get max bitrate (err %d)", err);
-		zassert_not_equal(max, 0, "max bitrate is 0");
-		expected = -ENOTSUP;
-	}
 
 	err = can_stop(can_dev);
 	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
 
 	err = can_set_bitrate_data(can_dev, max + 1);
-	zassert_equal(err, expected, "too high data phase bitrate accepted");
+	zassert_equal(err, -ENOTSUP, "too high data phase bitrate accepted");
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
@@ -499,19 +491,7 @@ static bool canfd_predicate(const void *state)
 
 void *canfd_setup(void)
 {
-	int err;
-
-	k_sem_init(&rx_callback_sem, 0, 2);
-	k_sem_init(&tx_callback_sem, 0, 2);
-
-	(void)can_stop(can_dev);
-
-	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK | CAN_MODE_FD);
-	zassert_equal(err, 0, "failed to set CAN FD loopback mode (err %d)", err);
-	zassert_equal(CAN_MODE_LOOPBACK | CAN_MODE_FD, can_get_mode(can_dev));
-
-	err = can_start(can_dev);
-	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+	can_common_test_setup(CAN_MODE_LOOPBACK | CAN_MODE_FD);
 
 	return NULL;
 }

@@ -12,6 +12,7 @@
 #define ZEPHYR_SUBSYS_SD_SPEC_H_
 
 #include <stdint.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -368,7 +369,18 @@ enum sd_group_num {
 
 /* Maximum data rate possible for SD high speed cards */
 enum hs_max_data_rate {
-	HS_MAX_DTR = 50000000,
+	HS_UNSUPPORTED = 0,
+	HS_MAX_DTR = MHZ(50),
+};
+
+/* Maximum data rate possible for SD uhs cards */
+enum uhs_max_data_rate {
+	UHS_UNSUPPORTED = 0,
+	UHS_SDR12_MAX_DTR = MHZ(25),
+	UHS_SDR25_MAX_DTR = MHZ(50),
+	UHS_SDR50_MAX_DTR = MHZ(100),
+	UHS_SDR104_MAX_DTR = MHZ(208),
+	UHS_DDR50_MAX_DTR = MHZ(50),
 };
 
 /**
@@ -379,6 +391,7 @@ enum hs_max_data_rate {
  */
 enum sd_bus_speed {
 	UHS_SDR12_BUS_SPEED = BIT(0),
+	DEFAULT_BUS_SPEED = BIT(0),
 	HIGH_SPEED_BUS_SPEED = BIT(1),
 	UHS_SDR25_BUS_SPEED = BIT(1),
 	UHS_SDR50_BUS_SPEED = BIT(2),
@@ -393,10 +406,14 @@ enum sd_bus_speed {
  * controller to identify timing of card.
  */
 enum sd_timing_mode {
+	SD_TIMING_DEFAULT = 0U,
+	/*!< Default Mode */
 	SD_TIMING_SDR12 = 0U,
-	/*!< Default mode & SDR12 */
+	/*!< SDR12 mode */
+	SD_TIMING_HIGH_SPEED = 1U,
+	/*!< High speed mode */
 	SD_TIMING_SDR25 = 1U,
-	/*!< High speed mode & SDR25 */
+	/*!< SDR25 mode */
 	SD_TIMING_SDR50 = 2U,
 	/*!< SDR50 mode*/
 	SD_TIMING_SDR104 = 3U,
@@ -411,16 +428,16 @@ enum sd_timing_mode {
  * Controls the SD host controller clock speed on the SD bus.
  */
 enum sdhc_clock_speed {
-	SDMMC_CLOCK_400KHZ = 400000U,
-	SD_CLOCK_25MHZ = 25000000U,
-	SD_CLOCK_50MHZ = 50000000U,
-	SD_CLOCK_100MHZ = 100000000U,
-	SD_CLOCK_208MHZ = 208000000U,
-	MMC_CLOCK_26MHZ = 26000000U,
-	MMC_CLOCK_52MHZ = 52000000U,
-	MMC_CLOCK_DDR52 = 52000000U,
-	MMC_CLOCK_HS200 = 200000000U,
-	MMC_CLOCK_HS400 = 200000000U, /* Same clock freq as HS200, just DDR */
+	SDMMC_CLOCK_400KHZ = KHZ(400),
+	SD_CLOCK_25MHZ = MHZ(25),
+	SD_CLOCK_50MHZ = MHZ(50),
+	SD_CLOCK_100MHZ = MHZ(100),
+	SD_CLOCK_208MHZ = MHZ(208),
+	MMC_CLOCK_26MHZ = MHZ(26),
+	MMC_CLOCK_52MHZ = MHZ(52),
+	MMC_CLOCK_DDR52 = MHZ(52),
+	MMC_CLOCK_HS200 = MHZ(200),
+	MMC_CLOCK_HS400 = MHZ(200), /* Same clock freq as HS200, just DDR */
 };
 
 /**
@@ -487,7 +504,7 @@ enum sd_driver_strength {
  */
 struct sd_switch_caps {
 	enum hs_max_data_rate hs_max_dtr;
-	enum sdhc_clock_speed uhs_max_dtr;
+	enum uhs_max_data_rate uhs_max_dtr;
 	enum sd_bus_speed bus_speed;
 	enum sd_driver_type sd_drv_type;
 	enum sd_current_limit sd_current_limit;

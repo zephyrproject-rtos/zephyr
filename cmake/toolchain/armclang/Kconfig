@@ -23,3 +23,7 @@ config ARMCLANG_STD_LIBC
 	  not provided by ARM Compiler standard libraries.
 
 endchoice
+
+config TOOLCHAIN_ARMCLANG_SUPPORTS_GNU_EXTENSIONS
+	def_bool y
+	select TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS

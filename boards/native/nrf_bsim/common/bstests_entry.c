@@ -74,7 +74,7 @@ static struct bst_test_instance *bst_test_find(struct bst_test_list *tests,
 	return NULL;
 }
 
-void bst_install_tests(void)
+__noubsan void bst_install_tests(void)
 {
 	int idx = 0;
 
@@ -224,6 +224,13 @@ void bst_main(void)
  */
 uint8_t bst_delete(void)
 {
+	static bool already_deleted;
+
+	if (already_deleted) {
+		return bst_result;
+	}
+	already_deleted = true;
+
 	if (current_test && current_test->test_delete_f) {
 		current_test->test_delete_f();
 	}

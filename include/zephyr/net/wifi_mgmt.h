@@ -66,16 +66,12 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_IFACE_STATUS,
 	/** Set power save status */
 	NET_REQUEST_WIFI_CMD_PS,
-	/** Set power save mode */
-	NET_REQUEST_WIFI_CMD_PS_MODE,
 	/** Setup or teardown TWT flow */
 	NET_REQUEST_WIFI_CMD_TWT,
 	/** Get power save config */
 	NET_REQUEST_WIFI_CMD_PS_CONFIG,
 	/** Set or get regulatory domain */
 	NET_REQUEST_WIFI_CMD_REG_DOMAIN,
-	/** Set power save timeout */
-	NET_REQUEST_WIFI_CMD_PS_TIMEOUT,
 	/** Set or get Mode of operation */
 	NET_REQUEST_WIFI_CMD_MODE,
 	/** Set or get packet filter setting for current mode */
@@ -86,6 +82,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_AP_STA_DISCONNECT,
 	/** Get Wi-Fi driver and Firmware versions */
 	NET_REQUEST_WIFI_CMD_VERSION,
+	/** Set RTS threshold */
+	NET_REQUEST_WIFI_CMD_RTS_THRESHOLD,
 	NET_REQUEST_WIFI_CMD_MAX
 };
 
@@ -124,11 +122,6 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_IFACE_STATUS);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS);
 
-#define NET_REQUEST_WIFI_PS_MODE			\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PS_MODE)
-
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_MODE);
-
 #define NET_REQUEST_WIFI_TWT			\
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_TWT)
 
@@ -142,11 +135,6 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_CONFIG);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_REG_DOMAIN)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_REG_DOMAIN);
-
-#define NET_REQUEST_WIFI_PS_TIMEOUT			\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PS_TIMEOUT)
-
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_TIMEOUT);
 
 #define NET_REQUEST_WIFI_MODE				\
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_MODE)
@@ -173,6 +161,10 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_STA_DISCONNECT);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_VERSION);
 
+#define NET_REQUEST_WIFI_RTS_THRESHOLD			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_RTS_THRESHOLD)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD);
 /** Wi-Fi management events */
 enum net_event_wifi_cmd {
 	/** Scan results available */
@@ -866,6 +858,15 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*get_version)(const struct device *dev, struct wifi_version *params);
+	/** Set RTS threshold value
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param RTS threshold value
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*set_rts_threshold)(const struct device *dev, unsigned int rts_threshold);
+
 };
 
 /** Wi-Fi management offload API */

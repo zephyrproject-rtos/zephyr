@@ -378,8 +378,6 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 	uint8_t cmr;
 	uint8_t sr;
 
-	__ASSERT_NO_MSG(callback != NULL);
-
 	if (frame->dlc > CAN_MAX_DLC) {
 		LOG_ERR("TX frame DLC %u exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
 		return -EINVAL;

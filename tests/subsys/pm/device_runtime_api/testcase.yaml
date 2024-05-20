@@ -1,11 +1,12 @@
+common:
+  tags: pm
+
 tests:
   pm.device_runtime.api:
-    tags: pm
-    integration_platforms:
-      - native_sim
+    platform_allow:
+    - native_sim
   pm.device_runtime.isr_safe.api:
-    tags: pm
-    integration_platforms:
-      - native_sim
+    platform_allow:
+    - native_sim
     extra_configs:
-      - CONFIG_TEST_PM_DEVICE_ISR_SAFE=y
+    - CONFIG_TEST_PM_DEVICE_ISR_SAFE=y

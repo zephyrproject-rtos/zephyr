@@ -21,4 +21,10 @@ supported:
   - dac
   - i2c
   - watchdog
+  - pwm
+  - counter
+  - sdhc
+  - regulator
+  - adc
+  - usb_device
 vendor: nxp

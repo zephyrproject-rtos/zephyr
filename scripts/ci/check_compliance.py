@@ -7,6 +7,7 @@
 import argparse
 import collections
 from email.utils import parseaddr
+import json
 import logging
 import os
 from pathlib import Path
@@ -177,7 +178,6 @@ class ComplianceTest:
         fail = FmtdFailure(severity, title, file, line, col, desc)
         self._result(fail, fail.text)
         self.fmtd_failures.append(fail)
-
 
 class EndTest(Exception):
     """
@@ -598,6 +598,39 @@ class KconfigCheck(ComplianceTest):
             # Clean up the temporary directory
             shutil.rmtree(kconfiglib_dir)
 
+    def get_logging_syms(self, kconf):
+        # Returns a set() with the names of the Kconfig symbols generated with
+        # logging template in samples/tests folders. The Kconfig symbols doesn't
+        # include `CONFIG_` and for each module declared there is one symbol
+        # per suffix created.
+
+        suffixes = [
+            "_LOG_LEVEL",
+            "_LOG_LEVEL_DBG",
+            "_LOG_LEVEL_ERR",
+            "_LOG_LEVEL_INF",
+            "_LOG_LEVEL_WRN",
+            "_LOG_LEVEL_OFF",
+            "_LOG_LEVEL_INHERIT",
+            "_LOG_LEVEL_DEFAULT",
+        ]
+
+        # Warning: Needs to work with both --perl-regexp and the 're' module.
+        regex = r"^\s*(?:module\s*=\s*)([A-Z0-9_]+)\s*(?:#|$)"
+
+        # Grep samples/ and tests/ for symbol definitions
+        grep_stdout = git("grep", "-I", "-h", "--perl-regexp", regex, "--",
+                          ":samples", ":tests", cwd=ZEPHYR_BASE)
+
+        names = re.findall(regex, grep_stdout, re.MULTILINE)
+
+        kconf_syms = []
+        for name in names:
+            for suffix in suffixes:
+                kconf_syms.append(f"{name}{suffix}")
+
+        return set(kconf_syms)
+
     def get_defined_syms(self, kconf):
         # Returns a set() with the names of all defined Kconfig symbols (with no
         # 'CONFIG_' prefix). This is complicated by samples and tests defining
@@ -619,8 +652,10 @@ class KconfigCheck(ComplianceTest):
 
         # Symbols from the main Kconfig tree + grepped definitions from samples
         # and tests
-        return set([sym.name for sym in kconf_syms]
-                   + re.findall(regex, grep_stdout, re.MULTILINE))
+        return set(
+            [sym.name for sym in kconf_syms]
+            + re.findall(regex, grep_stdout, re.MULTILINE)
+        ).union(self.get_logging_syms(kconf))
 
     def check_top_menu_not_too_long(self, kconf):
         """
@@ -803,7 +838,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             for sym_name in re.findall(regex, line):
                 sym_name = sym_name[7:]  # Strip CONFIG_
                 if sym_name not in defined_syms and \
-                   sym_name not in self.UNDEF_KCONFIG_WHITELIST:
+                   sym_name not in self.UNDEF_KCONFIG_ALLOWLIST:
 
                     undef_to_locs[sym_name].append(f"{path}:{lineno}")
 
@@ -821,7 +856,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
 
         self.failure(f"""
 Found references to undefined Kconfig symbols. If any of these are false
-positives, then add them to UNDEF_KCONFIG_WHITELIST in {__file__}.
+positives, then add them to UNDEF_KCONFIG_ALLOWLIST in {__file__}.
 
 If the reference is for a comment like /* CONFIG_FOO_* */ (or
 /* CONFIG_FOO_*_... */), then please use exactly that form (with the '*'). The
@@ -834,7 +869,7 @@ flagged.
 
     # Many of these are symbols used as examples. Note that the list is sorted
     # alphabetically, and skips the CONFIG_ prefix.
-    UNDEF_KCONFIG_WHITELIST = {
+    UNDEF_KCONFIG_ALLOWLIST = {
         "ALSO_MISSING",
         "APP_LINK_WITH_",
         "APP_LOG_LEVEL", # Application log level is not detected correctly as
@@ -866,8 +901,6 @@ flagged.
         "BOOT_SIGNATURE_TYPE_RSA",        # MCUboot setting used by sysbuild
         "BOOT_VALIDATE_SLOT0",       # Used in (sysbuild-based) test
         "BOOT_WATCHDOG_FEED",        # Used in (sysbuild-based) test
-        "BTTESTER_LOG_LEVEL",  # Used in tests/bluetooth/tester
-        "BTTESTER_LOG_LEVEL_DBG",  # Used in tests/bluetooth/tester
         "CDC_ACM_PORT_NAME_",
         "CHRE",  # Optional module
         "CHRE_LOG_LEVEL_DBG",  # Optional module
@@ -905,8 +938,6 @@ flagged.
         "MCUBOOT_CLEANUP_ARM_CORE", # Used in (sysbuild-based) test
         "MCUBOOT_SERIAL",           # Used in (sysbuild-based) test/
                                     # documentation
-        "MCUMGR_GRP_EXAMPLE", # Used in documentation
-        "MCUMGR_GRP_EXAMPLE_LOG_LEVEL", # Used in documentation
         "MCUMGR_GRP_EXAMPLE_OTHER_HOOK", # Used in documentation
         "MISSING",
         "MODULES",
@@ -919,8 +950,6 @@ flagged.
         "REG1",
         "REG2",
         "RIMAGE_SIGNING_SCHEMA",  # Optional module
-        "SAMPLE_MODULE_LOG_LEVEL",  # Used as an example in samples/subsys/logging
-        "SAMPLE_MODULE_LOG_LEVEL_DBG",  # Used in tests/subsys/logging/log_api
         "LOG_BACKEND_MOCK_OUTPUT_DEFAULT", #Referenced in tests/subsys/logging/log_syst
         "LOG_BACKEND_MOCK_OUTPUT_SYST", #Referenced in testcase.yaml of log_syst test
         "SEL",
@@ -934,7 +963,6 @@ flagged.
         "SRAM2",  # Referenced in a comment in samples/application_development
         "STACK_SIZE",  # Used as an example in the Kconfig docs
         "STD_CPP",  # Referenced in CMake comment
-        "TAGOIO_HTTP_POST_LOG_LEVEL",  # Used as in samples/net/cloud/tagoio
         "TEST1",
         "TOOLCHAIN_ARCMWDT_SUPPORTS_THREAD_LOCAL_STORAGE", # The symbol is defined in the toolchain
                                                     # Kconfig which is sourced based on Zephyr
@@ -1178,7 +1206,7 @@ class PyLint(ComplianceTest):
         else:
             python_environment["PYTHONPATH"] = check_script_dir
 
-        pylintcmd = ["pylint", "--rcfile=" + pylintrc,
+        pylintcmd = ["pylint", "--output-format=json2", "--rcfile=" + pylintrc,
                      "--load-plugins=argparse-checker"] + py_files
         logger.info(cmd2str(pylintcmd))
         try:
@@ -1190,21 +1218,19 @@ class PyLint(ComplianceTest):
                            env=python_environment)
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
-            regex = r'^\s*(\S+):(\d+):(\d+):\s*([A-Z]\d{4}):\s*(.*)$'
-
-            matches = re.findall(regex, output, re.MULTILINE)
-            for m in matches:
-                # https://pylint.pycqa.org/en/latest/user_guide/messages/messages_overview.html#
+            messages = json.loads(output)['messages']
+            for m in messages:
                 severity = 'unknown'
-                if m[3][0] in ('F', 'E'):
+                if m['messageId'][0] in ('F', 'E'):
                     severity = 'error'
-                elif m[3][0] in ('W','C', 'R', 'I'):
+                elif m['messageId'][0] in ('W','C', 'R', 'I'):
                     severity = 'warning'
-                self.fmtd_failure(severity, m[3], m[0], m[1], col=m[2],
-                        desc=m[4])
+                self.fmtd_failure(severity, m['messageId'], m['path'],
+                                  m['line'], col=str(m['column']), desc=m['message']
+                                  + f" ({m['symbol']})")
 
-            # If the regex has not matched add the whole output as a failure
-            if len(matches) == 0:
+            if len(messages) == 0:
+                # If there are no specific messages add the whole output as a failure
                 self.failure(output)
 
 

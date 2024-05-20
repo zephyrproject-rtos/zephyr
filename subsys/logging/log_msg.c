@@ -389,3 +389,21 @@ void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
 		z_log_msg_finalize(msg, source, desc, data);
 	}
 }
+
+int16_t log_msg_get_source_id(struct log_msg *msg)
+{
+	if (!z_log_is_local_domain(log_msg_get_domain(msg))) {
+		/* Remote domain is converting source pointer to ID */
+		return (int16_t)(uintptr_t)log_msg_get_source(msg);
+	}
+
+	void *source = (void *)log_msg_get_source(msg);
+
+	if (source != NULL) {
+		return IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)
+					? log_dynamic_source_id(source)
+					: log_const_source_id(source);
+	}
+
+	return -1;
+}

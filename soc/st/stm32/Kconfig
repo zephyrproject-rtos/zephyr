@@ -47,6 +47,9 @@ config SWJ_ANALOG_PRIORITY
 	  This priority must be greater than GPIO_INIT_PRIORITY and lower than
 	  UART_INIT_PRIORITY.
 
+config STM32_FLASH_PREFETCH
+	bool "Flash prefetch buffer"
+
 choice POWER_SUPPLY_CHOICE
 	prompt "STM32 power supply configuration"
 	default POWER_SUPPLY_LDO

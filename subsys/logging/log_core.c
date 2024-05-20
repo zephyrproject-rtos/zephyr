@@ -322,13 +322,13 @@ static uint32_t z_log_init(bool blocking, bool can_sleep)
 		return 0;
 	}
 
-	int i = 0;
 	if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN)) {
 		z_log_links_initiate();
 	}
 
+	int backend_index = 0;
 
-	/* Assign ids to backends. */
+	/* Activate autostart backends */
 	STRUCT_SECTION_FOREACH(log_backend, backend) {
 		if (backend->autostart) {
 			log_backend_init(backend);
@@ -341,11 +341,11 @@ static uint32_t z_log_init(bool blocking, bool can_sleep)
 						   backend->cb->ctx,
 						   CONFIG_LOG_MAX_LEVEL);
 			} else {
-				mask |= BIT(i);
+				mask |= BIT(backend_index);
 			}
-
-			i++;
 		}
+
+		++backend_index;
 	}
 
 	/* If blocking init, wait until all backends are activated. */
@@ -364,6 +364,16 @@ static uint32_t z_log_init(bool blocking, bool can_sleep)
 void log_init(void)
 {
 	(void)z_log_init(true, true);
+}
+
+void log_thread_trigger(void)
+{
+	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
+		return;
+	}
+
+	k_timer_stop(&log_process_thread_timer);
+	k_sem_give(&log_process_thread_sem);
 }
 
 static void thread_set(k_tid_t process_tid)
@@ -466,18 +476,16 @@ static bool msg_filter_check(struct log_backend const *backend,
 	uint8_t level;
 	uint8_t domain_id;
 	int16_t source_id;
-	struct log_source_dynamic_data *source;
 
-	source = (struct log_source_dynamic_data *)log_msg_get_source(&msg->log);
 	level = log_msg_get_level(&msg->log);
 	domain_id = log_msg_get_domain(&msg->log);
+	source_id = log_msg_get_source_id(&msg->log);
 
 	/* Accept all non-logging messages. */
 	if (level == LOG_LEVEL_NONE) {
 		return true;
 	}
-	if (source) {
-		source_id = log_dynamic_source_id(source);
+	if (source_id >= 0) {
 		backend_level = log_filter_get(backend, domain_id, source_id, true);
 
 		return (level <= backend_level);

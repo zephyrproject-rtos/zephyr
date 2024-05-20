@@ -23,10 +23,10 @@ static void *pre_write_cb(uint16_t obj_inst_id,
 	return pre_write_cb_buf;
 }
 
-static int post_write_cb(uint16_t obj_inst_id,
-			 uint16_t res_id, uint16_t res_inst_id,
-			 uint8_t *data, uint16_t data_len,
-			 bool last_block, size_t total_size)
+static int post_write_cb(uint16_t obj_inst_id, uint16_t res_id,
+			 uint16_t res_inst_id, uint8_t *data,
+			 uint16_t data_len, bool last_block,
+			 size_t total_size, size_t offset)
 {
 	callback_checker |= 0x02;
 	return 0;
@@ -41,10 +41,9 @@ static void *read_cb(uint16_t obj_inst_id,
 	return 0;
 }
 
-static int validate_cb(uint16_t obj_inst_id,
-		       uint16_t res_id, uint16_t res_inst_id,
-		       uint8_t *data, uint16_t data_len,
-		       bool last_block, size_t total_size)
+static int validate_cb(uint16_t obj_inst_id, uint16_t res_id,
+		       uint16_t res_inst_id, uint8_t *data, uint16_t data_len,
+		       bool last_block, size_t total_size, size_t offset)
 {
 	callback_checker |= 0x08;
 	return 0;
@@ -599,11 +598,17 @@ ZTEST(lwm2m_registry, test_null_strings)
 
 ZTEST(lwm2m_registry, test_obj_version)
 {
-
+#if defined(CONFIG_LWM2M_ENGINE_ALWAYS_REPORT_OBJ_VERSION)
+	zassert_true(lwm2m_engine_shall_report_obj_version(lwm2m_engine_get_obj(&LWM2M_OBJ(0))));
+	zassert_true(
+		lwm2m_engine_shall_report_obj_version(lwm2m_engine_get_obj(&LWM2M_OBJ(32768))));
+	zassert_true(lwm2m_engine_shall_report_obj_version(lwm2m_engine_get_obj(&LWM2M_OBJ(3303))));
+#else
 	zassert_false(lwm2m_engine_shall_report_obj_version(lwm2m_engine_get_obj(&LWM2M_OBJ(0))));
 	zassert_false(
 		lwm2m_engine_shall_report_obj_version(lwm2m_engine_get_obj(&LWM2M_OBJ(32768))));
 	zassert_true(lwm2m_engine_shall_report_obj_version(lwm2m_engine_get_obj(&LWM2M_OBJ(3303))));
+#endif
 }
 
 ZTEST(lwm2m_registry, test_resource_cache)

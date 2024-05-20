@@ -36,7 +36,7 @@
 	-dcache_mem_cycles=2
 	-icache=65536,64,4,a
 	-icache_feature=2
-	-dccm_size=0x40000
+	-dccm_size=0x100000
 	-dccm_base=0x80000000
 	-dccm_mem_cycles=2
 	-iccm0_size=0x40000

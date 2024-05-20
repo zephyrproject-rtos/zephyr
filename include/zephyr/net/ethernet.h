@@ -971,6 +971,24 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 }
 #endif
 
+/**
+ * @brief Check if the given interface is a VLAN interface.
+ *
+ * @param iface Network interface
+ *
+ * @return True if this network interface is VLAN one, false if not.
+ */
+#if defined(CONFIG_NET_VLAN)
+bool net_eth_is_vlan_interface(struct net_if *iface);
+#else
+static inline bool net_eth_is_vlan_interface(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return false;
+}
+#endif
+
 #if !defined(CONFIG_ETH_DRIVER_RAW_MODE)
 
 #define Z_ETH_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\

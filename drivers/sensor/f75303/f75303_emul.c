@@ -103,7 +103,7 @@ static int f75303_emul_init(const struct emul *target, const struct device *pare
 	return 0;
 }
 
-static int f75303_emul_set_channel(const struct emul *target, enum sensor_channel chan,
+static int f75303_emul_set_channel(const struct emul *target, struct sensor_chan_spec ch,
 				   const q31_t *value, int8_t shift)
 {
 	struct f75303_emul_data *data = target->data;
@@ -112,7 +112,7 @@ static int f75303_emul_set_channel(const struct emul *target, enum sensor_channe
 	int32_t reg_value;
 	uint8_t reg_h, reg_l;
 
-	switch ((int32_t)chan) {
+	switch ((int32_t)ch.chan_type) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
 		reg_h = F75303_LOCAL_TEMP_H;
 		reg_l = F75303_LOCAL_TEMP_L;
@@ -139,12 +139,12 @@ static int f75303_emul_set_channel(const struct emul *target, enum sensor_channe
 	return 0;
 }
 
-static int f75303_emul_get_sample_range(const struct emul *target, enum sensor_channel chan,
+static int f75303_emul_get_sample_range(const struct emul *target, struct sensor_chan_spec ch,
 					q31_t *lower, q31_t *upper, q31_t *epsilon, int8_t *shift)
 {
-	if (chan != SENSOR_CHAN_AMBIENT_TEMP &&
-	    chan != (enum sensor_channel)SENSOR_CHAN_F75303_REMOTE1 &&
-	    chan != (enum sensor_channel)SENSOR_CHAN_F75303_REMOTE2) {
+	if (ch.chan_type != SENSOR_CHAN_AMBIENT_TEMP &&
+	    ch.chan_type != (enum sensor_channel)SENSOR_CHAN_F75303_REMOTE1 &&
+	    ch.chan_type != (enum sensor_channel)SENSOR_CHAN_F75303_REMOTE2) {
 		return -ENOTSUP;
 	}
 
@@ -160,7 +160,7 @@ static const struct i2c_emul_api f75303_emul_api_i2c = {
 	.transfer = f75303_emul_transfer_i2c,
 };
 
-static const struct emul_sensor_backend_api f75303_emul_api_sensor = {
+static const struct emul_sensor_driver_api f75303_emul_api_sensor = {
 	.set_channel = f75303_emul_set_channel,
 	.get_sample_range = f75303_emul_get_sample_range,
 };

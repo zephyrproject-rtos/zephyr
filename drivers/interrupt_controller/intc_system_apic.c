@@ -19,7 +19,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/linker/sections.h>
 
-#define IS_IOAPIC_IRQ(irq)  (irq < z_loapic_irq_base())
+#define IS_IOAPIC_IRQ(irq)  ((irq) < z_loapic_irq_base())
 #define HARDWARE_IRQ_LIMIT ((z_loapic_irq_base() + LOAPIC_IRQ_COUNT) - 1)
 
 /**

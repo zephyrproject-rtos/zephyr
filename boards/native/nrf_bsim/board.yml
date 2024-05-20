@@ -6,6 +6,10 @@ boards:
 - name: nrf5340bsim
   vendor: zephyr
   socs:
-  # Note this is referring to the real SOC yaml, but we only use its name and cpu-cluster definition
-  # In practice this board uses the same native SOC (SOC_POSIX) as the nrf52_bsim
   - name: nrf5340
+- name: nrf54l15bsim
+  vendor: zephyr
+  socs:
+  - name: nrf54l15
+# Note the 53 and 54 are referring to the real SOC yamls, but we only use their name and cpu-cluster
+# definitions. In practice these board uses the same native SOC (SOC_POSIX) as the nrf52_bsim

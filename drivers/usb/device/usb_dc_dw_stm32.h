@@ -74,7 +74,7 @@ static inline int pwr_on_st_stm32f4_fsotg(struct usb_dwc2_reg *const base)
 	}
 
 #define USB_DW_QUIRK_ST_STM32F4_FSOTG_DEFINE(n)					\
-	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), st_stm32f4_fsotg),	\
+	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(n, st_stm32f4_fsotg),		\
 		    (QUIRK_ST_STM32F4_FSOTG_DEFINE(n)), ())
 
 #endif /* ZEPHYR_DRIVERS_USB_DEVICE_USB_DC_DW_STM32_H */

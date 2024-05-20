@@ -204,6 +204,15 @@ void map_rom_segments(uint32_t app_drom_start, uint32_t app_drom_vaddr,
 	cache_hal_enable(CACHE_TYPE_ALL);
 #endif /* CONFIG_SOC_SERIES_ESP32 */
 
+#if !defined(CONFIG_SOC_SERIES_ESP32) && !defined(CONFIG_SOC_SERIES_ESP32S2)
+	/* Configure the Cache MMU size for instruction and rodata in flash. */
+	uint32_t cache_mmu_irom_size = ((app_irom_size + CONFIG_MMU_PAGE_SIZE - 1) /
+			CONFIG_MMU_PAGE_SIZE) * sizeof(uint32_t);
+
+	/* Split the cache usage by the segment sizes */
+	Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size,
+				CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
+#endif
 	/* Show map segments continue using same log format as during MCUboot phase */
 	BOOT_LOG_INF("DROM segment: paddr=%08xh, vaddr=%08xh, size=%05Xh (%6d) map",
 			app_drom_start_aligned, app_drom_vaddr_aligned,

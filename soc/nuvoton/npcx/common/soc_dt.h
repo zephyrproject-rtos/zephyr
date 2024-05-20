@@ -81,6 +81,20 @@
 	}
 
 /**
+ * @brief Construct a npcx_clk_cfg structure from 'clocks' with the same clock 'name'.
+ *
+ * @param inst instance number for compatible defined in DT_DRV_COMPAT.
+ * @param name name of the clock
+ * @return npcx_clk_cfg item from 'clocks' property with the same clock 'name'
+ */
+#define NPCX_DT_CLK_CFG_ITEM_BY_NAME(inst, name)                               \
+	{                                                                      \
+	  .bus  = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), name, bus),        \
+	  .ctrl = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), name, ctl),        \
+	  .bit  = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), name, bit),        \
+	}
+
+/**
  * @brief Length of 'clocks' property which type is 'phandle-array'
  *
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.

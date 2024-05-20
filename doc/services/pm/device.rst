@@ -18,7 +18,7 @@ Zephyr supports two methods of device power management:
 .. _pm-device-runtime-pm:
 
 Device Runtime Power Management
-*******************************
+===============================
 
 Device runtime power management involves coordinated interaction between
 device drivers, subsystems, and applications. While device drivers
@@ -70,7 +70,7 @@ For more information, see :ref:`pm-device-runtime`.
 .. _pm-device-system-pm:
 
 System-Managed Device Power Management
-**************************************
+======================================
 
 When using this method, device power management is mostly done inside
 :c:func:`pm_system_suspend()` along with entering a CPU or SOC power state.
@@ -231,6 +231,40 @@ support in a device driver.
         PM_DEVICE_DT_INST_GET(0), NULL, NULL, POST_KERNEL,
         CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
+.. _pm-device-shell:
+
+Shell Commands
+**************
+
+Power management actions can be triggered from shell commands for testing
+purposes. To do that, enable the :kconfig:option:`CONFIG_PM_DEVICE_SHELL`
+option and issue a ``pm`` command on a device from the shell, for example:
+
+.. code-block:: console
+
+        uart:~$ device list
+        - buttons (active)
+        uart:~$ pm suspend buttons
+        uart:~$ device list
+        devices:
+        - buttons (suspended)
+
+To print the power management state of a device, enable
+:kconfig:option:`CONFIG_DEVICE_SHELL` and use the ``device list`` command, for
+example:
+
+.. code-block:: console
+
+        uart:~$ device list
+        devices:
+        - i2c@40003000 (active)
+        - buttons (active, usage=1)
+        - leds (READY)
+
+In this case, ``leds`` does not support PM, ``i2c`` supports PM with manual
+suspend and resume actions and it's currently active, ``buttons`` supports
+runtime PM and it's currently active with one user.
+
 .. _pm-device-busy:
 
 Busy Status Indication
@@ -285,9 +319,12 @@ later calling :c:func:`pm_device_wakeup_enable`.
    It is responsibility of driver or the application to do any additional
    configuration required by the device to support it.
 
-Power Domain
-************
+Examples
+********
 
-Power domain on Zephyr is represented as a regular device. The power management
-subsystem ensures that a domain is resumed before and suspended after devices
-using it. For more details, see :ref:`pm-power-domain`.
+Some helpful examples showing device power management features:
+
+* :zephyr_file:`samples/subsys/pm/device_pm/`
+* :zephyr_file:`tests/subsys/pm/power_mgmt/`
+* :zephyr_file:`tests/subsys/pm/device_wakeup_api/`
+* :zephyr_file:`tests/subsys/pm/device_driver_init/`

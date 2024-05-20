@@ -72,6 +72,9 @@ config HAS_HW_NRF_GPIO0
 config HAS_HW_NRF_GPIO1
 	def_bool $(dt_nodelabel_enabled_with_compat,gpio1,$(DT_COMPAT_NORDIC_NRF_GPIO))
 
+config HAS_HW_NRF_GPIO2
+	def_bool $(dt_nodelabel_enabled_with_compat,gpio2,$(DT_COMPAT_NORDIC_NRF_GPIO))
+
 config HAS_HW_NRF_GPIOTE0
 	def_bool $(dt_nodelabel_enabled_with_compat,gpiote0,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
 
@@ -525,6 +528,42 @@ config HAS_HW_NRF_TWIS2
 config HAS_HW_NRF_TWIS3
 	def_bool $(dt_nodelabel_enabled_with_compat,i2c3,$(DT_COMPAT_NORDIC_NRF_TWIS))
 
+config HAS_HW_NRF_TWIS20
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c20,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_TWIS21
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c21,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_TWIS22
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c22,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_TWIS30
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c30,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_TWIS130
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c130,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_TWIS131
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c131,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_TWIS132
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c132,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_TWIS133
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c133,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_TWIS134
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c134,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_TWIS135
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c135,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_TWIS136
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c136,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_TWIS137
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c137,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
 config HAS_HW_NRF_UART0
 	def_bool $(dt_nodelabel_enabled_with_compat,uart0,$(DT_COMPAT_NORDIC_NRF_UART))
 
@@ -602,6 +641,12 @@ config HAS_HW_NRF_WDT30
 
 config HAS_HW_NRF_WDT31
 	def_bool $(dt_nodelabel_enabled_with_compat,wdt31,$(DT_COMPAT_NORDIC_NRF_WDT))
+
+config HAS_HW_NRF_WDT010
+	def_bool $(dt_nodelabel_enabled_with_compat,wdt010,$(DT_COMPAT_NORDIC_NRF_WDT))
+
+config HAS_HW_NRF_WDT011
+	def_bool $(dt_nodelabel_enabled_with_compat,wdt011,$(DT_COMPAT_NORDIC_NRF_WDT))
 
 config HAS_HW_NRF_WDT130
 	def_bool $(dt_nodelabel_enabled_with_compat,wdt130,$(DT_COMPAT_NORDIC_NRF_WDT))

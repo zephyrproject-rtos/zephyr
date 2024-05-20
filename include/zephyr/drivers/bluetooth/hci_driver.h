@@ -46,22 +46,11 @@ enum {
  * host with data from the controller. The buffer needs to have its type
  * set with the help of bt_buf_set_type() before calling this API.
  *
- * @note This function must only be called from a cooperative thread.
- *
  * @param buf Network buffer containing data from the controller.
  *
  * @return 0 on success or negative error number on failure.
  */
 int bt_recv(struct net_buf *buf);
-
-/** @brief Read static addresses from the controller.
- *
- *  @param addrs  Random static address and Identity Root (IR) array.
- *  @param size   Size of array.
- *
- *  @return Number of addresses read.
- */
-uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t size);
 
 /** Possible values for the 'bus' member of the bt_hci_driver struct */
 enum bt_hci_driver_bus {

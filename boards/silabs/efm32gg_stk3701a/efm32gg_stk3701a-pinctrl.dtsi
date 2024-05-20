@@ -25,4 +25,22 @@
 				<GECKO_LOC(UART_RX, 4)>;
 		};
 	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			psels = <GECKO_PSEL(I2C_SDA, C, 0)>,
+				<GECKO_PSEL(I2C_SCL, C, 1)>,
+				<GECKO_LOC(I2C_SDA, 4)>,
+				<GECKO_LOC(I2C_SCL, 4)>;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			psels = <GECKO_PSEL(I2C_SDA, C, 4)>,
+				<GECKO_PSEL(I2C_SCL, C, 5)>,
+				<GECKO_LOC(I2C_SDA, 0)>,
+				<GECKO_LOC(I2C_SCL, 0)>;
+		};
+	};
 };

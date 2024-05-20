@@ -83,7 +83,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	struct ll_sync_iso_set *sync_iso;
 	memq_link_t *link_sync_estab;
 	memq_link_t *link_sync_lost;
-	struct node_rx_hdr *node_rx;
+	struct node_rx_pdu *node_rx;
 	struct ll_sync_set *sync;
 	struct lll_sync_iso *lll;
 	int8_t last_index;
@@ -160,9 +160,9 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	sync_iso->timeout_expire = 0U;
 
 	/* Setup the periodic sync to establish ISO sync */
-	node_rx->link = link_sync_estab;
+	node_rx->hdr.link = link_sync_estab;
 	sync->iso.node_rx_estab = node_rx;
-	sync_iso->node_rx_lost.hdr.link = link_sync_lost;
+	sync_iso->node_rx_lost.rx.hdr.link = link_sync_lost;
 
 	/* Initialize sync LLL context */
 	lll = &sync_iso->lll;
@@ -241,9 +241,9 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 		}
 		sync->iso.sync_iso = NULL;
 
-		node_rx = (void *)sync->iso.node_rx_estab;
+		node_rx = sync->iso.node_rx_estab;
 		link_sync_estab = node_rx->hdr.link;
-		link_sync_lost = sync_iso->node_rx_lost.hdr.link;
+		link_sync_lost = sync_iso->node_rx_lost.rx.hdr.link;
 
 		ll_rx_link_release(link_sync_lost);
 		ll_rx_link_release(link_sync_estab);
@@ -256,10 +256,9 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 		/* NOTE: Since NODE_RX_TYPE_SYNC_ISO is only generated from ULL
 		 *       context, pass ULL context as parameter.
 		 */
-		node_rx->hdr.rx_ftr.param = sync_iso;
+		node_rx->rx_ftr.param = sync_iso;
 
-		/* NOTE: struct node_rx_lost has uint8_t member following the
-		 *       struct node_rx_hdr to store the reason.
+		/* NOTE: struct node_rx_lost has uint8_t member store the reason.
 		 */
 		se = (void *)node_rx->pdu;
 		se->status = BT_HCI_ERR_OP_CANCELLED_BY_HOST;
@@ -271,14 +270,14 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 
 	err = ull_ticker_stop_with_mark((TICKER_ID_SCAN_SYNC_ISO_BASE +
 					 big_handle), sync_iso, &sync_iso->lll);
-	LL_ASSERT(err == 0 || err == -EALREADY);
+	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, big_handle, err);
 	if (err) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	ull_sync_iso_stream_release(sync_iso);
 
-	link_sync_lost = sync_iso->node_rx_lost.hdr.link;
+	link_sync_lost = sync_iso->node_rx_lost.rx.hdr.link;
 	ll_rx_link_release(link_sync_lost);
 
 	return BT_HCI_ERR_SUCCESS;
@@ -368,7 +367,7 @@ void ull_sync_iso_stream_release(struct ll_sync_iso_set *sync_iso)
 }
 
 void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
-			struct node_rx_hdr *node_rx,
+			struct node_rx_pdu *node_rx,
 			uint8_t *acad, uint8_t acad_len)
 {
 	struct lll_sync_iso_stream *stream;
@@ -464,6 +463,9 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[2] << 16;
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[3] << 24;
 	lll->payload_count |= (uint64_t)(bi->payload_count_framing[4] & 0x7f) << 32;
+
+	/* Set establishment event countdown */
+	lll->establish_events = CONN_ESTAB_COUNTDOWN;
 
 	if (lll->enc && (bi_size == PDU_BIG_INFO_ENCRYPTED_SIZE)) {
 		const uint8_t BIG3[4]  = {0x33, 0x47, 0x49, 0x42};
@@ -652,22 +654,25 @@ void ull_sync_iso_estab_done(struct node_rx_event_done *done)
 	struct node_rx_sync_iso *se;
 	struct node_rx_pdu *rx;
 
-	/* switch to normal prepare */
-	mfy_lll_prepare.fp = lll_sync_iso_prepare;
+	if (done->extra.trx_cnt || done->extra.estab_failed) {
+		/* Switch to normal prepare */
+		mfy_lll_prepare.fp = lll_sync_iso_prepare;
 
-	/* Get reference to ULL context */
-	sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
+		/* Get reference to ULL context */
+		sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
 
-	/* Prepare BIG Sync Established */
-	rx = (void *)sync_iso->sync->iso.node_rx_estab;
-	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
-	rx->hdr.handle = sync_iso_handle_get(sync_iso);
-	rx->hdr.rx_ftr.param = sync_iso;
+		/* Prepare BIG Sync Established */
+		rx = (void *)sync_iso->sync->iso.node_rx_estab;
+		rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
+		rx->hdr.handle = sync_iso_handle_get(sync_iso);
+		rx->rx_ftr.param = sync_iso;
 
-	se = (void *)rx->pdu;
-	se->status = BT_HCI_ERR_SUCCESS;
+		se = (void *)rx->pdu;
+		se->status = done->extra.estab_failed ?
+			BT_HCI_ERR_CONN_FAIL_TO_ESTAB : BT_HCI_ERR_SUCCESS;
 
-	ll_rx_put_sched(rx->hdr.link, rx);
+		ll_rx_put_sched(rx->hdr.link, rx);
+	}
 
 	ull_sync_iso_done(done);
 }
@@ -785,7 +790,7 @@ void ull_sync_iso_done_terminate(struct node_rx_event_done *done)
 	rx = (void *)&sync_iso->node_rx_lost;
 	rx->hdr.handle = sync_iso_handle_get(sync_iso);
 	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
-	rx->hdr.rx_ftr.param = sync_iso;
+	rx->rx_ftr.param = sync_iso;
 	*((uint8_t *)rx->pdu) = lll->term_reason;
 
 	/* Stop Sync ISO Ticker */
@@ -818,7 +823,7 @@ static void disable(uint8_t sync_idx)
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_SYNC_ISO_BASE +
 					sync_idx, sync_iso, &sync_iso->lll);
-	LL_ASSERT(err == 0 || err == -EALREADY);
+	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, sync_idx, err);
 }
 
 static int init_reset(void)
@@ -872,9 +877,15 @@ static void timeout_cleanup(struct ll_sync_iso_set *sync_iso)
 	/* Populate the Sync Lost which will be enqueued in disabled_cb */
 	rx = (void *)&sync_iso->node_rx_lost;
 	rx->hdr.handle = sync_iso_handle_get(sync_iso);
-	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
-	rx->hdr.rx_ftr.param = sync_iso;
-	*((uint8_t *)rx->pdu) = BT_HCI_ERR_CONN_TIMEOUT;
+	rx->rx_ftr.param = sync_iso;
+
+	if (mfy_lll_prepare.fp == lll_sync_iso_prepare) {
+		rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
+		*((uint8_t *)rx->pdu) = BT_HCI_ERR_CONN_TIMEOUT;
+	} else {
+		rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
+		*((uint8_t *)rx->pdu) = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+	}
 
 	/* Stop Sync ISO Ticker */
 	handle = sync_iso_handle_get(sync_iso);

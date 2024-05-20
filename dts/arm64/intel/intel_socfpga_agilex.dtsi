@@ -99,6 +99,10 @@
 		reg = <0x10000000 0x200000>;
 	};
 
+	fpga0: bridges {
+		compatible = "altr,socfpga-agilex-bridge";
+	};
+
 	uart0: uart@ffc02000 {
 		compatible = "ns16550";
 		reg-shift = <2>;

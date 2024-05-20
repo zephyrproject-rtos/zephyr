@@ -5,7 +5,8 @@
 
 config COUNTER_NXP_PIT
 	bool "NXP PIT driver"
-	default y if DT_HAS_NXP_PIT_CHANNEL_ENABLED && \
+	default y
+	depends on DT_HAS_NXP_PIT_CHANNEL_ENABLED && \
 			DT_HAS_NXP_PIT_ENABLED
 	help
 	  Enable support for the NXP Periodic Interrupt Timer (PIT).

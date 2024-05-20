@@ -725,10 +725,10 @@ int lll_adv_scan_req_report(struct lll_adv *lll, struct pdu_adv *pdu_adv_rx,
 	node_rx->hdr.type = NODE_RX_TYPE_SCAN_REQ;
 	node_rx->hdr.handle = ull_adv_lll_handle_get(lll);
 
-	node_rx->hdr.rx_ftr.rssi = (rssi_ready) ? radio_rssi_get() :
+	node_rx->rx_ftr.rssi = (rssi_ready) ? radio_rssi_get() :
 						  BT_HCI_LE_RSSI_NOT_AVAILABLE;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	node_rx->hdr.rx_ftr.rl_idx = rl_idx;
+	node_rx->rx_ftr.rl_idx = rl_idx;
 #endif
 
 	ull_rx_put_sched(node_rx->hdr.link, node_rx);
@@ -1387,15 +1387,15 @@ static void isr_done(void *param)
 	}
 
 #if defined(CONFIG_BT_CTLR_ADV_INDICATION)
-	struct node_rx_hdr *node_rx = ull_pdu_rx_alloc_peek(3);
+	struct node_rx_pdu *node_rx = ull_pdu_rx_alloc_peek(3);
 
 	if (node_rx) {
 		ull_pdu_rx_alloc();
 
 		/* TODO: add other info by defining a payload struct */
-		node_rx->type = NODE_RX_TYPE_ADV_INDICATION;
+		node_rx->hdr.type = NODE_RX_TYPE_ADV_INDICATION;
 
-		ull_rx_put_sched(node_rx->link, node_rx);
+		ull_rx_put_sched(node_rx->hdr.link, node_rx);
 	}
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
 
@@ -1641,7 +1641,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		rx->hdr.type = NODE_RX_TYPE_CONNECTION;
 		rx->hdr.handle = 0xffff;
 
-		ftr = &(rx->hdr.rx_ftr);
+		ftr = &(rx->rx_ftr);
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = radio_tmr_end_get() -

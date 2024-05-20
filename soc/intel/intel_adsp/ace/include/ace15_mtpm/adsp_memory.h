@@ -161,17 +161,17 @@ struct ace_lpsram_regs {
 #endif
 
 /* These registers are for the L2 HP SRAM bank power management control and status.*/
-#define L2HSBPM_REG					0x17A800
-#define L2HSBPM_REG_SIZE			0x0008
+#define L2_HSBPM_BASE (DT_REG_ADDR(DT_NODELABEL(hsbpm)))
+#define L2_HSBPM_SIZE (DT_REG_SIZE(DT_NODELABEL(hsbpm)))
 
 #define HPSRAM_REGS(block_idx)		((volatile struct ace_hpsram_regs *const) \
-	(L2HSBPM_REG + L2HSBPM_REG_SIZE * (block_idx)))
+	(L2_HSBPM_BASE + L2_HSBPM_SIZE * (block_idx)))
 
 /* These registers are for the L2 LP SRAM bank power management control and status.*/
-#define L2LSBPM_REG				0x71D80
-#define L2LSBPM_REG_SIZE			0x0008
+#define L2_LSBPM_BASE (DT_REG_ADDR(DT_NODELABEL(lsbpm)))
+#define L2_LSBPM_SIZE (DT_REG_SIZE(DT_NODELABEL(lsbpm)))
 
 #define LPSRAM_REGS(block_idx)		((volatile struct ace_lpsram_regs *const) \
-	(L2LSBPM_REG + L2LSBPM_REG_SIZE * (block_idx)))
+	(L2_LSBPM_BASE + L2_LSBPM_SIZE * (block_idx)))
 
 #endif /* ZEPHYR_SOC_INTEL_ADSP_MEMORY_H_ */

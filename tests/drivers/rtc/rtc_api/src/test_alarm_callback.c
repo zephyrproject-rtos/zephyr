@@ -1,5 +1,6 @@
 /*
- * Copyright 2022 Bjarki Arge Andreasen
+ * Copyright (c) 2022 Bjarki Arge Andreasen
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,14 +55,14 @@ ZTEST(rtc_api, test_alarm_callback)
 	for (uint16_t i = 0; i < alarms_count; i++) {
 		ret = rtc_alarm_set_callback(rtc, i, NULL, NULL);
 
-		zassert_ok(ret, "Failed to clear and disable alarm");
+		zassert_ok(ret, "Failed to clear and disable alarm %d", i);
 	}
 
 	/* Validate alarms supported fields */
 	for (uint16_t i = 0; i < alarms_count; i++) {
 		ret = rtc_alarm_get_supported_fields(rtc, i, &alarm_time_mask_supported);
 
-		zassert_ok(ret, "Failed to get supported alarm fields");
+		zassert_ok(ret, "Failed to get supported alarm %d fields", i);
 
 		/* Skip test if alarm does not support the minute and hour fields */
 		if (((RTC_ALARM_TIME_MASK_MINUTE & alarm_time_mask_supported) == 0) ||
@@ -78,7 +79,7 @@ ZTEST(rtc_api, test_alarm_callback)
 	for (uint16_t i = 0; i < alarms_count; i++) {
 		ret = rtc_alarm_set_time(rtc, i, alarm_time_mask_set, &alarm_time_set);
 
-		zassert_ok(ret, "Failed to set alarm time");
+		zassert_ok(ret, "Failed to set alarm %d time", i);
 	}
 
 	/* Initialize RTC time to set */
@@ -98,7 +99,7 @@ ZTEST(rtc_api, test_alarm_callback)
 	for (uint16_t i = 0; i < alarms_count; i++) {
 		ret = rtc_alarm_is_pending(rtc, i);
 
-		zassert_true(ret > -1, "Failed to clear alarm pending status");
+		zassert_true(ret > -1, "Failed to clear alarm %d pending status", i);
 	}
 
 	/* Set and enable alarm callback */
@@ -113,7 +114,7 @@ ZTEST(rtc_api, test_alarm_callback)
 						&callback_user_data_even);
 		}
 
-		zassert_ok(ret, "Failed to set alarm callback");
+		zassert_ok(ret, "Failed to set alarm %d callback", i);
 	}
 
 	for (uint8_t i = 0; i < 2; i++) {
@@ -143,7 +144,7 @@ ZTEST(rtc_api, test_alarm_callback)
 					: atomic_test_bit(&callback_called_mask_even, j);
 
 			zassert_equal(callback_called_status, true,
-				      "Alarm callback should have been called");
+				      "Alarm %d callback should have been called", j);
 		}
 
 		/* Reset RTC time */
@@ -156,14 +157,14 @@ ZTEST(rtc_api, test_alarm_callback)
 	for (uint16_t i = 0; i < alarms_count; i++) {
 		ret = rtc_alarm_set_callback(rtc, i, NULL, NULL);
 
-		zassert_ok(ret, "Failed to disable alarm callback");
+		zassert_ok(ret, "Failed to disable alarm %d callback", i);
 
 		ret = rtc_alarm_set_time(rtc, i, 0, NULL);
 
-		zassert_ok(ret, "Failed to disable alarm");
+		zassert_ok(ret, "Failed to disable alarm %d", i);
 
 		ret = rtc_alarm_is_pending(rtc, i);
 
-		zassert_true(ret > -1, "Failed to clear alarm pending state");
+		zassert_true(ret > -1, "Failed to clear alarm %d pending state", i);
 	}
 }

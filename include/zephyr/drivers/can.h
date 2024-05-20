@@ -31,7 +31,7 @@ extern "C" {
  * @brief CAN Interface
  * @defgroup can_interface CAN Interface
  * @since 1.12
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup io_interfaces
  * @{
  */
@@ -171,10 +171,7 @@ enum can_state {
  */
 struct can_frame {
 	/** Standard (11-bit) or extended (29-bit) CAN identifier. */
-	uint32_t id  : 29;
-	/** @cond INTERNAL_HIDDEN */
-	uint8_t res0 : 3; /* reserved/padding. */
-	/** @endcond */
+	uint32_t id;
 	/** Data Length Code (DLC) indicating data length in bytes. */
 	uint8_t dlc;
 	/** Flags. @see @ref CAN_FRAME_FLAGS. */
@@ -190,7 +187,8 @@ struct can_frame {
 	uint16_t timestamp;
 #else
 	/** @cond INTERNAL_HIDDEN */
-	uint16_t res1;  /* reserved/padding. */
+	/** Padding. */
+	uint16_t reserved;
 	/** @endcond */
 #endif
 	/** The frame payload data. */
@@ -212,7 +210,6 @@ struct can_frame {
 /** Filter matches frames with extended (29-bit) CAN IDs */
 #define CAN_FILTER_IDE  BIT(0)
 
-
 /** @} */
 
 /**
@@ -220,14 +217,11 @@ struct can_frame {
  */
 struct can_filter {
 	/** CAN identifier to match. */
-	uint32_t id           : 29;
-	/** @cond INTERNAL_HIDDEN */
-	uint32_t res0         : 3;
-	/** @endcond */
+	uint32_t id;
 	/** CAN identifier matching mask. If a bit in this mask is 0, the value
 	 * of the corresponding bit in the ``id`` field is ignored by the filter.
 	 */
-	uint32_t mask         : 29;
+	uint32_t mask;
 	/** Flags. @see @ref CAN_FILTER_FLAGS. */
 	uint8_t flags;
 };
@@ -380,10 +374,11 @@ struct can_driver_config {
 		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, phys)),			\
 		.min_bitrate = DT_CAN_TRANSCEIVER_MIN_BITRATE(node_id, _min_bitrate),		\
 		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, _max_bitrate),		\
-		.bus_speed = DT_PROP(node_id, bus_speed),					\
+		.bus_speed = DT_PROP_OR(node_id, bus_speed, CONFIG_CAN_DEFAULT_BITRATE),	\
 		.sample_point = DT_PROP_OR(node_id, sample_point, 0),				\
 		IF_ENABLED(CONFIG_CAN_FD_MODE,							\
-			(.bus_speed_data = DT_PROP_OR(node_id, bus_speed_data, 0),		\
+			(.bus_speed_data = DT_PROP_OR(node_id, bus_speed_data,			\
+						      CONFIG_CAN_DEFAULT_BITRATE_DATA),		\
 			 .sample_point_data = DT_PROP_OR(node_id, sample_point_data, 0),))	\
 	}
 
@@ -840,18 +835,33 @@ static inline int z_impl_can_get_core_clock(const struct device *dev, uint32_t *
  * Get the minimum supported bitrate for the CAN controller/transceiver combination.
  *
  * @param dev Pointer to the device structure for the driver instance.
+ * @return Minimum supported bitrate in bits/s
+ */
+__syscall uint32_t can_get_bitrate_min(const struct device *dev);
+
+static inline uint32_t z_impl_can_get_bitrate_min(const struct device *dev)
+{
+	const struct can_driver_config *common = (const struct can_driver_config *)dev->config;
+
+	return common->min_bitrate;
+}
+
+/**
+ * @brief Get minimum supported bitrate
+ *
+ * Get the minimum supported bitrate for the CAN controller/transceiver combination.
+ *
+ * @deprecated Use @a can_get_bitrate_min() instead.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
  * @param[out] min_bitrate Minimum supported bitrate in bits/s
  *
  * @retval -EIO General input/output error.
  * @retval -ENOSYS If this function is not implemented by the driver.
  */
-__syscall int can_get_min_bitrate(const struct device *dev, uint32_t *min_bitrate);
-
-static inline int z_impl_can_get_min_bitrate(const struct device *dev, uint32_t *min_bitrate)
+__deprecated static inline int can_get_min_bitrate(const struct device *dev, uint32_t *min_bitrate)
 {
-	const struct can_driver_config *common = (const struct can_driver_config *)dev->config;
-
-	*min_bitrate = common->min_bitrate;
+	*min_bitrate = can_get_bitrate_min(dev);
 
 	return 0;
 }
@@ -862,23 +872,34 @@ static inline int z_impl_can_get_min_bitrate(const struct device *dev, uint32_t 
  * Get the maximum supported bitrate for the CAN controller/transceiver combination.
  *
  * @param dev Pointer to the device structure for the driver instance.
+ * @return Maximum supported bitrate in bits/s
+ */
+__syscall uint32_t can_get_bitrate_max(const struct device *dev);
+
+static inline uint32_t z_impl_can_get_bitrate_max(const struct device *dev)
+{
+	const struct can_driver_config *common = (const struct can_driver_config *)dev->config;
+
+	return common->max_bitrate;
+}
+
+/**
+ * @brief Get maximum supported bitrate
+ *
+ * Get the maximum supported bitrate for the CAN controller/transceiver combination.
+ *
+ * @deprecated Use @a can_get_bitrate_max() instead.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
  * @param[out] max_bitrate Maximum supported bitrate in bits/s
  *
  * @retval 0 If successful.
  * @retval -EIO General input/output error.
  * @retval -ENOSYS If this function is not implemented by the driver.
  */
-__syscall int can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate);
-
-static inline int z_impl_can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+__deprecated static inline int can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 {
-	const struct can_driver_config *common = (const struct can_driver_config *)dev->config;
-
-	if (common->max_bitrate == 0U) {
-		return -ENOSYS;
-	}
-
-	*max_bitrate = common->max_bitrate;
+	*max_bitrate = can_get_bitrate_max(dev);
 
 	return 0;
 }
@@ -1343,17 +1364,8 @@ __syscall int can_send(const struct device *dev, const struct can_frame *frame,
  * @retval -EINVAL if the requested filter type is invalid.
  * @retval -ENOTSUP if the requested filter type is not supported.
  */
-static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
-				    void *user_data, const struct can_filter *filter)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
-
-	if (filter == NULL) {
-		return -EINVAL;
-	}
-
-	return api->add_rx_filter(dev, callback, user_data, filter);
-}
+int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
+		      void *user_data, const struct can_filter *filter);
 
 /**
  * @brief Statically define and initialize a CAN RX message queue.

@@ -86,17 +86,6 @@ static void usbd_ep_ctrl_set_zlp(struct usbd_contex *const uds_ctx,
  * All the functions below are part of public USB device support API.
  */
 
-struct net_buf *usbd_ep_ctrl_buf_alloc(struct usbd_contex *const uds_ctx,
-				       const uint8_t ep, const size_t size)
-{
-	if (USB_EP_GET_IDX(ep)) {
-		/* Not a control endpoint */
-		return NULL;
-	}
-
-	return udc_ep_buf_alloc(uds_ctx->dev, ep, size);
-}
-
 int usbd_ep_ctrl_enqueue(struct usbd_contex *const uds_ctx,
 			 struct net_buf *const buf)
 {
@@ -120,18 +109,18 @@ int usbd_ep_ctrl_enqueue(struct usbd_contex *const uds_ctx,
 	return udc_ep_enqueue(uds_ctx->dev, buf);
 }
 
-struct net_buf *usbd_ep_buf_alloc(const struct usbd_class_node *const c_nd,
+struct net_buf *usbd_ep_buf_alloc(const struct usbd_class_data *const c_data,
 				  const uint8_t ep, const size_t size)
 {
-	struct usbd_contex *uds_ctx = c_nd->data->uds_ctx;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
 
 	return udc_ep_buf_alloc(uds_ctx->dev, ep, size);
 }
 
-int usbd_ep_enqueue(const struct usbd_class_node *const c_nd,
+int usbd_ep_enqueue(const struct usbd_class_data *const c_data,
 		    struct net_buf *const buf)
 {
-	struct usbd_contex *uds_ctx = c_nd->data->uds_ctx;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
 	struct udc_buf_info *bi = udc_get_buf_info(buf);
 
 	if (USB_EP_DIR_IS_IN(bi->ep)) {
@@ -140,7 +129,7 @@ int usbd_ep_enqueue(const struct usbd_class_node *const c_nd,
 		}
 	}
 
-	bi->owner = (void *)c_nd;
+	bi->owner = (void *)c_data;
 
 	return udc_ep_enqueue(uds_ctx->dev, buf);
 }

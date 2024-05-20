@@ -261,7 +261,7 @@ uint8_t ull_adv_sync_time_update(struct ll_adv_sync_set *sync,
 uint8_t ull_adv_sync_chm_update(void);
 
 /* helper function to cleanup after channel map update indications complete */
-void ull_adv_sync_chm_complete(struct node_rx_hdr *rx);
+void ull_adv_sync_chm_complete(struct node_rx_pdu *rx);
 
 /* helper function to fill initial value of sync_info structure */
 void ull_adv_sync_info_fill(struct ll_adv_sync_set *sync,
@@ -302,7 +302,7 @@ struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle);
 uint8_t ull_adv_iso_chm_update(void);
 
 /* helper function to cleanup after channel map update complete */
-void ull_adv_iso_chm_complete(struct node_rx_hdr *rx);
+void ull_adv_iso_chm_complete(struct node_rx_pdu *rx);
 
 /* helper function to schedule a mayfly to get BIG offset */
 void ull_adv_iso_offset_get(struct ll_adv_sync_set *sync);

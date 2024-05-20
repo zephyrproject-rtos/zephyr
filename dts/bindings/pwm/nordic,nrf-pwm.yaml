@@ -2,7 +2,7 @@ description: nRF PWM
 
 compatible: "nordic,nrf-pwm"
 
-include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml, memory-region.yaml]
 
 properties:
   reg:

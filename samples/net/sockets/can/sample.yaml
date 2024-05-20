@@ -8,6 +8,10 @@ common:
   filter: dt_chosen_enabled("zephyr,canbus") and not dt_compat_enabled("kvaser,pcican")
   depends_on: can
   harness: console
+  # native_posix does not work with CONFIG_POSIX_API
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
 tests:
   sample.net.sockets.can.one_socket:
     extra_configs:

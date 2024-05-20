@@ -1,0 +1,12 @@
+tests:
+  boards.nrf.i2c.i2c_slave:
+    depends_on: i2c
+    tags: drivers i2c
+    harness: ztest
+    harness_config:
+      fixture: i2c_loopback
+    platform_allow: nrf52840dk/nrf52840 nrf5340dk/nrf5340/cpuapp nrf54l15pdk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf54l15pdk/nrf54l15/cpuapp

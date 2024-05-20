@@ -330,7 +330,7 @@ ZTEST(gnss_nmea0183, test_parse_gga_fix)
 		      "Incorrectly parsed number of satelites");
 
 	zassert_equal(data.info.hdop, 1410, "Incorrectly parsed HDOP");
-	zassert_equal(data.nav_data.altitude, 42371, "Incorrectly parsed altitude");
+	zassert_equal(data.nav_data.altitude, 15234, "Incorrectly parsed altitude");
 }
 
 ZTEST(gnss_nmea0183, test_snprintk)

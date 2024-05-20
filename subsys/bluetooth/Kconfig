@@ -61,15 +61,6 @@ config BT_HCI_RAW_H4_ENABLE
 	  This option enables use of H:4 transport for HCI RAW access at
 	  build time.
 
-config BT_HCI_RAW_RESERVE
-	int "Buffer headroom needed for HCI transport"
-	depends on BT_HCI_RAW
-	default 1 if BT_HCI_RAW_H4
-	default 0
-	help
-	  This option is used by the HCI raw transport implementation to
-	  declare how much headroom it needs for any HCI transport headers.
-
 config BT_HCI_RAW_CMD_EXT
 	bool "RAW HCI Command Extension"
 	help

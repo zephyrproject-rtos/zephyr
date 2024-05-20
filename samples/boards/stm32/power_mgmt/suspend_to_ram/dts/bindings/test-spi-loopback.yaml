@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2024 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    This binding provides resources required to build and run an SPI
+    loopback test under power management conditions
+
+compatible: "test-spi-loopback"
+
+include: [spi-device.yaml]

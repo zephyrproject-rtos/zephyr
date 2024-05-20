@@ -21,13 +21,18 @@
 # Outcome:
 # The following variables will be defined when this CMake module completes:
 #
-# - BOARD:                Board, without revision field.
-# - BOARD_REVISION:       Board revision
-# - BOARD_DIR:            Board directory with the implementation for selected board
-# - ARCH_DIR:             Arch dir for extracted from selected board
-# - BOARD_ROOT:           BOARD_ROOT with ZEPHYR_BASE appended
-# - BOARD_EXTENSION_DIRS: List of board extension directories (If
-#                         BOARD_EXTENSIONS is not explicitly disabled)
+# - BOARD:                       Board, without revision field.
+# - BOARD_REVISION:              Board revision
+# - BOARD_QUALIFIERS:            Board qualifiers
+# - NORMALIZED_BOARD_QUALIFIERS: Board qualifiers in lower-case format where slashes have been
+#                                replaced with underscores
+# - NORMALIZED_BOARD_TARGET:     Board target in lower-case format where slashes have been
+#                                replaced with underscores
+# - BOARD_DIR:                   Board directory with the implementation for selected board
+# - ARCH_DIR:                    Arch dir for extracted from selected board
+# - BOARD_ROOT:                  BOARD_ROOT with ZEPHYR_BASE appended
+# - BOARD_EXTENSION_DIRS:        List of board extension directories (If
+#                                BOARD_EXTENSIONS is not explicitly disabled)
 #
 # The following targets will be defined when this CMake module completes:
 # - board: when invoked, a list of valid boards will be printed
@@ -314,7 +319,7 @@ elseif(HWMv2)
       unset(CACHED_BOARD CACHE)
       message(FATAL_ERROR "Board qualifiers `${BOARD_QUALIFIERS}` for board \
             `${BOARD}` not found. Please specify a valid board target.\n"
-            "Valid board targets for ${BOARD_NAME} are:\n${board_targets}\n")
+            "Valid board targets for ${LIST_BOARD_NAME} are:\n${board_targets}\n")
     endif()
   endif()
 else()
@@ -336,7 +341,12 @@ endif()
 if(DEFINED BOARD_QUALIFIERS)
   string(REGEX REPLACE "^/" "qualifiers: " board_message_qualifiers "${BOARD_QUALIFIERS}")
   set(board_message "${board_message}, ${board_message_qualifiers}")
+
+  string(REPLACE "/" "_" NORMALIZED_BOARD_QUALIFIERS "${BOARD_QUALIFIERS}")
 endif()
+
+set(NORMALIZED_BOARD_TARGET "${BOARD}${BOARD_QUALIFIERS}")
+string(REPLACE "/" "_" NORMALIZED_BOARD_TARGET "${NORMALIZED_BOARD_TARGET}")
 
 message(STATUS "${board_message}")
 

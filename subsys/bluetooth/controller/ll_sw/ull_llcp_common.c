@@ -54,7 +54,7 @@
 
 /* LLCP Local Procedure FSM states */
 enum {
-	LP_COMMON_STATE_IDLE,
+	LP_COMMON_STATE_IDLE = LLCP_STATE_IDLE,
 	LP_COMMON_STATE_WAIT_TX,
 	LP_COMMON_STATE_WAIT_TX_ACK,
 	LP_COMMON_STATE_WAIT_RX,
@@ -84,7 +84,7 @@ enum {
 
 /* LLCP Remote Procedure Common FSM states */
 enum {
-	RP_COMMON_STATE_IDLE,
+	RP_COMMON_STATE_IDLE = LLCP_STATE_IDLE,
 	RP_COMMON_STATE_WAIT_RX,
 	RP_COMMON_STATE_POSTPONE_TERMINATE,
 	RP_COMMON_STATE_WAIT_TX,
@@ -921,11 +921,6 @@ void llcp_lp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_
 	lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RESPONSE, rx->pdu);
 }
 
-void llcp_lp_comm_init_proc(struct proc_ctx *ctx)
-{
-	ctx->state = LP_COMMON_STATE_IDLE;
-}
-
 void llcp_lp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RUN, param);
@@ -1139,6 +1134,7 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t gene
 
 	/* Allocate ntf node */
 	ntf = ctx->node_ref.rx;
+	ctx->node_ref.rx = NULL;
 	LL_ASSERT(ntf);
 
 	/* This should be an 'old' RX node, so put/sched when done */
@@ -1419,11 +1415,6 @@ void llcp_rp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_
 void llcp_rp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
 {
 	rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_ACK, tx->pdu);
-}
-
-void llcp_rp_comm_init_proc(struct proc_ctx *ctx)
-{
-	ctx->state = RP_COMMON_STATE_IDLE;
 }
 
 void llcp_rp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)

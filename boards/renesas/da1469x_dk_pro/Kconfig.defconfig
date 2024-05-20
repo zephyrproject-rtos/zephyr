@@ -34,4 +34,32 @@ config LV_Z_POINTER_INPUT_MSGQ_COUNT
 
 endif # INPUT
 
+#if PM || PM_DEVICE || PM_DEVICE_RUNTIME
+
+# Increase stack size to avoid raising usage-fault
+# exceptions due to stack overflow.
+config IDLE_STACK_SIZE
+	default 2048
+
+# Make sure the serial device has higher
+# initialization priority.
+config SERIAL_INIT_PRIORITY
+	default KERNEL_INIT_PRIORITY_DEFAULT
+
+#endif # PM || PM_DEVICE
+
+if BT
+
+choice BT_HCI_BUS_TYPE
+	default BT_DA1469X
+endchoice
+
+config BT_WAIT_NOP
+	default y
+
+config TEST_RANDOM_GENERATOR
+	default y
+
+endif # BT
+
 endif # BOARD_DA1469X_DK_PRO

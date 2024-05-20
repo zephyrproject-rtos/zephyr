@@ -1,0 +1,31 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FOLDER_TEST_INCLUDE_APP
+	bool
+	default "$(dt_alias_enabled,test-app)"
+
+config SOC_FOLDER_TEST_INCLUDE_BOARD
+	bool
+	default "$(dt_alias_enabled,test-board)"
+
+config SOC_FOLDER_TEST_INCLUDE_BOARD_SUFFIX
+	bool
+	default "$(dt_alias_enabled,test-board-suffix)"
+
+config SOC_FOLDER_TEST_INCLUDE_BOARD_QUALIFIERS
+	bool
+	default "$(dt_alias_enabled,test-board-qualifiers)"
+
+config SOC_FOLDER_TEST_INCLUDE_SOC
+	bool
+	default "$(dt_alias_enabled,test-soc)"
+
+config SOC_FOLDER_TEST_INCLUDE_SOC_SUFFIX
+	bool
+	default "$(dt_alias_enabled,test-soc-suffix)"
+
+config TEST_TYPE
+	int "Test type"
+
+source "Kconfig.zephyr"

@@ -50,6 +50,7 @@ static void btp_send_discovery_completed_ev(struct bt_conn *conn, uint8_t status
 }
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
+				      const struct bt_csip_set_coordinator_set_member *member,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	LOG_DBG("");
@@ -531,13 +532,13 @@ static int cap_broadcast_source_adv_setup(struct btp_bap_broadcast_local_source 
 					  uint32_t *gap_settings)
 {
 	int err;
-	struct bt_le_adv_param *param = BT_LE_EXT_ADV_NCONN_NAME;
+	struct bt_le_adv_param *param = BT_LE_EXT_ADV_NCONN;
 
 	NET_BUF_SIMPLE_DEFINE(ad_buf, BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
 	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
 
 	/* Broadcast Audio Streaming Endpoint advertising data */
-	struct bt_data base_ad;
+	struct bt_data base_ad[2];
 	struct bt_data per_ad;
 
 	err = bt_cap_initiator_broadcast_get_id(source->cap_broadcast, &source->broadcast_id);
@@ -552,11 +553,14 @@ static int cap_broadcast_source_adv_setup(struct btp_bap_broadcast_local_source 
 	/* Setup extended advertising data */
 	net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
 	net_buf_simple_add_le24(&ad_buf, source->broadcast_id);
-	base_ad.type = BT_DATA_SVC_DATA16;
-	base_ad.data_len = ad_buf.len;
-	base_ad.data = ad_buf.data;
-	err = tester_gap_create_adv_instance(param, BTP_GAP_ADDR_TYPE_IDENTITY, &base_ad, 1, NULL,
-					     0, gap_settings);
+	base_ad[0].type = BT_DATA_SVC_DATA16;
+	base_ad[0].data_len = ad_buf.len;
+	base_ad[0].data = ad_buf.data;
+	base_ad[1].type = BT_DATA_NAME_COMPLETE;
+	base_ad[1].data_len = sizeof(CONFIG_BT_DEVICE_NAME) - 1;
+	base_ad[1].data = CONFIG_BT_DEVICE_NAME;
+	err = tester_gap_create_adv_instance(param, BTP_GAP_ADDR_TYPE_IDENTITY, base_ad, 2,
+					     NULL, 0, gap_settings);
 	if (err != 0) {
 		LOG_DBG("Failed to create extended advertising instance: %d", err);
 

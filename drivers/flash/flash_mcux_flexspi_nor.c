@@ -52,8 +52,10 @@ enum {
 	READ_STATUS_REG,
 	ERASE_CHIP,
 	READ_JESD216,
+	/* Entries after this should be for scratch commands */
+	FLEXSPI_INSTR_PROG_END,
 	/* Used for temporary commands during initialization */
-	SCRATCH_CMD,
+	SCRATCH_CMD = FLEXSPI_INSTR_PROG_END,
 	SCRATCH_CMD2,
 	/* Must be last entry */
 	FLEXSPI_INSTR_END,
@@ -718,22 +720,23 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 
 	/* Check to see if we can enable 4 byte addressing */
 	ret = jesd216_bfp_decode_dw16(&header->phdr[0], bfp, &dw16);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Attempt to enable 4 byte addressing */
-	ret = flash_flexspi_nor_4byte_enable(data, flexspi_lut, dw16.enter_4ba);
 	if (ret == 0) {
-		/* Use 4 byte address width */
-		addr_width = 32;
-		/* Update LUT for ERASE_SECTOR and ERASE_BLOCK to use 32 bit addr */
-		flexspi_lut[ERASE_SECTOR][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_SE,
-				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, addr_width);
-		flexspi_lut[ERASE_BLOCK][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_BE,
-				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, addr_width);
+		/* Attempt to enable 4 byte addressing */
+		ret = flash_flexspi_nor_4byte_enable(data, flexspi_lut,
+						     dw16.enter_4ba);
+		if (ret == 0) {
+			/* Use 4 byte address width */
+			addr_width = 32;
+			/* Update LUT for ERASE_SECTOR and ERASE_BLOCK to use 32 bit addr */
+			flexspi_lut[ERASE_SECTOR][0] = FLEXSPI_LUT_SEQ(
+					kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
+					SPI_NOR_CMD_SE, kFLEXSPI_Command_RADDR_SDR,
+					kFLEXSPI_1PAD, addr_width);
+			flexspi_lut[ERASE_BLOCK][0] = FLEXSPI_LUT_SEQ(
+					kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
+					SPI_NOR_CMD_BE, kFLEXSPI_Command_RADDR_SDR,
+					kFLEXSPI_1PAD, addr_width);
+		}
 	}
 	/* Extract the read command.
 	 * Note- enhanced XIP not currently supported, nor is 4-4-4 mode.
@@ -764,20 +767,21 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
 		/* Read 1S-4S-4S enable method */
 		ret = jesd216_bfp_decode_dw15(&header->phdr[0], bfp, &dw15);
-		if (ret < 0) {
-			return ret;
+		if (ret == 0) {
+			ret = flash_flexspi_nor_quad_enable(data, flexspi_lut,
+							    dw15.qer);
+			if (ret == 0) {
+				/* Now, install 1S-1S-4S page program command */
+				flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
+						kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
+						SPI_NOR_CMD_PP_1_1_4, kFLEXSPI_Command_RADDR_SDR,
+						kFLEXSPI_1PAD, addr_width);
+				flexspi_lut[PAGE_PROGRAM][1] = FLEXSPI_LUT_SEQ(
+						kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_4PAD,
+						0x4, kFLEXSPI_Command_STOP,
+						kFLEXSPI_1PAD, 0x0);
+			}
 		}
-		ret = flash_flexspi_nor_quad_enable(data, flexspi_lut, dw15.qer);
-		if (ret < 0) {
-			return ret;
-		}
-		/* Now, install 1S-1S-4S page program command */
-		flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP_1_1_4,
-				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, addr_width);
-		flexspi_lut[PAGE_PROGRAM][1] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_4PAD, 0x4,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
 
 	} else if (jesd216_bfp_read_support(&header->phdr[0], bfp,
 	    JESD216_MODE_122, &instr) > 0) {
@@ -817,7 +821,8 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 	/* Now, read DW14 to determine the polling method we should use while programming */
 	ret = jesd216_bfp_decode_dw14(&header->phdr[0], bfp, &dw14);
 	if (ret < 0) {
-		return ret;
+		/* Default to legacy polling mode */
+		dw14.poll_options = 0x0;
 	}
 	if (dw14.poll_options & BIT(1)) {
 		/* Read instruction used for polling is 0x70 */
@@ -1014,7 +1019,7 @@ _program_lut:
 	 */
 	ret = memc_flexspi_set_device_config(&data->controller, &data->config,
 					(uint32_t *)flexspi_lut,
-					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
+					FLEXSPI_INSTR_PROG_END * MEMC_FLEXSPI_CMD_PER_SEQ,
 					data->port);
 	if (ret < 0) {
 		return ret;

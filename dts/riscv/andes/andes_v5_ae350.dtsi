@@ -205,7 +205,6 @@
 		l2_cache: cache-controller@e0500000 {
 			compatible = "andestech,l2c";
 			reg = <0xe0500000 0x1000>;
-			cache-unified;
 			status = "disabled";
 		};
 

@@ -180,6 +180,25 @@ static void eth_irq_handler(const struct device *port)
 	}
 }
 
+static int eth_set_config(const struct device *dev, enum ethernet_config_type type,
+			  const struct ethernet_config *config)
+{
+	struct eth_liteeth_dev_data *context = dev->data;
+	int ret = -ENOTSUP;
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		memcpy(context->mac_addr, config->mac_address.addr, sizeof(context->mac_addr));
+		ret = net_if_set_link_addr(context->iface, context->mac_addr,
+					   sizeof(context->mac_addr), NET_LINK_ETHERNET);
+		break;
+	default:
+		break;
+	}
+
+	return ret;
+}
+
 #ifdef CONFIG_ETH_LITEETH_0
 
 static struct eth_liteeth_dev_data eth_data = {
@@ -247,6 +266,7 @@ static enum ethernet_hw_caps eth_caps(const struct device *dev)
 static const struct ethernet_api eth_api = {
 	.iface_api.init = eth_iface_init,
 	.get_capabilities = eth_caps,
+	.set_config = eth_set_config,
 	.send = eth_tx
 };
 

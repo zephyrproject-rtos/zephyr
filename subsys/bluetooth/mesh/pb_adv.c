@@ -482,6 +482,11 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
 {
 	uint8_t seg = CONT_SEG_INDEX(rx->gpc);
 
+	if (link.tx.adv[0]) {
+		LOG_DBG("Ongoing tx transaction has not been completed yet");
+		return;
+	}
+
 	LOG_DBG("len %u, seg_index %u", buf->len, seg);
 
 	if (!link.rx.seg && link.rx.id == rx->xact_id) {
@@ -569,6 +574,11 @@ static void gen_prov_ack(struct prov_rx *rx, struct net_buf_simple *buf)
 static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 {
 	uint8_t seg = SEG_NVAL;
+
+	if (link.tx.adv[0]) {
+		LOG_DBG("Ongoing tx transaction has not been completed yet");
+		return;
+	}
 
 	if (rx->xact_id == link.rx.id) {
 		if (!link.rx.seg) {

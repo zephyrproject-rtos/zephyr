@@ -47,12 +47,6 @@ The following macro can be used for easy state creation:
 
 * :c:macro:`SMF_CREATE_STATE` Create a state
 
-.. note:: The :c:macro:`SMF_CREATE_STATE` macro takes an additional parameter
-   for the parent state when :kconfig:option:`CONFIG_SMF_ANCESTOR_SUPPORT` is
-   enabled . The :c:macro:`SMF_CREATE_STATE` macro takes two additional
-   parameters for the parent state and initial transition when the
-   :kconfig:option:`CONFIG_SMF_INITIAL_TRANSITION` option is enabled.
-
 State Machine Creation
 ======================
 
@@ -62,9 +56,9 @@ enum. For example, the following creates three flat states::
    enum demo_state { S0, S1, S2 };
 
    const struct smf_state demo_states[] = {
-      [S0] = SMF_CREATE_STATE(s0_entry, s0_run, s0_exit),
-      [S1] = SMF_CREATE_STATE(s1_entry, s1_run, s1_exit),
-      [S2] = SMF_CREATE_STATE(s2_entry, s2_run, s2_exit)
+      [S0] = SMF_CREATE_STATE(s0_entry, s0_run, s0_exit, NULL, NULL),
+      [S1] = SMF_CREATE_STATE(s1_entry, s1_run, s1_exit, NULL, NULL),
+      [S2] = SMF_CREATE_STATE(s2_entry, s2_run, s2_exit, NULL, NULL)
    };
 
 And this example creates three hierarchical states::
@@ -72,9 +66,9 @@ And this example creates three hierarchical states::
    enum demo_state { S0, S1, S2 };
 
    const struct smf_state demo_states[] = {
-      [S0] = SMF_CREATE_STATE(s0_entry, s0_run, s0_exit, parent_s0),
-      [S1] = SMF_CREATE_STATE(s1_entry, s1_run, s1_exit, parent_s12),
-      [S2] = SMF_CREATE_STATE(s2_entry, s2_run, s2_exit, parent_s12)
+      [S0] = SMF_CREATE_STATE(s0_entry, s0_run, s0_exit, parent_s0, NULL),
+      [S1] = SMF_CREATE_STATE(s1_entry, s1_run, s1_exit, parent_s12, NULL),
+      [S2] = SMF_CREATE_STATE(s2_entry, s2_run, s2_exit, parent_s12, NULL)
    };
 
 
@@ -211,11 +205,11 @@ Code::
 
 	/* Populate state table */
 	static const struct smf_state demo_states[] = {
-		[S0] = SMF_CREATE_STATE(s0_entry, s0_run, s0_exit),
+		[S0] = SMF_CREATE_STATE(s0_entry, s0_run, s0_exit, NULL, NULL),
 		/* State S1 does not have an entry action */
-		[S1] = SMF_CREATE_STATE(NULL, s1_run, s1_exit),
+		[S1] = SMF_CREATE_STATE(NULL, s1_run, s1_exit, NULL, NULL),
 		/* State S2 does not have an exit action */
-		[S2] = SMF_CREATE_STATE(s2_entry, s2_run, NULL),
+		[S2] = SMF_CREATE_STATE(s2_entry, s2_run, NULL, NULL, NULL),
 	};
 
 	int main(void)
@@ -314,12 +308,12 @@ Code::
 	/* Populate state table */
 	static const struct smf_state demo_states[] = {
 		/* Parent state does not have a run action */
-		[PARENT] = SMF_CREATE_STATE(parent_entry, NULL, parent_exit, NULL),
+		[PARENT] = SMF_CREATE_STATE(parent_entry, NULL, parent_exit, NULL, NULL),
 		/* Child states do not have entry or exit actions */
-		[S0] = SMF_CREATE_STATE(NULL, s0_run, NULL, &demo_states[PARENT]),
-		[S1] = SMF_CREATE_STATE(NULL, s1_run, NULL, &demo_states[PARENT]),
+		[S0] = SMF_CREATE_STATE(NULL, s0_run, NULL, &demo_states[PARENT], NULL),
+		[S1] = SMF_CREATE_STATE(NULL, s1_run, NULL, &demo_states[PARENT], NULL),
 		/* State S2 do ot have entry or exit actions and no parent */
-		[S2] = SMF_CREATE_STATE(NULL, s2_run, NULL, NULL),
+		[S2] = SMF_CREATE_STATE(NULL, s2_run, NULL, NULL, NULL),
 	};
 
 	int main(void)
@@ -445,8 +439,8 @@ Code::
 
 	/* Populate state table */
 	static const struct smf_state demo_states[] = {
-		[S0] = SMF_CREATE_STATE(s0_entry, s0_run, NULL),
-		[S1] = SMF_CREATE_STATE(s1_entry, s1_run, NULL),
+		[S0] = SMF_CREATE_STATE(s0_entry, s0_run, NULL, NULL, NULL),
+		[S1] = SMF_CREATE_STATE(s1_entry, s1_run, NULL, NULL, NULL),
 	};
 
 	void button_pressed(const struct device *dev,

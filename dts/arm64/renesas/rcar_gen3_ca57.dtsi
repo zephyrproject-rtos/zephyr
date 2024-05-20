@@ -28,6 +28,26 @@
 			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	};
 
+	reg_3p3v: regulator_3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "reg_3p3v";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
+		regulator-boot-on;
+		status = "okay";
+	};
+
+	reg_1p8v: regulator_1p8v {
+		compatible = "regulator-fixed";
+		regulator-name = "reg_1p8v";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-always-on;
+		regulator-boot-on;
+		status = "okay";
+	};
+
 	gic: interrupt-controller@f1010000 {
 		compatible = "arm,gic-400", "arm,gic-v2", "arm,gic" ;
 		#interrupt-cells = <4>;
@@ -53,13 +73,36 @@
 			#reset-cells = <1>;
 		};
 
+		gpio5: gpio@e6055000 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0 0xe6055000 0 0x50>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 9 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 907>;
+			status = "disabled";
+		};
+
+		sd0: mmc@ee100000 {
+			compatible = "renesas,rcar-mmc";
+			reg = <0 0xee100000 0 0x2000>;
+			interrupts = <GIC_SPI 165 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 314>, <&cpg CPG_CORE R8A7795_CLK_SD0H>;
+			max-bus-freq = <200000000>;
+			status = "disabled";
+		};
+
 		emmc2: mmc@ee140000 {
 			compatible = "renesas,rcar-mmc";
 			reg = <0 0xee140000 0 0x2000>;
+			vmmc-supply = <&reg_3p3v>;
+			vqmmc-supply = <&reg_1p8v>;
 			interrupts = <GIC_SPI 167 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
-			clocks = <&cpg CPG_MOD 312>;
-			max-frequency = <200000000>;
+			clocks = <&cpg CPG_MOD 312>, <&cpg CPG_CORE R8A7795_CLK_SD2H>;
+			max-bus-freq = <200000000>;
 			status = "disabled";
 		};
 

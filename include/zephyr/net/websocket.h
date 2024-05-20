@@ -182,8 +182,35 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
  * the connection.
  *
  * @param ws_sock Websocket id returned by websocket_connect().
+ *
+ * @return <0 if error, 0 the connection was closed successfully
  */
 int websocket_disconnect(int ws_sock);
+
+/**
+ * @brief Register a socket as websocket. This is called by HTTP server
+ *        when a connection is upgraded to a websocket connection.
+ *
+ * @param http_sock Underlying socket connection socket.
+ * @param recv_buf Temporary receive buffer for websocket parsing. This must
+ *        point to a memory area that is valid for the duration of the whole
+ *        websocket session.
+ * @param recv_buf_len Length of the temporary receive buffer.
+ *
+ * @return <0 if error, >=0 the actual websocket to be used by application
+ */
+int websocket_register(int http_sock, uint8_t *recv_buf, size_t recv_buf_len);
+
+/**
+ * @brief Unregister a websocket. This is called when we no longer need
+ *        the underlaying "real" socket. This will close first the websocket
+ *        and then the original socket.
+ *
+ * @param ws_sock Websocket connection socket.
+ *
+ * @return <0 if error, 0 the websocket connection is now fully closed
+ */
+int websocket_unregister(int ws_sock);
 
 #if defined(CONFIG_WEBSOCKET_CLIENT)
 void websocket_init(void);

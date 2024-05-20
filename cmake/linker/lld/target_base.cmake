@@ -31,6 +31,14 @@ macro(toolchain_ld_base)
     )
   endif()
 
+  # Global pointer relaxation is off by default in lld. Explicitly enable it if
+  # linker relaxations and gp usage are both allowed.
+  if (CONFIG_LINKER_USE_RELAX AND CONFIG_RISCV_GP)
+    zephyr_ld_options(
+      ${LINKERFLAGPREFIX},--relax-gp
+    )
+  endif()
+
   if(CONFIG_CPP)
     # LLVM lld complains:
     #   error: section: init_array is not contiguous with other relro sections

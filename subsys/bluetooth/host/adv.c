@@ -661,6 +661,12 @@ static int hci_set_ad_ext(struct bt_le_ext_adv *adv, uint16_t hci_op,
 		return -EAGAIN;
 	}
 
+	if (total_len_bytes > bt_dev.le.max_adv_data_len) {
+		LOG_WRN("adv or scan rsp data too large (%d > max %d)", total_len_bytes,
+			bt_dev.le.max_adv_data_len);
+		return -EDOM;
+	}
+
 	if (total_len_bytes <= BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN) {
 		/* If possible, set all data at once.
 		 * This allows us to update advertising data while advertising.
@@ -921,7 +927,7 @@ static int le_adv_start_add_conn(const struct bt_le_ext_adv *adv,
 			return -ENOMEM;
 		}
 
-		bt_conn_set_state(conn, BT_CONN_CONNECTING_ADV);
+		bt_conn_set_state(conn, BT_CONN_ADV_CONNECTABLE);
 		*out_conn = conn;
 		return 0;
 	}
@@ -935,7 +941,7 @@ static int le_adv_start_add_conn(const struct bt_le_ext_adv *adv,
 		return -ENOMEM;
 	}
 
-	bt_conn_set_state(conn, BT_CONN_CONNECTING_DIR_ADV);
+	bt_conn_set_state(conn, BT_CONN_ADV_DIR_CONNECTABLE);
 	*out_conn = conn;
 	return 0;
 }
@@ -946,10 +952,10 @@ static void le_adv_stop_free_conn(const struct bt_le_ext_adv *adv, uint8_t statu
 
 	if (!adv_is_directed(adv)) {
 		conn = bt_conn_lookup_state_le(adv->id, BT_ADDR_LE_NONE,
-					       BT_CONN_CONNECTING_ADV);
+					       BT_CONN_ADV_CONNECTABLE);
 	} else {
 		conn = bt_conn_lookup_state_le(adv->id, &adv->target_addr,
-					       BT_CONN_CONNECTING_DIR_ADV);
+					       BT_CONN_ADV_DIR_CONNECTABLE);
 	}
 
 	if (conn) {

@@ -37,7 +37,7 @@ void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
 	if (ELF_ST_TYPE(sym->st_info) == STT_SECTION) {
 		elf_shdr_t *shdr = llext_peek(ldr, ldr->hdr.e_shoff +
 					      sym->st_shndx * ldr->hdr.e_shentsize);
-		sh_addr = shdr->sh_addr;
+		sh_addr = shdr->sh_addr ? : (uintptr_t)llext_peek(ldr, shdr->sh_offset);
 	} else {
 		sh_addr = ldr->sects[LLEXT_MEM_TEXT].sh_addr;
 	}

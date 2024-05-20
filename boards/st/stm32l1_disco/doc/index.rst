@@ -16,12 +16,13 @@ packaged software examples.
 There
 are two variants of the board:
 
-- STM32LDISCOVERY targets STM32L152RBT6, with 128K flash, 16K RAM
-- 32L152CDISCOVERY targets STM32L152RCT6, with 256K flash, 32K RAM
+- STM32LDISCOVERY targets STM32L152RBT6, with 128K flash, 16K RAM, 4K EEPROM
+- STM32L152CDISCOVERY targets STM32L152RCT6, with 256K flash, 32K RAM, 8K EEPROM
 
-The STM32LDISCOVERY is no longer sold, but was widely available.  The current
-configuration assumes only 128K flash and 16K RAM, so it builds and runs
-on both variants out of the box.
+The STM32LDISCOVERY is no longer sold, but was widely available.
+stm32l1_disco configuration enables support for STM32LDISCOVERY board and
+stm32l152c_disco configuration enables support for STM32L152CDISCOVERY board.
+
 
 .. image:: img/stm32l1_disco.jpg
      :align: center
@@ -53,7 +54,8 @@ More information about STM32L151x can be found in the `STM32L1x reference manual
 Supported Features
 ==================
 
-The Zephyr stm32l1_disco board configuration supports the following hardware features:
+The Zephyr stm32l1_disco and stm32l152c_disco board configurations support
+the following hardware features:
 
 .. list-table:: Supported hardware
    :header-rows: 1
@@ -95,8 +97,11 @@ The Zephyr stm32l1_disco board configuration supports the following hardware fea
 
 Other hardware features are not yet supported in this Zephyr port.
 
-The default configuration can be found in
+The configuration of stm32l1_disco can be found in
 :zephyr_file:`boards/st/stm32l1_disco/stm32l1_disco_defconfig`
+
+Configuration of stm32l152c_disco can be found in
+:zephyr_file:`boards/st/stm32l1_disco/stm32l152c_disco_defconfig`
 
 Connections and IOs
 ===================
@@ -140,8 +145,9 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-STM32L1DISCOVERY board includes an ST-LINK/V2 embedded debug tool interface.
-This interface is supported by the openocd version included in the Zephyr SDK.
+STM32L1DISCOVERY and STM32L152CDISCOVERY boards include an ST-LINK/V2 embedded
+debug tool interface. This interface is supported by the openocd version
+included in the Zephyr SDK.
 
 Flashing an application
 -----------------------
@@ -180,3 +186,6 @@ References
 
 .. _STM32L1DISCOVERY board User Manual:
    https://www.st.com/resource/en/user_manual/dm00027954.pdf
+
+.. _STM32L152CDISCOVERY board User Manual:
+   https://www.st.com/resource/en/user_manual/um1079-discovery-kit-with-stm32l152rc-mcu-stmicroelectronics.pdf

@@ -3,7 +3,8 @@
 
 menuconfig NRF_GRTC_TIMER
 	bool "nRF GRTC Timer"
-	default y if DT_HAS_NORDIC_NRF_GRTC_ENABLED
+	default y
+	depends on DT_HAS_NORDIC_NRF_GRTC_ENABLED
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	select NRFX_GRTC

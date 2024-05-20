@@ -31,12 +31,15 @@
 #include "cmsis.h"
 #include "soc_nrf_common.h"
 
+/* For offloading interrupts we can use any free interrupt */
 #if defined(CONFIG_BOARD_NRF52_BSIM)
 #define OFFLOAD_SW_IRQ SWI0_EGU0_IRQn
 #elif defined(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUAPP)
 #define OFFLOAD_SW_IRQ EGU0_IRQn
 #elif defined(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUNET)
 #define OFFLOAD_SW_IRQ SWI0_IRQn
+#elif defined(CONFIG_BOARD_NRF54L15BSIM)
+#define OFFLOAD_SW_IRQ SWI00_IRQn
 #endif
 
 #define FLASH_PAGE_ERASE_MAX_TIME_US	89700UL

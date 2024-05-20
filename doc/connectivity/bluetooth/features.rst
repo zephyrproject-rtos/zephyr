@@ -78,10 +78,6 @@ grown to be mature and feature-rich, as can be seen in the section below.
     * Foundation Models included
     * Highly configurable, fits as small as 16k RAM devices
 
-  * IPSP/6LoWPAN for IPv6 connectivity over Bluetooth LE
-
-    * IPSP node sample application
-
   * Basic Bluetooth BR/EDR (Classic) support
 
     * Generic Access Profile (GAP)

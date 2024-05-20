@@ -211,10 +211,12 @@
 /* SSP flush retry counts maximum */
 #define DAI_INTEL_SSP_RX_FLUSH_RETRY_MAX	16
 
-#define SSP_CLK_MCLK_ES_REQ	BIT(0)
-#define SSP_CLK_MCLK_ACTIVE	BIT(1)
-#define SSP_CLK_BCLK_ES_REQ	BIT(2)
-#define SSP_CLK_BCLK_ACTIVE	BIT(3)
+#define SSP_CLK_MCLK_IS_NEEDED	BIT(0)
+#define SSP_CLK_MCLK_ES_REQ	BIT(1)
+#define SSP_CLK_MCLK_ACTIVE	BIT(2)
+#define SSP_CLK_BCLK_IS_NEEDED	BIT(3)
+#define SSP_CLK_BCLK_ES_REQ	BIT(4)
+#define SSP_CLK_BCLK_ACTIVE	BIT(5)
 
 #define I2SLCTL_OFFSET		0x04
 
@@ -242,13 +244,22 @@
 
 /** \brief Offset of MCLK Divider x Ratio Register. */
 #define MN_MDIVR(x) (0x180 + (x) * 0x4)
+
+/** \brief Enables the output of MCLK Divider.
+ *  On ACE+ there is a single divider for all MCLKs
+ */
+#define MN_MDIVCTRL_M_DIV_ENABLE(x) BIT(0)
+
 #else
 #define MN_MDIVCTRL 0x0
 #define MN_MDIVR(x) (0x80 + (x) * 0x4)
-#endif
 
-/** \brief Enables the output of MCLK Divider. */
+/** \brief Enables the output of MCLK Divider.
+ * Each MCLK divider can be enabled separately.
+ */
 #define MN_MDIVCTRL_M_DIV_ENABLE(x) BIT(x)
+
+#endif
 
 /** \brief Bits for setting MCLK source clock. */
 #define MCDSS(x)	DAI_INTEL_SSP_SET_BITS(17, 16, x)
@@ -316,6 +327,10 @@ struct dai_intel_ssp_plat_fifo_data {
 };
 
 struct dai_intel_ssp_plat_data {
+	uint32_t ssp_index;
+	int acquire_count;
+	bool is_initialized;
+	bool is_power_en;
 	uint32_t base;
 	uint32_t ip_base;
 	uint32_t shim_base;
@@ -330,24 +345,25 @@ struct dai_intel_ssp_plat_data {
 	struct dai_intel_ssp_mn *mn_inst;
 	struct dai_intel_ssp_freq_table *ftable;
 	uint32_t *fsources;
+	uint32_t clk_active;
+	struct dai_intel_ipc3_ssp_params params;
 };
 
 struct dai_intel_ssp_pdata {
 	uint32_t sscr0;
 	uint32_t sscr1;
 	uint32_t psp;
-	uint32_t state[2];
-	uint32_t clk_active;
 	struct dai_config config;
 	struct dai_properties props;
-	struct dai_intel_ipc3_ssp_params params;
 };
 
 struct dai_intel_ssp {
-	uint32_t index;		/**< index */
+	uint32_t dai_index;
+	uint32_t ssp_index;
+	uint32_t state[2];
 	struct k_spinlock lock;	/**< locking mechanism */
 	int sref;		/**< simple ref counter, guarded by lock */
-	struct dai_intel_ssp_plat_data plat_data;
+	struct dai_intel_ssp_plat_data *ssp_plat_data;
 	void *priv_data;
 };
 

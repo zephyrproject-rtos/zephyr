@@ -34,8 +34,8 @@ specified.
 
 Zephyr supports both, native IEEE 802.15.4 and Thread, with 6LoWPAN. Zephyr's
 :ref:`thread_protocol_interface` implementation is based on `OpenThread
-<https://openthread.io/>`_. The IPv6 header compression in 6LoWPAN is shared
-among native IEEE 802.15.4 and the Bluetooth IPSP (IP support profile).
+<https://openthread.io/>`_. The IPv6 header compression in 6LoWPAN is used for
+native IEEE 802.15.4.
 
 API Reference
 *************

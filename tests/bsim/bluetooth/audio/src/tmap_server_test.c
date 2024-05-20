@@ -53,7 +53,7 @@ static void test_main(void)
 	}
 	printk("TMAP initialized. Start advertising...\n");
 	/* Create a connectable extended advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, NULL, &adv);
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &adv);
 	if (err) {
 		printk("Failed to create advertising set (err %d)\n", err);
 		return;

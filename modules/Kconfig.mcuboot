@@ -199,7 +199,6 @@ config MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
 	bool "MCUboot has been configured for DirectXIP operation"
 	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
 	select MCUBOOT_BOOTLOADER_NO_DOWNGRADE
-	select MCUBOOT_IMGTOOL_OVERWRITE_ONLY
 	help
 	  MCUboot expects slot0_partition and slot1_partition to exist in DT.
 	  In this mode MCUboot can boot from either partition and will
@@ -215,7 +214,6 @@ config MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
 	select MCUBOOT_BOOTUTIL_LIB_FOR_DIRECT_XIP
 	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
 	select MCUBOOT_BOOTLOADER_NO_DOWNGRADE
-	select MCUBOOT_IMGTOOL_OVERWRITE_ONLY
 	help
 	  MCUboot expects slot0_partition and slot1_partition to exist in DT.
 	  In this mode MCUboot will boot the application with the higher version

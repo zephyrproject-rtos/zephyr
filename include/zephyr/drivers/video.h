@@ -249,7 +249,7 @@ typedef int (*video_api_set_signal_t)(const struct device *dev,
 				      enum video_endpoint_id ep,
 				      struct k_poll_signal *signal);
 
-struct video_driver_api {
+__subsystem struct video_driver_api {
 	/* mandatory callbacks */
 	video_api_set_format_t set_format;
 	video_api_get_format_t get_format;
@@ -561,9 +561,19 @@ static inline int video_set_signal(const struct device *dev,
 }
 
 /**
+ * @brief Allocate aligned video buffer.
+ *
+ * @param size Size of the video buffer (in bytes).
+ * @param align Alignment of the requested memory, must be a power of two.
+ *
+ * @retval pointer to allocated video buffer
+ */
+struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align);
+
+/**
  * @brief Allocate video buffer.
  *
- * @param size Size of the video buffer.
+ * @param size Size of the video buffer (in bytes).
  *
  * @retval pointer to allocated video buffer
  */

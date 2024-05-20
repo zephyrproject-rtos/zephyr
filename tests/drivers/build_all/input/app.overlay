@@ -245,7 +245,8 @@
 			/* one entry for every devices */
 			cs-gpios = <&test_gpio 0 0>,
 				   <&test_gpio 1 0>,
-				   <&test_gpio 2 0>;
+				   <&test_gpio 2 0>,
+				   <&test_gpio 3 0>;
 
 			xpt2046@0 {
 				compatible = "xptek,xpt2046";
@@ -286,6 +287,18 @@
 				invert-x;
 				invert-y;
 			};
+
+                        paw32xx@3 {
+                                compatible = "pixart,paw32xx";
+                                reg = <3>;
+                                spi-max-frequency = <0>;
+                                motion-gpios = <&test_gpio 0 0>;
+                                zephyr,axis-x = <0>;
+                                zephyr,axis-y = <1>;
+                                invert-x;
+                                invert-y;
+                                res-cpi = <800>;
+                        };
 		};
 	};
 };

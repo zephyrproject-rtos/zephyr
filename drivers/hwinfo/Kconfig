@@ -189,6 +189,7 @@ config HWINFO_ANDES
 	bool "Andes system ID"
 	default y
 	depends on SOC_FAMILY_ANDES_V5
+	depends on SYSCON
 	help
 	  Enable Andes hwinfo driver
 
@@ -198,5 +199,14 @@ config HWINFO_RW61X
 	depends on SOC_SERIES_RW6XX
 	help
 	  Enable RW61X hwinfo driver
+
+config HWINFO_AMBIQ
+	bool "AMBIQ hwinfo"
+	default y
+	depends on SOC_SERIES_APOLLO4X
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_HWINFO
+	help
+	  Enable AMBIQ hwinfo driver
 
 endif

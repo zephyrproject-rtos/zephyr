@@ -32,7 +32,7 @@ static void ip_address_lifetime_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
-	PR("Type      \tState    \tLifetime (sec)\tAddress\n");
+	PR("Type      \tState    \tRef\tAddress\n");
 
 	ARRAY_FOR_EACH(ipv4->unicast, i) {
 		if (!ipv4->unicast[i].ipv4.is_used ||
@@ -40,13 +40,14 @@ static void ip_address_lifetime_cb(struct net_if *iface, void *user_data)
 			continue;
 		}
 
-		PR("%s  \t%s    \t%12s/%12s\n",
-		       addrtype2str(ipv4->unicast[i].ipv4.addr_type),
-		       addrstate2str(ipv4->unicast[i].ipv4.addr_state),
-		       net_sprint_ipv4_addr(
-			       &ipv4->unicast[i].ipv4.address.in_addr),
-		       net_sprint_ipv4_addr(
-			       &ipv4->unicast[i].netmask));
+		PR("%s  \t%s    \t%ld\t%s/%s\n",
+		   addrtype2str(ipv4->unicast[i].ipv4.addr_type),
+		   addrstate2str(ipv4->unicast[i].ipv4.addr_state),
+		   atomic_get(&ipv4->unicast[i].ipv4.atomic_ref),
+		   net_sprint_ipv4_addr(
+			   &ipv4->unicast[i].ipv4.address.in_addr),
+		   net_sprint_ipv4_addr(
+			   &ipv4->unicast[i].netmask));
 	}
 }
 #endif /* CONFIG_NET_NATIVE_IPV4 */

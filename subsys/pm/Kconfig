@@ -37,6 +37,13 @@ config PM_S2RAM
 	help
 	  This option enables suspend-to-RAM (S2RAM).
 
+config PM_S2RAM_CUSTOM_MARKING
+	bool "Use custom marking functions"
+	depends on PM_S2RAM
+	help
+	  By default a magic word in RAM is used to mark entering suspend-to-RAM. Enabling
+	  this option allows custom implementation of functions which handles the marking.
+
 config PM_NEED_ALL_DEVICES_IDLE
 	bool "System Low Power Mode Needs All Devices Idle"
 	depends on PM_DEVICE && !SMP
@@ -121,6 +128,13 @@ config PM_DEVICE_RUNTIME_EXCLUSIVE
 	help
 	  On system suspend / resume do not trigger the Device PM hooks but
 	  only rely on Runtime PM to manage the devices power states.
+
+config PM_DEVICE_SHELL
+	bool "Device Power Management shell"
+	depends on SHELL
+	help
+	  Enable the device power management shell, for triggering device power
+	  management events through the shell interface.
 
 endif # PM_DEVICE
 

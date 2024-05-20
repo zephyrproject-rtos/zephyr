@@ -125,7 +125,7 @@ ZTEST(bt_id_del, test_conn_lookup_returns_valid_conn_ref)
 
 	bt_id_del(&keys);
 
-	expect_single_call_bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_CONNECTING);
+	expect_single_call_bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_INITIATING);
 	expect_single_call_bt_conn_unref(&conn_ref);
 
 	zassert_true((keys.state & BT_KEYS_ID_PENDING_DEL) == BT_KEYS_ID_PENDING_DEL,

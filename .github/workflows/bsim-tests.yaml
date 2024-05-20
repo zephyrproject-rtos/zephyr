@@ -90,50 +90,50 @@ jobs:
           echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
       - name: Check common triggering files
-        uses: tj-actions/changed-files@v41
+        uses: tj-actions/changed-files@v44
         id: check-common-files
         with:
           files: |
             .github/workflows/bsim-tests.yaml
             .github/workflows/bsim-tests-publish.yaml
             west.yml
-            boards/posix/**
-            soc/posix/**
-            arch/posix/**
-            include/zephyr/arch/posix/**
-            scripts/native_simulator/**
+            boards/posix/
+            soc/posix/
+            arch/posix/
+            include/zephyr/arch/posix/
+            scripts/native_simulator/
             tests/bsim/*
 
       - name: Check if Bluethooth files changed
-        uses: tj-actions/changed-files@v41
+        uses: tj-actions/changed-files@v44
         id: check-bluetooth-files
         with:
           files: |
-            tests/bsim/bluetooth/**
-            samples/bluetooth/**
-            subsys/bluetooth/**
+            tests/bsim/bluetooth/
+            samples/bluetooth/
+            subsys/bluetooth/
 
       - name: Check if Networking files changed
-        uses: tj-actions/changed-files@v41
+        uses: tj-actions/changed-files@v44
         id: check-networking-files
         with:
           files: |
-            tests/bsim/net/**
-            samples/net/sockets/echo_*/**
-            modules/openthread/**
-            subsys/net/l2/openthread/**
+            tests/bsim/net/
+            samples/net/sockets/echo_*/
+            modules/openthread/
+            subsys/net/l2/openthread/
             include/zephyr/net/openthread.h
-            drivers/ieee802154/**
+            drivers/ieee802154/
             include/zephyr/net/ieee802154*
 
       - name: Check if UART files changed
-        uses: tj-actions/changed-files@v41
+        uses: tj-actions/changed-files@v44
         id: check-uart-files
         with:
           files: |
-            tests/bsim/drivers/uart/**
+            tests/bsim/drivers/uart/
             drivers/serial/*nrfx*
-            tests/drivers/uart/**
+            tests/drivers/uart/
 
       - name: Update BabbleSim to manifest revision
         if: >

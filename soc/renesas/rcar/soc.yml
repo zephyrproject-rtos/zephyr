@@ -11,3 +11,6 @@ family:
       - name: rcar_gen4
         socs:
           - name: r8a779f0
+            cpuclusters:
+              - name: r52
+              - name: a55

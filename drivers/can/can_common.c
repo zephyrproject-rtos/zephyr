@@ -6,6 +6,7 @@
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 
@@ -35,6 +36,25 @@ int z_impl_can_send(const struct device *dev, const struct can_frame *frame,
 		    void *user_data)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	uint32_t id_mask;
+
+	CHECKIF(frame == NULL) {
+		return -EINVAL;
+	}
+
+	if ((frame->flags & CAN_FRAME_IDE) != 0U) {
+		id_mask = CAN_EXT_ID_MASK;
+	} else {
+		id_mask = CAN_STD_ID_MASK;
+	}
+
+	CHECKIF((frame->id & ~(id_mask)) != 0U) {
+		LOG_ERR("invalid frame with %s (%d-bit) CAN ID 0x%0*x",
+			(frame->flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
+			(frame->flags & CAN_FRAME_IDE) != 0 ? 29 : 11,
+			(frame->flags & CAN_FRAME_IDE) != 0 ? 8 : 3, frame->id);
+		return -EINVAL;
+	}
 
 	if (callback == NULL) {
 		struct can_tx_default_cb_ctx ctx;
@@ -53,6 +73,34 @@ int z_impl_can_send(const struct device *dev, const struct can_frame *frame,
 	}
 
 	return api->send(dev, frame, timeout, callback, user_data);
+}
+
+int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
+		      void *user_data, const struct can_filter *filter)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	uint32_t id_mask;
+
+	CHECKIF(callback == NULL || filter == NULL) {
+		return -EINVAL;
+	}
+
+	if ((filter->flags & CAN_FILTER_IDE) != 0U) {
+		id_mask = CAN_EXT_ID_MASK;
+	} else {
+		id_mask = CAN_STD_ID_MASK;
+	}
+
+	CHECKIF(((filter->id & ~(id_mask)) != 0U) || ((filter->mask & ~(id_mask)) != 0U)) {
+		LOG_ERR("invalid filter with %s (%d-bit) CAN ID 0x%0*x, CAN ID mask 0x%0*x",
+			(filter->flags & CAN_FILTER_IDE) != 0 ? "extended" : "standard",
+			(filter->flags & CAN_FILTER_IDE) != 0 ? 29 : 11,
+			(filter->flags & CAN_FILTER_IDE) != 0 ? 8 : 3, filter->id,
+			(filter->flags & CAN_FILTER_IDE) != 0 ? 8 : 3, filter->mask);
+		return -EINVAL;
+	}
+
+	return api->add_rx_filter(dev, callback, user_data, filter);
 }
 
 static void can_msgq_put(const struct device *dev, struct can_frame *frame, void *user_data)
@@ -351,22 +399,12 @@ int z_impl_can_set_timing(const struct device *dev,
 int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate)
 {
 	struct can_timing timing = { 0 };
-	uint32_t min_bitrate;
-	uint32_t max_bitrate;
+	uint32_t min = can_get_bitrate_min(dev);
+	uint32_t max = can_get_bitrate_max(dev);
 	uint16_t sample_pnt;
 	int ret;
 
-	(void)can_get_min_bitrate(dev, &min_bitrate);
-
-	ret = can_get_max_bitrate(dev, &max_bitrate);
-	if (ret == -ENOSYS) {
-		/* Maximum bitrate unknown */
-		max_bitrate = 0;
-	} else if (ret < 0) {
-		return ret;
-	}
-
-	if ((bitrate < min_bitrate) || (((max_bitrate > 0) && (bitrate > max_bitrate)))) {
+	if ((bitrate < min) || (bitrate > max)) {
 		return -ENOTSUP;
 	}
 
@@ -407,22 +445,12 @@ int z_impl_can_set_timing_data(const struct device *dev,
 int z_impl_can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data)
 {
 	struct can_timing timing_data = { 0 };
-	uint32_t min_bitrate;
-	uint32_t max_bitrate;
+	uint32_t min = can_get_bitrate_min(dev);
+	uint32_t max = can_get_bitrate_max(dev);
 	uint16_t sample_pnt;
 	int ret;
 
-	(void)can_get_min_bitrate(dev, &min_bitrate);
-
-	ret = can_get_max_bitrate(dev, &max_bitrate);
-	if (ret == -ENOSYS) {
-		/* Maximum bitrate unknown */
-		max_bitrate = 0;
-	} else if (ret < 0) {
-		return ret;
-	}
-
-	if ((bitrate_data < min_bitrate) || ((max_bitrate > 0) && (bitrate_data > max_bitrate))) {
+	if ((bitrate_data < min) || (bitrate_data > max)) {
 		return -ENOTSUP;
 	}
 

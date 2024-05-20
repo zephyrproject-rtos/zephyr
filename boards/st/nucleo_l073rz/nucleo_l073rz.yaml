@@ -22,4 +22,5 @@ supported:
   - counter
   - rng
   - eeprom
+  - rtc
 vendor: st

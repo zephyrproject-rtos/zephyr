@@ -51,7 +51,7 @@
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "simple-bus";
+		compatible = "fu540-soc", "sifive-soc", "simple-bus";
 		ranges;
 
 		modeselect: rom@1000 {

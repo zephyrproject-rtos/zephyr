@@ -53,6 +53,11 @@ struct net_if_addr {
 	/** IP address */
 	struct net_addr address;
 
+	/** Reference counter. This is used to prevent address removal if there
+	 * are sockets that have bound the local endpoint to this address.
+	 */
+	atomic_t atomic_ref;
+
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	struct net_timeout lifetime;
 #endif
@@ -68,12 +73,31 @@ struct net_if_addr {
 	/** What is the current state of the address */
 	enum net_addr_state addr_state;
 
-#if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_IPV6_PE)
+	/** Address creation time. This is used to determine if the maximum
+	 * lifetime for this address is reached or not. The value is in seconds.
+	 */
+	uint32_t addr_create_time;
+
+	/** Preferred lifetime for the address in seconds.
+	 */
+	uint32_t addr_preferred_lifetime;
+
+	/** Address timeout value. This is only used if DAD needs to be redone
+	 * for this address because of earlier DAD failure. This value is in
+	 * seconds.
+	 */
+	int32_t addr_timeout;
+#endif
+
+#if defined(CONFIG_NET_IPV6_DAD)
 	/** How many times we have done DAD */
 	uint8_t dad_count;
 	/* What interface the DAD is running */
 	uint8_t ifindex;
 #endif
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 	/** Is the IP address valid forever */
 	uint8_t is_infinite : 1;
@@ -84,7 +108,12 @@ struct net_if_addr {
 	/** Is this IP address usage limited to the subnet (mesh) or not */
 	uint8_t is_mesh_local : 1;
 
-	uint8_t _unused : 5;
+	/** Is this IP address temporary and generated for example by
+	 * IPv6 privacy extension (RFC 8981)
+	 */
+	uint8_t is_temporary : 1;
+
+	uint8_t _unused : 4;
 };
 
 /**
@@ -279,6 +308,15 @@ struct net_if_ipv6 {
 
 	/** Retransmit timer (RFC 4861, page 52) */
 	uint32_t retrans_timer;
+
+#if defined(CONFIG_NET_IPV6_PE)
+	/** Privacy extension DESYNC_FACTOR value from RFC 8981 ch 3.4.
+	 * "DESYNC_FACTOR is a random value within the range 0 - MAX_DESYNC_FACTOR.
+	 * It is computed every time a temporary address is created.
+	 */
+	uint32_t desync_factor;
+#endif /* CONFIG_NET_IPV6_PE */
+
 #if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)
 	/** Router solicitation timer node */
 	sys_snode_t rs_node;
@@ -653,6 +691,19 @@ struct net_if {
 
 	struct k_mutex lock;
 	struct k_mutex tx_lock;
+
+	/** Network interface specific flags */
+	/** Enable IPv6 privacy extension (RFC 8981), this is enabled
+	 * by default if PE support is enabled in configuration.
+	 */
+	uint8_t pe_enabled : 1;
+
+	/* If PE is enabled, then this tells whether public addresses
+	 * are preferred over temporary ones for this interface.
+	 */
+	uint8_t pe_prefer_public : 1;
+
+	uint8_t _unused : 6;
 };
 
 static inline void net_if_lock(struct net_if *iface)
@@ -1110,6 +1161,31 @@ static inline int net_if_set_link_addr_unlocked(struct net_if *iface,
 int net_if_set_link_addr_locked(struct net_if *iface,
 				uint8_t *addr, uint8_t len,
 				enum net_link_type type);
+
+#if CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG
+extern int net_if_addr_unref_debug(struct net_if *iface,
+				   sa_family_t family,
+				   const void *addr,
+				   const char *caller, int line);
+#define net_if_addr_unref(iface, family, addr) \
+	net_if_addr_unref_debug(iface, family, addr, __func__, __LINE__)
+
+extern struct net_if_addr *net_if_addr_ref_debug(struct net_if *iface,
+						 sa_family_t family,
+						 const void *addr,
+						 const char *caller,
+						 int line);
+#define net_if_addr_ref(iface, family, addr) \
+	net_if_addr_ref_debug(iface, family, addr, __func__, __LINE__)
+#else
+extern int net_if_addr_unref(struct net_if *iface,
+			     sa_family_t family,
+			     const void *addr);
+extern struct net_if_addr *net_if_addr_ref(struct net_if *iface,
+					   sa_family_t family,
+					   const void *addr);
+#endif /* CONFIG_NET_IF_LOG_LEVEL */
+
 /** @endcond */
 
 /**
@@ -1565,7 +1641,7 @@ void net_if_ipv6_maddr_leave(struct net_if *iface,
  * @return Pointer to prefix, NULL if not found.
  */
 struct net_if_ipv6_prefix *net_if_ipv6_prefix_get(struct net_if *iface,
-						  struct in6_addr *addr);
+						  const struct in6_addr *addr);
 
 /**
  * @brief Check if this IPv6 prefix belongs to this interface
@@ -1914,6 +1990,35 @@ static inline const struct in6_addr *net_if_ipv6_select_src_addr(
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(dst);
+
+	return NULL;
+}
+#endif
+
+/**
+ * @brief Get a IPv6 source address that should be used when sending
+ * network data to destination. Use a hint set to the socket to select
+ * the proper address.
+ *
+ * @param iface Interface that was used when packet was received.
+ * If the interface is not known, then NULL can be given.
+ * @param dst IPv6 destination address
+ * @param flags Hint from the related socket. See RFC 5014 for value details.
+ *
+ * @return Pointer to IPv6 address to use, NULL if no IPv6 address
+ * could be found.
+ */
+#if defined(CONFIG_NET_NATIVE_IPV6)
+const struct in6_addr *net_if_ipv6_select_src_addr_hint(struct net_if *iface,
+							const struct in6_addr *dst,
+							int flags);
+#else
+static inline const struct in6_addr *net_if_ipv6_select_src_addr_hint(
+	struct net_if *iface, const struct in6_addr *dst, int flags)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(dst);
+	ARG_UNUSED(flags);
 
 	return NULL;
 }

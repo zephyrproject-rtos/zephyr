@@ -140,6 +140,10 @@ Glossary of Terms
       A number of different :term:`SoCs <SoC>` that share similar characteristics and
       features, and that the vendor typically names and markets together.
 
+   subsystem
+       A subsystem refers to a logically distinct part of the operating system
+       that handles specific functionality or provides certain services.
+
    system power state
       System power states describe the power consumption of the system as a
       whole. System power states are represented by :c:enum:`pm_state`.

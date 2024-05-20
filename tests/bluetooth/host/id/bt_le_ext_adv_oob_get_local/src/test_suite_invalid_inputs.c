@@ -115,7 +115,8 @@ ZTEST(bt_le_ext_adv_oob_get_local_invalid_inputs, test_updating_rpa_fails_while_
 
 	err = bt_le_ext_adv_oob_get_local(&adv, &oob);
 
-	expect_single_call_bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_CONNECTING_SCAN);
+	expect_single_call_bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
+						   BT_CONN_SCAN_BEFORE_INITIATING);
 
 	zassert_true(err == -EINVAL, "Unexpected error code '%d' was returned", err);
 }

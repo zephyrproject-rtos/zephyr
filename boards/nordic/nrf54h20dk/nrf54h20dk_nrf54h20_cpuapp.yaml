@@ -12,4 +12,9 @@ toolchain:
 ram: 256
 flash: 512
 supported:
+  - counter
   - gpio
+  - pwm
+  - spi
+  - watchdog
+  - usb_device

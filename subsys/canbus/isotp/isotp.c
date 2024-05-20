@@ -595,8 +595,10 @@ static inline int add_ff_sf_filter(struct isotp_recv_ctx *rctx)
 
 	if ((rctx->rx_addr.flags & ISOTP_MSG_FIXED_ADDR) != 0) {
 		mask = ISOTP_FIXED_ADDR_RX_MASK;
-	} else {
+	} else if ((rctx->rx_addr.flags & ISOTP_MSG_IDE) != 0) {
 		mask = CAN_EXT_ID_MASK;
+	} else {
+		mask = CAN_STD_ID_MASK;
 	}
 
 	prepare_filter(&filter, &rctx->rx_addr, mask);
@@ -1167,8 +1169,15 @@ static void send_work_handler(struct k_work *item)
 static inline int add_fc_filter(struct isotp_send_ctx *sctx)
 {
 	struct can_filter filter;
+	uint32_t mask;
 
-	prepare_filter(&filter, &sctx->rx_addr, CAN_EXT_ID_MASK);
+	if ((sctx->rx_addr.flags & ISOTP_MSG_IDE) != 0) {
+		mask = CAN_EXT_ID_MASK;
+	} else {
+		mask = CAN_STD_ID_MASK;
+	}
+
+	prepare_filter(&filter, &sctx->rx_addr, mask);
 
 	sctx->filter_id = can_add_rx_filter(sctx->can_dev, send_can_rx_cb, sctx,
 					   &filter);

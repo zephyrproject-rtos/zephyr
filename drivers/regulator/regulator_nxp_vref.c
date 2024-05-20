@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -24,7 +24,6 @@ struct regulator_nxp_vref_data {
 struct regulator_nxp_vref_config {
 	struct regulator_common_config common;
 	VREF_Type *base;
-	uint8_t gnd_sel;
 	uint16_t buf_start_delay;
 	uint16_t bg_start_time;
 };
@@ -165,7 +164,7 @@ static int regulator_nxp_vref_get_voltage(const struct device *dev,
 	/* Linear range index is the register value */
 	idx = (base->UTRIM & VREF_UTRIM_TRIM2V1_MASK) >> VREF_UTRIM_TRIM2V1_SHIFT;
 
-	ret = linear_range_get_value(&utrim_range, base->UTRIM, volt_uv);
+	ret = linear_range_get_value(&utrim_range, idx, volt_uv);
 
 	return ret;
 }
@@ -183,15 +182,9 @@ static const struct regulator_driver_api api = {
 
 static int regulator_nxp_vref_init(const struct device *dev)
 {
-	const struct regulator_nxp_vref_config *config = dev->config;
-	VREF_Type *base = config->base;
 	int ret;
 
 	regulator_common_data_init(dev);
-
-	/* Select ground */
-	base->CSR &= ~VREF_CSR_REFL_GRD_SEL_MASK;
-	base->CSR |= config->gnd_sel;
 
 	ret = regulator_nxp_vref_disable(dev);
 	if (ret < 0) {
@@ -207,7 +200,6 @@ static int regulator_nxp_vref_init(const struct device *dev)
 	static const struct regulator_nxp_vref_config config_##inst = {		\
 		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),		\
 		.base = (VREF_Type *) DT_INST_REG_ADDR(inst),			\
-		.gnd_sel = DT_INST_ENUM_IDX_OR(inst, nxp_ground_select, 0),	\
 		.buf_start_delay = DT_INST_PROP(inst,				\
 				nxp_buffer_startup_delay_us),			\
 		.bg_start_time = DT_INST_PROP(inst,				\

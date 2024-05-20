@@ -133,13 +133,33 @@
 	pinctrl-names = "default";
 };
 
-&enet {
+&enet_mac {
+	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
-	ptp {
-		pinctrl-0 = <&pinmux_ptp>;
-		pinctrl-names = "default";
+	phy-handle = <&phy>;
+	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_mdio>;
+	pinctrl-names = "default";
+	phy: phy@0 {
+		compatible = "microchip,ksz8081";
+		reg = <0>;
+		status = "okay";
+		mc,reset-gpio = <&gpio12 12 GPIO_ACTIVE_HIGH>;
+		mc,interrupt-gpio = <&gpio9 11 GPIO_ACTIVE_HIGH>;
+		mc,interface-type = "rmii";
 	};
+};
+
+&enet_ptp_clock {
+	status = "okay";
+	pinctrl-0 = <&pinmux_ptp>;
+	pinctrl-names = "default";
 };
 
 &csi {

@@ -131,7 +131,7 @@ project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
 # because clang from OneApi can't recognize them as asm files on
 # windows now.
 list(APPEND CMAKE_ASM_SOURCE_FILE_EXTENSIONS "S")
-enable_language(C CXX ASM)
+enable_language(ASM)
 
 # The setup / configuration of the toolchain itself and the configuration of
 # supported compilation flags are now split, as this allows to use the toolchain
@@ -167,6 +167,11 @@ set(KERNEL_STAT_NAME  ${KERNEL_NAME}.stat)
 set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
 set(KERNEL_META_NAME  ${KERNEL_NAME}.meta)
 set(KERNEL_SYMBOLS_NAME    ${KERNEL_NAME}.symbols)
+
+# Enable dynamic library support when required by LLEXT.
+if(CONFIG_LLEXT AND CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
+  set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
+endif()
 
 include(${BOARD_DIR}/board.cmake OPTIONAL)
 
