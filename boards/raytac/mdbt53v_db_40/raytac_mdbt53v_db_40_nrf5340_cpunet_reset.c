@@ -49,7 +49,7 @@ static int remoteproc_mgr_boot(const struct device *dev)
 	 */
 
 	/* Release the Network MCU, 'Release force off signal' */
-	nrf53_cpunet_enable(true);
+	NRF_RESET->NETWORK.FORCEOFF = RESET_NETWORK_FORCEOFF_FORCEOFF_Release;
 
 	LOG_DBG("Network MCU released.");
 #endif /* !CONFIG_TRUSTED_EXECUTION_SECURE */
