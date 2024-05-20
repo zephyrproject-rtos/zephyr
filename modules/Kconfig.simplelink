@@ -15,7 +15,7 @@ config SIMPLELINK_HOST_DRIVER
 	select REQUIRES_FULL_LIBC
 	select ERRNO
 	select PTHREAD_IPC
-	select POSIX_CLOCK
+	select POSIX_TIMERS
 	help
 	  Build the SimpleLink host driver
 

@@ -17,7 +17,6 @@ implementation of the POSIX API.
 * :kconfig:option:`CONFIG_MAX_PTHREAD_KEY_COUNT`
 * :kconfig:option:`CONFIG_MAX_PTHREAD_MUTEX_COUNT`
 * :kconfig:option:`CONFIG_MAX_PTHREAD_SPINLOCK_COUNT`
-* :kconfig:option:`CONFIG_MAX_TIMER_COUNT`
 * :kconfig:option:`CONFIG_MQUEUE_NAMELEN_MAX`
 * :kconfig:option:`CONFIG_MSG_COUNT_MAX`
 * :kconfig:option:`CONFIG_MSG_SIZE_MAX`
@@ -25,7 +24,6 @@ implementation of the POSIX API.
 * :kconfig:option:`CONFIG_NET_SOCKETS`
 * :kconfig:option:`CONFIG_NET_SOCKETS_POLL_MAX`
 * :kconfig:option:`CONFIG_POSIX_API`
-* :kconfig:option:`CONFIG_POSIX_CLOCK`
 * :kconfig:option:`CONFIG_POSIX_FS`
 * :kconfig:option:`CONFIG_POSIX_MAX_FDS`
 * :kconfig:option:`CONFIG_POSIX_MAX_OPEN_FILES`
@@ -46,4 +44,4 @@ implementation of the POSIX API.
 * :kconfig:option:`CONFIG_PTHREAD_RECYCLER_DELAY_MS`
 * :kconfig:option:`CONFIG_PTHREAD_SPINLOCK`
 * :kconfig:option:`CONFIG_SEM_VALUE_MAX`
-* :kconfig:option:`CONFIG_TIMER`
+* :kconfig:option:`CONFIG_TIMER_CREATE_WAIT`

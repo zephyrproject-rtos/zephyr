@@ -543,6 +543,17 @@ _POSIX_ASYNCHRONOUS_IO
     aio_write(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     lio_listio(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
 
+.. _posix_option_cputime:
+
+_POSIX_CPUTIME
+++++++++++++++
+
+.. csv-table:: _POSIX_CPUTIME
+   :header: API, Supported
+   :widths: 50,10
+
+    CLOCK_PROCESS_CPUTIME_ID,yes
+
 .. _posix_option_fsync:
 
 _POSIX_FSYNC
