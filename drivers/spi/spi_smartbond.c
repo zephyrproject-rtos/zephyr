@@ -15,8 +15,12 @@ LOG_MODULE_REGISTER(spi_smartbond);
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include <DA1469xAB.h>
+#include <da1469x_pd.h>
 
 #define DIVN_CLK	32000000	/* divN_clk 32MHz */
 #define SCLK_FREQ_2MHZ	(DIVN_CLK / 14) /* 2.285714MHz*/
@@ -33,6 +37,10 @@ struct spi_smartbond_cfg {
 struct spi_smartbond_data {
 	struct spi_context ctx;
 	uint8_t dfs;
+#if defined(CONFIG_PM_DEVICE)
+	ATOMIC_DEFINE(pm_policy_state_flag, 1);
+	uint32_t spi_ctrl_reg;
+#endif
 };
 
 static inline void spi_smartbond_enable(const struct spi_smartbond_cfg *cfg, bool enable)
@@ -106,6 +114,31 @@ static inline int spi_smartbond_set_word_size(const struct spi_smartbond_cfg *cf
 	return 0;
 }
 
+static inline void spi_smartbond_pm_policy_state_lock_get(struct spi_smartbond_data *data)
+{
+#if defined(CONFIG_PM_DEVICE)
+	if (atomic_test_and_set_bit(data->pm_policy_state_flag, 0) == 0) {
+		/*
+		 * Prevent the SoC from entering the normal sleep state as PDC does not support
+		 * waking up the application core following SPI events.
+		 */
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+#endif
+}
+
+static inline void spi_smartbond_pm_policy_state_lock_put(struct spi_smartbond_data *data)
+{
+#if defined(CONFIG_PM_DEVICE)
+	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, 0) == 1) {
+		/*
+		 * Allow the SoC to enter the normal sleep state once SPI transactions are done.
+		 */
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+#endif
+}
+
 static int spi_smartbond_configure(const struct spi_smartbond_cfg *cfg,
 				   struct spi_smartbond_data *data,
 				   const struct spi_config *spi_cfg)
@@ -113,6 +146,9 @@ static int spi_smartbond_configure(const struct spi_smartbond_cfg *cfg,
 	int rc;
 
 	if (spi_context_configured(&data->ctx, spi_cfg)) {
+#ifdef CONFIG_PM_DEVICE
+		spi_smartbond_enable(cfg, true);
+#endif
 		return 0;
 	}
 
@@ -182,6 +218,8 @@ static int spi_smartbond_transceive(const struct device *dev, const struct spi_c
 	uint32_t bitmask;
 	int rc;
 
+	spi_smartbond_pm_policy_state_lock_get(data);
+
 	spi_context_lock(&data->ctx, false, NULL, NULL, spi_cfg);
 	rc = spi_smartbond_configure(cfg, data, spi_cfg);
 	if (rc == 0) {
@@ -210,6 +248,8 @@ static int spi_smartbond_transceive(const struct device *dev, const struct spi_c
 	}
 	spi_context_cs_control(ctx, false);
 	spi_context_release(&data->ctx, rc);
+
+	spi_smartbond_pm_policy_state_lock_put(data);
 
 	return rc;
 }
@@ -247,7 +287,7 @@ static const struct spi_driver_api spi_smartbond_driver_api = {
 	.release = spi_smartbond_release,
 };
 
-static int spi_smartbond_init(const struct device *dev)
+static int spi_smartbond_resume(const struct device *dev)
 {
 	const struct spi_smartbond_cfg *cfg = dev->config;
 	struct spi_smartbond_data *data = dev->data;
@@ -273,6 +313,69 @@ static int spi_smartbond_init(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_PM_DEVICE)
+static int spi_smartbond_suspend(const struct device *dev)
+{
+	int ret;
+	const struct spi_smartbond_cfg *config = dev->config;
+	struct spi_smartbond_data *data = dev->data;
+
+	data->spi_ctrl_reg = config->regs->SPI_CTRL_REG;
+	/* Disable the SPI digital block */
+	config->regs->SPI_CTRL_REG &= ~SPI_SPI_CTRL_REG_SPI_EN_CTRL_Msk;
+	/* Gate SPI clocking */
+	CRG_COM->RESET_CLK_COM_REG = config->periph_clock_config;
+
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+	if (ret < 0) {
+		LOG_WRN("Failed to configure the SPI pins to inactive state");
+	}
+
+	return ret;
+}
+
+static int spi_smartbond_pm_action(const struct device *dev,
+				   enum pm_device_action action)
+{
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
+		ret = spi_smartbond_resume(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = spi_smartbond_suspend(dev);
+		da1469x_pd_release(MCU_PD_DOMAIN_COM);
+		break;
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif
+
+static int spi_smartbond_init(const struct device *dev)
+{
+	int ret;
+	struct spi_smartbond_data *data = dev->data;
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	/* Make sure device state is marked as suspended */
+	pm_device_init_suspended(dev);
+
+	ret = pm_device_runtime_enable(dev);
+
+#else
+	da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
+	ret = spi_smartbond_resume(dev);
+#endif
+	spi_context_unlock_unconditionally(&data->ctx);
+
+	return ret;
+}
+
 #define SPI_SMARTBOND_DEVICE(id)                                                                   \
 	PINCTRL_DT_INST_DEFINE(id);                                                                \
 	static const struct spi_smartbond_cfg spi_smartbond_##id##_cfg = {                         \
@@ -284,8 +387,13 @@ static int spi_smartbond_init(const struct device *dev)
 		SPI_CONTEXT_INIT_LOCK(spi_smartbond_##id##_data, ctx),                             \
 		SPI_CONTEXT_INIT_SYNC(spi_smartbond_##id##_data, ctx),                             \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)};                            \
-	DEVICE_DT_INST_DEFINE(id, spi_smartbond_init, NULL, &spi_smartbond_##id##_data,            \
-			      &spi_smartbond_##id##_cfg, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,    \
+	PM_DEVICE_DT_INST_DEFINE(id, spi_smartbond_pm_action);                                     \
+	DEVICE_DT_INST_DEFINE(id,                                                                  \
+			      spi_smartbond_init,                                                  \
+			      PM_DEVICE_DT_INST_GET(id),                                           \
+			      &spi_smartbond_##id##_data,                                          \
+			      &spi_smartbond_##id##_cfg,                                           \
+			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,                               \
 			      &spi_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_SMARTBOND_DEVICE)
