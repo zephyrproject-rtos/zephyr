@@ -3,6 +3,8 @@
 zephyr_library()
 
 zephyr_library_sources(
+  clock.c
+  port.c
   ptp.c
   state_machine.c
 )
