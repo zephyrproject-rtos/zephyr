@@ -274,7 +274,9 @@ class Json_report:
                                                 "Name":i_fun['name']
                                             }
                                             json_file['Uncovered_Functions'].append(json_uncovered_funciton)
-                                    json_files.append(json_file)
+                                    comp_exists = [x for x in json_files if x['Path'] == json_file['Path']]
+                                    if not comp_exists:
+                                        json_files.append(json_file)
                         json_component['files']=json_files
                         output_json['components'].append(json_component)
                     else:
