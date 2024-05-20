@@ -9,11 +9,6 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <soc.h>
 
-#include <hal/nrf_rtc.h>
-#include <hal/nrf_timer.h>
-#include <hal/nrf_radio.h>
-#include <hal/nrf_ccm.h>
-#include <hal/nrf_aar.h>
 #include <nrfx_gpiote.h>
 
 #include "util/mem.h"
@@ -175,25 +170,15 @@ void isr_radio(void)
 
 void radio_isr_set(radio_isr_cb_t cb, void *param)
 {
-	irq_disable(RADIO_IRQn);
+	irq_disable(HAL_RADIO_IRQn);
 
 	isr_cb_param = param;
 	isr_cb = cb;
 
-	nrf_radio_int_enable(NRF_RADIO,
-			     0 |
-				/* RADIO_INTENSET_READY_Msk |
-				 * RADIO_INTENSET_ADDRESS_Msk |
-				 * RADIO_INTENSET_PAYLOAD_Msk |
-				 * RADIO_INTENSET_END_Msk |
-				 */
-				RADIO_INTENSET_DISABLED_Msk
-				/* | RADIO_INTENSET_RSSIEND_Msk |
-				 */
-	    );
+	nrf_radio_int_enable(NRF_RADIO, HAL_RADIO_INTENSET_DISABLED_Msk);
 
-	NVIC_ClearPendingIRQ(RADIO_IRQn);
-	irq_enable(RADIO_IRQn);
+	NVIC_ClearPendingIRQ(HAL_RADIO_IRQn);
+	irq_enable(HAL_RADIO_IRQn);
 }
 
 void radio_setup(void)
@@ -236,7 +221,7 @@ void radio_setup(void)
 
 void radio_reset(void)
 {
-	irq_disable(RADIO_IRQn);
+	irq_disable(HAL_RADIO_IRQn);
 
 	/* nRF SoC generic radio reset/initializations
 	 * Note: Only registers whose bits are partially modified across
@@ -622,7 +607,7 @@ static uint32_t last_pdu_end_us;
 
 uint32_t radio_is_done(void)
 {
-	if (NRF_RADIO->NRF_RADIO_TXRX_END_EVENT != 0) {
+	if (NRF_RADIO->NRF_RADIO_TRX_END_EVENT != 0) {
 		/* On packet END event increment last packet end time value.
 		 * Note: this depends on the function being called exactly once
 		 * in the ISR function.
@@ -637,7 +622,7 @@ uint32_t radio_is_done(void)
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 uint32_t radio_is_done(void)
 {
-	return (NRF_RADIO->NRF_RADIO_TXRX_END_EVENT != 0);
+	return (NRF_RADIO->NRF_RADIO_TRX_END_EVENT != 0);
 }
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
@@ -941,10 +926,10 @@ void radio_switch_complete_and_rx(uint8_t phy_rx)
 {
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
-			    RADIO_SHORTS_END_DISABLE_Msk |
+			    NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_RXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
 
 	/* NOTE: As Tx chain delays are negligible constant values (~1 us)
 	 *	 across nRF5x radios, sw_switch assumes the 1M chain delay for
@@ -960,10 +945,10 @@ void radio_switch_complete_and_tx(uint8_t phy_rx, uint8_t flags_rx,
 {
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
-			    RADIO_SHORTS_END_DISABLE_Msk |
+			    NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
 
 	sw_switch(SW_SWITCH_RX, SW_SWITCH_TX, phy_rx, flags_rx, phy_tx, flags_tx,
 		  END_EVT_DELAY_DISABLED);
@@ -975,10 +960,10 @@ void radio_switch_complete_with_delay_compensation_and_tx(
 	enum radio_end_evt_delay_state end_delay_en)
 {
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk |
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
 
 	sw_switch(SW_SWITCH_RX, SW_SWITCH_TX, phy_rx, flags_rx, phy_tx, flags_tx, end_delay_en);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
@@ -989,10 +974,10 @@ void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 {
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
-			    RADIO_SHORTS_END_DISABLE_Msk |
+			    NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
 
 	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next,
 		  END_EVT_DELAY_DISABLED);
@@ -1004,10 +989,10 @@ void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
 {
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
-			    RADIO_SHORTS_END_DISABLE_Msk |
+			    NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_RXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
 
 	sw_switch(SW_SWITCH_RX, SW_SWITCH_RX, phy_curr, flags_curr, phy_next, flags_next,
 		  END_EVT_DELAY_DISABLED);
@@ -1017,9 +1002,9 @@ void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
 void radio_switch_complete_and_b2b_tx_disable(void)
 {
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk);
+	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
 #else /* CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE);
+	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
 	hal_radio_sw_switch_b2b_tx_disable(sw_tifs_toggle);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
@@ -1027,9 +1012,9 @@ void radio_switch_complete_and_b2b_tx_disable(void)
 void radio_switch_complete_and_b2b_rx_disable(void)
 {
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk);
+	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
 #else /* CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE);
+	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
 	hal_radio_sw_switch_b2b_rx_disable(sw_tifs_toggle);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
@@ -1037,9 +1022,9 @@ void radio_switch_complete_and_b2b_rx_disable(void)
 void radio_switch_complete_and_disable(void)
 {
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk);
+	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
 #else /* CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE);
+	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
 	hal_radio_sw_switch_disable();
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
@@ -1134,7 +1119,7 @@ uint32_t radio_bc_has_match(void)
 
 void radio_tmr_status_reset(void)
 {
-	nrf_rtc_event_disable(NRF_RTC0, RTC_EVTENCLR_COMPARE2_Msk);
+	nrf_rtc_event_disable(NRF_RTC, RTC_EVTENCLR_COMPARE2_Msk);
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
 	hal_trigger_crypt_ppi_disable();
@@ -1173,7 +1158,7 @@ void radio_tmr_status_reset(void)
 
 void radio_tmr_tx_status_reset(void)
 {
-	nrf_rtc_event_disable(NRF_RTC0, RTC_EVTENCLR_COMPARE2_Msk);
+	nrf_rtc_event_disable(NRF_RTC, RTC_EVTENCLR_COMPARE2_Msk);
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
 	hal_trigger_crypt_ppi_disable();
@@ -1216,7 +1201,7 @@ void radio_tmr_tx_status_reset(void)
 
 void radio_tmr_rx_status_reset(void)
 {
-	nrf_rtc_event_disable(NRF_RTC0, RTC_EVTENCLR_COMPARE2_Msk);
+	nrf_rtc_event_disable(NRF_RTC, RTC_EVTENCLR_COMPARE2_Msk);
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
 	hal_trigger_crypt_ppi_disable();
@@ -1309,13 +1294,13 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
 	EVENT_TIMER->MODE = 0;
-	EVENT_TIMER->PRESCALER = 4;
+	EVENT_TIMER->PRESCALER = HAL_EVENT_TIMER_PRESCALER_VALUE;
 	EVENT_TIMER->BITMODE = 2;	/* 24 - bit */
 
 	nrf_timer_cc_set(EVENT_TIMER, 0, remainder);
 
-	nrf_rtc_cc_set(NRF_RTC0, 2, ticks_start);
-	nrf_rtc_event_enable(NRF_RTC0, RTC_EVTENSET_COMPARE2_Msk);
+	nrf_rtc_cc_set(NRF_RTC, 2, ticks_start);
+	nrf_rtc_event_enable(NRF_RTC, RTC_EVTENSET_COMPARE2_Msk);
 
 	hal_event_timer_start_ppi_config();
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_EVENT_TIMER_START_PPI));
@@ -1329,7 +1314,7 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 	nrf_timer_task_trigger(SW_SWITCH_TIMER, NRF_TIMER_TASK_CLEAR);
 	SW_SWITCH_TIMER->MODE = 0;
-	SW_SWITCH_TIMER->PRESCALER = 4;
+	SW_SWITCH_TIMER->PRESCALER = HAL_EVENT_TIMER_PRESCALER_VALUE;
 	SW_SWITCH_TIMER->BITMODE = 0; /* 16 bit */
 	/* FIXME: start along with EVENT_TIMER, to save power */
 	nrf_timer_task_trigger(SW_SWITCH_TIMER, NRF_TIMER_TASK_START);
@@ -1365,8 +1350,8 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t tick)
 	remainder_us = 1;
 	nrf_timer_cc_set(EVENT_TIMER, 0, remainder_us);
 
-	nrf_rtc_cc_set(NRF_RTC0, 2, tick);
-	nrf_rtc_event_enable(NRF_RTC0, RTC_EVTENSET_COMPARE2_Msk);
+	nrf_rtc_cc_set(NRF_RTC, 2, tick);
+	nrf_rtc_event_enable(NRF_RTC, RTC_EVTENSET_COMPARE2_Msk);
 
 	hal_event_timer_start_ppi_config();
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_EVENT_TIMER_START_PPI));
@@ -1460,7 +1445,7 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 
 uint32_t radio_tmr_start_get(void)
 {
-	return nrf_rtc_cc_get(NRF_RTC0, 2);
+	return nrf_rtc_cc_get(NRF_RTC, 2);
 }
 
 void radio_tmr_stop(void)
