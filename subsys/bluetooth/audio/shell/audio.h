@@ -10,15 +10,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __AUDIO_H
-#define __AUDIO_H
+#ifndef AUDIO_SHELL_AUDIO_H
+#define AUDIO_SHELL_AUDIO_H
 
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/sys/atomic_types.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
 
 #include "shell/bt.h"
 
@@ -1159,4 +1171,4 @@ static inline void copy_broadcast_source_preset(struct broadcast_source *source,
 }
 #endif /* CONFIG_BT_AUDIO */
 
-#endif /* __AUDIO_H */
+#endif /* AUDIO_SHELL_AUDIO_H */
