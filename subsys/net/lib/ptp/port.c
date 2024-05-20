@@ -10,10 +10,14 @@ LOG_MODULE_REGISTER(ptp_port, CONFIG_PTP_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ptp.h>
+#include <zephyr/net/ptp_time.h>
 
 #include "clock.h"
 #include "port.h"
+#include "msg.h"
 #include "transport.h"
+
+#define PORT_DELAY_REQ_CLEARE_TO (3 * NSEC_PER_SEC)
 
 static struct ptp_port ports[CONFIG_PTP_NUM_PORTS];
 static struct k_mem_slab foreign_tts_slab;
@@ -45,6 +49,21 @@ const char *port_id_str(struct ptp_port_id *port_id)
 		 port_id->port_number);
 
 	return str_port_id;
+}
+
+static void port_synchronize(struct ptp_port *port,
+			     struct net_ptp_time ingress_ts,
+			     struct net_ptp_time origin_ts,
+			     ptp_timeinterval correction1,
+			     ptp_timeinterval correction2)
+{
+	uint64_t t1, t2, t1c;
+
+	t1 = origin_ts.second * NSEC_PER_SEC + origin_ts.nanosecond;
+	t2 = ingress_ts.second * NSEC_PER_SEC + ingress_ts.nanosecond;
+	t1c = t1 + (correction1 >> 16) + (correction2 >> 16);
+
+	ptp_clock_synchronize(t2, t1c);
 }
 
 static void port_ds_init(struct ptp_port *port)
@@ -141,6 +160,270 @@ static void port_clear_foreign_clock_records(struct ptp_foreign_tt_clock *foreig
 	}
 }
 
+static void port_delay_req_cleanup(struct ptp_port *port)
+{
+	sys_snode_t *prev = NULL;
+	struct ptp_msg *msg;
+	int64_t timestamp, current = k_uptime_get() * NSEC_PER_MSEC;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&port->delay_req_list, msg, node) {
+		timestamp = msg->timestamp.host.second * NSEC_PER_SEC +
+			    msg->timestamp.host.nanosecond;
+
+		if (current - timestamp < PORT_DELAY_REQ_CLEARE_TO) {
+			break;
+		}
+
+		ptp_msg_unref(msg);
+		sys_slist_remove(&port->delay_req_list, prev, &msg->node);
+		prev = &msg->node;
+	}
+}
+
+static void port_clear_delay_req(struct ptp_port *port)
+{
+	sys_snode_t *prev = NULL;
+	struct ptp_msg *msg;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&port->delay_req_list, msg, node) {
+		ptp_msg_unref(msg);
+		sys_slist_remove(&port->delay_req_list, prev, &msg->node);
+		prev = &msg->node;
+	}
+}
+
+static int port_msg_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
+{
+	ptp_msg_pre_send(msg);
+
+	return ptp_transport_send(port, msg, idx);
+}
+
+static void port_sync_fup_ooo_handle(struct ptp_port *port, struct ptp_msg *msg)
+{
+	struct ptp_msg *last = port->last_sync_fup;
+
+	if (ptp_msg_type(msg) != PTP_MSG_FOLLOW_UP &&
+	    ptp_msg_type(msg) != PTP_MSG_SYNC) {
+		return;
+	}
+
+	if (!last) {
+		port->last_sync_fup = msg;
+		ptp_msg_ref(msg);
+		return;
+	}
+
+	if (ptp_msg_type(last) == PTP_MSG_SYNC &&
+	    ptp_msg_type(msg) == PTP_MSG_FOLLOW_UP &&
+	    msg->header.sequence_id == last->header.sequence_id) {
+
+		port_synchronize(port,
+				 last->timestamp.host,
+				 msg->timestamp.protocol,
+				 last->header.correction,
+				 msg->header.correction);
+
+		ptp_msg_unref(port->last_sync_fup);
+		port->last_sync_fup = NULL;
+	} else if (ptp_msg_type(last) == PTP_MSG_FOLLOW_UP &&
+		   ptp_msg_type(msg) == PTP_MSG_SYNC &&
+		   msg->header.sequence_id == last->header.sequence_id) {
+
+		port_synchronize(port,
+				 msg->timestamp.host,
+				 last->timestamp.protocol,
+				 msg->header.correction,
+				 last->header.correction);
+
+		ptp_msg_unref(port->last_sync_fup);
+		port->last_sync_fup = NULL;
+	} else {
+		ptp_msg_unref(port->last_sync_fup);
+		port->last_sync_fup = msg;
+		ptp_msg_ref(msg);
+	}
+}
+
+static int port_announce_msg_process(struct ptp_port *port, struct ptp_msg *msg)
+{
+	int ret = 0;
+	const struct ptp_default_ds *dds = ptp_clock_default_ds();
+
+	if (msg->announce.steps_rm >= dds->max_steps_rm) {
+		return ret;
+	}
+
+	switch (ptp_port_state(port)) {
+	case PTP_PS_INITIALIZING:
+		__fallthrough;
+	case PTP_PS_DISABLED:
+		__fallthrough;
+	case PTP_PS_FAULTY:
+		break;
+	case PTP_PS_LISTENING:
+		__fallthrough;
+	case PTP_PS_PRE_TIME_TRANSMITTER:
+		__fallthrough;
+	case PTP_PS_TIME_TRANSMITTER:
+		__fallthrough;
+	case PTP_PS_GRAND_MASTER:
+#if CONFIG_PTP_FOREIGN_TIME_TRANSMITTER_FEATURE
+		ret = ptp_port_add_foreign_tt(port, msg);
+		break;
+#else
+		__fallthrough;
+#endif
+	case PTP_PS_TIME_RECEIVER:
+		__fallthrough;
+	case PTP_PS_UNCALIBRATED:
+		__fallthrough;
+	case PTP_PS_PASSIVE:
+		ret = ptp_port_update_current_time_transmitter(port, msg);
+		break;
+	default:
+		break;
+	}
+
+	return ret;
+}
+
+static void port_sync_msg_process(struct ptp_port *port, struct ptp_msg *msg)
+{
+	enum ptp_port_state state = ptp_port_state(port);
+
+	if (state != PTP_PS_TIME_RECEIVER && state != PTP_PS_UNCALIBRATED) {
+		return;
+	}
+
+	if (!ptp_msg_current_parent(msg)) {
+		return;
+	}
+
+	if (port->port_ds.log_sync_interval != msg->header.log_msg_interval) {
+		port->port_ds.log_sync_interval = msg->header.log_msg_interval;
+	}
+
+	msg->header.correction += port->port_ds.delay_asymmetry;
+
+	if (!(msg->header.flags[0] & PTP_MSG_TWO_STEP_FLAG)) {
+		port_synchronize(port,
+				 msg->timestamp.host,
+				 msg->timestamp.protocol,
+				 msg->header.correction,
+				 0);
+
+		if (port->last_sync_fup) {
+			ptp_msg_unref(port->last_sync_fup);
+			port->last_sync_fup = NULL;
+		}
+
+		return;
+	}
+
+	port_sync_fup_ooo_handle(port, msg);
+}
+
+static void port_follow_up_msg_process(struct ptp_port *port, struct ptp_msg *msg)
+{
+	enum ptp_port_state state = ptp_port_state(port);
+
+	if (state != PTP_PS_TIME_RECEIVER && state != PTP_PS_UNCALIBRATED) {
+		return;
+	}
+
+	if (!ptp_msg_current_parent(msg)) {
+		return;
+	}
+
+	port_sync_fup_ooo_handle(port, msg);
+}
+
+static int port_delay_req_msg_process(struct ptp_port *port, struct ptp_msg *msg)
+{
+	int ret;
+	struct ptp_msg *resp;
+	enum ptp_port_state state = ptp_port_state(port);
+	const struct ptp_default_ds *dds = ptp_clock_default_ds();
+
+	if (state != PTP_PS_TIME_TRANSMITTER && state != PTP_PS_GRAND_MASTER) {
+		return 0;
+	}
+
+	resp = ptp_msg_alloc();
+	if (!resp) {
+		return -ENOMEM;
+	}
+
+	resp->header.type_major_sdo_id = PTP_MSG_DELAY_RESP;
+	resp->header.version	       = PTP_VERSION;
+	resp->header.msg_length	       = sizeof(struct ptp_delay_resp_msg);
+	resp->header.domain_number     = dds->domain;
+	resp->header.correction	       = msg->header.correction;
+	resp->header.src_port_id       = port->port_ds.id;
+	resp->header.sequence_id       = msg->header.sequence_id;
+	resp->header.log_msg_interval  = port->port_ds.log_min_delay_req_interval;
+
+	resp->delay_resp.receive_timestamp.seconds_high = msg->timestamp.host._sec.high;
+	resp->delay_resp.receive_timestamp.seconds_low = msg->timestamp.host._sec.low;
+	resp->delay_resp.receive_timestamp.nanoseconds = msg->timestamp.host.nanosecond;
+	resp->delay_resp.req_port_id = msg->header.src_port_id;
+
+	if (msg->header.flags[0] & PTP_MSG_UNICAST_FLAG) {
+		/* TODO handle unicast messages */
+		resp->header.flags[0] |= PTP_MSG_UNICAST_FLAG;
+	}
+
+	ret = port_msg_send(port, resp, PTP_SOCKET_EVENT);
+	ptp_msg_unref(resp);
+
+	if (ret < 0) {
+		return -EFAULT;
+	}
+
+	LOG_DBG("Port %d responds to Delay_Req message", port->port_ds.id.port_number);
+	return 0;
+}
+
+static void port_delay_resp_msg_process(struct ptp_port *port, struct ptp_msg *msg)
+{
+	uint64_t t3, t4, t4c;
+	sys_snode_t *prev = NULL;
+	struct ptp_msg *req;
+	enum ptp_port_state state = ptp_port_state(port);
+
+	if (state != PTP_PS_TIME_RECEIVER && state != PTP_PS_UNCALIBRATED) {
+		return;
+	}
+
+	if (!ptp_port_id_eq(&msg->delay_resp.req_port_id, &port->port_ds.id)) {
+		/* Message is not meant for this PTP Port */
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&port->delay_req_list, req, node) {
+		if (msg->header.sequence_id == ntohs(req->header.sequence_id)) {
+			break;
+		}
+		prev = &req->node;
+	}
+
+	if (!req) {
+		return;
+	}
+
+	t3 = req->timestamp.host.second * NSEC_PER_SEC + req->timestamp.host.nanosecond;
+	t4 = msg->timestamp.protocol.second * NSEC_PER_SEC + msg->timestamp.protocol.nanosecond;
+	t4c = t4 - (msg->header.correction >> 16);
+
+	ptp_clock_delay(t3, t4c);
+
+	sys_slist_remove(&port->delay_req_list, prev, &req->node);
+	ptp_msg_unref(req);
+
+	port->port_ds.log_min_delay_req_interval = msg->header.log_msg_interval;
+}
+
 void ptp_port_init(struct net_if *iface, void *user_data)
 {
 	struct ptp_port *port;
@@ -165,8 +448,11 @@ void ptp_port_init(struct net_if *iface, void *user_data)
 	port->socket[PTP_SOCKET_GENERAL] = -1;
 
 	port->state_machine = dds->time_receiver_only ? ptp_tr_state_machine : ptp_state_machine;
+	port->last_sync_fup = NULL;
+
 	port_ds_init(port);
 	sys_slist_init(&port->foreign_list);
+	sys_slist_init(&port->delay_req_list);
 
 	port_timer_init(&port->timers.delay, port_timer_to_handler, port);
 	port_timer_init(&port->timers.announce, port_timer_to_handler, port);
@@ -177,6 +463,11 @@ void ptp_port_init(struct net_if *iface, void *user_data)
 	ptp_clock_port_add(port);
 
 	LOG_DBG("Port %d initialized", port->port_ds.id.port_number);
+}
+
+enum ptp_port_state ptp_port_state(struct ptp_port *port)
+{
+	return (enum ptp_port_state)port->port_ds.state;
 }
 
 bool ptp_port_id_eq(const struct ptp_port_id *p1, const struct ptp_port_id *p2)
@@ -252,4 +543,28 @@ void ptp_port_free_foreign_tts(struct ptp_port *port)
 
 		k_mem_slab_free(&foreign_tts_slab, (void *)foreign);
 	}
+}
+
+int ptp_port_update_current_time_transmitter(struct ptp_port *port, struct ptp_msg *msg)
+{
+	struct ptp_foreign_tt_clock *foreign = port->best;
+
+	if (!foreign ||
+	    !ptp_port_id_eq(&msg->header.src_port_id, &foreign->dataset.sender)) {
+		return ptp_port_add_foreign_tt(port, msg);
+	}
+
+	foreign_clock_cleanup(foreign);
+	ptp_msg_ref(msg);
+
+	k_fifo_put(&foreign->messages, (void *)msg);
+	foreign->messages_count++;
+
+	if (foreign->messages_count > 1) {
+		struct ptp_msg *last = (struct ptp_msg *)k_fifo_peek_tail(&foreign->messages);
+
+		return ptp_msg_announce_cmp(&msg->announce, &last->announce);
+	}
+
+	return 0;
 }
