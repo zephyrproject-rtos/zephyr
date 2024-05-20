@@ -8,7 +8,7 @@
 #include <zephyr/device.h>
 
 #include <zephyr/ipc/ipc_service.h>
-#include <nrf53_cpunet_mgmt.h>
+#include <hal/nrf_reset.h>
 #include <string.h>
 
 #include "common.h"
@@ -130,7 +130,7 @@ int main(void)
 	k_msleep(500);
 
 	LOG_INF("Stop network core");
-	nrf53_cpunet_enable(false);
+	nrf_reset_network_force_off(NRF_RESET, true);
 
 	LOG_INF("Reset IPC service");
 
@@ -158,7 +158,7 @@ int main(void)
 	}
 
 	LOG_INF("Run network core");
-	nrf53_cpunet_enable(true);
+	nrf_reset_network_force_off(NRF_RESET, false);
 
 	k_sem_take(&bound_sem, K_FOREVER);
 
