@@ -178,7 +178,7 @@ Artificially long but functional example:
     parser.add_argument("--flash-before", action="store_true", default=False,
                         help="""Flash device before attaching to serial port.
                         This is useful for devices that share the same port for programming
-                        and serial console, where flash must come first.
+                        and serial console, or use soft-USB, where flash must come first.
                         """)
 
     test_or_build.add_argument(
