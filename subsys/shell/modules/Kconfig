@@ -34,7 +34,7 @@ config DEVICE_SHELL
 
 config DATE_SHELL
 	bool "Date shell"
-	depends on POSIX_CLOCK
+	depends on POSIX_TIMERS
 	default y if !SHELL_MINIMAL
 	help
 	  This shell provides access to date and time based on Unix time.

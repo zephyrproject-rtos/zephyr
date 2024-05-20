@@ -141,55 +141,73 @@ enum {
 	_SC_TZNAME_MAX,
 };
 
-#define __z_posix_sysconf_SC_ADVISORY_INFO                _POSIX_ADVISORY_INFO
-#define __z_posix_sysconf_SC_ASYNCHRONOUS_IO              _POSIX_ASYNCHRONOUS_IO
-#define __z_posix_sysconf_SC_BARRIERS                     _POSIX_BARRIERS
-#define __z_posix_sysconf_SC_CLOCK_SELECTION              _POSIX_CLOCK_SELECTION
-#define __z_posix_sysconf_SC_CPUTIME                      _POSIX_CPUTIME
-#define __z_posix_sysconf_SC_FSYNC                        _POSIX_FSYNC
-#define __z_posix_sysconf_SC_IPV6                         _POSIX_IPV6
-#define __z_posix_sysconf_SC_JOB_CONTROL                  _POSIX_JOB_CONTROL
-#define __z_posix_sysconf_SC_MAPPED_FILES                 _POSIX_MAPPED_FILES
-#define __z_posix_sysconf_SC_MEMLOCK                      _POSIX_MEMLOCK
-#define __z_posix_sysconf_SC_MEMLOCK_RANGE                _POSIX_MEMLOCK_RANGE
-#define __z_posix_sysconf_SC_MEMORY_PROTECTION            _POSIX_MEMORY_PROTECTION
-#define __z_posix_sysconf_SC_MESSAGE_PASSING              _POSIX_MESSAGE_PASSING
-#define __z_posix_sysconf_SC_MONOTONIC_CLOCK              _POSIX_MONOTONIC_CLOCK
-#define __z_posix_sysconf_SC_PRIORITIZED_IO               _POSIX_PRIORITIZED_IO
-#define __z_posix_sysconf_SC_PRIORITY_SCHEDULING          _POSIX_PRIORITY_SCHEDULING
-#define __z_posix_sysconf_SC_RAW_SOCKETS                  _POSIX_RAW_SOCKETS
-#define __z_posix_sysconf_SC_RE_DUP_MAX                   _POSIX_RE_DUP_MAX
-#define __z_posix_sysconf_SC_READER_WRITER_LOCKS          _POSIX_READER_WRITER_LOCKS
-#define __z_posix_sysconf_SC_REALTIME_SIGNALS             _POSIX_REALTIME_SIGNALS
-#define __z_posix_sysconf_SC_REGEXP                       _POSIX_REGEXP
-#define __z_posix_sysconf_SC_SAVED_IDS                    _POSIX_SAVED_IDS
-#define __z_posix_sysconf_SC_SEMAPHORES                   _POSIX_SEMAPHORES
-#define __z_posix_sysconf_SC_SHARED_MEMORY_OBJECTS        _POSIX_SHARED_MEMORY_OBJECTS
-#define __z_posix_sysconf_SC_SHELL                        _POSIX_SHELL
-#define __z_posix_sysconf_SC_SPAWN                        _POSIX_SPAWN
-#define __z_posix_sysconf_SC_SPIN_LOCKS                   _POSIX_SPIN_LOCKS
-#define __z_posix_sysconf_SC_SPORADIC_SERVER              _POSIX_SPORADIC_SERVER
-#define __z_posix_sysconf_SC_SS_REPL_MAX                  _POSIX_SS_REPL_MAX
-#define __z_posix_sysconf_SC_SYNCHRONIZED_IO              _POSIX_SYNCHRONIZED_IO
-#define __z_posix_sysconf_SC_THREAD_ATTR_STACKADDR        _POSIX_THREAD_ATTR_STACKADDR
-#define __z_posix_sysconf_SC_THREAD_ATTR_STACKSIZE        _POSIX_THREAD_ATTR_STACKSIZE
-#define __z_posix_sysconf_SC_THREAD_CPUTIME               _POSIX_THREAD_CPUTIME
-#define __z_posix_sysconf_SC_THREAD_PRIO_INHERIT          _POSIX_THREAD_PRIO_INHERIT
-#define __z_posix_sysconf_SC_THREAD_PRIO_PROTECT          _POSIX_THREAD_PRIO_PROTECT
-#define __z_posix_sysconf_SC_THREAD_PRIORITY_SCHEDULING   _POSIX_THREAD_PRIORITY_SCHEDULING
-#define __z_posix_sysconf_SC_THREAD_PROCESS_SHARED        _POSIX_THREAD_PROCESS_SHARED
-#define __z_posix_sysconf_SC_THREAD_ROBUST_PRIO_INHERIT   _POSIX_THREAD_ROBUST_PRIO_INHERIT
-#define __z_posix_sysconf_SC_THREAD_ROBUST_PRIO_PROTECT   _POSIX_THREAD_ROBUST_PRIO_PROTECT
-#define __z_posix_sysconf_SC_THREAD_SAFE_FUNCTIONS        _POSIX_THREAD_SAFE_FUNCTIONS
-#define __z_posix_sysconf_SC_THREAD_SPORADIC_SERVER       _POSIX_THREAD_SPORADIC_SERVER
-#define __z_posix_sysconf_SC_THREADS                      _POSIX_THREADS
-#define __z_posix_sysconf_SC_TIMEOUTS                     _POSIX_TIMEOUTS
-#define __z_posix_sysconf_SC_TIMERS                       _POSIX_TIMERS
-#define __z_posix_sysconf_SC_TRACE                        _POSIX_TRACE
-#define __z_posix_sysconf_SC_TRACE_EVENT_FILTER           _POSIX_TRACE_EVENT_FILTER
-#define __z_posix_sysconf_SC_TRACE_EVENT_NAME_MAX         _POSIX_TRACE_EVENT_NAME_MAX
-#define __z_posix_sysconf_SC_TRACE_INHERIT                _POSIX_TRACE_INHERIT
-#define __z_posix_sysconf_SC_TRACE_LOG                    _POSIX_TRACE_LOG
+#define __z_posix_sysconf_SC_ADVISORY_INFO (-1L)
+#define __z_posix_sysconf_SC_ASYNCHRONOUS_IO                                                       \
+	COND_CODE_1(CONFIG_POSIX_ASYNCHRONOUS_IO, (_POSIX_ASYNCHRONOUS_IO), (-1L))
+#define __z_posix_sysconf_SC_BARRIERS COND_CODE_1(CONFIG_PTHREAD_BARRIER, (_POSIX_BARRIERS), (-1L))
+#define __z_posix_sysconf_SC_CLOCK_SELECTION                                                       \
+	COND_CODE_1(CONFIG_POSIX_CLOCK_SELECTION, (_POSIX_CLOCK_SELECTION), (-1L))
+#define __z_posix_sysconf_SC_CPUTIME \
+	COND_CODE_1(CONFIG_POSIX_CPUTIME, (_POSIX_CPUTIME), (-1L))
+#define __z_posix_sysconf_SC_FSYNC                                                                 \
+	COND_CODE_1(CONFIG_POSIX_FSYNC, (_POSIX_FSYNC), (-1L))
+#define __z_posix_sysconf_SC_IPV6              COND_CODE_1(CONFIG_NET_IPV6, (_POSIX_IPV6), (-1L))
+#define __z_posix_sysconf_SC_JOB_CONTROL       (-1L)
+#define __z_posix_sysconf_SC_MAPPED_FILES      (-1L)
+#define __z_posix_sysconf_SC_MEMLOCK           (-1L)
+#define __z_posix_sysconf_SC_MEMLOCK_RANGE     (-1L)
+#define __z_posix_sysconf_SC_MEMORY_PROTECTION (-1L)
+#define __z_posix_sysconf_SC_MESSAGE_PASSING                                                       \
+	COND_CODE_1(CONFIG_POSIX_MQUEUE, (_POSIX_MESSAGE_PASSING), (-1L))
+#define __z_posix_sysconf_SC_MONOTONIC_CLOCK                                                       \
+	COND_CODE_1(CONFIG_POSIX_MONOTONIC_CLOCK, (_POSIX_MONOTONIC_CLOCK), (-1L))
+#define __z_posix_sysconf_SC_PRIORITIZED_IO (-1L)
+#define __z_posix_sysconf_SC_PRIORITY_SCHEDULING                                                   \
+	COND_CODE_1(CONFIG_POSIX_PRIORITY_SCHEDULING, (_POSIX_PRIORITY_SCHEDULING), (-1L))
+#define __z_posix_sysconf_SC_RAW_SOCKETS                                                           \
+	COND_CODE_1(CONFIG_NET_SOCKETS_PACKET, (_POSIX_RAW_SOCKETS), (-1L))
+#define __z_posix_sysconf_SC_RE_DUP_MAX _POSIX_RE_DUP_MAX
+#define __z_posix_sysconf_SC_READER_WRITER_LOCKS                                                   \
+	COND_CODE_1(CONFIG_PTHREAD_IPC, (_POSIX_READER_WRITER_LOCKS), (-1L))
+#define __z_posix_sysconf_SC_REALTIME_SIGNALS      (-1L)
+#define __z_posix_sysconf_SC_REGEXP                (-1L)
+#define __z_posix_sysconf_SC_SAVED_IDS             (-1L)
+#define __z_posix_sysconf_SC_SEMAPHORES                                                            \
+	COND_CODE_1(CONFIG_PTHREAD_IPC, (_POSIX_SEMAPHORES), (-1L))
+#define __z_posix_sysconf_SC_SHARED_MEMORY_OBJECTS (-1L)
+#define __z_posix_sysconf_SC_SHELL                 (-1L)
+#define __z_posix_sysconf_SC_SPAWN                 (-1L)
+#define __z_posix_sysconf_SC_SPIN_LOCKS                                                            \
+	COND_CODE_1(CONFIG_PTHREAD_SPINLOCK, (_POSIX_SPIN_LOCKS), (-1L))
+#define __z_posix_sysconf_SC_SPORADIC_SERVER (-1L)
+#define __z_posix_sysconf_SC_SS_REPL_MAX     _POSIX_SS_REPL_MAX
+#define __z_posix_sysconf_SC_SYNCHRONIZED_IO (-1L)
+#define __z_posix_sysconf_SC_THREAD_ATTR_STACKADDR                                                 \
+	COND_CODE_1(CONFIG_PTHREAD_IPC, (_POSIX_THREAD_ATTR_STACKADDR), (-1))
+#define __z_posix_sysconf_SC_THREAD_ATTR_STACKSIZE                                                 \
+	COND_CODE_1(CONFIG_PTHREAD_IPC, (_POSIX_THREAD_ATTR_STACKSIZE), (-1L))
+#define __z_posix_sysconf_SC_THREAD_CPUTIME (-1L)
+#define __z_posix_sysconf_SC_THREAD_PRIO_INHERIT                                                   \
+	COND_CODE_1(CONFIG_PTHREAD_IPC, (_POSIX_THREAD_PRIO_INHERIT), (-1L))
+#define __z_posix_sysconf_SC_THREAD_PRIO_PROTECT        (-1L)
+#define __z_posix_sysconf_SC_THREAD_PRIORITY_SCHEDULING (-1L)
+#define __z_posix_sysconf_SC_THREAD_PROCESS_SHARED      (-1L)
+#define __z_posix_sysconf_SC_THREAD_ROBUST_PRIO_INHERIT (-1L)
+#define __z_posix_sysconf_SC_THREAD_ROBUST_PRIO_PROTECT (-1L)
+#define __z_posix_sysconf_SC_THREAD_SAFE_FUNCTIONS                                                 \
+	COND_CODE_1(CONFIG_PTHREAD_IPC, (_POSIX_THREAD_SAFE_FUNCTIONS), (-1L))
+#define __z_posix_sysconf_SC_THREAD_SPORADIC_SERVER       (-1L)
+#define __z_posix_sysconf_SC_THREADS                                                               \
+	COND_CODE_1(CONFIG_PTHREAD_IPC, (_POSIX_THREADS), (-1L))
+#define __z_posix_sysconf_SC_TIMEOUTS                                                              \
+	COND_CODE_1(CONFIG_POSIX_TIMEOUTS, (_POSIX_TIMEOUTS), (-1L))
+#define __z_posix_sysconf_SC_TIMERS                                                                \
+	COND_CODE_1(CONFIG_POSIX_TIMEOUTS, (_POSIX_TIMERS), (-1))
+#define __z_posix_sysconf_SC_TRACE                        (-1L)
+#define __z_posix_sysconf_SC_TRACE_EVENT_FILTER           (-1L)
+#define __z_posix_sysconf_SC_TRACE_EVENT_NAME_MAX         _POSIX_TRACE_NAME_MAX
+#define __z_posix_sysconf_SC_TRACE_INHERIT                (-1L)
+#define __z_posix_sysconf_SC_TRACE_LOG                    (-1L)
 #define __z_posix_sysconf_SC_TRACE_NAME_MAX               _POSIX_TRACE_NAME_MAX
 #define __z_posix_sysconf_SC_TRACE_SYS_MAX                _POSIX_TRACE_SYS_MAX
 #define __z_posix_sysconf_SC_TRACE_USER_EVENT_MAX         _POSIX_TRACE_USER_EVENT_MAX
@@ -211,7 +229,7 @@ enum {
 #define __z_posix_sysconf_SC_2_C_DEV                      _POSIX2_C_DEV
 #define __z_posix_sysconf_SC_2_CHAR_TERM                  (-1L)
 #define __z_posix_sysconf_SC_COLL_WEIGHTS_MAX             _POSIX2_COLL_WEIGHTS_MAX
-#define __z_posix_sysconf_SC_DELAYTIMER_MAX               _POSIX2_DELAYTIMER_MAX
+#define __z_posix_sysconf_SC_DELAYTIMER_MAX               _POSIX_DELAYTIMER_MAX
 #define __z_posix_sysconf_SC_EXPR_NEST_MAX                _POSIX2_EXPR_NEST_MAX
 #define __z_posix_sysconf_SC_2_FORT_DEV                   (-1L)
 #define __z_posix_sysconf_SC_2_FORT_RUN                   (-1L)

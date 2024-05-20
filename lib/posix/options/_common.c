@@ -8,7 +8,7 @@
 #include <ksched.h>
 #include <zephyr/posix/time.h>
 
-#ifdef CONFIG_POSIX_CLOCK
+#ifdef CONFIG_POSIX_TIMERS
 int64_t timespec_to_timeoutms(const struct timespec *abstime)
 {
 	int64_t milli_secs, secs, nsecs;
@@ -30,4 +30,4 @@ int64_t timespec_to_timeoutms(const struct timespec *abstime)
 
 	return milli_secs;
 }
-#endif	/* CONFIG_POSIX_CLOCK */
+#endif /* CONFIG_POSIX_TIMERS */
