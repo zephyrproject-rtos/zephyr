@@ -25,16 +25,17 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
  * @brief PTP Clock structure.
  */
 struct ptp_clock {
-	const struct device	*phc;
-	struct ptp_default_ds	default_ds;
-	struct ptp_current_ds	current_ds;
-	struct ptp_parent_ds	parent_ds;
-	struct ptp_time_prop_ds time_prop_ds;
-	struct ptp_dataset	dataset;
-	sys_slist_t		ports_list;
-	struct zsock_pollfd	pollfd[2 * CONFIG_PTP_NUM_PORTS];
-	bool			pollfd_valid;
-	uint8_t			time_src;
+	const struct device	    *phc;
+	struct ptp_default_ds	    default_ds;
+	struct ptp_current_ds	    current_ds;
+	struct ptp_parent_ds	    parent_ds;
+	struct ptp_time_prop_ds	    time_prop_ds;
+	struct ptp_dataset	    dataset;
+	struct ptp_foreign_tt_clock *best;
+	sys_slist_t		    ports_list;
+	struct zsock_pollfd	    pollfd[2 * CONFIG_PTP_NUM_PORTS];
+	bool			    pollfd_valid;
+	uint8_t			    time_src;
 };
 
 static struct ptp_clock clock = { 0 };
@@ -150,4 +151,9 @@ void ptp_clock_port_add(struct ptp_port *port)
 {
 	clock.default_ds.n_ports++;
 	sys_slist_append(&clock.ports_list, &port->node);
+}
+
+const struct ptp_foreign_tt_clock *ptp_clock_best_time_transmitter(void)
+{
+	return clock.best;
 }
