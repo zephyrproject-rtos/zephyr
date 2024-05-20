@@ -7,6 +7,7 @@
 #define ZEPHYR_INCLUDE_POSIX_SIGNAL_H_
 
 #include "posix_types.h"
+#include "posix_features.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,7 +45,6 @@ extern "C" {
 /* 30 not used */
 #define SIGSYS    31 /**< Bad system call */
 
-#define RTSIG_MAX CONFIG_POSIX_RTSIG_MAX
 #define SIGRTMIN 32
 #define SIGRTMAX (SIGRTMIN + RTSIG_MAX)
 #define _NSIG (SIGRTMAX + 1)
