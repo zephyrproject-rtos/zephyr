@@ -1136,7 +1136,9 @@ void radio_tmr_status_reset(void)
 {
 	nrf_rtc_event_disable(NRF_RTC0, RTC_EVTENCLR_COMPARE2_Msk);
 
+#if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
 	hal_trigger_crypt_ppi_disable();
+#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
 
 	hal_radio_nrf_ppi_channels_disable(
 			BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI) |
@@ -1163,14 +1165,19 @@ void radio_tmr_status_reset(void)
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 			BIT(HAL_TRIGGER_CRYPT_DELAY_PPI) |
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
-			BIT(HAL_TRIGGER_CRYPT_PPI));
+#if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
+			BIT(HAL_TRIGGER_CRYPT_PPI) |
+#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
+			0);
 }
 
 void radio_tmr_tx_status_reset(void)
 {
 	nrf_rtc_event_disable(NRF_RTC0, RTC_EVTENCLR_COMPARE2_Msk);
 
+#if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
 	hal_trigger_crypt_ppi_disable();
+#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
 
 	hal_radio_nrf_ppi_channels_disable(
 #if (HAL_RADIO_ENABLE_TX_ON_TICK_PPI != HAL_RADIO_ENABLE_RX_ON_TICK_PPI) && \
@@ -1201,14 +1208,19 @@ void radio_tmr_tx_status_reset(void)
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 			BIT(HAL_TRIGGER_CRYPT_DELAY_PPI) |
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
-			BIT(HAL_TRIGGER_CRYPT_PPI));
+#if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
+			BIT(HAL_TRIGGER_CRYPT_PPI) |
+#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
+			0);
 }
 
 void radio_tmr_rx_status_reset(void)
 {
 	nrf_rtc_event_disable(NRF_RTC0, RTC_EVTENCLR_COMPARE2_Msk);
 
+#if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
 	hal_trigger_crypt_ppi_disable();
+#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
 
 	hal_radio_nrf_ppi_channels_disable(
 #if (HAL_RADIO_ENABLE_TX_ON_TICK_PPI != HAL_RADIO_ENABLE_RX_ON_TICK_PPI) && \
@@ -1239,7 +1251,10 @@ void radio_tmr_rx_status_reset(void)
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 			BIT(HAL_TRIGGER_CRYPT_DELAY_PPI) |
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
-			BIT(HAL_TRIGGER_CRYPT_PPI));
+#if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
+			BIT(HAL_TRIGGER_CRYPT_PPI) |
+#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
+			0);
 }
 
 void radio_tmr_tx_enable(void)
@@ -1739,8 +1754,10 @@ void radio_gpio_pa_lna_disable(void)
 }
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN || HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
+#if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
 static uint8_t MALIGN(4) _ccm_scratch[(HAL_RADIO_PDU_LEN_MAX - 4) + 16];
 
+#if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_SYNC_ISO)
 static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_type, void *pkt)
 {
 	uint32_t mode;
@@ -1868,7 +1885,9 @@ void *radio_ccm_iso_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_type, v
 {
 	return radio_ccm_ext_rx_pkt_set(cnf, phy, pdu_type, pkt);
 }
+#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_SYNC_ISO */
 
+#if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_ADV_ISO)
 static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *pkt)
 {
 	uint32_t mode;
@@ -1939,6 +1958,7 @@ void *radio_ccm_iso_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *pkt)
 {
 	return radio_ccm_ext_tx_pkt_set(cnf, pdu_type, pkt);
 }
+#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_ADV_ISO */
 
 uint32_t radio_ccm_is_done(void)
 {
@@ -2086,6 +2106,7 @@ uint8_t radio_ar_resolve(const uint8_t *addr)
 
 }
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
 
 #if defined(CONFIG_BT_CTLR_DF_SUPPORT) && !defined(CONFIG_ZTEST)
 /* @brief Function configures CTE inline register to start sampling of CTE
