@@ -3,15 +3,23 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-#ifdef CONFIG_BT_MCS
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/mcc.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/services/ots.h>
+#include <zephyr/sys/printk.h>
 
+#include "bstests.h"
 #include "common.h"
 
+#ifdef CONFIG_BT_MCS
 extern enum bst_result_t bst_result;
 
 static uint64_t g_icon_object_id;
@@ -879,7 +887,7 @@ static void test_cp_prev_track(void)
 	 * and can change between them.
 	 */
 
-	/* To verify that a track change has happeded, the test checks that the
+	/* To verify that a track change has happened, the test checks that the
 	 * current track object ID has changed.
 	 */
 
@@ -1047,7 +1055,7 @@ static void test_cp_prev_group(void)
 	 * and can change between them.
 	 */
 
-	/* To verify that a group change has happeded, the test checks that the
+	/* To verify that a group change has happened, the test checks that the
 	 * current group object ID has changed.
 	 */
 

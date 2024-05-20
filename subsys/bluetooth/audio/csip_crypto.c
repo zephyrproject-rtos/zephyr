@@ -9,16 +9,23 @@
  * in the CSIS spec is also provided as BE, and logging values as BE will make
  * it easier to compare.
  */
-#include "csip_crypto.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/crypto.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "crypto/bt_crypto.h"
 
 #include "common/bt_str.h"
 
-#include <zephyr/logging/log.h>
+#include "csip_crypto.h"
 
 LOG_MODULE_REGISTER(bt_csip_crypto, CONFIG_BT_CSIP_SET_MEMBER_CRYPTO_LOG_LEVEL);
 

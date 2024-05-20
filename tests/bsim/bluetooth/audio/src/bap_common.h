@@ -9,10 +9,13 @@
 #ifndef ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_COMMON_
 #define ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_COMMON_
 
-#include <zephyr/bluetooth/bluetooth.h>
+#include <stdbool.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 #define LONG_META 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, \
 		  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, \
