@@ -9,7 +9,10 @@
 #define ZEPHYR_INCLUDE_NET_HTTP_SERVER_H_
 
 /**
+ * @file server.h
+ *
  * @brief HTTP server API
+ *
  * @defgroup http_server HTTP server API
  * @ingroup networking
  * @{
@@ -196,12 +199,28 @@ BUILD_ASSERT(offsetof(struct http_resource_detail_dynamic, common) == 0);
 typedef int (*http_resource_websocket_cb_t)(int ws_socket,
 					    void *user_data);
 
+/** @brief Representation of a websocket server resource */
 struct http_resource_detail_websocket {
+	/** Common resource details. */
 	struct http_resource_detail common;
+
+	/** Websocket socket value */
 	int ws_sock;
+
+	/** Resource callback used by the server to interact with the
+	 *  application.
+	 */
 	http_resource_websocket_cb_t cb;
+
+	/** Data buffer used to exchanged data between server and the,
+	 *  application.
+	 */
 	uint8_t *data_buffer;
+
+	/** Length of the data in the data buffer. */
 	size_t data_buffer_len;
+
+	/** A pointer to the user data registered by the application.  */
 	void *user_data;
 };
 
@@ -335,8 +354,10 @@ struct http_client_ctx {
 	 */
 	struct k_work_delayable inactivity_timer;
 
-	/* Websocket security key. */
+/** @cond INTERNAL_HIDDEN */
+	/** Websocket security key. */
 	IF_ENABLED(CONFIG_WEBSOCKET, (uint8_t ws_sec_key[HTTP_SERVER_WS_MAX_SEC_KEY_LEN]));
+/** @endcond */
 
 	/** Flag indicating that headers were sent in the reply. */
 	bool headers_sent : 1;
