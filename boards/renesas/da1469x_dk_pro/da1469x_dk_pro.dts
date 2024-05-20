@@ -167,11 +167,13 @@ zephyr_udc0: &usbd {
 &spi {
 	status = "okay";
 	pinctrl-0 = <&spi_controller>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&spi_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi2 {
 	status = "okay";
 	pinctrl-0 = <&spi2_controller>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&spi2_sleep>;
+	pinctrl-names = "default", "sleep";
 };
