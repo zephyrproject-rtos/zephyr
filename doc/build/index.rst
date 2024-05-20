@@ -15,4 +15,3 @@ Build and Configuration Systems
    zephyr_cmake_package.rst
    sysbuild/index.rst
    version/index.rst
-   flashing/index.rst
