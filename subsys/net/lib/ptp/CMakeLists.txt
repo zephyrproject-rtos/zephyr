@@ -8,4 +8,5 @@ zephyr_library_sources(
   port.c
   ptp.c
   state_machine.c
+  tlv.c
 )
