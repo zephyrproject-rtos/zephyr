@@ -125,6 +125,12 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 		last_index = bis[i];
 	}
 
+	/* Check if encryption supported */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    encryption) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	};
+
 	/* Check if requested encryption matches */
 	if (encryption != sync->enc) {
 		return BT_HCI_ERR_ENC_MODE_NOT_ACCEPTABLE;
@@ -470,7 +476,8 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	/* Set establishment event countdown */
 	lll->establish_events = CONN_ESTAB_COUNTDOWN;
 
-	if (lll->enc && (bi_size == PDU_BIG_INFO_ENCRYPTED_SIZE)) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    lll->enc && (bi_size == PDU_BIG_INFO_ENCRYPTED_SIZE)) {
 		const uint8_t BIG3[4]  = {0x33, 0x47, 0x49, 0x42};
 		struct ccm *ccm_rx;
 		uint8_t gsk[16];

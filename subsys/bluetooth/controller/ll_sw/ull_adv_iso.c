@@ -144,6 +144,12 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
+	/* Check if encryption supported */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    encryption) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	};
+
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
 		if (num_bis == 0U || num_bis > 0x1F) {
 			return BT_HCI_ERR_INVALID_PARAM;
@@ -566,7 +572,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	big_info->payload_count_framing[4] &= ~BIT(7);
 	big_info->payload_count_framing[4] |= ((framing & 0x01) << 7);
 
-	if (encryption) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) && encryption) {
 		const uint8_t BIG1[16] = {0x31, 0x47, 0x49, 0x42, };
 		const uint8_t BIG2[4]  = {0x32, 0x47, 0x49, 0x42};
 		const uint8_t BIG3[4]  = {0x33, 0x47, 0x49, 0x42};
