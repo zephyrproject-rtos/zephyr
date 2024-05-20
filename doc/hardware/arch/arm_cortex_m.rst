@@ -169,7 +169,7 @@ PendSV exception return sequence restores the new thread's caller-saved register
 return address, as part of unstacking the exception stack frame.
 
 The implementation of the context-switch mechanism is present in
-:file:`arch/arm/core/swap_helper.S`.
+:file:`arch/arm/core/cortex_m/swap_helper.S`.
 
 Stack limit checking (Arm v8-M)
 -------------------------------
@@ -262,7 +262,7 @@ interrupt. If the ZLI feature is enabled in Mainline Cortex-M builds (see
 * Regular HW interrupts are assigned priority levels lower than SVC.
 
 The priority level configuration in Cortex-M is implemented in
-:file:`include/arch/arm/exception.h`.
+:file:`include/zephyr/arch/arm/cortex_m/exception.h`.
 
 Locking and unlocking IRQs
 --------------------------
@@ -337,7 +337,7 @@ CPU Idling
 
 The Cortex-M architecture port implements both k_cpu_idle()
 and k_cpu_atomic_idle(). The implementation is present in
-:file:`arch/arm/core/cpu_idle.S`.
+:file:`arch/arm/core/cortex_m/cpu_idle.c`.
 
 In both implementations, the processor
 will attempt to put the core to low power mode.
@@ -444,7 +444,7 @@ are programmed during system boot.
   ``zephyr,memory-attr`` defining the MPU permissions for the memory region.
   See the next section for more details.
 
-The above MPU regions are defined in :file:`soc/arm/common/cortex_m/arm_mpu_regions.c`.
+The above MPU regions are defined in :file:`arch/arm/core/mpu/arm_mpu_regions.c`.
 Alternative MPU configurations are allowed by enabling :kconfig:option:`CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS`.
 When enabled, this option signifies that the Cortex-M SoC will define and
 configure its own fixed MPU regions in the SoC definition.
@@ -618,7 +618,7 @@ Linking Cortex-M applications
 *****************************
 
 Most Cortex-M platforms make use of the default Cortex-M
-GCC linker script in :file:`include/arch/arm/cortex-m/scripts/linked.ld`,
+GCC linker script in :file:`include/zephyr/arch/arm/cortex_m/scripts/linker.ld`,
 although it is possible for platforms to use a custom linker
 script as well.
 
