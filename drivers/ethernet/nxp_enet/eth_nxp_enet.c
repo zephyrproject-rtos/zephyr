@@ -63,7 +63,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #elif defined(CONFIG_SOC_SERIES_KINETIS_K6X)
 #define ETH_NXP_ENET_UNIQUE_ID	(SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL)
 #else
-#define ETH_NXP_ENET_UNIQUE_ID 0xFFFFFF
 #error "Unsupported SOC"
 #endif
 
@@ -599,11 +598,13 @@ static void eth_nxp_enet_isr(const struct device *dev)
 	irq_unlock(irq_lock_key);
 }
 
+/* Note this is not universally unique, it just is probably unique on a network */
 static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
 {
 	uint32_t id = ETH_NXP_ENET_UNIQUE_ID;
 
-	mac_addr[0] = FREESCALE_OUI_B0;
+	/* Setting LAA bit because it is not guaranteed universally unique */
+	mac_addr[0] = FREESCALE_OUI_B0 | 0x02;
 	mac_addr[1] = FREESCALE_OUI_B1;
 	mac_addr[2] = FREESCALE_OUI_B2;
 	mac_addr[3] = FIELD_GET(0xFF0000, id);
