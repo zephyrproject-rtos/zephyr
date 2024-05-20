@@ -13,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <hci_core.h>
 
 #include "bap_endpoint.h"
@@ -636,6 +637,26 @@ static void stream_started(struct bt_bap_stream *stream)
 	btp_send_ascs_ase_state_changed_ev(stream->conn, u_stream->ase_id, info.state);
 }
 
+static void stream_connected(struct bt_bap_stream *stream)
+{
+	struct bt_conn_info conn_info;
+	struct bt_bap_ep_info ep_info;
+	int err;
+
+	LOG_DBG("Connected stream %p", stream);
+
+	(void)bt_bap_ep_get_info(stream->ep, &ep_info);
+	(void)bt_conn_get_info(stream->conn, &conn_info);
+	if (conn_info.role == BT_HCI_ROLE_CENTRAL && ep_info.dir == BT_AUDIO_DIR_SOURCE) {
+		/* Automatically do the receiver start ready operation for source ASEs as the client
+		 */
+		err = bt_bap_stream_start(stream);
+		if (err != 0) {
+			LOG_ERR("Failed to start stream %p", stream);
+		}
+	}
+}
+
 static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
@@ -703,6 +724,7 @@ static struct bt_bap_stream_ops stream_ops = {
 	.stopped = stream_stopped,
 	.recv = stream_recv,
 	.sent = stream_sent,
+	.connected = stream_connected,
 };
 
 struct btp_bap_unicast_stream *btp_bap_unicast_stream_alloc(
@@ -1419,7 +1441,7 @@ uint8_t btp_ascs_receiver_start_ready(const void *cmd, uint16_t cmd_len,
 	LOG_DBG("Starting stream %p, ep %u, dir %u", bap_stream, cp->ase_id, info.dir);
 
 	while (true) {
-		err = bt_bap_stream_start(bap_stream);
+		err = bt_bap_stream_connect(bap_stream);
 		if (err == -EBUSY) {
 			/* TODO: How to determine if a controller is ready again after
 			 * bt_bap_stream_start? In AC 6(i) tests the PTS sends Receiver Start Ready
@@ -1427,8 +1449,8 @@ uint8_t btp_ascs_receiver_start_ready(const void *cmd, uint16_t cmd_len,
 			 */
 			k_sleep(K_MSEC(1000));
 			continue;
-		} else if (err != 0) {
-			LOG_DBG("Could not start stream: %d", err);
+		} else if (err != 0 && err != -EALREADY) {
+			LOG_DBG("Could not connect stream: %d", err);
 			return BTP_STATUS_FAILED;
 		}
 

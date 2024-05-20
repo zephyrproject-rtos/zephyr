@@ -34,6 +34,7 @@ Commands
       stream_qos             : interval [framing] [latency] [pd] [sdu] [phy] [rtn]
       qos                    : Send QoS configure for Unicast Group
       enable                 : [context]
+      connect                : Connect the CIS of the stream
       stop
       list
       print_ase_info         : Print ASE info for default connection
@@ -62,10 +63,8 @@ Commands
                                     [extended <meta>]
                                     [vendor <meta>]]
       send                   : Send to Audio Stream [data]
-      start_sine             : Start sending a LC3 encoded sine wave [all]
-      stop_sine              : Stop sending a LC3 encoded sine wave [all]
-      recv_stats             : Sets or gets the receive statistics reporting interval
-                              in # of packets
+      bap_stats              : Sets or gets the statistics reporting interval in # of
+                              packets
       set_location           : <direction: sink, source> <location bitmask>
       set_context            : <direction: sink, source><context bitmask> <type:
                               supported, available>
@@ -80,19 +79,19 @@ Commands
    "config","discover","idle/codec-configured/qos-configured","codec-configured"
    "qos","config","codec-configured/qos-configured","qos-configured"
    "enable","qos","qos-configured","enabling"
-   "[start]","enable","enabling","streaming"
+   "connect","qos/enable","qos-configured/enabling","qos-configured/enabling"
+   "[start]","enable/connect","enabling","streaming"
    "disable","enable", "enabling/streaming","disabling"
    "[stop]","disable","disabling","qos-configure/idle"
    "release","config","any","releasing/codec-configure/idle"
    "list","none","any","none"
    "select_unicast","none","any","none"
-   "connect","discover","idle/codec-configured/qos-configured","codec-configured"
    "send","enable","streaming","none"
 
 Example Central
 ***************
 
-Connect and establish a stream:
+Connect and establish a sink stream:
 
 .. code-block:: console
 
@@ -104,8 +103,9 @@ Connect and establish a stream:
    uart:~$ bap config sink 0
    uart:~$ bap qos
    uart:~$ bap enable
+   uart:~$ bap connect
 
-Or using connect command:
+Connect and establish a source stream:
 
 .. code-block:: console
 
@@ -113,8 +113,12 @@ Or using connect command:
    uart:~$ bap init
    uart:~$ bt connect <address>
    uart:~$ gatt exchange-mtu
-   uart:~$ bap discover sink
-   uart:~$ bap connect sink 0
+   uart:~$ bap discover source
+   uart:~$ bap config source 0
+   uart:~$ bap qos
+   uart:~$ bap enable
+   uart:~$ bap connect
+   uart:~$ bap start
 
 Disconnect and release:
 
@@ -479,8 +483,7 @@ parameters.
 Enable
 ******
 
-The :code:`enable` command attempts to enable the stream previously configured,
-if the remote peer accepts then the ISO connection procedure is also initiated.
+The :code:`enable` command attempts to enable the stream previously configured.
 
 .. csv-table:: State Machine Transitions
    :header: "Depends", "Allowed States", "Next States"
@@ -493,17 +496,33 @@ if the remote peer accepts then the ISO connection procedure is also initiated.
    uart:~$ bap enable [context]
    uart:~$ bap enable Media
 
-Start
-*****
+Connect
+*******
 
-The :code:`start` command is only necessary when acting as a sink as it
-indicates to the source the stack is ready to start receiving data.
+The :code:`connect` command attempts to connect the stream previously configured.
+Sink streams will have to be started by the unicast server, and source streams will have to be
+started by the unicast client.
 
 .. csv-table:: State Machine Transitions
    :header: "Depends", "Allowed States", "Next States"
    :widths: auto
 
-   "enable","enabling","streaming"
+   "qos/enable","qos-configured/enabling","qos-configured/enabling"
+
+.. code-block:: console
+
+   uart:~$ bap connect
+
+Start
+*****
+
+The :code:`start` command is only necessary when starting a source stream.
+
+.. csv-table:: State Machine Transitions
+   :header: "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "enable/connect","enabling","streaming"
 
 .. code-block:: console
 
