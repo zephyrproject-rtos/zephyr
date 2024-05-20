@@ -134,6 +134,14 @@ zephyr_interface_library_named(mbedTLS)
       )
     endif()
 
+    if(CONFIG_MBEDTLS_PSA_P256M_DRIVER_ENABLED)
+      list(APPEND crypto_source
+        ${ZEPHYR_CURRENT_MODULE_DIR}/3rdparty/p256-m/p256-m_driver_entrypoints.c
+        ${ZEPHYR_CURRENT_MODULE_DIR}/3rdparty/p256-m/p256-m/p256-m.c
+      )
+      zephyr_library_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/library)
+    endif()
+
     list(APPEND crypto_source
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pem.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pkcs12.c
