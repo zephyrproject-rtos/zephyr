@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -476,6 +476,8 @@ int bt_bap_stream_disconnect(struct bt_bap_stream *stream)
 
 	iso_chan = bt_bap_stream_iso_chan_get(stream);
 	if (iso_chan == NULL || iso_chan->iso == NULL) {
+		LOG_DBG("Not connected");
+
 		return -ENOTCONN;
 	}
 
@@ -719,6 +721,40 @@ int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+int bt_bap_stream_connect(struct bt_bap_stream *stream)
+{
+	uint8_t state;
+
+	LOG_DBG("stream %p ep %p", stream, stream == NULL ? NULL : stream->ep);
+
+	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+		LOG_DBG("Invalid stream");
+		return -EINVAL;
+	}
+
+	/* Valid only after the CIS ID has been assigned in QoS configured state and while we are
+	 * not streaming
+	 */
+	state = stream->ep->status.state;
+	switch (state) {
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
+	case BT_BAP_EP_STATE_ENABLING:
+		break;
+	default:
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(state));
+		return -EBADMSG;
+	}
+
+	/* Only a unicast client can connect a stream */
+	if (conn_get_role(stream->conn) == BT_HCI_ROLE_CENTRAL) {
+		return bt_bap_unicast_client_connect(stream);
+	} else {
+		return -EOPNOTSUPP;
+	}
+}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 int bt_bap_stream_start(struct bt_bap_stream *stream)
 {

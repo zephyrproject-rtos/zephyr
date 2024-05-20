@@ -447,6 +447,10 @@ Bluetooth Audio
   This needs to be added to all instances of CAP discovery callback functions defined.
   (:github:`72797`)
 
+* :c:func:`bt_bap_stream_start` no longer connects the CIS. To connect the CIS,
+  the :c:func:`bt_bap_stream_connect` shall now be called before :c:func:`bt_bap_stream_start`.
+  (:github:`73032`)
+
 * All occurrences of ``set_sirk`` have been changed to just ``sirk`` as the ``s`` in ``sirk`` stands
   for set. (:github:`73413`)
 

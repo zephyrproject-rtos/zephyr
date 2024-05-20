@@ -1,11 +1,17 @@
 /*  Bluetooth Audio Common Audio Profile internal header */
 
 /*
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+#include <stddef.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -20,6 +26,7 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream);
 void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream);
 void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream);
 void bt_cap_initiator_started(struct bt_cap_stream *cap_stream);
+void bt_cap_initiator_connected(struct bt_cap_stream *cap_stream);
 void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream);
 void bt_cap_initiator_released(struct bt_cap_stream *cap_stream);
 void bt_cap_stream_ops_register_bap(struct bt_cap_stream *cap_stream);
@@ -49,6 +56,7 @@ enum bt_cap_common_subproc_type {
 	BT_CAP_COMMON_SUBPROC_TYPE_CODEC_CONFIG,
 	BT_CAP_COMMON_SUBPROC_TYPE_QOS_CONFIG,
 	BT_CAP_COMMON_SUBPROC_TYPE_ENABLE,
+	BT_CAP_COMMON_SUBPROC_TYPE_CONNECT,
 	BT_CAP_COMMON_SUBPROC_TYPE_START,
 	BT_CAP_COMMON_SUBPROC_TYPE_META_UPDATE,
 	BT_CAP_COMMON_SUBPROC_TYPE_RELEASE,
@@ -61,6 +69,7 @@ struct bt_cap_initiator_proc_param {
 			struct bt_conn *conn;
 			struct bt_bap_ep *ep;
 			struct bt_audio_codec_cfg *codec_cfg;
+			bool connected;
 		} start;
 		struct {
 			/** Codec Specific Capabilities Metadata count */

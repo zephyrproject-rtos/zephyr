@@ -1,11 +1,26 @@
 /*
- * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
 
 #include "cap_internal.h"
 #include "csip_internal.h"
@@ -30,6 +45,8 @@ void bt_cap_common_clear_active_proc(void)
 
 void bt_cap_common_start_proc(enum bt_cap_common_proc_type proc_type, size_t proc_cnt)
 {
+	LOG_DBG("Setting proc to %d for %zu streams", proc_type, proc_cnt);
+
 	atomic_set_bit(active_proc.proc_state_flags, BT_CAP_COMMON_PROC_STATE_ACTIVE);
 	active_proc.proc_cnt = proc_cnt;
 	active_proc.proc_type = proc_type;
@@ -40,6 +57,8 @@ void bt_cap_common_start_proc(enum bt_cap_common_proc_type proc_type, size_t pro
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
 void bt_cap_common_set_subproc(enum bt_cap_common_subproc_type subproc_type)
 {
+	LOG_DBG("Setting subproc to %d", subproc_type);
+
 	active_proc.proc_done_cnt = 0U;
 	active_proc.proc_initiated_cnt = 0U;
 	active_proc.subproc_type = subproc_type;
@@ -102,6 +121,8 @@ void bt_cap_common_abort_proc(struct bt_conn *conn, int err)
 		/* no-op */
 		return;
 	}
+
+	LOG_DBG("Aborting proc %d for %p: %d", active_proc.proc_type, (void *)conn, err);
 
 	active_proc.err = err;
 	active_proc.failed_conn = conn;
