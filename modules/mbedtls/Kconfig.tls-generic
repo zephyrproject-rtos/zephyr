@@ -502,6 +502,14 @@ config MBEDTLS_LMS
 	depends on MBEDTLS_SHA256
 	select PSA_WANT_ALG_SHA_256
 
+config MBEDTLS_PSA_P256M_DRIVER_ENABLED
+	bool "P256-M driver"
+	depends on MBEDTLS_PSA_CRYPTO_C
+	imply PSA_WANT_ALG_SHA_256
+	help
+	  Enable support for the optimized sofware implementation of the secp256r1
+	  curve.
+
 config MBEDTLS_SSL_DTLS_CONNECTION_ID
 	bool "DTLS Connection ID extension"
 	depends on MBEDTLS_DTLS
