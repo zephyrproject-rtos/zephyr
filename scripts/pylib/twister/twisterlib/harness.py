@@ -408,6 +408,9 @@ class Pytest(Harness):
         if hardware.post_script:
             command.append(f'--post-script={hardware.post_script}')
 
+        if hardware.flash_before:
+            command.append(f'--flash-before={hardware.flash_before}')
+
         return command
 
     def run_command(self, cmd, timeout):
