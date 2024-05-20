@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# This file should be removed after Zephyr 4.0 is released
+
+menu "Deprecated POSIX options"
+endmenu
