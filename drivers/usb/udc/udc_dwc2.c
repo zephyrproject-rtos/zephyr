@@ -928,51 +928,6 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 	(void)dwc2_quirk_irq_clear(dev);
 }
 
-static int udc_dwc2_ep_enqueue(const struct device *dev,
-			       struct udc_ep_config *const cfg,
-			       struct net_buf *const buf)
-{
-	struct dwc2_drv_event evt = {
-		.ep = cfg->addr,
-		.type = DWC2_DRV_EVT_XFER,
-	};
-
-	LOG_DBG("%p enqueue %x %p", dev, cfg->addr, buf);
-	udc_buf_put(cfg, buf);
-
-	if (!cfg->stat.halted) {
-		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
-	}
-
-	return 0;
-}
-
-static int udc_dwc2_ep_dequeue(const struct device *dev,
-			       struct udc_ep_config *const cfg)
-{
-	unsigned int lock_key;
-	struct net_buf *buf;
-
-	lock_key = irq_lock();
-
-	if (USB_EP_DIR_IS_IN(cfg->addr)) {
-		dwc2_flush_tx_fifo(dev, USB_EP_GET_IDX(cfg->addr));
-	}
-
-	buf = udc_buf_get_all(dev, cfg->addr);
-	if (buf) {
-		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-	}
-
-	irq_unlock(lock_key);
-
-	udc_ep_set_busy(dev, cfg->addr, false);
-
-	LOG_DBG("dequeue ep 0x%02x", cfg->addr);
-
-	return 0;
-}
-
 static void dwc2_unset_unused_fifo(const struct device *dev)
 {
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
@@ -1416,6 +1371,44 @@ static int udc_dwc2_ep_clear_halt(const struct device *dev,
 	if (udc_buf_peek(dev, cfg->addr)) {
 		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 	}
+
+	return 0;
+}
+
+static int udc_dwc2_ep_enqueue(const struct device *dev,
+			       struct udc_ep_config *const cfg,
+			       struct net_buf *const buf)
+{
+	struct dwc2_drv_event evt = {
+		.ep = cfg->addr,
+		.type = DWC2_DRV_EVT_XFER,
+	};
+
+	LOG_DBG("%p enqueue %x %p", dev, cfg->addr, buf);
+	udc_buf_put(cfg, buf);
+
+	if (!cfg->stat.halted) {
+		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+	}
+
+	return 0;
+}
+
+static int udc_dwc2_ep_dequeue(const struct device *dev,
+			       struct udc_ep_config *const cfg)
+{
+	struct net_buf *buf;
+
+	udc_dwc2_ep_disable(dev, cfg, false);
+
+	buf = udc_buf_get_all(dev, cfg->addr);
+	if (buf) {
+		udc_submit_ep_event(dev, buf, -ECONNABORTED);
+	}
+
+	udc_ep_set_busy(dev, cfg->addr, false);
+
+	LOG_DBG("dequeue ep 0x%02x", cfg->addr);
 
 	return 0;
 }
