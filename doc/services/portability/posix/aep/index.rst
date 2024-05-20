@@ -63,12 +63,12 @@ The *Minimal Realtime System Profile* (PSE51) includes all of the
     :ref:`_POSIX_FSYNC <posix_option_fsync>`, 200809L, :kconfig:option:`CONFIG_POSIX_FSYNC`
     :ref:`_POSIX_MEMLOCK <posix_option_memlock>`, -1,
     :ref:`_POSIX_MEMLOCK_RANGE <posix_option_memlock_range>`, -1,
-    :ref:`_POSIX_MONOTONIC_CLOCK <posix_option_monotonic_clock>`, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
+    :ref:`_POSIX_MONOTONIC_CLOCK <posix_option_monotonic_clock>`, 200809L, :kconfig:option:`CONFIG_POSIX_MONOTONIC_CLOCK`
     :ref:`_POSIX_SHARED_MEMORY_OBJECTS <posix_shared_memory_objects>`, -1,
     :ref:`_POSIX_SYNCHRONIZED_IO <posix_option_synchronized_io>`, -1,
     :ref:`_POSIX_THREAD_ATTR_STACKADDR<posix_option_thread_attr_stackaddr>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
     :ref:`_POSIX_THREAD_ATTR_STACKSIZE<posix_option_thread_attr_stacksize>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
-    :ref:`_POSIX_THREAD_CPUTIME <posix_option_thread_cputime>`, -1,
+    :ref:`_POSIX_THREAD_CPUTIME <posix_option_thread_cputime>`, 200809L, :kconfig:option:`CONFIG_POSIX_CPUTIME`
     _POSIX_THREAD_PRIO_INHERIT, 200809L, :kconfig:option:`CONFIG_PTHREAD_MUTEX`
     _POSIX_THREAD_PRIO_PROTECT, -1,
     :ref:`_POSIX_THREAD_PRIORITY_SCHEDULING<posix_option_thread_priority_scheduling>`, 200809L, :kconfig:option:`CONFIG_POSIX_PRIORITY_SCHEDULING`
@@ -150,7 +150,7 @@ The *Dedicated Realtime System Profile* (PSE53) includes all features from PSE52
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
 
-    _POSIX_CPUTIME, -1,
+    :ref:`_POSIX_CPUTIME <posix_option_cputime>`, 200809L, :kconfig:option:`CONFIG_POSIX_CPUTIME`
     _POSIX_PRIORITIZED_IO, -1,
     :ref:`_POSIX_PRIORITY_SCHEDULING <posix_option_priority_scheduling>`, -1,
     _POSIX_RAW_SOCKETS, 200809L, :kconfig:option:`CONFIG_NET_SOCKETS_PACKET`

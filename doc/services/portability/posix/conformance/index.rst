@@ -63,7 +63,7 @@ POSIX System Interfaces
     _POSIX_VERSION, 200809L,
     :ref:`_POSIX_ASYNCHRONOUS_IO<posix_option_asynchronous_io>`, 200809L, :ref:`†<posix_undefined_behaviour>`
     :ref:`_POSIX_BARRIERS<posix_option_group_barriers>`, 200809L, :kconfig:option:`CONFIG_PTHREAD_BARRIER`
-    :ref:`_POSIX_CLOCK_SELECTION<posix_option_group_clock_selection>`, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
+    :ref:`_POSIX_CLOCK_SELECTION<posix_option_group_clock_selection>`, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK_SELECTION`
     _POSIX_MAPPED_FILES, -1, :ref:`†<posix_undefined_behaviour>`
     _POSIX_MEMORY_PROTECTION, -1, :ref:`†<posix_undefined_behaviour>`
     :ref:`_POSIX_READER_WRITER_LOCKS<posix_option_reader_writer_locks>`, 200809L, :kconfig:option:`CONFIG_PTHREAD_IPC`
@@ -72,8 +72,8 @@ POSIX System Interfaces
     :ref:`_POSIX_SPIN_LOCKS<posix_option_group_spin_locks>`, 200809L, :kconfig:option:`CONFIG_PTHREAD_SPINLOCK`
     :ref:`_POSIX_THREAD_SAFE_FUNCTIONS<posix_thread_safe_functions>`, -1,
     :ref:`_POSIX_THREADS<posix_option_group_threads_base>`, -1, :kconfig:option:`CONFIG_PTHREAD_IPC`
-    :ref:`_POSIX_TIMEOUTS<posix_option_timeouts>`, 200809L, :kconfig:option:`CONFIG_PTHREAD_IPC`
-    :ref:`_POSIX_TIMERS<posix_option_group_timers>`, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
+    :ref:`_POSIX_TIMEOUTS<posix_option_timeouts>`, 200809L, :kconfig:option:`CONFIG_POSIX_TIMEOUTS`
+    :ref:`_POSIX_TIMERS<posix_option_group_timers>`, 200809L, :kconfig:option:`CONFIG_POSIX_TIMERS`
     _POSIX2_C_BIND, 200809L,
 
 .. csv-table:: POSIX System Interfaces (Optional)
@@ -81,13 +81,13 @@ POSIX System Interfaces
    :widths: 50, 10, 50
 
     _POSIX_ADVISORY_INFO, -1,
-    _POSIX_CPUTIME, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
+    :ref:`_POSIX_CPUTIME<posix_option_cputime>`, 200809L, :kconfig:option:`CONFIG_POSIX_CPUTIME`
     :ref:`_POSIX_FSYNC<posix_option_fsync>`, 200809L, :kconfig:option:`CONFIG_POSIX_FSYNC`
     _POSIX_IPV6, 200809L, :kconfig:option:`CONFIG_NET_IPV6`
     _POSIX_MEMLOCK, -1,
     _POSIX_MEMLOCK_RANGE, -1,
     :ref:`_POSIX_MESSAGE_PASSING<posix_option_message_passing>`, 200809L, :kconfig:option:`CONFIG_POSIX_MQUEUE`
-    :ref:`_POSIX_MONOTONIC_CLOCK<posix_option_monotonic_clock>`, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
+    :ref:`_POSIX_MONOTONIC_CLOCK<posix_option_monotonic_clock>`, 200809L, :kconfig:option:`CONFIG_POSIX_MONOTONIC_CLOCK`
     _POSIX_PRIORITIZED_IO, -1,
     :ref:`_POSIX_PRIORITY_SCHEDULING<posix_option_priority_scheduling>`, 200809L, :kconfig:option:`CONFIG_POSIX_PRIORITY_SCHEDULING`
     _POSIX_RAW_SOCKETS, 200809L, :kconfig:option:`CONFIG_NET_SOCKETS_PACKET`
@@ -97,7 +97,7 @@ POSIX System Interfaces
     _POSIX_SYNCHRONIZED_IO, -1,
     :ref:`_POSIX_THREAD_ATTR_STACKADDR<posix_option_thread_attr_stackaddr>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
     :ref:`_POSIX_THREAD_ATTR_STACKSIZE<posix_option_thread_attr_stacksize>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
-    _POSIX_THREAD_CPUTIME, -1,
+    :ref:`_POSIX_THREAD_CPUTIME <posix_option_thread_cputime>`, 200809L, :kconfig:option:`CONFIG_POSIX_CPUTIME`
     _POSIX_THREAD_PRIO_INHERIT, 200809L, :kconfig:option:`CONFIG_PTHREAD_MUTEX`
     _POSIX_THREAD_PRIO_PROTECT, -1,
     :ref:`_POSIX_THREAD_PRIORITY_SCHEDULING<posix_option_thread_priority_scheduling>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
