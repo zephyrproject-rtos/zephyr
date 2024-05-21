@@ -563,6 +563,7 @@ static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 	};
 	uint8_t *ascii7_str;
 	size_t len;
+	size_t i;
 
 	if (dn->str.utype == USBD_DUT_STRING_SERIAL_NUMBER && dn->str.use_hwinfo) {
 		ssize_t hwid_len = get_sn_from_hwid(hwid_sn);
@@ -575,7 +576,7 @@ static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 		head.bLength = sizeof(head) + hwid_len * 2;
 		ascii7_str = hwid_sn;
 	} else {
-		head.bLength = dn->bLength,
+		head.bLength = dn->bLength;
 		ascii7_str = (uint8_t *)dn->ptr;
 	}
 
@@ -588,11 +589,15 @@ static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 	net_buf_add_mem(buf, &head, MIN(len, sizeof(head)));
 	len -= MIN(len, sizeof(head));
 
-	for (size_t i = 0; i < len; i++) {
+	for (i = 0; i < len / 2; i++) {
 		__ASSERT(ascii7_str[i] > 0x1F && ascii7_str[i] < 0x7F,
 			 "Only printable ascii-7 characters are allowed in USB "
 			 "string descriptors");
 		net_buf_add_le16(buf, ascii7_str[i]);
+	}
+
+	if (len & 1) {
+		net_buf_add_u8(buf, ascii7_str[i]);
 	}
 }
 
