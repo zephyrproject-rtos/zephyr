@@ -8,7 +8,6 @@ toolchain:
 ram: 786
 flash: 2048
 supported:
-  - adc
   - counter
   - gpio
   - pwm
