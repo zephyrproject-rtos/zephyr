@@ -11,7 +11,17 @@
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/ztest.h>
 
-#define SPI_MODE (SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE)
+#if CONFIG_TESTED_SPI_MODE == 0
+#define SPI_MODE (SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_TRANSFER_LSB)
+#elif CONFIG_TESTED_SPI_MODE == 1
+#define SPI_MODE (SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_TRANSFER_MSB | SPI_MODE_CPHA)
+#elif CONFIG_TESTED_SPI_MODE == 2
+#define SPI_MODE (SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_TRANSFER_LSB | SPI_MODE_CPOL)
+#elif CONFIG_TESTED_SPI_MODE == 3
+#define SPI_MODE (SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_TRANSFER_MSB | SPI_MODE_CPHA \
+				| SPI_MODE_CPOL)
+#endif
+
 #define SPIM_OP	 (SPI_OP_MODE_MASTER | SPI_MODE)
 #define SPIS_OP	 (SPI_OP_MODE_SLAVE | SPI_MODE)
 
@@ -245,6 +255,57 @@ ZTEST(spi_slave, test_basic)
 ZTEST(spi_slave, test_basic_async)
 {
 	test_basic(true);
+}
+
+/** Basic test with zero length buffers.
+ */
+void test_basic_zero_len(bool async)
+{
+	size_t len = 8;
+
+	/* SPIM */
+	tdata.bufs[0].buf = buf_alloc(len, true);
+	tdata.bufs[0].len = len;
+	tdata.bufs[1].buf = buf_alloc(len, true);
+	/* Intentionally len was set to 0 - second buffer "is empty". */
+	tdata.bufs[1].len = 0;
+	tdata.sets[0].buffers = &tdata.bufs[0];
+	tdata.sets[0].count = 2;
+	tdata.mtx_set = &tdata.sets[0];
+
+	tdata.bufs[2].buf = buf_alloc(len, true);
+	tdata.bufs[2].len = len;
+	tdata.bufs[3].buf = buf_alloc(len, true);
+	/* Intentionally len was set to 0 - second buffer "is empty". */
+	tdata.bufs[3].len = 0;
+	tdata.sets[1].buffers = &tdata.bufs[2];
+	tdata.sets[1].count = 2;
+	tdata.mrx_set = &tdata.sets[1];
+
+	/* SPIS */
+	tdata.bufs[4].buf = buf_alloc(len, false);
+	tdata.bufs[4].len = len;
+	tdata.sets[2].buffers = &tdata.bufs[4];
+	tdata.sets[2].count = 1;
+	tdata.stx_set = &tdata.sets[2];
+
+	tdata.bufs[6].buf = buf_alloc(len, false);
+	tdata.bufs[6].len = len;
+	tdata.sets[3].buffers = &tdata.bufs[6];
+	tdata.sets[3].count = 1;
+	tdata.srx_set = &tdata.sets[3];
+
+	run_test(true, true, async);
+}
+
+ZTEST(spi_slave, test_basic_zero_len)
+{
+	test_basic_zero_len(false);
+}
+
+ZTEST(spi_slave, test_basic_zero_len_async)
+{
+	test_basic_zero_len(true);
 }
 
 /** Setup a transfer where RX buffer on master and slave are shorter than
