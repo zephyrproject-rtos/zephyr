@@ -184,6 +184,66 @@ const void *llext_find_sym(const struct llext_symtable *sym_table, const char *s
 }
 
 /*
+ * Load basic ELF file data
+ */
+
+static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
+{
+	int ret;
+
+	/* read ELF header */
+
+	ret = llext_seek(ldr, 0);
+	if (ret != 0) {
+		LOG_ERR("Failed to seek for ELF header");
+		return ret;
+	}
+
+	ret = llext_read(ldr, &ldr->hdr, sizeof(ldr->hdr));
+	if (ret != 0) {
+		LOG_ERR("Failed to read ELF header");
+		return ret;
+	}
+
+	/* check whether this is a valid ELF file */
+	if (memcmp(ldr->hdr.e_ident, ELF_MAGIC, sizeof(ELF_MAGIC)) != 0) {
+		LOG_HEXDUMP_ERR(ldr->hdr.e_ident, 16, "Invalid ELF, magic does not match");
+		return -EINVAL;
+	}
+
+	switch (ldr->hdr.e_type) {
+	case ET_REL:
+		LOG_DBG("Loading relocatable ELF");
+		break;
+
+	case ET_DYN:
+		LOG_DBG("Loading shared ELF");
+		break;
+
+	default:
+		LOG_ERR("Unsupported ELF file type %x", ldr->hdr.e_type);
+		return -EINVAL;
+	}
+
+	ldr->sect_cnt = ldr->hdr.e_shnum;
+
+	memset(ldr->sects, 0, sizeof(ldr->sects));
+
+	size_t sect_map_sz = ldr->sect_cnt * sizeof(ldr->sect_map[0]);
+
+	ldr->sect_map = llext_alloc(sect_map_sz);
+	if (!ldr->sect_map) {
+		LOG_ERR("Failed to allocate memory for section map, size %zu", sect_map_sz);
+		return -ENOMEM;
+	}
+
+	memset(ldr->sect_map, 0, sect_map_sz);
+	ext->alloc_size += sect_map_sz;
+
+	return 0;
+}
+
+/*
  * Find all relevant string and symbol tables
  */
 static int llext_find_tables(struct llext_loader *ldr)
@@ -575,6 +635,7 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 
 	LOG_DBG("symbol count %u", sym_cnt);
 
+	ext->sym_tab.sym_cnt = 0;
 	for (i = 0, pos = ldr->sects[LLEXT_MEM_SYMTAB].sh_offset;
 	     i < sym_cnt;
 	     i++, pos += ent_size) {
@@ -1070,24 +1131,14 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 static int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 			 struct llext_load_param *ldr_parm)
 {
-	int ret = 0;
+	int ret;
 
-	memset(ldr->sects, 0, sizeof(ldr->sects));
-	ldr->sect_cnt = 0;
-	ext->sym_tab.sym_cnt = 0;
-
-	size_t sect_map_sz = ldr->hdr.e_shnum * sizeof(ldr->sect_map[0]);
-
-	ldr->sect_map = llext_alloc(sect_map_sz);
-	if (!ldr->sect_map) {
-		LOG_ERR("Failed to allocate memory for section map, size %zu", sect_map_sz);
-		ret = -ENOMEM;
+	LOG_DBG("Loading ELF data...");
+	ret = llext_load_elf_data(ldr, ext);
+	if (ret != 0) {
+		LOG_ERR("Failed to load basic ELF data, ret %d", ret);
 		goto out;
 	}
-	memset(ldr->sect_map, 0, sect_map_sz);
-
-	ldr->sect_cnt = ldr->hdr.e_shnum;
-	ext->alloc_size += sect_map_sz;
 
 #ifdef CONFIG_USERSPACE
 	ret = k_mem_domain_init(&ext->mem_domain, 0, NULL);
@@ -1182,7 +1233,6 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 	       struct llext_load_param *ldr_parm)
 {
 	int ret;
-	elf_ehdr_t ehdr;
 
 	*ext = llext_by_name(name);
 
@@ -1194,57 +1244,27 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 		goto out;
 	}
 
-	ret = llext_seek(ldr, 0);
-	if (ret != 0) {
-		LOG_ERR("Failed to seek for ELF header");
+	*ext = llext_alloc(sizeof(struct llext));
+	if (*ext == NULL) {
+		LOG_ERR("Not enough memory for extension metadata");
+		ret = -ENOMEM;
+		goto out;
+	}
+	memset(*ext, 0, sizeof(struct llext));
+
+	ret = do_llext_load(ldr, *ext, ldr_parm);
+	if (ret < 0) {
+		llext_free(*ext);
+		*ext = NULL;
 		goto out;
 	}
 
-	ret = llext_read(ldr, &ehdr, sizeof(ehdr));
-	if (ret != 0) {
-		LOG_ERR("Failed to read ELF header");
-		goto out;
-	}
+	strncpy((*ext)->name, name, sizeof((*ext)->name));
+	(*ext)->name[sizeof((*ext)->name) - 1] = '\0';
+	(*ext)->use_count++;
 
-	/* check whether this is an valid elf file */
-	if (memcmp(ehdr.e_ident, ELF_MAGIC, sizeof(ELF_MAGIC)) != 0) {
-		LOG_HEXDUMP_ERR(ehdr.e_ident, 16, "Invalid ELF, magic does not match");
-		ret = -EINVAL;
-		goto out;
-	}
-
-	switch (ehdr.e_type) {
-	case ET_REL:
-	case ET_DYN:
-		LOG_DBG("Loading relocatable or shared elf");
-		*ext = llext_alloc(sizeof(struct llext));
-		if (*ext == NULL) {
-			LOG_ERR("Not enough memory for extension metadata");
-			ret = -ENOMEM;
-			goto out;
-		}
-		memset(*ext, 0, sizeof(struct llext));
-
-		ldr->hdr = ehdr;
-		ret = do_llext_load(ldr, *ext, ldr_parm);
-		if (ret < 0) {
-			llext_free(*ext);
-			*ext = NULL;
-			goto out;
-		}
-
-		strncpy((*ext)->name, name, sizeof((*ext)->name));
-		(*ext)->name[sizeof((*ext)->name) - 1] = '\0';
-		(*ext)->use_count++;
-
-		sys_slist_append(&_llext_list, &(*ext)->_llext_list);
-		LOG_INF("Loaded extension %s", (*ext)->name);
-
-		break;
-	default:
-		LOG_ERR("Unsupported elf file type %x", ehdr.e_type);
-		ret = -EINVAL;
-	}
+	sys_slist_append(&_llext_list, &(*ext)->_llext_list);
+	LOG_INF("Loaded extension %s", (*ext)->name);
 
 out:
 	k_mutex_unlock(&llext_lock);
