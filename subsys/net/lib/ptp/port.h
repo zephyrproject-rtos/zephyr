@@ -141,6 +141,43 @@ void ptp_port_free_foreign_tts(struct ptp_port *port);
  */
 int ptp_port_update_current_time_transmitter(struct ptp_port *port, struct ptp_msg *msg);
 
+/**
+ * @brief Function processing received PTP Management message on the PTP Port's level.
+ *
+ * @param[in] port    PTP Port to process the received message.
+ * @param[in] ingress Original PTP Port that received the message.
+ * @param[in] msg     PTP Management message to be processed.
+ * @param[in] tlv     Management TLV attached to the message.
+ *
+ * @return 0 on positive message processing, negative otherwise
+ */
+int ptp_port_management_msg_process(struct ptp_port *port,
+				    struct ptp_port *ingress,
+				    struct ptp_msg *msg,
+				    struct ptp_tlv_mgmt *tlv);
+
+/**
+ * @brief Function for sending Management Error resposnse message.
+ *
+ * @param[in] port PTP Port that is going to send Management Error response.
+ * @param[in] msg  PTP Management message that caused Management Error.
+ * @param[in] err  Management Error code.
+ *
+ * @return 0 if message sent successfully, negative otherwise.
+ */
+int ptp_port_management_error(struct ptp_port *port, struct ptp_msg *msg, enum ptp_mgmt_err err);
+
+/**
+ * @brief Function for sending response on specific PTP PORT to received PTP Management message.
+ *
+ * @param[in] port PTP Port that will send response message.
+ * @param[in] req  Received PTP Management message.
+ * @param[in] tlv  Management TLV attached to the message.
+ *
+ * @return 0 if message sent successfully, negative otherwise.
+ */
+int ptp_port_management_resp(struct ptp_port *port, struct ptp_msg *req, struct ptp_tlv_mgmt *tlv);
+
 #ifdef __cplusplus
 }
 #endif
