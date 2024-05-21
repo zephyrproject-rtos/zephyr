@@ -32,6 +32,32 @@ LOG_MODULE_REGISTER(llext, CONFIG_LLEXT_LOG_LEVEL);
 
 K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * 1024);
 
+void *llext_alloc(size_t bytes)
+{
+	return k_heap_alloc(&llext_heap, bytes, K_NO_WAIT);
+}
+
+void *llext_aligned_alloc(size_t align, size_t bytes)
+{
+	return k_heap_aligned_alloc(&llext_heap, align, bytes, K_NO_WAIT);
+}
+
+void llext_free(void *ptr)
+{
+	k_heap_free(&llext_heap, ptr);
+}
+
+void llext_free_sections(struct llext *ext)
+{
+	for (int i = 0; i < LLEXT_MEM_COUNT; i++) {
+		if (ext->mem_on_heap[i]) {
+			LOG_DBG("freeing memory region %d", i);
+			llext_free(ext->mem[i]);
+			ext->mem[i] = NULL;
+		}
+	}
+}
+
 static const char ELF_MAGIC[] = {0x7f, 'E', 'L', 'F'};
 
 static sys_slist_t _llext_list = SYS_SLIST_STATIC_INIT(&_llext_list);
@@ -475,10 +501,7 @@ static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
 	uintptr_t sect_align = sect_alloc;
 #endif
 
-	ext->mem[mem_idx] = k_heap_aligned_alloc(&llext_heap, sect_align,
-						 sect_alloc,
-						 K_NO_WAIT);
-
+	ext->mem[mem_idx] = llext_aligned_alloc(sect_align, sect_alloc);
 	if (!ext->mem[mem_idx]) {
 		return -ENOMEM;
 	}
@@ -507,7 +530,7 @@ static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
 	return 0;
 
 err:
-	k_heap_free(&llext_heap, ext->mem[mem_idx]);
+	llext_free(ext->mem[mem_idx]);
 	return ret;
 }
 
@@ -594,7 +617,7 @@ static int llext_allocate_symtab(struct llext_loader *ldr, struct llext *ext)
 	struct llext_symtable *sym_tab = &ext->sym_tab;
 	size_t syms_size = sym_tab->sym_cnt * sizeof(struct llext_symbol);
 
-	sym_tab->syms = k_heap_alloc(&llext_heap, syms_size, K_NO_WAIT);
+	sym_tab->syms = llext_alloc(syms_size);
 	if (!sym_tab->syms) {
 		return -ENOMEM;
 	}
@@ -618,8 +641,7 @@ static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext)
 	struct llext_symtable *exp_tab = &ext->exp_tab;
 
 	exp_tab->sym_cnt = shdr->sh_size / sizeof(struct llext_symbol);
-	exp_tab->syms = k_heap_alloc(&llext_heap, exp_tab->sym_cnt * sizeof(struct llext_symbol),
-				     K_NO_WAIT);
+	exp_tab->syms = llext_alloc(exp_tab->sym_cnt * sizeof(struct llext_symbol));
 	if (!exp_tab->syms) {
 		return -ENOMEM;
 	}
@@ -1056,7 +1078,7 @@ static int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 
 	size_t sect_map_sz = ldr->hdr.e_shnum * sizeof(ldr->sect_map[0]);
 
-	ldr->sect_map = k_heap_alloc(&llext_heap, sect_map_sz, K_NO_WAIT);
+	ldr->sect_map = llext_alloc(sect_map_sz);
 	if (!ldr->sect_map) {
 		LOG_ERR("Failed to allocate memory for section map, size %zu", sect_map_sz);
 		ret = -ENOMEM;
@@ -1138,23 +1160,19 @@ static int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	}
 
 out:
-	k_heap_free(&llext_heap, ldr->sect_map);
+	llext_free(ldr->sect_map);
 
 	if (ret != 0) {
 		LOG_DBG("Failed to load extension, freeing memory...");
-		for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_COUNT; mem_idx++) {
-			if (ext->mem_on_heap[mem_idx]) {
-				k_heap_free(&llext_heap, ext->mem[mem_idx]);
-			}
-		}
-		k_heap_free(&llext_heap, ext->exp_tab.syms);
+		llext_free_sections(ext);
+		llext_free(ext->exp_tab.syms);
 	} else {
 		LOG_DBG("loaded module, .text at %p, .rodata at %p", ext->mem[LLEXT_MEM_TEXT],
 			ext->mem[LLEXT_MEM_RODATA]);
 	}
 
 	ext->sym_tab.sym_cnt = 0;
-	k_heap_free(&llext_heap, ext->sym_tab.syms);
+	llext_free(ext->sym_tab.syms);
 	ext->sym_tab.syms = NULL;
 
 	return ret;
@@ -1199,7 +1217,7 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 	case ET_REL:
 	case ET_DYN:
 		LOG_DBG("Loading relocatable or shared elf");
-		*ext = k_heap_alloc(&llext_heap, sizeof(struct llext), K_NO_WAIT);
+		*ext = llext_alloc(sizeof(struct llext));
 		if (*ext == NULL) {
 			LOG_ERR("Not enough memory for extension metadata");
 			ret = -ENOMEM;
@@ -1210,7 +1228,7 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 		ldr->hdr = ehdr;
 		ret = do_llext_load(ldr, *ext, ldr_parm);
 		if (ret < 0) {
-			k_heap_free(&llext_heap, *ext);
+			llext_free(*ext);
 			*ext = NULL;
 			goto out;
 		}
@@ -1254,16 +1272,9 @@ int llext_unload(struct llext **ext)
 	*ext = NULL;
 	k_mutex_unlock(&llext_lock);
 
-	for (int i = 0; i < LLEXT_MEM_COUNT; i++) {
-		if (tmp->mem_on_heap[i]) {
-			LOG_DBG("freeing memory region %d", i);
-			k_heap_free(&llext_heap, tmp->mem[i]);
-			tmp->mem[i] = NULL;
-		}
-	}
-
-	k_heap_free(&llext_heap, tmp->exp_tab.syms);
-	k_heap_free(&llext_heap, tmp);
+	llext_free_sections(tmp);
+	llext_free(tmp->exp_tab.syms);
+	llext_free(tmp);
 
 	return 0;
 }
