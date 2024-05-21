@@ -22,7 +22,7 @@ get_target_property(TFM_TOOLCHAIN_PREFIX     tfm TFM_TOOLCHAIN_PREFIX)
 get_target_property(TFM_TOOLCHAIN_NS_FILE    tfm TFM_TOOLCHAIN_NS_FILE)
 
 set(TFM_TEST_REPO_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../tf-m-tests)
-set(TFM_PSA_ARCHTEST_REPO_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../psa-arch-tests)
+set(PSA_ARCH_TESTS_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../psa-arch-tests)
 
 if (CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION AND CONFIG_TFM_QCBOR_PATH STREQUAL "")
 # TODO: Remove this when QCBOR licensing issues w/t_cose have been resolved,
@@ -56,7 +56,7 @@ set(TEST_PSA_API "${TFM_PSA_TEST_SUITE}")
 
 set_property(TARGET zephyr_property_target
              APPEND PROPERTY TFM_CMAKE_OPTIONS
-             -DPSA_ARCH_TESTS_PATH=${TFM_PSA_ARCHTEST_REPO_PATH}
+             -DPSA_ARCH_TESTS_PATH=${PSA_ARCH_TESTS_PATH}
 )
 
 set_property(TARGET zephyr_property_target
