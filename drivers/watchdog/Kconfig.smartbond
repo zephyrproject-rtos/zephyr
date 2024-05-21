@@ -7,6 +7,7 @@ config WDT_SMARTBOND
 	bool "Watchdog Driver for Smartbond family of MCUs"
 	default y
 	depends on DT_HAS_RENESAS_SMARTBOND_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
 	help
 	  Enable watchdog driver for Smartbond line of MCUs
 
