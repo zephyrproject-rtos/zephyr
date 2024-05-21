@@ -274,6 +274,7 @@ def map_regs():
 
     # Intel Audio DSP Registers
     global bar4_mmap
+    global bar4_mem
     (bar4_mem, bar4_mmap) = bar_map(pcidir, 4)
     dsp = Regs(bar4_mem)
     if adsp_is_ace():
@@ -667,14 +668,24 @@ def win_read(base, start, length):
         log.error("bar4_mmap.size()=%d", bar4_mmap.size())
         raise ie
 
-def win_hdr(base):
-    return struct.unpack("<IIII", win_read(base, 0, 16))
+def winstream_reg_hdr(base):
+    hdr = Regs(bar4_mem + base)
+    hdr.WLEN  = 0x00
+    hdr.START = 0x04
+    hdr.END   = 0x08
+    hdr.SEQ   = 0x0c
+    hdr.freeze()
+    return hdr
+
+def win_hdr(hdr):
+    return ( hdr.WLEN, hdr.START, hdr.END, hdr.SEQ )
 
 # Python implementation of the same algorithm in sys_winstream_read(),
 # see there for details.
 def winstream_read(base, last_seq):
     while True:
-        (wlen, start, end, seq) = win_hdr(base)
+        hdr = winstream_reg_hdr(base)
+        (wlen, start, end, seq) = win_hdr(hdr)
         if wlen > SHELL_MAX_VALID_SLOT_SIZE:
             log.debug("DSP powered off at winstream_read")
             return (seq, "")
@@ -692,7 +703,7 @@ def winstream_read(base, last_seq):
         result = win_read(base, 16 + copy, suffix)
         if suffix < behind:
             result += win_read(base, 16, behind - suffix)
-        (wlen, start1, end, seq1) = win_hdr(base)
+        (wlen, start1, end, seq1) = win_hdr(hdr)
         if start1 == start and seq1 == seq:
             # Best effort attempt at decoding, replacing unusable characters
             # Found to be useful when it really goes wrong
@@ -709,7 +720,8 @@ def idx_sub(wlen, a, b):
 # Python implementation of the same algorithm in sys_winstream_write(),
 # see there for details.
 def winstream_write(base, msg):
-    (wlen, start, end, seq) = win_hdr(base)
+    hdr = winstream_reg_hdr(base)
+    (wlen, start, end, seq) = win_hdr(hdr)
     if wlen > SHELL_MAX_VALID_SLOT_SIZE:
         log.debug("DSP powered off at winstream_write")
         return
@@ -724,9 +736,9 @@ def winstream_write(base, msg):
     if seq != 0:
         avail = (wlen - 1) - idx_sub(wlen, end, start)
         if lenmsg > avail:
-            start = idx_mod(wlen, start + (lenmsg - avail))
+            hdr.START = idx_mod(wlen, start + (lenmsg - avail))
     if lenmsg < lenmsg0:
-        start = end
+        hdr.START = end
         drop = lenmsg0 - lenmsg
         msg = msg[drop : lenmsg - drop]
     suffix = min(lenmsg, wlen - end)
@@ -735,15 +747,8 @@ def winstream_write(base, msg):
     if lenmsg > suffix:
         for c in range(0, lenmsg - suffix):
             bar4_mmap[base + 16 + c] = msg[suffix + c]
-    end = idx_mod(wlen, end + lenmsg)
-    seq += lenmsg0
-    # write back updated fields as 32bit writes
-    update_hdr = struct.pack("<III", start, end, seq)
-    dst = base + 4 # skip wlen
-    for c in range(0, 3):
-        src = c * 4
-        bar4_mmap[dst : dst + 4] = update_hdr[src : src + 4]
-        dst += 4
+    hdr.END = idx_mod(wlen, end + lenmsg)
+    hdr.SEQ += lenmsg0
 
 def debug_offset():
     ( base, stride ) = adsp_mem_window_config()
