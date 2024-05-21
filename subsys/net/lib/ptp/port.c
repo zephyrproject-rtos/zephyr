@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(ptp_port, CONFIG_PTP_LOG_LEVEL);
 #include <zephyr/net/ptp_time.h>
 #include <zephyr/random/random.h>
 
+#include "btca.h"
 #include "clock.h"
 #include "port.h"
 #include "msg.h"
@@ -1246,6 +1247,51 @@ bool ptp_port_id_eq(const struct ptp_port_id *p1, const struct ptp_port_id *p2)
 struct ptp_dataset *ptp_port_best_foreign_ds(struct ptp_port *port)
 {
 	return port->best ? &port->best->dataset : NULL;
+}
+
+struct ptp_foreign_tt_clock *ptp_port_best_foreign(struct ptp_port *port)
+{
+	struct ptp_foreign_tt_clock *foreign;
+	struct ptp_announce_msg *last;
+
+	port->best = NULL;
+
+	if (port->port_ds.time_transmitter_only) {
+		return NULL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&port->foreign_list, foreign, node) {
+		if (!foreign->messages_count) {
+			continue;
+		}
+
+		foreign_clock_cleanup(foreign);
+
+		if (foreign->messages_count < FOREIGN_TIME_TRANSMITTER_THRESHOLD) {
+			continue;
+		}
+
+		last = (struct ptp_announce_msg *)k_fifo_peek_head(&foreign->messages);
+
+		foreign->dataset.priority1 = last->gm_priority1;
+		foreign->dataset.priority2 = last->gm_priority2;
+		foreign->dataset.steps_rm = last->steps_rm;
+
+		memcpy(&foreign->dataset.clk_quality,
+		       &last->gm_clk_quality,
+		       sizeof(last->gm_clk_quality));
+		memcpy(&foreign->dataset.clk_id, &last->gm_id, sizeof(last->gm_id));
+		memcpy(&foreign->dataset.receiver, &port->port_ds.id, sizeof(port->port_ds.id));
+
+		if (!port->best) {
+			port->best = foreign;
+		} else if (ptp_btca_ds_cmp(&foreign->dataset, &port->best->dataset)) {
+			port->best = foreign;
+		} else {
+			port_clear_foreign_clock_records(foreign);
+		}
+	}
+	return port->best;
 }
 
 int ptp_port_add_foreign_tt(struct ptp_port *port, struct ptp_msg *msg)
