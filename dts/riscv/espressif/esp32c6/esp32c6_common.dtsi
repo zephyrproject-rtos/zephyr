@@ -149,6 +149,15 @@
 			clocks = <&rtc ESP32_UART1_MODULE>;
 			current-speed = <115200>;
 		};
+
+		ledc0: ledc@60007000 {
+			compatible = "espressif,esp32-ledc";
+			pwm-controller;
+			#pwm-cells = <3>;
+			reg = <0x60007000 0x1000>;
+			clocks = <&rtc ESP32_LEDC_MODULE>;
+			status = "disabled";
+		};
 	};
 
 };
