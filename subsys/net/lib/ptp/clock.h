@@ -89,6 +89,21 @@ struct ptp_foreign_tt_clock {
 const struct ptp_clock *ptp_clock_init(void);
 
 /**
+ * @brief Function handling STATE DECISION EVENT for the PTP Clock instance.
+ */
+void ptp_clock_handle_state_decision_evt(void);
+
+/**
+ * @brief Function processing received PTP Management message at the PTP Clock level.
+ *
+ * @param[in] port PTP Port that received the message.
+ * @param[in] msg  Received PTP Management message.
+ *
+ * @return 1 if the message processing results in State Decision Event.
+ */
+int ptp_clock_management_msg_process(struct ptp_port *port, struct ptp_msg *msg);
+
+/**
  * @brief Function synchronizing local PTP Hardware Clock to the remote.
  *
  * @param[in] ingress Timestamp of the message reception from the remote node in nanoseconds.
