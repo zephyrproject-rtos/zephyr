@@ -24,24 +24,23 @@ ZTEST(posix_headers, test_unistd_h)
 	/* zassert_not_equal(-1, W_OK); */ /* not implemented */
 	/* zassert_not_equal(-1, X_OK); */ /* not implemented */
 
-	/* zassert_not_equal(INT_MIN, _CS_PATH); */ /* not implemented */
-
-	/* zassert_not_equal(INT_MIN, _CS_POSIX_V7_ILP32_OFF32_CFLAGS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _CS_POSIX_V7_ILP32_OFF32_LDFLAGS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _CS_POSIX_V7_ILP32_OFF32_LIBS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _CS_POSIX_V7_ILP32_OFFBIG_CFLAGS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _CS_POSIX_V7_ILP32_OFFBIG_LDFLAGS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _CS_POSIX_V7_ILP32_OFFBIG_LIBS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _CS_POSIX_V7_LP64_OFF64_CFLAGS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _CS_POSIX_V7_LP64_OFF64_LDFLAGS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _CS_POSIX_V7_LP64_OFF64_LIBS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _CS_POSIX_V7_LPBIG_OFFBIG_CFLAGS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _CS_POSIX_V7_LPBIG_OFFBIG_LDFLAGS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _CS_POSIX_V7_LPBIG_OFFBIG_LIBS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _CS_POSIX_V7_THREADS_CFLAGS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _CS_POSIX_V7_THREADS_LDFLAGS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _CS_POSIX_V7_WIDTH_RESTRICTED_ENVS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _CS_V7_ENV); */ /* not implemented */
+	zassert_not_equal(INT_MIN, _CS_PATH);
+	zassert_not_equal(INT_MIN, _CS_POSIX_V7_ILP32_OFF32_CFLAGS);
+	zassert_not_equal(INT_MIN, _CS_POSIX_V7_ILP32_OFF32_LDFLAGS);
+	zassert_not_equal(INT_MIN, _CS_POSIX_V7_ILP32_OFF32_LIBS);
+	zassert_not_equal(INT_MIN, _CS_POSIX_V7_ILP32_OFFBIG_CFLAGS);
+	zassert_not_equal(INT_MIN, _CS_POSIX_V7_ILP32_OFFBIG_LDFLAGS);
+	zassert_not_equal(INT_MIN, _CS_POSIX_V7_ILP32_OFFBIG_LIBS);
+	zassert_not_equal(INT_MIN, _CS_POSIX_V7_LP64_OFF64_CFLAGS);
+	zassert_not_equal(INT_MIN, _CS_POSIX_V7_LP64_OFF64_LDFLAGS);
+	zassert_not_equal(INT_MIN, _CS_POSIX_V7_LP64_OFF64_LIBS);
+	zassert_not_equal(INT_MIN, _CS_POSIX_V7_LPBIG_OFFBIG_CFLAGS);
+	zassert_not_equal(INT_MIN, _CS_POSIX_V7_LPBIG_OFFBIG_LDFLAGS);
+	zassert_not_equal(INT_MIN, _CS_POSIX_V7_LPBIG_OFFBIG_LIBS);
+	zassert_not_equal(INT_MIN, _CS_POSIX_V7_THREADS_CFLAGS);
+	zassert_not_equal(INT_MIN, _CS_POSIX_V7_THREADS_LDFLAGS);
+	zassert_not_equal(INT_MIN, _CS_POSIX_V7_WIDTH_RESTRICTED_ENVS);
+	zassert_not_equal(INT_MIN, _CS_V7_ENV);
 
 	/* zassert_not_equal(-1, F_LOCK); */ /* not implemented */
 	/* zassert_not_equal(-1, F_TEST); */ /* not implemented */
