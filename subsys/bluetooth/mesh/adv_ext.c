@@ -514,6 +514,18 @@ void bt_mesh_adv_init(void)
 				   K_PRIO_COOP(MESH_WORKQ_PRIORITY), NULL);
 		k_thread_name_set(&bt_mesh_workq.thread, "BT MESH WQ");
 	}
+
+#if defined(CONFIG_BT_LL_SOFTDEVICE)
+	const sdc_hci_cmd_vs_scan_accept_ext_adv_packets_set_t cmd_params = {
+		.accept_ext_adv_packets = IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_ACCEPT_EXT_ADV_PACKETS),
+	};
+
+	int err = sdc_hci_cmd_vs_scan_accept_ext_adv_packets_set(&cmd_params);
+
+	if (err) {
+		LOG_ERR("Failed to set accept_ext_adv_packets: %d", err);
+	}
+#endif
 }
 
 static struct bt_mesh_ext_adv *adv_instance_find(struct bt_le_ext_adv *instance)

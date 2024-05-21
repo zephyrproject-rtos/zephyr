@@ -214,6 +214,17 @@ config BT_MESH_ADV_EXT_FRIEND_SEPARATE
 	  messages as close to the start of the ReceiveWindow as possible,
 	  thus reducing the scanning time on the Low Power node.
 
+config BT_MESH_ADV_EXT_ACCEPT_EXT_ADV_PACKETS
+	bool "Reject or accept extended advertising packets"
+	depends on BT_LL_SOFTDEVICE
+	help
+	  Configure the scanner and initiator to either reject or accept extended
+	  advertising packets by the SoftDevice Controller. This is set to false
+	  by default, to prevent loss of scan time when receiving a pointer packet
+	  while scanning for Bluetooth Mesh packets. Set to true if extended
+	  advertising packets are to be received by the SoftDevice Controller for
+	  purposes other than Bluetooth Mesh.
+
 endif # BT_MESH_ADV_EXT
 
 endchoice
