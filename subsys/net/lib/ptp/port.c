@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(ptp_port, CONFIG_PTP_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ptp.h>
 #include <zephyr/net/ptp_time.h>
+#include <zephyr/random/random.h>
 
 #include "clock.h"
 #include "port.h"
@@ -61,6 +62,33 @@ static int port_msg_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_so
 	return ptp_transport_send(port, msg, idx);
 }
 
+static void port_timer_set_timeout(struct k_timer *timer, uint8_t factor, int8_t log_seconds)
+{
+	uint64_t timeout = log_seconds < 0 ? (NSEC_PER_SEC * factor) >> (log_seconds * -1) :
+					     (NSEC_PER_SEC * factor) << log_seconds;
+
+	k_timer_start(timer, K_NSEC(timeout), K_NO_WAIT);
+}
+
+static void port_timer_set_timeout_random(struct k_timer *timer,
+					  int min_factor,
+					  int span,
+					  int log_seconds)
+{
+	uint64_t timeout, random_ns;
+
+	if (log_seconds < 0) {
+		timeout = (NSEC_PER_SEC * min_factor) >> -log_seconds;
+		random_ns = NSEC_PER_SEC >> -log_seconds;
+	} else {
+		timeout = (NSEC_PER_SEC * min_factor) << log_seconds;
+		random_ns = (span * NSEC_PER_SEC) << log_seconds;
+	}
+
+	timeout = timeout + (random_ns * (sys_rand32_get() % (1 << 15) + 1) >> 15);
+	k_timer_start(timer, K_NSEC(timeout), K_NO_WAIT);
+}
+
 static void port_synchronize(struct ptp_port *port,
 			     struct net_ptp_time ingress_ts,
 			     struct net_ptp_time origin_ts,
@@ -74,6 +102,10 @@ static void port_synchronize(struct ptp_port *port,
 	t1c = t1 + (correction1 >> 16) + (correction2 >> 16);
 
 	ptp_clock_synchronize(t2, t1c);
+
+	port_timer_set_timeout(&port->timers.sync,
+			       port->port_ds.announce_receipt_timeout,
+			       port->port_ds.log_sync_interval);
 }
 
 static void port_ds_init(struct ptp_port *port)
@@ -859,6 +891,100 @@ enum ptp_port_state ptp_port_state(struct ptp_port *port)
 	return (enum ptp_port_state)port->port_ds.state;
 }
 
+enum ptp_port_event ptp_port_timer_event_gen(struct ptp_port *port, struct k_timer *timer)
+{
+	enum ptp_port_event event = PTP_EVT_NONE;
+	enum ptp_port_state state = ptp_port_state(port);
+
+	switch (state) {
+	case PTP_PS_PRE_TIME_TRANSMITTER:
+		if (timer == &port->timers.qualification &&
+		    atomic_test_bit(&port->timeouts, PTP_PORT_TIMER_QUALIFICATION_TO)) {
+			LOG_DBG("Port %d Qualification timeout", port->port_ds.id.port_number);
+			atomic_clear_bit(&port->timeouts, PTP_PORT_TIMER_QUALIFICATION_TO);
+
+			return PTP_EVT_QUALIFICATION_TIMEOUT_EXPIRES;
+		}
+		break;
+	case PTP_PS_GRAND_MASTER:
+		__fallthrough;
+	case PTP_PS_TIME_TRANSMITTER:
+		if (timer == &port->timers.sync &&
+		    atomic_test_bit(&port->timeouts, PTP_PORT_TIMER_SYNC_TO)) {
+			LOG_DBG("Port %d TX Sync timeout", port->port_ds.id.port_number);
+			port_timer_set_timeout(&port->timers.sync,
+					       1,
+					       port->port_ds.log_sync_interval);
+			atomic_clear_bit(&port->timeouts, PTP_PORT_TIMER_SYNC_TO);
+
+			return port_sync_msg_transmit(port) == 0 ? PTP_EVT_NONE :
+								   PTP_EVT_FAULT_DETECTED;
+		}
+
+		if (timer == &port->timers.announce &&
+		    atomic_test_bit(&port->timeouts, PTP_PORT_TIMER_ANNOUNCE_TO)) {
+			LOG_DBG("Port %d TimeTransmitter Announce timeout",
+				port->port_ds.id.port_number);
+			port_timer_set_timeout(&port->timers.announce,
+					       1,
+					       port->port_ds.log_announce_interval);
+			atomic_clear_bit(&port->timeouts, PTP_PORT_TIMER_ANNOUNCE_TO);
+
+			return port_announce_msg_transmit(port) == 0 ? PTP_EVT_NONE :
+								       PTP_EVT_FAULT_DETECTED;
+		}
+		break;
+	case PTP_PS_TIME_RECEIVER:
+		if (timer == &port->timers.delay &&
+		    atomic_test_bit(&port->timeouts, PTP_PORT_TIMER_DELAY_TO)) {
+
+			atomic_clear_bit(&port->timeouts, PTP_PORT_TIMER_DELAY_TO);
+			port_delay_req_cleanup(port);
+			port_timer_set_timeout(&port->timers.delay,
+					       1,
+					       port->port_ds.log_announce_interval);
+
+			if (port_delay_req_msg_transmit(port) < 0) {
+				return PTP_EVT_FAULT_DETECTED;
+			}
+		}
+		__fallthrough;
+	case PTP_PS_PASSIVE:
+		__fallthrough;
+	case PTP_PS_UNCALIBRATED:
+		__fallthrough;
+	case PTP_PS_LISTENING:
+		if ((timer == &port->timers.announce || timer == &port->timers.sync) &&
+		    (atomic_test_bit(&port->timeouts, PTP_PORT_TIMER_ANNOUNCE_TO) ||
+		     atomic_test_bit(&port->timeouts, PTP_PORT_TIMER_SYNC_TO))) {
+
+			LOG_DBG("Port %d %s timeout",
+				port->port_ds.id.port_number,
+				timer == &port->timers.announce ? "Announce" : "RX Sync");
+
+			atomic_clear_bit(&port->timeouts, PTP_PORT_TIMER_ANNOUNCE_TO);
+			atomic_clear_bit(&port->timeouts, PTP_PORT_TIMER_SYNC_TO);
+
+			if (port->best) {
+				port_clear_foreign_clock_records(port->best);
+			}
+
+			port_delay_req_cleanup(port);
+			port_timer_set_timeout_random(&port->timers.announce,
+						      port->port_ds.announce_receipt_timeout,
+						      1,
+						      port->port_ds.log_announce_interval);
+
+			return PTP_EVT_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return event;
+}
+
 bool ptp_port_id_eq(const struct ptp_port_id *p1, const struct ptp_port_id *p2)
 {
 	return memcmp(p1, p2, sizeof(struct ptp_port_id)) == 0;
@@ -953,6 +1079,11 @@ int ptp_port_update_current_time_transmitter(struct ptp_port *port, struct ptp_m
 
 	k_fifo_put(&foreign->messages, (void *)msg);
 	foreign->messages_count++;
+
+	port_timer_set_timeout_random(&port->timers.announce,
+				      port->port_ds.announce_receipt_timeout,
+				      1,
+				      port->port_ds.log_announce_interval);
 
 	if (foreign->messages_count > 1) {
 		struct ptp_msg *last = (struct ptp_msg *)k_fifo_peek_tail(&foreign->messages);
