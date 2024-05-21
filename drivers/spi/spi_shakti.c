@@ -79,12 +79,13 @@ int sspi_shakti_init(const struct device *dev)
     #ifdef SPI_DEBUG
     printk("\nSPI%d Initialized..", spi_number);
     #endif
-    return spi_base;
+    return 0;
   }
   else{
     printk("\nInvalid SPI instance %d. This SoC supports only SPI-0 to SPI-3", spi_number);
     return -1;
   }
+  return 0;
 }
 
 
@@ -881,7 +882,12 @@ static int spi_shakti_transceive(const struct device *dev,
     printk("comm_mode %d\n", comm_mode);
     printk("spi_size %d\n", spi_size);
   #endif
-
+  uint8_t rx_buff[16];
+  struct spi_buf rx_loc_bufs = { .buf = rx_buff, .len = tx_bufs->buffers->len};
+  struct spi_buf_set rx_loc_buffs = { .buffers = &rx_loc_bufs, .count = 1};
+  if(rx_bufs == NULL){
+    rx_bufs = &rx_loc_buffs;
+  }
   sspi_shakti_init(dev);
   sclk_shakti_config(dev, pol, pha, prescale, setup_time, hold_time);
   k_mutex_lock(&(((struct spi_shakti_cfg*)(dev->config))->mutex),K_FOREVER);

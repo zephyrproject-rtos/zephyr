@@ -47,5 +47,6 @@ int main(void)
 	while (1) {
 		lv_task_handler();
 		k_sleep(K_MSEC(10));
+		printk("Inside loop");
 	}
 }

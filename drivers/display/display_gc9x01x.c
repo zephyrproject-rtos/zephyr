@@ -46,7 +46,6 @@ struct gc9x01x_config {
 	uint16_t y_resolution;
 	bool inversion;
 	const void *regs;
-	uint8_t ncs;
 };
 
 /* Initialization command data struct  */
@@ -490,15 +489,24 @@ static int gc9x01x_configure(const struct device *dev)
 
 	return 0;
 }
-
+struct spi_shakti_cfg {
+	uint32_t base;
+	uint32_t f_sys;
+    const struct pinctrl_dev_config *pcfg;
+    struct k_mutex mutex;
+};
 static int gc9x01x_init(const struct device *dev)
 {
 	const struct gc9x01x_config *config = dev->config;
 	int ret;
-
+	struct spi_dt_spec spi = config->spi;
+	struct device_state obj = *((struct device_state *)((struct device *)config->spi.bus)->state);
+	// printf("Spi struct :%#x",((struct spi_shakti_cfg*)(((struct device *)((config->spi).bus))->config))->base);
+	// printf("Spi struct :%#x",*((struct device_state *)((struct device *)config->spi.bus).state));
+	printf("dev state     %d     %d",obj.init_res,obj.initialized);
 	if (!spi_is_ready_dt(&config->spi)) {
 		LOG_ERR("SPI device is not ready");
-		printf("SPi not ready");
+		printf("SPI not ready");
 		return -ENODEV;
 	}
 
@@ -689,7 +697,6 @@ static const struct display_driver_api gc9x01x_api = {
 		.x_resolution = DT_INST_PROP(inst, width),                                         \
 		.y_resolution = DT_INST_PROP(inst, height),                                        \
 		.inversion = DT_INST_PROP(inst, display_inversion),\
-		.ncs = DT_INST_PROP(inst, ncs),							\
 		.regs = &gc9x01x_regs_##inst,                                                      \
 	};                                                                                         \
 	static struct gc9x01x_data gc9x01x_data_##inst;                                            \
