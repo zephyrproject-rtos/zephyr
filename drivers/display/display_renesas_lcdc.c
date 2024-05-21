@@ -22,6 +22,7 @@
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smartbond_display, CONFIG_DISPLAY_LOG_LEVEL);
@@ -75,8 +76,7 @@ struct display_smartbond_data {
 	/* Granted DMA channel used for memory transfers */
 	int dma_channel;
 #if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
-	/* Flag to determine if device suspension is allowed */
-	bool is_sleep_allowed;
+	ATOMIC_DEFINE(pm_policy_state_flag, 1);
 #endif
 };
 
@@ -98,6 +98,29 @@ struct display_smartbond_config {
 	uint8_t pixel_size;
 	enum display_pixel_format pixel_format;
 };
+
+static inline void lcdc_smartbond_pm_policy_state_lock_get(struct display_smartbond_data *data)
+{
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+	if (atomic_test_and_set_bit(data->pm_policy_state_flag, 0) == 0) {
+		/*
+		 * Prevent the SoC from etering the normal sleep state as PDC does not support
+		 * waking up the application core following LCDC events.
+		 */
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+#endif
+}
+
+static inline void lcdc_smartbond_pm_policy_state_lock_put(struct display_smartbond_data *data)
+{
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, 0) == 1) {
+		/* Allow the SoC to enter the nornmal sleep state once LCDC is inactive */
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+#endif
+}
 
 /* Display pixel to layer color format translation */
 static uint8_t lcdc_smartbond_pixel_to_lcm(enum display_pixel_format pixel_format)
@@ -319,11 +342,6 @@ static int display_smartbond_init(const struct device *dev)
 	pm_device_init_suspended(dev);
 
 	ret = pm_device_runtime_enable(dev);
-
-	/* Sleep is allowed until the device is explicitly resumed on application level. */
-	if (ret == 0) {
-		data->is_sleep_allowed = true;
-	}
 #else
 	/* Resume if either PM is not used at all or if PM without runtime is used. */
 	ret = display_smartbond_resume(dev);
@@ -355,13 +373,11 @@ static int display_smartbond_blanking_on(const struct device *dev)
 		}
 	}
 
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
 	/*
 	 * At this moment the display panel should be turned off and so the device
 	 * can enter the suspend state.
 	 */
-	data->is_sleep_allowed = true;
-#endif
+	lcdc_smartbond_pm_policy_state_lock_put(data);
 
 	k_sem_give(&data->device_sem);
 
@@ -391,13 +407,11 @@ static int display_smartbond_blanking_off(const struct device *dev)
 	 */
 	LCDC->LCDC_MODE_REG &= ~LCDC_LCDC_MODE_REG_LCDC_FORCE_BLANK_Msk;
 
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
 	/*
 	 * At this moment the display should be turned on and so the device
 	 * cannot enter the suspend state.
 	 */
-	data->is_sleep_allowed = false;
-#endif
+	lcdc_smartbond_pm_policy_state_lock_get(data);
 
 	k_sem_give(&data->device_sem);
 
@@ -566,20 +580,14 @@ static int display_smartbond_write(const struct device *dev,
 #if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
 static int display_smartbond_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	/* Initialize with an error code that should abort sleeping */
-	int ret = -EBUSY;
-	struct display_smartbond_data *data = dev->data;
+	int ret = 0;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
-		/* Sleep is only allowed whne display blanking is activated */
-		if (data->is_sleep_allowed) {
-			(void)display_smartbond_suspend(dev);
-			ret = 0;
-		}
+		/* A non-zero value should not affect sleep */
+		(void)display_smartbond_suspend(dev);
 		break;
 	case PM_DEVICE_ACTION_RESUME:
-		__ASSERT_NO_MSG(data->is_sleep_allowed);
 		/*
 		 * The resume error code should not be taken into consideration
 		 * by the PM subsystem
