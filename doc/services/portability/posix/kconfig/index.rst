@@ -27,7 +27,6 @@ implementation of the POSIX API.
 * :kconfig:option:`CONFIG_POSIX_API`
 * :kconfig:option:`CONFIG_POSIX_CLOCK`
 * :kconfig:option:`CONFIG_POSIX_FS`
-* :kconfig:option:`CONFIG_POSIX_LIMITS_RTSIG_MAX`
 * :kconfig:option:`CONFIG_POSIX_MAX_FDS`
 * :kconfig:option:`CONFIG_POSIX_MAX_OPEN_FILES`
 * :kconfig:option:`CONFIG_POSIX_MQUEUE`
