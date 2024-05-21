@@ -164,11 +164,6 @@ struct net_buf *bt_buf_make_view(struct net_buf *view,
 	 */
 	__ASSERT_NO_MSG(net_buf_headroom(parent) > 0);
 
-	/* `parent` should have been just re-used instead of trying to make a
-	 * view into it.
-	 */
-	__ASSERT_NO_MSG(len < parent->len);
-
 	__ASSERT_NO_MSG(!bt_buf_has_view(parent));
 
 	LOG_DBG("make-view %p viewsize %u meta %p", view, len, meta);
