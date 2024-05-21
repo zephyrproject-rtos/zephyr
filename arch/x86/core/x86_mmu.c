@@ -178,7 +178,7 @@ static const struct paging_level paging_levels[] = {
 	}
 };
 
-#define NUM_LEVELS	ARRAY_SIZE(paging_levels)
+#define NUM_LEVELS	((unsigned int)ARRAY_SIZE(paging_levels))
 #define PTE_LEVEL	(NUM_LEVELS - 1)
 #define PDE_LEVEL	(NUM_LEVELS - 2)
 
@@ -204,14 +204,14 @@ static const struct paging_level paging_levels[] = {
 #endif /* !CONFIG_X86_64 && !CONFIG_X86_PAE */
 
 /* Memory range covered by an instance of various table types */
-#define PT_AREA		((uintptr_t)(CONFIG_MMU_PAGE_SIZE * NUM_PT_ENTRIES))
+#define PT_AREA		((uintptr_t)CONFIG_MMU_PAGE_SIZE * NUM_PT_ENTRIES)
 #define PD_AREA 	(PT_AREA * NUM_PD_ENTRIES)
 #ifdef CONFIG_X86_64
 #define PDPT_AREA	(PD_AREA * NUM_PDPT_ENTRIES)
 #endif
 
-#define VM_ADDR		CONFIG_KERNEL_VM_BASE
-#define VM_SIZE		CONFIG_KERNEL_VM_SIZE
+#define VM_ADDR		((uintptr_t)CONFIG_KERNEL_VM_BASE)
+#define VM_SIZE		((uintptr_t)CONFIG_KERNEL_VM_BASE)
 
 /* Define a range [PT_START, PT_END) which is the memory range
  * covered by all the page tables needed for the address space
@@ -258,7 +258,7 @@ static const struct paging_level paging_levels[] = {
 #endif /* CONFIG_X86_64 */
 
 #define INITIAL_PTABLE_PAGES \
-	(NUM_TABLE_PAGES + CONFIG_X86_EXTRA_PAGE_TABLE_PAGES)
+	(NUM_TABLE_PAGES + (uintptr_t)CONFIG_X86_EXTRA_PAGE_TABLE_PAGES)
 
 #ifdef CONFIG_X86_PAE
 /* Toplevel PDPT wasn't included as it is not a page in size */
@@ -266,7 +266,7 @@ static const struct paging_level paging_levels[] = {
 	((INITIAL_PTABLE_PAGES * CONFIG_MMU_PAGE_SIZE) + 0x20)
 #else
 #define INITIAL_PTABLE_SIZE \
-	(INITIAL_PTABLE_PAGES * CONFIG_MMU_PAGE_SIZE)
+	(INITIAL_PTABLE_PAGES * (uintptr_t)CONFIG_MMU_PAGE_SIZE)
 #endif
 
 /* "dummy" pagetables for the first-phase build. The real page tables
@@ -284,48 +284,48 @@ static __used char dummy_pagetables[INITIAL_PTABLE_SIZE];
  * the provided virtual address
  */
 __pinned_func
-static inline int get_index(void *virt, int level)
+static inline uintptr_t get_index(void *virt, unsigned int level)
 {
 	return (((uintptr_t)virt >> paging_levels[level].shift) %
 		paging_levels[level].entries);
 }
 
 __pinned_func
-static inline pentry_t *get_entry_ptr(pentry_t *ptables, void *virt, int level)
+static inline pentry_t *get_entry_ptr(pentry_t *ptables, void *virt, unsigned int level)
 {
 	return &ptables[get_index(virt, level)];
 }
 
 __pinned_func
-static inline pentry_t get_entry(pentry_t *ptables, void *virt, int level)
+static inline pentry_t get_entry(pentry_t *ptables, void *virt, unsigned int level)
 {
 	return ptables[get_index(virt, level)];
 }
 
 /* Get the physical memory address associated with this table entry */
 __pinned_func
-static inline uintptr_t get_entry_phys(pentry_t entry, int level)
+static inline uintptr_t get_entry_phys(pentry_t entry, unsigned int level)
 {
 	return entry & paging_levels[level].mask;
 }
 
 /* Return the virtual address of a linked table stored in the provided entry */
 __pinned_func
-static inline pentry_t *next_table(pentry_t entry, int level)
+static inline pentry_t *next_table(pentry_t entry, unsigned int level)
 {
 	return z_mem_virt_addr(get_entry_phys(entry, level));
 }
 
 /* Number of table entries at this level */
 __pinned_func
-static inline size_t get_num_entries(int level)
+static inline size_t get_num_entries(unsigned int level)
 {
 	return paging_levels[level].entries;
 }
 
 /* 4K for everything except PAE PDPTs */
 __pinned_func
-static inline size_t table_size(int level)
+static inline size_t table_size(unsigned int level)
 {
 	return get_num_entries(level) * sizeof(pentry_t);
 }
@@ -334,7 +334,7 @@ static inline size_t table_size(int level)
  * that an entry within the table covers
  */
 __pinned_func
-static inline size_t get_entry_scope(int level)
+static inline size_t get_entry_scope(unsigned int level)
 {
 	return (1UL << paging_levels[level].shift);
 }
@@ -343,7 +343,7 @@ static inline size_t get_entry_scope(int level)
  * that this entire table covers
  */
 __pinned_func
-static inline size_t get_table_scope(int level)
+static inline size_t get_table_scope(unsigned int level)
 {
 	return get_entry_scope(level) * get_num_entries(level);
 }
@@ -352,7 +352,7 @@ static inline size_t get_table_scope(int level)
  * stored in any other bits
  */
 __pinned_func
-static inline bool is_leaf(int level, pentry_t entry)
+static inline bool is_leaf(unsigned int level, pentry_t entry)
 {
 	if (level == PTE_LEVEL) {
 		/* Always true for PTE */
@@ -364,12 +364,12 @@ static inline bool is_leaf(int level, pentry_t entry)
 
 /* This does NOT (by design) un-flip KPTI PTEs, it's just the raw PTE value */
 __pinned_func
-static inline void pentry_get(int *paging_level, pentry_t *val,
+static inline void pentry_get(unsigned int *paging_level, pentry_t *val,
 			      pentry_t *ptables, void *virt)
 {
 	pentry_t *table = ptables;
 
-	for (int level = 0; level < NUM_LEVELS; level++) {
+	for (unsigned int level = 0; level < NUM_LEVELS; level++) {
 		pentry_t entry = get_entry(table, virt, level);
 
 		if ((entry & MMU_P) == 0 || is_leaf(level, entry)) {
@@ -576,12 +576,12 @@ static char get_entry_code(pentry_t value)
 }
 
 __pinned_func
-static void print_entries(pentry_t entries_array[], uint8_t *base, int level,
+static void print_entries(pentry_t entries_array[], uint8_t *base, unsigned int level,
 			  size_t count)
 {
 	int column = 0;
 
-	for (int i = 0; i < count; i++) {
+	for (size_t i = 0; i < count; i++) {
 		pentry_t entry = entries_array[i];
 
 		uintptr_t phys = get_entry_phys(entry, level);
@@ -719,7 +719,7 @@ SYS_INIT(dump_kernel_tables, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 __pinned_func
 static void str_append(char **buf, size_t *size, const char *str)
 {
-	int ret = snprintk(*buf, *size, "%s", str);
+	size_t ret = (size_t)snprintk(*buf, *size, "%s", str);
 
 	if (ret >= *size) {
 		/* Truncated */
@@ -732,7 +732,7 @@ static void str_append(char **buf, size_t *size, const char *str)
 }
 
 __pinned_func
-static void dump_entry(int level, void *virt, pentry_t entry)
+static void dump_entry(unsigned int level, void *virt, pentry_t entry)
 {
 	const struct paging_level *info = &paging_levels[level];
 	char buf[24] = { 0 };
@@ -776,7 +776,7 @@ __pinned_func
 void z_x86_dump_mmu_flags(pentry_t *ptables, void *virt)
 {
 	pentry_t entry = 0;
-	int level = 0;
+	unsigned int level = 0;
 
 	pentry_get(&level, &entry, ptables, virt);
 
@@ -822,7 +822,7 @@ static inline pentry_t reset_pte(pentry_t old_val)
  */
 __pinned_func
 static inline pentry_t pte_finalize_value(pentry_t val, bool user_table,
-					  int level)
+					  unsigned int level)
 {
 #ifdef CONFIG_X86_KPTI
 	static const uintptr_t shared_phys_addr =
@@ -1008,7 +1008,7 @@ static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
 	bool flush = (options & OPTION_FLUSH) != 0U;
 	int ret = 0;
 
-	for (int level = 0; level < NUM_LEVELS; level++) {
+	for (unsigned int level = 0; level < NUM_LEVELS; level++) {
 		int index;
 		pentry_t *entryp;
 
@@ -1389,7 +1389,7 @@ static bool page_validate(pentry_t *ptables, uint8_t *addr, bool write)
 {
 	pentry_t *table = ptables;
 
-	for (int level = 0; level < NUM_LEVELS; level++) {
+	for (unsigned int level = 0; level < NUM_LEVELS; level++) {
 		pentry_t entry = get_entry(table, addr, level);
 
 		if (is_leaf(level, entry)) {
@@ -1657,9 +1657,9 @@ static void *page_pool_get(void)
 
 /* Debugging function to show how many pages are free in the pool */
 __pinned_func
-static inline unsigned int pages_free(void)
+static inline size_t pages_free(void)
 {
-	return (page_pos - page_pool) / CONFIG_MMU_PAGE_SIZE;
+	return (size_t)(page_pos - page_pool) / CONFIG_MMU_PAGE_SIZE;
 }
 
 /**
@@ -1679,11 +1679,11 @@ static inline unsigned int pages_free(void)
  * @retval -ENOMEM Insufficient page pool memory
  */
 __pinned_func
-static int copy_page_table(pentry_t *dst, pentry_t *src, int level)
+static int copy_page_table(pentry_t *dst, pentry_t *src, unsigned int level)
 {
 	if (level == PTE_LEVEL) {
 		/* Base case: leaf page table */
-		for (int i = 0; i < get_num_entries(level); i++) {
+		for (size_t i = 0; i < get_num_entries(level); i++) {
 			dst[i] = pte_finalize_value(reset_pte(src[i]), true,
 						    PTE_LEVEL);
 		}
@@ -2061,7 +2061,8 @@ void arch_reserved_pages_update(void)
 int arch_page_phys_get(void *virt, uintptr_t *phys)
 {
 	pentry_t pte = 0;
-	int level, ret;
+	unsigned int level;
+	int ret;
 
 	__ASSERT(POINTER_TO_UINT(virt) % CONFIG_MMU_PAGE_SIZE == 0U,
 		 "unaligned address %p to %s", virt, __func__);
@@ -2070,7 +2071,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 
 	if ((pte & MMU_P) != 0) {
 		if (phys != NULL) {
-			*phys = (uintptr_t)get_entry_phys(pte, PTE_LEVEL);
+			*phys = get_entry_phys(pte, PTE_LEVEL);
 		}
 		ret = 0;
 	} else {
@@ -2199,7 +2200,7 @@ __pinned_func
 enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location)
 {
 	pentry_t pte;
-	int level;
+	unsigned int level;
 
 	/* TODO: since we only have to query the current set of page tables,
 	 * could optimize this with recursive page table mapping
@@ -2226,7 +2227,7 @@ __pinned_func
 bool z_x86_kpti_is_access_ok(void *addr, pentry_t *ptables)
 {
 	pentry_t pte;
-	int level;
+	unsigned int level;
 
 	pentry_get(&level, &pte, ptables, addr);
 

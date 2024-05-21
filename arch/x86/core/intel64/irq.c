@@ -35,23 +35,22 @@ static const struct device *const vtd = DEVICE_DT_GET_ONE(intel_vt_d);
 static void irq_spurious(const void *arg)
 {
 	LOG_ERR("Spurious interrupt, vector %d\n", (uint32_t)(uint64_t)arg);
-	z_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
+	z_fatal_error((unsigned int)K_ERR_SPURIOUS_IRQ, NULL);
 }
 
 void x86_64_irq_init(void)
 {
-	for (int i = 0; i < NR_IRQ_VECTORS; i++) {
+	for (unsigned int i = 0; i < NR_IRQ_VECTORS; i++) {
 		x86_irq_funcs[i] = irq_spurious;
-		x86_irq_args[i] = (const void *)(long)(i + IV_IRQS);
+		x86_irq_args[i] = (const void *)(uintptr_t)(i + IV_IRQS);
 	}
 }
 
 int z_x86_allocate_vector(unsigned int priority, int prev_vector)
 {
-	const int VECTORS_PER_PRIORITY = 16;
-	const int MAX_PRIORITY = 13;
+	const unsigned int VECTORS_PER_PRIORITY = 16;
+	const unsigned int MAX_PRIORITY = 13;
 	int vector = prev_vector;
-	int i;
 
 	if (priority >= MAX_PRIORITY) {
 		priority = MAX_PRIORITY;
@@ -61,7 +60,7 @@ int z_x86_allocate_vector(unsigned int priority, int prev_vector)
 		vector = (priority * VECTORS_PER_PRIORITY) + IV_IRQS;
 	}
 
-	for (i = 0; i < VECTORS_PER_PRIORITY; ++i, ++vector) {
+	for (unsigned int i = 0; i < VECTORS_PER_PRIORITY; ++i, ++vector) {
 		if (prev_vector != 1 && vector == prev_vector) {
 			continue;
 		}
@@ -75,7 +74,7 @@ int z_x86_allocate_vector(unsigned int priority, int prev_vector)
 			continue;
 		}
 
-		if (x86_irq_funcs[vector - IV_IRQS] == irq_spurious) {
+		if (x86_irq_funcs[(unsigned int)vector - IV_IRQS] == irq_spurious) {
 			return vector;
 		}
 	}
@@ -124,7 +123,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 #endif /* CONFIG_INTEL_VTD_ICTL */
 
 		z_irq_controller_irq_config(vector, irq, flags);
-		z_x86_irq_connect_on_vector(irq, vector, func, arg);
+		z_x86_irq_connect_on_vector(irq, (uint8_t)vector, func, arg);
 	}
 
 	irq_unlock(key);

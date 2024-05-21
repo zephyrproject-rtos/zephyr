@@ -39,9 +39,9 @@ static void pcie_mm_init(void)
 	struct acpi_mcfg *m = acpi_table_get("MCFG", 0);
 
 	if (m != NULL) {
-		int n = (m->header.Length - sizeof(*m)) / sizeof(m->pci_segs[0]);
+		size_t n = (m->header.Length - sizeof(*m)) / sizeof(m->pci_segs[0]);
 
-		for (int i = 0; i < n && i < MAX_PCI_BUS_SEGMENTS; i++) {
+		for (size_t i = 0; i < n && i < MAX_PCI_BUS_SEGMENTS; i++) {
 			size_t size;
 			uintptr_t phys_addr;
 
@@ -51,7 +51,8 @@ static void pcie_mm_init(void)
 
 			phys_addr = m->pci_segs[i].Address;
 			/* 32 devices & 8 functions per bus, 4k per device */
-			size = bus_segs[i].n_buses * (32 * 8 * 4096);
+			size = bus_segs[i].n_buses;
+			size *= 32 * 8 * 4096;
 
 			device_map((mm_reg_t *)&bus_segs[i].mmio, phys_addr, size,
 				   K_MEM_CACHE_NONE);
@@ -65,10 +66,10 @@ static void pcie_mm_init(void)
 static inline void pcie_mm_conf(pcie_bdf_t bdf, unsigned int reg,
 				bool write, uint32_t *data)
 {
-	for (int i = 0; i < ARRAY_SIZE(bus_segs); i++) {
-		int off = PCIE_BDF_TO_BUS(bdf) - bus_segs[i].start_bus;
+	for (size_t i = 0; i < ARRAY_SIZE(bus_segs); i++) {
+		uint32_t off = PCIE_BDF_TO_BUS(bdf) - bus_segs[i].start_bus;
 
-		if (off >= 0 && off < bus_segs[i].n_buses) {
+		if (off < bus_segs[i].n_buses) {
 			bdf = PCIE_BDF(off,
 				       PCIE_BDF_TO_DEV(bdf),
 				       PCIE_BDF_TO_FUNC(bdf));

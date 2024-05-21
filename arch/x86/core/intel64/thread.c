@@ -49,17 +49,17 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 	iframe = Z_STACK_PTR_TO_FRAME(struct x86_initial_frame, stack_ptr);
 	iframe->rip = 0U;
-	thread->callee_saved.rsp = (long) iframe;
-	thread->callee_saved.rip = (long) switch_entry;
+	thread->callee_saved.rsp = (uint64_t) iframe;
+	thread->callee_saved.rip = (uint64_t) switch_entry;
 	thread->callee_saved.rflags = EFLAGS_INITIAL;
 
 	/* Parameters to entry point, which is populated in
 	 * thread->callee_saved.rip
 	 */
-	thread->arch.rdi = (long) entry;
-	thread->arch.rsi = (long) p1;
-	thread->arch.rdx = (long) p2;
-	thread->arch.rcx = (long) p3;
+	thread->arch.rdi = (uint64_t) entry;
+	thread->arch.rsi = (uint64_t) p1;
+	thread->arch.rdx = (uint64_t) p2;
+	thread->arch.rcx = (uint64_t) p3;
 
 	x86_sse_init(thread);
 

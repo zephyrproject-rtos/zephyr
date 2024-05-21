@@ -40,7 +40,7 @@
  * stuff after.
  */
 static __attribute__((section(".runtime_data_end")))
-uint64_t runtime_data_end[1] = { 0x1111aa8888aa1111L };
+uint64_t runtime_data_end[1] = { 0x1111aa8888aa1111ULL };
 
 #define EXT_DATA_START ((void *) &runtime_data_end[1])
 
@@ -52,14 +52,14 @@ static void efi_putchar(int c)
 	static uint16_t efibuf[PUTCHAR_BUFSZ + 1];
 	static int n;
 
-	if (c == '\n') {
-		efi_putchar('\r');
+	if (c == (int)'\n') {
+		efi_putchar((int)'\r');
 	}
 
-	efibuf[n] = c;
+	efibuf[n] = (uint16_t)c;
 	++n;
 
-	if (c == '\n' || n == PUTCHAR_BUFSZ) {
+	if (c == (int)'\n' || n == PUTCHAR_BUFSZ) {
 		efibuf[n] = 0U;
 		efi->ConOut->OutputString(efi->ConOut, efibuf);
 		n = 0;
@@ -125,7 +125,7 @@ static void disable_hpet(void)
 {
 	uint64_t *hpet = (uint64_t *)0xfed00000L;
 
-	hpet[32] &= ~4;
+	hpet[32] &= ~4ULL;
 }
 
 /* FIXME: if you check the generated code, "ms_abi" calls like this
@@ -143,25 +143,25 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 
 	efi_prepare_boot_arg();
 
-	for (int i = 0; i < sizeof(zefi_zsegs)/sizeof(zefi_zsegs[0]); i++) {
-		int bytes = zefi_zsegs[i].sz;
+	for (size_t i = 0; i < sizeof(zefi_zsegs)/sizeof(zefi_zsegs[0]); i++) {
+		uint32_t bytes = zefi_zsegs[i].sz;
 		uint8_t *dst = (uint8_t *)zefi_zsegs[i].addr;
 
-		printf("Zeroing %d bytes of memory at %p\n", bytes, dst);
-		for (int j = 0; j < bytes; j++) {
+		printf("Zeroing %u bytes of memory at %p\n", bytes, dst);
+		for (uint32_t j = 0; j < bytes; j++) {
 			dst[j] = 0U;
 		}
 	}
 
-	for (int i = 0; i < sizeof(zefi_dsegs)/sizeof(zefi_dsegs[0]); i++) {
-		int bytes = zefi_dsegs[i].sz;
-		int off = zefi_dsegs[i].off;
+	for (size_t i = 0; i < sizeof(zefi_dsegs)/sizeof(zefi_dsegs[0]); i++) {
+		uint32_t bytes = zefi_dsegs[i].sz;
+		uint32_t off = zefi_dsegs[i].off;
 		uint8_t *dst = (uint8_t *)zefi_dsegs[i].addr;
 		uint8_t *src = &((uint8_t *)EXT_DATA_START)[off];
 
 		printf("Copying %d data bytes to %p from image offset %d\n",
 		       bytes, dst, zefi_dsegs[i].off);
-		for (int j = 0; j < bytes; j++) {
+		for (uint32_t j = 0; j < bytes; j++) {
 			dst[j] = src[j];
 		}
 
@@ -173,7 +173,7 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 		 * starts, because the very first thing it does is
 		 * install its own page table that disallows writes.
 		 */
-		if (((long)dst & 0xfff) == 0 && dst < (uint8_t *)0x100000L) {
+		if (((uintptr_t)dst & 0xfff) == 0 && (uintptr_t)dst < 0x100000ULL) {
 			for (int i = 0; i < 8; i++) {
 				dst[i] = 0x90; /* 0x90 == 1-byte NOP */
 			}

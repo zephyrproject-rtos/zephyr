@@ -52,7 +52,7 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 	if (_current == NULL || arch_is_in_isr()) {
 		/* We were servicing an interrupt or in early boot environment
 		 * and are supposed to be on the interrupt stack */
-		int cpu_id;
+		uint8_t cpu_id;
 
 #ifdef CONFIG_SMP
 		cpu_id = arch_curr_cpu()->id;
@@ -194,7 +194,7 @@ static inline uintptr_t get_cr3(const z_arch_esf_t *esf)
 	/* If the interrupted thread was in user mode, we did a page table
 	 * switch when we took the exception via z_x86_trampoline_to_kernel
 	 */
-	if ((esf->cs & 0x3) != 0) {
+	if ((esf->cs & 0x3U) != 0) {
 		return _current->arch.ptables;
 	}
 #else
@@ -392,7 +392,7 @@ FUNC_NORETURN void z_x86_unhandled_cpu_exception(uintptr_t vector,
 #else
 	ARG_UNUSED(vector);
 #endif
-	z_x86_fatal_error(K_ERR_CPU_EXCEPTION, esf);
+	z_x86_fatal_error((unsigned int)K_ERR_CPU_EXCEPTION, esf);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -449,9 +449,7 @@ void z_x86_page_fault_handler(z_arch_esf_t *esf)
 #endif
 
 #ifdef CONFIG_USERSPACE
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(exceptions); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(exceptions); i++) {
 #ifdef CONFIG_X86_64
 		if ((void *)esf->rip >= exceptions[i].start &&
 		    (void *)esf->rip < exceptions[i].end) {
@@ -471,29 +469,29 @@ void z_x86_page_fault_handler(z_arch_esf_t *esf)
 	dump_page_fault(esf);
 #endif
 #ifdef CONFIG_THREAD_STACK_INFO
-	if (z_x86_check_stack_bounds(esf_get_sp(esf), 0, esf->cs)) {
-		z_x86_fatal_error(K_ERR_STACK_CHK_FAIL, esf);
+	if (z_x86_check_stack_bounds(esf_get_sp(esf), 0, (uint16_t)esf->cs)) {
+		z_x86_fatal_error((unsigned int)K_ERR_STACK_CHK_FAIL, esf);
 	}
 #endif
 #ifdef CONFIG_THREAD_STACK_MEM_MAPPED
 	void *fault_addr = z_x86_cr2_get();
 
 	if (z_x86_check_guard_page((uintptr_t)fault_addr)) {
-		z_x86_fatal_error(K_ERR_STACK_CHK_FAIL, esf);
+		z_x86_fatal_error((unsigned int)K_ERR_STACK_CHK_FAIL, esf);
 	}
 #endif
 
-	z_x86_fatal_error(K_ERR_CPU_EXCEPTION, esf);
+	z_x86_fatal_error((unsigned int)K_ERR_CPU_EXCEPTION, esf);
 	CODE_UNREACHABLE;
 }
 
 __pinned_func
 void z_x86_do_kernel_oops(const z_arch_esf_t *esf)
 {
-	uintptr_t reason;
+	unsigned int reason;
 
 #ifdef CONFIG_X86_64
-	reason = esf->rax;
+	reason = (unsigned int)esf->rax;
 #else
 	uintptr_t *stack_ptr = (uintptr_t *)esf->esp;
 
@@ -504,9 +502,9 @@ void z_x86_do_kernel_oops(const z_arch_esf_t *esf)
 	/* User mode is only allowed to induce oopses and stack check
 	 * failures via this software interrupt
 	 */
-	if ((esf->cs & 0x3) != 0 && !(reason == K_ERR_KERNEL_OOPS ||
-				      reason == K_ERR_STACK_CHK_FAIL)) {
-		reason = K_ERR_KERNEL_OOPS;
+	if ((esf->cs & 0x3U) != 0 && !(reason == (unsigned int)K_ERR_KERNEL_OOPS ||
+				      reason == (unsigned int)K_ERR_STACK_CHK_FAIL)) {
+		reason = (unsigned int)K_ERR_KERNEL_OOPS;
 	}
 #endif
 
