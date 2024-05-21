@@ -504,6 +504,19 @@ const struct ptp_dataset *ptp_clock_best_foreign_ds(void)
 	return clock.best ? &clock.best->dataset : NULL;
 }
 
+struct ptp_port *ptp_clock_port_from_iface(struct net_if *iface)
+{
+	struct ptp_port *port;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&clock.ports_list, port, node) {
+		if (port->iface == iface) {
+			return port;
+		}
+	}
+
+	return NULL;
+}
+
 void ptp_clock_pollfd_invalidate(void)
 {
 	clock.pollfd_valid = false;
