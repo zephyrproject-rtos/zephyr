@@ -7,5 +7,6 @@ config WDT_SAM
 	bool "Atmel SAM MCU Family Watchdog (WDT) Driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
 	help
 	  Enable WDT driver for Atmel SAM MCUs.
