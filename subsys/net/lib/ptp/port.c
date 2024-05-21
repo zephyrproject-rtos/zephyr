@@ -55,6 +55,24 @@ const char *port_id_str(struct ptp_port_id *port_id)
 	return str_port_id;
 }
 
+static const char *port_state_str(enum ptp_port_state state)
+{
+	const static char * const states[] = {
+		[PTP_PS_INITIALIZING]	      = "INITIALIZING",
+		[PTP_PS_FAULTY]		      = "FAULTY",
+		[PTP_PS_DISABLED]	      = "DISABLED",
+		[PTP_PS_LISTENING]	      = "LISTENING",
+		[PTP_PS_PRE_TIME_TRANSMITTER] = "PRE TIME TRANSMITTER",
+		[PTP_PS_TIME_TRANSMITTER]     = "TIME TRANSMITTER",
+		[PTP_PS_GRAND_MASTER]	      = "GRAND MASTER",
+		[PTP_PS_PASSIVE]	      = "PASSIVE",
+		[PTP_PS_UNCALIBRATED]	      = "UNCALIBRATED",
+		[PTP_PS_TIME_RECEIVER]	      = "TIME RECEIVER",
+	};
+
+	return states[state];
+}
+
 static int port_msg_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
 {
 	ptp_msg_pre_send(msg);
@@ -895,6 +913,44 @@ static void port_disable(struct ptp_port *port)
 	LOG_DBG("Port %d disabled", port->port_ds.id.port_number);
 }
 
+int port_state_update(struct ptp_port *port, enum ptp_port_event event, bool tt_diff)
+{
+	enum ptp_port_state next_state = port->state_machine(ptp_port_state(port),
+							     event,
+							     tt_diff);
+
+	if (next_state == PTP_PS_FAULTY) {
+		/* clear fault if interface is UP */
+		if (net_if_oper_state(port->iface) == NET_IF_OPER_UP) {
+			next_state = port->state_machine(next_state, PTP_EVT_FAULT_CLEARED, false);
+		}
+	}
+
+	if (next_state == PTP_PS_INITIALIZING) {
+		if (port_is_enabled(port)) {
+			port_disable(port);
+		}
+		if (port_enable(port)) {
+			event = PTP_EVT_FAULT_DETECTED;
+		} else {
+			event = PTP_EVT_INIT_COMPLETE;
+		}
+		next_state = port->state_machine(next_state, event, false);
+	}
+
+	if (next_state != ptp_port_state(port)) {
+		LOG_DBG("Port %d changed state from %s to %s",
+			port->port_ds.id.port_number,
+			port_state_str(ptp_port_state(port)),
+			port_state_str(next_state));
+
+		port->port_ds.state = next_state;
+		return 1;
+	}
+
+	return 0;
+}
+
 void ptp_port_init(struct net_if *iface, void *user_data)
 {
 	struct ptp_port *port;
@@ -934,6 +990,153 @@ void ptp_port_init(struct net_if *iface, void *user_data)
 	ptp_clock_port_add(port);
 
 	LOG_DBG("Port %d initialized", port->port_ds.id.port_number);
+}
+
+enum ptp_port_event ptp_port_event_gen(struct ptp_port *port, int idx)
+{
+	enum ptp_port_event event = PTP_EVT_NONE;
+	struct ptp_msg *msg;
+	int ret, cnt;
+
+	if (idx < 0) {
+		return event;
+	}
+
+	msg = ptp_msg_alloc();
+	if (!msg) {
+		return PTP_EVT_FAULT_DETECTED;
+	}
+
+	cnt = ptp_transport_recv(port, msg, idx);
+	if (cnt <= 0) {
+		LOG_ERR("Error during message reception");
+		ptp_msg_unref(msg);
+		return PTP_EVT_FAULT_DETECTED;
+	}
+
+	ret = ptp_msg_post_recv(port, msg, cnt);
+	if (ret) {
+		ptp_msg_unref(msg);
+		return PTP_EVT_FAULT_DETECTED;
+	}
+
+	if (ptp_port_id_eq(&msg->header.src_port_id, &port->port_ds.id)) {
+		ptp_msg_unref(msg);
+		return PTP_EVT_NONE;
+	}
+
+	switch (ptp_msg_type(msg)) {
+	case PTP_MSG_SYNC:
+		port_sync_msg_process(port, msg);
+		break;
+	case PTP_MSG_DELAY_REQ:
+		if (port_delay_req_msg_process(port, msg)) {
+			event = PTP_EVT_FAULT_DETECTED;
+		}
+		break;
+	case PTP_MSG_PDELAY_REQ:
+		__fallthrough;
+	case PTP_MSG_PDELAY_RESP:
+		__fallthrough;
+	case PTP_MSG_PDELAY_RESP_FOLLOW_UP:
+		/* P2P delay machanism not supported */
+		break;
+	case PTP_MSG_FOLLOW_UP:
+		port_follow_up_msg_process(port, msg);
+		break;
+	case PTP_MSG_DELAY_RESP:
+		port_delay_resp_msg_process(port, msg);
+		break;
+	case PTP_MSG_ANNOUNCE:
+		if (port_announce_msg_process(port, msg)) {
+			event = PTP_EVT_STATE_DECISION;
+		}
+		break;
+	case PTP_MSG_SIGNALING:
+		/* Signalling messages not supported */
+		break;
+	case PTP_MSG_MANAGEMENT:
+		if (ptp_clock_management_msg_process(port, msg)) {
+			event = PTP_EVT_STATE_DECISION;
+		}
+		break;
+	default:
+		break;
+	}
+
+	ptp_msg_unref(msg);
+	return event;
+}
+
+void ptp_port_event_handle(struct ptp_port *port, enum ptp_port_event event, bool tt_diff)
+{
+	const struct ptp_current_ds *cds = ptp_clock_current_ds();
+
+	if (event == PTP_EVT_NONE) {
+		return;
+	}
+
+	if (!port_state_update(port, event, tt_diff)) {
+		/* No PTP Port state change */
+		return;
+	}
+
+	k_timer_stop(&port->timers.announce);
+	k_timer_stop(&port->timers.delay);
+	k_timer_stop(&port->timers.sync);
+	k_timer_stop(&port->timers.qualification);
+
+	switch (port->port_ds.state) {
+	case PTP_PS_INITIALIZING:
+		break;
+	case PTP_PS_FAULTY:
+		__fallthrough;
+	case PTP_PS_DISABLED:
+		port_disable(port);
+		break;
+	case PTP_PS_LISTENING:
+		port_timer_set_timeout_random(&port->timers.announce,
+					      port->port_ds.announce_receipt_timeout,
+					      1,
+					      port->port_ds.log_announce_interval);
+		break;
+	case PTP_PS_PRE_TIME_TRANSMITTER:
+		port_timer_set_timeout(&port->timers.qualification,
+				       1 + cds->steps_rm,
+				       port->port_ds.log_announce_interval);
+		break;
+	case PTP_PS_GRAND_MASTER:
+		__fallthrough;
+	case PTP_PS_TIME_TRANSMITTER:
+		port_timer_set_timeout(&port->timers.announce,
+				       1,
+				       port->port_ds.log_announce_interval);
+		port_timer_set_timeout(&port->timers.sync, 1, port->port_ds.log_sync_interval);
+		break;
+	case PTP_PS_PASSIVE:
+		port_timer_set_timeout_random(&port->timers.announce,
+					      port->port_ds.announce_receipt_timeout,
+					      1,
+					      port->port_ds.log_announce_interval);
+		break;
+	case PTP_PS_UNCALIBRATED:
+		if (port->last_sync_fup) {
+			ptp_msg_unref(port->last_sync_fup);
+			port->last_sync_fup = NULL;
+		}
+		port_clear_delay_req(port);
+		__fallthrough;
+	case PTP_PS_TIME_RECEIVER:
+		port_timer_set_timeout_random(&port->timers.announce,
+					      port->port_ds.announce_receipt_timeout,
+					      1,
+					      port->port_ds.log_announce_interval);
+		port_timer_set_timeout_random(&port->timers.delay,
+					      0,
+					      2,
+					      port->port_ds.log_min_delay_req_interval);
+		break;
+	};
 }
 
 enum ptp_port_state ptp_port_state(struct ptp_port *port)

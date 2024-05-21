@@ -103,6 +103,25 @@ enum ptp_port_state ptp_port_state(struct ptp_port *port);
  * @return PTP Port event.
  */
 enum ptp_port_event ptp_port_timer_event_gen(struct ptp_port *port, struct k_timer *timer);
+/**
+ * @brief Function generating PTP Port events based on messages
+ * that has been recived on a PTP Port's socket.
+ *
+ * @param[in] port  Pointer to the PTP Port structure.
+ * @param[in] idx   Index of the PTP Port's socket to be checked.
+ *
+ * @return PTP Port event.
+ */
+enum ptp_port_event ptp_port_event_gen(struct ptp_port *port, int idx);
+
+/**
+ * @brief Function handling PTP Port event.
+ *
+ * @param[in] port    Pointer to the PTP Port structure.
+ * @param[in] event   PTP Port Event to be processed.
+ * @param[in] tt_diff Flag indicating whether PTP TimeTransmitter has changed.
+ */
+void ptp_port_event_handle(struct ptp_port *port, enum ptp_port_event event, bool tt_diff);
 
 /**
  * @brief Function checking if two port identities are equal.
