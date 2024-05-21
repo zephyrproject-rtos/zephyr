@@ -311,6 +311,13 @@ static inline sec_tag_t hawkbit_get_tls_tag(void)
 int32_t hawkbit_get_action_id(void);
 
 /**
+ * @brief Get the hawkBit poll interval.
+ *
+ * @return Poll interval.
+ */
+uint32_t hawkbit_get_poll_interval(void);
+
+/**
  * @brief Resets the hawkBit action id, that is saved in settings.
  *
  * @details This should be done after changing the hawkBit server.
