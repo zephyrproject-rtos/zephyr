@@ -25,6 +25,7 @@ enum {
 	IPC_DISPATCHER_WIFI_AP_DISABLE,
 	IPC_DISPATCHER_WIFI_L2_DATA,
 	IPC_DISPATCHER_WIFI_EVENT,
+	IPC_DISPATCHER_WIFI_IPV4_ADDR,
 };
 
 __packed struct ipc_msg {
@@ -38,6 +39,9 @@ struct wifi_w91_data_base {
 	scan_result_cb_t scan_cb;
 	uint8_t state;
 	struct net_if *iface;
+#if CONFIG_NET_DHCPV4
+	struct net_mgmt_event_callback ev_dhcp;
+#endif /*CONFIG_NET_DHCPV4 */
 };
 
 struct wifi_w91_data_l2 {

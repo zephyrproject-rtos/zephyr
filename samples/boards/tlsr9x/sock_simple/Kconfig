@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SAMPLE_WIFI_SSID
+	string "WIFI SSID - Network name"
+
+config SAMPLE_WIFI_PASSWORD
+	string "WIFI PSK - Network password"
+
+source "Kconfig.zephyr"

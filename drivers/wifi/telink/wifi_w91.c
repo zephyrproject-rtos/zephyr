@@ -17,9 +17,9 @@ enum wifi_w91_state_flag {
 	WIFI_W91_STA_STARTED,
 	WIFI_W91_STA_CONNECTING,
 	WIFI_W91_STA_CONNECTED,
-	WIFI_W91_AP_CONNECTED,
-	WIFI_W91_AP_DISCONNECTED,
+	WIFI_W91_AP_STARTED,
 	WIFI_W91_AP_STOPPED,
+
 };
 
 enum wifi_w91_auth_mode {
@@ -106,6 +106,74 @@ struct wifi_w91_event {
 	union wifi_w91_event_param param;
 };
 
+struct ip_v4_data {
+	uint32_t ip;
+	uint32_t mask;
+	uint32_t gw;
+};
+
+/* APIs implementation: set ipv4 */
+static size_t pack_wifi_w91_set_ipv4(uint8_t inst, void *unpack_data, uint8_t *pack_data)
+{
+	struct ip_v4_data *p_ip_v4 = unpack_data;
+	size_t pack_data_len = sizeof(uint32_t) +
+		sizeof(p_ip_v4->ip) + sizeof(p_ip_v4->mask) + sizeof(p_ip_v4->gw);
+
+	if (pack_data != NULL) {
+		uint32_t id = IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_WIFI_IPV4_ADDR, inst);
+
+		IPC_DISPATCHER_PACK_FIELD(pack_data, id);
+		IPC_DISPATCHER_PACK_FIELD(pack_data, p_ip_v4->ip);
+		IPC_DISPATCHER_PACK_FIELD(pack_data, p_ip_v4->mask);
+		IPC_DISPATCHER_PACK_FIELD(pack_data, p_ip_v4->gw);
+	}
+
+	return pack_data_len;
+}
+
+IPC_DISPATCHER_UNPACK_FUNC_ONLY_WITH_ERROR_PARAM(wifi_w91_set_ipv4);
+
+static int wifi_w91_set_ipv4(struct net_if *iface)
+{
+	struct wifi_w91_data *data = iface->if_dev->dev->data;
+	int err = 0;
+
+	if (data->base.state == WIFI_W91_STA_CONNECTED ||
+		data->base.state == WIFI_W91_AP_STARTED) {
+
+		struct ip_v4_data ipv4 = {
+			.ip = iface->config.ip.ipv4->unicast[0].address.in_addr.s_addr,
+			.mask = iface->config.ip.ipv4->netmask.s_addr,
+			.gw = iface->config.ip.ipv4->gw.s_addr
+		};
+
+		err = -ETIMEDOUT;
+		IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, 0,
+			wifi_w91_set_ipv4, &ipv4, &err,
+			CONFIG_WIFI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+	}
+
+	if (data->base.state == WIFI_W91_STA_CONNECTED) {
+		if (err) {
+			LOG_INF("set ip error %d", err);
+		}
+		wifi_mgmt_raise_connect_result_event(data->base.iface, err);
+	}
+
+	return 0;
+}
+
+#if CONFIG_NET_DHCPV4
+static void wifi_w91_got_dhcp_ip(struct net_mgmt_event_callback *cb,
+	uint32_t mgmt_event, struct net_if *iface)
+{
+	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
+		return;
+	}
+	(void) wifi_w91_set_ipv4(iface);
+}
+#endif /* CONFIG_NET_DHCPV4 */
+
 static struct k_thread wifi_event_thread_data;
 K_THREAD_STACK_DEFINE(wifi_event_thread_stack, CONFIG_TELINK_W91_WIFI_EVENT_THREAD_STACK_SIZE);
 K_MSGQ_DEFINE(wifi_event_msgq, sizeof(struct wifi_w91_event),
@@ -158,6 +226,11 @@ static void wifi_w91_init_if(struct net_if *iface)
 	/* Assign link local address. */
 	net_if_set_link_addr(data->base.iface, data->base.mac,
 		WIFI_MAC_ADDR_LEN, NET_LINK_ETHERNET);
+#if CONFIG_NET_DHCPV4
+	net_mgmt_init_event_callback(&data->base.ev_dhcp,
+		wifi_w91_got_dhcp_ip, NET_EVENT_IPV4_ADDR_ADD);
+	net_mgmt_add_event_callback(&data->base.ev_dhcp);
+#endif /* CONFIG_NET_DHCPV4 */
 }
 
 /* APIs implementation: wifi scan */
@@ -527,20 +600,14 @@ static void wifi_w91_event_thread(void *p1, void *p2, void *p3)
 			break;
 		case WIFI_W91_EVENT_STA_CONNECTED:
 			data->base.state = WIFI_W91_STA_CONNECTED;
-
-#if CONFIG_TELINK_W91_WIFI_STA_AUTO_DHCPV4
-				net_dhcpv4_start(data->base.iface);
-#else
-				wifi_mgmt_raise_connect_result_event(data->base.iface, 0);
-#endif /* CONFIG_TELINK_W91_WIFI_STA_AUTO_DHCPV4 */
+			LOG_INF("The WiFi STA connected");
+#if !CONFIG_NET_DHCPV4
+			(void) wifi_w91_set_ipv4(data->base.iface);
+#endif /* !CONFIG_NET_DHCPV4 */
 			break;
 		case WIFI_W91_EVENT_STA_DISCONNECTED:
+			LOG_INF("The WiFi STA disconnected");
 			if (data->base.state == WIFI_W91_STA_CONNECTED) {
-
-#if CONFIG_TELINK_W91_WIFI_STA_AUTO_DHCPV4
-				net_dhcpv4_stop(data->base.iface);
-#endif /* CONFIG_TELINK_W91_WIFI_STA_AUTO_DHCPV4 */
-
 				wifi_mgmt_raise_disconnect_result_event(data->base.iface, 0);
 			} else {
 				wifi_mgmt_raise_disconnect_result_event(data->base.iface, -1);
@@ -550,7 +617,8 @@ static void wifi_w91_event_thread(void *p1, void *p2, void *p3)
 			wifi_w91_even_scan_done_handler(data, &event.param.scan_done);
 			break;
 		case WIFI_W91_EVENT_AP_START:
-			data->base.state = WIFI_W91_AP_STOPPED;
+			data->base.state = WIFI_W91_AP_STARTED;
+			(void) wifi_w91_set_ipv4(data->base.iface);
 			LOG_INF("The WiFi Access Point is started");
 			break;
 		case WIFI_W91_EVENT_AP_STOP:
@@ -558,7 +626,6 @@ static void wifi_w91_event_thread(void *p1, void *p2, void *p3)
 			LOG_INF("The WiFi Access Point is stopped");
 			break;
 		case WIFI_W91_EVENT_AP_STACONNECTED:
-			data->base.state = WIFI_W91_AP_CONNECTED;
 			LOG_INF("The WiFi Access Point is connected"
 				"(mac = 0x%x:0x%x:0x%x:0x%x:0x%x:0x%x)",
 				event.param.ap_sta_info.mac[0], event.param.ap_sta_info.mac[1],
@@ -566,7 +633,6 @@ static void wifi_w91_event_thread(void *p1, void *p2, void *p3)
 				event.param.ap_sta_info.mac[4], event.param.ap_sta_info.mac[5]);
 			break;
 		case WIFI_W91_EVENT_AP_STADISCONNECTED:
-			data->base.state = WIFI_W91_AP_DISCONNECTED;
 			LOG_INF("The WiFi Access Point is disconnected"
 				"(mac = 0x%x:0x%x:0x%x:0x%x:0x%x:0x%x)",
 				event.param.ap_sta_info.mac[0], event.param.ap_sta_info.mac[1],

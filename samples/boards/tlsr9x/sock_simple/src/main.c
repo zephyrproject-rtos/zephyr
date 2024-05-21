@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/net/wifi_mgmt.h>
 #ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
 #include <zephyr/posix/unistd.h>
 #include <zephyr/posix/netdb.h>
@@ -23,7 +24,7 @@ LOG_MODULE_REGISTER(sock_app, LOG_LEVEL_INF);
 #define ECHO_SERVER_BUF_SIZE      300
 #define ECHO_SERVER_DEADTIME_MS   1000
 
-int main(void)
+static void data_exchange(volatile bool *connected)
 {
 	LOG_INF("app started");
 
@@ -58,7 +59,7 @@ int main(void)
 
 		uint8_t cnt = 0;
 
-		for (bool error = false; !error; cnt++) {
+		for (bool error = false; !error && *connected; cnt++) {
 
 			struct sockaddr_in server_addr = {
 				.sin_family = AF_INET,
@@ -131,6 +132,66 @@ int main(void)
 	}
 
 	LOG_INF("app finished");
+}
+
+static struct {
+	volatile bool connected;
+	struct k_sem sem;
+} app_data;
+
+static void on_wifi_event(struct net_mgmt_event_callback *cb,
+	uint32_t mgmt_event, struct net_if *iface)
+{
+	switch (mgmt_event) {
+	case NET_EVENT_WIFI_CONNECT_RESULT:
+		app_data.connected = true;
+		k_sem_give(&app_data.sem);
+		LOG_INF("connected");
+		break;
+	case NET_EVENT_WIFI_DISCONNECT_RESULT:
+		app_data.connected = false;
+		LOG_INF("disconnected");
+		break;
+	default:
+		LOG_INF("unhandled network event %u", mgmt_event);
+		break;
+	}
+}
+
+int main(void)
+{
+	app_data.connected = false;
+	(void) k_sem_init(&app_data.sem, 0, 1);
+
+	static struct net_mgmt_event_callback wifi_cb;
+
+	net_mgmt_init_event_callback(&wifi_cb, on_wifi_event,
+		NET_EVENT_WIFI_CONNECT_RESULT | NET_EVENT_WIFI_DISCONNECT_RESULT);
+	net_mgmt_add_event_callback(&wifi_cb);
+
+	for (;;) {
+		if (!app_data.connected) {
+			struct wifi_connect_req_params connect_req_params = {
+				.ssid = CONFIG_SAMPLE_WIFI_SSID,
+				.ssid_length = strlen(CONFIG_SAMPLE_WIFI_SSID),
+				.psk = CONFIG_SAMPLE_WIFI_PASSWORD,
+				.psk_length = strlen(CONFIG_SAMPLE_WIFI_PASSWORD),
+				.security = WIFI_SECURITY_TYPE_PSK
+			};
+
+			if (net_mgmt(NET_REQUEST_WIFI_CONNECT, net_if_get_default(),
+				&connect_req_params, sizeof(connect_req_params))) {
+				LOG_ERR("connection request failed\n");
+			} else {
+				LOG_INF("connecting...");
+			}
+
+			(void) k_sem_take(&app_data.sem, K_FOREVER);
+		}
+		if (app_data.connected) {
+			data_exchange(&app_data.connected);
+		}
+	}
 
 	return 0;
 }
