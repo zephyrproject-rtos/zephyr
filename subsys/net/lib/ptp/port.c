@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(ptp_port, CONFIG_PTP_LOG_LEVEL);
 #include "clock.h"
 #include "port.h"
 #include "msg.h"
+#include "tlv.h"
 #include "transport.h"
 
 #define PORT_DELAY_REQ_CLEARE_TO (3 * NSEC_PER_SEC)
@@ -424,6 +425,187 @@ static void port_delay_resp_msg_process(struct ptp_port *port, struct ptp_msg *m
 	port->port_ds.log_min_delay_req_interval = msg->header.log_msg_interval;
 }
 
+static struct ptp_msg *port_management_resp_prepare(struct ptp_port *port, struct ptp_msg *req)
+{
+	struct ptp_msg *resp = ptp_msg_alloc();
+	const struct ptp_default_ds *dds = ptp_clock_default_ds();
+
+	if (!resp) {
+		return NULL;
+	}
+
+	resp->header.type_major_sdo_id = PTP_MSG_MANAGEMENT;
+	resp->header.version	       = PTP_VERSION;
+	resp->header.msg_length	       = sizeof(struct ptp_management_msg);
+	resp->header.domain_number     = dds->domain;
+	resp->header.src_port_id       = port->port_ds.id;
+	resp->header.sequence_id       = req->header.sequence_id;
+	resp->header.log_msg_interval  = port->port_ds.log_min_delay_req_interval;
+
+	if (req->management.action == PTP_MGMT_GET ||
+	    req->management.action == PTP_MGMT_SET) {
+		resp->management.action = PTP_MGMT_RESP;
+	} else if (req->management.action == PTP_MGMT_CMD) {
+		resp->management.action = PTP_MGMT_ACK;
+	}
+
+	memcpy(&resp->management.target_port_id,
+	       &req->header.src_port_id,
+	       sizeof(struct ptp_port_id));
+
+	resp->management.starting_boundary_hops = req->management.starting_boundary_hops -
+						 req->management.boundary_hops;
+	resp->management.boundary_hops = resp->management.starting_boundary_hops;
+
+	return resp;
+}
+
+static int port_management_resp_tlv_fill(struct ptp_port *port,
+					 struct ptp_msg *req,
+					 struct ptp_msg *resp,
+					 struct ptp_tlv_mgmt *req_mgmt)
+{
+	int length = 0;
+	struct ptp_tlv_mgmt *mgmt;
+	struct ptp_tlv_default_ds *tlv_dds;
+	struct ptp_tlv_parent_ds *tlv_pds;
+	const struct ptp_parent_ds *pds = ptp_clock_parent_ds();
+	const struct ptp_current_ds *cds = ptp_clock_current_ds();
+	const struct ptp_default_ds *dds = ptp_clock_default_ds();
+	const struct ptp_time_prop_ds *tpds = ptp_clock_time_prop_ds();
+	struct ptp_tlv_container *container  = ptp_tlv_alloc();
+
+	if (!container) {
+		return -ENOMEM;
+	}
+
+	container->tlv = (struct ptp_tlv *)resp->management.suffix;
+	mgmt = (struct ptp_tlv_mgmt *)container->tlv;
+	mgmt->type = PTP_TLV_TYPE_MANAGEMENT;
+	mgmt->id = req_mgmt->id;
+
+	switch (mgmt->id) {
+	case PTP_MGMT_DEFAULT_DATA_SET:
+		tlv_dds = (struct ptp_tlv_default_ds *)mgmt->data;
+
+		length = sizeof(struct ptp_tlv_default_ds);
+		tlv_dds->flags = 0x1 | (dds->time_receiver_only << 1);
+		tlv_dds->n_ports = dds->n_ports;
+		tlv_dds->priority1 = dds->priority1;
+		tlv_dds->priority2 = dds->priority2;
+		tlv_dds->domain = dds->domain;
+		memcpy(&tlv_dds->clk_id, &dds->clk_id, sizeof(tlv_dds->clk_id));
+		memcpy(&tlv_dds->clk_quality, &dds->clk_quality, sizeof(tlv_dds->clk_quality));
+		break;
+	case PTP_MGMT_CURRENT_DATA_SET:
+		length = sizeof(struct ptp_tlv_current_ds);
+		memcpy(mgmt->data, cds, sizeof(struct ptp_tlv_current_ds));
+		break;
+	case PTP_MGMT_PARENT_DATA_SET:
+		tlv_pds = (struct ptp_tlv_parent_ds *)mgmt->data;
+
+		length = sizeof(struct ptp_tlv_parent_ds);
+
+		tlv_pds->obsreved_parent_offset_scaled_log_variance =
+			pds->obsreved_parent_offset_scaled_log_variance;
+		tlv_pds->obsreved_parent_clk_phase_change_rate =
+			pds->obsreved_parent_clk_phase_change_rate;
+		tlv_pds->gm_priority1 = pds->gm_priority1;
+		tlv_pds->gm_priority2 = pds->gm_priority2;
+		memcpy(&tlv_pds->port_id, &pds->port_id, sizeof(tlv_pds->port_id));
+		memcpy(&tlv_pds->gm_id, &pds->gm_id, sizeof(tlv_pds->gm_id));
+		memcpy(&tlv_pds->gm_clk_quality,
+		       &pds->gm_clk_quality,
+		       sizeof(tlv_pds->gm_clk_quality));
+
+		break;
+	case PTP_MGMT_TIME_PROPERTIES_DATA_SET:
+		length = sizeof(struct ptp_tlv_time_prop_ds);
+		memcpy(mgmt->data, tpds, sizeof(struct ptp_tlv_time_prop_ds));
+		break;
+	case PTP_MGMT_PORT_DATA_SET:
+		length = sizeof(struct ptp_tlv_port_ds);
+		memcpy(mgmt->data, &port->port_ds, sizeof(struct ptp_tlv_port_ds));
+		break;
+	case PTP_MGMT_PRIORITY1:
+		length = sizeof(dds->priority1);
+		*mgmt->data = dds->priority1;
+		break;
+	case PTP_MGMT_PRIORITY2:
+		length = sizeof(dds->priority2);
+		*mgmt->data = dds->priority2;
+		break;
+	case PTP_MGMT_DOMAIN:
+		length = sizeof(dds->domain);
+		*mgmt->data = dds->domain;
+		break;
+	case PTP_MGMT_TIME_RECEIVER_ONLY:
+		length = sizeof(dds->time_receiver_only);
+		*mgmt->data = dds->time_receiver_only;
+		break;
+	case PTP_MGMT_LOG_ANNOUNCE_INTERVAL:
+		length = sizeof(port->port_ds.log_announce_interval);
+		*mgmt->data = port->port_ds.log_announce_interval;
+		break;
+	case PTP_MGMT_LOG_SYNC_INTERVAL:
+		length = sizeof(port->port_ds.log_sync_interval);
+		*mgmt->data = port->port_ds.log_sync_interval;
+		break;
+	case PTP_MGMT_VERSION_NUMBER:
+		length = sizeof(port->port_ds.version);
+		*mgmt->data = port->port_ds.version;
+		break;
+	case PTP_MGMT_CLOCK_ACCURACY:
+		length = sizeof(dds->clk_quality.accuracy);
+		*mgmt->data = dds->clk_quality.accuracy;
+		break;
+	case PTP_MGMT_DELAY_MECHANISM:
+		length = sizeof(port->port_ds.delay_mechanism);
+		*(uint16_t *)mgmt->data = port->port_ds.delay_mechanism;
+		break;
+	default:
+		ptp_tlv_free(container);
+		return -EINVAL;
+	}
+
+	/* Management TLV length shall be an even number */
+	if (length % 2) {
+		mgmt->data[length] = 0;
+		length++;
+	}
+
+	container->tlv->length = sizeof(mgmt->id) + length;
+	resp->header.msg_length += sizeof(*container->tlv) + container->tlv->length;
+	sys_slist_append(&resp->tlvs, &container->node);
+
+	return 0;
+}
+
+static int port_management_set(struct ptp_port *port,
+			       struct ptp_msg *req,
+			       struct ptp_tlv_mgmt *tlv)
+{
+	bool send_resp = false;
+
+	switch (tlv->id) {
+	case PTP_MGMT_LOG_ANNOUNCE_INTERVAL:
+		port->port_ds.log_announce_interval = *tlv->data;
+		send_resp = true;
+		break;
+	case PTP_MGMT_LOG_SYNC_INTERVAL:
+		port->port_ds.log_sync_interval = *tlv->data;
+		send_resp = true;
+		break;
+	case PTP_MGMT_UNICAST_NEGOTIATION_ENABLE:
+		/* TODO unicast */
+		break;
+	default:
+		break;
+	}
+
+	return send_resp ? ptp_port_management_resp(port, req, tlv) : 0;
+}
+
 void ptp_port_init(struct net_if *iface, void *user_data)
 {
 	struct ptp_port *port;
@@ -571,5 +753,88 @@ int ptp_port_update_current_time_transmitter(struct ptp_port *port, struct ptp_m
 		return ptp_msg_announce_cmp(&msg->announce, &last->announce);
 	}
 
+	return 0;
+}
+
+int ptp_port_management_msg_process(struct ptp_port *port,
+				    struct ptp_port *ingress,
+				    struct ptp_msg *msg,
+				    struct ptp_tlv_mgmt *tlv)
+{
+	int ret = 0;
+	uint16_t target_port = msg->management.target_port_id.port_number;
+
+	if (target_port != port->port_ds.id.port_number && target_port != 0xFFFF) {
+		return ret;
+	}
+
+	if (ptp_mgmt_action(msg) == PTP_MGMT_SET) {
+		ret = port_management_set(port, msg, tlv);
+	} else {
+		ret = ptp_port_management_resp(port, msg, tlv);
+	}
+
+	return ret;
+}
+
+int ptp_port_management_error(struct ptp_port *port, struct ptp_msg *msg, enum ptp_mgmt_err err)
+{
+	int ret;
+	struct ptp_tlv *tlv;
+	struct ptp_tlv_mgmt_err *mgmt_err;
+	struct ptp_tlv_mgmt *mgmt = (struct ptp_tlv_mgmt *)msg->management.suffix;
+
+	struct ptp_msg *resp = port_management_resp_prepare(port, msg);
+
+	if (!resp) {
+		return -ENOMEM;
+	}
+
+	tlv = ptp_msg_add_tlv(resp, sizeof(struct ptp_tlv_mgmt_err));
+	if (!tlv) {
+		ptp_msg_unref(resp);
+		return -ENOMEM;
+	}
+
+	mgmt_err = (struct ptp_tlv_mgmt_err *)tlv;
+
+	mgmt_err->type = PTP_TLV_TYPE_MANAGEMENT_ERROR_STATUS;
+	mgmt_err->length = 8;
+	mgmt_err->err_id = err;
+	mgmt_err->id = mgmt->id;
+
+	ret = port_msg_send(port, resp, PTP_SOCKET_GENERAL);
+	ptp_msg_unref(resp);
+
+	if (ret) {
+		return -EFAULT;
+	}
+
+	LOG_DBG("Port %d sends Menagement Error message", port->port_ds.id.port_number);
+	return 0;
+}
+
+int ptp_port_management_resp(struct ptp_port *port, struct ptp_msg *req, struct ptp_tlv_mgmt *tlv)
+{
+	int ret;
+	struct ptp_msg *resp = port_management_resp_prepare(port, req);
+
+	if (!resp) {
+		return -ENOMEM;
+	}
+
+	ret = port_management_resp_tlv_fill(port, req, resp, tlv);
+	if (ret) {
+		return ret;
+	}
+
+	ret = port_msg_send(port, resp, PTP_SOCKET_GENERAL);
+	ptp_msg_unref(resp);
+
+	if (ret < 0) {
+		return -EFAULT;
+	}
+
+	LOG_DBG("Port %d sends Menagement message response", port->port_ds.id.port_number);
 	return 0;
 }
