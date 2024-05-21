@@ -288,6 +288,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		}
 
 		if (is_vlan_pkt) {
+			net_pkt_set_priority(pkt, net_vlan2priority(net_pkt_vlan_priority(pkt)));
 			net_pkt_set_iface(pkt,
 					  net_eth_get_vlan_iface(iface, net_pkt_vlan_tag(pkt)));
 
