@@ -12,6 +12,7 @@
 #include <DA1469xAB.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smartbond_entropy, CONFIG_ENTROPY_LOG_LEVEL);
@@ -46,6 +47,10 @@ struct entropy_smartbond_dev_data {
 
 	RNG_POOL_DEFINE(isr, CONFIG_ENTROPY_SMARTBOND_ISR_POOL_SIZE);
 	RNG_POOL_DEFINE(thr, CONFIG_ENTROPY_SMARTBOND_THR_POOL_SIZE);
+
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+	ATOMIC_DEFINE(pm_policy_state_flag, 1);
+#endif
 };
 
 static struct entropy_smartbond_dev_data entropy_smartbond_data;
@@ -57,6 +62,33 @@ static struct entropy_smartbond_dev_data entropy_smartbond_data;
 #define FIFO_COUNT_MASK                                                                            \
 	(TRNG_TRNG_FIFOLVL_REG_TRNG_FIFOFULL_Msk | TRNG_TRNG_FIFOLVL_REG_TRNG_FIFOLVL_Msk)
 
+static inline void entropy_smartbond_pm_policy_state_lock_get(const struct device *dev)
+{
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+	struct entropy_smartbond_dev_data *data = dev->data;
+
+	if (atomic_test_and_set_bit(data->pm_policy_state_flag, 0) == 0) {
+		/*
+		 * Prevent the SoC from etering the normal sleep state as PDC does not support
+		 * waking up the application core following TRNG events.
+		 */
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+#endif
+}
+
+static inline void entropy_smartbond_pm_policy_state_lock_put(const struct device *dev)
+{
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+	struct entropy_smartbond_dev_data *data = dev->data;
+
+	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, 0) == 1) {
+		/* Allow the SoC to enter the nornmal sleep state once TRNG is inactive */
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+#endif
+}
+
 static void trng_enable(bool enable)
 {
 	unsigned int key;
@@ -65,9 +97,17 @@ static void trng_enable(bool enable)
 	if (enable) {
 		CRG_TOP->CLK_AMBA_REG |= CRG_TOP_CLK_AMBA_REG_TRNG_CLK_ENABLE_Msk;
 		TRNG->TRNG_CTRL_REG = TRNG_TRNG_CTRL_REG_TRNG_ENABLE_Msk;
+
+		/*
+		 * Sleep is not allowed as long as the ISR and thread SW FIFOs
+		 * are being filled with random numbers.
+		 */
+		entropy_smartbond_pm_policy_state_lock_get(DEVICE_DT_INST_GET(0));
 	} else {
 		CRG_TOP->CLK_AMBA_REG &= ~CRG_TOP_CLK_AMBA_REG_TRNG_CLK_ENABLE_Msk;
 		TRNG->TRNG_CTRL_REG = 0;
+
+		entropy_smartbond_pm_policy_state_lock_put(DEVICE_DT_INST_GET(0));
 	}
 	irq_unlock(key);
 }
@@ -340,25 +380,12 @@ static int entropy_smartbond_get_entropy_isr(const struct device *dev, uint8_t *
 }
 
 #if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
-/*
- * TRNG is powered by PD_SYS which is the same power domain used to power the SoC.
- * Entering the sleep state should not be allowed for as long as the ISR and thread
- * SW FIFOs are being filled with random numbers.
- */
-static inline bool entropy_is_sleep_allowed(void)
-{
-	return !(TRNG->TRNG_CTRL_REG & TRNG_TRNG_CTRL_REG_TRNG_ENABLE_Msk);
-}
-
 static int entropy_smartbond_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	/* Initialize with an error code that should abort sleeping */
-	int ret = -EBUSY;
+	int ret = 0;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		__ASSERT_NO_MSG(entropy_is_sleep_allowed());
-
 		/*
 		 * No need to turn on TRNG. It should be done when we the space in the FIFOs
 		 * are below the defined ISR and thread FIFO's thresholds.
@@ -367,14 +394,9 @@ static int entropy_smartbond_pm_action(const struct device *dev, enum pm_device_
 		 * \sa CONFIG_ENTROPY_SMARTBOND_ISR_THRESHOLD
 		 *
 		 */
-		ret = 0;
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		/* Sleep is only allowed when there is no TRNG activity */
-		if (entropy_is_sleep_allowed()) {
-			/* At this point TRNG should be disabled; no need to turn it off. */
-			ret = 0;
-		}
+		/* At this point TRNG should be disabled; no need to turn it off. */
 		break;
 	default:
 		ret = -ENOTSUP;
