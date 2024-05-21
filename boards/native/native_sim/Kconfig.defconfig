@@ -37,11 +37,5 @@ config UART_CONSOLE
 
 endif # CONSOLE
 
-if I2C
-
-config EMUL
-	default y
-
-endif # I2C
 
 endif # BOARD_NATIVE_SIM
