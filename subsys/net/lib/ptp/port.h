@@ -144,6 +144,15 @@ bool ptp_port_id_eq(const struct ptp_port_id *p1, const struct ptp_port_id *p2);
 struct ptp_dataset *ptp_port_best_foreign_ds(struct ptp_port *port);
 
 /**
+ * @brief Compute PTP Port's best Foreign TimeTransmitter Clock.
+ *
+ * @param[in] port Pointer to the PTP Port.
+ *
+ * @return Pointer to the PTP Port's best Foreign TimeTransmitter.
+ */
+struct ptp_foreign_tt_clock *ptp_port_best_foreign(struct ptp_port *port);
+
+/**
  * @brief Function adding foreign TimeTransmitter Clock for the PTP Port based on specified message.
  *
  * @param[in] port Pointer to the PTP Port.
