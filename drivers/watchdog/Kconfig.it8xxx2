@@ -5,6 +5,7 @@ config WDT_ITE_IT8XXX2
 	bool "ITE it8xxx2 Watchdog Timer (WDT) driver"
 	default y
 	depends on DT_HAS_ITE_IT8XXX2_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
 	help
 	  This option enables the Watchdog Timer driver for ITE it8xxx2.
 	  This driver supports only one channel that id is 0 and 16-bits

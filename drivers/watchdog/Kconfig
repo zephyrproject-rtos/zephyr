@@ -11,8 +11,12 @@ menuconfig WATCHDOG
 
 if WATCHDOG
 
+config HAS_WDT_DISABLE_AT_BOOT
+	bool
+
 config WDT_DISABLE_AT_BOOT
 	bool "Disable at boot"
+	depends on HAS_WDT_DISABLE_AT_BOOT
 	help
 	  Disable watchdog at Zephyr system startup.
 
