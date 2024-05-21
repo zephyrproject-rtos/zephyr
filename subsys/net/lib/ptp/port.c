@@ -845,6 +845,56 @@ static int port_management_set(struct ptp_port *port,
 	return send_resp ? ptp_port_management_resp(port, req, tlv) : 0;
 }
 
+static int port_enable(struct ptp_port *port)
+{
+	while (!net_if_is_up(port->iface)) {
+		return -1;
+	}
+	if (ptp_transport_open(port)) {
+		LOG_ERR("Couldn't open socket on Port %d.", port->port_ds.id.port_number);
+		return -1;
+	}
+
+	port->port_ds.enable = true;
+
+	ptp_clock_pollfd_invalidate();
+	LOG_DBG("Port %d opened", port->port_ds.id.port_number);
+	return 0;
+}
+
+static bool port_is_enabled(struct ptp_port *port)
+{
+	enum ptp_port_state state = ptp_port_state(port);
+
+	if (state == PTP_PS_FAULTY ||
+	    state == PTP_PS_DISABLED ||
+	    state == PTP_PS_INITIALIZING) {
+		return false;
+	}
+	return true;
+}
+
+static void port_disable(struct ptp_port *port)
+{
+	k_timer_stop(&port->timers.announce);
+	k_timer_stop(&port->timers.delay);
+	k_timer_stop(&port->timers.sync);
+	k_timer_stop(&port->timers.qualification);
+
+	atomic_clear(&port->timeouts);
+
+	ptp_transport_close(port);
+	ptp_port_free_foreign_tts(port);
+	port->best = NULL;
+
+	net_if_unregister_timestamp_cb(&port->sync_ts_cb);
+	net_if_unregister_timestamp_cb(&port->delay_req_ts_cb);
+
+	ptp_clock_pollfd_invalidate();
+	port->port_ds.enable = false;
+	LOG_DBG("Port %d disabled", port->port_ds.id.port_number);
+}
+
 void ptp_port_init(struct net_if *iface, void *user_data)
 {
 	struct ptp_port *port;
