@@ -7,8 +7,12 @@ toolchain:
   - zephyr
 supported:
   - gpio
+  - watchdog
   - uart
+  - spi
 testing:
   ignore_tags:
     - net
     - bluetooth
+    - pm
+    - tracing

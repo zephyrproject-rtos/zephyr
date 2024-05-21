@@ -8,6 +8,7 @@
 
 #include <espressif/esp32c6/esp32c6_wroom_n8.dtsi>
 #include "esp32c6_devkitc-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "esp32c6_devkitc";
@@ -31,6 +32,7 @@
 		user_button1: button_1 {
 			label = "User SW1";
 			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };
