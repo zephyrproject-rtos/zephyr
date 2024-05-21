@@ -448,6 +448,18 @@ void bt_mesh_adv_init(void)
 	for (int i = 0; i < ARRAY_SIZE(advs); i++) {
 		(void)memcpy(&advs[i].adv_param, &adv_param, sizeof(adv_param));
 	}
+
+#if defined(CONFIG_BT_LL_SOFTDEVICE)
+	const sdc_hci_cmd_vs_scan_accept_ext_adv_packets_set_t cmd_params = {
+		.accept_ext_adv_packets = IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_ACCEPT_EXT_ADV_PACKETS),
+	};
+
+	int err = sdc_hci_cmd_vs_scan_accept_ext_adv_packets_set(&cmd_params);
+
+	if (err) {
+		LOG_ERR("Failed to set accept_ext_adv_packets: %d", err);
+	}
+#endif
 }
 
 static struct bt_mesh_ext_adv *adv_instance_find(struct bt_le_ext_adv *instance)
