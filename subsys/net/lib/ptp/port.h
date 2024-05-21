@@ -17,6 +17,7 @@
 #include <stdbool.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/net/net_if.h>
 
 #include "ds.h"
 #include "state_machine.h"

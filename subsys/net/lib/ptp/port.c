@@ -18,6 +18,8 @@ LOG_MODULE_REGISTER(ptp_port, CONFIG_PTP_LOG_LEVEL);
 #include "tlv.h"
 #include "transport.h"
 
+#define DEFAULT_LOG_MSG_INTERVAL (0x7F)
+
 #define PORT_DELAY_REQ_CLEARE_TO (3 * NSEC_PER_SEC)
 
 static struct ptp_port ports[CONFIG_PTP_NUM_PORTS];
@@ -52,6 +54,13 @@ const char *port_id_str(struct ptp_port_id *port_id)
 	return str_port_id;
 }
 
+static int port_msg_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
+{
+	ptp_msg_pre_send(msg);
+
+	return ptp_transport_send(port, msg, idx);
+}
+
 static void port_synchronize(struct ptp_port *port,
 			     struct net_ptp_time ingress_ts,
 			     struct net_ptp_time origin_ts,
@@ -84,6 +93,211 @@ static void port_ds_init(struct ptp_port *port)
 	ds->log_min_pdelay_req_interval = CONFIG_PTP_MIN_PDELAY_REQ_LOG_INTERVAL;
 	ds->version			= PTP_VERSION;
 	ds->delay_asymmetry		= 0;
+}
+
+static void port_delay_req_timestamp_cb(struct net_pkt *pkt)
+{
+	struct ptp_port *port = ptp_clock_port_from_iface(pkt->iface);
+	struct ptp_msg *req, *msg = ptp_msg_from_pkt(pkt);
+	sys_snode_t *iter, *last = NULL;
+
+	if (!port || !msg) {
+		return;
+	}
+
+	msg->header.src_port_id.port_number = ntohs(msg->header.src_port_id.port_number);
+
+	if (!ptp_port_id_eq(&port->port_ds.id, &msg->header.src_port_id) ||
+	    ptp_msg_type(msg) != PTP_MSG_DELAY_REQ) {
+		return;
+	}
+
+	for (iter = sys_slist_peek_head(&port->delay_req_list);
+	     iter;
+	     iter = sys_slist_peek_next(iter), last = iter) {
+
+		req =  CONTAINER_OF(iter, struct ptp_msg, node);
+
+		if (req->header.sequence_id != msg->header.sequence_id) {
+			continue;
+		}
+
+		if (pkt->timestamp.second == UINT64_MAX ||
+		    (pkt->timestamp.second == 0 && pkt->timestamp.nanosecond == 0)) {
+			net_if_unregister_timestamp_cb(&port->delay_req_ts_cb);
+			sys_slist_remove(&port->delay_req_list, last, iter);
+			ptp_msg_unref(req);
+			return;
+		}
+
+		req->timestamp.host._sec.high = ntohs(pkt->timestamp._sec.high);
+		req->timestamp.host._sec.low = ntohl(pkt->timestamp._sec.low);
+		req->timestamp.host.nanosecond = ntohl(pkt->timestamp.nanosecond);
+
+		LOG_DBG("Port %d registered timestamp for %d Delay_Req",
+			port->port_ds.id.port_number,
+			ntohs(msg->header.sequence_id));
+
+		if (iter == sys_slist_peek_tail(&port->delay_req_list)) {
+			net_if_unregister_timestamp_cb(&port->delay_req_ts_cb);
+		}
+	}
+}
+
+static void port_sync_timestamp_cb(struct net_pkt *pkt)
+{
+	struct ptp_port *port = ptp_clock_port_from_iface(pkt->iface);
+	struct ptp_msg *msg = ptp_msg_from_pkt(pkt);
+
+	if (!port || !msg) {
+		return;
+	}
+
+	msg->header.src_port_id.port_number = ntohs(msg->header.src_port_id.port_number);
+
+	if (ptp_port_id_eq(&port->port_ds.id, &msg->header.src_port_id) &&
+	    ptp_msg_type(msg) == PTP_MSG_SYNC) {
+
+		const struct ptp_default_ds *dds = ptp_clock_default_ds();
+		const struct ptp_time_prop_ds *tpds = ptp_clock_time_prop_ds();
+		struct ptp_msg *resp = ptp_msg_alloc();
+
+		if (!resp) {
+			return;
+		}
+
+		resp->header.type_major_sdo_id = PTP_MSG_FOLLOW_UP;
+		resp->header.version	       = PTP_VERSION;
+		resp->header.msg_length	       = sizeof(struct ptp_follow_up_msg);
+		resp->header.domain_number     = dds->domain;
+		resp->header.flags[1]	       = tpds->flags;
+		resp->header.src_port_id       = port->port_ds.id;
+		resp->header.sequence_id       = port->seq_id.sync++;
+		resp->header.log_msg_interval  = port->port_ds.log_sync_interval;
+
+		resp->follow_up.precise_origin_timestamp.seconds_high = pkt->timestamp._sec.high;
+		resp->follow_up.precise_origin_timestamp.seconds_low = pkt->timestamp._sec.low;
+		resp->follow_up.precise_origin_timestamp.nanoseconds = pkt->timestamp.nanosecond;
+
+		net_if_unregister_timestamp_cb(&port->sync_ts_cb);
+
+		port_msg_send(port, resp, PTP_SOCKET_GENERAL);
+		ptp_msg_unref(resp);
+
+		LOG_DBG("Port %d sends Follow_Up message", port->port_ds.id.port_number);
+	}
+}
+
+static int port_announce_msg_transmit(struct ptp_port *port)
+{
+	const struct ptp_parent_ds *pds = ptp_clock_parent_ds();
+	const struct ptp_current_ds *cds = ptp_clock_current_ds();
+	const struct ptp_default_ds *dds = ptp_clock_default_ds();
+	const struct ptp_time_prop_ds *tpds = ptp_clock_time_prop_ds();
+	struct ptp_msg *msg = ptp_msg_alloc();
+	int ret;
+
+	if (!msg) {
+		return -ENOMEM;
+	}
+
+	msg->header.type_major_sdo_id = PTP_MSG_ANNOUNCE;
+	msg->header.version	      = PTP_VERSION;
+	msg->header.msg_length	      = sizeof(struct ptp_announce_msg);
+	msg->header.domain_number     = dds->domain;
+	msg->header.flags[1]	      = tpds->flags;
+	msg->header.src_port_id	      = port->port_ds.id;
+	msg->header.sequence_id	      = port->seq_id.announce++;
+	msg->header.log_msg_interval  = port->port_ds.log_sync_interval;
+
+	msg->announce.current_utc_offset = tpds->current_utc_offset;
+	msg->announce.gm_priority1	 = pds->gm_priority1;
+	msg->announce.gm_clk_quality	 = pds->gm_clk_quality;
+	msg->announce.gm_priority2	 = pds->gm_priority2;
+	msg->announce.gm_id		 = pds->gm_id;
+	msg->announce.steps_rm		 = cds->steps_rm;
+	msg->announce.time_src		 = tpds->time_src;
+
+	ret = port_msg_send(port, msg, PTP_SOCKET_GENERAL);
+	ptp_msg_unref(msg);
+
+	if (ret < 0) {
+		return -EFAULT;
+	}
+
+	LOG_DBG("Port %d sends Announce message", port->port_ds.id.port_number);
+	return 0;
+}
+
+static int port_delay_req_msg_transmit(struct ptp_port *port)
+{
+	const struct ptp_default_ds *dds = ptp_clock_default_ds();
+	struct ptp_msg *msg = ptp_msg_alloc();
+	int ret;
+
+	if (!msg) {
+		return -ENOMEM;
+	}
+
+	msg->header.type_major_sdo_id = PTP_MSG_DELAY_REQ;
+	msg->header.version	      = PTP_VERSION;
+	msg->header.msg_length	      = sizeof(struct ptp_delay_req_msg);
+	msg->header.domain_number     = dds->domain;
+	msg->header.src_port_id	      = port->port_ds.id;
+	msg->header.sequence_id	      = port->seq_id.delay++;
+	msg->header.log_msg_interval  = DEFAULT_LOG_MSG_INTERVAL;
+
+	net_if_register_timestamp_cb(&port->delay_req_ts_cb,
+				     NULL,
+				     port->iface,
+				     port_delay_req_timestamp_cb);
+
+	ret = port_msg_send(port, msg, PTP_SOCKET_EVENT);
+	if (ret < 0) {
+		ptp_msg_unref(msg);
+		return -EFAULT;
+	}
+
+	sys_slist_append(&port->delay_req_list, &msg->node);
+
+	LOG_DBG("Port %d sends Delay_Req message", port->port_ds.id.port_number);
+	return 0;
+}
+
+static int port_sync_msg_transmit(struct ptp_port *port)
+{
+	const struct ptp_default_ds *dds = ptp_clock_default_ds();
+	const struct ptp_time_prop_ds *tpds = ptp_clock_time_prop_ds();
+	struct ptp_msg *msg = ptp_msg_alloc();
+	int ret;
+
+	if (!msg) {
+		return -ENOMEM;
+	}
+
+	msg->header.type_major_sdo_id = PTP_MSG_SYNC;
+	msg->header.version	      = PTP_VERSION;
+	msg->header.msg_length	      = sizeof(struct ptp_sync_msg);
+	msg->header.domain_number     = dds->domain;
+	msg->header.flags[0]	      = PTP_MSG_TWO_STEP_FLAG;
+	msg->header.flags[1]	      = tpds->flags;
+	msg->header.src_port_id	      = port->port_ds.id;
+	msg->header.sequence_id	      = port->seq_id.sync;
+	msg->header.log_msg_interval  = port->port_ds.log_sync_interval;
+
+	net_if_register_timestamp_cb(&port->sync_ts_cb,
+				     NULL,
+				     port->iface,
+				     port_sync_timestamp_cb);
+
+	ret = port_msg_send(port, msg, PTP_SOCKET_EVENT);
+	ptp_msg_unref(msg);
+
+	if (ret < 0) {
+		return -EFAULT;
+	}
+	LOG_DBG("Port %d sends Sync message", port->port_ds.id.port_number);
+	return 0;
 }
 
 static void port_timer_init(struct k_timer *timer, k_timer_expiry_t timeout_fn, void *user_data)
@@ -191,13 +405,6 @@ static void port_clear_delay_req(struct ptp_port *port)
 		sys_slist_remove(&port->delay_req_list, prev, &msg->node);
 		prev = &msg->node;
 	}
-}
-
-static int port_msg_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
-{
-	ptp_msg_pre_send(msg);
-
-	return ptp_transport_send(port, msg, idx);
 }
 
 static void port_sync_fup_ooo_handle(struct ptp_port *port, struct ptp_msg *msg)

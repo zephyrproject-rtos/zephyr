@@ -148,6 +148,16 @@ const struct ptp_dataset *ptp_clock_ds(void);
 const struct ptp_dataset *ptp_clock_best_foreign_ds(void);
 
 /**
+ * @brief Get PTP Port from network interface.
+ *
+ * @param[in] iface Pointer to the network interface.
+ *
+ * @return Pointer to the PTP Port binded with given interface. If no PTP Port assigned
+ * to the interface NULL is returned.
+ */
+struct ptp_port *ptp_clock_port_from_iface(struct net_if *iface);
+
+/**
  * @brief Function invalidating PTP Clock's array of file descriptors used for sockets.
  */
 void ptp_clock_pollfd_invalidate(void);
