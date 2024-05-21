@@ -281,8 +281,9 @@ Using LinkServer
 ----------------
 
 Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
-search path.  LinkServer works with the default CMSIS-DAP firmware included in
-the on-board debugger.
+search path.  LinkServer works with the CMSIS-DAP firmware include in LinkServer
+install. Please follow the ``LPCScrypt\docs\Debug_Probe_Firmware_Programming.pdf``
+for more details.
 
 Linkserver is the default runner. You may also se the ``-r linkserver`` option
 with West to use the LinkServer runner.
