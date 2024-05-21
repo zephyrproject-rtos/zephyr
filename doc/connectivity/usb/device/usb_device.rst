@@ -110,7 +110,7 @@ and looks like this:
 		};
 	};
 
-Samples :zephyr:code-sample:`usb-cdc-acm` and :zephyr:code-sample:`usb-hid-cdc` have similar overlay files.
+Sample :zephyr:code-sample:`usb-cdc-acm` has similar overlay files.
 And since no special properties are present, it may seem overkill to use
 devicetree to describe CDC ACM UART.  The motivation behind using devicetree
 is the easy interchangeability of a real UART controller and CDC ACM UART
@@ -579,7 +579,7 @@ The following Product IDs are currently used:
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`usb-cdc-acm-composite`        | 0x0002 |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-hid-cdc`                  | 0x0003 |
+| Reserved (previously: usb-hid-cdc)                 | 0x0003 |
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`usb-cdc-acm-console`          | 0x0004 |
 +----------------------------------------------------+--------+
