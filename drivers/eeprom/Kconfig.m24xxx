@@ -1,0 +1,16 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_M24XXX
+	bool "ST Automotive I2C EEPROM"
+	default y
+	depends on DT_HAS_ST_M24M02_A125_ENABLED || \
+		   DT_HAS_ST_M24M01_A125_ENABLED || \
+		   DT_HAS_ST_M24C64_A125_ENABLED || \
+		   DT_HAS_ST_M24C32_A125_ENABLED || \
+		   DT_HAS_ST_M24C16_A125_ENABLED || \
+		   DT_HAS_ST_M24C08_A125_ENABLED || \
+		   DT_HAS_ST_M24C04_A125_ENABLED
+	select I2C
+	help
+	  Enable ST Automotive I2C EEPROM
