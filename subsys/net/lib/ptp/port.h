@@ -95,6 +95,16 @@ void ptp_port_init(struct net_if *iface, void *user_data);
 enum ptp_port_state ptp_port_state(struct ptp_port *port);
 
 /**
+ * @brief Function generating PTP Port events based on PTP Port's timers.
+ *
+ * @param[in] port  Pointer to the PTP Port structure.
+ * @param[in] timer Pointer to the PTP Port's timer to be checked.
+ *
+ * @return PTP Port event.
+ */
+enum ptp_port_event ptp_port_timer_event_gen(struct ptp_port *port, struct k_timer *timer);
+
+/**
  * @brief Function checking if two port identities are equal.
  *
  * @param[in] p1 Pointer to the port identity structure.
