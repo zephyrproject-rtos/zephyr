@@ -780,11 +780,8 @@ quit:
 
 static int recv_data(struct net_socket_service_event *pev)
 {
-	COND_CODE_1(IS_ENABLED(CONFIG_NET_IPV6),
-		    (struct sockaddr_in6), (struct sockaddr_in)) addr;
 	struct dns_resolve_context *ctx = pev->user_data;
 	socklen_t optlen = sizeof(int);
-	size_t addrlen = sizeof(addr);
 	struct net_buf *dns_cname = NULL;
 	struct net_buf *dns_data = NULL;
 	uint16_t query_hash = 0U;
@@ -824,7 +821,7 @@ static int recv_data(struct net_socket_service_event *pev)
 
 	ret = zsock_recvfrom(pev->event.fd, dns_data->data,
 			     net_buf_max_len(dns_data), 0,
-			     (struct sockaddr *)&addr, &addrlen);
+			     NULL, NULL);
 	if (ret < 0) {
 		ret = -errno;
 		NET_ERR("recv failed on IPv%d socket (%d)",
