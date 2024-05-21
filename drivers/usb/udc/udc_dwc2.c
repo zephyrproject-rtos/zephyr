@@ -1258,6 +1258,16 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 	dxepctl_reg = dwc2_get_dxepctl_reg(dev, cfg->addr);
 	dxepctl = sys_read32(dxepctl_reg);
 
+	if (dxepctl & USB_DWC2_DEPCTL_NAKSTS) {
+		/* Endpoint already sends forced NAKs. STALL if necessary. */
+		if (stall) {
+			dxepctl |= USB_DWC2_DEPCTL_STALL;
+			sys_write32(dxepctl, dxepctl_reg);
+		}
+
+		return;
+	}
+
 	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
 		mem_addr_t dctl_reg, gintsts_reg, doepint_reg;
 		uint32_t dctl;
@@ -1278,7 +1288,11 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 
 		dwc2_wait_for_bit(gintsts_reg, USB_DWC2_GINTSTS_GOUTNAKEFF);
 
-		dxepctl |= USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_EPDIS;
+		/* The application cannot disable control OUT endpoint 0. */
+		if (ep_idx != 0) {
+			dxepctl |= USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_EPDIS;
+		}
+
 		if (stall) {
 			/* For OUT endpoints STALL is set instead of SNAK */
 			dxepctl |= USB_DWC2_DEPCTL_STALL;
@@ -1287,7 +1301,9 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 		}
 		sys_write32(dxepctl, dxepctl_reg);
 
-		dwc2_wait_for_bit(doepint_reg, USB_DWC2_DOEPINT_EPDISBLD);
+		if (ep_idx != 0) {
+			dwc2_wait_for_bit(doepint_reg, USB_DWC2_DOEPINT_EPDISBLD);
+		}
 
 		/* Clear Endpoint Disabled interrupt */
 		sys_write32(USB_DWC2_DIEPINT_EPDISBLD, doepint_reg);
@@ -1712,9 +1728,6 @@ static int udc_dwc2_disable(const struct device *dev)
 	sys_set_bits(dctl_reg, USB_DWC2_DCTL_SFTDISCON);
 	LOG_DBG("Disable device %p", dev);
 
-	config->irq_disable_func(dev);
-	sys_clear_bits((mem_addr_t)&base->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
-
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
 		LOG_DBG("Failed to disable control endpoint");
 		return -EIO;
@@ -1724,6 +1737,9 @@ static int udc_dwc2_disable(const struct device *dev)
 		LOG_DBG("Failed to disable control endpoint");
 		return -EIO;
 	}
+
+	config->irq_disable_func(dev);
+	sys_clear_bits((mem_addr_t)&base->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
 
 	err = dwc2_quirk_disable(dev);
 	if (err) {
