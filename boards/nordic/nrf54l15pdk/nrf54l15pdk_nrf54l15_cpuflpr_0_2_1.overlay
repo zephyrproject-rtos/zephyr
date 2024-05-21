@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nrf54l15pdk_nrf54l15_common_0_3_0.dtsi"
+#include "nrf54l15pdk_nrf54l15_common_0_2_1.dtsi"
