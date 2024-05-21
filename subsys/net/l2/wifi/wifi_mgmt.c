@@ -649,13 +649,13 @@ static int wifi_set_twt(uint32_t mgmt_request, struct net_if *iface,
 			WIFI_TWT_FAIL_PEER_NOT_HE_CAPAB;
 		goto fail;
 	}
-*/
+
 	if (!info.twt_capable) {
 		twt_params->fail_reason =
 			WIFI_TWT_FAIL_PEER_NOT_TWT_CAPAB;
 		goto fail;
 	}
-*/
+
 	return wifi_mgmt_api->set_twt(dev, twt_params);
 fail:
 	return -ENOEXEC;
@@ -663,6 +663,35 @@ fail:
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_TWT, wifi_set_twt);
+
+static int wifi_set_btwt(uint32_t mgmt_request, struct net_if *iface,
+			  void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_twt_params *twt_params = data;
+	struct wifi_iface_status info = { 0 };
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->set_btwt == NULL) {
+		twt_params->fail_reason =
+			WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED;
+		return -ENOTSUP;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &info,
+			sizeof(struct wifi_iface_status))) {
+		twt_params->fail_reason =
+			WIFI_TWT_FAIL_UNABLE_TO_GET_IFACE_STATUS;
+		goto fail;
+	}
+
+	return wifi_mgmt_api->set_btwt(dev, twt_params);
+fail:
+	return -ENOEXEC;
+
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BTWT, wifi_set_btwt);
 
 void wifi_mgmt_raise_twt_event(struct net_if *iface, struct wifi_twt_params *twt_params)
 {
