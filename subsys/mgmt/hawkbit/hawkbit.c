@@ -506,6 +506,11 @@ int32_t hawkbit_get_action_id(void)
 	return hb_cfg.action_id;
 }
 
+uint32_t hawkbit_get_poll_interval(void)
+{
+	return poll_sleep;
+}
+
 /*
  * Update sleep interval, based on results from hawkBit base polling
  * resource
