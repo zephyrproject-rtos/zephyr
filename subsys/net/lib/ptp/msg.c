@@ -8,12 +8,14 @@
 LOG_MODULE_REGISTER(ptp_msg, CONFIG_PTP_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
+#include <zephyr/net/udp.h>
 #include <zephyr/net/ptp.h>
 
 #include "clock.h"
 #include "msg.h"
 #include "port.h"
 #include "tlv.h"
+#include "transport.h"
 
 static struct k_mem_slab msg_slab;
 
@@ -255,6 +257,54 @@ void ptp_msg_ref(struct ptp_msg *msg)
 enum ptp_msg_type ptp_msg_type(const struct ptp_msg *msg)
 {
 	return (enum ptp_msg_type)(msg->header.type_major_sdo_id & 0xF);
+}
+
+struct ptp_msg *ptp_msg_from_pkt(struct net_pkt *pkt)
+{
+	static const size_t eth_hdr_len = IS_ENABLED(CONFIG_NET_VLAN) ?
+					  sizeof(struct net_eth_vlan_hdr) :
+					  sizeof(struct net_eth_hdr);
+	struct net_udp_hdr *hdr;
+	struct ptp_msg *msg;
+	int port, payload;
+
+	if (pkt->buffer->len == eth_hdr_len) {
+		/* Packet contain Ethernet header at the beginning. */
+		struct net_buf *buf;
+
+		/* remove packet temporarly. */
+		buf = pkt->buffer;
+		pkt->buffer = buf->frags;
+
+		hdr = net_udp_get_hdr(pkt, NULL);
+
+		/* insert back temporarly femoved frag. */
+		net_pkt_frag_insert(pkt, buf);
+	} else {
+		hdr = net_udp_get_hdr(pkt, NULL);
+	}
+
+	payload = ntohs(hdr->len) - NET_UDPH_LEN;
+
+	if (!hdr) {
+		LOG_ERR("Couldn't retrieve UDP header from the net packet");
+		return NULL;
+	}
+
+	port = ntohs(hdr->dst_port);
+
+	if (port != PTP_SOCKET_PORT_EVENT && port != PTP_SOCKET_PORT_GENERAL) {
+		LOG_ERR("Couldn't retrieve PTP message from the net packet");
+		return NULL;
+	}
+
+	msg = (struct ptp_msg *)((uintptr_t)hdr + NET_UDPH_LEN);
+
+	if (payload == ntohs(msg->header.msg_length)) {
+		return msg;
+	}
+
+	return NULL;
 }
 
 void ptp_msg_pre_send(struct ptp_msg *msg)
