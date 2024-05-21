@@ -119,6 +119,20 @@ const struct ptp_default_ds *ptp_clock_default_ds(void);
 const struct ptp_parent_ds *ptp_clock_parent_ds(void);
 
 /**
+ * @brief Function for getting PTP Clock Current dataset.
+ *
+ * @return Pointer to the structure representing PTP Clock instance's Current dataset.
+ */
+const struct ptp_current_ds *ptp_clock_current_ds(void);
+
+/**
+ * @brief Function for getting PTP Clock Time Properties dataset.
+ *
+ * @return Pointer to the structure representing PTP Clock instance's Time Properties dataset.
+ */
+const struct ptp_time_prop_ds *ptp_clock_time_prop_ds(void);
+
+/**
  * @brief Function for getting a common dataset for the clock's default dataset.
  *
  * @return Pointer to the common dataset that contain data from ptp_default_ds structure.
@@ -152,6 +166,16 @@ void ptp_clock_port_add(struct ptp_port *port);
  * NULL if there is no Foreign TimeTransmitter.
  */
 const struct ptp_foreign_tt_clock *ptp_clock_best_time_transmitter(void);
+
+/**
+ * @brief Function checking if given PTP Clock IDs are the same.
+ *
+ * @param[in] c1 Pointer to the PTP Clock ID.
+ * @param[in] c2 Pointer to the PTP Clock ID.
+ *
+ * @return True if the same, false otherwise.
+ */
+bool ptp_clock_id_eq(const ptp_clk_id *c1, const ptp_clk_id *c2);
 
 #ifdef __cplusplus
 }
