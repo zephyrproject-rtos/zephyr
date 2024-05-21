@@ -15,7 +15,6 @@ menuconfig HAWKBIT
 	depends on DNS_RESOLVER
 	depends on JSON_LIBRARY
 	depends on BOOTLOADER_MCUBOOT
-	select EVENTS
 	select MPU_ALLOW_FLASH_WRITE
 	select IMG_ENABLE_IMAGE_CHECK
 	select IMG_ERASE_PROGRESSIVELY
@@ -34,9 +33,17 @@ config HAWKBIT_POLL_INTERVAL
 	  This time interval is zero and 43200 minutes(30 days). This will be overridden
 	  by the value configured in the settings of the hawkBit server.
 
+config HAWKBIT_AUTOHANDLER
+	bool "hawkBit autohandler"
+	select EVENTS
+	default y
+	help
+	  Activate autohandler to handle the update process automatically.
+
 config HAWKBIT_SHELL
 	bool "hawkBit shell utilities"
 	depends on SHELL
+	depends on HAWKBIT_AUTOHANDLER
 	help
 	  Activate shell module that provides hawkBit commands.
 
