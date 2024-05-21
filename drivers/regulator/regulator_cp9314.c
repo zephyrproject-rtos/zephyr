@@ -119,6 +119,7 @@ LOG_MODULE_REGISTER(CP9314, CONFIG_REGULATOR_LOG_LEVEL);
 #define CP9314_REG_BC_STS_C  0x62
 #define CP9314_CHIP_REV_MASK GENMASK(7, 4)
 #define CP9314_CHIP_REV_B0   0x1
+#define CP9314_CHIP_REV_B1   0x3
 
 #define CP9314_REG_FORCE_SC_MISC 0x69
 #define CP9314_FORCE_CSI_EN      BIT(0)
@@ -524,6 +525,8 @@ static int regulator_cp9314_init(const struct device *dev)
 		if (ret < 0) {
 			return ret;
 		}
+		break;
+	case CP9314_CHIP_REV_B1:
 		break;
 	default:
 		LOG_ERR("Invalid CP9314 REV:0x%x\n", value);
