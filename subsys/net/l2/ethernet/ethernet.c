@@ -268,27 +268,37 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 	type = ntohs(hdr->type);
 
-	if (IS_ENABLED(CONFIG_NET_VLAN) && type == NET_ETH_PTYPE_VLAN) {
-		if (net_eth_is_vlan_enabled(ctx, iface) &&
-		    !eth_is_vlan_tag_stripped(iface)) {
+	if (IS_ENABLED(CONFIG_NET_VLAN) && net_eth_is_vlan_enabled(ctx, iface)) {
+		if (type == NET_ETH_PTYPE_VLAN) {
 			struct net_eth_vlan_hdr *hdr_vlan =
 				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-			enum net_verdict verdict;
-
-			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
-			type = ntohs(hdr_vlan->type);
-			hdr_len = sizeof(struct net_eth_vlan_hdr);
+			if (!eth_is_vlan_tag_stripped(iface)) {
+				net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
+				type = ntohs(hdr_vlan->type);
+				hdr_len = sizeof(struct net_eth_vlan_hdr);
+				is_vlan_pkt = true;
+			} else {
+				NET_DBG("Unexpected VLAN packet received type 0x%04x tci 0x%04x "
+					"iface %d (%p)",
+					type, hdr_vlan->vlan.tci, net_if_get_by_iface(iface),
+					iface);
+			}
+		} else if (net_pkt_vlan_tag(pkt)) {
 			is_vlan_pkt = true;
+		}
 
+		if (is_vlan_pkt) {
 			net_pkt_set_iface(pkt,
-					  net_eth_get_vlan_iface(iface,
-						       net_pkt_vlan_tag(pkt)));
+					  net_eth_get_vlan_iface(iface, net_pkt_vlan_tag(pkt)));
 
 			/* We could call VLAN interface directly but then the
 			 * interface statistics would not get updated so route
 			 * the call via Virtual L2 layer.
 			 */
-			if (net_if_l2(net_pkt_iface(pkt))->recv != NULL) {
+			if (net_if_l2(net_pkt_iface(pkt)) != NULL &&
+			    net_if_l2(net_pkt_iface(pkt))->recv != NULL) {
+				enum net_verdict verdict;
+
 				verdict = net_if_l2(net_pkt_iface(pkt))->recv(iface, pkt);
 				if (verdict == NET_DROP) {
 					goto drop;
