@@ -9,7 +9,7 @@ if SOC_SERIES_VIRGO
 rsource "Kconfig.defconfig.virgo*"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 266666667
+	default 26666667
 
 config KERNEL_ENTRY
 	default "entry"
@@ -28,7 +28,7 @@ config NUM_2ND_LEVEL_AGGREGATORS
 	default 1
 
 config 2ND_LVL_ISR_TBL_OFFSET
-	default 12
+	default 16
 
 config 2ND_LVL_INTR_00_OFFSET
 	default 16
@@ -42,4 +42,4 @@ config 2ND_LEVEL_INTERRUPT_BITS
 config NUM_IRQS
 	default 32
 
-endif # SOC_SERIES_ANDES_AE350
+endif # SOC_SERIES_VIRGO
