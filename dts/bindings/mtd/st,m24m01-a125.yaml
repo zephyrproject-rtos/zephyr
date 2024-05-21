@@ -1,0 +1,8 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST M24M01-A125 automotive 1-Mbit I2C EEPROM
+
+compatible: "st,m24m01-a125"
+
+include: ["st,m24xxx-a125-base.yaml"]

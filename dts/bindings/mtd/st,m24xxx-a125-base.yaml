@@ -1,0 +1,11 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST M24XXX-A125 automotive I2C EEPROM
+
+include: ["eeprom-base.yaml", i2c-device.yaml]
+
+properties:
+  wp-gpios:
+    type: phandle-array
+    description: GPIO to which the write-protect pin of the chip is connected
