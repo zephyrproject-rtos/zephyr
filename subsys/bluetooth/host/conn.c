@@ -152,9 +152,7 @@ static struct net_buf *get_data_frag(struct net_buf *outside, size_t winsize)
 		return window;
 	}
 
-	__ASSERT_NO_MSG(outside->ref == 1);
-
-	window = bt_buf_make_view(window, net_buf_ref(outside),
+	window = bt_buf_make_view(window, outside,
 				  winsize, &get_frag_md(window)->view_meta);
 
 	LOG_DBG("get-acl-frag: outside %p window %p size %d", outside, window, winsize);
@@ -608,7 +606,7 @@ static bool is_acl_conn(struct bt_conn *conn)
 }
 
 static int send_buf(struct bt_conn *conn, struct net_buf *buf,
-		    void *cb, void *ud)
+		    size_t len, void *cb, void *ud)
 {
 	struct net_buf *frag = NULL;
 	struct bt_conn_tx *tx = NULL;
@@ -627,7 +625,7 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		return -EIO;
 	}
 
-	LOG_DBG("conn %p buf %p len %u", conn, buf, buf->len);
+	LOG_DBG("conn %p buf %p len %u buf->len %u", conn, buf, len, buf->len);
 
 	/* Acquire the right to send 1 packet to the controller */
 	if (k_sem_take(bt_conn_get_pkts(conn), K_NO_WAIT)) {
@@ -654,17 +652,23 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 	tx->cb = cb;
 	tx->user_data = ud;
 
-	/* If the current buffer doesn't fit a controller buffer */
-	if (buf->len > conn_mtu(conn)) {
-		uint16_t frag_len = MIN(conn_mtu(conn), buf->len);
+	uint16_t frag_len = MIN(conn_mtu(conn), len);
 
-		LOG_DBG("send frag: buf %p len %d", buf, frag_len);
+	__ASSERT_NO_MSG(buf->ref == 1);
 
-		/* get a view into `buf`, sized `frag_len`. Also pull
-		 * `frag_len` bytes from `buf`.
+	if (buf->len > frag_len) {
+		LOG_DBG("keep %p around", buf);
+		frag = get_data_frag(net_buf_ref(buf), frag_len);
+	} else {
+		LOG_DBG("move %p ref in", buf);
+		/* Move the ref into `frag` for the last TX. That way `buf` will
+		 * get destroyed when `frag` is destroyed.
 		 */
 		frag = get_data_frag(buf, frag_len);
+	}
 
+	/* If the current buffer doesn't fit a controller buffer */
+	if (len > conn_mtu(conn)) {
 		flags = conn->next_is_frag ? FRAG_CONT : FRAG_START;
 		conn->next_is_frag = true;
 	} else {
@@ -672,11 +676,13 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		conn->next_is_frag = false;
 	}
 
+	LOG_DBG("send frag: buf %p len %d", buf, frag_len);
+
 	/* At this point, the buffer is either a fragment or a full HCI packet.
 	 * The flags are also valid.
 	 */
 	LOG_DBG("conn %p buf %p len %u flags 0x%02x",
-		conn, frag ? frag : buf, buf->len, flags);
+		conn, frag, frag->len, flags);
 
 	/* Keep track of sent buffers. We have to append _before_
 	 * sending, as we might get pre-empted if the HCI driver calls
@@ -690,9 +696,9 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 	sys_slist_append(&conn->tx_pending, &tx->node);
 
 	if (is_iso_tx_conn(conn)) {
-		err = send_iso(conn, frag ? frag : buf, flags);
+		err = send_iso(conn, frag, flags);
 	} else if (is_acl_conn(conn)) {
-		err = send_acl(conn, frag ? frag : buf, flags);
+		err = send_acl(conn, frag, flags);
 	} else {
 		err = -EINVAL;	/* Some animals disable asserts (╯°□°）╯︵ ┻━┻ */
 		__ASSERT(false, "Invalid connection type %u", conn->type);
@@ -708,13 +714,10 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 
 	LOG_ERR("Unable to send to driver (err %d)", err);
 
-	/* If we get here, something has seriously gone wrong: The caller should
-	 * also destroy the `parent` buf (of which the current fragment
-	 * belongs).
+	/* If we get here, something has seriously gone wrong: the `parent` buf
+	 * (of which the current fragment belongs) should also be destroyed.
 	 */
-	if (frag) {
-		net_buf_unref(frag);
-	}
+	net_buf_unref(frag);
 
 	/* `buf` might not get destroyed right away, and its `tx`
 	 * pointer will still be reachable. Make sure that we don't try
@@ -934,6 +937,7 @@ void bt_conn_tx_processor(void)
 	struct bt_conn *conn;
 	struct net_buf *buf;
 	bt_conn_tx_cb_t cb = NULL;
+	size_t buf_len;
 	void *ud = NULL;
 
 	if (!IS_ENABLED(CONFIG_BT_CONN_TX)) {
@@ -959,10 +963,10 @@ void bt_conn_tx_processor(void)
 		/* Call the user callbacks & destroy (final-unref) the buffers
 		 * we were supposed to send.
 		 */
-		buf = conn->tx_data_pull(conn, conn_mtu(conn));
+		buf = conn->tx_data_pull(conn, SIZE_MAX, &buf_len);
 		while (buf) {
 			destroy_and_callback(conn, buf, cb, ud);
-			buf = conn->tx_data_pull(conn, conn_mtu(conn));
+			buf = conn->tx_data_pull(conn, SIZE_MAX, &buf_len);
 		}
 		return;
 	}
@@ -970,7 +974,7 @@ void bt_conn_tx_processor(void)
 	/* now that we are guaranteed resources, we can pull data from the upper
 	 * layer (L2CAP or ISO).
 	 */
-	buf = conn->tx_data_pull(conn, conn_mtu(conn));
+	buf = conn->tx_data_pull(conn, conn_mtu(conn), &buf_len);
 	if (!buf) {
 		/* Either there is no more data, or the buffer is already in-use
 		 * by a view on it. In both cases, the TX processor will be
@@ -981,8 +985,9 @@ void bt_conn_tx_processor(void)
 		return;
 	}
 
-	bool last_buf = conn_mtu(conn) >= buf->len;
+	bool last_buf = conn_mtu(conn) >= buf_len;
 
+	/* TODO: add sdu_sent callback on last PDU */
 	if (last_buf) {
 		/* Only pull the callback info from the last buffer.
 		 * We still allocate one TX context per-fragment though.
@@ -994,7 +999,7 @@ void bt_conn_tx_processor(void)
 	LOG_DBG("TX process: conn %p buf %p (%s)",
 		conn, buf, last_buf ? "last" : "frag");
 
-	int err = send_buf(conn, buf, cb, ud);
+	int err = send_buf(conn, buf, buf_len, cb, ud);
 
 	if (err) {
 		/* -EIO means `unrecoverable error`. It can be an assertion that

@@ -190,13 +190,9 @@ struct bt_l2cap_le_chan {
 	 * L2CAP_LE_CREDIT_BASED_CONNECTION_REQ/RSP or L2CAP_CONFIGURATION_REQ.
 	 */
 	struct bt_l2cap_le_endpoint	tx;
-#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	/** Channel Transmission queue (for SDUs) */
 	struct k_fifo                   tx_queue;
-	/** Channel Pending Transmission buffer  */
-	struct net_buf                  *tx_buf;
-	/** Channel Transmission work  */
-	struct k_work_delayable		tx_work;
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	/** Segment SDU packet from upper layer */
 	struct net_buf			*_sdu;
 	uint16_t			_sdu_len;
@@ -223,8 +219,8 @@ struct bt_l2cap_le_chan {
 	sys_snode_t			_pdu_ready;
 	/** @internal To be used with @ref bt_conn.upper_data_ready */
 	atomic_t			_pdu_ready_lock;
-	/** @internal Queue of net bufs not yet sent to lower layer */
-	struct k_fifo			_pdu_tx_queue;
+	/** @internal Holds the length of the current PDU/segment */
+	size_t				_pdu_remaining;
 };
 
 /**

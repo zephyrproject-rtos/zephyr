@@ -348,7 +348,9 @@ static bool chan_has_data(struct bt_l2cap_br_chan *br_chan)
 	return !k_fifo_is_empty(&br_chan->_pdu_tx_queue);
 }
 
-struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount)
+struct net_buf *l2cap_br_data_pull(struct bt_conn *conn,
+				   size_t amount,
+				   size_t *length)
 {
 	const sys_snode_t *pdu_ready = sys_slist_peek_head(&conn->l2cap_data_ready);
 
@@ -395,6 +397,8 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount)
 			raise_data_ready(br_chan);
 		}
 	}
+
+	*length = pdu->len;
 
 	return pdu;
 }

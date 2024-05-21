@@ -138,7 +138,9 @@ void hci_iso(struct net_buf *buf)
 }
 
 /* Pull data from the ISO layer */
-static struct net_buf *iso_data_pull(struct bt_conn *conn, size_t amount);
+static struct net_buf *iso_data_pull(struct bt_conn *conn,
+				     size_t amount,
+				     size_t *length);
 
 /* Returns true if the ISO layer has data to send on this conn */
 static bool iso_has_data(struct bt_conn *conn);
@@ -734,7 +736,9 @@ static bool iso_has_data(struct bt_conn *conn)
 #endif	/* CONFIG_BT_ISO_TX */
 }
 
-static struct net_buf *iso_data_pull(struct bt_conn *conn, size_t amount)
+static struct net_buf *iso_data_pull(struct bt_conn *conn,
+				     size_t amount,
+				     size_t *length)
 {
 #if defined(CONFIG_BT_ISO_TX)
 	LOG_DBG("conn %p amount %d", conn, amount);
@@ -773,6 +777,8 @@ static struct net_buf *iso_data_pull(struct bt_conn *conn, size_t amount)
 		(void)b;
 		__ASSERT_NO_MSG(b == frag);
 	}
+
+	*length = frag->len;
 
 	return frag;
 #else

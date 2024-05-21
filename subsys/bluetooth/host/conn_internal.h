@@ -269,7 +269,9 @@ struct bt_conn {
 	 * Scheduling from which channel to pull (e.g. for L2CAP) is done at the
 	 * upper layer's discretion.
 	 */
-	struct net_buf * (*tx_data_pull)(struct bt_conn *conn, size_t amount);
+	struct net_buf * (*tx_data_pull)(struct bt_conn *conn,
+					 size_t amount,
+					 size_t *length);
 
 	/* Get (and clears for ACL conns) callback and user-data for `buf`. */
 	void (*get_and_clear_cb)(struct bt_conn *conn, struct net_buf *buf,
