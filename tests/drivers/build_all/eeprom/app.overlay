@@ -51,6 +51,62 @@
 				wp-gpios = <&test_gpio 0 0>;
 				/* read-only; */
 			};
+
+			test_i2c_m24m02: m24m02@2 {
+				compatible = "st,m24m02-a125";
+				status = "okay";
+				reg = <0x2>;
+				wp-gpios = <&test_gpio 0 0>;
+				/* read-only; */
+			};
+
+			test_i2c_m24m01: m24m01@3 {
+				compatible = "st,m24m01-a125";
+				status = "okay";
+				reg = <0x3>;
+				wp-gpios = <&test_gpio 0 0>;
+				/* read-only; */
+			};
+
+			test_i2c_m24c64: m24c64@4 {
+				compatible = "st,m24c64-a125";
+				status = "okay";
+				reg = <0x4>;
+				wp-gpios = <&test_gpio 0 0>;
+				/* read-only; */
+			};
+
+			test_i2c_m24c32: m24c32@5 {
+				compatible = "st,m24c32-a125";
+				status = "okay";
+				reg = <0x5>;
+				wp-gpios = <&test_gpio 0 0>;
+				/* read-only; */
+			};
+
+			test_i2c_m24c16: m24c16@6 {
+				compatible = "st,m24c16-a125";
+				status = "okay";
+				reg = <0x6>;
+				wp-gpios = <&test_gpio 0 0>;
+				/* read-only; */
+			};
+
+			test_i2c_m24c08: m24c08@7 {
+				compatible = "st,m24c08-a125";
+				status = "okay";
+				reg = <0x7>;
+				wp-gpios = <&test_gpio 0 0>;
+				/* read-only; */
+			};
+
+			test_i2c_m24c04: m24c04@8 {
+				compatible = "st,m24c04-a125";
+				status = "okay";
+				reg = <0x8>;
+				wp-gpios = <&test_gpio 0 0>;
+				/* read-only; */
+			};
 		};
 
 		test_spi: spi@33334444 {
