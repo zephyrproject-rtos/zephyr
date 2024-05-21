@@ -122,7 +122,6 @@ tests:
       - DTC_OVERLAY_FILE="boards/nrf54l15pdk_nrf54l15_cpuapp_ext_flash.overlay"
       - mcuboot_CONF_FILE="boards/nrf54l15pdk_nrf54l15_cpuapp_ext_flash.conf"
       - mcuboot_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l15pdk_nrf54l15_cpuapp_ext_flash.overlay"
-    extra_configs:
       - SB_CONFIG_PARTITION_MANAGER=n
     platform_allow:
       - nrf54l15pdk/nrf54l15/cpuapp
