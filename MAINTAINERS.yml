@@ -3349,6 +3349,7 @@ NXP Platforms (MCU):
     - yvanderv
     - EmilioCBen
     - decsny
+    - butok
   files:
     - boards/nxp/mimxrt*/
     - boards/nxp/frdm*/
