@@ -29,7 +29,7 @@ if (CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION AND CONFIG_TFM_QCBOR_PATH STREQUAL "
 # or only allow it when 'QCBOR_PATH' is set to a local path where QCBOR has
 # been manually downloaded by the user before starting the build.
 message(FATAL_ERROR "CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION is not available "
-  "with TF-M 2.0.0 due to licensing issues with a dependent library. This "
+  "with TF-M due to licensing issues with a dependent library. This "
   "restriction will be removed once licensing issues have been resolved."
   )
 endif()
@@ -50,11 +50,7 @@ set(TFM_PSA_TEST_SUITE INITIAL_ATTESTATION)
 endif()
 
 if (NOT DEFINED TFM_PSA_TEST_SUITE)
-  message(FATAL_ERROR "Please define witch test suite to run:
-    CONFIG_TFM_PSA_TEST_CRYPTO
-    CONFIG_TFM_PSA_TEST_PROTECTED_STORAGE
-    CONFIG_TFM_PSA_TEST_STORAGE
-    CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION")
+  message(FATAL_ERROR "Please define a test suite to run. Refer to the README to see the available test suites.")
 endif()
 set(TEST_PSA_API "${TFM_PSA_TEST_SUITE}")
 
