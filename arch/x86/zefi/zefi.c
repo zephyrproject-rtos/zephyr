@@ -143,7 +143,7 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 
 	efi_prepare_boot_arg();
 
-	for (size_t i = 0; i < sizeof(zefi_zsegs)/sizeof(zefi_zsegs[0]); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(zefi_zsegs); i++) {
 		uint32_t bytes = zefi_zsegs[i].sz;
 		uint8_t *dst = (uint8_t *)zefi_zsegs[i].addr;
 
@@ -153,7 +153,7 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 		}
 	}
 
-	for (size_t i = 0; i < sizeof(zefi_dsegs)/sizeof(zefi_dsegs[0]); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(zefi_zsegs); i++) {
 		uint32_t bytes = zefi_dsegs[i].sz;
 		uint32_t off = zefi_dsegs[i].off;
 		uint8_t *dst = (uint8_t *)zefi_dsegs[i].addr;
