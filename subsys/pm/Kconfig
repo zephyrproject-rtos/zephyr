@@ -42,7 +42,7 @@ config PM_S2RAM_CUSTOM_MARKING
 	depends on PM_S2RAM
 	help
 	  By default a magic word in RAM is used to mark entering suspend-to-RAM. Enabling
-	  this option allows custom implementation of functions which handles the marking.
+	  this option allows custom implementation of functions which handle the marking.
 
 config PM_NEED_ALL_DEVICES_IDLE
 	bool "System Low Power Mode Needs All Devices Idle"
