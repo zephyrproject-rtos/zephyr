@@ -11,8 +11,6 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_POSIX_SYSCONF
-
 enum {
 	_SC_ADVISORY_INFO,
 	_SC_ASYNCHRONOUS_IO,
@@ -141,7 +139,6 @@ enum {
 	_SC_TZNAME_MAX,
 };
 
-#ifdef CONFIG_POSIX_SYSCONF_IMPL_MACRO
 #define __z_posix_sysconf_SC_ADVISORY_INFO                _POSIX_ADVISORY_INFO
 #define __z_posix_sysconf_SC_ASYNCHRONOUS_IO              _POSIX_ASYNCHRONOUS_IO
 #define __z_posix_sysconf_SC_BARRIERS                     _POSIX_BARRIERS
@@ -268,9 +265,8 @@ enum {
 #define __z_posix_sysconf_SC_TTY_NAME_MAX                 TTY_NAME_MAX
 #define __z_posix_sysconf_SC_TZNAME_MAX                   TZNAME_MAX
 
+#ifdef CONFIG_POSIX_SYSCONF_IMPL_MACRO
 #define sysconf(x) (long)CONCAT(__z_posix_sysconf, x)
-#endif
-
 #endif
 
 #ifdef __cplusplus
