@@ -24,17 +24,6 @@ get_target_property(TFM_TOOLCHAIN_NS_FILE    tfm TFM_TOOLCHAIN_NS_FILE)
 set(TFM_TEST_REPO_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../tf-m-tests)
 set(PSA_ARCH_TESTS_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../psa-arch-tests)
 
-if (CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION AND CONFIG_TFM_QCBOR_PATH STREQUAL "")
-# TODO: Remove this when QCBOR licensing issues w/t_cose have been resolved,
-# or only allow it when 'QCBOR_PATH' is set to a local path where QCBOR has
-# been manually downloaded by the user before starting the build.
-message(FATAL_ERROR "CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION is not available "
-  "with TF-M due to licensing issues with a dependent library. This "
-  "restriction will be removed once licensing issues have been resolved."
-  )
-endif()
-
-
 set(TFM_TEST_DIR         "${TFM_TEST_REPO_PATH}/tests_psa_arch/spe/partitions")
 set(PSA_ARCH_TESTS_CONFIG_FILE "${TFM_TEST_REPO_PATH}/tests_psa_arch/spe/config/config_test_psa_api.cmake")
 if (CONFIG_TFM_PSA_TEST_CRYPTO)

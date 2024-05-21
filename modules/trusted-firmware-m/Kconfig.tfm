@@ -393,6 +393,7 @@ config TFM_PSA_TEST_STORAGE
 config TFM_PSA_TEST_INITIAL_ATTESTATION
 	bool "Initial attestation tests"
 	depends on MAIN_STACK_SIZE >= 4096
+	select TFM_PARTITION_INITIAL_ATTESTATION
 	help
 	  Enable the PSA Initial Attestation test suite.
 

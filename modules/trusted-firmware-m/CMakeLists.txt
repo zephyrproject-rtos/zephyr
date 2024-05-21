@@ -199,6 +199,16 @@ if (CONFIG_BUILD_WITH_TFM)
     message(FATAL_ERROR "Unsupported ZEPHYR_TOOLCHAIN_VARIANT: ${ZEPHYR_TOOLCHAIN_VARIANT}")
   endif()
 
+  if (CONFIG_TFM_PARTITION_INITIAL_ATTESTATION AND CONFIG_TFM_QCBOR_PATH STREQUAL "")
+    # TODO: Remove this when QCBOR licensing issues w/t_cose have been resolved,
+    # or only allow it when 'QCBOR_PATH' is set to a local path where QCBOR has
+    # been manually downloaded by the user before starting the build.
+    message(FATAL_ERROR "CONFIG_TFM_PARTITION_INITIAL_ATTESTATION is not available "
+      "with TF-M due to licensing issues with a dependent library. This "
+      "restriction will be removed once licensing issues have been resolved."
+      )
+  endif()
+
   string(REPLACE "toolchain" "toolchain_ns" TFM_TOOLCHAIN_NS_FILE ${TFM_TOOLCHAIN_FILE})
 
   if(CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU0_NS)
