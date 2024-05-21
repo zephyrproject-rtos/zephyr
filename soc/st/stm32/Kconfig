@@ -50,6 +50,12 @@ config SWJ_ANALOG_PRIORITY
 config STM32_FLASH_PREFETCH
 	bool "Flash prefetch buffer"
 
+config STM32_WKUP_PINS
+	bool "STM32 PWR Wake-up Pins"
+	depends on DT_HAS_ST_STM32_PWR_ENABLED
+	help
+	  Enable support for STM32 PWR wake-up pins.
+
 choice POWER_SUPPLY_CHOICE
 	prompt "STM32 power supply configuration"
 	default POWER_SUPPLY_LDO
