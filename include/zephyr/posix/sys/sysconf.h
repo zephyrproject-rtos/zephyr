@@ -158,7 +158,7 @@ enum {
 #define __z_posix_sysconf_SC_MEMLOCK_RANGE     (-1L)
 #define __z_posix_sysconf_SC_MEMORY_PROTECTION (-1L)
 #define __z_posix_sysconf_SC_MESSAGE_PASSING                                                       \
-	COND_CODE_1(CONFIG_POSIX_MQUEUE, (_POSIX_MESSAGE_PASSING), (-1L))
+	COND_CODE_1(CONFIG_POSIX_MESSAGE_PASSING, (_POSIX_MESSAGE_PASSING), (-1L))
 #define __z_posix_sysconf_SC_MONOTONIC_CLOCK                                                       \
 	COND_CODE_1(CONFIG_POSIX_MONOTONIC_CLOCK, (_POSIX_MONOTONIC_CLOCK), (-1L))
 #define __z_posix_sysconf_SC_PRIORITIZED_IO (-1L)

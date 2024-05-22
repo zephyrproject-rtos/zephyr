@@ -53,7 +53,7 @@
 /* #define _POSIX_MEMLOCK_RANGE (-1L) */
 /* #define _POSIX_MEMORY_PROTECTION (-1L) */
 
-#ifdef CONFIG_POSIX_MQUEUE
+#ifdef CONFIG_POSIX_MESSAGE_PASSING
 #define _POSIX_MESSAGE_PASSING _POSIX_VERSION
 #endif
 
@@ -207,7 +207,7 @@
 #define _POSIX_MAX_CANON                    (255)
 #define _POSIX_MAX_INPUT                    (255)
 #define _POSIX_MQ_OPEN_MAX \
-	COND_CODE_1(CONFIG_POSIX_MQUEUE, (CONFIG_MSG_COUNT_MAX), (0))
+	COND_CODE_1(CONFIG_POSIX_MESSAGE_PASSING, (CONFIG_POSIX_MQ_OPEN_MAX), (0))
 #define _POSIX_MQ_PRIO_MAX                  (32)
 #define _POSIX_NAME_MAX                     (14)
 #define _POSIX_NGROUPS_MAX                  (8)
