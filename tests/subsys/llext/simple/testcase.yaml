@@ -4,6 +4,8 @@ common:
     - arm
     - xtensa
   platform_exclude:
+    - apollo4p_evb
+    - apollo4p_blue_kxr_evb
     - numaker_pfm_m487 # See #63167
     - qemu_cortex_r5 # unsupported relocations
 
