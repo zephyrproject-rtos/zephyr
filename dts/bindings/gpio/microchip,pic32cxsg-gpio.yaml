@@ -1,6 +1,6 @@
 description: Microchip PIC32CXSG GPIO PORT node
 
-compatible: "atmel,sam0-gpio"
+compatible: "microchip,pic32cxsg-gpio"
 
 include: [gpio-controller.yaml, base.yaml]
 

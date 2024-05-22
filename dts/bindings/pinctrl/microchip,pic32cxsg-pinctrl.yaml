@@ -72,7 +72,7 @@ description: |
           pinctrl-names = "default";
     };
 
-compatible: "atmel,sam0-pinctrl"
+compatible: "microchip,pic32cxsg-pinctrl"
 
 include: base.yaml
 

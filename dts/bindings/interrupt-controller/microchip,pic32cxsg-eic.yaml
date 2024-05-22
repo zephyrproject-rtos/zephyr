@@ -1,6 +1,6 @@
 description: Microchip PIC32CXSG series External Interrupt Controller
 
-compatible: "atmel,sam0-eic"
+compatible: "microchip,pic32cxsg-eic"
 
 include: base.yaml
 

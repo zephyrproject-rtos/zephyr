@@ -3,7 +3,7 @@
 
 description: Microchip PIC32CXSG TCC in PWM mode
 
-compatible: "atmel,sam0-tcc-pwm"
+compatible: "microchip,pic32cxsg-tcc-pwm"
 
 include:
   - name: base.yaml

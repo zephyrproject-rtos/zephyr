@@ -1,6 +1,6 @@
 description: Specialization of Bosch m_can CAN FD controller for Microchip PIC32CXSG
 
-compatible: "atmel,sam0-can"
+compatible: "microchip,pic32cxsg-can"
 
 include:
   - name: bosch,m_can-base.yaml

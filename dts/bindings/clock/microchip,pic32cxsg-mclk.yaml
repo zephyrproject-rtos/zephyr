@@ -3,7 +3,7 @@
 
 description: Microchip PIC32CXSGD5x Generic Clock Controller (MCLK)
 
-compatible: "atmel,sam0d5x-mclk"
+compatible: "microchip,pic32cxsgd5x-mclk"
 
 include: [clock-controller.yaml, base.yaml]
 

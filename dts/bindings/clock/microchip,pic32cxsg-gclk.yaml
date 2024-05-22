@@ -3,7 +3,7 @@
 
 description: Microchip PIC32CXSG Generic Clock Controller (GCLK)
 
-compatible: "atmel,sam0-gclk"
+compatible: "microchip,pic32cxsg-gclk"
 
 include: [clock-controller.yaml, base.yaml]
 

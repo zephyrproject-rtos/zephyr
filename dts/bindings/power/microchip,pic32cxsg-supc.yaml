@@ -30,7 +30,7 @@ description: |
   The SUPC wakeup source ids that can be enabled are defined in the
   zephyr/include/zephyr/dt-bindings/power/microchip_pic32cxsg_supc.h header file.
 
-compatible: "atmel,sam0-supc"
+compatible: "microchip,pic32cxsg-supc"
 
 include:
   - name: base.yaml

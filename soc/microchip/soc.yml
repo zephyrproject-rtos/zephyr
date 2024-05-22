@@ -1,5 +1,5 @@
 family:
-- name: microchip_pic32cx
+- name: microchip_pic32
   series:
   - name: pic32cxsg
     socs:

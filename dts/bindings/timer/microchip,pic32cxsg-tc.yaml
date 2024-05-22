@@ -2,7 +2,7 @@
 
 description: Microchip PIC32CXSG Timer Counter (TC) node
 
-compatible: "atmel,sam0-tc"
+compatible: "microchip,pic32cxsg-tc"
 
 include:
   - name: base.yaml

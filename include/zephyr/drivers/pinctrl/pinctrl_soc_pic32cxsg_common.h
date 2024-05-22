@@ -14,7 +14,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/types.h>
-#include <dt-bindings/pinctrl/microchip-pic32cxsg-pinctrl.h>
+#include <dt-bindings/pinctrl/microchip_pic32cxsg_pinctrl.h>
 
 #ifdef __cplusplus
 extern "C" {

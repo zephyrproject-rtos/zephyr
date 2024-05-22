@@ -3,7 +3,7 @@
 
 description: Microchip PIC32CXSG SERCOM SPI controller
 
-compatible: "atmel,sam0-spi"
+compatible: "microchip,pic32cxsg-spi"
 
 include:
   - name: spi-controller.yaml

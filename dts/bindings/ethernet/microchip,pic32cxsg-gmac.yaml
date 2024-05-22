@@ -3,6 +3,6 @@
 
 description: Microchip PIC32CXSG-family GMAC Ethernet
 
-compatible: "atmel,sam0-gmac"
+compatible: "microchip,pic32cxsg-gmac"
 
 include: atmel,gmac-common.yaml

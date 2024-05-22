@@ -3,7 +3,7 @@
 
 description: Microchip PIC32CXSG series SERCOM I2C node
 
-compatible: "atmel,sam0-i2c"
+compatible: "microchip,pic32cxsg-i2c"
 
 include:
   - name: i2c-controller.yaml

@@ -31,7 +31,7 @@ description: |
     PMC_TYPE_GCK
     PMC_TYPE_PROGRAMMABLE
 
-compatible: "atmel,sam0-pmc"
+compatible: "microchip,pic32cxsg-pmc"
 
 include: [clock-controller.yaml, base.yaml]
 

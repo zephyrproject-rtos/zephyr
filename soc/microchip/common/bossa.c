@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Microchip
+ * Copyright (c) 2020 Google LLC.
  *
  * SPDX-License-Identifier: Apache-2.0
  */

@@ -3,7 +3,7 @@
 
 description: Microchip PIC32CXSG basic timer counter (TC) operating in 32-bit wide mode
 
-compatible: "atmel,sam0-tc32"
+compatible: "microchip,pic32cxsg-tc32"
 
 include:
   - name: base.yaml

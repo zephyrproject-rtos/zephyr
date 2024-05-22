@@ -1,6 +1,6 @@
 description: Microchip PIC32CXSG DMA controller
 
-compatible: "atmel,sam0-dmac"
+compatible: "microchip,pic32cxsg-dmac"
 
 include: dma-controller.yaml
 
