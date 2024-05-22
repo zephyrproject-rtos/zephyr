@@ -50,7 +50,7 @@ The *Minimal Realtime System Profile* (PSE51) includes all of the
 
     :ref:`POSIX_C_LANG_JUMP <posix_option_group_c_lang_jump>`, yes,
     :ref:`POSIX_C_LANG_SUPPORT <posix_option_group_c_lang_support>`, yes,
-    :ref:`POSIX_DEVICE_IO <posix_option_group_device_io>`,,
+    :ref:`POSIX_DEVICE_IO <posix_option_group_device_io>`,, :kconfig:option:`CONFIG_POSIX_DEVICE_IO`
     :ref:`POSIX_SIGNALS <posix_option_group_signals>`,,
     :ref:`POSIX_SINGLE_PROCESS <posix_option_group_single_process>`, yes,
     :ref:`POSIX_THREADS_BASE <posix_option_group_threads_base>`, yes,

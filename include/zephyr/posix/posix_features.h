@@ -211,7 +211,7 @@
 #define _POSIX_MQ_PRIO_MAX                  (32)
 #define _POSIX_NAME_MAX                     (14)
 #define _POSIX_NGROUPS_MAX                  (8)
-#define _POSIX_OPEN_MAX                     CONFIG_POSIX_MAX_FDS
+#define _POSIX_OPEN_MAX                     CONFIG_POSIX_OPEN_MAX
 #define _POSIX_PATH_MAX                     (256)
 #define _POSIX_PIPE_BUF                     (512)
 #define _POSIX_RE_DUP_MAX                   (255)

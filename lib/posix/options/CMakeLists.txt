@@ -37,9 +37,13 @@ add_subdirectory_ifdef(CONFIG_GETOPT getopt)
 zephyr_library_sources_ifdef(CONFIG_EVENTFD eventfd.c)
 zephyr_library_sources_ifdef(CONFIG_FNMATCH fnmatch.c)
 zephyr_library_sources_ifdef(CONFIG_GETENTROPY getentropy.c)
-zephyr_library_sources_ifdef(CONFIG_POSIX_API perror.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_ASYNCHRONOUS_IO aio.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_CONFSTR confstr.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_DEVICE_IO
+  # perror should be moved to the common libc
+  perror.c
+  device_io.c
+)
 zephyr_library_sources_ifdef(CONFIG_POSIX_ENV env.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_FD_MGMT
   fd_mgmt.c

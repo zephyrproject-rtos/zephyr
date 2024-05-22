@@ -41,7 +41,7 @@ config WIFI_NM_WPA_SUPPLICANT_WQ_PRIO
 	int "Thread priority of wpa_supplicant iface workqueue"
 	default 7
 
-# Currently we default POSIX_MAX_FDS to 16 in lib/posix/Kconfig
+# Currently we default ZVFS_OPEN_MAX to 16 in lib/posix/Kconfig
 # l2_packet - 1
 # ctrl_iface - 2 * socketpairs = 4(local and global)
 # z_wpa_event_sock - 1 socketpair = 2
