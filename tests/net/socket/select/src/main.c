@@ -34,7 +34,7 @@ ZTEST_USER(net_socket_select, test_fd_set)
 {
 	zsock_fd_set set;
 
-	/* Relies on specific value of CONFIG_POSIX_MAX_FDS in prj.conf */
+	/* Relies on specific value of CONFIG_ZVFS_OPEN_MAX in prj.conf */
 	zassert_equal(sizeof(set.bitset), sizeof(uint32_t) * 2, "");
 
 	ZSOCK_FD_ZERO(&set);

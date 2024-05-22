@@ -20,8 +20,8 @@ static K_MUTEX_DEFINE(sock_obj_mutex);
 /* Allocate some extra socket objects so that we can track
  * closed sockets and get some historical statistics.
  */
-static struct sock_obj sock_objects[CONFIG_POSIX_MAX_FDS * 2] = {
-	[0 ... ((CONFIG_POSIX_MAX_FDS * 2) - 1)] = {
+static struct sock_obj sock_objects[CONFIG_ZVFS_OPEN_MAX * 2] = {
+	[0 ... ((CONFIG_ZVFS_OPEN_MAX * 2) - 1)] = {
 		.fd = -1,
 		.init_done = false,
 	}

@@ -23,6 +23,12 @@
 #include <zephyr/kernel/mm.h>
 #include <sys/time.h>
 
+int _read(int fd, void *buf, int nbytes);
+int _write(int fd, const void *buf, int nbytes);
+int _open(const char *name, int mode);
+int _close(int file);
+int _lseek(int file, int ptr, int dir);
+
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
 #define LIBC_DATA	K_APP_DMEM(z_libc_partition)
 
@@ -210,8 +216,8 @@ static inline int z_vrfy_zephyr_write_stdout(const void *buf, int nbytes)
 #include <zephyr/syscalls/zephyr_write_stdout_mrsh.c>
 #endif
 
-#ifndef CONFIG_POSIX_API
-int _read(int fd, char *buf, int nbytes)
+#ifndef CONFIG_POSIX_DEVICE_IO
+int _read(int fd, void *buf, int nbytes)
 {
 	ARG_UNUSED(fd);
 
@@ -238,10 +244,7 @@ int _close(int file)
 	return -1;
 }
 __weak FUNC_ALIAS(_close, close, int);
-#else
-extern ssize_t write(int file, const char *buffer, size_t count);
-#define _write	write
-#endif
+#endif /* CONFIG_POSIX_DEVICE_IO */
 
 #ifndef CONFIG_POSIX_FD_MGMT
 int _lseek(int file, int ptr, int dir)
@@ -275,6 +278,7 @@ int _fstat(int file, struct stat *st)
 	return 0;
 }
 __weak FUNC_ALIAS(_fstat, fstat, int);
+#endif /* CONFIG_POSIX_FILE_SYSTEM */
 
 __weak void _exit(int status)
 {
@@ -478,11 +482,6 @@ __weak FUNC_NORETURN void __chk_fail(void)
 }
 
 #if CONFIG_XTENSA
-extern int _read(int fd, char *buf, int nbytes);
-extern int _open(const char *name, int mode);
-extern int _close(int file);
-extern int _lseek(int file, int ptr, int dir);
-
 /* The Newlib in xtensa toolchain has a few missing functions for the
  * reentrant versions of the syscalls.
  */

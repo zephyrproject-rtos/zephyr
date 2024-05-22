@@ -12,13 +12,6 @@ menuconfig POSIX_FS
 
 if POSIX_FS
 
-config POSIX_MAX_OPEN_FILES
-	int "Maximum number of open file descriptors"
-	default 16
-	help
-	  Maximum number of open files. Note that this setting
-	  is additionally bounded by CONFIG_POSIX_MAX_FDS.
-
 config POSIX_FSYNC
 	bool "Support for fsync()"
 	default y

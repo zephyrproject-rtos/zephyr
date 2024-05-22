@@ -37,6 +37,26 @@ config POSIX_LIMITS_RTSIG_MAX
 
 	  Please use CONFIG_POSIX_RTSIG_MAX instead.
 
+config POSIX_MAX_FDS
+	int "Maximum number of open file descriptors [DEPRECATED]"
+	default POSIX_OPEN_MAX
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_OPEN_MAX instead.
+
+	  See also CONFIG_ZVFS_OPEN_MAX.
+
+config POSIX_MAX_OPEN_FILES
+	int "Maximum number of open file descriptors [DEPRECATED]"
+	default POSIX_OPEN_MAX
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_OPEN_MAX instead.
+
+	  See also CONFIG_ZVFS_OPEN_MAX.
+
 config TIMER
 	bool "Timer support [DEPRECATED]"
 	select DEPRECATED
