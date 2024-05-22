@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nordic_nrf_bellboard_local
+#define DT_DRV_COMPAT nordic_nrf_bellboard_rx
 
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/mbox.h>
@@ -37,7 +37,7 @@ static mbox_callback_t cbs[NRF_BELLBOARD_EVENTS_TRIGGERED_COUNT];
 static void *cbs_ctx[NRF_BELLBOARD_EVENTS_TRIGGERED_COUNT];
 static uint32_t evt_enabled_masks[BELLBOARD_NUM_IRQS];
 
-static void bellboard_local_isr(const void *parameter)
+static void bellboard_rx_isr(const void *parameter)
 {
 	uint8_t irq_idx = (uint8_t)(uintptr_t)parameter;
 	uint32_t int_pend;
@@ -59,15 +59,15 @@ static void bellboard_local_isr(const void *parameter)
 	}
 }
 
-static uint32_t bellboard_local_max_channels_get(const struct device *dev)
+static uint32_t bellboard_rx_max_channels_get(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return NRF_BELLBOARD_EVENTS_TRIGGERED_COUNT;
 }
 
-static int bellboard_local_register_callback(const struct device *dev, uint32_t id,
-					     mbox_callback_t cb, void *user_data)
+static int bellboard_rx_register_callback(const struct device *dev, uint32_t id, mbox_callback_t cb,
+					  void *user_data)
 {
 	ARG_UNUSED(dev);
 
@@ -81,7 +81,7 @@ static int bellboard_local_register_callback(const struct device *dev, uint32_t 
 	return 0;
 }
 
-static int bellboard_local_set_enabled(const struct device *dev, uint32_t id, bool enable)
+static int bellboard_rx_set_enabled(const struct device *dev, uint32_t id, bool enable)
 {
 	bool valid_found = false;
 
@@ -125,21 +125,21 @@ static int bellboard_local_set_enabled(const struct device *dev, uint32_t id, bo
 	return 0;
 }
 
-static const struct mbox_driver_api bellboard_local_driver_api = {
-	.max_channels_get = bellboard_local_max_channels_get,
-	.register_callback = bellboard_local_register_callback,
-	.set_enabled = bellboard_local_set_enabled,
+static const struct mbox_driver_api bellboard_rx_driver_api = {
+	.max_channels_get = bellboard_rx_max_channels_get,
+	.register_callback = bellboard_rx_register_callback,
+	.set_enabled = bellboard_rx_set_enabled,
 };
 
 #define BELLBOARD_IRQ_CONFIGURE(name, idx)                                                         \
 	COND_CODE_1(DT_INST_IRQ_HAS_NAME(0, name),                                                 \
 		    (IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, name, irq),                                \
-				 DT_INST_IRQ_BY_NAME(0, name, priority), bellboard_local_isr,      \
+				 DT_INST_IRQ_BY_NAME(0, name, priority), bellboard_rx_isr,         \
 				 (const void *)idx, 0);                                            \
 		     irq_enable(DT_INST_IRQ_BY_NAME(0, name, irq));),                              \
 		    ())
 
-static int bellboard_local_init(const struct device *dev)
+static int bellboard_rx_init(const struct device *dev)
 {
 	uint32_t evt_all_mappings =
 		evt_mappings[0] | evt_mappings[1] | evt_mappings[2] | evt_mappings[3];
@@ -165,5 +165,5 @@ static int bellboard_local_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, bellboard_local_init, NULL, NULL, NULL, POST_KERNEL,
-		      CONFIG_MBOX_INIT_PRIORITY, &bellboard_local_driver_api);
+DEVICE_DT_INST_DEFINE(0, bellboard_rx_init, NULL, NULL, NULL, POST_KERNEL,
+		      CONFIG_MBOX_INIT_PRIORITY, &bellboard_rx_driver_api);
