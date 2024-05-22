@@ -1,88 +1,23 @@
 /*
  * Copyright (c) 2024 Nordic Semiconductor ASA
  *
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
-#include <nordic/nrf54l15_cpuapp_ns.dtsi>
-#include "nrf54l15pdk_nrf54l15_cpuapp_ns-pinctrl.dtsi"
+
+#define USE_NON_SECURE_ADDRESS_MAP 1
+
+#include "nrf54l15_cpuapp_common.dtsi"
 
 / {
+	compatible = "nordic,nrf54l15pdk_nrf54l15-cpuapp";
+	model = "Nordic nRF54L15 PDK nRF54L15 Application MCU";
+
 	chosen {
-		zephyr,console = &uart20;
-		/* TODO: NCSDK-24862: We don't support configuring RRAM and SRAM
-		 * regions in the DTS file yet. The partition manager configures
-		 * these regions now.
-		 */
-		zephyr,shell-uart = &uart20;
-		zephyr,flash = &rram0;
-		zephyr,sram = &sram0;
-		zephyr,ieee802154 = &ieee802154;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
 	};
-
-	leds {
-		compatible = "gpio-leds";
-		led0: led_0 {
-			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
-			label = "Green LED 0";
-		};
-		led1: led_1 {
-			gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
-			label = "Green LED 1";
-		};
-		led2: led_2 {
-			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-			label = "Green LED 2";
-		};
-		led3: led_3 {
-			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
-			label = "Green LED 3";
-		};
-	};
-
-	buttons {
-		compatible = "gpio-keys";
-		button0: button_0 {
-			gpios = <&gpio1 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button 0";
-			zephyr,code = <INPUT_KEY_0>;
-		};
-		button1: button_1 {
-			gpios = <&gpio1 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button 1";
-			zephyr,code = <INPUT_KEY_1>;
-		};
-		button2: button_2 {
-			gpios = <&gpio2 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button 2";
-			zephyr,code = <INPUT_KEY_2>;
-		};
-		button3: button_3 {
-			gpios = <&gpio2 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button 3";
-			zephyr,code = <INPUT_KEY_3>;
-		};
-	};
-
-	aliases {
-		led0 = &led0;
-		led1 = &led1;
-		led2 = &led2;
-		led3 = &led3;
-		sw0 = &button0;
-		sw1 = &button1;
-		sw2 = &button2;
-		sw3 = &button3;
-	};
-};
-
-&uart20 {
-	status = "okay";
-	current-speed = <115200>;
-	pinctrl-0 = <&uart20_default>;
-	pinctrl-1 = <&uart20_sleep>;
-	pinctrl-names = "default", "sleep";
 };
 
 &uart30 {
@@ -93,40 +28,4 @@
 	pinctrl-0 = <&uart30_default>;
 	pinctrl-1 = <&uart30_sleep>;
 	pinctrl-names = "default", "sleep";
-};
-
-&grtc {
-	status = "okay";
-};
-
-&gpio0 {
-	status = "okay";
-};
-
-&gpio1 {
-	status = "okay";
-};
-
-&gpio2 {
-	status = "okay";
-};
-
-&gpiote20 {
-	status = "okay";
-};
-
-&gpiote30 {
-	status = "okay";
-};
-
-&ieee802154 {
-	status = "okay";
-};
-
-&temp {
-	status = "okay";
-};
-
-&clock {
-	status = "okay";
 };
