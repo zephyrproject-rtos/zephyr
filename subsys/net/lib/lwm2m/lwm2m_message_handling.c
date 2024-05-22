@@ -996,10 +996,10 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 #endif /* CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0 */
 
 		if (res->post_write_cb) {
-			ret = res->post_write_cb(obj_inst->obj_inst_id, res->res_id,
-						 res_inst->res_inst_id, data_ptr, len,
-						 last_pkt_block && last_block, opaque_ctx.len,
-						 msg->in.block_ctx->ctx.current);
+			ret = res->post_write_cb(
+				obj_inst->obj_inst_id, res->res_id, res_inst->res_inst_id, data_ptr,
+				len, last_pkt_block && last_block, opaque_ctx.len,
+				(msg->in.block_ctx ? msg->in.block_ctx->ctx.current : 0));
 			if (ret < 0) {
 				return ret;
 			}
