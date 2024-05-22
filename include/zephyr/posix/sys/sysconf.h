@@ -178,7 +178,7 @@ enum {
 #define __z_posix_sysconf_SC_SHELL                 (-1L)
 #define __z_posix_sysconf_SC_SPAWN                 (-1L)
 #define __z_posix_sysconf_SC_SPIN_LOCKS                                                            \
-	COND_CODE_1(CONFIG_PTHREAD_SPINLOCK, (_POSIX_SPIN_LOCKS), (-1L))
+	COND_CODE_1(CONFIG_POSIX_SPIN_LOCKS, (_POSIX_SPIN_LOCKS), (-1L))
 #define __z_posix_sysconf_SC_SPORADIC_SERVER (-1L)
 #define __z_posix_sysconf_SC_SS_REPL_MAX     _POSIX_SS_REPL_MAX
 #define __z_posix_sysconf_SC_SYNCHRONIZED_IO (-1L)

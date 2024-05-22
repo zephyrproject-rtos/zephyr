@@ -102,6 +102,15 @@ config PTHREAD_BARRIER
 
 	  Please use CONFIG_POSIX_BARRIERS instead.
 
+config PTHREAD_SPINLOCK
+	bool "pthread_spinlock_t support [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_SPIN_LOCKS
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_SPIN_LOCKS instead.
+
 config TIMER
 	bool "Timer support [DEPRECATED]"
 	select DEPRECATED
