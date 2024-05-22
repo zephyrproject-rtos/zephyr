@@ -104,11 +104,14 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+		/* intentionally empty because UICR is hardware fixed to Secure */
+#else
 		uicr: uicr@ffd000 {
 			compatible = "nordic,nrf-uicr";
 			reg = <0xffd000 0x1000>;
 		};
-
+#endif
 		ficr: ficr@ffc000 {
 			compatible = "nordic,nrf-ficr";
 			reg = <0xffc000 0x1000>;
