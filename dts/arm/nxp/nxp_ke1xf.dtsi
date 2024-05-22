@@ -290,6 +290,7 @@
 			clock-frequency = <128000>;
 			prescaler = <1>;
 			clk-source = <1>;
+			resolution = <16>;
 		};
 
 		wdog: watchdog@40052000 {
