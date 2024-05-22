@@ -610,10 +610,6 @@ static void bt_rfcomm_tx_destroy(struct net_buf *buf)
 	if (dlc && dlc->ops && dlc->ops->sent) {
 		dlc->ops->sent(dlc, tx_buf, -ESHUTDOWN);
 	}
-
-	if (tx_buf != NULL) {
-		net_buf_unref(tx_buf);
-	}
 }
 
 static void rfcomm_sent(struct bt_conn *conn, void *user_data, int err)
@@ -637,10 +633,6 @@ static void rfcomm_sent(struct bt_conn *conn, void *user_data, int err)
 
 	if (dlc && dlc->ops && dlc->ops->sent) {
 		dlc->ops->sent(dlc, tx_buf, err);
-	}
-
-	if (tx_buf != NULL) {
-		net_buf_unref(tx_buf);
 	}
 }
 
@@ -1553,7 +1545,7 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	LOG_DBG("TX buffer %p", tx);
 
 	tx->dlc = dlc;
-	tx->buf = net_buf_ref(buf);
+	tx->buf = buf;
 
 	*rfcomm_tx_data(buf) = tx;
 
