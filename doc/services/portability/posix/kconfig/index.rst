@@ -39,6 +39,5 @@ implementation of the POSIX API.
 * :kconfig:option:`CONFIG_PTHREAD_KEY`
 * :kconfig:option:`CONFIG_PTHREAD_MUTEX`
 * :kconfig:option:`CONFIG_PTHREAD_RECYCLER_DELAY_MS`
-* :kconfig:option:`CONFIG_PTHREAD_SPINLOCK`
 * :kconfig:option:`CONFIG_SEM_VALUE_MAX`
 * :kconfig:option:`CONFIG_TIMER_CREATE_WAIT`
