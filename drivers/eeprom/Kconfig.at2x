@@ -52,6 +52,14 @@ config EEPROM_AT25
 	help
 	  Enable support for Atmel AT25 SPI EEPROMs.
 
+config EEPROM_M24
+	bool "ST M24 I2C EEPROM support"
+	default y
+	depends on DT_HAS_ST_M24XXX_ENABLED
+	select EEPROM_AT2X_I2C
+	help
+	  Enable support for ST M24 I2C EEPROMs.
+
 config EEPROM_AT2X_INIT_PRIORITY
 	int "AT2X EEPROM init priority"
 	default 80

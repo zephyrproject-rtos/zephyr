@@ -33,11 +33,14 @@ LOG_MODULE_REGISTER(eeprom_at2x);
 #define EEPROM_AT25_STATUS_WEL BIT(1) /* Write Enable Latch (RO) */
 #define EEPROM_AT25_STATUS_BP0 BIT(2) /* Block Protection 0 (RW) */
 #define EEPROM_AT25_STATUS_BP1 BIT(3) /* Block Protection 1 (RW) */
-
 #define HAS_WP_OR(id) DT_NODE_HAS_PROP(id, wp_gpios) ||
 #define ANY_INST_HAS_WP_GPIOS                                                                      \
-	(DT_FOREACH_STATUS_OKAY(atmel_at24, HAS_WP_OR)                                             \
-		 DT_FOREACH_STATUS_OKAY(atmel_at25, HAS_WP_OR) 0)
+	(                                                                                          \
+		DT_FOREACH_STATUS_OKAY(atmel_at24, HAS_WP_OR)                                      \
+		DT_FOREACH_STATUS_OKAY(atmel_at25, HAS_WP_OR)                                      \
+		DT_FOREACH_STATUS_OKAY(st_m24xxx, HAS_WP_OR)                                       \
+		0                                                                                  \
+	)
 
 typedef bool (*eeprom_at2x_bus_is_ready)(const struct device *dev);
 
@@ -637,28 +640,35 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 			      &eeprom_##name##_config_##index, POST_KERNEL,                        \
 			      CONFIG_EEPROM_AT2X_INIT_PRIORITY, &eeprom_at2x_api)
 
-#define DT_DRV_COMPAT atmel_at24
-#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
-static struct eeprom_at2x_bus_api atmel_at24_bus_api = {
+#ifdef CONFIG_EEPROM_AT2X_I2C
+static struct eeprom_at2x_bus_api eeprom_at2x_i2c_bus_api = {
 	.bus_is_ready = eeprom_at2x_i2c_bus_is_ready,
 	.read = eeprom_at2x_i2c_read,
 	.write = eeprom_at2x_i2c_write,
 };
-#define EEPROM_ATMEL_AT24_BUS_API &atmel_at24_bus_api
-DT_INST_FOREACH_STATUS_OKAY_VARGS(EEPROM_AT2X_INST_DEFINE, DT_DRV_COMPAT, EEPROM_AT2X_I2C_BUS,
-				  EEPROM_ATMEL_AT24_BUS_API, ASSERT_AT24_ADDR_W_VALID)
-#endif
-#undef DT_DRV_COMPAT
+#define EEPROM_ATMEL_AT2X_I2C_BUS_API &eeprom_at2x_i2c_bus_api
+#endif /* CONFIG_EEPROM_AT2X_I2C */
 
-#define DT_DRV_COMPAT atmel_at25
-#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
-static struct eeprom_at2x_bus_api atmel_at25_bus_api = {
+#ifdef CONFIG_EEPROM_AT2X_SPI
+static struct eeprom_at2x_bus_api eeprom_at2x_spi_bus_api = {
 	.bus_is_ready = eeprom_at2x_spi_bus_is_ready,
 	.read = eeprom_at2x_spi_read,
 	.write = eeprom_at2x_spi_write,
 };
-#define EEPROM_ATMEL_AT25_BUS_API &atmel_at25_bus_api
+#define EEPROM_ATMEL_AT2X_SPI_BUS_API &eeprom_at2x_spi_bus_api
+#endif /* CONFIG_EEPROM_AT2X_SPI */
+
+#define DT_DRV_COMPAT atmel_at24
+DT_INST_FOREACH_STATUS_OKAY_VARGS(EEPROM_AT2X_INST_DEFINE, DT_DRV_COMPAT, EEPROM_AT2X_I2C_BUS,
+				  EEPROM_ATMEL_AT2X_I2C_BUS_API, ASSERT_AT24_ADDR_W_VALID)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT atmel_at25
 DT_INST_FOREACH_STATUS_OKAY_VARGS(EEPROM_AT2X_INST_DEFINE, DT_DRV_COMPAT, EEPROM_AT2X_SPI_BUS,
-				  EEPROM_ATMEL_AT25_BUS_API, ASSERT_AT25_ADDR_W_VALID)
-#endif
+				  EEPROM_ATMEL_AT2X_SPI_BUS_API, ASSERT_AT25_ADDR_W_VALID)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT st_m24xxx
+DT_INST_FOREACH_STATUS_OKAY_VARGS(EEPROM_AT2X_INST_DEFINE, DT_DRV_COMPAT, EEPROM_AT2X_I2C_BUS,
+				  EEPROM_ATMEL_AT2X_I2C_BUS_API, ASSERT_AT24_ADDR_W_VALID)
 #undef DT_DRV_COMPAT
