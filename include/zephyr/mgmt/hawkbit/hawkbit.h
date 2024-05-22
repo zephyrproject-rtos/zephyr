@@ -16,7 +16,6 @@
  * @ingroup third_party
  * @{
  */
-#define HAWKBIT_JSON_URL "/default/controller/v1"
 
 #ifndef ZEPHYR_INCLUDE_MGMT_HAWKBIT_HAWKBIT_H_
 #define ZEPHYR_INCLUDE_MGMT_HAWKBIT_HAWKBIT_H_
