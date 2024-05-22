@@ -87,7 +87,7 @@
 /* #define _POSIX_SHELL (-1L) */
 /* #define _POSIX_SPAWN (-1L) */
 
-#ifdef CONFIG_PTHREAD_SPINLOCK
+#ifdef CONFIG_POSIX_SPIN_LOCKS
 #define _POSIX_SPIN_LOCKS _POSIX_VERSION
 #endif
 
