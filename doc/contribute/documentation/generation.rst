@@ -98,7 +98,7 @@ as described below:
 
       .. code-block:: console
 
-         pip install -r ~/zephyrproject/zephyr/doc/requirements.txt
+         pip install -U -r ~/zephyrproject/zephyr/doc/requirements.txt
 
       On Ubuntu Linux:
 
@@ -133,7 +133,7 @@ as described below:
 
       .. code-block:: console
 
-         pip install -r ~/zephyrproject/zephyr/doc/requirements.txt
+         pip install -U -r ~/zephyrproject/zephyr/doc/requirements.txt
 
       Use ``brew`` and ``tlmgr`` to install the tools:
 
@@ -149,7 +149,7 @@ as described below:
 
       .. code-block:: console
 
-         pip install -r %HOMEPATH$\zephyrproject\zephyr\doc\requirements.txt
+         pip install -U -r %HOMEPATH$\zephyrproject\zephyr\doc\requirements.txt
 
       Open a ``cmd.exe`` window as **Administrator** and run the following command:
 
