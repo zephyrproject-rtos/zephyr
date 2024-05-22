@@ -369,6 +369,7 @@ config ARCH_IRQ_VECTOR_TABLE_ALIGN
 
 config RISCV_TRAP_HANDLER_ALIGNMENT
 	int "Alignment of RISC-V trap handler in bytes"
+	default 64 if RISCV_HAS_CLIC
 	default 4
 	help
 	  This value configures the alignment of RISC-V trap handling
