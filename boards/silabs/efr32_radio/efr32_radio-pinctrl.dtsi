@@ -16,4 +16,26 @@
 				<GECKO_LOC(UART_RX, 0)>;
 		};
 	};
+
+	usart1_default: usart1_default {
+		group1 {
+			psels = <GECKO_PSEL(SPIM_SCK, C, 8)>,
+				<GECKO_PSEL(SPIM_MISO, C, 7)>,
+				<GECKO_PSEL(SPIM_MOSI, C, 6)>,
+				<GECKO_LOC(SPI_SCK, 11)>,
+				<GECKO_LOC(SPI_MISO, 11)>,
+				<GECKO_LOC(SPI_MOSI, 11)>;
+		};
+	};
+
+	usart2_default: usart2_default {
+		group1 {
+			psels = <GECKO_PSEL(SPIM_SCK, A, 8)>,
+				<GECKO_PSEL(SPIM_MISO, A, 7)>,
+				<GECKO_PSEL(SPIM_MOSI, A, 6)>,
+				<GECKO_LOC(SPI_SCK, 1)>,
+				<GECKO_LOC(SPI_MISO, 1)>,
+				<GECKO_LOC(SPI_MOSI, 1)>;
+		};
+	};
 };
