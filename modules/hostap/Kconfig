@@ -10,6 +10,7 @@ config WIFI_NM_WPA_SUPPLICANT
 	select POSIX_TIMERS
 	select POSIX_SIGNALS
 	select POSIX_API
+	select FILE_SYSTEM
 	select NET_SOCKETS
 	select NET_SOCKETS_PACKET
 	select NET_SOCKETPAIR
@@ -370,6 +371,12 @@ config SAE
 	bool
 
 config SHA256
+	bool
+
+config SHA384
+	bool
+
+config SHA512
 	bool
 
 config SUITEB192

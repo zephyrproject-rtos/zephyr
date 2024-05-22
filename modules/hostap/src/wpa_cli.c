@@ -29,7 +29,7 @@ static int cmd_wpa_cli(const struct shell *sh,
 	argc++;
 
 	/* Remove wpa_cli from the argument list */
-	return z_wpa_ctrl_zephyr_cmd(argc - 1, &argv[1]);
+	return zephyr_wpa_ctrl_zephyr_cmd(argc - 1, &argv[1]);
 }
 
 /* Persisting with "wpa_cli" naming for compatibility with Wi-Fi
