@@ -1,0 +1,68 @@
+# Copyright (c) 2024 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ENE ESPI controller
+
+compatible: "ene,kb1200-espi"
+
+include: [espi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    description: register space
+    required: true
+
+  espivw-reg:
+    type: int
+    description: espivw register space
+    required: true
+
+  espivw-tab:
+    type: int
+    description: espivw table space
+    required: true
+
+  espioob-reg:
+    type: int
+    description: espioob register space
+    required: true
+
+  espifa-reg:
+    type: int
+    description: espifa register space
+    required: true
+
+  hif-reg:
+    type: int
+    description: esp hif register space
+    required: true
+
+  kbc-reg:
+    type: int
+    description: esp kbc table space
+    required: true
+
+  eci-reg:
+    type: int
+    description: esp eci register space
+    required: true
+
+  dbi-reg:
+    type: int
+    description: espi debug io register space
+    required: true
+
+  gpios:
+    type: phandle-array
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
