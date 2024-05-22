@@ -12,7 +12,6 @@ implementation of the POSIX API.
 * :kconfig:option:`CONFIG_FNMATCH`
 * :kconfig:option:`CONFIG_GETOPT`
 * :kconfig:option:`CONFIG_GETOPT_LONG`
-* :kconfig:option:`CONFIG_MAX_PTHREAD_BARRIER_COUNT`
 * :kconfig:option:`CONFIG_MAX_PTHREAD_COUNT`
 * :kconfig:option:`CONFIG_MAX_PTHREAD_KEY_COUNT`
 * :kconfig:option:`CONFIG_MAX_PTHREAD_MUTEX_COUNT`
@@ -35,7 +34,6 @@ implementation of the POSIX API.
 * :kconfig:option:`CONFIG_POSIX_UNAME_NODENAME_LEN`
 * :kconfig:option:`CONFIG_POSIX_UNAME_VERSION_LEN`
 * :kconfig:option:`CONFIG_PTHREAD`
-* :kconfig:option:`CONFIG_PTHREAD_BARRIER`
 * :kconfig:option:`CONFIG_PTHREAD_COND`
 * :kconfig:option:`CONFIG_PTHREAD_CREATE_BARRIER`
 * :kconfig:option:`CONFIG_PTHREAD_IPC`
