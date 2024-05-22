@@ -155,6 +155,7 @@ croxel	Croxel, Inc.
 crystalfontz	Crystalfontz America, Inc.
 csky	Hangzhou C-SKY Microsystems Co., Ltd
 csq	Shenzen Chuangsiqi Technology Co.,Ltd.
+ct	CTHINGS.CO
 cubietech	Cubietech, Ltd.
 cypress	Cypress Semiconductor Corporation
 cznic	CZ.NIC, z.s.p.o.
