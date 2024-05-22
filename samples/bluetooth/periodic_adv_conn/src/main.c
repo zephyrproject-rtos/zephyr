@@ -181,7 +181,7 @@ int main(void)
 		return 0;
 	}
 
-	/* Create a non-connectable non-scannable advertising set */
+	/* Create a non-connectable advertising set */
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, &adv_cb, &pawr_adv);
 	if (err) {
 		printk("Failed to create advertising set (err %d)\n", err);
