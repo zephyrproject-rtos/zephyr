@@ -490,7 +490,7 @@ static void init(void)
 					  &stream_ops);
 	}
 
-	/* Create a non-connectable non-scannable advertising set */
+	/* Create a connectable advertising set */
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &ext_adv);
 	if (err != 0) {
 		FAIL("Failed to create advertising set (err %d)\n", err);
