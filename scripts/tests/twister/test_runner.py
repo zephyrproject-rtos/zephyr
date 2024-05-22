@@ -2691,6 +2691,7 @@ def test_twisterrunner_execute(caplog):
 
     process_mock = mock.Mock()
     process_mock().join = mock.Mock(side_effect=mock_join)
+    process_mock().exitcode = 0
     pipeline_mock = mock.Mock()
     done_mock = mock.Mock()
 
