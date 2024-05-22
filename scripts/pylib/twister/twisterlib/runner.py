@@ -1315,8 +1315,22 @@ class TwisterRunner:
 
 
     def pipeline_mgr(self, pipeline, done_queue, lock, results):
-        if sys.platform == 'linux':
-            with self.jobserver.get_job():
+        try:
+            if sys.platform == 'linux':
+                with self.jobserver.get_job():
+                    while True:
+                        try:
+                            task = pipeline.get_nowait()
+                        except queue.Empty:
+                            break
+                        else:
+                            instance = task['test']
+                            pb = ProjectBuilder(instance, self.env, self.jobserver)
+                            pb.duts = self.duts
+                            pb.process(pipeline, done_queue, task, lock, results)
+
+                    return True
+            else:
                 while True:
                     try:
                         task = pipeline.get_nowait()
@@ -1327,20 +1341,10 @@ class TwisterRunner:
                         pb = ProjectBuilder(instance, self.env, self.jobserver)
                         pb.duts = self.duts
                         pb.process(pipeline, done_queue, task, lock, results)
-
                 return True
-        else:
-            while True:
-                try:
-                    task = pipeline.get_nowait()
-                except queue.Empty:
-                    break
-                else:
-                    instance = task['test']
-                    pb = ProjectBuilder(instance, self.env, self.jobserver)
-                    pb.duts = self.duts
-                    pb.process(pipeline, done_queue, task, lock, results)
-            return True
+        except Exception as e:
+            logger.error(f"General exception: {e}")
+            sys.exit(1)
 
     def execute(self, pipeline, done):
         lock = Lock()
@@ -1360,6 +1364,11 @@ class TwisterRunner:
         try:
             for p in processes:
                 p.join()
+                if p.exitcode != 0:
+                    logger.error(f"Process {p.pid} failed, aborting execution")
+                    for proc in processes:
+                        proc.terminate()
+                    sys.exit(1)
         except KeyboardInterrupt:
             logger.info("Execution interrupted")
             for p in processes:
