@@ -16,6 +16,6 @@ tests:
     harness_config:
       type: multi_line
       regex:
-        - "ADC sequence reading\\[\\d+\\]:"
+        - "ADC sequence reading \\[\\d+\\]:"
         - "- .+, channel \\d+, \\d+ sequence samples:"
         - "- - \\d+ (= \\d+mV)|(\\(value in mV not available\\))"
