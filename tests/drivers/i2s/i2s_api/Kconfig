@@ -37,3 +37,17 @@ config I2S_TEST_ALLOWED_DATA_OFFSET
 	help
 	  Maximum allowed offset between sent and received samples. Non-zero
 	  value of this option may be needed when GPIO loopback is used.
+
+config I2S_TEST_WORD_SIZE
+	int "Word size in bits"
+	default 16
+	help
+	  16, 24 and 32 bit word sizes are supported
+
+config I2S_TEST_DATA_FORMAT
+	int "Data format"
+	default 0
+	help
+	  I2S_FMT_DATA_FORMAT_I2S (0) is the default setting,
+	  NRF I2S driver supports I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED (3)
+	  and I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED (4) additonally

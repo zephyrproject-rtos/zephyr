@@ -22,3 +22,63 @@ tests:
       - mimxrt685_evk/mimxrt685s/cm33
     harness_config:
       fixture: gpio_loopback
+  drivers.i2s.gpio_loopback_24bit_word:
+    depends_on:
+      - i2s
+      - gpio
+    tags:
+      - drivers
+      - userspace
+    filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    harness: ztest
+    platform_exclude:
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt685_evk/mimxrt685s/cm33
+    harness_config:
+      fixture: gpio_loopback
+    extra_args: CONFIG_I2S_TEST_WORD_SIZE=24
+  drivers.i2s.gpio_loopback_32bit_word:
+    depends_on:
+      - i2s
+      - gpio
+    tags:
+      - drivers
+      - userspace
+    filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    harness: ztest
+    platform_exclude:
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt685_evk/mimxrt685s/cm33
+    harness_config:
+      fixture: gpio_loopback
+    extra_args: CONFIG_I2S_TEST_WORD_SIZE=32
+  drivers.i2s.gpio_loopback_left_justified_format:
+    depends_on:
+      - i2s
+      - gpio
+    tags:
+      - drivers
+      - userspace
+    filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    harness: ztest
+    platform_exclude:
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt685_evk/mimxrt685s/cm33
+    harness_config:
+      fixture: gpio_loopback
+    extra_args: CONFIG_I2S_TEST_DATA_FORMAT=3
+  drivers.i2s.gpio_loopback_right_justified_format:
+    depends_on:
+      - i2s
+      - gpio
+    tags:
+      - drivers
+      - userspace
+    filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    harness: ztest
+    platform_exclude:
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt685_evk/mimxrt685s/cm33
+    harness_config:
+      fixture: gpio_loopback
+    extra_args: CONFIG_I2S_TEST_DATA_FORMAT=4

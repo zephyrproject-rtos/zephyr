@@ -16,10 +16,15 @@ extern struct k_mem_slab tx_mem_slab;
 
 #define SAMPLE_NO	32
 #define TIMEOUT		2000
-#define FRAME_CLK_FREQ	8000
 
-extern int16_t data_l[SAMPLE_NO];
-extern int16_t data_r[SAMPLE_NO];
+#if (CONFIG_I2S_TEST_WORD_SIZE > 16)
+#define FRAME_CLK_FREQ	4000
+#else
+#define FRAME_CLK_FREQ	8000
+#endif
+
+extern int32_t data_l[SAMPLE_NO];
+extern int32_t data_r[SAMPLE_NO];
 
 extern const struct device *dev_i2s_rx;
 extern const struct device *dev_i2s_tx;
@@ -40,8 +45,8 @@ extern bool dir_both_supported;
 int tx_block_write(const struct device *dev_i2s, int att, int err);
 int rx_block_read(const struct device *dev_i2s, int att);
 
-void fill_buf_const(int16_t *tx_block, int16_t val_l, int16_t val_r);
-int verify_buf_const(int16_t *rx_block, int16_t val_l, int16_t val_r);
+void fill_buf_const(int32_t *tx_block, int32_t val_l, int32_t val_r);
+int verify_buf_const(int32_t *rx_block, int32_t val_l, int32_t val_r);
 
 int configure_stream(const struct device *dev_i2s, enum i2s_dir dir);
 

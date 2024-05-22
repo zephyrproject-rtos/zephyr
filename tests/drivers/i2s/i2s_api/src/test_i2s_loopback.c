@@ -152,7 +152,7 @@ ZTEST_USER(i2s_loopback, test_i2s_rx_sync_start)
 
 	/* Prefill TX queue */
 	for (int n = 0; n < NUM_TX_BLOCKS; n++) {
-		fill_buf_const((uint16_t *)buf, 1, 2);
+		fill_buf_const((uint32_t *)buf, 1, 2);
 		ret = i2s_buf_write(dev_i2s_tx, buf, BLOCK_SIZE);
 		zassert_equal(ret, TC_PASS);
 		TC_PRINT("%d->OK\n", n);
@@ -169,7 +169,7 @@ ZTEST_USER(i2s_loopback, test_i2s_rx_sync_start)
 	zassert_equal(ret, 0, "RX START trigger failed");
 	ret = i2s_buf_read(dev_i2s_rx, buf, &rx_size);
 	zassert_equal(ret, TC_PASS);
-	ret = verify_buf_const((uint16_t *)buf, 1, 2);
+	ret = verify_buf_const((uint32_t *)buf, 1, 2);
 
 	zassert_equal(ret, TC_PASS);
 	TC_PRINT("%d<-OK\n", 1);
