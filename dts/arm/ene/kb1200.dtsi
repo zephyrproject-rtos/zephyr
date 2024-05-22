@@ -335,6 +335,25 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		espi0: espi@50200000 {
+			compatible = "ene,kb1200-espi";
+			reg = <0x50200000 0x100>;
+			espivw-reg = <0x50202000>;
+			espivw-tab = <0x50202100>;
+			espioob-reg = <0x50203000>;
+			espifa-reg = <0x50204000>;
+			hif-reg = <0x50210000>;
+			kbc-reg = <0x50211000>;
+			eci-reg = <0x50212000>;
+			dbi-reg = <0x50214000>;
+			interrupts = <32 3>, <33 3>, <34 3>, <26 3>, <27 3>, <28 3>, <31 3>;
+			interrupt-names = "vwire", "oob", "flash", "kbc", "eci", "dbi", "iotosram";
+			gpios = <&gpio0x1x 0x18 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 

@@ -193,4 +193,13 @@
 		pinmux = <ENE_KB1200_PINMUX(0x73, PINMUX_FUNC_B)>;
 		bias-pull-up;
 	};
+	/omit-if-no-ref/ espi_cs_gpio17: espi_cs_gpio17 {
+		pinmux = <ENE_KB1200_PINMUX(0x17, PINMUX_FUNC_B)>;
+	};
+	/omit-if-no-ref/ espi_rst_gpio18: espi_rst_gpio18 {
+		pinmux = <ENE_KB1200_PINMUX(0x18, PINMUX_FUNC_B)>;
+	};
+	/omit-if-no-ref/ espi_alert_gpio19: espi_alert_gpio19 {
+		pinmux = <ENE_KB1200_PINMUX(0x19, PINMUX_FUNC_B)>;
+	};
 };
