@@ -102,6 +102,7 @@ config NEWLIB_LIBC
 	depends on !NATIVE_APPLICATION
 	depends on NEWLIB_LIBC_SUPPORTED
 	select NEED_LIBC_MEM_PARTITION
+	imply POSIX_FD_MGMT_ALIAS_LSEEK
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.

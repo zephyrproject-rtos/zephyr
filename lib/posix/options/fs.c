@@ -421,7 +421,7 @@ int mkdir(const char *path, mode_t mode)
  * @brief Truncate file to specified length.
  *
  */
-int ftruncate(int fd, off_t length)
+int zvfs_ftruncate(int fd, off_t length)
 {
 	int rc;
 	struct posix_fs_desc *ptr = NULL;

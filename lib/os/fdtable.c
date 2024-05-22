@@ -366,7 +366,7 @@ int fsync(int fd)
 FUNC_ALIAS(fsync, _fsync, int);
 #endif /* CONFIG_POSIX_FSYNC */
 
-off_t lseek(int fd, off_t offset, int whence)
+off_t zvfs_lseek(int fd, off_t offset, int whence)
 {
 	if (_check_fd(fd) < 0) {
 		return -1;
@@ -375,7 +375,6 @@ off_t lseek(int fd, off_t offset, int whence)
 	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_LSEEK,
 			  offset, whence);
 }
-FUNC_ALIAS(lseek, _lseek, off_t);
 
 int ioctl(int fd, unsigned long request, ...)
 {
@@ -393,26 +392,16 @@ int ioctl(int fd, unsigned long request, ...)
 	return res;
 }
 
-int fcntl(int fd, int cmd, ...)
+int zvfs_fcntl(int fd, int cmd, va_list args)
 {
-	va_list args;
 	int res;
 
 	if (_check_fd(fd) < 0) {
 		return -1;
 	}
 
-	/* Handle fdtable commands. */
-	if (cmd == F_DUPFD) {
-		/* Not implemented so far. */
-		errno = EINVAL;
-		return -1;
-	}
-
 	/* The rest of commands are per-fd, handled by ioctl vmethod. */
-	va_start(args, cmd);
 	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, cmd, args);
-	va_end(args);
 
 	return res;
 }
