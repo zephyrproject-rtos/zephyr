@@ -4,6 +4,7 @@
 menuconfig PTP
 	bool "IEEE 1588 (PTP) support [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	select EVENTFD
 	select NET_SOCKETS
 	select NET_CONTEXT_PRIORITY
 	select NET_L2_PTP

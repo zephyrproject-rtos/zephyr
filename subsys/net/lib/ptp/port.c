@@ -370,6 +370,8 @@ static void port_timer_to_handler(struct k_timer *timer)
 	} else if (timer == &port->timers.qualification) {
 		atomic_set_bit(&port->timeouts, PTP_PORT_TIMER_QUALIFICATION_TO);
 	}
+
+	ptp_clock_signal_timeout();
 }
 
 static void foreign_clock_cleanup(struct ptp_foreign_tt_clock *foreign)
