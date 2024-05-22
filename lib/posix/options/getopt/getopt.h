@@ -29,6 +29,10 @@ struct getopt_state {
 };
 
 extern int optreset;	/* reset getopt */
+extern char *optarg;
+extern int opterr;
+extern int optind;
+extern int optopt;
 
 #define no_argument        0
 #define required_argument  1
