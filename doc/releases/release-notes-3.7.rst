@@ -427,6 +427,10 @@ Trusted Firmware-M
 * TF-M was updated to 2.1.0. Release notes can be found at:
   https://tf-m-user-guide.trustedfirmware.org/releases/2.1.0.html
 
+* Support for MCUboot signature types other than RSA-3072 has been added.
+  The type can be chosen with the :kconfig:option:`CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE` Kconfig option.
+  Using EC-P256, the new default, reduces flash usage by several KBs compared to RSA.
+
 zcbor
 *****
 
