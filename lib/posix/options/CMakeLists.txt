@@ -62,6 +62,7 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_SINGLE_PROCESS
   sysconf.c
   uname.c
 )
+zephyr_library_sources_ifdef(CONFIG_POSIX_SPIN_LOCKS spinlock.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_SYSLOG syslog.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_TIMERS
   clock.c
@@ -75,7 +76,6 @@ zephyr_library_sources_ifdef(CONFIG_PTHREAD pthread.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_RWLOCK rwlock.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_PRIORITY_SCHEDULING sched.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC semaphore.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_SPINLOCK spinlock.c)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
