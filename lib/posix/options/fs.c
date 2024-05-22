@@ -429,3 +429,15 @@ int zvfs_ftruncate(int fd, off_t length)
 
 	return 0;
 }
+
+int fstat(int fildes, struct stat *buf)
+{
+	ARG_UNUSED(fildes);
+	ARG_UNUSED(buf);
+
+	errno = ENOTSUP;
+	return -1;
+}
+#ifdef CONFIG_POSIX_FILE_SYSTEM_ALIAS_FSTAT
+FUNC_ALIAS(fstat, _fstat, int);
+#endif

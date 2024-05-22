@@ -2,20 +2,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig POSIX_FS
+menuconfig POSIX_FILE_SYSTEM
 	bool "POSIX file system API support"
 	default y if POSIX_API
-	depends on FILE_SYSTEM
+	select FILE_SYSTEM
 	select FDTABLE
 	help
 	  This enables POSIX style file system related APIs.
 
-if POSIX_FS
+if POSIX_FILE_SYSTEM
 
-config POSIX_FSYNC
-	bool "Support for fsync()"
-	default y
+config POSIX_FILE_SYSTEM_ALIAS_FSTAT
+	bool
 	help
-	  This enables fsync() support.
+	  Select 'y' here and Zephyr will provide an alias for fstat() as _fstat().
 
-endif # POSIX_FS
+endif # POSIX_FILE_SYSTEM
