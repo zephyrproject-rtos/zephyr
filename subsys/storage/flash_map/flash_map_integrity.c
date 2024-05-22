@@ -42,7 +42,7 @@ int flash_area_check_int_sha256(const struct flash_area *fa,
 #endif
 	int to_read;
 	int pos;
-	int rc;
+	int rc = 0;
 
 	if (fa == NULL || fac == NULL || fac->match == NULL ||
 	    fac->rbuf == NULL || fac->clen == 0 || fac->rblen == 0) {
