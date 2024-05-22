@@ -112,6 +112,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_AMBIQ
 	DEVS_FOR_DT_COMPAT(ambiq_counter)
 #endif
+#ifdef CONFIG_COUNTER_MCUX_LPTMR
+	DEVS_FOR_DT_COMPAT(nxp_lptmr)
+#endif
 };
 
 static const struct device *const period_devs[] = {
