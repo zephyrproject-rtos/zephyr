@@ -16,6 +16,7 @@ void intc_mtk_adsp_set_enable(const struct device *dev, int irq, bool val);
  */
 static const struct device *irq_dev(unsigned int *irq_inout)
 {
+#ifdef CONFIG_SOC_SERIES_MT8195_ADSP
 	/* Controller 0 is on Xtensa vector 1, controller 1 on vector 23. */
 	if ((*irq_inout & 0xff) == 1) {
 		*irq_inout >>= 8;
@@ -24,6 +25,10 @@ static const struct device *irq_dev(unsigned int *irq_inout)
 	__ASSERT_NO_MSG((*irq_inout & 0xff) == 23);
 	*irq_inout = (*irq_inout >> 8) - 1;
 	return DEVICE_DT_GET(DT_INST(1, mediatek_adsp_intc));
+#else
+	/* Only one on 818x */
+	return DEVICE_DT_GET(DT_INST(0, mediatek_adsp_intc));
+#endif
 }
 
 void z_soc_irq_enable(unsigned int irq)

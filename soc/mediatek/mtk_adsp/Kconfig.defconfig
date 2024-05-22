@@ -26,10 +26,21 @@ config MAX_IRQ_PER_AGGREGATOR
 config 2ND_LVL_ISR_TBL_OFFSET
 	default 32
 
+# The 8186/8188 core has only one software interrupt that lives at
+# level 2, underneath other hardware interrupts like timer, so it
+# can't reliably do this.  Unselect so the tests don't try to exercise
+# it.
+config IRQ_OFFLOAD_NESTED
+	default n if SOC_SERIES_MT818X_ADSP
+	default y
+
 config MTK_ADSP_TIMER
 	default y
 config XTENSA_TIMER
 	default n
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 13000000
 
 config MAIN_STACK_SIZE
 	default 2048
@@ -51,7 +62,8 @@ config XTENSA_HAL
 	default y
 
 config SOC_TOOLCHAIN_NAME
-	default "mtk_mt8195_adsp"
+	default "mtk_mt8195_adsp" if SOC_SERIES_MT8195_ADSP
+	default "mtk_mt818x_adsp" if SOC_SERIES_MT818X_ADSP
 
 config XTENSA_RESET_VECTOR
 	default n
