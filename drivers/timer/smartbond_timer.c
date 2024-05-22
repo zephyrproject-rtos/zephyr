@@ -108,6 +108,18 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	target_val = ((target_val + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
 
 	set_reload(target_val);
+
+	/*
+	 * If time was so small that it already fired or should fire
+	 * just now, mark interrupt as pending to avoid losing timer event.
+	 * Condition is true when target_val (point in time that should be
+	 * used for wakeup) is behind timer value or is equal to it.
+	 * In that case we don't know if reload value was set in time or
+	 * not but time expired anyway so make sure that interrupt is pending.
+	 */
+	if ((int32_t)(target_val - timer_val_32_noupdate() - 1) < 0) {
+		NVIC_SetPendingIRQ(TIMER2_IRQn);
+	}
 }
 
 uint32_t sys_clock_elapsed(void)
