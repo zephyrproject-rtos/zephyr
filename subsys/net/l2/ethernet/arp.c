@@ -408,6 +408,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 			if (!net_pkt_ipv4_auto(pkt) &&
 			    k_queue_unique_append(&entry->pending_queue._queue,
 						  net_pkt_ref(pkt))) {
+				net_pkt_unref(pkt);
 				k_mutex_unlock(&arp_mutex);
 				return NULL;
 			}
