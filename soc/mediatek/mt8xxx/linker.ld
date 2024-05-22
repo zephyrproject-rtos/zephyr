@@ -1,4 +1,4 @@
-/* Copyright 2023 The ChromiumOS Authors
+/* Copyright 2024 The ChromiumOS Authors
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -139,4 +139,5 @@ SECTIONS {
 #ifdef CONFIG_LLEXT
 #include <zephyr/linker/llext-sections.ld>
 #endif
+
 } /* SECTIONS */

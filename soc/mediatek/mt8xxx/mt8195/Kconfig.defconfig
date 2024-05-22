@@ -1,7 +1,7 @@
 # Copyright 2023 The ChromiumOS Authors
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_MT8195_ADSP
+if SOC_SERIES_MT8195
 
 config NUM_2ND_LEVEL_AGGREGATORS
 	default 2
@@ -10,4 +10,4 @@ config 2ND_LVL_INTR_00_OFFSET
 config 2ND_LVL_INTR_01_OFFSET
 	default 23
 
-endif # SOC_SERIES_MT8195_ADSP
+endif # SOC_SERIES_MT8195

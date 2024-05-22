@@ -2,8 +2,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SOC_MTK_ADSP_SOC_H
-#define ZEPHYR_SOC_MTK_ADSP_SOC_H
+#ifndef ZEPHYR_SOC_MTK_SOC_H
+#define ZEPHYR_SOC_MTK_SOC_H
 
 #include <zephyr/device.h>
 
@@ -26,4 +26,4 @@ void mtk_adsp_mbox_set_handler(const struct device *mbox, uint32_t chan,
 /* Signal an interrupt on the specified channel for the other side */
 void mtk_adsp_mbox_signal(const struct device *mbox, uint32_t chan);
 
-#endif /* ZEPHYR_SOC_MTK_ADSP_SOC_H */
+#endif /* ZEPHYR_SOC_MTK_SOC_H */
