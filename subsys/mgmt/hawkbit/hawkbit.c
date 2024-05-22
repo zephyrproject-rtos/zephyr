@@ -45,6 +45,8 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #define HAWKBIT_RECV_TIMEOUT (300 * MSEC_PER_SEC)
 #define HAWKBIT_SET_SERVER_TIMEOUT K_MSEC(300)
 
+#define HAWKBIT_JSON_URL "/default/controller/v1"
+
 #define HTTP_HEADER_CONTENT_TYPE_JSON "application/json;charset=UTF-8"
 
 #define SLOT1_LABEL slot1_partition
