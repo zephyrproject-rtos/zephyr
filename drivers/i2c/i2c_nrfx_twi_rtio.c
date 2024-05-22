@@ -32,9 +32,9 @@ BUILD_ASSERT(
 	offsetof(struct i2c_nrfx_twi_common_data, dev_config)
 );
 
-static void i2c_nrfx_twi_complete(const struct device *dev, int status);
+static void i2c_nrfx_twi_rtio_complete(const struct device *dev, int status);
 
-static bool i2c_nrfx_twi_msg_start(const struct device *dev, uint8_t flags,
+static bool i2c_nrfx_twi_rtio_msg_start(const struct device *dev, uint8_t flags,
 				   uint8_t *buf, size_t buf_len, uint16_t i2c_addr)
 {
 	const struct i2c_nrfx_twi_config *config = dev->config;
@@ -59,7 +59,7 @@ static bool i2c_nrfx_twi_msg_start(const struct device *dev, uint8_t flags,
 	return false;
 }
 
-static bool i2c_nrfx_twi_start(const struct device *dev)
+static bool i2c_nrfx_twi_rtio_start(const struct device *dev)
 {
 	struct i2c_nrfx_twi_rtio_data *const dev_data = dev->data;
 	struct i2c_rtio *ctx = dev_data->ctx;
@@ -68,13 +68,13 @@ static bool i2c_nrfx_twi_start(const struct device *dev)
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
-		return i2c_nrfx_twi_msg_start(dev, I2C_MSG_READ | sqe->iodev_flags,
+		return i2c_nrfx_twi_rtio_msg_start(dev, I2C_MSG_READ | sqe->iodev_flags,
 					sqe->buf, sqe->buf_len, dt_spec->addr);
 	case RTIO_OP_TINY_TX:
-		return i2c_nrfx_twi_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
+		return i2c_nrfx_twi_rtio_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
 					sqe->tiny_buf, sqe->tiny_buf_len, dt_spec->addr);
 	case RTIO_OP_TX:
-		return i2c_nrfx_twi_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
+		return i2c_nrfx_twi_rtio_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
 					sqe->buf, sqe->buf_len, dt_spec->addr);
 	case RTIO_OP_I2C_CONFIGURE:
 		(void)i2c_nrfx_twi_configure(dev, sqe->i2c_config);
@@ -88,7 +88,7 @@ static bool i2c_nrfx_twi_start(const struct device *dev)
 	}
 }
 
-static void i2c_nrfx_twi_complete(const struct device *dev, int status)
+static void i2c_nrfx_twi_rtio_complete(const struct device *dev, int status)
 {
 	/** Finalize if there are no more pending xfers */
 	const struct i2c_nrfx_twi_config *config = dev->config;
@@ -96,14 +96,14 @@ static void i2c_nrfx_twi_complete(const struct device *dev, int status)
 	struct i2c_rtio *const ctx = data->ctx;
 
 	if (i2c_rtio_complete(ctx, status)) {
-		(void)i2c_nrfx_twi_start(dev);
+		(void)i2c_nrfx_twi_rtio_start(dev);
 	} else {
 		nrfx_twi_disable(&config->twi);
 		data->twi_enabled = false;
 	}
 }
 
-static int i2c_nrfx_twi_transfer(const struct device *dev,
+static int i2c_nrfx_twi_rtio_transfer(const struct device *dev,
 				 struct i2c_msg *msgs,
 				 uint8_t num_msgs, uint16_t addr)
 {
@@ -122,24 +122,24 @@ static void event_handler(nrfx_twi_evt_t const *p_event, void *p_context)
 		status = -EIO;
 	}
 
-	i2c_nrfx_twi_complete(dev, status);
+	i2c_nrfx_twi_rtio_complete(dev, status);
 }
 
-static void i2c_nrfx_twi_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_seq)
+static void i2c_nrfx_twi_rtio_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_seq)
 {
 	struct i2c_nrfx_twi_rtio_data *data = dev->data;
 	struct i2c_rtio *const ctx = data->ctx;
 
 	if (i2c_rtio_submit(ctx, iodev_seq)) {
-		(void)i2c_nrfx_twi_start(dev);
+		(void)i2c_nrfx_twi_rtio_start(dev);
 	}
 }
 
-static const struct i2c_driver_api i2c_nrfx_twi_driver_api = {
+static const struct i2c_driver_api i2c_nrfx_twi_rtio_driver_api = {
 	.configure   = i2c_nrfx_twi_configure,
-	.transfer    = i2c_nrfx_twi_transfer,
+	.transfer    = i2c_nrfx_twi_rtio_transfer,
 	.recover_bus = i2c_nrfx_twi_recover_bus,
-	.iodev_submit = i2c_nrfx_twi_submit,
+	.iodev_submit = i2c_nrfx_twi_rtio_submit,
 };
 
 #define I2C_NRFX_TWI_RTIO_DEVICE(idx)					       \
@@ -186,7 +186,7 @@ static const struct i2c_driver_api i2c_nrfx_twi_driver_api = {
 		      &twi_##idx##z_config,				       \
 		      POST_KERNEL,					       \
 		      CONFIG_I2C_INIT_PRIORITY,				       \
-		      &i2c_nrfx_twi_driver_api)
+		      &i2c_nrfx_twi_rtio_driver_api)
 
 #ifdef CONFIG_HAS_HW_NRF_TWI0
 I2C_NRFX_TWI_RTIO_DEVICE(0);
