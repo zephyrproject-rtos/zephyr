@@ -427,8 +427,10 @@ enum wifi_conn_status {
  * in the disconnect result event for detailed reason.
  */
 enum wifi_disconn_reason {
+	/** Success, overload status as reason */
+	WIFI_REASON_DISCONN_SUCCESS = 0,
 	/** Unspecified reason */
-	WIFI_REASON_DISCONN_UNSPECIFIED = WIFI_STATUS_DISCONN_FIRST_STATUS,
+	WIFI_REASON_DISCONN_UNSPECIFIED,
 	/** Disconnected due to user request */
 	WIFI_REASON_DISCONN_USER_REQUEST,
 	/** Disconnected due to AP leaving */
