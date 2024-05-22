@@ -66,7 +66,7 @@ static void async_callback(const struct device *dev, struct uart_event *evt, voi
 static bool async_verify(const struct device *dev, bool active)
 {
 	char txbuf[] = "test";
-	uint8_t rxbuf[32];
+	uint8_t rxbuf[32] = { 0 };
 	volatile bool tx_done = false;
 	int err;
 
