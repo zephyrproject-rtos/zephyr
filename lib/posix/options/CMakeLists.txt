@@ -38,6 +38,7 @@ zephyr_library_sources_ifdef(CONFIG_EVENTFD eventfd.c)
 zephyr_library_sources_ifdef(CONFIG_FNMATCH fnmatch.c)
 zephyr_library_sources_ifdef(CONFIG_GETENTROPY getentropy.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_ASYNCHRONOUS_IO aio.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_BARRIERS barrier.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_CONFSTR confstr.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_DEVICE_IO
   # perror should be moved to the common libc
@@ -64,7 +65,6 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_TIMERS
 )
 zephyr_library_sources_ifdef(CONFIG_POSIX_UNAME uname.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC _common.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_BARRIER barrier.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_COND cond.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_KEY key.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_MUTEX mutex.c)

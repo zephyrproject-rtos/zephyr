@@ -144,7 +144,7 @@ enum {
 #define __z_posix_sysconf_SC_ADVISORY_INFO (-1L)
 #define __z_posix_sysconf_SC_ASYNCHRONOUS_IO                                                       \
 	COND_CODE_1(CONFIG_POSIX_ASYNCHRONOUS_IO, (_POSIX_ASYNCHRONOUS_IO), (-1L))
-#define __z_posix_sysconf_SC_BARRIERS COND_CODE_1(CONFIG_PTHREAD_BARRIER, (_POSIX_BARRIERS), (-1L))
+#define __z_posix_sysconf_SC_BARRIERS COND_CODE_1(CONFIG_POSIX_BARRIERS, (_POSIX_BARRIERS), (-1L))
 #define __z_posix_sysconf_SC_CLOCK_SELECTION                                                       \
 	COND_CODE_1(CONFIG_POSIX_CLOCK_SELECTION, (_POSIX_CLOCK_SELECTION), (-1L))
 #define __z_posix_sysconf_SC_CPUTIME \
