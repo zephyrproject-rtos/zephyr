@@ -107,6 +107,7 @@ config NEWLIB_LIBC
 	imply POSIX_DEVICE_IO_ALIAS_READ
 	imply POSIX_DEVICE_IO_ALIAS_WRITE
 	imply POSIX_FD_MGMT_ALIAS_LSEEK
+	imply POSIX_FILE_SYSTEM_ALIAS_FSTAT
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.

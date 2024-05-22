@@ -94,7 +94,7 @@ POSIX System Interfaces
     _POSIX_SHARED_MEMORY_OBJECTS, -1,
     _POSIX_SPAWN, -1, :ref:`†<posix_undefined_behaviour>`
     _POSIX_SPORADIC_SERVER, -1, :ref:`†<posix_undefined_behaviour>`
-    _POSIX_SYNCHRONIZED_IO, -1,
+    :ref:`_POSIX_SYNCHRONIZED_IO <posix_option_synchronized_io>`, -1, :kconfig:option:`CONFIG_POSIX_SYNCHRONIZED_IO`
     :ref:`_POSIX_THREAD_ATTR_STACKADDR<posix_option_thread_attr_stackaddr>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
     :ref:`_POSIX_THREAD_ATTR_STACKSIZE<posix_option_thread_attr_stacksize>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
     :ref:`_POSIX_THREAD_CPUTIME <posix_option_thread_cputime>`, 200809L, :kconfig:option:`CONFIG_POSIX_CPUTIME`
