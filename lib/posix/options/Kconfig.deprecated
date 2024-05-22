@@ -57,6 +57,15 @@ config POSIX_MAX_OPEN_FILES
 
 	  See also CONFIG_ZVFS_OPEN_MAX.
 
+config PTHREAD_BARRIER
+	bool "pthread_barrier_t support [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_BARRIERS
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_BARRIERS instead.
+
 config TIMER
 	bool "Timer support [DEPRECATED]"
 	select DEPRECATED
