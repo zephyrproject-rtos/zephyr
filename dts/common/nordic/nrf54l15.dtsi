@@ -567,12 +567,16 @@
 				status = "disabled";
 			};
 
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+			/* intentionally empty because WDT30 is hardware fixed to Secure */
+#else
 			wdt30: watchdog@108000 {
 				compatible = "nordic,nrf-wdt";
 				reg = <0x108000 0x620>;
 				interrupts = <264 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 			};
+#endif
 
 			wdt31: watchdog@109000 {
 				compatible = "nordic,nrf-wdt";
