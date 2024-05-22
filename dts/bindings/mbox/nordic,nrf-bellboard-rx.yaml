@@ -6,13 +6,13 @@ description: |
 
   BELLBOARD provides support for inter-domain software signaling. It implements
   a set of tasks and events intended for signaling within an interprocessor
-  communication (IPC) framework. When used in local mode, the BELLBOARD
+  communication (IPC) framework. When used in the rx mode, the BELLBOARD
   instance is used to receive events triggered by other remote cores.
 
   Example definition:
 
     bellboard: mailbox@deadbeef {
-      compatible = "nordic,nrf-bellboard-local";
+      compatible = "nordic,nrf-bellboard-rx";
       reg = <0xdeadbeef 0x1000>;
       interrupts = <98 NRF_DEFAULT_IRQ_PRIORITY>,
                    <99 NRF_DEFAULT_IRQ_PRIORITY>;
@@ -21,7 +21,7 @@ description: |
       #mbox-cells = <1>;
     };
 
-compatible: "nordic,nrf-bellboard-local"
+compatible: "nordic,nrf-bellboard-rx"
 
 include: "nordic,nrf-bellboard-common.yaml"
 
