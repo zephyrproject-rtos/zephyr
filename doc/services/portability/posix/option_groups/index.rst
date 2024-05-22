@@ -151,6 +151,31 @@ Group.
 For more information on developing Zephyr applications in the C programming language, please refer
 to :ref:`details<language_support>`.
 
+.. _posix_option_group_c_lib_ext:
+
+POSIX_C_LIB_EXT
+===============
+
+.. csv-table:: POSIX_C_LIB_EXT
+   :header: API, Supported
+   :widths: 50,10
+
+    fnmatch(), yes
+    getopt(), yes
+    getsubopt(),
+    optarg, yes
+    opterr, yes
+    optind, yes
+    optopt, yes
+    stpcpy(),
+    stpncpy(),
+    strcasecmp(),
+    strdup(),
+    strfmon(),
+    strncasecmp(), yes
+    strndup(),
+    strnlen(), yes
+
 .. _posix_option_group_realtime_signals:
 
 POSIX_REALTIME_SIGNALS
