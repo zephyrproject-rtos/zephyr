@@ -1869,11 +1869,9 @@ static int dai_ssp_check_aux_data(struct ssp_intel_aux_tlv *aux_tlv, int aux_len
 	return 0;
 }
 
-static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_config)
+static int dai_ssp_parse_tlv(struct dai_intel_ssp *dp, const uint8_t *aux_ptr, size_t aux_len)
 {
-	const struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 *blob = spec_config;
-	int aux_tlv_size = sizeof(struct ssp_intel_aux_tlv);
-	int hop, i, j, cfg_len, pre_aux_len, aux_len;
+	int hop, i, j;
 	struct ssp_intel_aux_tlv *aux_tlv;
 	struct ssp_intel_mn_ctl *mn;
 	struct ssp_intel_clk_ctl *clk;
@@ -1885,15 +1883,6 @@ static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_con
 #ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	struct ssp_intel_link_ctl *link;
 #endif
-	uint8_t *aux_ptr;
-
-	cfg_len = blob->size;
-	pre_aux_len = sizeof(*blob) + blob->i2s_mclk_control.mdivrcnt * sizeof(uint32_t);
-	aux_len = cfg_len - pre_aux_len;
-	aux_ptr = (uint8_t *)blob + pre_aux_len;
-
-	if (aux_len <= 0)
-		return 0;
 
 	for (i = 0; i < aux_len; i += hop) {
 		aux_tlv = (struct ssp_intel_aux_tlv *)(aux_ptr);
@@ -1958,11 +1947,28 @@ static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_con
 			return -EINVAL;
 		}
 
-		hop = aux_tlv->size + aux_tlv_size;
+		hop = aux_tlv->size + sizeof(struct ssp_intel_aux_tlv);
 		aux_ptr += hop;
 	}
 
 	return 0;
+}
+
+static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_config)
+{
+	const struct dai_intel_ipc4_ssp_configuration_blob_ver_1_5 *blob = spec_config;
+	int cfg_len, pre_aux_len, aux_len;
+	uint8_t *aux_ptr;
+
+	cfg_len = blob->size;
+	pre_aux_len = sizeof(*blob) + blob->i2s_mclk_control.mdivrcnt * sizeof(uint32_t);
+	aux_len = cfg_len - pre_aux_len;
+	aux_ptr = (uint8_t *)blob + pre_aux_len;
+
+	if (aux_len <= 0)
+		return 0;
+
+	return dai_ssp_parse_tlv(dp, aux_ptr, aux_len);
 }
 
 static int dai_ssp_set_clock_control_ver_1_5(struct dai_intel_ssp *dp,
