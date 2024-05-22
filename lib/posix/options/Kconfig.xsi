@@ -5,9 +5,8 @@
 config XSI_SINGLE_PROCESS
 	bool "X/Open single process"
 	default y if POSIX_API
-	depends on POSIX_ENV
-	depends on POSIX_UNAME
-	depends on POSIX_CLOCK_SELECTION
+	depends on POSIX_SINGLE_PROCESS
+	depends on POSIX_TIMERS
 	help
 	  Select 'y' here and Zephyr will provide implementations of
 	  gethostid(), gettimeofday(), and putenv().

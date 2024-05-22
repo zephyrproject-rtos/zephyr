@@ -28,6 +28,24 @@ config POSIX_CLOCK
 
 	  Please use CONFIG_POSIX_TIMERS instead.
 
+config POSIX_CONFSTR
+	bool "Retrieve string system configuration [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_SINGLE_PROCESS
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_SINGLE_PROCESS instead.
+
+config POSIX_ENV
+	bool "Support for environ, getenv(), getenv_r(), setenv(), and unsetenv() [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_SINGLE_PROCESS
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_SINGLE_PROCESS instead.
+
 config POSIX_LIMITS_RTSIG_MAX
 	int "_POSIX_RTSIG_MAX value in limits.h [DEPRECATED]"
 	default POSIX_RTSIG_MAX if POSIX_REALTIME_SIGNALS
@@ -56,6 +74,24 @@ config POSIX_MAX_OPEN_FILES
 	  Please use CONFIG_POSIX_OPEN_MAX instead.
 
 	  See also CONFIG_ZVFS_OPEN_MAX.
+
+config POSIX_SYSCONF
+	bool "Support for sysconf() [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_SINGLE_PROCESS
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_SINGLE_PROCESS instead.
+
+config POSIX_UNAME
+	bool "Support for uname [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_SINGLE_PROCESS
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_SINGLE_PROCESS instead.
 
 config PTHREAD_BARRIER
 	bool "pthread_barrier_t support [DEPRECATED]"
