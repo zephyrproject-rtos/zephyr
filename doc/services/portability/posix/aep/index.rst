@@ -65,7 +65,7 @@ The *Minimal Realtime System Profile* (PSE51) includes all of the
     :ref:`_POSIX_MEMLOCK_RANGE <posix_option_memlock_range>`, -1,
     :ref:`_POSIX_MONOTONIC_CLOCK <posix_option_monotonic_clock>`, 200809L, :kconfig:option:`CONFIG_POSIX_MONOTONIC_CLOCK`
     :ref:`_POSIX_SHARED_MEMORY_OBJECTS <posix_shared_memory_objects>`, -1,
-    :ref:`_POSIX_SYNCHRONIZED_IO <posix_option_synchronized_io>`, -1,
+    :ref:`_POSIX_SYNCHRONIZED_IO <posix_option_synchronized_io>`, -1, :kconfig:option:`CONFIG_POSIX_SYNCHRONIZED_IO`
     :ref:`_POSIX_THREAD_ATTR_STACKADDR<posix_option_thread_attr_stackaddr>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
     :ref:`_POSIX_THREAD_ATTR_STACKSIZE<posix_option_thread_attr_stacksize>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
     :ref:`_POSIX_THREAD_CPUTIME <posix_option_thread_cputime>`, 200809L, :kconfig:option:`CONFIG_POSIX_CPUTIME`
@@ -103,7 +103,7 @@ The *Realtime Controller System Profile* (PSE52) includes all features from PSE5
 
     :ref:`POSIX_C_LANG_MATH <posix_option_group_c_lang_math>`, yes,
     :ref:`POSIX_FD_MGMT <posix_option_group_fd_mgmt>`,, :kconfig:option:`CONFIG_POSIX_FD_MGMT`
-    :ref:`POSIX_FILE_SYSTEM <posix_option_group_file_system>`,,
+    :ref:`POSIX_FILE_SYSTEM <posix_option_group_file_system>`,, :kconfig:option:`CONFIG_POSIX_FILE_SYSTEM`
 
 .. csv-table:: PSE52 Option Requirements
    :header: Symbol, Support, Remarks

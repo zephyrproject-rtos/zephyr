@@ -23,6 +23,7 @@
 #include <zephyr/kernel/mm.h>
 #include <sys/time.h>
 
+int _fstat(int fd, struct stat *st);
 int _read(int fd, void *buf, int nbytes);
 int _write(int fd, const void *buf, int nbytes);
 int _open(const char *name, int mode);
@@ -272,6 +273,7 @@ int _getpid(void)
 }
 __weak FUNC_ALIAS(_getpid, getpid, int);
 
+#ifndef CONFIG_POSIX_FILE_SYSTEM
 int _fstat(int file, struct stat *st)
 {
 	st->st_mode = S_IFCHR;
