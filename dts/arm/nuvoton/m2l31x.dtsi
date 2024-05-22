@@ -358,6 +358,34 @@
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
+
+		canfd0: canfd@40020000 {
+			compatible = "nuvoton,numaker-canfd";
+			reg = <0x40020000 0x200>, <0x40020200 0x1800>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <112 0>, <113 0>;
+			interrupt-names = "int0", "int1";
+			resets = <&rst NUMAKER_CANFD0_RST>;
+			clocks = <&pcc NUMAKER_CANFD0_MODULE
+				  NUMAKER_CLK_CLKSEL0_CANFD0SEL_HCLK
+				  NUMAKER_CLK_CLKDIV5_CANFD0(1)>;
+			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			status = "disabled";
+		};
+
+		canfd1: canfd@40024000 {
+			compatible = "nuvoton,numaker-canfd";
+			reg = <0x40024000 0x200>, <0x40024200 0x1800>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <114 0>, <115 0>;
+			interrupt-names = "int0", "int1";
+			resets = <&rst NUMAKER_CANFD1_RST>;
+			clocks = <&pcc NUMAKER_CANFD1_MODULE
+				  NUMAKER_CLK_CLKSEL0_CANFD1SEL_HCLK
+				  NUMAKER_CLK_CLKDIV5_CANFD1(1)>;
+			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			status = "disabled";
+		};
 	};
 };
 
