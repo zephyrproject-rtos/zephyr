@@ -493,7 +493,7 @@ int main(void)
 		struct bt_data per_ad;
 		uint32_t broadcast_id;
 
-		/* Create a non-connectable non-scannable advertising set */
+		/* Create a connectable advertising set */
 		err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CUSTOM, NULL, &adv);
 		if (err != 0) {
 			printk("Unable to create extended advertising set: %d\n",
