@@ -25,7 +25,8 @@ if(CONFIG_POSIX_SIGNAL)
 endif()
 
 if(CONFIG_POSIX_API OR CONFIG_PTHREAD_IPC OR CONFIG_POSIX_TIMERS OR
-  CONFIG_POSIX_MQUEUE OR CONFIG_POSIX_FS OR CONFIG_EVENTFD OR CONFIG_GETOPT)
+  CONFIG_POSIX_MQUEUE OR CONFIG_POSIX_FS OR CONFIG_EVENTFD OR CONFIG_GETOPT OR
+  CONFIG_POSIX_SINGLE_PROCESS)
   # This is a temporary workaround so that Newlib declares the appropriate
   # types for us. POSIX features to be formalized as part of #51211
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:-D_POSIX_THREADS>)
@@ -39,13 +40,11 @@ zephyr_library_sources_ifdef(CONFIG_FNMATCH fnmatch.c)
 zephyr_library_sources_ifdef(CONFIG_GETENTROPY getentropy.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_ASYNCHRONOUS_IO aio.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_BARRIERS barrier.c)
-zephyr_library_sources_ifdef(CONFIG_POSIX_CONFSTR confstr.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_DEVICE_IO
   # perror should be moved to the common libc
   perror.c
   device_io.c
 )
-zephyr_library_sources_ifdef(CONFIG_POSIX_ENV env.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_FD_MGMT
   fd_mgmt.c
 )
@@ -57,13 +56,17 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_MULTI_PROCESS
 zephyr_library_sources_ifdef(CONFIG_POSIX_NETWORKING net.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_PUTMSG stropts.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_SIGNAL signal.c ${STRSIGNAL_TABLE_H})
-zephyr_library_sources_ifdef(CONFIG_POSIX_SYSCONF_IMPL_FULL sysconf.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_SINGLE_PROCESS
+  confstr.c
+  env.c
+  sysconf.c
+  uname.c
+)
 zephyr_library_sources_ifdef(CONFIG_POSIX_SYSLOG syslog.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_TIMERS
   clock.c
   timer.c
 )
-zephyr_library_sources_ifdef(CONFIG_POSIX_UNAME uname.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC _common.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_COND cond.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_KEY key.c)
