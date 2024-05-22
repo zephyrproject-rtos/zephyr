@@ -29,3 +29,8 @@ properties:
   active-low:
     type: boolean
     description: Pulse counter input pin is active-low
+
+  resolution:
+    type: int
+    required: true
+    description: Represents the width of the timer in bits.
