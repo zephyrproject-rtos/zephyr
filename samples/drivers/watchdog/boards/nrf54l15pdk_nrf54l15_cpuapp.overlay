@@ -3,6 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&wdt30 {
+&wdt31 {
 	status = "okay";
 };
