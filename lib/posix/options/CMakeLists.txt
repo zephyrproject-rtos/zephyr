@@ -73,8 +73,8 @@ zephyr_library_sources_ifdef(CONFIG_PTHREAD_COND cond.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_KEY key.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_MUTEX mutex.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD pthread.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_RWLOCK rwlock.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_PRIORITY_SCHEDULING sched.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_READER_WRITER_LOCKS rwlock.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC semaphore.c)
 
 zephyr_library_include_directories(
