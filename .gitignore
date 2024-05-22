@@ -27,6 +27,8 @@ outdir
 outdir-*
 scripts/basic/fixdep
 scripts/gen_idt/gen_idt
+coverage-report
+doc-coverage.info
 doc/_build
 doc/doxygen
 doc/xml
@@ -53,6 +55,7 @@ venv
 .venv
 .DS_Store
 .clangd
+new.info
 
 # CI output
 compliance.xml
