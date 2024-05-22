@@ -6,6 +6,33 @@
 
 menu "Deprecated POSIX options"
 
+config FNMATCH
+	bool "Support for fnmatch [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_C_LIB_EXT
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_C_LIB_EXT instead.
+
+config GETENTROPY
+	bool "Support for getentropy [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_C_LIB_EXT
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_C_LIB_EXT instead.
+
+config GETOPT
+	bool "Getopt library support [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_C_LIB_EXT
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_C_LIB_EXT instead.
+
 config MAX_TIMER_COUNT
 	int "Maximum number of timer_t [DEPRECATED]"
 	default POSIX_TIMER_MAX if POSIX_TIMERS
