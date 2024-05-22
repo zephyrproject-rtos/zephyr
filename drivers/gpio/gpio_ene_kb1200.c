@@ -204,7 +204,7 @@ static const struct gpio_driver_api kb1200_gpio_api = {
 	};                                                                                         \
 	static struct gpio_kb1200_data gpio_kb1200_##n##_data;                                     \
 	DEVICE_DT_INST_DEFINE(n, &kb1200_gpio_##n##_init, NULL, &gpio_kb1200_##n##_data,           \
-			      &port_##n##_kb1200_config, POST_KERNEL,                              \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &kb1200_gpio_api);
+			      &port_##n##_kb1200_config, PRE_KERNEL_1,                             \
+			      CONFIG_GPIO_INIT_PRIORITY, &kb1200_gpio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(KB1200_GPIO_INIT)
