@@ -109,7 +109,7 @@ The *Realtime Controller System Profile* (PSE52) includes all features from PSE5
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
 
-    :ref:`_POSIX_MESSAGE_PASSING <posix_option_message_passing>`, 200809L, :kconfig:option:`CONFIG_POSIX_MQUEUE`
+    :ref:`_POSIX_MESSAGE_PASSING <posix_option_message_passing>`, 200809L, :kconfig:option:`CONFIG_POSIX_MESSAGE_PASSING`
     _POSIX_TRACE, -1,
     _POSIX_TRACE_EVENT_FILTER, -1,
     _POSIX_TRACE_LOG, -1,
