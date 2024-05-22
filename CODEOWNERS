@@ -168,6 +168,7 @@
 /drivers/adc/*max11102_17*                @benediktibk
 /drivers/adc/*kb1200*                     @ene-steven
 /drivers/adc/adc_ad559x.c                 @bbilas
+/drivers/adc/*adc_max1125x*               @mustafaabdullahk
 /drivers/audio/*nrfx*                     @anangl
 /drivers/auxdisplay/*pt6314*              @xingrz
 /drivers/auxdisplay/*                      @thedjnK
