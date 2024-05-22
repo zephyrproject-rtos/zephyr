@@ -153,7 +153,7 @@ int pthread_condattr_setclock(pthread_condattr_t *att, clockid_t clock_id);
  *
  * Initialize a rwlock with the default rwlock attributes.
  */
-#define PTHREAD_RWLOCK_INITIALIZER (-1)
+#define POSIX_RWLOCK_INITIALIZER (-1)
 
 /*
  *  Mutex attributes - type

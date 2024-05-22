@@ -120,6 +120,15 @@ config PTHREAD_BARRIER
 
 	  Please use CONFIG_POSIX_BARRIERS instead.
 
+config PTHREAD_RWLOCK
+	bool "pthread_spinlock_t support [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_READER_WRITER_LOCKS
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_READER_WRITER_LOCKS instead.
+
 config PTHREAD_SPINLOCK
 	bool "pthread_spinlock_t support [DEPRECATED]"
 	select DEPRECATED
