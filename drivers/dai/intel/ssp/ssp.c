@@ -1869,6 +1869,39 @@ static int dai_ssp_check_aux_data(struct ssp_intel_aux_tlv *aux_tlv, int aux_len
 	return 0;
 }
 
+/**
+ * This function checks if the provided buffer contains valid DMA control
+ * TLV (Type-Length-Value) entries. It ensures that only specific types
+ * of DMA control settings are allowed to be modified at runtime.
+ */
+static int dai_ssp_check_dma_control(const uint8_t *aux_ptr, int aux_len)
+{
+	int hop;
+	struct ssp_intel_aux_tlv *aux_tlv;
+
+	for (int i = 0; i < aux_len; i += hop) {
+		aux_tlv = (struct ssp_intel_aux_tlv *)(aux_ptr);
+		switch (aux_tlv->type) {
+		case SSP_DMA_CLK_CONTROLS:
+		case SSP_DMA_TRANSMISSION_START:
+		case SSP_DMA_TRANSMISSION_STOP:
+		case SSP_DMA_ALWAYS_RUNNING_MODE:
+		case SSP_DMA_SYNC_DATA:
+		case SSP_DMA_CLK_CONTROLS_EXT:
+		case SSP_LINK_CLK_SOURCE:
+			break;
+		default:
+			LOG_ERR("incorect config type %u", aux_tlv->type);
+			return -EINVAL;
+		}
+
+		hop = aux_tlv->size + sizeof(struct ssp_intel_aux_tlv);
+		aux_ptr += hop;
+	}
+
+	return 0;
+}
+
 static int dai_ssp_parse_tlv(struct dai_intel_ssp *dp, const uint8_t *aux_ptr, size_t aux_len)
 {
 	int hop, i, j;
@@ -2556,6 +2589,30 @@ static int ssp_init(const struct device *dev)
 	return pm_device_runtime_enable(dev);
 }
 
+static int dai_ssp_dma_control_set(const struct device *dev,
+				   const void *bespoke_cfg,
+				   size_t size)
+{
+	struct dai_intel_ssp *dp = (struct dai_intel_ssp *)dev->data;
+
+	LOG_INF("SSP%d: tlv addr = 0x%x, tlv size = %d",
+		dp->dai_index, (uint32_t)bespoke_cfg, size);
+	if (size < sizeof(struct ssp_intel_aux_tlv)) {
+		return -EINVAL;
+	}
+
+	if (dp->state[DAI_DIR_PLAYBACK] != DAI_STATE_READY ||
+		dp->state[DAI_DIR_CAPTURE] != DAI_STATE_READY) {
+		return -EIO;
+	}
+
+	if (dai_ssp_check_dma_control(bespoke_cfg, size)) {
+		return -EINVAL;
+	}
+
+	return dai_ssp_parse_tlv(dp, bespoke_cfg, size);
+}
+
 static struct dai_driver_api dai_intel_ssp_api_funcs = {
 	.probe			= pm_device_runtime_get,
 	.remove			= pm_device_runtime_put,
@@ -2563,6 +2620,7 @@ static struct dai_driver_api dai_intel_ssp_api_funcs = {
 	.config_get		= dai_ssp_config_get,
 	.trigger		= dai_ssp_trigger,
 	.get_properties		= dai_ssp_get_properties,
+	.config_update		= dai_ssp_dma_control_set,
 };
 
 
