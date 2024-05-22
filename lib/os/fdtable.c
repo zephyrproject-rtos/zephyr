@@ -349,8 +349,7 @@ int zvfs_close(int fd)
 	return res;
 }
 
-#ifdef CONFIG_POSIX_FSYNC
-int fsync(int fd)
+int zvfs_fsync(int fd)
 {
 	if (_check_fd(fd) < 0) {
 		return -1;
@@ -358,8 +357,6 @@ int fsync(int fd)
 
 	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_FSYNC);
 }
-FUNC_ALIAS(fsync, _fsync, int);
-#endif /* CONFIG_POSIX_FSYNC */
 
 off_t zvfs_lseek(int fd, off_t offset, int whence)
 {

@@ -25,8 +25,8 @@ if(CONFIG_POSIX_SIGNAL)
 endif()
 
 if(CONFIG_POSIX_API OR CONFIG_PTHREAD_IPC OR CONFIG_POSIX_TIMERS OR
-  CONFIG_POSIX_MESSAGE_PASSING OR CONFIG_POSIX_FS OR CONFIG_EVENTFD OR CONFIG_POSIX_C_LIB_EXT OR
-  CONFIG_POSIX_SINGLE_PROCESS)
+  CONFIG_POSIX_MESSAGE_PASSING OR CONFIG_POSIX_FILE_SYSTEM OR CONFIG_EVENTFD OR
+  CONFIG_POSIX_C_LIB_EXT OR CONFIG_POSIX_SINGLE_PROCESS)
   # This is a temporary workaround so that Newlib declares the appropriate
   # types for us. POSIX features to be formalized as part of #51211
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:-D_POSIX_THREADS>)
@@ -51,7 +51,8 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_DEVICE_IO
 zephyr_library_sources_ifdef(CONFIG_POSIX_FD_MGMT
   fd_mgmt.c
 )
-zephyr_library_sources_ifdef(CONFIG_POSIX_FS fs.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_FILE_SYSTEM fs.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_FSYNC fsync.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MESSAGE_PASSING mqueue.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MULTI_PROCESS
   sleep.c
