@@ -339,6 +339,7 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 		(void)memset(&hdr->src_ipaddr, 0, sizeof(struct in_addr));
 	}
 
+	NET_DBG("Generating request for %s", net_sprint_ipv4_addr(next_addr));
 	return pkt;
 }
 
@@ -408,6 +409,8 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 			if (!net_pkt_ipv4_auto(pkt) &&
 			    k_queue_unique_append(&entry->pending_queue._queue,
 						  net_pkt_ref(pkt))) {
+				NET_DBG("Pending ARP request for %s, queuing pkt %p",
+					net_sprint_ipv4_addr(addr), pkt);
 				k_mutex_unlock(&arp_mutex);
 				return NULL;
 			}
@@ -867,6 +870,10 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 
 	case NET_ARP_REPLY:
 		if (net_ipv4_is_my_addr((struct in_addr *)arp_hdr->dst_ipaddr)) {
+			NET_DBG("Received ll %s for IP %s",
+				net_sprint_ll_addr(arp_hdr->src_hwaddr.addr,
+						   sizeof(struct net_eth_addr)),
+				net_sprint_ipv4_addr(arp_hdr->src_ipaddr));
 			net_arp_update(net_pkt_iface(pkt),
 				       (struct in_addr *)arp_hdr->src_ipaddr,
 				       &arp_hdr->src_hwaddr,
