@@ -25,8 +25,8 @@ implementation of the POSIX API.
 * :kconfig:option:`CONFIG_NET_SOCKETS_POLL_MAX`
 * :kconfig:option:`CONFIG_POSIX_API`
 * :kconfig:option:`CONFIG_POSIX_FS`
-* :kconfig:option:`CONFIG_POSIX_MAX_FDS`
-* :kconfig:option:`CONFIG_POSIX_MAX_OPEN_FILES`
+* :kconfig:option:`CONFIG_ZVFS_OPEN_MAX`
+* :kconfig:option:`CONFIG_POSIX_OPEN_MAX`
 * :kconfig:option:`CONFIG_POSIX_MQUEUE`
 * :kconfig:option:`CONFIG_POSIX_RTSIG_MAX`
 * :kconfig:option:`CONFIG_POSIX_SIGNAL`

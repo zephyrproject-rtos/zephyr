@@ -26,7 +26,7 @@ struct posix_fs_desc {
 	bool used;
 };
 
-static struct posix_fs_desc desc_array[CONFIG_POSIX_MAX_OPEN_FILES];
+static struct posix_fs_desc desc_array[CONFIG_POSIX_OPEN_MAX];
 
 static struct fs_dirent fdirent;
 static struct dirent pdirent;
@@ -39,7 +39,7 @@ static struct posix_fs_desc *posix_fs_alloc_obj(bool is_dir)
 	struct posix_fs_desc *ptr = NULL;
 	unsigned int key = irq_lock();
 
-	for (i = 0; i < CONFIG_POSIX_MAX_OPEN_FILES; i++) {
+	for (i = 0; i < CONFIG_POSIX_OPEN_MAX; i++) {
 		if (desc_array[i].used == false) {
 			ptr = &desc_array[i];
 			ptr->used = true;
@@ -80,12 +80,7 @@ static int posix_mode_to_zephyr(int mf)
 	return mode;
 }
 
-/**
- * @brief Open a file.
- *
- * See IEEE 1003.1
- */
-int open(const char *name, int flags, ...)
+int zvfs_open(const char *name, int flags)
 {
 	int rc, fd;
 	struct posix_fs_desc *ptr = NULL;
@@ -122,10 +117,6 @@ int open(const char *name, int flags, ...)
 
 	return fd;
 }
-
-#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_PICOLIBC)
-FUNC_ALIAS(open, _open, int);
-#endif
 
 static int fs_close_vmeth(void *obj)
 {

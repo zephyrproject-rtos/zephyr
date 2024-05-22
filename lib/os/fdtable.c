@@ -31,12 +31,14 @@ struct fd_entry {
 	struct k_condvar cond;
 };
 
-#ifdef CONFIG_POSIX_API
+#if defined(CONFIG_POSIX_DEVICE_IO)
 static const struct fd_op_vtable stdinout_fd_op_vtable;
-#endif
 
-static struct fd_entry fdtable[CONFIG_POSIX_MAX_FDS] = {
-#ifdef CONFIG_POSIX_API
+BUILD_ASSERT(CONFIG_ZVFS_OPEN_MAX >= 3, "CONFIG_ZVFS_OPEN_MAX >= 3 for CONFIG_POSIX_DEVICE_IO");
+#endif /* defined(CONFIG_POSIX_DEVICE_IO) */
+
+static struct fd_entry fdtable[CONFIG_ZVFS_OPEN_MAX] = {
+#if defined(CONFIG_POSIX_DEVICE_IO)
 	/*
 	 * Predefine entries for stdin/stdout/stderr.
 	 */
@@ -62,9 +64,7 @@ static struct fd_entry fdtable[CONFIG_POSIX_MAX_FDS] = {
 		.cond = Z_CONDVAR_INITIALIZER(fdtable[2].cond),
 	},
 #else
-	{
-	0
-	},
+	{0},
 #endif
 };
 
@@ -296,9 +296,7 @@ int z_alloc_fd(void *obj, const struct fd_op_vtable *vtable)
 	return fd;
 }
 
-#ifdef CONFIG_POSIX_API
-
-ssize_t read(int fd, void *buf, size_t sz)
+ssize_t zvfs_read(int fd, void *buf, size_t sz)
 {
 	ssize_t res;
 
@@ -314,9 +312,8 @@ ssize_t read(int fd, void *buf, size_t sz)
 
 	return res;
 }
-FUNC_ALIAS(read, _read, ssize_t);
 
-ssize_t write(int fd, const void *buf, size_t sz)
+ssize_t zvfs_write(int fd, const void *buf, size_t sz)
 {
 	ssize_t res;
 
@@ -332,9 +329,8 @@ ssize_t write(int fd, const void *buf, size_t sz)
 
 	return res;
 }
-FUNC_ALIAS(write, _write, ssize_t);
 
-int close(int fd)
+int zvfs_close(int fd)
 {
 	int res;
 
@@ -352,7 +348,6 @@ int close(int fd)
 
 	return res;
 }
-FUNC_ALIAS(close, _close, int);
 
 #ifdef CONFIG_POSIX_FSYNC
 int fsync(int fd)
@@ -372,8 +367,8 @@ off_t zvfs_lseek(int fd, off_t offset, int whence)
 		return -1;
 	}
 
-	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_LSEEK,
-			  offset, whence);
+	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_LSEEK, offset,
+				    whence);
 }
 
 int ioctl(int fd, unsigned long request, ...)
@@ -406,6 +401,7 @@ int zvfs_fcntl(int fd, int cmd, va_list args)
 	return res;
 }
 
+#if defined(CONFIG_POSIX_DEVICE_IO)
 /*
  * fd operations for stdio/stdout/stderr
  */
@@ -420,7 +416,7 @@ static ssize_t stdinout_read_vmeth(void *obj, void *buffer, size_t count)
 static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
 {
 #if defined(CONFIG_BOARD_NATIVE_POSIX)
-	return write(1, buffer, count);
+	return zvfs_write(1, buffer, count);
 #elif defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
 	return z_impl_zephyr_write_stdout(buffer, count);
 #else
@@ -441,4 +437,4 @@ static const struct fd_op_vtable stdinout_fd_op_vtable = {
 	.ioctl = stdinout_ioctl_vmeth,
 };
 
-#endif /* CONFIG_POSIX_API */
+#endif /* defined(CONFIG_POSIX_DEVICE_IO) */

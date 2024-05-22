@@ -268,7 +268,7 @@ enum {
 #define __z_posix_sysconf_SC_NGROUPS_MAX                  _POSIX_NGROUPS_MAX
 #define __z_posix_sysconf_SC_MQ_OPEN_MAX                  MQ_OPEN_MAX
 #define __z_posix_sysconf_SC_MQ_PRIO_MAX                  MQ_PRIO_MAX
-#define __z_posix_sysconf_SC_OPEN_MAX                     CONFIG_POSIX_MAX_FDS
+#define __z_posix_sysconf_SC_OPEN_MAX                     CONFIG_ZVFS_OPEN_MAX
 #define __z_posix_sysconf_SC_PAGE_SIZE                    PAGE_SIZE
 #define __z_posix_sysconf_SC_PAGESIZE                     PAGESIZE
 #define __z_posix_sysconf_SC_THREAD_DESTRUCTOR_ITERATIONS PTHREAD_DESTRUCTOR_ITERATIONS

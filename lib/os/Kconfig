@@ -10,6 +10,15 @@ config FDTABLE
 	  for any I/O object implementing POSIX I/O semantics (i.e. read/write +
 	  aux operations).
 
+config ZVFS_OPEN_MAX
+	int "Maximum number of open file descriptors"
+	default 16 if WIFI_NM_WPA_SUPPLICANT
+	default 16 if POSIX_API
+	default 4
+	help
+	  Maximum number of open file descriptors, this includes
+	  files, sockets, special devices, etc.
+
 config PRINTK_SYNC
 	bool "Serialize printk() calls"
 	default y if SMP && MP_MAX_NUM_CPUS > 1 && !(EFI_CONSOLE && LOG)
