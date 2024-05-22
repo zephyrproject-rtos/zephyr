@@ -21,6 +21,7 @@
 
 #include "ds.h"
 #include "state_machine.h"
+#include "tlv.h"
 
 #ifdef __cplusplus
 extern "C" {
