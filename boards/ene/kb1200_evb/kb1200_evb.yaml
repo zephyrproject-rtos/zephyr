@@ -7,7 +7,13 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - adc
+  - espi
   - gpio
+  - i2c
+  - pwm
   - uart
+  - watchdog
 ram: 64
 flash: 256
+vendor: ene

@@ -20,6 +20,7 @@ Hardware
 - SER1, SER2 and SER3
 - FAN PWM interface
 - ENE Debug interface
+- eSPI interface
 
 Supported Features
 ==================
@@ -53,6 +54,8 @@ The following features are supported:
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 | WDT       | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
+| ESPI      | on-chip    | espi                                |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr (at the moment)
