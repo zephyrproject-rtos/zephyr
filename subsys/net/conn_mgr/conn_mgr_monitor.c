@@ -37,9 +37,8 @@ uint16_t iface_states[CONN_MGR_IFACE_MAX];
 /* Tracks the most recent total quantity of L4-ready ifaces */
 static uint16_t last_ready_count;
 
-/* Tracks the last ifaces to change state in each respective direction */
-static struct net_if *last_iface_down;
-static struct net_if *last_iface_up;
+/* Tracks the last iface to cause a major state change */
+static struct net_if *last_blame;
 
 /* Used to signal when modifications have been made that need to be responded to */
 K_SEM_DEFINE(conn_mgr_mon_updated, 1, 1);
@@ -70,7 +69,7 @@ static int conn_mgr_get_index_for_if(struct net_if *iface)
 }
 
 /**
- * @brief Marks an iface as ready or unready and updates all associated state tracking.
+ * @brief Conveniently update iface readiness state
  *
  * @param idx - index (in iface_states) of the iface to mark ready or unready
  * @param readiness - true if the iface should be considered ready, otherwise false
@@ -82,16 +81,12 @@ static void conn_mgr_mon_set_ready(int idx, bool readiness)
 
 	if (readiness) {
 		iface_states[idx] |= CONN_MGR_IF_READY;
-		last_iface_up = conn_mgr_mon_get_if_by_index(idx);
-	} else {
-		last_iface_down = conn_mgr_mon_get_if_by_index(idx);
 	}
 }
 
 static void conn_mgr_mon_handle_update(void)
 {
 	int idx;
-	int ready_count;
 	bool is_ip_ready;
 	bool is_ipv6_ready;
 	bool is_ipv4_ready;
@@ -99,6 +94,8 @@ static void conn_mgr_mon_handle_update(void)
 	bool is_oper_up;
 	bool was_l4_ready;
 	bool is_ignored;
+	int ready_count = 0;
+	struct net_if *blame = NULL;
 
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
 
@@ -118,29 +115,31 @@ static void conn_mgr_mon_handle_update(void)
 		is_ip_ready	= is_ipv6_ready || is_ipv4_ready;
 		is_l4_ready	= is_oper_up && is_ip_ready && !is_ignored;
 
-		/* Respond to changes to iface readiness */
-		if (was_l4_ready != is_l4_ready) {
-			/* Track the iface readiness change */
-			conn_mgr_mon_set_ready(idx, is_l4_ready);
-		}
-
 		/* Track ready iface count */
 		if (is_l4_ready) {
 			ready_count += 1;
 		}
 
+		/* If readiness changed, track blame for possibly triggered events */
+		if (was_l4_ready != is_l4_ready) {
+			blame = conn_mgr_mon_get_if_by_index(idx);
+		}
+
+		/* Update readiness state flag with the (possibly) new value */
+		conn_mgr_mon_set_ready(idx, is_l4_ready);
 	}
 
 	/* If the total number of ready ifaces changed, possibly send an event */
 	if (ready_count != last_ready_count) {
 		if (ready_count == 0) {
 			/* We just lost connectivity */
-			net_mgmt_event_notify(NET_EVENT_L4_DISCONNECTED, last_iface_down);
+			net_mgmt_event_notify(NET_EVENT_L4_DISCONNECTED, blame);
 		} else if (last_ready_count == 0) {
 			/* We just gained connectivity */
-			net_mgmt_event_notify(NET_EVENT_L4_CONNECTED, last_iface_up);
+			net_mgmt_event_notify(NET_EVENT_L4_CONNECTED, blame);
 		}
 		last_ready_count = ready_count;
+		last_blame = blame;
 	}
 
 	k_mutex_unlock(&conn_mgr_mon_lock);
@@ -219,9 +218,9 @@ void conn_mgr_mon_resend_status(void)
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
 
 	if (last_ready_count == 0) {
-		net_mgmt_event_notify(NET_EVENT_L4_DISCONNECTED, last_iface_down);
+		net_mgmt_event_notify(NET_EVENT_L4_DISCONNECTED, last_blame);
 	} else {
-		net_mgmt_event_notify(NET_EVENT_L4_CONNECTED, last_iface_up);
+		net_mgmt_event_notify(NET_EVENT_L4_CONNECTED, last_blame);
 	}
 
 	k_mutex_unlock(&conn_mgr_mon_lock);
