@@ -238,16 +238,18 @@ int _close(int file)
 	return -1;
 }
 __weak FUNC_ALIAS(_close, close, int);
+#else
+extern ssize_t write(int file, const char *buffer, size_t count);
+#define _write	write
+#endif
 
+#ifndef CONFIG_POSIX_FD_MGMT
 int _lseek(int file, int ptr, int dir)
 {
 	return 0;
 }
 __weak FUNC_ALIAS(_lseek, lseek, int);
-#else
-extern ssize_t write(int file, const char *buffer, size_t count);
-#define _write	write
-#endif
+#endif /* CONFIG_POSIX_FD_MGMT */
 
 int _isatty(int file)
 {
