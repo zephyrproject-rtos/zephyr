@@ -41,6 +41,9 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_API perror.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_ASYNCHRONOUS_IO aio.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_CONFSTR confstr.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_ENV env.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_FD_MGMT
+  fd_mgmt.c
+)
 zephyr_library_sources_ifdef(CONFIG_POSIX_FS fs.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MQUEUE mqueue.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MULTI_PROCESS
