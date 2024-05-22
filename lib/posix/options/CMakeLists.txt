@@ -25,7 +25,7 @@ if(CONFIG_POSIX_SIGNAL)
 endif()
 
 if(CONFIG_POSIX_API OR CONFIG_PTHREAD_IPC OR CONFIG_POSIX_TIMERS OR
-  CONFIG_POSIX_MESSAGE_PASSING OR CONFIG_POSIX_FS OR CONFIG_EVENTFD OR CONFIG_GETOPT OR
+  CONFIG_POSIX_MESSAGE_PASSING OR CONFIG_POSIX_FS OR CONFIG_EVENTFD OR CONFIG_POSIX_C_LIB_EXT OR
   CONFIG_POSIX_SINGLE_PROCESS)
   # This is a temporary workaround so that Newlib declares the appropriate
   # types for us. POSIX features to be formalized as part of #51211
@@ -34,12 +34,15 @@ if(CONFIG_POSIX_API OR CONFIG_PTHREAD_IPC OR CONFIG_POSIX_TIMERS OR
 endif()
 
 zephyr_library()
-add_subdirectory_ifdef(CONFIG_GETOPT getopt)
 zephyr_library_sources_ifdef(CONFIG_EVENTFD eventfd.c)
-zephyr_library_sources_ifdef(CONFIG_FNMATCH fnmatch.c)
-zephyr_library_sources_ifdef(CONFIG_GETENTROPY getentropy.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_ASYNCHRONOUS_IO aio.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_BARRIERS barrier.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_C_LIB_EXT
+  fnmatch.c
+  getentropy.c
+  getopt/getopt.c
+  getopt/getopt_common.c
+)
 zephyr_library_sources_ifdef(CONFIG_POSIX_DEVICE_IO
   # perror should be moved to the common libc
   perror.c
@@ -76,6 +79,13 @@ zephyr_library_sources_ifdef(CONFIG_PTHREAD pthread.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_PRIORITY_SCHEDULING sched.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_READER_WRITER_LOCKS rwlock.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC semaphore.c)
+
+zephyr_library_sources_ifdef(CONFIG_GETOPT_LONG
+  getopt/getopt_long.c
+)
+zephyr_include_directories_ifdef(CONFIG_POSIX_C_LIB_EXT
+  getopt/
+)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include

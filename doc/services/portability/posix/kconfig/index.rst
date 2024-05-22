@@ -9,8 +9,6 @@ implementation of the POSIX API.
 * :kconfig:option:`CONFIG_EVENTFD`
 * :kconfig:option:`CONFIG_EVENTFD_MAX`
 * :kconfig:option:`CONFIG_FDTABLE`
-* :kconfig:option:`CONFIG_FNMATCH`
-* :kconfig:option:`CONFIG_GETOPT`
 * :kconfig:option:`CONFIG_GETOPT_LONG`
 * :kconfig:option:`CONFIG_MAX_PTHREAD_COUNT`
 * :kconfig:option:`CONFIG_MAX_PTHREAD_KEY_COUNT`

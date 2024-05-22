@@ -556,7 +556,7 @@ is accomplished by the ``getopt`` family functions.
 
 For this purpose shell supports the getopt and getopt_long libraries available
 in the FreeBSD project. This feature is activated by:
-:kconfig:option:`CONFIG_GETOPT` set to ``y`` and :kconfig:option:`CONFIG_GETOPT_LONG`
+:kconfig:option:`CONFIG_POSIX_C_LIB_EXT` set to ``y`` and :kconfig:option:`CONFIG_GETOPT_LONG`
 set to ``y``.
 
 This feature can be used in thread safe as well as non thread safe manner.
