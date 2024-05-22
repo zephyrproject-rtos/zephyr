@@ -68,9 +68,8 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	location-rx = <GECKO_LOCATION(11) GECKO_PORT_C GECKO_PIN(7)>;
-	location-tx = <GECKO_LOCATION(11) GECKO_PORT_C GECKO_PIN(6)>;
-	location-clk = <GECKO_LOCATION(11) GECKO_PORT_C GECKO_PIN(8)>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
 
 	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
 

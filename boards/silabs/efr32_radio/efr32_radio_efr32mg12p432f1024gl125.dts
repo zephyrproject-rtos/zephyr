@@ -68,6 +68,16 @@
 	};
 };
 
+&usart2 {
+	compatible = "silabs,gecko-spi-usart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&usart2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 9 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
 &i2c0 {
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
