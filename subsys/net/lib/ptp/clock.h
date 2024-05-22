@@ -89,6 +89,13 @@ struct ptp_foreign_tt_clock {
 const struct ptp_clock *ptp_clock_init(void);
 
 /**
+ * @brief Function polling all sockets descriptors for incoming PTP messages.
+ *
+ * @return Pointer to the first element of array of socket descriptors assigned to PTP Ports.
+ */
+struct zsock_pollfd *ptp_clock_poll_sockets(void);
+
+/**
  * @brief Function handling STATE DECISION EVENT for the PTP Clock instance.
  */
 void ptp_clock_handle_state_decision_evt(void);
@@ -118,6 +125,19 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress);
  * @param[in] ingress Timestamp of the message reception on the remote node in nanoseconds.
  */
 void ptp_clock_delay(uint64_t egress, uint64_t ingress);
+/**
+ * @brief Function for getting list of PTP Ports for the PTP Clock instance.
+ *
+ * @return Pointer to the single-linked list of PTP Ports.
+ */
+sys_slist_t *ptp_clock_ports_list(void);
+
+/**
+ * @brief Function returning PTP Clock type of the instance.
+ *
+ * @return PTP Clock type of the instance.
+ */
+enum ptp_clock_type ptp_clock_type(void);
 
 /**
  * @brief Function for getting PTP Clock Default dataset.
@@ -176,6 +196,19 @@ struct ptp_port *ptp_clock_port_from_iface(struct net_if *iface);
  * @brief Function invalidating PTP Clock's array of file descriptors used for sockets.
  */
 void ptp_clock_pollfd_invalidate(void);
+
+/**
+ * @brief Function signalling timoeout of one of PTP Ports timer
+ * to the PTP Clock's file descriptor. The function should be called only from
+ * the contex of timer expiration function.
+ */
+void ptp_clock_signal_timeout(void);
+
+/**
+ * @brief Function signalling to the PTP Clock that STATE_DECISION_EVENT occurred and
+ * it needs to be handled.
+ */
+void ptp_clock_state_decision_req(void);
 
 /**
  * @brief Function adding PTP Port to the PTP Clock's list of initialized PTP Ports.
