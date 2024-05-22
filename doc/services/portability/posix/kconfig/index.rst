@@ -30,7 +30,6 @@ implementation of the POSIX API.
 * :kconfig:option:`CONFIG_POSIX_RTSIG_MAX`
 * :kconfig:option:`CONFIG_POSIX_SIGNAL`
 * :kconfig:option:`CONFIG_POSIX_SIGNAL_STRING_DESC`
-* :kconfig:option:`CONFIG_POSIX_UNAME`
 * :kconfig:option:`CONFIG_POSIX_UNAME_NODENAME_LEN`
 * :kconfig:option:`CONFIG_POSIX_UNAME_VERSION_LEN`
 * :kconfig:option:`CONFIG_PTHREAD`
