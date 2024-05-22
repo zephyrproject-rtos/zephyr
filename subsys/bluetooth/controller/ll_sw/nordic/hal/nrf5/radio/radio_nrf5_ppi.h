@@ -269,53 +269,6 @@ static inline void hal_trigger_rateoverride_ppi_config(void)
 #endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 
 /******************************************************************************/
-#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
-static inline void hal_palna_ppi_setup(void)
-{
-	nrf_ppi_channel_endpoint_setup(
-		NRF_PPI,
-		HAL_ENABLE_PALNA_PPI,
-		(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[2]),
-		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[HAL_PALNA_GPIOTE_CHAN]));
-	nrf_ppi_channel_endpoint_setup(
-		NRF_PPI,
-		HAL_DISABLE_PALNA_PPI,
-		(uint32_t)&(NRF_RADIO->EVENTS_DISABLED),
-		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[HAL_PALNA_GPIOTE_CHAN]));
-}
-#endif /* defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN) */
-
-/******************************************************************************/
-#if defined(HAL_RADIO_FEM_IS_NRF21540)
-static inline void hal_pa_ppi_setup(void)
-{
-	/* Nothing specific to PA with FEM to handle inside TRX chains */
-}
-
-static inline void hal_lna_ppi_setup(void)
-{
-	/* Nothing specific to LNA with FEM to handle inside TRX chains */
-}
-
-static inline void hal_fem_ppi_setup(void)
-{
-	nrf_ppi_channel_and_fork_endpoint_setup(
-		NRF_PPI,
-		HAL_ENABLE_FEM_PPI,
-		(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[3]),
-		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[HAL_PDN_GPIOTE_CHAN]),
-		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[HAL_CSN_GPIOTE_CHAN]));
-	nrf_ppi_channel_and_fork_endpoint_setup(
-		NRF_PPI,
-		HAL_DISABLE_FEM_PPI,
-		(uint32_t)&(NRF_RADIO->EVENTS_DISABLED),
-		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[HAL_PDN_GPIOTE_CHAN]),
-		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[HAL_CSN_GPIOTE_CHAN]));
-}
-
-#endif /* HAL_RADIO_FEM_IS_NRF21540 */
-
-/******************************************************************************/
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 /* PPI setup used for SW-based auto-switching during TIFS. */
 

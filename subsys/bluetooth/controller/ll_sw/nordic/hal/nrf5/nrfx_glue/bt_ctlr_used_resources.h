@@ -18,25 +18,6 @@
 #include "../radio/radio_nrf5_ppi_resources.h"
 #endif
 
-#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || \
-	defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
-#define HAL_PALNA_GPIOTE_CHAN 0
-#define HAL_PALNA_GPIOTE_MASK BIT(HAL_PALNA_GPIOTE_CHAN)
-#else
-#define HAL_PALNA_GPIOTE_MASK 0
-#endif
-
-#if defined(HAL_RADIO_FEM_IS_NRF21540)
-#define HAL_PDN_GPIOTE_CHAN 1
-#define HAL_CSN_GPIOTE_CHAN 2
-#define HAL_PDN_CSN_GPIOTE_MASK (BIT(HAL_PDN_GPIOTE_CHAN) | BIT(HAL_CSN_GPIOTE_CHAN))
-#else
-#define HAL_PDN_CSN_GPIOTE_MASK 0
-#endif
-
-/* Mask with all GPIOTE channels used by the bluetooth controller. */
-#define BT_CTLR_USED_GPIOTE_CHANNELS (HAL_PALNA_GPIOTE_MASK | HAL_PDN_CSN_GPIOTE_MASK)
-
 /* Mask with all (D)PPI channels used by the bluetooth controller. */
 #define BT_CTLR_USED_PPI_CHANNELS \
 	(BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI) | \
