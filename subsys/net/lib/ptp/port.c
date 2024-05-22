@@ -24,6 +24,11 @@ LOG_MODULE_REGISTER(ptp_port, CONFIG_PTP_LOG_LEVEL);
 
 #define PORT_DELAY_REQ_CLEARE_TO (3 * NSEC_PER_SEC)
 
+#define PORT_LINK_UP	     BIT(0)
+#define PORT_LINK_DOWN	     BIT(1)
+#define PORT_LINK_CHANGED    BIT(2)
+#define PORT_LINK_EVENT_MASK (NET_EVENT_IF_DOWN | NET_EVENT_IF_UP)
+
 static struct ptp_port ports[CONFIG_PTP_NUM_PORTS];
 static struct k_mem_slab foreign_tts_slab;
 #if CONFIG_PTP_FOREIGN_TIME_TRANSMITTER_FEATURE
@@ -871,6 +876,9 @@ static int port_enable(struct ptp_port *port)
 	while (!net_if_is_up(port->iface)) {
 		return -1;
 	}
+
+	port->link_status = PORT_LINK_UP;
+
 	if (ptp_transport_open(port)) {
 		LOG_ERR("Couldn't open socket on Port %d.", port->port_ds.id.port_number);
 		return -1;
@@ -954,6 +962,42 @@ int port_state_update(struct ptp_port *port, enum ptp_port_event event, bool tt_
 	return 0;
 }
 
+static void port_link_monitor(struct net_mgmt_event_callback *cb,
+			      uint32_t mgmt_event,
+			      struct net_if *iface)
+{
+	ARG_UNUSED(cb);
+
+	enum ptp_port_event event = PTP_EVT_NONE;
+	struct ptp_port *port = ptp_clock_port_from_iface(iface);
+	int iface_state = mgmt_event == NET_EVENT_IF_UP ? PORT_LINK_UP : PORT_LINK_DOWN;
+
+	if (!port) {
+		return;
+	}
+
+	if (iface_state & port->link_status) {
+		port->link_status = port->link_status;
+	} else {
+		port->link_status = iface_state | PORT_LINK_CHANGED;
+		LOG_DBG("Port %d link %s",
+			port->port_ds.id.port_number,
+			port->link_status & PORT_LINK_UP ? "up" : "down");
+	}
+
+	if (port->link_status & PORT_LINK_CHANGED) {
+		event = iface_state == PORT_LINK_UP ?
+			PTP_EVT_FAULT_CLEARED : PTP_EVT_FAULT_DETECTED;
+		port->link_status ^= PORT_LINK_CHANGED;
+	}
+
+	if (port->link_status & PORT_LINK_DOWN) {
+		ptp_clock_state_decision_req();
+	}
+
+	ptp_port_event_handle(port, event, false);
+}
+
 void ptp_port_init(struct net_if *iface, void *user_data)
 {
 	struct ptp_port *port;
@@ -991,6 +1035,9 @@ void ptp_port_init(struct net_if *iface, void *user_data)
 
 	ptp_clock_pollfd_invalidate();
 	ptp_clock_port_add(port);
+
+	net_mgmt_init_event_callback(&port->link_cb, port_link_monitor, PORT_LINK_EVENT_MASK);
+	net_mgmt_add_event_callback(&port->link_cb);
 
 	LOG_DBG("Port %d initialized", port->port_ds.id.port_number);
 }
