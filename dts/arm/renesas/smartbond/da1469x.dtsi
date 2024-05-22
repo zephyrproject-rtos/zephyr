@@ -46,7 +46,6 @@
 			rc32k: rc32k {
 				compatible = "renesas,smartbond-lp-osc";
 				clock-frequency = <DT_FREQ_K(32)>;
-				calibration-interval = <1>;
 				#clock-cells = <0>;
 				status = "okay";
 			};
@@ -60,7 +59,6 @@
 			rcx: rcx {
 				compatible = "renesas,smartbond-lp-osc";
 				clock-frequency = <DT_FREQ_K(15)>;
-				calibration-interval = <1>;
 				#clock-cells = <0>;
 				status = "disabled";
 			};

@@ -554,6 +554,8 @@ static inline ssize_t zsock_recv(int sock, void *buf, size_t max_len,
  */
 __syscall int zsock_fcntl_impl(int sock, int cmd, int flags);
 
+/** @cond INTERNAL_HIDDEN */
+
 /*
  * Need this wrapper because newer GCC versions got too smart and "typecheck"
  * even macros.
@@ -570,6 +572,8 @@ static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
 }
 
 #define zsock_fcntl zsock_fcntl_wrapper
+
+/** @endcond */
 
 /**
  * @brief Control underlying socket parameters
@@ -590,6 +594,8 @@ static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
  */
 __syscall int zsock_ioctl_impl(int sock, unsigned long request, va_list ap);
 
+/** @cond INTERNAL_HIDDEN */
+
 static inline int zsock_ioctl_wrapper(int sock, unsigned long request, ...)
 {
 	int ret;
@@ -603,6 +609,8 @@ static inline int zsock_ioctl_wrapper(int sock, unsigned long request, ...)
 }
 
 #define zsock_ioctl zsock_ioctl_wrapper
+
+/** @endcond */
 
 /**
  * @brief Efficiently poll multiple sockets for events

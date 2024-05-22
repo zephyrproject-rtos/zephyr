@@ -28,7 +28,10 @@ extern "C" {
  * @{
  */
 
+/** Maximum length of the band specification string */
 #define WIFI_UTILS_MAX_BAND_STR_LEN 3
+
+/** Maximum length of the channel specification string */
 #define WIFI_UTILS_MAX_CHAN_STR_LEN 4
 
 /**

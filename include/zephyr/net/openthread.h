@@ -199,7 +199,11 @@ int openthread_api_mutex_try_lock(struct openthread_context *ot_context);
  */
 void openthread_api_mutex_unlock(struct openthread_context *ot_context);
 
+/** @cond INTERNAL_HIDDEN */
+
 #define OPENTHREAD_L2_CTX_TYPE struct openthread_context
+
+/** @endcond */
 
 #ifdef __cplusplus
 }

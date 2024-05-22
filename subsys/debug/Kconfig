@@ -444,3 +444,9 @@ config SEGGER_DEBUGMON
 	  This option will enable Segger's implementation of
 	  the debug monitor interrupt, overriding the
 	  default z_arm_debug_monitor symbol.
+
+config MIPI_STP_DECODER
+	bool "MIPI STPv2 decoder"
+	depends on !BIG_ENDIAN
+	help
+	  Module decodes a stream of STPv2 data.

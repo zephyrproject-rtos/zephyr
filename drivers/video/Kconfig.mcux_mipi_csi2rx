@@ -1,0 +1,10 @@
+# NXP MIPI CSI-2 Rx driver configuration option
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_MCUX_MIPI_CSI2RX
+	bool "NXP MIPI CSI-2 Rx driver"
+	default y
+	depends on DT_HAS_NXP_MIPI_CSI2RX_ENABLED
+	select VIDEO_MCUX_CSI

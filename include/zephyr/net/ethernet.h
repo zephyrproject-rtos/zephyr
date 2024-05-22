@@ -20,11 +20,7 @@
 
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_pkt.h>
-
-#if defined(CONFIG_NET_LLDP)
 #include <zephyr/net/lldp.h>
-#endif
-
 #include <zephyr/sys/util.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet_vlan.h>
@@ -49,13 +45,14 @@ extern "C" {
  * @{
  */
 
-#define NET_ETH_ADDR_LEN		6U
+#define NET_ETH_ADDR_LEN		6U /**< Ethernet MAC address length */
+
+/** Ethernet address */
+struct net_eth_addr {
+	uint8_t addr[NET_ETH_ADDR_LEN]; /**< Buffer storing the address */
+};
 
 /** @cond INTERNAL_HIDDEN */
-
-struct net_eth_addr {
-	uint8_t addr[NET_ETH_ADDR_LEN];
-};
 
 #define NET_ETH_HDR(pkt) ((struct net_eth_hdr *)net_pkt_data(pkt))
 
@@ -108,8 +105,12 @@ struct net_eth_addr {
 #define ETH_P_HDLC	NET_ETH_PTYPE_HDLC
 #endif
 
-#define NET_ETH_MINIMAL_FRAME_SIZE	60
-#define NET_ETH_MTU			1500
+/** @endcond */
+
+#define NET_ETH_MINIMAL_FRAME_SIZE	60   /**< Minimum Ethernet frame size */
+#define NET_ETH_MTU			1500 /**< Ethernet MTU size */
+
+/** @cond INTERNAL_HIDDEN */
 
 #if defined(CONFIG_NET_VLAN)
 #define _NET_ETH_MAX_HDR_SIZE		(sizeof(struct net_eth_vlan_hdr))
@@ -134,7 +135,7 @@ struct net_eth_addr {
 
 /** @endcond */
 
-/** Ethernet hardware capabilities */
+/** @brief Ethernet hardware capabilities */
 enum ethernet_hw_caps {
 	/** TX Checksum offloading supported for all of IPv4, UDP, TCP */
 	ETHERNET_HW_TX_CHKSUM_OFFLOAD	= BIT(0),
@@ -181,8 +182,10 @@ enum ethernet_hw_caps {
 	/** VLAN Tag stripping */
 	ETHERNET_HW_VLAN_TAG_STRIP	= BIT(14),
 
-	/** DSA switch */
-	ETHERNET_DSA_SLAVE_PORT	= BIT(15),
+	/** DSA switch slave port */
+	ETHERNET_DSA_SLAVE_PORT		= BIT(15),
+
+	/** DSA switch master port */
 	ETHERNET_DSA_MASTER_PORT	= BIT(16),
 
 	/** IEEE 802.1Qbv (scheduled traffic) supported */
@@ -230,11 +233,14 @@ enum ethernet_t1s_param_type {
 };
 
 /** @endcond */
+
+/** Ethernet T1S specific parameters */
 struct ethernet_t1s_param {
 	/** Type of T1S parameter */
 	enum ethernet_t1s_param_type type;
 	union {
-		/* PLCA is the Physical Layer (PHY) Collision
+		/**
+		 * PLCA is the Physical Layer (PHY) Collision
 		 * Avoidance technique employed with multidrop
 		 * 10Base-T1S standard.
 		 *
@@ -273,6 +279,7 @@ struct ethernet_t1s_param {
 	};
 };
 
+/** Ethernet Qav specific parameters */
 struct ethernet_qav_param {
 	/** ID of the priority queue to use */
 	int queue_id;
@@ -314,6 +321,7 @@ enum ethernet_gate_state_operation {
 
 /** @endcond */
 
+/** Ethernet Qbv specific parameters */
 struct ethernet_qbv_param {
 	/** Port id */
 	int port_id;
@@ -325,6 +333,7 @@ struct ethernet_qbv_param {
 		/** True if Qbv is enabled or not */
 		bool enabled;
 
+		/** Gate control information */
 		struct {
 			/** True = open, False = closed */
 			bool gate_status[NET_TC_TX_COUNT];
@@ -342,7 +351,8 @@ struct ethernet_qbv_param {
 		/** Number of entries in gate control list */
 		uint32_t gate_control_list_len;
 
-		/* The time values are set in one go when type is set to
+		/**
+		 * The time values are set in one go when type is set to
 		 * ETHERNET_QBV_PARAM_TYPE_TIME
 		 */
 		struct {
@@ -378,6 +388,7 @@ enum ethernet_qbu_preempt_status {
 
 /** @endcond */
 
+/** Ethernet Qbu specific parameters */
 struct ethernet_qbu_param {
 	/** Port id */
 	int port_id;
@@ -390,8 +401,7 @@ struct ethernet_qbu_param {
 		/** Release advance (nanoseconds) */
 		uint32_t release_advance;
 
-		/** sequence of framePreemptionAdminStatus values.
-		 */
+		/** sequence of framePreemptionAdminStatus values */
 		enum ethernet_qbu_preempt_status
 				frame_preempt_statuses[NET_TC_TX_COUNT];
 
@@ -401,13 +411,13 @@ struct ethernet_qbu_param {
 		/** Link partner status (from Qbr) */
 		bool link_partner_status;
 
-		/** Additional fragment size (from Qbr). The minimum non-final
+		/**
+		 * Additional fragment size (from Qbr). The minimum non-final
 		 * fragment size is (additional_fragment_size + 1) * 64 octets
 		 */
 		uint8_t additional_fragment_size : 2;
 	};
 };
-
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -427,7 +437,7 @@ enum ethernet_if_types {
 	L2_ETH_IF_TYPE_WIFI,
 } __packed;
 
-
+/** Ethernet filter description */
 struct ethernet_filter {
 	/** Type of filter */
 	enum ethernet_filter_type type;
@@ -445,6 +455,7 @@ enum ethernet_txtime_param_type {
 
 /** @endcond */
 
+/** Ethernet TXTIME specific parameters */
 struct ethernet_txtime_param {
 	/** Type of TXTIME parameter */
 	enum ethernet_txtime_param_type type;
@@ -455,6 +466,7 @@ struct ethernet_txtime_param {
 };
 
 /** @cond INTERNAL_HIDDEN */
+
 struct ethernet_config {
 	union {
 		bool auto_negotiation;
@@ -482,8 +494,10 @@ struct ethernet_config {
 		struct ethernet_filter filter;
 	};
 };
+
 /** @endcond */
 
+/** Ethernet L2 API operations. */
 struct ethernet_api {
 	/**
 	 * The net_if_api must be placed in first position in this
@@ -491,11 +505,11 @@ struct ethernet_api {
 	 */
 	struct net_if_api iface_api;
 
-#if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	/** Collect optional ethernet specific statistics. This pointer
 	 * should be set by driver if statistics needs to be collected
 	 * for that driver.
 	 */
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth *(*get_stats)(const struct device *dev);
 #endif
 
@@ -518,18 +532,18 @@ struct ethernet_api {
 			  enum ethernet_config_type type,
 			  struct ethernet_config *config);
 
-#if defined(CONFIG_NET_VLAN)
 	/** The IP stack will call this function when a VLAN tag is enabled
 	 * or disabled. If enable is set to true, then the VLAN tag was added,
 	 * if it is false then the tag was removed. The driver can utilize
 	 * this information if needed.
 	 */
+#if defined(CONFIG_NET_VLAN)
 	int (*vlan_setup)(const struct device *dev, struct net_if *iface,
 			  uint16_t tag, bool enable);
 #endif /* CONFIG_NET_VLAN */
 
-#if defined(CONFIG_PTP_CLOCK)
 	/** Return ptp_clock device that is tied to this ethernet device */
+#if defined(CONFIG_PTP_CLOCK)
 	const struct device *(*get_ptp_clock)(const struct device *dev);
 #endif /* CONFIG_PTP_CLOCK */
 
@@ -537,12 +551,13 @@ struct ethernet_api {
 	int (*send)(const struct device *dev, struct net_pkt *pkt);
 };
 
+/** @cond INTERNAL_HIDDEN */
+
 /* Make sure that the network interface API is properly setup inside
  * Ethernet API struct (it is the first one).
  */
 BUILD_ASSERT(offsetof(struct ethernet_api, iface_api) == 0);
 
-/** @cond INTERNAL_HIDDEN */
 struct net_eth_hdr {
 	struct net_eth_addr dst;
 	struct net_eth_addr src;
@@ -567,7 +582,7 @@ struct ethernet_vlan {
 
 /** @endcond */
 
-#if defined(CONFIG_NET_LLDP)
+/** Ethernet LLDP specific parameters */
 struct ethernet_lldp {
 	/** Used for track timers */
 	sys_snode_t node;
@@ -593,7 +608,8 @@ struct ethernet_lldp {
 	/** LLDP RX callback function */
 	net_lldp_recv_cb_t cb;
 };
-#endif /* CONFIG_NET_LLDP */
+
+/** @cond INTERNAL_HIDDEN */
 
 enum ethernet_flags {
 	ETH_CARRIER_UP,
@@ -671,8 +687,6 @@ struct ethernet_context {
  */
 void ethernet_init(struct net_if *iface);
 
-/** @cond INTERNAL_HIDDEN */
-
 #define ETHERNET_L2_CTX_TYPE	struct ethernet_context
 
 /* Separate header for VLAN as some of device interfaces might not
@@ -688,7 +702,15 @@ struct net_eth_vlan_hdr {
 	uint16_t type;
 } __packed;
 
+/** @endcond */
 
+/**
+ * @brief Check if the Ethernet MAC address is a broadcast address.
+ *
+ * @param addr A valid pointer to a Ethernet MAC address.
+ *
+ * @return true if address is a broadcast address, false if not
+ */
 static inline bool net_eth_is_addr_broadcast(struct net_eth_addr *addr)
 {
 	if (addr->addr[0] == 0xff &&
@@ -703,6 +725,13 @@ static inline bool net_eth_is_addr_broadcast(struct net_eth_addr *addr)
 	return false;
 }
 
+/**
+ * @brief Check if the Ethernet MAC address is unspecified.
+ *
+ * @param addr A valid pointer to a Ethernet MAC address.
+ *
+ * @return true if address is unspecified, false if not
+ */
 static inline bool net_eth_is_addr_unspecified(struct net_eth_addr *addr)
 {
 	if (addr->addr[0] == 0x00 &&
@@ -717,6 +746,13 @@ static inline bool net_eth_is_addr_unspecified(struct net_eth_addr *addr)
 	return false;
 }
 
+/**
+ * @brief Check if the Ethernet MAC address is a multicast address.
+ *
+ * @param addr A valid pointer to a Ethernet MAC address.
+ *
+ * @return true if address is a multicast address, false if not
+ */
 static inline bool net_eth_is_addr_multicast(struct net_eth_addr *addr)
 {
 #if defined(CONFIG_NET_IPV6)
@@ -737,16 +773,37 @@ static inline bool net_eth_is_addr_multicast(struct net_eth_addr *addr)
 	return false;
 }
 
+/**
+ * @brief Check if the Ethernet MAC address is a group address.
+ *
+ * @param addr A valid pointer to a Ethernet MAC address.
+ *
+ * @return true if address is a group address, false if not
+ */
 static inline bool net_eth_is_addr_group(struct net_eth_addr *addr)
 {
 	return addr->addr[0] & 0x01;
 }
 
+/**
+ * @brief Check if the Ethernet MAC address is valid.
+ *
+ * @param addr A valid pointer to a Ethernet MAC address.
+ *
+ * @return true if address is valid, false if not
+ */
 static inline bool net_eth_is_addr_valid(struct net_eth_addr *addr)
 {
 	return !net_eth_is_addr_unspecified(addr) && !net_eth_is_addr_group(addr);
 }
 
+/**
+ * @brief Check if the Ethernet MAC address is a LLDP multicast address.
+ *
+ * @param addr A valid pointer to a Ethernet MAC address.
+ *
+ * @return true if address is a LLDP multicast address, false if not
+ */
 static inline bool net_eth_is_addr_lldp_multicast(struct net_eth_addr *addr)
 {
 #if defined(CONFIG_NET_GPTP) || defined(CONFIG_NET_LLDP)
@@ -758,11 +815,20 @@ static inline bool net_eth_is_addr_lldp_multicast(struct net_eth_addr *addr)
 	    addr->addr[5] == 0x0e) {
 		return true;
 	}
+#else
+	ARG_UNUSED(addr);
 #endif
 
 	return false;
 }
 
+/**
+ * @brief Check if the Ethernet MAC address is a PTP multicast address.
+ *
+ * @param addr A valid pointer to a Ethernet MAC address.
+ *
+ * @return true if address is a PTP multicast address, false if not
+ */
 static inline bool net_eth_is_addr_ptp_multicast(struct net_eth_addr *addr)
 {
 #if defined(CONFIG_NET_GPTP)
@@ -774,14 +840,19 @@ static inline bool net_eth_is_addr_ptp_multicast(struct net_eth_addr *addr)
 	    addr->addr[5] == 0x00) {
 		return true;
 	}
+#else
+	ARG_UNUSED(addr);
 #endif
 
 	return false;
 }
 
+/**
+ * @brief Return Ethernet broadcast address.
+ *
+ * @return Ethernet broadcast address.
+ */
 const struct net_eth_addr *net_eth_broadcast_addr(void);
-
-/** @endcond */
 
 /**
  * @brief Convert IPv4 multicast address to Ethernet address.
@@ -989,6 +1060,8 @@ static inline bool net_eth_is_vlan_interface(struct net_if *iface)
 }
 #endif
 
+/** @cond INTERNAL_HIDDEN */
+
 #if !defined(CONFIG_ETH_DRIVER_RAW_MODE)
 
 #define Z_ETH_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
@@ -1016,6 +1089,8 @@ static inline bool net_eth_is_vlan_interface(struct net_if *iface)
 	Z_ETH_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, 0,	\
 				       init_fn, pm, data, config, prio,	\
 				       api, mtu)
+
+/** @endcond */
 
 /**
  * @brief Create an Ethernet network interface and bind it to network device.

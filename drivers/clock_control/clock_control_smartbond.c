@@ -30,9 +30,7 @@ struct lpc_clock_state {
 	.rc32k_freq = DT_PROP(DT_NODELABEL(rc32k), clock_frequency),
 };
 
-#define CALIBRATION_INTERVAL (DT_NODE_HAS_STATUS(DT_NODELABEL(rcx), okay) ?	\
-			DT_PROP(DT_NODELABEL(rcx), calibration_interval) :	\
-			DT_PROP(DT_NODELABEL(rc32k), calibration_interval))
+#define CALIBRATION_INTERVAL CONFIG_SMARTBOND_LP_OSC_CALIBRATION_INTERVAL
 
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 extern int z_clock_hw_cycles_per_sec;
@@ -51,19 +49,18 @@ static void calibration_work_cb(struct k_work *work)
 		da1469x_clock_lp_rcx_calibrate();
 		lpc_clock_state.rcx_ready = true;
 		lpc_clock_state.rcx_freq = da1469x_clock_lp_rcx_freq_get();
-		k_work_schedule(&calibration_work,
-				K_MSEC(1000 * CALIBRATION_INTERVAL));
 		LOG_DBG("RCX calibration done, RCX freq: %d",
 			(int)lpc_clock_state.rcx_freq);
-	} else if (lpc_clock_state.rc32k_started) {
+	}
+	if (lpc_clock_state.rc32k_started) {
 		da1469x_clock_lp_rc32k_calibrate();
 		lpc_clock_state.rc32k_ready = true;
 		lpc_clock_state.rc32k_freq = da1469x_clock_lp_rc32k_freq_get();
-		k_work_schedule(&calibration_work,
-				K_MSEC(1000 * CALIBRATION_INTERVAL));
 		LOG_DBG("RC32K calibration done, RC32K freq: %d",
 			(int)lpc_clock_state.rc32k_freq);
 	}
+	k_work_schedule(&calibration_work,
+			K_MSEC(1000 * CALIBRATION_INTERVAL));
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	switch (smartbond_source_clock(SMARTBOND_CLK_LP_CLK)) {
 	case SMARTBOND_CLK_RCX:
@@ -92,7 +89,7 @@ static void smartbond_start_rc32k(void)
 		CRG_TOP->CLK_RC32K_REG |= CRG_TOP_CLK_RC32K_REG_RC32K_ENABLE_Msk;
 	}
 	lpc_clock_state.rc32k_started = true;
-	if (!lpc_clock_state.rc32k_ready && (CALIBRATION_INTERVAL > 0)) {
+	if (!lpc_clock_state.rc32k_ready) {
 		if (!k_work_is_pending(&calibration_work.work)) {
 			k_work_schedule(&calibration_work,
 					K_MSEC(1000 * CALIBRATION_INTERVAL));
@@ -107,7 +104,7 @@ static void smartbond_start_rcx(void)
 		da1469x_clock_lp_rcx_enable();
 		lpc_clock_state.rcx_started = true;
 	}
-	if (!lpc_clock_state.rcx_ready && (CALIBRATION_INTERVAL > 0)) {
+	if (!lpc_clock_state.rcx_ready) {
 		if (!k_work_is_pending(&calibration_work.work)) {
 			k_work_schedule(&calibration_work,
 					K_MSEC(1000 * CALIBRATION_INTERVAL));
@@ -178,6 +175,8 @@ static inline int smartbond_clock_control_off(const struct device *dev,
 
 	switch (clk) {
 	case SMARTBOND_CLK_RC32K:
+		BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(rc32k), okay),
+				"RC32K is not allowed to be turned off");
 		if (((CRG_TOP->CLK_CTRL_REG & CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Msk) >>
 			   CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Pos) != 0) {
 			CRG_TOP->CLK_RC32K_REG &= ~CRG_TOP_CLK_RC32K_REG_RC32K_ENABLE_Msk;

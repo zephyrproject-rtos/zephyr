@@ -186,8 +186,13 @@ struct net_stats_udp {
  * @brief IPv6 neighbor discovery statistics
  */
 struct net_stats_ipv6_nd {
+	/** Number of dropped IPv6 neighbor discovery packets. */
 	net_stats_t drop;
+
+	/** Number of received IPv6 neighbor discovery packets. */
 	net_stats_t recv;
+
+	/** Number of sent IPv6 neighbor discovery packets. */
 	net_stats_t sent;
 };
 
@@ -195,13 +200,13 @@ struct net_stats_ipv6_nd {
  * @brief IPv6 multicast listener daemon statistics
  */
 struct net_stats_ipv6_mld {
-	/** Number of received IPv6 MLD queries */
+	/** Number of received IPv6 MLD queries. */
 	net_stats_t recv;
 
-	/** Number of sent IPv6 MLD reports */
+	/** Number of sent IPv6 MLD reports. */
 	net_stats_t sent;
 
-	/** Number of dropped IPv6 MLD packets */
+	/** Number of dropped IPv6 MLD packets. */
 	net_stats_t drop;
 };
 
@@ -223,7 +228,10 @@ struct net_stats_ipv4_igmp {
  * @brief Network packet transfer times for calculating average TX time
  */
 struct net_stats_tx_time {
+	/** Sum of network packet transfer times. */
 	uint64_t sum;
+
+	/** Number of network packets transferred. */
 	net_stats_t count;
 };
 
@@ -231,9 +239,14 @@ struct net_stats_tx_time {
  * @brief Network packet receive times for calculating average RX time
  */
 struct net_stats_rx_time {
+	/** Sum of network packet receive times. */
 	uint64_t sum;
+
+	/** Number of network packets received. */
 	net_stats_t count;
 };
+
+/** @cond INTERNAL_HIDDEN */
 
 #if NET_TC_TX_COUNT == 0
 #define NET_TC_TX_STATS_COUNT 1
@@ -247,29 +260,43 @@ struct net_stats_rx_time {
 #define NET_TC_RX_STATS_COUNT NET_TC_RX_COUNT
 #endif
 
+/** @endcond */
+
 /**
  * @brief Traffic class statistics
  */
 struct net_stats_tc {
+	/** TX statistics for each traffic class */
 	struct {
+		/** Helper for calculating average TX time statistics */
 		struct net_stats_tx_time tx_time;
 #if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
+		/** Detailed TX time statistics inside network stack */
 		struct net_stats_tx_time
 				tx_time_detail[NET_PKT_DETAIL_STATS_COUNT];
 #endif
+		/** Number of packets sent for this traffic class */
 		net_stats_t pkts;
+		/** Number of bytes sent for this traffic class */
 		net_stats_t bytes;
+		/** Priority of this traffic class */
 		uint8_t priority;
 	} sent[NET_TC_TX_STATS_COUNT];
 
+	/** RX statistics for each traffic class */
 	struct {
+		/** Helper for calculating average RX time statistics */
 		struct net_stats_rx_time rx_time;
 #if defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
+		/** Detailed RX time statistics inside network stack */
 		struct net_stats_rx_time
 				rx_time_detail[NET_PKT_DETAIL_STATS_COUNT];
 #endif
+		/** Number of packets received for this traffic class */
 		net_stats_t pkts;
+		/** Number of bytes received for this traffic class */
 		net_stats_t bytes;
+		/** Priority of this traffic class */
 		uint8_t priority;
 	} recv[NET_TC_RX_STATS_COUNT];
 };
@@ -279,9 +306,13 @@ struct net_stats_tc {
  * @brief Power management statistics
  */
 struct net_stats_pm {
+	/** Total suspend time */
 	uint64_t overall_suspend_time;
+	/** How many times we were suspended */
 	net_stats_t suspend_count;
+	/** How long the last suspend took */
 	uint32_t last_suspend_time;
+	/** Network interface last suspend start time */
 	uint32_t start_time;
 };
 
@@ -367,6 +398,7 @@ struct net_stats {
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_POWER_MANAGEMENT)
+	/** Power management statistics */
 	struct net_stats_pm pm;
 #endif
 };
@@ -375,26 +407,61 @@ struct net_stats {
  * @brief Ethernet error statistics
  */
 struct net_stats_eth_errors {
+	/** Number of RX length errors */
 	net_stats_t rx_length_errors;
+
+	/** Number of RX overrun errors */
 	net_stats_t rx_over_errors;
+
+	/** Number of RX CRC errors */
 	net_stats_t rx_crc_errors;
+
+	/** Number of RX frame errors */
 	net_stats_t rx_frame_errors;
+
+	/** Number of RX net_pkt allocation errors */
 	net_stats_t rx_no_buffer_count;
+
+	/** Number of RX missed errors */
 	net_stats_t rx_missed_errors;
+
+	/** Number of RX long length errors */
 	net_stats_t rx_long_length_errors;
+
+	/** Number of RX short length errors */
 	net_stats_t rx_short_length_errors;
+
+	/** Number of RX buffer align errors */
 	net_stats_t rx_align_errors;
+
+	/** Number of RX DMA failed errors */
 	net_stats_t rx_dma_failed;
+
+	/** Number of RX net_buf allocation errors */
 	net_stats_t rx_buf_alloc_failed;
 
+	/** Number of TX aborted errors */
 	net_stats_t tx_aborted_errors;
+
+	/** Number of TX carrier errors */
 	net_stats_t tx_carrier_errors;
+
+	/** Number of TX FIFO errors */
 	net_stats_t tx_fifo_errors;
+
+	/** Number of TX heartbeat errors */
 	net_stats_t tx_heartbeat_errors;
+
+	/** Number of TX window errors */
 	net_stats_t tx_window_errors;
+
+	/** Number of TX DMA failed errors */
 	net_stats_t tx_dma_failed;
 
+	/** Number of uncorrected ECC errors */
 	net_stats_t uncorr_ecc_errors;
+
+	/** Number of corrected ECC errors */
 	net_stats_t corr_ecc_errors;
 };
 
@@ -402,9 +469,16 @@ struct net_stats_eth_errors {
  * @brief Ethernet flow control statistics
  */
 struct net_stats_eth_flow {
+	/** Number of RX XON flow control */
 	net_stats_t rx_flow_control_xon;
+
+	/** Number of RX XOFF flow control */
 	net_stats_t rx_flow_control_xoff;
+
+	/** Number of TX XON flow control */
 	net_stats_t tx_flow_control_xon;
+
+	/** Number of TX XOFF flow control */
 	net_stats_t tx_flow_control_xoff;
 };
 
@@ -412,7 +486,10 @@ struct net_stats_eth_flow {
  * @brief Ethernet checksum statistics
  */
 struct net_stats_eth_csum {
+	/** Number of good RX checksum offloading */
 	net_stats_t rx_csum_offload_good;
+
+	/** Number of failed RX checksum offloading */
 	net_stats_t rx_csum_offload_errors;
 };
 
@@ -420,8 +497,13 @@ struct net_stats_eth_csum {
  * @brief Ethernet hardware timestamp statistics
  */
 struct net_stats_eth_hw_timestamp {
+	/** Number of RX hardware timestamp cleared */
 	net_stats_t rx_hwtstamp_cleared;
+
+	/** Number of RX hardware timestamp timeout */
 	net_stats_t tx_hwtstamp_timeouts;
+
+	/** Number of RX hardware timestamp skipped */
 	net_stats_t tx_hwtstamp_skipped;
 };
 
@@ -430,8 +512,8 @@ struct net_stats_eth_hw_timestamp {
  * @brief Ethernet vendor specific statistics
  */
 struct net_stats_eth_vendor {
-	const char * const key;
-	uint32_t value;
+	const char * const key; /**< Key name of vendor statistics */
+	uint32_t value;         /**< Value of the statistics key */
 };
 #endif
 
@@ -439,20 +521,48 @@ struct net_stats_eth_vendor {
  * @brief All Ethernet specific statistics
  */
 struct net_stats_eth {
+	/** Total number of bytes received and sent */
 	struct net_stats_bytes bytes;
+
+	/** Total number of packets received and sent */
 	struct net_stats_pkts pkts;
+
+	/** Total number of broadcast packets received and sent */
 	struct net_stats_pkts broadcast;
+
+	/** Total number of multicast packets received and sent */
 	struct net_stats_pkts multicast;
+
+	/** Total number of errors in RX and TX */
 	struct net_stats_pkts errors;
+
+	/** Total number of errors in RX and TX */
 	struct net_stats_eth_errors error_details;
+
+	/** Total number of flow control errors in RX and TX */
 	struct net_stats_eth_flow flow_control;
+
+	/** Total number of checksum errors in RX and TX */
 	struct net_stats_eth_csum csum;
+
+	/** Total number of hardware timestamp errors in RX and TX */
 	struct net_stats_eth_hw_timestamp hw_timestamp;
+
+	/** Total number of collisions */
 	net_stats_t collisions;
+
+	/** Total number of dropped TX packets */
 	net_stats_t tx_dropped;
+
+	/** Total number of TX timeout errors */
 	net_stats_t tx_timeout_count;
+
+	/** Total number of TX queue restarts */
 	net_stats_t tx_restart_queue;
+
+	/** Total number of RX unknown protocol packets */
 	net_stats_t unknown_protocol;
+
 #ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
 	/** Array is terminated with an entry containing a NULL key */
 	struct net_stats_eth_vendor *vendor;
@@ -463,7 +573,10 @@ struct net_stats_eth {
  * @brief All PPP specific statistics
  */
 struct net_stats_ppp {
+	/** Total number of bytes received and sent */
 	struct net_stats_bytes bytes;
+
+	/** Total number of packets received and sent */
 	struct net_stats_pkts pkts;
 
 	/** Number of received and dropped PPP frames. */
@@ -488,17 +601,32 @@ struct net_stats_sta_mgmt {
  * @brief All Wi-Fi specific statistics
  */
 struct net_stats_wifi {
+	/** Total number of beacon errors */
 	struct net_stats_sta_mgmt sta_mgmt;
+
+	/** Total number of bytes received and sent */
 	struct net_stats_bytes bytes;
+
+	/** Total number of packets received and sent */
 	struct net_stats_pkts pkts;
+
+	/** Total number of broadcast packets received and sent */
 	struct net_stats_pkts broadcast;
+
+	/** Total number of multicast packets received and sent */
 	struct net_stats_pkts multicast;
+
+	/** Total number of errors in RX and TX */
 	struct net_stats_pkts errors;
+
+	/** Total number of unicast packets received and sent */
 	struct net_stats_pkts unicast;
 };
 
 #if defined(CONFIG_NET_STATISTICS_USER_API)
 /* Management part definitions */
+
+/** @cond INTERNAL_HIDDEN */
 
 #define _NET_STATS_LAYER	NET_MGMT_LAYER_L3
 #define _NET_STATS_CODE		0x101
@@ -522,96 +650,133 @@ enum net_request_stats_cmd {
 	NET_REQUEST_STATS_CMD_GET_WIFI,
 };
 
+/** @endcond */
+
+/** Request all network statistics */
 #define NET_REQUEST_STATS_GET_ALL				\
 	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_ALL)
 
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ALL);
-
+/** Request all processing error statistics */
 #define NET_REQUEST_STATS_GET_PROCESSING_ERROR				\
 	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_PROCESSING_ERROR)
 
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PROCESSING_ERROR);
-
+/** Request number of received and sent bytes */
 #define NET_REQUEST_STATS_GET_BYTES				\
 	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_BYTES)
 
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_BYTES);
-
+/** Request IP error statistics */
 #define NET_REQUEST_STATS_GET_IP_ERRORS				\
 	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IP_ERRORS)
 
+/** @cond INTERNAL_HIDDEN */
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ALL);
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PROCESSING_ERROR);
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_BYTES);
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IP_ERRORS);
 
+/** @endcond */
+
 #if defined(CONFIG_NET_STATISTICS_IPV4)
+/** Request IPv4 statistics */
 #define NET_REQUEST_STATS_GET_IPV4				\
 	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV4)
 
+/** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV4);
+/** @endcond */
 #endif /* CONFIG_NET_STATISTICS_IPV4 */
 
 #if defined(CONFIG_NET_STATISTICS_IPV6)
+/** Request IPv6 statistics */
 #define NET_REQUEST_STATS_GET_IPV6				\
 	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV6)
 
+/** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6);
+/** @endcond */
 #endif /* CONFIG_NET_STATISTICS_IPV6 */
 
 #if defined(CONFIG_NET_STATISTICS_IPV6_ND)
+/** Request IPv6 neighbor discovery statistics */
 #define NET_REQUEST_STATS_GET_IPV6_ND				\
 	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV6_ND)
 
+/** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6_ND);
+/** @endcond */
 #endif /* CONFIG_NET_STATISTICS_IPV6_ND */
 
 #if defined(CONFIG_NET_STATISTICS_ICMP)
+/** Request ICMPv4 and ICMPv6 statistics */
 #define NET_REQUEST_STATS_GET_ICMP				\
 	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_ICMP)
 
+/** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ICMP);
+/** @endcond */
 #endif /* CONFIG_NET_STATISTICS_ICMP */
 
 #if defined(CONFIG_NET_STATISTICS_UDP)
+/** Request UDP statistics */
 #define NET_REQUEST_STATS_GET_UDP				\
 	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_UDP)
 
+/** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_UDP);
+/** @endcond */
 #endif /* CONFIG_NET_STATISTICS_UDP */
 
 #if defined(CONFIG_NET_STATISTICS_TCP)
+/** Request TCP statistics */
 #define NET_REQUEST_STATS_GET_TCP				\
 	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_TCP)
 
+/** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_TCP);
+/** @endcond */
 #endif /* CONFIG_NET_STATISTICS_TCP */
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
+/** Request Ethernet statistics */
 #define NET_REQUEST_STATS_GET_ETHERNET				\
 	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_ETHERNET)
 
+/** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ETHERNET);
+/** @endcond */
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
 #if defined(CONFIG_NET_STATISTICS_PPP)
+/** Request PPP statistics */
 #define NET_REQUEST_STATS_GET_PPP				\
 	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_PPP)
 
+/** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PPP);
+/** @endcond */
 #endif /* CONFIG_NET_STATISTICS_PPP */
 
 #endif /* CONFIG_NET_STATISTICS_USER_API */
 
 #if defined(CONFIG_NET_STATISTICS_POWER_MANAGEMENT)
+/** Request network power management statistics */
 #define NET_REQUEST_STATS_GET_PM				\
 	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_PM)
 
+/** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PM);
+/** @endcond */
 #endif /* CONFIG_NET_STATISTICS_POWER_MANAGEMENT */
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
+/** Request Wi-Fi statistics */
 #define NET_REQUEST_STATS_GET_WIFI				\
 	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_WIFI)
 
+/** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_WIFI);
+/** @endcond */
 #endif /* CONFIG_NET_STATISTICS_WIFI */
 
 /**
