@@ -1,0 +1,10 @@
+# Copyright (c) 2024 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ESPI_ENE_KB1200
+	bool "ENE KB1200 eSPI Driver"
+	default y
+	depends on DT_HAS_ENE_KB1200_ESPI_ENABLED
+	select PINCTRL
+	help
+	  Enable support for the kb1200 eSPI controllers.
