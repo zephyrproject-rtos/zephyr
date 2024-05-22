@@ -39,6 +39,10 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
+
+	if (state == PM_STATE_STANDBY) {
+		__enable_irq();
+	}
 }
 
 static int renesas_da1469x_pm_init(void)
