@@ -86,6 +86,7 @@ static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_POS_DX] = "pos_dx",
 	[SENSOR_CHAN_POS_DY] = "pos_dy",
 	[SENSOR_CHAN_POS_DZ] = "pos_dz",
+	[SENSOR_CHAN_POS_DXYZ] = "pos_dxyz",
 	[SENSOR_CHAN_RPM] = "rpm",
 	[SENSOR_CHAN_GAUGE_VOLTAGE] = "gauge_voltage",
 	[SENSOR_CHAN_GAUGE_AVG_CURRENT] = "gauge_avg_current",
@@ -364,6 +365,7 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 		case SENSOR_CHAN_MAGN_X:
 		case SENSOR_CHAN_MAGN_Y:
 		case SENSOR_CHAN_MAGN_Z:
+		case SENSOR_CHAN_POS_DX:
 		case SENSOR_CHAN_POS_DY:
 		case SENSOR_CHAN_POS_DZ:
 			continue;
@@ -392,7 +394,7 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 				case SENSOR_CHAN_ACCEL_XYZ:
 				case SENSOR_CHAN_GYRO_XYZ:
 				case SENSOR_CHAN_MAGN_XYZ:
-				case SENSOR_CHAN_POS_DX: {
+				case SENSOR_CHAN_POS_DXYZ: {
 					struct sensor_three_axis_data *data =
 						(struct sensor_three_axis_data *)decoded_buffer;
 
@@ -446,7 +448,7 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 			case SENSOR_CHAN_ACCEL_XYZ:
 			case SENSOR_CHAN_GYRO_XYZ:
 			case SENSOR_CHAN_MAGN_XYZ:
-			case SENSOR_CHAN_POS_DX: {
+			case SENSOR_CHAN_POS_DXYZ: {
 				struct sensor_three_axis_data *data =
 					(struct sensor_three_axis_data *)decoded_buffer;
 
