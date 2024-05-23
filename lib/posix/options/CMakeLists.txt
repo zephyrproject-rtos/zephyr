@@ -24,7 +24,7 @@ if(CONFIG_POSIX_SIGNAL)
   )
 endif()
 
-if(CONFIG_POSIX_API OR CONFIG_PTHREAD_IPC OR CONFIG_POSIX_TIMERS OR
+if(CONFIG_POSIX_API OR CONFIG_POSIX_THREADS OR CONFIG_POSIX_TIMERS OR
   CONFIG_POSIX_MESSAGE_PASSING OR CONFIG_POSIX_FILE_SYSTEM OR CONFIG_EVENTFD OR
   CONFIG_POSIX_C_LIB_EXT OR CONFIG_POSIX_SINGLE_PROCESS)
   # This is a temporary workaround so that Newlib declares the appropriate
@@ -70,15 +70,17 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_SYSLOG syslog.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_TIMERS
   clock.c
   timer.c
+  timespec_to_timeout.c
 )
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC _common.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_COND cond.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_KEY key.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_MUTEX mutex.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD pthread.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_PRIORITY_SCHEDULING sched.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_READER_WRITER_LOCKS rwlock.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_SEMAPHORES semaphore.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_THREADS
+  cond.c
+  key.c
+  mutex.c
+  pthread.c
+)
 zephyr_library_sources_ifdef(CONFIG_XOPEN_STREAMS stropts.c)
 zephyr_library_sources_ifdef(CONFIG_XSI_SYSTEM_LOGGING syslog.c)
 
