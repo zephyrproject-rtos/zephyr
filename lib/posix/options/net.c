@@ -100,11 +100,6 @@ char *if_indextoname(unsigned int ifindex, char *ifname)
 {
 	int ret;
 
-	if (!IS_ENABLED(CONFIG_NET_INTERFACE_NAME)) {
-		errno = ENOTSUP;
-		return NULL;
-	}
-
 	ret = net_if_get_name(net_if_get_by_index(ifindex), ifname, IF_NAMESIZE);
 	if (ret < 0) {
 		errno = ENXIO;
@@ -118,14 +113,14 @@ void if_freenameindex(struct if_nameindex *ptr)
 {
 	size_t n;
 
-	if (ptr == NULL || !IS_ENABLED(CONFIG_NET_INTERFACE_NAME)) {
+	if (ptr == NULL) {
 		return;
 	}
 
 	NET_IFACE_COUNT(&n);
 
 	for (size_t i = 0; i < n; ++i) {
-		if (IS_ENABLED(CONFIG_NET_INTERFACE_NAME) && ptr[i].if_name != NULL) {
+		if (ptr[i].if_name != NULL) {
 			free(ptr[i].if_name);
 		}
 	}
@@ -138,11 +133,6 @@ struct if_nameindex *if_nameindex(void)
 	size_t n;
 	char *name;
 	struct if_nameindex *ni;
-
-	if (!IS_ENABLED(CONFIG_NET_INTERFACE_NAME)) {
-		errno = ENOTSUP;
-		return NULL;
-	}
 
 	/* FIXME: would be nice to use this without malloc */
 	NET_IFACE_COUNT(&n);
@@ -178,10 +168,6 @@ return_err:
 unsigned int if_nametoindex(const char *ifname)
 {
 	int ret;
-
-	if (!IS_ENABLED(CONFIG_NET_INTERFACE_NAME)) {
-		return 0;
-	}
 
 	ret = net_if_get_by_name(ifname);
 	if (ret < 0) {

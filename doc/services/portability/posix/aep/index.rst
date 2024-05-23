@@ -141,7 +141,7 @@ The *Dedicated Realtime System Profile* (PSE53) includes all features from PSE52
    :widths: 50, 10, 50
 
     :ref:`POSIX_MULTI_PROCESS<posix_option_group_multi_process>`,, :kconfig:option:`CONFIG_POSIX_MULTI_PROCESS`:ref:`†<posix_undefined_behaviour>`
-    :ref:`POSIX_NETWORKING <posix_option_group_networking>`, yes,
+    :ref:`POSIX_NETWORKING <posix_option_group_networking>`, yes, :kconfig:option:`CONFIG_POSIX_NETWORKING`
     :ref:`POSIX_PIPE <posix_option_group_pipe>`,,
     :ref:`POSIX_SIGNAL_JUMP <posix_option_group_signal_jump>`,,
 
@@ -152,7 +152,7 @@ The *Dedicated Realtime System Profile* (PSE53) includes all features from PSE52
     :ref:`_POSIX_CPUTIME <posix_option_cputime>`, 200809L, :kconfig:option:`CONFIG_POSIX_CPUTIME`
     _POSIX_PRIORITIZED_IO, -1,
     :ref:`_POSIX_PRIORITY_SCHEDULING <posix_option_priority_scheduling>`, -1,
-    _POSIX_RAW_SOCKETS, 200809L, :kconfig:option:`CONFIG_NET_SOCKETS_PACKET`
+    :ref:`_POSIX_RAW_SOCKETS <posix_option_raw_sockets>`, 200809L, :kconfig:option:`CONFIG_POSIX_RAW_SOCKETS`
     _POSIX_SPAWN, -1, :ref:`†<posix_undefined_behaviour>`
     _POSIX_SPORADIC_SERVER, -1, :ref:`†<posix_undefined_behaviour>`
 
