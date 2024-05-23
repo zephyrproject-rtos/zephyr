@@ -778,6 +778,34 @@ _POSIX_THREAD_PRIORITY_SCHEDULING
     pthread_setschedparam(),yes
     pthread_setschedprio(),yes
 
+.. _posix_option_thread_prio_inherit:
+
+_POSIX_THREAD_PRIO_INHERIT
+++++++++++++++++++++++++++
+
+.. csv-table:: _POSIX_THREAD_PRIO_INHERIT
+   :header: API, Supported
+   :widths: 50,10
+
+    pthread_mutexattr_getprotocol(),yes
+    pthread_mutexattr_setprotocol(),yes
+
+.. _posix_option_thread_prio_protect:
+
+_POSIX_THREAD_PRIO_PROTECT
+++++++++++++++++++++++++++
+
+.. csv-table:: _POSIX_THREAD_PRIO_PROTECT
+   :header: API, Supported
+   :widths: 50,10
+
+    pthread_mutex_getprioceiling(),
+    pthread_mutex_setprioceiling(),
+    pthread_mutexattr_getprioceiling(),
+    pthread_mutexattr_getprotocol(),yes
+    pthread_mutexattr_setprioceiling(),
+    pthread_mutexattr_setprotocol(),yes
+
 .. _posix_thread_safe_functions:
 
 _POSIX_THREAD_SAFE_FUNCTIONS
