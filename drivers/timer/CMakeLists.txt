@@ -6,6 +6,7 @@ zephyr_library_sources_ifdef(CONFIG_ALTERA_AVALON_TIMER altera_avalon_timer_hal.
 zephyr_library_sources_ifdef(CONFIG_AMBIQ_STIMER_TIMER ambiq_stimer.c)
 zephyr_library_sources_ifdef(CONFIG_APIC_TIMER apic_timer.c)
 zephyr_library_sources_ifdef(CONFIG_APIC_TSC_DEADLINE_TIMER apic_tsc.c)
+zephyr_library_sources_ifdef(CONFIG_APIC_TIMER_TSC apic_tsc.c)
 zephyr_library_sources_ifdef(CONFIG_ARCV2_TIMER arcv2_timer0.c)
 zephyr_library_sources_ifdef(CONFIG_ARM_ARCH_TIMER arm_arch_timer.c)
 zephyr_library_sources_ifdef(CONFIG_INTEL_ADSP_TIMER intel_adsp_timer.c)
