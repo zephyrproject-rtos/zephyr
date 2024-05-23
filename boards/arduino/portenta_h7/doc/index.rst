@@ -56,13 +56,22 @@ The current Zephyr arduino_portenta_h7 board configuration supports the followin
 +-----------+------------+-------------------------------------+
 | IPM       | on-chip    | virtual mailbox based on HSEM       |
 +-----------+------------+-------------------------------------+
+| EXTFLASH  | on-chip    | qspi                                |
++-----------+------------+-------------------------------------+
+| SDRAM     | on-chip    | sdram                               |
++-----------+------------+-------------------------------------+
+| USB       | on-board   | usb-hs                              |
++-----------+------------+-------------------------------------+
+| ETHERNET  | on-board   | eth                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
-NOTE: There are two versions of the board available on the market. Version 1.0
-did not have the low speed external oscillator populated, while board
-version 4.1 does have the LSE clock populated. If you wish to build support
-for the LSE clock use ``arduino_portenta_h7@4.1`` as the board.
+The high precision low speed external (LSE) clock is only fully supported on
+boards with hardware revision 4.10 or greater. By default the internal source
+is used; to enable the use of the external oscillator, manually specify the
+hardware revision at build time (see :ref:`application_board_version` for
+information on how to build for specific revisions of the board).
 
 Resources sharing
 =================
@@ -83,7 +92,7 @@ Building and Flashing
 *************************
 
 Applications for the ``arduino_portenta_h7`` board should be built per core target,
-using either ``arduino_portenta_h7//m7`` or ``arduino_portenta_h7//m4`` as the target.
+using either ``arduino_portenta_h7_m7`` or ``arduino_portenta_h7_m4`` as the target.
 See :ref:`build_an_application` for more information about application builds.
 
 
