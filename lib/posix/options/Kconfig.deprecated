@@ -192,4 +192,22 @@ config TIMER_DELAYTIMER_MAX
 
 	  Please use CONFIG_POSIX_DELAYTIMER_MAX instead.
 
+config SEM_NAMELEN_MAX
+	int "Maximum name length [DEPRECATED]"
+	default POSIX_SEM_NAMELEN_MAX if POSIX_SEMAPHORES
+	default 0
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_SEM_NAMELEN_MAX instead.
+
+config SEM_VALUE_MAX
+	int "Maximum semaphore limit [DEPRECATED]"
+	default POSIX_SEM_VALUE_MAX if POSIX_SEMAPHORES
+	default 0
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_SEM_VALUE_MAX instead.
+
 endmenu
