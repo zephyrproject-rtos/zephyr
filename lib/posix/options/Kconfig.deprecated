@@ -138,6 +138,15 @@ config POSIX_SYSCONF
 
 	  Please use CONFIG_POSIX_SINGLE_PROCESS instead.
 
+config POSIX_SYSLOG
+	bool "Support for syslog() [DEPRECATED]"
+	select DEPRECATED
+	select XSI_SYSTEM_LOGGING
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_XSI_SYSTEM_LOGGING instead.
+
 config POSIX_UNAME
 	bool "Support for uname [DEPRECATED]"
 	select DEPRECATED
