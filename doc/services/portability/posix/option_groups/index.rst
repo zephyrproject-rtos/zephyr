@@ -638,6 +638,15 @@ _POSIX_FSYNC
 
     fsync(),yes
 
+.. _posix_option_ipv6:
+
+_POSIX_IPV6
++++++++++++
+
+Internet Protocol Version 6 is supported.
+
+For more information, please refer to :ref:`Networking <networking>`.
+
 .. _posix_option_memlock:
 
 _POSIX_MEMLOCK
@@ -708,6 +717,15 @@ _POSIX_PRIORITY_SCHEDULING
     sched_setparam(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     sched_setscheduler(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     sched_yield(),yes
+
+.. _posix_option_raw_sockets:
+
+_POSIX_RAW_SOCKETS
+++++++++++++++++++
+
+Raw sockets are supported.
+
+For more information, please refer to :kconfig:option:`CONFIG_NET_SOCKETS_PACKET`.
 
 .. _posix_option_reader_writer_locks:
 
