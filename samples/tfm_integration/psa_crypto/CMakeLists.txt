@@ -19,11 +19,9 @@ target_include_directories(app PRIVATE
   $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
 )
 
-# In TF-M, default value of CRYPTO_ENGINE_BUF_SIZE is 0x2080. It causes
-# insufficient memory failure while verifying signature. Increase it to 0x2400.
 set_property(TARGET zephyr_property_target
              APPEND PROPERTY TFM_CMAKE_OPTIONS
-             -DCRYPTO_ENGINE_BUF_SIZE=0x2400
+             -DPROJECT_CONFIG_HEADER_FILE=${CMAKE_CURRENT_SOURCE_DIR}/src/configs/config_tfm.h
 )
 
-zephyr_include_directories(${APPLICATION_SOURCE_DIR}/src/tls_config)
+zephyr_include_directories(${APPLICATION_SOURCE_DIR}/src/configs)
