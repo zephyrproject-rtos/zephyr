@@ -58,7 +58,6 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_MULTI_PROCESS
   sleep.c
 )
 zephyr_library_sources_ifdef(CONFIG_POSIX_NETWORKING net.c)
-zephyr_library_sources_ifdef(CONFIG_POSIX_PUTMSG stropts.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_SIGNAL signal.c ${STRSIGNAL_TABLE_H})
 zephyr_library_sources_ifdef(CONFIG_POSIX_SINGLE_PROCESS
   confstr.c
@@ -80,6 +79,7 @@ zephyr_library_sources_ifdef(CONFIG_PTHREAD pthread.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_PRIORITY_SCHEDULING sched.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_READER_WRITER_LOCKS rwlock.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_SEMAPHORES semaphore.c)
+zephyr_library_sources_ifdef(CONFIG_XOPEN_STREAMS stropts.c)
 zephyr_library_sources_ifdef(CONFIG_XSI_SYSTEM_LOGGING syslog.c)
 
 zephyr_library_sources_ifdef(CONFIG_GETOPT_LONG
