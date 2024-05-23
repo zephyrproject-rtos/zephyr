@@ -265,11 +265,9 @@ static void i2c_target_address(const struct device *dev,uint8_t slave_address,ui
 }
 
 static void i2c_write_page(const struct device *dev,uint8_t *data,uint32_t length){
-    printf("\nwp1");
     delayms(DELAY);
     for (uint32_t i=0;i<length;i++){
         i2c_write_byte(dev,*(data++));
-        printf("\nwp2");
         delayms(DELAY);
     }
 }
@@ -319,15 +317,11 @@ static int i2c_seciot_configure(const struct device *dev,uint32_t dev_config)
 
 static int i2c_seciot_write_msg(const struct device *dev,struct i2c_msg *msg,uint16_t addr)
 {
-    printf("\nwrite");
     i2c_target_address(dev,(uint8_t)addr,I2C_WRITE);
-    printf("\nw1");
     uint8_t *data =msg->buf;
     uint8_t length=msg->len;
     i2c_write_page(dev,data,length);
-    printf("\nw2");
     i2c_end(dev);
-    printf("\nw3");
     return 0;
 }
 static int i2c_seciot_read_msg(const struct device *dev,struct i2c_msg *msg,uint16_t addr)
@@ -335,7 +329,6 @@ static int i2c_seciot_read_msg(const struct device *dev,struct i2c_msg *msg,uint
     uint8_t length = msg->len;
     if(length == 1)
     {
-        printf("\nread");
         i2c_target_address(dev,addr,I2C_READ);
         (msg->buf)[0] = i2c_read_byte(dev);
         i2c_end(dev);
@@ -348,7 +341,6 @@ static int i2c_seciot_read_msg(const struct device *dev,struct i2c_msg *msg,uint
 }
 static int i2c_seciot_transfer(const struct device *dev,struct i2c_msg *msgs,uint8_t num_msgs,uint16_t addr)		       
 {
-    printf("\nt1");
 	/* Check for NULL pointers */
 	if (dev == NULL) {
 		//LOG_ERR("Device handle is NULL");
@@ -361,17 +353,14 @@ static int i2c_seciot_transfer(const struct device *dev,struct i2c_msg *msgs,uin
 	if (msgs == NULL) {
 		return -EINVAL;
 	}
-    printf("\nt2");
 k_mutex_lock(&(((struct i2c_seciot_cfg*)(dev->config))->mutex),K_FOREVER);
     for (int i = 0; i < num_msgs; i++) {
         delayms(10);
-        printf("\nt3");
         if (msgs[i].flags & I2C_MSG_READ) {
 	    	i2c_seciot_read_msg(dev, &(msgs[i]), addr);
 	    } else {
 	    	i2c_seciot_write_msg(dev, &(msgs[i]), addr);
 	    }
-        printf("\nt4");
   k_mutex_unlock(&(((struct i2c_seciot_cfg*)(dev->config))->mutex));
     }
 }

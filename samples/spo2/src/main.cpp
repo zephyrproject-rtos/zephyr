@@ -186,7 +186,6 @@ bool MAX30100::begin(const struct device *dev)
 	// Set Mode
 	spo2_write(dev, I2C0, 0X57, MAX30100_REG_MODE_CONFIGURATION, DEFAULT_MODE);
 	uint8_t x = spo2_read(dev, I2C0, 0X57, MAX30100_REG_MODE_CONFIGURATION);
-	printf("\ndebug %u",x);
 
 	// Set LedsPulseWidth
 	uint8_t previous = spo2_read(dev, I2C0, 0X57, MAX30100_REG_SPO2_CONFIGURATION);
@@ -215,7 +214,7 @@ bool MAX30100::begin(const struct device *dev)
 void MAX30100::update(const struct device *dev)
 {
 	// Delay for 10ms before sampling every value.Used as samplingrate is way too high.(Optional)
-	delayms(10);
+	// delayms(10);
 	readFifoData(dev);
 }
 
@@ -239,8 +238,9 @@ bool MAX30100::getRawValues(uint16_t *ir, uint16_t *red)
 		// Dequeue the oldest value from the buffer
 		uint16_t pop_ir = buffer_ir.pop();
 		uint16_t pop_red = buffer_red.pop();
-		printf("\n%u",millis(get_mcycle_stop()));
-		printf("	%u",pop_ir);
+		// printf("\nm	%u",millis(get_mcycle_stop()));
+		printf("\nIR:%u",pop_ir);
+		printf("\nRed:%u",pop_red);
 		*ir = pop_ir;
 		*red = pop_red;
 		return true;
@@ -283,8 +283,6 @@ void MAX30100::resetFifo(const struct device *dev)
  */
 void spo2_write(const struct device *dev, uint8_t i2c_number, uint8_t slave_address, uint8_t reg_addr, uint8_t data)
 {
-	printf("\n>>>>>>");
-
 	uint8_t msg_arr[2];
 	struct i2c_msg msg_obj;
 	msg_arr[0] = reg_addr;
@@ -370,13 +368,13 @@ void MAX30100::readFifoData(const struct device *dev)
 	uint8_t y = spo2_read(dev, I2C0, 0X57, MAX30100_REG_FIFO_READ_POINTER);
 
 	toRead = (x - y) & (MAX30100_FIFO_DEPTH-1);
-	printf("\nx %u",x);
-	printf("\ny %u",y);
+	// printf("\nx %u",x);
+	// printf("\ny %u",y);
 	if(x == y)
 	{
 		toRead = x;
 	}
-	printf("\ntoRead %u",toRead);
+	// printf("\ntr %u",toRead);
 
 	// Read data from the FIFO buffer in burst mode
 	spo2_burstread(dev, I2C0, 0X57,MAX30100_REG_FIFO_DATA ,buffer,toRead);
@@ -713,7 +711,6 @@ bool PulseOximeter::begin(const struct device *dev, PulseOximeterDebuggingMode d
 	debuggingMode = debuggingMode_;
 
 	bool ready = hrm.begin(dev);
-	printf("\n2");
 	if (!ready) 
 	{
 		if (debuggingMode != PULSEOXIMETER_DEBUGGINGMODE_NONE) 
@@ -867,8 +864,8 @@ void PulseOximeter::checkSample()
 
 		// The signal fed to the beat detector is mirrored since the cleanest monotonic spike is below zero
 		float filteredPulseValue = lpf.step(-irACValue);
-		printf("	%f",irACValue);
-		printf("	%f",filteredPulseValue);
+		// printf("	%f",irACValue);
+		// printf("	%f",filteredPulseValue);
 		bool beatDetected = beatDetector.addSample(filteredPulseValue);
 		//printf("\nbeatDetected %d",beatDetected);
 		// printf("\nstate %d",state);
@@ -1031,7 +1028,6 @@ void delayms(long delay)
 // MAX30100_Minimal code
 int main()
 {
-   printf("\n1");
    const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
 
 	uint8_t cycle_at_start = get_mcycle_start();
@@ -1053,7 +1049,7 @@ int main()
 	{
 		printf("\nSUCCESS");
 	}
-	printf("\nTime	IR	irAC	LPF");
+	// printf("\nTime	IR	irAC	LPF");
 
 	while(1)
 	{
