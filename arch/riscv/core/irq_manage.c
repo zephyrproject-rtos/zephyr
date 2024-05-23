@@ -9,6 +9,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/irq_multilevel.h>
+#include <zephyr/sw_isr_table.h>
 
 #ifdef CONFIG_RISCV_HAS_PLIC
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
@@ -53,4 +54,17 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 #endif
 	return irq;
 }
+
+#ifdef CONFIG_SHARED_INTERRUPTS
+int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
+				void (*routine)(const void *parameter), const void *parameter,
+				uint32_t flags)
+{
+	ARG_UNUSED(priority);
+	ARG_UNUSED(flags);
+
+	return z_isr_uninstall(irq + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, routine,
+			       parameter);
+}
+#endif /* CONFIG_SHARED_INTERRUPTS */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
