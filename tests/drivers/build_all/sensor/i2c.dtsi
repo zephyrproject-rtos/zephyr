@@ -1072,3 +1072,10 @@ test_i2c_lsm9ds1: lsm9ds1@91 {
 	compatible = "st,lsm9ds1";
 	reg = <0x8e>;
 };
+
+test_i2c_bmp180: bmp180@92 {
+	compatible = "bosch,bmp180";
+	status = "okay";
+	reg = <0x92>;
+	oversampling = <1>;
+};
