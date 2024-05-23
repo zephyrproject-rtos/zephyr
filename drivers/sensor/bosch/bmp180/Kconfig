@@ -1,0 +1,12 @@
+# Bosch BMP180 configuration options
+
+# Copyright (C) 2024 Jakov Jovic <jovic.jakov@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BMP180
+	bool "Bosch BMP180 digital pressure and temperature sensor"
+	depends on DT_HAS_BOSCH_BMP180_ENABLED
+	select I2C
+	default y
+	help
+	  Enable the driver for the Bosch BMP180 pressure sensor.
