@@ -56,6 +56,7 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_FSYNC fsync.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MESSAGE_PASSING mqueue.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MULTI_PROCESS
   sleep.c
+  multi_process.c
 )
 zephyr_library_sources_ifdef(CONFIG_POSIX_NETWORKING net.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_SIGNALS signal.c ${STRSIGNAL_TABLE_H})

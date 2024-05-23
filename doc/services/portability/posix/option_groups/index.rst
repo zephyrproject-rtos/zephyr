@@ -559,6 +559,40 @@ This table lists service support status in Zephyr for `POSIX_FD_MGMT`:
     putc_unlocked(),
     putchar_unlocked(),
 
+.. _posix_option_group_multi_process:
+
+POSIX_MULTI_PROCESS
+===================
+
+.. csv-table:: POSIX_MULTI_PROCESS
+   :header: API, Supported
+   :widths: 50,10
+
+    _Exit(), yes
+    _exit(), yes
+    assert(), yes
+    atexit(),:ref:`†<posix_undefined_behaviour>`
+    clock(),
+    execl(),:ref:`†<posix_undefined_behaviour>`
+    execle(),:ref:`†<posix_undefined_behaviour>`
+    execlp(),:ref:`†<posix_undefined_behaviour>`
+    execv(),:ref:`†<posix_undefined_behaviour>`
+    execve(),:ref:`†<posix_undefined_behaviour>`
+    execvp(),:ref:`†<posix_undefined_behaviour>`
+    exit(), yes
+    fork(),:ref:`†<posix_undefined_behaviour>`
+    getpgrp(),:ref:`†<posix_undefined_behaviour>`
+    getpgid(),:ref:`†<posix_undefined_behaviour>`
+    getpid(), yes :ref:`†<posix_undefined_behaviour>`
+    getppid(),:ref:`†<posix_undefined_behaviour>`
+    getsid(),:ref:`†<posix_undefined_behaviour>`
+    setsid(),:ref:`†<posix_undefined_behaviour>`
+    sleep(),yes
+    times(),
+    wait(),:ref:`†<posix_undefined_behaviour>`
+    waitid(),:ref:`†<posix_undefined_behaviour>`
+    waitpid(),:ref:`†<posix_undefined_behaviour>`
+
 .. _posix_options:
 
 Additional POSIX Options
