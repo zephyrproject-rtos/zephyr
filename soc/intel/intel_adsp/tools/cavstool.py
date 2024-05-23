@@ -281,6 +281,7 @@ def map_regs():
         dsp.HFIPCXCTL = 0x73228
         dsp.HFIPCXTDDY = 0x73300
         dsp.HFIPCXIDDY = 0x73380
+        dsp.ROM_STATUS = 0x163200
         dsp.SRAM_FW_STATUS = WINDOW_BASE_ACE
     else:
         dsp.ADSPCS         = 0x00004
@@ -290,7 +291,8 @@ def map_regs():
         dsp.HIPCIDR        = 0x00048 if cavs15 else 0x000d0
         dsp.HIPCIDA        =                        0x000d4 # 1.8+ only
         dsp.HIPCIDD        = 0x0004c if cavs15 else 0x000d8
-        dsp.SRAM_FW_STATUS = WINDOW_BASE # Start of first SRAM window
+        dsp.ROM_STATUS     = WINDOW_BASE # Start of first SRAM window
+        dsp.SRAM_FW_STATUS = WINDOW_BASE
     dsp.freeze()
 
     return (hda, sd, dsp, hda_ostream_id)
@@ -600,7 +602,7 @@ def load_firmware_ace(fw_file):
     log.info("ACK IPC")
     dsp.HFIPCXIDA |= (1 << 31)
 
-    log.info(f"Starting DMA, FW_STATUS = 0x{dsp.SRAM_FW_STATUS:x}")
+    log.info(f"Starting DMA, FW_STATUS = 0x{dsp.ROM_STATUS:x}")
     sd.CTL |= 2 # START flag
 
     wait_fw_entered()
@@ -618,12 +620,12 @@ def load_firmware_ace(fw_file):
     log.info(f"ACE firmware load complete")
 
 def fw_is_alive():
-    return dsp.SRAM_FW_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
+    return dsp.ROM_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
 
 def wait_fw_entered(timeout_s=2):
-    log.info("Waiting %s for firmware handoff, FW_STATUS = 0x%x",
+    log.info("Waiting %s for firmware handoff, ROM_STATUS = 0x%x",
              "forever" if timeout_s is None else f"{timeout_s} seconds",
-             dsp.SRAM_FW_STATUS)
+             dsp.ROM_STATUS)
     hertz = 100
     attempts = None if timeout_s is None else timeout_s * hertz
     while True:
@@ -637,9 +639,9 @@ def wait_fw_entered(timeout_s=2):
         time.sleep(1 / hertz)
 
     if not alive:
-        log.warning("Load failed?  FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
+        log.warning("Load failed?  ROM_STATUS = 0x%x", dsp.ROM_STATUS)
     else:
-        log.info("FW alive, FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
+        log.info("FW alive, ROM_STATUS = 0x%x", dsp.ROM_STATUS)
 
 def winstream_offset():
     ( base, stride ) = adsp_mem_window_config()
