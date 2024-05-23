@@ -32,6 +32,8 @@ ColumnLimit: 100
 ConstructorInitializerIndentWidth: 8
 ContinuationIndentWidth: 8
 ForEachMacros:
+  - 'ARRAY_FOR_EACH'
+  - 'ARRAY_FOR_EACH_PTR'
   - 'FOR_EACH'
   - 'FOR_EACH_FIXED_ARG'
   - 'FOR_EACH_IDX'
