@@ -14,26 +14,14 @@ config POSIX_API
 	  Enable mostly-standards-compliant implementations of
 	  various POSIX (IEEE 1003.1) APIs.
 
-config PTHREAD_IPC
-	bool "POSIX pthread IPC API"
-	default y if POSIX_API
-	depends on POSIX_TIMERS
-	help
-	  This enables a mostly-standards-compliant implementation of
-	  the pthread mutex, condition variable and barrier IPC
-	  mechanisms.
-
 rsource "Kconfig.aio"
 rsource "Kconfig.barrier"
-rsource "Kconfig.cond"
 rsource "Kconfig.c_lib_ext"
 rsource "Kconfig.device_io"
 rsource "Kconfig.fd_mgmt"
 rsource "Kconfig.fs"
-rsource "Kconfig.key"
 rsource "Kconfig.mem"
 rsource "Kconfig.mqueue"
-rsource "Kconfig.mutex"
 rsource "Kconfig.net"
 rsource "Kconfig.proc1"
 rsource "Kconfig.procN"

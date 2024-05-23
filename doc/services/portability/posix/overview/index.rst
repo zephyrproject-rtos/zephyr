@@ -129,8 +129,7 @@ feature selection at various levels of granularity.
 Alternatively, users may enable one of the Kconfig options below as a shortcut to enable multiple
 :ref:`Option Groups<posix_option_groups>`.
 
-* :kconfig:option:`CONFIG_POSIX_API`
-* :kconfig:option:`CONFIG_PTHREAD_IPC`
+* :kconfig:option:`CONFIG_POSIX_API` - Enables all implemented POSIX API Options and Option Groups
 
 .. note::
     Since the POSIX environment in Zephyr is fully configurable via :ref:`Kconfig<kconfig>`,

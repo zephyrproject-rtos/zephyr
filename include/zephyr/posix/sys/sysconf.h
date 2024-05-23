@@ -183,22 +183,24 @@ enum {
 #define __z_posix_sysconf_SC_SS_REPL_MAX     _POSIX_SS_REPL_MAX
 #define __z_posix_sysconf_SC_SYNCHRONIZED_IO (-1L)
 #define __z_posix_sysconf_SC_THREAD_ATTR_STACKADDR                                                 \
-	COND_CODE_1(CONFIG_PTHREAD_IPC, (_POSIX_THREAD_ATTR_STACKADDR), (-1))
+	COND_CODE_1(CONFIG_POSIX_THREAD_ATTR_STACKADDR, (_POSIX_THREAD_ATTR_STACKADDR), (-1))
 #define __z_posix_sysconf_SC_THREAD_ATTR_STACKSIZE                                                 \
-	COND_CODE_1(CONFIG_PTHREAD_IPC, (_POSIX_THREAD_ATTR_STACKSIZE), (-1L))
+	COND_CODE_1(CONFIG_POSIX_THREAD_ATTR_STACKSIZE, (_POSIX_THREAD_ATTR_STACKSIZE), (-1L))
 #define __z_posix_sysconf_SC_THREAD_CPUTIME (-1L)
 #define __z_posix_sysconf_SC_THREAD_PRIO_INHERIT                                                   \
-	COND_CODE_1(CONFIG_PTHREAD_IPC, (_POSIX_THREAD_PRIO_INHERIT), (-1L))
+	COND_CODE_1(CONFIG_POSIX_THREAD_PRIO_INHERIT, (_POSIX_THREAD_PRIO_INHERIT), (-1L))
 #define __z_posix_sysconf_SC_THREAD_PRIO_PROTECT        (-1L)
-#define __z_posix_sysconf_SC_THREAD_PRIORITY_SCHEDULING (-1L)
+#define __z_posix_sysconf_SC_THREAD_PRIORITY_SCHEDULING                                            \
+	COND_CODE_1(CONFIG_POSIX_THREAD_PRIORITY_SCHEDULING, (_POSIX_THREAD_PRIORITY_SCHEDULING),  \
+		    (-1L))
 #define __z_posix_sysconf_SC_THREAD_PROCESS_SHARED      (-1L)
 #define __z_posix_sysconf_SC_THREAD_ROBUST_PRIO_INHERIT (-1L)
 #define __z_posix_sysconf_SC_THREAD_ROBUST_PRIO_PROTECT (-1L)
 #define __z_posix_sysconf_SC_THREAD_SAFE_FUNCTIONS                                                 \
-	COND_CODE_1(CONFIG_PTHREAD_IPC, (_POSIX_THREAD_SAFE_FUNCTIONS), (-1L))
+	COND_CODE_1(CONFIG_POSIX_THREAD_SAFE_FUNCTIONS, (_POSIX_THREAD_SAFE_FUNCTIONS), (-1L))
 #define __z_posix_sysconf_SC_THREAD_SPORADIC_SERVER       (-1L)
 #define __z_posix_sysconf_SC_THREADS                                                               \
-	COND_CODE_1(CONFIG_PTHREAD_IPC, (_POSIX_THREADS), (-1L))
+	COND_CODE_1(CONFIG_POSIX_THREADS, (_POSIX_THREADS), (-1L))
 #define __z_posix_sysconf_SC_TIMEOUTS                                                              \
 	COND_CODE_1(CONFIG_POSIX_TIMEOUTS, (_POSIX_TIMEOUTS), (-1L))
 #define __z_posix_sysconf_SC_TIMERS                                                                \

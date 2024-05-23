@@ -86,7 +86,7 @@ static sys_dlist_t posix_thread_q[] = {
 	SYS_DLIST_STATIC_INIT(&posix_thread_q[POSIX_THREAD_RUN_Q]),
 	SYS_DLIST_STATIC_INIT(&posix_thread_q[POSIX_THREAD_DONE_Q]),
 };
-static struct posix_thread posix_thread_pool[CONFIG_MAX_PTHREAD_COUNT];
+static struct posix_thread posix_thread_pool[CONFIG_POSIX_THREAD_THREADS_MAX];
 static struct k_spinlock pthread_pool_lock;
 static int pthread_concurrency;
 
@@ -123,8 +123,8 @@ static inline enum posix_thread_qid posix_thread_q_get(struct posix_thread *t)
  * perspective of the application). With a linear space, this means that
  * the theoretical pthread_t range is [0,2147483647].
  */
-BUILD_ASSERT(CONFIG_MAX_PTHREAD_COUNT < PTHREAD_OBJ_MASK_INIT,
-	     "CONFIG_MAX_PTHREAD_COUNT is too high");
+BUILD_ASSERT(CONFIG_POSIX_THREAD_THREADS_MAX < PTHREAD_OBJ_MASK_INIT,
+	     "CONFIG_POSIX_THREAD_THREADS_MAX is too high");
 
 static inline size_t posix_thread_to_offset(struct posix_thread *t)
 {
@@ -148,7 +148,7 @@ struct posix_thread *to_posix_thread(pthread_t pthread)
 		return NULL;
 	}
 
-	if (bit >= CONFIG_MAX_PTHREAD_COUNT) {
+	if (bit >= ARRAY_SIZE(posix_thread_pool)) {
 		LOG_DBG("Invalid pthread (%x)", pthread);
 		return NULL;
 	}
@@ -252,8 +252,8 @@ void __z_pthread_cleanup_pop(int execute)
 
 static bool is_posix_policy_prio_valid(int priority, int policy)
 {
-	if (priority >= sched_get_priority_min(policy) &&
-	    priority <= sched_get_priority_max(policy)) {
+	if (priority >= posix_sched_priority_min(policy) &&
+	    priority <= posix_sched_priority_max(policy)) {
 		return true;
 	}
 
@@ -879,7 +879,7 @@ int pthread_setschedprio(pthread_t thread, int prio)
 	int ret;
 	int new_prio = K_LOWEST_APPLICATION_THREAD_PRIO;
 	struct posix_thread *t = NULL;
-	int policy;
+	int policy = -1;
 	struct sched_param param;
 
 	ret = pthread_getschedparam(thread, &policy, &param);
@@ -1375,7 +1375,7 @@ int pthread_setname_np(pthread_t thread, const char *name)
 	k_tid_t kthread;
 
 	thread = get_posix_thread_idx(thread);
-	if (thread >= CONFIG_MAX_PTHREAD_COUNT) {
+	if (thread >= ARRAY_SIZE(posix_thread_pool)) {
 		return ESRCH;
 	}
 
@@ -1399,7 +1399,7 @@ int pthread_getname_np(pthread_t thread, char *name, size_t len)
 	k_tid_t kthread;
 
 	thread = get_posix_thread_idx(thread);
-	if (thread >= CONFIG_MAX_PTHREAD_COUNT) {
+	if (thread >= ARRAY_SIZE(posix_thread_pool)) {
 		return ESRCH;
 	}
 
@@ -1474,10 +1474,8 @@ int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT 
 
 static int posix_thread_pool_init(void)
 {
-	size_t i;
-
-	for (i = 0; i < CONFIG_MAX_PTHREAD_COUNT; ++i) {
-		posix_thread_q_set(&posix_thread_pool[i], POSIX_THREAD_READY_Q);
+	ARRAY_FOR_EACH_PTR(posix_thread_pool, th) {
+		posix_thread_q_set(th, POSIX_THREAD_READY_Q);
 	}
 
 	return 0;
