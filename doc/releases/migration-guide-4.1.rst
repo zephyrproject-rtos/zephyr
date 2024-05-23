@@ -243,6 +243,10 @@ Bluetooth Host
 
    The default value of :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT` has been set to 0.
 
+* LE legacy pairing is no longer enabled by default since it's not secure. Leaving it enabled
+  makes a device vulnerable for downgrade attacks. If an application still needs to use LE legacy
+  pairing, it should disable :kconfig:option:`CONFIG_BT_SMP_SC_PAIR_ONLY` manually.
+
 Bluetooth Crypto
 ================
 

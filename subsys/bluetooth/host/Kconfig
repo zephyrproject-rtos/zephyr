@@ -549,6 +549,7 @@ config BT_SMP_APP_PAIRING_ACCEPT
 
 config BT_SMP_SC_PAIR_ONLY
 	bool "Disable legacy pairing"
+	default y
 	help
 	  This option disables LE legacy pairing and forces LE secure connection
 	  pairing. All Security Mode 1 levels can be used with legacy pairing
@@ -744,8 +745,7 @@ config BT_SMP_MIN_ENC_KEY_SIZE
 	int
 	prompt "Minimum encryption key size accepted in octets" if !BT_SMP_SC_ONLY
 	range 7 16
-	default 16 if BT_SMP_SC_ONLY
-	default 7
+	default 16
 	help
 	  This option sets the minimum encryption key size accepted during pairing.
 
