@@ -261,11 +261,13 @@ int _isatty(int file)
 }
 __weak FUNC_ALIAS(_isatty, isatty, int);
 
+#ifndef CONFIG_POSIX_SIGNALS
 int _kill(int i, int j)
 {
 	return 0;
 }
 __weak FUNC_ALIAS(_kill, kill, int);
+#endif /* CONFIG_POSIX_SIGNALS */
 
 int _getpid(void)
 {

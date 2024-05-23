@@ -156,6 +156,15 @@ config POSIX_PUTMSG
 
 	  Please use CONFIG_XOPEN_STREAMS instead.
 
+config POSIX_SIGNAL
+	bool "Support for POSIX signal APIs [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_SIGNALS
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_SIGNALS instead.
+
 config POSIX_SYSCONF
 	bool "Support for sysconf() [DEPRECATED]"
 	select DEPRECATED
