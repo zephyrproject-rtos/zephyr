@@ -89,6 +89,22 @@ struct ptp_foreign_tt_clock {
 const struct ptp_clock *ptp_clock_init(void);
 
 /**
+ * @brief Function synchronizing local PTP Hardware Clock to the remote.
+ *
+ * @param[in] ingress Timestamp of the message reception from the remote node in nanoseconds.
+ * @param[in] egress  Timestamp of the message transmission to the local node in nanoseconds.
+ */
+void ptp_clock_synchronize(uint64_t ingress, uint64_t egress);
+
+/**
+ * @brief Function updating PTP Clock path delay.
+ *
+ * @param[in] egress  Timestamp of the message transmission in nanoseconds.
+ * @param[in] ingress Timestamp of the message reception on the remote node in nanoseconds.
+ */
+void ptp_clock_delay(uint64_t egress, uint64_t ingress);
+
+/**
  * @brief Function for getting PTP Clock Default dataset.
  *
  * @return Pointer to the structure representing PTP Clock instance's Default dataset.
