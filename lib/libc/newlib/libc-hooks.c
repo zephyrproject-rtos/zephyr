@@ -29,6 +29,8 @@ int _write(int fd, const void *buf, int nbytes);
 int _open(const char *name, int mode);
 int _close(int file);
 int _lseek(int file, int ptr, int dir);
+int _kill(int pid, int sig);
+int _getpid(void);
 
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
 #define LIBC_DATA	K_APP_DMEM(z_libc_partition)
@@ -269,12 +271,6 @@ int _kill(int i, int j)
 __weak FUNC_ALIAS(_kill, kill, int);
 #endif /* CONFIG_POSIX_SIGNALS */
 
-int _getpid(void)
-{
-	return 0;
-}
-__weak FUNC_ALIAS(_getpid, getpid, int);
-
 #ifndef CONFIG_POSIX_FILE_SYSTEM
 int _fstat(int file, struct stat *st)
 {
@@ -283,6 +279,15 @@ int _fstat(int file, struct stat *st)
 }
 __weak FUNC_ALIAS(_fstat, fstat, int);
 #endif /* CONFIG_POSIX_FILE_SYSTEM */
+
+#ifndef CONFIG_POSIX_MULTI_PROCESS
+int _getpid(void)
+{
+	return 0;
+}
+__weak FUNC_ALIAS(_getpid, getpid, int);
+
+#endif /* CONFIG_POSIX_MULTI_PROCESS */
 
 __weak void _exit(int status)
 {
