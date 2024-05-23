@@ -3,7 +3,7 @@
 
 description: LiteX VexRiscV interrupt controller
 
-compatible: "vexriscv-intc0"
+compatible: "litex,vexriscv-intc0"
 
 include: [interrupt-controller.yaml, base.yaml]
 
