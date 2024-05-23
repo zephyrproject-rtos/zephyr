@@ -39,7 +39,7 @@ have not been approved by the `Open Source Initiative (OSI)`_. See the
    https://www.zephyrproject.org/governance/
 
 .. _Zephyr project charter:
-   https://www.zephyrproject.org/wp-content/uploads/sites/38/2020/09/CLEAN-LF-Zephyr-Charter-20200624-effective-20200901.pdf
+   https://www.zephyrproject.org/wp-content/uploads/sites/38/2023/08/LF-Zephyr-Charter-2023.08.21.pdf
 
 .. _Open Source Initiative (OSI):
    https://opensource.org/licenses/alphabetical
