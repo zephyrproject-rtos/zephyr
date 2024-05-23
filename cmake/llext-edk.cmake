@@ -94,7 +94,7 @@ string(REGEX REPLACE "[^a-zA-Z0-9]" "_" llext_edk_name_sane ${llext_edk_name})
 string(TOUPPER ${llext_edk_name_sane} llext_edk_name_sane)
 set(install_dir_var "${llext_edk_name_sane}_INSTALL_DIR")
 
-separate_arguments(LLEXT_CFLAGS NATIVE_COMMAND ${llext_cflags})
+separate_arguments(llext_cflags NATIVE_COMMAND ${llext_cflags})
 
 set(make_relative FALSE)
 foreach(flag ${llext_cflags})
@@ -117,7 +117,7 @@ foreach(flag ${llext_cflags})
         list(APPEND new_cflags ${flag})
     endif()
 endforeach()
-set(LLEXT_CFLAGS ${new_cflags})
+set(llext_cflags ${new_cflags})
 
 cmake_path(CONVERT "${INTERFACE_INCLUDE_DIRECTORIES}" TO_CMAKE_PATH_LIST include_dirs)
 
