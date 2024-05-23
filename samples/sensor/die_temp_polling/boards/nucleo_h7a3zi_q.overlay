@@ -1,0 +1,17 @@
+/ {
+	aliases {
+		die-temp0 = &die_temp;
+	};
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&adc2 {
+	pinctrl-0 = <&adc2_inp0_pc2_c>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
