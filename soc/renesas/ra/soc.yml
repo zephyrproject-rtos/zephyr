@@ -31,3 +31,6 @@ family:
       - name: ra2a1
         socs:
           - name: r7fa2a1ab3cfm
+      - name: ra2l1
+        socs:
+          - name: r7fa2l1ab2dfp
