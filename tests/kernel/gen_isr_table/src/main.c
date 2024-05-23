@@ -20,7 +20,12 @@ extern uint32_t _irq_vector_table[];
 #endif
 
 #if defined(CONFIG_RISCV)
-#if defined(CONFIG_RISCV_HAS_CLIC)
+#if defined(CONFIG_NRFX_CLIC)
+#define ISR1_OFFSET	15
+#define ISR3_OFFSET	16
+#define ISR5_OFFSET	17
+#define TRIG_CHECK_SIZE	18
+#elif defined(CONFIG_RISCV_HAS_CLIC)
 #define ISR1_OFFSET	3
 #define ISR3_OFFSET	17
 #define ISR5_OFFSET	18
@@ -42,7 +47,12 @@ extern uint32_t _irq_vector_table[];
 #endif
 
 #define IRQ_LINE(offset)        offset
+#if defined(CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET)
+#define TABLE_INDEX(offset)     offset + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+#else
 #define TABLE_INDEX(offset)     offset
+#endif
+
 #else
 #define ISR1_OFFSET	0
 #define ISR2_OFFSET	1
