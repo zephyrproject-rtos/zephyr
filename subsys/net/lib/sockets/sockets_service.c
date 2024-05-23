@@ -314,4 +314,7 @@ static int init_socket_service(void)
 	return 0;
 }
 
-SYS_INIT(init_socket_service, APPLICATION, CONFIG_NET_SOCKETS_SERVICE_INIT_PRIO);
+void socket_service_init(void)
+{
+	(void)init_socket_service();
+}

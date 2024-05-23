@@ -787,10 +787,6 @@ static int enable_shell_telnet(void)
 	return shell_init(&shell_telnet, NULL, cfg_flags, log_backend, level);
 }
 
-BUILD_ASSERT(CONFIG_SHELL_TELNET_INIT_PRIORITY > CONFIG_NET_SOCKETS_SERVICE_INIT_PRIO,
-	     "CONFIG_SHELL_TELNET_INIT_PRIORITY must be higher than "
-	     "CONFIG_NET_SOCKETS_SERVICE_INIT_PRIO");
-
 SYS_INIT(enable_shell_telnet, APPLICATION, CONFIG_SHELL_TELNET_INIT_PRIORITY);
 
 const struct shell *shell_backend_telnet_get_ptr(void)
