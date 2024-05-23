@@ -1,0 +1,20 @@
+# Copyright (C) 2024 Jakov Jovic <jovic.jakov@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+description: Bosch BMP180 Digital pressure and temperature sensor
+
+compatible: "bosch,bmp180"
+
+properties:
+  oversampling:
+    type: int
+    required: true
+    description: |
+      Hardware pressure sampling accuracy modes. Available modes:
+      - 0: BMP180_MODE_ULTRA_LOW_POWER (1 sample, 4.5 ms)
+      - 1: BMP180_MODE_STANDARD (2 samples, 7.5 ms)
+      - 2: BMP180_MODE_HIGH_RESOLUTION (4 samples, 13.5 ms)
+      - 3: BMP180_MODE_ULTRA_HIGH_RESOLUTION (8 samples, 25.5 ms)
+    enum: [0, 1, 2, 3]
