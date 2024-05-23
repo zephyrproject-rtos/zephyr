@@ -43,6 +43,10 @@ endif
 config MODEM_PIPE
 	bool "Modem pipe module"
 
+config MODEM_PIPELINK
+	bool "Modem pipelink module"
+	depends on MODEM_PIPE
+
 config MODEM_PPP
 	bool "Modem PPP module"
 	depends on NET_L2_PPP
