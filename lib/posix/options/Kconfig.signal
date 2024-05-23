@@ -2,11 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-menu "Signal support"
+menu "POSIX signals"
 
 config POSIX_REALTIME_SIGNALS
-	bool "POSIX realtime signals"
+	bool "POSIX realtime signals [EXPERIMENTAL]"
 	default y if POSIX_API
+	select EXPERIMENTAL
 	help
 	  Enable support for POSIX realtime signals.
 
@@ -21,13 +22,14 @@ config POSIX_RTSIG_MAX
 
 endif # POSIX_REALTIME_SIGNALS
 
-config POSIX_SIGNAL
-	bool "Support for POSIX signal APIs"
+config POSIX_SIGNALS
+	bool "POSIX signals [EXPERIMENTAL]"
 	default y if POSIX_API
+	select EXPERIMENTAL
 	help
-	  Enable support for POSIX signal APIs.
+	  Enable support for POSIX signals.
 
-if POSIX_SIGNAL
+if POSIX_SIGNALS
 
 config POSIX_SIGNAL_STRING_DESC
 	bool "Use full description for the strsignal API"
