@@ -25,12 +25,12 @@ def test_sensor_shell_get(shell: Shell):
     assert any(['channel type=31(voltage)' in line for line in lines]), 'expected response not found'
 
     lines = shell.exec_command('sensor get sensor@1 53')
-    assert any(['channel type=53(gauge_time_to_empty)' in line for line in lines]), 'expected response not found'
+    assert any(['channel type=53(gauge_state_of_health)' in line for line in lines]), 'expected response not found'
 
     # Channel should be the last one before 'all' (because 'all' doesn't print anything) so that the
     # for-loop in `parse_named_int()` will go through everything
     lines = shell.exec_command('sensor get sensor@0 gauge_desired_charging_current')
-    assert any(['channel type=58(gauge_desired_charging_current)' in line for line in lines]), 'expected response not found'
+    assert any(['channel type=59(gauge_desired_charging_current)' in line for line in lines]), 'expected response not found'
 
     logger.info('response is valid')
 
@@ -42,7 +42,7 @@ def test_sensor_shell_attr_get(shell: Shell):
     assert any(['sensor@0(channel=co2, attr=sampling_frequency)' in line for line in lines]), 'expected response not found'
 
     lines = shell.exec_command('sensor attr_get sensor@1 53 3')
-    assert any(['sensor@1(channel=gauge_time_to_empty, attr=slope_th)' in line for line in lines]), 'expected response not found'
+    assert any(['sensor@1(channel=gauge_state_of_health, attr=slope_th)' in line for line in lines]), 'expected response not found'
 
     logger.info('response is valid')
 
@@ -55,7 +55,7 @@ def test_sensor_shell_attr_set(shell: Shell):
     assert any([expected_line in line for line in lines]), 'expected response not found'
 
     lines = shell.exec_command('sensor attr_set sensor@1 53 3 1')
-    expected_line = 'sensor@1 channel=gauge_time_to_empty, attr=slope_th set to value=1'
+    expected_line = 'sensor@1 channel=gauge_state_of_health, attr=slope_th set to value=1'
     assert any([expected_line in line for line in lines]), 'expected response not found'
 
     logger.info('response is valid')

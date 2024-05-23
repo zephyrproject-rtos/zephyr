@@ -47,6 +47,7 @@ struct sensor_data_header {
  * - :c:enum:`SENSOR_CHAN_POS_DX`
  * - :c:enum:`SENSOR_CHAN_POS_DY`
  * - :c:enum:`SENSOR_CHAN_POS_DZ`
+ * - :c:enum:`SENSOR_CHAN_POS_DXYZ`
  */
 struct sensor_three_axis_data {
 	struct sensor_data_header header;
