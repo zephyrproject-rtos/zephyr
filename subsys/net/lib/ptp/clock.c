@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 #include <string.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/ptp_clock.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/socket.h>
@@ -20,6 +21,9 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 #include "clock.h"
 #include "ddt.h"
 #include "port.h"
+
+#define MIN_NSEC_TO_TIMEINTERVAL (0xFFFF800000000000ULL)
+#define MAX_NSEC_TO_TIMEINTERVAL (0x00007FFFFFFFFFFFULL)
 
 /**
  * @brief PTP Clock structure.
@@ -36,6 +40,12 @@ struct ptp_clock {
 	struct zsock_pollfd	    pollfd[2 * CONFIG_PTP_NUM_PORTS];
 	bool			    pollfd_valid;
 	uint8_t			    time_src;
+	struct {
+		uint64_t	    t1;
+		uint64_t	    t2;
+		uint64_t	    t3;
+		uint64_t	    t4;
+	} timestamp;			/* latest timestamps in nanoseconds */
 };
 
 static struct ptp_clock clock = { 0 };
@@ -74,6 +84,17 @@ static const char *clock_id_str(ptp_clk_id *clock_id)
 		 cid[7]);
 
 	return str_clock_id;
+}
+
+static ptp_timeinterval clock_ns_to_timeinterval(int64_t val)
+{
+	if (val < (int64_t)MIN_NSEC_TO_TIMEINTERVAL) {
+		val = MIN_NSEC_TO_TIMEINTERVAL;
+	} else if (val > (int64_t)MAX_NSEC_TO_TIMEINTERVAL) {
+		val = MAX_NSEC_TO_TIMEINTERVAL;
+	}
+
+	return (uint64_t)val << 16;
 }
 
 const struct ptp_clock *ptp_clock_init(void)
@@ -135,6 +156,55 @@ const struct ptp_clock *ptp_clock_init(void)
 	sys_slist_init(&clock.ports_list);
 	LOG_DBG("PTP Clock %s initialized", clock_id_str(&dds->clk_id));
 	return &clock;
+}
+
+void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
+{
+	int64_t offset;
+	uint64_t delay = clock.current_ds.mean_delay >> 16;
+
+	clock.timestamp.t1 = egress;
+	clock.timestamp.t2 = ingress;
+
+	if (!clock.current_ds.mean_delay) {
+		return;
+	}
+
+	offset = clock.timestamp.t2 - clock.timestamp.t1 - delay;
+
+	/* If diff is too big, clock needs to be set first. */
+	if (offset > NSEC_PER_SEC || offset < -NSEC_PER_SEC) {
+		struct net_ptp_time current;
+
+		LOG_WRN("Clock offset exceeds 1 second.");
+
+		ptp_clock_get(clock.phc, &current);
+
+		current.second -= (uint64_t)(offset / NSEC_PER_SEC);
+		current.nanosecond -= (uint32_t)(offset % NSEC_PER_SEC);
+
+		ptp_clock_set(clock.phc, &current);
+		return;
+	}
+
+	LOG_DBG("Offset %lldns", offset);
+	clock.current_ds.offset_from_tt = clock_ns_to_timeinterval(offset);
+
+	ptp_clock_adjust(clock.phc, offset);
+}
+
+void ptp_clock_delay(uint64_t egress, uint64_t ingress)
+{
+	int64_t delay;
+
+	clock.timestamp.t3 = egress;
+	clock.timestamp.t4 = ingress;
+
+	delay = ((clock.timestamp.t2 - clock.timestamp.t3) +
+		 (clock.timestamp.t4 - clock.timestamp.t1)) / 2;
+
+	LOG_DBG("Delay %lldns", delay);
+	clock.current_ds.mean_delay = clock_ns_to_timeinterval(delay);
 }
 
 const struct ptp_default_ds *ptp_clock_default_ds(void)
