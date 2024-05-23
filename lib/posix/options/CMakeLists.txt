@@ -80,6 +80,7 @@ zephyr_library_sources_ifdef(CONFIG_PTHREAD pthread.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_PRIORITY_SCHEDULING sched.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_READER_WRITER_LOCKS rwlock.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_SEMAPHORES semaphore.c)
+zephyr_library_sources_ifdef(CONFIG_XSI_SYSTEM_LOGGING syslog.c)
 
 zephyr_library_sources_ifdef(CONFIG_GETOPT_LONG
   getopt/getopt_long.c
