@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2024 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		pcc: clock-controller@4000d000 {
+			compatible = "nuvoton,npcm-pcc";
+			/* Cells for bus type, clock control reg and bit */
+			#clock-cells = <3>;
+			/* First reg region is Power Management Controller */
+			/* Second reg region is Core Domain Clock Generator */
+			reg = <0x4000d000 0x2000
+			       0x400b5000 0x2000>;
+			reg-names = "pmc", "cdcg";
+		};
+
+		scfg: scfg@400c3000 {
+			compatible = "nuvoton,npcm-scfg";
+			/* First reg region is System Configuration Device */
+			/* Second reg region is System Glue Device */
+			reg = <0x400c3000 0x70
+			       0x400a5000 0x2000>;
+			reg-names = "scfg", "glue";
+			#alt-cells = <3>;
+			#lvol-cells = <2>;
+		};
+
+		mdc: mdc@4000c000 {
+			compatible = "syscon";
+			reg = <0x4000c000 0xa>;
+			reg-io-width = <1>;
+		};
+
+		mdc_header: mdc@4000c00a {
+			compatible = "syscon";
+			reg = <0x4000c00a 0x4>;
+			reg-io-width = <2>;
+		};
+	};
+
+	soc-id {
+		compatible = "nuvoton,npcm-soc-id";
+		family-id = <0x20>;
+	};
+
+	booter-variant {
+		compatible = "nuvoton,npcm-booter-variant";
+	};
+};

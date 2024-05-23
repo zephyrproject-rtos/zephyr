@@ -15,4 +15,8 @@
 #include <zephyr/devicetree.h>
 #include <cmsis_core_m_defaults.h>
 
+#include <reg/reg_access.h>
+#include <reg/reg_def.h>
+#include <soc_clock.h>
+
 #endif /* _NUVOTON_NPCM_SOC_H_ */
