@@ -4,7 +4,37 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <arm/armv7-m.dtsi>
+
+/* Macros for device tree declarations of npcm soc family */
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/npcm_clock.h>
+#include <zephyr/dt-bindings/pinctrl/npcm-pinctrl.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <freq.h>
+
 / {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+		};
+	};
+
+	def-io-conf-list {
+		compatible = "nuvoton,npcm-pinctrl-def";
+		pinmux = <>;
+	};
+
+	pinctrl: pinctrl {
+		compatible = "nuvoton,npcm-pinctrl";
+		status = "okay";
+	};
+
 	soc {
 		pcc: clock-controller@4000d000 {
 			compatible = "nuvoton,npcm-pcc";
@@ -49,4 +79,8 @@
 	booter-variant {
 		compatible = "nuvoton,npcm-booter-variant";
 	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
 };

@@ -4,25 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arm/armv7-m.dtsi>
-
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/pwm/pwm.h>
-#include <freq.h>
+/* npcm4 series pinmux mapping table */
+#include "npcm4/npcm4-alts-map.dtsi"
 
 /* Device tree declarations of npcm soc family */
 #include "npcm.dtsi"
 
 / {
-	cpus {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		cpu0: cpu@0 {
-			device_type = "cpu";
-			compatible = "arm,cortex-m4";
-			reg = <0>;
-		};
+	def-io-conf-list {
+		/* Change default functional pads to GPIOs */
+		pinmux = <&alt5c_psin_sel
+			  &alt5c_psout_sel
+			  &alt5c_pson_sel
+			  &alt5d_rstout0_sel
+			  &alt5d_rstout1_sel
+			  &alt5d_rstout2_sel
+			  &alt5d_sktocc_sel
+			  &alt5d_caseopen_sel
+			  &alt5e_dpwrok_sel
+			  &alt5e_rsmrst_sel
+			  &alt5e_deep_s5_sel
+			  &alt5e_pwrok0_sel
+			  &alt5e_3vsbsw_sel>;
 	};
 
 	soc {
@@ -41,8 +44,4 @@
 		 * want to switch the interface from io to specific peripheral.
 		 */
 	};
-};
-
-&nvic {
-	arm,num-irq-priority-bits = <3>;
 };

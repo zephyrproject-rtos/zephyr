@@ -17,6 +17,10 @@
 
 #include <reg/reg_access.h>
 #include <reg/reg_def.h>
+#include <soc_dt.h>
 #include <soc_clock.h>
+#include <soc_pins.h>
+
+#define NPCM_PUPD_EN_OFFSET(n)		(0x028 + n)
 
 #endif /* _NUVOTON_NPCM_SOC_H_ */
