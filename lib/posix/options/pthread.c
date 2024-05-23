@@ -188,22 +188,6 @@ int pthread_equal(pthread_t pt1, pthread_t pt2)
 	return (pt1 == pt2);
 }
 
-pid_t getpid(void)
-{
-	/*
-	 * To maintain compatibility with some other POSIX operating systems,
-	 * a PID of zero is used to indicate that the process exists in another namespace.
-	 * PID zero is also used by the scheduler in some cases.
-	 * PID one is usually reserved for the init process.
-	 * Also note, that negative PIDs may be used by kill()
-	 * to send signals to process groups in some implementations.
-	 *
-	 * At the moment, getpid just returns an arbitrary number >= 2
-	 */
-
-	return 42;
-}
-
 static inline void __z_pthread_cleanup_init(struct __pthread_cleanup *c, void (*routine)(void *arg),
 					    void *arg)
 {
