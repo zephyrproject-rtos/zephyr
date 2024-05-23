@@ -92,7 +92,6 @@ struct sigevent {
 	int sigev_signo;
 };
 
-#ifdef CONFIG_POSIX_SIGNAL
 char *strsignal(int signum);
 int sigemptyset(sigset_t *set);
 int sigfillset(sigset_t *set);
@@ -102,7 +101,6 @@ int sigismember(const sigset_t *set, int signo);
 int sigprocmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
 
 int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
-#endif /* CONFIG_POSIX_SIGNAL */
 
 #ifdef __cplusplus
 }
