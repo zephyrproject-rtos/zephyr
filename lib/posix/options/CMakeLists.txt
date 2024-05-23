@@ -10,7 +10,7 @@ if(CONFIG_POSIX_API)
   zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr/posix)
 endif()
 
-if(CONFIG_POSIX_SIGNAL)
+if(CONFIG_POSIX_SIGNALS)
   set(STRSIGNAL_TABLE_H ${GEN_DIR}/posix/strsignal_table.h)
 
   add_custom_command(
@@ -58,7 +58,7 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_MULTI_PROCESS
   sleep.c
 )
 zephyr_library_sources_ifdef(CONFIG_POSIX_NETWORKING net.c)
-zephyr_library_sources_ifdef(CONFIG_POSIX_SIGNAL signal.c ${STRSIGNAL_TABLE_H})
+zephyr_library_sources_ifdef(CONFIG_POSIX_SIGNALS signal.c ${STRSIGNAL_TABLE_H})
 zephyr_library_sources_ifdef(CONFIG_POSIX_SINGLE_PROCESS
   confstr.c
   env.c

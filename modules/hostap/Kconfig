@@ -8,7 +8,7 @@
 config WIFI_NM_WPA_SUPPLICANT
 	bool "WPA Suplicant from hostap project [EXPERIMENTAL]"
 	select POSIX_TIMERS
-	select POSIX_SIGNAL
+	select POSIX_SIGNALS
 	select POSIX_API
 	select NET_SOCKETS
 	select NET_SOCKETS_PACKET

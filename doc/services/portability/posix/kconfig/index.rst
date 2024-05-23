@@ -24,7 +24,6 @@ implementation of the POSIX API.
 * :kconfig:option:`CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT`
 * :kconfig:option:`CONFIG_POSIX_PTHREAD_ATTR_STACKSIZE_BITS`
 * :kconfig:option:`CONFIG_POSIX_RTSIG_MAX`
-* :kconfig:option:`CONFIG_POSIX_SIGNAL`
 * :kconfig:option:`CONFIG_POSIX_SIGNAL_STRING_DESC`
 * :kconfig:option:`CONFIG_POSIX_THREAD_KEYS_MAX`
 * :kconfig:option:`CONFIG_POSIX_THREAD_THREADS_MAX`
