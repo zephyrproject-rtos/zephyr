@@ -33,6 +33,24 @@ config GETOPT
 
 	  Please use CONFIG_POSIX_C_LIB_EXT instead.
 
+config MAX_PTHREAD_COUNT
+	int "Maximum number of pthread_t [DEPRECATED]"
+	default POSIX_THREAD_THREADS_MAX if POSIX_THREADS
+	default 0
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_THREAD_THREADS_MAX instead.
+
+config MAX_PTHREAD_KEY_COUNT
+	int "Maximum number of pthread_key_t [DEPRECATED]"
+	default POSIX_THREAD_KEYS_MAX if POSIX_THREADS
+	default 0
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_THREAD_KEYS_MAX instead.
+
 config MAX_TIMER_COUNT
 	int "Maximum number of timer_t [DEPRECATED]"
 	default POSIX_TIMER_MAX if POSIX_TIMERS
@@ -165,6 +183,15 @@ config POSIX_UNAME
 
 	  Please use CONFIG_POSIX_SINGLE_PROCESS instead.
 
+config PTHREAD
+	bool "pthread_t support [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_THREADS
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_THREADS instead.
+
 config PTHREAD_BARRIER
 	bool "pthread_barrier_t support [DEPRECATED]"
 	select DEPRECATED
@@ -173,6 +200,43 @@ config PTHREAD_BARRIER
 	  This option is deprecated.
 
 	  Please use CONFIG_POSIX_BARRIERS instead.
+
+config PTHREAD_COND
+	bool "pthread_cond_t support [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_THREADS
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_THREADS instead.
+
+
+config PTHREAD_IPC
+	bool "POSIX pthread IPC API [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_THREADS
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_THREADS instead.
+
+config PTHREAD_KEY
+	bool "pthread_key_t support [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_THREADS
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_THREADS instead.
+
+config PTHREAD_MUTEX
+	bool "pthread_mutex_t support [DEPRECATED]"
+	select DEPRECATED
+	select POSIX_THREADS
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_POSIX_THREADS instead.
 
 config PTHREAD_RWLOCK
 	bool "pthread_spinlock_t support [DEPRECATED]"
