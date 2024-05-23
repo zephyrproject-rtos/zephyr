@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2024 Texas Instruments Incorporated
+ *	Andrew Davis <afd@ti.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/am64x_m4.dtsi>
+#include "sk_am64_am6442_m4-pinctrl.dtsi"
+
+/ {
+	model = "TI AM64x STARTER KIT (SK) M4";
+	compatible = "ti,am64x_m4_sk", "ti,am6442";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,ipc = &ipc0;
+		zephyr,ipc_shm = &ddr0;
+	};
+
+	aliases {
+		led0 = &heartbeat_led;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "okay";
+			clock-frequency = <DT_FREQ_M(400)>;
+		};
+	};
+
+	ddr0: memory@a4000000 {
+		compatible = "mmio-sram";
+		reg = <0xa4000000 DT_SIZE_M(1)>;
+	};
+
+	rsc_table: memory@a4100000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xa4100000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "RSC_TABLE";
+	};
+
+	ddr1: memory@a4200000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xa4200000 (DT_SIZE_M(15) - DT_SIZE_K(4))>;
+		zephyr,memory-region = "DDR";
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		heartbeat_led: led_0 {
+			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+			label = "Heartbeat LED";
+		};
+	};
+
+	ipc0: ipc {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox6 0>, <&mbox6 1>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&mcu_uart0_rx_default &mcu_uart0_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio0 {
+	pinctrl-0 = <&mcu_gpio0_led_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
