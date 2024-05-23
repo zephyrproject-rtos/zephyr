@@ -910,7 +910,7 @@ static void svc_handler(struct k_work *work)
 	int ret;
 
 	ret = recv_data(pev);
-	if (ret < 0) {
+	if (ret < 0 && ret != DNS_EAI_ALLDONE) {
 		NET_ERR("DNS recv error (%d)", ret);
 	}
 }
