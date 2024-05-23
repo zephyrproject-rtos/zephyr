@@ -14,9 +14,6 @@ if APIC_TIMER
 config APIC_TIMER_IRQ
 	default 24
 
-config APIC_TIMER_TSC
-	default y
-
 endif # APIC_TIMER
 
 config X86_DYNAMIC_IRQ_STUBS
