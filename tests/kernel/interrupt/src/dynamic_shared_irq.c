@@ -97,6 +97,12 @@ static void *dynamic_shared_irq_suite_setup(void)
 	return NULL;
 }
 
+#if defined(CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET)
+#define TABLE_OFFSET CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+#else
+#define TABLE_OFFSET 0
+#endif
+
 static void dynamic_shared_irq_suite_before(void *data)
 {
 	ARG_UNUSED(data);
@@ -104,37 +110,39 @@ static void dynamic_shared_irq_suite_before(void *data)
 	arch_irq_connect_dynamic(fixture.irq1, fixture.irq_priority,
 				 test_isr_0, 0, 0);
 
-	zassert_true(_sw_isr_table[fixture.irq1_table_idx].isr == test_isr_0,
+	zassert_true(_sw_isr_table[fixture.irq1_table_idx + TABLE_OFFSET].isr == test_isr_0,
 		     "wrong _sw_isr_table ISR at irq1");
-	zassert_true(!_sw_isr_table[fixture.irq1_table_idx].arg,
+	zassert_true(!_sw_isr_table[fixture.irq1_table_idx + TABLE_OFFSET].arg,
 		     "wrong _sw_isr_table argument at irq1");
-	zassert_true(!z_shared_sw_isr_table[fixture.irq1_table_idx].client_num,
+	zassert_true(!z_shared_sw_isr_table[fixture.irq1_table_idx + TABLE_OFFSET].client_num,
 		     "wrong client number at irq1");
 
 	arch_irq_connect_dynamic(fixture.irq1, fixture.irq_priority,
 				 test_isr_1, (void *)1, 0);
 
-	zassert_true(_sw_isr_table[fixture.irq1_table_idx].isr == z_shared_isr,
+	zassert_true(_sw_isr_table[fixture.irq1_table_idx + TABLE_OFFSET].isr == z_shared_isr,
 		     "wrong _sw_isr_table ISR at irq1");
-	zassert_true(_sw_isr_table[fixture.irq1_table_idx].arg ==
-		     &z_shared_sw_isr_table[fixture.irq1_table_idx],
+	zassert_true(_sw_isr_table[fixture.irq1_table_idx + TABLE_OFFSET].arg ==
+		     &z_shared_sw_isr_table[fixture.irq1_table_idx + TABLE_OFFSET],
 		     "wrong _sw_isr_table argument at irq1");
-	zassert_true(z_shared_sw_isr_table[fixture.irq1_table_idx].client_num == 2,
+	zassert_true(z_shared_sw_isr_table[fixture.irq1_table_idx + TABLE_OFFSET].client_num == 2,
 		     "wrong client number at irq1");
 
-	zassert_true(client_exists_at_index(test_isr_0, 0, fixture.irq1_table_idx, 0),
+	zassert_true(client_exists_at_index(test_isr_0, 0, fixture.irq1_table_idx + TABLE_OFFSET,
+					    0),
 		     "unexpected client data for irq1, index 0");
-	zassert_true(client_exists_at_index(test_isr_1, (void *)1, fixture.irq1_table_idx, 1),
+	zassert_true(client_exists_at_index(test_isr_1, (void *)1,
+		     fixture.irq1_table_idx + TABLE_OFFSET, 1),
 		     "unexpected client data for irq1, index 1");
 
 	arch_irq_connect_dynamic(fixture.irq2, fixture.irq_priority,
 				 test_isr_2, (void *)2, 0);
 
-	zassert_true(_sw_isr_table[fixture.irq2_table_idx].isr == test_isr_2,
+	zassert_true(_sw_isr_table[fixture.irq2_table_idx + TABLE_OFFSET].isr == test_isr_2,
 		     "wrong _sw_isr_table ISR at irq2");
-	zassert_true(_sw_isr_table[fixture.irq2_table_idx].arg == (void *)2,
+	zassert_true(_sw_isr_table[fixture.irq2_table_idx + TABLE_OFFSET].arg == (void *)2,
 		     "wrong _sw_isr_table argument at irq2");
-	zassert_true(!z_shared_sw_isr_table[fixture.irq2_table_idx].client_num,
+	zassert_true(!z_shared_sw_isr_table[fixture.irq2_table_idx + TABLE_OFFSET].client_num,
 		     "wrong client number at irq2");
 
 	reset_test_vector();
@@ -191,11 +199,11 @@ ZTEST(shared_irq_feature, test_dynamic_shared_irq_disconnect_write)
 	arch_irq_disconnect_dynamic(fixture.irq1, fixture.irq_priority,
 				    test_isr_0, 0, 0);
 
-	zassert_true(_sw_isr_table[fixture.irq1_table_idx].isr == test_isr_1,
+	zassert_true(_sw_isr_table[fixture.irq1_table_idx + TABLE_OFFSET].isr == test_isr_1,
 		     "wrong _sw_isr_table ISR at irq1");
-	zassert_true(_sw_isr_table[fixture.irq1_table_idx].arg == (void *)1,
+	zassert_true(_sw_isr_table[fixture.irq1_table_idx + TABLE_OFFSET].arg == (void *)1,
 		     "wrong _sw_isr_table arg at irq1");
-	zassert_true(!z_shared_sw_isr_table[fixture.irq1_table_idx].client_num,
+	zassert_true(!z_shared_sw_isr_table[fixture.irq1_table_idx + TABLE_OFFSET].client_num,
 		     "wrong client number at irq1");
 
 	irq_enable(fixture.irq1);
