@@ -1,0 +1,68 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra2/r7fa2l1ab2dfp.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+
+#include "ek_ra2l1-pinctrl.dtsi"
+
+/ {
+	model = "Renesas EK-RA2L1";
+	compatible = "renesas,ra2l1", "renesas,ra";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart9;
+		zephyr,shell-uart = &uart9;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led1 {
+			gpios = <&ioport5 3 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+		led2: led2 {
+			gpios = <&ioport5 4 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+		led3: led3 {
+			gpios = <&ioport5 5 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(20)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&ioport5 {
+	status = "okay";
+};
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	uart9: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
