@@ -74,6 +74,8 @@ static int trim_hsfll(void)
 	nrf_hsfll_trim_set(hsfll, &trim);
 
 	nrf_hsfll_task_trigger(hsfll, NRF_HSFLL_TASK_FREQ_CHANGE);
+	/* HSFLL task frequency change needs to be triggered twice to take effect.*/
+	nrf_hsfll_task_trigger(hsfll, NRF_HSFLL_TASK_FREQ_CHANGE);
 
 	LOG_DBG("NRF_HSFLL->TRIM.VSUP = %d", hsfll->TRIM.VSUP);
 	LOG_DBG("NRF_HSFLL->TRIM.COARSE = %d", hsfll->TRIM.COARSE);
