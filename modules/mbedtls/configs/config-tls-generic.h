@@ -163,16 +163,8 @@
 #define MBEDTLS_DES_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_CIPHER_ARC4_ENABLED)
-#define MBEDTLS_ARC4_C
-#endif
-
 #if defined(CONFIG_MBEDTLS_CIPHER_CHACHA20_ENABLED)
 #define MBEDTLS_CHACHA20_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_CIPHER_BLOWFISH_ENABLED)
-#define MBEDTLS_BLOWFISH_C
 #endif
 
 #if defined(CONFIG_MBEDTLS_CIPHER_CCM_ENABLED)
@@ -272,10 +264,6 @@
 #endif
 
 /* Supported hash algorithms */
-
-#if defined(CONFIG_MBEDTLS_MD4)
-#define MBEDTLS_MD4_C
-#endif
 
 #if defined(CONFIG_MBEDTLS_MD5)
 #define MBEDTLS_MD5_C
