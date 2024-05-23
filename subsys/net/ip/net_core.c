@@ -549,6 +549,8 @@ static inline int services_init(void)
 {
 	int status;
 
+	socket_service_init();
+
 	status = net_dhcpv4_init();
 	if (status) {
 		return status;

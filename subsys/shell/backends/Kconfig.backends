@@ -470,7 +470,7 @@ if SHELL_BACKEND_TELNET
 config SHELL_TELNET_INIT_PRIORITY
 	int "Initialization priority"
 	default 95
-	range NET_SOCKETS_SERVICE_INIT_PRIO 99
+	range 0 99
 	help
 	  Initialization priority for telnet shell backend. This must be higher
 	  than socket service initialization priority, as socket service has to
