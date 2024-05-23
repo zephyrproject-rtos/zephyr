@@ -35,7 +35,7 @@ BUILD_ASSERT(
 static void i2c_nrfx_twi_rtio_complete(const struct device *dev, int status);
 
 static bool i2c_nrfx_twi_rtio_msg_start(const struct device *dev, uint8_t flags,
-				   uint8_t *buf, size_t buf_len, uint16_t i2c_addr)
+					uint8_t *buf, size_t buf_len, uint16_t i2c_addr)
 {
 	const struct i2c_nrfx_twi_config *config = dev->config;
 	struct i2c_nrfx_twi_rtio_data *const dev_data = dev->data;
@@ -69,13 +69,13 @@ static bool i2c_nrfx_twi_rtio_start(const struct device *dev)
 	switch (sqe->op) {
 	case RTIO_OP_RX:
 		return i2c_nrfx_twi_rtio_msg_start(dev, I2C_MSG_READ | sqe->iodev_flags,
-					sqe->buf, sqe->buf_len, dt_spec->addr);
+						   sqe->buf, sqe->buf_len, dt_spec->addr);
 	case RTIO_OP_TINY_TX:
 		return i2c_nrfx_twi_rtio_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-					sqe->tiny_buf, sqe->tiny_buf_len, dt_spec->addr);
+						   sqe->tiny_buf, sqe->tiny_buf_len, dt_spec->addr);
 	case RTIO_OP_TX:
 		return i2c_nrfx_twi_rtio_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-					sqe->buf, sqe->buf_len, dt_spec->addr);
+						   sqe->buf, sqe->buf_len, dt_spec->addr);
 	case RTIO_OP_I2C_CONFIGURE:
 		(void)i2c_nrfx_twi_configure(dev, sqe->i2c_config);
 		return false;
@@ -103,9 +103,8 @@ static void i2c_nrfx_twi_rtio_complete(const struct device *dev, int status)
 	}
 }
 
-static int i2c_nrfx_twi_rtio_transfer(const struct device *dev,
-				 struct i2c_msg *msgs,
-				 uint8_t num_msgs, uint16_t addr)
+static int i2c_nrfx_twi_rtio_transfer(const struct device *dev, struct i2c_msg *msgs,
+				      uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_rtio *const ctx = ((struct i2c_nrfx_twi_rtio_data *)
 		dev->data)->ctx;
