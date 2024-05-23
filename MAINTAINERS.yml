@@ -852,6 +852,7 @@ Documentation:
     - doc/project/
     - doc/releases/
     - doc/security/
+    - doc/safety/
     - README.rst
     - doc/substitutions.txt
     - doc/images/Zephyr-Kite-in-tree.png
