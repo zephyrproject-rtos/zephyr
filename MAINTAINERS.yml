@@ -646,6 +646,7 @@ Coding Guidelines:
     - nashif
     - carlescufi
     - jfischer-no
+    - simhein
   files:
     - .checkpatch.conf
     - .clang-format
