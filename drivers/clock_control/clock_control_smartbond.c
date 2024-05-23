@@ -16,6 +16,7 @@
 #if defined(CONFIG_BT_DA1469X)
 #include <shm.h>
 #endif
+#include <zephyr/drivers/regulator.h>
 
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
@@ -145,10 +146,59 @@ static void smartbond_start_xtal32k(void)
 	}
 }
 
+#ifdef CONFIG_REGULATOR
+/*
+ * Should be used to control PLL when the regulator driver is available.
+ * If the latter is available, then the VDD level should be changed when
+ * switching to/from PLL. Otherwise, the VDD level is considered to
+ * be fixed @1.2V which should support both XTAL32M and PLL system clocks.
+ */
+static int smartbond_clock_set_pll_status(bool status)
+{
+	const struct device *dev  = DEVICE_DT_GET(DT_NODELABEL(vdd));
+	int ret;
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Regulator device is not ready");
+		return -ENODEV;
+	}
+
+	if (status) {
+		/* Enabling PLL requires that VDD be raised to 1.2V */
+		if (regulator_set_voltage(dev, 1200000, 1200000) == 0) {
+			da1469x_clock_sys_pll_enable();
+
+			/* QSPIC read pipe delay should be updated when switching to PLL */
+		} else {
+			LOG_ERR("Failed to set VDD_LEVEL to 1.2V");
+			return -EIO;
+		}
+	} else {
+		/* Disable PLL and switch back to XTAL32M */
+		da1469x_clock_sys_pll_disable();
+
+		/* VDD level can now be switched back to 0.9V */
+		ret = regulator_set_voltage(dev, 900000, 900000);
+		if (ret < 0) {
+			LOG_WRN("Failed to set VDD_LEVEL to 0.9V");
+		} else {
+			/*
+			 * System clock should be switched to XTAL32M and VDD should be set to 0.9.
+			 * The QSPIC read pipe delay should be updated.
+			 */
+			da1469x_qspi_set_read_pipe_delay(QSPIC_ID, 2);
+		}
+	}
+
+	return 0;
+}
+#endif
+
 static inline int smartbond_clock_control_on(const struct device *dev,
 					     clock_control_subsys_t sub_system)
 {
 	enum smartbond_clock clk = (enum smartbond_clock)(sub_system);
+	int ret = 0;
 
 	ARG_UNUSED(dev);
 
@@ -177,33 +227,34 @@ static inline int smartbond_clock_control_on(const struct device *dev,
 				da1469x_clock_sys_xtal32m_enable();
 				da1469x_clock_sys_xtal32m_wait_to_settle();
 			}
+#if CONFIG_REGULATOR
+			ret = smartbond_clock_set_pll_status(true);
+#else
 			da1469x_clock_sys_pll_enable();
+#endif
 		}
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 static inline int smartbond_clock_control_off(const struct device *dev,
 					      clock_control_subsys_t sub_system)
 {
 	enum smartbond_clock clk = (enum smartbond_clock)(sub_system);
+	int ret = 0;
 
 	ARG_UNUSED(dev);
 
 	switch (clk) {
 	case SMARTBOND_CLK_RC32K:
+		/* RC32K is used by POWERUP and WAKEUP HW FSM */
 		BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(rc32k), okay),
 				"RC32K is not allowed to be turned off");
-		if (((CRG_TOP->CLK_CTRL_REG & CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Msk) >>
-			   CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Pos) != 0) {
-			CRG_TOP->CLK_RC32K_REG &= ~CRG_TOP_CLK_RC32K_REG_RC32K_ENABLE_Msk;
-			lpc_clock_state.rc32k_ready = false;
-			lpc_clock_state.rc32k_started = false;
-		}
+		ret = -EPERM;
 		break;
 	case SMARTBOND_CLK_RCX:
 		if (((CRG_TOP->CLK_CTRL_REG & CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Msk) >>
@@ -232,13 +283,27 @@ static inline int smartbond_clock_control_off(const struct device *dev,
 		da1469x_clock_sys_xtal32m_enable();
 		break;
 	case SMARTBOND_CLK_PLL96M:
-		da1469x_clock_sys_pll_disable();
+		/*
+		 * PLL must not be disabled as long as a peripheral e.g. LCDC is enabled
+		 * and clocked by PLL. It's critical that PLL be not turned off if USB
+		 * is active, as the latter is clocked by PLL/2 to generate the required
+		 * clock for the full speed mode.
+		 */
+		if (!da1469x_clock_check_device_div1_clock()) {
+#if CONFIG_REGULATOR
+			ret = smartbond_clock_set_pll_status(false);
+#else
+			da1469x_clock_sys_pll_disable();
+#endif
+		} else {
+			ret = -EPERM;
+		}
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 static enum smartbond_clock smartbond_source_clock(enum smartbond_clock clk)
@@ -414,7 +479,7 @@ int z_smartbond_select_sys_clk(enum smartbond_clock sys_clk)
 	uint32_t sys_clock_freq;
 	uint32_t clk_sel;
 	uint32_t clk_sel_msk = CRG_TOP_CLK_CTRL_REG_SYS_CLK_SEL_Msk;
-	int res;
+	int res = 0;
 
 	res = smartbond_clock_get_rate(sys_clk, &sys_clock_freq);
 	if (res != 0) {
@@ -431,10 +496,26 @@ int z_smartbond_select_sys_clk(enum smartbond_clock sys_clk)
 		CRG_TOP->CLK_CTRL_REG = (CRG_TOP->CLK_CTRL_REG & ~clk_sel_msk) | clk_sel;
 		SystemCoreClock = sys_clock_freq;
 	} else if (sys_clk == SMARTBOND_CLK_PLL96M) {
-		da1469x_clock_pll_wait_to_lock();
+		/* Check that PLL is already enabled, otherwise enable it. */
+		if (!da1469x_clock_sys_pll_is_enabled()) {
+#if CONFIG_REGULATOR
+			res = smartbond_clock_set_pll_status(true);
+			if (res != 0) {
+				return -EIO;
+			}
+#else
+			da1469x_clock_sys_pll_enable();
+#endif
+		}
 		da1469x_clock_sys_pll_switch();
 	} else if (sys_clk == SMARTBOND_CLK_XTAL32M) {
+		/*
+		 * XTAL32M should be enabled eitherway as it's not allowed
+		 * to be turned off by application.
+		 */
 		da1469x_clock_sys_xtal32m_switch_safe();
+	} else {
+		return -EINVAL;
 	}
 
 	/* When switching back from PLL to 32MHz read pipe delay may be set to 2 */
@@ -442,7 +523,7 @@ int z_smartbond_select_sys_clk(enum smartbond_clock sys_clk)
 		smartbond_clock_control_update_memory_settings(SystemCoreClock);
 	}
 
-	return 0;
+	return res;
 }
 
 /**
