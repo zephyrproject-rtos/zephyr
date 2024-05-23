@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+menu "Miscellaneous POSIX-related options"
+
 menuconfig EVENTFD
 	bool "Support for eventfd"
 	depends on !NATIVE_APPLICATION
@@ -14,10 +16,15 @@ menuconfig EVENTFD
 	  be used as an event wait/notify mechanism together with POSIX calls
 	  like read, write and poll.
 
+if EVENTFD
+
 config EVENTFD_MAX
 	int "Maximum number of eventfd's"
-	depends on EVENTFD
 	default 1
 	range 1 4096
 	help
 	  The maximum number of supported event file descriptors.
+
+endif # EVENTFD
+
+endmenu

@@ -35,6 +35,8 @@ rsource "Kconfig.sync_io"
 rsource "Kconfig.timer"
 rsource "Kconfig.xsi"
 
+rsource "Kconfig.compat"
+
 rsource "Kconfig.deprecated"
 
 endmenu # "POSIX Options"
