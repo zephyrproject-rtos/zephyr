@@ -143,11 +143,6 @@ config NET_SOCKETS_SERVICE_STACK_SIZE
 	help
 	  Set the internal stack size for the thread that polls sockets.
 
-config NET_SOCKETS_SERVICE_INIT_PRIO
-	int "Startup priority for the network socket service"
-	default 90
-	depends on NET_SOCKETS_SERVICE
-
 config NET_SOCKETS_SOCKOPT_TLS
 	bool "TCP TLS socket option support"
 	imply TLS_CREDENTIALS

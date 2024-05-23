@@ -71,6 +71,12 @@ extern int net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
 
 extern struct net_if *net_ipip_get_virtual_interface(struct net_if *input_iface);
 
+#if defined(CONFIG_NET_SOCKETS_SERVICE)
+extern void socket_service_init(void);
+#else
+static inline void socket_service_init(void) { }
+#endif
+
 #if defined(CONFIG_NET_NATIVE) || defined(CONFIG_NET_OFFLOAD)
 extern void net_context_init(void);
 extern const char *net_context_state(struct net_context *context);
