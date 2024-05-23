@@ -447,6 +447,7 @@ _oops:
     mov  r1, sp /* pointer to _callee_saved_t */
 #endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
+    mov r2, lr /* EXC_RETURN */
     bl z_do_kernel_oops
     /* return from SVC exception is done here */
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
