@@ -102,6 +102,20 @@ This table lists service support status in Zephyr:
     pthread_getconcurrency(),yes
     pthread_setconcurrency(),yes
 
+.. _posix_option_group_xsi_system_logging:
+
+XSI_SYSTEM_LOGGING
+==================
+
+.. csv-table:: XSI_SYSTEM_LOGGING
+   :header: API, Supported
+   :widths: 50,10
+
+    closelog(),yes
+    openlog(),yes
+    setlogmask(),yes
+    syslog(),yes
+
 .. _posix_option_group_c_lang_jump:
 
 POSIX_C_LANG_JUMP

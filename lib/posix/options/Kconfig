@@ -45,7 +45,6 @@ rsource "Kconfig.signal"
 rsource "Kconfig.spinlock"
 rsource "Kconfig.stropts"
 rsource "Kconfig.sync_io"
-rsource "Kconfig.syslog"
 rsource "Kconfig.timer"
 rsource "Kconfig.xsi"
 
