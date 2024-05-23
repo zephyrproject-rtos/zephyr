@@ -111,6 +111,7 @@ jobs:
         pip3 install west==${WEST_VERSION}
         pip3 install cmake==${CMAKE_VERSION}
         pip3 install coverxygen
+        pip3 install pyserial
 
     - name: west setup
       run: |
@@ -228,6 +229,7 @@ jobs:
         pip3 install -r doc/requirements.txt
         pip3 install west==${WEST_VERSION}
         pip3 install cmake==${CMAKE_VERSION}
+        pip3 install pyserial
 
     - name: west setup
       run: |
