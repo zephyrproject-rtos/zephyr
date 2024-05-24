@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(ltc2451, CONFIG_ADC_LOG_LEVEL);
 struct ltc2451_config {
 	struct i2c_dt_spec i2c;
 	uint8_t conversion_speed;
+	int resolution;
 };
 
 static int ltc2451_channel_setup(const struct device *dev,
@@ -96,6 +97,7 @@ static const struct adc_driver_api ltc2451_api = {
 	static const struct ltc2451_config ltc2451_cfg_##index = { \
 		.i2c = I2C_DT_SPEC_INST_GET(index), \
 		.conversion_speed = DT_INST_PROP(index, conversion_speed), \
+		.resolution = 16, \
 	}; \
  \
 	DEVICE_DT_INST_DEFINE(index, &ltc2451_init, NULL, NULL, \
