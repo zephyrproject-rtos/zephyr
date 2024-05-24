@@ -35,6 +35,9 @@ Boards
   All symbols are renamed as follows: ``SOC_IT81202BX``, ``SOC_IT81202CX``, ``SOC_IT81302BX``,
   ``SOC_IT81302CX``, ``SOC_IT82002AW``, ``SOC_IT82202AX``, ``SOC_IT82302AX``.
   And, rename the ``SOC_SERIES_ITE_IT8XXX2`` to ``SOC_SERIES_IT8XXX2``. (:github:`71680`)
+* For native_sim/posix: :kconfig:option:`CONFIG_EMUL` is no longer enabled by default when
+  :kconfig:option:`CONFIG_I2C` is set. Users who need this setting enabled should set it in
+  their project config file. (:github:`73067`)
 
 Modules
 *******
