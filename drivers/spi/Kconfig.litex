@@ -9,3 +9,10 @@ config SPI_LITEX
 	depends on DT_HAS_LITEX_SPI_ENABLED
 	help
 	  Enable the SPI peripherals on LiteX
+
+config SPI_LITEX_LITESPI
+	bool "LiteX SPI LiteSPI controller driver"
+	default y
+	depends on DT_HAS_LITEX_SPI_LITESPI_ENABLED
+	help
+	  Enable the SPI peripherals on LiteX
