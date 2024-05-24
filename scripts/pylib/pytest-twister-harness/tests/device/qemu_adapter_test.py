@@ -27,7 +27,7 @@ def fixture_device_adapter(tmp_path) -> Generator[QemuAdapter, None, None]:
 
 @patch('shutil.which', return_value='west')
 def test_if_generate_command_creates_proper_command(patched_which, device: QemuAdapter):
-    device.device_config.build_dir = Path('build_dir')
+    device.device_config.app_build_dir = Path('build_dir')
     device.generate_command()
     assert device.command == ['west', 'build', '-d', 'build_dir', '-t', 'run']
 

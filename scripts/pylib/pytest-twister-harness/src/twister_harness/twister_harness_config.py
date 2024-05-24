@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
+from twister_harness.helpers.domains_helper import get_default_domain_name
 
 import pytest
 
@@ -32,6 +33,14 @@ class DeviceConfig:
     pre_script: Path | None = None
     post_script: Path | None = None
     post_flash_script: Path | None = None
+    app_build_dir: Path | None = None
+
+    def __post_init__(self):
+        domains = self.build_dir / 'domains.yaml'
+        if domains.exists():
+            self.app_build_dir = self.build_dir / get_default_domain_name(domains)
+        else:
+            self.app_build_dir = self.build_dir
 
 
 @dataclass

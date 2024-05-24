@@ -23,7 +23,7 @@ class QemuAdapter(BinaryAdapterBase):
 
     def generate_command(self) -> None:
         """Set command to run."""
-        self.command = [self.west, 'build', '-d', str(self.device_config.build_dir), '-t', 'run']
+        self.command = [self.west, 'build', '-d', str(self.device_config.app_build_dir), '-t', 'run']
         if 'stdin' in self.process_kwargs:
             self.process_kwargs.pop('stdin')
 
