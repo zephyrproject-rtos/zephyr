@@ -17,6 +17,7 @@
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 		zephyr,sram = &sram0;
+		zephyr,canbus = &flexcan2;
 	};
 
 	cpus {
@@ -64,6 +65,14 @@
 			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	can_phy0: can-phy0 {
+		compatible = "nxp,tja1057", "can-transceiver-gpio";
+		max-bitrate = <8000000>;
+		standby-gpios = <&gpio_exp0 8 GPIO_ACTIVE_HIGH>;
+		#phy-cells = <0>;
+		status = "okay";
+	};
 };
 
 &lpuart1 {
@@ -91,7 +100,7 @@
 };
 
 &lpi2c2 {
-	status = "disabled";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-names = "default";
@@ -99,7 +108,7 @@
 	mfd0:adp5585@34 {
 		compatible = "adi,adp5585";
 		reg = <0x34>;
-		status = "disabled";
+		status = "okay";
 
 		gpio_exp0: adp5585_gpio {
 			compatible = "adi,adp5585-gpio";
@@ -144,5 +153,14 @@
 };
 
 &gpio4{
+	status = "okay";
+};
+
+&flexcan2 {
+	pinctrl-0 = <&flexcan2_default>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	phys = <&can_phy0>;
 	status = "okay";
 };
