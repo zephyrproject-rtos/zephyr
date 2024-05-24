@@ -12,11 +12,18 @@
  * for the Nordic Semiconductor nRF54L family processor.
  */
 
+#ifdef __NRF_TFM__
+#include <autoconf.h>
+#endif
+
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
+
+#ifndef __NRF_TFM__
 #include <zephyr/cache.h>
+#endif
 
 #if defined(NRF_APPLICATION)
 #include <cmsis_core.h>
@@ -36,17 +43,9 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define HFXO_NODE DT_NODELABEL(hfxo)
 #endif
 
-static int nordicsemi_nrf54l_init(void)
-{
-	/* Update the SystemCoreClock global variable with current core clock
-	 * retrieved from hardware state.
-	 */
-	SystemCoreClockUpdate();
-
 #if defined(NRF_APPLICATION)
-	/* Enable ICACHE */
-	sys_cache_instr_enable();
-
+static inline void power_and_clock_configuration(void)
+{
 #if DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal)
 	uint32_t xosc32ktrim = NRF_FICR->XOSC32KTRIM;
 
@@ -73,16 +72,16 @@ static int nordicsemi_nrf54l_init(void)
 	 * NOTE: The desired capacitance value is used in encoded from in INTCAP calculation formula
 	 *       That is different than in case of HFXO.
 	 */
-	uint32_t cap_val_encoded = (((DT_PROP(LFXO_NODE, load_capacitance_femtofarad) - 4000UL)
-				     * 2UL) / 1000UL);
+	uint32_t cap_val_encoded =
+		(((DT_PROP(LFXO_NODE, load_capacitance_femtofarad) - 4000UL) * 2UL) / 1000UL);
 
 	/* Calculation of INTCAP code before rounding. Min that calculations here are done on
 	 * values multiplied by 2^9, e.g. 0.765625 * 2^9 = 392.
 	 * offset_k should be divided by 2^6, but to add it to value shifted by 2^9 we have to
 	 * multiply it be 2^3.
 	 */
-	uint32_t mid_val = (cap_val_encoded - 4UL) * (uint32_t)(slope_k + 392UL)
-			   + (offset_k << 3UL);
+	uint32_t mid_val =
+		(cap_val_encoded - 4UL) * (uint32_t)(slope_k + 392UL) + (offset_k << 3UL);
 
 	/* Get integer part of the INTCAP code */
 	uint32_t lfxo_intcap = mid_val >> 9UL;
@@ -128,8 +127,9 @@ static int nordicsemi_nrf54l_init(void)
 	 */
 	uint32_t cap_val_femto_f = DT_PROP(HFXO_NODE, load_capacitance_femtofarad);
 
-	uint32_t mid_val_intcap = (((cap_val_femto_f - 5500UL) * (uint32_t)(slope_m + 791UL))
-		 + (offset_m << 2UL) * 1000UL) >> 8UL;
+	uint32_t mid_val_intcap = (((cap_val_femto_f - 5500UL) * (uint32_t)(slope_m + 791UL)) +
+				   (offset_m << 2UL) * 1000UL) >>
+				  8UL;
 
 	/* Convert the calculated value to piko Farads */
 	uint32_t hfxo_intcap = mid_val_intcap / 1000;
@@ -160,7 +160,39 @@ static int nordicsemi_nrf54l_init(void)
 #if defined(CONFIG_ELV_GRTC_LFXO_ALLOWED)
 	nrf_regulators_elv_mode_allow_set(NRF_REGULATORS, NRF_REGULATORS_ELV_ELVGRTCLFXO_MASK);
 #endif /* CONFIG_ELV_GRTC_LFXO_ALLOWED */
+}
 #endif /* NRF_APPLICATION */
+
+int nordicsemi_nrf54l_init(void)
+{
+	/* Update the SystemCoreClock global variable with current core clock
+	 * retrieved from hardware state.
+	 */
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) || defined(__NRF_TFM__)
+	/* Currently not supported for non-secure */
+	SystemCoreClockUpdate();
+#endif
+
+#ifdef __NRF_TFM__
+	/* TF-M enables the instruction cache from target_cfg.c, so we
+	 * don't need to enable it here.
+	 */
+#else
+	/* Enable ICACHE */
+	sys_cache_instr_enable();
+#endif
+
+	/* NRF_REGULATORS and NRF_OSCILLATORS are configured to be secure
+	 * as NRF_REGULATORS.POFCON is needed by the secure domain to
+	 * prevent glitches when the power supply is attacked.
+	 *
+	 * NRF_OSCILLATORS is also configured as secure because of a HW limitation
+	 * that requires them to be configured with the same security property.
+	 */
+#if (defined(NRF_APPLICATION) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)) ||                  \
+	defined(__NRF_TFM__)
+	power_and_clock_configuration();
+#endif
 
 	return 0;
 }
