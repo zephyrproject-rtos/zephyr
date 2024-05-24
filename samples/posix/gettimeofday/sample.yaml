@@ -10,6 +10,9 @@ common:
   tags:
     - posix
     - net
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
 tests:
   sample.posix.gettimeofday:
     harness: net
