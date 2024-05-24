@@ -149,6 +149,10 @@ Device Drivers and Devicetree
         };
     };
 
+* The :dtcompatible:`nxp,kinetis-lptmr` compatible string has been changed to
+  :dtcompatible:`nxp,lptmr`. The old string will be usable for a short time, but
+  should be replaced for it will be removed in the future.
+
 * Some of the driver API structs have been rename to have the required ``_driver_api`` suffix. (:github:`72182`)
   The following types have been renamed:
 
