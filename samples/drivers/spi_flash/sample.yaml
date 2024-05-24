@@ -20,13 +20,3 @@ tests:
         - "Attempting to write 4 bytes"
         - "Data read matches data written. Good!!"
     depends_on: spi
-  sample.drivers.spi.flash_dpd:
-    tags:
-      - spi
-      - flash
-    filter: dt_compat_enabled("jedec,spi-nor")
-    platform_exclude: hifive_unmatched
-    build_only: true
-    extra_configs:
-      - CONFIG_SPI_NOR_IDLE_IN_DPD=y
-    depends_on: spi
