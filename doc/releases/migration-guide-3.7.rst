@@ -36,6 +36,9 @@ Boards
   ``SOC_IT81302CX``, ``SOC_IT82002AW``, ``SOC_IT82202AX``, ``SOC_IT82302AX``.
   And, rename the ``SOC_SERIES_ITE_IT8XXX2`` to ``SOC_SERIES_IT8XXX2``. (:github:`71680`)
 
+* LiteX: Renamed the ``compatible`` of the LiteX VexRiscV interrupt controller node from
+  ``vexriscv-intc0`` to :dtcompatible:`litex,vexriscv-intc0`. (:github:`73211`)
+
 Modules
 *******
 
