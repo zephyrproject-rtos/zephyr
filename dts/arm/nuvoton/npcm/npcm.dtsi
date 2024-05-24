@@ -58,6 +58,24 @@
 			#lvol-cells = <2>;
 		};
 
+		uart0: serial@400c4000 {
+			compatible = "nuvoton,npcm-uart";
+			reg = <0x400c4000 0x100>;
+			interrupts = <23 3>;
+			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL1 4>;
+			status = "disabled";
+			label = "UART_0";
+		};
+
+		uart1: serial@400c4200 {
+			compatible = "nuvoton,npcm-uart";
+			reg = <0x400c4200 0x100>;
+			interrupts = <76 3>;
+			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL0 6>;
+			status = "disabled";
+			label = "UART_1";
+		};
+
 		mdc: mdc@4000c000 {
 			compatible = "syscon";
 			reg = <0x4000c000 0xa>;

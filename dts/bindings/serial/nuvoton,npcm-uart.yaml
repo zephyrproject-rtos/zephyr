@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCM-UART node
+
+compatible: "nuvoton,npcm-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+    reg:
+        required: true
+    clocks:
+        required: true
+    pinctrl-0:
+        required: true
+    pinctrl-names:
+        required: true
