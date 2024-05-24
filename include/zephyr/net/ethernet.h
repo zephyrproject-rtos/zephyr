@@ -726,6 +726,27 @@ static inline bool net_eth_is_addr_broadcast(struct net_eth_addr *addr)
 }
 
 /**
+ * @brief Check if the Ethernet MAC address is a all zeroes address.
+ *
+ * @param addr A valid pointer to an Ethernet MAC address.
+ *
+ * @return true if address is an all zeroes address, false if not
+ */
+static inline bool net_eth_is_addr_all_zeroes(struct net_eth_addr *addr)
+{
+	if (addr->addr[0] == 0x00 &&
+	    addr->addr[1] == 0x00 &&
+	    addr->addr[2] == 0x00 &&
+	    addr->addr[3] == 0x00 &&
+	    addr->addr[4] == 0x00 &&
+	    addr->addr[5] == 0x00) {
+		return true;
+	}
+
+	return false;
+}
+
+/**
  * @brief Check if the Ethernet MAC address is unspecified.
  *
  * @param addr A valid pointer to a Ethernet MAC address.
