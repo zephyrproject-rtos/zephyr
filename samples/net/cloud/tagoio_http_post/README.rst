@@ -24,8 +24,6 @@ Requirements
 
   * Ethernet: Using default configuration
   * WiFi: Using default configuration plus wifi overlay
-  * Modem: Using default configuration plus modem overlay
-
 
 TagoIO Device Configuration
 ***************************
@@ -80,58 +78,6 @@ need fill ``CONFIG_TAGOIO_HTTP_WIFI_SSID`` with your wifi network SSID and
    :gen-args: -DEXTRA_CONF_FILE=overlay-wifi.conf
    :goals: build flash
    :compact:
-
-
-Modem
-=====
-
-The Modem support is quite similar to WIFI, you need a board with an embedded
-Modem support or you can add a shield.  Currently, the overlay was created to
-allow modems with PPP support.  This was tested using ``SIMcom SIM808 EVB``.
-Additionally you need fill ``CONFIG_MODEM_GSM_APN`` with the correspondent Access
-Point Name (APN) at
-:zephyr_file:`samples/net/cloud/tagoio_http_post/overlay-modem.conf` file. A
-DTC overlay file should be used to configure the glue between the modem and the
-uart port. It can reside at boards directory, with the board name, or it can be
-a special designator like defined at ``arduino.overlay``.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/net/cloud/tagoio_http_post
-   :board: sam4e_xpro
-   :gen-args: -DEXTRA_CONF_FILE=overlay-modem.conf
-   :goals: build flash
-   :compact:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/net/cloud/tagoio_http_post
-   :board: frdm_k64f
-   :gen-args: -DEXTRA_CONF_FILE=overlay-modem.conf -DDTC_OVERLAY_FILE=arduino.overlay
-   :goals: build flash
-   :compact:
-
-In a terminal window you can check if communication is happen:
-
-.. code-block:: console
-
-    $ minicom -D /dev/ttyACM0
-
-    *** Booting Zephyr OS build zephyr-v2.4.0-1135-g137732e23c1e  ***
-
-
-    [00:00:02.172,000] <inf> modem_gsm: Manufacturer: SIMCOM_Lt
-    [00:00:02.227,000] <inf> modem_gsm: Model: SIMCOM_SIM808
-    [00:00:02.283,000] <inf> modem_gsm: Revision: 1418B04SIM808M32
-    [00:00:02.338,000] <inf> modem_gsm: IMSI: XXXXXX
-    [00:00:02.393,000] <inf> modem_gsm: ICCID: XXXXXX
-    [00:00:02.453,000] <inf> modem_gsm: IMEI: XXXXXX
-    [00:00:02.574,000] <inf> modem_gsm: Attached to packet service!
-    [00:00:02.575,000] <inf> net_ppp: Initializing PPP to use UART_3
-    [00:00:13.370,000] <inf> tagoio: TagoIO IoT - HTTP Client - Temperature demo
-    [00:00:13.370,000] <inf> tagoio: Temp: 20
-    [00:00:25.237,000] <inf> tagoio: Temp: 76
-    [00:00:37.581,000] <inf> tagoio: Temp: 36
-    [00:00:50.437,000] <inf> tagoio: Temp: 98
-
 
 Visualizing TagoIO dashboard
 ****************************
