@@ -5,22 +5,6 @@ POSIX Conformance
 
 As per `IEEE 1003.1-2017`, this section details Zephyr's POSIX conformance.
 
-.. _posix_undefined_behaviour:
-
-.. note::
-   As per POSIX 1003.13, single process mode is supported directly by both PSE51 and PSE52
-   profiles. While Zephyr includes support for many features found in PSE53, PSE53 itself requires
-   supporting multiple processes. Since supporting multiple processes is beyond the scope of
-   Zephyr's current design, some features requiring multi-process capabilities may exhibit
-   undefined behaviour, which we denote with the † (obelus) symbol.
-
-.. _posix_libc_provided:
-
-.. note::
-    Features listed in various POSIX Options or Option Groups may be provided in whole or in part
-    by a conformant C library implementation. This includes (but is not limited to) POSIX
-    Extensions to the ISO C Standard (`CX`_).
-
 .. _posix_system_interfaces:
 
 POSIX System Interfaces
@@ -34,19 +18,7 @@ POSIX System Interfaces
 
     _POSIX_CHOWN_RESTRICTED, 0,
     _POSIX_NO_TRUNC, 0,
-    _POSIX_VDISABLE, 0,
-
-.. The following should be valued greater than zero in Zephyr, in order to be strictly conformant
-    with the POSIX specification.
-
-.. csv-table:: POSIX System Interfaces
-   :header: Symbol, Support, Remarks
-   :widths: 50, 10, 50
-
-    _POSIX_JOB_CONTROL, -1, :ref:`†<posix_undefined_behaviour>`
-    _POSIX_REGEXP, -1, :ref:`†<posix_undefined_behaviour>`
-    _POSIX_SAVED_IDS, -1, :ref:`†<posix_undefined_behaviour>`
-    _POSIX_SHELL, -1, :ref:`†<posix_undefined_behaviour>`
+    _POSIX_VDISABLE, ``'\0'``,
 
 .. TODO: POSIX_ASYNCHRONOUS_IO, and other interfaces below, are mandatory. That means that a
    strictly conforming application need not be modified in order to compile against Zephyr.
@@ -76,6 +48,18 @@ POSIX System Interfaces
     :ref:`_POSIX_TIMERS<posix_option_group_timers>`, 200809L, :kconfig:option:`CONFIG_POSIX_TIMERS`
     _POSIX2_C_BIND, 200809L,
 
+.. The following should be valued greater than zero in Zephyr, in order to be strictly conformant
+    with the POSIX specification.
+
+.. csv-table:: POSIX System Interfaces (Unsupported)
+   :header: Symbol, Support, Remarks
+   :widths: 50, 10, 50
+
+    _POSIX_JOB_CONTROL, -1, :ref:`†<posix_undefined_behaviour>`
+    _POSIX_REGEXP, -1, :ref:`†<posix_undefined_behaviour>`
+    _POSIX_SAVED_IDS, -1, :ref:`†<posix_undefined_behaviour>`
+    _POSIX_SHELL, -1, :ref:`†<posix_undefined_behaviour>`
+
 .. csv-table:: POSIX System Interfaces (Optional)
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
@@ -84,14 +68,14 @@ POSIX System Interfaces
     :ref:`_POSIX_CPUTIME<posix_option_cputime>`, 200809L, :kconfig:option:`CONFIG_POSIX_CPUTIME`
     :ref:`_POSIX_FSYNC<posix_option_fsync>`, 200809L, :kconfig:option:`CONFIG_POSIX_FSYNC`
     :ref:`_POSIX_IPV6<posix_option_ipv6>`, 200809L, :kconfig:option:`CONFIG_POSIX_IPV6`
-    _POSIX_MEMLOCK, -1,
-    _POSIX_MEMLOCK_RANGE, -1,
+    :ref:`_POSIX_MEMLOCK <posix_option_memlock>`, -1,
+    :ref:`_POSIX_MEMLOCK_RANGE <posix_option_memlock_range>`, -1,
     :ref:`_POSIX_MESSAGE_PASSING<posix_option_message_passing>`, 200809L, :kconfig:option:`CONFIG_POSIX_MESSAGE_PASSING`
     :ref:`_POSIX_MONOTONIC_CLOCK<posix_option_monotonic_clock>`, 200809L, :kconfig:option:`CONFIG_POSIX_MONOTONIC_CLOCK`
     _POSIX_PRIORITIZED_IO, -1,
     :ref:`_POSIX_PRIORITY_SCHEDULING<posix_option_priority_scheduling>`, 200809L, :kconfig:option:`CONFIG_POSIX_PRIORITY_SCHEDULING`
     :ref:`_POSIX_RAW_SOCKETS<posix_option_raw_sockets>`, 200809L, :kconfig:option:`CONFIG_POSIX_RAW_SOCKETS`
-    _POSIX_SHARED_MEMORY_OBJECTS, -1,
+    :ref:`_POSIX_SHARED_MEMORY_OBJECTS <posix_shared_memory_objects>`, -1,
     _POSIX_SPAWN, -1, :ref:`†<posix_undefined_behaviour>`
     _POSIX_SPORADIC_SERVER, -1, :ref:`†<posix_undefined_behaviour>`
     :ref:`_POSIX_SYNCHRONIZED_IO <posix_option_synchronized_io>`, -1, :kconfig:option:`CONFIG_POSIX_SYNCHRONIZED_IO`
@@ -113,6 +97,7 @@ POSIX System Interfaces
     _XOPEN_REALTIME_THREADS, -1,
     :ref:`_XOPEN_STREAMS<posix_option_xopen_streams>`, 200809L, :kconfig:option:`CONFIG_XOPEN_STREAMS`
     _XOPEN_UNIX, -1,
+
 
 POSIX Shell and Utilities
 =========================
@@ -141,10 +126,10 @@ Zephyr does not support a POSIX shell or utilities at this time.
 XSI Conformance
 ###############
 
-XSI System Interfaces
-=====================
+X/Open System Interfaces
+========================
 
-.. csv-table:: XSI System Interfaces
+.. csv-table:: X/Open System Interfaces
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
 
@@ -152,5 +137,21 @@ XSI System Interfaces
     :ref:`_POSIX_THREAD_ATTR_STACKADDR<posix_option_thread_attr_stackaddr>`, 200809L, :kconfig:option:`CONFIG_POSIX_THREAD_ATTR_STACKADDR`
     :ref:`_POSIX_THREAD_ATTR_STACKSIZE<posix_option_thread_attr_stacksize>`, 200809L, :kconfig:option:`CONFIG_POSIX_THREAD_ATTR_STACKSIZE`
     _POSIX_THREAD_PROCESS_SHARED, -1,
+
+.. _posix_undefined_behaviour:
+
+.. note::
+   Some features may exhibit undefined behaviour as they fall beyond the scope of Zephyr's current
+   design and capabilities. For example, multi-processing, ad-hoc memory-mapping, multiple users,
+   or regular expressions are features that are uncommon in low-footprint embedded systems.
+   Such undefined behaviour is denoted with the † (obelus) symbol. Additional details
+   :ref:`here <posix_option_groups>`.
+
+.. _posix_libc_provided:
+
+.. note::
+    Features listed in various POSIX Options or Option Groups may be provided in whole or in part
+    by a conformant C library implementation. This includes (but is not limited to) POSIX
+    Extensions to the ISO C Standard (`CX`_).
 
 .. _CX: https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap01.html
