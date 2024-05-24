@@ -113,6 +113,11 @@ Other Subsystems
 Flash map
 =========
 
+ * ``CONFIG_SPI_NOR_IDLE_IN_DPD`` has been removed from the :kconfig:option:`CONFIG_SPI_NOR`
+   driver. An enhanced version of this functionality can be obtained by enabling
+   :ref:`pm-device-runtime` on the device (Tunable with
+   :kconfig:option:`CONFIG_SPI_NOR_ACTIVE_DWELL_MS`).
+
 hawkBit
 =======
 

@@ -78,4 +78,15 @@ config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	  (32768), the sector size (4096), or any non-zero multiple of the
 	  sector size.
 
+config SPI_NOR_ACTIVE_DWELL_MS
+	int "Dwell period (ms) after last use to stay in active mode"
+	depends on PM_DEVICE_RUNTIME
+	default 10
+	help
+	  Flash accesses commonly occur in bursts, where entering and exiting DPD
+	  mode between each access adds significantly to the total operation time.
+	  This option controls how long to remain in active mode after each API
+	  call, eliminating the active->idle->active transition sequence if another
+	  transaction occurs before the dwell period expires.
+
 endif # SPI_NOR
