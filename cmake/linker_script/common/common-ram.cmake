@@ -58,10 +58,6 @@ if(CONFIG_SENSING)
   zephyr_iterable_section(NAME sensing_sensor GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
 endif()
 
-if(CONFIG_UART_MUX)
-  zephyr_iterable_section(NAME uart_mux GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
-endif()
-
 if(CONFIG_USB_DEVICE_STACK)
   zephyr_linker_section(NAME usb_descriptor GROUP DATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT} SUBALIGN 1)
   zephyr_linker_section_configure(SECTION usb_descriptor
