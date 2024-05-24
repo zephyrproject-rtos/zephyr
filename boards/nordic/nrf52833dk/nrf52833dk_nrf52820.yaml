@@ -10,6 +10,7 @@ ram: 32
 flash: 256
 supported:
   - usb_device
+  - usbd
   - ble
   - gpio
   - watchdog
