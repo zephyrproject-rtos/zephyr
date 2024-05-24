@@ -801,15 +801,15 @@ if(CONFIG_LEGACY_GENERATED_INCLUDE_PATH)
     ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
 endif()
 
-add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
+add_custom_command(OUTPUT include/generated/zephyr/syscall_dispatch.c ${syscall_list_h}
   # Also, some files are written to include/generated/zephyr/syscalls/
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/build/gen_syscalls.py
   --json-file        ${syscalls_json}                     # Read this file
   --base-output      include/generated/zephyr/syscalls    # Write to this dir
-  --syscall-dispatch include/generated/syscall_dispatch.c # Write this file
-  --syscall-export-llext  include/generated/syscall_export_llext.c
+  --syscall-dispatch include/generated/zephyr/syscall_dispatch.c # Write this file
+  --syscall-export-llext  include/generated/zephyr/syscall_export_llext.c
   --syscall-list     ${syscall_list_h}
   $<$<BOOL:${CONFIG_USERSPACE}>:--gen-mrsh-files>
   ${SYSCALL_LONG_REGISTERS_ARG}
@@ -2121,7 +2121,7 @@ add_custom_command(
         ${ZEPHYR_BASE}/scripts/build/gen_syscalls.py
         --json-file        ${syscalls_json}                     # Read this file
         --base-output      edk/include/generated/zephyr/syscalls           # Write to this dir
-        --syscall-dispatch edk/include/generated/syscall_dispatch.c # Write this file
+        --syscall-dispatch edk/include/generated/zephyr/syscall_dispatch.c # Write this file
         --syscall-list     ${edk_syscall_list_h}
         $<$<BOOL:${CONFIG_LLEXT_EDK_USERSPACE_ONLY}>:--userspace-only>
         ${SYSCALL_LONG_REGISTERS_ARG}
