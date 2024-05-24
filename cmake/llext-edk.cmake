@@ -17,7 +17,6 @@
 # - INTERFACE_INCLUDE_DIRECTORIES: List of include directories to copy headers
 #   from. It should simply be the INTERFACE_INCLUDE_DIRECTORIES property of the
 #   zephyr_interface target.
-# - AUTOCONF_H: Name of the autoconf.h file, used to generate the imacros flag.
 # - llext_edk_file: Output file name for the tarball.
 # - llext_cflags: Additional flags to be added to the generated flags.
 # - ZEPHYR_BASE: Path to the zephyr base directory.
@@ -119,9 +118,6 @@ foreach(flag ${llext_cflags})
 endforeach()
 set(llext_cflags ${new_cflags})
 
-
-set(autoconf_h_edk ${llext_edk_inc}/${AUTOCONF_H})
-cmake_path(RELATIVE_PATH AUTOCONF_H BASE_DIRECTORY ${PROJECT_BINARY_DIR} OUTPUT_VARIABLE autoconf_h_rel)
 
 list(APPEND base_flags_make ${llext_cflags} ${imacros_make})
 list(APPEND base_flags_cmake ${llext_cflags} ${imacros_cmake})
