@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2024 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common Wake-Up Unit Input (WUI) mapping configurations in npcm family */
+#include <nuvoton/npcm/npcm-miwus-wui-map.dtsi>
+
+/* Specific Wake-Up Unit Input (WUI) mapping configurations in npcm4 series */
+/ {
+	/* Mapping between MIWU wui bits and source device */
+	npcm-miwus-wui-map {
+		compatible = "nuvoton,npcm-miwu-wui-map";
+	};
+};
