@@ -12,7 +12,7 @@ config MODEM_CELLULAR
 	select RING_BUFFER
 	select NET_L2_PPP_OPTION_MRU
 	select NET_L2_PPP_PAP
-	depends on (DT_HAS_QUECTEL_BG95_ENABLED || DT_HAS_ZEPHYR_GSM_PPP_ENABLED || \
+	depends on (DT_HAS_QUECTEL_BG95_ENABLED || \
 		    DT_HAS_SIMCOM_SIM7080_ENABLED || DT_HAS_U_BLOX_SARA_R4_ENABLED || \
 		    DT_HAS_U_BLOX_SARA_R5_ENABLED || DT_HAS_SWIR_HL7800_ENABLED || \
 		    DT_HAS_TELIT_ME910G1_ENABLED || DT_HAS_QUECTEL_EG25_G_ENABLED || \
@@ -21,8 +21,7 @@ config MODEM_CELLULAR
 	  This driver uses the generic 3gpp AT commands, along
 	  with the standard protocols CMUX and PPP, to configure
 	  cellular modems to establish a point-to-point
-	  network connection. It is a plug-in replacement for the
-	  existing GSM_PPP driver, and a template for tailored
+	  network connection. It is a template for tailored
 	  drivers for the ublox, quectel and other modems, which
 	  include power management and more complex device specific
 	  features.
