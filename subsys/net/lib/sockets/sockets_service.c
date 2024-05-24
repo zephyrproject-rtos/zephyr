@@ -12,6 +12,17 @@ LOG_MODULE_REGISTER(net_sock_svc, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/socket_service.h>
 #include <zephyr/posix/sys/eventfd.h>
 
+/* Next checks makes sure that we are not trying to use this library
+ * with eventfd if CONFIG_POSIX_API is not set and if using native_sim
+ * based board. The reason is that we should always use zephyr libc based
+ * eventfd implementation instead of host libc one.
+ */
+#if defined(CONFIG_NATIVE_LIBC) && defined(CONFIG_EVENTFD)
+#error "The eventfd support CONFIG_EVENTFD will not work with host libc "
+	"so you need to enable CONFIG_POSIX_API in this case which will turn "
+	"off the host libc usage."
+#endif
+
 static int init_socket_service(void);
 static bool init_done;
 
