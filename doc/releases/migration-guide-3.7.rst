@@ -48,7 +48,7 @@ Build System
      * - ``version.h``
      * - ``zsr.h``
 
-  and syscall headers are now namespaced into the ``zephyr/`` folder. The change is largely
+  as well as syscall headers & sources are now namespaced into the ``zephyr/`` folder. The change is largely
   automated, and the script can be found in :github:`63973`.
   For the time being, the compatibility Kconfig (:kconfig:option:`CONFIG_LEGACY_GENERATED_INCLUDE_PATH`)
   is enabled by default so that downstream applications will continue to compile, a warning message
