@@ -794,14 +794,11 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 		}
 
 		if (IS_ENABLED(CONFIG_NET_ARP_GRATUITOUS)) {
-			if (memcmp(&eth_hdr->dst,
-				   net_eth_broadcast_addr(),
-				   sizeof(struct net_eth_addr)) == 0 &&
-			    memcmp(&arp_hdr->dst_hwaddr,
-				   net_eth_broadcast_addr(),
-				   sizeof(struct net_eth_addr)) == 0 &&
-			    memcmp(&arp_hdr->dst_ipaddr, &arp_hdr->src_ipaddr,
-				   sizeof(struct in_addr)) == 0) {
+			if (net_eth_is_addr_broadcast(&eth_hdr->dst) &&
+			    (net_eth_is_addr_broadcast(&arp_hdr->dst_hwaddr) ||
+			     net_eth_is_addr_all_zeroes(&arp_hdr->dst_hwaddr)) &&
+			    net_ipv4_addr_cmp_raw(arp_hdr->dst_ipaddr,
+						  arp_hdr->src_ipaddr)) {
 				/* If the IP address is in our cache,
 				 * then update it here.
 				 */
