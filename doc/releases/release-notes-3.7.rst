@@ -251,6 +251,18 @@ Drivers and Sensors
 
 * MFD
 
+* Modem
+
+  * Removed deprecated ``GSM_PPP`` driver along with its dts compatible ``zephyr,gsm-ppp``.
+
+  * Removed deprecated ``UART_MUX`` and ``GSM_MUX`` previously used by ``GSM_PPP``.
+
+  * Removed support for dts compatible ``zephyr,gsm-ppp`` from ``MODEM_CELLULAR`` driver.
+
+  * Removed integration with ``UART_MUX`` from ``MODEM_IFACE_UART_INTERRUPT`` module.
+
+  * Removed integration with ``UART_MUX`` from ``MODEM_SHELL`` module.
+
 * PCIE
 
 * MEMC
@@ -457,3 +469,12 @@ Tests and Samples
     ``west build``. This snippet sets the :kconfig:option:`CONFIG_BT_ZEPHYR_NUS_AUTO_START_BLUETOOTH`
     which allows non-Bluetooth samples that use the UART APIs to run without modifications
     (e.g: Console and Logging examples).
+
+  * Removed ``GSM_PPP`` specific configuration overlays from samples ``net/cloud/tagoio`` and
+    ``net/mgmt/updatehub``. The ``GSM_PPP`` device driver has been deprecated and removed. The new
+    ``MODEM_CELLULAR`` device driver which replaces it uses the native networking stack and ``PM``
+    subsystem, which like ethernet, requires no application specific actions to set up networking.
+
+  * Removed ``net/gsm_modem`` sample as the ``GSM_PPP`` device driver it depended on has been
+    deprecated and removed. The sample has been replaced by the sample ``net/cellular_modem``
+    based on the ``MODEM_CELLULAR`` device driver.
