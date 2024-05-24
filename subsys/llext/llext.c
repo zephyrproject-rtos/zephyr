@@ -220,11 +220,13 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 {
 	int i, ret;
 	size_t pos;
-	elf_shdr_t shdr, rodata = {.sh_addr = ~0},
-		high_shdr = {.sh_offset = 0}, low_shdr = {.sh_offset = ~0};
+	elf_shdr_t shdr,
+		data_shdr_high = {.sh_offset = 0}, data_shdr_low = {.sh_offset = ~0},
+		rodata_shdr_high = {.sh_offset = 0}, rodata_shdr_low = {.sh_offset = ~0};
 	const char *name;
 
 	ldr->sects[LLEXT_MEM_RODATA].sh_size = 0;
+	ldr->sects[LLEXT_MEM_DATA].sh_size = 0;
 
 	for (i = 0, pos = ldr->hdr.e_shoff;
 	     i < ldr->hdr.e_shnum;
@@ -239,32 +241,37 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 			return ret;
 		}
 
-		/* Identify the lowest and the highest data sections */
-		if (!(shdr.sh_flags & SHF_EXECINSTR) &&
-		    shdr.sh_type == SHT_PROGBITS) {
-			if (shdr.sh_offset > high_shdr.sh_offset) {
-				high_shdr = shdr;
-			}
-			if (shdr.sh_offset < low_shdr.sh_offset) {
-				low_shdr = shdr;
-			}
+		if ((shdr.sh_type != SHT_PROGBITS && shdr.sh_type != SHT_NOBITS) ||
+		    !(shdr.sh_flags & SHF_ALLOC)) {
+			continue;
 		}
 
 		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr.sh_name);
 
 		LOG_DBG("section %d name %s", i, name);
 
-		enum llext_mem mem_idx;
-
-		/*
-		 * .rodata section is optional. If there isn't one, use the
-		 * first read-only data section
-		 */
-		if (shdr.sh_addr && !(shdr.sh_flags & (SHF_WRITE | SHF_EXECINSTR)) &&
-		    shdr.sh_addr < rodata.sh_addr) {
-			rodata = shdr;
-			LOG_DBG("rodata: select %#zx name %s", (size_t)shdr.sh_addr, name);
+		/* Identify the lowest and the highest data sections */
+		if (!(shdr.sh_flags & SHF_EXECINSTR)) {
+			if (shdr.sh_flags & SHF_WRITE) {
+				/* .data and other writable sections */
+				if (shdr.sh_offset > data_shdr_high.sh_offset) {
+					data_shdr_high = shdr;
+				}
+				if (shdr.sh_offset < data_shdr_low.sh_offset) {
+					data_shdr_low = shdr;
+				}
+			} else {
+				/* .rodata and others */
+				if (shdr.sh_offset > rodata_shdr_high.sh_offset) {
+					rodata_shdr_high = shdr;
+				}
+				if (shdr.sh_offset < rodata_shdr_low.sh_offset) {
+					rodata_shdr_low = shdr;
+				}
+			}
 		}
+
+		enum llext_mem mem_idx;
 
 		/*
 		 * Keep in mind, that when using relocatable (partially linked)
@@ -290,12 +297,16 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 		ldr->sect_map[i] = mem_idx;
 	}
 
-	ldr->prog_data_size = high_shdr.sh_size + high_shdr.sh_offset - low_shdr.sh_offset;
+	size_t prog_data_size = data_shdr_high.sh_size +
+		data_shdr_high.sh_offset - data_shdr_low.sh_offset;
 
-	/* No verbatim .rodata, use an automatically selected one */
-	if (!ldr->sects[LLEXT_MEM_RODATA].sh_size) {
-		ldr->sects[LLEXT_MEM_RODATA] = rodata;
-	}
+	size_t prog_rodata_size = rodata_shdr_high.sh_size +
+		rodata_shdr_high.sh_offset - rodata_shdr_low.sh_offset;
+
+	ldr->sects[LLEXT_MEM_RODATA] = rodata_shdr_low;
+	ldr->sects[LLEXT_MEM_RODATA].sh_size = prog_rodata_size;
+	ldr->sects[LLEXT_MEM_DATA] = data_shdr_low;
+	ldr->sects[LLEXT_MEM_DATA].sh_size = prog_data_size;
 
 	return 0;
 }
