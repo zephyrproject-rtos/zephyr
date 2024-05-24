@@ -11,7 +11,7 @@ tests:
       regex:
         - "Wait for DTR"
   sample.usb_device_next.cdc-acm:
-    depends_on: usb_device
+    depends_on: usbd
     tags: usb
     extra_args: CONF_FILE="usbd_next_prj.conf"
     platform_allow:
