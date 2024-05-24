@@ -73,6 +73,9 @@ Boards
   :kconfig:option:`CONFIG_I2C` is set. Users who need this setting enabled should set it in
   their project config file. (:github:`73067`)
 
+* LiteX: Renamed the ``compatible`` of the LiteX VexRiscV interrupt controller node from
+  ``vexriscv-intc0`` to :dtcompatible:`litex,vexriscv-intc0`. (:github:`73211`)
+
 Modules
 *******
 
