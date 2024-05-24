@@ -4,7 +4,6 @@
 
 config POSIX_ASYNCHRONOUS_IO
 	bool "POSIX asynchronous I/O [EXPERIMENTAL]"
-	default y if POSIX_API
 	select EXPERIMENTAL
 	help
 	  Enable this option for asynchronous I/O. This option is present for conformance purposes

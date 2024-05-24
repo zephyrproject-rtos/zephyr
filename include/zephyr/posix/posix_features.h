@@ -12,6 +12,22 @@
 #include <zephyr/sys/util_macro.h> /* COND_CODE_1() */
 
 /*
+ * POSIX Application Environment Profiles (AEP - IEEE Std 1003.13-2003)
+ */
+
+#ifdef CONFIG_POSIX_AEP_REALTIME_MINIMAL
+#define _POSIX_AEP_REALTIME_MINIMAL 200312L
+#endif
+
+#ifdef CONFIG_POSIX_AEP_REALTIME_CONTROLLER
+#define _POSIX_AEP_REALTIME_CONTROLLER 200312L
+#endif
+
+#ifdef CONFIG_POSIX_AEP_REALTIME_DEDICATED
+#define _POSIX_AEP_REALTIME_DEDICATED 200312L
+#endif
+
+/*
  * POSIX System Interfaces
  */
 

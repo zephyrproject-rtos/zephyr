@@ -6,7 +6,6 @@
 
 menuconfig POSIX_SINGLE_PROCESS
 	bool "POSIX single process support"
-	default y if POSIX_API
 	# imply COMMON_LIBC_MALLOC # for env.c
 	help
 	  Select 'y' here to use confstr(), environ, errno, getenv(), setenv(), sysconf(), uname(),

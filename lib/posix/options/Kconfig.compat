@@ -10,7 +10,6 @@ config EVENTFD
 	depends on !NATIVE_APPLICATION
 	select ZVFS
 	select ZVFS_EVENTFD
-	default y if POSIX_API
 	help
 	  Enable support for event file descriptors, eventfd. An eventfd can
 	  be used as an event wait/notify mechanism together with POSIX calls
