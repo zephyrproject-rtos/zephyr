@@ -69,7 +69,7 @@ BUILD_ASSERT(CYCLES_PER_TICK >= 2, "APIC timer: bad CYCLES_PER_TICK");
 
 /*
  * The spinlock protects all access to the local APIC timer registers,
- * as well as 'total_cycles', 'last_announcement', and 'cached_icr'.
+ * as well as 'total_cycles', 'last_announce', and 'cached_icr'.
  *
  * One important invariant that must be observed: `total_cycles` + `cached_icr`
  * is always an integral multiple of CYCLE_PER_TICK; this is, timer interrupts
@@ -77,76 +77,16 @@ BUILD_ASSERT(CYCLES_PER_TICK >= 2, "APIC timer: bad CYCLES_PER_TICK");
  */
 
 static struct k_spinlock lock;
+static uint64_t last_announce;
 static uint64_t total_cycles;
 static uint32_t cached_icr = CYCLES_PER_TICK;
 
-#ifdef CONFIG_TICKLESS_KERNEL
-
-static uint64_t last_announcement;	/* last time we called sys_clock_announce() */
-
-void sys_clock_set_timeout(int32_t n, bool idle)
+static ALWAYS_INLINE uint64_t rdtsc(void)
 {
-	ARG_UNUSED(idle);
+	uint32_t hi, lo;
 
-	int   full_ticks;	/* number of complete ticks we'll wait */
-	uint32_t full_cycles;	/* full_ticks represented as cycles */
-	uint32_t partial_cycles;	/* number of cycles to first tick boundary */
-
-#ifdef CONFIG_APIC_TIMER_TSC
-	if (n == K_TICKS_FOREVER) {
-		x86_write_loapic(LOAPIC_TIMER_ICR, 0x0);
-		return;
-	}
-#endif
-
-	if (n < 1) {
-		full_ticks = 0;
-	} else if ((n == K_TICKS_FOREVER) || (n > MAX_TICKS)) {
-		full_ticks = MAX_TICKS - 1;
-	} else {
-		full_ticks = n - 1;
-	}
-
-	full_cycles = full_ticks * CYCLES_PER_TICK;
-
-	/*
-	 * There's a wee race condition here. The timer may expire while
-	 * we're busy reprogramming it; an interrupt will be queued at the
-	 * local APIC and the ISR will be called too early, roughly right
-	 * after we unlock, and not because the count we just programmed has
-	 * counted down. Luckily this situation is easy to detect, which is
-	 * why the ISR actually checks to be sure the CCR is 0 before acting.
-	 */
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-#ifdef CONFIG_APIC_TIMER_TSC
-	total_cycles = sys_clock_cycle_get_64();
-#else
-	total_cycles += (cached_icr - x86_read_loapic(LOAPIC_TIMER_CCR));
-#endif
-	partial_cycles = CYCLES_PER_TICK - (total_cycles % CYCLES_PER_TICK);
-	cached_icr = full_cycles + partial_cycles;
-	x86_write_loapic(LOAPIC_TIMER_ICR, cached_icr);
-
-	k_spin_unlock(&lock, key);
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	uint64_t ticks;
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-#ifdef CONFIG_APIC_TIMER_TSC
-	ticks = sys_clock_cycle_get_64() - last_announcement;
-#else
-	ticks = total_cycles - last_announcement;
-	ticks += cached_icr - x86_read_loapic(LOAPIC_TIMER_CCR);
-#endif
-	k_spin_unlock(&lock, key);
-	ticks /= CYCLES_PER_TICK;
-
-	return ticks;
+	__asm__ volatile("rdtsc" : "=d"(hi), "=a"(lo));
+	return lo + (((uint64_t)hi) << 32);
 }
 
 static void isr(const void *arg)
@@ -170,72 +110,78 @@ static void isr(const void *arg)
 		return;
 	}
 
-#ifdef CONFIG_APIC_TIMER_TSC
 	total_cycles = sys_clock_cycle_get_64();
-#else
-	/* Restart the timer as early as possible to minimize drift... */
-	x86_write_loapic(LOAPIC_TIMER_ICR, MAX_TICKS * CYCLES_PER_TICK);
-
-	total_cycles += cached_icr;
-	cached_icr = MAX_TICKS * CYCLES_PER_TICK;
-#endif
-	ticks_u64 = (total_cycles - last_announcement) / CYCLES_PER_TICK;
+	ticks_u64 = (total_cycles - last_announce) / CYCLES_PER_TICK;
 	ticks = (ticks_u64 > INT_MAX) ? INT_MAX : (int32_t)ticks_u64;
-	last_announcement += ticks_u64 * CYCLES_PER_TICK;
+	last_announce += ticks_u64 * CYCLES_PER_TICK;
 	k_spin_unlock(&lock, key);
 	sys_clock_announce(ticks);
 }
 
-#else
-
-static void isr(const void *arg)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
-	ARG_UNUSED(arg);
+	ARG_UNUSED(idle);
+
+	int   full_ticks;	/* number of complete ticks we'll wait */
+	uint32_t full_cycles;	/* full_ticks represented as cycles */
+	uint32_t partial_cycles;	/* number of cycles to first tick boundary */
+
+	if (ticks == K_TICKS_FOREVER) {
+		x86_write_loapic(LOAPIC_TIMER_ICR, 0x0);
+		return;
+	}
+
+	if (ticks < 1) {
+		full_ticks = 0;
+	} else if ((ticks == K_TICKS_FOREVER) || (ticks > MAX_TICKS)) {
+		full_ticks = MAX_TICKS - 1;
+	} else {
+		full_ticks = ticks - 1;
+	}
+
+	full_cycles = full_ticks * CYCLES_PER_TICK;
+
+	/*
+	 * There's a wee race condition here. The timer may expire while
+	 * we're busy reprogramming it; an interrupt will be queued at the
+	 * local APIC and the ISR will be called too early, roughly right
+	 * after we unlock, and not because the count we just programmed has
+	 * counted down. Luckily this situation is easy to detect, which is
+	 * why the ISR actually checks to be sure the CCR is 0 before acting.
+	 */
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	total_cycles += CYCLES_PER_TICK;
-	x86_write_loapic(LOAPIC_TIMER_ICR, cached_icr);
-	k_spin_unlock(&lock, key);
 
-	sys_clock_announce(1);
+	total_cycles = sys_clock_cycle_get_64();
+	partial_cycles = CYCLES_PER_TICK - (total_cycles % CYCLES_PER_TICK);
+	cached_icr = full_cycles + partial_cycles;
+	x86_write_loapic(LOAPIC_TIMER_ICR, cached_icr);
+
+	k_spin_unlock(&lock, key);
 }
 
 uint32_t sys_clock_elapsed(void)
 {
-	return 0U;
+	uint64_t ticks;
+
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	ticks = sys_clock_cycle_get_64() - last_announce;
+	k_spin_unlock(&lock, key);
+	ticks /= CYCLES_PER_TICK;
+
+	return ticks;
 }
 
-#endif /* CONFIG_TICKLESS_KERNEL */
-
-#ifdef CONFIG_APIC_TIMER_TSC
+uint32_t sys_clock_cycle_get_32(void)
+{
+	return (uint32_t)sys_clock_cycle_get_64();
+}
 
 uint64_t sys_clock_cycle_get_64(void)
 {
 	uint64_t tsc = z_tsc_read();
 
 	return (tsc * CONFIG_APIC_TIMER_TSC_M) / CONFIG_APIC_TIMER_TSC_N;
-}
-
-#else
-
-uint64_t sys_clock_cycle_get_64(void)
-{
-	uint64_t ret;
-	uint32_t ccr;
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	ccr = x86_read_loapic(LOAPIC_TIMER_CCR);
-	ret = total_cycles + (cached_icr - ccr);
-	k_spin_unlock(&lock, key);
-
-	return ret;
-}
-
-#endif
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	return (uint32_t)sys_clock_cycle_get_64();
 }
 
 static int sys_clock_driver_init(void)
@@ -259,11 +205,9 @@ static int sys_clock_driver_init(void)
 		CONFIG_APIC_TIMER_IRQ_PRIORITY,
 		isr, 0, 0);
 
-#ifdef CONFIG_APIC_TIMER_TSC
 	total_cycles = sys_clock_cycle_get_64();
-	last_announcement = total_cycles - (total_cycles % CYCLES_PER_TICK);
+	last_announce = total_cycles - (total_cycles % CYCLES_PER_TICK);
 	cached_icr = CYCLES_PER_TICK - (total_cycles % CYCLES_PER_TICK);
-#endif
 	x86_write_loapic(LOAPIC_TIMER_ICR, cached_icr);
 	irq_enable(CONFIG_APIC_TIMER_IRQ);
 
