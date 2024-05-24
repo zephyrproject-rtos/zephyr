@@ -345,6 +345,10 @@ static int display_smartbond_init(const struct device *dev)
 #else
 	/* Resume if either PM is not used at all or if PM without runtime is used. */
 	ret = display_smartbond_resume(dev);
+	if (ret == 0) {
+		/* Display port should be enabled at this moment and so sleep is not allowed. */
+		lcdc_smartbond_pm_policy_state_lock_get(data);
+	}
 #endif
 
 	return ret;
