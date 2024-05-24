@@ -93,6 +93,30 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+		spi1: spi@e000c000 {
+			compatible = "litex,spi-litespi";
+			reg = <0xe000c000 0x4>,
+				<0xe000c004 0x4>,
+				<0xe000c008 0x4>,
+				<0xe000c00c 0x4>,
+				<0xe000c010 0x4>,
+				<0xe000c800 0x4>,
+				<0x60000000 0x1000000>;
+			reg-names = "core_mmap_dummy_bits",
+				"core_master_cs",
+				"core_master_phyconfig",
+				"core_master_rxtx",
+				"core_master_status",
+				"phy_clk_divisor",
+				"flash_mmap";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			spiflash0: flash@0 {
+				compatible = "jedec,spi-nor";
+				reg = <0>;
+				spi-max-frequency = <10000000>;
+			};
+		};
 		timer0: timer@e0002800 {
 			compatible = "litex,timer0";
 			interrupt-parent = <&intc0>;
