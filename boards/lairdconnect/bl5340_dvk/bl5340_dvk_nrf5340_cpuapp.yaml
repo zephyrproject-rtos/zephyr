@@ -16,7 +16,6 @@ supported:
   - qspi
   - spi
   - uart
-  - usb_cdc
   - usb_device
   - watchdog
 vendor: lairdconnect
