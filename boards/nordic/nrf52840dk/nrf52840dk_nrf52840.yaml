@@ -23,6 +23,7 @@ supported:
   - spi
   - usb_cdc
   - usb_device
+  - usbd
   - watchdog
   - netif:openthread
 vendor: nordic
