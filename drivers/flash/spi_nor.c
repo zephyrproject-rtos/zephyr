@@ -35,15 +35,10 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
  * * Some devices support a Deep Power-Down mode which reduces current
  *   to as little as 0.1% of standby.
  *
- * The power reduction from DPD is sufficient to warrant allowing its
- * use even in cases where Zephyr's device power management is not
- * available.  This is selected through the SPI_NOR_IDLE_IN_DPD
- * Kconfig option.
- *
  * When mapped to the Zephyr Device Power Management states:
  * * PM_DEVICE_STATE_ACTIVE covers both active and standby modes;
- * * PM_DEVICE_STATE_SUSPENDED, and PM_DEVICE_STATE_OFF all correspond to
- *   deep-power-down mode.
+ * * PM_DEVICE_STATE_SUSPENDED corresponds to deep-power-down mode;
+ * * PM_DEVICE_STATE_OFF covers the powered off state;
  */
 
 #define SPI_NOR_MAX_ADDR_WIDTH 4
@@ -552,11 +547,7 @@ static int exit_dpd(const struct device *const dev)
 	return ret;
 }
 
-/* Everything necessary to acquire owning access to the device.
- *
- * This means taking the lock and, if necessary, waking the device
- * from deep power-down mode.
- */
+/* Everything necessary to acquire owning access to the device. */
 static void acquire_device(const struct device *dev)
 {
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
@@ -564,23 +555,11 @@ static void acquire_device(const struct device *dev)
 
 		k_sem_take(&driver_data->sem, K_FOREVER);
 	}
-
-	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD)) {
-		exit_dpd(dev);
-	}
 }
 
-/* Everything necessary to release access to the device.
- *
- * This means (optionally) putting the device into deep power-down
- * mode, and releasing the lock.
- */
+/* Everything necessary to release access to the device. */
 static void release_device(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD)) {
-		enter_dpd(dev);
-	}
-
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct spi_nor_data *const driver_data = dev->data;
 
@@ -1439,11 +1418,6 @@ static int spi_nor_pm_control(const struct device *dev, enum pm_device_action ac
 	int rc = 0;
 
 	switch (action) {
-#ifdef CONFIG_SPI_NOR_IDLE_IN_DPD
-	case PM_DEVICE_ACTION_SUSPEND:
-	case PM_DEVICE_ACTION_RESUME:
-		break;
-#else
 	case PM_DEVICE_ACTION_SUSPEND:
 		acquire_device(dev);
 		rc = enter_dpd(dev);
@@ -1454,11 +1428,9 @@ static int spi_nor_pm_control(const struct device *dev, enum pm_device_action ac
 		rc = exit_dpd(dev);
 		release_device(dev);
 		break;
-#endif /* CONFIG_SPI_NOR_IDLE_IN_DPD */
 	case PM_DEVICE_ACTION_TURN_ON:
 		/* Coming out of power off */
 		rc = spi_nor_configure(dev);
-#ifndef CONFIG_SPI_NOR_IDLE_IN_DPD
 		if (rc == 0) {
 			/* Move to DPD, the correct device state
 			 * for PM_DEVICE_STATE_SUSPENDED
@@ -1467,7 +1439,6 @@ static int spi_nor_pm_control(const struct device *dev, enum pm_device_action ac
 			rc = enter_dpd(dev);
 			release_device(dev);
 		}
-#endif /* CONFIG_SPI_NOR_IDLE_IN_DPD */
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
