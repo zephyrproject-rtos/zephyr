@@ -6,7 +6,6 @@ menu "X/Open system interfaces"
 
 config XSI_SINGLE_PROCESS
 	bool "X/Open single process"
-	default y if POSIX_API
 	depends on POSIX_SINGLE_PROCESS
 	depends on POSIX_TIMERS
 	help
@@ -18,7 +17,6 @@ config XSI_SINGLE_PROCESS
 
 config XOPEN_STREAMS
 	bool "X/Open streams"
-	default y if POSIX_API
 	help
 	  This option provides support for the X/Open Streams interface, including functions such as
 	  fattach(), fdetach(), getmsg(), getpmsg(), putmsg(), and putpmsg().
@@ -28,7 +26,6 @@ config XOPEN_STREAMS
 
 config XSI_SYSTEM_LOGGING
 	bool "X/Open system logging"
-	default y if POSIX_API
 	help
 	  This option provides support for closelog(), openlog(), syslog(),
 	  setlogmask(), and vsyslog().
@@ -38,7 +35,6 @@ config XSI_SYSTEM_LOGGING
 
 config XSI_THREADS_EXT
 	bool "X/Open threads extensions"
-	default y if POSIX_API
 	help
 	  This option provides support for pthread_attr_getstack(), pthread_attr_setstack(),
 	  pthread_getconcurrency(), and pthread_setconcurrency().

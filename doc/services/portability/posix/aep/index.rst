@@ -42,7 +42,7 @@ The *Minimal Realtime System Profile* (PSE51) includes all of the
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
 
-    _POSIX_AEP_REALTIME_MINIMAL, -1,
+    _POSIX_AEP_REALTIME_MINIMAL, -1, :kconfig:option:`CONFIG_POSIX_AEP_REALTIME_MINIMAL`
 
 .. csv-table:: PSE51 Option Groups
    :header: Symbol, Support, Remarks
@@ -94,7 +94,7 @@ The *Realtime Controller System Profile* (PSE52) includes all features from PSE5
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
 
-    _POSIX_AEP_REALTIME_CONTROLLER, -1,
+    _POSIX_AEP_REALTIME_CONTROLLER, -1, :kconfig:option:`CONFIG_POSIX_AEP_REALTIME_CONTROLLER`
 
 .. csv-table:: PSE52 Option Groups
    :header: Symbol, Support, Remarks
@@ -134,7 +134,7 @@ The *Dedicated Realtime System Profile* (PSE53) includes all features from PSE52
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
 
-    _POSIX_AEP_REALTIME_DEDICATED, -1,
+    _POSIX_AEP_REALTIME_DEDICATED, -1, :kconfig:option:`CONFIG_POSIX_AEP_REALTIME_DEDICATED`
 
 .. csv-table:: PSE53 Option Groups
    :header: Symbol, Support, Remarks

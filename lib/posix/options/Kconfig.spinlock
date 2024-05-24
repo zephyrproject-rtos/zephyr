@@ -4,7 +4,6 @@
 
 menuconfig POSIX_SPIN_LOCKS
 	bool "POSIX spin locks"
-	default y if POSIX_API
 	help
 	  Select 'y' here to enable POSIX spin locks.
 

@@ -4,7 +4,6 @@
 
 menuconfig POSIX_SEMAPHORES
 	bool "POSIX semaphore support"
-	default y if POSIX_API
 	help
 	  Enable this option for POSIX semaphore support.
 

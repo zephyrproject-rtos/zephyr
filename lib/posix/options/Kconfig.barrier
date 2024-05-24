@@ -6,7 +6,6 @@
 
 menuconfig POSIX_BARRIERS
 	bool "POSIX barriers"
-	default y if POSIX_API
 	help
 	  Select 'y' here to enable POSIX barriers.
 

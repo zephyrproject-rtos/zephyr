@@ -4,7 +4,6 @@
 
 menuconfig POSIX_READER_WRITER_LOCKS
 	bool "POSIX reader-writer locks"
-	default y if POSIX_API
 	help
 	  Select 'y' here to enable POSIX reader-writer locks.
 
