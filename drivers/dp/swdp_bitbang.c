@@ -58,30 +58,20 @@ struct sw_cfg_data {
 	bool fast_clock;
 };
 
-static uint8_t sw_request_lut[16] = {0U};
-
-static void mk_sw_request_lut(void)
-{
-	uint32_t parity = 0U;
-
-	for (int request = 0; request < sizeof(sw_request_lut); request++) {
-		parity = request;
-		parity ^= parity >> 2;
-		parity ^= parity >> 1;
-
-		/*
-		 * Move A[3:3], RnW, APnDP bits to their position,
-		 * add start bit, stop bit(6), and park bit.
-		 */
-		sw_request_lut[request] =  BIT(7) | (request << 1) | BIT(0);
-		/* Add parity bit */
-		if (parity & 0x01U) {
-			sw_request_lut[request] |= BIT(5);
-		}
-	}
-
-	LOG_HEXDUMP_DBG(sw_request_lut, sizeof(sw_request_lut), "request lut");
-}
+/*
+ * Move A[2:3], RnW, APnDP bits to their position,
+ * add start bit, stop bit(6), park bit and parity bit.
+ * For example, reading IDCODE would be APnDP=0, RnW=1, A2=0, A3=0.
+ * The request would be 0xa5, which is 10100101 in binary.
+ *
+ * For more information, see:
+ * - CMSIS-DAP Command Specification, DAP_Transfer
+ * - ARM Debug Interface v5 Architecture Specification
+ */
+const static uint8_t sw_request_lut[16] = {
+	0x81, 0xa3, 0xa5, 0x87, 0xa9, 0x8b, 0x8d, 0xaf,
+	0xb1, 0x93, 0x95, 0xb7, 0x99, 0xbb, 0xbd, 0x9f
+};
 
 static ALWAYS_INLINE uint32_t sw_get32bit_parity(uint32_t data)
 {
@@ -678,7 +668,6 @@ static int sw_gpio_init(const struct device *dev)
 	sw_data->fast_clock = false;
 	sw_data->clock_delay = CLOCK_DELAY(SWDP_DEFAULT_SWCLK_FREQUENCY,
 					   config->port_write_cycles);
-	mk_sw_request_lut();
 
 	return 0;
 }
