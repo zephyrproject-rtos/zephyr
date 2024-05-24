@@ -1,0 +1,141 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&cpu0 {
+	clock-outputs = <&system_clock>;
+};
+
+&gcr {
+	/* Root clock sources */
+	no_clock: no-clock {
+		/* Dummy node */
+		compatible = "fixed-clock-source";
+		#clock-cells = <0>;
+		frequency = <0>;
+	};
+
+	ext_clock: ext-clock {
+		/* External clock */
+		compatible = "fixed-clock-source";
+		#clock-cells = <0>;
+		frequency = <0>;
+	};
+
+	erfo: erfo {
+		/* 32 MHz External RF Oscillator */
+		compatible = "adi,gcr-clock-source";
+		#clock-cells = <1>;
+		enable-offset = <16>;
+		ready-offset = <24>;
+		frequency = <DT_FREQ_M(32)>;
+	};
+
+	ertco: ertco {
+		/* 32.768 kHz External Real-Time Oscillator */
+		compatible = "adi,gcr-clock-source";
+		#clock-cells = <1>;
+		enable-offset = <17>;
+		ready-offset = <25>;
+		frequency = <32768>;
+	};
+
+	iso: iso {
+		/* 60 MHz Internal Secondary Oscillator */
+		compatible = "adi,gcr-clock-source";
+		#clock-cells = <1>;
+		enable-offset = <18>;
+		ready-offset = <26>;
+		frequency = <DT_FREQ_M(60)>;
+	};
+
+	ipo: ipo {
+		/* 120 MHz Internal Primary Oscillator */
+		compatible = "adi,gcr-clock-source";
+		#clock-cells = <1>;
+		enable-offset = <19>;
+		ready-offset = <27>;
+		frequency = <DT_FREQ_M(120)>;
+	};
+
+	ibro: ibro {
+		/* 7.3728 MHz Internal Baud Rate Oscillator */
+		compatible = "adi,gcr-clock-source";
+		#clock-cells = <1>;
+		enable-offset = <20>;
+		ready-offset = <28>;
+		frequency = <7372800>;
+		read-only;
+	};
+
+	inro: inro {
+		/* 8 kHz Internal Nano-Ring Oscillator */
+		compatible = "adi,gcr-clock-source";
+		#clock-cells = <1>;
+		frequency = <DT_FREQ_K(8)>;
+		ready-offset = <29>;
+		read-only;
+	};
+
+	/* Clock muxes */
+	sysclk_sel: sysclk-sel {
+		/* System Oscillator Source Select */
+		compatible = "adi,gcr-clock-mux";
+		#clock-cells = <1>;
+		select-offset = <9>;
+		select-width = <3>;
+		ready-offset = <13>;
+		input-sources = <&iso &no_clock &erfo &inro &ipo &ibro &ertco &ext_clock>;
+
+		sysclk_div: sysclk-div {
+			/* System Oscillator Prescaler */
+			compatible = "adi,gcr-clock-div";
+			#clock-cells = <1>;
+			divider-offset = <6>;
+			divider-width = <3>;
+
+			system_clock: system-clock {
+				/* System Clock */
+				compatible = "clock-output";
+				#clock-cells = <1>;
+			};
+
+			apb_div: apb-div {
+				compatible = "fixed-clock-div";
+				#clock-cells = <0>;
+				divider = <2>;
+
+				apb_clock: apb-clock {
+					compatible = "clock-output";
+					#clock-cells = <1>;
+				};
+
+				uart0_clock_gate: uart0-clock-gate {
+					compatible = "adi,gcr-clock-gate";
+					#clock-cells = <1>;
+					disable-reg = <0>;
+					disable-offset = <9>;
+
+					uart0_clock: uart0-clock {
+						compatible = "clock-output";
+						#clock-cells = <1>;
+					};
+				};
+
+				spi4_clock_gate: spi4-clock-gate {
+					compatible = "adi,gcr-clock-gate";
+					#clock-cells = <1>;
+					disable-reg = <1>;
+					disable-offset = <17>;
+
+					spi4_clock: spi4-clock {
+						compatible = "clock-output";
+						#clock-cells = <1>;
+					};
+				};
+			};
+		};
+	};
+};
