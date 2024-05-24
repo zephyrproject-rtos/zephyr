@@ -16,6 +16,5 @@ supported:
   - netif:eth
   - qspi
   - memc
-  - usb_cdc
   - usb_device
 vendor: st

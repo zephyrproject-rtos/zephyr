@@ -8,7 +8,6 @@ toolchain:
   - xtools
 supported:
   - usb_device
-  - usb_cdc
   - ble
   - pwm
   - watchdog
