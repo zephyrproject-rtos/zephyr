@@ -6,7 +6,6 @@ menu "POSIX signals"
 
 config POSIX_REALTIME_SIGNALS
 	bool "POSIX realtime signals [EXPERIMENTAL]"
-	default y if POSIX_API
 	select EXPERIMENTAL
 	help
 	  Enable support for POSIX realtime signals.
@@ -24,7 +23,6 @@ endif # POSIX_REALTIME_SIGNALS
 
 config POSIX_SIGNALS
 	bool "POSIX signals [EXPERIMENTAL]"
-	default y if POSIX_API
 	select EXPERIMENTAL
 	help
 	  Enable support for POSIX signals.

@@ -4,7 +4,6 @@
 
 menuconfig POSIX_FD_MGMT
 	bool "POSIX file descriptor management [EXPERIMENTAL]"
-	default y if POSIX_API
 	select EXPERIMENTAL
 	help
 	  Select 'y' here and Zephyr will provide implementations for the POSIX_FD_MGMT Option Group.

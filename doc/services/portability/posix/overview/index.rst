@@ -122,22 +122,43 @@ Configuration
 
 Like most features in Zephyr, POSIX features are
 :ref:`highly configurable<zephyr_intro_configurability>` but disabled by default. Users must
-explicitly choose to enable POSIX options via :ref:`Kconfig<kconfig>` selection. Indeed, there are
-:ref:`many Kconfig options in Zephyr<posix_kconfig_options>` for the POSIX API to allow for
-feature selection at various levels of granularity.
+explicitly choose to enable POSIX options via :ref:`Kconfig<kconfig>` selection.
 
-Alternatively, users may enable one of the Kconfig options below as a shortcut to enable multiple
-:ref:`Option Groups<posix_option_groups>`.
+Subprofiles
++++++++++++
 
-* :kconfig:option:`CONFIG_POSIX_API` - Enables all implemented POSIX API Options and Option Groups
+Enable one of the Kconfig options below to quickly configure a pre-defined
+:ref:`POSIX subprofile <posix_subprofiles>`.
 
-.. note::
-    Since the POSIX environment in Zephyr is fully configurable via :ref:`Kconfig<kconfig>`,
-    configurations that require modifying features should not be made if strict compliance is
-    required (POSIX-1.2017, section 2.1.3.1).
+* :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_BASE` (:ref:`Base <posix_system_interfaces_required>`)
+* :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE51` (:ref:`PSE51 <posix_aep_pse51>`)
+* :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE52` (:ref:`PSE52 <posix_aep_pse52>`)
+* :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE53` (:ref:`PSE53 <posix_aep_pse53>`)
 
-..
-    TODO: create Kconfig shortcuts for PSE51, PSE52, and PSE53
+Additional POSIX :ref:`Options and Option Groups <posix_option_groups>` may be enabled as needed
+via Kconfig (e.g. ``CONFIG_POSIX_C_LIB_EXT=y``). Further fine-tuning may be accomplished via
+:ref:`additional POSIX-related Kconfig options <posix_kconfig_options>`.
+
+Subprofiles, Options, and Option Groups should be considered the preferred way to configure POSIX
+in Zephyr going forward.
+
+Legacy
+++++++
+
+Historically, Zephyr used :kconfig:option:`CONFIG_POSIX_API` to configure a set of POSIX features
+that was overloaded and always increasing in size.
+
+* :kconfig:option:`CONFIG_POSIX_API`
+
+The option is now frozen, and can be considered equivalent to the following:
+
+* :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE51`
+* :kconfig:option:`CONFIG_POSIX_FD_MGMT`
+* :kconfig:option:`CONFIG_POSIX_MESSAGE_PASSING`
+* :kconfig:option:`CONFIG_POSIX_NETWORKING`
+
+However, :kconfig:option:`CONFIG_POSIX_API` should be considered legacy and should not be used for
+new Zephyr applications.
 
 .. _IEEE: https://www.ieee.org/
 .. _IEEE Computer Society: https://www.computer.org/

@@ -5,7 +5,6 @@
 
 menuconfig POSIX_TIMERS
 	bool "POSIX timers, clocks, and sleep functions"
-	default y if POSIX_API
 	help
 	  Select 'y' here and Zephyr will provide implementations of clock_getres(), clock_gettime(),
 	  clock_settime(), nanosleep(), timer_create(), timer_delete(), timer_getoverrun(),
@@ -18,7 +17,6 @@ if POSIX_TIMERS
 
 config POSIX_THREAD_CPUTIME
 	bool "POSIX per-thread CPU-time clocks"
-	default y
 	help
 	  This enables CLOCK_THREAD_CPUTIME_ID.
 
@@ -29,7 +27,6 @@ config POSIX_THREAD_CPUTIME
 
 config POSIX_MONOTONIC_CLOCK
 	bool "POSIX Monotonic clock support"
-	default y
 	help
 	  This enables CLOCK_MONOTONIC.
 
@@ -39,7 +36,6 @@ config POSIX_MONOTONIC_CLOCK
 
 config POSIX_CPUTIME
 	bool "POSIX per-process CPU-time clocks"
-	default y
 	help
 	  This enables CLOCK_PROCESS_CPUTIME_ID.
 
@@ -50,7 +46,6 @@ config POSIX_CPUTIME
 
 config POSIX_CLOCK_SELECTION
 	bool "POSIX Clock selection"
-	default y
 	help
 	  This enables POSIX clock selection.
 
@@ -79,7 +74,6 @@ config POSIX_TIMER_MAX
 
 config POSIX_TIMEOUTS
 	bool "Support timeouts for some blocking POSIX services"
-	default y
 	help
 	  Enable mandatory timeouts for some blocking operations.
 

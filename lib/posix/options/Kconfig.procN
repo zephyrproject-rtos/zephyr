@@ -4,7 +4,6 @@
 
 menuconfig POSIX_MULTI_PROCESS
 	bool "POSIX multi-process support [EXPERIMENTAL]"
-	default y if POSIX_API
 	select EXPERIMENTAL
 	help
 	  Support for multi-processing.
