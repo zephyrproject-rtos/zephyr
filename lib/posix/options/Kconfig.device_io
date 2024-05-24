@@ -6,7 +6,6 @@ menu "POSIX device I/O"
 
 config POSIX_DEVICE_IO
 	bool "POSIX device I/O [EXPERIMENTAL]"
-	default y if POSIX_API
 	select FDTABLE
 	select EXPERIMENTAL
 	help

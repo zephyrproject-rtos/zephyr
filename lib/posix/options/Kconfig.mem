@@ -5,7 +5,7 @@
 config POSIX_PAGE_SIZE_BITS
 	int "Number of bits to use for PAGE_SIZE"
 	range 6 16
-	default 12 if POSIX_API
+	default 12 if POSIX_BASE_DEFINITIONS
 	default 6
 	help
 	  Define PAGE_SIZE as BIT(n), where n is the value configured here.
