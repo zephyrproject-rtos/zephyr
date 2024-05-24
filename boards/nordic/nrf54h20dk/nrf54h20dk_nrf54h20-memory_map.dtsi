@@ -146,20 +146,6 @@
 };
 
 &mram1x {
-	cpurad_rx_partitions: cpurad-rx-partitions {
-		compatible = "nordic,owned-partitions", "fixed-partitions";
-		status = "disabled";
-		perm-read;
-		perm-execute;
-		perm-secure;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		cpurad_slot0_partition: partition@66000 {
-			reg = <0x66000 DT_SIZE_K(256)>;
-		};
-	};
-
 	cpuapp_rx_partitions: cpuapp-rx-partitions {
 		compatible = "nordic,owned-partitions", "fixed-partitions";
 		status = "disabled";
@@ -169,12 +155,26 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		cpuapp_slot0_partition: partition@a6000 {
-			reg = <0xa6000 DT_SIZE_K(512)>;
+		cpuapp_slot0_partition: partition@66000 {
+			reg = <0x66000 DT_SIZE_K(512)>;
 		};
 
-		cpuppr_code_partition: partition@126000 {
-			reg = <0x126000 DT_SIZE_K(64)>;
+		cpuppr_code_partition: partition@193000 {
+			reg = <0x193000 DT_SIZE_K(64)>;
+		};
+	};
+
+	cpurad_rx_partitions: cpurad-rx-partitions {
+		compatible = "nordic,owned-partitions", "fixed-partitions";
+		status = "disabled";
+		perm-read;
+		perm-execute;
+		perm-secure;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cpurad_slot0_partition: partition@1a3000 {
+			reg = <0x1a3000 DT_SIZE_K(256)>;
 		};
 	};
 
@@ -187,8 +187,8 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		storage_partition: partition@136000 {
-			reg = <0x136000 DT_SIZE_K(24)>;
+		storage_partition: partition@1e3000 {
+			reg = <0x1e3000 DT_SIZE_K(24)>;
 		};
 	};
 };
