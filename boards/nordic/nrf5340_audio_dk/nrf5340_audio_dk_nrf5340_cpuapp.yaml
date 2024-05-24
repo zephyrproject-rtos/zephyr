@@ -19,6 +19,5 @@ supported:
   - i2c
   - pwm
   - watchdog
-  - usb_cdc
   - usb_device
 vendor: nordic

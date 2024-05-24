@@ -9,7 +9,6 @@ toolchain:
 supported:
   - adc
   - usb_device
-  - usb_cdc
   - ble
   - watchdog
   - counter

@@ -15,7 +15,6 @@ supported:
   - gpio
   - i2c
   - pwm
-  - usb_cdc
   - usb_device
   - watchdog
 vendor: rak
