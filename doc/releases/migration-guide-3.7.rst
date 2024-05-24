@@ -81,6 +81,14 @@ MbedTLS
 
 * The hash algorithms SHA-384, SHA-512, MD5 and SHA-1 are not enabled by default anymore.
   Their respective Kconfig options now need to be explicitly enabled to be able to use them.
+* The Kconfig options previously named `CONFIG_MBEDTLS_MAC_*_ENABLED` have been renamed.
+  The `_MAC` and `_ENABLED` parts have been removed from their names.
+* The :kconfig:option:`CONFIG_MBEDTLS_HASH_ALL_ENABLED` Kconfig option has been fixed to actually
+  enable all the available hash algorithms. Previously, it used to only enable the SHA-2 ones.
+* The `CONFIG_MBEDTLS_HASH_SHA*_ENABLED` Kconfig options have been removed. They were duplicates
+  of other Kconfig options which are now named `CONFIG_MBEDTLS_SHA*`.
+* The `CONFIG_MBEDTLS_MAC_ALL_ENABLED` Kconfig option has been removed. Its equivalent is the
+  combination of :kconfig:option:`CONFIG_MBEDTLS_HASH_ALL_ENABLED` and :kconfig:option:`CONFIG_MBEDTLS_CMAC`.
 
 MCUboot
 =======

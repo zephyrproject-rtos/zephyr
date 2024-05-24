@@ -271,23 +271,25 @@
 #define MBEDTLS_ECP_NIST_OPTIM
 #endif
 
-/* Supported message authentication methods */
+/* Supported hash algorithms */
 
-#if defined(CONFIG_MBEDTLS_MAC_MD4_ENABLED)
+#if defined(CONFIG_MBEDTLS_MD4)
 #define MBEDTLS_MD4_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_MD5_ENABLED)
+#if defined(CONFIG_MBEDTLS_MD5)
 #define MBEDTLS_MD5_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_SHA1_ENABLED)
+#if defined(CONFIG_MBEDTLS_SHA1)
 #define MBEDTLS_SHA1_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_SHA256_ENABLED) || \
-	defined(CONFIG_MBEDTLS_HASH_SHA256_ENABLED)
+#if defined(CONFIG_MBEDTLS_SHA224)
 #define MBEDTLS_SHA224_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_SHA256)
 #define MBEDTLS_SHA256_C
 #endif
 
@@ -295,21 +297,19 @@
 #define MBEDTLS_SHA256_SMALLER
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_SHA384_ENABLED) || \
-	defined(CONFIG_MBEDTLS_HASH_SHA384_ENABLED)
+#if defined(CONFIG_MBEDTLS_SHA384)
 #define MBEDTLS_SHA384_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_SHA512_ENABLED) || \
-	defined(CONFIG_MBEDTLS_HASH_SHA512_ENABLED)
+#if defined(CONFIG_MBEDTLS_SHA512)
 #define MBEDTLS_SHA512_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_POLY1305_ENABLED)
+#if defined(CONFIG_MBEDTLS_POLY1305)
 #define MBEDTLS_POLY1305_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_CMAC_ENABLED)
+#if defined(CONFIG_MBEDTLS_CMAC)
 #define MBEDTLS_CMAC_C
 #endif
 

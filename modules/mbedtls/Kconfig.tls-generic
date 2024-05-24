@@ -12,15 +12,15 @@ menu "Supported TLS version"
 config MBEDTLS_TLS_VERSION_1_0
 	bool "Support for TLS 1.0"
 	select MBEDTLS_CIPHER
-	select MBEDTLS_MAC_MD5_ENABLED
-	select MBEDTLS_MAC_SHA1_ENABLED
+	select MBEDTLS_MD5
+	select MBEDTLS_SHA1
 	select MBEDTLS_MD
 
 config MBEDTLS_TLS_VERSION_1_1
 	bool "Support for TLS 1.1 (DTLS 1.0)"
 	select MBEDTLS_CIPHER
-	select MBEDTLS_MAC_MD5_ENABLED
-	select MBEDTLS_MAC_SHA1_ENABLED
+	select MBEDTLS_MD5
+	select MBEDTLS_SHA1
 	select MBEDTLS_MD
 
 config MBEDTLS_TLS_VERSION_1_2
@@ -206,25 +206,7 @@ config MBEDTLS_ECP_NIST_OPTIM
 
 endif
 
-comment "Supported hash"
-
-config MBEDTLS_HASH_ALL_ENABLED
-	bool "All available hashes"
-	select MBEDTLS_HASH_SHA256_ENABLED
-	select MBEDTLS_HASH_SHA384_ENABLED
-	select MBEDTLS_HASH_SHA512_ENABLED
-
-config MBEDTLS_HASH_SHA256_ENABLED
-	bool "SHA224 and SHA256 hashes"
-
-config MBEDTLS_HASH_SHA384_ENABLED
-	bool "SHA384 hash"
-	select MBEDTLS_HASH_SHA512_ENABLED
-
-config MBEDTLS_HASH_SHA512_ENABLED
-	bool "SHA512 hash"
-
-comment "Supported cipher modes"
+comment "Supported ciphers and cipher modes"
 
 config MBEDTLS_CIPHER_ALL_ENABLED
 	bool "All available ciphers"
@@ -297,55 +279,57 @@ config MBEDTLS_CIPHER_MODE_CTR_ENABLED
 
 config MBEDTLS_CHACHAPOLY_AEAD_ENABLED
 	bool "ChaCha20-Poly1305 AEAD algorithm"
-	depends on MBEDTLS_CIPHER_CHACHA20_ENABLED || MBEDTLS_MAC_POLY1305_ENABLED
+	depends on MBEDTLS_CIPHER_CHACHA20_ENABLED && MBEDTLS_POLY1305
 
-comment "Supported message authentication methods"
+config MBEDTLS_CMAC
+	bool "CMAC (Cipher-based Message Authentication Code) mode for block ciphers."
+	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_DES_ENABLED
 
-config MBEDTLS_MAC_ALL_ENABLED
+comment "Supported hash algorithms"
+
+config MBEDTLS_HASH_ALL_ENABLED
 	bool "All available MAC methods"
-	select MBEDTLS_MAC_MD4_ENABLED
-	select MBEDTLS_MAC_MD5_ENABLED
-	select MBEDTLS_MAC_SHA1_ENABLED
-	select MBEDTLS_MAC_SHA256_ENABLED
-	select MBEDTLS_MAC_SHA384_ENABLED
-	select MBEDTLS_MAC_SHA512_ENABLED
-	select MBEDTLS_MAC_POLY1305_ENABLED
-	select MBEDTLS_MAC_CMAC_ENABLED
+	select MBEDTLS_MD4
+	select MBEDTLS_MD5
+	select MBEDTLS_SHA1
+	select MBEDTLS_SHA224
+	select MBEDTLS_SHA256
+	select MBEDTLS_SHA384
+	select MBEDTLS_SHA512
+	select MBEDTLS_POLY1305
 
-config MBEDTLS_MAC_MD4_ENABLED
+config MBEDTLS_MD4
 	bool "MD4 hash algorithm"
 
-config MBEDTLS_MAC_MD5_ENABLED
+config MBEDTLS_MD5
 	bool "MD5 hash algorithm"
 
-config MBEDTLS_MAC_SHA1_ENABLED
-	bool "SHA1 hash algorithm"
+config MBEDTLS_SHA1
+	bool "SHA-1 hash algorithm"
 
-config MBEDTLS_MAC_SHA256_ENABLED
-	bool "SHA-224 and SHA-256 hash algorithms"
+config MBEDTLS_SHA224
+	bool "SHA-224 hash algorithm"
+
+config MBEDTLS_SHA256
+	bool "SHA-256 hash algorithm"
 	default y
 
 config MBEDTLS_SHA256_SMALLER
 	bool "Smaller SHA-256 implementation"
-	depends on MBEDTLS_MAC_SHA256_ENABLED
+	depends on MBEDTLS_SHA256
 	default y
 	help
-	  Enable an implementation of SHA-256 that has lower ROM footprint but also
-	  lower performance
+	  Enable an implementation of SHA-256 that has a
+	  smaller ROM footprint but also lower performance.
 
-config MBEDTLS_MAC_SHA384_ENABLED
+config MBEDTLS_SHA384
 	bool "SHA-384 hash algorithm"
-	select MBEDTLS_MAC_SHA512_ENABLED
 
-config MBEDTLS_MAC_SHA512_ENABLED
+config MBEDTLS_SHA512
 	bool "SHA-512 hash algorithm"
 
-config MBEDTLS_MAC_POLY1305_ENABLED
-	bool "Poly1305 MAC algorithm"
-
-config MBEDTLS_MAC_CMAC_ENABLED
-	bool "CMAC (Cipher-based Message Authentication Code) mode for block ciphers."
-	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_DES_ENABLED
+config MBEDTLS_POLY1305
+	bool "Poly1305 hash family"
 
 endmenu
 
@@ -387,7 +371,7 @@ config MBEDTLS_HAVE_ASM
 
 config MBEDTLS_ENTROPY_ENABLED
 	bool "MbedTLS generic entropy pool"
-	depends on MBEDTLS_MAC_SHA256_ENABLED || MBEDTLS_MAC_SHA384_ENABLED || MBEDTLS_MAC_SHA512_ENABLED
+	depends on MBEDTLS_SHA256 || MBEDTLS_SHA384 || MBEDTLS_SHA512
 	default y if MBEDTLS_ZEPHYR_ENTROPY
 
 config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
@@ -502,7 +486,7 @@ config MBEDTLS_PSA_CRYPTO_CLIENT
 config MBEDTLS_LMS
 	bool "Support LMS signature schemes"
 	depends on MBEDTLS_PSA_CRYPTO_CLIENT
-	depends on MBEDTLS_HASH_SHA256_ENABLED
+	depends on MBEDTLS_SHA256
 	select PSA_WANT_ALG_SHA_256
 
 config MBEDTLS_SSL_DTLS_CONNECTION_ID
