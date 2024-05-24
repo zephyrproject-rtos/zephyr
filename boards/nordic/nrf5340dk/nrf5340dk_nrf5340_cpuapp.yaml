@@ -15,6 +15,7 @@ supported:
   - pwm
   - watchdog
   - usb_device
+  - usbd
   - netif:openthread
   - gpio
   - spi

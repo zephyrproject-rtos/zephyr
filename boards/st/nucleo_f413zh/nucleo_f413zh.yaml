@@ -17,5 +17,6 @@ supported:
   - spi
   - gpio
   - usb_device
+  - usbd
   - counter
 vendor: st
