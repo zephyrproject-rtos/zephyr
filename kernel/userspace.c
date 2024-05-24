@@ -1014,4 +1014,4 @@ static uintptr_t handler_no_syscall(uintptr_t arg1, uintptr_t arg2,
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 
-#include <syscall_dispatch.c>
+#include <zephyr/syscall_dispatch.c>

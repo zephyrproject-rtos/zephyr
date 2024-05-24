@@ -147,7 +147,7 @@ the project out directory under ``include/generated/``:
   of the API in uppercase, prefixed with ``K_SYSCALL_``.
 
 * An entry for the system call is created in the dispatch table
-  ``_k_syscall_table``, expressed in ``include/generated/syscall_dispatch.c``
+  ``_k_syscall_table``, expressed in ``include/generated/zephyr/syscall_dispatch.c``
 
   * This table only contains syscalls where their corresponding
     prototypes are declared in header files when
