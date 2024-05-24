@@ -1,0 +1,8 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Deprecated compatible for NXP LPTMR
+
+compatible: "nxp,kinetis-lptmr"
+
+include: nxp,lptmr.yaml
