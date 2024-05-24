@@ -21,7 +21,7 @@ tests:
         - "The device is put in USB mass storage mode."
   sample.usb_device_next.mass_ram_none:
     min_ram: 128
-    depends_on: usb_device
+    depends_on: usbd
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf54h20dk/nrf54h20/cpuapp
@@ -89,7 +89,7 @@ tests:
     min_ram: 32
     modules:
       - fatfs
-    depends_on: usb_device
+    depends_on: usbd
     filter: dt_compat_enabled("nordic,qspi-nor")
     platform_allow:
       - nrf52840dk/nrf52840

@@ -1,16 +1,17 @@
 sample:
   name: USB support shell sample
+common:
+  depends_on:
+    - usbd
 tests:
   sample.usbd.shell:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf54h20dk/nrf54h20/cpuapp
       - frdm_k64f
-    depends_on: usb_device
     harness: keyboard
     tags: usb
   sample.usbh.shell:
-    depends_on: usb_device
     tags:
       - usb
       - shield
