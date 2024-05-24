@@ -285,7 +285,7 @@ static uint16_t dap_swj_pins(struct dap_context *const ctx,
 	uint8_t value = request[0];
 	uint8_t select = request[1];
 	uint32_t wait = sys_get_le32(&request[2]);
-	int64_t timeout_ticks;
+	k_timepoint_t end = sys_timepoint_calc(K_USEC(wait));
 	uint8_t state;
 
 	if (!atomic_test_bit(&ctx->state, DAP_STATE_CONNECTED)) {
@@ -299,8 +299,6 @@ static uint16_t dap_swj_pins(struct dap_context *const ctx,
 		api->swdp_set_pins(ctx->swdp_dev, select, value);
 	}
 
-	timeout_ticks = k_uptime_ticks() + (CONFIG_SYS_CLOCK_TICKS_PER_SEC / 1000000 * wait);
-
 	do {
 		api->swdp_get_pins(ctx->swdp_dev, &state);
 		LOG_INF("select 0x%02x, value 0x%02x, wait %u, state 0x%02x",
@@ -309,7 +307,7 @@ static uint16_t dap_swj_pins(struct dap_context *const ctx,
 			LOG_DBG("swdp_get_pins succeeded before timeout");
 			break;
 		}
-	} while (k_uptime_ticks() - timeout_ticks > 0);
+	} while (!sys_timepoint_expired(end));
 
 	response[0] = state;
 
