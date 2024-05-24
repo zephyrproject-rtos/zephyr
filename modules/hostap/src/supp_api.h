@@ -165,6 +165,20 @@ int supplicant_channel(const struct device *dev, struct wifi_channel_info *chann
  */
 int supplicant_btm_query(const struct device *dev, uint8_t reason);
 
+/** Flush PMKSA cache entries
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_pmksa_flush(const struct device *dev);
+
+/** Get Wi-Fi connection paramters recently used
+ *
+ * @return pointer to the Wi-Fi connection paramters
+ */
+struct wifi_connect_req_params *supplicant_get_wifi_conn_params(void);
+
 #ifdef CONFIG_AP
 /**
  * @brief Set Wi-Fi AP configuration
