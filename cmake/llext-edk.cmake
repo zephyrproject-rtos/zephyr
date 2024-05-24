@@ -174,7 +174,7 @@ list(JOIN imacros_gen_make " " imacros_gen_str)
 file(APPEND ${llext_edk}/Makefile.cflags "\n\nLLEXT_GENERATED_IMACROS_CFLAGS = ${imacros_gen_str}")
 
 # Generate flags for CMake
-list(APPEND all_flags_cmake ${base_flags_cmake} ${imacros_gen_make} ${all_inc_flags_cmake})
+list(APPEND all_flags_cmake ${base_flags_cmake} ${imacros_gen_cmake} ${all_inc_flags_cmake})
 file(WRITE ${llext_edk}/cmake.cflags "set(LLEXT_CFLAGS ${all_flags_cmake})")
 
 file(APPEND ${llext_edk}/cmake.cflags "\n\nset(LLEXT_ALL_INCLUDE_CFLAGS ${all_inc_flags_cmake})")
