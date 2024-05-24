@@ -3524,6 +3524,20 @@ Microchip MEC Platforms:
   labels:
     - "platform: Microchip MEC"
 
+Microchip RISC-V Platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - kgugala
+    - tgorochowik
+  files:
+    - boards/microchip/m2gl025_miv/
+    - boards/microchip/mpfs_icicle/
+    - dts/riscv/microchip/
+    - soc/microchip/miv/
+  labels:
+    - "platform: Microchip RISC-V"
+
 Microchip SAM Platforms:
   status: maintained
   maintainers:
