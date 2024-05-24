@@ -17,6 +17,5 @@ supported:
   - spi
   - uart
   - watchdog
-  - usb_cdc
   - usb_device
   - netif:openthread
