@@ -621,7 +621,7 @@ static int uart_stm32_config_get(const struct device *dev,
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 typedef void (*poll_in_fn)(
-	const struct uart_stm32_config *config,
+	USART_TypeDef *usart,
 	void *in);
 
 static int uart_stm32_poll_in_visitor(const struct device *dev, void *in, poll_in_fn get_fn)
@@ -642,13 +642,13 @@ static int uart_stm32_poll_in_visitor(const struct device *dev, void *in, poll_i
 		return -1;
 	}
 
-	get_fn(config, in);
+	get_fn(usart, in);
 
 	return 0;
 }
 
 typedef void (*poll_out_fn)(
-	const struct uart_stm32_config *config, void *out);
+	USART_TypeDef *usart, void *out);
 
 static void uart_stm32_poll_out_visitor(const struct device *dev, void *out, poll_out_fn set_fn)
 {
@@ -694,18 +694,18 @@ static void uart_stm32_poll_out_visitor(const struct device *dev, void *out, pol
 	}
 #endif /* CONFIG_PM */
 
-	set_fn(config, out);
+	set_fn(usart, out);
 	irq_unlock(key);
 }
 
-static void poll_in_u8(const struct uart_stm32_config *config, void *in)
+static void poll_in_u8(USART_TypeDef *usart, void *in)
 {
-	*((unsigned char *)in) = (unsigned char)LL_USART_ReceiveData8(config->usart);
+	*((unsigned char *)in) = (unsigned char)LL_USART_ReceiveData8(usart);
 }
 
-static void poll_out_u8(const struct uart_stm32_config *config, void *out)
+static void poll_out_u8(USART_TypeDef *usart, void *out)
 {
-	LL_USART_TransmitData8(config->usart, *((uint8_t *)out));
+	LL_USART_TransmitData8(usart, *((uint8_t *)out));
 }
 
 static int uart_stm32_poll_in(const struct device *dev, unsigned char *c)
@@ -720,14 +720,14 @@ static void uart_stm32_poll_out(const struct device *dev, unsigned char c)
 
 #ifdef CONFIG_UART_WIDE_DATA
 
-static void poll_out_u9(const struct uart_stm32_config *config, void *out)
+static void poll_out_u9(USART_TypeDef *usart, void *out)
 {
-	LL_USART_TransmitData9(config->usart, *((uint16_t *)out));
+	LL_USART_TransmitData9(usart, *((uint16_t *)out));
 }
 
-static void poll_in_u9(const struct uart_stm32_config *config, void *in)
+static void poll_in_u9(USART_TypeDef *usart, void *in)
 {
-	*((uint16_t *)in) = LL_USART_ReceiveData9(config->usart);
+	*((uint16_t *)in) = LL_USART_ReceiveData9(usart);
 }
 
 static int uart_stm32_poll_in_u16(const struct device *dev, uint16_t *in_u16)
@@ -812,7 +812,7 @@ static inline void __uart_stm32_get_clock(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-typedef void (*fifo_fill_fn)(const struct uart_stm32_config *config, const void *tx_data,
+typedef void (*fifo_fill_fn)(USART_TypeDef *usart, const void *tx_data,
 			     const uint8_t offset);
 
 static int uart_stm32_fifo_fill_visitor(const struct device *dev, const void *tx_data, int size,
@@ -834,7 +834,7 @@ static int uart_stm32_fifo_fill_visitor(const struct device *dev, const void *tx
 		/* TXE flag will be cleared with byte write to DR|RDR register */
 
 		/* Send a character */
-		fill_fn(config, tx_data, num_tx);
+		fill_fn(usart, tx_data, num_tx);
 		num_tx++;
 	}
 
@@ -843,12 +843,12 @@ static int uart_stm32_fifo_fill_visitor(const struct device *dev, const void *tx
 	return num_tx;
 }
 
-static void fifo_fill_with_u8(const struct uart_stm32_config *config,
+static void fifo_fill_with_u8(USART_TypeDef *usart,
 					 const void *tx_data, const uint8_t offset)
 {
 	const uint8_t *data = (const uint8_t *)tx_data;
 	/* Send a character (8bit) */
-	LL_USART_TransmitData8(config->usart, data[offset]);
+	LL_USART_TransmitData8(usart, data[offset]);
 }
 
 static int uart_stm32_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
@@ -861,7 +861,7 @@ static int uart_stm32_fifo_fill(const struct device *dev, const uint8_t *tx_data
 					    fifo_fill_with_u8);
 }
 
-typedef void (*fifo_read_fn)(const struct uart_stm32_config *config, void *rx_data,
+typedef void (*fifo_read_fn)(USART_TypeDef *usart, void *rx_data,
 			     const uint8_t offset);
 
 static int uart_stm32_fifo_read_visitor(const struct device *dev, void *rx_data, const int size,
@@ -874,7 +874,7 @@ static int uart_stm32_fifo_read_visitor(const struct device *dev, void *rx_data,
 	while ((size - num_rx > 0) && LL_USART_IsActiveFlag_RXNE(usart)) {
 		/* RXNE flag will be cleared upon read from DR|RDR register */
 
-		read_fn(config, rx_data, num_rx);
+		read_fn(usart, rx_data, num_rx);
 		num_rx++;
 
 		/* Clear overrun error flag */
@@ -890,12 +890,12 @@ static int uart_stm32_fifo_read_visitor(const struct device *dev, void *rx_data,
 	return num_rx;
 }
 
-static void fifo_read_with_u8(const struct uart_stm32_config *config, void *rx_data,
+static void fifo_read_with_u8(USART_TypeDef *usart, void *rx_data,
 					 const uint8_t offset)
 {
 	uint8_t *data = (uint8_t *)rx_data;
 
-	data[offset] = LL_USART_ReceiveData8(config->usart);
+	data[offset] = LL_USART_ReceiveData8(usart);
 }
 
 static int uart_stm32_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
@@ -910,13 +910,13 @@ static int uart_stm32_fifo_read(const struct device *dev, uint8_t *rx_data, cons
 
 #ifdef CONFIG_UART_WIDE_DATA
 
-static void fifo_fill_with_u16(const struct uart_stm32_config *config,
+static void fifo_fill_with_u16(USART_TypeDef *usart,
 					  const void *tx_data, const uint8_t offset)
 {
 	const uint16_t *data = (const uint16_t *)tx_data;
 
 	/* Send a character (9bit) */
-	LL_USART_TransmitData9(config->usart, data[offset]);
+	LL_USART_TransmitData9(usart, data[offset]);
 }
 
 static int uart_stm32_fifo_fill_u16(const struct device *dev, const uint16_t *tx_data, int size)
@@ -929,12 +929,12 @@ static int uart_stm32_fifo_fill_u16(const struct device *dev, const uint16_t *tx
 					    fifo_fill_with_u16);
 }
 
-static void fifo_read_with_u16(const struct uart_stm32_config *config, void *rx_data,
+static void fifo_read_with_u16(USART_TypeDef *usart, void *rx_data,
 					  const uint8_t offset)
 {
 	uint16_t *data = (uint16_t *)rx_data;
 
-	data[offset] = LL_USART_ReceiveData9(config->usart);
+	data[offset] = LL_USART_ReceiveData9(usart);
 }
 
 static int uart_stm32_fifo_read_u16(const struct device *dev, uint16_t *rx_data, const int size)
