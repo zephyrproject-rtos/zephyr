@@ -10,6 +10,5 @@ config SOC_SERIES_NPCM4
 	select SOC_FAMILY_NPCM
 	select CORTEX_M_SYSTICK
 	select CPU_HAS_ARM_MPU
-	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	help
 	  Enable support for Nuvoton NPCM4 series
