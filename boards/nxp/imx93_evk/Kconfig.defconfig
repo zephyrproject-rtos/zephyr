@@ -1,0 +1,14 @@
+# MIMX93 EVK board defconfig
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_IMX93_EVK_MIMX9352_A55
+
+if CAN
+# CAN Phy must be enabled after mfd0 gpio expander is ready
+config CAN_TRANSCEIVER_INIT_PRIORITY
+	default 75
+endif
+
+endif # BOARD_IMX93_EVK_MIMX9352_A55
