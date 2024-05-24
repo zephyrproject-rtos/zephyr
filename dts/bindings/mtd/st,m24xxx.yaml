@@ -1,0 +1,8 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST M24xxx I2C EEPROM
+
+compatible: "st,m24xxx"
+
+include: ["atmel,at24.yaml"]
