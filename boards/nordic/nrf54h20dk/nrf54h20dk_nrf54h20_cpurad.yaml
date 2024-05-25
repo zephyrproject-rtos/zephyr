@@ -12,7 +12,6 @@ toolchain:
 ram: 192
 flash: 256
 supported:
-  - counter
   - gpio
   - pwm
   - spi
