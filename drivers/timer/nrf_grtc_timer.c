@@ -29,6 +29,12 @@
 
 #define CHAN_COUNT     NRFX_GRTC_CONFIG_NUM_OF_CC_CHANNELS
 #define EXT_CHAN_COUNT (CHAN_COUNT - 1)
+/* The reset value of waketime is 1, which doesn't seem to work.
+ * It's being looked into, but for the time being use 4.
+ * Timeout must always be higher than waketime, so setting that to 5.
+ */
+#define WAKETIME       (4)
+#define TIMEOUT        (WAKETIME + 1)
 
 #ifndef GRTC_SYSCOUNTERL_VALUE_Msk
 #define GRTC_SYSCOUNTERL_VALUE_Msk GRTC_SYSCOUNTER_SYSCOUNTERL_VALUE_Msk
@@ -48,6 +54,9 @@
 	(((COUNTER_SPAN / CYC_PER_TICK) > INT_MAX) ? INT_MAX : (COUNTER_SPAN / CYC_PER_TICK))
 
 #define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
+
+/* The maximum SYSCOUNTERVALID settling time equals 1x32k cycles + 20x1MHz cycles. */
+#define GRTC_SYSCOUNTERVALID_SETTLE_MAX_TIME_US 51
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = DT_IRQN(GRTC_NODE);
@@ -69,6 +78,36 @@ static nrfx_grtc_channel_t system_clock_channel_data = {
 	__ASSERT_NO_MSG((NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK & (1UL << (chan))) &&           \
 			((chan) != system_clock_channel_data.channel))
 
+static inline void grtc_active_set(void)
+{
+#if defined(NRF_GRTC_HAS_SYSCOUNTER_ARRAY) && (NRF_GRTC_HAS_SYSCOUNTER_ARRAY == 1)
+	nrfy_grtc_sys_counter_active_set(NRF_GRTC, true);
+	while (!nrfy_grtc_sys_conter_ready_check(NRF_GRTC)) {
+	}
+#else
+	nrfy_grtc_sys_counter_active_state_request_set(NRF_GRTC, true);
+	k_busy_wait(GRTC_SYSCOUNTERVALID_SETTLE_MAX_TIME_US);
+#endif
+}
+
+static inline void grtc_wakeup(void)
+{
+	if (IS_ENABLED(CONFIG_NRF_GRTC_SLEEP_ALLOWED)) {
+		grtc_active_set();
+	}
+}
+
+static inline void grtc_sleep(void)
+{
+	if (IS_ENABLED(CONFIG_NRF_GRTC_SLEEP_ALLOWED)) {
+#if defined(NRF_GRTC_HAS_SYSCOUNTER_ARRAY) && (NRF_GRTC_HAS_SYSCOUNTER_ARRAY == 1)
+		nrfy_grtc_sys_counter_active_set(NRF_GRTC, false);
+#else
+		nrfy_grtc_sys_counter_active_state_request_set(NRF_GRTC, false);
+#endif
+	}
+}
+
 static inline uint64_t counter_sub(uint64_t a, uint64_t b)
 {
 	return (a - b);
@@ -77,7 +116,10 @@ static inline uint64_t counter_sub(uint64_t a, uint64_t b)
 static inline uint64_t counter(void)
 {
 	uint64_t now;
+
+	grtc_wakeup();
 	nrfx_grtc_syscounter_get(&now);
+	grtc_sleep();
 	return now;
 }
 
@@ -99,8 +141,10 @@ static inline uint64_t get_comparator(uint32_t chan)
 static void system_timeout_set(uint64_t value)
 {
 	if (value <= NRF_GRTC_SYSCOUNTER_CCADD_MASK) {
+		grtc_wakeup();
 		nrfx_grtc_syscounter_cc_relative_set(&system_clock_channel_data, value, true,
 						     NRFX_GRTC_CC_RELATIVE_SYSCOUNTER);
+		grtc_sleep();
 	} else {
 		nrfx_grtc_syscounter_cc_absolute_set(&system_clock_channel_data, value + counter(),
 						     true);
@@ -329,7 +373,6 @@ int z_nrf_grtc_timer_capture_read(int32_t chan, uint64_t *captured_time)
 	 */
 
 	uint64_t capt_time;
-	nrfx_err_t result;
 
 	IS_CHANNEL_ALLOWED_ASSERT(chan);
 
@@ -340,10 +383,8 @@ int z_nrf_grtc_timer_capture_read(int32_t chan, uint64_t *captured_time)
 		 */
 		return -EBUSY;
 	}
-	result = nrfx_grtc_syscounter_cc_value_read(chan, &capt_time);
-	if (result != NRFX_SUCCESS) {
-		return -EPERM;
-	}
+
+	capt_time = nrfy_grtc_sys_counter_cc_get(NRF_GRTC, chan);
 
 	__ASSERT_NO_MSG(capt_time < COUNTER_SPAN);
 
@@ -358,22 +399,16 @@ int z_nrf_grtc_wakeup_prepare(uint64_t wake_time_us)
 	nrfx_err_t err_code;
 	static uint8_t systemoff_channel;
 	uint64_t now = counter();
-	nrfx_grtc_sleep_config_t sleep_cfg;
 	/* Minimum time that ensures valid execution of system-off procedure. */
-	uint32_t minimum_latency_us;
+	uint32_t minimum_latency_us = nrfy_grtc_waketime_get(NRF_GRTC) +
+				      nrfy_grtc_timeout_get(NRF_GRTC) +
+				      CONFIG_NRF_GRTC_SLEEP_MINIMUM_LATENCY;
 	uint32_t chan;
 	int ret;
-
-	nrfx_grtc_sleep_configuration_get(&sleep_cfg);
-	minimum_latency_us = (sleep_cfg.waketime + sleep_cfg.timeout) * USEC_PER_SEC / 32768 +
-			     CONFIG_NRF_GRTC_SYSCOUNTER_SLEEP_MINIMUM_LATENCY;
-	sleep_cfg.auto_mode = false;
-	nrfx_grtc_sleep_configure(&sleep_cfg);
 
 	if (minimum_latency_us > wake_time_us) {
 		return -EINVAL;
 	}
-
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	err_code = nrfx_grtc_channel_alloc(&systemoff_channel);
@@ -382,9 +417,7 @@ int z_nrf_grtc_wakeup_prepare(uint64_t wake_time_us)
 		return -ENOMEM;
 	}
 	(void)nrfx_grtc_syscounter_cc_int_disable(systemoff_channel);
-	ret = compare_set(systemoff_channel,
-			  now + wake_time_us * sys_clock_hw_cycles_per_sec() / USEC_PER_SEC, NULL,
-			  NULL);
+	ret = compare_set(systemoff_channel, now + wake_time_us, NULL, NULL);
 	if (ret < 0) {
 		k_spin_unlock(&lock, key);
 		return ret;
@@ -400,7 +433,7 @@ int z_nrf_grtc_wakeup_prepare(uint64_t wake_time_us)
 	}
 
 	/* Make sure that wake_time_us was not triggered yet. */
-	if (nrfx_grtc_syscounter_compare_event_check(systemoff_channel)) {
+	if (nrfy_grtc_sys_counter_compare_event_check(NRF_GRTC, systemoff_channel)) {
 		k_spin_unlock(&lock, key);
 		return -EINVAL;
 	}
@@ -411,7 +444,7 @@ int z_nrf_grtc_wakeup_prepare(uint64_t wake_time_us)
 		MAX_CC_LATCH_WAIT_TIME_US;
 	k_busy_wait(wait_time);
 #if NRF_GRTC_HAS_CLKSEL
-	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFXO);
+	nrfy_grtc_clksel_set(NRF_GRTC, NRF_GRTC_CLKSEL_LFXO);
 #endif
 	k_spin_unlock(&lock, key);
 	return 0;
@@ -452,8 +485,15 @@ static int sys_clock_driver_init(void)
 #if defined(CONFIG_NRF_GRTC_TIMER_CLOCK_MANAGEMENT) &&                                             \
 	(defined(NRF_GRTC_HAS_CLKSEL) && (NRF_GRTC_HAS_CLKSEL == 1))
 	/* Use System LFCLK as the low-frequency clock source. */
-	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFCLK);
+	nrfy_grtc_clksel_set(NRF_GRTC, NRF_GRTC_CLKSEL_LFCLK);
 #endif
+
+#if defined(CONFIG_NRF_GRTC_START_SYSCOUNTER)
+	/* SYSCOUNTER needs to be turned off before initialization. */
+	nrfy_grtc_sys_counter_set(NRF_GRTC, false);
+	nrfy_grtc_timeout_set(NRF_GRTC, TIMEOUT);
+	nrfy_grtc_waketime_set(NRF_GRTC, WAKETIME);
+#endif /* CONFIG_NRF_GRTC_START_SYSCOUNTER */
 
 	IRQ_CONNECT(DT_IRQN(GRTC_NODE), DT_IRQ(GRTC_NODE, priority), nrfx_isr,
 		    nrfx_grtc_irq_handler, 0);
@@ -468,12 +508,19 @@ static int sys_clock_driver_init(void)
 	if (err_code != NRFX_SUCCESS) {
 		return err_code == NRFX_ERROR_NO_MEM ? -ENOMEM : -EPERM;
 	}
+	if (IS_ENABLED(CONFIG_NRF_GRTC_SLEEP_ALLOWED)) {
+		nrfy_grtc_sys_counter_auto_mode_set(NRF_GRTC, false);
+	}
 #else
 	err_code = nrfx_grtc_channel_alloc(&system_clock_channel_data.channel);
 	if (err_code != NRFX_SUCCESS) {
 		return -ENOMEM;
 	}
 #endif /* CONFIG_NRF_GRTC_START_SYSCOUNTER */
+
+	if (!IS_ENABLED(CONFIG_NRF_GRTC_SLEEP_ALLOWED)) {
+		grtc_active_set();
+	}
 
 	int_mask = NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK;
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
