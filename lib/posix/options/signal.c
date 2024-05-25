@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <stdio.h>
 
+#include <zephyr/posix/pthread.h>
 #include <zephyr/posix/signal.h>
 
 #define SIGNO_WORD_IDX(_signo) (signo / BITS_PER_LONG)
