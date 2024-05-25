@@ -382,6 +382,9 @@ config SYMTAB
 config EXCEPTION_STACK_TRACE
 	bool "Attempt to print stack traces upon exceptions"
 	default y
+	depends on (X86_EXCEPTION_STACK_TRACE || \
+		    ARM64_EXCEPTION_STACK_TRACE || \
+		    RISCV_EXCEPTION_STACK_TRACE)
 	help
 	  If the architecture fatal handling code supports it, attempt to
 	  print a stack trace of function memory addresses when an
