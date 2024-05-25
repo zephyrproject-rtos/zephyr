@@ -7,7 +7,7 @@ project(smf)
 target_sources(app PRIVATE src/main.c)
 
 if(CONFIG_SMF_INITIAL_TRANSITION)
-  target_sources(app PRIVATE src/test_lib_initial_transitions_smf.c)
+  target_sources(app PRIVATE src/test_lib_self_transition_smf.c)
 elseif(CONFIG_SMF_ANCESTOR_SUPPORT)
   target_sources(app PRIVATE src/test_lib_hierarchical_smf.c
     src/test_lib_hierarchical_5_ancestor_smf.c)

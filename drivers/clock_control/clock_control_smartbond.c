@@ -10,7 +10,9 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/smartbond_clock_control.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <da1469x_clock.h>
+#include <da1469x_qspic.h>
 
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
@@ -30,12 +32,15 @@ struct lpc_clock_state {
 	.rc32k_freq = DT_PROP(DT_NODELABEL(rc32k), clock_frequency),
 };
 
-#define CALIBRATION_INTERVAL (DT_NODE_HAS_STATUS(DT_NODELABEL(rcx), okay) ?	\
-			DT_PROP(DT_NODELABEL(rcx), calibration_interval) :	\
-			DT_PROP(DT_NODELABEL(rc32k), calibration_interval))
+#define CALIBRATION_INTERVAL CONFIG_SMARTBOND_LP_OSC_CALIBRATION_INTERVAL
+
+#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+extern int z_clock_hw_cycles_per_sec;
+#endif
 
 static void calibration_work_cb(struct k_work *work);
 static void xtal32k_settle_work_cb(struct k_work *work);
+static enum smartbond_clock smartbond_source_clock(enum smartbond_clock clk);
 
 static K_WORK_DELAYABLE_DEFINE(calibration_work, calibration_work_cb);
 static K_WORK_DELAYABLE_DEFINE(xtal32k_settle_work, xtal32k_settle_work_cb);
@@ -46,19 +51,30 @@ static void calibration_work_cb(struct k_work *work)
 		da1469x_clock_lp_rcx_calibrate();
 		lpc_clock_state.rcx_ready = true;
 		lpc_clock_state.rcx_freq = da1469x_clock_lp_rcx_freq_get();
-		k_work_schedule(&calibration_work,
-				K_MSEC(1000 * CALIBRATION_INTERVAL));
 		LOG_DBG("RCX calibration done, RCX freq: %d",
 			(int)lpc_clock_state.rcx_freq);
-	} else if (lpc_clock_state.rc32k_started) {
+	}
+	if (lpc_clock_state.rc32k_started) {
 		da1469x_clock_lp_rc32k_calibrate();
 		lpc_clock_state.rc32k_ready = true;
 		lpc_clock_state.rc32k_freq = da1469x_clock_lp_rc32k_freq_get();
-		k_work_schedule(&calibration_work,
-				K_MSEC(1000 * CALIBRATION_INTERVAL));
 		LOG_DBG("RC32K calibration done, RC32K freq: %d",
 			(int)lpc_clock_state.rc32k_freq);
 	}
+	k_work_schedule(&calibration_work,
+			K_MSEC(1000 * CALIBRATION_INTERVAL));
+#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	switch (smartbond_source_clock(SMARTBOND_CLK_LP_CLK)) {
+	case SMARTBOND_CLK_RCX:
+		z_clock_hw_cycles_per_sec = lpc_clock_state.rcx_freq;
+		break;
+	case SMARTBOND_CLK_RC32K:
+		z_clock_hw_cycles_per_sec = lpc_clock_state.rc32k_freq;
+		break;
+	default:
+		break;
+	}
+#endif
 }
 
 static void xtal32k_settle_work_cb(struct k_work *work)
@@ -75,7 +91,7 @@ static void smartbond_start_rc32k(void)
 		CRG_TOP->CLK_RC32K_REG |= CRG_TOP_CLK_RC32K_REG_RC32K_ENABLE_Msk;
 	}
 	lpc_clock_state.rc32k_started = true;
-	if (!lpc_clock_state.rc32k_ready && (CALIBRATION_INTERVAL > 0)) {
+	if (!lpc_clock_state.rc32k_ready) {
 		if (!k_work_is_pending(&calibration_work.work)) {
 			k_work_schedule(&calibration_work,
 					K_MSEC(1000 * CALIBRATION_INTERVAL));
@@ -90,7 +106,7 @@ static void smartbond_start_rcx(void)
 		da1469x_clock_lp_rcx_enable();
 		lpc_clock_state.rcx_started = true;
 	}
-	if (!lpc_clock_state.rcx_ready && (CALIBRATION_INTERVAL > 0)) {
+	if (!lpc_clock_state.rcx_ready) {
 		if (!k_work_is_pending(&calibration_work.work)) {
 			k_work_schedule(&calibration_work,
 					K_MSEC(1000 * CALIBRATION_INTERVAL));
@@ -161,6 +177,8 @@ static inline int smartbond_clock_control_off(const struct device *dev,
 
 	switch (clk) {
 	case SMARTBOND_CLK_RC32K:
+		BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(rc32k), okay),
+				"RC32K is not allowed to be turned off");
 		if (((CRG_TOP->CLK_CTRL_REG & CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Msk) >>
 			   CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Pos) != 0) {
 			CRG_TOP->CLK_RC32K_REG &= ~CRG_TOP_CLK_RC32K_REG_RC32K_ENABLE_Msk;
@@ -305,30 +323,6 @@ static void smartbond_clock_control_off_by_ord(const struct device *dev,
 	smartbond_clock_control_off(dev, (clock_control_subsys_rate_t)clk);
 }
 
-static void
-qspi_set_read_pipe_delay(uint8_t delay)
-{
-	QSPIC->QSPIC_CTRLMODE_REG =
-		(QSPIC->QSPIC_CTRLMODE_REG & ~QSPIC_QSPIC_CTRLMODE_REG_QSPIC_PCLK_MD_Msk) |
-		(delay << QSPIC_QSPIC_CTRLMODE_REG_QSPIC_PCLK_MD_Pos) |
-		QSPIC_QSPIC_CTRLMODE_REG_QSPIC_RPIPE_EN_Msk;
-}
-
-static void
-qspi_set_cs_delay(uint32_t sys_clock_freq, uint32_t read_delay_ns, uint32_t erase_delay_ns)
-{
-	sys_clock_freq /= 100000;
-	uint32_t read_delay_cyc = ((read_delay_ns * sys_clock_freq) + 9999) / 10000;
-	uint32_t erase_delay_cyc = ((erase_delay_ns * sys_clock_freq) + 9999) / 10000;
-
-	QSPIC->QSPIC_BURSTCMDB_REG =
-		(QSPIC->QSPIC_BURSTCMDB_REG & ~QSPIC_QSPIC_BURSTCMDB_REG_QSPIC_CS_HIGH_MIN_Msk) |
-		read_delay_cyc << QSPIC_QSPIC_BURSTCMDB_REG_QSPIC_CS_HIGH_MIN_Pos;
-	QSPIC->QSPIC_ERASECMDB_REG =
-		(QSPIC->QSPIC_ERASECMDB_REG & ~QSPIC_QSPIC_ERASECMDB_REG_QSPIC_ERS_CS_HI_Msk) |
-		(erase_delay_cyc << QSPIC_QSPIC_ERASECMDB_REG_QSPIC_ERS_CS_HI_Pos);
-}
-
 int z_smartbond_select_lp_clk(enum smartbond_clock lp_clk)
 {
 	int rc = 0;
@@ -350,10 +344,50 @@ int z_smartbond_select_lp_clk(enum smartbond_clock lp_clk)
 	}
 
 	if (rc == 0) {
+#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+		switch (lp_clk) {
+		case SMARTBOND_CLK_RCX:
+			z_clock_hw_cycles_per_sec = lpc_clock_state.rcx_freq;
+			break;
+		case SMARTBOND_CLK_RC32K:
+			z_clock_hw_cycles_per_sec = lpc_clock_state.rc32k_freq;
+			break;
+		default:
+			z_clock_hw_cycles_per_sec = 32768;
+			break;
+		}
+#endif
 		CRG_TOP->CLK_CTRL_REG = (CRG_TOP->CLK_CTRL_REG & ~clk_sel_msk) | clk_sel;
 	}
 
 	return rc;
+}
+
+static void smartbond_clock_control_update_memory_settings(uint32_t sys_clock_freq)
+{
+	if (sys_clock_freq > 32000000) {
+		da1469x_qspi_set_read_pipe_delay(QSPIC_ID, 7);
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(memc), okay)
+		da1469x_qspi_set_read_pipe_delay(QSPIC2_ID, 7);
+#endif
+	} else {
+		da1469x_qspi_set_read_pipe_delay(QSPIC_ID, 2);
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(memc), okay)
+		da1469x_qspi_set_read_pipe_delay(QSPIC2_ID, 2);
+#endif
+	}
+
+	da1469x_qspi_set_cs_delay(QSPIC_ID, SystemCoreClock,
+		DT_PROP(DT_NODELABEL(flash_controller), read_cs_idle_delay),
+		DT_PROP(DT_NODELABEL(flash_controller), erase_cs_idle_delay));
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(memc), okay)
+	da1469x_qspi_set_cs_delay(QSPIC2_ID, SystemCoreClock,
+		DT_PROP(DT_NODELABEL(memc), read_cs_idle_min_ns),
+		DT_PROP_OR(DT_NODELABEL(memc), erase_cs_idle_min_ns, 0));
+#if DT_PROP(DT_NODELABEL(memc), is_ram)
+	da1469x_qspi_set_tcem(SystemCoreClock, DT_PROP(DT_NODELABEL(memc), tcem_max_us));
+#endif
+#endif
 }
 
 int z_smartbond_select_sys_clk(enum smartbond_clock sys_clk)
@@ -370,12 +404,7 @@ int z_smartbond_select_sys_clk(enum smartbond_clock sys_clk)
 
 	/* When PLL is selected as system clock qspi read pipe delay must be set to 7 */
 	if (sys_clock_freq > 32000000) {
-		qspi_set_read_pipe_delay(7);
-		qspi_set_cs_delay(SystemCoreClock,
-				  DT_PROP(DT_NODELABEL(flash_controller),
-					  read_cs_idle_delay),
-				  DT_PROP(DT_NODELABEL(flash_controller),
-					  erase_cs_idle_delay));
+		smartbond_clock_control_update_memory_settings(sys_clock_freq);
 	}
 
 	if (sys_clk == SMARTBOND_CLK_RC32M) {
@@ -391,12 +420,7 @@ int z_smartbond_select_sys_clk(enum smartbond_clock sys_clk)
 
 	/* When switching back from PLL to 32MHz read pipe delay may be set to 2 */
 	if (SystemCoreClock <= 32000000) {
-		qspi_set_read_pipe_delay(2);
-		qspi_set_cs_delay(SystemCoreClock,
-				  DT_PROP(DT_NODELABEL(flash_controller),
-					  read_cs_idle_delay),
-				  DT_PROP(DT_NODELABEL(flash_controller),
-					  erase_cs_idle_delay));
+		smartbond_clock_control_update_memory_settings(SystemCoreClock);
 	}
 
 	return 0;
@@ -419,6 +443,11 @@ int smartbond_clocks_init(const struct device *dev)
 	enum smartbond_clock sys_clk;
 
 	ARG_UNUSED(dev);
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(memc), okay)
+	/* Make sure QSPIC2 is enabled */
+	da1469x_clock_amba_enable(CRG_TOP_CLK_AMBA_REG_QSPI2_ENABLE_Msk);
+#endif
 
 #define ENABLE_OSC(clock) smartbond_clock_control_on_by_ord(dev, DT_DEP_ORD(clock))
 #define DISABLE_OSC(clock) if (DT_NODE_HAS_STATUS(clock, disabled)) { \
@@ -459,9 +488,36 @@ static struct clock_control_driver_api smartbond_clock_control_api = {
 	.get_rate = smartbond_clock_control_get_rate,
 };
 
+#if CONFIG_PM_DEVICE
+static int smartbond_clocks_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(memc), okay)
+		/* Make sure QSPIC2 is enabled */
+		da1469x_clock_amba_enable(CRG_TOP_CLK_AMBA_REG_QSPI2_ENABLE_Msk);
+#endif
+		/*
+		 * Make sure the flash controller has correct settings as clock restoration
+		 * might have been performed upon waking up.
+		 */
+		smartbond_clock_control_update_memory_settings(SystemCoreClock);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
+
+PM_DEVICE_DT_DEFINE(DT_NODELABEL(osc), smartbond_clocks_pm_action);
+
 DEVICE_DT_DEFINE(DT_NODELABEL(osc),
 		 &smartbond_clocks_init,
-		 NULL,
+		 PM_DEVICE_DT_GET(DT_NODELABEL(osc)),
 		 NULL, NULL,
 		 PRE_KERNEL_1,
 		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY,

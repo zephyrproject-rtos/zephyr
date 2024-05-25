@@ -1,5 +1,5 @@
 identifier: nrf9161dk@0.7.0/nrf9161/ns
-name: nRF9161-DK-NRF9161-Non-Secure
+name: nRF9161-DK-NRF9161-Non-Secure (rev. 0.7.0)
 type: mcu
 arch: arm
 toolchain:

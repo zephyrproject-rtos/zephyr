@@ -22,3 +22,8 @@ zephyr_library_sources_ifdef(
   hfp_hf.c
   at.c
   )
+
+zephyr_library_sources_ifdef(
+  CONFIG_BT_HFP_AG
+  hfp_ag.c
+  )

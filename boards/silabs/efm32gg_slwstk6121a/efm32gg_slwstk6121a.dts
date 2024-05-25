@@ -72,15 +72,15 @@
  * to work properly.
  */
 &i2c0 {
-	location-sda = <GECKO_LOCATION(4) GECKO_PORT_A GECKO_PIN(0)>;
-	location-scl = <GECKO_LOCATION(4) GECKO_PORT_A GECKO_PIN(1)>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 /* Connected to Si7021 sensor on WSTK */
 &i2c1 {
-	location-sda = <GECKO_LOCATION(1) GECKO_PORT_B GECKO_PIN(11)>;
-	location-scl = <GECKO_LOCATION(1) GECKO_PORT_B GECKO_PIN(12)>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 

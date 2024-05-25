@@ -550,7 +550,7 @@ static const struct uart_driver_api uart_rcar_driver_api = {
 		.bus_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),		\
 		.bus_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
-		.is_hscif = DT_NODE_HAS_COMPAT(DT_DRV_INST(n), renesas_rcar_hscif),	\
+		.is_hscif = DT_INST_NODE_HAS_COMPAT(n, renesas_rcar_hscif),	        \
 		IRQ_FUNC_INIT								\
 	}
 

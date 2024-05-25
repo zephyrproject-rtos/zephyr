@@ -289,7 +289,7 @@ static int start_le_scan_legacy(uint8_t scan_type, uint16_t interval, uint16_t w
 	return 0;
 }
 
-static int start_passive_scan(bool fast_scan)
+static int start_host_initiated_scan(bool fast_scan)
 {
 	uint16_t interval, window;
 
@@ -303,13 +303,19 @@ static int start_passive_scan(bool fast_scan)
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-		struct bt_hci_ext_scan_phy scan;
+		struct bt_hci_ext_scan_phy scan_phy_params;
 
-		scan.type = BT_HCI_LE_SCAN_PASSIVE;
-		scan.interval = sys_cpu_to_le16(interval);
-		scan.window = sys_cpu_to_le16(window);
+		scan_phy_params.type = BT_HCI_LE_SCAN_PASSIVE;
+		scan_phy_params.interval = sys_cpu_to_le16(interval);
+		scan_phy_params.window = sys_cpu_to_le16(window);
 
-		return start_le_scan_ext(&scan, NULL, 0);
+		/* Scan on 1M + Coded if the controller supports it*/
+		if (BT_FEAT_LE_PHY_CODED(bt_dev.le.features)) {
+			return start_le_scan_ext(&scan_phy_params, &scan_phy_params, 0);
+		} else {
+			return start_le_scan_ext(&scan_phy_params, NULL, 0);
+		}
+
 	}
 
 	return start_le_scan_legacy(BT_HCI_LE_SCAN_PASSIVE, interval, window);
@@ -318,6 +324,9 @@ static int start_passive_scan(bool fast_scan)
 int bt_le_scan_update(bool fast_scan)
 {
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
+		/* The application has already explicitly started scanning.
+		 * We should keep the scanner running to avoid changing scan parameters.
+		 */
 		return 0;
 	}
 
@@ -335,26 +344,28 @@ int bt_le_scan_update(bool fast_scan)
 
 		/* don't restart scan if we have pending connection */
 		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
-					       BT_CONN_CONNECTING);
+					       BT_CONN_INITIATING);
 		if (conn) {
 			bt_conn_unref(conn);
 			return 0;
 		}
 
 		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
-					       BT_CONN_CONNECTING_SCAN);
+					       BT_CONN_SCAN_BEFORE_INITIATING);
 		if (conn) {
 			atomic_set_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
 
 			bt_conn_unref(conn);
 
-			return start_passive_scan(fast_scan);
+			/* Start/Restart the scanner */
+			return start_host_initiated_scan(fast_scan);
 		}
 	}
 
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 	if (get_pending_per_adv_sync()) {
-		return start_passive_scan(fast_scan);
+		/* Start/Restart the scanner. */
+		return start_host_initiated_scan(fast_scan);
 	}
 #endif
 
@@ -378,7 +389,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 	}
 
 	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, id_addr,
-				       BT_CONN_CONNECTING_SCAN);
+				       BT_CONN_SCAN_BEFORE_INITIATING);
 	if (!conn) {
 		return;
 	}
@@ -393,7 +404,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 		goto failed;
 	}
 
-	bt_conn_set_state(conn, BT_CONN_CONNECTING);
+	bt_conn_set_state(conn, BT_CONN_INITIATING);
 	bt_conn_unref(conn);
 	return;
 
@@ -661,6 +672,19 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			 * Discard this and future reports from the advertiser.
 			 */
 			reassembling_advertiser.state = FRAG_ADV_DISCARDING;
+		}
+
+		if (evt->length > buf->len) {
+			LOG_WRN("Adv report corrupted (wants %u out of %u)", evt->length, buf->len);
+
+			/* Start discarding irrespective of the `more_to_come` flag. We
+			 * assume we may have lost a partial adv report in the truncated
+			 * data.
+			 */
+			reassembling_advertiser.state = FRAG_ADV_DISCARDING;
+			net_buf_reset(buf);
+
+			return;
 		}
 
 		if (reassembling_advertiser.state == FRAG_ADV_DISCARDING) {

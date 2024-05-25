@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2024 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <qemu/virt-riscv.dtsi>
+
+/ {
+	cpus {
+		cpu@0 {
+			riscv,isa = "rv64gc";
+		};
+
+		cpu@1 {
+			riscv,isa = "rv64gc";
+		};
+
+		cpu@2 {
+			riscv,isa = "rv64gc";
+		};
+
+		cpu@3 {
+			riscv,isa = "rv64gc";
+		};
+
+		cpu@4 {
+			riscv,isa = "rv64gc";
+		};
+
+		cpu@5 {
+			riscv,isa = "rv64gc";
+		};
+
+		cpu@6 {
+			riscv,isa = "rv64gc";
+		};
+
+		cpu@7 {
+			riscv,isa = "rv64gc";
+		};
+	};
+};

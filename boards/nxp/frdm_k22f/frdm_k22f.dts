@@ -154,6 +154,7 @@ arduino_spi: &spi0 {
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm0_default>;
 	pinctrl-names = "default";
+	clock-source = "fixed";
 };
 
 &uart1 {

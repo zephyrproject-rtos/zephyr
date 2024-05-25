@@ -8,6 +8,7 @@
 #include <st/f4/stm32f469Xi.dtsi>
 #include <st/f4/stm32f469nihx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "adi_sdp_120pin_connector.dtsi"
 
 / {
 	model = "Analog Devices Inc. SDP-K1 board";

@@ -423,10 +423,11 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 	 * found ticker to change. In this case the iterations have to be
 	 * restarted with the new reference ticks_anchor value.
 	 * Simultaneous continuous scanning on 1M and Coded PHY, alongwith
-	 * directed advertising and one other state/role could expire in quick
-	 * succession, hence have a retry count of 4.
+	 * directed advertising and N other state/role could expire in quick
+	 * succession, hence have a retry count of UINT8_MAX, which is possible
+	 * maximum implementation limit for ticker nodes.
 	 */
-	retry = 4U;
+	retry = UINT8_MAX;
 
 	/* Initialize variable required for iterations to find a free slot */
 	ticker_id = ticker_id_prev = TICKER_NULL;

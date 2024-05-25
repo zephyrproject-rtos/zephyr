@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Lemonbeat GmbH
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <mem.h>
+#include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 
 / {
 	aliases {
@@ -87,6 +89,10 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x0 0x1000>;
 		#clock-cells = <1>;
+		reset: reset {
+			compatible = "nxp,lpc-syscon-reset";
+			#reset-cells = <1>;
+		};
 	};
 
 	iap: flash-controller@34000 {
@@ -178,6 +184,7 @@
 		reg = <0x86000 0x1000>;
 		interrupts = <14 0>;
 		clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 11)>;
 		status = "disabled";
 	};
 
@@ -186,6 +193,7 @@
 		reg = <0x87000 0x1000>;
 		interrupts = <15 0>;
 		clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 12)>;
 		status = "disabled";
 	};
 
@@ -194,6 +202,7 @@
 		reg = <0x88000 0x1000>;
 		interrupts = <16 0>;
 		clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 13)>;
 		status = "disabled";
 	};
 
@@ -202,6 +211,7 @@
 		reg = <0x89000 0x1000>;
 		interrupts = <17 0>;
 		clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 14)>;
 		status = "disabled";
 	};
 
@@ -210,6 +220,7 @@
 		reg = <0x8a000 0x1000>;
 		interrupts = <18 0>;
 		clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 15)>;
 		status = "disabled";
 	};
 
@@ -218,6 +229,7 @@
 		reg = <0x96000 0x1000>;
 		interrupts = <19 0>;
 		clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 16)>;
 		status = "disabled";
 	};
 
@@ -226,6 +238,7 @@
 		reg = <0x97000 0x1000>;
 		interrupts = <20 0>;
 		clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 17)>;
 		status = "disabled";
 	};
 
@@ -234,6 +247,7 @@
 		reg = <0x98000 0x1000>;
 		interrupts = <21 0>;
 		clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 18)>;
 		status = "disabled";
 	};
 
@@ -248,6 +262,7 @@
 		reg = <0x9f000 0x1000>;
 		interrupts = <59 0>;
 		clocks = <&syscon MCUX_HS_SPI_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(2, 28)>;
 		status = "disabled";
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -280,6 +295,7 @@
 		offset-value-a = <10>;
 		offset-value-b = <10>;
 		#io-channel-cells = <1>;
+		clocks = <&syscon MCUX_LPADC1_CLK>;
 	};
 
 	usbhs: usbhs@144000 {

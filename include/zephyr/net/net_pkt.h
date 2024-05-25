@@ -46,6 +46,8 @@ extern "C" {
 
 struct net_context;
 
+/** @cond INTERNAL_HIDDEN */
+
 /* buffer cursor used in net_pkt */
 struct net_pkt_cursor {
 	/** Current net_buf pointer by the cursor */
@@ -53,6 +55,8 @@ struct net_pkt_cursor {
 	/** Current position in the data buffer of the net_buf */
 	uint8_t *pos;
 };
+
+/** @endcond */
 
 /**
  * @brief Network packet.
@@ -72,8 +76,8 @@ struct net_pkt {
 
 	/** buffer holding the packet */
 	union {
-		struct net_buf *frags;
-		struct net_buf *buffer;
+		struct net_buf *frags;   /**< buffer fragment */
+		struct net_buf *buffer;  /**< alias to a buffer fragment */
 	};
 
 	/** Internal buffer iterator used for reading/writing */
@@ -177,12 +181,6 @@ struct net_pkt {
 			       */
 #endif
 	uint8_t ppp_msg : 1; /* This is a PPP message */
-#if defined(CONFIG_NET_TCP)
-	uint8_t tcp_first_msg : 1; /* Is this the first time this pkt is
-				    * sent, or is this a resend of a TCP
-				    * segment.
-				    */
-#endif
 	uint8_t captured : 1;	  /* Set to 1 if this packet is already being
 				   * captured
 				   */
@@ -480,25 +478,6 @@ static inline void net_pkt_set_ip_ecn(struct net_pkt *pkt, uint8_t ecn)
 {
 #if defined(CONFIG_NET_IP_DSCP_ECN)
 	pkt->ip_ecn = ecn;
-#endif
-}
-
-static inline uint8_t net_pkt_tcp_1st_msg(struct net_pkt *pkt)
-{
-#if defined(CONFIG_NET_TCP)
-	return pkt->tcp_first_msg;
-#else
-	return true;
-#endif
-}
-
-static inline void net_pkt_set_tcp_1st_msg(struct net_pkt *pkt, bool is_1st)
-{
-#if defined(CONFIG_NET_TCP)
-	pkt->tcp_first_msg = is_1st;
-#else
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_1st);
 #endif
 }
 
@@ -1426,8 +1405,12 @@ static inline void net_pkt_set_remote_address(struct net_pkt *pkt,
 #define NET_PKT_SLAB_DEFINE(name, count)				\
 	K_MEM_SLAB_DEFINE(name, sizeof(struct net_pkt), count, 4)
 
+/** @cond INTERNAL_HIDDEN */
+
 /* Backward compatibility macro */
 #define NET_PKT_TX_SLAB_DEFINE(name, count) NET_PKT_SLAB_DEFINE(name, count)
+
+/** @endcond */
 
 /**
  * @brief Create a data fragment net_buf pool
@@ -1880,9 +1863,13 @@ struct net_pkt *net_pkt_rx_alloc(k_timeout_t timeout);
 struct net_pkt *net_pkt_alloc_on_iface(struct net_if *iface,
 				       k_timeout_t timeout);
 
+/** @cond INTERNAL_HIDDEN */
+
 /* Same as above but specifically for RX packet */
 struct net_pkt *net_pkt_rx_alloc_on_iface(struct net_if *iface,
 					  k_timeout_t timeout);
+/** @endcond */
+
 #endif
 
 /**
@@ -1943,12 +1930,17 @@ struct net_pkt *net_pkt_alloc_with_buffer(struct net_if *iface,
 					  enum net_ip_protocol proto,
 					  k_timeout_t timeout);
 
+/** @cond INTERNAL_HIDDEN */
+
 /* Same as above but specifically for RX packet */
 struct net_pkt *net_pkt_rx_alloc_with_buffer(struct net_if *iface,
 					     size_t size,
 					     sa_family_t family,
 					     enum net_ip_protocol proto,
 					     k_timeout_t timeout);
+
+/** @endcond */
+
 #endif
 
 /**
@@ -2165,7 +2157,18 @@ struct net_pkt *net_pkt_shallow_clone(struct net_pkt *pkt,
  */
 int net_pkt_read(struct net_pkt *pkt, void *data, size_t length);
 
-/* Read uint8_t data data a net_pkt */
+/**
+ * @brief Read a byte (uint8_t) from a net_pkt
+ *
+ * @details net_pkt's cursor should be properly initialized and,
+ *          if needed, positioned using net_pkt_skip.
+ *          Cursor position will be updated after the operation.
+ *
+ * @param pkt  The network packet from where to read
+ * @param data The destination uint8_t where to copy the data
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
 static inline int net_pkt_read_u8(struct net_pkt *pkt, uint8_t *data)
 {
 	return net_pkt_read(pkt, data, 1);
@@ -2228,13 +2231,35 @@ int net_pkt_read_be32(struct net_pkt *pkt, uint32_t *data);
  */
 int net_pkt_write(struct net_pkt *pkt, const void *data, size_t length);
 
-/* Write uint8_t data into a net_pkt. */
+/**
+ * @brief Write a byte (uint8_t) data to a net_pkt
+ *
+ * @details net_pkt's cursor should be properly initialized and,
+ *          if needed, positioned using net_pkt_skip.
+ *          Cursor position will be updated after the operation.
+ *
+ * @param pkt  The network packet from where to read
+ * @param data The uint8_t value to write
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
 static inline int net_pkt_write_u8(struct net_pkt *pkt, uint8_t data)
 {
 	return net_pkt_write(pkt, &data, sizeof(uint8_t));
 }
 
-/* Write uint16_t big endian data into a net_pkt. */
+/**
+ * @brief Write a uint16_t big endian data to a net_pkt
+ *
+ * @details net_pkt's cursor should be properly initialized and,
+ *          if needed, positioned using net_pkt_skip.
+ *          Cursor position will be updated after the operation.
+ *
+ * @param pkt  The network packet from where to read
+ * @param data The uint16_t value in host byte order to write
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
 static inline int net_pkt_write_be16(struct net_pkt *pkt, uint16_t data)
 {
 	uint16_t data_be16 = htons(data);
@@ -2242,7 +2267,18 @@ static inline int net_pkt_write_be16(struct net_pkt *pkt, uint16_t data)
 	return net_pkt_write(pkt, &data_be16, sizeof(uint16_t));
 }
 
-/* Write uint32_t big endian data into a net_pkt. */
+/**
+ * @brief Write a uint32_t big endian data to a net_pkt
+ *
+ * @details net_pkt's cursor should be properly initialized and,
+ *          if needed, positioned using net_pkt_skip.
+ *          Cursor position will be updated after the operation.
+ *
+ * @param pkt  The network packet from where to read
+ * @param data The uint32_t value in host byte order to write
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
 static inline int net_pkt_write_be32(struct net_pkt *pkt, uint32_t data)
 {
 	uint32_t data_be32 = htonl(data);
@@ -2250,7 +2286,18 @@ static inline int net_pkt_write_be32(struct net_pkt *pkt, uint32_t data)
 	return net_pkt_write(pkt, &data_be32, sizeof(uint32_t));
 }
 
-/* Write uint32_t little endian data into a net_pkt. */
+/**
+ * @brief Write a uint32_t little endian data to a net_pkt
+ *
+ * @details net_pkt's cursor should be properly initialized and,
+ *          if needed, positioned using net_pkt_skip.
+ *          Cursor position will be updated after the operation.
+ *
+ * @param pkt  The network packet from where to read
+ * @param data The uint32_t value in host byte order to write
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
 static inline int net_pkt_write_le32(struct net_pkt *pkt, uint32_t data)
 {
 	uint32_t data_le32 = sys_cpu_to_le32(data);
@@ -2258,7 +2305,18 @@ static inline int net_pkt_write_le32(struct net_pkt *pkt, uint32_t data)
 	return net_pkt_write(pkt, &data_le32, sizeof(uint32_t));
 }
 
-/* Write uint16_t little endian data into a net_pkt. */
+/**
+ * @brief Write a uint16_t little endian data to a net_pkt
+ *
+ * @details net_pkt's cursor should be properly initialized and,
+ *          if needed, positioned using net_pkt_skip.
+ *          Cursor position will be updated after the operation.
+ *
+ * @param pkt  The network packet from where to read
+ * @param data The uint16_t value in host byte order to write
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
 static inline int net_pkt_write_le16(struct net_pkt *pkt, uint16_t data)
 {
 	uint16_t data_le16 = sys_cpu_to_le16(data);
@@ -2336,6 +2394,8 @@ bool net_pkt_is_contiguous(struct net_pkt *pkt, size_t size);
  */
 size_t net_pkt_get_contiguous_len(struct net_pkt *pkt);
 
+/** @cond INTERNAL_HIDDEN */
+
 struct net_pkt_data_access {
 #if !defined(CONFIG_NET_HEADERS_ALWAYS_CONTIGUOUS)
 	void *data;
@@ -2367,6 +2427,8 @@ struct net_pkt_data_access {
 	}
 
 #endif /* CONFIG_NET_HEADERS_ALWAYS_CONTIGUOUS */
+
+/** @endcond */
 
 /**
  * @brief Get data from a network packet in a contiguous way

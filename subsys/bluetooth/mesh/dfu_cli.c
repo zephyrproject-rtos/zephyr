@@ -6,11 +6,11 @@
 
 #include <string.h>
 #include <zephyr/bluetooth/mesh.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/settings/settings.h>
 #include "access.h"
 #include "dfu.h"
 #include "blob.h"
-#include <zephyr/random/random.h>
 #include <common/bt_str.h>
 
 #define LOG_LEVEL CONFIG_BT_MESH_DFU_LOG_LEVEL
@@ -1017,7 +1017,11 @@ int bt_mesh_dfu_cli_send(struct bt_mesh_dfu_cli *cli,
 	cli->xfer.blob.size = xfer->slot->size;
 
 	if (xfer->blob_id == 0) {
-		sys_rand_get(&cli->xfer.blob.id, sizeof(cli->xfer.blob.id));
+		int err = bt_rand(&cli->xfer.blob.id, sizeof(cli->xfer.blob.id));
+
+		if (err) {
+			return err;
+		}
 	} else {
 		cli->xfer.blob.id = xfer->blob_id;
 	}

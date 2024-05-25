@@ -217,12 +217,12 @@ struct dma_config {
 	 */
 	uint32_t  complete_callback_en : 1;
 	/**
-	 * Error callback enable
+	 * Error callback disable
 	 *
 	 * - 0b0 error callback enabled
 	 * - 0b1 error callback disabled
 	 */
-	uint32_t  error_callback_en :    1;
+	uint32_t  error_callback_dis :    1;
 	/**
 	 * Source handshake, HW specific
 	 *

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Ilya Tagunov <tagunil@gmail.com>
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -163,6 +164,12 @@ stm32_lp_tick_source: &lptim1 {
 		pinctrl-0 = <&tim2_ch1_pa5>;
 		pinctrl-names = "default";
 	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
 };
 
 &rng {

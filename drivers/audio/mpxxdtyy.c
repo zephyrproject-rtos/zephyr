@@ -90,7 +90,8 @@ int sw_filter_lib_run(TPDMFilter_InitStruct *pdm_filter,
 		      void *pdm_block, void *pcm_block,
 		      size_t pdm_size, size_t pcm_size)
 {
-	int i;
+	int i, j;
+	int pdm_offset;
 	uint8_t a, b;
 
 	if (pdm_block == NULL || pcm_block == NULL || pdm_filter == NULL) {
@@ -118,25 +119,35 @@ int sw_filter_lib_run(TPDMFilter_InitStruct *pdm_filter,
 		}
 	}
 
-	switch (pdm_filter[0].Decimation) {
-	case 64:
+	for (j = 0; j < pcm_size / 2; j += pdm_filter[0].Fs / 1000) {
+		/*
+		 * The number of PDM bytes per PCM sample is the decimation factor
+		 * divided by the number of bits per byte (8). We need to skip a number of
+		 * PDM bytes equivalent to the number of PCM samples, times the number of
+		 * channels.
+		 */
+		pdm_offset = j * (pdm_filter[0].Decimation / 8) * pdm_filter[0].In_MicChannels;
+
 		for (i = 0; i < pdm_filter[0].In_MicChannels; i++) {
-			Open_PDM_Filter_64(&((uint8_t *) pdm_block)[i],
-					   &((uint16_t *) pcm_block)[i],
-					   pdm_filter->MaxVolume,
-					   &pdm_filter[i]);
+			switch (pdm_filter[0].Decimation) {
+			case 64:
+				Open_PDM_Filter_64(&((uint8_t *) pdm_block)[pdm_offset + i],
+						&((uint16_t *) pcm_block)[j + i],
+						pdm_filter->MaxVolume,
+						&pdm_filter[i]);
+				break;
+
+			case 128:
+				Open_PDM_Filter_128(&((uint8_t *) pdm_block)[pdm_offset + i],
+						&((uint16_t *) pcm_block)[j + i],
+						pdm_filter->MaxVolume,
+						&pdm_filter[i]);
+				break;
+
+			default:
+				return -EINVAL;
+			}
 		}
-		break;
-	case 128:
-		for (i = 0; i < pdm_filter[0].In_MicChannels; i++) {
-			Open_PDM_Filter_128(&((uint8_t *) pdm_block)[i],
-					    &((uint16_t *) pcm_block)[i],
-					    pdm_filter->MaxVolume,
-					    &pdm_filter[i]);
-		}
-		break;
-	default:
-		return -EINVAL;
 	}
 
 	return 0;

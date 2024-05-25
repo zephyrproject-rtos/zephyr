@@ -40,7 +40,15 @@ ZTEST(rtc_api, test_y2k)
 
 	/* Party like it's 1999 */
 	zassert_not_null(gmtime_r(&t[Y99], tm[Y99]));
-	zassert_ok(rtc_set_time(rtc, &rtm[Y99]));
+
+	int ret = rtc_set_time(rtc, &rtm[Y99]);
+
+	if (ret == -EINVAL) {
+		TC_PRINT("Rollover not supported\n");
+		ztest_test_skip();
+	} else {
+		zassert_ok(ret, "RTC Set Time Failed");
+	}
 
 	/* Living after midnight */
 	k_sleep(K_SECONDS(SECONDS_BEFORE + SECONDS_AFTER));

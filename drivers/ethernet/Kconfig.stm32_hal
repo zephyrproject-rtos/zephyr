@@ -11,6 +11,8 @@ menuconfig ETH_STM32_HAL
 	select USE_STM32_HAL_ETH
 	select NOCACHE_MEMORY if SOC_SERIES_STM32H7X && CPU_CORTEX_M7
 	select HWINFO
+	select ETH_DSA_SUPPORT
+	select MDIO if SOC_SERIES_STM32H5X || SOC_SERIES_STM32H7X
 	imply CRC
 	help
 	  Enable STM32 HAL based Ethernet driver. It is available for
@@ -28,7 +30,7 @@ config ETH_STM32_HAL_API_V2
 	  Use the new HAL driver instead of the legacy one.
 
 config ETH_STM32_HAL_API_V1
-	bool "Use new HAL driver"
+	bool "Use legacy HAL driver"
 	depends on !SOC_SERIES_STM32H5X
 	select DEPRECATED if SOC_SERIES_STM32H7X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
 	help

@@ -79,7 +79,7 @@
 
 /* LLCP Local Procedure Connection Update FSM states */
 enum {
-	LP_CU_STATE_IDLE,
+	LP_CU_STATE_IDLE = LLCP_STATE_IDLE,
 	LP_CU_STATE_WAIT_TX_CONN_PARAM_REQ,
 	LP_CU_STATE_WAIT_RX_CONN_PARAM_RSP,
 	LP_CU_STATE_WAIT_TX_CONN_UPDATE_IND,
@@ -109,7 +109,7 @@ enum {
 
 /* LLCP Remote Procedure Connection Update FSM states */
 enum {
-	RP_CU_STATE_IDLE,
+	RP_CU_STATE_IDLE = LLCP_STATE_IDLE,
 	RP_CU_STATE_WAIT_RX_CONN_PARAM_REQ,
 	RP_CU_STATE_WAIT_CONN_PARAM_REQ_AVAILABLE,
 	RP_CU_STATE_WAIT_NTF_CONN_PARAM_REQ,
@@ -585,6 +585,7 @@ static void lp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 	switch (evt) {
 	case LP_CU_EVT_CONN_UPDATE_IND:
 		llcp_pdu_decode_conn_update_ind(ctx, param);
+		llcp_rr_set_incompat(conn, INCOMPAT_RESERVED);
 		/* Keep RX node to use for NTF */
 		llcp_rx_node_retain(ctx);
 		ctx->state = LP_CU_STATE_WAIT_INSTANT;
@@ -633,8 +634,7 @@ static void lp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 			lp_cu_ntf_complete(conn, ctx, evt, param);
 		} else {
 			/* Release RX node kept for NTF */
-			ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RELEASE;
-			ll_rx_put_sched(ctx->node_ref.rx->hdr.link, ctx->node_ref.rx);
+			llcp_rx_node_release(ctx);
 			ctx->node_ref.rx = NULL;
 
 			lp_cu_complete(conn, ctx);
@@ -725,11 +725,6 @@ void llcp_lp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		lp_cu_complete(conn, ctx);
 		break;
 	}
-}
-
-void llcp_lp_cu_init_proc(struct proc_ctx *ctx)
-{
-	ctx->state = LP_CU_STATE_IDLE;
 }
 
 void llcp_lp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
@@ -973,11 +968,18 @@ static void rp_cu_st_wait_conn_param_req_available(struct ll_conn *conn, struct 
 	case RP_CU_EVT_RUN:
 		if (cpr_active_is_set(conn)) {
 			ctx->state = RP_CU_STATE_WAIT_CONN_PARAM_REQ_AVAILABLE;
+
 			if (!llcp_rr_ispaused(conn) && llcp_tx_alloc_peek(conn, ctx)) {
 				/* We're good to reject immediately */
 				ctx->data.cu.rejected_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
 				ctx->data.cu.error = BT_HCI_ERR_UNSUPP_LL_PARAM_VAL;
 				rp_cu_send_reject_ext_ind(conn, ctx, evt, param);
+
+				/* Possibly retained rx node to be released as we won't need it */
+				llcp_rx_node_release(ctx);
+				ctx->node_ref.rx = NULL;
+
+				break;
 			}
 			/* In case we have to defer NTF */
 			llcp_rx_node_retain(ctx);
@@ -992,6 +994,9 @@ static void rp_cu_st_wait_conn_param_req_available(struct ll_conn *conn, struct 
 				rp_cu_conn_param_req_ntf(conn, ctx);
 				ctx->state = RP_CU_STATE_WAIT_CONN_PARAM_REQ_REPLY;
 			} else {
+				/* Possibly retained rx node to be released as we won't need it */
+				llcp_rx_node_release(ctx);
+				ctx->node_ref.rx = NULL;
 #if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
 				/* Handle APM as a vendor specific user extension */
 				if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL &&
@@ -1177,8 +1182,7 @@ static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 			cu_ntf(conn, ctx);
 		} else {
 			/* Release RX node kept for NTF */
-			ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RELEASE;
-			ll_rx_put_sched(ctx->node_ref.rx->hdr.link, ctx->node_ref.rx);
+			llcp_rx_node_release(ctx);
 			ctx->node_ref.rx = NULL;
 		}
 		rp_cu_complete(conn, ctx);
@@ -1308,11 +1312,6 @@ void llcp_rp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		rp_cu_complete(conn, ctx);
 		break;
 	}
-}
-
-void llcp_rp_cu_init_proc(struct proc_ctx *ctx)
-{
-	ctx->state = RP_CU_STATE_IDLE;
 }
 
 void llcp_rp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)

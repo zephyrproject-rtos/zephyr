@@ -37,10 +37,6 @@
 #include <esp_clk_internal.h>
 #include <zephyr/sys/printk.h>
 
-#ifdef CONFIG_MCUBOOT
-#include "bootloader_init.h"
-#endif /* CONFIG_MCUBOOT */
-
 extern void rtc_clk_cpu_freq_set_xtal(void);
 extern void esp_reset_reason_init(void);
 

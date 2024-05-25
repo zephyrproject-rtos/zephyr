@@ -26,7 +26,6 @@ static bool leave_idle;
 static bool idle_entered;
 static bool testing_device_runtime;
 static bool testing_device_order;
-static bool testing_device_lock;
 static bool testing_force_state;
 
 enum pm_state forced_state;
@@ -37,6 +36,19 @@ static const struct device *const device_a =
 	DEVICE_DT_GET(DT_INST(0, test_device_pm));
 static const struct device *const device_c =
 	DEVICE_DT_GET(DT_INST(2, test_device_pm));
+
+/*
+ * This device does not support PM. It is used to check
+ * the behavior of the PM subsystem when a device does not
+ * support PM.
+ */
+static const struct device *const device_e =
+	DEVICE_DT_GET(DT_INST(4, test_device_pm));
+
+DEVICE_DT_DEFINE(DT_INST(4, test_device_pm), NULL,
+		NULL, NULL, NULL,
+		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		NULL);
 
 /*
  * According with the initialization level, devices A, B and C are
@@ -167,18 +179,6 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 	/* If testing device order this function does not need to anything */
 	if (testing_device_order) {
-		return;
-	}
-
-	if (testing_device_lock) {
-		pm_device_state_get(device_a, &device_power_state);
-
-		/*
-		 * If the device has its state locked the device has
-		 * to be ACTIVE
-		 */
-		zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE,
-				NULL);
 		return;
 	}
 
@@ -454,6 +454,35 @@ ZTEST(power_management_1cpu, test_force_state)
 
 	testing_force_state = true;
 	k_sleep(K_SECONDS(1U));
+}
+
+ZTEST(power_management_1cpu, test_device_without_pm)
+{
+	pm_device_busy_set(device_e);
+
+	/* Since this device does not support PM, it should not be set busy */
+	zassert_false(pm_device_is_busy(device_e));
+
+	/* No device should be busy */
+	zassert_false(pm_device_is_any_busy());
+
+	/* Lets ensure that nothing happens */
+	pm_device_busy_clear(device_e);
+
+	/* Check the status. Since PM is enabled but this device does not support it.
+	 * It should return -ENOSYS
+	 */
+	zassert_equal(pm_device_state_get(device_e, NULL), -ENOSYS);
+
+	/* Try to forcefully change the state should also return an error */
+	zassert_equal(pm_device_action_run(device_e, PM_DEVICE_ACTION_SUSPEND), -ENOSYS);
+
+	/* Confirming the device is powered */
+	zassert_true(pm_device_is_powered(device_e));
+
+	/* Test wakeup functionality */
+	zassert_false(pm_device_wakeup_enable(device_e, true));
+	zassert_false(pm_device_wakeup_is_enabled(device_e));
 }
 
 void power_management_1cpu_teardown(void *data)

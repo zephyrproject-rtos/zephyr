@@ -1,4 +1,4 @@
-# Copyright 2023 NXP
+# Copyright 2023-2024 NXP
 # Copyright (c) 2017 Linaro Limited.
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -164,13 +164,8 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
 
     def do_erase(self, **kwargs):
 
-        if self.core is not None:
-            _cmd_core = ":"+self.core
-        else:
-            _cmd_core = ""
-
         linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", str(self.probe)] +
-                          [self.device+_cmd_core] + ["erase"])
+                          [self.device] + ["erase"])
         self.logger.debug("flash erase command = " + str(linkserver_cmd))
         self.check_call(linkserver_cmd)
 
@@ -186,18 +181,16 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
 
     def flash(self, **kwargs):
 
-        if self.core is not None:
-            _cmd_core = ":"+self.core
-        else:
-            _cmd_core = ""
-
-        linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", str(self.probe)] + self.override_cli + [self.device+_cmd_core])
+        linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", str(self.probe)] + self.override_cli + [self.device])
         self.logger.debug(f'LinkServer cmd:  + {linkserver_cmd}')
 
         if self.erase:
             self.do_erase()
 
-        if self.bin_name is not None and os.path.isfile(self.bin_name):
+        # Use .hex or .bin, preferring .hex over .bin
+        if self.supports_hex and self.hex_name is not None and os.path.isfile(self.hex_name):
+            flash_cmd = (["load", self.hex_name])
+        elif self.bin_name is not None and os.path.isfile(self.bin_name):
             if self.dt_flash:
                 load_addr = self.flash_address_from_build_conf(self.build_conf)
             else:
@@ -206,10 +199,10 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
 
             flash_cmd = (["load", "--addr", str(load_addr), self.bin_name])
         else:
-            err = 'Cannot flash; no bin ({}) file found.'
-            raise ValueError(err.format(self.bin_name))
+            err = 'Cannot flash; no hex ({}) or bin ({}) file found.'
+            raise ValueError(err.format(self.hex_name, self.bin_name))
 
-        # Flash the selected elf file
+        # Flash the selected file
         linkserver_cmd = linkserver_cmd + flash_cmd
         self.logger.debug("flash command = " + str(linkserver_cmd))
         kwargs = {}
@@ -220,3 +213,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                 kwargs['stdout'] = subprocess.DEVNULL
 
         self.check_call(linkserver_cmd, **kwargs)
+
+    def supports_hex(self):
+        # v1.5.30 has added flash support for Intel Hex files.
+        return self.linkserver_version_str >= "v1.5.30"

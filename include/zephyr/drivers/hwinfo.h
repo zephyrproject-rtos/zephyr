@@ -96,6 +96,22 @@ __syscall ssize_t hwinfo_get_device_id(uint8_t *buffer, size_t length);
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length);
 
 /**
+ * @brief Copy the device EUI64 to a buffer
+ *
+ * This routine copies the device EUI64 (8 bytes) to the buffer.
+ * The EUI64 depends on the hardware and is guaranteed unique.
+ *
+ * @param buffer  Buffer of 8 bytes to write the ID to.
+ *
+ * @retval zero if successful.
+ * @retval -ENOSYS if there is no implementation for the particular device.
+ * @retval any negative value on driver specific errors.
+ */
+__syscall int hwinfo_get_device_eui64(uint8_t *buffer);
+
+int z_impl_hwinfo_get_device_eui64(uint8_t *buffer);
+
+/**
  * @brief      Retrieve cause of device reset.
  *
  * @param      cause  OR'd @ref reset_cause "reset cause" flags

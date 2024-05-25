@@ -28,8 +28,38 @@ static const struct z_exc_handle exceptions[] = {
  #define NO_REG "                "
 #endif
 
+/* Stack trace function */
+void z_riscv_unwind_stack(const z_arch_esf_t *esf);
+
+uintptr_t z_riscv_get_sp_before_exc(const z_arch_esf_t *esf)
+{
+	/*
+	 * Kernel stack pointer prior this exception i.e. before
+	 * storing the exception stack frame.
+	 */
+	uintptr_t sp = (uintptr_t)esf + sizeof(z_arch_esf_t);
+
+#ifdef CONFIG_USERSPACE
+	if ((esf->mstatus & MSTATUS_MPP) == PRV_U) {
+		/*
+		 * Exception happened in user space:
+		 * consider the saved user stack instead.
+		 */
+		sp = esf->sp;
+	}
+#endif
+
+	return sp;
+}
+
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 				       const z_arch_esf_t *esf)
+{
+	z_riscv_fatal_error_csf(reason, esf, NULL);
+}
+
+FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const z_arch_esf_t *esf,
+					   const _callee_saved_t *csf)
 {
 #ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
@@ -47,14 +77,32 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 		LOG_ERR("     a6: " PR_REG "    t6: " PR_REG, esf->a6, esf->t6);
 		LOG_ERR("     a7: " PR_REG, esf->a7);
 #endif /* CONFIG_RISCV_ISA_RV32E */
-#ifdef CONFIG_USERSPACE
-		LOG_ERR("     sp: " PR_REG, esf->sp);
-#endif
+		LOG_ERR("     sp: " PR_REG, z_riscv_get_sp_before_exc(esf));
 		LOG_ERR("     ra: " PR_REG, esf->ra);
 		LOG_ERR("   mepc: " PR_REG, esf->mepc);
 		LOG_ERR("mstatus: " PR_REG, esf->mstatus);
 		LOG_ERR("");
 	}
+
+	if (csf != NULL) {
+#if defined(CONFIG_RISCV_ISA_RV32E)
+		LOG_ERR("     s0: " PR_REG, csf->s0);
+		LOG_ERR("     s1: " PR_REG, csf->s1);
+#else
+		LOG_ERR("     s0: " PR_REG "    s6: " PR_REG, csf->s0, csf->s6);
+		LOG_ERR("     s1: " PR_REG "    s7: " PR_REG, csf->s1, csf->s7);
+		LOG_ERR("     s2: " PR_REG "    s8: " PR_REG, csf->s2, csf->s8);
+		LOG_ERR("     s3: " PR_REG "    s9: " PR_REG, csf->s3, csf->s9);
+		LOG_ERR("     s4: " PR_REG "   s10: " PR_REG, csf->s4, csf->s10);
+		LOG_ERR("     s5: " PR_REG "   s11: " PR_REG, csf->s5, csf->s11);
+#endif /* CONFIG_RISCV_ISA_RV32E */
+		LOG_ERR("");
+	}
+
+	if (IS_ENABLED(CONFIG_RISCV_EXCEPTION_STACK_TRACE)) {
+		z_riscv_unwind_stack(esf);
+	}
+
 #endif /* CONFIG_EXCEPTION_DEBUG */
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;

@@ -200,7 +200,8 @@ elseif(CONFIG_SPEED_OPTIMIZATIONS)
 elseif(CONFIG_SIZE_OPTIMIZATIONS)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_FLAG}) # Default in kconfig
 else()
-  assert(0 "Unreachable code. Expected optimization level to have been chosen. See Kconfig.zephyr")
+  message(FATAL_ERROR
+    "Unreachable code. Expected optimization level to have been chosen. See Kconfig.zephyr")
 endif()
 
 if(NOT CONFIG_ARCH_IS_SET)
@@ -217,6 +218,26 @@ if(CONFIG_LTO)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
   add_link_options($<TARGET_PROPERTY:linker,lto_arguments>)
 endif()
+
+if(CONFIG_STD_C23)
+  set(CSTD c2x)
+elseif(CONFIG_STD_C17)
+  set(CSTD c17)
+elseif(CONFIG_STD_C11)
+  set(CSTD c11)
+elseif(CONFIG_STD_C99)
+  set(CSTD c99)
+elseif(CONFIG_STD_C90)
+  set(CSTD c90)
+else()
+  message(FATAL_ERROR "Unreachable code. Expected C standard to have been chosen.")
+endif()
+
+if(CONFIG_GNU_C_EXTENSIONS)
+  string(REPLACE "c" "gnu" CSTD "${CSTD}")
+endif()
+
+list(APPEND CMAKE_C_COMPILE_FEATURES ${compile_features_${CSTD}})
 
 # @Intent: Obtain compiler specific flags related to C++ that are not influenced by kconfig
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,required>>)
@@ -247,7 +268,8 @@ if(CONFIG_CPP)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp2b>)
     list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp20})
   else()
-    assert(0 "Unreachable code. Expected C++ standard to have been chosen. See Kconfig.zephyr.")
+    message(FATAL_ERROR
+      "Unreachable code. Expected C++ standard to have been chosen. See Kconfig.zephyr.")
   endif()
   set(CMAKE_CXX_COMPILE_FEATURES ${CMAKE_CXX_COMPILE_FEATURES} PARENT_SCOPE)
 
@@ -601,6 +623,7 @@ get_property(LIBC_LINK_LIBRARIES TARGET zephyr_interface PROPERTY LIBC_LINK_LIBR
 zephyr_link_libraries(${LIBC_LINK_LIBRARIES})
 
 set(syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
+set(edk_syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/edk/include/generated/syscall_list.h)
 set(syscalls_json    ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
 set(struct_tags_json ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/struct_tags.json)
 
@@ -884,7 +907,7 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   add_dependencies(${zephyr_lib} zephyr_generated_headers)
 endforeach()
 
-if(CONFIG_LLEXT)
+if(CONFIG_KERNEL_WHOLE_ARCHIVE)
   set(WHOLE_ARCHIVE_LIBS ${ZEPHYR_LIBS_PROPERTY} kernel)
 else()
   set(WHOLE_ARCHIVE_LIBS ${ZEPHYR_LIBS_PROPERTY})
@@ -954,14 +977,19 @@ if(CONFIG_USERSPACE)
   set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/build/process_gperf.py)
 endif()
 
-get_property(CSTD GLOBAL PROPERTY CSTD)
-set_ifndef(CSTD c99)
+get_property(GLOBAL_CSTD GLOBAL PROPERTY CSTD)
+if(DEFINED GLOBAL_CSTD)
+  message(DEPRECATION
+    "Global CSTD property is deprecated, see Kconfig.zephyr for C Standard options.")
+  set(CSTD ${GLOBAL_CSTD})
+  list(APPEND CMAKE_C_COMPILE_FEATURES ${compile_features_${CSTD}})
+endif()
 
 # @Intent: Obtain compiler specific flag for specifying the c standard
 zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,cstd>${CSTD}>
 )
-set(CMAKE_C_COMPILE_FEATURES ${compile_features_${CSTD}} PARENT_SCOPE)
+set(CMAKE_C_COMPILE_FEATURES ${CMAKE_C_COMPILE_FEATURES} PARENT_SCOPE)
 
 # @Intent: Configure linker scripts, i.e. generate linker scripts with variables substituted
 toolchain_ld_configure_files()
@@ -1704,7 +1732,7 @@ endif()
 if(CONFIG_OUTPUT_DISASSEMBLY)
 if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
     set(disassembly_type "$<TARGET_PROPERTY:bintools,disassembly_flag_all>")
-  else()
+  elseif (CONFIG_OUTPUT_DISASSEMBLY_WITH_SOURCE)
     set(disassembly_type "$<TARGET_PROPERTY:bintools,disassembly_flag_inline_source>")
   endif()
   list(APPEND
@@ -1767,6 +1795,17 @@ if(CONFIG_BUILD_OUTPUT_STRIPPED)
     post_build_byproducts
     ${KERNEL_STRIP_NAME}
     )
+endif()
+
+if(CONFIG_BUILD_OUTPUT_COMPRESS_DEBUG_SECTIONS)
+  list(APPEND
+    post_build_commands
+    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_compress_debug_sections>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+)
 endif()
 
 if(CONFIG_BUILD_OUTPUT_EXE)
@@ -2022,6 +2061,51 @@ if((CMAKE_BUILD_TYPE IN_LIST build_types) AND (NOT NO_BUILD_TYPE_WARNING))
       )
   endif()
 endif()
+
+# Extension Development Kit (EDK) generation.
+set(llext_edk_file ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.tar.xz)
+
+# TODO maybe generate flags for C CXX ASM
+zephyr_get_compile_options_for_lang(C zephyr_flags)
+
+# Filter out non LLEXT and LLEXT_EDK flags - and add required ones
+llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags} llext_edk_cflags)
+llext_filter_zephyr_flags(LLEXT_EDK_REMOVE_FLAGS ${llext_edk_cflags} llext_edk_cflags)
+
+list(APPEND llext_edk_cflags ${LLEXT_APPEND_FLAGS})
+list(APPEND llext_edk_cflags ${LLEXT_EDK_APPEND_FLAGS})
+
+add_custom_command(
+    OUTPUT ${llext_edk_file}
+    # Regenerate syscalls in case CONFIG_LLEXT_EDK_USERSPACE_ONLY
+    COMMAND ${CMAKE_COMMAND}
+        -E make_directory edk/include/generated
+    COMMAND
+        ${PYTHON_EXECUTABLE}
+        ${ZEPHYR_BASE}/scripts/build/gen_syscalls.py
+        --json-file        ${syscalls_json}                     # Read this file
+        --base-output      edk/include/generated/syscalls           # Write to this dir
+        --syscall-dispatch edk/include/generated/syscall_dispatch.c # Write this file
+        --syscall-list     ${edk_syscall_list_h}
+        $<$<BOOL:${CONFIG_LLEXT_EDK_USERSPACE_ONLY}>:--userspace-only>
+        ${SYSCALL_LONG_REGISTERS_ARG}
+        ${SYSCALL_SPLIT_TIMEOUT_ARG}
+    COMMAND ${CMAKE_COMMAND}
+        -DPROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}
+        -DAPPLICATION_SOURCE_DIR=${APPLICATION_SOURCE_DIR}
+        -DINTERFACE_INCLUDE_DIRECTORIES="$<JOIN:$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>,:>"
+        -Dllext_edk_file=${llext_edk_file}
+        -DAUTOCONF_H=${AUTOCONF_H}
+        -Dllext_cflags="${llext_edk_cflags}"
+        -Dllext_edk_name=${CONFIG_LLEXT_EDK_NAME}
+        -DWEST_TOPDIR=${WEST_TOPDIR}
+        -DZEPHYR_BASE=${ZEPHYR_BASE}
+        -DCONFIG_LLEXT_EDK_USERSPACE_ONLY=${CONFIG_LLEXT_EDK_USERSPACE_ONLY}
+        -P ${ZEPHYR_BASE}/cmake/llext-edk.cmake
+    DEPENDS ${logical_target_for_zephyr_elf}
+    COMMAND_EXPAND_LISTS
+)
+add_custom_target(llext-edk DEPENDS ${llext_edk_file})
 
 # @Intent: Set compiler specific flags for standard C/C++ includes
 # Done at the very end, so any other system includes which may

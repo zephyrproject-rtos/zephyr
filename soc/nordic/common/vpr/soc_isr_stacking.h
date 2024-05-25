@@ -56,8 +56,8 @@
 		unsigned long a2;                                                                  \
 		unsigned long a1;                                                                  \
 		unsigned long a0;                                                                  \
-		unsigned long mepc;                                                                \
 		unsigned long _mcause;                                                             \
+		unsigned long mepc;                                                                \
 	} __aligned(16);
 
 #endif /* DT_PROP(VPR_CPU, nordic_bus_width) == 64 */
@@ -79,7 +79,28 @@
  * Size of the SW managed part of the ESF in case of interrupt
  *   sizeof(__padding) + ... + sizeof(soc_context)
  */
-#define ESF_SW_IRQ_SIZEOF (0x10)
+#define ESF_SW_IRQ_SIZEOF (0x20)
+
+/*
+ * VPR needs aligned(8) SP when doing HW stacking, if this condition is not fulfilled it will move
+ * SP by additional 4 bytes when HW stacking is done. This will be indicated by LSB bit in stacked
+ * MEPC. This bit needs to be saved and then restored because zephyr is managing MEPC and doesn't
+ * know anything about this additional offset.
+ */
+#define MEPC_SP_ALIGN_BIT_MASK (0x1UL)
+
+#define STORE_SP_ALIGN_BIT_FROM_MEPC				\
+	addi t1, sp, __z_arch_esf_t_soc_context_OFFSET;		\
+	lr t0, __z_arch_esf_t_mepc_OFFSET(sp);			\
+	andi t0, t0, MEPC_SP_ALIGN_BIT_MASK;			\
+	sr t0, __soc_esf_t_sp_align_OFFSET(t1)
+
+#define RESTORE_SP_ALIGN_BIT_TO_MEPC				\
+	addi t1, sp, __z_arch_esf_t_soc_context_OFFSET;		\
+	lr t0, __soc_esf_t_sp_align_OFFSET(t1);			\
+	lr t1, __z_arch_esf_t_mepc_OFFSET(sp);			\
+	or t2, t1, t0;						\
+	sr t2, __z_arch_esf_t_mepc_OFFSET(sp)
 
 #define SOC_ISR_SW_STACKING			\
 	csrw mscratch, t0;			\
@@ -97,9 +118,11 @@
 stacking_is_interrupt:				\
 	addi sp, sp, -ESF_SW_IRQ_SIZEOF;	\
 						\
-stacking_keep_going:
+stacking_keep_going:				\
+	STORE_SP_ALIGN_BIT_FROM_MEPC
 
 #define SOC_ISR_SW_UNSTACKING			\
+	RESTORE_SP_ALIGN_BIT_TO_MEPC;		\
 	csrr t0, mcause;			\
 	srli t0, t0, RISCV_MCAUSE_IRQ_POS;	\
 	bnez t0, unstacking_is_interrupt;	\

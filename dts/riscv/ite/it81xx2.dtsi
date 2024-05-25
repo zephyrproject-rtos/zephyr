@@ -608,6 +608,12 @@
 				      IT8XXX2_IRQ_TIMER2 IRQ_TYPE_EDGE_RISING>; /* One shot timer */
 			interrupt-parent = <&intc>;
 		};
+
+		sha0: sha@f0202d {
+			compatible = "ite,it8xxx2-sha";
+			reg = <0x00f0202d 0x3>;
+			status = "disabled";
+		};
 	};
 };
 

@@ -279,7 +279,7 @@ static struct i2c_emul_api bmi160_emul_api_i2c = {
 };
 #endif
 
-static int bmi160_emul_backend_set_channel(const struct emul *target, enum sensor_channel ch,
+static int bmi160_emul_backend_set_channel(const struct emul *target, struct sensor_chan_spec ch,
 					   const q31_t *value, int8_t shift)
 {
 	const struct bmi160_emul_cfg *cfg = target->cfg;
@@ -288,11 +288,11 @@ static int bmi160_emul_backend_set_channel(const struct emul *target, enum senso
 	int8_t scale_shift = 0;
 	int reg_lsb;
 
-	switch (ch) {
+	switch (ch.chan_type) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
-		reg_lsb = BMI160_REG_DATA_ACC_X + (ch - SENSOR_CHAN_ACCEL_X) * 2;
+		reg_lsb = BMI160_REG_DATA_ACC_X + (ch.chan_type - SENSOR_CHAN_ACCEL_X) * 2;
 		scale = 0x4e7404ea;
 
 		switch (FIELD_GET(GENMASK(3, 0), cfg->reg[BMI160_REG_ACC_RANGE])) {
@@ -313,7 +313,7 @@ static int bmi160_emul_backend_set_channel(const struct emul *target, enum senso
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
-		reg_lsb = BMI160_REG_DATA_GYR_X + (ch - SENSOR_CHAN_GYRO_X) * 2;
+		reg_lsb = BMI160_REG_DATA_GYR_X + (ch.chan_type - SENSOR_CHAN_GYRO_X) * 2;
 		scale = 0x45d02bea;
 
 		switch (FIELD_GET(GENMASK(2, 0), cfg->reg[BMI160_REG_GYR_RANGE])) {
@@ -353,7 +353,7 @@ static int bmi160_emul_backend_set_channel(const struct emul *target, enum senso
 		intermediate <<= shift - scale_shift;
 	}
 
-	if (ch == SENSOR_CHAN_DIE_TEMP) {
+	if (ch.chan_type == SENSOR_CHAN_DIE_TEMP) {
 		/* Need to subtract 23C */
 		intermediate -= INT64_C(23) << (31 - scale_shift);
 	}
@@ -366,13 +366,13 @@ static int bmi160_emul_backend_set_channel(const struct emul *target, enum senso
 	return 0;
 }
 
-static int bmi160_emul_backend_get_sample_range(const struct emul *target, enum sensor_channel ch,
-						q31_t *lower, q31_t *upper, q31_t *epsilon,
-						int8_t *shift)
+static int bmi160_emul_backend_get_sample_range(const struct emul *target,
+						struct sensor_chan_spec ch, q31_t *lower,
+						q31_t *upper, q31_t *epsilon, int8_t *shift)
 {
 	const struct bmi160_emul_cfg *cfg = target->cfg;
 
-	switch (ch) {
+	switch (ch.chan_type) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
@@ -440,10 +440,10 @@ static int bmi160_emul_backend_get_sample_range(const struct emul *target, enum 
 	}
 }
 
-static int bmi160_emul_backend_set_offset(const struct emul *target, enum sensor_channel ch,
+static int bmi160_emul_backend_set_offset(const struct emul *target, struct sensor_chan_spec ch,
 					  const q31_t *values, int8_t shift)
 {
-	if (ch != SENSOR_CHAN_ACCEL_XYZ && ch != SENSOR_CHAN_GYRO_XYZ) {
+	if (ch.chan_type != SENSOR_CHAN_ACCEL_XYZ && ch.chan_type != SENSOR_CHAN_GYRO_XYZ) {
 		return -EINVAL;
 	}
 
@@ -452,20 +452,20 @@ static int bmi160_emul_backend_set_offset(const struct emul *target, enum sensor
 	int8_t scale_shift = 0;
 
 	if (values[0] == 0 && values[1] == 0 && values[2] == 0) {
-		if (ch == SENSOR_CHAN_ACCEL_XYZ) {
+		if (ch.chan_type == SENSOR_CHAN_ACCEL_XYZ) {
 			cfg->reg[BMI160_REG_OFFSET_EN] &= ~BIT(BMI160_ACC_OFS_EN_POS);
 		} else {
 			cfg->reg[BMI160_REG_OFFSET_EN] &= ~BIT(BMI160_GYR_OFS_EN_POS);
 		}
 	} else {
-		if (ch == SENSOR_CHAN_ACCEL_XYZ) {
+		if (ch.chan_type == SENSOR_CHAN_ACCEL_XYZ) {
 			cfg->reg[BMI160_REG_OFFSET_EN] |= BIT(BMI160_ACC_OFS_EN_POS);
 		} else {
 			cfg->reg[BMI160_REG_OFFSET_EN] |= BIT(BMI160_GYR_OFS_EN_POS);
 		}
 	}
 
-	if (ch == SENSOR_CHAN_ACCEL_XYZ) {
+	if (ch.chan_type == SENSOR_CHAN_ACCEL_XYZ) {
 		/*
 		 * bits = (values[i]mps2 / 9.80665g/mps2) / 0.0039g
 		 *      = values[i] / 0.038245935mps2/bit
@@ -493,11 +493,11 @@ static int bmi160_emul_backend_set_offset(const struct emul *target, enum sensor
 
 		int64_t reg_value = intermediate / scale;
 
-		__ASSERT_NO_MSG(ch != SENSOR_CHAN_ACCEL_XYZ ||
+		__ASSERT_NO_MSG(ch.chan_type != SENSOR_CHAN_ACCEL_XYZ ||
 				(reg_value >= INT8_MIN && reg_value <= INT8_MAX));
-		__ASSERT_NO_MSG(ch != SENSOR_CHAN_GYRO_XYZ ||
+		__ASSERT_NO_MSG(ch.chan_type != SENSOR_CHAN_GYRO_XYZ ||
 				(reg_value >= -0x1ff - 1 && reg_value <= 0x1ff));
-		if (ch == SENSOR_CHAN_ACCEL_XYZ) {
+		if (ch.chan_type == SENSOR_CHAN_ACCEL_XYZ) {
 			cfg->reg[BMI160_REG_OFFSET_ACC_X + i] = reg_value & 0xff;
 		} else {
 			cfg->reg[BMI160_REG_OFFSET_GYR_X + i] = reg_value & 0xff;
@@ -510,11 +510,11 @@ static int bmi160_emul_backend_set_offset(const struct emul *target, enum sensor
 	return 0;
 }
 
-static int bmi160_emul_backend_set_attribute(const struct emul *target, enum sensor_channel ch,
+static int bmi160_emul_backend_set_attribute(const struct emul *target, struct sensor_chan_spec ch,
 					     enum sensor_attribute attribute, const void *value)
 {
 	if (attribute == SENSOR_ATTR_OFFSET &&
-	    (ch == SENSOR_CHAN_ACCEL_XYZ || ch == SENSOR_CHAN_GYRO_XYZ)) {
+	    (ch.chan_type == SENSOR_CHAN_ACCEL_XYZ || ch.chan_type == SENSOR_CHAN_GYRO_XYZ)) {
 		const struct sensor_three_axis_attribute *attribute_value = value;
 
 		return bmi160_emul_backend_set_offset(target, ch, attribute_value->values,
@@ -524,12 +524,12 @@ static int bmi160_emul_backend_set_attribute(const struct emul *target, enum sen
 }
 
 static int bmi160_emul_backend_get_attribute_metadata(const struct emul *target,
-						      enum sensor_channel ch,
+						      struct sensor_chan_spec ch,
 						      enum sensor_attribute attribute, q31_t *min,
 						      q31_t *max, q31_t *increment, int8_t *shift)
 {
 	ARG_UNUSED(target);
-	switch (ch) {
+	switch (ch.chan_type) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
@@ -569,7 +569,7 @@ static int bmi160_emul_backend_get_attribute_metadata(const struct emul *target,
 	}
 }
 
-static const struct emul_sensor_backend_api backend_api = {
+static const struct emul_sensor_driver_api backend_api = {
 	.set_channel = bmi160_emul_backend_set_channel,
 	.get_sample_range = bmi160_emul_backend_get_sample_range,
 	.set_attribute = bmi160_emul_backend_set_attribute,

@@ -179,18 +179,25 @@ static int reg_test_bit(uint8_t bit, mm_reg_t addr, uint32_t off)
 /* Common registers settings, bits etc... */
 
 /* CTRLR0 settings */
+#if !IS_ENABLED(CONFIG_SPI_DW_HSSI)
 #define DW_SPI_CTRLR0_SCPH_BIT		(6)
 #define DW_SPI_CTRLR0_SCPOL_BIT		(7)
+#define DW_SPI_CTRLR0_TMOD_SHIFT	(8)
+#define DW_SPI_CTRLR0_SLV_OE_BIT	(10)
 #define DW_SPI_CTRLR0_SRL_BIT		(11)
+#else
+/* The register layout is different in the HSSI variant */
+#define DW_SPI_CTRLR0_SCPH_BIT		(8)
+#define DW_SPI_CTRLR0_SCPOL_BIT		(9)
+#define DW_SPI_CTRLR0_TMOD_SHIFT	(10)
+#define DW_SPI_CTRLR0_SLV_OE_BIT	(12)
+#define DW_SPI_CTRLR0_SRL_BIT		(13)
+#endif
 
 #define DW_SPI_CTRLR0_SCPH		BIT(DW_SPI_CTRLR0_SCPH_BIT)
 #define DW_SPI_CTRLR0_SCPOL		BIT(DW_SPI_CTRLR0_SCPOL_BIT)
 #define DW_SPI_CTRLR0_SRL		BIT(DW_SPI_CTRLR0_SRL_BIT)
-
-#define DW_SPI_CTRLR0_SLV_OE_BIT	(10)
 #define DW_SPI_CTRLR0_SLV_OE		BIT(DW_SPI_CTRLR0_SLV_OE_BIT)
-
-#define DW_SPI_CTRLR0_TMOD_SHIFT	(8)
 
 #define DW_SPI_CTRLR0_TMOD_TX_RX	(0)
 #define DW_SPI_CTRLR0_TMOD_TX		(1 << DW_SPI_CTRLR0_TMOD_SHIFT)

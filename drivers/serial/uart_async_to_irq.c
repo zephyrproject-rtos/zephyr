@@ -107,6 +107,10 @@ static void on_rx_dis(const struct device *dev, struct uart_async_to_irq_data *d
 	if (data->flags & A2I_RX_ENABLE) {
 		int err;
 
+		if (data->rx.async_rx.pending_bytes == 0) {
+			uart_async_rx_reset(&data->rx.async_rx);
+		}
+
 		err = try_rx_enable(dev, data);
 		if (err == 0) {
 			data->rx.pending_buf_req = 0;
@@ -331,7 +335,6 @@ int uart_async_to_irq_rx_enable(const struct device *dev)
 		return err;
 	}
 
-	uart_async_rx_reset(&data->rx.async_rx);
 
 	err = try_rx_enable(dev, data);
 	if (err == 0) {
@@ -354,6 +357,8 @@ int uart_async_to_irq_rx_disable(const struct device *dev)
 		}
 		k_sem_take(&data->rx.sem, K_FOREVER);
 	}
+
+	uart_async_rx_reset(&data->rx.async_rx);
 
 	return 0;
 }

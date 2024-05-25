@@ -8,6 +8,7 @@
  * @brief fixed-size stack object
  */
 
+#include <zephyr/sys/math_extras.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
 
@@ -50,7 +51,7 @@ int32_t z_impl_k_stack_alloc_init(struct k_stack *stack, uint32_t num_entries)
 	if (buffer != NULL) {
 		k_stack_init(stack, buffer, num_entries);
 		stack->flags = K_STACK_FLAG_ALLOC;
-		ret = (int32_t)0;
+		ret = 0;
 	} else {
 		ret = -ENOMEM;
 	}
@@ -64,8 +65,12 @@ int32_t z_impl_k_stack_alloc_init(struct k_stack *stack, uint32_t num_entries)
 static inline int32_t z_vrfy_k_stack_alloc_init(struct k_stack *stack,
 					      uint32_t num_entries)
 {
+	size_t total_size;
+
 	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(stack, K_OBJ_STACK));
 	K_OOPS(K_SYSCALL_VERIFY(num_entries > 0));
+	K_OOPS(K_SYSCALL_VERIFY(!size_mul_overflow(num_entries, sizeof(stack_data_t),
+					&total_size)));
 	return z_impl_k_stack_alloc_init(stack, num_entries);
 }
 #include <syscalls/k_stack_alloc_init_mrsh.c>

@@ -11,4 +11,4 @@ tests:
       - nrf5340dk/nrf5340/cpunet
     tags:
       - kernel
-      - pm
+      - profiling

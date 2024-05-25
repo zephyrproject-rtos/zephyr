@@ -1,0 +1,184 @@
+/*
+ * Copyright (c) 2024 Joel Guittet
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <espressif/esp32s3/esp32s3_r2.dtsi>
+#include "esp32s3_touch_lcd_1_28-pinctrl.dtsi"
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	model = "ESP32-S3-Touch-LCD-1.28 PROCPU";
+	compatible = "waveshare,esp32-s3-touch-lcd-1.28";
+
+	aliases {
+		i2c-1 = &i2c1;
+		pwm-0 = &ledc0;
+		pwm-lcd0 = &pwm_lcd0;
+		sw0 = &button0;
+		uart-0 = &uart0;
+		watchdog0 = &wdt0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &gc9a01;
+	};
+
+	/* Buttons */
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BOOT Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	/* Touch Controller */
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&cst816s>;
+	};
+
+	/* PWM */
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_lcd0: pwm_lcd0 {
+			pwms = <&ledc0 0 PWM_HZ(250) PWM_POLARITY_NORMAL>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <ESP32_CLK_CPU_240M>;
+};
+
+&cpu1 {
+	clock-frequency = <ESP32_CLK_CPU_240M>;
+};
+
+&flash0 {
+	status = "okay";
+	reg = <0x0 DT_SIZE_M(16)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x0000F000>;
+			read-only;
+		};
+
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 0x00100000>;
+		};
+
+		slot1_partition: partition@110000 {
+			label = "image-1";
+			reg = <0x00110000 0x00100000>;
+		};
+
+		scratch_partition: partition@210000 {
+			label = "image-scratch";
+			reg = <0x00210000 0x00040000>;
+		};
+
+		storage_partition: partition@250000 {
+			label = "storage";
+			reg = <0x00250000 0x00006000>;
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c1 {
+	status ="okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+
+	/* Hynitron CST816S Capacitive Touch Controller */
+	cst816s: cst816s@15 {
+		status = "okay";
+		compatible = "hynitron,cst816s";
+		reg = <0x15>;
+		irq-gpios = <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		rst-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&ledc0 {
+	status = "okay";
+	pinctrl-0 = <&ledc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	channel0@0 {
+		reg = <0x0>;
+		timer = <0>;
+	};
+	channel1@1 {
+		reg = <0x1>;
+		timer = <1>;
+	};
+	channel2@2 {
+		reg = <0x2>;
+		timer = <2>;
+	};
+};
+
+&spi2 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+
+	gc9a01: gc9a01@0 {
+		status = "okay";
+		compatible = "galaxycore,gc9x01x";
+		reg = <0>;
+		spi-max-frequency = <100000000>;
+		cmd-data-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+		pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+		display-inversion;
+		width = <240>;
+		height = <240>;
+	};
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&wdt0 {
+	status = "okay";
+};

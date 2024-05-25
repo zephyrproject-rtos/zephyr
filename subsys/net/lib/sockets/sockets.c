@@ -89,8 +89,8 @@ static inline void *get_sock_vtable(int sock,
 #endif /* CONFIG_USERSPACE */
 
 	if (ctx == NULL) {
-		NET_ERR("invalid access on sock %d by thread %p", sock,
-			_current);
+		NET_DBG("Invalid access on sock %d by thread %p (%s)", sock,
+			_current, k_thread_name_get(_current));
 	}
 
 	return ctx;
@@ -2692,6 +2692,22 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
+		case IPV6_ADDR_PREFERENCES:
+			if (IS_ENABLED(CONFIG_NET_IPV6)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_ADDR_PREFERENCES,
+							     optval,
+							     optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
 		case IPV6_TCLASS:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {
 				ret = net_context_get_option(ctx,
@@ -3276,6 +3292,22 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
+		case IPV6_ADDR_PREFERENCES:
+			if (IS_ENABLED(CONFIG_NET_IPV6)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_ADDR_PREFERENCES,
+							     optval,
+							     optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
 		case IPV6_TCLASS:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {
 				ret = net_context_set_option(ctx,
@@ -3452,6 +3484,7 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 			  socklen_t *addrlen)
 {
 	socklen_t newlen = 0;
+	int ret;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == AF_INET) {
 		struct sockaddr_in addr4 = { 0 };
@@ -3460,26 +3493,32 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 			SET_ERRNO(-EINVAL);
 		}
 
-		addr4.sin_family = AF_INET;
-		addr4.sin_port = net_sin_ptr(&ctx->local)->sin_port;
-		memcpy(&addr4.sin_addr, net_sin_ptr(&ctx->local)->sin_addr,
-		       sizeof(struct in_addr));
 		newlen = sizeof(struct sockaddr_in);
 
+		ret = net_context_get_local_addr(ctx,
+						 (struct sockaddr *)&addr4,
+						 &newlen);
+		if (ret < 0) {
+			SET_ERRNO(-ret);
+		}
+
 		memcpy(addr, &addr4, MIN(*addrlen, newlen));
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		   ctx->local.family == AF_INET6) {
+
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && ctx->local.family == AF_INET6) {
 		struct sockaddr_in6 addr6 = { 0 };
 
 		if (net_sin6_ptr(&ctx->local)->sin6_addr == NULL) {
 			SET_ERRNO(-EINVAL);
 		}
 
-		addr6.sin6_family = AF_INET6;
-		addr6.sin6_port = net_sin6_ptr(&ctx->local)->sin6_port;
-		memcpy(&addr6.sin6_addr, net_sin6_ptr(&ctx->local)->sin6_addr,
-		       sizeof(struct in6_addr));
 		newlen = sizeof(struct sockaddr_in6);
+
+		ret = net_context_get_local_addr(ctx,
+						 (struct sockaddr *)&addr6,
+						 &newlen);
+		if (ret < 0) {
+			SET_ERRNO(-ret);
+		}
 
 		memcpy(addr, &addr6, MIN(*addrlen, newlen));
 	} else {

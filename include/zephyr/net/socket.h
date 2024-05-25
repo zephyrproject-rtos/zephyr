@@ -22,29 +22,21 @@
  * @{
  */
 
+#include <zephyr/kernel.h>
 #include <sys/types.h>
 #include <zephyr/types.h>
+#include <zephyr/device.h>
 #include <zephyr/net/net_ip.h>
-#include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/socket_select.h>
+#include <zephyr/net/socket_poll.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/fdtable.h>
+#include <zephyr/net/dns_resolve.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief Definition of the monitored socket/file descriptor.
- *
- * An array of these descriptors is passed as an argument to poll().
- */
-struct zsock_pollfd {
-	int fd;        /**< Socket descriptor */
-	short events;  /**< Requested events */
-	short revents; /**< Returned events */
-};
 
 /**
  * @name Options for poll()
@@ -283,6 +275,7 @@ struct zsock_addrinfo {
 	int ai_family;            /**< Address family of the returned addresses */
 	int ai_socktype;          /**< Socket type, for example SOCK_STREAM or SOCK_DGRAM */
 	int ai_protocol;          /**< Protocol for addresses, 0 means any protocol */
+	int ai_eflags;            /**< Extended flags for special usage */
 	socklen_t ai_addrlen;     /**< Length of the socket address */
 	struct sockaddr *ai_addr; /**< Pointer to the address */
 	char *ai_canonname;       /**< Optional official name of the host */
@@ -561,6 +554,8 @@ static inline ssize_t zsock_recv(int sock, void *buf, size_t max_len,
  */
 __syscall int zsock_fcntl_impl(int sock, int cmd, int flags);
 
+/** @cond INTERNAL_HIDDEN */
+
 /*
  * Need this wrapper because newer GCC versions got too smart and "typecheck"
  * even macros.
@@ -577,6 +572,8 @@ static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
 }
 
 #define zsock_fcntl zsock_fcntl_wrapper
+
+/** @endcond */
 
 /**
  * @brief Control underlying socket parameters
@@ -597,6 +594,8 @@ static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
  */
 __syscall int zsock_ioctl_impl(int sock, unsigned long request, va_list ap);
 
+/** @cond INTERNAL_HIDDEN */
+
 static inline int zsock_ioctl_wrapper(int sock, unsigned long request, ...)
 {
 	int ret;
@@ -610,6 +609,8 @@ static inline int zsock_ioctl_wrapper(int sock, unsigned long request, ...)
 }
 
 #define zsock_ioctl zsock_ioctl_wrapper
+
+/** @endcond */
 
 /**
  * @brief Efficiently poll multiple sockets for events
@@ -765,6 +766,8 @@ __syscall int z_zsock_getaddrinfo_internal(const char *host,
 #define AI_ADDRCONFIG 0x20
 /** Assume service (port) is numeric */
 #define AI_NUMERICSERV 0x400
+/** Extra flags present (see RFC 5014) */
+#define AI_EXTFLAGS 0x800
 /** @} */
 
 /**
@@ -1277,6 +1280,27 @@ struct ipv6_mreq {
  *  incoming packet. See RFC 3542.
  */
 #define IPV6_RECVPKTINFO 49
+
+/** RFC5014: Source address selection. */
+#define IPV6_ADDR_PREFERENCES   72
+
+/** Prefer temporary address as source. */
+#define IPV6_PREFER_SRC_TMP             0x0001
+/** Prefer public address as source. */
+#define IPV6_PREFER_SRC_PUBLIC          0x0002
+/** Either public or temporary address is selected as a default source
+ *  depending on the output interface configuration (this is the default value).
+ *  This is Linux specific option not found in the RFC.
+ */
+#define IPV6_PREFER_SRC_PUBTMP_DEFAULT  0x0100
+/** Prefer Care-of address as source. Ignored in Zephyr. */
+#define IPV6_PREFER_SRC_COA             0x0004
+/** Prefer Home address as source. Ignored in Zephyr. */
+#define IPV6_PREFER_SRC_HOME            0x0400
+/** Prefer CGA (Cryptographically Generated Address) address as source. Ignored in Zephyr. */
+#define IPV6_PREFER_SRC_CGA             0x0008
+/** Prefer non-CGA address as source. Ignored in Zephyr. */
+#define IPV6_PREFER_SRC_NONCGA          0x0800
 
 /**
  * @brief Incoming IPv6 packet information.

@@ -128,6 +128,9 @@ config MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 	bool "ECJPAKE based ciphersuite modes"
 	depends on MBEDTLS_ECJPAKE_C
 
+config MBEDTLS_HKDF_C
+	bool "HMAC-based Extract-and-Expand Key Derivation Function"
+
 comment "Elliptic curve libraries"
 
 config MBEDTLS_ECDH_C
@@ -223,17 +226,14 @@ config MBEDTLS_HASH_ALL_ENABLED
 	select MBEDTLS_HASH_SHA512_ENABLED
 
 config MBEDTLS_HASH_SHA256_ENABLED
-	bool "SHA256 hash"
-	default y if !NET_L2_OPENTHREAD
+	bool "SHA224 and SHA256 hashes"
 
 config MBEDTLS_HASH_SHA384_ENABLED
 	bool "SHA384 hash"
-	default y if !NET_L2_OPENTHREAD
 	select MBEDTLS_HASH_SHA512_ENABLED
 
 config MBEDTLS_HASH_SHA512_ENABLED
 	bool "SHA512 hash"
-	default y if !NET_L2_OPENTHREAD
 
 comment "Supported cipher modes"
 
@@ -334,11 +334,9 @@ config MBEDTLS_MAC_MD4_ENABLED
 
 config MBEDTLS_MAC_MD5_ENABLED
 	bool "MD5 hash algorithm"
-	default y if !NET_L2_OPENTHREAD
 
 config MBEDTLS_MAC_SHA1_ENABLED
 	bool "SHA1 hash algorithm"
-	default y if !NET_L2_OPENTHREAD
 
 config MBEDTLS_MAC_SHA256_ENABLED
 	bool "SHA-224 and SHA-256 hash algorithms"
@@ -493,16 +491,43 @@ config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 	  which ensures that master secrets are different for every
 	  connection and every session.
 
+choice MBEDTLS_PSA_CRYPTO_RND_SOURCE
+	prompt "Select random source for built-in PSA crypto"
+	depends on MBEDTLS_PSA_CRYPTO_C
+	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
+
+config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
+	bool "Use a cryptographically secure driver as random source"
+	depends on CSPRNG_ENABLED
+	help
+	  Use cryptographically secure random generator to provide random data
+	  instead of legacy MbedTLS modules (ENTROPY + CTR_DRBG/HMAC_DRBG).
+
+config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
+	bool "Use legacy modules to generate random data"
+	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_CTR_DRBG_ENABLED if !MBEDTLS_HMAC_DRBG_ENABLED
+	help
+	  Use legacy MbedTLS modules (ENTROPY + CTR_DRBG/HMAC_DRBG) as random
+	  source generators.
+
+endchoice
+
 config MBEDTLS_PSA_CRYPTO_C
 	bool "Platform Security Architecture cryptography API"
-	depends on MBEDTLS_ENTROPY_ENABLED
-	depends on MBEDTLS_CTR_DRBG_ENABLED || MBEDTLS_HMAC_DRBG_ENABLED
 	default y if UOSCORE || UEDHOC
+
+config MBEDTLS_USE_PSA_CRYPTO
+	bool "Use PSA APIs instead of legacy MbedTLS when possible"
+	help
+	  Use PSA APIs instead of legacy MbedTLS functions in TLS/DTLS and other
+	  "intermediate" modules such as PK, MD and Cipher.
 
 config MBEDTLS_LMS
 	bool "Support LMS signature schemes"
-	depends on MBEDTLS_PSA_CRYPTO_C
+	depends on MBEDTLS_PSA_CRYPTO_CLIENT
 	depends on MBEDTLS_HASH_SHA256_ENABLED
+	select PSA_WANT_ALG_SHA_256
 
 config MBEDTLS_SSL_DTLS_CONNECTION_ID
 	bool "DTLS Connection ID extension"

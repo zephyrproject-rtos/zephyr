@@ -99,6 +99,7 @@ int nxp_pint_pin_enable(uint8_t pin, enum nxp_pint_trigger trigger, bool wake)
 		EnableDeepSleepIRQ(pint_irq_cfg[slot].irq);
 	} else {
 		DisableDeepSleepIRQ(pint_irq_cfg[slot].irq);
+		irq_enable(pint_irq_cfg[slot].irq);
 	}
 #endif
 	return 0;

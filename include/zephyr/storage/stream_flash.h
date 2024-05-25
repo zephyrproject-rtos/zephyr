@@ -98,21 +98,23 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 size_t stream_flash_bytes_written(struct stream_flash_ctx *ctx);
 
 /**
- * @brief  Process input buffers to be written to flash device in single blocks.
+ * @brief Process input buffers to be written to flash device in single blocks.
  * Will store remainder between calls.
  *
- * A final call to this function with flush set to true
- * will write out the remaining block buffer to flash.
+ * A write with the @p flush set to true has to be issued as the last
+ * write request for a given context, as it concludes write of a stream,
+ * and flushes buffers to storage device.
+ *
+ * @warning There must not be any additional write requests issued for a flushed context,
+ * unless it is re-initialized, as such write attempts may result in the function
+ * failing and returning error.
+ * Once context has been flushed, it can be re-initialized and re-used for new
+ * stream flash session.
  *
  * @param ctx context
  * @param data data to write
  * @param len Number of bytes to write
  * @param flush when true this forces any buffered data to be written to flash
- *        A write with the @p flush set to true has to be issued as the last
- *        write request for a given context, as it concludes write of a stream;
- *        there must not be issued any more write requests for given context,
- *        unless it is re-initialized, and such write attempts may result in the
- *        function returning error.
  *
  * @return non-negative on success, negative errno code on fail
  */

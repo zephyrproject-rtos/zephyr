@@ -1303,7 +1303,7 @@ static const struct i2s_driver_api i2s_mcux_driver_api = {
 				CONFIG_I2S_EDMA_BURST_SIZE,		\
 			  .dma_callback = i2s_dma_tx_callback,		\
 			  .complete_callback_en = 1,			\
-			  .error_callback_en = 1,			\
+			  .error_callback_dis = 1,			\
 			  .block_count = 1,				\
 			  .head_block =					\
 				&i2s_##i2s_id##_data.tx.dma_block,	\
@@ -1323,7 +1323,7 @@ static const struct i2s_driver_api i2s_mcux_driver_api = {
 				CONFIG_I2S_EDMA_BURST_SIZE,		\
 			  .dma_callback = i2s_dma_rx_callback,		\
 			  .complete_callback_en = 1,			\
-			  .error_callback_en = 1,			\
+			  .error_callback_dis = 1,			\
 			  .block_count = 1,				\
 			  .head_block =					\
 				&i2s_##i2s_id##_data.rx.dma_block,	\

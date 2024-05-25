@@ -406,7 +406,7 @@ class ImgtoolSigner(Signer):
 
         # The partitions node, and its subnode, must provide
         # the size of slot1_partition or slot0_partition partition via the regs property.
-        slot_key = 'slot0_partition' if 'slot1_partition' in slots else 'slot0_partition'
+        slot_key = 'slot1_partition' if 'slot1_partition' in slots else 'slot0_partition'
         if not slots[slot_key].regs:
             log.die(f'{slot_key} flash partition has no regs property;',
                     "can't determine size of slot")

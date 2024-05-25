@@ -298,6 +298,14 @@ int main(void)
 	buf_desc.height = h_step;
 
 	for (int idx = 0; idx < capabilities.y_resolution; idx += h_step) {
+		/*
+		 * Tweaking the height value not to draw outside of the display.
+		 * It is required when using a monochrome display whose vertical
+		 * resolution can not be divided by 8.
+		 */
+		if ((capabilities.y_resolution - idx) < h_step) {
+			buf_desc.height = (capabilities.y_resolution - idx);
+		}
 		display_write(display_dev, 0, idx, &buf_desc, buf);
 	}
 

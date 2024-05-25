@@ -13,6 +13,7 @@
 #include <nrfx_uarte.h>
 #include <drivers/src/prs/nrfx_prs.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
 
 #define TRANSFER_LENGTH 10
 
@@ -133,6 +134,8 @@ static bool switch_to_spim(void)
 	 */
 	if (uarte_initialized) {
 		nrfx_uarte_uninit(&uarte);
+		/* Workaround: uninit does not clear events, make sure all events are cleared. */
+		nrfy_uarte_int_init(uarte.p_reg, 0xFFFFFFFF, 0, false);
 		uarte_initialized = false;
 	}
 
@@ -141,7 +144,7 @@ static bool switch_to_spim(void)
 		NRF_SPIM_PIN_NOT_CONNECTED,
 		NRF_SPIM_PIN_NOT_CONNECTED,
 		NRF_DT_GPIOS_TO_PSEL(SPIM_NODE, cs_gpios));
-	spim_config.frequency = NRF_SPIM_FREQ_1M;
+	spim_config.frequency = MHZ(1);
 	spim_config.skip_gpio_cfg = true;
 	spim_config.skip_psel_cfg = true;
 
@@ -150,6 +153,10 @@ static bool switch_to_spim(void)
 	if (ret < 0) {
 		return ret;
 	}
+
+	/* Set initial state of SCK according to the SPI mode. */
+	nrfy_gpio_pin_write(nrfy_spim_sck_pin_get(spim.p_reg),
+			    (spim_config.mode <= NRF_SPIM_MODE_1) ? 0 : 1);
 
 	err = nrfx_spim_init(&spim, &spim_config, spim_handler, NULL);
 	if (err != NRFX_SUCCESS) {
@@ -215,6 +222,8 @@ static bool switch_to_uarte(void)
 	 */
 	if (spim_initialized) {
 		nrfx_spim_uninit(&spim);
+		/* Workaround: uninit does not clear events, make sure all events are cleared. */
+		nrfy_spim_int_init(spim.p_reg, 0xFFFFFFFF, 0, false);
 		spim_initialized = false;
 	}
 
@@ -291,7 +300,7 @@ static bool background_transfer(const struct device *spi_dev)
 	static const struct spi_config spi_dev_cfg = {
 		.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |
 			     SPI_TRANSFER_MSB,
-		.frequency = 1000000,
+		.frequency = MHZ(1),
 		.cs = {
 			.gpio = GPIO_DT_SPEC_GET(SPI_DEV_NODE, cs_gpios),
 		},

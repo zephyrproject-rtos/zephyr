@@ -7,6 +7,6 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 
-int bt_testlib_adv_conn(struct bt_conn **conn, int id, uint32_t adv_options);
+int bt_testlib_adv_conn(struct bt_conn **conn, int id, const char *name);
 
 #endif /* ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_ADV_H_ */

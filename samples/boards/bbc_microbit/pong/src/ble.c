@@ -42,6 +42,10 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_UUID128_ALL, PONG_SVC_UUID),
 };
 
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 static struct bt_conn *default_conn;
 
 static const struct bt_gatt_attr *local_attr;
@@ -467,8 +471,8 @@ static void ble_timeout(struct k_work *work)
 		k_work_reschedule(&ble_work, K_NO_WAIT);
 		break;
 	case BLE_ADV_START:
-		err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad),
-				      NULL, 0);
+		err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
+				      sd, ARRAY_SIZE(sd));
 		if (err) {
 			printk("Advertising failed to start (err %d)\n", err);
 			return;

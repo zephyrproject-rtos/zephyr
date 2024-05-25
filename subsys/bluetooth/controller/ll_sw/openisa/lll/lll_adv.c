@@ -654,7 +654,7 @@ isr_rx_do_close:
 
 static void isr_done(void *param)
 {
-	struct node_rx_hdr *node_rx;
+	struct node_rx_pdu *node_rx;
 	struct lll_adv *lll = param;
 
 	/* TODO: MOVE to a common interface, isr_lll_radio_status? */
@@ -728,9 +728,9 @@ static void isr_done(void *param)
 		ull_pdu_rx_alloc();
 
 		/* TODO: add other info by defining a payload struct */
-		node_rx->type = NODE_RX_TYPE_ADV_INDICATION;
+		node_rx->hdr.type = NODE_RX_TYPE_ADV_INDICATION;
 
-		ull_rx_put_sched(node_rx->link, node_rx);
+		ull_rx_put_sched(node_rx->hdr.link, node_rx);
 	}
 #else /* !CONFIG_BT_CTLR_ADV_INDICATION */
 	ARG_UNUSED(node_rx);
@@ -927,7 +927,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		memcpy(rx->pdu, pdu_rx, (offsetof(struct pdu_adv, connect_ind) +
 					 sizeof(struct pdu_adv_connect_ind)));
 
-		ftr = &(rx->hdr.rx_ftr);
+		ftr = &(rx->rx_ftr);
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = radio_tmr_end_get() -
@@ -1001,7 +1001,7 @@ static inline int isr_rx_sr_report(struct pdu_adv *pdu_adv_rx,
 	pdu_len = offsetof(struct pdu_adv, payload) + pdu_adv_rx->len;
 	memcpy(pdu_adv, pdu_adv_rx, pdu_len);
 
-	node_rx->hdr.rx_ftr.rssi = (rssi_ready) ? (radio_rssi_get() & 0x7f) :
+	node_rx->rx_ftr.rssi = (rssi_ready) ? (radio_rssi_get() & 0x7f) :
 						  0x7f;
 
 	ull_rx_put_sched(node_rx->hdr.link, node_rx);

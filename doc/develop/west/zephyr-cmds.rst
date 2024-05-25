@@ -74,7 +74,7 @@ See :zephyr_file:`share/zephyr-package/cmake` for details.
 Software bill of materials: ``west spdx``
 *****************************************
 
-This command generates SPDX 2.2 tag-value documents, creating relationships
+This command generates SPDX 2.3 tag-value documents, creating relationships
 from source files to the corresponding generated build files.
 ``SPDX-License-Identifier`` comments in source files are scanned and filled
 into the SPDX documents.

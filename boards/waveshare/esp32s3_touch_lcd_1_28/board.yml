@@ -1,0 +1,5 @@
+board:
+  name: esp32s3_touch_lcd_1_28
+  vendor: waveshare
+  socs:
+  - name: esp32s3

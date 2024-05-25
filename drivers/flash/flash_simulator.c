@@ -268,7 +268,7 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 #if FLASH_SIMULATOR_ERASE_VALUE == 0xFF
 		*(MOCK_FLASH(offset + i)) &= *((uint8_t *)data + i);
 #else
-		*(MOCK_FLASH(offset + i)) = *((uint8_t *)data + i);
+		*(MOCK_FLASH(offset + i)) |= *((uint8_t *)data + i);
 #endif
 	}
 

@@ -134,13 +134,13 @@ struct modem_cellular_data {
 
 struct modem_cellular_config {
 	const struct device *uart;
-	const struct gpio_dt_spec power_gpio;
-	const struct gpio_dt_spec reset_gpio;
-	const uint16_t power_pulse_duration_ms;
-	const uint16_t reset_pulse_duration_ms;
-	const uint16_t startup_time_ms;
-	const uint16_t shutdown_time_ms;
-	const bool autostarts;
+	struct gpio_dt_spec power_gpio;
+	struct gpio_dt_spec reset_gpio;
+	uint16_t power_pulse_duration_ms;
+	uint16_t reset_pulse_duration_ms;
+	uint16_t startup_time_ms;
+	uint16_t shutdown_time_ms;
+	bool autostarts;
 	const struct modem_chat_script *init_chat_script;
 	const struct modem_chat_script *dial_chat_script;
 	const struct modem_chat_script *periodic_chat_script;
@@ -408,7 +408,7 @@ static void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, u
 
 	if (argc == 2) {
 		registration_status = atoi(argv[1]);
-	} else if (argc == 3) {
+	} else if (argc == 3 || argc == 6) {
 		registration_status = atoi(argv[2]);
 	} else {
 		return;
@@ -458,7 +458,7 @@ MODEM_CHAT_MATCHES_DEFINE(dial_abort_matches,
 			  MODEM_CHAT_MATCH("NO CARRIER", "", NULL),
 			  MODEM_CHAT_MATCH("NO DIALTONE", "", NULL));
 
-#if DT_HAS_COMPAT_STATUS_OKAY(swir_hl7800)
+#if DT_HAS_COMPAT_STATUS_OKAY(swir_hl7800) || DT_HAS_COMPAT_STATUS_OKAY(sqn_gm02s)
 MODEM_CHAT_MATCH_DEFINE(connect_match, "CONNECT", "", NULL);
 #endif
 
@@ -2038,6 +2038,45 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_periodic_chat_script,
 			 modem_cellular_chat_callback_handler, 4);
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(sqn_gm02s)
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(sqn_gm02s_init_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", cgmi_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", cgmr_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0,5,127", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_init_chat_script, sqn_gm02s_init_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(sqn_gm02s_dial_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
+							 "\""CONFIG_MODEM_CELLULAR_APN"\"",
+							 ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CFUN=1", 10000),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("ATD*99***1#", connect_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_dial_chat_script, sqn_gm02s_dial_chat_script_cmds,
+			 dial_abort_matches, modem_cellular_chat_callback_handler, 15);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(sqn_gm02s_periodic_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
+			 sqn_gm02s_periodic_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 4);
+#endif
+
 #define MODEM_CELLULAR_INST_NAME(name, inst) \
 	_CONCAT(_CONCAT(_CONCAT(name, _), DT_DRV_COMPAT), inst)
 
@@ -2050,7 +2089,7 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2079,7 +2118,7 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2108,7 +2147,7 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2137,7 +2176,7 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2166,7 +2205,7 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2195,7 +2234,7 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2225,7 +2264,7 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2254,7 +2293,7 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2282,7 +2321,7 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_periodic_chat_script,
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \
-	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
@@ -2293,6 +2332,36 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_periodic_chat_script,
 		.init_chat_script = &nordic_nrf91_slm_init_chat_script,                            \
 		.dial_chat_script = &nordic_nrf91_slm_dial_chat_script,                            \
 		.periodic_chat_script = &nordic_nrf91_slm_periodic_chat_script,                    \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, modem_cellular_init, PM_DEVICE_DT_INST_GET(inst),              \
+			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
+			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL, 99,            \
+			      &modem_cellular_api);
+
+#define MODEM_CELLULAR_DEVICE_SQN_GM02S(inst)                                                      \
+	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
+                                                                                                   \
+	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
+		.chat_delimiter = "\r",                                                            \
+		.chat_filter = "\n",                                                               \
+		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
+	};                                                                                         \
+                                                                                                   \
+	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
+		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
+		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
+		.autostarts = true,                                                                \
+		.power_pulse_duration_ms = 1500,                                                   \
+		.reset_pulse_duration_ms = 100,                                                    \
+		.startup_time_ms = 2000,                                                           \
+		.shutdown_time_ms = 5000,                                                          \
+		.init_chat_script = &sqn_gm02s_init_chat_script,                                   \
+		.dial_chat_script = &sqn_gm02s_dial_chat_script,                                   \
+		.periodic_chat_script = &sqn_gm02s_periodic_chat_script,                           \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
@@ -2336,4 +2405,8 @@ DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_TELIT_ME910G1)
 
 #define DT_DRV_COMPAT nordic_nrf91_slm
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_NORDIC_NRF91_SLM)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT sqn_gm02s
+DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_SQN_GM02S)
 #undef DT_DRV_COMPAT

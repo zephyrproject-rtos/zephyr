@@ -963,7 +963,7 @@ struct net_buf_simple_state {
 static inline void net_buf_simple_save(struct net_buf_simple *buf,
 				       struct net_buf_simple_state *state)
 {
-	state->offset = net_buf_simple_headroom(buf);
+	state->offset = (uint16_t)net_buf_simple_headroom(buf);
 	state->len = buf->len;
 }
 
@@ -1017,10 +1017,10 @@ struct net_buf {
 	/** Where the buffer should go when freed up. */
 	uint8_t pool_id;
 
-	/* Size of user data on this buffer */
+	/** Size of user data on this buffer */
 	uint8_t user_data_size;
 
-	/* Union for convenience access to the net_buf_simple members, also
+	/** Union for convenience access to the net_buf_simple members, also
 	 * preserving the old API.
 	 */
 	union {
@@ -1042,12 +1042,16 @@ struct net_buf {
 			uint8_t *__buf;
 		};
 
+		/** @cond INTERNAL_HIDDEN */
 		struct net_buf_simple b;
+		/** @endcond */
 	};
 
 	/** System metadata for this buffer. */
 	uint8_t user_data[] __net_buf_align;
 };
+
+/** @cond INTERNAL_HIDDEN */
 
 struct net_buf_data_cb {
 	uint8_t * __must_check (*alloc)(struct net_buf *buf, size_t *size,
@@ -1062,6 +1066,8 @@ struct net_buf_data_alloc {
 	size_t max_alloc_size;
 };
 
+/** @endcond */
+
 /**
  * @brief Network buffer pool representation.
  *
@@ -1071,7 +1077,7 @@ struct net_buf_pool {
 	/** LIFO to place the buffer into when free */
 	struct k_lifo free;
 
-	/* to prevent concurrent access/modifications */
+	/** To prevent concurrent access/modifications */
 	struct k_spinlock lock;
 
 	/** Number of buffers in pool */
@@ -1080,7 +1086,7 @@ struct net_buf_pool {
 	/** Number of uninitialized buffers */
 	uint16_t uninit_count;
 
-	/* Size of user data allocated to this pool */
+	/** Size of user data allocated to this pool */
 	uint8_t user_data_size;
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
@@ -1172,12 +1178,14 @@ extern const struct net_buf_data_alloc net_buf_heap_alloc;
 					 _net_buf_##_name, _count, _ud_size, \
 					 _destroy)
 
+/** @cond INTERNAL_HIDDEN */
+
 struct net_buf_pool_fixed {
 	uint8_t *data_pool;
 };
 
-/** @cond INTERNAL_HIDDEN */
 extern const struct net_buf_data_cb net_buf_fixed_cb;
+
 /** @endcond */
 
 /**
@@ -1315,14 +1323,19 @@ int net_buf_id(struct net_buf *buf);
 /**
  * @brief Allocate a new fixed buffer from a pool.
  *
+ * @note Some types of data allocators do not support
+ *       blocking (such as the HEAP type). In this case it's still possible
+ *       for net_buf_alloc() to fail (return NULL) even if it was given
+ *       K_FOREVER.
+ *
+ * @note The timeout value will be overridden to K_NO_WAIT if called from the
+ *       system workqueue.
+ *
  * @param pool Which pool to allocate the buffer from.
  * @param timeout Affects the action taken should the pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait until the specified
- *        timeout. Note that some types of data allocators do not support
- *        blocking (such as the HEAP type). In this case it's still possible
- *        for net_buf_alloc() to fail (return NULL) even if it was given
- *        K_FOREVER.
+ *        timeout.
  *
  * @return New buffer or NULL if out of buffers.
  */
@@ -1350,15 +1363,20 @@ static inline struct net_buf * __must_check net_buf_alloc(struct net_buf_pool *p
 /**
  * @brief Allocate a new variable length buffer from a pool.
  *
+ * @note Some types of data allocators do not support
+ *       blocking (such as the HEAP type). In this case it's still possible
+ *       for net_buf_alloc() to fail (return NULL) even if it was given
+ *       K_FOREVER.
+ *
+ * @note The timeout value will be overridden to K_NO_WAIT if called from the
+ *       system workqueue.
+ *
  * @param pool Which pool to allocate the buffer from.
  * @param size Amount of data the buffer must be able to fit.
  * @param timeout Affects the action taken should the pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait until the specified
- *        timeout. Note that some types of data allocators do not support
- *        blocking (such as the HEAP type). In this case it's still possible
- *        for net_buf_alloc() to fail (return NULL) even if it was given
- *        K_FOREVER.
+ *        timeout.
  *
  * @return New buffer or NULL if out of buffers.
  */
@@ -1382,16 +1400,21 @@ struct net_buf * __must_check net_buf_alloc_len(struct net_buf_pool *pool,
  * Allocate a new buffer from a pool, where the data pointer comes from the
  * user and not from the pool.
  *
+ * @note Some types of data allocators do not support
+ *       blocking (such as the HEAP type). In this case it's still possible
+ *       for net_buf_alloc() to fail (return NULL) even if it was given
+ *       K_FOREVER.
+ *
+ * @note The timeout value will be overridden to K_NO_WAIT if called from the
+ *       system workqueue.
+ *
  * @param pool Which pool to allocate the buffer from.
  * @param data External data pointer
  * @param size Amount of data the pointed data buffer if able to fit.
  * @param timeout Affects the action taken should the pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait until the specified
- *        timeout. Note that some types of data allocators do not support
- *        blocking (such as the HEAP type). In this case it's still possible
- *        for net_buf_alloc() to fail (return NULL) even if it was given
- *        K_FOREVER.
+ *        timeout.
  *
  * @return New buffer or NULL if out of buffers.
  */

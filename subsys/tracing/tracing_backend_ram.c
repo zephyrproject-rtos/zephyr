@@ -35,6 +35,8 @@ static void tracing_backend_ram_output(
 static void tracing_backend_ram_init(void)
 {
 	memset(ram_tracing, 0, CONFIG_RAM_TRACING_BUFFER_SIZE);
+	pos = 0;
+	buffer_full = false;
 }
 
 const struct tracing_backend_api tracing_backend_ram_api = {

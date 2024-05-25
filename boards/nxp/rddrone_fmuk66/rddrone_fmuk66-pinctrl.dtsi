@@ -10,7 +10,7 @@
 #include <nxp/kinetis/MK66FN2M0VMD18-pinctrl.h>
 
 &pinctrl {
-	enet_default: enet_default {
+	mdio_default: mdio_default {
 		group0 {
 			pinmux = <RMII0_MDIO_PTB0>;
 			drive-strength = "low";
@@ -19,14 +19,21 @@
 			slew-rate = "fast";
 		};
 		group1 {
+			pinmux = <RMII0_MDC_PTB1>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
+	enet_default: enet_default {
+		group0 {
 			pinmux = <RMII0_RXER_PTA5>,
 				<RMII0_RXD1_PTA12>,
 				<RMII0_RXD0_PTA13>,
 				<RMII0_CRS_DV_PTA14>,
 				<RMII0_TXEN_PTA15>,
 				<RMII0_TXD1_PTA17>,
-				<RMII0_TXD0_PTA16>,
-				<RMII0_MDC_PTB1>;
+				<RMII0_TXD0_PTA16>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};

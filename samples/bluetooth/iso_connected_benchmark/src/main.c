@@ -137,6 +137,10 @@ static struct bt_iso_cig_param cig_create_param = {
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 static enum benchmark_role device_role_select(void)
 {
 	char role_char;
@@ -1275,11 +1279,9 @@ static int run_peripheral(void)
 
 	LOG_INF("Starting advertising");
 	err = bt_le_adv_start(
-		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_ONE_TIME | BT_LE_ADV_OPT_CONNECTABLE |
-					BT_LE_ADV_OPT_USE_NAME |
-					BT_LE_ADV_OPT_FORCE_NAME_IN_AD,
+		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_ONE_TIME | BT_LE_ADV_OPT_CONNECTABLE,
 				BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL),
-		NULL, 0, NULL, 0);
+		NULL, 0, sd, ARRAY_SIZE(sd));
 	if (err != 0) {
 		LOG_ERR("Advertising failed to start: %d", err);
 		return err;

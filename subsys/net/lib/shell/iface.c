@@ -321,12 +321,13 @@ static void iface_cb(struct net_if *iface, void *user_data)
 			continue;
 		}
 
-		PR("\t%s %s %s%s%s\n",
+		PR("\t%s %s %s%s%s%s\n",
 		   net_sprint_ipv6_addr(&unicast->address.in6_addr),
 		   addrtype2str(unicast->addr_type),
 		   addrstate2str(unicast->addr_state),
 		   unicast->is_infinite ? " infinite" : "",
-		   unicast->is_mesh_local ? " meshlocal" : "");
+		   unicast->is_mesh_local ? " meshlocal" : "",
+		   unicast->is_temporary ? " temporary" : "");
 		count++;
 	}
 
@@ -385,6 +386,12 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 skip_ipv6:
 
+#if defined(CONFIG_NET_IPV6_PE)
+	PR("IPv6 privacy extension   : %s (preferring %s addresses)\n",
+	   iface->pe_enabled ? "enabled" : "disabled",
+	   iface->pe_prefer_public ? "public" : "temporary");
+#endif
+
 	if (ipv6) {
 		PR("IPv6 hop limit           : %d\n",
 		   ipv6->hop_limit);
@@ -404,9 +411,6 @@ skip_ipv6:
 	if (
 #if defined(CONFIG_NET_L2_IEEE802154)
 		(net_if_l2(iface) == &NET_L2_GET_NAME(IEEE802154)) ||
-#endif
-#if defined(CONFIG_NET_L2_BT)
-		 (net_if_l2(iface) == &NET_L2_GET_NAME(BLUETOOTH)) ||
 #endif
 		 0) {
 		PR_WARNING("%s not %s for this interface.\n", "IPv4",

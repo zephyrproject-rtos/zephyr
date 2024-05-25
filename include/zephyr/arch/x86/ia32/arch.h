@@ -266,8 +266,8 @@ static inline void arch_irq_direct_pm(void)
  * tracing/tracing.h cannot be included here due to circular dependency
  */
 #if defined(CONFIG_TRACING)
-extern void sys_trace_isr_enter(void);
-extern void sys_trace_isr_exit(void);
+void sys_trace_isr_enter(void);
+void sys_trace_isr_exit(void);
 #endif
 
 static inline void arch_isr_direct_header(void)
@@ -287,7 +287,7 @@ static inline void arch_isr_direct_header(void)
  *	  cannot be referenced from a public header, so we move it to an
  *	  external function.
  */
-extern void arch_isr_direct_footer_swap(unsigned int key);
+void arch_isr_direct_footer_swap(unsigned int key);
 
 static inline void arch_isr_direct_footer(int swap)
 {

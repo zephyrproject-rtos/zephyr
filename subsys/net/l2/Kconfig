@@ -14,62 +14,6 @@ if NET_L2_DUMMY
 source "subsys/net/l2/dummy/Kconfig"
 endif
 
-config NET_L2_BT
-	bool "Bluetooth support"
-	depends on NET_IPV6
-	depends on BT
-	depends on BT_PERIPHERAL
-	depends on BT_CENTRAL
-	depends on BT_SMP
-	depends on BT_L2CAP_DYNAMIC_CHANNEL
-	select NET_6LO
-	help
-	  Enable Bluetooth driver that send and receives IPv6 packets,
-	  does header compression on it and writes it to the
-	  Bluetooth stack via L2CAP channel.
-
-if NET_L2_BT
-config NET_L2_BT_ZEP1656
-	bool "***Workaround to work with Linux.***"
-	help
-	  This workaround is necessary to interoperate with Linux up to 4.10 but
-	  it might not be compliant with RFC 7668 as it cause the stack to skip
-	  Neighbor Discovery cache causing the destination link address to be
-	  omitted. For more details why this is needed see:
-	  https://github.com/zephyrproject-rtos/zephyr/issues/3111
-
-config NET_L2_BT_SEC_LEVEL
-	int "Security level of Bluetooth Link"
-	default 1
-	range 1 4
-	help
-	  Security level of Bluetooth Link:
-	  Level 1 (BT_SECURITY_L1) = No encryption or authentication required
-	  Level 2 (BT_SECURITY_L2) = Only encryption required
-	  Level 3 (BT_SECURITY_L3) = Encryption and authentication required
-	  Level 4 (BT_SECURITY_L4) = LE Secure Connection required
-
-module = NET_L2_BT
-module-dep = NET_LOG
-module-str = Log level for Bluetooth L2 layer
-module-help = Enables Bluetooth L2 to output debug messages.
-source "subsys/net/Kconfig.template.log_config.net"
-endif
-
-config NET_L2_BT_MGMT
-	bool "Bluetooth Network Management support"
-	depends on NET_L2_BT
-	select NET_MGMT
-	select NET_MGMT_EVENT
-
-config NET_L2_BT_SHELL
-	bool "Bluetooth shell module"
-	select SHELL
-	select NET_L2_BT_MGMT
-	help
-	  This can be used for testing Bluetooth management commands through the
-	  console via a shell module named "net_bt".
-
 source "subsys/net/l2/virtual/Kconfig"
 
 source "subsys/net/l2/ethernet/Kconfig"

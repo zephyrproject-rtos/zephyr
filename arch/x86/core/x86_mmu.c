@@ -450,6 +450,8 @@ static inline void assert_addr_aligned(uintptr_t addr)
 #if __ASSERT_ON
 	__ASSERT((addr & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U,
 		 "unaligned address 0x%" PRIxPTR, addr);
+#else
+	ARG_UNUSED(addr);
 #endif
 }
 
@@ -481,6 +483,8 @@ static inline void assert_size_aligned(size_t size)
 #if __ASSERT_ON
 	__ASSERT((size & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U,
 		 "unaligned size %zu", size);
+#else
+	ARG_UNUSED(size);
 #endif
 }
 
@@ -828,6 +832,9 @@ static inline pentry_t pte_finalize_value(pentry_t val, bool user_table,
 	    get_entry_phys(val, level) != shared_phys_addr) {
 		val = ~val;
 	}
+#else
+	ARG_UNUSED(user_table);
+	ARG_UNUSED(level);
 #endif
 	return val;
 }
@@ -841,7 +848,7 @@ static inline pentry_t pte_finalize_value(pentry_t val, bool user_table,
 __pinned_func
 static inline pentry_t atomic_pte_get(const pentry_t *target)
 {
-	return (pentry_t)atomic_ptr_get((atomic_ptr_t *)target);
+	return (pentry_t)atomic_ptr_get((const atomic_ptr_t *)target);
 }
 
 __pinned_func
@@ -1162,8 +1169,8 @@ static int range_map(void *virt, uintptr_t phys, size_t size,
 {
 	int ret = 0, ret2;
 
-	LOG_DBG("%s: %p -> %p (%zu) flags " PRI_ENTRY " mask "
-		PRI_ENTRY " opt 0x%x", __func__, (void *)phys, virt, size,
+	LOG_DBG("%s: 0x%" PRIxPTR " -> %p (%zu) flags " PRI_ENTRY " mask "
+		PRI_ENTRY " opt 0x%x", __func__, phys, virt, size,
 		entry_flags, mask, options);
 
 #ifdef CONFIG_X86_64
@@ -1294,7 +1301,7 @@ void arch_mem_unmap(void *addr, size_t size)
 {
 	int ret;
 
-	ret = range_map_unlocked((void *)addr, 0, size, 0, 0,
+	ret = range_map_unlocked(addr, 0, size, 0, 0,
 				 OPTION_FLUSH | OPTION_CLEAR);
 	__ASSERT_NO_MSG(ret == 0);
 	ARG_UNUSED(ret);
@@ -1355,7 +1362,7 @@ void z_x86_mmu_init(void)
 #endif
 }
 
-#if CONFIG_X86_STACK_PROTECTION
+#ifdef CONFIG_X86_STACK_PROTECTION
 __pinned_func
 void z_x86_set_stack_guard(k_thread_stack_t *stack)
 {
@@ -1380,7 +1387,7 @@ void z_x86_set_stack_guard(k_thread_stack_t *stack)
 __pinned_func
 static bool page_validate(pentry_t *ptables, uint8_t *addr, bool write)
 {
-	pentry_t *table = (pentry_t *)ptables;
+	pentry_t *table = ptables;
 
 	for (int level = 0; level < NUM_LEVELS; level++) {
 		pentry_t entry = get_entry(table, addr, level);
@@ -1425,7 +1432,7 @@ static inline void bcb_fence(void)
 }
 
 __pinned_func
-int arch_buffer_validate(void *addr, size_t size, int write)
+int arch_buffer_validate(const void *addr, size_t size, int write)
 {
 	pentry_t *ptables = z_x86_thread_page_tables_get(_current);
 	uint8_t *virt;
@@ -1433,8 +1440,8 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 	int ret = 0;
 
 	/* addr/size arbitrary, fix this up into an aligned region */
-	k_mem_region_align((uintptr_t *)&virt, &aligned_size,
-			   (uintptr_t)addr, size, CONFIG_MMU_PAGE_SIZE);
+	(void)k_mem_region_align((uintptr_t *)&virt, &aligned_size,
+				 (uintptr_t)addr, size, CONFIG_MMU_PAGE_SIZE);
 
 	for (size_t offset = 0; offset < aligned_size;
 	     offset += CONFIG_MMU_PAGE_SIZE) {
@@ -1774,8 +1781,8 @@ static inline int apply_region(pentry_t *ptables, void *start,
 __pinned_func
 static void set_stack_perms(struct k_thread *thread, pentry_t *ptables)
 {
-	LOG_DBG("update stack for thread %p's ptables at %p: %p (size %zu)",
-		thread, ptables, (void *)thread->stack_info.start,
+	LOG_DBG("update stack for thread %p's ptables at %p: 0x%" PRIxPTR " (size %zu)",
+		thread, ptables, thread->stack_info.start,
 		thread->stack_info.size);
 	apply_region(ptables, (void *)thread->stack_info.start,
 		     thread->stack_info.size,
@@ -1922,8 +1929,8 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	}
 
 	thread->arch.ptables = z_mem_phys_addr(domain->arch.ptables);
-	LOG_DBG("set thread %p page tables to %p", thread,
-		(void *)thread->arch.ptables);
+	LOG_DBG("set thread %p page tables to 0x%" PRIxPTR, thread,
+		thread->arch.ptables);
 
 	/* Check if we're doing a migration from a different memory domain
 	 * and have to remove permissions from its old domain.
@@ -2001,9 +2008,7 @@ static void mark_addr_page_reserved(uintptr_t addr, size_t len)
 			continue;
 		}
 
-		struct z_page_frame *pf = z_phys_to_page_frame(pos);
-
-		pf->flags |= Z_PAGE_FRAME_RESERVED;
+		z_page_frame_set(z_phys_to_page_frame(pos), Z_PAGE_FRAME_RESERVED);
 	}
 }
 

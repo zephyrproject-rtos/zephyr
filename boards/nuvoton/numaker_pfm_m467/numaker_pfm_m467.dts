@@ -111,8 +111,6 @@
 };
 
 &canfd0 {
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	pinctrl-0 = <&canfd0_default>;
 	pinctrl-names = "default";
 	status = "okay";

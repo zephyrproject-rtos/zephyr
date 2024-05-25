@@ -226,14 +226,11 @@ static int img_mgmt_get_unused_slot_area_id(int slot)
 #endif
 }
 #elif CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER >= 2
-static int img_mgmt_get_unused_slot_area_id(int image)
+static int img_mgmt_get_unused_slot_area_id(unsigned int image)
 {
 	int area_id = -1;
 	int slot = 0;
 
-	if (image == -1) {
-		image = 0;
-	}
 	slot = img_mgmt_get_opposite_slot(img_mgmt_active_slot(image));
 
 	if (!img_mgmt_slot_in_use(slot)) {

@@ -9,6 +9,8 @@ Overview
 This sample is a minimum application to demonstrate basic power management
 behavior in a basic blinking LED set up using the :ref:`GPIO API <gpio_api>` in
 low power context + ADC measurements and entropy.
+SPI loopback is also available but not yet implemented for Suspend To RAM PM
+mode.
 
 .. _stm32-pm-suspend-to-ram-sample-requirements:
 

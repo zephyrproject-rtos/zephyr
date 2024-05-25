@@ -8,7 +8,6 @@ zephyr_sources(
 )
 
 zephyr_sources_ifdef(CONFIG_SOC_ANDES_V5_PMA pma.c)
-zephyr_sources_ifdef(CONFIG_SOC_ANDES_V5_L2C l2_cache.c)
 zephyr_linker_sources(ROM_START SORT_KEY 0x0 common_linker/init.ld)
 zephyr_linker_sources_ifdef(CONFIG_SOC_ANDES_V5_EXECIT RODATA SORT_KEY 0x0 common_linker/execit.ld)
 zephyr_linker_sources_ifdef(CONFIG_XIP RAM_SECTIONS SORT_KEY 0x0 common_linker/ram_start_nonzero.ld)

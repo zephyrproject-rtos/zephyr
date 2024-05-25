@@ -48,7 +48,7 @@ config BT_HCI_TX_STACK_SIZE
 	default 512 if BT_H4
 	default 512 if BT_H5
 	default 416 if BT_SPI
-	default 940 if BT_CTLR && BT_LL_SW_SPLIT && (NO_OPTIMIZATIONS || BT_ISO_BROADCAST)
+	default 1152 if BT_CTLR && BT_LL_SW_SPLIT && (NO_OPTIMIZATIONS || BT_ISO_BROADCAST)
 	default 1024 if BT_CTLR && BT_LL_SW_SPLIT && BT_CENTRAL
 	default 768 if BT_CTLR && BT_LL_SW_SPLIT
 	default 512 if BT_USERCHAN
@@ -71,27 +71,6 @@ config BT_HCI_TX_PRIO
 	# Hidden option for Co-Operative Tx thread priority
 	int
 	default 7
-
-config BT_HCI_RESERVE
-	int
-	default 0 if BT_H4
-	default 1 if BT_H5
-	default 1 if BT_HCI_IPC
-	default 1 if BT_SPI
-	default 1 if BT_STM32_IPM
-	default 1 if BT_STM32WBA
-	default 1 if BT_USERCHAN
-	default 1 if BT_ESP32
-	default 0 if BT_B91
-	default 1 if BT_AMBIQ_HCI
-	default 1 if BT_SILABS_HCI
-	# Even if no driver is selected the following default is still
-	# needed e.g. for unit tests.
-	default 0
-	help
-	  Headroom that the driver needs for sending and receiving buffers. Add a
-	  new 'default' entry for each new driver.
-
 
 choice BT_RECV_CONTEXT
 	prompt "BT RX Thread Selection"
@@ -902,8 +881,7 @@ config BT_DF_CTE_TX_AOD
 
 config BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES
 	bool "Use 16 bits signed integer IQ samples in connectionless IQ reports"
-	depends on BT_DF_CONNECTIONLESS_CTE_RX && BT_HCI_VS_EXT
-	select BT_HCI_VS_EVT
+	depends on BT_DF_CONNECTIONLESS_CTE_RX && BT_HCI_VS
 	help
 	  Direction Finging connectionless IQ reports provide a set of IQ samples collected during
 	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
@@ -913,8 +891,7 @@ config BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES
 
 config BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES
 	bool "Use 16 bits signed integer IQ samples in connection IQ reports"
-	depends on BT_DF_CONNECTION_CTE_RX && BT_HCI_VS_EXT
-	select BT_HCI_VS_EVT
+	depends on BT_DF_CONNECTION_CTE_RX && BT_HCI_VS
 	help
 	  Direction Finging connection IQ reports provide a set of IQ samples collected during
 	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
@@ -1019,88 +996,7 @@ config BT_CONN_DISABLE_SECURITY
 	  WARNING: This option enables anyone to snoop on-air traffic.
 	  Use of this feature in production is strongly discouraged.
 
-config BT_CLASSIC
-	bool "Bluetooth BR/EDR support [EXPERIMENTAL]"
-	depends on BT_HCI_HOST
-	select BT_PERIPHERAL
-	select BT_CENTRAL
-	select BT_SMP
-	select BT_L2CAP_DYNAMIC_CHANNEL
-	select EXPERIMENTAL
-	help
-	  This option enables Bluetooth BR/EDR support
-
-if BT_CLASSIC
-config BT_MAX_SCO_CONN
-	int "Maximum number of simultaneous SCO connections"
-	default 1
-	range 1 3
-	help
-	  Maximum number of simultaneous Bluetooth synchronous connections
-	  supported. The minimum (and default) number is 1.
-
-config BT_RFCOMM
-	bool "Bluetooth RFCOMM protocol support [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	help
-	  This option enables Bluetooth RFCOMM support
-
-config BT_RFCOMM_L2CAP_MTU
-	int "L2CAP MTU for RFCOMM frames"
-	depends on BT_RFCOMM
-	# RX MTU will be truncated to account for the L2CAP PDU header.
-	default BT_BUF_ACL_RX_SIZE
-	range 23 32767
-	help
-	  Maximum size of L2CAP PDU for RFCOMM frames.
-
-config BT_RFCOMM_TX_MAX
-	int "Maximum number of pending TX buffers for RFCOMM"
-	default BT_MAX_CONN
-	range BT_MAX_CONN 255
-	help
-	  Maximum number of pending TX buffers that have an associated
-	  sending buf. Normally this can be left to the default value, which
-	  is equal to the number of session in the stack-internal pool.
-
-config BT_HFP_HF
-	bool "Bluetooth Handsfree profile HF Role support [EXPERIMENTAL]"
-	depends on PRINTK
-	select BT_RFCOMM
-	select EXPERIMENTAL
-	help
-	  This option enables Bluetooth HF support
-
-config BT_AVDTP
-	bool "Bluetooth AVDTP protocol support [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	help
-	  This option enables Bluetooth AVDTP support
-
-config BT_A2DP
-	bool "Bluetooth A2DP Profile [EXPERIMENTAL]"
-	select BT_AVDTP
-	select EXPERIMENTAL
-	help
-	  This option enables the A2DP profile
-
-config BT_PAGE_TIMEOUT
-	hex "Bluetooth Page Timeout"
-	default 0x2000
-	range 0x0001 0xffff
-	help
-	  This option sets the page timeout value. Value is selected as
-	  (N * 0.625) ms.
-
-config BT_COD
-	hex "Bluetooth Class of Device(CoD)"
-	default 0
-	help
-	  This option sets the class of device.For the list of possible values please
-	  consult the following link:
-	  https://www.bluetooth.com/specifications/assigned-numbers
-
-endif # BT_CLASSIC
+rsource "./classic/Kconfig"
 
 config BT_HCI_VS_EVT_USER
 	bool "User Vendor-Specific event handling"

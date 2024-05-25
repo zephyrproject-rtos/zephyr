@@ -9,12 +9,18 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/sys/util.h>
 #include <fsl_common.h>
+#include "fsl_power.h"
 
 /* Add include for DTS generated information */
 #include <zephyr/devicetree.h>
 
 #endif /* !_ASMLANGUAGE */
 
+/* Wrapper Function to deal with SDK differences in power API */
+static inline void EnableDeepSleepIRQ(IRQn_Type irq)
+{
+	POWER_EnableWakeup(irq);
+}
 
 #ifdef CONFIG_MEMC
 int flexspi_clock_set_freq(uint32_t clock_name, uint32_t rate);

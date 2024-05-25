@@ -19,6 +19,11 @@
 		zephyr,shell-uart = &scif2;
 	};
 
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		sdhc0 = &emmc2;
+	};
+
 	ram: memory@48000000 {
 		device_type = "mmio-sram";
 		reg = <0x0 0x48000000 0x0 DT_SIZE_M(512)>;
@@ -29,4 +34,22 @@
 	pinctrl-0 = <&scif2_data_a_tx_default &scif2_data_a_rx_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&emmc2 {
+	pinctrl-0 = <&emmc2_clk &emmc2_cmd &emmc2_ds
+		     &emmc2_data0 &emmc2_data1 &emmc2_data2 &emmc2_data3
+		     &emmc2_data4 &emmc2_data5 &emmc2_data6 &emmc2_data7>;
+	pinctrl-1 = <&emmc2_clk &emmc2_cmd &emmc2_ds
+		     &emmc2_data0 &emmc2_data1 &emmc2_data2 &emmc2_data3
+		     &emmc2_data4 &emmc2_data5 &emmc2_data6 &emmc2_data7>;
+	pinctrl-names = "default", "uhs";
+	disk {
+		compatible = "zephyr,mmc-disk";
+		status = "disabled";
+	};
+	bus-width = <8>;
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	non-removable;
 };

@@ -267,10 +267,10 @@ void k_mem_paging_eviction_init(void);
  * a loaded data page may be selected, in which case its associated page frame
  * will have the Z_PAGE_FRAME_BACKED bit cleared (as it is no longer cached).
  *
- * pf->addr will indicate the virtual address the page is currently mapped to.
- * Large, sparse backing stores which can contain the entire address space
- * may simply generate location tokens purely as a function of pf->addr with no
- * other management necessary.
+ * z_page_frame_to_virt(pf) will indicate the virtual address the page is
+ * currently mapped to. Large, sparse backing stores which can contain the
+ * entire address space may simply generate location tokens purely as a
+ * function of that virtual address with no other management necessary.
  *
  * This function distinguishes whether it was called on behalf of a page
  * fault. A free backing store location must always be reserved in order for

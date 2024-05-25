@@ -10,6 +10,7 @@ import random
 import logging
 import shutil
 import glob
+import csv
 
 from twisterlib.testsuite import TestCase, TestSuite
 from twisterlib.platform import Platform
@@ -72,6 +73,22 @@ class TestInstance:
         self.init_cases()
         self.filters = []
         self.filter_type = None
+
+    def record(self, recording, fname_csv="recording.csv"):
+        if recording:
+            if self.recording is None:
+                self.recording = recording.copy()
+            else:
+                self.recording.extend(recording)
+
+            filename = os.path.join(self.build_dir, fname_csv)
+            with open(filename, "wt") as csvfile:
+                cw = csv.DictWriter(csvfile,
+                                    fieldnames = self.recording[0].keys(),
+                                    lineterminator = os.linesep,
+                                    quoting = csv.QUOTE_NONNUMERIC)
+                cw.writeheader()
+                cw.writerows(self.recording)
 
     def add_filter(self, reason, filter_type):
         self.filters.append({'type': filter_type, 'reason': reason })
@@ -201,7 +218,6 @@ class TestInstance:
         if handler:
             handler.options = options
             handler.generator_cmd = env.generator_cmd
-            handler.generator = env.generator
             handler.suite_name_check = not options.disable_suite_name_check
         self.handler = handler
 

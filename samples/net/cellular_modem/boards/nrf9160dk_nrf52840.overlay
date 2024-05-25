@@ -1,4 +1,4 @@
-#include <nrf9160dk_uart1_on_if0_3.dtsi>
+#include <nrf52840/nrf9160dk_uart1_on_if0_3.dtsi>
 
 / {
 	aliases {

@@ -34,7 +34,10 @@ static void polling_verify(const struct device *dev, bool is_async, bool active)
 
 	for (int i = 0; i < ARRAY_SIZE(outs); i++) {
 		uart_poll_out(dev, outs[i]);
-		k_busy_wait(1000);
+		/* We need to wait until receiver gets the data. Receiver may have
+		 * RX timeout so data is not received instantly.
+		 */
+		k_busy_wait(5000);
 
 		if (active) {
 			err = uart_poll_in(dev, &c);
@@ -63,7 +66,7 @@ static void async_callback(const struct device *dev, struct uart_event *evt, voi
 static bool async_verify(const struct device *dev, bool active)
 {
 	char txbuf[] = "test";
-	uint8_t rxbuf[32];
+	uint8_t rxbuf[32] = { 0 };
 	volatile bool tx_done = false;
 	int err;
 
@@ -78,6 +81,12 @@ static bool async_verify(const struct device *dev, bool active)
 
 	zassert_equal(err, 0, "Unexpected err: %d", err);
 
+	/* Wait a bit to ensure that polling transfer is already finished otherwise
+	 * receiver might be enabled when there is an ongoing transfer and bytes
+	 * will get corrupted.
+	 */
+	k_busy_wait(1000);
+
 	if (!DISABLED_RX) {
 		err = uart_rx_enable(dev, rxbuf, sizeof(rxbuf), 1 * USEC_PER_MSEC);
 		zassert_equal(err, 0, "Unexpected err: %d", err);
@@ -90,7 +99,7 @@ static bool async_verify(const struct device *dev, bool active)
 
 	if (!DISABLED_RX) {
 		err = uart_rx_disable(dev);
-		zassert_equal(err, 0, "Unexpected err: %d", err);
+		zassert_true((err == 0) || (err == -EFAULT));
 
 		k_busy_wait(10000);
 
@@ -203,36 +212,36 @@ ZTEST(uart_pm, test_uart_pm_poll_tx)
 	communication_verify(dev, true);
 }
 
-static void timeout(struct k_timer *timer)
+static void work_handler(struct k_work *work)
 {
-	const struct device *uart = k_timer_user_data_get(timer);
+	const struct device *dev = DEVICE_DT_GET(UART_NODE);
 
-	action_run(uart, PM_DEVICE_ACTION_SUSPEND, 0);
+	action_run(dev, PM_DEVICE_ACTION_SUSPEND, 0);
 }
-
-static K_TIMER_DEFINE(pm_timer, timeout, NULL);
 
 /* Test going into low power state after interrupting poll out. Use various
  * delays to test interruption at multiple places.
  */
 ZTEST(uart_pm, test_uart_pm_poll_tx_interrupted)
 {
+	static struct k_work_delayable dwork;
+	static struct k_work_sync sync;
 	const struct device *dev;
 	char str[] = "test";
 
 	dev = DEVICE_DT_GET(UART_NODE);
 	zassert_true(device_is_ready(dev), "uart device is not ready");
 
-	k_timer_user_data_set(&pm_timer, (void *)dev);
+	k_work_init_delayable(&dwork, work_handler);
 
 	for (int i = 1; i < 100; i++) {
-		k_timer_start(&pm_timer, K_USEC(i * 10), K_NO_WAIT);
+		k_work_schedule(&dwork, K_USEC(i * 10));
 
 		for (int j = 0; j < sizeof(str); j++) {
 			uart_poll_out(dev, str[j]);
 		}
 
-		k_timer_status_sync(&pm_timer);
+		k_work_flush_delayable(&dwork, &sync);
 
 		action_run(dev, PM_DEVICE_ACTION_RESUME, 0);
 

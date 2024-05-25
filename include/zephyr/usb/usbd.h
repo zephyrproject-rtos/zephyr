@@ -15,6 +15,7 @@
 #define ZEPHYR_INCLUDE_USBD_H_
 
 #include <zephyr/device.h>
+#include <zephyr/usb/bos.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/usb/usbd_msg.h>
 #include <zephyr/net/buf.h>
@@ -58,8 +59,10 @@ extern "C" {
  */
 #define USB_STRING_DESCRIPTOR_LENGTH(s)	(sizeof(s) * 2)
 
-/* Used internally to keep descriptors in order */
-enum usbd_desc_usage_type {
+/** Used internally to keep descriptors in order
+ * @cond INTERNAL_HIDDEN
+ */
+enum usbd_str_desc_utype {
 	USBD_DUT_STRING_LANG,
 	USBD_DUT_STRING_MANUFACTURER,
 	USBD_DUT_STRING_PRODUCT,
@@ -67,25 +70,52 @@ enum usbd_desc_usage_type {
 	USBD_DUT_STRING_INTERFACE,
 };
 
+enum usbd_bos_desc_utype {
+	USBD_DUT_BOS_NONE,
+};
+/** @endcond */
+
+/**
+ * USBD string descriptor data
+ */
+struct usbd_str_desc_data {
+	/** Descriptor index, required for string descriptors */
+	uint8_t idx;
+	/** Descriptor usage type (not bDescriptorType) */
+	enum usbd_str_desc_utype utype : 8;
+	/** The string descriptor is in ASCII7 format */
+	unsigned int ascii7 : 1;
+	/** Device stack obtains SerialNumber using the HWINFO API */
+	unsigned int use_hwinfo : 1;
+};
+
+/**
+ * USBD BOS Device Capability descriptor data
+ */
+struct usbd_bos_desc_data {
+	/** Descriptor usage type (not bDescriptorType) */
+	enum usbd_bos_desc_utype utype : 8;
+};
+
 /**
  * Descriptor node
  *
  * Descriptor node is used to manage descriptors that are not
- * directly part of a structure, such as string or bos descriptors.
+ * directly part of a structure, such as string or BOS capability descriptors.
  */
 struct usbd_desc_node {
 	/** slist node struct */
 	sys_dnode_t node;
-	/** Descriptor index, required for string descriptors */
-	unsigned int idx : 8;
-	/** Descriptor usage type (not bDescriptorType) */
-	unsigned int utype : 8;
-	/** If not set, string descriptor must be converted to UTF16LE */
-	unsigned int utf16le : 1;
-	/** If not set, device stack obtains SN using the hwinfo API */
-	unsigned int custom_sn : 1;
-	/** Pointer to a descriptor */
-	void *desc;
+	union {
+		struct usbd_str_desc_data str;
+		struct usbd_bos_desc_data bos;
+	};
+	/** Opaque pointer to a descriptor payload */
+	const void *const ptr;
+	/** Descriptor size in bytes */
+	uint8_t bLength;
+	/** Descriptor type */
+	uint8_t bDescriptorType;
 };
 
 /**
@@ -142,6 +172,18 @@ struct usbd_ch9_data {
 };
 
 /**
+ * @brief USB device speed
+ */
+enum usbd_speed {
+	/** Device supports or is connected to a full speed bus */
+	USBD_SPEED_FS,
+	/** Device supports or is connected to a high speed bus  */
+	USBD_SPEED_HS,
+	/** Device supports or is connected to a super speed bus */
+	USBD_SPEED_SS,
+};
+
+/**
  * USB device support status
  */
 struct usbd_status {
@@ -153,7 +195,25 @@ struct usbd_status {
 	unsigned int suspended : 1;
 	/** USB remote wake-up feature is enabled */
 	unsigned int rwup : 1;
+	/** USB device speed */
+	enum usbd_speed speed : 2;
 };
+
+struct usbd_contex;
+
+/**
+ * @brief Callback type definition for USB device message delivery
+ *
+ * The implementation uses the system workqueue, and a callback provided and
+ * registered by the application. The application callback is called in the
+ * context of the system workqueue. Notification messages are stored in a queue
+ * and delivered to the callback in sequence.
+ *
+ * @param[in] ctx Pointer to USB device support context
+ * @param[in] msg Pointer to USB device message
+ */
+typedef void (*usbd_msg_cb_t)(struct usbd_contex *const ctx,
+			      const struct usbd_msg *const msg);
 
 /**
  * USB device support runtime context
@@ -172,14 +232,18 @@ struct usbd_contex {
 	usbd_msg_cb_t msg_cb;
 	/** Middle layer runtime data */
 	struct usbd_ch9_data ch9_data;
-	/** slist to manage descriptors like string, bos */
+	/** slist to manage descriptors like string, BOS */
 	sys_dlist_t descriptors;
-	/** slist to manage device configurations */
-	sys_slist_t configs;
+	/** slist to manage Full-Speed device configurations */
+	sys_slist_t fs_configs;
+	/** slist to manage High-Speed device configurations */
+	sys_slist_t hs_configs;
 	/** Status of the USB device support */
 	struct usbd_status status;
-	/** Pointer to device descriptor */
-	void *desc;
+	/** Pointer to Full-Speed device descriptor */
+	void *fs_desc;
+	/** Pointer to High-Speed device descriptor */
+	void *hs_desc;
 };
 
 /**
@@ -195,68 +259,89 @@ struct usbd_cctx_vendor_req {
 /** USB Class instance registered flag */
 #define USBD_CCTX_REGISTERED		0
 
-struct usbd_class_node;
+struct usbd_class_data;
 
 /**
  * @brief USB device support class instance API
  */
 struct usbd_class_api {
 	/** Feature halt state update handler */
-	void (*feature_halt)(struct usbd_class_node *const node,
+	void (*feature_halt)(struct usbd_class_data *const c_data,
 			     uint8_t ep, bool halted);
 
 	/** Configuration update handler */
-	void (*update)(struct usbd_class_node *const node,
+	void (*update)(struct usbd_class_data *const c_data,
 		       uint8_t iface, uint8_t alternate);
 
 	/** USB control request handler to device */
-	int (*control_to_dev)(struct usbd_class_node *const node,
+	int (*control_to_dev)(struct usbd_class_data *const c_data,
 			      const struct usb_setup_packet *const setup,
 			      const struct net_buf *const buf);
 
 	/** USB control request handler to host */
-	int (*control_to_host)(struct usbd_class_node *const node,
+	int (*control_to_host)(struct usbd_class_data *const c_data,
 			       const struct usb_setup_packet *const setup,
 			       struct net_buf *const buf);
 
 	/** Endpoint request completion event handler */
-	int (*request)(struct usbd_class_node *const node,
+	int (*request)(struct usbd_class_data *const c_data,
 		       struct net_buf *buf, int err);
 
 	/** USB power management handler suspended */
-	void (*suspended)(struct usbd_class_node *const node);
+	void (*suspended)(struct usbd_class_data *const c_data);
 
 	/** USB power management handler resumed */
-	void (*resumed)(struct usbd_class_node *const node);
+	void (*resumed)(struct usbd_class_data *const c_data);
 
 	/** Start of Frame */
-	void (*sof)(struct usbd_class_node *const node);
+	void (*sof)(struct usbd_class_data *const c_data);
 
 	/** Class associated configuration is selected */
-	void (*enable)(struct usbd_class_node *const node);
+	void (*enable)(struct usbd_class_data *const c_data);
 
 	/** Class associated configuration is disabled */
-	void (*disable)(struct usbd_class_node *const node);
+	void (*disable)(struct usbd_class_data *const c_data);
 
 	/** Initialization of the class implementation */
-	int (*init)(struct usbd_class_node *const node);
+	int (*init)(struct usbd_class_data *const c_data);
 
 	/** Shutdown of the class implementation */
-	void (*shutdown)(struct usbd_class_node *const node);
+	void (*shutdown)(struct usbd_class_data *const c_data);
+
+	/** Get function descriptor based on speed parameter */
+	void *(*get_desc)(struct usbd_class_data *const c_data,
+			  const enum usbd_speed speed);
 };
 
 /**
  * @brief USB device support class data
  */
 struct usbd_class_data {
+	/** Name of the USB device class instance */
+	const char *name;
 	/** Pointer to USB device stack context structure */
 	struct usbd_contex *uds_ctx;
-	/** Pointer to a class implementation descriptor that should end with
-	 *  a nil descriptor (bLength = 0 and bDescriptorType = 0).
-	 */
-	void *desc;
+	/** Pointer to device support class API */
+	const struct usbd_class_api *api;
 	/** Supported vendor request table, can be NULL */
 	const struct usbd_cctx_vendor_req *v_reqs;
+	/** Pointer to private data */
+	void *priv;
+};
+
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * Variables necessary for per speed class management. For each speed (Full,
+ * High) there is separate `struct usbd_class_node` pointing to the same
+ * `struct usbd_class_data` (because the class can only operate at one speed
+ * at a time).
+ */
+struct usbd_class_node {
+	/** Node information for the slist. */
+	sys_snode_t node;
+	/** Pointer to public class node instance. */
+	struct usbd_class_data *const c_data;
 	/** Bitmap of all endpoints assigned to the instance.
 	 *  The IN endpoints are mapped in the upper halfword.
 	 */
@@ -269,24 +354,43 @@ struct usbd_class_data {
 	uint32_t iface_bm;
 	/** Variable to store the state of the class instance */
 	atomic_t state;
-	/** Pointer to private data */
-	void *priv;
 };
 
-struct usbd_class_node {
-	/** Node information for the slist. */
-	sys_snode_t node;
-	/** Name of the USB device class instance */
-	const char *name;
-	/** Pointer to device support class API */
-	const struct usbd_class_api *api;
-	/** Pointer to USB device support class data */
-	struct usbd_class_data *data;
-};
+/** @endcond */
+
+/**
+ * @brief Get the USB device runtime context under which the class is registered
+ *
+ * The class implementation must use this function and not access the members
+ * of the struct directly.
+ *
+ * @param[in] c_data Pointer to USB device class data
+ *
+ * @return Pointer to USB device runtime context
+ */
+static inline struct usbd_contex *usbd_class_get_ctx(const struct usbd_class_data *const c_data)
+{
+	return c_data->uds_ctx;
+}
+
+/**
+ * @brief Get class implementation private data
+ *
+ * The class implementation must use this function and not access the members
+ * of the struct directly.
+ *
+ * @param[in] c_data Pointer to USB device class data
+ *
+ * @return Pointer to class implementation private data
+ */
+static inline void *usbd_class_get_private(const struct usbd_class_data *const c_data)
+{
+	return c_data->priv;
+}
 
 #define USBD_DEVICE_DEFINE(device_name, uhc_dev, vid, pid)		\
 	static struct usb_device_descriptor				\
-	desc_##device_name = {						\
+	fs_desc_##device_name = {					\
 		.bLength = sizeof(struct usb_device_descriptor),	\
 		.bDescriptorType = USB_DESC_DEVICE,			\
 		.bcdUSB = sys_cpu_to_le16(USB_SRN_2_0),			\
@@ -302,10 +406,28 @@ struct usbd_class_node {
 		.iSerialNumber = 0,					\
 		.bNumConfigurations = 0,				\
 	};								\
+	static struct usb_device_descriptor				\
+	hs_desc_##device_name = {					\
+		.bLength = sizeof(struct usb_device_descriptor),	\
+		.bDescriptorType = USB_DESC_DEVICE,			\
+		.bcdUSB = sys_cpu_to_le16(USB_SRN_2_0),			\
+		.bDeviceClass = USB_BCC_MISCELLANEOUS,			\
+		.bDeviceSubClass = 2,					\
+		.bDeviceProtocol = 1,					\
+		.bMaxPacketSize0 = 64,					\
+		.idVendor = vid,					\
+		.idProduct = pid,					\
+		.bcdDevice = sys_cpu_to_le16(USB_BCD_DRN),		\
+		.iManufacturer = 0,					\
+		.iProduct = 0,						\
+		.iSerialNumber = 0,					\
+		.bNumConfigurations = 0,				\
+	};								\
 	static STRUCT_SECTION_ITERABLE(usbd_contex, device_name) = {	\
 		.name = STRINGIFY(device_name),				\
 		.dev = uhc_dev,						\
-		.desc = &desc_##device_name,				\
+		.fs_desc = &fs_desc_##device_name,			\
+		.hs_desc = &hs_desc_##device_name,			\
 	}
 
 #define USBD_CONFIGURATION_DEFINE(name, attrib, power)			\
@@ -339,33 +461,38 @@ struct usbd_class_node {
  * @param name Language string descriptor node identifier.
  */
 #define USBD_DESC_LANG_DEFINE(name)					\
-	static struct usb_string_descriptor				\
-	string_desc_##name = {						\
+	static uint16_t langid_##name = sys_cpu_to_le16(0x0409);	\
+	static struct usbd_desc_node name = {				\
 		.bLength = sizeof(struct usb_string_descriptor),	\
 		.bDescriptorType = USB_DESC_STRING,			\
-		.bString = sys_cpu_to_le16(0x0409),			\
-	};								\
-	static struct usbd_desc_node name = {				\
-		.idx = 0,						\
-		.utype = USBD_DUT_STRING_LANG,				\
-		.desc = &string_desc_##name,				\
+		.str = {						\
+			.idx = 0,					\
+			.utype = USBD_DUT_STRING_LANG,			\
+		},							\
+		.ptr = &langid_##name,					\
 	}
 
-#define USBD_DESC_STRING_DEFINE(d_name, d_string, d_utype)		\
-	struct usb_string_descriptor_##d_name {				\
-		uint8_t bLength;					\
-		uint8_t bDescriptorType;				\
-		uint8_t bString[USB_BSTRING_LENGTH(d_string)];		\
-	} __packed;							\
-	static struct usb_string_descriptor_##d_name			\
-	string_desc_##d_name = {					\
-		.bLength = USB_STRING_DESCRIPTOR_LENGTH(d_string),	\
-		.bDescriptorType = USB_DESC_STRING,			\
-		.bString = d_string,					\
-	};								\
-	static struct usbd_desc_node d_name = {				\
-		.utype = d_utype,					\
-		.desc = &string_desc_##d_name,				\
+/**
+ * @brief Create a string descriptor
+ *
+ * This macro defines a descriptor node and a string descriptor.
+ * The string literal passed to the macro should be in the ASCII7 format. It
+ * is converted to UTF16LE format on the host request.
+ *
+ * @param d_name   Internal string descriptor node identifier name
+ * @param d_string ASCII7 encoded string literal
+ * @param d_utype  String descriptor usage type
+ */
+#define USBD_DESC_STRING_DEFINE(d_name, d_string, d_utype)			\
+	static uint8_t ascii_##d_name[USB_BSTRING_LENGTH(d_string)] = d_string;	\
+	static struct usbd_desc_node d_name = {					\
+		.str = {							\
+			.utype = d_utype,					\
+			.ascii7 = true,						\
+		},								\
+		.bLength = USB_STRING_DESCRIPTOR_LENGTH(d_string),		\
+		.bDescriptorType = USB_DESC_STRING,				\
+		.ptr = &ascii_##d_name,					\
 	}
 
 /**
@@ -399,23 +526,57 @@ struct usbd_class_node {
 /**
  * @brief Create a string descriptor node and serial number string descriptor
  *
- * This macro defines a descriptor node and a string descriptor that,
- * when added to the device context, is automatically used as the serial number
- * string descriptor. The string literal parameter is used as a placeholder,
- * the unique number is obtained from hwinfo. Both descriptor node and descriptor
- * are defined with static-storage-class specifier.
+ * This macro defines a descriptor node that, when added to the device context,
+ * is automatically used as the serial number string descriptor. A valid serial
+ * number is generated from HWID (HWINFO= whenever this string descriptor is
+ * requested.
  *
  * @param d_name   String descriptor node identifier.
- * @param d_string ASCII7 encoded serial number string literal placeholder
  */
-#define USBD_DESC_SERIAL_NUMBER_DEFINE(d_name, d_string)		\
-	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DUT_STRING_SERIAL_NUMBER)
+#define USBD_DESC_SERIAL_NUMBER_DEFINE(d_name)					\
+	static struct usbd_desc_node d_name = {					\
+		.str = {							\
+			.utype = USBD_DUT_STRING_SERIAL_NUMBER,			\
+			.ascii7 = true,						\
+			.use_hwinfo = true,					\
+		},								\
+		.bDescriptorType = USB_DESC_STRING,				\
+	}
 
-#define USBD_DEFINE_CLASS(class_name, class_api, class_data)		\
-	static STRUCT_SECTION_ITERABLE(usbd_class_node, class_name) = {	\
-		.name = STRINGIFY(class_name),				\
-		.api = class_api,					\
-		.data = class_data,					\
+/**
+ * @brief Define BOS Device Capability descriptor node
+ *
+ * The application defines a BOS capability descriptor node for descriptors
+ * such as USB 2.0 Extension Descriptor.
+ *
+ * @param name       Descriptor node identifier
+ * @param len        Device Capability descriptor length
+ * @param subset     Pointer to a Device Capability descriptor
+ */
+#define USBD_DESC_BOS_DEFINE(name, len, subset)					\
+	static struct usbd_desc_node name = {					\
+		.bos = {							\
+			.utype = USBD_DUT_BOS_NONE,				\
+		},								\
+		.ptr = subset,							\
+		.bLength = len,							\
+		.bDescriptorType = USB_DESC_BOS,				\
+	}
+
+#define USBD_DEFINE_CLASS(class_name, class_api, class_priv, class_v_reqs)	\
+	static struct usbd_class_data class_name = {				\
+		.name = STRINGIFY(class_name),					\
+		.api = class_api,						\
+		.v_reqs = class_v_reqs,						\
+		.priv = class_priv,						\
+	};									\
+	static STRUCT_SECTION_ITERABLE_ALTERNATE(				\
+		usbd_class_fs, usbd_class_node, class_name##_fs) = {		\
+		.c_data = &class_name,						\
+	};									\
+	static STRUCT_SECTION_ITERABLE_ALTERNATE(				\
+		usbd_class_hs, usbd_class_node, class_name##_hs) = {		\
+		.c_data = &class_name,						\
 	}
 
 /** @brief Helper to declare request table of usbd_cctx_vendor_req
@@ -441,7 +602,7 @@ struct usbd_class_node {
 /**
  * @brief Add common USB descriptor
  *
- * Add common descriptor like string or bos.
+ * Add common descriptor like string or BOS Device Capability.
  *
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] dn      Pointer to USB descriptor node
@@ -452,14 +613,34 @@ int usbd_add_descriptor(struct usbd_contex *uds_ctx,
 			struct usbd_desc_node *dn);
 
 /**
+ * @brief Get USB string descriptor index from descriptor node
+ *
+ * @param[in] desc_nd Pointer to USB descriptor node
+ *
+ * @return Descriptor index, 0 if descriptor is not part of any device
+ */
+uint8_t usbd_str_desc_get_idx(const struct usbd_desc_node *const desc_nd);
+
+/**
+ * @brief Remove USB string descriptor
+ *
+ * Remove linked USB string descriptor from any list.
+ *
+ * @param[in] desc_nd Pointer to USB descriptor node
+ */
+void usbd_remove_descriptor(struct usbd_desc_node *const desc_nd);
+
+/**
  * @brief Add a USB device configuration
  *
  * @param[in] uds_ctx Pointer to USB device support context
+ * @param[in] speed   Speed at which this configuration operates
  * @param[in] cd      Pointer to USB configuration node
  *
  * @return 0 on success, other values on fail.
  */
 int usbd_add_configuration(struct usbd_contex *uds_ctx,
+			   const enum usbd_speed speed,
 			   struct usbd_config_node *cd);
 
 /**
@@ -478,13 +659,14 @@ int usbd_add_configuration(struct usbd_contex *uds_ctx,
  *
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] name    Class instance name
+ * @param[in] speed   Configuration speed
  * @param[in] cfg     Configuration value (similar to bConfigurationValue)
  *
  * @return 0 on success, other values on fail.
  */
 int usbd_register_class(struct usbd_contex *uds_ctx,
 			const char *name,
-			uint8_t cfg);
+			const enum usbd_speed speed, uint8_t cfg);
 
 /**
  * @brief Unregister an USB class instance
@@ -495,13 +677,14 @@ int usbd_register_class(struct usbd_contex *uds_ctx,
  *
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] name    Class instance name
+ * @param[in] speed   Configuration speed
  * @param[in] cfg     Configuration value (similar to bConfigurationValue)
  *
  * @return 0 on success, other values on fail.
  */
 int usbd_unregister_class(struct usbd_contex *uds_ctx,
 			  const char *name,
-			  uint8_t cfg);
+			  const enum usbd_speed speed, uint8_t cfg);
 
 /**
  * @brief Register USB notification message callback
@@ -593,31 +776,17 @@ int usbd_ep_clear_halt(struct usbd_contex *uds_ctx, uint8_t ep);
 bool usbd_ep_is_halted(struct usbd_contex *uds_ctx, uint8_t ep);
 
 /**
- * @brief Allocate buffer for USB device control request
- *
- * Allocate a new buffer from controller's driver buffer pool.
- *
- * @param[in] uds_ctx Pointer to USB device support context
- * @param[in] ep      Endpoint address
- * @param[in] size    Size of the request buffer
- *
- * @return pointer to allocated request or NULL on error.
- */
-struct net_buf *usbd_ep_ctrl_buf_alloc(struct usbd_contex *const uds_ctx,
-				       const uint8_t ep, const size_t size);
-
-/**
  * @brief Allocate buffer for USB device request
  *
  * Allocate a new buffer from controller's driver buffer pool.
  *
- * @param[in] c_nd   Pointer to USB device class node
+ * @param[in] c_data Pointer to USB device class data
  * @param[in] ep     Endpoint address
  * @param[in] size   Size of the request buffer
  *
  * @return pointer to allocated request or NULL on error.
  */
-struct net_buf *usbd_ep_buf_alloc(const struct usbd_class_node *const c_nd,
+struct net_buf *usbd_ep_buf_alloc(const struct usbd_class_data *const c_data,
 				  const uint8_t ep, const size_t size);
 
 /**
@@ -638,12 +807,12 @@ int usbd_ep_ctrl_enqueue(struct usbd_contex *const uds_ctx,
  *
  * Add request to the queue.
  *
- * @param[in] c_nd   Pointer to USB device class node
+ * @param[in] c_data   Pointer to USB device class data
  * @param[in] buf    Pointer to UDC request buffer
  *
  * @return 0 on success, or error from udc_ep_enqueue()
  */
-int usbd_ep_enqueue(const struct usbd_class_node *const c_nd,
+int usbd_ep_enqueue(const struct usbd_class_data *const c_data,
 		    struct net_buf *const buf);
 
 /**
@@ -685,15 +854,34 @@ bool usbd_is_suspended(struct usbd_contex *uds_ctx);
 int usbd_wakeup_request(struct usbd_contex *uds_ctx);
 
 /**
+ * @brief Get actual device speed
+ *
+ * @param[in] uds_ctx Pointer to a device context
+ *
+ * @return Actual device speed
+ */
+enum usbd_speed usbd_bus_speed(const struct usbd_contex *const uds_ctx);
+
+/**
+ * @brief Get highest speed supported by the controller
+ *
+ * @param[in] uds_ctx Pointer to a device context
+ *
+ * @return Highest supported speed
+ */
+enum usbd_speed usbd_caps_speed(const struct usbd_contex *const uds_ctx);
+
+/**
  * @brief Set USB device descriptor value bcdUSB
  *
  * @param[in] uds_ctx Pointer to USB device support context
+ * @param[in] speed   Speed for which the bcdUSB should be set
  * @param[in] bcd     bcdUSB value
  *
  * @return 0 on success, other values on fail.
  */
 int usbd_device_set_bcd(struct usbd_contex *const uds_ctx,
-			 const uint16_t bcd);
+			const enum usbd_speed speed, const uint16_t bcd);
 
 /**
  * @brief Set USB device descriptor value idVendor
@@ -721,6 +909,7 @@ int usbd_device_set_pid(struct usbd_contex *const uds_ctx,
  * @brief Set USB device descriptor code triple Base Class, SubClass, and Protocol
  *
  * @param[in] uds_ctx    Pointer to USB device support context
+ * @param[in] speed      Speed for which the code triple should be set
  * @param[in] base_class bDeviceClass value
  * @param[in] subclass   bDeviceSubClass value
  * @param[in] protocol   bDeviceProtocol value
@@ -728,6 +917,7 @@ int usbd_device_set_pid(struct usbd_contex *const uds_ctx,
  * @return 0 on success, other values on fail.
  */
 int usbd_device_set_code_triple(struct usbd_contex *const uds_ctx,
+				const enum usbd_speed speed,
 				const uint8_t base_class,
 				const uint8_t subclass, const uint8_t protocol);
 
@@ -735,37 +925,58 @@ int usbd_device_set_code_triple(struct usbd_contex *const uds_ctx,
  * @brief Setup USB device configuration attribute Remote Wakeup
  *
  * @param[in] uds_ctx Pointer to USB device support context
+ * @param[in] speed   Configuration speed
  * @param[in] cfg     Configuration number
  * @param[in] enable  Sets attribute if true, clears it otherwise
  *
  * @return 0 on success, other values on fail.
  */
 int usbd_config_attrib_rwup(struct usbd_contex *const uds_ctx,
+			    const enum usbd_speed speed,
 			    const uint8_t cfg, const bool enable);
 
 /**
  * @brief Setup USB device configuration attribute Self-powered
  *
  * @param[in] uds_ctx Pointer to USB device support context
+ * @param[in] speed   Configuration speed
  * @param[in] cfg     Configuration number
  * @param[in] enable  Sets attribute if true, clears it otherwise
  *
  * @return 0 on success, other values on fail.
  */
 int usbd_config_attrib_self(struct usbd_contex *const uds_ctx,
+			    const enum usbd_speed speed,
 			    const uint8_t cfg, const bool enable);
 
 /**
  * @brief Setup USB device configuration power consumption
  *
  * @param[in] uds_ctx Pointer to USB device support context
+ * @param[in] speed   Configuration speed
  * @param[in] cfg     Configuration number
  * @param[in] power   Maximum power consumption value (bMaxPower)
  *
  * @return 0 on success, other values on fail.
  */
 int usbd_config_maxpower(struct usbd_contex *const uds_ctx,
+			 const enum usbd_speed speed,
 			 const uint8_t cfg, const uint8_t power);
+
+/**
+ * @brief Check that the controller can detect the VBUS state change.
+ *
+ * This can be used in a generic application to explicitly handle the VBUS
+ * detected event after usbd_init(). For example, to call usbd_enable() after a
+ * short delay to give the PMIC time to detect the bus, or to handle cases
+ * where usbd_enable() can only be called after a VBUS detected event.
+ *
+ * @param[in] uds_ctx Pointer to USB device support context
+ *
+ * @return true if controller can detect VBUS state change, false otherwise
+ */
+bool usbd_can_detect_vbus(struct usbd_contex *const uds_ctx);
+
 /**
  * @}
  */

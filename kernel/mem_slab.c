@@ -172,7 +172,7 @@ SYS_INIT(init_mem_slab_obj_core_list, PRE_KERNEL_1,
 int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 		    size_t block_size, uint32_t num_blocks)
 {
-	int rc = 0;
+	int rc;
 
 	slab->info.num_blocks = num_blocks;
 	slab->info.block_size = block_size;
@@ -261,7 +261,7 @@ void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
 		 "Invalid memory pointer provided");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, free, slab);
-	if (slab->free_list == NULL && IS_ENABLED(CONFIG_MULTITHREADING)) {
+	if ((slab->free_list == NULL) && IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct k_thread *pending_thread = z_unpend_first_thread(&slab->wait_q);
 
 		if (pending_thread != NULL) {

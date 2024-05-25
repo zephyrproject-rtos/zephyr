@@ -1,5 +1,5 @@
 # Copyright (c) 2024 Cirrus Logic, Inc.
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 description: |
   Cirrus CP9314 Buck Switched Cap DC/DC Converter
@@ -26,6 +26,10 @@ properties:
   cirrus,en-gpios:
     type: phandle-array
     description: GPIO tied to EN pin
+
+  cirrus,pgood-gpios:
+    type: phandle-array
+    description: GPIO tied to PGOOD pin
 
   cirrus,initial-switched-capacitor-mode:
     type: string

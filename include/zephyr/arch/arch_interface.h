@@ -783,7 +783,7 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
  *
  * @return nonzero if the permissions don't match.
  */
-int arch_buffer_validate(void *addr, size_t size, int write);
+int arch_buffer_validate(const void *addr, size_t size, int write);
 
 /**
  * Get the optimal virtual region alignment to optimize the MMU table layout

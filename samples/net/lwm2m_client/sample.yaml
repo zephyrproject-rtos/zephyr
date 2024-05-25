@@ -52,17 +52,6 @@ tests:
     tags:
       - net
       - lwm2m
-  sample.net.lwm2m_client.bt:
-    harness: net
-    extra_args: OVERLAY_CONFIG=overlay-bt.conf
-    platform_allow:
-      - nrf52840dk/nrf52840
-      - disco_l475_iot1
-    tags:
-      - net
-      - lwm2m
-    integration_platforms:
-      - disco_l475_iot1
   sample.net.lwm2m_client.queue_mode:
     harness: net
     depends_on: netif

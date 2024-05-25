@@ -437,9 +437,17 @@ static int lis2dh_pm_action(const struct device *dev,
 {
 	int status;
 	struct lis2dh_data *lis2dh = dev->data;
+	uint8_t regdata;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		/* read REFERENCE register (see datasheet rev 6 section 8.9 footnote 1) */
+		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_REFERENCE, &regdata);
+		if (status < 0) {
+			LOG_ERR("failed to read reg_reference");
+			return status;
+		}
+
 		/* Resume previous mode. */
 		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
 						  lis2dh->reg_ctrl1_active_val);
@@ -492,7 +500,7 @@ static int lis2dh_pm_action(const struct device *dev,
 			    &lis2dh_driver_api);
 
 #define IS_LSM303AGR_DEV(inst) \
-	DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), st_lsm303agr_accel)
+	DT_INST_NODE_HAS_COMPAT(inst, st_lsm303agr_accel)
 
 #define DISC_PULL_UP(inst) \
 	DT_INST_PROP(inst, disconnect_sdo_sa0_pull_up)
@@ -537,8 +545,8 @@ static int lis2dh_pm_action(const struct device *dev,
  * compat(lis2dh) cannot be used here because it is the base part.
  */
 #define FRACTIONAL_BITS(inst)	\
-	(DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), st_lis2dh12) ||				\
-	 DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), st_lis3dh)) ?				\
+	(DT_INST_NODE_HAS_COMPAT(inst, st_lis2dh12) ||				\
+	 DT_INST_NODE_HAS_COMPAT(inst, st_lis3dh)) ?				\
 		      (IS_ENABLED(CONFIG_LIS2DH_OPER_MODE_LOW_POWER) ? 0 : 2) : \
 		      0
 

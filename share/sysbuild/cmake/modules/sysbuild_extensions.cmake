@@ -597,7 +597,7 @@ function(sysbuild_cache_set)
     return()
   elseif(VARS_REMOVE_DUPLICATES AND NOT VARS_APPEND)
     message(FATAL_ERROR
-            "sysbuild_set(VAR <var> APPEND REMOVE_DUPLICATES ...) missing required APPEND option")
+            "sysbuild_cache_set(VAR <var> APPEND REMOVE_DUPLICATES ...) missing required APPEND option")
   endif()
 
   get_property(var_type CACHE ${VARS_VAR} PROPERTY TYPE)
@@ -615,9 +615,7 @@ function(sysbuild_cache_set)
     # Search for these exact items in the existing value and prevent adding
     # them if they are already present which avoids issues with double addition
     # when cmake is reran.
-    string(FIND "$CACHE{${VARS_VAR}}" "${VARS_UNPARSED_ARGUMENTS}" index)
-
-    if(NOT ${index} EQUAL -1)
+    if("${VARS_UNPARSED_ARGUMENTS}" IN_LIST var_new)
       return()
     endif()
 

@@ -294,7 +294,7 @@ static int dma_xmc4xxx_config(const struct device *dev, uint32_t channel, struct
 		XMC_DMA_CH_EnableEvent(dma, channel, XMC_DMA_CH_EVENT_BLOCK_TRANSFER_COMPLETE);
 	}
 
-	if (config->error_callback_en) {
+	if (!config->error_callback_dis) {
 		XMC_DMA_CH_EnableEvent(dma, channel, XMC_DMA_CH_EVENT_ERROR);
 	}
 

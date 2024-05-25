@@ -181,6 +181,24 @@ Attach a J-Link 10-pin connector to J55. Check that jumpers J61 and J62 are
 **off** (they are on by default when boards ship from the factory) to ensure
 SWD signals are disconnected from the OpenSDA microcontroller.
 
+Using LinkServer
+----------------
+
+Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
+search path. To use LinkServer the on board CMSIS-DAP firmware need updated with
+LPCScrypt installed with LinkServer.
+
+To enter board debuger FW update mode, connect J22 first, and power cycle board.
+For more details please refer to `Debug_Probe_Firmware_Programming.pdf`, which is
+installed with LinkServer.
+
+.. code-block:: console
+
+    :Ubuntu/Mac: scripts/program_CMSIS
+    :Windows: scripts/program_CMSIS.cmd
+
+You may also se the ``-r linkserver`` option with West to use the LinkServer.
+
 Configuring a Console
 =====================
 

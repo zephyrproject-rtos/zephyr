@@ -21,8 +21,7 @@
  * Broadcast ISO radio events.
  */
 #define BT_LE_EXT_ADV_CUSTOM \
-		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
-				BT_LE_ADV_OPT_USE_NAME, \
+		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, \
 				0x0080, 0x0080, NULL)
 
 #define BT_LE_PER_ADV_CUSTOM \

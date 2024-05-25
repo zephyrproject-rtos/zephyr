@@ -14,6 +14,10 @@
 /**
  * @brief Isochronous channels (ISO)
  * @defgroup bt_iso Isochronous channels (ISO)
+ *
+ * @since 2.3
+ * @version 0.8.0
+ *
  * @ingroup bluetooth
  * @{
  */
@@ -156,7 +160,7 @@ struct bt_iso_chan {
 	struct bt_iso_chan_qos		*qos;
 	/** Channel state */
 	enum bt_iso_state		state;
-#if defined(CONFIG_BT_SMP) || defined(__DOXYGEN__)
+#if (defined(CONFIG_BT_SMP) && defined(CONFIG_BT_ISO_UNICAST)) || defined(__DOXYGEN__)
 	/** @brief The required security level of the channel
 	 *
 	 * This value can be set as the central before connecting a CIS
@@ -167,7 +171,7 @@ struct bt_iso_chan {
 	 * Only available when @kconfig{CONFIG_BT_SMP} is enabled.
 	 */
 	bt_security_t			required_sec_level;
-#endif /* CONFIG_BT_SMP */
+#endif /* CONFIG_BT_SMP && CONFIG_BT_ISO_UNICAST */
 	/** Node used internally by the stack */
 	sys_snode_t node;
 };

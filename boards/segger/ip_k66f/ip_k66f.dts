@@ -103,14 +103,24 @@
 	};
 };
 
-&enet {
+&enet_mac {
 	status = "okay";
 	pinctrl-0 = <&enet_default>;
 	pinctrl-names = "default";
+	zephyr,random-mac-address;
+	phy-connection-type = "rmii";
+	phy-handle = <&phy>;
+};
 
-	fixed-link {
-		speed = <100>;
-		full-duplex;
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&enet_default>;
+	pinctrl-names = "default";
+	phy: phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+		fixed-link = "100BASE-T Full-Duplex";
 	};
 };
 
@@ -131,7 +141,7 @@
 
 		spi-cpol;
 		spi-cpha;
-		dsa-master-port = <&enet>;
+		dsa-master-port = <&enet_mac>;
 		dsa-slave-ports = <3>;
 
 		lan3: lan_3 {

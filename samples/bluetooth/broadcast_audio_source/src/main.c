@@ -23,7 +23,7 @@ BUILD_ASSERT(strlen(CONFIG_BROADCAST_CODE) <= BT_AUDIO_BROADCAST_CODE_SIZE,
  * interval.
  */
 #define BT_LE_EXT_ADV_CUSTOM                                                                       \
-	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_USE_NAME, 0x0080, 0x0080, NULL)
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, 0x0080, 0x0080, NULL)
 
 /* When BROADCAST_ENQUEUE_COUNT > 1 we can enqueue enough buffers to ensure that
  * the controller is never idle
@@ -489,7 +489,7 @@ int main(void)
 		NET_BUF_SIMPLE_DEFINE(ad_buf,
 				      BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
 		NET_BUF_SIMPLE_DEFINE(base_buf, 128);
-		struct bt_data ext_ad;
+		struct bt_data ext_ad[2];
 		struct bt_data per_ad;
 		uint32_t broadcast_id;
 
@@ -525,10 +525,12 @@ int main(void)
 		/* Setup extended advertising data */
 		net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
 		net_buf_simple_add_le24(&ad_buf, broadcast_id);
-		ext_ad.type = BT_DATA_SVC_DATA16;
-		ext_ad.data_len = ad_buf.len;
-		ext_ad.data = ad_buf.data;
-		err = bt_le_ext_adv_set_data(adv, &ext_ad, 1, NULL, 0);
+		ext_ad[0].type = BT_DATA_SVC_DATA16;
+		ext_ad[0].data_len = ad_buf.len;
+		ext_ad[0].data = ad_buf.data;
+		ext_ad[1] = (struct bt_data)BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME,
+						    sizeof(CONFIG_BT_DEVICE_NAME) - 1);
+		err = bt_le_ext_adv_set_data(adv, ext_ad, 2, NULL, 0);
 		if (err != 0) {
 			printk("Failed to set extended advertising data: %d\n",
 			       err);

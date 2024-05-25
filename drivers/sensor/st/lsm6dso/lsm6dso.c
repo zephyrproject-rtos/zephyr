@@ -909,7 +909,7 @@ static int lsm6dso_init(const struct device *dev)
 	.accel_pm = DT_INST_PROP(inst, accel_pm),			\
 	.accel_odr = DT_INST_PROP(inst, accel_odr),			\
 	.accel_range = DT_INST_PROP(inst, accel_range) |		\
-		(DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), st_lsm6dso32) ?	\
+		(DT_INST_NODE_HAS_COMPAT(inst, st_lsm6dso32) ?	        \
 			ACCEL_RANGE_DOUBLE : 0),			\
 	.gyro_pm = DT_INST_PROP(inst, gyro_pm),				\
 	.gyro_odr = DT_INST_PROP(inst, gyro_odr),			\

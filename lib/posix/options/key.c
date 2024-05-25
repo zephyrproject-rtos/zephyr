@@ -200,18 +200,18 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 
 	SYS_SLIST_FOR_EACH_NODE(&(thread->key_list), node_l) {
 
-			thread_spec_data = (pthread_thread_data *)node_l;
+		thread_spec_data = (pthread_thread_data *)node_l;
 
-			if (thread_spec_data->key == key_obj) {
+		if (thread_spec_data->key == key_obj) {
 
-				/* Key is already present so
-				 * associate thread specific data
-				 */
-				thread_spec_data->spec_data = (void *)value;
-				LOG_DBG("Paired key %x to value %p for thread %x", key, value,
-					pthread_self());
-				goto out;
-			}
+			/* Key is already present so
+			 * associate thread specific data
+			 */
+			thread_spec_data->spec_data = (void *)value;
+			LOG_DBG("Paired key %x to value %p for thread %x", key, value,
+				pthread_self());
+			goto out;
+		}
 	}
 
 	if (node_l == NULL) {

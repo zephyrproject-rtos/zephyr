@@ -1,4 +1,4 @@
-# Copyright (c) 2017, NXP
+# Copyright 2017, 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: Kinetis FTM PWM
@@ -13,6 +13,25 @@ properties:
 
   pinctrl-0:
     required: true
+
+  clock-source:
+    type: string
+    required: true
+    enum:
+      - "system"
+      - "fixed"
+      - "external"
+    description: |
+      Select one of three possible clock sources for the FTM counter:
+        * system: it's the bus interface clock driving the FTM module. Usually
+          provides higher timer resolution than the other two clock sources.
+        * fixed: it's a fixed clock defined by chip integration.
+        * external: it's a clock that can be accessed externally to the chip and
+          passes through a sychronizer clocked by the FTM bus interface clock.
+
+      This clock source selection is independent of the bus interface clock
+      driving the FTM module. Refer to the chip specific documentation for
+      further information.
 
 pwm-cells:
   - channel

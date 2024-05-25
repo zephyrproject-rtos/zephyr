@@ -20,37 +20,6 @@ endchoice
 
 endif # BT
 
-if NETWORKING
-
-# Re-create the NET_L2_BT dependencies here
-config BT
-	default y
-
-config BT_PERIPHERAL
-	default BT
-
-config BT_CENTRAL
-	default BT
-
-config BT_SMP
-	default BT
-
-config BT_L2CAP_DYNAMIC_CHANNEL
-	default BT
-
-# BT is the only onboard network iface, so use it for IP networking
-# if it's enabled
-
-config NET_L2_BT
-	depends on NET_IPV6
-	default BT
-
-config NET_L2_BT_ZEP1656
-	depends on NET_IPV6
-	default BT
-
-endif # NETWORKING
-
 endif # BOARD_96B_CARBON_STM32F401XE
 
 if BOARD_96B_CARBON_NRF51822

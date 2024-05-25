@@ -51,11 +51,8 @@ struct bt_buf_data {
 	uint8_t type;
 };
 
-#if defined(CONFIG_BT_HCI_RAW)
-#define BT_BUF_RESERVE MAX(CONFIG_BT_HCI_RESERVE, CONFIG_BT_HCI_RAW_RESERVE)
-#else
-#define BT_BUF_RESERVE CONFIG_BT_HCI_RESERVE
-#endif
+/* Headroom reserved in buffers, primarily for HCI transport encoding purposes */
+#define BT_BUF_RESERVE 1
 
 /** Helper to include reserved HCI data in buffer calculations */
 #define BT_BUF_SIZE(size) (BT_BUF_RESERVE + (size))
@@ -71,7 +68,7 @@ struct bt_buf_data {
 
 /** Helper to calculate needed buffer size for HCI ISO packets. */
 #define BT_BUF_ISO_SIZE(size) BT_BUF_SIZE(BT_HCI_ISO_HDR_SIZE + \
-					  BT_HCI_ISO_TS_DATA_HDR_SIZE + \
+					  BT_HCI_ISO_SDU_TS_HDR_SIZE + \
 					  (size))
 
 /** Data size needed for HCI ACL RX buffers */

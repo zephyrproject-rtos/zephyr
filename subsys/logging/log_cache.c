@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+
 #include "log_cache.h"
 
 #define LOG_CACHE_DBG 0
@@ -28,6 +30,11 @@ int log_cache_init(struct log_cache *cache, const struct log_cache_config *confi
 				     sizeof(uintptr_t));
 	uint32_t entry_cnt = config->buf_len / entry_size;
 	struct log_cache_entry *entry = config->buf;
+
+	/* Ensure the cache has at least one entry */
+	if (entry_cnt == 0) {
+		return -EINVAL;
+	}
 
 	/* Add all entries to idle list */
 	for (uint32_t i = 0; i < entry_cnt; i++) {

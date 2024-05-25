@@ -1350,9 +1350,42 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 			}
 			break;
 
+		case CMDR_M0_ERROR: {
+			uint8_t ccc = data->xfer.cmds[i].cmd1 & 0xFF;
+			/*
+			 * The M0 is an illegally formatted CCC. i.e. the Controller
+			 * receives 1 byte instead of 2 with the GETMWL CCC. This can
+			 * be problematic for CCCs that can have variable length such
+			 * as GETMXDS and GETCAPS. Verify the number of bytes received matches
+			 * what's expected from the specification and ignore the error. The IP will
+			 * still retramsit the same CCC and theres nothing that can be done to
+			 * prevent this. It it still up to the application to read `num_xfer` to
+			 * determine the number of bytes returned.
+			 */
+			if (ccc == I3C_CCC_GETMXDS) {
+				/*
+				 * Whether GETMXDS format 1 and format 2 can't be known ahead of
+				 * time which will be returned.
+				 */
+				if ((*data->xfer.cmds[i].num_xfer !=
+				     sizeof(((union i3c_ccc_getmxds *)0)->fmt1)) &&
+				    (*data->xfer.cmds[i].num_xfer !=
+				     sizeof(((union i3c_ccc_getmxds *)0)->fmt2))) {
+					ret = -EIO;
+				}
+			} else if (ccc == I3C_CCC_GETCAPS) {
+				/* GETCAPS can only return 1-4 bytes */
+				if (*data->xfer.cmds[i].num_xfer > sizeof(union i3c_ccc_getcaps)) {
+					ret = -EIO;
+				}
+			} else {
+				ret = -EIO;
+			}
+			break;
+		}
+
 		case CMDR_DDR_PREAMBLE_ERROR:
 		case CMDR_DDR_PARITY_ERROR:
-		case CMDR_M0_ERROR:
 		case CMDR_M1_ERROR:
 		case CMDR_M2_ERROR:
 		case CMDR_NACK_RESP:

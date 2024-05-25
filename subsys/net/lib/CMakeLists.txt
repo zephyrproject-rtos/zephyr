@@ -27,7 +27,7 @@ if (CONFIG_DNS_RESOLVER
   add_subdirectory(dns)
 endif()
 
-if(CONFIG_HTTP_PARSER_URL OR CONFIG_HTTP_PARSER OR CONFIG_HTTP_CLIENT)
+if(CONFIG_HTTP)
   add_subdirectory(http)
 endif()
 

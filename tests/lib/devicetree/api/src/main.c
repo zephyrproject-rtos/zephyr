@@ -319,6 +319,10 @@ ZTEST(devicetree_api, test_has_compat)
 		   (TA_HAS_COMPAT(vnd_undefined_compat) << 1) |
 		   (TA_HAS_COMPAT(vnd_not_a_test_array_compat) << 2));
 	zassert_equal(compats, 0x3, "");
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_model1
+	zassert_true(DT_INST_NODE_HAS_COMPAT(0, zephyr_model2));
 }
 
 ZTEST(devicetree_api, test_has_status)
@@ -2208,6 +2212,16 @@ ZTEST(devicetree_api, test_child_nodes_list_varg)
 	#undef TEST_PARENT
 	#undef TEST_FUNC_AND_COMMA
 	#undef TEST_FUNC
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_child_bindings
+ZTEST(devicetree_api, test_child_nodes_number)
+{
+	zassert_equal(DT_CHILD_NUM(TEST_CHILDREN), 3, "");
+	zassert_equal(DT_INST_CHILD_NUM(0), 3, "");
+	zassert_equal(DT_CHILD_NUM_STATUS_OKAY(TEST_CHILDREN), 2, "");
+	zassert_equal(DT_INST_CHILD_NUM_STATUS_OKAY(0), 2, "");
 }
 
 ZTEST(devicetree_api, test_great_grandchild)

@@ -64,11 +64,19 @@ config FLASH_STM32_READOUT_PROTECTION_PERMANENT_ALLOW
 
 config FLASH_STM32_BLOCK_REGISTERS
 	bool "Extended operation for blocking option and control registers"
+	select FLASH_HAS_EX_OP
 	default n
 	help
 	  Enables flash extended operations that can be used to disable access
 	  to option and control registers until reset. Disabling access to these
 	  registers improves system security, because flash content (or
 	  protection settings) can't be changed even when exploit was found.
+
+config STM32_MEMMAP
+	bool "NOR Flash in MemoryMapped for XiP"
+	depends on XIP
+	help
+	  This option enables the XIP mode for the external NOR flash
+	  mounted on STM32 boards.
 
 endif # SOC_FLASH_STM32

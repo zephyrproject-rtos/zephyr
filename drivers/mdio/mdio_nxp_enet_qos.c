@@ -144,17 +144,9 @@ static int nxp_enet_qos_mdio_write(const struct device *dev,
 	return do_transaction(&mdio_write);
 }
 
-static void nxp_enet_qos_mdio_bus_fn(const struct device *dev)
-{
-	/* Intentionally empty. IP does not support this functionality. */
-	ARG_UNUSED(dev);
-}
-
 static const struct mdio_driver_api nxp_enet_qos_mdio_api = {
 	.read = nxp_enet_qos_mdio_read,
 	.write = nxp_enet_qos_mdio_write,
-	.bus_enable = nxp_enet_qos_mdio_bus_fn,
-	.bus_disable = nxp_enet_qos_mdio_bus_fn,
 };
 
 static int nxp_enet_qos_mdio_init(const struct device *dev)

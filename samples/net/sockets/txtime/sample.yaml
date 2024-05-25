@@ -3,8 +3,6 @@ common:
   depends_on: netif
   # We can only run this in platforms that support PTP clock and TXTIME
   platform_allow:
-    - native_posix
-    - native_posix/native/64
     - native_sim
     - native_sim/native/64
     - qemu_x86

@@ -101,9 +101,6 @@ schema;scenario-schema:
         "ordered":
           type: bool
           required: false
-        "repeat":
-          type: int
-          required: false
         "pytest_root":
           type: seq
           required: false

@@ -197,6 +197,8 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | RADIO     | STM32WB5MMG| Bluetooth Low Energy (BLE)          |
 +-----------+------------+-------------------------------------+
+| RTC       | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/st/b_u585i_iot02a/b_u585i_iot02a_defconfig`

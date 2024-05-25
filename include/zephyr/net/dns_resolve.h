@@ -13,8 +13,10 @@
 #ifndef ZEPHYR_INCLUDE_NET_DNS_RESOLVE_H_
 #define ZEPHYR_INCLUDE_NET_DNS_RESOLVE_H_
 
+#include <zephyr/kernel.h>
 #include <zephyr/net/net_ip.h>
-#include <zephyr/net/net_context.h>
+#include <zephyr/net/socket_poll.h>
+#include <zephyr/net/net_core.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,9 +90,13 @@ enum dns_query_type {
  * Address info struct is passed to callback that gets all the results.
  */
 struct dns_addrinfo {
+	/** IP address information */
 	struct sockaddr ai_addr;
+	/** Length of the ai_addr field */
 	socklen_t       ai_addrlen;
-	uint8_t            ai_family;
+	/** Address family of the address information */
+	uint8_t         ai_family;
+	/** Canonical name of the address */
 	char            ai_canonname[DNS_MAX_NAME_SIZE + 1];
 };
 
@@ -157,22 +163,27 @@ typedef void (*dns_resolve_cb_t)(enum dns_resolve_status status,
 				 struct dns_addrinfo *info,
 				 void *user_data);
 
+/** @cond INTERNAL_HIDDEN */
+
 enum dns_resolve_context_state {
 	DNS_RESOLVE_CONTEXT_ACTIVE,
 	DNS_RESOLVE_CONTEXT_DEACTIVATING,
 	DNS_RESOLVE_CONTEXT_INACTIVE,
 };
 
+/** @endcond */
+
 /**
  * DNS resolve context structure.
  */
 struct dns_resolve_context {
+	/** List of configured DNS servers */
 	struct {
 		/** DNS server information */
 		struct sockaddr dns_server;
 
 		/** Connection to the DNS server */
-		struct net_context *net_ctx;
+		int sock;
 
 		/** Is this server mDNS one */
 		uint8_t is_mdns : 1;
@@ -180,6 +191,16 @@ struct dns_resolve_context {
 		/** Is this server LLMNR one */
 		uint8_t is_llmnr : 1;
 	} servers[CONFIG_DNS_RESOLVER_MAX_SERVERS + DNS_MAX_MCAST_SERVERS];
+
+/** @cond INTERNAL_HIDDEN */
+#if (IS_ENABLED(CONFIG_NET_IPV6) && IS_ENABLED(CONFIG_NET_IPV4))
+#define DNS_RESOLVER_MAX_POLL (2 * (CONFIG_DNS_RESOLVER_MAX_SERVERS + DNS_MAX_MCAST_SERVERS))
+#else
+#define DNS_RESOLVER_MAX_POLL (1 * (CONFIG_DNS_RESOLVER_MAX_SERVERS + DNS_MAX_MCAST_SERVERS))
+#endif
+	/** Socket polling for each server connection */
+	struct zsock_pollfd fds[DNS_RESOLVER_MAX_POLL];
+/** @endcond */
 
 	/** Prevent concurrent access */
 	struct k_mutex lock;

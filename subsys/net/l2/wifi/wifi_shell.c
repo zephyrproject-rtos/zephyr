@@ -457,6 +457,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					       {"bssid", required_argument, 0, 'm'},
 					       {"band", required_argument, 0, 'b'},
 					       {"channel", required_argument, 0, 'c'},
+					       {"timeout", required_argument, 0, 't'},
 					       {"help", no_argument, 0, 'h'},
 					       {0, 0, 0, 0}};
 	int opt_index = 0;
@@ -477,7 +478,8 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->security = WIFI_SECURITY_TYPE_NONE;
 	params->mfp = WIFI_MFP_OPTIONAL;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:h", long_options, &opt_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:t:h",
+		long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 's':
@@ -496,12 +498,8 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			}
 			break;
 		case 'p':
-			if (secure_connection) {
-				params->psk = optarg;
-				params->psk_length = strlen(params->psk);
-			} else {
-				PR_WARNING("Passphrase provided without security configuration\n");
-			}
+			params->psk = optarg;
+			params->psk_length = strlen(params->psk);
 			break;
 		case 'c':
 			channel = strtol(optarg, &endptr, 10);
@@ -567,16 +565,36 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 				&params->bssid[2], &params->bssid[3],
 				&params->bssid[4], &params->bssid[5]);
 			break;
-		case 'h':
-			shell_help(sh);
+		case 't':
+			if (iface_mode == WIFI_MODE_INFRA) {
+				params->timeout = strtol(optarg, &endptr, 10);
+				if (*endptr != '\0') {
+					PR_ERROR("Invalid timeout: %s\n", optarg);
+					return -EINVAL;
+				}
+			}
 			break;
+		case 'h':
+			return -ENOEXEC;
 		default:
 			PR_ERROR("Invalid option %c\n", opt);
 			shell_help(sh);
 			return -EINVAL;
 		}
 	}
+	if (params->psk && !secure_connection) {
+		PR_WARNING("Passphrase provided without security configuration\n");
+	}
 
+	if (!params->ssid) {
+		PR_ERROR("SSID not provided\n");
+		return -EINVAL;
+	}
+
+	if (iface_mode == WIFI_MODE_AP && params->channel == WIFI_CHANNEL_ANY) {
+		PR_ERROR("Channel not provided\n");
+		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -585,6 +603,7 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_connect_req_params cnx_params = { 0 };
+	int ret;
 
 	context.sh = sh;
 	if (__wifi_args_to_params(sh, argc, argv, &cnx_params, WIFI_MODE_INFRA)) {
@@ -593,12 +612,11 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 	}
 
 	context.connecting = true;
-
-	if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface,
-		     &cnx_params, sizeof(struct wifi_connect_req_params))) {
-		PR_WARNING("Connection request failed\n");
+	ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface,
+		       &cnx_params, sizeof(struct wifi_connect_req_params));
+	if (ret) {
+		printk("Connection request failed with error: %d\n", ret);
 		context.connecting = false;
-
 		return -ENOEXEC;
 	}
 
@@ -624,7 +642,7 @@ static int cmd_wifi_disconnect(const struct shell *sh, size_t argc,
 		if (status == -EALREADY) {
 			PR_INFO("Already disconnected\n");
 		} else {
-			PR_WARNING("Disconnect request failed\n");
+			PR_WARNING("Disconnect request failed: %d\n", status);
 			return -ENOEXEC;
 		}
 	} else {
@@ -849,6 +867,8 @@ static void print_wifi_stats(struct net_if *iface, struct net_stats_wifi *data,
 	PR("Mcast sent       : %u\n", data->multicast.tx);
 	PR("Beacons received : %u\n", data->sta_mgmt.beacons_rx);
 	PR("Beacons missed   : %u\n", data->sta_mgmt.beacons_miss);
+	PR("Unicast received : %u\n", data->unicast.rx);
+	PR("Unicast sent     : %u\n", data->unicast.tx);
 }
 #endif /* CONFIG_NET_STATISTICS_WIFI && CONFIG_NET_STATISTICS_USER_API */
 
@@ -1242,7 +1262,7 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 	int ret;
 
 	context.sh = sh;
-	if (__wifi_args_to_params(sh, argc - 1, &argv[1], &cnx_params, WIFI_MODE_AP)) {
+	if (__wifi_args_to_params(sh, argc, &argv[0], &cnx_params, WIFI_MODE_AP)) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
@@ -1475,6 +1495,40 @@ static int cmd_wifi_ps_wakeup_mode(const struct shell *sh, size_t argc, char *ar
 	}
 
 	PR("%s\n", wifi_ps_wakeup_mode_txt(params.wakeup_mode));
+
+	return 0;
+}
+
+static int cmd_wifi_set_rts_threshold(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	unsigned int rts_threshold = -1; /* Default value if user supplies "off" argument */
+	int err = 0;
+
+	context.sh = sh;
+
+	if (strcmp(argv[1], "off") != 0) {
+		long rts_val = shell_strtol(argv[1], 10, &err);
+
+		if (err) {
+			shell_error(sh, "Unable to parse input (err %d)", err);
+			return err;
+		}
+
+		rts_threshold = (unsigned int)rts_val;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_RTS_THRESHOLD, iface,
+		     &rts_threshold, sizeof(rts_threshold))) {
+		shell_fprintf(sh, SHELL_WARNING,
+			      "Setting RTS threshold failed.\n");
+		return -ENOEXEC;
+	}
+
+	if ((int)rts_threshold >= 0)
+		shell_fprintf(sh, SHELL_NORMAL, "RTS threshold: %d\n", rts_threshold);
+	else
+		shell_fprintf(sh, SHELL_NORMAL, "RTS threshold is off\n");
 
 	return 0;
 }
@@ -1811,15 +1865,18 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  cmd_wifi_ap_disable,
 		  1, 0),
 	SHELL_CMD_ARG(enable, NULL,
-		  "\"<SSID>\"\n"
-		  "<channel number>\n"
-		  "[PSK: valid only for secure SSIDs]\n"
-		  "[Security type: valid only for secure SSIDs]\n"
+		  "-s --ssid=<SSID>\n"
+		  "-c --channel=<channel number>\n"
+		  "-p --passphrase=<PSK> (valid only for secure SSIDs)\n"
+		  "-k --key-mgmt=<Security type> (valid only for secure SSIDs)\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP, 7: WPA-PSK\n"
-		  "[MFP (optional: needs security type to be specified)]\n"
-		  ": 0:Disable, 1:Optional, 2:Required.\n",
+		  "-w --ieee-80211w=<MFP> (optional: needs security type to be specified)\n"
+		  "0:Disable, 1:Optional, 2:Required\n"
+		  "-b --band=<band> (2 -2.6GHz, 5 - 5Ghz, 6 - 6GHz)\n"
+		  "-m --bssid=<BSSID>\n"
+		  "-h --help (prints help)",
 		  cmd_wifi_ap_enable,
-		  3, 3),
+		  2, 13),
 	SHELL_CMD_ARG(stations, NULL,
 		  "List stations connected to the AP",
 		  cmd_wifi_ap_stations,
@@ -1869,10 +1926,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "[-b, --band] 0: any band (2:2.4GHz, 5:5GHz, 6:6GHz]\n"
 		  "[-p, --psk]: Passphrase (valid only for secure SSIDs)\n"
 		  "[-k, --key-mgmt]: Key Management type (valid only for secure SSIDs)\n"
-		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP, 7: WPA-PSK\n"
+		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP,"
+		  " 7: WPA-PSK, 8: WPA-Auto-Personal\n"
 		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n"
 		  "[-m, --bssid]: MAC address of the AP (BSSID).\n"
+		  "[-t, --timeout]: Timeout for the connection attempt (in seconds).\n"
 		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
 		  2, 7),
@@ -1974,6 +2033,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		     NULL,
 		     "<wakeup_mode: DTIM/Listen Interval>.\n",
 		     cmd_wifi_ps_wakeup_mode,
+		     2,
+		     0),
+	SHELL_CMD_ARG(rts_threshold,
+		     NULL,
+		     "<rts_threshold: rts threshold/off>.\n",
+		     cmd_wifi_set_rts_threshold,
 		     2,
 		     0),
 	SHELL_SUBCMD_SET_END

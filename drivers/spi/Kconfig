@@ -13,6 +13,15 @@ menuconfig SPI
 
 if SPI
 
+config SPI_SHELL
+	bool "SPI Shell"
+	depends on SHELL
+	help
+	  Enable SPI Shell.
+
+	  The currently SPI shell supports simple SPI write/read (transceive)
+	  operation.
+
 config SPI_ASYNC
 	bool "Asynchronous call support"
 	select POLL
@@ -45,7 +54,7 @@ config SPI_EXTENDED_MODES
 
 config SPI_INIT_PRIORITY
 	int "Init priority"
-	default 70
+	default KERNEL_INIT_PRIORITY_DEVICE
 	help
 	  Device driver initialization priority.
 

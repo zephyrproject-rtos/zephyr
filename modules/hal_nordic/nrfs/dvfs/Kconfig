@@ -1,0 +1,40 @@
+#
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "Local domain DVFS library"
+
+module = LOCAL_DOMAIN_DVFS_LIB
+module-str = Local domain DVFS library
+source "subsys/logging/Kconfig.template.log_config"
+
+config NRFS_LOCAL_DOMAIN_DVFS_TEST
+	bool "Local domain DVFS test"
+	help
+	  Disable hw registers interaction for testing.
+
+config NRFS_LOCAL_DOMAIN_DVFS_SCALE_DOWN_AFTER_INIT
+	bool "Local domain scale down after init"
+	help
+	  Request lowest oppoint after DVFS initialization.
+
+config NRFS_LOCAL_DOMAIN_DOWNSCALE_SAFETY_TIMEOUT_US
+	int "Voltage downscale procedure safety timeout in us"
+	range 1 10000000
+	default 1000000 if (NRFS_LOCAL_DOMAIN_DVFS_TEST || LOG)
+	default 1500
+
+config NRFS_LOCAL_DOMAIN_DVFS_HANDLER_TASK_STACK_SIZE
+	int "Stack size used for DVFS handling task"
+	range 256 2048
+	default 1024 if LOG
+	default 512
+
+config NRFS_LOCAL_DOMAIN_DVFS_HANDLER_TASK_PRIORITY
+	int "Priority of DVFS handling task"
+	range -16 NUM_PREEMPT_PRIORITIES
+	default 0
+
+endmenu

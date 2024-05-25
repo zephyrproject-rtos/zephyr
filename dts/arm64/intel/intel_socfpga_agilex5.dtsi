@@ -97,6 +97,10 @@
 		reg = <0x80100000 DT_SIZE_M(8)>;
 	};
 
+	fpga0: bridges {
+		compatible = "altr,socfpga-agilex-bridge";
+	};
+
 	uart0: uart@10c02000 {
 		compatible = "ns16550";
 		reg-shift = <2>;

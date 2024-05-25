@@ -1,0 +1,21 @@
+# Copyright (c) 2024 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "UART Async Test"
+
+source "Kconfig.zephyr"
+
+if DCACHE
+
+config DT_DEFINED_NOCACHE
+	bool "Enable this if a nocache region is defined in devicetree"
+
+if DT_DEFINED_NOCACHE
+
+config DT_DEFINED_NOCACHE_NAME
+	string "Name of the nocache region defined in devicetree (uppercase)"
+
+endif # DT_DEFINED_NOCACHE
+
+endif # DCACHE

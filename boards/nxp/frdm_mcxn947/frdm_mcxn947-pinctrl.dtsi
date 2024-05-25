@@ -101,4 +101,60 @@
 			input-enable;
 		};
 	};
+
+	pinmux_flexpwm1_pwm0: pinmux_flexpwm1_pwm0 {
+		group0 {
+			pinmux = <PWM1_A0_PIO2_6>,
+				<PWM1_B0_PIO2_7>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_flexpwm1_pwm1: pinmux_flexpwm1_pwm1 {
+		group0 {
+			pinmux = <PWM1_A1_PIO2_4>,
+				<PWM1_B1_PIO2_5>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_flexpwm1_pwm2: pinmux_flexpwm1_pwm2 {
+		group0 {
+			pinmux = <PWM1_A2_PIO2_2>,
+				<PWM1_B2_PIO2_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_usdhc0: pinmux_usdhc0 {
+		group0 {
+			pinmux = <SDHC0_CMD_PIO2_5>,
+			       <SDHC0_D0_PIO2_3>,
+			       <SDHC0_D1_PIO2_2>,
+			       <SDHC0_D2_PIO2_7>,
+			       <SDHC0_D3_PIO2_6>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			bias-pull-up;
+			input-enable;
+		};
+		group1 {
+			pinmux = <SDHC0_CLK_PIO2_4>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+	pinmux_lpadc0: pinmux_lpadc0 {
+		group0 {
+			pinmux = <ADC0_A2_PIO4_23>,
+				<ADC0_A1_PIO4_15>,
+				<ADC0_B1_PIO4_19>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
 };

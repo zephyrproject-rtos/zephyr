@@ -82,18 +82,6 @@ struct usbd_msg {
 };
 
 /**
- * @brief Callback type definition for USB device message delivery
- *
- * The implementation uses the system workqueue, and a callback provided and
- * registered by the application. The application callback is called in the
- * context of the system workqueue. Notification messages are stored in a queue
- * and delivered to the callback in sequence.
- *
- * @param[in] msg Pointer to USB device message
- */
-typedef void (*usbd_msg_cb_t)(const struct usbd_msg *const msg);
-
-/**
  * @brief Returns the message type as a constant string
  *
  * @param[in] type USBD message type

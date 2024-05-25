@@ -6,6 +6,7 @@
 
 #include <errno.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/net/hostname.h>
 #include <zephyr/internal/syscall_handler.h>
 
 int z_impl_zsock_gethostname(char *buf, size_t len)

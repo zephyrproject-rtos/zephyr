@@ -217,6 +217,8 @@ static inline pentry_t *z_x86_thread_page_tables_get(struct k_thread *thread)
 		 */
 		return z_mem_virt_addr(thread->arch.ptables);
 	}
+#else
+	ARG_UNUSED(thread);
 #endif
 	return z_x86_kernel_ptables;
 }

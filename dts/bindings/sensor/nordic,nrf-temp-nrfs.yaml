@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic nRF family temperature sensor accessed via nRF Services (nrfs)
+
+compatible: "nordic,nrf-temp-nrfs"
+
+include: base.yaml

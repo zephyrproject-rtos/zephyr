@@ -1,5 +1,5 @@
 # Copyright (c) 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 config MFD_AXP192
 	bool "AXP192 PMIC multi-function device driver"

@@ -37,6 +37,7 @@ struct st7789v_config {
 	uint8_t gamma;
 	uint8_t colmod;
 	uint8_t lcm;
+	bool inversion_on;
 	uint8_t porch_param[5];
 	uint8_t cmd2en_param[4];
 	uint8_t pwctrl1_param[2];
@@ -298,7 +299,11 @@ static void st7789v_lcd_init(const struct device *dev)
 	tmp = config->gamma;
 	st7789v_transmit(dev, ST7789V_CMD_GAMSET, &tmp, 1);
 
-	st7789v_transmit(dev, ST7789V_CMD_INV_ON, NULL, 0);
+	if (config->inversion_on) {
+		st7789v_transmit(dev, ST7789V_CMD_INV_ON, NULL, 0);
+	} else {
+		st7789v_transmit(dev, ST7789V_CMD_INV_OFF, NULL, 0);
+	}
 
 	st7789v_transmit(dev, ST7789V_CMD_PVGAMCTRL,
 			 (uint8_t *)config->pvgam_param,
@@ -411,6 +416,7 @@ static const struct display_driver_api st7789v_api = {
 		.gamma = DT_INST_PROP(inst, gamma),					\
 		.colmod = DT_INST_PROP(inst, colmod),					\
 		.lcm = DT_INST_PROP(inst, lcm),						\
+		.inversion_on = !DT_INST_PROP(inst, inversion_off),			\
 		.porch_param = DT_INST_PROP(inst, porch_param),				\
 		.cmd2en_param = DT_INST_PROP(inst, cmd2en_param),			\
 		.pwctrl1_param = DT_INST_PROP(inst, pwctrl1_param),			\

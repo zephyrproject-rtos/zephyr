@@ -456,6 +456,7 @@ static void isr_rx_estab(void *param)
 	LL_ASSERT(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO_ESTAB;
+	e->estab_failed = 0U;
 	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_ok;
 
@@ -1264,7 +1265,7 @@ static void isr_rx_iso_data_valid(const struct lll_sync_iso *const lll,
 	node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
 	node_rx->hdr.handle = handle;
 
-	iso_meta = &node_rx->hdr.rx_iso_meta;
+	iso_meta = &node_rx->rx_iso_meta;
 	iso_meta->payload_number = lll->payload_count + (lll->bn_curr - 1U) +
 				   (lll->ptc_curr * lll->pto) - lll->bn;
 
@@ -1293,7 +1294,7 @@ static void isr_rx_iso_data_invalid(const struct lll_sync_iso *const lll,
 	node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
 	node_rx->hdr.handle = handle;
 
-	iso_meta = &node_rx->hdr.rx_iso_meta;
+	iso_meta = &node_rx->rx_iso_meta;
 	iso_meta->payload_number = lll->payload_count - bn - 1U;
 
 	stream = ull_sync_iso_lll_stream_get(lll->stream_handle[0]);

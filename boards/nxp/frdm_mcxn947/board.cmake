@@ -23,6 +23,9 @@ else()
   message(FATAL_ERROR "Support for cpu1 not available yet")
 endif()
 
+# Pyocd support added with the NXP.MCXN947_DFP.17.0.0.pack CMSIS Pack
+board_runner_args(pyocd "--target=mcxn947")
 
 include(${ZEPHYR_BASE}/boards/common/linkserver.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)

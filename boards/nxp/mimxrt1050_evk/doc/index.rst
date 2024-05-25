@@ -357,9 +357,10 @@ External JLink :ref:`jlink-external-debug-probe`
 Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
 path.
 
-Attach a J-Link 20-pin connector to J21. Check that jumpers J32 and J33 are
-**off** (they are on by default when boards ship from the factory) to ensure
-SWD signals are disconnected from the OpenSDA microcontroller.
+Attach a J-Link 20-pin connector to J21. Check that jumpers J32 and J33 with
+schematic rev A0/A1 or J47 and J48 with schematic rev B1 are **off** (they are
+on by default when boards ship from the factory) to ensure SWD signals are
+disconnected from the OpenSDA microcontroller.
 
 Configuring a Console
 =====================
@@ -486,13 +487,3 @@ Current Zephyr build supports the new MIMXRT1050-EVKB
 
 .. _Enable QSPI flash support in SEGGER JLink:
    https://wiki.segger.com/i.MXRT1050#QSPI_flash
-
-Experimental ENET Driver
-========================
-
-Current default ethernet driver is eth_mcux, with binding `nxp,kinetis-ethernet`. There is a new
-driver with binding `nxp,enet`, which is experimental and undergoing development, but will have
-enhanced capability, such as not hardcoding code for only one phy in the driver like eth_mcux.
-
-To build for this EVK with the new driver, include the experimental overlay to west build with
-the option `-DEXTRA_DTC_OVERLAY_FILE=nxp,enet-experimental.overlay`.

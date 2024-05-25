@@ -888,9 +888,6 @@ static int can_rcar_send(const struct device *dev, const struct can_frame *frame
 		"extended" : "standard"
 		, (frame->flags & CAN_FRAME_RTR) != 0 ? "yes" : "no");
 
-	__ASSERT_NO_MSG(callback != NULL);
-	__ASSERT(frame->dlc == 0U || frame->data != NULL, "Dataptr is null");
-
 	if (frame->dlc > CAN_MAX_DLC) {
 		LOG_ERR("DLC of %d exceeds maximum (%d)",
 			frame->dlc, CAN_MAX_DLC);

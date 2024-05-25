@@ -222,3 +222,25 @@ void assert_frame_equal(const struct can_frame *frame1,
 				  "Received data differ");
 	}
 }
+
+void can_common_test_setup(can_mode_t initial_mode)
+{
+	int err;
+
+	k_sem_init(&rx_callback_sem, 0, 2);
+	k_sem_init(&tx_callback_sem, 0, 2);
+
+	k_object_access_grant(&can_msgq, k_current_get());
+	k_object_access_grant(can_dev, k_current_get());
+
+	zassert_true(device_is_ready(can_dev), "CAN device not ready");
+
+	(void)can_stop(can_dev);
+
+	err = can_set_mode(can_dev, initial_mode);
+	zassert_equal(err, 0, "failed to set initial mode (err %d)", err);
+	zassert_equal(initial_mode, can_get_mode(can_dev));
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}

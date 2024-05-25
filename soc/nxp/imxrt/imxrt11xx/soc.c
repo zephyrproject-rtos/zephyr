@@ -398,6 +398,11 @@ static ALWAYS_INLINE void clock_init(void)
 	rootCfg.mux = kCLOCK_LPI2C5_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Lpi2c5, &rootCfg);
+
+	/* Configure Lpi2c6 using Osc24M */
+	rootCfg.mux = kCLOCK_LPI2C6_ClockRoot_MuxOsc24MOut;
+	rootCfg.div = 12;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpi2c6, &rootCfg);
 #endif
 
 
@@ -437,7 +442,7 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 #endif
 
-#ifdef CONFIG_PTP_CLOCK_MCUX
+#if defined(CONFIG_PTP_CLOCK_MCUX) || defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	/* 24MHz PTP clock */
 	rootCfg.mux = kCLOCK_ENET_TIMER1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
@@ -449,6 +454,27 @@ static ALWAYS_INLINE void clock_init(void)
 	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Lpspi1, &rootCfg);
+#endif
+
+#ifdef CONFIG_VIDEO_MCUX_MIPI_CSI2RX
+	/* MIPI CSI-2 Rx connects to CSI via Video Mux */
+	CLOCK_EnableClock(kCLOCK_Video_Mux);
+	VIDEO_MUX->VID_MUX_CTRL.SET = VIDEO_MUX_VID_MUX_CTRL_CSI_SEL_MASK;
+
+	/* Configure MIPI CSI-2 Rx clocks */
+	rootCfg.div = 8;
+	rootCfg.mux = kCLOCK_CSI2_ClockRoot_MuxSysPll3Out;
+	CLOCK_SetRootClock(kCLOCK_Root_Csi2, &rootCfg);
+
+	rootCfg.mux = kCLOCK_CSI2_ESC_ClockRoot_MuxSysPll3Out;
+	CLOCK_SetRootClock(kCLOCK_Root_Csi2_Esc, &rootCfg);
+
+	rootCfg.mux = kCLOCK_CSI2_UI_ClockRoot_MuxSysPll3Out;
+	CLOCK_SetRootClock(kCLOCK_Root_Csi2_Ui, &rootCfg);
+
+	/* Enable power domain for MIPI CSI-2 */
+	PGMC_BPC4->BPC_POWER_CTRL |= (PGMC_BPC_BPC_POWER_CTRL_PSW_ON_SOFT_MASK |
+				      PGMC_BPC_BPC_POWER_CTRL_ISO_OFF_SOFT_MASK);
 #endif
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN
@@ -527,7 +553,7 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 #endif
 
-#if !(DT_NODE_HAS_COMPAT(DT_CHOSEN(flash), nxp_imx_flexspi)) && \
+#if !(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_flash), nxp_imx_flexspi)) && \
 	defined(CONFIG_MEMC_MCUX_FLEXSPI) && \
 	DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi), okay)
 	/* Configure FLEXSPI1 using OSC_RC_48M_DIV2 */

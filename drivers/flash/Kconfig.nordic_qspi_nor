@@ -6,6 +6,7 @@ menuconfig NORDIC_QSPI_NOR
 	default y
 	depends on DT_HAS_NORDIC_QSPI_NOR_ENABLED
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
 	select NRFX_QSPI
 	select FLASH_JESD216
 	select PINCTRL

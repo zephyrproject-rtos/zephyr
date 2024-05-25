@@ -437,3 +437,25 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 }
 
 #endif /* CONFIG_PM */
+
+#ifdef CONFIG_ARCH_CPU_IDLE_CUSTOM
+
+__no_optimization
+void arch_cpu_idle(void)
+{
+	uint32_t cpu = arch_proc_id();
+
+	sys_trace_idle();
+
+	/*
+	 * unlock and invalidate icache if clock gating is allowed
+	 */
+	if (!(DSPCS.bootctl[cpu].bctl & DSPBR_BCTL_WAITIPCG)) {
+		xthal_icache_all_unlock();
+		xthal_icache_all_invalidate();
+	}
+
+	__asm__ volatile ("waiti 0");
+}
+
+#endif /* CONFIG_ARCH_CPU_IDLE_CUSTOM */

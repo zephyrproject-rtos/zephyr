@@ -81,6 +81,7 @@ struct virtual_interface_config {
 #endif
 /** @endcond */
 
+/** Virtual L2 API operations. */
 struct virtual_interface_api {
 	/**
 	 * The net_if_api must be placed in first position in this

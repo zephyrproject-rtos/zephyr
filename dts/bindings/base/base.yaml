@@ -92,3 +92,9 @@ properties:
   mbox-names:
     type: string-array
     description: Provided names of mailbox / IPM channel specifiers
+
+  zephyr,deferred-init:
+    type: boolean
+    description: |
+      Do not initialize device automatically on boot. Device should be manually
+      initialized using device_init().

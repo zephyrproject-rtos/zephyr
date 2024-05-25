@@ -144,6 +144,8 @@ struct npcx_taf_head {
 	uint8_t llen;
 };
 
+int npcx_init_taf(const struct device *dev, sys_slist_t *callbacks);
+
 #ifdef __cplusplus
 }
 #endif

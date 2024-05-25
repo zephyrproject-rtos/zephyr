@@ -36,10 +36,10 @@ struct i2c_rtio {
  * @param _sq_sz Submission queue entry pool size
  * @param _cq_sz Completeion queue entry pool size
  */
-#define I2C_RTIO_DEFINE(_name, _sq_sz, _cq_sz)	\
-	RTIO_DEFINE(_name##_r, _sq_sz, _cq_sz);	\
-	static struct i2c_rtio _name = {	\
-		.r = &_name##_r,		\
+#define I2C_RTIO_DEFINE(_name, _sq_sz, _cq_sz)		\
+	RTIO_DEFINE(CONCAT(_name, _r), _sq_sz, _cq_sz);	\
+	static struct i2c_rtio _name = {		\
+		.r = &CONCAT(_name, _r),		\
 	};
 
 /**

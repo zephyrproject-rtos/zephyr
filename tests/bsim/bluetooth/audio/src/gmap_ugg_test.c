@@ -23,8 +23,7 @@
  * Broadcast ISO radio events.
  */
 #define BT_LE_EXT_ADV_CUSTOM \
-		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
-				BT_LE_ADV_OPT_USE_NAME, \
+		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, \
 				0x0080, 0x0080, NULL)
 
 #define BT_LE_PER_ADV_CUSTOM \
@@ -264,6 +263,7 @@ static struct bt_bap_stream_ops stream_ops = {
 };
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
+				      const struct bt_csip_set_coordinator_set_member *member,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (err != 0) {

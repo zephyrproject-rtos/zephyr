@@ -10,6 +10,11 @@ west-commands:
       - name: boards
         class: Boards
         help: display information about supported boards
+  - file: scripts/west_commands/shields.py
+    commands:
+      - name: shields
+        class: Shields
+        help: display list of supported shields
   - file: scripts/west_commands/build.py
     commands:
       - name: build

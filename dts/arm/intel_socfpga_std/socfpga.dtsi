@@ -227,6 +227,11 @@
 			reg = <0xffb30000 0xffff>;
 			interrupts = <0 127 4 IRQ_DEFAULT_PRIORITY>;
 			interrupt-parent = <&intc>;
+			num-out-eps = <16>;
+			num-in-eps = <16>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x208ffc90>;
+			ghwcfg4 = <0xfe0f0020>;
 			status = "disabled";
 			};
 
@@ -235,6 +240,11 @@
 			reg = <0xffb40000 0xffff>;
 			interrupts = <0 128 4 IRQ_DEFAULT_PRIORITY>;
 			interrupt-parent = <&intc>;
+			num-out-eps = <16>;
+			num-in-eps = <16>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x208ffc90>;
+			ghwcfg4 = <0xfe0f0020>;
 			status = "okay";
 			};
 

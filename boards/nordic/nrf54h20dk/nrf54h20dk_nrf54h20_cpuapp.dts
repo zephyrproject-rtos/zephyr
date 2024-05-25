@@ -11,6 +11,7 @@
 #include "nrf54h20dk_nrf54h20-ipc_conf.dtsi"
 #include "nrf54h20dk_nrf54h20-pinctrl.dtsi"
 
+/delete-node/ &cpurad_cpusys_ipc;
 /delete-node/ &cpusec_cpurad_ipc;
 
 / {
@@ -22,6 +23,10 @@
 		zephyr,code-partition = &cpuapp_slot0_partition;
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpuapp_data;
+		zephyr,shell-uart = &uart136;
+		zephyr,ieee802154 = &cpuapp_ieee802154;
+		zephyr,bt-hci-ipc = &ipc0;
+		nordic,802154-spinel-ipc = &ipc0;
 	};
 
 	aliases {
@@ -33,6 +38,8 @@
 		sw1 = &button1;
 		sw2 = &button2;
 		sw3 = &button3;
+		ipc-to-cpusys = &cpuapp_cpusys_ipc;
+		watchdog0 = &wdt010;
 	};
 
 	buttons {
@@ -92,15 +99,28 @@
 	status = "okay";
 };
 
+&cpuapp_cpurad_ram0x_region {
+	status = "okay";
+};
+
 &shared_ram3x_region {
 	status = "okay";
 };
 
 &cpuapp_bellboard {
+	status = "okay";
 	interrupts = <96 NRF_DEFAULT_IRQ_PRIORITY>;
 	interrupt-names = "irq0";
-	/* irq0: 0: cpuapp-cpusec, 13: cpuapp-cpuppr, 18: cpuapp-cpurad */
-	nordic,interrupt-mapping = <0x00042001 0>;
+	/* irq0: 0: cpuapp-cpusec, 6: cpuapp-cpusys, 13: cpuapp-cpuppr, 18: cpuapp-cpurad */
+	nordic,interrupt-mapping = <0x00042041 0>;
+};
+
+&cpurad_bellboard {
+	status = "okay";
+};
+
+&cpusys_vevif {
+	status = "okay";
 };
 
 &cpusec_cpuapp_ipc {
@@ -109,11 +129,20 @@
 	rx-region = <&cpusec_cpuapp_ipc_shm>;
 };
 
-&cpuapp_cpurad_ipc {
-	compatible = "zephyr,ipc-icmsg-me-initiator";
+ipc0: &cpuapp_cpurad_ipc {
+	status = "okay";
 	mbox-names = "rx", "tx";
 	tx-region = <&cpuapp_cpurad_ipc_shm>;
 	rx-region = <&cpurad_cpuapp_ipc_shm>;
+	tx-blocks = <32>;
+	rx-blocks = <32>;
+};
+
+&cpuapp_cpusys_ipc {
+	status = "okay";
+	mbox-names = "rx", "tx";
+	tx-region = <&cpuapp_cpusys_ipc_shm>;
+	rx-region = <&cpusys_cpuapp_ipc_shm>;
 };
 
 &cpuapp_cpuppr_ipc {
@@ -173,4 +202,42 @@
 	pinctrl-0 = <&uart136_default>;
 	pinctrl-1 = <&uart136_sleep>;
 	pinctrl-names = "default", "sleep";
+	hw-flow-control;
+};
+
+&gpio6 {
+	status = "okay";
+};
+
+&exmif {
+	cs-gpios = <&gpio6 3 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&exmif_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	mx25uw63: mx25uw6345g@0 {
+		compatible = "jedec,spi-nor";
+		status = "disabled";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(48)>;
+		jedec-id = [c2 84 37];
+		sfdp-bfp = [
+			e5 20 8a ff  ff ff ff 03  00 ff 00 ff  00 ff 00 ff
+			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 10 d8
+			00 ff 00 ff  87 79 01 00  84 12 00 c4  cc 04 67 46
+			30 b0 30 b0  f4 bd d5 5c  00 00 00 ff  10 10 00 20
+			00 00 00 00  00 00 7c 23  48 00 00 00  00 00 88 88
+		];
+		size = <67108864>;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <30000>;
+	};
+};
+
+&cpuapp_ieee802154 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
 };

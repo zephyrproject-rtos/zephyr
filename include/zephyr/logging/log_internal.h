@@ -114,8 +114,6 @@ void z_log_msg_commit(struct log_msg *msg);
  *
  * @param[out] backoff Recommended backoff needed to maintain ordering of processed
  * messages. Used only when links are using dedicated buffers.
- *
- * @param Message or null if no pending messages.
  */
 union log_msg_generic *z_log_msg_claim(k_timeout_t *backoff);
 

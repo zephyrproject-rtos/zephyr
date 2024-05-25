@@ -51,7 +51,7 @@ set_compiler_property(PROPERTY nostdinc)
 set_compiler_property(PROPERTY nostdinc_include)
 
 # Compiler flags for disabling C++ standard include.
-set_compiler_property(TARGET compiler-cpp PROPERTY nostdincxx)
+set_property(TARGET compiler-cpp PROPERTY nostdincxx)
 
 # Required C++ flags when compiling C++ code
 set_property(TARGET compiler-cpp PROPERTY required)

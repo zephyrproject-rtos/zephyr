@@ -62,10 +62,6 @@ tests:
       - SHIELD=atmel_rf2xx_mikrobus
       - OVERLAY_CONFIG="overlay-802154.conf"
     platform_allow: lpcxpresso55s69/lpc55s69/cpu0/ns
-  sample.net.sockets.echo_client.bt:
-    extra_args: OVERLAY_CONFIG="overlay-bt.conf"
-    platform_allow: qemu_x86
-    tags: bluetooth
   sample.net.sockets.echo_client.mcr20a:
     extra_args:
       - SHIELD=frdm_cr20a

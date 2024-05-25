@@ -1,0 +1,13 @@
+identifier: frdm_ke15z
+name: NXP FRDM-KE15Z
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+flash: 256
+ram: 24
+supported:
+  - gpio
+  - uart

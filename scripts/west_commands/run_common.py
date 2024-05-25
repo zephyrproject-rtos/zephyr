@@ -1,12 +1,15 @@
 # Copyright (c) 2018 Open Source Foundries Limited.
+# Copyright (c) 2023 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
 '''Common code used by commands which execute runners.
 '''
 
+import re
 import argparse
 import logging
+from collections import defaultdict
 from os import close, getcwd, path, fspath
 from pathlib import Path
 from subprocess import CalledProcessError
@@ -15,12 +18,14 @@ import tempfile
 import textwrap
 import traceback
 
+from dataclasses import dataclass
 from west import log
 from build_helpers import find_build_dir, is_zephyr_build, load_domains, \
     FIND_BUILD_DIR_DESCRIPTION
 from west.commands import CommandError
 from west.configuration import config
 from runners.core import FileType
+from runners.core import BuildConfiguration
 import yaml
 
 from zephyr_ext_common import ZEPHYR_SCRIPTS
@@ -77,6 +82,19 @@ class WestLogHandler(logging.Handler):
             log.dbg(fmt)
         else:
             log.dbg(fmt, level=log.VERBOSE_EXTREME)
+
+@dataclass
+class UsedFlashCommand:
+    command: str
+    boards: list
+    runners: list
+    first: bool
+    ran: bool = False
+
+@dataclass
+class ImagesFlashed:
+    flashed: int = 0
+    total: int = 0
 
 def command_verb(command):
     return "flash" if command.name == "flash" else "debug"
@@ -147,6 +165,19 @@ def do_run_common(command, user_args, user_runner_args, domains=None):
     # This is the main routine for all the "west flash", "west debug",
     # etc. commands.
 
+    # Holds a list of run once commands, this is useful for sysbuild images
+    # whereby there are multiple images per board with flash commands that can
+    # interfere with other images if they run one per time an image is flashed.
+    used_cmds = []
+
+    # Holds a set of processed board names for flash running information.
+    processed_boards = set()
+
+    # Holds a dictionary of board image flash counts, the first element is
+    # number of images flashed so far and second element is total number of
+    # images for a given board.
+    board_image_count = defaultdict(ImagesFlashed)
+
     if user_args.context:
         dump_context(command, user_args, user_runner_args)
         return
@@ -165,20 +196,108 @@ def do_run_common(command, user_args, user_runner_args, domains=None):
             # Get the user specified domains.
             domains = load_domains(build_dir).get_domains(user_args.domain)
 
-    if len(domains) > 1 and len(user_runner_args) > 0:
-        log.wrn("Specifying runner options for multiple domains is experimental.\n"
-                "If problems are experienced, please specify a single domain "
-                "using '--domain <domain>'")
+    if len(domains) > 1:
+        if len(user_runner_args) > 0:
+            log.wrn("Specifying runner options for multiple domains is experimental.\n"
+                    "If problems are experienced, please specify a single domain "
+                    "using '--domain <domain>'")
+
+        # Process all domains to load board names and populate flash runner
+        # parameters.
+        board_names = set()
+        for d in domains:
+            if d.build_dir is None:
+                build_dir = get_build_dir(user_args)
+            else:
+                build_dir = d.build_dir
+
+            cache = load_cmake_cache(build_dir, user_args)
+            build_conf = BuildConfiguration(build_dir)
+            board = build_conf.get('CONFIG_BOARD_TARGET')
+            board_names.add(board)
+            board_image_count[board].total += 1
+
+            # Load board flash runner configuration (if it exists) and store
+            # single-use commands in a dictionary so that they get executed
+            # once per unique board name.
+            if cache['BOARD_DIR'] not in processed_boards and 'SOC_FULL_DIR' in cache:
+                soc_yaml_file = Path(cache['SOC_FULL_DIR']) / 'soc.yml'
+                board_yaml_file = Path(cache['BOARD_DIR']) / 'board.yml'
+                group_type = 'boards'
+
+                # Search for flash runner configuration, board takes priority over SoC
+                try:
+                    with open(board_yaml_file, 'r') as f:
+                        data_yaml = yaml.safe_load(f.read())
+
+                except FileNotFoundError:
+                    continue
+
+                if 'runners' not in data_yaml:
+                    # Check SoC file
+                    group_type = 'qualifiers'
+                    try:
+                        with open(soc_yaml_file, 'r') as f:
+                            data_yaml = yaml.safe_load(f.read())
+
+                    except FileNotFoundError:
+                        continue
+
+                processed_boards.add(cache['BOARD_DIR'])
+
+                if 'runners' not in data_yaml or 'run_once' not in data_yaml['runners']:
+                    continue
+
+                for cmd in data_yaml['runners']['run_once']:
+                    for data in data_yaml['runners']['run_once'][cmd]:
+                        for group in data['groups']:
+                            run_first = bool(data['run'] == 'first')
+                            if group_type == 'qualifiers':
+                                targets = []
+                                for target in group[group_type]:
+                                    # For SoC-based qualifiers, prepend to the beginning of the
+                                    # match to allow for matching any board name
+                                    targets.append('([^/]+)/' + target)
+                            else:
+                                targets = group[group_type]
+
+                            used_cmds.append(UsedFlashCommand(cmd, targets, data['runners'], run_first))
+
+    # Reduce entries to only those having matching board names (either exact or with regex) and
+    # remove any entries with empty board lists
+    for i, entry in enumerate(used_cmds):
+        for l, match in enumerate(entry.boards):
+            match_found = False
+
+            # Check if there is a matching board for this regex
+            for check in board_names:
+                if re.match(fr'^{match}$', check) is not None:
+                    match_found = True
+                    break
+
+            if not match_found:
+                del entry.boards[l]
+
+        if len(entry.boards) == 0:
+            del used_cmds[i]
 
     for d in domains:
-        do_run_common_image(command, user_args, user_runner_args, d.build_dir)
+        do_run_common_image(command, user_args, user_runner_args,
+                            used_cmds, board_image_count, d.build_dir)
 
-def do_run_common_image(command, user_args, user_runner_args, build_dir=None):
+
+def do_run_common_image(command, user_args, user_runner_args, used_cmds,
+                        board_image_count, build_dir=None,):
+    global re
     command_name = command.name
     if build_dir is None:
         build_dir = get_build_dir(user_args)
     cache = load_cmake_cache(build_dir, user_args)
-    board = cache['CACHED_BOARD']
+    build_conf = BuildConfiguration(build_dir)
+    board = build_conf.get('CONFIG_BOARD_TARGET')
+
+    if board_image_count is not None and board in board_image_count:
+        board_image_count[board].flashed += 1
 
     # Load runners.yaml.
     yaml_path = runners_yaml_path(build_dir, board)
@@ -200,6 +319,93 @@ def do_run_common_image(command, user_args, user_runner_args, build_dir=None):
     # If the user passed -- to force the parent argument parser to stop
     # parsing, it will show up here, and needs to be filtered out.
     runner_args = [arg for arg in user_runner_args if arg != '--']
+
+    # Check if there are any commands that should only be ran once per board
+    # and if so, remove them for all but the first iteration of the flash
+    # runner per unique board name.
+    if len(used_cmds) > 0 and len(runner_args) > 0:
+        i = len(runner_args) - 1
+        while i >= 0:
+            for cmd in used_cmds:
+                if cmd.command == runner_args[i] and (runner_name in cmd.runners or 'all' in cmd.runners):
+                    # Check if board is here
+                    match_found = False
+
+                    for match in cmd.boards:
+                        # Check if there is a matching board for this regex
+                        if re.match(fr'^{match}$', board) is not None:
+                            match_found = True
+                            break
+
+                    if not match_found:
+                        continue
+
+                    # Check if this is a first or last run
+                    if not cmd.first:
+                        # For last run instances, we need to check that this really is the last
+                        # image of all boards being flashed
+                        for check in cmd.boards:
+                            can_continue = False
+
+                            for match in board_image_count:
+                                if re.match(fr'^{check}$', match) is not None:
+                                    if board_image_count[match].flashed == board_image_count[match].total:
+                                        can_continue = True
+                                        break
+
+                        if not can_continue:
+                            continue
+
+                    if not cmd.ran:
+                        cmd.ran = True
+                    else:
+                        runner_args.pop(i)
+
+                    break
+
+            i = i - 1
+
+    # If flashing multiple images, the runner supports reset after flashing and
+    # the board has enabled this functionality, check if the board should be
+    # reset or not. If this is not specified in the board/soc file, leave it up to
+    # the runner's default configuration to decide if a reset should occur.
+    if runner_cls.capabilities().reset:
+        if board_image_count is not None:
+            reset = True
+
+            for cmd in used_cmds:
+                if cmd.command == '--reset' and (runner_name in cmd.runners or 'all' in cmd.runners):
+                    # Check if board is here
+                    match_found = False
+
+                    for match in cmd.boards:
+                        if re.match(fr'^{match}$', board) is not None:
+                            match_found = True
+                            break
+
+                    if not match_found:
+                        continue
+
+                    # Check if this is a first or last run
+                    if cmd.first and cmd.ran:
+                        reset = False
+                        break
+                    elif not cmd.first and not cmd.ran:
+                        # For last run instances, we need to check that this really is the last
+                        # image of all boards being flashed
+                        for check in cmd.boards:
+                            can_continue = False
+
+                            for match in board_image_count:
+                                if re.match(fr'^{check}$', match) is not None:
+                                    if board_image_count[match].flashed != board_image_count[match].total:
+                                        reset = False
+                                        break
+
+            if reset:
+                runner_args.append('--reset')
+            else:
+                runner_args.append('--no-reset')
 
     # Arguments in this order to allow specific to override general:
     #
@@ -439,8 +645,8 @@ def dump_context(command, args, unknown_args):
         log.wrn('no --build-dir given or found; output will be limited')
         runners_yaml = None
     else:
-        cache = load_cmake_cache(build_dir, args)
-        board = cache['CACHED_BOARD']
+        build_conf = BuildConfiguration(build_dir)
+        board = build_conf.get('CONFIG_BOARD_TARGET')
         yaml_path = runners_yaml_path(build_dir, board)
         runners_yaml = load_runners_yaml(yaml_path)
 

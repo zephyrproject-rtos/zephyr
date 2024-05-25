@@ -166,7 +166,7 @@ static inline void trigger_irq(int irq)
 }
 
 #elif defined(CONFIG_RISCV)
-#if defined(CONFIG_NUCLEI_ECLIC)
+#if defined(CONFIG_NUCLEI_ECLIC) || defined(CONFIG_NRFX_CLIC)
 void riscv_clic_irq_set_pending(uint32_t irq);
 static inline void trigger_irq(int irq)
 {

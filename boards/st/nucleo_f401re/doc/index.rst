@@ -87,6 +87,8 @@ The Zephyr nucleo_401re board configuration supports the following hardware feat
 +-----------+------------+-------------------------------------+
 | die-temp  | on-chip    | die temperature sensor              |
 +-----------+------------+-------------------------------------+
+| RTC       | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 

@@ -138,6 +138,10 @@ __ramfunc void clock_init(void)
 	/* Call function set_flexspi_clock() to set flexspi clock source to aux0_pll_clk in XIP. */
 	set_flexspi_clock(FLEXSPI, 2U, 2U);
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(os_timer), nxp_os_timer, okay)
+	CLOCK_AttachClk(kLPOSC_to_OSTIMER_CLK);
+#endif
+
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt), nxp_lpc_wwdt, okay))
 	CLOCK_AttachClk(kLPOSC_to_WDT0_CLK);
 #else
@@ -146,6 +150,14 @@ __ramfunc void clock_init(void)
 	 */
 	CLOCK_AttachClk(kNONE_to_WDT0_CLK);
 #endif
+
+#if defined(CONFIG_ADC_MCUX_GAU) || defined(CONFIG_DAC_MCUX_GAU)
+	/* Attack clock for GAU and reset */
+	CLOCK_AttachClk(kMAIN_CLK_to_GAU_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivGauClk, 1U);
+	CLOCK_EnableClock(kCLOCK_Gau);
+	RESET_PeripheralReset(kGAU_RST_SHIFT_RSTn);
+#endif /* GAU */
 
 /* Any flexcomm can be USART */
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay)) && CONFIG_SERIAL
@@ -238,11 +250,6 @@ __ramfunc void clock_init(void)
 #endif
 #endif /* CONFIG_COUNTER_MCUX_CTIMER */
 
-#ifdef CONFIG_COUNTER_NXP_MRT
-	RESET_PeripheralReset(kMRT_RST_SHIFT_RSTn);
-	RESET_PeripheralReset(kFREEMRT_RST_SHIFT_RSTn);
-#endif
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usb_otg), okay) && CONFIG_USB_DC_NXP_EHCI
 	/* Enable system xtal from Analog */
 	SYSCTL2->ANA_GRP_CTRL |= SYSCTL2_ANA_GRP_CTRL_PU_AG_MASK;
@@ -272,19 +279,27 @@ static int nxp_rw600_init(void)
 	POWER_EnableResetSource(kPOWER_ResetSourceWdt);
 #endif
 
+#if DT_NODE_HAS_PROP(DT_NODELABEL(pmu), reset_causes_en)
 #define PMU_RESET_CAUSES_ \
 	DT_FOREACH_PROP_ELEM_SEP(DT_NODELABEL(pmu), reset_causes_en, DT_PROP_BY_IDX, (|))
 #define PMU_RESET_CAUSES \
 	COND_CODE_0(IS_EMPTY(PMU_RESET_CAUSES_), (PMU_RESET_CAUSES_), (0))
 #define WDT_RESET \
-	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(wwdt), (kPOWER_ResetSourceWdt), (0))
+	COND_CODE_1(DT_NODE_HAS_STATUS(wwdt, okay), (kPOWER_ResetSourceWdt), (0))
 #define RESET_CAUSES \
 	(PMU_RESET_CAUSES | WDT_RESET)
+#else
+#define RESET_CAUSES 0
+#endif
 
 	POWER_EnableResetSource(RESET_CAUSES);
 
 	/* Initialize clock */
 	clock_init();
+
+#if defined(CONFIG_ADC_MCUX_GAU) ||  defined(CONFIG_DAC_MCUX_GAU)
+	POWER_PowerOnGau();
+#endif
 
 	return 0;
 }

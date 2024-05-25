@@ -881,11 +881,11 @@ int espi_init(void)
 
 	ret = espi_config(espi_dev, &cfg);
 	if (ret) {
-		LOG_ERR("Failed to configure eSPI slave channels:%x err: %d", cfg.channel_caps,
+		LOG_ERR("Failed to configure eSPI target channels:%x err: %d", cfg.channel_caps,
 			ret);
 		return ret;
 	} else {
-		LOG_INF("eSPI slave configured successfully!");
+		LOG_INF("eSPI target configured successfully!");
 	}
 
 	LOG_INF("eSPI test - callbacks initialization... ");
@@ -1145,20 +1145,20 @@ static int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 }
 #endif /* CONFIG_ESPI_FLASH_CHANNEL */
 
-#ifndef CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
-static void send_slave_bootdone(void)
+#ifndef CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
+static void send_target_bootdone(void)
 {
 	int ret;
 	uint8_t boot_done;
 
-	ret = espi_receive_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, &boot_done);
+	ret = espi_receive_vwire(espi_dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, &boot_done);
 	LOG_INF("%s boot_done: %d", __func__, boot_done);
 	if (ret) {
-		LOG_WRN("Fail to retrieve slave boot done");
+		LOG_WRN("Fail to retrieve target boot done");
 	} else if (!boot_done) {
-		/* SLAVE_BOOT_DONE & SLAVE_LOAD_STS have to be sent together */
-		espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, 1);
-		espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 1);
+		/* TARGET_BOOT_DONE & TARGET_LOAD_STS have to be sent together */
+		espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS, 1);
+		espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, 1);
 	}
 }
 #endif
@@ -1271,9 +1271,9 @@ int espi_test(void)
 		return ret;
 	}
 
-#ifndef CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
+#ifndef CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE
 	/* When automatic acknowledge is disabled to perform lengthy operations
-	 * in the eSPI slave, need to explicitly send slave boot
+	 * in the eSPI target, need to explicitly send target boot virtual wires
 	 */
 	bool vw_ch_sts;
 
@@ -1285,7 +1285,7 @@ int espi_test(void)
 		k_busy_wait(100);
 	} while (!vw_ch_sts);
 
-	send_slave_bootdone();
+	send_target_bootdone();
 #endif
 
 #ifdef CONFIG_ESPI_FLASH_CHANNEL

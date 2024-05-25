@@ -12,7 +12,11 @@
 #include <da1469x_config.h>
 #include <da1469x_otp.h>
 #include <system_DA1469x.h>
+#include <da1469x_pd.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(crypto_smartbond_crypto, CONFIG_CRYPTO_LOG_LEVEL);
@@ -114,6 +118,21 @@ static void smartbond_crypto_isr(const void *arg)
 	}
 }
 
+static inline void crypto_smartbond_pm_policy_state_lock_get(const struct device *dev)
+{
+	/*
+	 * Prevent the SoC from entering the normal sleep state as PDC does not support
+	 * waking up the application core following AES/HASH events.
+	 */
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
+static inline void crypto_smartbond_pm_policy_state_lock_put(const struct device *dev)
+{
+	/* Allow the SoC to enter the normal sleep state once AES/HASH operations are done. */
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
 static bool crypto_smartbond_lock_session(const struct device *dev)
 {
 	bool lock = false;
@@ -123,6 +142,9 @@ static bool crypto_smartbond_lock_session(const struct device *dev)
 
 	if (!in_use) {
 		in_use = true;
+		/* Prevent sleep as long as a cryptographic session is in place */
+		da1469x_pd_acquire(MCU_PD_DOMAIN_SYS);
+		crypto_smartbond_pm_policy_state_lock_get(dev);
 		crypto_smartbond_set_status(true);
 		lock = true;
 	}
@@ -141,6 +163,8 @@ static void crypto_smartbond_unlock_session(const struct device *dev)
 	if (in_use) {
 		in_use = false;
 		crypto_smartbond_set_status(false);
+		crypto_smartbond_pm_policy_state_lock_put(dev);
+		da1469x_pd_release_nowait(MCU_PD_DOMAIN_SYS);
 	}
 
 	k_sem_give(&data->session_sem);
@@ -913,6 +937,33 @@ static struct crypto_driver_api crypto_smartbond_driver_api = {
 	.query_hw_caps = crypto_smartbond_query_hw_caps
 };
 
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+static int crypto_smartbond_pm_action(const struct device *dev,
+	enum pm_device_action action)
+{
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/*
+		 * No need to perform any actions here as the AES/HASH controller
+		 * should already be turned off.
+		 */
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/*
+		 * No need to perform any actions here as the AES/HASH controller
+		 * will be initialized upon acquiring a cryptographic session.
+		 */
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif
+
 static int crypto_smartbond_init(const struct device *dev)
 {
 	struct crypto_smartbond_data *data = dev->data;
@@ -931,9 +982,17 @@ static int crypto_smartbond_init(const struct device *dev)
 	IRQ_CONNECT(SMARTBOND_IRQN, SMARTBOND_IRQ_PRIO, smartbond_crypto_isr,
 			DEVICE_DT_INST_GET(0), 0);
 
+	/* Controller should be initialized once a crypyographic session is requested */
 	crypto_smartbond_set_status(false);
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	/* Make sure device state is marked as suspended */
+	pm_device_init_suspended(dev);
+
+	return pm_device_runtime_enable(dev);
+#else
 	return 0;
+#endif
 }
 
 /*
@@ -944,10 +1003,13 @@ static int crypto_smartbond_init(const struct device *dev)
 	BUILD_ASSERT((inst) == 0,                                           \
 		"multiple instances are not supported");                        \
 	\
+	PM_DEVICE_DT_INST_DEFINE(inst, crypto_smartbond_pm_action);	\
+	\
 	static struct crypto_smartbond_data crypto_smartbond_data_##inst;   \
 	\
 	DEVICE_DT_INST_DEFINE(0,                            \
-		crypto_smartbond_init, NULL,                    \
+		crypto_smartbond_init,		                    \
+		PM_DEVICE_DT_INST_GET(inst),					\
 		&crypto_smartbond_data_##inst, NULL,            \
 		POST_KERNEL,                                    \
 		CONFIG_CRYPTO_INIT_PRIORITY,                    \

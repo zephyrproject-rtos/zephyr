@@ -105,6 +105,9 @@ static int npcx_clock_control_get_subsys_rate(const struct device *dev,
 	case NPCX_CLOCK_BUS_FMCLK:
 		*rate = FMCLK;
 		break;
+	case NPCX_CLOCK_BUS_MCLKD:
+		*rate = OFMCLK/(MCLKD_SL + 1);
+		break;
 	default:
 		*rate = 0U;
 		/* Invalid parameters */
@@ -185,6 +188,13 @@ BUILD_ASSERT(APBSRC_CLK / (APB4DIV_VAL + 1) <= MAX_OFMCLK &&
 	     (APB4DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
 	     "Invalid APB4_CLK setting");
 #endif
+#if defined(CONFIG_I3C_NPCX)
+BUILD_ASSERT(OFMCLK / (MCLKD_SL + 1) <= MHZ(50) &&
+	     OFMCLK / (MCLKD_SL + 1) >= MHZ(40),
+	     "Invalid MCLKD_SL setting");
+BUILD_ASSERT(APBSRC_CLK / (APB4DIV_VAL + 1) >= MHZ(20),
+	     "Invalid PDMA CLK setting");
+#endif
 
 static int npcx_clock_control_init(const struct device *dev)
 {
@@ -222,6 +232,7 @@ static int npcx_clock_control_init(const struct device *dev)
 	inst_cdcg->HFCBCD  = VAL_HFCBCD;
 	inst_cdcg->HFCBCD1 = VAL_HFCBCD1;
 	inst_cdcg->HFCBCD2 = VAL_HFCBCD2;
+	inst_cdcg->HFCBCD3 = VAL_HFCBCD3;
 
 	/*
 	 * Power-down (turn off clock) the modules initially for better

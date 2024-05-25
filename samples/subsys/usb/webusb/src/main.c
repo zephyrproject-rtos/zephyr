@@ -164,10 +164,13 @@ USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_capability_lpm bos_cap_lpm = {
 	.bDescriptorType = USB_DESC_DEVICE_CAPABILITY,
 	.bDevCapabilityType = USB_BOS_CAPABILITY_EXTENSION,
 	/**
+	 * Currently there is not a single device driver in Zephyr that supports
+	 * LPM. Moreover, Zephyr USB stack does not have LPM support, so do not
+	 * falsely claim to support LPM.
 	 * BIT(1) - LPM support
 	 * BIT(2) - BESL support
 	 */
-	.bmAttributes = BIT(1) | BIT(2),
+	.bmAttributes = 0,
 };
 
 /* WebUSB Device Requests */

@@ -836,7 +836,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 			.dest_data_size = 4,				\
 			.dma_callback = dma_callback,			\
 			.complete_callback_en = 1,			\
-			.error_callback_en = 1,				\
+			.error_callback_dis = 0,			\
 			.block_count = 1,				\
 			.head_block = &spi_mcux_data_##id.tx_dma_block,	\
 			.channel_direction = MEMORY_TO_PERIPHERAL,	\
@@ -857,7 +857,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 			.dest_data_size = 2,				\
 			.dma_callback = dma_callback,			\
 			.complete_callback_en = 1,			\
-			.error_callback_en = 1,				\
+			.error_callback_dis = 0,			\
 			.block_count =					\
 			_UTIL_AND2(DT_INST_NODE_HAS_PROP(		\
 				id, nxp_rx_tx_chn_share), 2),		\

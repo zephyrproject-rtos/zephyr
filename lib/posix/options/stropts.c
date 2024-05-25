@@ -58,3 +58,11 @@ int getpmsg(int fildes, struct strbuf *ctlptr, struct strbuf *dataptr, int *band
 	errno = ENOSYS;
 	return -1;
 }
+
+int isastream(int fildes)
+{
+	ARG_UNUSED(fildes);
+
+	errno = ENOSYS;
+	return -1;
+}

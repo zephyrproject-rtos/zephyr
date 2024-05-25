@@ -273,7 +273,7 @@ static int dma_atcdmac300_config(const struct device *dev, uint32_t channel,
 	ch_ctrl |= DMA_CH_CTRL_INTABT;
 
 	/* Disable the error callback */
-	if (!cfg->error_callback_en) {
+	if (!cfg->error_callback_dis) {
 		ch_ctrl |= DMA_CH_CTRL_INTERR;
 	}
 

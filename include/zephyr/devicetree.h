@@ -552,6 +552,25 @@
 #define DT_NODE_CHILD_IDX(node_id) DT_CAT(node_id, _CHILD_IDX)
 
 /**
+ * @brief Get the number of child nodes of a given node
+ *
+ * @param node_id a node identifier
+ * @return Number of child nodes
+ */
+#define DT_CHILD_NUM(node_id) DT_CAT(node_id, _CHILD_NUM)
+
+
+/**
+ * @brief Get the number of child nodes of a given node
+ *        which child nodes' status are okay
+ *
+ * @param node_id a node identifier
+ * @return Number of child nodes which status are okay
+ */
+#define DT_CHILD_NUM_STATUS_OKAY(node_id) \
+	DT_CAT(node_id, _CHILD_NUM_STATUS_OKAY)
+
+/**
  * @brief Do @p node_id1 and @p node_id2 refer to the same node?
  *
  * Both @p node_id1 and @p node_id2 must be node identifiers for nodes
@@ -3443,6 +3462,29 @@
 	DT_CHILD(DT_DRV_INST(inst), child)
 
 /**
+ * @brief Get the number of child nodes of a given node
+ *
+ * This is equivalent to @see
+ * <tt>DT_CHILD_NUM(DT_DRV_INST(inst))</tt>.
+ *
+ * @param inst Devicetree instance number
+ * @return Number of child nodes
+ */
+#define DT_INST_CHILD_NUM(inst) DT_CHILD_NUM(DT_DRV_INST(inst))
+
+/**
+ * @brief Get the number of child nodes of a given node
+ *
+ * This is equivalent to @see
+ * <tt>DT_CHILD_NUM_STATUS_OKAY(DT_DRV_INST(inst))</tt>.
+ *
+ * @param inst Devicetree instance number
+ * @return Number of child nodes which status are okay
+ */
+#define DT_INST_CHILD_NUM_STATUS_OKAY(inst) \
+	DT_CHILD_NUM_STATUS_OKAY(DT_DRV_INST(inst))
+
+/**
  * @brief Call @p fn on all child nodes of DT_DRV_INST(inst).
  *
  * The macro @p fn should take one argument, which is the node
@@ -4356,6 +4398,15 @@
  */
 #define DT_INST_NODE_HAS_PROP(inst, prop) \
 	DT_NODE_HAS_PROP(DT_DRV_INST(inst), prop)
+
+/**
+ * @brief Does a DT_DRV_COMPAT instance have the compatible?
+ * @param inst instance number
+ * @param compat lowercase-and-underscores compatible, without quotes
+ * @return 1 if the instance matches the compatible, 0 otherwise.
+ */
+#define DT_INST_NODE_HAS_COMPAT(inst, compat) \
+	DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), compat)
 
 /**
  * @brief Does a phandle array have a named cell specifier at an index

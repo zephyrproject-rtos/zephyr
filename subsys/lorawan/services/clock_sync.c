@@ -71,7 +71,7 @@ static struct clock_sync_context ctx;
  */
 static int clock_sync_serialize_device_time(uint8_t *buf, size_t size)
 {
-	uint32_t device_time = k_uptime_get() / MSEC_PER_SEC + ctx.time_offset;
+	uint32_t device_time = k_uptime_seconds() + ctx.time_offset;
 
 	if (size < sizeof(uint32_t)) {
 		return -ENOSPC;
@@ -221,7 +221,7 @@ int lorawan_clock_sync_get(uint32_t *gps_time)
 	__ASSERT(gps_time != NULL, "gps_time parameter is required");
 
 	if (ctx.synchronized) {
-		*gps_time = (uint32_t)(k_uptime_get() / MSEC_PER_SEC + ctx.time_offset);
+		*gps_time = k_uptime_seconds() + ctx.time_offset;
 		return 0;
 	} else {
 		return -EAGAIN;

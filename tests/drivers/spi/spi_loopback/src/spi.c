@@ -58,6 +58,7 @@ static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP(FRAME_
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define BUF_SIZE 18
 #define BUF2_SIZE 36
+#define BUF3_SIZE 8192
 
 #if CONFIG_NOCACHE_MEMORY
 #define __NOCACHE	__attribute__((__section__(".nocache")))
@@ -73,6 +74,9 @@ static __aligned(32) char buffer_rx[BUF_SIZE] __used __NOCACHE;
 static const char tx2_data[BUF2_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
 static __aligned(32) char buffer2_tx[BUF2_SIZE] __used __NOCACHE;
 static __aligned(32) char buffer2_rx[BUF2_SIZE] __used __NOCACHE;
+static const char large_tx_data[BUF3_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
+static __aligned(32) char large_buffer_tx[BUF3_SIZE] __used __NOCACHE;
+static __aligned(32) char large_buffer_rx[BUF3_SIZE] __used __NOCACHE;
 
 /*
  * We need 5x(buffer size) + 1 to print a comma-separated list of each
@@ -83,6 +87,9 @@ static uint8_t buffer_print_rx[BUF_SIZE * 5 + 1];
 
 static uint8_t buffer_print_tx2[BUF2_SIZE * 5 + 1];
 static uint8_t buffer_print_rx2[BUF2_SIZE * 5 + 1];
+
+static uint8_t large_buffer_print_tx[BUF3_SIZE * 5 + 1];
+static uint8_t large_buffer_print_rx[BUF3_SIZE * 5 + 1];
 
 static void to_display_format(const uint8_t *src, size_t size, char *dst)
 {
@@ -517,6 +524,52 @@ static int spi_rx_bigger_than_tx(struct spi_dt_spec *spec)
 	return 0;
 }
 
+/* test transferring different buffers on the same dma channels */
+static int spi_complete_large_transfers(struct spi_dt_spec *spec)
+{
+	struct spi_buf tx_bufs;
+	const struct spi_buf_set tx = {
+		.buffers = &tx_bufs,
+		.count = 1
+	};
+
+	tx_bufs.buf = large_buffer_tx;
+	tx_bufs.len = BUF3_SIZE;
+
+
+	struct spi_buf rx_bufs;
+	const struct spi_buf_set rx = {
+		.buffers = &rx_bufs,
+		.count = 1
+	};
+
+	rx_bufs.buf = large_buffer_rx;
+	rx_bufs.len = BUF3_SIZE;
+
+	int ret;
+
+	LOG_INF("Start complete large transfers");
+
+	ret = spi_transceive_dt(spec, &tx, &rx);
+	if (ret) {
+		LOG_ERR("Code %d", ret);
+		zassert_false(ret, "SPI transceive failed");
+		return ret;
+	}
+
+	if (memcmp(large_buffer_tx, large_buffer_rx, BUF3_SIZE)) {
+		to_display_format(large_buffer_tx, BUF3_SIZE, large_buffer_print_tx);
+		to_display_format(large_buffer_rx, BUF3_SIZE, large_buffer_print_rx);
+		LOG_ERR("Large Buffer contents are different: %s", large_buffer_print_tx);
+		LOG_ERR("                             vs: %s", large_buffer_print_rx);
+		zassert_false(1, "Large Buffer contents are different");
+		return -1;
+	}
+
+	LOG_INF("Passed");
+
+	return 0;
+}
 #if (CONFIG_SPI_ASYNC)
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
@@ -565,6 +618,10 @@ static int spi_async_call(struct spi_dt_spec *spec)
 			.buf = buffer2_tx,
 			.len = BUF2_SIZE,
 		},
+		{
+			.buf = large_buffer_tx,
+			.len = BUF3_SIZE,
+		},
 	};
 	const struct spi_buf rx_bufs[] = {
 		{
@@ -574,6 +631,10 @@ static int spi_async_call(struct spi_dt_spec *spec)
 		{
 			.buf = buffer2_rx,
 			.len = BUF2_SIZE,
+		},
+		{
+			.buf = large_buffer_rx,
+			.len = BUF3_SIZE,
 		},
 	};
 	const struct spi_buf_set tx = {
@@ -589,6 +650,7 @@ static int spi_async_call(struct spi_dt_spec *spec)
 	LOG_INF("Start async call");
 	memset(buffer_rx, 0, sizeof(buffer_rx));
 	memset(buffer2_rx, 0, sizeof(buffer2_rx));
+	memset(large_buffer_rx, 0, sizeof(large_buffer_rx));
 
 	ret = spi_transceive_signal(spec->bus, &spec->config, &tx, &rx, &async_sig);
 	if (ret == -ENOTSUP) {
@@ -625,6 +687,15 @@ static int spi_async_call(struct spi_dt_spec *spec)
 		LOG_ERR("Buffer 2 contents are different: %s", buffer_print_tx2);
 		LOG_ERR("                             vs: %s", buffer_print_rx2);
 		zassert_false(1, "Buffer 2 contents are different");
+		return -1;
+	}
+
+	if (memcmp(large_buffer_tx, large_buffer_rx, BUF3_SIZE)) {
+		to_display_format(large_buffer_tx, BUF3_SIZE, large_buffer_print_tx);
+		to_display_format(large_buffer_rx, BUF3_SIZE, large_buffer_print_rx);
+		LOG_ERR("Buffer 3 contents are different: %s", large_buffer_print_tx);
+		LOG_ERR("                             vs: %s", large_buffer_print_rx);
+		zassert_false(1, "Buffer 3 contents are different");
 		return -1;
 	}
 
@@ -684,7 +755,8 @@ ZTEST(spi_loopback, test_spi_loopback)
 	    spi_rx_half_start(&spi_slow) ||
 	    spi_rx_half_end(&spi_slow) ||
 	    spi_rx_every_4(&spi_slow) ||
-	    spi_rx_bigger_than_tx(&spi_slow)
+	    spi_rx_bigger_than_tx(&spi_slow) ||
+	    spi_complete_large_transfers(&spi_slow)
 #if (CONFIG_SPI_ASYNC)
 	    || spi_async_call(&spi_slow)
 #endif
@@ -702,7 +774,8 @@ ZTEST(spi_loopback, test_spi_loopback)
 	    spi_rx_half_start(&spi_fast) ||
 	    spi_rx_half_end(&spi_fast) ||
 	    spi_rx_every_4(&spi_fast) ||
-	    spi_rx_bigger_than_tx(&spi_fast)
+	    spi_rx_bigger_than_tx(&spi_fast) ||
+	    spi_complete_large_transfers(&spi_fast)
 #if (CONFIG_SPI_ASYNC)
 	    || spi_async_call(&spi_fast)
 #endif
@@ -729,6 +802,8 @@ static void *spi_loopback_setup(void)
 	memcpy(buffer_tx, tx_data, sizeof(tx_data));
 	memset(buffer2_tx, 0, sizeof(buffer2_tx));
 	memcpy(buffer2_tx, tx2_data, sizeof(tx2_data));
+	memset(large_buffer_tx, 0, sizeof(large_buffer_tx));
+	memcpy(large_buffer_tx, large_tx_data, sizeof(large_tx_data));
 	return NULL;
 }
 

@@ -32,6 +32,7 @@ menuconfig BUILD_WITH_TFM
 	select BUILD_OUTPUT_HEX
 	imply INIT_ARCH_HW_AT_BOOT
 	imply ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+	imply MBEDTLS
 	help
 	  When enabled, this option instructs the Zephyr build process to
 	  additionally generate a TF-M image for the Secure Execution

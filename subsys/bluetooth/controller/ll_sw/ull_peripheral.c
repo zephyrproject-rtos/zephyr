@@ -61,13 +61,13 @@
 #include "hal/debug.h"
 
 static void invalid_release(struct ull_hdr *hdr, struct lll_conn *lll,
-			    memq_link_t *link, struct node_rx_hdr *rx);
+			    memq_link_t *link, struct node_rx_pdu *rx);
 static void ticker_op_stop_adv_cb(uint32_t status, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
 					       void *param);
 
-void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
+void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		     struct lll_conn *lll)
 {
 	uint32_t conn_offset_us, conn_interval_us;
@@ -97,7 +97,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	conn = lll->hdr.parent;
 
 	/* Populate the peripheral context */
-	pdu_adv = (void *)((struct node_rx_pdu *)rx)->pdu;
+	pdu_adv = (void *)rx->pdu;
 
 	peer_addr_type = pdu_adv->tx_addr;
 	memcpy(peer_addr, pdu_adv->connect_ind.init_addr, BDADDR_SIZE);
@@ -120,7 +120,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	/* Use the link stored in the node rx to enqueue connection
 	 * complete node rx towards LL context.
 	 */
-	link = rx->link;
+	link = rx->hdr.link;
 
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
 	const uint8_t peer_id_addr_type = (peer_addr_type & 0x01);
@@ -277,7 +277,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	cc->sca = conn->periph.sca;
 
 	lll->handle = ll_conn_handle_get(conn);
-	rx->handle = lll->handle;
+	rx->hdr.handle = lll->handle;
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
@@ -297,11 +297,11 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		ll_rx_put(link, rx);
 
 		/* use the rx node for CSA event */
-		rx = (void *)rx_csa;
-		link = rx->link;
+		rx = rx_csa;
+		link = rx->hdr.link;
 
-		rx->handle = lll->handle;
-		rx->type = NODE_RX_TYPE_CHAN_SEL_ALGO;
+		rx->hdr.handle = lll->handle;
+		rx->hdr.type = NODE_RX_TYPE_CHAN_SEL_ALGO;
 
 		cs = (void *)rx_csa->pdu;
 
@@ -326,13 +326,13 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		 * advertising terminate event
 		 */
 		rx = adv->lll.node_rx_adv_term;
-		link = rx->link;
+		link = rx->hdr.link;
 
 		handle = ull_adv_handle_get(adv);
 		LL_ASSERT(handle < BT_CTLR_ADV_SET);
 
-		rx->type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
-		rx->handle = handle;
+		rx->hdr.type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
+		rx->hdr.handle = handle;
 		rx->rx_ftr.param_adv_term.status = 0U;
 		rx->rx_ftr.param_adv_term.conn_handle = lll->handle;
 		rx->rx_ftr.param_adv_term.num_events = 0U;
@@ -593,7 +593,7 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 static void invalid_release(struct ull_hdr *hdr, struct lll_conn *lll,
-			    memq_link_t *link, struct node_rx_hdr *rx)
+			    memq_link_t *link, struct node_rx_pdu *rx)
 {
 	/* Reset the advertising disabled callback */
 	hdr->disabled_cb = NULL;
@@ -602,7 +602,7 @@ static void invalid_release(struct ull_hdr *hdr, struct lll_conn *lll,
 	lll->periph.initiated = 0U;
 
 	/* Mark for buffer for release */
-	rx->type = NODE_RX_TYPE_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 	/* Release CSA#2 related node rx too */
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
@@ -617,11 +617,11 @@ static void invalid_release(struct ull_hdr *hdr, struct lll_conn *lll,
 		ll_rx_put(link, rx);
 
 		/* Use the rx node for CSA event */
-		rx = (void *)rx_csa;
-		link = rx->link;
+		rx = rx_csa;
+		link = rx->hdr.link;
 
 		/* Mark for buffer for release */
-		rx->type = NODE_RX_TYPE_RELEASE;
+		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 	}
 
 	/* Enqueue connection or CSA event to be release */

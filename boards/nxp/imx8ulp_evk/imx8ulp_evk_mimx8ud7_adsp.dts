@@ -15,5 +15,18 @@
 
 	chosen {
 		zephyr,sram = &sram0;
+		zephyr,console = &lpuart7;
+		zephyr,shell-uart = &lpuart7;
 	};
+};
+
+&lpuart7 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart7_default>;
+	pinctrl-names = "default";
+};
+
+&sai5 {
+	rx-dataline = <3>;
 };

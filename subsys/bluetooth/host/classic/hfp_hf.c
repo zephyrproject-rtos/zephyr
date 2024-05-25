@@ -18,6 +18,7 @@
 
 #include <zephyr/bluetooth/classic/rfcomm.h>
 #include <zephyr/bluetooth/classic/hfp_hf.h>
+#include <zephyr/bluetooth/classic/sdp.h>
 
 #include "host/hci_core.h"
 #include "host/conn_internal.h"
@@ -55,6 +56,73 @@ static const struct {
 	{"roam", 0, 1}, /* HF_ROAM_IND */
 	{"battchg", 0, 5} /* HF_BATTERY_IND */
 };
+
+/* HFP Hands-Free SDP record */
+static struct bt_sdp_attribute hfp_attrs[] = {
+	BT_SDP_NEW_SERVICE,
+	BT_SDP_LIST(
+		BT_SDP_ATTR_SVCLASS_ID_LIST,
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+			BT_SDP_ARRAY_16(BT_SDP_HANDSFREE_SVCLASS)
+		},
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+			BT_SDP_ARRAY_16(BT_SDP_GENERIC_AUDIO_SVCLASS)
+		}
+		)
+	),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_PROTO_DESC_LIST,
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 12),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 3),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_SDP_PROTO_L2CAP)
+			},
+			)
+		},
+		{
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 5),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_SDP_PROTO_RFCOMM)
+			},
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UINT8),
+				BT_SDP_ARRAY_8(BT_RFCOMM_CHAN_HFP_HF)
+			},
+			)
+		},
+		)
+	),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_PROFILE_DESC_LIST,
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+			BT_SDP_ARRAY_16(BT_SDP_HANDSFREE_SVCLASS)
+		},
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+			BT_SDP_ARRAY_16(0x0109)
+		},
+		)
+	),
+	/* The values of the “SupportedFeatures” bitmap shall be the same as the
+	 * values of the Bits 0 to 4 of the AT-command AT+BRSF (see Section 5.3).
+	 */
+	BT_SDP_SUPPORTED_FEATURES(BT_HFP_HF_SUPPORTED_FEATURES & 0x1f),
+};
+
+static struct bt_sdp_record hfp_rec = BT_SDP_RECORD(hfp_attrs);
 
 void hf_slc_error(struct at_client *hf_at)
 {
@@ -755,6 +823,8 @@ static void hfp_hf_init(void)
 	};
 
 	bt_sco_server_register(&sco_server);
+
+	bt_sdp_register_service(&hfp_rec);
 }
 
 int bt_hfp_hf_register(struct bt_hfp_hf_cb *cb)

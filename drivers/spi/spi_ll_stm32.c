@@ -18,6 +18,9 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #ifdef CONFIG_SPI_STM32_DMA
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/dma.h>
@@ -27,9 +30,9 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/irq.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 
-#ifdef CONFIG_SOC_SERIES_STM32H7X
+#ifdef CONFIG_DCACHE
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#endif
+#endif /* CONFIG_DCACHE */
 
 #ifdef CONFIG_NOCACHE_MEMORY
 #include <zephyr/linker/linker-defs.h>
@@ -39,17 +42,13 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 
 #include "spi_ll_stm32.h"
 
-/*
- * Check defined(CONFIG_DCACHE) because some platforms disable it in the tests
- * e.g. nucleo_f746zg
- */
-#if defined(CONFIG_CPU_HAS_DCACHE) &&                       \
-	defined(CONFIG_DCACHE) &&                               \
+#if defined(CONFIG_DCACHE) &&                               \
 	!defined(CONFIG_NOCACHE_MEMORY)
+/* currently, manual cache coherency management is only done on dummy_rx_tx_buffer */
 #define SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED	1
 #else
 #define  SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED	0
-#endif /* defined(CONFIG_CPU_HAS_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY) */
+#endif /* defined(CONFIG_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY) */
 
 #define WAIT_1US	1U
 
@@ -73,31 +72,54 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #endif
 #endif /* CONFIG_SOC_SERIES_STM32MP1X */
 
+static void spi_stm32_pm_policy_state_lock_get(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM)) {
+		struct spi_stm32_data *data = dev->data;
+
+		if (!data->pm_policy_state_on) {
+			data->pm_policy_state_on = true;
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+			if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+				pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+			}
+			pm_device_runtime_get(dev);
+		}
+	}
+}
+
+static void spi_stm32_pm_policy_state_lock_put(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM)) {
+		struct spi_stm32_data *data = dev->data;
+
+		if (data->pm_policy_state_on) {
+			data->pm_policy_state_on = false;
+			pm_device_runtime_put(dev);
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+			if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+				pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+			}
+		}
+	}
+}
+
 #ifdef CONFIG_SPI_STM32_DMA
 static uint32_t bits2bytes(uint32_t bits)
 {
 	return bits / 8;
 }
 
-/* dummy value used for transferring NOP when tx buf is null
- * and use as dummy sink for when rx buf is null.
+/* dummy buffer is used for transferring NOP when tx buf is null
+ * and used as a dummy sink for when rx buf is null.
  */
-#ifdef CONFIG_NOCACHE_MEMORY
 /*
- * If a nocache area is available, place it there to avoid potential DMA
- * cache-coherency problems.
- */
-static __aligned(32) uint32_t dummy_rx_tx_buffer
-	__attribute__((__section__(".nocache")));
-
-#else /* CONFIG_NOCACHE_MEMORY */
-
-/*
- * If nocache areas are not available, cache coherency might need to be kept
+ * If Nocache Memory is supported, buffer will be placed in nocache region by
+ * the linker to avoid potential DMA cache-coherency problems.
+ * If Nocache Memory is not supported, cache coherency might need to be kept
  * manually. See SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED.
  */
-static __aligned(32) uint32_t dummy_rx_tx_buffer;
-#endif /* CONFIG_NOCACHE_MEMORY */
+static __aligned(32) uint32_t dummy_rx_tx_buffer __nocache;
 
 /* This function is executed in the interrupt context */
 static void dma_callback(const struct device *dev, void *arg,
@@ -150,7 +172,7 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 		dummy_rx_tx_buffer = 0;
 #if SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED
 		arch_dcache_flush_range((void *)&dummy_rx_tx_buffer, sizeof(uint32_t));
-#endif /* CONFIG_CPU_HAS_DCACHE && !defined(CONFIG_NOCACHE_MEMORY) */
+#endif /* SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED */
 		blk_cfg->source_address = (uint32_t)&dummy_rx_tx_buffer;
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
@@ -500,6 +522,8 @@ static void spi_stm32_complete(const struct device *dev, int status)
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	spi_context_complete(&data->ctx, dev, status);
 #endif
+
+	spi_stm32_pm_policy_state_lock_put(dev);
 }
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
@@ -768,6 +792,8 @@ static int transceive(const struct device *dev,
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
+	spi_stm32_pm_policy_state_lock_get(dev);
+
 	ret = spi_stm32_configure(dev, config);
 	if (ret) {
 		goto end;
@@ -901,12 +927,13 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 	return res;
 }
 
-#ifdef CONFIG_SOC_SERIES_STM32H7X
+#ifdef CONFIG_DCACHE
 static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 {
 	bool buf_within_nocache = false;
 
 #ifdef CONFIG_NOCACHE_MEMORY
+	/* Check if buffer is in nocache region defined by the linker */
 	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
 		((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
 	if (buf_within_nocache) {
@@ -914,6 +941,7 @@ static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 	}
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+	/* Check if buffer is in nocache memory region defined in DT */
 	buf_within_nocache = mem_attr_check_buf(
 		(void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
 
@@ -937,7 +965,7 @@ static bool spi_buf_set_in_nocache(const struct spi_buf_set *bufs)
 	}
 	return true;
 }
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* CONFIG_DCACHE */
 
 static int transceive_dma(const struct device *dev,
 		      const struct spi_config *config,
@@ -960,14 +988,16 @@ static int transceive_dma(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-#ifdef CONFIG_SOC_SERIES_STM32H7X
+#ifdef CONFIG_DCACHE
 	if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
 		(rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs))) {
 		return -EFAULT;
 	}
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* CONFIG_DCACHE */
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
+
+	spi_stm32_pm_policy_state_lock_get(dev);
 
 	k_sem_reset(&data->status_sem);
 
@@ -1076,6 +1106,8 @@ static int transceive_dma(const struct device *dev,
 
 end:
 	spi_context_release(&data->ctx, ret);
+
+	spi_stm32_pm_policy_state_lock_put(dev);
 
 	return ret;
 }
@@ -1195,8 +1227,61 @@ static int spi_stm32_init(const struct device *dev)
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
+	return pm_device_runtime_enable(dev);
+}
+
+#ifdef CONFIG_PM_DEVICE
+static int spi_stm32_pm_action(const struct device *dev,
+			       enum pm_device_action action)
+{
+	const struct spi_stm32_config *config = dev->config;
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	int err;
+
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Set pins to active state */
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
+
+		/* enable clock */
+		err = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
+		if (err != 0) {
+			LOG_ERR("Could not enable SPI clock");
+			return err;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Stop device clock. */
+		err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
+		if (err != 0) {
+			LOG_ERR("Could not enable SPI clock");
+			return err;
+		}
+
+		/* Move pins to sleep state */
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+		if ((err < 0) && (err != -ENOENT)) {
+			/*
+			 * If returning -ENOENT, no pins where defined for sleep mode :
+			 * Do not output on console (might sleep already) when going to sleep,
+			 * "SPI pinctrl sleep state not available"
+			 * and don't block PM suspend.
+			 * Else return the error.
+			 */
+			return err;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
 	return 0;
 }
+#endif /* CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 #define STM32_SPI_IRQ_HANDLER_DECL(id)					\
@@ -1297,7 +1382,9 @@ static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
 	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)		\
 };									\
 									\
-DEVICE_DT_INST_DEFINE(id, &spi_stm32_init, NULL,			\
+PM_DEVICE_DT_INST_DEFINE(id, spi_stm32_pm_action);			\
+									\
+DEVICE_DT_INST_DEFINE(id, &spi_stm32_init, PM_DEVICE_DT_INST_GET(id),	\
 		    &spi_stm32_dev_data_##id, &spi_stm32_cfg_##id,	\
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		\
 		    &api_funcs);					\

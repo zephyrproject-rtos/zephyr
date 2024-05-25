@@ -20,6 +20,7 @@
 #define NPCX_CLOCK_BUS_FMCLK       10
 #define NPCX_CLOCK_BUS_FIU0        NPCX_CLOCK_BUS_FIU
 #define NPCX_CLOCK_BUS_FIU1        11
+#define NPCX_CLOCK_BUS_MCLKD       12
 
 /* clock enable/disable references */
 #define NPCX_PWDWN_CTL1            0
@@ -30,6 +31,7 @@
 #define NPCX_PWDWN_CTL6            5
 #define NPCX_PWDWN_CTL7            6
 #define NPCX_PWDWN_CTL8            7
-#define NPCX_PWDWN_CTL_COUNT       8
+#define NPCX_PWDWN_CTL9            8
+#define NPCX_PWDWN_CTL_COUNT       9
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NPCX_CLOCK_H_ */

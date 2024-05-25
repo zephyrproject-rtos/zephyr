@@ -7,6 +7,7 @@ The MIPI DBI driver class implements support for MIPI DBI compliant display
 controllers.
 
 MIPI DBI defines 3 interface types:
+
 * Type A: Motorola 6800 parallel bus
 
 * Type B: Intel 8080 parallel bus

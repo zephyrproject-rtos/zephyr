@@ -3,9 +3,10 @@ tests:
     tags:
       - drivers
       - fuel_gauge
-    filter: >
-      dt_compat_enabled("sbs,sbs-gauge-new-api") and
-      (CONFIG_QEMU_TARGET or CONFIG_BOARD_NATIVE_SIM)
+    platform_key:
+      - arch
+      - simulation
+    filter: dt_compat_enabled("sbs,sbs-gauge-new-api")
     extra_args:
       - CONF_FILE="prj.conf;boards/emulated_board.conf"
       - DTC_OVERLAY_FILE="boards/emulated_board.overlay"
@@ -24,9 +25,10 @@ tests:
     tags:
       - drivers
       - fuel_gauge
-    filter: >
-      dt_compat_enabled("sbs,sbs-gauge-new-api") and
-      (CONFIG_QEMU_TARGET or CONFIG_BOARD_NATIVE_SIM)
+    platform_key:
+      - arch
+      - simulation
+    filter: dt_compat_enabled("sbs,sbs-gauge-new-api")
     platform_allow:
       - hifive_unmatched
       - qemu_cortex_a53

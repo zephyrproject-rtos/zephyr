@@ -1,0 +1,23 @@
+# STM32H745XI DISCOVERY board configuration
+
+# Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+# Copyright (c) 2024 Tomas Jurena <jurena@utb.cz>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32H745I_DISCO
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+config ETH_STM32_HAL_MII
+	default y
+
+endif # NETWORKING
+
+config MEMC
+	default y if DISPLAY
+
+
+endif # BOARD_STM32H745I_DISCO

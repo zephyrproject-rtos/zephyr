@@ -312,7 +312,7 @@ uint8_t bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 	}
 
 	sco_conn->role = BT_HCI_ROLE_PERIPHERAL;
-	bt_conn_set_state(sco_conn, BT_CONN_CONNECTING);
+	bt_conn_set_state(sco_conn, BT_CONN_INITIATING);
 	bt_conn_unref(sco_conn);
 
 	return BT_HCI_ERR_SUCCESS;
@@ -368,7 +368,7 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer, struct bt_sco_chan *ch
 	sco_conn = bt_conn_lookup_addr_sco(peer);
 	if (sco_conn) {
 		switch (sco_conn->state) {
-		case BT_CONN_CONNECTING:
+		case BT_CONN_INITIATING:
 		case BT_CONN_CONNECTED:
 			return sco_conn;
 		default:
@@ -391,7 +391,7 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer, struct bt_sco_chan *ch
 	sco_conn->sco.link_type = link_type;
 
 	bt_sco_chan_add(sco_conn, chan);
-	bt_conn_set_state(chan->sco, BT_CONN_CONNECTING);
+	bt_conn_set_state(chan->sco, BT_CONN_INITIATING);
 	bt_sco_chan_set_state(chan, BT_SCO_STATE_CONNECTING);
 
 	if (sco_setup_sync_conn(sco_conn) < 0) {

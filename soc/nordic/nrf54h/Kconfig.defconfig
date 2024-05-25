@@ -33,4 +33,10 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 endif # RISCV
 
+config SPI_DW_HSSI
+	default y if SPI_DW
+
+config SPI_DW_ACCESS_WORD_ONLY
+	default y if SPI_DW
+
 endif # SOC_SERIES_NRF54HX

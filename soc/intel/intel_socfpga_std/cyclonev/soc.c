@@ -31,7 +31,7 @@ void arch_reserved_pages_update(void)
 		}
 		struct z_page_frame *pf = z_phys_to_page_frame(pos);
 
-		pf->flags |= Z_PAGE_FRAME_RESERVED;
+		z_page_frame_set(pf, Z_PAGE_FRAME_RESERVED);
 	}
 }
 

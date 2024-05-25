@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Centro de Inovacao EDGE.
+# SPDX-License-Identifier: Apache-2.0
+
+config SEQUENCE_SAMPLES
+	int "Number of samples to be made on the sequence for each channel."
+	default 5
+
+config SEQUENCE_RESOLUTION
+	int "Set the resolution of the sequence readings."
+	default 12
+
+source "Kconfig.zephyr"

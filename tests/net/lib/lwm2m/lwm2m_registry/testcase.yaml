@@ -7,3 +7,13 @@ tests:
       - net
     integration_platforms:
       - native_sim
+  net.lwm2m.lwm2m_registry.always_report_obj_version:
+    platform_key:
+      - simulation
+    tags:
+      - lwm2m
+      - net
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_LWM2M_ENGINE_ALWAYS_REPORT_OBJ_VERSION=y

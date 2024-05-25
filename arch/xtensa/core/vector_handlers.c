@@ -10,12 +10,17 @@
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <kswap.h>
-#include <_soc_inthandlers.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/logging/log.h>
 #include <offsets.h>
 #include <zsr.h>
 #include <zephyr/arch/common/exc_handle.h>
+
+#ifdef CONFIG_XTENSA_GEN_HANDLERS
+#include <xtensa_handlers.h>
+#else
+#include <_soc_inthandlers.h>
+#endif
 
 #include <xtensa_internal.h>
 
@@ -359,7 +364,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 *    thread.
 		 */
 		__asm__ volatile("rsil %0, %1"
-				: "=r" (ignore) : "i"(XCHAL_NMILEVEL));
+				: "=r" (ignore) : "i"(XCHAL_EXCM_LEVEL));
 
 		_current_cpu->nested = 1;
 	}

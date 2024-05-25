@@ -31,8 +31,7 @@ static struct bt_le_ext_adv *adv_set;
 
 static struct bt_le_adv_param param =
 		BT_LE_ADV_PARAM_INIT(BT_LE_ADV_OPT_EXT_ADV |
-				     BT_LE_ADV_OPT_USE_IDENTITY |
-				     BT_LE_ADV_OPT_USE_NAME,
+				     BT_LE_ADV_OPT_USE_IDENTITY,
 				     BT_GAP_ADV_FAST_INT_MIN_2,
 				     BT_GAP_ADV_FAST_INT_MAX_2,
 				     NULL);
@@ -63,6 +62,10 @@ struct bt_df_adv_cte_tx_param cte_params = { .cte_len = CTE_LEN,
 					     .num_ant_ids = 0,
 					     .ant_ids = NULL
 #endif /* CONFIG_BT_DF_CTE_TX_AOD */
+};
+
+static const struct bt_data ad[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
 static void adv_sent_cb(struct bt_le_ext_adv *adv,
@@ -96,6 +99,12 @@ int main(void)
 		return 0;
 	}
 	printk("success\n");
+
+	err = bt_le_ext_adv_set_data(adv_set, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err) {
+		printk("failed (err %d)\n", err);
+		return 0;
+	}
 
 	printk("Update CTE params...");
 	err = bt_df_set_adv_cte_tx_param(adv_set, &cte_params);

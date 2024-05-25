@@ -70,3 +70,54 @@ mapping:
     required: false
     type: str
     desc: Free form comment with extra information regarding the SoC.
+  runners:
+    type: map
+    mapping:
+      run_once:
+        type: map
+        desc: |
+              Allows for restricting west flash commands when using sysbuild to run once per given
+              grouping of board targets. This is to allow for future image program cycles to not
+              erase the flash of a device which has just been programmed by another image.
+        mapping:
+          regex;(.*):
+            type: seq
+            desc: |
+                  A dictionary of commands which should be limited to running once per invocation
+                  of west flash for a given set of flash runners and board targets.
+            sequence:
+              - type: map
+                mapping:
+                  run:
+                    required: true
+                    type: str
+                    enum: ['first', 'last']
+                    desc: |
+                          If first, will run this command once when the first image is flashed, if
+                          last, will run this command once when the final image is flashed.
+                  runners:
+                    required: true
+                    type: seq
+                    sequence:
+                      - type: str
+                        desc: |
+                              A list of flash runners that this applies to, can use `all` to apply
+                              to all runners.
+                  groups:
+                    required: true
+                    type: seq
+                    sequence:
+                      - type: map
+                        desc: |
+                              A grouping of board targets which the command should apply to. Can
+                              be used multiple times to have multiple groups.
+                        mapping:
+                          qualifiers:
+                            required: true
+                            type: seq
+                            sequence:
+                              - type: str
+                                desc: |
+                                      A board qualifier to match against in regex form. Must be one
+                                      entry per board target, a single regex entry will not match
+                                      two board targets even if they both match.

@@ -56,6 +56,28 @@ void ipv6_frag_cb(struct net_ipv6_reassembly *reass, void *user_data)
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
 
+#if defined(CONFIG_NET_IPV6_PE)
+static void ipv6_pe_filter_cb(struct in6_addr *prefix, bool is_denylist,
+			      void *user_data)
+{
+	struct net_shell_user_data *data = user_data;
+	const struct shell *sh = data->sh;
+	int *count = data->user_data;
+	char ipaddr[INET6_ADDRSTRLEN + 1];
+
+	net_addr_ntop(AF_INET6, prefix, ipaddr, sizeof(ipaddr) - 1);
+
+	if (*count == 0) {
+		PR("IPv6 privacy extension %s list filters :\n",
+		   is_denylist ? "deny" : "allow");
+	}
+
+	PR("[%d] %s/64\n", *count, ipaddr);
+
+	(*count)++;
+}
+#endif /* CONFIG_NET_IPV6_PE */
+
 static void address_lifetime_cb(struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
@@ -74,12 +96,12 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
-	PR("Type      \tState    \tLifetime (sec)\tAddress\n");
+	PR("Type      \tState    \tLifetime (sec)\tRef\tAddress\n");
 
 	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		struct net_if_ipv6_prefix *prefix;
 		char remaining_str[sizeof("01234567890")];
-		uint64_t remaining;
+		uint32_t remaining;
 		uint8_t prefix_len;
 
 		if (!ipv6->unicast[i].is_used ||
@@ -103,16 +125,16 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 				 "infinite");
 		} else {
 			snprintk(remaining_str, sizeof(remaining_str) - 1,
-				 "%u", (uint32_t)(remaining / 1000U));
+				 "%u", remaining);
 		}
 
-		PR("%s  \t%s\t%s    \t%s/%d\n",
-		       addrtype2str(ipv6->unicast[i].addr_type),
-		       addrstate2str(ipv6->unicast[i].addr_state),
-		       remaining_str,
-		       net_sprint_ipv6_addr(
-			       &ipv6->unicast[i].address.in6_addr),
-		       prefix_len);
+		PR("%s  \t%s\t%14s\t%ld\t%s/%d%s\n",
+		   addrtype2str(ipv6->unicast[i].addr_type),
+		   addrstate2str(ipv6->unicast[i].addr_state),
+		   remaining_str, atomic_get(&ipv6->unicast[i].atomic_ref),
+		   net_sprint_ipv6_addr(&ipv6->unicast[i].address.in6_addr),
+		   prefix_len,
+		   ipv6->unicast[i].is_temporary ? " (temporary)" : "");
 	}
 }
 #endif /* CONFIG_NET_NATIVE_IPV6 */
@@ -160,6 +182,15 @@ static int cmd_net_ipv6(const struct shell *sh, size_t argc, char *argv[])
 		   "disabled");
 	}
 
+	PR("Privacy extension support                 : %s\n",
+	   IS_ENABLED(CONFIG_NET_IPV6_PE) ? "enabled" : "disabled");
+
+#if defined(CONFIG_NET_IPV6_PE)
+	PR("Max number of IPv6 privacy extension filters "
+	   "                : %d\n",
+	   CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT);
+#endif
+
 	PR("Max number of IPv6 network interfaces "
 	   "in the system          : %d\n",
 	   CONFIG_NET_IF_MAX_IPV6_COUNT);
@@ -178,7 +209,8 @@ static int cmd_net_ipv6(const struct shell *sh, size_t argc, char *argv[])
 
 	/* Print information about address lifetime */
 	net_if_foreach(address_lifetime_cb, &user_data);
-#endif
+
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 	return 0;
 }
@@ -292,6 +324,119 @@ static int cmd_net_ip6_del(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_net_ip6_pe(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+#if CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0
+	bool do_allowlisting = true;
+	struct in6_addr prefix;
+	bool do_add;
+	int arg = 1;
+	int ret;
+
+	if (argc == 0) {
+		PR_ERROR("Correct usage: net ipv6 pe [add | del] [allow | deny] [<prefix>]\n");
+		return -EINVAL;
+	}
+
+	if (argc == 1) {
+		struct net_shell_user_data user_data;
+		int count = 0;
+
+		user_data.sh = sh;
+		user_data.user_data = &count;
+
+		count = net_ipv6_pe_filter_foreach(ipv6_pe_filter_cb, &user_data);
+		if (count == 0) {
+			PR("No privacy extension filters found.");
+		}
+
+		return 0;
+	}
+
+	if (strcmp(argv[arg], "add") == 0) {
+		arg++;
+		do_add = true;
+	} else if (strcmp(argv[arg], "del") == 0) {
+		arg++;
+		do_add = false;
+	} else {
+		PR("Unknown sub-option \"%s\"\n", argv[arg]);
+		return 0;
+	}
+
+	if (!argv[arg]) {
+		PR("No sub-options given. See \"help net ipv6\" "
+		   "command for details.\n");
+		return 0;
+	}
+
+	if (strcmp(argv[arg], "allow") == 0) {
+		arg++;
+	} else if (strcmp(argv[arg], "deny") == 0) {
+		arg++;
+		do_allowlisting = false;
+	}
+
+	if (!argv[arg]) {
+		PR("No sub-options given. See \"help net ipv6\" "
+		   "command for details.\n");
+		return 0;
+	}
+
+	ret = net_addr_pton(AF_INET6, argv[arg], &prefix);
+	if (ret < 0) {
+		PR("Invalid prefix \"%s\"\n", argv[arg]);
+		if (strstr(argv[arg], "/")) {
+			PR("Do not add the prefix length.\n");
+		}
+
+		return 0;
+	}
+
+	if (do_add) {
+		ret = net_ipv6_pe_add_filter(&prefix, !do_allowlisting);
+	} else {
+		ret = net_ipv6_pe_del_filter(&prefix);
+	}
+
+	if (ret < 0) {
+		if (ret == -EALREADY) {
+			PR("Filter %s already in %s list\n",
+			   net_sprint_ipv6_addr(&prefix),
+			   do_allowlisting ? "allow" : "deny");
+		} else if (ret == -ENOENT) {
+			PR("No such filter %s found\n",
+			   net_sprint_ipv6_addr(&prefix));
+		} else {
+			PR("Cannot %s %s %sfilter (%d)\n",
+			   do_add ? "add" : "delete",
+			   argv[arg],
+			   do_add ?
+			   (do_allowlisting ? "allowlist " :
+			    "denylist ") : "",
+			   ret);
+		}
+
+		return 0;
+	}
+
+	PR("%s %s%sfilter for %s\n",
+	   do_add ? "Added" : "Deleted",
+	   do_add ? (do_allowlisting ? "allow" : "deny") : "",
+	   do_add ? " list " : "",
+	   argv[arg]);
+#else
+	PR("IPv6 privacy extension filter support is disabled.\n");
+	PR("Set CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0 to enable it.\n");
+#endif
+#else /* CONFIG_NET_NATIVE_IPV6 */
+	PR_INFO("Set %s and %s to enable native %s support.\n",
+			"CONFIG_NET_NATIVE", "CONFIG_NET_IPV6", "IPv6");
+#endif /* CONFIG_NET_NATIVE_IPV6 */
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ip6,
 	SHELL_CMD(add, NULL,
 		  "'net ipv6 add <index> <address>' adds the address to the interface.",
@@ -299,6 +444,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ip6,
 	SHELL_CMD(del, NULL,
 		  "'net ipv6 del <index> <address>' deletes the address from the interface.",
 		  cmd_net_ip6_del),
+	SHELL_CMD(pe, NULL,
+		  "net ipv6 pe add [allow|deny] <IPv6 prefix>\n"
+		  "Add IPv6 address to filter list. The allow/deny "
+		  "parameter tells if this is allow listed (accepted) or "
+		  "deny listed (declined) prefix. Default is to allow list "
+		  "the prefix.\n"
+		  "ipv6 pe del <IPv6 prefix>\n"
+		  "Delete IPv6 address from filter list.",
+		  cmd_net_ip6_pe),
 	SHELL_SUBCMD_SET_END
 );
 
