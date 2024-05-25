@@ -10,7 +10,6 @@
 #include <soc.h>
 #include <hal/nrf_gpio.h>
 #include <stdbool.h>
-#include <zephyr/linker/devicetree_regions.h>
 
 #include <zephyr/logging/log.h>
 
@@ -46,6 +45,7 @@ struct pwm_nrfx_config {
 
 struct pwm_nrfx_data {
 	uint32_t period_cycles;
+	uint16_t seq_values[NRF_PWM_CHANNEL_COUNT];
 	/* Bit mask indicating channels that need the PWM generation. */
 	uint8_t  pwm_needed;
 	uint8_t  prescaler;
@@ -56,12 +56,6 @@ struct pwm_nrfx_data {
 #error "Current implementation supports maximum 8 channels."
 #endif
 
-static uint16_t *seq_values_ptr_get(const struct device *dev)
-{
-	const struct pwm_nrfx_config *config = dev->config;
-
-	return (uint16_t *)config->seq.values.p_raw;
-}
 
 static bool pwm_period_check_and_set(const struct device *dev,
 				     uint32_t channel, uint32_t period_cycles)
@@ -170,7 +164,7 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 		needs_pwm = true;
 	}
 
-	seq_values_ptr_get(dev)[channel] = PWM_NRFX_CH_VALUE(compare_value, inverted);
+	data->seq_values[channel] = PWM_NRFX_CH_VALUE(compare_value, inverted);
 
 	LOG_DBG("channel %u, pulse %u, period %u, prescaler: %u.",
 		channel, pulse_cycles, period_cycles, data->prescaler);
@@ -255,6 +249,7 @@ static const struct pwm_driver_api pwm_nrfx_drv_api_funcs = {
 static int pwm_nrfx_init(const struct device *dev)
 {
 	const struct pwm_nrfx_config *config = dev->config;
+	struct pwm_nrfx_data *data = dev->data;
 	uint8_t initially_inverted = 0;
 
 	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
@@ -265,7 +260,7 @@ static int pwm_nrfx_init(const struct device *dev)
 		return ret;
 	}
 
-	for (size_t i = 0; i < NRF_PWM_CHANNEL_COUNT; i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(data->seq_values); i++) {
 		uint32_t psel;
 
 		if (channel_psel_get(i, &psel, config)) {
@@ -278,10 +273,10 @@ static int pwm_nrfx_init(const struct device *dev)
 		}
 	}
 
-	for (size_t i = 0; i < NRF_PWM_CHANNEL_COUNT; i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(data->seq_values); i++) {
 		bool inverted = initially_inverted & BIT(i);
 
-		seq_values_ptr_get(dev)[i] = PWM_NRFX_CH_VALUE(0, inverted);
+		data->seq_values[i] = PWM_NRFX_CH_VALUE(0, inverted);
 	}
 
 	nrfx_err_t result = nrfx_pwm_init(&config->pwm,
@@ -344,19 +339,10 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 
 #define PWM(dev_idx) DT_NODELABEL(pwm##dev_idx)
 #define PWM_PROP(dev_idx, prop) DT_PROP(PWM(dev_idx), prop)
-#define PWM_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(PWM(idx), prop)
-
-#define PWM_MEMORY_SECTION(idx)						      \
-	COND_CODE_1(PWM_HAS_PROP(idx, memory_regions),			      \
-		(__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(	      \
-			DT_PHANDLE(PWM(idx), memory_regions)))))),	      \
-		())
 
 #define PWM_NRFX_DEVICE(idx)						      \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(PWM(idx));			      \
 	static struct pwm_nrfx_data pwm_nrfx_##idx##_data;		      \
-	static uint16_t pwm_##idx##_seq_values[NRF_PWM_CHANNEL_COUNT]	      \
-			PWM_MEMORY_SECTION(idx);			      \
 	PINCTRL_DT_DEFINE(PWM(idx));					      \
 	static const struct pwm_nrfx_config pwm_nrfx_##idx##_config = {	      \
 		.pwm = NRFX_PWM_INSTANCE(idx),				      \
@@ -371,7 +357,7 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 			.load_mode = NRF_PWM_LOAD_INDIVIDUAL,		      \
 			.step_mode = NRF_PWM_STEP_TRIGGERED,		      \
 		},							      \
-		.seq.values.p_raw = pwm_##idx##_seq_values,		      \
+		.seq.values.p_raw = pwm_nrfx_##idx##_data.seq_values,	      \
 		.seq.length = NRF_PWM_CHANNEL_COUNT,			      \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(PWM(idx)),		      \
 	};								      \
