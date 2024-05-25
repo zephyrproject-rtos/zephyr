@@ -74,7 +74,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 	}
 }
 
-BT_CONN_CB_DEFINE(conn_callbacks) = {
+static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
 	.security_changed = security_changed,
@@ -350,6 +350,8 @@ static void gatt_read(uint16_t handle, uint8_t expect_att_err)
 static void test_main(void)
 {
 	int err;
+
+	bt_conn_cb_register(&conn_callbacks);
 
 	err = bt_enable(NULL);
 	if (err != 0) {
