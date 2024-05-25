@@ -33,6 +33,7 @@ tests:
     extra_configs:
       - CONFIG_NO_OPTIMIZATIONS=y
       - CONFIG_DEBUG_INFO=y
+      - CONFIG_OMIT_FRAME_POINTER=n
     integration_platforms:
       - qemu_x86
       - qemu_x86_64
