@@ -844,17 +844,6 @@ config PSA_WANT_ALG_SRP_PASSWORD_HASH
 	prompt "PSA SRP password hash support" if !PSA_PROMPTLESS
 	select EXPERIMENTAL
 
-config PSA_HAS_PAKE_SUPPORT
-	bool
-	default y
-	depends on PSA_WANT_ALG_JPAKE			|| \
-		   PSA_WANT_ALG_SPAKE2P_HMAC		|| \
-		   PSA_WANT_ALG_SPAKE2P_CMAC		|| \
-		   PSA_WANT_ALG_SPAKE2P_MATTER 		|| \
-		   PSA_WANT_ALG_SRP_6 			|| \
-		   PSA_WANT_ALG_SRP_PASSWORD_HASH
-	help
-	  Prompt-less configuration that states that PAKE is supported.
 
 config PSA_WANT_ALG_PURE_EDDSA
 	bool
