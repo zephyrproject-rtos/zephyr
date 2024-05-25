@@ -382,7 +382,6 @@ config SYMTAB
 config EXCEPTION_STACK_TRACE
 	bool "Attempt to print stack traces upon exceptions"
 	default y
-	depends on DEBUG_INFO
 	depends on !OMIT_FRAME_POINTER
 	help
 	  If the architecture fatal handling code supports it, attempt to
