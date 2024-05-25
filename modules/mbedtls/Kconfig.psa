@@ -34,27 +34,24 @@ menu "PSA key type support"
 config PSA_HAS_KEY_SUPPORT
 	bool
 	default y
-		depends on PSA_WANT_KEY_TYPE_DERIVE		|| \
-		   PSA_WANT_KEY_TYPE_HMAC			|| \
-		   PSA_WANT_KEY_TYPE_RAW_DATA			|| \
-		   PSA_WANT_KEY_TYPE_PASSWORD			|| \
-		   PSA_WANT_KEY_TYPE_PASSWORD_HASH		|| \
-		   PSA_WANT_KEY_TYPE_PEPPER             	|| \
-		   PSA_WANT_KEY_TYPE_AES 			|| \
-		   PSA_WANT_KEY_TYPE_ARIA               	|| \
-		   PSA_WANT_KEY_TYPE_DES                	|| \
-		   PSA_WANT_KEY_TYPE_CAMELLIA           	|| \
-		   PSA_WANT_KEY_TYPE_SM4                	|| \
-		   PSA_WANT_KEY_TYPE_ARC4               	|| \
-		   PSA_WANT_KEY_TYPE_CHACHA20			|| \
-		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE	|| \
-		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT	|| \
-		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT	|| \
-		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE	|| \
-		   PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY		|| \
-		   PSA_WANT_KEY_TYPE_RSA_KEY_PAIR		|| \
-		   PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY     	|| \
-		   PSA_WANT_KEY_TYPE_DH_KEY_PAIR        	|| \
+	depends on PSA_WANT_KEY_TYPE_DERIVE		|| \
+		   PSA_WANT_KEY_TYPE_HMAC		|| \
+		   PSA_WANT_KEY_TYPE_RAW_DATA		|| \
+		   PSA_WANT_KEY_TYPE_PASSWORD		|| \
+		   PSA_WANT_KEY_TYPE_PASSWORD_HASH	|| \
+		   PSA_WANT_KEY_TYPE_PEPPER             || \
+		   PSA_WANT_KEY_TYPE_AES 		|| \
+		   PSA_WANT_KEY_TYPE_ARIA               || \
+		   PSA_WANT_KEY_TYPE_DES                || \
+		   PSA_WANT_KEY_TYPE_CAMELLIA           || \
+		   PSA_WANT_KEY_TYPE_SM4                || \
+		   PSA_WANT_KEY_TYPE_ARC4               || \
+		   PSA_WANT_KEY_TYPE_CHACHA20		|| \
+		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR	|| \
+		   PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY	|| \
+		   PSA_WANT_KEY_TYPE_RSA_KEY_PAIR	|| \
+		   PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY     || \
+		   PSA_WANT_KEY_TYPE_DH_KEY_PAIR        || \
 		   PSA_WANT_KEY_TYPE_DH_PUBLIC_KEY
 
 config PSA_WANT_KEY_TYPE_DERIVE
@@ -125,22 +122,11 @@ config PSA_WANT_KEY_TYPE_CHACHA20
 	help
 	  Key for the ChaCha20 stream cipher or the ChaCha20-Poly1305 AEAD algorithm.
 
-
 config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR
 	bool "PSA ECC key pair support"
 	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
-	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
-	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
-	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
-	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
-	select DEPRECATED
 	help
-	  DEPRECATED: This configuration will be removed in a future release,
-	  please use the individual options for import, export, generate,
-	  derive and public key instead.
-
 	  Elliptic curve key pair: both the private and public key.
-
 
 config PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
 	bool "PSA ECC public key support"
@@ -150,35 +136,36 @@ config PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
 
 config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
 	bool "PSA ECC import key pair support"
+	default y if PSA_WANT_KEY_TYPE_ECC_KEY_PAIR
 	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
 	help
 	  Elliptic curve key pair: import for both the private and public key.
 
 config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
 	bool "PSA ECC export key pair support"
+	default y if PSA_WANT_KEY_TYPE_ECC_KEY_PAIR
 	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
 	help
 	  Elliptic curve key pair: export for both the private and public key.
 
 config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
 	bool "PSA ECC generate key pair support"
+	default y if PSA_WANT_KEY_TYPE_ECC_KEY_PAIR
 	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
 	help
 	  Elliptic curve key pair: generate for both the private and public key.
-
-config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
-	bool "PSA ECC derive key pair support"
-	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
-	help
-	  Elliptic curve key pair: key derivation support.
 
 config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
 	bool
 	default y
 	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT || \
 		PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT || \
-		PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE || \
 		PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+
+config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
+	bool
+	default y
+	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR
 
 config PSA_WANT_KEY_TYPE_RSA_KEY_PAIR
 	bool "PSA RSA key pair type support"
