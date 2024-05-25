@@ -41,7 +41,6 @@ config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 config RISCV_EXCEPTION_STACK_TRACE
 	bool
 	default y
-	depends on EXCEPTION_STACK_TRACE
 	imply THREAD_STACK_INFO
 	help
 	  Internal config to enable runtime stack traces on fatal exceptions.
