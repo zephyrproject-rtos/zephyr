@@ -83,7 +83,6 @@ static int trim_hsfll(void)
 static int nordicsemi_nrf54h_init(void)
 {
 	sys_cache_instr_enable();
-	sys_cache_data_enable();
 
 	power_domain_init();
 
