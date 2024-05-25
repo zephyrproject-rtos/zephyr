@@ -191,7 +191,7 @@ static int gpio_davinci_init(const struct device *dev)
 	static struct gpio_davinci_data gpio_davinci_##n##_data;		  \
 										  \
 	DEVICE_DT_INST_DEFINE(n,						  \
-		&gpio_davinci_init,						  \
+		gpio_davinci_init,						  \
 		NULL,								  \
 		&gpio_davinci_##n##_data,					  \
 		&gpio_davinci_##n##_config,					  \
