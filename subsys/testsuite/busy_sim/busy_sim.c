@@ -166,6 +166,9 @@ void busy_sim_stop(void)
 		k_work_cancel(&sim_work);
 	}
 
+	err = counter_cancel_channel_alarm(config->counter, 0);
+	__ASSERT_NO_MSG(err == 0);
+
 	err = counter_stop(config->counter);
 	__ASSERT_NO_MSG(err == 0);
 }
