@@ -256,7 +256,7 @@ static const struct gpio_driver_api api_funcs = {
 	}
 
 #define GPIO_CC32XX_DEVICE_INIT(n)					     \
-	DEVICE_DT_INST_DEFINE(n, &gpio_cc32xx_a##n##_init,		     \
+	DEVICE_DT_INST_DEFINE(n, gpio_cc32xx_a##n##_init,		     \
 			NULL, &gpio_cc32xx_a##n##_data,			     \
 			&gpio_cc32xx_a##n##_config,			     \
 			POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,		     \

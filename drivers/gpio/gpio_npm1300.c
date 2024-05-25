@@ -222,7 +222,7 @@ static int gpio_npm1300_init(const struct device *dev)
                                                                                                    \
 		static struct gpio_npm1300_data gpio_npm1300_data##n;                              \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &gpio_npm1300_init, NULL, &gpio_npm1300_data##n,                  \
+	DEVICE_DT_INST_DEFINE(n, gpio_npm1300_init, NULL, &gpio_npm1300_data##n,                   \
 			      &gpio_npm1300_config##n, POST_KERNEL,                                \
 			      CONFIG_GPIO_NPM1300_INIT_PRIORITY, &gpio_npm1300_api);
 
