@@ -27,5 +27,8 @@ CONFIG_SERIAL=y
 # Enable GPIO
 CONFIG_GPIO=y
 
+# NCSDK-22600: Built-in keys are not supported yet.
+CONFIG_TFM_CRYPTO_BUILTIN_KEYS=n
+
 # Start SYSCOUNTER on driver init
 CONFIG_NRF_GRTC_START_SYSCOUNTER=y
