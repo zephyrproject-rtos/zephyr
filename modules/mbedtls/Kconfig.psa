@@ -572,16 +572,6 @@ config PSA_WANT_ALG_PBKDF2_AES_CMAC_PRF_128
 	prompt "PSA PBKDF2-AES-CMAC-PRF-128 support" if !PSA_PROMPTLESS
 	depends on PSA_WANT_ALG_CMAC
 
-config PSA_WANT_ALG_SP800_108_COUNTER_HMAC
-	bool
-	prompt "Add PSA SP800-108r1 CTR HMAC KBKDF support"
-	depends on PSA_WANT_ALG_HMAC
-
-config PSA_WANT_ALG_SP800_108_COUNTER_CMAC
-	bool
-	prompt "Add PSA SP800-108r1 CTR CMAC KBKDF support"
-	depends on PSA_WANT_ALG_CMAC
-
 config PSA_WANT_ALG_TLS12_PRF
 	bool
 	prompt "PSA PRF support (TLS1.2)" if !PSA_PROMPTLESS
