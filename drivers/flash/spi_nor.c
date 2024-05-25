@@ -557,16 +557,24 @@ static int exit_dpd(const struct device *const dev)
 /* Everything necessary to acquire owning access to the device. */
 static void acquire_device(const struct device *dev)
 {
+	const struct spi_nor_config *cfg = dev->config;
+
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct spi_nor_data *const driver_data = dev->data;
 
 		k_sem_take(&driver_data->sem, K_FOREVER);
 	}
+
+	(void)pm_device_runtime_get(cfg->spi.bus);
 }
 
 /* Everything necessary to release access to the device. */
 static void release_device(const struct device *dev)
 {
+	const struct spi_nor_config *cfg = dev->config;
+
+	(void)pm_device_runtime_put(cfg->spi.bus);
+
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct spi_nor_data *const driver_data = dev->data;
 
