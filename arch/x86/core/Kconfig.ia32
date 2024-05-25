@@ -167,6 +167,7 @@ config X86_EXCEPTION_STACK_TRACE
 	bool
 	default y
 	depends on EXCEPTION_STACK_TRACE
+	depends on DEBUG_INFO
 	help
 	  Internal config to enable runtime stack traces on fatal exceptions.
 
