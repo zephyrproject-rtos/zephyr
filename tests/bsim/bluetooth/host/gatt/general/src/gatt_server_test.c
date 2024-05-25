@@ -47,7 +47,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	UNSET_FLAG(flag_is_connected);
 }
 
-BT_CONN_CB_DEFINE(conn_callbacks) = {
+static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -150,6 +150,8 @@ static void test_main(void)
 	const struct bt_data ad[] = {
 		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR))
 	};
+
+	bt_conn_cb_register(&conn_callbacks);
 
 	err = bt_enable(NULL);
 	if (err != 0) {
