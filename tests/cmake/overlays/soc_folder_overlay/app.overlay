@@ -1,5 +1,0 @@
-/ {
-	aliases {
-		test-app = &uart0;
-	};
-};
