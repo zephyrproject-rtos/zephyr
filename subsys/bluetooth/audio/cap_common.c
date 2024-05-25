@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(bt_cap_common, CONFIG_BT_CAP_COMMON_LOG_LEVEL);
 static struct bt_cap_common_client bt_cap_common_clients[CONFIG_BT_MAX_CONN];
 static const struct bt_uuid *cas_uuid = BT_UUID_CAS;
 static struct bt_cap_common_proc active_proc;
+static bt_cap_common_discover_func_t discover_cb_func;
 
 struct bt_cap_common_proc *bt_cap_common_get_active_proc(void)
 {
@@ -257,13 +258,10 @@ struct bt_cap_common_client *bt_cap_common_get_client(enum bt_cap_set_type type,
 static void cap_common_discover_complete(struct bt_conn *conn, int err,
 					 const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
-	struct bt_cap_common_client *client;
+	if (discover_cb_func != NULL) {
+		const bt_cap_common_discover_func_t cb_func = discover_cb_func;
 
-	client = bt_cap_common_get_client_by_acl(conn);
-	if (client != NULL && client->discover_cb_func != NULL) {
-		const bt_cap_common_discover_func_t cb_func = client->discover_cb_func;
-
-		client->discover_cb_func = NULL;
+		discover_cb_func = NULL;
 		cb_func(conn, err, csis_inst);
 	}
 }
@@ -388,26 +386,24 @@ static uint8_t bt_cap_common_discover_cas_cb(struct bt_conn *conn, const struct 
 int bt_cap_common_discover(struct bt_conn *conn, bt_cap_common_discover_func_t func)
 {
 	struct bt_gatt_discover_params *param;
-	struct bt_cap_common_client *client;
 	int err;
 
-	client = bt_cap_common_get_client_by_acl(conn);
-	if (client->discover_cb_func != NULL) {
+	if (discover_cb_func != NULL) {
 		return -EBUSY;
 	}
 
-	param = &client->param;
+	param = &bt_cap_common_clients[bt_conn_index(conn)].param;
 	param->func = bt_cap_common_discover_cas_cb;
 	param->uuid = cas_uuid;
 	param->type = BT_GATT_DISCOVER_PRIMARY;
 	param->start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	param->end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
-	client->discover_cb_func = func;
+	discover_cb_func = func;
 
 	err = bt_gatt_discover(conn, param);
 	if (err != 0) {
-		client->discover_cb_func = NULL;
+		discover_cb_func = NULL;
 
 		/* Report expected possible errors */
 		if (err == -ENOTCONN || err == -ENOMEM) {
