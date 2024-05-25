@@ -95,7 +95,7 @@ class Tag:
 
 class Filters:
     def __init__(self, modified_files, ignore_path, alt_tags, testsuite_root,
-                 pull_request=False, platforms=[], detailed_test_id=True, quarantine_list=None, tc_roots_th=20):
+                 pull_request=False, platforms=[], detailed_test_id=True, quarantine_list=None):
         self.modified_files = modified_files
         self.testsuite_root = testsuite_root
         self.resolved_files = []
@@ -109,7 +109,6 @@ class Filters:
         self.ignore_path = ignore_path
         self.tag_cfg_file = alt_tags
         self.quarantine_list = quarantine_list
-        self.tc_roots_th = tc_roots_th
 
     def process(self):
         self.find_modules()
@@ -293,7 +292,7 @@ class Filters:
         for t in tests:
             _options.extend(["-T", t ])
 
-        if len(tests) > self.tc_roots_th:
+        if len(tests) > 20:
             logging.warning(f"{len(tests)} tests changed, this looks like a global change, skipping test handling, revert to default")
             self.full_twister = True
             return
@@ -397,9 +396,6 @@ def parse_args():
             help="Number of tests per builder")
     parser.add_argument('-n', '--default-matrix', default=10, type=int,
             help="Number of tests per builder")
-    parser.add_argument('--testcase-roots-threshold', default=20, type=int,
-            help="Threshold value for number of modified testcase roots, up to which an optimized scope is still applied."
-                 "When exceeded, full scope will be triggered")
     parser.add_argument('--detailed-test-id', action='store_true',
             help="Include paths to tests' locations in tests' names.")
     parser.add_argument("--no-detailed-test-id", dest='detailed_test_id', action="store_false",
@@ -452,7 +448,7 @@ if __name__ == "__main__":
         print("=========")
 
     f = Filters(files, args.ignore_path, args.alt_tags, args.testsuite_root,
-                args.pull_request, args.platform, args.detailed_test_id, args.quarantine_list, args.testcase_roots_threshold)
+                args.pull_request, args.platform, args.detailed_test_id, args.quarantine_list)
     f.process()
 
     # remove dupes and filtered cases
