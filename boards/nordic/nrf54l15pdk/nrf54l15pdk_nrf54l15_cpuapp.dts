@@ -96,7 +96,6 @@
 	pinctrl-0 = <&uart20_default>;
 	pinctrl-1 = <&uart20_sleep>;
 	pinctrl-names = "default", "sleep";
-	hw-flow-control;
 };
 
 &uart30 {
