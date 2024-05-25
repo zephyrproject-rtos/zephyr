@@ -88,10 +88,6 @@ void z_riscv_unwind_stack(const z_arch_esf_t *esf)
 	uintptr_t ra;
 	struct stackframe *frame;
 
-	if (esf == NULL) {
-		return;
-	}
-
 	LOG_ERR("call trace:");
 
 	for (int i = 0; (i < MAX_STACK_FRAMES) && (fp != 0U) && in_stack_bound(fp);) {
@@ -120,10 +116,6 @@ void z_riscv_unwind_stack(const z_arch_esf_t *esf)
 	uintptr_t sp = z_riscv_get_sp_before_exc(esf);
 	uintptr_t ra;
 	uintptr_t *ksp = (uintptr_t *)sp;
-
-	if (esf == NULL) {
-		return;
-	}
 
 	LOG_ERR("call trace:");
 
