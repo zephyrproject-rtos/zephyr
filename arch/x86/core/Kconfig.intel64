@@ -33,7 +33,6 @@ config X86_EXCEPTION_STACK_TRACE
 	bool
 	default y
 	select DEBUG_INFO
-	depends on EXCEPTION_STACK_TRACE
 	depends on !OMIT_FRAME_POINTER
 	depends on NO_OPTIMIZATIONS
 	help
