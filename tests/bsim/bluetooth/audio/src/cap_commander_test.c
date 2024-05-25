@@ -12,22 +12,18 @@
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/micp.h>
 #include <zephyr/bluetooth/audio/vcp.h>
-#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include "common.h"
 #include "bap_common.h"
-
-#define SEM_TIMEOUT K_SECONDS(5)
 
 extern enum bst_result_t bst_result;
 
 static struct bt_conn *connected_conns[CONFIG_BT_MAX_CONN];
 static volatile size_t connected_conn_cnt;
 
-static struct k_sem sem_disconnected;
-static struct k_sem sem_cas_discovered;
-static struct k_sem sem_vcs_discovered;
-static struct k_sem sem_mics_discovered;
+CREATE_FLAG(flag_cas_discovered);
+CREATE_FLAG(flag_vcs_discovered);
+CREATE_FLAG(flag_mics_discovered);
 CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_volume_changed);
 CREATE_FLAG(flag_volume_mute_changed);
@@ -39,7 +35,7 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (err != 0) {
-		FAIL("Discover failed on %p: %d\n", (void *)conn, err);
+		FAIL("Failed to discover CAS: %d\n", err);
 
 		return;
 	}
@@ -51,12 +47,12 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 			return;
 		}
 
-		printk("Found CAS on %p with CSIS %p\n", (void *)conn, csis_inst);
+		printk("Found CAS with CSIS %p\n", csis_inst);
 	} else {
-		printk("Found CAS on %p\n", (void *)conn);
+		printk("Found CAS\n");
 	}
 
-	k_sem_give(&sem_cas_discovered);
+	SET_FLAG(flag_cas_discovered);
 }
 
 #if defined(CONFIG_BT_VCP_VOL_CTLR)
@@ -144,7 +140,7 @@ static void cap_vcp_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err, uint8
 	}
 
 	printk("VCS for %p found with %u VOCS and %u AICS\n", vol_ctlr, vocs_count, aics_count);
-	k_sem_give(&sem_vcs_discovered);
+	SET_FLAG(flag_vcs_discovered);
 }
 
 static void cap_vcp_state_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err, uint8_t volume,
@@ -172,7 +168,7 @@ static void cap_micp_discover_cb(struct bt_micp_mic_ctlr *mic_ctlr, int err, uin
 	}
 
 	printk("MICS for %p found with %u AICS\n", mic_ctlr, aics_count);
-	k_sem_give(&sem_mics_discovered);
+	SET_FLAG(flag_mics_discovered);
 }
 
 static struct bt_micp_mic_ctlr_cb micp_cb = {
@@ -189,16 +185,8 @@ static struct bt_gatt_cb gatt_callbacks = {
 	.att_mtu_updated = att_mtu_updated,
 };
 
-static void cap_disconnected_cb(struct bt_conn *conn, uint8_t reason)
+static void init(void)
 {
-	k_sem_give(&sem_disconnected);
-}
-
-static void init(size_t acceptor_cnt)
-{
-	static struct bt_conn_cb conn_cb = {
-		.disconnected = cap_disconnected_cb,
-	};
 	int err;
 
 	err = bt_enable(NULL);
@@ -208,7 +196,6 @@ static void init(size_t acceptor_cnt)
 	}
 
 	bt_gatt_cb_register(&gatt_callbacks);
-	bt_conn_cb_register(&conn_cb);
 
 	err = bt_cap_commander_register_cb(&cap_cb);
 	if (err != 0) {
@@ -227,11 +214,6 @@ static void init(size_t acceptor_cnt)
 		FAIL("Failed to register MICP callbacks (err %d)\n", err);
 		return;
 	}
-
-	k_sem_init(&sem_disconnected, 0, acceptor_cnt);
-	k_sem_init(&sem_cas_discovered, 0, acceptor_cnt);
-	k_sem_init(&sem_vcs_discovered, 0, acceptor_cnt);
-	k_sem_init(&sem_mics_discovered, 0, acceptor_cnt);
 }
 
 static void cap_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
@@ -294,117 +276,62 @@ static void scan_and_connect(void)
 	connected_conn_cnt++;
 }
 
-static void disconnect_acl(size_t acceptor_cnt)
+static void disconnect_acl(struct bt_conn *conn)
 {
-	k_sem_reset(&sem_disconnected);
+	int err;
 
-	for (size_t i = 0U; i < acceptor_cnt; i++) {
-		struct bt_conn *conn = connected_conns[i];
-		int err;
-
-		printk("Disconnecting %p\n", (void *)conn);
-
-		err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-		if (err != 0) {
-			FAIL("Failed to disconnect %p (err %d)\n", (void *)conn, err);
-			return;
-		}
-	}
-
-	for (size_t i = 0U; i < acceptor_cnt; i++) {
-		const int err = k_sem_take(&sem_disconnected, SEM_TIMEOUT);
-
-		if (err != 0) {
-			const struct bt_conn *conn = connected_conns[i];
-
-			FAIL("Failed to take sem_disconnected for %p: %d", (void *)conn, err);
-		}
+	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err != 0) {
+		FAIL("Failed to disconnect (err %d)\n", err);
+		return;
 	}
 }
 
-static void discover_cas(size_t acceptor_cnt)
+static void discover_cas(struct bt_conn *conn)
 {
-	k_sem_reset(&sem_cas_discovered);
+	int err;
 
-	/* Do parallel discovery */
-	for (size_t i = 0U; i < acceptor_cnt; i++) {
-		struct bt_conn *conn = connected_conns[i];
-		int err;
+	UNSET_FLAG(flag_cas_discovered);
 
-		printk("Discovering CAS on %p\n", (void *)conn);
-
-		err = bt_cap_commander_discover(conn);
-		if (err != 0) {
-			FAIL("Failed to discover CAS on %p: %d\n", (void *)conn, err);
-			return;
-		}
+	err = bt_cap_commander_discover(conn);
+	if (err != 0) {
+		printk("Failed to discover CAS: %d\n", err);
+		return;
 	}
 
-	for (size_t i = 0U; i < acceptor_cnt; i++) {
-		const int err = k_sem_take(&sem_cas_discovered, SEM_TIMEOUT);
-
-		if (err != 0) {
-			const struct bt_conn *conn = connected_conns[i];
-
-			FAIL("Failed to take sem_cas_discovered for %p: %d", (void *)conn, err);
-		}
-	}
+	WAIT_FOR_FLAG(flag_cas_discovered);
 }
 
-static void discover_vcs(size_t acceptor_cnt)
+static void discover_vcs(struct bt_conn *conn)
 {
-	k_sem_reset(&sem_vcs_discovered);
+	struct bt_vcp_vol_ctlr *vol_ctlr;
+	int err;
 
-	/* Do parallel discovery */
-	for (size_t i = 0U; i < acceptor_cnt; i++) {
-		struct bt_conn *conn = connected_conns[i];
-		struct bt_vcp_vol_ctlr *vol_ctlr;
-		int err;
+	UNSET_FLAG(flag_vcs_discovered);
 
-		printk("Discovering VCS on %p\n", (void *)conn);
-
-		err = bt_vcp_vol_ctlr_discover(conn, &vol_ctlr);
-		if (err != 0) {
-			FAIL("Failed to discover VCS on %p: %d\n", err);
-			return;
-		}
+	err = bt_vcp_vol_ctlr_discover(conn, &vol_ctlr);
+	if (err != 0) {
+		FAIL("Failed to discover VCS: %d\n", err);
+		return;
 	}
 
-	for (size_t i = 0U; i < acceptor_cnt; i++) {
-		const int err = k_sem_take(&sem_vcs_discovered, SEM_TIMEOUT);
-
-		if (err != 0) {
-			const struct bt_conn *conn = connected_conns[i];
-
-			FAIL("Failed to take sem_vcs_discovered for %p: %d", (void *)conn, err);
-		}
-	}
+	WAIT_FOR_FLAG(flag_vcs_discovered);
 }
 
-static void discover_mics(size_t acceptor_cnt)
+static void discover_mics(struct bt_conn *conn)
 {
-	k_sem_reset(&sem_mics_discovered);
+	struct bt_micp_mic_ctlr *mic_ctlr;
+	int err;
 
-	for (size_t i = 0U; i < acceptor_cnt; i++) {
-		struct bt_micp_mic_ctlr *mic_ctlr;
-		int err;
+	UNSET_FLAG(flag_mics_discovered);
 
-		err = bt_micp_mic_ctlr_discover(connected_conns[i], &mic_ctlr);
-		if (err != 0) {
-			FAIL("Failed to discover MICS: %d\n", err);
-			return;
-		}
+	err = bt_micp_mic_ctlr_discover(conn, &mic_ctlr);
+	if (err != 0) {
+		FAIL("Failed to discover MICS: %d\n", err);
+		return;
 	}
 
-	for (size_t i = 0U; i < acceptor_cnt; i++) {
-		const int err = k_sem_take(&sem_mics_discovered, SEM_TIMEOUT);
-
-		if (err != 0) {
-			const struct bt_conn *conn = connected_conns[i];
-
-			FAIL("Failed to take sem_mics_discovered for %p: %d", (void *)conn, err);
-		}
-	}
+	WAIT_FOR_FLAG(flag_mics_discovered);
 }
 
 static void test_change_volume(void)
@@ -550,25 +477,29 @@ static void test_change_microphone_gain(void)
 
 static void test_main_cap_commander_capture_and_render(void)
 {
-	const size_t acceptor_cnt = get_dev_cnt() - 1; /* Assume all other devices are acceptors
-							*/
-	init(acceptor_cnt);
+	init();
 
 	/* Connect to and do discovery on all CAP acceptors */
-	for (size_t i = 0U; i < acceptor_cnt; i++) {
+	for (size_t i = 0U; i < get_dev_cnt() - 1; i++) {
 		scan_and_connect();
 
 		WAIT_FOR_FLAG(flag_mtu_exchanged);
-	}
 
-	/* TODO: We should use CSIP to find set members */
-	discover_cas(acceptor_cnt);
-	discover_cas(acceptor_cnt); /* verify that we can discover twice */
+		/* TODO: We should use CSIP to find set members */
+		discover_cas(connected_conns[i]);
+		discover_cas(connected_conns[i]); /* test that we can discover twice */
+
+		if (IS_ENABLED(CONFIG_BT_VCP_VOL_CTLR)) {
+			discover_vcs(connected_conns[i]);
+		}
+
+		if (IS_ENABLED(CONFIG_BT_MICP_MIC_CTLR)) {
+			discover_mics(connected_conns[i]);
+		}
+	}
 
 	if (IS_ENABLED(CONFIG_BT_CSIP_SET_COORDINATOR)) {
 		if (IS_ENABLED(CONFIG_BT_VCP_VOL_CTLR)) {
-			discover_vcs(acceptor_cnt);
-
 			test_change_volume();
 
 			test_change_volume_mute(true);
@@ -580,8 +511,6 @@ static void test_main_cap_commander_capture_and_render(void)
 		}
 
 		if (IS_ENABLED(CONFIG_BT_MICP_MIC_CTLR)) {
-			discover_mics(acceptor_cnt);
-
 			test_change_microphone_mute(true);
 			test_change_microphone_mute(false);
 
@@ -592,7 +521,10 @@ static void test_main_cap_commander_capture_and_render(void)
 	}
 
 	/* Disconnect all CAP acceptors */
-	disconnect_acl(acceptor_cnt);
+	for (size_t i = 0U; i < connected_conn_cnt; i++) {
+		disconnect_acl(connected_conns[i]);
+	}
+	connected_conn_cnt = 0U;
 
 	PASS("CAP commander capture and rendering passed\n");
 }
