@@ -29,7 +29,6 @@
 #include <zephyr/net/socket_select.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/fdtable.h>
-#include <zephyr/net/socket_ncs.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus
