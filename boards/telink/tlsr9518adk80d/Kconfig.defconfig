@@ -6,22 +6,6 @@ if BOARD_TLSR9518ADK80D
 config SOC_FLASH_TELINK_B91
 	default y if FLASH
 
-if BT
-
-# BLE Controller SDK from hal_telink requires
-# Telink's toolchain with FPU support
-config FPU
-	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "zephyr"
-
-config BT_HCI_ACL_FLOW_CONTROL
-	default n
-
-choice BT_HCI_BUS_TYPE
-	default BT_B91
-endchoice
-
-endif # BT
-
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
 
