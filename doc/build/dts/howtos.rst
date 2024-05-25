@@ -237,10 +237,11 @@ If you don't set :makevar:`DTC_OVERLAY_FILE`, the build system will follow
 these steps, looking for files in your application configuration directory to
 use as devicetree overlays:
 
-#. If the file :file:`socs/<SOC>_<BOARD_QUALIFIERS>.overlay` exists, it will be used.
-#. If the file :file:`boards/<BOARD>.overlay` exists, it will be used in addition to the above.
+#. If the file :file:`boards/<BOARD>.overlay` exists, it will be used.
 #. If the current board has :ref:`multiple revisions <porting_board_revisions>`
-   and :file:`boards/<BOARD>_<revision>.overlay` exists, it will be used in addition to the above.
+   and :file:`boards/<BOARD>_<revision>.overlay` exists, it will be used.
+   This file will be used in addition to :file:`boards/<BOARD>.overlay`
+   if both exist.
 #. If one or more files have been found in the previous steps, the build system
    stops looking and just uses those files.
 #. Otherwise, if :file:`<BOARD>.overlay` exists, it will be used, and the build

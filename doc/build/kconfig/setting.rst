@@ -151,8 +151,7 @@ used.
    form :file:`prj_<build>.conf` and if file
    :file:`boards/<BOARD>_<build>.conf` exists in same folder as file
    :file:`prj_<build>.conf`, the result of merging :file:`prj_<build>.conf` and
-   :file:`boards/<BOARD>_<build>.conf` is used - note that this feature is
-   deprecated, :ref:`application-file-suffixes` should be used instead.
+   :file:`boards/<BOARD>_<build>.conf` is used.
 
 #. Otherwise, :file:`prj_<BOARD>.conf` is used if it exists in the application
    configuration directory.
@@ -168,11 +167,6 @@ used.
 
 #. Otherwise, :file:`prj.conf` is used from the application configuration
    directory. If it does not exist then a fatal error will be emitted.
-
-Furthermore, applications can have SoC overlay configuration that is applied to
-it, the file :file:`socs/<SOC>_<BOARD_QUALIFIERS>.conf` will be applied if it exists,
-after the main project configuration has been applied and before any board overlay
-configuration files have been applied.
 
 All configuration files will be taken from the application's configuration
 directory except for files with an absolute path that are given with the
