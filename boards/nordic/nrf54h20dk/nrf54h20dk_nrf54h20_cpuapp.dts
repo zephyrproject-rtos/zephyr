@@ -32,7 +32,6 @@
 		led1 = &led1;
 		led2 = &led2;
 		led3 = &led3;
-		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
 		sw1 = &button1;
 		sw2 = &button2;
@@ -88,13 +87,6 @@
 		led3: led_3 {
 			gpios = <&gpio9 3 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 3";
-		};
-	};
-
-	pwmleds {
-		compatible = "pwm-leds";
-		pwm_led0: pwm_led_0 {
-			pwms = <&pwm120 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 	};
 
@@ -201,11 +193,4 @@ ipc0: &cpuapp_cpurad_ipc {
 	pinctrl-1 = <&uart136_sleep>;
 	pinctrl-names = "default", "sleep";
 	hw-flow-control;
-};
-
-&pwm120 {
-	status = "okay";
-	pinctrl-0 = <&pwm120_default>;
-	pinctrl-1 = <&pwm120_sleep>;
-	pinctrl-names = "default", "sleep";
 };
