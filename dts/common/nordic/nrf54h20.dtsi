@@ -172,11 +172,6 @@
 				interrupts = <64 NRF_DEFAULT_IRQ_PRIORITY>,
 					     <65 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
-
-			cpuapp_resetinfo: resetinfo@1e000 {
-				compatible = "nordic,nrf-resetinfo";
-				reg = <0x1e000 0x1000>;
-			};
 		};
 
 		cpurad_peripherals: peripheral@53000000 {
@@ -195,11 +190,6 @@
 					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_COARSE_1>,
 					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_FINE_1>;
 				nordic,ficr-names = "vsup", "coarse", "fine";
-			};
-
-			cpurad_resetinfo: resetinfo@1e000 {
-				compatible = "nordic,nrf-resetinfo";
-				reg = <0x1e000 0x1000>;
 			};
 
 			dppic020: dppic@22000 {
