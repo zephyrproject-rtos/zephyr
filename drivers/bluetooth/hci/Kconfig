@@ -97,11 +97,6 @@ config BT_ESP32
 	help
 	  Espressif HCI bluetooth interface
 
-config BT_B91
-	bool "Telink B91 HCI driver"
-	help
-	  Telink B91 HCI bluetooth interface
-
 config BT_PSOC6_BLESS
 	bool "PSOC6 BLESS driver"
 	select BT_HCI_SETUP
