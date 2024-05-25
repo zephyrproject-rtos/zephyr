@@ -14,4 +14,3 @@ flash: 256
 supported:
   - gpio
   - pwm
-  - watchdog
