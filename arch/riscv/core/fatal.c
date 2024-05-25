@@ -107,7 +107,7 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const z_arch_esf
 		LOG_ERR("");
 	}
 
-	if (IS_ENABLED(CONFIG_RISCV_EXCEPTION_STACK_TRACE)) {
+	if (IS_ENABLED(CONFIG_RISCV_EXCEPTION_STACK_TRACE) && (esf != NULL)) {
 		z_riscv_unwind_stack(esf);
 	}
 
