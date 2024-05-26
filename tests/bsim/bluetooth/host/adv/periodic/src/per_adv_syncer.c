@@ -190,7 +190,10 @@ static void start_scan(void)
 	int err;
 
 	printk("Start scanning...");
-	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
+
+	err = bt_le_scan_start(IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) ?
+			       BT_LE_SCAN_CODED_ACTIVE : BT_LE_SCAN_ACTIVE,
+			       NULL);
 	if (err) {
 		FAIL("Failed to start scan: %d\n", err);
 		return;
