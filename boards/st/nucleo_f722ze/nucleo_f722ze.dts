@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Evan Perry Grove
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,6 +68,10 @@
 
 &clk_hsi {
 	status = "disabled";
+};
+
+&clk_lsi {
+	status = "okay";
 };
 
 &pll {
