@@ -28,6 +28,11 @@ import pykwalify.core
 from pathlib import Path, PurePath
 from collections import namedtuple
 
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
+
 METADATA_SCHEMA = '''
 ## A pykwalify schema for basic validation of the structure of a
 ## metadata YAML file.
@@ -156,7 +161,7 @@ BLOB_PRESENT = 'A'
 BLOB_NOT_PRESENT = 'D'
 BLOB_OUTDATED = 'M'
 
-schema = yaml.safe_load(METADATA_SCHEMA)
+schema = yaml.load(METADATA_SCHEMA, Loader=SafeLoader)
 
 
 def validate_setting(setting, module_path, filename=None):
@@ -180,7 +185,7 @@ def process_module(module):
                        module_path / MODULE_YML_PATH.with_suffix('.yaml')]:
         if Path(module_yml).is_file():
             with Path(module_yml).open('r') as f:
-                meta = yaml.safe_load(f.read())
+                meta = yaml.load(f.read(), Loader=SafeLoader)
 
             try:
                 pykwalify.core.Core(source_data=meta, schema_data=schema)\

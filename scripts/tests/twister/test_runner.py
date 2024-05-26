@@ -1805,7 +1805,7 @@ def test_projectbuilder_get_binaries_from_runners(
 
     with mock.patch('os.path.exists', mock_exists), \
          mock.patch('builtins.open', mock.mock_open()), \
-         mock.patch('yaml.safe_load', return_value=runners_content):
+         mock.patch('yaml.load', return_value=runners_content):
         if domain:
             bins = pb._get_binaries_from_runners(domain)
         else:
