@@ -906,7 +906,7 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   add_dependencies(${zephyr_lib} zephyr_generated_headers)
 endforeach()
 
-if(CONFIG_LLEXT)
+if(CONFIG_KERNEL_WHOLE_ARCHIVE)
   set(WHOLE_ARCHIVE_LIBS ${ZEPHYR_LIBS_PROPERTY} kernel)
 else()
   set(WHOLE_ARCHIVE_LIBS ${ZEPHYR_LIBS_PROPERTY})
