@@ -194,6 +194,26 @@ static char *get_l3_desc(struct event_msg *msg,
 		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
+	case NET_EVENT_IPV6_PE_ENABLED:
+		*desc = "IPv6 PE";
+		*desc2 = "enabled";
+		break;
+	case NET_EVENT_IPV6_PE_DISABLED:
+		*desc = "IPv6 PE";
+		*desc2 = "disabled";
+		break;
+	case NET_EVENT_IPV6_PE_FILTER_ADD:
+		*desc = "IPv6 PE filter";
+		*desc2 = "add";
+		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+				     extra_info_len);
+		break;
+	case NET_EVENT_IPV6_PE_FILTER_DEL:
+		*desc = "IPv6 PE filter";
+		*desc2 = "del";
+		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+				     extra_info_len);
+		break;
 	case NET_EVENT_IPV4_ADDR_ADD:
 		*desc = "IPv4 address";
 		*desc2 = "add";
