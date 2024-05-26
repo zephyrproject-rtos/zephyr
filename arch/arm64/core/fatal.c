@@ -223,7 +223,7 @@ static void esf_unwind(const z_arch_esf_t *esf)
 	uint64_t lr;
 
 	LOG_ERR("");
-	while (fp != NULL) {
+	for (int i = 0; (fp != NULL) && (i < CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES); i++) {
 		lr = fp[1];
 #ifdef CONFIG_SYMTAB
 		uint32_t offset = 0;
