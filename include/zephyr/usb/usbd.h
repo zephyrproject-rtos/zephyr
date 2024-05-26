@@ -79,10 +79,10 @@ struct usbd_str_desc_data {
 	uint8_t idx;
 	/** Descriptor usage type (not bDescriptorType) */
 	enum usbd_str_desc_utype utype : 8;
-	/** If not set, device stack obtains SN using the hwinfo API */
-	unsigned int custom_sn : 1;
 	/** The string descriptor is in ASCII7 format */
 	unsigned int ascii7 : 1;
+	/** Device stack obtains SerialNumber using the HWINFO API */
+	unsigned int use_hwinfo : 1;
 };
 
 /**
@@ -97,8 +97,12 @@ struct usbd_desc_node {
 	union {
 		struct usbd_str_desc_data str;
 	};
-	/** Pointer to a descriptor */
-	void *const desc;
+	/** Opaque pointer to a descriptor payload */
+	const void *const ptr;
+	/** Descriptor size in bytes */
+	uint8_t bLength;
+	/** Descriptor type */
+	uint8_t bDescriptorType;
 };
 
 /**
@@ -444,18 +448,15 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  * @param name Language string descriptor node identifier.
  */
 #define USBD_DESC_LANG_DEFINE(name)					\
-	static struct usb_string_descriptor				\
-	string_desc_##name = {						\
+	static uint16_t langid_##name = sys_cpu_to_le16(0x0409);	\
+	static struct usbd_desc_node name = {				\
 		.bLength = sizeof(struct usb_string_descriptor),	\
 		.bDescriptorType = USB_DESC_STRING,			\
-		.bString = sys_cpu_to_le16(0x0409),			\
-	};								\
-	static struct usbd_desc_node name = {				\
 		.str = {						\
 			.idx = 0,					\
 			.utype = USBD_DUT_STRING_LANG,			\
 		},							\
-		.desc = &string_desc_##name,				\
+		.ptr = &langid_##name,					\
 	}
 
 /**
@@ -469,24 +470,16 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  * @param d_string ASCII7 encoded string literal
  * @param d_utype  String descriptor usage type
  */
-#define USBD_DESC_STRING_DEFINE(d_name, d_string, d_utype)		\
-	struct usb_string_descriptor_##d_name {				\
-		uint8_t bLength;					\
-		uint8_t bDescriptorType;				\
-		uint8_t bString[USB_BSTRING_LENGTH(d_string)];		\
-	} __packed;							\
-	static struct usb_string_descriptor_##d_name			\
-	string_desc_##d_name = {					\
-		.bLength = USB_STRING_DESCRIPTOR_LENGTH(d_string),	\
-		.bDescriptorType = USB_DESC_STRING,			\
-		.bString = d_string,					\
-	};								\
-	static struct usbd_desc_node d_name = {				\
-		.str = {						\
-			.utype = d_utype,				\
-			.ascii7 = true,					\
-		},							\
-		.desc = &string_desc_##d_name,				\
+#define USBD_DESC_STRING_DEFINE(d_name, d_string, d_utype)			\
+	static uint8_t ascii_##d_name[USB_BSTRING_LENGTH(d_string)] = d_string;	\
+	static struct usbd_desc_node d_name = {					\
+		.str = {							\
+			.utype = d_utype,					\
+			.ascii7 = true,						\
+		},								\
+		.bLength = USB_STRING_DESCRIPTOR_LENGTH(d_string),		\
+		.bDescriptorType = USB_DESC_STRING,				\
+		.ptr = &ascii_##d_name,					\
 	}
 
 /**
@@ -520,17 +513,22 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 /**
  * @brief Create a string descriptor node and serial number string descriptor
  *
- * This macro defines a descriptor node and a string descriptor that,
- * when added to the device context, is automatically used as the serial number
- * string descriptor. The string literal parameter is used as a placeholder,
- * the unique number is obtained from hwinfo. Both descriptor node and descriptor
- * are defined with static-storage-class specifier.
+ * This macro defines a descriptor node that, when added to the device context,
+ * is automatically used as the serial number string descriptor. A valid serial
+ * number is generated from HWID (HWINFO= whenever this string descriptor is
+ * requested.
  *
  * @param d_name   String descriptor node identifier.
- * @param d_string ASCII7 encoded serial number string literal placeholder
  */
-#define USBD_DESC_SERIAL_NUMBER_DEFINE(d_name, d_string)		\
-	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DUT_STRING_SERIAL_NUMBER)
+#define USBD_DESC_SERIAL_NUMBER_DEFINE(d_name)					\
+	static struct usbd_desc_node d_name = {					\
+		.str = {							\
+			.utype = USBD_DUT_STRING_SERIAL_NUMBER,			\
+			.ascii7 = true,						\
+			.use_hwinfo = true,					\
+		},								\
+		.bDescriptorType = USB_DESC_STRING,				\
+	}
 
 #define USBD_DEFINE_CLASS(class_name, class_api, class_priv, class_v_reqs)	\
 	static struct usbd_class_data class_name = {				\

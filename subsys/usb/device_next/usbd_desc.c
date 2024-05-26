@@ -19,10 +19,7 @@ LOG_MODULE_REGISTER(usbd_desc, CONFIG_USBD_LOG_LEVEL);
 static inline bool desc_type_equal(const struct usbd_desc_node *const a,
 				   const struct usbd_desc_node *const b)
 {
-	const struct usb_desc_header *const head_a = a->desc;
-	const struct usb_desc_header *const head_b = b->desc;
-
-	return head_a->bDescriptorType == head_b->bDescriptorType;
+	return a->bDescriptorType == b->bDescriptorType;
 }
 
 /*
@@ -87,11 +84,9 @@ struct usbd_desc_node *usbd_get_descriptor(struct usbd_contex *const uds_ctx,
 					   const uint8_t type, const uint8_t idx)
 {
 	struct usbd_desc_node *desc_nd;
-	struct usb_desc_header *dh;
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&uds_ctx->descriptors, desc_nd, node) {
-		dh = desc_nd->desc;
-		if (desc_nd->str.idx == idx && dh->bDescriptorType == type) {
+		if (desc_nd->str.idx == idx && desc_nd->bDescriptorType == type) {
 			return desc_nd;
 		}
 	}
@@ -116,7 +111,6 @@ int usbd_add_descriptor(struct usbd_contex *const uds_ctx,
 			struct usbd_desc_node *const desc_nd)
 {
 	struct usb_device_descriptor *hs_desc, *fs_desc;
-	struct usb_desc_header *head;
 	int ret = 0;
 
 	usbd_device_lock(uds_ctx);
@@ -134,7 +128,6 @@ int usbd_add_descriptor(struct usbd_contex *const uds_ctx,
 		sys_dlist_init(&uds_ctx->descriptors);
 	}
 
-	head = desc_nd->desc;
 	if (sys_dnode_is_linked(&desc_nd->node)) {
 		ret = -EALREADY;
 		goto add_descriptor_error;
@@ -146,7 +139,7 @@ int usbd_add_descriptor(struct usbd_contex *const uds_ctx,
 		goto add_descriptor_error;
 	}
 
-	if (head->bDescriptorType == USB_DESC_STRING) {
+	if (desc_nd->bDescriptorType == USB_DESC_STRING) {
 		switch (desc_nd->str.utype) {
 		case USBD_DUT_STRING_LANG:
 			break;
