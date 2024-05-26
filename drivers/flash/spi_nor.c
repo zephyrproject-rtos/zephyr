@@ -1414,11 +1414,6 @@ static int spi_nor_configure(const struct device *dev)
 	}
 #endif /* ANY_INST_HAS_MXICY_MX25R_POWER_MODE */
 
-	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD)
-	    && (enter_dpd(dev) != 0)) {
-		return -ENODEV;
-	}
-
 	return 0;
 }
 
