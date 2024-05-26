@@ -246,3 +246,11 @@ zephyr_udc0: &usb_otg {
 			  <PMU_RESET_ITRC>,
 			  <PMU_RESET_AP_RESET>;
 };
+
+&adc0 {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+};
