@@ -336,7 +336,6 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 		uint32_t fit = 0;
 		size_t base_size;
 		size_t frame_size;
-		size_t channel_idx = 0;
 		uint16_t frame_count;
 
 		/* Channels with multi-axis equivalents are skipped */
@@ -504,7 +503,7 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 					   PRIsensor_q31_data_arg(*data, 0));
 			}
 			}
-			++channel_idx;
+			++ch.chan_idx;
 		}
 	}
 }
