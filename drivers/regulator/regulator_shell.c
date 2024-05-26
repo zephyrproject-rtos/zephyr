@@ -74,8 +74,7 @@ static int strtomicro(char *inp, char units, int32_t *val)
 static void microtoshell(const struct shell *sh, char unit, int32_t val)
 {
 	if (val > 100000) {
-		shell_print(sh, "%d.%03d %c", val / 1000000,
-			    (val % 1000000) / 1000, unit);
+		shell_print(sh, "%d.%06d %c", val / 1000000, val % 1000000, unit);
 	} else if (val > 1000) {
 		shell_print(sh, "%d.%03d m%c", val / 1000, val % 1000, unit);
 	} else {
