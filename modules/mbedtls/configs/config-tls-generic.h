@@ -35,7 +35,6 @@
 
 #if defined(CONFIG_MBEDTLS_LMS)
 #define MBEDTLS_LMS_C
-#define PSA_WANT_ALG_SHA_256 1
 #endif
 
 #if defined(CONFIG_MBEDTLS_HAVE_TIME_DATE)
@@ -486,6 +485,10 @@
 #define MBEDTLS_FS_IO
 #endif
 
+#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_C */
+
+#if defined(CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT)
+#define MBEDTLS_PSA_CRYPTO_CLIENT
 #endif
 
 #if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2) && defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
@@ -496,18 +499,12 @@
 #define MBEDTLS_SSL_DTLS_CONNECTION_ID
 #endif
 
-/* User config file */
-
 #if defined(CONFIG_MBEDTLS_USER_CONFIG_FILE)
 #include CONFIG_MBEDTLS_USER_CONFIG_FILE
 #endif
 
 #if defined(CONFIG_BUILD_WITH_TFM)
 #undef MBEDTLS_PSA_CRYPTO_C
-#endif /* CONFIG_BUILD_WITH_TFM */
-
-#if defined(CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT)
-#define MBEDTLS_PSA_CRYPTO_CLIENT
 #endif
 
 #if defined(CONFIG_PSA_WANT_ALG_SHA_256)
