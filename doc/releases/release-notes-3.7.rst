@@ -274,6 +274,11 @@ Drivers and Sensors
 
 * W1
 
+* Watchdog
+
+  * Added :kconfig:option:`CONFIG_WDT_NPCX_WARNING_LEADING_TIME_MS` to set the leading warning time
+    in milliseconds. Removed no longer used :kconfig:option:`CONFIG_WDT_NPCX_DELAY_CYCLES`.
+
 * Wi-Fi
 
   * Added support for configuring RTS threshold. With this, users can set the RTS threshold value or
