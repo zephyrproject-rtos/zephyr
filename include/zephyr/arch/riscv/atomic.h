@@ -54,6 +54,30 @@ static ALWAYS_INLINE atomic_val_t atomic_min(atomic_t *target, atomic_val_t valu
 	return ret;
 }
 
+static ALWAYS_INLINE atomic_val_t atomic_maxu(atomic_t *target, atomic_val_t value)
+{
+	atomic_val_t ret;
+
+	__asm__ volatile("amomaxu.d.aq  %0, %1, %2"
+			 : "=r"(ret)
+			 : "r"(value), "A"(*target)
+			 : "memory");
+
+	return ret;
+}
+
+static ALWAYS_INLINE atomic_val_t atomic_minu(atomic_t *target, atomic_val_t value)
+{
+	atomic_val_t ret;
+
+	__asm__ volatile("amominu.d.aq  %0, %1, %2"
+			 : "=r"(ret)
+			 : "r"(value), "A"(*target)
+			 : "memory");
+
+	return ret;
+}
+
 #else
 
 static ALWAYS_INLINE atomic_val_t atomic_swap(const atomic_t *target, atomic_val_t newval)
@@ -85,6 +109,30 @@ static ALWAYS_INLINE atomic_val_t atomic_min(atomic_t *target, atomic_val_t valu
 	atomic_val_t ret;
 
 	__asm__ volatile("amomin.w.aq  %0, %1, %2"
+			 : "=r"(ret)
+			 : "r"(value), "A"(*target)
+			 : "memory");
+
+	return ret;
+}
+
+static ALWAYS_INLINE atomic_val_t atomic_maxu(atomic_t *target, atomic_val_t value)
+{
+	atomic_val_t ret;
+
+	__asm__ volatile("amomaxu.w.aq  %0, %1, %2"
+			 : "=r"(ret)
+			 : "r"(value), "A"(*target)
+			 : "memory");
+
+	return ret;
+}
+
+static ALWAYS_INLINE atomic_val_t atomic_minu(atomic_t *target, atomic_val_t value)
+{
+	atomic_val_t ret;
+
+	__asm__ volatile("amominu.w.aq  %0, %1, %2"
 			 : "=r"(ret)
 			 : "r"(value), "A"(*target)
 			 : "memory");

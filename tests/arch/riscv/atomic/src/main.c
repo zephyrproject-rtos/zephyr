@@ -30,7 +30,7 @@
 #define ATOMIC_WORD(val_if_64, val_if_32)                                                          \
 	((atomic_t)((sizeof(void *) == sizeof(uint64_t)) ? (val_if_64) : (val_if_32)))
 
-ZTEST_USER(riscv_atomic, test_riscv_atomic)
+ZTEST_USER(riscv_atomic, test_atomic)
 {
 	atomic_t target;
 	atomic_val_t value;
@@ -55,6 +55,18 @@ ZTEST_USER(riscv_atomic, test_riscv_atomic)
 	value = -8;
 	zassert_true((atomic_min(&target, value) == 5), "atomic_min");
 	zassert_true((target == -8), "atomic_min");
+
+	/* atomic_max unsigned */
+	target = 5;
+	value = ATOMIC_WORD(0xffffffff00000000, 0xffff0000);
+	zassert_true((atomic_maxu(&target, value) == 5), "atomic_maxu");
+	zassert_true((target == ATOMIC_WORD(0xffffffff00000000, 0xffff0000)), "atomic_maxu");
+
+	/* atomic_min unsigned */
+	target = 5;
+	value = ATOMIC_WORD(0xffffffff00000000, 0xffff0000);
+	zassert_true((atomic_minu(&target, value) == 5), "atomic_minu");
+	zassert_true((target == 5), "atomic_minu");
 }
 
 ZTEST_SUITE(riscv_atomic, NULL, NULL, NULL, NULL, NULL);
