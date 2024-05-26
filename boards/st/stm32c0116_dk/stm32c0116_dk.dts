@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/c0/stm32c011X6.dtsi>
 #include <st/c0/stm32c011f(4-6)ux-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32C0116-DK Discovery board";
@@ -41,6 +42,38 @@
 			label = "reset button";
 			gpios = <&gpiof 2 GPIO_ACTIVE_LOW>;
 			status = "okay";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&adc1 8>;
+		keyup-threshold-mv = <3300>;
+
+		select_key {
+			press-thresholds-mv = <0>;
+			zephyr,code = <INPUT_KEY_SELECT>;
+		};
+
+		left_key {
+			press-thresholds-mv = <670>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		down_key {
+			press-thresholds-mv = <1320>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		up_key {
+			press-thresholds-mv = <2010>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		right_key {
+			press-thresholds-mv = <2650>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
 	};
 
@@ -109,8 +142,21 @@
 	pinctrl-0 = <&adc1_in8_pa8>;
 	pinctrl-names = "default";
 	st,adc-clock-source = <SYNC>;
-	st,adc-prescaler = <4>;
+	st,adc-prescaler = <2>;
 	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@8 {
+		reg = <0x8>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+
 };
 
 &die_temp {
