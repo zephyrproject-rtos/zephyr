@@ -1,0 +1,22 @@
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ARCH_POSIX_FUZZ_IRQ
+	int "OS interrupt via which to deliver fuzz cases"
+	default 31
+	help
+	  In this sample, new fuzz cases are delivered to Zephyr
+	  via interrupts.  The IRQ should be otherwise unused, but can
+	  be any value desired by the app.
+
+config ARCH_POSIX_FUZZ_TICKS
+	int "Ticks to allow for fuzz case processing"
+	default 2
+	help
+	  Fuzz interrupts are delivered, from the perspective of the
+	  OS, at a steady cadence in simulated time.  In general most
+	  apps won't require much time to reach an idle state
+	  following a unit-test style case, so the default is short to
+	  prevent interaction with regular timer workloads.
+
+source "Kconfig.zephyr"
