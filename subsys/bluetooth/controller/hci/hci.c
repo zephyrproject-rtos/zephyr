@@ -211,9 +211,9 @@ static uint32_t cis_pending_count;
 static uint64_t event_mask = DEFAULT_EVENT_MASK;
 static uint64_t event_mask_page_2 = DEFAULT_EVENT_MASK_PAGE_2;
 static uint64_t le_event_mask = DEFAULT_LE_EVENT_MASK;
-#if defined(CONFIG_BT_HCI_VS_EVT)
-static uint64_t vs_events_mask = DEFAULT_VS_EVT_MASK;
-#endif /* CONFIG_BT_HCI_VS_EVT */
+#if defined(CONFIG_BT_HCI_VS)
+__maybe_unused static uint64_t vs_events_mask = DEFAULT_VS_EVT_MASK;
+#endif /* CONFIG_BT_HCI_VS */
 
 static struct net_buf *cmd_complete_status(uint8_t status);
 
@@ -339,8 +339,8 @@ static void *meta_evt(struct net_buf *buf, uint8_t subevt, uint8_t melen)
 	return net_buf_add(buf, melen);
 }
 
-#if defined(CONFIG_BT_HCI_VS_EVT)
-static void *vs_event(struct net_buf *buf, uint8_t subevt, uint8_t evt_len)
+#if defined(CONFIG_BT_HCI_VS)
+__maybe_unused static void *vs_event(struct net_buf *buf, uint8_t subevt, uint8_t evt_len)
 {
 	struct bt_hci_evt_vs *evt;
 
@@ -350,7 +350,7 @@ static void *vs_event(struct net_buf *buf, uint8_t subevt, uint8_t evt_len)
 
 	return net_buf_add(buf, evt_len);
 }
-#endif /* CONFIG_BT_HCI_VS_EVT */
+#endif /* CONFIG_BT_HCI_VS */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 static void *mesh_evt(struct net_buf *buf, uint8_t subevt, uint8_t melen)

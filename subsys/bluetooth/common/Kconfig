@@ -190,13 +190,6 @@ config BT_HCI_VS
 	  Host and/or Controller. This enables Set Version Information,
 	  Supported Commands, Supported Features vendor commands.
 
-config BT_HCI_VS_EVT
-	bool "Zephyr HCI Vendor-Specific Events"
-	depends on BT_HCI_VS
-	help
-	  Enable support for the Zephyr HCI Vendor-Specific Events in the
-	  Host and/or Controller.
-
 config BT_HCI_VS_FATAL_ERROR
 	bool "Allow vendor specific HCI event Zephyr Fatal Error"
 	depends on BT_HCI_VS

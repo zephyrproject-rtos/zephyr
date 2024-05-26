@@ -2526,7 +2526,7 @@ static void hci_vendor_event(struct net_buf *buf)
 	}
 #endif /* CONFIG_BT_HCI_VS_EVT_USER */
 
-	if (IS_ENABLED(CONFIG_BT_HCI_VS_EVT) && !handled) {
+	if (IS_ENABLED(CONFIG_BT_HCI_VS) && !handled) {
 		struct bt_hci_evt_vs *evt;
 
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
