@@ -41,11 +41,6 @@
 
 #define XTENSA_MMU_PTEBASE_MASK 0xFFC00000
 
-#define XTENSA_MMU_PTE(paddr, ring, attr) \
-	(((paddr) & XTENSA_MMU_PTE_PPN_MASK) | \
-	(((ring) << XTENSA_MMU_PTE_RING_SHIFT) & XTENSA_MMU_PTE_RING_MASK) | \
-	((attr) & XTENSA_MMU_PTE_ATTR_MASK))
-
 /** Number of bits to shift for PPN in PTE */
 #define XTENSA_MMU_PTE_PPN_SHIFT		12U
 
