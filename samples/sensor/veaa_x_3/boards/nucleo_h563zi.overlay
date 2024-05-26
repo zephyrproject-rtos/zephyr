@@ -1,0 +1,35 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2024, Vitrolife A/S
+ */
+
+/* spi1 sck conflicts with dac1 channel 3 */
+/delete-node/ &spi1;
+
+/ {
+	test_veaa_x_3: test_veaa_x_3 {
+		status = "okay";
+		compatible = "festo,veaa-x-3";
+		io-channels = <&adc1 3>;
+		dac = <&dac1>;
+		dac-channel-id = <2>;
+		dac-resolution = <12>;
+		pressure-range-type = "D2";
+	};
+
+};
+
+&adc1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+};
