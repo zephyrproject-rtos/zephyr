@@ -80,6 +80,7 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv)
 	hawkbit_get_firmware_version(firmware_version, BOOT_IMG_VER_STRLEN_MAX);
 	hawkbit_get_device_identity(device_id, DEVICE_ID_HEX_MAX_SIZE);
 
+	shell_print(sh, "Action id: %d", hawkbit_get_action_id());
 	shell_fprintf(sh, SHELL_NORMAL, "Unique device id: %s\n", device_id);
 	shell_fprintf(sh, SHELL_NORMAL, "Firmware Version: %s\n",
 		      firmware_version);
@@ -101,6 +102,18 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv)
 	shell_fprintf(sh, SHELL_INFO, "Init hawkBit ...\n");
 
 	hawkbit_init();
+
+	return 0;
+}
+
+static int cmd_reset(const struct shell *sh, size_t argc, char *argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	int ret = hawkbit_reset_action_id();
+
+	shell_print(sh, "Reset action id %s", (ret == 0) ? "success" : "failed");
 
 	return 0;
 }
@@ -160,6 +173,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD(info, NULL, "Dump hawkBit information", cmd_info),
 	SHELL_CMD(init, NULL, "Initialize hawkBit", cmd_init),
 	SHELL_CMD(run, NULL, "Trigger an hawkBit update run", cmd_run),
+	SHELL_CMD(reset, NULL, "Reset the hawkBit action id", cmd_reset),
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
 	SHELL_CMD(set, &sub_hawkbit_set, "Set hawkBit settings", NULL),
 #endif

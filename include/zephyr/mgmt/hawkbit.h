@@ -220,6 +220,26 @@ static inline char *hawkbit_get_ddi_security_token(void)
 }
 
 /**
+ * @brief Get the hawkBit action id.
+ *
+ * @return Action id.
+
+*/
+int32_t hawkbit_get_action_id(void);
+
+/**
+ * @brief Resets the hawkBit action id, that is saved in settings.
+ *
+ * @details This should be done after changing the hawkBit server.
+ *
+ * @retval 0 on success.
+ * @retval -EAGAIN if probe is currently running.
+ * @retval -EIO if the action id could not be reset.
+ *
+ */
+int hawkbit_reset_action_id(void);
+
+/**
  * @}
  */
 
