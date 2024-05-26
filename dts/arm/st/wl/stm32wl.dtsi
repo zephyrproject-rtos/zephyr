@@ -333,7 +333,7 @@
 				compatible = "st,stm32wl-subghz-radio";
 				reg = <0>;
 				interrupts = <50 0>;
-				spi-max-frequency = <12000000>;
+				spi-max-frequency = <8000000>;
 				status = "disabled";
 			};
 		};
