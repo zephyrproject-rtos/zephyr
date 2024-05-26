@@ -356,11 +356,17 @@ static int rtc_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
+/*
+ * On STM32WBAX series, there is no bit in BCDR register to enable RTC.
+ * Enabling RTC is done directly via the RCC APB register bit.
+ */
+#ifndef CONFIG_SOC_SERIES_STM32WBAX
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	LL_RCC_EnableRTC();
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+#endif /* CONFIG_SOC_SERIES_STM32WBAX */
 
 	err = rtc_stm32_configure(dev);
 
