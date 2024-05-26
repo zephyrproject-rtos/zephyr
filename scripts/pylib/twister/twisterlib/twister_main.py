@@ -62,7 +62,7 @@ def init_color(colorama_strip):
     colorama.init(strip=colorama_strip)
 
 
-def main(options):
+def main(options, default_options):
     start_time = time.time()
 
     # Configure color output
@@ -105,7 +105,7 @@ def main(options):
     VERBOSE = options.verbose
     setup_logging(options.outdir, options.log_file, VERBOSE, options.timestamps)
 
-    env = TwisterEnv(options)
+    env = TwisterEnv(options, default_options)
     env.discover()
 
     hwm = HardwareMap(env)

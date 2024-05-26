@@ -11,6 +11,7 @@ from colorama import Fore
 import xml.etree.ElementTree as ET
 import string
 from datetime import datetime
+from pathlib import PosixPath
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -235,12 +236,23 @@ class Reporting:
 
     def json_report(self, filename, version="NA", platform=None):
         logger.info(f"Writing JSON report {filename}")
+
+        if self.env.options.report_all_options:
+            report_options = vars(self.env.options)
+        else:
+            report_options = self.env.non_default_options()
+
+        # Resolve known JSON serialization problems.
+        for k,v in report_options.items():
+            report_options[k] = str(v) if type(v) in [PosixPath] else v
+
         report = {}
         report["environment"] = {"os": os.name,
                                  "zephyr_version": version,
                                  "toolchain": self.env.toolchain,
                                  "commit_date": self.env.commit_date,
-                                 "run_date": self.env.run_date
+                                 "run_date": self.env.run_date,
+                                 "options": report_options
                                  }
         suites = []
 
