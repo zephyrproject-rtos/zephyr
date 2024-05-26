@@ -235,6 +235,8 @@ class BinaryHandler(Handler):
             command = [self.generator_cmd, "run_renode_test"]
         elif self.call_make_run:
             command = [self.generator_cmd, "run"]
+        elif self.instance.testsuite.type == "unit":
+            command = [self.binary]
         else:
             binary = os.path.join(self.get_default_domain_build_dir(), "zephyr", "zephyr.exe")
             command = [binary]
