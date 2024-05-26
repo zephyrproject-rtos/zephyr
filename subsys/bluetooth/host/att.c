@@ -3647,22 +3647,23 @@ int bt_eatt_disconnect(struct bt_conn *conn)
 #if defined(CONFIG_BT_TESTING)
 int bt_eatt_disconnect_one(struct bt_conn *conn)
 {
-	struct bt_att_chan *chan = att_get_fixed_chan(conn);
-	struct bt_att *att = chan->att;
-	int err = -ENOTCONN;
+	struct bt_att *att;
+	struct bt_att_chan *chan;
 
 	if (!conn) {
 		return -EINVAL;
 	}
 
+	chan = att_get_fixed_chan(conn);
+	att = chan->att;
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
 		if (bt_att_is_enhanced(chan)) {
-			err = bt_l2cap_chan_disconnect(&chan->chan.chan);
-			return err;
+			return bt_l2cap_chan_disconnect(&chan->chan.chan);
 		}
 	}
 
-	return err;
+	return -ENOTCONN;
 }
 
 int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu)
