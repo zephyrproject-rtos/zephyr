@@ -168,6 +168,22 @@ int sys_bitarray_test_and_clear_bit(sys_bitarray_t *bitarray, size_t bit, int *p
 int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
 		       size_t *offset);
 
+/*
+ * Calculates the bit-wise XOR of two bitarrays in a region.
+ * The result is stored in the first bitarray passed in (@p dst).
+ * Both bitarrays must be of the same size.
+ *
+ * @param dst      Bitarray struct
+ * @param other    Bitarray struct
+ * @param num_bits Number of bits in the region, must be larger than 0
+ * @param offset   Starting bit location
+ *
+ * @retval 0       Operation successful
+ * @retval -EINVAL Invalid argument (e.g. out-of-bounds access, mismatching bitarrays, trying to xor
+ * 0 bits, etc.)
+ */
+int sys_bitarray_xor(sys_bitarray_t *dst, sys_bitarray_t *other, size_t num_bits, size_t offset);
+
 /**
  * Count bits set in a bit array region
  *
