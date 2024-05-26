@@ -126,6 +126,28 @@
 #define NRF_FUN_QSPI_IO2 33U
 /** QSPI IO3 */
 #define NRF_FUN_QSPI_IO3 34U
+/** EXMIF CK */
+#define NRF_FUN_EXMIF_CK 35U
+/** EXMIF DQ0 */
+#define NRF_FUN_EXMIF_DQ0 36U
+/** EXMIF DQ1 */
+#define NRF_FUN_EXMIF_DQ1 37U
+/** EXMIF DQ2 */
+#define NRF_FUN_EXMIF_DQ2 38U
+/** EXMIF DQ3 */
+#define NRF_FUN_EXMIF_DQ3 39U
+/** EXMIF DQ4 */
+#define NRF_FUN_EXMIF_DQ4 40U
+/** EXMIF DQ5 */
+#define NRF_FUN_EXMIF_DQ5 41U
+/** EXMIF DQ6 */
+#define NRF_FUN_EXMIF_DQ6 42U
+/** EXMIF DQ7 */
+#define NRF_FUN_EXMIF_DQ7 43U
+/** EXMIF CS0 */
+#define NRF_FUN_EXMIF_CS0 44U
+/** EXMIF CS1 */
+#define NRF_FUN_EXMIF_CS1 45U
 
 /** @} */
 
