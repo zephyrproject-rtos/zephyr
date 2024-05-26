@@ -57,6 +57,10 @@ struct r502a_sys_param {
 	uint32_t baud;
 } __packed;
 
+struct r502a_template {
+	uint8_t *data;
+	size_t len;
+};
 enum sensor_channel_grow_r502a {
 	/** Fingerprint template count, ID number for enrolling and searching*/
 	SENSOR_CHAN_FINGERPRINT = SENSOR_CHAN_PRIV_START,
@@ -127,6 +131,9 @@ enum sensor_attribute_grow_r502a {
 };
 
 int r502a_read_sys_param(const struct device *dev, struct r502a_sys_param *val);
+int fps_upload_char_buf(const struct device *dev, struct r502a_template *temp);
+int fps_download_char_buf(const struct device *dev, uint8_t char_buf_id,
+				const struct r502a_template *temp);
 
 #ifdef __cplusplus
 }
