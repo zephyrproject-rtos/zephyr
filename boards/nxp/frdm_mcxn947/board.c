@@ -205,6 +205,11 @@ static int frdm_mcxn947_init(void)
 	flexspi_clock_set_freq(MCUX_FLEXSPI_CLK, MHZ(50));
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(vref), okay)
+	CLOCK_EnableClock(kCLOCK_Vref);
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlVref);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
