@@ -496,8 +496,15 @@
 #endif
 
 #if defined(CONFIG_BUILD_WITH_TFM)
-#define MBEDTLS_PSA_CRYPTO_CLIENT
 #undef MBEDTLS_PSA_CRYPTO_C
 #endif /* CONFIG_BUILD_WITH_TFM */
+
+#if defined(CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT)
+#define MBEDTLS_PSA_CRYPTO_CLIENT
+#endif
+
+#if defined(CONFIG_PSA_WANT_ALG_SHA_256)
+#define PSA_WANT_ALG_SHA_256 1
+#endif
 
 #endif /* MBEDTLS_CONFIG_H */
