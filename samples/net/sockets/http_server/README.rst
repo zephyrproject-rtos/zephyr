@@ -1,5 +1,8 @@
-Zephyr HTTP Server
-==================
+.. zephyr:code-sample:: sockets-http-server
+   :name: HTTP Server
+   :relevant-api: http_service http_server tls_credentials
+
+   Implement an HTTP(s) Server demonstrating various resource types.
 
 Overview
 --------
