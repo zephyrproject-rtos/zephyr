@@ -56,6 +56,8 @@ static int channel_get(const struct device *dev, enum sensor_channel chan, struc
 	case SENSOR_CHAN_GYRO_XYZ:
 		__fallthrough;
 	case SENSOR_CHAN_MAGN_XYZ:
+		__fallthrough;
+	case SENSOR_CHAN_POS_DXYZ:
 		for (int i = 0; i < 3; i++, val++) {
 			val->val1 = chan;
 			val->val2 = 1;

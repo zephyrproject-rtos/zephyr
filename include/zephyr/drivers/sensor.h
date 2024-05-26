@@ -150,6 +150,8 @@ enum sensor_channel {
 	SENSOR_CHAN_POS_DY,
 	/** Position change on the Z axis, in points. */
 	SENSOR_CHAN_POS_DZ,
+	/** Position change on the X, Y and Z axis, in points. */
+	SENSOR_CHAN_POS_DXYZ,
 
 	/** Revolutions per minute, in RPM. */
 	SENSOR_CHAN_RPM,
@@ -929,12 +931,12 @@ struct __attribute__((__packed__)) sensor_data_generic_header {
  *
  * @param[in] chan The channel to check
  * @retval true if @p chan is any of @ref SENSOR_CHAN_ACCEL_XYZ, @ref SENSOR_CHAN_GYRO_XYZ, or
- *         @ref SENSOR_CHAN_MAGN_XYZ
+ *         @ref SENSOR_CHAN_MAGN_XYZ, or @ref SENSOR_CHAN_POS_DXYZ
  * @retval false otherwise
  */
 #define SENSOR_CHANNEL_3_AXIS(chan)                                                                \
 	((chan) == SENSOR_CHAN_ACCEL_XYZ || (chan) == SENSOR_CHAN_GYRO_XYZ ||                      \
-	 (chan) == SENSOR_CHAN_MAGN_XYZ)
+	 (chan) == SENSOR_CHAN_MAGN_XYZ || (chan) == SENSOR_CHAN_POS_DXYZ)
 
 /**
  * @brief Get the sensor's decoder API
