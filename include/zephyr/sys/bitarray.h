@@ -168,7 +168,7 @@ int sys_bitarray_test_and_clear_bit(sys_bitarray_t *bitarray, size_t bit, int *p
 int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
 		       size_t *offset);
 
-/*
+/**
  * Calculates the bit-wise XOR of two bitarrays in a region.
  * The result is stored in the first bitarray passed in (@p dst).
  * Both bitarrays must be of the same size.
