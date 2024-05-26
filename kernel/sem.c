@@ -189,7 +189,7 @@ void z_impl_k_sem_reset(struct k_sem *sem)
 static inline int z_vrfy_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 {
 	K_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
-	return z_impl_k_sem_take((struct k_sem *)sem, timeout);
+	return z_impl_k_sem_take(sem, timeout);
 }
 #include <syscalls/k_sem_take_mrsh.c>
 

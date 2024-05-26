@@ -26,7 +26,7 @@
  * core kernel.
  */
 #define Z_PHYS_RAM_START	((uintptr_t)CONFIG_SRAM_BASE_ADDRESS)
-#define Z_PHYS_RAM_SIZE		((size_t)KB(CONFIG_SRAM_SIZE))
+#define Z_PHYS_RAM_SIZE		(KB(CONFIG_SRAM_SIZE))
 #define Z_PHYS_RAM_END		(Z_PHYS_RAM_START + Z_PHYS_RAM_SIZE)
 #define Z_NUM_PAGE_FRAMES	(Z_PHYS_RAM_SIZE / (size_t)CONFIG_MMU_PAGE_SIZE)
 

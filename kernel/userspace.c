@@ -221,7 +221,7 @@ static size_t obj_align_get(enum k_objects otype)
 	return ret;
 }
 
-static struct dyn_obj *dyn_object_find(void *obj)
+static struct dyn_obj *dyn_object_find(const void *obj)
 {
 	struct dyn_obj *node;
 	k_spinlock_key_t key;
@@ -490,7 +490,7 @@ struct k_object *k_object_find(const void *obj)
 		 * 11.8 but is justified since we know dynamic objects
 		 * were not declared with a const qualifier.
 		 */
-		dyn = dyn_object_find((void *)obj);
+		dyn = dyn_object_find(obj);
 		if (dyn != NULL) {
 			ret = &dyn->kobj;
 		}

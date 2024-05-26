@@ -174,7 +174,7 @@ static inline int z_vrfy_k_thread_name_set(struct k_thread *thread, const char *
 	 * the current z_vrfy / z_impl split does not provide a
 	 * means of doing so.
 	 */
-	if (k_usermode_string_copy(name, (char *)str, sizeof(name)) != 0) {
+	if (k_usermode_string_copy(name, str, sizeof(name)) != 0) {
 		return -EFAULT;
 	}
 
