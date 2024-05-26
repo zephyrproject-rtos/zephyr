@@ -422,7 +422,7 @@ static int websocket_interal_disconnect(struct websocket_context *ctx)
 	ret = websocket_send_msg(ctx->sock, NULL, 0, WEBSOCKET_OPCODE_CLOSE,
 				 true, true, SYS_FOREVER_MS);
 	if (ret < 0) {
-		NET_ERR("[%p] Failed to send close message (err %d).", ctx, ret);
+		NET_DBG("[%p] Failed to send close message (err %d).", ctx, ret);
 	}
 
 	websocket_context_unref(ctx);
