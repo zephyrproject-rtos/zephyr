@@ -865,13 +865,13 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 			sys_write32(USB_DWC2_GINTSTS_USBRST, gintsts_reg);
 			dwc2_on_bus_reset(dev);
 			LOG_DBG("USB Reset interrupt");
-			udc_submit_event(dev, UDC_EVT_RESET, 0);
 		}
 
 		if (int_status & USB_DWC2_GINTSTS_ENUMDONE) {
 			/* Clear and handle Enumeration Done interrupt. */
 			sys_write32(USB_DWC2_GINTSTS_ENUMDONE, gintsts_reg);
 			dwc2_handle_enumdone(dev);
+			udc_submit_event(dev, UDC_EVT_RESET, 0);
 		}
 
 		if (int_status & USB_DWC2_GINTSTS_USBSUSP) {
