@@ -98,6 +98,12 @@ static char *get_l3_desc(struct event_msg *msg,
 		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
+	case NET_EVENT_IPV6_ADDR_DEPRECATED:
+		*desc = "IPv6 address";
+		*desc2 = "deprecated";
+		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+				     extra_info_len);
+		break;
 	case NET_EVENT_IPV6_ADDR_DEL:
 		*desc = "IPv6 address";
 		*desc2 = "del";
