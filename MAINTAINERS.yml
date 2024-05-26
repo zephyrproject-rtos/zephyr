@@ -114,11 +114,7 @@
 ACPI:
   status: maintained
   maintainers:
-    - jhedberg
     - najumon1980
-  collaborators:
-    - finikorg
-    - tbursztyka
   files:
     - lib/acpi/
     - include/zephyr/acpi/
@@ -1674,10 +1670,6 @@ Release Notes:
   status: maintained
   maintainers:
     - dcpleung
-  collaborators:
-    - jhedberg
-    - finikorg
-    - tbursztyka
   files:
     - drivers/pcie/
     - include/zephyr/drivers/pcie/
@@ -3235,11 +3227,12 @@ SiLabs Platforms:
 Intel Platforms (X86):
   status: maintained
   maintainers:
-    - jhedberg
+    - edersondisouza
   collaborators:
-    - tbursztyka
-    - laurenmurphyx64
     - najumon1980
+    - teburd
+    - dcpleung
+    - ceolin
   files:
     - boards/intel/adl/
     - boards/intel/ehl/
@@ -3248,16 +3241,18 @@ Intel Platforms (X86):
     - soc/intel/atom/
     - soc/intel/lakemont/
     - soc/intel/*_lake/
+    - drivers/timer/Kconfig.x86
+    - drivers/timer/hpet.c
+    - drivers/timer/apic*
   labels:
     - "platform: X86"
 
 Intel Platforms (Xtensa):
   status: maintained
   maintainers:
-    - nashif
+    - dcpleung
   collaborators:
     - andyross
-    - dcpleung
     - lyakh
     - lgirdwood
     - marc-hb
@@ -3267,6 +3262,7 @@ Intel Platforms (Xtensa):
     - softwarecki
     - jxstelter
     - marcinszkudlinski
+    - nashif
   files:
     - boards/intel/adsp/
     - soc/intel/intel_adsp/
@@ -3285,6 +3281,7 @@ Intel Platforms (ISH):
   collaborators:
     - teburd
     - likongintel
+    - nashif
   files:
     - boards/intel/ish/
     - soc/intel/intel_ish/
@@ -4018,9 +4015,6 @@ West:
   status: maintained
   maintainers:
     - najumon1980
-    - jhedberg
-  collaborators:
-    - tbursztyka
   files:
     - modules/acpica/
   labels:
@@ -4791,15 +4785,14 @@ Xtensa arch:
 x86 arch:
   status: maintained
   maintainers:
-    - jhedberg
+    - edersondisouza
   collaborators:
-    - tbursztyka
     - andyross
-    - nashif
     - dcpleung
     - ceolin
     - laurenmurphyx64
     - najumon1980
+    - nashif
   files:
     - arch/x86/
     - include/zephyr/arch/x86/
