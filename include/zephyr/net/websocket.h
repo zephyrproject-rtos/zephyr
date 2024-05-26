@@ -187,6 +187,20 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
  */
 int websocket_disconnect(int ws_sock);
 
+/**
+ * @brief Register a socket as websocket. This is called by HTTP server
+ *        when a connection is upgraded to a websocket connection.
+ *
+ * @param http_sock Underlying socket connection socket.
+ * @param recv_buf Temporary receive buffer for websocket parsing. This must
+ *        point to a memory area that is valid for the duration of the whole
+ *        websocket session.
+ * @param recv_buf_len Length of the temporary receive buffer.
+ *
+ * @return <0 if error, >=0 the actual websocket to be used by application
+ */
+int websocket_register(int http_sock, uint8_t *recv_buf, size_t recv_buf_len);
+
 #if defined(CONFIG_WEBSOCKET_CLIENT)
 void websocket_init(void);
 #else
