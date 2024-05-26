@@ -71,7 +71,7 @@
 
 /** Get the ring from a PTE */
 #define XTENSA_MMU_PTE_RING_GET(pte) \
-	(((pte) & ~XTENSA_MMU_PTE_RING_MASK) >> XTENSA_MMU_PTE_RING_SHIFT)
+	(((pte) & XTENSA_MMU_PTE_RING_MASK) >> XTENSA_MMU_PTE_RING_SHIFT)
 
 /** Get the ASID from the RASID register corresponding to the ring in a PTE */
 #define XTENSA_MMU_PTE_ASID_GET(pte, rasid) \
