@@ -984,8 +984,7 @@ static void data_ready_trigger_handler(const struct device *sensor,
 			continue;
 		}
 		/* Skip 3 axis channels */
-		if (i == SENSOR_CHAN_ACCEL_XYZ || i == SENSOR_CHAN_GYRO_XYZ ||
-		    i == SENSOR_CHAN_MAGN_XYZ) {
+		if (SENSOR_CHANNEL_3_AXIS(i)) {
 			continue;
 		}
 
