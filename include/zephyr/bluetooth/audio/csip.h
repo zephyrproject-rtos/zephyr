@@ -12,10 +12,11 @@
  *
  * @defgroup bt_gatt_csip Coordinated Set Identification Profile (CSIP)
  *
+ * @since 3.0
+ * @version 0.8.0
+ *
  * @ingroup bluetooth
  * @{
- * *
- * [Experimental] Users should note that the APIs can change as a part of ongoing development.
  */
 
 #include <zephyr/bluetooth/conn.h>

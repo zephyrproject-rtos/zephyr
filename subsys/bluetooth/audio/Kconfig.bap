@@ -13,8 +13,7 @@ config BT_BAP_UNICAST
 	select BT_ISO_UNICAST
 
 config BT_BAP_UNICAST_SERVER
-	bool "Bluetooth Unicast Audio Server Support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Bluetooth Unicast Audio Server Support"
 	select BT_BAP_UNICAST
 	select BT_GATT_DYNAMIC_DB
 	select BT_GATT_CACHING
@@ -27,8 +26,7 @@ config BT_BAP_UNICAST_SERVER
 	  using Isochronous channels.
 
 config BT_BAP_UNICAST_CLIENT
-	bool "Bluetooth Unicast Audio Client Support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Bluetooth Unicast Audio Client Support"
 	select BT_BAP_UNICAST
 	select BT_ISO_CENTRAL
 	select BT_CENTRAL
@@ -127,8 +125,7 @@ config BT_BAP_UNICAST_CLIENT_ASE_SRC
 endif # BT_BAP_UNICAST_CLIENT
 
 config BT_BAP_BROADCAST_SOURCE
-	bool "Bluetooth Broadcast Source Audio Support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Bluetooth Broadcast Source Audio Support"
 	select BT_ISO_BROADCASTER
 	select BT_AUDIO_TX
 	help
@@ -167,8 +164,7 @@ config BT_BAP_BROADCAST_SRC_STREAM_COUNT
 endif # BT_BAP_BROADCAST_SOURCE
 
 config BT_BAP_BROADCAST_SINK
-	bool "Bluetooth Broadcast Sink Audio Support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Bluetooth Broadcast Sink Audio Support"
 	select BT_ISO_SYNC_RECEIVER
 	select BT_AUDIO_RX
 	select BT_PAC_SNK
@@ -211,8 +207,7 @@ config BT_BAP_BROADCAST_SNK_STREAM_COUNT
 endif # BT_BAP_BROADCAST_SINK
 
 config BT_BAP_SCAN_DELEGATOR
-	bool "Basic Audio Profile Scan Delegator role support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Basic Audio Profile Scan Delegator role support"
 	select BT_OBSERVER
 	select BT_EXT_ADV
 	select BT_PER_ADV_SYNC
@@ -244,8 +239,7 @@ config BT_BAP_SCAN_DELEGATOR_BUF_TIMEOUT
 endif # BT_BAP_SCAN_DELEGATOR
 
 config BT_BAP_BROADCAST_ASSISTANT
-	bool "Basic Audio Profile Broadcast Assistant role support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Basic Audio Profile Broadcast Assistant role support"
 	select BT_OBSERVER
 	select BT_EXT_ADV
 	select BT_PER_ADV_SYNC
