@@ -1,5 +1,5 @@
 # Copyright (c) 2024 SILA Embedded Solutions GmbH
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 config MFD_BD8LB600FS
 	bool "BD8LB600FS low side switch multi-function device driver"
