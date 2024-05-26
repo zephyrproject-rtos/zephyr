@@ -61,7 +61,6 @@
  */
 
 #define R502A_OK 0x00 /*commad execution complete*/
-#define R502A_NOT_FOUND 0x09 /*fail to find the matching finger*/
 
 /*Package Identifier's definition*/
 #define R502A_COMMAND_PACKET 0x1 /*Command packet*/
@@ -94,6 +93,11 @@
 #define R502A_SOFTRESET 0x3D /*Soft reset*/
 #define R502A_HANDSHAKE 0x40 /*Handshake*/
 #define R502A_BADPACKET 0xFE /* Bad packet was sent*/
+
+#define R502A_NOT_MATCH_CC 0x08 /* templates of two buffers not matching*/
+#define R502A_NOT_FOUND_CC 0x09 /*fail to find the matching finger*/
+#define R502A_FINGER_MATCH_NOT_FOUND 0
+#define R502A_FINGER_MATCH_FOUND 1
 
 #define R502A_STARTCODE 0xEF01 /*Fixed value, High byte transferred first*/
 #define R502A_DEFAULT_PASSWORD 0x00000000
@@ -187,8 +191,6 @@ struct grow_r502a_data {
 	struct k_mutex lock;
 	struct k_sem uart_rx_sem;
 
-	uint16_t finger_id;
-	uint16_t matching_score;
 	uint16_t template_count;
 };
 
