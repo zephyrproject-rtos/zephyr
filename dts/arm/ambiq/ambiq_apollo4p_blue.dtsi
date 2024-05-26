@@ -174,7 +174,7 @@
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x20>;
 
-			bt-hci@0 {
+			bt_hci_apollo: bt-hci@0 {
 				compatible = "ambiq,bt-hci-spi";
 				reg = <0>;
 				irq-gpios = <&gpio32_63 21 GPIO_ACTIVE_HIGH>;
