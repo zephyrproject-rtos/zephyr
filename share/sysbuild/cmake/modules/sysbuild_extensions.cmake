@@ -597,7 +597,7 @@ function(sysbuild_cache_set)
     return()
   elseif(VARS_REMOVE_DUPLICATES AND NOT VARS_APPEND)
     message(FATAL_ERROR
-            "sysbuild_set(VAR <var> APPEND REMOVE_DUPLICATES ...) missing required APPEND option")
+            "sysbuild_cache_set(VAR <var> APPEND REMOVE_DUPLICATES ...) missing required APPEND option")
   endif()
 
   get_property(var_type CACHE ${VARS_VAR} PROPERTY TYPE)
