@@ -1568,8 +1568,7 @@ static void disable(uint16_t handle)
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_CONN_ISO_BASE + handle,
 					cig, &cig->lll);
-
-	LL_ASSERT(err == 0 || err == -EALREADY);
+	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, handle, err);
 
 	cig->lll.handle = LLL_HANDLE_INVALID;
 	cig->lll.resume_cis = LLL_HANDLE_INVALID;

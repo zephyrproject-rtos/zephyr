@@ -270,7 +270,7 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 
 	err = ull_ticker_stop_with_mark((TICKER_ID_SCAN_SYNC_ISO_BASE +
 					 big_handle), sync_iso, &sync_iso->lll);
-	LL_ASSERT(err == 0 || err == -EALREADY);
+	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, big_handle, err);
 	if (err) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -823,7 +823,7 @@ static void disable(uint8_t sync_idx)
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_SYNC_ISO_BASE +
 					sync_idx, sync_iso, &sync_iso->lll);
-	LL_ASSERT(err == 0 || err == -EALREADY);
+	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, sync_idx, err);
 }
 
 static int init_reset(void)
