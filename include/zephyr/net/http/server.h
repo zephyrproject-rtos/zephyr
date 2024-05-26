@@ -15,6 +15,10 @@
 #include <zephyr/net/http/hpack.h>
 #include <zephyr/net/socket.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define HTTP_SERVER_CLIENT_BUFFER_SIZE CONFIG_HTTP_SERVER_CLIENT_BUFFER_SIZE
 #define HTTP_SERVER_MAX_STREAMS        CONFIG_HTTP_SERVER_MAX_STREAMS
 #define HTTP_SERVER_MAX_CONTENT_TYPE_LEN CONFIG_HTTP_SERVER_MAX_CONTENT_TYPE_LENGTH
@@ -212,5 +216,9 @@ int http_server_start(void);
 
 /* Stops the HTTP2 server */
 int http_server_stop(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
