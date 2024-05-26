@@ -668,6 +668,19 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			reassembling_advertiser.state = FRAG_ADV_DISCARDING;
 		}
 
+		if (evt->length > buf->len) {
+			LOG_WRN("Adv report corrupted (wants %u out of %u)", evt->length, buf->len);
+
+			/* Start discarding irrespective of the `more_to_come` flag. We
+			 * assume we may have lost a partial adv report in the truncated
+			 * data.
+			 */
+			reassembling_advertiser.state = FRAG_ADV_DISCARDING;
+			net_buf_reset(buf);
+
+			return;
+		}
+
 		if (reassembling_advertiser.state == FRAG_ADV_DISCARDING) {
 			if (!more_to_come) {
 				/* We do no longer need to keep track of this advertiser as
