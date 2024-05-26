@@ -215,17 +215,14 @@ config MBEDTLS_HASH_ALL_ENABLED
 	select MBEDTLS_HASH_SHA512_ENABLED
 
 config MBEDTLS_HASH_SHA256_ENABLED
-	bool "SHA256 hash"
-	default y if !NET_L2_OPENTHREAD
+	bool "SHA224 and SHA256 hashes"
 
 config MBEDTLS_HASH_SHA384_ENABLED
 	bool "SHA384 hash"
-	default y if !NET_L2_OPENTHREAD
 	select MBEDTLS_HASH_SHA512_ENABLED
 
 config MBEDTLS_HASH_SHA512_ENABLED
 	bool "SHA512 hash"
-	default y if !NET_L2_OPENTHREAD
 
 comment "Supported cipher modes"
 
@@ -320,11 +317,9 @@ config MBEDTLS_MAC_MD4_ENABLED
 
 config MBEDTLS_MAC_MD5_ENABLED
 	bool "MD5 hash algorithm"
-	default y if !NET_L2_OPENTHREAD
 
 config MBEDTLS_MAC_SHA1_ENABLED
 	bool "SHA1 hash algorithm"
-	default y if !NET_L2_OPENTHREAD
 
 config MBEDTLS_MAC_SHA256_ENABLED
 	bool "SHA-224 and SHA-256 hash algorithms"
