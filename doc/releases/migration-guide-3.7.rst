@@ -39,6 +39,12 @@ Boards
 Modules
 *******
 
+MbedTLS
+=======
+
+* The hash algorithms SHA-384, SHA-512, MD5 and SHA-1 are not enabled by default anymore.
+  Their respective Kconfig options now need to be explicitly enabled to be able to use them.
+
 MCUboot
 =======
 
