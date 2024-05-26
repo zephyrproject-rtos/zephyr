@@ -147,7 +147,9 @@ static int send_udp_data(struct data *data)
 
 	ret = send(data->udp.sock, lorem_ipsum, data->udp.expecting, 0);
 
-	LOG_DBG("%s UDP: Sent %d bytes", data->proto, data->udp.expecting);
+	if (PRINT_PROGRESS) {
+		LOG_DBG("%s UDP: Sent %d bytes", data->proto, data->udp.expecting);
+	}
 
 	k_timer_start(&data->udp.ctrl->rx_timer, UDP_WAIT, K_NO_WAIT);
 
@@ -275,9 +277,11 @@ static int process_udp_proto(struct data *data)
 		return 0;
 	}
 
-	/* Correct response received */
-	LOG_DBG("%s UDP: Received and compared %d bytes, all ok",
-		data->proto, received);
+	if (PRINT_PROGRESS) {
+		/* Correct response received */
+		LOG_DBG("%s UDP: Received and compared %d bytes, all ok",
+			data->proto, received);
+	}
 
 	if (++data->udp.counter % 1000 == 0U) {
 		LOG_INF("%s UDP: Exchanged %u packets", data->proto,
