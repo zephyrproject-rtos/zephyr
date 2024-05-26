@@ -6,7 +6,6 @@
 
 /dts-v1/;
 #include <silabs/efr32mg12p432f1024gl125.dtsi>
-#include <silabs/efr32xg12p-pinctrl.dtsi>
 #include "efr32_radio.dtsi"
 
 / {
@@ -71,13 +70,6 @@
 				<GECKO_LOC(I2C_SCL, 14)>;
 		};
 	};
-};
-
-&usart0 {
-	current-speed = <115200>;
-	pinctrl-0 = <&usart0_default>;
-	pinctrl-names = "default";
-	status = "okay";
 };
 
 &i2c0 {
