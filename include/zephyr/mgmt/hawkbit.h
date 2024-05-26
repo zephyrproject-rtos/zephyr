@@ -71,15 +71,16 @@ typedef int (*hawkbit_config_device_data_cb_handler_t)(const char *device_id, ui
  *
  * @param cb The callback function.
  *
- * @return 0 on success.
- * @return -EINVAL if the callback is NULL.
+ * @retval 0 on success.
+ * @retval -EINVAL if the callback is NULL.
  */
 int hawkbit_set_custom_data_cb(hawkbit_config_device_data_cb_handler_t cb);
 
 /**
  * @brief Init the flash partition
  *
- * @return 0 on success, negative on error.
+ * @retval 0 on success.
+ * @retval -errno if init fails.
  */
 int hawkbit_init(void);
 
@@ -94,12 +95,17 @@ void hawkbit_autohandler(void);
 /**
  * @brief The hawkBit probe verify if there is some update to be performed.
  *
- * @return HAWKBIT_UPDATE_INSTALLED has an update available.
- * @return HAWKBIT_NO_UPDATE no update available.
- * @return HAWKBIT_NETWORKING_ERROR fail to connect to the hawkBit server.
- * @return HAWKBIT_METADATA_ERROR fail to parse or to encode the metadata.
- * @return HAWKBIT_OK if success.
- * @return HAWKBIT_DOWNLOAD_ERROR fail while downloading the update package.
+ * @retval HAWKBIT_NETWORKING_ERROR fail to connect to the hawkBit server.
+ * @retval HAWKBIT_UNCONFIRMED_IMAGE image is unconfirmed.
+ * @retval HAWKBIT_PERMISSION_ERROR fail to get the permission to access the hawkBit server.
+ * @retval HAWKBIT_METADATA_ERROR fail to parse or to encode the metadata.
+ * @retval HAWKBIT_DOWNLOAD_ERROR fail while downloading the update package.
+ * @retval HAWKBIT_OK if the image was already updated.
+ * @retval HAWKBIT_UPDATE_INSTALLED if an update was installed. Reboot is required to apply it.
+ * @retval HAWKBIT_NO_UPDATE if no update was available.
+ * @retval HAWKBIT_CANCEL_UPDATE if the update was cancelled by the server.
+ * @retval HAWKBIT_NOT_INITIALIZED if hawkBit is not initialized.
+ * @retval HAWKBIT_PROBE_IN_PROGRESS if probe is currently running.
  */
 enum hawkbit_response hawkbit_probe(void);
 
@@ -123,8 +129,8 @@ typedef bool (*hawkbit_get_device_identity_cb_handler_t)(char *id, int id_max_le
  *
  * @param cb The callback function.
  *
- * @return 0 on success.
- * @return -EINVAL if the callback is NULL.
+ * @retval 0 on success.
+ * @retval -EINVAL if the callback is NULL.
  */
 int hawkbit_set_device_identity_cb(hawkbit_get_device_identity_cb_handler_t cb);
 
