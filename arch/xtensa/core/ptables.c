@@ -715,7 +715,7 @@ static inline uint32_t *alloc_l1_table(void)
 	return NULL;
 }
 
-static uint32_t *dup_table(uint32_t *source_table)
+static uint32_t *dup_table(void)
 {
 	uint16_t i, j;
 	uint32_t *dst_table = alloc_l1_table();
@@ -727,13 +727,13 @@ static uint32_t *dup_table(uint32_t *source_table)
 	for (i = 0; i < XTENSA_L1_PAGE_TABLE_ENTRIES; i++) {
 		uint32_t *l2_table, *src_l2_table;
 
-		if (is_pte_illegal(source_table[i]) ||
+		if (is_pte_illegal(xtensa_kernel_ptables[i]) ||
 			(i == XTENSA_MMU_L1_POS(XTENSA_MMU_PTEVADDR))) {
 			dst_table[i] = XTENSA_MMU_PTE_ILLEGAL;
 			continue;
 		}
 
-		src_l2_table = (uint32_t *)(source_table[i] & XTENSA_MMU_PTE_PPN_MASK);
+		src_l2_table = (uint32_t *)(xtensa_kernel_ptables[i] & XTENSA_MMU_PTE_PPN_MASK);
 		l2_table = alloc_l2_table();
 		if (l2_table == NULL) {
 			goto err;
@@ -797,7 +797,7 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	}
 
 
-	ptables = dup_table(xtensa_kernel_ptables);
+	ptables = dup_table();
 
 	if (ptables == NULL) {
 		ret = -ENOMEM;
