@@ -19,7 +19,7 @@ LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
 
 static const gpio_flags_t gpio_int_cfg[5] = {
-			GPIO_INT_EDGE,
+			GPIO_INT_EDGE_BOTH,
 			GPIO_INT_EDGE_RISING,
 			GPIO_INT_EDGE_FALLING,
 			GPIO_INT_LEVEL_HIGH,

@@ -34,7 +34,7 @@ properties:
       The default of 0 is the most common situation to avoid multiple interrupts
       to be triggered by same event.
 
-      - 0 # LIS2DH_DT_GPIO_INT_EDGE
+      - 0 # LIS2DH_DT_GPIO_INT_EDGE_BOTH
       - 1 # LIS2DH_DT_GPIO_INT_EDGE_RISING
       - 2 # LIS2DH_DT_GPIO_INT_EDGE_FALLING
       - 3 # LIS2DH_DT_GPIO_INT_LEVEL_HIGH
@@ -51,7 +51,7 @@ properties:
       The default of 0 is the most common situation to avoid multiple interrupts
       to be triggered by same event.
 
-      - 0 # LIS2DH_DT_GPIO_INT_EDGE
+      - 0 # LIS2DH_DT_GPIO_INT_EDGE_BOTH
       - 1 # LIS2DH_DT_GPIO_INT_EDGE_RISING
       - 2 # LIS2DH_DT_GPIO_INT_EDGE_FALLING
       - 3 # LIS2DH_DT_GPIO_INT_LEVEL_HIGH
