@@ -1058,15 +1058,6 @@ def test_testplan_report_test_list(capfd):
            '10 total.' in out
 
 
-def test_testplan_config(caplog):
-    testplan = TestPlan(env=mock.Mock())
-    testplan.coverage_platform = 'dummy cov'
-
-    testplan.config()
-
-    assert 'coverage platform: dummy cov' in caplog.text
-
-
 def test_testplan_info(capfd):
     TestPlan.info('dummy text')
 

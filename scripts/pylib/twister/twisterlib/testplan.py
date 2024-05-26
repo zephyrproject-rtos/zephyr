@@ -387,8 +387,6 @@ class TestPlan:
             print(" - {}".format(test))
         print("{} total.".format(cnt))
 
-    def config(self):
-        logger.info("coverage platform: {}".format(self.coverage_platform))
 
     # Debug Functions
     @staticmethod

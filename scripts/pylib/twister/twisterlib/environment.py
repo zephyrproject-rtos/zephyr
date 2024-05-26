@@ -782,7 +782,7 @@ def parse_arguments(parser, args, options = None):
     if options.coverage:
         options.enable_coverage = True
 
-    if not options.coverage_platform:
+    if options.enable_coverage and not options.coverage_platform:
         options.coverage_platform = options.platform
 
     if options.coverage_formats:
