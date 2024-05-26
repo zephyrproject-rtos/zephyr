@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <zephyr/toolchain.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 
 #include <zephyr/drivers/i3c.h>
@@ -254,8 +255,7 @@ int i3c_ccc_do_setmwl_all(const struct device *controller,
 	ccc_payload.ccc.data_len = sizeof(data);
 
 	/* The actual data is MSB first. So order the data. */
-	data[0] = (uint8_t)((mwl->len & 0xFF00U) >> 8);
-	data[1] = (uint8_t)(mwl->len & 0xFFU);
+	sys_put_be16(mwl->len, data);
 
 	return i3c_do_ccc(controller, &ccc_payload);
 }
@@ -282,8 +282,7 @@ int i3c_ccc_do_setmwl(const struct i3c_device_desc *target,
 	ccc_payload.targets.num_targets = 1;
 
 	/* The actual length is MSB first. So order the data. */
-	data[0] = (uint8_t)((mwl->len & 0xFF00U) >> 8);
-	data[1] = (uint8_t)(mwl->len & 0xFFU);
+	sys_put_be16(mwl->len, data);
 
 	return i3c_do_ccc(target->bus, &ccc_payload);
 }
@@ -314,7 +313,7 @@ int i3c_ccc_do_getmwl(const struct i3c_device_desc *target,
 
 	if (ret == 0) {
 		/* The actual length is MSB first. So order the data. */
-		mwl->len = (data[0] << 8) | data[1];
+		mwl->len = sys_get_be16(data);
 	}
 
 	return ret;
@@ -337,8 +336,7 @@ int i3c_ccc_do_setmrl_all(const struct device *controller,
 	ccc_payload.ccc.data_len = has_ibi_size ? 3 : 2;
 
 	/* The actual length is MSB first. So order the data. */
-	data[0] = (uint8_t)((mrl->len & 0xFF00U) >> 8);
-	data[1] = (uint8_t)(mrl->len & 0xFFU);
+	sys_put_be16(mrl->len, data);
 
 	if (has_ibi_size) {
 		data[2] = mrl->ibi_len;
@@ -368,8 +366,7 @@ int i3c_ccc_do_setmrl(const struct i3c_device_desc *target,
 	ccc_payload.targets.num_targets = 1;
 
 	/* The actual length is MSB first. So order the data. */
-	data[0] = (uint8_t)((mrl->len & 0xFF00U) >> 8);
-	data[1] = (uint8_t)(mrl->len & 0xFFU);
+	sys_put_be16(mrl->len, data);
 
 	if ((target->bcr & I3C_BCR_IBI_PAYLOAD_HAS_DATA_BYTE)
 	    == I3C_BCR_IBI_PAYLOAD_HAS_DATA_BYTE) {
@@ -413,7 +410,7 @@ int i3c_ccc_do_getmrl(const struct i3c_device_desc *target,
 
 	if (ret == 0) {
 		/* The actual length is MSB first. So order the data. */
-		mrl->len = (data[0] << 8) | data[1];
+		mrl->len = sys_get_be16(data);
 
 		if (has_ibi_sz) {
 			mrl->ibi_len = data[2];
@@ -477,13 +474,13 @@ int i3c_ccc_do_getstatus(const struct i3c_device_desc *target,
 	if (ret == 0) {
 		/* Received data is MSB first. So order the data. */
 		if (fmt == GETSTATUS_FORMAT_1) {
-			status->fmt1.status = (data[0] << 8) | data[1];
+			status->fmt1.status = sys_get_be16(data);
 		} else if (fmt == GETSTATUS_FORMAT_2) {
 			switch (defbyte) {
 			case GETSTATUS_FORMAT_2_TGTSTAT:
 				__fallthrough;
 			case GETSTATUS_FORMAT_2_PRECR:
-				status->fmt2.raw_u16 = (data[0] << 8) | data[1];
+				status->fmt2.raw_u16 = sys_get_be16(data);
 				break;
 			default:
 				break;
