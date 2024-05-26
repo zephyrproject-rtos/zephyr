@@ -239,6 +239,51 @@ static int tcp_endpoint_set(union tcp_endpoint *ep, struct net_pkt *pkt,
 	return ret;
 }
 
+int net_tcp_endpoint_copy(struct net_context *ctx,
+			  struct sockaddr *local,
+			  struct sockaddr *peer,
+			  socklen_t *addrlen)
+{
+	const struct tcp *conn = ctx->tcp;
+	socklen_t newlen = ctx->local.family == AF_INET ?
+		sizeof(struct sockaddr_in) :
+		sizeof(struct sockaddr_in6);
+
+	if (local != NULL) {
+		/* If we are connected, then get the address we are actually
+		 * using, otherwise get the address we are bound as these might
+		 * be different if we are bound to any address.
+		 */
+		if (conn->state < TCP_ESTABLISHED) {
+			if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == AF_INET) {
+				memcpy(&net_sin(local)->sin_addr,
+				       net_sin_ptr(&ctx->local)->sin_addr,
+				       sizeof(struct in_addr));
+				net_sin(local)->sin_port = net_sin_ptr(&ctx->local)->sin_port;
+				net_sin(local)->sin_family = AF_INET;
+			} else if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == AF_INET6) {
+				memcpy(&net_sin6(local)->sin6_addr,
+				       net_sin6_ptr(&ctx->local)->sin6_addr,
+				       sizeof(struct in6_addr));
+				net_sin6(local)->sin6_port = net_sin6_ptr(&ctx->local)->sin6_port;
+				net_sin6(local)->sin6_family = AF_INET6;
+				net_sin6(local)->sin6_scope_id =
+					net_sin6_ptr(&ctx->local)->sin6_scope_id;
+			} else {
+				return -EINVAL;
+			}
+		} else {
+			memcpy(local, &conn->src.sa, newlen);
+		}
+	}
+
+	if (peer != NULL) {
+		memcpy(local, &conn->dst.sa, newlen);
+	}
+
+	return 0;
+}
+
 static const char *tcp_flags(uint8_t flags)
 {
 #define BUF_SIZE 25 /* 6 * 4 + 1 */
