@@ -87,6 +87,12 @@
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
+#elif defined(CONFIG_BOARD_RD_RW612_BGA)
+
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
+#define DAC_RESOLUTION		10
+#define DAC_CHANNEL_ID		0
+
 #else
 #error "Unsupported board."
 #endif
