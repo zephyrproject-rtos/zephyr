@@ -244,7 +244,7 @@ Ambiq Platforms:
   status: odd fixes
   collaborators:
     - aaronyegx
-    - HaoLuo
+    - AlessandroLuo
     - RichardSWheatley
   files:
     - soc/ambiq/
@@ -4203,6 +4203,7 @@ West:
   status: odd fixes
   collaborators:
     - aaronyegx
+    - AlessandroLuo
     - RichardSWheatley
   files:
     - modules/hal_ambiq/
