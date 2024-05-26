@@ -18,7 +18,7 @@
  */
 ZTEST(boot_delay, test_bootdelay)
 {
-	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 1000000000) {
+	if (sys_clock_hw_cycles_per_sec() > 1000000000) {
 		/* Systems with very fast counters (like the x86 TSC)
 		 * and long firmware startup (often 10+ seconds on a
 		 * EFI PC!)  can easily roll this over during startup,

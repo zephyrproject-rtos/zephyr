@@ -11,7 +11,7 @@
 ZTEST(no_multithreading, test_k_busy_wait)
 {
 	int64_t now = k_uptime_get();
-	uint32_t watchdog = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+	uint32_t watchdog = sys_clock_hw_cycles_per_sec();
 
 	while (k_uptime_get() != now) {
 		/* Wait until uptime progresses */
