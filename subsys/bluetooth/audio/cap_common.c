@@ -256,6 +256,7 @@ struct bt_cap_common_client *bt_cap_common_get_client(enum bt_cap_set_type type,
 }
 
 static void cap_common_discover_complete(struct bt_conn *conn, int err,
+					 const struct bt_csip_set_coordinator_set_member *member,
 					 const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	struct bt_cap_common_client *client;
@@ -265,7 +266,7 @@ static void cap_common_discover_complete(struct bt_conn *conn, int err,
 		const bt_cap_common_discover_func_t cb_func = client->discover_cb_func;
 
 		client->discover_cb_func = NULL;
-		cb_func(conn, err, csis_inst);
+		cb_func(conn, err, member, csis_inst);
 	}
 }
 
@@ -278,7 +279,7 @@ static void csis_client_discover_cb(struct bt_conn *conn,
 	if (err != 0) {
 		LOG_DBG("CSIS client discover failed: %d", err);
 
-		cap_common_discover_complete(conn, err, NULL);
+		cap_common_discover_complete(conn, err, NULL, NULL);
 
 		return;
 	}
@@ -290,10 +291,10 @@ static void csis_client_discover_cb(struct bt_conn *conn,
 	if (member == NULL || set_count == 0 || client->csis_inst == NULL) {
 		LOG_ERR("Unable to find CSIS for CAS");
 
-		cap_common_discover_complete(conn, -ENODATA, NULL);
+		cap_common_discover_complete(conn, -ENODATA, NULL, NULL);
 	} else {
 		LOG_DBG("Found CAS with CSIS");
-		cap_common_discover_complete(conn, 0, client->csis_inst);
+		cap_common_discover_complete(conn, 0, member, client->csis_inst);
 	}
 }
 
@@ -304,7 +305,7 @@ static uint8_t bt_cap_common_discover_included_cb(struct bt_conn *conn,
 	if (attr == NULL) {
 		LOG_DBG("CAS CSIS include not found");
 
-		cap_common_discover_complete(conn, 0, NULL);
+		cap_common_discover_complete(conn, 0, NULL, NULL);
 	} else {
 		const struct bt_gatt_include *included_service = attr->user_data;
 		struct bt_cap_common_client *client =
@@ -335,11 +336,15 @@ static uint8_t bt_cap_common_discover_included_cb(struct bt_conn *conn,
 			err = bt_csip_set_coordinator_discover(conn);
 			if (err != 0) {
 				LOG_DBG("Discover failed (err %d)", err);
-				cap_common_discover_complete(conn, err, NULL);
+				cap_common_discover_complete(conn, err, NULL, NULL);
 			}
 		} else {
+			const struct bt_csip_set_coordinator_set_member *member =
+				bt_csip_set_coordinator_csis_member_by_conn(conn);
+
 			LOG_DBG("Found CAS with CSIS");
-			cap_common_discover_complete(conn, 0, client->csis_inst);
+
+			cap_common_discover_complete(conn, 0, member, client->csis_inst);
 		}
 	}
 
@@ -350,7 +355,7 @@ static uint8_t bt_cap_common_discover_cas_cb(struct bt_conn *conn, const struct 
 					     struct bt_gatt_discover_params *params)
 {
 	if (attr == NULL) {
-		cap_common_discover_complete(conn, -ENODATA, NULL);
+		cap_common_discover_complete(conn, -ENODATA, NULL, NULL);
 	} else {
 		const struct bt_gatt_service_val *prim_service = attr->user_data;
 		struct bt_cap_common_client *client =
@@ -362,7 +367,7 @@ static uint8_t bt_cap_common_discover_cas_cb(struct bt_conn *conn, const struct 
 
 		if (attr->handle == prim_service->end_handle) {
 			LOG_DBG("Found CAS without CSIS");
-			cap_common_discover_complete(conn, 0, NULL);
+			cap_common_discover_complete(conn, 0, NULL, NULL);
 
 			return BT_GATT_ITER_STOP;
 		}
@@ -379,7 +384,7 @@ static uint8_t bt_cap_common_discover_cas_cb(struct bt_conn *conn, const struct 
 		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
 
-			cap_common_discover_complete(conn, err, NULL);
+			cap_common_discover_complete(conn, err, NULL, NULL);
 		}
 	}
 
