@@ -7,6 +7,8 @@ env:
   - BSIM_OUT_PATH
 toolchain:
   - zephyr
+supported:
+  - counter
 testing:
   ignore_tags:
     - gpio
