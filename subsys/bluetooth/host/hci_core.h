@@ -373,7 +373,7 @@ struct bt_dev {
 	/* Supported commands */
 	uint8_t			supported_commands[64];
 
-#if defined(CONFIG_BT_HCI_VS_EXT)
+#if defined(CONFIG_BT_HCI_VS)
 	/* Vendor HCI support */
 	uint8_t                    vs_features[BT_DEV_VS_FEAT_MAX];
 	uint8_t                    vs_commands[BT_DEV_VS_CMDS_MAX];

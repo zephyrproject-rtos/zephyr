@@ -137,7 +137,7 @@ config BT_CTLR_CRYPTO
 config BT_CTLR_HCI_VS_BUILD_INFO
 	string "Zephyr HCI VS Build Info string"
 	default ""
-	depends on BT_HCI_VS_EXT
+	depends on BT_HCI_VS
 	help
 	  User-defined string that will be returned by the Zephyr VS Read Build
 	  Information command after the Zephyr version and build time. When
@@ -428,7 +428,7 @@ config BT_CTLR_TX_PWR_ANTENNA
 
 config BT_CTLR_TX_PWR_DYNAMIC_CONTROL
 	bool "Tx Power Dynamic Control"
-	depends on BT_HCI_VS_EXT
+	depends on BT_HCI_VS
 	help
 	  Enable dynamic control of Tx power per role/connection.
 	  Provides HCI VS commands to set and get the current Tx
@@ -1007,7 +1007,7 @@ config BT_CTLR_ASSERT_HANDLER
 
 config BT_CTLR_VS_SCAN_REQ_RX
 	bool "Use scan request reporting"
-	depends on BT_HCI_VS_EXT && !BT_CTLR_ADV_EXT
+	depends on BT_HCI_VS && !BT_CTLR_ADV_EXT
 	select BT_HCI_VS_EVT
 	select BT_CTLR_SCAN_REQ_NOTIFY
 	help
