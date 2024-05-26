@@ -156,7 +156,6 @@
 		mcuboot-button0 = &evb_sw1;
 		mcuboot-led0 = &evb_led1;
 		watchdog0 = &wdt0;
-		spi-flash0 = &mx25r64;
 	};
 };
 

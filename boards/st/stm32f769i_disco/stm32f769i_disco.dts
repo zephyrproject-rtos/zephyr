@@ -77,7 +77,6 @@
 		led2 = &green_led_3;
 		led3 = &red_led_4;
 		sw0 = &user_button;
-		spi-flash0 = &mx25l51245g;
 	};
 
 	quadspi_memory_avail: memory-avail@90000000 {

@@ -22,7 +22,6 @@
 		sw1 = &button1;
 		watchdog0 = &wdog0;
 		watchdog1 = &wdog1;
-		spi-flash0 = &mx25r80;
 	};
 
 	chosen {

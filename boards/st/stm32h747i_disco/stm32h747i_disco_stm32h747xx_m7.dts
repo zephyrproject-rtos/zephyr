@@ -55,7 +55,6 @@
 		led0 = &green_led_1;
 		led1 = &orange_led_2;
 		sw0 = &wake_up;
-		spi-flash0 = &mt25ql512ab1;
 	};
 };
 
