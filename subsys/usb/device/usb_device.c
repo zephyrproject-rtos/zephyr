@@ -1595,7 +1595,7 @@ int usb_enable(usb_dc_status_callback status_cb)
 {
 	int ret;
 	struct usb_dc_ep_cfg_data ep0_cfg;
-	struct usb_device_descriptor *dev_desc = (void *)usb_dev.descriptors;
+	struct usb_device_descriptor *dev_desc;
 
 	/* Prevent from calling usb_enable form different context.
 	 * This should only be called once.
@@ -1609,12 +1609,27 @@ int usb_enable(usb_dc_status_callback status_cb)
 		goto out;
 	}
 
+	/*
+	 * If usb_dev.descriptors is equal to NULL (usb_dev has static
+	 * specifier), then usb_get_device_descriptor() and usb_set_config()
+	 * are likely not called yet. If so, set the configuration here.
+	 */
+	if (usb_dev.descriptors == NULL) {
+		usb_set_config(usb_get_device_descriptor());
+		if (usb_dev.descriptors == NULL) {
+			LOG_ERR("Failed to configure USB device stack");
+			ret =  -1;
+			goto out;
+		}
+	}
+
 	/* Enable VBUS if needed */
 	ret = usb_vbus_set(true);
 	if (ret < 0) {
 		goto out;
 	}
 
+	dev_desc = (void *)usb_dev.descriptors;
 	usb_dev.user_status_callback = status_cb;
 	usb_register_status_callback(forward_status_cb);
 	usb_dc_set_status_callback(forward_status_cb);
@@ -1693,32 +1708,11 @@ out:
 	return ret;
 }
 
-/*
- * This function configures the USB device stack based on USB descriptor and
- * usb_cfg_data.
- */
+#if defined(CONFIG_USB_DEVICE_INITIALIZE_AT_BOOT)
 static int usb_device_init(void)
 {
-	uint8_t *device_descriptor;
-
-	if (usb_dev.enabled == true) {
-		return -EALREADY;
-	}
-
-	/* register device descriptor */
-	device_descriptor = usb_get_device_descriptor();
-	if (!device_descriptor) {
-		LOG_ERR("Failed to configure USB device stack");
-		return -1;
-	}
-
-	usb_set_config(device_descriptor);
-
-	if (IS_ENABLED(CONFIG_USB_DEVICE_INITIALIZE_AT_BOOT)) {
-		return usb_enable(NULL);
-	}
-
-	return 0;
+	return usb_enable(NULL);
 }
 
 SYS_INIT(usb_device_init, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
+#endif
