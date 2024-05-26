@@ -68,12 +68,31 @@ struct net_if_addr {
 	/** What is the current state of the address */
 	enum net_addr_state addr_state;
 
-#if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_IPV6_PE)
+	/** Address creation time. This is used to determine if the maximum
+	 * lifetime for this address is reached or not. The value is in seconds.
+	 */
+	uint32_t addr_create_time;
+
+	/** Preferred lifetime for the address in seconds.
+	 */
+	uint32_t addr_preferred_lifetime;
+
+	/** Address timeout value. This is only used if DAD needs to be redone
+	 * for this address because of earlier DAD failure. This value is in
+	 * seconds.
+	 */
+	int32_t addr_timeout;
+#endif
+
+#if defined(CONFIG_NET_IPV6_DAD)
 	/** How many times we have done DAD */
 	uint8_t dad_count;
 	/* What interface the DAD is running */
 	uint8_t ifindex;
 #endif
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 	/** Is the IP address valid forever */
 	uint8_t is_infinite : 1;
@@ -84,7 +103,12 @@ struct net_if_addr {
 	/** Is this IP address usage limited to the subnet (mesh) or not */
 	uint8_t is_mesh_local : 1;
 
-	uint8_t _unused : 5;
+	/** Is this IP address temporary and generated for example by
+	 * IPv6 privacy extension (RFC 8981)
+	 */
+	uint8_t is_temporary : 1;
+
+	uint8_t _unused : 4;
 };
 
 /**
@@ -279,6 +303,15 @@ struct net_if_ipv6 {
 
 	/** Retransmit timer (RFC 4861, page 52) */
 	uint32_t retrans_timer;
+
+#if defined(CONFIG_NET_IPV6_PE)
+	/** Privacy extension DESYNC_FACTOR value from RFC 8981 ch 3.4.
+	 * "DESYNC_FACTOR is a random value within the range 0 - MAX_DESYNC_FACTOR.
+	 * It is computed every time a temporary address is created.
+	 */
+	uint32_t desync_factor;
+#endif /* CONFIG_NET_IPV6_PE */
+
 #if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)
 	/** Router solicitation timer node */
 	sys_snode_t rs_node;
@@ -653,6 +686,19 @@ struct net_if {
 
 	struct k_mutex lock;
 	struct k_mutex tx_lock;
+
+	/** Network interface specific flags */
+	/** Enable IPv6 privacy extension (RFC 8981), this is enabled
+	 * by default if PE support is enabled in configuration.
+	 */
+	uint8_t pe_enabled : 1;
+
+	/* If PE is enabled, then this tells whether public addresses
+	 * are preferred over temporary ones for this interface.
+	 */
+	uint8_t pe_prefer_public : 1;
+
+	uint8_t _unused : 6;
 };
 
 static inline void net_if_lock(struct net_if *iface)

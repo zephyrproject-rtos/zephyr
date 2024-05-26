@@ -165,6 +165,64 @@ config NET_IPV6_RA_RDNSS
 	  Support Router Advertisement Recursive DNS Server option.
 	  See RFC 6106 for details. The value depends on your network needs.
 
+config NET_IPV6_PE
+	bool "Privacy extension (RFC 8981) support [EXPERIMENTAL]"
+	select MBEDTLS
+	select EXPERIMENTAL
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
+	help
+	  This enables IPv6 privacy extension (RFC 8981) support.
+	  The interface identifier is randomized and SLAAC addresses
+	  generated from it will expire. This requires that applications are
+	  prepared to use new IPv6 addresses when old ones will expire.
+	  Note that you should make sure that the value of config option
+	  CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT should be large enough so that
+	  two PE generated IPv6 addresses can be added to the network interface
+	  at the same time.
+
+if NET_IPV6_PE
+
+config NET_IPV6_PE_FILTER_PREFIX_COUNT
+	int "Size of the IPv6 prefix filter list"
+	default 0
+	help
+	  Size of the allow/deny filter list of IPv6 prefixes. User can
+	  set filters at runtime and it is possible to enable or disable
+	  privacy extension support according to this filter list.
+	  By default no filters are enabled.
+
+config NET_IPV6_PE_PREFER_PUBLIC_ADDRESSES
+	bool "Prefer public preferred address over temporary one"
+	help
+	  Prefer public addresses over temporary addresses.
+
+config NET_IPV6_PE_TEMP_VALID_LIFETIME
+	int "Max lifetime for temporary address (in minutes)"
+	default 1800
+	help
+	  No temporary address should ever remain valid for longer than this
+	  value. The value is in minutes. Default value is 2 days (2*24*60).
+
+config NET_IPV6_PE_TEMP_PREFERRED_LIFETIME
+	int "Max preferred lifetime for temporary address (in minutes)"
+	default 1440
+	help
+	  No temporary address should ever remain preferred for longer than this
+	  value. The value is in minutes. Default value is 1 day (24*60).
+
+config NET_IPV6_PE_TEMP_IDGEN_RETRIES
+	int "Max amount of failed DAD attempts"
+	default 3
+	help
+	  The node MUST perform duplicate address detection (DAD) on the
+	  generated temporary address. If after TEMP_IDGEN_RETRIES consecutive
+	  attempts no non-unique address was generated then there will be no
+	  attempt to generate temporary addresses for that interface.
+
+endif
+
 config NET_6LO
 	bool "6lowpan IPv6 Compression library"
 	default y if NET_L2_IEEE802154
@@ -209,6 +267,12 @@ module = NET_IPV6_ND
 module-dep = NET_LOG
 module-str = Log level for IPv6 Neighbor Discovery
 module-help = Enables IPv6 Neighbor Discovery code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_IPV6_PE
+module-dep = NET_LOG
+module-str = Log level for IPv6 Privacy Extension
+module-help = Enables IPv6 Privacy Extension code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
 module = NET_ICMPV6
