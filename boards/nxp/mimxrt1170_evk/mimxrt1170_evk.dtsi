@@ -130,6 +130,11 @@
 	pinctrl-names = "default";
 };
 
+&lpi2c6 {
+	pinctrl-0 = <&pinmux_lpi2c6>;
+	pinctrl-names = "default";
+};
+
 &flexcan3 {
 	pinctrl-0 = <&pinmux_flexcan3>;
 	pinctrl-names = "default";
