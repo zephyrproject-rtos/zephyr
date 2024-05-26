@@ -19,6 +19,51 @@
 
 	aliases {
 		watchdog0 = &wdt0;
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0_31 10 GPIO_ACTIVE_LOW>;
+			label = "LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpio0_31 30 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+		led2: led_2 {
+			gpios = <&gpio0_31 15 GPIO_ACTIVE_LOW>;
+			label = "LED 2";
+		};
+		led3: led_3 {
+			gpios = <&gpio0_31 14 GPIO_ACTIVE_LOW>;
+			label = "LED 3";
+		};
+		led4: led_4 {
+			gpios = <&gpio0_31 17 GPIO_ACTIVE_LOW>;
+			label = "LED 4";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0_31 16 GPIO_ACTIVE_LOW>;
+			label = "BTN0";
+		};
+		button1: button_1 {
+			gpios = <&gpio0_31 18 GPIO_ACTIVE_LOW>;
+			label = "BTN1";
+		};
+		button2: button_2 {
+			gpios = <&gpio0_31 19 GPIO_ACTIVE_LOW>;
+			label = "BTN2";
+		};
 	};
 };
 
@@ -43,5 +88,13 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio0_31 {
+	status = "okay";
+};
+
+&gpio32_63 {
 	status = "okay";
 };
