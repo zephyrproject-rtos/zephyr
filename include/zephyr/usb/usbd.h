@@ -553,6 +553,24 @@ int usbd_add_descriptor(struct usbd_contex *uds_ctx,
 			struct usbd_desc_node *dn);
 
 /**
+ * @brief Get USB string descriptor index from descriptor node
+ *
+ * @param[in] desc_nd Pointer to USB descriptor node
+ *
+ * @return Descriptor index, 0 if descriptor is not part of any device
+ */
+uint8_t usbd_str_desc_get_idx(const struct usbd_desc_node *const desc_nd);
+
+/**
+ * @brief Remove USB string descriptor
+ *
+ * Remove linked USB string descriptor from any list.
+ *
+ * @param[in] desc_nd Pointer to USB descriptor node
+ */
+void usbd_remove_descriptor(struct usbd_desc_node *const desc_nd);
+
+/**
  * @brief Add a USB device configuration
  *
  * @param[in] uds_ctx Pointer to USB device support context

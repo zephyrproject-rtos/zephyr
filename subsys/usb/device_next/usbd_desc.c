@@ -268,3 +268,20 @@ add_descriptor_error:
 	usbd_device_unlock(uds_ctx);
 	return ret;
 }
+
+uint8_t usbd_str_desc_get_idx(const struct usbd_desc_node *const desc_nd)
+{
+	if (sys_dnode_is_linked(&desc_nd->node)) {
+		return desc_nd->idx;
+	}
+
+	return 0;
+}
+
+void usbd_remove_descriptor(struct usbd_desc_node *const desc_nd)
+{
+	if (sys_dnode_is_linked(&desc_nd->node)) {
+		sys_dlist_remove(&desc_nd->node);
+		desc_nd->idx = 0;
+	}
+}
