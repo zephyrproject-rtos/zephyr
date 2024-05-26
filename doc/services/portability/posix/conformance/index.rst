@@ -87,14 +87,14 @@ POSIX System Interfaces
     _POSIX_MEMLOCK, -1,
     _POSIX_MEMLOCK_RANGE, -1,
     :ref:`_POSIX_MESSAGE_PASSING<posix_option_message_passing>`, 200809L, :kconfig:option:`CONFIG_POSIX_MQUEUE`
-    _POSIX_MONOTONIC_CLOCK, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
+    :ref:`_POSIX_MONOTONIC_CLOCK<posix_option_monotonic_clock>`, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
     _POSIX_PRIORITIZED_IO, -1,
-    :ref:`_POSIX_PRIORITY_SCHEDULING<posix_option_priority_scheduling>`, -1, :kconfig:option:`CONFIG_POSIX_PRIORITY_SCHEDULING` (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    _POSIX_RAW_SOCKETS, 200809L, :kconfig:option:`CONFIG_NET_SOCKETS`
+    :ref:`_POSIX_PRIORITY_SCHEDULING<posix_option_priority_scheduling>`, 200809L, :kconfig:option:`CONFIG_POSIX_PRIORITY_SCHEDULING`
+    _POSIX_RAW_SOCKETS, 200809L, :kconfig:option:`CONFIG_NET_SOCKETS_PACKET`
     _POSIX_SHARED_MEMORY_OBJECTS, -1,
-    _POSIX_SPAWN, -1,
-    _POSIX_SPORADIC_SERVER, -1,
-    _POSIX_SYNCHRONIZED_IO, -1, :kconfig:option:`CONFIG_POSIX_FS`
+    _POSIX_SPAWN, -1, :ref:`†<posix_undefined_behaviour>`
+    _POSIX_SPORADIC_SERVER, -1, :ref:`†<posix_undefined_behaviour>`
+    _POSIX_SYNCHRONIZED_IO, -1,
     :ref:`_POSIX_THREAD_ATTR_STACKADDR<posix_option_thread_attr_stackaddr>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
     :ref:`_POSIX_THREAD_ATTR_STACKSIZE<posix_option_thread_attr_stacksize>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
     _POSIX_THREAD_CPUTIME, -1,
