@@ -186,8 +186,13 @@ static ALWAYS_INLINE void clock_init(void)
 	BUILD_ASSERT_PODF_IN_RANGE(ipg_podf, 1, 4);
 	CLOCK_SetDiv(kCLOCK_IpgDiv, DT_PROP(DT_CHILD(CCM_NODE, ipg_podf), clock_div) - 1);
 
+#ifdef CONFIG_SOC_MIMXRT1042
+	/* Set PRE_PERIPH_CLK to SYS_PLL */
+	CLOCK_SetMux(kCLOCK_PrePeriphMux, 0x0);
+#else
 	/* Set PRE_PERIPH_CLK to PLL1, 1200M */
 	CLOCK_SetMux(kCLOCK_PrePeriphMux, 0x3);
+#endif
 
 	/* Set PERIPH_CLK MUX to PRE_PERIPH_CLK */
 	CLOCK_SetMux(kCLOCK_PeriphMux, 0x0);
