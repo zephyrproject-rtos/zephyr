@@ -13,6 +13,8 @@
 #ifndef ZEPHYR_INCLUDE_MGMT_HAWKBIT_H_
 #define ZEPHYR_INCLUDE_MGMT_HAWKBIT_H_
 
+#include <zephyr/net/tls_credentials.h>
+
 #define HAWKBIT_JSON_URL "/default/controller/v1"
 
 /**
@@ -47,6 +49,7 @@ struct hawkbit_runtime_config {
 	char *server_addr;
 	uint16_t server_port;
 	char *auth_token;
+	sec_tag_t tls_tag;
 };
 
 /**
@@ -160,7 +163,7 @@ struct hawkbit_runtime_config hawkbit_get_config(void);
 static inline int hawkbit_set_server_addr(char *addr_str)
 {
 	struct hawkbit_runtime_config set_config = {
-		.server_addr = addr_str, .server_port = 0, .auth_token = NULL};
+		.server_addr = addr_str, .server_port = 0, .auth_token = NULL, .tls_tag = 0};
 
 	return hawkbit_set_config(&set_config);
 }
@@ -175,7 +178,7 @@ static inline int hawkbit_set_server_addr(char *addr_str)
 static inline int hawkbit_set_server_port(uint16_t port)
 {
 	struct hawkbit_runtime_config set_config = {
-		.server_addr = NULL, .server_port = port, .auth_token = NULL};
+		.server_addr = NULL, .server_port = port, .auth_token = NULL, .tls_tag = 0};
 
 	return hawkbit_set_config(&set_config);
 }
@@ -190,7 +193,22 @@ static inline int hawkbit_set_server_port(uint16_t port)
 static inline int hawkbit_set_ddi_security_token(char *token)
 {
 	struct hawkbit_runtime_config set_config = {
-		.server_addr = NULL, .server_port = 0, .auth_token = token};
+		.server_addr = NULL, .server_port = 0, .auth_token = token, .tls_tag = 0};
+
+	return hawkbit_set_config(&set_config);
+}
+
+/**
+ * @brief Set the hawkBit TLS tag
+ *
+ * @param tag TLS tag to set.
+ * @retval 0 on success.
+ * @retval -EAGAIN if probe is currently running.
+ */
+static inline int hawkbit_set_tls_tag(sec_tag_t tag)
+{
+	struct hawkbit_runtime_config set_config = {
+		.server_addr = NULL, .server_port = 0, .auth_token = NULL, .tls_tag = tag};
 
 	return hawkbit_set_config(&set_config);
 }
@@ -223,6 +241,16 @@ static inline uint16_t hawkbit_get_server_port(void)
 static inline char *hawkbit_get_ddi_security_token(void)
 {
 	return hawkbit_get_config().auth_token;
+}
+
+/**
+ * @brief Get the hawkBit TLS tag.
+ *
+ * @return TLS tag.
+ */
+static inline sec_tag_t hawkbit_get_tls_tag(void)
+{
+	return hawkbit_get_config().tls_tag;
 }
 
 /**
