@@ -27,7 +27,7 @@ static void transceive_packet(const struct device *dev, union r502a_packet *tx_p
 	uint16_t check_sum, pkg_len;
 
 	pkg_len = data_len + R502A_CHECKSUM_LEN;
-	check_sum = pkg_len + tx_packet->pid;
+	check_sum = (pkg_len >> 8) + (pkg_len & 0xFF) + tx_packet->pid;
 
 	sys_put_be16(R502A_STARTCODE, tx_packet->start);
 	sys_put_be32(cfg->comm_addr, tx_packet->addr);
