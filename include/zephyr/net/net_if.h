@@ -263,15 +263,15 @@ enum net_if_flag {
 /** @endcond */
 };
 
-/** Network interface operational status (RFC 2863). */
+/** @brief Network interface operational status (RFC 2863). */
 enum net_if_oper_state {
-	NET_IF_OPER_UNKNOWN,
-	NET_IF_OPER_NOTPRESENT,
-	NET_IF_OPER_DOWN,
-	NET_IF_OPER_LOWERLAYERDOWN,
-	NET_IF_OPER_TESTING,
-	NET_IF_OPER_DORMANT,
-	NET_IF_OPER_UP,
+	NET_IF_OPER_UNKNOWN,        /**< Initial (unknown) value */
+	NET_IF_OPER_NOTPRESENT,     /**< Hardware missing */
+	NET_IF_OPER_DOWN,           /**< Interface is down */
+	NET_IF_OPER_LOWERLAYERDOWN, /**< Lower layer interface is down */
+	NET_IF_OPER_TESTING,        /**< Training mode */
+	NET_IF_OPER_DORMANT,        /**< Waiting external action */
+	NET_IF_OPER_UP,             /**< Interface is up */
 } __packed;
 
 #if defined(CONFIG_NET_OFFLOAD)
@@ -290,6 +290,7 @@ struct net_offload;
 #endif
 /* @endcond */
 
+/** IPv6 configuration */
 struct net_if_ipv6 {
 	/** Unicast IP addresses */
 	struct net_if_addr unicast[NET_IF_MAX_IPV6_ADDR];
@@ -336,6 +337,7 @@ struct net_if_ipv6 {
 };
 
 #if defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6)
+/** DHCPv6 configuration */
 struct net_if_dhcpv6 {
 	/** Used for timer list. */
 	sys_snode_t node;
@@ -420,6 +422,7 @@ struct net_if_addr_ipv4 {
 	struct in_addr netmask;
 };
 
+/** IPv4 configuration */
 struct net_if_ipv4 {
 	/** Unicast IP addresses */
 	struct net_if_addr_ipv4 unicast[NET_IF_MAX_IPV4_ADDR];
@@ -633,7 +636,7 @@ struct net_if_dev {
 	/** Interface's private L2 data pointer */
 	void *l2_data;
 
-	/* For internal use */
+	/** For internal use */
 	ATOMIC_DEFINE(flags, NET_IF_NUM_FLAGS);
 
 	/** The hardware link address */
@@ -689,7 +692,10 @@ struct net_if {
 	int tx_pending;
 #endif
 
+	/** Mutex protecting this network interface instance */
 	struct k_mutex lock;
+
+	/** Mutex used when sending data */
 	struct k_mutex tx_lock;
 
 	/** Network interface specific flags */
@@ -698,13 +704,16 @@ struct net_if {
 	 */
 	uint8_t pe_enabled : 1;
 
-	/* If PE is enabled, then this tells whether public addresses
+	/** If PE is enabled, then this tells whether public addresses
 	 * are preferred over temporary ones for this interface.
 	 */
 	uint8_t pe_prefer_public : 1;
 
+	/** Unused bit flags (ignore) */
 	uint8_t _unused : 6;
 };
+
+/** @cond INTERNAL_HIDDEN */
 
 static inline void net_if_lock(struct net_if *iface)
 {
@@ -744,6 +753,8 @@ static inline void net_if_tx_unlock(struct net_if *iface)
 
 	k_mutex_unlock(&iface->tx_lock);
 }
+
+/** @endcond */
 
 /**
  * @brief Set a value in network interface flags
@@ -1820,6 +1831,8 @@ uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface);
  */
 void net_if_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit);
 
+/** @cond INTERNAL_HIDDEN */
+
 /* The old hop limit setter function is deprecated because the naming
  * of it was incorrect. The API name was missing "_if_" so this function
  * should not be used.
@@ -1830,6 +1843,8 @@ static inline void net_ipv6_set_hop_limit(struct net_if *iface,
 {
 	net_if_ipv6_set_hop_limit(iface, hop_limit);
 }
+
+/** @endcond */
 
 /**
  * @brief Get IPv6 multicast hop limit specified for a given interface. This is the
