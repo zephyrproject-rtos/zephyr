@@ -169,8 +169,6 @@ static int memc_flexspi_is66wvq8m4_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	memc_flexspi_reset(data->controller);
-
 	if (memc_flexspi_is66wvq8m4_get_vendor_id(dev, &vendor_id)) {
 		LOG_ERR("Could not read vendor id");
 		return -EIO;
