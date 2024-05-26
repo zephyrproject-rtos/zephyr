@@ -21,6 +21,14 @@
 #include "usbd_msg.h"
 
 #include <zephyr/logging/log.h>
+#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart) \
+	&& defined(CONFIG_USBD_CDC_ACM_LOG_LEVEL) \
+	&& CONFIG_USBD_CDC_ACM_LOG_LEVEL != LOG_LEVEL_NONE
+/* Prevent endless recursive logging loop and warn user about it */
+#warning "USB_CDC_ACM_LOG_LEVEL forced to LOG_LEVEL_NONE"
+#undef CONFIG_USBD_CDC_ACM_LOG_LEVEL
+#define CONFIG_USBD_CDC_ACM_LOG_LEVEL LOG_LEVEL_NONE
+#endif
 LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 
 NET_BUF_POOL_FIXED_DEFINE(cdc_acm_ep_pool,
