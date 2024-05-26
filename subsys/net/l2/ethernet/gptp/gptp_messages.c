@@ -241,7 +241,6 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 	struct gptp_follow_up *fup;
 	struct net_if *iface;
 	struct net_pkt *pkt;
-	struct net_ptp_time *sync_ts;
 
 	NET_ASSERT(sync);
 	NET_ASSERT((port >= GPTP_PORT_START) && (port <= GPTP_PORT_END));
@@ -259,7 +258,6 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 	hdr = GPTP_HDR(pkt);
 	fup = GPTP_FOLLOW_UP(pkt);
 	sync_hdr = GPTP_HDR(sync);
-	sync_ts = net_pkt_timestamp(sync);
 
 	/*
 	 * Header configuration.
@@ -271,11 +269,6 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 	hdr->ptp_version = GPTP_VERSION;
 	hdr->sequence_id = sync_hdr->sequence_id;
 	hdr->domain_number = 0U;
-	/*
-	 * Grand master clock should keep correction_field at zero,
-	 * according to IEEE802.1AS Table 11-6 and 10.6.2.2.9
-	 */
-	hdr->correction_field = 0LL;
 	hdr->flags.octets[0] = 0U;
 	hdr->flags.octets[1] = GPTP_FLAG_PTP_TIMESCALE;
 	hdr->message_length = htons(sizeof(struct gptp_hdr) +
@@ -286,14 +279,6 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 	hdr->reserved0 = 0U;
 	hdr->reserved1 = 0U;
 	hdr->reserved2 = 0U;
-
-	/*
-	 * Get preciseOriginTimestamp from previous sync message
-	 * according to IEEE802.1AS 11.4.4.2.1 syncEventEgressTimestamp
-	 */
-	fup->prec_orig_ts_secs_high = htons(sync_ts->_sec.high);
-	fup->prec_orig_ts_secs_low = htonl(sync_ts->_sec.low);
-	fup->prec_orig_ts_nsecs = htonl(sync_ts->nanosecond);
 
 	/* PTP configuration will be set by the MDSyncSend state machine. */
 
