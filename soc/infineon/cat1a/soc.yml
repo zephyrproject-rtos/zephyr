@@ -1,19 +1,5 @@
 family:
-- name: psoc6
-  series:
-  - name: psoc62
-    socs:
-    - name: cy8c6247
-      cpuclusters:
-      - name: m0
-      - name: m4
-  - name: psoc63
-    socs:
-    - name: cy8c6347
-      cpuclusters:
-      - name: m0
-      - name: m4
-- name: infineon_cat1
+- name: cat1a
   series:
   - name: psoc6
     socs:
@@ -63,7 +49,6 @@ family:
     - name: cy8c6347bzi_bld34
     - name: cy8c6347bzi_bld54
     - name: cy8c6247bfi_d54
-    - name: cyble_416045_02
     - name: cy8c6347fmi_bud53
     - name: cy8c6347fmi_bud13
     - name: cy8c6347fmi_bud43
@@ -129,3 +114,12 @@ family:
     - name: cy8c6144lqi_s4f62
     - name: cy8c6144azi_s4f12
     - name: cy8c6144lqi_s4f12
+    - name: cyble_416045_02
+    - name: cy8c6247
+      cpuclusters:
+      - name: m0
+      - name: m4
+    - name: cy8c6347
+      cpuclusters:
+      - name: m0
+      - name: m4
