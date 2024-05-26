@@ -184,6 +184,11 @@ static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_conte
 	ARG_UNUSED(id);
 	ARG_UNUSED(p_context);
 	uint64_t dticks;
+	uint64_t now = counter();
+
+	if (unlikely(now < cc_val)) {
+		return;
+	}
 
 	dticks = counter_sub(cc_val, last_count) / CYC_PER_TICK;
 
