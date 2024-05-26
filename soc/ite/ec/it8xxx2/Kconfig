@@ -193,7 +193,6 @@ config SOC_IT8XXX2_FLASH_SIZE_BYTES
 
 config ILM_MAX_SIZE
 	int "ILM Size in kB"
-	default 60 if SOC_IT81202CX || SOC_IT81302CX
 	default SRAM_SIZE
 
 endif # SOC_SERIES_IT8XXX2
