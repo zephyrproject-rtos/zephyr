@@ -30,7 +30,6 @@ struct video_mcux_csi_data {
 	csi_handle_t csi_handle;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
-	uint32_t pixelformat;
 	struct k_poll_signal *signal;
 };
 
@@ -126,7 +125,6 @@ static int video_mcux_csi_set_fmt(const struct device *dev, enum video_endpoint_
 		return -EINVAL;
 	}
 
-	data->pixelformat = fmt->pixelformat;
 	data->csi_config.bytesPerPixel = bpp;
 	data->csi_config.linePitch_Bytes = fmt->pitch;
 	data->csi_config.polarityFlags = kCSI_HsyncActiveHigh | kCSI_DataLatchOnRisingEdge;
