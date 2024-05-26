@@ -5,6 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief SNTP (Simple Network Time Protocol)
+ */
+
 #ifndef ZEPHYR_INCLUDE_NET_SNTP_H_
 #define ZEPHYR_INCLUDE_NET_SNTP_H_
 
@@ -23,21 +28,24 @@ extern "C" {
 
 /** Time as returned by SNTP API, fractional seconds since 1 Jan 1970 */
 struct sntp_time {
-	uint64_t seconds;
-	uint32_t fraction;
+	uint64_t seconds;        /**< Second value */
+	uint32_t fraction;       /**< Fractional seconds value */
 #if defined(CONFIG_SNTP_UNCERTAINTY)
-	uint64_t uptime_us;
-	uint32_t uncertainty_us;
+	uint64_t uptime_us;      /**< Uptime in microseconds */
+	uint32_t uncertainty_us; /**< Uncertainty in microseconds */
 #endif
 };
 
 /** SNTP context */
 struct sntp_ctx {
+
+/** @cond INTERNAL_HIDDEN */
 	struct {
 		struct zsock_pollfd fds[1];
 		int nfds;
 		int fd;
 	} sock;
+/** @endcond */
 
 	/** Timestamp when the request was sent from client to server.
 	 *  This is used to check if the originated timestamp in the server
