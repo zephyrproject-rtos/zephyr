@@ -34,8 +34,17 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #define MLDv2_MCAST_RECORD_LEN sizeof(struct net_icmpv6_mld_mcast_record)
 #define IPV6_OPT_HDR_ROUTER_ALERT_LEN 8
+#define MLDV2_REPORT_RESERVED_BYTES 2
 
 #define MLDv2_LEN (MLDv2_MCAST_RECORD_LEN + sizeof(struct in6_addr))
+
+/* Internal structure used for appending multicast routes to MLDv2 reports */
+struct mcast_route_appending_info {
+	int status;
+	struct net_pkt *pkt;
+	struct net_if *iface;
+	size_t skipped;
+};
 
 static int mld_create(struct net_pkt *pkt,
 		      const struct in6_addr *addr,
@@ -144,6 +153,37 @@ static int mld_send(struct net_pkt *pkt)
 
 	return 0;
 }
+
+#if defined(CONFIG_NET_MCAST_ROUTE_MLD_REPORTS)
+static void count_mcast_routes(struct net_route_entry_mcast *entry, void *user_data)
+{
+	(*((int *)user_data))++;
+}
+
+static void append_mcast_routes(struct net_route_entry_mcast *entry, void *user_data)
+{
+	struct mcast_route_appending_info *info = (struct mcast_route_appending_info *)user_data;
+	struct net_if_mcast_addr *mcasts = info->iface->config.ip.ipv6->mcast;
+
+	if (info->status != 0 || entry->prefix_len != 128) {
+		return;
+	}
+
+	for (int i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+		if (!mcasts[i].is_used || !mcasts[i].is_joined) {
+			continue;
+		}
+
+		if (net_ipv6_addr_cmp(&entry->group, &mcasts[i].address.in6_addr)) {
+			/* Address was already added to the report */
+			info->skipped++;
+			return;
+		}
+	}
+
+	info->status = mld_create(info->pkt, &entry->group, NET_IPV6_MLDv2_MODE_IS_EXCLUDE, 0);
+}
+#endif
 
 int net_ipv6_mld_send_single(struct net_if *iface, const struct in6_addr *addr, uint8_t mode)
 {
@@ -269,6 +309,14 @@ static int send_mld_report(struct net_if *iface)
 		count++;
 	}
 
+#if defined(CONFIG_NET_MCAST_ROUTE_MLD_REPORTS)
+	/* Increase number of slots by a number of multicast routes that
+	 * can be later added to the report. Checking for duplicates is done
+	 * while appending an entry.
+	 */
+	net_route_mcast_foreach(count_mcast_routes, NULL, (void *)&count);
+#endif
+
 	pkt = net_pkt_alloc_with_buffer(iface, IPV6_OPT_HDR_ROUTER_ALERT_LEN +
 					NET_ICMPV6_UNUSED_LEN +
 					count * MLDv2_MCAST_RECORD_LEN,
@@ -294,6 +342,45 @@ static int send_mld_report(struct net_if *iface)
 			goto drop;
 		}
 	}
+
+#if defined(CONFIG_NET_MCAST_ROUTE_MLD_REPORTS)
+	/* Append information about multicast routes as packets will be
+	 * forwarded to these interfaces on reception.
+	 */
+	struct mcast_route_appending_info info;
+
+	info.status = 0;
+	info.pkt = pkt;
+	info.iface = iface;
+	info.skipped = 0;
+
+	net_route_mcast_foreach(append_mcast_routes, NULL, &info);
+
+	ret = info.status;
+	if (ret < 0) {
+		goto drop;
+	}
+
+	/* We may have skipped duplicated addresses that we reserved space for,
+	 * modify number of records.
+	 */
+	if (info.skipped) {
+		net_pkt_cursor_init(pkt);
+		net_pkt_set_overwrite(pkt, true);
+
+		net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt) +
+				  sizeof(struct net_icmp_hdr) + MLDV2_REPORT_RESERVED_BYTES);
+
+		count -= info.skipped;
+
+		ret = net_pkt_write_be16(pkt, count);
+		if (ret < 0) {
+			goto drop;
+		}
+
+		net_pkt_remove_tail(pkt, info.skipped * sizeof(struct net_icmpv6_mld_mcast_record));
+	}
+#endif
 
 	ret = mld_send(pkt);
 	if (ret < 0) {
