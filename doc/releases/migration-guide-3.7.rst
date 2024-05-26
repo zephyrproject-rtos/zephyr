@@ -370,6 +370,12 @@ LoRaWAN
 MCUmgr
 ======
 
+* The support for SHA-256 (when using checksum/hash functions), previously provided
+  by either TinyCrypt or MbedTLS, is now provided by either PSA or MbedTLS.
+  PSA is the recommended API going forward, however, if it is not already enabled
+  (:kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT`) and you have tight code size
+  constraints, you may be able to save 1.3 KB by using MbedTLS instead.
+
 Modem
 =====
 
