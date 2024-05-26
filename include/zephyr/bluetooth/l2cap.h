@@ -171,7 +171,7 @@ struct bt_l2cap_le_chan {
 	 *
 	 *  If the application has set an alloc_buf channel callback for the
 	 *  channel to support receiving segmented L2CAP SDUs the application
-	 *  should inititalize the MTU of the Receiving Endpoint. Otherwise the
+	 *  should initialize the MTU of the Receiving Endpoint. Otherwise the
 	 *  MTU of the receiving endpoint will be initialized to
 	 *  @ref BT_L2CAP_SDU_RX_MTU by the stack.
 	 *
