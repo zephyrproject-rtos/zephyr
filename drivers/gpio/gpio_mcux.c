@@ -332,6 +332,40 @@ static void gpio_mcux_port_isr(const struct device *dev)
 	gpio_fire_callbacks(&data->callbacks, dev, int_status);
 }
 
+#define GPIO_HAS_SHARED_IRQ DT_HAS_COMPAT_STATUS_OKAY(nxp_gpio_cluster)
+
+#if GPIO_HAS_SHARED_IRQ
+static void gpio_mcux_shared_cluster_isr(const struct device *ports[])
+{
+	const struct device **current_port = &ports[0];
+
+	while (*current_port != NULL) {
+		gpio_mcux_port_isr(*current_port);
+		current_port++;
+	}
+}
+
+#define CLUSTER_ARRAY_ELEMENT(node_id) DEVICE_DT_GET(node_id),
+
+#define GPIO_MCUX_CLUSTER_INIT(node_id)								\
+	const struct device *shared_array##node_id[DT_CHILD_NUM_STATUS_OKAY(node_id) + 1] =	\
+		{DT_FOREACH_CHILD_STATUS_OKAY(node_id, CLUSTER_ARRAY_ELEMENT) NULL};	\
+												\
+	static int gpio_mcux_shared_interrupt_init##node_id(void)	\
+	{								\
+		IRQ_CONNECT(DT_IRQN(node_id),				\
+			    DT_IRQ(node_id, priority),			\
+			    gpio_mcux_shared_cluster_isr,		\
+			    shared_array##node_id, 0);			\
+		irq_enable(DT_IRQN(node_id));				\
+									\
+		return 0;						\
+	}								\
+	SYS_INIT(gpio_mcux_shared_interrupt_init##node_id, POST_KERNEL, 0);
+
+DT_FOREACH_STATUS_OKAY(nxp_gpio_cluster, GPIO_MCUX_CLUSTER_INIT)
+#endif
+
 #ifdef CONFIG_GPIO_GET_DIRECTION
 static int gpio_mcux_port_get_direction(const struct device *dev, gpio_port_pins_t map,
 					gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
@@ -388,7 +422,8 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 		},							\
 		.gpio_base = (GPIO_Type *) DT_INST_REG_ADDR(n),		\
 		.port_base = (PORT_Type *) GPIO_PORT_BASE_ADDR(n),	\
-		.flags = UTIL_AND(DT_INST_IRQ_HAS_IDX(n, 0), GPIO_INT_ENABLE),\
+		.flags = UTIL_AND(UTIL_OR(DT_INST_IRQ_HAS_IDX(n, 0),	\
+				GPIO_HAS_SHARED_IRQ), GPIO_INT_ENABLE), \
 	};								\
 									\
 	static struct gpio_mcux_data gpio_mcux_port## n ##_data;	\
