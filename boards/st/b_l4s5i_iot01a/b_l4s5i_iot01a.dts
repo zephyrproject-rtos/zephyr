@@ -50,7 +50,6 @@
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 		accel0 = &lsm6dsl;
-		spi-flash0 = &mx25r6435f;
 	};
 };
 

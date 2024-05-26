@@ -18,7 +18,6 @@
 	aliases {
 		led0 = &led0;
 		sw0 = &button0;
-		spi-flash0 = &mx25r80;
 		spi0 = &usart0;
 		watchdog0 = &wdog0;
 		/* If enabled, MCUboot uses this for recovery mode entrance */

@@ -20,10 +20,6 @@
 		zephyr,uart-pipe = &lpuart0;
 		zephyr,code-partition = &slot0_partition;
 	};
-
-	aliases {
-		spi-flash0 = &mx25r32;
-	};
 };
 
 &m4_flash {
