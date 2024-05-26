@@ -39,8 +39,9 @@
 
 LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 
-#if defined(CONFIG_SOC_SERIES_STM32L1X) && !defined(RTC_SUBSECOND_SUPPORT)
-/* subsecond counting is not supported by some STM32L1x MCUs */
+#if (defined(CONFIG_SOC_SERIES_STM32L1X) && !defined(RTC_SUBSECOND_SUPPORT)) \
+	|| defined(CONFIG_SOC_SERIES_STM32F2X)
+/* subsecond counting is not supported by some STM32L1x MCUs (Cat.1) & by STM32F2x SoC series */
 #define HW_SUBSECOND_SUPPORT (0)
 #else
 #define HW_SUBSECOND_SUPPORT (1)
