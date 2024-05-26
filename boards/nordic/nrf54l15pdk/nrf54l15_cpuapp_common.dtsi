@@ -18,10 +18,6 @@
 		zephyr,flash = &cpuapp_rram;
 		zephyr,ieee802154 = &ieee802154;
 	};
-
-	aliases {
-		spi-flash0 = &mx25r64;
-	};
 };
 
 &cpuapp_sram {

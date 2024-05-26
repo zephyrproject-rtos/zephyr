@@ -78,7 +78,6 @@
 		led0 = &blue_led;
 		led1 = &red_led;
 		sw0 = &user_button;
-		spi-flash0 = &mx25lm51245;
 	};
 };
 

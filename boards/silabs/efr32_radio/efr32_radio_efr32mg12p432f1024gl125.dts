@@ -11,10 +11,6 @@
 / {
 	model = "Silicon Labs BRD4161A (Mighty Gecko Radio Board)";
 	compatible = "silabs,efr32_radio_brd4161a", "silabs,efr32mg12p";
-
-	aliases {
-		spi-flash0 = &mx25r80;
-	};
 };
 
 &cpu0 {

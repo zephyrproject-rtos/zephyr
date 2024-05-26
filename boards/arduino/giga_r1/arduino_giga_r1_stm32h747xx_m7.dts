@@ -37,7 +37,6 @@
 		led0 = &red_led;
 		led1 = &green_led;
 		sw0 = &user_button;
-		spi-flash0 = &n25q128a1;
 	};
 };
 

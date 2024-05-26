@@ -38,7 +38,6 @@
 		sw0 = &button2;
 		lora0 = &lora0;
 		watchdog0 = &wdt0;
-		spi-flash0 = &at25;
 	};
 };
 
