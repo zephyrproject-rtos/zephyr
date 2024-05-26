@@ -100,6 +100,8 @@ int intel_adsp_ipc_init(const struct device *dev)
 
 	memset(devdata, 0, sizeof(*devdata));
 
+	k_sem_init(&devdata->sem, 0, 1);
+
 	/* ACK any latched interrupts (including TDA to clear IDA on
 	 * the other side!), then enable.
 	 */
