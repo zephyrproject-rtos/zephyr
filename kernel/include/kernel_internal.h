@@ -140,7 +140,7 @@ extern void smp_timer_init(void);
 
 extern void z_early_rand_get(uint8_t *buf, size_t length);
 
-#if CONFIG_STACK_POINTER_RANDOM
+#if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 extern int z_stack_adjust_initialized;
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 
