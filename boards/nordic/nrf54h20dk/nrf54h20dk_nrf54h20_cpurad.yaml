@@ -15,4 +15,3 @@ supported:
   - gpio
   - pwm
   - spi
-  - watchdog
