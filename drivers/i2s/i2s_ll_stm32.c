@@ -633,7 +633,7 @@ static void dma_tx_callback(const struct device *dma_dev, void *arg,
 #else
 			(void *)LL_SPI_DMA_GetRegAddr(cfg->i2s),
 #endif
-			stream->cfg.block_size);
+			mem_block_size);
 	if (ret < 0) {
 		LOG_DBG("Failed to start TX DMA transfer: %d", ret);
 		goto tx_disable;
