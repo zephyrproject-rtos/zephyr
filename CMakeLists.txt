@@ -1792,6 +1792,17 @@ if(CONFIG_BUILD_OUTPUT_STRIPPED)
     )
 endif()
 
+if(CONFIG_BUILD_OUTPUT_COMPRESS_DEBUG_SECTIONS)
+  list(APPEND
+    post_build_commands
+    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_compress_debug_sections>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+)
+endif()
+
 if(CONFIG_BUILD_OUTPUT_EXE)
   if (NOT CONFIG_NATIVE_LIBRARY)
     list(APPEND

@@ -784,6 +784,11 @@ config BUILD_OUTPUT_STRIPPED
 	  Build a stripped binary zephyr/zephyr.strip in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
+config BUILD_OUTPUT_COMPRESS_DEBUG_SECTIONS
+	bool "Compress debug sections in the ELF file"
+	help
+	  Compress debug sections in the ELF file to reduce the file size.
+
 config BUILD_OUTPUT_ADJUST_LMA
 	string
 	help
