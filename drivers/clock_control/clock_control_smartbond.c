@@ -175,6 +175,8 @@ static inline int smartbond_clock_control_off(const struct device *dev,
 
 	switch (clk) {
 	case SMARTBOND_CLK_RC32K:
+		BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(rc32k), okay),
+				"RC32K is not allowed to be turned off");
 		if (((CRG_TOP->CLK_CTRL_REG & CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Msk) >>
 			   CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Pos) != 0) {
 			CRG_TOP->CLK_RC32K_REG &= ~CRG_TOP_CLK_RC32K_REG_RC32K_ENABLE_Msk;
