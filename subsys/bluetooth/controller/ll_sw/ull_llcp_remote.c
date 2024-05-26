@@ -313,6 +313,12 @@ void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
 		LL_ASSERT(0);
 		break;
 	}
+
+	/* If rx node was not retained clear reference */
+	if (ctx->node_ref.rx && ctx->node_ref.rx->hdr.type != NODE_RX_TYPE_RETAIN) {
+		ctx->node_ref.rx = NULL;
+	}
+
 	llcp_rr_check_done(conn, ctx);
 }
 
