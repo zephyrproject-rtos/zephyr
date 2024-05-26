@@ -312,6 +312,7 @@ class Pytest(Harness):
         finally:
             if self.reserved_serial:
                 self.instance.handler.make_device_available(self.reserved_serial)
+        self.instance.record(self.recording)
         self._update_test_status()
 
     def generate_command(self):
@@ -418,7 +419,7 @@ class Pytest(Harness):
             env=env
         ) as proc:
             try:
-                reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
+                reader_t = threading.Thread(target=self._output_reader, args=(proc, self), daemon=True)
                 reader_t.start()
                 reader_t.join(timeout)
                 if reader_t.is_alive():
@@ -455,12 +456,13 @@ class Pytest(Harness):
         return cmd, env
 
     @staticmethod
-    def _output_reader(proc):
+    def _output_reader(proc, harness):
         while proc.stdout.readable() and proc.poll() is None:
             line = proc.stdout.readline().decode().strip()
             if not line:
                 continue
             logger.debug('PYTEST: %s', line)
+            harness.parse_record(line)
         proc.communicate()
 
     def _update_test_status(self):
