@@ -178,7 +178,7 @@ SECTIONS
 	 * section overlap.
 	 */
 	__exidx_start = .;
-#if defined (__GCC_LINKER_CMD__)
+#if defined (__GCC_LINKER_CMD__) || defined (__LLD_LINKER_CMD__)
 	*(.ARM.exidx* gnu.linkonce.armexidx.*)
 #endif
 	__exidx_end = .;
