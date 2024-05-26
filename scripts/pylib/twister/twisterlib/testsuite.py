@@ -82,10 +82,10 @@ def scan_file(inf_name):
         re.MULTILINE)
     # Checks if the file contains a definition of "void test_main(void)"
     # Since ztest provides a plain test_main implementation it is OK to:
-    # 1. register test suites and not call the run function iff the test
-    #    doesn't have a custom test_main.
-    # 2. register test suites and a custom test_main definition iff the test
-    #    also calls ztest_run_registered_test_suites.
+    # 1. register test suites and not call the run function if and only if
+    #    the test doesn't have a custom test_main.
+    # 2. register test suites and a custom test_main definition if and only if
+    #    the test also calls ztest_run_registered_test_suites.
     test_main_regex = re.compile(
         br"^\s*void\s+test_main\(void\)",
         re.MULTILINE)

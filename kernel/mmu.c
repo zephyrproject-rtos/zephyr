@@ -1440,9 +1440,9 @@ static bool do_page_fault(void *addr, bool pin)
 	 * during the page-in/out operation.
 	 *
 	 * We do however re-enable interrupts during the page-in/page-out
-	 * operation iff interrupts were enabled when the exception was taken;
-	 * in this configuration page faults in an ISR are a bug; all their
-	 * code/data must be pinned.
+	 * operation if and only if interrupts were enabled when the exception
+	 * was taken; in this configuration page faults in an ISR are a bug;
+	 * all their code/data must be pinned.
 	 *
 	 * If interrupts were disabled when the exception was taken, the
 	 * arch code is responsible for keeping them that way when entering
