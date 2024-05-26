@@ -599,9 +599,9 @@ config BT_CTLR_DYNAMIC_INTERRUPTS
 	  enabled.
 
 config BT_CTLR_OPTIMIZE_FOR_SPEED
-	prompt "Optimize for Speed" if !(SOC_SERIES_NRF51X && BT_CTLR_LE_ENC)
+	prompt "Optimize for Speed"
 	bool
-	default y if BT_CTLR_LE_ENC
+	default y
 	help
 	  Optimize compilation of controller for execution speed.
 
