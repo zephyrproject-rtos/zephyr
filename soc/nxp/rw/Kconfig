@@ -17,6 +17,7 @@ config SOC_SERIES_RW6XX
 	select HAS_MCUX_FLEXCOMM
 	select INIT_SYS_PLL
 	select HAS_MCUX_CACHE
+	select HAS_PM
 
 if SOC_SERIES_RW6XX
 
