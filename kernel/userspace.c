@@ -981,6 +981,12 @@ static uintptr_t handler_bad_syscall(uintptr_t bad_id, uintptr_t arg2,
 				     uintptr_t arg5, uintptr_t arg6,
 				     void *ssf)
 {
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+	ARG_UNUSED(arg4);
+	ARG_UNUSED(arg5);
+	ARG_UNUSED(arg6);
+
 	LOG_ERR("Bad system call id %" PRIuPTR " invoked", bad_id);
 	arch_syscall_oops(ssf);
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
@@ -990,6 +996,13 @@ static uintptr_t handler_no_syscall(uintptr_t arg1, uintptr_t arg2,
 				    uintptr_t arg3, uintptr_t arg4,
 				    uintptr_t arg5, uintptr_t arg6, void *ssf)
 {
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+	ARG_UNUSED(arg4);
+	ARG_UNUSED(arg5);
+	ARG_UNUSED(arg6);
+
 	LOG_ERR("Unimplemented system call");
 	arch_syscall_oops(ssf);
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
