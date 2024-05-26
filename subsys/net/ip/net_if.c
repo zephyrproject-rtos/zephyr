@@ -1820,6 +1820,7 @@ static inline void net_if_addr_init(struct net_if_addr *ifaddr,
 	ifaddr->is_temporary = false;
 	ifaddr->address.family = AF_INET6;
 	ifaddr->addr_type = addr_type;
+	ifaddr->atomic_ref = ATOMIC_INIT(1);
 
 	net_ipaddr_copy(&ifaddr->address.in6_addr, addr);
 
@@ -1911,105 +1912,28 @@ out:
 
 bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 {
-	bool ret = false;
 	struct net_if_ipv6 *ipv6;
-	struct in6_addr maddr;
-	int found = -1;
-	unsigned int maddr_count = 0;
+	int ret;
 
 	NET_ASSERT(addr);
 
-	net_if_lock(iface);
-
 	ipv6 = iface->config.ip.ipv6;
 	if (!ipv6) {
-		goto out;
+		return false;
 	}
 
-	net_ipv6_addr_create_solicited_node(addr, &maddr);
+	ret = net_if_addr_unref(iface, AF_INET6, addr);
+	if (ret > 0) {
+		NET_DBG("Address %s still in use (ref %d)",
+			net_sprint_ipv6_addr(addr), ret);
+		return false;
 
-	ARRAY_FOR_EACH(ipv6->unicast, i) {
-		struct in6_addr unicast_maddr;
-
-		if (!ipv6->unicast[i].is_used) {
-			continue;
-		}
-
-		/* count how many times this solicited-node multicast address is identical
-		 * for all the used unicast addresses
-		 */
-		net_ipv6_addr_create_solicited_node(&ipv6->unicast[i].address.in6_addr,
-						    &unicast_maddr);
-		if (net_ipv6_addr_cmp(&maddr, &unicast_maddr)) {
-			maddr_count++;
-		}
-
-		if (!net_ipv6_addr_cmp(&ipv6->unicast[i].address.in6_addr,
-				       addr)) {
-			continue;
-		}
-
-		found = i;
+	} else if (ret < 0) {
+		NET_DBG("Address %s not found (%d)",
+			net_sprint_ipv6_addr(addr), ret);
 	}
 
-	if (found >= 0) {
-		if (!ipv6->unicast[found].is_infinite) {
-			k_mutex_lock(&lock, K_FOREVER);
-
-			sys_slist_find_and_remove(
-				&active_address_lifetime_timers,
-				&ipv6->unicast[found].lifetime.node);
-
-			if (sys_slist_is_empty(
-				    &active_address_lifetime_timers)) {
-				k_work_cancel_delayable(
-					&address_lifetime_timer);
-			}
-
-			k_mutex_unlock(&lock);
-		}
-
-#if defined(CONFIG_NET_IPV6_DAD)
-		if (!net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
-			k_mutex_lock(&lock, K_FOREVER);
-			sys_slist_find_and_remove(&active_dad_timers,
-						  &ipv6->unicast[found].dad_node);
-			k_mutex_unlock(&lock);
-		}
-#endif
-
-		ipv6->unicast[found].is_used = false;
-
-		if (maddr_count == 1) {
-			/* remove the solicited-node multicast address only if no other
-			 * unicast address is also using it
-			 */
-			net_if_ipv6_maddr_rm(iface, &maddr);
-		}
-
-		NET_DBG("[%d] interface %d (%p) address %s type %s removed",
-			found, net_if_get_by_iface(iface), iface,
-			net_sprint_ipv6_addr(addr),
-			net_addr_type2str(ipv6->unicast[found].addr_type));
-
-		/* Using the IPv6 address pointer here can give false
-		 * info if someone adds a new IP address into this position
-		 * in the address array. This is quite unlikely thou.
-		 */
-		net_mgmt_event_notify_with_info(
-			NET_EVENT_IPV6_ADDR_DEL,
-			iface,
-			&ipv6->unicast[found].address.in6_addr,
-			sizeof(struct in6_addr));
-
-		ret = true;
-		goto out;
-	}
-
-out:
-	net_if_unlock(iface);
-
-	return ret;
+	return true;
 }
 
 bool z_impl_net_if_ipv6_addr_add_by_index(int index,
@@ -4192,6 +4116,7 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 		ifaddr->address.in_addr.s4_addr32[0] =
 						addr->s4_addr32[0];
 		ifaddr->addr_type = addr_type;
+		ifaddr->atomic_ref = ATOMIC_INIT(1);
 
 		/* Caller has to take care of timers and their expiry */
 		if (vlifetime) {
@@ -4226,44 +4151,27 @@ out:
 bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr)
 {
 	struct net_if_ipv4 *ipv4;
-	bool ret = false;
+	int ret;
 
-	net_if_lock(iface);
+	NET_ASSERT(addr);
 
 	ipv4 = iface->config.ip.ipv4;
 	if (!ipv4) {
-		goto out;
+		return false;
 	}
 
-	ARRAY_FOR_EACH(ipv4->unicast, i) {
-		if (!ipv4->unicast[i].ipv4.is_used) {
-			continue;
-		}
+	ret = net_if_addr_unref(iface, AF_INET, addr);
+	if (ret > 0) {
+		NET_DBG("Address %s still in use (ref %d)",
+			net_sprint_ipv4_addr(addr), ret);
+		return false;
 
-		if (!net_ipv4_addr_cmp(&ipv4->unicast[i].ipv4.address.in_addr,
-				       addr)) {
-			continue;
-		}
-
-		ipv4->unicast[i].ipv4.is_used = false;
-
-		NET_DBG("[%zu] interface %d (%p) address %s removed",
-			i, net_if_get_by_iface(iface), iface,
-			net_sprint_ipv4_addr(addr));
-
-		net_mgmt_event_notify_with_info(
-			NET_EVENT_IPV4_ADDR_DEL, iface,
-			&ipv4->unicast[i].ipv4.address.in_addr,
-			sizeof(struct in_addr));
-
-		ret = true;
-		goto out;
+	} else if (ret < 0) {
+		NET_DBG("Address %s not found (%d)",
+			net_sprint_ipv4_addr(addr), ret);
 	}
 
-out:
-	net_if_unlock(iface);
-
-	return ret;
+	return true;
 }
 
 bool z_impl_net_if_ipv4_addr_add_by_index(int index,
@@ -4634,6 +4542,304 @@ out:
 	}
 
 	return iface;
+}
+
+static struct net_if_addr *get_ifaddr(struct net_if *iface,
+				      sa_family_t family,
+				      const void *addr,
+				      unsigned int *mcast_addr_count)
+{
+	struct net_if_addr *ifaddr = NULL;
+
+	net_if_lock(iface);
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+		struct net_if_ipv6 *ipv6 =
+			COND_CODE_1(CONFIG_NET_NATIVE_IPV6, (iface->config.ip.ipv6), (NULL));
+
+		struct in6_addr maddr;
+		unsigned int maddr_count = 0;
+		int found = -1;
+
+		net_ipv6_addr_create_solicited_node((struct in6_addr *)addr,
+						    &maddr);
+
+		ARRAY_FOR_EACH(ipv6->unicast, i) {
+			struct in6_addr unicast_maddr;
+
+			if (!ipv6->unicast[i].is_used) {
+				continue;
+			}
+
+			/* Count how many times this solicited-node multicast address is identical
+			 * for all the used unicast addresses
+			 */
+			net_ipv6_addr_create_solicited_node(
+				&ipv6->unicast[i].address.in6_addr,
+				&unicast_maddr);
+
+			if (net_ipv6_addr_cmp(&maddr, &unicast_maddr)) {
+				maddr_count++;
+			}
+
+			if (!net_ipv6_addr_cmp(&ipv6->unicast[i].address.in6_addr, addr)) {
+				continue;
+			}
+
+			found = i;
+		}
+
+		if (found >= 0) {
+			ifaddr = &ipv6->unicast[found];
+
+			if (mcast_addr_count != NULL) {
+				*mcast_addr_count = maddr_count;
+			}
+		}
+
+		goto out;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+		struct net_if_ipv4 *ipv4 =
+			COND_CODE_1(CONFIG_NET_NATIVE_IPV4, (iface->config.ip.ipv4), (NULL));
+
+		ARRAY_FOR_EACH(ipv4->unicast, i) {
+			if (!ipv4->unicast[i].ipv4.is_used) {
+				continue;
+			}
+
+			if (!net_ipv4_addr_cmp(&ipv4->unicast[i].ipv4.address.in_addr,
+					       addr)) {
+				continue;
+			}
+
+			ifaddr = &ipv4->unicast[i].ipv4;
+
+			goto out;
+		}
+	}
+
+out:
+	net_if_unlock(iface);
+
+	return ifaddr;
+}
+
+static void remove_ipv6_ifaddr(struct net_if *iface,
+			       struct net_if_addr *ifaddr,
+			       unsigned int maddr_count)
+{
+	struct net_if_ipv6 *ipv6;
+
+	net_if_lock(iface);
+
+	ipv6 = COND_CODE_1(CONFIG_NET_NATIVE_IPV6, (iface->config.ip.ipv6), (NULL));
+	if (!ipv6) {
+		goto out;
+	}
+
+	if (!ifaddr->is_infinite) {
+		k_mutex_lock(&lock, K_FOREVER);
+
+#if defined(CONFIG_NET_NATIVE_IPV6)
+		sys_slist_find_and_remove(&active_address_lifetime_timers,
+					  &ifaddr->lifetime.node);
+
+		if (sys_slist_is_empty(&active_address_lifetime_timers)) {
+			k_work_cancel_delayable(&address_lifetime_timer);
+		}
+#endif
+		k_mutex_unlock(&lock);
+	}
+
+#if defined(CONFIG_NET_IPV6_DAD)
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
+		k_mutex_lock(&lock, K_FOREVER);
+		sys_slist_find_and_remove(&active_dad_timers,
+					  &ifaddr->dad_node);
+		k_mutex_unlock(&lock);
+	}
+#endif
+
+	if (maddr_count == 1) {
+		/* Remove the solicited-node multicast address only if no other
+		 * unicast address is also using it
+		 */
+		struct in6_addr maddr;
+
+		net_ipv6_addr_create_solicited_node(&ifaddr->address.in6_addr,
+						    &maddr);
+		net_if_ipv6_maddr_rm(iface, &maddr);
+	}
+
+	/* Using the IPv6 address pointer here can give false
+	 * info if someone adds a new IP address into this position
+	 * in the address array. This is quite unlikely thou.
+	 */
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_ADDR_DEL,
+					iface,
+					&ifaddr->address.in6_addr,
+					sizeof(struct in6_addr));
+out:
+	net_if_unlock(iface);
+}
+
+static void remove_ipv4_ifaddr(struct net_if *iface,
+			       struct net_if_addr *ifaddr)
+{
+	struct net_if_ipv4 *ipv4;
+
+	net_if_lock(iface);
+
+	ipv4 = COND_CODE_1(CONFIG_NET_NATIVE_IPV4, (iface->config.ip.ipv4), (NULL));
+	if (!ipv4) {
+		goto out;
+	}
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ADDR_DEL,
+					iface,
+					&ifaddr->address.in_addr,
+					sizeof(struct in_addr));
+out:
+	net_if_unlock(iface);
+}
+
+#if defined(CONFIG_NET_IF_LOG_LEVEL)
+#define NET_LOG_LEVEL CONFIG_NET_IF_LOG_LEVEL
+#else
+#define NET_LOG_LEVEL 0
+#endif
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+struct net_if_addr *net_if_addr_ref_debug(struct net_if *iface,
+					  sa_family_t family,
+					  const void *addr,
+					  const char *caller,
+					  int line)
+#else
+struct net_if_addr *net_if_addr_ref(struct net_if *iface,
+				    sa_family_t family,
+				    const void *addr)
+#endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
+{
+	struct net_if_addr *ifaddr;
+	atomic_val_t ref;
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+	char addr_str[IS_ENABLED(CONFIG_NET_IPV6) ?
+		      INET6_ADDRSTRLEN : INET_ADDRSTRLEN];
+
+	__ASSERT(iface, "iface is NULL (%s():%d)", caller, line);
+#endif
+
+	ifaddr = get_ifaddr(iface, family, addr, NULL);
+
+	do {
+		ref = ifaddr ? atomic_get(&ifaddr->atomic_ref) : 0;
+		if (!ref) {
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+			NET_ERR("iface %d addr %s (%s():%d)",
+				net_if_get_by_iface(iface),
+				net_addr_ntop(family,
+					      addr,
+					      addr_str, sizeof(addr_str)),
+				caller, line);
+#endif
+			return NULL;
+		}
+	} while (!atomic_cas(&ifaddr->atomic_ref, ref, ref + 1));
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+	NET_DBG("[%d] ifaddr %s state %d ref %ld (%s():%d)",
+		net_if_get_by_iface(iface),
+		net_addr_ntop(ifaddr->address.family,
+			      (void *)&ifaddr->address.in_addr,
+			      addr_str, sizeof(addr_str)),
+		ifaddr->addr_state,
+		ref + 1,
+		caller, line);
+#endif
+
+	return ifaddr;
+}
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+int net_if_addr_unref_debug(struct net_if *iface,
+			    sa_family_t family,
+			    const void *addr,
+			    const char *caller, int line)
+#else
+int net_if_addr_unref(struct net_if *iface,
+		      sa_family_t family,
+		      const void *addr)
+#endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
+{
+	struct net_if_addr *ifaddr;
+	unsigned int maddr_count = 0;
+	atomic_val_t ref;
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+	char addr_str[IS_ENABLED(CONFIG_NET_IPV6) ?
+		      INET6_ADDRSTRLEN : INET_ADDRSTRLEN];
+
+	__ASSERT(iface, "iface is NULL (%s():%d)", caller, line);
+#endif
+
+	ifaddr = get_ifaddr(iface, family, addr, &maddr_count);
+
+	if (!ifaddr) {
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+		NET_ERR("iface %d addr %s (%s():%d)",
+			net_if_get_by_iface(iface),
+			net_addr_ntop(family,
+				      addr,
+				      addr_str, sizeof(addr_str)),
+			caller, line);
+#endif
+		return -EINVAL;
+	}
+
+	do {
+		ref = atomic_get(&ifaddr->atomic_ref);
+		if (!ref) {
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+			NET_ERR("*** ERROR *** iface %d ifaddr %p "
+				"is freed already (%s():%d)",
+				net_if_get_by_iface(iface),
+				ifaddr,
+				caller, line);
+#endif
+			return -EINVAL;
+		}
+
+	} while (!atomic_cas(&ifaddr->atomic_ref, ref, ref - 1));
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+	NET_DBG("[%d] ifaddr %s state %d ref %ld (%s():%d)",
+		net_if_get_by_iface(iface),
+		net_addr_ntop(ifaddr->address.family,
+			      (void *)&ifaddr->address.in_addr,
+			      addr_str, sizeof(addr_str)),
+		ifaddr->addr_state,
+		ref - 1, caller, line);
+#endif
+
+	if (ref > 1) {
+		return ref - 1;
+	}
+
+	ifaddr->is_used = false;
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6 && addr != NULL) {
+		remove_ipv6_ifaddr(iface, ifaddr, maddr_count);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET && addr != NULL) {
+		remove_ipv4_ifaddr(iface, ifaddr);
+	}
+
+	return 0;
 }
 
 enum net_verdict net_if_recv_data(struct net_if *iface, struct net_pkt *pkt)

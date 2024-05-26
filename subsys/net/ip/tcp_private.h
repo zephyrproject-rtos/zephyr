@@ -336,6 +336,7 @@ struct tcp { /* TCP connection */
 	bool keep_alive : 1;
 #endif /* CONFIG_NET_TCP_KEEPALIVE */
 	bool tcp_nodelay : 1;
+	bool addr_ref_done : 1;
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\

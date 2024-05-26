@@ -53,6 +53,11 @@ struct net_if_addr {
 	/** IP address */
 	struct net_addr address;
 
+	/** Reference counter. This is used to prevent address removal if there
+	 * are sockets that have bound the local endpoint to this address.
+	 */
+	atomic_t atomic_ref;
+
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	struct net_timeout lifetime;
 #endif
@@ -1156,6 +1161,31 @@ static inline int net_if_set_link_addr_unlocked(struct net_if *iface,
 int net_if_set_link_addr_locked(struct net_if *iface,
 				uint8_t *addr, uint8_t len,
 				enum net_link_type type);
+
+#if CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG
+extern int net_if_addr_unref_debug(struct net_if *iface,
+				   sa_family_t family,
+				   const void *addr,
+				   const char *caller, int line);
+#define net_if_addr_unref(iface, family, addr) \
+	net_if_addr_unref_debug(iface, family, addr, __func__, __LINE__)
+
+extern struct net_if_addr *net_if_addr_ref_debug(struct net_if *iface,
+						 sa_family_t family,
+						 const void *addr,
+						 const char *caller,
+						 int line);
+#define net_if_addr_ref(iface, family, addr) \
+	net_if_addr_ref_debug(iface, family, addr, __func__, __LINE__)
+#else
+extern int net_if_addr_unref(struct net_if *iface,
+			     sa_family_t family,
+			     const void *addr);
+extern struct net_if_addr *net_if_addr_ref(struct net_if *iface,
+					   sa_family_t family,
+					   const void *addr);
+#endif /* CONFIG_NET_IF_LOG_LEVEL */
+
 /** @endcond */
 
 /**
