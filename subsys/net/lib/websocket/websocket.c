@@ -1193,6 +1193,58 @@ out:
 	return ret;
 }
 
+static struct websocket_context *websocket_search(int sock)
+{
+	struct websocket_context *ctx = NULL;
+	int i;
+
+	k_sem_take(&contexts_lock, K_FOREVER);
+
+	for (i = 0; i < ARRAY_SIZE(contexts); i++) {
+		if (!websocket_context_is_used(&contexts[i])) {
+			continue;
+		}
+
+		if (contexts[i].sock != sock) {
+			continue;
+		}
+
+		ctx = &contexts[i];
+		break;
+	}
+
+	k_sem_give(&contexts_lock);
+
+	return ctx;
+}
+
+int websocket_unregister(int sock)
+{
+	struct websocket_context *ctx;
+
+	if (sock < 0) {
+		return -EINVAL;
+	}
+
+	ctx = websocket_search(sock);
+	if (ctx == NULL) {
+		NET_DBG("[%p] Real socket for websocket sock %d not found!", ctx, sock);
+		return -ENOENT;
+	}
+
+	if (ctx->real_sock < 0) {
+		return -EALREADY;
+	}
+
+	(void)zsock_close(sock);
+	(void)zsock_close(ctx->real_sock);
+
+	ctx->real_sock = -1;
+	ctx->sock = -1;
+
+	return 0;
+}
+
 static const struct socket_op_vtable websocket_fd_op_vtable = {
 	.fd_vtable = {
 		.read = websocket_read_vmeth,
