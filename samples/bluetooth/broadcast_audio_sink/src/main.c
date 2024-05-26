@@ -151,22 +151,6 @@ static void lc3_decoder_thread(void *arg1, void *arg2, void *arg3);
 K_THREAD_DEFINE(decoder_tid, LC3_ENCODER_STACK_SIZE, lc3_decoder_thread,
 		NULL, NULL, NULL, LC3_ENCODER_PRIORITY, 0, -1);
 
-static size_t get_chan_cnt(enum bt_audio_location chan_allocation)
-{
-	size_t cnt = 0U;
-
-	if (chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO) {
-		return 1;
-	}
-
-	while (chan_allocation != 0) {
-		cnt += chan_allocation & 1U;
-		chan_allocation >>= 1;
-	}
-
-	return cnt;
-}
-
 /* Consumer thread of the decoded stream data */
 static void lc3_decoder_thread(void *arg1, void *arg2, void *arg3)
 {
@@ -207,7 +191,7 @@ static void lc3_decoder_thread(void *arg1, void *arg2, void *arg3)
 			stream->in_buf = NULL;
 			k_mutex_unlock(&stream->lc3_decoder_mutex);
 
-			frames_per_block = get_chan_cnt(stream->chan_allocation);
+			frames_per_block = bt_audio_get_chan_count(stream->chan_allocation);
 			if (buf->len !=
 			    (frames_per_block * octets_per_frame * frames_blocks_per_sdu)) {
 				printk("Expected %u frame blocks with %u frames of size %u, but "
@@ -386,7 +370,7 @@ static int lc3_enable(struct broadcast_sink_stream *sink_stream)
 	/* An SDU can consist of X frame blocks, each with Y frames (one per channel) of size Z in
 	 * them. The minimum SDU size required for this is X * Y * Z.
 	 */
-	chan_alloc_bit_cnt = get_chan_cnt(sink_stream->chan_allocation);
+	chan_alloc_bit_cnt = bt_audio_get_chan_count(sink_stream->chan_allocation);
 	sdu_size_required = chan_alloc_bit_cnt * sink_stream->lc3_octets_per_frame *
 			    sink_stream->lc3_frames_blocks_per_sdu;
 	if (sdu_size_required < sink_stream->stream.qos->sdu) {
@@ -771,7 +755,7 @@ static bool find_valid_bis_in_subgroup_cb(const struct bt_bap_base_subgroup *sub
 	} else {
 		/* If the subgroup contains a single channel, then we just grab the first BIS index
 		 */
-		if (get_chan_cnt(chan_allocation) == 1 &&
+		if (bt_audio_get_chan_count(chan_allocation) == 1 &&
 		    chan_allocation == CONFIG_TARGET_BROADCAST_CHANNEL) {
 			uint32_t subgroup_bis_indexes;
 

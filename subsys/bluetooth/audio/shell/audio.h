@@ -220,22 +220,6 @@ int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *pa
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
 
-static inline uint8_t get_chan_cnt(enum bt_audio_location chan_allocation)
-{
-	uint8_t cnt = 0U;
-
-	if (chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO) {
-		return 1;
-	}
-
-	while (chan_allocation != 0) {
-		cnt += chan_allocation & 1U;
-		chan_allocation >>= 1;
-	}
-
-	return cnt;
-}
-
 static inline void print_qos(const struct shell *sh, const struct bt_audio_codec_qos *qos)
 {
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST)
