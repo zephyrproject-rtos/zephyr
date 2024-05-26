@@ -155,7 +155,6 @@ struct spi_nor_config {
 	bool dpd_exist:1;
 	bool dpd_wakeup_sequence_exist:1;
 	bool mxicy_mx25r_power_mode_exist:1;
-	bool enter_4byte_addr_exist:1;
 	bool reset_gpios_exist:1;
 	bool requires_ulbpr_exist:1;
 	bool wp_gpios_exist:1;
@@ -1034,10 +1033,10 @@ static int spi_nor_read_jedec_id(const struct device *dev,
 static int spi_nor_set_address_mode(const struct device *dev,
 				    uint8_t enter_4byte_addr)
 {
-	const struct spi_nor_config *cfg = dev->config;
-	int ret = -ENOSYS;
+	int ret = 0;
 
-	if (cfg->enter_4byte_addr_exist) {
+	LOG_DBG("Checking enter-4byte-addr %02x", enter_4byte_addr);
+
 	/* Do nothing if not provided (either no bits or all bits
 	 * set).
 	 */
@@ -1045,8 +1044,6 @@ static int spi_nor_set_address_mode(const struct device *dev,
 	    || (enter_4byte_addr == 0xff)) {
 		return 0;
 	}
-
-	LOG_DBG("Checking enter-4byte-addr %02x", enter_4byte_addr);
 
 	/* This currently only supports command 0xB7 (Enter 4-Byte
 	 * Address Mode), with or without preceding WREN.
@@ -1061,18 +1058,18 @@ static int spi_nor_set_address_mode(const struct device *dev,
 		/* Enter after WREN. */
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
 	}
+
 	if (ret == 0) {
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_4BA);
-	}
 
-	if (ret == 0) {
-		struct spi_nor_data *data = dev->data;
+		if (ret == 0) {
+			struct spi_nor_data *data = dev->data;
 
-		data->flag_access_32bit = true;
+			data->flag_access_32bit = true;
+		}
 	}
 
 	release_device(dev);
-	}
 
 	return ret;
 }
@@ -1655,7 +1652,6 @@ static const struct flash_driver_api spi_nor_api = {
 	.dpd_exist = DT_INST_PROP(idx, has_dpd),						\
 	.dpd_wakeup_sequence_exist = DT_INST_NODE_HAS_PROP(idx, dpd_wakeup_sequence),		\
 	.mxicy_mx25r_power_mode_exist = DT_INST_NODE_HAS_PROP(idx, mxicy_mx25r_power_mode),	\
-	.enter_4byte_addr_exist = DT_INST_NODE_HAS_PROP(idx, enter_4byte_addr),			\
 	.reset_gpios_exist = DT_INST_NODE_HAS_PROP(idx, reset_gpios),				\
 	.requires_ulbpr_exist = DT_INST_PROP(idx, requires_ulbpr),				\
 	.wp_gpios_exist = DT_INST_NODE_HAS_PROP(idx, wp_gpios),					\
