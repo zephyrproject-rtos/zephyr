@@ -442,7 +442,7 @@ static inline void net_context_set_accepting(struct net_context *context,
 	if (accepting) {
 		context->flags |= NET_CONTEXT_ACCEPTING_SOCK;
 	} else {
-		context->flags &= ~NET_CONTEXT_ACCEPTING_SOCK;
+		context->flags &= (uint16_t)~NET_CONTEXT_ACCEPTING_SOCK;
 	}
 }
 
@@ -474,7 +474,7 @@ static inline void net_context_set_closing(struct net_context *context,
 	if (closing) {
 		context->flags |= NET_CONTEXT_CLOSING_SOCK;
 	} else {
-		context->flags &= ~NET_CONTEXT_CLOSING_SOCK;
+		context->flags &= (uint16_t)~NET_CONTEXT_CLOSING_SOCK;
 	}
 }
 
@@ -554,7 +554,7 @@ static inline void net_context_set_family(struct net_context *context,
 	if (family == AF_UNSPEC || family == AF_INET || family == AF_INET6 ||
 	    family == AF_PACKET || family == AF_CAN) {
 		/* Family is in BIT(4), BIT(5) and BIT(6) */
-		flag = family << 3;
+		flag = (uint8_t)(family << 3);
 	}
 
 	context->flags |= flag;
@@ -596,7 +596,7 @@ static inline void net_context_set_type(struct net_context *context,
 
 	if (type == SOCK_DGRAM || type == SOCK_STREAM || type == SOCK_RAW) {
 		/* Type is in BIT(6) and BIT(7)*/
-		flag = type << 6;
+		flag = (uint16_t)(type << 6);
 	}
 
 	context->flags |= flag;
@@ -714,7 +714,7 @@ static inline void net_context_set_iface(struct net_context *context,
 {
 	NET_ASSERT(iface);
 
-	context->iface = net_if_get_by_iface(iface);
+	context->iface = (uint8_t)net_if_get_by_iface(iface);
 }
 
 /**
