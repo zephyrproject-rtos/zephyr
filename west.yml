@@ -288,7 +288,7 @@ manifest:
       path: modules/debug/mipi-sys-t
       groups:
         - debug
-      revision: a819419603a2dfcb47f7f39092e1bc112e45d1ef
+      revision: 71ace1f5caa03e56c8740a09863e685efb4b2360
     - name: net-tools
       revision: 7c7a856814d7f27509c8511fef14cec21f7d0c30
       path: tools/net-tools
