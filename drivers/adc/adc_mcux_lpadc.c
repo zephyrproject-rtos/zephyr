@@ -122,10 +122,15 @@ static int mcux_lpadc_acquisition_time_setup(const struct device *dev, uint16_t 
 static int mcux_lpadc_channel_setup(const struct device *dev,
 				const struct adc_channel_cfg *channel_cfg)
 {
+	const struct mcux_lpadc_config *config = dev->config;
+	const struct device **regulator = config->ref_supplies;
+	uint16_t vref_mv = CONTAINER_OF(channel_cfg, struct adc_dt_spec, channel_cfg)->vref_mv;
+	int32_t vref_uv = (int32_t)((uint32_t)vref_mv * 1000);
 	struct mcux_lpadc_data *data = dev->data;
 	lpadc_conv_command_config_t *cmd;
 	uint8_t channel_side;
 	uint8_t channel_num;
+	int err;
 
 	/* User may configure maximum number of active channels */
 	if (channel_cfg->channel_id >= CONFIG_LPADC_CHANNEL_COUNT) {
@@ -200,8 +205,25 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 	}
 #endif
 
-	if (channel_cfg->reference != ADC_REF_EXTERNAL0) {
-		LOG_ERR("Invalid channel reference");
+	/*
+	 * ADC_REF_EXTERNAL1: Use SoC internal regulator as LPADC reference voltage.
+	 * ADC_REF_EXTERNAL0: Use other voltage source (maybe also within the SoCs)
+	 * as LPADC reference voltage, like VREFH, VDDA, etc.
+	 */
+	if (channel_cfg->reference == ADC_REF_EXTERNAL1) {
+		LOG_DBG("ref external1");
+		if (*regulator != NULL) {
+			err = regulator_set_voltage(*regulator, vref_uv, vref_uv);
+			if (err < 0) {
+				return err;
+			}
+		} else {
+			return -EINVAL;
+		}
+	} else if (channel_cfg->reference == ADC_REF_EXTERNAL0) {
+		LOG_DBG("ref external0");
+	} else {
+		LOG_DBG("ref not support");
 		return -EINVAL;
 	}
 
