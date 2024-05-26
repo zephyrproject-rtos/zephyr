@@ -13,6 +13,7 @@
  */
 
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/tc_util.h>
@@ -73,6 +74,17 @@ static void i2c_ram_before(void *f)
 	rx_cmd[1] = (addr) & 0xFF;
 	addr += ARRAY_SIZE(tx_data) - TX_DATA_OFFSET;
 	memset(rx_data, 0, ARRAY_SIZE(rx_data));
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	pm_device_runtime_get(i2c_dev);
+#endif
+}
+
+static void i2c_ram_after(void *f)
+{
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	pm_device_runtime_put(i2c_dev);
+#endif
 }
 
 ZTEST(i2c_ram, test_ram_transfer)
@@ -294,4 +306,4 @@ ZTEST(i2c_ram, test_ram_rtio_isr)
 
 #endif /* CONFIG_I2C_RTIO */
 
-ZTEST_SUITE(i2c_ram, NULL, i2c_ram_setup, i2c_ram_before, NULL, NULL);
+ZTEST_SUITE(i2c_ram, NULL, i2c_ram_setup, i2c_ram_before, i2c_ram_after, NULL);
