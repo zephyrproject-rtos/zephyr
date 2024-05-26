@@ -489,6 +489,9 @@
 
 #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT)
 #define MBEDTLS_PSA_CRYPTO_CLIENT
+#define MBEDTLS_PSA_CRYPTO_CONFIG
+#define MBEDTLS_PSA_CRYPTO_CONFIG_FILE   "config-psa.h"
+
 #endif
 
 #if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2) && defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
@@ -505,10 +508,6 @@
 
 #if defined(CONFIG_BUILD_WITH_TFM)
 #undef MBEDTLS_PSA_CRYPTO_C
-#endif
-
-#if defined(CONFIG_PSA_WANT_ALG_SHA_256)
-#define PSA_WANT_ALG_SHA_256 1
 #endif
 
 #endif /* MBEDTLS_CONFIG_H */
