@@ -64,6 +64,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 #define USB_RING_BUF_SIZE            (5 * LC3_MAX_NUM_SAMPLES_STEREO) /* 5 SDUs*/
 #endif /* defined(CONFIG_USB_DEVICE_AUDIO) */
 
+static K_SEM_DEFINE(sem_broadcast_sink_stopped, 0U, 1U);
 static K_SEM_DEFINE(sem_connected, 0U, 1U);
 static K_SEM_DEFINE(sem_disconnected, 0U, 1U);
 static K_SEM_DEFINE(sem_broadcaster_found, 0U, 1U);
@@ -75,7 +76,9 @@ static K_SEM_DEFINE(sem_broadcast_code_received, 0U, 1U);
 static K_SEM_DEFINE(sem_pa_request, 0U, 1U);
 static K_SEM_DEFINE(sem_past_request, 0U, 1U);
 static K_SEM_DEFINE(sem_bis_sync_requested, 0U, 1U);
-static K_SEM_DEFINE(sem_bis_synced, 0U, CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT);
+static K_SEM_DEFINE(sem_stream_connected, 0U, CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT);
+static K_SEM_DEFINE(sem_stream_started, 0U, CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT);
+static K_SEM_DEFINE(sem_big_synced, 0U, 1U);
 
 /* Sample assumes that we only have a single Scan Delegator receive state */
 static const struct bt_bap_scan_delegator_recv_state *req_recv_state;
@@ -107,8 +110,11 @@ static struct broadcast_sink_stream {
 } streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 
 static struct bt_bap_stream *streams_p[ARRAY_SIZE(streams)];
+static volatile bool big_synced;
+static volatile bool base_received;
 static struct bt_conn *broadcast_assistant_conn;
 static struct bt_le_ext_adv *ext_adv;
+static volatile uint8_t stream_count;
 
 static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 	BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_24KHZ,
@@ -480,6 +486,25 @@ static void usb_data_written_cb(const struct device *dev, struct net_buf *buf, s
 }
 #endif /* defined(CONFIG_USB_DEVICE_AUDIO) */
 
+static void stream_connected_cb(struct bt_bap_stream *stream)
+{
+	printk("Stream %p connected\n", stream);
+
+	k_sem_give(&sem_stream_connected);
+}
+
+static void stream_disconnected_cb(struct bt_bap_stream *stream, uint8_t reason)
+{
+	int err;
+
+	printk("Stream %p disconnected with reason 0x%02X\n", stream, reason);
+
+	err = k_sem_take(&sem_stream_connected, K_NO_WAIT);
+	if (err != 0) {
+		printk("Failed to take sem_stream_connected: %d\n", err);
+	}
+}
+
 static void stream_started_cb(struct bt_bap_stream *stream)
 {
 	struct broadcast_sink_stream *sink_stream =
@@ -509,7 +534,11 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 	}
 #endif /* CONFIG_LIBLC3 */
 
-	k_sem_give(&sem_bis_synced);
+	k_sem_give(&sem_stream_started);
+	if (k_sem_count_get(&sem_stream_started) == stream_count) {
+		big_synced = true;
+		k_sem_give(&sem_big_synced);
+	}
 }
 
 static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
@@ -518,9 +547,13 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
 
-	err = k_sem_take(&sem_bis_synced, K_NO_WAIT);
+	err = k_sem_take(&sem_stream_started, K_NO_WAIT);
 	if (err != 0) {
-		printk("Failed to take sem_bis_synced: %d\n", err);
+		printk("Failed to take sem_stream_started: %d\n", err);
+	}
+
+	if (k_sem_count_get(&sem_stream_started) != stream_count) {
+		big_synced = false;
 	}
 }
 
@@ -563,6 +596,8 @@ static void stream_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_rec
 }
 
 static struct bt_bap_stream_ops stream_ops = {
+	.connected = stream_connected_cb,
+	.disconnected = stream_disconnected_cb,
 	.started = stream_started_cb,
 	.stopped = stream_stopped_cb,
 	.recv = stream_recv_cb,
@@ -794,7 +829,7 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 	uint32_t base_bis_index_bitfield = 0U;
 	int err;
 
-	if (k_sem_count_get(&sem_base_received) != 0U) {
+	if (base_received) {
 		return;
 	}
 
@@ -817,17 +852,23 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 
 	bis_index_bitfield = base_bis_index_bitfield & bis_index_mask;
 
+	printk("bis_index_bitfield = 0x%08x\n", bis_index_bitfield);
+
 	if (broadcast_assistant_conn == NULL) {
 		/* No broadcast assistant requesting anything */
 		requested_bis_sync = BT_BAP_BIS_SYNC_NO_PREF;
 		k_sem_give(&sem_bis_sync_requested);
 	}
 
+	base_received = true;
 	k_sem_give(&sem_base_received);
 }
 
 static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo)
 {
+	printk("Broadcast sink (%p) is syncable, BIG %s\n", (void *)sink,
+	       biginfo->encryption ? "encrypted" : "not encrypted");
+
 	k_sem_give(&sem_syncable);
 
 	if (!biginfo->encryption) {
@@ -903,6 +944,18 @@ static int pa_sync_past(struct bt_conn *conn, uint16_t pa_interval)
 	return err;
 }
 
+static void recv_state_updated_cb(struct bt_conn *conn,
+				  const struct bt_bap_scan_delegator_recv_state *recv_state)
+{
+	printk("Receive state updated, pa sync state: %u\n", recv_state->pa_sync_state);
+
+	for (uint8_t i = 0; i < recv_state->num_subgroups; i++) {
+		printk("subgroup %d bis_sync: 0x%08x\n", i, recv_state->subgroups[i].bis_sync);
+	}
+
+	req_recv_state = recv_state;
+}
+
 static int pa_sync_req_cb(struct bt_conn *conn,
 			  const struct bt_bap_scan_delegator_recv_state *recv_state,
 			  bool past_avail, uint16_t pa_interval)
@@ -951,14 +1004,21 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 {
 	int err;
 
-	req_recv_state = recv_state;
+	printk("PA sync termination req, pa sync state: %u\n", recv_state->pa_sync_state);
 
-	err = bt_bap_broadcast_sink_delete(broadcast_sink);
-	if (err != 0) {
-		return err;
+	for (uint8_t i = 0; i < recv_state->num_subgroups; i++) {
+		printk("subgroup %d bis_sync: 0x%08x\n", i, recv_state->subgroups[i].bis_sync);
 	}
 
-	broadcast_sink = NULL;
+	req_recv_state = recv_state;
+
+	printk("Delete periodic advertising sync\n");
+	err = bt_le_per_adv_sync_delete(pa_sync);
+	if (err != 0) {
+		printk("Could not delete per adv sync: %d\n", err);
+
+		return err;
+	}
 
 	return 0;
 }
@@ -982,13 +1042,12 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 			   const struct bt_bap_scan_delegator_recv_state *recv_state,
 			   const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
 {
-	const bool bis_synced = k_sem_count_get(&sem_bis_synced) > 0U;
-
-	printk("BIS sync request received for %p: 0x%08x\n",
-	       recv_state, bis_sync_req[0]);
+	printk("BIS sync request received for %p: 0x%08x->0x%08x, broadcast id: 0x%06x, (%s)\n",
+	       recv_state, requested_bis_sync, bis_sync_req[0], recv_state->broadcast_id,
+	       big_synced ? "BIG synced" : "BIG not synced");
 
 	/* We only care about a single subgroup in this sample */
-	if (bis_synced && requested_bis_sync != bis_sync_req[0]) {
+	if (big_synced && requested_bis_sync != bis_sync_req[0]) {
 		/* If the BIS sync request is received while we are already
 		 * synced, it means that the requested BIS sync has changed.
 		 */
@@ -996,8 +1055,8 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 
 		/* The stream stopped callback will be called as part of this,
 		 * and we do not need to wait for any events from the
-		 * controller. Thus, when this returns, the `sem_bis_synced`
-		 * is back to  0.
+		 * controller. Thus, when this returns, the `big_synced`
+		 * is back to false.
 		 */
 		err = bt_bap_broadcast_sink_stop(broadcast_sink);
 		if (err != 0) {
@@ -1005,6 +1064,8 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 
 			return err;
 		}
+
+		k_sem_give(&sem_broadcast_sink_stopped);
 	}
 
 	requested_bis_sync = bis_sync_req[0];
@@ -1017,6 +1078,7 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 }
 
 static struct bt_bap_scan_delegator_cb scan_delegator_cbs = {
+	.recv_state_updated = recv_state_updated_cb,
 	.pa_sync_req = pa_sync_req_cb,
 	.pa_sync_term_req = pa_sync_term_req_cb,
 	.broadcast_code = broadcast_code_cb,
@@ -1099,20 +1161,18 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 	printk("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X\n", broadcast_id,
 	       le_addr, info->sid);
 
-	if (broadcast_assistant_conn == NULL) {
-		/* Not requested by Broadcast Assistant */
-		k_sem_give(&sem_broadcaster_found);
-	} else if (req_recv_state != NULL &&
-		   bt_addr_le_eq(info->addr, &req_recv_state->addr) &&
-		   info->sid == req_recv_state->adv_sid &&
-		   broadcast_id == req_recv_state->broadcast_id) {
+	if (broadcast_assistant_conn == NULL /* Not requested by Broadcast Assistant */ ||
+	    (req_recv_state != NULL && bt_addr_le_eq(info->addr, &req_recv_state->addr) &&
+	     info->sid == req_recv_state->adv_sid &&
+	     broadcast_id == req_recv_state->broadcast_id)) {
+
+		/* Store info for PA sync parameters */
+		memcpy(&broadcaster_info, info, sizeof(broadcaster_info));
+		bt_addr_le_copy(&broadcaster_addr, info->addr);
+		broadcaster_broadcast_id = broadcast_id;
+		printk("broadcaster_broadcast_id = 0x%06X\n", broadcaster_broadcast_id);
 		k_sem_give(&sem_broadcaster_found);
 	}
-
-	/* Store info for PA sync parameters */
-	memcpy(&broadcaster_info, info, sizeof(broadcaster_info));
-	bt_addr_le_copy(&broadcaster_addr, info->addr);
-	broadcaster_broadcast_id = broadcast_id;
 
 	/* Stop parsing */
 	return false;
@@ -1160,11 +1220,11 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 	if (info->interval != 0U) {
 		/* call to bt_data_parse consumes netbufs so shallow clone for verbose output */
 
-		/* If req_recv_state is NULL then we have been requested by a broadcast assistant to
-		 * sync to a specific broadcast source. In that case we do not apply our own
-		 * broadcast name filter.
+		/* If req_recv_state is not NULL then we have been requested by a broadcast
+		 * assistant to sync to a specific broadcast source. In that case we do not apply
+		 * our own broadcast name filter.
 		 */
-		if (req_recv_state != NULL && strlen(CONFIG_TARGET_BROADCAST_NAME) > 0U) {
+		if (req_recv_state == NULL && strlen(CONFIG_TARGET_BROADCAST_NAME) > 0U) {
 			struct net_buf_simple buf_copy;
 			char name[NAME_LEN] = {0};
 
@@ -1271,9 +1331,14 @@ static int reset(void)
 {
 	int err;
 
+	printk("Reset\n");
+
 	bis_index_bitfield = 0U;
 	requested_bis_sync = 0U;
 	req_recv_state = NULL;
+	big_synced = false;
+	base_received = false;
+	stream_count = 0U;
 	(void)memset(sink_broadcast_code, 0, sizeof(sink_broadcast_code));
 	(void)memset(&broadcaster_info, 0, sizeof(broadcaster_info));
 	(void)memset(&broadcaster_addr, 0, sizeof(broadcaster_addr));
@@ -1301,35 +1366,6 @@ static int reset(void)
 		pa_sync = NULL;
 	}
 
-	if (IS_ENABLED(CONFIG_SCAN_OFFLOAD)) {
-		if (broadcast_assistant_conn != NULL) {
-			err = bt_conn_disconnect(broadcast_assistant_conn,
-						 BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-			if (err) {
-				printk("Disconnecting Broadcast Assistant failed (err %d)\n",
-				       err);
-
-				return err;
-			}
-
-			err = k_sem_take(&sem_disconnected, SEM_TIMEOUT);
-			if (err != 0) {
-				printk("Failed to take sem_disconnected: %d\n", err);
-
-				return err;
-			}
-		}
-
-		if (ext_adv != NULL) {
-			stop_adv();
-		}
-
-		k_sem_reset(&sem_connected);
-		k_sem_reset(&sem_disconnected);
-		k_sem_reset(&sem_pa_request);
-		k_sem_reset(&sem_past_request);
-	}
-
 	k_sem_reset(&sem_broadcaster_found);
 	k_sem_reset(&sem_pa_synced);
 	k_sem_reset(&sem_base_received);
@@ -1337,7 +1373,10 @@ static int reset(void)
 	k_sem_reset(&sem_pa_sync_lost);
 	k_sem_reset(&sem_broadcast_code_received);
 	k_sem_reset(&sem_bis_sync_requested);
-	k_sem_reset(&sem_bis_synced);
+	k_sem_reset(&sem_stream_connected);
+	k_sem_reset(&sem_stream_started);
+	k_sem_reset(&sem_broadcast_sink_stopped);
+
 	return 0;
 }
 
@@ -1443,28 +1482,46 @@ int main(void)
 		}
 
 		if (IS_ENABLED(CONFIG_SCAN_OFFLOAD)) {
-			printk("Starting advertising\n");
-			err = start_adv();
-			if (err != 0) {
-				printk("Unable to start advertising connectable: %d\n",
-				       err);
+			if (broadcast_assistant_conn == NULL) {
+				k_sem_reset(&sem_connected);
 
-				return 0;
-			}
+				printk("Starting advertising\n");
+				/* Stop advertising before starting if needed */
+				if (ext_adv != NULL) {
+					err = stop_adv();
+					if (err != 0) {
+						printk("Unable to stop advertising: %d\n", err);
 
-			printk("Waiting for Broadcast Assistant\n");
-			err = k_sem_take(&sem_connected, ADV_TIMEOUT);
-			if (err != 0) {
-				printk("No Broadcast Assistant connected\n");
-
-				err = stop_adv();
+						return 0;
+					}
+				}
+				err = start_adv();
 				if (err != 0) {
-					printk("Unable to stop advertising: %d\n",
+					printk("Unable to start advertising connectable: %d\n",
 					       err);
 
 					return 0;
 				}
-			} else {
+
+				printk("Waiting for Broadcast Assistant\n");
+				err = k_sem_take(&sem_connected, ADV_TIMEOUT);
+				if (err != 0) {
+					printk("No Broadcast Assistant connected\n");
+
+					err = stop_adv();
+					if (err != 0) {
+						printk("Unable to stop advertising: %d\n", err);
+
+						return 0;
+					}
+				}
+			}
+
+			if (broadcast_assistant_conn != NULL) {
+				k_sem_reset(&sem_pa_request);
+				k_sem_reset(&sem_past_request);
+				k_sem_reset(&sem_disconnected);
+
 				/* Wait for the PA request to determine if we
 				 * should start scanning, or wait for PAST
 				 */
@@ -1483,8 +1540,8 @@ int main(void)
 		}
 
 		if (strlen(CONFIG_TARGET_BROADCAST_NAME) > 0U) {
-			printk("Scanning for broadcast sources containing`"
-			CONFIG_TARGET_BROADCAST_NAME "`\n");
+			printk("Scanning for broadcast sources containing "
+			       "`" CONFIG_TARGET_BROADCAST_NAME "`\n");
 		} else {
 			printk("Scanning for broadcast sources\n");
 		}
@@ -1496,12 +1553,12 @@ int main(void)
 			return 0;
 		}
 
+		printk("Waiting for Broadcaster\n");
 		err = k_sem_take(&sem_broadcaster_found, SEM_TIMEOUT);
 		if (err != 0) {
 			printk("sem_broadcaster_found timed out, resetting\n");
 			continue;
 		}
-		printk("Broadcast source found, waiting for PA sync\n");
 
 		err = bt_le_scan_stop();
 		if (err != 0) {
@@ -1539,8 +1596,8 @@ wait_for_pa_sync:
 			printk("sem_base_received timed out, resetting\n");
 			continue;
 		}
-		printk("BASE received, waiting for syncable\n");
 
+		printk("BASE received, waiting for syncable\n");
 		err = k_sem_take(&sem_syncable, SEM_TIMEOUT);
 		if (err != 0) {
 			printk("sem_syncable timed out, resetting\n");
@@ -1565,7 +1622,17 @@ wait_for_pa_sync:
 		}
 
 		sync_bitfield = bis_index_bitfield & requested_bis_sync;
-		printk("Syncing to broadcast with bitfield: 0x%08x\n", sync_bitfield);
+		stream_count = 0;
+		for (int i = 1; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
+			if ((sync_bitfield & BIT(i)) != 0) {
+				stream_count++;
+			}
+		}
+
+		printk("Syncing to broadcast with bitfield: 0x%08x = 0x%08x (bis_index) & 0x%08x "
+		       "(req_bis_sync), stream_count = %u\n",
+		       sync_bitfield, bis_index_bitfield, requested_bis_sync, stream_count);
+
 		err = bt_bap_broadcast_sink_sync(broadcast_sink, sync_bitfield, streams_p,
 						 sink_broadcast_code);
 		if (err != 0) {
@@ -1573,15 +1640,23 @@ wait_for_pa_sync:
 			return 0;
 		}
 
-		printk("Waiting for BIG sync\n");
-		err = k_sem_take(&sem_bis_synced, SEM_TIMEOUT);
+		printk("Waiting for stream(s) started\n");
+		err = k_sem_take(&sem_big_synced, SEM_TIMEOUT);
 		if (err != 0) {
-			printk("sem_bis_synced timed out, resetting\n");
+			printk("sem_big_synced timed out, resetting\n");
 			continue;
 		}
 
 		printk("Waiting for PA disconnected\n");
 		k_sem_take(&sem_pa_sync_lost, K_FOREVER);
+
+		printk("Wainting for sink to stop\n");
+		err = k_sem_take(&sem_broadcast_sink_stopped, SEM_TIMEOUT);
+		if (err != 0) {
+			printk("sem_broadcast_sink_stopped timed out, resetting\n");
+			continue;
+		}
 	}
+
 	return 0;
 }
