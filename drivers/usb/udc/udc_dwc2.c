@@ -1168,7 +1168,7 @@ static int udc_dwc2_ep_enable(const struct device *dev,
 
 	for (uint8_t i = 1U; i < priv->ineps; i++) {
 		LOG_DBG("DIEPTXF%u %08x DIEPCTL%u %08x",
-			i, sys_read32((mem_addr_t)base->dieptxf[i - 1U]), i, dxepctl);
+			i, sys_read32((mem_addr_t)&base->dieptxf[i - 1U]), i, dxepctl);
 	}
 
 	return 0;
