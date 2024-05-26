@@ -175,10 +175,6 @@ int udc_submit_event(const struct device *dev,
 		.dev = dev,
 	};
 
-	if (!udc_is_initialized(dev)) {
-		return -EPERM;
-	}
-
 	return data->event_cb(dev, &drv_evt);
 }
 
