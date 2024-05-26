@@ -3550,6 +3550,10 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 	size_t i = 0;
 	int err;
 
+	if (!conn) {
+		return -EINVAL;
+	}
+
 	/* Check the encryption level for EATT */
 	if (bt_conn_get_security(conn) < BT_SECURITY_L2) {
 		/* Vol 3, Part G, Section 5.3.2 Channel Requirements states:
@@ -3559,10 +3563,6 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 	}
 
 	if (num_channels > CONFIG_BT_EATT_MAX || num_channels == 0) {
-		return -EINVAL;
-	}
-
-	if (!conn) {
 		return -EINVAL;
 	}
 
