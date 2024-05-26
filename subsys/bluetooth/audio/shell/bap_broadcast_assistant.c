@@ -830,6 +830,7 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 	struct bt_le_per_adv_sync_info pa_info;
 	unsigned long broadcast_id;
 	uint32_t bis_bitfield_req;
+	uint32_t subgroups_bis_sync;
 	int err;
 
 	if (pa_sync == NULL) {
@@ -873,6 +874,7 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 	param.broadcast_id = broadcast_id;
 
 	bis_bitfield_req = 0U;
+	subgroups_bis_sync = 0U;
 	for (size_t i = 3U; i < argc; i++) {
 		const unsigned long index = shell_strtoul(argv[i], 16, &err);
 
@@ -906,17 +908,22 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 	/* use the BASE to verify the BIS indexes set by command */
 	for (size_t j = 0U; j < param.num_subgroups; j++) {
 		if (bis_bitfield_req == 0) {
-			/* Not set the BIS indexes by command, use BASE directly */
-			break;
-		} else if ((subgroup_params[j].bis_sync & bis_bitfield_req) != 0) {
-			subgroup_params[j].bis_sync &= bis_bitfield_req;
+			/* Request a PA sync without BIS sync */
+			subgroup_params[j].bis_sync = 0;
 		} else {
-			/* Command is rejected when BASE does not support BIS index in command */
-			shell_error(ctx_shell, "Cannot set BIS index 0x%06X when BASE subgroup %d "
-				    "only supports %d", bis_bitfield_req, j,
-				    subgroup_params[j].bis_sync);
-			return -ENOEXEC;
+			subgroups_bis_sync |= subgroup_params[j].bis_sync;
+			/* only set the BIS index field as optional parameters */
+			/* not to whatever is in the BASE */
+			subgroup_params[j].bis_sync &= bis_bitfield_req;
 		}
+	}
+
+	if ((subgroups_bis_sync & bis_bitfield_req) != bis_bitfield_req) {
+		/* bis_sync of all subgroups should contain at least all the bits in request */
+		/* Otherwise Command will be rejected */
+		shell_error(ctx_shell, "Cannot set BIS index 0x%06X when BASE subgroups only "
+			    "supports %d", bis_bitfield_req, subgroups_bis_sync);
+		return -ENOEXEC;
 	}
 
 	err = bt_bap_broadcast_assistant_add_src(default_conn, &param);
