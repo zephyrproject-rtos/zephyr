@@ -326,7 +326,7 @@ static int ppp_save_byte(struct ppp_driver_context *ppp, uint8_t byte)
 	 */
 	if (ppp->available == 1) {
 		ret = net_pkt_alloc_buffer(ppp->pkt,
-					   CONFIG_NET_BUF_DATA_SIZE,
+					   CONFIG_NET_BUF_DATA_SIZE + ppp->available,
 					   AF_UNSPEC, K_NO_WAIT);
 		if (ret < 0) {
 			LOG_ERR("[%p] cannot allocate new data buffer", ppp);
