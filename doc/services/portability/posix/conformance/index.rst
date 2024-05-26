@@ -67,7 +67,7 @@ POSIX System Interfaces
     _POSIX_MAPPED_FILES, -1, :ref:`†<posix_undefined_behaviour>`
     _POSIX_MEMORY_PROTECTION, -1, :ref:`†<posix_undefined_behaviour>`
     :ref:`_POSIX_READER_WRITER_LOCKS<posix_option_reader_writer_locks>`, 200809L, :kconfig:option:`CONFIG_PTHREAD_IPC`
-    _POSIX_REALTIME_SIGNALS, -1, :ref:`†<posix_undefined_behaviour>`
+    :ref:`_POSIX_REALTIME_SIGNALS<posix_option_group_realtime_signals>`, -1,
     :ref:`_POSIX_SEMAPHORES<posix_option_group_semaphores>`, 200809L, :kconfig:option:`CONFIG_PTHREAD_IPC`
     :ref:`_POSIX_SPIN_LOCKS<posix_option_group_spin_locks>`, 200809L, :kconfig:option:`CONFIG_PTHREAD_SPINLOCK`
     :ref:`_POSIX_THREAD_SAFE_FUNCTIONS<posix_thread_safe_functions>`, -1,
