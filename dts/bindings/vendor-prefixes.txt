@@ -150,6 +150,7 @@ cortina	Cortina Systems, Inc.
 cosmic	Cosmic Circuits
 crane	Crane Connectivity Solutions
 creative	Creative Technology Ltd
+croxel	Croxel, Inc.
 crystalfontz	Crystalfontz America, Inc.
 csky	Hangzhou C-SKY Microsystems Co., Ltd
 csq	Shenzen Chuangsiqi Technology Co.,Ltd.
