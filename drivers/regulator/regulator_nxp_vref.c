@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -165,7 +165,7 @@ static int regulator_nxp_vref_get_voltage(const struct device *dev,
 	/* Linear range index is the register value */
 	idx = (base->UTRIM & VREF_UTRIM_TRIM2V1_MASK) >> VREF_UTRIM_TRIM2V1_SHIFT;
 
-	ret = linear_range_get_value(&utrim_range, base->UTRIM, volt_uv);
+	ret = linear_range_get_value(&utrim_range, idx, volt_uv);
 
 	return ret;
 }
