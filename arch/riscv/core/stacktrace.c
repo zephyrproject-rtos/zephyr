@@ -20,7 +20,7 @@ uintptr_t z_riscv_get_sp_before_exc(const z_arch_esf_t *esf);
  #define PR_REG "%016" PRIxPTR
 #endif
 
-#define MAX_STACK_FRAMES 8
+#define MAX_STACK_FRAMES CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES
 
 struct stackframe {
 	uintptr_t fp;

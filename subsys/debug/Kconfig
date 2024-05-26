@@ -389,6 +389,14 @@ config EXCEPTION_STACK_TRACE
 	  print a stack trace of function memory addresses when an
 	  exception is reported.
 
+config EXCEPTION_STACK_TRACE_MAX_FRAMES
+	int "Configures the depth of stack trace"
+	default 8
+	depends on EXCEPTION_STACK_TRACE
+	help
+	  In the event of a stack trace, this place a limit on the depths
+	  of the stack to examine.
+
 config EXCEPTION_STACK_TRACE_SYMTAB
 	bool "Print function names in the stack trace"
 	select SYMTAB
