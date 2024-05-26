@@ -134,14 +134,6 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 	return rc;
 }
 
-static int ws2812_strip_update_channels(const struct device *dev,
-					uint8_t *channels,
-					size_t num_channels)
-{
-	LOG_ERR("update_channels not implemented");
-	return -ENOTSUP;
-}
-
 static size_t ws2812_strip_length(const struct device *dev)
 {
 	const struct ws2812_spi_cfg *cfg = dev_cfg(dev);
@@ -179,7 +171,6 @@ static int ws2812_spi_init(const struct device *dev)
 
 static const struct led_strip_driver_api ws2812_spi_api = {
 	.update_rgb = ws2812_strip_update_rgb,
-	.update_channels = ws2812_strip_update_channels,
 	.length = ws2812_strip_length,
 };
 

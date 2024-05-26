@@ -125,7 +125,7 @@ static inline int led_strip_update_rgb(const struct device *dev,
 }
 
 /**
- * @brief		Function to update an LED strip with the given channel array
+ * @brief		Optional function to update an LED strip with the given channel array
  *			(each channel byte corresponding to an individually addressable color
  *			channel or LED. Channels are updated linearly in strip order.
  *
@@ -134,7 +134,8 @@ static inline int led_strip_update_rgb(const struct device *dev,
  * @param num_channels	Length of channels array.
  *
  * @retval		0 on success.
- * @retval		-errno negative errno code on failure.
+ * @retval		-ENOSYS if not implemented.
+ * @retval		-errno negative errno code on other failure.
  *
  * @warning		This routine may overwrite @a channels.
  */
@@ -144,6 +145,10 @@ static inline int led_strip_update_channels(const struct device *dev,
 {
 	const struct led_strip_driver_api *api =
 		(const struct led_strip_driver_api *)dev->api;
+
+	if (api->update_channels == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->update_channels(dev, channels, num_channels);
 }
