@@ -2017,9 +2017,8 @@ int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
  * @funcprops \isr_ok
  *
  * @param queue Address of the queue.
- * @param timeout Non-negative waiting period to obtain a data item
- *                or one of the special values K_NO_WAIT and
- *                K_FOREVER.
+ * @param timeout Waiting period to obtain a data item, or one of the special
+ *                values K_NO_WAIT and K_FOREVER.
  *
  * @return Address of the data item if successful; NULL if returned
  * without waiting, or waiting period timed out.
@@ -2163,8 +2162,8 @@ struct z_futex_data {
  * @param futex Address of the futex.
  * @param expected Expected value of the futex, if it is different the caller
  *		   will not wait on it.
- * @param timeout Non-negative waiting period on the futex, or
- *		  one of the special values K_NO_WAIT or K_FOREVER.
+ * @param timeout Waiting period on the futex, or one of the special values
+ *                K_NO_WAIT or K_FOREVER.
  * @retval -EACCES Caller does not have read access to futex address.
  * @retval -EAGAIN If the futex value did not match the expected parameter.
  * @retval -EINVAL Futex parameter address not recognized by the kernel.
@@ -4564,9 +4563,8 @@ int k_msgq_cleanup(struct k_msgq *msgq);
  *
  * @param msgq Address of the message queue.
  * @param data Pointer to the message.
- * @param timeout Non-negative waiting period to add the message,
- *                or one of the special values K_NO_WAIT and
- *                K_FOREVER.
+ * @param timeout Waiting period to add the message, or one of the special
+ *                values K_NO_WAIT and K_FOREVER.
  *
  * @retval 0 Message sent.
  * @retval -ENOMSG Returned without waiting or queue purged.
@@ -5191,7 +5189,7 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
  *
  * @param slab Address of the memory slab.
  * @param mem Pointer to block address area.
- * @param timeout Non-negative waiting period to wait for operation to complete.
+ * @param timeout Waiting period to wait for operation to complete.
  *        Use K_NO_WAIT to return without waiting,
  *        or K_FOREVER to wait as long as necessary.
  *
