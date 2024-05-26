@@ -14,6 +14,7 @@
 	compatible = "bsim,nrf54l15-bsim-nrf54l15-cpuapp", "bsim,nrf54";
 
 	chosen {
+		zephyr,entropy = &rng;
 	};
 
 	/delete-node/ cpus;
@@ -65,6 +66,11 @@
 		/delete-node/ spu@50003000;
 		/delete-node/ gpiote@5000d000;
 		/delete-node/ crypto@50844000;
+	};
+
+	rng: rng {
+		status = "okay";
+		compatible = "zephyr,native-posix-rng";
 	};
 };
 
