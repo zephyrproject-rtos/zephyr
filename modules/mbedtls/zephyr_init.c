@@ -115,3 +115,26 @@ mbedtls_ms_time_t mbedtls_ms_time(void)
 {
 	return (mbedtls_ms_time_t)k_uptime_get();
 }
+
+#if defined(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
+/* MBEDTLS_PSA_CRYPTO_C requires a random generator to work and this can
+ * be achieved through either legacy MbedTLS modules
+ * (ENTROPY + CTR_DRBG/HMAC_DRBG) or provided externally by enabling the
+ * CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG. In the latter case the following
+ * callback functions needs to be defined.
+ */
+psa_status_t mbedtls_psa_external_get_random(
+	mbedtls_psa_external_random_context_t *context,
+	uint8_t *output, size_t output_size, size_t *output_length)
+{
+	(void) context;
+
+	if (sys_csrand_get(output, output_size) != 0) {
+		return PSA_ERROR_GENERIC_ERROR;
+	}
+
+	*output_length = output_size;
+
+	return PSA_SUCCESS;
+}
+#endif

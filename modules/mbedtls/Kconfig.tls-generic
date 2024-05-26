@@ -460,10 +460,30 @@ config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 	  which ensures that master secrets are different for every
 	  connection and every session.
 
+choice MBEDTLS_PSA_CRYPTO_RND_SOURCE
+	prompt "Select random source for built-in PSA crypto"
+	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
+
+config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
+	bool "Use a cryptographically secure driver as random source"
+	depends on CSPRNG_ENABLED
+	help
+	  Use cryptographically secure random generator to provide random data
+	  instead of legacy MbedTLS modules (ENTROPY + CTR_DRBG/HMAC_DRBG).
+
+config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
+	bool "Use legacy modules to generate random data"
+	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_CTR_DRBG_ENABLED if !MBEDTLS_HMAC_DRBG_ENABLED
+	help
+	  Use legacy MbedTLS modules (ENTROPY + CTR_DRBG/HMAC_DRBG) as random
+	  source generators.
+
+endchoice
+
 config MBEDTLS_PSA_CRYPTO_C
 	bool "Platform Security Architecture cryptography API"
-	depends on MBEDTLS_ENTROPY_ENABLED
-	depends on MBEDTLS_CTR_DRBG_ENABLED || MBEDTLS_HMAC_DRBG_ENABLED
+	depends on MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG || MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 	default y if UOSCORE || UEDHOC
 
 config MBEDTLS_LMS
