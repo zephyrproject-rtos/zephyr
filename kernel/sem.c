@@ -48,7 +48,7 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	/*
 	 * Limit cannot be zero and count cannot be greater than limit
 	 */
-	CHECKIF(limit == 0U || limit > K_SEM_MAX_LIMIT || initial_count > limit) {
+	CHECKIF(limit == 0U || initial_count > limit) {
 		SYS_PORT_TRACING_OBJ_FUNC(k_sem, init, sem, -EINVAL);
 
 		return -EINVAL;
