@@ -57,6 +57,10 @@ config CLOCK_CONTROL_INIT_PRIORITY
 	default 1
 	depends on CLOCK_CONTROL
 
+config PHY_INIT_PRIORITY
+	default 81
+	depends on NET_L2_ETHERNET && ETH_DRIVER
+
 config MEMC_STM32
 	default y
 	depends on MEMC
