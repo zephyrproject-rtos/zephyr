@@ -229,6 +229,7 @@ Drivers and Sensors
 * Sensor
 
   * Added TMP114 driver
+  * Added DS18S20 1-wire temperature sensor driver.
 
 * Serial
 
