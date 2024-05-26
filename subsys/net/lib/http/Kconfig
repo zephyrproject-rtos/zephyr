@@ -23,10 +23,9 @@ config HTTP_PARSER_STRICT
 	  This option enables the strict parsing option
 
 config HTTP_CLIENT
-	bool "HTTP client API [EXPERIMENTAL]"
+	bool "HTTP client API"
 	select HTTP_PARSER
 	select HTTP_PARSER_URL
-	select EXPERIMENTAL
 	help
 	  HTTP client API
 
