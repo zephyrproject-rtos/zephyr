@@ -317,11 +317,11 @@ static int entropy_smartbond_get_entropy_isr(const struct device *dev, uint8_t *
 			}
 
 			NVIC_ClearPendingIRQ(IRQN);
-			if (random_word_get(buf) != 0) {
+			if (random_word_get(bytes) != 0) {
 				continue;
 			}
 
-			while (ptr < limit) {
+			while (ptr < limit && len) {
 				buf[--len] = *ptr++;
 			}
 			/* Store remaining data for later use */
