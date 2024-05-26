@@ -15,6 +15,8 @@
 
 	chosen {
 		zephyr,entropy = &rng;
+		zephyr,flash-controller = &rram_controller;
+		zephyr,flash = &cpuapp_rram;
 	};
 
 	/delete-node/ cpus;
@@ -22,8 +24,6 @@
 	/delete-node/ sw-pwm;
 
 	soc {
-		/delete-node/ uicr@ffd000;
-		/delete-node/ ficr@ffc000;
 		/delete-node/ memory@20000000;
 		/delete-node/ memory@2002f000;
 		peripheral@50000000 {
@@ -62,7 +62,6 @@
 			/delete-node/ gpiote@10c000;
 			/delete-node/ clock@10e000;
 		};
-		/delete-node/ rram-controller@5004b000;
 		/delete-node/ spu@50003000;
 		/delete-node/ gpiote@5000d000;
 		/delete-node/ crypto@50844000;
@@ -79,6 +78,18 @@
 	/* Channels 7-11 reserved for Zero Latency IRQs, 3-4 for FLPR */
 	child-owned-channels = <3 4 7 8 9 10 11>;
 	status = "okay";
+};
+
+&cpuapp_rram {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0x0 DT_SIZE_K(500)>;
+		};
+	};
 };
 
 &temp {
