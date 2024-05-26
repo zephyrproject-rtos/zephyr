@@ -934,7 +934,7 @@ __syscall int device_init(const struct device *dev);
 		.state = (state_),                                             \
 		.data = (data_),                                               \
 		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/        \
-		IF_ENABLED(CONFIG_PM_DEVICE, ({ .pm_base = (pm_),)}) /**/         \
+		IF_ENABLED(CONFIG_PM_DEVICE, ({ .pm_base = (pm_),})) /**/         \
 	}
 
 /**
