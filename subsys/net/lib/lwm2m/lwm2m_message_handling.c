@@ -673,32 +673,33 @@ cleanup:
 
 int lwm2m_send_message_async(struct lwm2m_message *msg)
 {
-	int ret = 0;
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
 
 	/* check if body encode buffer is in use => packet is not yet prepared for send */
 	if (msg->body_encode_buffer.data == msg->cpkt.data) {
-		ret = prepare_msg_for_send(msg);
+		int ret = prepare_msg_for_send(msg);
+
 		if (ret) {
 			lwm2m_reset_message(msg, true);
 			return ret;
 		}
 	}
 #endif
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
-	ret = lwm2m_rd_client_connection_resume(msg->ctx);
-	if (ret) {
-		lwm2m_reset_message(msg, true);
-		return ret;
+	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
+		int ret = lwm2m_rd_client_connection_resume(msg->ctx);
+
+		if (ret && ret != -EPERM) {
+			lwm2m_reset_message(msg, true);
+			return ret;
+		}
 	}
-#endif
 	sys_slist_append(&msg->ctx->pending_sends, &msg->node);
 
 	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
 		engine_update_tx_time();
 	}
 	lwm2m_engine_wake_up();
-	return ret;
+	return 0;
 }
 
 int lwm2m_information_interface_send(struct lwm2m_message *msg)
