@@ -113,6 +113,37 @@ Device Drivers and Devicetree
   * ``emul_bbram_backend_api`` to :c:struct:`emul_bbram_driver_api`
   * ``usbc_ppc_drv`` to :c:struct:`usbc_ppc_driver_api`
 
+* The driver for :dtcompatible:`maxim,max31790` got split up into a MFD and an
+  actual PWM driver. Previously, an instance of this device could have been
+  defined like this:
+
+  .. code-block:: devicetree
+
+    max31790_max31790: max31790@20 {
+        compatible = "maxim,max31790";
+        status = "okay";
+        reg = <0x20>;
+        pwm-controller;
+        #pwm-cells = <2>;
+    };
+
+  This can be converted to:
+
+  .. code-block:: devicetree
+
+    max31790_max31790: max31790@20 {
+        compatible = "maxim,max31790";
+        status = "okay";
+        reg = <0x20>;
+
+        max31790_max31790_pwm: max31790_max31790_pwm {
+            compatible = "maxim,max31790-pwm";
+            status = "okay";
+            pwm-controller;
+            #pwm-cells = <2>;
+        };
+    };
+
 Analog-to-Digital Converter (ADC)
 =================================
 
