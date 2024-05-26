@@ -26,6 +26,7 @@
 		zephyr,shell-uart = &uart136;
 		zephyr,ieee802154 = &cpuapp_ieee802154;
 		zephyr,bt-hci-ipc = &ipc0;
+		nordic,802154-spinel-ipc = &ipc0;
 	};
 
 	aliases {
