@@ -570,9 +570,18 @@ int pm_device_runtime_usage(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	(void)k_sem_take(&pm->lock, K_FOREVER);
-	usage = pm->base.usage;
-	k_sem_give(&pm->lock);
+	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
+		struct pm_device_isr *pm_sync = dev->pm_isr;
+		k_spinlock_key_t k = k_spin_lock(&pm_sync->lock);
+
+		usage = pm_sync->base.usage;
+
+		k_spin_unlock(&pm_sync->lock, k);
+	} else {
+		(void)k_sem_take(&pm->lock, K_FOREVER);
+		usage = pm->base.usage;
+		k_sem_give(&pm->lock);
+	}
 
 	return usage;
 }
