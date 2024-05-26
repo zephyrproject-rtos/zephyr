@@ -56,8 +56,9 @@ class Twister(WestCommand):
             "args: {} remainder: {}".format(args, remainder), level=log.VERBOSE_EXTREME
         )
 
-        options = self._parse_arguments(args=remainder, options=args)
-        ret = main(options)
+        options = parse_arguments(self.parser, args=remainder, options=args)
+        default_options = parse_arguments(self.parser, args=[], on_init=False)
+        ret = main(options, default_options)
         sys.exit(ret)
 
     def _parse_arguments(self, args, options):
