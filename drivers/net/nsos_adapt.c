@@ -752,6 +752,7 @@ static int nsos_poll_to_epoll_events(int events_from)
 	MAP_POLL_EPOLL(POLLIN, EPOLLIN);
 	MAP_POLL_EPOLL(POLLOUT, EPOLLOUT);
 	MAP_POLL_EPOLL(POLLERR, EPOLLERR);
+	MAP_POLL_EPOLL(POLLHUP, EPOLLHUP);
 
 	return events_to;
 }
@@ -763,6 +764,7 @@ static int nsos_epoll_to_poll_events(int events_from)
 	MAP_POLL_EPOLL(EPOLLIN, POLLIN);
 	MAP_POLL_EPOLL(EPOLLOUT, POLLOUT);
 	MAP_POLL_EPOLL(EPOLLERR, POLLERR);
+	MAP_POLL_EPOLL(EPOLLHUP, POLLHUP);
 
 	return events_to;
 }
