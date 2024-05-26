@@ -195,7 +195,6 @@ void power_gate_entry(uint32_t core_id)
 	}
 
 	soc_cpus_active[core_id] = false;
-	sys_cache_data_flush_range(soc_cpus_active, sizeof(soc_cpus_active));
 	k_cpu_idle();
 
 	/* It is unlikely we get in here, but when this happens
