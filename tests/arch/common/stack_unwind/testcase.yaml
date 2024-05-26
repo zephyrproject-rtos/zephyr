@@ -50,3 +50,18 @@ tests:
       regex:
         - "E: backtrace  0: fp: \\w+ lr: \\w+"
         - "E: backtrace  1: fp: \\w+ lr: \\w+"
+  arch.common.stack_unwind.symtab:
+    arch_allow:
+      - riscv
+    integration_platforms:
+      - qemu_riscv32
+      - qemu_riscv64
+    extra_args: OVERLAY_CONFIG="enable_fp.conf"
+    harness_config:
+      type: multi_line
+      regex:
+        - "[func1+\\w+]"
+        - "[func2+\\w+]"
+        - "[func1+\\w+]"
+        - "[func2+\\w+]"
+        - "[func1+\\w+]"
