@@ -34,6 +34,7 @@ ZTEST_USER(riscv_atomic, test_atomic)
 {
 	atomic_t target;
 	atomic_val_t value;
+	unsigned long utarget, uvalue;
 
 	zassert_equal(sizeof(atomic_t), ATOMIC_WORD(sizeof(uint64_t), sizeof(uint32_t)),
 		      "sizeof(atomic_t)");
@@ -57,16 +58,16 @@ ZTEST_USER(riscv_atomic, test_atomic)
 	zassert_true((target == -8), "atomic_min");
 
 	/* atomic_max unsigned */
-	target = 5;
-	value = ATOMIC_WORD(0xffffffff00000000, 0xffff0000);
-	zassert_true((atomic_maxu(&target, value) == 5), "atomic_maxu");
-	zassert_true((target == ATOMIC_WORD(0xffffffff00000000, 0xffff0000)), "atomic_maxu");
+	utarget = 5;
+	uvalue = ATOMIC_WORD(0xffffffff00000000, 0xffff0000);
+	zassert_true((atomic_maxu(&utarget, uvalue) == 5), "atomic_maxu");
+	zassert_true((utarget == ATOMIC_WORD(0xffffffff00000000, 0xffff0000)), "atomic_maxu");
 
 	/* atomic_min unsigned */
-	target = 5;
-	value = ATOMIC_WORD(0xffffffff00000000, 0xffff0000);
-	zassert_true((atomic_minu(&target, value) == 5), "atomic_minu");
-	zassert_true((target == 5), "atomic_minu");
+	utarget = 5;
+	uvalue = ATOMIC_WORD(0xffffffff00000000, 0xffff0000);
+	zassert_true((atomic_minu(&utarget, uvalue) == 5), "atomic_minu");
+	zassert_true((utarget == 5), "atomic_minu");
 }
 
 ZTEST_SUITE(riscv_atomic, NULL, NULL, NULL, NULL, NULL);

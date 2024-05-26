@@ -54,9 +54,9 @@ static ALWAYS_INLINE atomic_val_t atomic_min(atomic_t *target, atomic_val_t valu
 	return ret;
 }
 
-static ALWAYS_INLINE atomic_val_t atomic_maxu(atomic_t *target, atomic_val_t value)
+static ALWAYS_INLINE atomic_val_t atomic_maxu(unsigned long *target, unsigned long value)
 {
-	atomic_val_t ret;
+	unsigned long ret;
 
 	__asm__ volatile("amomaxu.d.aq  %0, %1, %2"
 			 : "=r"(ret)
@@ -66,9 +66,9 @@ static ALWAYS_INLINE atomic_val_t atomic_maxu(atomic_t *target, atomic_val_t val
 	return ret;
 }
 
-static ALWAYS_INLINE atomic_val_t atomic_minu(atomic_t *target, atomic_val_t value)
+static ALWAYS_INLINE atomic_val_t atomic_minu(unsigned long *target, unsigned long value)
 {
-	atomic_val_t ret;
+	unsigned long ret;
 
 	__asm__ volatile("amominu.d.aq  %0, %1, %2"
 			 : "=r"(ret)
@@ -116,9 +116,9 @@ static ALWAYS_INLINE atomic_val_t atomic_min(atomic_t *target, atomic_val_t valu
 	return ret;
 }
 
-static ALWAYS_INLINE atomic_val_t atomic_maxu(atomic_t *target, atomic_val_t value)
+static ALWAYS_INLINE unsigned long atomic_maxu(unsigned long *target, unsigned long value)
 {
-	atomic_val_t ret;
+	unsigned long ret;
 
 	__asm__ volatile("amomaxu.w.aq  %0, %1, %2"
 			 : "=r"(ret)
@@ -128,9 +128,9 @@ static ALWAYS_INLINE atomic_val_t atomic_maxu(atomic_t *target, atomic_val_t val
 	return ret;
 }
 
-static ALWAYS_INLINE atomic_val_t atomic_minu(atomic_t *target, atomic_val_t value)
+static ALWAYS_INLINE unsigned long atomic_minu(unsigned long *target, unsigned long value)
 {
-	atomic_val_t ret;
+	unsigned long ret;
 
 	__asm__ volatile("amominu.w.aq  %0, %1, %2"
 			 : "=r"(ret)
