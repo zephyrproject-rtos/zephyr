@@ -2,7 +2,7 @@ sample:
   description: Sample with MCUboot built through sysbuild
   name: with mcuboot
 tests:
-  sample.application_development.sysbuild.with_mcuboot:
+  sample.sysbuild.with_mcuboot:
     sysbuild: true
     # Platform allowed is used as twister using sysbuild still lacks proper
     # filtering support, see discussion in #49552.

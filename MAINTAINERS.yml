@@ -3761,12 +3761,12 @@ Sysbuild:
     - "57300"
   files:
     - share/sysbuild/
-    - samples/application_development/sysbuild/
+    - samples/sysbuild/
     - doc/build/sysbuild/
   labels:
     - "area: Sysbuild"
   tests:
-    - sample.application_development.sysbuild
+    - sample.sysbuild
 
 Task Watchdog:
   status: maintained
