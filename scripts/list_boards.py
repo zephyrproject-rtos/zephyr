@@ -231,6 +231,17 @@ def load_v2_boards(board_name, board_yml, systems):
     return boards
 
 
+# Note that this does not share the args.board functionality of find_v2_boards
+def find_v2_board_dirs(args):
+    dirs = []
+    board_files = []
+    for root in unique_paths(args.board_roots):
+        board_files.extend((root / 'boards').rglob(BOARD_YML))
+
+    dirs = [board_yml.parent for board_yml in board_files if board_yml.is_file()]
+    return dirs
+
+
 def find_v2_boards(args):
     root_args = argparse.Namespace(**{'soc_roots': args.soc_roots})
     systems = list_hardware.find_v2_systems(root_args)
