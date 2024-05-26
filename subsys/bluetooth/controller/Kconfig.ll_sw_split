@@ -598,12 +598,34 @@ config BT_CTLR_DYNAMIC_INTERRUPTS
 	  permit use of SoC's peripheral for custom use when Bluetooth is not
 	  enabled.
 
-config BT_CTLR_OPTIMIZE_FOR_SPEED
-	prompt "Optimize for Speed"
-	bool
-	default y
+choice
+	prompt "Optimization options"
+	depends on !LTO
+	default BT_CTLR_OPTIMIZE_FOR_SPEED
+
+config BT_CTLR_OPTIMIZE_FOR_APP_DEFAULT
+	bool "Optimize for application defaults"
 	help
-	  Optimize compilation of controller for execution speed.
+	  Optimize compilation of Controller for application's default.
+
+config BT_CTLR_OPTIMIZE_FOR_SIZE
+	bool "Optimize for space"
+	help
+	  Optimize compilation of Controller for code size.
+
+	  This is the Zephyr project default, but is overridden to use optimize
+	  for speed when compiling the Controller to reduce application's ISR
+	  and thread latencies.
+
+config BT_CTLR_OPTIMIZE_FOR_SPEED
+	bool "Optimize for Speed"
+	help
+	  Optimize compilation of Controller for execution speed. As the
+	  Controller's Upper Link Layer and Lower Link Layer execute in ISRs,
+	  use of speed optimizations reduces application's ISR and thread
+	  latencies.
+
+endchoice
 
 config BT_CTLR_XTAL_ADVANCED
 	bool "Advanced event preparation"

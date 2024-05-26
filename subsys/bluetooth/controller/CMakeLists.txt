@@ -213,6 +213,11 @@ add_subdirectory_ifdef(
   )
 
 zephyr_library_compile_options_ifdef(
+  CONFIG_BT_CTLR_OPTIMIZE_FOR_SIZE
+  ${OPTIMIZE_FOR_SIZE_FLAG}
+  )
+
+zephyr_library_compile_options_ifdef(
   CONFIG_BT_CTLR_OPTIMIZE_FOR_SPEED
   ${OPTIMIZE_FOR_SPEED_FLAG}
   )
