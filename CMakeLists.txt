@@ -2064,6 +2064,17 @@ endif()
 
 # Extension Development Kit (EDK) generation.
 set(llext_edk_file ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.tar.xz)
+
+# TODO maybe generate flags for C CXX ASM
+zephyr_get_compile_options_for_lang(C zephyr_flags)
+
+# Filter out non LLEXT and LLEXT_EDK flags - and add required ones
+llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags} llext_edk_cflags)
+llext_filter_zephyr_flags(LLEXT_EDK_REMOVE_FLAGS ${llext_edk_cflags} llext_edk_cflags)
+
+list(APPEND llext_edk_cflags ${LLEXT_APPEND_FLAGS})
+list(APPEND llext_edk_cflags ${LLEXT_EDK_APPEND_FLAGS})
+
 add_custom_command(
     OUTPUT ${llext_edk_file}
     # Regenerate syscalls in case CONFIG_LLEXT_EDK_USERSPACE_ONLY
@@ -2085,7 +2096,7 @@ add_custom_command(
         -DINTERFACE_INCLUDE_DIRECTORIES="$<JOIN:$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>,:>"
         -Dllext_edk_file=${llext_edk_file}
         -DAUTOCONF_H=${AUTOCONF_H}
-        -DLLEXT_CFLAGS="${LLEXT_CFLAGS}"
+        -Dllext_cflags="${llext_edk_cflags}"
         -Dllext_edk_name=${CONFIG_LLEXT_EDK_NAME}
         -DWEST_TOPDIR=${WEST_TOPDIR}
         -DZEPHYR_BASE=${ZEPHYR_BASE}
