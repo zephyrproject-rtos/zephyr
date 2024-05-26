@@ -40,6 +40,16 @@ const clock_arm_pll_config_t armPllConfig = {
 };
 #endif
 
+#if CONFIG_INIT_SYS_PLL
+/* Configure System PLL */
+const clock_sys_pll_config_t sysPllConfig = {
+	.loopDivider = (DT_PROP(DT_CHILD(CCM_NODE, sys_pll), loop_div) - 20) / 2,
+	.numerator = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), numerator),
+	.denominator = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), denominator),
+	.src = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), src),
+};
+#endif
+
 #if CONFIG_USB_DC_NXP_EHCI
 /* USB PHY condfiguration */
 #define BOARD_USB_PHY_D_CAL (0x0CU)
@@ -158,6 +168,10 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 #ifdef CONFIG_INIT_VIDEO_PLL
 	CLOCK_InitVideoPll(&videoPllConfig);
+#endif
+
+#if CONFIG_INIT_SYS_PLL
+	CLOCK_InitSysPll(&sysPllConfig);
 #endif
 
 #if DT_NODE_EXISTS(DT_CHILD(CCM_NODE, arm_podf))
