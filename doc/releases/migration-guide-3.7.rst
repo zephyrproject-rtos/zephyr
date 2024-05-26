@@ -106,6 +106,13 @@ Device Drivers and Devicetree
         };
     };
 
+* Some of the driver API structs have been rename to have the required ``_driver_api`` suffix.
+  The following types have been renamed:
+
+  * ``emul_sensor_backend_api`` to :c:struct:`emul_sensor_driver_api`
+  * ``emul_bbram_backend_api`` to :c:struct:`emul_bbram_driver_api`
+  * ``usbc_ppc_drv`` to :c:struct:`usbc_ppc_driver_api`
+
 Analog-to-Digital Converter (ADC)
 =================================
 
