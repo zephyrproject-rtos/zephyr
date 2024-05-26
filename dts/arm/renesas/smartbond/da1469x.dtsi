@@ -272,6 +272,7 @@
 			reg = <0x50020100 0x100>;
 			periph-clock-config = <0x02>;
 			interrupts = <6 0>;
+			hw-flow-control-supported;
 			status = "disabled";
 		};
 
@@ -280,6 +281,7 @@
 			reg = <0x50020200 0x100>;
 			periph-clock-config = <0x08>;
 			interrupts = <7 0>;
+			hw-flow-control-supported;
 			status = "disabled";
 		};
 
