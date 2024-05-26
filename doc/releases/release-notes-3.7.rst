@@ -287,6 +287,9 @@ Networking
 
     * :c:func:`lwm2m_set_bulk`
 
+  * Added new ``offset`` parameter to :c:type:`lwm2m_engine_set_data_cb_t` callback type.
+    This affects post write and validate callbacks as well as some firmware callbacks.
+
 * IPSP:
 
   * Removed IPSP support. ``CONFIG_NET_L2_BT`` does not exist anymore.

@@ -378,6 +378,13 @@ Networking
   ``CONFIG_NET_TCP_RETRY_COUNT`` instead to control the total timeout at the
   TCP level. (:github:`70731`)
 
+* In LwM2M API, the callback type :c:type:`lwm2m_engine_set_data_cb_t` has now an additional
+  parameter ``offset``. This parameter is used to indicate the offset of the data
+  during a Coap Block-wise transfer. Any post write, validate or some firmware callbacks
+  should be updated to include this parameter. (:github:`72590`)
+
+
+
 Other Subsystems
 ****************
 

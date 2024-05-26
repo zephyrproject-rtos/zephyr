@@ -303,6 +303,8 @@ static int do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		}
 
 		if (context.write_cb) {
+			size_t offset = context.block_ctx.current;
+
 			/* flush incoming data to write_cb */
 			while (payload_len > 0) {
 				len = (payload_len > write_buflen) ? write_buflen : payload_len;
@@ -317,7 +319,8 @@ static int do_firmware_transfer_reply_cb(const struct coap_packet *response,
 
 				ret = context.write_cb(context.obj_inst_id, 0, 0, write_buf, len,
 						       last_block && (payload_len == 0U),
-						       context.block_ctx.total_size);
+						       context.block_ctx.total_size, offset);
+				offset += len;
 				if (ret < 0) {
 					goto error;
 				}
