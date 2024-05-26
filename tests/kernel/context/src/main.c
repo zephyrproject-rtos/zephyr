@@ -245,6 +245,9 @@ static void _test_kernel_cpu_idle(int atomic)
 				k_cpu_idle();
 			}
 		} while ((idle_loops++ < CONFIG_MAX_IDLE_WAKES) && (idle_timer_done == false));
+		zassert_true(idle_timer_done,
+			     "The CPU was waken spuriously too many times (%d > %d)",
+			     idle_loops, CONFIG_MAX_IDLE_WAKES);
 		dt = k_uptime_ticks() - t0;
 		zassert_true(abs((int32_t) (dt - dur)) <= slop,
 			     "Inaccurate wakeup, idled for %d ticks, expected %d",
