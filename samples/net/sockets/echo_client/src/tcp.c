@@ -88,6 +88,7 @@ static int compare_tcp_data(struct data *data, const char *buf, uint32_t receive
 static int start_tcp_proto(struct data *data, struct sockaddr *addr,
 			   socklen_t addrlen)
 {
+	int optval;
 	int ret;
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
@@ -158,6 +159,14 @@ static int start_tcp_proto(struct data *data, struct sockaddr *addr,
 		ret = -errno;
 	}
 #endif
+
+	/* Prefer IPv6 temporary addresses */
+	if (addr->sa_family == AF_INET6) {
+		optval = IPV6_PREFER_SRC_TMP;
+		(void)setsockopt(data->tcp.sock, IPPROTO_IPV6,
+				 IPV6_ADDR_PREFERENCES,
+				 &optval, sizeof(optval));
+	}
 
 	ret = connect(data->tcp.sock, addr, addrlen);
 	if (ret < 0) {
