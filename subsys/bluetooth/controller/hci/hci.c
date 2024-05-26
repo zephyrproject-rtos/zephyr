@@ -5998,7 +5998,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 						   ISO_INT_UNIT_US));
 
 #else /* !CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
-		uint8_t target_event;
+		uint64_t target_event;
 		uint8_t event_offset;
 
 		/* Determine the target event and the first event offset after
