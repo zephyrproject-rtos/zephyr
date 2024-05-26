@@ -23,6 +23,10 @@ config LEGACY_MULTI_LEVEL_TABLE_GENERATION
 	depends on MULTI_LEVEL_INTERRUPTS
 	depends on !PLIC
 	depends on !NXP_IRQSTEER
+	depends on !RV32M1_INTMUX
+	depends on !CAVS_ICTL
+	depends on !DW_ICTL_ACE
+	depends on !DW_ICTL
 	help
 	  A make-shift Kconfig to continue generating the multi-level interrupt LUT
 	  with the legacy way using DT macros.
