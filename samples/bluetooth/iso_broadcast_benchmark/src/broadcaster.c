@@ -617,7 +617,7 @@ static int create_big(struct bt_le_ext_adv **adv, struct bt_iso_big **big)
 {
 	int err;
 
-	/* Create a non-connectable non-scannable advertising set */
+	/* Create a non-connectable advertising set */
 	LOG_INF("Creating Extended Advertising set");
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, adv);
 	if (err != 0) {
