@@ -636,6 +636,17 @@ extern "C" {
 	10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, ~)
 
 /**
+ * @brief Number of arguments in the variable arguments list.
+ *
+ * @note Supports up to 63 arguments.
+ *
+ * @param ... List of arguments
+ * @return  Number of variadic arguments in the argument list
+ */
+#define NUM_VA_ARGS(...)                                                                           \
+	COND_CODE_1(IS_EMPTY(__VA_ARGS__), (0), (UTIL_INC(NUM_VA_ARGS_LESS_1(__VA_ARGS__))))
+
+/**
  * @brief Mapping macro that pastes results together
  *
  * This is similar to FOR_EACH() in that it invokes a macro repeatedly
