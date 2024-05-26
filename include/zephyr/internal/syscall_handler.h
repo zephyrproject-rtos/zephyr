@@ -56,7 +56,7 @@ enum _obj_init_check {
  */
 static inline bool k_is_in_user_syscall(void)
 {
-	/* This gets set on entry to the syscall's generasted z_mrsh
+	/* This gets set on entry to the syscall's generated z_mrsh
 	 * function and then cleared on exit. This code path is only
 	 * encountered when a syscall is made from user mode, system
 	 * calls from supervisor mode bypass everything directly to
