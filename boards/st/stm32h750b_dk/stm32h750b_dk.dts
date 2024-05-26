@@ -54,7 +54,6 @@
 		led0 = &green_led;
 		led1 = &red_led;
 		sw0 = &user_button;
-		spi-flash0 = &mt25ql512ab1;
 	};
 };
 

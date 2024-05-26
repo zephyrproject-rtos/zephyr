@@ -105,7 +105,6 @@
 		watchdog0 = &wdt0;
 		accel0 = &lis3dh;
 		bbram0 = &extrtc0;
-		spi-flash0 = &mx25r64;
 	};
 
 	mipi_dbi {

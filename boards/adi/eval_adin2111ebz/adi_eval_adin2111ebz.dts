@@ -48,7 +48,6 @@
 	aliases {
 		led0 = &blue_led;
 		watchdog0 = &iwdg;
-		spi-flash0 = &flash_ext;
 	};
 };
 
