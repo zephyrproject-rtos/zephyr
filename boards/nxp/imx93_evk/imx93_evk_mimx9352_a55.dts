@@ -119,6 +119,7 @@
 				line-name = "exp_sel";
 				output-low;
 			};
+			status = "disabled";
 		};
 	};
 };
