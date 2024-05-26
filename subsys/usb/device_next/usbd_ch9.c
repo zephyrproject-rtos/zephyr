@@ -691,6 +691,60 @@ static int sreq_get_dev_qualifier(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
+static void desc_fill_bos_root(struct usbd_contex *const uds_ctx,
+			       struct usb_bos_descriptor *const root)
+{
+	struct usbd_desc_node *desc_nd;
+
+	root->bLength = sizeof(struct usb_bos_descriptor);
+	root->bDescriptorType = USB_DESC_BOS;
+	root->wTotalLength = root->bLength;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&uds_ctx->descriptors, desc_nd, node) {
+		if (desc_nd->bDescriptorType == USB_DESC_BOS) {
+			root->wTotalLength += desc_nd->bLength;
+			root->bNumDeviceCaps += desc_nd->bLength;
+		}
+	}
+}
+
+static int sreq_get_desc_bos(struct usbd_contex *const uds_ctx,
+			     struct net_buf *const buf)
+{
+	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
+	struct usb_bos_descriptor bos;
+	struct usbd_desc_node *desc_nd;
+	size_t len;
+
+	desc_fill_bos_root(uds_ctx, &bos);
+	len = MIN(net_buf_tailroom(buf), MIN(setup->wLength, bos.wTotalLength));
+
+	LOG_DBG("wLength %u, bLength %u, wTotalLength %u, tailroom %u",
+		setup->wLength, bos.bLength, bos.wTotalLength, net_buf_tailroom(buf));
+
+	net_buf_add_mem(buf, &bos, MIN(len, bos.bLength));
+
+	len -= MIN(len, sizeof(bos));
+	if (len == 0) {
+		return 0;
+	}
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&uds_ctx->descriptors, desc_nd, node) {
+		if (desc_nd->bDescriptorType == USB_DESC_BOS) {
+			LOG_DBG("bLength %u, len %u, tailroom %u",
+				desc_nd->bLength, len, net_buf_tailroom(buf));
+			net_buf_add_mem(buf, desc_nd->ptr, MIN(len, desc_nd->bLength));
+
+			len -= MIN(len, desc_nd->bLength);
+			if (len == 0) {
+				break;
+			}
+		}
+	}
+
+	return 0;
+}
+
 static int sreq_get_descriptor(struct usbd_contex *const uds_ctx,
 			       struct net_buf *const buf)
 {
@@ -722,6 +776,8 @@ static int sreq_get_descriptor(struct usbd_contex *const uds_ctx,
 		return sreq_get_desc_str(uds_ctx, buf, desc_idx);
 	case USB_DESC_DEVICE_QUALIFIER:
 		return sreq_get_dev_qualifier(uds_ctx, buf);
+	case USB_DESC_BOS:
+		return sreq_get_desc_bos(uds_ctx, buf);
 	case USB_DESC_INTERFACE:
 	case USB_DESC_ENDPOINT:
 	default:

@@ -15,6 +15,7 @@
 #define ZEPHYR_INCLUDE_USBD_H_
 
 #include <zephyr/device.h>
+#include <zephyr/usb/bos.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/usb/usbd_msg.h>
 #include <zephyr/net/buf.h>
@@ -69,6 +70,9 @@ enum usbd_str_desc_utype {
 	USBD_DUT_STRING_INTERFACE,
 };
 
+enum usbd_bos_desc_utype {
+	USBD_DUT_BOS_NONE,
+};
 /** @endcond */
 
 /**
@@ -86,16 +90,25 @@ struct usbd_str_desc_data {
 };
 
 /**
+ * USBD BOS Device Capability descriptor data
+ */
+struct usbd_bos_desc_data {
+	/** Descriptor usage type (not bDescriptorType) */
+	enum usbd_bos_desc_utype utype : 8;
+};
+
+/**
  * Descriptor node
  *
  * Descriptor node is used to manage descriptors that are not
- * directly part of a structure, such as string or bos descriptors.
+ * directly part of a structure, such as string or BOS capability descriptors.
  */
 struct usbd_desc_node {
 	/** slist node struct */
 	sys_dnode_t node;
 	union {
 		struct usbd_str_desc_data str;
+		struct usbd_bos_desc_data bos;
 	};
 	/** Opaque pointer to a descriptor payload */
 	const void *const ptr;
@@ -219,7 +232,7 @@ struct usbd_contex {
 	usbd_msg_cb_t msg_cb;
 	/** Middle layer runtime data */
 	struct usbd_ch9_data ch9_data;
-	/** slist to manage descriptors like string, bos */
+	/** slist to manage descriptors like string, BOS */
 	sys_dlist_t descriptors;
 	/** slist to manage Full-Speed device configurations */
 	sys_slist_t fs_configs;
@@ -530,6 +543,26 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		.bDescriptorType = USB_DESC_STRING,				\
 	}
 
+/**
+ * @brief Define BOS Device Capability descriptor node
+ *
+ * The application defines a BOS capability descriptor node for descriptors
+ * such as USB 2.0 Extension Descriptor.
+ *
+ * @param name       Descriptor node identifier
+ * @param len        Device Capability descriptor length
+ * @param subset     Pointer to a Device Capability descriptor
+ */
+#define USBD_DESC_BOS_DEFINE(name, len, subset)					\
+	static struct usbd_desc_node name = {					\
+		.bos = {							\
+			.utype = USBD_DUT_BOS_NONE,				\
+		},								\
+		.ptr = subset,							\
+		.bLength = len,							\
+		.bDescriptorType = USB_DESC_BOS,				\
+	}
+
 #define USBD_DEFINE_CLASS(class_name, class_api, class_priv, class_v_reqs)	\
 	static struct usbd_class_data class_name = {				\
 		.name = STRINGIFY(class_name),					\
@@ -569,7 +602,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 /**
  * @brief Add common USB descriptor
  *
- * Add common descriptor like string or bos.
+ * Add common descriptor like string or BOS Device Capability.
  *
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] dn      Pointer to USB descriptor node
