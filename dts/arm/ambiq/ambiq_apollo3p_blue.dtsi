@@ -25,12 +25,6 @@
 		};
 	};
 
-	/* Flash region */
-	flash0: flash@C000 {
-		compatible = "soc-nv-flash";
-		reg = <0x0000C000 0x1F4000>;
-	};
-
 	/* TCM */
 	tcm: tcm@10000000 {
 		compatible = "zephyr,memory-region";
@@ -46,6 +40,20 @@
 
 	soc {
 		compatible = "ambiq,apollo3p-blue", "ambiq,apollo3x", "simple-bus";
+
+		flash: flash-controller@c000 {
+			compatible = "ambiq,flash-controller";
+			reg = <0x0000c000 0x1f4000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Flash region */
+			flash0: flash@c000 {
+				compatible = "soc-nv-flash";
+				reg = <0x0000c000 0x1f4000>;
+			};
+		};
 
 		pwrcfg: pwrcfg@40021000 {
 			compatible = "ambiq,pwrctrl";
