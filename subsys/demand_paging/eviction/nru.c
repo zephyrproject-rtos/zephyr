@@ -36,7 +36,7 @@ static void nru_periodic_update(struct k_timer *timer)
 		}
 
 		/* Clear accessed bit in page tables */
-		(void)arch_page_info_get(pf->addr, NULL, true);
+		(void)arch_page_info_get(z_page_frame_to_virt(pf), NULL, true);
 	}
 
 	irq_unlock(key);
@@ -58,7 +58,7 @@ struct z_page_frame *k_mem_paging_eviction_select(bool *dirty_ptr)
 			continue;
 		}
 
-		flags = arch_page_info_get(pf->addr, NULL, false);
+		flags = arch_page_info_get(z_page_frame_to_virt(pf), NULL, false);
 		accessed = (flags & ARCH_DATA_PAGE_ACCESSED) != 0UL;
 		dirty = (flags & ARCH_DATA_PAGE_DIRTY) != 0UL;
 

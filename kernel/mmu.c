@@ -450,10 +450,12 @@ static void frame_mapped_set(struct z_page_frame *pf, void *addr)
 	 * Zephyr equivalent of VSDOs
 	 */
 	PF_ASSERT(pf, !z_page_frame_is_mapped(pf) || z_page_frame_is_pinned(pf),
-		 "non-pinned and already mapped to %p", pf->addr);
+		 "non-pinned and already mapped to %p",
+		 z_page_frame_to_virt(pf));
 
-	pf->flags |= Z_PAGE_FRAME_MAPPED;
-	pf->addr = addr;
+	z_page_frame_set(pf, Z_PAGE_FRAME_MAPPED);
+	pf->addr = UINT_TO_POINTER(POINTER_TO_UINT(addr)
+				   & ~(CONFIG_MMU_PAGE_SIZE - 1));
 }
 
 /* LCOV_EXCL_START */
@@ -475,7 +477,7 @@ static int virt_to_page_frame(void *virt, uintptr_t *phys)
 
 	Z_PAGE_FRAME_FOREACH(paddr, pf) {
 		if (z_page_frame_is_mapped(pf)) {
-			if (virt == pf->addr) {
+			if (virt == z_page_frame_to_virt(pf)) {
 				ret = 0;
 				if (phys != NULL) {
 					*phys = z_page_frame_to_phys(pf);
@@ -523,7 +525,8 @@ static int map_anon_page(void *addr, uint32_t flags)
 
 		pf = k_mem_paging_eviction_select(&dirty);
 		__ASSERT(pf != NULL, "failed to get a page frame");
-		LOG_DBG("evicting %p at 0x%lx", pf->addr,
+		LOG_DBG("evicting %p at 0x%lx",
+			z_page_frame_to_virt(pf),
 			z_page_frame_to_phys(pf));
 		ret = page_frame_prepare_locked(pf, &dirty, false, &location);
 		if (ret != 0) {
@@ -542,7 +545,7 @@ static int map_anon_page(void *addr, uint32_t flags)
 	arch_mem_map(addr, phys, CONFIG_MMU_PAGE_SIZE, flags | K_MEM_CACHE_WB);
 
 	if (lock) {
-		pf->flags |= Z_PAGE_FRAME_PINNED;
+		z_page_frame_set(pf, Z_PAGE_FRAME_PINNED);
 	}
 	frame_mapped_set(pf, addr);
 
@@ -930,9 +933,9 @@ static void mark_linker_section_pinned(void *start_addr, void *end_addr,
 		frame_mapped_set(pf, addr);
 
 		if (pin) {
-			pf->flags |= Z_PAGE_FRAME_PINNED;
+			z_page_frame_set(pf, Z_PAGE_FRAME_PINNED);
 		} else {
-			pf->flags &= ~Z_PAGE_FRAME_PINNED;
+			z_page_frame_clear(pf, Z_PAGE_FRAME_PINNED);
 		}
 	}
 }
@@ -975,7 +978,7 @@ void z_mem_manage_init(void)
 		 * structures, and any code used to perform page fault
 		 * handling, page-ins, etc.
 		 */
-		pf->flags |= Z_PAGE_FRAME_PINNED;
+		z_page_frame_set(pf, Z_PAGE_FRAME_PINNED);
 	}
 #endif /* CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 
@@ -1177,7 +1180,7 @@ static int page_frame_prepare_locked(struct z_page_frame *pf, bool *dirty_ptr,
 			LOG_ERR("out of backing store memory");
 			return -ENOMEM;
 		}
-		arch_mem_page_out(pf->addr, *location_ptr);
+		arch_mem_page_out(z_page_frame_to_virt(pf), *location_ptr);
 	} else {
 		/* Shouldn't happen unless this function is mis-used */
 		__ASSERT(!dirty, "un-mapped page determined to be dirty");
@@ -1186,7 +1189,7 @@ static int page_frame_prepare_locked(struct z_page_frame *pf, bool *dirty_ptr,
 	/* Mark as busy so that z_page_frame_is_evictable() returns false */
 	__ASSERT(!z_page_frame_is_busy(pf), "page frame 0x%lx is already busy",
 		 phys);
-	pf->flags |= Z_PAGE_FRAME_BUSY;
+	z_page_frame_set(pf, Z_PAGE_FRAME_BUSY);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	/* Update dirty parameter, since we set to true if it wasn't backed
 	 * even if otherwise clean
@@ -1222,7 +1225,7 @@ static int do_mem_evict(void *addr)
 
 	dirty = (flags & ARCH_DATA_PAGE_DIRTY) != 0;
 	pf = z_phys_to_page_frame(phys);
-	__ASSERT(pf->addr == addr, "page frame address mismatch");
+	__ASSERT(z_page_frame_to_virt(pf) == addr, "page frame address mismatch");
 	ret = page_frame_prepare_locked(pf, &dirty, false, &location);
 	if (ret != 0) {
 		goto out;
@@ -1294,7 +1297,7 @@ int z_page_frame_evict(uintptr_t phys)
 		ret = 0;
 		goto out;
 	}
-	flags = arch_page_info_get(pf->addr, NULL, false);
+	flags = arch_page_info_get(z_page_frame_to_virt(pf), NULL, false);
 	/* Shouldn't ever happen */
 	__ASSERT((flags & ARCH_DATA_PAGE_LOADED) != 0, "data page not loaded");
 	dirty = (flags & ARCH_DATA_PAGE_DIRTY) != 0;
@@ -1480,7 +1483,7 @@ static bool do_page_fault(void *addr, bool pin)
 			uintptr_t phys = page_in_location;
 
 			pf = z_phys_to_page_frame(phys);
-			pf->flags |= Z_PAGE_FRAME_PINNED;
+			z_page_frame_set(pf, Z_PAGE_FRAME_PINNED);
 		}
 
 		/* This if-block is to pin the page if it is
@@ -1500,7 +1503,8 @@ static bool do_page_fault(void *addr, bool pin)
 		/* Need to evict a page frame */
 		pf = do_eviction_select(&dirty);
 		__ASSERT(pf != NULL, "failed to get a page frame");
-		LOG_DBG("evicting %p at 0x%lx", pf->addr,
+		LOG_DBG("evicting %p at 0x%lx",
+			z_page_frame_to_virt(pf),
 			z_page_frame_to_phys(pf));
 
 		paging_stats_eviction_inc(faulting_thread, dirty);
@@ -1522,14 +1526,13 @@ static bool do_page_fault(void *addr, bool pin)
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	key = irq_lock();
-	pf->flags &= ~Z_PAGE_FRAME_BUSY;
+	z_page_frame_clear(pf, Z_PAGE_FRAME_BUSY);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
+	z_page_frame_clear(pf, Z_PAGE_FRAME_MAPPED);
+	frame_mapped_set(pf, addr);
 	if (pin) {
-		pf->flags |= Z_PAGE_FRAME_PINNED;
+		z_page_frame_set(pf, Z_PAGE_FRAME_PINNED);
 	}
-	pf->flags |= Z_PAGE_FRAME_MAPPED;
-	pf->addr = UINT_TO_POINTER(POINTER_TO_UINT(addr)
-				   & ~(CONFIG_MMU_PAGE_SIZE - 1));
 
 	arch_mem_page_in(addr, z_page_frame_to_phys(pf));
 	k_mem_paging_backing_store_page_finalize(pf, page_in_location);
@@ -1593,7 +1596,7 @@ static void do_mem_unpin(void *addr)
 		 "invalid data page at %p", addr);
 	if ((flags & ARCH_DATA_PAGE_LOADED) != 0) {
 		pf = z_phys_to_page_frame(phys);
-		pf->flags &= ~Z_PAGE_FRAME_PINNED;
+		z_page_frame_clear(pf, Z_PAGE_FRAME_PINNED);
 	}
 	irq_unlock(key);
 }

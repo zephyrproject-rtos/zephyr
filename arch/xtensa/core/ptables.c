@@ -337,15 +337,12 @@ void xtensa_mmu_init(void)
 __weak void arch_reserved_pages_update(void)
 {
 	uintptr_t page;
-	struct z_page_frame *pf;
 	int idx;
 
 	for (page = CONFIG_SRAM_BASE_ADDRESS, idx = 0;
 	     page < (uintptr_t)z_mapped_start;
 	     page += CONFIG_MMU_PAGE_SIZE, idx++) {
-		pf = &z_page_frames[idx];
-
-		pf->flags |= Z_PAGE_FRAME_RESERVED;
+		z_page_frame_set(&z_page_frames[idx], Z_PAGE_FRAME_RESERVED);
 	}
 }
 #endif /* CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES */
