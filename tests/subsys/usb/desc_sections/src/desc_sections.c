@@ -203,6 +203,7 @@ ZTEST(desc_sections, test_desc_sections)
 {
 	struct usb_desc_header *head;
 
+	usb_set_config(usb_get_device_descriptor());
 	TC_PRINT("__usb_descriptor_start %p\n", __usb_descriptor_start);
 	TC_PRINT("__usb_descriptor_end %p\n",  __usb_descriptor_end);
 	TC_PRINT("USB Descriptor table span %d\n",
