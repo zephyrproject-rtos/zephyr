@@ -2408,6 +2408,47 @@ ZTEST_USER(net_socket_udp, test_35_recvmsg_msg_controllen_update)
 	zassert_equal(rv, 0, "close failed");
 }
 
+ZTEST(net_socket_udp, test_36_v6_address_removal)
+{
+	int ret;
+	bool status;
+	int client_sock;
+	struct sockaddr_in6 client_addr;
+	struct net_if_addr *ifaddr;
+	struct net_if *iface;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV6_PE)) {
+		return;
+	}
+
+	ifaddr = net_if_ipv6_addr_lookup(&my_addr1, &iface);
+	zassert_equal(ifaddr->atomic_ref, 1, "Ref count is wrong (%ld vs %ld)",
+		      ifaddr->atomic_ref, 1);
+
+	prepare_sock_udp_v6(MY_IPV6_ADDR_ETH, CLIENT_PORT, &client_sock, &client_addr);
+
+	ret = zsock_bind(client_sock,
+			 (struct sockaddr *)&client_addr,
+			 sizeof(client_addr));
+	zassert_equal(ret, 0, "client bind failed");
+
+	status = net_if_ipv6_addr_rm(eth_iface, &my_addr1);
+	zassert_false(status, "Address could be removed");
+
+	ifaddr = net_if_ipv6_addr_lookup(&my_addr1, &iface);
+	zassert_not_null(ifaddr, "Address %s not found",
+			 net_sprint_ipv6_addr(&my_addr1));
+
+	ret = zsock_close(client_sock);
+	zassert_equal(ret, 0, "close failed");
+
+	ifaddr = net_if_ipv6_addr_lookup(&my_addr1, &iface);
+	zassert_equal(iface, eth_iface, "Invalid interface %p vs %p",
+		      iface, eth_iface);
+	zassert_is_null(ifaddr, "Address %s found",
+			net_sprint_ipv6_addr(&my_addr1));
+}
+
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);
