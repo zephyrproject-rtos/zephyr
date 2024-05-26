@@ -12,6 +12,7 @@
 #include <zephyr/net/http/service.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/net/websocket.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_http_server_sample, LOG_LEVEL_DBG);
@@ -173,7 +174,7 @@ static void ws_handler(void *ptr1, void *ptr2, void *ptr3)
 
 	*in_use = false;
 
-	(void)close(client);
+	(void)websocket_unregister(client);
 
 	cfg->sock = -1;
 }
