@@ -9,6 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdalign.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
@@ -18,9 +20,15 @@
  * their members are bytes or byte arrays, the size is. They must not be padded
  * by the compiler, otherwise the on-wire packet will not map the packed
  * structure correctly.
+ *
+ * The bt_addr structs are not marked __packed because it's considered ugly by
+ * some. But here is a proof that the structs have all the properties of, and
+ * can be safely used as packed structs.
  */
 BUILD_ASSERT(sizeof(bt_addr_t) == BT_ADDR_SIZE);
+BUILD_ASSERT(alignof(bt_addr_t) == 1);
 BUILD_ASSERT(sizeof(bt_addr_le_t) == BT_ADDR_LE_SIZE);
+BUILD_ASSERT(alignof(bt_addr_le_t) == 1);
 
 #if defined(CONFIG_BT_HCI_HOST)
 /* The Bluetooth subsystem requires that higher priority events shall be given
