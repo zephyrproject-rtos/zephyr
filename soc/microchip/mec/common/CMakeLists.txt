@@ -4,6 +4,9 @@ zephyr_include_directories(.)
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_MEC172X
   soc_i2c.c
 )
+zephyr_library_sources_ifdef(CONFIG_HAS_MEC5_HAL
+  soc_cmn_init.c
+)
 
 if (DEFINED CONFIG_MCHP_HEADER_VERBOSE_OUTPUT)
     set(MCHP_HEADER_VERBOSE_OPTION "-v")

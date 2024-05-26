@@ -8,6 +8,7 @@ if SOC_FAMILY_MICROCHIP_MEC
 
 menuconfig MCHP_MEC_UNSIGNED_HEADER
 	bool "Create an unsigned output binary with MCHP MEC binary header"
+	depends on SOC_SERIES_MEC172X
 	help
 	  On Microchip MEC series chip, the ROM code loads firmware image from flash
 	  to RAM using a TAG to locate a Header which specifies the location and
@@ -210,6 +211,54 @@ config MCHP_HEADER_VERBOSE_OUTPUT
 
 endif # MCHP_MEC_UNSIGNED_HEADER
 
+# Common debug configuration
+choice
+	prompt "MEC debug interface general configuration"
+	default SOC_MEC_DEBUG_AND_TRACING
+	depends on SOC_SERIES_MEC174X || SOC_SERIES_MEC175X || SOC_SERIES_MECH172X
+	help
+	  Select Debug SoC interface support for MEC SoC family
+
+	config SOC_MEC_DEBUG_DISABLED
+		bool "Disable debug support"
+		help
+		  Debug port is disabled, JTAG/SWD cannot be enabled. JTAG_RST#
+		  pin is ignored. All other JTAG pins can be used as GPIOs
+		  or other non-JTAG alternate functions.
+
+	config SOC_MEC_DEBUG_WITHOUT_TRACING
+		bool "Debug support via Serial wire debug"
+		help
+		  JTAG port in SWD mode.
+
+	config SOC_MEC_DEBUG_AND_TRACING
+		bool "Debug support via Serial wire debug with tracing enabled"
+		help
+		  JTAG port is enabled in SWD mode.
+endchoice
+
+choice
+	prompt "MEC debug interface trace configuration"
+	default SOC_MEC_DEBUG_AND_SWV_TRACING
+	depends on SOC_MEC_DEBUG_AND_TRACING
+	help
+	  Select tracing mode for debug interface
+
+	config SOC_MEC_DEBUG_AND_ETM_TRACING
+		bool "Debug support via Serial wire debug"
+		help
+		  JTAG port in SWD mode and ETM as tracing method.
+		  ETM re-assigns 5 pins for clock and 4-bit data bus.
+		  Check data sheet for functions shared with ETM.
+
+	config SOC_MEC_DEBUG_AND_SWV_TRACING
+		bool "debug support via Serial Wire Debug and Viewer"
+		help
+		  JTAG port in SWD mode and SWV as tracing method.
+		  Check data sheet for functions shared with SWD and SWV pins.
+endchoice
+
+# common processor clock divider configuration
 config SOC_MEC_PROC_CLK_DIV
 	int "PROC_CLK_DIV"
 	default 1
