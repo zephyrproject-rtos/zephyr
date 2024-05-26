@@ -3,55 +3,6 @@
 # Copyright (c) 2017 Intel Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-config NET_CONFIG_AUTO_INIT
-	bool "Init networking support automatically during device startup"
-	default n if USB_DEVICE_NETWORK
-	default y
-	help
-	  If this option is set, then the networking system is automatically
-	  initialized when the device is started. If you do not wish to do
-	  this, then disable this and call net_config_init() in your application.
-
-config NET_CONFIG_INIT_PRIO
-	int "Startup priority for the network application init"
-	default 95
-	depends on NET_CONFIG_AUTO_INIT
-
-config NET_CONFIG_INIT_TIMEOUT
-	int "How long to wait for networking to be ready and available"
-	default 30
-	help
-	  The value is in seconds. If for example IPv4 address from DHCPv4 is not
-	  received within this limit, then the net_config_init() call will fail
-	  during the device startup.
-
-config NET_CONFIG_NEED_IPV6
-	bool "This application wants IPv6 support"
-	depends on NET_CONFIG_AUTO_INIT
-	select NET_IPV6
-	help
-	  The network application needs IPv6 support to function properly.
-	  This option makes sure the network application is initialized properly
-	  in order to use IPv6.
-
-config NET_CONFIG_NEED_IPV6_ROUTER
-	bool "This application wants IPv6 router to exists"
-	depends on NET_CONFIG_AUTO_INIT
-	depends on NET_IPV6
-	help
-	  The network application needs IPv6 router to exists before continuing.
-	  What this means that the application wants to wait until it receives
-	  IPv6 router advertisement message before continuing.
-
-config NET_CONFIG_NEED_IPV4
-	bool "This application wants IPv4 support"
-	depends on NET_CONFIG_AUTO_INIT
-	select NET_IPV4
-	help
-	  The network application needs IPv4 support to function properly.
-	  This option makes sure the network application is initialized properly
-	  in order to use IPv4.
-
 module = NET_CONFIG
 module-dep = NET_LOG
 module-str = Log level for network config library
@@ -70,6 +21,55 @@ menuconfig NET_CONFIG_SETTINGS
 	  provisioning but quick sampling/testing.
 
 if NET_CONFIG_SETTINGS
+
+config NET_CONFIG_AUTO_INIT
+	bool "Init networking support automatically during device startup"
+	default n if USB_DEVICE_NETWORK
+	default y
+	help
+	  If this option is set, then the networking system is automatically
+	  initialized when the device is started. If you do not wish to do
+	  this, then disable this and call net_config_init() in your application.
+
+if NET_CONFIG_AUTO_INIT
+
+config NET_CONFIG_INIT_PRIO
+	int "Startup priority for the network application init"
+	default 95
+
+config NET_CONFIG_NEED_IPV6
+	bool "This application wants IPv6 support"
+	select NET_IPV6
+	help
+	  The network application needs IPv6 support to function properly.
+	  This option makes sure the network application is initialized properly
+	  in order to use IPv6.
+
+config NET_CONFIG_NEED_IPV6_ROUTER
+	bool "This application wants IPv6 router to exists"
+	depends on NET_IPV6
+	help
+	  The network application needs IPv6 router to exists before continuing.
+	  What this means that the application wants to wait until it receives
+	  IPv6 router advertisement message before continuing.
+
+config NET_CONFIG_NEED_IPV4
+	bool "This application wants IPv4 support"
+	select NET_IPV4
+	help
+	  The network application needs IPv4 support to function properly.
+	  This option makes sure the network application is initialized properly
+	  in order to use IPv4.
+
+endif # NET_CONFIG_AUTO_INIT
+
+config NET_CONFIG_INIT_TIMEOUT
+	int "How long to wait for networking to be ready and available"
+	default 30
+	help
+	  The value is in seconds. If for example IPv4 address from DHCPv4 is not
+	  received within this limit, then the net_config_init() call will fail
+	  during the device startup.
 
 config NET_CONFIG_MY_VLAN_ID
 	int "My VLAN identifier"
