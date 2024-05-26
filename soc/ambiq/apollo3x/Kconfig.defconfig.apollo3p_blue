@@ -12,10 +12,6 @@ config MAIN_STACK_SIZE
 
 if BT
 
-choice BT_HCI_BUS_TYPE
-	default BT_AMBIQ_HCI
-endchoice
-
 config BT_BUF_ACL_TX_COUNT
 	default 4
 
