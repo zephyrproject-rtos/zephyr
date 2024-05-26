@@ -313,7 +313,7 @@ static int on_header_field(struct http_parser *parser, const char *at,
 	struct http_client_ctx *ctx = CONTAINER_OF(parser,
 						   struct http_client_ctx,
 						   parser);
-	size_t offset = strlen(ctx->header_buffer);
+	size_t offset = strnlen(ctx->header_buffer, sizeof(ctx->header_buffer));
 
 	if (offset + length > sizeof(ctx->header_buffer) - 1U) {
 		LOG_DBG("Header %s too long (by %zu bytes)", "field",
@@ -352,7 +352,7 @@ static int on_header_value(struct http_parser *parser,
 	struct http_client_ctx *ctx = CONTAINER_OF(parser,
 						   struct http_client_ctx,
 						   parser);
-	size_t offset = strlen(ctx->header_buffer);
+	size_t offset = strnlen(ctx->header_buffer, sizeof(ctx->header_buffer));
 
 	if (offset + length > sizeof(ctx->header_buffer) - 1U) {
 		LOG_DBG("Header %s too long (by %zu bytes)", "value",
@@ -380,8 +380,7 @@ static int on_header_value(struct http_parser *parser,
 			if (ctx->websocket_sec_key_next) {
 #if defined(CONFIG_WEBSOCKET)
 				strncpy(ctx->ws_sec_key, ctx->header_buffer,
-					MIN(sizeof(ctx->ws_sec_key),
-					    strlen(ctx->header_buffer)));
+					MIN(sizeof(ctx->ws_sec_key), offset));
 #endif
 				ctx->websocket_sec_key_next = false;
 			}
@@ -529,7 +528,14 @@ int handle_http1_request(struct http_client_ctx *client)
 		const char *needed_upgrade = "h2c\r\n";
 
 		if (client->websocket_upgrade) {
-			if (IS_ENABLED(CONFIG_WEBSOCKET)) {
+			if (IS_ENABLED(CONFIG_HTTP_SERVER_WEBSOCKET)) {
+				detail = get_resource_detail(client->url_buffer,
+							     &path_len, true);
+				if (detail == NULL) {
+					goto not_found;
+				}
+
+				client->current_detail = detail;
 				return handle_http1_to_websocket_upgrade(client);
 			}
 
@@ -563,7 +569,7 @@ upgrade_not_found:
 		}
 	}
 
-	detail = get_resource_detail(client->url_buffer, &path_len);
+	detail = get_resource_detail(client->url_buffer, &path_len, false);
 	if (detail != NULL) {
 		detail->path_len = path_len;
 
@@ -583,6 +589,7 @@ upgrade_not_found:
 			}
 		}
 	} else {
+not_found: ; /* Add extra semicolon to make clang to compile when using label */
 		static const char not_found_response[] =
 			"HTTP/1.1 404 Not Found\r\n"
 			"Content-Length: 9\r\n\r\n"

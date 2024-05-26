@@ -16,6 +16,7 @@
 #include <zephyr/net/http/service.h>
 #include <zephyr/sys/base64.h>
 #include <mbedtls/sha1.h>
+#include <zephyr/net/websocket.h>
 
 LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
@@ -37,7 +38,7 @@ int handle_http1_to_websocket_upgrade(struct http_client_ctx *client)
 		"Connection: Upgrade\r\n"
 		"Upgrade: websocket\r\n"
 		"Sec-WebSocket-Accept: ";
-	char key_accept[32 + sizeof(WS_MAGIC)];
+	char key_accept[HTTP_SERVER_WS_MAX_SEC_KEY_LEN + sizeof(WS_MAGIC)];
 	char accept[20];
 	char tmp[64];
 	size_t key_len;
@@ -91,10 +92,27 @@ int handle_http1_to_websocket_upgrade(struct http_client_ctx *client)
 	 * to Websocket.
 	 */
 	if (client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
-		client->current_detail = NULL;
-		client->server_state = HTTP_SERVER_PREFACE_STATE;
-		client->cursor += client->data_len;
-		client->data_len = 0;
+		struct http_resource_detail_websocket *ws_detail;
+		int ws_sock;
+
+		ws_detail = (struct http_resource_detail_websocket *)client->current_detail;
+
+		ret = ws_sock = websocket_register(client->fd,
+						   ws_detail->data_buffer,
+						   ws_detail->data_buffer_len);
+		if (ret < 0) {
+			NET_DBG("Cannot register websocket (%d)", ret);
+			goto error;
+		}
+
+		http_server_release_client(client);
+
+		ret = ws_detail->cb(ws_sock, ws_detail->user_data);
+		if (ret < 0) {
+			NET_DBG("WS connection failed (%d)", ret);
+			zsock_close(ws_sock);
+			goto error;
+		}
 	}
 
 	return 0;

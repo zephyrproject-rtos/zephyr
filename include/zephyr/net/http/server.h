@@ -29,6 +29,7 @@
 enum http_resource_type {
 	HTTP_RESOURCE_TYPE_STATIC,
 	HTTP_RESOURCE_TYPE_DYNAMIC,
+	HTTP_RESOURCE_TYPE_WEBSOCKET,
 };
 
 struct http_resource_detail {
@@ -46,6 +47,8 @@ struct http_resource_detail_static {
 	const void *static_data;
 	size_t static_data_len;
 };
+/* Make sure that the common is the first in the struct. */
+BUILD_ASSERT(offsetof(struct http_resource_detail_static, common) == 0);
 
 struct http_client_ctx;
 
@@ -89,10 +92,38 @@ struct http_resource_detail_dynamic {
 	struct http_client_ctx *holder;
 	void *user_data;
 };
+BUILD_ASSERT(offsetof(struct http_resource_detail_dynamic, common) == 0);
 
 struct http_resource_detail_rest {
 	struct http_resource_detail common;
 };
+
+/**
+ * @typedef http_resource_websocket_cb_t
+ * @brief Callback used when a Websocket connection is setup. The application
+ *        will need to handle all functionality related to the connection like
+ *        reading and writing websocket data, and closing the connection.
+ *
+ * @param ws_socket A socket for the Websocket data.
+ * @param user_data User specified data.
+ *
+ * @return  0 Accepting the connection, HTTP server library will no longer
+ *            handle data to/from the socket and it is application responsibility
+ *            to send and receive data to/from the supplied socket.
+ *         <0 error, close the connection.
+ */
+typedef int (*http_resource_websocket_cb_t)(int ws_socket,
+					    void *user_data);
+
+struct http_resource_detail_websocket {
+	struct http_resource_detail common;
+	int ws_sock;
+	http_resource_websocket_cb_t cb;
+	uint8_t *data_buffer;
+	size_t data_buffer_len;
+	void *user_data;
+};
+BUILD_ASSERT(offsetof(struct http_resource_detail_websocket, common) == 0);
 
 enum http_stream_state {
 	HTTP_SERVER_STREAM_IDLE,
