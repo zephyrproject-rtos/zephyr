@@ -29,6 +29,7 @@ tests:
       - mr_canhubk3
       - longan_nano
       - longan_nano/gd32vf103/lite
+      - rd_rw612_bga
     integration_platforms:
       - nucleo_l073rz
       - nrf52840dk/nrf52840
