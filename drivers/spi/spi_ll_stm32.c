@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/toolchain.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #ifdef CONFIG_SPI_STM32_DMA
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/dma.h>
@@ -82,6 +83,7 @@ static void spi_stm32_pm_policy_state_lock_get(const struct device *dev)
 			if (IS_ENABLED(CONFIG_PM_S2RAM)) {
 				pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 			}
+			pm_device_runtime_get(dev);
 		}
 	}
 }
@@ -93,6 +95,7 @@ static void spi_stm32_pm_policy_state_lock_put(const struct device *dev)
 
 		if (data->pm_policy_state_on) {
 			data->pm_policy_state_on = false;
+			pm_device_runtime_put(dev);
 			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 			if (IS_ENABLED(CONFIG_PM_S2RAM)) {
 				pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
@@ -1224,7 +1227,7 @@ static int spi_stm32_init(const struct device *dev)
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
-	return 0;
+	return pm_device_runtime_enable(dev);
 }
 
 #ifdef CONFIG_PM_DEVICE
