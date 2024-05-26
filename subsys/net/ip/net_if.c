@@ -579,6 +579,7 @@ struct net_if *net_if_get_default(void)
 	struct net_if *iface = NULL;
 
 	if (&_net_if_list_start[0] == &_net_if_list_end[0]) {
+		NET_WARN("No default interface found!");
 		return NULL;
 	}
 
