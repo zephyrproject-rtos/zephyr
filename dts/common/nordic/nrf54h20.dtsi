@@ -8,12 +8,8 @@
 #include <nordic/nrf_common.dtsi>
 
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20.h>
-
-/* Domain IDs. Can be used to specify channel links in IPCT nodes. */
-#define NRF_DOMAIN_ID_APPLICATION 2
-#define NRF_DOMAIN_ID_RADIOCORE   3
-#define NRF_DOMAIN_ID_GLOBALFAST  12
-#define NRF_DOMAIN_ID_GLOBALSLOW  13
+#include <zephyr/dt-bindings/misc/nordic-domain-id-nrf54h20.h>
+#include <zephyr/dt-bindings/misc/nordic-owner-id-nrf54h20.h>
 
 /delete-node/ &sw_pwm;
 
