@@ -7,11 +7,6 @@
 
 /** @file lwm2m.h
  *
- * @defgroup lwm2m_api LwM2M high-level API
- * @since 1.9
- * @version 0.8.0
- * @ingroup networking
- * @{
  * @brief LwM2M high-level API
  *
  * @details
@@ -21,6 +16,12 @@
  *
  * @note For more information refer to Technical Specification
  * OMA-TS-LightweightM2M_Core-V1_1_1-20190617-A
+ *
+ * @defgroup lwm2m_api LwM2M high-level API
+ * @since 1.9
+ * @version 0.8.0
+ * @ingroup networking
+ * @{
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_LWM2M_H_
@@ -283,7 +284,9 @@ struct lwm2m_ctx {
 struct lwm2m_time_series_elem {
 	/** Cached data Unix timestamp */
 	time_t t;
+	/** Element value */
 	union {
+		/** @cond INTERNAL_HIDDEN */
 		uint8_t u8;
 		uint16_t u16;
 		uint32_t u32;
@@ -295,6 +298,7 @@ struct lwm2m_time_series_elem {
 		time_t time;
 		double f;
 		bool b;
+		/** @endcond */
 	};
 };
 
@@ -2144,21 +2148,37 @@ void lwm2m_acknowledge(struct lwm2m_ctx *client_ctx);
  * lwm2m_rd_client_start()
  */
 enum lwm2m_rd_client_event {
+	/** Invalid event */
 	LWM2M_RD_CLIENT_EVENT_NONE,
+	/** Bootstrap registration failure */
 	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_FAILURE,
+	/** Bootstrap registration complete */
 	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_COMPLETE,
+	/** Bootstrap transfer complete */
 	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_TRANSFER_COMPLETE,
+	/** Registration failure */
 	LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE,
+	/** Registration complete */
 	LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE,
+	/** Registration timeout */
 	LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT,
+	/** Registration update complete */
 	LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE,
+	/** De-registration failure */
 	LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE,
+	/** Disconnected */
 	LWM2M_RD_CLIENT_EVENT_DISCONNECT,
+	/** Queue mode RX off */
 	LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF,
+	/** Engine suspended */
 	LWM2M_RD_CLIENT_EVENT_ENGINE_SUSPENDED,
+	/** Network error */
 	LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR,
+	/** Registration update */
 	LWM2M_RD_CLIENT_EVENT_REG_UPDATE,
+	/** De-register */
 	LWM2M_RD_CLIENT_EVENT_DEREGISTER,
+	/** Server disabled */
 	LWM2M_RD_CLIENT_EVENT_SERVER_DISABLED,
 };
 
@@ -2270,9 +2290,9 @@ char *lwm2m_path_log_buf(char *buf, struct lwm2m_obj_path *path);
  * lwm2m_send_cb()
  */
 enum lwm2m_send_status {
-	LWM2M_SEND_STATUS_SUCCESS,
-	LWM2M_SEND_STATUS_FAILURE,
-	LWM2M_SEND_STATUS_TIMEOUT,
+	LWM2M_SEND_STATUS_SUCCESS,  /**< Succeed */
+	LWM2M_SEND_STATUS_FAILURE,  /**< Failure */
+	LWM2M_SEND_STATUS_TIMEOUT,  /**< Timeout */
 };
 
 /**
