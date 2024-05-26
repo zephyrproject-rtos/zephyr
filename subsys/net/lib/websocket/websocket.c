@@ -393,6 +393,8 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	/* Init parser FSM */
 	ctx->parser_state = WEBSOCKET_PARSER_STATE_OPCODE;
 
+	(void)sock_obj_core_alloc_find(ctx->real_sock, fd, SOCK_STREAM);
+
 	return fd;
 
 out:
@@ -424,6 +426,8 @@ static int websocket_interal_disconnect(struct websocket_context *ctx)
 	if (ret < 0) {
 		NET_DBG("[%p] Failed to send close message (err %d).", ctx, ret);
 	}
+
+	(void)sock_obj_core_dealloc(ctx->sock);
 
 	websocket_context_unref(ctx);
 
@@ -1050,6 +1054,8 @@ static int websocket_send(struct websocket_context *ctx, const uint8_t *buf,
 
 	NET_DBG("[%p] Sent %d bytes", ctx, ret);
 
+	sock_obj_core_update_send_stats(ctx->sock, ret);
+
 	return ret;
 }
 
@@ -1077,6 +1083,8 @@ static int websocket_recv(struct websocket_context *ctx, uint8_t *buf,
 	}
 
 	NET_DBG("[%p] Received %d bytes", ctx, ret);
+
+	sock_obj_core_update_recv_stats(ctx->sock, ret);
 
 	return ret;
 }
@@ -1165,6 +1173,8 @@ int websocket_register(int sock, uint8_t *recv_buf, size_t recv_buf_len)
 
 	ctx->recv_buf.count = 0;
 	ctx->parser_state = WEBSOCKET_PARSER_STATE_OPCODE;
+
+	(void)sock_obj_core_alloc_find(ctx->real_sock, fd, SOCK_STREAM);
 
 	return fd;
 
