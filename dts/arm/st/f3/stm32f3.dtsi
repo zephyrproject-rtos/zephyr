@@ -412,6 +412,7 @@
 			interrupts = <41 0>;
 			prescaler = <32768>;
 			alarms-count = <2>;
+			alrm-exti-line = <17>;
 			status = "disabled";
 		};
 
