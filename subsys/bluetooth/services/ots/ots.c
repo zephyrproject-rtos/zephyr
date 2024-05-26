@@ -318,7 +318,7 @@ int bt_ots_obj_add_internal(struct bt_ots *ots, struct bt_conn *conn,
 	(void)memset(&created_desc, 0, sizeof(created_desc));
 
 	if (ots->cb->obj_created) {
-		err = ots->cb->obj_created(ots, NULL, new_obj->id, param, &created_desc);
+		err = ots->cb->obj_created(ots, conn, new_obj->id, param, &created_desc);
 
 		if (err) {
 			(void)bt_gatt_ots_obj_manager_obj_delete(new_obj);
