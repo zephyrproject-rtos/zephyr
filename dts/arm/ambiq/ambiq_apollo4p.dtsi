@@ -22,8 +22,35 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			cpu-power-states = <&idle &suspend_to_ram>;
 		};
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				/*
+				 * As Apollo4 datasheet, run_to_sleep and sleep_to_run
+				 * transition time are both lower than 1us, but
+				 * considering the software overhead we set a
+				 * bigger value.
+				 */
+				min-residency-us = <100>;
+				exit-latency-us = <5>;
+			};
 
+			suspend_to_ram: suspend_to_ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				/*
+				 * As Apollo4 datasheet, run_to_deepsleep transition
+				 * time is lower than 1us and deepsleep_to_run
+				 * transition time is about 25us, but considering
+				 * the software overhead, we set a bigger value.
+				 */
+				min-residency-us = <2000>;
+				exit-latency-us = <125>;
+			};
+		};
 	};
 
 	/* TCM */
