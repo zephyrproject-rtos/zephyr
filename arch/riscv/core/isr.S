@@ -78,7 +78,12 @@ GTEXT(__soc_save_context)
 GTEXT(__soc_restore_context)
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
+#ifdef CONFIG_EXCEPTION_DEBUG
 GTEXT(z_riscv_fatal_error_csf)
+#else
+GTEXT(z_riscv_fatal_error)
+#endif /* CONFIG_EXCEPTION_DEBUG */
+
 GTEXT(z_get_next_switch_handle)
 GTEXT(z_riscv_switch)
 GTEXT(z_riscv_thread_start)
@@ -411,9 +416,11 @@ do_fault:
 	/* Save callee-saved registers to be passed as 3rd arg */
 	STORE_CALLEE_SAVED()		;
 	mv a2, sp
-#endif
 
 	tail z_riscv_fatal_error_csf
+#else
+	tail z_riscv_fatal_error
+#endif
 
 #if defined(CONFIG_IRQ_OFFLOAD)
 do_irq_offload:
