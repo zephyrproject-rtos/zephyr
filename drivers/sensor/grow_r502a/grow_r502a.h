@@ -131,21 +131,40 @@
 #define R502A_DELAY 200
 #define R502A_RETRY_DELAY 5
 
-#define LED_CTRL_BREATHING 0x01
-#define LED_CTRL_FLASHING 0x02
-#define LED_CTRL_ON_ALWAYS 0x03
-#define LED_CTRL_OFF_ALWAYS 0x04
-#define LED_CTRL_ON_GRADUALLY 0x05
-#define LED_CTRL_OFF_GRADUALLY 0x06
+/*LED glow control code*/
+enum r502a_led_ctrl_code {
+	R502A_LED_CTRL_BREATHING = 0x01,
+	R502A_LED_CTRL_FLASHING,
+	R502A_LED_CTRL_ON_ALWAYS,
+	R502A_LED_CTRL_OFF_ALWAYS,
+	R502A_LED_CTRL_ON_GRADUALLY,
+	R502A_LED_CTRL_OFF_GRADUALLY,
+};
 
-#define LED_SPEED_HALF 0x50
-#define LED_SPEED_FULL 0xFF
+/* LED glow speed code
+ * if needed, use desired speed between 0-255
+ */
+enum r502a_led_speed {
+	R502A_LED_SPEED_MAX = 0x00,
+	R502A_LED_SPEED_HALF = 0x50,
+	R502A_LED_SPEED_MIN = 0xFF,
+};
 
-#define LED_COLOR_RED 0x01
-#define LED_COLOR_BLUE 0x02
-#define LED_COLOR_PURPLE 0x03
+/* LED glowing cycle
+ * if needed, use desired cycle count between 1-255
+ */
+enum r502a_led_cycle {
+	R502A_LED_CYCLE_INFINITE = 0x00,
+	R502A_LED_CYCLE_1,
+	R502A_LED_CYCLE_2,
+	R502A_LED_CYCLE_3,
+	R502A_LED_CYCLE_4,
+	R502A_LED_CYCLE_5,
+	R502A_LED_CYCLE_255 = 0xFF,
+};
 
-struct led_params {
+
+struct r502a_led_params {
 	uint8_t ctrl_code;
 	uint8_t color_idx;
 	uint8_t speed; /* Speed 0x00-0xff */
@@ -192,6 +211,7 @@ struct grow_r502a_data {
 	struct k_sem uart_rx_sem;
 
 	uint16_t template_count;
+	uint8_t led_color;
 };
 
 struct grow_r502a_config {

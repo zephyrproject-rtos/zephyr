@@ -9,6 +9,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor/grow_r502a.h>
+#include <zephyr/drivers/led.h>
 
 static bool enroll;
 static struct sensor_value fid_get, count, find, del;
@@ -79,6 +80,38 @@ static void template_count_get(const struct device *dev)
 	printk("template count : %d\n", count.val1);
 }
 
+static int r502a_led(void)
+{
+	int ret;
+	const int led_num = 0;
+	const int led_color_a_inst = 1;
+	uint8_t led_color = R502A_LED_COLOR_PURPLE;
+	const struct device *led_dev =  DEVICE_DT_GET_ONE(hzgrow_r502a_led);
+
+	if (led_dev ==  NULL) {
+		printk("Error: no device found\n");
+		return -ENODEV;
+	}
+
+	if (!device_is_ready(led_dev)) {
+		printk("Error: Device %s is not ready\n", led_dev->name);
+		return -EAGAIN;
+	}
+
+	ret = led_set_color(led_dev, led_num, led_color_a_inst, &led_color);
+	if (ret != 0) {
+		printk("led set color failed %d\n", ret);
+		return -1;
+	}
+
+	ret = led_on(led_dev, led_num);
+	if (ret != 0) {
+		printk("led on failed %d\n", ret);
+		return -1;
+	}
+	return 0;
+}
+
 static void trigger_handler(const struct device *dev,
 			    const struct sensor_trigger *trigger)
 {
@@ -103,6 +136,12 @@ int main(void)
 
 	if (!device_is_ready(dev)) {
 		printk("Error: Device %s is not ready\n", dev->name);
+		return 0;
+	}
+
+	ret = r502a_led();
+	if (ret != 0) {
+		printk("Error: device led failed to set %d", ret);
 		return 0;
 	}
 
