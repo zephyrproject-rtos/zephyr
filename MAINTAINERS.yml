@@ -446,11 +446,7 @@ Bluetooth Audio:
     - tests/bluetooth/audio/
     - tests/bsim/bluetooth/audio/
     - tests/bluetooth/shell/audio.conf
-    - doc/connectivity/bluetooth/img/ble_audio_arch.svg
-    - doc/connectivity/bluetooth/img/cap_proc.svg
-    - doc/connectivity/bluetooth/img/gaf.svg
-    - doc/connectivity/bluetooth/img/zephyr_gaf.svg
-    - doc/connectivity/bluetooth/bluetooth-le-audio-arch.rst
+    - doc/connectivity/bluetooth/api/audio/
     - samples/bluetooth/broadcast_audio*/
     - samples/bluetooth/hap*/
     - samples/bluetooth/public_broadcast*/
