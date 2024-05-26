@@ -517,7 +517,11 @@ static void port80_it8xxx2_isr(const struct device *dev)
 		ESPI_PERIPHERAL_NODATA
 	};
 
-	evt.evt_data = gctrl->GCTRL_P80HDR;
+	if (IS_ENABLED(CONFIG_ESPI_IT8XXX2_PORT_81_CYCLE)) {
+		evt.evt_data = gctrl->GCTRL_P80HDR | (gctrl->GCTRL_P81HDR << 8);
+	} else {
+		evt.evt_data = gctrl->GCTRL_P80HDR;
+	}
 	/* Write 1 to clear this bit */
 	gctrl->GCTRL_P80H81HSR |= BIT(0);
 
@@ -529,8 +533,13 @@ static void port80_it8xxx2_init(const struct device *dev)
 	ARG_UNUSED(dev);
 	struct gctrl_it8xxx2_regs *const gctrl = ESPI_IT8XXX2_GET_GCTRL_BASE;
 
-	/* Accept Port 80h Cycle */
-	gctrl->GCTRL_SPCTRL1 |= IT8XXX2_GCTRL_ACP80;
+	/* Accept Port 80h (and 81h) Cycle */
+	if (IS_ENABLED(CONFIG_ESPI_IT8XXX2_PORT_81_CYCLE)) {
+		gctrl->GCTRL_SPCTRL1 |=
+			(IT8XXX2_GCTRL_ACP80 | IT8XXX2_GCTRL_ACP81);
+	} else {
+		gctrl->GCTRL_SPCTRL1 |= IT8XXX2_GCTRL_ACP80;
+	}
 	IRQ_CONNECT(IT8XXX2_PORT_80_IRQ, 0, port80_it8xxx2_isr,
 			DEVICE_DT_INST_GET(0), 0);
 	irq_enable(IT8XXX2_PORT_80_IRQ);
