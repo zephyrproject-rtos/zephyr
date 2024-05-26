@@ -34,3 +34,5 @@ tests:
     platform_allow:
       - native_sim/native/64
       - native_sim
+  drivers.disk.stm32_sdhc:
+    filter: dt_compat_enabled("st,stm32-sdmmc")
