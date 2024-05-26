@@ -621,16 +621,32 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	 * with a valid context.
 	 */
 	if (ftr->aux_lll_sched) {
-		/* AUX_ADV_IND/AUX_CHAIN_IND PDU reception is being setup */
-		ftr->aux_sched = 1U;
-
 		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync_lll) {
 			sync_lll->lll_aux = lll_aux;
+
+			/* AUX_ADV_IND/AUX_CHAIN_IND PDU reception is being
+			 * setup
+			 */
+			ftr->aux_sched = 1U;
 
 			/* In sync context, dispatch immediately */
 			ll_rx_put_sched(link, rx);
 		} else {
+			/* check scan context is not already using LLL
+			 * scheduling, or receiving a chain then it will
+			 * reuse the aux context.
+			 */
+			LL_ASSERT(!lll->lll_aux || (lll->lll_aux == lll_aux));
+
+			/* scan context get the aux context so that it can
+			 * continue reception in LLL scheduling.
+			 */
 			lll->lll_aux = lll_aux;
+
+			/* AUX_ADV_IND/AUX_CHAIN_IND PDU reception is being
+			 * setup
+			 */
+			ftr->aux_sched = 1U;
 		}
 
 		/* Reset auxiliary channel PDU scan state which otherwise is
