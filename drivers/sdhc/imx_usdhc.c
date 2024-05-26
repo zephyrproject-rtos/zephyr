@@ -282,21 +282,6 @@ static int imx_usdhc_reset(const struct device *dev)
 	return USDHC_Reset(cfg->base, kUSDHC_ResetAll, 100U) == true ? 0 : -ETIMEDOUT;
 }
 
-/* Wait for USDHC to gate clock when it is disabled */
-static inline void imx_usdhc_wait_clock_gate(USDHC_Type *base)
-{
-	uint32_t timeout = 1000;
-
-	while (timeout--) {
-		if (base->PRES_STATE & USDHC_PRES_STATE_SDOFF_MASK) {
-			break;
-		}
-	}
-	if (timeout == 0) {
-		LOG_WRN("SD clock did not gate in time");
-	}
-}
-
 /*
  * Set SDHC io properties
  */
