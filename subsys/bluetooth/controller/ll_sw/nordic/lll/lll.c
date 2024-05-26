@@ -719,6 +719,7 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 			struct lll_prepare_param *prepare_param,
 			uint8_t is_resume, uint8_t is_dequeue)
 {
+	struct lll_event *ready_short = NULL;
 	struct lll_event *ready;
 	struct lll_event *next;
 	uint8_t idx;
@@ -728,9 +729,35 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	idx = UINT8_MAX;
 	ready = prepare_dequeue_iter_ready_get(&idx);
 
+	/* Find any short prepare */
+	if (ready) {
+		uint32_t ticks_at_preempt_min = ready->prepare_param.ticks_at_expire;
+
+		do {
+			uint32_t ticks_at_preempt_next;
+			struct lll_event *ready_next;
+			uint32_t diff;
+
+			ready_next = prepare_dequeue_iter_ready_get(&idx);
+			if (!ready_next) {
+				break;
+			}
+
+			ticks_at_preempt_next = ready_next->prepare_param.ticks_at_expire;
+			diff = ticker_ticks_diff_get(ticks_at_preempt_next,
+						     ticks_at_preempt_min);
+			if ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) {
+				continue;
+			}
+
+			ready_short = ready_next;
+			ticks_at_preempt_min = ticks_at_preempt_next;
+		} while (true);
+	}
+
 	/* Current event active or another prepare is ready in the pipeline */
 	if ((!is_dequeue && !is_done_sync()) ||
-	    event.curr.abort_cb ||
+	    event.curr.abort_cb || ready_short ||
 	    (ready && is_resume)) {
 #if defined(CONFIG_BT_CTLR_LOW_LAT)
 		lll_prepare_cb_t resume_cb;
@@ -749,6 +776,11 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 		if (is_resume) {
 			return -EINPROGRESS;
+		}
+
+		/* Find any short prepare */
+		if (ready_short) {
+			ready = ready_short;
 		}
 
 		/* Always start preempt timeout for first prepare in pipeline */
