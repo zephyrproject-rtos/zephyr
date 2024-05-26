@@ -71,3 +71,16 @@ module-str = llext
 source "subsys/logging/Kconfig.template.log_config"
 
 endif
+
+menu "Linkable loadable Extension Development Kit (EDK)"
+
+config LLEXT_EDK_NAME
+	string "Name for llext EDK (Extension Development Kit)"
+	default "llext-edk"
+	help
+	  Name will be used when generating the EDK file, as <name>.tar.xz.
+	  It will also be used, normalized, as the prefix for the variable
+	  stating EDK location, used on generated Makefile.cflags. For
+	  instance, the default name, "llext-edk", becomes LLEXT_EDK_INSTALL_DIR.
+
+endmenu
