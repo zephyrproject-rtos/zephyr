@@ -108,7 +108,6 @@ static void wait_for_start_signal(atomic_t *start_flag)
 
 static inline void smp_init_top(void *arg)
 {
-	struct k_thread dummy_thread;
 	struct cpu_start_cb csc = arg ? *(struct cpu_start_cb *)arg : (struct cpu_start_cb){0};
 
 	/* Let start_cpu() know that this CPU has powered up. */
@@ -123,7 +122,7 @@ static inline void smp_init_top(void *arg)
 		/* Initialize the dummy thread struct so that
 		 * the scheduler can schedule actual threads to run.
 		 */
-		z_dummy_thread_init(&dummy_thread);
+		z_dummy_thread_init(&_thread_dummies[arch_curr_cpu()->id]);
 	}
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
