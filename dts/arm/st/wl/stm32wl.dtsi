@@ -29,7 +29,7 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "arm,cortex-m4f";
+			compatible = "arm,cortex-m4";
 			reg = <0>;
 			cpu-power-states = <&stop0 &stop1 &stop2>;
 		};
