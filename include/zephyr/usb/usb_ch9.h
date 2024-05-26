@@ -268,6 +268,7 @@ struct usb_association_descriptor {
 /** USB Specification Release Numbers (bcdUSB Descriptor field) */
 #define USB_SRN_1_1			0x0110
 #define USB_SRN_2_0			0x0200
+#define USB_SRN_2_0_1			0x0201
 #define USB_SRN_2_1			0x0210
 
 #define USB_DEC_TO_BCD(dec)	((((dec) / 10) << 4) | ((dec) % 10))
