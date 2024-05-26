@@ -98,10 +98,6 @@ struct http_resource_detail_dynamic {
 };
 BUILD_ASSERT(offsetof(struct http_resource_detail_dynamic, common) == 0);
 
-struct http_resource_detail_rest {
-	struct http_resource_detail common;
-};
-
 /**
  * @typedef http_resource_websocket_cb_t
  * @brief Callback used when a Websocket connection is setup. The application
