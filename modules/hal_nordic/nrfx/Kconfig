@@ -984,6 +984,16 @@ config NRFX_WDT31
 	depends on $(dt_nodelabel_has_compat,wdt31,$(DT_COMPAT_NORDIC_NRF_WDT))
 	select NRFX_WDT
 
+config NRFX_WDT010
+	bool "WDT010 driver instance"
+	depends on $(dt_nodelabel_has_compat,wdt010,$(DT_COMPAT_NORDIC_NRF_WDT))
+	select NRFX_WDT
+
+config NRFX_WDT011
+	bool "WDT011 driver instance"
+	depends on $(dt_nodelabel_has_compat,wdt011,$(DT_COMPAT_NORDIC_NRF_WDT))
+	select NRFX_WDT
+
 config NRFX_WDT130
 	bool "WDT130 driver instance"
 	depends on $(dt_nodelabel_has_compat,wdt130,$(DT_COMPAT_NORDIC_NRF_WDT))

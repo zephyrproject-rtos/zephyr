@@ -168,6 +168,20 @@
 				interrupts = <64 NRF_DEFAULT_IRQ_PRIORITY>,
 					     <65 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
+
+			cpuapp_wdt010: watchdog@14000 {
+				compatible = "nordic,nrf-wdt";
+				reg = <0x14000 0x1000>;
+				status = "disabled";
+				interrupts = <20 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			cpuapp_wdt011: watchdog@15000 {
+				compatible = "nordic,nrf-wdt";
+				reg = <0x15000 0x1000>;
+				status = "disabled";
+				interrupts = <21 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
 		};
 
 		cpurad_peripherals: peripheral@53000000 {
@@ -186,6 +200,20 @@
 					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_COARSE_1>,
 					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_FINE_1>;
 				nordic,ficr-names = "vsup", "coarse", "fine";
+			};
+
+			cpurad_wdt010: watchdog@13000 {
+				compatible = "nordic,nrf-wdt";
+				reg = <0x13000 0x1000>;
+				status = "disabled";
+				interrupts = <19 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			cpurad_wdt011: watchdog@14000 {
+				compatible = "nordic,nrf-wdt";
+				reg = <0x14000 0x1000>;
+				status = "disabled";
+				interrupts = <20 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
 			dppic020: dppic@22000 {
