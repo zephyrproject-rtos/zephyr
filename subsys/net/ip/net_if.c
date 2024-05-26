@@ -1658,37 +1658,21 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 
 	net_if_lock(iface);
 
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6) ||
+	    net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
+		goto out;
+	}
+
 	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
 		goto out;
 	}
 
 	ARRAY_FOR_EACH(ipv6->unicast, i) {
-		struct net_if_mcast_addr *maddr;
-		struct in6_addr addr;
-		int ret;
-
 		if (!ipv6->unicast[i].is_used) {
 			continue;
 		}
 
-		net_ipv6_addr_create_solicited_node(
-			&ipv6->unicast[i].address.in6_addr,
-			&addr);
-
-		maddr = net_if_ipv6_maddr_lookup(&addr, &iface);
-		if (!maddr) {
-			continue;
-		}
-
-		if (net_if_ipv4_maddr_is_joined(maddr)) {
-			continue;
-		}
-
-		ret = net_ipv6_mld_join(iface, &addr);
-		if (ret < 0 && ret != EALREADY) {
-			NET_DBG("Cannot rejoin multicast group %s (%d)",
-				net_sprint_ipv6_addr(&addr), ret);
-		}
+		join_mcast_nodes(iface, &ipv6->unicast[i].address.in6_addr);
 	}
 
 out:
