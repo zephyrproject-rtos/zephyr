@@ -23,4 +23,5 @@ supported:
   - watchdog
   - pwm
   - counter
+  - sdhc
 vendor: nxp
