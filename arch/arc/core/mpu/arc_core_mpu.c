@@ -34,7 +34,7 @@ int arch_mem_domain_max_partitions_get(void)
 /*
  * Validate the given buffer is user accessible or not
  */
-int arch_buffer_validate(void *addr, size_t size, int write)
+int arch_buffer_validate(const void *addr, size_t size, int write)
 {
 	return arc_core_mpu_buffer_validate(addr, size, write);
 }

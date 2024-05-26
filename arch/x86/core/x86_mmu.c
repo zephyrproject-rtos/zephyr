@@ -848,7 +848,7 @@ static inline pentry_t pte_finalize_value(pentry_t val, bool user_table,
 __pinned_func
 static inline pentry_t atomic_pte_get(const pentry_t *target)
 {
-	return (pentry_t)atomic_ptr_get((atomic_ptr_t *)target);
+	return (pentry_t)atomic_ptr_get((const atomic_ptr_t *)target);
 }
 
 __pinned_func
@@ -1301,7 +1301,7 @@ void arch_mem_unmap(void *addr, size_t size)
 {
 	int ret;
 
-	ret = range_map_unlocked((void *)addr, 0, size, 0, 0,
+	ret = range_map_unlocked(addr, 0, size, 0, 0,
 				 OPTION_FLUSH | OPTION_CLEAR);
 	__ASSERT_NO_MSG(ret == 0);
 	ARG_UNUSED(ret);
@@ -1387,7 +1387,7 @@ void z_x86_set_stack_guard(k_thread_stack_t *stack)
 __pinned_func
 static bool page_validate(pentry_t *ptables, uint8_t *addr, bool write)
 {
-	pentry_t *table = (pentry_t *)ptables;
+	pentry_t *table = ptables;
 
 	for (int level = 0; level < NUM_LEVELS; level++) {
 		pentry_t entry = get_entry(table, addr, level);
@@ -1432,7 +1432,7 @@ static inline void bcb_fence(void)
 }
 
 __pinned_func
-int arch_buffer_validate(void *addr, size_t size, int write)
+int arch_buffer_validate(const void *addr, size_t size, int write)
 {
 	pentry_t *ptables = z_x86_thread_page_tables_get(_current);
 	uint8_t *virt;
