@@ -447,6 +447,7 @@ Bluetooth Audio:
     - tests/bluetooth/audio/
     - tests/bsim/bluetooth/audio/
     - tests/bluetooth/shell/audio.conf
+    - tests/bluetooth/tester/overlay-le-audio.conf
     - doc/connectivity/bluetooth/api/audio/
     - samples/bluetooth/broadcast_audio*/
     - samples/bluetooth/hap*/
