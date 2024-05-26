@@ -1667,12 +1667,59 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 		goto out;
 	}
 
+	/* Rejoin solicited node multicasts. */
 	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		if (!ipv6->unicast[i].is_used) {
 			continue;
 		}
 
 		join_mcast_nodes(iface, &ipv6->unicast[i].address.in6_addr);
+	}
+
+	/* Rejoin any mcast address present on the interface, but marked as not joined. */
+	ARRAY_FOR_EACH(ipv6->mcast, i) {
+		int ret;
+
+		if (!ipv6->mcast[i].is_used ||
+		    net_if_ipv4_maddr_is_joined(&ipv6->mcast[i])) {
+			continue;
+		}
+
+		ret = net_ipv6_mld_join(iface, &ipv6->mcast[i].address.in6_addr);
+		if (ret < 0) {
+			NET_ERR("Cannot join mcast address %s for %d (%d)",
+				net_sprint_ipv6_addr(&ipv6->mcast[i].address.in6_addr),
+				net_if_get_by_iface(iface), ret);
+		}
+	}
+
+out:
+	net_if_unlock(iface);
+}
+
+/* To be called when interface comes operational down so that multicast
+ * groups are rejoined when back up.
+ */
+static void clear_joined_ipv6_mcast_groups(struct net_if *iface)
+{
+	struct net_if_ipv6 *ipv6;
+
+	net_if_lock(iface);
+
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		goto out;
+	}
+
+	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
+		goto out;
+	}
+
+	ARRAY_FOR_EACH(ipv6->mcast, i) {
+		if (!ipv6->mcast[i].is_used) {
+			continue;
+		}
+
+		net_if_ipv6_maddr_leave(iface, &ipv6->mcast[i]);
 	}
 
 out:
@@ -3199,6 +3246,7 @@ static void iface_ipv6_init(int if_count)
 #define join_mcast_allnodes(...)
 #define join_mcast_solicit_node(...)
 #define leave_mcast_all(...)
+#define clear_joined_ipv6_mcast_groups(...)
 #define join_mcast_nodes(...)
 #define iface_ipv6_start(...)
 #define iface_ipv6_stop(...)
@@ -5034,6 +5082,7 @@ static void notify_iface_down(struct net_if *iface)
 	if (!net_if_is_offloaded(iface) &&
 	    !(l2_flags_get(iface) & NET_L2_POINT_TO_POINT)) {
 		iface_ipv6_stop(iface);
+		clear_joined_ipv6_mcast_groups(iface);
 		net_ipv4_autoconf_reset(iface);
 	}
 }
