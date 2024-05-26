@@ -12,15 +12,7 @@ config BT_TMAP
 	help
 	  Enabling this will enable TMAP.
 
-config BT_DEBUG_TMAP
-	bool "Telephony and Media Audio Profile debug"
-	select DEPRECATED
-	depends on BT_TMAP
-	help
-	  Use this option to enable Telephony and Media Audio Profile debug
-	  logs for the Bluetooth Audio functionality.
-
+parent-module = BT
 module = BT_TMAP
-legacy-debug-sym = BT_DEBUG_TMAP
 module-str = "Telephony and Media Audio Profile"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+source "subsys/logging/Kconfig.template.log_config_inherit"

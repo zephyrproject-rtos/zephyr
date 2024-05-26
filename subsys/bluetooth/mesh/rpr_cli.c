@@ -298,7 +298,7 @@ static int handle_scan_report(const struct bt_mesh_model *mod, struct bt_mesh_ms
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_DEBUG)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_MODEL_LOG_LEVEL_DBG)) {
 		struct bt_uuid_128 uuid_repr = { .uuid = { BT_UUID_TYPE_128 } };
 
 		memcpy(uuid_repr.val, dev.uuid, 16);

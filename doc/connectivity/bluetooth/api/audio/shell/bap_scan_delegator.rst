@@ -11,7 +11,8 @@ synchronization transfer (PAST) protocol.
 The Scan Delegator server typically resides on devices that have inputs or
 outputs.
 
-It is necessary to have :code:`BT_DEBUG_BAP_SCAN_DELEGATOR` enabled for using
+It is necessary to have
+:kconfig:option:`CONFIG_BT_BAP_SCAN_DELEGATOR_LOG_LEVEL_DBG` enabled for using
 the Scan Delegator interactively.
 
 The Scan Delegator can currently only set the sync state of a receive state, but

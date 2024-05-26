@@ -32,6 +32,12 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 API Changes
 ***********
 
+Removed APIs in this release
+============================
+
+ * The Bluetooth subsystem specific debug symbols are removed. They have been replaced with the
+   Zephyr logging ones.
+
 Deprecated in this release
 ==========================
 

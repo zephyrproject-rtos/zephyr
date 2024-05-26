@@ -15,8 +15,8 @@ laptops. The call control client will also thus typically be the advertiser.
 The client can control the states of calls on a server using the call control
 point.
 
-It is necessary to have :code:`BT_DEBUG_TBS_CLIENT` enabled for using the client
-interactively.
+It is necessary to have :kconfig:option:`CONFIG_BT_TBS_CLIENT_LOG_LEVEL_DBG`
+enabled for using the client interactively.
 
 Using the telephone bearer service client
 =========================================
@@ -160,8 +160,8 @@ The telephone bearer service is a service that typically resides on devices that
 can make calls, including calls from apps such as Skype, e.g. (smart)phones and
 PCs.
 
-It is necessary to have :code:`BT_DEBUG_TBS` enabled for using the TBS server
-interactively.
+It is necessary to have :kconfig:option:`CONFIG_BT_TBS_LOG_LEVEL_DBG` enabled
+for using the TBS server interactively.
 
 Using the telephone bearer service
 ==================================
