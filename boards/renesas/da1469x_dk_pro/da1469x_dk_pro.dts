@@ -119,6 +119,7 @@
 	status = "okay";
 	pinctrl-0 = <&uart_default>;
 	pinctrl-names = "default";
+	rx-wake-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 };
 
 zephyr_udc0: &usbd {
