@@ -457,6 +457,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					       {"bssid", required_argument, 0, 'm'},
 					       {"band", required_argument, 0, 'b'},
 					       {"channel", required_argument, 0, 'c'},
+					       {"timeout", required_argument, 0, 't'},
 					       {"help", no_argument, 0, 'h'},
 					       {0, 0, 0, 0}};
 	int opt_index = 0;
@@ -477,7 +478,8 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->security = WIFI_SECURITY_TYPE_NONE;
 	params->mfp = WIFI_MFP_OPTIONAL;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:h", long_options, &opt_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:t:h",
+		long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 's':
@@ -562,6 +564,15 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 				&params->bssid[0], &params->bssid[1],
 				&params->bssid[2], &params->bssid[3],
 				&params->bssid[4], &params->bssid[5]);
+			break;
+		case 't':
+			if (iface_mode == WIFI_MODE_INFRA) {
+				params->timeout = strtol(optarg, &endptr, 10);
+				if (*endptr != '\0') {
+					PR_ERROR("Invalid timeout: %s\n", optarg);
+					return -EINVAL;
+				}
+			}
 			break;
 		case 'h':
 			return -ENOEXEC;
@@ -1920,6 +1931,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n"
 		  "[-m, --bssid]: MAC address of the AP (BSSID).\n"
+		  "[-t, --timeout]: Timeout for the connection attempt (in seconds).\n"
 		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
 		  2, 7),
