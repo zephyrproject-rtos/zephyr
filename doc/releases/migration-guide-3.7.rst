@@ -210,6 +210,14 @@ Bluetooth Mesh
   got ``const`` qualifier too. The model's metadata structure and metadata raw value
   can be declared as permanent constants in the non-volatile memory. (:github:`69679`)
 
+* The model metadata pointer declaration of :c:struct:`bt_mesh_model` has been changed
+  to a single ``const *`` and redundant metadata pointer from :c:struct:`bt_mesh_health_srv`
+  is removed. Consequently, :code:`BT_MESH_MODEL_HEALTH_SRV` definition is changed
+  to use variable argument notation. (:github:`71281`). Now, when your implementation
+  supports :kconfig:option:`CONFIG_BT_MESH_LARGE_COMP_DATA_SRV` and when you need to
+  specify metadata for Health Server model, simply pass metadata as the last argument
+  to the :code:`BT_MESH_MODEL_HEALTH_SRV` macro, otherwise omit the last argument.
+
 Bluetooth Audio
 ===============
 

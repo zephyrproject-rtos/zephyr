@@ -684,7 +684,6 @@ static struct bt_mesh_health_cli health_cli = {
 };
 
 
-#ifdef CONFIG_BT_MESH_LARGE_COMP_DATA_SRV
 static uint8_t health_tests[] = {
 	BT_MESH_HEALTH_TEST_INFO(COMPANY_ID_LF, 6, 0x01, 0x02, 0x03, 0x04, 0x34,
 				 0x15),
@@ -718,13 +717,9 @@ static const struct bt_mesh_models_metadata_entry health_srv_meta_alt[] = {
 	},
 	BT_MESH_MODELS_METADATA_END,
 };
-#endif
 
 static struct bt_mesh_health_srv health_srv = {
 	.cb = &health_srv_cb,
-#ifdef CONFIG_BT_MESH_LARGE_COMP_DATA_SRV
-	.metadata = health_srv_meta,
-#endif
 };
 
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, CUR_FAULTS_MAX);
@@ -1027,7 +1022,63 @@ static uint8_t proxy_solicit(const void *cmd, uint16_t cmd_len,
 static const struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
-	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
+	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub, health_srv_meta),
+	BT_MESH_MODEL_HEALTH_CLI(&health_cli),
+#if defined(CONFIG_BT_MESH_SAR_CFG_SRV)
+	BT_MESH_MODEL_SAR_CFG_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_SAR_CFG_CLI)
+	BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
+#endif
+#if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
+	BT_MESH_MODEL_LARGE_COMP_DATA_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_CLI)
+	BT_MESH_MODEL_LARGE_COMP_DATA_CLI(&lcd_cli),
+#endif
+#if defined(CONFIG_BT_MESH_OP_AGG_SRV)
+	BT_MESH_MODEL_OP_AGG_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_OP_AGG_CLI)
+	BT_MESH_MODEL_OP_AGG_CLI,
+#endif
+#if defined(CONFIG_BT_MESH_RPR_CLI)
+	BT_MESH_MODEL_RPR_CLI(&rpr_cli),
+#endif
+#if defined(CONFIG_BT_MESH_RPR_SRV)
+	BT_MESH_MODEL_RPR_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_DFD_SRV)
+	BT_MESH_MODEL_DFD_SRV(&dfd_srv),
+#endif
+#if defined(CONFIG_BT_MESH_DFU_SRV)
+	BT_MESH_MODEL_DFU_SRV(&dfu_srv),
+#endif
+#if defined(CONFIG_BT_MESH_BLOB_CLI) && !defined(CONFIG_BT_MESH_DFD_SRV)
+	BT_MESH_MODEL_BLOB_CLI(&blob_cli),
+#endif
+#if defined(CONFIG_BT_MESH_PRIV_BEACON_SRV)
+	BT_MESH_MODEL_PRIV_BEACON_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_PRIV_BEACON_CLI)
+	BT_MESH_MODEL_PRIV_BEACON_CLI(&priv_beacon_cli),
+#endif
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_CLI)
+	BT_MESH_MODEL_OD_PRIV_PROXY_CLI(&od_priv_proxy_cli),
+#endif
+#if defined(CONFIG_BT_MESH_SOL_PDU_RPL_CLI)
+	BT_MESH_MODEL_SOL_PDU_RPL_CLI(&srpl_cli),
+#endif
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
+	BT_MESH_MODEL_OD_PRIV_PROXY_SRV,
+#endif
+
+};
+
+static const struct bt_mesh_model root_models_alt[] = {
+	BT_MESH_MODEL_CFG_SRV,
+	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub, health_srv_meta_alt),
 	BT_MESH_MODEL_HEALTH_CLI(&health_cli),
 #if defined(CONFIG_BT_MESH_SAR_CFG_SRV)
 	BT_MESH_MODEL_SAR_CFG_SRV,
@@ -1098,6 +1149,10 @@ static const struct bt_mesh_model vnd_models[] = {
 
 static const struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(0, root_models, vnd_models),
+};
+
+static const struct bt_mesh_elem elements_alt[] = {
+	BT_MESH_ELEM(0, root_models_alt, vnd_models),
 };
 
 static void link_open(bt_mesh_prov_bearer_t bearer)
@@ -1247,8 +1302,8 @@ static const struct bt_mesh_comp comp = {
 
 static const struct bt_mesh_comp comp_alt = {
 	.cid = CID_LOCAL,
-	.elem = elements,
-	.elem_count = ARRAY_SIZE(elements),
+	.elem = elements_alt,
+	.elem_count = ARRAY_SIZE(elements_alt),
 	.vid = 2,
 };
 
@@ -1414,9 +1469,6 @@ static uint8_t init(const void *cmd, uint16_t cmd_len,
 		err = bt_mesh_init(&prov, &comp);
 	} else {
 		LOG_WRN("Loading alternative comp data");
-#ifdef CONFIG_BT_MESH_LARGE_COMP_DATA_SRV
-		health_srv.metadata = health_srv_meta_alt;
-#endif
 		err = bt_mesh_init(&prov, &comp_alt);
 	}
 
