@@ -73,7 +73,7 @@ def main(options):
 
     previous_results = None
     # Cleanup
-    if options.no_clean or options.only_failed or options.test_only:
+    if options.no_clean or options.only_failed or options.test_only or options.report_summary is not None:
         if os.path.exists(options.outdir):
             print("Keeping artifacts untouched")
     elif options.last_metrics:
@@ -158,6 +158,13 @@ def main(options):
 
     if options.save_tests:
         report.json_report(options.save_tests)
+        return 0
+
+    if options.report_summary is not None:
+        if options.report_summary < 0:
+            logger.error("The report summary value cannot be less than 0")
+            return 1
+        report.synopsis()
         return 0
 
     if options.device_testing and not options.build_only:
