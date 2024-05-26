@@ -363,13 +363,13 @@ if (CONFIG_BUILD_WITH_TFM)
     zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
   endif()
 
-  target_include_directories(tfm_api PRIVATE
+  target_include_directories(tfm_api PUBLIC
     ${TFM_INTERFACE_INCLUDE_DIR}
     ${TFM_INTERFACE_INCLUDE_DIR}/crypto_keys
     ${ZEPHYR_BASE}/modules/mbedtls/configs
     )
   # Pass down the MbedTLS configuration file to use.
-  target_compile_definitions(tfm_api PRIVATE
+  target_compile_definitions(tfm_api PUBLIC
     MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
     )
 
