@@ -23,6 +23,7 @@
  * @{
  */
 
+#include <errno.h>
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 
@@ -109,6 +110,16 @@ static inline int led_strip_update_rgb(const struct device *dev,
 {
 	const struct led_strip_driver_api *api =
 		(const struct led_strip_driver_api *)dev->api;
+
+	/* Allow for out-of-tree drivers that do not have this function for 2 Zephyr releases
+	 * until making it mandatory, function added after Zephyr 3.6
+	 */
+	if (api->length != NULL) {
+		/* Ensure supplied pixel size is valid for this device */
+		if (api->length(dev) < num_pixels) {
+			return -ERANGE;
+		}
+	}
 
 	return api->update_rgb(dev, pixels, num_pixels);
 }
