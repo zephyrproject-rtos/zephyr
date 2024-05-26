@@ -48,8 +48,7 @@ struct mcast_route_appending_info {
 
 static int mld_create(struct net_pkt *pkt,
 		      const struct in6_addr *addr,
-		      uint8_t record_type,
-		      uint16_t num_sources)
+		      uint8_t record_type)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(mld_access,
 				   struct net_icmpv6_mld_mcast_record);
@@ -63,21 +62,12 @@ static int mld_create(struct net_pkt *pkt,
 
 	mld->record_type = record_type;
 	mld->aux_data_len = 0U;
-	mld->num_sources = htons(num_sources);
+	mld->num_sources = 0U;
 
 	net_ipv6_addr_copy_raw(mld->mcast_address, (uint8_t *)addr);
 
 	if (net_pkt_set_data(pkt, &mld_access)) {
 		return -ENOBUFS;
-	}
-
-	if (num_sources > 0) {
-		/* All source addresses, RFC 3810 ch 3 */
-		if (net_pkt_write(pkt,
-				  net_ipv6_unspecified_address()->s6_addr,
-				  sizeof(struct in6_addr))) {
-			return -ENOBUFS;
-		}
 	}
 
 	return 0;
@@ -181,7 +171,7 @@ static void append_mcast_routes(struct net_route_entry_mcast *entry, void *user_
 		}
 	}
 
-	info->status = mld_create(info->pkt, &entry->group, NET_IPV6_MLDv2_MODE_IS_EXCLUDE, 0);
+	info->status = mld_create(info->pkt, &entry->group, NET_IPV6_MLDv2_MODE_IS_EXCLUDE);
 }
 #endif
 
@@ -201,7 +191,7 @@ int net_ipv6_mld_send_single(struct net_if *iface, const struct in6_addr *addr, 
 	}
 
 	if (mld_create_packet(pkt, 1) ||
-	    mld_create(pkt, addr, mode, 1)) {
+	    mld_create(pkt, addr, mode)) {
 		ret = -ENOBUFS;
 		goto drop;
 	}
@@ -337,7 +327,7 @@ static int send_mld_report(struct net_if *iface)
 		}
 
 		ret = mld_create(pkt, &ipv6->mcast[i].address.in6_addr,
-				 NET_IPV6_MLDv2_MODE_IS_EXCLUDE, 0);
+				 NET_IPV6_MLDv2_MODE_IS_EXCLUDE);
 		if (ret < 0) {
 			goto drop;
 		}
