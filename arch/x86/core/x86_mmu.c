@@ -1433,8 +1433,8 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 	int ret = 0;
 
 	/* addr/size arbitrary, fix this up into an aligned region */
-	k_mem_region_align((uintptr_t *)&virt, &aligned_size,
-			   (uintptr_t)addr, size, CONFIG_MMU_PAGE_SIZE);
+	(void)k_mem_region_align((uintptr_t *)&virt, &aligned_size,
+				 (uintptr_t)addr, size, CONFIG_MMU_PAGE_SIZE);
 
 	for (size_t offset = 0; offset < aligned_size;
 	     offset += CONFIG_MMU_PAGE_SIZE) {
