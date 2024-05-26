@@ -25,6 +25,7 @@
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpurad_ram0;
 		zephyr,shell-uart = &uart135;
+		zephyr,ieee802154 = &cpurad_ieee802154;
 		zephyr,bt-hci-ipc = &ipc0;
 	};
 };
@@ -97,4 +98,8 @@ ipc0: &cpuapp_cpurad_ipc {
 	pinctrl-0 = <&uart136_default>;
 	pinctrl-1 = <&uart136_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+&cpurad_ieee802154 {
+	status = "okay";
 };
