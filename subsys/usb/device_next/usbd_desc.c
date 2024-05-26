@@ -17,54 +17,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_desc, CONFIG_USBD_LOG_LEVEL);
 
-/*
- * The last index of the initializer_string without null character is:
- *   ascii_idx_max = bLength / 2 - 2
- * Use this macro to determine the last index of ASCII7 string.
- */
-#define USB_BSTRING_ASCII_IDX_MAX(n)	(n / 2 - 2)
-
-/*
- * The last index of the bString is:
- *   utf16le_idx_max = sizeof(initializer_string) * 2 - 2 - 1
- *   utf16le_idx_max = bLength - 2 - 1
- * Use this macro to determine the last index of UTF16LE string.
- */
-#define USB_BSTRING_UTF16LE_IDX_MAX(n)	(n - 3)
-
-/**
- * @brief Transform ASCII-7 string descriptor to UTF16-LE
- *
- * This function transforms ASCII-7 string descriptor
- * into a UTF16-LE.
- *
- * @param[in] dn     Pointer to descriptor node
- */
-static void usbd_ascii7_to_utf16le(struct usbd_desc_node *const dn)
-{
-	struct usb_string_descriptor *desc = dn->desc;
-	int idx_max = USB_BSTRING_UTF16LE_IDX_MAX(desc->bLength);
-	int ascii_idx_max = USB_BSTRING_ASCII_IDX_MAX(desc->bLength);
-	uint8_t *buf = (uint8_t *)&desc->bString;
-
-	LOG_DBG("idx_max %d, ascii_idx_max %d, buf %p",
-		idx_max, ascii_idx_max, buf);
-
-	for (int i = idx_max; i >= 0; i -= 2) {
-		LOG_DBG("char %c : %x, idx %d -> %d",
-			buf[ascii_idx_max],
-			buf[ascii_idx_max],
-			ascii_idx_max, i);
-		__ASSERT(buf[ascii_idx_max] > 0x1F && buf[ascii_idx_max] < 0x7F,
-			 "Only printable ascii-7 characters are allowed in USB "
-			 "string descriptors");
-		buf[i] = 0U;
-		buf[i - 1] = buf[ascii_idx_max--];
-	}
-
-	dn->utf16le = true;
-}
-
 /**
  * @brief Get common USB descriptor
  *
@@ -171,8 +123,8 @@ static int desc_add_and_update_idx(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
-void *usbd_get_descriptor(struct usbd_contex *const uds_ctx,
-			  const uint8_t type, const uint8_t idx)
+struct usbd_desc_node *usbd_get_descriptor(struct usbd_contex *const uds_ctx,
+					   const uint8_t type, const uint8_t idx)
 {
 	struct usbd_desc_node *tmp;
 	struct usb_desc_header *dh;
@@ -180,7 +132,7 @@ void *usbd_get_descriptor(struct usbd_contex *const uds_ctx,
 	SYS_DLIST_FOR_EACH_CONTAINER(&uds_ctx->descriptors, tmp, node) {
 		dh = tmp->desc;
 		if (tmp->idx == idx && dh->bDescriptorType == type) {
-			return tmp->desc;
+			return tmp;
 		}
 	}
 
@@ -257,10 +209,6 @@ int usbd_add_descriptor(struct usbd_contex *const uds_ctx,
 			break;
 		default:
 			break;
-		}
-
-		if (desc_nd->idx && !desc_nd->utf16le) {
-			usbd_ascii7_to_utf16le(desc_nd);
 		}
 	}
 
