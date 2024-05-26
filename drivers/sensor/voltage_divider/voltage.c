@@ -22,7 +22,7 @@ struct voltage_config {
 
 struct voltage_data {
 	struct adc_sequence sequence;
-	int16_t raw;
+	uint16_t raw;
 };
 
 static int fetch(const struct device *dev, enum sensor_channel chan)
@@ -47,7 +47,7 @@ static int get(const struct device *dev, enum sensor_channel chan, struct sensor
 {
 	const struct voltage_config *config = dev->config;
 	struct voltage_data *data = dev->data;
-	int32_t raw_val = data->raw;
+	int32_t raw_val;
 	int32_t v_mv;
 	int ret;
 
@@ -55,6 +55,15 @@ static int get(const struct device *dev, enum sensor_channel chan, struct sensor
 
 	if (chan != SENSOR_CHAN_VOLTAGE) {
 		return -ENOTSUP;
+	}
+
+	if (config->voltage.port.channel_cfg.differential) {
+		raw_val = (int16_t)data->raw;
+	} else if (config->voltage.port.resolution < 16) {
+		/* Can be removed when issue #71119 is resolved */
+		raw_val = (int16_t)data->raw;
+	} else {
+		raw_val = data->raw;
 	}
 
 	ret = adc_raw_to_millivolts_dt(&config->voltage.port, &raw_val);
