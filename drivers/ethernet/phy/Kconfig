@@ -36,9 +36,7 @@ config PHY_GENERIC_MII
 config PHY_ADIN2111
 	bool "ADIN2111 PHY driver"
 	default y
-	depends on DT_HAS_ADI_ADIN2111_PHY_ENABLED
-	depends on ETH_ADIN2111
-	depends on MDIO_ADIN2111
+	depends on DT_HAS_ADI_ADIN2111_PHY_ENABLED || DT_HAS_ADI_ADIN1100_PHY_ENABLED
 	help
 	  Enable ADIN2111 PHY driver.
 
