@@ -124,6 +124,14 @@ config BT_LL_SW_SPLIT
 
 endchoice
 
+config BT_CTLR_HCI
+	bool "Host Controller Interface (HCI)"
+	default y
+	help
+	  Enable the Host Controller interface (HCI) in the Controller.
+	  This should almost always be enabled, except in a few special
+	  cases, like for unit testing.
+
 comment "BLE Controller configuration"
 
 config BT_CTLR_CRYPTO
@@ -137,7 +145,7 @@ config BT_CTLR_CRYPTO
 config BT_CTLR_HCI_VS_BUILD_INFO
 	string "Zephyr HCI VS Build Info string"
 	default ""
-	depends on BT_HCI_VS
+	depends on BT_CTLR_HCI && BT_HCI_VS
 	help
 	  User-defined string that will be returned by the Zephyr VS Read Build
 	  Information command after the Zephyr version and build time. When
@@ -988,6 +996,7 @@ config BT_CTLR_SMI_TX_SETTING
 
 config BT_CTLR_HCI_CODEC_AND_DELAY_INFO
 	bool "Codecs and controller delay information commands"
+	depends on BT_CTLR_HCI
 	help
 	  Enable HCI commands to read information about supported
 	  codecs, codec capabilities, and controller delay.
