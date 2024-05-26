@@ -3154,6 +3154,9 @@ Synopsys Platforms:
     - soc/snps/
     - boards/snps/
     - samples/boards/arc_secure_services/
+    - scripts/west_commands/runners/mdb.py
+    - scripts/west_commands/tests/test_mdb.py
+    - scripts/west_commands/runners/nsim.py
   labels:
     - "platform: Synopsys"
 
