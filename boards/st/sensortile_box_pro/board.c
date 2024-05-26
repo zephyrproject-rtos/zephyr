@@ -20,11 +20,10 @@ static int sensortile_box_pro_usb_console_init(void)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
-	if (!device_is_ready(dev) || usb_enable(NULL)) {
-		return -1;
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
 	}
-
-	return 0;
+	return usb_enable(NULL);
 }
 
 /* needs to be done at Application */
