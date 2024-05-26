@@ -249,7 +249,7 @@ typedef int (*video_api_set_signal_t)(const struct device *dev,
 				      enum video_endpoint_id ep,
 				      struct k_poll_signal *signal);
 
-struct video_driver_api {
+__subsystem struct video_driver_api {
 	/* mandatory callbacks */
 	video_api_set_format_t set_format;
 	video_api_get_format_t get_format;
