@@ -998,6 +998,7 @@ static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	int trigger;
+	bool trigger_enabled = false;
 	int err;
 
 	if (argc < 4) {
@@ -1038,6 +1039,7 @@ static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
 			}
 			err = sensor_trigger_set(dev, &sensor_trigger_table[trigger].trigger,
 						 sensor_trigger_table[trigger].handler);
+			trigger_enabled = true;
 		}
 	} else if (strcmp(argv[2], "off") == 0) {
 		/* Clear the handler for the given trigger on this device */
@@ -1060,6 +1062,10 @@ static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
 	if (err) {
 		shell_error(sh, "Error while setting trigger %d on device %s (%d)", trigger,
 			    argv[1], err);
+	} else {
+		shell_info(sh, "%s trigger idx=%d %s on device %s",
+			   trigger_enabled ? "Enabled" : "Disabled", trigger,
+			   sensor_trigger_table[trigger].name, argv[1]);
 	}
 
 	return err;
