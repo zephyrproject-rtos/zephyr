@@ -187,7 +187,10 @@ static inline ErrorStatus rtc_stm32_init_alarm(RTC_TypeDef *rtc, uint32_t format
 					LL_RTC_AlarmTypeDef *ll_alarm_struct, uint16_t id)
 {
 	ll_alarm_struct->AlarmDateWeekDaySel = RTC_STM32_ALRM_DATEWEEKDAYSEL_DATE;
-	/* RTC write protection is disabled & enabled again inside LL_RTC_ALMx_Init functions */
+	/*
+	 * RTC write protection is disabled & enabled again inside LL_RTC_ALMx_Init functions
+	 * The LL_RTC_ALMx_Init does convert bin2bcd by itself
+	 */
 	if (id == RTC_STM32_ALRM_A) {
 		return LL_RTC_ALMA_Init(rtc, format, ll_alarm_struct);
 	}
@@ -776,6 +779,7 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 		if (rtc_stm32_is_active_alarm(RTC, id)) {
 			LL_RTC_DisableWriteProtection(RTC);
 			rtc_stm32_disable_alarm(RTC, id);
+			rtc_stm32_disable_interrupt_alarm(RTC, id);
 			LL_RTC_EnableWriteProtection(RTC);
 		}
 		LOG_DBG("Alarm %d has been disabled", id);
@@ -808,9 +812,9 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 
 	p_rtc_alrm->user_mask = mask;
 
-	LOG_DBG("set alarm: second = %d, min = %d, hour = %d,"
-			"wday = %d, mday = %d, mask = 0x%04x",
-			timeptr->tm_sec, timeptr->tm_min, timeptr->tm_hour,
+	LOG_DBG("set alarm %d : second = %d, min = %d, hour = %d,"
+			" wday = %d, mday = %d, mask = 0x%04x",
+			id, timeptr->tm_sec, timeptr->tm_min, timeptr->tm_hour,
 			timeptr->tm_wday, timeptr->tm_mday, mask);
 
 #if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
@@ -820,15 +824,14 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 	/* Disable the write protection for RTC registers */
 	LL_RTC_DisableWriteProtection(RTC);
 
-	if (rtc_stm32_is_active_alarm(RTC, id)) {
-		/* Disable Alarm if already active */
-		rtc_stm32_disable_alarm(RTC, id);
-	}
+	/* Disable ALARM so that the RTC_ISR_ALRAWF/RTC_ISR_ALRBWF is 0 */
+	rtc_stm32_disable_alarm(RTC, id);
+	rtc_stm32_disable_interrupt_alarm(RTC, id);
 
 #ifdef RTC_ISR_ALRAWF
 	if (id == RTC_STM32_ALRM_A) {
 		/* Wait till RTC ALRAWF flag is set before writing to RTC registers */
-		while ((LL_RTC_ReadReg(RTC, ISR) & RTC_ISR_ALRAWF) == 0U) {
+		while (!LL_RTC_IsActiveFlag_ALRAW(RTC)) {
 			;
 		}
 	}
@@ -837,7 +840,7 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 #ifdef RTC_ISR_ALRBWF
 	if (id == RTC_STM32_ALRM_B) {
 		/* Wait till RTC ALRBWF flag is set before writing to RTC registers */
-		while ((LL_RTC_ReadReg(RTC, ISR) & RTC_ISR_ALRBWF) == 0U) {
+		while (!LL_RTC_IsActiveFlag_ALRBW(RTC)) {
 			;
 		}
 	}
@@ -874,6 +877,22 @@ disable_bkup_access:
 unlock:
 	k_mutex_unlock(&data->lock);
 
+	if (id == RTC_STM32_ALRM_A) {
+		LOG_DBG("Alarm A : %dh%dm%ds   mask = 0x%x",
+			LL_RTC_ALMA_GetHour(RTC),
+			LL_RTC_ALMA_GetMinute(RTC),
+			LL_RTC_ALMA_GetSecond(RTC),
+			LL_RTC_ALMA_GetMask(RTC));
+	}
+#ifdef RTC_ALARM_B
+	if (id == RTC_STM32_ALRM_B) {
+		LOG_DBG("Alarm B : %dh%dm%ds   mask = 0x%x",
+			LL_RTC_ALMB_GetHour(RTC),
+			LL_RTC_ALMB_GetMinute(RTC),
+			LL_RTC_ALMB_GetSecond(RTC),
+			LL_RTC_ALMB_GetMask(RTC));
+	}
+#endif /* #ifdef RTC_ALARM_B */
 	return err;
 }
 
