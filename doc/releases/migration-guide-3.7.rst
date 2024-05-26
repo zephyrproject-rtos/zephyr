@@ -493,6 +493,14 @@ State Machine Framework
   now independent of the values of :kconfig:option:`CONFIG_SMF_ANCESTOR_SUPPORT` and
   :kconfig:option:`CONFIG_SMF_INITIAL_TRANSITION`. If the additional arguments are not used, they
   have to be set to ``NULL``. (:github:`71250`)
+* SMF now follows a more UML-like transition flow when the transition source is a parent of the
+  state called by :c:func:`smf_run_state`. Exit actions up to (but not including) the Least Common
+  Ancestor of the transition source and target state will be executed, as will entry actions from
+  (but not including) the LCA down to the target state. (:github:`71675`)
+* Previously, calling :c:func:`smf_set_state` with a ``new_state`` set to NULL would execute all
+  exit actions from the current state to the topmost parent, with the expectation the topmost exit
+  action would terminate the state machine. Passing ``NULL`` is now not allowed. Instead create a
+  'terminate' state at the top level, and call :c:func:`smf_set_terminate` from its entry action.
 
 ZBus
 ====

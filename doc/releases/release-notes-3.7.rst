@@ -375,6 +375,9 @@ Libraries / Subsystems
 * State Machine Framework
 
   * The :c:macro:`SMF_CREATE_STATE` macro now always takes 5 arguments.
+  * Transition sources that are parents of the state that was run now choose the correct Least
+    Common Ancestor for executing Exit and Entry Actions.
+  * Passing ``NULL`` to :c:func:`smf_set_state` is now not allowed.
 
 * Storage
 
