@@ -23,12 +23,7 @@
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
 		};
-	};
 
-	/* MRAM region */
-	flash0: flash@18000 {
-		compatible = "soc-nv-flash";
-		reg = <0x00018000 0x1e8000>;
 	};
 
 	/* TCM */
@@ -46,6 +41,20 @@
 
 	soc {
 		compatible = "ambiq,apollo4p", "ambiq,apollo4x", "simple-bus";
+
+		flash: flash-controller@18000 {
+			compatible = "ambiq,flash-controller";
+			reg = <0x00018000 0x1e8000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Flash region */
+			flash0: flash@18000 {
+				compatible = "soc-nv-flash";
+				reg = <0x00018000 0x1e8000>;
+			};
+		};
 
 		pwrcfg: pwrcfg@40021000 {
 			compatible = "ambiq,pwrctrl";
