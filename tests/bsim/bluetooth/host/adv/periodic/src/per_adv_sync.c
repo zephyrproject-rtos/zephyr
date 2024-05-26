@@ -237,7 +237,7 @@ static void start_bonding(void)
 	printk("done.\n");
 }
 
-static void main_per_adv_syncer(void)
+static void main_per_adv_sync(void)
 {
 	struct bt_le_per_adv_sync *sync = NULL;
 
@@ -253,10 +253,10 @@ static void main_per_adv_syncer(void)
 	printk("Waiting for periodic sync lost...\n");
 	WAIT_FOR_FLAG(flag_per_adv_sync_lost);
 
-	PASS("Periodic advertising syncer passed\n");
+	PASS("Periodic advertising sync passed\n");
 }
 
-static void main_per_adv_syncer_app_not_scanning(void)
+static void main_per_adv_sync_app_not_scanning(void)
 {
 	int err;
 	struct bt_le_per_adv_sync *sync = NULL;
@@ -280,10 +280,10 @@ static void main_per_adv_syncer_app_not_scanning(void)
 	printk("Waiting for periodic sync lost...\n");
 	WAIT_FOR_FLAG(flag_per_adv_sync_lost);
 
-	PASS("Periodic advertising syncer passed\n");
+	PASS("Periodic advertising sync passed\n");
 }
 
-static void main_per_adv_conn_syncer(void)
+static void main_per_adv_conn_sync(void)
 {
 	struct bt_le_per_adv_sync *sync = NULL;
 
@@ -305,10 +305,10 @@ static void main_per_adv_conn_syncer(void)
 	printk("Waiting for periodic sync lost...\n");
 	WAIT_FOR_FLAG(flag_per_adv_sync_lost);
 
-	PASS("Periodic advertising syncer passed\n");
+	PASS("Periodic advertising sync passed\n");
 }
 
-static void main_per_adv_conn_privacy_syncer(void)
+static void main_per_adv_conn_privacy_sync(void)
 {
 	struct bt_le_per_adv_sync *sync = NULL;
 
@@ -336,10 +336,10 @@ static void main_per_adv_conn_privacy_syncer(void)
 	printk("Waiting for periodic sync lost...\n");
 	WAIT_FOR_FLAG(flag_per_adv_sync_lost);
 
-	PASS("Periodic advertising syncer passed\n");
+	PASS("Periodic advertising sync passed\n");
 }
 
-static void main_per_adv_long_data_syncer(void)
+static void main_per_adv_long_data_sync(void)
 {
 #if (CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0)
 	struct bt_le_per_adv_sync *sync = NULL;
@@ -359,58 +359,58 @@ static void main_per_adv_long_data_syncer(void)
 	printk("Waiting for periodic sync lost...\n");
 	WAIT_FOR_FLAG(flag_per_adv_sync_lost);
 #endif
-	PASS("Periodic advertising long data syncer passed\n");
+	PASS("Periodic advertising long data sync passed\n");
 }
 
-static const struct bst_test_instance per_adv_syncer[] = {
+static const struct bst_test_instance per_adv_sync[] = {
 	{
-		.test_id = "per_adv_syncer",
+		.test_id = "per_adv_sync",
 		.test_descr = "Basic periodic advertising sync test. "
 			      "Will just sync to a periodic advertiser.",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = main_per_adv_syncer
+		.test_main_f = main_per_adv_sync
 	},
 	{
-		.test_id = "per_adv_syncer_app_not_scanning",
+		.test_id = "per_adv_sync_app_not_scanning",
 		.test_descr = "Basic periodic advertising sync test but where "
 			      "the app stopped scanning before creating sync."
 			      "Expect the host to start scanning automatically.",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = main_per_adv_syncer_app_not_scanning
+		.test_main_f = main_per_adv_sync_app_not_scanning
 	},
 	{
-		.test_id = "per_adv_conn_syncer",
+		.test_id = "per_adv_conn_sync",
 		.test_descr = "Periodic advertising sync test, but where there "
 			      "is a connection between the advertiser and the "
-			      "syncer.",
+			      "synchronized device.",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = main_per_adv_conn_syncer
+		.test_main_f = main_per_adv_conn_sync
 	},
 	{
-		.test_id = "per_adv_conn_privacy_syncer",
+		.test_id = "per_adv_conn_privacy_sync",
 		.test_descr = "Periodic advertising sync test, but where "
-			      "advertiser and syncer are bonded and using  "
+			      "advertiser and synchronized device are bonded and using  "
 			      "privacy",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = main_per_adv_conn_privacy_syncer
+		.test_main_f = main_per_adv_conn_privacy_sync
 	},
 	{
-		.test_id = "per_adv_long_data_syncer",
+		.test_id = "per_adv_long_data_sync",
 		.test_descr = "Periodic advertising sync test with larger "
 			      "data length. Test is used to verify that "
 			      "reassembly of long data is handeled correctly.",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = main_per_adv_long_data_syncer
+		.test_main_f = main_per_adv_long_data_sync
 	},
 	BSTEST_END_MARKER
 };
 
-struct bst_test_list *test_per_adv_syncer(struct bst_test_list *tests)
+struct bst_test_list *test_per_adv_sync(struct bst_test_list *tests)
 {
-	return bst_add_tests(tests, per_adv_syncer);
+	return bst_add_tests(tests, per_adv_sync);
 }
