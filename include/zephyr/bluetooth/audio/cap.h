@@ -750,6 +750,20 @@ struct bt_cap_commander_cb {
 	void (*microphone_gain_changed)(struct bt_conn *conn, int err);
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 #endif /* CONFIG_BT_MICP_MIC_CTLR */
+
+#if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
+	/**
+	 * @brief Callback for bt_cap_commander_broadcast_reception_start().
+	 *
+	 * @param conn		Pointer to the connection where the error
+	 *			occurred. NULL if @p err is 0 or if cancelled by
+	 *			bt_cap_commander_cancel()
+	 * @param err		0 on success, BT_GATT_ERR() with a
+	 *			specific ATT (BT_ATT_ERR_*) error code or -ECANCELED if cancelled
+	 *			by bt_cap_commander_cancel().
+	 */
+	void (*broadcast_reception_start)(struct bt_conn *conn, int err);
+#endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 };
 
 /**
@@ -842,7 +856,7 @@ struct bt_cap_commander_broadcast_reception_start_member_param {
 	 *
 	 * At least one bit in one of the subgroups bis_sync parameters shall be set.
 	 */
-	struct bt_bap_bass_subgroup *subgroups;
+	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 
 	/** Number of subgroups */
 	size_t num_subgroups;

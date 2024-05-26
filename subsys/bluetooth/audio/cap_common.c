@@ -124,6 +124,7 @@ static bool active_proc_is_commander(void)
 	case BT_CAP_COMMON_PROC_TYPE_VOLUME_MUTE_CHANGE:
 	case BT_CAP_COMMON_PROC_TYPE_MICROPHONE_GAIN_CHANGE:
 	case BT_CAP_COMMON_PROC_TYPE_MICROPHONE_MUTE_CHANGE:
+	case BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_START:
 		return true;
 	default:
 		return false;
