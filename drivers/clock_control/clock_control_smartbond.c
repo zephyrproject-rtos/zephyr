@@ -13,6 +13,9 @@
 #include <zephyr/pm/device.h>
 #include <da1469x_clock.h>
 #include <da1469x_qspic.h>
+#if defined(CONFIG_BT_DA1469X)
+#include <shm.h>
+#endif
 
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
@@ -53,6 +56,14 @@ static void calibration_work_cb(struct k_work *work)
 		lpc_clock_state.rcx_freq = da1469x_clock_lp_rcx_freq_get();
 		LOG_DBG("RCX calibration done, RCX freq: %d",
 			(int)lpc_clock_state.rcx_freq);
+
+#if defined(CONFIG_BT_DA1469X)
+		/* Update CMAC sleep clock with calculated frequency if RCX is set as lp_clk */
+		if ((CRG_TOP->CLK_CTRL_REG & CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Msk) ==
+		    (1 << CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Pos)) {
+			cmac_request_lp_clock_freq_set(lpc_clock_state.rcx_freq);
+		}
+#endif
 	}
 	if (lpc_clock_state.rc32k_started) {
 		da1469x_clock_lp_rc32k_calibrate();
@@ -82,6 +93,14 @@ static void xtal32k_settle_work_cb(struct k_work *work)
 	if (lpc_clock_state.xtal32k_started && !lpc_clock_state.xtal32k_ready) {
 		LOG_DBG("XTAL32K settled.");
 		lpc_clock_state.xtal32k_ready = true;
+
+#if defined(CONFIG_BT_DA1469X)
+		/* Update CMAC sleep clock if XTAL32K is set as lp_clk */
+		if ((CRG_TOP->CLK_CTRL_REG & CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Msk) ==
+		    (2 << CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Pos)) {
+			cmac_request_lp_clock_freq_set(32768);
+		}
+#endif
 	}
 }
 
