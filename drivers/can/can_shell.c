@@ -674,7 +674,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 	const struct device *dev = device_get_binding(argv[1]);
 	static unsigned int frame_counter;
 	unsigned int frame_no;
-	struct can_frame frame;
+	struct can_frame frame = { 0 };
 	uint32_t id_mask;
 	int argidx = 2;
 	uint32_t val;
