@@ -218,12 +218,14 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 {
 	uint32_t page, *table;
 	bool shared = !!(attrs & XTENSA_MMU_MAP_SHARED);
+	uint32_t sw_attrs = (attrs & XTENSA_MMU_PTE_ATTR_ORIGINAL) == XTENSA_MMU_PTE_ATTR_ORIGINAL ?
+		attrs : 0;
 
 	for (page = start; page < end; page += CONFIG_MMU_PAGE_SIZE) {
 		uint32_t pte = XTENSA_MMU_PTE(page,
 					      shared ? XTENSA_MMU_SHARED_RING :
 						       XTENSA_MMU_KERNEL_RING,
-					      attrs);
+					      sw_attrs, attrs);
 		uint32_t l2_pos = XTENSA_MMU_L2_POS(page);
 		uint32_t l1_pos = XTENSA_MMU_L1_POS(page);
 
@@ -237,7 +239,7 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 
 			xtensa_kernel_ptables[l1_pos] =
 				XTENSA_MMU_PTE((uint32_t)table, XTENSA_MMU_KERNEL_RING,
-					       XTENSA_MMU_PAGE_TABLE_ATTR);
+					       sw_attrs, XTENSA_MMU_PAGE_TABLE_ATTR);
 		}
 
 		table = (uint32_t *)(xtensa_kernel_ptables[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
@@ -272,13 +274,13 @@ static void xtensa_init_page_tables(void)
 	for (entry = 0; entry < ARRAY_SIZE(mmu_zephyr_ranges); entry++) {
 		const struct xtensa_mmu_range *range = &mmu_zephyr_ranges[entry];
 
-		map_memory(range->start, range->end, range->attrs);
+		map_memory(range->start, range->end, range->attrs | XTENSA_MMU_PTE_ATTR_ORIGINAL);
 	}
 
 	for (entry = 0; entry < xtensa_soc_mmu_ranges_num; entry++) {
 		const struct xtensa_mmu_range *range = &xtensa_soc_mmu_ranges[entry];
 
-		map_memory(range->start, range->end, range->attrs);
+		map_memory(range->start, range->end, range->attrs | XTENSA_MMU_PTE_ATTR_ORIGINAL);
 	}
 
 	/* Finally, the direct-mapped pages used in the page tables
@@ -357,7 +359,7 @@ static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
 		init_page_table(table, XTENSA_L2_PAGE_TABLE_ENTRIES);
 
 		l1_table[l1_pos] = XTENSA_MMU_PTE((uint32_t)table, XTENSA_MMU_KERNEL_RING,
-						  XTENSA_MMU_PAGE_TABLE_ATTR);
+						  0, XTENSA_MMU_PAGE_TABLE_ATTR);
 
 		sys_cache_data_flush_range((void *)&l1_table[l1_pos], sizeof(l1_table[0]));
 	}
@@ -365,7 +367,7 @@ static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
 	table = (uint32_t *)(l1_table[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
 	table[l2_pos] = XTENSA_MMU_PTE(phys, is_user ? XTENSA_MMU_USER_RING :
 						       XTENSA_MMU_KERNEL_RING,
-				       flags);
+				       0, flags);
 
 	sys_cache_data_flush_range((void *)&table[l2_pos], sizeof(table[0]));
 	xtensa_tlb_autorefill_invalidate();
@@ -738,14 +740,25 @@ static uint32_t *dup_table(uint32_t *source_table)
 		}
 
 		for (j = 0; j < XTENSA_L2_PAGE_TABLE_ENTRIES; j++) {
+			uint32_t original_attr =  XTENSA_MMU_PTE_SW_GET(src_l2_table[j]);
+
 			l2_table[j] =  src_l2_table[j];
+			if (original_attr != 0x0) {
+				uint8_t ring;
+
+				ring = XTENSA_MMU_PTE_RING_GET(l2_table[j]);
+				l2_table[j] =  XTENSA_MMU_PTE_ATTR_SET(l2_table[j], original_attr);
+				l2_table[j] =  XTENSA_MMU_PTE_RING_SET(l2_table[j],
+						ring == XTENSA_MMU_SHARED_RING ?
+						XTENSA_MMU_SHARED_RING : XTENSA_MMU_KERNEL_RING);
+			}
 		}
 
 		/* The page table is using kernel ASID because we don't
 		 * user thread manipulate it.
 		 */
 		dst_table[i] = XTENSA_MMU_PTE((uint32_t)l2_table, XTENSA_MMU_KERNEL_RING,
-					      XTENSA_MMU_PAGE_TABLE_ATTR);
+					      0, XTENSA_MMU_PAGE_TABLE_ATTR);
 
 		sys_cache_data_flush_range((void *)l2_table, XTENSA_L2_PAGE_TABLE_SIZE);
 	}
@@ -772,6 +785,18 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	__ASSERT(asid_count < (XTENSA_MMU_SHARED_ASID), "Reached maximum of ASID available");
 
 	key = k_spin_lock(&xtensa_mmu_lock);
+	/* If this is the default domain, we don't need
+	 * to create a new set of page tables. We can just
+	 * use the kernel page tables and save memory.
+	 */
+
+	if (domain == &k_mem_domain_default) {
+		domain->arch.ptables = xtensa_kernel_ptables;
+		domain->arch.asid = asid_count;
+		goto end;
+	}
+
+
 	ptables = dup_table(xtensa_kernel_ptables);
 
 	if (ptables == NULL) {
@@ -784,6 +809,7 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 
 	sys_slist_append(&xtensa_domain_list, &domain->arch.node);
 
+end:
 	ret = 0;
 
 err:

@@ -50,10 +50,24 @@
 /** Number of bits to shift for ring in PTE */
 #define XTENSA_MMU_PTE_RING_SHIFT		4U
 
+/** Number of bits to shift for SW reserved ared in PTE */
+#define XTENSA_MMU_PTE_SW_SHIFT		6U
+
+/** Mask for SW bits in PTE */
+#define XTENSA_MMU_PTE_SW_MASK		0x00000FC0U
+
+/**
+ * Internal bit just used to indicate that the attr field must
+ * be set in the SW bits too. It is used later when duplicating the
+ * kernel page tables.
+ */
+#define XTENSA_MMU_PTE_ATTR_ORIGINAL BIT(31)
+
 /** Construct a page table entry (PTE) */
-#define XTENSA_MMU_PTE(paddr, ring, attr) \
+#define XTENSA_MMU_PTE(paddr, ring, sw, attr) \
 	(((paddr) & XTENSA_MMU_PTE_PPN_MASK) | \
 	 (((ring) << XTENSA_MMU_PTE_RING_SHIFT) & XTENSA_MMU_PTE_RING_MASK) | \
+	 (((sw) << XTENSA_MMU_PTE_SW_SHIFT) & XTENSA_MMU_PTE_SW_MASK) | \
 	 ((attr) & XTENSA_MMU_PTE_ATTR_MASK))
 
 /** Get the attributes from a PTE */
@@ -62,7 +76,15 @@
 
 /** Set the attributes in a PTE */
 #define XTENSA_MMU_PTE_ATTR_SET(pte, attr) \
-	(((pte) & ~XTENSA_MMU_PTE_ATTR_MASK) | (attr))
+	(((pte) & ~XTENSA_MMU_PTE_ATTR_MASK) | (attr & XTENSA_MMU_PTE_ATTR_MASK))
+
+/** Set the SW field in a PTE */
+#define XTENSA_MMU_PTE_SW_SET(pte, sw) \
+	(((pte) & ~XTENSA_MMU_PTE_SW_MASK) | (sw << XTENSA_MMU_PTE_SW_SHIFT))
+
+/** Get the SW field from a PTE */
+#define XTENSA_MMU_PTE_SW_GET(pte) \
+	(((pte) & XTENSA_MMU_PTE_SW_MASK) >> XTENSA_MMU_PTE_SW_SHIFT)
 
 /** Set the ring in a PTE */
 #define XTENSA_MMU_PTE_RING_SET(pte, ring) \
