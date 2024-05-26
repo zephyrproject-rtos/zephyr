@@ -28,7 +28,6 @@ from anytree.exporter import DictExporter
 
 import elftools
 from elftools.elf.elffile import ELFFile
-from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 from elftools.dwarf.descriptions import describe_form_class
 from elftools.dwarf.descriptions import (
