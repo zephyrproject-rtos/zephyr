@@ -207,6 +207,11 @@ Drivers and Sensors
 
 * Input
 
+* LED Strip
+
+  * The ``chain-length`` and ``color-mapping`` properties have been added to all LED strip
+    bindings.
+
 * MDIO
 
 * MFD
