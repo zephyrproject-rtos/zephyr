@@ -74,7 +74,7 @@ struct quectel_lcx6g_data {
 		enum gnss_navigation_mode navigation_mode_response;
 	};
 
-	struct k_spinlock lock;
+	struct k_sem lock;
 	k_timeout_t pm_timeout;
 };
 
@@ -158,6 +158,20 @@ static int quectel_lcx6g_configure_pps(const struct device *dev)
 	data->dynamic_match.match_size = ret;
 
 	return modem_chat_run_script(&data->chat, &data->dynamic_script);
+}
+
+static void quectel_lcx6g_lock(const struct device *dev)
+{
+	struct quectel_lcx6g_data *data = dev->data;
+
+	(void)k_sem_take(&data->lock, K_FOREVER);
+}
+
+static void quectel_lcx6g_unlock(const struct device *dev)
+{
+	struct quectel_lcx6g_data *data = dev->data;
+
+	k_sem_give(&data->lock);
 }
 
 static void quectel_lcx6g_pm_changed(const struct device *dev)
@@ -254,11 +268,9 @@ static int quectel_lcx6g_turn_off(const struct device *dev)
 
 static int quectel_lcx6g_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	struct quectel_lcx6g_data *data = dev->data;
-	k_spinlock_key_t key;
 	int ret = -ENOTSUP;
 
-	key = k_spin_lock(&data->lock);
+	quectel_lcx6g_lock(dev);
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
@@ -284,7 +296,7 @@ static int quectel_lcx6g_pm_action(const struct device *dev, enum pm_device_acti
 
 	quectel_lcx6g_pm_changed(dev);
 
-	k_spin_unlock(&data->lock, key);
+	quectel_lcx6g_unlock(dev);
 	return ret;
 }
 #endif /* CONFIG_PM_DEVICE */
@@ -292,14 +304,13 @@ static int quectel_lcx6g_pm_action(const struct device *dev, enum pm_device_acti
 static int quectel_lcx6g_set_fix_rate(const struct device *dev, uint32_t fix_interval_ms)
 {
 	struct quectel_lcx6g_data *data = dev->data;
-	k_spinlock_key_t key;
 	int ret;
 
 	if (fix_interval_ms < 100 || fix_interval_ms > 1000) {
 		return -EINVAL;
 	}
 
-	key = k_spin_lock(&data->lock);
+	quectel_lcx6g_lock(dev);
 
 	ret = gnss_nmea0183_snprintk(data->dynamic_request_buf, sizeof(data->dynamic_request_buf),
 				     "PAIR050,%u", fix_interval_ms);
@@ -323,7 +334,7 @@ static int quectel_lcx6g_set_fix_rate(const struct device *dev, uint32_t fix_int
 	}
 
 unlock_return:
-	k_spin_unlock(&data->lock, key);
+	quectel_lcx6g_unlock(dev);
 	return ret;
 }
 
@@ -347,10 +358,9 @@ static void quectel_lcx6g_get_fix_rate_callback(struct modem_chat *chat, char **
 static int quectel_lcx6g_get_fix_rate(const struct device *dev, uint32_t *fix_interval_ms)
 {
 	struct quectel_lcx6g_data *data = dev->data;
-	k_spinlock_key_t key;
 	int ret;
 
-	key = k_spin_lock(&data->lock);
+	quectel_lcx6g_lock(dev);
 
 	ret = gnss_nmea0183_snprintk(data->dynamic_request_buf, sizeof(data->dynamic_request_buf),
 				     "PAIR051");
@@ -373,7 +383,7 @@ static int quectel_lcx6g_get_fix_rate(const struct device *dev, uint32_t *fix_in
 	*fix_interval_ms = data->fix_rate_response;
 
 unlock_return:
-	k_spin_unlock(&data->lock, key);
+	quectel_lcx6g_unlock(dev);
 	return 0;
 }
 
@@ -381,7 +391,6 @@ static int quectel_lcx6g_set_navigation_mode(const struct device *dev,
 					     enum gnss_navigation_mode mode)
 {
 	struct quectel_lcx6g_data *data = dev->data;
-	k_spinlock_key_t key;
 	uint8_t navigation_mode = 0;
 	int ret;
 
@@ -403,7 +412,7 @@ static int quectel_lcx6g_set_navigation_mode(const struct device *dev,
 		break;
 	}
 
-	key = k_spin_lock(&data->lock);
+	quectel_lcx6g_lock(dev);
 
 	ret = gnss_nmea0183_snprintk(data->dynamic_request_buf, sizeof(data->dynamic_request_buf),
 				     "PAIR080,%u", navigation_mode);
@@ -427,7 +436,7 @@ static int quectel_lcx6g_set_navigation_mode(const struct device *dev,
 	}
 
 unlock_return:
-	k_spin_unlock(&data->lock, key);
+	quectel_lcx6g_unlock(dev);
 	return ret;
 }
 
@@ -468,10 +477,9 @@ static int quectel_lcx6g_get_navigation_mode(const struct device *dev,
 					     enum gnss_navigation_mode *mode)
 {
 	struct quectel_lcx6g_data *data = dev->data;
-	k_spinlock_key_t key;
 	int ret;
 
-	key = k_spin_lock(&data->lock);
+	quectel_lcx6g_lock(dev);
 
 	ret = gnss_nmea0183_snprintk(data->dynamic_request_buf, sizeof(data->dynamic_request_buf),
 				     "PAIR081");
@@ -494,7 +502,7 @@ static int quectel_lcx6g_get_navigation_mode(const struct device *dev,
 	*mode = data->navigation_mode_response;
 
 unlock_return:
-	k_spin_unlock(&data->lock, key);
+	quectel_lcx6g_unlock(dev);
 	return ret;
 }
 
@@ -502,7 +510,6 @@ static int quectel_lcx6g_set_enabled_systems(const struct device *dev, gnss_syst
 {
 	struct quectel_lcx6g_data *data = dev->data;
 	gnss_systems_t supported_systems;
-	k_spinlock_key_t key;
 	int ret;
 
 	supported_systems = (GNSS_SYSTEM_GPS | GNSS_SYSTEM_GLONASS | GNSS_SYSTEM_GALILEO |
@@ -512,7 +519,7 @@ static int quectel_lcx6g_set_enabled_systems(const struct device *dev, gnss_syst
 		return -EINVAL;
 	}
 
-	key = k_spin_lock(&data->lock);
+	quectel_lcx6g_lock(dev);
 
 	ret = gnss_nmea0183_snprintk(data->dynamic_request_buf, sizeof(data->dynamic_request_buf),
 				     "PAIR066,%u,%u,%u,%u,%u,0",
@@ -562,7 +569,7 @@ static int quectel_lcx6g_set_enabled_systems(const struct device *dev, gnss_syst
 	}
 
 unlock_return:
-	k_spin_unlock(&data->lock, key);
+	quectel_lcx6g_unlock(dev);
 	return ret;
 }
 
@@ -603,10 +610,9 @@ static void quectel_lcx6g_get_sbas_status_callback(struct modem_chat *chat, char
 static int quectel_lcx6g_get_enabled_systems(const struct device *dev, gnss_systems_t *systems)
 {
 	struct quectel_lcx6g_data *data = dev->data;
-	k_spinlock_key_t key;
 	int ret;
 
-	key = k_spin_lock(&data->lock);
+	quectel_lcx6g_lock(dev);
 
 	ret = gnss_nmea0183_snprintk(data->dynamic_request_buf, sizeof(data->dynamic_request_buf),
 				     "PAIR067");
@@ -647,7 +653,7 @@ static int quectel_lcx6g_get_enabled_systems(const struct device *dev, gnss_syst
 	*systems = data->enabled_systems_response;
 
 unlock_return:
-	k_spin_unlock(&data->lock, key);
+	quectel_lcx6g_unlock(dev);
 	return ret;
 }
 
@@ -746,7 +752,10 @@ static void quectel_lcx6g_init_dynamic_script(const struct device *dev)
 
 static int quectel_lcx6g_init(const struct device *dev)
 {
+	struct quectel_lcx6g_data *data = dev->data;
 	int ret;
+
+	k_sem_init(&data->lock, 1, 1);
 
 	ret = quectel_lcx6g_init_nmea0183_match(dev);
 	if (ret < 0) {
