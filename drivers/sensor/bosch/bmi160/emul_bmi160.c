@@ -569,7 +569,7 @@ static int bmi160_emul_backend_get_attribute_metadata(const struct emul *target,
 	}
 }
 
-static const struct emul_sensor_backend_api backend_api = {
+static const struct emul_sensor_driver_api backend_api = {
 	.set_channel = bmi160_emul_backend_set_channel,
 	.get_sample_range = bmi160_emul_backend_get_sample_range,
 	.set_attribute = bmi160_emul_backend_set_attribute,

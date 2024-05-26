@@ -25,7 +25,7 @@
 /**
  * @brief Collection of function pointers implementing a common backend API for sensor emulators
  */
-__subsystem struct emul_sensor_backend_api {
+__subsystem struct emul_sensor_driver_api {
 	/** Sets a given fractional value for a given sensor channel. */
 	int (*set_channel)(const struct emul *target, enum sensor_channel ch, const q31_t *value,
 			   int8_t shift);
@@ -75,7 +75,7 @@ static inline int emul_sensor_backend_set_channel(const struct emul *target, enu
 		return -ENOTSUP;
 	}
 
-	struct emul_sensor_backend_api *api = (struct emul_sensor_backend_api *)target->backend_api;
+	struct emul_sensor_driver_api *api = (struct emul_sensor_driver_api *)target->backend_api;
 
 	if (api->set_channel) {
 		return api->set_channel(target, ch, value, shift);
@@ -108,7 +108,7 @@ static inline int emul_sensor_backend_get_sample_range(const struct emul *target
 		return -ENOTSUP;
 	}
 
-	struct emul_sensor_backend_api *api = (struct emul_sensor_backend_api *)target->backend_api;
+	struct emul_sensor_driver_api *api = (struct emul_sensor_driver_api *)target->backend_api;
 
 	if (api->get_sample_range) {
 		return api->get_sample_range(target, ch, lower, upper, epsilon, shift);
@@ -135,7 +135,7 @@ static inline int emul_sensor_backend_set_attribute(const struct emul *target,
 		return -ENOTSUP;
 	}
 
-	struct emul_sensor_backend_api *api = (struct emul_sensor_backend_api *)target->backend_api;
+	struct emul_sensor_driver_api *api = (struct emul_sensor_driver_api *)target->backend_api;
 
 	if (api->set_attribute == NULL) {
 		return -ENOTSUP;
@@ -170,7 +170,7 @@ static inline int emul_sensor_backend_get_attribute_metadata(const struct emul *
 		return -ENOTSUP;
 	}
 
-	struct emul_sensor_backend_api *api = (struct emul_sensor_backend_api *)target->backend_api;
+	struct emul_sensor_driver_api *api = (struct emul_sensor_driver_api *)target->backend_api;
 
 	if (api->get_attribute_metadata == NULL) {
 		return -ENOTSUP;

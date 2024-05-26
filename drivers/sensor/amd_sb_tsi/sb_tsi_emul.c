@@ -140,7 +140,7 @@ static const struct i2c_emul_api sb_tsi_emul_api_i2c = {
 	.transfer = sb_tsi_emul_transfer_i2c,
 };
 
-static const struct emul_sensor_backend_api sb_tsi_emul_api_sensor = {
+static const struct emul_sensor_driver_api sb_tsi_emul_api_sensor = {
 	.set_channel = sb_tsi_emul_set_channel,
 	.get_sample_range = sb_tsi_emul_get_sample_range,
 };

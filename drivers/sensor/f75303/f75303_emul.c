@@ -160,7 +160,7 @@ static const struct i2c_emul_api f75303_emul_api_i2c = {
 	.transfer = f75303_emul_transfer_i2c,
 };
 
-static const struct emul_sensor_backend_api f75303_emul_api_sensor = {
+static const struct emul_sensor_driver_api f75303_emul_api_sensor = {
 	.set_channel = f75303_emul_set_channel,
 	.get_sample_range = f75303_emul_get_sample_range,
 };
