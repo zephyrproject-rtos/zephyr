@@ -49,13 +49,7 @@ static bool in_stack_bound(uintptr_t addr)
 
 	if (_current == NULL || arch_is_in_isr()) {
 		/* We were servicing an interrupt */
-		int cpu_id;
-
-#ifdef CONFIG_SMP
-		cpu_id = arch_curr_cpu()->id;
-#else
-		cpu_id = 0;
-#endif
+		uint8_t cpu_id = IS_ENABLED(CONFIG_SMP) ? arch_curr_cpu()->id : 0U;
 
 		start = (uintptr_t)K_KERNEL_STACK_BUFFER(z_interrupt_stacks[cpu_id]);
 		end = start + CONFIG_ISR_STACK_SIZE;
