@@ -454,8 +454,8 @@ static int fps_search(const struct device *dev, uint8_t char_buf_idx)
 		.pid = R502A_COMMAND_PACKET,
 		.data = {R502A_SEARCH, char_buf_idx}
 	};
-	sys_put_be16(R02A_LIBRARY_START_IDX, &tx_packet.data[1]);
-	sys_put_be16(R502A_DEFAULT_CAPACITY, &tx_packet.data[3]);
+	sys_put_be16(R02A_LIBRARY_START_IDX, &tx_packet.data[2]);
+	sys_put_be16(R502A_DEFAULT_CAPACITY, &tx_packet.data[4]);
 
 	transceive_packet(dev, &tx_packet, &rx_packet, search_len);
 
@@ -478,6 +478,7 @@ static int fps_search(const struct device *dev, uint8_t char_buf_idx)
 		led_ctrl.cycle = 0x02;
 		fps_led_control(dev, &led_ctrl);
 		LOG_ERR("Did not find a match");
+		return -ENOENT;
 	} else {
 		led_ctrl.ctrl_code = LED_CTRL_ON_ALWAYS;
 		led_ctrl.color_idx = LED_COLOR_RED;
