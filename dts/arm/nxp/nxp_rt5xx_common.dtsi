@@ -116,6 +116,7 @@
 	 */
 
 	clkctl0: clkctl@1000 {
+		/* FIXME This chip does NOT have a syscon */
 		compatible = "nxp,lpc-syscon";
 		reg = <0x1000 0x1000>;
 		#clock-cells = <1>;
@@ -130,6 +131,7 @@
 	};
 
 	clkctl1: clkctl@21000 {
+		/* FIXME This chip does NOT have a syscon */
 		compatible = "nxp,lpc-syscon";
 		reg = <0x21000 0x1000>;
 		#clock-cells = <1>;
