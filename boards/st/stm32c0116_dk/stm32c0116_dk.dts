@@ -13,8 +13,8 @@
 	compatible = "st,stm32c011f6-dk";
 
 	chosen {
-		zephyr,console = &usart2;
-		zephyr,shell-uart = &usart2;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -63,6 +63,11 @@
 	clock-frequency = <DT_FREQ_M(48)>;
 	ahb-prescaler = <1>;
 	apb1-prescaler = <1>;
+};
+
+&pinctrl {
+	remap-pa11;
+	remap-pa12;
 };
 
 &usart1 {
