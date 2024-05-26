@@ -308,6 +308,19 @@
 				status = "disabled";
 			};
 
+			exmif: spi@95000 {
+				compatible = "nordic,nrf-exmif", "snps,designware-spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x95000 0x500 0x95500 0xb00>;
+				reg-names = "wrapper", "core";
+				interrupts = <149 NRF_DEFAULT_IRQ_PRIORITY>;
+				clock-frequency = <DT_FREQ_M(400)>;
+				fifo-depth = <32>;
+				max-xfer-size = <16>;
+				status = "disabled";
+			};
+
 			cpusec_bellboard: mailbox@99000 {
 				reg = <0x99000 0x1000>;
 				status = "disabled";
