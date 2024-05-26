@@ -200,17 +200,17 @@ config NET_IPV6_PE_PREFER_PUBLIC_ADDRESSES
 
 config NET_IPV6_PE_TEMP_VALID_LIFETIME
 	int "Max lifetime for temporary address (in minutes)"
-	default 1800
+	default 1440
 	help
 	  No temporary address should ever remain valid for longer than this
-	  value. The value is in minutes. Default value is 2 days (2*24*60).
+	  value. The value is in minutes. Default value is 1 day (24*60).
 
 config NET_IPV6_PE_TEMP_PREFERRED_LIFETIME
 	int "Max preferred lifetime for temporary address (in minutes)"
-	default 1440
+	default 1380
 	help
 	  No temporary address should ever remain preferred for longer than this
-	  value. The value is in minutes. Default value is 1 day (24*60).
+	  value. The value is in minutes. Default value is 23 hours (23*60).
 
 config NET_IPV6_PE_TEMP_IDGEN_RETRIES
 	int "Max amount of failed DAD attempts"
