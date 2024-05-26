@@ -549,8 +549,8 @@ class Reporting:
 
 
     def target_report(self, json_file, outdir, suffix):
-        platforms = {inst.platform for _, inst in self.instances.items()}
-        for platform in platforms:
+        platforms = {repr(inst.platform):inst.platform for _, inst in self.instances.items()}
+        for platform in platforms.values():
             if suffix:
                 filename = os.path.join(outdir,"{}_{}.xml".format(platform.normalized_name, suffix))
                 json_platform_file = os.path.join(outdir,"{}_{}.json".format(platform.normalized_name, suffix))
