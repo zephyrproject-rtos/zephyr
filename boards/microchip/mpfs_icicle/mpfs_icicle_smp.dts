@@ -1,0 +1,94 @@
+/*
+ * Copyright (c) 2020-2021 Microchip Technology Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <microchip/mpfs.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <mem.h>
+
+/ {
+	model = "Microchip PolarFire-SoC Icicle Kit";
+	compatible = "microchip,mpfs-icicle-kit", "microchip,mpfs";
+
+	cpus {
+		cpu@0 {
+			status = "disabled";
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		sw0 = &sw0;
+		i2c0 = &i2c0;
+		i2c1 = &i2c1;
+	};
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led0 {
+			gpios = <&gpio2 16 GPIO_ACTIVE_LOW>;
+			label = "LED_0";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		sw0: sw0 {
+			gpios = <&gpio2 30 GPIO_ACTIVE_LOW>;
+			label = "SW_0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <150000000>;
+};
+
+&qspi0 {
+	status = "okay";
+	qspi_flash: spi-nor-flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <5000000>;
+		size = <DT_SIZE_M(256)>;
+		jedec-id = [20 ba 19];
+	};
+};
+
+&spi1 {
+	status = "okay";
+};
+
+&syscontroller_qspi {
+	status = "okay";
+	sys_ctrl_flash: spi-nor-flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <5000000>;
+	};
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+};
