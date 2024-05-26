@@ -163,3 +163,7 @@
 &wdt0 {
 	status = "okay";
 };
+
+&dac {
+	status = "okay";
+};
