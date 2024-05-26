@@ -1760,9 +1760,11 @@ function(zephyr_blobs_verify)
 
       message(VERBOSE "Verifying blob \"${path}\"")
 
-      # Each path that has a correct sha256 is prefixed with an A
-      if(NOT "A ${path}" IN_LIST BLOBS_LIST)
-        message(${msg_lvl} "Blob for path \"${path}\" isn't valid.")
+      if(NOT EXISTS "${path}")
+        message(${msg_lvl} "Blob for path \"${path}\" missing. Update with: west blobs fetch")
+      elseif(NOT "A ${path}" IN_LIST BLOBS_LIST)
+        # Each path that has a correct sha256 is prefixed with an A
+        message(${msg_lvl} "Blob for path \"${path}\" isn't valid. Update with: west blobs fetch")
       endif()
     endforeach()
   else()
@@ -1773,7 +1775,9 @@ function(zephyr_blobs_verify)
 
       message(VERBOSE "Verifying blob \"${path}\"")
 
-      if(NOT "${status}" STREQUAL "A")
+      if(NOT EXISTS "${path}")
+        message(${msg_lvl} "Blob for path \"${path}\" missing. Update with: west blobs fetch ${BLOBS_VERIFY_MODULE}")
+      elseif(NOT "${status}" STREQUAL "A")
         message(${msg_lvl} "Blob for path \"${path}\" isn't valid. Update with: west blobs fetch ${BLOBS_VERIFY_MODULE}")
       endif()
     endforeach()
