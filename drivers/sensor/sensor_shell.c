@@ -144,6 +144,20 @@ static struct sample_stats sensor_stats[CONFIG_SENSOR_SHELL_MAX_TRIGGER_DEVICES]
 
 static const struct device *sensor_trigger_devices[CONFIG_SENSOR_SHELL_MAX_TRIGGER_DEVICES];
 
+static bool device_is_sensor(const struct device *dev)
+{
+#ifdef CONFIG_SENSOR_INFO
+	STRUCT_SECTION_FOREACH(sensor_info, sensor) {
+		if (sensor->dev == dev) {
+			return true;
+		}
+	}
+	return false;
+#else
+	return true;
+#endif /* CONFIG_SENSOR_INFO */
+}
+
 static int find_sensor_trigger_device(const struct device *sensor)
 {
 	for (int i = 0; i < CONFIG_SENSOR_SHELL_MAX_TRIGGER_DEVICES; i++) {
@@ -529,6 +543,12 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
+	if (!device_is_sensor(dev)) {
+		shell_error(sh, "Device is not a sensor (%s)", argv[1]);
+		k_mutex_unlock(&cmd_get_mutex);
+		return -ENODEV;
+	}
+
 	if (argc == 2) {
 		/* read all channel types */
 		for (int i = 0; i < ARRAY_SIZE(iodev_sensor_shell_channels); ++i) {
@@ -588,6 +608,12 @@ static int cmd_sensor_attr_set(const struct shell *shell_ptr, size_t argc, char 
 	dev = device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(shell_ptr, "Device unknown (%s)", argv[1]);
+		return -ENODEV;
+	}
+
+	if (!device_is_sensor(dev)) {
+		shell_error(shell_ptr, "Device is not a sensor (%s)", argv[1]);
+		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
 	}
 
@@ -666,6 +692,12 @@ static int cmd_sensor_attr_get(const struct shell *shell_ptr, size_t argc, char 
 	dev = device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(shell_ptr, "Device unknown (%s)", argv[1]);
+		return -ENODEV;
+	}
+
+	if (!device_is_sensor(dev)) {
+		shell_error(shell_ptr, "Device is not a sensor (%s)", argv[1]);
+		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
 	}
 
