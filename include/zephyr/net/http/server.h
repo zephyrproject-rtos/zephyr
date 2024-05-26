@@ -19,6 +19,11 @@
 #define HTTP_SERVER_MAX_STREAMS        CONFIG_HTTP_SERVER_MAX_STREAMS
 #define HTTP_SERVER_MAX_CONTENT_TYPE_LEN CONFIG_HTTP_SERVER_MAX_CONTENT_TYPE_LENGTH
 
+/* Maximum header field name / value length. This is only used to detect Upgrade and
+ * websocket header fields and values in the http1 server so the value is quite short.
+ */
+#define HTTP_SERVER_MAX_HEADER_LEN 32
+
 #define HTTP2_PREFACE "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 
 enum http_resource_type {
@@ -142,8 +147,6 @@ struct http_frame {
 
 struct http_client_ctx {
 	int fd;
-	bool preface_sent;
-	bool has_upgrade_header;
 	unsigned char buffer[HTTP_SERVER_CLIENT_BUFFER_SIZE];
 	unsigned char *cursor; /**< Cursor indicating currently processed byte. */
 	size_t data_len; /**< Data left to process in the buffer. */
@@ -157,12 +160,17 @@ struct http_client_ctx {
 	struct http_parser parser;
 	unsigned char url_buffer[CONFIG_HTTP_SERVER_MAX_URL_LENGTH];
 	unsigned char content_type[CONFIG_HTTP_SERVER_MAX_CONTENT_TYPE_LENGTH];
+	unsigned char header_buffer[HTTP_SERVER_MAX_HEADER_LEN];
 	size_t content_len;
 	enum http_method method;
 	enum http1_parser_state parser_state;
 	int http1_frag_data_len;
-	bool headers_sent;
 	struct k_work_delayable inactivity_timer;
+	bool headers_sent : 1;
+	bool preface_sent : 1;
+	bool has_upgrade_header : 1;
+	bool http2_upgrade : 1;
+	bool websocket_upgrade : 1;
 };
 
 /* Starts the HTTP2 server */
