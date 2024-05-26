@@ -25,4 +25,5 @@ supported:
   - counter
   - sdhc
   - regulator
+  - adc
 vendor: nxp
