@@ -91,8 +91,18 @@ class Harness:
         """
         return self.id
 
+    def parse_record(self, line) -> re.Match:
+        match = None
+        if self.record_pattern:
+            match = self.record_pattern.search(line)
+            if match:
+                self.recording.append({ k:v.strip() for k,v in match.groupdict(default="").items() })
+        return match
+    #
 
     def process_test(self, line):
+
+        self.parse_record(line)
 
         runid_match = re.search(self.run_id_pattern, line)
         if runid_match:
@@ -250,11 +260,6 @@ class Console(Harness):
             self.capture_coverage = True
         elif self.GCOV_END in line:
             self.capture_coverage = False
-
-        if self.record_pattern:
-            match = self.record_pattern.search(line)
-            if match:
-                self.recording.append({ k:v.strip() for k,v in match.groupdict(default="").items() })
 
         self.process_test(line)
         # Reset the resulting test state to 'failed' when not all of the patterns were

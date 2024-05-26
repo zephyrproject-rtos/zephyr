@@ -129,6 +129,7 @@ def test_handler_final_handle_actions(mocked_instance):
     harness.detected_suite_names = mock.Mock()
     harness.matched_run_id = False
     harness.run_id_exists = True
+    harness.recording = mock.Mock()
 
     handler_time = mock.Mock()
 
@@ -142,6 +143,8 @@ def test_handler_final_handle_actions(mocked_instance):
 
     handler.instance.reason = 'This reason shan\'t be changed.'
     handler._final_handle_actions(harness, handler_time)
+
+    instance.assert_has_calls([mock.call.record(harness.recording)])
 
     assert handler.instance.reason == 'This reason shan\'t be changed.'
 
@@ -202,42 +205,6 @@ def test_handler_missing_suite_name(mocked_instance):
     assert all(
         testcase.status == 'failed' for testcase in handler.instance.testcases
     )
-
-
-def test_handler_record(mocked_instance):
-    instance = mocked_instance
-    instance.testcases = [mock.Mock()]
-
-    handler = Handler(instance)
-
-    harness = twisterlib.harness.Harness()
-    harness.recording = [ {'field_1':  'recording_1_1', 'field_2': 'recording_1_2'},
-                          {'field_1':  'recording_2_1', 'field_2': 'recording_2_2'}
-                        ]
-
-    with mock.patch(
-        'builtins.open',
-        mock.mock_open(read_data='')
-    ) as mock_file, \
-        mock.patch(
-        'csv.DictWriter.writerow',
-        mock.Mock()
-    ) as mock_writeheader, \
-        mock.patch(
-        'csv.DictWriter.writerows',
-        mock.Mock()
-    ) as mock_writerows:
-        handler.record(harness)
-
-    print(mock_file.mock_calls)
-
-    mock_file.assert_called_with(
-        os.path.join(instance.build_dir, 'recording.csv'),
-        'at'
-    )
-
-    mock_writeheader.assert_has_calls([mock.call({ k:k for k in harness.recording[0].keys()})])
-    mock_writerows.assert_has_calls([mock.call(harness.recording)])
 
 
 def test_handler_terminate(mocked_instance):
