@@ -47,6 +47,12 @@ void log_core_init(void);
  */
 void log_init(void);
 
+/** @brief Trigger the log processing thread to process logs immediately.
+ *
+ *  @note Function  has no effect when CONFIG_LOG_MODE_IMMEDIATE is set.
+ */
+void log_thread_trigger(void);
+
 /**
  * @brief Function for providing thread which is processing logs.
  *
