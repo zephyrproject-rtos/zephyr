@@ -27,3 +27,13 @@ properties:
       Number of alarms supported by STM32 RTC device.
       Most of STM32 MCU series have 2 RTC alarms, A & B.
       Defaults to 0 when not declared in devicetree.
+
+  alrm-exti-line:
+    type: int
+    description: |
+      Number of the Extended Interrupts and Event Controller (EXTI) interrupt
+      line connected to the RTC Alarm event.
+      Not required, since RTC Alarm interrupt could be routed directly to Nested
+      Vectored Interrupt Controller (NVIC) and to Power Control (PWR) wake-up
+      pins on some series.
+      Valid range: 0 - 31
