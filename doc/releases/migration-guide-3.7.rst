@@ -213,6 +213,49 @@ Controller Area Network (CAN)
 Display
 =======
 
+* ST7735R based displays now use the MIPI DBI driver class. These displays
+  must now be declared within a MIPI DBI driver wrapper device, which will
+  manage interfacing with the display. Note that the `cmd-data-gpios` pin has
+  changed polarity with this update, to align better with the new
+  `dc-gpios` name. For an example, see below:
+
+  .. code-block:: devicetree
+
+    /* Legacy ST7735R display definition */
+    &spi0 {
+        st7735r: st7735r@0 {
+            compatible = "sitronix,st7735r";
+            reg = <0>;
+            spi-max-frequency = <32000000>;
+            reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+            cmd-data-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+            ...
+        };
+    };
+
+    /* New display definition with MIPI DBI device */
+
+    #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+    ...
+
+    mipi_dbi {
+        compatible = "zephyr,mipi-dbi-spi";
+        reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+        dc-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+        spi-dev = <&spi0>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        st7735r: st7735r@0 {
+            compatible = "sitronix,st7735r";
+            reg = <0>;
+            mipi-max-frequency = <32000000>;
+            mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+            ...
+        };
+    };
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
