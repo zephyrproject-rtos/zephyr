@@ -410,7 +410,7 @@ static void cap_commander_proc_complete(void)
 		}
 		break;
 	case BT_CAP_COMMON_PROC_TYPE_VOLUME_MUTE_CHANGE:
-		if (cap_cb->volume_changed != NULL) {
+		if (cap_cb->volume_mute_changed != NULL) {
 			cap_cb->volume_mute_changed(failed_conn, err);
 		}
 		break;
