@@ -12,17 +12,11 @@
 
 extern enum bst_result_t bst_result;
 
-/* Callback after Bluetoot initialization attempt */
-static void bt_ready(int err)
+static void start_adv(void)
 {
-	if (err) {
-		FAIL("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
+	int err;
 
-	printk("Bluetooth initialized\n");
-
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, AD_SIZE, NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, AD_SIZE, NULL, 0);
 	if (err) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 		return;
@@ -45,15 +39,20 @@ static void test_main(void)
 	}
 
 	/* Initialize Bluetooth, get connected */
-	err = bt_enable(bt_ready);
+	err = bt_enable(NULL);
 	if (err) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
-
-	WAIT_FOR_FLAG(flag_connected);
+	printk("Bluetooth initialized\n");
 
 	PASS("MCS passed\n");
+
+	while (1) {
+		start_adv();
+		WAIT_FOR_FLAG(flag_connected);
+		WAIT_FOR_UNSET_FLAG(flag_connected);
+	}
 }
 
 static const struct bst_test_instance test_mcs[] = {

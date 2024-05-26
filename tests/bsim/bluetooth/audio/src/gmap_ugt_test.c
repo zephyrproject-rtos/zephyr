@@ -416,8 +416,8 @@ static void test_main(void)
 		return;
 	}
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, gmap_acceptor_ad, ARRAY_SIZE(gmap_acceptor_ad),
-			      NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, gmap_acceptor_ad,
+			      ARRAY_SIZE(gmap_acceptor_ad), NULL, 0);
 	if (err != 0) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 		return;
