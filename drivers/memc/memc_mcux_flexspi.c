@@ -188,9 +188,12 @@ int memc_flexspi_set_device_config(const struct device *dev,
 		/* Update lut offset with new value */
 		data->port_luts[port].lut_offset = lut_used;
 	}
-	data->port_luts[port].lut_used = lut_count;
-	tmp_config.ARDSeqIndex += data->port_luts[port].lut_offset;
-	tmp_config.AWRSeqIndex += data->port_luts[port].lut_offset;
+	/* LUTs should only be installed on sequence boundaries, every
+	 * 4 entries. Round LUT usage up to nearest sequence
+	 */
+	data->port_luts[port].lut_used = ROUND_UP(lut_count, 4);
+	tmp_config.ARDSeqIndex += data->port_luts[port].lut_offset / MEMC_FLEXSPI_CMD_PER_SEQ;
+	tmp_config.AWRSeqIndex += data->port_luts[port].lut_offset / MEMC_FLEXSPI_CMD_PER_SEQ;
 
 	/* Lock IRQs before reconfiguring FlexSPI, to prevent XIP */
 	key = irq_lock();
@@ -215,12 +218,29 @@ int memc_flexspi_reset(const struct device *dev)
 int memc_flexspi_transfer(const struct device *dev,
 		flexspi_transfer_t *transfer)
 {
+	flexspi_transfer_t tmp;
 	struct memc_flexspi_data *data = dev->data;
 	status_t status;
+	uint32_t seq_off, addr_offset = 0U;
+	int i;
 
-	/* Adjust transfer LUT index based on port */
-	transfer->seqIndex += data->port_luts[transfer->port].lut_offset;
-	status = FLEXSPI_TransferBlocking(data->base, transfer);
+	/* Calculate sequence offset and address offset based on port */
+	seq_off = data->port_luts[transfer->port].lut_offset /
+				MEMC_FLEXSPI_CMD_PER_SEQ;
+	for (i = 0; i < transfer->port; i++) {
+		addr_offset += data->size[i];
+	}
+
+	if ((seq_off != 0) || (addr_offset != 0)) {
+		/* Adjust device address and sequence index for transfer */
+		memcpy(&tmp, transfer, sizeof(tmp));
+		tmp.seqIndex += seq_off;
+		tmp.deviceAddress += addr_offset;
+		status = FLEXSPI_TransferBlocking(data->base, &tmp);
+	} else {
+		/* Transfer does not need adjustment */
+		status = FLEXSPI_TransferBlocking(data->base, transfer);
+	}
 
 	if (status != kStatus_Success) {
 		LOG_ERR("Transfer error: %d", status);
