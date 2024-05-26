@@ -24,6 +24,10 @@
 # - WEST_TOPDIR: Path to the west top directory.
 # - APPLICATION_SOURCE_DIR: Path to the application source directory.
 # - PROJECT_BINARY_DIR: Path to the project binary build directory.
+# - CONFIG_LLEXT_EDK_USERSPACE_ONLY: Whether to copy syscall headers from the
+#   edk directory. This is necessary when building an extension that only
+#   supports userspace, as the syscall headers are regenerated in the edk
+#   directory.
 
 cmake_minimum_required(VERSION 3.20.0)
 
@@ -93,6 +97,11 @@ foreach(dir ${include_dirs})
     list(APPEND all_flags_make "-I\$(${install_dir_var})/${dest_rel}")
     list(APPEND all_flags_cmake "-I\${CMAKE_CURRENT_LIST_DIR}/${dest_rel}")
 endforeach()
+
+if(CONFIG_LLEXT_EDK_USERSPACE_ONLY)
+    # Copy syscall headers from edk directory, as they were regenerated there.
+    file(COPY ${PROJECT_BINARY_DIR}/edk/include/generated/ DESTINATION ${LLEXT_EDK_INC}/zephyr/include/generated)
+endif()
 
 list(JOIN all_flags_make " " all_flags_str)
 file(WRITE ${llext_edk}/Makefile.cflags "LLEXT_CFLAGS = ${all_flags_str}")
