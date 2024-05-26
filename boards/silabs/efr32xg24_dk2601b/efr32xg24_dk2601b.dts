@@ -27,6 +27,7 @@
 		led2 = &blue_led;
 		sw0 = &button0;
 		sw1 = &button1;
+		watchdog0 = &wdog0;
 	};
 
 	leds {
@@ -170,5 +171,9 @@
 };
 
 &adc0 {
+	status = "okay";
+};
+
+&stimer0 {
 	status = "okay";
 };

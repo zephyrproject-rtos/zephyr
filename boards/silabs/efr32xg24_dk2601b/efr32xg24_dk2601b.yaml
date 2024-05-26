@@ -8,8 +8,10 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - counter
   - gpio
   - uart
+  - watchdog
 testing:
   ignore_tags:
     - net
