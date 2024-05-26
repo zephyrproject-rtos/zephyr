@@ -51,19 +51,18 @@ static void calibration_work_cb(struct k_work *work)
 		da1469x_clock_lp_rcx_calibrate();
 		lpc_clock_state.rcx_ready = true;
 		lpc_clock_state.rcx_freq = da1469x_clock_lp_rcx_freq_get();
-		k_work_schedule(&calibration_work,
-				K_MSEC(1000 * CALIBRATION_INTERVAL));
 		LOG_DBG("RCX calibration done, RCX freq: %d",
 			(int)lpc_clock_state.rcx_freq);
-	} else if (lpc_clock_state.rc32k_started) {
+	}
+	if (lpc_clock_state.rc32k_started) {
 		da1469x_clock_lp_rc32k_calibrate();
 		lpc_clock_state.rc32k_ready = true;
 		lpc_clock_state.rc32k_freq = da1469x_clock_lp_rc32k_freq_get();
-		k_work_schedule(&calibration_work,
-				K_MSEC(1000 * CALIBRATION_INTERVAL));
 		LOG_DBG("RC32K calibration done, RC32K freq: %d",
 			(int)lpc_clock_state.rc32k_freq);
 	}
+	k_work_schedule(&calibration_work,
+			K_MSEC(1000 * CALIBRATION_INTERVAL));
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	switch (smartbond_source_clock(SMARTBOND_CLK_LP_CLK)) {
 	case SMARTBOND_CLK_RCX:
