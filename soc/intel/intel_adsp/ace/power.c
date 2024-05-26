@@ -224,7 +224,7 @@ __asm__(".align 4\n\t"
 	"dsp_restore_vector:\n\t"
 	"  movi  a0, 0\n\t"
 	"  movi  a1, 1\n\t"
-	"  movi  a2, 0x40020\n\t"/* PS_UM|PS_WOE */
+	"  movi  a2, " STRINGIFY(PS_UM | PS_WOE | PS_INTLEVEL(XCHAL_EXCM_LEVEL)) "\n\t"
 	"  wsr   a2, PS\n\t"
 	"  wsr   a1, WINDOWSTART\n\t"
 	"  wsr   a0, WINDOWBASE\n\t"
@@ -243,7 +243,7 @@ static ALWAYS_INLINE void power_off_exit(void)
 	__asm__(
 		"  movi  a0, 0\n\t"
 		"  movi  a1, 1\n\t"
-		"  movi  a2, 0x40020\n\t"/* PS_UM|PS_WOE */
+		"  movi  a2, " STRINGIFY(PS_UM | PS_WOE | PS_INTLEVEL(XCHAL_EXCM_LEVEL)) "\n\t"
 		"  wsr   a2, PS\n\t"
 		"  wsr   a1, WINDOWSTART\n\t"
 		"  wsr   a0, WINDOWBASE\n\t"
