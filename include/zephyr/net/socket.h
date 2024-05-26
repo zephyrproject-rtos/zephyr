@@ -283,6 +283,7 @@ struct zsock_addrinfo {
 	int ai_family;            /**< Address family of the returned addresses */
 	int ai_socktype;          /**< Socket type, for example SOCK_STREAM or SOCK_DGRAM */
 	int ai_protocol;          /**< Protocol for addresses, 0 means any protocol */
+	int ai_eflags;            /**< Extended flags for special usage */
 	socklen_t ai_addrlen;     /**< Length of the socket address */
 	struct sockaddr *ai_addr; /**< Pointer to the address */
 	char *ai_canonname;       /**< Optional official name of the host */
@@ -765,6 +766,8 @@ __syscall int z_zsock_getaddrinfo_internal(const char *host,
 #define AI_ADDRCONFIG 0x20
 /** Assume service (port) is numeric */
 #define AI_NUMERICSERV 0x400
+/** Extra flags present (see RFC 5014) */
+#define AI_EXTFLAGS 0x800
 /** @} */
 
 /**
@@ -1277,6 +1280,27 @@ struct ipv6_mreq {
  *  incoming packet. See RFC 3542.
  */
 #define IPV6_RECVPKTINFO 49
+
+/** RFC5014: Source address selection. */
+#define IPV6_ADDR_PREFERENCES   72
+
+/** Prefer temporary address as source. */
+#define IPV6_PREFER_SRC_TMP             0x0001
+/** Prefer public address as source. */
+#define IPV6_PREFER_SRC_PUBLIC          0x0002
+/** Either public or temporary address is selected as a default source
+ *  depending on the output interface configuration (this is the default value).
+ *  This is Linux specific option not found in the RFC.
+ */
+#define IPV6_PREFER_SRC_PUBTMP_DEFAULT  0x0100
+/** Prefer Care-of address as source. Ignored in Zephyr. */
+#define IPV6_PREFER_SRC_COA             0x0004
+/** Prefer Home address as source. Ignored in Zephyr. */
+#define IPV6_PREFER_SRC_HOME            0x0400
+/** Prefer CGA (Cryptographically Generated Address) address as source. Ignored in Zephyr. */
+#define IPV6_PREFER_SRC_CGA             0x0008
+/** Prefer non-CGA address as source. Ignored in Zephyr. */
+#define IPV6_PREFER_SRC_NONCGA          0x0800
 
 /**
  * @brief Incoming IPv6 packet information.

@@ -349,6 +349,13 @@ __net_socket struct net_context {
 		/** Receive network packet information in recvmsg() call */
 		bool recv_pktinfo;
 #endif
+#if defined(CONFIG_NET_IPV6)
+		/**
+		 * Source address selection preferences. Currently used only for IPv6,
+		 * see RFC 5014 for details.
+		 */
+		uint16_t addr_preferences;
+#endif
 	} options;
 
 	/** Protocol (UDP, TCP or IEEE 802.3 protocol value) */
@@ -1268,6 +1275,7 @@ enum net_context_option {
 	NET_OPT_MCAST_HOP_LIMIT   = 14,
 	NET_OPT_UNICAST_HOP_LIMIT = 15,
 	NET_OPT_TTL               = 16,
+	NET_OPT_ADDR_PREFERENCES  = 17,
 };
 
 /**
