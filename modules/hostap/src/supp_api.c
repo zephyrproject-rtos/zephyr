@@ -270,7 +270,7 @@ static inline int chan_to_freq(int chan)
 	 * for these (yet).
 	 */
 	int freq = -1;
-	int op_classes[] = {81, 128};
+	int op_classes[] = {81, 82, 128};
 	int op_classes_size = ARRAY_SIZE(op_classes);
 
 	for (int i = 0; i < op_classes_size; i++) {
