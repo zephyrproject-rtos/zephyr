@@ -801,7 +801,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             for sym_name in re.findall(regex, line):
                 sym_name = sym_name[7:]  # Strip CONFIG_
                 if sym_name not in defined_syms and \
-                   sym_name not in self.UNDEF_KCONFIG_WHITELIST:
+                   sym_name not in self.UNDEF_KCONFIG_ALLOWLIST:
 
                     undef_to_locs[sym_name].append(f"{path}:{lineno}")
 
@@ -819,7 +819,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
 
         self.failure(f"""
 Found references to undefined Kconfig symbols. If any of these are false
-positives, then add them to UNDEF_KCONFIG_WHITELIST in {__file__}.
+positives, then add them to UNDEF_KCONFIG_ALLOWLIST in {__file__}.
 
 If the reference is for a comment like /* CONFIG_FOO_* */ (or
 /* CONFIG_FOO_*_... */), then please use exactly that form (with the '*'). The
@@ -832,7 +832,7 @@ flagged.
 
     # Many of these are symbols used as examples. Note that the list is sorted
     # alphabetically, and skips the CONFIG_ prefix.
-    UNDEF_KCONFIG_WHITELIST = {
+    UNDEF_KCONFIG_ALLOWLIST = {
         "ALSO_MISSING",
         "APP_LINK_WITH_",
         "APP_LOG_LEVEL", # Application log level is not detected correctly as
