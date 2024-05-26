@@ -252,7 +252,7 @@
 	status = "okay";
 };
 
-&octospi1 {
+&xspi1 {
 	pinctrl-0 = <&octospi1_io0_pb1 &octospi1_io1_pd12
 		     &octospi1_io2_pc2 &octospi1_io3_pd13
 		     &octospi1_io4_ph2 &octospi1_io5_ph3
@@ -264,11 +264,11 @@
 	status = "okay";
 
 	mx25lm51245: ospi-nor-flash@90000000 {
-		compatible = "st,stm32-ospi-nor";
+		compatible = "st,stm32-xspi-nor";
 		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
-		spi-bus-width = <OSPI_OPI_MODE>;
-		data-rate = <OSPI_DTR_TRANSFER>;
+		spi-bus-width = <XSPI_OCTO_MODE>;
+		data-rate = <XSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
 		status = "okay";
 
