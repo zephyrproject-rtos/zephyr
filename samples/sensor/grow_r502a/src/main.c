@@ -12,7 +12,7 @@
 #include <zephyr/drivers/led.h>
 
 static bool enroll;
-static struct sensor_value fid_get, count, find, del;
+static struct sensor_value fid_get, count, find, del, param;
 
 static void finger_find(const struct device *dev)
 {
@@ -123,6 +123,23 @@ static void trigger_handler(const struct device *dev,
 	}
 }
 
+static void read_fps_param(const struct device *dev)
+{
+	int ret = 0;
+	struct r502a_sys_param res;
+
+	ret = r502a_read_sys_param(dev, &res);
+	if (ret != 0) {
+		printk("r502a read system parameter failed %d\n", ret);
+		return;
+	}
+
+	printk("baud %d\n", res.baud);
+	printk("addr 0x%x\n", res.addr);
+	printk("lib_size %d\n", res.lib_size);
+	printk("data_pkt_size %d\n", res.data_pkt_size);
+}
+
 int main(void)
 {
 	int ret;
@@ -146,6 +163,8 @@ int main(void)
 	}
 
 	template_count_get(dev);
+
+	read_fps_param(dev);
 
 	del.val1 = 3;
 	ret = sensor_attr_set(dev, SENSOR_CHAN_FINGERPRINT, SENSOR_ATTR_R502A_RECORD_DEL, &del);

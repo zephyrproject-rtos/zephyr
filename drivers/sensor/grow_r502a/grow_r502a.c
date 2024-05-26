@@ -11,6 +11,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/led.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/drivers/sensor/grow_r502a.h>
 #include "grow_r502a.h"
@@ -122,6 +123,103 @@ static void uart_cb_handler(const struct device *dev, void *user_data)
 			break;
 		}
 	}
+}
+
+/**
+ * @brief	Set sensor device's basic parameters like baud rate, security level
+ *		and data package length.
+ */
+static int fps_set_sys_param(const struct device *dev, const struct sensor_value *val)
+{
+	union r502a_packet rx_packet = {0};
+	int ret = 0;
+	char const set_sys_param_len = 3;
+
+	union r502a_packet tx_packet = {
+		.pid = R502A_COMMAND_PACKET,
+		.data = { R502A_SETSYSPARAM, val->val1, val->val2}
+	};
+
+	ret = transceive_packet(dev, &tx_packet, &rx_packet, set_sys_param_len);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (rx_packet.pid != R502A_ACK_PACKET) {
+		LOG_ERR("Error receiving ack packet 0x%X", rx_packet.pid);
+		return -EIO;
+	}
+
+	if (rx_packet.buf[R502A_CC_IDX] == R502A_OK) {
+		LOG_DBG("R502A set system parameter success");
+	} else {
+		LOG_ERR("R502A set system parameter error %d", rx_packet.buf[R502A_CC_IDX]);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+int r502a_read_sys_param(const struct device *dev, struct r502a_sys_param *val)
+{
+	struct grow_r502a_data *drv_data = dev->data;
+
+	union r502a_packet rx_packet = {0};
+	int offset = 0, ret = 0;
+	char const read_sys_param_len = 1;
+
+	union r502a_packet tx_packet = {
+		.pid = R502A_COMMAND_PACKET,
+		.data = {R502A_READSYSPARAM}
+	};
+
+	k_mutex_lock(&drv_data->lock, K_FOREVER);
+
+	ret = transceive_packet(dev, &tx_packet, &rx_packet, read_sys_param_len);
+	if (ret != 0) {
+		goto unlock;
+	}
+
+	if (rx_packet.pid != R502A_ACK_PACKET) {
+		LOG_ERR("Error receiving ack packet 0x%X", rx_packet.pid);
+		ret = -EIO;
+		goto unlock;
+	}
+
+	if (rx_packet.buf[R502A_CC_IDX] == R502A_OK) {
+		LOG_DBG("R502A read system parameter success");
+	} else {
+		LOG_ERR("R502A read system parameter error %d", rx_packet.buf[R502A_CC_IDX]);
+		ret = -EIO;
+		goto unlock;
+	}
+
+	val->status_reg = sys_get_be16(
+				&rx_packet.data[offsetof(struct r502a_sys_param, status_reg) + 1]
+				);
+	val->system_id = sys_get_be16(
+				&rx_packet.data[offsetof(struct r502a_sys_param, system_id) + 1]
+				);
+	val->lib_size = sys_get_be16(
+				&rx_packet.data[offsetof(struct r502a_sys_param, lib_size) + 1]
+				);
+	val->sec_level = sys_get_be16(
+				&rx_packet.data[offsetof(struct r502a_sys_param, sec_level) + 1]
+				);
+	val->addr = sys_get_be32(
+			&rx_packet.data[offsetof(struct r502a_sys_param, addr) + 1]
+			);
+	offset = sys_get_be16(
+			&rx_packet.data[offsetof(struct r502a_sys_param, data_pkt_size) + 1]
+			);
+	val->data_pkt_size = 32 * (1 << offset);
+	val->baud = sys_get_be16(
+			&rx_packet.data[offsetof(struct r502a_sys_param, baud) + 1]
+			) * 9600;
+
+unlock:
+	k_mutex_unlock(&drv_data->lock);
+	return ret;
 }
 
 static int fps_led_control(const struct device *dev, struct r502a_led_params *led_control)
@@ -689,6 +787,7 @@ unlock:
 static int fps_init(const struct device *dev)
 {
 	struct grow_r502a_data *drv_data = dev->data;
+	struct sensor_value val;
 	int ret;
 
 	struct r502a_led_params led_ctrl = {
@@ -701,6 +800,13 @@ static int fps_init(const struct device *dev)
 	k_mutex_lock(&drv_data->lock, K_FOREVER);
 
 	ret = fps_verify_password(dev);
+	if (ret != 0) {
+		goto unlock;
+	}
+
+	val.val1 = R502A_DATA_PKG_LEN;
+	val.val2 = LOG2(CONFIG_R502A_DATA_PKT_SIZE >> 5);
+	ret = fps_set_sys_param(dev, &val);
 	if (ret != 0) {
 		goto unlock;
 	}
@@ -762,6 +868,22 @@ static int grow_r502a_attr_set(const struct device *dev, enum sensor_channel cha
 		return fps_empty_db(dev);
 	case SENSOR_ATTR_R502A_RECORD_LOAD:
 		return fps_load_template(dev, val->val1);
+	case SENSOR_ATTR_R502A_SYS_PARAM: {
+		int ret = 0;
+
+		if (val->val1 == R502A_DATA_PKG_LEN) {
+			LOG_ERR("Data package length should not be runtime configurable");
+			return -EINVAL;
+		};
+		k_mutex_lock(&drv_data->lock, K_FOREVER);
+		ret = fps_set_sys_param(dev, val);
+		if (ret != 0) {
+			k_mutex_unlock(&drv_data->lock);
+			return ret;
+		}
+		k_mutex_unlock(&drv_data->lock);
+		return 0;
+	}
 	default:
 		LOG_ERR("Sensor attribute not supported");
 		return -ENOTSUP;
