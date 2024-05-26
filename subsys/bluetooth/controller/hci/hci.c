@@ -5709,7 +5709,7 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 {
-	struct bt_hci_iso_data_hdr *iso_data_hdr;
+	struct bt_hci_iso_sdu_hdr *iso_sdu_hdr;
 	struct isoal_sdu_tx sdu_frag_tx;
 	struct bt_hci_iso_hdr *iso_hdr;
 	uint32_t *time_stamp;
@@ -5719,7 +5719,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	uint8_t flags;
 	uint16_t len;
 
-	iso_data_hdr = NULL;
+	iso_sdu_hdr = NULL;
 	*evt  = NULL;
 
 	if (buf->len < sizeof(*iso_hdr)) {
@@ -5770,11 +5770,11 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 
 	/* Extract ISO data header if included (PB_Flag 0b00 or 0b10) */
 	if ((pb_flag & 0x01) == 0) {
-		iso_data_hdr = net_buf_pull_mem(buf, sizeof(*iso_data_hdr));
-		len -= sizeof(*iso_data_hdr);
-		sdu_frag_tx.packet_sn = sys_le16_to_cpu(iso_data_hdr->sn);
+		iso_sdu_hdr = net_buf_pull_mem(buf, sizeof(*iso_sdu_hdr));
+		len -= sizeof(*iso_sdu_hdr);
+		sdu_frag_tx.packet_sn = sys_le16_to_cpu(iso_sdu_hdr->sn);
 		sdu_frag_tx.iso_sdu_length =
-			sys_le16_to_cpu(bt_iso_pkt_len(iso_data_hdr->slen));
+			sys_le16_to_cpu(bt_iso_pkt_len(iso_sdu_hdr->slen));
 	} else {
 		sdu_frag_tx.packet_sn = 0;
 		sdu_frag_tx.iso_sdu_length = 0;

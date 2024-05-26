@@ -110,7 +110,7 @@ config BT_ISO_TX_MTU
 	help
 	  Maximum MTU for Isochronous channels TX buffers.
 	  This is the actual data payload. It doesn't include the optional
-	  HCI ISO Data packet fields (e.g. `struct bt_hci_iso_ts_data_hdr`).
+	  HCI ISO Data packet fields (e.g. `struct bt_hci_iso_sdu_ts_hdr`).
 	  Set this value to 247 to fit 247 bytes of data within a single
 	  HCI ISO Data packet with a size of 255, without utilizing timestamps.
 
@@ -128,7 +128,7 @@ config BT_ISO_RX_MTU
 	help
 	  Maximum MTU for Isochronous channels RX buffers.
 	  This is the actual data payload. It doesn't include the optional
-	  HCI ISO Data packet fields (e.g. `struct bt_hci_iso_ts_data_hdr`)
+	  HCI ISO Data packet fields (e.g. `struct bt_hci_iso_sdu_ts_hdr`)
 
 config BT_ISO_TEST_PARAMS
 	bool "ISO test parameters support"
