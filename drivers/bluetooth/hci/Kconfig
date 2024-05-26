@@ -117,13 +117,6 @@ config BT_NXP
 	help
 	  NXP HCI bluetooth interface
 
-config BT_NO_DRIVER
-	bool "No default HCI driver"
-	select BT_HAS_HCI_VS
-	help
-	  This is intended for unit tests where no internal driver
-	  should be selected.
-
 config BT_AMBIQ_HCI
 	bool "AMBIQ BT HCI driver"
 	select SPI
