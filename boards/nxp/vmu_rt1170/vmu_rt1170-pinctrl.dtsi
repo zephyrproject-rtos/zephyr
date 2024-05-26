@@ -344,20 +344,9 @@
 				<&iomuxc_gpio_sd_b1_02_usdhc1_data0>,
 				<&iomuxc_gpio_sd_b1_03_usdhc1_data1>,
 				<&iomuxc_gpio_sd_b1_04_usdhc1_data2>,
-				<&iomuxc_gpio_sd_b1_05_usdhc1_data3>;
+				<&iomuxc_gpio_sd_b1_05_usdhc1_data3>,
+				<&iomuxc_gpio_sd_b1_01_usdhc1_clk>;
 			bias-pull-up;
-			drive-strength = "high";
-			slew-rate = "fast";
-			input-enable;
-		};
-		group1 {
-			pinmux = <&iomuxc_gpio_sd_b1_01_usdhc1_clk>;
-			drive-strength = "high";
-			slew-rate = "fast";
-		};
-		group2 {
-			pinmux = <&iomuxc_gpio_ad_32_usdhc1_cd_b>;
-			bias-pull-down;
 			input-enable;
 		};
 	};
