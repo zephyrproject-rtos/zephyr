@@ -60,7 +60,7 @@ The *Minimal Realtime System Profile* (PSE51) includes all of the
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
 
-    :ref:`_POSIX_FSYNC <posix_option_fsync>`, -1,
+    :ref:`_POSIX_FSYNC <posix_option_fsync>`, 200809L, :kconfig:option:`CONFIG_POSIX_FSYNC`
     :ref:`_POSIX_MEMLOCK <posix_option_memlock>`, -1,
     :ref:`_POSIX_MEMLOCK_RANGE <posix_option_memlock_range>`, -1,
     :ref:`_POSIX_MONOTONIC_CLOCK <posix_option_monotonic_clock>`, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
