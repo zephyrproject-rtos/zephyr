@@ -252,7 +252,8 @@ static int test_loop_suspend_resume(const struct device *dma)
 			done = 1;
 			TC_PRINT("suspend not supported\n");
 			dma_stop(dma, chan_id);
-			return TC_PASS;
+			ztest_test_skip();
+			return TC_SKIP;
 		}
 		tc = transfer_count;
 		irq_unlock(irq_key);
