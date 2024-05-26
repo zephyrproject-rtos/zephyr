@@ -103,6 +103,10 @@ in the migration guide. This includes:
 - Anything else that can affect the compilation or runtime behavior of an
   existing application
 
+Each entry in the migration guide must include a brief explanation of the change
+as well as refer to the Pull Request that introduced it, in order for the user
+to be able to understand the context of the change.
+
 .. toctree::
    :maxdepth: 1
    :glob:
