@@ -346,9 +346,9 @@ static int rtc_stm32_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 
 	/* Enable Backup access */
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
 	LL_PWR_EnableBkUpAccess();
-#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
 
 	/* Enable RTC clock source */
 	if (clock_control_configure(clk, (clock_control_subsys_t)&cfg->pclken[1], NULL) != 0) {
@@ -370,9 +370,9 @@ static int rtc_stm32_init(const struct device *dev)
 
 	err = rtc_stm32_configure(dev);
 
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
 	LL_PWR_DisableBkUpAccess();
-#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
 
 #ifdef CONFIG_RTC_ALARM
 	rtc_stm32_irq_config(dev);
@@ -413,18 +413,18 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 
 	LOG_DBG("Setting clock");
 
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
 	LL_PWR_EnableBkUpAccess();
-#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
 
 	LL_RTC_DisableWriteProtection(RTC);
 
 	ErrorStatus status = LL_RTC_EnterInitMode(RTC);
 
 	if (status != SUCCESS) {
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
 		LL_PWR_DisableBkUpAccess();
-#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
 		k_mutex_unlock(&data->lock);
 		return -EIO;
 	}
@@ -450,9 +450,9 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 
 	LL_RTC_EnableWriteProtection(RTC);
 
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
 	LL_PWR_DisableBkUpAccess();
-#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
 
 	k_mutex_unlock(&data->lock);
 
@@ -962,9 +962,9 @@ static int rtc_stm32_set_calibration(const struct device *dev, int32_t calibrati
 		return -EIO;
 	}
 
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
 	LL_PWR_EnableBkUpAccess();
-#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
 
 	LL_RTC_DisableWriteProtection(RTC);
 
@@ -972,9 +972,9 @@ static int rtc_stm32_set_calibration(const struct device *dev, int32_t calibrati
 
 	LL_RTC_EnableWriteProtection(RTC);
 
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
 	LL_PWR_DisableBkUpAccess();
-#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
 
 	return 0;
 }
