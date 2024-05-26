@@ -441,10 +441,15 @@ static int websocket_close_vmeth(void *obj)
 
 	ret = websocket_interal_disconnect(ctx);
 	if (ret < 0) {
-		NET_DBG("[%p] Cannot close (%d)", obj, ret);
+		/* Ignore error if we are not connected */
+		if (ret != -ENOTCONN) {
+			NET_DBG("[%p] Cannot close (%d)", obj, ret);
 
-		errno = -ret;
-		return -1;
+			errno = -ret;
+			return -1;
+		}
+
+		ret = 0;
 	}
 
 	return ret;
