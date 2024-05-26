@@ -3171,6 +3171,20 @@ static void iface_ipv6_start(struct net_if *iface)
 	net_if_start_rs(iface);
 }
 
+static void iface_ipv6_stop(struct net_if *iface)
+{
+	struct in6_addr addr = { };
+
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6) ||
+	    net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
+		return;
+	}
+
+	net_ipv6_addr_create_iid(&addr, net_if_get_link_addr(iface));
+
+	(void)net_if_ipv6_addr_rm(iface, &addr);
+}
+
 static void iface_ipv6_init(int if_count)
 {
 	iface_ipv6_dad_init();
@@ -3203,6 +3217,7 @@ static void iface_ipv6_init(int if_count)
 #define leave_mcast_all(...)
 #define join_mcast_nodes(...)
 #define iface_ipv6_start(...)
+#define iface_ipv6_stop(...)
 #define iface_ipv6_init(...)
 
 struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *addr,
@@ -5034,6 +5049,7 @@ static void notify_iface_down(struct net_if *iface)
 
 	if (!net_if_is_offloaded(iface) &&
 	    !(l2_flags_get(iface) & NET_L2_POINT_TO_POINT)) {
+		iface_ipv6_stop(iface);
 		net_ipv4_autoconf_reset(iface);
 	}
 }
