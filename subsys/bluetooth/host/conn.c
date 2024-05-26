@@ -852,7 +852,9 @@ static void conn_destroy(struct bt_conn *conn, void *data)
 		bt_conn_set_state(conn, BT_CONN_DISCONNECT_COMPLETE);
 	}
 
-	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+	if (conn->state != BT_CONN_DISCONNECTED) {
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+	}
 }
 
 void bt_conn_cleanup_all(void)
