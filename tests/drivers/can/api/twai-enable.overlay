@@ -9,7 +9,6 @@
 	status = "okay";
 	pinctrl-0 = <&twai_default>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 
 	can-transceiver {
 		max-bitrate = <1000000>;

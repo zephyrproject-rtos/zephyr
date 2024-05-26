@@ -168,7 +168,6 @@ arduino_serial: &lpuart2 {
 
 &flexcan1 {
 	status = "okay";
-	bus-speed = <125000>;
 	pinctrl-0 = <&pinmux_flexcan1>;
 	pinctrl-names = "default";
 

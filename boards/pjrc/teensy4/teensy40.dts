@@ -66,11 +66,6 @@ zephyr_udc0: &usb1 {
 	current-speed = < 115200 >;
 };
 
-&flexcan1 {
-	status = "okay";
-	bus-speed = < 125000 >;
-};
-
 &edma0 {
 	status = "okay";
 };
@@ -98,11 +93,7 @@ zephyr_udc0: &usb1 {
 &flexcan1 {
 	pinctrl-0 = <&pinmux_flexcan1>;
 	pinctrl-names = "default";
-};
-
-&flexcan1 {
-	pinctrl-0 = <&pinmux_flexcan1>;
-	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flexcan2 {
