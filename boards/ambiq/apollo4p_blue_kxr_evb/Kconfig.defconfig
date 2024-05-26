@@ -9,9 +9,6 @@ if BT
 config MAIN_STACK_SIZE
 	default 2048
 
-config BT_AMBIQ_HCI
-	default y
-
 config BT_BUF_ACL_TX_COUNT
 	default 14
 

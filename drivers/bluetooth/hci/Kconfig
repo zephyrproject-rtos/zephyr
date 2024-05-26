@@ -127,6 +127,8 @@ config BT_NO_DRIVER
 
 config BT_AMBIQ_HCI
 	bool "AMBIQ BT HCI driver"
+	default y
+	depends on DT_HAS_AMBIQ_BT_HCI_SPI_ENABLED
 	select SPI
 	select GPIO if SOC_SERIES_APOLLO4X
 	select CLOCK_CONTROL if SOC_SERIES_APOLLO4X
