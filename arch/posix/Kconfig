@@ -27,7 +27,7 @@ menuconfig ARCH_POSIX_LIBFUZZER
 	help
 	  Build the posix app as a LLVM libfuzzer target.  Requires
 	  support from the toolchain (currently only clang works, and
-	  only on native_posix/native/64), and should normally be used in
+	  only on native_{posix,sim}[//64]), and should normally be used in
 	  concert with some of CONFIG_ASAN/UBSAN/MSAN for validation.
 	  The application needs to implement the
 	  LLVMFuzzerTestOneInput() entry point, which runs in the host
