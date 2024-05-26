@@ -1,5 +1,5 @@
 identifier: olimex_esp32_evb/esp32/appcpu
-name: Olimex ESP32-EVB
+name: Olimex ESP32-EVB APPCPU
 type: mcu
 arch: xtensa
 toolchain:

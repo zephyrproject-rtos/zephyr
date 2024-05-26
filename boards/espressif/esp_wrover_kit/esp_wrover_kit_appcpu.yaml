@@ -1,5 +1,5 @@
 identifier: esp_wrover_kit/esp32/appcpu
-name: ESP WROVER KIT
+name: ESP WROVER KIT APPCPU
 type: mcu
 arch: xtensa
 toolchain:

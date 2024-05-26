@@ -1,5 +1,5 @@
 identifier: nrf9160dk@0.7.0/nrf52840
-name: nRF9160-DK-NRF52840
+name: nRF9160-DK-NRF52840 (rev. 0.7.0)
 type: mcu
 arch: arm
 ram: 64

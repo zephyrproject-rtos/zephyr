@@ -1,5 +1,5 @@
 identifier: heltec_wifi_lora32_v2/esp32/appcpu
-name: ESP32 DEVKITC WROVER APPCPU
+name: HELTEC WiFi LoRa 32 (V2) Board APPCPU
 type: mcu
 arch: xtensa
 toolchain:

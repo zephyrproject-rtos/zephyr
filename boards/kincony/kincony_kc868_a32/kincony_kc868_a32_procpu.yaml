@@ -1,5 +1,5 @@
 identifier: kincony_kc868_a32/esp32/procpu
-name: KINCONY-KC868-A32
+name: KINCONY-KC868-A32 PROCPU
 type: mcu
 arch: xtensa
 toolchain:
