@@ -141,6 +141,15 @@ static int set_random_address(const bt_addr_t *addr)
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, buf, NULL);
 	if (err) {
+		if (err == -EACCES) {
+			/* If we are here we probably tried to set a random
+			 * address while a legacy advertising, scanning or
+			 * initiating is enabled, this is illegal.
+			 *
+			 * See Core Spec @ Vol 4, Part E 7.8.4
+			 */
+			LOG_WRN("cmd disallowed");
+		}
 		return err;
 	}
 
