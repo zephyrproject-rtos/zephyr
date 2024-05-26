@@ -91,6 +91,10 @@ struct coap_client_internal_request {
 	struct coap_client_request coap_request;
 	struct coap_packet request;
 	uint8_t request_tag[COAP_TOKEN_MAX_LEN];
+
+	/* For GETs with observe option set */
+	bool is_observe;
+	int last_response_id;
 };
 
 struct coap_client {
@@ -141,9 +145,8 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 /**
  * @brief Cancel all current requests.
  *
- * This is intended for canceling long-running requests (e.g. GETs with the OBSERVE option set,
- * or a block transfer) which have gone stale for some reason. It is also intended for responding
- * to network connectivity issues.
+ * This is intended for canceling long-running requests (e.g. GETs with the OBSERVE option set)
+ * which has gone stale for some reason.
  *
  * @param client Client instance.
  */
