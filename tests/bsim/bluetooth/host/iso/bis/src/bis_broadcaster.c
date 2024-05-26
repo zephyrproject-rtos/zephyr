@@ -155,7 +155,7 @@ static void create_ext_adv(struct bt_le_ext_adv **adv)
 
 	LOG_INF("Creating extended advertising set with periodic advertising");
 
-	/* Create a non-connectable non-scannable advertising set */
+	/* Create a non-connectable advertising set */
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, adv);
 	TEST_ASSERT(err == 0, "Unable to create extended advertising set: %d", err);
 
