@@ -280,19 +280,21 @@ static int memc_flexspi_init(const struct device *dev)
 {
 	struct memc_flexspi_data *data = dev->data;
 	flexspi_config_t flexspi_config;
+	uint32_t flash_sizes[kFLEXSPI_PortCount];
+	int ret;
+	uint8_t i;
 
 	/* we should not configure the device we are running on */
 	if (memc_flexspi_is_running_xip(dev)) {
-		LOG_DBG("XIP active on %s, skipping init", dev->name);
-		return 0;
+		if (!IS_ENABLED(CONFIG_MEMC_MCUX_FLEXSPI_INIT_XIP)) {
+			LOG_DBG("XIP active on %s, skipping init", dev->name);
+			return 0;
+		}
 	}
-
 	/*
 	 * SOCs such as the RT1064 and RT1024 have internal flash, and no pinmux
 	 * settings, continue if no pinctrl state found.
 	 */
-	int ret;
-
 	ret = pinctrl_apply_state(data->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0 && ret != -ENOENT) {
 		return ret;
@@ -328,7 +330,7 @@ FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
 	/* Configure AHB RX buffers, if any configuration settings are present */
 	__ASSERT(data->buf_cfg_cnt < FSL_FEATURE_FLEXSPI_AHB_BUFFER_COUNT,
 		"Maximum RX buffer configuration count exceeded");
-	for (uint8_t i = 0; i < data->buf_cfg_cnt; i++) {
+	for (i = 0; i < data->buf_cfg_cnt; i++) {
 		/* Should AHB prefetch up to buffer size? */
 		flexspi_config.ahbConfig.buffer[i].enablePrefetch = data->buf_cfg[i].prefetch;
 		/* AHB access priority (used for suspending control of AHB prefetching )*/
@@ -339,7 +341,24 @@ FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
 		flexspi_config.ahbConfig.buffer[i].bufferSize = data->buf_cfg[i].buf_size;
 	}
 
+	if (memc_flexspi_is_running_xip(dev)) {
+		/* Save flash sizes- FlexSPI init will reset them */
+		for (i = 0; i < kFLEXSPI_PortCount; i++) {
+			flash_sizes[i] = data->base->FLSHCR0[i];
+		}
+	}
+
 	FLEXSPI_Init(data->base, &flexspi_config);
+
+	if (memc_flexspi_is_running_xip(dev)) {
+		/* Restore flash sizes */
+		for (i = 0; i < kFLEXSPI_PortCount; i++) {
+			data->base->FLSHCR0[i] = flash_sizes[i];
+		}
+
+		/* Reenable FLEXSPI module */
+		data->base->MCR0 &= ~FLEXSPI_MCR0_MDIS_MASK;
+	}
 
 	return 0;
 }
