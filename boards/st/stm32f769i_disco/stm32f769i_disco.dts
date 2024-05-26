@@ -79,6 +79,13 @@
 		sw0 = &user_button;
 		spi-flash0 = &mx25l51245g;
 	};
+
+	quadspi_memory_avail: memory-avail@90000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x90000000 DT_SIZE_M(64)>;
+		zephyr,memory-region = "QSPI_AVAIL";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+	};
 };
 
 &clk_hse {
