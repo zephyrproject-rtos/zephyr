@@ -52,15 +52,6 @@ enum {
  */
 int bt_recv(struct net_buf *buf);
 
-/** @brief Read static addresses from the controller.
- *
- *  @param addrs  Random static address and Identity Root (IR) array.
- *  @param size   Size of array.
- *
- *  @return Number of addresses read.
- */
-uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t size);
-
 /** Possible values for the 'bus' member of the bt_hci_driver struct */
 enum bt_hci_driver_bus {
 	BT_HCI_DRIVER_BUS_VIRTUAL       = 0,
