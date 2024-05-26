@@ -572,7 +572,8 @@
 			compatible = "soc-nv-flash";
 			reg = <0 DT_SIZE_M(2)>;
 			erase-block-size = <8192>;
-			write-block-size = <16>;
+			/* MCXN94x ROM Flash API supports writing of 128B pages. */
+			write-block-size = <128>;
 		};
 	};
 
