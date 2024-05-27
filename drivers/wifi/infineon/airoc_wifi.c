@@ -658,6 +658,7 @@ static int airoc_mgmt_ap_enable(const struct device *dev, struct wifi_connect_re
 
 	data->is_ap_up = true;
 	airoc_if = airoc_ap_if;
+	net_if_dormant_off(data->iface);
 error:
 
 	k_sem_give(&data->sema_common);
@@ -703,6 +704,7 @@ static int airoc_mgmt_ap_disable(const struct device *dev)
 	if (whd_ret == CY_RSLT_SUCCESS) {
 		data->is_ap_up = false;
 		airoc_if = airoc_sta_if;
+		net_if_dormant_on(data->iface);
 	} else {
 		LOG_ERR("Can't stop wifi ap: %u", whd_ret);
 	}
