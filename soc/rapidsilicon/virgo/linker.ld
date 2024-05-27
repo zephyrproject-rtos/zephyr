@@ -22,9 +22,12 @@
 
 #ifdef CONFIG_XIP
 #define ROMABLE_REGION              ROM
+#elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(xip_mem), rapidsi_ilm, okay)
+#define ROMABLE_REGION              ROM
 #else
 #define ROMABLE_REGION              RAM
 #endif
+
 #define RAMABLE_REGION              RAM
 
 #define _EXCEPTION_SECTION_NAME     exceptions
@@ -83,9 +86,7 @@ then we use that for ROM otherwise we fall back to SRAM.
 
 MEMORY
 {
-#ifdef CONFIG_XIP
-    ROM (rx)  : ORIGIN = ROM_BASE, LENGTH = ROM_SIZE
-#endif
+	ROM (rx)  : ORIGIN = ROM_BASE, LENGTH = ROM_SIZE
     RAM (rwx) : ORIGIN = RAM_BASE, LENGTH = RAM_SIZE
 
     LINKER_DT_REGIONS()
