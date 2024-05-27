@@ -1642,13 +1642,16 @@ int bt_audio_codec_cap_set_octets_per_frame(
  * @brief Extract the maximum codec frames per SDU from a codec capability.
  *
  * @param codec_cap The codec capabilities to extract data from.
+ * @param fallback_to_default If true this function will provide the default value of 1
+ *        if the type is not found when @p codec_cap.id is @ref BT_HCI_CODING_FORMAT_LC3.
  *
  * @retval Maximum number of codec frames per SDU supported
  * @retval -EINVAL if arguments are invalid
  * @retval -ENODATA if not found
  * @retval -EBADMSG if found value has invalid size or value
  */
-int bt_audio_codec_cap_get_max_codec_frames_per_sdu(const struct bt_audio_codec_cap *codec_cap);
+int bt_audio_codec_cap_get_max_codec_frames_per_sdu(const struct bt_audio_codec_cap *codec_cap,
+						    bool fallback_to_default);
 
 /**
  * @brief Set the maximum codec frames per SDU of a codec capability.
