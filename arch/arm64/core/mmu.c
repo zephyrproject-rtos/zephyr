@@ -139,6 +139,12 @@ int arm64_mmu_tables_total_usage(void)
 
 static inline bool is_free_desc(uint64_t desc)
 {
+	return desc == 0;
+}
+
+static inline bool is_inval_desc(uint64_t desc)
+{
+	/* invalid descriptors aren't necessarily free */
 	return (desc & PTE_DESC_TYPE_MASK) == PTE_INVALID_DESC;
 }
 
