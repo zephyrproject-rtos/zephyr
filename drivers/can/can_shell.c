@@ -68,11 +68,25 @@ static struct k_poll_event can_shell_rx_msgq_events[] = {
 static void can_shell_tx_msgq_triggered_work_handler(struct k_work *work);
 static void can_shell_rx_msgq_triggered_work_handler(struct k_work *work);
 
+#ifdef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
+static void can_shell_dummy_bypass_cb(const struct shell *sh, uint8_t *data, size_t len)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+}
+#endif /* CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY */
+
 static void can_shell_print_frame(const struct shell *sh, const struct device *dev,
 				  const struct can_frame *frame)
 {
 	uint8_t nbytes = can_dlc_to_bytes(frame->dlc);
 	int i;
+
+#ifdef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
+	/* Bypass the shell to avoid breaking up the line containing the frame */
+	shell_set_bypass(sh, can_shell_dummy_bypass_cb);
+#endif /* CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY */
 
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	/* Timestamp */
@@ -111,6 +125,10 @@ static void can_shell_print_frame(const struct shell *sh, const struct device *d
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "\n");
+
+#ifdef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
+	shell_set_bypass(sh, NULL);
+#endif /* CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY */
 }
 
 static int can_shell_tx_msgq_poll_submit(const struct shell *sh)
