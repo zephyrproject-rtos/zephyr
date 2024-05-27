@@ -42,3 +42,17 @@ config HAS_CC23X0_SDK
 
 config HAS_CC35XX_SDK
 	bool
+
+config SIMPLELINK_F3_RADIO_DRIVER
+	bool "Build the RCL driver"
+	depends on HAS_CC23X0_SDK
+	default y
+	help
+		Build the RCL driver
+
+config SIMPLELINK_F3_RF_SETTING_PREGEN
+	bool "Use the pre-generated radio settings"
+	depends on SIMPLELINK_F3_RADIO_DRIVER
+	default y
+	help
+		Use the pre-generated radio settings
