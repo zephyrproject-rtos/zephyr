@@ -70,7 +70,7 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "central",
 		.test_descr = "Central device",
-		.test_post_init_f = test_ccc_store_init,
+		.test_pre_init_f = test_ccc_store_init,
 		.test_tick_f = test_tick,
 		.test_main_f = central_main,
 		.test_args_f = test_args,
@@ -78,7 +78,7 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral device",
-		.test_post_init_f = test_ccc_store_init,
+		.test_pre_init_f = test_ccc_store_init,
 		.test_tick_f = test_tick,
 		.test_main_f = peripheral_main,
 		.test_args_f = test_args,

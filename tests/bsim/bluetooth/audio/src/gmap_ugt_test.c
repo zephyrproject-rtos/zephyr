@@ -449,7 +449,7 @@ static void test_args(int argc, char *argv[])
 static const struct bst_test_instance test_gmap_ugt[] = {
 	{
 		.test_id = "gmap_ugt",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 		.test_args_f = test_args,

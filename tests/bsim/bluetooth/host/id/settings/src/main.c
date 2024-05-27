@@ -37,14 +37,14 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "dut1",
 		.test_descr = "DUT 1",
-		.test_post_init_f = test_id_settings_init,
+		.test_pre_init_f = test_id_settings_init,
 		.test_tick_f = test_tick,
 		.test_main_f = run_dut1,
 	},
 	{
 		.test_id = "dut2",
 		.test_descr = "DUT 2",
-		.test_post_init_f = test_id_settings_init,
+		.test_pre_init_f = test_id_settings_init,
 		.test_tick_f = test_tick,
 		.test_main_f = run_dut2,
 	},

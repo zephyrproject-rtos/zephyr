@@ -682,14 +682,14 @@ static void test_gatt_client(void)
 static const struct bst_test_instance test_has[] = {
 	{
 		.test_id = "has_client",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},
 	{
 		.test_id = "has_client_offline_behavior",
 		.test_descr = "Test receiving notifications after reconnection",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_gatt_client,
 	},

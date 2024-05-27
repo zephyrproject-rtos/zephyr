@@ -64,7 +64,7 @@ static const struct bst_test_instance test_sample[] = {
 			      "It expects to be connected to a compatible broadcast audio source, "
 			      "waits for " STR(WAIT_TIME) " seconds, and checks how "
 			      "many ISO packets have been received correctly",
-		.test_post_init_f = test_broadcast_sink_sample_init,
+		.test_pre_init_f = test_broadcast_sink_sample_init,
 		.test_tick_f = test_broadcast_sink_sample_tick,
 	},
 	BSTEST_END_MARKER

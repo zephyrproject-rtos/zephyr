@@ -1838,14 +1838,14 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "advx",
 		.test_descr = "Extended Advertising",
-		.test_post_init_f = test_advx_init,
+		.test_pre_init_f = test_advx_init,
 		.test_tick_f = test_advx_tick,
 		.test_main_f = test_advx_main
 	},
 	{
 		.test_id = "scanx",
 		.test_descr = "Extended scanning",
-		.test_post_init_f = test_advx_init,
+		.test_pre_init_f = test_advx_init,
 		.test_tick_f = test_advx_tick,
 		.test_main_f = test_scanx_main
 	},

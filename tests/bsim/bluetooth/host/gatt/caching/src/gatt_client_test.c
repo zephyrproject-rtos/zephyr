@@ -529,37 +529,37 @@ static void test_main_retry_reads_no_eatt(void)
 static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "gatt_client_db_hash_read_eatt",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_db_hash_read_eatt,
 	},
 	{
 		.test_id = "gatt_client_out_of_sync_eatt",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_out_of_sync_eatt,
 	},
 	{
 		.test_id = "gatt_client_retry_reads_eatt",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_retry_reads_eatt,
 	},
 	{
 		.test_id = "gatt_client_db_hash_read_no_eatt",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_db_hash_read_no_eatt,
 	},
 	{
 		.test_id = "gatt_client_out_of_sync_no_eatt",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_out_of_sync_no_eatt,
 	},
 	{
 		.test_id = "gatt_client_retry_reads_no_eatt",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_retry_reads_no_eatt,
 	},

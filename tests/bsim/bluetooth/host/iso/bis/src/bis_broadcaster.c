@@ -308,14 +308,14 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "broadcaster",
 		.test_descr = "Minimal BIS broadcaster that broadcast ISO data",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},
 	{
 		.test_id = "broadcaster_disable",
 		.test_descr = "BIS broadcaster that tests bt_disable for ISO",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_disable,
 	},

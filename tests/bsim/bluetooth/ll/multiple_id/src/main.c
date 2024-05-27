@@ -100,14 +100,14 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "central",
 		.test_descr = "Central Multilink",
-		.test_post_init_f = test_multiple_init,
+		.test_pre_init_f = test_multiple_init,
 		.test_tick_f = test_multiple_tick,
 		.test_main_f = test_central_main
 	},
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral multiple identity",
-		.test_post_init_f = test_multiple_init,
+		.test_pre_init_f = test_multiple_init,
 		.test_tick_f = test_multiple_tick,
 		.test_main_f = test_peripheral_main
 	},

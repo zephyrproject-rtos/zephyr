@@ -17,14 +17,14 @@ static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "central",
 		.test_descr = "Central performs active scanning using RPA",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = dut_procedure,
 	},
 	{
 		.test_id = "central_connect_short_rpa_timeout",
 		.test_descr = "Central connects to a peripheral using a short RPA timeout",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = dut_procedure_connect_short_rpa_timeout,
 	},
@@ -32,7 +32,7 @@ static const struct bst_test_instance test_to_add[] = {
 		.test_id = "central_connect_fails_with_short_rpa_timeout",
 		.test_descr = "Central connects to a peripheral using a short RPA timeout"
 			      " but expects connection establishment to time out.",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = dut_procedure_connect_timeout,
 	},
@@ -40,7 +40,7 @@ static const struct bst_test_instance test_to_add[] = {
 		.test_id = "peripheral",
 		.test_descr = "Performs scannable advertising, validates that the scanner"
 			      " RPA address refreshes",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = tester_procedure,
 	},
