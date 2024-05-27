@@ -19,6 +19,8 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - frdm_k64f
       - 96b_carbon/stm32f401xe
+      - mimxrt685_evk/mimxrt685s/cm33
+      - mimxrt1060_evk
     harness: console
     harness_config:
       type: one_line
