@@ -1728,28 +1728,29 @@ def test_qemuhandler_thread_close_files(is_pid, is_lookup_error):
 
 
 TESTDATA_24 = [
-    ('timeout', 'failed', 'Timeout'),
-    ('failed', 'failed', 'Failed'),
-    ('unexpected eof', 'failed', 'unexpected eof'),
-    ('unexpected byte', 'failed', 'unexpected byte'),
-    (None, None, 'Unknown'),
+    ('failed', 'timeout', 'failed', 'timeout'),
+    ('failed', 'Execution error', 'failed', 'Execution error'),
+    ('failed', 'unexpected eof', 'failed', 'unexpected eof'),
+    ('failed', 'unexpected byte', 'failed', 'unexpected byte'),
+    (None, None, None, 'Unknown'),
 ]
 
 @pytest.mark.parametrize(
-    'out_state, expected_status, expected_reason',
+    '_status, _reason, expected_status, expected_reason',
     TESTDATA_24,
     ids=['timeout', 'failed', 'unexpected eof', 'unexpected byte', 'unknown']
 )
 def test_qemuhandler_thread_update_instance_info(
     mocked_instance,
-    out_state,
+    _status,
+    _reason,
     expected_status,
     expected_reason
 ):
     handler = QEMUHandler(mocked_instance, 'build')
     handler_time = 59
 
-    QEMUHandler._thread_update_instance_info(handler, handler_time, out_state)
+    QEMUHandler._thread_update_instance_info(handler, handler_time, _status, _reason)
 
     assert handler.instance.execution_time == handler_time
 
@@ -1765,6 +1766,7 @@ TESTDATA_25 = [
         [None] * 60 + ['success'] * 6,
         1000,
         False,
+        'failed',
         'timeout',
         [mock.call('1\n'), mock.call('1\n')]
     ),
@@ -1776,6 +1778,7 @@ TESTDATA_25 = [
         100,
         False,
         'failed',
+        None,
         [mock.call('1\n'), mock.call('1\n')]
     ),
     (
@@ -1785,6 +1788,7 @@ TESTDATA_25 = [
         ['success'] * 3,
         100,
         False,
+        'failed',
         'unexpected eof',
         []
     ),
@@ -1795,6 +1799,7 @@ TESTDATA_25 = [
         ['success'] * 3,
         100,
         False,
+        'failed',
         'unexpected byte',
         []
     ),
@@ -1806,6 +1811,7 @@ TESTDATA_25 = [
         100,
         False,
         'success',
+        None,
         [mock.call('1\n'), mock.call('2\n'), mock.call('3\n'), mock.call('4\n')]
     ),
     (
@@ -1815,6 +1821,7 @@ TESTDATA_25 = [
         [None] * 3 + ['success'] * 7,
         100,
         False,
+        'failed',
         'timeout',
         [mock.call('1\n'), mock.call('2\n')]
     ),
@@ -1826,13 +1833,14 @@ TESTDATA_25 = [
         (n for n in [100, 100, 10000]),
         True,
         'success',
+        None,
         [mock.call('1\n'), mock.call('2\n'), mock.call('3\n'), mock.call('4\n')]
     ),
 ]
 
 @pytest.mark.parametrize(
     'content, timeout, pid, harness_states, cputime, capture_coverage,' \
-    ' expected_out_state, expected_log_calls',
+    ' expected_status, expected_reason, expected_log_calls',
     TESTDATA_25,
     ids=[
         'timeout',
@@ -1853,7 +1861,8 @@ def test_qemuhandler_thread(
     harness_states,
     cputime,
     capture_coverage,
-    expected_out_state,
+    expected_status,
+    expected_reason,
     expected_log_calls
 ):
     def mock_cputime(pid):
@@ -1930,7 +1939,8 @@ def test_qemuhandler_thread(
     mock_thread_update_instance_info.assert_called_once_with(
         handler,
         mock.ANY,
-        expected_out_state
+        expected_status,
+        mock.ANY
     )
 
     log_fp_mock.write.assert_has_calls(expected_log_calls)
