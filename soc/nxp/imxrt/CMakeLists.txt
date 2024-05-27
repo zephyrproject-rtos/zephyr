@@ -39,6 +39,7 @@ endif()
 
 if(CONFIG_SOC_SERIES_IMXRT6XX OR CONFIG_SOC_SERIES_IMXRT5XX)
   zephyr_linker_sources_ifdef(CONFIG_USB_DEVICE_DRIVER SECTIONS usb.ld)
+  zephyr_linker_sources_ifdef(CONFIG_UDC_DRIVER SECTIONS usb.ld)
 endif()
 
 if(CONFIG_MEMC)
