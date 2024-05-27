@@ -392,10 +392,9 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 * to map the opcode to the HCI command documentation.
 			 * Example: 0x0c03 represents HCI_Reset command.
 			 */
-			bool success = process_pending_cmd(HCI_CMD_TIMEOUT);
+			__maybe_unused bool success = process_pending_cmd(HCI_CMD_TIMEOUT);
 
 			BT_ASSERT_MSG(success, "command opcode 0x%04x timeout", opcode);
-			(void)success; /* cmon zephyr fix your assert macros */
 		} while (buf != cmd);
 	}
 
