@@ -225,6 +225,24 @@ static int lvgl_init(void)
 	lv_disp_drv_init(&disp_drv);
 	disp_drv.user_data = (void *)&disp_data;
 
+	switch (disp_data.cap.current_orientation) {
+	case DISPLAY_ORIENTATION_NORMAL:
+		disp_drv.rotated = LV_DISP_ROT_NONE;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		disp_drv.rotated = LV_DISP_ROT_90;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_180:
+		disp_drv.rotated = LV_DISP_ROT_180;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_270:
+		disp_drv.rotated = LV_DISP_ROT_270;
+		break;
+	default:
+		LOG_ERR("Invalid display orientation");
+		return -EINVAL;
+	}
+
 #ifdef CONFIG_LV_Z_FULL_REFRESH
 	disp_drv.full_refresh = 1;
 #endif
