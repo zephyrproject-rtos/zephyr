@@ -30,6 +30,11 @@
  */
 static int stm32g4_init(void)
 {
+	/* Enable ART Accelerator I/D-cache and prefetch */
+	LL_FLASH_EnableInstCache();
+	LL_FLASH_EnableDataCache();
+	LL_FLASH_EnablePrefetch();
+
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 16 MHz from HSI */
 	SystemCoreClock = 16000000;
