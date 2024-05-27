@@ -390,13 +390,13 @@ static void tbs_test_server_only(void)
 static const struct bst_test_instance test_tbs[] = {
 	{
 		.test_id = "tbs_test_server_only",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = tbs_test_server_only
 	},
 	{
 		.test_id = "tbs",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
 	},

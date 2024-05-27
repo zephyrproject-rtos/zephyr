@@ -889,25 +889,25 @@ static void test_cap_acceptor_capture_and_render(void)
 static const struct bst_test_instance test_cap_acceptor[] = {
 	{
 		.test_id = "cap_acceptor_unicast",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_acceptor_unicast,
 	},
 	{
 		.test_id = "cap_acceptor_unicast_timeout",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_acceptor_unicast_timeout,
 	},
 	{
 		.test_id = "cap_acceptor_broadcast",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_acceptor_broadcast,
 	},
 	{
 		.test_id = "cap_acceptor_capture_and_render",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_acceptor_capture_and_render,
 	},

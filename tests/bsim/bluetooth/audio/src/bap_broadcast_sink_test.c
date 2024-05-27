@@ -1041,19 +1041,19 @@ static void broadcast_sink_with_assistant(void)
 static const struct bst_test_instance test_broadcast_sink[] = {
 	{
 		.test_id = "broadcast_sink",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},
 	{
 		.test_id = "broadcast_sink_disconnect",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_sink_disconnect,
 	},
 	{
 		.test_id = "broadcast_sink_with_assistant",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = broadcast_sink_with_assistant,
 	},
