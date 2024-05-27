@@ -3,7 +3,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import functools
 import inspect
+import operator
 import os
 import pickle
 import re
@@ -917,6 +919,69 @@ def substring(kconf, _, string, start, stop=None):
     else:
         return string[int(start):]
 
+def arith(kconf, name, *args):
+    """
+    The arithmetic operations on integers.
+    If three or more arguments are given, it returns the result of performing
+    the operation on the first two arguments and operates the same operation as
+    the result and the following argument.
+    For interoperability with inc and dec,
+    if there is only one argument, it will be split with a comma and processed
+    as a sequence of numbers.
+
+    Examples in Kconfig:
+
+    $(add, 10, 3)          # -> 13
+    $(add, 10, 3, 2)       # -> 15
+    $(sub, 10, 3)          # -> 7
+    $(sub, 10, 3, 2)       # -> 5
+    $(mul, 10, 3)          # -> 30
+    $(mul, 10, 3, 2)       # -> 60
+    $(div, 10, 3)          # -> 3
+    $(div, 10, 3, 2)       # -> 1
+    $(mod, 10, 3)          # -> 1
+    $(mod, 10, 3, 2)       # -> 1
+    $(inc, 1)              # -> 2
+    $(inc, 1, 1)           # -> "2,2"
+    $(inc, $(inc, 1, 1))   # -> "3,3"
+    $(dec, 1)              # -> 0
+    $(dec, 1, 1)           # -> "0,0"
+    $(dec, $(dec, 1, 1))   # -> "-1,-1"
+    $(add, $(inc, 1, 1))   # -> 4
+    $(div, $(dec, 1, 1))   # Error (0 div 0)
+    """
+
+    intarray = map(int, args if len(args) > 1 else args[0].split(","))
+
+    if name == "add":
+        return str(int(functools.reduce(operator.add, intarray)))
+    elif name == "sub":
+        return str(int(functools.reduce(operator.sub, intarray)))
+    elif name == "mul":
+        return str(int(functools.reduce(operator.mul, intarray)))
+    elif name == "div":
+        return str(int(functools.reduce(operator.truediv, intarray)))
+    elif name == "mod":
+        return str(int(functools.reduce(operator.mod, intarray)))
+    else:
+        assert False
+
+
+def inc_dec(kconf, name, *args):
+    """
+    Calculate the increment and the decrement of integer sequence.
+    Returns a string that concatenates numbers with a comma as a separator.
+    """
+
+    intarray = map(int, args if len(args) > 1 else args[0].split(","))
+
+    if name == "inc":
+        return ",".join(map(lambda a: str(a + 1), intarray))
+    elif name == "dec":
+        return ",".join(map(lambda a: str(a - 1), intarray))
+    else:
+        assert False
+
 
 # Keys in this dict are the function names as they appear
 # in Kconfig files. The values are tuples in this form:
@@ -976,4 +1041,11 @@ functions = {
         "normalize_upper": (normalize_upper, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
         "substring": (substring, 2, 3),
+        "add": (arith, 1, 255),
+        "sub": (arith, 1, 255),
+        "mul": (arith, 1, 255),
+        "div": (arith, 1, 255),
+        "mod": (arith, 1, 255),
+        "inc": (inc_dec, 1, 255),
+        "dec": (inc_dec, 1, 255),
 }
