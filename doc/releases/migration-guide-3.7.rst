@@ -582,6 +582,10 @@ Bluetooth Audio
   :c:func:`bt_audio_codec_cap_get_max_codec_frames_per_sdu`.
   To maintain existing behavior set the parameter to ``false``. (:github:`72090`)
 
+* Added ``fallback_to_default`` parameter to
+  :c:func:`bt_audio_codec_cfg_meta_get_pref_context`.
+  To maintain existing behavior set the parameter to ``false``. (:github:`72090`)
+
 Bluetooth Classic
 =================
 

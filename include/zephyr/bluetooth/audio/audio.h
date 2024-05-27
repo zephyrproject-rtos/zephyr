@@ -1178,18 +1178,23 @@ int bt_audio_codec_cfg_meta_set_val(struct bt_audio_codec_cfg *codec_cfg,
  */
 int bt_audio_codec_cfg_meta_unset_val(struct bt_audio_codec_cfg *codec_cfg,
 				      enum bt_audio_metadata_type type);
-/** @brief Extract preferred contexts
+/**
+ * @brief Extract preferred contexts
  *
- *  See @ref BT_AUDIO_METADATA_TYPE_PREF_CONTEXT for more information about this value.
+ * See @ref BT_AUDIO_METADATA_TYPE_PREF_CONTEXT for more information about this value.
  *
- *  @param codec_cfg The codec data to search in.
+ * @param codec_cfg The codec data to search in.
+ * @param fallback_to_default If true this function will provide the default value of
+ *        @ref BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED if the type is not found when @p codec_cfg.id is
+ *        @ref BT_HCI_CODING_FORMAT_LC3.
  *
  *  @retval The preferred context type if positive or 0
  *  @retval -EINVAL if arguments are invalid
  *  @retval -ENODATA if not found
  *  @retval -EBADMSG if found value has invalid size
  */
-int bt_audio_codec_cfg_meta_get_pref_context(const struct bt_audio_codec_cfg *codec_cfg);
+int bt_audio_codec_cfg_meta_get_pref_context(const struct bt_audio_codec_cfg *codec_cfg,
+					     bool fallback_to_default);
 
 /**
  * @brief Set the preferred context of a codec configuration metadata.

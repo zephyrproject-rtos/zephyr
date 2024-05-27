@@ -950,7 +950,7 @@ static inline void print_codec_cfg(const struct shell *sh, size_t indent,
 		const uint8_t *data;
 		int ret;
 
-		ret = bt_audio_codec_cfg_meta_get_pref_context(codec_cfg);
+		ret = bt_audio_codec_cfg_meta_get_pref_context(codec_cfg, true);
 		if (ret >= 0) {
 			print_codec_meta_pref_context(sh, indent, (enum bt_audio_context)ret);
 		}
