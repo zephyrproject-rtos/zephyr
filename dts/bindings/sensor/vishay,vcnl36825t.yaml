@@ -21,6 +21,8 @@ properties:
 
       Defaults to sensor reset value.
 
+      Note: "force"-mode only available if low-power mode inactive.
+
   measurement-period:
     type: int
     default: 40

@@ -454,6 +454,9 @@ static const struct sensor_driver_api vcnl36825t_driver_api = {
 		DT_INST_PROP(inst, low_power) || (DT_INST_PROP(inst, measurement_period) <=        \
 						  VCNL36825T_PS_PERIOD_VALUE_MAX_MS),              \
 		"measurement-period must be less/equal 80 ms with deactivated low-power mode");    \
+	BUILD_ASSERT(!DT_INST_PROP(inst, low_power) || (DT_INST_ENUM_IDX(inst, operation_mode) ==  \
+							VCNL36825T_OPERATION_MODE_AUTO),           \
+		     "operation-mode \"force\" only available if low-power mode deactivated");     \
 	static struct vcnl36825t_data vcnl36825t_data_##inst;                                      \
 	static const struct vcnl36825t_config vcnl36825t_config_##inst = {                         \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
