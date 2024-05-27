@@ -10,10 +10,6 @@ properties:
     type: uint8-array
     description: Booster soft start values
 
-  orientation-flipped:
-    type: boolean
-    description: Last column address is mapped to first segment
-
   reset-gpios:
     type: phandle-array
     required: true
@@ -48,6 +44,18 @@ properties:
       Display controller can have integrated temperature sensor or
       an external temperature sensor is connected to the controller.
       The value selects which sensor should be used.
+
+  rotation:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 90
+      - 180
+      - 270
+    description:
+      Display rotation (CW) in degrees.
+      If not defined, rotation is off by default.
 
 child-binding:
   description: |

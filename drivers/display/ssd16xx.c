@@ -66,6 +66,7 @@ struct ssd16xx_data {
 	uint8_t scan_mode;
 	bool blanking_on;
 	enum ssd16xx_profile_type profile;
+	enum display_orientation orientation;
 };
 
 struct ssd16xx_dt_array {
@@ -100,7 +101,7 @@ struct ssd16xx_config {
 
 	const struct ssd16xx_profile *profiles[SSD16XX_NUM_PROFILES];
 
-	bool orientation;
+	uint16_t rotation;
 	uint16_t height;
 	uint16_t width;
 	uint8_t tssv;
@@ -380,42 +381,73 @@ static int ssd16xx_set_window(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if ((y + desc->height) > panel_h) {
-		LOG_ERR("Buffer out of bounds (height)");
-		return -EINVAL;
+	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
+	    data->orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		if ((y + desc->height) > panel_h) {
+			LOG_ERR("Buffer out of bounds (height)");
+			return -EINVAL;
+		}
+
+		if ((x + desc->width) > config->width) {
+			LOG_ERR("Buffer out of bounds (width)");
+			return -EINVAL;
+		}
+
+		if ((desc->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE) != 0U) {
+			LOG_ERR("Buffer height not multiple of %d", EPD_PANEL_NUMOF_ROWS_PER_PAGE);
+			return -EINVAL;
+		}
+
+		if ((y % EPD_PANEL_NUMOF_ROWS_PER_PAGE) != 0U) {
+			LOG_ERR("Y coordinate not multiple of %d", EPD_PANEL_NUMOF_ROWS_PER_PAGE);
+			return -EINVAL;
+		}
+	} else {
+		if ((y + desc->height) > config->width) {
+			LOG_ERR("Buffer out of bounds (height)");
+			return -EINVAL;
+		}
+
+		if ((x + desc->width) > panel_h) {
+			LOG_ERR("Buffer out of bounds (width)");
+			return -EINVAL;
+		}
+
+		if ((desc->width % SSD16XX_PIXELS_PER_BYTE) != 0U) {
+			LOG_ERR("Buffer width not multiple of %d", SSD16XX_PIXELS_PER_BYTE);
+			return -EINVAL;
+		}
+
+		if ((x % SSD16XX_PIXELS_PER_BYTE) != 0U) {
+			LOG_ERR("X coordinate not multiple of %d", SSD16XX_PIXELS_PER_BYTE);
+			return -EINVAL;
+		}
 	}
 
-	if ((x + desc->width) > config->width) {
-		LOG_ERR("Buffer out of bounds (width)");
-		return -EINVAL;
-	}
-
-	if ((desc->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE) != 0U) {
-		LOG_ERR("Buffer height not multiple of %d",
-				EPD_PANEL_NUMOF_ROWS_PER_PAGE);
-		return -EINVAL;
-	}
-
-	if ((y % EPD_PANEL_NUMOF_ROWS_PER_PAGE) != 0U) {
-		LOG_ERR("Y coordinate not multiple of %d",
-				EPD_PANEL_NUMOF_ROWS_PER_PAGE);
-		return -EINVAL;
-	}
-
-	switch (data->scan_mode) {
-	case SSD16XX_DATA_ENTRY_XIYDY:
+	switch (data->orientation) {
+	case DISPLAY_ORIENTATION_NORMAL:
+		x_start = (panel_h - 1 - y) / SSD16XX_PIXELS_PER_BYTE;
+		x_end = (panel_h - 1 - (y + desc->height - 1)) / SSD16XX_PIXELS_PER_BYTE;
+		y_start = x;
+		y_end = (x + desc->width - 1);
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		x_start = (panel_h - 1 - x) / SSD16XX_PIXELS_PER_BYTE;
+		x_end = (panel_h - 1 - (x + desc->width - 1)) / SSD16XX_PIXELS_PER_BYTE;
+		y_start = (config->width - 1 - y);
+		y_end = (config->width - 1 - (y + desc->height - 1));
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_180:
 		x_start = y / SSD16XX_PIXELS_PER_BYTE;
 		x_end = (y + desc->height - 1) / SSD16XX_PIXELS_PER_BYTE;
 		y_start = (x + desc->width - 1);
 		y_end = x;
 		break;
-
-	case SSD16XX_DATA_ENTRY_XDYIY:
-		x_start = (panel_h - 1 - y) / SSD16XX_PIXELS_PER_BYTE;
-		x_end = (panel_h - 1 - (y + desc->height - 1)) /
-			SSD16XX_PIXELS_PER_BYTE;
-		y_start = x;
-		y_end = (x + desc->width - 1);
+	case DISPLAY_ORIENTATION_ROTATED_270:
+		x_start = x / SSD16XX_PIXELS_PER_BYTE;
+		x_end = (x + desc->width - 1) / SSD16XX_PIXELS_PER_BYTE;
+		y_start = y;
+		y_end = (y + desc->height - 1);
 		break;
 	default:
 		return -EINVAL;
@@ -585,6 +617,7 @@ static void ssd16xx_get_capabilities(const struct device *dev,
 				     struct display_capabilities *caps)
 {
 	const struct ssd16xx_config *config = dev->config;
+	struct ssd16xx_data *data = dev->data;
 
 	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
@@ -592,9 +625,14 @@ static void ssd16xx_get_capabilities(const struct device *dev,
 			     config->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
-	caps->screen_info = SCREEN_INFO_MONO_VTILED |
-			    SCREEN_INFO_MONO_MSB_FIRST |
-			    SCREEN_INFO_EPD;
+	caps->screen_info = SCREEN_INFO_MONO_MSB_FIRST | SCREEN_INFO_EPD;
+
+	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
+	    data->orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		caps->screen_info |= SCREEN_INFO_MONO_VTILED;
+	}
+
+	caps->current_orientation = data->orientation;
 }
 
 static int ssd16xx_set_pixel_format(const struct device *dev,
@@ -606,6 +644,32 @@ static int ssd16xx_set_pixel_format(const struct device *dev,
 
 	LOG_ERR("not supported");
 	return -ENOTSUP;
+}
+
+static int ssd16xx_set_orientation(const struct device *dev,
+				   const enum display_orientation orientation)
+{
+	struct ssd16xx_data *data = dev->data;
+	int err;
+
+	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
+		data->scan_mode = SSD16XX_DATA_ENTRY_XDYIY;
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
+		data->scan_mode = SSD16XX_DATA_ENTRY_XDYDX;
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		data->scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
+		data->scan_mode = SSD16XX_DATA_ENTRY_XIYIX;
+	}
+
+	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_ENTRY_MODE, data->scan_mode);
+	if (err < 0) {
+		return err;
+	}
+
+	data->orientation = orientation;
+
+	return 0;
 }
 
 static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd)
@@ -840,6 +904,7 @@ static int ssd16xx_controller_init(const struct device *dev)
 {
 	const struct ssd16xx_config *config = dev->config;
 	struct ssd16xx_data *data = dev->data;
+	enum display_orientation orientation;
 	int err;
 
 	LOG_DBG("");
@@ -860,12 +925,6 @@ static int ssd16xx_controller_init(const struct device *dev)
 
 	k_msleep(SSD16XX_RESET_DELAY);
 
-	if (config->orientation == 1) {
-		data->scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
-	} else {
-		data->scan_mode = SSD16XX_DATA_ENTRY_XDYIY;
-	}
-
 	err = ssd16xx_set_profile(dev, SSD16XX_PROFILE_FULL);
 	if (err < 0) {
 		return err;
@@ -877,6 +936,21 @@ static int ssd16xx_controller_init(const struct device *dev)
 	}
 
 	err = ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RED_RAM);
+	if (err < 0) {
+		return err;
+	}
+
+	if (config->rotation == 0U) {
+		orientation = DISPLAY_ORIENTATION_NORMAL;
+	} else if (config->rotation == 90U) {
+		orientation = DISPLAY_ORIENTATION_ROTATED_90;
+	} else if (config->rotation == 180U) {
+		orientation = DISPLAY_ORIENTATION_ROTATED_180;
+	} else {
+		orientation = DISPLAY_ORIENTATION_ROTATED_270;
+	}
+
+	err = ssd16xx_set_orientation(dev, orientation);
 	if (err < 0) {
 		return err;
 	}
@@ -954,6 +1028,7 @@ static struct display_driver_api ssd16xx_driver_api = {
 	.read = ssd16xx_read,
 	.get_capabilities = ssd16xx_get_capabilities,
 	.set_pixel_format = ssd16xx_set_pixel_format,
+	.set_orientation = ssd16xx_set_orientation,
 };
 
 #if DT_HAS_COMPAT_STATUS_OKAY(solomon_ssd1608)
@@ -1070,7 +1145,7 @@ static struct ssd16xx_quirks quirks_solomon_ssd1681 = {
 		.quirks = quirks_ptr,					\
 		.height = DT_PROP(n, height),				\
 		.width = DT_PROP(n, width),				\
-		.orientation = DT_PROP(n, orientation_flipped),		\
+		.rotation = DT_PROP(n, rotation),			\
 		.tssv = DT_PROP_OR(n, tssv, 0),				\
 		.softstart = SSD16XX_ASSIGN_ARRAY(n, softstart),	\
 		.profiles = {						\
