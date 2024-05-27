@@ -270,18 +270,18 @@ def map_regs():
     (bar4_mem, bar4_mmap) = bar_map(pcidir, 4)
     dsp = Regs(bar4_mem)
     if adsp_is_ace():
-        dsp.HFDSSCS = 0x1000
-        dsp.HFPWRCTL = 0x1d18
-        dsp.HFPWRSTS = 0x1d1c
+        dsp.HFDSSCS        = 0x1000
+        dsp.HFPWRCTL       = 0x1d18
+        dsp.HFPWRSTS       = 0x1d1c
         dsp.DSP2CXCTL_PRIMARY = 0x178d04
-        dsp.HFIPCXTDR = 0x73200
-        dsp.HFIPCXTDA = 0x73204
-        dsp.HFIPCXIDR = 0x73210
-        dsp.HFIPCXIDA = 0x73214
-        dsp.HFIPCXCTL = 0x73228
-        dsp.HFIPCXTDDY = 0x73300
-        dsp.HFIPCXIDDY = 0x73380
-        dsp.ROM_STATUS = 0x163200 if ace15 else 0x160200
+        dsp.HFIPCXTDR      = 0x73200
+        dsp.HFIPCXTDA      = 0x73204
+        dsp.HFIPCXIDR      = 0x73210
+        dsp.HFIPCXIDA      = 0x73214
+        dsp.HFIPCXCTL      = 0x73228
+        dsp.HFIPCXTDDY     = 0x73300
+        dsp.HFIPCXIDDY     = 0x73380
+        dsp.ROM_STATUS     = 0x163200 if ace15 else 0x160200
         dsp.SRAM_FW_STATUS = WINDOW_BASE_ACE
     else:
         dsp.ADSPCS         = 0x00004
