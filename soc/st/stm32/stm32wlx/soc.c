@@ -32,9 +32,10 @@ LOG_MODULE_REGISTER(soc);
  */
 static int stm32wl_init(void)
 {
-	/* Enable CPU data and instruction cache */
+	/* Enable CPU data and instruction cache and prefetch */
 	LL_FLASH_EnableInstCache();
 	LL_FLASH_EnableDataCache();
+	LL_FLASH_EnablePrefetch();
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 4 MHz from MSI */
