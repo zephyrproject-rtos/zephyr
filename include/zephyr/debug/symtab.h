@@ -9,6 +9,15 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @defgroup symtab_apis Symbol Table API
+ * @{
+ */
+
 /**
  * @cond INTERNAL_HIDDEN
  */
@@ -48,5 +57,13 @@ const struct symtab_info *const symtab_get(void);
  * @return Name of the nearest symbol if found, otherwise "?" is returned.
  */
 const char *const symtab_find_symbol_name(uintptr_t addr, uint32_t *offset);
+
+/**
+ * @}
+ */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_DEBUG_SYMTAB_H_ */
