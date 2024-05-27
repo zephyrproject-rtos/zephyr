@@ -9,11 +9,9 @@ tests:
       - qemu_x86
       - nrf51dk/nrf51822
       - nrf52dk/nrf52832
-      - rd_rw612_bga
     tags: bluetooth
     integration_platforms:
       - qemu_cortex_m3
-      - rd_rw612_bga
   sample.bluetooth.peripheral_ht.frdm_kw41z_shield:
     harness: bluetooth
     platform_allow:
@@ -25,3 +23,10 @@ tests:
     extra_args: SHIELD=frdm_kw41z
     integration_platforms:
       - mimxrt1020_evk
+  sample.bluetooth.peripheral_ht.nxp:
+    # Disabling monolithic since CI environment doesn't use blobs
+    harness: bluetooth
+    platform_allow:
+      - rd_rw612_bga
+    extra_configs:
+      - CONFIG_NXP_MONOLITHIC_BT=n
