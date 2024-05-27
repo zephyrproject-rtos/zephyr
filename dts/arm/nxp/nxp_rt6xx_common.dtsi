@@ -289,6 +289,12 @@
 		status = "disabled";
 	};
 
+	usbphy: usbphy@13b000 {
+		compatible = "nxp,usbphy";
+		reg = <0x13b000 0x1000>;
+		status = "disabled";
+	};
+
 	hs_lspi: spi@126000 {
 		compatible = "nxp,lpc-spi";
 		/* Enabling cs-gpios below will allow using GPIO CS,
