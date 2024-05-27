@@ -360,7 +360,7 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 
 	err = tester_gap_padv_configure(BT_LE_PER_ADV_PARAM(BT_GAP_PER_ADV_FAST_INT_MIN_2,
 							    BT_GAP_PER_ADV_FAST_INT_MAX_2,
-							    BT_LE_PER_ADV_OPT_USE_TX_POWER));
+							    BT_LE_PER_ADV_OPT_NONE));
 	if (err != 0) {
 		LOG_DBG("Failed to configure periodic advertising: %d", err);
 
