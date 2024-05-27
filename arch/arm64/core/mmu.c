@@ -24,6 +24,7 @@
 #include <mmu.h>
 
 #include "mmu.h"
+#include "paging.h"
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -225,6 +226,7 @@ static void debug_show_pte(uint64_t *pte, unsigned int level)
 	MMU_DEBUG((*pte & PTE_BLOCK_DESC_AP_ELx) ? "-ELx" : "-ELh");
 	MMU_DEBUG((*pte & PTE_BLOCK_DESC_PXN) ? "-PXN" : "-PX");
 	MMU_DEBUG((*pte & PTE_BLOCK_DESC_UXN) ? "-UXN" : "-UX");
+	MMU_DEBUG((*pte & PTE_SW_WRITABLE) ? "-WRITABLE" : "");
 	MMU_DEBUG("\n");
 }
 #else
@@ -665,6 +667,8 @@ static uint64_t get_region_desc(uint32_t attrs)
 
 	/* AP bits for Data access permission */
 	desc |= (attrs & MT_RW) ? PTE_BLOCK_DESC_AP_RW : PTE_BLOCK_DESC_AP_RO;
+	desc |= (IS_ENABLED(CONFIG_DEMAND_PAGING) && (attrs & MT_RW)) ?
+		PTE_SW_WRITABLE : 0;
 
 	/* Mirror permissions to EL0 */
 	desc |= (attrs & MT_RW_AP_ELx) ?
@@ -1551,6 +1555,95 @@ void arch_mem_scratch(uintptr_t phys)
 		sync_domains(virt, size, "scratch");
 		invalidate_tlb_page(virt);
 	}
+}
+
+/* Called from the fault handler. Returns true if the fault is resolved. */
+bool z_arm64_do_demand_paging(uint64_t esr, uint64_t far)
+{
+	uintptr_t virt = far;
+	uint64_t *pte, desc;
+
+	/* filter relevant exceptions */
+	switch (GET_ESR_EC(esr)) {
+	case 0x21: /* insn abort from current EL */
+	case 0x25: /* data abort from current EL */
+		break;
+	default:
+		return false;
+	}
+
+	/* make sure the fault happened in the expected range */
+	if (!IN_RANGE(virt,
+		      (uintptr_t)K_MEM_VIRT_RAM_START,
+		      ((uintptr_t)K_MEM_VIRT_RAM_END - 1))) {
+		return false;
+	}
+
+	virt = ROUND_DOWN(virt, CONFIG_MMU_PAGE_SIZE);
+
+	pte = get_pte_location(&kernel_ptables, virt);
+	if (!pte) {
+		/* page mapping doesn't exist, let the core code do its thing */
+		return k_mem_page_fault((void *)virt);
+	}
+	desc = *pte;
+	if ((desc & PTE_DESC_TYPE_MASK) != PTE_PAGE_DESC) {
+		/* page is not loaded/mapped */
+		return k_mem_page_fault((void *)virt);
+	}
+
+	/*
+	 * From this point, we expect only 2 cases:
+	 *
+	 * 1) the Access Flag was not set so we set it marking the page
+	 *    as accessed;
+	 *
+	 * 2) the page was read-only and a write occurred so we clear the
+	 *    RO flag marking the page dirty.
+	 *
+	 * We bail out on anything else.
+	 *
+	 * Fault status codes for Data aborts (DFSC):
+	 *  0b0010LL	Access flag fault
+	 *  0b0011LL	Permission fault
+	 */
+	uint32_t dfsc = GET_ESR_ISS(esr) & GENMASK(5, 0);
+	bool write = (GET_ESR_ISS(esr) & BIT(6)) != 0; /* WnR */
+
+	if (dfsc == (0b001000 | XLAT_LAST_LEVEL) &&
+	    (desc & PTE_BLOCK_DESC_AF) == 0) {
+		/* page is being accessed: set the access flag */
+		desc |= PTE_BLOCK_DESC_AF;
+		if (write) {
+			if ((desc & PTE_SW_WRITABLE) == 0) {
+				/* we don't actually have write permission */
+				return false;
+			}
+			/*
+			 * Let's avoid another fault immediately after
+			 * returning by making the page read-write right away
+			 * effectively marking it "dirty" as well.
+			 */
+			desc &= ~PTE_BLOCK_DESC_AP_RO;
+		}
+		*pte = desc;
+		sync_domains(virt, CONFIG_MMU_PAGE_SIZE, "accessed");
+		/* no TLB inval needed after setting AF */
+		return true;
+	}
+
+	if (dfsc == (0b001100 | XLAT_LAST_LEVEL) && write &&
+	    (desc & PTE_BLOCK_DESC_AP_RO) != 0 &&
+	    (desc & PTE_SW_WRITABLE) != 0) {
+		/* make it "dirty" i.e. read-write */
+		desc &= ~PTE_BLOCK_DESC_AP_RO;
+		*pte = desc;
+		sync_domains(virt, CONFIG_MMU_PAGE_SIZE, "dirtied");
+		invalidate_tlb_page(virt);
+		return true;
+	}
+
+	return false;
 }
 
 #endif /* CONFIG_DEMAND_PAGING */
