@@ -257,15 +257,13 @@ static void raise_data_ready(struct bt_l2cap_br_chan *br_chan)
 static void lower_data_ready(struct bt_l2cap_br_chan *br_chan)
 {
 	struct bt_conn *conn = br_chan->chan.conn;
-	sys_snode_t *s = sys_slist_get(&conn->l2cap_data_ready);
+	__maybe_unused sys_snode_t *s = sys_slist_get(&conn->l2cap_data_ready);
 
 	__ASSERT_NO_MSG(s == &br_chan->_pdu_ready);
-	(void)s;
 
-	atomic_t old = atomic_set(&br_chan->_pdu_ready_lock, 0);
+	__maybe_unused atomic_t old = atomic_set(&br_chan->_pdu_ready_lock, 0);
 
 	__ASSERT_NO_MSG(old);
-	(void)old;
 }
 
 static void cancel_data_ready(struct bt_l2cap_br_chan *br_chan)
@@ -383,10 +381,9 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn,
 
 	if (last_frag) {
 		LOG_DBG("last frag, removing %p", pdu);
-		struct net_buf *b = k_fifo_get(&br_chan->_pdu_tx_queue, K_NO_WAIT);
+		__maybe_unused struct net_buf *b = k_fifo_get(&br_chan->_pdu_tx_queue, K_NO_WAIT);
 
 		__ASSERT_NO_MSG(b == pdu);
-		(void)b;
 
 		LOG_DBG("chan %p done", br_chan);
 		lower_data_ready(br_chan);
