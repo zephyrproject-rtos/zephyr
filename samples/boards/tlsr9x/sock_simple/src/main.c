@@ -97,28 +97,24 @@ static void data_exchange(volatile bool *connected)
 			LOG_INF("sent message to: %s:%u",
 				ECHO_SERVER_IP, ntohs(server_addr.sin_port));
 
-			for (bool rx_done = false; !rx_done;) {
-				socklen_t server_addr_len = sizeof(server_addr);
-				static uint8_t receive_buf[sizeof(transmit_buf)];
-				ssize_t receive_buf_len =
-					recvfrom(sock, receive_buf, sizeof(receive_buf), 0,
-						(struct sockaddr *)&server_addr, &server_addr_len);
-				if (receive_buf_len == -1) {
-					LOG_ERR("recvfrom failed: (%d) %s", errno, strerror(errno));
-					rx_done = true;
-					break;
-				} else if (receive_buf_len == transmit_buf_len) {
-					if (!memcmp(receive_buf, transmit_buf, transmit_buf_len)) {
-						LOG_INF("all OK");
-						rx_done = true;
-					} else {
-						LOG_ERR("transmit and receive mismatch");
-					}
+			socklen_t server_addr_len = sizeof(server_addr);
+			static uint8_t receive_buf[sizeof(transmit_buf)];
+			ssize_t receive_buf_len =
+				recvfrom(sock, receive_buf, sizeof(receive_buf), 0,
+					(struct sockaddr *)&server_addr, &server_addr_len);
+			if (receive_buf_len == -1) {
+				LOG_ERR("recvfrom failed: (%d) %s", errno, strerror(errno));
+				continue;
+			} else if (receive_buf_len == transmit_buf_len) {
+				if (!memcmp(receive_buf, transmit_buf, transmit_buf_len)) {
+					LOG_INF("all OK");
 				} else {
-					LOG_ERR("transmit and receive lengths mismatch (%u - %u)",
-						(unsigned int)transmit_buf_len,
-						(unsigned int)receive_buf_len);
+					LOG_ERR("transmit and receive mismatch");
 				}
+			} else {
+				LOG_ERR("transmit and receive lengths mismatch (%u - %u)",
+					(unsigned int)transmit_buf_len,
+					(unsigned int)receive_buf_len);
 			}
 			k_msleep(ECHO_SERVER_DEADTIME_MS);
 		}
