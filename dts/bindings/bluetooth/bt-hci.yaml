@@ -23,3 +23,6 @@ properties:
   bt-hci-quirks:
     type: string-array
     description: HCI device quirks
+  bt-hci-vs-ext:
+    type: boolean
+    description: Zephyr HCI vendor extensions are supported
