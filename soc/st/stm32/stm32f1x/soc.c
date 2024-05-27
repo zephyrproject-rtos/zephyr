@@ -12,6 +12,8 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 
+#include <stm32_ll_system.h>
+
 #include <cmsis_core.h>
 
 /**
@@ -24,6 +26,11 @@
  */
 static int stm32f1_init(void)
 {
+#ifdef FLASH_ACR_PRFTBE
+	/* Enable ART Accelerator prefetch */
+	LL_FLASH_EnablePrefetch();
+#endif
+
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 8 MHz from HSI */
 	SystemCoreClock = 8000000;
