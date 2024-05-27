@@ -7,6 +7,7 @@
 import argparse
 import sys
 import os
+import re
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.descriptions import (
@@ -64,6 +65,17 @@ start_addr = 0
 symtab_list = []
 
 
+def sanitize_func_name(name):
+    pattern = r'(^[a-zA-Z_][a-zA-Z0-9_]*)'
+    match = re.match(pattern, name)
+    if match:
+        return match.group(0)
+    else:
+        log.error(f"Failed to sanitize function name: {name}")
+
+    return name
+
+
 def main():
     args = parse_args()
     log.set_debug(args.debug)
@@ -75,17 +87,18 @@ def main():
         symtab = elf.get_section_by_name('.symtab')
 
         i = 1
-        for nsym, symbol in enumerate(symtab.iter_symbols()): # pylint: disable=unused-variable
+        for nsym, symbol in enumerate(symtab.iter_symbols()):  # pylint: disable=unused-variable
             symbol_type = describe_symbol_type(symbol['st_info']['type'])
             symbol_addr = symbol['st_value']
 
             if symbol_type == 'FUNC' and symbol_addr != 0:
+                symbol_name = sanitize_func_name(symbol.name)
                 symtab_list.append(symtab_entry(
-                    symbol_addr, symbol_addr, symbol.name))
+                    symbol_addr, symbol_addr, symbol_name))
                 log.debug('%6d: %s %.25s' % (
                     i,
                     hex(symbol_addr),
-                    symbol.name))
+                    symbol_name))
                 i = i + 1
 
         symtab_list.sort(key=lambda x: x.addr, reverse=False)
