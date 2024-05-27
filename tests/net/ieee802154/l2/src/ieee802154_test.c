@@ -405,7 +405,7 @@ static int set_up_recv_socket(enum net_sock_type socket_type)
 	};
 	int fd;
 
-	fd = zsock_socket(AF_PACKET, socket_type, ETH_P_IEEE802154);
+	fd = zsock_socket(AF_PACKET, socket_type, htons(ETH_P_IEEE802154));
 	if (fd < 0) {
 		NET_ERR("*** Failed to create recv socket : %d", errno);
 		return fd;
@@ -697,7 +697,7 @@ static bool test_dgram_packet_sending(void *dst_sll, uint8_t dst_sll_halen, uint
 	}
 
 	NET_INFO("- Sending DGRAM packet via AF_PACKET socket");
-	fd = zsock_socket(AF_PACKET, SOCK_DGRAM, ETH_P_IEEE802154);
+	fd = zsock_socket(AF_PACKET, SOCK_DGRAM, htons(ETH_P_IEEE802154));
 	if (fd < 0) {
 		NET_ERR("*** Failed to create DGRAM socket : %d", errno);
 		goto reset_security;
@@ -924,7 +924,7 @@ static bool test_raw_packet_sending(void)
 
 	NET_INFO("- Sending RAW packet via AF_PACKET socket");
 
-	fd = zsock_socket(AF_PACKET, SOCK_RAW, ETH_P_IEEE802154);
+	fd = zsock_socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IEEE802154));
 	if (fd < 0) {
 		NET_ERR("*** Failed to create RAW socket : %d", errno);
 		goto out;
@@ -1108,7 +1108,7 @@ static bool test_recv_and_send_ack_reply(struct ieee802154_pkt_test *t)
 
 	NET_INFO("- Sending ACK reply to a data packet");
 
-	fd = zsock_socket(AF_PACKET, SOCK_DGRAM, ETH_P_IEEE802154);
+	fd = zsock_socket(AF_PACKET, SOCK_DGRAM, htons(ETH_P_IEEE802154));
 	if (fd < 0) {
 		NET_ERR("*** Failed to create DGRAM socket : %d", errno);
 		goto out;

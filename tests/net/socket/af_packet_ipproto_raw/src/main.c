@@ -120,7 +120,7 @@ ZTEST(net_sckt_packet_raw_ip, test_sckt_raw_packet_raw_ip)
 	char receive_buffer[128];
 	int sock;
 
-	sock = zsock_socket(AF_PACKET, SOCK_RAW, IPPROTO_RAW);
+	sock = zsock_socket(AF_PACKET, SOCK_RAW, htons(IPPROTO_RAW));
 	zassert_true(sock >= 0, "Could not create a socket");
 
 	dst.sll_ifindex = net_if_get_by_iface(iface);

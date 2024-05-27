@@ -86,7 +86,7 @@ static int start_socket(int *sock)
 	*sock = socket(AF_PACKET,
 		       IS_ENABLED(CONFIG_NET_SAMPLE_ENABLE_PACKET_DGRAM) ?
 							SOCK_DGRAM : SOCK_RAW,
-		       ETH_P_ALL);
+		       htons(ETH_P_ALL));
 	if (*sock < 0) {
 		LOG_ERR("Failed to create %s socket : %d",
 			IS_ENABLED(CONFIG_NET_SAMPLE_ENABLE_PACKET_DGRAM) ?

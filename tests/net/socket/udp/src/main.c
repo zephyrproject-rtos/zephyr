@@ -2155,7 +2155,7 @@ ZTEST(net_socket_udp, test_31_v4_ttl)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, CLIENT_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
 
 	ret = bind_socket(packet_sock, lo0);
@@ -2204,7 +2204,7 @@ ZTEST(net_socket_udp, test_32_v4_mcast_ttl)
 	prepare_sock_udp_v4(MY_IPV4_ADDR, CLIENT_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
 
 	ret = bind_socket(packet_sock, lo0);
@@ -2254,7 +2254,7 @@ ZTEST(net_socket_udp, test_33_v6_mcast_hops)
 	prepare_sock_udp_v6(MY_IPV6_ADDR, CLIENT_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
 
 	ret = bind_socket(packet_sock, lo0);
@@ -2320,7 +2320,7 @@ ZTEST(net_socket_udp, test_34_v6_hops)
 	prepare_sock_udp_v6(MY_IPV6_ADDR, CLIENT_PORT, &client_sock, &client_addr);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock, &server_addr);
 
-	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	packet_sock = zsock_socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
 
 	ret = bind_socket(packet_sock, lo0);
