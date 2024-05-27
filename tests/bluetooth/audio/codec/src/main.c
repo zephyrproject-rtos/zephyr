@@ -7,14 +7,18 @@
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
+#include <zephyr/bluetooth/audio/lc3.h>
+#include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/fff.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include <ztest_test.h>
 #include <ztest_assert.h>
@@ -975,7 +979,7 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_get_val)
 	const uint8_t *data;
 	int ret;
 
-	ret = bt_audio_codec_cap_get_val(&codec_cap, BT_AUDIO_CODEC_CFG_FREQ, &data);
+	ret = bt_audio_codec_cap_get_val(&codec_cap, BT_AUDIO_CODEC_CAP_TYPE_FREQ, &data);
 	zassert_equal(ret, sizeof(expected_data), "Unexpected return value %d", ret);
 	zassert_equal(data[0], expected_data, "Unexpected return value %d", ret);
 }
@@ -992,15 +996,15 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_set_val)
 	const uint8_t *data;
 	int ret;
 
-	ret = bt_audio_codec_cap_get_val(&codec_cap, BT_AUDIO_CODEC_CFG_FREQ, &data);
+	ret = bt_audio_codec_cap_get_val(&codec_cap, BT_AUDIO_CODEC_CAP_TYPE_FREQ, &data);
 	zassert_equal(ret, sizeof(expected_data), "Unexpected return value %d", ret);
 	zassert_equal(data[0], expected_data, "Unexpected return value %d", ret);
 
-	ret = bt_audio_codec_cap_set_val(&codec_cap, BT_AUDIO_CODEC_CFG_FREQ,
+	ret = bt_audio_codec_cap_set_val(&codec_cap, BT_AUDIO_CODEC_CAP_TYPE_FREQ,
 					 &new_expected_data, sizeof(new_expected_data));
 	zassert_true(ret > 0, "Unexpected return value %d", ret);
 
-	ret = bt_audio_codec_cap_get_val(&codec_cap, BT_AUDIO_CODEC_CFG_FREQ, &data);
+	ret = bt_audio_codec_cap_get_val(&codec_cap, BT_AUDIO_CODEC_CAP_TYPE_FREQ, &data);
 	zassert_equal(ret, sizeof(new_expected_data), "Unexpected return value %d", ret);
 	zassert_equal(data[0], new_expected_data, "Unexpected data value %u", data[0]);
 }
@@ -1013,14 +1017,14 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_set_val_new)
 	const uint8_t *data;
 	int ret;
 
-	ret = bt_audio_codec_cap_get_val(&codec_cap, BT_AUDIO_CODEC_CFG_FREQ, &data);
+	ret = bt_audio_codec_cap_get_val(&codec_cap, BT_AUDIO_CODEC_CAP_TYPE_FREQ, &data);
 	zassert_equal(ret, -ENODATA, "Unexpected return value %d", ret);
 
-	ret = bt_audio_codec_cap_set_val(&codec_cap, BT_AUDIO_CODEC_CFG_FREQ,
+	ret = bt_audio_codec_cap_set_val(&codec_cap, BT_AUDIO_CODEC_CAP_TYPE_FREQ,
 					 &new_expected_data, sizeof(new_expected_data));
 	zassert_true(ret > 0, "Unexpected return value %d", ret);
 
-	ret = bt_audio_codec_cap_get_val(&codec_cap, BT_AUDIO_CODEC_CFG_FREQ, &data);
+	ret = bt_audio_codec_cap_get_val(&codec_cap, BT_AUDIO_CODEC_CAP_TYPE_FREQ, &data);
 	zassert_equal(ret, sizeof(new_expected_data), "Unexpected return value %d", ret);
 	zassert_equal(data[0], new_expected_data, "Unexpected return value %d", ret);
 }
