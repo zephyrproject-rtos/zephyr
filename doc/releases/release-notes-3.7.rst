@@ -440,6 +440,9 @@ Libraries / Subsystems
     :kconfig:option:`CONFIG_FS_FATFS_MKFS` Kconfig option. This option is enabled by default if
     :kconfig:option:`CONFIG_FILE_SYSTEM_MKFS` is set.
 
+  * FS: It is now possible to truncate a file while opening using :c:func:`fs_open`
+    and by passing ``FS_O_TRUNC`` flag.
+
 * POSIX API
 
 * LoRa/LoRaWAN
