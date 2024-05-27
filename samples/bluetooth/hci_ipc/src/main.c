@@ -294,7 +294,7 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 		struct net_buf *buf;
 
 		buf = hci_vs_err_assert(file, line);
-		if (buf == NULL) {
+		if (buf != NULL) {
 			/* Send the event over ipc */
 			hci_ipc_send(buf, HCI_FATAL_ERR_MSG);
 		} else {
