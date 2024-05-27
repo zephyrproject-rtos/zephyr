@@ -6,9 +6,16 @@ tests:
       - native_posix
       - native_sim
       - nrf52840dk/nrf52840
-      - rd_rw612_bga
     tags: bluetooth
     harness: bluetooth
+  bluetooth.general.tester.nxp:
+    # Disabling monolithic since CI environment doesn't use blobs
+    build_only: true
+    harness: bluetooth
+    platform_allow:
+      - rd_rw612_bga
+    extra_configs:
+      - CONFIG_NXP_MONOLITHIC_BT=n
   bluetooth.general.tester_le_audio:
     build_only: true
     platform_allow:
