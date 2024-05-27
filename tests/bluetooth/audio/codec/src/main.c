@@ -1124,8 +1124,47 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_get_supported_audio_chan_c
 
 	int ret;
 
-	ret = bt_audio_codec_cap_get_supported_audio_chan_counts(&codec_cap);
+	ret = bt_audio_codec_cap_get_supported_audio_chan_counts(&codec_cap, false);
 	zassert_equal(ret, 2, "Unexpected return value %d", ret);
+}
+
+ZTEST(audio_codec_test_suite,
+	test_bt_audio_codec_cap_get_supported_audio_chan_counts_lc3_fallback_true)
+{
+	struct bt_audio_codec_cap codec_cap = {.id = BT_HCI_CODING_FORMAT_LC3};
+	int err;
+
+	err = bt_audio_codec_cap_get_supported_audio_chan_counts(&codec_cap, true);
+	zassert_equal(err, 1, "unexpected error %d", err);
+}
+
+ZTEST(audio_codec_test_suite,
+	test_bt_audio_codec_cap_get_supported_audio_chan_counts_lc3_fallback_false)
+{
+	struct bt_audio_codec_cap codec_cap = {.id = BT_HCI_CODING_FORMAT_LC3};
+	int err;
+
+	err = bt_audio_codec_cap_get_supported_audio_chan_counts(&codec_cap, false);
+	zassert_equal(err, -ENODATA, "unexpected error %d", err);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_get_supported_audio_chan_counts_fallback_true)
+{
+	struct bt_audio_codec_cap codec_cap = {0};
+	int err;
+
+	err = bt_audio_codec_cap_get_supported_audio_chan_counts(&codec_cap, true);
+	zassert_equal(err, -ENODATA, "unexpected error %d", err);
+}
+
+ZTEST(audio_codec_test_suite,
+	test_bt_audio_codec_cap_get_supported_audio_chan_counts_fallback_false)
+{
+	struct bt_audio_codec_cap codec_cap = {0};
+	int err;
+
+	err = bt_audio_codec_cap_get_supported_audio_chan_counts(&codec_cap, true);
+	zassert_equal(err, -ENODATA, "unexpected error %d", err);
 }
 
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_set_supported_audio_chan_counts)
@@ -1137,14 +1176,14 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_set_supported_audio_chan_c
 
 	int ret;
 
-	ret = bt_audio_codec_cap_get_supported_audio_chan_counts(&codec_cap);
+	ret = bt_audio_codec_cap_get_supported_audio_chan_counts(&codec_cap, false);
 	zassert_equal(ret, 1, "Unexpected return value %d", ret);
 
-	ret = bt_audio_codec_cap_set_frame_dur(&codec_cap,
-					       BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(2));
+	ret = bt_audio_codec_cap_set_supported_audio_chan_counts(
+		&codec_cap, BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(2));
 	zassert_true(ret > 0, "Unexpected return value %d", ret);
 
-	ret = bt_audio_codec_cap_get_frame_dur(&codec_cap);
+	ret = bt_audio_codec_cap_get_supported_audio_chan_counts(&codec_cap, false);
 	zassert_equal(ret, 2, "Unexpected return value %d", ret);
 }
 
