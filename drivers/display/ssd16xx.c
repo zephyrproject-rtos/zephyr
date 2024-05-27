@@ -453,12 +453,6 @@ static int ssd16xx_set_window(const struct device *dev,
 		return -EINVAL;
 	}
 
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_ENTRY_MODE,
-				&data->scan_mode, sizeof(data->scan_mode));
-	if (err < 0) {
-		return err;
-	}
-
 	err = ssd16xx_set_ram_param(dev, x_start, x_end, y_start, y_end);
 	if (err < 0) {
 		return err;
@@ -893,6 +887,11 @@ static int ssd16xx_set_profile(const struct device *dev,
 		if (err < 0) {
 			return err;
 		}
+	}
+
+	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_ENTRY_MODE, data->scan_mode);
+	if (err < 0) {
+		return err;
 	}
 
 	data->profile = type;
