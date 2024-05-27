@@ -125,7 +125,12 @@ int usbd_ep_enqueue(const struct usbd_class_data *const c_data,
 
 	if (USB_EP_DIR_IS_IN(bi->ep)) {
 		if (usbd_is_suspended(uds_ctx)) {
-			return -EPERM;
+			int ret;
+
+			ret = usbd_wakeup_request(uds_ctx);
+			if (ret != 0) {
+				return ret;
+			}
 		}
 	}
 
