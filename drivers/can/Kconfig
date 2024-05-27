@@ -61,6 +61,13 @@ config CAN_SHELL_RX_QUEUE_SIZE
 	help
 	  Maximum number of CAN frames in the CAN shell receive queue.
 
+config CAN_SHELL_SCRIPTING_FRIENDLY
+	bool "Produce scripting-friendly output"
+	help
+	  Enable scripting-friendly/machine-readable output from the CAN shell. Enabling this
+	  bypasses the shell when printing certain outputs to ensure the output is not interleaved
+	  with the shell prompt.
+
 endif # CAN_SHELL
 
 config CAN_STATS
