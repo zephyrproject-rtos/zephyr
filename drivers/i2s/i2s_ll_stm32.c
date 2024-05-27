@@ -932,6 +932,8 @@ static void tx_stream_disable(struct stream *stream, const struct device *dev)
 		stream->mem_block = NULL;
 	}
 
+	/* Wait for TX queue to drain before disabling */
+	k_busy_wait(100);
 	LL_I2S_Disable(cfg->i2s);
 
 	active_dma_tx_channel[stream->dma_channel] = NULL;
