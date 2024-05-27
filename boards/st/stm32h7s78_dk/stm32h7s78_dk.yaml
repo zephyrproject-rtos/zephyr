@@ -10,4 +10,7 @@ supported:
   - arduino_gpio
   - gpio
   - uart
+  - watchdog
+  - entropy
+  - adc
 vendor: st
