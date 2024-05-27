@@ -14,6 +14,8 @@
 #include <zephyr/linker/linker-defs.h>
 #include <string.h>
 
+#include <stm32_ll_system.h>
+
 #include <cmsis_core.h>
 
 /**
@@ -26,6 +28,10 @@
  */
 static int stm32c0_init(void)
 {
+	/* Enable ART Accelerator I-cache and prefetch */
+	LL_FLASH_EnableInstCache();
+	LL_FLASH_EnablePrefetch();
+
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 48 MHz from HSI */
 	SystemCoreClock = 48000000;
