@@ -1243,8 +1243,46 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_get_max_codec_frames_per_s
 
 	int ret;
 
-	ret = bt_audio_codec_cap_get_max_codec_frames_per_sdu(&codec_cap);
+	ret = bt_audio_codec_cap_get_max_codec_frames_per_sdu(&codec_cap, false);
 	zassert_equal(ret, 2, "Unexpected return value %d", ret);
+}
+
+ZTEST(audio_codec_test_suite,
+	test_bt_audio_codec_cap_get_max_codec_frames_per_sdu_lc3_fallback_true)
+{
+	struct bt_audio_codec_cap codec_cap = {.id = BT_HCI_CODING_FORMAT_LC3};
+	int err;
+
+	err = bt_audio_codec_cap_get_max_codec_frames_per_sdu(&codec_cap, true);
+	zassert_equal(err, 1, "unexpected error %d", err);
+}
+
+ZTEST(audio_codec_test_suite,
+	test_bt_audio_codec_cap_get_max_codec_frames_per_sdu_lc3_fallback_false)
+{
+	struct bt_audio_codec_cap codec_cap = {.id = BT_HCI_CODING_FORMAT_LC3};
+	int err;
+
+	err = bt_audio_codec_cap_get_max_codec_frames_per_sdu(&codec_cap, false);
+	zassert_equal(err, -ENODATA, "unexpected error %d", err);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_get_max_codec_frames_per_sdu_fallback_true)
+{
+	struct bt_audio_codec_cap codec_cap = {0};
+	int err;
+
+	err = bt_audio_codec_cap_get_max_codec_frames_per_sdu(&codec_cap, true);
+	zassert_equal(err, -ENODATA, "unexpected error %d", err);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_get_max_codec_frames_per_sdu_fallback_false)
+{
+	struct bt_audio_codec_cap codec_cap = {0};
+	int err;
+
+	err = bt_audio_codec_cap_get_max_codec_frames_per_sdu(&codec_cap, true);
+	zassert_equal(err, -ENODATA, "unexpected error %d", err);
 }
 
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_set_max_codec_frames_per_sdu)
@@ -1256,13 +1294,13 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_set_max_codec_frames_per_s
 
 	int ret;
 
-	ret = bt_audio_codec_cap_get_max_codec_frames_per_sdu(&codec_cap);
+	ret = bt_audio_codec_cap_get_max_codec_frames_per_sdu(&codec_cap, false);
 	zassert_equal(ret, 2, "Unexpected return value %d", ret);
 
 	ret = bt_audio_codec_cap_set_max_codec_frames_per_sdu(&codec_cap, 4U);
 	zassert_true(ret > 0, "Unexpected return value %d", ret);
 
-	ret = bt_audio_codec_cap_get_max_codec_frames_per_sdu(&codec_cap);
+	ret = bt_audio_codec_cap_get_max_codec_frames_per_sdu(&codec_cap, false);
 	zassert_equal(ret, 4, "Unexpected return value %d", ret);
 }
 

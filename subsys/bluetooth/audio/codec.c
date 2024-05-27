@@ -2112,7 +2112,8 @@ int bt_audio_codec_cap_set_octets_per_frame(
 					  codec_frame_le32, sizeof(codec_frame_le32));
 }
 
-int bt_audio_codec_cap_get_max_codec_frames_per_sdu(const struct bt_audio_codec_cap *codec_cap)
+int bt_audio_codec_cap_get_max_codec_frames_per_sdu(const struct bt_audio_codec_cap *codec_cap,
+						    bool fallback_to_default)
 {
 	const uint8_t *data;
 	uint8_t data_len;
@@ -2125,6 +2126,10 @@ int bt_audio_codec_cap_get_max_codec_frames_per_sdu(const struct bt_audio_codec_
 	data_len =
 		bt_audio_codec_cap_get_val(codec_cap, BT_AUDIO_CODEC_CAP_TYPE_FRAME_COUNT, &data);
 	if (data == NULL) {
+		if (fallback_to_default && codec_cap->id == BT_HCI_CODING_FORMAT_LC3) {
+			return 1;
+		}
+
 		return -ENODATA;
 	}
 

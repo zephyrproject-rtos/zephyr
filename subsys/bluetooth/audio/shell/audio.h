@@ -686,7 +686,7 @@ static inline void print_codec_cap(const struct shell *sh, size_t indent,
 			print_codec_cap_octets_per_codec_frame(sh, indent, &codec_frame);
 		}
 
-		ret = bt_audio_codec_cap_get_max_codec_frames_per_sdu(codec_cap);
+		ret = bt_audio_codec_cap_get_max_codec_frames_per_sdu(codec_cap, true);
 		if (ret >= 0) {
 			print_codec_cap_max_codec_frames_per_sdu(sh, indent, (uint8_t)ret);
 		}
