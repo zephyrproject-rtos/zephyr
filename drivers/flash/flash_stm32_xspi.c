@@ -2050,7 +2050,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	 * If clock is off, then MemoryMapped is off too and we do init
 	 */
 	if (clock_control_get_status(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				     (clock_control_subsys_t) &dev_cfg->pclken[0])
+				     (clock_control_subsys_t) &dev_cfg->pclken)
 				     == CLOCK_CONTROL_STATUS_ON) {
 		if (stm32_xspi_is_memorymap(dev)) {
 			LOG_ERR("NOR init'd in MemMapped mode");
@@ -2076,53 +2076,44 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		return ret;
 	}
 
-	if (dev_cfg->pclk_len > 3) {
-		/* Max 3 domain clock are expected */
-		LOG_ERR("Could not select %d XSPI domain clock", dev_cfg->pclk_len);
-		return -EIO;
-	}
-
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t) &dev_cfg->pclken[0]) != 0) {
+			     (clock_control_subsys_t) &dev_cfg->pclken) != 0) {
 		LOG_ERR("Could not enable XSPI clock");
 		return -EIO;
 	}
 	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &dev_cfg->pclken[0],
+					(clock_control_subsys_t) &dev_cfg->pclken,
 					&ahb_clock_freq) < 0) {
 		LOG_ERR("Failed call clock_control_get_rate(pclken)");
 		return -EIO;
 	}
-	/* Alternate clock config for peripheral if any */
-	if (IS_ENABLED(STM32_XSPI_DOMAIN_CLOCK_SUPPORT) && (dev_cfg->pclk_len > 1)) {
-		if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				(clock_control_subsys_t) &dev_cfg->pclken[1],
-				NULL) != 0) {
-			LOG_ERR("Could not select XSPI domain clock");
-			return -EIO;
-		}
-		/*
-		 * Get the clock rate from this one (update ahb_clock_freq)
-		 * TODO: retrieve index in the clocks property where clocks has "xspi-ker"
-		 * Assuming index is 1
-		 */
-		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				(clock_control_subsys_t) &dev_cfg->pclken[1],
-				&ahb_clock_freq) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken)");
-			return -EIO;
-		}
+
+#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_ker)
+	/* Kernel clock config for peripheral if any */
+	if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					(clock_control_subsys_t) &dev_cfg->pclken_ker,
+					NULL) != 0) {
+		LOG_ERR("Could not select XSPI domain clock");
+		return -EIO;
 	}
+
+	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					(clock_control_subsys_t) &dev_cfg->pclken_ker,
+					&ahb_clock_freq) < 0) {
+		LOG_ERR("Failed call clock_control_get_rate(pclken_ker)");
+		return -EIO;
+	}
+#endif /* xspi_ker */
+
+#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_mgr)
 	/* Clock domain corresponding to the IO-Mgr (XSPIM) */
-	if (IS_ENABLED(STM32_XSPI_DOMAIN_CLOCK_SUPPORT) && (dev_cfg->pclk_len > 2)) {
-		if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				(clock_control_subsys_t) &dev_cfg->pclken[2]) != 0) {
-			LOG_ERR("Could not enable XSPI Manager clock");
-			return -EIO;
-		}
-		/* Do NOT Get the clock rate from this one */
+	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				(clock_control_subsys_t) &dev_cfg->pclken_mgr) != 0) {
+		LOG_ERR("Could not enable XSPI Manager clock");
+		return -EIO;
 	}
+#endif /* xspi_mgr */
 
 	for (; prescaler <= STM32_XSPI_CLOCK_PRESCALER_MAX; prescaler++) {
 		uint32_t clk = STM32_XSPI_CLOCK_COMPUTE(ahb_clock_freq, prescaler);
@@ -2429,13 +2420,25 @@ static int flash_stm32_xspi_init(const struct device *dev)
 
 static void flash_stm32_xspi_irq_config_func(const struct device *dev);
 
-static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(STM32_XSPI_NODE);
-
 PINCTRL_DT_DEFINE(STM32_XSPI_NODE);
 
 static const struct flash_stm32_xspi_config flash_stm32_xspi_cfg = {
-	.pclken = pclken,
-	.pclk_len = DT_NUM_CLOCKS(STM32_XSPI_NODE),
+	.pclken = {
+		.bus = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspix, bus),
+		.enr = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspix, bits)
+	},
+#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_ker)
+	.pclken_ker = {
+		.bus = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspi_ker, bus),
+		.enr = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspi_ker, bits)
+	},
+#endif /* xspi_ker */
+#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_mgr)
+	.pclken_mgr = {
+		.bus = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspi_mgr, bus),
+		.enr = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspi_mgr, bits)
+	},
+#endif /* xspi_mgr */
 	.irq_config = flash_stm32_xspi_irq_config_func,
 	.flash_size = DT_INST_PROP(0, size) / 8, /* In Bytes */
 	.max_frequency = DT_INST_PROP(0, ospi_max_frequency),
