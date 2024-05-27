@@ -186,15 +186,19 @@ Received CAN frames matching the added filter(s) are printed to the shell. A few
 
 .. code-block:: console
 
-   # Flags  ID   Size  Data bytes
-   --       010   [8]  01 02 03 04 05 06 07 08
-   B-       010  [08]  01 02 03 04 05 06 07 08
-   BP       010  [03]  01 aa bb
-   --  00000010   [0]
-   --       010   [1]  20
-   --       010   [8]  remote transmission request
+   # Dev Flags    ID   Size  Data bytes
+   can0  --       010   [8]  01 02 03 04 05 06 07 08
+   can0  B-       010  [08]  01 02 03 04 05 06 07 08
+   can0  BP       010  [03]  01 aa bb
+   can0  --  00000010   [0]
+   can0  --       010   [1]  20
+   can0  --       010   [8]  remote transmission request
 
 The columns have the following meaning:
+
+* Dev
+
+  * Name of the device receiving the frame.
 
 * Flags
 
