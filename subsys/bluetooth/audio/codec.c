@@ -1192,14 +1192,23 @@ int bt_audio_codec_cfg_meta_unset_val(struct bt_audio_codec_cfg *codec_cfg,
 	return ret;
 }
 
-int bt_audio_codec_cfg_meta_get_pref_context(const struct bt_audio_codec_cfg *codec_cfg)
+int bt_audio_codec_cfg_meta_get_pref_context(const struct bt_audio_codec_cfg *codec_cfg,
+					     bool fallback_to_default)
 {
+	int ret;
+
 	CHECKIF(codec_cfg == NULL) {
 		LOG_DBG("codec_cfg is NULL");
 		return -EINVAL;
 	}
 
-	return codec_meta_get_pref_context(codec_cfg->meta, codec_cfg->meta_len);
+	ret = codec_meta_get_pref_context(codec_cfg->meta, codec_cfg->meta_len);
+
+	if (ret == -ENODATA && fallback_to_default && codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
+		return BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
+	}
+
+	return ret;
 }
 
 int bt_audio_codec_cfg_meta_set_pref_context(struct bt_audio_codec_cfg *codec_cfg,

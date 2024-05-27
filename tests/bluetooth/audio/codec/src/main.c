@@ -503,8 +503,44 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_get_pref_context)
 							BT_BYTES_LIST_LE16(ctx))});
 	int ret;
 
-	ret = bt_audio_codec_cfg_meta_get_pref_context(&codec_cfg);
+	ret = bt_audio_codec_cfg_meta_get_pref_context(&codec_cfg, false);
 	zassert_equal(ret, 0x0005, "unexpected return value %d", ret);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_get_pref_context_lc3_fallback_true)
+{
+	struct bt_audio_codec_cfg codec_cfg = {.id = BT_HCI_CODING_FORMAT_LC3};
+	int err;
+
+	err = bt_audio_codec_cfg_meta_get_pref_context(&codec_cfg, true);
+	zassert_equal(err, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED, "unexpected error %d", err);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_get_pref_context_lc3_fallback_false)
+{
+	struct bt_audio_codec_cfg codec_cfg = {.id = BT_HCI_CODING_FORMAT_LC3};
+	int err;
+
+	err = bt_audio_codec_cfg_meta_get_pref_context(&codec_cfg, false);
+	zassert_equal(err, -ENODATA, "unexpected error %d", err);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_get_pref_context_fallback_true)
+{
+	struct bt_audio_codec_cfg codec_cfg = {0};
+	int err;
+
+	err = bt_audio_codec_cfg_meta_get_pref_context(&codec_cfg, true);
+	zassert_equal(err, -ENODATA, "unexpected error %d", err);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_get_pref_context_fallback_false)
+{
+	struct bt_audio_codec_cfg codec_cfg = {0};
+	int err;
+
+	err = bt_audio_codec_cfg_meta_get_pref_context(&codec_cfg, true);
+	zassert_equal(err, -ENODATA, "unexpected error %d", err);
 }
 
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_set_pref_context)
@@ -518,13 +554,13 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_set_pref_context)
 							BT_BYTES_LIST_LE16(ctx))});
 	int ret;
 
-	ret = bt_audio_codec_cfg_meta_get_pref_context(&codec_cfg);
+	ret = bt_audio_codec_cfg_meta_get_pref_context(&codec_cfg, false);
 	zassert_equal(ret, 0x0005, "Unexpected return value %d", ret);
 
 	ret = bt_audio_codec_cfg_meta_set_pref_context(&codec_cfg, new_ctx);
 	zassert_true(ret > 0, "Unexpected return value %d", ret);
 
-	ret = bt_audio_codec_cfg_meta_get_pref_context(&codec_cfg);
+	ret = bt_audio_codec_cfg_meta_get_pref_context(&codec_cfg, false);
 	zassert_equal(ret, 0x0100, "Unexpected return value %d", ret);
 }
 
