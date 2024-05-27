@@ -18,7 +18,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		cpu@0 {
+		cpu0: cpu@0 {
 			clock-frequency = <100000000>;
 			compatible = "litex,vexriscv-standard", "riscv";
 			device_type = "cpu";
