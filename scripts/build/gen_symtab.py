@@ -55,8 +55,9 @@ def parse_args():
 
 
 class symtab_entry:
-    def __init__(self, addr, offset, name):
+    def __init__(self, addr, size, offset, name):
         self.addr = addr
+        self.size = size
         self.offset = offset
         self.name = name
 
@@ -90,11 +91,12 @@ def main():
         for nsym, symbol in enumerate(symtab.iter_symbols()):  # pylint: disable=unused-variable
             symbol_type = describe_symbol_type(symbol['st_info']['type'])
             symbol_addr = symbol['st_value']
+            symbol_size = symbol['st_size']
 
             if symbol_type == 'FUNC' and symbol_addr != 0:
                 symbol_name = sanitize_func_name(symbol.name)
                 symtab_list.append(symtab_entry(
-                    symbol_addr, symbol_addr, symbol_name))
+                    symbol_addr, symbol_addr, symbol_size, symbol_name))
                 log.debug('%6d: %s %.25s' % (
                     i,
                     hex(symbol_addr),
@@ -115,10 +117,21 @@ def main():
         print("#include <zephyr/debug/symtab.h>", file=wf)
         print("", file=wf)
         print(
-            f"const struct z_symtab_entry z_symtab_entries[{len(symtab_list)}] = {{", file=wf)
+            f"const struct z_symtab_entry z_symtab_entries[{len(symtab_list) + 1}] = {{", file=wf)
         for i, entry in enumerate(symtab_list):
             print(
-                f"\t[{i}] = {{.offset = {hex(entry.offset)}, .name = \"{entry.name}\"}}, /* {hex(entry.addr)} */", file=wf)
+                f"\t/* ADDR: {hex(entry.addr)} SIZE: {hex(entry.size)} */", file=wf)
+            print(
+                f"\t[{i}] = {{.offset = {hex(entry.offset)}, .name = \"{entry.name}\"}},", file=wf)
+
+        # Append a dummy entry at the end to facilitate the binary search
+        if symtab_list[-1].size == 0:
+            dummy_offset = f"{hex(symtab_list[-1].offset)} + sizeof(uintptr_t)"
+        else:
+            dummy_offset = f"{hex(symtab_list[-1].offset + symtab_list[-1].size)}"
+        print("\t/* dummy entry */", file=wf)
+        print(
+            f"\t[{len(symtab_list)}] = {{.offset = {dummy_offset}, .name = \"?\"}},", file=wf)
         print(f"}};\n", file=wf)
 
         print(f"const struct symtab_info z_symtab = {{", file=wf)
