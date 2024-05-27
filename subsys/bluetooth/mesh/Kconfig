@@ -1648,7 +1648,7 @@ config BT_MESH_FRIEND_SEG_RX
 
 config BT_MESH_FRIEND_ADV_LATENCY
 	int "Latency for enabling advertising"
-	range 0 4
+	range 0 10
 	default 0
 	help
 	  Latency in milliseconds between request for and start of Friend
