@@ -45,6 +45,7 @@ class Harness:
 
     def __init__(self):
         self.state = None
+        self.reason = None
         self.type = None
         self.regex = []
         self.matches = OrderedDict()
@@ -114,11 +115,13 @@ class Harness:
         if self.RUN_PASSED in line:
             if self.fault:
                 self.state = "failed"
+                self.reason = "Fault detected while running test"
             else:
                 self.state = "passed"
 
         if self.RUN_FAILED in line:
             self.state = "failed"
+            self.reason = "Testsuite failed"
 
         if self.fail_on_fault:
             if self.FAULT == line:
@@ -273,11 +276,13 @@ class Console(Harness):
                          f" {self.next_pattern} of {self.patterns_expected}"
                          f" expected ordered patterns.")
             self.state = "failed"
+            self.reason = "patterns did not match (ordered)"
         if self.state == "passed" and not self.ordered and len(self.matches) < self.patterns_expected:
             logger.error(f"HARNESS:{self.__class__.__name__}: failed with"
                          f" {len(self.matches)} of {self.patterns_expected}"
                          f" expected unordered patterns.")
             self.state = "failed"
+            self.reason = "patterns did not match (unordered)"
 
         tc = self.instance.get_case_or_create(self.get_testcase_name())
         if self.state == "passed":
@@ -686,12 +691,13 @@ class Test(Harness):
         self.process_test(line)
 
         if not self.ztest and self.state:
-            logger.debug(f"not a ztest and no state for  {self.id}")
+            logger.debug(f"not a ztest and no state for {self.id}")
             tc = self.instance.get_case_or_create(self.id)
             if self.state == "passed":
                 tc.status = "passed"
             else:
                 tc.status = "failed"
+                tc.reason = "Test failure"
 
 
 class Ztest(Test):

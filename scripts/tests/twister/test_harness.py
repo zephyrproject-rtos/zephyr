@@ -467,8 +467,8 @@ TEST_DATA_7 = [("", "Running TESTSUITE suite_name", ['suite_name'], None, True, 
             ("", "PASS - test_example in 0 seconds", [], "passed", True, None),
             ("", "SKIP - test_example in 0 seconds", [], "skipped", True, None),
             ("", "FAIL - test_example in 0 seconds", [], "failed", True, None),
-            ("not a ztest and no state for  test_id", "START - test_testcase", [], "passed", False, "passed"),
-            ("not a ztest and no state for  test_id", "START - test_testcase", [], "failed", False, "failed")]
+            ("not a ztest and no state for test_id", "START - test_testcase", [], "passed", False, "passed"),
+            ("not a ztest and no state for test_id", "START - test_testcase", [], "failed", False, "failed")]
 @pytest.mark.parametrize(
    "exp_out, line, exp_suite_name, exp_status, ztest, state",
    TEST_DATA_7,
