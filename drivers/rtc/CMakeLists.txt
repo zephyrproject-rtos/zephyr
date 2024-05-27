@@ -7,6 +7,7 @@ zephyr_library()
 
 zephyr_library_sources(rtc_utils.c)
 
+zephyr_library_sources_ifdef(CONFIG_RTC_RV8263 rtc_rv8263.c)
 zephyr_library_sources_ifdef(CONFIG_RTC_AM1805 rtc_am1805.c)
 zephyr_library_sources_ifdef(CONFIG_RTC_DS1307 rtc_ds1307.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE rtc_handlers.c)
