@@ -1122,7 +1122,7 @@ static inline bool net_ipv6_is_addr_solicited_node(const struct in6_addr *addr)
 static inline bool net_ipv6_is_addr_mcast_scope(const struct in6_addr *addr,
 						int scope)
 {
-	return (addr->s6_addr[0] == 0xff) && (addr->s6_addr[1] == scope);
+	return (addr->s6_addr[0] == 0xff) && ((addr->s6_addr[1] & 0xF) == scope);
 }
 
 /**
