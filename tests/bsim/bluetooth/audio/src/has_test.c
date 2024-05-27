@@ -158,13 +158,13 @@ static void test_offline_behavior(void)
 static const struct bst_test_instance test_has[] = {
 	{
 		.test_id = "has",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},
 	{
 		.test_id = "has_offline_behavior",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_offline_behavior,
 	},

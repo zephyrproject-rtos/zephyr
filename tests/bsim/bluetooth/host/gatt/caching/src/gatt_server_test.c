@@ -154,13 +154,13 @@ static void test_main_no_eatt(void)
 static const struct bst_test_instance test_gatt_server[] = {
 	{
 		.test_id = "gatt_server_eatt",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_eatt,
 	},
 	{
 		.test_id = "gatt_server_no_eatt",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_no_eatt,
 	},
