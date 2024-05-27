@@ -28,8 +28,9 @@
  */
 static int st_stm32f7_init(void)
 {
-	/* Enable ART Flash cache accelerator */
+	/* Enable ART Flash cache accelerator and prefetch */
 	LL_FLASH_EnableART();
+	LL_FLASH_EnablePrefetch();
 
 	sys_cache_instr_enable();
 	sys_cache_data_enable();

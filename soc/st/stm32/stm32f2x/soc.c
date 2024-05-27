@@ -29,9 +29,10 @@
  */
 static int stm32f2_init(void)
 {
-	/* Enable ART Flash cache accelerator for both Instruction and Data */
+	/* Enable ART Flash I/D-cache accelerator and prefetch */
 	LL_FLASH_EnableInstCache();
 	LL_FLASH_EnableDataCache();
+	LL_FLASH_EnablePrefetch();
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 16 MHz from HSI */
