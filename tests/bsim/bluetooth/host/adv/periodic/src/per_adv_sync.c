@@ -367,7 +367,7 @@ static const struct bst_test_instance per_adv_sync[] = {
 		.test_id = "per_adv_sync",
 		.test_descr = "Basic periodic advertising sync test. "
 			      "Will just sync to a periodic advertiser.",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_sync
 	},
@@ -376,7 +376,7 @@ static const struct bst_test_instance per_adv_sync[] = {
 		.test_descr = "Basic periodic advertising sync test but where "
 			      "the app stopped scanning before creating sync."
 			      "Expect the host to start scanning automatically.",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_sync_app_not_scanning
 	},
@@ -385,7 +385,7 @@ static const struct bst_test_instance per_adv_sync[] = {
 		.test_descr = "Periodic advertising sync test, but where there "
 			      "is a connection between the advertiser and the "
 			      "synchronized device.",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_conn_sync
 	},
@@ -394,7 +394,7 @@ static const struct bst_test_instance per_adv_sync[] = {
 		.test_descr = "Periodic advertising sync test, but where "
 			      "advertiser and synchronized device are bonded and using  "
 			      "privacy",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_conn_privacy_sync
 	},
@@ -403,7 +403,7 @@ static const struct bst_test_instance per_adv_sync[] = {
 		.test_descr = "Periodic advertising sync test with larger "
 			      "data length. Test is used to verify that "
 			      "reassembly of long data is handeled correctly.",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_long_data_sync
 	},

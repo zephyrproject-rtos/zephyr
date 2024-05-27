@@ -64,7 +64,7 @@ static const struct bst_test_instance test_sample[] = {
 			      "It expects to be connected to a compatible unicast server, "
 			      "waits for " STR(WAIT_TIME) " seconds, and checks how "
 			      "many audio packets have been received correctly",
-		.test_post_init_f = test_unicast_client_sample_init,
+		.test_pre_init_f = test_unicast_client_sample_init,
 		.test_tick_f = test_unicast_client_sample_tick,
 	},
 	BSTEST_END_MARKER
