@@ -675,7 +675,7 @@ static inline void print_codec_cap(const struct shell *sh, size_t indent,
 						  (enum bt_audio_codec_cap_frame_dur)ret);
 		}
 
-		ret = bt_audio_codec_cap_get_supported_audio_chan_counts(codec_cap);
+		ret = bt_audio_codec_cap_get_supported_audio_chan_counts(codec_cap, true);
 		if (ret >= 0) {
 			print_codec_cap_chan_count(sh, indent,
 						   (enum bt_audio_codec_cap_chan_count)ret);

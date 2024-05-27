@@ -574,6 +574,10 @@ Bluetooth Audio
 * Added ``fallback_to_default`` parameter to :c:func:`bt_audio_codec_cfg_get_chan_allocation`.
   To maintain existing behavior set the parameter to ``false``. (:github:`72090`)
 
+* Added ``fallback_to_default`` parameter to
+  :c:func:`bt_audio_codec_cap_get_supported_audio_chan_counts`.
+  To maintain existing behavior set the parameter to ``false``. (:github:`72090`)
+
 Bluetooth Classic
 =================
 
