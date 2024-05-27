@@ -34,7 +34,7 @@
 #define _RESET_SECTION_NAME         reset
 
 #ifdef CONFIG_XIP
-#if DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_flash), rapidsi_ilm, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_flash), micron_m25p32, okay) /* We can replace the flash compact w.r.t dts */
 #ifdef CONFIG_FLASH_LOAD_OFFSET
 #define ROM_BASE (DT_REG_ADDR(DT_CHOSEN(zephyr_flash)) + \
 				CONFIG_FLASH_LOAD_OFFSET)
