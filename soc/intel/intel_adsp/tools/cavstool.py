@@ -201,7 +201,7 @@ def adsp_is_cavs():
     return cavs15 or cavs18 or cavs15
 
 def adsp_is_ace():
-    return ace15 or ace20
+    return ace15 or ace20 or ace30
 
 def adsp_mem_window_config():
     if adsp_is_ace():
@@ -218,13 +218,14 @@ def map_regs():
     pcidir = os.path.dirname(p)
 
     # Platform/quirk detection.  ID lists cribbed from the SOF kernel driver
-    global cavs15, cavs18, cavs25, ace15, ace20
+    global cavs15, cavs18, cavs25, ace15, ace20, ace30
     did = int(open(f"{pcidir}/device").read().rstrip(), 16)
     cavs15 = did in [ 0x5a98, 0x1a98, 0x3198 ]
     cavs18 = did in [ 0x9dc8, 0xa348, 0x02c8, 0x06c8, 0xa3f0 ]
     cavs25 = did in [ 0xa0c8, 0x43c8, 0x4b55, 0x4b58, 0x7ad0, 0x51c8 ]
     ace15 = did in [ 0x7e28 ]
     ace20 = did in [ 0xa828 ]
+    ace30 = did in [ 0xe428 ]
 
     # Check sysfs for a loaded driver and remove it
     if os.path.exists(f"{pcidir}/driver"):
@@ -277,8 +278,8 @@ def map_regs():
     dsp = Regs(bar4_mem)
     if adsp_is_ace():
         dsp.HFDSSCS        = 0x1000
-        dsp.HFPWRCTL       = 0x1d18
-        dsp.HFPWRSTS       = 0x1d1c
+        dsp.HFPWRCTL       = 0x1d18 if ace20 else 0x1d20
+        dsp.HFPWRSTS       = 0x1d1c if ace20 else 0x1d24
         dsp.DSP2CXCTL_PRIMARY = 0x178d04
         dsp.HFIPCXTDR      = 0x73200
         dsp.HFIPCXTDA      = 0x73204
