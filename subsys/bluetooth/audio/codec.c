@@ -2004,7 +2004,8 @@ int bt_audio_codec_cap_set_frame_dur(struct bt_audio_codec_cap *codec_cap,
 					  &frame_dur_u8, sizeof(frame_dur_u8));
 }
 
-int bt_audio_codec_cap_get_supported_audio_chan_counts(const struct bt_audio_codec_cap *codec_cap)
+int bt_audio_codec_cap_get_supported_audio_chan_counts(const struct bt_audio_codec_cap *codec_cap,
+						       bool fallback_to_default)
 {
 	const uint8_t *data;
 	uint8_t data_len;
@@ -2016,6 +2017,10 @@ int bt_audio_codec_cap_get_supported_audio_chan_counts(const struct bt_audio_cod
 
 	data_len = bt_audio_codec_cap_get_val(codec_cap, BT_AUDIO_CODEC_CAP_TYPE_CHAN_COUNT, &data);
 	if (data == NULL) {
+		if (fallback_to_default && codec_cap->id == BT_HCI_CODING_FORMAT_LC3) {
+			return 1;
+		}
+
 		return -ENODATA;
 	}
 

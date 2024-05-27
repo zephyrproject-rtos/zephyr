@@ -1585,13 +1585,16 @@ int bt_audio_codec_cap_set_frame_dur(struct bt_audio_codec_cap *codec_cap,
  * @brief Extract the frequency from a codec capability.
  *
  * @param codec_cap The codec capabilities to extract data from.
+ * @param fallback_to_default If true this function will provide the default value of 1
+ *        if the type is not found when @p codec_cap.id is @ref BT_HCI_CODING_FORMAT_LC3.
  *
- * @retval Bitfield of supported channel counts if 0 or positive
+ * @retval Number of supported channel counts if 0 or positive
  * @retval -EINVAL if arguments are invalid
  * @retval -ENODATA if not found
  * @retval -EBADMSG if found value has invalid size or value
  */
-int bt_audio_codec_cap_get_supported_audio_chan_counts(const struct bt_audio_codec_cap *codec_cap);
+int bt_audio_codec_cap_get_supported_audio_chan_counts(const struct bt_audio_codec_cap *codec_cap,
+						       bool fallback_to_default);
 
 /**
  * @brief Set the channel count of a codec capability.
