@@ -1708,6 +1708,11 @@ struct lwm2m_ctx *lwm2m_rd_client_ctx(void)
 	return client.ctx;
 }
 
+void lwm2m_rd_client_set_ctx(struct lwm2m_ctx *ctx)
+{
+	client.ctx = ctx;
+}
+
 int lwm2m_rd_client_connection_resume(struct lwm2m_ctx *client_ctx)
 {
 	if (client.ctx != client_ctx) {

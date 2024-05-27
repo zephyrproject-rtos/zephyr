@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/net/lwm2m.h>
 #include <zephyr/net/socket.h>
+#include "lwm2m_rd_client.h"
 
 #define APP_BANNER "Run LWM2M client"
 
@@ -246,9 +247,11 @@ int main(void)
 
 	client.tls_tag = 1;
 	client.set_socketoptions = set_socketoptions;
+	client.event_cb = rd_client_event;
+	client.observe_cb = observe_cb;
+	client.sock_fd = -1;
 
-	lwm2m_rd_client_start(&client, CONFIG_BOARD, 0, rd_client_event, observe_cb);
-	lwm2m_rd_client_stop(&client, rd_client_event, false);
+	lwm2m_rd_client_set_ctx(&client);
 
 	return 0;
 }
