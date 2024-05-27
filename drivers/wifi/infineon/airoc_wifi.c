@@ -363,6 +363,37 @@ static void airoc_wifi_network_process_ethernet_data(whd_interface_t interface, 
 	}
 }
 
+static enum ethernet_hw_caps airoc_get_capabilities(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return ETHERNET_HW_FILTERING;
+}
+
+static int airoc_set_config(const struct device *dev,
+			    enum ethernet_config_type type,
+			    const struct ethernet_config *config)
+{
+	ARG_UNUSED(dev);
+	whd_mac_t whd_mac_addr;
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_FILTER:
+		for (int i = 0; i < WHD_ETHER_ADDR_LEN; i++) {
+			whd_mac_addr.octet[i] = config->filter.mac_address.addr[i];
+		}
+		if (config->filter.set) {
+			whd_wifi_register_multicast_address(airoc_if, &whd_mac_addr);
+		} else {
+			whd_wifi_unregister_multicast_address(airoc_if, &whd_mac_addr);
+		}
+		return 0;
+	default:
+		break;
+	}
+	return -ENOTSUP;
+}
+
 static void *link_events_handler(whd_interface_t ifp, const whd_event_header_t *event_header,
 				 const uint8_t *event_data, void *handler_user_data)
 {
@@ -779,6 +810,8 @@ static const struct wifi_mgmt_ops airoc_wifi_mgmt = {
 static const struct net_wifi_mgmt_offload airoc_api = {
 	.wifi_iface.iface_api.init = airoc_mgmt_init,
 	.wifi_iface.send = airoc_mgmt_send,
+	.wifi_iface.get_capabilities = airoc_get_capabilities,
+	.wifi_iface.set_config = airoc_set_config,
 	.wifi_mgmt_api = &airoc_wifi_mgmt,
 };
 
