@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # vim: set syntax=python ts=4 :
 #
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018-2024 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -320,6 +320,9 @@ class Reporting:
             if instance.status is not None:
                 suite["execution_time"] =  f"{float(handler_time):.2f}"
             suite["build_time"] =  f"{float(instance.build_time):.2f}"
+
+            if self.env.options.report_kconfig_symbols and instance.defconfig is not None:
+                suite["kconfig"] = instance.defconfig
 
             testcases = []
 
