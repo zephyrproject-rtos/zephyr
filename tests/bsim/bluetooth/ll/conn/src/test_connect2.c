@@ -227,7 +227,7 @@ static const struct bst_test_instance test_connect[] = {
 			      "central device can be found. The test will "
 			      "pass if notifications can be sent without "
 			      "crash.",
-		.test_post_init_f = test_con2_init,
+		.test_pre_init_f = test_con2_init,
 		.test_tick_f = test_con2_tick,
 		.test_main_f = test_con2_main
 	},
@@ -236,7 +236,7 @@ static const struct bst_test_instance test_connect[] = {
 		.test_descr = "Multiple connections test. It expects that a "
 			      "central device connects 20 times. The test will "
 			      "pass if 20 connections are succeed in less than 22 seconds",
-		.test_post_init_f = test_con2_repeat_init,
+		.test_pre_init_f = test_con2_repeat_init,
 		.test_tick_f = test_con2_repeat_tick,
 		.test_main_f = test_con2_repeat_main
 	},

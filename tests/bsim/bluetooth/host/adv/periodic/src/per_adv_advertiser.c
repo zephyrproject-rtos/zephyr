@@ -374,7 +374,7 @@ static const struct bst_test_instance per_adv_advertiser[] = {
 		.test_id = "per_adv_advertiser",
 		.test_descr = "Basic periodic advertising test. "
 			      "Will just start periodic advertising.",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_advertiser
 	},
@@ -383,7 +383,7 @@ static const struct bst_test_instance per_adv_advertiser[] = {
 		.test_id = "per_adv_advertiser_coded_phy",
 		.test_descr = "Basic periodic advertising test on Coded PHY. "
 			      "Advertiser and periodic advertiser uses Coded PHY",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_advertiser_coded
 	},
@@ -392,7 +392,7 @@ static const struct bst_test_instance per_adv_advertiser[] = {
 		.test_id = "per_adv_conn_advertiser",
 		.test_descr = "Periodic advertising test with concurrent ACL "
 			      "and PA sync.",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_conn_advertiser
 	},
@@ -400,7 +400,7 @@ static const struct bst_test_instance per_adv_advertiser[] = {
 		.test_id = "per_adv_conn_privacy_advertiser",
 		.test_descr = "Periodic advertising test with concurrent ACL "
 			      "with bonding and PA sync.",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_conn_privacy_advertiser
 	},
@@ -408,7 +408,7 @@ static const struct bst_test_instance per_adv_advertiser[] = {
 		.test_id = "per_adv_long_data_advertiser",
 		.test_descr = "Periodic advertising test with a longer data length. "
 			      "To test the reassembly of large data packets",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_long_data_advertiser
 	},

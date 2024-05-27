@@ -486,7 +486,7 @@ static const struct bst_test_instance test_def[] = {
 		.test_id = "peripheral",
 		.test_descr = "Peripheral Connection Stress",
 		.test_args_f = test_args,
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_main_f = test_peripheral_main
 	},
 	BSTEST_END_MARKER
