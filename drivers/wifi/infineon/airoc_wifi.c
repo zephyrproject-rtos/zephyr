@@ -620,10 +620,18 @@ static int airoc_mgmt_ap_enable(const struct device *dev, struct wifi_connect_re
 			params->channel);
 	}
 
-	if (params->psk_length == 0) {
+	switch (params->security) {
+	case WIFI_SECURITY_TYPE_NONE:
 		security = WHD_SECURITY_OPEN;
-	} else {
+		break;
+	case WIFI_SECURITY_TYPE_PSK:
 		security = WHD_SECURITY_WPA2_AES_PSK;
+		break;
+	case WIFI_SECURITY_TYPE_SAE:
+		security = WHD_SECURITY_WPA3_SAE;
+		break;
+	default:
+		goto error;
 	}
 
 	if (whd_wifi_init_ap(airoc_ap_if, &ssid, security, (const uint8_t *)params->psk,
