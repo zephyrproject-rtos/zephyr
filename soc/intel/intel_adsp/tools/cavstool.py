@@ -281,7 +281,7 @@ def map_regs():
         dsp.HFIPCXCTL = 0x73228
         dsp.HFIPCXTDDY = 0x73300
         dsp.HFIPCXIDDY = 0x73380
-        dsp.ROM_STATUS = 0x163200
+        dsp.ROM_STATUS = 0x163200 if ace15 else 0x160200
         dsp.SRAM_FW_STATUS = WINDOW_BASE_ACE
     else:
         dsp.ADSPCS         = 0x00004
