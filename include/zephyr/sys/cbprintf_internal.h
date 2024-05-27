@@ -92,6 +92,7 @@ extern "C" {
 #define Z_CBPRINTF_IS_PCHAR(x, flags) \
 	z_cbprintf_cxx_is_pchar(x, (flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO)
 #else
+/* NOLINTBEGIN(misc-redundant-expression) */
 #define Z_CBPRINTF_IS_PCHAR(x, flags) \
 	_Generic((x) + 0, \
 		/* char * */ \
@@ -111,6 +112,7 @@ extern "C" {
 		const volatile wchar_t * : 1, \
 		default : \
 			0)
+/* NOLINTEND(misc-redundant-expression) */
 #endif
 
 /** @brief Check if argument fits in 32 bit word.
