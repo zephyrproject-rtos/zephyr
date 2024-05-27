@@ -89,6 +89,12 @@
 #define MT_DEFAULT_SECURE_STATE	MT_SECURE
 #endif
 
+/* Definitions used by arch_page_info_get() */
+#define ARCH_DATA_PAGE_LOADED		BIT(0)
+#define ARCH_DATA_PAGE_ACCESSED		BIT(1)
+#define ARCH_DATA_PAGE_DIRTY		BIT(2)
+#define ARCH_DATA_PAGE_NOT_MAPPED	BIT(3)
+
 #ifndef _ASMLANGUAGE
 
 /* Region definition data structure */

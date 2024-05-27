@@ -21,6 +21,7 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/util.h>
+#include <mmu.h>
 
 #include "mmu.h"
 
@@ -209,8 +210,10 @@ static void debug_show_pte(uint64_t *pte, unsigned int level)
 
 	if (is_block_desc(*pte)) {
 		MMU_DEBUG("[Block] ");
-	} else {
+	} else if (!is_inval_desc(*pte)) {
 		MMU_DEBUG("[Page] ");
+	} else {
+		MMU_DEBUG("[paged-out] ");
 	}
 
 	uint8_t mem_type = (*pte >> 2) & MT_TYPE_MASK;
@@ -758,6 +761,12 @@ static void invalidate_tlb_all(void)
 	__asm__ volatile (
 	"dsb ishst; tlbi vmalle1; dsb ish; isb"
 	: : : "memory");
+}
+
+static inline void invalidate_tlb_page(uintptr_t virt)
+{
+	/* to be refined */
+	invalidate_tlb_all();
 }
 
 /* zephyr execution regions with appropriate attributes */
@@ -1351,3 +1360,197 @@ void z_arm64_swap_mem_domains(struct k_thread *incoming)
 }
 
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_DEMAND_PAGING
+
+static uint64_t *get_pte_location(struct arm_mmu_ptables *ptables,
+				  uintptr_t virt)
+{
+	uint64_t *pte;
+	uint64_t *table = ptables->base_xlat_table;
+	unsigned int level = BASE_XLAT_LEVEL;
+
+	for (;;) {
+		pte = &table[XLAT_TABLE_VA_IDX(virt, level)];
+		if (level == XLAT_LAST_LEVEL) {
+			return pte;
+		}
+
+		if (is_table_desc(*pte, level)) {
+			level++;
+			table = pte_desc_table(*pte);
+			continue;
+		}
+
+		/* anything else is unexpected */
+		return NULL;
+	}
+}
+
+void arch_mem_page_out(void *addr, uintptr_t location)
+{
+	uintptr_t virt = (uintptr_t)addr;
+	uint64_t *pte = get_pte_location(&kernel_ptables, virt);
+	uint64_t desc;
+
+	__ASSERT(pte != NULL, "");
+	desc = *pte;
+
+	/* mark the entry invalid to the hardware */
+	desc &= ~PTE_DESC_TYPE_MASK;
+	desc |= PTE_INVALID_DESC;
+
+	/* store the location token in place of the physical address */
+	__ASSERT((location & ~PTE_PHYSADDR_MASK) == 0, "");
+	desc &= ~PTE_PHYSADDR_MASK;
+	desc |= location;
+
+	/*
+	 * The location token may be 0. Make sure the whole descriptor
+	 * doesn't end up being zero as this would be seen as a free entry.
+	 */
+	desc |= PTE_BLOCK_DESC_AP_RO;
+
+	*pte = desc;
+	MMU_DEBUG("page_out: virt=%#lx location=%#lx\n", virt, location);
+	debug_show_pte(pte, XLAT_LAST_LEVEL);
+
+	sync_domains(virt, CONFIG_MMU_PAGE_SIZE, "page_out");
+	invalidate_tlb_page(virt);
+}
+
+void arch_mem_page_in(void *addr, uintptr_t phys)
+{
+	uintptr_t virt = (uintptr_t)addr;
+	uint64_t *pte = get_pte_location(&kernel_ptables, virt);
+	uint64_t desc;
+
+	__ASSERT((phys & ~PTE_PHYSADDR_MASK) == 0, "");
+
+	__ASSERT(pte != NULL, "");
+	desc = *pte;
+	__ASSERT(!is_free_desc(desc), "");
+
+	/* mark the entry valid again to the hardware */
+	desc &= ~PTE_DESC_TYPE_MASK;
+	desc |= PTE_PAGE_DESC;
+
+	/* store the physical address */
+	desc &= ~PTE_PHYSADDR_MASK;
+	desc |= phys;
+
+	/* mark as clean */
+	desc |= PTE_BLOCK_DESC_AP_RO;
+
+	/* and make it initially unaccessible to track unaccessed pages */
+	desc &= ~PTE_BLOCK_DESC_AF;
+
+	*pte = desc;
+	MMU_DEBUG("page_in: virt=%#lx phys=%#lx\n", virt, phys);
+	debug_show_pte(pte, XLAT_LAST_LEVEL);
+
+	sync_domains(virt, CONFIG_MMU_PAGE_SIZE, "page_in");
+	invalidate_tlb_page(virt);
+}
+
+enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location)
+{
+	uintptr_t virt = (uintptr_t)addr;
+	uint64_t *pte = get_pte_location(&kernel_ptables, virt);
+	uint64_t desc;
+	enum arch_page_location status;
+
+	if (!pte) {
+		return ARCH_PAGE_LOCATION_BAD;
+	}
+	desc = *pte;
+	if (is_free_desc(desc)) {
+		return ARCH_PAGE_LOCATION_BAD;
+	}
+
+	switch (desc & PTE_DESC_TYPE_MASK) {
+	case PTE_PAGE_DESC:
+		status = ARCH_PAGE_LOCATION_PAGED_IN;
+		break;
+	case PTE_INVALID_DESC:
+		status = ARCH_PAGE_LOCATION_PAGED_OUT;
+		break;
+	default:
+		return ARCH_PAGE_LOCATION_BAD;
+	}
+
+	*location = desc & PTE_PHYSADDR_MASK;
+	return status;
+}
+
+uintptr_t arch_page_info_get(void *addr, uintptr_t *phys, bool clear_accessed)
+{
+	uintptr_t virt = (uintptr_t)addr;
+	uint64_t *pte = get_pte_location(&kernel_ptables, virt);
+	uint64_t desc;
+	uintptr_t status = 0;
+
+	if (!pte) {
+		return ARCH_DATA_PAGE_NOT_MAPPED;
+	}
+	desc = *pte;
+	if (is_free_desc(desc)) {
+		return ARCH_DATA_PAGE_NOT_MAPPED;
+	}
+
+	switch (desc & PTE_DESC_TYPE_MASK) {
+	case PTE_PAGE_DESC:
+		status |= ARCH_DATA_PAGE_LOADED;
+		break;
+	case PTE_INVALID_DESC:
+		/* page not loaded */
+		break;
+	default:
+		return ARCH_DATA_PAGE_NOT_MAPPED;
+	}
+
+	if (phys) {
+		*phys = desc & PTE_PHYSADDR_MASK;
+	}
+
+	if ((status & ARCH_DATA_PAGE_LOADED) == 0) {
+		return status;
+	}
+
+	if ((desc & PTE_BLOCK_DESC_AF) != 0) {
+		status |= ARCH_DATA_PAGE_ACCESSED;
+	}
+
+	if ((desc & PTE_BLOCK_DESC_AP_RO) == 0) {
+		status |= ARCH_DATA_PAGE_DIRTY;
+	}
+
+	if (clear_accessed) {
+		desc &= ~PTE_BLOCK_DESC_AF;
+		*pte = desc;
+		MMU_DEBUG("page_info: virt=%#lx (clearing AF)\n", virt);
+		debug_show_pte(pte, XLAT_LAST_LEVEL);
+		sync_domains(virt, CONFIG_MMU_PAGE_SIZE, "unaccessible");
+		invalidate_tlb_page(virt);
+	}
+
+	return status;
+}
+
+#define MT_SCRATCH (MT_NORMAL | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE)
+
+void arch_mem_scratch(uintptr_t phys)
+{
+	uintptr_t virt = (uintptr_t)K_MEM_SCRATCH_PAGE;
+	size_t size = CONFIG_MMU_PAGE_SIZE;
+	int ret = add_map(&kernel_ptables, "scratch", phys, virt, size, MT_SCRATCH);
+
+	if (ret) {
+		LOG_ERR("add_map() returned %d", ret);
+	} else {
+		sync_domains(virt, size, "scratch");
+		invalidate_tlb_page(virt);
+	}
+}
+
+#endif /* CONFIG_DEMAND_PAGING */
