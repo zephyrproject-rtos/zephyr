@@ -1149,7 +1149,6 @@ DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 			.head_block =						\
 				&mcux_flexcomm_##n##_data.tx_data.active_block,	\
 			.channel_direction = MEMORY_TO_PERIPHERAL,		\
-			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),	\
 			.dma_callback = mcux_flexcomm_uart_dma_tx_callback,	\
 			.user_data = (void *)DEVICE_DT_INST_GET(n),		\
 		},								\
@@ -1170,7 +1169,6 @@ DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 			.head_block =						\
 				&mcux_flexcomm_##n##_data.rx_data.active_block,	\
 			.channel_direction = PERIPHERAL_TO_MEMORY,		\
-			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),	\
 			.dma_callback = mcux_flexcomm_uart_dma_rx_callback,	\
 			.user_data = (void *)DEVICE_DT_INST_GET(n)		\
 		},								\
