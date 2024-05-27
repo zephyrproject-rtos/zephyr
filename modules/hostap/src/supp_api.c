@@ -414,6 +414,12 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				}
 			}
 
+			if (params->pwe_configed) {
+				if (!wpa_cli_cmd_v("set sae_pwe %d", params->sae_pwe)) {
+					goto out;
+				}
+			}
+
 			if (!wpa_cli_cmd_v("set_network %d key_mgmt SAE", resp.network_id)) {
 				goto out;
 			}

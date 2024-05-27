@@ -416,6 +416,9 @@ struct wifi_connect_req_params {
 	uint8_t bssid[WIFI_MAC_ADDR_LEN];
 	/** Connect timeout in seconds, SYS_FOREVER_MS for no timeout */
 	int timeout;
+	/** PWE derivation */
+	int sae_pwe;
+	bool pwe_configed;
 };
 
 /** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
