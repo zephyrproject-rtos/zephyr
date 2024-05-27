@@ -24,7 +24,7 @@ struct z_symtab_entry {
 
 struct symtab_info {
 	/* Absolute address of the first symbol */
-	const uintptr_t start_addr;
+	const uintptr_t first_addr;
 	/* Number of symbol entries */
 	const uint32_t length;
 	/* Symbol entries */

@@ -65,7 +65,7 @@ class symtab_entry:
         return self.addr == other.addr
 
 
-start_addr = 0
+first_addr = 0
 symtab_list = []
 
 
@@ -109,11 +109,11 @@ def main():
         symtab_list.sort(key=lambda x: x.addr, reverse=False)
 
         # Get the address of the first symbol
-        start_addr = symtab_list[0].addr
+        first_addr = symtab_list[0].addr
 
         for i, entry in enumerate(symtab_list):
             # Offset is calculated here
-            entry.offset = entry.addr - start_addr
+            entry.offset = entry.addr - first_addr
 
             # Debug print
             log.debug('%6d: %s %s %.25s' % (
@@ -146,7 +146,7 @@ def main():
         print(f"}};\n", file=wf)
 
         print(f"const struct symtab_info z_symtab = {{", file=wf)
-        print(f"\t.start_addr = {hex(start_addr)},", file=wf)
+        print(f"\t.first_addr = {hex(first_addr)},", file=wf)
         print(f"\t.length = {len(symtab_list)},", file=wf)
         print(f"\t.entries = z_symtab_entries,", file=wf)
         print(f"}};\n", file=wf)
