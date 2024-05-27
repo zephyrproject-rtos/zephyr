@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Daniel Kampert
+# Author: Daniel Kampert <DanielKampert@Kampis-Elektroecke.de>
+
+description: Micro Crystal RV-8263-C8 RTC
+
+compatible: "microcrystal,rv-8263-c8"
+
+include:
+  - name: rtc-device.yaml
+  - name: i2c-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+
+  clkout:
+    type: int
+    default: 32768
+    enum:
+      - 32768
+      - 16384
+      - 8192
+      - 4096
+      - 1024
+      - 1
+      - 0
+    description:
+      Enable CLKOUT at given frequency. When disabled, CLKOUT pin is LOW. Set to 0 to
+      disable the CLKOUT signal.
