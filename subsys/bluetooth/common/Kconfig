@@ -175,8 +175,12 @@ config BT_BUF_CMD_TX_COUNT
 
 endmenu
 
+# Workaround to have commas on function arguments
+ZEPHYR_BT_HCI := zephyr,bt-hci
+
 config BT_HAS_HCI_VS
 	bool
+	default $(dt_chosen_bool_prop,$(ZEPHYR_BT_HCI),bt-hci-vs-ext)
 	help
 	  This option is set by the Bluetooth controller to indicate support
 	  for the Zephyr HCI Vendor-Specific Commands and Event.
