@@ -502,7 +502,7 @@ static int airoc_mgmt_connect(const struct device *dev, struct wifi_connect_req_
 		goto error;
 	}
 
-	if (usr_result.security == 0) {
+	if (usr_result.security == WHD_SECURITY_UNKNOWN) {
 		ret = -EAGAIN;
 		LOG_ERR("Could not scan device");
 		goto error;
