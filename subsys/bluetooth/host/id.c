@@ -1415,7 +1415,7 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CONN) &&
+	if (IS_ENABLED(CONFIG_BT_SMP) &&
 	    !bt_addr_le_eq(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
 		err = bt_unpair(id, NULL);
 		if (err) {
@@ -1453,7 +1453,7 @@ int bt_id_delete(uint8_t id)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CONN)) {
+	if (IS_ENABLED(CONFIG_BT_SMP)) {
 		int err;
 
 		err = bt_unpair(id, NULL);
