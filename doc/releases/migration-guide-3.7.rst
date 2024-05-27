@@ -534,6 +534,11 @@ Networking
   :kconfig:option:`CONFIG_POSIX_MAX_FDS` are high enough. Unfortunately no exact values
   for these can be given as it depends on application needs and usage. (:github:`72834`)
 
+* The packet socket (type ``AF_PACKET``) protocol field in ``socket`` API call has changed.
+  The protocol field should be in network byte order so that we are compatible with Linux
+  socket calls. Linux expects the protocol field to be ``htons(ETH_P_ALL)`` if it is desired
+  to receive all the network packets. See details in
+  https://www.man7.org/linux/man-pages/man7/packet.7.html documentation. (:github:`73338`)
 
 Other Subsystems
 ****************
