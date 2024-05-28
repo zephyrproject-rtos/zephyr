@@ -29,6 +29,7 @@ struct flashdisk_data {
 	const size_t size;
 	const size_t sector_size;
 	size_t page_size;
+	int (*page_erase)(const struct device *dev, off_t offset, size_t size);
 	off_t cached_addr;
 	bool cache_valid;
 	bool cache_dirty;
@@ -70,6 +71,8 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 		LOG_INF("%s is read-only", ctx->info.name);
 		return 0;
 	}
+
+	ctx->page_erase = flash_has_direct_write(ctx->info.dev) ? NULL : flash_erase;
 
 	if (IS_ENABLED(CONFIG_FLASHDISK_VERIFY_PAGE_LAYOUT)) {
 		if (ctx->offset != page.start_offset) {
@@ -213,7 +216,8 @@ static int flashdisk_cache_commit(struct flashdisk_data *ctx)
 		return 0;
 	}
 
-	if (flash_erase(ctx->info.dev, ctx->cached_addr, ctx->page_size) < 0) {
+	if ((ctx->page_erase != NULL) &&
+	    (ctx->page_erase(ctx->info.dev, ctx->cached_addr, ctx->page_size) < 0)) {
 		return -EIO;
 	}
 
