@@ -92,7 +92,7 @@ static void csip_discover_cb(struct bt_conn *conn,
 {
 	LOG_DBG("");
 
-	uint8_t sirk[BT_CSIP_SET_SIRK_SIZE];
+	uint8_t sirk[BT_CSIP_SIRK_SIZE];
 	size_t sirk_size = ARRAY_SIZE(sirk);
 	uint8_t conn_index;
 
@@ -112,7 +112,7 @@ static void csip_discover_cb(struct bt_conn *conn,
 
 	cur_csis_inst = &member->insts[0];
 
-	memcpy(sirk, cur_csis_inst->info.set_sirk, sizeof(cur_csis_inst->info.set_sirk));
+	memcpy(sirk, cur_csis_inst->info.sirk, sizeof(cur_csis_inst->info.sirk));
 
 	btp_send_csip_sirk_ev(conn, sirk, sirk_size);
 
@@ -126,7 +126,7 @@ static void csip_discover_cb(struct bt_conn *conn,
 	btp_csip_set_members[conn_index] = member;
 
 	csip_inst = bt_csip_set_coordinator_lookup_instance_by_index(conn, conn_index);
-	btp_send_csip_discovered_ev(conn, csip_inst->set_sirk_handle, csip_inst->set_size_handle,
+	btp_send_csip_discovered_ev(conn, csip_inst->sirk_handle, csip_inst->set_size_handle,
 				    csip_inst->set_lock_handle, csip_inst->rank_handle, err);
 }
 
