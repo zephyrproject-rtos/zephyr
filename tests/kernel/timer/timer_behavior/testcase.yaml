@@ -8,6 +8,8 @@ tests:
       - mcu
     simulation_exclude:
       - renode
+    platform_exclude:
+      - nrf54h20dk/nrf54h20/cpuppr
   kernel.timer.timer_behavior_external:
     filter: dt_compat_enabled("test-kernel-timer-behavior-external")
     harness: pytest
