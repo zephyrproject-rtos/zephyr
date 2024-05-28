@@ -733,6 +733,7 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Some clocks would be activated by default */
 	config_enable_default_clocks();
+	config_regulator_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
 #if defined(FLASH_ACR_LATENCY)
 	uint32_t old_flash_freq;
@@ -838,6 +839,7 @@ void HAL_RCC_CSSCallback(void)
 }
 #endif
 
+void __weak config_regulator_voltage(uint32_t hclk_freq) {}
 /**
  * @brief RCC device, note that priority is intentionally set to 1 so
  * that the device init runs just after SOC init
