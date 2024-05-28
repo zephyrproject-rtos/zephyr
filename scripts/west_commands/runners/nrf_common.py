@@ -261,13 +261,13 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                 self.exec_op('erase', core='NRFDL_DEVICE_CORE_NETWORK')
 
             if self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUAPP'):
-                if not self.erase:
+                if not self.erase and self.build_conf.getboolean('CONFIG_NRF_REGTOOL_GENERATE_UICR'):
                     self.exec_op('erase', core='NRFDL_DEVICE_CORE_APPLICATION',
                                  chip_erase_mode='ERASE_UICR',
                                  qspi_erase_mode='ERASE_NONE')
                 core = 'NRFDL_DEVICE_CORE_APPLICATION'
             elif self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPURAD'):
-                if not self.erase:
+                if not self.erase and self.build_conf.getboolean('CONFIG_NRF_REGTOOL_GENERATE_UICR'):
                     self.exec_op('erase', core='NRFDL_DEVICE_CORE_NETWORK',
                                  chip_erase_mode='ERASE_UICR',
                                  qspi_erase_mode='ERASE_NONE')
