@@ -66,7 +66,6 @@ const struct device *npcm_get_gpio_dev(int port)
 	return gpio_devs[port];
 }
 
-#ifdef CONFIG_NPCM_MIWU
 void npcm_gpio_enable_io_pads(const struct device *dev, int pin)
 {
 	const struct gpio_npcm_config *const config = dev->config;
@@ -104,14 +103,6 @@ void npcm_gpio_disable_io_pads(const struct device *dev, int pin)
 		npcm_miwu_io_disable(io_wui);
 	}
 }
-#else
-void npcm_gpio_enable_io_pads(const struct device *dev, int pin)
-{
-}
-void npcm_gpio_disable_io_pads(const struct device *dev, int pin)
-{
-}
-#endif
 
 /* GPIO api functions */
 static int gpio_npcm_config(const struct device *dev,
@@ -277,7 +268,6 @@ static int gpio_npcm_port_toggle_bits(const struct device *dev,
 	return 0;
 }
 
-#ifdef CONFIG_NPCM_MIWU
 static int gpio_npcm_pin_interrupt_configure(const struct device *dev,
 					     gpio_pin_t pin,
 					     enum gpio_int_mode mode,
@@ -337,23 +327,12 @@ static int gpio_npcm_pin_interrupt_configure(const struct device *dev,
 
 	return 0;
 }
-#else
-static int gpio_npcm_pin_interrupt_configure(const struct device *dev,
-					     gpio_pin_t pin,
-					     enum gpio_int_mode mode,
-					     enum gpio_int_trig trig)
-{
-	return -EINVAL;
-}
-#endif
 
-
-#ifdef CONFIG_NPCM_MIWU
 static int gpio_npcm_manage_callback(const struct device *dev,
 				      struct gpio_callback *callback, bool set)
 {
 	const struct gpio_npcm_config *const config = dev->config;
-	struct miwu_io_callback *miwu_cb = (struct miwu_io_callback *)callback;
+	struct miwu_callback *miwu_cb = (struct miwu_callback *)callback;
 	int pin = find_lsb_set(callback->pin_mask) - 1;
 
 	/* pin_mask should not be zero */
@@ -373,15 +352,8 @@ static int gpio_npcm_manage_callback(const struct device *dev,
 			config->port);
 
 	/* Insert or remove a IO callback which being called in MIWU ISRs */
-	return npcm_miwu_manage_gpio_callback(miwu_cb, set);
+	return npcm_miwu_manage_callback(miwu_cb, set);
 }
-#else
-static int gpio_npcm_manage_callback(const struct device *dev,
-				      struct gpio_callback *callback, bool set)
-{
-	return -EINVAL;
-}
-#endif
 
 /* GPIO driver registration */
 static const struct gpio_driver_api gpio_npcm_driver = {

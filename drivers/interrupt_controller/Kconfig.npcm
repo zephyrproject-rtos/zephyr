@@ -1,0 +1,13 @@
+# NPCM GPIO driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config NPCM_MIWU
+	bool "Nuvoton NPCM embedded controller (EC) miwu driver"
+	default y
+	depends on SOC_FAMILY_NPCM
+	help
+	  This option enables the Multi-Input Wake-Up Unit (MIWU) driver
+	  for NPCM family ofprocessors.
+	  This is required for GPIO, RTC, LPC/eSPI interrupt support.
