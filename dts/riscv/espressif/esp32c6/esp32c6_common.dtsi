@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp-esp32c6-intmux.h>
 #include <zephyr/dt-bindings/clock/esp32c6_clock.h>
@@ -26,6 +27,9 @@
 			compatible = "espressif,riscv";
 			riscv,isa = "rv32imc_zicsr";
 			reg = <0>;
+			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
+			clock-frequency = <DT_FREQ_M(160)>;
+			xtal-freq = <DT_FREQ_M(40)>;
 		};
 	};
 
@@ -65,17 +69,20 @@
 		rtc: rtc@600b000 {
 			compatible = "espressif,esp32-rtc";
 			reg = <0x600B000 DT_SIZE_K(1)>;
-			xtal-freq = <ESP32_CLK_XTAL_40M>;
+			fast-clk-src = <ESP32_RTC_FAST_CLK_SRC_RC_FAST>;
+			slow-clk-src = <ESP32_RTC_SLOW_CLK_SRC_RC_SLOW>;
 			#clock-cells = <1>;
 			status = "okay";
 
-			rtc_timer: rtc_timer {
-				compatible = "espressif,esp32-rtc-timer";
-				slow-clk-freq = <ESP32_RTC_SLOW_CLK_FREQ_90K>;
-				interrupts = <LP_RTC_TIMER_INTR_SOURCE>;
-				interrupt-parent = <&intc>;
-				status = "okay";
-			};
+		};
+
+		rtc_timer: rtc_timer@600b0c00 {
+			compatible = "espressif,esp32-rtc-timer";
+			reg = <0x600B0C00 DT_SIZE_K(1)>;
+			clocks = <&rtc ESP32_MODULE_MAX>;
+			interrupts = <LP_RTC_TIMER_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			status = "okay";
 		};
 
 		spi2: spi@60081000 {
