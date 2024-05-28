@@ -12,7 +12,7 @@ add_library(mocks STATIC
             mocks/hmac_prng_expects.c
             mocks/crypto_help_utils.c
 
-            ${ZEPHYR_BASE}/subsys/bluetooth/host/crypto.c
+            ${ZEPHYR_BASE}/subsys/bluetooth/host/crypto_tc.c
             ${ZEPHYR_BASE}/subsys/logging/log_minimal.c
             ${ZEPHYR_BASE}/subsys/bluetooth/common/bt_str.c
             ${ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
