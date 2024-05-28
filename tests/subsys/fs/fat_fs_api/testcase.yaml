@@ -15,6 +15,9 @@ tests:
   filesystem.fat.api.mmc:
     extra_args: CONF_FILE="prj_mmc.conf"
     filter: dt_compat_enabled("zephyr,mmc-disk")
+  filesystem.fat.api.sdmmc:
+    extra_args: CONF_FILE="prj_sdmmc.conf"
+    filter: dt_compat_enabled("zephyr,sdmmc-disk")
   filesystem.fat.ram.api:
     platform_allow:
       - native_sim
