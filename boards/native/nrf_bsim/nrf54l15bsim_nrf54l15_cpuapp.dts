@@ -33,7 +33,6 @@
 			/delete-node/ mailbox@0;
 			/delete-node/ interrupt-controller@f0000000;
 			/delete-node/ gpio@50400;
-			/delete-node/ radio@8a000;
 			/delete-node/ i2c@c6000;
 			/delete-node/ spi@c6000;
 			/delete-node/ uart@c6000;
@@ -94,4 +93,9 @@
 
 &temp {
 	status = "okay";
+};
+
+&radio {
+	/* This feature is not yet supported by the RADIO model */
+	/delete-property/ dfe-supported;
 };
