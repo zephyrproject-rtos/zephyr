@@ -1,5 +1,5 @@
-identifier: hifive_unmatched
-name: SiFive HiFive Unmatched
+identifier: hifive_unmatched/fu740/u74
+name: SiFive HiFive Unmatched (U74)
 type: mcu
 arch: riscv
 toolchain:
@@ -8,6 +8,7 @@ ram: 3840
 simulation: renode
 simulation_exec: renode
 testing:
+  timeout_multiplier: 6
   ignore_tags:
     - net
     - bluetooth
