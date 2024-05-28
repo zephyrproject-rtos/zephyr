@@ -2549,6 +2549,8 @@ endfunction()
 #                          to absolute path, relative from `APPLICATION_SOURCE_DIR`
 #                          Issue an error for any relative path not specified
 #                          by user with `-D<path>`
+#                          BASE_DIR <base-dir>: convert paths relative to <base-dir>
+#                                               instead of `APPLICATION_SOURCE_DIR`
 #
 # returns an updated list of absolute paths
 #
@@ -2602,7 +2604,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
   endif()
 
   if(${ARGV0} STREQUAL APPLICATION_ROOT)
-    set(single_args APPLICATION_ROOT)
+    set(single_args APPLICATION_ROOT BASE_DIR)
   elseif(${ARGV0} STREQUAL CONF_FILES)
     set(options QUALIFIERS REQUIRED)
     set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG BUILD SUFFIX)
@@ -2615,6 +2617,10 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
   endif()
 
   if(ZFILE_APPLICATION_ROOT)
+    if(NOT DEFINED ZFILE_BASE_DIR)
+      set(ZFILE_BASE_DIR ${APPLICATION_SOURCE_DIR})
+    endif()
+
     # Note: user can do: `-D<var>=<relative-path>` and app can at same
     # time specify `list(APPEND <var> <abs-path>)`
     # Thus need to check and update only CACHED variables (-D<var>).
@@ -2625,7 +2631,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
       # path from  `APPLICATION_SOURCE_DIR`.
       if(NOT IS_ABSOLUTE ${path})
         list(FIND ${ZFILE_APPLICATION_ROOT} ${path} index)
-	cmake_path(ABSOLUTE_PATH path BASE_DIRECTORY ${APPLICATION_SOURCE_DIR} NORMALIZE)
+        cmake_path(ABSOLUTE_PATH path BASE_DIRECTORY ${ZFILE_BASE_DIR} NORMALIZE)
         if(NOT ${index} LESS 0)
           list(REMOVE_AT ${ZFILE_APPLICATION_ROOT} ${index})
           list(INSERT ${ZFILE_APPLICATION_ROOT} ${index} ${path})
@@ -2645,7 +2651,7 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
       endif()
     endforeach()
 
-    list(REMOVE_DUPLICATES ZFILE_APPLICATION_ROOT)
+    list(REMOVE_DUPLICATES ${ZFILE_APPLICATION_ROOT})
     # This updates the provided argument in parent scope (callers scope)
     set(${ZFILE_APPLICATION_ROOT} ${${ZFILE_APPLICATION_ROOT}} PARENT_SCOPE)
   endif()
