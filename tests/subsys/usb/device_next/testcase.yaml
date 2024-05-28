@@ -1,5 +1,4 @@
 common:
-  depends_on: usb_device
   platform_allow:
     - native_sim
     - qemu_cortex_m3
