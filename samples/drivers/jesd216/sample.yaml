@@ -17,7 +17,8 @@ tests:
       - hifive1
       - hifive_unleashed/fu540/e51
       - hifive_unleashed/fu540/u54
-      - hifive_unmatched
+      - hifive_unmatched/fu740/s7
+      - hifive_unmatched/fu740/u74
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1170_evk/mimxrt1176/cm4
     filter: dt_compat_enabled("jedec,spi-nor")

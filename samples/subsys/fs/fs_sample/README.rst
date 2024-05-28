@@ -73,13 +73,13 @@ sample lists them out on the debug serial output.
 Building and Running EXT2 samples
 *********************************
 
-Ext2 sample can be built for ``hifive_unmatched`` or ``bl5340_dvk/nrf5340/cpuapp``. Because
+Ext2 sample can be built for ``hifive_unmatched/fu740/s7`` or ``bl5340_dvk/nrf5340/cpuapp``. Because
 FAT is default file system for this sample, additional flags must be passed to build
 the sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/fs/fs_sample
-   :board: hifive_unmatched
+   :board: hifive_unmatched/fu740/s7 hifive_unmatched/fu740/u74
    :gen-args: -DCONF_FILE=prj_ext.conf
    :goals: build
    :compact:
