@@ -18,8 +18,8 @@ struct bt_csip_set_member_register_param param = {
 	.rank = 1,
 	.lockable = true,
 	/* Using the CSIS test sample SIRK */
-	.set_sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
-		      0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
+	.sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
+		  0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
 };
 
 static void csip_lock_changed_cb(struct bt_conn *conn,
@@ -76,15 +76,15 @@ static void bt_ready(int err)
 	}
 }
 
-static void test_set_sirk(void)
+static void test_sirk(void)
 {
-	const uint8_t new_set_sirk[] = {0xff, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
-					0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45};
-	uint8_t tmp_sirk[BT_CSIP_SET_SIRK_SIZE];
+	const uint8_t new_sirk[] = {0xff, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
+				    0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45};
+	uint8_t tmp_sirk[BT_CSIP_SIRK_SIZE];
 	int err;
 
 	printk("Setting new SIRK\n");
-	err = bt_csip_set_member_set_sirk(svc_inst, new_set_sirk);
+	err = bt_csip_set_member_sirk(svc_inst, new_sirk);
 	if (err != 0) {
 		FAIL("Failed to set SIRK: %d\n", err);
 		return;
@@ -97,7 +97,7 @@ static void test_set_sirk(void)
 		return;
 	}
 
-	if (memcmp(new_set_sirk, tmp_sirk, BT_CSIP_SET_SIRK_SIZE) != 0) {
+	if (memcmp(new_sirk, tmp_sirk, BT_CSIP_SIRK_SIZE) != 0) {
 		FAIL("The SIRK set and the SIRK set were different\n");
 		return;
 	}
@@ -193,7 +193,7 @@ static void test_new_sirk(void)
 	backchannel_sync_send_all();
 	backchannel_sync_wait_all();
 
-	test_set_sirk();
+	test_sirk();
 
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 
@@ -223,8 +223,8 @@ static void test_args(int argc, char *argv[])
 
 			argn++;
 
-			len = hex2bin(argv[argn], strlen(argv[argn]),
-				      param.set_sirk, sizeof(param.set_sirk));
+			len = hex2bin(argv[argn], strlen(argv[argn]), param.sirk,
+				      sizeof(param.sirk));
 			if (len == 0) {
 				FAIL("Could not parse SIRK");
 				return;
