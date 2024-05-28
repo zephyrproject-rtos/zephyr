@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/util.h>
@@ -69,6 +70,7 @@ struct udc_dwc2_data {
 	uint32_t max_pktcnt;
 	uint32_t tx_len[16];
 	unsigned int dynfifosizing : 1;
+	unsigned int bufferdma : 1;
 	/* Number of endpoints including control endpoint */
 	uint8_t numdeveps;
 	/* Number of IN endpoints including control endpoint */
@@ -248,6 +250,25 @@ static void dwc2_set_epint(const struct device *dev,
 	}
 }
 
+static bool dwc2_dma_buffer_ok_to_use(const struct device *dev, void *buf,
+				      uint32_t xfersize, uint16_t mps)
+{
+	ARG_UNUSED(dev);
+
+	if (!IS_ALIGNED(buf, 4)) {
+		LOG_ERR("Buffer not aligned");
+		return false;
+	}
+
+	/* If Max Packet Size is not */
+	if (unlikely(mps % 4) && (xfersize > mps)) {
+		LOG_ERR("Padding not supported");
+		return false;
+	}
+
+	return true;
+}
+
 /* Can be called from ISR context */
 static int dwc2_tx_fifo_write(const struct device *dev,
 			      struct udc_ep_config *const cfg, struct net_buf *const buf)
@@ -320,27 +341,44 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 	/* Set number of packets and transfer size */
 	sys_write32((pktcnt << USB_DWC2_DEPTSIZN_PKTCNT_POS) | len, dieptsiz_reg);
 
+	if (priv->bufferdma) {
+		if (!dwc2_dma_buffer_ok_to_use(dev, buf->data, len, cfg->mps)) {
+			/* Cannot continue unless buffer is bounced. Device will
+			 * cease to function. Is fatal error appropriate here?
+			 */
+			irq_unlock(key);
+			return -ENOTSUP;
+		}
+
+		sys_write32((uint32_t)buf->data,
+			    (mem_addr_t)&base->in_ep[ep_idx].diepdma);
+
+		sys_cache_data_flush_range(buf->data, len);
+	}
+
 	/* Clear NAK and set endpoint enable */
 	sys_set_bits(diepctl_reg, USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_CNAK);
 	/* Clear IN Endpoint NAK Effective interrupt in case it was set */
 	sys_write32(USB_DWC2_DIEPINT_INEPNAKEFF, diepint_reg);
 
-	/* FIFO access is always in 32-bit words */
+	if (!priv->bufferdma) {
+		/* FIFO access is always in 32-bit words */
 
-	for (uint32_t i = 0UL; i < len; i += d) {
-		uint32_t val = buf->data[i];
+		for (uint32_t i = 0UL; i < len; i += d) {
+			uint32_t val = buf->data[i];
 
-		if (i + 1 < len) {
-			val |= ((uint32_t)buf->data[i + 1UL]) << 8;
-		}
-		if (i + 2 < len) {
-			val |= ((uint32_t)buf->data[i + 2UL]) << 16;
-		}
-		if (i + 3 < len) {
-			val |= ((uint32_t)buf->data[i + 3UL]) << 24;
-		}
+			if (i + 1 < len) {
+				val |= ((uint32_t)buf->data[i + 1UL]) << 8;
+			}
+			if (i + 2 < len) {
+				val |= ((uint32_t)buf->data[i + 2UL]) << 16;
+			}
+			if (i + 3 < len) {
+				val |= ((uint32_t)buf->data[i + 3UL]) << 24;
+			}
 
-		sys_write32(val, UDC_DWC2_EP_FIFO(base, ep_idx));
+			sys_write32(val, UDC_DWC2_EP_FIFO(base, ep_idx));
+		}
 	}
 
 	irq_unlock(key);
@@ -380,22 +418,65 @@ static inline int dwc2_read_fifo(const struct device *dev, const uint8_t ep,
 	return 0;
 }
 
+static uint32_t dwc2_rx_xfer_size(struct udc_dwc2_data *const priv,
+				  struct udc_ep_config *const cfg,
+				  struct net_buf *buf)
+{
+	uint32_t size;
+
+	if (priv->bufferdma) {
+		size = net_buf_tailroom(buf);
+
+		/* Do as many packets in a single DMA as possible */
+		if (size > priv->max_xfersize) {
+			size = ROUND_DOWN(priv->max_xfersize, cfg->mps);
+		}
+	} else {
+		/* Completer mode can always program Max Packet Size, RxFLvl
+		 * interrupt will drop excessive data if necessary (i.e. buffer
+		 * is too short).
+		 */
+		size = cfg->mps;
+	}
+
+	return size;
+}
+
 /* Can be called from ISR and we call it only when there is a buffer in the queue */
-static void dwc2_prep_rx(const struct device *dev,
+static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 			 struct udc_ep_config *const cfg, const bool ncnak)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
 	mem_addr_t doeptsiz_reg = (mem_addr_t)&base->out_ep[ep_idx].doeptsiz;
 	mem_addr_t doepctl_reg = dwc2_get_dxepctl_reg(dev, ep_idx);
 	uint32_t doeptsiz;
+	uint32_t xfersize;
 
-	doeptsiz = (1 << USB_DWC2_DOEPTSIZ0_PKTCNT_POS) | cfg->mps;
+	xfersize = dwc2_rx_xfer_size(priv, cfg, buf);
+
+	doeptsiz = xfersize | usb_dwc2_set_deptsizn_pktcnt(DIV_ROUND_UP(xfersize, cfg->mps));
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
-		doeptsiz |= (3 << USB_DWC2_DOEPTSIZ0_SUPCNT_POS);
+		/* Use 1 to allow 8 byte long buffers for SETUP data */
+		doeptsiz |= (1 << USB_DWC2_DOEPTSIZ0_SUPCNT_POS);
 	}
 
 	sys_write32(doeptsiz, doeptsiz_reg);
+
+	if (priv->bufferdma) {
+		if (!dwc2_dma_buffer_ok_to_use(dev, buf->data, xfersize, cfg->mps)) {
+			/* Cannot continue unless buffer is bounced. Device will
+			 * cease to function. Is fatal error appropriate here?
+			 */
+			return;
+		}
+
+		sys_write32((uint32_t)buf->data,
+			    (mem_addr_t)&base->out_ep[ep_idx].doepdma);
+
+		sys_cache_data_invd_range(buf->data, xfersize);
+	}
 
 	if (ncnak) {
 		sys_set_bits(doepctl_reg, USB_DWC2_DEPCTL_EPENA);
@@ -417,7 +498,7 @@ static void dwc2_handle_xfer_next(const struct device *dev,
 	}
 
 	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
-		dwc2_prep_rx(dev, cfg, 0);
+		dwc2_prep_rx(dev, buf, cfg, 0);
 	} else {
 		if (dwc2_tx_fifo_write(dev, cfg, buf)) {
 			LOG_ERR("Failed to start write to TX FIFO, ep 0x%02x",
@@ -430,6 +511,7 @@ static void dwc2_handle_xfer_next(const struct device *dev,
 
 static int dwc2_ctrl_feed_dout(const struct device *dev, const size_t length)
 {
+	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
 	struct net_buf *buf;
 
 	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, length);
@@ -437,8 +519,8 @@ static int dwc2_ctrl_feed_dout(const struct device *dev, const size_t length)
 		return -ENOMEM;
 	}
 
-	udc_buf_put(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT), buf);
-	dwc2_prep_rx(dev, udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT), 0);
+	udc_buf_put(ep_cfg, buf);
+	dwc2_prep_rx(dev, buf, ep_cfg, 0);
 	LOG_DBG("feed buf %p", buf);
 
 	return 0;
@@ -642,6 +724,7 @@ static void dwc2_on_bus_reset(const struct device *dev)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	uint32_t doepmsk;
 
 	/* Set the NAK bit for all OUT endpoints */
 	for (uint8_t i = 0U; i < priv->numdeveps; i++) {
@@ -656,9 +739,20 @@ static void dwc2_on_bus_reset(const struct device *dev)
 		}
 	}
 
-	sys_write32(USB_DWC2_DOEPINT_SETUP, (mem_addr_t)&base->doepmsk);
-	sys_set_bits((mem_addr_t)&base->gintmsk, USB_DWC2_GINTSTS_RXFLVL);
+	doepmsk = USB_DWC2_DOEPINT_SETUP;
+	if (priv->bufferdma) {
+		doepmsk |= USB_DWC2_DOEPINT_XFERCOMPL |
+			   USB_DWC2_DOEPINT_STSPHSERCVD;
+	}
+
+	sys_write32(doepmsk, (mem_addr_t)&base->doepmsk);
 	sys_set_bits((mem_addr_t)&base->diepmsk, USB_DWC2_DIEPINT_XFERCOMPL);
+
+	/* Software has to handle RxFLvl interrupt only in Completer mode */
+	if (!priv->bufferdma) {
+		sys_set_bits((mem_addr_t)&base->gintmsk,
+			     USB_DWC2_GINTSTS_RXFLVL);
+	}
 
 	/* Clear device address during reset. */
 	sys_clear_bits((mem_addr_t)&base->dcfg, USB_DWC2_DCFG_DEVADDR_MASK);
@@ -744,7 +838,7 @@ static inline void dwc2_handle_rxflvl(const struct device *dev)
 		}
 
 		if (net_buf_tailroom(buf) && evt.bcnt == ep_cfg->mps) {
-			dwc2_prep_rx(dev, ep_cfg, 0);
+			dwc2_prep_rx(dev, buf, ep_cfg, 0);
 		} else {
 			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 		}
@@ -763,8 +857,8 @@ static inline void dwc2_handle_rxflvl(const struct device *dev)
 	}
 }
 
-static inline void dwc2_handle_xfercompl(const struct device *dev,
-					 const uint8_t ep_idx)
+static inline void dwc2_handle_in_xfercompl(const struct device *dev,
+					    const uint8_t ep_idx)
 {
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct udc_ep_config *ep_cfg;
@@ -814,7 +908,7 @@ static inline void dwc2_handle_iepint(const struct device *dev)
 				n | USB_EP_DIR_IN, status);
 
 			if (status & USB_DWC2_DIEPINT_XFERCOMPL) {
-				dwc2_handle_xfercompl(dev, n);
+				dwc2_handle_in_xfercompl(dev, n);
 			}
 
 		}
@@ -824,9 +918,52 @@ static inline void dwc2_handle_iepint(const struct device *dev)
 	sys_write32(USB_DWC2_GINTSTS_IEPINT, (mem_addr_t)&base->gintsts);
 }
 
+static inline void dwc2_handle_out_xfercompl(const struct device *dev,
+					     const uint8_t ep_idx)
+{
+	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep_idx);
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
+	struct dwc2_drv_event evt;
+	struct net_buf *buf;
+	uint32_t doeptsiz;
+
+	doeptsiz = sys_read32((mem_addr_t)&base->out_ep[ep_idx].doeptsiz);
+
+	buf = udc_buf_peek(dev, ep_cfg->addr);
+	if (!buf) {
+		LOG_ERR("No buffer for ep 0x%02x", ep_cfg->addr);
+		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
+		return;
+	}
+
+	evt.type = DWC2_DRV_EVT_DOUT;
+	evt.ep = ep_cfg->addr;
+	/* Assume udc buffer and endpoint config is the same as it was when
+	 * transfer was scheduled in dwc2_prep_rx(). The original transfer size
+	 * value is necessary here because controller decreases the value for
+	 * every byte stored.
+	 */
+	evt.bcnt = dwc2_rx_xfer_size(priv, ep_cfg, buf) -
+		usb_dwc2_get_deptsizn_xfersize(doeptsiz);
+
+	if (priv->bufferdma) {
+		sys_cache_data_invd_range(buf->data, evt.bcnt);
+	}
+
+	net_buf_add(buf, evt.bcnt);
+
+	if (((evt.bcnt % ep_cfg->mps) == 0) && net_buf_tailroom(buf)) {
+		dwc2_prep_rx(dev, buf, ep_cfg, 0);
+	} else {
+		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+	}
+}
+
 static inline void dwc2_handle_oepint(const struct device *dev)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	const uint8_t n_max = 16;
 	uint32_t doepmsk;
 	uint32_t daint;
@@ -839,23 +976,59 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 		uint32_t doepint;
 		uint32_t status;
 
-		if (daint & USB_DWC2_DAINT_OUTEPINT(n)) {
-			/* Read and clear interrupt status */
-			doepint = sys_read32(doepint_reg);
-			status = doepint & doepmsk;
-			sys_write32(status, doepint_reg);
+		if (!(daint & USB_DWC2_DAINT_OUTEPINT(n))) {
+			continue;
+		}
 
-			LOG_DBG("ep 0x%02x interrupt status: 0x%x", n, status);
+		/* Read and clear interrupt status */
+		doepint = sys_read32(doepint_reg);
+		status = doepint & doepmsk;
+		sys_write32(status, doepint_reg);
 
-			if (status & USB_DWC2_DOEPINT_SETUP) {
-				struct dwc2_drv_event evt = {
-					.type = DWC2_DRV_EVT_SETUP,
-					.ep = USB_CONTROL_EP_OUT,
-					.bcnt = 8,
-				};
+		LOG_DBG("ep 0x%02x interrupt status: 0x%x", n, status);
 
-				k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
-			}
+		/* StupPktRcvd is not enabled for interrupt, but must be checked
+		 * when XferComp hits to determine if SETUP token was received.
+		 */
+		if (priv->bufferdma && (status & USB_DWC2_DOEPINT_XFERCOMPL) &&
+		    (doepint & USB_DWC2_DOEPINT_STUPPKTRCVD)) {
+			uint32_t addr;
+
+			sys_write32(USB_DWC2_DOEPINT_STUPPKTRCVD, doepint_reg);
+			status &= ~USB_DWC2_DOEPINT_XFERCOMPL;
+
+			/* DMAAddr points past the memory location where the
+			 * SETUP data was stored. Copy the received SETUP data
+			 * to temporary location used also in Completer mode
+			 * which allows common SETUP interrupt handling.
+			 */
+			addr = sys_read32((mem_addr_t)&base->out_ep[0].doepdma);
+			sys_cache_data_invd_range((void *)(addr - 8), 8);
+			memcpy(priv->setup, (void *)(addr - 8), sizeof(priv->setup));
+		}
+
+		if (status & USB_DWC2_DOEPINT_SETUP) {
+			struct dwc2_drv_event evt = {
+				.type = DWC2_DRV_EVT_SETUP,
+				.ep = USB_CONTROL_EP_OUT,
+				.bcnt = 8,
+			};
+
+			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+		}
+
+		if (status & USB_DWC2_DOEPINT_STSPHSERCVD) {
+			/* Driver doesn't need any special handling, but it is
+			 * mandatory that the bit is cleared in Buffer DMA mode.
+			 * If the bit is not cleared (i.e. when this interrupt
+			 * bit is masked), then SETUP interrupts will cease
+			 * after first control transfer with data stage from
+			 * device to host.
+			 */
+		}
+
+		if (status & USB_DWC2_DOEPINT_XFERCOMPL) {
+			dwc2_handle_out_xfercompl(dev, n);
 		}
 	}
 
@@ -1105,6 +1278,23 @@ static int udc_dwc2_ep_activate(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (priv->bufferdma && (cfg->mps % 4)) {
+		/* TODO: In Buffer DMA mode, DMA will insert padding bytes in
+		 * between packets if endpoint Max Packet Size is not multiple
+		 * of 4 (DWORD) and single transfer spans across multiple
+		 * packets.
+		 *
+		 * In order to support such Max Packet Sizes, the driver would
+		 * have to remove the padding in between the packets. Besides
+		 * just driver shuffling the data, the buffers would have to be
+		 * large enough to temporarily hold the paddings.
+		 *
+		 * For the time being just error out early.
+		 */
+		LOG_ERR("Driver requires MPS to be multiple of 4");
+		return -EINVAL;
+	}
+
 	dxepctl = sys_read32(dxepctl_reg);
 	/* Set max packet size */
 	dxepctl &= ~USB_DWC2_DEPCTL_MPS_MASK;
@@ -1281,7 +1471,7 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 
 		diepint_reg = (mem_addr_t)&base->in_ep[ep_idx].diepint;
 
-		dxepctl |= USB_DWC2_DEPCTL_SNAK;
+		dxepctl |= USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_SNAK;
 		if (stall) {
 			/* For IN endpoints STALL is set in addition to SNAK */
 			dxepctl |= USB_DWC2_DEPCTL_STALL;
@@ -1550,10 +1740,12 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	const struct udc_dwc2_config *const config = dev->config;
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct usb_dwc2_reg *const base = config->base;
+	mem_addr_t gahbcfg_reg = (mem_addr_t)&base->gahbcfg;
 	mem_addr_t gusbcfg_reg = (mem_addr_t)&base->gusbcfg;
 	mem_addr_t dcfg_reg = (mem_addr_t)&base->dcfg;
 	uint32_t dcfg;
 	uint32_t gusbcfg;
+	uint32_t gahbcfg;
 	uint32_t ghwcfg2;
 	uint32_t ghwcfg3;
 	uint32_t ghwcfg4;
@@ -1581,6 +1773,18 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	gusbcfg = USB_DWC2_GUSBCFG_FORCEDEVMODE;
 	sys_write32(gusbcfg, gusbcfg_reg);
 	k_msleep(25);
+
+	/* Buffer DMA is always supported in Internal DMA mode.
+	 * TODO: check and support descriptor DMA if available
+	 */
+	priv->bufferdma = (usb_dwc2_get_ghwcfg2_otgarch(ghwcfg2) ==
+			   USB_DWC2_GHWCFG2_OTGARCH_INTERNALDMA);
+
+	if (!IS_ENABLED(CONFIG_UDC_DWC2_DMA)) {
+		priv->bufferdma = 0;
+	} else if (priv->bufferdma) {
+		LOG_WRN("Experimental DMA enabled");
+	}
 
 	if (ghwcfg2 & USB_DWC2_GHWCFG2_DYNFIFOSIZING) {
 		LOG_DBG("Dynamic FIFO Sizing is enabled");
@@ -1621,7 +1825,20 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	LOG_DBG("LPM mode is %s",
 		(ghwcfg3 & USB_DWC2_GHWCFG3_LPMMODE) ? "enabled" : "disabled");
 
+	/* Configure AHB, select Completer or DMA mode */
+	gahbcfg = sys_read32(gahbcfg_reg);
+
+	if (priv->bufferdma) {
+		gahbcfg |= USB_DWC2_GAHBCFG_DMAEN;
+	} else {
+		gahbcfg &= ~USB_DWC2_GAHBCFG_DMAEN;
+	}
+
+	sys_write32(gahbcfg, gahbcfg_reg);
+
 	dcfg = sys_read32(dcfg_reg);
+
+	dcfg &= ~USB_DWC2_DCFG_DESCDMA;
 
 	/* Configure PHY and device speed */
 	dcfg &= ~USB_DWC2_DCFG_DEVSPD_MASK;
@@ -2027,6 +2244,14 @@ static const struct udc_api udc_dwc2_api = {
 		.ghwcfg2 = DT_INST_PROP(n, ghwcfg2),				\
 		.ghwcfg4 = DT_INST_PROP(n, ghwcfg4),				\
 	};									\
+										\
+	IF_ENABLED(CONFIG_DCACHE, (BUILD_ASSERT(				\
+		!IS_ENABLED(CONFIG_UDC_DWC2_DMA) ||				\
+		(DT_INST_PROP(n, ghwcfg2) & USB_DWC2_GHWCFG2_OTGARCH_MASK) !=	\
+			(USB_DWC2_GHWCFG2_OTGARCH_INTERNALDMA <<		\
+			 USB_DWC2_GHWCFG2_OTGARCH_POS),				\
+		"USB stack does not provide D-Cache aware buffers yet");	\
+	))									\
 										\
 	static struct udc_dwc2_data udc_priv_##n = {				\
 	};									\
