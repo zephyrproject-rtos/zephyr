@@ -6,6 +6,7 @@ menu "Heap and Memory Allocation"
 
 config SYS_HEAP_VALIDATE
 	bool "Internal heap validity checking"
+	depends on ASSERT
 	help
 	  The sys_heap implementation is instrumented for extensive
 	  internal validation.  Leave this off by default, unless
