@@ -43,6 +43,7 @@
 
 &i2c2 {
     clock-frequency = <400000>;
+    status = "okay";
 
     display_touch: ft6206@38 {
         compatible = "focaltech,ft5336";

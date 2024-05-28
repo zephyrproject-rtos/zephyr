@@ -60,7 +60,7 @@
 				compatible = "renesas,smartbond-lp-osc";
 				clock-frequency = <DT_FREQ_K(15)>;
 				#clock-cells = <0>;
-				status = "disabled";
+				status = "okay";
 			};
 			rc32m: rc32m {
 				compatible = "fixed-clock";
@@ -95,7 +95,7 @@
 		};
 		lp_clk: lp_clk {
 			compatible = "renesas,smartbond-lp-clk";
-			clock-src = <&rc32k>;
+			clock-src = <&rcx>;
 			status = "okay";
 		};
 
@@ -156,6 +156,7 @@
 			device_type = "memory";
 			reg = <0x32000000 DT_SIZE_K(32768)>;
 			zephyr,memory-region = "PSRAM";
+			status = "disabled";
 		};
 
 		qspif: memory@16000000 {

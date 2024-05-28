@@ -5,6 +5,20 @@
 
 if BOARD_DA1469X_DK_PRO
 
+# Enable sleep and voltage rails manager so that
+# the device consumes the lowest possible current
+config PM
+	default y
+
+config PM_DEVICE
+	default y
+
+config REGULATOR
+	default y
+
+config I2C_CALLBACK
+	default y if I2C_SMARTBOND
+
 if LVGL
 
 config LV_Z_BITS_PER_PIXEL
@@ -34,7 +48,7 @@ config LV_Z_POINTER_INPUT_MSGQ_COUNT
 
 endif # INPUT
 
-#if PM || PM_DEVICE || PM_DEVICE_RUNTIME
+if PM || PM_DEVICE || PM_DEVICE_RUNTIME
 
 # Increase stack size to avoid raising usage-fault
 # exceptions due to stack overflow.
@@ -46,7 +60,7 @@ config IDLE_STACK_SIZE
 config SERIAL_INIT_PRIORITY
 	default KERNEL_INIT_PRIORITY_DEFAULT
 
-#endif # PM || PM_DEVICE
+endif # PM || PM_DEVICE
 
 if BT
 

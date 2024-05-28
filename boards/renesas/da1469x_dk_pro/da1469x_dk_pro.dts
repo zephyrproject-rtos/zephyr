@@ -139,6 +139,14 @@ zephyr_udc0: &usbd {
 	status = "okay";
 };
 
+/*
+ * On board level we switch to XTAL32K and
+ * so RCX can be disabled.
+ */
+&rcx {
+	status = "disabled";
+};
+
 &lp_clk {
 	clock-src = <&xtal32k>;
 };
@@ -147,29 +155,22 @@ zephyr_udc0: &usbd {
 	clock-src = <&xtal32m>;
 };
 
-&pll {
-	status = "okay";
-};
 &i2c {
-	status = "okay";
 	pinctrl-0 = <&i2c_default>;
 	pinctrl-names = "default";
 };
 
 &i2c2 {
-	status = "okay";
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-names = "default";
 };
 
 &spi {
-	status = "okay";
 	pinctrl-0 = <&spi_controller>;
 	pinctrl-names = "default";
 };
 
 &spi2 {
-	status = "okay";
 	pinctrl-0 = <&spi2_controller>;
 	pinctrl-names = "default";
 };
