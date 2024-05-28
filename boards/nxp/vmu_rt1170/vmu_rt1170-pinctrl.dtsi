@@ -156,6 +156,14 @@
 		};
 	};
 
+	pinmux_qtmr_pwm_buzzer: pinmux_qtmr_pwm_buzzer {
+		group0 {
+			pinmux = <&iomuxc_gpio_emc_b2_09_qtimer1_timer0>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_lpadc1: pinmux_lpadc1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_10_adc1_ch2a>;
