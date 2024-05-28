@@ -13,28 +13,23 @@ set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_sysbuild_guiconfig
 set(KCONFIG_TARGETS sysbuild_menuconfig sysbuild_guiconfig)
 list(TRANSFORM EXTRA_KCONFIG_TARGETS PREPEND "sysbuild_")
 
-if(DEFINED APPLICATION_CONFIG_DIR AND NOT DEFINED CACHE{APPLICATION_CONFIG_DIR})
-  set(APPLICATION_CONFIG_DIR "${APPLICATION_CONFIG_DIR}" CACHE INTERNAL "Application config dir")
-elseif(DEFINED CACHE{APPLICATION_CONFIG_DIR} AND
-       NOT (APPLICATION_CONFIG_DIR STREQUAL "$CACHE{APPLICATION_CONFIG_DIR}"))
-  message(WARNING
-          "Sysbuild scoped APPLICATION_CONFIG_DIR and cached APPLICATION_CONFIG_DIR differs.\n"
-          "Setting value used internally by Sysbuild (sysbuild scoped):\n"
-	  " - ${APPLICATION_CONFIG_DIR}\n"
-	  "Setting value used by images (cached):\n"
-	  " - $CACHE{APPLICATION_CONFIG_DIR}\n"
+zephyr_get(APPLICATION_CONFIG_DIR)
+if(DEFINED APPLICATION_CONFIG_DIR)
+  zephyr_file(APPLICATION_ROOT APPLICATION_CONFIG_DIR BASE_DIR ${APP_DIR})
+
+  # Sysbuild must add a locally defined APPLICATION_CONFIG_DIR in sysbuild/CMakeLists.txt
+  # to the cache in order for the setting to propagate to images.
+  set(APPLICATION_CONFIG_DIR ${APPLICATION_CONFIG_DIR} CACHE PATH
+      "Sysbuild adjusted APPLICATION_CONFIG_DIR" FORCE
   )
 endif()
 
-# If there is a dedicated SB_APPLICATION_CONFIG_DIR, then create a local
-# scoped APPLICATION_CONFIG_DIR hiding any cache variant.
-# The cache setting is the setting passed to sysbuild image cache files
+zephyr_get(SB_APPLICATION_CONFIG_DIR)
 if(DEFINED SB_APPLICATION_CONFIG_DIR)
+  zephyr_file(APPLICATION_ROOT SB_APPLICATION_CONFIG_DIR BASE_DIR ${APP_DIR})
   set(APPLICATION_CONFIG_DIR ${SB_APPLICATION_CONFIG_DIR})
-elseif(NOT DEFINED APPLICATION_CONFIG_DIR)
-  get_filename_component(APP_DIR  ${APP_DIR} ABSOLUTE)
-  set(APPLICATION_CONFIG_DIR ${APP_DIR})
 endif()
+set_ifndef(APPLICATION_CONFIG_DIR ${APP_DIR})
 string(CONFIGURE ${APPLICATION_CONFIG_DIR} APPLICATION_CONFIG_DIR)
 
 if(DEFINED SB_CONF_FILE)
