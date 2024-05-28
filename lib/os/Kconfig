@@ -123,5 +123,6 @@ config POWEROFF
 	  Enable support for system power off.
 
 rsource "Kconfig.cbprintf"
+rsource "zvfs/Kconfig"
 
 endmenu
