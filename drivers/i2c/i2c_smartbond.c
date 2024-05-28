@@ -65,6 +65,27 @@ static inline void i2c_smartbond_pm_policy_state_lock_put(struct i2c_smartbond_d
 #endif
 }
 
+static inline bool i2c_smartbond_is_idle(const struct device *dev)
+{
+	const struct i2c_smartbond_cfg *config = dev->config;
+	uint32_t mask = I2C_I2C_STATUS_REG_I2C_ACTIVITY_Msk |
+					I2C_I2C_STATUS_REG_RFNE_Msk |
+					I2C_I2C_STATUS_REG_TFE_Msk;
+
+	return ((config->regs->I2C_STATUS_REG & mask) == I2C_I2C_STATUS_REG_TFE_Msk);
+}
+
+static void i2c_smartbond_disable_when_inactive(const struct device *dev)
+{
+	const struct i2c_smartbond_cfg *config = dev->config;
+
+	if ((config->regs->I2C_ENABLE_REG & I2C_I2C_ENABLE_REG_I2C_EN_Msk)) {
+		while (!i2c_smartbond_is_idle(dev)) {
+		};
+		config->regs->I2C_ENABLE_REG &= ~I2C_I2C_ENABLE_REG_I2C_EN_Msk;
+	}
+}
+
 static int i2c_smartbond_configure(const struct device *dev, uint32_t dev_config)
 {
 	const struct i2c_smartbond_cfg *config = dev->config;
@@ -105,11 +126,7 @@ static int i2c_smartbond_configure(const struct device *dev, uint32_t dev_config
 
 	key = k_spin_lock(&data->lock);
 
-	if (!!(config->regs->I2C_ENABLE_REG & I2C_I2C_ENABLE_REG_I2C_EN_Msk)) {
-		while (!!(config->regs->I2C_STATUS_REG & I2C_I2C_STATUS_REG_I2C_ACTIVITY_Msk)) {
-		};
-		config->regs->I2C_ENABLE_REG &= ~I2C_I2C_ENABLE_REG_I2C_EN_Msk;
-	}
+	i2c_smartbond_disable_when_inactive(dev);
 
 	/* Write control register*/
 	config->regs->I2C_CON_REG = con_reg;
@@ -319,7 +336,7 @@ static int i2c_smartbond_transfer(const struct device *dev, struct i2c_msg *msgs
 	struct i2c_smartbond_data *data = dev->data;
 	int ret = 0;
 
-	while (!!(config->regs->I2C_STATUS_REG & I2C_I2C_STATUS_REG_I2C_ACTIVITY_Msk)) {
+	while (!i2c_smartbond_is_idle(dev)) {
 	};
 
 	ret = i2c_smartbond_prep_transfer(dev, msgs, num_msgs, addr);
