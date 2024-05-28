@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/wb0/stm32wb0.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32wb07", "st,stm32wb0", "simple-bus";
+
+		flash: flash-controller@40001000 {
+			flash0: flash@10040000 {
+				reg = <0x10040000 DT_SIZE_K(256)>;
+			};
+		};
+	};
+};
