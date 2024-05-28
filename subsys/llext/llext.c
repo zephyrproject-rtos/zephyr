@@ -874,18 +874,37 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 				} else {
 					LOG_INF("found symbol %s at 0x%lx", name, link_addr);
 				}
-			} else if (ELF_ST_TYPE(sym.st_info) == STT_SECTION ||
-				   ELF_ST_TYPE(sym.st_info) == STT_FUNC ||
-				   ELF_ST_TYPE(sym.st_info) == STT_OBJECT) {
-				/* Link address is relative to the start of the section */
+			} else if (sym.st_shndx == SHN_ABS) {
+				/* Absolute symbol */
+				link_addr = sym.st_value;
+			} else if ((sym.st_shndx < ldr->hdr.e_shnum) &&
+				!IN_RANGE(sym.st_shndx, SHN_LORESERVE, SHN_HIRESERVE)) {
+				/* This check rejects all relocations whose target symbol
+				 * has a section index higher than the maximum possible
+				 * in this ELF file, or belongs in the reserved range:
+				 * they will be caught by the `else` below and cause an
+				 * error to be returned. This aborts the LLEXT's loading
+				 * and prevents execution of improperly relocated code,
+				 * which is dangerous.
+				 *
+				 * Note that the unsupported SHN_COMMON section is rejected
+				 * as part of this check. Also note that SHN_ABS would be
+				 * rejected as well, but we want to handle it properly:
+				 * for this reason, this check must come AFTER handling
+				 * the case where the symbol's section index is SHN_ABS!
+				 *
+				 *
+				 * For regular symbols, the link address is obtained by
+				 * adding st_value to the start address of the section
+				 * in which the target symbol resides.
+				 */
 				link_addr = (uintptr_t)ext->mem[ldr->sect_map[sym.st_shndx]]
 					+ sym.st_value;
-
-				LOG_INF("found section symbol %s addr 0x%lx", name, link_addr);
 			} else {
-				/* Nothing to relocate here */
-				LOG_DBG("not relocated");
-				continue;
+				LOG_ERR("rela section %d, entry %d: cannot apply relocation: "
+					"target symbol has unexpected section index %d (0x%X)",
+					i, j, sym.st_shndx, sym.st_shndx);
+				return -ENOEXEC;
 			}
 
 			LOG_INF("writing relocation symbol %s type %zd sym %zd at addr 0x%lx "
