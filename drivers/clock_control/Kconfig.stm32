@@ -47,6 +47,51 @@ config CLOCK_STM32_MUX
 	  for a specific domain. For instance per_ck clock on STM32H7 or
 	  CLK48 clock
 
+menu "STM32WB0 LSI options"
+	depends on DT_HAS_ST_STM32WB0_LSI_CLOCK_ENABLED
+
+config STM32WB0_LSI_MEASUREMENT_WINDOW
+	int "Size of LSI measurement window (in periods)"
+	default 32
+	range 23 256
+	help
+	  Size of the LSI measurement window (# of LSI periods)
+
+	  The measurement process involves waiting for a certain amount of LSI periods
+	  to occur, in order to determine precisely the LSI period, and thus frequency.
+
+	  This property controls how much LSI periods are required for each measure.
+	  Bigger window sizes increase accuracy of the measure, but increase the time
+	  needed to complete it. Since fLSI >= 24kHz, increasing the measurement window
+	  size makes each measure roughly 42µs slower in the worst case.
+
+	  Minimal value is a recommendation from RM0505 Rev.1 §25.8.2, and maximum
+	  value is a hardware limitation.
+
+config STM32WB0_LSI_RUNTIME_MEASUREMENT_INTERVAL
+	int "LSI run-time measurement interval (ms)"
+	default 0
+	help
+	  Interval at which runtime measurements should be performed, in milliseconds
+
+	  Since the LSI RC frequency is affected by temperature, which is not stable
+	  across time, it is recommended to perform measurements of the LSI frequency
+	  at regular intervals to obtain better accuracy.
+
+	  This property enables runtime LSI measurement if present. In this case,
+	  a background thread is created and performs LSI measurements, sleeping
+	  the amount of time specified in this property between each measure. This
+	  thread is also tasked with updating the control registers of peripherals
+	  affected by slow clock drift such as RTC or IWDG, in collaboration with
+	  the peripherals' drivers. Note that this increases the memory footprint
+	  of the clock control driver, and may increase power consumption.
+
+	  Setting this option to the default value of "0" disables runtime frequency
+	  measurements - the result of a single measure performed at boot will be
+	  treated as LSI frequency for the lifetime of the application.
+
+endmenu # DT_HAS_ST_STM32WB0_LSI_CLOCK_ENABLED
+
 # Micro-controller Clock output configuration options
 
 choice
