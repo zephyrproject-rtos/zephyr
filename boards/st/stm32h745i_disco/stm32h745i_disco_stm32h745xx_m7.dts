@@ -46,6 +46,7 @@
 		led0 = &green_led;
 		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
+		spi-flash0 = &mt25ql512ab1;
 	};
 };
 
