@@ -13,3 +13,6 @@ family:
       - name: fu700
         socs:
           - name: fu740
+            cpuclusters:
+              - name: s7
+              - name: u74

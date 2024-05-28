@@ -18,7 +18,8 @@ tests:
       - qemu_kvm_arm64
       - xenvm
       - xenvm/xenvm/gicv3
-      - hifive_unmatched
+      - hifive_unmatched/fu740/s7
+      - hifive_unmatched/fu740/u74
       - rcar_h3ulcb/r8a77951/a57
       - rcar_salvator_xs
       - numaker_pfm_m467

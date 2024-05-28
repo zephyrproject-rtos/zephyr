@@ -1,0 +1,21 @@
+identifier: hifive_unmatched/fu740/s7
+name: SiFive HiFive Unmatched (S7)
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 3840
+simulation: renode
+simulation_exec: renode
+testing:
+  timeout_multiplier: 6
+  ignore_tags:
+    - net
+    - bluetooth
+  renode:
+    uart: sysbus.uart0
+    resc: boards/sifive/hifive_unmatched/support/hifive_unmatched.resc
+supported:
+  - spi
+  - memc
+vendor: sifive
