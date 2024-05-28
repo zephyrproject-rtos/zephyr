@@ -173,6 +173,11 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 		off_t offset = 0;
 
 		buf = net_buf_alloc(&tx_pool, K_FOREVER);
+		if (buf == NULL) {
+			printk("Unable to allocate buffer from syswq\n");
+			return;
+		}
+
 		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
 		net_buffer = net_buf_tail(buf);
@@ -204,6 +209,13 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 				buf_to_send = buf;
 			} else {
 				buf_to_send = net_buf_clone(buf, K_FOREVER);
+			}
+
+			if (buf_to_send == NULL) {
+				printk("Failed to clone %p from syswq\n", buf);
+				net_buf_unref(buf);
+
+				return;
 			}
 
 			ret = bt_bap_stream_send(stream, buf_to_send, get_and_incr_seq_num(stream));
@@ -316,6 +328,11 @@ static void audio_timer_timeout(struct k_work *work)
 	}
 
 	buf = net_buf_alloc(&tx_pool, K_FOREVER);
+	if (buf == NULL) {
+		printk("Unable to allocate buffer from syswq\n");
+		return;
+	}
+
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, buf_data, len_to_send);
 
@@ -333,6 +350,13 @@ static void audio_timer_timeout(struct k_work *work)
 			buf_to_send = buf;
 		} else {
 			buf_to_send = net_buf_clone(buf, K_FOREVER);
+		}
+
+		if (buf_to_send == NULL) {
+			printk("Failed to clone %p from syswq\n", buf);
+			net_buf_unref(buf);
+
+			return;
 		}
 
 		ret = bt_bap_stream_send(stream, buf_to_send, get_and_incr_seq_num(stream));
