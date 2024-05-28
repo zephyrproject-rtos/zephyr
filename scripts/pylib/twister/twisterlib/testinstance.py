@@ -4,6 +4,7 @@
 # Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
+from enum import Enum
 import os
 import hashlib
 import random
@@ -16,7 +17,7 @@ from twisterlib.testsuite import TestCase, TestSuite
 from twisterlib.platform import Platform
 from twisterlib.error import BuildError
 from twisterlib.size_calc import SizeCalculator
-from twisterlib.statuses import TestCaseStatus, TestInstanceStatus
+from twisterlib.statuses import TwisterStatus
 from twisterlib.handlers import (
     Handler,
     SimulationHandler,
@@ -47,7 +48,7 @@ class TestInstance:
         self.testsuite: TestSuite = testsuite
         self.platform: Platform = platform
 
-        self.status = TestInstanceStatus.NONE
+        self._status = TwisterStatus.NONE
         self.reason = "Unknown"
         self.metrics = dict()
         self.handler = None
@@ -93,9 +94,24 @@ class TestInstance:
                 cw.writeheader()
                 cw.writerows(self.recording)
 
+    @property
+    def status(self) -> TwisterStatus:
+        return self._status
+
+    @status.setter
+    def status(self, value : TwisterStatus) -> None:
+        # Check for illegal assignments by value
+        try:
+            key = value.name if isinstance(value, Enum) else value
+            self._status = TwisterStatus[key]
+        except KeyError:
+            logger.warning(f'TestInstance assigned status "{value}"'
+                           f' without an equivalent in TwisterStatus.'
+                           f' Assignment was ignored.')
+
     def add_filter(self, reason, filter_type):
         self.filters.append({'type': filter_type, 'reason': reason })
-        self.status = TestInstanceStatus.FILTER
+        self.status = TwisterStatus.FILTER
         self.reason = reason
         self.filter_type = filter_type
 
@@ -125,9 +141,9 @@ class TestInstance:
 
     def add_missing_case_status(self, status, reason=None):
         for case in self.testcases:
-            if case.status == TestCaseStatus.STARTED:
-                case.status = TestCaseStatus.FAIL
-            elif case.status == TestCaseStatus.NONE:
+            if case.status == TwisterStatus.STARTED:
+                case.status = TwisterStatus.FAIL
+            elif case.status == TwisterStatus.NONE:
                 case.status = status
                 if reason:
                     case.reason = reason

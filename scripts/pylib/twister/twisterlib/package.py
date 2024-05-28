@@ -7,7 +7,7 @@ import tarfile
 import json
 import os
 
-from twisterlib.statuses import TestSuiteStatus
+from twisterlib.statuses import TwisterStatus
 
 class Artifacts:
 
@@ -27,7 +27,7 @@ class Artifacts:
         with open(os.path.join(self.options.outdir, "twister.json"), "r") as json_test_plan:
             jtp = json.load(json_test_plan)
             for t in jtp['testsuites']:
-                if t['status'] != TestSuiteStatus.FILTER:
+                if t['status'] != TwisterStatus.FILTER:
                     p = t['platform']
                     normalized  = p.replace("/", "_")
                     dirs.append(os.path.join(self.options.outdir, normalized, t['name']))
