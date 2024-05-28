@@ -49,6 +49,7 @@ void config_pll2(void);
 void config_plli2s(void);
 #endif
 void config_enable_default_clocks(void);
+void config_regulator_voltage(uint32_t hclk_freq);
 
 /* functions exported to the soc power.c */
 int stm32_clock_control_init(const struct device *dev);
