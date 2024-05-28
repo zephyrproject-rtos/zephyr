@@ -12,7 +12,7 @@ import time
 
 from colorama import Fore
 
-from twisterlib.statuses import TestInstanceStatus
+from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
 from twisterlib.reports import Reporting
 from twisterlib.hardwaremap import HardwareMap
@@ -142,7 +142,7 @@ def main(options, default_options):
         # command line
 
         for i in tplan.instances.values():
-            if i.status == TestInstanceStatus.FILTER:
+            if i.status == TwisterStatus.FILTER:
                 if options.platform and i.platform.name not in options.platform:
                     continue
                 logger.debug(

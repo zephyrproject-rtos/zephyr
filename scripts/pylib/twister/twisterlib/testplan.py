@@ -17,7 +17,6 @@ import copy
 import shutil
 import random
 import snippets
-from colorama import Fore
 from pathlib import Path
 from argparse import Namespace
 
@@ -33,7 +32,7 @@ from twisterlib.testsuite import TestSuite, scan_testsuite_path
 from twisterlib.error import TwisterRuntimeError
 from twisterlib.platform import Platform
 from twisterlib.config_parser import TwisterConfigParser
-from twisterlib.statuses import TestCaseStatus, TestInstanceStatus, TestSuiteStatus
+from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.quarantine import Quarantine
 
@@ -287,7 +286,7 @@ class TestPlan:
         # at runtime, ignore the cases we already know going to be skipped.
         # This fixes an issue where some sets would get majority of skips and
         # basically run nothing beside filtering.
-        to_run = {k : v for k,v in self.instances.items() if v.status == TestInstanceStatus.NONE}
+        to_run = {k : v for k,v in self.instances.items() if v.status == TwisterStatus.NONE}
         total = len(to_run)
         per_set = int(total / sets)
         num_extra_sets = total - (per_set * sets)
@@ -304,8 +303,8 @@ class TestPlan:
             end = start + per_set
 
         sliced_instances = islice(to_run.items(), start, end)
-        skipped = {k : v for k,v in self.instances.items() if v.status == TestInstanceStatus.SKIP}
-        errors = {k : v for k,v in self.instances.items() if v.status == TestInstanceStatus.ERROR}
+        skipped = {k : v for k,v in self.instances.items() if v.status == TwisterStatus.SKIP}
+        errors = {k : v for k,v in self.instances.items() if v.status == TwisterStatus.ERROR}
         self.instances = OrderedDict(sliced_instances)
         if subset == 1:
             # add all pre-filtered tests that are skipped or got error status
@@ -625,21 +624,22 @@ class TestPlan:
                     instance.metrics['available_ram'] = ts.get('available_ram', 0)
                     instance.metrics['available_rom'] = ts.get('available_rom', 0)
 
-                    status = ts.get('status', TestSuiteStatus.NONE)
+                    status = ts.get('status')
+                    status = TwisterStatus(status) if status else TwisterStatus.NONE
                     reason = ts.get("reason", "Unknown")
-                    if status in [TestInstanceStatus.ERROR, TestInstanceStatus.FAIL]:
+                    if status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
                         if self.options.report_summary is not None:
                             instance.status = status
                             instance.reason = reason
                             self.instance_fail_count += 1
                         else:
-                            instance.status = TestInstanceStatus.NONE
+                            instance.status = TwisterStatus.NONE
                             instance.reason = None
                             instance.retries += 1
                     # test marked as passed (built only) but can run when
                     # --test-only is used. Reset status to capture new results.
-                    elif status == TestInstanceStatus.PASS and instance.run and self.options.test_only:
-                        instance.status = TestInstanceStatus.NONE
+                    elif status == TwisterStatus.PASS and instance.run and self.options.test_only:
+                        instance.status = TwisterStatus.NONE
                         instance.reason = None
                     else:
                         instance.status = status
@@ -649,13 +649,14 @@ class TestPlan:
 
                     for tc in ts.get('testcases', []):
                         identifier = tc['identifier']
-                        tc_status = tc.get('status', TestCaseStatus.NONE)
+                        tc_status = tc.get('status')
+                        tc_status = TwisterStatus(tc_status) if tc_status else TwisterStatus.NONE
                         tc_reason = None
                         # we set reason only if status is valid, it might have been
                         # reset above...
-                        if instance.status != TestInstanceStatus.NONE:
+                        if instance.status != TwisterStatus.NONE:
                             tc_reason = tc.get('reason')
-                        if tc_status != TestCaseStatus.NONE:
+                        if tc_status != TwisterStatus.NONE:
                             case = instance.set_case_status_by_name(identifier, tc_status, tc_reason)
                             case.duration = tc.get('execution_time', 0)
                             if tc.get('log'):
@@ -903,7 +904,7 @@ class TestPlan:
                     for this_snippet in snippet_args['snippets']:
                         if this_snippet not in found_snippets:
                             logger.error(f"Can't find snippet '%s' for test '%s'", this_snippet, ts.name)
-                            instance.status = TestInstanceStatus.ERROR
+                            instance.status = TwisterStatus.ERROR
                             instance.reason = f"Snippet {this_snippet} not found"
                             missing_snippet = True
                             break
@@ -1014,14 +1015,14 @@ class TestPlan:
 
         self.selected_platforms = set(p.platform.name for p in self.instances.values())
 
-        filtered_instances = list(filter(lambda item:  item.status == TestInstanceStatus.FILTER, self.instances.values()))
+        filtered_instances = list(filter(lambda item:  item.status == TwisterStatus.FILTER, self.instances.values()))
         for filtered_instance in filtered_instances:
             change_skip_to_error_if_integration(self.options, filtered_instance)
 
             filtered_instance.add_missing_case_status(filtered_instance.status)
 
         self.filtered_platforms = set(p.platform.name for p in self.instances.values()
-                                      if p.status != TestInstanceStatus.SKIP )
+                                      if p.status != TwisterStatus.SKIP )
 
     def add_instances(self, instance_list):
         for instance in instance_list:
@@ -1062,7 +1063,7 @@ class TestPlan:
             os.mkdir(links_dir_path)
 
         for instance in self.instances.values():
-            if instance.status != TestInstanceStatus.SKIP:
+            if instance.status != TwisterStatus.SKIP:
                 self._create_build_dir_link(links_dir_path, instance)
 
     def _create_build_dir_link(self, links_dir_path, instance):
@@ -1102,5 +1103,5 @@ def change_skip_to_error_if_integration(options, instance):
                          Filters.QUARANTINE}
         if filters.intersection(ignore_filters):
             return
-        instance.status = TestInstanceStatus.ERROR
+        instance.status = TwisterStatus.ERROR
         instance.reason += " but is one of the integration platforms"
