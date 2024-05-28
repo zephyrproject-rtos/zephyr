@@ -463,4 +463,13 @@ int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 		     enum dns_rr_type *qtype,
 		     enum dns_class *qclass);
 
+/**
+ * @brief Map query type number to a string.
+ *
+ * @param qtype Query type
+ *
+ * @return Printable query type name.
+ */
+const char *dns_qtype_to_str(enum dns_rr_type qtype);
+
 #endif
