@@ -423,6 +423,7 @@ def write_regs(node):
             idx_vals.append((idx_macro,
                              f"{reg.addr} /* {hex(reg.addr)} */"))
             if reg.name:
+                name_vals.append((f"{path_id}_REG_NAME_{reg.name}_EXISTS", 1))
                 name_macro = f"{path_id}_REG_NAME_{reg.name}_VAL_ADDRESS"
                 name_vals.append((name_macro, f"DT_{idx_macro}"))
 
