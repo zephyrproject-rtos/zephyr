@@ -164,6 +164,38 @@
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x45 0>;
 		};
 
+		qtmr1: qtmr@4015c000 {
+			compatible = "nxp,qtmr-pwm";
+			reg = <0x4015c000 0x4000>;
+			interrupts = <171 0>;
+			status = "disabled";
+			clocks = <&ccm IMX_CCM_QTMR1_CLK 0x0 0>;
+		};
+
+		qtmr2: qtmr@40160000 {
+			compatible = "nxp,qtmr-pwm";
+			reg = <0x40160000 0x4000>;
+			interrupts = <172 0>;
+			status = "disabled";
+			clocks = <&ccm IMX_CCM_QTMR2_CLK 0x0 0>;
+		};
+
+		qtmr3: qtmr@40164000 {
+			compatible = "nxp,qtmr-pwm";
+			reg = <0x40164000 0x4000>;
+			interrupts = <173 0>;
+			status = "disabled";
+			clocks = <&ccm IMX_CCM_QTMR3_CLK 0x0 0>;
+		};
+
+		qtmr4: qtmr@40168000 {
+			compatible = "nxp,qtmr-pwm";
+			reg = <0x40168000 0x4000>;
+			interrupts = <174 0>;
+			status = "disabled";
+			clocks = <&ccm IMX_CCM_QTMR4_CLK 0x0 0>;
+		};
+
 		ccm: ccm@40cc0000 {
 			compatible = "nxp,imx-ccm-rev2";
 			reg = <0x40cc0000 0x4000>;
