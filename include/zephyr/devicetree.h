@@ -2230,6 +2230,20 @@
 	IS_ENABLED(DT_CAT4(node_id, _REG_IDX_, idx, _EXISTS))
 
 /**
+ * @brief Is @p name a valid register block name?
+ *
+ * If this returns 1, then DT_REG_ADDR_BY_NAME(node_id, name) or
+ * DT_REG_SIZE_BY_NAME(node_id, name) are valid.
+ * If it returns 0, it is an error to use those macros with name @p name.
+ * @param node_id node identifier
+ * @param name name to check
+ * @return 1 if @p name is a valid register block name,
+ *         0 otherwise.
+ */
+#define DT_REG_HAS_NAME(node_id, name) \
+	IS_ENABLED(DT_CAT4(node_id, _REG_NAME_, name, _EXISTS))
+
+/**
  * @brief Get the base address of the register block at index @p idx
  * @param node_id node identifier
  * @param idx index of the register whose address to return
@@ -2292,6 +2306,18 @@
 	DT_CAT4(node_id, _REG_NAME_, name, _VAL_ADDRESS)
 
 /**
+ * @brief Like DT_REG_ADDR_BY_NAME(), but with a fallback to @p default_value
+ * @param node_id node identifier
+ * @param name lowercase-and-underscores register specifier name
+ * @param default_value a fallback value to expand to
+ * @return address of the register block specified by name if present,
+ *         @p default_value otherwise
+ */
+#define DT_REG_ADDR_BY_NAME_OR(node_id, name, default_value) \
+	COND_CODE_1(DT_REG_HAS_NAME(node_id, name), \
+		    (DT_REG_ADDR_BY_NAME(node_id, name)), (default_value))
+
+/**
  * @brief 64-bit version of DT_REG_ADDR_BY_NAME()
  *
  * This macro version adds the appropriate suffix for 64-bit unsigned
@@ -2314,6 +2340,19 @@
  */
 #define DT_REG_SIZE_BY_NAME(node_id, name) \
 	DT_CAT4(node_id, _REG_NAME_, name, _VAL_SIZE)
+
+/**
+ * @brief Like DT_REG_SIZE_BY_NAME(), but with a fallback to @p default_value
+ * @param node_id node identifier
+ * @param name lowercase-and-underscores register specifier name
+ * @param default_value a fallback value to expand to
+ * @return size of the register block specified by name if present,
+ *         @p default_value otherwise
+ */
+#define DT_REG_SIZE_BY_NAME_OR(node_id, name, default_value) \
+	COND_CODE_1(DT_REG_HAS_NAME(node_id, name), \
+		    (DT_REG_SIZE_BY_NAME(node_id, name)), (default_value))
+
 
 /**
  * @}
@@ -4069,6 +4108,15 @@
 #define DT_INST_REG_HAS_IDX(inst, idx) DT_REG_HAS_IDX(DT_DRV_INST(inst), idx)
 
 /**
+ * @brief is @p name a valid register block name on a `DT_DRV_COMPAT` instance?
+ * @param inst instance number
+ * @param name name to check
+ * @return 1 if @p name is a valid register block name,
+ *         0 otherwise.
+ */
+#define DT_INST_REG_HAS_NAME(inst, name) DT_REG_HAS_NAME(DT_DRV_INST(inst), name)
+
+/**
  * @brief Get a `DT_DRV_COMPAT` instance's idx-th register block's address
  * @param inst instance number
  * @param idx index of the register whose address to return
@@ -4095,6 +4143,17 @@
 	DT_REG_ADDR_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
+ * @brief Like DT_INST_REG_ADDR_BY_NAME(), but with a fallback to @p default_value
+ * @param inst instance number
+ * @param name lowercase-and-underscores register specifier name
+ * @param default_value a fallback value to expand to
+ * @return address of the register block specified by name if present,
+ *         @p default_value otherwise
+ */
+#define DT_INST_REG_ADDR_BY_NAME_OR(inst, name, default_value) \
+	DT_REG_ADDR_BY_NAME_OR(DT_DRV_INST(inst), name, default_value)
+
+/**
  * @brief 64-bit version of DT_INST_REG_ADDR_BY_NAME()
  *
  * This macro version adds the appropriate suffix for 64-bit unsigned
@@ -4117,6 +4176,17 @@
  */
 #define DT_INST_REG_SIZE_BY_NAME(inst, name) \
 	DT_REG_SIZE_BY_NAME(DT_DRV_INST(inst), name)
+
+/**
+ * @brief Like DT_INST_REG_SIZE_BY_NAME(), but with a fallback to @p default_value
+ * @param inst instance number
+ * @param name lowercase-and-underscores register specifier name
+ * @param default_value a fallback value to expand to
+ * @return size of the register block specified by name if present,
+ *         @p default_value otherwise
+ */
+#define DT_INST_REG_SIZE_BY_NAME_OR(inst, name, default_value) \
+	DT_REG_SIZE_BY_NAME_OR(DT_DRV_INST(inst), name, default_value)
 
 /**
  * @brief Get a `DT_DRV_COMPAT`'s (only) register block address
