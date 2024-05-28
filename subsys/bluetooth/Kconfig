@@ -192,6 +192,13 @@ rsource "crypto/Kconfig"
 rsource "lib/Kconfig"
 rsource "Kconfig.logging"
 
+config BT_USE_PSA_API
+	bool "Use PSA APIs instead of TinyCrypt for crypto operations"
+	depends on BT_CRYPTO || BT_HOST_CRYPTO
+	depends on PSA_CRYPTO_CLIENT
+	help
+	  Use PSA APIs instead of TinyCrypt for crypto operations
+
 endif # BT_HCI
 
 config BT_COMPANY_ID
