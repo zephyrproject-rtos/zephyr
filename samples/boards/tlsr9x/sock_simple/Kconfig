@@ -7,4 +7,20 @@ config SAMPLE_WIFI_SSID
 config SAMPLE_WIFI_PASSWORD
 	string "WIFI PSK - Network password"
 
+menu "Application related configuration"
+
+choice APP_SOCKET_TYPE
+	prompt "Socket type used for data exchange"
+	default APP_SOCKET_UDP
+
+config APP_SOCKET_UDP
+	bool "Use UDP socket"
+
+config APP_SOCKET_TCP
+	bool "Use TCP socket"
+
+endchoice
+
+endmenu
+
 source "Kconfig.zephyr"

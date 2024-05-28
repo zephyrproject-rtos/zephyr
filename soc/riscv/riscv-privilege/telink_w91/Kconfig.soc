@@ -22,13 +22,6 @@ config TELINK_W91_HWDSP
 	depends on SOC_SERIES_RISCV_TELINK_W91
 	default n
 
-config TELINK_W91_MBEDTLS_HW_ACCELERATION
-	bool "Use Telink W91 platform mbedtls HW acceleration"
-	depends on SOC_SERIES_RISCV_TELINK_W91 && MBEDTLS
-	default y
-	help
-		This option enables Telink W91 hardware accelerated mbedtls version.
-
 config TELINK_W91_PFT_ARCH
 	bool "Support performance throttling"
 	default y
