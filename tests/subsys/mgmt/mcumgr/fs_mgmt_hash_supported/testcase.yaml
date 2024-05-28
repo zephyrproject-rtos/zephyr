@@ -23,6 +23,7 @@ tests:
       - lpcxpresso55s69/lpc55s69/cpu1
       - mpfs_icicle
       - apollo4p_evb
+      - cyw920829m2evk_02
   mgmt.mcumgr.fs.mgmt.hash.supported.sha256:
     extra_args: >
       OVERLAY_CONFIG="configuration/sha256.conf"
@@ -35,6 +36,7 @@ tests:
       - lpcxpresso55s69/lpc55s69/cpu1
       - mpfs_icicle
       - apollo4p_evb
+      - cyw920829m2evk_02
   mgmt.mcumgr.fs.mgmt.hash.supported.all:
     extra_args: >
       OVERLAY_CONFIG="configuration/all.conf"
@@ -47,3 +49,4 @@ tests:
       - lpcxpresso55s69/lpc55s69/cpu1
       - mpfs_icicle
       - apollo4p_evb
+      - cyw920829m2evk_02
