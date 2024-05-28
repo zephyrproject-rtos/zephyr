@@ -4120,12 +4120,11 @@ struct bt_uuid_128 {
 /**
  *  @brief Set Identity Resolving Key value
  */
-#define BT_UUID_CSIS_SET_SIRK_VAL 0x2b84
+#define BT_UUID_CSIS_SIRK_VAL 0x2b84
 /**
  *  @brief Set Identity Resolving Key
  */
-#define BT_UUID_CSIS_SET_SIRK \
-	BT_UUID_DECLARE_16(BT_UUID_CSIS_SET_SIRK_VAL)
+#define BT_UUID_CSIS_SIRK         BT_UUID_DECLARE_16(BT_UUID_CSIS_SIRK_VAL)
 /**
  *  @brief Set size value
  */

@@ -49,7 +49,7 @@ struct btp_csip_discovered_ev {
 #define BTP_CSIP_SIRK_EV			0x81
 struct btp_csip_sirk_ev {
 	bt_addr_le_t address;
-	uint8_t sirk[BT_CSIP_SET_SIRK_SIZE];
+	uint8_t sirk[BT_CSIP_SIRK_SIZE];
 } __packed;
 
 #define BTP_CSIP_LOCK_EV			0x82

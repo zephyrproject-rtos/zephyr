@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(bt_csip_crypto, CONFIG_BT_CSIP_SET_MEMBER_CRYPTO_LOG_LEVEL);
 #define BT_CSIP_PADDED_RAND_SIZE    (BT_CSIP_CRYPTO_PADDING_SIZE + BT_CSIP_CRYPTO_PRAND_SIZE)
 #define BT_CSIP_R_MASK              BIT_MASK(24) /* r is 24 bit / 3 octet */
 
-int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE], uint8_t r[BT_CSIP_CRYPTO_PRAND_SIZE],
+int bt_csip_sih(const uint8_t sirk[BT_CSIP_SIRK_SIZE], uint8_t r[BT_CSIP_CRYPTO_PRAND_SIZE],
 		uint8_t out[BT_CSIP_CRYPTO_HASH_SIZE])
 {
 	uint8_t res[BT_CSIP_PADDED_RAND_SIZE]; /* need to store 128 bit */
@@ -37,7 +37,7 @@ int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE], uint8_t r[BT_CSIP_CRY
 		LOG_DBG("Invalid r %s", bt_hex(r, BT_CSIP_CRYPTO_PRAND_SIZE));
 	}
 
-	LOG_DBG("SIRK %s", bt_hex(sirk, BT_CSIP_SET_SIRK_SIZE));
+	LOG_DBG("SIRK %s", bt_hex(sirk, BT_CSIP_SIRK_SIZE));
 	LOG_DBG("r %s", bt_hex(r, BT_CSIP_CRYPTO_PRAND_SIZE));
 
 	/* r' = padding || r */
@@ -148,9 +148,8 @@ static int s1(const uint8_t *m, size_t m_size,
 	return err;
 }
 
-int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
-		const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE],
-		uint8_t out_sirk[BT_CSIP_SET_SIRK_SIZE])
+int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE], const uint8_t sirk[BT_CSIP_SIRK_SIZE],
+		uint8_t out_sirk[BT_CSIP_SIRK_SIZE])
 {
 	const uint8_t m[] = {'S', 'I', 'R', 'K', 'e', 'n', 'c'};
 	const uint8_t p[] = {'c', 's', 'i', 's'};
@@ -163,7 +162,7 @@ int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
 	 * sef(K, SIRK) = k1(K, s1("SIRKenc"), "csis") ^ SIRK
 	 */
 
-	LOG_DBG("SIRK %s", bt_hex(sirk, BT_CSIP_SET_SIRK_SIZE));
+	LOG_DBG("SIRK %s", bt_hex(sirk, BT_CSIP_SIRK_SIZE));
 
 	if (IS_ENABLED(CONFIG_LITTLE_ENDIAN)) {
 		/* Swap because aes_cmac is big endian
@@ -195,14 +194,13 @@ int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
 	}
 
 	mem_xor_128(out_sirk, k1_out, sirk);
-	LOG_DBG("out %s", bt_hex(out_sirk, BT_CSIP_SET_SIRK_SIZE));
+	LOG_DBG("out %s", bt_hex(out_sirk, BT_CSIP_SIRK_SIZE));
 
 	return 0;
 }
 
-int bt_csip_sdf(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
-		const uint8_t enc_sirk[BT_CSIP_SET_SIRK_SIZE],
-		uint8_t out_sirk[BT_CSIP_SET_SIRK_SIZE])
+int bt_csip_sdf(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE], const uint8_t enc_sirk[BT_CSIP_SIRK_SIZE],
+		uint8_t out_sirk[BT_CSIP_SIRK_SIZE])
 {
 	/* SIRK encryption is currently symmetric, which means that we can
 	 * simply apply the sef function to decrypt it.

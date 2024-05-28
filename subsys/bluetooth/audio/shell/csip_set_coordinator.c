@@ -181,7 +181,7 @@ static struct bt_le_scan_cb csip_set_coordinator_scan_callbacks = {
 
 static bool csip_found(struct bt_data *data, void *user_data)
 {
-	if (bt_csip_set_coordinator_is_set_member(cur_inst->info.set_sirk, data)) {
+	if (bt_csip_set_coordinator_is_set_member(cur_inst->info.sirk, data)) {
 		bt_addr_le_t *addr = user_data;
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
@@ -325,8 +325,7 @@ static int cmd_csip_set_coordinator_discover_members(const struct shell *sh,
 			const struct bt_csip_set_coordinator_csis_inst *inst =
 				&set_members[i]->insts[j];
 
-			if (memcmp(inst->info.set_sirk, cur_inst->info.set_sirk,
-				   BT_CSIP_SET_SIRK_SIZE) == 0) {
+			if (memcmp(inst->info.sirk, cur_inst->info.sirk, BT_CSIP_SIRK_SIZE) == 0) {
 				bt_addr_le_copy(&addr_found[members_found++],
 						bt_conn_get_dst(conns[i]));
 				break;

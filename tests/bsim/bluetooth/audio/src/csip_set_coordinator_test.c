@@ -169,7 +169,7 @@ static bool is_discovered(const bt_addr_le_t *addr)
 
 static bool csip_found(struct bt_data *data, void *user_data)
 {
-	if (bt_csip_set_coordinator_is_set_member(primary_inst->info.set_sirk, data)) {
+	if (bt_csip_set_coordinator_is_set_member(primary_inst->info.sirk, data)) {
 		const bt_addr_le_t *addr = user_data;
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
