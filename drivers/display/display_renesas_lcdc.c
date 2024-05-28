@@ -440,7 +440,7 @@ static void display_smartbond_get_capabilities(const struct device *dev,
 	 * bindings.
 	 */
 	capabilities->supported_pixel_formats = DT_INST_PROP(0, pixel_format);
-	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->current_orientation = DISPLAY_ORIENTATION_ROTATED_180;
 	capabilities->current_pixel_format = DT_INST_PROP(0, pixel_format);
 	capabilities->x_resolution = DT_INST_PROP(0, width);
 	capabilities->y_resolution = DT_INST_PROP(0, height);

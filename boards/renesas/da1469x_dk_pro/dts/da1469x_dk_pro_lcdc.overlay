@@ -16,6 +16,8 @@
         input = <&display_touch>;
         status = "okay";
         swap-xy;
+        invert-x;
+        invert-y;
     };
 };
 
