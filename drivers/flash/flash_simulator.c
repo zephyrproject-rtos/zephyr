@@ -162,7 +162,10 @@ static const struct flash_driver_api flash_sim_api;
 
 static const struct flash_parameters flash_sim_parameters = {
 	.write_block_size = FLASH_SIMULATOR_PROG_UNIT,
-	.erase_value = FLASH_SIMULATOR_ERASE_VALUE
+	.erase_value = FLASH_SIMULATOR_ERASE_VALUE,
+#if CONFIG_FLASH_SIMULATOR_DIRECT_WRITE
+	.direct_write = true,
+#endif /* CONFIG_FLASH_SIMULATOR_DIRECT_WRITE */
 };
 
 static int flash_range_is_valid(const struct device *dev, off_t offset,
@@ -231,7 +234,7 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 	for (uint32_t i = 0; i < len; i += FLASH_SIMULATOR_PROG_UNIT) {
 		if (memcmp(buf, MOCK_FLASH(offset + i), sizeof(buf))) {
 			FLASH_SIM_STATS_INC(flash_sim_stats, double_writes);
-#if !CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES
+#if !CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES && !CONFIG_FLASH_SIMULATOR_DIRECT_WRITE
 			return -EIO;
 #endif
 		}
@@ -264,10 +267,13 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 		}
 #endif /* CONFIG_FLASH_SIMULATOR_STATS */
 
+#if CONFIG_FLASH_SIMULATOR_DIRECT_WRITE
+		*(MOCK_FLASH(offset + i)) = *((uint8_t *)data + i);
+#elif FLASH_SIMULATOR_ERASE_VALUE == 0xFF
 		/* only pull bits to zero */
-#if FLASH_SIMULATOR_ERASE_VALUE == 0xFF
 		*(MOCK_FLASH(offset + i)) &= *((uint8_t *)data + i);
 #else
+		/* only pull bits to one */
 		*(MOCK_FLASH(offset + i)) |= *((uint8_t *)data + i);
 #endif
 	}

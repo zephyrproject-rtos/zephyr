@@ -29,6 +29,13 @@ config FLASH_SIMULATOR_DOUBLE_WRITES
 	 Keep in mind that write operations can only change value of a bit from erase-value to the
 	 opposite.
 
+config FLASH_SIMULATOR_DIRECT_WRITE
+	bool "Allow direct write (no prior erase required)"
+	select FLASH_HAS_DIRECT_WRITE
+	help
+	 If selected the simulator will not required areas to be erased before
+	 performing a write.
+
 config FLASH_SIMULATOR_SIMULATE_TIMING
 	bool "Hardware timing simulation"
 
