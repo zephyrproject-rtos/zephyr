@@ -6,6 +6,15 @@
 
 menu "Deprecated POSIX options"
 
+config EVENTFD_MAX
+	int "Maximum number of eventfd's [DEPRECATED]"
+	default ZVFS_EVENTFD_MAX if ZVFS_EVENTFD
+	default 0
+	help
+	  This option is deprecated.
+
+	  Please use CONFIG_ZVFS_EVENTFD_MAX instead.
+
 config FNMATCH
 	bool "Support for fnmatch [DEPRECATED]"
 	select DEPRECATED
