@@ -10,18 +10,7 @@ LOG_MODULE_REGISTER(net_sock_svc, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/net/socket_service.h>
-#include <zephyr/posix/sys/eventfd.h>
-
-/* Next checks makes sure that we are not trying to use this library
- * with eventfd if CONFIG_POSIX_API is not set and if using native_sim
- * based board. The reason is that we should always use zephyr libc based
- * eventfd implementation instead of host libc one.
- */
-#if defined(CONFIG_NATIVE_LIBC) && defined(CONFIG_EVENTFD)
-#error "The eventfd support CONFIG_EVENTFD will not work with host libc "
-	"so you need to enable CONFIG_POSIX_API in this case which will turn "
-	"off the host libc usage."
-#endif
+#include <zephyr/zvfs/eventfd.h>
 
 static int init_socket_service(void);
 static bool init_done;
@@ -94,7 +83,7 @@ int z_impl_net_socket_service_register(const struct net_socket_service_desc *svc
 	}
 
 	/* Tell the thread to re-read the variables */
-	eventfd_write(ctx.events[0].fd, 1);
+	zvfs_eventfd_write(ctx.events[0].fd, 1);
 	ret = 0;
 
 out:
@@ -191,7 +180,7 @@ static int trigger_work(struct zsock_pollfd *pev)
 static void socket_service_thread(void)
 {
 	int ret, i, fd, count = 0;
-	eventfd_t value;
+	zvfs_eventfd_t value;
 
 	STRUCT_SECTION_COUNT(net_socket_service_desc, &ret);
 	if (ret == 0) {
@@ -222,11 +211,11 @@ static void socket_service_thread(void)
 
 	ctx.count = count + 1;
 
-	/* Create an eventfd that can be used to trigger events during polling */
-	fd = eventfd(0, 0);
+	/* Create an zvfs_eventfd that can be used to trigger events during polling */
+	fd = zvfs_eventfd(0, 0);
 	if (fd < 0) {
 		fd = -errno;
-		NET_ERR("eventfd failed (%d)", fd);
+		NET_ERR("zvfs_eventfd failed (%d)", fd);
 		goto out;
 	}
 
@@ -264,7 +253,7 @@ restart:
 		}
 
 		if (ret > 0 && ctx.events[0].revents) {
-			eventfd_read(ctx.events[0].fd, &value);
+			zvfs_eventfd_read(ctx.events[0].fd, &value);
 			NET_DBG("Received restart event.");
 			goto restart;
 		}
