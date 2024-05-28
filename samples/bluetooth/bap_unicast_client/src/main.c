@@ -4,18 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
-#include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
 
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/types.h>
+
+#include "stream_tx.h"
 
 static void start_scan(void);
 
@@ -23,16 +26,12 @@ uint64_t unicast_audio_recv_ctr; /* This value is exposed to test code */
 
 static struct bt_bap_unicast_client_cb unicast_client_cbs;
 static struct bt_conn *default_conn;
-static struct k_work_delayable audio_send_work;
 static struct bt_bap_unicast_group *unicast_group;
 static struct audio_sink {
 	struct bt_bap_ep *ep;
 	uint16_t seq_num;
 } sinks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct bt_bap_ep *sources[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static struct bt_bap_stream streams[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT +
 				      CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
@@ -60,302 +59,6 @@ static K_SEM_DEFINE(sem_stream_qos, 0, ARRAY_SIZE(sinks) + ARRAY_SIZE(sources));
 static K_SEM_DEFINE(sem_stream_enabled, 0, 1);
 static K_SEM_DEFINE(sem_stream_started, 0, 1);
 static K_SEM_DEFINE(sem_stream_connected, 0, 1);
-
-#define AUDIO_DATA_TIMEOUT_US 1000000UL /* Send data every 1 second */
-
-static uint16_t get_and_incr_seq_num(const struct bt_bap_stream *stream)
-{
-	for (size_t i = 0U; i < configured_sink_stream_count; i++) {
-		if (stream->ep == sinks[i].ep) {
-			uint16_t seq_num;
-
-			seq_num = sinks[i].seq_num;
-
-			if (IS_ENABLED(CONFIG_LIBLC3)) {
-				sinks[i].seq_num++;
-			} else {
-				sinks[i].seq_num += (AUDIO_DATA_TIMEOUT_US /
-						     codec_configuration.qos.interval);
-			}
-
-			return seq_num;
-		}
-	}
-
-	printk("Could not find endpoint from stream %p\n", stream);
-
-	return 0;
-}
-
-#if defined(CONFIG_LIBLC3)
-
-#include "lc3.h"
-#include "math.h"
-
-#define MAX_SAMPLE_RATE         48000
-#define MAX_FRAME_DURATION_US   10000
-#define MAX_NUM_SAMPLES         ((MAX_FRAME_DURATION_US * MAX_SAMPLE_RATE) / USEC_PER_SEC)
-#define AUDIO_VOLUME            (INT16_MAX - 3000) /* codec does clipping above INT16_MAX - 3000 */
-#define AUDIO_TONE_FREQUENCY_HZ   400
-
-static int16_t audio_buf[MAX_NUM_SAMPLES];
-static lc3_encoder_t lc3_encoder;
-static lc3_encoder_mem_48k_t lc3_encoder_mem;
-static int freq_hz;
-static int frame_duration_us;
-static int frame_duration_100us;
-static int frames_per_sdu;
-static int octets_per_frame;
-
-/**
- * Use the math lib to generate a sine-wave using 16 bit samples into a buffer.
- *
- * @param buf Destination buffer
- * @param length_us Length of the buffer in microseconds
- * @param frequency_hz frequency in Hz
- * @param sample_rate_hz sample-rate in Hz.
- */
-static void fill_audio_buf_sin(int16_t *buf, int length_us, int frequency_hz, int sample_rate_hz)
-{
-	const int sine_period_samples = sample_rate_hz / frequency_hz;
-	const unsigned int num_samples = (length_us * sample_rate_hz) / USEC_PER_SEC;
-	const float step = 2 * 3.1415f / sine_period_samples;
-
-	for (unsigned int i = 0; i < num_samples; i++) {
-		const float sample = sinf(i * step);
-
-		buf[i] = (int16_t)(AUDIO_VOLUME * sample);
-	}
-}
-
-static void lc3_audio_timer_timeout(struct k_work *work)
-{
-	/* For the first call-back we push multiple audio frames to the buffer to use the
-	 * controller ISO buffer to handle jitter.
-	 */
-	const uint8_t prime_count = 2;
-	static int64_t start_time;
-	static int32_t sdu_cnt;
-	int32_t sdu_goal_cnt;
-	int64_t uptime, run_time_ms, run_time_100us;
-
-	k_work_schedule(&audio_send_work, K_USEC(codec_configuration.qos.interval));
-
-	if (lc3_encoder == NULL) {
-		printk("LC3 encoder not setup, cannot encode data.\n");
-		return;
-	}
-
-	if (start_time == 0) {
-		/* Read start time and produce the number of frames needed to catch up with any
-		 * inaccuracies in the timer. by calculating the number of frames we should
-		 * have sent and compare to how many were actually sent.
-		 */
-		start_time = k_uptime_get();
-	}
-
-	uptime = k_uptime_get();
-	run_time_ms = uptime - start_time;
-
-	/* PDU count calculations done in 100us units to allow 7.5ms framelength in fixed-point */
-	run_time_100us = run_time_ms * 10;
-	sdu_goal_cnt = run_time_100us / (frame_duration_100us * frames_per_sdu);
-
-	/* Add primer value to ensure the controller do not run low on data due to jitter */
-	sdu_goal_cnt += prime_count;
-
-	printk("LC3 encode %d frames in %d SDUs\n", (sdu_goal_cnt - sdu_cnt) * frames_per_sdu,
-						    (sdu_goal_cnt - sdu_cnt));
-
-	while (sdu_cnt < sdu_goal_cnt) {
-		const uint16_t tx_sdu_len = frames_per_sdu * octets_per_frame;
-		struct net_buf *buf;
-		uint8_t *net_buffer;
-		off_t offset = 0;
-
-		buf = net_buf_alloc(&tx_pool, K_FOREVER);
-		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
-
-		net_buffer = net_buf_tail(buf);
-		buf->len += tx_sdu_len;
-
-		for (int i = 0; i < frames_per_sdu; i++) {
-			int lc3_ret;
-
-			lc3_ret = lc3_encode(lc3_encoder, LC3_PCM_FORMAT_S16,
-					     audio_buf, 1, octets_per_frame,
-					     net_buffer + offset);
-			offset += octets_per_frame;
-
-			if (lc3_ret == -1) {
-				printk("LC3 encoder failed - wrong parameters?: %d",
-					lc3_ret);
-				net_buf_unref(buf);
-				return;
-			}
-		}
-
-		for (size_t i = 0U; i < configured_sink_stream_count; i++) {
-			struct bt_bap_stream *stream = &streams[i];
-			struct net_buf *buf_to_send;
-			int ret;
-
-			/* Clone the buffer if sending on more than 1 stream */
-			if (i == configured_sink_stream_count - 1) {
-				buf_to_send = buf;
-			} else {
-				buf_to_send = net_buf_clone(buf, K_FOREVER);
-			}
-
-			ret = bt_bap_stream_send(stream, buf_to_send, get_and_incr_seq_num(stream));
-			if (ret < 0) {
-				printk("  Failed to send LC3 audio data on streams[%zu] (%d)\n",
-				       i, ret);
-				net_buf_unref(buf_to_send);
-			} else {
-				printk("  TX LC3 l on streams[%zu]: %zu\n",
-				       tx_sdu_len, i);
-				sdu_cnt++;
-			}
-		}
-	}
-}
-
-static int init_lc3(void)
-{
-	const struct bt_audio_codec_cfg *codec_cfg = &codec_configuration.codec_cfg;
-	unsigned int num_samples;
-	int ret;
-
-	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
-	if (ret > 0) {
-		freq_hz = bt_audio_codec_cfg_freq_to_freq_hz(ret);
-	} else {
-		return ret;
-	}
-
-	ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
-	if (ret > 0) {
-		frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
-	}
-
-	octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
-	frames_per_sdu = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
-	octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
-
-	if (freq_hz < 0) {
-		printk("Error: Codec frequency not set, cannot start codec.");
-		return -1;
-	}
-
-	if (frame_duration_us < 0) {
-		printk("Error: Frame duration not set, cannot start codec.");
-		return -1;
-	}
-
-	if (octets_per_frame < 0) {
-		printk("Error: Octets per frame not set, cannot start codec.");
-		return -1;
-	}
-
-	frame_duration_100us = frame_duration_us / 100;
-
-
-	/* Fill audio buffer with Sine wave only once and repeat encoding the same tone frame */
-	fill_audio_buf_sin(audio_buf, frame_duration_us, AUDIO_TONE_FREQUENCY_HZ, freq_hz);
-
-	num_samples = ((frame_duration_us * freq_hz) / USEC_PER_SEC);
-	for (unsigned int i = 0; i < num_samples; i++) {
-		printk("%3i: %6i\n", i, audio_buf[i]);
-	}
-
-	/* Create the encoder instance. This shall complete before stream_started() is called. */
-	lc3_encoder = lc3_setup_encoder(frame_duration_us,
-					freq_hz,
-					0, /* No resampling */
-					&lc3_encoder_mem);
-
-	if (lc3_encoder == NULL) {
-		printk("ERROR: Failed to setup LC3 encoder - wrong parameters?\n");
-		return -1;
-	}
-	return 0;
-}
-
-#else
-
-#define init_lc3(...) 0
-
-/**
- * @brief Send audio data on timeout
- *
- * This will send an increasing amount of audio data, starting from 1 octet.
- * The data is just mock data, and does not actually represent any audio.
- *
- * First iteration : 0x00
- * Second iteration: 0x00 0x01
- * Third iteration : 0x00 0x01 0x02
- *
- * And so on, until it wraps around the configured MTU (CONFIG_BT_ISO_TX_MTU)
- *
- * @param work Pointer to the work structure
- */
-static void audio_timer_timeout(struct k_work *work)
-{
-	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
-	static bool data_initialized;
-	struct net_buf *buf;
-	static size_t len_to_send = 1;
-
-	if (!data_initialized) {
-		/* TODO: Actually encode some audio data */
-		for (int i = 0; i < ARRAY_SIZE(buf_data); i++) {
-			buf_data[i] = (uint8_t)i;
-		}
-
-		data_initialized = true;
-	}
-
-	buf = net_buf_alloc(&tx_pool, K_FOREVER);
-	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
-	net_buf_add_mem(buf, buf_data, len_to_send);
-
-	/* We configured the sink streams to be first in `streams`, so that
-	 * we can use `stream[i]` to select sink streams (i.e. streams with
-	 * data going to the server)
-	 */
-	for (size_t i = 0U; i < configured_sink_stream_count; i++) {
-		struct bt_bap_stream *stream = &streams[i];
-		struct net_buf *buf_to_send;
-		int ret;
-
-		/* Clone the buffer if sending on more than 1 stream */
-		if (i == configured_sink_stream_count - 1) {
-			buf_to_send = buf;
-		} else {
-			buf_to_send = net_buf_clone(buf, K_FOREVER);
-		}
-
-		ret = bt_bap_stream_send(stream, buf_to_send, get_and_incr_seq_num(stream));
-		if (ret < 0) {
-			printk("Failed to send audio data on streams[%zu]: (%d)\n",
-			       i, ret);
-			net_buf_unref(buf_to_send);
-		} else {
-			printk("Sending mock data with len %zu on streams[%zu]\n",
-			       len_to_send, i);
-		}
-	}
-
-	k_work_schedule(&audio_send_work, K_USEC(AUDIO_DATA_TIMEOUT_US));
-
-	len_to_send++;
-	if (len_to_send > codec_configuration.qos.sdu) {
-		len_to_send = 1;
-	}
-}
-
-#endif
 
 static void print_hex(const uint8_t *ptr, size_t len)
 {
@@ -519,6 +222,23 @@ static void stream_enabled(struct bt_bap_stream *stream)
 	k_sem_give(&sem_stream_enabled);
 }
 
+static bool stream_is_tx(const struct bt_bap_stream *stream)
+{
+	struct bt_bap_ep_info info;
+	int err;
+
+	if (stream == NULL || stream->ep == NULL) {
+		return false;
+	}
+
+	err = bt_bap_ep_get_info(stream->ep, &info);
+	if (err != 0) {
+		return false;
+	}
+
+	return info.can_send;
+}
+
 static void stream_connected_cb(struct bt_bap_stream *stream)
 {
 	printk("Audio Stream %p connected\n", stream);
@@ -537,6 +257,14 @@ static void stream_connected_cb(struct bt_bap_stream *stream)
 static void stream_started(struct bt_bap_stream *stream)
 {
 	printk("Audio Stream %p started\n", stream);
+	/* Register the stream for TX if it can send */
+	if (IS_ENABLED(CONFIG_BT_AUDIO_TX) && stream_is_tx(stream)) {
+		const int err = stream_tx_register(stream);
+
+		if (err != 0) {
+			printk("Failed to register stream %p for TX: %d\n", stream, err);
+		}
+	}
 
 	k_sem_give(&sem_stream_started);
 }
@@ -555,8 +283,14 @@ static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Audio Stream %p stopped with reason 0x%02X\n", stream, reason);
 
-	/* Stop send timer */
-	k_work_cancel_delayable(&audio_send_work);
+	/* Unregister the stream for TX if it can send */
+	if (IS_ENABLED(CONFIG_BT_AUDIO_TX) && stream_is_tx(stream)) {
+		const int err = stream_tx_unregister(stream);
+
+		if (err != 0) {
+			printk("Failed to unregister stream %p for TX: %d", stream, err);
+		}
+	}
 }
 
 static void stream_released(struct bt_bap_stream *stream)
@@ -774,11 +508,9 @@ static int init(void)
 
 	bt_gatt_cb_register(&gatt_callbacks);
 
-#if defined(CONFIG_LIBLC3)
-	k_work_init_delayable(&audio_send_work, lc3_audio_timer_timeout);
-#else
-	k_work_init_delayable(&audio_send_work, audio_timer_timeout);
-#endif
+	if (IS_ENABLED(CONFIG_BT_AUDIO_TX)) {
+		stream_tx_init();
+	}
 
 	return 0;
 }
@@ -999,14 +731,6 @@ static int set_stream_qos(void)
 
 static int enable_streams(void)
 {
-	if (IS_ENABLED(CONFIG_LIBLC3)) {
-		int err = init_lc3();
-
-		if (err != 0) {
-			return err;
-		}
-	}
-
 	for (size_t i = 0U; i < configured_stream_count; i++) {
 		int err;
 
@@ -1199,11 +923,6 @@ int main(void)
 			return 0;
 		}
 		printk("Streams started\n");
-
-		if (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0) {
-			/* Start send timer */
-			k_work_schedule(&audio_send_work, K_MSEC(0));
-		}
 
 		/* Wait for disconnect */
 		err = k_sem_take(&sem_disconnected, K_FOREVER);
