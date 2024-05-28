@@ -75,7 +75,8 @@ struct wifi_ap_sta_node {
 };
 static struct wifi_ap_sta_node sta_list[CONFIG_WIFI_SHELL_MAX_AP_STA];
 
-static bool parse_number(const struct shell *sh, long *param, char *str, long min, long max)
+static bool parse_number(const struct shell *sh, long *param, char *str,
+			 char *pname, long min, long max)
 {
 	char *endptr;
 	char *str_tmp = str;
@@ -94,7 +95,13 @@ static bool parse_number(const struct shell *sh, long *param, char *str, long mi
 	}
 
 	if ((num) < (min) || (num) > (max)) {
-		PR_WARNING("Value out of range: %s, (%ld-%ld)", str_tmp, min, max);
+		if (pname) {
+			PR_WARNING("%s value out of range: %s, (%ld-%ld)",
+				   pname, str_tmp, min, max);
+		} else {
+			PR_WARNING("Value out of range: %s, (%ld-%ld)",
+				   str_tmp, min, max);
+		}
 		return false;
 	}
 	*param = num;
@@ -1067,12 +1074,12 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 	params.setup.trigger = 0;
 	params.setup.announce = 0;
 
-	if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
+	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_wake_interval = (uint32_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_INTERVAL_US)) {
+	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_INTERVAL_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_interval = (uint64_t)value;
@@ -1105,59 +1112,59 @@ static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 
 	params.operation = WIFI_TWT_SETUP;
 
-	if (!parse_number(sh, &value, argv[idx++], WIFI_TWT_INDIVIDUAL,
+	if (!parse_number(sh, &value, argv[idx++], NULL, WIFI_TWT_INDIVIDUAL,
 			  WIFI_TWT_WAKE_TBTT)) {
 		return -EINVAL;
 	}
 	params.negotiation_type = (enum wifi_twt_negotiation_type)value;
 
-	if (!parse_number(sh, &value, argv[idx++], WIFI_TWT_SETUP_CMD_REQUEST,
+	if (!parse_number(sh, &value, argv[idx++], NULL, WIFI_TWT_SETUP_CMD_REQUEST,
 			  WIFI_TWT_SETUP_CMD_DEMAND)) {
 		return -EINVAL;
 	}
 	params.setup_cmd = (enum wifi_twt_setup_cmd)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 1, 255)) {
+	if (!parse_number(sh, &value, argv[idx++], NULL, 1, 255)) {
 		return -EINVAL;
 	}
 	params.dialog_token = (uint8_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 0, (WIFI_MAX_TWT_FLOWS - 1))) {
+	if (!parse_number(sh, &value, argv[idx++], NULL, 0, (WIFI_MAX_TWT_FLOWS - 1))) {
 		return -EINVAL;
 	}
 	params.flow_id = (uint8_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
+	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.responder = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
+	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.trigger = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
+	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.implicit = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
+	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.announce = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
+	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_wake_interval = (uint32_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_INTERVAL_US)) {
+	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_INTERVAL_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_interval = (uint64_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 0, WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US)) {
+	if (!parse_number(sh, &value, argv[idx++], NULL, 0, WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_wake_ahead_duration = (uint32_t)value;
@@ -1190,24 +1197,24 @@ static int cmd_wifi_twt_teardown(const struct shell *sh, size_t argc,
 
 	params.operation = WIFI_TWT_TEARDOWN;
 
-	if (!parse_number(sh, &value, argv[idx++], WIFI_TWT_INDIVIDUAL,
+	if (!parse_number(sh, &value, argv[idx++], NULL, WIFI_TWT_INDIVIDUAL,
 			  WIFI_TWT_WAKE_TBTT)) {
 		return -EINVAL;
 	}
 	params.negotiation_type = (enum wifi_twt_negotiation_type)value;
 
-	if (!parse_number(sh, &value, argv[idx++], WIFI_TWT_SETUP_CMD_REQUEST,
+	if (!parse_number(sh, &value, argv[idx++], NULL, WIFI_TWT_SETUP_CMD_REQUEST,
 			  WIFI_TWT_SETUP_CMD_DEMAND)) {
 		return -EINVAL;
 	}
 	params.setup_cmd = (enum wifi_twt_setup_cmd)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 1, 255)) {
+	if (!parse_number(sh, &value, argv[idx++], NULL, 1, 255)) {
 		return -EINVAL;
 	}
 	params.dialog_token = (uint8_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 0, (WIFI_MAX_TWT_FLOWS - 1))) {
+	if (!parse_number(sh, &value, argv[idx++], NULL, 0, (WIFI_MAX_TWT_FLOWS - 1))) {
 		return -EINVAL;
 	}
 	params.flow_id = (uint8_t)value;
@@ -1441,7 +1448,7 @@ static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *a
 
 	context.sh = sh;
 
-	if (!parse_number(sh, &interval, argv[1],
+	if (!parse_number(sh, &interval, argv[1], NULL,
 			  WIFI_LISTEN_INTERVAL_MIN,
 			  WIFI_LISTEN_INTERVAL_MAX)) {
 		return -EINVAL;
