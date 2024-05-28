@@ -63,14 +63,13 @@ static uint8_t csis_get_member_rsi(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_VAL(err);
 }
 
-static uint8_t csis_set_sirk_type(const void *cmd, uint16_t cmd_len, void *rsp,
-				  uint16_t *rsp_len)
+static uint8_t csis_sirk_type(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
-	const struct btp_csis_set_sirk_type_cmd *cp = cmd;
+	const struct btp_csis_sirk_type_cmd *cp = cmd;
 
 	enc_sirk = cp->encrypted != 0U;
 
-	LOG_DBG("Set SIRK type: %s", enc_sirk ? "encrypted" : "plain text");
+	LOG_DBG("SIRK type: %s", enc_sirk ? "encrypted" : "plain text");
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -80,22 +79,22 @@ static const struct btp_handler csis_handlers[] = {
 		.opcode = BTP_CSIS_READ_SUPPORTED_COMMANDS,
 		.index = BTP_INDEX_NONE,
 		.expect_len = 0,
-		.func = csis_supported_commands
+		.func = csis_supported_commands,
 	},
 	{
 		.opcode = BTP_CSIS_SET_MEMBER_LOCK,
 		.expect_len = sizeof(struct btp_csis_set_member_lock_cmd),
-		.func = csis_set_member_lock
+		.func = csis_set_member_lock,
 	},
 	{
 		.opcode = BTP_CSIS_GET_MEMBER_RSI,
 		.expect_len = sizeof(struct btp_csis_get_member_rsi_cmd),
-		.func = csis_get_member_rsi
+		.func = csis_get_member_rsi,
 	},
 	{
 		.opcode = BTP_CSIS_ENC_SIRK_TYPE,
-		.expect_len = sizeof(struct btp_csis_set_sirk_type_cmd),
-		.func = csis_set_sirk_type,
+		.expect_len = sizeof(struct btp_csis_sirk_type_cmd),
+		.func = csis_sirk_type,
 	},
 };
 
@@ -123,8 +122,8 @@ uint8_t tester_init_csis(void)
 {
 	const struct bt_csip_set_member_register_param register_params = {
 		.set_size = 1,
-		.set_sirk = { 0xB8, 0x03, 0xEA, 0xC6, 0xAF, 0xBB, 0x65, 0xA2,
-			      0x5A, 0x41, 0xF1, 0x53, 0x05, 0x68, 0x8E, 0x83 },
+		.sirk = { 0xB8, 0x03, 0xEA, 0xC6, 0xAF, 0xBB, 0x65, 0xA2,
+			  0x5A, 0x41, 0xF1, 0x53, 0x05, 0x68, 0x8E, 0x83 },
 		.lockable = true,
 		.rank = 1,
 		.cb = &csis_cb,
