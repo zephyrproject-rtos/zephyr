@@ -14,3 +14,15 @@ tests:
       - CONFIG_NVS_LOOKUP_CACHE=y
       - CONFIG_NVS_LOOKUP_CACHE_SIZE=64
     platform_allow: native_sim
+  filesystem.nvs.data_crc:
+    extra_args:
+      - CONFIG_NVS_DATA_CRC=y
+    platform_allow:
+      - native_sim
+      - qemu_x86
+  filesystem.nvs.data_crc_cache:
+    extra_args:
+      - CONFIG_NVS_DATA_CRC=y
+      - CONFIG_NVS_LOOKUP_CACHE=y
+      - CONFIG_NVS_LOOKUP_CACHE_SIZE=64
+    platform_allow: native_sim
