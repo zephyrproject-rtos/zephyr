@@ -5,6 +5,14 @@ tests:
     arch_allow: x86
     harness: bluetooth
     tags: bluetooth
+  sample.bluetooth.central_hr.minimal:
+    harness: bluetooth
+    platform_allow:
+      - bbc_microbit
+    integration_platforms:
+      - bbc_microbit
+    extra_args: EXTRA_CONF_FILE=prj_minimal.conf
+    tags: bluetooth
   sample.bluetooth.central_hr.bt_ll_sw_split.extended:
     harness: bluetooth
     platform_allow:
