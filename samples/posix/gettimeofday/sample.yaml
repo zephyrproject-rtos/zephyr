@@ -4,6 +4,9 @@ sample:
 common:
   filter: ( CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
     and not CONFIG_SOC_FAMILY_INTEL_ADSP )
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
   harness: net
   min_ram: 32
   min_flash: 96
