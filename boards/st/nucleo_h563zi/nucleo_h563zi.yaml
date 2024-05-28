@@ -18,6 +18,7 @@ supported:
   - adc
   - dac
   - pwm
+  - netif:eth
   - counter
   - spi
   - usb_device
