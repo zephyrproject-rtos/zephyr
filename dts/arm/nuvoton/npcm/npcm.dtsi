@@ -64,7 +64,6 @@
 			interrupts = <23 3>;
 			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL1 4>;
 			status = "disabled";
-			label = "UART_0";
 		};
 
 		uart1: serial@400c4200 {
@@ -73,7 +72,6 @@
 			interrupts = <76 3>;
 			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL0 6>;
 			status = "disabled";
-			label = "UART_1";
 		};
 
 		mdc: mdc@4000c000 {
