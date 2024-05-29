@@ -36,7 +36,7 @@ FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 static struct fs_mount_t fs_mnt;
 
 #if defined(CONFIG_USB_DEVICE_STACK_NEXT)
-static struct usbd_contex *sample_usbd;
+static struct usbd_context *sample_usbd;
 
 #if CONFIG_DISK_DRIVER_RAM
 USBD_DEFINE_MSC_LUN(RAM, "Zephyr", "RAMDisk", "0.00");

@@ -337,7 +337,7 @@ static void write_explicit_feedback(struct usbd_class_data *const c_data,
 				    uint8_t ep, uint8_t terminal)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct uac2_ctx *ctx = dev->data;
 	struct net_buf *buf;
 	struct udc_buf_info *bi;
@@ -382,7 +382,7 @@ void uac2_update(struct usbd_class_data *const c_data,
 		 uint8_t iface, uint8_t alternate)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 	struct uac2_ctx *ctx = dev->data;
 	const struct usb_association_descriptor *iad;
@@ -568,7 +568,7 @@ static int uac2_request(struct usbd_class_data *const c_data, struct net_buf *bu
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 	struct uac2_ctx *ctx = dev->data;
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct udc_buf_info *bi;
 	uint8_t ep, terminal;
 	uint16_t mps;
