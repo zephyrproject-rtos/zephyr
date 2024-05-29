@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "espressif,riscv";
-			riscv,isa = "rv32imc_zicsr";
+			riscv,isa = "rv32imac_zicsr";
 			reg = <0>;
 			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
 			clock-frequency = <DT_FREQ_M(160)>;
@@ -82,7 +82,7 @@
 			clocks = <&rtc ESP32_MODULE_MAX>;
 			interrupts = <LP_RTC_TIMER_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		spi2: spi@60081000 {
@@ -96,18 +96,18 @@
 			status = "disabled";
 		};
 
-		wdt0: watchdog@6001f048  {
+		wdt0: watchdog@60008048  {
 			compatible = "espressif,esp32-watchdog";
-			reg = <0x6001f048 0x20>;
+			reg = <0x60008048 0x20>;
 			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_TIMG0_MODULE>;
 			status = "disabled";
 		};
 
-		wdt1: watchdog@60020048 {
+		wdt1: watchdog@60009048 {
 			compatible = "espressif,esp32-watchdog";
-			reg = <0x60020048 0x20>;
+			reg = <0x60009048 0x20>;
 			interrupts = <TG1_WDT_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_TIMG1_MODULE>;
@@ -147,9 +147,9 @@
 			clocks = <&rtc ESP32_UART0_MODULE>;
 		};
 
-		uart1: uart@60010000 {
+		uart1: uart@60001000 {
 			compatible = "espressif,esp32-uart";
-			reg = <0x60010000 DT_SIZE_K(4)>;
+			reg = <0x60001000 DT_SIZE_K(4)>;
 			status = "disabled";
 			interrupts = <UART1_INTR_SOURCE>;
 			interrupt-parent = <&intc>;

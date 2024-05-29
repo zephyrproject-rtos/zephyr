@@ -101,7 +101,7 @@ SECTIONS
     *(.iram1 .iram1.*)
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
 
-    /* C3 memprot requires 512 B alignment for split lines */
+    /* C6 memprot requires 512 B alignment for split lines */
     . = ALIGN (16);
     _init_end = ABSOLUTE(.);
     . = ALIGN(16);
