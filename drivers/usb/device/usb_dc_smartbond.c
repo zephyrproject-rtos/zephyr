@@ -22,9 +22,12 @@
 #include <DA1469xAB.h>
 #include <soc.h>
 #include <da1469x_clock.h>
+#include <da1469x_pd.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/clock_control/smartbond_clock_control.h>
+#include <zephyr/pm/policy.h>
 
 LOG_MODULE_REGISTER(usb_dc_smartbond, CONFIG_USB_DRIVER_LOG_LEVEL);
 
@@ -128,6 +131,7 @@ struct smartbond_ep_state {
 struct usb_dc_state {
 	bool vbus_present;
 	bool attached;
+	atomic_t clk_requested;
 	uint8_t nfsr;
 	usb_dc_status_callback status_cb;
 	struct smartbond_ep_state ep_state[2][4];
@@ -684,6 +688,7 @@ static uint32_t check_reset_end(uint32_t alt_ev)
 			}
 			LOG_INF("Set operational %02x", USB->USB_MAMSK_REG);
 			set_nfsr(NFSR_NODE_OPERATIONAL);
+			dev_state.status_cb(USB_DC_CONNECTED, NULL);
 		}
 	}
 	return alt_ev;
@@ -723,11 +728,30 @@ static void handle_bus_reset(void)
 	check_reset_end(alt_ev);
 }
 
+static void usb_clock_on(void)
+{
+	if (atomic_cas(&dev_state.clk_requested, 0, 1)) {
+		clock_control_on(DEVICE_DT_GET(DT_NODELABEL(osc)),
+				 (clock_control_subsys_rate_t)SMARTBOND_CLK_USB);
+	}
+}
+
+static void usb_clock_off(void)
+{
+	if (atomic_cas(&dev_state.clk_requested, 1, 0)) {
+		clock_control_off(DEVICE_DT_GET(DT_NODELABEL(osc)),
+				  (clock_control_subsys_rate_t)SMARTBOND_CLK_USB);
+	}
+}
+
 static void handle_alt_ev(void)
 {
 	struct smartbond_ep_state *ep_state;
 	uint32_t alt_ev = USB->USB_ALTEV_REG;
 
+	if (USB->USB_NFSR_REG == NFSR_NODE_SUSPEND) {
+		usb_clock_on();
+	}
 	alt_ev = check_reset_end(alt_ev);
 	if (GET_BIT(alt_ev, USB_USB_ALTEV_REG_USB_RESET) &&
 	    dev_state.nfsr != NFSR_NODE_RESET) {
@@ -755,6 +779,7 @@ static void handle_alt_ev(void)
 		USB->USB_ALTMSK_REG =
 			USB_USB_ALTMSK_REG_USB_M_RESET_Msk |
 			USB_USB_ALTMSK_REG_USB_M_RESUME_Msk;
+		usb_clock_off();
 		dev_state.status_cb(USB_DC_SUSPEND, NULL);
 	}
 }
@@ -892,34 +917,76 @@ static void usb_dc_smartbond_isr(void)
 	}
 }
 
-static void usb_dc_smartbond_vbus_changed(bool present)
+/**
+ * USB functionality can be disabled from HOST and DEVICE side.
+ * Host side is indicated by VBUS line.
+ * Device side is decided by pair of calls usb_dc_attach()/usb_dc_detach,
+ * USB will only work when application calls usb_dc_attach() and VBUS is present.
+ * When both conditions are not met USB clock (PLL) is released, and peripheral
+ * remain in reset state.
+ */
+static void usb_change_state(bool attached, bool vbus_present)
 {
-	if (dev_state.vbus_present == present) {
+	if (dev_state.attached == attached && dev_state.vbus_present == vbus_present) {
 		return;
 	}
 
-	dev_state.vbus_present = present;
-
-	if (present) {
-		/* TODO: Add PD acquire when available */
-		/* If power event happened before USB started, delay dcd_connect
-		 * until dcd_init is called.
+	if (attached && vbus_present) {
+		dev_state.attached = true;
+		dev_state.vbus_present = true;
+		/*
+		 * Prevent transition to standby, this greatly reduces
+		 * IRQ response time
 		 */
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+		usb_clock_on();
 		dev_state.status_cb(USB_DC_CONNECTED, NULL);
-	} else {
+		USB->USB_MCTRL_REG = USB_USB_MCTRL_REG_USBEN_Msk;
+		USB->USB_NFSR_REG = 0;
+		USB->USB_FAR_REG = 0x80;
+		USB->USB_TXMSK_REG = 0;
+		USB->USB_RXMSK_REG = 0;
+
+		USB->USB_MAMSK_REG = USB_USB_MAMSK_REG_USB_M_INTR_Msk |
+				     USB_USB_MAMSK_REG_USB_M_ALT_Msk |
+				     USB_USB_MAMSK_REG_USB_M_WARN_Msk;
+		USB->USB_ALTMSK_REG = USB_USB_ALTMSK_REG_USB_M_RESET_Msk |
+				      USB_USB_ALTEV_REG_USB_SD3_Msk;
+
+		USB->USB_MCTRL_REG = USB_USB_MCTRL_REG_USBEN_Msk |
+				     USB_USB_MCTRL_REG_USB_NAT_Msk;
+
+		/* Select chosen DMA to be triggered by USB. */
+		DMA->DMA_REQ_MUX_REG =
+			(DMA->DMA_REQ_MUX_REG & ~DA146XX_DMA_USB_MUX_MASK) |
+			DA146XX_DMA_USB_MUX;
+	} else if (dev_state.attached && dev_state.vbus_present) {
+		/*
+		 * USB was previously in use now either VBUS is gone or application
+		 * requested detach, put it down
+		 */
+		dev_state.attached = attached;
+		dev_state.vbus_present = vbus_present;
 		USB->USB_MCTRL_REG = 0;
+		usb_clock_off();
 		dev_state.status_cb(USB_DC_DISCONNECTED, NULL);
-		/* TODO: Add PD release when available */
+		/* Allow standby USB not in use or not connected */
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	} else {
+		/* USB still not activated, keep track of what's on and off */
+		dev_state.attached = attached;
+		dev_state.vbus_present = vbus_present;
 	}
 }
 
 static void usb_dc_smartbond_vbus_isr(void)
 {
-	bool vbus_present =
-		(CRG_TOP->ANA_STATUS_REG & CRG_TOP_ANA_STATUS_REG_VBUS_AVAILABLE_Msk) != 0;
+	LOG_DBG("VBUS_ISR");
 
 	CRG_TOP->VBUS_IRQ_CLEAR_REG = 1;
-	usb_dc_smartbond_vbus_changed(vbus_present);
+	usb_change_state(dev_state.attached,
+			 (CRG_TOP->ANA_STATUS_REG &
+			  CRG_TOP_ANA_STATUS_REG_VBUS_AVAILABLE_Msk) != 0);
 }
 
 static int usb_init(void)
@@ -1255,40 +1322,18 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const ep_cfg)
 
 int usb_dc_detach(void)
 {
-	LOG_DBG("");
+	LOG_DBG("Detach");
 
-	REG_CLR_BIT(USB_MCTRL_REG, USB_NAT);
-
-	dev_state.attached = false;
+	usb_change_state(false, dev_state.vbus_present);
 
 	return 0;
 }
 
 int usb_dc_attach(void)
 {
-	LOG_DBG("");
-	if (GET_BIT(USB->USB_MCTRL_REG, USB_USB_MCTRL_REG_USB_NAT) == 0) {
-		USB->USB_MCTRL_REG = USB_USB_MCTRL_REG_USBEN_Msk;
-		USB->USB_NFSR_REG = 0;
-		USB->USB_FAR_REG = 0x80;
-		USB->USB_TXMSK_REG = 0;
-		USB->USB_RXMSK_REG = 0;
+	LOG_INF("Attach");
 
-		USB->USB_MAMSK_REG = USB_USB_MAMSK_REG_USB_M_INTR_Msk |
-				     USB_USB_MAMSK_REG_USB_M_ALT_Msk |
-				     USB_USB_MAMSK_REG_USB_M_WARN_Msk;
-		USB->USB_ALTMSK_REG = USB_USB_ALTMSK_REG_USB_M_RESET_Msk |
-				      USB_USB_ALTEV_REG_USB_SD3_Msk;
-
-		USB->USB_MCTRL_REG = USB_USB_MCTRL_REG_USBEN_Msk |
-				     USB_USB_MCTRL_REG_USB_NAT_Msk;
-
-		/* Select chosen DMA to be triggered by USB. */
-		DMA->DMA_REQ_MUX_REG =
-			(DMA->DMA_REQ_MUX_REG & ~DA146XX_DMA_USB_MUX_MASK) |
-			DA146XX_DMA_USB_MUX;
-	}
-	dev_state.attached = true;
+	usb_change_state(true, dev_state.vbus_present);
 
 	return 0;
 }
