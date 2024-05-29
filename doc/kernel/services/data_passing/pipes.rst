@@ -231,7 +231,7 @@ Configuration Options
 
 Related configuration options:
 
-* CONFIG_PIPES
+* :kconfig:option:`CONFIG_PIPES`
 
 API Reference
 *************
