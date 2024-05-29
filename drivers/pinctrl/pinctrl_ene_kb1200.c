@@ -35,6 +35,14 @@
  *  GPIO5F          KSO9            SERTXD1
  *  GPIO71          SDA8            UARTRTS
  *  GPIO38          SCL4            PWM1
+ *  GPIO41          SHICS
+ *  GPIO40          SHICLK
+ *  GPIO42          SHIDO
+ *  GPIO3E          SHIDI
+ *  GPIO45          SHR_SPICS
+ *  GPIO47          SHR_SPICLK
+ *  GPIO44          SHR_MOSI
+ *  GPIO46          SHR_MISO
  */
 
 /*
@@ -108,6 +116,18 @@ static int kb1200_config_pin(uint32_t gpio, uint32_t conf, uint32_t func)
 			break;
 		case GPIO38_SCL4_PWM1:
 			WRITE_BIT(gcfg_regs->GPIOALT, 9, func);
+			break;
+		case GPIO41_SHICS:
+		case GPIO40_SHICLK:
+		case GPIO42_SHIDO:
+		case GPIO3E_SHIDI:
+			gcfg_regs->GPIOMUX = (gcfg_regs->GPIOMUX & ~(3 << 0)) | (3 << 0);
+			break;
+		case GPIO45_SHR_SPICS:
+		case GPIO47_SHR_SPICLK:
+		case GPIO44_SHR_MOSI:
+		case GPIO46_SHR_MISO:
+			gcfg_regs->GPIOMUX = (gcfg_regs->GPIOMUX & ~(3 << 0)) | (2 << 0);
 			break;
 		}
 		WRITE_BIT(gpio_regs->GPIOFS, pin, 1);

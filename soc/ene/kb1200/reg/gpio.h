@@ -51,5 +51,13 @@ struct gpio_regs {
 #define GPIO71_SDA8_UARTRTS     0x71
 #define GPIO38_SCL4_PWM1        0x38
 
+#define GPIO41_SHICS            0x41
+#define GPIO40_SHICLK           0x40
+#define GPIO42_SHIDO            0x42
+#define GPIO3E_SHIDI            0x3E
+#define GPIO45_SHR_SPICS        0x45
+#define GPIO47_SHR_SPICLK       0x47
+#define GPIO44_SHR_MOSI         0x44
+#define GPIO46_SHR_MISO         0x46
 
 #endif /* ENE_KB1200_GPIO_H */
