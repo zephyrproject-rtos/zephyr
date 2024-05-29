@@ -1352,19 +1352,24 @@ int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 		LOG_WRN("fifo_%d error status: 0x%02x", ep_fifo, ep_regs[ep_fifo].ep_status);
 	}
 
-	if (max_data_len == 0) {
+	rx_fifo_len = (uint16_t)ff_regs[ep_fifo].ep_rx_fifo_dcnt_lsb +
+		      (((uint16_t)ff_regs[ep_fifo].ep_rx_fifo_dcnt_msb) << 8);
 
-		*read_bytes = 0;
-
-		if (ep_idx > 0) {
-			ep_regs[ep_idx].ep_ctrl.fields.ready_bit = 1;
+	if (!buf && !max_data_len) {
+		/*
+		 * When both buffer and max data to read are zero return
+		 * the available data length in buffer.
+		 */
+		if (read_bytes) {
+			*read_bytes = rx_fifo_len;
 		}
 
+		if (ep_idx > 0 && !rx_fifo_len) {
+			udata0.fifo_ready[ep_fifo - 1] = true;
+			it82xx2_usb_set_ep_ctrl(ep_idx, EP_READY_ENABLE, true);
+		}
 		return 0;
 	}
-
-	rx_fifo_len = (uint16_t)ff_regs[ep_fifo].ep_rx_fifo_dcnt_lsb +
-		(((uint16_t)ff_regs[ep_fifo].ep_rx_fifo_dcnt_msb) << 8);
 
 	if (ep_idx == 0) {
 		/* Prevent wrong read_bytes cause memory error
