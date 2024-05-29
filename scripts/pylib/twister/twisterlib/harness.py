@@ -13,6 +13,7 @@ import logging
 import threading
 import time
 import shutil
+import json
 
 from twisterlib.error import ConfigurationError
 from twisterlib.environment import ZEPHYR_BASE, PYTEST_PLUGIN_INSTALLED
@@ -57,6 +58,7 @@ class Harness:
         self.next_pattern = 0
         self.record = None
         self.record_pattern = None
+        self.record_as_json = None
         self.recording = []
         self.ztest = False
         self.detected_suite_names = []
@@ -82,6 +84,7 @@ class Harness:
             self.record = config.get('record', {})
             if self.record:
                 self.record_pattern = re.compile(self.record.get("regex", ""))
+                self.record_as_json = self.record.get("as_json")
 
     def build(self):
         pass
@@ -92,12 +95,27 @@ class Harness:
         """
         return self.id
 
+    def translate_record(self, record: dict) -> dict:
+        if self.record_as_json:
+            for k in self.record_as_json:
+                if not k in record:
+                    continue
+                try:
+                    record[k] = json.loads(record[k]) if record[k] else {}
+                except json.JSONDecodeError as parse_error:
+                    logger.warning(f"HARNESS:{self.__class__.__name__}: recording JSON failed:"
+                                   f" {parse_error} for '{k}':'{record[k]}'")
+                    # Don't set the Harness state to failed for recordings.
+                    record[k] = { 'ERROR': { 'msg': str(parse_error), 'doc': record[k] } }
+        return record
+
     def parse_record(self, line) -> re.Match:
         match = None
         if self.record_pattern:
             match = self.record_pattern.search(line)
             if match:
-                self.recording.append({ k:v.strip() for k,v in match.groupdict(default="").items() })
+                rec = self.translate_record({ k:v.strip() for k,v in match.groupdict(default="").items() })
+                self.recording.append(rec)
         return match
     #
 
