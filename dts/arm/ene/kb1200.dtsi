@@ -335,6 +335,14 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		spi0: spi@40320000 {
+			compatible = "ene,kb1200-spi";
+			reg = <0x40320000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 

@@ -193,4 +193,28 @@
 		pinmux = <ENE_KB1200_PINMUX(0x73, PINMUX_FUNC_B)>;
 		bias-pull-up;
 	};
+	/omit-if-no-ref/ shi_clk_gpio40: shi_clk_gpio40 {
+		pinmux = <ENE_KB1200_PINMUX(0x40, PINMUX_FUNC_B)>;
+	};
+	/omit-if-no-ref/ shi_cs_gpio41: shi_cs_gpio41 {
+		pinmux = <ENE_KB1200_PINMUX(0x41, PINMUX_FUNC_B)>;
+	};
+	/omit-if-no-ref/ shi_mosi_gpio42: shi_mosi_gpio42 {
+		pinmux = <ENE_KB1200_PINMUX(0x42, PINMUX_FUNC_B)>;
+	};
+	/omit-if-no-ref/ shi_miso_gpio3e: shi_miso_gpio3e {
+		pinmux = <ENE_KB1200_PINMUX(0x3E, PINMUX_FUNC_A)>;
+	};
+	/omit-if-no-ref/ shr_clk_gpio47: shr_clk_gpio47 {
+		pinmux = <ENE_KB1200_PINMUX(0x47, PINMUX_FUNC_B)>;
+	};
+	/omit-if-no-ref/ shr_cs_gpio45: shr_cs_gpio45 {
+		pinmux = <ENE_KB1200_PINMUX(0x45, PINMUX_FUNC_B)>;
+	};
+	/omit-if-no-ref/ shr_mosi_gpio44: shr_mosi_gpio44 {
+		pinmux = <ENE_KB1200_PINMUX(0x44, PINMUX_FUNC_B)>;
+	};
+	/omit-if-no-ref/ shr_miso_gpio46: shr_miso_gpio46 {
+		pinmux = <ENE_KB1200_PINMUX(0x46, PINMUX_FUNC_A)>;
+	};
 };
