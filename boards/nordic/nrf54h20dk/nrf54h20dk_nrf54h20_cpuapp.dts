@@ -108,6 +108,10 @@
 	status = "okay";
 };
 
+&ram21_region {
+	status = "okay";
+};
+
 &cpuapp_bellboard {
 	status = "okay";
 	interrupts = <96 NRF_DEFAULT_IRQ_PRIORITY>;
@@ -153,6 +157,10 @@ ipc0: &cpuapp_cpurad_ipc {
 };
 
 &cpuapp_dma_region {
+	status = "okay";
+};
+
+&dma_fast_region {
 	status = "okay";
 };
 
