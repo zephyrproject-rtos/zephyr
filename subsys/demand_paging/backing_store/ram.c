@@ -51,8 +51,8 @@
  * starts getting set for certain page frames after a page-in (and possibly
  * cleared at a later time).
  */
-static char backing_store[CONFIG_MMU_PAGE_SIZE *
-			  CONFIG_BACKING_STORE_RAM_PAGES];
+#define BACKING_STORE_SIZE (CONFIG_BACKING_STORE_RAM_PAGES * CONFIG_MMU_PAGE_SIZE)
+static char backing_store[BACKING_STORE_SIZE] __aligned(sizeof(void *));
 static struct k_mem_slab backing_slabs;
 static unsigned int free_slabs;
 
@@ -95,7 +95,9 @@ int k_mem_paging_backing_store_location_get(struct k_mem_page_frame *pf,
 
 	ret = k_mem_slab_alloc(&backing_slabs, &slab, K_NO_WAIT);
 	__ASSERT(ret == 0, "slab count mismatch");
-	(void)ret;
+	if (ret != 0) {
+		return ret;
+	}
 	*location = slab_to_location(slab);
 	free_slabs--;
 
