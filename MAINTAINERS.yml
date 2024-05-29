@@ -446,11 +446,10 @@ Bluetooth Audio:
     - tests/bluetooth/shell/audio.conf
     - tests/bluetooth/tester/overlay-le-audio.conf
     - doc/connectivity/bluetooth/api/audio/
-    - samples/bluetooth/broadcast_audio*/
+    - samples/bluetooth/bap*/
     - samples/bluetooth/hap*/
-    - samples/bluetooth/public_broadcast*/
+    - samples/bluetooth/pbp*/
     - samples/bluetooth/tmap*/
-    - samples/bluetooth/unicast_audio*/
   labels:
     - "area: Bluetooth Audio"
     - "area: Bluetooth"
