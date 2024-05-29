@@ -401,7 +401,7 @@ void radio_freq_chan_set(uint32_t chan)
 
 void radio_whiten_iv_set(uint32_t iv)
 {
-	NRF_RADIO->DATAWHITEIV = iv;
+	nrf_radio_datawhiteiv_set(NRF_RADIO, iv);
 
 	NRF_RADIO->PCNF1 &= ~RADIO_PCNF1_WHITEEN_Msk;
 	NRF_RADIO->PCNF1 |= ((1UL) << RADIO_PCNF1_WHITEEN_Pos) &
@@ -652,12 +652,10 @@ uint32_t radio_is_idle(void)
 
 void radio_crc_configure(uint32_t polynomial, uint32_t iv)
 {
-	NRF_RADIO->CRCCNF =
-	    (((RADIO_CRCCNF_SKIPADDR_Skip) << RADIO_CRCCNF_SKIPADDR_Pos) &
-	     RADIO_CRCCNF_SKIPADDR_Msk) |
-	    (((RADIO_CRCCNF_LEN_Three) << RADIO_CRCCNF_LEN_Pos) &
-	       RADIO_CRCCNF_LEN_Msk);
-	NRF_RADIO->CRCPOLY = polynomial;
+	nrf_radio_crc_configure(NRF_RADIO,
+				RADIO_CRCCNF_LEN_Three,
+				NRF_RADIO_CRC_ADDR_SKIP,
+				polynomial);
 	NRF_RADIO->CRCINIT = iv;
 }
 
