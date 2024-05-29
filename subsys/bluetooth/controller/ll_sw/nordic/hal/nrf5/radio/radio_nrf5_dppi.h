@@ -5,9 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_SOC_SERIES_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 #define NRF_DPPIC NRF_DPPIC10
-#endif /* CONFIG_SOC_SERIES_NRF54LX */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
 
 static inline void hal_radio_nrf_ppi_channels_enable(uint32_t mask)
 {
