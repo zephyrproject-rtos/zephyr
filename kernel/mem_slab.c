@@ -204,6 +204,16 @@ out:
 	return rc;
 }
 
+static inline bool slab_ptr_is_good(struct k_mem_slab *slab, const void *ptr)
+{
+	const char *p = ptr;
+	ptrdiff_t offset = p - slab->buffer;
+
+	return (offset >= 0) &&
+	       (offset < (slab->info.block_size * slab->info.num_blocks)) &&
+	       ((offset % slab->info.block_size) == 0);
+}
+
 int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 {
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
@@ -216,6 +226,10 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 		*mem = slab->free_list;
 		slab->free_list = *(char **)(slab->free_list);
 		slab->info.num_used++;
+		__ASSERT((slab->free_list == NULL &&
+			  slab->info.num_used == slab->info.num_blocks) ||
+			 slab_ptr_is_good(slab, slab->free_list),
+			 "slab corruption detected");
 
 #ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
 		slab->info.max_used = MAX(slab->info.num_used,
@@ -253,11 +267,7 @@ void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
 {
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 
-	__ASSERT(((char *)mem >= slab->buffer) &&
-		 ((((char *)mem - slab->buffer) % slab->info.block_size) == 0) &&
-		 ((char *)mem <= (slab->buffer + (slab->info.block_size *
-						  (slab->info.num_blocks - 1)))),
-		 "Invalid memory pointer provided");
+	__ASSERT(slab_ptr_is_good(slab, mem), "Invalid memory pointer provided");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, free, slab);
 	if ((slab->free_list == NULL) && IS_ENABLED(CONFIG_MULTITHREADING)) {
