@@ -1,7 +1,13 @@
+# Copyright (c) 2024 Meta Platforms
 # SPDX-License-Identifier: Apache-2.0
 
-add_library(symtab
+zephyr_library()
+
+zephyr_library_sources(
   symtab.c
+)
+
+add_library(symtab
   symtab_stub.c
 )
 
