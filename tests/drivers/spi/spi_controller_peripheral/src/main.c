@@ -146,15 +146,15 @@ static int check_buffers(struct spi_buf_set *tx_set, struct spi_buf_set *rx_set,
 	return memcmp(tx_data, rx_data, rx_len);
 }
 
-/** Calculate expected number of received bytes by the slave.
+/** Calculate expected number of received bytes by the SPI peripheral.
  *
- * It is used to check if SPI API call for slave returns correct value.
+ * It is used to check if SPI API call for peripheral SPI device returns correct value.
  * @param tx_set TX set.
  * @param rx_set RX set.
  *
  * @return Expected amount of received bytes.
  */
-static int slave_rx_len(struct spi_buf_set *tx_set, struct spi_buf_set *rx_set)
+static int peripheral_rx_len(struct spi_buf_set *tx_set, struct spi_buf_set *rx_set)
 {
 	size_t tx_len = 0;
 	size_t rx_len = 0;
@@ -178,15 +178,15 @@ static int slave_rx_len(struct spi_buf_set *tx_set, struct spi_buf_set *rx_set)
 static void run_test(bool m_same_size, bool s_same_size, bool async)
 {
 	int rv;
-	int slave_rv;
+	int periph_rv;
 	int srx_len;
 
 	rv = k_work_schedule(&tdata.test_work, K_MSEC(10));
 	zassert_equal(rv, 1);
 
 	if (!async) {
-		slave_rv = spi_transceive(spis_dev, &spis_config, tdata.stx_set, tdata.srx_set);
-		if (slave_rv == -ENOTSUP) {
+		periph_rv = spi_transceive(spis_dev, &spis_config, tdata.stx_set, tdata.srx_set);
+		if (periph_rv == -ENOTSUP) {
 			ztest_test_skip();
 		}
 	} else {
@@ -204,7 +204,7 @@ static void run_test(bool m_same_size, bool s_same_size, bool async)
 		rv = k_poll(&async_evt, 1, K_MSEC(200));
 		zassert_false(rv, "one or more events are not ready");
 
-		slave_rv = async_evt.signal->result;
+		periph_rv = async_evt.signal->result;
 
 		/* Reinitializing for next call */
 		async_evt.signal->signaled = 0U;
@@ -214,9 +214,9 @@ static void run_test(bool m_same_size, bool s_same_size, bool async)
 	rv = k_sem_take(&tdata.sem, K_MSEC(100));
 	zassert_equal(rv, 0);
 
-	srx_len = slave_rx_len(tdata.mtx_set, tdata.srx_set);
+	srx_len = peripheral_rx_len(tdata.mtx_set, tdata.srx_set);
 
-	zassert_equal(slave_rv, srx_len, "Got: %d but expected:%d", slave_rv, srx_len);
+	zassert_equal(periph_rv, srx_len, "Got: %d but expected:%d", periph_rv, srx_len);
 
 	rv = check_buffers(tdata.mtx_set, tdata.srx_set, m_same_size);
 	zassert_equal(rv, 0);
@@ -225,7 +225,7 @@ static void run_test(bool m_same_size, bool s_same_size, bool async)
 	zassert_equal(rv, 0);
 }
 
-/** Basic test where slave and master have RX and TX sets which contains only one
+/** Basic test where SPI controller and SPI peripheral have RX and TX sets which contains only one
  *  same size buffer.
  */
 static void test_basic(bool async)
@@ -247,12 +247,12 @@ static void test_basic(bool async)
 	run_test(true, true, async);
 }
 
-ZTEST(spi_slave, test_basic)
+ZTEST(spi_controller_peripheral, test_basic)
 {
 	test_basic(false);
 }
 
-ZTEST(spi_slave, test_basic_async)
+ZTEST(spi_controller_peripheral, test_basic_async)
 {
 	test_basic(true);
 }
@@ -298,19 +298,19 @@ void test_basic_zero_len(bool async)
 	run_test(true, true, async);
 }
 
-ZTEST(spi_slave, test_basic_zero_len)
+ZTEST(spi_controller_peripheral, test_basic_zero_len)
 {
 	test_basic_zero_len(false);
 }
 
-ZTEST(spi_slave, test_basic_zero_len_async)
+ZTEST(spi_controller_peripheral, test_basic_zero_len_async)
 {
 	test_basic_zero_len(true);
 }
 
-/** Setup a transfer where RX buffer on master and slave are shorter than
- *  TX buffers. RX buffers shall contain beginning of TX data and last TX
- *  bytes that did not fit in the RX buffers shall be lost.
+/** Setup a transfer where RX buffer on SPI controller and SPI peripheral are
+ *  shorter than TX buffers. RX buffers shall contain beginning of TX data
+ *  and last TX bytes that did not fit in the RX buffers shall be lost.
  */
 static void test_short_rx(bool async)
 {
@@ -338,12 +338,12 @@ static void test_short_rx(bool async)
 	run_test(false, false, async);
 }
 
-ZTEST(spi_slave, test_short_rx)
+ZTEST(spi_controller_peripheral, test_short_rx)
 {
 	test_short_rx(false);
 }
 
-ZTEST(spi_slave, test_short_rx_async)
+ZTEST(spi_controller_peripheral, test_short_rx_async)
 {
 	test_short_rx(true);
 }
@@ -372,17 +372,17 @@ static void test_only_tx(bool async)
 	run_test(true, true, async);
 }
 
-ZTEST(spi_slave, test_only_tx)
+ZTEST(spi_controller_peripheral, test_only_tx)
 {
 	test_only_tx(false);
 }
 
-ZTEST(spi_slave, test_only_tx_async)
+ZTEST(spi_controller_peripheral, test_only_tx_async)
 {
 	test_only_tx(true);
 }
 
-/** Test where only master transmits and slave receives in chunks. */
+/** Test where only SPI controller transmits and SPI peripheral receives in chunks. */
 static void test_only_tx_in_chunks(bool async)
 {
 	size_t len1 = 7;
@@ -409,17 +409,17 @@ static void test_only_tx_in_chunks(bool async)
 	run_test(true, true, async);
 }
 
-ZTEST(spi_slave, test_only_tx_in_chunks)
+ZTEST(spi_controller_peripheral, test_only_tx_in_chunks)
 {
 	test_only_tx_in_chunks(false);
 }
 
-ZTEST(spi_slave, test_only_tx_in_chunks_async)
+ZTEST(spi_controller_peripheral, test_only_tx_in_chunks_async)
 {
 	test_only_tx_in_chunks(true);
 }
 
-/** Test where only slave transmits. */
+/** Test where only SPI peripheral transmits. */
 static void test_only_rx(bool async)
 {
 	size_t len = 16;
@@ -443,17 +443,17 @@ static void test_only_rx(bool async)
 	run_test(true, true, async);
 }
 
-ZTEST(spi_slave, test_only_rx)
+ZTEST(spi_controller_peripheral, test_only_rx)
 {
 	test_only_rx(false);
 }
 
-ZTEST(spi_slave, test_only_rx_async)
+ZTEST(spi_controller_peripheral, test_only_rx_async)
 {
 	test_only_rx(true);
 }
 
-/** Test where only slave transmits in chunks. */
+/** Test where only SPI peripheral transmits in chunks. */
 static void test_only_rx_in_chunks(bool async)
 {
 	size_t len1 = 7;
@@ -480,12 +480,12 @@ static void test_only_rx_in_chunks(bool async)
 	run_test(true, true, async);
 }
 
-ZTEST(spi_slave, test_only_rx_in_chunks)
+ZTEST(spi_controller_peripheral, test_only_rx_in_chunks)
 {
 	test_only_rx_in_chunks(false);
 }
 
-ZTEST(spi_slave, test_only_rx_in_chunks_async)
+ZTEST(spi_controller_peripheral, test_only_rx_in_chunks_async)
 {
 	test_only_rx_in_chunks(true);
 }
@@ -511,4 +511,4 @@ static void *suite_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(spi_slave, NULL, suite_setup, before, NULL, NULL);
+ZTEST_SUITE(spi_controller_peripheral, NULL, suite_setup, before, NULL, NULL);
