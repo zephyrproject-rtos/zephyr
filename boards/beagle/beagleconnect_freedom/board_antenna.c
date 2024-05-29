@@ -2,6 +2,7 @@
  *
  * Copyright (c) 2021 Florin Stancu
  * Copyright (c) 2021 Jason Kridner, BeagleBoard.org Foundation
+ * Copyright (c) 2024 Ayush Singh <ayush@beagleboard.org>
  *
  */
 
@@ -10,22 +11,26 @@
  * switch.
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/device.h>
+#define DT_DRV_COMPAT skyworks_sky13317
+
 #include <zephyr/init.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include <ti/drivers/rf/RF.h>
-#include <driverlib/gpio.h>
-#include <driverlib/ioc.h>
 #include <driverlib/rom.h>
+#include <driverlib/interrupt.h>
 
-/* DIOs for RF antenna paths */
-#define BOARD_RF_HIGH_PA   29		/* TODO: pull from DT */
-#define BOARD_RF_SUB1GHZ   30		/* TODO: pull from DT */
+/* custom pinctrl states for the antenna mux */
+#define PINCTRL_STATE_ANT_SUBG    1
+#define PINCTRL_STATE_ANT_SUBG_PA 2
 
-static void board_cc13xx_rf_callback(RF_Handle client, RF_GlobalEvent events,
-		void *arg);
+#define BOARD_ANT_GPIO_PA   0
+#define BOARD_ANT_GPIO_SUBG 1
 
+static int board_antenna_init(const struct device *dev);
+static void board_cc13xx_rf_callback(RF_Handle client, RF_GlobalEvent events, void *arg);
 
 const RFCC26XX_HWAttrsV2 RFCC26XX_hwAttrs = {
 	.hwiPriority        = INT_PRI_LEVEL7,
@@ -38,30 +43,44 @@ const RFCC26XX_HWAttrsV2 RFCC26XX_hwAttrs = {
 			RF_GlobalEventRadioPowerDown),
 };
 
+PINCTRL_DT_INST_DEFINE(0);
+DEVICE_DT_INST_DEFINE(0, board_antenna_init, NULL, NULL, NULL, POST_KERNEL,
+		      CONFIG_BOARD_ANTENNA_INIT_PRIO, NULL);
+
+static const struct pinctrl_dev_config *ant_pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0);
+static const struct gpio_dt_spec ant_gpios[] = {
+	DT_FOREACH_PROP_ELEM_SEP(DT_NODELABEL(antenna_mux0), gpios, GPIO_DT_SPEC_GET_BY_IDX, (,))};
+
 /**
  * Antenna switch GPIO init routine.
  */
-static int board_antenna_init(void)
+static int board_antenna_init(const struct device *dev)
 {
+	ARG_UNUSED(dev);
+	int i;
 
-	/* set all paths to low */
-	IOCPinTypeGpioOutput(BOARD_RF_HIGH_PA);
-	GPIO_setOutputEnableDio(BOARD_RF_HIGH_PA, GPIO_OUTPUT_DISABLE);
-	IOCPinTypeGpioOutput(BOARD_RF_SUB1GHZ);
-	GPIO_setOutputEnableDio(BOARD_RF_SUB1GHZ, GPIO_OUTPUT_DISABLE);
+	/* default pinctrl configuration: set all antenna mux control pins as GPIOs */
+	pinctrl_apply_state(ant_pcfg, PINCTRL_STATE_DEFAULT);
+	/* set all GPIOs to 0 (all RF paths disabled) */
+	for (i = 0; i < ARRAY_SIZE(ant_gpios); i++) {
+		gpio_pin_configure_dt(&ant_gpios[i], 0);
+	}
 	return 0;
 }
 
-SYS_INIT(board_antenna_init, POST_KERNEL, CONFIG_BOARD_ANTENNA_INIT_PRIO);
-
-void board_cc13xx_rf_callback(RF_Handle client, RF_GlobalEvent events, void *arg)
+/**
+ * Custom TI RFCC26XX callback for switching the on-board antenna mux on radio setup.
+ */
+static void board_cc13xx_rf_callback(RF_Handle client, RF_GlobalEvent events, void *arg)
 {
 	bool    sub1GHz   = false;
 	uint8_t loDivider = 0;
+	int i;
 
-	/* Switch off all paths first. Needs to be done anyway in every sub-case below. */
-	GPIO_setOutputEnableDio(BOARD_RF_HIGH_PA, GPIO_OUTPUT_DISABLE);
-	GPIO_setOutputEnableDio(BOARD_RF_SUB1GHZ, GPIO_OUTPUT_DISABLE);
+	/* Clear all antenna switch GPIOs (for all cases). */
+	for (i = 0; i < ARRAY_SIZE(ant_gpios); i++) {
+		gpio_pin_configure_dt(&ant_gpios[i], 0);
+	}
 
 	if (events & RF_GlobalEventRadioSetup) {
 		/* Decode the current PA configuration. */
@@ -74,43 +93,27 @@ void board_cc13xx_rf_callback(RF_Handle client, RF_GlobalEvent events, void *arg
 		case (CMD_RADIO_SETUP):
 		case (CMD_BLE5_RADIO_SETUP):
 			loDivider = RF_LODIVIDER_MASK & setupCommand->common.loDivider;
-			/* Sub-1GHz front-end. */
-			if (loDivider != 0)
-				sub1GHz = true;
 			break;
 		case (CMD_PROP_RADIO_DIV_SETUP):
 			loDivider = RF_LODIVIDER_MASK & setupCommand->prop_div.loDivider;
-			/* Sub-1GHz front-end. */
-			if (loDivider != 0)
-				sub1GHz = true;
 			break;
 		default:
 			break;
 		}
+		sub1GHz = (loDivider != 0);
 
-		/* Sub-1 GHz */
-		if (paType == RF_TxPowerTable_HighPA) {
-			/* PA enable --> HIGH PA */
-			/* LNA enable --> Sub-1 GHz */
-			/* Note: RFC_GPO3 is a work-around because the RFC_GPO1 */
-			/* is sometimes not de-asserted on CC1352 Rev A. */
-			IOCPortConfigureSet(BOARD_RF_HIGH_PA,
-					IOC_PORT_RFC_GPO3, IOC_IOMODE_NORMAL);
-			IOCPortConfigureSet(BOARD_RF_SUB1GHZ,
-					IOC_PORT_RFC_GPO0, IOC_IOMODE_NORMAL);
-		} else {
-			/* RF core active --> Sub-1 GHz */
-			IOCPortConfigureSet(BOARD_RF_HIGH_PA,
-					IOC_PORT_GPIO, IOC_IOMODE_NORMAL);
-			IOCPortConfigureSet(BOARD_RF_SUB1GHZ,
-					IOC_PORT_GPIO, IOC_IOMODE_NORMAL);
-			GPIO_setOutputEnableDio(BOARD_RF_SUB1GHZ, GPIO_OUTPUT_ENABLE);
+		if (sub1GHz) {
+			if (paType == RF_TxPowerTable_HighPA) {
+				/* Note: RFC_GPO3 is a work-around because the RFC_GPO1 */
+				/* is sometimes not de-asserted on CC1352 Rev A. */
+				pinctrl_apply_state(ant_pcfg, PINCTRL_STATE_ANT_SUBG_PA);
+			} else {
+				pinctrl_apply_state(ant_pcfg, PINCTRL_STATE_ANT_SUBG);
+				/* Manually set the sub-GHZ antenna switch DIO */
+				gpio_pin_configure_dt(&ant_gpios[BOARD_ANT_GPIO_SUBG], 1);
+			}
 		}
 	} else {
-		/* Reset the IO multiplexer to GPIO functionality */
-		IOCPortConfigureSet(BOARD_RF_HIGH_PA,
-				IOC_PORT_GPIO, IOC_IOMODE_NORMAL);
-		IOCPortConfigureSet(BOARD_RF_SUB1GHZ,
-				IOC_PORT_GPIO, IOC_IOMODE_NORMAL);
+		pinctrl_apply_state(ant_pcfg, PINCTRL_STATE_DEFAULT);
 	}
 }
