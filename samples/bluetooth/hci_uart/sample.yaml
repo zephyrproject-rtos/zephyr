@@ -65,6 +65,7 @@ tests:
       - nrf54l15pdk/nrf54l15/cpuapp
     extra_args:
       - OVERLAY_CONFIG=overlay-all-bt_ll_sw_split.conf
+      - DTC_OVERLAY_FILE=./boards/nrf54l15pdk_nrf54l15_cpuapp_df.overlay
     tags:
       - uart
       - bluetooth
