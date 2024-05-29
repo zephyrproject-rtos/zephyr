@@ -345,7 +345,7 @@ static uint8_t bt_cap_common_discover_included_cb(struct bt_conn *conn,
 			}
 		} else {
 			const struct bt_csip_set_coordinator_set_member *member =
-				bt_csip_set_coordinator_csis_member_by_conn(conn);
+				bt_csip_set_coordinator_set_member_by_conn(conn);
 
 			LOG_DBG("Found CAS with CSIS");
 
