@@ -59,7 +59,6 @@
 			/delete-node/ watchdog@109000;
 			/delete-node/ gpio@10a000;
 			/delete-node/ gpiote@10c000;
-			/delete-node/ clock@10e000;
 		};
 		/delete-node/ spu@50003000;
 		/delete-node/ gpiote@5000d000;
@@ -98,4 +97,8 @@
 &radio {
 	/* This feature is not yet supported by the RADIO model */
 	/delete-property/ dfe-supported;
+};
+
+&clock {
+	status = "okay";
 };
