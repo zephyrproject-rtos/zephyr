@@ -15,7 +15,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sock_app, LOG_LEVEL_INF);
 
+#if CONFIG_NET_IPV4
 #define ECHO_SERVER_IP            CONFIG_NET_CONFIG_PEER_IPV4_ADDR
+#elif CONFIG_NET_IPV6
+#define ECHO_SERVER_IP            CONFIG_NET_CONFIG_PEER_IPV6_ADDR
+#endif
 #define ECHO_SERVER_PORT          2024
 #define ECHO_SERVER_TIMEOUT_MS    1000
 #define ECHO_SERVER_UDP_BUF_SIZE  1472

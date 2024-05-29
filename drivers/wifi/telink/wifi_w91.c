@@ -112,6 +112,7 @@ struct ip_v4_data {
 	uint32_t gw;
 };
 
+#if CONFIG_NET_IPV4
 /* APIs implementation: set ipv4 */
 static size_t pack_wifi_w91_set_ipv4(uint8_t inst, void *unpack_data, uint8_t *pack_data)
 {
@@ -162,6 +163,7 @@ static int wifi_w91_set_ipv4(struct net_if *iface)
 
 	return 0;
 }
+#endif /* CONFIG_NET_IPV4 */
 
 #if CONFIG_NET_DHCPV4
 static void wifi_w91_got_dhcp_ip(struct net_mgmt_event_callback *cb,
@@ -601,9 +603,9 @@ static void wifi_w91_event_thread(void *p1, void *p2, void *p3)
 		case WIFI_W91_EVENT_STA_CONNECTED:
 			data->base.state = WIFI_W91_STA_CONNECTED;
 			LOG_INF("The WiFi STA connected");
-#if !CONFIG_NET_DHCPV4
+#if !CONFIG_NET_DHCPV4 && CONFIG_NET_IPV4
 			(void) wifi_w91_set_ipv4(data->base.iface);
-#endif /* !CONFIG_NET_DHCPV4 */
+#endif /* !CONFIG_NET_DHCPV4 && CONFIG_NET_IPV4 */
 			break;
 		case WIFI_W91_EVENT_STA_DISCONNECTED:
 			LOG_INF("The WiFi STA disconnected");
@@ -618,7 +620,9 @@ static void wifi_w91_event_thread(void *p1, void *p2, void *p3)
 			break;
 		case WIFI_W91_EVENT_AP_START:
 			data->base.state = WIFI_W91_AP_STARTED;
+#if CONFIG_NET_IPV4
 			(void) wifi_w91_set_ipv4(data->base.iface);
+#endif /* CONFIG_NET_IPV4 */
 			LOG_INF("The WiFi Access Point is started");
 			break;
 		case WIFI_W91_EVENT_AP_STOP:

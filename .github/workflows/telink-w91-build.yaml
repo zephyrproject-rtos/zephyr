@@ -68,6 +68,16 @@ jobs:
         cd ..
         west build -b tlsr9118bdk40d             -d build_blinky_dfu_w91                zephyr/samples/basic/blinky                              -- -DCONFIG_BOOTLOADER_MCUBOOT=y
 
+    - name: Build W91 sock_simple IPv4
+      run: |
+        cd ..
+        west build -b tlsr9118bdk40d             -d build_sock_simple_ipv4_w91          zephyr/samples/boards/tlsr9x/sock_simple
+
+    - name: Build W91 sock_simple IPv6
+      run: |
+        cd ..
+        west build -b tlsr9118bdk40d             -d build_sock_simple_ipv6_w91          zephyr/samples/boards/tlsr9x/sock_simple                 -- -DCONFIG_NET_CONFIG_NEED_IPV4=n -DCONFIG_NET_CONFIG_NEED_IPV6=y
+
     - name: Collect artifacts
       run: |
         mkdir telink_build_artifacts
