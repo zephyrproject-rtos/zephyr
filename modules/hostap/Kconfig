@@ -202,6 +202,18 @@ config WIFI_NM_WPA_SUPPLICANT_BSS_MAX_IDLE_TIME
 config WIFI_NM_WPA_SUPPLICANT_NO_DEBUG
 	bool "Disable printing of debug messages, saves code size significantly"
 
+
+config WIFI_NM_WPA_SUPPLICANT_DPP
+	bool "WFA Easy Connect DPP"
+	select DPP
+	select DPP2
+	select DPP3
+	select GAS
+	select GAS_SERVER
+	select OFFCHANNEL
+	select MBEDTLS_X509_CSR_WRITE_C
+	select MBEDTLS_X509_CSR_PARSE_C
+
 # Create hidden config options that are used in hostap. This way we do not need
 # to mark them as allowed for CI checks, and also someone else cannot use the
 # same name options.
@@ -280,6 +292,9 @@ config P2P
 	bool
 
 config GAS
+	bool
+
+config GAS_SERVER
 	bool
 
 config OFFCHANNEL
@@ -384,6 +399,15 @@ config RRM
 	depends on WIFI_NM_WPA_SUPPLICANT_RRM
 
 config WMM_AC
+	bool
+
+config DPP
+	bool
+
+config DPP2
+	bool
+
+config DPP3
 	bool
 
 config NW_SEL_RELIABILITY

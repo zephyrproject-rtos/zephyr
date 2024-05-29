@@ -366,6 +366,33 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_NW_SEL_RE
 	CONFIG_NW_SEL_RELIABILITY
 )
 
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
+	${WIFI_NM_WPA_SUPPLICANT_BASE}/dpp_supplicant.c
+	${WIFI_NM_WPA_SUPPLICANT_BASE}/offchannel.c
+	${WIFI_NM_WPA_SUPPLICANT_BASE}/gas_query.c
+
+	${HOSTAP_SRC_BASE}/ap/dpp_hostapd.c
+	${HOSTAP_SRC_BASE}/ap/gas_query_ap.c
+	${HOSTAP_SRC_BASE}/ap/gas_serv.c
+
+	${HOSTAP_SRC_BASE}/common/dpp_tcp.c
+	${HOSTAP_SRC_BASE}/common/dpp.c
+	${HOSTAP_SRC_BASE}/common/dpp_pkex.c
+	${HOSTAP_SRC_BASE}/common/dpp_crypto.c
+	${HOSTAP_SRC_BASE}/common/dpp_auth.c
+	${HOSTAP_SRC_BASE}/common/dpp_reconfig.c
+	${HOSTAP_SRC_BASE}/common/gas_server.c
+	${HOSTAP_SRC_BASE}/common/gas.c
+	${HOSTAP_SRC_BASE}/common/dpp_backup.c
+
+	${HOSTAP_SRC_BASE}/crypto/aes-siv.c
+
+	${HOSTAP_SRC_BASE}/utils/json.c
+	${HOSTAP_SRC_BASE}/utils/ip_addr.c
+
+	${HOSTAP_SRC_BASE}/tls/asn1.c
+)
+
 # crypto mbedtls related
 if(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO)
 zephyr_library_sources(
