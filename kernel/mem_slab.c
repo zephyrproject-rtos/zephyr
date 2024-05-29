@@ -103,7 +103,6 @@ static struct k_obj_core_stats_desc mem_slab_stats_desc = {
  */
 static int create_free_list(struct k_mem_slab *slab)
 {
-	uint32_t j;
 	char *p;
 
 	/* blocks must be word aligned */
@@ -113,12 +112,12 @@ static int create_free_list(struct k_mem_slab *slab)
 	}
 
 	slab->free_list = NULL;
-	p = slab->buffer;
+	p = slab->buffer + slab->info.block_size * (slab->info.num_blocks - 1);
 
-	for (j = 0U; j < slab->info.num_blocks; j++) {
+	while (p >= slab->buffer) {
 		*(char **)p = slab->free_list;
 		slab->free_list = p;
-		p += slab->info.block_size;
+		p -= slab->info.block_size;
 	}
 	return 0;
 }
