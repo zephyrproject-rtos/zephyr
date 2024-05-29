@@ -9,7 +9,7 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 
 #include <zephyr/device.h>
 #include <zephyr/ipc/ipc_service.h>
@@ -18,10 +18,17 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver);
 
+#define DT_DRV_COMPAT zephyr_bt_hci_ipc
+
 #define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(1000)
 
-static struct ipc_ept hci_ept;
-static K_SEM_DEFINE(ipc_bound_sem, 0, 1);
+struct ipc_data {
+	bt_hci_recv_t recv;
+	struct ipc_ept hci_ept;
+	struct ipc_ept_cfg hci_ept_cfg;
+	struct k_sem bound_sem;
+	const struct device *ipc;
+};
 
 static bool is_hci_event_discardable(const uint8_t *evt_data)
 {
@@ -200,8 +207,9 @@ static struct net_buf *bt_ipc_iso_recv(const uint8_t *data, size_t remaining)
 	return buf;
 }
 
-static void bt_ipc_rx(const uint8_t *data, size_t len)
+static void bt_ipc_rx(const struct device *dev, const uint8_t *data, size_t len)
 {
+	struct ipc_data *ipc = dev->data;
 	uint8_t pkt_indicator;
 	struct net_buf *buf = NULL;
 	size_t remaining = len;
@@ -231,14 +239,15 @@ static void bt_ipc_rx(const uint8_t *data, size_t len)
 
 	if (buf) {
 		LOG_DBG("Calling bt_recv(%p)", buf);
-		bt_recv(buf);
+		ipc->recv(dev, buf);
 
 		LOG_HEXDUMP_DBG(buf->data, buf->len, "RX buf payload:");
 	}
 }
 
-static int bt_ipc_send(struct net_buf *buf)
+static int bt_ipc_send(const struct device *dev, struct net_buf *buf)
 {
+	struct ipc_data *data = dev->data;
 	int err;
 	uint8_t pkt_indicator;
 
@@ -261,7 +270,7 @@ static int bt_ipc_send(struct net_buf *buf)
 	net_buf_push_u8(buf, pkt_indicator);
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
-	err = ipc_service_send(&hci_ept, buf->data, buf->len);
+	err = ipc_service_send(&data->hci_ept, buf->data, buf->len);
 	if (err < 0) {
 		LOG_ERR("Failed to send (err %d)", err);
 	}
@@ -273,21 +282,18 @@ done:
 
 static void hci_ept_bound(void *priv)
 {
-	k_sem_give(&ipc_bound_sem);
+	const struct device *dev = priv;
+	struct ipc_data *ipc = dev->data;
+
+	k_sem_give(&ipc->bound_sem);
 }
 
 static void hci_ept_recv(const void *data, size_t len, void *priv)
 {
-	bt_ipc_rx(data, len);
-}
+	const struct device *dev = priv;
 
-static struct ipc_ept_cfg hci_ept_cfg = {
-	.name = "nrf_bt_hci",
-	.cb = {
-		.bound    = hci_ept_bound,
-		.received = hci_ept_recv,
-	},
-};
+	bt_ipc_rx(dev, data, len);
+}
 
 int __weak bt_hci_transport_setup(const struct device *dev)
 {
@@ -301,12 +307,10 @@ int __weak bt_hci_transport_teardown(const struct device *dev)
 	return 0;
 }
 
-static int bt_ipc_open(void)
+static int bt_ipc_open(const struct device *dev, bt_hci_recv_t recv)
 {
+	struct ipc_data *ipc = dev->data;
 	int err;
-
-	const struct device *hci_ipc_instance =
-		DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci_ipc));
 
 	err = bt_hci_transport_setup(NULL);
 	if (err) {
@@ -316,29 +320,32 @@ static int bt_ipc_open(void)
 
 	LOG_DBG("");
 
-	err = ipc_service_open_instance(hci_ipc_instance);
+	err = ipc_service_open_instance(ipc->ipc);
 	if (err && (err != -EALREADY)) {
 		LOG_ERR("IPC service instance initialization failed: %d\n", err);
 		return err;
 	}
 
-	err = ipc_service_register_endpoint(hci_ipc_instance, &hci_ept, &hci_ept_cfg);
+	err = ipc_service_register_endpoint(ipc->ipc, &ipc->hci_ept, &ipc->hci_ept_cfg);
 	if (err) {
 		LOG_ERR("Registering endpoint failed with %d", err);
 		return err;
 	}
 
-	err = k_sem_take(&ipc_bound_sem, IPC_BOUND_TIMEOUT_IN_MS);
+	err = k_sem_take(&ipc->bound_sem, IPC_BOUND_TIMEOUT_IN_MS);
 	if (err) {
 		LOG_ERR("Endpoint binding failed with %d", err);
 		return err;
 	}
 
+	ipc->recv = recv;
+
 	return 0;
 }
 
-static int bt_ipc_close(void)
+static int bt_ipc_close(const struct device *dev)
 {
+	struct ipc_data *ipc = dev->data;
 	int err;
 
 	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
@@ -349,16 +356,13 @@ static int bt_ipc_close(void)
 		}
 	}
 
-	err = ipc_service_deregister_endpoint(&hci_ept);
+	err = ipc_service_deregister_endpoint(&ipc->hci_ept);
 	if (err) {
 		LOG_ERR("Deregistering HCI endpoint failed with: %d", err);
 		return err;
 	}
 
-	const struct device *hci_ipc_instance =
-		DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci_ipc));
-
-	err = ipc_service_close_instance(hci_ipc_instance);
+	err = ipc_service_close_instance(ipc->ipc);
 	if (err) {
 		LOG_ERR("Closing IPC service failed with: %d", err);
 		return err;
@@ -370,31 +374,31 @@ static int bt_ipc_close(void)
 		return err;
 	}
 
+	ipc->recv = NULL;
+
 	return 0;
 }
 
-static const struct bt_hci_driver drv = {
-	.name		= "IPC",
+static const struct bt_hci_driver_api drv = {
 	.open		= bt_ipc_open,
 	.close		= bt_ipc_close,
 	.send		= bt_ipc_send,
-	.bus		= BT_HCI_DRIVER_BUS_IPM,
-#if defined(CONFIG_BT_DRIVER_QUIRK_NO_AUTO_DLE)
-	.quirks         = BT_QUIRK_NO_AUTO_DLE,
-#endif
 };
 
-static int bt_ipc_init(void)
-{
+#define IPC_DEVICE_INIT(inst) \
+	static struct ipc_data ipc_data_##inst = { \
+		.bound_sem = Z_SEM_INITIALIZER(ipc_data_##inst.bound_sem, 0, 1), \
+		.hci_ept_cfg = { \
+			.name = DT_INST_PROP(inst, bt_hci_ipc_name), \
+			.cb = { \
+				.bound    = hci_ept_bound, \
+				.received = hci_ept_recv, \
+			}, \
+			.priv = (void *)DEVICE_DT_INST_GET(inst), \
+		}, \
+		.ipc = DEVICE_DT_GET(DT_INST_PARENT(inst)), \
+	}; \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &ipc_data_##inst, NULL, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
-	int err;
-
-	err = bt_hci_driver_register(&drv);
-	if (err < 0) {
-		LOG_ERR("Failed to register BT HIC driver (err %d)", err);
-	}
-
-	return err;
-}
-
-SYS_INIT(bt_ipc_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DT_INST_FOREACH_STATUS_OKAY(IPC_DEVICE_INIT)
