@@ -178,6 +178,10 @@ simultaneously. The selection is done by JP4 and JP5 jumpers.
 To use the RGB LED, JP5 must be ON and JP4 OFF. In this configuration,
 GPIO_SELECT2 (PH1) is the chip select for this RGB device on SPI1.
 
+Buttons
+-------
+STM32WB5MM-DK has two user buttons. The first button is mapped to PC12,
+and the second to PC13. They have the aliases sw0 and sw1 respectively.
 
 Programming and Debugging
 *************************
