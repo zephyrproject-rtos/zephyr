@@ -17,7 +17,7 @@
  *
  * @return 0 on success, other values on fail.
  */
-int usbd_interface_shutdown(struct usbd_contex *const uds_ctx,
+int usbd_interface_shutdown(struct usbd_context *const uds_ctx,
 			    struct usbd_config_node *const cfg_nd);
 
 /**
@@ -31,7 +31,7 @@ int usbd_interface_shutdown(struct usbd_contex *const uds_ctx,
  *
  * @return 0 on success, other values on fail.
  */
-int usbd_interface_default(struct usbd_contex *const uds_ctx,
+int usbd_interface_default(struct usbd_context *const uds_ctx,
 			   const enum usbd_speed speed,
 			   struct usbd_config_node *const cfg_nd);
 
@@ -46,7 +46,7 @@ int usbd_interface_default(struct usbd_contex *const uds_ctx,
  *
  * @return 0 on success, other values on fail.
  */
-int usbd_interface_set(struct usbd_contex *uds_ctx,
+int usbd_interface_set(struct usbd_context *uds_ctx,
 		       const uint8_t iface,
 		       const uint8_t alternate);
 

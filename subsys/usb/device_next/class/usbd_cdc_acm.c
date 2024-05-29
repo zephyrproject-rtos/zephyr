@@ -143,7 +143,7 @@ static ALWAYS_INLINE bool check_wq_ctx(const struct device *dev)
 
 static uint8_t cdc_acm_get_int_in(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	struct usbd_cdc_acm_desc *desc = data->desc;
@@ -157,7 +157,7 @@ static uint8_t cdc_acm_get_int_in(struct usbd_class_data *const c_data)
 
 static uint8_t cdc_acm_get_bulk_in(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	struct usbd_cdc_acm_desc *desc = data->desc;
@@ -171,7 +171,7 @@ static uint8_t cdc_acm_get_bulk_in(struct usbd_class_data *const c_data)
 
 static uint8_t cdc_acm_get_bulk_out(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	struct usbd_cdc_acm_desc *desc = data->desc;
@@ -185,7 +185,7 @@ static uint8_t cdc_acm_get_bulk_out(struct usbd_class_data *const c_data)
 
 static size_t cdc_acm_get_bulk_mps(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return 512U;
@@ -197,7 +197,7 @@ static size_t cdc_acm_get_bulk_mps(struct usbd_class_data *const c_data)
 static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 				struct net_buf *buf, int err)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	struct udc_buf_info *bi;
@@ -421,7 +421,7 @@ static int usbd_cdc_acm_ctd(struct usbd_class_data *const c_data,
 			    const struct usb_setup_packet *const setup,
 			    const struct net_buf *const buf)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	size_t len;

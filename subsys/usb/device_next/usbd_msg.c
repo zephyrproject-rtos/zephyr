@@ -22,14 +22,14 @@ static sys_slist_t msg_list;
 
 struct usbd_msg_pkt {
 	sys_snode_t node;
-	struct usbd_contex *ctx;
+	struct usbd_context *ctx;
 	struct usbd_msg msg;
 };
 
 K_MEM_SLAB_DEFINE_STATIC(usbd_msg_slab, sizeof(struct usbd_msg_pkt),
 			 CONFIG_USBD_MSG_SLAB_COUNT, sizeof(void *));
 
-static inline void usbd_msg_pub(struct usbd_contex *const ctx,
+static inline void usbd_msg_pub(struct usbd_context *const ctx,
 				const struct usbd_msg msg)
 {
 	struct usbd_msg_pkt *m_pkt;
@@ -87,7 +87,7 @@ static void msg_work_handler(struct k_work *work)
 	}
 }
 
-int usbd_msg_register_cb(struct usbd_contex *const uds_ctx,
+int usbd_msg_register_cb(struct usbd_context *const uds_ctx,
 			 const usbd_msg_cb_t cb)
 {
 	int ret = 0;
@@ -107,7 +107,7 @@ register_cb_exit:
 	return ret;
 }
 
-void usbd_msg_pub_simple(struct usbd_contex *const ctx,
+void usbd_msg_pub_simple(struct usbd_context *const ctx,
 			 const enum usbd_msg_type type, const int status)
 {
 	const struct usbd_msg msg = {
@@ -120,7 +120,7 @@ void usbd_msg_pub_simple(struct usbd_contex *const ctx,
 	}
 }
 
-void usbd_msg_pub_device(struct usbd_contex *const ctx,
+void usbd_msg_pub_device(struct usbd_context *const ctx,
 			 const enum usbd_msg_type type, const struct device *const dev)
 {
 	const struct usbd_msg msg = {

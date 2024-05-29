@@ -134,7 +134,7 @@ static uint8_t bt_hci_get_int_in(struct usbd_class_data *const c_data)
 
 static uint8_t bt_hci_get_bulk_in(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct bt_hci_data *data = usbd_class_get_private(c_data);
 	struct usbd_bt_hci_desc *desc = data->desc;
 
@@ -147,7 +147,7 @@ static uint8_t bt_hci_get_bulk_in(struct usbd_class_data *const c_data)
 
 static uint8_t bt_hci_get_bulk_out(struct usbd_class_data *const c_data)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct bt_hci_data *data = usbd_class_get_private(c_data);
 	struct usbd_bt_hci_desc *desc = data->desc;
 
@@ -370,7 +370,7 @@ restart_out_transfer:
 static int bt_hci_request(struct usbd_class_data *const c_data,
 			  struct net_buf *buf, int err)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct bt_hci_data *hci_data = usbd_class_get_private(c_data);
 	struct udc_buf_info *bi;
 
