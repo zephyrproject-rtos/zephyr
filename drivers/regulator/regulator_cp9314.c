@@ -530,7 +530,7 @@ static int regulator_cp9314_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	LOG_INF("Found CP9314 REV:0x%x\n", value);
+	LOG_DBG("Found CP9314 REV:0x%x\n", value);
 
 	ret = regulator_cp9314_otp_init(dev);
 	if (ret < 0) {
