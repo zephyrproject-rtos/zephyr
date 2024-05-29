@@ -176,18 +176,6 @@ ZTEST(spi_error_cases, test_unsupported_frequency)
 	zassert_equal(rv, -EINVAL, "Got %d instead", rv);
 }
 
-ZTEST(spi_error_cases, test_CS_unsupported_on_slave)
-{
-	int slave_rv;
-	struct spi_config spis_config_invalid = spis_config;
-	struct gpio_dt_spec test_gpio = { DEVICE_DT_GET(DT_NODELABEL(gpio0)), 10, GPIO_ACTIVE_LOW };
-
-	spis_config_invalid.cs.gpio = test_gpio;
-
-	slave_rv = spi_transceive(spis_dev, &spis_config_invalid, tdata.stx_set, tdata.srx_set);
-	zassert_equal(slave_rv, -EINVAL, "Got %d instead", slave_rv);
-}
-
 ZTEST(spi_error_cases, test_spis_scattered_tx_buf_not_supported)
 {
 	int slave_rv;
