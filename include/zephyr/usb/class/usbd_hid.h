@@ -106,8 +106,10 @@ struct hid_device_ops {
 	 * feature, input, or output report, which is specified by the argument
 	 * type. If there is no report ID in the report descriptor, the id
 	 * argument is zero. The callback implementation must check the
-	 * arguments, such as whether the report type is supported, and return
-	 * a nonzero value to indicate an unsupported type or an error.
+	 * arguments, such as whether the report type is supported and the
+	 * report length, and return a negative value to indicate an
+	 * unsupported type or an error, or return the length of the report
+	 * written to the buffer.
 	 */
 	int (*get_report)(const struct device *dev,
 			  const uint8_t type, const uint8_t id,
