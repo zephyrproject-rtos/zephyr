@@ -5,7 +5,7 @@
  */
 #include "nrf54h20dk_nrf54h20_common.dtsi"
 
-&dut_spi {
+&spi130 {
 	memory-regions = <&cpuapp_dma_region>;
 };
 
