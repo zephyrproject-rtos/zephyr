@@ -155,3 +155,9 @@
 	pinctrl-0 = <&i2c8_clk_gpio70 &i2c8_dat_gpio71>;
 	pinctrl-names = "default";
 };
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&shi_clk_gpio40 &shi_cs_gpio41 &shi_mosi_gpio42 &shi_miso_gpio3e>;
+	pinctrl-names = "default";
+};
