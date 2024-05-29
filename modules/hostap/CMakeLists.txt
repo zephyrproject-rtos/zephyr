@@ -419,6 +419,10 @@ zephyr_library_sources(
 	${HOSTAP_SRC_BASE}/crypto/rc4.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
+	${HOSTAP_BASE}/port/mbedtls/supp_psa_api.c
+)
+
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	${HOSTAP_SRC_BASE}/crypto/ms_funcs.c
 	${HOSTAP_SRC_BASE}/crypto/aes-eax.c
