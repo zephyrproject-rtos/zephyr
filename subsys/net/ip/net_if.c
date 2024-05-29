@@ -86,14 +86,14 @@ static struct {
 	struct net_if_ipv6 ipv6;
 	struct net_if *iface;
 } ipv6_addresses[CONFIG_NET_IF_MAX_IPV6_COUNT];
-#endif /* CONFIG_NET_IPV6 */
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 #if defined(CONFIG_NET_NATIVE_IPV4)
 static struct {
 	struct net_if_ipv4 ipv4;
 	struct net_if *iface;
 } ipv4_addresses[CONFIG_NET_IF_MAX_IPV4_COUNT];
-#endif /* CONFIG_NET_IPV4 */
+#endif /* CONFIG_NET_NATIVE_IPV4 */
 
 /* We keep track of the link callbacks in this list.
  */
@@ -958,7 +958,7 @@ static void iface_router_init(void)
 }
 #else
 #define iface_router_init(...)
-#endif
+#endif /* CONFIG_NET_NATIVE_IPV4 || CONFIG_NET_NATIVE_IPV6 */
 
 #if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
 void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
@@ -1006,7 +1006,7 @@ void net_if_mcast_monitor(struct net_if *iface,
 #define net_if_mcast_mon_register(...)
 #define net_if_mcast_mon_unregister(...)
 #define net_if_mcast_monitor(...)
-#endif
+#endif /* CONFIG_NET_NATIVE_IPV4 || CONFIG_NET_NATIVE_IPV6 */
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
 int net_if_config_ipv6_get(struct net_if *iface, struct net_if_ipv6 **ipv6)
@@ -3242,7 +3242,7 @@ static void iface_ipv6_init(int if_count)
 	}
 }
 
-#else
+#else /* CONFIG_NET_NATIVE_IPV6 */
 #define join_mcast_allnodes(...)
 #define join_mcast_solicit_node(...)
 #define leave_mcast_all(...)
@@ -3278,7 +3278,7 @@ struct in6_addr *net_if_ipv6_get_global_addr(enum net_addr_state state,
 
 	return NULL;
 }
-#endif /* CONFIG_NET_IPV6 */
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 #if defined(CONFIG_NET_NATIVE_IPV4)
 int net_if_config_ipv4_get(struct net_if *iface, struct net_if_ipv4 **ipv4)
@@ -4568,7 +4568,7 @@ static void leave_ipv4_mcast_all(struct net_if *iface)
 	}
 }
 
-#else
+#else /* CONFIG_NET_NATIVE_IPV4 */
 #define leave_ipv4_mcast_all(...)
 #define iface_ipv4_init(...)
 
@@ -4598,7 +4598,7 @@ struct in_addr *net_if_ipv4_get_global_addr(struct net_if *iface,
 
 	return NULL;
 }
-#endif /* CONFIG_NET_IPV4 */
+#endif /* CONFIG_NET_NATIVE_IPV4 */
 
 struct net_if *net_if_select_src_iface(const struct sockaddr *dst)
 {
