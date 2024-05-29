@@ -58,6 +58,7 @@ if (CONFIG_SOC_ESP32S3_APPCPU)
   endif()
 
 else()
+  ## Building for PROCPU
 
   set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
 
@@ -75,6 +76,21 @@ else()
     board_finalize_runner_args(esp32 "--esp-app-address=${img_0_off}")
   endif()
 
+endif()
+
+if(CONFIG_MCUBOOT)
+    # search from cross references between bootloader sections
+    message("check_callgraph using: ${ESP_IDF_PATH}/tools/ci/check_callgraph.py")
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND
+        ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/tools/ci/check_callgraph.py
+      ARGS
+        --rtl-dirs ${CMAKE_BINARY_DIR}/zephyr
+	--elf-file ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf
+        find-refs
+	--from-section='.iram0.loader_text'
+	--to-section='.iram0.text'
+        --exit-code)
 endif()
 
 if(CONFIG_MCUBOOT)
