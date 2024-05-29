@@ -154,4 +154,4 @@
 #  endif
 #endif
 
-#endif /* _MICROCHIP_PIC32CXSG0_ADC_FIXUP_H_ */
+#endif /* _MICROCHIP_PIC32CXSG_ADC_FIXUP_H_ */

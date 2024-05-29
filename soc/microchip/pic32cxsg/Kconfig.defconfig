@@ -1,6 +1,7 @@
 # Microchip PIC32CXSG MCU family default configuration options
 
 # Copyright (c) 2024 Microchip
+
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_FAMILY_MICROCHIP_PIC32CXSG
