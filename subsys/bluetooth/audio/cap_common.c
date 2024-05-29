@@ -54,16 +54,23 @@ bool bt_cap_common_subproc_is_type(enum bt_cap_common_subproc_type subproc_type)
 struct bt_conn *bt_cap_common_get_member_conn(enum bt_cap_set_type type,
 					      const union bt_cap_set_member *member)
 {
+	if (member == NULL) {
+		return NULL;
+	}
+
 	if (type == BT_CAP_SET_TYPE_CSIP) {
 		struct bt_cap_common_client *client;
 
 		/* We have verified that `client` won't be NULL in
 		 * `valid_change_volume_param`.
 		 */
+
 		client = bt_cap_common_get_client_by_csis(member->csip);
-		if (client != NULL) {
-			return client->conn;
+		if (client == NULL) {
+			return NULL;
 		}
+
+		return client->conn;
 	}
 
 	return member->member;
@@ -222,44 +229,6 @@ bt_cap_common_get_client_by_csis(const struct bt_csip_set_coordinator_csis_inst 
 	return NULL;
 }
 
-struct bt_cap_common_client *bt_cap_common_get_client(enum bt_cap_set_type type,
-						      const union bt_cap_set_member *member)
-{
-	struct bt_cap_common_client *client = NULL;
-
-	if (member == NULL) {
-		LOG_DBG("member is NULL");
-		return NULL;
-	}
-
-	if (type == BT_CAP_SET_TYPE_AD_HOC) {
-		CHECKIF(member->member == NULL) {
-			LOG_DBG("member->member is NULL");
-			return NULL;
-		}
-
-		client = bt_cap_common_get_client_by_acl(member->member);
-	} else if (type == BT_CAP_SET_TYPE_CSIP) {
-		CHECKIF(member->csip == NULL) {
-			LOG_DBG("member->csip is NULL");
-			return NULL;
-		}
-
-		client = bt_cap_common_get_client_by_csis(member->csip);
-		if (client == NULL) {
-			LOG_DBG("CSIS was not found for member");
-			return NULL;
-		}
-	}
-
-	if (client == NULL || !client->cas_found) {
-		LOG_DBG("CAS was not found for member %p", member);
-		return NULL;
-	}
-
-	return client;
-}
-
 static void cap_common_discover_complete(struct bt_conn *conn, int err,
 					 const struct bt_csip_set_coordinator_set_member *member,
 					 const struct bt_csip_set_coordinator_csis_inst *csis_inst)
@@ -367,7 +336,6 @@ static uint8_t bt_cap_common_discover_cas_cb(struct bt_conn *conn, const struct 
 			CONTAINER_OF(params, struct bt_cap_common_client, param);
 		int err;
 
-		client->cas_found = true;
 		client->conn = bt_conn_ref(conn);
 
 		if (attr->handle == prim_service->end_handle) {

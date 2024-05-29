@@ -89,9 +89,6 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume)
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_vcp_vol_ctlr *vol_ctlr; /* We don't care about this */
 
-		err = bt_cap_commander_discover(&fixture->conns[i]);
-		zassert_equal(0, err, "Unexpected return value %d", err);
-
 		err = bt_vcp_vol_ctlr_discover(&fixture->conns[i], &vol_ctlr);
 		zassert_equal(0, err, "Unexpected return value %d", err);
 	}
@@ -123,9 +120,6 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_double)
 
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_vcp_vol_ctlr *vol_ctlr; /* We don't care about this */
-
-		err = bt_cap_commander_discover(&fixture->conns[i]);
-		zassert_equal(0, err, "Unexpected return value %d", err);
 
 		err = bt_vcp_vol_ctlr_discover(&fixture->conns[i], &vol_ctlr);
 		zassert_equal(0, err, "Unexpected return value %d", err);
@@ -191,7 +185,7 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_inval_missing_cas)
 {
 	union bt_cap_set_member members[ARRAY_SIZE(fixture->conns)];
 	const struct bt_cap_commander_change_volume_param param = {
-		.type = BT_CAP_SET_TYPE_AD_HOC,
+		.type = BT_CAP_SET_TYPE_CSIP,
 		.members = members,
 		.count = ARRAY_SIZE(fixture->conns),
 		.volume = 177,
@@ -233,11 +227,6 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_inval_missing_vcs)
 
 	err = bt_cap_commander_register_cb(&mock_cap_commander_cb);
 	zassert_equal(0, err, "Unexpected return value %d", err);
-
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
-		err = bt_cap_commander_discover(&fixture->conns[i]);
-		zassert_equal(0, err, "Unexpected return value %d", err);
-	}
 
 	err = bt_cap_commander_change_volume(&param);
 	zassert_equal(-EINVAL, err, "Unexpected return value %d", err);
@@ -303,9 +292,6 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_offset)
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_vcp_vol_ctlr *vol_ctlr; /* We don't care about this */
 
-		err = bt_cap_commander_discover(&fixture->conns[i]);
-		zassert_equal(0, err, "Unexpected return value %d", err);
-
 		err = bt_vcp_vol_ctlr_discover(&fixture->conns[i], &vol_ctlr);
 		zassert_equal(0, err, "Unexpected return value %d", err);
 	}
@@ -338,9 +324,6 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_offset_double)
 
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_vcp_vol_ctlr *vol_ctlr; /* We don't care about this */
-
-		err = bt_cap_commander_discover(&fixture->conns[i]);
-		zassert_equal(0, err, "Unexpected return value %d", err);
 
 		err = bt_vcp_vol_ctlr_discover(&fixture->conns[i], &vol_ctlr);
 		zassert_equal(0, err, "Unexpected return value %d", err);
@@ -407,7 +390,7 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_offset_inval_missin
 	struct bt_cap_commander_change_volume_offset_member_param
 		member_params[ARRAY_SIZE(fixture->conns)];
 	const struct bt_cap_commander_change_volume_offset_param param = {
-		.type = BT_CAP_SET_TYPE_AD_HOC,
+		.type = BT_CAP_SET_TYPE_CSIP,
 		.param = member_params,
 		.count = ARRAY_SIZE(member_params),
 	};
@@ -450,11 +433,6 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_offset_inval_missin
 
 	err = bt_cap_commander_register_cb(&mock_cap_commander_cb);
 	zassert_equal(0, err, "Unexpected return value %d", err);
-
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
-		err = bt_cap_commander_discover(&fixture->conns[i]);
-		zassert_equal(0, err, "Unexpected return value %d", err);
-	}
 
 	err = bt_cap_commander_change_volume_offset(&param);
 	zassert_equal(-EINVAL, err, "Unexpected return value %d", err);
@@ -560,9 +538,6 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_mute_state)
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_vcp_vol_ctlr *vol_ctlr; /* We don't care about this */
 
-		err = bt_cap_commander_discover(&fixture->conns[i]);
-		zassert_equal(0, err, "Unexpected return value %d", err);
-
 		err = bt_vcp_vol_ctlr_discover(&fixture->conns[i], &vol_ctlr);
 		zassert_equal(0, err, "Unexpected return value %d", err);
 	}
@@ -594,9 +569,6 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_mute_state_double)
 
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_vcp_vol_ctlr *vol_ctlr; /* We don't care about this */
-
-		err = bt_cap_commander_discover(&fixture->conns[i]);
-		zassert_equal(0, err, "Unexpected return value %d", err);
 
 		err = bt_vcp_vol_ctlr_discover(&fixture->conns[i], &vol_ctlr);
 		zassert_equal(0, err, "Unexpected return value %d", err);
@@ -662,7 +634,7 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_mute_state_inval_mi
 {
 	union bt_cap_set_member members[ARRAY_SIZE(fixture->conns)];
 	const struct bt_cap_commander_change_volume_mute_state_param param = {
-		.type = BT_CAP_SET_TYPE_AD_HOC,
+		.type = BT_CAP_SET_TYPE_CSIP,
 		.members = members,
 		.count = ARRAY_SIZE(fixture->conns),
 		.mute = true,
@@ -704,11 +676,6 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_mute_state_inval_mi
 
 	err = bt_cap_commander_register_cb(&mock_cap_commander_cb);
 	zassert_equal(0, err, "Unexpected return value %d", err);
-
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
-		err = bt_cap_commander_discover(&fixture->conns[i]);
-		zassert_equal(0, err, "Unexpected return value %d", err);
-	}
 
 	err = bt_cap_commander_change_volume_mute_state(&param);
 	zassert_equal(-EINVAL, err, "Unexpected return value %d", err);
