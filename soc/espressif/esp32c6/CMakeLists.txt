@@ -62,7 +62,7 @@ if(CONFIG_MCUBOOT)
         ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/tools/ci/check_callgraph.py
       ARGS
         --rtl-dirs ${CMAKE_BINARY_DIR}/zephyr
-	--elf-file ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf
+        --elf-file ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf
         find-refs --from-section=.iram0.iram_loader --to-section=.iram0.text
         --exit-code)
 endif()
