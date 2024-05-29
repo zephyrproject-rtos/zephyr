@@ -188,6 +188,11 @@ zephyr_iterable_section(NAME tracing_backend KVMA RAM_REGION GROUP RODATA_REGION
 zephyr_linker_section(NAME zephyr_dbg_info KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
 zephyr_linker_section_configure(SECTION zephyr_dbg_info INPUT ".zephyr_dbg_info" KEEP)
 
+if(CONFIG_SYMTAB)
+  zephyr_linker_section(NAME symtab KVMA FLASH GROUP RODATA_REGION SUBALIGN 4 NOINPUT)
+  zephyr_linker_section_configure(SECTION symtab INPUT ".gnu.linkonce.symtab*")
+endif()
+
 if (CONFIG_DEVICE_DEPS)
   zephyr_linker_section(NAME device_deps KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT} ENDALIGN 16)
   zephyr_linker_section_configure(SECTION device_deps INPUT .__device_deps_pass1* KEEP SORT NAME PASS LINKER_DEVICE_DEPS_PASS1)
