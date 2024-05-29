@@ -39,6 +39,11 @@
 			mboxes = <&mbox 0>, <&mbox 1>;
 			mbox-names = "tx", "rx";
 			status = "okay";
+
+			bt_hci_ipc0: bt_hci_ipc0 {
+				compatible = "zephyr,bt-hci-ipc";
+				status = "okay";
+			};
 		};
 
 		ipc1: ipc1 {
