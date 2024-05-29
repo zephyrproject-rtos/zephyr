@@ -19,6 +19,7 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/posix/sys/eventfd.h>
+#include <zephyr/posix/fnmatch.h>
 
 LOG_MODULE_REGISTER(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
@@ -659,6 +660,16 @@ struct http_resource_detail *get_resource_detail(const char *path,
 		HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
 			if (skip_this(resource, is_websocket)) {
 				continue;
+			}
+
+			if (IS_ENABLED(CONFIG_HTTP_SERVER_RESOURCE_WILDCARD)) {
+				int ret;
+
+				ret = fnmatch(resource->resource, path, FNM_PATHNAME);
+				if (ret == 0) {
+					*path_len = strlen(resource->resource);
+					return resource->detail;
+				}
 			}
 
 			if (compare_strings(path, resource->resource) == 0) {
