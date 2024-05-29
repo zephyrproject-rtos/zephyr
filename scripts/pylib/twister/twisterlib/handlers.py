@@ -456,7 +456,7 @@ class DeviceHandler(Handler):
         dut_found = False
 
         for d in self.duts:
-            if fixture and fixture not in d.fixtures:
+            if fixture and fixture not in map(lambda f: f.split(sep=':')[0], d.fixtures):
                 continue
             if d.platform != device or (d.serial is None and d.serial_pty is None):
                 continue
