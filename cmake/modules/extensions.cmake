@@ -2555,7 +2555,7 @@ endfunction()
 # returns an updated list of absolute paths
 #
 # Usage:
-#   zephyr_file(CONF_FILES <paths> [DTS <list>] [KCONF <list>]
+#   zephyr_file(CONF_FILES <paths> [DTS <list>] [KCONF <list>] [FWCONF <list>]
 #               [BOARD <board> [BOARD_REVISION <revision>] | NAMES <name> ...]
 #               [BUILD <type>] [SUFFIX <suffix>] [REQUIRED]
 #   )
@@ -2566,6 +2566,7 @@ endfunction()
 #                     - DTS:       Overlay files (.overlay)
 #                     - Kconfig:   Config fragments (.conf)
 #                     - defconfig: defconfig files (_defconfig)
+#                     - firmware config: [_]fw_config.yaml files
 #                     The conf file search will return existing configuration
 #                     files for the current board.
 #                     CONF_FILES takes the following additional arguments:
@@ -2584,6 +2585,7 @@ endfunction()
 #                     DTS <list>:    List to append DTS overlay files in <path> to
 #                     KCONF <list>:  List to append Kconfig fragment files in <path> to
 #                     DEFCONF <list>: List to append _defconfig files in <path> to
+#                     FWCONF <list>: List to append [_]fwconfig.yaml files in <path> to
 #                     BUILD <type>:  Build type to include for search.
 #                                    For example:
 #                                    BUILD debug, will look for <board>_debug.conf
@@ -2593,7 +2595,7 @@ endfunction()
 #                                    For example:
 #                                    SUFFIX fish, will look for <file>_fish.conf and use
 #                                    if found but will use <file>.conf if not found
-#                     REQUIRED:      Option to indicate that the <list> specified by DTS or KCONF
+#                     REQUIRED:      Option to indicate that the <list> specified by DTS, KCONF or FCONF
 #                                    must contain at least one element, else an error will be raised.
 #
 function(zephyr_file)
@@ -2607,7 +2609,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
     set(single_args APPLICATION_ROOT BASE_DIR)
   elseif(${ARGV0} STREQUAL CONF_FILES)
     set(options QUALIFIERS REQUIRED)
-    set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG BUILD SUFFIX)
+    set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG FWCONF BUILD SUFFIX)
     set(multi_args CONF_FILES NAMES)
   endif()
 
@@ -2679,6 +2681,7 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
     if(ZFILE_NAMES)
       set(dts_filename_list ${ZFILE_NAMES})
       set(kconf_filename_list ${ZFILE_NAMES})
+      set(fwconf_filename_list ${ZFILE_NAMES})
     else()
       if(NOT ZFILE_QUALIFIERS)
         zephyr_build_string(filename_list
@@ -2706,6 +2709,11 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
       set(kconf_shortened_filename_list ${shortened_filename_list})
       list(TRANSFORM kconf_filename_list APPEND ".conf")
       list(TRANSFORM kconf_shortened_filename_list APPEND ".conf")
+
+      set(fwconf_filename_list ${filename_list})
+      set(fwconf_shortened_filename_list ${shortened_filename_list})
+      list(TRANSFORM fwconf_filename_list APPEND "_fw_config.yaml")
+      list(TRANSFORM fwconf_shortened_filename_list APPEND "_fw_config.yaml")
     endif()
 
     if(ZFILE_DTS)
@@ -2857,6 +2865,68 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
 
       # This updates the provided list in parent scope (callers scope)
       set(${ZFILE_DEFCONFIG} ${${ZFILE_DEFCONFIG}} PARENT_SCOPE)
+    endif()
+
+    if(ZFILE_FWCONF)
+      set(found_fwconf_files)
+      foreach(path ${ZFILE_CONF_FILES})
+        set(test_file ${path}/fw_config.yaml)
+        if(EXISTS ${test_file})
+          list(APPEND found_fwconf_files ${test_file})
+        else()
+          zephyr_file_suffix(test_file SUFFIX ${ZFILE_SUFFIX})
+          if(EXISTS ${test_file})
+            list(APPEND found_fwconf_files ${test_file})
+          endif()
+        endif()
+
+        foreach(filename IN ZIP_LISTS fwconf_filename_list fwconf_shortened_filename_list)
+          foreach(i RANGE 1)
+            if(NOT IS_ABSOLUTE filename_${i} AND DEFINED filename_${i})
+              set(test_file_${i} ${path}/${filename_${i}})
+            else()
+              set(test_file_${i} ${filename_${i}})
+            endif()
+            zephyr_file_suffix(test_file_${i} SUFFIX ${ZFILE_SUFFIX})
+
+
+            if(NOT EXISTS ${test_file_${i}})
+              set(test_file_${i})
+            endif()
+          endforeach()
+
+          if(test_file_0 OR test_file_1)
+            list(APPEND found_fwconf_files ${test_file_0})
+            list(APPEND found_fwconf_files ${test_file_1})
+
+            if(DEFINED ZFILE_BUILD)
+              set(deprecated_file_found y)
+            endif()
+
+            if(ZFILE_NAMES)
+              break()
+            endif()
+          endif()
+
+          if(test_file_1 AND NOT BOARD_${ZFILE_BOARD}_SINGLE_SOC)
+            message(FATAL_ERROR "Board ${ZFILE_BOARD} defines multiple SoCs.\nShortened file name "
+                    "(${filename_1}) not allowed, use '<board>_<soc>_fwconfig.yaml' naming"
+            )
+          endif()
+
+          if(test_file_0 AND test_file_1)
+            message(FATAL_ERROR "Conflicting file names discovered. Cannot use both ${filename_0} "
+                    "and ${filename_1}. Please choose one naming style, "
+                    "${filename_0} is recommended."
+            )
+          endif()
+        endforeach()
+      endforeach()
+
+      list(APPEND ${ZFILE_FWCONF} ${found_fwconf_files})
+
+      # This updates the provided list in parent scope (callers scope)
+      set(${ZFILE_FWCONF} ${${ZFILE_FWCONF}} PARENT_SCOPE)
     endif()
   endif()
 endfunction()
