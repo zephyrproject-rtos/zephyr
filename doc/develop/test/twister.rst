@@ -1082,6 +1082,10 @@ can be used multiple times and all given fixtures will be appended as a list. An
 given fixtures will be assigned to all boards, this means that all boards set by
 current twister command can run those testcases which request the same fixtures.
 
+Some fixtures allow for configuration strings to be appended, separated from the
+fixture name by a ``:``. Only the fixture name is matched against the fixtures
+requested by testcases.
+
 Notes
 +++++
 
