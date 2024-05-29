@@ -23,7 +23,7 @@ config SOC_MICROCHIP_PIC32CXSG_DEFAULT_AS_MAIN
 	  This choice will leave all clocks to their current state.
 	  This can be the default reset state or a state set by a bootloader.
 
-config SOC_MICROCHIP_PIC32CXS_G_XOSC32K_AS_MAIN
+config SOC_MICROCHIP_PIC32CXSG_XOSC32K_AS_MAIN
 	depends on SOC_MICROCHIP_PIC32CXSG_XOSC32K
 	bool "XOSC32K"
 
