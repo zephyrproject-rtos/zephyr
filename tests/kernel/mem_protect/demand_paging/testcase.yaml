@@ -6,7 +6,10 @@ tests:
       - kernel
       - mmu
       - demand_paging
-    platform_allow: qemu_x86_tiny
+    platform_allow:
+      - qemu_cortex_a53
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+      - qemu_x86_tiny
     extra_configs:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
   kernel.demand_paging.timing_funcs:
