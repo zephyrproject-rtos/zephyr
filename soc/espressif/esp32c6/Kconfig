@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_ESP32C6
@@ -8,6 +8,7 @@ config SOC_SERIES_ESP32C6
 	select CLOCK_CONTROL
 	select PINCTRL
 	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_M
 	select RISCV_ISA_EXT_C
 	select RISCV_ISA_EXT_ZICSR
@@ -17,10 +18,6 @@ config SOC_SERIES_ESP32C6
 	select HAS_POWEROFF
 
 if SOC_SERIES_ESP32C6
-
-config IDF_TARGET_ESP32C6
-	bool "ESP32C6 as target board"
-	default y
 
 config ESP32_PHY_MAX_WIFI_TX_POWER
 	int "Max WiFi TX power (dBm)"
@@ -37,7 +34,6 @@ config ESP32_PHY_MAX_TX_POWER
 config MAC_BB_PD
 	bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
 	depends on SOC_SERIES_ESP32C6 && TICKLESS_KERNEL
-	default n
 	help
 	  If enabled, the MAC and baseband of Wi-Fi and Bluetooth will be powered
 	  down when PHY is disabled. Enabling this setting reduces power consumption
