@@ -15,18 +15,18 @@
  * If no bootloader is used, we can extend it to gain more user ram.
  */
 #ifdef CONFIG_ESP_SIMPLE_BOOT
-user_iram_end = (DRAM_BUFFERS_START + IRAM_DRAM_OFFSET);
+user_iram_end = (BOOTLOADER_USER_DRAM_END + IRAM_DRAM_OFFSET);
 #else
 user_iram_end = BOOTLOADER_IRAM_LOADER_SEG_START;
 #endif
 
 /* User available SRAM memory segments */
 user_dram_seg_org = SRAM1_DRAM_START;
-user_iram_seg_org = (SRAM0_IRAM_START + CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE);
-user_dram_end = (user_iram_end - IRAM_DRAM_OFFSET);
-user_idram_size = (user_dram_end - SRAM1_DRAM_START);
-sram0_iram_size = (SRAM0_SIZE - CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE);
-user_iram_seg_len = (user_idram_size + sram0_iram_size);
+user_iram_seg_org = SRAM0_IRAM_START + CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE;
+user_dram_end = BOOTLOADER_IRAM_LOADER_SEG_START - IRAM_DRAM_OFFSET;
+user_idram_size = user_dram_end - SRAM1_DRAM_START;
+sram0_iram_size = SRAM0_SIZE - CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE;
+user_iram_seg_len = user_idram_size + sram0_iram_size;
 user_dram_seg_len = user_idram_size;
 
 /* Aliases */
