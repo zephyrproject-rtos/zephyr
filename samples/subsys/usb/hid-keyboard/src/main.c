@@ -143,7 +143,7 @@ struct hid_device_ops kb_ops = {
 
 int main(void)
 {
-	struct usbd_contex *sample_usbd;
+	struct usbd_context *sample_usbd;
 	const struct device *hid_dev;
 	int ret;
 

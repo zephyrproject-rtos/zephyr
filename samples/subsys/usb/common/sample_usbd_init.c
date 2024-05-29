@@ -51,7 +51,7 @@ static const struct usb_bos_capability_lpm bos_cap_lpm = {
 
 USBD_DESC_BOS_DEFINE(sample_usbext, sizeof(bos_cap_lpm), &bos_cap_lpm);
 
-static int register_fs_classes(struct usbd_contex *uds_ctx)
+static int register_fs_classes(struct usbd_context *uds_ctx)
 {
 	int err = 0;
 
@@ -71,7 +71,7 @@ static int register_fs_classes(struct usbd_contex *uds_ctx)
 	return err;
 }
 
-static int register_hs_classes(struct usbd_contex *uds_ctx)
+static int register_hs_classes(struct usbd_context *uds_ctx)
 {
 	int err = 0;
 
@@ -91,7 +91,7 @@ static int register_hs_classes(struct usbd_contex *uds_ctx)
 	return err;
 }
 
-static int sample_add_configuration(struct usbd_contex *uds_ctx,
+static int sample_add_configuration(struct usbd_context *uds_ctx,
 				    const enum usbd_speed speed,
 				    struct usbd_config_node *config)
 {
@@ -131,7 +131,7 @@ static int sample_add_configuration(struct usbd_contex *uds_ctx,
 	return 0;
 }
 
-struct usbd_contex *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
+struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
 {
 	int err;
 

@@ -99,7 +99,7 @@ INPUT_CALLBACK_DEFINE(NULL, input_cb);
 #if defined(CONFIG_USB_DEVICE_STACK_NEXT)
 static int enable_usb_device_next(void)
 {
-	struct usbd_contex *sample_usbd;
+	struct usbd_context *sample_usbd;
 	int err;
 
 	sample_usbd = sample_usbd_init_device(NULL);

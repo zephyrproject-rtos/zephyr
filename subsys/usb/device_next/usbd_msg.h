@@ -16,7 +16,7 @@
  * @param[in] type    Message type
  * @param[in] status  Status or error code
  */
-void usbd_msg_pub_simple(struct usbd_contex *const ctx,
+void usbd_msg_pub_simple(struct usbd_context *const ctx,
 			 const enum usbd_msg_type type, const int status);
 
 /**
@@ -26,7 +26,7 @@ void usbd_msg_pub_simple(struct usbd_contex *const ctx,
  * @param[in] type    Message type
  * @param[in] dev     Pointer to a device structure
  */
-void usbd_msg_pub_device(struct usbd_contex *const ctx,
+void usbd_msg_pub_device(struct usbd_context *const ctx,
 			 const enum usbd_msg_type type, const struct device *const dev);
 
 #endif /* ZEPHYR_INCLUDE_USBD_MSG_H */

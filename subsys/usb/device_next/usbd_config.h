@@ -47,7 +47,7 @@ static inline void usbd_config_set_value(const struct usbd_config_node *const cf
  *
  * @return pointer to configuration node or NULL if does not exist
  */
-struct usbd_config_node *usbd_config_get(struct usbd_contex *uds_ctx,
+struct usbd_config_node *usbd_config_get(struct usbd_context *uds_ctx,
 					 const enum usbd_speed speed,
 					 uint8_t cfg);
 
@@ -60,7 +60,7 @@ struct usbd_config_node *usbd_config_get(struct usbd_contex *uds_ctx,
  *
  * @return pointer to configuration node or NULL if does not exist
  */
-struct usbd_config_node *usbd_config_get_current(struct usbd_contex *uds_ctx);
+struct usbd_config_node *usbd_config_get_current(struct usbd_context *uds_ctx);
 
 /**
  * @brief Check whether a configuration exist
@@ -71,7 +71,7 @@ struct usbd_config_node *usbd_config_get_current(struct usbd_contex *uds_ctx);
  *
  * @return True if a configuration exist.
  */
-bool usbd_config_exist(struct usbd_contex *const uds_ctx,
+bool usbd_config_exist(struct usbd_context *const uds_ctx,
 		       const enum usbd_speed speed,
 		       const uint8_t cfg);
 
@@ -87,6 +87,6 @@ bool usbd_config_exist(struct usbd_contex *const uds_ctx,
  *
  * @return 0 on success, other values on fail.
  */
-int usbd_config_set(struct usbd_contex *uds_ctx, uint8_t new_cfg);
+int usbd_config_set(struct usbd_context *uds_ctx, uint8_t new_cfg);
 
 #endif /* ZEPHYR_INCLUDE_USBD_CONFIG_H */

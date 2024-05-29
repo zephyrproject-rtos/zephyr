@@ -98,7 +98,7 @@ static inline uint8_t hid_get_out_ep(struct usbd_class_data *const c_data)
 static int usbd_hid_request(struct usbd_class_data *const c_data,
 			    struct net_buf *const buf, const int err)
 {
-	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct hid_device_data *ddata = dev->data;
 	const struct hid_device_ops *ops = ddata->ops;
