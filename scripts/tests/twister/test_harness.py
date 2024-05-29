@@ -45,22 +45,39 @@ def process_logs(harness, logs):
 
 
 TEST_DATA_RECORDING = [
-                ([''], "^START:(?P<foo>.*):END", []),
-                (['START:bar:STOP'], "^START:(?P<foo>.*):END", []),
-                (['START:bar:END'], "^START:(?P<foo>.*):END", [{'foo':'bar'}]),
-                (['START:bar:baz:END'], "^START:(?P<foo>.*):(?P<boo>.*):END", [{'foo':'bar', 'boo':'baz'}]),
+                ([''], "^START:(?P<foo>.*):END", [], None),
+                (['START:bar:STOP'], "^START:(?P<foo>.*):END", [], None),
+                (['START:bar:END'], "^START:(?P<foo>.*):END", [{'foo':'bar'}], None),
+                (['START:bar:baz:END'], "^START:(?P<foo>.*):(?P<boo>.*):END", [{'foo':'bar', 'boo':'baz'}], None),
                 (['START:bar:baz:END','START:may:jun:END'], "^START:(?P<foo>.*):(?P<boo>.*):END",
-                 [{'foo':'bar', 'boo':'baz'}, {'foo':'may', 'boo':'jun'}]),
+                 [{'foo':'bar', 'boo':'baz'}, {'foo':'may', 'boo':'jun'}], None),
+                (['START:bar:END'], "^START:(?P<foo>.*):END", [{'foo':'bar'}], []),
+                (['START:bar:END'], "^START:(?P<foo>.*):END", [{'foo':'bar'}], ['boo']),
+                (['START:bad_json:END'], "^START:(?P<foo>.*):END",
+                 [{'foo':{'ERROR':{'msg':'Expecting value: line 1 column 1 (char 0)', 'doc':'bad_json'}}}], ['foo']),
+                (['START::END'], "^START:(?P<foo>.*):END", [{'foo':{}}], ['foo']),
+                (['START: {"one":1, "two":2} :END'], "^START:(?P<foo>.*):END", [{'foo':{'one':1, 'two':2}}], ['foo']),
+                (['START: {"one":1, "two":2} :STOP:oops:END'], "^START:(?P<foo>.*):STOP:(?P<boo>.*):END",
+                   [{'foo':{'one':1, 'two':2},'boo':'oops'}], ['foo']),
+                (['START: {"one":1, "two":2} :STOP:{"oops":0}:END'], "^START:(?P<foo>.*):STOP:(?P<boo>.*):END",
+                   [{'foo':{'one':1, 'two':2},'boo':{'oops':0}}], ['foo','boo']),
                       ]
 @pytest.mark.parametrize(
-    "lines, pattern, expected_records",
+    "lines, pattern, expected_records, as_json",
     TEST_DATA_RECORDING,
-    ids=["empty", "no match", "match 1 field", "match 2 fields", "match 2 records"]
+    ids=["empty", "no match", "match 1 field", "match 2 fields", "match 2 records",
+         "as_json empty", "as_json no such field", "error parsing json", "empty json value", "simple json",
+         "plain field and json field", "two json fields"
+        ]
 )
-def test_harness_parse_record(lines, pattern, expected_records):
+def test_harness_parse_record(lines, pattern, expected_records, as_json):
     harness = Harness()
     harness.record = { 'regex': pattern }
     harness.record_pattern = re.compile(pattern)
+
+    harness.record_as_json = as_json
+    if as_json is not None:
+        harness.record['as_json'] = as_json
 
     assert not harness.recording
 
