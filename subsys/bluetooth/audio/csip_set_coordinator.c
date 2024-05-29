@@ -1412,7 +1412,7 @@ struct bt_csip_set_coordinator_csis_inst *bt_csip_set_coordinator_csis_inst_by_h
 }
 
 struct bt_csip_set_coordinator_set_member *
-bt_csip_set_coordinator_csis_member_by_conn(struct bt_conn *conn)
+bt_csip_set_coordinator_set_member_by_conn(const struct bt_conn *conn)
 {
 	struct bt_csip_set_coordinator_inst *client;
 
@@ -1423,8 +1423,11 @@ bt_csip_set_coordinator_csis_member_by_conn(struct bt_conn *conn)
 	}
 
 	client = &client_insts[bt_conn_index(conn)];
+	if (client->conn == conn) {
+		return &client->set_member;
+	}
 
-	return &client->set_member;
+	return NULL;
 }
 
 /*************************** PUBLIC FUNCTIONS ***************************/
