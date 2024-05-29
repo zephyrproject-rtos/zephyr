@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
 
 / {
 	reserved-memory {
@@ -89,6 +90,27 @@
 
 			cpusys_cpurad_ipc_shm: memory@e80 {
 				reg = <0xe80 0x80>;
+			};
+		};
+
+		ram21_region: memory@2f890000 {
+			compatible = "nordic,owned-memory";
+			status = "disabled";
+			reg = <0x2f890000 DT_SIZE_K(64)>;
+			perm-read;
+			perm-write;
+			perm-secure;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x2f890000 0x10000>;
+
+			dma_fast_region: memory@8000 {
+				compatible = "zephyr,memory-region";
+				reg = <0x8000 DT_SIZE_K(16)>;
+				status = "disabled";
+				#memory-region-cells = <0>;
+				zephyr,memory-region = "DMA_RAM21";
+				zephyr,memory-attr = <( DT_MEM_CACHEABLE )>;
 			};
 		};
 
