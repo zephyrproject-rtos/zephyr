@@ -244,6 +244,11 @@ static inline int usbhs_init_caps(const struct device *dev)
 	return 0;
 }
 
+static inline int usbhs_is_phy_clk_off(const struct device *dev)
+{
+	return !k_event_test(&usbhs_events, USBHS_VBUS_READY);
+}
+
 #define QUIRK_NRF_USBHS_DEFINE(n)						\
 	struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {			\
 		.init = usbhs_enable_nrfs_service,				\
@@ -252,6 +257,7 @@ static inline int usbhs_init_caps(const struct device *dev)
 		.shutdown = usbhs_disable_nrfs_service,				\
 		.irq_clear = usbhs_irq_clear,					\
 		.caps = usbhs_init_caps,					\
+		.is_phy_clk_off = usbhs_is_phy_clk_off,				\
 	};
 
 DT_INST_FOREACH_STATUS_OKAY(QUIRK_NRF_USBHS_DEFINE)
