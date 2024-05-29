@@ -298,6 +298,8 @@ static void finish_transaction(const struct device *dev, int error)
 
 	spi_context_complete(ctx, dev, error);
 	dev_data->busy = false;
+
+	spi_context_cs_control(&dev_data->ctx, false);
 }
 
 static void transfer_next_chunk(const struct device *dev)
@@ -468,8 +470,6 @@ static int transceive(const struct device *dev,
 			anomaly_58_workaround_clear(dev_data);
 #endif
 		}
-
-		spi_context_cs_control(&dev_data->ctx, false);
 	}
 
 	spi_context_release(&dev_data->ctx, error);
