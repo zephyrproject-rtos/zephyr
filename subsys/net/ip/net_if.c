@@ -2733,7 +2733,6 @@ bool net_if_ipv6_router_rm(struct net_if_router *router)
 
 uint8_t net_if_ipv6_get_mcast_hop_limit(struct net_if *iface)
 {
-#if defined(CONFIG_NET_NATIVE_IPV6)
 	int ret = 0;
 
 	net_if_lock(iface);
@@ -2751,16 +2750,10 @@ out:
 	net_if_unlock(iface);
 
 	return ret;
-#else
-	ARG_UNUSED(iface);
-
-	return 0;
-#endif
 }
 
 void net_if_ipv6_set_mcast_hop_limit(struct net_if *iface, uint8_t hop_limit)
 {
-#if defined(CONFIG_NET_NATIVE_IPV6)
 	net_if_lock(iface);
 
 	if (net_if_config_ipv6_get(iface, NULL) < 0) {
@@ -2774,15 +2767,10 @@ void net_if_ipv6_set_mcast_hop_limit(struct net_if *iface, uint8_t hop_limit)
 	iface->config.ip.ipv6->mcast_hop_limit = hop_limit;
 out:
 	net_if_unlock(iface);
-#else
-	ARG_UNUSED(iface);
-	ARG_UNUSED(hop_limit);
-#endif
 }
 
 uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
 {
-#if defined(CONFIG_NET_NATIVE_IPV6)
 	int ret = 0;
 
 	net_if_lock(iface);
@@ -2800,16 +2788,10 @@ out:
 	net_if_unlock(iface);
 
 	return ret;
-#else
-	ARG_UNUSED(iface);
-
-	return 0;
-#endif
 }
 
 void net_if_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit)
 {
-#if defined(CONFIG_NET_NATIVE_IPV6)
 	net_if_lock(iface);
 
 	if (net_if_config_ipv6_get(iface, NULL) < 0) {
@@ -2823,10 +2805,6 @@ void net_if_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit)
 	iface->config.ip.ipv6->hop_limit = hop_limit;
 out:
 	net_if_unlock(iface);
-#else
-	ARG_UNUSED(iface);
-	ARG_UNUSED(hop_limit);
-#endif
 }
 
 struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
@@ -3368,7 +3346,6 @@ out:
 
 uint8_t net_if_ipv4_get_ttl(struct net_if *iface)
 {
-#if defined(CONFIG_NET_NATIVE_IPV4)
 	int ret = 0;
 
 	net_if_lock(iface);
@@ -3386,16 +3363,10 @@ out:
 	net_if_unlock(iface);
 
 	return ret;
-#else
-	ARG_UNUSED(iface);
-
-	return 0;
-#endif
 }
 
 void net_if_ipv4_set_ttl(struct net_if *iface, uint8_t ttl)
 {
-#if defined(CONFIG_NET_NATIVE_IPV4)
 	net_if_lock(iface);
 
 	if (net_if_config_ipv4_get(iface, NULL) < 0) {
@@ -3409,15 +3380,10 @@ void net_if_ipv4_set_ttl(struct net_if *iface, uint8_t ttl)
 	iface->config.ip.ipv4->ttl = ttl;
 out:
 	net_if_unlock(iface);
-#else
-	ARG_UNUSED(iface);
-	ARG_UNUSED(ttl);
-#endif
 }
 
 uint8_t net_if_ipv4_get_mcast_ttl(struct net_if *iface)
 {
-#if defined(CONFIG_NET_NATIVE_IPV4)
 	int ret = 0;
 
 	net_if_lock(iface);
@@ -3435,16 +3401,10 @@ out:
 	net_if_unlock(iface);
 
 	return ret;
-#else
-	ARG_UNUSED(iface);
-
-	return 0;
-#endif
 }
 
 void net_if_ipv4_set_mcast_ttl(struct net_if *iface, uint8_t ttl)
 {
-#if defined(CONFIG_NET_NATIVE_IPV4)
 	net_if_lock(iface);
 
 	if (net_if_config_ipv4_get(iface, NULL) < 0) {
@@ -3458,10 +3418,6 @@ void net_if_ipv4_set_mcast_ttl(struct net_if *iface, uint8_t ttl)
 	iface->config.ip.ipv4->mcast_ttl = ttl;
 out:
 	net_if_unlock(iface);
-#else
-	ARG_UNUSED(iface);
-	ARG_UNUSED(ttl);
-#endif
 }
 
 struct net_if_router *net_if_ipv4_router_lookup(struct net_if *iface,
