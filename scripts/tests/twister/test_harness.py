@@ -345,6 +345,7 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
     hardware.baud = 115200
     hardware.runner = "runner"
     hardware.runner_params = ["--runner-param1", "runner-param2"]
+    hardware.fixtures = ['fixture1:option1', 'fixture2']
 
     options = handler.options
     options.west_flash = "args"
@@ -386,6 +387,8 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
         assert '--pre-script=pre_script' in command
         assert '--post-flash-script=post_flash_script' in command
         assert '--post-script=post_script' in command
+        assert '--twister-fixture=fixture1:option1' in command
+        assert '--twister-fixture=fixture2' in command
 
 
 def test__update_command_with_env_dependencies():

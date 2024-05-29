@@ -117,6 +117,10 @@ def pytest_addoption(parser: pytest.Parser):
         choices=('function', 'class', 'module', 'package', 'session'),
         help='The scope for which `dut` and `shell` fixtures are shared.'
     )
+    twister_harness_group.addoption(
+        '--twister-fixture', action='append', dest='fixtures', metavar='FIXTURE', default=[],
+        help='Twister fixture supported by this platform. May be given multiple times.'
+    )
 
 
 def pytest_configure(config: pytest.Config):

@@ -33,6 +33,7 @@ class DeviceConfig:
     pre_script: Path | None = None
     post_script: Path | None = None
     post_flash_script: Path | None = None
+    fixtures: list[str] = None
     app_build_dir: Path | None = None
 
     def __post_init__(self):
@@ -77,6 +78,7 @@ class TwisterHarnessConfig:
             pre_script=_cast_to_path(config.option.pre_script),
             post_script=_cast_to_path(config.option.post_script),
             post_flash_script=_cast_to_path(config.option.post_flash_script),
+            fixtures=config.option.fixtures,
         )
 
         devices.append(device_from_cli)
