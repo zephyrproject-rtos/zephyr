@@ -25,7 +25,6 @@ zephyr_library_compile_definitions(
 	TLS_DEFAULT_CIPHERS=\""DEFAULT:!EXP:!LOW"\"
 	CONFIG_SME
 	CONFIG_NO_CONFIG_WRITE
-	CONFIG_NO_CONFIG_BLOBS
 	CONFIG_CTRL_IFACE
 	CONFIG_NO_RANDOM_POOL
 	CONFIG_SHA256
@@ -75,10 +74,6 @@ zephyr_library_include_directories(
 	${ZEPHYR_BASE}/include
 	${ZEPHYR_BASE}/include/net
 	)
-
-zephyr_library_compile_definitions_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO
-	CONFIG_NO_PBKDF2
-)
 
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_NO_DEBUG
 	CONFIG_NO_STDOUT_DEBUG
