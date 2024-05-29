@@ -99,3 +99,6 @@ def test_flash(dut: DeviceAdapter, tool, tool_options, config,
         stats, stats_count = tool.run(seconds, tool_options)
         assert stats_count
         do_analysys(test, stats, stats_count, config, sys_clock_hw_cycles_per_sec)
+
+    # Let the running test's image output to be fully captured from device.
+    dut.readlines()
