@@ -15,7 +15,7 @@
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
 		zephyr,display = &ili9340;
-		zephyr,bt-hci-ipc = &ipc0;
+		zephyr,bt-hci = &bt_hci_ipc0;
 	};
 
 	/* Main LEDs and buttons are on an I2C TCA9538 GPIO port expander */

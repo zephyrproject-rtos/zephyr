@@ -26,7 +26,7 @@
 		zephyr,sram = &cpuapp_data;
 		zephyr,shell-uart = &uart136;
 		zephyr,ieee802154 = &cpuapp_ieee802154;
-		zephyr,bt-hci-ipc = &ipc0;
+		zephyr,bt-hci = &bt_hci_ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
 		zephyr,canbus = &can120;
 		zephyr,entropy = &prng;
@@ -162,6 +162,11 @@ ipc0: &cpuapp_cpurad_ipc {
 	rx-region = <&cpurad_cpuapp_ipc_shm>;
 	tx-blocks = <32>;
 	rx-blocks = <32>;
+
+	bt_hci_ipc0: bt_hci_ipc0 {
+		compatible = "zephyr,bt-hci-ipc";
+		status = "okay";
+	};
 };
 
 &cpuapp_cpusys_ipc {

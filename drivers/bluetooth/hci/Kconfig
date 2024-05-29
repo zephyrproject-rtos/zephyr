@@ -38,6 +38,8 @@ config BT_RPMSG
 
 config BT_HCI_IPC
 	bool "HCI using the IPC subsystem"
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_IPC_ENABLED
 	select BT_HAS_HCI_VS
 	select IPC_SERVICE
 	select MBOX
