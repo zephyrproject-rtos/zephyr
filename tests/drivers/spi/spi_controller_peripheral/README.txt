@@ -1,5 +1,5 @@
 In this test suite two instances of the SPI peripheral are connected together.
-One SPI instance works as a master, second one is configured as a slave.
+One SPI instance works as a controller, second one is configured as a peripheral.
 In each test, both instances get identical configuration (CPOL, CPHA, bitrate, etc.).
 
 Four GPIO loopbacks are required (see overlay for nrf54l15pdk for reference):
