@@ -229,6 +229,8 @@
 		interrupts = <14 0>;
 		clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 11)>;
+		dmas = <&dma0 4>, <&dma0 5>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -238,6 +240,8 @@
 		interrupts = <15 0>;
 		clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 12)>;
+		dmas = <&dma0 6 &dma0 7>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -247,6 +251,8 @@
 		interrupts = <16 0>;
 		clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 13)>;
+		dmas = <&dma0 10 &dma0 11>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -256,6 +262,8 @@
 		interrupts = <17 0>;
 		clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 14)>;
+		dmas = <&dma0 8 &dma0 9>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -265,6 +273,8 @@
 		interrupts = <18 0>;
 		clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 15)>;
+		dmas = <&dma0 12 &dma0 13>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -274,6 +284,8 @@
 		interrupts = <19 0>;
 		clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 16)>;
+		dmas = <&dma0 14 &dma0 15>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -283,6 +295,8 @@
 		interrupts = <20 0>;
 		clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 17)>;
+		dmas = <&dma0 16 &dma0 17>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -292,6 +306,8 @@
 		interrupts = <21 0>;
 		clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 18)>;
+		dmas = <&dma0 18 &dma0 19>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -315,6 +331,8 @@
 		interrupts = <59 0>;
 		clocks = <&syscon MCUX_HS_SPI_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(2, 28)>;
+		dmas = <&dma0 2 &dma0 3>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 		#address-cells = <1>;
 		#size-cells = <0>;
