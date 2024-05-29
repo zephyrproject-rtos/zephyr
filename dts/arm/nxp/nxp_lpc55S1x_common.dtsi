@@ -36,13 +36,15 @@
 	#size-cells = <1>;
 
 	sramx: memory@4000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x4000000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAMX";
 	};
 
 	sram0: memory@20000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20000000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "SRAM0";
 	};
 
 	sram1: memory@20008000 {
