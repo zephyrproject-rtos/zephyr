@@ -367,10 +367,15 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 		const struct bt_cap_stream *cap_stream = stream_param->stream;
 		const struct bt_audio_codec_cfg *codec_cfg = stream_param->codec_cfg;
 		const struct bt_bap_stream *bap_stream;
-		const struct bt_cap_common_client *client =
-			bt_cap_common_get_client(param->type, member);
+		const struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, member);
 
-		if (client == NULL) {
+		if (member == NULL) {
+			LOG_DBG("param->members[%zu] is NULL", i);
+			return false;
+		}
+
+		if (member_conn == NULL) {
 			LOG_DBG("Invalid param->members[%zu]", i);
 			return false;
 		}
@@ -922,7 +927,6 @@ static bool valid_unicast_audio_update_param(const struct bt_cap_unicast_audio_u
 			&param->stream_params[i];
 		const struct bt_cap_stream *cap_stream = stream_param->stream;
 		const struct bt_bap_stream *bap_stream;
-		struct bt_cap_common_client *client;
 		struct bt_conn *conn;
 
 		CHECKIF(cap_stream == NULL) {
@@ -936,12 +940,6 @@ static bool valid_unicast_audio_update_param(const struct bt_cap_unicast_audio_u
 			LOG_DBG("param->stream_params[%zu].stream->bap_stream.conn is NULL", i);
 
 			return -EINVAL;
-		}
-
-		client = bt_cap_common_get_client_by_acl(conn);
-		if (!client->cas_found) {
-			LOG_DBG("CAS was not found for param->stream_params[%zu].stream", i);
-			return false;
 		}
 
 		CHECKIF(bap_stream->group == NULL) {
@@ -1164,7 +1162,6 @@ static bool valid_unicast_audio_stop_param(const struct bt_cap_unicast_audio_sto
 	for (size_t i = 0U; i < param->count; i++) {
 		const struct bt_cap_stream *cap_stream = param->streams[i];
 		const struct bt_bap_stream *bap_stream;
-		struct bt_cap_common_client *client;
 		struct bt_conn *conn;
 
 		CHECKIF(cap_stream == NULL) {
@@ -1178,12 +1175,6 @@ static bool valid_unicast_audio_stop_param(const struct bt_cap_unicast_audio_sto
 			LOG_DBG("param->streams[%zu]->bap_stream.conn is NULL", i);
 
 			return -EINVAL;
-		}
-
-		client = bt_cap_common_get_client_by_acl(conn);
-		if (!client->cas_found) {
-			LOG_DBG("CAS was not found for param->streams[%zu]", i);
-			return false;
 		}
 
 		CHECKIF(bap_stream->group == NULL) {

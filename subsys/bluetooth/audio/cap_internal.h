@@ -156,7 +156,6 @@ struct bt_cap_common_client {
 	bt_cap_common_discover_func_t discover_cb_func;
 	uint16_t csis_start_handle;
 	const struct bt_csip_set_coordinator_csis_inst *csis_inst;
-	bool cas_found;
 };
 
 struct bt_cap_common_proc *bt_cap_common_get_active_proc(void);
@@ -177,6 +176,4 @@ void bt_cap_common_disconnected(struct bt_conn *conn, uint8_t reason);
 struct bt_cap_common_client *bt_cap_common_get_client_by_acl(const struct bt_conn *acl);
 struct bt_cap_common_client *
 bt_cap_common_get_client_by_csis(const struct bt_csip_set_coordinator_csis_inst *csis_inst);
-struct bt_cap_common_client *bt_cap_common_get_client(enum bt_cap_set_type type,
-						      const union bt_cap_set_member *member);
 int bt_cap_common_discover(struct bt_conn *conn, bt_cap_common_discover_func_t func);

@@ -113,6 +113,10 @@ Bluetooth
     The public_broadcast_sink sample has been renamed to pbp_public_broadcast_sink.
     The public_broadcast_source sample has been renamed to pbp_public_broadcast_source.
 
+  * The CAP Commander and CAP Initiator now no longer require CAS to be discovered for
+    :code:`BT_CAP_SET_TYPE_AD_HOC` sets. This allows applications to use these APIs on e.g.
+    BAP Unicast Servers that do not implement the CAP Acceptor role.
+
 * Host
 
   * Added Nordic UART Service (NUS), enabled by the :kconfig:option:`CONFIG_BT_ZEPHYR_NUS`.

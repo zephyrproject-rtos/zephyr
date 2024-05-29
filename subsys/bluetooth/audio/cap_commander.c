@@ -200,15 +200,15 @@ static bool valid_broadcast_reception_start_param(
 		const struct bt_cap_commander_broadcast_reception_start_member_param *start_param =
 			&param->param[i];
 		const union bt_cap_set_member *member = &param->param[i].member;
-		const struct bt_cap_common_client *client =
-			bt_cap_common_get_client(param->type, member);
+		const struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, member);
 
 		if (member == NULL) {
 			LOG_DBG("param->param[%zu].member is NULL", i);
 			return false;
 		}
 
-		if (client == NULL) {
+		if (member_conn == NULL) {
 			LOG_DBG("Invalid param->param[%zu].member", i);
 			return false;
 		}
@@ -509,15 +509,20 @@ static bool valid_change_volume_param(const struct bt_cap_commander_change_volum
 
 	for (size_t i = 0U; i < param->count; i++) {
 		const union bt_cap_set_member *member = &param->members[i];
-		const struct bt_cap_common_client *client =
-			bt_cap_common_get_client(param->type, member);
+		const struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, member);
 
-		if (client == NULL) {
+		if (member == NULL) {
+			LOG_DBG("param->members[%zu] is NULL", i);
+			return false;
+		}
+
+		if (member_conn == NULL) {
 			LOG_DBG("Invalid param->members[%zu]", i);
 			return false;
 		}
 
-		if (bt_vcp_vol_ctlr_get_by_conn(client->conn) == NULL) {
+		if (bt_vcp_vol_ctlr_get_by_conn(member_conn) == NULL) {
 			LOG_DBG("Volume control not available for param->members[%zu]", i);
 			return false;
 		}
@@ -678,15 +683,20 @@ static bool valid_change_volume_mute_state_param(
 
 	for (size_t i = 0U; i < param->count; i++) {
 		const union bt_cap_set_member *member = &param->members[i];
-		const struct bt_cap_common_client *client =
-			bt_cap_common_get_client(param->type, member);
+		const struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, member);
 
-		CHECKIF(client == NULL) {
+		if (member == NULL) {
+			LOG_DBG("param->members[%zu] is NULL", i);
+			return false;
+		}
+
+		if (member_conn == NULL) {
 			LOG_DBG("Invalid param->members[%zu]", i);
 			return false;
 		}
 
-		CHECKIF(bt_vcp_vol_ctlr_get_by_conn(client->conn) == NULL) {
+		CHECKIF(bt_vcp_vol_ctlr_get_by_conn(member_conn) == NULL) {
 			LOG_DBG("Volume control not available for param->members[%zu]", i);
 			return false;
 		}
@@ -861,18 +871,23 @@ valid_change_offset_param(const struct bt_cap_commander_change_volume_offset_par
 		const struct bt_cap_commander_change_volume_offset_member_param *member_param =
 			&param->param[i];
 		const union bt_cap_set_member *member = &member_param->member;
-		const struct bt_cap_common_client *client =
-			bt_cap_common_get_client(param->type, member);
+		const struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, member);
 		struct bt_vcp_vol_ctlr *vol_ctlr;
 		struct bt_vcp_included included;
 		int err;
 
-		if (client == NULL) {
+		if (member == NULL) {
+			LOG_DBG("param->param[%zu].member is NULL", i);
+			return false;
+		}
+
+		if (member_conn == NULL) {
 			LOG_DBG("Invalid param->param[%zu].member", i);
 			return false;
 		}
 
-		vol_ctlr = bt_vcp_vol_ctlr_get_by_conn(client->conn);
+		vol_ctlr = bt_vcp_vol_ctlr_get_by_conn(member_conn);
 		if (vol_ctlr == NULL) {
 			LOG_DBG("Volume control not available for param->param[%zu].member", i);
 			return false;
@@ -1091,15 +1106,20 @@ static bool valid_change_microphone_mute_state_param(
 
 	for (size_t i = 0U; i < param->count; i++) {
 		const union bt_cap_set_member *member = &param->members[i];
-		const struct bt_cap_common_client *client =
-			bt_cap_common_get_client(param->type, member);
+		const struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, member);
 
-		CHECKIF(client == NULL) {
+		if (member == NULL) {
+			LOG_DBG("param->members[%zu] is NULL", i);
+			return false;
+		}
+
+		if (member_conn == NULL) {
 			LOG_DBG("Invalid param->members[%zu]", i);
 			return false;
 		}
 
-		CHECKIF(bt_micp_mic_ctlr_get_by_conn(client->conn) == NULL) {
+		CHECKIF(bt_micp_mic_ctlr_get_by_conn(member_conn) == NULL) {
 			LOG_DBG("Microphone control not available for param->members[%zu]", i);
 			return false;
 		}
@@ -1272,18 +1292,23 @@ static bool valid_change_microphone_gain_param(
 
 	for (size_t i = 0U; i < param->count; i++) {
 		const union bt_cap_set_member *member = &param->param[i].member;
-		const struct bt_cap_common_client *client =
-			bt_cap_common_get_client(param->type, member);
+		const struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, member);
 		struct bt_micp_mic_ctlr *mic_ctlr;
 		struct bt_micp_included included;
 		int err;
 
-		if (client == NULL) {
+		if (member == NULL) {
+			LOG_DBG("param->param[%zu].member is NULL", i);
+			return false;
+		}
+
+		if (member_conn == NULL) {
 			LOG_DBG("Invalid param->param[%zu].member", i);
 			return false;
 		}
 
-		mic_ctlr = bt_micp_mic_ctlr_get_by_conn(client->conn);
+		mic_ctlr = bt_micp_mic_ctlr_get_by_conn(member_conn);
 		if (mic_ctlr == NULL) {
 			LOG_DBG("Microphone control not available for param->param[%zu].member", i);
 			return false;
