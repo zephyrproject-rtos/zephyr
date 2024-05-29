@@ -35,6 +35,10 @@ static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
 	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &async_sig);
 
+static struct k_poll_signal async_sig_spim = K_POLL_SIGNAL_INITIALIZER(async_sig_spim);
+static struct k_poll_event async_evt_spim =
+	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &async_sig_spim);
+
 #define MEMORY_SECTION(node)                                                                       \
 	COND_CODE_1(DT_NODE_HAS_PROP(node, memory_regions),                                        \
 		    (__attribute__((__section__(                                                   \
@@ -55,6 +59,7 @@ struct test_data {
 	struct spi_buf_set *stx_set;
 	struct spi_buf_set *srx_set;
 	struct spi_buf bufs[8];
+	bool async;
 };
 
 static struct test_data tdata;
@@ -85,8 +90,26 @@ static void work_handler(struct k_work *work)
 	struct test_data *td = CONTAINER_OF(dwork, struct test_data, test_work);
 	int rv;
 
-	rv = spi_transceive_dt(&spim, td->mtx_set, td->mrx_set);
-	if (rv == 0) {
+	if (!td->async) {
+		rv = spi_transceive_dt(&spim, td->mtx_set, td->mrx_set);
+		if (rv == 0) {
+			k_sem_give(&td->sem);
+		}
+	} else {
+		rv = spi_transceive_signal(spim.bus, &spim.config, td->mtx_set, td->mrx_set,
+				&async_sig_spim);
+		zassert_equal(rv, 0);
+
+		rv = k_poll(&async_evt_spim, 1, K_MSEC(200));
+		zassert_false(rv, "one or more events are not ready");
+
+		rv = async_evt_spim.signal->result;
+		zassert_equal(rv, 0);
+
+		/* Reinitializing for next call */
+		async_evt_spim.signal->signaled = 0U;
+		async_evt_spim.state = K_POLL_STATE_NOT_READY;
+
 		k_sem_give(&td->sem);
 	}
 }
@@ -181,6 +204,7 @@ static void run_test(bool m_same_size, bool s_same_size, bool async)
 	int periph_rv;
 	int srx_len;
 
+	tdata.async = async;
 	rv = k_work_schedule(&tdata.test_work, K_MSEC(10));
 	zassert_equal(rv, 1);
 
