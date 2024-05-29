@@ -704,6 +704,9 @@ config PIPES
 	  allows a thread to send a byte stream to another thread. Pipes can
 	  be used to synchronously transfer chunks of data in whole or in part.
 
+	  Note that setting this option slightly increases the size of the
+	  thread structure.
+
 config KERNEL_MEM_POOL
 	bool "Use Kernel Memory Pool"
 	default y
