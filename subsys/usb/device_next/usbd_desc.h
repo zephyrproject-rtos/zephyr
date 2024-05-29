@@ -20,7 +20,7 @@
  *
  * @return pointer to descriptor node or NULL if not found.
  */
-struct usbd_desc_node *usbd_get_descriptor(struct usbd_contex *const uds_ctx,
+struct usbd_desc_node *usbd_get_descriptor(struct usbd_context *const uds_ctx,
 					   const uint8_t type, const uint8_t idx);
 
 /**
@@ -34,6 +34,6 @@ struct usbd_desc_node *usbd_get_descriptor(struct usbd_contex *const uds_ctx,
  *
  * @return 0 on success, other values on fail.
  */
-int usbd_desc_remove_all(struct usbd_contex *const uds_ctx);
+int usbd_desc_remove_all(struct usbd_context *const uds_ctx);
 
 #endif /* ZEPHYR_INCLUDE_USBD_DESC_H */
