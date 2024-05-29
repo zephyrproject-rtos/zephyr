@@ -162,7 +162,10 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			dir = NRF_GPIO_PIN_DIR_OUTPUT;
 			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
 #if NRF_GPIO_HAS_CLOCKPIN && defined(NRF_SPIM_CLOCKPIN_MOSI_NEEDED)
-			clockpin = true;
+			/* CLOCKPIN setting must not be applied to SPIM12x instances. */
+			if (!NRF_SPIM_IS_320MHZ_SPIM((void *)reg)) {
+				clockpin = true;
+			}
 #endif
 			break;
 		case NRF_FUN_SPIM_MISO:
