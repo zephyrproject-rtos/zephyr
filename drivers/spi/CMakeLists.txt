@@ -24,7 +24,7 @@ zephyr_library_sources_ifdef(CONFIG_SPI_NRFX_SPI	spi_nrfx_spi.c
 zephyr_library_sources_ifdef(CONFIG_SPI_NRFX_SPIM	spi_nrfx_spim.c
 							spi_nrfx_common.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_NRFX_SPIS	spi_nrfx_spis.c)
-zephyr_library_sources_ifdef(CONFIG_SPI_LITESPI		spi_litespi.c)
+zephyr_library_sources_ifdef(CONFIG_SPI_LITEX		spi_litex.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_OC_SIMPLE	spi_oc_simple.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_XEC_QMSPI	spi_xec_qmspi.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_GECKO		spi_gecko.c)
