@@ -69,6 +69,7 @@
 	ahb-prescaler = <1>;
 	apb1-prescaler = <2>;
 	apb2-prescaler = <1>;
+	adc-prescaler = <2>;
 };
 
 &usart1 {
