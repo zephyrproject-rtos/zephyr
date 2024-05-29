@@ -231,19 +231,21 @@ static int handle_get_report(const struct device *dev,
 	const uint8_t id = HID_GET_REPORT_ID(setup->wValue);
 	struct hid_device_data *const ddata = dev->data;
 	const struct hid_device_ops *ops = ddata->ops;
+	size_t size = net_buf_tailroom(buf);
+	uint8_t *data = net_buf_add(buf, size);
 
 	switch (type) {
 	case HID_REPORT_TYPE_INPUT:
 		LOG_DBG("Get Report, Input Report ID %u", id);
-		errno = ops->get_report(dev, type, id, net_buf_tailroom(buf), buf->data);
+		errno = ops->get_report(dev, type, id, size, data);
 		break;
 	case HID_REPORT_TYPE_OUTPUT:
 		LOG_DBG("Get Report, Output Report ID %u", id);
-		errno = ops->get_report(dev, type, id, net_buf_tailroom(buf), buf->data);
+		errno = ops->get_report(dev, type, id, size, data);
 		break;
 	case HID_REPORT_TYPE_FEATURE:
 		LOG_DBG("Get Report, Feature Report ID %u", id);
-		errno = ops->get_report(dev, type, id, net_buf_tailroom(buf), buf->data);
+		errno = ops->get_report(dev, type, id, size, data);
 		break;
 	default:
 		errno = -ENOTSUP;
