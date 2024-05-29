@@ -18,7 +18,7 @@
  *
  * @return usbd_class_request() return value
  */
-int usbd_class_handle_xfer(struct usbd_contex *const uds_ctx,
+int usbd_class_handle_xfer(struct usbd_context *const uds_ctx,
 			   struct net_buf *const buf,
 			   const int err);
 
@@ -47,7 +47,7 @@ size_t usbd_class_desc_len(struct usbd_class_data *const c_data,
  *
  * @return Class c_nd pointer or NULL
  */
-struct usbd_class_node *usbd_class_get_by_iface(struct usbd_contex *uds_ctx,
+struct usbd_class_node *usbd_class_get_by_iface(struct usbd_context *uds_ctx,
 						uint8_t i_n);
 
 /**
@@ -60,7 +60,7 @@ struct usbd_class_node *usbd_class_get_by_iface(struct usbd_contex *uds_ctx,
  *
  * @return Class c_nd pointer or NULL
  */
-struct usbd_class_node *usbd_class_get_by_config(struct usbd_contex *uds_ctx,
+struct usbd_class_node *usbd_class_get_by_config(struct usbd_context *uds_ctx,
 						 const enum usbd_speed speed,
 						 uint8_t cnum,
 						 uint8_t inum);
@@ -75,7 +75,7 @@ struct usbd_class_node *usbd_class_get_by_config(struct usbd_contex *uds_ctx,
  *
  * @return Class c_nd pointer or NULL
  */
-struct usbd_class_node *usbd_class_get_by_ep(struct usbd_contex *uds_ctx,
+struct usbd_class_node *usbd_class_get_by_ep(struct usbd_context *uds_ctx,
 					     uint8_t ep);
 
 /**
@@ -92,7 +92,7 @@ struct usbd_class_node *usbd_class_get_by_ep(struct usbd_contex *uds_ctx,
  *
  * @return Class c_nd pointer or NULL
  */
-struct usbd_class_node *usbd_class_get_by_req(struct usbd_contex *uds_ctx,
+struct usbd_class_node *usbd_class_get_by_req(struct usbd_context *uds_ctx,
 					      uint8_t request);
 
 /**
@@ -104,7 +104,7 @@ struct usbd_class_node *usbd_class_get_by_req(struct usbd_contex *uds_ctx,
  *
  * @return 0 on success, other values on fail.
  */
-int usbd_class_remove_all(struct usbd_contex *const uds_ctx,
+int usbd_class_remove_all(struct usbd_context *const uds_ctx,
 			  const enum usbd_speed speed,
 			  const uint8_t cfg);
 

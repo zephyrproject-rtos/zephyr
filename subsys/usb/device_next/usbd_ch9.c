@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(usbd_ch9, CONFIG_USBD_LOG_LEVEL);
 #define SF_TEST_MODE_SELECTOR(wIndex)		((uint8_t)((wIndex) >> 8))
 #define SF_TEST_LOWER_BYTE(wIndex)		((uint8_t)(wIndex))
 
-static int nonstd_request(struct usbd_contex *const uds_ctx,
+static int nonstd_request(struct usbd_context *const uds_ctx,
 			  struct net_buf *const dbuf);
 
 static bool reqtype_is_to_host(const struct usb_setup_packet *const setup)
@@ -42,18 +42,18 @@ static bool reqtype_is_to_device(const struct usb_setup_packet *const setup)
 	return !reqtype_is_to_host(setup);
 }
 
-static void ch9_set_ctrl_type(struct usbd_contex *const uds_ctx,
+static void ch9_set_ctrl_type(struct usbd_context *const uds_ctx,
 				   const int type)
 {
 	uds_ctx->ch9_data.ctrl_type = type;
 }
 
-static int ch9_get_ctrl_type(struct usbd_contex *const uds_ctx)
+static int ch9_get_ctrl_type(struct usbd_context *const uds_ctx)
 {
 	return uds_ctx->ch9_data.ctrl_type;
 }
 
-static int post_status_stage(struct usbd_contex *const uds_ctx)
+static int post_status_stage(struct usbd_context *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
 	int ret = 0;
@@ -80,7 +80,7 @@ static int post_status_stage(struct usbd_contex *const uds_ctx)
 	return ret;
 }
 
-static int sreq_set_address(struct usbd_contex *const uds_ctx)
+static int sreq_set_address(struct usbd_context *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
 	struct udc_device_caps caps = udc_caps(uds_ctx->dev);
@@ -123,7 +123,7 @@ static int sreq_set_address(struct usbd_contex *const uds_ctx)
 	return 0;
 }
 
-static int sreq_set_configuration(struct usbd_contex *const uds_ctx)
+static int sreq_set_configuration(struct usbd_context *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
 	const enum usbd_speed speed = usbd_bus_speed(uds_ctx);
@@ -174,7 +174,7 @@ static int sreq_set_configuration(struct usbd_contex *const uds_ctx)
 	return ret;
 }
 
-static int sreq_set_interface(struct usbd_contex *const uds_ctx)
+static int sreq_set_interface(struct usbd_context *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
 	int ret;
@@ -210,7 +210,7 @@ static int sreq_set_interface(struct usbd_contex *const uds_ctx)
 	return ret;
 }
 
-static void sreq_feature_halt_notify(struct usbd_contex *const uds_ctx,
+static void sreq_feature_halt_notify(struct usbd_context *const uds_ctx,
 				     const uint8_t ep, const bool halted)
 {
 	struct usbd_class_node *c_nd = usbd_class_get_by_ep(uds_ctx, ep);
@@ -220,7 +220,7 @@ static void sreq_feature_halt_notify(struct usbd_contex *const uds_ctx,
 	}
 }
 
-static int sreq_clear_feature(struct usbd_contex *const uds_ctx)
+static int sreq_clear_feature(struct usbd_context *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
 	uint8_t ep = setup->wIndex;
@@ -275,7 +275,7 @@ static int sreq_clear_feature(struct usbd_contex *const uds_ctx)
 	return ret;
 }
 
-static int set_feature_test_mode(struct usbd_contex *const uds_ctx)
+static int set_feature_test_mode(struct usbd_context *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
 	uint8_t mode = SF_TEST_MODE_SELECTOR(setup->wIndex);
@@ -296,7 +296,7 @@ static int set_feature_test_mode(struct usbd_contex *const uds_ctx)
 	return 0;
 }
 
-static int sreq_set_feature(struct usbd_contex *const uds_ctx)
+static int sreq_set_feature(struct usbd_context *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
 	uint8_t ep = setup->wIndex;
@@ -358,7 +358,7 @@ static int sreq_set_feature(struct usbd_contex *const uds_ctx)
 	return ret;
 }
 
-static int std_request_to_device(struct usbd_contex *const uds_ctx,
+static int std_request_to_device(struct usbd_context *const uds_ctx,
 				 struct net_buf *const buf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
@@ -389,7 +389,7 @@ static int std_request_to_device(struct usbd_contex *const uds_ctx,
 	return ret;
 }
 
-static int sreq_get_status(struct usbd_contex *const uds_ctx,
+static int sreq_get_status(struct usbd_context *const uds_ctx,
 			   struct net_buf *const buf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
@@ -449,7 +449,7 @@ static int sreq_get_status(struct usbd_contex *const uds_ctx,
  * This function handles configuration and USB2.0 other-speed-configuration
  * descriptor type requests.
  */
-static int sreq_get_desc_cfg(struct usbd_contex *const uds_ctx,
+static int sreq_get_desc_cfg(struct usbd_context *const uds_ctx,
 			     struct net_buf *const buf,
 			     const uint8_t idx,
 			     const bool other_cfg)
@@ -601,7 +601,7 @@ static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 	}
 }
 
-static int sreq_get_desc_dev(struct usbd_contex *const uds_ctx,
+static int sreq_get_desc_dev(struct usbd_context *const uds_ctx,
 			     struct net_buf *const buf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
@@ -627,7 +627,7 @@ static int sreq_get_desc_dev(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
-static int sreq_get_desc_str(struct usbd_contex *const uds_ctx,
+static int sreq_get_desc_str(struct usbd_context *const uds_ctx,
 			     struct net_buf *const buf, const uint8_t idx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
@@ -659,7 +659,7 @@ static int sreq_get_desc_str(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
-static int sreq_get_dev_qualifier(struct usbd_contex *const uds_ctx,
+static int sreq_get_dev_qualifier(struct usbd_context *const uds_ctx,
 				  struct net_buf *const buf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
@@ -696,7 +696,7 @@ static int sreq_get_dev_qualifier(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
-static void desc_fill_bos_root(struct usbd_contex *const uds_ctx,
+static void desc_fill_bos_root(struct usbd_context *const uds_ctx,
 			       struct usb_bos_descriptor *const root)
 {
 	struct usbd_desc_node *desc_nd;
@@ -714,7 +714,7 @@ static void desc_fill_bos_root(struct usbd_contex *const uds_ctx,
 	}
 }
 
-static int sreq_get_desc_bos(struct usbd_contex *const uds_ctx,
+static int sreq_get_desc_bos(struct usbd_context *const uds_ctx,
 			     struct net_buf *const buf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
@@ -769,7 +769,7 @@ static int sreq_get_desc_bos(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
-static int sreq_get_descriptor(struct usbd_contex *const uds_ctx,
+static int sreq_get_descriptor(struct usbd_context *const uds_ctx,
 			       struct net_buf *const buf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
@@ -812,7 +812,7 @@ static int sreq_get_descriptor(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
-static int sreq_get_configuration(struct usbd_contex *const uds_ctx,
+static int sreq_get_configuration(struct usbd_context *const uds_ctx,
 				  struct net_buf *const buf)
 
 {
@@ -840,7 +840,7 @@ static int sreq_get_configuration(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
-static int sreq_get_interface(struct usbd_contex *const uds_ctx,
+static int sreq_get_interface(struct usbd_context *const uds_ctx,
 			      struct net_buf *const buf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
@@ -885,7 +885,7 @@ static int sreq_get_interface(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
-static int std_request_to_host(struct usbd_contex *const uds_ctx,
+static int std_request_to_host(struct usbd_context *const uds_ctx,
 			       struct net_buf *const buf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
@@ -913,7 +913,7 @@ static int std_request_to_host(struct usbd_contex *const uds_ctx,
 	return ret;
 }
 
-static int nonstd_request(struct usbd_contex *const uds_ctx,
+static int nonstd_request(struct usbd_context *const uds_ctx,
 			  struct net_buf *const dbuf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
@@ -947,7 +947,7 @@ static int nonstd_request(struct usbd_contex *const uds_ctx,
 	return ret;
 }
 
-static int handle_setup_request(struct usbd_contex *const uds_ctx,
+static int handle_setup_request(struct usbd_context *const uds_ctx,
 				struct net_buf *const buf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
@@ -987,7 +987,7 @@ static int handle_setup_request(struct usbd_contex *const uds_ctx,
 	return ret;
 }
 
-static int ctrl_xfer_get_setup(struct usbd_contex *const uds_ctx,
+static int ctrl_xfer_get_setup(struct usbd_context *const uds_ctx,
 			       struct net_buf *const buf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
@@ -1061,7 +1061,7 @@ static struct net_buf *spool_data_out(struct net_buf *const buf)
 	return NULL;
 }
 
-int usbd_handle_ctrl_xfer(struct usbd_contex *const uds_ctx,
+int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 			  struct net_buf *const buf, const int err)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
@@ -1193,7 +1193,7 @@ ctrl_xfer_stall:
 	return ret;
 }
 
-int usbd_init_control_pipe(struct usbd_contex *const uds_ctx)
+int usbd_init_control_pipe(struct usbd_context *const uds_ctx)
 {
 	uds_ctx->ch9_data.state = USBD_STATE_DEFAULT;
 	ch9_set_ctrl_type(uds_ctx, CTRL_AWAIT_SETUP_DATA);

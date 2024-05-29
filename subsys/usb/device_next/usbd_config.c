@@ -16,7 +16,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_cfg, CONFIG_USBD_LOG_LEVEL);
 
-static sys_slist_t *usbd_configs(struct usbd_contex *uds_ctx,
+static sys_slist_t *usbd_configs(struct usbd_context *uds_ctx,
 				 const enum usbd_speed speed)
 {
 	switch (speed) {
@@ -29,7 +29,7 @@ static sys_slist_t *usbd_configs(struct usbd_contex *uds_ctx,
 	}
 }
 
-struct usbd_config_node *usbd_config_get(struct usbd_contex *const uds_ctx,
+struct usbd_config_node *usbd_config_get(struct usbd_context *const uds_ctx,
 					 const enum usbd_speed speed,
 					 const uint8_t cfg)
 {
@@ -45,7 +45,7 @@ struct usbd_config_node *usbd_config_get(struct usbd_contex *const uds_ctx,
 }
 
 struct usbd_config_node *
-usbd_config_get_current(struct usbd_contex *const uds_ctx)
+usbd_config_get_current(struct usbd_context *const uds_ctx)
 {
 	if (!usbd_state_is_configured(uds_ctx)) {
 		LOG_INF("No configuration set (Address state?)");
@@ -71,7 +71,7 @@ static void usbd_config_classes_enable(struct usbd_config_node *const cfg_nd,
 }
 
 /* Reset configuration to addressed state, shutdown all endpoints */
-static int usbd_config_reset(struct usbd_contex *const uds_ctx)
+static int usbd_config_reset(struct usbd_context *const uds_ctx)
 {
 	struct usbd_config_node *cfg_nd;
 	int ret = 0;
@@ -92,7 +92,7 @@ static int usbd_config_reset(struct usbd_contex *const uds_ctx)
 	return ret;
 }
 
-bool usbd_config_exist(struct usbd_contex *const uds_ctx,
+bool usbd_config_exist(struct usbd_context *const uds_ctx,
 		       const enum usbd_speed speed,
 		       const uint8_t cfg)
 {
@@ -103,7 +103,7 @@ bool usbd_config_exist(struct usbd_contex *const uds_ctx,
 	return (config != NULL) ? true : false;
 }
 
-int usbd_config_set(struct usbd_contex *const uds_ctx,
+int usbd_config_set(struct usbd_context *const uds_ctx,
 		    const uint8_t new_cfg)
 {
 	struct usbd_config_node *cfg_nd;
@@ -143,7 +143,7 @@ int usbd_config_set(struct usbd_contex *const uds_ctx,
  * All the functions below are part of public USB device support API.
  */
 
-int usbd_config_attrib_rwup(struct usbd_contex *const uds_ctx,
+int usbd_config_attrib_rwup(struct usbd_context *const uds_ctx,
 			    const enum usbd_speed speed,
 			    const uint8_t cfg, const bool enable)
 {
@@ -185,7 +185,7 @@ attrib_rwup_exit:
 	return ret;
 }
 
-int usbd_config_attrib_self(struct usbd_contex *const uds_ctx,
+int usbd_config_attrib_self(struct usbd_context *const uds_ctx,
 			    const enum usbd_speed speed,
 			    const uint8_t cfg, const bool enable)
 {
@@ -219,7 +219,7 @@ attrib_self_exit:
 	return ret;
 }
 
-int usbd_config_maxpower(struct usbd_contex *const uds_ctx,
+int usbd_config_maxpower(struct usbd_context *const uds_ctx,
 			 const enum usbd_speed speed,
 			 const uint8_t cfg, const uint8_t power)
 {
@@ -249,7 +249,7 @@ maxpower_exit:
 	return ret;
 }
 
-int usbd_add_configuration(struct usbd_contex *const uds_ctx,
+int usbd_add_configuration(struct usbd_context *const uds_ctx,
 			   const enum usbd_speed speed,
 			   struct usbd_config_node *const cfg_nd)
 {

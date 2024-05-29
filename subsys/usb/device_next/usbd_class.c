@@ -44,7 +44,7 @@ size_t usbd_class_desc_len(struct usbd_class_data *const c_data,
 }
 
 struct usbd_class_node *
-usbd_class_get_by_config(struct usbd_contex *const uds_ctx,
+usbd_class_get_by_config(struct usbd_context *const uds_ctx,
 			 const enum usbd_speed speed,
 			 const uint8_t cnum,
 			 const uint8_t inum)
@@ -67,7 +67,7 @@ usbd_class_get_by_config(struct usbd_contex *const uds_ctx,
 }
 
 struct usbd_class_node *
-usbd_class_get_by_iface(struct usbd_contex *const uds_ctx,
+usbd_class_get_by_iface(struct usbd_context *const uds_ctx,
 			const uint8_t inum)
 {
 	struct usbd_class_node *c_nd;
@@ -87,7 +87,7 @@ usbd_class_get_by_iface(struct usbd_contex *const uds_ctx,
 	return NULL;
 }
 
-static bool xfer_owner_exist(struct usbd_contex *const uds_ctx,
+static bool xfer_owner_exist(struct usbd_context *const uds_ctx,
 			     struct usbd_config_node *const cfg_nd,
 			     struct net_buf *const buf)
 {
@@ -114,7 +114,7 @@ static bool xfer_owner_exist(struct usbd_contex *const uds_ctx,
 	return false;
 }
 
-int usbd_class_handle_xfer(struct usbd_contex *const uds_ctx,
+int usbd_class_handle_xfer(struct usbd_context *const uds_ctx,
 			   struct net_buf *const buf,
 			   const int err)
 {
@@ -137,7 +137,7 @@ int usbd_class_handle_xfer(struct usbd_contex *const uds_ctx,
 }
 
 struct usbd_class_node *
-usbd_class_get_by_ep(struct usbd_contex *const uds_ctx,
+usbd_class_get_by_ep(struct usbd_context *const uds_ctx,
 		     const uint8_t ep)
 {
 	struct usbd_class_node *c_nd;
@@ -175,7 +175,7 @@ usbd_class_get_by_ep(struct usbd_contex *const uds_ctx,
 }
 
 struct usbd_class_node *
-usbd_class_get_by_req(struct usbd_contex *const uds_ctx,
+usbd_class_get_by_req(struct usbd_context *const uds_ctx,
 		      const uint8_t request)
 {
 	struct usbd_config_node *cfg_nd;
@@ -229,7 +229,7 @@ usbd_class_node_get(const char *name, const enum usbd_speed speed)
 	return NULL;
 }
 
-static int usbd_class_append(struct usbd_contex *const uds_ctx,
+static int usbd_class_append(struct usbd_context *const uds_ctx,
 			     struct usbd_class_node *const c_nd,
 			     const enum usbd_speed speed,
 			     const uint8_t cfg)
@@ -246,7 +246,7 @@ static int usbd_class_append(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
-static int usbd_class_remove(struct usbd_contex *const uds_ctx,
+static int usbd_class_remove(struct usbd_context *const uds_ctx,
 			     struct usbd_class_node *const c_nd,
 			     const enum usbd_speed speed,
 			     const uint8_t cfg)
@@ -265,7 +265,7 @@ static int usbd_class_remove(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
-int usbd_class_remove_all(struct usbd_contex *const uds_ctx,
+int usbd_class_remove_all(struct usbd_context *const uds_ctx,
 			  const enum usbd_speed speed,
 			  const uint8_t cfg)
 {
@@ -292,7 +292,7 @@ int usbd_class_remove_all(struct usbd_contex *const uds_ctx,
  * All the functions below are part of public USB device support API.
  */
 
-int usbd_register_class(struct usbd_contex *const uds_ctx,
+int usbd_register_class(struct usbd_context *const uds_ctx,
 			const char *name,
 			const enum usbd_speed speed, const uint8_t cfg)
 {
@@ -340,7 +340,7 @@ register_class_error:
 	return ret;
 }
 
-int usbd_unregister_class(struct usbd_contex *const uds_ctx,
+int usbd_unregister_class(struct usbd_context *const uds_ctx,
 			  const char *name,
 			  const enum usbd_speed speed, const uint8_t cfg)
 {
