@@ -1,0 +1,36 @@
+# Copyright (c) 2024 Trackunit Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config MODEM_AT_SHELL
+	bool "AT command shell based on modem modules"
+	select MODEM_MODULES
+	select MODEM_CHAT
+	select MODEM_PIPE
+	select MODEM_PIPELINK
+	depends on !MODEM_SHELL
+	depends on !SHELL_WILDCARD
+	depends on $(dt_alias_enabled,modem)
+
+if MODEM_AT_SHELL
+
+config MODEM_AT_SHELL_USER_PIPE
+	int "User pipe number to use"
+	default 0
+
+config MODEM_AT_SHELL_RESPONSE_TIMEOUT_S
+	int "Timeout waiting for response to AT command in seconds"
+	default 5
+
+config MODEM_AT_SHELL_COMMAND_MAX_SIZE
+	int "Maximum size of AT command"
+	default 32
+
+config MODEM_AT_SHELL_RESPONSE_MAX_SIZE
+	int "Maximum size of AT response"
+	default 64
+
+config MODEM_AT_SHELL_CHAT_RECEIVE_BUF_SIZE
+	int "Size of modem chat receive buffer in bytes"
+	default 128
+
+endif # MODEM_AT_SHELL
