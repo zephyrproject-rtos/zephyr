@@ -105,6 +105,14 @@ Bluetooth
   * Removed ``err`` from :c:struct:`bt_bap_broadcast_assistant_cb.recv_state_removed` as it was
     redundant.
 
+  * The broadcast_audio_assistant sample has been renamed to bap_broadcast_assistant.
+    The broadcast_audio_sink sample has been renamed to bap_broadcast_sink.
+    The broadcast_audio_source sample has been renamed to bap_broadcast_source.
+    The unicast_audio_client sample has been renamed to bap_unicast_client.
+    The unicast_audio_server sample has been renamed to bap_unicast_server.
+    The public_broadcast_sink sample has been renamed to pbp_public_broadcast_sink.
+    The public_broadcast_source sample has been renamed to pbp_public_broadcast_source.
+
 * Host
 
   * Added Nordic UART Service (NUS), enabled by the :kconfig:option:`CONFIG_BT_ZEPHYR_NUS`.
