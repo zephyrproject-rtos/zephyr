@@ -130,6 +130,24 @@ Alternatively, an HTTPS service can be defined with with
 Once HTTP(s) service is defined, resources can be registered for it with
 :c:macro:`HTTP_RESOURCE_DEFINE` macro.
 
+Application can enable resource wildcard support by enabling
+:kconfig:option:`CONFIG_HTTP_SERVER_RESOURCE_WILDCARD` option. When this
+option is set, then it is possible to match several incoming HTTP requests
+with just one resource handler. The `fnmatch()
+<https://pubs.opengroup.org/onlinepubs/9699919799/functions/fnmatch.html>`__
+POSIX API function is used to match the pattern in the URL paths.
+
+Example:
+
+.. code-block:: c
+
+    HTTP_RESOURCE_DEFINE(my_resource, my_service, "/foo*", &resource_detail);
+
+This would match all URLs that start with a string ``foo``. See
+`POSIX.2 chapter 2.13
+<https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_13>`__
+for pattern matching syntax description.
+
 Static resources
 ================
 
