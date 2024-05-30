@@ -1023,7 +1023,7 @@ Release Notes:
   maintainers:
     - rriveramcrus
   collaborators:
-    - GRobertZieba
+    - RobertZ2011
   files:
     - drivers/charger/
     - dts/bindings/charger/
