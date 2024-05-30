@@ -53,6 +53,23 @@ int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb)
 	return 0;
 }
 
+int bt_cap_initiator_unregister_cb(const struct bt_cap_initiator_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		LOG_DBG("cb is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(cap_cb != cb) {
+		LOG_DBG("cb is not registered");
+		return -EINVAL;
+	}
+
+	cap_cb = NULL;
+
+	return 0;
+}
+
 struct valid_metadata_param {
 	bool stream_context_found;
 	bool valid;
