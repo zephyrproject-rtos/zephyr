@@ -16,17 +16,29 @@
 struct dummy_display_config {
 	uint16_t height;
 	uint16_t width;
+	int rotation;
 };
 
 struct dummy_display_data {
 	enum display_pixel_format current_pixel_format;
+	enum display_orientation current_orientation;
 };
 
 static int dummy_display_init(const struct device *dev)
 {
 	struct dummy_display_data *disp_data = dev->data;
+	const struct dummy_display_config *disp_cfg = dev->config;
 
 	disp_data->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
+	if (disp_cfg->rotation == 0U) {
+		disp_data->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	} else if (disp_cfg->rotation == 90U) {
+		disp_data->current_orientation = DISPLAY_ORIENTATION_ROTATED_90;
+	} else if (disp_cfg->rotation == 180U) {
+		disp_data->current_orientation = DISPLAY_ORIENTATION_ROTATED_180;
+	} else {
+		disp_data->current_orientation = DISPLAY_ORIENTATION_ROTATED_270;
+	}
 
 	return 0;
 }
@@ -93,8 +105,8 @@ static void dummy_display_get_capabilities(const struct device *dev,
 		PIXEL_FORMAT_MONO01 |
 		PIXEL_FORMAT_MONO10;
 	capabilities->current_pixel_format = disp_data->current_pixel_format;
-	capabilities->screen_info = SCREEN_INFO_MONO_VTILED |
-		SCREEN_INFO_MONO_MSB_FIRST;
+	capabilities->current_orientation = disp_data->current_orientation;
+	capabilities->screen_info = SCREEN_INFO_MONO_VTILED | SCREEN_INFO_MONO_MSB_FIRST;
 }
 
 static int dummy_display_set_pixel_format(const struct device *dev,
@@ -106,6 +118,15 @@ static int dummy_display_set_pixel_format(const struct device *dev,
 	return 0;
 }
 
+static int dummy_display_set_orientation(const struct device *dev,
+					 const enum display_orientation orientation)
+{
+	struct dummy_display_data *disp_data = dev->data;
+
+	disp_data->current_orientation = orientation;
+	return 0;
+}
+
 static const struct display_driver_api dummy_display_api = {
 	.blanking_on = dummy_display_blanking_on,
 	.blanking_off = dummy_display_blanking_off,
@@ -114,21 +135,19 @@ static const struct display_driver_api dummy_display_api = {
 	.set_contrast = dummy_display_set_contrast,
 	.get_capabilities = dummy_display_get_capabilities,
 	.set_pixel_format = dummy_display_set_pixel_format,
+	.set_orientation = dummy_display_set_orientation,
 };
 
-#define DISPLAY_DUMMY_DEFINE(n)						\
-	static const struct dummy_display_config dd_config_##n = {	\
-		.height = DT_INST_PROP(n, height),			\
-		.width = DT_INST_PROP(n, width),			\
-	};								\
-									\
-	static struct dummy_display_data dd_data_##n;			\
-									\
-	DEVICE_DT_INST_DEFINE(n, &dummy_display_init, NULL,		\
-			      &dd_data_##n,				\
-			      &dd_config_##n,				\
-			      POST_KERNEL,				\
-			      CONFIG_DISPLAY_INIT_PRIORITY,		\
-			      &dummy_display_api);			\
+#define DISPLAY_DUMMY_DEFINE(n)                                                                    \
+	static const struct dummy_display_config dd_config_##n = {                                 \
+		.height = DT_INST_PROP(n, height),                                                 \
+		.width = DT_INST_PROP(n, width),                                                   \
+		.rotation = DT_INST_PROP(n, rotation),                                             \
+	};                                                                                         \
+                                                                                                   \
+	static struct dummy_display_data dd_data_##n;                                              \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &dummy_display_init, NULL, &dd_data_##n, &dd_config_##n,          \
+			      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &dummy_display_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DISPLAY_DUMMY_DEFINE)
