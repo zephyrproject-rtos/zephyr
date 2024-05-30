@@ -98,6 +98,8 @@ void isr_handler(const void *param)
 #define TEST_IRQ_DYN_LINE 0
 #endif
 
+#elif defined(CONFIG_MICROBLAZE)
+#define TEST_IRQ_DYN_LINE 1
 #else
 #define TEST_IRQ_DYN_LINE 0
 #endif

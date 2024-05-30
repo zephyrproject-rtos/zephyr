@@ -65,6 +65,8 @@
  * unless TICK_IRQ is defined here for them
  */
 #endif /* defined(CONFIG_ARCH_POSIX) */
+#elif defined(CONFIG_MICROBLAZE) && defined(CONFIG_XLNX_TMRCTR)
+#define TICK_IRQ DT_IRQN(DT_INST(CONFIG_XLNX_TMRCTR_TIMER_INDEX, xlnx_tmrctr))
 #else
 
 extern const int32_t z_sys_timer_irq_for_test;
@@ -72,10 +74,11 @@ extern const int32_t z_sys_timer_irq_for_test;
 
 #endif
 
-/* Cortex-M1 and Nios II do have a power saving instruction, so k_cpu_idle()
+/* Cortex-M1, MicroBlaze and Nios II do have a power saving instruction, so k_cpu_idle()
  * returns immediately
  */
-#if !defined(CONFIG_CPU_CORTEX_M1) && !defined(CONFIG_NIOS2)
+#if !defined(CONFIG_CPU_CORTEX_M1) && !defined(CONFIG_NIOS2) && \
+	(!(defined(CONFIG_MICROBLAZE) && defined(CONFIG_MICROBLAZE_IDLE_NOP)))
 #define HAS_POWERSAVE_INSTRUCTION
 #endif
 
