@@ -731,6 +731,23 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 		elapsed_event = latency_event + 1U;
 	}
 
+	/* Check for establishmet failure */
+	if (done->extra.estab_failed) {
+		uint8_t handle;
+		uint32_t ret;
+
+		/* Stop Sync ISO Ticker directly. Establishment failure has been
+		 * notified.
+		 */
+		handle = sync_iso_handle_get(sync_iso);
+		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+				  (TICKER_ID_SCAN_SYNC_ISO_BASE +
+				  sync_iso_handle_to_index(handle)), NULL, NULL);
+		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+			  (ret == TICKER_STATUS_BUSY));
+		return;
+	}
+
 	/* Sync drift compensation and new skip calculation
 	 */
 	ticks_drift_plus = 0U;
