@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Rapid Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_VIRGO
+	bool
+	select SOC_FAMILY_VIRGO
+	help
+	  Rapid Silicon SoC Series Virgo Implementation"
+
+config SOC_VIRGO
+	bool
+	select SOC_SERIES_VIRGO
+	help
+	  Virgo SoC implementation"
+
+config SOC_SERIES
+	default "virgo" if SOC_SERIES_VIRGO
+
+config SOC
+	default "virgo" if SOC_VIRGO

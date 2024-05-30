@@ -1,0 +1,6 @@
+family:
+- name: virgo
+  series:
+  - name: virgo
+    socs:
+    - name: virgo

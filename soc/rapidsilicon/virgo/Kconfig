@@ -1,0 +1,45 @@
+# Copyright (c) 2024 Rapid Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_VIRGO
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_CLIC
+	select RISCV_VECTORED_MODE
+	select GEN_IRQ_VECTOR_TABLE
+
+config SOC_VIRGO
+	select ATOMIC_OPERATIONS_BUILTIN
+	select INCLUDE_RESET_VECTOR
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select ATOMIC_OPERATIONS_C
+	select THREAD_NAME
+
+if SOC_SERIES_VIRGO
+
+if GEN_IRQ_VECTOR_TABLE
+
+	choice IRQ_VECTOR_TABLE_TYPE
+		default IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
+	endchoice
+
+	config RISCV_MCAUSE_EXCEPTION_MASK
+		default 0x1F
+
+endif
+
+config SOC_ANDES_V5_EXECIT
+	bool "Andes V5 EXEC.IT extension"
+	depends on RISCV_ISA_EXT_C
+	depends on !RISCV_GENERIC_TOOLCHAIN
+	depends on !LINKER_USE_NO_RELAX
+	help
+		The EXEC.IT extension (Execution on Instruction Table) generate
+		a look-up table and replaces suitable 32-bit instructions with
+		the 16-bit "exec.it <INDEX>".
+
+endif # SOC_SERIES_VIRGO
