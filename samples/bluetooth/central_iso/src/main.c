@@ -23,7 +23,7 @@
 /* Currently only nRF5 hardware is supported by this sample. */
 #include "bt_clock_hal_nrf5.h"
 
-#define LATENCY_MS      10U                   /* 10.0 ms */
+#define LATENCY_MS      20U /* 20.0 ms, FT=2 with CIS reliability policy, otherwise w/o effect */
 #define SDU_INTERVAL_US (10U * USEC_PER_MSEC) /* 10.0 ms */
 #define NUM_RETRIES     1U                    /* SDU tx retries, influences ISO interval length */
 
