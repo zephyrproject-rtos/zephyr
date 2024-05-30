@@ -236,16 +236,21 @@ int
 fcb_get_len(const struct fcb *fcb, uint8_t *buf, uint16_t *len)
 {
 	int rc;
-	if ((buf[0] ^ ~fcb->f_erase_value) & 0x80) {
+	uint8_t buf0_xor;
+	uint8_t buf1_xor;
+
+	buf0_xor = buf[0] ^ ~fcb->f_erase_value;
+	if (buf0_xor & 0x80) {
 		if ((buf[0] == fcb->f_erase_value) &&
 		    (buf[1] == fcb->f_erase_value)) {
 			return -ENOTSUP;
 		}
-		*len = ((buf[0] ^ ~fcb->f_erase_value) & 0x7f) |
-			((uint8_t)(buf[1] ^ ~fcb->f_erase_value) << 7);
+
+		buf1_xor = buf[1] ^ ~fcb->f_erase_value;
+		*len = (uint16_t)((buf0_xor & 0x7f) | ((uint16_t)buf1_xor << 7));
 		rc = 2;
 	} else {
-		*len = (uint8_t)(buf[0] ^ ~fcb->f_erase_value);
+		*len = (uint16_t)(buf0_xor);
 		rc = 1;
 	}
 	return rc;
