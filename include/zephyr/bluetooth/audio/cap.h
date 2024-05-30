@@ -297,6 +297,16 @@ struct bt_cap_unicast_audio_stop_param {
 int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb);
 
 /**
+ * @brief Unregister Common Audio Profile Initiator callbacks
+ *
+ * @param cb   The callback structure that was previously registered.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p cb is NULL or @p cb was not registered
+ */
+int bt_cap_initiator_unregister_cb(const struct bt_cap_initiator_cb *cb);
+
+/**
  * @brief Setup and start unicast audio streams for a set of devices.
  *
  * The result of this operation is that the streams in @p param will be
