@@ -52,7 +52,7 @@ static inline bool is_synchronized(void)
 static uint32_t seq_num;
 static int32_t sdu_interval_us;
 
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, 2, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static void iso_send_sdu(struct k_work *work);
