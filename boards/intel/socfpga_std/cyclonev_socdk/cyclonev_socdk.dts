@@ -63,7 +63,7 @@
 			status = "okay";
 
 			eeprom: eeprom@51 {
-				compatible = "atmel,at24";
+				compatible = "microchip,at24lc32a", "atmel,at24";
 				status = "okay";
 				reg = <0x51>;
 				size = <4096>;
