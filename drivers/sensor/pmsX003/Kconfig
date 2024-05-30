@@ -1,0 +1,12 @@
+# PMS7003 particulate matter sensor configuration options
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config PMSX003
+	bool "PMSX003 particulate matter sensor"
+	default y
+	depends on DT_HAS_PLANTOWER_PMSX003_ENABLED
+	depends on SERIAL
+	help
+	  Enable driver for pms7003, pms5003 and pms6003 particulate matter sensor.

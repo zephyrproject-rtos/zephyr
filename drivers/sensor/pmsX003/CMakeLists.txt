@@ -2,4 +2,4 @@
 
 zephyr_library()
 
-zephyr_library_sources(pms7003.c)
+zephyr_library_sources(pmsX003.c)
