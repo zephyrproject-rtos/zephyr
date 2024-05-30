@@ -92,17 +92,26 @@ Mbed TLS
 * TLS 1.2, RSA, AES, DES, and all the hash algorithms except SHA-256
   (SHA-224, SHA-384, SHA-512, MD5 and SHA-1) are not enabled by default anymore.
   Their respective Kconfig options now need to be explicitly enabled to be able to use them.
-* The Kconfig options previously named `CONFIG_MBEDTLS_MAC_*_ENABLED` have been renamed.
-  The `_MAC` and `_ENABLED` parts have been removed from their names.
+  (:github:`72078`)
+* The Kconfig options previously named ``CONFIG_MBEDTLS_MAC_*_ENABLED`` have been renamed.
+  The ``_MAC`` and ``_ENABLED`` parts have been removed from their names. (:github:`73267`)
 * The :kconfig:option:`CONFIG_MBEDTLS_HASH_ALL_ENABLED` Kconfig option has been fixed to actually
   enable all the available hash algorithms. Previously, it used to only enable the SHA-2 ones.
-* The `CONFIG_MBEDTLS_HASH_SHA*_ENABLED` Kconfig options have been removed. They were duplicates
-  of other Kconfig options which are now named `CONFIG_MBEDTLS_SHA*`.
-* The `CONFIG_MBEDTLS_MAC_ALL_ENABLED` Kconfig option has been removed. Its equivalent is the
+  (:github:`73267`)
+* The ``CONFIG_MBEDTLS_HASH_SHA*_ENABLED`` Kconfig options have been removed. They were duplicates
+  of other Kconfig options which are now named ``CONFIG_MBEDTLS_SHA*``. (:github:`73267`)
+* The ``CONFIG_MBEDTLS_MAC_ALL_ENABLED`` Kconfig option has been removed. Its equivalent is the
   combination of :kconfig:option:`CONFIG_MBEDTLS_HASH_ALL_ENABLED` and :kconfig:option:`CONFIG_MBEDTLS_CMAC`.
+  (:github:`73267`)
 * The Kconfig options ``CONFIG_MBEDTLS_MAC_MD4_ENABLED``, ``CONFIG_MBEDTLS_CIPHER_ARC4_ENABLED``
   and ``CONFIG_MBEDTLS_CIPHER_BLOWFISH_ENABLED`` were removed because they are no more supported
   in Mbed TLS. (:github:`73222`)
+* When there is any PSA crypto provider available in the system
+  (i.e. :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT` is set), desired PSA crypto
+  features must be explicitly enabled using proper ``CONFIG_PSA_WANT_*``. (:github:`72243`)
+* TLS/X509/PK/MD modules will use PSA crypto APIs instead of legacy ones as soon
+  as there is any PSA crypto provider available in the system
+  (i.e. :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT` is set). (:github:`72243`)
 
 MCUboot
 =======
@@ -561,6 +570,12 @@ Networking
   socket calls. Linux expects the protocol field to be ``htons(ETH_P_ALL)`` if it is desired
   to receive all the network packets. See details in
   https://www.man7.org/linux/man-pages/man7/packet.7.html documentation. (:github:`73338`)
+
+* TCP now uses SHA-256 instead of MD5 for ISN generation. The crypto support for
+  this hash computation was also changed from Mbed TLS to PSA APIs. This was achieved
+  by making :kconfig:option:`CONFIG_NET_TCP_ISN_RFC6528` depend on
+  :kconfig:option:`PSA_WANT_ALG_SHA_256` instead of legacy ``CONFIG_MBEDTLS_*``
+  features. (:github:`71827`)
 
 Other Subsystems
 ****************
