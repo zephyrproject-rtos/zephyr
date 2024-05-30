@@ -223,7 +223,7 @@ fcb_put_len(const struct fcb *fcb, uint8_t *buf, uint16_t len)
 	if (len < 0x80) {
 		buf[0] = len ^ ~fcb->f_erase_value;
 		return 1;
-	} else if (len < FCB_MAX_LEN) {
+	} else if (len <= FCB_MAX_LEN) {
 		buf[0] = (len | 0x80) ^ ~fcb->f_erase_value;
 		buf[1] = (len >> 7) ^ ~fcb->f_erase_value;
 		return 2;
