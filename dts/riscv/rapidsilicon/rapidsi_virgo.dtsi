@@ -44,12 +44,14 @@
 		 compatible = "rapidsi,dlm";
 		 device_type = "memory";
 		 reg = <0xA0300000 DT_SIZE_K(32)>;
+		 status = "okay";
 	 };
 	 
 	 xip_mem: xip_mem@A0200060 {
 		 compatible = "rapidsi,ilm";
 		 device_type = "memory";
 		 reg = <0xA0200060 (DT_SIZE_K(64)-0x00000060)>;
+		 status = "okay";
 	 };
  
 	 soc {
