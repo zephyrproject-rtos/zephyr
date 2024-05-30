@@ -322,7 +322,9 @@ def write_bindings_rst(vnd_lookup, out_dir):
     .. rst-class:: rst-columns
     ''', string_io)
 
-    for vnd in vnd_lookup.vnd2bindings:
+    for vnd, bindings in vnd_lookup.vnd2bindings.items():
+        if len(bindings) == 0:
+            continue
         print(f'- :ref:`{vnd_lookup.target(vnd)}`', file=string_io)
 
     print_block('''\
@@ -357,6 +359,9 @@ def write_bindings_rst(vnd_lookup, out_dir):
             if isinstance(vnd, str):
                 title += f' ({vnd})'
         underline = '=' * len(title)
+
+        if len(bindings) == 0:
+            continue
 
         print_block(f'''\
         .. _{vnd_lookup.target(vnd)}:
