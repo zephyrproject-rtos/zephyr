@@ -14,7 +14,7 @@ test_uart_mhz19b: mhz19b {
 };
 
 test_uart_pms7003: pms7003 {
-	compatible = "plantower,pms7003";
+	compatible = "plantower,pmsX003";
 };
 
 grow_r502a {
