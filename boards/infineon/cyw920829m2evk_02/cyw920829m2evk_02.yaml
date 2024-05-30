@@ -17,5 +17,6 @@ supported:
   - uart
   - clock_control
   - bluetooth
+  - watchdog
 
 vendor: infineon
