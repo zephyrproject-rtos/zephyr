@@ -1,0 +1,32 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config TELINK_W91_CORE_HEARTBEAT
+	bool "Telink W91 intercore heartbeat"
+	default y
+	help
+		This option enables Telink W91 heartbeat messages between cores.
+
+config TELINK_W91_CORE_HEARTBEAT_THREAD_STACK_SIZE
+	int "Core heartbeat thread stack size"
+	default 512
+	help
+	  Core heartbeat stack size.
+
+config TELINK_W91_CORE_HEARTBEAT_THREAD_PRIORITY
+	int "Core heartbeat thread priority"
+	default 10
+	help
+	  Core heartbeat thread priority.
+
+config CORE_HEARTBEAT_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS
+	int "Telink IPC dispatcher timeout while waiting on the N22 response"
+	default 200
+	help
+	  This option sets Telink IPC dispatcher response driver timeout in mS.
+
+config CORE_HEARTBEAT_TELINK_W91_TIMEOUT_MS
+	int "Hearbeat signal interval, ms"
+	default 1000
+	help
+	  This option sets heartbeat timeout in mS.

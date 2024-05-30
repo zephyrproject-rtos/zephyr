@@ -97,3 +97,5 @@ config TELINK_W91_DEBUG_BAUDRATE
 source "soc/riscv/riscv-privilege/telink_w91/ipc/Kconfig.ipc"
 
 source "soc/riscv/riscv-privilege/telink_w91/blocking_core/Kconfig.blocking"
+
+source "soc/riscv/riscv-privilege/telink_w91/core_heartbeat/Kconfig.heartbeat"

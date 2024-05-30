@@ -27,6 +27,12 @@ zephyr_sources(
 )
 endif()
 
+if(CONFIG_TELINK_W91_CORE_HEARTBEAT)
+zephyr_sources(
+	core_heartbeat/core_heartbeat.c
+)
+endif()
+
 if(CONFIG_TELINK_W91_DEBUG_ENABLE)
 zephyr_sources(
 	debug.c
