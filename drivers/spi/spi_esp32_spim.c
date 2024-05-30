@@ -280,6 +280,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	spi_hal_dev_config_t *hal_dev = &data->dev_config;
 	spi_dev_t *hw = hal->hw;
 	int freq;
+	int res;
 
 	if (spi_context_configured(ctx, spi_cfg)) {
 		return 0;
@@ -291,7 +292,8 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	}
 
 	/* enables SPI peripheral */
-	if (clock_control_on(cfg->clock_dev, cfg->clock_subsys)) {
+	res = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
+	if (res != 0 && res != -EALREADY) {
 		LOG_ERR("Could not enable SPI clock");
 		return -EIO;
 	}
