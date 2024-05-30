@@ -15,6 +15,7 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <freq.h>
 
 /*
@@ -81,7 +82,8 @@
 		compatible = "zephyr,memory-region";
 		reg = <0x70000000 DT_SIZE_M(256)>;
 		zephyr,memory-region = "EXTMEM";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_EXTMEM) )>;
+		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
 	};
 
 	clocks {
