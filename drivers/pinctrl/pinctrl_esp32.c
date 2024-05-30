@@ -242,12 +242,12 @@ static int esp32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 		if (ESP32_PORT_IDX(pin_num) == 0) {
 			gpio_dev_t *const gpio_dev =
 				(gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0));
-			gpio_dev->out_w1ts = pin_num;
+			gpio_dev->out_w1ts = BIT(pin_num);
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
 		} else {
 			gpio_dev_t *const gpio_dev =
 				(gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio1));
-			gpio_dev->out1_w1ts.data = pin_num;
+			gpio_dev->out1_w1ts.data = BIT(pin_num - 32);
 #endif
 		}
 	}
@@ -256,12 +256,12 @@ static int esp32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 		if (ESP32_PORT_IDX(pin_num) == 0) {
 			gpio_dev_t *const gpio_dev =
 				(gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0));
-			gpio_dev->out_w1tc = pin_num;
+			gpio_dev->out_w1tc = BIT(pin_num);
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
 		} else {
 			gpio_dev_t *const gpio_dev =
 				(gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio1));
-			gpio_dev->out1_w1tc.data = pin_num;
+			gpio_dev->out1_w1tc.data = BIT(pin_num - 32);
 #endif
 		}
 	}
