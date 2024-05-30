@@ -329,8 +329,20 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 
 	net_buf_put(&bt_dev.cmd_tx_queue, net_buf_ref(buf));
 
+	/* Wait for a response from the Bluetooth Controller.
+	 * The Controller may fail to respond if:
+	 *  - It was never programmed or connected.
+	 *  - There was a fatal error.
+	 *
+	 * See the `BT_HCI_OP_` macros in hci_types.h or
+	 * Core_v5.4, Vol 4, Part E, Section 5.4.1 and Section 7
+	 * to map the opcode to the HCI command documentation.
+	 * Example: 0x0c03 represents HCI_Reset command.
+	 */
 	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
-	BT_ASSERT_MSG(err == 0, "command opcode 0x%04x timeout with err %d", opcode, err);
+	BT_ASSERT_MSG(err == 0,
+		      "Controller unresponsive, command opcode 0x%04x timeout with err %d",
+		      opcode, err);
 
 	status = cmd(buf)->status;
 	if (status) {
