@@ -1,5 +1,5 @@
 family:
-- name: rapidsi
+- name: virgo
   series:
   - name: virgo
     socs:

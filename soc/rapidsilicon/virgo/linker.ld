@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016-2017 Jean-Paul Etienne <fractalclone@gmail.com>
  * Copyright (c) 2021 Andes Technology Corporation
+ * Copyright (c) 2024 Rapid Silicon
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +10,7 @@
  * @file
  * @brief Linker command/script file
  *
- * Linker script for the ae350 platform
+ * Linker script for the virgo platform
  */
 
 #include <zephyr/devicetree.h>

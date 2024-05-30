@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Andes Technology Corporation
+ * Copyright (c) 2024 Rapid Silicon
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,8 @@
  * Extra definitions required for CONFIG_RISCV_SOC_OFFSETS.
  */
 
-#ifndef SOC_RISCV_ANDES_V5_SOC_OFFSETS_H_
-#define SOC_RISCV_ANDES_V5_SOC_OFFSETS_H_
+#ifndef SOC_VIRGO_SOC_OFFSETS_H_
+#define SOC_VIRGO_SOC_OFFSETS_H_
 
 #ifdef CONFIG_RISCV_SOC_OFFSETS
 
@@ -31,4 +31,4 @@
 
 #endif /* CONFIG_RISCV_SOC_OFFSETS */
 
-#endif /* SOC_RISCV_ANDES_V5_SOC_OFFSETS_H_*/
+#endif /* SOC_VIRGO_SOC_OFFSETS_H_*/

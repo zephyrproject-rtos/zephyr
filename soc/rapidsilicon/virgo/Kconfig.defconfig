@@ -9,7 +9,7 @@ if SOC_SERIES_VIRGO
 rsource "Kconfig.defconfig.virgo*"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 26666667
+	default 266666667
 
 config KERNEL_ENTRY
 	default "entry"

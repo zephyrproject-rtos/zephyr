@@ -1,10 +1,10 @@
-# Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2024 Rapid Silicon
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_FAMILY_RAPIDSI
+config SOC_FAMILY_VIRGO
 	bool
 
 config SOC_FAMILY
-	default "rapidsi" if SOC_FAMILY_RAPIDSI
+	default "virgo" if SOC_FAMILY_VIRGO
 
 rsource "*/Kconfig.soc"
