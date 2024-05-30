@@ -69,6 +69,7 @@ struct espi_npcx_data {
 #define NPCX_ESPI_MAXFREQ_25         1
 #define NPCX_ESPI_MAXFREQ_33         2
 #define NPCX_ESPI_MAXFREQ_50         3
+#define NPCX_ESPI_MAXFREQ_66         4
 
 /* Minimum delay before acknowledging a virtual wire */
 #define NPCX_ESPI_VWIRE_ACK_DELAY    10ul /* 10 us */
@@ -676,6 +677,11 @@ static int espi_npcx_configure(const struct device *dev, struct espi_cfg *cfg)
 	case 50:
 		max_freq = NPCX_ESPI_MAXFREQ_50;
 		break;
+#ifdef CONFIG_SOC_SERIES_NPCX4
+	case 66:
+		max_freq = NPCX_ESPI_MAXFREQ_66;
+		break;
+#endif
 	default:
 		return -EINVAL;
 	}
