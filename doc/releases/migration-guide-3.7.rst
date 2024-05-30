@@ -838,6 +838,15 @@ State Machine Framework
   action would terminate the state machine. Passing ``NULL`` is now not allowed. Instead create a
   'terminate' state at the top level, and call :c:func:`smf_set_terminate` from its entry action.
 
+UpdateHub
+=========
+
+* The SHA-256 implementation used to perform integrity checks is not chosen with
+  :kconfig:option:`CONFIG_FLASH_AREA_CHECK_INTEGRITY_BACKEND` anymore. Instead, the implementation
+  used (now either Mbed TLS or PSA) is chosen based on :kconfig:option:`CONFIG_PSA_CRYPTO_CLIENT`.
+  It still defaults to using Mbed TLS (with a smaller footprint than previously) unless the
+  board is built with TF-M or :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_C` is enabled. (:github:`73511`)
+
 ZBus
 ====
 
