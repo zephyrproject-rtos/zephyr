@@ -743,7 +743,7 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 
 		data_length = can_dlc_to_bytes(frame.dlc);
 		if (data_length <= sizeof(frame.data)) {
-			if ((frame.flags & CAN_FRAME_RTR) == 0U) {
+			if ((frame.flags & CAN_FRAME_RTR) == 0U && data_length != 0U) {
 				err = can_mcan_read_mram(dev, fifo_offset + get_idx *
 							 sizeof(struct can_mcan_rx_fifo) +
 							 offsetof(struct can_mcan_rx_fifo, data_32),
@@ -1006,7 +1006,7 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 		goto err_unlock;
 	}
 
-	if ((frame->flags & CAN_FRAME_RTR) == 0U) {
+	if ((frame->flags & CAN_FRAME_RTR) == 0U && data_length != 0U) {
 		err = can_mcan_write_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_BUFFER] +
 					put_idx * sizeof(struct can_mcan_tx_buffer) +
 					offsetof(struct can_mcan_tx_buffer, data_32),
