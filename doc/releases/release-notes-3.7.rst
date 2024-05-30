@@ -521,6 +521,9 @@ Libraries / Subsystems
     to allow the user to specify how Mbed TLS PSA crypto core should generate random numbers.
     The former option, which is the default, relies on legacy entropy and CTR_DRBG/HMAC_DRBG
     modules, while the latter relies on CSPRNG drivers.
+  * :kconfig:option:`CONFIG_MBEDTLS_PSA_P256M_DRIVER_ENABLED` enables support
+    for the Mbed TLS's p256-m driver PSA crypto library. This is a Cortex-M SW
+    optimized implementation of secp256r1 curve.
 
 * Random
 
