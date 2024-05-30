@@ -111,6 +111,56 @@
 			};
 		};
 
+		spi0: spi@40046000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40046000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 6>;
+			interrupts = <16 0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40047000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40047000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 7>;
+			interrupts = <17 0>;
+			status = "disabled";
+		};
+
+		spi2: spi@40048000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40048000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 8>;
+			interrupts = <18 0>;
+			status = "disabled";
+		};
+
+		spi3: spi@400be000 {
+			compatible = "adi,max32-spi";
+			reg = <0x400be000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 16>;
+			interrupts = <56 0>;
+			status = "disabled";
+		};
+
+		spi4: spi@400be400 {
+			compatible = "adi,max32-spi";
+			reg = <0x400be400 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 17>;
+			interrupts = <105 0>;
+			status = "disabled";
+		};
+
 		uart3: serial@40081400 {
 			compatible = "adi,max32-uart";
 			reg = <0x40081400 0x400>;
