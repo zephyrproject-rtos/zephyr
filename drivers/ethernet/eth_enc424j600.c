@@ -557,8 +557,8 @@ static enum ethernet_hw_caps enc424j600_get_capabilities(const struct device *de
 }
 
 static int enc424j600_set_config(const struct device *dev,
-                                 enum ethernet_config_type type,
-                                 const struct ethernet_config *config)
+				 enum ethernet_config_type type,
+				 const struct ethernet_config *config)
 {
 	struct enc424j600_runtime *ctx = dev->data;
 	uint16_t tmp;
