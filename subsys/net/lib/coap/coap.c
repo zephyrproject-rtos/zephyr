@@ -1286,7 +1286,9 @@ int coap_append_block1_option(struct coap_packet *cpkt,
 		SET_NUM(val, ctx->current / bytes);
 	} else {
 		SET_BLOCK_SIZE(val, ctx->block_size);
-		SET_NUM(val, ctx->current / bytes);
+		if (ctx->current > bytes) {
+			SET_NUM(val, (ctx->current - 1) / bytes);
+		}
 	}
 
 	r = coap_append_option_int(cpkt, COAP_OPTION_BLOCK1, val);
