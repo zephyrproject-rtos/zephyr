@@ -449,6 +449,11 @@ Networking
 
   * Removed IPSP support. ``CONFIG_NET_L2_BT`` does not exist anymore.
 
+* TCP:
+
+  * ISN generation now uses SHA-256 instead of MD5. Moreover it now relies on PSA APIs
+    instead of legacy Mbed TLS functions for hash computation.
+
 USB
 ***
 
@@ -508,6 +513,14 @@ Libraries / Subsystems
 
   * Mbed TLS was updated to 3.6.0. Release notes can be found at:
     https://github.com/Mbed-TLS/mbedtls/releases/tag/v3.6.0
+  * When any PSA crypto provider is available in the system
+    (:kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT` is enabled), desired PSA features
+    must now be explicitly selected through ``CONFIG_PSA_WANT_xxx`` symbols.
+  * Choice symbols :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_LEGACY_RNG` and
+    :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG` were added in order
+    to allow the user to specify how Mbed TLS PSA crypto core should generate random numbers.
+    The former option, which is the default, relies on legacy entropy and CTR_DRBG/HMAC_DRBG
+    modules, while the latter relies on CSPRNG drivers.
 
 * Random
 
