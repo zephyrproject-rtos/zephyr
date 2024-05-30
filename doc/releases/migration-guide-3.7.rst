@@ -657,6 +657,14 @@ Bluetooth Host
   longer used in Zephyr 3.4.0 and later. Any references to this field should be removed. No further
   action is needed.
 
+Bluetooth Crypto
+================
+
+* :kconfig:option:`CONFIG_BT_USE_PSA_API` was added to explicitly request use
+  of PSA APIs instead of TinyCrypt for crypto operations. Of course, this is
+  possible only a PSA crypto provider available in the system, i.e.
+  :kconfig:option:`CONFIG_PSA_CRYPTO_CLIENT` is set. (:github:`73378`)
+
 Networking
 **********
 
