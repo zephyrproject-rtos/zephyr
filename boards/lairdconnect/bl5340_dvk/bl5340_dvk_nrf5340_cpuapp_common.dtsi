@@ -152,7 +152,7 @@
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
 	at24c256@50 {
-		compatible = "atmel,at24";
+		compatible = "atmel,at24c256", "atmel,at24";
 		reg = <0x50>;
 		size = <32768>;
 		pagesize = <64>;
