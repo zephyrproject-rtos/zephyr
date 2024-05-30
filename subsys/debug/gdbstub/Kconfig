@@ -1,0 +1,45 @@
+# Copyright (c) 2020 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GDBSTUB
+	bool "GDB remote serial protocol support [EXPERIMENTAL]"
+	depends on ARCH_HAS_GDBSTUB
+	select UART_USE_RUNTIME_CONFIGURE
+	select EXPERIMENTAL
+	help
+	  This option enable support the target using GDB, or any other
+	  application that supports GDB protocol.
+
+if GDBSTUB
+
+choice
+	prompt "GDB backend"
+
+config GDBSTUB_SERIAL_BACKEND
+	bool "Use serial backend"
+	depends on SERIAL
+	help
+	  Use serial as backend for GDB
+
+config GDBSTUB_CUSTOM_BACKEND
+	bool "Use a custom backend"
+	help
+	  Use a custom backend for GDB
+
+endchoice
+
+config GDBSTUB_BUF_SZ
+	int "GDB backend send/receive buffer size (in bytes)"
+	default 256
+	help
+	  This specifies the size (in bytes) of the send/receive buffer
+	  for GDB backend. This needs to be big enough to hold one
+	  full GDB packet at a time.
+
+config GDBSTUB_TRACE
+	bool "GDB backend extra logging"
+	help
+	  Enable extra debug logging for the GDB backend, including
+	  breakpoint interrupts and remote commands it receives.
+
+endif # GDBSTUB
