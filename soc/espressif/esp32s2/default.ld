@@ -17,7 +17,7 @@
  * If no bootloader is used, we can extend it to gain more user ram.
  */
 #ifdef CONFIG_ESP_SIMPLE_BOOT
-user_iram_end = (DRAM_BUFFERS_START + IRAM_DRAM_OFFSET);
+user_iram_end = (BOOTLOADER_USER_DRAM_END + IRAM_DRAM_OFFSET);
 #else
 user_iram_end = BOOTLOADER_IRAM_LOADER_SEG_START;
 #endif
@@ -31,7 +31,7 @@ user_iram_seg_len = user_idram_size;
 user_dram_seg_len = user_idram_size;
 
 /* Aliases */
-#define ROTEXT_REGION     irom0_0_seg
+#define FLASH_CODE_REGION irom0_0_seg
 #define RODATA_REGION     drom0_0_seg
 #define IRAM_REGION       iram0_0_seg
 #define RAMABLE_REGION    dram0_0_seg
@@ -42,7 +42,6 @@ user_dram_seg_len = user_idram_size;
 #undef GROUP_ROM_LINK_IN
 #define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
 
-/* TODO */
 #define RESERVE_RTC_MEM 0
 
 MEMORY
@@ -798,10 +797,63 @@ SECTIONS
 
   /* --- END OF DRAM --- */
 
+  /* --- START OF .flash.text --- */
+
+  _image_irom_start = LOADADDR(.flash.text);
+  _image_irom_size = SIZEOF(.flash.text);
+  _image_irom_vaddr = ADDR(.flash.text);
+
+  .flash.text_dummy (NOLOAD):
+  {
+    . = ALIGN(CACHE_ALIGN);
+  } GROUP_LINK_IN(ROMABLE_REGION)
+
+  .flash.text : ALIGN(4)
+  {
+    _stext = .;
+    _instruction_reserved_start = ABSOLUTE(.);
+    _text_start = ABSOLUTE(.);
+    __text_region_start = ABSOLUTE(.);
+
+#if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
+    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.*)
+
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
+    *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+    *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+#endif
+
+    *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
+    *(.irom0.text) /* catch stray ICACHE_RODATA_ATTR */
+    *(.fini.literal)
+    *(.fini)
+    *(.gnu.version)
+    *(.literal .text .literal.* .text.*)
+
+    /* CPU will try to prefetch up to 16 bytes of
+     * of instructions. This means that any configuration (e.g. MMU, PMS) must allow
+     * safe access to up to 16 bytes after the last real instruction, add
+     * dummy bytes to ensure this
+     */
+    . += 16;
+
+    _text_end = ABSOLUTE(.);
+    _instruction_reserved_end = ABSOLUTE(.);  /* This is a symbol marking the flash.text end, this can be used for mmu driver to maintain virtual address */
+    __text_region_end = ABSOLUTE(.);
+    _etext = .;
+
+  } GROUP_DATA_LINK_IN(FLASH_CODE_REGION, ROMABLE_REGION)
+
+  /* --- END OF .flash.text --- */
+
   /* --- START OF .rodata --- */
 
   _image_drom_start = LOADADDR(.flash.rodata);
   _image_drom_size = LOADADDR(.flash.rodata_end) + SIZEOF(.flash.rodata_end)  - _image_drom_start;
+  _image_drom_size2 = _rodata_end - _rodata_start;
   _image_drom_vaddr = ADDR(.flash.rodata);
 
   /* Align next section to 64k to allow mapping */
@@ -843,7 +895,6 @@ SECTIONS
     *(.dynamic)
     *(.gnu.version_d)
     . = ALIGN(4);
-    _rodata_end = ABSOLUTE(.);
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
     *(*.lit4)
@@ -871,6 +922,7 @@ SECTIONS
   .flash.rodata_end :
   {
     . = ALIGN(CACHE_ALIGN);
+    _rodata_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
     _rodata_reserved_end = ABSOLUTE(.);
     __rodata_region_end = ABSOLUTE(.);
@@ -878,58 +930,6 @@ SECTIONS
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   /* --- END OF .rodata --- */
-
-  /* --- START OF .flash.text --- */
-
-  _image_irom_start = LOADADDR(.flash.text);
-  _image_irom_size = LOADADDR(.flash.text) + SIZEOF(.flash.text) - _image_irom_start;
-  _image_irom_vaddr = ADDR(.flash.text);
-
-  .flash.text_dummy (NOLOAD):
-  {
-    . = ALIGN(CACHE_ALIGN+CACHE_ALIGN);
-  } GROUP_LINK_IN(ROMABLE_REGION)
-
-  .flash.text : ALIGN(4)
-  {
-    _stext = .;
-    _instruction_reserved_start = ABSOLUTE(.);
-    _text_start = ABSOLUTE(.);
-    __text_region_start = ABSOLUTE(.);
-
-#if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
-    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
-    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.*)
-
-#endif
-
-#if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
-    *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
-    *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
-#endif
-
-    *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
-    *(.irom0.text) /* catch stray ICACHE_RODATA_ATTR */
-    *(.fini.literal)
-    *(.fini)
-    *(.gnu.version)
-    *(.literal .text .literal.* .text.*)
-
-    /* CPU will try to prefetch up to 16 bytes of
-     * of instructions. This means that any configuration (e.g. MMU, PMS) must allow
-     * safe access to up to 16 bytes after the last real instruction, add
-     * dummy bytes to ensure this
-     */
-    . += 16;
-
-    _text_end = ABSOLUTE(.);
-    _instruction_reserved_end = ABSOLUTE(.);  /* This is a symbol marking the flash.text end, this can be used for mmu driver to maintain virtual address */
-    __text_region_end = ABSOLUTE(.);
-    _etext = .;
-
-  } GROUP_DATA_LINK_IN(ROTEXT_REGION, ROMABLE_REGION)
-
-  /* --- END OF .flash.text --- */
 
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>
