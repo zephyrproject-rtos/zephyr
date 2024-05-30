@@ -14,10 +14,16 @@ choice APP_SOCKET_TYPE
 	default APP_SOCKET_UDP
 
 config APP_SOCKET_UDP
-	bool "Use UDP socket"
+	bool "Use UDP IPV4 socket"
+
+config APP_SOCKET_UDP_IPV6
+	bool "Use UDP IPV6 socket"
 
 config APP_SOCKET_TCP
-	bool "Use TCP socket"
+	bool "Use TCP IPV4 socket"
+
+config APP_SOCKET_TCP_IPV6
+	bool "Use TCP IPV6 socket"
 
 endchoice
 

@@ -76,7 +76,7 @@ jobs:
     - name: Build W91 sock_simple IPv6
       run: |
         cd ..
-        west build -b tlsr9118bdk40d             -d build_sock_simple_ipv6_w91          zephyr/samples/boards/tlsr9x/sock_simple                 -- -DCONFIG_NET_CONFIG_NEED_IPV4=n -DCONFIG_NET_CONFIG_NEED_IPV6=y
+        west build -b tlsr9118bdk40d             -d build_sock_simple_ipv6_w91          zephyr/samples/boards/tlsr9x/sock_simple                 -- -DCONFIG_APP_SOCKET_UDP_IPV6=y
 
     - name: Collect artifacts
       run: |
