@@ -7,11 +7,8 @@ from pathlib import Path
 import re
 import textwrap
 
-from sphinx.cmd.build import get_parser
-
-args = get_parser().parse_args()
 ZEPHYR_BASE = Path(__file__).resolve().parents[1]
-ZEPHYR_BUILD = Path(args.outputdir).resolve()
+ZEPHYR_BUILD = Path(os.environ.get("DOCS_HTML_DIR")).resolve()
 
 # Add the '_extensions' directory to sys.path, to enable finding Sphinx
 # extensions within.
