@@ -1,0 +1,20 @@
+identifier: virgo_proto
+name: Rapidsi Virgo_Proto
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 32
+supported:
+  - gpio
+  - counter
+  - i2c
+  - spi
+  - watchdog
+  - flash
+  - dma
+  - crypto
+testing:
+  ignore_tags:
+    - bluetooth
+vendor: rapidsi

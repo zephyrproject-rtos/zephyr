@@ -1,0 +1,5 @@
+board:
+  name: virgo_proto
+  vendor: rapidsi
+  socs:
+  - name: virgo
