@@ -5,13 +5,10 @@ description: Power Voltage and Temperature Monitoring Module
 
 compatible: "rapidsi,pvt"
 
-include: base.yaml
+include: [base.yaml]
 
 properties:
-  reg:
-    required: true
 
-properties:
   io-channels:
     required: false
     description: |
@@ -22,3 +19,9 @@ properties:
     required: false
     description: |
       ADC resolution to be used for the channel.
+
+  clock-frequency:
+    type: int
+    required: false
+    description:
+      Clock frequency of the ADC channel for PVT.

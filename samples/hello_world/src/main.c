@@ -5,10 +5,16 @@
  */
 
 #include <stdio.h>
+#include <zephyr/kernel.h>
 
 int main(void)
 {
-	printf("Hello World! %s\n", CONFIG_BOARD_TARGET);
+	int Cnt = 0;
+
+	while(true) {
+		printf("%d - Hello World! %s\n", Cnt++, CONFIG_BOARD_TARGET);
+		k_msleep(1000);
+	}
 
 	return 0;
 }

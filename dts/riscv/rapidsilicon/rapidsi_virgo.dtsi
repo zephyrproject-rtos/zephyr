@@ -68,41 +68,39 @@
 		 scu: scu@A0110000 {
 			 compatible = "syscon";
 			 reg = <0xA0110000 DT_SIZE_K(64)>;
-			 #address-cells = <1>;
-			 #size-cells = <0>;
-			 status = "okay";
- 
-			 pvt: pvt@A0112000 {
-				 compatible = "rapidsi,pvt", "riscv,pvt";
-				 reg = <0xA0112000>;
-				 clock-frequency = <133333333>;
-				 status = "disabled";
-			 };
-		 
-			 pinctrl: pin-controller@A0111000 {
-				 compatible = "rapidsi,pinctrl";
-				 reg = <0xA0111000>;
-				 npins = <16>;
-				 #pin-cells = <4>;
-				 pin-controller;
-				 status = "disabled";
- 
-				 ofe_default_pinmux: ofe_default_pinmux {
-					 compatible = "rapidsi,rigel";
-					 group1 { 
-						 compatible = "rapidsi,rigel";
-						 pins = <&pinctrl 0 PIN_FN_ALT PIN_PULL_STATUS_DIS PIN_PULL_DIR_DOWN>;
-						 pin-names = "CONFIG_DONE";
-					 };
-					 group2 {
-						 compatible = "rapidsi,rigel";
-						 pins = <&pinctrl 1 PIN_FN_ALT PIN_PULL_STATUS_DIS PIN_PULL_DIR_DOWN>;
-						 pin-names = "CONFIG_ERROR";
-					 };
-				 };
-			 };
+			 status = "okay";			 
 		 };
- 
+
+		 pvt: pvt@A0112000 {
+			compatible = "rapidsi,pvt", "riscv,pvt";
+			reg = <0xA0112000 0xFF>;
+			clock-frequency = <133333333>;
+			status = "disabled";
+		 };
+	
+		 pinctrl: pin-controller@A0111000 {
+			compatible = "rapidsi,pinctrl";
+			reg = <0xA0111000 0xFF>;
+			npins = <16>;
+			#pin-cells = <4>;
+			pin-controller;
+			status = "disabled";
+
+			ofe_default_pinmux: ofe_default_pinmux {
+				compatible = "rapidsi,rigel";
+				group1 { 
+					compatible = "rapidsi,rigel";
+					pins = <&pinctrl 0 PIN_FN_ALT PIN_PULL_STATUS_DIS PIN_PULL_DIR_DOWN>;
+					pin-names = "CONFIG_DONE";
+				};
+				group2 {
+					compatible = "rapidsi,rigel";
+					pins = <&pinctrl 1 PIN_FN_ALT PIN_PULL_STATUS_DIS PIN_PULL_DIR_DOWN>;
+					pin-names = "CONFIG_ERROR";
+				};
+			};
+		 };
+
 		 flash: flash@B0000000 {
 			 compatible = "micron,m25p32";
 			 reg = <0xB0000000 DT_SIZE_M(16)>;

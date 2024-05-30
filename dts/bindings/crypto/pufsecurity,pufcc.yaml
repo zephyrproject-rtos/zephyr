@@ -1,9 +1,14 @@
 # Copyright (c) 2024, Rapid Silicon
 # SPDX-License-Identifier: Apache-2.0
 
-include: base.yaml
+description: |
+  PUF security IP PUFcc can be used for the authentication and decryption
+  of the secure images under several authentication and encryption algorithms.
+  PUFcc has in built DMA to decrypt the encrypted images on the fly.
 
 compatible: "pufsecurity,pufcc"
+
+include: [base.yaml]
 
 properties:
   reg:
