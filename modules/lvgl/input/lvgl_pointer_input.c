@@ -89,6 +89,7 @@ static void lvgl_pointer_process_event(const struct device *dev, struct input_ev
 	case DISPLAY_ORIENTATION_NORMAL:
 		point->x = tmp_point.x;
 		point->y = tmp_point.y;
+		break;
 	case DISPLAY_ORIENTATION_ROTATED_90:
 		point->x = tmp_point.y;
 		point->y = cap->y_resolution - tmp_point.x;
