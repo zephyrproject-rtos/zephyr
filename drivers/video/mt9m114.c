@@ -501,9 +501,15 @@ static DEVICE_API(video, mt9m114_driver_api) = {
 
 static int mt9m114_init(const struct device *dev)
 {
+	const struct mt9m114_config *cfg = dev->config;
 	struct video_format fmt;
 	uint16_t val;
 	int ret;
+
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
+	}
 
 	/* no power control, wait for camera ready */
 	k_sleep(K_MSEC(100));
@@ -547,26 +553,14 @@ static int mt9m114_init(const struct device *dev)
 	return 0;
 }
 
-#if 1 /* Unique Instance */
+#define MT9M114_INIT(n)                                                                            \
+	static struct mt9m114_data mt9m114_data_##n;                                               \
+                                                                                                   \
+	static const struct mt9m114_config mt9m114_cfg_##n = {                                     \
+		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &mt9m114_init, NULL, &mt9m114_data_##n, &mt9m114_cfg_##n,         \
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &mt9m114_driver_api);
 
-static const struct mt9m114_config mt9m114_cfg_0 = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
-
-static struct mt9m114_data mt9m114_data_0;
-
-static int mt9m114_init_0(const struct device *dev)
-{
-	const struct mt9m114_config *cfg = dev->config;
-
-	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
-		return -ENODEV;
-	}
-
-	return mt9m114_init(dev);
-}
-
-DEVICE_DT_INST_DEFINE(0, &mt9m114_init_0, NULL, &mt9m114_data_0, &mt9m114_cfg_0, POST_KERNEL,
-		      CONFIG_VIDEO_INIT_PRIORITY, &mt9m114_driver_api);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(MT9M114_INIT)
