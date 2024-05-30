@@ -520,6 +520,7 @@ primux	Primux Trading, S.L.
 probox2	PROBOX2 (by W2COMP Co., Ltd.)
 prt	Protonic Holland
 ptc	Princeton Technology Corp.
+pufsecurity	PUF Security
 pulsedlight	PulsedLight, Inc
 purism	Purism, SPC
 qca	Qualcomm Atheros, Inc.
@@ -537,6 +538,7 @@ raidsonic	RaidSonic Technology GmbH
 rakwireless	RAKwireless Technology Limited
 ralink	Mediatek/Ralink Technology Corp.
 ramtron	Ramtron International
+rapidsi	Rapid Silicon
 raspberrypi	Raspberry Pi Foundation
 raydium	Raydium Semiconductor Corp.
 raytac	Raytac Corporation

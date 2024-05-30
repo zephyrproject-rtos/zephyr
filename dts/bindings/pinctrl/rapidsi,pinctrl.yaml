@@ -1,0 +1,75 @@
+# Copyright (c) 2024 Rapid Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The Rapid Silicon pin controller has one register per pin number. 
+  Each register exposes the four modes:
+
+     PIN_FN_MAIN
+     PIN_FN_FPGA
+     PIN_FN_ALT
+     PIN_FN_DEBUG
+
+  It also exposes the bits to enable or disable the pull resistors 
+  as well as direction to pull a pin. 
+  
+  As a result, the following shows an example of a pin 
+  configuration for one flow engine peripheral in virgo_tc_eval board.
+
+  #include <dt-bindings/pinctrl/rapidsi_virgo_pinctrl.h>
+
+  /*
+    In the following example, each element in pins property is defined as:
+    1 - phandle to pinctrl node
+    2 - pin number
+    3 - pin mode as listed above.
+    4 - pin pull resistor enabled or disabled
+    5 - pin pull resistor direction being up or down.
+  */
+  &pinctrl {
+    #pin-cells = <4>;
+    ofe_default_pinmux {   
+      group1 { 
+        pins = <&pinctrl 0 PIN_FN_ALT PIN_PULL_STATUS_DIS PIN_PULL_DIR_DOWN>;
+        pin-names = "CONFIG_DONE";
+      };
+      group2 {
+        pins = <&pinctrl 1 PIN_FN_ALT PIN_PULL_STATUS_DIS PIN_PULL_DIR_DOWN>;
+        pin-names = "CONFIG_ERROR";
+      };
+    };
+  };
+
+  &ofe {
+    pinctrl-0 = <&ofe_default_pinmux>;
+  };
+
+  In the above example, config_done is assigned pin number 0 with 
+  alternate functionality where pull resistors are disabled. In case the
+  pull resistors are disabled the PIN_PULL_DIR... argument is ignored.
+
+  In the light of the above example, the ofe node related yaml file will 
+  need to include the pins (type:phandle-array) and pin-names (type:string-array) 
+  properties. And the correct arguments from 2 to 5 can be extracted 
+  using DT_PHA_BY_NAME Macro.
+
+compatible: "rapidsi,pinctrl"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  npins:
+    type: int
+    required: true
+
+  "#pin-cells":
+    const: 4
+
+pin-cells:
+  - pin_num
+  - pin_mode
+  - pin_pull_state
+  - pin_pull_dir
