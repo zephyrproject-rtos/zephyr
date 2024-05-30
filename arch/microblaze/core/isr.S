@@ -71,7 +71,7 @@ _interrupt_handler:
 	mfs TEMP_DATA_REG, rmsr
 	STORE_TO_STACK(TEMP_DATA_REG, ESF_OFFSET(msr))
 
-	#if defined(CONFIG_USE_HARDWARE_FLOAT_INSTR)
+	#if defined(CONFIG_MICROBLAZE_USE_HARDWARE_FLOAT_INSTR)
 		/* Stack FSR using TEMP_DATA_REG(temp1) */
 		mfs TEMP_DATA_REG, rfsr
 		STORE_TO_STACK(TEMP_DATA_REG, ESF_OFFSET(fsr))
@@ -211,7 +211,7 @@ _isr_restore_carry:
 	mts rmsr, TEMP_DATA_REG
 	/* END restore carry bit */
 
-	#if defined(CONFIG_USE_HARDWARE_FLOAT_INSTR)
+	#if defined(CONFIG_MICROBLAZE_USE_HARDWARE_FLOAT_INSTR)
 		/* Reload the FSR from the stack. */
 		LOAD_FROM_STACK(TEMP_DATA_REG, ESF_OFFSET(fsr))
 		mts rfsr, TEMP_DATA_REG

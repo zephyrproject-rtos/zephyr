@@ -48,7 +48,7 @@ GEN_OFFSET_SYM(z_arch_esf_t, r4);
 GEN_OFFSET_SYM(z_arch_esf_t, r3);
 GEN_OFFSET_SYM(z_arch_esf_t, r2);
 GEN_OFFSET_SYM(z_arch_esf_t, msr);
-#if defined(CONFIG_USE_HARDWARE_FLOAT_INSTR)
+#if defined(CONFIG_MICROBLAZE_USE_HARDWARE_FLOAT_INSTR)
 GEN_OFFSET_SYM(z_arch_esf_t, fsr);
 #endif
 

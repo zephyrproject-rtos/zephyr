@@ -112,6 +112,18 @@ config NIOS2
 	help
 	  Nios II Gen 2 architecture
 
+config MICROBLAZE
+	bool
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_C
+	select GEN_ISR_TABLES
+	select GEN_SW_ISR_TABLE
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
+	imply DYNAMIC_INTERRUPTS
+	imply ARCH_HAS_CUSTOM_BUSY_WAIT
+	help
+	  MicroBlaze architecture
+
 config RISCV
 	bool
 	select ARCH_IS_SET

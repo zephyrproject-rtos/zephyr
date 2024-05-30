@@ -65,7 +65,7 @@ FUNC_NORETURN void z_microblaze_fatal_error(unsigned int reason,
 		printk("r31:\t0x%x\n", dump->esf.r31);
 
 		printk("MSR:\t0x%08x\t(exc)\n", dump->esf.msr);
-#if defined(CONFIG_USE_HARDWARE_FLOAT_INSTR)
+#if defined(CONFIG_MICROBLAZE_USE_HARDWARE_FLOAT_INSTR)
 		printk("FSR:\t%08x\n", dump->esf.fsr);
 #endif
 		printk("ESR:\t0x%08x\n", dump->esr);

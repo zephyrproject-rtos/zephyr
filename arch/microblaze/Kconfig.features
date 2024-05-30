@@ -1,0 +1,76 @@
+# Copyright (c) 2023 Advanced Micro Devices, Inc. (AMD)
+# Copyright (c) 2023 Alp Sayin <alpsayin@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+
+menu "HW Feature Options"
+	depends on MICROBLAZE
+
+# Picolibc with C++ support in Zephyr SDK is handled by Zephyr SDK's own Kconfig.
+config PICOLIBC_SUPPORTED
+	bool
+	default n
+	help
+		Microblaze doesn't have picolibc support yet
+
+config MICROBLAZE_USE_MSR_INSTR
+	prompt "Use msrset & msrclr instructions"
+	def_bool y
+	help
+		This depends on CPU supporting msrset/msrclr instructions.
+		xparameters would define this as MICROBLAZE_USE_MSR_INSTR = 1.
+
+config MICROBLAZE_USE_BARREL_SHIFT_INSTR
+	prompt "Use barrel shift instructions"
+	def_bool y
+	help
+		This depends on CPU supporting barrel shift instructions.
+		xparameters would define this as USE_BARREL = 1.
+
+config MICROBLAZE_USE_PATTERN_COMPARE_INSTR
+	prompt "Use pattern compare instructions"
+	def_bool y
+	help
+		This depends on CPU supporting pattern compare instructions.
+		xparameters would define this as USE_PCMP = 1.
+
+config MICROBLAZE_USE_DIV_INSTR
+	prompt "Use division instructions"
+	def_bool y
+	help
+		This depends on CPU supporting hardware division instructions.
+		xparameters would define this as USE_DIV = 1.
+
+config MICROBLAZE_USE_MUL_INSTR
+	prompt "Use multiplication instructions"
+	def_bool y
+	help
+		This depends on CPU supporting hardware multiplication instructions.
+		xparameters would define this as USE_HW_MUL >= 1.
+
+config MICROBLAZE_USE_MULHI_INSTR
+	prompt "Use mulhi for multiplication of higher bits"
+	def_bool y
+	depends on MICROBLAZE_USE_MUL_INSTR
+	help
+		Use multiply high instructions for high part of 32x32 multiply.
+		This depends on CPU supporting hardware high multiplication instructions.
+		xparameters would define this as USE_HW_MUL = 2.
+
+config MICROBLAZE_USE_HARDWARE_FLOAT_INSTR
+	def_bool n
+	depends on CPU_HAS_FPU
+	help
+		This depends on CPU supporting hardware float instructions.
+		xparameters would define this as USE_FPU = 1.
+
+config MICROBLAZE_DATA_IS_TEXT_RELATIVE
+	bool "Assume data & text segment distance is static"
+	default y
+	help
+		Assume that the displacement between the text and data segments is fixed at
+		static link time. This allows data to be referenced by offset from start of
+		text address instead of GOT (r20) since PC-relative addressing is not supported.
+		Injects -mpic-data-is-text-relative
+
+endmenu
