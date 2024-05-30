@@ -802,6 +802,14 @@ void can_mcan_line_1_isr(const struct device *dev)
 		return;
 	}
 
+	if ((ir & CAN_MCAN_IR_PEA) != 0U) {
+		LOG_DBG("Protocol error in arbitration phase: ir: 0x%x", ir);
+	}
+
+	if ((ir & CAN_MCAN_IR_PED) != 0U) {
+		LOG_DBG("Protocol error in data phase: ir: 0x%x", ir);
+	}
+
 	while ((ir & events) != 0U) {
 		err = can_mcan_write_reg(dev, CAN_MCAN_IR, events & ir);
 		if (err != 0) {
