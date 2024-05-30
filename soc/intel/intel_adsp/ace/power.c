@@ -72,8 +72,8 @@ __imr void power_init(void)
  * (each bit corresponds to one ebb)
  * @param response_to_ipc       flag if ipc response should be send during power down
  */
-extern void power_down(bool disable_lpsram, uint32_t *hpsram_pg_mask,
-			   bool response_to_ipc);
+extern void power_down(bool disable_lpsram, uint32_t __sparse_cache * hpsram_pg_mask,
+		       bool response_to_ipc);
 
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 /**
