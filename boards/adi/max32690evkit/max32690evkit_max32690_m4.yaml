@@ -9,5 +9,6 @@ toolchain:
 supported:
   - gpio
   - serial
+  - spi
 ram: 1024
 flash: 3072
