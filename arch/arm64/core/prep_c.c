@@ -27,6 +27,22 @@ __weak void z_arm64_mm_init(bool is_primary_core) { }
  */
 void z_early_memset(void *dst, int c, size_t n)
 {
+	if (((uintptr_t)dst & (sizeof(uint64_t) - 1)) == 0) {
+		/* speed-up if 64-bit aligned which should be the default */
+		uint64_t *d8 = dst;
+		uint64_t c8 = (uint8_t)c;
+
+		c8 |= c8 << 8;
+		c8 |= c8 << 16;
+		c8 |= c8 << 32;
+
+		while (n >= 8) {
+			*d8++ = c8;
+			n -= 8;
+		}
+		dst = d8;
+	}
+
 	uint8_t *d = dst;
 
 	while (n--) {
@@ -36,6 +52,19 @@ void z_early_memset(void *dst, int c, size_t n)
 
 void z_early_memcpy(void *dst, const void *src, size_t n)
 {
+	if ((((uintptr_t)dst | (uintptr_t)src) & (sizeof(uint64_t) - 1)) == 0) {
+		/* speed-up if 64-bit aligned which should be the default */
+		uint64_t *d8 = dst;
+		const uint64_t *s8 = src;
+
+		while (n >= 8) {
+			*d8++ = *s8++;
+			n -= 8;
+		}
+		dst = d8;
+		src = s8;
+	}
+
 	uint8_t *d = dst;
 	const uint8_t *s = src;
 
