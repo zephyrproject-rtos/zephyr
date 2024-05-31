@@ -1649,7 +1649,13 @@ static void conn_list_eps(struct bt_conn *conn, void *data)
 		const struct bt_bap_ep *ep = snks[conn_index][i];
 
 		if (ep != NULL) {
-			shell_print(sh, "    #%u: ep %p", i, ep);
+			struct bt_bap_ep_info ep_info;
+			int err;
+
+			err = bt_bap_ep_get_info(ep, &ep_info);
+			if (err == 0) {
+				shell_print(sh, "    #%u: ep %p (state: %d)", i, ep, ep_info.state);
+			}
 		}
 	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
@@ -1661,7 +1667,13 @@ static void conn_list_eps(struct bt_conn *conn, void *data)
 		const struct bt_bap_ep *ep = srcs[conn_index][i];
 
 		if (ep != NULL) {
-			shell_print(sh, "    #%u: ep %p", i, ep);
+			struct bt_bap_ep_info ep_info;
+			int err;
+
+			err = bt_bap_ep_get_info(ep, &ep_info);
+			if (err == 0) {
+				shell_print(sh, "    #%u: ep %p (state: %d)", i, ep, ep_info.state);
+			}
 		}
 	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
