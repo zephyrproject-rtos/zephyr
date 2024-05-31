@@ -107,7 +107,7 @@
 		uart4: usart@40005000 {
 			compatible = "gd,gd32-usart";
 			reg = <0x40005000 0x400>;
-			interrupts = <52 0>;
+			interrupts = <53 0>;
 			clocks = <&cctl GD32_CLOCK_UART4>;
 			resets = <&rctl GD32_RESET_UART4>;
 			status = "disabled";
