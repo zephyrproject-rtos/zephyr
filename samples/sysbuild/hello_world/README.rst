@@ -26,14 +26,14 @@ to boot a remote core.
 
 .. note::
    It is recommended to use sample setups from
-   :zephyr_file:`samples/basic/multitarget_hello_world/sample.yaml` using the
+   :zephyr_file:`samples/sysbuild/hello_world/sample.yaml` using the
    ``-T`` option.
 
 Here's an example to build and flash the sample for the
 :ref:`nrf54h20dk_nrf54h20`, using application and radio cores:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/basic/multitarget_hello_world
+   :zephyr-app: samples/sysbuild/hello_world
    :board: nrf54h20dk/nrf54h20/cpuapp
    :west-args: --sysbuild
    :gen-args: -DSB_CONFIG_REMOTE_BOARD='"nrf54h20dk/nrf54h20/cpurad"'
@@ -44,9 +44,9 @@ The same can be achieved by using the
 :zephyr_file:`samples/basic/multitarget_hello_world/sample.yaml` setup:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/basic/multitarget_hello_world
+   :zephyr-app: samples/sysbuild/hello_world
    :board: nrf54h20dk/nrf54h20/cpuapp
-   :west-args: -T sample.basic.multitarget_hello_world.nrf54h20dk_cpuapp_cpurad
+   :west-args: -T sample.sysbuild.hello_world.nrf54h20dk_cpuapp_cpurad
    :goals: build flash
    :compact:
 
