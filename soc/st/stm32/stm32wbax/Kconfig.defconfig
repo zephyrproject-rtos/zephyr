@@ -37,6 +37,9 @@ endchoice
 config ENTROPY_STM32_CLK_CHECK
 	default n
 
+config FPU
+	default y
+
 endif
 
 if PM_S2RAM
