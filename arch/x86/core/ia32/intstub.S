@@ -33,7 +33,7 @@
 	GTEXT(arch_swap)
 
 #ifdef CONFIG_PM
-	GTEXT(z_pm_save_idle_exit)
+	GTEXT(pm_system_resume)
 #endif
 
 /**
@@ -314,13 +314,13 @@ handle_idle:
 	movl	$0, _kernel_offset_to_idle(%ecx)
 
 	/*
-	 * Beware that a timer driver's z_pm_save_idle_exit() implementation might
+	 * Beware that a timer driver's pm_system_resume() implementation might
 	 * expect that interrupts are disabled when invoked.  This ensures that
 	 * the calculation and programming of the device for the next timer
 	 * deadline is not interrupted.
 	 */
 
-	call	z_pm_save_idle_exit
+	call	pm_system_resume
 	popl	%edx
 	popl	%eax
 	jmp	alreadyOnIntStack
