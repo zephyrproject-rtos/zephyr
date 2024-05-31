@@ -8,8 +8,9 @@ if SOC_SERIES_VIRGO
 # overrides SoC Series values.
 rsource "Kconfig.defconfig.virgo*"
 
+# Below CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC is used by machine timer
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 266666667
+	default 133333333
 
 config KERNEL_ENTRY
 	default "entry"

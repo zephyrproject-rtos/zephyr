@@ -11,16 +11,20 @@
  {
 	 model = "Rapid Silicon Virgo Proto";
 	 compatible = "rapidsi,virgo_proto";
-	 timebase-frequency = <26666667>; // 26.6MHz for fpga only
+	 timebase-frequency = <26666667>;
  
 	 chosen {
 		 zephyr,console = &uart0;
 		 zephyr,shell-uart = &uart0;
 		 zephyr,sram = &sram;
-		 zephyr,flash = &flash;
+		 zephyr,flash = &ilm;
 	 };
  };
  
+ &cpu0 {
+	clock-frequency = <26666667>;
+ };
+
  &uart0 {
 	 clock-frequency = <26666667>;
 	 current-speed = <115200>;
@@ -28,6 +32,6 @@
  };
  
  &cpu0 {
-	 clock-frequency = <26666667>; // 26.6MHz for fpga only
+	 clock-frequency = <26666667>;
  };
  

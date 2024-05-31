@@ -21,10 +21,6 @@ config SOC_VIRGO
 
 if SOC_SERIES_VIRGO
 
-config ILM
-	bool "Virgo Instruction Level Memory for Code Execution"
-	default n
-
 if GEN_IRQ_VECTOR_TABLE
 
 	choice IRQ_VECTOR_TABLE_TYPE

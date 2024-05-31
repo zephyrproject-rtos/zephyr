@@ -21,27 +21,18 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/linker-tool.h>
 
-#if !defined(CONFIG_XIP) && defined(CONFIG_ILM)
-#define DATA_REGION_LINKIN(RAMABLE_REGION, ROMABLE_REGION) \
-		> RAMABLE_REGION AT > ROMABLE_REGION
-#else
-#define DATA_REGION_LINKIN(RAMABLE_REGION, ROMABLE_REGION) \
-		GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-#endif
-
-#if defined(CONFIG_XIP) || defined(CONFIG_ILM)
+#ifdef CONFIG_XIP
 #define ROMABLE_REGION              ROM
 #else
 #define ROMABLE_REGION              RAM
 #endif
-
 #define RAMABLE_REGION              RAM
 
 #define _EXCEPTION_SECTION_NAME     exceptions
 #define _RESET_SECTION_NAME         reset
 
 #ifdef CONFIG_XIP
-#if DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_flash), rapidsi_ilm, okay) /* We can replace the flash compact w.r.t dts */
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_flash), okay)
 #ifdef CONFIG_FLASH_LOAD_OFFSET
 #define ROM_BASE (DT_REG_ADDR(DT_CHOSEN(zephyr_flash)) + \
 				CONFIG_FLASH_LOAD_OFFSET)
@@ -59,18 +50,8 @@
 #define ROM_SIZE DT_REG_SIZE_BY_IDX(SPI_CTRL, 1)
 #endif
 #else /* CONFIG_XIP */
-/* In case CONFIG_XIP=n, we check if we have any other ram like
-execute in place memory available for Virgo or not. If yes,
-then we use that for ROM otherwise we fall back to SRAM. 
-*/
-#ifdef CONFIG_ILM 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(xip_mem), rapidsi_ilm, okay)
-#define ROM_BASE DT_REG_ADDR(DT_NODELABEL(xip_mem))
-#define ROM_SIZE DT_REG_SIZE(DT_NODELABEL(xip_mem))
-#else
-ASSERT(0, "DTS node xip_mem is not available or has status disabled")
-#endif /* XIP_MEM */
-#endif /* CONFIG_ILM */
+#define ROM_BASE CONFIG_SRAM_BASE_ADDRESS
+#define ROM_SIZE KB(CONFIG_SRAM_SIZE)
 #endif /* CONFIG_XIP */
 
 #define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
@@ -94,9 +75,9 @@ ASSERT(0, "DTS node xip_mem is not available or has status disabled")
 
 MEMORY
 {
-	#if !defined(CONFIG_XIP) && defined(CONFIG_ILM)
-		ROM (rx)  : ORIGIN = ROM_BASE, LENGTH = ROM_SIZE
-	#endif
+#ifdef CONFIG_XIP
+    ROM (rx)  : ORIGIN = ROM_BASE, LENGTH = ROM_SIZE
+#endif
     RAM (rwx) : ORIGIN = RAM_BASE, LENGTH = RAM_SIZE
 
     LINKER_DT_REGIONS()
@@ -246,7 +227,7 @@ SECTIONS
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif /* CONFIG_USERSPACE */
 
-    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
+  SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 		 . = ALIGN(4);
 		/* _image_ram_start = .; */
@@ -285,7 +266,7 @@ SECTIONS
 
 		 __data_end = .;
 
-	}  DATA_REGION_LINKIN(RAMABLE_REGION, ROMABLE_REGION)
+	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 	__data_size = __data_end - __data_start;
 	__data_load_start = LOADADDR(_DATA_SECTION_NAME);
 
@@ -301,6 +282,35 @@ SECTIONS
 #include <snippets-data-sections.ld>
 
     __data_region_end = .;
+
+    SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
+	{
+		MPU_MIN_SIZE_ALIGN
+		/*
+		 * For performance, BSS section is assumed to be 4 byte aligned and
+		 * a multiple of 4 bytes
+		 */
+		 . = ALIGN(4);
+		 __bss_start = .;
+		__kernel_ram_start = .;
+		 *(.sbss)
+		 *(".sbss.*")
+		 *(.bss)
+		 *(".bss.*")
+		 COMMON_SYMBOLS
+
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_sram_bss_relocate.ld>
+#endif
+
+		 /*
+		  * As memory is cleared in words only, it is simpler to ensure the BSS
+		  * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
+		  */
+		  __bss_end = ALIGN(4);
+	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+#include <zephyr/linker/common-noinit.ld>
 
 	__kernel_ram_end = .;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
@@ -366,36 +376,6 @@ GROUP_START(DTCM)
 
 GROUP_END(DTCM)
 #endif
-
-
-    SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
-	{
-		MPU_MIN_SIZE_ALIGN
-		/*
-		 * For performance, BSS section is assumed to be 4 byte aligned and
-		 * a multiple of 4 bytes
-		 */
-		 . = ALIGN(4);
-		 __bss_start = .;
-		__kernel_ram_start = .;
-		 *(.sbss)
-		 *(".sbss.*")
-		 *(.bss)
-		 *(".bss.*")
-		 COMMON_SYMBOLS
-
-#ifdef CONFIG_CODE_DATA_RELOCATION
-#include <linker_sram_bss_relocate.ld>
-#endif
-
-		 /*
-		  * As memory is cleared in words only, it is simpler to ensure the BSS
-		  * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
-		  */
-		  __bss_end = ALIGN(4);
-	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
-
-#include <zephyr/linker/common-noinit.ld>
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
