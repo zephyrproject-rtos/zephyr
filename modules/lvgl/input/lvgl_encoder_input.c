@@ -28,6 +28,8 @@ static void lvgl_encoder_process_event(const struct device *dev, struct input_ev
 		data->pending_event.enc_diff = evt->value;
 	} else if (evt->code == cfg->button_input_code) {
 		data->pending_event.state = evt->value ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
+		data->pending_event.enc_diff = 0;
+		data->pending_event.key = LV_KEY_ENTER;
 	} else {
 		LOG_DBG("Ignored input event: %u", evt->code);
 		return;
