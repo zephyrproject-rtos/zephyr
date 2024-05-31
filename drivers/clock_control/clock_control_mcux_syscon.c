@@ -355,6 +355,21 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 #endif
 #endif /* CONFIG_MEMC_MCUX_FLEXSPI */
 
+#if defined(CONFIG_I2S_MCUX_SAI)
+	case MCUX_SAI0_CLK:
+#if (FSL_FEATURE_SOC_I2S_COUNT == 1)
+		*rate = CLOCK_GetSaiClkFreq();
+#else
+		*rate = CLOCK_GetSaiClkFreq(0);
+#endif
+		break;
+#if (FSL_FEATURE_SOC_I2S_COUNT == 2)
+	case MCUX_SAI1_CLK:
+		*rate = CLOCK_GetSaiClkFreq(1);
+		break;
+#endif
+#endif /* CONFIG_I2S_MCUX_SAI */
+
 #ifdef CONFIG_ETH_NXP_ENET_QOS
 	case MCUX_ENET_QOS_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
