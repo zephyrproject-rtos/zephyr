@@ -437,6 +437,7 @@ Bluetooth Audio:
     - kruithofa
     - larsgk
     - pin-zephyr
+    - niym-ot
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
