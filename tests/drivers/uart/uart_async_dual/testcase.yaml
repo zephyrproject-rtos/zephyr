@@ -1,0 +1,75 @@
+common:
+  tags:
+    - drivers
+    - uart
+  timeout: 120
+tests:
+  drivers.uart.async_dual:
+    harness: ztest
+    harness_config:
+      fixture: uart_loopback
+    depends_on: gpio
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+      - nrf54h20dk/nrf54h20/cpuppr
+      - nrf9160dk/nrf9160
+      - nrf52_bsim
+  drivers.uart.async_dual.busy_sim:
+    harness: ztest
+    harness_config:
+      fixture: uart_loopback
+    depends_on: gpio
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+      - nrf54h20dk/nrf54h20/cpuppr
+      - nrf9160dk/nrf9160
+      - nrf52_bsim
+    extra_configs:
+      - CONFIG_TEST_BUSY_SIM=y
+  drivers.uart.async_dual.pm_runtime:
+    harness: ztest
+    harness_config:
+      fixture: uart_loopback
+    depends_on: gpio
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+      - nrf54h20dk/nrf54h20/cpuppr
+      - nrf9160dk/nrf9160
+      - nrf52_bsim
+    extra_configs:
+      - CONFIG_PM_DEVICE_RUNTIME=y
+      - CONFIG_PM_DEVICE=y
+  drivers.uart.async_dual.pm_runtime.busy_sim:
+    harness: ztest
+    harness_config:
+      fixture: uart_loopback
+    depends_on: gpio
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+      - nrf54h20dk/nrf54h20/cpuppr
+      - nrf9160dk/nrf9160
+      - nrf52_bsim
+    extra_configs:
+      - CONFIG_PM_DEVICE_RUNTIME=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_TEST_BUSY_SIM=y
+  drivers.uart.async_dual.pm_runtime.explicit:
+    harness: ztest
+    harness_config:
+      fixture: uart_loopback
+    depends_on: gpio
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+      - nrf54h20dk/nrf54h20/cpuppr
+      - nrf9160dk/nrf9160
+      - nrf52_bsim
+    extra_configs:
+      - CONFIG_PM_RUNTIME_IN_TEST=y
