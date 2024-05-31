@@ -52,6 +52,11 @@ LOG_MODULE_REGISTER(flash_stm32_xspi, CONFIG_FLASH_LOG_LEVEL);
 #include <stm32_ll_dma.h>
 #endif /* STM32_XSPI_USE_DMA */
 
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_system.h>
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+
 #include "flash_stm32_xspi.h"
 
 static inline void xspi_lock_thread(const struct device *dev)
@@ -2047,6 +2052,11 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		LOG_ERR("XSPI mode SPI|DUAL|QUAD/DTR is not valid");
 		return -ENOTSUP;
 	}
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	LL_PWR_EnableXSPIM2();
+	__HAL_RCC_SBS_CLK_ENABLE();
+	LL_SBS_EnableXSPI2SpeedOptim();
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 	/* Signals configuration */
 	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -2124,17 +2134,17 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	if (dev_cfg->data_rate == XSPI_DTR_TRANSFER) {
 		dev_data->hxspi.Init.MemoryType = HAL_XSPI_MEMTYPE_MACRONIX;
 		dev_data->hxspi.Init.DelayHoldQuarterCycle = HAL_XSPI_DHQC_ENABLE;
-	} else {
-
 	}
 #if defined(XSPI_DCR1_DLYBYP)
 #if STM32_XSPI_DLYB_BYPASSED
 	dev_data->hxspi.Init.DelayBlockBypass = HAL_XSPI_DELAY_BLOCK_BYPASS;
-#else
-	dev_data->hxspi.Init.DelayBlockBypass = HAL_XSPI_DELAY_BLOCK_ON;
 #endif /* STM32_XSPI_DLYB_BYPASSED */
 #endif /* XSPI_DCR1_DLYBYP */
 
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	dev_data->hxspi.Init.MaxTran = 0;
+	dev_data->hxspi.Init.MemorySelect = HAL_XSPI_CSSEL_NCS1;
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 	if (HAL_XSPI_Init(&dev_data->hxspi) != HAL_OK) {
 		LOG_ERR("XSPI Init failed");
@@ -2143,7 +2153,8 @@ static int flash_stm32_xspi_init(const struct device *dev)
 
 	LOG_DBG("XSPI Init'd");
 
-#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)
+#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2) || \
+	defined(XSPIM) || defined(XSPIM1) || defined(XSPIM2)
 	/* XSPI I/O manager init Function */
 	XSPIM_CfgTypeDef xspi_mgr_cfg;
 
@@ -2163,7 +2174,10 @@ static int flash_stm32_xspi_init(const struct device *dev)
 
 #endif /* XSPIM */
 
-#if defined(DLYB_XSPI1) || defined(DLYB_XSPI2) || defined(DLYB_OCTOSPI1) || defined(DLYB_OCTOSPI2)
+#if !defined(CONFIG_SOC_SERIES_STM32H7RSX) && \
+	(defined(DLYB_XSPI1) || defined(DLYB_XSPI2) || \
+	 defined(DLYB_OCTOSPI1) || defined(DLYB_OCTOSPI2))
+
 	/* XSPI delay block init Function */
 	HAL_XSPI_DLYB_CfgTypeDef xspi_delay_block_cfg = {0};
 
