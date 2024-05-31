@@ -103,6 +103,8 @@ config BT_ESP32
 
 config BT_PSOC6_BLESS
 	bool "PSOC6 BLESS driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_BLESS_HCI_ENABLED
 	select BT_HCI_SETUP
 	help
 	  PSOC6 BLESS driver with BLE Controller which operates in
