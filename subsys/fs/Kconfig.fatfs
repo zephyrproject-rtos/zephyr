@@ -230,6 +230,13 @@ config FS_FATFS_REENTRANT
 	  access for each volume. Will create a zephyr mutex object for each
 	  FatFs volume and a FatFs system mutex.
 
+config FS_FATFS_LBA64
+	bool "Support for 64-bit LBA"
+	depends on FS_FATFS_EXFAT
+	help
+	  This option enables support for 64-bit LBA, which also
+	  enables GPT support.
+
 endmenu
 
 endif # FAT_FILESYSTEM_ELM
