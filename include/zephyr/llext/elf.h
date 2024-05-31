@@ -196,6 +196,7 @@ struct elf64_shdr {
 	elf64_xword sh_entsize;
 };
 
+#define SHT_NULL 0x0
 #define SHT_PROGBITS 0x1
 #define SHT_SYMTAB 0x2
 #define SHT_STRTAB 0x3

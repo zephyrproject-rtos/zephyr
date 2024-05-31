@@ -186,11 +186,13 @@ static int llext_find_tables(struct llext_loader *ldr)
 			return ret;
 		}
 
-		LOG_DBG("section %d at %zx: name %d, type %d, flags %zx, addr %zx, size %zd",
+		LOG_DBG("section %d at %zx: name %d, type %d, flags %zx, "
+			"ofs %zx, addr %zx, size %zd",
 			i, pos,
 			shdr.sh_name,
 			shdr.sh_type,
 			(size_t)shdr.sh_flags,
+			(size_t)shdr.sh_offset,
 			(size_t)shdr.sh_addr,
 			(size_t)shdr.sh_size);
 
@@ -240,13 +242,10 @@ static const char *llext_string(struct llext_loader *ldr, struct llext *ext,
  */
 static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 {
-	int i, ret;
+	int i, j, ret;
 	size_t pos;
-	elf_shdr_t shdr, rodata = {.sh_addr = ~0},
-		high_shdr = {.sh_offset = 0}, low_shdr = {.sh_offset = ~0};
+	elf_shdr_t shdr;
 	const char *name;
-
-	ldr->sects[LLEXT_MEM_RODATA].sh_size = 0;
 
 	for (i = 0, pos = ldr->hdr.e_shoff;
 	     i < ldr->hdr.e_shnum;
@@ -261,62 +260,145 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 			return ret;
 		}
 
-		/* Identify the lowest and the highest data sections */
-		if (!(shdr.sh_flags & SHF_EXECINSTR) &&
-		    shdr.sh_type == SHT_PROGBITS) {
-			if (shdr.sh_offset > high_shdr.sh_offset) {
-				high_shdr = shdr;
-			}
-			if (shdr.sh_offset < low_shdr.sh_offset) {
-				low_shdr = shdr;
-			}
+		if ((shdr.sh_type != SHT_PROGBITS && shdr.sh_type != SHT_NOBITS) ||
+		    !(shdr.sh_flags & SHF_ALLOC) ||
+		    shdr.sh_size == 0) {
+			continue;
 		}
 
 		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr.sh_name);
 
-		LOG_DBG("section %d name %s", i, name);
-
+		/* Identify the section type by its flags */
 		enum llext_mem mem_idx;
 
-		/*
-		 * .rodata section is optional. If there isn't one, use the
-		 * first read-only data section
-		 */
-		if (shdr.sh_addr && !(shdr.sh_flags & (SHF_WRITE | SHF_EXECINSTR)) &&
-		    shdr.sh_addr < rodata.sh_addr) {
-			rodata = shdr;
-			LOG_DBG("rodata: select %#zx name %s", (size_t)shdr.sh_addr, name);
-		}
-
-		/*
-		 * Keep in mind, that when using relocatable (partially linked)
-		 * objects, ELF segments aren't created, so ldr->sect_map[] and
-		 * ldr->sects[] don't contain all the sections
-		 */
-		if (strcmp(name, ".text") == 0) {
-			mem_idx = LLEXT_MEM_TEXT;
-		} else if (strcmp(name, ".data") == 0) {
-			mem_idx = LLEXT_MEM_DATA;
-		} else if (strcmp(name, ".rodata") == 0) {
-			mem_idx = LLEXT_MEM_RODATA;
-		} else if (strcmp(name, ".bss") == 0) {
+		switch (shdr.sh_type) {
+		case SHT_NOBITS:
 			mem_idx = LLEXT_MEM_BSS;
-		} else if (strcmp(name, ".exported_sym") == 0) {
-			mem_idx = LLEXT_MEM_EXPORT;
-		} else {
+			break;
+		case SHT_PROGBITS:
+			if (shdr.sh_flags & SHF_EXECINSTR) {
+				mem_idx = LLEXT_MEM_TEXT;
+			} else if (shdr.sh_flags & SHF_WRITE) {
+				mem_idx = LLEXT_MEM_DATA;
+			} else {
+				mem_idx = LLEXT_MEM_RODATA;
+			}
+			break;
+		default:
 			LOG_DBG("Not copied section %s", name);
 			continue;
 		}
 
-		ldr->sects[mem_idx] = shdr;
+		/* Special exception for .exported_sym */
+		if (strcmp(name, ".exported_sym") == 0) {
+			mem_idx = LLEXT_MEM_EXPORT;
+		}
+
+		LOG_DBG("section %d name %s maps to idx %d", i, name, mem_idx);
+
 		ldr->sect_map[i] = mem_idx;
+		elf_shdr_t *sect = ldr->sects + mem_idx;
+
+		if (sect->sh_type == SHT_NULL) {
+			/* First section of this type, copy all info */
+			*sect = shdr;
+		} else {
+			/* Make sure the sections are compatible before merging */
+			if (shdr.sh_flags != sect->sh_flags) {
+				LOG_ERR("Unsupported section flags for %s (mem %d)",
+					name, mem_idx);
+				return -ENOEXEC;
+			}
+
+			if (mem_idx == LLEXT_MEM_BSS) {
+				/* SHT_NOBITS sections cannot be merged properly:
+				 * as they use no space in the file, the logic
+				 * below does not work; they must be treated as
+				 * independent entities.
+				 */
+				LOG_ERR("Multiple SHT_NOBITS sections are not supported");
+				return -ENOEXEC;
+			}
+
+			if (ldr->hdr.e_type == ET_DYN) {
+				/* In shared objects, sh_addr is the VMA. Before
+				 * merging these sections, make sure the delta
+				 * in VMAs matches that of file offsets.
+				 */
+				if (shdr.sh_addr - sect->sh_addr !=
+				    shdr.sh_offset - sect->sh_offset) {
+					LOG_ERR("Incompatible section addresses "
+						"for %s (mem %d)", name, mem_idx);
+					return -ENOEXEC;
+				}
+			}
+
+			/*
+			 * Extend the current section to include the new one
+			 * (overlaps are detected later)
+			 */
+			size_t address = MIN(sect->sh_addr, shdr.sh_addr);
+			size_t bot_ofs = MIN(sect->sh_offset, shdr.sh_offset);
+			size_t top_ofs = MAX(sect->sh_offset + sect->sh_size,
+					     shdr.sh_offset + shdr.sh_size);
+
+			sect->sh_addr = address;
+			sect->sh_offset = bot_ofs;
+			sect->sh_size = top_ofs - bot_ofs;
+		}
 	}
 
-	ldr->prog_data_size = high_shdr.sh_size + high_shdr.sh_offset - low_shdr.sh_offset;
+	/*
+	 * Test that no computed range overlaps. This can happen if sections of
+	 * different llext_mem type are interleaved in the ELF file or in VMAs.
+	 */
+	for (i = 0; i < LLEXT_MEM_COUNT; i++) {
+		for (j = i+1; j < LLEXT_MEM_COUNT; j++) {
+			elf_shdr_t *x = ldr->sects + i;
+			elf_shdr_t *y = ldr->sects + j;
 
-	/* No verbatim .rodata, use an automatically selected one */
-	if (!ldr->sects[LLEXT_MEM_RODATA].sh_size) {
-		ldr->sects[LLEXT_MEM_RODATA] = rodata;
+			if (x->sh_type == SHT_NULL || x->sh_size == 0 ||
+			    y->sh_type == SHT_NULL || y->sh_size == 0) {
+				/* Skip empty sections */
+				continue;
+			}
+
+			if (ldr->hdr.e_type == ET_DYN) {
+				/*
+				 * Test all merged VMA ranges for overlaps
+				 */
+				if ((x->sh_addr <= y->sh_addr &&
+				     x->sh_addr + x->sh_size > y->sh_addr) ||
+				    (y->sh_addr <= x->sh_addr &&
+				     y->sh_addr + y->sh_size > x->sh_addr)) {
+					LOG_ERR("VMA range %d (0x%zx +%zd) "
+						"overlaps with %d (0x%zx +%zd)",
+						i, (size_t)x->sh_addr, (size_t)x->sh_size,
+						j, (size_t)y->sh_addr, (size_t)y->sh_size);
+					return -ENOEXEC;
+				}
+			}
+
+			/*
+			 * Test file offsets. BSS sections store no
+			 * data in the file and must not be included
+			 * in checks to avoid false positives.
+			 */
+			if (i == LLEXT_MEM_BSS || j == LLEXT_MEM_BSS) {
+				continue;
+			}
+
+			if ((x->sh_offset <= y->sh_offset &&
+			     x->sh_offset + x->sh_size > y->sh_offset) ||
+			    (y->sh_offset <= x->sh_offset &&
+			     y->sh_offset + y->sh_size > x->sh_offset)) {
+				LOG_ERR("ELF file range %d (0x%zx +%zd) "
+					"overlaps with %d (0x%zx +%zd)",
+					i, (size_t)x->sh_offset, (size_t)x->sh_size,
+					j, (size_t)y->sh_offset, (size_t)y->sh_size);
+				return -ENOEXEC;
+			}
+		}
 	}
 
 	return 0;
@@ -352,6 +434,8 @@ static void llext_init_mem_part(struct llext *ext, enum llext_mem mem_idx,
 			ext->mem_parts[mem_idx].size);
 	}
 #endif
+
+	LOG_DBG("mem idx %d: start 0x%zx, size %zd", mem_idx, (size_t)start, len);
 }
 
 static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
