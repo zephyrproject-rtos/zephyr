@@ -94,7 +94,7 @@ struct i2s_mcux_config {
 	uint32_t pll_pd;
 	uint32_t pll_num;
 	uint32_t pll_den;
-	uint32_t *mclk_control_base;
+	uint32_t mclk_control_base;
 	uint32_t mclk_pin_mask;
 	uint32_t mclk_pin_offset;
 	uint32_t tx_channel;
@@ -400,9 +400,10 @@ error:
 static void enable_mclk_direction(const struct device *dev, bool dir)
 {
 	const struct i2s_mcux_config *dev_cfg = dev->config;
+	uint32_t control_base = dev_cfg->mclk_control_base;
 	uint32_t offset = dev_cfg->mclk_pin_offset;
 	uint32_t mask = dev_cfg->mclk_pin_mask;
-	uint32_t *base = (uint32_t *)(dev_cfg->mclk_control_base + offset);
+	uint32_t *base = (uint32_t *)(control_base + offset);
 
 	if (dir) {
 		*base |= mask;
@@ -1030,6 +1031,7 @@ static void i2s_mcux_isr(void *arg)
 
 static void audio_clock_settings(const struct device *dev)
 {
+#ifdef CONFIG_I2S_HAS_PLL_SETTING
 	clock_audio_pll_config_t audioPllConfig;
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	uint32_t clock_name = (uint32_t)dev_cfg->clk_sub_sys;
@@ -1055,6 +1057,7 @@ static void audio_clock_settings(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES */
 
 	CLOCK_InitAudioPll(&audioPllConfig);
+#endif
 }
 
 static int i2s_mcux_initialize(const struct device *dev)
@@ -1113,7 +1116,8 @@ static int i2s_mcux_initialize(const struct device *dev)
 /* master clock configurations */
 #if (defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)) ||                             \
 	(defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) && (FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER))
-#if defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) && (FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER)
+#if ((defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) && (FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER)) || \
+	(defined(FSL_FEATURE_SAI_HAS_MCR_MCLK_POST_DIV) && (FSL_FEATURE_SAI_HAS_MCR_MCLK_POST_DIV)))
 	mclkConfig.mclkHz = mclk;
 	mclkConfig.mclkSourceClkHz = mclk;
 #endif
@@ -1140,16 +1144,15 @@ static DEVICE_API(i2s, i2s_mcux_driver_api) = {
                                                                                                    \
 	static const struct i2s_mcux_config i2s_##i2s_id##_config = {                              \
 		.base = (I2S_Type *)DT_INST_REG_ADDR(i2s_id),                                      \
-		.clk_src = DT_INST_PROP(i2s_id, clock_mux),                                        \
-		.clk_pre_div = DT_INST_PROP(i2s_id, pre_div),                                      \
-		.clk_src_div = DT_INST_PROP(i2s_id, podf),                                         \
-		.pll_src = DT_PHA_BY_NAME(DT_DRV_INST(i2s_id), pll_clocks, src, value),            \
-		.pll_lp = DT_PHA_BY_NAME(DT_DRV_INST(i2s_id), pll_clocks, lp, value),              \
-		.pll_pd = DT_PHA_BY_NAME(DT_DRV_INST(i2s_id), pll_clocks, pd, value),              \
-		.pll_num = DT_PHA_BY_NAME(DT_DRV_INST(i2s_id), pll_clocks, num, value),            \
-		.pll_den = DT_PHA_BY_NAME(DT_DRV_INST(i2s_id), pll_clocks, den, value),            \
-		.mclk_control_base =                                                               \
-			(uint32_t *)DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(i2s_id), pinmuxes)),    \
+		.clk_src = DT_INST_PROP_OR(i2s_id, clock_mux, 0),                                  \
+		.clk_pre_div = DT_INST_PROP_OR(i2s_id, pre_div, 0),                                \
+		.clk_src_div = DT_INST_PROP_OR(i2s_id, podf, 0),                                   \
+		.pll_src = DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id), pll_clocks, src, value, 0),      \
+		.pll_lp = DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id), pll_clocks, lp, value, 0),        \
+		.pll_pd = DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id), pll_clocks, pd, value, 0),        \
+		.pll_num = DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id), pll_clocks, num, value, 0),      \
+		.pll_den = DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id), pll_clocks, den, value, 0),      \
+		.mclk_control_base = DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(i2s_id), pinmuxes)),       \
 		.mclk_pin_mask = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, function),        \
 		.mclk_pin_offset = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, pin),           \
 		.clk_sub_sys =                                                                     \
