@@ -95,6 +95,7 @@
 };
 
 &radio {
+	status = "okay";
 	/* This feature is not yet supported by the RADIO model */
 	/delete-property/ dfe-supported;
 };
