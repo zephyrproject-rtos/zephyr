@@ -125,7 +125,23 @@ int disk_access_ioctl(const char *pdrv, uint8_t cmd, void *buf)
 
 	if ((disk != NULL) && (disk->ops != NULL) &&
 				(disk->ops->ioctl != NULL)) {
-		rc = disk->ops->ioctl(disk, cmd, buf);
+		switch (cmd) {
+		case DISK_IOCTL_CTRL_INIT:
+			if (disk->refcnt == 0U) {
+				rc = disk->ops->ioctl(disk, cmd, buf);
+				if (rc == 0) {
+					disk->refcnt++;
+				}
+			} else if (disk->refcnt < UINT16_MAX) {
+				disk->refcnt++;
+				rc = 0;
+			} else {
+				LOG_ERR("Disk reference count at max value");
+			}
+			break;
+		default:
+			rc = disk->ops->ioctl(disk, cmd, buf);
+		}
 	}
 
 	return rc;

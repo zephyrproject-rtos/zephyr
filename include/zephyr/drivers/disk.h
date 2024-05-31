@@ -49,6 +49,12 @@ extern "C" {
 #define DISK_IOCTL_GET_ERASE_BLOCK_SZ		4
 /** Commit any cached read/writes to disk */
 #define DISK_IOCTL_CTRL_SYNC			5
+/** Initialize the disk. This IOCTL must be issued before the disk can be
+ * used for I/O. It is reference counted, so only the first successful
+ * invocation of this macro on an uninitialized disk will initialize the IO
+ * device
+ */
+#define DISK_IOCTL_CTRL_INIT			6
 
 /**
  * @brief Possible return bitmasks for disk_status()

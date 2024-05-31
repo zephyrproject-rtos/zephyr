@@ -451,6 +451,8 @@ static int disk_flash_access_ioctl(struct disk_info *disk, uint8_t cmd, void *bu
 		*(uint32_t *)buff = ctx->page_size / ctx->sector_size;
 		k_mutex_unlock(&ctx->lock);
 		return 0;
+	case DISK_IOCTL_CTRL_INIT:
+		return disk_flash_access_init(disk);
 	default:
 		break;
 	}

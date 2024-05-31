@@ -82,7 +82,14 @@ static int disk_mmc_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buf)
 	const struct device *dev = disk->dev;
 	struct mmc_data *data = dev->data;
 
-	return mmc_ioctl(&data->card, cmd, buf);
+	switch (cmd) {
+	case DISK_IOCTL_CTRL_INIT:
+		return disk_mmc_access_init(disk);
+	default:
+		return mmc_ioctl(&data->card, cmd, buf);
+	}
+
+	return 0;
 }
 
 static const struct disk_operations mmc_disk_ops = {

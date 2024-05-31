@@ -481,6 +481,8 @@ static int stm32_sdmmc_access_ioctl(struct disk_info *disk, uint8_t cmd,
 	case DISK_IOCTL_CTRL_SYNC:
 		/* we use a blocking API, so nothing to do for sync */
 		break;
+	case DISK_IOCTL_CTRL_INIT:
+		return stm32_sdmmc_access_init(disk);
 	default:
 		return -EINVAL;
 	}
