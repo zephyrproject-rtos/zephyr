@@ -75,8 +75,6 @@ struct arch_esf {
 
 extern uint32_t z_arm_coredump_fault_sp;
 
-typedef struct arch_esf z_arch_esf_t;
-
 extern void z_arm_exc_exit(bool fatal);
 
 #ifdef __cplusplus

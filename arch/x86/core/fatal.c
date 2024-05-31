@@ -35,7 +35,7 @@ FUNC_NORETURN void arch_system_halt(unsigned int reason)
 
 #ifdef CONFIG_THREAD_STACK_INFO
 
-static inline uintptr_t esf_get_sp(const z_arch_esf_t *esf)
+static inline uintptr_t esf_get_sp(const struct arch_esf *esf)
 {
 #ifdef CONFIG_X86_64
 	return esf->rsp;
@@ -122,7 +122,7 @@ bool z_x86_check_guard_page(uintptr_t addr)
 
 #ifdef CONFIG_EXCEPTION_DEBUG
 
-static inline uintptr_t esf_get_code(const z_arch_esf_t *esf)
+static inline uintptr_t esf_get_code(const struct arch_esf *esf)
 {
 #ifdef CONFIG_X86_64
 	return esf->code;
@@ -188,7 +188,7 @@ static void unwind_stack(uintptr_t base_ptr, uint16_t cs)
 }
 #endif /* CONFIG_EXCEPTION_STACK_TRACE */
 
-static inline uintptr_t get_cr3(const z_arch_esf_t *esf)
+static inline uintptr_t get_cr3(const struct arch_esf *esf)
 {
 #if defined(CONFIG_USERSPACE) && defined(CONFIG_X86_KPTI)
 	/* If the interrupted thread was in user mode, we did a page table
@@ -206,14 +206,14 @@ static inline uintptr_t get_cr3(const z_arch_esf_t *esf)
 	return z_x86_cr3_get();
 }
 
-static inline pentry_t *get_ptables(const z_arch_esf_t *esf)
+static inline pentry_t *get_ptables(const struct arch_esf *esf)
 {
 	return z_mem_virt_addr(get_cr3(esf));
 }
 
 #ifdef CONFIG_X86_64
 __pinned_func
-static void dump_regs(const z_arch_esf_t *esf)
+static void dump_regs(const struct arch_esf *esf)
 {
 	LOG_ERR("RAX: 0x%016lx RBX: 0x%016lx RCX: 0x%016lx RDX: 0x%016lx",
 		esf->rax, esf->rbx, esf->rcx, esf->rdx);
@@ -236,7 +236,7 @@ static void dump_regs(const z_arch_esf_t *esf)
 }
 #else /* 32-bit */
 __pinned_func
-static void dump_regs(const z_arch_esf_t *esf)
+static void dump_regs(const struct arch_esf *esf)
 {
 	LOG_ERR("EAX: 0x%08x, EBX: 0x%08x, ECX: 0x%08x, EDX: 0x%08x",
 		esf->eax, esf->ebx, esf->ecx, esf->edx);
@@ -327,7 +327,7 @@ static void log_exception(uintptr_t vector, uintptr_t code)
 }
 
 __pinned_func
-static void dump_page_fault(z_arch_esf_t *esf)
+static void dump_page_fault(struct arch_esf *esf)
 {
 	uintptr_t err;
 	void *cr2;
@@ -362,7 +362,7 @@ static void dump_page_fault(z_arch_esf_t *esf)
 
 __pinned_func
 FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
-				     const z_arch_esf_t *esf)
+				     const struct arch_esf *esf)
 {
 	if (esf != NULL) {
 #ifdef CONFIG_EXCEPTION_DEBUG
@@ -385,7 +385,7 @@ FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
 
 __pinned_func
 FUNC_NORETURN void z_x86_unhandled_cpu_exception(uintptr_t vector,
-						 const z_arch_esf_t *esf)
+						 const struct arch_esf *esf)
 {
 #ifdef CONFIG_EXCEPTION_DEBUG
 	log_exception(vector, esf_get_code(esf));
@@ -404,7 +404,7 @@ static const struct z_exc_handle exceptions[] = {
 #endif
 
 __pinned_func
-void z_x86_page_fault_handler(z_arch_esf_t *esf)
+void z_x86_page_fault_handler(struct arch_esf *esf)
 {
 #ifdef CONFIG_DEMAND_PAGING
 	if ((esf->errorCode & PF_P) == 0) {
@@ -488,7 +488,7 @@ void z_x86_page_fault_handler(z_arch_esf_t *esf)
 }
 
 __pinned_func
-void z_x86_do_kernel_oops(const z_arch_esf_t *esf)
+void z_x86_do_kernel_oops(const struct arch_esf *esf)
 {
 	uintptr_t reason;
 

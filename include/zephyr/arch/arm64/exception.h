@@ -55,8 +55,6 @@ struct arch_esf {
 #endif
 } __aligned(16);
 
-typedef struct arch_esf z_arch_esf_t;
-
 #ifdef __cplusplus
 }
 #endif

@@ -36,7 +36,7 @@ char kernel_string[BUF_SIZE];
 char kernel_buf[BUF_SIZE];
 ZTEST_BMEM char user_string[BUF_SIZE];
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	printk("Caught system error -- reason %d\n", reason);
 	printk("Unexpected fault during test\n");

@@ -18,7 +18,7 @@
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
 
-void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf);
+void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf);
 
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 /*

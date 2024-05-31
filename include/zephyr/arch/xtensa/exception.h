@@ -28,7 +28,6 @@ extern "C" {
 struct arch_esf {
 	int dummy;
 };
-typedef int z_arch_esf_t;
 
 #endif
 

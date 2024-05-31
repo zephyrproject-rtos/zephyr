@@ -94,7 +94,7 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 
 #endif /* !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER) */
 
-void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);
 
 /**
  *

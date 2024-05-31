@@ -33,7 +33,7 @@ volatile bool expect_fault;
 __pinned_noinit
 static uint8_t __aligned(CONFIG_MMU_PAGE_SIZE) test_page[TEST_PAGE_SZ];
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	printk("Caught system error -- reason %d\n", reason);
 

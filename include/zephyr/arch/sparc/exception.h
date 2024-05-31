@@ -25,8 +25,6 @@ struct arch_esf {
 	uint32_t y;
 };
 
-typedef struct arch_esf z_arch_esf_t;
-
 #ifdef __cplusplus
 }
 #endif

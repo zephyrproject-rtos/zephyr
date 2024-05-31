@@ -79,6 +79,8 @@
 #include <zephyr/toolchain.h>
 #include <stddef.h>
 
+typedef struct arch_esf z_arch_esf_t;
+
 /* definition of the GEN_OFFSET_SYM() macros is toolchain independent  */
 
 #define GEN_OFFSET_SYM(S, M) \
