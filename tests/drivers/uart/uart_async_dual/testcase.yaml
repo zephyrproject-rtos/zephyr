@@ -1,0 +1,31 @@
+common:
+  tags:
+    - drivers
+    - uart
+tests:
+  drivers.uart.async_dual:
+    harness: ztest
+    harness_config:
+      fixture: uart_loopback
+    depends_on: gpio
+    platform_allow:
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+      - nrf54h20dk/nrf54h20/cpuppr
+      - nrf9160dk/nrf9160
+      - nrf52_bsim
+  drivers.uart.async_dual.busy_sim:
+    harness: ztest
+    harness_config:
+      fixture: uart_loopback
+    depends_on: gpio
+    platform_allow:
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+      - nrf54h20dk/nrf54h20/cpuppr
+      - nrf9160dk/nrf9160
+      - nrf52_bsim
+    extra_configs:
+      - CONFIG_TEST_BUSY_SIM=y
