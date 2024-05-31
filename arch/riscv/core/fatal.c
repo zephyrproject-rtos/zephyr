@@ -30,7 +30,7 @@ static const struct z_exc_handle exceptions[] = {
 #endif
 
 /* Stack trace function */
-void z_riscv_unwind_stack(const struct arch_esf *esf);
+void z_riscv_unwind_stack(const struct arch_esf *esf, const _callee_saved_t *csf);
 
 uintptr_t z_riscv_get_sp_before_exc(const struct arch_esf *esf)
 {
@@ -107,8 +107,8 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const struct arc
 		LOG_ERR("");
 	}
 
-	if (IS_ENABLED(CONFIG_EXCEPTION_STACK_TRACE) && (esf != NULL)) {
-		z_riscv_unwind_stack(esf);
+	if (IS_ENABLED(CONFIG_EXCEPTION_STACK_TRACE)) {
+		z_riscv_unwind_stack(esf, csf);
 	}
 
 #endif /* CONFIG_EXCEPTION_DEBUG */

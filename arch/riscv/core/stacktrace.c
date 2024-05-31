@@ -14,68 +14,95 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 uintptr_t z_riscv_get_sp_before_exc(const struct arch_esf *esf);
 
-#if __riscv_xlen == 32
- #define PR_REG "%08" PRIxPTR
-#elif __riscv_xlen == 64
- #define PR_REG "%016" PRIxPTR
-#endif
-
-#define MAX_STACK_FRAMES CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES
+#define MAX_STACK_FRAMES                                                                           \
+	MAX(CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES, CONFIG_ARCH_STACKWALK_MAX_FRAMES)
 
 struct stackframe {
 	uintptr_t fp;
 	uintptr_t ra;
 };
 
-#ifdef CONFIG_FRAME_POINTER
-#define SFP_FMT "fp: "
-#else
-#define SFP_FMT "sp: "
-#endif
+typedef bool (*stack_verify_fn)(uintptr_t, const struct k_thread *const, const struct arch_esf *);
 
-#ifdef CONFIG_EXCEPTION_STACK_TRACE_SYMTAB
-#define LOG_STACK_TRACE(idx, sfp, ra, name, offset)                                                \
-	LOG_ERR("     %2d: " SFP_FMT PR_REG "   ra: " PR_REG " [%s+0x%x]", idx, sfp, ra, name,     \
-		offset)
-#else
-#define LOG_STACK_TRACE(idx, sfp, ra, name, offset)                                                \
-	LOG_ERR("     %2d: " SFP_FMT PR_REG "   ra: " PR_REG, idx, sfp, ra)
-#endif
-
-static bool in_stack_bound(uintptr_t addr, const struct arch_esf *esf)
+static inline bool in_irq_stack_bound(uintptr_t addr, uint8_t cpu_id)
 {
-#ifdef CONFIG_THREAD_STACK_INFO
 	uintptr_t start, end;
+
+	start = (uintptr_t)K_KERNEL_STACK_BUFFER(z_interrupt_stacks[cpu_id]);
+	end = start + CONFIG_ISR_STACK_SIZE;
+
+	return (addr >= start) && (addr < end);
+}
+
+static inline bool in_kernel_thread_stack_bound(uintptr_t addr, const struct k_thread *const thread)
+{
+	uintptr_t start, end;
+
+	start = thread->stack_info.start;
+	end = Z_STACK_PTR_ALIGN(thread->stack_info.start + thread->stack_info.size);
+
+	return (addr >= start) && (addr < end);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline bool in_user_thread_stack_bound(uintptr_t addr, const struct k_thread *const thread)
+{
+	uintptr_t start, end;
+
+	/* See: zephyr/include/zephyr/arch/riscv/arch.h */
+	if (IS_ENABLED(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)) {
+		start = thread->arch.priv_stack_start - CONFIG_PRIVILEGED_STACK_SIZE;
+		end = thread->arch.priv_stack_start;
+	} else {
+		start = thread->stack_info.start - CONFIG_PRIVILEGED_STACK_SIZE;
+		end = thread->stack_info.start;
+	}
+
+	return (addr >= start) && (addr < end);
+}
+#endif /* CONFIG_USERSPACE */
+
+static bool in_fatal_stack_bound(uintptr_t addr, const struct k_thread *const thread,
+				 const struct arch_esf *esf)
+{
+	ARG_UNUSED(thread);
+
+	if (!IS_ALIGNED(addr, sizeof(uintptr_t))) {
+		return false;
+	}
 
 	if (_current == NULL || arch_is_in_isr()) {
 		/* We were servicing an interrupt */
 		uint8_t cpu_id = IS_ENABLED(CONFIG_SMP) ? arch_curr_cpu()->id : 0U;
 
-		start = (uintptr_t)K_KERNEL_STACK_BUFFER(z_interrupt_stacks[cpu_id]);
-		end = start + CONFIG_ISR_STACK_SIZE;
+		return in_irq_stack_bound(addr, cpu_id);
+	}
 #ifdef CONFIG_USERSPACE
-	} else if (((esf->mstatus & MSTATUS_MPP) == PRV_U) &&
-		   ((_current->base.user_options & K_USER) != 0)) {
-		/* See: zephyr/include/zephyr/arch/riscv/arch.h */
-		if (IS_ENABLED(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)) {
-			start = _current->arch.priv_stack_start - CONFIG_PRIVILEGED_STACK_SIZE;
-			end = _current->arch.priv_stack_start;
-		} else {
-			start = _current->stack_info.start - CONFIG_PRIVILEGED_STACK_SIZE;
-			end = _current->stack_info.start;
-		}
+	if ((esf != NULL) && ((esf->mstatus & MSTATUS_MPP) == PRV_U) &&
+	    ((_current->base.user_options & K_USER) != 0)) {
+		return in_user_thread_stack_bound(addr, _current);
+	}
 #endif /* CONFIG_USERSPACE */
-	} else {
-		start = _current->stack_info.start;
-		end = Z_STACK_PTR_ALIGN(_current->stack_info.start + _current->stack_info.size);
+
+	return in_kernel_thread_stack_bound(addr, _current);
+}
+
+static bool in_stack_bound(uintptr_t addr, const struct k_thread *const thread,
+			   const struct arch_esf *esf)
+{
+	ARG_UNUSED(esf);
+
+	if (!IS_ALIGNED(addr, sizeof(uintptr_t))) {
+		return false;
 	}
 
-	return (addr >= start) && (addr < end);
-#else
-	ARG_UNUSED(addr);
-	ARG_UNUSED(esf);
-	return true;
-#endif /* CONFIG_THREAD_STACK_INFO */
+#ifdef CONFIG_USERSPACE
+	if ((thread->base.user_options & K_USER) != 0) {
+		return in_user_thread_stack_bound(addr, thread);
+	}
+#endif /* CONFIG_USERSPACE */
+
+	return in_kernel_thread_stack_bound(addr, thread);
 }
 
 static inline bool in_text_region(uintptr_t addr)
@@ -86,61 +113,131 @@ static inline bool in_text_region(uintptr_t addr)
 }
 
 #ifdef CONFIG_FRAME_POINTER
-void z_riscv_unwind_stack(const struct arch_esf *esf)
+static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const struct k_thread *thread,
+			    const struct arch_esf *esf, stack_verify_fn vrfy,
+			    const _callee_saved_t *csf)
 {
-	uintptr_t fp = esf->s0;
+	uintptr_t fp, last_fp = 0;
 	uintptr_t ra;
 	struct stackframe *frame;
 
-	LOG_ERR("call trace:");
+	if (esf != NULL) {
+		/* Unwind the provided exception stack frame */
+		fp = esf->s0;
+		ra = esf->mepc;
+	} else if ((csf == NULL) || (csf == &_current->callee_saved)) {
+		/* Unwind current thread (default case when nothing is provided ) */
+		fp = (uintptr_t)__builtin_frame_address(0);
+		ra = (uintptr_t)walk_stackframe;
+		thread = _current;
+	} else {
+		/* Unwind the provided thread */
+		fp = csf->s0;
+		ra = csf->ra;
+	}
 
-	for (int i = 0; (i < MAX_STACK_FRAMES) && (fp != 0U) && in_stack_bound(fp, esf);) {
+	for (int i = 0; (i < MAX_STACK_FRAMES) && vrfy(fp, thread, esf) && (fp > last_fp);) {
+		if (in_text_region(ra)) {
+			if (!cb(cookie, ra)) {
+				break;
+			}
+			/*
+			 * Increment the iterator only if `ra` is within the text region to get the
+			 * most out of it
+			 */
+			i++;
+		}
+		last_fp = fp;
+		/* Unwind to the previous frame */
 		frame = (struct stackframe *)fp - 1;
 		ra = frame->ra;
-		if (in_text_region(ra)) {
-#ifdef CONFIG_EXCEPTION_STACK_TRACE_SYMTAB
-			uint32_t offset = 0;
-			const char *name = symtab_find_symbol_name(ra, &offset);
-#endif
-			LOG_STACK_TRACE(i, fp, ra, name, offset);
-			/*
-			 * Increment the iterator only if `ra` is within the text region to get the
-			 * most out of it
-			 */
-			i++;
-		}
 		fp = frame->fp;
 	}
-
-	LOG_ERR("");
 }
-#else /* !CONFIG_FRAME_POINTER */
-void z_riscv_unwind_stack(const struct arch_esf *esf)
+#else  /* !CONFIG_FRAME_POINTER */
+register uintptr_t current_stack_pointer __asm__("sp");
+static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const struct k_thread *thread,
+			    const struct arch_esf *esf, stack_verify_fn vrfy,
+			    const _callee_saved_t *csf)
 {
-	uintptr_t sp = z_riscv_get_sp_before_exc(esf);
+	uintptr_t sp;
 	uintptr_t ra;
-	uintptr_t *ksp = (uintptr_t *)sp;
+	uintptr_t *ksp, last_ksp = 0;
 
-	LOG_ERR("call trace:");
+	if (esf != NULL) {
+		/* Unwind the provided exception stack frame */
+		sp = z_riscv_get_sp_before_exc(esf);
+		ra = esf->mepc;
+	} else if ((csf == NULL) || (csf == &_current->callee_saved)) {
+		/* Unwind current thread (default case when nothing is provided ) */
+		sp = current_stack_pointer;
+		ra = (uintptr_t)walk_stackframe;
+		thread = _current;
+	} else {
+		/* Unwind the provided thread */
+		sp = csf->sp;
+		ra = csf->ra;
 
-	for (int i = 0; (i < MAX_STACK_FRAMES) && ((uintptr_t)ksp != 0U) &&
-			in_stack_bound((uintptr_t)ksp, esf);
-	     ksp++) {
-		ra = *ksp;
+	}
+
+	ksp = (uintptr_t *)sp;
+	for (int i = 0; (i < MAX_STACK_FRAMES) && vrfy((uintptr_t)ksp, thread, esf) &&
+			((uintptr_t)ksp > last_ksp);) {
 		if (in_text_region(ra)) {
-#ifdef CONFIG_EXCEPTION_STACK_TRACE_SYMTAB
-			uint32_t offset = 0;
-			const char *name = symtab_find_symbol_name(ra, &offset);
-#endif
-			LOG_STACK_TRACE(i, (uintptr_t)ksp, ra, name, offset);
+			if (!cb(cookie, ra)) {
+				break;
+			}
 			/*
 			 * Increment the iterator only if `ra` is within the text region to get the
 			 * most out of it
 			 */
 			i++;
 		}
+		last_ksp = (uintptr_t)ksp;
+		/* Unwind to the previous frame */
+		ra = ((struct arch_esf *)ksp++)->ra;
 	}
-
-	LOG_ERR("");
 }
 #endif /* CONFIG_FRAME_POINTER */
+
+void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
+		     const struct k_thread *thread, const struct arch_esf *esf)
+{
+	walk_stackframe(callback_fn, cookie, thread, esf, in_stack_bound,
+			thread != NULL ? &thread->callee_saved : NULL);
+}
+
+#if __riscv_xlen == 32
+#define PR_REG "%08" PRIxPTR
+#elif __riscv_xlen == 64
+#define PR_REG "%016" PRIxPTR
+#endif
+
+#ifdef CONFIG_EXCEPTION_STACK_TRACE_SYMTAB
+#define LOG_STACK_TRACE(idx, ra, name, offset)                                                     \
+	LOG_ERR("     %2d: ra: " PR_REG " [%s+0x%x]", idx, ra, name, offset)
+#else
+#define LOG_STACK_TRACE(idx, ra, name, offset) LOG_ERR("     %2d: ra: " PR_REG, idx, ra)
+#endif /* CONFIG_EXCEPTION_STACK_TRACE_SYMTAB */
+
+static bool print_trace_address(void *arg, unsigned long ra)
+{
+	int *i = arg;
+#ifdef CONFIG_EXCEPTION_STACK_TRACE_SYMTAB
+	uint32_t offset = 0;
+	const char *name = symtab_find_symbol_name(ra, &offset);
+#endif
+
+	LOG_STACK_TRACE((*i)++, ra, name, offset);
+
+	return true;
+}
+
+void z_riscv_unwind_stack(const struct arch_esf *esf, const _callee_saved_t *csf)
+{
+	int i = 0;
+
+	LOG_ERR("call trace:");
+	walk_stackframe(print_trace_address, &i, NULL, esf, in_fatal_stack_bound, csf);
+	LOG_ERR("");
+}

@@ -802,7 +802,7 @@ ZTEST(smp, test_fatal_on_smp)
 				      K_PRIO_PREEMPT(2), 0, K_NO_WAIT);
 
 	/* hold cpu and wait for thread trigger exception and being terminated */
-	k_busy_wait(2 * DELAY_US);
+	k_busy_wait(5 * DELAY_US);
 
 	/* Verify that child thread is no longer running. We can't simply use k_thread_join here
 	 * as we don't want to introduce reschedule point here.

@@ -1,3 +1,5 @@
+common:
+  timeout: 120
 tests:
   kernel.multiprocessing.smp:
     tags:
