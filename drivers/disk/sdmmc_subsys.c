@@ -37,11 +37,6 @@ static int disk_sdmmc_access_init(struct disk_info *disk)
 	struct sdmmc_data *data = dev->data;
 	int ret;
 
-	if (data->status == SD_OK) {
-		/* Called twice, don't reinit */
-		return 0;
-	}
-
 	if (!sd_is_card_present(cfg->host_controller)) {
 		return DISK_STATUS_NOMEDIA;
 	}
