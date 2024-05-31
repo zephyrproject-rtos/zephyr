@@ -39,9 +39,16 @@ static K_SEM_DEFINE(hci_sem, 1, 1);
 #define BLE_DYN_ALLOC_SIZE \
 	(BLE_TOTAL_BUFFER_SIZE(CFG_BLE_NUM_LINK, MBLOCK_COUNT))
 
+/* GATT buffer size (in bytes)*/
+#define BLE_GATT_BUF_SIZE \
+	BLE_TOTAL_BUFFER_SIZE_GATT(CFG_BLE_NUM_GATT_ATTRIBUTES, \
+				   CFG_BLE_NUM_GATT_SERVICES, \
+				   CFG_BLE_ATT_VALUE_ARRAY_SIZE)
+
 #define DIVC(x, y)         (((x)+(y)-1)/(y))
 
 static uint32_t __noinit buffer[DIVC(BLE_DYN_ALLOC_SIZE, 4)];
+static uint32_t __noinit gatt_buffer[DIVC(BLE_GATT_BUF_SIZE, 4)];
 
 extern uint8_t ll_state_busy;
 
@@ -330,8 +337,8 @@ static int bt_ble_ctlr_init(void)
 	init_params_p.mblockCount             = CFG_BLE_MBLOCK_COUNT;
 	init_params_p.bleStartRamAddress      = (uint8_t *)buffer;
 	init_params_p.total_buffer_size       = BLE_DYN_ALLOC_SIZE;
-	init_params_p.bleStartRamAddress_GATT = NULL;
-	init_params_p.total_buffer_size_GATT  = 0;
+	init_params_p.bleStartRamAddress_GATT = (uint8_t *)gatt_buffer;
+	init_params_p.total_buffer_size_GATT  = BLE_GATT_BUF_SIZE;
 	init_params_p.options                 = CFG_BLE_OPTIONS;
 	init_params_p.debug                   = 0U;
 
