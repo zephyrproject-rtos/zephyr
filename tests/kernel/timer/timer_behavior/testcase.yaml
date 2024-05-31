@@ -8,6 +8,10 @@ tests:
       - mcu
     simulation_exclude:
       - renode
+    harness_config:
+      record:
+        regex: "RECORD:(?P<metrics>.*)"
+        as_json: ['metrics']
   kernel.timer.timer_behavior_external:
     filter: dt_compat_enabled("test-kernel-timer-behavior-external")
     harness: pytest
