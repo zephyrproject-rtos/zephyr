@@ -15,6 +15,7 @@ supported:
   - can
   - counter
   - gpio
+  - i2c
   - pwm
   - spi
   - watchdog
