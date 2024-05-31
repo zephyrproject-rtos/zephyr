@@ -157,6 +157,23 @@ int lvgl_reload_display_capabilities(void)
 
 		display_get_capabilities(disp_data->display_dev, &disp_data->cap);
 
+		switch (disp_data->cap.current_orientation) {
+		case DISPLAY_ORIENTATION_NORMAL:
+			disp->driver->rotated = LV_DISP_ROT_NONE;
+			break;
+		case DISPLAY_ORIENTATION_ROTATED_90:
+			disp->driver->rotated = LV_DISP_ROT_90;
+			break;
+		case DISPLAY_ORIENTATION_ROTATED_180:
+			disp->driver->rotated = LV_DISP_ROT_180;
+			break;
+		case DISPLAY_ORIENTATION_ROTATED_270:
+			disp->driver->rotated = LV_DISP_ROT_270;
+			break;
+		default:
+			return -EINVAL;
+		}
+
 		disp = lv_disp_get_next(disp);
 	}
 

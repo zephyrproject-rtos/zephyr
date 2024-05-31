@@ -61,63 +61,44 @@ static void lvgl_pointer_process_event(const struct device *dev, struct input_ev
 		return;
 	}
 
-	lv_point_t tmp_point = {
-		.x = data->point_x,
-		.y = data->point_y,
-	};
+	point->x = data->point_x;
+	point->y = data->point_y;
 
 	if (cfg->invert_x) {
 		if (cap->current_orientation == DISPLAY_ORIENTATION_NORMAL ||
 		    cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-			tmp_point.x = cap->x_resolution - tmp_point.x;
+			point->x = cap->x_resolution - point->x;
 		} else {
-			tmp_point.x = cap->y_resolution - tmp_point.x;
+			point->x = cap->y_resolution - point->x;
 		}
 	}
 
 	if (cfg->invert_y) {
 		if (cap->current_orientation == DISPLAY_ORIENTATION_NORMAL ||
 		    cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-			tmp_point.y = cap->y_resolution - tmp_point.y;
+			point->y = cap->y_resolution - point->y;
 		} else {
-			tmp_point.y = cap->x_resolution - tmp_point.y;
+			point->y = cap->x_resolution - point->y;
 		}
 	}
 
-	/* rotate touch point to match display rotation */
+	/* Compensate off-by-one error in LVGL rotation code (lv_indev.c) */
 	switch (cap->current_orientation) {
 	case DISPLAY_ORIENTATION_NORMAL:
-		point->x = tmp_point.x;
-		point->y = tmp_point.y;
 		break;
 	case DISPLAY_ORIENTATION_ROTATED_90:
-		point->x = tmp_point.y;
-		point->y = cap->y_resolution - tmp_point.x;
+		point->y -= 1;
 		break;
 	case DISPLAY_ORIENTATION_ROTATED_180:
-		point->x = cap->x_resolution - tmp_point.x;
-		point->y = cap->y_resolution - tmp_point.y;
+		point->x -= 1;
+		point->y -= 1;
 		break;
 	case DISPLAY_ORIENTATION_ROTATED_270:
-		point->x = cap->x_resolution - tmp_point.y;
-		point->y = tmp_point.x;
+		point->x -= 1;
 		break;
 	default:
 		LOG_ERR("Invalid display orientation");
 		break;
-	}
-
-	/* filter readings within display */
-	if (point->x <= 0) {
-		point->x = 0;
-	} else if (point->x >= cap->x_resolution) {
-		point->x = cap->x_resolution - 1;
-	}
-
-	if (point->y <= 0) {
-		point->y = 0;
-	} else if (point->y >= cap->y_resolution) {
-		point->y = cap->y_resolution - 1;
 	}
 
 	if (k_msgq_put(cfg->common_config.event_msgq, &data->common_data.pending_event,
