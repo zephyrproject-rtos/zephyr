@@ -71,8 +71,7 @@ uart2: &scb2 {
 	status = "okay";
 };
 
-&flash_controller {
-
+/ {
 	flash0: flash@60000000 {
 		compatible = "soc-nv-flash";
 		reg = <0x60000000 DT_SIZE_K(512)>;
