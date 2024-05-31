@@ -16,7 +16,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/byteorder.h>
@@ -31,6 +31,10 @@ LOG_MODULE_REGISTER(psoc6_bless);
 #include "cycfg_ble.h"
 
 #define DT_DRV_COMPAT infineon_cat1_bless_hci
+
+struct psoc6_bless_data {
+	bt_hci_recv_t recv;
+};
 
 #define BLE_LOCK_TMOUT_MS       (1000)
 #define BLE_THREAD_SEM_TMOUT_MS (1000)
@@ -94,6 +98,8 @@ static void psoc6_bless_isr_handler(const struct device *dev)
 
 static void psoc6_bless_events_handler(uint32_t eventCode, void *eventParam)
 {
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct psoc6_bless_data *hci = dev->data;
 	cy_stc_ble_hci_tx_packet_info_t *hci_rx = NULL;
 	struct net_buf *buf = NULL;
 	size_t buf_tailroom = 0;
@@ -135,12 +141,15 @@ static void psoc6_bless_events_handler(uint32_t eventCode, void *eventParam)
 		return;
 	}
 	net_buf_add_mem(buf, hci_rx->data, hci_rx->dataLength);
-	bt_recv(buf);
+	hci->recv(dev, buf);
 }
 
-static int psoc6_bless_open(void)
+static int psoc6_bless_open(const struct device *dev, bt_hci_recv_t recv)
 {
+	struct psoc6_bless_data *hci = dev->data;
 	k_tid_t tid;
+
+	hci->recv = recv;
 
 	tid = k_thread_create(&psoc6_bless_rx_thread_data, psoc6_bless_rx_thread_stack,
 			      K_KERNEL_STACK_SIZEOF(psoc6_bless_rx_thread_stack),
@@ -151,9 +160,11 @@ static int psoc6_bless_open(void)
 	return 0;
 }
 
-static int psoc6_bless_send(struct net_buf *buf)
+static int psoc6_bless_send(const struct device *dev, struct net_buf *buf)
 {
 	cy_en_ble_api_result_t result;
+
+	ARG_UNUSED(dev);
 
 	memset(&hci_tx_pkt, 0, sizeof(cy_stc_ble_hci_tx_packet_info_t));
 
@@ -190,8 +201,9 @@ static int psoc6_bless_send(struct net_buf *buf)
 	return 0;
 }
 
-static int psoc6_bless_setup(const struct bt_hci_setup_params *params)
+static int psoc6_bless_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
+	ARG_UNUSED(dev);
 	ARG_UNUSED(params);
 	struct net_buf *buf;
 	int err;
@@ -217,17 +229,11 @@ static int psoc6_bless_setup(const struct bt_hci_setup_params *params)
 	return 0;
 }
 
-static int psoc6_bless_hci_init(void)
+static int psoc6_bless_hci_init(const struct device *dev)
 {
 	cy_en_ble_api_result_t result;
-	static const struct bt_hci_driver drv = {
-		.name = "PSoC 6 BLESS",
-		.bus = BT_HCI_DRIVER_BUS_VIRTUAL,
-		.quirks = BT_QUIRK_NO_RESET,
-		.open = psoc6_bless_open,
-		.send = psoc6_bless_send,
-		.setup = psoc6_bless_setup,
-	};
+
+	ARG_UNUSED(dev);
 
 	/* Connect BLE interrupt to ISR */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), psoc6_bless_isr_handler, 0, 0);
@@ -252,10 +258,20 @@ static int psoc6_bless_hci_init(void)
 	/* Enables BLE Low-power mode (LPM)*/
 	Cy_BLE_EnableLowPowerMode();
 
-	/* Register a BLESS HCI driver to the Bluetooth stack. */
-	bt_hci_driver_register(&drv);
-
 	return 0;
 }
 
-SYS_INIT(psoc6_bless_hci_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+static const struct bt_hci_driver_api drv = {
+	.open = psoc6_bless_open,
+	.send = psoc6_bless_send,
+	.setup = psoc6_bless_setup,
+};
+
+#define PSOC6_BLESS_DEVICE_INIT(inst) \
+	static struct psoc6_bless_data psoc6_bless_data_##inst = { \
+	}; \
+	DEVICE_DT_INST_DEFINE(inst, psoc6_bless_hci_init, NULL, &psoc6_bless_data_##inst, NULL, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+
+/* Only one instance supported */
+PSOC6_BLESS_DEVICE_INIT(0)
