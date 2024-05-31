@@ -244,6 +244,11 @@ static int lvgl_init(void)
 		return -EPERM;
 	}
 
+	if (lvgl_reload_display_capabilities() != 0) {
+		LOG_ERR("Error reloading display capabilities.");
+		return -EPERM;
+	}
+
 	err = lvgl_init_input_devices();
 	if (err < 0) {
 		LOG_ERR("Failed to initialize input devices.");

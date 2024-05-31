@@ -49,6 +49,8 @@ int set_lvgl_rendering_cb(lv_disp_drv_t *disp_drv);
 
 void lvgl_flush_display(struct lvgl_display_flush *request);
 
+int lvgl_reload_display_capabilities(void);
+
 #ifdef CONFIG_LV_Z_USE_ROUNDER_CB
 void lvgl_rounder_cb(lv_disp_drv_t *disp_drv, lv_area_t *area);
 #endif
