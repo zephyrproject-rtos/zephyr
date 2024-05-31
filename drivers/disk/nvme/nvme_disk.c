@@ -11,11 +11,6 @@ LOG_MODULE_DECLARE(nvme, CONFIG_NVME_LOG_LEVEL);
 
 #include "nvme.h"
 
-static int nvme_disk_init(struct disk_info *disk)
-{
-	return 0;
-}
-
 static int nvme_disk_status(struct disk_info *disk)
 {
 	return 0;
@@ -186,12 +181,20 @@ static int nvme_disk_ioctl(struct disk_info *disk, uint8_t cmd, void *buff)
 	case DISK_IOCTL_CTRL_SYNC:
 		ret = nvme_disk_flush(ns);
 		break;
+	case DISK_IOCTL_CTRL_INIT:
+		ret = 0;
+		break;
 	default:
 		ret = -EINVAL;
 	}
 
 	nvme_unlock(disk->dev);
 	return ret;
+}
+
+static int nvme_disk_init(struct disk_info *disk)
+{
+	return nvme_disk_ioctl(disk, DISK_IOCTL_CTRL_INIT, NULL);
 }
 
 static const struct disk_operations nvme_disk_ops = {
