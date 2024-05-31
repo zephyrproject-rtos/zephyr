@@ -233,3 +233,10 @@ zephyr_udc0: &usb1 {
 &sc_timer {
 	status = "okay";
 };
+
+&sai1 {
+	status = "okay";
+};
+&sai0 {
+	status = "okay";
+};
