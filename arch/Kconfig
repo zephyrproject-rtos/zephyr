@@ -178,8 +178,9 @@ config BIG_ENDIAN
 	  Little-endian architecture is the default and should leave this option
 	  unselected.  This option is selected by arch/$ARCH/Kconfig,
 	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally avoid
-	  modifying it.  The option is used to select linker script OUTPUT_FORMAT
-	  and command line option for gen_isr_tables.py.
+	  modifying it.  The option is used to select linker script OUTPUT_FORMAT,
+	  the toolchain flags (TOOLCHAIN_C_FLAGS, TOOLCHAIN_LD_FLAGS), and command
+	  line option for gen_isr_tables.py.
 
 config LITTLE_ENDIAN
 	# Hidden Kconfig option representing the default little-endian architecture
