@@ -52,6 +52,11 @@ LOG_MODULE_REGISTER(flash_stm32_xspi, CONFIG_FLASH_LOG_LEVEL);
 #include <stm32_ll_dma.h>
 #endif /* STM32_XSPI_USE_DMA */
 
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_system.h>
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+
 #include "flash_stm32_xspi.h"
 
 static inline void xspi_lock_thread(const struct device *dev)
@@ -2047,6 +2052,11 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		LOG_ERR("XSPI mode SPI|DUAL|QUAD/DTR is not valid");
 		return -ENOTSUP;
 	}
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	LL_PWR_EnableXSPIM2();
+	__HAL_RCC_SBS_CLK_ENABLE();
+	LL_SBS_EnableXSPI2SpeedOptim();
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 	/* Signals configuration */
 	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -2124,17 +2134,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	if (dev_cfg->data_rate == XSPI_DTR_TRANSFER) {
 		dev_data->hxspi.Init.MemoryType = HAL_XSPI_MEMTYPE_MACRONIX;
 		dev_data->hxspi.Init.DelayHoldQuarterCycle = HAL_XSPI_DHQC_ENABLE;
-	} else {
-
 	}
-#if defined(XSPI_DCR1_DLYBYP)
-#if STM32_XSPI_DLYB_BYPASSED
-	dev_data->hxspi.Init.DelayBlockBypass = HAL_XSPI_DELAY_BLOCK_BYPASS;
-#else
-	dev_data->hxspi.Init.DelayBlockBypass = HAL_XSPI_DELAY_BLOCK_ON;
-#endif /* STM32_XSPI_DLYB_BYPASSED */
-#endif /* XSPI_DCR1_DLYBYP */
-
 
 	if (HAL_XSPI_Init(&dev_data->hxspi) != HAL_OK) {
 		LOG_ERR("XSPI Init failed");
@@ -2143,7 +2143,8 @@ static int flash_stm32_xspi_init(const struct device *dev)
 
 	LOG_DBG("XSPI Init'd");
 
-#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)
+#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2) || \
+	defined(XSPIM) || defined(XSPIM1) || defined(XSPIM2)
 	/* XSPI I/O manager init Function */
 	XSPIM_CfgTypeDef xspi_mgr_cfg;
 
@@ -2163,7 +2164,10 @@ static int flash_stm32_xspi_init(const struct device *dev)
 
 #endif /* XSPIM */
 
-#if defined(DLYB_XSPI1) || defined(DLYB_XSPI2) || defined(DLYB_OCTOSPI1) || defined(DLYB_OCTOSPI2)
+#if !defined(CONFIG_SOC_SERIES_STM32H7RSX) && \
+	(defined(DLYB_XSPI1) || defined(DLYB_XSPI2) || \
+	 defined(DLYB_OCTOSPI1) || defined(DLYB_OCTOSPI2))
+
 	/* XSPI delay block init Function */
 	HAL_XSPI_DLYB_CfgTypeDef xspi_delay_block_cfg = {0};
 
@@ -2444,9 +2448,19 @@ static struct flash_stm32_xspi_data flash_stm32_xspi_dev_data = {
 					: HAL_XSPI_CSSEL_NCS2),
 #endif
 			.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE,
-#if defined(OCTOSPI_DCR4_REFRESH)
+#if defined(OCTOSPI_DCR1_DLYBYP) || defined(XSPI_DCR1_DLYBYP)
+#if STM32_XSPI_DLYB_BYPASSED
+			.DelayBlockBypass = HAL_XSPI_DELAY_BLOCK_BYPASS;
+#else
+			.DelayBlockBypass = HAL_XSPI_DELAY_BLOCK_ON;
+#endif /* STM32_XSPI_DLYB_BYPASSED */
+#endif /* xXSPI_DCR1_DLYBYP */
+#if defined(OCTOSPI_DCR3_MAXTRAN) || defined(XSPI_DCR3_MAXTRAN)
+			.MaxTran = 0,
+#endif /* xSPI_DCR3_MAXTRAN */
+#if defined(OCTOSPI_DCR4_REFRESH) || defined(XSPI_DCR4_REFRESH)
 			.Refresh = 0,
-#endif /* OCTOSPI_DCR4_REFRESH */
+#endif /* xSPI_DCR4_REFRESH */
 		},
 	},
 	.qer_type = DT_QER_PROP_OR(0, JESD216_DW15_QER_VAL_S1B6),
