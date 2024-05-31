@@ -1,0 +1,7 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "nrf54h20dk_nrf54h20_common.dtsi"
+
+&timer137 {
+	interrupts = <467 (NRF_DEFAULT_IRQ_PRIORITY + 1)>;
+};
