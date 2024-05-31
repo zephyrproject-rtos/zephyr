@@ -5,6 +5,8 @@
 
 #include "akm09918c.h"
 
+#define DT_DRV_COMPAT asahi_kasei_akm09918c
+
 static int akm09918c_decoder_get_frame_count(const uint8_t *buffer,
 					     struct sensor_chan_spec chan_spec,
 					     uint16_t *frame_count)
