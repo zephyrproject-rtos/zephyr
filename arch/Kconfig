@@ -409,6 +409,14 @@ config FRAME_POINTER
 	  Select Y here to gain precise stack traces at the expense of slightly
 	  increased size and decreased speed.
 
+config ARCH_STACKWALK_MAX_FRAMES
+	int "Max depth for stack walk function"
+	default 8
+	depends on ARCH_HAS_STACKWALK
+	help
+	  Depending on implementation, this can place a hard limit on the depths of the stack
+	  for the stack walk function to examine.
+
 menu "Interrupt Configuration"
 
 config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
@@ -653,6 +661,11 @@ config ARCH_HAS_EXTRA_EXCEPTION_INFO
 
 config ARCH_HAS_GDBSTUB
 	bool
+
+config ARCH_HAS_STACKWALK
+	bool
+	help
+	  This is selected when the architecture implemented the arch_stack_walk() API.
 
 config ARCH_HAS_COHERENCE
 	bool
