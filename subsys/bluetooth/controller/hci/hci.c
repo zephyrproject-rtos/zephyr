@@ -5001,7 +5001,7 @@ NET_BUF_POOL_FIXED_DEFINE(vs_err_tx_pool, 1, BT_BUF_EVT_RX_SIZE,
 typedef struct bt_hci_vs_fata_error_cpu_data_cortex_m bt_hci_vs_fatal_error_cpu_data;
 
 static void vs_err_fatal_cpu_data_fill(bt_hci_vs_fatal_error_cpu_data *cpu_data,
-				       const z_arch_esf_t *esf)
+				       const struct arch_esf *esf)
 {
 	cpu_data->a1 = sys_cpu_to_le32(esf->basic.a1);
 	cpu_data->a2 = sys_cpu_to_le32(esf->basic.a2);
@@ -5036,7 +5036,7 @@ static struct net_buf *vs_err_evt_create(uint8_t subevt, uint8_t len)
 	return buf;
 }
 
-struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const z_arch_esf_t *esf)
+struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const struct arch_esf *esf)
 {
 	/* Prepare vendor specific HCI Fatal Error event */
 	struct bt_hci_vs_fatal_error_stack_frame *sf;

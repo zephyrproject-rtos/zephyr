@@ -19,8 +19,6 @@ struct arch_esf {
 	uint32_t dummy; /*maybe we will want to add something someday*/
 };
 
-typedef struct arch_esf z_arch_esf_t;
-
 #ifdef __cplusplus
 }
 #endif

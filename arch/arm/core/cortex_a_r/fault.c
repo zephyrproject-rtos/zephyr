@@ -206,7 +206,7 @@ bool z_arm_fault_undef_instruction_fp(void)
  *
  * @return Returns true if the fault is fatal
  */
-bool z_arm_fault_undef_instruction(z_arch_esf_t *esf)
+bool z_arm_fault_undef_instruction(struct arch_esf *esf)
 {
 #if defined(CONFIG_FPU_SHARING)
 	/*
@@ -243,7 +243,7 @@ bool z_arm_fault_undef_instruction(z_arch_esf_t *esf)
  *
  * @return Returns true if the fault is fatal
  */
-bool z_arm_fault_prefetch(z_arch_esf_t *esf)
+bool z_arm_fault_prefetch(struct arch_esf *esf)
 {
 	uint32_t reason = K_ERR_CPU_EXCEPTION;
 
@@ -299,7 +299,7 @@ static const struct z_exc_handle exceptions[] = {
  *
  * @return true if error is recoverable, otherwise return false.
  */
-static bool memory_fault_recoverable(z_arch_esf_t *esf)
+static bool memory_fault_recoverable(struct arch_esf *esf)
 {
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
 		/* Mask out instruction mode */
@@ -321,7 +321,7 @@ static bool memory_fault_recoverable(z_arch_esf_t *esf)
  *
  * @return Returns true if the fault is fatal
  */
-bool z_arm_fault_data(z_arch_esf_t *esf)
+bool z_arm_fault_data(struct arch_esf *esf)
 {
 	uint32_t reason = K_ERR_CPU_EXCEPTION;
 

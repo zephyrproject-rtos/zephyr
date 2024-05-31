@@ -87,7 +87,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     void *p1, void *p2, void *p3)
 {
 	extern void z_arm64_exit_exc(void);
-	z_arch_esf_t *pInitCtx;
+	struct arch_esf *pInitCtx;
 
 	/*
 	 * Clean the thread->arch to avoid unexpected behavior because the

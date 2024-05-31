@@ -53,8 +53,6 @@ struct arch_esf {
 	unsigned long ss;
 };
 
-typedef struct arch_esf z_arch_esf_t;
-
 struct x86_ssf {
 	unsigned long rip;
 	unsigned long rflags;

@@ -12,7 +12,7 @@
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 FUNC_NORETURN void z_nios2_fatal_error(unsigned int reason,
-				       const z_arch_esf_t *esf)
+				       const struct arch_esf *esf)
 {
 #if CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
@@ -102,7 +102,7 @@ static char *cause_str(uint32_t cause_code)
 }
 #endif
 
-FUNC_NORETURN void _Fault(const z_arch_esf_t *esf)
+FUNC_NORETURN void _Fault(const struct arch_esf *esf)
 {
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
 	/* Unfortunately, completely unavailable on Nios II/e cores */

@@ -50,8 +50,6 @@ struct arch_esf {
 	unsigned long cause;
 };
 
-typedef struct arch_esf z_arch_esf_t;
-
 #ifdef __cplusplus
 }
 #endif

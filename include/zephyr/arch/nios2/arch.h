@@ -101,10 +101,10 @@ void arch_irq_enable(unsigned int irq);
 void arch_irq_disable(unsigned int irq);
 
 FUNC_NORETURN void z_SysFatalErrorHandler(unsigned int reason,
-					 const z_arch_esf_t *esf);
+					 const struct arch_esf *esf);
 
 FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
-					  const z_arch_esf_t *esf);
+					  const struct arch_esf *esf);
 
 enum nios2_exception_cause {
 	NIOS2_EXCEPTION_UNKNOWN                      = -1,

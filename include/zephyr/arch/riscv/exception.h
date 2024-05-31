@@ -87,7 +87,6 @@ struct arch_esf {
 } __aligned(16);
 #endif /* CONFIG_RISCV_SOC_HAS_ISR_STACKING */
 
-typedef struct arch_esf z_arch_esf_t;
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 typedef struct soc_esf soc_esf_t;
 #endif
