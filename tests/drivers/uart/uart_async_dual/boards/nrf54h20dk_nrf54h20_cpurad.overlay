@@ -1,0 +1,27 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "nrf54h20dk_nrf54h20_common.dtsi"
+
+&cpurad_dma_region {
+	compatible = "zephyr,memory-region";
+	reg = <0x1e80 0x180>;
+};
+
+&dut {
+	memory-regions = <&cpurad_dma_region>;
+};
+
+&dut_aux {
+	memory-regions = <&cpurad_dma_region>;
+};
+
+&timer131 {
+	status = "okay";
+	prescaler = <0>;
+};
+
+/ {
+	chosen {
+		zephyr,cpu-stats-counter = &timer131;
+	};
+};
