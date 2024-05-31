@@ -30,7 +30,9 @@ config SOC_SERIES
 	default "intel_adsp_ace" if SOC_SERIES_INTEL_ADSP_ACE
 
 config SOC_TOOLCHAIN_NAME
-	default "intel_ace15_mtpm" if SOC_SERIES_INTEL_ADSP_ACE
+	default "intel_ace15_mtpm" if SOC_INTEL_ACE15_MTPM
+	default "intel_ace15_mtpm" if SOC_INTEL_ACE20_LNL
+	default "intel_ace30_ptl" if SOC_INTEL_ACE30_PTL
 
 config SOC
 	default "ace15_mtpm" if SOC_INTEL_ACE15_MTPM
