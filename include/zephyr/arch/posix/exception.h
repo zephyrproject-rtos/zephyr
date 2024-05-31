@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2010-2014 Wind River Systems, Inc.
+ * Copyright (c) 2017 Oticon A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_ARCH_POSIX_EXPCEPTION_H_
+#define ZEPHYR_INCLUDE_ARCH_POSIX_EXPCEPTION_H_
+
+#ifndef _ASMLANGUAGE
+#include <zephyr/types.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct __esf {
+	uint32_t dummy; /*maybe we will want to add something someday*/
+};
+
+typedef struct __esf z_arch_esf_t;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _ASMLANGUAGE */
+
+#endif /* ZEPHYR_INCLUDE_ARCH_POSIX_EXPCEPTION_H_ */
