@@ -12,6 +12,7 @@
 #define ZEPHYR_INCLUDE_FATAL_H
 
 #include <zephyr/arch/cpu.h>
+#include <zephyr/arch/exception.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/fatal_types.h>
 
