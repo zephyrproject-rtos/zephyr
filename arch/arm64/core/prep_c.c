@@ -21,6 +21,7 @@ extern void z_arm64_mm_init(bool is_primary_core);
 
 __weak void z_arm64_mm_init(bool is_primary_core) { }
 
+#ifndef CONFIG_ARM64_ENABLE_ORIGINAL_EARLY_MEM_FUNCTIONS
 /*
  * These simple memset/memcpy alternatives are necessary as the optimized
  * ones depend on the MMU to be active (see commit c5b898743a20).
@@ -43,6 +44,7 @@ void z_early_memcpy(void *dst, const void *src, size_t n)
 		*d++ = *s++;
 	}
 }
+#endif
 
 /**
  *

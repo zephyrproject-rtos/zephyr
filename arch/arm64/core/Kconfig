@@ -171,6 +171,14 @@ config ARM64_FALLBACK_ON_RESERVED_CORES
 	  then that core will be skipped and the next core in the device tree
 	  will be used.
 
+config ARM64_ENABLE_ORIGINAL_EARLY_MEM_FUNCTIONS
+	bool "To enable original early memset and memcpy functions"
+	help
+	  By default the ARM64 z_early_memset and z_early_memcpy functions
+	  are overridden with simple byte by byte non optimized functions.
+	  Enabling this option will remove the overridden functions and use
+	  the original optimized memset and memcpy functions.
+
 config ARM64_STACK_PROTECTION
 	bool
 	default y if HW_STACK_PROTECTION
