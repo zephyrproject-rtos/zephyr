@@ -25,9 +25,6 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	default 40960 if BT
 	default 4096
 
-config BT_ESP32
-	default y if BT
-
 endif # BOARD_ODROID_GO_ESP32_PROCPU
 
 if BOARD_ODROID_GO_ESP32_APPCPU

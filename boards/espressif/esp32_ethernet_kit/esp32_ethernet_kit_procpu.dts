@@ -23,6 +23,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
 	};
 };
 
@@ -129,4 +130,8 @@
 
 &eth {
 	phy-handle = <&phy>;
+};
+
+&esp32_bt_hci {
+	status = "okay";
 };

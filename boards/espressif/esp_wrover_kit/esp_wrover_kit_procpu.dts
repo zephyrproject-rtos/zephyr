@@ -36,6 +36,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &ili9341;
 		zephyr,sdhc = &sdhc1;
+		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
 	leds {
@@ -250,4 +251,8 @@
 			reg = <0x00250000 0x00006000>;
 		};
 	};
+};
+
+&esp32_bt_hci {
+	status = "okay";
 };
