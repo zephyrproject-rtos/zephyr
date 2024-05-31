@@ -25,7 +25,7 @@
  *
  * @param stack Pointer to stack frame.
  */
-void xtensa_dump_stack(const z_arch_esf_t *stack);
+void xtensa_dump_stack(const void *stack);
 
 /**
  * @brief Get string description from an exception code.
@@ -43,7 +43,7 @@ char *xtensa_exccause(unsigned int cause_code);
  * @param esf Exception context, with details and partial or full register
  *            state when the error occurred. May in some cases be NULL.
  */
-void xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+void xtensa_fatal_error(unsigned int reason, const struct arch_esf *esf);
 
 /**
  * @brief Perform a one-way transition from supervisor to user mode.

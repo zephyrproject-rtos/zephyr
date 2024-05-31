@@ -29,7 +29,6 @@
 extern "C" {
 #endif
 struct arch_esf;
-typedef struct arch_esf z_arch_esf_t;
 #ifdef __cplusplus
 }
 #endif

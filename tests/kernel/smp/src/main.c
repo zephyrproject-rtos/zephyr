@@ -757,7 +757,7 @@ ZTEST(smp, test_smp_ipi)
 }
 #endif
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
 {
 	static int trigger;
 

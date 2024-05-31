@@ -24,7 +24,7 @@ static struct k_thread esf_collection_thread;
 /**
  * Validates that pEsf matches state from set_regs_with_known_pattern()
  */
-static int check_esf_matches_expectations(const z_arch_esf_t *pEsf)
+static int check_esf_matches_expectations(const struct arch_esf *pEsf)
 {
 	const uint16_t expected_fault_instruction = 0xde5a; /* udf #90 */
 	const bool caller_regs_match_expected =
@@ -88,7 +88,7 @@ static int check_esf_matches_expectations(const z_arch_esf_t *pEsf)
 	return 0;
 }
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	TC_PRINT("Caught system error -- reason %d\n", reason);
 

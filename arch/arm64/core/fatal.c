@@ -181,7 +181,7 @@ static void dump_esr(uint64_t esr, bool *dump_far)
 	LOG_ERR("  ISS: 0x%llx", GET_ESR_ISS(esr));
 }
 
-static void esf_dump(const z_arch_esf_t *esf)
+static void esf_dump(const struct arch_esf *esf)
 {
 	LOG_ERR("x0:  0x%016llx  x1:  0x%016llx", esf->x0, esf->x1);
 	LOG_ERR("x2:  0x%016llx  x3:  0x%016llx", esf->x2, esf->x3);
@@ -196,7 +196,7 @@ static void esf_dump(const z_arch_esf_t *esf)
 }
 
 #ifdef CONFIG_EXCEPTION_STACK_TRACE
-static void esf_unwind(const z_arch_esf_t *esf)
+static void esf_unwind(const struct arch_esf *esf)
 {
 	/*
 	 * For GCC:
@@ -244,7 +244,7 @@ static void esf_unwind(const z_arch_esf_t *esf)
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
 #ifdef CONFIG_ARM64_STACK_PROTECTION
-static bool z_arm64_stack_corruption_check(z_arch_esf_t *esf, uint64_t esr, uint64_t far)
+static bool z_arm64_stack_corruption_check(struct arch_esf *esf, uint64_t esr, uint64_t far)
 {
 	uint64_t sp, sp_limit, guard_start;
 	/* 0x25 means data abort from current EL */
@@ -284,7 +284,7 @@ static bool z_arm64_stack_corruption_check(z_arch_esf_t *esf, uint64_t esr, uint
 }
 #endif
 
-static bool is_recoverable(z_arch_esf_t *esf, uint64_t esr, uint64_t far,
+static bool is_recoverable(struct arch_esf *esf, uint64_t esr, uint64_t far,
 			   uint64_t elr)
 {
 	if (!esf)
@@ -306,7 +306,7 @@ static bool is_recoverable(z_arch_esf_t *esf, uint64_t esr, uint64_t far,
 	return false;
 }
 
-void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
+void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 {
 	uint64_t esr = 0;
 	uint64_t elr = 0;
@@ -379,7 +379,7 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
  *
  * @param esf exception frame
  */
-void z_arm64_do_kernel_oops(z_arch_esf_t *esf)
+void z_arm64_do_kernel_oops(struct arch_esf *esf)
 {
 	/* x8 holds the exception reason */
 	unsigned int reason = esf->x8;

@@ -27,7 +27,7 @@ extern "C" {
  * Those registers are pushed onto the stack by _ExcEnt().
  */
 
-typedef struct arch_esf {
+struct arch_esf {
 #ifdef CONFIG_GDBSTUB
 	unsigned int ss;
 	unsigned int gs;
@@ -47,7 +47,7 @@ typedef struct arch_esf {
 	unsigned int eip;
 	unsigned int cs;
 	unsigned int eflags;
-} z_arch_esf_t;
+};
 
 extern unsigned int z_x86_exception_vector;
 

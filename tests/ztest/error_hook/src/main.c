@@ -153,7 +153,7 @@ static void release_offload_sem(void)
  * default one.
  */
 void ztest_post_fatal_error_hook(unsigned int reason,
-		const z_arch_esf_t *pEsf)
+		const struct arch_esf *pEsf)
 {
 	switch (case_type) {
 	case ZTEST_CATCH_FATAL_ACCESS:
