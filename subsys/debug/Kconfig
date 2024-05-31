@@ -382,6 +382,7 @@ config EXCEPTION_STACK_TRACE
 
 config EXCEPTION_STACK_TRACE_MAX_FRAMES
 	int "Configures the depth of stack trace"
+	default ARCH_STACKWALK_MAX_FRAMES if ARCH_HAS_STACKWALK
 	default 8
 	depends on EXCEPTION_STACK_TRACE
 	help

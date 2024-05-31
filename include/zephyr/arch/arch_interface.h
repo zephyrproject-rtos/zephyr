@@ -1251,6 +1251,33 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
  */
 void arch_spin_relax(void);
 
+/**
+ * stack_trace_callback_fn - Callback for @ref arch_stack_walk
+ * @param cookie Caller supplied pointer handed back by @ref arch_stack_walk
+ * @param addr The stack entry address to consume
+ *
+ * @return True, if the entry was consumed or skipped. False, if there is no space left to store
+ */
+typedef bool (*stack_trace_callback_fn)(void *cookie, unsigned long addr);
+
+/**
+ * @brief Architecture-specific function to walk the stack
+ *
+ * @param callback_fn Callback which is invoked by the architecture code for each entry.
+ * @param cookie Caller supplied pointer which is handed back to @a callback_fn
+ * @param thread Pointer to a k_thread struct, can be NULL
+ * @param esf Pointer to an arch_esf struct, can be NULL
+ *
+ * ============ ======= ============================================
+ * thread	esf
+ * ============ ======= ============================================
+ * thread	NULL	Stack trace from thread (can be _current)
+ * thread	esf	Stack trace starting on esf
+ * ============ ======= ============================================
+ */
+void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
+		     const struct k_thread *thread, const struct arch_esf *esf);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
