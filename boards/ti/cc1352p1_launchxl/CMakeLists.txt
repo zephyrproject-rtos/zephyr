@@ -1,4 +1,3 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_library()
-zephyr_library_sources(board_antenna.c)
+add_subdirectory(${ZEPHYR_BASE}/boards/ti/common/ ${CMAKE_CURRENT_BINARY_DIR}/common)
