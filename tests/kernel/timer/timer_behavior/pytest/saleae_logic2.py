@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Intel Corporation
+# Copyright (c) 2023-2024 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -62,7 +62,7 @@ def do_analysis(output_dir):
     total_time = data[-1]
 
     return {'mean': mean, 'stddev': std, 'var': var, 'min': minimum,
-            'max': maximum, 'total_time': total_time}
+            'max': maximum, 'total_time': total_time}, len(diff)
 
 
 # options should be a string of the format:
