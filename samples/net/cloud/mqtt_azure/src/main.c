@@ -8,6 +8,7 @@
 LOG_MODULE_REGISTER(mqtt_azure, LOG_LEVEL_DBG);
 
 #include <zephyr/kernel.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/mqtt.h>
 

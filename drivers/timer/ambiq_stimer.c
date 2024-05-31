@@ -24,11 +24,10 @@
 
 #define COUNTER_MAX UINT32_MAX
 
-#define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
-		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define MAX_TICKS ((k_ticks_t)(COUNTER_MAX / CYC_PER_TICK) - 1)
-#define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
-#define MIN_DELAY 1
+#define CYC_PER_TICK (sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define MAX_TICKS    ((k_ticks_t)(COUNTER_MAX / CYC_PER_TICK) - 1)
+#define MAX_CYCLES   (MAX_TICKS * CYC_PER_TICK)
+#define MIN_DELAY    1
 
 #define TIMER_IRQ (DT_INST_IRQN(0))
 
@@ -102,8 +101,7 @@ uint32_t sys_clock_elapsed(void)
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&g_lock);
-	uint32_t ret = (am_hal_stimer_counter_get()
-			- g_last_count) / CYC_PER_TICK;
+	uint32_t ret = (am_hal_stimer_counter_get() - g_last_count) / CYC_PER_TICK;
 
 	k_spin_unlock(&g_lock, key);
 	return ret;
@@ -121,10 +119,13 @@ static int stimer_init(void)
 
 	oldCfg = am_hal_stimer_config(AM_HAL_STIMER_CFG_FREEZE);
 
-	am_hal_stimer_config((oldCfg & ~(AM_HAL_STIMER_CFG_FREEZE | STIMER_STCFG_CLKSEL_Msk))
-			| AM_HAL_STIMER_XTAL_32KHZ
-			| AM_HAL_STIMER_CFG_COMPARE_A_ENABLE);
-
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	am_hal_stimer_config((oldCfg & ~(AM_HAL_STIMER_CFG_FREEZE | CTIMER_STCFG_CLKSEL_Msk)) |
+			     AM_HAL_STIMER_XTAL_32KHZ | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE);
+#else
+	am_hal_stimer_config((oldCfg & ~(AM_HAL_STIMER_CFG_FREEZE | STIMER_STCFG_CLKSEL_Msk)) |
+			     AM_HAL_STIMER_XTAL_32KHZ | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE);
+#endif
 	g_last_count = am_hal_stimer_counter_get();
 
 	k_spin_unlock(&g_lock, key);
@@ -141,5 +142,4 @@ static int stimer_init(void)
 	return 0;
 }
 
-SYS_INIT(stimer_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(stimer_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

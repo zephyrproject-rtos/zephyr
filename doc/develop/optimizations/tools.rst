@@ -4,7 +4,7 @@ Optimization Tools
 ##################
 
 The available optimization tools let you analyse :ref:`footprint_tools`
-and :ref:`data_structures` using different build system targets.
+and :ref:`data_structure_tools` using different build system targets.
 
 .. _footprint_tools:
 
@@ -195,7 +195,7 @@ To view worst-case stack usage analysis, build this with the
     :gen-args: -DCONFIG_STACK_USAGE=y
 
 
-.. _data_structures:
+.. _data_structure_tools:
 
 Data Structures
 ****************

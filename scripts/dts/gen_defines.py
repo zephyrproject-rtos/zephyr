@@ -524,6 +524,15 @@ def write_children(node):
 
     out_comment("Helper macros for child nodes of this node.")
 
+    out_dt_define(f"{node.z_path_id}_CHILD_NUM", len(node.children))
+
+    ok_nodes_num = 0
+    for child in node.children.values():
+        if child.status == "okay":
+            ok_nodes_num = ok_nodes_num + 1
+
+    out_dt_define(f"{node.z_path_id}_CHILD_NUM_STATUS_OKAY", ok_nodes_num)
+
     out_dt_define(f"{node.z_path_id}_FOREACH_CHILD(fn)",
             " ".join(f"fn(DT_{child.z_path_id})" for child in
                 node.children.values()))

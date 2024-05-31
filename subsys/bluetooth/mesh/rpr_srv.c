@@ -1173,7 +1173,7 @@ static void adv_handle_ext_scan(const struct bt_le_scan_recv_info *info,
 	srv.scan.addr = *info->addr;
 	atomic_set_bit(srv.flags, SCAN_EXT_HAS_ADDR);
 
-	if (IS_ENABLED(CONFIG_BT_MESH_DEBUG_MODEL)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_MODEL_LOG_LEVEL_DBG)) {
 		struct bt_uuid_128 uuid_repr = { .uuid = { BT_UUID_TYPE_128 } };
 
 		memcpy(uuid_repr.val, dev->uuid, 16);

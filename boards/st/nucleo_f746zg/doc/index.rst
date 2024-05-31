@@ -122,6 +122,8 @@ features:
 +-------------+------------+-------------------------------------+
 | Backup SRAM | on-chip    | Backup SRAM                         |
 +-------------+------------+-------------------------------------+
+| RTC         | on-chip    | rtc                                 |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -189,6 +191,17 @@ Nucleo F746ZG board includes an ST-LINK/V2-1 embedded debug tool interface.
 Flashing an application to Nucleo F746ZG
 ----------------------------------------
 
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its installation is required to be able to flash the board.
+
+Alternatively, openocd (provided in Zephyr SDK) or JLink can also be used to
+flash the board using the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+
 Here is an example for the :ref:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board.
@@ -233,3 +246,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32F746 reference manual:
    https://www.st.com/resource/en/reference_manual/dm00124865.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

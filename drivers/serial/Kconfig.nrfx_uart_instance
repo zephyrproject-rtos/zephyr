@@ -76,6 +76,13 @@ config UART_$(nrfx_uart_num)_NRF_HW_ASYNC_TIMER
 	int "Timer instance"
 	depends on UART_$(nrfx_uart_num)_NRF_HW_ASYNC
 
+config UART_$(nrfx_uart_num)_HAS_RX_CACHE_SECTION
+	def_bool $(dt_nodelabel_has_prop,uart$(nrfx_uart_num),memory-regions)
+	imply NRFX_UARTE_CONFIG_RX_CACHE_ENABLED
+	help
+	  This helper symbol indicates the existence of a linker section which
+	  can be dedicated to an RX cache buffer.
+
 config UART_$(nrfx_uart_num)_TX_CACHE_SIZE
 	int "TX cache buffer size"
 	depends on !UART_NRFX_UARTE_LEGACY_SHIM
@@ -87,7 +94,7 @@ config UART_$(nrfx_uart_num)_TX_CACHE_SIZE
 config UART_$(nrfx_uart_num)_RX_CACHE_SIZE
 	int "RX cache buffer size"
 	depends on !UART_NRFX_UARTE_LEGACY_SHIM
-	default 32 if $(dt_nodelabel_has_compat,shared_ram3x_region,$(DT_COMPAT_NORDIC_OWNED_MEMORY))
+	default 32 if UART_$(nrfx_uart_num)_HAS_RX_CACHE_SECTION
 	default 5
 	range 5 255
 	help

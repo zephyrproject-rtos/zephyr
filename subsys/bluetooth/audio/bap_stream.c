@@ -118,6 +118,7 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 	info->id = ep->status.id;
 	info->state = ep->status.state;
 	info->dir = dir;
+	info->qos_pref = &ep->qos_pref;
 
 	if (ep->iso == NULL) {
 		info->paired_ep = NULL;

@@ -13,6 +13,7 @@
  * exceptions
  */
 
+#include <zephyr/debug/symtab.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/kernel.h>
@@ -194,7 +195,7 @@ static void esf_dump(const z_arch_esf_t *esf)
 	LOG_ERR("x18: 0x%016llx  lr:  0x%016llx", esf->x18, esf->lr);
 }
 
-#ifdef CONFIG_ARM64_ENABLE_FRAME_POINTER
+#ifdef CONFIG_FRAME_POINTER
 static void esf_unwind(const z_arch_esf_t *esf)
 {
 	/*
@@ -222,10 +223,18 @@ static void esf_unwind(const z_arch_esf_t *esf)
 	uint64_t lr;
 
 	LOG_ERR("");
-	while (fp != NULL) {
+	for (int i = 0; (fp != NULL) && (i < CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES); i++) {
 		lr = fp[1];
+#ifdef CONFIG_SYMTAB
+		uint32_t offset = 0;
+		const char *name = symtab_find_symbol_name(lr, &offset);
+
+		LOG_ERR("backtrace %2d: fp: 0x%016llx lr: 0x%016llx [%s+0x%x]",
+			 count++, (uint64_t) fp, lr, name, offset);
+#else
 		LOG_ERR("backtrace %2d: fp: 0x%016llx lr: 0x%016llx",
 			 count++, (uint64_t) fp, lr);
+#endif
 		fp = (uint64_t *) fp[0];
 	}
 	LOG_ERR("");
@@ -313,11 +322,13 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 			far = read_far_el1();
 			elr = read_elr_el1();
 			break;
+#if !defined(CONFIG_ARMV8_R)
 		case MODE_EL3:
 			esr = read_esr_el3();
 			far = read_far_el3();
 			elr = read_elr_el3();
 			break;
+#endif /* CONFIG_ARMV8_R */
 		}
 
 #ifdef CONFIG_ARM64_STACK_PROTECTION
@@ -352,9 +363,9 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 		esf_dump(esf);
 	}
 
-#ifdef CONFIG_ARM64_ENABLE_FRAME_POINTER
+#ifdef CONFIG_FRAME_POINTER
 	esf_unwind(esf);
-#endif /* CONFIG_ARM64_ENABLE_FRAME_POINTER */
+#endif /* CONFIG_FRAME_POINTER */
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
 	z_fatal_error(reason, esf);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 NXP
+ * Copyright (c) 2022, 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,14 +29,16 @@ typedef uint32_t pinctrl_soc_pin_t;
 #if (defined(CONFIG_SOC_SERIES_KINETIS_KWX) &&		\
 	!(defined(CONFIG_SOC_MKW24D5) ||		\
 	defined(CONFIG_SOC_MKW22D5))) ||		\
-	defined(CONFIG_SOC_SERIES_KINETIS_KL2X) ||	\
-	defined(CONFIG_SOC_SERIES_KINETIS_KE1XF)
+	defined(CONFIG_SOC_SERIES_KINETIS_KL2X)  ||	\
+	defined(CONFIG_SOC_SERIES_KINETIS_KE1XF) ||	\
+	defined(CONFIG_SOC_SERIES_KE1XZ)
 #define PORT_PCR_ODE(x) 0x0
 #define PORT_PCR_ODE_MASK 0x0
 #endif
 
 /* Kinetis KE series does not support slew rate. Define macros to have no effect */
-#if defined(CONFIG_SOC_SERIES_KINETIS_KE1XF)
+#if defined(CONFIG_SOC_SERIES_KINETIS_KE1XF) ||		\
+	defined(CONFIG_SOC_SERIES_KE1XZ)
 #define PORT_PCR_SRE(x) 0x0
 #define PORT_PCR_SRE_MASK 0x0
 #endif

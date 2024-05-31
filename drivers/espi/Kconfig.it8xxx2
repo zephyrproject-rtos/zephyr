@@ -127,4 +127,19 @@ config ESPI_IT8XXX2_PNPCFG_DEVICE_KBC_MOUSE
 	  With this option enabled, EC will send IRQ12 signal to host when the
 	  KBC mouse output buffer is full.
 
+# On IT8xxx2 series, this configuration option has limitation:
+# Port 80 and 81 I/O cycles share the same interrupt source and there is no
+# status bit to indicate which cycle triggered the interrupt and data registers
+# of these two ports are read only. Hence EC have to read these two data
+# registers at the same time in the ISR.
+# It means that the Host must alwasy write 2 bytes of data to port 80 otherwise
+# port 81 data will not be updated.
+config ESPI_IT8XXX2_PORT_81_CYCLE
+	bool "EC accepts 0x81 I/O cycle from eSPI transaction"
+	depends on ESPI_PERIPHERAL_DEBUG_PORT_80
+	help
+	  With this option enabled, EC will accept 0x81 I/O cycle from the Host.
+	  This allows EC to accept 2 bytes of port 80 data written from the Host.
+	  (e.g. using iotools: iotools io_write16 0x80 0x1234)
+
 endif #ESPI_IT8XXX2

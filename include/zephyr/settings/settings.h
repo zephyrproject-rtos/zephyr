@@ -304,6 +304,16 @@ int settings_load_subtree_direct(
 int settings_save(void);
 
 /**
+ * Save limited set of currently running serialized items. All serialized items
+ * that belong to subtree and which are different from currently persisted
+ * values will be saved.
+ *
+ * @param[in] subtree name of the subtree to be loaded.
+ * @return 0 on success, non-zero on failure.
+ */
+int settings_save_subtree(const char *subtree);
+
+/**
  * Write a single serialized value to persisted storage (if it has
  * changed value).
  *

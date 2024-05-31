@@ -221,7 +221,7 @@ static const struct gpio_driver_api neorv32_gpio_driver_api = {
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			&neorv32_gpio_init,				\
+			neorv32_gpio_init,				\
 			NULL,						\
 			&neorv32_gpio_##n##_data,			\
 			&neorv32_gpio_##n##_config,			\

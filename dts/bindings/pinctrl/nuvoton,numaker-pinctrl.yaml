@@ -83,3 +83,6 @@ child-binding:
           Set the speed of a pin. This setting effectively limits the
           slew rate of the output signal. Hardware default configuration is low.
           Fast slew rate could support fast speed pins, like as SPI CLK up to 50MHz.
+      digital-path-disable:
+        type: boolean
+        description: disable digital path on a pin.

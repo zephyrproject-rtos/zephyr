@@ -1,0 +1,57 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rw6xx.dtsi>
+#include "frdm_rw612-pinctrl.dtsi"
+
+/ {
+	model = "nxp,frdm_rw612";
+
+	aliases {
+		led0 = &green_led;
+	};
+
+	chosen {
+		zephyr,sram = &sram_data;
+		zephyr,flash = &w25q512jvfiq;
+		zephyr,console = &flexcomm3;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_1 {
+			gpios = <&hsgpio0 12 0>;
+		};
+	};
+};
+
+&flexcomm3 {
+	compatible = "nxp,lpc-usart";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm3_usart>;
+	pinctrl-names = "default";
+};
+
+&hsgpio0 {
+	status = "okay";
+};
+
+&flexspi {
+	status = "okay";
+	/* Winbond external flash */
+	w25q512jvfiq: w25q512jvfiq@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		reg = <0>;
+		size = <(DT_SIZE_M(512) / 8)>;
+		status = "okay";
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+		spi-max-frequency = <133000000>;
+	};
+};

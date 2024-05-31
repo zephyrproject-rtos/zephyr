@@ -208,6 +208,8 @@ features:
 +-----------+------------+-------------------------------------+
 | die-temp  | on-chip    | die temperature sensor              |
 +-----------+------------+-------------------------------------+
+| RTC       | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 

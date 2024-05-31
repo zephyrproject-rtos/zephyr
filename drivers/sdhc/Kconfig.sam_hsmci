@@ -1,5 +1,5 @@
 # Copyright 2023 Nikhef
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 config SAM_HSMCI
 	bool "ATMEL SAM HSMCI driver"

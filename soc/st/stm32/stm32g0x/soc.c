@@ -16,8 +16,8 @@
 #include <string.h>
 
 #include <cmsis_core.h>
-#if defined(SYSCFG_CFGR1_UCPD1_STROBE) || defined(SYSCFG_CFGR1_UCPD2_STROBE)
 #include <stm32_ll_system.h>
+#if defined(SYSCFG_CFGR1_UCPD1_STROBE) || defined(SYSCFG_CFGR1_UCPD2_STROBE)
 #include <stm32_ll_bus.h>
 #endif /* SYSCFG_CFGR1_UCPD1_STROBE || SYSCFG_CFGR1_UCPD2_STROBE */
 
@@ -81,6 +81,10 @@ static void stm32g0_disable_dead_battery(void)
  */
 static int stm32g0_init(void)
 {
+	/* Enable ART Accelerator I-cache and prefetch */
+	LL_FLASH_EnableInstCache();
+	LL_FLASH_EnablePrefetch();
+
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 16 MHz from HSI */
 	SystemCoreClock = 16000000;

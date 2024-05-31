@@ -46,7 +46,7 @@ config CAVS_ISR_TBL_OFFSET
 if KERNEL_VM_SUPPORT
 
 config KERNEL_VM_SIZE
-	default 0x800000
+	default 0xfe0000
 
 endif
 

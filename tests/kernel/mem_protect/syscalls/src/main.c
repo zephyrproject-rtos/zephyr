@@ -63,7 +63,7 @@ static inline size_t z_vrfy_string_nlen(char *src, size_t maxlen, int *err)
 
 	return ret;
 }
-#include <syscalls/string_nlen_mrsh.c>
+#include <zephyr/syscalls/string_nlen_mrsh.c>
 
 int z_impl_string_alloc_copy(char *src)
 {
@@ -89,7 +89,7 @@ static inline int z_vrfy_string_alloc_copy(char *src)
 
 	return ret;
 }
-#include <syscalls/string_alloc_copy_mrsh.c>
+#include <zephyr/syscalls/string_alloc_copy_mrsh.c>
 
 int z_impl_string_copy(char *src)
 {
@@ -110,7 +110,7 @@ static inline int z_vrfy_string_copy(char *src)
 
 	return z_impl_string_copy(kernel_buf);
 }
-#include <syscalls/string_copy_mrsh.c>
+#include <zephyr/syscalls/string_copy_mrsh.c>
 
 /* Not actually used, but will copy wrong string if called by mistake instead
  * of the handler
@@ -125,7 +125,7 @@ static inline int z_vrfy_to_copy(char *dest)
 {
 	return k_usermode_to_copy((char *)dest, user_string, BUF_SIZE);
 }
-#include <syscalls/to_copy_mrsh.c>
+#include <zephyr/syscalls/to_copy_mrsh.c>
 
 int z_impl_syscall_arg64(uint64_t arg)
 {
@@ -139,7 +139,7 @@ static inline int z_vrfy_syscall_arg64(uint64_t arg)
 {
 	return z_impl_syscall_arg64(arg);
 }
-#include <syscalls/syscall_arg64_mrsh.c>
+#include <zephyr/syscalls/syscall_arg64_mrsh.c>
 
 /* Bigger 64 bit arg syscall to exercise marshalling 7+ words of
  * arguments (this one happens to need 9), and to test generation of
@@ -166,7 +166,7 @@ static inline uint64_t z_vrfy_syscall_arg64_big(uint32_t arg1, uint32_t arg2,
 {
 	return z_impl_syscall_arg64_big(arg1, arg2, arg3, arg4, arg5, arg6);
 }
-#include <syscalls/syscall_arg64_big_mrsh.c>
+#include <zephyr/syscalls/syscall_arg64_big_mrsh.c>
 
 uint32_t z_impl_more_args(uint32_t arg1, uint32_t arg2, uint32_t arg3,
 			  uint32_t arg4, uint32_t arg5, uint32_t arg6,
@@ -190,7 +190,7 @@ static inline uint32_t z_vrfy_more_args(uint32_t arg1, uint32_t arg2,
 {
 	return z_impl_more_args(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
-#include <syscalls/more_args_mrsh.c>
+#include <zephyr/syscalls/more_args_mrsh.c>
 
 /**
  * @brief Test to demonstrate usage of k_usermode_string_nlen()
@@ -417,7 +417,7 @@ static inline bool z_vrfy_syscall_context(void)
 {
 	return z_impl_syscall_context();
 }
-#include <syscalls/syscall_context_mrsh.c>
+#include <zephyr/syscalls/syscall_context_mrsh.c>
 
 void test_syscall_context_user(void *p1, void *p2, void *p3)
 {

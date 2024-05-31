@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/phy.h>
 #include <ethernet/eth_stats.h>
 #include <soc.h>
 #include <zephyr/sys/printk.h>
@@ -56,6 +57,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define PHY_ADDR	CONFIG_ETH_STM32_HAL_PHY_ADDRESS
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
+
+#define DEVICE_PHY_BY_NAME(n) \
+	    DEVICE_DT_GET(DT_CHILD(DT_INST_CHILD(n, mdio), ethernet_phy_0))
+
+static const struct device *eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
 
 #define PHY_BSR  ((uint16_t)0x0001U)  /*!< Transceiver Basic Status Register */
 #define PHY_LINKED_STATUS  ((uint16_t)0x0004U)  /*!< Valid link established */
@@ -211,8 +217,9 @@ static HAL_StatusTypeDef read_eth_phy_register(ETH_HandleTypeDef *heth,
 						uint32_t PHYReg,
 						uint32_t *RegVal)
 {
-#if defined(CONFIG_SOC_SERIES_STM32H7X) ||  defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_ETH_STM32_HAL_API_V2)
+#if defined(CONFIG_MDIO)
+	return phy_read(eth_stm32_phy_dev, PHYReg, RegVal);
+#elif defined(CONFIG_ETH_STM32_HAL_API_V2)
 	return HAL_ETH_ReadPHYRegister(heth, PHYAddr, PHYReg, RegVal);
 #else
 	ARG_UNUSED(PHYAddr);
@@ -1223,7 +1230,6 @@ static int eth_initialize(const struct device *dev)
 	}
 
 	setup_mac_filter(heth);
-
 
 
 	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",

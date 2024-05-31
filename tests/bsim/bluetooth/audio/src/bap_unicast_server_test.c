@@ -490,7 +490,7 @@ static void init(void)
 					  &stream_ops);
 	}
 
-	/* Create a non-connectable non-scannable advertising set */
+	/* Create a connectable advertising set */
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &ext_adv);
 	if (err != 0) {
 		FAIL("Failed to create advertising set (err %d)\n", err);
@@ -600,13 +600,13 @@ static void test_main_acl_disconnect(void)
 static const struct bst_test_instance test_unicast_server[] = {
 	{
 		.test_id = "unicast_server",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},
 	{
 		.test_id = "unicast_server_acl_disconnect",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_acl_disconnect,
 	},

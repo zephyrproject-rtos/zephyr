@@ -25,4 +25,9 @@
 			int-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	led {
+		compatible = "hzgrow,r502a-led";
+		status = "okay";
+	};
 };

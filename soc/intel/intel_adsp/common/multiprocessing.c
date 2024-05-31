@@ -17,7 +17,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 
-#include <zsr.h>
+#include <zephyr/zsr.h>
 #include <cavs-idc.h>
 #include <soc.h>
 #include <zephyr/cache.h>

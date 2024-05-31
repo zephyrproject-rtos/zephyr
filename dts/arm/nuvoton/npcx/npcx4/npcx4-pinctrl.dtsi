@@ -30,6 +30,22 @@
 		dev-ctl = <0x0 6 1 0x01>;
 	};
 
+	/omit-if-no-ref/ sio_clk_sel_96m: devctl3-sio-clk_sel-96m {
+		dev-ctl = <0x4 6 2 0x00>;
+	};
+
+	/omit-if-no-ref/ sio_clk_sel_100: devctl3-sio-clk_sel-100m {
+		dev-ctl = <0x4 6 2 0x01>;
+	};
+
+	/omit-if-no-ref/ sio_clk_sel_120m: devctl3-sio-clk_sel-120m {
+		dev-ctl = <0x4 6 2 0x02>;
+	};
+
+	/omit-if-no-ref/ sio_clk_sel_90m: devctl3-sio-clk_sel-90m {
+		dev-ctl = <0x4 6 2 0x03>;
+	};
+
 	/* Prebuild nodes for peripheral device's pin-muxing and pad properties */
 	/* Flash Interface Unit (FIU) */
 	/omit-if-no-ref/ fiu_ext_io0_io1_clk_cs_gpa4_96_a2_a0: periph-fiu-ext {

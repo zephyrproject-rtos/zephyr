@@ -53,6 +53,10 @@ Page Frame
   addresses. For every page frame, a ``struct z_page_frame`` is instantiated to
   store metadata. Flags for each page frame:
 
+  * ``Z_PAGE_FRAME_FREE`` indicates a page frame is unused and on the list of
+    free page frames. When this flag is set, none of the other flags are
+    meaningful and they must not be modified.
+
   * ``Z_PAGE_FRAME_PINNED`` indicates a page frame is pinned in memory
     and should never be paged out.
 

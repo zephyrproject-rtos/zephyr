@@ -26,6 +26,7 @@ class DeviceConfig:
     id: str = ''
     product: str = ''
     serial_pty: str = ''
+    flash_before: bool = False
     west_flash_extra_args: list[str] = field(default_factory=list, repr=False)
     name: str = ''
     pre_script: Path | None = None
@@ -62,6 +63,7 @@ class TwisterHarnessConfig:
             id=config.option.device_id,
             product=config.option.device_product,
             serial_pty=config.option.device_serial_pty,
+            flash_before=bool(config.option.flash_before),
             west_flash_extra_args=west_flash_extra_args,
             pre_script=_cast_to_path(config.option.pre_script),
             post_script=_cast_to_path(config.option.post_script),

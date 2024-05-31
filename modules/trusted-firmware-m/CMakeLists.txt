@@ -15,21 +15,6 @@ set(TFM_VALID_PARTITIONS
   TFM_PARTITION_FIRMWARE_UPDATE
   )
 
-# List of all crypto modules that can be enabled/disabled
-# Corresponds to the *_MODULE_DISABLED configs in 'trusted-firmware-m/secure_fw/partitions/crypto/Kconfig'
-set(TFM_CRYPTO_MODULES
-  CRYPTO_RNG_MODULE
-  CRYPTO_KEY_MODULE
-  CRYPTO_AEAD_MODULE
-  CRYPTO_MAC_MODULE
-  CRYPTO_HASH_MODULE
-  CRYPTO_CIPHER_MODULE
-  CRYPTO_ASYM_SIGN_MODULE
-  CRYPTO_ASYM_ENCRYPT_MODULE
-  CRYPTO_KEY_DERIVATION_MODULE
-  )
-
-
 if (CONFIG_BUILD_WITH_TFM)
   # PSA API awareness for the Non-Secure application
   target_compile_definitions(app PRIVATE "TFM_PSA_API")
@@ -50,6 +35,25 @@ if (CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DBL2=TRUE)
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_VERSION_S=${CONFIG_TFM_IMAGE_VERSION_S})
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_VERSION_NS=${CONFIG_TFM_IMAGE_VERSION_NS})
+    list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_SIGNATURE_TYPE=${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE})
+
+    # TF-M's config/check_config.cmake requires MCUBOOT_BUILTIN_KEY=OFF for RSA
+    # and MCUBOOT_USE_PSA_CRYPTO for EC-P. The others are dependencies needed
+    # for either the build or the boot to succeed.
+    if (${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE} MATCHES "^RSA")
+      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_BUILTIN_KEY=OFF)
+      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_HW_KEY=ON)
+    elseif (${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE} MATCHES "^EC-P")
+      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_USE_PSA_CRYPTO=ON)
+      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_BUILTIN_KEY=ON)
+      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_HW_KEY=OFF)
+    endif()
+
+    foreach(SUFFIX IN ITEMS "S" "NS")
+      string(CONFIGURE ${CONFIG_TFM_KEY_FILE_${SUFFIX}} CONFIG_TFM_KEY_FILE_${SUFFIX})
+      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_KEY_${SUFFIX}=${CONFIG_TFM_KEY_FILE_${SUFFIX}})
+    endforeach()
+
   else()
     list(APPEND TFM_CMAKE_ARGS -DBL2=FALSE)
   endif()
@@ -148,17 +152,7 @@ if (CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -D${partition}=${val})
   endforeach()
 
-  # Enable TFM crypto modules as specified in Kconfig
-  foreach(module ${TFM_CRYPTO_MODULES})
-    if (CONFIG_TFM_${module}_ENABLED)
-      # list(APPEND TFM_ENABLED_CRYPTO_MODULES_ARG ${module})
-      list(APPEND TFM_CMAKE_ARGS -D${module}_ENABLED=True)
-    endif()
-  endforeach()
-
   set(TFM_BINARY_DIR ${CMAKE_BINARY_DIR}/tfm)
-
-  set(PSA_ARCH_TESTS_PATH ${ZEPHYR_CURRENT_MODULE_DIR}/../psa-arch-tests)
 
   set(TFM_INTERFACE_SOURCE_DIR   ${TFM_BINARY_DIR}/api_ns/interface/src)
   set(TFM_INTERFACE_INCLUDE_DIR  ${TFM_BINARY_DIR}/api_ns/interface/include)
@@ -224,6 +218,16 @@ if (CONFIG_BUILD_WITH_TFM)
     message(FATAL_ERROR "Unsupported ZEPHYR_TOOLCHAIN_VARIANT: ${ZEPHYR_TOOLCHAIN_VARIANT}")
   endif()
 
+  if (CONFIG_TFM_PARTITION_INITIAL_ATTESTATION AND CONFIG_TFM_QCBOR_PATH STREQUAL "")
+    # TODO: Remove this when QCBOR licensing issues w/t_cose have been resolved,
+    # or only allow it when 'QCBOR_PATH' is set to a local path where QCBOR has
+    # been manually downloaded by the user before starting the build.
+    message(FATAL_ERROR "CONFIG_TFM_PARTITION_INITIAL_ATTESTATION is not available "
+      "with TF-M due to licensing issues with a dependent library. This "
+      "restriction will be removed once licensing issues have been resolved."
+      )
+  endif()
+
   string(REPLACE "toolchain" "toolchain_ns" TFM_TOOLCHAIN_NS_FILE ${TFM_TOOLCHAIN_FILE})
 
   if(CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU0_NS)
@@ -251,6 +255,8 @@ if (CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_ENABLE_FP=OFF)
   endif()
 
+  list(APPEND TFM_CMAKE_ARGS -DTFM_TESTS_REVISION_CHECKS=OFF)
+
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
   add_custom_target(tfm_cmake
     DEPENDS ${TFM_BINARY_DIR}/CMakeCache.txt
@@ -264,13 +270,11 @@ if (CONFIG_BUILD_WITH_TFM)
       -DCMAKE_BUILD_TYPE=${TFM_CMAKE_BUILD_TYPE}
       -DTFM_PLATFORM=${CONFIG_TFM_BOARD}
       -DCONFIG_TFM_BUILD_LOG_QUIET=ON
-      -DSILENCE_TFM_VERSION_WARNING=ON
       -DCONFIG_TFM_MEMORY_USAGE_QUIET=OFF
       -DPython3_EXECUTABLE=${Python3_EXECUTABLE}
       ${TFM_CMAKE_ARGS}
       $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
       -DMBEDCRYPTO_PATH=$<IF:$<BOOL:$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>>,$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>,${ZEPHYR_MBEDTLS_MODULE_DIR}>
-      -DPSA_ARCH_TESTS_PATH=${PSA_ARCH_TESTS_PATH}
       ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}
     WORKING_DIRECTORY ${TFM_BINARY_DIR}
     COMMAND_EXPAND_LISTS
@@ -363,9 +367,14 @@ if (CONFIG_BUILD_WITH_TFM)
     zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
   endif()
 
-  target_include_directories(tfm_api PRIVATE
+  target_include_directories(tfm_api PUBLIC
     ${TFM_INTERFACE_INCLUDE_DIR}
     ${TFM_INTERFACE_INCLUDE_DIR}/crypto_keys
+    ${ZEPHYR_BASE}/modules/mbedtls/configs
+    )
+  # Pass down the MbedTLS configuration file to use.
+  target_compile_definitions(tfm_api PUBLIC
+    MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
     )
 
   zephyr_library_link_libraries(

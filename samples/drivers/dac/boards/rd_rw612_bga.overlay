@@ -1,0 +1,12 @@
+/ {
+	zephyr,user {
+		dac = <&dac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <10>;
+	};
+};
+
+&dac0 {
+	nxp,conversion-rate = "500K";
+	nxp,output-voltage-range = "large";
+};

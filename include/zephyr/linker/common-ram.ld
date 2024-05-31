@@ -43,7 +43,7 @@
                 __device_states_end = .;
         } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#if CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE
 	ITERABLE_SECTION_RAM(pm_device_slots, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 
@@ -94,10 +94,6 @@
 #if defined(CONFIG_PCIE)
 	ITERABLE_SECTION_RAM(pcie_dev, Z_LINK_ITERABLE_SUBALIGN)
 #endif /* PCIE */
-
-#if defined(CONFIG_UART_MUX)
-	ITERABLE_SECTION_RAM(uart_mux, Z_LINK_ITERABLE_SUBALIGN)
-#endif
 
 #if defined(CONFIG_USB_DEVICE_STACK)
 	SECTION_DATA_PROLOGUE(usb_descriptor,,SUBALIGN(1))

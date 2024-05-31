@@ -27,10 +27,11 @@
 extern "C" {
 #endif
 
+/** IGMP parameters */
 struct igmp_param {
-	struct in_addr *source_list; /* List of sources to include or exclude */
-	size_t sources_len;          /* Length of source list */
-	bool include;                /* Source list filter type */
+	struct in_addr *source_list; /**< List of sources to include or exclude */
+	size_t sources_len;          /**< Length of source list */
+	bool include;                /**< Source list filter type */
 };
 
 /**

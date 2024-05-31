@@ -37,6 +37,7 @@
 #include "keys.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
+#include "classic/l2cap_br_interface.h"
 #include "smp.h"
 
 #define LOG_LEVEL CONFIG_BT_SMP_LOG_LEVEL
@@ -815,7 +816,7 @@ static void smp_br_timeout(struct k_work *work)
 static void smp_br_send(struct bt_smp_br *smp, struct net_buf *buf,
 			bt_conn_tx_cb_t cb)
 {
-	int err = bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf, cb, NULL);
+	int err = bt_l2cap_br_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf, cb, NULL);
 
 	if (err) {
 		if (err == -ENOBUFS) {
@@ -1397,7 +1398,8 @@ static int smp_br_error(struct bt_smp_br *smp, uint8_t reason)
 	 * SMP timer is not restarted for PairingFailed so don't use
 	 * smp_br_send
 	 */
-	if (bt_l2cap_send(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf)) {
+	if (bt_l2cap_br_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf,
+				NULL, NULL)) {
 		net_buf_unref(buf);
 	}
 

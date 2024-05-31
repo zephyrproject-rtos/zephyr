@@ -43,6 +43,12 @@ struct pwm_it8xxx2_cfg {
 	const struct pinctrl_dev_config *pcfg;
 };
 
+struct pwm_it8xxx2_data {
+	uint32_t ctr;
+	uint32_t cxcprs;
+	uint32_t target_freq_prev;
+};
+
 static void pwm_enable(const struct device *dev, int enabled)
 {
 	const struct pwm_it8xxx2_cfg *config = dev->config;
@@ -92,11 +98,12 @@ static int pwm_it8xxx2_set_cycles(const struct device *dev,
 {
 	const struct pwm_it8xxx2_cfg *config = dev->config;
 	struct pwm_it8xxx2_regs *const inst = config->base;
+	struct pwm_it8xxx2_data *data = dev->data;
 	volatile uint8_t *reg_dcr = (uint8_t *)config->reg_dcr;
 	volatile uint8_t *reg_pwmpol = (uint8_t *)config->reg_pwmpol;
 	int ch = config->channel;
 	int prs_sel = config->prs_sel;
-	uint32_t actual_freq = 0xffffffff, target_freq, deviation, cxcprs, ctr;
+	uint32_t actual_freq = 0xffffffff, target_freq, deviation;
 	uint64_t pwm_clk_src;
 
 	/* Select PWM inverted polarity (ex. active-low pulse) */
@@ -162,47 +169,58 @@ static int pwm_it8xxx2_set_cycles(const struct device *dev,
 	 *          CTRx[7:0] value 00h results in a divisor 1
 	 *          CTRx[7:0] value FFh results in a divisor 256
 	 */
-	for (ctr = 0xFF; ctr >= PWM_CTRX_MIN; ctr--) {
-		cxcprs = (((uint32_t) pwm_clk_src) / (ctr + 1) / target_freq);
-		/*
-		 * Make sure cxcprs isn't zero, or we will have
-		 * divide-by-zero on calculating actual_freq.
-		 */
-		if (cxcprs != 0) {
-			actual_freq = ((uint32_t) pwm_clk_src) / (ctr + 1) / cxcprs;
-			if (abs(actual_freq - target_freq) < deviation) {
-				/* CxCPRS[15:0] = cxcprs - 1 */
-				cxcprs--;
-				break;
+	if (target_freq != data->target_freq_prev) {
+		uint32_t ctr, cxcprs;
+
+		for (ctr = 0xFF; ctr >= PWM_CTRX_MIN; ctr--) {
+			cxcprs = (((uint32_t) pwm_clk_src) / (ctr + 1) / target_freq);
+			/*
+			 * Make sure cxcprs isn't zero, or we will have
+			 * divide-by-zero on calculating actual_freq.
+			 */
+			if (cxcprs != 0) {
+				actual_freq = ((uint32_t) pwm_clk_src) / (ctr + 1) / cxcprs;
+				if (abs(actual_freq - target_freq) < deviation) {
+					/* CxCPRS[15:0] = cxcprs - 1 */
+					cxcprs--;
+					break;
+				}
 			}
 		}
-	}
 
-	if (cxcprs > UINT16_MAX) {
-		LOG_ERR("PWM prescaler CxCPRS only support 2 bytes !");
-		return -EINVAL;
+		if (cxcprs > UINT16_MAX) {
+			LOG_ERR("PWM prescaler CxCPRS only support 2 bytes !");
+			return -EINVAL;
+		}
+
+		/* Store ctr and cxcprs with successful frequency change */
+		data->ctr = ctr;
+		data->cxcprs = cxcprs;
 	}
 
 	/* Set PWM prescaler clock divide and cycle time register */
 	if (prs_sel == PWM_PRESCALER_C4) {
-		inst->C4CPRS = cxcprs & 0xFF;
-		inst->C4MCPRS = (cxcprs >> 8) & 0xFF;
-		inst->CTR1 = ctr;
+		inst->C4CPRS = data->cxcprs & 0xFF;
+		inst->C4MCPRS = (data->cxcprs >> 8) & 0xFF;
+		inst->CTR1 = data->ctr;
 	} else if (prs_sel == PWM_PRESCALER_C6) {
-		inst->C6CPRS = cxcprs & 0xFF;
-		inst->C6MCPRS = (cxcprs >> 8) & 0xFF;
-		inst->CTR2 = ctr;
+		inst->C6CPRS = data->cxcprs & 0xFF;
+		inst->C6MCPRS = (data->cxcprs >> 8) & 0xFF;
+		inst->CTR2 = data->ctr;
 	} else if (prs_sel == PWM_PRESCALER_C7) {
-		inst->C7CPRS = cxcprs & 0xFF;
-		inst->C7MCPRS = (cxcprs >> 8) & 0xFF;
-		inst->CTR3 = ctr;
+		inst->C7CPRS = data->cxcprs & 0xFF;
+		inst->C7MCPRS = (data->cxcprs >> 8) & 0xFF;
+		inst->CTR3 = data->ctr;
 	}
 
 	/* Set PWM channel duty cycle register */
-	*reg_dcr = (ctr * pulse_cycles) / period_cycles;
+	*reg_dcr = (data->ctr * pulse_cycles) / period_cycles;
 
 	/* PWM channel clock source not gating */
 	pwm_enable(dev, 1);
+
+	/* Store the frequency to be compared */
+	data->target_freq_prev = target_freq;
 
 	LOG_DBG("clock source freq %d, target freq %d",
 		(uint32_t) pwm_clk_src, target_freq);
@@ -277,10 +295,12 @@ static const struct pwm_driver_api pwm_it8xxx2_api = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
 	};										\
 											\
+	static struct pwm_it8xxx2_data pwm_it8xxx2_data_##inst;                         \
+											\
 	DEVICE_DT_INST_DEFINE(inst,							\
 			      &pwm_it8xxx2_init,					\
 			      NULL,							\
-			      NULL,							\
+			      &pwm_it8xxx2_data_##inst,					\
 			      &pwm_it8xxx2_cfg_##inst,					\
 			      PRE_KERNEL_1,						\
 			      CONFIG_PWM_INIT_PRIORITY,					\

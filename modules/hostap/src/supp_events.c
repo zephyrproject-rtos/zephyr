@@ -36,6 +36,7 @@ static const struct wpa_supp_event_info {
 	{ "CTRL-EVENT-BSS-REMOVED", SUPPLICANT_EVENT_BSS_REMOVED },
 	{ "CTRL-EVENT-TERMINATING", SUPPLICANT_EVENT_TERMINATING },
 	{ "CTRL-EVENT-SCAN-STARTED", SUPPLICANT_EVENT_SCAN_STARTED },
+	{ "CTRL-EVENT-SCAN-RESULTS", SUPPLICANT_EVENT_SCAN_RESULTS },
 	{ "CTRL-EVENT-SCAN-FAILED", SUPPLICANT_EVENT_SCAN_FAILED },
 	{ "CTRL-EVENT-NETWORK-NOT-FOUND", SUPPLICANT_EVENT_NETWORK_NOT_FOUND },
 	{ "CTRL-EVENT-NETWORK-ADDED", SUPPLICANT_EVENT_NETWORK_ADDED },
@@ -67,7 +68,7 @@ static enum wifi_conn_status wpas_to_wifi_mgmt_conn_status(int status)
 	}
 }
 
-static enum wifi_disconn_reason wpas_to_wifi_mgmt_diconn_status(int status)
+static enum wifi_disconn_reason wpas_to_wifi_mgmt_disconn_status(int status)
 {
 	switch (status) {
 	case WLAN_REASON_DEAUTH_LEAVING:
@@ -172,6 +173,7 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 		break;
 	case SUPPLICANT_EVENT_TERMINATING:
 	case SUPPLICANT_EVENT_SCAN_STARTED:
+	case SUPPLICANT_EVENT_SCAN_RESULTS:
 	case SUPPLICANT_EVENT_SCAN_FAILED:
 	case SUPPLICANT_EVENT_NETWORK_NOT_FOUND:
 	case SUPPLICANT_EVENT_NETWORK_ADDED:
@@ -219,7 +221,7 @@ int supplicant_send_wifi_mgmt_conn_event(void *ctx, int status_code)
 int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code)
 {
 	struct wpa_supplicant *wpa_s = ctx;
-	int status = wpas_to_wifi_mgmt_diconn_status(reason_code);
+	int status = wpas_to_wifi_mgmt_disconn_status(reason_code);
 	enum net_event_wifi_cmd event;
 
 	if (!wpa_s || !wpa_s->current_ssid) {

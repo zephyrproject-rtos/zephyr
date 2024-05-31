@@ -1,0 +1,42 @@
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon PSoC6 (legacy) series MCUs
+config SOC_CY8C6247_M0
+	bool
+	select SOC_SERIES_PSOC6_62
+	select SOC_FAMILY_PSOC6_LEGACY
+	select SOC_FAMILY_PSOC6_LEGACY_M0
+
+config SOC_CY8C6247_M4
+	bool
+	select SOC_SERIES_PSOC6_62
+	select SOC_FAMILY_PSOC6_LEGACY
+	select SOC_FAMILY_PSOC6_LEGACY_M4
+
+config SOC_CY8C6347_M0
+	bool
+	select SOC_SERIES_PSOC6_63
+	select SOC_FAMILY_PSOC6_LEGACY
+	select SOC_FAMILY_PSOC6_LEGACY_M0
+
+config SOC_CY8C6347_M4
+	bool
+	select SOC_SERIES_PSOC6_63
+	select SOC_FAMILY_PSOC6_LEGACY
+	select SOC_FAMILY_PSOC6_LEGACY_M4
+
+config SOC_PART_NUMBER_CY8C6247BZI_D54
+	bool
+
+config SOC_PART_NUMBER_CY8C6347BZI_BLD53
+	bool
+
+config SOC
+	default "cy8c6247" if SOC_CY8C6247_M0 || SOC_CY8C6247_M4
+	default "cy8c6347" if SOC_CY8C6347_M0 || SOC_CY8C6347_M4
+
+config SOC_PART_NUMBER
+	default "CY8C6247BZI_D54" if SOC_PART_NUMBER_CY8C6247BZI_D54
+	default "CY8C6347BZI_BLD53" if SOC_PART_NUMBER_CY8C6347BZI_BLD53

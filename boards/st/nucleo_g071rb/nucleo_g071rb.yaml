@@ -25,4 +25,5 @@ supported:
   - dma
   - lptim
   - nvs
+  - rtc
 vendor: st

@@ -562,8 +562,8 @@ static void init(void)
 		.rank = 1,
 		.lockable = true,
 		/* Using the CSIP_SET_MEMBER test sample SIRK */
-		.set_sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
-			      0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
+		.sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
+			  0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
 	};
 
 	int err;
@@ -616,7 +616,7 @@ static void init(void)
 			bt_cap_stream_ops_register(&unicast_streams[i], &unicast_stream_ops);
 		}
 
-		err = bt_le_adv_start(BT_LE_ADV_CONN, cap_acceptor_ad,
+		err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, cap_acceptor_ad,
 				      ARRAY_SIZE(cap_acceptor_ad), NULL, 0);
 		if (err != 0) {
 			FAIL("Advertising failed to start (err %d)\n", err);
@@ -889,25 +889,25 @@ static void test_cap_acceptor_capture_and_render(void)
 static const struct bst_test_instance test_cap_acceptor[] = {
 	{
 		.test_id = "cap_acceptor_unicast",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_acceptor_unicast,
 	},
 	{
 		.test_id = "cap_acceptor_unicast_timeout",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_acceptor_unicast_timeout,
 	},
 	{
 		.test_id = "cap_acceptor_broadcast",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_acceptor_broadcast,
 	},
 	{
 		.test_id = "cap_acceptor_capture_and_render",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_acceptor_capture_and_render,
 	},

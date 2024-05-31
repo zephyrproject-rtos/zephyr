@@ -29,12 +29,16 @@ extern "C" {
  * @{
  */
 
+/** @cond INTERNAL_HIDDEN */
+
 /* Protocols of the protocol family PF_NET_MGMT */
 #define NET_MGMT_EVENT_PROTO 0x01
 
 /* Socket NET_MGMT options */
 #define SOL_NET_MGMT_BASE 100
 #define SOL_NET_MGMT_RAW (SOL_NET_MGMT_BASE + 1)
+
+/** @endcond */
 
 /**
  * struct sockaddr_nm - The sockaddr structure for NET_MGMT sockets

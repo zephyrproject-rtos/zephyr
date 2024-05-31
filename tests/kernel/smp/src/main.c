@@ -1172,6 +1172,50 @@ ZTEST(smp, test_smp_switch_torture)
 	}
 }
 
+/**
+ * @brief Torture test for cpu affinity code
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details Pin thread to a specific cpu. Once thread gets cpu, check
+ *          the cpu id is correct and then thread will give up cpu.
+ */
+#ifdef CONFIG_SCHED_CPU_MASK
+static void check_affinity(void *arg0, void *arg1, void *arg2)
+{
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+
+	int affinity = POINTER_TO_INT(arg0);
+	int counter = 30;
+
+	while (counter != 0) {
+		zassert_equal(affinity, curr_cpu(), "Affinity test failed.");
+		counter--;
+		k_yield();
+	}
+}
+
+ZTEST(smp, test_smp_affinity)
+{
+	int num_threads = arch_num_cpus();
+
+	for (int i = 0; i < num_threads; ++i) {
+		k_thread_create(&tthread[i], tstack[i],
+					       STACK_SIZE, check_affinity,
+					       INT_TO_POINTER(i), NULL, NULL,
+					       0, 0, K_FOREVER);
+
+		k_thread_cpu_pin(&tthread[i], i);
+		k_thread_start(&tthread[i]);
+	}
+
+	for (int i = 0; i < num_threads; i++) {
+		k_thread_join(&tthread[i], K_FOREVER);
+	}
+}
+#endif
+
 static void *smp_tests_setup(void)
 {
 	/* Sleep a bit to guarantee that both CPUs enter an idle

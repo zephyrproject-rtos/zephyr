@@ -6,7 +6,7 @@
 
 #include <zephyr/sys/printk.h>
 #include <zephyr/shell/shell.h>
-#include <version.h>
+#include <zephyr/version.h>
 #include <stdlib.h>
 #include <zephyr/drivers/fpga.h>
 

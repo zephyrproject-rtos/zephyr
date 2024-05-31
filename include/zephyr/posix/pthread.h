@@ -276,20 +276,6 @@ int pthread_mutexattr_init(pthread_mutexattr_t *attr);
  */
 int pthread_mutexattr_destroy(pthread_mutexattr_t *attr);
 
-/**
- * @brief Declare a pthread barrier
- *
- * Declaration API for a pthread barrier.  This is not a
- * POSIX API, it's provided to better conform with Zephyr's allocation
- * strategies for kernel objects.
- *
- * @param name Symbol name of the barrier
- * @param count Thread count, same as the "count" argument to
- *             pthread_barrier_init()
- * @deprecated Use @ref pthread_barrier_init instead.
- */
-#define PTHREAD_BARRIER_DEFINE(name, count) pthread_barrier_t name = -1 __DEPRECATED_MACRO
-
 #define PTHREAD_BARRIER_SERIAL_THREAD 1
 
 /*

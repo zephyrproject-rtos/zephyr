@@ -49,7 +49,6 @@ static void mock_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data)
 
 #define CONFIG_SMBUS_INTEL_PCH_ACCESS_IO
 #define device_map(a, b, c, d)
-#define pcie_probe(bdf, id)	1
 #define pcie_set_cmd(a, b, c)
 
 #define SMBUS_EMUL	"smbus_emul"

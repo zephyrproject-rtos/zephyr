@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <sample_usbd.h>
+
 #include <string.h>
 
 #include <zephyr/kernel.h>
@@ -14,6 +16,7 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/usb/usb_device.h>
+#include <zephyr/usb/usbd.h>
 #include <zephyr/usb/class/usb_hid.h>
 
 #include <zephyr/logging/log.h>
@@ -34,10 +37,10 @@ enum mouse_report_idx {
 	MOUSE_REPORT_COUNT = 4,
 };
 
-static uint8_t report[MOUSE_REPORT_COUNT];
+static uint8_t __aligned(sizeof(void *)) report[MOUSE_REPORT_COUNT];
 static K_SEM_DEFINE(report_sem, 0, 1);
 
-static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
+static inline void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 {
 	usb_status = status;
 }
@@ -93,6 +96,30 @@ static void input_cb(struct input_event *evt)
 
 INPUT_CALLBACK_DEFINE(NULL, input_cb);
 
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
+static int enable_usb_device_next(void)
+{
+	struct usbd_contex *sample_usbd;
+	int err;
+
+	sample_usbd = sample_usbd_init_device(NULL);
+	if (sample_usbd == NULL) {
+		LOG_ERR("Failed to initialize USB device");
+		return -ENODEV;
+	}
+
+	err = usbd_enable(sample_usbd);
+	if (err) {
+		LOG_ERR("Failed to enable device support");
+		return err;
+	}
+
+	LOG_DBG("USB device support enabled");
+
+	return 0;
+}
+#endif /* IS_ENABLED(CONFIG_USB_DEVICE_STACK_NEXT) */
+
 int main(void)
 {
 	const struct device *hid_dev;
@@ -103,7 +130,11 @@ int main(void)
 		return 0;
 	}
 
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
+	hid_dev = DEVICE_DT_GET_ONE(zephyr_hid_device);
+#else
 	hid_dev = device_get_binding("HID_0");
+#endif
 	if (hid_dev == NULL) {
 		LOG_ERR("Cannot get USB HID Device");
 		return 0;
@@ -121,7 +152,11 @@ int main(void)
 
 	usb_hid_init(hid_dev);
 
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
+	ret = enable_usb_device_next();
+#else
 	ret = usb_enable(status_cb);
+#endif
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
 		return 0;

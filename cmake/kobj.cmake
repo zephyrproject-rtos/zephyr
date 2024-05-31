@@ -2,9 +2,9 @@
 
 function(gen_kobj gen_dir_out)
   if (PROJECT_BINARY_DIR)
-    set(gen_dir ${PROJECT_BINARY_DIR}/include/generated)
+    set(gen_dir ${PROJECT_BINARY_DIR}/include/generated/zephyr)
   else ()
-    set(gen_dir ${CMAKE_BINARY_DIR}/include/generated)
+    set(gen_dir ${CMAKE_BINARY_DIR}/include/generated/zephyr)
   endif ()
 
   set(KOBJ_TYPES ${gen_dir}/kobj-types-enum.h)
@@ -30,6 +30,7 @@ function(gen_kobj gen_dir_out)
     )
   add_custom_target(${KOBJ_TYPES_H_TARGET} DEPENDS ${KOBJ_TYPES} ${KOBJ_OTYPE})
 
+  cmake_path(GET gen_dir PARENT_PATH gen_dir)
   set(${gen_dir_out} ${gen_dir} PARENT_SCOPE)
 
 endfunction ()

@@ -106,6 +106,30 @@ static void create_per_adv_set(struct bt_le_ext_adv **adv)
 	printk("done.\n");
 }
 
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+static void create_per_adv_set_coded(struct bt_le_ext_adv **adv)
+{
+	int err;
+
+	printk("Creating coded PHY extended advertising set...");
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CODED_NCONN, NULL, adv);
+	if (err) {
+		printk("Failed to create advertising set: %d\n", err);
+		return;
+	}
+	printk("done.\n");
+
+	printk("Setting periodic advertising parameters...");
+	err = bt_le_per_adv_set_param(*adv, BT_LE_PER_ADV_DEFAULT);
+	if (err) {
+		printk("Failed to set periodic advertising parameters: %d\n",
+		       err);
+		return;
+	}
+	printk("done.\n");
+}
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+
 static void create_conn_adv_set(struct bt_le_ext_adv **adv)
 {
 	int err;
@@ -228,6 +252,31 @@ static void main_per_adv_advertiser(void)
 	PASS("Periodic advertiser passed\n");
 }
 
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+static void main_per_adv_advertiser_coded(void)
+{
+	struct bt_le_ext_adv *per_adv;
+
+	common_init();
+
+	create_per_adv_set_coded(&per_adv);
+
+	start_per_adv_set(per_adv);
+	start_ext_adv_set(per_adv);
+
+	/* Advertise for a bit */
+	k_sleep(K_SECONDS(10));
+
+	stop_per_adv_set(per_adv);
+	stop_ext_adv_set(per_adv);
+
+	delete_adv_set(per_adv);
+	per_adv = NULL;
+
+	PASS("Periodic advertiser coded PHY passed\n");
+}
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+
 static void main_per_adv_conn_advertiser(void)
 {
 	struct bt_le_ext_adv *conn_adv;
@@ -325,15 +374,25 @@ static const struct bst_test_instance per_adv_advertiser[] = {
 		.test_id = "per_adv_advertiser",
 		.test_descr = "Basic periodic advertising test. "
 			      "Will just start periodic advertising.",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_advertiser
 	},
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	{
+		.test_id = "per_adv_advertiser_coded_phy",
+		.test_descr = "Basic periodic advertising test on Coded PHY. "
+			      "Advertiser and periodic advertiser uses Coded PHY",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = main_per_adv_advertiser_coded
+	},
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
 	{
 		.test_id = "per_adv_conn_advertiser",
 		.test_descr = "Periodic advertising test with concurrent ACL "
 			      "and PA sync.",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_conn_advertiser
 	},
@@ -341,15 +400,15 @@ static const struct bst_test_instance per_adv_advertiser[] = {
 		.test_id = "per_adv_conn_privacy_advertiser",
 		.test_descr = "Periodic advertising test with concurrent ACL "
 			      "with bonding and PA sync.",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_conn_privacy_advertiser
 	},
 	{
 		.test_id = "per_adv_long_data_advertiser",
 		.test_descr = "Periodic advertising test with a longer data length. "
-			      "To test the syncers reassembly of large data packets",
-		.test_post_init_f = test_init,
+			      "To test the reassembly of large data packets",
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = main_per_adv_long_data_advertiser
 	},

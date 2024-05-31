@@ -37,6 +37,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         cli: Optional[Path],
         use_elf: bool,
         erase: bool,
+        extload: Optional[str],
         tool_opt: List[str],
     ) -> None:
         super().__init__(cfg)
@@ -50,6 +51,12 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         )
         self._use_elf = use_elf
         self._erase = erase
+
+        if extload:
+            p = STM32CubeProgrammerBinaryRunner._get_stm32cubeprogrammer_path().parent.resolve() / 'ExternalLoader'
+            self._extload = ['-el', str(p / extload)]
+        else:
+            self._extload = []
 
         self._tool_opt: List[str] = list()
         for opts in [shlex.split(opt) for opt in tool_opt]:
@@ -112,7 +119,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={"flash"}, erase=True, tool_opt=True)
+        return RunnerCaps(commands={"flash"}, erase=True, extload=True, tool_opt=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -152,6 +159,10 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         )
 
     @classmethod
+    def extload_help(cls) -> str:
+        return "External Loader for STM32_Programmer_CLI"
+
+    @classmethod
     def tool_opt_help(cls) -> str:
         return "Additional options for STM32_Programmer_CLI"
 
@@ -168,6 +179,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             cli=args.cli,
             use_elf=args.use_elf,
             erase=args.erase,
+            extload=args.extload,
             tool_opt=args.tool_opt,
         )
 
@@ -192,6 +204,9 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
 
         cmd += ["--connect", connect_opts]
         cmd += self._tool_opt
+        if self._extload:
+            # external loader to come after the tool option in STM32CubeProgrammer
+            cmd += self._extload
 
         # erase first if requested
         if self._erase:
@@ -200,7 +215,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         # flash image and run application
         dl_file = self.cfg.elf_file if self._use_elf else self.cfg.hex_file
         if dl_file is None:
-            raise RuntimeError(f'cannot flash; no download file was specified')
+            raise RuntimeError('cannot flash; no download file was specified')
         elif not os.path.isfile(dl_file):
             raise RuntimeError(f'download file {dl_file} does not exist')
         self.check_call(cmd + ["--download", dl_file, "--start"])

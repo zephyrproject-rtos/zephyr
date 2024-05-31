@@ -73,7 +73,7 @@ int updatehub_storage_mark_partition_to_upgrade(struct updatehub_storage_context
 		return -EINVAL;
 	}
 
-	return boot_request_upgrade_multi(partition_id, BOOT_UPGRADE_TEST);
+	return boot_request_upgrade(BOOT_UPGRADE_TEST);
 }
 
 int updatehub_storage_mark_partition_as_confirmed(const uint32_t partition_id)

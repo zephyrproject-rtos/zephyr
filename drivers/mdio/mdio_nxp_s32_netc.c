@@ -67,17 +67,9 @@ static int nxp_s32_mdio_initialize(const struct device *dev)
 	return 0;
 }
 
-static void nxp_s32_mdio_noop(const struct device *dev)
-{
-	/* intentionally left empty */
-}
-
 static const struct mdio_driver_api nxp_s32_mdio_api = {
 	.read = nxp_s32_mdio_read,
 	.write = nxp_s32_mdio_write,
-	/* NETC does not support enabling/disabling EMDIO controller independently */
-	.bus_enable = nxp_s32_mdio_noop,
-	.bus_disable = nxp_s32_mdio_noop,
 };
 
 #define NXP_S32_MDIO_HW_INSTANCE_CHECK(i, n) \

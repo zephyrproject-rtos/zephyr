@@ -12,6 +12,11 @@
 
 #define PEER_PORT 4242
 
+/* Turn off the progress printing so that shell can be used.
+ * Set to true if you want to see progress output.
+ */
+#define PRINT_PROGRESS false
+
 #if defined(CONFIG_USERSPACE)
 #include <zephyr/app_memory/app_memdomain.h>
 extern struct k_mem_partition app_partition;

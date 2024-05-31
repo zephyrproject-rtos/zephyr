@@ -435,12 +435,12 @@ enum arch_page_location {
  * in that.
  *
  * @param addr Virtual data page address that took the page fault
- * @param [out] location In the case of ARCH_PAGE_FAULT_PAGED_OUT, the backing
+ * @param [out] location In the case of ARCH_PAGE_LOCATION_PAGED_OUT, the backing
  *        store location value used to retrieve the data page. In the case of
- *        ARCH_PAGE_FAULT_PAGED_IN, the physical address the page is mapped to.
- * @retval ARCH_PAGE_FAULT_PAGED_OUT The page was evicted to the backing store.
- * @retval ARCH_PAGE_FAULT_PAGED_IN The data page is resident in memory.
- * @retval ARCH_PAGE_FAULT_BAD The page is un-mapped or otherwise has had
+ *        ARCH_PAGE_LOCATION_PAGED_IN, the physical address the page is mapped to.
+ * @retval ARCH_PAGE_LOCATION_PAGED_OUT The page was evicted to the backing store.
+ * @retval ARCH_PAGE_LOCATION_PAGED_IN The data page is resident in memory.
+ * @retval ARCH_PAGE_LOCATION_BAD The page is un-mapped or otherwise has had
  *         invalid access
  */
 enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location);

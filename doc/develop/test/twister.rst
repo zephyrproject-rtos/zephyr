@@ -499,9 +499,6 @@ harness_config: <harness configuration options>
     ordered: <True|False> (default False)
         Check the regular expression strings in orderly or randomly fashion
 
-    repeat: <integer>
-        Number of times to validate the repeated regex expression
-
     record: <recording options> (optional)
       regex: <regular expression> (required)
         The regular expression with named subgroups to match data fields
@@ -1349,12 +1346,6 @@ To execute a Robot test suite with twister, run the following command:
       .. code-block:: bat
 
          python .\scripts\twister --platform hifive1 --test samples/subsys/shell/shell_module/sample.shell.shell_module.robot
-
-It's also possible to run it by `west` directly, with:
-
-.. code-block:: bash
-
-   $ ROBOT_FILES=shell_module.robot west build -p -b hifive1 -s samples/subsys/shell/shell_module -t run_renode_test
 
 Writing Robot tests
 ===================

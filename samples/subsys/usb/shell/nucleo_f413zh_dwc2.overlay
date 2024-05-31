@@ -15,6 +15,11 @@
 			interrupt-names = "fsotg";
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000080>,
 				 <&rcc STM32_SRC_PLL_Q NO_SEL>;
+			num-out-eps = <6>;
+			num-in-eps = <6>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x229ed520>;
+			ghwcfg4 = <0x17f08030>;
 		};
 	};
 };

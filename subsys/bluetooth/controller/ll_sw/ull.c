@@ -1953,11 +1953,14 @@ int ull_disable(void *lll)
 	if (!ull_ref_get(hdr)) {
 		return -EALREADY;
 	}
+	cpu_dmb(); /* Ensure synchronized data access */
 
 	k_sem_init(&sem, 0, 1);
 
 	hdr->disabled_param = &sem;
 	hdr->disabled_cb = disabled_cb;
+
+	cpu_dmb(); /* Ensure synchronized data access */
 
 	/* ULL_HIGH can run after we have call `ull_ref_get` and it can
 	 * decrement the ref count. Hence, handle this race condition by
@@ -2072,12 +2075,45 @@ void ull_prepare_dequeue(uint8_t caller_id)
 	void *param_resume_head = NULL;
 	void *param_resume_next = NULL;
 	struct lll_event *next;
+	uint8_t loop;
+
+	/* Development assertion check to ensure the below loop processing
+	 * has a limit.
+	 *
+	 * Only 2 scanner and 1 advertiser (directed adv) gets enqueue back:
+	 *
+	 * Already in queue max 7 (EVENT_PIPELINE_MAX):
+	 *  - 2 continuous scan prepare in queue (1M and Coded PHY)
+	 *  - 2 continuous scan resume in queue (1M and Coded PHY)
+	 *  - 1 directed adv prepare
+	 *  - 1 directed adv resume
+	 *  - 1 any other role with time reservation
+	 *
+	 * The loop removes the duplicates (scan and advertiser) with is_aborted
+	 * flag set in 7 iterations:
+	 *  - 1 scan prepare (1M)
+	 *  - 1 scan prepare (Coded PHY)
+	 *  - 1 directed adv prepare
+	 *
+	 * and has enqueue the following in these 7 iterations:
+	 *  - 1 scan resume (1M)
+	 *  - 1 scan resume (Coded PHY)
+	 *  - 1 directed adv resume
+	 *
+	 * Hence, it should be (EVENT_PIPELINE_MAX + 3U) iterations max.
+	 */
+	loop = (EVENT_PIPELINE_MAX + 3U);
 
 	next = ull_prepare_dequeue_get();
 	while (next) {
 		void *param = next->prepare_param.param;
 		uint8_t is_aborted = next->is_aborted;
 		uint8_t is_resume = next->is_resume;
+
+		/* Assert if we exceed iterations processing the prepare queue
+		 */
+		LL_ASSERT(loop);
+		loop--;
 
 		/* Let LLL invoke the `prepare` interface if radio not in active
 		 * use. Otherwise, enqueue at end of the prepare pipeline queue.

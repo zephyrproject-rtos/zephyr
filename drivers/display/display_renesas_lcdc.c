@@ -20,6 +20,9 @@
 #include <DA1469xAB.h>
 #include <da1469x_pd.h>
 #include <zephyr/linker/devicetree_regions.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smartbond_display, CONFIG_DISPLAY_LOG_LEVEL);
@@ -72,6 +75,9 @@ struct display_smartbond_data {
 	struct k_sem dma_sync_sem;
 	/* Granted DMA channel used for memory transfers */
 	int dma_channel;
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+	ATOMIC_DEFINE(pm_policy_state_flag, 1);
+#endif
 };
 
 struct display_smartbond_config {
@@ -92,6 +98,29 @@ struct display_smartbond_config {
 	uint8_t pixel_size;
 	enum display_pixel_format pixel_format;
 };
+
+static inline void lcdc_smartbond_pm_policy_state_lock_get(struct display_smartbond_data *data)
+{
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+	if (atomic_test_and_set_bit(data->pm_policy_state_flag, 0) == 0) {
+		/*
+		 * Prevent the SoC from etering the normal sleep state as PDC does not support
+		 * waking up the application core following LCDC events.
+		 */
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+#endif
+}
+
+static inline void lcdc_smartbond_pm_policy_state_lock_put(struct display_smartbond_data *data)
+{
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, 0) == 1) {
+		/* Allow the SoC to enter the nornmal sleep state once LCDC is inactive */
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+#endif
+}
 
 /* Display pixel to layer color format translation */
 static uint8_t lcdc_smartbond_pixel_to_lcm(enum display_pixel_format pixel_format)
@@ -180,36 +209,6 @@ static void smartbond_display_isr(const void *arg)
 	k_sem_give(&data->sync_sem);
 }
 
-static int display_smartbond_resume(const struct device *dev)
-{
-	const struct display_smartbond_config *config = dev->config;
-	int ret;
-
-	/* Select default state */
-	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		LOG_ERR("Could not apply LCDC pins' default state (%d)", ret);
-		return -EIO;
-	}
-
-#if LCDC_SMARTBOND_IS_PLL_REQUIRED
-	const struct device *clock_dev = DEVICE_DT_GET(DT_NODELABEL(osc));
-
-	if (!device_is_ready(clock_dev)) {
-		LOG_WRN("Clock device is not ready");
-		return -ENODEV;
-	}
-
-	ret = z_smartbond_select_sys_clk(SMARTBOND_CLK_PLL96M);
-	if (ret < 0) {
-		LOG_WRN("Could not switch to PLL");
-		return -EIO;
-	}
-#endif
-
-	return display_smartbond_configure(dev);
-}
-
 static void display_smartbond_dma_cb(const struct device *dma, void *arg,
 				uint32_t id, int status)
 {
@@ -248,6 +247,70 @@ static int display_smartbond_dma_config(const struct device *dev)
 	return 0;
 }
 
+static int display_smartbond_resume(const struct device *dev)
+{
+	const struct display_smartbond_config *config = dev->config;
+	int ret;
+
+	/* Select default state */
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("Could not apply LCDC pins' default state (%d)", ret);
+		return -EIO;
+	}
+
+#if LCDC_SMARTBOND_IS_PLL_REQUIRED
+	const struct device *clock_dev = DEVICE_DT_GET(DT_NODELABEL(osc));
+
+	if (!device_is_ready(clock_dev)) {
+		LOG_WRN("Clock device is not ready");
+		return -ENODEV;
+	}
+
+	ret = z_smartbond_select_sys_clk(SMARTBOND_CLK_PLL96M);
+	if (ret < 0) {
+		LOG_WRN("Could not switch to PLL");
+		return -EIO;
+	}
+#endif
+
+	ret = display_smartbond_dma_config(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return display_smartbond_configure(dev);
+}
+
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+static void display_smartbond_dma_deconfig(const struct device *dev)
+{
+	struct display_smartbond_data *data = dev->data;
+
+	__ASSERT(data->dma, "DMA should be already initialized");
+
+	dma_release_channel(data->dma, data->dma_channel);
+}
+
+static int display_smartbond_suspend(const struct device *dev)
+{
+	const struct display_smartbond_config *config = dev->config;
+	int ret;
+
+	/* Select sleep state; it's OK if settings fails for any reason */
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+	if (ret < 0) {
+		LOG_WRN("Could not apply DISPLAY pins' sleep state");
+	}
+
+	/* Disable host controller to minimize power consumption */
+	da1469x_lcdc_set_status(false, false, 0);
+
+	display_smartbond_dma_deconfig(dev);
+
+	return 0;
+}
+#endif
 
 static int display_smartbond_init(const struct device *dev)
 {
@@ -271,33 +334,24 @@ static int display_smartbond_init(const struct device *dev)
 		}
 	}
 
-	ret = display_smartbond_resume(dev);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = display_smartbond_dma_config(dev);
-	if (ret < 0) {
-		return ret;
-	}
-
 	IRQ_CONNECT(SMARTBOND_IRQN, SMARTBOND_IRQ_PRIO, smartbond_display_isr,
 								DEVICE_DT_INST_GET(0), 0);
 
-#if CONFIG_PM
-	/*
-	 * When in continues mode, the display device should always be refreshed
-	 * and so the controller is not allowed to be turned off. The latter, is
-	 * powered by PD_SYS which is turned off when the SoC enters the extended
-	 * sleep state. By acquiring PD_SYS, the deep sleep state is prevented
-	 * and the system enters the low-power state (i.e. ARM WFI) when possible.
-	 *
-	 * XXX CONFIG_PM_DEVICE_RUNTIME is no supported yet!
-	 */
-	da1469x_pd_acquire_noconf(MCU_PD_DOMAIN_SYS);
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	/* Make sure device state is marked as suspended */
+	pm_device_init_suspended(dev);
+
+	ret = pm_device_runtime_enable(dev);
+#else
+	/* Resume if either PM is not used at all or if PM without runtime is used. */
+	ret = display_smartbond_resume(dev);
+	if (ret == 0) {
+		/* Display port should be enabled at this moment and so sleep is not allowed. */
+		lcdc_smartbond_pm_policy_state_lock_get(data);
+	}
 #endif
 
-	return 0;
+	return ret;
 }
 
 static int display_smartbond_blanking_on(const struct device *dev)
@@ -322,6 +376,12 @@ static int display_smartbond_blanking_on(const struct device *dev)
 			LOG_WRN("Display port could not be de-activated");
 		}
 	}
+
+	/*
+	 * At this moment the display panel should be turned off and so the device
+	 * can enter the suspend state.
+	 */
+	lcdc_smartbond_pm_policy_state_lock_put(data);
 
 	k_sem_give(&data->device_sem);
 
@@ -350,6 +410,12 @@ static int display_smartbond_blanking_off(const struct device *dev)
 	 * pixel data.
 	 */
 	LCDC->LCDC_MODE_REG &= ~LCDC_LCDC_MODE_REG_LCDC_FORCE_BLANK_Msk;
+
+	/*
+	 * At this moment the display should be turned on and so the device
+	 * cannot enter the suspend state.
+	 */
+	lcdc_smartbond_pm_policy_state_lock_get(data);
 
 	k_sem_give(&data->device_sem);
 
@@ -515,6 +581,30 @@ static int display_smartbond_write(const struct device *dev,
 	return 0;
 }
 
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+static int display_smartbond_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* A non-zero value should not affect sleep */
+		(void)display_smartbond_suspend(dev);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/*
+		 * The resume error code should not be taken into consideration
+		 * by the PM subsystem
+		 */
+		ret = display_smartbond_resume(dev);
+		break;
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif
 
 static struct display_driver_api display_smartbond_driver_api = {
 	.write =  display_smartbond_write,
@@ -527,6 +617,7 @@ static struct display_driver_api display_smartbond_driver_api = {
 
 #define SMARTBOND_DISPLAY_INIT(inst)	\
 	PINCTRL_DT_INST_DEFINE(inst);	\
+	PM_DEVICE_DT_INST_DEFINE(inst, display_smartbond_pm_action);	\
 									\
 	__aligned(4) static uint8_t buffer_ ## inst[(((DT_INST_PROP(inst, width) * \
 	DISPLAY_SMARTBOND_PIXEL_SIZE(inst)) + 0x3) & ~0x3) *	\
@@ -572,7 +663,7 @@ static struct display_driver_api display_smartbond_driver_api = {
 	}; \
 							\
 							\
-	DEVICE_DT_INST_DEFINE(inst, display_smartbond_init, NULL, \
+	DEVICE_DT_INST_DEFINE(inst, display_smartbond_init, PM_DEVICE_DT_INST_GET(inst), \
 				&display_smartbond_data_## inst,	\
 				&display_smartbond_config_## inst,	\
 				POST_KERNEL,	\

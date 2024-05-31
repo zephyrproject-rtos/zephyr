@@ -15,9 +15,14 @@ import yaml
 import list_hardware
 from list_hardware import unique_paths
 
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
+
 BOARD_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'board-schema.yml')
 with open(BOARD_SCHEMA_PATH, 'r') as f:
-    board_schema = yaml.safe_load(f.read())
+    board_schema = yaml.load(f.read(), Loader=SafeLoader)
 
 BOARD_YML = 'board.yml'
 
@@ -178,7 +183,7 @@ def load_v2_boards(board_name, board_yml, systems):
     boards = []
     if board_yml.is_file():
         with board_yml.open('r') as f:
-            b = yaml.safe_load(f.read())
+            b = yaml.load(f.read(), Loader=SafeLoader)
 
         try:
             pykwalify.core.Core(source_data=b, schema_data=board_schema).validate()
@@ -229,6 +234,17 @@ def load_v2_boards(board_name, board_yml, systems):
             )
             boards.append(board)
     return boards
+
+
+# Note that this does not share the args.board functionality of find_v2_boards
+def find_v2_board_dirs(args):
+    dirs = []
+    board_files = []
+    for root in unique_paths(args.board_roots):
+        board_files.extend((root / 'boards').rglob(BOARD_YML))
+
+    dirs = [board_yml.parent for board_yml in board_files if board_yml.is_file()]
+    return dirs
 
 
 def find_v2_boards(args):

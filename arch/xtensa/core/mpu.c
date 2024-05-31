@@ -969,7 +969,7 @@ out:
 	return ret;
 }
 
-int arch_buffer_validate(void *addr, size_t size, int write)
+int arch_buffer_validate(const void *addr, size_t size, int write)
 {
 	uintptr_t aligned_addr;
 	size_t aligned_size, addr_offset;

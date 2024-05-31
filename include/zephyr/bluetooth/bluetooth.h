@@ -231,6 +231,10 @@ int bt_enable(bt_ready_cb_t cb);
  *
  * Disable Bluetooth. Can't be called before bt_enable has completed.
  *
+ * This API will clear all configured identities and keys that are not persistently
+ * stored with @kconfig{CONFIG_BT_SETTINGS}. These can be restored
+ * with settings_load() before reenabling the stack.
+ *
  * Close and release HCI resources. Result is architecture dependent.
  *
  * @return Zero on success or (negative) error code otherwise.
@@ -912,6 +916,12 @@ struct bt_le_per_adv_param {
 				       BT_GAP_ADV_FAST_INT_MIN_2, \
 				       BT_GAP_ADV_FAST_INT_MAX_2, NULL)
 
+/** This is the recommended default for connectable advertisers.
+ */
+#define BT_LE_ADV_CONN_ONE_TIME                                                                    \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_ONE_TIME,                        \
+			BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL)
+
 /**
  * @deprecated This macro will be removed in the near future, see
  * https://github.com/zephyrproject-rtos/zephyr/issues/71686
@@ -1530,7 +1540,7 @@ struct bt_le_per_adv_sync_recv_info {
 	/** The value of the event counter where the subevent indication was received. */
 	uint16_t periodic_event_counter;
 
-	/** The subevent where the subevend indication was received. */
+	/** The subevent where the subevent indication was received. */
 	uint8_t subevent;
 #endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 };

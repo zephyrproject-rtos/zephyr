@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: QEMU RISC-V virt machine CPU node
+
+compatible: "qemu,riscv-virt"
+
+include: riscv,cpus.yaml

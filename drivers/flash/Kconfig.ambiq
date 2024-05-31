@@ -2,11 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config FLASH_AMBIQ
-	bool "Ambiq flash driver on MRAM"
+	bool "Ambiq flash driver on MRAM or flash"
 	default y
 	depends on DT_HAS_AMBIQ_FLASH_CONTROLLER_ENABLED
 	select AMBIQ_HAL
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	help
-	  Enables Ambiq flash driver on MRAM.
+	  Enables Ambiq flash driver on MRAM (e.g. Apollo4x) or
+	  flash (e.g. Apollo3x).

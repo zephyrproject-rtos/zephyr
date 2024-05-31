@@ -123,3 +123,16 @@ static inline const char *bt_bap_big_enc_state_str(uint8_t state)
 		return "unknown state";
 	}
 }
+
+static inline bool valid_bis_syncs(uint32_t bis_sync)
+{
+	if (bis_sync == BT_BAP_BIS_SYNC_NO_PREF) {
+		return true;
+	}
+
+	if (bis_sync > BIT_MASK(31)) { /* Max BIS index */
+		return false;
+	}
+
+	return true;
+}

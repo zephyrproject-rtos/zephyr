@@ -46,7 +46,7 @@ BUILD_ASSERT(sizeof(intptr_t) == sizeof(long));
 
 #define K_ANY NULL
 
-#if CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES == 0
+#if (CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES) == 0
 #error Zero available thread priorities defined!
 #endif
 
@@ -1775,6 +1775,19 @@ static inline uint32_t k_uptime_get_32(void)
 }
 
 /**
+ * @brief Get system uptime in seconds.
+ *
+ * This routine returns the elapsed time since the system booted,
+ * in seconds.
+ *
+ * @return Current uptime in seconds.
+ */
+static inline uint32_t k_uptime_seconds(void)
+{
+	return k_ticks_to_sec_floor32(k_uptime_ticks());
+}
+
+/**
  * @brief Get elapsed time.
  *
  * This routine computes the elapsed time between the current system uptime
@@ -2017,9 +2030,8 @@ int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
  * @funcprops \isr_ok
  *
  * @param queue Address of the queue.
- * @param timeout Non-negative waiting period to obtain a data item
- *                or one of the special values K_NO_WAIT and
- *                K_FOREVER.
+ * @param timeout Waiting period to obtain a data item, or one of the special
+ *                values K_NO_WAIT and K_FOREVER.
  *
  * @return Address of the data item if successful; NULL if returned
  * without waiting, or waiting period timed out.
@@ -2163,8 +2175,8 @@ struct z_futex_data {
  * @param futex Address of the futex.
  * @param expected Expected value of the futex, if it is different the caller
  *		   will not wait on it.
- * @param timeout Non-negative waiting period on the futex, or
- *		  one of the special values K_NO_WAIT or K_FOREVER.
+ * @param timeout Waiting period on the futex, or one of the special values
+ *                K_NO_WAIT or K_FOREVER.
  * @retval -EACCES Caller does not have read access to futex address.
  * @retval -EAGAIN If the futex value did not match the expected parameter.
  * @retval -EINVAL Futex parameter address not recognized by the kernel.
@@ -4564,9 +4576,8 @@ int k_msgq_cleanup(struct k_msgq *msgq);
  *
  * @param msgq Address of the message queue.
  * @param data Pointer to the message.
- * @param timeout Non-negative waiting period to add the message,
- *                or one of the special values K_NO_WAIT and
- *                K_FOREVER.
+ * @param timeout Waiting period to add the message, or one of the special
+ *                values K_NO_WAIT and K_FOREVER.
  *
  * @retval 0 Message sent.
  * @retval -ENOMSG Returned without waiting or queue purged.
@@ -5191,7 +5202,7 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
  *
  * @param slab Address of the memory slab.
  * @param mem Pointer to block address area.
- * @param timeout Non-negative waiting period to wait for operation to complete.
+ * @param timeout Waiting period to wait for operation to complete.
  *        Use K_NO_WAIT to return without waiting,
  *        or K_FOREVER to wait as long as necessary.
  *
@@ -5323,7 +5334,8 @@ struct k_heap {
 void k_heap_init(struct k_heap *h, void *mem,
 		size_t bytes) __attribute_nonnull(1);
 
-/** @brief Allocate aligned memory from a k_heap
+/**
+ * @brief Allocate aligned memory from a k_heap
  *
  * Behaves in all ways like k_heap_alloc(), except that the returned
  * memory (if available) will have a starting address in memory which
@@ -5370,6 +5382,32 @@ void *k_heap_alloc(struct k_heap *h, size_t bytes,
 		k_timeout_t timeout) __attribute_nonnull(1);
 
 /**
+ * @brief Reallocate memory from a k_heap
+ *
+ * Reallocates and returns a memory buffer from the memory region owned
+ * by the heap.  If no memory is available immediately, the call will
+ * block for the specified timeout (constructed via the standard
+ * timeout API, or K_NO_WAIT or K_FOREVER) waiting for memory to be
+ * freed.  If the allocation cannot be performed by the expiration of
+ * the timeout, NULL will be returned.
+ * Reallocated memory is aligned on a multiple of pointer sizes.
+ *
+ * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ * @note When CONFIG_MULTITHREADING=n any @a timeout is treated as K_NO_WAIT.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param h Heap from which to allocate
+ * @param ptr Original pointer returned from a previous allocation
+ * @param bytes Desired size of block to allocate
+ * @param timeout How long to wait, or K_NO_WAIT
+ *
+ * @return Pointer to memory the caller can now use, or NULL
+ */
+void *k_heap_realloc(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t timeout)
+	__attribute_nonnull(1);
+
+/**
  * @brief Free memory allocated by k_heap_alloc()
  *
  * Returns the specified memory block, which must have been returned
@@ -5384,7 +5422,7 @@ void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
 /* Hand-calculated minimum heap sizes needed to return a successful
  * 1-byte allocation.  See details in lib/os/heap.[ch]
  */
-#define Z_HEAP_MIN_SIZE (sizeof(void *) > 4 ? 56 : 44)
+#define Z_HEAP_MIN_SIZE ((sizeof(void *) > 4) ? 56 : 44)
 
 /**
  * @brief Define a static k_heap in the specified linker section
@@ -5515,6 +5553,25 @@ void k_free(void *ptr);
  * @return Address of the allocated memory if successful; otherwise NULL.
  */
 void *k_calloc(size_t nmemb, size_t size);
+
+/** @brief Expand the size of an existing allocation
+ *
+ * Returns a pointer to a new memory region with the same contents,
+ * but a different allocated size.  If the new allocation can be
+ * expanded in place, the pointer returned will be identical.
+ * Otherwise the data will be copies to a new block and the old one
+ * will be freed as per sys_heap_free().  If the specified size is
+ * smaller than the original, the block will be truncated in place and
+ * the remaining memory returned to the heap.  If the allocation of a
+ * new block fails, then NULL will be returned and the old block will
+ * not be freed or modified.
+ *
+ * @param ptr Original pointer returned from a previous allocation
+ * @param size Amount of memory requested (in bytes).
+ *
+ * @return Pointer to memory the caller can now use, or NULL.
+ */
+void *k_realloc(void *ptr, size_t size);
 
 /** @} */
 
@@ -5785,7 +5842,7 @@ __syscall int k_poll(struct k_poll_event *events, int num_events,
 
 __syscall void k_poll_signal_init(struct k_poll_signal *sig);
 
-/*
+/**
  * @brief Reset a poll signal object's state to unsignaled.
  *
  * @param sig A poll signal object
@@ -6096,7 +6153,7 @@ void k_sys_runtime_stats_disable(void);
 #endif
 
 #include <zephyr/tracing/tracing.h>
-#include <syscalls/kernel.h>
+#include <zephyr/syscalls/kernel.h>
 
 #endif /* !_ASMLANGUAGE */
 

@@ -52,7 +52,11 @@ uint32_t dma_stm32_slot_to_channel(uint32_t id);
 #endif
 
 typedef void (*dma_stm32_clear_flag_func)(DMA_TypeDef *DMAx);
+#if !defined(CONFIG_SOC_SERIES_STM32G0X)
 typedef uint32_t (*dma_stm32_check_flag_func)(DMA_TypeDef *DMAx);
+#else
+typedef uint32_t (*dma_stm32_check_flag_func)(const DMA_TypeDef *DMAx);
+#endif
 
 bool dma_stm32_is_tc_active(DMA_TypeDef *DMAx, uint32_t id);
 void dma_stm32_clear_tc(DMA_TypeDef *DMAx, uint32_t id);

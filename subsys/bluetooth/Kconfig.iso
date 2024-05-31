@@ -25,21 +25,19 @@ config BT_ISO_UNICAST
 	  Isochronous channels.
 
 config BT_ISO_PERIPHERAL
-	bool "Bluetooth Isochronous Channel Unicast Peripheral Support [EXPERIMENTAL]"
+	bool "Bluetooth Isochronous Channel Unicast Peripheral Support"
 	depends on !BT_CTLR || BT_CTLR_PERIPHERAL_ISO_SUPPORT
 	select BT_PERIPHERAL
 	select BT_ISO_UNICAST
-	select EXPERIMENTAL
 	help
 	  This option enables support for Bluetooth Unicast
 	  Isochronous channels for the peripheral role.
 
 config BT_ISO_CENTRAL
-	bool "Bluetooth Isochronous Channel Unicast Central Support [EXPERIMENTAL]"
+	bool "Bluetooth Isochronous Channel Unicast Central Support"
 	depends on !BT_CTLR || BT_CTLR_CENTRAL_ISO_SUPPORT
 	select BT_CENTRAL
 	select BT_ISO_UNICAST
-	select EXPERIMENTAL
 	help
 	  This option enables support for Bluetooth Broadcast
 	  Isochronous channels for the central role.
@@ -50,24 +48,22 @@ config BT_ISO_BROADCAST
 	select BT_EXT_ADV
 
 config BT_ISO_BROADCASTER
-	bool "Bluetooth Isochronous Broadcaster Support [EXPERIMENTAL]"
+	bool "Bluetooth Isochronous Broadcaster Support"
 	depends on !BT_CTLR || BT_CTLR_ADV_ISO_SUPPORT
 	select BT_ISO_BROADCAST
 	select BT_ISO_TX
 	select BT_BROADCASTER
 	select BT_PER_ADV
-	select EXPERIMENTAL
 	help
 	  This option enables support for the Bluetooth Isochronous Broadcaster.
 
 config BT_ISO_SYNC_RECEIVER
-	bool "Bluetooth Isochronous Synchronized Receiver Support [EXPERIMENTAL]"
+	bool "Bluetooth Isochronous Synchronized Receiver Support"
 	depends on !BT_CTLR || BT_CTLR_SYNC_ISO_SUPPORT
 	select BT_ISO_BROADCAST
 	select BT_ISO_RX
 	select BT_OBSERVER
 	select BT_PER_ADV_SYNC
-	select EXPERIMENTAL
 	help
 	  This option enables support for the Bluetooth Isochronous
 	  Synchronized Receiver.
@@ -105,14 +101,15 @@ config BT_ISO_TX_FRAG_COUNT
 
 config BT_ISO_TX_MTU
 	int "Maximum supported MTU for Isochronous TX buffers"
-	default 251
 	range 1 4095
+	default 247
 	help
 	  Maximum MTU for Isochronous channels TX buffers.
 	  This is the actual data payload. It doesn't include the optional
-	  HCI ISO Data packet fields (e.g. `struct bt_hci_iso_ts_data_hdr`).
+	  HCI ISO Data packet fields (e.g. `struct bt_hci_iso_sdu_ts_hdr`).
 	  Set this value to 247 to fit 247 bytes of data within a single
-	  HCI ISO Data packet with a size of 255, without utilizing timestamps.
+	  HCI ISO Data packet with Data_Total_Length of 255, utilizing
+	  timestamps.
 
 config BT_ISO_RX_BUF_COUNT
 	int "Number of Isochronous RX buffers"
@@ -128,7 +125,7 @@ config BT_ISO_RX_MTU
 	help
 	  Maximum MTU for Isochronous channels RX buffers.
 	  This is the actual data payload. It doesn't include the optional
-	  HCI ISO Data packet fields (e.g. `struct bt_hci_iso_ts_data_hdr`)
+	  HCI ISO Data packet fields (e.g. `struct bt_hci_iso_sdu_ts_hdr`)
 
 config BT_ISO_TEST_PARAMS
 	bool "ISO test parameters support"

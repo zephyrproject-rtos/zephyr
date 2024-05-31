@@ -150,6 +150,7 @@ cortina	Cortina Systems, Inc.
 cosmic	Cosmic Circuits
 crane	Crane Connectivity Solutions
 creative	Creative Technology Ltd
+croxel	Croxel, Inc.
 crystalfontz	Crystalfontz America, Inc.
 csky	Hangzhou C-SKY Microsystems Co., Ltd
 csq	Shenzen Chuangsiqi Technology Co.,Ltd.
@@ -231,6 +232,7 @@ fastrax	Fastrax Oy
 fcs	Fairchild Semiconductor
 feixin	Shenzhen Feixin Photoelectic Co., Ltd
 feiyang	Shenzhen Fly Young Technology Co.,LTD.
+festo	Festo SE & Co. KG
 fii	Foxconn Industrial Internet
 fintek	Feature Integration Technology Inc.
 firefly	Firefly
@@ -320,6 +322,7 @@ isee	ISEE 2007 S.L.
 isentek	Isentek Inc.
 isil	Intersil
 issi	Integrated Silicon Solutions Inc.
+ist	Innovative Sensor Technology IST AG
 ite	ITE Tech. Inc.
 itead	ITEAD Intelligent Systems Co.Ltd
 ivo	InfoVision Optoelectronics Kunshan Co. Ltd.
@@ -496,7 +499,7 @@ pda	Precision Design Associates, Inc.
 pericom	Pericom Technology Inc.
 pervasive	Pervasive Displays, Inc.
 phicomm	PHICOMM Co., Ltd.
-phytec	PHYTEC Messtechnik GmbH
+phytec	PHYTEC
 picochip	Picochip Ltd
 pine64	Pine64
 pineriver	Shenzhen PineRiver Designs Co., Ltd.

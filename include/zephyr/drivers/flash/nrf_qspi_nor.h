@@ -35,6 +35,6 @@ __syscall void nrf_qspi_nor_xip_enable(const struct device *dev, bool enable);
 }
 #endif
 
-#include <syscalls/nrf_qspi_nor.h>
+#include <zephyr/syscalls/nrf_qspi_nor.h>
 
 #endif /* __ZEPHYR_INCLUDE_DRIVERS_FLASH_NRF_QSPI_NOR_H__ */

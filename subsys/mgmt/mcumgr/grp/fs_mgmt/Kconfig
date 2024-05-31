@@ -125,7 +125,8 @@ config MCUMGR_GRP_FS_CHECKSUM_IEEE_CRC32
 
 config MCUMGR_GRP_FS_HASH_SHA256
 	bool "SHA256 hash support"
-	depends on TINYCRYPT_SHA256 || MBEDTLS_MAC_SHA256_ENABLED
+	depends on BUILD_WITH_TFM || MBEDTLS_SHA256
+	select PSA_WANT_ALG_SHA_256 if BUILD_WITH_TFM
 	help
 	  Enable SHA256 hash support for MCUmgr.
 

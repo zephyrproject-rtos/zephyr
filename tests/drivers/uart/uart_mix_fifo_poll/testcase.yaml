@@ -9,6 +9,8 @@ common:
     - nrf9160dk/nrf9160
     - nrf5340dk/nrf5340/cpuapp
     - nrf54l15pdk/nrf54l15/cpuapp
+    - nrf54h20dk/nrf54h20/cpuapp
+    - nrf54h20dk/nrf54h20/cpurad
     - nrf52_bsim
   integration_platforms:
     - nrf52840dk/nrf52840
@@ -79,6 +81,10 @@ tests:
       - CONFIG_UART_ASYNC_API=n
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
+    platform_exclude:
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
 
   drivers.uart.legacy.uart_mix_poll_fifo:
     extra_configs:
@@ -86,6 +92,10 @@ tests:
       - CONFIG_UART_0_INTERRUPT_DRIVEN=y
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
+    platform_exclude:
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
 
   drivers.uart.legacy.uart_mix_poll_async_api:
     extra_configs:
@@ -97,3 +107,7 @@ tests:
       - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
       - CONFIG_NRFX_TIMER2=y
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
+    platform_exclude:
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad

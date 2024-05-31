@@ -43,7 +43,7 @@ int __ramfunc flexspi_clock_set_freq(uint32_t clock_name, uint32_t rate)
 	FLEXSPI_Enable(FLEXSPI, false);
 
 	set_flexspi_clock(FLEXSPI, (CLKCTL0->FLEXSPIFCLKSEL &
-			CLKCTL0_FLEXSPIFCLKDIV_DIV_MASK), (divider + 1));
+			CLKCTL0_FLEXSPIFCLKSEL_SEL_MASK), (divider + 1));
 
 
 	FLEXSPI_Enable(FLEXSPI, true);

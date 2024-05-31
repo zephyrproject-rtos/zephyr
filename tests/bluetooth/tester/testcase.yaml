@@ -6,6 +6,7 @@ tests:
       - native_posix
       - native_sim
       - nrf52840dk/nrf52840
+      - rd_rw612_bga
     tags: bluetooth
     harness: bluetooth
   bluetooth.general.tester_le_audio:

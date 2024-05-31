@@ -140,7 +140,7 @@ static void process(const struct log_backend *const backend,
 	}
 
 	zassert_equal(msg->log.hdr.timestamp, exp->timestamp,
-#if CONFIG_LOG_TIMESTAMP_64BIT
+#ifdef CONFIG_LOG_TIMESTAMP_64BIT
 		      "Got: %llu, expected: %llu",
 #else
 		      "Got: %u, expected: %u",

@@ -1,5 +1,0 @@
-board:
-  name: cy8cproto_063_ble
-  vendor: cypress
-  socs:
-  - name: cyble_416045_02

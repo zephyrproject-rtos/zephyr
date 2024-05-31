@@ -18,12 +18,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver);
 
-#define IPC_CMD 0x01
-#define IPC_ACL 0x02
-#define IPC_SCO 0x03
-#define IPC_EVT 0x04
-#define IPC_ISO 0x05
-
 #define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(1000)
 
 static struct ipc_ept hci_ept;
@@ -218,15 +212,15 @@ static void bt_ipc_rx(const uint8_t *data, size_t len)
 	remaining -= sizeof(pkt_indicator);
 
 	switch (pkt_indicator) {
-	case IPC_EVT:
+	case BT_HCI_H4_EVT:
 		buf = bt_ipc_evt_recv(data, remaining);
 		break;
 
-	case IPC_ACL:
+	case BT_HCI_H4_ACL:
 		buf = bt_ipc_acl_recv(data, remaining);
 		break;
 
-	case IPC_ISO:
+	case BT_HCI_H4_ISO:
 		buf = bt_ipc_iso_recv(data, remaining);
 		break;
 
@@ -252,13 +246,13 @@ static int bt_ipc_send(struct net_buf *buf)
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
-		pkt_indicator = IPC_ACL;
+		pkt_indicator = BT_HCI_H4_ACL;
 		break;
 	case BT_BUF_CMD:
-		pkt_indicator = IPC_CMD;
+		pkt_indicator = BT_HCI_H4_CMD;
 		break;
 	case BT_BUF_ISO_OUT:
-		pkt_indicator = IPC_ISO;
+		pkt_indicator = BT_HCI_H4_ISO;
 		break;
 	default:
 		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));

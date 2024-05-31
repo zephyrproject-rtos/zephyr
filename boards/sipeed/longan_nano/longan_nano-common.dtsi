@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
 	chosen {
@@ -65,6 +66,50 @@
 		sw0 = &button_boot0;
 		watchdog0 = &fwdgt;
 	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		reset-gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+		dc-gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
+		spi-dev = <&spi0>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* longan nano has LCD with st7735s controller.
+		 * It can use with st7735r driver.
+		 */
+		lcd0: lcd@0 {
+			compatible = "sitronix,st7735r";
+			reg = <0>;
+			status = "okay";
+			width = <160>;
+			height = <80>;
+			inversion-on;
+			rgb-is-inverted;
+			x-offset = <1>;
+			y-offset = <26>;
+			pwctr1 = [62 02 04];
+			pwctr2 = [C0];
+			pwctr3 = [0D 00];
+			pwctr4 = [8D 6A];
+			pwctr5 = [8D EE];
+			invctr = <3>;
+			frmctr1 = [05 3A 3A];
+			frmctr2 = [05 3A 3A];
+			frmctr3 = [05 3A 3A 05 3A 3A];
+			vmctr1 = <14>;
+			gamctrp1 = [10 0E 02 03 0E 07 02 07 0A 12 27 37 00 0D 0E 10];
+			gamctrn1 = [10 0E 03 03 0F 06 02 08 0A 13 26 36 00 0D 0E 10];
+			colmod = <5>;
+			madctl = <120>;
+			caset = [00 01 00 a0];
+			raset = [00 1a 00 69];
+
+			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+			mipi-max-frequency = <4000000>;
+		};
+	};
 };
 
 &gpioa {
@@ -109,41 +154,6 @@
 	pinctrl-names = "default";
 
 	cs-gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
-
-	/* longan nano has LCD with st7735s controller.
-	 * It can use with st7735r driver.
-	 */
-	lcd0: lcd@0 {
-		compatible = "sitronix,st7735r";
-		reg = <0>;
-		status = "okay";
-		reset-gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
-		cmd-data-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
-		width = <160>;
-		height = <80>;
-		inversion-on;
-		rgb-is-inverted;
-		x-offset = <1>;
-		y-offset = <26>;
-		pwctr1 = [62 02 04];
-		pwctr2 = [C0];
-		pwctr3 = [0D 00];
-		pwctr4 = [8D 6A];
-		pwctr5 = [8D EE];
-		invctr = <3>;
-		frmctr1 = [05 3A 3A];
-		frmctr2 = [05 3A 3A];
-		frmctr3 = [05 3A 3A 05 3A 3A];
-		vmctr1 = <14>;
-		gamctrp1 = [10 0E 02 03 0E 07 02 07 0A 12 27 37 00 0D 0E 10];
-		gamctrn1 = [10 0E 03 03 0F 06 02 08 0A 13 26 36 00 0D 0E 10];
-		colmod = <5>;
-		madctl = <120>;
-		caset = [00 01 00 a0];
-		raset = [00 1a 00 69];
-
-		spi-max-frequency = <4000000>;
-	};
 };
 
 &spi1 {

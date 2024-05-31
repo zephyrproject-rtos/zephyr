@@ -186,14 +186,14 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "adv",
 		.test_descr = "Central GATT Write",
-		.test_post_init_f = test_adv_chain_init,
+		.test_pre_init_f = test_adv_chain_init,
 		.test_tick_f = test_adv_chain_tick,
 		.test_main_f = test_adv_main
 	},
 	{
 		.test_id = "scan",
 		.test_descr = "Peripheral GATT Write",
-		.test_post_init_f = test_adv_chain_init,
+		.test_pre_init_f = test_adv_chain_init,
 		.test_tick_f = test_adv_chain_tick,
 		.test_main_f = test_scan_main
 	},

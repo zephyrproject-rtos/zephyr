@@ -12,5 +12,8 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+  renode:
+    uart: sysbus.uart0
+    resc: boards/renode/riscv32_virtual/support/riscv32_virtual.resc
 supported:
   - uart

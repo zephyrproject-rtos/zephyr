@@ -28,6 +28,7 @@ config TLS_CREDENTIALS_BACKEND_VOLATILE
 config TLS_CREDENTIALS_BACKEND_PROTECTED_STORAGE
 	bool "TLS credentials management protected storage backend"
 	depends on BUILD_WITH_TFM
+	select PSA_WANT_ALG_SHA_256
 	help
 	  TLS credentials management backend using the Protected Storage
 	  API to store credentials with integrity check against physical

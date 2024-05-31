@@ -281,9 +281,9 @@ static int dsa_ksz8xxx_switch_setup(const struct ksz8xxx_data *pdev)
 
 #if defined(CONFIG_DSA_KSZ_TAIL_TAGGING)
 	/* Enable tail tag feature */
-	dsa_ksz8xxx_read_reg(pdev, KSZ8863_GLOBAL_CTRL10, &tmp);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8863_GLOBAL_CTRL1, &tmp);
 	tmp |= KSZ8863_GLOBAL_CTRL1_TAIL_TAG_EN;
-	dsa_ksz8xxx_write_reg(pdev, KSZ8863_GLOBAL_CTRL10, tmp);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8863_GLOBAL_CTRL1, tmp);
 #else
 	/* Disable tail tag feature */
 	dsa_ksz8xxx_read_reg(pdev, KSZ8863_GLOBAL_CTRL1, &tmp);

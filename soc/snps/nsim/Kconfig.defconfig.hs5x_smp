@@ -15,7 +15,7 @@ config NUM_IRQS
 	default 30
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 5000000
+	default 1000000
 
 config CACHE_MANAGEMENT
 	default y

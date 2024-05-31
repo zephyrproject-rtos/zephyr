@@ -17,7 +17,6 @@
 #include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/shell/shell.h>
-#include <zephyr/drivers/console/uart_mux.h>
 
 #include <zephyr/sys/printk.h>
 
@@ -154,36 +153,6 @@ static int cmd_modem_send(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-#if defined(CONFIG_GSM_MUX)
-static void uart_mux_cb(const struct device *uart, const struct device *dev,
-			int dlci_address, void *user_data)
-{
-	struct modem_shell_user_data *data = user_data;
-	const struct shell *sh = data->sh;
-	int *count = data->user_data;
-	const char *ch = "?";
-
-	if (*count == 0) {
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "\nReal UART\tMUX UART\tDLCI\n");
-	}
-
-	(*count)++;
-
-	if (dlci_address == CONFIG_GSM_MUX_DLCI_AT) {
-		ch = "AT";
-	} else if (dlci_address == CONFIG_GSM_MUX_DLCI_PPP) {
-		ch = "PPP";
-	} else if (dlci_address == 0) {
-		ch = "control";
-	}
-
-	shell_fprintf(sh, SHELL_NORMAL,
-		      "%s\t\t%s\t\t%d (%s)\n",
-		      uart->name, dev->name, dlci_address, ch);
-}
-#endif
-
 static int cmd_modem_info(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct ms_context *mdm_ctx;
@@ -227,20 +196,7 @@ static int cmd_modem_info(const struct shell *sh, size_t argc, char *argv[])
 		      mdm_ctx->data_imei,
 		      mdm_ctx->data_rssi ? *mdm_ctx->data_rssi : 0);
 
-	shell_fprintf(sh, SHELL_NORMAL,
-		      "GSM 07.10 muxing : %s\n",
-		      IS_ENABLED(CONFIG_GSM_MUX) ? "enabled" : "disabled");
-
-#if defined(CONFIG_GSM_MUX)
-	struct modem_shell_user_data user_data;
-	int count = 0;
-
-	user_data.sh = sh;
-	user_data.user_data = &count;
-
-	uart_mux_foreach(uart_mux_cb, &user_data);
-#endif
-
+	shell_fprintf(sh, SHELL_NORMAL, "GSM 07.10 muxing : disabled\n");
 	return 0;
 }
 

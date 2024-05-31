@@ -1,0 +1,5 @@
+board:
+  name: croxel_cx1825
+  vendor: croxel
+  socs:
+  - name: nrf52840

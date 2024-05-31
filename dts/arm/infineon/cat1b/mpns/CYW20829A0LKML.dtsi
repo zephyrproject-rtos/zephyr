@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../cyw20829/cyw20829.56-qfn.dtsi"

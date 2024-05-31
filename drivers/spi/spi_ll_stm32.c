@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/toolchain.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #ifdef CONFIG_SPI_STM32_DMA
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/dma.h>
@@ -82,6 +83,7 @@ static void spi_stm32_pm_policy_state_lock_get(const struct device *dev)
 			if (IS_ENABLED(CONFIG_PM_S2RAM)) {
 				pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 			}
+			pm_device_runtime_get(dev);
 		}
 	}
 }
@@ -93,6 +95,7 @@ static void spi_stm32_pm_policy_state_lock_put(const struct device *dev)
 
 		if (data->pm_policy_state_on) {
 			data->pm_policy_state_on = false;
+			pm_device_runtime_put(dev);
 			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 			if (IS_ENABLED(CONFIG_PM_S2RAM)) {
 				pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
@@ -1224,7 +1227,7 @@ static int spi_stm32_init(const struct device *dev)
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
-	return 0;
+	return pm_device_runtime_enable(dev);
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -1238,10 +1241,12 @@ static int spi_stm32_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		/* Set pins to active state */
-		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-		if (err < 0) {
-			return err;
+		if (!spi_stm32_is_subghzspi(dev)) {
+			/* Set pins to active state */
+			err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+			if (err < 0) {
+				return err;
+			}
 		}
 
 		/* enable clock */
@@ -1255,21 +1260,24 @@ static int spi_stm32_pm_action(const struct device *dev,
 		/* Stop device clock. */
 		err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
 		if (err != 0) {
-			LOG_ERR("Could not enable SPI clock");
+			LOG_ERR("Could not disable SPI clock");
 			return err;
 		}
 
-		/* Move pins to sleep state */
-		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
-		if ((err < 0) && (err != -ENOENT)) {
-			/*
-			 * If returning -ENOENT, no pins where defined for sleep mode :
-			 * Do not output on console (might sleep already) when going to sleep,
-			 * "SPI pinctrl sleep state not available"
-			 * and don't block PM suspend.
-			 * Else return the error.
-			 */
-			return err;
+		if (!spi_stm32_is_subghzspi(dev)) {
+			/* Move pins to sleep state */
+			err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+			if ((err < 0) && (err != -ENOENT)) {
+				/*
+				 * If returning -ENOENT, no pins where defined for sleep mode :
+				 * Do not output on console (might sleep already) when going to
+				 * sleep,
+				 * "SPI pinctrl sleep state not available"
+				 * and don't block PM suspend.
+				 * Else return the error.
+				 */
+				return err;
+			}
 		}
 		break;
 	default:

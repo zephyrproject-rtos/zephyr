@@ -81,6 +81,9 @@ extern bool net_context_is_recv_pktinfo_set(struct net_context *context);
 extern void net_pkt_init(void);
 extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
+int net_context_get_local_addr(struct net_context *context,
+			       struct sockaddr *addr,
+			       socklen_t *addrlen);
 #else
 static inline void net_context_init(void) { }
 static inline void net_pkt_init(void) { }
@@ -105,6 +108,17 @@ static inline bool net_context_is_recv_pktinfo_set(struct net_context *context)
 {
 	ARG_UNUSED(context);
 	return false;
+}
+
+static inline int net_context_get_local_addr(struct net_context *context,
+					     struct sockaddr *addr,
+					     socklen_t *addrlen)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(addrlen);
+
+	return -ENOTSUP;
 }
 #endif
 
@@ -173,6 +187,12 @@ struct sock_obj {
 	struct sock_obj_type_raw_stats stats;
 };
 #endif /* CONFIG_NET_SOCKETS_OBJ_CORE */
+
+#if defined(CONFIG_NET_IPV6_PE)
+/* This is needed by ipv6_pe.c when privacy extension support is enabled */
+void net_if_ipv6_start_dad(struct net_if *iface,
+			   struct net_if_addr *ifaddr);
+#endif
 
 #if defined(CONFIG_NET_GPTP)
 /**

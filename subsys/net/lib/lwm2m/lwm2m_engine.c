@@ -681,8 +681,8 @@ static int socket_recv_message(struct lwm2m_ctx *client_ctx)
 	static struct sockaddr from_addr;
 
 	from_addr_len = sizeof(from_addr);
-	len = zsock_recvfrom(client_ctx->sock_fd, in_buf, sizeof(in_buf) - 1, 0, &from_addr,
-			     &from_addr_len);
+	len = zsock_recvfrom(client_ctx->sock_fd, in_buf, sizeof(in_buf) - 1, ZSOCK_MSG_DONTWAIT,
+			     &from_addr, &from_addr_len);
 
 	if (len < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK) {

@@ -510,7 +510,7 @@ struct zbus_channel_observation {
  * @retval -EAGAIN Waiting period timed out.
  * @retval -EFAULT A parameter is incorrect, the notification could not be sent to one or more
  * observer, or the function context is invalid (inside an ISR). The function only returns this
- * value when the CONFIG_ZBUS_ASSERT_MOCK is enabled.
+ * value when the @kconfig{CONFIG_ZBUS_ASSERT_MOCK} is enabled.
  */
 int zbus_chan_pub(const struct zbus_channel *chan, const void *msg, k_timeout_t timeout);
 
@@ -529,7 +529,7 @@ int zbus_chan_pub(const struct zbus_channel *chan, const void *msg, k_timeout_t 
  * @retval -EBUSY The channel is busy.
  * @retval -EAGAIN Waiting period timed out.
  * @retval -EFAULT A parameter is incorrect, or the function context is invalid (inside an ISR). The
- * function only returns this value when the CONFIG_ZBUS_ASSERT_MOCK is enabled.
+ * function only returns this value when the @kconfig{CONFIG_ZBUS_ASSERT_MOCK} is enabled.
  */
 int zbus_chan_read(const struct zbus_channel *chan, void *msg, k_timeout_t timeout);
 
@@ -552,7 +552,7 @@ int zbus_chan_read(const struct zbus_channel *chan, void *msg, k_timeout_t timeo
  * @retval -EBUSY The channel is busy.
  * @retval -EAGAIN Waiting period timed out.
  * @retval -EFAULT A parameter is incorrect, or the function context is invalid (inside an ISR). The
- * function only returns this value when the CONFIG_ZBUS_ASSERT_MOCK is enabled.
+ * function only returns this value when the @kconfig{CONFIG_ZBUS_ASSERT_MOCK} is enabled.
  */
 int zbus_chan_claim(const struct zbus_channel *chan, k_timeout_t timeout);
 
@@ -568,7 +568,7 @@ int zbus_chan_claim(const struct zbus_channel *chan, k_timeout_t timeout);
  *
  * @retval 0 Channel finished.
  * @retval -EFAULT A parameter is incorrect, or the function context is invalid (inside an ISR). The
- * function only returns this value when the CONFIG_ZBUS_ASSERT_MOCK is enabled.
+ * function only returns this value when the @kconfig{CONFIG_ZBUS_ASSERT_MOCK} is enabled.
  */
 int zbus_chan_finish(const struct zbus_channel *chan);
 
@@ -588,7 +588,7 @@ int zbus_chan_finish(const struct zbus_channel *chan);
  * @retval -ENOMEM There is not more buffer on the messgage buffers pool.
  * @retval -EFAULT A parameter is incorrect, the notification could not be sent to one or more
  * observer, or the function context is invalid (inside an ISR). The function only returns this
- * value when the CONFIG_ZBUS_ASSERT_MOCK is enabled.
+ * value when the @kconfig{CONFIG_ZBUS_ASSERT_MOCK} is enabled.
  */
 int zbus_chan_notify(const struct zbus_channel *chan, k_timeout_t timeout);
 
@@ -747,7 +747,7 @@ struct zbus_observer_node {
  *
  * @retval 0 Observer set enable.
  * @retval -EFAULT A parameter is incorrect, or the function context is invalid (inside an ISR). The
- * function only returns this value when the CONFIG_ZBUS_ASSERT_MOCK is enabled.
+ * function only returns this value when the @kconfig{CONFIG_ZBUS_ASSERT_MOCK} is enabled.
  */
 int zbus_obs_set_enable(struct zbus_observer *obs, bool enabled);
 
@@ -832,7 +832,7 @@ static inline const char *zbus_obs_name(const struct zbus_observer *obs)
  *
  * @retval 0 Observer detached from the thread.
  * @retval -EFAULT A parameter is incorrect, or the function context is invalid (inside an ISR). The
- * function only returns this value when the CONFIG_ZBUS_ASSERT_MOCK is enabled.
+ * function only returns this value when the @kconfig{CONFIG_ZBUS_ASSERT_MOCK} is enabled.
  */
 int zbus_obs_attach_to_thread(const struct zbus_observer *obs);
 
@@ -843,7 +843,7 @@ int zbus_obs_attach_to_thread(const struct zbus_observer *obs);
  *
  * @retval 0 Observer detached from the thread.
  * @retval -EFAULT A parameter is incorrect, or the function context is invalid (inside an ISR). The
- * function only returns this value when the CONFIG_ZBUS_ASSERT_MOCK is enabled.
+ * function only returns this value when the @kconfig{CONFIG_ZBUS_ASSERT_MOCK} is enabled.
  */
 int zbus_obs_detach_from_thread(const struct zbus_observer *obs);
 
@@ -865,7 +865,7 @@ int zbus_obs_detach_from_thread(const struct zbus_observer *obs);
  * @retval -EAGAIN Waiting period timed out.
  * @retval -EINVAL The observer is not a subscriber.
  * @retval -EFAULT A parameter is incorrect, or the function context is invalid (inside an ISR). The
- * function only returns this value when the CONFIG_ZBUS_ASSERT_MOCK is enabled.
+ * function only returns this value when the @kconfig{CONFIG_ZBUS_ASSERT_MOCK} is enabled.
  */
 int zbus_sub_wait(const struct zbus_observer *sub, const struct zbus_channel **chan,
 		  k_timeout_t timeout);

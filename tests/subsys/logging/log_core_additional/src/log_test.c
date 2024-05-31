@@ -409,8 +409,6 @@ ZTEST(test_log_core_additional, test_multiple_backends)
 #ifdef CONFIG_LOG_PROCESS_THREAD
 ZTEST(test_log_core_additional, test_log_thread)
 {
-	uint32_t slabs_free, used, max;
-
 	TC_PRINT("Logging buffer is configured to %d bytes\n",
 		 CONFIG_LOG_BUFFER_SIZE);
 
@@ -420,28 +418,57 @@ ZTEST(test_log_core_additional, test_log_thread)
 
 	log_setup(false);
 
-	slabs_free = log_msg_mem_get_free();
-	used = log_msg_mem_get_used();
-	max = log_msg_mem_get_max_used();
-	zassert_equal(used, 0);
+	zassert_false(log_data_pending());
 
 	LOG_INF("log info to log thread");
 	LOG_WRN("log warning to log thread");
 	LOG_ERR("log error to log thread");
 
-	zassert_equal(log_msg_mem_get_used(), 3);
-	zassert_equal(log_msg_mem_get_free(), slabs_free - 3);
-	zassert_equal(log_msg_mem_get_max_used(), max);
+	zassert_true(log_data_pending());
 
-	TC_PRINT("after log, free: %d, used: %d, max: %d\n", slabs_free, used, max);
 	/* wait 2 seconds for logging thread to handle this log message*/
 	k_sleep(K_MSEC(2000));
 	zassert_equal(3, backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
-	zassert_equal(log_msg_mem_get_used(), 0);
+	zassert_false(log_data_pending());
 }
 #else
 ZTEST(test_log_core_additional, test_log_thread)
+{
+	ztest_test_skip();
+}
+#endif
+
+/**
+ * @brief Process all logging activities using a dedicated thread (trigger immediate processing)
+ *
+ * @addtogroup logging
+ */
+
+#ifdef CONFIG_LOG_PROCESS_THREAD
+ZTEST(test_log_core_additional, test_log_thread_trigger)
+{
+	log_setup(false);
+
+	zassert_false(log_data_pending());
+
+	LOG_INF("log info to log thread");
+	LOG_WRN("log warning to log thread");
+	LOG_ERR("log error to log thread");
+
+	zassert_true(log_data_pending());
+
+	/* Trigger log thread to process messages as soon as possible. */
+	log_thread_trigger();
+
+	/* wait 1ms to give logging thread chance to handle these log messages. */
+	k_sleep(K_MSEC(1));
+	zassert_equal(3, backend1_cb.counter,
+		      "Unexpected amount of messages received by the backend.");
+	zassert_false(log_data_pending());
+}
+#else
+ZTEST(test_log_core_additional, test_log_thread_trigger)
 {
 	ztest_test_skip();
 }
@@ -491,7 +518,9 @@ ZTEST(test_log_core_additional, test_log_msg_create)
 
 		Z_LOG_MSG_CREATE(!IS_ENABLED(CONFIG_USERSPACE), mode,
 			  Z_LOG_LOCAL_DOMAIN_ID, NULL,
-			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, TEST_MESSAGE);
+			  LOG_LEVEL_INF, NULL, 0, TEST_MESSAGE);
+
+		backend1_cb.total_logs = 3;
 
 		while (log_test_process()) {
 		}

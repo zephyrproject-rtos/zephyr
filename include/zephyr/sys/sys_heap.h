@@ -162,11 +162,6 @@ void sys_heap_free(struct sys_heap *heap, void *mem);
  * new block fails, then NULL will be returned and the old block will
  * not be freed or modified.
  *
- * @note The return of a NULL on failure is a different behavior than
- * POSIX realloc(), which specifies that the original pointer will be
- * returned (i.e. it is not possible to safely detect realloc()
- * failure in POSIX, but it is here).
- *
  * @param heap Heap from which to allocate
  * @param ptr Original pointer returned from a previous allocation
  * @param align Alignment in bytes, must be a power of two

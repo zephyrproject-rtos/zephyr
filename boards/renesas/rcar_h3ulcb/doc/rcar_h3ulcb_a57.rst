@@ -58,6 +58,8 @@ hardware features:
 +-----------+------------------------------+--------------------------------+
 | UART      | uart                         | serial port-polling            |
 +-----------+------------------------------+--------------------------------+
+| MMC       | renesas_rcar_mmc             | DMA and SCC                    |
++-----------+------------------------------+--------------------------------+
 
 Other hardware features have not been enabled yet for this board.
 

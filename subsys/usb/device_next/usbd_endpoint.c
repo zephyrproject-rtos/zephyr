@@ -86,17 +86,6 @@ static void usbd_ep_ctrl_set_zlp(struct usbd_contex *const uds_ctx,
  * All the functions below are part of public USB device support API.
  */
 
-struct net_buf *usbd_ep_ctrl_buf_alloc(struct usbd_contex *const uds_ctx,
-				       const uint8_t ep, const size_t size)
-{
-	if (USB_EP_GET_IDX(ep)) {
-		/* Not a control endpoint */
-		return NULL;
-	}
-
-	return udc_ep_buf_alloc(uds_ctx->dev, ep, size);
-}
-
 int usbd_ep_ctrl_enqueue(struct usbd_contex *const uds_ctx,
 			 struct net_buf *const buf)
 {

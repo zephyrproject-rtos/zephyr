@@ -14,4 +14,6 @@
 
 #include <zephyr/linker/common-rom/common-rom-debug.ld>
 
+#include <zephyr/linker/common-rom/common-rom-interrupt-controllers.ld>
+
 #include <zephyr/linker/common-rom/common-rom-misc.ld>

@@ -57,9 +57,3 @@ properties:
       - 368000000
       - 384000000
       - 400000000
-
-  nordic,ficrs:
-    required: true
-
-  nordic,ficr-names:
-    required: true

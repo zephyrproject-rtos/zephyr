@@ -235,13 +235,13 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 		"Pitch in descriptor is larger than screen size");
 	__ASSERT(desc->height <= config->height,
 		"Height in descriptor is larger than screen size");
-	__ASSERT(x + desc->pitch <= config->width,
+	__ASSERT(x + desc->width <= config->width,
 		 "Writing outside screen boundaries in horizontal direction");
 	__ASSERT(y + desc->height <= config->height,
 		 "Writing outside screen boundaries in vertical direction");
 
 	if (desc->width > desc->pitch ||
-	    x + desc->pitch > config->width ||
+	    x + desc->width > config->width ||
 	    y + desc->height > config->height) {
 		return -EINVAL;
 	}

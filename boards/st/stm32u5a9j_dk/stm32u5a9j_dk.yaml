@@ -20,6 +20,7 @@ supported:
   - sdmmc
   - timer
   - rng
+  - rtc
 ram: 2496
 flash: 4096
 vendor: st

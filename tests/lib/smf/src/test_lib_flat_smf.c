@@ -213,10 +213,10 @@ static void state_d_exit(void *obj)
 }
 
 static const struct smf_state test_states[] = {
-	[STATE_A] = SMF_CREATE_STATE(state_a_entry, state_a_run, state_a_exit),
-	[STATE_B] = SMF_CREATE_STATE(state_b_entry, state_b_run, state_b_exit),
-	[STATE_C] = SMF_CREATE_STATE(state_c_entry, state_c_run, state_c_exit),
-	[STATE_D] = SMF_CREATE_STATE(state_d_entry, state_d_run, state_d_exit),
+	[STATE_A] = SMF_CREATE_STATE(state_a_entry, state_a_run, state_a_exit, NULL, NULL),
+	[STATE_B] = SMF_CREATE_STATE(state_b_entry, state_b_run, state_b_exit, NULL, NULL),
+	[STATE_C] = SMF_CREATE_STATE(state_c_entry, state_c_run, state_c_exit, NULL, NULL),
+	[STATE_D] = SMF_CREATE_STATE(state_d_entry, state_d_run, state_d_exit, NULL, NULL),
 };
 
 ZTEST(smf_tests, test_smf_flat)

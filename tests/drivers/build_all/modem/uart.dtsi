@@ -53,10 +53,6 @@ test_quectel_eg25_g: quectel_eg25_g {
 	mdm-reset-gpios = <&test_gpio 0 0>;
 };
 
-test_gsm_ppp: gsm_ppp {
-	compatible = "zephyr,gsm-ppp";
-};
-
 test_telit_me910g1: telit_me910g1 {
 	compatible = "telit,me910g1";
 
@@ -75,4 +71,10 @@ test_nordic_nrf91_slm: nordic_nrf91_slm {
 	compatible = "nordic,nrf91-slm";
 
 	mdm-power-gpios = <&test_gpio 0 0>;
+};
+
+test_sqn_gm02s: sqn_gm02s {
+	compatible = "sqn,gm02s";
+
+	mdm-reset-gpios = <&test_gpio 0 0>;
 };

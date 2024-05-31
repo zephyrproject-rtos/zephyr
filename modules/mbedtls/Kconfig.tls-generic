@@ -12,15 +12,15 @@ menu "Supported TLS version"
 config MBEDTLS_TLS_VERSION_1_0
 	bool "Support for TLS 1.0"
 	select MBEDTLS_CIPHER
-	select MBEDTLS_MAC_MD5_ENABLED
-	select MBEDTLS_MAC_SHA1_ENABLED
+	select MBEDTLS_MD5
+	select MBEDTLS_SHA1
 	select MBEDTLS_MD
 
 config MBEDTLS_TLS_VERSION_1_1
 	bool "Support for TLS 1.1 (DTLS 1.0)"
 	select MBEDTLS_CIPHER
-	select MBEDTLS_MAC_MD5_ENABLED
-	select MBEDTLS_MAC_SHA1_ENABLED
+	select MBEDTLS_MD5
+	select MBEDTLS_SHA1
 	select MBEDTLS_MD
 
 config MBEDTLS_TLS_VERSION_1_2
@@ -105,7 +105,7 @@ config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
 	bool "ECDH-ECDSA based ciphersuite modes"
-	depends on MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C
+	depends on (MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C) || (PSA_WANT_ALG_ECDH && PSA_WANT_ALG_ECDSA)
 
 config MBEDTLS_ECDSA_DETERMINISTIC
 	bool "Deterministic ECDSA (RFC 6979)"
@@ -206,28 +206,7 @@ config MBEDTLS_ECP_NIST_OPTIM
 
 endif
 
-comment "Supported hash"
-
-config MBEDTLS_HASH_ALL_ENABLED
-	bool "All available hashes"
-	select MBEDTLS_HASH_SHA256_ENABLED
-	select MBEDTLS_HASH_SHA384_ENABLED
-	select MBEDTLS_HASH_SHA512_ENABLED
-
-config MBEDTLS_HASH_SHA256_ENABLED
-	bool "SHA256 hash"
-	default y if !NET_L2_OPENTHREAD
-
-config MBEDTLS_HASH_SHA384_ENABLED
-	bool "SHA384 hash"
-	default y if !NET_L2_OPENTHREAD
-	select MBEDTLS_HASH_SHA512_ENABLED
-
-config MBEDTLS_HASH_SHA512_ENABLED
-	bool "SHA512 hash"
-	default y if !NET_L2_OPENTHREAD
-
-comment "Supported cipher modes"
+comment "Supported ciphers and cipher modes"
 
 config MBEDTLS_CIPHER_ALL_ENABLED
 	bool "All available ciphers"
@@ -300,57 +279,57 @@ config MBEDTLS_CIPHER_MODE_CTR_ENABLED
 
 config MBEDTLS_CHACHAPOLY_AEAD_ENABLED
 	bool "ChaCha20-Poly1305 AEAD algorithm"
-	depends on MBEDTLS_CIPHER_CHACHA20_ENABLED || MBEDTLS_MAC_POLY1305_ENABLED
+	depends on MBEDTLS_CIPHER_CHACHA20_ENABLED && MBEDTLS_POLY1305
 
-comment "Supported message authentication methods"
+config MBEDTLS_CMAC
+	bool "CMAC (Cipher-based Message Authentication Code) mode for block ciphers."
+	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_DES_ENABLED
 
-config MBEDTLS_MAC_ALL_ENABLED
+comment "Supported hash algorithms"
+
+config MBEDTLS_HASH_ALL_ENABLED
 	bool "All available MAC methods"
-	select MBEDTLS_MAC_MD4_ENABLED
-	select MBEDTLS_MAC_MD5_ENABLED
-	select MBEDTLS_MAC_SHA1_ENABLED
-	select MBEDTLS_MAC_SHA256_ENABLED
-	select MBEDTLS_MAC_SHA384_ENABLED
-	select MBEDTLS_MAC_SHA512_ENABLED
-	select MBEDTLS_MAC_POLY1305_ENABLED
-	select MBEDTLS_MAC_CMAC_ENABLED
+	select MBEDTLS_MD4
+	select MBEDTLS_MD5
+	select MBEDTLS_SHA1
+	select MBEDTLS_SHA224
+	select MBEDTLS_SHA256
+	select MBEDTLS_SHA384
+	select MBEDTLS_SHA512
+	select MBEDTLS_POLY1305
 
-config MBEDTLS_MAC_MD4_ENABLED
+config MBEDTLS_MD4
 	bool "MD4 hash algorithm"
 
-config MBEDTLS_MAC_MD5_ENABLED
+config MBEDTLS_MD5
 	bool "MD5 hash algorithm"
-	default y if !NET_L2_OPENTHREAD
 
-config MBEDTLS_MAC_SHA1_ENABLED
-	bool "SHA1 hash algorithm"
-	default y if !NET_L2_OPENTHREAD
+config MBEDTLS_SHA1
+	bool "SHA-1 hash algorithm"
 
-config MBEDTLS_MAC_SHA256_ENABLED
-	bool "SHA-224 and SHA-256 hash algorithms"
+config MBEDTLS_SHA224
+	bool "SHA-224 hash algorithm"
+
+config MBEDTLS_SHA256
+	bool "SHA-256 hash algorithm"
 	default y
 
 config MBEDTLS_SHA256_SMALLER
 	bool "Smaller SHA-256 implementation"
-	depends on MBEDTLS_MAC_SHA256_ENABLED
+	depends on MBEDTLS_SHA256
 	default y
 	help
-	  Enable an implementation of SHA-256 that has lower ROM footprint but also
-	  lower performance
+	  Enable an implementation of SHA-256 that has a
+	  smaller ROM footprint but also lower performance.
 
-config MBEDTLS_MAC_SHA384_ENABLED
+config MBEDTLS_SHA384
 	bool "SHA-384 hash algorithm"
-	select MBEDTLS_MAC_SHA512_ENABLED
 
-config MBEDTLS_MAC_SHA512_ENABLED
+config MBEDTLS_SHA512
 	bool "SHA-512 hash algorithm"
 
-config MBEDTLS_MAC_POLY1305_ENABLED
-	bool "Poly1305 MAC algorithm"
-
-config MBEDTLS_MAC_CMAC_ENABLED
-	bool "CMAC (Cipher-based Message Authentication Code) mode for block ciphers."
-	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_DES_ENABLED
+config MBEDTLS_POLY1305
+	bool "Poly1305 hash family"
 
 endmenu
 
@@ -392,7 +371,7 @@ config MBEDTLS_HAVE_ASM
 
 config MBEDTLS_ENTROPY_ENABLED
 	bool "MbedTLS generic entropy pool"
-	depends on MBEDTLS_MAC_SHA256_ENABLED || MBEDTLS_MAC_SHA384_ENABLED || MBEDTLS_MAC_SHA512_ENABLED
+	depends on MBEDTLS_SHA256 || MBEDTLS_SHA384 || MBEDTLS_SHA512
 	default y if MBEDTLS_ZEPHYR_ENTROPY
 
 config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
@@ -465,16 +444,50 @@ config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 	  which ensures that master secrets are different for every
 	  connection and every session.
 
+choice MBEDTLS_PSA_CRYPTO_RND_SOURCE
+	prompt "Select random source for built-in PSA crypto"
+	depends on MBEDTLS_PSA_CRYPTO_C
+	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
+
+config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
+	bool "Use a cryptographically secure driver as random source"
+	depends on CSPRNG_ENABLED
+	help
+	  Use cryptographically secure random generator to provide random data
+	  instead of legacy MbedTLS modules (ENTROPY + CTR_DRBG/HMAC_DRBG).
+
+config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
+	bool "Use legacy modules to generate random data"
+	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_CTR_DRBG_ENABLED if !MBEDTLS_HMAC_DRBG_ENABLED
+	help
+	  Use legacy MbedTLS modules (ENTROPY + CTR_DRBG/HMAC_DRBG) as random
+	  source generators.
+
+endchoice
+
 config MBEDTLS_PSA_CRYPTO_C
 	bool "Platform Security Architecture cryptography API"
-	depends on MBEDTLS_ENTROPY_ENABLED
-	depends on MBEDTLS_CTR_DRBG_ENABLED || MBEDTLS_HMAC_DRBG_ENABLED
 	default y if UOSCORE || UEDHOC
+
+config MBEDTLS_USE_PSA_CRYPTO
+	bool "Use PSA APIs instead of legacy MbedTLS when possible"
+	default y if MBEDTLS_PSA_CRYPTO_CLIENT
+	help
+	  Use PSA APIs instead of legacy MbedTLS functions in TLS/DTLS and other
+	  "intermediate" modules such as PK, MD and Cipher.
+
+config MBEDTLS_PSA_CRYPTO_CLIENT
+	bool
+	default y
+	depends on BUILD_WITH_TFM || MBEDTLS_PSA_CRYPTO_C
+	select PSA_CRYPTO_CLIENT
 
 config MBEDTLS_LMS
 	bool "Support LMS signature schemes"
-	depends on MBEDTLS_PSA_CRYPTO_C
-	depends on MBEDTLS_HASH_SHA256_ENABLED
+	depends on MBEDTLS_PSA_CRYPTO_CLIENT
+	depends on MBEDTLS_SHA256
+	select PSA_WANT_ALG_SHA_256
 
 config MBEDTLS_SSL_DTLS_CONNECTION_ID
 	bool "DTLS Connection ID extension"

@@ -261,7 +261,7 @@ int arm_core_mpu_get_max_available_dyn_regions(void);
  *       spans multiple enabled MPU regions (even if these regions all
  *       permit user access).
  */
-int arm_core_mpu_buffer_validate(void *addr, size_t size, int write);
+int arm_core_mpu_buffer_validate(const void *addr, size_t size, int write);
 
 #endif /* CONFIG_ARM_MPU */
 

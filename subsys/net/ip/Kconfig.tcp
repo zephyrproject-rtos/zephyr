@@ -229,9 +229,7 @@ config NET_TCP_ISN_RFC6528
 	bool "Use ISN algorithm from RFC 6528"
 	default y
 	depends on NET_TCP
-	select MBEDTLS
-	select MBEDTLS_MD
-	select MBEDTLS_MAC_MD5_ENABLED
+	depends on PSA_WANT_ALG_SHA_256
 	help
 	  Implement Initial Sequence Number calculation as described in
 	  RFC 6528 chapter 3. https://tools.ietf.org/html/rfc6528

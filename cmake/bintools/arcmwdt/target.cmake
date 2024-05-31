@@ -20,9 +20,16 @@ SET(CMAKE_C_ARCHIVE_FINISH "<CMAKE_AR> -sq <TARGET>")
 
 find_program(CMAKE_GDB     ${CROSS_COMPILE}mdb     PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
-# MWDT binutils don't support required features like section renaming, so we
-# temporarily had to use GNU objcopy instead
-find_program(CMAKE_OBJCOPY ${ZEPHYR_SDK_CROSS_COMPILE}objcopy PATHS ${ZEPHYR_SDK_INSTALL_DIR} NO_DEFAULT_PATH)
-message(STATUS "Found GNU objcopy helper for MWDT: ${CMAKE_OBJCOPY} (Zephyr SDK ${SDK_VERSION})")
+function(zephyr_sdk_target_cmake)
+  # Scoped loading of variables set by Zephyr SDK target.cmake.
+  include(${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr/target.cmake)
+
+  # MWDT binutils don't support required features like section renaming, so we
+  # temporarily had to use GNU objcopy instead
+  find_program(CMAKE_OBJCOPY ${CROSS_COMPILE}objcopy PATHS ${ZEPHYR_SDK_INSTALL_DIR} NO_DEFAULT_PATH)
+  message(STATUS "Found GNU objcopy helper for MWDT: ${CMAKE_OBJCOPY} (Zephyr SDK ${SDK_VERSION})")
+endfunction()
+
+zephyr_sdk_target_cmake()
 
 include(${ZEPHYR_BASE}/cmake/bintools/arcmwdt/target_bintools.cmake)

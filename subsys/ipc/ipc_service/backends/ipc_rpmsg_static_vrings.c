@@ -325,13 +325,14 @@ static int mbox_init(const struct device *instance)
 {
 	const struct backend_config_t *conf = instance->config;
 	struct backend_data_t *data = instance->data;
+	struct k_work_queue_config wq_cfg = {.name = instance->name};
 	int prio, err;
 
 	prio = (conf->wq_prio_type == PRIO_COOP) ? K_PRIO_COOP(conf->wq_prio) :
 						   K_PRIO_PREEMPT(conf->wq_prio);
 
 	k_work_queue_init(&data->mbox_wq);
-	k_work_queue_start(&data->mbox_wq, mbox_stack[conf->id], WQ_STACK_SIZE, prio, NULL);
+	k_work_queue_start(&data->mbox_wq, mbox_stack[conf->id], WQ_STACK_SIZE, prio, &wq_cfg);
 
 	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
 		char name[THREAD_MAX_NAME_LEN];

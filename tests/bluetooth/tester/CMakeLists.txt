@@ -94,3 +94,7 @@ endif()
 if(CONFIG_BT_TMAP)
     target_sources(app PRIVATE src/btp_tmap.c)
 endif()
+
+if(CONFIG_BT_OTS)
+    target_sources(app PRIVATE src/btp_ots.c)
+endif()

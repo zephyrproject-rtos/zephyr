@@ -5,9 +5,12 @@ family:
         socs:
           - name: it81202bx
           - name: it81202cx
+          - name: it81202dx
           - name: it81302bx
           - name: it81302cx
+          - name: it81302dx
           - name: it82002aw
+          - name: it82002bw
           - name: it82202ax
           - name: it82302ax
           - name: it82202bw

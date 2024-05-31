@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2024 Common Ground Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mikrobus_i2c {
+	status = "okay";
+
+	bme280_mikroe_weather_click: bme280@76 {
+		compatible = "bosch,bme280";
+		reg = <0x76>;
+	};
+};

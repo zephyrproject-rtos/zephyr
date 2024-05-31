@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/debug/symtab.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
@@ -28,76 +29,29 @@ static const struct z_exc_handle exceptions[] = {
  #define NO_REG "                "
 #endif
 
-#ifdef CONFIG_RISCV_EXCEPTION_STACK_TRACE
-#define MAX_STACK_FRAMES 8
+/* Stack trace function */
+void z_riscv_unwind_stack(const z_arch_esf_t *esf);
 
-struct stackframe {
-	uintptr_t fp;
-	uintptr_t ra;
-};
-
-static bool in_stack_bound(uintptr_t addr)
+uintptr_t z_riscv_get_sp_before_exc(const z_arch_esf_t *esf)
 {
-#ifdef CONFIG_THREAD_STACK_INFO
-	uintptr_t start, end;
+	/*
+	 * Kernel stack pointer prior this exception i.e. before
+	 * storing the exception stack frame.
+	 */
+	uintptr_t sp = (uintptr_t)esf + sizeof(z_arch_esf_t);
 
-	if (_current == NULL || arch_is_in_isr()) {
-		/* We were servicing an interrupt */
-		int cpu_id;
-
-#ifdef CONFIG_SMP
-		cpu_id = arch_curr_cpu()->id;
-#else
-		cpu_id = 0;
-#endif
-
-		start = (uintptr_t)K_KERNEL_STACK_BUFFER(z_interrupt_stacks[cpu_id]);
-		end = start + CONFIG_ISR_STACK_SIZE;
 #ifdef CONFIG_USERSPACE
-		/* TODO: handle user threads */
+	if ((esf->mstatus & MSTATUS_MPP) == PRV_U) {
+		/*
+		 * Exception happened in user space:
+		 * consider the saved user stack instead.
+		 */
+		sp = esf->sp;
+	}
 #endif
-	} else {
-		start = _current->stack_info.start;
-		end = Z_STACK_PTR_ALIGN(_current->stack_info.start + _current->stack_info.size);
-	}
 
-	return (addr >= start) && (addr < end);
-#else
-	ARG_UNUSED(addr);
-	return true;
-#endif /* CONFIG_THREAD_STACK_INFO */
+	return sp;
 }
-
-static inline bool in_text_region(uintptr_t addr)
-{
-	extern uintptr_t __text_region_start, __text_region_end;
-
-	return (addr >= (uintptr_t)&__text_region_start) && (addr < (uintptr_t)&__text_region_end);
-}
-
-static void unwind_stack(const z_arch_esf_t *esf)
-{
-	uintptr_t fp = esf->s0;
-	uintptr_t ra;
-	struct stackframe *frame;
-
-	LOG_ERR("call trace:");
-
-	for (int i = 0; (i < MAX_STACK_FRAMES) && (fp != 0U) && in_stack_bound((uintptr_t)fp);) {
-		frame = (struct stackframe *)fp - 1;
-		ra = frame->ra;
-		if (in_text_region(ra)) {
-			LOG_ERR("     %2d: fp: " PR_REG "   ra: " PR_REG, i, (uintptr_t)fp, ra);
-			/*
-			 * Increment the iterator only if `ra` is within the text region to get the
-			 * most out of it
-			 */
-			i++;
-		}
-		fp = frame->fp;
-	}
-}
-#endif /* CONFIG_RISCV_EXCEPTION_STACK_TRACE */
 
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 				       const z_arch_esf_t *esf)
@@ -110,12 +64,6 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const z_arch_esf
 {
 #ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
-		/*
-		 * Kernel stack pointer prior this exception i.e. before
-		 * storing the exception stack frame.
-		 */
-		uintptr_t sp = (uintptr_t)esf + sizeof(z_arch_esf_t);
-
 		LOG_ERR("     a0: " PR_REG "    t0: " PR_REG, esf->a0, esf->t0);
 		LOG_ERR("     a1: " PR_REG "    t1: " PR_REG, esf->a1, esf->t1);
 		LOG_ERR("     a2: " PR_REG "    t2: " PR_REG, esf->a2, esf->t2);
@@ -130,23 +78,18 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const z_arch_esf
 		LOG_ERR("     a6: " PR_REG "    t6: " PR_REG, esf->a6, esf->t6);
 		LOG_ERR("     a7: " PR_REG, esf->a7);
 #endif /* CONFIG_RISCV_ISA_RV32E */
-#ifdef CONFIG_USERSPACE
-		if ((esf->mstatus & MSTATUS_MPP) == 0) {
-			/*
-			 * Exception happened in user space:
-			 * consider the saved user stack instead.
-			 */
-			sp = esf->sp;
-		}
-#endif
-		LOG_ERR("     sp: " PR_REG, sp);
+		LOG_ERR("     sp: " PR_REG, z_riscv_get_sp_before_exc(esf));
 		LOG_ERR("     ra: " PR_REG, esf->ra);
+#ifndef CONFIG_SYMTAB
 		LOG_ERR("   mepc: " PR_REG, esf->mepc);
+#else
+		uint32_t offset = 0;
+		const char *name = symtab_find_symbol_name(esf->mepc, &offset);
+
+		LOG_ERR("   mepc: " PR_REG " [%s+0x%x]", esf->mepc, name, offset);
+#endif
 		LOG_ERR("mstatus: " PR_REG, esf->mstatus);
 		LOG_ERR("");
-#ifdef CONFIG_RISCV_EXCEPTION_STACK_TRACE
-		unwind_stack(esf);
-#endif /* CONFIG_RISCV_EXCEPTION_STACK_TRACE */
 	}
 
 	if (csf != NULL) {
@@ -163,6 +106,11 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const z_arch_esf
 #endif /* CONFIG_RISCV_ISA_RV32E */
 		LOG_ERR("");
 	}
+
+	if (IS_ENABLED(CONFIG_RISCV_EXCEPTION_STACK_TRACE) && (esf != NULL)) {
+		z_riscv_unwind_stack(esf);
+	}
+
 #endif /* CONFIG_EXCEPTION_DEBUG */
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;
@@ -315,6 +263,6 @@ static void z_vrfy_user_fault(unsigned int reason)
 	z_impl_user_fault(reason);
 }
 
-#include <syscalls/user_fault_mrsh.c>
+#include <zephyr/syscalls/user_fault_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */

@@ -74,7 +74,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 	}
 }
 
-BT_CONN_CB_DEFINE(conn_callbacks) = {
+static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
 	.security_changed = security_changed,
@@ -351,6 +351,8 @@ static void test_main(void)
 {
 	int err;
 
+	bt_conn_cb_register(&conn_callbacks);
+
 	err = bt_enable(NULL);
 	if (err != 0) {
 		FAIL("Bluetooth discover failed (err %d)\n", err);
@@ -393,7 +395,7 @@ static void test_main(void)
 static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "gatt_client",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
 	},

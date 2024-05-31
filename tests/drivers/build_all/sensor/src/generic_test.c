@@ -30,7 +30,7 @@ union sensor_data_union {
  * Set up an RTIO context that can be shared for all sensors
  */
 
-static enum sensor_channel iodev_all_channels[SENSOR_CHAN_ALL];
+static struct sensor_chan_spec iodev_all_channels[SENSOR_CHAN_ALL];
 static struct sensor_read_config iodev_read_config = {
 	.channels = iodev_all_channels,
 	.max = SENSOR_CHAN_ALL,
@@ -110,8 +110,9 @@ static void run_generic_test(const struct device *dev)
 
 		q31_t lower, upper;
 		int8_t shift;
+		struct sensor_chan_spec ch_spec = {.chan_type = ch, .chan_idx = 0};
 
-		if (emul_sensor_backend_get_sample_range(emul, ch, &lower, &upper,
+		if (emul_sensor_backend_get_sample_range(emul, ch_spec, &lower, &upper,
 							 &channel_table[ch].epsilon, &shift) == 0) {
 			/* This channel is supported */
 			channel_table[ch].supported = true;
@@ -120,7 +121,7 @@ static void run_generic_test(const struct device *dev)
 				channel_table[ch].epsilon, shift);
 
 			/* Add to the list of channels to read */
-			iodev_all_channels[iodev_read_config.count++] = ch;
+			iodev_all_channels[iodev_read_config.count++].chan_type = ch;
 
 			/* Generate a set of CONFIG_GENERIC_SENSOR_TEST_NUM_EXPECTED_VALS test
 			 * values.
@@ -155,20 +156,22 @@ static void run_generic_test(const struct device *dev)
 
 		/* Set this iteration's expected values in emul for every supported channel */
 		for (size_t i = 0; i < iodev_read_config.count; i++) {
-			enum sensor_channel ch = iodev_all_channels[i];
+			struct sensor_chan_spec ch_spec = iodev_all_channels[i];
 
 			rv = emul_sensor_backend_set_channel(
-				emul, ch, &channel_table[ch].expected_values[iteration],
-				channel_table[ch].expected_value_shift);
-			zassert_ok(
-				rv,
-				"Cannot set value 0x%08x on channel %d (error %d, iteration %d/%d)",
-				channel_table[i].expected_values[iteration], ch, rv, iteration + 1,
-				CONFIG_GENERIC_SENSOR_TEST_NUM_EXPECTED_VALS);
+				emul, ch_spec,
+				&channel_table[ch_spec.chan_type].expected_values[iteration],
+				channel_table[ch_spec.chan_type].expected_value_shift);
+			zassert_ok(rv,
+				   "Cannot set value 0x%08x on channel (type: %d, index: %d) "
+				   "(error %d, iteration %d/%d)",
+				   channel_table[i].expected_values[iteration], ch_spec.chan_type,
+				   ch_spec.chan_idx, rv, iteration + 1,
+				   CONFIG_GENERIC_SENSOR_TEST_NUM_EXPECTED_VALS);
 		}
 
 		/* Perform the actual sensor read */
-		rv = sensor_read(&iodev_read, &sensor_read_rtio_ctx, NULL);
+		rv = sensor_read_async_mempool(&iodev_read, &sensor_read_rtio_ctx, NULL);
 		zassert_ok(rv, "Could not read sensor (error %d, iteration %d/%d)", rv,
 			   iteration + 1, CONFIG_GENERIC_SENSOR_TEST_NUM_EXPECTED_VALS);
 

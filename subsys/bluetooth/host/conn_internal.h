@@ -323,6 +323,8 @@ int bt_conn_iso_init(void);
 /* Cleanup ISO references */
 void bt_iso_cleanup_acl(struct bt_conn *iso_conn);
 
+void bt_iso_reset(void);
+
 /* Add a new BR/EDR connection */
 struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
 

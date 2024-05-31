@@ -6,13 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_ADC_ADC_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_ADC_ADC_H_
 
-/*
- * Provide the BIT_MASK() macro for when this file is included from
- * devicetrees.
- */
-#ifndef BIT_MASK
-#define BIT_MASK(n) ((1 << (n)) - 1)
-#endif
+#include <zephyr/dt-bindings/dt-util.h>
 
 /** Acquisition time is expressed in microseconds. */
 #define ADC_ACQ_TIME_MICROSECONDS  (1)

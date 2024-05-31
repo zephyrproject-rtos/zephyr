@@ -1,0 +1,18 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_ADP5585
+	bool "ADP5585_GPIO I2C GPIO chip"
+	default y
+	depends on DT_HAS_ADI_ADP5585_GPIO_ENABLED
+	select MFD
+	select I2C
+	help
+	  Enable the ADP5585 GPIO driver.
+
+config GPIO_ADP5585_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	depends on GPIO_ADP5585
+	help
+	  Device driver initialization priority.

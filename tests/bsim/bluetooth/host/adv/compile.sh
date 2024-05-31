@@ -20,6 +20,7 @@ app=tests/bsim/bluetooth/host/adv/extended conf_file=prj_advertiser.conf compile
 app=tests/bsim/bluetooth/host/adv/extended conf_file=prj_scanner.conf compile
 app=tests/bsim/bluetooth/host/adv/periodic compile
 app=tests/bsim/bluetooth/host/adv/periodic conf_file=prj_long_data.conf compile
+app=tests/bsim/bluetooth/host/adv/periodic conf_file=prj_coded.conf compile
 app=tests/bsim/bluetooth/host/adv/encrypted/css_sample_data compile
 app=tests/bsim/bluetooth/host/adv/encrypted/ead_sample compile
 app=tests/bsim/bluetooth/host/adv/long_ad compile

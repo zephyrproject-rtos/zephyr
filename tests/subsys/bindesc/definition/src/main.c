@@ -6,7 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/bindesc.h>
-#include <version.h>
+#include <zephyr/version.h>
 
 #define STR_ID 1
 #define UINT_ID 2

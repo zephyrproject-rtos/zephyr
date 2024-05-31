@@ -88,7 +88,7 @@ void arc_core_mpu_remove_mem_domain(struct k_mem_domain *mem_domain);
 void arc_core_mpu_remove_mem_partition(struct k_mem_domain *domain,
 			uint32_t partition_id);
 int arc_core_mpu_get_max_domain_partition_regions(void);
-int arc_core_mpu_buffer_validate(void *addr, size_t size, int write);
+int arc_core_mpu_buffer_validate(const void *addr, size_t size, int write);
 
 #endif
 

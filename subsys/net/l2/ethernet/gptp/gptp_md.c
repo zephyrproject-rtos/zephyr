@@ -29,11 +29,14 @@ static void gptp_md_sync_prepare(struct net_pkt *pkt,
 }
 
 static void gptp_md_follow_up_prepare(struct net_pkt *pkt,
+				      struct net_pkt *sync,
 				      struct gptp_md_sync_info *sync_send,
 				      int port_number)
 {
 	struct gptp_hdr *hdr;
 	struct gptp_follow_up *fup;
+	uint64_t sync_ts_ns, delay_ns;
+	struct net_ptp_time *sync_ts = net_pkt_timestamp(sync);
 
 	hdr = GPTP_HDR(pkt);
 	fup = GPTP_FOLLOW_UP(pkt);
@@ -45,6 +48,48 @@ static void gptp_md_follow_up_prepare(struct net_pkt *pkt,
 
 	hdr->log_msg_interval = sync_send->log_msg_interval;
 
+	if (memcmp(GPTP_GLOBAL_DS()->gm_priority.root_system_id.grand_master_id,
+			   GPTP_DEFAULT_DS()->clk_id, GPTP_CLOCK_ID_LEN) == 0 &&
+			   GPTP_GLOBAL_DS()->gm_present) {
+		/*
+		 * Time aware system acting as the Grand Master.
+		 *
+		 * Get preciseOriginTimestamp from previous sync message
+		 * according to IEEE802.1AS 11.4.4.2.1 syncEventEgressTimestamp
+		 */
+		fup->prec_orig_ts_secs_high = htons(sync_ts->_sec.high);
+		fup->prec_orig_ts_secs_low = htonl(sync_ts->_sec.low);
+		fup->prec_orig_ts_nsecs = htonl(sync_ts->nanosecond);
+		/*
+		 * Grand master clock should keep correction_field at zero,
+		 * according to IEEE802.1AS Table 11-6 and 10.6.2.2.9
+		 */
+		hdr->correction_field = 0LL;
+	} else {
+		/*
+		 * Time aware system acting as a bridge.
+		 */
+		fup->prec_orig_ts_secs_high =
+			htons(sync_send->precise_orig_ts._sec.high);
+		fup->prec_orig_ts_secs_low = htonl(sync_send->precise_orig_ts._sec.low);
+		fup->prec_orig_ts_nsecs = htonl(sync_send->precise_orig_ts.nanosecond);
+		/*
+		 * According to IEEE802.AS 11.1.3 and 11.2.14.2.3, when time aware
+		 * system is operating as a transparent clock also called a bridge, it
+		 * shall compute the sum of link propagation delay and residence time,
+		 * expressed in grand master time base. Then this quantity shall be
+		 * added to last received fup correction field to build value of
+		 * correction field.
+		 */
+		sync_ts_ns = sync_ts->second;
+		sync_ts_ns *= NSEC_PER_SEC;
+		sync_ts_ns += sync_ts->nanosecond;
+		delay_ns = sync_ts_ns - sync_send->upstream_tx_time;
+
+		hdr->correction_field = sync_send->follow_up_correction_field +
+			(int64_t)(sync_send->rate_ratio * delay_ns);
+		hdr->correction_field = htonll(hdr->correction_field << 16);
+	}
 	fup->tlv_hdr.type = htons(GPTP_TLV_ORGANIZATION_EXT);
 	fup->tlv_hdr.len = htons(sizeof(struct gptp_follow_up_tlv));
 	fup->tlv.org_id[0] = GPTP_FUP_TLV_ORG_ID_BYTE_0;
@@ -852,6 +897,7 @@ static void gptp_md_sync_send_state_machine(int port)
 			pkt = gptp_prepare_follow_up(port, state->sync_ptr);
 			if (pkt) {
 				gptp_md_follow_up_prepare(pkt,
+							 state->sync_ptr,
 							 state->sync_send_ptr,
 							 port);
 				gptp_send_follow_up(port, pkt);

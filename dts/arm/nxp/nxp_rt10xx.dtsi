@@ -297,6 +297,15 @@
 				#clock-cells = <0>;
 			};
 
+			sys-pll {
+				compatible = "nxp,imx-ccm-fnpll";
+				loop-div = <22>;
+				numerator = <0>;
+				denominator = <1>;
+				src = <0>;
+				#clock-cells = <0>;
+			};
+
 			#clock-cells = <3>;
 		};
 

@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2020 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	board_power: resources {
+		compatible = "microchip,mec172x-board-power";
+		/* MCHP_GPIO_012 */
+		pwrg-gpios = <&gpio_000_036 10 GPIO_ACTIVE_HIGH>;
+		/* MCHP_GPIO_0054 */
+		rsm-gpios = <&gpio_040_076 12 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+
+/* Enable Target to Controller Virtual Wires GPIO 0 - 3 */
+&vw_t2c_gpio_0 {
+	status = "okay";
+	reset-state = "1";
+	reset-source = "ESPI_RESET";
+};
+
+&vw_t2c_gpio_1 {
+	status = "okay";
+	reset-state = "1";
+	reset-source = "ESPI_RESET";
+};
+
+&vw_t2c_gpio_2 {
+	status = "okay";
+	reset-state = "1";
+	reset-source = "ESPI_RESET";
+};
+
+&vw_t2c_gpio_3 {
+	status = "okay";
+	reset-state = "1";
+	reset-source = "ESPI_RESET";
+};
+
+&spi0 {
+	status = "okay";
+	clock-frequency = <24000000>;
+	chip-select = <0>;
+	lines = <4>;
+};
+
+/* Disable unwanted VWs notifications
+ * Refer to include/zephyr/drivers/espi.h
+ */
+&vw_sus_stat_n {
+	status = "disabled";
+};
+
+&vw_smiout_n {
+	status = "disabled";
+};
+
+&vw_nmiout_n {
+	status = "disabled";
+};
+
+&vw_slp_lan_n {
+	status = "disabled";
+};
+
+&vw_slp_wlan_n {
+	status = "disabled";
+};
+
+&vw_host_c10 {
+	status = "disabled";
+};

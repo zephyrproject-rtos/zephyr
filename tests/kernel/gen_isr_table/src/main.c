@@ -20,7 +20,12 @@ extern uint32_t _irq_vector_table[];
 #endif
 
 #if defined(CONFIG_RISCV)
-#if defined(CONFIG_RISCV_HAS_CLIC)
+#if defined(CONFIG_NRFX_CLIC)
+#define ISR1_OFFSET	15
+#define ISR3_OFFSET	16
+#define ISR5_OFFSET	17
+#define TRIG_CHECK_SIZE	18
+#elif defined(CONFIG_RISCV_HAS_CLIC)
 #define ISR1_OFFSET	3
 #define ISR3_OFFSET	17
 #define ISR5_OFFSET	18
@@ -42,7 +47,12 @@ extern uint32_t _irq_vector_table[];
 #endif
 
 #define IRQ_LINE(offset)        offset
+#if defined(CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET)
+#define TABLE_INDEX(offset)     offset + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+#else
 #define TABLE_INDEX(offset)     offset
+#endif
+
 #else
 #define ISR1_OFFSET	0
 #define ISR2_OFFSET	1
@@ -407,20 +417,39 @@ static void test_multi_level_bit_masks_fn(uint32_t irq1, uint32_t irq2, uint32_t
 	const bool has_l3 = irq3 > 0;
 	const bool has_l2 = irq2 > 0;
 	const uint32_t level = has_l3 ? 3 : has_l2 ? 2 : 1;
-	const uint32_t irqn = (irq3 << l3_shift) | (irq2 << l2_shift) | irq1;
+	const uint32_t irqn_l1 = irq1;
+	const uint32_t irqn_l2 = (irq2 << l2_shift) | irqn_l1;
+	const uint32_t irqn = (irq3 << l3_shift) | irqn_l2;
 
 	zassert_equal(level, irq_get_level(irqn));
 
 	if (has_l2) {
 		zassert_equal(hwirq2, irq_from_level_2(irqn));
+		zassert_equal(hwirq2, irq_from_level(irqn, 2));
 		zassert_equal((hwirq2 + 1) << l2_shift, irq_to_level_2(hwirq2));
+		zassert_equal((hwirq2 + 1) << l2_shift, irq_to_level(hwirq2, 2));
 		zassert_equal(hwirq1, irq_parent_level_2(irqn));
+		zassert_equal(hwirq1, irq_parent_level(irqn, 2));
 	}
 
 	if (has_l3) {
 		zassert_equal(hwirq3, irq_from_level_3(irqn));
+		zassert_equal(hwirq3, irq_from_level(irqn, 3));
 		zassert_equal((hwirq3 + 1) << l3_shift, irq_to_level_3(hwirq3));
+		zassert_equal((hwirq3 + 1) << l3_shift, irq_to_level(hwirq3, 3));
 		zassert_equal(hwirq2 + 1, irq_parent_level_3(irqn));
+		zassert_equal(hwirq2 + 1, irq_parent_level(irqn, 3));
+	}
+
+	if (has_l3) {
+		zassert_equal(irqn_l2, irq_get_intc_irq(irqn));
+	} else if (has_l2) {
+		zassert_equal(irqn_l1, irq_get_intc_irq(irqn));
+	} else {
+		/* degenerate cases */
+		if (false) {
+			zassert_equal(irqn, irq_get_intc_irq(irqn));
+		}
 	}
 }
 

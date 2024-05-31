@@ -169,7 +169,7 @@ static inline int is_user_accessible_region(uint32_t r_index, int write)
  * This internal function validates whether a given memory buffer
  * is user accessible or not.
  */
-static inline int mpu_buffer_validate(void *addr, size_t size, int write)
+static inline int mpu_buffer_validate(const void *addr, size_t size, int write)
 {
 	int32_t r_index;
 	int rc = -EPERM;

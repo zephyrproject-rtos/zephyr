@@ -315,10 +315,10 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 	while (frag) {
 		total += frag->len;
 
-		frag_size = frag->size;
+		frag_size = net_buf_max_len(frag);
 
 		NET_INFO("[%d] frag %p len %d max len %u size %d pool %p",
-			 count, frag, frag->len, net_buf_max_len(frag),
+			 count, frag, frag->len, frag->size,
 			 frag_size, net_buf_pool_get(frag->pool_id));
 
 		count++;
@@ -2130,8 +2130,9 @@ size_t net_pkt_get_contiguous_len(struct net_pkt *pkt)
 		size_t len;
 
 		len = net_pkt_is_being_overwritten(pkt) ?
-			pkt->cursor.buf->len : pkt->cursor.buf->size;
+			pkt->cursor.buf->len : net_buf_max_len(pkt->cursor.buf);
 		len -= pkt->cursor.pos - pkt->cursor.buf->data;
+
 		return len;
 	}
 

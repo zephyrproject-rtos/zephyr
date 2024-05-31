@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Evan Perry Grove
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,6 +70,10 @@
 	status = "disabled";
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
 &pll {
 	div-m = <4>;
 	mul-n = <216>;
@@ -118,7 +123,6 @@
 &can1 {
 	pinctrl-0 = <&can1_rx_pd0 &can1_tx_pd1>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 	status = "okay";
 };
 

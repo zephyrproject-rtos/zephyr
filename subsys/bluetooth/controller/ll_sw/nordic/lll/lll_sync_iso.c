@@ -375,7 +375,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	uint32_t overhead;
 
 	overhead = lll_preempt_calc(ull, (TICKER_ID_SCAN_SYNC_ISO_BASE +
-					  ull_sync_iso_lll_handle_get(lll)), ticks_at_event);
+					  ull_sync_iso_lll_index_get(lll)), ticks_at_event);
 	/* check if preempt to start has changed */
 	if (overhead) {
 		LL_ASSERT_OVERHEAD(overhead);
@@ -456,6 +456,7 @@ static void isr_rx_estab(void *param)
 	LL_ASSERT(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO_ESTAB;
+	e->estab_failed = 0U;
 	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_ok;
 

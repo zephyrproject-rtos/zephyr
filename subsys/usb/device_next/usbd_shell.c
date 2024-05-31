@@ -43,7 +43,7 @@ static struct usbd_shell_speed {
 USBD_DESC_LANG_DEFINE(lang);
 USBD_DESC_MANUFACTURER_DEFINE(mfr, "ZEPHYR");
 USBD_DESC_PRODUCT_DEFINE(product, "Zephyr USBD foobaz");
-USBD_DESC_SERIAL_NUMBER_DEFINE(sn, "0123456789ABCDEF");
+USBD_DESC_SERIAL_NUMBER_DEFINE(sn);
 
 /* Default device descriptors and context used in the shell. */
 USBD_DEVICE_DEFINE(sh_uds_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),

@@ -16,7 +16,7 @@
 #ifndef DEVICETREE_H
 #define DEVICETREE_H
 
-#include <devicetree_generated.h>
+#include <zephyr/devicetree_generated.h>
 #include <zephyr/irq_multilevel.h>
 
 #if !defined(_LINKER) && !defined(_ASMLANGUAGE)
@@ -550,6 +550,25 @@
  * @return the node's index in its parent node's list of children
  */
 #define DT_NODE_CHILD_IDX(node_id) DT_CAT(node_id, _CHILD_IDX)
+
+/**
+ * @brief Get the number of child nodes of a given node
+ *
+ * @param node_id a node identifier
+ * @return Number of child nodes
+ */
+#define DT_CHILD_NUM(node_id) DT_CAT(node_id, _CHILD_NUM)
+
+
+/**
+ * @brief Get the number of child nodes of a given node
+ *        which child nodes' status are okay
+ *
+ * @param node_id a node identifier
+ * @return Number of child nodes which status are okay
+ */
+#define DT_CHILD_NUM_STATUS_OKAY(node_id) \
+	DT_CAT(node_id, _CHILD_NUM_STATUS_OKAY)
 
 /**
  * @brief Do @p node_id1 and @p node_id2 refer to the same node?
@@ -3441,6 +3460,29 @@
  */
 #define DT_INST_CHILD(inst, child) \
 	DT_CHILD(DT_DRV_INST(inst), child)
+
+/**
+ * @brief Get the number of child nodes of a given node
+ *
+ * This is equivalent to @see
+ * <tt>DT_CHILD_NUM(DT_DRV_INST(inst))</tt>.
+ *
+ * @param inst Devicetree instance number
+ * @return Number of child nodes
+ */
+#define DT_INST_CHILD_NUM(inst) DT_CHILD_NUM(DT_DRV_INST(inst))
+
+/**
+ * @brief Get the number of child nodes of a given node
+ *
+ * This is equivalent to @see
+ * <tt>DT_CHILD_NUM_STATUS_OKAY(DT_DRV_INST(inst))</tt>.
+ *
+ * @param inst Devicetree instance number
+ * @return Number of child nodes which status are okay
+ */
+#define DT_INST_CHILD_NUM_STATUS_OKAY(inst) \
+	DT_CHILD_NUM_STATUS_OKAY(DT_DRV_INST(inst))
 
 /**
  * @brief Call @p fn on all child nodes of DT_DRV_INST(inst).

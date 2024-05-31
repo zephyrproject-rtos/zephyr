@@ -1,0 +1,7 @@
+tests:
+  kernel.smp_abort:
+    arch_exclude: x86  # Buggy irq_offload(), see #71172
+    tags:
+      - kernel
+      - smp
+    filter: (CONFIG_MP_MAX_NUM_CPUS > 1)

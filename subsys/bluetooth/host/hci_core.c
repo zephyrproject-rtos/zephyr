@@ -253,8 +253,12 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	LOG_DBG("opcode 0x%04x param_len %u", opcode, param_len);
 
+	/* net_buf_alloc(K_FOREVER) can fail when run from the syswq */
 	buf = net_buf_alloc(&hci_cmd_pool, K_FOREVER);
-	__ASSERT_NO_MSG(buf);
+	if (!buf) {
+		LOG_DBG("Unable to allocate a command buffer");
+		return NULL;
+	}
 
 	LOG_DBG("buf %p", buf);
 
@@ -340,6 +344,8 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			return -ENOMEM;
 		case BT_HCI_ERR_INVALID_PARAM:
 			return -EINVAL;
+		case BT_HCI_ERR_CMD_DISALLOWED:
+			return -EACCES;
 		default:
 			return -EIO;
 		}
@@ -1153,6 +1159,7 @@ static void conn_auto_initiate(struct bt_conn *conn)
 
 static void le_conn_complete_cancel(uint8_t err)
 {
+	int ret;
 	struct bt_conn *conn;
 
 	/* Handle create connection cancel.
@@ -1166,27 +1173,30 @@ static void le_conn_complete_cancel(uint8_t err)
 		return;
 	}
 
-	conn->err = err;
-
-	/* Handle cancellation of outgoing connection attempt. */
-	if (!IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST)) {
-		/* We notify before checking autoconnect flag
-		 * as application may choose to change it from
-		 * callback.
-		 */
-		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-		/* Check if device is marked for autoconnect. */
-		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+	if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+		if (!IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST)) {
 			/* Restart passive scanner for device */
 			bt_conn_set_state(conn, BT_CONN_SCAN_BEFORE_INITIATING);
+		} else {
+			/* Restart FAL initiator after RPA timeout. */
+			ret = bt_le_create_conn(conn);
+			if (ret) {
+				LOG_ERR("Failed to restart initiator");
+			}
 		}
 	} else {
-		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
-			/* Restart FAL initiator after RPA timeout. */
-			bt_le_create_conn(conn);
-		} else {
-			/* Create connection canceled by timeout */
+		int busy_status = k_work_delayable_busy_get(&conn->deferred_work);
+
+		if (!(busy_status & (K_WORK_QUEUED | K_WORK_DELAYED))) {
+			/* Connection initiation timeout triggered. */
+			conn->err = err;
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		} else {
+			/* Restart initiator after RPA timeout. */
+			ret = bt_le_create_conn(conn);
+			if (ret) {
+				LOG_ERR("Failed to restart initiator");
+			}
 		}
 	}
 
@@ -2520,7 +2530,7 @@ static void hci_vendor_event(struct net_buf *buf)
 	}
 #endif /* CONFIG_BT_HCI_VS_EVT_USER */
 
-	if (IS_ENABLED(CONFIG_BT_HCI_VS_EVT) && !handled) {
+	if (IS_ENABLED(CONFIG_BT_HCI_VS) && !handled) {
 		struct bt_hci_evt_vs *evt;
 
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
@@ -3659,7 +3669,7 @@ static void bt_dev_show_info(void)
 		bt_dev.lmp_version, bt_dev.lmp_subversion);
 }
 
-#if defined(CONFIG_BT_HCI_VS_EXT)
+#if defined(CONFIG_BT_HCI_VS)
 static const char *vs_hw_platform(uint16_t platform)
 {
 	static const char * const plat_str[] = {
@@ -3797,7 +3807,7 @@ static void hci_vs_init(void)
 		net_buf_unref(rsp);
 	}
 }
-#endif /* CONFIG_BT_HCI_VS_EXT */
+#endif /* CONFIG_BT_HCI_VS */
 
 static int hci_init(void)
 {
@@ -3852,7 +3862,7 @@ static int hci_init(void)
 		return err;
 	}
 
-#if defined(CONFIG_BT_HCI_VS_EXT)
+#if defined(CONFIG_BT_HCI_VS)
 	hci_vs_init();
 #endif
 	err = bt_id_init();
@@ -4227,6 +4237,13 @@ int bt_disable(void)
 	/* Some functions rely on checking this bitfield */
 	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));
 
+	/* Reset IDs and corresponding keys. */
+	bt_dev.id_count = 0;
+#if defined(CONFIG_BT_SMP)
+	bt_dev.le.rl_entries = 0;
+	bt_keys_reset();
+#endif
+
 	/* If random address was set up - clear it */
 	bt_addr_le_copy(&bt_dev.random_addr, BT_ADDR_LE_ANY);
 
@@ -4257,6 +4274,10 @@ int bt_disable(void)
 	/* Abort RX thread */
 	k_thread_abort(&bt_workq.thread);
 #endif
+
+	if (IS_ENABLED(CONFIG_BT_ISO)) {
+		bt_iso_reset();
+	}
 
 	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
 

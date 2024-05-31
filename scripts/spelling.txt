@@ -773,6 +773,7 @@ hypervior||hypervisor
 hypter||hyper
 idel||idle
 identidier||identifier
+iff||if and only if
 iligal||illegal
 illigal||illegal
 illgal||illegal

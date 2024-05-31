@@ -154,6 +154,6 @@ static inline uint32_t z_impl_hwspinlock_get_max_id(const struct device *dev)
 
 /** @} */
 
-#include <syscalls/hwspinlock.h>
+#include <zephyr/syscalls/hwspinlock.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_HWSPINLOCK_H_ */

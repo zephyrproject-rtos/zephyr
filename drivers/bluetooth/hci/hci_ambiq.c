@@ -25,25 +25,21 @@ LOG_MODULE_REGISTER(bt_hci_driver);
 #define HCI_SPI_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(ambiq_bt_hci_spi)
 #define SPI_DEV_NODE DT_BUS(HCI_SPI_NODE)
 
-#define HCI_CMD 0x01
-#define HCI_ACL 0x02
-#define HCI_SCO 0x03
-#define HCI_EVT 0x04
-
 /* Offset of special item */
 #define PACKET_TYPE         0
 #define PACKET_TYPE_SIZE    1
 #define EVT_HEADER_TYPE     0
-#define EVT_HEADER_EVENT    1
-#define EVT_HEADER_SIZE     2
-#define EVT_VENDOR_CODE_LSB 3
-#define EVT_VENDOR_CODE_MSB 4
-#define CMD_OGF             1
-#define CMD_OCF             2
+#define EVT_CMD_COMP_OP_LSB 3
+#define EVT_CMD_COMP_OP_MSB 4
+#define EVT_CMD_COMP_DATA   5
 
 #define EVT_OK      0
 #define EVT_DISCARD 1
 #define EVT_NOP     2
+
+#define BT_FEAT_SET_BIT(feat, octet, bit) (feat[octet] |= BIT(bit))
+#define BT_FEAT_SET_NO_BREDR(feat)        BT_FEAT_SET_BIT(feat, 4, 5)
+#define BT_FEAT_SET_LE(feat)              BT_FEAT_SET_BIT(feat, 4, 6)
 
 /* Max SPI buffer length for transceive operations.
  * The maximum TX packet number is 512 bytes data + 12 bytes header.
@@ -51,6 +47,13 @@ LOG_MODULE_REGISTER(bt_hci_driver);
  */
 #define SPI_MAX_TX_MSG_LEN 524
 #define SPI_MAX_RX_MSG_LEN 258
+
+/* The controller may be unavailable to receive packets because it is busy
+ * on processing something or have packets to send to host. Need to free the
+ * SPI bus and wait some moment to try again.
+ */
+#define SPI_BUSY_WAIT_INTERVAL_MS 25
+#define SPI_BUSY_TX_ATTEMPTS      200
 
 static uint8_t __noinit rxmsg[SPI_MAX_RX_MSG_LEN];
 static const struct device *spi_dev = DEVICE_DT_GET(SPI_DEV_NODE);
@@ -72,6 +75,7 @@ static K_SEM_DEFINE(sem_spi_available, 1, 1);
 void bt_packet_irq_isr(const struct device *unused1, struct gpio_callback *unused2,
 		       uint32_t unused3)
 {
+	bt_apollo_rcv_isr_preprocess();
 	k_sem_give(&sem_irq);
 }
 
@@ -87,15 +91,27 @@ static inline int bt_spi_transceive(void *tx, uint32_t tx_len, void *rx, uint32_
 static int spi_send_packet(uint8_t *data, uint16_t len)
 {
 	int ret;
+	uint16_t fail_count = 0;
 
-	/* Wait for SPI bus to be available */
-	k_sem_take(&sem_spi_available, K_FOREVER);
+	do {
+		/* Wait for SPI bus to be available */
+		k_sem_take(&sem_spi_available, K_FOREVER);
 
-	/* Send the SPI packet to controller */
-	ret = bt_apollo_spi_send(data, len, bt_spi_transceive);
+		/* Send the SPI packet to controller */
+		ret = bt_apollo_spi_send(data, len, bt_spi_transceive);
 
-	/* Free the SPI bus */
-	k_sem_give(&sem_spi_available);
+		/* Free the SPI bus */
+		k_sem_give(&sem_spi_available);
+
+		if (ret) {
+			/* Give some chance to controller to complete the processing or
+			 * packets sending.
+			 */
+			k_sleep(K_MSEC(SPI_BUSY_WAIT_INTERVAL_MS));
+		} else {
+			break;
+		}
+	} while (fail_count++ < SPI_BUSY_TX_ATTEMPTS);
 
 	return ret;
 }
@@ -118,7 +134,7 @@ static int spi_receive_packet(uint8_t *data, uint16_t *len)
 
 static int hci_event_filter(const uint8_t *evt_data)
 {
-	uint8_t evt_type = evt_data[0];
+	uint8_t evt_type = evt_data[EVT_HEADER_TYPE];
 
 	switch (evt_type) {
 	case BT_HCI_EVT_LE_META_EVENT: {
@@ -132,11 +148,26 @@ static int hci_event_filter(const uint8_t *evt_data)
 		}
 	}
 	case BT_HCI_EVT_CMD_COMPLETE: {
-		uint16_t opcode = (uint16_t)(evt_data[3] + (evt_data[4] << 8));
+		uint16_t opcode = (uint16_t)(evt_data[EVT_CMD_COMP_OP_LSB] +
+					     (evt_data[EVT_CMD_COMP_OP_MSB] << 8));
 
 		switch (opcode) {
 		case BT_OP_NOP:
 			return EVT_NOP;
+		case BT_HCI_OP_READ_LOCAL_FEATURES: {
+			/* The BLE controller of some Ambiq Apollox Blue SOC may have issue to
+			 * report the expected supported features bitmask successfully, thought the
+			 * features are actually supportive. Need to correct them before going to
+			 * the host stack.
+			 */
+			struct bt_hci_rp_read_local_features *rp =
+				(void *)&evt_data[EVT_CMD_COMP_DATA];
+			if (rp->status == 0) {
+				BT_FEAT_SET_NO_BREDR(rp->features);
+				BT_FEAT_SET_LE(rp->features);
+			}
+			return EVT_OK;
+		}
 		default:
 			return EVT_OK;
 		}
@@ -272,11 +303,11 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 			}
 
 			switch (rxmsg[PACKET_TYPE]) {
-			case HCI_EVT:
+			case BT_HCI_H4_EVT:
 				buf = bt_hci_evt_recv(&rxmsg[PACKET_TYPE + PACKET_TYPE_SIZE],
 						      (len - PACKET_TYPE_SIZE));
 				break;
-			case HCI_ACL:
+			case BT_HCI_H4_ACL:
 				buf = bt_hci_acl_recv(&rxmsg[PACKET_TYPE + PACKET_TYPE_SIZE],
 						      (len - PACKET_TYPE_SIZE));
 				break;
@@ -306,10 +337,10 @@ static int bt_hci_send(struct net_buf *buf)
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
-		net_buf_push_u8(buf, HCI_ACL);
+		net_buf_push_u8(buf, BT_HCI_H4_ACL);
 		break;
 	case BT_BUF_CMD:
-		net_buf_push_u8(buf, HCI_CMD);
+		net_buf_push_u8(buf, BT_HCI_H4_CMD);
 		break;
 	default:
 		LOG_ERR("Unsupported type");

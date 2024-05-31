@@ -106,7 +106,7 @@ int getenv_r(const char *name, char *buf, size_t len)
 			ret = -ERANGE;
 			K_SPINLOCK_BREAK;
 		}
-		strncpy(buf, val, vsize);
+		strcpy(buf, val);
 		LOG_DBG("Found entry %s", environ[ret]);
 	}
 
@@ -188,7 +188,7 @@ int setenv(const char *name, const char *val, int overwrite)
 			environ[ret] = env;
 		}
 
-		strncpy(environ[ret], name, nsize);
+		strcpy(environ[ret], name);
 		environ[ret][nsize] = '=';
 		strncpy(environ[ret] + nsize + 1, val, vsize + 1);
 		LOG_DBG("Added entry %s", environ[ret]);

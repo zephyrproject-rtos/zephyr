@@ -21,6 +21,14 @@
 #include "usbd_msg.h"
 
 #include <zephyr/logging/log.h>
+#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart) \
+	&& defined(CONFIG_USBD_CDC_ACM_LOG_LEVEL) \
+	&& CONFIG_USBD_CDC_ACM_LOG_LEVEL != LOG_LEVEL_NONE
+/* Prevent endless recursive logging loop and warn user about it */
+#warning "USB_CDC_ACM_LOG_LEVEL forced to LOG_LEVEL_NONE"
+#undef CONFIG_USBD_CDC_ACM_LOG_LEVEL
+#define CONFIG_USBD_CDC_ACM_LOG_LEVEL LOG_LEVEL_NONE
+#endif
 LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 
 NET_BUF_POOL_FIXED_DEFINE(cdc_acm_ep_pool,
@@ -260,7 +268,13 @@ static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED)) {
-		/* TODO */
+		if (ring_buf_is_empty(data->tx_fifo.rb)) {
+			/* Raise TX ready interrupt */
+			cdc_acm_work_submit(&data->irq_cb_work);
+		} else {
+			/* Queue pending TX data on IN endpoint */
+			cdc_acm_work_submit(&data->tx_fifo_work);
+		}
 	}
 }
 

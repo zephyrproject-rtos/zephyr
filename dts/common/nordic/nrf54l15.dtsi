@@ -104,11 +104,14 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+		/* intentionally empty because UICR is hardware fixed to Secure */
+#else
 		uicr: uicr@ffd000 {
 			compatible = "nordic,nrf-uicr";
 			reg = <0xffd000 0x1000>;
 		};
-
+#endif
 		ficr: ficr@ffc000 {
 			compatible = "nordic,nrf-ficr";
 			reg = <0xffc000 0x1000>;
@@ -131,10 +134,17 @@
 			ranges = <0x0 0x2002f000 0x11000>;
 		};
 
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+		global_peripherals: peripheral@40000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40000000 0x10000000>;
+#else
 		global_peripherals: peripheral@50000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x50000000 0x10000000>;
+#endif
 
 			dppic00: dppic@42000 {
 				compatible = "nordic,nrf-dppic";
@@ -212,6 +222,7 @@
 				cc-num = <6>;
 				max-bit-width = <32>;
 				interrupts = <85 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-frequency = <DT_FREQ_M(128)>;
 				prescaler = <0>;
 			};
 
@@ -228,6 +239,7 @@
 				cc-num = <8>;
 				max-bit-width = <32>;
 				interrupts = <133 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -565,12 +577,16 @@
 				status = "disabled";
 			};
 
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+			/* intentionally empty because WDT30 is hardware fixed to Secure */
+#else
 			wdt30: watchdog@108000 {
 				compatible = "nordic,nrf-wdt";
 				reg = <0x108000 0x620>;
 				interrupts = <264 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 			};
+#endif
 
 			wdt31: watchdog@109000 {
 				compatible = "nordic,nrf-wdt";

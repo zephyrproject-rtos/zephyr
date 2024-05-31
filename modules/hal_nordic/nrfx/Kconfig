@@ -265,6 +265,10 @@ config NRFX_RNG
 	bool "RNG driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_RNG))
 
+config NRFX_RRAMC
+	bool "RRAMC driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_RRAM_CONTROLLER))
+
 config NRFX_RTC
 	bool
 
@@ -946,7 +950,6 @@ config NRFX_UARTE_CONFIG_TX_LINK
 
 config NRFX_UARTE_CONFIG_RX_CACHE_ENABLED
 	bool "UARTE RX caching support"
-	default y if $(dt_nodelabel_has_compat,shared_ram3x_region,$(DT_COMPAT_NORDIC_OWNED_MEMORY))
 	depends on NRFX_UARTE
 	help
 	  Feature might be enabled on platforms which has limitations regarding addresses
@@ -978,6 +981,16 @@ config NRFX_WDT30
 config NRFX_WDT31
 	bool "WDT31 driver instance"
 	depends on $(dt_nodelabel_has_compat,wdt31,$(DT_COMPAT_NORDIC_NRF_WDT))
+	select NRFX_WDT
+
+config NRFX_WDT010
+	bool "WDT010 driver instance"
+	depends on $(dt_nodelabel_has_compat,wdt010,$(DT_COMPAT_NORDIC_NRF_WDT))
+	select NRFX_WDT
+
+config NRFX_WDT011
+	bool "WDT011 driver instance"
+	depends on $(dt_nodelabel_has_compat,wdt011,$(DT_COMPAT_NORDIC_NRF_WDT))
 	select NRFX_WDT
 
 config NRFX_WDT130

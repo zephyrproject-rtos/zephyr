@@ -252,7 +252,9 @@ static inline void i2c_dw_data_ask(const struct device *dev)
 			data |= IC_DATA_CMD_STOP;
 		}
 
+#ifdef CONFIG_I2C_TARGET
 		clear_bit_intr_mask_tx_empty(reg_base);
+#endif /* CONFIG_I2C_TARGET */
 
 		write_cmd_data(data, reg_base);
 
@@ -413,6 +415,7 @@ static void i2c_dw_isr(const struct device *port)
 			i2c_dw_data_read(port);
 		}
 
+#ifdef CONFIG_I2C_TARGET
 		/* Check if the TX FIFO is ready for commands.
 		 * TX FIFO also serves as command queue where read requests
 		 * are written to TX FIFO.
@@ -421,6 +424,7 @@ static void i2c_dw_isr(const struct device *port)
 			    == I2C_MSG_READ) {
 			set_bit_intr_mask_tx_empty(reg_base);
 		}
+#endif /* CONFIG_I2C_TARGET */
 
 		if (intr_stat.bits.tx_empty) {
 			if ((dw->xfr_flags & I2C_MSG_RW_MASK)

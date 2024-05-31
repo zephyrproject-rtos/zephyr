@@ -144,6 +144,7 @@ class Lcov(CoverageTool):
     def __init__(self, jobs=None):
         super().__init__()
         self.ignores = []
+        self.ignore_branch_patterns = []
         self.output_formats = "lcov,html"
         self.version = self.get_version()
         self.jobs = jobs
@@ -168,6 +169,9 @@ class Lcov(CoverageTool):
 
     def add_ignore_directory(self, pattern):
         self.ignores.append('*/' + pattern + '/*')
+
+    def add_ignore_branch_pattern(self, pattern):
+        self.ignore_branch_patterns.append(pattern)
 
     @property
     def is_lcov_v2(self):
@@ -252,6 +256,7 @@ class Gcovr(CoverageTool):
     def __init__(self):
         super().__init__()
         self.ignores = []
+        self.ignore_branch_patterns = []
         self.output_formats = "html"
         self.version = self.get_version()
 
@@ -278,6 +283,9 @@ class Gcovr(CoverageTool):
     def add_ignore_directory(self, pattern):
         self.ignores.append(".*/" + pattern + '/.*')
 
+    def add_ignore_branch_pattern(self, pattern):
+        self.ignore_branch_patterns.append(pattern)
+
     @staticmethod
     def _interleave_list(prefix, list):
         tuple_list = [(prefix, item) for item in list]
@@ -292,6 +300,7 @@ class Gcovr(CoverageTool):
         ztestfile = os.path.join(outdir, "ztest.json")
 
         excludes = Gcovr._interleave_list("-e", self.ignores)
+        excludes += Gcovr._interleave_list("--exclude-branches-by-pattern", self.ignore_branch_patterns)
 
         # Different ifdef-ed implementations of the same function should not be
         # in conflict treated by GCOVR as separate objects for coverage statistics.
@@ -383,5 +392,8 @@ def run_coverage(testplan, options):
     coverage_tool.add_ignore_file('generated')
     coverage_tool.add_ignore_directory('tests')
     coverage_tool.add_ignore_directory('samples')
+    # Ignore branch coverage on LOG_* and LOG_HEXDUMP_* macros
+    # Branch misses are due to the implementation of Z_LOG2 and cannot be avoided
+    coverage_tool.add_ignore_branch_pattern(r"^\s*LOG_(?:HEXDUMP_)?(?:DBG|INF|WRN|ERR)\(.*")
     coverage_completed = coverage_tool.generate(options.outdir)
     return coverage_completed

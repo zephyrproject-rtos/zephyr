@@ -179,7 +179,7 @@ typedef int (*lora_api_recv_async)(const struct device *dev, lora_recv_cb cb);
 typedef int (*lora_api_test_cw)(const struct device *dev, uint32_t frequency,
 				int8_t tx_power, uint16_t duration);
 
-struct lora_driver_api {
+__subsystem struct lora_driver_api {
 	lora_api_config config;
 	lora_api_send send;
 	lora_api_send_async send_async;

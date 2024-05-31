@@ -88,6 +88,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/sha1.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/sha256.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/sha512.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/sha3.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/threading.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/timing.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/version_features.c
@@ -119,6 +120,7 @@ zephyr_interface_library_named(mbedTLS)
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_cipher.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_driver_wrappers_no_static.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_ecp.c
+        ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_ffdh.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_hash.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_mac.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_rsa.c
@@ -138,6 +140,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pkparse.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pkwrite.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pk.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/pk_ecc.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pk_wrap.c
     )
 

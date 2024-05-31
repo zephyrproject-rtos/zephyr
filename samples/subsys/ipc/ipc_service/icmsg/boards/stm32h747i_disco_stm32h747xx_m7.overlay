@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2024 Celina Sophie Kalus <hello@celinakalus.de>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/delete-property/ zephyr,ipc_shm;
+	};
+
+	/* Define new memory regions for TX and RX */
+	/delete-node/ memory@38000000;
+
+	sram_tx: memory@38000000 {
+		 zephyr,memory-region = "SRAM_TX";
+		 compatible = "zephyr,memory-region", "mmio-sram";
+		 reg = <0x38000000 0x08000>;
+		 zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+	 };
+
+	sram_rx: memory@38008000 {
+		 zephyr,memory-region = "SRAM_RX";
+		 compatible = "zephyr,memory-region", "mmio-sram";
+		 reg = <0x38008000 0x08000>;
+		 zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+	 };
+
+	ipc0: ipc0 {
+		compatible = "zephyr,ipc-icmsg";
+		tx-region = <&sram_tx>;
+		rx-region = <&sram_rx>;
+		mboxes = <&mailbox 11>, <&mailbox 10>;
+		mbox-names = "tx", "rx";
+		status = "okay";
+	};
+};
+
+&mailbox {
+	status = "okay";
+};

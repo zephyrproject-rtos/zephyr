@@ -6,15 +6,15 @@
 
 /** @file mqtt_sn.h
  *
- * @defgroup mqtt_sn_socket MQTT-SN Client library
- * @ingroup networking
- * @{
  * @brief MQTT-SN Client Implementation
  *
  * @details
  * MQTT-SN Client's Application interface is defined in this header.
  * Targets protocol version 1.2.
  *
+ * @defgroup mqtt_sn_socket MQTT-SN Client library
+ * @ingroup networking
+ * @{
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_MQTT_SN_H_

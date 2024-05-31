@@ -11,6 +11,8 @@ systick: &cpuapp_systick {};
 nvic: &cpuapp_nvic {};
 cpuppr_vevif: &cpuppr_vevif_remote {};
 cpusys_vevif: &cpusys_vevif_remote {};
+wdt010: &cpuapp_wdt010 {};
+wdt011: &cpuapp_wdt011 {};
 
 /delete-node/ &cpuppr;
 /delete-node/ &cpurad;

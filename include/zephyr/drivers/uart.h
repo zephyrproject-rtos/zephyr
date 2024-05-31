@@ -1671,6 +1671,6 @@ static inline int z_impl_uart_drv_cmd(const struct device *dev, uint32_t cmd,
  * @}
  */
 
-#include <syscalls/uart.h>
+#include <zephyr/syscalls/uart.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_UART_H_ */

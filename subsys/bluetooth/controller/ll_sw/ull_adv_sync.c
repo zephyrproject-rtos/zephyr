@@ -2022,7 +2022,7 @@ static uint8_t sync_stop(struct ll_adv_sync_set *sync)
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_ADV_SYNC_BASE + sync_handle,
 					sync, &sync->lll);
-	LL_ASSERT(err == 0 || err == -EALREADY);
+	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, sync_handle, err);
 	if (err) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}

@@ -99,8 +99,6 @@ The Zephyr nucleo_f103rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | COUNTER   | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 

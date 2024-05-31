@@ -1,5 +1,5 @@
 identifier: odroid_go/esp32/appcpu
-name: ODROID-GO
+name: ODROID-GO APPCPU
 type: mcu
 arch: xtensa
 toolchain:

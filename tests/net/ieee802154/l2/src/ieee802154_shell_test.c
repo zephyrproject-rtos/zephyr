@@ -136,7 +136,7 @@ static void test_scan_shell_cmd(void)
 
 	if (!ieee802154_validate_frame(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt),
 				       &mpdu)) {
-		NET_ERR("*** Could not parse beacon request.\n");
+		NET_ERR("*** Could not parse beacon request.");
 		ztest_test_fail();
 		goto release_frag;
 	}
@@ -179,7 +179,7 @@ static void test_associate_shell_cmd(struct ieee802154_context *ctx)
 	zassert_not_null(assoc_req);
 
 	if (!ieee802154_validate_frame(assoc_req->data, assoc_req->len, &mpdu)) {
-		NET_ERR("*** Could not parse association request.\n");
+		NET_ERR("*** Could not parse association request.");
 		ztest_test_fail();
 		goto release_frag;
 	}
@@ -207,7 +207,7 @@ ZTEST(ieee802154_l2_shell, test_active_scan)
 
 	pkt = net_pkt_rx_alloc_with_buffer(net_iface, sizeof(beacon_pkt), AF_UNSPEC, 0, K_FOREVER);
 	if (!pkt) {
-		NET_ERR("*** No buffer to allocate\n");
+		NET_ERR("*** No buffer to allocate");
 		goto fail;
 	}
 
@@ -253,7 +253,7 @@ ZTEST(ieee802154_l2_shell, test_associate)
 	pkt = ieee802154_create_mac_cmd_frame(net_iface, IEEE802154_CFI_ASSOCIATION_RESPONSE,
 					      &params);
 	if (!pkt) {
-		NET_ERR("*** Could not create association response\n");
+		NET_ERR("*** Could not create association response");
 		goto fail;
 	}
 
@@ -313,7 +313,7 @@ ZTEST(ieee802154_l2_shell, test_initiate_disassociation_from_enddevice)
 
 	if (!ieee802154_validate_frame(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt),
 				       &mpdu)) {
-		NET_ERR("*** Could not parse disassociation notification.\n");
+		NET_ERR("*** Could not parse disassociation notification.");
 		ztest_test_fail();
 		goto release_frag;
 	}
@@ -353,7 +353,7 @@ ZTEST(ieee802154_l2_shell, test_initiate_disassociation_from_coordinator)
 	pkt = ieee802154_create_mac_cmd_frame(net_iface, IEEE802154_CFI_DISASSOCIATION_NOTIFICATION,
 					      &params);
 	if (!pkt) {
-		NET_ERR("*** Could not create association response\n");
+		NET_ERR("*** Could not create association response");
 		goto fail;
 	}
 
@@ -451,21 +451,21 @@ static void *test_setup(void)
 	k_sem_reset(&driver_lock);
 
 	if (!dev) {
-		NET_ERR("*** Could not get fake device\n");
+		NET_ERR("*** Could not get fake device");
 		return NULL;
 	}
 
 	net_iface = net_if_lookup_by_dev(dev);
 	if (!net_iface) {
-		NET_ERR("*** Could not get fake iface\n");
+		NET_ERR("*** Could not get fake iface");
 		return NULL;
 	}
 
-	NET_INFO("Fake IEEE 802.15.4 network interface ready\n");
+	NET_INFO("Fake IEEE 802.15.4 network interface ready");
 
 	current_pkt = net_pkt_rx_alloc(K_FOREVER);
 	if (!current_pkt) {
-		NET_ERR("*** No buffer to allocate\n");
+		NET_ERR("*** No buffer to allocate");
 		return false;
 	}
 

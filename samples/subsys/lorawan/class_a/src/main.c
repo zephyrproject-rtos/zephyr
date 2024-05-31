@@ -99,10 +99,6 @@ int main(void)
 		return 0;
 	}
 
-#ifdef CONFIG_LORAWAN_APP_CLOCK_SYNC
-	lorawan_clock_sync_run();
-#endif
-
 	LOG_INF("Sending data...");
 	while (1) {
 		ret = lorawan_send(2, data, sizeof(data),

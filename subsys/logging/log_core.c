@@ -366,6 +366,16 @@ void log_init(void)
 	(void)z_log_init(true, true);
 }
 
+void log_thread_trigger(void)
+{
+	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
+		return;
+	}
+
+	k_timer_stop(&log_process_thread_timer);
+	k_sem_give(&log_process_thread_sem);
+}
+
 static void thread_set(k_tid_t process_tid)
 {
 	proc_tid = process_tid;
@@ -448,7 +458,7 @@ void z_vrfy_log_panic(void)
 {
 	z_impl_log_panic();
 }
-#include <syscalls/log_panic_mrsh.c>
+#include <zephyr/syscalls/log_panic_mrsh.c>
 #endif
 
 static bool msg_filter_check(struct log_backend const *backend,
@@ -584,7 +594,7 @@ bool z_vrfy_log_process(void)
 {
 	return z_impl_log_process();
 }
-#include <syscalls/log_process_mrsh.c>
+#include <zephyr/syscalls/log_process_mrsh.c>
 #endif
 
 uint32_t z_impl_log_buffered_cnt(void)
@@ -597,7 +607,7 @@ uint32_t z_vrfy_log_buffered_cnt(void)
 {
 	return z_impl_log_buffered_cnt();
 }
-#include <syscalls/log_buffered_cnt_mrsh.c>
+#include <zephyr/syscalls/log_buffered_cnt_mrsh.c>
 #endif
 
 void z_log_dropped(bool buffered)

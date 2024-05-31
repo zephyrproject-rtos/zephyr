@@ -157,21 +157,9 @@ static int mdio_gpio_initialize(const struct device *dev)
 	return 0;
 }
 
-static void mdio_gpio_bus_enable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
-static void mdio_gpio_bus_disable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
 static const struct mdio_driver_api mdio_gpio_driver_api = {
 	.read = mdio_gpio_read_mmi,
 	.write = mdio_gpio_write_mmi,
-	.bus_enable = mdio_gpio_bus_enable,
-	.bus_disable = mdio_gpio_bus_disable,
 };
 
 #define MDIO_GPIO_CONFIG(inst)                                                                     \

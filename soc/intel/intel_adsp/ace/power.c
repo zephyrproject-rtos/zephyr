@@ -22,8 +22,6 @@
 
 #define LPSRAM_MAGIC_VALUE      0x13579BDF
 #define LPSCTL_BATTR_MASK       GENMASK(16, 12)
-#define SRAM_ALIAS_BASE         0xA0000000
-#define SRAM_ALIAS_MASK         0xF0000000
 
 #if CONFIG_SOC_INTEL_ACE15_MTPM
 /* Used to force any pending transaction by HW issuing an upstream read before
@@ -52,10 +50,6 @@ __imr void power_init(void)
 }
 
 #ifdef CONFIG_PM
-
-#define uncache_to_cache(address) \
-				((__typeof__(address))(((uint32_t)(address) &  \
-				~SRAM_ALIAS_MASK) | SRAM_ALIAS_BASE))
 
 #define L2_INTERRUPT_NUMBER     4
 #define L2_INTERRUPT_MASK       (1<<L2_INTERRUPT_NUMBER)
@@ -150,7 +144,13 @@ static ALWAYS_INLINE void _save_core_context(uint32_t core_id)
 	core_desc[core_id].thread_ptr = XTENSA_RUR("THREADPTR");
 	__asm__ volatile("mov %0, a0" : "=r"(core_desc[core_id].a0));
 	__asm__ volatile("mov %0, a1" : "=r"(core_desc[core_id].a1));
+
+#if CONFIG_MP_MAX_NUM_CPUS == 1
+	/* With one core only, the memory is mapped in cache and we need to flush
+	 * it.
+	 */
 	sys_cache_data_flush_range(&core_desc[core_id], sizeof(struct core_state));
+#endif
 }
 
 static ALWAYS_INLINE void _restore_core_context(void)
@@ -189,7 +189,6 @@ void power_gate_entry(uint32_t core_id)
 	}
 
 	soc_cpus_active[core_id] = false;
-	sys_cache_data_flush_range(soc_cpus_active, sizeof(soc_cpus_active));
 	k_cpu_idle();
 
 	/* It is unlikely we get in here, but when this happens
@@ -218,7 +217,7 @@ __asm__(".align 4\n\t"
 	"dsp_restore_vector:\n\t"
 	"  movi  a0, 0\n\t"
 	"  movi  a1, 1\n\t"
-	"  movi  a2, 0x40020\n\t"/* PS_UM|PS_WOE */
+	"  movi  a2, " STRINGIFY(PS_UM | PS_WOE | PS_INTLEVEL(XCHAL_EXCM_LEVEL)) "\n\t"
 	"  wsr   a2, PS\n\t"
 	"  wsr   a1, WINDOWSTART\n\t"
 	"  wsr   a0, WINDOWBASE\n\t"
@@ -237,7 +236,7 @@ static ALWAYS_INLINE void power_off_exit(void)
 	__asm__(
 		"  movi  a0, 0\n\t"
 		"  movi  a1, 1\n\t"
-		"  movi  a2, 0x40020\n\t"/* PS_UM|PS_WOE */
+		"  movi  a2, " STRINGIFY(PS_UM | PS_WOE | PS_INTLEVEL(XCHAL_EXCM_LEVEL)) "\n\t"
 		"  wsr   a2, PS\n\t"
 		"  wsr   a1, WINDOWSTART\n\t"
 		"  wsr   a0, WINDOWBASE\n\t"
@@ -266,6 +265,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 	uint32_t cpu = arch_proc_id();
+	uint32_t battr;
 	int ret;
 
 	ARG_UNUSED(ret);
@@ -334,25 +334,26 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			/* do power down - this function won't return */
 			ret = pm_device_runtime_put(INTEL_ADSP_HST_DOMAIN_DEV);
 			__ASSERT_NO_MSG(ret == 0);
-			power_down(true, uncache_to_cache(&hpsram_mask),
+			power_down(true, sys_cache_cached_ptr_get(&hpsram_mask),
 				   true);
 		} else {
 			power_gate_entry(cpu);
 		}
 		break;
+
+	/* Only core 0 handles this state */
 	case PM_STATE_RUNTIME_IDLE:
+		battr = DSPCS.bootctl[cpu].battr & (~LPSCTL_BATTR_MASK);
+
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPPG;
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
 		soc_cpu_power_down(cpu);
-		if (cpu == 0) {
-			uint32_t battr = DSPCS.bootctl[cpu].battr & (~LPSCTL_BATTR_MASK);
-
-			battr |= (DSPBR_BATTR_LPSCTL_RESTORE_BOOT & LPSCTL_BATTR_MASK);
-			DSPCS.bootctl[cpu].battr = battr;
-		}
+		battr |= (DSPBR_BATTR_LPSCTL_RESTORE_BOOT & LPSCTL_BATTR_MASK);
+		DSPCS.bootctl[cpu].battr = battr;
 
 		ret = pm_device_runtime_put(INTEL_ADSP_HST_DOMAIN_DEV);
 		__ASSERT_NO_MSG(ret == 0);
+
 		power_gate_entry(cpu);
 		break;
 	default:
@@ -387,7 +388,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			imr_layout->imr_state.header.adsp_imr_magic = 0;
 			imr_layout->imr_state.header.imr_restore_vector = NULL;
 			imr_layout->imr_state.header.imr_ram_storage = NULL;
-			sys_clock_idle_exit();
+			intel_adsp_clock_soft_off_exit();
 			mem_window_idle_exit();
 			soc_mp_on_d3_exit();
 		}
@@ -395,17 +396,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		soc_cpus_active[cpu] = true;
 		sys_cache_data_flush_and_invd_all();
 	} else if (state == PM_STATE_RUNTIME_IDLE) {
-		if (cpu != 0) {
-			/* NOTE: HW should support dynamic power gating on secondary cores.
-			 * But since there is no real profit from it, functionality is not
-			 * fully implemented.
-			 * SOF PM policy will not allowed primary core to enter d0i3 state
-			 * when secondary cores are active.
-			 */
-			__ASSERT(false, "state not supported on secondary core");
-			return;
-		}
-
 		soc_cpu_power_up(cpu);
 
 		if (!WAIT_FOR(soc_cpu_is_powered(cpu),
@@ -418,9 +408,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 #else
 		DSPCS.bootctl[cpu].bctl |= DSPBR_BCTL_WAITIPCG | DSPBR_BCTL_WAITIPPG;
 #endif /* CONFIG_ADSP_IDLE_CLOCK_GATING */
-		if (cpu == 0) {
-			DSPCS.bootctl[cpu].battr &= (~LPSCTL_BATTR_MASK);
-		}
+		DSPCS.bootctl[cpu].battr &= (~LPSCTL_BATTR_MASK);
 
 		soc_cpus_active[cpu] = true;
 		sys_cache_data_flush_and_invd_all();

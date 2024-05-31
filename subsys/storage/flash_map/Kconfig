@@ -58,7 +58,7 @@ config FLASH_AREA_CHECK_INTEGRITY_MBEDTLS
 	bool "Use MBEDTLS"
 	select MBEDTLS
 	select MBEDTLS_MD
-	select MBEDTLS_MAC_SHA256_ENABLED
+	select MBEDTLS_SHA256
 	select MBEDTLS_ENABLE_HEAP
 	help
 	  Use MBEDTLS library to perform the integrity check.

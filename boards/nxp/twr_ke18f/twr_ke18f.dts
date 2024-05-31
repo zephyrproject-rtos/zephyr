@@ -293,7 +293,6 @@
 
 &flexcan0 {
 	status = "okay";
-	bus-speed = <125000>;
 	pinctrl-0 = <&flexcan0_default>;
 	pinctrl-names = "default";
 

@@ -17,6 +17,7 @@ if I2C_NRFX
 config I2C_NRFX_TWI
 	def_bool y
 	depends on DT_HAS_NORDIC_NRF_TWI_ENABLED
+	select HAS_I2C_RTIO
 	select NRFX_TWI0 if HAS_HW_NRF_TWI0
 	select NRFX_TWI1 if HAS_HW_NRF_TWI1
 

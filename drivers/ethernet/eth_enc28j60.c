@@ -527,6 +527,18 @@ static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
 
 	if (tx_end & ENC28J60_BIT_ESTAT_TXABRT) {
 		LOG_ERR("%s: TX failed!", dev->name);
+
+		/* 12.1.3 "TRANSMIT ERROR INTERRUPT FLAG (TXERIF)" states:
+		 *
+		 * "After determining the problem and solution, the
+		 * host controller should clear the LATECOL (if set) and
+		 * TXABRT bits so that future aborts can be detected
+		 * accurately."
+		 */
+		eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_ESTAT,
+					   ENC28J60_BIT_ESTAT_TXABRT
+					   | ENC28J60_BIT_ESTAT_LATECOL);
+
 		return -EIO;
 	}
 

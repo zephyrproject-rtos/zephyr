@@ -46,8 +46,9 @@ BUILD_ASSERT(CONFIG_MP_NUM_CPUS == CONFIG_MP_MAX_NUM_CPUS,
 __pinned_bss
 struct z_kernel _kernel;
 
-__pinned_bss
-atomic_t _cpus_active;
+#ifdef CONFIG_PM
+__pinned_bss atomic_t _cpus_active;
+#endif
 
 /* init/main and idle threads */
 K_THREAD_PINNED_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
@@ -394,7 +395,7 @@ static inline int z_vrfy_device_init(const struct device *dev)
 
 	return z_impl_device_init(dev);
 }
-#include <syscalls/device_init_mrsh.c>
+#include <zephyr/syscalls/device_init_mrsh.c>
 #endif
 
 extern void boot_banner(void);
@@ -424,7 +425,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	z_sys_post_kernel = true;
 
 	z_sys_init_run_level(INIT_LEVEL_POST_KERNEL);
-#if CONFIG_STACK_POINTER_RANDOM
+#if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 	z_stack_adjust_initialized = 1;
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 	boot_banner();
@@ -512,11 +513,13 @@ void z_init_cpu(int id)
 		CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
 #endif
 
+#ifdef CONFIG_PM
 	/*
 	 * Increment number of CPUs active. The pm subsystem
 	 * will keep track of this from here.
 	 */
 	atomic_inc(&_cpus_active);
+#endif
 
 #ifdef CONFIG_OBJ_CORE_SYSTEM
 	k_obj_core_init_and_link(K_OBJ_CORE(&_kernel.cpus[id]), &obj_type_cpu);
@@ -650,12 +653,7 @@ FUNC_NORETURN void z_cstart(void)
 	LOG_CORE_INIT();
 
 #if defined(CONFIG_MULTITHREADING)
-	/* Note: The z_ready_thread() call in prepare_multithreading() requires
-	 * a dummy thread even if CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN=y
-	 */
-	struct k_thread dummy_thread;
-
-	z_dummy_thread_init(&dummy_thread);
+	z_dummy_thread_init(&_thread_dummy);
 #endif /* CONFIG_MULTITHREADING */
 	/* do any necessary initialization of static devices */
 	z_device_state_init();

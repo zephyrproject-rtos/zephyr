@@ -92,6 +92,7 @@ extern "C" {
 #define Z_CBPRINTF_IS_PCHAR(x, flags) \
 	z_cbprintf_cxx_is_pchar(x, (flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO)
 #else
+/* NOLINTBEGIN(misc-redundant-expression) */
 #define Z_CBPRINTF_IS_PCHAR(x, flags) \
 	_Generic((x) + 0, \
 		/* char * */ \
@@ -111,6 +112,7 @@ extern "C" {
 		const volatile wchar_t * : 1, \
 		default : \
 			0)
+/* NOLINTEND(misc-redundant-expression) */
 #endif
 
 /** @brief Check if argument fits in 32 bit word.
@@ -548,7 +550,7 @@ extern "C" {
  * Floats are promoted to double so they use size of double, others int storage
  * or it's own storage size if it is bigger than int.
  *
- * @param x argument.
+ * @param v argument.
  *
  * @return Number of bytes used for storing the argument.
  */
@@ -676,12 +678,12 @@ do { \
 			Z_CBPRINTF_IS_LONGDOUBLE(_arg) && \
 			!IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE)),\
 			"Packaging of long double not enabled in Kconfig."); \
-	while (_align_offset % Z_CBPRINTF_ALIGNMENT(_arg) != 0UL) { \
+	while ((_align_offset % Z_CBPRINTF_ALIGNMENT(_arg)) != 0UL) { \
 		_idx += sizeof(int); \
 		_align_offset += sizeof(int); \
 	} \
 	uint32_t _arg_size = Z_CBPRINTF_ARG_SIZE(_arg); \
-	uint32_t _loc = _idx / sizeof(int); \
+	uint8_t _loc = (uint8_t)(_idx / sizeof(int)); \
 	if (arg_idx < 1 + _fros_cnt) { \
 		if (_ros_pos_en) { \
 			_ros_pos_buf[_ros_pos_idx++] = _loc; \
@@ -700,7 +702,7 @@ do { \
 			} \
 		} else if (_rws_pos_en) { \
 			_rws_buffer[_rws_pos_idx++] = arg_idx - 1; \
-			_rws_buffer[_rws_pos_idx++] = _idx / sizeof(int); \
+			_rws_buffer[_rws_pos_idx++] = (uint8_t)(_idx / sizeof(int)); \
 		} \
 	} \
 	if (_buf && _idx < (int)_max) { \

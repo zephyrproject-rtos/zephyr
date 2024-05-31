@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	/* The async_api.nocache_mem_dt test case expects a non-cachable RAM region */
+	sram_nocache: memory@2004c000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2004c000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "RAM_NOCACHE";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_NOCACHE>;
+	};
+};

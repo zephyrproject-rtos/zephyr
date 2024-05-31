@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include <zephyr/random/random.h>
 
 #if defined(CONFIG_NET_TCP_ISN_RFC6528)
-#include <mbedtls/md5.h>
+#include <psa/crypto.h>
 #endif
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_context.h>
@@ -111,7 +111,7 @@ static int tcp_pkt_linearize(struct net_pkt *pkt, size_t pos, size_t len)
 
 	buf = net_pkt_get_frag(pkt, len, TCP_PKT_ALLOC_TIMEOUT);
 
-	if (!buf || buf->size < len) {
+	if (!buf || net_buf_max_len(buf) < len) {
 		if (buf) {
 			net_buf_unref(buf);
 		}
@@ -119,7 +119,7 @@ static int tcp_pkt_linearize(struct net_pkt *pkt, size_t pos, size_t len)
 		goto out;
 	}
 
-	net_buf_linearize(buf->data, buf->size, pkt->frags, pos, len);
+	net_buf_linearize(buf->data, net_buf_max_len(buf), pkt->frags, pos, len);
 	net_buf_add(buf, len);
 
 	len1 = first->len - (pkt->cursor.pos - pkt->cursor.buf->data);
@@ -237,6 +237,51 @@ static int tcp_endpoint_set(union tcp_endpoint *ep, struct net_pkt *pkt,
 	}
 
 	return ret;
+}
+
+int net_tcp_endpoint_copy(struct net_context *ctx,
+			  struct sockaddr *local,
+			  struct sockaddr *peer,
+			  socklen_t *addrlen)
+{
+	const struct tcp *conn = ctx->tcp;
+	socklen_t newlen = ctx->local.family == AF_INET ?
+		sizeof(struct sockaddr_in) :
+		sizeof(struct sockaddr_in6);
+
+	if (local != NULL) {
+		/* If we are connected, then get the address we are actually
+		 * using, otherwise get the address we are bound as these might
+		 * be different if we are bound to any address.
+		 */
+		if (conn->state < TCP_ESTABLISHED) {
+			if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == AF_INET) {
+				memcpy(&net_sin(local)->sin_addr,
+				       net_sin_ptr(&ctx->local)->sin_addr,
+				       sizeof(struct in_addr));
+				net_sin(local)->sin_port = net_sin_ptr(&ctx->local)->sin_port;
+				net_sin(local)->sin_family = AF_INET;
+			} else if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == AF_INET6) {
+				memcpy(&net_sin6(local)->sin6_addr,
+				       net_sin6_ptr(&ctx->local)->sin6_addr,
+				       sizeof(struct in6_addr));
+				net_sin6(local)->sin6_port = net_sin6_ptr(&ctx->local)->sin6_port;
+				net_sin6(local)->sin6_family = AF_INET6;
+				net_sin6(local)->sin6_scope_id =
+					net_sin6_ptr(&ctx->local)->sin6_scope_id;
+			} else {
+				return -EINVAL;
+			}
+		} else {
+			memcpy(local, &conn->src.sa, newlen);
+		}
+	}
+
+	if (peer != NULL) {
+		memcpy(local, &conn->dst.sa, newlen);
+	}
+
+	return 0;
 }
 
 static const char *tcp_flags(uint8_t flags)
@@ -729,6 +774,16 @@ static void tcp_conn_release(struct k_work *work)
 	if (conn->context->conn_handler) {
 		net_conn_unregister(conn->context->conn_handler);
 		conn->context->conn_handler = NULL;
+	}
+
+	/* As the TCP socket could be closed without connect being called,
+	 * check if the address reference is done before releasing the address.
+	 */
+	if (conn->iface != NULL && conn->addr_ref_done) {
+		net_if_addr_unref(conn->iface, conn->src.sa.sa_family,
+				  conn->src.sa.sa_family == AF_INET ?
+				  (const void *)&conn->src.sin.sin_addr :
+				  (const void *)&conn->src.sin6.sin6_addr);
 	}
 
 	conn->context->tcp = NULL;
@@ -2060,6 +2115,7 @@ static struct tcp *tcp_conn_alloc(void)
 	conn->send_win_max = MAX(tcp_tx_window, NET_IPV6_MTU);
 	conn->send_win = conn->send_win_max;
 	conn->tcp_nodelay = false;
+	conn->addr_ref_done = false;
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
 	conn->dup_ack_cnt = 0;
 #endif
@@ -2235,14 +2291,17 @@ static uint32_t tcpv6_init_isn(struct in6_addr *saddr,
 	static bool once;
 
 	if (!once) {
-		sys_rand_get(unique_key, sizeof(unique_key));
+		sys_csrand_get(unique_key, sizeof(unique_key));
 		once = true;
 	}
 
 	memcpy(buf.key, unique_key, sizeof(buf.key));
 
 #if defined(CONFIG_NET_TCP_ISN_RFC6528)
-	mbedtls_md5((const unsigned char *)&buf, sizeof(buf), hash);
+	size_t hash_len;
+
+	psa_hash_compute(PSA_ALG_SHA_256, (const unsigned char *)&buf, sizeof(buf),
+			 hash, sizeof(hash), &hash_len);
 #endif
 
 	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
@@ -2270,14 +2329,17 @@ static uint32_t tcpv4_init_isn(struct in_addr *saddr,
 	static bool once;
 
 	if (!once) {
-		sys_rand_get(unique_key, sizeof(unique_key));
+		sys_csrand_get(unique_key, sizeof(unique_key));
 		once = true;
 	}
 
 	memcpy(buf.key, unique_key, sizeof(unique_key));
 
 #if defined(CONFIG_NET_TCP_ISN_RFC6528)
-	mbedtls_md5((const unsigned char *)&buf, sizeof(buf), hash);
+	size_t hash_len;
+
+	psa_hash_compute(PSA_ALG_SHA_256, (const unsigned char *)&buf, sizeof(buf),
+			 hash, sizeof(hash), &hash_len);
 #endif
 
 	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
@@ -2413,6 +2475,13 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 		conn = NULL;
 		goto err;
 	}
+
+	net_if_addr_ref(conn->iface, conn->dst.sa.sa_family,
+			conn->src.sa.sa_family == AF_INET ?
+			(const void *)&conn->src.sin.sin_addr :
+			(const void *)&conn->src.sin6.sin6_addr);
+	conn->addr_ref_done = true;
+
 err:
 	if (!conn) {
 		net_stats_update_tcp_seg_conndrop(net_pkt_iface(pkt));
@@ -3832,6 +3901,12 @@ int net_tcp_connect(struct net_context *context,
 	if (ret < 0) {
 		goto out;
 	}
+
+	net_if_addr_ref(conn->iface, conn->src.sa.sa_family,
+			conn->src.sa.sa_family == AF_INET ?
+			(const void *)&conn->src.sin.sin_addr :
+			(const void *)&conn->src.sin6.sin6_addr);
+	conn->addr_ref_done = true;
 
 	conn->connect_cb = cb;
 	context->user_data = user_data;

@@ -31,18 +31,6 @@
 		/* adjust channel number according to pinmux in board.dts */
 		io-channels = <&adc4 8>;
 	};
-
-	leds: leds {
-		compatible = "gpio-leds";
-		red_led_3: led_3 {
-			gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
-			label = "User LD2";
-		};
-	};
-
-	aliases {
-		led2 = &red_led_3;
-	};
 };
 
 &lptim1 {

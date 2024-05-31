@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 STMicroelectronics
+ * Copyright (c) 2023-2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -212,6 +212,7 @@
 			reg = <0x46007800 0x400>;
 			interrupts = <2 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB7 0x00200000>;
+			alarms-count = <2>;
 			status = "disabled";
 		};
 
@@ -447,9 +448,9 @@
 			status = "disabled";
 		};
 
-		rng: rng@520c0800 {
+		rng: rng@420c0800 {
 			compatible = "st,stm32-rng";
-			reg = <0x520c0800 0x400>;
+			reg = <0x420c0800 0x400>;
 			interrupts = <59 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>,
 				 <&rcc STM32_SRC_HSI16 RNG_SEL(2)>;

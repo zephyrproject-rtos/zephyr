@@ -52,5 +52,6 @@ source "drivers/rtc/Kconfig.rpi_pico"
 source "drivers/rtc/Kconfig.sam"
 source "drivers/rtc/Kconfig.smartbond"
 source "drivers/rtc/Kconfig.stm32"
+source "drivers/rtc/Kconfig.numaker"
 
 endif # RTC

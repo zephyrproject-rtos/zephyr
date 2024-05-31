@@ -124,10 +124,11 @@ static isoal_status_t test_sink_sdu_emit(const struct isoal_sink             *si
 }
 
 static isoal_status_t test_sink_sdu_write(void *dbuf,
+					  const size_t sdu_written,
 					  const uint8_t *pdu_payload,
 					  const size_t consume_len)
 {
-	memcpy(dbuf, pdu_payload, consume_len);
+	memcpy((uint8_t *)dbuf + sdu_written, pdu_payload, consume_len);
 
 	return ISOAL_STATUS_OK;
 }
@@ -1204,14 +1205,14 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "broadcast",
 		.test_descr = "ISO broadcast",
-		.test_post_init_f = test_iso_init,
+		.test_pre_init_f = test_iso_init,
 		.test_tick_f = test_iso_tick,
 		.test_main_f = test_iso_main
 	},
 	{
 		.test_id = "receive",
 		.test_descr = "ISO receive",
-		.test_post_init_f = test_iso_init,
+		.test_pre_init_f = test_iso_init,
 		.test_tick_f = test_iso_tick,
 		.test_main_f = test_iso_recv_main
 	},
@@ -1219,7 +1220,7 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "receive_vs_dp",
 		.test_descr = "ISO receive VS",
-		.test_post_init_f = test_iso_init,
+		.test_pre_init_f = test_iso_init,
 		.test_tick_f = test_iso_tick,
 		.test_main_f = test_iso_recv_vs_dp_main
 	},

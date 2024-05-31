@@ -1,0 +1,16 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "nrf54h20dk_nrf54h20_common.dtsi"
+
+&cpurad_dma_region {
+	/* Default space is not enough. */
+	reg = <0x1e80 0x100>;
+};
+
+&dut {
+	memory-regions = <&cpurad_dma_region>;
+};
+
+&grtc {
+	interrupts = <109 2>;
+};

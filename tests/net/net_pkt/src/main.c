@@ -1265,7 +1265,7 @@ ZTEST(net_pkt_test_suite, test_net_pkt_shallow_clone_append_buf_0)
 
 ZTEST(net_pkt_test_suite, test_net_pkt_shallow_clone_append_buf_1)
 {
-	test_net_pkt_shallow_clone_append_buf(2);
+	test_net_pkt_shallow_clone_append_buf(1);
 }
 
 ZTEST(net_pkt_test_suite, test_net_pkt_shallow_clone_append_buf_2)

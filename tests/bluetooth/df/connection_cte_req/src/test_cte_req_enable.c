@@ -97,7 +97,7 @@ ZTEST(test_hci_set_conn_cte_rx_params_with_conn_set,
 	int err;
 
 	err = send_conn_cte_req_enable(g_conn_handle, &g_data, true);
-	zassert_equal(err, -EIO,
+	zassert_equal(err, -EACCES,
 		      "Unexpected error value for CTE request enable before set rx params");
 }
 
@@ -109,7 +109,7 @@ ZTEST(test_hci_set_conn_cte_rx_params_with_rx_param_set,
 	g_data.cte_request_interval = REQUEST_INTERVAL_TOO_LOW;
 
 	err = send_conn_cte_req_enable(g_conn_handle, &g_data, true);
-	zassert_equal(err, -EIO,
+	zassert_equal(err, -EACCES,
 		      "Unexpected error value for CTE request enable with too short request"
 		      " interval");
 }

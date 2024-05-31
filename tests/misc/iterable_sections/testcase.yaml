@@ -1,4 +1,12 @@
+common:
+  tags: iterable_sections
+
 tests:
   linker.iterable_sections:
-    tags: iterable_sections
     arch_exclude: xtensa
+
+  linker.iterable_sections.linker_generator:
+    platform_allow: qemu_cortex_m3
+    tags: linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

@@ -7,6 +7,7 @@ config SPI_MCUX_FLEXCOMM
 	default y
 	depends on DT_HAS_NXP_LPC_SPI_ENABLED
 	select PINCTRL
+	select RESET
 	help
 	  Enable support for mcux flexcomm spi driver.
 

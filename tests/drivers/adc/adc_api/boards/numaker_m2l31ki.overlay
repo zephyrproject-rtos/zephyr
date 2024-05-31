@@ -1,0 +1,40 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	zephyr,user {
+		io-channels = <&eadc0 5>, <&eadc0 7>;
+	};
+};
+
+&pinctrl {
+	/* EVB's UNO Pin A2 & A0 for channel 5 & 7 --> PB5, PB7 */
+	eadc0_default: eadc0_default {
+		group0 {
+			pinmux = <PB5MFP_EADC0_CH5>, <PB7MFP_EADC0_CH7>;
+		};
+	};
+};
+
+&eadc0 {
+	status = "okay";
+	pinctrl-0 = <&eadc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@5 {
+		reg = <5>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+	};
+
+	channel@7 {
+		reg = <7>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+	};
+};

@@ -78,7 +78,12 @@ GTEXT(__soc_save_context)
 GTEXT(__soc_restore_context)
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
+#ifdef CONFIG_EXCEPTION_DEBUG
 GTEXT(z_riscv_fatal_error_csf)
+#else
+GTEXT(z_riscv_fatal_error)
+#endif /* CONFIG_EXCEPTION_DEBUG */
+
 GTEXT(z_get_next_switch_handle)
 GTEXT(z_riscv_switch)
 GTEXT(z_riscv_thread_start)
@@ -198,6 +203,8 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	bnez t1, no_fp
 	/* determine if this is an Illegal Instruction exception */
 	csrr t2, mcause
+	li t1, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
+	and t2, t2, t1
 	li t1, 2		/* 2 = illegal instruction */
 	bne t1, t2, no_fp
 	/* determine if we trapped on an FP instruction. */
@@ -411,9 +418,11 @@ do_fault:
 	/* Save callee-saved registers to be passed as 3rd arg */
 	STORE_CALLEE_SAVED()		;
 	mv a2, sp
-#endif
 
 	tail z_riscv_fatal_error_csf
+#else
+	tail z_riscv_fatal_error
+#endif
 
 #if defined(CONFIG_IRQ_OFFLOAD)
 do_irq_offload:

@@ -8,3 +8,14 @@ config CLOCK_CONTROL_SMARTBOND
 	depends on SOC_FAMILY_RENESAS_SMARTBOND
 	help
 	  Enable driver for Clock Control subsystem found in SmartBond
+
+if CLOCK_CONTROL_SMARTBOND
+
+config SMARTBOND_LP_OSC_CALIBRATION_INTERVAL
+	int "Low-power oscillators calibration interval"
+	default 1
+	range 1 10
+	help
+	  Time in seconds between calibration of low power clock RC32K and RCX.
+
+endif # CLOCK_CONTROL_SMARTBOND

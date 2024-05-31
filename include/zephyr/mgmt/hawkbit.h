@@ -13,6 +13,8 @@
 #ifndef ZEPHYR_INCLUDE_MGMT_HAWKBIT_H_
 #define ZEPHYR_INCLUDE_MGMT_HAWKBIT_H_
 
+#include <zephyr/net/tls_credentials.h>
+
 #define HAWKBIT_JSON_URL "/default/controller/v1"
 
 /**
@@ -47,6 +49,7 @@ struct hawkbit_runtime_config {
 	char *server_addr;
 	uint16_t server_port;
 	char *auth_token;
+	sec_tag_t tls_tag;
 };
 
 /**
@@ -71,15 +74,16 @@ typedef int (*hawkbit_config_device_data_cb_handler_t)(const char *device_id, ui
  *
  * @param cb The callback function.
  *
- * @return 0 on success.
- * @return -EINVAL if the callback is NULL.
+ * @retval 0 on success.
+ * @retval -EINVAL if the callback is NULL.
  */
 int hawkbit_set_custom_data_cb(hawkbit_config_device_data_cb_handler_t cb);
 
 /**
  * @brief Init the flash partition
  *
- * @return 0 on success, negative on error.
+ * @retval 0 on success.
+ * @retval -errno if init fails.
  */
 int hawkbit_init(void);
 
@@ -94,12 +98,17 @@ void hawkbit_autohandler(void);
 /**
  * @brief The hawkBit probe verify if there is some update to be performed.
  *
- * @return HAWKBIT_UPDATE_INSTALLED has an update available.
- * @return HAWKBIT_NO_UPDATE no update available.
- * @return HAWKBIT_NETWORKING_ERROR fail to connect to the hawkBit server.
- * @return HAWKBIT_METADATA_ERROR fail to parse or to encode the metadata.
- * @return HAWKBIT_OK if success.
- * @return HAWKBIT_DOWNLOAD_ERROR fail while downloading the update package.
+ * @retval HAWKBIT_NETWORKING_ERROR fail to connect to the hawkBit server.
+ * @retval HAWKBIT_UNCONFIRMED_IMAGE image is unconfirmed.
+ * @retval HAWKBIT_PERMISSION_ERROR fail to get the permission to access the hawkBit server.
+ * @retval HAWKBIT_METADATA_ERROR fail to parse or to encode the metadata.
+ * @retval HAWKBIT_DOWNLOAD_ERROR fail while downloading the update package.
+ * @retval HAWKBIT_OK if the image was already updated.
+ * @retval HAWKBIT_UPDATE_INSTALLED if an update was installed. Reboot is required to apply it.
+ * @retval HAWKBIT_NO_UPDATE if no update was available.
+ * @retval HAWKBIT_CANCEL_UPDATE if the update was cancelled by the server.
+ * @retval HAWKBIT_NOT_INITIALIZED if hawkBit is not initialized.
+ * @retval HAWKBIT_PROBE_IN_PROGRESS if probe is currently running.
  */
 enum hawkbit_response hawkbit_probe(void);
 
@@ -123,8 +132,8 @@ typedef bool (*hawkbit_get_device_identity_cb_handler_t)(char *id, int id_max_le
  *
  * @param cb The callback function.
  *
- * @return 0 on success.
- * @return -EINVAL if the callback is NULL.
+ * @retval 0 on success.
+ * @retval -EINVAL if the callback is NULL.
  */
 int hawkbit_set_device_identity_cb(hawkbit_get_device_identity_cb_handler_t cb);
 
@@ -154,7 +163,7 @@ struct hawkbit_runtime_config hawkbit_get_config(void);
 static inline int hawkbit_set_server_addr(char *addr_str)
 {
 	struct hawkbit_runtime_config set_config = {
-		.server_addr = addr_str, .server_port = 0, .auth_token = NULL};
+		.server_addr = addr_str, .server_port = 0, .auth_token = NULL, .tls_tag = 0};
 
 	return hawkbit_set_config(&set_config);
 }
@@ -169,7 +178,7 @@ static inline int hawkbit_set_server_addr(char *addr_str)
 static inline int hawkbit_set_server_port(uint16_t port)
 {
 	struct hawkbit_runtime_config set_config = {
-		.server_addr = NULL, .server_port = port, .auth_token = NULL};
+		.server_addr = NULL, .server_port = port, .auth_token = NULL, .tls_tag = 0};
 
 	return hawkbit_set_config(&set_config);
 }
@@ -184,7 +193,22 @@ static inline int hawkbit_set_server_port(uint16_t port)
 static inline int hawkbit_set_ddi_security_token(char *token)
 {
 	struct hawkbit_runtime_config set_config = {
-		.server_addr = NULL, .server_port = 0, .auth_token = token};
+		.server_addr = NULL, .server_port = 0, .auth_token = token, .tls_tag = 0};
+
+	return hawkbit_set_config(&set_config);
+}
+
+/**
+ * @brief Set the hawkBit TLS tag
+ *
+ * @param tag TLS tag to set.
+ * @retval 0 on success.
+ * @retval -EAGAIN if probe is currently running.
+ */
+static inline int hawkbit_set_tls_tag(sec_tag_t tag)
+{
+	struct hawkbit_runtime_config set_config = {
+		.server_addr = NULL, .server_port = 0, .auth_token = NULL, .tls_tag = tag};
 
 	return hawkbit_set_config(&set_config);
 }
@@ -218,6 +242,36 @@ static inline char *hawkbit_get_ddi_security_token(void)
 {
 	return hawkbit_get_config().auth_token;
 }
+
+/**
+ * @brief Get the hawkBit TLS tag.
+ *
+ * @return TLS tag.
+ */
+static inline sec_tag_t hawkbit_get_tls_tag(void)
+{
+	return hawkbit_get_config().tls_tag;
+}
+
+/**
+ * @brief Get the hawkBit action id.
+ *
+ * @return Action id.
+
+*/
+int32_t hawkbit_get_action_id(void);
+
+/**
+ * @brief Resets the hawkBit action id, that is saved in settings.
+ *
+ * @details This should be done after changing the hawkBit server.
+ *
+ * @retval 0 on success.
+ * @retval -EAGAIN if probe is currently running.
+ * @retval -EIO if the action id could not be reset.
+ *
+ */
+int hawkbit_reset_action_id(void);
 
 /**
  * @}

@@ -550,14 +550,21 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-void sys_clock_idle_exit(void)
+void stm32_clock_control_standby_exit(void)
 {
 #ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
 	if (clock_control_get_status(clk_ctrl,
 				     (clock_control_subsys_t) &lptim_clk[0])
 				     != CLOCK_CONTROL_STATUS_ON) {
 		sys_clock_driver_init();
-	} else if (timeout_stdby) {
+	}
+#endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
+}
+
+void sys_clock_idle_exit(void)
+{
+#ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
+	if (timeout_stdby) {
 		cycle_t missed_lptim_cnt;
 		uint32_t stdby_timer_diff, stdby_timer_post, dticks;
 		uint64_t stdby_timer_us;

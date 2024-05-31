@@ -73,7 +73,9 @@ static inline void z_impl_mdio_bus_enable(const struct device *dev)
 	const struct mdio_driver_api *api =
 		(const struct mdio_driver_api *)dev->api;
 
-	api->bus_enable(dev);
+	if (api->bus_enable != NULL) {
+		api->bus_enable(dev);
+	}
 }
 
 /**
@@ -89,7 +91,9 @@ static inline void z_impl_mdio_bus_disable(const struct device *dev)
 	const struct mdio_driver_api *api =
 		(const struct mdio_driver_api *)dev->api;
 
-	api->bus_disable(dev);
+	if (api->bus_disable != NULL) {
+		api->bus_disable(dev);
+	}
 }
 
 /**
@@ -233,6 +237,6 @@ static inline int z_impl_mdio_write_c45(const struct device *dev, uint8_t prtad,
  * @}
  */
 
-#include <syscalls/mdio.h>
+#include <zephyr/syscalls/mdio.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_MDIO_H_ */

@@ -869,7 +869,7 @@ static inline const struct device *z_vrfy_net_eth_get_ptp_clock_by_index(int ind
 {
 	return z_impl_net_eth_get_ptp_clock_by_index(index);
 }
-#include <syscalls/net_eth_get_ptp_clock_by_index_mrsh.c>
+#include <zephyr/syscalls/net_eth_get_ptp_clock_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #else /* CONFIG_PTP_CLOCK */
 const struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)

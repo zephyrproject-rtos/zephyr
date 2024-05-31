@@ -195,9 +195,6 @@ static int i2c_read_to_buffer(const struct shell *shell_ctx,
 			      uint8_t *buf, uint8_t buf_length)
 {
 	const struct device *dev;
-	uint8_t reg_addr_buf[MAX_BYTES_FOR_REGISTER_INDEX];
-	int reg_addr_bytes;
-	int reg_addr;
 	int dev_addr;
 	int ret;
 
@@ -209,15 +206,23 @@ static int i2c_read_to_buffer(const struct shell *shell_ctx,
 	}
 
 	dev_addr = strtol(s_dev_addr, NULL, 16);
-	reg_addr = strtol(s_reg_addr, NULL, 16);
 
-	reg_addr_bytes = get_bytes_count_for_hex(s_reg_addr);
-	sys_put_be32(reg_addr, reg_addr_buf);
+	if (s_reg_addr != NULL) {
+		uint8_t reg_addr_buf[MAX_BYTES_FOR_REGISTER_INDEX];
+		int reg_addr_bytes;
+		int reg_addr;
 
-	ret = i2c_write_read(dev, dev_addr,
-			     reg_addr_buf +
-			       MAX_BYTES_FOR_REGISTER_INDEX - reg_addr_bytes,
-			     reg_addr_bytes, buf, buf_length);
+		reg_addr = strtol(s_reg_addr, NULL, 16);
+		reg_addr_bytes = get_bytes_count_for_hex(s_reg_addr);
+		sys_put_be32(reg_addr, reg_addr_buf);
+
+		ret = i2c_write_read(dev, dev_addr,
+				     reg_addr_buf + MAX_BYTES_FOR_REGISTER_INDEX - reg_addr_bytes,
+				     reg_addr_bytes, buf, buf_length);
+	} else {
+		ret = i2c_read(dev, buf, buf_length, dev_addr);
+	}
+
 	if (ret < 0) {
 		shell_error(shell_ctx, "Failed to read from device: %s",
 			    s_dev_addr);
@@ -263,6 +268,30 @@ static int cmd_i2c_read(const struct shell *shell_ctx, size_t argc, char **argv)
 	ret = i2c_read_to_buffer(shell_ctx, argv[ARGV_DEV],
 				 argv[ARGV_ADDR], argv[ARGV_REG],
 				 buf, num_bytes);
+	if (ret == 0) {
+		shell_hexdump(shell_ctx, buf, num_bytes);
+	}
+
+	return ret;
+}
+
+/* i2c direct_read <device> <dev_addr> [<numbytes>] */
+static int cmd_i2c_direct_read(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	uint8_t buf[MAX_I2C_BYTES];
+	int num_bytes;
+	int ret;
+
+	if (argc > 3) {
+		num_bytes = strtol(argv[3], NULL, 16);
+		if (num_bytes > MAX_I2C_BYTES) {
+			num_bytes = MAX_I2C_BYTES;
+		}
+	} else {
+		num_bytes = MAX_I2C_BYTES;
+	}
+
+	ret = i2c_read_to_buffer(shell_ctx, argv[ARGV_DEV], argv[ARGV_ADDR], NULL, buf, num_bytes);
 	if (ret == 0) {
 		shell_hexdump(shell_ctx, buf, num_bytes);
 	}
@@ -336,6 +365,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
 		      "Read a byte from an I2C device\n"
 		      "Usage: read_byte <device> <addr> <reg>",
 		      cmd_i2c_read_byte, 4, 0),
+	SHELL_CMD_ARG(direct_read, &dsub_device_name,
+		      "Read byte stream directly from an I2C device without "
+		      "writing a register address first\n"
+		      "Usage: direct_read <device> <addr> [<bytes>]",
+		      cmd_i2c_direct_read, 3, 1),
 	SHELL_CMD_ARG(write, &dsub_device_name,
 		      "Write bytes to an I2C device\n"
 		      "Usage: write <device> <addr> <reg> [<byte1>, ...]",

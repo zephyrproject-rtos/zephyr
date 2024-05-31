@@ -22,7 +22,8 @@ struct i2c_eeprom_target_data {
 	uint32_t buffer_size;
 	uint8_t *buffer;
 	uint32_t buffer_idx;
-	bool first_write;
+	uint32_t idx_write_cnt;
+	uint8_t address_width;
 };
 
 struct i2c_eeprom_target_config {
@@ -86,7 +87,7 @@ static int eeprom_target_write_requested(struct i2c_target_config *config)
 
 	LOG_DBG("eeprom: write req");
 
-	data->first_write = true;
+	data->idx_write_cnt = 0;
 
 	return 0;
 }
@@ -121,9 +122,13 @@ static int eeprom_target_write_received(struct i2c_target_config *config,
 	 * I2C controller support
 	 */
 
-	if (data->first_write) {
-		data->buffer_idx = val;
-		data->first_write = false;
+	if (data->idx_write_cnt < (data->address_width >> 3)) {
+		if (data->idx_write_cnt == 0) {
+			data->buffer_idx = 0;
+		}
+
+		data->buffer_idx = val | (data->buffer_idx << 8);
+		data->idx_write_cnt++;
 	} else {
 		data->buffer[data->buffer_idx++] = val;
 	}
@@ -162,7 +167,7 @@ static int eeprom_target_stop(struct i2c_target_config *config)
 
 	LOG_DBG("eeprom: stop");
 
-	data->first_write = true;
+	data->idx_write_cnt = 0;
 
 	return 0;
 }
@@ -246,10 +251,17 @@ static int i2c_eeprom_target_init(const struct device *dev)
 
 #define I2C_EEPROM_INIT(inst)						\
 	static struct i2c_eeprom_target_data				\
-		i2c_eeprom_target_##inst##_dev_data;			\
+		i2c_eeprom_target_##inst##_dev_data = {			\
+			.address_width = DT_INST_PROP_OR(inst,		\
+					address_width, 8),		\
+		};							\
 									\
 	static uint8_t							\
 	i2c_eeprom_target_##inst##_buffer[(DT_INST_PROP(inst, size))];	\
+									\
+	BUILD_ASSERT(DT_INST_PROP(inst, size) <=			\
+			(1 << DT_INST_PROP_OR(inst, address_width, 8)), \
+			"size must be <= than 2^address_width");	\
 									\
 	static const struct i2c_eeprom_target_config			\
 		i2c_eeprom_target_##inst##_cfg = {			\

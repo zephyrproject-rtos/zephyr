@@ -53,14 +53,6 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
-
-&cpu1 {
-	clock-frequency = <ESP32_CLK_CPU_240M>;
-};
-
 uext_serial: &uart1 {};
 uext_i2c: &i2c0 {};
 uext_spi: &spi2 {};
@@ -100,7 +92,6 @@ uext_spi: &spi2 {};
 	status = "okay";
 	pinctrl-0 = <&twai_default>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 
 	can-transceiver {
 		max-bitrate = <1000000>;

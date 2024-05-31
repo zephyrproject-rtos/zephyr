@@ -11,7 +11,7 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(net_http, CONFIG_NET_HTTP_LOG_LEVEL);
+LOG_MODULE_REGISTER(net_http_client, CONFIG_NET_HTTP_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <string.h>

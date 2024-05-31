@@ -75,17 +75,17 @@ static void ms5837_compensate_30(const struct device *dev,
 
 	temp_sq = (int64_t)(data->temperature - 2000) * (data->temperature - 2000);
 	if (data->temperature < 2000) {
-		Ti = (3ll * dT * dT) / (1ll << 23);
-		OFFi = (3ll * temp_sq) / 1ll;
+		Ti = (3ll * dT * dT) / (1ll << 33);
+		OFFi = (3ll * temp_sq) / (1ll << 1);
 		SENSi = (5ll * temp_sq) / (1ll << 3);
 		if (data->temperature < -1500) {
 			temp_sq = (data->temperature + 1500) *
 				  (data->temperature + 1500);
 			OFFi += 7ll * temp_sq;
-			SENSi += 5ll * temp_sq;
+			SENSi += 4ll * temp_sq;
 		}
 	} else {
-		Ti = (1ll * dT * dT) / (1ll << 37);
+		Ti = (2ll * dT * dT) / (1ll << 37);
 		OFFi = temp_sq / (1ll << 4);
 		SENSi = 0;
 	}

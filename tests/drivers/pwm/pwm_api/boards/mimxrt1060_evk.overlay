@@ -9,6 +9,13 @@
  * by the test, but can be tested using the PWM shell.
  */
 
+/ {
+	aliases {
+		pwm-0 = &flexpwm1_pwm0;
+		pwm-1 = &flexpwm1_pwm3;
+	};
+};
+
 &flexpwm1_pwm3 {
 	status = "okay";
 };

@@ -48,11 +48,3 @@ config SOC
 	default "npcx9m7f" if SOC_NPCX9M7F
 	default "npcx9m7fb" if SOC_NPCX9M7FB
 	default "npcx9mfp" if SOC_NPCX9MFP
-
-config NPCX_VCC1_RST_HANG_WORKAROUND
-	bool
-	depends on SOC_NPCX9M7FB
-	default y
-	help
-	  Workaround the issue "Possible Hang-Up After VCC1_RST Reset"
-	  in the npcx9m7fb SoC errata.

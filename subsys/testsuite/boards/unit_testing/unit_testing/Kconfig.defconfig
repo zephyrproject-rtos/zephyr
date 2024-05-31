@@ -6,3 +6,8 @@
 choice BT_HCI_BUS_TYPE
 	default BT_NO_DRIVER
 endchoice
+
+# Controller HCI support requires e.g. devicetree, which isn't available
+# for unit tests.
+config BT_CTLR_HCI
+	default n

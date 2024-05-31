@@ -15,6 +15,8 @@ The technical documentation for current and past releases is available at
 https://docs.zephyrproject.org/ (use the version selector to select your release
 of interest).
 
+.. _zephyr_release_cycle:
+
 Release Life Cycle and Maintenance
 **********************************
 
@@ -102,6 +104,10 @@ in the migration guide. This includes:
   defaulting to a different C standard library)
 - Anything else that can affect the compilation or runtime behavior of an
   existing application
+
+Each entry in the migration guide must include a brief explanation of the change
+as well as refer to the Pull Request that introduced it, in order for the user
+to be able to understand the context of the change.
 
 .. toctree::
    :maxdepth: 1

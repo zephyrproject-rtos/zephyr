@@ -27,8 +27,7 @@
  * @param out   3 byte LS byte first output buffer
  * @return int 0 on success, any other value indicates a failure.
  */
-int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE],
-		uint8_t r[BT_CSIP_CRYPTO_PRAND_SIZE],
+int bt_csip_sih(const uint8_t sirk[BT_CSIP_SIRK_SIZE], uint8_t r[BT_CSIP_CRYPTO_PRAND_SIZE],
 		uint8_t out[BT_CSIP_CRYPTO_HASH_SIZE]);
 
 /**
@@ -54,9 +53,8 @@ int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE],
  * @param out_sirk  The encrypted SIRK.
  * @return int 0 on success, any other value indicates a failure.
  */
-int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
-		const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE],
-		uint8_t out_sirk[BT_CSIP_SET_SIRK_SIZE]);
+int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE], const uint8_t sirk[BT_CSIP_SIRK_SIZE],
+		uint8_t out_sirk[BT_CSIP_SIRK_SIZE]);
 
 /**
  * @brief SIRK decryption function sdf
@@ -81,6 +79,5 @@ int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
  * @param out_sirk  The decrypted SIRK.
  * @return int 0 on success, any other value indicates a failure.
  */
-int bt_csip_sdf(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
-		const uint8_t enc_sirk[BT_CSIP_SET_SIRK_SIZE],
-		uint8_t out_sirk[BT_CSIP_SET_SIRK_SIZE]);
+int bt_csip_sdf(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE], const uint8_t enc_sirk[BT_CSIP_SIRK_SIZE],
+		uint8_t out_sirk[BT_CSIP_SIRK_SIZE]);

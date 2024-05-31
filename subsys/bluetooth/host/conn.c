@@ -383,20 +383,19 @@ static void wait_for_tx_work(struct bt_conn *conn)
 #if defined(CONFIG_BT_CONN_TX)
 	LOG_DBG("conn %p", conn);
 
-	if (IS_ENABLED(CONFIG_BT_RECV_WORKQ_SYS)) {
+	if (IS_ENABLED(CONFIG_BT_RECV_WORKQ_SYS) ||
+	    k_current_get() == k_work_queue_thread_get(&k_sys_work_q)) {
 		tx_notify(conn);
 	} else {
 		struct k_work_sync sync;
+		int err;
 
-		/* API docs mention undefined behavior if syncing on work item
-		 * from wq execution context.
-		 */
-		__ASSERT_NO_MSG(k_current_get() !=
-				k_work_queue_thread_get(&k_sys_work_q));
+		err = k_work_submit(&conn->tx_complete_work);
+		__ASSERT(err >= 0, "couldn't submit (err %d)", err);
 
-		k_work_submit(&conn->tx_complete_work);
 		k_work_flush(&conn->tx_complete_work, &sync);
 	}
+	LOG_DBG("done");
 #else
 	ARG_UNUSED(conn);
 #endif	/* CONFIG_BT_CONN_TX */
@@ -478,6 +477,16 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 
 	LOG_DBG("conn handle %u buf len %u cb %p user_data %p", conn->handle, buf->len, cb,
 		user_data);
+
+	if (buf->ref != 1) {
+		/* The host may alter the buf contents when fragmenting. Higher
+		 * layers cannot expect the buf contents to stay intact. Extra
+		 * refs suggests a silent data corruption would occur if not for
+		 * this error.
+		 */
+		LOG_ERR("buf given to conn has other refs");
+		return -EINVAL;
+	}
 
 	if (buf->user_data_size < CONFIG_BT_CONN_TX_USER_DATA_SIZE) {
 		LOG_ERR("not enough room in user_data %d < %d pool %u",
@@ -853,7 +862,9 @@ static void conn_destroy(struct bt_conn *conn, void *data)
 		bt_conn_set_state(conn, BT_CONN_DISCONNECT_COMPLETE);
 	}
 
-	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+	if (conn->state != BT_CONN_DISCONNECTED) {
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+	}
 }
 
 void bt_conn_cleanup_all(void)

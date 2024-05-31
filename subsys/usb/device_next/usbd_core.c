@@ -120,6 +120,7 @@ static int event_handler_bus_reset(struct usbd_contex *const uds_ctx)
 	switch (udc_speed) {
 	case UDC_BUS_SPEED_HS:
 		uds_ctx->status.speed = USBD_SPEED_HS;
+		break;
 	default:
 		uds_ctx->status.speed = USBD_SPEED_FS;
 	}
@@ -192,8 +193,7 @@ static void usbd_thread(void *p1, void *p2, void *p3)
 		k_msgq_get(&usbd_msgq, &event, K_FOREVER);
 
 		STRUCT_SECTION_FOREACH(usbd_contex, uds_ctx) {
-			if (uds_ctx->dev == event.dev &&
-			    usbd_is_initialized(uds_ctx)) {
+			if (uds_ctx->dev == event.dev) {
 				usbd_event_handler(uds_ctx, &event);
 			}
 		}

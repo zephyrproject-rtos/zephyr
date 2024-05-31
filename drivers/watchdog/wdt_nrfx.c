@@ -60,7 +60,9 @@ static int wdt_nrf_disable(const struct device *dev)
 {
 #if NRFX_WDT_HAS_STOP
 	const struct wdt_nrfx_config *config = dev->config;
+	struct wdt_nrfx_data *data = dev->data;
 	nrfx_err_t err_code;
+	int channel_id;
 
 	err_code = nrfx_wdt_stop(&config->wdt);
 
@@ -68,6 +70,13 @@ static int wdt_nrf_disable(const struct device *dev)
 		/* This can only happen if wdt_nrf_setup() is not called first. */
 		return -EFAULT;
 	}
+
+	nrfx_wdt_channels_free(&config->wdt);
+
+	for (channel_id = 0; channel_id < data->m_allocated_channels; channel_id++) {
+		data->m_callbacks[channel_id] = NULL;
+	}
+	data->m_allocated_channels = 0;
 
 	return 0;
 #else
@@ -220,6 +229,22 @@ WDT_NRFX_WDT_DEVICE(30);
 WDT_NRFX_WDT_DEVICE(31);
 #endif
 
+#ifdef CONFIG_HAS_HW_NRF_WDT010
+WDT_NRFX_WDT_DEVICE(010);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_WDT011
+WDT_NRFX_WDT_DEVICE(011);
+#endif
+
 #ifdef CONFIG_HAS_HW_NRF_WDT130
 WDT_NRFX_WDT_DEVICE(130);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_WDT131
+WDT_NRFX_WDT_DEVICE(131);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_WDT132
+WDT_NRFX_WDT_DEVICE(132);
 #endif

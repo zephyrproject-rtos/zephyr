@@ -81,7 +81,7 @@ ZTEST(clock_sync, test_app_time)
 
 	device_time = sys_get_le32(req.data + 1);
 	token_req = req.data[5] & 0xF;
-	zassert_within((int)device_time, (int)(k_uptime_get() / 1000), 1);
+	zassert_within((int)device_time, k_uptime_seconds(), 1);
 
 	/* apply a time correction of 1000 seconds */
 	sys_put_le32(1000, ans_data + 1);
@@ -90,7 +90,7 @@ ZTEST(clock_sync, test_app_time)
 	lorawan_emul_send_downlink(CLOCK_SYNC_PORT, false, 0, 0, sizeof(ans_data), ans_data);
 
 	lorawan_clock_sync_get(&gps_time);
-	zassert_within(gps_time, (k_uptime_get() / 1000) + 1000, 1);
+	zassert_within(gps_time, k_uptime_seconds() + 1000, 1);
 }
 
 ZTEST(clock_sync, test_device_app_time_periodicity)

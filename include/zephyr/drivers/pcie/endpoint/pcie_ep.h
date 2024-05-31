@@ -56,7 +56,7 @@ enum pcie_reset {
 
 typedef void (*pcie_ep_reset_callback_t)(void *arg);
 
-struct pcie_ep_driver_api {
+__subsystem struct pcie_ep_driver_api {
 	int (*conf_read)(const struct device *dev, uint32_t offset,
 			 uint32_t *data);
 	void (*conf_write)(const struct device *dev, uint32_t offset,

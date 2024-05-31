@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <offsets.h>
+#include <zephyr/offsets.h>
 #include <zephyr/toolchain.h>
 
 GTEXT(__soc_save_context)

@@ -61,7 +61,7 @@ static inline int z_vrfy_ext_syscall_ok(int a)
 {
 	return z_impl_ext_syscall_ok(a);
 }
-#include <syscalls/ext_syscall_ok_mrsh.c>
+#include <zephyr/syscalls/ext_syscall_ok_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 
@@ -228,6 +228,13 @@ static LLEXT_CONST uint8_t threads_kernel_objects_ext[] __aligned(4) = {
 	#include "threads_kernel_objects.inc"
 };
 LLEXT_LOAD_UNLOAD(threads_kernel_objects, true, threads_objects_perm_setup)
+#endif
+
+#ifndef CONFIG_LLEXT_TYPE_ELF_OBJECT
+static LLEXT_CONST uint8_t multi_file_ext[] __aligned(4) = {
+	#include "multi_file.inc"
+};
+LLEXT_LOAD_UNLOAD(multi_file, true, NULL)
 #endif
 
 

@@ -307,7 +307,7 @@ static int regulator_da1469x_get_voltage(const struct device *dev,
 	uint16_t idx;
 
 	if (config->desc->voltage_idx_mask) {
-		idx = FIELD_GET(CRG_TOP->POWER_CTRL_REG, config->desc->voltage_idx_mask);
+		idx = FIELD_GET(config->desc->voltage_idx_mask, CRG_TOP->POWER_CTRL_REG);
 	} else {
 		idx = 0;
 	}
@@ -358,8 +358,8 @@ static int regulator_da1469x_get_current_limit(const struct device *dev,
 	if (config->desc->current_ranges == NULL) {
 		return -ENOTSUP;
 	}
-	idx = FIELD_GET(*config->desc->dcdc_register,
-			DCDC_DCDC_V14_REG_DCDC_V14_CUR_LIM_MAX_HV_Msk);
+	idx = FIELD_GET(DCDC_DCDC_V14_REG_DCDC_V14_CUR_LIM_MAX_HV_Msk,
+			*config->desc->dcdc_register);
 	ret = linear_range_group_get_value(config->desc->current_ranges, 1, idx, curr_ua);
 
 	return ret;

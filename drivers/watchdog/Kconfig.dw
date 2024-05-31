@@ -7,5 +7,6 @@ config WDT_DW
 	bool "Synopsys DesignWare Watchdog driver"
 	default y
 	depends on DT_HAS_SNPS_DESIGNWARE_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
 	help
 	  Synopsys DesignWare Watchdog driver.

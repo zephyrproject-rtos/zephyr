@@ -98,6 +98,12 @@ int bt_apollo_vnd_setup(void);
  */
 bool bt_apollo_vnd_rcv_ongoing(uint8_t *data, uint16_t len);
 
+/**
+ * @brief Do the specific preprocessing in HCI packet receiving ISR if needed,
+ * for example, clear the interrupt status.
+ */
+void bt_apollo_rcv_isr_preprocess(void);
+
 #ifdef __cplusplus
 }
 #endif

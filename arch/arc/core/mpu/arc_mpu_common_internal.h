@@ -207,7 +207,7 @@ int arc_core_mpu_get_max_domain_partition_regions(void)
 /**
  * @brief validate the given buffer is user accessible or not
  */
-int arc_core_mpu_buffer_validate(void *addr, size_t size, int write)
+int arc_core_mpu_buffer_validate(const void *addr, size_t size, int write)
 {
 	/*
 	 * For ARC MPU, smaller region number takes priority.

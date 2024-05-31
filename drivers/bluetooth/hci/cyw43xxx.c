@@ -19,7 +19,6 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cyw43xxx_driver);

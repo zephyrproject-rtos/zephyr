@@ -9,9 +9,14 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 
+static bool pm_device_filter(const struct device *dev)
+{
+	return dev->pm != NULL;
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, pm_device_filter);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;

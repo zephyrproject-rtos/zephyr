@@ -1,5 +1,5 @@
 identifier: xiao_esp32s3/esp32s3/procpu
-name: XIAO ESP32S3
+name: XIAO ESP32S3 PROCPU
 type: mcu
 arch: xtensa
 toolchain:

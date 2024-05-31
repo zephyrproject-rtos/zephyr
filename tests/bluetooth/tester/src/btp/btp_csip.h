@@ -25,12 +25,14 @@ struct btp_csip_start_ordered_access_cmd {
 
 #define BTP_CSIP_SET_COORDINATOR_LOCK		0x04
 struct btp_csip_set_coordinator_lock_cmd {
-	uint8_t count;
+	uint8_t addr_cnt;
+	bt_addr_le_t addr[];
 } __packed;
 
 #define BTP_CSIP_SET_COORDINATOR_RELEASE	0x05
 struct btp_csip_set_coordinator_release_cmd {
-	uint8_t count;
+	uint8_t addr_cnt;
+	bt_addr_le_t addr[];
 } __packed;
 
 /* CSIP Events */
@@ -47,7 +49,7 @@ struct btp_csip_discovered_ev {
 #define BTP_CSIP_SIRK_EV			0x81
 struct btp_csip_sirk_ev {
 	bt_addr_le_t address;
-	uint8_t sirk[BT_CSIP_SET_SIRK_SIZE];
+	uint8_t sirk[BT_CSIP_SIRK_SIZE];
 } __packed;
 
 #define BTP_CSIP_LOCK_EV			0x82

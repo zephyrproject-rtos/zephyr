@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
+
+if SOC_SERIES_APOLLO3X
+
+rsource "Kconfig.defconfig.apollo3*"
+
+endif # SOC_SERIES_APOLLO3X

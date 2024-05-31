@@ -216,7 +216,7 @@ void bma4xx_emul_set_accel_data(const struct emul *target, q31_t value, int8_t s
 	data->regs[reg + 1] = FIELD_GET(GENMASK(11, 4), reg_val);
 }
 
-static int bma4xx_emul_backend_set_channel(const struct emul *target, enum sensor_channel ch,
+static int bma4xx_emul_backend_set_channel(const struct emul *target, struct sensor_chan_spec ch,
 					   const q31_t *value, int8_t shift)
 {
 
@@ -226,7 +226,7 @@ static int bma4xx_emul_backend_set_channel(const struct emul *target, enum senso
 
 	struct bma4xx_emul_data *data = target->data;
 
-	switch (ch) {
+	switch (ch.chan_type) {
 	case SENSOR_CHAN_ACCEL_X:
 		bma4xx_emul_set_accel_data(target, value[0], shift, BMA4XX_REG_DATA_8);
 		break;
@@ -250,15 +250,15 @@ static int bma4xx_emul_backend_set_channel(const struct emul *target, enum senso
 	return 0;
 }
 
-static int bma4xx_emul_backend_get_sample_range(const struct emul *target, enum sensor_channel ch,
-						q31_t *lower, q31_t *upper, q31_t *epsilon,
-						int8_t *shift)
+static int bma4xx_emul_backend_get_sample_range(const struct emul *target,
+						struct sensor_chan_spec ch, q31_t *lower,
+						q31_t *upper, q31_t *epsilon, int8_t *shift)
 {
 	if (!lower || !upper || !epsilon || !shift) {
 		return -EINVAL;
 	}
 
-	switch (ch) {
+	switch (ch.chan_type) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
@@ -306,7 +306,7 @@ static int bma4xx_emul_backend_get_sample_range(const struct emul *target, enum 
 	return 0;
 }
 
-static const struct emul_sensor_backend_api bma4xx_emul_sensor_backend_api = {
+static const struct emul_sensor_driver_api bma4xx_emul_sensor_driver_api = {
 	.set_channel = bma4xx_emul_backend_set_channel,
 	.get_sample_range = bma4xx_emul_backend_get_sample_range,
 };
@@ -319,6 +319,6 @@ static struct i2c_emul_api bma4xx_emul_api_i2c = {
 	static struct bma4xx_emul_data bma4xx_emul_data_##n = {};                                  \
 	static const struct bma4xx_emul_cfg bma4xx_emul_cfg_##n = {};                              \
 	EMUL_DT_INST_DEFINE(n, bma4xx_emul_init, &bma4xx_emul_data_##n, &bma4xx_emul_cfg_##n,      \
-			    &bma4xx_emul_api_i2c, &bma4xx_emul_sensor_backend_api);
+			    &bma4xx_emul_api_i2c, &bma4xx_emul_sensor_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INIT_BMA4XX)

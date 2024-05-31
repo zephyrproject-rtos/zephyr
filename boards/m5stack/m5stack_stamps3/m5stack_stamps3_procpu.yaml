@@ -1,5 +1,5 @@
 identifier: m5stack_stamps3/esp32s3/procpu
-name: M5Stack StampS3
+name: M5Stack StampS3 PROCPU
 type: mcu
 arch: xtensa
 toolchain:

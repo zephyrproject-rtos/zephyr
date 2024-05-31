@@ -141,9 +141,7 @@ static void (*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *,
 };
 
 /** Channel to capture get function mapping. */
-#if !defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32G4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32MP1X)
+#if !defined(CONFIG_SOC_SERIES_STM32MP1X)
 static uint32_t __maybe_unused (*const get_channel_capture[])(const TIM_TypeDef *) = {
 #else
 static uint32_t __maybe_unused (*const get_channel_capture[])(TIM_TypeDef *) = {
@@ -166,9 +164,7 @@ static void __maybe_unused (*const disable_capture_interrupt[])(TIM_TypeDef *) =
 };
 
 /** Channel to is capture active flag mapping. */
-#if !defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32G4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32MP1X)
+#if !defined(CONFIG_SOC_SERIES_STM32MP1X)
 static uint32_t __maybe_unused (*const is_capture_active[])(const TIM_TypeDef *) = {
 #else
 static uint32_t __maybe_unused (*const is_capture_active[])(TIM_TypeDef *) = {

@@ -21,7 +21,8 @@ to simulate the radio channel.
 In the BabbleSim documentation you can find more information on how to
 `get <https://babblesim.github.io/fetching.html>`_ and
 `build <https://babblesim.github.io/building.html>`_ the simulator.
-In the :ref:`nrf52_bsim<nrf52_bsim>` and :ref:`nrf5340bsim<nrf5340bsim>` boards documentation
+In the :ref:`nrf52_bsim<nrf52_bsim>`, :ref:`nrf5340bsim<nrf5340bsim>`,
+and :ref:`nrf54l15bsim<nrf54l15bsim>` boards documentation
 you can find more information about how to build Zephyr targeting these particular boards,
 and a few examples.
 
@@ -67,8 +68,9 @@ found in the :ref:`bsim boards tests section<bsim_boards_tests>`.
 Test coverage and BabbleSim
 ***************************
 
-As the :ref:`nrf52_bsim<nrf52_bsim>` and :ref:`nrf5340bsim<nrf5340bsim>` boards are based on the
-POSIX architecture, you can easily collect test coverage information.
+As the :ref:`nrf52_bsim<nrf52_bsim>` and :ref:`nrf5340bsim<nrf5340bsim>`, and
+:ref:`nrf54l15bsim<nrf54l15bsim>` boards are based on the POSIX architecture, you can easily collect
+test coverage information.
 
 You can use the script :zephyr_file:`tests/bsim/generate_coverage_report.sh` to generate an html
 coverage report from tests.

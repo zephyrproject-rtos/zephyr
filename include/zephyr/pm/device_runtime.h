@@ -48,7 +48,7 @@ int pm_device_runtime_auto_enable(const struct device *dev);
  * @param dev Device instance.
  *
  * @retval 0 If the device runtime PM is enabled successfully.
- * @retval -EPERM If device has power state locked.
+ * @retval -EBUSY If device is busy.
  * @retval -ENOTSUP If the device does not support PM.
  * @retval -errno Other negative errno, result of suspending the device.
  *
@@ -158,6 +158,17 @@ int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay);
  */
 bool pm_device_runtime_is_enabled(const struct device *dev);
 
+/**
+ * @brief Return the current device usage counter.
+ *
+ * @param dev Device instance.
+ *
+ * @returns the current usage counter.
+ * @retval -ENOTSUP If the device is not using runtime PM.
+ * @retval -ENOSYS If the runtime PM is not enabled at all.
+ */
+int pm_device_runtime_usage(const struct device *dev);
+
 #else
 
 static inline int pm_device_runtime_auto_enable(const struct device *dev)
@@ -202,6 +213,12 @@ static inline bool pm_device_runtime_is_enabled(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return false;
+}
+
+static inline int pm_device_runtime_usage(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return -ENOSYS;
 }
 
 #endif

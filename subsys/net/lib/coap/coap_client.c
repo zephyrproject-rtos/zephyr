@@ -27,6 +27,7 @@ static atomic_t coap_client_recv_active;
 static int send_request(int sock, const void *buf, size_t len, int flags,
 			const struct sockaddr *dest_addr, socklen_t addrlen)
 {
+	LOG_HEXDUMP_DBG(buf, len, "Send CoAP Request:");
 	if (addrlen == 0) {
 		return zsock_sendto(sock, buf, len, flags, NULL, 0);
 	} else {
@@ -37,11 +38,17 @@ static int send_request(int sock, const void *buf, size_t len, int flags,
 static int receive(int sock, void *buf, size_t max_len, int flags,
 		   struct sockaddr *src_addr, socklen_t *addrlen)
 {
+	ssize_t err;
+
 	if (*addrlen == 0) {
-		return zsock_recvfrom(sock, buf, max_len, flags, NULL, NULL);
+		err = zsock_recvfrom(sock, buf, max_len, flags, NULL, NULL);
 	} else {
-		return zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
+		err = zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
 	}
+	if (err > 0) {
+		LOG_HEXDUMP_DBG(buf, err, "Receive CoAP Response:");
+	}
+	return err;
 }
 
 static void reset_block_contexts(struct coap_client_internal_request *request)
@@ -59,6 +66,7 @@ static void reset_internal_request(struct coap_client_internal_request *request)
 {
 	request->offset = 0;
 	request->last_id = 0;
+	request->last_response_id = -1;
 	reset_block_contexts(request);
 }
 
@@ -282,6 +290,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 	struct coap_client_internal_request *internal_req = get_free_request(client);
 
 	if (internal_req == NULL) {
+		LOG_DBG("No more free requests");
 		return -EAGAIN;
 	}
 
@@ -320,6 +329,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 	reset_internal_request(internal_req);
 
 	if (k_mutex_lock(&client->send_mutex, K_NO_WAIT)) {
+		LOG_DBG("Could not immediately lock send_mutex");
 		return -EAGAIN;
 	}
 
@@ -360,6 +370,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 		}
 
 		coap_pending_cycle(&internal_req->pending);
+		internal_req->is_observe = coap_request_is_observe(&internal_req->request);
 	}
 
 	ret = send_request(sock, internal_req->request.data, internal_req->request.offset, 0,
@@ -380,8 +391,13 @@ out:
 static void report_callback_error(struct coap_client_internal_request *internal_req, int error_code)
 {
 	if (internal_req->coap_request.cb) {
-		internal_req->coap_request.cb(error_code, 0, NULL, 0, true,
-					      internal_req->coap_request.user_data);
+		if (!atomic_set(&internal_req->in_callback, 1)) {
+			internal_req->coap_request.cb(error_code, 0, NULL, 0, true,
+						      internal_req->coap_request.user_data);
+			atomic_clear(&internal_req->in_callback);
+		} else {
+			LOG_DBG("Cannot call the callback; already in it.");
+		}
 	}
 }
 
@@ -400,7 +416,9 @@ static int resend_request(struct coap_client *client,
 {
 	int ret = 0;
 
-	if (internal_req->pending.timeout != 0 && coap_pending_cycle(&internal_req->pending)) {
+	if (internal_req->request_ongoing &&
+	    internal_req->pending.timeout != 0 &&
+	    coap_pending_cycle(&internal_req->pending)) {
 		LOG_ERR("Timeout in poll, retrying send");
 
 		/* Reset send block context as it was updated in previous init from packet */
@@ -643,6 +661,7 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	/* CON, NON_CON and piggybacked ACK need to match the token with original request */
 	uint16_t payload_len;
 	uint8_t response_code = coap_header_get_code(response);
+	uint16_t response_id = coap_header_get_id(response);
 	const uint8_t *payload = coap_packet_get_payload(response, &payload_len);
 
 	/* Separate response coming */
@@ -658,6 +677,14 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		LOG_WRN("Not matching tokens");
 		return 1;
 	}
+
+	/* MID-based deduplication */
+	if (response_id == internal_req->last_response_id) {
+		LOG_WRN("Duplicate MID, dropping");
+		goto fail;
+	}
+
+	internal_req->last_response_id = response_id;
 
 	/* Received echo option */
 	if (find_echo_option(response, &client->echo_option)) {
@@ -765,10 +792,16 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 
 	/* Call user callback */
 	if (internal_req->coap_request.cb) {
-		internal_req->coap_request.cb(response_code, internal_req->offset, payload,
-					      payload_len, last_block,
-					      internal_req->coap_request.user_data);
-
+		if (!atomic_set(&internal_req->in_callback, 1)) {
+			internal_req->coap_request.cb(response_code, internal_req->offset, payload,
+						      payload_len, last_block,
+						      internal_req->coap_request.user_data);
+			atomic_clear(&internal_req->in_callback);
+		}
+		if (!internal_req->request_ongoing) {
+			/* User callback must have called coap_client_cancel_requests(). */
+			goto fail;
+		}
 		/* Update the offset for next callback in a blockwise transfer */
 		if (blockwise_transfer) {
 			internal_req->offset += payload_len;
@@ -811,8 +844,31 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	}
 fail:
 	client->response_ready = false;
-	internal_req->request_ongoing = false;
+	if (ret < 0 || !internal_req->is_observe) {
+		internal_req->request_ongoing = false;
+	}
 	return ret;
+}
+
+void coap_client_cancel_requests(struct coap_client *client)
+{
+	for (int i = 0; i < ARRAY_SIZE(client->requests); i++) {
+		if (client->requests[i].request_ongoing == true) {
+			LOG_DBG("Cancelling request %d", i);
+			/* Report the request was cancelled. This will be skipped if
+			 * this function was called from the user's callback so we
+			 * do not reenter it. In that case, the user knows their
+			 * request was cancelled anyway.
+			 */
+			report_callback_error(&client->requests[i], -ECANCELED);
+			client->requests[i].request_ongoing = false;
+			client->requests[i].is_observe = false;
+		}
+	}
+	atomic_clear(&coap_client_recv_active);
+
+	/* Wait until after zsock_poll() can time out and return. */
+	k_sleep(K_MSEC(COAP_PERIODIC_TIMEOUT));
 }
 
 void coap_client_recv(void *coap_cl, void *a, void *b)

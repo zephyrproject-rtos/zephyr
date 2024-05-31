@@ -192,6 +192,6 @@ static inline int z_impl_retained_mem_clear(const struct device *dev)
 }
 #endif
 
-#include <syscalls/retained_mem.h>
+#include <zephyr/syscalls/retained_mem.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_RETAINED_MEM_ */

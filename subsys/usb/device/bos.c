@@ -7,14 +7,17 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_bos, CONFIG_USB_DEVICE_LOG_LEVEL);
 
+#include <bos_desc.h>
+
 #include <zephyr/kernel.h>
-
 #include <zephyr/usb/usb_device.h>
-
 #include <zephyr/usb/bos.h>
 
 extern const uint8_t __usb_bos_desc_start[];
 extern const uint8_t __usb_bos_desc_end[];
+
+#define USB_DEVICE_BOS_DESC_DEFINE_HDR \
+	static __in_section(usb, bos_desc_area, 0) __aligned(1) __used
 
 USB_DEVICE_BOS_DESC_DEFINE_HDR struct usb_bos_descriptor bos_hdr = {
 	.bLength = sizeof(struct usb_bos_descriptor),
@@ -38,8 +41,10 @@ void usb_bos_fix_total_length(void)
 	bos_hdr.wTotalLength = usb_bos_get_length();
 }
 
-void usb_bos_register_cap(struct usb_bos_platform_descriptor *desc)
+void usb_bos_register_cap(void *desc)
 {
+	ARG_UNUSED(desc);
+
 	/* Has effect only on first register */
 	bos_hdr.wTotalLength = usb_bos_get_length();
 

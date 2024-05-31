@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 qianfan Zhao
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +47,10 @@
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
 	};
+};
+
+&clk_lse {
+	status = "okay";
 };
 
 &clk_hse {
@@ -118,6 +123,12 @@
 	pinctrl-names = "default";
 	st,adc-clock-source = <SYNC>;
 	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
 

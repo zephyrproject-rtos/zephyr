@@ -141,19 +141,11 @@ static int mdio_nxp_s32_init(const struct device *dev)
 	return 0;
 }
 
-static void mdio_nxp_s32_noop(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	/* Controller does not support enabling/disabling MDIO bus */
-}
-
 static const struct mdio_driver_api mdio_nxp_s32_driver_api = {
 	.read = mdio_nxp_s32_read_c22,
 	.write = mdio_nxp_s32_write_c22,
 	.read_c45 = mdio_nxp_s32_read_c45,
 	.write_c45 = mdio_nxp_s32_write_c45,
-	.bus_enable = mdio_nxp_s32_noop,
-	.bus_disable = mdio_nxp_s32_noop,
 };
 
 #define MDIO_NXP_S32_HW_INSTANCE_CHECK(i, n)						\

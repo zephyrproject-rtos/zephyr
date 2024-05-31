@@ -496,8 +496,9 @@ void z_shell_cmd_trim(const struct shell *sh)
 	sh->ctx->cmd_buff_pos = sh->ctx->cmd_buff_len;
 }
 
-const struct device *shell_device_lookup(size_t idx,
-				   const char *prefix)
+static const struct device *shell_device_internal(size_t idx,
+						  const char *prefix,
+						  shell_device_filter_t filter)
 {
 	size_t match_idx = 0;
 	const struct device *dev;
@@ -510,7 +511,8 @@ const struct device *shell_device_lookup(size_t idx,
 		    && (strlen(dev->name) != 0)
 		    && ((prefix == NULL)
 			|| (strncmp(prefix, dev->name,
-				    strlen(prefix)) == 0))) {
+				    strlen(prefix)) == 0))
+		    && (filter == NULL || filter(dev))) {
 			if (match_idx == idx) {
 				return dev;
 			}
@@ -520,6 +522,18 @@ const struct device *shell_device_lookup(size_t idx,
 	}
 
 	return NULL;
+}
+
+const struct device *shell_device_filter(size_t idx,
+					 shell_device_filter_t filter)
+{
+	return shell_device_internal(idx, NULL, filter);
+}
+
+const struct device *shell_device_lookup(size_t idx,
+					 const char *prefix)
+{
+	return shell_device_internal(idx, prefix, NULL);
 }
 
 long shell_strtol(const char *str, int base, int *err)

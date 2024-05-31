@@ -31,3 +31,10 @@ config DAC_MCUX_DAC32_TESTOUT
 	depends on DAC_MCUX_DAC32
 	help
 	  Enable the DAC test output.
+
+config DAC_MCUX_GAU
+	bool "NXP GAU DAC driver"
+	default y
+	depends on DT_HAS_NXP_GAU_DAC_ENABLED
+	help
+	  Enable the driver for the NXP GAU DAC.

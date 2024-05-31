@@ -65,9 +65,6 @@ Building and Running
 The sample updates the LED strip periodically. The update frequency can be
 modified by changing the :kconfig:option:`CONFIG_SAMPLE_LED_UPDATE_DELAY`.
 
-If there is no chain-length property in the devicetree node, you need to set
-the number of LEDs in the :kconfig:option:`CONFIG_SAMPLE_LED_STRIP_LENGTH` option.
-
 Then build and flash the application:
 
 .. zephyr-app-commands::

@@ -45,7 +45,7 @@ typedef void (*vtd_set_irte_msi_f)(const struct device *dev,
 typedef bool (*vtd_irte_is_msi_f)(const struct device *dev,
 				  uint8_t irte_idx);
 
-struct vtd_driver_api {
+__subsystem struct vtd_driver_api {
 	vtd_alloc_entries_f allocate_entries;
 	vtd_remap_msi_f remap_msi;
 	vtd_remap_f remap;

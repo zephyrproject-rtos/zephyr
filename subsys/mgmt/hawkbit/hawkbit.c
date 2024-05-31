@@ -31,11 +31,6 @@
 #include "hawkbit_firmware.h"
 #include "hawkbit_priv.h"
 
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-#define CA_CERTIFICATE_TAG 1
-#include <zephyr/net/tls_credentials.h>
-#endif
-
 LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 
 #define CANCEL_BASE_SIZE 50
@@ -82,6 +77,9 @@ static struct hawkbit_config {
 #ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
 	char ddi_security_token[DDI_SECURITY_TOKEN_SIZE + 1];
 #endif
+#ifdef CONFIG_HAWKBIT_USE_DYNAMIC_CERT_TAG
+	sec_tag_t tls_tag;
+#endif
 #endif /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
 } hb_cfg;
 
@@ -102,6 +100,14 @@ static struct hawkbit_config {
 #else
 #define HAWKBIT_DDI_SECURITY_TOKEN CONFIG_HAWKBIT_DDI_SECURITY_TOKEN
 #endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
+
+#ifdef CONFIG_HAWKBIT_USE_DYNAMIC_CERT_TAG
+#define HAWKBIT_CERT_TAG hb_cfg.tls_tag
+#elif defined(HAWKBIT_USE_STATIC_CERT_TAG)
+#define HAWKBIT_CERT_TAG CONFIG_HAWKBIT_STATIC_CERT_TAG
+#else
+#define HAWKBIT_CERT_TAG 0
+#endif /* CONFIG_HAWKBIT_USE_DYNAMIC_CERT_TAG */
 
 struct hawkbit_download {
 	int download_status;
@@ -341,7 +347,7 @@ static bool start_http_client(void)
 	struct zsock_addrinfo *addr;
 	struct zsock_addrinfo hints = {0};
 	int resolve_attempts = 10;
-	int protocol = IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) ? IPPROTO_TLS_1_2 : IPPROTO_TCP;
+	int protocol = IS_ENABLED(CONFIG_HAWKBIT_USE_TLS) ? IPPROTO_TLS_1_2 : IPPROTO_TCP;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		hints.ai_family = AF_INET6;
@@ -371,9 +377,9 @@ static bool start_http_client(void)
 		goto err;
 	}
 
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+#ifdef CONFIG_HAWKBIT_USE_TLS
 	sec_tag_t sec_tag_opt[] = {
-		CA_CERTIFICATE_TAG,
+		HAWKBIT_CERT_TAG,
 	};
 
 	if (zsock_setsockopt(hb_context.sock, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt,
@@ -385,7 +391,7 @@ static bool start_http_client(void)
 			     sizeof(HAWKBIT_SERVER)) < 0) {
 		goto err_sock;
 	}
-#endif
+#endif /* CONFIG_HAWKBIT_USE_TLS */
 
 	if (zsock_connect(hb_context.sock, addr->ai_addr, addr->ai_addrlen) < 0) {
 		LOG_ERR("Failed to connect to server");
@@ -475,6 +481,23 @@ static int hawkbit_device_acid_update(int32_t new_value)
 	}
 
 	return 0;
+}
+
+int hawkbit_reset_action_id(void)
+{
+	int ret;
+
+	if (k_sem_take(&probe_sem, K_NO_WAIT) == 0) {
+		ret = hawkbit_device_acid_update(0);
+		k_sem_give(&probe_sem);
+		return ret;
+	}
+	return -EAGAIN;
+}
+
+int32_t hawkbit_get_action_id(void)
+{
+	return hb_cfg.action_id;
 }
 
 /*
@@ -742,6 +765,12 @@ int hawkbit_set_config(struct hawkbit_runtime_config *config)
 				hb_cfg.ddi_security_token);
 		}
 #endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
+#ifdef CONFIG_HAWKBIT_USE_DYNAMIC_CERT_TAG
+		if (config->tls_tag != 0) {
+			hb_cfg.tls_tag = config->tls_tag;
+			LOG_DBG("configured %s: %d", "hawkbit/tls_tag", hb_cfg.tls_tag);
+		}
+#endif /* CONFIG_HAWKBIT_USE_DYNAMIC_CERT_TAG */
 		settings_save();
 		k_sem_give(&probe_sem);
 	} else {
@@ -759,6 +788,7 @@ struct hawkbit_runtime_config hawkbit_get_config(void)
 		.server_addr = HAWKBIT_SERVER,
 		.server_port = HAWKBIT_PORT_INT,
 		.auth_token = HAWKBIT_DDI_SECURITY_TOKEN,
+		.tls_tag = HAWKBIT_CERT_TAG,
 	};
 
 	return config;
@@ -1160,7 +1190,7 @@ static bool send_request(enum http_method method, enum hawkbit_http_request type
 void hawkbit_reboot(void)
 {
 	LOG_PANIC();
-	sys_reboot(SYS_REBOOT_WARM);
+	sys_reboot(IS_ENABLED(CONFIG_HAWKBIT_REBOOT_COLD) ? SYS_REBOOT_COLD : SYS_REBOOT_WARM);
 }
 
 static bool check_hawkbit_server(void)

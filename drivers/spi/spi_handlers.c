@@ -114,7 +114,7 @@ static inline int z_vrfy_spi_transceive(const struct device *dev,
 					&tx_bufs_copy,
 					&rx_bufs_copy);
 }
-#include <syscalls/spi_transceive_mrsh.c>
+#include <zephyr/syscalls/spi_transceive_mrsh.c>
 
 static inline int z_vrfy_spi_release(const struct device *dev,
 				     const struct spi_config *config)
@@ -123,4 +123,4 @@ static inline int z_vrfy_spi_release(const struct device *dev,
 	K_OOPS(K_SYSCALL_DRIVER_SPI(dev, release));
 	return z_impl_spi_release((const struct device *)dev, config);
 }
-#include <syscalls/spi_release_mrsh.c>
+#include <zephyr/syscalls/spi_release_mrsh.c>

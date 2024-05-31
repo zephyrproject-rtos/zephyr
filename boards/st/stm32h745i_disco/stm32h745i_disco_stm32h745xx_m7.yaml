@@ -1,0 +1,24 @@
+identifier: stm32h745i_disco/stm32h745xx/m7
+name: STM32H745XI Discovery (M7)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 512
+flash: 1024
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - uart
+  - gpio
+  - counter
+  - i2c
+  - pwm
+  - netif:eth
+  - qspi
+  - memc
+  - spi
+  - rtc
+  - can
+vendor: st

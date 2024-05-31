@@ -25,6 +25,9 @@
 #define SHELL_PRINT_INDENT_LEVEL_SIZE 2
 #define MAX_CODEC_FRAMES_PER_SDU      4U
 
+/* BIS sync is a 32-bit bitfield where BIT(0) is not allowed */
+#define VALID_BIS_SYNC(_bis_sync) ((bis_sync & BIT(0)) == 0U && bis_sync < UINT32_MAX)
+
 extern struct bt_csip_set_member_svc_inst *svc_inst;
 
 ssize_t audio_ad_data_add(struct bt_data *data, const size_t data_size, const bool discoverable,
@@ -48,7 +51,7 @@ ssize_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 
-unsigned long bap_get_recv_stats_interval(void);
+unsigned long bap_get_stats_interval(void);
 
 #if defined(CONFIG_LIBLC3)
 #include "lc3.h"
@@ -61,7 +64,7 @@ unsigned long bap_get_recv_stats_interval(void);
 #define LC3_MAX_NUM_SAMPLES_STEREO (LC3_MAX_NUM_SAMPLES_MONO * 2U)
 #endif /* CONFIG_LIBLC3 */
 
-#define LOCATION BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT
+#define LOCATION BT_AUDIO_LOCATION_FRONT_LEFT
 #define CONTEXT                                                                                    \
 	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |                \
 	 BT_AUDIO_CONTEXT_TYPE_MEDIA |                                                             \
@@ -74,15 +77,6 @@ struct named_lc3_preset {
 	const char *name;
 	struct bt_bap_lc3_preset preset;
 };
-
-const struct named_lc3_preset *bap_get_named_preset(bool is_unicast, enum bt_audio_dir dir,
-						    const char *preset_arg);
-
-size_t bap_get_rx_streaming_cnt(void);
-int bap_usb_init(void);
-int bap_usb_add_frame_to_usb(enum bt_audio_location lc3_chan_allocation, const int16_t *frame,
-			     size_t frame_size, uint32_t ts);
-void bap_usb_clear_frames_to_usb(void);
 
 struct shell_stream {
 	struct bt_cap_stream stream;
@@ -106,11 +100,20 @@ struct shell_stream {
 			/* The uptime tick measured when stream was connected */
 			int64_t connected_at_ticks;
 			uint16_t seq_num;
-			struct k_work_delayable audio_send_work;
-			bool active;
 #if defined(CONFIG_LIBLC3)
 			atomic_t lc3_enqueue_cnt;
+			bool active;
+			size_t encoded_cnt;
 			size_t lc3_sdu_cnt;
+			lc3_encoder_mem_48k_t lc3_encoder_mem;
+			lc3_encoder_t lc3_encoder;
+#if defined(CONFIG_USB_DEVICE_AUDIO)
+			/* Indicates where to read left USB data in the ring buffer */
+			size_t left_read_idx;
+			/* Indicates where to read right USB data in the ring buffer */
+			size_t right_read_idx;
+			size_t right_ring_buf_fail_cnt;
+#endif /* CONFIG_USB_DEVICE_AUDIO */
 #endif /* CONFIG_LIBLC3 */
 		} tx;
 #endif /* CONFIG_BT_AUDIO_TX */
@@ -119,6 +122,7 @@ struct shell_stream {
 		struct {
 			struct bt_iso_recv_info last_info;
 			size_t empty_sdu_pkts;
+			size_t valid_sdu_pkts;
 			size_t lost_pkts;
 			size_t err_pkts;
 			size_t dup_psn;
@@ -133,6 +137,26 @@ struct shell_stream {
 #endif /* CONFIG_BT_AUDIO_RX */
 	};
 };
+
+const struct named_lc3_preset *bap_get_named_preset(bool is_unicast, enum bt_audio_dir dir,
+						    const char *preset_arg);
+
+size_t bap_get_rx_streaming_cnt(void);
+size_t bap_get_tx_streaming_cnt(void);
+void bap_foreach_stream(void (*func)(struct shell_stream *sh_stream, void *data), void *data);
+
+int bap_usb_init(void);
+
+int bap_usb_add_frame_to_usb(enum bt_audio_location lc3_chan_allocation, const int16_t *frame,
+			     size_t frame_size, uint32_t ts);
+void bap_usb_clear_frames_to_usb(void);
+uint16_t get_next_seq_num(struct bt_bap_stream *bap_stream);
+struct shell_stream *shell_stream_from_bap_stream(struct bt_bap_stream *bap_stream);
+struct bt_bap_stream *bap_stream_from_shell_stream(struct shell_stream *sh_stream);
+bool bap_usb_can_get_full_sdu(struct shell_stream *sh_stream);
+void bap_usb_get_frame(struct shell_stream *sh_stream, enum bt_audio_location chan_alloc,
+		       int16_t buffer[]);
+size_t bap_usb_get_frame_size(const struct shell_stream *sh_stream);
 
 struct broadcast_source {
 	bool is_cap;
@@ -198,22 +222,6 @@ int bap_ac_create_unicast_group(const struct bap_unicast_ac_param *param,
 int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *param);
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
-
-static inline uint8_t get_chan_cnt(enum bt_audio_location chan_allocation)
-{
-	uint8_t cnt = 0U;
-
-	if (chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO) {
-		return 1;
-	}
-
-	while (chan_allocation != 0) {
-		cnt += chan_allocation & 1U;
-		chan_allocation >>= 1;
-	}
-
-	return cnt;
-}
 
 static inline void print_qos(const struct shell *sh, const struct bt_audio_codec_qos *qos)
 {

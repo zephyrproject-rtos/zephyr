@@ -9,7 +9,7 @@
 #include <zephyr/logging/log.h>
 
 #include <soc.h>
-#include <nrf53_cpunet_mgmt.h>
+#include <hal/nrf_reset.h>
 
 #if defined(CONFIG_BOARD_PAN1783_EVB_NRF5340_CPUAPP)
 LOG_MODULE_REGISTER(pan1783_evb_cpuapp, CONFIG_LOG_DEFAULT_LEVEL);
@@ -42,7 +42,7 @@ static int remoteproc_mgr_boot(void)
 	remoteproc_mgr_config();
 
 	/* Release the Network MCU, 'Release force off signal' */
-	nrf53_cpunet_enable(true);
+	nrf_reset_network_force_off(NRF_RESET, false);
 
 	LOG_DBG("Network MCU released.");
 

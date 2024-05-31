@@ -46,6 +46,11 @@ from twisterlib.platform import Platform
 from twisterlib.testplan import change_skip_to_error_if_integration
 from twisterlib.harness import HarnessImporter, Pytest
 
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
+
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 import expr_parser
@@ -299,7 +304,7 @@ class CMake:
                     log.write(log_msg)
 
             if log_msg:
-                overflow_found = re.findall("region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM|dram0_1_seg)' overflowed by", log_msg)
+                overflow_found = re.findall("region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM|dram\\d_\\d_seg)' overflowed by", log_msg)
                 imgtool_overflow_found = re.findall(r"Error: Image size \(.*\) \+ trailer \(.*\) exceeds requested size", log_msg)
                 if overflow_found and not self.options.overflow_as_errors:
                     logger.debug("Test skipped due to {} Overflow".format(overflow_found[0]))
@@ -496,16 +501,10 @@ class FilterBuilder(CMake):
         if self.testsuite.sysbuild and self.env.options.device_testing:
             # Verify that twister's arguments support sysbuild.
             # Twister sysbuild flashing currently only works with west, so
-            # --west-flash must be passed. Additionally, erasing the DUT
-            # before each test with --west-flash=--erase will inherently not
-            # work with sysbuild.
+            # --west-flash must be passed.
             if self.env.options.west_flash is None:
                 logger.warning("Sysbuild test will be skipped. " +
                     "West must be used for flashing.")
-                return {os.path.join(self.platform.name, self.testsuite.name): True}
-            elif "--erase" in self.env.options.west_flash:
-                logger.warning("Sysbuild test will be skipped, " +
-                    "--erase is not supported with --west-flash")
                 return {os.path.join(self.platform.name, self.testsuite.name): True}
 
         if self.testsuite and self.testsuite.filter:
@@ -574,6 +573,7 @@ class ProjectBuilder(FilterBuilder):
     def log_info_file(self, inline_logs):
         build_dir = self.instance.build_dir
         h_log = "{}/handler.log".format(build_dir)
+        he_log = "{}/handler_stderr.log".format(build_dir)
         b_log = "{}/build.log".format(build_dir)
         v_log = "{}/valgrind.log".format(build_dir)
         d_log = "{}/device.log".format(build_dir)
@@ -585,6 +585,8 @@ class ProjectBuilder(FilterBuilder):
             self.log_info("{}".format(pytest_log), inline_logs, log_testcases=True)
         elif os.path.exists(h_log) and os.path.getsize(h_log) > 0:
             self.log_info("{}".format(h_log), inline_logs)
+        elif os.path.exists(he_log) and os.path.getsize(he_log) > 0:
+            self.log_info("{}".format(he_log), inline_logs)
         elif os.path.exists(d_log) and os.path.getsize(d_log) > 0:
             self.log_info("{}".format(d_log), inline_logs)
         else:
@@ -758,6 +760,7 @@ class ProjectBuilder(FilterBuilder):
         allow = [
             os.path.join('zephyr', '.config'),
             'handler.log',
+            'handler_stderr.log',
             'build.log',
             'device.log',
             'recording.csv',
@@ -861,7 +864,7 @@ class ProjectBuilder(FilterBuilder):
             return []
 
         with open(runners_file_path, 'r') as file:
-            runners_content: dict = yaml.safe_load(file)
+            runners_content: dict = yaml.load(file, Loader=SafeLoader)
 
         if 'config' not in runners_content:
             return []
@@ -901,7 +904,7 @@ class ProjectBuilder(FilterBuilder):
 
         with open(runners_file_path, 'rt') as file:
             runners_content_text = file.read()
-            runners_content_yaml: dict = yaml.safe_load(runners_content_text)
+            runners_content_yaml: dict = yaml.load(runners_content_text, Loader=SafeLoader)
 
         if 'config' not in runners_content_yaml:
             return

@@ -22,4 +22,5 @@ supported:
   - arduino_spi
   - usb_device
   - nvs
+  - rtc
 vendor: st

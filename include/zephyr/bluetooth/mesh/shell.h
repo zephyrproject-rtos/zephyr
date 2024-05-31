@@ -38,6 +38,9 @@ struct bt_mesh_shell_target {
 /** @brief External reference to health server */
 extern struct bt_mesh_health_srv bt_mesh_shell_health_srv;
 
+/** @brief External reference to health server metadata */
+extern const struct bt_mesh_models_metadata_entry health_srv_meta[];
+
 /** @brief External reference to health client */
 extern struct bt_mesh_health_cli bt_mesh_shell_health_cli;
 

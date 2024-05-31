@@ -211,7 +211,8 @@ if __name__ == "__main__":
     try:
         parser = add_parse_arguments()
         options = parse_arguments(parser, sys.argv[1:])
-        ret = main(options)
+        default_options = parse_arguments(parser, [], on_init=False)
+        ret = main(options, default_options)
     finally:
         if (os.name != "nt") and os.isatty(1):
             # (OS is not Windows) and (stdout is interactive)

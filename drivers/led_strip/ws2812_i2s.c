@@ -38,6 +38,7 @@ struct ws2812_i2s_cfg {
 	size_t tx_buf_bytes;
 	struct k_mem_slab *mem_slab;
 	uint8_t num_colors;
+	size_t length;
 	const uint8_t *color_mapping;
 	uint16_t reset_words;
 	uint32_t lrck_period;
@@ -163,11 +164,11 @@ static int ws2812_strip_update_rgb(const struct device *dev, struct led_rgb *pix
 	return ret;
 }
 
-static int ws2812_strip_update_channels(const struct device *dev, uint8_t *channels,
-					size_t num_channels)
+static size_t ws2812_strip_length(const struct device *dev)
 {
-	LOG_ERR("update_channels not implemented");
-	return -ENOTSUP;
+	const struct ws2812_i2s_cfg *cfg = dev->config;
+
+	return cfg->length;
 }
 
 static int ws2812_i2s_init(const struct device *dev)
@@ -217,7 +218,7 @@ static int ws2812_i2s_init(const struct device *dev)
 
 static const struct led_strip_driver_api ws2812_i2s_api = {
 	.update_rgb = ws2812_strip_update_rgb,
-	.update_channels = ws2812_strip_update_channels,
+	.length = ws2812_strip_length,
 };
 
 /* Integer division, but always rounds up: e.g. 10/3 = 4 */
@@ -250,6 +251,7 @@ static const struct led_strip_driver_api ws2812_i2s_api = {
 		.tx_buf_bytes = WS2812_I2S_BUFSIZE(idx),                                           \
 		.mem_slab = &ws2812_i2s_##idx##_slab,                                              \
 		.num_colors = WS2812_NUM_COLORS(idx),                                              \
+		.length = DT_INST_PROP(idx, chain_length),                                         \
 		.color_mapping = ws2812_i2s_##idx##_color_mapping,                                 \
 		.lrck_period = WS2812_I2S_LRCK_PERIOD_US(idx),                                     \
 		.extra_wait_time_us = DT_INST_PROP(idx, extra_wait_time),                          \

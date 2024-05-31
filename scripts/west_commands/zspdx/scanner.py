@@ -159,7 +159,7 @@ def normalizeExpression(licsConcluded):
         return licsConcluded[0]
 
     # more than one, so we'll need to combine them
-    # iff an expression has spaces, it needs parens
+    # if and only if an expression has spaces, it needs parens
     revised = []
     for lic in licsConcluded:
         if lic in ["NONE", "NOASSERTION"]:

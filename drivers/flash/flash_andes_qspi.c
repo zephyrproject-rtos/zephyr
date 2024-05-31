@@ -548,10 +548,10 @@ static int spi_nor_process_sfdp(const struct device *dev)
 		/* We only process BFP so use one parameter block */
 		uint8_t raw[JESD216_SFDP_SIZE(decl_nph)];
 		struct jesd216_sfdp_header sfdp;
-	} u;
-	const struct jesd216_sfdp_header *hp = &u.sfdp;
+	} u_header;
+	const struct jesd216_sfdp_header *hp = &u_header.sfdp;
 
-	ret = read_sfdp(dev, 0, u.raw, sizeof(u.raw));
+	ret = read_sfdp(dev, 0, u_header.raw, sizeof(u_header.raw));
 	if (ret != 0) {
 		LOG_ERR("SFDP read failed: %d", ret);
 		return ret;
@@ -582,11 +582,11 @@ static int spi_nor_process_sfdp(const struct device *dev)
 			union {
 				uint32_t dw[MIN(php->len_dw, 20)];
 				struct jesd216_bfp bfp;
-			} u;
-			const struct jesd216_bfp *bfp = &u.bfp;
+			} u_param;
+			const struct jesd216_bfp *bfp = &u_param.bfp;
 
 			ret = read_sfdp(dev,
-				jesd216_param_addr(php), u.dw, sizeof(u.dw));
+				jesd216_param_addr(php), u_param.dw, sizeof(u_param.dw));
 
 			if (ret != 0) {
 				break;
@@ -609,7 +609,7 @@ static int spi_nor_process_sfdp(const struct device *dev)
 		.len_dw = config->bfp_len,
 	};
 
-	ret = spi_nor_process_bfp(dev, &bfp_hdr, cfg->bfp);
+	ret = spi_nor_process_bfp(dev, &bfp_hdr, config->bfp);
 #else
 #error Unhandled SFDP choice
 #endif
@@ -825,10 +825,10 @@ static int flash_andes_qspi_init(const struct device *dev)
 
 #ifndef CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME
 
-	if (memcmp(jedec_id, cfg->jedec_id, sizeof(jedec_id)) != 0) {
+	if (memcmp(jedec_id, config->jedec_id, sizeof(jedec_id)) != 0) {
 		LOG_ERR("Device id %02x %02x %02x does not match config"
 			"%02x %02x %02x", jedec_id[0], jedec_id[1], jedec_id[2],
-			cfg->jedec_id[0], cfg->jedec_id[1], cfg->jedec_id[2]);
+			config->jedec_id[0], config->jedec_id[1], config->jedec_id[2]);
 		return -EINVAL;
 	}
 #endif

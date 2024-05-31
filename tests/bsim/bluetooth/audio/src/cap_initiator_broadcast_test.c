@@ -184,7 +184,7 @@ static void setup_extended_adv(struct bt_le_ext_adv **adv)
 {
 	int err;
 
-	/* Create a non-connectable non-scannable advertising set */
+	/* Create a non-connectable advertising set */
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CUSTOM, NULL, adv);
 	if (err != 0) {
 		FAIL("Unable to create extended advertising set: %d\n", err);
@@ -841,13 +841,13 @@ static void test_args(int argc, char *argv[])
 static const struct bst_test_instance test_cap_initiator_broadcast[] = {
 	{
 		.test_id = "cap_initiator_broadcast",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_cap_initiator_broadcast,
 	},
 	{
 		.test_id = "cap_initiator_ac_12",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_12,
 		.test_args_f = test_args,
@@ -855,7 +855,7 @@ static const struct bst_test_instance test_cap_initiator_broadcast[] = {
 #if BROADCAST_STREMT_CNT >= CAP_AC_MAX_STREAM
 	{
 		.test_id = "cap_initiator_ac_13",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_13,
 		.test_args_f = test_args,
@@ -863,7 +863,7 @@ static const struct bst_test_instance test_cap_initiator_broadcast[] = {
 #endif /* BROADCAST_STREMT_CNT >= CAP_AC_MAX_STREAM */
 	{
 		.test_id = "cap_initiator_ac_14",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_ac_14,
 		.test_args_f = test_args,

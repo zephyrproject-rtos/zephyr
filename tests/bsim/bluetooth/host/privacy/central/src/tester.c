@@ -14,7 +14,10 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/toolchain.h>
 
+#include <babblekit/testcase.h>
+
 DEFINE_FLAG(flag_new_address);
+DEFINE_FLAG(flag_connected);
 
 void scanned_cb(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_scanned_info *info)
 {
@@ -64,8 +67,14 @@ void scanned_cb(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_scanned_info *in
 	old_addr = new_addr;
 }
 
+static void connected_cb(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_connected_info *info)
+{
+	SET_FLAG(flag_connected);
+}
+
 static struct bt_le_ext_adv_cb adv_callbacks = {
 	.scanned = scanned_cb,
+	.connected = connected_cb
 };
 
 void start_advertising(void)
@@ -122,6 +131,57 @@ void tester_procedure(void)
 		WAIT_FOR_FLAG(flag_new_address);
 		UNSET_FLAG(flag_new_address);
 	}
+
+	PASS("PASS\n");
+}
+
+void tester_procedure_periph_delayed_start_of_conn_adv(void)
+{
+	backchannel_init(0);
+
+	int err;
+	struct bt_le_adv_param params =
+		BT_LE_ADV_PARAM_INIT(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_IDENTITY,
+				     BT_GAP_ADV_FAST_INT_MIN_2,
+				     BT_GAP_ADV_FAST_INT_MAX_2, NULL);
+	struct bt_data ad;
+	struct bt_le_ext_adv *adv;
+
+	/* Enable bluetooth */
+	err = bt_enable(NULL);
+	TEST_ASSERT(!err, "Failed to enable bluetooth (err %d)");
+
+	/* Advertiser to use a long RPA timeout */
+	err = bt_le_set_rpa_timeout(100);
+	TEST_ASSERT(!err, "Failed to set RPA timeout (err %d)", err);
+
+	err = bt_le_ext_adv_create(&params, &adv_callbacks, &adv);
+	TEST_ASSERT(!err, "Failed to create advertising set (err %d)", err);
+
+	ad.type = BT_DATA_NAME_COMPLETE;
+	ad.data_len = strlen(CONFIG_BT_DEVICE_NAME);
+	ad.data = (const uint8_t *)CONFIG_BT_DEVICE_NAME;
+
+	err = bt_le_ext_adv_set_data(adv, &ad, 1, NULL, 0);
+	TEST_ASSERT(!err, "Failed to set advertising data (err %d)", err);
+
+	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+	TEST_ASSERT(!err, "Failed to start advertiser (err %d)", err);
+
+	backchannel_sync_wait();
+
+	err = bt_le_ext_adv_stop(adv);
+	TEST_ASSERT(!err, "Failed to stop advertiser (err %d)", err);
+
+	/* Wait a few RPA cycles before restaring the advertiser to force RPA timeout
+	 * on the DUT.
+	 */
+	k_sleep(K_SECONDS(7));
+
+	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+	TEST_ASSERT(!err, "Failed to restart advertiser (err %d)", err);
+
+	WAIT_FOR_FLAG(flag_connected);
 
 	PASS("PASS\n");
 }

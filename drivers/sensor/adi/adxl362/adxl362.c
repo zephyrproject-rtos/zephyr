@@ -561,7 +561,8 @@ static void adxl362_accel_convert(struct sensor_value *val, int accel,
 static void adxl362_temp_convert(struct sensor_value *val, int temp)
 {
 	/* See sensitivity and bias specifications in table 1 of datasheet */
-	int milli_c = (temp - ADXL362_TEMP_BIAS_LSB) * ADXL362_TEMP_MC_PER_LSB;
+	int milli_c = (temp - ADXL362_TEMP_BIAS_LSB) * ADXL362_TEMP_MC_PER_LSB +
+		      (ADXL362_TEMP_BIAS_TEST_CONDITION * 1000);
 
 	val->val1 = milli_c / 1000;
 	val->val2 = (milli_c % 1000) * 1000;

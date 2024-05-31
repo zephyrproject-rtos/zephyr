@@ -48,7 +48,7 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	/*
 	 * Limit cannot be zero and count cannot be greater than limit
 	 */
-	CHECKIF(limit == 0U || limit > K_SEM_MAX_LIMIT || initial_count > limit) {
+	CHECKIF(limit == 0U || initial_count > limit) {
 		SYS_PORT_TRACING_OBJ_FUNC(k_sem, init, sem, -EINVAL);
 
 		return -EINVAL;
@@ -79,7 +79,7 @@ int z_vrfy_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	K_OOPS(K_SYSCALL_OBJ_INIT(sem, K_OBJ_SEM));
 	return z_impl_k_sem_init(sem, initial_count, limit);
 }
-#include <syscalls/k_sem_init_mrsh.c>
+#include <zephyr/syscalls/k_sem_init_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 static inline bool handle_poll_events(struct k_sem *sem)
@@ -126,12 +126,12 @@ static inline void z_vrfy_k_sem_give(struct k_sem *sem)
 	K_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
 	z_impl_k_sem_give(sem);
 }
-#include <syscalls/k_sem_give_mrsh.c>
+#include <zephyr/syscalls/k_sem_give_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 {
-	int ret = 0;
+	int ret;
 
 	__ASSERT(((arch_is_in_isr() == false) ||
 		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
@@ -189,23 +189,23 @@ void z_impl_k_sem_reset(struct k_sem *sem)
 static inline int z_vrfy_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 {
 	K_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
-	return z_impl_k_sem_take((struct k_sem *)sem, timeout);
+	return z_impl_k_sem_take(sem, timeout);
 }
-#include <syscalls/k_sem_take_mrsh.c>
+#include <zephyr/syscalls/k_sem_take_mrsh.c>
 
 static inline void z_vrfy_k_sem_reset(struct k_sem *sem)
 {
 	K_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
 	z_impl_k_sem_reset(sem);
 }
-#include <syscalls/k_sem_reset_mrsh.c>
+#include <zephyr/syscalls/k_sem_reset_mrsh.c>
 
 static inline unsigned int z_vrfy_k_sem_count_get(struct k_sem *sem)
 {
 	K_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
 	return z_impl_k_sem_count_get(sem);
 }
-#include <syscalls/k_sem_count_get_mrsh.c>
+#include <zephyr/syscalls/k_sem_count_get_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */
 

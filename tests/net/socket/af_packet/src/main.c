@@ -201,10 +201,10 @@ static void __test_packet_sockets(int *sock1, int *sock2)
 	zassert_not_null(ud.first, "1st Ethernet interface not found");
 	zassert_not_null(ud.second, "2nd Ethernet interface not found");
 
-	*sock1 = setup_socket(ud.first, SOCK_RAW, ETH_P_ALL);
+	*sock1 = setup_socket(ud.first, SOCK_RAW, htons(ETH_P_ALL));
 	zassert_true(*sock1 >= 0, "Cannot create 1st socket (%d)", *sock1);
 
-	*sock2 = setup_socket(ud.second, SOCK_RAW, ETH_P_ALL);
+	*sock2 = setup_socket(ud.second, SOCK_RAW, htons(ETH_P_ALL));
 	zassert_true(*sock2 >= 0, "Cannot create 2nd socket (%d)", *sock2);
 
 	ret = bind_socket(*sock1, ud.first);
@@ -311,10 +311,10 @@ ZTEST(socket_packet, test_packet_sockets_dgram)
 	zassert_not_null(ud.first, "1st Ethernet interface not found");
 	zassert_not_null(ud.second, "2nd Ethernet interface not found");
 
-	sock1 = setup_socket(ud.first, SOCK_DGRAM, ETH_P_TSN);
+	sock1 = setup_socket(ud.first, SOCK_DGRAM, htons(ETH_P_TSN));
 	zassert_true(sock1 >= 0, "Cannot create 1st socket (%d)", sock1);
 
-	sock2 = setup_socket(ud.second, SOCK_DGRAM, ETH_P_TSN);
+	sock2 = setup_socket(ud.second, SOCK_DGRAM, htons(ETH_P_TSN));
 	zassert_true(sock2 >= 0, "Cannot create 2nd socket (%d)", sock2);
 
 	ret = bind_socket(sock1, ud.first);
@@ -421,10 +421,10 @@ ZTEST(socket_packet, test_raw_and_dgram_socket_exchange)
 	zassert_not_null(ud.first, "1st Ethernet interface not found");
 	zassert_not_null(ud.second, "2nd Ethernet interface not found");
 
-	sock1 = setup_socket(ud.first, SOCK_DGRAM, ETH_P_ALL);
+	sock1 = setup_socket(ud.first, SOCK_DGRAM, htons(ETH_P_ALL));
 	zassert_true(sock1 >= 0, "Cannot create 1st socket (%d)", sock1);
 
-	sock2 = setup_socket(ud.second, SOCK_RAW, ETH_P_ALL);
+	sock2 = setup_socket(ud.second, SOCK_RAW, htons(ETH_P_ALL));
 	zassert_true(sock2 >= 0, "Cannot create 2nd socket (%d)", sock2);
 
 	ret = bind_socket(sock1, ud.first);
@@ -520,13 +520,13 @@ ZTEST(socket_packet, test_raw_and_dgram_socket_recv)
 	zassert_not_null(ud.first, "1st Ethernet interface not found");
 	zassert_not_null(ud.second, "2nd Ethernet interface not found");
 
-	sock1 = setup_socket(ud.first, SOCK_DGRAM, ETH_P_ALL);
+	sock1 = setup_socket(ud.first, SOCK_DGRAM, htons(ETH_P_ALL));
 	zassert_true(sock1 >= 0, "Cannot create 1st socket (%d)", sock1);
 
-	sock2 = setup_socket(ud.second, SOCK_RAW, ETH_P_ALL);
+	sock2 = setup_socket(ud.second, SOCK_RAW, htons(ETH_P_ALL));
 	zassert_true(sock2 >= 0, "Cannot create 2nd socket (%d)", sock2);
 
-	sock3 = setup_socket(ud.second, SOCK_RAW, ETH_P_ALL);
+	sock3 = setup_socket(ud.second, SOCK_RAW, htons(ETH_P_ALL));
 	zassert_true(sock3 >= 0, "Cannot create 2nd socket (%d)", sock3);
 
 	ret = bind_socket(sock1, ud.first);

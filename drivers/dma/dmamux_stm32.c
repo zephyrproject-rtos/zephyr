@@ -70,19 +70,24 @@ uint32_t table_ll_channel[] = {
 	LISTIFY(DT_INST_PROP(0, dma_channels), DMAMUX_CHANNEL, (,))
 };
 
-uint32_t (*func_ll_is_active_so[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
+#if !defined(CONFIG_SOC_SERIES_STM32G0X)
+#define dmamux_channel_typedef DMAMUX_Channel_TypeDef
+#else
+#define dmamux_channel_typedef const DMAMUX_Channel_TypeDef
+#endif
+uint32_t (*func_ll_is_active_so[])(dmamux_channel_typedef * DMAMUXx) = {
 	LISTIFY(DT_INST_PROP(0, dma_channels), IS_ACTIVE_FLAG_SOX, (,))
 };
 
-void (*func_ll_clear_so[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
+void (*func_ll_clear_so[])(dmamux_channel_typedef * DMAMUXx) = {
 	LISTIFY(DT_INST_PROP(0, dma_channels), CLEAR_FLAG_SOX, (,))
 };
 
-uint32_t (*func_ll_is_active_rgo[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
+uint32_t (*func_ll_is_active_rgo[])(dmamux_channel_typedef * DMAMUXx) = {
 	LISTIFY(DT_INST_PROP(0, dma_generators), IS_ACTIVE_FLAG_RGOX, (,))
 };
 
-void (*func_ll_clear_rgo[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
+void (*func_ll_clear_rgo[])(dmamux_channel_typedef * DMAMUXx) = {
 	LISTIFY(DT_INST_PROP(0, dma_generators), CLEAR_FLAG_RGOX, (,))
 };
 

@@ -85,6 +85,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | TIMER     | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| RTC       | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features have not been enabled yet for this board.
 
