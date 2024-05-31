@@ -12,7 +12,7 @@
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
-uintptr_t z_riscv_get_sp_before_exc(const z_arch_esf_t *esf);
+uintptr_t z_riscv_get_sp_before_exc(const struct arch_esf *esf);
 
 #if __riscv_xlen == 32
  #define PR_REG "%08" PRIxPTR
@@ -42,7 +42,7 @@ struct stackframe {
 	LOG_ERR("     %2d: " SFP_FMT PR_REG "   ra: " PR_REG, idx, sfp, ra)
 #endif
 
-static bool in_stack_bound(uintptr_t addr, const z_arch_esf_t *esf)
+static bool in_stack_bound(uintptr_t addr, const struct arch_esf *esf)
 {
 #ifdef CONFIG_THREAD_STACK_INFO
 	uintptr_t start, end;
@@ -86,7 +86,7 @@ static inline bool in_text_region(uintptr_t addr)
 }
 
 #ifdef CONFIG_FRAME_POINTER
-void z_riscv_unwind_stack(const z_arch_esf_t *esf)
+void z_riscv_unwind_stack(const struct arch_esf *esf)
 {
 	uintptr_t fp = esf->s0;
 	uintptr_t ra;
@@ -115,7 +115,7 @@ void z_riscv_unwind_stack(const z_arch_esf_t *esf)
 	LOG_ERR("");
 }
 #else /* !CONFIG_FRAME_POINTER */
-void z_riscv_unwind_stack(const z_arch_esf_t *esf)
+void z_riscv_unwind_stack(const struct arch_esf *esf)
 {
 	uintptr_t sp = z_riscv_get_sp_before_exc(esf);
 	uintptr_t ra;

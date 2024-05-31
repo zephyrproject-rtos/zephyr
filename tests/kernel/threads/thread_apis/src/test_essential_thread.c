@@ -61,7 +61,7 @@ ZTEST(threads_lifecycle, test_essential_thread_operation)
 }
 
 void k_sys_fatal_error_handler(unsigned int reason,
-				      const z_arch_esf_t *esf)
+				      const struct arch_esf *esf)
 {
 	ARG_UNUSED(esf);
 	ARG_UNUSED(reason);
