@@ -1,9 +1,0 @@
-# Copyright (c) 2024 Microchip
-# SPDX-License-Identifier: Apache-2.0
-
-config MDIO_MICROCHIP_PIC32CXSG
-	bool "Microchip PIC32CXSG MDIO driver"
-	depends on ETH_PIC32CXSG_GMAC
-	default y
-	help
-	  Enable Microchip PIC32CXSG MCU Family MDIO driver.
