@@ -437,6 +437,135 @@ void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result);
 
 void sys_trace_k_event_init(struct k_event *event);
 
+
+#define sys_port_trace_socket_init(sock, family, type, proto)	\
+	sys_trace_socket_init(sock, family, type, proto)
+#define sys_port_trace_socket_close_enter(sock) \
+	sys_trace_socket_close_enter(sock)
+#define sys_port_trace_socket_close_exit(sock, ret) \
+	sys_trace_socket_close_exit(sock, ret)
+#define sys_port_trace_socket_shutdown_enter(sock, how) \
+	sys_trace_socket_shutdown_enter(sock, how)
+#define sys_port_trace_socket_shutdown_exit(sock, ret) \
+	sys_trace_socket_shutdown_exit(sock, ret)
+#define sys_port_trace_socket_bind_enter(sock, addr, addrlen) \
+	sys_trace_socket_bind_enter(sock, addr, addrlen)
+#define sys_port_trace_socket_bind_exit(sock, ret) \
+	sys_trace_socket_bind_exit(sock, ret)
+#define sys_port_trace_socket_connect_enter(sock, addr, addrlen) \
+	sys_trace_socket_connect_enter(sock, addr, addrlen)
+#define sys_port_trace_socket_connect_exit(sock, ret) \
+	sys_trace_socket_connect_exit(sock, ret)
+#define sys_port_trace_socket_listen_enter(sock, backlog) \
+	sys_trace_socket_listen_enter(sock, backlog)
+#define sys_port_trace_socket_listen_exit(sock, ret) \
+	sys_trace_socket_listen_exit(sock, ret)
+#define sys_port_trace_socket_accept_enter(sock) \
+	sys_trace_socket_accept_enter(sock)
+#define sys_port_trace_socket_accept_exit(sock, addr, addrlen, ret) \
+	sys_trace_socket_accept_exit(sock, addr, addrlen, ret)
+#define sys_port_trace_socket_sendto_enter(sock, len, flags, dest_addr, addrlen) \
+	sys_trace_socket_sendto_enter(sock, len, flags, dest_addr, addrlen)
+#define sys_port_trace_socket_sendto_exit(sock, ret) \
+	sys_trace_socket_sendto_exit(sock, ret)
+#define sys_port_trace_socket_sendmsg_enter(sock, msg, flags) \
+	sys_trace_socket_sendmsg_enter(sock, msg, flags)
+#define sys_port_trace_socket_sendmsg_exit(sock, ret) \
+	sys_trace_socket_sendmsg_exit(sock, ret)
+#define sys_port_trace_socket_recvfrom_enter(sock, max_len, flags, addr, addrlen) \
+	sys_trace_socket_recvfrom_enter(sock, max_len, flags, addr, addrlen)
+#define sys_port_trace_socket_recvfrom_exit(sock, src_addr, addrlen, ret) \
+	sys_trace_socket_recvfrom_exit(sock, src_addr, addrlen, ret)
+#define sys_port_trace_socket_recvmsg_enter(sock, msg, flags) \
+	sys_trace_socket_recvmsg_enter(sock, msg, flags)
+#define sys_port_trace_socket_recvmsg_exit(sock, msg, ret) \
+	sys_trace_socket_recvmsg_exit(sock, msg, ret)
+#define sys_port_trace_socket_fcntl_enter(sock, cmd, flags) \
+	sys_trace_socket_fcntl_enter(sock, cmd, flags)
+#define sys_port_trace_socket_fcntl_exit(sock, ret) \
+	sys_trace_socket_fcntl_exit(sock, ret)
+#define sys_port_trace_socket_ioctl_enter(sock, req) \
+	sys_trace_socket_ioctl_enter(sock, req)
+#define sys_port_trace_socket_ioctl_exit(sock, ret) \
+	sys_trace_socket_ioctl_exit(sock, ret)
+#define sys_port_trace_socket_poll_enter(fds, nfds, timeout) \
+	sys_trace_socket_poll_enter(fds, nfds, timeout)
+#define sys_port_trace_socket_poll_exit(fds, nfds, ret) \
+	sys_trace_socket_poll_exit(fds, nfds, ret)
+#define sys_port_trace_socket_getsockopt_enter(sock, level, optname) \
+	sys_trace_socket_getsockopt_enter(sock, level, optname)
+#define sys_port_trace_socket_getsockopt_exit(sock, level, optname, optval, optlen, ret) \
+	sys_trace_socket_getsockopt_exit(sock, level, optname, optval, optlen, ret)
+#define sys_port_trace_socket_setsockopt_enter(sock, level, optname, optval, optlen) \
+	sys_trace_socket_setsockopt_enter(sock, level, optname, optval, optlen)
+#define sys_port_trace_socket_setsockopt_exit(sock, ret) \
+	sys_trace_socket_setsockopt_exit(sock, ret)
+#define sys_port_trace_socket_getpeername_enter(sock) \
+	sys_trace_socket_getpeername_enter(sock)
+#define sys_port_trace_socket_getpeername_exit(sock, addr, addrlen, ret) \
+	sys_trace_socket_getpeername_exit(sock, addr, addrlen, ret)
+#define sys_port_trace_socket_getsockname_enter(sock) \
+	sys_trace_socket_getsockname_enter(sock)
+#define sys_port_trace_socket_getsockname_exit(sock, addr, addrlen, ret) \
+	sys_trace_socket_getsockname_exit(sock, addr, addrlen, ret)
+#define sys_port_trace_socket_socketpair_enter(family, type, proto, sv)	\
+	sys_trace_socket_socketpair_enter(family, type, proto, sv)
+#define sys_port_trace_socket_socketpair_exit(sockA, sockB, ret) \
+	sys_trace_socket_socketpair_exit(sockA, sockB, ret)
+
+/* Do not try to include network headers as it just leads to inclusion
+ * nightmare, just declare couple of structs that are needed.
+ */
+struct sockaddr;
+struct msghdr;
+struct zsock_pollfd;
+
+void sys_trace_socket_init(int sock, int family, int type, int proto);
+void sys_trace_socket_close_enter(int sock);
+void sys_trace_socket_close_exit(int sock, int ret);
+void sys_trace_socket_shutdown_enter(int sock, int how);
+void sys_trace_socket_shutdown_exit(int sock, int ret);
+void sys_trace_socket_bind_enter(int sock, const struct sockaddr *addr, size_t addrlen);
+void sys_trace_socket_bind_exit(int sock, int ret);
+void sys_trace_socket_connect_enter(int sock, const struct sockaddr *addr, size_t addrlen);
+void sys_trace_socket_connect_exit(int sock, int ret);
+void sys_trace_socket_listen_enter(int sock, int backlog);
+void sys_trace_socket_listen_exit(int sock, int ret);
+void sys_trace_socket_accept_enter(int sock);
+void sys_trace_socket_accept_exit(int sock, const struct sockaddr *addr, const size_t *addrlen,
+				  int ret);
+void sys_trace_socket_sendto_enter(int sock, int len, int flags, const struct sockaddr *dest_addr,
+				   size_t addrlen);
+void sys_trace_socket_sendto_exit(int sock, int ret);
+void sys_trace_socket_sendmsg_enter(int sock, const struct msghdr *msg, int flags);
+void sys_trace_socket_sendmsg_exit(int sock, int ret);
+void sys_trace_socket_recvfrom_enter(int sock, int max_len, int flags, struct sockaddr *addr,
+				     size_t *addrlen);
+void sys_trace_socket_recvfrom_exit(int sock, const struct sockaddr *src_addr,
+				    const size_t *addrlen, int ret);
+void sys_trace_socket_recvmsg_enter(int sock, const struct msghdr *msg, int flags);
+void sys_trace_socket_recvmsg_exit(int sock, const struct msghdr *msg, int ret);
+void sys_trace_socket_fcntl_enter(int sock, int cmd, int flags);
+void sys_trace_socket_fcntl_exit(int sock, int ret);
+void sys_trace_socket_ioctl_enter(int sock, int req);
+void sys_trace_socket_ioctl_exit(int sock, int ret);
+void sys_trace_socket_poll_enter(const struct zsock_pollfd *fds, int nfds, int timeout);
+void sys_trace_socket_poll_exit(const struct zsock_pollfd *fds, int nfds, int ret);
+void sys_trace_socket_getsockopt_enter(int sock, int level, int optname);
+void sys_trace_socket_getsockopt_exit(int sock, int level, int optname, void *optval,
+				      size_t optlen, int ret);
+void sys_trace_socket_setsockopt_enter(int sock, int level, int optname, const void *optval,
+				       size_t optlen);
+void sys_trace_socket_setsockopt_exit(int sock, int ret);
+void sys_trace_socket_getpeername_enter(int sock);
+void sys_trace_socket_getpeername_exit(int sock,  struct sockaddr *addr, const size_t *addrlen,
+				       int ret);
+void sys_trace_socket_getsockname_enter(int sock);
+void sys_trace_socket_getsockname_exit(int sock, const struct sockaddr *addr, const size_t *addrlen,
+				       int ret);
+void sys_trace_socket_socketpair_enter(int family, int type, int proto, int *sv);
+void sys_trace_socket_socketpair_exit(int sock_A, int sock_B, int ret);
+
 #ifdef __cplusplus
 }
 #endif
