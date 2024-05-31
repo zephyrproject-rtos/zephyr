@@ -1,0 +1,23 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	chosen {
+		zephyr,canbus = &canfd0;
+	};
+};
+
+&pinctrl {
+	/* CAN TX/RX --> UNO D3/D2 */
+	canfd0_default: canfd0_default {
+		group0 {
+			pinmux = <PC5MFP_CANFD0_TXD>,
+				 <PC4MFP_CANFD0_RXD>;
+		};
+	};
+};
+
+&canfd0 {
+	pinctrl-0 = <&canfd0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
