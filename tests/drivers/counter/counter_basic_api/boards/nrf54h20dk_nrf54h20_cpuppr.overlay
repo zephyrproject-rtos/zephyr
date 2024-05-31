@@ -1,0 +1,12 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "nrf54h20dk_nrf54h20_common.dtsi"
+
+/* PPR does not have interrupts for fast peripherals. */
+&timer120 {
+    status = "disabled";
+};
+
+&timer121 {
+	status = "disabled";
+};
