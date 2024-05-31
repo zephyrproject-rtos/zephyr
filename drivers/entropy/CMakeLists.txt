@@ -34,11 +34,4 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_GECKO_SE           entropy_gecko_se.
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_PSA_CRYPTO_RNG     entropy_psa_crypto.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_NPCX_DRBG          entropy_npcx_drbg.c)
 
-if (CONFIG_FAKE_ENTROPY_NRF_PRNG)
-  zephyr_library_sources(fake_entropy_nrf_prng.c)
-
-  message(WARNING "\nA nRF PRNG is used, which does not produce real random bits."
-  "This is not secure and should therefore never be used in a product.")
-endif()
-
 zephyr_library_link_libraries_ifdef(CONFIG_BUILD_WITH_TFM tfm_api)
