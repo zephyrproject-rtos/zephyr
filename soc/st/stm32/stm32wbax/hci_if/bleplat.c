@@ -80,25 +80,6 @@ void MX_RAMCFG_Init(void)
 	}
 }
 
-void *ble_memcpy(void *dst, const void *src, uint8_t n)
-{
-	memcpy(dst, src, (size_t)n);
-
-	return dst;
-}
-
-void *ble_memset(void *dst, uint8_t c, uint16_t n)
-{
-	memset((void *)dst, (int)c, (size_t)n);
-
-	return dst;
-}
-
-int8_t ble_memcmp(const void *a, const void *b, uint16_t n)
-{
-	return (int8_t)memcmp(a, b, (size_t)n);
-}
-
 void Error_Handler(void)
 {
 	LOG_ERR("");
