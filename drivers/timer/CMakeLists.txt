@@ -36,3 +36,7 @@ zephyr_library_sources_ifdef(CONFIG_XLNX_PSTTC_TIMER xlnx_psttc_timer.c)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_TIMER xtensa_sys_timer.c)
 zephyr_library_sources_ifdef(CONFIG_SMARTBOND_TIMER smartbond_timer.c)
 zephyr_library_sources_ifdef(CONFIG_MTK_ADSP_TIMER mtk_adsp_timer.c)
+
+if(CONFIG_APIC_TSC_DEADLINE_TIMER OR CONFIG_APIC_TIMER_TSC)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/arch/x86/include)
+endif()

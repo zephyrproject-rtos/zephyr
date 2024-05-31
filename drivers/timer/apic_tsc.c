@@ -12,6 +12,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/drivers/interrupt_controller/loapic.h>
 #include <zephyr/irq.h>
+#include <kernel_arch_func.h>
 
 /*
  * This driver is selected when either CONFIG_APIC_TIMER_TSC or
@@ -250,7 +251,7 @@ void smp_timer_init(void)
 	 * configuration write.
 	 */
 	x86_write_loapic(LOAPIC_TIMER, lvt_reg.val);
-	__asm__ volatile("mfence" ::: "memory");
+	z_x86_mb();
 	clear_tsc_adjust();
 	irq_enable(timer_irq());
 }
@@ -306,7 +307,7 @@ static int sys_clock_driver_init(void)
 	 * (i.e. a timeout we're about to set) cannot possibly reorder
 	 * around the initialization we just did.
 	 */
-	__asm__ volatile("mfence" ::: "memory");
+	z_x86_mb();
 
 	last_tick = rdtsc() / CYC_PER_TICK;
 	last_cycle = last_tick * CYC_PER_TICK;

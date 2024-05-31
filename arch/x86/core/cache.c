@@ -17,6 +17,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/cache.h>
 #include <stdbool.h>
+#include <kernel_arch_func.h>
 
 /* Not Write-through bit */
 #define X86_REG_CR0_NW BIT(29)
@@ -102,11 +103,7 @@ int arch_dcache_flush_range(void *start_addr, size_t size)
 				"+m"(*(volatile char *)start));
 	}
 
-#if defined(CONFIG_X86_MFENCE_INSTRUCTION_SUPPORTED)
-	__asm__ volatile("mfence;\n\t":::"memory");
-#else
-	__asm__ volatile("lock; addl $0,-4(%%esp);\n\t":::"memory", "cc");
-#endif
+	z_x86_mb();
 	return 0;
 }
 

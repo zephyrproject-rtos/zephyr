@@ -108,6 +108,18 @@ void z_x86_irq_connect_on_vector(unsigned int irq,
 				 void (*func)(const void *arg),
 				 const void *arg);
 
+/*
+ * X86 memory barrier to force strict CPU ordering
+ */
+static inline void z_x86_mb(void)
+{
+#if defined(CONFIG_X86_64) || defined(X86_CPU_HAS_SSE2)
+	__asm__ volatile("mfence;\n\t":::"memory");
+#else
+	__asm__ volatile("lock; addl $0,-4(%%esp);\n\t":::"memory", "cc");
+#endif
+}
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_ */
