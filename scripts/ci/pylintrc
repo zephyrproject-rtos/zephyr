@@ -67,7 +67,6 @@ enable=
     singleton-comparison,
     misplaced-comparison-constant,
     unidiomatic-typecheck,
-    consider-using-enumerate,
     consider-iterating-dictionary,
     bad-classmethod-argument,
     bad-mcs-method-argument,
