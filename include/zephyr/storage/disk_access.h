@@ -41,6 +41,9 @@ extern "C" {
  * This call is made by the consumer before doing any IO calls so that the
  * disk or the backing device can do any initialization.
  *
+ * Disk initialization is reference counted, so only the first successful call
+ * to initialize a uninitialized disk will actually initialize the disk
+ *
  * @param[in] pdrv          Disk name
  *
  * @return 0 on success, negative errno code on fail

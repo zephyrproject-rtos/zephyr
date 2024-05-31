@@ -77,6 +77,8 @@ struct disk_info {
 	const struct disk_operations *ops;
 	/** Device associated to this disk */
 	const struct device *dev;
+	/** Internally used disk reference count */
+	uint16_t refcnt;
 };
 
 /**

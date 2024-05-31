@@ -265,10 +265,6 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 	struct stm32_sdmmc_priv *priv = dev->data;
 	int err;
 
-	if (priv->status == DISK_STATUS_OK) {
-		return 0;
-	}
-
 	if (priv->status == DISK_STATUS_NOMEDIA) {
 		return -ENODEV;
 	}

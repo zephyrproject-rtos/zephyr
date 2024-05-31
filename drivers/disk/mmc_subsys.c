@@ -38,11 +38,6 @@ static int disk_mmc_access_init(struct disk_info *disk)
 	struct mmc_data *data = dev->data;
 	int ret;
 
-	if (data->status == SD_OK) {
-		/* Called twice, don't reinit */
-		return 0;
-	}
-
 	ret = sd_init(cfg->host_controller, &data->card);
 	if (ret) {
 		data->status = SD_ERROR;
