@@ -52,6 +52,11 @@ LOG_MODULE_REGISTER(flash_stm32_xspi, CONFIG_FLASH_LOG_LEVEL);
 #include <stm32_ll_dma.h>
 #endif /* STM32_XSPI_USE_DMA */
 
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_system.h>
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+
 #include "flash_stm32_xspi.h"
 
 static inline void xspi_lock_thread(const struct device *dev)
@@ -2068,6 +2073,11 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		LOG_ERR("XSPI mode SPI|DUAL|QUAD/DTR is not valid");
 		return -ENOTSUP;
 	}
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	LL_PWR_EnableXSPIM2();
+	__HAL_RCC_SBS_CLK_ENABLE();
+	LL_SBS_EnableXSPI2SpeedOptim();
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 	/* Signals configuration */
 	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -2158,7 +2168,8 @@ static int flash_stm32_xspi_init(const struct device *dev)
 
 	LOG_DBG("XSPI Init'd");
 
-#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)
+#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2) || \
+	defined(XSPIM) || defined(XSPIM1) || defined(XSPIM2)
 	/* XSPI I/O manager init Function */
 	XSPIM_CfgTypeDef xspi_mgr_cfg;
 
@@ -2471,9 +2482,12 @@ static struct flash_stm32_xspi_data flash_stm32_xspi_dev_data = {
 					: HAL_XSPI_CSSEL_NCS2),
 #endif
 			.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE,
-#if defined(OCTOSPI_DCR4_REFRESH)
+#if defined(XSPI_DCR3_MAXTRAN)
+			.MaxTran = 0,
+#endif /* XSPI_DCR3_MAXTRAN */
+#if defined(XSPI_DCR4_REFRESH)
 			.Refresh = 0,
-#endif /* OCTOSPI_DCR4_REFRESH */
+#endif /* XSPI_DCR4_REFRESH */
 		},
 	},
 	.qer_type = DT_QER_PROP_OR(0, JESD216_DW15_QER_VAL_S1B6),
