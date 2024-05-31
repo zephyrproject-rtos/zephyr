@@ -704,6 +704,7 @@ static void desc_fill_bos_root(struct usbd_contex *const uds_ctx,
 	root->bLength = sizeof(struct usb_bos_descriptor);
 	root->bDescriptorType = USB_DESC_BOS;
 	root->wTotalLength = root->bLength;
+	root->bNumDeviceCaps = 0;
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&uds_ctx->descriptors, desc_nd, node) {
 		if (desc_nd->bDescriptorType == USB_DESC_BOS) {
