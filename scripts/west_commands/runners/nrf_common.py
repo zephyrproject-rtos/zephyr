@@ -263,14 +263,14 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             if self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUAPP'):
                 if not self.erase and self.build_conf.getboolean('CONFIG_NRF_REGTOOL_GENERATE_UICR'):
                     self.exec_op('erase', core='NRFDL_DEVICE_CORE_APPLICATION',
-                                 chip_erase_mode='ERASE_UICR',
-                                 qspi_erase_mode='ERASE_NONE')
+                                 option={'chip_erase_mode': 'ERASE_UICR',
+                                         'qspi_erase_mode': 'ERASE_NONE'})
                 core = 'NRFDL_DEVICE_CORE_APPLICATION'
             elif self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPURAD'):
                 if not self.erase and self.build_conf.getboolean('CONFIG_NRF_REGTOOL_GENERATE_UICR'):
                     self.exec_op('erase', core='NRFDL_DEVICE_CORE_NETWORK',
-                                 chip_erase_mode='ERASE_UICR',
-                                 qspi_erase_mode='ERASE_NONE')
+                                 option={'chip_erase_mode': 'ERASE_UICR',
+                                         'qspi_erase_mode': 'ERASE_NONE'})
                 core = 'NRFDL_DEVICE_CORE_NETWORK'
         else:
             if self.erase:
@@ -383,7 +383,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         ''' Ensure the tool is installed '''
 
     def op_program(self, hex_file, erase, qspi_erase, defer=False, core=None):
-        args = {'firmware': {'file': hex_file, 'format': 'NRFDL_FW_INTEL_HEX'},
+        args = {'firmware': {'file': hex_file},
                 'chip_erase_mode': erase, 'verify': 'VERIFY_READ'}
         if qspi_erase:
             args['qspi_erase_mode'] = qspi_erase
