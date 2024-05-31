@@ -7,7 +7,9 @@ zephyr_sources(soc_port.c)
 
 zephyr_sources_ifdef(CONFIG_BOOTLOADER_BOSSA bossa.c)
 
-zephyr_sources_ifdef(CONFIG_SOC_SERIES_PIC32CXSG soc_pic32cxsg.c)
+zephyr_sources_ifdef(CONFIG_SOC_SERIES_PIC32CXSG41 soc_pic32cxsg.c)
+zephyr_sources_ifdef(CONFIG_SOC_SERIES_PIC32CXSG60 soc_pic32cxsg.c)
+zephyr_sources_ifdef(CONFIG_SOC_SERIES_PIC32CXSG61 soc_pic32cxsg.c)
 
 zephyr_include_directories(.)
 

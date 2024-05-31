@@ -4,7 +4,7 @@
 
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_PIC32CXSG
+if SOC_SERIES_PIC32CXSG60
 
 config NUM_IRQS
 	default 137
@@ -12,4 +12,4 @@ config NUM_IRQS
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 
-endif # SOC_SERIES_PIC32CXSG
+endif # SOC_SERIES_PIC32CXSG60

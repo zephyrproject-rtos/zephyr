@@ -4,26 +4,26 @@
 
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_PIC32CXSG
+config SOC_SERIES_PIC32CXSG41
 	bool
 	select SOC_FAMILY_MICROCHIP_PIC32CXSG
 	help
 	  Enable support for Microchip PIC32CXSG Cortex-M4F microcontrollers.
 
 config SOC_SERIES
-	default "pic32cxsg" if SOC_SERIES_PIC32CXSG
+	default "pic32cxsg41" if SOC_SERIES_PIC32CXSG41
 
 config CONFIG_SOC_PIC32CX1025SG41064
 	bool
-	select SOC_SERIES_PIC32CXSG
+	select SOC_SERIES_PIC32CXSG41
 
 config CONFIG_SOC_PIC32CX1025SG41100
 	bool
-	select SOC_SERIES_PIC32CXSG
+	select SOC_SERIES_PIC32CXSG41
 
 config CONFIG_SOC_PIC32CX1025SG41128
 	bool
-	select SOC_SERIES_PIC32CXSG
+	select SOC_SERIES_PIC32CXSG41
 
 config SOC
 	default "pic32cx1025sg41064" if SOC_PIC32CX1025SG41064
