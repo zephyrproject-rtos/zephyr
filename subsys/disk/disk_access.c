@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,9 +59,19 @@ int disk_access_init(const char *pdrv)
 	struct disk_info *disk = disk_access_get_di(pdrv);
 	int rc = -EINVAL;
 
-	if ((disk != NULL) && (disk->ops != NULL) &&
-				(disk->ops->init != NULL)) {
-		rc = disk->ops->init(disk);
+	if ((disk != NULL) && (disk->refcnt == 0U)) {
+		/* Disk has not been initialized, start it */
+		if ((disk->ops != NULL) && (disk->ops->init != NULL)) {
+			rc = disk->ops->init(disk);
+			if (rc == 0) {
+				/* Increment reference count */
+				disk->refcnt++;
+			}
+		}
+	} else if ((disk != NULL) && (disk->refcnt < UINT16_MAX)) {
+		/* Disk reference count is nonzero, simply increment it */
+		disk->refcnt++;
+		rc = 0;
 	}
 
 	return rc;
@@ -136,6 +147,9 @@ int disk_access_register(struct disk_info *disk)
 		rc = -EINVAL;
 		goto reg_err;
 	}
+
+	/* Initialize reference count to zero */
+	disk->refcnt = 0U;
 
 	/*  append to the disk list */
 	sys_dlist_append(&disk_access_list, &disk->node);
