@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Intel Corporation
+# Copyright (c) 2023-2024 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -11,7 +11,7 @@ from twister_harness import DeviceAdapter
 logger = logging.getLogger(__name__)
 
 
-def do_analysys(test, stats, config, sys_clock_hw_cycles_per_sec):
+def do_analysys(test, stats, stats_count, config, sys_clock_hw_cycles_per_sec):
     logger.info('====================================================')
     logger.info(f'periodic timer behaviour using {test} mechanism:')
 
@@ -52,6 +52,29 @@ def do_analysys(test, stats, config, sys_clock_hw_cycles_per_sec):
     logger.info(f'real drift:     {time_diff * 1_000_000:.6f} us')
     logger.info('====================================================')
 
+    logger.info('RECORD: {'
+                f'"testcase":"jitter_drift_timer"'
+                f', "mechanism":"{test}_external", "stats_count": {stats_count}, ' +
+                ', '.join(['"{}_us":{:.6f}'.format(k, v * 1_000_000) for k,v in stats.items()]) +
+                f', "expected_total_time_us":{seconds * 1_000_000:.6f}'
+                f', "expected_total_drift_us":{seconds * max_drift_ppm:.6f}'
+                f', "total_drift_us": {time_diff * 1_000_000:.6f}'
+                f', "min_bound_us":{min_bound * 1_000_000:.6f}'
+                f', "max_bound_us":{max_bound * 1_000_000:.6f}'
+                f', "expected_period_cycles":{expected_period:.0f}'
+                f', "sys_clock_hw_cycles_per_sec":{sys_clock_hw_cycles_per_sec}, ' +
+                ', '.join(['"CONFIG_{}":{}'.format(k, str(config[k]).rstrip()) for k in [
+                                            'SYS_CLOCK_HW_CYCLES_PER_SEC',
+                                            'SYS_CLOCK_TICKS_PER_SEC',
+                                            'TIMER_TEST_PERIOD',
+                                            'TIMER_TEST_SAMPLES',
+                                            'TIMER_TEST_MAX_STDDEV',
+                                            'TIMER_EXTERNAL_TEST_PERIOD_MAX_DRIFT_PPM',
+                                            'TIMER_EXTERNAL_TEST_MAX_DRIFT_PPM'
+                                                                                 ]
+                          ]) + '}'
+              )
+
     assert stats['stddev'] < max_stddev
     assert stats['min'] >= min_bound
     assert stats['max'] <= max_bound
@@ -73,5 +96,6 @@ def test_flash(dut: DeviceAdapter, tool, tool_options, config,
     tests = ["builtin", "startdelay"]
     for test in tests:
         wait_sync_point(dut, test)
-        stats = tool.run(seconds, tool_options)
-        do_analysys(test, stats, config, sys_clock_hw_cycles_per_sec)
+        stats, stats_count = tool.run(seconds, tool_options)
+        assert stats_count
+        do_analysys(test, stats, stats_count, config, sys_clock_hw_cycles_per_sec)
