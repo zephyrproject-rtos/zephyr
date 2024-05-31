@@ -1,0 +1,16 @@
+# Copyright (c) 2024, Tomasz Bursztyka
+#
+# SPDX-License-Identifier: Apache-2.0
+
+init:
+  my_driver_priority_2:
+    dependencies:
+      - my_driver_priority_1
+
+  my_driver_priority_3:
+    dependencies:
+      - my_driver_priority_2
+
+  my_driver_priority_4:
+    dependencies:
+      - my_driver_priority_3

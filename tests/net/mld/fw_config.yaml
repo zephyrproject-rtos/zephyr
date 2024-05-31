@@ -1,0 +1,8 @@
+# Copyright (c) 2024, Tomasz Bursztyka
+#
+# SPDX-License-Identifier: Apache-2.0
+
+init:
+  net_test_null_iface:
+    dependencies:
+      - net_init

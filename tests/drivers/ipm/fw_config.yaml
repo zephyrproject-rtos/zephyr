@@ -1,0 +1,12 @@
+# Copyright (c) 2024, Tomasz Bursztyka
+#
+# SPDX-License-Identifier: Apache-2.0
+
+init:
+  ipm_console_send0:
+    dependencies:
+      - ipm_dummy0
+
+  ipm_console_recv0:
+    dependencies:
+      - ipm_dummy0
