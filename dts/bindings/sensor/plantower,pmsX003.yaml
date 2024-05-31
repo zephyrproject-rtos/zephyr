@@ -1,0 +1,16 @@
+# Copyright (c) 2020, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Plantower PMSX003 air pollution sensor.
+  Air pollution sensor capable of measuring mass concentration of dust.
+  The 'X' in PMSX003 stands for any sensor in the series, such as PMS6003, PMS7003, or PMS5003.
+  See more info at:
+  https://www.espruino.com/datasheets/PMS7003.pdf
+  https://www.digikey.com/en/htmldatasheets/production/2903006/0/0/1/pms5003-series-manual
+  https://evelta.com/content/datasheets/203-PMS6003.pdf
+
+
+compatible: "plantower,pmsX003"
+
+include: [sensor-device.yaml, uart-device.yaml]
