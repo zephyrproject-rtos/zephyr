@@ -7,6 +7,3 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	default 51200 if WIFI
 	default 40960 if BT
 	default 4096
-
-config BT_ESP32
-	default y if BT
