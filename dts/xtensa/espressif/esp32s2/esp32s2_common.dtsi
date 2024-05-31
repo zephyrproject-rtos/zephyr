@@ -63,6 +63,11 @@
 		status = "disabled";
 	};
 
+	esp32_bt_hci: esp32_bt_hci {
+		compatible = "espressif,esp32-bt-hci";
+		status = "disabled";
+	};
+
 	pinctrl: pin-controller {
 		compatible = "espressif,esp32-pinctrl";
 		status = "okay";

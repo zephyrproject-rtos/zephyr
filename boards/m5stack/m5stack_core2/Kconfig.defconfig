@@ -15,9 +15,6 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 config KERNEL_MEM_POOL
 	default y
 
-config BT_ESP32
-	default y if BT
-
 config GPIO_HOGS_INIT_PRIORITY
 	default 70
 

@@ -98,6 +98,8 @@ config BT_USERCHAN
 
 config BT_ESP32
 	bool "ESP32 HCI driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED
 	help
 	  Espressif HCI bluetooth interface
 
