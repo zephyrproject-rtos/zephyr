@@ -28,7 +28,7 @@ config CAN_DEFAULT_BITRATE
 	default 125000
 	help
 	  Default initial CAN bitrate in bits/s. This can be overridden per CAN controller using the
-	  "bus-speed" devicetree property.
+	  "bitrate" devicetree property.
 
 config CAN_DEFAULT_BITRATE_DATA
 	int "Default CAN data phase bitrate"
@@ -36,7 +36,7 @@ config CAN_DEFAULT_BITRATE_DATA
 	depends on CAN_FD_MODE
 	help
 	  Default initial CAN data phase bitrate in bits/s. This can be overridden per CAN controller
-	  using the "bus-speed-data" devicetree property.
+	  using the "bitrate-data" devicetree property.
 
 config CAN_SHELL
 	bool "CAN shell"

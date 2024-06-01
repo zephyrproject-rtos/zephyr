@@ -22,7 +22,7 @@ The Zephyr end of the CAN fixture can be configured as follows:
 * The CAN controller to be used is set using the ``zephyr,canbus`` chosen devicetree node.
 * The CAN bitrates are set using :kconfig:option:`CONFIG_CAN_DEFAULT_BITRATE` and
   :kconfig:option:`CONFIG_CAN_DEFAULT_BITRATE_DATA`, but can be overridden on a board level using
-  the ``bus-speed`` and ``bus-speed-data`` CAN controller devicetree properties if needed. Default
+  the ``bitrate`` and ``bitrate-data`` CAN controller devicetree properties if needed. Default
   bitrates are 125 kbits/s for the arbitration phase/CAN classic and 1 Mbit/s for the CAN FD data
   phase when using bitrate switching (BRS).
 
