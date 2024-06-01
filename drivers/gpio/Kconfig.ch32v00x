@@ -1,0 +1,7 @@
+# Copyright (c) 2024 Michael Hope
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_WCH_GPIO
+	bool "WCH CH32V00x GPIO driver"
+	depends on DT_HAS_WCH_GPIO_ENABLED
+	default y
