@@ -28,10 +28,17 @@ The Zephyr end of the CAN fixture can be configured as follows:
 
 The host end of the CAN fixture can be configured through python-can. Available configuration
 options depend on the type of host CAN adapter used. The python-can library provides a lot of
-flexibility for configuration as decribed in the `python-can configuration`_ page. By default, the
-python-can configuration context is not specified, causing python-can to use the default
-configuration context. The context can be overridden using the ``--can-context`` test suite argument
-(see examples below).
+flexibility for configuration as decribed in the `python-can configuration`_ page, all centered
+around the concept of a configuration "context. The configuration context for this test suite can be
+configured as follows:
+
+* By default, the python-can configuration context is not specified, causing python-can to use the
+  default configuration context.
+* A specific configuration context can be provided along with the ``can`` fixture separated by a
+  ``:`` (i.e. specify fixture ``can:zcan0`` to use the ``zcan0`` python-can configuration context).
+* The configuration context can be overridden using the ``--can-context`` test suite argument
+  (i.e. run ``twister`` with the ``--pytest-args=--can-context=zcan0`` argument to use the ``zcan0``
+  python-can configuration context).
 
 Building and Running
 ********************
@@ -65,7 +72,7 @@ be launched using Twister:
 
 .. code-block:: shell
 
-   west twister -v -p native_sim/native/64 -X can -T tests/drivers/can/host/ --pytest-args=--can-context=zcan0
+   west twister -v -p native_sim/native/64 -X can:zcan0 -T tests/drivers/can/host/
 
 After the test suite has completed, the virtual SocketCAN interface can be removed again:
 
@@ -107,7 +114,7 @@ Twister. Below is an example for running on the :ref:`lpcxpresso55s36`:
 
 .. code-block:: shell
 
-   west twister -v -p lpcxpresso55s36/lpc55s36 --device-testing --device-serial /dev/ttyACM0 -X can -T tests/drivers/can/host/ --pytest-args=--can-context=can0
+   west twister -v -p lpcxpresso55s36/lpc55s36 --device-testing --device-serial /dev/ttyACM0 -X can:can0 -T tests/drivers/can/host/
 
 After the test suite has completed, the SocketCAN interface can be brought down again:
 
