@@ -32,6 +32,8 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+
+		zephyr,bt-hci = &hci_spi;
 	};
 
 	leds {
@@ -164,7 +166,7 @@ stm32_lp_tick_source: &lptim1 {
 	pinctrl-names = "default";
 	status = "okay";
 	cs-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
-	bluenrg-2@0 {
+	hci_spi: bluenrg-2@0 {
 		compatible = "st,hci-spi-v2";
 		reg = <0>;
 		reset-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
