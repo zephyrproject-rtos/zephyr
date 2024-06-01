@@ -14,6 +14,7 @@ osource "$(KCONFIG_BINARY_DIR)/Kconfig.modules"
 
 source "modules/Kconfig.altera"
 source "modules/Kconfig.atmel"
+source "modules/Kconfig.ch32v00x"
 source "modules/Kconfig.chre"
 source "modules/Kconfig.cypress"
 source "modules/Kconfig.eos_s3"
