@@ -40,7 +40,7 @@ int main(void)
 	struct video_buffer *buffers[2], *vbuf;
 	int i, ret, sock, client;
 	struct video_format fmt;
-	const struct device *const video = DEVICE_DT_GET_ONE(nxp_imx_csi);
+	const struct device *const video = DEVICE_DT_GET_ANY(nxp_imx_csi);
 
 	/* Prepare Network */
 	(void)memset(&addr, 0, sizeof(addr));
