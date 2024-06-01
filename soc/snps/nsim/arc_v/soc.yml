@@ -3,4 +3,5 @@ family:
     series:
       - name: rmx
         socs:
+          - name: rmx100
           - name: rmx500

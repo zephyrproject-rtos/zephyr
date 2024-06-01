@@ -2,4 +2,5 @@ board:
   name: nsim_arc_v
   vendor: snps
   socs:
+  - name: rmx100
   - name: rmx500

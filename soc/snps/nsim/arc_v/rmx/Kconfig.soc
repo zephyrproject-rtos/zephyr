@@ -8,9 +8,14 @@ config SOC_SERIES_RMX
 config SOC_SERIES
 	default "rmx" if SOC_SERIES_RMX
 
+config SOC_RMX100
+	bool
+	select SOC_SERIES_RMX
+
 config SOC_RMX500
 	bool
 	select SOC_SERIES_RMX
 
 config SOC
+	default "rmx100" if SOC_RMX100
 	default "rmx500" if SOC_RMX500

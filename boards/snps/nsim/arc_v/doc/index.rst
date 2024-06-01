@@ -16,6 +16,7 @@ platform includes the following features:
 There are multiple supported board targets for that platform. Some but not all of currently
 available targets are listed below:
 
+* ``nsim_arc_v/rmx100`` - Synopsys RISC-V RMX100 core
 * ``nsim_arc_v/rmx500`` - Synopsys RISC-V RMX500 core
 
 .. _board_nsim_arc_v_prop_files:
