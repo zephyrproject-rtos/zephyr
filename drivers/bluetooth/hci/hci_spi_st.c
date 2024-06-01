@@ -22,7 +22,7 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/bluetooth/hci.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/bluetooth/hci_raw.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
@@ -89,6 +89,10 @@ static struct k_thread spi_rx_thread_data;
 #define BLUENRG_CONFIG_PUBADDR_LEN          0x06
 #define BLUENRG_CONFIG_LL_ONLY_OFFSET       0x2C
 #define BLUENRG_CONFIG_LL_ONLY_LEN          0x01
+
+struct bt_spi_data {
+	bt_hci_recv_t recv;
+};
 
 static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
 	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LOCK_ON, 0);
@@ -351,7 +355,8 @@ static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t v
 }
 
 #if !defined(CONFIG_BT_HCI_RAW)
-static int bt_spi_bluenrg_setup(const struct bt_hci_setup_params *params)
+static int bt_spi_bluenrg_setup(const struct device *dev,
+				const struct bt_hci_setup_params *params)
 {
 	int ret;
 	const bt_addr_t *addr = &params->public_addr;
@@ -496,7 +501,9 @@ static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t
 
 static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 {
-	ARG_UNUSED(p1);
+	const struct device *dev = p1;
+	struct bt_spi_data *hci = dev->data;
+
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
@@ -539,14 +546,14 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 			ret = bt_spi_rx_buf_construct(rxmsg, &buf, size);
 			if (!ret) {
 				/* Handle the received HCI data */
-				bt_recv(buf);
+				hci->recv(dev, buf);
 				buf = NULL;
 			}
 		} while (READ_CONDITION);
 	}
 }
 
-static int bt_spi_send(struct net_buf *buf)
+static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 {
 	uint16_t size;
 	uint8_t rx_first[1];
@@ -632,8 +639,9 @@ static int bt_spi_send(struct net_buf *buf)
 	return ret;
 }
 
-static int bt_spi_open(void)
+static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 {
+	struct bt_spi_data *hci = dev->data;
 	int err;
 
 	/* Configure RST pin and hold BLE in Reset */
@@ -660,6 +668,8 @@ static int bt_spi_open(void)
 		return err;
 	}
 
+	hci->recv = recv;
+
 	/* Take BLE out of reset */
 	k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));
 	gpio_pin_set_dt(&rst_gpio, 0);
@@ -667,7 +677,7 @@ static int bt_spi_open(void)
 	/* Start RX thread */
 	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
 			K_KERNEL_STACK_SIZEOF(spi_rx_stack),
-			bt_spi_rx_thread, NULL, NULL, NULL,
+			bt_spi_rx_thread, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
 
@@ -683,10 +693,7 @@ static int bt_spi_open(void)
 	return 0;
 }
 
-static const struct bt_hci_driver drv = {
-	.name		= DEVICE_DT_NAME(DT_DRV_INST(0)),
-	.bus		= BT_HCI_DRIVER_BUS_SPI,
-	.quirks		= BT_QUIRK_NO_RESET,
+static const struct bt_hci_driver_api drv = {
 #if defined(CONFIG_BT_BLUENRG_ACI) && !defined(CONFIG_BT_HCI_RAW)
 	.setup          = bt_spi_bluenrg_setup,
 #endif /* CONFIG_BT_BLUENRG_ACI && !CONFIG_BT_HCI_RAW */
@@ -694,7 +701,7 @@ static const struct bt_hci_driver drv = {
 	.send		= bt_spi_send,
 };
 
-static int bt_spi_init(void)
+static int bt_spi_init(const struct device *dev)
 {
 
 	if (!spi_is_ready_dt(&bus)) {
@@ -712,12 +719,16 @@ static int bt_spi_init(void)
 		return -ENODEV;
 	}
 
-	bt_hci_driver_register(&drv);
-
-
 	LOG_DBG("BT SPI initialized");
 
 	return 0;
 }
 
-SYS_INIT(bt_spi_init, POST_KERNEL, CONFIG_BT_SPI_INIT_PRIORITY);
+#define HCI_DEVICE_INIT(inst) \
+	static struct bt_spi_data hci_data_##inst = { \
+	}; \
+	DEVICE_DT_INST_DEFINE(inst, bt_spi_init, NULL, &hci_data_##inst, NULL, \
+			      POST_KERNEL, CONFIG_BT_SPI_INIT_PRIORITY, &drv)
+
+/* Only one instance supported right now */
+HCI_DEVICE_INIT(0)
