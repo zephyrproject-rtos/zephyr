@@ -59,6 +59,8 @@ config BT_SPI
 
 config BT_STM32_IPM
 	bool "IPM HCI"
+	default y
+	depends on DT_HAS_ST_STM32WB_RF_ENABLED
 	select USE_STM32_HAL_CORTEX
 	select HAS_STM32LIB
 	help
