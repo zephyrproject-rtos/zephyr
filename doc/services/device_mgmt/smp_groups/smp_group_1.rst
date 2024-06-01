@@ -391,7 +391,7 @@ where:
     :align: center
 
     +------------------+-------------------------------------------------------------------------+
-    | "off"            | offset of last successfully written byte of update.                     |
+    | "off"            | Portion of the upload that has been completed, in 8-bit bytes.          |
     +------------------+-------------------------------------------------------------------------+
     | "match"          | indicates if the uploaded data successfully matches the provided SHA256 |
     |                  | hash or not, only sent in the final packet if                           |
