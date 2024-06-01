@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <freq.h>
 #include <mem.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -22,6 +23,34 @@
 			compatible = "wch,qingke-v2";
 			reg = <0>;
 			clock-frequency = <DT_FREQ_M(48)>;
+		};
+	};
+
+	clocks {
+		clk_hse: clk-hse {
+			#clock-cells = <0>;
+			compatible = "wch,ch32v00x-hse-clock";
+			status = "disabled";
+		};
+
+		clk_hsi: clk-hsi {
+			#clock-cells = <0>;
+			compatible = "wch,ch32v00x-hsi-clock";
+			clock-frequency = <DT_FREQ_M(24)>;
+			status = "disabled";
+		};
+
+		clk_lsi: clk-lsi {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_K(128)>;
+			status = "disabled";
+		};
+
+		pll: pll {
+			#clock-cells = <0>;
+			compatible = "wch,ch32v00x-pll-clock";
+			status = "disabled";
 		};
 	};
 
