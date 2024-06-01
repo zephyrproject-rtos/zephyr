@@ -40,6 +40,7 @@ _names = [
     'jlink',
     'linkserver',
     'mdb',
+    'minichlink',
     'misc',
     'native',
     'nios2',
