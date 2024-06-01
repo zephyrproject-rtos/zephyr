@@ -156,7 +156,8 @@ enum {
 #define __z_posix_sysconf_SC_MAPPED_FILES                                                          \
 	COND_CODE_1(CONFIG_POSIX_MAPPED_FILES, (_POSIX_MAPPED_FILES), (-1L))
 #define __z_posix_sysconf_SC_MEMLOCK           (-1L)
-#define __z_posix_sysconf_SC_MEMLOCK_RANGE     (-1L)
+#define __z_posix_sysconf_SC_MEMLOCK_RANGE                                                         \
+	COND_CODE_1(CONFIG_POSIX_MEMLOCK_RANGE, (_POSIX_MEMLOCK_RANGE), (-1L))
 #define __z_posix_sysconf_SC_MEMORY_PROTECTION (-1L)
 #define __z_posix_sysconf_SC_MESSAGE_PASSING                                                       \
 	COND_CODE_1(CONFIG_POSIX_MESSAGE_PASSING, (_POSIX_MESSAGE_PASSING), (-1L))
