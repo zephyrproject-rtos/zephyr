@@ -1,0 +1,5 @@
+board:
+  name: ek_ra2a1
+  vendor: renesas
+  socs:
+  - name: r7fa2a1ab3cfm
