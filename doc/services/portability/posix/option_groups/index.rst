@@ -665,12 +665,16 @@ For more information, please refer to :ref:`Networking <networking>`.
 _POSIX_MEMLOCK
 ++++++++++++++
 
+Zephyr's :ref:`Demand Paging API <memory_management_api_demand_paging>` does not yet support
+pinning or unpinning all virtual memory regions. The functions below are expected to fail and
+set ``errno`` to ``ENOSYS`` :ref:`†<posix_undefined_behaviour>`.
+
 .. csv-table:: _POSIX_MEMLOCK
    :header: API, Supported
    :widths: 50,10
 
-    mlockall(),
-    munlockall(),
+    mlockall(), yes
+    munlockall(), yes
 
 .. _posix_option_memlock_range:
 
