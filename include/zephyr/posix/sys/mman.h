@@ -32,8 +32,10 @@
 extern "C" {
 #endif
 
+int mlock(const void *addr, size_t len);
 void *mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off);
 int msync(void *addr, size_t length, int flags);
+int munlock(const void *addr, size_t len);
 int munmap(void *addr, size_t len);
 
 #ifdef __cplusplus
