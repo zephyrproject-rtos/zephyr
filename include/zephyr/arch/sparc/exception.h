@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-struct __esf {
+struct arch_esf {
 	uint32_t out[8];
 	uint32_t global[8];
 	uint32_t psr;
@@ -25,7 +25,7 @@ struct __esf {
 	uint32_t y;
 };
 
-typedef struct __esf z_arch_esf_t;
+typedef struct arch_esf z_arch_esf_t;
 
 #ifdef __cplusplus
 }

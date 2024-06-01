@@ -27,7 +27,7 @@ extern "C" {
  * Those registers are pushed onto the stack by _ExcEnt().
  */
 
-typedef struct nanoEsf {
+typedef struct arch_esf {
 #ifdef CONFIG_GDBSTUB
 	unsigned int ss;
 	unsigned int gs;

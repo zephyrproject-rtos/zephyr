@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-struct __esf {
+struct arch_esf {
 	uint32_t ra; /* return address r31 */
 	uint32_t r1; /* at */
 	uint32_t r2; /* return value */
@@ -35,7 +35,7 @@ struct __esf {
 	uint32_t instr; /* Instruction being executed when exc occurred */
 };
 
-typedef struct __esf z_arch_esf_t;
+typedef struct arch_esf z_arch_esf_t;
 
 #ifdef __cplusplus
 }
