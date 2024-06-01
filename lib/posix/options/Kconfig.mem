@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+menu "POSIX memory"
+
 config POSIX_PAGE_SIZE_BITS
 	int "Number of bits to use for PAGE_SIZE"
 	range 6 16
@@ -11,3 +13,16 @@ config POSIX_PAGE_SIZE_BITS
 	  Define PAGE_SIZE as BIT(n), where n is the value configured here.
 	  PAGE_SIZE is supported in the range [64, 65536]
 	  If CONFIG_POSIX_API=y, PAGE_SIZE defaults to 4096, otherwise, it is 64 bytes.
+
+config POSIX_MAPPED_FILES
+	bool "POSIX memory-mapped files [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	imply MMU
+	help
+	  Select 'y' here and Zephyr will provide support for mmap(), msync(), and munmap().
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799.orig/functions/V2_chap02.html
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_port.html#tag_24_03_04
+
+endmenu
