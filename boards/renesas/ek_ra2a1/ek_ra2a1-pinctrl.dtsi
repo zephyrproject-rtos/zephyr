@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sci0_default: sci0_default {
+		group1 {
+			/* rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 3, 1)>;
+		};
+		group2 {
+			/* tx */
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 3, 2)>;
+			drive-strength = "medium";
+		};
+	};
+};
