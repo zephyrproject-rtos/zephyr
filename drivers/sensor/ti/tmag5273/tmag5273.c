@@ -102,17 +102,17 @@ static int tmag5273_reset_device_status(const struct device *dev)
 /**
  * @brief checks for DIAG_FAIL errors and reads out the DEVICE_STATUS register if necessary
  *
- * Prints a human readable representation to the log, if \c CONFIG_LOG is activated.
- *
- * @param drv_cfg[in] driver instance configuration
- * @param device_status[out] DEVICE_STATUS register if DIAG_FAIL is set
+ * @param[in] drv_cfg driver instance configuration
+ * @param[out] device_status DEVICE_STATUS register if DIAG_FAIL is set
  *
  * @retval 0 on success
- * @retval "!= 0" on error (see @ref i2c_reg_read_byte for error codes)
+ * @retval "!= 0" on error
+ *                  - \c -EIO on any set error device status bit
+ *                  - see @ref i2c_reg_read_byte for error codes
  *
  * @note
- * If tmag5273_config.ignore_diag_fail is se
- *   -  \a device_status will be always set to \c 0,
+ * If tmag5273_config.ignore_diag_fail is set
+ *   - \a device_status will be always set to \c 0,
  *   - the function always returns \c 0.
  */
 static int tmag5273_check_device_status(const struct tmag5273_config *drv_cfg,
