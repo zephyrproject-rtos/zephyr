@@ -95,7 +95,7 @@ class GdbStub_ARM64(GdbStub):
         self.registers[RegNum.X17]  = tu[17]
         self.registers[RegNum.X18]  = tu[18]
 
-        # Callee saved registers are not provided in __esf structure
+        # Callee saved registers are not provided in arch_esf structure
         # So they will be omitted (set to undefined) when stub generates the
         # packet in handle_register_group_read_packet.
 

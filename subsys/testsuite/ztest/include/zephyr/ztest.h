@@ -28,8 +28,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-struct esf;
-typedef struct esf z_arch_esf_t;
+struct arch_esf;
+typedef struct arch_esf z_arch_esf_t;
 #ifdef __cplusplus
 }
 #endif

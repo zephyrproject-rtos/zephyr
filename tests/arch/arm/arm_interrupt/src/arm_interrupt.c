@@ -74,7 +74,7 @@ static int check_esf_matches_expectations(const z_arch_esf_t *pEsf)
 	 * is overwritten in fault.c)
 	 */
 	if (memcmp((void *)callee_regs->psp, pEsf,
-		offsetof(struct __esf, basic.xpsr)) != 0) {
+		offsetof(struct arch_esf, basic.xpsr)) != 0) {
 		printk("psp does not match __basic_sf provided\n");
 		return -1;
 	}

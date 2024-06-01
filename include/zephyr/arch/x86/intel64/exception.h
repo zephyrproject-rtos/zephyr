@@ -17,7 +17,7 @@ extern "C" {
  * the exception stack frame
  */
 
-struct x86_esf {
+struct arch_esf {
 #ifdef CONFIG_EXCEPTION_DEBUG
 	/* callee-saved */
 	unsigned long rbx;
@@ -53,7 +53,7 @@ struct x86_esf {
 	unsigned long ss;
 };
 
-typedef struct x86_esf z_arch_esf_t;
+typedef struct arch_esf z_arch_esf_t;
 
 struct x86_ssf {
 	unsigned long rip;
