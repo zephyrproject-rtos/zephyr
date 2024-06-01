@@ -28,14 +28,19 @@
 
 #define MAP_FAILED ((void *)-1)
 
+#define MCL_CURRENT 0
+#define MCL_FUTURE  1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 int mlock(const void *addr, size_t len);
+int mlockall(int flags);
 void *mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off);
 int msync(void *addr, size_t length, int flags);
 int munlock(const void *addr, size_t len);
+int munlockall(void);
 int munmap(void *addr, size_t len);
 
 #ifdef __cplusplus
