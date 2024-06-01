@@ -247,8 +247,9 @@ Controller Area Network (CAN)
 =============================
 
 * Removed the following deprecated CAN controller devicetree properties. Out-of-tree boards using
-  these properties need to switch to using the ``bus-speed``, ``sample-point``, ``bus-speed-data``,
-  and ``sample-point-data`` devicetree properties for specifying the initial CAN bitrate:
+  these properties can switch to using the ``bitrate``, ``sample-point``, ``bitrate-data``, and
+  ``sample-point-data`` devicetree properties (or rely on :kconfig:option:`CAN_DEFAULT_BITRATE` and
+  :kconfig:option:`CAN_DEFAULT_BITRATE_DATA`) for specifying the initial CAN bitrate:
 
   * ``sjw``
   * ``prop-seg``
@@ -258,6 +259,9 @@ Controller Area Network (CAN)
   * ``prop-seg-data``
   * ``phase-seg1-data``
   * ``phase-seg1-data``
+
+  The ``bus-speed`` and ``bus-speed-data`` CAN controller devicetree properties have been
+  deprecated.
 
   (:github:`68714`)
 
