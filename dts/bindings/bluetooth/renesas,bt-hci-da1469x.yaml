@@ -1,0 +1,11 @@
+description: Bluetooth HCI for Renesas DA1469x
+
+compatible: "renesas,bt-hci-da1469x"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "BT DA1469x"
+  bt-hci-bus:
+    default: "BT_HCI_BUS_IPM"

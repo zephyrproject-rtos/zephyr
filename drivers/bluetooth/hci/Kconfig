@@ -118,6 +118,8 @@ config BT_PSOC6_BLESS
 
 config BT_DA1469X
 	bool "DA1469x HCI driver"
+	default y
+	depends on DT_HAS_RENESAS_BT_HCI_DA1469X_ENABLED
 	help
 	  Bluetooth HCI driver for communication with CMAC core
 	  on DA1469x MCU.
