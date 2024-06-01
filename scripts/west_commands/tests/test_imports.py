@@ -32,6 +32,7 @@ def test_runner_imports():
         'linkserver',
         'mdb-hw',
         'mdb-nsim',
+        'minichlink',
         'misc-flasher',
         'native',
         'nios2',
