@@ -1,0 +1,225 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
+#include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <freq.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m23";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		system: system@4001e000 {
+			compatible = "renesas,ra-system";
+			reg = <0x4001e000 0x1000>;
+			status = "okay";
+		};
+
+		ioport0: gpio@40040000 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40040000 0x20>;
+			port = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport1: gpio@40040020 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40040020 0x20>;
+			port = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport2: gpio@40040040 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40040040 0x20>;
+			port = <2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport3: gpio@40040060 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40040060 0x20>;
+			port = <3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport4: gpio@40040080 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40040080 0x20>;
+			port = <4>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport5: gpio@400400a0 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x400400a0 0x20>;
+			port = <5>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport6: gpio@400400c0 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x400400c0 0x20>;
+			port = <6>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport7: gpio@400400e0 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x400400e0 0x20>;
+			port = <7>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport8: gpio@40040100 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40040100 0x20>;
+			port = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport9: gpio@40040120 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40040120 0x20>;
+			port = <9>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		pinctrl: pin-controller@40040800 {
+			compatible = "renesas,ra-pinctrl-pfs";
+			reg = <0x40040800 0x3c0>;
+			status = "okay";
+		};
+
+		sci0: sci@40070000 {
+			compatible = "renesas,ra-sci";
+			interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40070000 0x20>;
+			clocks = <&pclkb MSTPB 31>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra-sci-uart";
+				channel = <0>;
+				status = "disabled";
+			};
+		};
+
+		sci1: sci@40070020 {
+			compatible = "renesas,ra-sci";
+			interrupts = <8 1>, <9 1>, <10 1>, <11 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40070020 0x20>;
+			clocks = <&pclkb MSTPB 30>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra-sci-uart";
+				channel = <1>;
+				status = "disabled";
+			};
+		};
+
+		sci2: sci@40070040 {
+			compatible = "renesas,ra-sci";
+			interrupts = <12 1>, <13 1>, <14 1>, <15 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40070040 0x20>;
+			clocks = <&pclkb MSTPB 29>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra-sci-uart";
+				channel = <2>;
+				status = "disabled";
+			};
+		};
+
+		sci3: sci@40070060 {
+			compatible = "renesas,ra-sci";
+			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40070060 0x20>;
+			clocks = <&pclkb MSTPB 28>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra-sci-uart";
+				channel = <3>;
+				status = "disabled";
+			};
+		};
+
+		sci9: sci@40070120 {
+			compatible = "renesas,ra-sci";
+			interrupts = <24 1>, <25 1>, <26 1>, <27 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40070120 0x20>;
+			clocks = <&pclkb MSTPB 22>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra-sci-uart";
+				channel = <9>;
+				status = "disabled";
+			};
+		};
+
+		flash-controller@407e0000 {
+			reg = <0x407e0000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		id_code: id_code@1010018 {
+			compatible = "zephyr,memory-region";
+			reg = <0x01010018 0x20>;
+			zephyr,memory-region = "ID_CODE";
+			status = "okay";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};
