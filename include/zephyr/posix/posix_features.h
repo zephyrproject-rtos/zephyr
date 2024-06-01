@@ -70,7 +70,11 @@
 #endif
 
 /* #define _POSIX_MEMLOCK (-1L) */
-/* #define _POSIX_MEMLOCK_RANGE (-1L) */
+
+#ifdef CONFIG_POSIX_MEMLOCK_RANGE
+#define _POSIX_MEMLOCK_RANGE _POSIX_VERSION
+#endif
+
 /* #define _POSIX_MEMORY_PROTECTION (-1L) */
 
 #ifdef CONFIG_POSIX_MESSAGE_PASSING
