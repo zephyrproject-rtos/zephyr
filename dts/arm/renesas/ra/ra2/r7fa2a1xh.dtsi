@@ -1,0 +1,98 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/renesas/ra/ra2/ra2xx.dtsi>
+#include <zephyr/dt-bindings/clock/ra_clock.h>
+
+/delete-node/ &sci2;
+/delete-node/ &sci3;
+/delete-node/ &ioport6;
+/delete-node/ &ioport7;
+/delete-node/ &ioport8;
+
+/ {
+	clocks: clocks {
+		xtal: clock-xtal {
+			compatible = "renesas,ra8-cgc-external-clock";
+			clock-frequency = <DT_FREQ_M(12)>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		hoco: clock-hoco {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			#clock-cells = <0>;
+		};
+
+		moco: clock-moco {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(8)>;
+			#clock-cells = <0>;
+		};
+
+		loco: clock-loco {
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+		};
+
+		subclk: clock-subclk {
+			compatible = "renesas,ra8-cgc-subclk";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		pclkblock: pclkblock {
+			compatible = "renesas,ra8-cgc-pclk-block";
+			#clock-cells = <0>;
+			sysclock-src = <RA_CLOCK_SOURCE_HOCO>;
+			status = "okay";
+
+			iclk: iclk {
+				compatible = "renesas,ra8-cgc-pclk";
+				clk_div = <RA_SYS_CLOCK_DIV_1>;
+				#clock-cells = <0>;
+				status = "okay";
+			};
+
+			pclkb: pclkb {
+				compatible = "renesas,ra8-cgc-pclk";
+				clk_div = <RA_SYS_CLOCK_DIV_2>;
+				#clock-cells = <0>;
+				status = "okay";
+			};
+
+			pclkd: pclkd {
+				compatible = "renesas,ra8-cgc-pclk";
+				clk_div = <RA_SYS_CLOCK_DIV_1>;
+				#clock-cells = <0>;
+				status = "okay";
+			};
+
+			fclk: fclk {
+				compatible = "renesas,ra8-cgc-pclk";
+				clk_div = <RA_SYS_CLOCK_DIV_1>;
+				#clock-cells = <0>;
+				status = "okay";
+			};
+
+			clkout: clkout {
+				compatible = "renesas,ra8-cgc-pclk";
+				#clock-cells = <0>;
+				status = "disabled";
+			};
+
+
+			sdadcclk: sdadcclk {
+				compatible = "renesas,ra8-cgc-pclk";
+				#clock-cells = <0>;
+				status = "disabled";
+			};
+		};
+	};
+};
