@@ -25,6 +25,9 @@ extern "C" {
  * register windows are in use.  This isn't a struct type, it just
  * matches the register/stack-unit width.
  */
+struct arch_esf {
+	int dummy;
+};
 typedef int z_arch_esf_t;
 
 #endif

@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-struct __esf {
+struct arch_esf {
 	unsigned long ra;		/* return address */
 	unsigned long gp;		/* global pointer */
 
@@ -50,7 +50,7 @@ struct __esf {
 	unsigned long cause;
 };
 
-typedef struct __esf z_arch_esf_t;
+typedef struct arch_esf z_arch_esf_t;
 
 #ifdef __cplusplus
 }

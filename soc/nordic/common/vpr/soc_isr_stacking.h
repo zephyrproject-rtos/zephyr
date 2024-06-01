@@ -17,7 +17,7 @@
 #if DT_PROP(VPR_CPU, nordic_bus_width) == 64
 
 #define SOC_ISR_STACKING_ESF_DECLARE                                                               \
-	struct __esf {                                                                             \
+	struct arch_esf {                                                                          \
 		unsigned long s0;                                                                  \
 		unsigned long mstatus;                                                             \
 		unsigned long tp;                                                                  \
@@ -40,7 +40,7 @@
 #else /* DT_PROP(VPR_CPU, nordic_bus_width) == 32 */
 
 #define SOC_ISR_STACKING_ESF_DECLARE                                                               \
-	struct __esf {                                                                             \
+	struct arch_esf {                                                                          \
 		unsigned long s0;                                                                  \
 		unsigned long mstatus;                                                             \
 		unsigned long tp;                                                                  \
