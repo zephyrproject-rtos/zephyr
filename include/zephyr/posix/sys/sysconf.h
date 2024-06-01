@@ -153,7 +153,8 @@ enum {
 	COND_CODE_1(CONFIG_POSIX_FSYNC, (_POSIX_FSYNC), (-1L))
 #define __z_posix_sysconf_SC_IPV6              COND_CODE_1(CONFIG_NET_IPV6, (_POSIX_IPV6), (-1L))
 #define __z_posix_sysconf_SC_JOB_CONTROL       (-1L)
-#define __z_posix_sysconf_SC_MAPPED_FILES      (-1L)
+#define __z_posix_sysconf_SC_MAPPED_FILES                                                          \
+	COND_CODE_1(CONFIG_POSIX_MAPPED_FILES, (_POSIX_MAPPED_FILES), (-1L))
 #define __z_posix_sysconf_SC_MEMLOCK           (-1L)
 #define __z_posix_sysconf_SC_MEMLOCK_RANGE     (-1L)
 #define __z_posix_sysconf_SC_MEMORY_PROTECTION (-1L)
