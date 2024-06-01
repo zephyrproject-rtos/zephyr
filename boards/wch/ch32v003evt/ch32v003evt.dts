@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2024 Michael Hope <michaelh@juju.nz>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <wch/ch32v00x.dtsi>
+#include "ch32v003evt-pinctrl.dtsi"
+
+/ {
+	model = "ch32v003evt";
+	compatible = "wch,ch32v003";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/*
+		 * Please connect the unconnected LED on the WCH CH32V003EVT
+		 * board to a suitable GPIO pin (like PD4) and then change
+		 * this status to "okay".
+		 */
+		status = "disabled";
+
+		red_led: led0 {
+			gpios = <&gpiod 4 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(24)>;
+	status = "okay";
+};
+
+&pll {
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+};
