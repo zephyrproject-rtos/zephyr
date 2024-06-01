@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+ / {
+	 chosen {
+		 zephyr,bt-hci = &spbtle_rf_x_nucleo_idb05a1;
+	 };
+ };
+
 &arduino_spi {
 	cs-gpios = <&arduino_header 1 GPIO_ACTIVE_LOW>;	      /* A1 */
 

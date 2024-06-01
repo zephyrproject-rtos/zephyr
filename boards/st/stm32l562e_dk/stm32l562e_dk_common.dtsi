@@ -37,6 +37,10 @@
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
 	};
+
+	chosen {
+		zephyr,bt-hci = &hci_spi;
+	};
 };
 
 &clk_hsi48 {
@@ -114,7 +118,7 @@ stm32_lp_tick_source: &lptim1 {
 	cs-gpios = <&gpiog 5 GPIO_ACTIVE_LOW>;
 	status = "okay";
 
-	spbtle-rf@0 {
+	hci_spi: spbtle-rf@0 {
 		compatible = "st,hci-spi-v1";
 		reg = <0>;
 		irq-gpios = <&gpiog 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;

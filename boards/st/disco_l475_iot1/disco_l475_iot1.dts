@@ -22,6 +22,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,flash-controller = &mx25r6435f;
 		zephyr,bt-c2h-uart = &usart1;
+		zephyr,bt-hci = &hci_spi;
 	};
 
 	leds {
@@ -191,7 +192,7 @@
 	cs-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>,
 		   <&gpioe 0 GPIO_ACTIVE_LOW>;
 
-	spbtle-rf@0 {
+	hci_spi: spbtle-rf@0 {
 		compatible = "st,hci-spi-v1";
 		reg = <0>;
 		reset-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;

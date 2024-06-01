@@ -29,6 +29,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &hci_spi;
 	};
 
 	leds {
@@ -163,7 +164,7 @@ stm32_lp_tick_source: &lptim1 {
 	cs-gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
 	status = "okay";
 
-	bluenrg-lp@0 {
+	hci_spi: bluenrg-lp@0 {
 		compatible = "st,hci-spi-v2";
 		reg = <0>;
 		irq-gpios = <&gpiod 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
