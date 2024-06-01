@@ -681,8 +681,8 @@ _POSIX_MEMLOCK_RANGE
    :header: API, Supported
    :widths: 50,10
 
-    mlock(),
-    munlock(),
+    mlock(), yes
+    munlock(), yes
 
 .. _posix_option_message_passing:
 
