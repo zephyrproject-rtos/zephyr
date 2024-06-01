@@ -64,9 +64,6 @@ endif # PM || PM_DEVICE
 
 if BT
 
-config BT_DA1469X
-	default y
-
 config BT_WAIT_NOP
 	default y
 
