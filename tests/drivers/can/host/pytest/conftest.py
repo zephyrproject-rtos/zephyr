@@ -23,9 +23,16 @@ def pytest_addoption(parser) -> None:
                      help='Configuration context to use for python-can (default: None)')
 
 @pytest.fixture(name='context', scope='session')
-def fixture_context(request) -> str:
+def fixture_context(request, dut: DeviceAdapter) -> str:
     """Return the name of the python-can configuration context to use."""
     ctx = request.config.getoption('--can-context')
+
+    if ctx is None:
+        for fixture in dut.device_config.fixtures:
+            if fixture.startswith('can:'):
+                ctx = fixture.split(sep=':', maxsplit=1)[1]
+                break
+
     logger.info('using python-can configuration context "%s"', ctx)
     return ctx
 
