@@ -389,6 +389,19 @@ POSIX_FILE_SYSTEM
     unlink(), yes
     utime(),
 
+.. _posix_option_mapped_files:
+
+POSIX_MAPPED_FILES
+==================
+
+.. csv-table:: POSIX_MAPPED_FILES
+   :header: API, Supported
+   :widths: 50,10
+
+    mmap(),yes
+    msync(),yes
+    munmap(),yes
+
 .. _posix_option_group_networking:
 
 POSIX_NETWORKING
@@ -757,8 +770,8 @@ _POSIX_SHARED_MEMORY_OBJECTS
    :header: API, Supported
    :widths: 50,10
 
-    mmap(),
-    munmap(),
+    mmap(), yes
+    munmap(), yes
     shm_open(),
     shm_unlink(),
 
