@@ -119,6 +119,7 @@ void z_arm_platform_init(void)
 	 * sys_cache*-functions can enable them, if requested by the
 	 * configuration.
 	 */
+	SCB_InvalidateDCache();
 	SCB_DisableDCache();
 
 	/*
