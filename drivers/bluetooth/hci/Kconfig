@@ -66,6 +66,8 @@ config BT_STM32_IPM
 
 config BT_STM32WBA
 	bool "STM32WBA HCI driver"
+	default y
+	depends on DT_HAS_ST_HCI_STM32WBA_ENABLED
 	select HAS_STM32LIB
 	help
 	  ST STM32WBA HCI Bluetooth interface

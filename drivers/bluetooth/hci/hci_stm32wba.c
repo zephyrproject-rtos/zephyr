@@ -7,11 +7,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/hci.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <linklayer_plat_local.h>
@@ -26,6 +25,12 @@
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(hci_wba);
+
+#define DT_DRV_COMPAT st_hci_stm32wba
+
+struct hci_data {
+	bt_hci_recv_t recv;
+};
 
 static K_SEM_DEFINE(hci_sem, 1, 1);
 
@@ -205,9 +210,10 @@ static struct net_buf *treat_iso(const uint8_t *data, size_t len,
 	return buf;
 }
 
-static int receive_data(const uint8_t *data, size_t len,
+static int receive_data(const struct device *dev, const uint8_t *data, size_t len,
 			const uint8_t *ext_data, size_t ext_len)
 {
+	struct hci_data *hci = dev->data;
 	uint8_t pkt_indicator;
 	struct net_buf *buf;
 	int err = 0;
@@ -235,7 +241,7 @@ static int receive_data(const uint8_t *data, size_t len,
 	}
 
 	if (buf) {
-		bt_recv(buf);
+		hci->recv(dev, buf);
 	} else {
 		err = -ENOMEM;
 		ll_state_busy = 1;
@@ -247,6 +253,7 @@ static int receive_data(const uint8_t *data, size_t len,
 uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 			 const uint8_t *ext_data, uint16_t ext_length)
 {
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	int ret = 0;
 	int err;
 
@@ -257,7 +264,7 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 
 	k_sem_take(&hci_sem, K_FOREVER);
 
-	err = receive_data(data, (size_t)length - 1,
+	err = receive_data(dev, data, (size_t)length - 1,
 			   ext_data, (size_t)ext_length);
 
 	k_sem_give(&hci_sem);
@@ -271,11 +278,13 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 	return ret;
 }
 
-static int bt_hci_stm32wba_send(struct net_buf *buf)
+static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 {
 	uint16_t event_length;
 	uint8_t pkt_indicator;
 	uint8_t tx_buffer[BLE_CTRLR_STACK_BUFFER_SIZE];
+
+	ARG_UNUSED(dev);
 
 	k_sem_take(&hci_sem, K_FOREVER);
 
@@ -304,7 +313,7 @@ static int bt_hci_stm32wba_send(struct net_buf *buf)
 	LOG_DBG("event_length: %u", event_length);
 
 	if (event_length) {
-		receive_data((uint8_t *)&tx_buffer, (size_t)event_length, NULL, 0);
+		receive_data(dev, (uint8_t *)&tx_buffer, (size_t)event_length, NULL, 0);
 	}
 
 	k_sem_give(&hci_sem);
@@ -342,8 +351,9 @@ static int bt_ble_ctlr_init(void)
 	return 0;
 }
 
-static int bt_hci_stm32wba_open(void)
+static int bt_hci_stm32wba_open(const struct device *dev, bt_hci_recv_t recv)
 {
+	struct hci_data *data = dev->data;
 	int ret = 0;
 
 	link_layer_register_isr();
@@ -351,6 +361,9 @@ static int bt_hci_stm32wba_open(void)
 	ll_sys_config_params();
 
 	ret = bt_ble_ctlr_init();
+	if (ret == 0) {
+		data->recv = recv;
+	}
 
 	/* TODO. Enable Flash manager once available */
 	if (IS_ENABLED(CONFIG_FLASH)) {
@@ -360,18 +373,16 @@ static int bt_hci_stm32wba_open(void)
 	return ret;
 }
 
-static const struct bt_hci_driver drv = {
-	.name           = "BT IPM",
-	.bus            = BT_HCI_DRIVER_BUS_IPM,
+static const struct bt_hci_driver_api drv = {
 	.open           = bt_hci_stm32wba_open,
 	.send           = bt_hci_stm32wba_send,
 };
 
-static int bt_stm32wba_hci_init(void)
-{
-	bt_hci_driver_register(&drv);
+#define HCI_DEVICE_INIT(inst) \
+	static struct hci_data hci_data_##inst = { \
+	}; \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
-	return 0;
-}
-
-SYS_INIT(bt_stm32wba_hci_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+/* Only one instance supported */
+HCI_DEVICE_INIT(0)
