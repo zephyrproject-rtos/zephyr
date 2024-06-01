@@ -9,7 +9,7 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/hci.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/random/random.h>
@@ -25,6 +25,12 @@
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(hci_da1469x);
+
+#define DT_DRV_COMPAT renesas_bt_hci_da1469x
+
+struct hci_data {
+	bt_hci_recv_t recv;
+};
 
 static K_KERNEL_STACK_DEFINE(rng_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 static struct k_thread rng_thread_data;
@@ -189,9 +195,10 @@ static struct net_buf *get_rx(k_timeout_t timeout)
 
 static void rx_thread(void *p1, void *p2, void *p3)
 {
+	const struct device *dev = p1;
+	struct hci_data *hci = dev->data;
 	struct net_buf *buf;
 
-	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
@@ -224,7 +231,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			irq_enable(CMAC2SYS_IRQn);
 
 			LOG_DBG("Calling bt_recv(%p)", buf);
-			bt_recv(buf);
+			hci->recv(dev, buf);
 
 			/* Give other threads a chance to run if the ISR
 			 * is receiving data so fast that rx.fifo never
@@ -403,13 +410,14 @@ static void rng_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static int bt_da1469x_open(void)
+static int bt_da1469x_open(const struct device *dev, bt_hci_recv_t recv)
 {
+	struct hci_data *hci = dev->data;
 	k_tid_t tid;
 
 	tid = k_thread_create(&rx_thread_data, rx_thread_stack,
 			      K_KERNEL_STACK_SIZEOF(rx_thread_stack),
-			      rx_thread, NULL, NULL, NULL,
+			      rx_thread, (void *)dev, NULL, NULL,
 			      K_PRIO_COOP(CONFIG_BT_RX_PRIO),
 			      0, K_NO_WAIT);
 	k_thread_name_set(tid, "bt_rx_thread");
@@ -423,6 +431,8 @@ static int bt_da1469x_open(void)
 			      0, K_NO_WAIT);
 	k_thread_name_set(tid, "bt_rng_thread");
 
+	hci->recv = recv;
+
 	cmac_enable();
 	irq_enable(CMAC2SYS_IRQn);
 
@@ -430,17 +440,23 @@ static int bt_da1469x_open(void)
 }
 
 #ifdef CONFIG_BT_HCI_HOST
-static int bt_da1469x_close(void)
+static int bt_da1469x_close(const struct device *dev)
 {
+	struct hci_data *hci = dev->data;
+
 	irq_disable(CMAC2SYS_IRQn);
 	cmac_disable();
+
+	hci->recv = NULL;
 
 	return 0;
 }
 #endif /* CONFIG_BT_HCI_HOST */
 
-static int bt_da1469x_send(struct net_buf *buf)
+static int bt_da1469x_send(const struct device *dev, struct net_buf *buf)
 {
+	ARG_UNUSED(dev);
+
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
 		LOG_DBG("ACL: buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
@@ -462,19 +478,15 @@ static int bt_da1469x_send(struct net_buf *buf)
 	return 0;
 }
 
-static const struct bt_hci_driver drv = {
-	.name           = "BT DA1469x",
-	.bus            = BT_HCI_DRIVER_BUS_IPM,
+static const struct bt_hci_driver_api drv = {
 	.open           = bt_da1469x_open,
 	.close          = bt_da1469x_close,
 	.send           = bt_da1469x_send,
 };
 
-static int bt_da1469x_init(void)
+static int bt_da1469x_init(const struct device *dev)
 {
 	irq_disable(CMAC2SYS_IRQn);
-
-	bt_hci_driver_register(&drv);
 
 	cmac_disable();
 	cmac_load_image();
@@ -486,4 +498,11 @@ static int bt_da1469x_init(void)
 	return 0;
 }
 
-SYS_INIT(bt_da1469x_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+#define HCI_DEVICE_INIT(inst) \
+	static struct hci_data hci_data_##inst = { \
+	}; \
+	DEVICE_DT_INST_DEFINE(inst, bt_da1469x_init, NULL, &hci_data_##inst, NULL, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+
+/* Only one instance supported right now */
+HCI_DEVICE_INIT(0)

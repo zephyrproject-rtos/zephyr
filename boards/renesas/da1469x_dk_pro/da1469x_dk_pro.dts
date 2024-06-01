@@ -19,6 +19,7 @@
 		zephyr,console = &uart;
 		zephyr,shell-uart = &uart;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &bt_hci_da1469x;
 	};
 
 	lvgl_pointer {
@@ -172,4 +173,8 @@ zephyr_udc0: &usbd {
 	status = "okay";
 	pinctrl-0 = <&spi2_controller>;
 	pinctrl-names = "default";
+};
+
+&bt_hci_da1469x {
+	status = "okay";
 };
