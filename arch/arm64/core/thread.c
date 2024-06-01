@@ -102,7 +102,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * dropping into EL0.
 	 */
 
-	pInitCtx = Z_STACK_PTR_TO_FRAME(struct __esf, stack_ptr);
+	pInitCtx = Z_STACK_PTR_TO_FRAME(struct arch_esf, stack_ptr);
 
 	pInitCtx->x0 = (uint64_t)entry;
 	pInitCtx->x1 = (uint64_t)p1;
