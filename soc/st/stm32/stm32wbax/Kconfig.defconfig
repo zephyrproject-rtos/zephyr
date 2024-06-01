@@ -14,10 +14,6 @@ config STM32_FLASH_PREFETCH
 	default y
 
 config BT_STM32WBA
-	depends on BT
-	default y
-
-config BT_STM32WBA
 	select DYNAMIC_INTERRUPTS
 	select DYNAMIC_DIRECT_INTERRUPTS
 	select ENTROPY_GENERATOR
