@@ -18,6 +18,9 @@ env:
   # so we fetch that through pip.
   CMAKE_VERSION: 3.20.5
   DOXYGEN_VERSION: 1.9.6
+  # Job count is set to 2 less than the vCPU count of 16 because the total available RAM is 32GiB
+  # and each sphinx-build process may use more than 2GiB of RAM.
+  JOB_COUNT: 14
 
 jobs:
   doc-file-check:
@@ -132,7 +135,11 @@ jobs:
         else
           DOC_TARGET="html"
         fi
-        DOC_TAG=${DOC_TAG} SPHINXOPTS_EXTRA="-q -t publish" make -C doc ${DOC_TARGET}
+
+        DOC_TAG=${DOC_TAG} \
+        SPHINXOPTS="-j ${JOB_COUNT} -W --keep-going -T" \
+        SPHINXOPTS_EXTRA="-q -t publish" \
+        make -C doc ${DOC_TARGET}
 
         # API documentation coverage
         python3 -m coverxygen --xml-dir  doc/_build/html/doxygen/xml/ --src-dir include/ --output doc-coverage.info
@@ -245,7 +252,10 @@ jobs:
           DOC_TAG="development"
         fi
 
-        DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -j auto" LATEXMKOPTS="-quiet -halt-on-error" make -C doc pdf
+        DOC_TAG=${DOC_TAG} \
+        SPHINXOPTS="-q -j ${JOB_COUNT}" \
+        LATEXMKOPTS="-quiet -halt-on-error" \
+        make -C doc pdf
 
     - name: upload-build
       if: always()
