@@ -45,10 +45,10 @@
 		};
 	};
 
-	quadspi_memory: memory@90000000 {
+	quadspi_memory: memory-placeholder@90000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x90000000 DT_SIZE_M(256)>;
-		zephyr,memory-region = "QSPI";
+		zephyr,memory-region = "QSPI_PLACEHOLDER";
 		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_EXTMEM) )>;
 	};
 
@@ -714,7 +714,8 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x20000000>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x20000000>,
+				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
 		};

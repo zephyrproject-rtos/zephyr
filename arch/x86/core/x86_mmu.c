@@ -1169,8 +1169,8 @@ static int range_map(void *virt, uintptr_t phys, size_t size,
 {
 	int ret = 0, ret2;
 
-	LOG_DBG("%s: %p -> %p (%zu) flags " PRI_ENTRY " mask "
-		PRI_ENTRY " opt 0x%x", __func__, (void *)phys, virt, size,
+	LOG_DBG("%s: 0x%" PRIxPTR " -> %p (%zu) flags " PRI_ENTRY " mask "
+		PRI_ENTRY " opt 0x%x", __func__, phys, virt, size,
 		entry_flags, mask, options);
 
 #ifdef CONFIG_X86_64
@@ -1781,8 +1781,8 @@ static inline int apply_region(pentry_t *ptables, void *start,
 __pinned_func
 static void set_stack_perms(struct k_thread *thread, pentry_t *ptables)
 {
-	LOG_DBG("update stack for thread %p's ptables at %p: %p (size %zu)",
-		thread, ptables, (void *)thread->stack_info.start,
+	LOG_DBG("update stack for thread %p's ptables at %p: 0x%" PRIxPTR " (size %zu)",
+		thread, ptables, thread->stack_info.start,
 		thread->stack_info.size);
 	apply_region(ptables, (void *)thread->stack_info.start,
 		     thread->stack_info.size,
@@ -1929,8 +1929,8 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	}
 
 	thread->arch.ptables = z_mem_phys_addr(domain->arch.ptables);
-	LOG_DBG("set thread %p page tables to %p", thread,
-		(void *)thread->arch.ptables);
+	LOG_DBG("set thread %p page tables to 0x%" PRIxPTR, thread,
+		thread->arch.ptables);
 
 	/* Check if we're doing a migration from a different memory domain
 	 * and have to remove permissions from its old domain.

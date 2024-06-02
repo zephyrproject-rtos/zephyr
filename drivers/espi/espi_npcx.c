@@ -363,7 +363,7 @@ static uint32_t espi_taf_parse(const struct device *dev)
 	taf_pckt.len = (((uint16_t)taf_head.tag_hlen & 0xF) << 8) | taf_head.llen;
 	taf_pckt.tag = taf_head.tag_hlen >> 4;
 
-	if ((taf_pckt.len == 0) && ((taf_pckt.type & 0xF) == NPCX_ESPI_TAF_REQ_READ)) {
+	if ((taf_pckt.len == 0) && (taf_pckt.type == NPCX_ESPI_TAF_REQ_READ)) {
 		taf_pckt.len = KB(4);
 	}
 
@@ -372,7 +372,7 @@ static uint32_t espi_taf_parse(const struct device *dev)
 	taf_pckt.addr = sys_cpu_to_be32(taf_addr);
 
 	/* Get written data if eSPI TAF write */
-	if ((taf_pckt.type & 0xF) == NPCX_ESPI_TAF_REQ_WRITE) {
+	if (taf_pckt.type == NPCX_ESPI_TAF_REQ_WRITE) {
 		roundsize = DIV_ROUND_UP(taf_pckt.len, sizeof(uint32_t));
 		for (i = 0; i < roundsize; i++) {
 			taf_pckt.src[i] = inst->FLASHRXBUF[2 + i];
@@ -415,27 +415,7 @@ static void espi_bus_flash_rx_isr(const struct device *dev)
 #endif
 	}
 }
-
-static void espi_bus_completion_sent_isr(const struct device *dev)
-{
-	struct espi_reg *const inst = HAL_INSTANCE(dev);
-
-	/* check that ESPISTS.FLNACS is clear. */
-	if (IS_BIT_SET(inst->ESPISTS, NPCX_ESPISTS_FLNACS)) {
-		LOG_ERR("ESPISTS_FLNACS not clear\r\n");
-	}
-
-	/* flash operation is done, Make sure the TAFS transmit buffer is empty */
-	if (IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_TX_AVAIL)) {
-		LOG_ERR("FLASH_TX_AVAIL not clear\r\n");
-	}
-
-	/* In auto mode, release FLASH_NP_FREE here to get next SAF request.*/
-	if (IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_SAF_AUTO_READ)) {
-		inst->FLASHCTL |= BIT(NPCX_FLASHCTL_FLASH_NP_FREE);
-	}
-}
-#endif
+#endif /* CONFIG_ESPI_FLASH_CHANNEL */
 
 const struct espi_bus_isr espi_bus_isr_tbl[] = {
 	NPCX_ESPI_BUS_INT_ITEM(BERR, espi_bus_err_isr),
@@ -447,7 +427,6 @@ const struct espi_bus_isr espi_bus_isr_tbl[] = {
 #endif
 #if defined(CONFIG_ESPI_FLASH_CHANNEL)
 	NPCX_ESPI_BUS_INT_ITEM(FLASHRX, espi_bus_flash_rx_isr),
-	NPCX_ESPI_BUS_INT_ITEM(FLNACS, espi_bus_completion_sent_isr),
 #endif
 };
 
@@ -1415,6 +1394,10 @@ static int espi_npcx_init(const struct device *dev)
 
 	/* Configure host sub-modules which HW blocks belong to core domain */
 	npcx_host_init_subs_core_domain(dev, &data->callbacks);
+
+#if defined(CONFIG_ESPI_FLASH_CHANNEL) && defined(CONFIG_ESPI_SAF)
+	npcx_init_taf(dev, &data->callbacks);
+#endif
 
 	/* eSPI Bus interrupt installation */
 	IRQ_CONNECT(DT_INST_IRQN(0),

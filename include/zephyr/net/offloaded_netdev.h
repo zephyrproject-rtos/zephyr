@@ -58,7 +58,7 @@ struct offloaded_if_api {
 	/** Enable or disable the device (in response to admin state change) */
 	int (*enable)(const struct net_if *iface, bool state);
 
-	/* Types of offloaded net device */
+	/** Types of offloaded net device */
 	enum offloaded_net_if_types (*get_type)(void);
 };
 

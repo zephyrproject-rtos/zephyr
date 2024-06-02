@@ -216,7 +216,7 @@ void bma4xx_emul_set_accel_data(const struct emul *target, q31_t value, int8_t s
 	data->regs[reg + 1] = FIELD_GET(GENMASK(11, 4), reg_val);
 }
 
-static int bma4xx_emul_backend_set_channel(const struct emul *target, enum sensor_channel ch,
+static int bma4xx_emul_backend_set_channel(const struct emul *target, struct sensor_chan_spec ch,
 					   const q31_t *value, int8_t shift)
 {
 
@@ -226,7 +226,7 @@ static int bma4xx_emul_backend_set_channel(const struct emul *target, enum senso
 
 	struct bma4xx_emul_data *data = target->data;
 
-	switch (ch) {
+	switch (ch.chan_type) {
 	case SENSOR_CHAN_ACCEL_X:
 		bma4xx_emul_set_accel_data(target, value[0], shift, BMA4XX_REG_DATA_8);
 		break;
@@ -250,15 +250,15 @@ static int bma4xx_emul_backend_set_channel(const struct emul *target, enum senso
 	return 0;
 }
 
-static int bma4xx_emul_backend_get_sample_range(const struct emul *target, enum sensor_channel ch,
-						q31_t *lower, q31_t *upper, q31_t *epsilon,
-						int8_t *shift)
+static int bma4xx_emul_backend_get_sample_range(const struct emul *target,
+						struct sensor_chan_spec ch, q31_t *lower,
+						q31_t *upper, q31_t *epsilon, int8_t *shift)
 {
 	if (!lower || !upper || !epsilon || !shift) {
 		return -EINVAL;
 	}
 
-	switch (ch) {
+	switch (ch.chan_type) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:

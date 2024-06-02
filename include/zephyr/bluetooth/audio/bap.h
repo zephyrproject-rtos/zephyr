@@ -410,6 +410,9 @@ struct bt_bap_ep_info {
 	 *  otherwise NULL
 	 */
 	struct bt_bap_ep *paired_ep;
+
+	/** Pointer to the preferred QoS settings associated with the endpoint */
+	const struct bt_audio_codec_qos_pref *qos_pref;
 };
 
 /**
@@ -2101,11 +2104,9 @@ struct bt_bap_broadcast_assistant_cb {
 	 * @brief Callback function for when a receive state is removed.
 	 *
 	 * @param conn     The connection to the Broadcast Audio Scan Service server.
-	 * @param err      Error value. 0 on success, GATT error on fail.
 	 * @param src_id   The receive state.
 	 */
-	void (*recv_state_removed)(struct bt_conn *conn, int err,
-				   uint8_t src_id);
+	void (*recv_state_removed)(struct bt_conn *conn, uint8_t src_id);
 
 	/**
 	 * @brief Callback function for bt_bap_broadcast_assistant_scan_start().

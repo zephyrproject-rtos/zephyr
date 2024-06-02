@@ -169,7 +169,7 @@ static void ascii7_to_utf16le(void *descriptor)
 	uint8_t *buf = (uint8_t *)&str_descr->bString;
 
 	LOG_DBG("idx_max %d, ascii_idx_max %d, buf %p",
-		idx_max, ascii_idx_max, buf);
+		idx_max, ascii_idx_max, (void *)buf);
 
 	for (int i = idx_max; i >= 0; i -= 2) {
 		LOG_DBG("char %c : %x, idx %d -> %d",

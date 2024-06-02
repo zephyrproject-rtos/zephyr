@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/kernel.h>
 #include <zephyr/net/lwm2m.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/sys/crc.h>
 
 #include <lwm2m_engine.h>
 #include <lwm2m_util.h>
@@ -31,7 +32,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	"-uX\tRead value as uintX_t\n" \
 	"-sX\tRead value as intX_t\n" \
 	"-f \tRead value as float\n" \
-	"-t \tRead value as time_t\n"
+	"-t \tRead value as time_t\n" \
+	"-crc32\tCalculate CRC32 of the content\n"
 #define LWM2M_HELP_WRITE "write PATH [OPTIONS] VALUE\nWrite into LwM2M resource\n" \
 	"-s \tWrite value as string (default)\n" \
 	"-b \tWrite value as bool\n" \
@@ -180,6 +182,19 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 			goto out;
 		}
 		shell_hexdump(sh, buff, buff_len);
+	} else if (strcmp(dtype, "-crc32") == 0) {
+		const char *buff;
+		uint16_t buff_len = 0;
+
+		ret = lwm2m_get_res_buf(&path, (void **)&buff,
+					NULL, &buff_len, NULL);
+		if (ret != 0) {
+			goto out;
+		}
+
+		uint32_t crc = crc32_ieee(buff, buff_len);
+
+		shell_print(sh, "%u", crc);
 	} else if (strcmp(dtype, "-s") == 0) {
 		const char *buff;
 		uint16_t buff_len = 0;

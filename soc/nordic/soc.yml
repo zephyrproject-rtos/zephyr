@@ -61,6 +61,9 @@ runners:
           - qualifiers:
               - nrf9160
               - nrf9160/ns
+          - qualifiers:
+              - nrf54l15/cpuapp
+              - nrf54l15/cpuflpr
     '--erase':
       - runners:
           - nrfjprog
@@ -79,6 +82,9 @@ runners:
           - qualifiers:
               - nrf9160
               - nrf9160/ns
+          - qualifiers:
+              - nrf54l15/cpuapp
+              - nrf54l15/cpuflpr
     '--reset':
       - runners:
           - nrfjprog
@@ -97,3 +103,6 @@ runners:
           - qualifiers:
               - nrf9160
               - nrf9160/ns
+          - qualifiers:
+              - nrf54l15/cpuapp
+              - nrf54l15/cpuflpr

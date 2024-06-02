@@ -12,14 +12,14 @@
  *
  * @defgroup bt_has Hearing Access Service (HAS)
  *
+ * @since 3.1
+ * @version 0.8.0
+ *
  * @ingroup bluetooth
  * @{
  *
  * The Hearing Access Service is used to identify a hearing aid and optionally
  * to control hearing aid presets.
- *
- * [Experimental] Users should note that the APIs can change as a part of
- * ongoing development.
  */
 
 #include <sys/types.h>

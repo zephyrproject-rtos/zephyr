@@ -1,0 +1,12 @@
+family:
+- name: cat1b
+  series:
+  - name: cyw20829
+    socs:
+    - name: cyw20829a0lkml
+    - name: cyw20829a0kml
+    - name: cyw89829a0kml
+    - name: cyw20829b0lkml
+    - name: cyw20829b0kml
+    - name: cyw89829b0kml
+    - name: cyw89829b01mksbg

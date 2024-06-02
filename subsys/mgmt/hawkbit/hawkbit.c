@@ -1190,7 +1190,7 @@ static bool send_request(enum http_method method, enum hawkbit_http_request type
 void hawkbit_reboot(void)
 {
 	LOG_PANIC();
-	sys_reboot(SYS_REBOOT_WARM);
+	sys_reboot(IS_ENABLED(CONFIG_HAWKBIT_REBOOT_COLD) ? SYS_REBOOT_COLD : SYS_REBOOT_WARM);
 }
 
 static bool check_hawkbit_server(void)

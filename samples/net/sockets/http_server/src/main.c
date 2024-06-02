@@ -31,6 +31,7 @@ struct http_resource_detail_static index_html_gz_resource_detail = {
 			.type = HTTP_RESOURCE_TYPE_STATIC,
 			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
 			.content_encoding = "gzip",
+			.content_type = "text/html",
 		},
 	.static_data = index_html_gz,
 	.static_data_len = sizeof(index_html_gz),

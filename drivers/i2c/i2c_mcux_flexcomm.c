@@ -12,6 +12,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <fsl_i2c.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -32,6 +33,7 @@ struct mcux_flexcomm_config {
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t bitrate;
 	const struct pinctrl_dev_config *pincfg;
+	const struct reset_dt_spec reset;
 };
 
 #ifdef CONFIG_I2C_TARGET
@@ -470,6 +472,16 @@ static int mcux_flexcomm_init(const struct device *dev)
 	i2c_master_config_t master_config;
 	int error;
 
+	if (!device_is_ready(config->reset.dev)) {
+		LOG_ERR("Reset device not ready");
+		return -ENODEV;
+	}
+
+	error = reset_line_toggle(config->reset.dev, config->reset.id);
+	if (error) {
+		return error;
+	}
+
 	error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (error) {
 		return error;
@@ -527,6 +539,7 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 		.irq_config_func = mcux_flexcomm_config_func_##id,	\
 		.bitrate = DT_INST_PROP(id, clock_frequency),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\
+		.reset = RESET_DT_SPEC_INST_GET(id),			\
 	};								\
 	static struct mcux_flexcomm_data mcux_flexcomm_data_##id;	\
 	I2C_DEVICE_DT_INST_DEFINE(id,					\

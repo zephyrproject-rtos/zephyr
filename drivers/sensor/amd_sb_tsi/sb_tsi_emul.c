@@ -99,7 +99,7 @@ static int sb_tsi_emul_init(const struct emul *target, const struct device *pare
 	return 0;
 }
 
-static int sb_tsi_emul_set_channel(const struct emul *target, enum sensor_channel chan,
+static int sb_tsi_emul_set_channel(const struct emul *target, struct sensor_chan_spec ch,
 				   const q31_t *value, int8_t shift)
 {
 	struct sb_tsi_emul_data *data = target->data;
@@ -107,7 +107,7 @@ static int sb_tsi_emul_set_channel(const struct emul *target, enum sensor_channe
 	int32_t millicelsius;
 	int32_t reg_value;
 
-	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
+	if (ch.chan_type != SENSOR_CHAN_AMBIENT_TEMP && ch.chan_idx != 0) {
 		return -ENOTSUP;
 	}
 
@@ -121,10 +121,10 @@ static int sb_tsi_emul_set_channel(const struct emul *target, enum sensor_channe
 	return 0;
 }
 
-static int sb_tsi_emul_get_sample_range(const struct emul *target, enum sensor_channel chan,
+static int sb_tsi_emul_get_sample_range(const struct emul *target, struct sensor_chan_spec ch,
 					q31_t *lower, q31_t *upper, q31_t *epsilon, int8_t *shift)
 {
-	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
+	if (ch.chan_type != SENSOR_CHAN_AMBIENT_TEMP || ch.chan_idx != 0) {
 		return -ENOTSUP;
 	}
 

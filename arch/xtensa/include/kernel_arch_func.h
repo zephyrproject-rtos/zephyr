@@ -14,7 +14,7 @@
 #include <kernel_internal.h>
 #include <string.h>
 #include <zephyr/cache.h>
-#include <zsr.h>
+#include <zephyr/zsr.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -56,6 +56,8 @@ struct eth_bridge {
 	STRUCT_SECTION_ITERABLE(eth_bridge, name) = \
 		ETH_BRIDGE_INITIALIZER(name)
 
+/** @cond INTERNAL_HIDDEN */
+
 struct eth_bridge_iface_context {
 	sys_snode_t node;
 	struct eth_bridge *instance;
@@ -66,6 +68,8 @@ struct eth_bridge_listener {
 	sys_snode_t node;
 	struct k_fifo pkt_queue;
 };
+
+/** @endcond */
 
 /**
  * @brief Add an Ethernet network interface to a bridge

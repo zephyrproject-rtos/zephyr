@@ -345,6 +345,7 @@ config OVERRIDE_FRAME_POINTER_DEFAULT
 
 config OMIT_FRAME_POINTER
 	bool "Omit frame pointer"
+	depends on !FRAME_POINTER
 	depends on OVERRIDE_FRAME_POINTER_DEFAULT
 	help
 	  Choose Y for best performance. On some architectures (including x86)
@@ -368,6 +369,16 @@ config DEBUG_INFO
 	  used by debuggers in debugging the system, or enable additional
 	  debugging information to be reported at runtime.
 
+config SYMTAB
+	bool "Generate symbol table"
+	help
+	  Generate the symbol table with the offset and name of every
+	  function.
+	  The symbol table can be accessed by including the
+	  <zephyr/debug/symtab.h> header.
+
+	  Choose N if you have no idea what is this.
+
 config EXCEPTION_STACK_TRACE
 	bool "Attempt to print stack traces upon exceptions"
 	default y
@@ -378,6 +389,23 @@ config EXCEPTION_STACK_TRACE
 	  If the architecture fatal handling code supports it, attempt to
 	  print a stack trace of function memory addresses when an
 	  exception is reported.
+
+config EXCEPTION_STACK_TRACE_MAX_FRAMES
+	int "Configures the depth of stack trace"
+	default 8
+	depends on EXCEPTION_STACK_TRACE
+	help
+	  In the event of a stack trace, this place a limit on the depths
+	  of the stack to examine.
+
+config EXCEPTION_STACK_TRACE_SYMTAB
+	bool "Print function names in the stack trace"
+	select SYMTAB
+	depends on EXCEPTION_STACK_TRACE
+	help
+	  Enable this if you want to print the function names in the
+	  stack trace output. This will generate the symtab and
+	  can consume a lot of ROM if there's a lot of functions.
 
 #
 # Miscellaneous debugging options
@@ -444,3 +472,9 @@ config SEGGER_DEBUGMON
 	  This option will enable Segger's implementation of
 	  the debug monitor interrupt, overriding the
 	  default z_arm_debug_monitor symbol.
+
+config MIPI_STP_DECODER
+	bool "MIPI STPv2 decoder"
+	depends on !BIG_ENDIAN
+	help
+	  Module decodes a stream of STPv2 data.

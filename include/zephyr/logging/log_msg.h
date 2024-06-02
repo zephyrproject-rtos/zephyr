@@ -857,7 +857,7 @@ static inline uint8_t *log_msg_get_package(struct log_msg *msg, size_t *len)
  * @}
  */
 
-#include <syscalls/log_msg.h>
+#include <zephyr/syscalls/log_msg.h>
 
 #ifdef __cplusplus
 }

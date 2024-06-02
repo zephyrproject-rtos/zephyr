@@ -23,6 +23,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/devicetree/interrupt_controller.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
@@ -218,3 +219,10 @@ static int rv32m1_intmux_init(const struct device *dev)
 DEVICE_DT_INST_DEFINE(0, &rv32m1_intmux_init, NULL, NULL,
 		    &rv32m1_intmux_cfg, PRE_KERNEL_1,
 		    CONFIG_RV32M1_INTMUX_INIT_PRIORITY, &rv32m1_intmux_apis);
+
+#define INTC_CHILD_IRQ_ENTRY_DEF(node_id)                                                          \
+	IRQ_PARENT_ENTRY_DEFINE(CONCAT(DT_DRV_COMPAT, _child_, DT_NODE_CHILD_IDX(node_id)), NULL,  \
+				DT_IRQN(node_id), INTC_CHILD_ISR_TBL_OFFSET(node_id),              \
+				DT_INTC_GET_AGGREGATOR_LEVEL(node_id));
+
+DT_INST_FOREACH_CHILD_STATUS_OKAY(0, INTC_CHILD_IRQ_ENTRY_DEF);

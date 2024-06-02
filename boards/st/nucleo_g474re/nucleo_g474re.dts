@@ -223,8 +223,6 @@ stm32_lp_tick_source: &lptim1 {
 		 <&rcc STM32_SRC_HSE FDCAN_SEL(0)>;
 	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	status = "okay";
 };
 

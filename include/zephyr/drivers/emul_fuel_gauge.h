@@ -93,7 +93,7 @@ static inline int z_impl_emul_fuel_gauge_is_battery_cutoff(const struct emul *ta
 }
 #endif
 
-#include <syscalls/emul_fuel_gauge.h>
+#include <zephyr/syscalls/emul_fuel_gauge.h>
 
 /**
  * @}

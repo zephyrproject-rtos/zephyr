@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/bindesc.h>
-#include <version.h>
+#include <zephyr/version.h>
 
 #if IS_ENABLED(CONFIG_BINDESC_KERNEL_VERSION_STRING)
 BINDESC_STR_DEFINE(kernel_version_string, BINDESC_ID_KERNEL_VERSION_STRING,
@@ -34,7 +34,7 @@ BINDESC_UINT_DEFINE(kernel_version_number, BINDESC_ID_KERNEL_VERSION_NUMBER,
 #endif /* IS_ENABLED(CONFIG_BINDESC_KERNEL_VERSION_NUMBER) */
 
 #if IS_ENABLED(HAS_APP_VERSION)
-#include <app_version.h>
+#include <zephyr/app_version.h>
 
 #if IS_ENABLED(CONFIG_BINDESC_APP_VERSION_STRING)
 BINDESC_STR_DEFINE(app_version_string, BINDESC_ID_APP_VERSION_STRING,

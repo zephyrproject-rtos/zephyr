@@ -61,37 +61,50 @@ static void lvgl_pointer_process_event(const struct device *dev, struct input_ev
 		return;
 	}
 
-	point->x = data->point_x;
-	point->y = data->point_y;
+	lv_point_t tmp_point = {
+		.x = data->point_x,
+		.y = data->point_y,
+	};
 
 	if (cfg->invert_x) {
 		if (cap->current_orientation == DISPLAY_ORIENTATION_NORMAL ||
 		    cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-			point->x = cap->x_resolution - data->point_x;
+			tmp_point.x = cap->x_resolution - tmp_point.x;
 		} else {
-			point->x = cap->y_resolution - data->point_x;
+			tmp_point.x = cap->y_resolution - tmp_point.x;
 		}
 	}
 
 	if (cfg->invert_y) {
 		if (cap->current_orientation == DISPLAY_ORIENTATION_NORMAL ||
 		    cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-			point->y = cap->y_resolution - data->point_y;
+			tmp_point.y = cap->y_resolution - tmp_point.y;
 		} else {
-			point->y = cap->x_resolution - data->point_y;
+			tmp_point.y = cap->x_resolution - tmp_point.y;
 		}
 	}
 
 	/* rotate touch point to match display rotation */
-	if (cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_90) {
-		point->x = data->point_y;
-		point->y = cap->y_resolution - data->point_x;
-	} else if (cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-		point->x = cap->x_resolution - data->point_x;
-		point->y = cap->y_resolution - data->point_y;
-	} else if (cap->current_orientation == DISPLAY_ORIENTATION_ROTATED_270) {
-		point->x = cap->x_resolution - data->point_y;
-		point->y = data->point_x;
+	switch (cap->current_orientation) {
+	case DISPLAY_ORIENTATION_NORMAL:
+		point->x = tmp_point.x;
+		point->y = tmp_point.y;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		point->x = tmp_point.y;
+		point->y = cap->y_resolution - tmp_point.x;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_180:
+		point->x = cap->x_resolution - tmp_point.x;
+		point->y = cap->y_resolution - tmp_point.y;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_270:
+		point->x = cap->x_resolution - tmp_point.y;
+		point->y = tmp_point.x;
+		break;
+	default:
+		LOG_ERR("Invalid display orientation");
+		break;
 	}
 
 	/* filter readings within display */

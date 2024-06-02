@@ -140,7 +140,7 @@ struct stack_frame {
 #endif
 };
 
-#define MAX_STACK_FRAMES 8
+#define MAX_STACK_FRAMES CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES
 
 __pinned_func
 static void unwind_stack(uintptr_t base_ptr, uint16_t cs)

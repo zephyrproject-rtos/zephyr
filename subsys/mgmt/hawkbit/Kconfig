@@ -145,6 +145,22 @@ config HAWKBIT_STATIC_CERT_TAG
 
 endif
 
+choice HAWKBIT_REBOOT_MODE
+	prompt "Reboot mode after update"
+	default HAWKBIT_REBOOT_WARM
+
+config HAWKBIT_REBOOT_WARM
+	bool "Warm reboot after update"
+	help
+	  Do a warm reboot after the update.
+
+config HAWKBIT_REBOOT_COLD
+	bool "Cold reboot after update"
+	help
+	  Do a cold reboot after the update.
+
+endchoice
+
 module = HAWKBIT
 module-str = Log Level for hawkbit
 module-help = Enables logging for hawkBit code.

@@ -21,9 +21,7 @@ LOG_MODULE_REGISTER(main);
 
 #define STRIP_NODE		DT_ALIAS(led_strip)
 
-#if CONFIG_SAMPLE_LED_STRIP_LENGTH != 0
-#define STRIP_NUM_PIXELS	CONFIG_SAMPLE_LED_STRIP_LENGTH
-#elif DT_NODE_HAS_PROP(DT_ALIAS(led_strip), chain_length)
+#if DT_NODE_HAS_PROP(DT_ALIAS(led_strip), chain_length)
 #define STRIP_NUM_PIXELS	DT_PROP(DT_ALIAS(led_strip), chain_length)
 #else
 #error Unable to determine length of LED strip

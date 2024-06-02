@@ -11,6 +11,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device_runtime.h>
 #include <stm32_ll_adc.h>
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 #include <stm32_ll_icache.h>
@@ -45,6 +46,7 @@ static int stm32_vref_sample_fetch(const struct device *dev, enum sensor_channel
 	}
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
+	pm_device_runtime_get(data->adc);
 
 	rc = adc_channel_setup(data->adc, &data->adc_cfg);
 	if (rc) {
@@ -71,6 +73,7 @@ static int stm32_vref_sample_fetch(const struct device *dev, enum sensor_channel
 
 
 unlock:
+	pm_device_runtime_put(data->adc);
 	k_mutex_unlock(&data->mutex);
 
 	return rc;
@@ -81,7 +84,7 @@ static int stm32_vref_channel_get(const struct device *dev, enum sensor_channel 
 {
 	struct stm32_vref_data *data = dev->data;
 	const struct stm32_vref_config *cfg = dev->config;
-	float vref;
+	int32_t vref;
 
 	if (chan != SENSOR_CHAN_VOLTAGE) {
 		return -ENOTSUP;
@@ -112,14 +115,12 @@ static int stm32_vref_channel_get(const struct device *dev, enum sensor_channel 
 #else
 	vref = cfg->cal_mv * (*cfg->cal_addr) / data->raw;
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
-	/* millivolt to volt */
-	vref /= 1000;
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 	LL_ICACHE_Enable();
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
-	return sensor_value_from_double(val, vref);
+	return sensor_value_from_milli(val, vref);
 }
 
 static const struct sensor_driver_api stm32_vref_driver_api = {

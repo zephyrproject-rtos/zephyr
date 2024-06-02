@@ -61,9 +61,10 @@ static struct lwm2m_engine_res res[MAX_INSTANCE_COUNT][GATEWAY_MAX_ID];
 static struct lwm2m_engine_res_inst res_inst[MAX_INSTANCE_COUNT][RESOURCE_INSTANCE_COUNT];
 lwm2m_engine_gateway_msg_cb gateway_msg_cb[MAX_INSTANCE_COUNT];
 
-static int prefix_validation_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_id,
-				uint8_t *data, uint16_t data_len, bool last_block,
-				size_t total_size)
+static int prefix_validation_cb(uint16_t obj_inst_id, uint16_t res_id,
+				uint16_t res_inst_id, uint8_t *data,
+				uint16_t data_len, bool last_block,
+				size_t total_size, size_t offset)
 {
 	int i;
 	int length;

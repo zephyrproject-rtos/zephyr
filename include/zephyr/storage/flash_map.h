@@ -302,6 +302,15 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 #define FIXED_PARTITION_OFFSET(label) DT_REG_ADDR(DT_NODELABEL(label))
 
 /**
+ * Get fixed-partition offset from DTS node
+ *
+ * @param node DTS node of a partition
+ *
+ * @return fixed-partition offset, as defined for the partition in DTS.
+ */
+#define FIXED_PARTITION_NODE_OFFSET(node) DT_REG_ADDR(node)
+
+/**
  * Get fixed-partition size for DTS node label
  *
  * @param label DTS node label
@@ -309,6 +318,15 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  * @return fixed-partition offset, as defined for the partition in DTS.
  */
 #define FIXED_PARTITION_SIZE(label) DT_REG_SIZE(DT_NODELABEL(label))
+
+/**
+ * Get fixed-partition size for DTS node
+ *
+ * @param node DTS node of a partition
+ *
+ * @return fixed-partition size, as defined for the partition in DTS.
+ */
+#define FIXED_PARTITION_NODE_SIZE(node) DT_REG_SIZE(node)
 
 /**
  * Get device pointer for device the area/partition resides on
@@ -329,6 +347,16 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  */
 #define FIXED_PARTITION_DEVICE(label) \
 	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(label)))
+
+/**
+ * Get device pointer for device the area/partition resides on
+ *
+ * @param node DTS node of a partition
+ *
+ * @return Pointer to a device.
+ */
+#define FIXED_PARTITION_NODE_DEVICE(node) \
+	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(node))
 
 #ifdef __cplusplus
 }

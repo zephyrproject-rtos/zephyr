@@ -19,6 +19,8 @@ if APIC_TIMER
 
 config APIC_TIMER_IRQ
 	default 24
+endif
+if APIC_TIMER_TSC
 config APIC_TIMER_TSC_M
 	default 3
 config APIC_TIMER_TSC_N

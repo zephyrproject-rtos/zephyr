@@ -190,6 +190,9 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 			return ret;
 		}
 		k_sem_take(&dev_data->pxp_done, K_FOREVER);
+	} else {
+		LOG_WRN("PXP rotation will not work correctly unless a full sized "
+			"framebuffer is provided");
 	}
 #endif /* CONFIG_MCUX_ELCDIF_PXP */
 
@@ -200,8 +203,10 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 	/* Update index of active framebuffer */
 	dev_data->next_idx = (dev_data->next_idx + 1) % CONFIG_MCUX_ELCDIF_FB_NUM;
 #endif
-	/* Enable frame buffer completion interrupt */
-	ELCDIF_EnableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
+
+	if (IS_ENABLED(CONFIG_MCUX_ELCDIF_LP)) {
+		ELCDIF_EnableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
+	}
 	/* Wait for frame send to complete */
 	k_sem_take(&dev_data->sem, K_FOREVER);
 	return ret;
@@ -294,10 +299,11 @@ static void mcux_elcdif_isr(const struct device *dev)
 	status = ELCDIF_GetInterruptStatus(config->base);
 	ELCDIF_ClearInterruptStatus(config->base, status);
 	if (config->base->CUR_BUF == ((uint32_t)dev_data->active_fb)) {
-		/* Disable frame completion interrupt, post to
-		 * sem to notify that frame send is complete.
-		 */
-		ELCDIF_DisableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
+		if (IS_ENABLED(CONFIG_MCUX_ELCDIF_LP)) {
+			/* Disable frame completion interrupt if Low power mode is activated*/
+			ELCDIF_DisableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
+		}
+		/* Post to sem to notify that frame display is complete.*/
 		k_sem_give(&dev_data->sem);
 	}
 }
@@ -335,6 +341,9 @@ static int mcux_elcdif_init(const struct device *dev)
 	dev_data->active_fb = dev_data->fb[0];
 
 	ELCDIF_RgbModeInit(config->base, &dev_data->rgb_mode);
+	if (!IS_ENABLED(CONFIG_MCUX_ELCDIF_LP)) {
+		ELCDIF_EnableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
+	}
 	ELCDIF_RgbModeStart(config->base);
 
 	return 0;

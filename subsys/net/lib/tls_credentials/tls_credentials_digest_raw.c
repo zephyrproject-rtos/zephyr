@@ -19,6 +19,7 @@
 #if defined(CONFIG_PSA_WANT_ALG_SHA_256) && defined(CONFIG_BASE64)
 
 #include <psa/crypto.h>
+#include <zephyr/sys/base64.h>
 
 int credential_digest_raw(struct tls_credential *credential, void *dest, size_t *len)
 {

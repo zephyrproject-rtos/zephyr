@@ -88,7 +88,7 @@ int broadcaster_multiple(void)
 		/* Use advertising set instance index as SID */
 		adv_param.sid = index;
 
-		/* Create a non-connectable non-scannable advertising set */
+		/* Create a non-connectable advertising set */
 		err = bt_le_ext_adv_create(&adv_param, NULL, &adv[index]);
 		if (err) {
 			printk("Failed to create advertising set %d (err %d)\n",

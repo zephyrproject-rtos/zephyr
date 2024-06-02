@@ -3,7 +3,10 @@ common:
   # FIXME: This test fails very frequently on mps2/an385 due to the system
   #        timer stability issues, so keep it disabled until the root cause
   #        is fixed (GitHub issue zephyrproject-rtos/zephyr#48608).
-  platform_exclude: mps2/an385
+  platform_exclude:
+    - mps2/an385
+    - native_posix/native/64
+    - native_posix
 tests:
   net.socket.poll:
     min_ram: 21

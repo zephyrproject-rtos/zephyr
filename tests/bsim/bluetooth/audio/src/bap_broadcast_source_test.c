@@ -221,7 +221,7 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 	uint32_t broadcast_id;
 	int err;
 
-	/* Create a non-connectable non-scannable advertising set */
+	/* Create a non-connectable advertising set */
 	err = bt_le_ext_adv_create(&adv_param, NULL, adv);
 	if (err != 0) {
 		printk("Unable to create extended advertising set: %d\n", err);
@@ -518,7 +518,7 @@ static void test_main(void)
 static const struct bst_test_instance test_broadcast_source[] = {
 	{
 		.test_id = "broadcast_source",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
 	},

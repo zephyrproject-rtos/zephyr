@@ -249,6 +249,10 @@ zephyr_udc0: &usb1 {
 	status = "okay";
 };
 
+&pxp {
+	status = "okay";
+};
+
 /* GPT and Systick are enabled. If power management is enabled, the GPT
  * timer will be used instead of systick, as allows the core clock to
  * be gated.

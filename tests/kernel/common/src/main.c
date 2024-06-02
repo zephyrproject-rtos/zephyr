@@ -8,7 +8,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/kernel_version.h>
 #include <zephyr/sys/speculation.h>
-#include "version.h"
+#include <zephyr/version.h>
 
 /**
  * @defgroup kernel_common_tests Common Tests

@@ -133,7 +133,7 @@ static int akm09918c_emul_init(const struct emul *target, const struct device *p
 	return 0;
 }
 
-static int akm09918c_emul_backend_set_channel(const struct emul *target, enum sensor_channel ch,
+static int akm09918c_emul_backend_set_channel(const struct emul *target, struct sensor_chan_spec ch,
 					      const q31_t *value, int8_t shift)
 {
 	if (!target || !target->data) {
@@ -143,7 +143,7 @@ static int akm09918c_emul_backend_set_channel(const struct emul *target, enum se
 	struct akm09918c_emul_data *data = target->data;
 	uint8_t reg;
 
-	switch (ch) {
+	switch (ch.chan_type) {
 	case SENSOR_CHAN_MAGN_X:
 		reg = AKM09918C_REG_HXL;
 		break;
@@ -178,7 +178,7 @@ static int akm09918c_emul_backend_set_channel(const struct emul *target, enum se
 }
 
 static int akm09918c_emul_backend_get_sample_range(const struct emul *target,
-						   enum sensor_channel ch, q31_t *lower,
+						   struct sensor_chan_spec ch, q31_t *lower,
 						   q31_t *upper, q31_t *epsilon, int8_t *shift)
 {
 	ARG_UNUSED(target);
@@ -187,7 +187,7 @@ static int akm09918c_emul_backend_get_sample_range(const struct emul *target,
 		return -EINVAL;
 	}
 
-	switch (ch) {
+	switch (ch.chan_type) {
 	case SENSOR_CHAN_MAGN_X:
 	case SENSOR_CHAN_MAGN_Y:
 	case SENSOR_CHAN_MAGN_Z:

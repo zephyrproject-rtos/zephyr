@@ -5,22 +5,24 @@
 
 #include "akm09918c.h"
 
-static int akm09918c_decoder_get_frame_count(const uint8_t *buffer, enum sensor_channel channel,
-					     size_t channel_idx, uint16_t *frame_count)
+#define DT_DRV_COMPAT asahi_kasei_akm09918c
+
+static int akm09918c_decoder_get_frame_count(const uint8_t *buffer,
+					     struct sensor_chan_spec chan_spec,
+					     uint16_t *frame_count)
 {
 	ARG_UNUSED(buffer);
-	ARG_UNUSED(channel);
-	ARG_UNUSED(channel_idx);
+	ARG_UNUSED(chan_spec);
 
 	/* This sensor lacks a FIFO; there will always only be one frame at a time. */
 	*frame_count = 1;
 	return 0;
 }
 
-static int akm09918c_decoder_get_size_info(enum sensor_channel channel, size_t *base_size,
+static int akm09918c_decoder_get_size_info(struct sensor_chan_spec chan_spec, size_t *base_size,
 					   size_t *frame_size)
 {
-	switch (channel) {
+	switch (chan_spec.chan_type) {
 	case SENSOR_CHAN_MAGN_X:
 	case SENSOR_CHAN_MAGN_Y:
 	case SENSOR_CHAN_MAGN_Z:
@@ -48,9 +50,8 @@ static int akm09918c_convert_raw_to_q31(int16_t reading, q31_t *out)
 	return 0;
 }
 
-static int akm09918c_decoder_decode(const uint8_t *buffer, enum sensor_channel channel,
-				    size_t channel_idx, uint32_t *fit,
-				    uint16_t max_count, void *data_out)
+static int akm09918c_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+				    uint32_t *fit, uint16_t max_count, void *data_out)
 {
 	const struct akm09918c_encoded_data *edata = (const struct akm09918c_encoded_data *)buffer;
 
@@ -58,7 +59,7 @@ static int akm09918c_decoder_decode(const uint8_t *buffer, enum sensor_channel c
 		return 0;
 	}
 
-	switch (channel) {
+	switch (chan_spec.chan_type) {
 	case SENSOR_CHAN_MAGN_X:
 	case SENSOR_CHAN_MAGN_Y:
 	case SENSOR_CHAN_MAGN_Z:

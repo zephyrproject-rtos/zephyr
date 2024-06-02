@@ -44,6 +44,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_mod_raw.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_mod.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/block_cipher.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/camellia.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ccm.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/chacha20.c
@@ -88,6 +89,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/sha1.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/sha256.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/sha512.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/sha3.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/threading.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/timing.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/version_features.c
@@ -139,6 +141,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pkparse.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pkwrite.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pk.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/pk_ecc.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pk_wrap.c
     )
 

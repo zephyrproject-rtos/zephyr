@@ -57,14 +57,14 @@ struct bme680_config {
 
 #define BME680_CHIP_ID                  0x61
 
-#define BME680_LEN_FIELD                15
 #define BME680_LEN_COEFF_ALL            42
 #define BME680_LEN_COEFF1               23
 #define BME680_LEN_COEFF2               14
 #define BME680_LEN_COEFF3               5
 
 #define BME680_REG_COEFF3               0x00
-#define BME680_REG_FIELD0               0x1d
+#define BME680_REG_MEAS_STATUS          0x1D
+#define BME680_REG_FIELD0               0x1F
 #define BME680_REG_IDAC_HEAT0           0x50
 #define BME680_REG_RES_HEAT0            0x5A
 #define BME680_REG_GAS_WAIT0            0x64
@@ -72,9 +72,9 @@ struct bme680_config {
 #define BME680_REG_CTRL_GAS_0           0x70
 #define BME680_REG_CTRL_GAS_1           0x71
 #define BME680_REG_CTRL_HUM             0x72
+#define BME680_REG_STATUS               0x73
 #define BME680_REG_CTRL_MEAS            0x74
 #define BME680_REG_CONFIG               0x75
-#define BME680_REG_STATUS               0x73
 #define BME680_REG_UNIQUE_ID            0x83
 #define BME680_REG_COEFF1               0x8a
 #define BME680_REG_COEFF2               0xe1
@@ -204,7 +204,6 @@ struct bme680_data {
 	uint32_t calc_gas_resistance;
 
 	/* Additional information */
-	uint8_t new_data;
 	uint8_t heatr_stab;
 
 	/* Carryover between temperature and pressure/humidity compensation. */

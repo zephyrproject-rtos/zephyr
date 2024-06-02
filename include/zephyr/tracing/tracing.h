@@ -1691,6 +1691,25 @@
 #define sys_port_trace_k_heap_free(h)
 
 /**
+ * @brief Trace Heap realloc enter
+ * @param h Heap object
+ * @param ptr Pointer to reallocate
+ * @param bytes Bytes to reallocate
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_heap_realloc_enter(h, ptr, bytes, timeout)
+
+/**
+ * @brief Trace Heap realloc exit
+ * @param h Heap object
+ * @param ptr Pointer to reallocate
+ * @param bytes Bytes to reallocate
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_heap_realloc_exit(h, ptr, bytes, timeout, ret)
+
+/**
  * @brief Trace System Heap aligned alloc enter
  * @param heap Heap object
  */
@@ -1742,6 +1761,19 @@
  * @param ret Return value
  */
 #define sys_port_trace_k_heap_sys_k_calloc_exit(heap, ret)
+
+/**
+ * @brief Trace System heap realloc enter
+ * @param heap
+ */
+#define sys_port_trace_k_heap_sys_k_realloc_enter(heap, ptr)
+
+/**
+ * @brief Trace System heap realloc exit
+ * @param heap Heap object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_heap_sys_k_realloc_exit(heap, ptr, ret)
 
 /** @} */ /* end of subsys_tracing_apis_heap */
 

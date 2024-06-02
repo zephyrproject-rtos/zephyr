@@ -146,9 +146,6 @@ static int renesas_da1469x_init(void)
 				CRG_TOP_PMU_CTRL_REG_COM_SLEEP_Msk     |
 				CRG_TOP_PMU_CTRL_REG_RADIO_SLEEP_Msk);
 
-	/* PDC should take care of PD_SYS */
-	CRG_TOP->PMU_CTRL_REG &= ~CRG_TOP_PMU_CTRL_REG_SYS_SLEEP_Msk;
-
 #if defined(CONFIG_PM)
 	/* Enable cache retainability */
 	CRG_TOP->PMU_CTRL_REG |= CRG_TOP_PMU_CTRL_REG_RETAIN_CACHE_Msk;
@@ -167,14 +164,18 @@ static int renesas_da1469x_init(void)
 				CRG_TOP_BOD_CTRL_REG_BOD_V30_EN_Msk    |
 				CRG_TOP_BOD_CTRL_REG_BOD_VBAT_EN_Msk);
 
-	da1469x_pdc_reset();
-
 	da1469x_otp_init();
 	da1469x_trimv_init_from_otp();
 
 	da1469x_pd_init();
+
+	/*
+	 * Take PD_SYS control.
+	 */
 	da1469x_pd_acquire(MCU_PD_DOMAIN_SYS);
 	da1469x_pd_acquire(MCU_PD_DOMAIN_TIM);
+
+	da1469x_pdc_reset();
 
 	return 0;
 }

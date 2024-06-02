@@ -95,7 +95,7 @@ static timing_t z_vrfy_timing_timestamp_get(void)
 	return z_impl_timing_timestamp_get();
 }
 
-#include <syscalls/timing_timestamp_get_mrsh.c>
+#include <zephyr/syscalls/timing_timestamp_get_mrsh.c>
 #endif
 
 /*

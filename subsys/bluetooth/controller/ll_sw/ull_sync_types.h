@@ -115,6 +115,7 @@ struct ll_sync_iso_set {
 	uint16_t timeout;
 	uint16_t volatile timeout_reload; /* Non-zero when sync established */
 	uint16_t timeout_expire; /* timeout countdown */
+	uint8_t big_handle;
 
 	/* Encryption */
 	uint8_t gltk[16];

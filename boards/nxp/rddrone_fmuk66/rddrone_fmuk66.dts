@@ -281,7 +281,6 @@ zephyr_udc0: &usbotg {
 	status = "okay";
 	pinctrl-0 = <&flexcan0_default>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 	phys = <&transceiver0>;
 };
 
@@ -289,7 +288,6 @@ zephyr_udc0: &usbotg {
 	status = "okay";
 	pinctrl-0 = <&flexcan1_default>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 	phys = <&transceiver1>;
 };
 

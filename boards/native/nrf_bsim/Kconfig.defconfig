@@ -30,10 +30,12 @@ config NATIVE_SIMULATOR_PRIMARY_MCU_INDEX
 	default 0
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000 if NRF_GRTC_TIMER
 	default 32768
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 128 if !TICKLESS_KERNEL
+	default 10000 if NRF_GRTC_TIMER
 	default 32768
 
 config BT_CTLR

@@ -41,9 +41,20 @@ config NRF_GRTC_TIMER_CLOCK_MANAGEMENT
 	  the GRTC. Usually this is only needed by the processor that is starting
 	  the SYSCOUNTER, but can be shared by multiple processors in the system.
 
-config NRF_GRTC_SLEEP_MINIMUM_LATENCY
+config NRF_GRTC_SYSCOUNTER_SLEEP_MINIMUM_LATENCY
 	int
 	default 1000
 	depends on NRF_GRTC_SLEEP_ALLOWED
+	help
+	  The value (in us) ensures that the wakeup event will not fire
+	  too early. In other words, applying SYSCOUNTER sleep state for less than
+	  NRF_GRTC_SYSCOUNTER_SLEEP_MINIMUM_LATENCY period makes no sense.
+
+config NRF_GRTC_TIMER_AUTO_KEEP_ALIVE
+	bool
+	default y if NRF_GRTC_START_SYSCOUNTER
+	help
+	  This feature prevents the SYSCOUNTER from sleeping when any core is in
+	  active state.
 
 endif # NRF_GRTC_TIMER

@@ -159,7 +159,7 @@ config NET_IPV6_DAD
 config NET_IPV6_RA_RDNSS
 	bool "Support RA RDNSS option"
 	depends on NET_IPV6_ND
-	select DNS_RESOLVER
+	depends on DNS_RESOLVER
 	default y
 	help
 	  Support Router Advertisement Recursive DNS Server option.
@@ -168,6 +168,7 @@ config NET_IPV6_RA_RDNSS
 config NET_IPV6_PE
 	bool "Privacy extension (RFC 8981) support [EXPERIMENTAL]"
 	select MBEDTLS
+	select MBEDTLS_MD
 	select EXPERIMENTAL
 	select NET_MGMT
 	select NET_MGMT_EVENT

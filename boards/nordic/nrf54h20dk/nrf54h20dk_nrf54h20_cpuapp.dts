@@ -27,6 +27,7 @@
 		zephyr,ieee802154 = &cpuapp_ieee802154;
 		zephyr,bt-hci-ipc = &ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
+		zephyr,canbus = &can120;
 	};
 
 	aliases {
@@ -38,6 +39,8 @@
 		sw1 = &button1;
 		sw2 = &button2;
 		sw3 = &button3;
+		ipc-to-cpusys = &cpuapp_cpusys_ipc;
+		watchdog0 = &wdt010;
 	};
 
 	buttons {
@@ -117,6 +120,10 @@
 	status = "okay";
 };
 
+&cpusys_vevif {
+	status = "okay";
+};
+
 &cpusec_cpuapp_ipc {
 	mbox-names = "tx", "rx";
 	tx-region = <&cpuapp_cpusec_ipc_shm>;
@@ -133,6 +140,7 @@ ipc0: &cpuapp_cpurad_ipc {
 };
 
 &cpuapp_cpusys_ipc {
+	status = "okay";
 	mbox-names = "rx", "tx";
 	tx-region = <&cpuapp_cpusys_ipc_shm>;
 	rx-region = <&cpusys_cpuapp_ipc_shm>;
@@ -229,4 +237,18 @@ ipc0: &cpuapp_cpurad_ipc {
 
 &cpuapp_ieee802154 {
 	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
+&canpll {
+	status = "okay";
+};
+
+&can120 {
+	status = "okay";
+	pinctrl-0 = <&can120_default>;
+	pinctrl-names = "default";
 };

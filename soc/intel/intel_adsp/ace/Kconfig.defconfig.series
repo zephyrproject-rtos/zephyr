@@ -74,6 +74,13 @@ config XTENSA_NUM_SPIN_RELAX_NOPS
 
 endif # XTENSA_MORE_SPIN_RELAX_NOPS
 
+if KERNEL_VM_SUPPORT
+
+config KERNEL_VM_SIZE
+	default 0xfe0000
+
+endif
+
 rsource "Kconfig.defconfig.ace*"
 
 endif # SOC_SERIES_INTEL_ADSP_ACE

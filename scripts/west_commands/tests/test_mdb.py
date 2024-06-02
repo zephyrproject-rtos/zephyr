@@ -55,7 +55,7 @@ TEST_NSIM_CORE2 = [TEST_DRIVER_CMD, '-pset=2', '-psetname=core1',
               '-prop=download=2', '-nooptions', '-nogoifmain',
               '-toggle=include_local_symbols=1',
               '-nsim', TEST_BOARD_NSIM_ARGS, RC_KERNEL_ELF]
-TEST_NSIM_CORES_LAUNCH = [TEST_DRIVER_CMD, '-multifiles=core1,core0',
+TEST_NSIM_CORES_LAUNCH = [TEST_DRIVER_CMD, '-multifiles=core0,core1',
               '-run', '-cl']
 
 # mdb-hw

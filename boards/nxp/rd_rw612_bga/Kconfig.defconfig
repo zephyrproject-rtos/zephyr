@@ -30,4 +30,8 @@ config LV_Z_FLUSH_THREAD
 
 endif # LVGL
 
+# Enable interrupt support when using FT5336 driver
+config INPUT_FT5336_INTERRUPT
+	default y if INPUT
+
 endif # BOARD_RD_RW612_BGA

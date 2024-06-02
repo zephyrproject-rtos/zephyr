@@ -15,6 +15,7 @@
 #define ZEPHYR_INCLUDE_USBD_H_
 
 #include <zephyr/device.h>
+#include <zephyr/usb/bos.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/usb/usbd_msg.h>
 #include <zephyr/net/buf.h>
@@ -58,8 +59,10 @@ extern "C" {
  */
 #define USB_STRING_DESCRIPTOR_LENGTH(s)	(sizeof(s) * 2)
 
-/* Used internally to keep descriptors in order */
-enum usbd_desc_usage_type {
+/** Used internally to keep descriptors in order
+ * @cond INTERNAL_HIDDEN
+ */
+enum usbd_str_desc_utype {
 	USBD_DUT_STRING_LANG,
 	USBD_DUT_STRING_MANUFACTURER,
 	USBD_DUT_STRING_PRODUCT,
@@ -67,25 +70,52 @@ enum usbd_desc_usage_type {
 	USBD_DUT_STRING_INTERFACE,
 };
 
+enum usbd_bos_desc_utype {
+	USBD_DUT_BOS_NONE,
+};
+/** @endcond */
+
+/**
+ * USBD string descriptor data
+ */
+struct usbd_str_desc_data {
+	/** Descriptor index, required for string descriptors */
+	uint8_t idx;
+	/** Descriptor usage type (not bDescriptorType) */
+	enum usbd_str_desc_utype utype : 8;
+	/** The string descriptor is in ASCII7 format */
+	unsigned int ascii7 : 1;
+	/** Device stack obtains SerialNumber using the HWINFO API */
+	unsigned int use_hwinfo : 1;
+};
+
+/**
+ * USBD BOS Device Capability descriptor data
+ */
+struct usbd_bos_desc_data {
+	/** Descriptor usage type (not bDescriptorType) */
+	enum usbd_bos_desc_utype utype : 8;
+};
+
 /**
  * Descriptor node
  *
  * Descriptor node is used to manage descriptors that are not
- * directly part of a structure, such as string or bos descriptors.
+ * directly part of a structure, such as string or BOS capability descriptors.
  */
 struct usbd_desc_node {
 	/** slist node struct */
 	sys_dnode_t node;
-	/** Descriptor index, required for string descriptors */
-	unsigned int idx : 8;
-	/** Descriptor usage type (not bDescriptorType) */
-	unsigned int utype : 8;
-	/** If not set, string descriptor must be converted to UTF16LE */
-	unsigned int utf16le : 1;
-	/** If not set, device stack obtains SN using the hwinfo API */
-	unsigned int custom_sn : 1;
-	/** Pointer to a descriptor */
-	void *desc;
+	union {
+		struct usbd_str_desc_data str;
+		struct usbd_bos_desc_data bos;
+	};
+	/** Opaque pointer to a descriptor payload */
+	const void *const ptr;
+	/** Descriptor size in bytes */
+	uint8_t bLength;
+	/** Descriptor type */
+	uint8_t bDescriptorType;
 };
 
 /**
@@ -169,6 +199,22 @@ struct usbd_status {
 	enum usbd_speed speed : 2;
 };
 
+struct usbd_contex;
+
+/**
+ * @brief Callback type definition for USB device message delivery
+ *
+ * The implementation uses the system workqueue, and a callback provided and
+ * registered by the application. The application callback is called in the
+ * context of the system workqueue. Notification messages are stored in a queue
+ * and delivered to the callback in sequence.
+ *
+ * @param[in] ctx Pointer to USB device support context
+ * @param[in] msg Pointer to USB device message
+ */
+typedef void (*usbd_msg_cb_t)(struct usbd_contex *const ctx,
+			      const struct usbd_msg *const msg);
+
 /**
  * USB device support runtime context
  *
@@ -186,7 +232,7 @@ struct usbd_contex {
 	usbd_msg_cb_t msg_cb;
 	/** Middle layer runtime data */
 	struct usbd_ch9_data ch9_data;
-	/** slist to manage descriptors like string, bos */
+	/** slist to manage descriptors like string, BOS */
 	sys_dlist_t descriptors;
 	/** slist to manage Full-Speed device configurations */
 	sys_slist_t fs_configs;
@@ -415,33 +461,38 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  * @param name Language string descriptor node identifier.
  */
 #define USBD_DESC_LANG_DEFINE(name)					\
-	static struct usb_string_descriptor				\
-	string_desc_##name = {						\
+	static uint16_t langid_##name = sys_cpu_to_le16(0x0409);	\
+	static struct usbd_desc_node name = {				\
 		.bLength = sizeof(struct usb_string_descriptor),	\
 		.bDescriptorType = USB_DESC_STRING,			\
-		.bString = sys_cpu_to_le16(0x0409),			\
-	};								\
-	static struct usbd_desc_node name = {				\
-		.idx = 0,						\
-		.utype = USBD_DUT_STRING_LANG,				\
-		.desc = &string_desc_##name,				\
+		.str = {						\
+			.idx = 0,					\
+			.utype = USBD_DUT_STRING_LANG,			\
+		},							\
+		.ptr = &langid_##name,					\
 	}
 
-#define USBD_DESC_STRING_DEFINE(d_name, d_string, d_utype)		\
-	struct usb_string_descriptor_##d_name {				\
-		uint8_t bLength;					\
-		uint8_t bDescriptorType;				\
-		uint8_t bString[USB_BSTRING_LENGTH(d_string)];		\
-	} __packed;							\
-	static struct usb_string_descriptor_##d_name			\
-	string_desc_##d_name = {					\
-		.bLength = USB_STRING_DESCRIPTOR_LENGTH(d_string),	\
-		.bDescriptorType = USB_DESC_STRING,			\
-		.bString = d_string,					\
-	};								\
-	static struct usbd_desc_node d_name = {				\
-		.utype = d_utype,					\
-		.desc = &string_desc_##d_name,				\
+/**
+ * @brief Create a string descriptor
+ *
+ * This macro defines a descriptor node and a string descriptor.
+ * The string literal passed to the macro should be in the ASCII7 format. It
+ * is converted to UTF16LE format on the host request.
+ *
+ * @param d_name   Internal string descriptor node identifier name
+ * @param d_string ASCII7 encoded string literal
+ * @param d_utype  String descriptor usage type
+ */
+#define USBD_DESC_STRING_DEFINE(d_name, d_string, d_utype)			\
+	static uint8_t ascii_##d_name[USB_BSTRING_LENGTH(d_string)] = d_string;	\
+	static struct usbd_desc_node d_name = {					\
+		.str = {							\
+			.utype = d_utype,					\
+			.ascii7 = true,						\
+		},								\
+		.bLength = USB_STRING_DESCRIPTOR_LENGTH(d_string),		\
+		.bDescriptorType = USB_DESC_STRING,				\
+		.ptr = &ascii_##d_name,					\
 	}
 
 /**
@@ -475,17 +526,42 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 /**
  * @brief Create a string descriptor node and serial number string descriptor
  *
- * This macro defines a descriptor node and a string descriptor that,
- * when added to the device context, is automatically used as the serial number
- * string descriptor. The string literal parameter is used as a placeholder,
- * the unique number is obtained from hwinfo. Both descriptor node and descriptor
- * are defined with static-storage-class specifier.
+ * This macro defines a descriptor node that, when added to the device context,
+ * is automatically used as the serial number string descriptor. A valid serial
+ * number is generated from HWID (HWINFO= whenever this string descriptor is
+ * requested.
  *
  * @param d_name   String descriptor node identifier.
- * @param d_string ASCII7 encoded serial number string literal placeholder
  */
-#define USBD_DESC_SERIAL_NUMBER_DEFINE(d_name, d_string)		\
-	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DUT_STRING_SERIAL_NUMBER)
+#define USBD_DESC_SERIAL_NUMBER_DEFINE(d_name)					\
+	static struct usbd_desc_node d_name = {					\
+		.str = {							\
+			.utype = USBD_DUT_STRING_SERIAL_NUMBER,			\
+			.ascii7 = true,						\
+			.use_hwinfo = true,					\
+		},								\
+		.bDescriptorType = USB_DESC_STRING,				\
+	}
+
+/**
+ * @brief Define BOS Device Capability descriptor node
+ *
+ * The application defines a BOS capability descriptor node for descriptors
+ * such as USB 2.0 Extension Descriptor.
+ *
+ * @param name       Descriptor node identifier
+ * @param len        Device Capability descriptor length
+ * @param subset     Pointer to a Device Capability descriptor
+ */
+#define USBD_DESC_BOS_DEFINE(name, len, subset)					\
+	static struct usbd_desc_node name = {					\
+		.bos = {							\
+			.utype = USBD_DUT_BOS_NONE,				\
+		},								\
+		.ptr = subset,							\
+		.bLength = len,							\
+		.bDescriptorType = USB_DESC_BOS,				\
+	}
 
 #define USBD_DEFINE_CLASS(class_name, class_api, class_priv, class_v_reqs)	\
 	static struct usbd_class_data class_name = {				\
@@ -526,7 +602,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 /**
  * @brief Add common USB descriptor
  *
- * Add common descriptor like string or bos.
+ * Add common descriptor like string or BOS Device Capability.
  *
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] dn      Pointer to USB descriptor node
@@ -535,6 +611,24 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  */
 int usbd_add_descriptor(struct usbd_contex *uds_ctx,
 			struct usbd_desc_node *dn);
+
+/**
+ * @brief Get USB string descriptor index from descriptor node
+ *
+ * @param[in] desc_nd Pointer to USB descriptor node
+ *
+ * @return Descriptor index, 0 if descriptor is not part of any device
+ */
+uint8_t usbd_str_desc_get_idx(const struct usbd_desc_node *const desc_nd);
+
+/**
+ * @brief Remove USB string descriptor
+ *
+ * Remove linked USB string descriptor from any list.
+ *
+ * @param[in] desc_nd Pointer to USB descriptor node
+ */
+void usbd_remove_descriptor(struct usbd_desc_node *const desc_nd);
 
 /**
  * @brief Add a USB device configuration
@@ -680,20 +774,6 @@ int usbd_ep_clear_halt(struct usbd_contex *uds_ctx, uint8_t ep);
  * @return true if endpoint is halted, false otherwise
  */
 bool usbd_ep_is_halted(struct usbd_contex *uds_ctx, uint8_t ep);
-
-/**
- * @brief Allocate buffer for USB device control request
- *
- * Allocate a new buffer from controller's driver buffer pool.
- *
- * @param[in] uds_ctx Pointer to USB device support context
- * @param[in] ep      Endpoint address
- * @param[in] size    Size of the request buffer
- *
- * @return pointer to allocated request or NULL on error.
- */
-struct net_buf *usbd_ep_ctrl_buf_alloc(struct usbd_contex *const uds_ctx,
-				       const uint8_t ep, const size_t size);
 
 /**
  * @brief Allocate buffer for USB device request
@@ -882,6 +962,21 @@ int usbd_config_attrib_self(struct usbd_contex *const uds_ctx,
 int usbd_config_maxpower(struct usbd_contex *const uds_ctx,
 			 const enum usbd_speed speed,
 			 const uint8_t cfg, const uint8_t power);
+
+/**
+ * @brief Check that the controller can detect the VBUS state change.
+ *
+ * This can be used in a generic application to explicitly handle the VBUS
+ * detected event after usbd_init(). For example, to call usbd_enable() after a
+ * short delay to give the PMIC time to detect the bus, or to handle cases
+ * where usbd_enable() can only be called after a VBUS detected event.
+ *
+ * @param[in] uds_ctx Pointer to USB device support context
+ *
+ * @return true if controller can detect VBUS state change, false otherwise
+ */
+bool usbd_can_detect_vbus(struct usbd_contex *const uds_ctx);
+
 /**
  * @}
  */

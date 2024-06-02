@@ -7,7 +7,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
-#include <offsets.h>
+#include <zephyr/offsets.h>
 #include "boot.h"
 #include "macro_priv.inc"
 

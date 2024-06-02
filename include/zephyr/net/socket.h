@@ -22,29 +22,21 @@
  * @{
  */
 
+#include <zephyr/kernel.h>
 #include <sys/types.h>
 #include <zephyr/types.h>
+#include <zephyr/device.h>
 #include <zephyr/net/net_ip.h>
-#include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/socket_select.h>
+#include <zephyr/net/socket_poll.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/fdtable.h>
+#include <zephyr/net/dns_resolve.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief Definition of the monitored socket/file descriptor.
- *
- * An array of these descriptors is passed as an argument to poll().
- */
-struct zsock_pollfd {
-	int fd;        /**< Socket descriptor */
-	short events;  /**< Requested events */
-	short revents; /**< Returned events */
-};
 
 /**
  * @name Options for poll()
@@ -562,6 +554,8 @@ static inline ssize_t zsock_recv(int sock, void *buf, size_t max_len,
  */
 __syscall int zsock_fcntl_impl(int sock, int cmd, int flags);
 
+/** @cond INTERNAL_HIDDEN */
+
 /*
  * Need this wrapper because newer GCC versions got too smart and "typecheck"
  * even macros.
@@ -578,6 +572,8 @@ static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
 }
 
 #define zsock_fcntl zsock_fcntl_wrapper
+
+/** @endcond */
 
 /**
  * @brief Control underlying socket parameters
@@ -598,6 +594,8 @@ static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
  */
 __syscall int zsock_ioctl_impl(int sock, unsigned long request, va_list ap);
 
+/** @cond INTERNAL_HIDDEN */
+
 static inline int zsock_ioctl_wrapper(int sock, unsigned long request, ...)
 {
 	int ret;
@@ -611,6 +609,8 @@ static inline int zsock_ioctl_wrapper(int sock, unsigned long request, ...)
 }
 
 #define zsock_ioctl zsock_ioctl_wrapper
+
+/** @endcond */
 
 /**
  * @brief Efficiently poll multiple sockets for events
@@ -1378,7 +1378,7 @@ struct net_socket_register {
 }
 #endif
 
-#include <syscalls/socket.h>
+#include <zephyr/syscalls/socket.h>
 
 /**
  * @}

@@ -23,7 +23,7 @@
 #include <zephyr/toolchain/common.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/util.h>
-#include <offsets.h>
+#include <zephyr/offsets.h>
 
 /* We need to dummy out DT_NODE_HAS_STATUS when building the unittests.
  * Including devicetree.h would require generating dummy header files

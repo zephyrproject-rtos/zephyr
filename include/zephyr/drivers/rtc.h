@@ -539,6 +539,6 @@ static inline struct tm *rtc_time_to_tm(struct rtc_time *timeptr)
 }
 #endif
 
-#include <syscalls/rtc.h>
+#include <zephyr/syscalls/rtc.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_RTC_H_ */

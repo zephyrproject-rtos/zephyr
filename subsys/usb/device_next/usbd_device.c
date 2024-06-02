@@ -182,6 +182,11 @@ int usbd_init(struct usbd_contex *const uds_ctx)
 {
 	int ret;
 
+	/*
+	 * Lock the scheduler to ensure that the context is not preempted
+	 * before it is fully initialized.
+	 */
+	k_sched_lock();
 	usbd_device_lock(uds_ctx);
 
 	if (uds_ctx->dev == NULL) {
@@ -211,6 +216,8 @@ int usbd_init(struct usbd_contex *const uds_ctx)
 
 init_exit:
 	usbd_device_unlock(uds_ctx);
+	k_sched_unlock();
+
 	return ret;
 }
 
@@ -295,4 +302,11 @@ int usbd_shutdown(struct usbd_contex *const uds_ctx)
 	usbd_device_unlock(uds_ctx);
 
 	return 0;
+}
+
+bool usbd_can_detect_vbus(struct usbd_contex *const uds_ctx)
+{
+	const struct udc_device_caps caps = udc_caps(uds_ctx->dev);
+
+	return caps.can_detect_vbus;
 }

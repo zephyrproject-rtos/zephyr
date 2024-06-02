@@ -30,7 +30,7 @@
 	 */
 
 #if defined(LINKER_ZEPHYR_PREBUILT)
-#include <linker-kobject-prebuilt-data.h>
+#include <zephyr/linker-kobject-prebuilt-data.h>
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
 	/* This is produced by gperf. Put a place holder here
@@ -45,7 +45,7 @@
 #endif /* LINKER_ZEPHYR_PREBUILT */
 
 #if defined(LINKER_ZEPHYR_FINAL)
-#include <linker-kobject-prebuilt-data.h>
+#include <zephyr/linker-kobject-prebuilt-data.h>
 #ifdef KOBJECT_DATA_ALIGN
 	. = ALIGN(KOBJECT_DATA_ALIGN);
 

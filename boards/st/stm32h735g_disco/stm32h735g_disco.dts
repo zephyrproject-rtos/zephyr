@@ -216,8 +216,6 @@
 	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
 		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	status = "okay";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 
 	can-transceiver {
 		max-bitrate = <8000000>;
@@ -230,8 +228,6 @@
 	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
 		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	status = "okay";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 
 	can-transceiver {
 		max-bitrate = <8000000>;
@@ -245,8 +241,6 @@
 		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	/* Solder bridges SB29 and SB30 need to be closed for this to work */
 	status = "disabled";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 
 	can-transceiver {
 		max-bitrate = <8000000>;

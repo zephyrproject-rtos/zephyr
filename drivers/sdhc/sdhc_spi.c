@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -143,6 +143,7 @@ static int sdhc_spi_init_card(const struct device *dev)
 	spi_cfg->operation |= SPI_CS_ACTIVE_HIGH;
 	ret = sdhc_spi_rx(config->spi_dev, spi_cfg, data->scratch, 10);
 	if (ret != 0) {
+		spi_release(config->spi_dev, spi_cfg);
 		spi_cfg->operation &= ~SPI_CS_ACTIVE_HIGH;
 		return ret;
 	}
@@ -603,7 +604,7 @@ static int sdhc_spi_request(const struct device *dev,
 {
 	const struct sdhc_spi_config *config = dev->config;
 	struct sdhc_spi_data *dev_data = dev->data;
-	int ret, retries = cmd->retries;
+	int ret, stop_ret, retries = cmd->retries;
 	const struct sdhc_command stop_cmd = {
 		.opcode = SD_STOP_TRANSMISSION,
 		.arg = 0,
@@ -617,6 +618,7 @@ static int sdhc_spi_request(const struct device *dev,
 		} while ((ret != 0) && (retries-- > 0));
 	} else {
 		do {
+			retries--;
 			ret = sdhc_spi_send_cmd(dev, cmd, true);
 			if (ret) {
 				continue;
@@ -628,16 +630,27 @@ static int sdhc_spi_request(const struct device *dev,
 				ret = sdhc_spi_read_data(dev, data);
 			}
 			if (ret || (cmd->opcode == SD_READ_MULTIPLE_BLOCK)) {
+				int stop_retries = cmd->retries;
+
 				/* CMD12 is required after multiple read, or
 				 * to retry failed transfer
 				 */
-				sdhc_spi_send_cmd(dev,
+				stop_ret = sdhc_spi_send_cmd(dev,
 					(struct sdhc_command *)&stop_cmd,
 					false);
+				while ((stop_ret != 0) && (stop_retries > 0)) {
+					/* Retry stop command */
+					ret = stop_ret = sdhc_spi_send_cmd(dev,
+						(struct sdhc_command *)&stop_cmd,
+						false);
+					stop_retries--;
+				}
 			}
-		} while ((ret != 0) && (retries-- > 0));
+		} while ((ret != 0) && (retries > 0));
 	}
 	if (ret) {
+		/* Release SPI bus */
+		spi_release(config->spi_dev, dev_data->spi_cfg);
 		return ret;
 	}
 	/* Release SPI bus */

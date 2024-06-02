@@ -14,6 +14,5 @@ testing:
   only_tags:
     - arm
     - kernel
-    - tfm
     - userspace
     - trusted-firmware-m

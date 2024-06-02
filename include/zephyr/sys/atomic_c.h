@@ -85,7 +85,7 @@ __syscall atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value);
 #define _REMOVE_DISABLE_SYSCALL_TRACING
 #endif
 
-#include <syscalls/atomic_c.h>
+#include <zephyr/syscalls/atomic_c.h>
 
 #ifdef _REMOVE_DISABLE_SYSCALL_TRACING
 #undef DISABLE_SYSCALL_TRACING

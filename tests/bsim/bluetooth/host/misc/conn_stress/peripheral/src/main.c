@@ -400,7 +400,7 @@ void test_peripheral_main(void)
 	sprintf(name, "per-%d", get_device_nbr());
 	bt_set_name(name);
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, NULL, 0, NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, NULL, 0, NULL, 0);
 	if (err) {
 		LOG_ERR("Advertising failed to start (err %d)", err);
 		__ASSERT_NO_MSG(err);
@@ -486,7 +486,7 @@ static const struct bst_test_instance test_def[] = {
 		.test_id = "peripheral",
 		.test_descr = "Peripheral Connection Stress",
 		.test_args_f = test_args,
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_main_f = test_peripheral_main
 	},
 	BSTEST_END_MARKER

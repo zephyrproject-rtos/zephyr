@@ -26,7 +26,7 @@ config SWERV_PIC
 config VEXRISCV_LITEX_IRQ
 	bool "VexRiscv LiteX Interrupt controller"
 	default y
-	depends on DT_HAS_VEXRISCV_INTC0_ENABLED
+	depends on DT_HAS_LITEX_VEXRISCV_INTC0_ENABLED
 	help
 	  IRQ implementation for LiteX VexRiscv
 
@@ -105,5 +105,7 @@ source "drivers/interrupt_controller/Kconfig.vim"
 source "drivers/interrupt_controller/Kconfig.renesas_ra"
 
 source "drivers/interrupt_controller/Kconfig.nxp_irqsteer"
+
+source "drivers/interrupt_controller/Kconfig.mtk_adsp"
 
 endmenu

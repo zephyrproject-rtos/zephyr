@@ -15,8 +15,9 @@ sphinx-sitemap
 PyYAML>=6.0
 pykwalify
 
-# Used by pytest-twister-harness plugin
+# Used by pytest-twister-harness plugin (imported by autodoc)
 pytest
+pyserial
 
 # Doxygen doxmlparser
 doxmlparser

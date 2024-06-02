@@ -61,6 +61,8 @@ add_subdirectory_ifdef(CONFIG_S11059 s11059)
 add_subdirectory_ifdef(CONFIG_SBS_GAUGE sbs_gauge)
 add_subdirectory_ifdef(CONFIG_SX9500 sx9500)
 add_subdirectory_ifdef(CONFIG_TH02 th02)
+add_subdirectory_ifdef(CONFIG_TSIC_XX6 tsic_xx6)
+add_subdirectory_ifdef(CONFIG_VEAA_X_3 veaa_x_3)
 add_subdirectory_ifdef(CONFIG_VOLTAGE_DIVIDER voltage_divider)
 add_subdirectory_ifdef(CONFIG_TACH_ENE_KB1200 ene_tach_kb1200)
 

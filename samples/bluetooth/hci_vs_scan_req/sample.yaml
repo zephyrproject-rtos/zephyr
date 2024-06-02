@@ -5,8 +5,8 @@ tests:
     harness: bluetooth
     platform_allow:
       - nrf52dk/nrf52832
-      - qemu_cortex_m3
-      - qemu_x86
-    tags: bluetooth
     integration_platforms:
-      - qemu_cortex_m3
+      - nrf52dk/nrf52832
+    extra_configs:
+      - CONFIG_BT_LL_SW_SPLIT=y
+    tags: bluetooth

@@ -109,6 +109,15 @@ add_library(zephyr_interface INTERFACE)
 # flags that come with zephyr_interface.
 zephyr_library_named(zephyr)
 
+if(CONFIG_LEGACY_GENERATED_INCLUDE_PATH)
+  zephyr_include_directories(${PROJECT_BINARY_DIR}/include/generated/zephyr)
+  message(WARNING "
+    Warning: CONFIG_LEGACY_GENERATED_INCLUDE_PATH is currently enabled by default
+    so that user applications can continue to use the legacy include paths for the
+    generated headers. This Kconfig will be deprecated and eventually removed in
+    the future releases.")
+endif()
+
 zephyr_include_directories(
   include
   ${PROJECT_BINARY_DIR}/include/generated
@@ -541,9 +550,9 @@ if(ZEPHYR_GIT_INDEX)
 endif()
 
 add_custom_command(
-  OUTPUT ${PROJECT_BINARY_DIR}/include/generated/version.h
+  OUTPUT ${PROJECT_BINARY_DIR}/include/generated/zephyr/version.h
   COMMAND ${CMAKE_COMMAND} -DZEPHYR_BASE=${ZEPHYR_BASE}
-    -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/version.h
+    -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/zephyr/version.h
     -DVERSION_TYPE=KERNEL
     -DVERSION_FILE=${ZEPHYR_BASE}/VERSION
     -DKERNEL_VERSION_CUSTOMIZATION="$<TARGET_PROPERTY:version_h,KERNEL_VERSION_CUSTOMIZATION>"
@@ -552,13 +561,13 @@ add_custom_command(
   DEPENDS ${ZEPHYR_BASE}/VERSION ${git_dependency}
   COMMAND_EXPAND_LISTS
 )
-add_custom_target(version_h DEPENDS ${PROJECT_BINARY_DIR}/include/generated/version.h)
+add_custom_target(version_h DEPENDS ${PROJECT_BINARY_DIR}/include/generated/zephyr/version.h)
 
 if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
   add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/include/generated/app_version.h
+    OUTPUT ${PROJECT_BINARY_DIR}/include/generated/zephyr/app_version.h
     COMMAND ${CMAKE_COMMAND} -DZEPHYR_BASE=${ZEPHYR_BASE}
-      -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/app_version.h
+      -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/zephyr/app_version.h
       -DVERSION_TYPE=APP
       -DVERSION_FILE=${APPLICATION_SOURCE_DIR}/VERSION
       -DAPP_VERSION_CUSTOMIZATION="$<TARGET_PROPERTY:app_version_h,APP_VERSION_CUSTOMIZATION>"
@@ -567,7 +576,9 @@ if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
     DEPENDS ${APPLICATION_SOURCE_DIR}/VERSION ${git_dependency}
     COMMAND_EXPAND_LISTS
   )
-  add_custom_target(app_version_h DEPENDS ${PROJECT_BINARY_DIR}/include/generated/app_version.h)
+  add_custom_target(
+    app_version_h
+    DEPENDS ${PROJECT_BINARY_DIR}/include/generated/zephyr/app_version.h)
   add_dependencies(zephyr_interface app_version_h)
 endif()
 
@@ -622,7 +633,8 @@ set(ZEPHYR_CURRENT_CMAKE_DIR)
 get_property(LIBC_LINK_LIBRARIES TARGET zephyr_interface PROPERTY LIBC_LINK_LIBRARIES)
 zephyr_link_libraries(${LIBC_LINK_LIBRARIES})
 
-set(syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
+set(syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/include/generated/zephyr/syscall_list.h)
+set(edk_syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/edk/include/generated/zephyr/syscall_list.h)
 set(syscalls_json    ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
 set(struct_tags_json ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/struct_tags.json)
 
@@ -760,7 +772,7 @@ add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS ${syscall_list_h} ${picolibc_
 set_property(TARGET ${SYSCALL_LIST_H_TARGET}
              APPEND PROPERTY
              ADDITIONAL_CLEAN_FILES
-             ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscalls
+             ${CMAKE_CURRENT_BINARY_DIR}/include/generated/zephyr/syscalls
 )
 
 add_custom_target(${PARSE_SYSCALLS_TARGET}
@@ -780,19 +792,30 @@ if(CONFIG_TIMEOUT_64BIT)
   set(SYSCALL_SPLIT_TIMEOUT_ARG --split-type k_timeout_t --split-type k_ticks_t)
 endif()
 
-add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
-  # Also, some files are written to include/generated/syscalls/
+# percepio/TraceRecorder/kernelports/Zephyr/scripts/tz_parse_syscalls.py hardcodes the path
+# to the `syscall_list.h`, make a copy of the generated file so that percepio is able to build
+if(CONFIG_LEGACY_GENERATED_INCLUDE_PATH)
+  set(LEGACY_SYSCALL_LIST_H_ARGS
+    ${CMAKE_COMMAND} -E copy
+    ${syscall_list_h}
+    ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
+endif()
+
+add_custom_command(OUTPUT include/generated/zephyr/syscall_dispatch.c ${syscall_list_h}
+  # Also, some files are written to include/generated/zephyr/syscalls/
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/build/gen_syscalls.py
   --json-file        ${syscalls_json}                     # Read this file
-  --base-output      include/generated/syscalls           # Write to this dir
-  --syscall-dispatch include/generated/syscall_dispatch.c # Write this file
-  --syscall-export-llext  include/generated/syscall_export_llext.c
+  --base-output      include/generated/zephyr/syscalls    # Write to this dir
+  --syscall-dispatch include/generated/zephyr/syscall_dispatch.c # Write this file
+  --syscall-export-llext  include/generated/zephyr/syscall_export_llext.c
   --syscall-list     ${syscall_list_h}
   $<$<BOOL:${CONFIG_USERSPACE}>:--gen-mrsh-files>
   ${SYSCALL_LONG_REGISTERS_ARG}
   ${SYSCALL_SPLIT_TIMEOUT_ARG}
+  COMMAND
+  ${LEGACY_SYSCALL_LIST_H_ARGS}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${PARSE_SYSCALLS_TARGET}
   )
@@ -800,7 +823,7 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
 # This is passed into all calls to the gen_kobject_list.py script.
 set(gen_kobject_list_include_args --include-subsystem-list ${struct_tags_json})
 
-set(DRV_VALIDATION ${PROJECT_BINARY_DIR}/include/generated/driver-validation.h)
+set(DRV_VALIDATION ${PROJECT_BINARY_DIR}/include/generated/zephyr/driver-validation.h)
 add_custom_command(
   OUTPUT ${DRV_VALIDATION}
   COMMAND
@@ -833,7 +856,7 @@ add_dependencies(zephyr_generated_headers
 set(OFFSETS_LIB offsets)
 
 set(OFFSETS_C_PATH ${ARCH_DIR}/${ARCH}/core/offsets/offsets.c)
-set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
+set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/zephyr/offsets.h)
 
 add_library(          ${OFFSETS_LIB} OBJECT ${OFFSETS_C_PATH})
 target_include_directories(${OFFSETS_LIB} PRIVATE
@@ -1196,7 +1219,7 @@ if(CONFIG_USERSPACE)
     PUBLIC $<TARGET_PROPERTY:zephyr_interface,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>
   )
 
-  set(KOBJECT_LINKER_HEADER_DATA "${PROJECT_BINARY_DIR}/include/generated/linker-kobject-prebuilt-data.h")
+  set(KOBJECT_LINKER_HEADER_DATA "${PROJECT_BINARY_DIR}/include/generated/zephyr/linker-kobject-prebuilt-data.h")
 
   add_custom_command(
     OUTPUT ${KOBJECT_LINKER_HEADER_DATA}
@@ -1204,7 +1227,7 @@ if(CONFIG_USERSPACE)
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/gen_kobject_placeholders.py
     --object $<TARGET_OBJECTS:kobj_prebuilt_hash_output_lib>
-    --outdir ${PROJECT_BINARY_DIR}/include/generated
+    --outdir ${PROJECT_BINARY_DIR}/include/generated/zephyr
     --datapct ${CONFIG_KOBJECT_DATA_AREA_RESERVE_EXTRA_PERCENT}
     --rodata ${CONFIG_KOBJECT_RODATA_AREA_EXTRA_BYTES}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
@@ -1294,6 +1317,20 @@ if(CONFIG_GEN_ISR_TABLES)
     COMMAND_EXPAND_LISTS
     )
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
+endif()
+
+if(CONFIG_SYMTAB)
+  add_custom_command(
+    OUTPUT symtab.c
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/build/gen_symtab.py
+    -k $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
+    -o symtab.c
+    DEPENDS ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+    COMMAND_EXPAND_LISTS
+  )
+  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES symtab.c)
 endif()
 
 if(CONFIG_USERSPACE)
@@ -1947,7 +1984,7 @@ if(LOG_DICT_DB_NAME_ARG)
       ${ZEPHYR_BASE}/scripts/logging/dictionary/database_gen.py
       ${KERNEL_ELF_NAME}
       ${LOG_DICT_DB_NAME_ARG}=${LOG_DICT_DB_NAME}
-      --build-header ${PROJECT_BINARY_DIR}/include/generated/version.h
+      --build-header ${PROJECT_BINARY_DIR}/include/generated/zephyr/version.h
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     COMMENT "Generating logging dictionary database: ${LOG_DICT_DB_NAME}"
     DEPENDS ${logical_target_for_zephyr_elf}
@@ -2060,6 +2097,51 @@ if((CMAKE_BUILD_TYPE IN_LIST build_types) AND (NOT NO_BUILD_TYPE_WARNING))
       )
   endif()
 endif()
+
+# Extension Development Kit (EDK) generation.
+set(llext_edk_file ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.tar.xz)
+
+# TODO maybe generate flags for C CXX ASM
+zephyr_get_compile_options_for_lang(C zephyr_flags)
+
+# Filter out non LLEXT and LLEXT_EDK flags - and add required ones
+llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags} llext_edk_cflags)
+llext_filter_zephyr_flags(LLEXT_EDK_REMOVE_FLAGS ${llext_edk_cflags} llext_edk_cflags)
+
+list(APPEND llext_edk_cflags ${LLEXT_APPEND_FLAGS})
+list(APPEND llext_edk_cflags ${LLEXT_EDK_APPEND_FLAGS})
+
+add_custom_command(
+    OUTPUT ${llext_edk_file}
+    # Regenerate syscalls in case CONFIG_LLEXT_EDK_USERSPACE_ONLY
+    COMMAND ${CMAKE_COMMAND}
+        -E make_directory edk/include/generated/zephyr
+    COMMAND
+        ${PYTHON_EXECUTABLE}
+        ${ZEPHYR_BASE}/scripts/build/gen_syscalls.py
+        --json-file        ${syscalls_json}                     # Read this file
+        --base-output      edk/include/generated/zephyr/syscalls           # Write to this dir
+        --syscall-dispatch edk/include/generated/zephyr/syscall_dispatch.c # Write this file
+        --syscall-list     ${edk_syscall_list_h}
+        $<$<BOOL:${CONFIG_LLEXT_EDK_USERSPACE_ONLY}>:--userspace-only>
+        ${SYSCALL_LONG_REGISTERS_ARG}
+        ${SYSCALL_SPLIT_TIMEOUT_ARG}
+    COMMAND ${CMAKE_COMMAND}
+        -DPROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}
+        -DAPPLICATION_SOURCE_DIR=${APPLICATION_SOURCE_DIR}
+        -DINTERFACE_INCLUDE_DIRECTORIES="$<JOIN:$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>,:>"
+        -Dllext_edk_file=${llext_edk_file}
+        -DAUTOCONF_H=${AUTOCONF_H}
+        -Dllext_cflags="${llext_edk_cflags}"
+        -Dllext_edk_name=${CONFIG_LLEXT_EDK_NAME}
+        -DWEST_TOPDIR=${WEST_TOPDIR}
+        -DZEPHYR_BASE=${ZEPHYR_BASE}
+        -DCONFIG_LLEXT_EDK_USERSPACE_ONLY=${CONFIG_LLEXT_EDK_USERSPACE_ONLY}
+        -P ${ZEPHYR_BASE}/cmake/llext-edk.cmake
+    DEPENDS ${logical_target_for_zephyr_elf}
+    COMMAND_EXPAND_LISTS
+)
+add_custom_target(llext-edk DEPENDS ${llext_edk_file})
 
 # @Intent: Set compiler specific flags for standard C/C++ includes
 # Done at the very end, so any other system includes which may

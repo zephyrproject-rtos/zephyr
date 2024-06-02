@@ -1775,6 +1775,19 @@ static inline uint32_t k_uptime_get_32(void)
 }
 
 /**
+ * @brief Get system uptime in seconds.
+ *
+ * This routine returns the elapsed time since the system booted,
+ * in seconds.
+ *
+ * @return Current uptime in seconds.
+ */
+static inline uint32_t k_uptime_seconds(void)
+{
+	return k_ticks_to_sec_floor32(k_uptime_ticks());
+}
+
+/**
  * @brief Get elapsed time.
  *
  * This routine computes the elapsed time between the current system uptime
@@ -5369,6 +5382,32 @@ void *k_heap_alloc(struct k_heap *h, size_t bytes,
 		k_timeout_t timeout) __attribute_nonnull(1);
 
 /**
+ * @brief Reallocate memory from a k_heap
+ *
+ * Reallocates and returns a memory buffer from the memory region owned
+ * by the heap.  If no memory is available immediately, the call will
+ * block for the specified timeout (constructed via the standard
+ * timeout API, or K_NO_WAIT or K_FOREVER) waiting for memory to be
+ * freed.  If the allocation cannot be performed by the expiration of
+ * the timeout, NULL will be returned.
+ * Reallocated memory is aligned on a multiple of pointer sizes.
+ *
+ * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ * @note When CONFIG_MULTITHREADING=n any @a timeout is treated as K_NO_WAIT.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param h Heap from which to allocate
+ * @param ptr Original pointer returned from a previous allocation
+ * @param bytes Desired size of block to allocate
+ * @param timeout How long to wait, or K_NO_WAIT
+ *
+ * @return Pointer to memory the caller can now use, or NULL
+ */
+void *k_heap_realloc(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t timeout)
+	__attribute_nonnull(1);
+
+/**
  * @brief Free memory allocated by k_heap_alloc()
  *
  * Returns the specified memory block, which must have been returned
@@ -5514,6 +5553,25 @@ void k_free(void *ptr);
  * @return Address of the allocated memory if successful; otherwise NULL.
  */
 void *k_calloc(size_t nmemb, size_t size);
+
+/** @brief Expand the size of an existing allocation
+ *
+ * Returns a pointer to a new memory region with the same contents,
+ * but a different allocated size.  If the new allocation can be
+ * expanded in place, the pointer returned will be identical.
+ * Otherwise the data will be copies to a new block and the old one
+ * will be freed as per sys_heap_free().  If the specified size is
+ * smaller than the original, the block will be truncated in place and
+ * the remaining memory returned to the heap.  If the allocation of a
+ * new block fails, then NULL will be returned and the old block will
+ * not be freed or modified.
+ *
+ * @param ptr Original pointer returned from a previous allocation
+ * @param size Amount of memory requested (in bytes).
+ *
+ * @return Pointer to memory the caller can now use, or NULL.
+ */
+void *k_realloc(void *ptr, size_t size);
 
 /** @} */
 
@@ -6095,7 +6153,7 @@ void k_sys_runtime_stats_disable(void);
 #endif
 
 #include <zephyr/tracing/tracing.h>
-#include <syscalls/kernel.h>
+#include <zephyr/syscalls/kernel.h>
 
 #endif /* !_ASMLANGUAGE */
 

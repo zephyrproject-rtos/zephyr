@@ -147,6 +147,16 @@ arduino_i2c: &flexcomm2 {
 				label = "image-0";
 				reg = <0x00020000 0x3e0000>;
 			};
+
+			/* This partition is reserved for connectivity firmwares storage
+			 * and shouldn't be moved.
+			 */
+			 fw_storage: partition@400000 {
+				label = "fw_storage";
+				reg = <0x400000 0x280000>;
+				read-only;
+			};
+
 			slot1_partition: partition@680000 {
 				label = "image-1";
 				reg = <0x680000 0x3e0000>;
@@ -245,4 +255,27 @@ zephyr_udc0: &usb_otg {
 	reset-causes-en = <PMU_RESET_CM33_LOCKUP>,
 			  <PMU_RESET_ITRC>,
 			  <PMU_RESET_AP_RESET>;
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+};
+
+/* OS Timer is the wakeup source for PM mode 2 */
+&os_timer {
+	status = "okay";
+	wakeup-source;
+};
+
+&systick {
+	status = "disabled";
+};
+
+&hci {
+	status = "okay";
+	wakeup-source;
 };

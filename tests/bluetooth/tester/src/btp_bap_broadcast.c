@@ -1266,10 +1266,9 @@ static void bap_broadcast_assistant_recv_state_cb(struct bt_conn *conn, int err,
 	btp_send_broadcast_receive_state_ev(conn, state);
 }
 
-static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, int err,
-							  uint8_t src_id)
+static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, uint8_t src_id)
 {
-	LOG_DBG("err: %d", err);
+	LOG_DBG("");
 }
 
 static void bap_broadcast_assistant_scan_start_cb(struct bt_conn *conn, int err)

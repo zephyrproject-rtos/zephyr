@@ -43,7 +43,7 @@ static inline int *z_vrfy_z_errno(void)
 {
 	return z_impl_z_errno();
 }
-#include <syscalls/z_errno_mrsh.c>
+#include <zephyr/syscalls/z_errno_mrsh.c>
 
 #else
 int *z_impl_z_errno(void)

@@ -24,6 +24,7 @@ struct ws2812_led_strip_config {
 	const struct device *piodev;
 	const uint8_t gpio_pin;
 	uint8_t num_colors;
+	size_t length;
 	uint32_t frequency;
 	const uint8_t *const color_mapping;
 	uint16_t reset_delay;
@@ -108,16 +109,16 @@ static int ws2812_led_strip_update_rgb(const struct device *dev, struct led_rgb 
 	return 0;
 }
 
-static int ws2812_led_strip_update_channels(const struct device *dev, uint8_t *channels,
-					    size_t num_channels)
+static size_t ws2812_led_strip_length(const struct device *dev)
 {
-	LOG_DBG("update_channels not implemented");
-	return -ENOTSUP;
+	const struct ws2812_led_strip_config *config = dev->config;
+
+	return config->length;
 }
 
 static const struct led_strip_driver_api ws2812_led_strip_api = {
 	.update_rgb = ws2812_led_strip_update_rgb,
-	.update_channels = ws2812_led_strip_update_channels,
+	.length = ws2812_led_strip_length,
 };
 
 /*
@@ -190,6 +191,7 @@ static int ws2812_rpi_pico_pio_init(const struct device *dev)
 		.piodev = DEVICE_DT_GET(DT_PARENT(DT_PARENT(node))),                               \
 		.gpio_pin = DT_GPIO_PIN_BY_IDX(node, gpios, 0),                                    \
 		.num_colors = DT_PROP_LEN(node, color_mapping),                                    \
+		.length = DT_PROP(node, chain_length),                                             \
 		.color_mapping = ws2812_led_strip_##node##_color_mapping,                          \
 		.reset_delay = DT_PROP(node, reset_delay),                                         \
 		.frequency = DT_PROP(node, frequency),                                             \

@@ -29,6 +29,9 @@
 		zephyr,bt-hci-ipc = &ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
 	};
+	aliases {
+		ipc-to-cpusys = &cpurad_cpusys_ipc;
+	};
 };
 
 &shared_ram3x_region {
@@ -51,6 +54,10 @@
 	status = "okay";
 };
 
+&cpusys_vevif {
+	status = "okay";
+};
+
 &cpusec_cpurad_ipc {
 	mbox-names = "tx", "rx";
 	tx-region = <&cpurad_cpusec_ipc_shm>;
@@ -67,6 +74,7 @@ ipc0: &cpuapp_cpurad_ipc {
 };
 
 &cpurad_cpusys_ipc {
+	status = "okay";
 	mbox-names = "rx", "tx";
 	tx-region = <&cpurad_cpusys_ipc_shm>;
 	rx-region = <&cpusys_cpurad_ipc_shm>;

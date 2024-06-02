@@ -7,6 +7,7 @@ Bsim boards
 
 * :ref:`Simulated nRF52833 (nrf52_bsim)<nrf52_bsim>`
 * :ref:`Simulated nRF5340 (nrf5340bsim)<nrf5340bsim>`
+* :ref:`Simulated nRF54L15 (nrf54l15bsim)<nrf54l15bsim>`
 
 .. contents:: Table of contents
    :depth: 2
@@ -20,8 +21,8 @@ These boards are postfixed with `_bsim` as they use BabbleSim_
 These boards use the `native simulator`_ and the :ref:`POSIX architecture<Posix arch>` to build
 and execute the embedded code natively on Linux.
 
-Particular details on the :ref:`nRF52<nrf52_bsim>` and :ref:`nRF5340<nrf5340bsim>`
-simulation boards, including how to use them,
+Particular details on the :ref:`nRF52<nrf52_bsim>`, :ref:`nRF5340<nrf5340bsim>` and
+:ref:`nRF54l15<nrf54l15bsim>` simulation boards, including how to use them,
 can be found in their respective documentation.
 
 .. _BabbleSim:

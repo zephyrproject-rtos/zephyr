@@ -1945,7 +1945,8 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 	if ((buf->len <= ch->tx.mps) &&
 	    (net_buf_headroom(buf) >= BT_L2CAP_BUF_SIZE(0))) {
 		LOG_DBG("len <= MPS, not allocating seg for %p", buf);
-		seg = net_buf_ref(buf);
+		/* move `buf` to `seg`. `buf` now borrows `seg`. */
+		seg = buf;
 
 		len = seg->len;
 	} else {
@@ -2002,13 +2003,20 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 		 */
 		LOG_DBG("unref %p (%s)", seg,
 			buf == seg ? "orig" : "seg");
-		net_buf_unref(seg);
+
+		if (seg == buf) {
+			/* move `seg` to `buf` */
+		} else {
+			net_buf_unref(seg);
+		}
 
 		if (err == -ENOBUFS) {
 			/* Restore state since segment could not be sent */
 			net_buf_simple_restore(&buf->b, &state);
-			return -EAGAIN;
+			err =  -EAGAIN;
 		}
+
+		/* move `buf` back to caller */
 
 		return err;
 	}
@@ -2026,7 +2034,9 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 	return len;
 }
 
-/* return next netbuf fragment if present, also assign metadata */
+/**
+ * @param buf [move on success]
+ */
 static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 				  struct net_buf *buf)
 {
@@ -2048,14 +2058,11 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 		}
 
 		sent += ret;
-
-		/* If the current buffer has been fully consumed, destroy it */
-		if (sent == rem_len) {
-			net_buf_unref(buf);
-		}
 	}
 
 	LOG_DBG("ch %p cid 0x%04x sent %u", ch, ch->tx.cid, sent);
+
+	/* `l2cap_chan_le_send` moved `buf` for final seg */
 
 	return sent;
 }
@@ -3063,6 +3070,16 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 		LOG_ERR("attempt to send %u bytes on %u MTU chan",
 			sdu_len, le_chan->tx.mtu);
 		return -EMSGSIZE;
+	}
+
+	if (buf->ref != 1) {
+		/* The host may alter the buf contents when segmenting. Higher
+		 * layers cannot expect the buf contents to stay intact. Extra
+		 * refs suggests a silent data corruption would occur if not for
+		 * this error.
+		 */
+		LOG_ERR("buf given to l2cap has other refs");
+		return -EINVAL;
 	}
 
 	if (net_buf_headroom(buf) < BT_L2CAP_SDU_CHAN_SEND_RESERVE) {

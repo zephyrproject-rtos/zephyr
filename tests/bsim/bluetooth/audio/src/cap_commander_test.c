@@ -36,6 +36,7 @@ CREATE_FLAG(flag_microphone_mute_changed);
 CREATE_FLAG(flag_microphone_gain_changed);
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
+				      const struct bt_csip_set_coordinator_set_member *member,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (err != 0) {
@@ -600,7 +601,7 @@ static void test_main_cap_commander_capture_and_render(void)
 static const struct bst_test_instance test_cap_commander[] = {
 	{
 		.test_id = "cap_commander_capture_and_render",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_cap_commander_capture_and_render,
 	},

@@ -149,7 +149,8 @@ static void encode_frame_header(uint8_t *buf, uint32_t payload_len,
 
 static int send_headers_frame(struct http_client_ctx *client,
 			      enum http_status status, uint32_t stream_id,
-			      const char *content_encoding, uint8_t flags)
+			      struct http_resource_detail *detail_common,
+			      uint8_t flags)
 {
 	uint8_t headers_frame[64];
 	uint8_t status_str[4];
@@ -168,9 +169,17 @@ static int send_headers_frame(struct http_client_ctx *client,
 		return ret;
 	}
 
-	if (content_encoding != NULL) {
+	if (detail_common && detail_common->content_encoding != NULL) {
 		ret = add_header_field(client, &buf, &buflen, "content-encoding",
 				       "gzip");
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (detail_common && detail_common->content_type != NULL) {
+		ret = add_header_field(client, &buf, &buflen, "content-type",
+				       detail_common->content_type);
 		if (ret < 0) {
 			return ret;
 		}
@@ -349,7 +358,7 @@ static int handle_http2_static_resource(
 	content_len = static_detail->static_data_len;
 
 	ret = send_headers_frame(client, HTTP_200_OK, frame->stream_identifier,
-				 static_detail->common.content_encoding, 0);
+				 &static_detail->common, 0);
 	if (ret < 0) {
 		LOG_DBG("Cannot write to socket (%d)", ret);
 		goto out;
@@ -375,7 +384,7 @@ static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detai
 	char *ptr;
 
 	ret = send_headers_frame(client, HTTP_200_OK, frame->stream_identifier,
-				 dynamic_detail->common.content_encoding, 0);
+				 &dynamic_detail->common, 0);
 	if (ret < 0) {
 		LOG_DBG("Cannot write to socket (%d)", ret);
 		return ret;
@@ -481,7 +490,7 @@ static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_deta
 			if (!client->headers_sent) {
 				ret = send_headers_frame(
 					client, HTTP_200_OK, frame->stream_identifier,
-					dynamic_detail->common.content_encoding, 0);
+					&dynamic_detail->common, 0);
 				if (ret < 0) {
 					LOG_DBG("Cannot write to socket (%d)", ret);
 					return ret;
@@ -518,7 +527,7 @@ static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_deta
 			 */
 			ret = send_headers_frame(
 				client, HTTP_200_OK, frame->stream_identifier,
-				dynamic_detail->common.content_encoding,
+				&dynamic_detail->common,
 				HTTP_SERVER_FLAG_END_STREAM);
 			if (ret < 0) {
 				LOG_DBG("Cannot write to socket (%d)", ret);

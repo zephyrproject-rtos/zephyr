@@ -15,162 +15,71 @@ BUILD_ASSERT((CONFIG_NUM_2ND_LEVEL_AGGREGATORS * CONFIG_MAX_IRQ_PER_AGGREGATOR) 
 		     BIT(CONFIG_2ND_LEVEL_INTERRUPT_BITS),
 	     "L2 bits not enough to cover the number of L2 IRQs");
 
-/*
- * Insert code if the node_id is an interrupt controller
- */
-#define Z_IF_DT_IS_INTC(node_id, code)                                                             \
-	IF_ENABLED(DT_NODE_HAS_PROP(node_id, interrupt_controller), (code))
-
-/*
- * Expands to node_id if its IRQN is equal to `_irq`, nothing otherwise
- * This only works for `_irq` between 0 & 4095, see `IS_EQ`
- */
-#define Z_IF_DT_INTC_IRQN_EQ(node_id, _irq) IF_ENABLED(IS_EQ(DT_IRQ(node_id, irq), _irq), (node_id))
-
-/*
- * Expands to node_id if it's an interrupt controller & its IRQN is `irq`, or nothing otherwise
- */
-#define Z_DT_INTC_GET_IRQN(node_id, _irq)                                                          \
-	Z_IF_DT_IS_INTC(node_id, Z_IF_DT_INTC_IRQN_EQ(node_id, _irq))
-
 /**
- * Loop through child of "/soc" and get root interrupt controllers with `_irq` as IRQN,
- * this assumes only one device has the IRQN
- * @param _irq irq number
- * @return node_id(s) that has the `_irq` number, or empty if none of them has the `_irq`
+ * @brief Get the aggregator that's responsible for the given irq
+ *
+ * @param irq IRQ number to query
+ *
+ * @return Aggregator entry, NULL if irq is level 1 or not found.
  */
-#define INTC_DT_IRQN_GET(_irq)                                                                     \
-	DT_FOREACH_CHILD_STATUS_OKAY_VARGS(DT_PATH(soc), Z_DT_INTC_GET_IRQN, _irq)
-
-/* If can't find any matching interrupt controller, fills with `NULL` */
-#define INTC_DEVICE_INIT(node_id) .dev = DEVICE_DT_GET_OR_NULL(node_id),
-
-#define INIT_IRQ_PARENT_OFFSET(d, i, o) { \
-	INTC_DEVICE_INIT(d) \
-	.irq = i, \
-	.offset = o, \
-}
-
-#define IRQ_INDEX_TO_OFFSET(i, base) (base + i * CONFIG_MAX_IRQ_PER_AGGREGATOR)
-
-#define CAT_2ND_LVL_LIST(i, base) \
-	INIT_IRQ_PARENT_OFFSET(INTC_DT_IRQN_GET(CONFIG_2ND_LVL_INTR_0##i##_OFFSET), \
-			       CONFIG_2ND_LVL_INTR_0##i##_OFFSET, IRQ_INDEX_TO_OFFSET(i, base))
-const struct _irq_parent_entry _lvl2_irq_list[CONFIG_NUM_2ND_LEVEL_AGGREGATORS]
-	= { LISTIFY(CONFIG_NUM_2ND_LEVEL_AGGREGATORS, CAT_2ND_LVL_LIST, (,),
-		CONFIG_2ND_LVL_ISR_TBL_OFFSET) };
-
-#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
-
-BUILD_ASSERT((CONFIG_NUM_3RD_LEVEL_AGGREGATORS * CONFIG_MAX_IRQ_PER_AGGREGATOR) <=
-		     BIT(CONFIG_3RD_LEVEL_INTERRUPT_BITS),
-	     "L3 bits not enough to cover the number of L3 IRQs");
-
-#define CAT_3RD_LVL_LIST(i, base) \
-	INIT_IRQ_PARENT_OFFSET(INTC_DT_IRQN_GET(CONFIG_3RD_LVL_INTR_0##i##_OFFSET), \
-			       CONFIG_3RD_LVL_INTR_0##i##_OFFSET, IRQ_INDEX_TO_OFFSET(i, base))
-
-const struct _irq_parent_entry _lvl3_irq_list[CONFIG_NUM_3RD_LEVEL_AGGREGATORS]
-	 = { LISTIFY(CONFIG_NUM_3RD_LEVEL_AGGREGATORS, CAT_3RD_LVL_LIST, (,),
-		CONFIG_3RD_LVL_ISR_TBL_OFFSET) };
-
-#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
-
-static const struct _irq_parent_entry *get_parent_entry(unsigned int parent_irq,
-				      const struct _irq_parent_entry list[],
-				      unsigned int length)
+static const struct _irq_parent_entry *get_intc_entry_for_irq(unsigned int irq)
 {
-	unsigned int i;
-	const struct _irq_parent_entry *entry = NULL;
+	const unsigned int level = irq_get_level(irq);
 
-	for (i = 0U; i < length; ++i) {
-		if (list[i].irq == parent_irq) {
-			entry = &list[i];
-			break;
+	/* 1st level aggregator is not registered */
+	if (level == 1) {
+		return NULL;
+	}
+
+	const unsigned int intc_irq = irq_get_intc_irq(irq);
+
+	/* Find an aggregator entry that matches the level & intc_irq */
+	STRUCT_SECTION_FOREACH_ALTERNATE(intc_table, _irq_parent_entry, intc) {
+		if ((intc->level == level) && (intc->irq == intc_irq)) {
+			return intc;
 		}
 	}
 
-	__ASSERT(i != length, "Invalid argument: %i", parent_irq);
-
-	return entry;
+	return NULL;
 }
 
 const struct device *z_get_sw_isr_device_from_irq(unsigned int irq)
 {
-	const struct device *dev = NULL;
-	unsigned int level, parent_irq;
-	const struct _irq_parent_entry *entry = NULL;
+	const struct _irq_parent_entry *intc = get_intc_entry_for_irq(irq);
 
-	level = irq_get_level(irq);
+	__ASSERT(intc != NULL, "can't find an aggregator to handle irq(%X)", irq);
 
-	if (level == 2U) {
-		parent_irq = irq_parent_level_2(irq);
-		entry = get_parent_entry(parent_irq,
-					 _lvl2_irq_list,
-					 CONFIG_NUM_2ND_LEVEL_AGGREGATORS);
-	}
-#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
-	else if (level == 3U) {
-		parent_irq = irq_parent_level_3(irq);
-		entry = get_parent_entry(parent_irq,
-					 _lvl3_irq_list,
-					 CONFIG_NUM_3RD_LEVEL_AGGREGATORS);
-	}
-#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
-	dev = entry != NULL ? entry->dev : NULL;
-
-	return dev;
+	return intc != NULL ? intc->dev : NULL;
 }
 
 unsigned int z_get_sw_isr_irq_from_device(const struct device *dev)
 {
-	for (size_t i = 0U; i < CONFIG_NUM_2ND_LEVEL_AGGREGATORS; ++i) {
-		if (_lvl2_irq_list[i].dev == dev) {
-			return _lvl2_irq_list[i].irq;
+	/* Get the IRQN for the aggregator */
+	STRUCT_SECTION_FOREACH_ALTERNATE(intc_table, _irq_parent_entry, intc) {
+		if (intc->dev == dev) {
+			return intc->irq;
 		}
 	}
 
-#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
-	for (size_t i = 0U; i < CONFIG_NUM_3RD_LEVEL_AGGREGATORS; ++i) {
-		if (_lvl3_irq_list[i].dev == dev) {
-			return _lvl3_irq_list[i].irq;
-		}
-	}
-#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
+	__ASSERT(false, "dev(%p) not found", dev);
 
 	return 0;
 }
 
 unsigned int z_get_sw_isr_table_idx(unsigned int irq)
 {
-	unsigned int table_idx, level, parent_irq, local_irq, parent_offset;
-	const struct _irq_parent_entry *entry = NULL;
+	unsigned int table_idx, local_irq;
+	const struct _irq_parent_entry *intc = get_intc_entry_for_irq(irq);
+	const unsigned int level = irq_get_level(irq);
 
-	level = irq_get_level(irq);
+	if (intc != NULL) {
+		local_irq = irq_from_level(irq, level);
+		__ASSERT_NO_MSG(local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR);
 
-	if (level == 2U) {
-		local_irq = irq_from_level_2(irq);
-		__ASSERT_NO_MSG(local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR);
-		parent_irq = irq_parent_level_2(irq);
-		entry = get_parent_entry(parent_irq,
-					 _lvl2_irq_list,
-					 CONFIG_NUM_2ND_LEVEL_AGGREGATORS);
-		parent_offset = entry != NULL ? entry->offset : 0U;
-		table_idx = parent_offset + local_irq;
-	}
-#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
-	else if (level == 3U) {
-		local_irq = irq_from_level_3(irq);
-		__ASSERT_NO_MSG(local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR);
-		parent_irq = irq_parent_level_3(irq);
-		entry = get_parent_entry(parent_irq,
-					 _lvl3_irq_list,
-					 CONFIG_NUM_3RD_LEVEL_AGGREGATORS);
-		parent_offset = entry != NULL ? entry->offset : 0U;
-		table_idx = parent_offset + local_irq;
-	}
-#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
-	else {
+		table_idx = intc->offset + local_irq;
+	} else {
+		/* irq level must be 1 if no intc entry */
+		__ASSERT(level == 1, "can't find an aggregator to handle irq(%X)", irq);
 		table_idx = irq;
 	}
 

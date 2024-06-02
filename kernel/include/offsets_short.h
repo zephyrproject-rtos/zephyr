@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_OFFSETS_SHORT_H_
 #define ZEPHYR_KERNEL_INCLUDE_OFFSETS_SHORT_H_
 
-#include <offsets.h>
+#include <zephyr/offsets.h>
 #include <offsets_short_arch.h>
 
 /* kernel */

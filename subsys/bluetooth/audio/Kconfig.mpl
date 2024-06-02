@@ -9,7 +9,6 @@
 config BT_MPL
 	bool "Support for media player"
 	select BT_CCID
-	select EXPERIMENTAL
 	help
 	  Enables support for media player
 	  Note that the provided media player is a sample that only provides a

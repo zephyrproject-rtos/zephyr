@@ -362,8 +362,8 @@ static void test_main(void)
 			.rank = csis_rank,
 			.lockable = true,
 			/* Using the CSIP_SET_MEMBER test sample SIRK */
-			.set_sirk = {0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce, 0x22, 0xfd,
-				     0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45},
+			.sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
+				  0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
 		};
 
 		err = bt_cap_acceptor_register(&csip_set_member_param, &csip_set_member);
@@ -416,8 +416,8 @@ static void test_main(void)
 		return;
 	}
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, gmap_acceptor_ad, ARRAY_SIZE(gmap_acceptor_ad),
-			      NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, gmap_acceptor_ad,
+			      ARRAY_SIZE(gmap_acceptor_ad), NULL, 0);
 	if (err != 0) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 		return;
@@ -449,7 +449,7 @@ static void test_args(int argc, char *argv[])
 static const struct bst_test_instance test_gmap_ugt[] = {
 	{
 		.test_id = "gmap_ugt",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 		.test_args_f = test_args,

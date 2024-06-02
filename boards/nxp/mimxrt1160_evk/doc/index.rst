@@ -267,10 +267,8 @@ however the :ref:`pyocd-debug-host-tools` do not yet support programming the
 external flashes on this board so you must reconfigure the board for one of the
 following debug probes instead.
 
-.. _Using J-Link RT1160:
-
 Using J-Link
----------------------------------
+------------
 
 Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
 path.
@@ -278,6 +276,17 @@ path.
 There are two options: the onboard debug circuit can be updated with Segger
 J-Link firmware, or :ref:`jlink-external-debug-probe` can be attached to the
 EVK. See `Using J-Link with MIMXRT1160-EVK or MIMXRT1170-EVK`_ for more details.
+
+Using LinkServer
+----------------
+
+Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
+search path.  LinkServer works with the CMSIS-DAP firmware include in LinkServer
+install. Please follow the ``LPCScrypt\docs\Debug_Probe_Firmware_Programming.pdf``
+for more details.
+
+Linkserver is the default runner. You may also se the ``-r linkserver`` option
+with West to use the LinkServer runner.
 
 Configuring a Console
 =====================

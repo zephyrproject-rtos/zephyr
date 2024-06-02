@@ -112,7 +112,7 @@ void posix_irq_check_idle_exit(void)
 {
 	if (_kernel.idle) {
 		_kernel.idle = 0;
-		z_pm_save_idle_exit();
+		pm_system_resume();
 	}
 }
 #endif

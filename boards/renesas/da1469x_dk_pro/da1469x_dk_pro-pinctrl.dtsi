@@ -24,10 +24,27 @@
 		};
 	};
 
+	/omit-if-no-ref/ i2c_sleep: i2c_sleep {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(GPIO, 0, 31)>,
+				<SMARTBOND_PINMUX(GPIO, 0, 30)>;
+			bias-pull-up;
+
+		};
+	};
+
 	i2c2_default: i2c2_default {
 		group1 {
 			pinmux = <SMARTBOND_PINMUX(I2C2_SDA, 0, 28)>,
 				<SMARTBOND_PINMUX(I2C2_SCL, 0, 29)>;
+			bias-pull-up;
+		};
+	};
+
+	/omit-if-no-ref/ i2c2_sleep: i2c2_sleep {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(GPIO, 0, 28)>,
+				<SMARTBOND_PINMUX(GPIO, 0, 29)>;
 			bias-pull-up;
 		};
 	};
@@ -47,15 +64,46 @@
 		};
 	};
 
+	/omit-if-no-ref/ display_controller_sleep: display_controller_sleep {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(GPIO, 1, 2)>,
+				<SMARTBOND_PINMUX(GPIO, 1, 3)>,
+				<SMARTBOND_PINMUX(GPIO, 1, 4)>,
+				<SMARTBOND_PINMUX(GPIO, 1, 5)>,
+				<SMARTBOND_PINMUX(GPIO, 1, 7)>,
+				<SMARTBOND_PINMUX(GPIO, 1, 8)>,
+				<SMARTBOND_PINMUX(GPIO, 0, 27)>,
+				<SMARTBOND_PINMUX(GPIO, 0, 28)>,
+				<SMARTBOND_PINMUX(GPIO, 0, 29)>,
+				<SMARTBOND_PINMUX(GPIO, 0, 30)>;
+		};
+	};
+
+	/omit-if-no-ref/ spi_sleep: spi_sleep {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(GPIO, 0, 21)>,
+				 <SMARTBOND_PINMUX(GPIO, 0, 24)>,
+				 <SMARTBOND_PINMUX(GPIO, 0, 26)>;
+		};
+	};
+
 	spi_controller: spi_controller {
 		group1 {
-			pinmux = <SMARTBOND_PINMUX(SPI_CLK, 0, 22)>,
-				<SMARTBOND_PINMUX(SPI_DO, 0, 23)>;
+			pinmux = <SMARTBOND_PINMUX(SPI_CLK, 0, 21)>,
+				 <SMARTBOND_PINMUX(SPI_DO, 0, 26)>;
 			output-enable;
 		};
 		group2 {
-			pinmux = <SMARTBOND_PINMUX(SPI_DI, 0, 25)>;
+			pinmux = <SMARTBOND_PINMUX(SPI_DI, 0, 24)>;
 			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ spi2_sleep: spi2_sleep {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(GPIO, 1, 3)>,
+				 <SMARTBOND_PINMUX(GPIO, 1, 4)>,
+				 <SMARTBOND_PINMUX(GPIO, 1, 5)>;
 		};
 	};
 

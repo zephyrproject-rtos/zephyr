@@ -46,7 +46,7 @@ static int icm42688_rtio_sample_fetch(const struct device *dev, int16_t readings
 static int icm42688_submit_one_shot(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
-	const enum sensor_channel *const channels = cfg->channels;
+	const struct sensor_chan_spec *const channels = cfg->channels;
 	const size_t num_channels = cfg->count;
 	uint32_t min_buf_len = sizeof(struct icm42688_encoded_data);
 	int rc;

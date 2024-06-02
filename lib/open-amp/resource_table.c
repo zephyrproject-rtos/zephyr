@@ -34,8 +34,10 @@ extern char ram_console[];
 #define __resource Z_GENERIC_SECTION(.resource_table)
 
 static struct fw_resource_table __resource resource_table = {
-	.ver = 1,
-	.num = RSC_TABLE_NUM_ENTRY,
+	.hdr = {
+		.ver = 1,
+		.num = RSC_TABLE_NUM_ENTRY,
+	},
 	.offset = {
 
 #if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
@@ -72,8 +74,8 @@ static struct fw_resource_table __resource resource_table = {
 #endif
 };
 
-void rsc_table_get(void **table_ptr, int *length)
+void rsc_table_get(struct fw_resource_table **table_ptr, int *length)
 {
-	*table_ptr = (void *)&resource_table;
+	*table_ptr = &resource_table;
 	*length = sizeof(resource_table);
 }

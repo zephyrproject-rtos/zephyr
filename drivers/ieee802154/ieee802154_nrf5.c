@@ -1005,6 +1005,10 @@ static int nrf5_configure(const struct device *dev,
 	case IEEE802154_CONFIG_RX_ON_WHEN_IDLE:
 		nrf_802154_rx_on_when_idle_set(config->rx_on_when_idle);
 		nrf5_data.rx_on_when_idle = config->rx_on_when_idle;
+
+		if (config->rx_on_when_idle == false) {
+			(void)nrf_802154_sleep_if_idle();
+		}
 		break;
 
 	default:

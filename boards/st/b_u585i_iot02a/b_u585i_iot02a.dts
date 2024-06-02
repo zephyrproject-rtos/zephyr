@@ -6,6 +6,8 @@
 
 /dts-v1/;
 #include "b_u585i_iot02a-common.dtsi"
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	model = "STMicroelectronics B-U585I-IOT02A discovery kit";
@@ -24,6 +26,14 @@
 		led0 = &green_led_1;
 		led1 = &red_led_1;
 		sw0 = &user_button;
+	};
+
+	octo_nor: memory@70000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x70000000 DT_SIZE_M(64)>;
+		zephyr,memory-region = "EXTMEM";
+		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
 	};
 };
 

@@ -70,11 +70,7 @@
 		};
 
 		shared_ram20_region: memory@2f88f000 {
-			compatible = "nordic,owned-memory";
 			reg = <0x2f88f000 DT_SIZE_K(4)>;
-			status = "disabled";
-			perm-read;
-			perm-write;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x2f88f000 0x1000>;

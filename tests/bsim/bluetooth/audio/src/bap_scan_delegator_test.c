@@ -680,7 +680,7 @@ static int common_init(void)
 	bt_bap_scan_delegator_register_cb(&scan_delegator_cb);
 	bt_le_per_adv_sync_cb_register(&pa_sync_cb);
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, AD_SIZE, NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, AD_SIZE, NULL, 0);
 	if (err) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 		return err;
@@ -808,19 +808,19 @@ static void test_main_server_sync_server_rem(void)
 static const struct bst_test_instance test_scan_delegator[] = {
 	{
 		.test_id = "bap_scan_delegator_client_sync",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_client_sync,
 	},
 	{
 		.test_id = "bap_scan_delegator_server_sync_client_rem",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_server_sync_client_rem,
 	},
 	{
 		.test_id = "bap_scan_delegator_server_sync_server_rem",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_server_sync_server_rem,
 	},

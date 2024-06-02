@@ -45,6 +45,8 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPUPPR     NRF54H20_XXAA
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L15_ENGA       NRF54L15_ENGA_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L15_ENGA_CPUAPP NRF_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L15_ENGA_CPUFLPR NRF_FLPR)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF54L15 NRF54L15_XXAA)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF54L15_CPUAPP NRF_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9120             NRF9120_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9160             NRF9160_XXAA)
 
@@ -127,10 +129,6 @@ zephyr_library_sources_ifdef(CONFIG_NRFX_WDT     ${SRC_DIR}/nrfx_wdt.c)
 
 if(CONFIG_NRFX_TWI OR CONFIG_NRFX_TWIM)
   zephyr_library_sources(${SRC_DIR}/nrfx_twi_twim.c)
-endif()
-
-if (CONFIG_NRF_GRTC_TIMER AND CONFIG_NRF_GRTC_TIMER_CLOCK_MANAGEMENT)
-  zephyr_compile_definitions(NRF_GRTC_HAS_EXTENDED=1)
 endif()
 
 # Inject HAL "CONFIG_NFCT_PINS_AS_GPIOS" definition if user requests to

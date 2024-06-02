@@ -137,13 +137,6 @@ void IRAM_ATTR __esp_platform_start(void)
 	wdt_hal_disable(&rtc_wdt_ctx);
 	wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
-#ifndef CONFIG_SOC_ENABLE_APPCPU
-	/* Configures the CPU clock, RTC slow and fast clocks, and performs
-	 * RTC slow clock calibration.
-	 */
-	esp_clk_init();
-#endif
-
 	esp_timer_early_init();
 
 #if CONFIG_SOC_ENABLE_APPCPU

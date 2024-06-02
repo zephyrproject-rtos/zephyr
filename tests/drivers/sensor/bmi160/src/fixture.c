@@ -33,7 +33,9 @@ static void sensor_bmi160_setup_emulator(const struct device *dev, const struct 
 	zassert_ok(sensor_attr_set(dev, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_FULL_SCALE, &scale));
 
 	for (size_t i = 0; i < ARRAY_SIZE(values); ++i) {
-		zassert_ok(emul_sensor_backend_set_channel(emulator, values[i].channel,
+		struct sensor_chan_spec chan_spec = {.chan_type = values[i].channel, .chan_idx = 0};
+
+		zassert_ok(emul_sensor_backend_set_channel(emulator, chan_spec,
 							   &values[i].value, 3));
 	}
 }

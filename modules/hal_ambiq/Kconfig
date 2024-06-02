@@ -50,4 +50,9 @@ config AMBIQ_HAL_USE_HWINFO
 	help
 	  Use the HWINFO driver from Ambiq HAL
 
+config AMBIQ_HAL_USE_BLEIF
+	bool
+	help
+	  Use the BLEIF driver from Ambiq HAL
+
 endif # AMBIQ_HAL

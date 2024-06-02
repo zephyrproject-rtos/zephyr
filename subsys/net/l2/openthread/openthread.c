@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
-#include <version.h>
+#include <zephyr/version.h>
 
 #include <openthread/cli.h>
 #include <openthread/ip6.h>

@@ -80,7 +80,7 @@ Discovering sets on a device:
    <dbg> bt_csip_set_coordinator.discover_func: Setup complete for 1 / 1
    Found 1 sets on device
    uart:~$ csip_set_coordinator discover_sets
-   <dbg> bt_csip_set_coordinator.Set SIRK
+   <dbg> bt_csip_set_coordinator.SIRK
    36 04 9a dc 66 3a a1 a1 |6...f:..
    1d 9a 2f 41 01 73 3e 01 |../A.s>.
    <dbg> bt_csip_set_coordinator.csip_set_coordinator_discover_sets_read_set_size_cb: 2
@@ -109,7 +109,7 @@ Lock set members:
    <dbg> bt_csip_set_coordinator.csip_set_coordinator_connected: Connected to 34:02:86:03:86:c0 (public)
    <dbg> bt_csip_set_coordinator.discover_func: Setup complete for 1 / 1
    <dbg> bt_csip_set_coordinator.csip_set_coordinator_lock_set_init_cb:
-   <dbg> bt_csip_set_coordinator.Set SIRK
+   <dbg> bt_csip_set_coordinator.SIRK
    36 04 9a dc 66 3a a1 a1 |6...f:..
    1d 9a 2f 41 01 73 3e 01 |../A.s>.
    <dbg> bt_csip_set_coordinator.csip_set_coordinator_discover_sets_read_set_size_cb: 2
@@ -149,9 +149,9 @@ Using the Set Member
                      [rank <int>] [not-lockable] [sirk <data>]
       lock          :Lock the set
       release       :Release the set [force]
-      set_sirk      :Set the currently used SIRK <sirk>
+      sirk          :Set the currently used SIRK <sirk>
       get_sirk      :Get the currently used SIRK
-      set_sirk_rsp  :Set the response used in SIRK requests <accept, accept_enc,
+      sirk_rsp      :Set the response used in SIRK requests <accept, accept_enc,
                      reject, oob>
 
 Example Usage
@@ -176,8 +176,8 @@ clients.
 
 .. code-block:: console
 
-   uart:~$ csip_set_member set_sirk 00112233445566778899aabbccddeeff
-   Set SIRK updated
+   uart:~$ csip_set_member sirk 00112233445566778899aabbccddeeff
+   SIRK updated
 
 Getting the current SIRK
 ------------------------
@@ -187,6 +187,6 @@ This command can get the currently used SIRK.
 .. code-block:: console
 
    uart:~$ csip_set_member get_sirk
-   Set SIRK
+   SIRK
    36 04 9a dc 66 3a a1 a1 |6...f:..
    1d 9a 2f 41 01 73 3e 01 |../A.s>.

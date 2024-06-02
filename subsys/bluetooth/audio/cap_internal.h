@@ -118,7 +118,8 @@ struct bt_cap_commander_proc_param {
 };
 
 typedef void (*bt_cap_common_discover_func_t)(
-	struct bt_conn *conn, int err, const struct bt_csip_set_coordinator_csis_inst *csis_inst);
+	struct bt_conn *conn, int err, const struct bt_csip_set_coordinator_set_member *member,
+	const struct bt_csip_set_coordinator_csis_inst *csis_inst);
 
 struct bt_cap_common_proc_param {
 	union {

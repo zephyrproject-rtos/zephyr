@@ -29,3 +29,13 @@ zephyr_sources_ifdef(
   CONFIG_GDBSTUB_SERIAL_BACKEND
   gdbstub/gdbstub_backend_serial.c
   )
+
+zephyr_sources_ifdef(
+  CONFIG_MIPI_STP_DECODER
+  mipi_stp_decoder.c
+  )
+
+add_subdirectory_ifdef(
+  CONFIG_SYMTAB
+  symtab
+  )

@@ -31,10 +31,19 @@
             bias-pull-up;
         };
     };
+
+    i2c2_sleep: i2c2_sleep {
+        group1 {
+            pinmux = <SMARTBOND_PINMUX(GPIO, 0, 19)>,
+                <SMARTBOND_PINMUX(GPIO, 0, 18)>;
+            bias-pull-up;
+        };
+    };
 };
 
 &i2c2 {
     clock-frequency = <400000>;
+    status = "okay";
 
     display_touch: ft6206@38 {
         compatible = "focaltech,ft5336";
@@ -47,7 +56,8 @@
 &lcdc {
     status = "okay";
     pinctrl-0 = <&display_controller_default>;
-    pinctrl-names = "default";
+    pinctrl-1 = <&display_controller_sleep>;
+    pinctrl-names = "default", "sleep";
     width = <480>;
     height = <272>;
     disp-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;

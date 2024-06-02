@@ -638,6 +638,9 @@ void video_buffer_release(struct video_buffer *buf);
 /** YUYV pixel format */
 #define VIDEO_PIX_FMT_YUYV video_fourcc('Y', 'U', 'Y', 'V') /* 16  Y0-Cb0 Y1-Cr0 */
 
+/** XYUV32 pixel format */
+#define VIDEO_PIX_FMT_XYUV32 video_fourcc('X', 'Y', 'U', 'V') /* 32  XYUV-8-8-8-8 */
+
 /**
  *
  * @}

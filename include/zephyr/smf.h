@@ -18,26 +18,27 @@
 /**
  * @brief State Machine Framework API
  * @defgroup smf State Machine Framework API
+ * @version 0.1.0
  * @ingroup os_services
  * @{
  */
 
 /**
- * @brief Macro to create a hierarchical state.
+ * @brief Macro to create a hierarchical state with initial transitions.
  *
- * @param _entry   State entry function
- * @param _run     State run function
- * @param _exit    State exit function
+ * @param _entry   State entry function or NULL
+ * @param _run     State run function or NULL
+ * @param _exit    State exit function or NULL
  * @param _parent  State parent object or NULL
  * @param _initial State initial transition object or NULL
  */
-#define SMF_CREATE_STATE(_entry, _run, _exit, _parent, _initial)               \
-{                                                                              \
-	.entry = _entry,                                                       \
-	.run   = _run,                                                         \
-	.exit  = _exit,                                                        \
-	IF_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT, (.parent = _parent,))          \
-	IF_ENABLED(CONFIG_SMF_INITIAL_TRANSITION, (.initial = _initial,))      \
+#define SMF_CREATE_STATE(_entry, _run, _exit, _parent, _initial)           \
+{                                                                          \
+	.entry   = _entry,                                                 \
+	.run     = _run,                                                   \
+	.exit    = _exit,                                                  \
+	IF_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT, (.parent = _parent,))      \
+	IF_ENABLED(CONFIG_SMF_INITIAL_TRANSITION, (.initial = _initial,))  \
 }
 
 /**
@@ -72,6 +73,7 @@ struct smf_state {
 	const state_execution run;
 	/** Optional method that will be run when this state exists */
 	const state_execution exit;
+#ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 	/**
 	 * Optional parent state that contains common entry/run/exit
 	 *	implementation among various child states.
@@ -79,8 +81,8 @@ struct smf_state {
 	 *	run:   Parent function executes AFTER child function.
 	 *	exit:  Parent function executes AFTER child function.
 	 *
-	 *	Note: When transitioning between two child states with a shared parent,
-	 *	that parent's exit and entry functions do not execute.
+	 *	Note: When transitioning between two child states with a shared
+	 *      parent,	that parent's exit and entry functions do not execute.
 	 */
 	const struct smf_state *parent;
 
@@ -89,7 +91,8 @@ struct smf_state {
 	 * Optional initial transition state. NULL for leaf states.
 	 */
 	const struct smf_state *initial;
-#endif
+#endif /* CONFIG_SMF_INITIAL_TRANSITION */
+#endif /* CONFIG_SMF_ANCESTOR_SUPPORT */
 };
 
 /** Defines the current context of the state machine. */
@@ -98,6 +101,11 @@ struct smf_ctx {
 	const struct smf_state *current;
 	/** Previous state the state machine executed */
 	const struct smf_state *previous;
+
+#ifdef CONFIG_SMF_ANCESTOR_SUPPORT
+	/** Currently executing state (which may be a parent) */
+	const struct smf_state *executing;
+#endif /* CONFIG_SMF_ANCESTOR_SUPPORT */
 	/**
 	 * This value is set by the set_terminate function and
 	 * should terminate the state machine when its set to a
@@ -122,8 +130,8 @@ void smf_set_initial(struct smf_ctx *ctx, const struct smf_state *init_state);
 
 /**
  * @brief Changes a state machines state. This handles exiting the previous
- *        state and entering the target state. A common parent state will not
- *        exited nor be re-entered.
+ *        state and entering the target state. For HSMs the entry and exit
+ *        actions of the Least Common Ancestor will not be run.
  *
  * @param ctx       State machine context
  * @param new_state State to transition to (NULL is valid and exits all states)

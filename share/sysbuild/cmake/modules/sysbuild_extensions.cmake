@@ -460,16 +460,6 @@ function(ExternalZephyrProject_Cmake)
                PROPERTY IMAGE_CONF_SCRIPT
   )
 
-  # Update ROOT variables with relative paths to use absolute paths based on
-  # the source application directory.
-  foreach(type MODULE_EXT BOARD SOC ARCH SCA)
-    if(DEFINED CACHE{${type}_ROOT} AND NOT IS_ABSOLUTE $CACHE{${type}_ROOT})
-      set(rel_path $CACHE{${type}_ROOT})
-      cmake_path(ABSOLUTE_PATH rel_path BASE_DIRECTORY "${APP_DIR}" NORMALIZE OUTPUT_VARIABLE abs_path)
-      set(${type}_ROOT ${abs_path} CACHE PATH "Sysbuild adjusted absolute path" FORCE)
-    endif()
-  endforeach()
-
   sysbuild_cache(CREATE APPLICATION ${ZCMAKE_APPLICATION})
 
   foreach(script ${${ZCMAKE_APPLICATION}_CONF_SCRIPT})
@@ -661,7 +651,7 @@ function(sysbuild_add_subdirectory source_dir)
       " (expected at most 2, got ${ARGC})"
     )
   endif()
-  set(binary_dir ${ARGV1})
+  set(binary_dir ${ARGN})
 
   # Update SYSBUILD_CURRENT_SOURCE_DIR in this scope, to support nesting
   # of sysbuild_add_subdirectory() and even regular add_subdirectory().

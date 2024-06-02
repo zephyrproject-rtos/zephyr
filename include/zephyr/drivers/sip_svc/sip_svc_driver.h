@@ -349,6 +349,6 @@ static inline void z_impl_sip_svc_plat_free_async_memory(const struct device *de
 }
 
 
-#include <syscalls/sip_svc_driver.h>
+#include <zephyr/syscalls/sip_svc_driver.h>
 
 #endif /* ZEPHYR_INCLUDE_SIP_SVC_DRIVER_H_ */

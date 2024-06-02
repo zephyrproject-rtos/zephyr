@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Socket utility functions.
+ */
+
 #ifndef ZEPHYR_INCLUDE_NET_SOCKETUTILS_H_
 #define ZEPHYR_INCLUDE_NET_SOCKETUTILS_H_
 

@@ -91,8 +91,18 @@ class Harness:
         """
         return self.id
 
+    def parse_record(self, line) -> re.Match:
+        match = None
+        if self.record_pattern:
+            match = self.record_pattern.search(line)
+            if match:
+                self.recording.append({ k:v.strip() for k,v in match.groupdict(default="").items() })
+        return match
+    #
 
     def process_test(self, line):
+
+        self.parse_record(line)
 
         runid_match = re.search(self.run_id_pattern, line)
         if runid_match:
@@ -142,18 +152,17 @@ class Robot(Harness):
         tc.status = "passed"
 
     def run_robot_test(self, command, handler):
-
         start_time = time.time()
         env = os.environ.copy()
-        env["ROBOT_FILES"] = self.path
 
+        command.append(os.path.join(handler.sourcedir, self.path))
         with subprocess.Popen(command, stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT, cwd=self.instance.build_dir, env=env) as cmake_proc:
-            out, _ = cmake_proc.communicate()
+                stderr=subprocess.STDOUT, cwd=self.instance.build_dir, env=env) as renode_test_proc:
+            out, _ = renode_test_proc.communicate()
 
             self.instance.execution_time = time.time() - start_time
 
-            if cmake_proc.returncode == 0:
+            if renode_test_proc.returncode == 0:
                 self.instance.status = "passed"
                 # all tests in one Robot file are treated as a single test case,
                 # so its status should be set accordingly to the instance status
@@ -251,11 +260,6 @@ class Console(Harness):
         elif self.GCOV_END in line:
             self.capture_coverage = False
 
-        if self.record_pattern:
-            match = self.record_pattern.search(line)
-            if match:
-                self.recording.append({ k:v.strip() for k,v in match.groupdict(default="").items() })
-
         self.process_test(line)
         # Reset the resulting test state to 'failed' when not all of the patterns were
         # found in the output, but just ztest's 'PROJECT EXECUTION SUCCESSFUL'.
@@ -307,6 +311,7 @@ class Pytest(Harness):
         finally:
             if self.reserved_serial:
                 self.instance.handler.make_device_available(self.reserved_serial)
+        self.instance.record(self.recording)
         self._update_test_status()
 
     def generate_command(self):
@@ -402,6 +407,9 @@ class Pytest(Harness):
         if hardware.post_script:
             command.append(f'--post-script={hardware.post_script}')
 
+        if hardware.flash_before:
+            command.append(f'--flash-before={hardware.flash_before}')
+
         return command
 
     def run_command(self, cmd, timeout):
@@ -413,7 +421,7 @@ class Pytest(Harness):
             env=env
         ) as proc:
             try:
-                reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
+                reader_t = threading.Thread(target=self._output_reader, args=(proc, self), daemon=True)
                 reader_t.start()
                 reader_t.join(timeout)
                 if reader_t.is_alive():
@@ -450,12 +458,13 @@ class Pytest(Harness):
         return cmd, env
 
     @staticmethod
-    def _output_reader(proc):
+    def _output_reader(proc, harness):
         while proc.stdout.readable() and proc.poll() is None:
             line = proc.stdout.readline().decode().strip()
             if not line:
                 continue
             logger.debug('PYTEST: %s', line)
+            harness.parse_record(line)
         proc.communicate()
 
     def _update_test_status(self):

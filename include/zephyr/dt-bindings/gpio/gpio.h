@@ -79,11 +79,12 @@
 
 /** @} */
 
-/* Note: Bits 15 downto 8 are reserved for SoC specific flags. */
-
-/** Configures GPIO interrupt to wakeup the system from low power mode.
+/**
+ * Configures GPIO interrupt to wakeup the system from low power mode.
  */
-#define GPIO_INT_WAKEUP         (1u << 28)
+#define GPIO_INT_WAKEUP         (1 << 6)
+
+/* Note: Bits 15 downto 8 are reserved for SoC specific flags. */
 
 /**
  * @}

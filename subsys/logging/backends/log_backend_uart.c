@@ -189,7 +189,7 @@ static void panic(struct log_backend const *const backend)
 
 	/* Ensure that the UART device is in active mode */
 #if defined(CONFIG_PM_DEVICE_RUNTIME)
-	pm_device_runtime_get(uart_dev);
+	(void)pm_device_runtime_get(uart_dev);
 #elif defined(CONFIG_PM_DEVICE)
 	enum pm_device_state pm_state;
 	int rc;

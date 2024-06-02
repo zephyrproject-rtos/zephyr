@@ -67,6 +67,26 @@ int bt_audio_data_parse(const uint8_t ltv[], size_t size,
 	return 0;
 }
 
+uint8_t bt_audio_get_chan_count(enum bt_audio_location chan_allocation)
+{
+	if (chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO) {
+		return 1;
+	}
+
+#ifdef POPCOUNT
+	return POPCOUNT(chan_allocation);
+#else
+	uint8_t cnt = 0U;
+
+	while (chan_allocation != 0U) {
+		cnt += chan_allocation & 1U;
+		chan_allocation >>= 1U;
+	}
+
+	return cnt;
+#endif
+}
+
 #if defined(CONFIG_BT_CONN)
 
 static uint8_t bt_audio_security_check(const struct bt_conn *conn)

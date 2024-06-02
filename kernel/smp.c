@@ -60,6 +60,7 @@ unsigned int z_smp_global_lock(void)
 
 	if (!_current->base.global_lock_count) {
 		while (!atomic_cas(&global_lock, 0, 1)) {
+			arch_spin_relax();
 		}
 	}
 

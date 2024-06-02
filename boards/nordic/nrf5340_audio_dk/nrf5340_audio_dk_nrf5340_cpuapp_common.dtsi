@@ -193,7 +193,7 @@ arduino_spi: &spi4 {
 	pinctrl-names = "default", "sleep";
 	sdhc0: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";
-		reg = <0>;
+		reg = <1>;
 		status = "okay";
 		sdmmc {
 			compatible = "zephyr,sdmmc-disk";
@@ -205,7 +205,7 @@ arduino_spi: &spi4 {
 
 	cs47l63: cs47l63@2 {
 		compatible = "cirrus,cs47l63";
-		reg = <1>;
+		reg = <2>;
 		spi-max-frequency = <8000000>;
 		irq-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;

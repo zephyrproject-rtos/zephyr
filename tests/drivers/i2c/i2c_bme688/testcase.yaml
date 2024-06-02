@@ -1,0 +1,6 @@
+common:
+  tags: drivers i2c
+  depends_on: i2c
+tests:
+  drivers.i2c.bme688:
+    filter: dt_compat_enabled("bosch,bme680")

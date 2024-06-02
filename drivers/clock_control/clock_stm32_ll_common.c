@@ -205,7 +205,7 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
-		/* Attemp to change a wrong periph clock bit */
+		/* Attempt to change a wrong periph clock bit */
 		return -ENOTSUP;
 	}
 
@@ -228,7 +228,7 @@ static inline int stm32_clock_control_off(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
-		/* Attemp to toggle a wrong periph clock bit */
+		/* Attempt to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
 
@@ -733,6 +733,7 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Some clocks would be activated by default */
 	config_enable_default_clocks();
+	config_regulator_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
 #if defined(FLASH_ACR_LATENCY)
 	uint32_t old_flash_freq;
@@ -750,7 +751,7 @@ int stm32_clock_control_init(const struct device *dev)
 	}
 #endif /* FLASH_ACR_LATENCY */
 
-	/* Set up indiviual enabled clocks */
+	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
 	/* Set up PLLs */
@@ -838,6 +839,7 @@ void HAL_RCC_CSSCallback(void)
 }
 #endif
 
+void __weak config_regulator_voltage(uint32_t hclk_freq) {}
 /**
  * @brief RCC device, note that priority is intentionally set to 1 so
  * that the device init runs just after SOC init

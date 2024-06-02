@@ -573,6 +573,7 @@ class ProjectBuilder(FilterBuilder):
     def log_info_file(self, inline_logs):
         build_dir = self.instance.build_dir
         h_log = "{}/handler.log".format(build_dir)
+        he_log = "{}/handler_stderr.log".format(build_dir)
         b_log = "{}/build.log".format(build_dir)
         v_log = "{}/valgrind.log".format(build_dir)
         d_log = "{}/device.log".format(build_dir)
@@ -584,6 +585,8 @@ class ProjectBuilder(FilterBuilder):
             self.log_info("{}".format(pytest_log), inline_logs, log_testcases=True)
         elif os.path.exists(h_log) and os.path.getsize(h_log) > 0:
             self.log_info("{}".format(h_log), inline_logs)
+        elif os.path.exists(he_log) and os.path.getsize(he_log) > 0:
+            self.log_info("{}".format(he_log), inline_logs)
         elif os.path.exists(d_log) and os.path.getsize(d_log) > 0:
             self.log_info("{}".format(d_log), inline_logs)
         else:
@@ -757,6 +760,7 @@ class ProjectBuilder(FilterBuilder):
         allow = [
             os.path.join('zephyr', '.config'),
             'handler.log',
+            'handler_stderr.log',
             'build.log',
             'device.log',
             'recording.csv',

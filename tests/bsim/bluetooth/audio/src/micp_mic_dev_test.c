@@ -420,7 +420,7 @@ static void test_main(void)
 
 	printk("MICP initialized\n");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, AD_SIZE, NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, AD_SIZE, NULL, 0);
 	if (err != 0) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 		return;
@@ -436,13 +436,13 @@ static void test_main(void)
 static const struct bst_test_instance test_micp[] = {
 	{
 		.test_id = "micp_mic_dev_only",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_mic_dev_only
 	},
 	{
 		.test_id = "micp_mic_dev",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
 	},

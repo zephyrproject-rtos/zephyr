@@ -25,8 +25,6 @@
 #include "audio.h"
 
 #define INVALID_BROADCAST_ID 0xFFFFFFFFU
-/* BIS sync is a 32-bit bitfield where BIT(0) is not allowed */
-#define VALID_BIS_SYNC(_bis_sync) ((bis_sync & BIT(0)) == 0U && bis_sync < UINT32_MAX)
 
 static uint8_t received_base[UINT8_MAX];
 static uint8_t received_base_size;
@@ -215,16 +213,9 @@ static void bap_broadcast_assistant_recv_state_cb(
 	}
 }
 
-static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn,
-							  int err,
-							  uint8_t src_id)
+static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, uint8_t src_id)
 {
-	if (err != 0) {
-		shell_error(ctx_shell, "BASS recv state removed failed (%d)",
-			    err);
-	} else {
-		shell_print(ctx_shell, "BASS recv state %u removed", src_id);
-	}
+	shell_print(ctx_shell, "BASS recv state %u removed", src_id);
 }
 
 static void bap_broadcast_assistant_scan_start_cb(struct bt_conn *conn, int err)

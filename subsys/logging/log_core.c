@@ -458,7 +458,7 @@ void z_vrfy_log_panic(void)
 {
 	z_impl_log_panic();
 }
-#include <syscalls/log_panic_mrsh.c>
+#include <zephyr/syscalls/log_panic_mrsh.c>
 #endif
 
 static bool msg_filter_check(struct log_backend const *backend,
@@ -594,7 +594,7 @@ bool z_vrfy_log_process(void)
 {
 	return z_impl_log_process();
 }
-#include <syscalls/log_process_mrsh.c>
+#include <zephyr/syscalls/log_process_mrsh.c>
 #endif
 
 uint32_t z_impl_log_buffered_cnt(void)
@@ -607,7 +607,7 @@ uint32_t z_vrfy_log_buffered_cnt(void)
 {
 	return z_impl_log_buffered_cnt();
 }
-#include <syscalls/log_buffered_cnt_mrsh.c>
+#include <zephyr/syscalls/log_buffered_cnt_mrsh.c>
 #endif
 
 void z_log_dropped(bool buffered)

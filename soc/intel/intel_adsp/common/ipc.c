@@ -160,7 +160,7 @@ int intel_adsp_ipc_send_message(const struct device *dev,
 		return -EBUSY;
 	}
 
-	k_sem_init(&devdata->sem, 0, 1);
+	k_sem_reset(&devdata->sem);
 	/* Prevent entering runtime idle state until IPC acknowledgment is received. */
 	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 	devdata->tx_ack_pending = true;

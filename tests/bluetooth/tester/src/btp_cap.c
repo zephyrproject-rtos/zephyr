@@ -50,6 +50,7 @@ static void btp_send_discovery_completed_ev(struct bt_conn *conn, uint8_t status
 }
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
+				      const struct bt_csip_set_coordinator_set_member *member,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	LOG_DBG("");

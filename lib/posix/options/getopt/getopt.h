@@ -48,7 +48,7 @@ struct option {
 	int val;
 };
 
-/* Function intializes getopt_state structure for current thread */
+/* Function initializes getopt_state structure for current thread */
 void getopt_init(void);
 
 /* Function returns getopt_state structure for the current thread. */

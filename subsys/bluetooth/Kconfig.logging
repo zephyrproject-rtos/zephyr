@@ -298,6 +298,10 @@ module = BT_HFP_HF
 module-str = "Bluetooth Hands Free Profile (HFP)"
 source "subsys/logging/Kconfig.template.log_config_inherit"
 
+module = BT_HFP_AG
+module-str = "Bluetooth Hands Free Audio Gateway Profile (HFP AG)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
 module = BT_AVDTP
 module-str = "Bluetooth AVDTP debug"
 source "subsys/logging/Kconfig.template.log_config_inherit"

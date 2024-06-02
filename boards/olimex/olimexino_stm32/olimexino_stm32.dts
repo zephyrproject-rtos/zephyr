@@ -166,7 +166,6 @@ zephyr_udc0: &usb {
 &can1 {
 	pinctrl-0 = <&can_rx_remap1_pb8 &can_tx_remap1_pb9>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
 	phys = <&transceiver0>;
 	status = "okay";
 };

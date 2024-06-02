@@ -12,6 +12,7 @@
 #include <zephyr/sys/atomic.h>
 
 #include <zephyr/modem/pipe.h>
+#include <zephyr/modem/stats.h>
 
 #ifndef ZEPHYR_MODEM_PPP_
 #define ZEPHYR_MODEM_PPP_
@@ -112,6 +113,11 @@ struct modem_ppp {
 
 #if defined(CONFIG_NET_STATISTICS_PPP)
 	struct net_stats_ppp stats;
+#endif
+
+#if CONFIG_MODEM_STATS
+	struct modem_stats_buffer receive_buf_stats;
+	struct modem_stats_buffer transmit_buf_stats;
 #endif
 };
 

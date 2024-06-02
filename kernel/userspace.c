@@ -94,7 +94,7 @@ const char *otype_to_str(enum k_objects otype)
 	case K_OBJ_ANY:
 		ret = "generic";
 		break;
-#include <otype-to-str.h>
+#include <zephyr/otype-to-str.h>
 	default:
 		ret = "?";
 		break;
@@ -192,7 +192,7 @@ static size_t obj_size_get(enum k_objects otype)
 	size_t ret;
 
 	switch (otype) {
-#include <otype-to-size.h>
+#include <zephyr/otype-to-size.h>
 	default:
 		ret = sizeof(const struct device);
 		break;
@@ -277,8 +277,10 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 		if (idx != 0) {
 			*tidx = base + (idx - 1);
 
-			sys_bitfield_clear_bit((mem_addr_t)_thread_idx_map,
-					       *tidx);
+			/* Clear the bit. We already know the array index,
+			 * and the bit to be cleared.
+			 */
+			_thread_idx_map[i] &= ~(BIT(idx - 1));
 
 			/* Clear permission from all objects */
 			k_object_wordlist_foreach(clear_perms_cb,
@@ -308,7 +310,11 @@ static void thread_idx_free(uintptr_t tidx)
 	/* To prevent leaked permission when index is recycled */
 	k_object_wordlist_foreach(clear_perms_cb, (void *)tidx);
 
-	sys_bitfield_set_bit((mem_addr_t)_thread_idx_map, tidx);
+	/* Figure out which bits to set in _thread_idx_map[] and set it. */
+	int base = tidx / NUM_BITS(_thread_idx_map[0]);
+	int offset = tidx % NUM_BITS(_thread_idx_map[0]);
+
+	_thread_idx_map[base] |= BIT(offset);
 }
 
 static struct k_object *dynamic_object_create(enum k_objects otype, size_t align,
@@ -1008,4 +1014,4 @@ static uintptr_t handler_no_syscall(uintptr_t arg1, uintptr_t arg2,
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 
-#include <syscall_dispatch.c>
+#include <zephyr/syscall_dispatch.c>

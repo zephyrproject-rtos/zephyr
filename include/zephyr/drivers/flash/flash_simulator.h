@@ -34,6 +34,6 @@ __syscall void *flash_simulator_get_memory(const struct device *dev,
 }
 #endif
 
-#include <syscalls/flash_simulator.h>
+#include <zephyr/syscalls/flash_simulator.h>
 
 #endif /* __ZEPHYR_INCLUDE_DRIVERS__FLASH_SIMULATOR_H__ */

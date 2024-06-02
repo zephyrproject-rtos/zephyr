@@ -8,6 +8,8 @@ tests:
       - qemu_x86
       - nrf51dk/nrf51822
       - nrf52dk/nrf52832
+      - rd_rw612_bga
     tags: bluetooth
     integration_platforms:
       - qemu_cortex_m3
+      - rd_rw612_bga

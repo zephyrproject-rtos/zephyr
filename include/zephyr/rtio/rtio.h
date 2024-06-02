@@ -1485,6 +1485,6 @@ static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
 }
 #endif
 
-#include <syscalls/rtio.h>
+#include <zephyr/syscalls/rtio.h>
 
 #endif /* ZEPHYR_INCLUDE_RTIO_RTIO_H_ */

@@ -12,6 +12,7 @@
 #include <soc.h>
 #include <fsl_pwm.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
 
@@ -35,33 +36,16 @@ struct pwm_mcux_config {
 struct pwm_mcux_data {
 	uint32_t period_cycles[CHANNEL_COUNT];
 	pwm_signal_param_t channel[CHANNEL_COUNT];
+	struct k_mutex lock;
 };
 
-static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
+static int mcux_pwm_set_cycles_internal(const struct device *dev, uint32_t channel,
 			       uint32_t period_cycles, uint32_t pulse_cycles,
 			       pwm_flags_t flags)
 {
 	const struct pwm_mcux_config *config = dev->config;
 	struct pwm_mcux_data *data = dev->data;
 	pwm_level_select_t level;
-
-	if (channel >= CHANNEL_COUNT) {
-		LOG_ERR("Invalid channel");
-		return -EINVAL;
-	}
-
-	if (period_cycles == 0) {
-		LOG_ERR("Channel can not be set to inactive level");
-		return -ENOTSUP;
-	}
-
-	if (period_cycles > UINT16_MAX) {
-		/* 16-bit resolution */
-		LOG_ERR("Too long period (%u), adjust pwm prescaler!",
-			period_cycles);
-		/* TODO: dynamically adjust prescaler */
-		return -EINVAL;
-	}
 
 	if (flags & PWM_POLARITY_INVERTED) {
 		level = kPWM_LowTrue;
@@ -158,6 +142,36 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
+static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
+			       uint32_t period_cycles, uint32_t pulse_cycles,
+			       pwm_flags_t flags)
+{
+	struct pwm_mcux_data *data = dev->data;
+	int result;
+
+	if (channel >= CHANNEL_COUNT) {
+		LOG_ERR("Invalid channel");
+		return -EINVAL;
+	}
+
+	if (period_cycles == 0) {
+		LOG_ERR("Channel can not be set to inactive level");
+		return -ENOTSUP;
+	}
+
+	if (period_cycles > UINT16_MAX) {
+		/* 16-bit resolution */
+		LOG_ERR("Too long period (%u), adjust pwm prescaler!",
+			period_cycles);
+		/* TODO: dynamically adjust prescaler */
+		return -EINVAL;
+	}
+	k_mutex_lock(&data->lock, K_FOREVER);
+	result = mcux_pwm_set_cycles_internal(dev, channel, period_cycles, pulse_cycles, flags);
+	k_mutex_unlock(&data->lock);
+	return result;
+}
+
 static int mcux_pwm_get_cycles_per_sec(const struct device *dev,
 				       uint32_t channel, uint64_t *cycles)
 {
@@ -180,6 +194,8 @@ static int pwm_mcux_init(const struct device *dev)
 	pwm_config_t pwm_config;
 	status_t status;
 	int i, err;
+
+	k_mutex_init(&data->lock);
 
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");

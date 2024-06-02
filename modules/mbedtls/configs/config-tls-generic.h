@@ -271,23 +271,25 @@
 #define MBEDTLS_ECP_NIST_OPTIM
 #endif
 
-/* Supported message authentication methods */
+/* Supported hash algorithms */
 
-#if defined(CONFIG_MBEDTLS_MAC_MD4_ENABLED)
+#if defined(CONFIG_MBEDTLS_MD4)
 #define MBEDTLS_MD4_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_MD5_ENABLED)
+#if defined(CONFIG_MBEDTLS_MD5)
 #define MBEDTLS_MD5_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_SHA1_ENABLED)
+#if defined(CONFIG_MBEDTLS_SHA1)
 #define MBEDTLS_SHA1_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_SHA256_ENABLED) || \
-	defined(CONFIG_MBEDTLS_HASH_SHA256_ENABLED)
+#if defined(CONFIG_MBEDTLS_SHA224)
 #define MBEDTLS_SHA224_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_SHA256)
 #define MBEDTLS_SHA256_C
 #endif
 
@@ -295,21 +297,19 @@
 #define MBEDTLS_SHA256_SMALLER
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_SHA384_ENABLED) || \
-	defined(CONFIG_MBEDTLS_HASH_SHA384_ENABLED)
+#if defined(CONFIG_MBEDTLS_SHA384)
 #define MBEDTLS_SHA384_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_SHA512_ENABLED) || \
-	defined(CONFIG_MBEDTLS_HASH_SHA512_ENABLED)
+#if defined(CONFIG_MBEDTLS_SHA512)
 #define MBEDTLS_SHA512_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_POLY1305_ENABLED)
+#if defined(CONFIG_MBEDTLS_POLY1305)
 #define MBEDTLS_POLY1305_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_CMAC_ENABLED)
+#if defined(CONFIG_MBEDTLS_CMAC)
 #define MBEDTLS_CMAC_C
 #endif
 
@@ -373,12 +373,6 @@
     defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED) || \
     defined(MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED)
 #define MBEDTLS_RSA_C
-#endif
-
-#if defined(MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED) || \
-    defined(MBEDTLS_KEY_EXCHANGE_RSA_ENABLED) || \
-    defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED) || \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED)
 #define MBEDTLS_PKCS1_V15
 #define MBEDTLS_PKCS1_V21
 #endif
@@ -428,7 +422,7 @@
 #define MBEDTLS_PK_C
 #endif
 
-#if defined(MBEDTLS_ECDSA_C) || defined(MBEDTLS_RSA_C) || defined(MBEDTLS_X509_USE_C)
+#if defined(MBEDTLS_ECDSA_C) || defined(MBEDTLS_X509_USE_C)
 #define MBEDTLS_ASN1_PARSE_C
 #endif
 
@@ -473,10 +467,7 @@
 
 #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
 #define MBEDTLS_PSA_CRYPTO_C
-
-#if defined(CONFIG_MBEDTLS_USE_PSA_CRYPTO)
-#define MBEDTLS_USE_PSA_CRYPTO
-#endif
+#define MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS
 
 #if defined(CONFIG_ARCH_POSIX) && !defined(CONFIG_PICOLIBC)
 #define MBEDTLS_PSA_KEY_SLOT_COUNT     64
@@ -487,8 +478,15 @@
 
 #endif /* CONFIG_MBEDTLS_PSA_CRYPTO_C */
 
+#if defined(CONFIG_MBEDTLS_USE_PSA_CRYPTO)
+#define MBEDTLS_USE_PSA_CRYPTO
+#endif
+
 #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT)
 #define MBEDTLS_PSA_CRYPTO_CLIENT
+#define MBEDTLS_PSA_CRYPTO_CONFIG
+#define MBEDTLS_PSA_CRYPTO_CONFIG_FILE   "config-psa.h"
+
 #endif
 
 #if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2) && defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
@@ -505,10 +503,6 @@
 
 #if defined(CONFIG_BUILD_WITH_TFM)
 #undef MBEDTLS_PSA_CRYPTO_C
-#endif
-
-#if defined(CONFIG_PSA_WANT_ALG_SHA_256)
-#define PSA_WANT_ALG_SHA_256 1
 #endif
 
 #endif /* MBEDTLS_CONFIG_H */

@@ -6,10 +6,11 @@
 
 /** @file tftp.h
  *
+ * @brief TFTP Client Implementation
+ *
  * @defgroup tftp_client TFTP Client library
  * @ingroup networking
  * @{
- * @brief TFTP Client Implementation
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_TFTP_H_

@@ -25,6 +25,7 @@
 #define CAP_UNICAST_CLIENT_STREAM_COUNT ARRAY_SIZE(unicast_streams)
 
 static void cap_discover_cb(struct bt_conn *conn, int err,
+			    const struct bt_csip_set_coordinator_set_member *member,
 			    const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (err != 0) {
@@ -1344,7 +1345,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_cap_initiator_unicast_update, 2, CAP_UNICAST_CLIENT_STREAM_COUNT),
 	SHELL_CMD_ARG(unicast_stop, NULL,
 		      "Unicast stop streams [stream [stream [stream...]]] (all by default)",
-		      cmd_cap_initiator_unicast_stop, 2, CAP_UNICAST_CLIENT_STREAM_COUNT),
+		      cmd_cap_initiator_unicast_stop, 1, CAP_UNICAST_CLIENT_STREAM_COUNT),
 	SHELL_CMD_ARG(unicast_cancel, NULL, "Unicast cancel current procedure",
 		      cmd_cap_initiator_unicast_cancel, 1, 0),
 #if UNICAST_SINK_SUPPORTED

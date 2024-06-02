@@ -15,6 +15,5 @@ supported:
   - backup_sram
   - watchdog
   - usb
-  - sdhc
   - qspi
 vendor: weact

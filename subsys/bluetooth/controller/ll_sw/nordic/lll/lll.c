@@ -192,6 +192,14 @@ int lll_init(void)
 		return err;
 	}
 
+	if (IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN) ||
+	    IS_ENABLED(HAL_RADIO_GPIO_HAVE_LNA_PIN)) {
+		err = radio_gpio_pa_lna_init();
+		if (err) {
+			return err;
+		}
+	}
+
 	/* Initialize SW IRQ structure */
 	hal_swi_init();
 
@@ -257,6 +265,11 @@ int lll_deinit(void)
 	err = lll_clock_deinit();
 	if (err < 0) {
 		return err;
+	}
+
+	if (IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN) ||
+	    IS_ENABLED(HAL_RADIO_GPIO_HAVE_LNA_PIN)) {
+		radio_gpio_pa_lna_deinit();
 	}
 
 	/* Disable IRQs */

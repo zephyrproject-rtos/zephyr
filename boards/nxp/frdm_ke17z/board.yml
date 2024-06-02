@@ -1,0 +1,5 @@
+board:
+  name: frdm_ke17z
+  vendor: nxp
+  socs:
+    - name: mke17z7

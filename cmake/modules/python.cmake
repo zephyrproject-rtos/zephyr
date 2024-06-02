@@ -25,7 +25,7 @@ if(NOT Python3_EXECUTABLE)
   # cause just using find_program directly could result in a python2.7 as python,
   # and not finding a valid python3.
   foreach(candidate "python" "python3")
-    find_program(Python3_EXECUTABLE ${candidate})
+    find_program(Python3_EXECUTABLE ${candidate} PATHS ENV VIRTUAL_ENV NO_CMAKE_PATH)
     if(Python3_EXECUTABLE)
         execute_process (COMMAND "${Python3_EXECUTABLE}" -c
                                  "import sys; sys.stdout.write('.'.join([str(x) for x in sys.version_info[:2]]))"

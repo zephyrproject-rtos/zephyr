@@ -41,7 +41,7 @@ int csip_set_member_init(void)
 		.set_size = 2,
 		.rank = CONFIG_HAP_HA_SET_RANK,
 		.lockable = false,
-		.set_sirk = CSIP_SIRK_DEBUG,
+		.sirk = CSIP_SIRK_DEBUG,
 		.cb = &csip_cb,
 	};
 

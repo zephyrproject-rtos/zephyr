@@ -45,4 +45,9 @@ config SAMPLE_USBD_MAX_POWER
 	help
 	  bMaxPower value in the sample configuration in 2 mA units.
 
+config SAMPLE_USBD_20_EXTENSION_DESC
+	bool "Use default USB 2.0 Extension Descriptor"
+	help
+	  Set bcdUSB value to 0201 and use default USB 2.0 Extension Descriptor.
+
 endmenu

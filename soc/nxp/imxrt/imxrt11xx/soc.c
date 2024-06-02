@@ -456,6 +456,27 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Lpspi1, &rootCfg);
 #endif
 
+#ifdef CONFIG_VIDEO_MCUX_MIPI_CSI2RX
+	/* MIPI CSI-2 Rx connects to CSI via Video Mux */
+	CLOCK_EnableClock(kCLOCK_Video_Mux);
+	VIDEO_MUX->VID_MUX_CTRL.SET = VIDEO_MUX_VID_MUX_CTRL_CSI_SEL_MASK;
+
+	/* Configure MIPI CSI-2 Rx clocks */
+	rootCfg.div = 8;
+	rootCfg.mux = kCLOCK_CSI2_ClockRoot_MuxSysPll3Out;
+	CLOCK_SetRootClock(kCLOCK_Root_Csi2, &rootCfg);
+
+	rootCfg.mux = kCLOCK_CSI2_ESC_ClockRoot_MuxSysPll3Out;
+	CLOCK_SetRootClock(kCLOCK_Root_Csi2_Esc, &rootCfg);
+
+	rootCfg.mux = kCLOCK_CSI2_UI_ClockRoot_MuxSysPll3Out;
+	CLOCK_SetRootClock(kCLOCK_Root_Csi2_Ui, &rootCfg);
+
+	/* Enable power domain for MIPI CSI-2 */
+	PGMC_BPC4->BPC_POWER_CTRL |= (PGMC_BPC_BPC_POWER_CTRL_PSW_ON_SOFT_MASK |
+				      PGMC_BPC_BPC_POWER_CTRL_ISO_OFF_SOFT_MASK);
+#endif
+
 #ifdef CONFIG_CAN_MCUX_FLEXCAN
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan1), okay)
 	/* Configure CAN1 using Osc48MDiv2 */

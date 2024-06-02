@@ -450,23 +450,23 @@ static int sdio_set_bus_width(struct sd_card *card, enum sdhc_bus_width width)
 static inline void sdio_select_bus_speed(struct sd_card *card)
 {
 	if (card->host_props.host_caps.sdr104_support &&
-		(card->cccr_flags & SDIO_SUPPORT_SDR104) &&
-		(card->host_props.f_max >= SD_CLOCK_208MHZ)) {
+		(card->cccr_flags & SDIO_SUPPORT_SDR104)) {
 		card->card_speed = SD_TIMING_SDR104;
+		card->switch_caps.uhs_max_dtr = UHS_SDR104_MAX_DTR;
 	} else if (card->host_props.host_caps.ddr50_support &&
-		(card->cccr_flags & SDIO_SUPPORT_DDR50) &&
-		(card->host_props.f_max >= SD_CLOCK_50MHZ)) {
+		(card->cccr_flags & SDIO_SUPPORT_DDR50)) {
 		card->card_speed = SD_TIMING_DDR50;
+		card->switch_caps.uhs_max_dtr = UHS_DDR50_MAX_DTR;
 	} else if (card->host_props.host_caps.sdr50_support &&
-		(card->cccr_flags & SDIO_SUPPORT_SDR50) &&
-		(card->host_props.f_max >= SD_CLOCK_100MHZ)) {
+		(card->cccr_flags & SDIO_SUPPORT_SDR50)) {
 		card->card_speed = SD_TIMING_SDR50;
+		card->switch_caps.uhs_max_dtr = UHS_SDR50_MAX_DTR;
 	} else if (card->host_props.host_caps.high_spd_support &&
-		(card->switch_caps.bus_speed & SDIO_SUPPORT_HS) &&
-		(card->host_props.f_max >= SD_CLOCK_50MHZ)) {
-		card->card_speed = SD_TIMING_SDR25;
+		(card->cccr_flags & SDIO_SUPPORT_HS)) {
+		card->card_speed = SD_TIMING_HIGH_SPEED;
+		card->switch_caps.hs_max_dtr = HS_MAX_DTR;
 	} else {
-		card->card_speed = SD_TIMING_SDR12;
+		card->card_speed = SD_TIMING_DEFAULT;
 	}
 }
 
@@ -474,34 +474,35 @@ static inline void sdio_select_bus_speed(struct sd_card *card)
 static int sdio_set_bus_speed(struct sd_card *card)
 {
 	int ret, timing, retries = CONFIG_SD_RETRY_COUNT;
+	uint32_t bus_clock;
 	uint8_t speed_reg, target_speed;
 
 	switch (card->card_speed) {
 	/* Set bus clock speed */
 	case SD_TIMING_SDR104:
-		card->switch_caps.uhs_max_dtr = SD_CLOCK_208MHZ;
+		bus_clock = MIN(card->host_props.f_max, card->switch_caps.uhs_max_dtr);
 		target_speed = SDIO_CCCR_SPEED_SDR104;
 		timing = SDHC_TIMING_SDR104;
 		break;
 	case SD_TIMING_DDR50:
-		card->switch_caps.uhs_max_dtr = SD_CLOCK_50MHZ;
+		bus_clock = MIN(card->host_props.f_max, card->switch_caps.uhs_max_dtr);
 		target_speed = SDIO_CCCR_SPEED_DDR50;
 		timing = SDHC_TIMING_DDR50;
 		break;
 	case SD_TIMING_SDR50:
-		card->switch_caps.uhs_max_dtr = SD_CLOCK_100MHZ;
+		bus_clock = MIN(card->host_props.f_max, card->switch_caps.uhs_max_dtr);
 		target_speed = SDIO_CCCR_SPEED_SDR50;
 		timing = SDHC_TIMING_SDR50;
 		break;
-	case SD_TIMING_SDR25:
-		card->switch_caps.uhs_max_dtr = SD_CLOCK_50MHZ;
+	case SD_TIMING_HIGH_SPEED:
+		bus_clock = MIN(card->host_props.f_max, card->switch_caps.hs_max_dtr);
 		target_speed = SDIO_CCCR_SPEED_SDR25;
-		timing = SDHC_TIMING_SDR25;
+		timing = SDHC_TIMING_HS;
 		break;
-	case SD_TIMING_SDR12:
-		card->switch_caps.uhs_max_dtr = SD_CLOCK_25MHZ;
+	case SD_TIMING_DEFAULT:
+		bus_clock = MIN(card->host_props.f_max, MHZ(25));
 		target_speed = SDIO_CCCR_SPEED_SDR12;
-		timing = SDHC_TIMING_SDR12;
+		timing = SDHC_TIMING_LEGACY;
 		break;
 	default:
 		/* No need to change bus speed */
@@ -530,7 +531,7 @@ static int sdio_set_bus_speed(struct sd_card *card)
 	} else {
 		/* Set card bus clock and timing */
 		card->bus_io.timing = timing;
-		card->bus_io.clock = card->switch_caps.uhs_max_dtr;
+		card->bus_io.clock = bus_clock;
 		LOG_DBG("Setting bus clock to: %d", card->bus_io.clock);
 		ret = sdhc_set_io(card->sdhc, &card->bus_io);
 		if (ret) {

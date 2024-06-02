@@ -18,6 +18,7 @@
 	FAKE(mock_cap_commander_microphone_gain_changed_cb)
 
 DEFINE_FAKE_VOID_FUNC(mock_cap_commander_discovery_complete_cb, struct bt_conn *, int,
+		      const struct bt_csip_set_coordinator_set_member *,
 		      const struct bt_csip_set_coordinator_csis_inst *);
 
 DEFINE_FAKE_VOID_FUNC(mock_cap_commander_volume_changed_cb, struct bt_conn *, int);

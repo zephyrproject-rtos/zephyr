@@ -42,6 +42,8 @@ struct wifi_nm_instance {
 	struct net_if *mgd_ifaces[CONFIG_WIFI_NM_MAX_MANAGED_INTERFACES];
 };
 
+/** @cond INTERNAL_HIDDEN */
+
 #define WIFI_NM_NAME(name) wifi_nm_##name
 
 #define DEFINE_WIFI_NM_INSTANCE(_name, _ops)		\
@@ -50,6 +52,8 @@ struct wifi_nm_instance {
 		.ops = _ops,				\
 		.mgd_ifaces = { NULL },		\
 	}
+
+/** @endcond */
 
 /**
  * @brief Get a Network manager instance for a given name

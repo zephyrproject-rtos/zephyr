@@ -676,6 +676,103 @@ ZTEST(modem_chat, test_script_chat_timeout_cmd)
 		      "Script sent too many requests");
 }
 
+ZTEST(modem_chat, test_runtime_match)
+{
+	int ret;
+	struct modem_chat_match test_match;
+
+	modem_chat_match_init(&test_match);
+
+	ret = modem_chat_match_set_match(&test_match, "AT345");
+	zassert_ok(ret, "Failed to set match");
+	zassert_ok(strcmp(test_match.match, "AT345"), "Failed to set match");
+	zassert_equal(test_match.match_size, 5, "Failed to set size of match");
+
+	ret = modem_chat_match_set_separators(&test_match, ",*");
+	zassert_ok(ret, "Failed to set match");
+	zassert_ok(strcmp(test_match.separators, ",*"), "Failed to set separators");
+	zassert_equal(test_match.separators_size, 2, "Failed to set size of separators");
+
+	modem_chat_match_set_partial(&test_match, true);
+	zassert_equal(test_match.partial, true);
+	modem_chat_match_set_partial(&test_match, false);
+	zassert_equal(test_match.partial, false);
+
+	modem_chat_match_enable_wildcards(&test_match, true);
+	zassert_equal(test_match.wildcards, true);
+	modem_chat_match_enable_wildcards(&test_match, false);
+	zassert_equal(test_match.wildcards, false);
+}
+
+ZTEST(modem_chat, test_runtime_script_chat)
+{
+	int ret;
+	struct modem_chat_script_chat test_script_chat;
+	struct modem_chat_match test_response_matches[2];
+
+	modem_chat_script_chat_init(&test_script_chat);
+
+	ret = modem_chat_script_chat_set_request(&test_script_chat, "AT345");
+	zassert_ok(ret, "Failed to set request");
+	zassert_ok(strcmp(test_script_chat.request, "AT345"), "Failed to set script_chat");
+	zassert_equal(test_script_chat.request_size, 5, "Failed to set size of script_chat");
+
+	ret = modem_chat_script_chat_set_response_matches(&test_script_chat,
+							  test_response_matches,
+							  ARRAY_SIZE(test_response_matches));
+	zassert_ok(ret, "Failed to set response matches");
+	zassert_equal(test_script_chat.response_matches, test_response_matches,
+		      "Failed to set response_matches");
+	zassert_equal(test_script_chat.response_matches_size, ARRAY_SIZE(test_response_matches),
+		      "Failed to set response_matches");
+
+	ret = modem_chat_script_chat_set_response_matches(&test_script_chat,
+							  test_response_matches, 0);
+	zassert_equal(ret, -EINVAL, "Should have failed to set response matches");
+
+	ret = modem_chat_script_chat_set_response_matches(&test_script_chat, NULL, 1);
+	zassert_equal(ret, -EINVAL, "Should have failed to set response matches");
+}
+
+ZTEST(modem_chat, test_runtime_script)
+{
+	int ret;
+	struct modem_chat_script test_script;
+	struct modem_chat_script_chat test_script_chats[2];
+	struct modem_chat_match test_abort_matches[2];
+
+	modem_chat_script_init(&test_script);
+	zassert_equal(strlen(test_script.name), 0, "Failed to set default name");
+
+	ret = modem_chat_script_set_script_chats(&test_script, test_script_chats,
+						 ARRAY_SIZE(test_script_chats));
+	zassert_ok(ret, "Failed to set script chats");
+	zassert_equal(test_script.script_chats, test_script_chats,
+		      "Failed to set script_chats");
+	zassert_equal(test_script.script_chats_size, ARRAY_SIZE(test_script_chats),
+		      "Failed to set script_chats_size");
+
+	ret = modem_chat_script_set_script_chats(&test_script, test_script_chats, 0);
+	zassert_equal(ret, -EINVAL, "Should have failed to set script chats");
+
+	ret = modem_chat_script_set_script_chats(&test_script, NULL, 1);
+	zassert_equal(ret, -EINVAL, "Should have failed to set script chats");
+
+	ret = modem_chat_script_set_abort_matches(&test_script, test_abort_matches,
+						  ARRAY_SIZE(test_abort_matches));
+	zassert_ok(ret, "Failed to set abort matches");
+	zassert_equal(test_script.abort_matches, test_abort_matches,
+		      "Failed to set script_chats");
+	zassert_equal(test_script.abort_matches_size, ARRAY_SIZE(test_abort_matches),
+		      "Failed to set script_chats_size");
+
+	ret = modem_chat_script_set_abort_matches(&test_script, test_abort_matches, 0);
+	zassert_equal(ret, -EINVAL, "Should have failed to set abort matches");
+
+	ret = modem_chat_script_set_abort_matches(&test_script, NULL, 1);
+	zassert_equal(ret, -EINVAL, "Should have failed to set abort matches");
+}
+
 /*************************************************************************************************/
 /*                                         Test suite                                            */
 /*************************************************************************************************/

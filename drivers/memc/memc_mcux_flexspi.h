@@ -57,7 +57,7 @@ int memc_flexspi_update_clock(const struct device *dev,
  * @param dev: FlexSPI device
  * @param device_config: External device configuration.
  * @param lut_array: Lookup table of FlexSPI flash commands for device
- * @param lut_count: number of command entries (16 bytes each) in LUT
+ * @param lut_count: number of LUT entries (4 bytes each) in lut array
  * @param port: FlexSPI port to use for this external device
  * @return 0 on success, negative value on failure
  */

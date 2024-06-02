@@ -17,6 +17,7 @@ import copy
 import shutil
 import random
 import snippets
+from colorama import Fore
 from pathlib import Path
 from argparse import Namespace
 
@@ -107,6 +108,7 @@ class TestPlan:
         self.default_platforms = []
         self.load_errors = 0
         self.instances = dict()
+        self.instance_fail_count = 0
         self.warnings = 0
 
         self.scenarios = []
@@ -217,7 +219,7 @@ class TestPlan:
         else:
             last_run = os.path.join(self.options.outdir, "twister.json")
 
-        if self.options.only_failed:
+        if self.options.only_failed or self.options.report_summary is not None:
             self.load_from_file(last_run)
             self.selected_platforms = set(p.platform.name for p in self.instances.values())
         elif self.options.load_tests:
@@ -581,72 +583,83 @@ class TestPlan:
                 instance.add_filter("Not under quarantine", Filters.QUARANTINE)
 
     def load_from_file(self, file, filter_platform=[]):
-        with open(file, "r") as json_test_plan:
-            jtp = json.load(json_test_plan)
-            instance_list = []
-            for ts in jtp.get("testsuites", []):
-                logger.debug(f"loading {ts['name']}...")
-                testsuite = ts["name"]
+        try:
+            with open(file, "r") as json_test_plan:
+                jtp = json.load(json_test_plan)
+                instance_list = []
+                for ts in jtp.get("testsuites", []):
+                    logger.debug(f"loading {ts['name']}...")
+                    testsuite = ts["name"]
 
-                platform = self.get_platform(ts["platform"])
-                if filter_platform and platform.name not in filter_platform:
-                    continue
-                instance = TestInstance(self.testsuites[testsuite], platform, self.env.outdir)
-                if ts.get("run_id"):
-                    instance.run_id = ts.get("run_id")
+                    platform = self.get_platform(ts["platform"])
+                    if filter_platform and platform.name not in filter_platform:
+                        continue
+                    instance = TestInstance(self.testsuites[testsuite], platform, self.env.outdir)
+                    if ts.get("run_id"):
+                        instance.run_id = ts.get("run_id")
 
-                if self.options.device_testing:
-                    tfilter = 'runnable'
-                else:
-                    tfilter = 'buildable'
-                instance.run = instance.check_runnable(
-                    self.options.enable_slow,
-                    tfilter,
-                    self.options.fixture,
-                    self.hwm
-                )
+                    if self.options.device_testing:
+                        tfilter = 'runnable'
+                    else:
+                        tfilter = 'buildable'
+                    instance.run = instance.check_runnable(
+                        self.options.enable_slow,
+                        tfilter,
+                        self.options.fixture,
+                        self.hwm
+                    )
 
-                instance.metrics['handler_time'] = ts.get('execution_time', 0)
-                instance.metrics['used_ram'] = ts.get("used_ram", 0)
-                instance.metrics['used_rom']  = ts.get("used_rom",0)
-                instance.metrics['available_ram'] = ts.get('available_ram', 0)
-                instance.metrics['available_rom'] = ts.get('available_rom', 0)
+                    instance.metrics['handler_time'] = ts.get('execution_time', 0)
+                    instance.metrics['used_ram'] = ts.get("used_ram", 0)
+                    instance.metrics['used_rom']  = ts.get("used_rom",0)
+                    instance.metrics['available_ram'] = ts.get('available_ram', 0)
+                    instance.metrics['available_rom'] = ts.get('available_rom', 0)
 
-                status = ts.get('status', None)
-                reason = ts.get("reason", "Unknown")
-                if status in ["error", "failed"]:
-                    instance.status = None
-                    instance.reason = None
-                    instance.retries += 1
-                # test marked as passed (built only) but can run when
-                # --test-only is used. Reset status to capture new results.
-                elif status == 'passed' and instance.run and self.options.test_only:
-                    instance.status = None
-                    instance.reason = None
-                else:
-                    instance.status = status
-                    instance.reason = reason
+                    status = ts.get('status', None)
+                    reason = ts.get("reason", "Unknown")
+                    if status in ["error", "failed"]:
+                        if self.options.report_summary is not None:
+                            if status == "error": status = "ERROR"
+                            elif status == "failed": status = "FAILED"
+                            instance.status = Fore.RED + status + Fore.RESET
+                            instance.reason = reason
+                            self.instance_fail_count += 1
+                        else:
+                            instance.status = None
+                            instance.reason = None
+                            instance.retries += 1
+                    # test marked as passed (built only) but can run when
+                    # --test-only is used. Reset status to capture new results.
+                    elif status == 'passed' and instance.run and self.options.test_only:
+                        instance.status = None
+                        instance.reason = None
+                    else:
+                        instance.status = status
+                        instance.reason = reason
 
-                self.handle_quarantined_tests(instance, platform)
+                    self.handle_quarantined_tests(instance, platform)
 
-                for tc in ts.get('testcases', []):
-                    identifier = tc['identifier']
-                    tc_status = tc.get('status', None)
-                    tc_reason = None
-                    # we set reason only if status is valid, it might have been
-                    # reset above...
-                    if instance.status:
-                        tc_reason = tc.get('reason')
-                    if tc_status:
-                        case = instance.set_case_status_by_name(identifier, tc_status, tc_reason)
-                        case.duration = tc.get('execution_time', 0)
-                        if tc.get('log'):
-                            case.output = tc.get('log')
+                    for tc in ts.get('testcases', []):
+                        identifier = tc['identifier']
+                        tc_status = tc.get('status', None)
+                        tc_reason = None
+                        # we set reason only if status is valid, it might have been
+                        # reset above...
+                        if instance.status:
+                            tc_reason = tc.get('reason')
+                        if tc_status:
+                            case = instance.set_case_status_by_name(identifier, tc_status, tc_reason)
+                            case.duration = tc.get('execution_time', 0)
+                            if tc.get('log'):
+                                case.output = tc.get('log')
 
 
-                instance.create_overlay(platform, self.options.enable_asan, self.options.enable_ubsan, self.options.enable_coverage, self.options.coverage_platform)
-                instance_list.append(instance)
-            self.add_instances(instance_list)
+                    instance.create_overlay(platform, self.options.enable_asan, self.options.enable_ubsan, self.options.enable_coverage, self.options.coverage_platform)
+                    instance_list.append(instance)
+                self.add_instances(instance_list)
+        except FileNotFoundError as e:
+            logger.error(f"{e}")
+            return 1
 
     def apply_filters(self, **kwargs):
 

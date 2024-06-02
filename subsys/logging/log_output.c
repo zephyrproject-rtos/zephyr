@@ -152,11 +152,11 @@ static void buffer_write(log_output_func_t outf, uint8_t *buf, size_t len,
 {
 	int processed;
 
-	do {
+	while (len != 0) {
 		processed = outf(buf, len, ctx);
 		len -= processed;
 		buf += processed;
-	} while (len != 0);
+	}
 }
 
 

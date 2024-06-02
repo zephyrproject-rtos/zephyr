@@ -155,14 +155,8 @@ static void bap_broadcast_assistant_recv_state_cb(
 	SET_FLAG(flag_recv_state_updated);
 }
 
-static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, int err,
-					      uint8_t src_id)
+static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, uint8_t src_id)
 {
-	if (err != 0) {
-		FAIL("BASS recv state removed failed (%d)\n", err);
-		return;
-	}
-
 	printk("BASS recv state %u removed\n", src_id);
 	SET_FLAG(flag_cb_called);
 
@@ -628,19 +622,19 @@ static void test_main_server_sync_server_rem(void)
 static const struct bst_test_instance test_bass[] = {
 	{
 		.test_id = "bap_broadcast_assistant_client_sync",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_client_sync,
 	},
 	{
 		.test_id = "bap_broadcast_assistant_server_sync_client_rem",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_server_sync_client_rem,
 	},
 	{
 		.test_id = "bap_broadcast_assistant_server_sync_server_rem",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_server_sync_server_rem,
 	},

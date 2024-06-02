@@ -9,6 +9,10 @@ toolchain:
   - gnuarmemb
 supported:
   - uart
+  - watchdog
+  - counter
+  - gpio
+  - i2c
 testing:
   ignore_tags:
     - net

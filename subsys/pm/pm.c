@@ -144,8 +144,16 @@ void pm_system_resume(void)
 	 * and it may schedule another thread.
 	 */
 	if (atomic_test_and_clear_bit(z_post_ops_required, id)) {
+#if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
+		if (atomic_add(&_cpus_active, 1) == 0) {
+			pm_resume_devices();
+		}
+#endif
 		pm_state_exit_post_ops(z_cpus_pm_state[id].state, z_cpus_pm_state[id].substate_id);
 		pm_state_notify(false);
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+		sys_clock_idle_exit();
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
 		z_cpus_pm_state[id] = (struct pm_state_info){PM_STATE_ACTIVE,
 			0, 0};
 	}
@@ -240,11 +248,6 @@ bool pm_system_suspend(int32_t ticks)
 	pm_stats_stop();
 
 	/* Wake up sequence starts here */
-#if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
-	if (atomic_add(&_cpus_active, 1) == 0) {
-		pm_resume_devices();
-	}
-#endif
 	pm_stats_update(z_cpus_pm_state[id].state);
 	pm_system_resume();
 	k_sched_unlock();
@@ -279,4 +282,14 @@ int pm_notifier_unregister(struct pm_notifier *notifier)
 const struct pm_state_info *pm_state_next_get(uint8_t cpu)
 {
 	return &z_cpus_pm_state[cpu];
+}
+
+void z_pm_save_idle_exit(void)
+{
+	/* Some CPU low power states require notification at the ISR
+	 * to allow any operations that needs to be done before kernel
+	 * switches task or processes nested interrupts.
+	 * This can be simply ignored if not required.
+	 */
+	pm_system_resume();
 }
