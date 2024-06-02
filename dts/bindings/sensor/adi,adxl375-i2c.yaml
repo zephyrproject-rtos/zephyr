@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Aaron Chan
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADXL375 3-axis accelerometer using the I2C bus
+
+compatible: "adi,adxl375"
+
+include: ["i2c-device.yaml", "adi,adxl375-common.yaml"]

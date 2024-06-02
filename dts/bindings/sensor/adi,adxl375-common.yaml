@@ -1,0 +1,33 @@
+# Copyright (c) 2023 Aaron Chan
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml
+
+properties:
+  odr:
+    type: string
+    default: "100"
+    description: |
+          Accelerometer sampling frequency (ODR) in Hz. Default is power on reset value.
+    enum:
+      - "0.10"
+      - "0.20"
+      - "0.39"
+      - "0.78"
+      - "1.56"
+      - "3.13"
+      - "6.25"
+      - "12.5"
+      - "25"
+      - "50"
+      - "100"
+      - "200"
+      - "400"
+      - "800"
+      - "1600"
+      - "3200"
+
+  lp:
+    type: boolean
+    description: |
+          Low power mode. Default is false.
