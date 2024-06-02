@@ -76,7 +76,8 @@ config BT_STM32WBA
 
 config BT_SILABS_HCI
 	bool "Silicon Labs Bluetooth interface"
-	depends on SOC_SERIES_EFR32BG22 || SOC_SERIES_EFR32MG24 || SOC_SERIES_EFR32BG27
+	default y
+	depends on DT_HAS_SILABS_BT_HCI_ENABLED
 	depends on !PM || SOC_GECKO_PM_BACKEND_PMGR
 	select SOC_GECKO_USE_RAIL
 	select ENTROPY_GENERATOR

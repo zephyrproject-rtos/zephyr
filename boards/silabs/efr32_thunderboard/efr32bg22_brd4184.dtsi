@@ -20,6 +20,7 @@
 
 	chosen {
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &bt_hci_silabs;
 	};
 };
 
@@ -54,4 +55,8 @@
 
 &sw_imu_enable {
 	enable-gpios = <&gpiob GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
+};
+
+&bt_hci_silabs {
+	status = "okay";
 };
