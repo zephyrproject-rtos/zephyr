@@ -85,9 +85,6 @@ if BT
 config FLASH
 	default y
 
-config BT_NXP
-	default y
-
 config BT_DIS_MANUF
 	default "NXP"
 
