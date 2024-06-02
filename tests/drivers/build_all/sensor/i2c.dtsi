@@ -1049,3 +1049,9 @@ test_i2c_ina226: ina226@8d {
 	current-lsb-microamps = <5000>;
 	rshunt-micro-ohms = <500>;
 };
+
+test_i2c_adxl375: adxl375@8e {
+	compatible = "adi,adxl375";
+	reg = <0x8e>;
+	stauts = "okay";
+};

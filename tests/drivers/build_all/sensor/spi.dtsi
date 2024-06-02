@@ -383,3 +383,10 @@ test_spi_tle9104: tle9104@2e {
 		#sensor-cells = <0>;
 	};
 };
+
+test_spi_adxl375: adxl375@2f {
+	compatible = "adi,adxl375";
+	reg = <0x2f>;
+	spi-max-frequency = <0>;
+	status = "okay";
+};
