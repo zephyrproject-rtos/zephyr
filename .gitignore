@@ -12,6 +12,7 @@
 \#*\#
 
 build*/
+project/*
 !doc/build/
 !scripts/build
 !tests/drivers/build_all
