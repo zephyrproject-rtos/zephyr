@@ -43,12 +43,11 @@ static inline struct uhc_transfer *usbh_xfer_alloc(struct usb_device *udev,
 						   const uint8_t ep,
 						   const uint8_t attrib,
 						   const uint16_t mps,
-						   const uint16_t timeout,
 						   usbh_udev_cb_t cb)
 {
 	struct usbh_contex *const ctx = udev->ctx;
 
-	return uhc_xfer_alloc(ctx->dev, udev->addr, ep, attrib, mps, timeout, udev, cb);
+	return uhc_xfer_alloc(ctx->dev, udev->addr, ep, attrib, mps, udev, cb);
 }
 
 static inline int usbh_xfer_buf_add(const struct usb_device *udev,
@@ -90,6 +89,14 @@ static inline int usbh_xfer_enqueue(const struct usb_device *udev,
 	struct usbh_contex *const ctx = udev->ctx;
 
 	return uhc_ep_enqueue(ctx->dev, xfer);
+}
+
+static inline int usbh_xfer_dequeue(const struct usb_device *udev,
+				    struct uhc_transfer *const xfer)
+{
+	struct usbh_contex *const ctx = udev->ctx;
+
+	return uhc_ep_dequeue(ctx->dev, xfer);
 }
 
 #endif /* ZEPHYR_INCLUDE_USBH_DEVICE_H */
