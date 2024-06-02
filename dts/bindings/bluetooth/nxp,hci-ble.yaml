@@ -5,8 +5,12 @@ description: NXP BLE HCI information
 
 compatible: "nxp,hci-ble"
 
-include: base.yaml
+include: bt-hci.yaml
 
 properties:
   interrupts:
     required: true
+  bt-hci-name:
+    default: "BT NXP"
+  bt-hci-bus:
+    default: "BT_HCI_BUS_IPM"
