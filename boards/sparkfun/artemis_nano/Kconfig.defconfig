@@ -1,0 +1,11 @@
+# Sparkfun artemis_nano board configuration
+
+# Copyright (c) 2024 Ali Sarlak
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ARTEMIS_NANO
+
+config FLASH_BASE_ADDRESS
+	default 0x10000
+
+endif

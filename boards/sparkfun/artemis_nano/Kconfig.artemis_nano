@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Ali Sarlak
+
+
+if BOARD_ARTEMIS_NANO
+
+config BOARD_ARTEMIS_NANO
+	select SOC_APOLLO3_BLUE
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768 if AMBIQ_STIMER_TIMER
+
+endif # BOARD_ARTEMIS_NANO

@@ -1,0 +1,17 @@
+# Artemis Nano Board Definition
+identifier: artemis_nano
+name: Artemis Nano
+type: mcu
+arch: arm
+ram: 384
+flash: 976
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - gpio
+testing:
+  ignore_tags:
+    - net
+vendor: sparkfun
