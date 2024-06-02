@@ -210,7 +210,7 @@ static int cmd_get(const struct shell *sh, size_t argc, char **argv)
 		return res;
 	}
 
-	shell_print(sh, "%04d-%02d-%02dT%02d:%02d:%02d:%06d", rtctime.tm_year + 1900,
+	shell_print(sh, "%04d-%02d-%02dT%02d:%02d:%02d.%03d", rtctime.tm_year + 1900,
 		    rtctime.tm_mon + 1, rtctime.tm_mday, rtctime.tm_hour, rtctime.tm_min,
 		    rtctime.tm_sec, rtctime.tm_nsec / 1000000);
 
