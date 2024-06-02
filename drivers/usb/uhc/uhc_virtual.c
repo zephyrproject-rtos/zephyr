@@ -308,6 +308,24 @@ handle_reply_err:
 	return ret;
 }
 
+static void vrt_xfer_cleanup_cancelled(const struct device *dev)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	struct uhc_data *data = dev->data;
+	struct uhc_transfer *tmp;
+
+	if (priv->last_xfer != NULL && priv->last_xfer->err == -ECONNRESET) {
+		priv->busy = false;
+		vrt_xfer_drop_active(dev, -ECONNRESET);
+	}
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
+		if (tmp->err == -ECONNRESET) {
+			uhc_xfer_return(dev, tmp, -ECONNRESET);
+		}
+	}
+}
+
 static void xfer_work_handler(struct k_work *work)
 {
 	struct uhc_vrt_data *priv = CONTAINER_OF(work, struct uhc_vrt_data, work);
@@ -332,19 +350,12 @@ static void xfer_work_handler(struct k_work *work)
 			schedule = true;
 			break;
 		case UHC_VRT_EVT_SOF:
-			if (priv->last_xfer != NULL) {
-				if (priv->last_xfer->timeout) {
-					priv->last_xfer->timeout--;
-				} else {
-					vrt_xfer_drop_active(dev, -ETIMEDOUT);
-					priv->busy = false;
-					LOG_WRN("Transfer timeout");
-				}
-			}
 			break;
 		default:
 			break;
 		}
+
+		vrt_xfer_cleanup_cancelled(dev);
 
 		if (schedule && !priv->busy) {
 			err = vrt_schedule_xfer(dev);
@@ -458,7 +469,21 @@ static int uhc_vrt_enqueue(const struct device *dev,
 static int uhc_vrt_dequeue(const struct device *dev,
 			    struct uhc_transfer *const xfer)
 {
-	/* TODO */
+	struct uhc_data *data = dev->data;
+	struct uhc_transfer *tmp;
+	unsigned int key;
+
+	key = irq_lock();
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
+		if (xfer == tmp) {
+			tmp->err = -ECONNRESET;
+		}
+	}
+
+	irq_unlock(key);
+	vrt_event_submit(dev, UHC_VRT_EVT_XFER, NULL);
+
 	return 0;
 }
 
