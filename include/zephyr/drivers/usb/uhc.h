@@ -61,8 +61,6 @@ struct uhc_transfer {
 	uint8_t attrib;
 	/** Maximum packet size */
 	uint16_t mps;
-	/** Timeout in number of frames */
-	uint16_t timeout;
 	/** Flag marks request buffer is queued */
 	unsigned int queued : 1;
 	/** Control stage status, up to the driver to use it or not */
@@ -340,7 +338,6 @@ static inline int uhc_bus_resume(const struct device *dev)
  * @param[in] ep      Endpoint address
  * @param[in] attrib  Endpoint attributes
  * @param[in] mps     Maximum packet size of the endpoint
- * @param[in] timeout Timeout in number of frames
  * @param[in] udev    Opaque pointer to USB device
  * @param[in] cb      Transfer completion callback
  *
@@ -351,7 +348,6 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
 				    const uint8_t attrib,
 				    const uint16_t mps,
-				    const uint16_t timeout,
 				    void *const udev,
 				    void *const cb);
 
@@ -365,7 +361,6 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
  * @param[in] ep      Endpoint address
  * @param[in] attrib  Endpoint attributes
  * @param[in] mps     Maximum packet size of the endpoint
- * @param[in] timeout Timeout in number of frames
  * @param[in] udev    Opaque pointer to USB device
  * @param[in] cb      Transfer completion callback
  * @param[in] size    Size of the buffer
@@ -377,7 +372,6 @@ struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 					     const uint8_t ep,
 					     const uint8_t attrib,
 					     const uint16_t mps,
-					     const uint16_t timeout,
 					     void *const udev,
 					     void *const cb,
 					     size_t size);

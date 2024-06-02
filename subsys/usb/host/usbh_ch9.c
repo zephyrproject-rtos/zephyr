@@ -29,6 +29,13 @@ K_SEM_DEFINE(ch9_req_sync, 0, 1);
 static int ch9_req_cb(struct usb_device *const udev, struct uhc_transfer *const xfer)
 {
 	LOG_DBG("Request finished %p, err %d", xfer, xfer->err);
+	if (xfer->err == -ECONNRESET) {
+		LOG_INF("Transfer %p cancelled", (void *)xfer);
+		usbh_xfer_free(udev, xfer);
+
+		return 0;
+	}
+
 	k_sem_give(&ch9_req_sync);
 
 	return 0;
@@ -53,7 +60,7 @@ int usbh_req_setup(struct usb_device *const udev,
 	uint8_t ep = usb_reqtype_is_to_device(&req) ? 0x00 : 0x80;
 	int ret;
 
-	xfer = usbh_xfer_alloc(udev, ep, 0, 64, SETUP_REQ_TIMEOUT, ch9_req_cb);
+	xfer = usbh_xfer_alloc(udev, ep, 0, 64, ch9_req_cb);
 	if (!xfer) {
 		return -ENOMEM;
 	}
@@ -74,7 +81,17 @@ int usbh_req_setup(struct usb_device *const udev,
 		goto buf_alloc_err;
 	}
 
-	k_sem_take(&ch9_req_sync, K_MSEC(SETUP_REQ_TIMEOUT));
+	if (k_sem_take(&ch9_req_sync, K_MSEC(SETUP_REQ_TIMEOUT)) != 0) {
+		ret = usbh_xfer_dequeue(udev, xfer);
+		if (ret != 0) {
+			LOG_ERR("Failed to cancel transfer");
+			return ret;
+		}
+
+		LOG_ERR("Timeout");
+		return -ETIMEDOUT;
+	}
+
 	ret = xfer->err;
 
 buf_alloc_err:

@@ -96,7 +96,6 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
 				    const uint8_t attrib,
 				    const uint16_t mps,
-				    const uint16_t timeout,
 				    void *const udev,
 				    void *const cb)
 {
@@ -122,7 +121,6 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	xfer->ep = ep;
 	xfer->attrib = attrib;
 	xfer->mps = mps;
-	xfer->timeout = timeout;
 	xfer->udev = udev;
 	xfer->cb = cb;
 
@@ -137,7 +135,6 @@ struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 					     const uint8_t ep,
 					     const uint8_t attrib,
 					     const uint16_t mps,
-					     const uint16_t timeout,
 					     void *const udev,
 					     void *const cb,
 					     size_t size)
@@ -150,7 +147,7 @@ struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 		return NULL;
 	}
 
-	xfer = uhc_xfer_alloc(dev, addr, ep, attrib, mps, timeout, udev, cb);
+	xfer = uhc_xfer_alloc(dev, addr, ep, attrib, mps, udev, cb);
 	if (xfer == NULL) {
 		net_buf_unref(buf);
 		return NULL;
