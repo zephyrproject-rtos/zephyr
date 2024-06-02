@@ -4,10 +4,17 @@ sample:
 common:
   tags: sensors
   timeout: 5
-  harness: console
 
 tests:
   sample.sensor.qdec_sensor:
+    filter: dt_alias_exists("qdec0")
+
+  sample.sensor.sam_qdec_sensor:
+    platform_allow:
+      - sam_e70_xplained/same70q21
+      - sam_e70_xplained/same70q21b
+
+  sample.sensor.st_qdec_sensor:
     platform_allow: nucleo_f401re
     harness_config:
       fixture: fixture_mech_encoder

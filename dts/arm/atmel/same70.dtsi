@@ -354,6 +354,11 @@
 				 <&pmc PMC_TYPE_PERIPHERAL 24>,
 				 <&pmc PMC_TYPE_PERIPHERAL 25>;
 			status = "disabled";
+
+			qdec {
+				compatible = "atmel,sam-tc-qdec";
+				status = "disabled";
+			};
 		};
 
 		tc1: tc@40010000 {
@@ -366,6 +371,11 @@
 				 <&pmc PMC_TYPE_PERIPHERAL 27>,
 				 <&pmc PMC_TYPE_PERIPHERAL 28>;
 			status = "disabled";
+
+			qdec {
+				compatible = "atmel,sam-tc-qdec";
+				status = "disabled";
+			};
 		};
 
 		tc2: tc@40014000 {
@@ -378,6 +388,11 @@
 				 <&pmc PMC_TYPE_PERIPHERAL 48>,
 				 <&pmc PMC_TYPE_PERIPHERAL 49>;
 			status = "disabled";
+
+			qdec {
+				compatible = "atmel,sam-tc-qdec";
+				status = "disabled";
+			};
 		};
 
 		tc3: tc@40054000 {
@@ -390,6 +405,11 @@
 				 <&pmc PMC_TYPE_PERIPHERAL 51>,
 				 <&pmc PMC_TYPE_PERIPHERAL 52>;
 			status = "disabled";
+
+			qdec {
+				compatible = "atmel,sam-tc-qdec";
+				status = "disabled";
+			};
 		};
 
 		trng: random@40070000 {
