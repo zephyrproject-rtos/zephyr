@@ -57,23 +57,46 @@ static void print_cfg_desc(const struct shell *sh,
 	shell_print(sh, "bMaxPower\t\t%u mA", desc->bMaxPower * 2);
 }
 
+K_SEM_DEFINE(bulk_req_sync, 0, 1);
+
+static int bulk_req_cb(struct usb_device *const dev, struct uhc_transfer *const xfer)
+{
+	if (xfer->err == -ECONNRESET) {
+		LOG_INF("Bulk transfer canceled");
+	} else if (xfer->err) {
+		LOG_WRN("Bulk request failed, err %d", xfer->err);
+	} else {
+		LOG_INF("Bulk request finished");
+	}
+
+	usbh_xfer_buf_free(dev, xfer->buf);
+	usbh_xfer_free(dev, xfer);
+	k_sem_give(&bulk_req_sync);
+
+	return 0;
+}
+
 static int cmd_bulk(const struct shell *sh, size_t argc, char **argv)
 {
 	struct uhc_transfer *xfer;
 	struct net_buf *buf;
 	uint8_t ep;
 	size_t len;
+	int ret;
 
 	ep = strtol(argv[1], NULL, 16);
 	len = MIN(sizeof(vreq_test_buf), strtol(argv[2], NULL, 10));
 
-	xfer = usbh_xfer_alloc(udev, ep, 0, 512, 10, NULL);
+	xfer = usbh_xfer_alloc(udev, ep, 0, 512, bulk_req_cb);
 	if (!xfer) {
+		shell_error(sh, "host: Failed to allocate transfer");
 		return -ENOMEM;
 	}
 
 	buf = usbh_xfer_buf_alloc(udev, len);
 	if (!buf) {
+		shell_error(sh, "host: Failed to allocate buffer");
+		usbh_xfer_free(udev, xfer);
 		return -ENOMEM;
 	}
 
@@ -82,7 +105,28 @@ static int cmd_bulk(const struct shell *sh, size_t argc, char **argv)
 		net_buf_add_mem(buf, vreq_test_buf, len);
 	}
 
-	return uhc_ep_enqueue(uhs_ctx.dev, xfer);
+	k_sem_reset(&bulk_req_sync);
+	ret = usbh_xfer_enqueue(udev, xfer);
+	if (ret) {
+		usbh_xfer_buf_free(udev, xfer->buf);
+		usbh_xfer_free(udev, xfer);
+		return ret;
+	}
+
+	if (k_sem_take(&bulk_req_sync, K_MSEC(1000)) != 0) {
+		shell_print(sh, "host: Bulk transfer timeout");
+		ret = usbh_xfer_dequeue(udev, xfer);
+		if (ret != 0) {
+			shell_error(sh, "host: Failed to cancel transfer");
+			return ret;
+		}
+
+		return -ETIMEDOUT;
+	}
+
+	shell_print(sh, "host: Bulk transfer finished");
+
+	return 0;
 }
 
 static int cmd_vendor_in(const struct shell *sh,
