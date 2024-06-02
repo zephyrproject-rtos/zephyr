@@ -2,6 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # zephyr-keep-sorted-start
-source "drivers/sensor/meas/ms5607/Kconfig"
+source "drivers/sensor/meas/ms56xx/Kconfig"
 source "drivers/sensor/meas/ms5837/Kconfig"
 # zephyr-keep-sorted-stop

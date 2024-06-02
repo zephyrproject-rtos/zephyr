@@ -390,6 +390,35 @@ LED Strip
 Sensors
 =======
 
+* The :dtcompatible:`meas,ms5607` sensor driver has been changed to support
+  either the MS5611 sensor too. :dtcompatible:`meas,ms5607` is now renamed to
+  :dtcompatible:`meas,ms5611`, in order to be more generic. The DT attribute ``chip``
+  is required to specify which chip to use now. To specify using the MS5607, chip must 
+  be set to <7> in the devicetree. To specify using the MS5611, chip must be set to <11>
+  in the devicetree.
+
+  .. code-block:: devicetree
+
+    / {
+        ms5607@0 {
+            compatible = "meas,ms56xx";
+            reg = <0x76>;
+            status = "okay";
+            chip = <7>;
+        };
+    };
+
+  .. code-block:: devicetree
+
+    / {
+        ms5611@0 {
+            compatible = "meas,ms56xx";
+            reg = <0x76>;
+            status = "okay";
+            chip = <11>;
+        };
+    };  
+
 Serial
 ======
 

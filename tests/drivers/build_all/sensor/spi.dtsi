@@ -37,10 +37,11 @@ test_spi_bmi160: bmi160@3 {
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_spi_ms5607: ms5607@4 {
-	compatible = "meas,ms5607";
+test_spi_ms56xx: ms56xx@4 {
+	compatible = "meas,ms56xx";
 	reg = <0x4>;
 	spi-max-frequency = <0>;
+	chip = <11>;
 };
 
 test_spi_iis2dlpc: iis2dlpc@5 {

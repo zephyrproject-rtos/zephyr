@@ -1,0 +1,19 @@
+# Copyright (c) 2024, Aaron Chan
+# SPDX-License-Identifier: Apache-2.0
+
+
+description: |
+    TE Connectivity MS5607 and MS5611 digital pressure and temperature sensors.
+    The Datasheet is at https://www.te.com/usa-en/product-CAT-BLPS0035.html
+
+include: sensor-device.yaml
+
+properties:
+  chip:
+    type: int
+    required: true
+    description: |
+      Specifies which chip is used to determine calculation coefficients
+    enum:
+      - 7
+      - 11

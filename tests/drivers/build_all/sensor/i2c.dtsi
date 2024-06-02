@@ -170,9 +170,10 @@ test_i2c_max44009: max44009@16 {
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_ms5607: ms5607@17 {
-	compatible = "meas,ms5607";
+test_i2c_ms56xx: ms56xx@17 {
+	compatible = "meas,ms56xx";
 	reg = <0x17>;
+	chip = <7>;
 };
 
 test_i2c_ms5837: ms5837@18 {

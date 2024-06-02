@@ -4,21 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT meas_ms5607
+#define DT_DRV_COMPAT meas_ms56xx
 
 #include <string.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
-#include "ms5607.h"
+#include "ms56xx.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(ms5607);
+LOG_MODULE_DECLARE(ms56xx);
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 
-static int ms5607_spi_raw_cmd(const struct ms5607_config *config, uint8_t cmd)
+static int ms56xx_spi_raw_cmd(const struct ms56xx_config *config, uint8_t cmd)
 {
 	const struct spi_buf buf = {
 		.buf = &cmd,
@@ -33,9 +33,9 @@ static int ms5607_spi_raw_cmd(const struct ms5607_config *config, uint8_t cmd)
 	return spi_write_dt(&config->bus_cfg.spi, &buf_set);
 }
 
-static int ms5607_spi_reset(const struct ms5607_config *config)
+static int ms56xx_spi_reset(const struct ms56xx_config *config)
 {
-	int err = ms5607_spi_raw_cmd(config, MS5607_CMD_RESET);
+	int err = ms56xx_spi_raw_cmd(config, MS56XX_CMD_RESET);
 
 	if (err < 0) {
 		return err;
@@ -45,12 +45,11 @@ static int ms5607_spi_reset(const struct ms5607_config *config)
 	return 0;
 }
 
-static int ms5607_spi_read_prom(const struct ms5607_config *config, uint8_t cmd,
-				uint16_t *val)
+static int ms56xx_spi_read_prom(const struct ms56xx_config *config, uint8_t cmd, uint16_t *val)
 {
 	int err;
 
-	uint8_t tx[3] = { cmd, 0, 0 };
+	uint8_t tx[3] = {cmd, 0, 0};
 	const struct spi_buf tx_buf = {
 		.buf = tx,
 		.len = 3,
@@ -63,7 +62,6 @@ static int ms5607_spi_read_prom(const struct ms5607_config *config, uint8_t cmd,
 		} __packed;
 		uint8_t rx[3];
 	} rx;
-
 
 	const struct spi_buf rx_buf = {
 		.buf = &rx,
@@ -90,17 +88,16 @@ static int ms5607_spi_read_prom(const struct ms5607_config *config, uint8_t cmd,
 	return 0;
 }
 
-
-static int ms5607_spi_start_conversion(const struct ms5607_config *config, uint8_t cmd)
+static int ms56xx_spi_start_conversion(const struct ms56xx_config *config, uint8_t cmd)
 {
-	return ms5607_spi_raw_cmd(config, cmd);
+	return ms56xx_spi_raw_cmd(config, cmd);
 }
 
-static int ms5607_spi_read_adc(const struct ms5607_config *config, uint32_t *val)
+static int ms56xx_spi_read_adc(const struct ms56xx_config *config, uint32_t *val)
 {
 	int err;
 
-	uint8_t tx[4] = { MS5607_CMD_CONV_READ_ADC, 0, 0, 0 };
+	uint8_t tx[4] = {MS56XX_CMD_CONV_READ_ADC, 0, 0, 0};
 	const struct spi_buf tx_buf = {
 		.buf = tx,
 		.len = 4,
@@ -138,7 +135,7 @@ static int ms5607_spi_read_adc(const struct ms5607_config *config, uint32_t *val
 	return 0;
 }
 
-static int ms5607_spi_check(const struct ms5607_config *config)
+static int ms56xx_spi_check(const struct ms56xx_config *config)
 {
 	if (!spi_is_ready_dt(&config->bus_cfg.spi)) {
 		LOG_DBG("SPI bus not ready");
@@ -148,12 +145,12 @@ static int ms5607_spi_check(const struct ms5607_config *config)
 	return 0;
 }
 
-const struct ms5607_transfer_function ms5607_spi_transfer_function = {
-	.bus_check = ms5607_spi_check,
-	.reset = ms5607_spi_reset,
-	.read_prom = ms5607_spi_read_prom,
-	.start_conversion = ms5607_spi_start_conversion,
-	.read_adc = ms5607_spi_read_adc,
+const struct ms56xx_transfer_function ms56xx_spi_transfer_function = {
+	.bus_check = ms56xx_spi_check,
+	.reset = ms56xx_spi_reset,
+	.read_prom = ms56xx_spi_read_prom,
+	.start_conversion = ms56xx_spi_start_conversion,
+	.read_adc = ms56xx_spi_read_adc,
 };
 
 #endif
