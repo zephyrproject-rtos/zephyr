@@ -7,14 +7,14 @@
 #ifndef _MICROCHIP_PIC32CXSG_ADC_FIXUP_H_
 #define _MICROCHIP_PIC32CXSG_ADC_FIXUP_H_
 
-#if defined(ADC_SYNCBUSY_MASK)
+#if defined(ADC_SYNCBUSY_Msk)
 #define ADC_SYNC(adc) ((adc)->SYNCBUSY.reg)
-#define ADC_SYNC_MASK (ADC_SYNCBUSY_MASK)
+#define ADC_SYNC_MASK (ADC_SYNCBUSY_Msk)
 #elif defined(ADC_STATUS_SYNCBUSY)
 #define ADC_SYNC(adc) ((adc)->STATUS.reg)
 #define ADC_SYNC_MASK (ADC_STATUS_SYNCBUSY)
 #else
-#error ADC not supported...
+#error ADC 'ADC_SYNCBUSY_MASK' not supported...
 #endif
 
 #if defined(ADC_INPUTCTRL_DIFFMODE)
@@ -27,7 +27,7 @@
 #define ADC_DIFF(adc) ((adc)->CTRLC.reg)
 #define ADC_DIFF_MASK (ADC_CTRLC_DIFFMODE)
 #else
-#error ADC not supported...
+#error ADC 'ADC_INPUTCTRL_DIFFMODE' not supported...
 #endif
 
 #if defined(ADC_CTRLB_RESSEL)
@@ -43,7 +43,7 @@
 #define ADC_RESSEL_12BIT ADC_CTRLC_RESSEL_12BIT_Val
 #define ADC_RESSEL_16BIT ADC_CTRLC_RESSEL_16BIT_Val
 #else
-#error ADC not supported...
+#error ADC 'ADC_CTRLB_RESSEL' not supported...
 #endif
 
 #if defined(ADC_CTRLA_PRESCALER)
@@ -53,23 +53,25 @@
 #define ADC_PRESCALER(adc) ((adc)->CTRLB.bit.PRESCALER)
 #define ADC_CTRLx_PRESCALER_DIV ADC_CTRLB_PRESCALER_DIV
 #else
-#error ADC not supported...
+#error ADC 'ADC_CTRLA_PRESCALER' not supported...
 #endif
 
+#if 0		/* MDS */
 #if defined(SYSCTRL_VREF_TSEN)
 #define ADC_TSEN (SYSCTRL->VREF.bit.TSEN)
 #elif defined(SUPC_VREF_TSEN)
 #define ADC_TSEN (SUPC->VREF.bit.TSEN)
 #else
-#error ADC not supported...
+#error ADC 'SYSCTRL_VREF_TSEN' not supported...
 #endif
+#endif		/* MDS */
 
 #if defined(SYSCTRL_VREF_BGOUTEN)
 #define ADC_BGEN (SYSCTRL->VREF.bit.BGOUTEN)
 #elif defined(SUPC_VREF_VREFOE)
 #define ADC_BGEN (SUPC->VREF.bit.VREFOE)
 #else
-#error ADC not supported...
+#error ADC 'SYSCTRL_VREF_BGOUTEN' not supported...
 #endif
 
 #if defined(MCLK)
@@ -115,7 +117,7 @@
 #elif defined(MCLK_APBCMASK_ADC0)
 #  define MCLK_ADC (MCLK->APBCMASK.reg)
 #else
-#  error ADC not supported...
+#  error ADC 'MCLK_APBDMASK_ADC) || defined(MCLK_APBDMASK_ADC0' not supported...
 #endif
 #endif /* MCLK */
 
