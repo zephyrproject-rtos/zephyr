@@ -42,7 +42,7 @@ Sample Output
 
 .. code-block:: console
 
-    Video device detected, format: RGBP 640x480
+    Video device detected, format: RGBP 480x272
     TCP: Waiting for client...
 
 Then from a peer on the same network you can connect and grab frames.
@@ -52,7 +52,7 @@ Example with gstreamer:
 .. code-block:: console
 
     gst-launch-1.0 tcpclientsrc host=192.0.2.1 port=5000 \
-        ! videoparse format=rgb16 width=640 height=480 \
+        ! videoparse format=rgb16 width=480 height=272 \
         ! queue \
 	! videoconvert \
         ! fpsdisplaysink sync=false
