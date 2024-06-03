@@ -15,6 +15,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
+#define VIDEO_DEV_SW     "VIDEO_SW_GENERATOR"
 #define MY_PORT          5000
 #define MAX_CLIENT_QUEUE 1
 
@@ -40,8 +41,21 @@ int main(void)
 	struct video_buffer *buffers[2], *vbuf;
 	int i, ret, sock, client;
 	struct video_format fmt;
+#if DT_HAS_CHOSEN(zephyr_camera)
 	const struct device *const video = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
 
+	if (!device_is_ready(video)) {
+		LOG_ERR("%s: video device not ready.", video->name);
+		return 0;
+	}
+#else
+	const struct device *const video = device_get_binding(VIDEO_DEV_SW);
+
+	if (video == NULL) {
+		LOG_ERR("%s: video device not found or failed to initialized.", VIDEO_DEV_SW);
+		return 0;
+	}
+#endif
 	/* Prepare Network */
 	(void)memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
@@ -64,11 +78,6 @@ int main(void)
 	if (ret < 0) {
 		LOG_ERR("Failed to listen on TCP socket: %d", errno);
 		close(sock);
-		return 0;
-	}
-
-	if (!device_is_ready(video)) {
-		LOG_ERR("%s: device not ready.\n", video->name);
 		return 0;
 	}
 

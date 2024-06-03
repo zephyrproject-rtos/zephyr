@@ -29,12 +29,13 @@ interface. Ethernet cable must be connected to RJ45 connector.
 Building and Running
 ********************
 
-For :ref:`mimxrt1064_evk`, build this sample application with the following commands:
+For :ref:`mimxrt1064_evk`, the sample can be built with the following command.
+If a mt9m114 camera shield is missing, video software generator will be used instead.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/video/tcpserversink
    :board: mimxrt1064_evk
-   :shield: dvp_fpc24_mt9m114
+   :shield: [dvp_fpc24_mt9m114]
    :goals: build
    :compact:
 
@@ -58,6 +59,7 @@ Example with gstreamer:
 	! videoconvert \
         ! fpsdisplaysink sync=false
 
+For video software generator, the default resolution should be width=320 and height=160.
 
 References
 **********
