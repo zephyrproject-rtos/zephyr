@@ -23,11 +23,17 @@
 /* LPUART */
 #define IMX_CCM_LPUART_CLK             0x300UL
 #define IMX_CCM_LPUART1_CLK            0x300UL
+#define IMX_CCM_LPUART0102_CLK         0x300UL
 #define IMX_CCM_LPUART2_CLK            0x301UL
+#define IMX_CCM_LPUART0304_CLK         0x301UL
 #define IMX_CCM_LPUART3_CLK            0x302UL
+#define IMX_CCM_LPUART0506_CLK         0x302UL
 #define IMX_CCM_LPUART4_CLK            0x303UL
+#define IMX_CCM_LPUART0708_CLK         0x303UL
 #define IMX_CCM_LPUART5_CLK            0x304UL
+#define IMX_CCM_LPUART0910_CLK         0x304UL
 #define IMX_CCM_LPUART6_CLK            0x305UL
+#define IMX_CCM_LPUART1112_CLK         0x305UL
 #define IMX_CCM_LPUART7_CLK            0x306UL
 #define IMX_CCM_LPUART8_CLK            0x307UL
 #define IMX_CCM_LPUART9_CLK            0x308UL
