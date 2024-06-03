@@ -75,10 +75,17 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_UART_MCUX_LPUART
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_LPUART0102_CLK:
+	case IMX_CCM_LPUART0304_CLK:
+		clock_root = kCLOCK_Root_Lpuart0102 + instance;
+		break;
+#else
 	case IMX_CCM_LPUART1_CLK:
 	case IMX_CCM_LPUART2_CLK:
 		clock_root = kCLOCK_Root_Lpuart1 + instance;
 		break;
+#endif
 #endif
 
 #if CONFIG_IMX_USDHC
