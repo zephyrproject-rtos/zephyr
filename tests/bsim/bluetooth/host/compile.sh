@@ -38,5 +38,6 @@ app=tests/bsim/bluetooth/host/privacy/device compile
 app=tests/bsim/bluetooth/host/privacy/legacy compile
 
 app=tests/bsim/bluetooth/host/id/settings compile
+app=tests/bsim/bluetooth/host/scan/start_stop compile
 
 wait_for_background_jobs

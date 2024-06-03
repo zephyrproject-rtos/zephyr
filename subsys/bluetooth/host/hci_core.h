@@ -35,16 +35,11 @@ enum {
 	BT_DEV_HAS_PUB_KEY,
 	BT_DEV_PUB_KEY_BUSY,
 
-	/** The application explicitly instructed the stack to scan for advertisers
-	 * using the API @ref bt_le_scan_start().
-	 */
-	BT_DEV_EXPLICIT_SCAN,
-
 	/** The application either explicitly or implicitly instructed the stack to scan
 	 * for advertisers.
 	 *
 	 * Examples of such cases
-	 *  - Explicit scanning, @ref BT_DEV_EXPLICIT_SCAN.
+	 *  - Explicit scanning, @ref BT_LE_SCAN_USER_EXPLICIT_SCAN.
 	 *  - The application instructed the stack to automatically connect if a given device
 	 *    is detected.
 	 *  - The application wants to connect to a peer device using private addresses, but
@@ -60,13 +55,9 @@ enum {
 	 */
 	BT_DEV_SCANNING,
 
-	/* Cached parameters used when initially enabling the scanner.
-	 * These are needed to ensure the same parameters are used when restarting
-	 * the scanner after refreshing an RPA.
+	/**
+	 * Scanner is configured with a timeout.
 	 */
-	BT_DEV_ACTIVE_SCAN,
-	BT_DEV_SCAN_FILTER_DUP,
-	BT_DEV_SCAN_FILTERED,
 	BT_DEV_SCAN_LIMITED,
 
 	BT_DEV_INITIATING,
@@ -471,30 +462,6 @@ uint8_t bt_get_phy(uint8_t hci_phy);
  * @return CTE type (@ref bt_df_cte_type).
  */
 int bt_get_df_cte_type(uint8_t hci_cte_type);
-
-/** Start or restart scanner if needed
- *
- * Examples of cases where it may be required to start/restart a scanner:
- * - When the auto-connection establishement feature is used:
- *   - When the host sets a connection context for auto-connection establishment.
- *   - When a connection was established.
- *     The host may now be able to retry to automatically set up a connection.
- *   - When a connection was disconnected/lost.
- *     The host may now be able to retry to automatically set up a connection.
- *   - When the application stops explicit scanning.
- *     The host may now be able to retry to automatically set up a connection.
- *   - The application tries to connect to another device, but fails.
- *     The host may now be able to retry to automatically set up a connection.
- * - When the application wants to connect to a device, but we need
- *   to fallback to host privacy.
- * - When the application wants to establish a periodic sync to a device
- *   and the application has not already started scanning.
- *
- * @param fast_scan Use fast scan parameters or slow scan parameters
- *
- * @return 0 in case of success, or a negative error code on failure.
- */
-int bt_le_scan_update(bool fast_scan);
 
 int bt_le_create_conn(const struct bt_conn *conn);
 int bt_le_create_conn_cancel(void);
