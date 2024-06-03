@@ -569,6 +569,16 @@ class DeviceHandler(Handler):
         if self.instance.status in ["error", "failed"]:
             self.instance.add_missing_case_status("blocked", self.instance.reason)
 
+    def _terminate_pty(self, ser_pty, ser_pty_process):
+        logger.debug(f"Terminating serial-pty:'{ser_pty}'")
+        terminate_process(ser_pty_process)
+        try:
+            (stdout, stderr) = ser_pty_process.communicate(timeout=self.get_test_timeout())
+            logger.debug(f"Terminated serial-pty:'{ser_pty}', stdout:'{stdout}', stderr:'{stderr}'")
+        except subprocess.TimeoutExpired:
+            logger.debug(f"Terminated serial-pty:'{ser_pty}'")
+    #
+
     def _create_serial_connection(self, serial_device, hardware_baud,
                                   flash_timeout, serial_pty, ser_pty_process):
         try:
@@ -588,9 +598,7 @@ class DeviceHandler(Handler):
 
             self.instance.add_missing_case_status("blocked", "Serial Device Error")
             if serial_pty and ser_pty_process:
-                ser_pty_process.terminate()
-                outs, errs = ser_pty_process.communicate()
-                logger.debug("Process {} terminated outs: {} errs {}".format(serial_pty, outs, errs))
+                self._terminate_pty(serial_pty, ser_pty_process)
 
             if serial_pty:
                 self.make_device_available(serial_pty)
@@ -754,9 +762,7 @@ class DeviceHandler(Handler):
             ser.close()
 
         if serial_pty:
-            ser_pty_process.terminate()
-            outs, errs = ser_pty_process.communicate()
-            logger.debug("Process {} terminated outs: {} errs {}".format(serial_pty, outs, errs))
+            self._terminate_pty(serial_pty, ser_pty_process)
 
         handler_time = time.time() - start_time
 
