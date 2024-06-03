@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 NXP
+ * Copyright 2022, 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -92,7 +92,10 @@ static int imx_pinctrl_init(void)
 #elif defined(CONFIG_SOC_MIMX8MQ6)
 	CLOCK_EnableClock(kCLOCK_Iomux);
 #endif /* CONFIG_SOC_SERIES_IMXRT10XX || CONFIG_SOC_SERIES_IMXRT11XX */
-
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	CLOCK_EnableClock(kCLOCK_Iomuxc1);
+	CLOCK_EnableClock(kCLOCK_Iomuxc2);
+#endif /* CONFIG_SOC_SERIES_IMXRT118X */
 	return 0;
 }
 
