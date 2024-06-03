@@ -431,11 +431,11 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
 #define K_SYSCALL_MEMORY(ptr, size, write) \
 	K_SYSCALL_VERIFY_MSG(K_SYSCALL_MEMORY_SIZE_CHECK(ptr, size) \
 			     && !Z_DETECT_POINTER_OVERFLOW(ptr, size) \
-			     && (arch_buffer_validate((void *)ptr, size, write) \
+			     && (arch_buffer_validate((void *)(ptr), (size), (write)) \
 			     == 0), \
 			     "Memory region %p (size %zu) %s access denied", \
 			     (void *)(ptr), (size_t)(size), \
-			     write ? "write" : "read")
+			     (write) ? "write" : "read")
 
 /**
  * @brief Runtime check that a user thread has read permission to a memory area
@@ -541,9 +541,9 @@ static inline int k_object_validation_check(struct k_object *ko,
 
 #define K_SYSCALL_IS_OBJ(ptr, type, init) \
 	K_SYSCALL_VERIFY_MSG(k_object_validation_check(			\
-				     k_object_find((const void *)ptr),	\
-				     (const void *)ptr,			\
-				     type, init) == 0, "access denied")
+				     k_object_find((const void *)(ptr)),	\
+				     (const void *)(ptr),		\
+				     (type), (init)) == 0, "access denied")
 
 /**
  * @brief Runtime check driver object pointer for presence of operation
@@ -562,7 +562,7 @@ static inline int k_object_validation_check(struct k_object *ko,
 #define K_SYSCALL_DRIVER_OP(ptr, api_name, op) \
 	({ \
 		struct api_name *__device__ = (struct api_name *) \
-			((const struct device *)ptr)->api; \
+			((const struct device *)(ptr))->api; \
 		K_SYSCALL_VERIFY_MSG(__device__->op != NULL, \
 				    "Operation %s not defined for driver " \
 				    "instance %p", \
