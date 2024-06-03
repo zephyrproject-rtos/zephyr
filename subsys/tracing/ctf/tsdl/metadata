@@ -310,3 +310,21 @@ event {
 		uint32_t result;
 	};
 };
+
+event {
+	name = user_mode_enter;
+	id = 0x34;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_wakeup;
+	id = 0x35;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
