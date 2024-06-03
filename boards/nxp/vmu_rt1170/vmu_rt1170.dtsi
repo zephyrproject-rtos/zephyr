@@ -5,6 +5,7 @@
  */
 
 #include "vmu_rt1170-pinctrl.dtsi"
+#include <nxp/nxp_rt1170.dtsi>
 
 / {
 	aliases {
