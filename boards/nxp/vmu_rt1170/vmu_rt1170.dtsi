@@ -98,8 +98,26 @@
 	status = "okay";
 };
 
-&enet1g {
-	pinctrl-0 = <&pinmux_enet>;
+&enet1g_mac {
+	pinctrl-0 = <&pinmux_enet1g>;
+	pinctrl-names = "default";
+	phy-handle = <&enet1g_phy>;
+	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
+};
+
+&enet1g_mdio {
+	pinctrl-0 = <&pinmux_enet1g_mdio>;
+	pinctrl-names = "default";
+	enet1g_phy: phy@1 {
+		compatible = "nxp,tja1103";
+		reg = <1>;
+		master-slave = "master";
+	};
+};
+
+&enet1g_ptp_clock {
+	pinctrl-0 = <&pinmux_enet1g_ptp>;
 	pinctrl-names = "default";
 };
 
