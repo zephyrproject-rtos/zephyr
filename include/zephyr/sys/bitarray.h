@@ -59,7 +59,7 @@ typedef struct sys_bitarray sys_bitarray_t;
 		[DIV_ROUND_UP(DIV_ROUND_UP(total_bits, 8),		\
 			       sizeof(uint32_t))] = {0};		\
 	sba_mod sys_bitarray_t name = {					\
-		.num_bits = total_bits,					\
+		.num_bits = (total_bits),				\
 		.num_bundles = DIV_ROUND_UP(				\
 			DIV_ROUND_UP(total_bits, 8), sizeof(uint32_t)),	\
 		.bundles = _sys_bitarray_bundles_##name,		\
