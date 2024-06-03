@@ -1,0 +1,15 @@
+# Copyright (c) 2024, Tomasz Bursztyka
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# X86 specific scripts/fwconfig file
+
+init:
+  arch_smp_init:
+    dependencies:
+      - ioapic@fec00000
+      - loapic@fee00000
+
+  pcie_init:
+    dependencies:
+      - arch_smp_init
