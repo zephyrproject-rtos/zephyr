@@ -263,7 +263,7 @@ class BinaryHandler(Handler):
                             "--variable", "RESC:@" + resc,
                             "--variable", "UART:" + uart]
         elif self.call_make_run:
-            command = [self.generator_cmd, "run"]
+            command = [self.generator_cmd, "-C", self.get_default_domain_build_dir(), "run"]
         elif self.instance.testsuite.type == "unit":
             command = [self.binary]
         else:
