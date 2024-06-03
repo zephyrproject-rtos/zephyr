@@ -2066,6 +2066,10 @@ static int parse_write_op(struct lwm2m_message *msg, uint16_t format)
 			free_block_ctx(block_ctx);
 
 			r = init_block_ctx(&msg->path, &block_ctx);
+			/* If we have already parsed the packet, we can handle the block size
+			 * given by the server.
+			 */
+			block_ctx->ctx.block_size = block_size;
 		}
 
 		if (r < 0) {
