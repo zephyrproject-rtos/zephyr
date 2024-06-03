@@ -1,0 +1,2 @@
+[gpio_secure_0]
+PIN_8 = "NonSecure"
