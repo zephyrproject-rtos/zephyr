@@ -887,7 +887,7 @@ static void test_cancelled_alarm_does_not_expire_instance(const struct device *d
 {
 	int err;
 	uint32_t cnt;
-	uint32_t us = 1000;
+	uint32_t us = 1500;
 	uint32_t ticks = counter_us_to_ticks(dev, us);
 	uint32_t top = counter_get_top_value(dev);
 
