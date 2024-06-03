@@ -7,6 +7,11 @@ family:
       cpuclusters:
       - name: cpu0
       - name: cpu1
+  - name: mcxc
+    socs:
+    - name: mcxc141
+    - name: mcxc142
+    - name: mcxc242
 runners:
   run_once:
     '--erase':

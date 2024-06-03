@@ -1,0 +1,148 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MCXC
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CLOCK_CONTROL
+	select PLATFORM_SPECIFIC_INIT
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_SIM
+	select HAS_OSC
+	select HAS_MCG
+	select HAS_MCUX_RCM
+	select HAS_MCUX_FTFX
+	select HAS_MCUX_LPUART
+	select HAS_MCUX_LPI2C
+	select HAS_MCUX_TPM
+
+if SOC_SERIES_MCXC
+
+config HAS_OSC
+	bool
+	help
+	  Set if the oscillator (OSC) module is present in the SoC.
+
+if HAS_OSC
+
+choice MCXC_OSC_MODE
+	prompt "Oscillator Mode Selection"
+	default MCXC_OSC_EXTERNAL
+
+config MCXC_OSC_EXTERNAL
+	bool "External reference clock"
+	help
+	  Set this option to use the oscillator in external reference clock mode.
+
+config MCXC_OSC_LOW_POWER
+	bool "Low power oscillator"
+	help
+	  Set this option to use the oscillator in low-power mode.
+
+config MCXC_OSC_HIGH_GAIN
+	bool "High gain oscillator"
+	help
+	  Set this option to use the oscillator in high-gain mode.
+
+endchoice
+
+config OSC_XTAL0_FREQ
+	int "External oscillator frequency"
+	help
+	  Set the external oscillator frequency in Hz. This should be set by the
+	  board's defconfig.
+
+endif # HAS_OSC
+
+config HAS_MCG
+	bool
+	help
+	  Set if the multipurpose clock generator (MCG) module is present in the SoC.
+
+if HAS_MCG
+
+config MCG_FCRDIV
+	int "Low-frequency internal reference clock divider 1"
+	range 0 7
+	default 0
+	help
+	  Selects the amount to divide down the low-frequency internal
+	  reference clock as exponent of power of 2.
+
+config MCG_LIRCDIV2
+	int "Low-frequency internal reference clock divider 2"
+	range 0 7
+	default 0
+	help
+	  Selects the amount to divide down the low-frequency internal
+	  reference clock as exponent of power of 2.
+
+endif # HAS_MCG
+
+config MCXC_FLASH_CONFIG
+	bool "MCXC flash configuration field"
+	default y if XIP && !BOOTLOADER_MCUBOOT
+	help
+	  Include the 16-byte flash configuration field that stores default
+	  protection settings (loaded on reset) and security information that
+	  allows the MCU to restrict access to the FTFx module.
+
+if MCXC_FLASH_CONFIG
+
+config MCXC_FLASH_CONFIG_OFFSET
+	hex "MCXC flash configuration field offset"
+	default 0x400
+
+config MCXC_FLASH_CONFIG_FSEC
+	hex "Flash security byte (FSEC)"
+	range 0 0xff
+	default 0xfe
+	help
+	  Configures the reset value of the FSEC register, which includes
+	  backdoor key access, mass erase, factory access, and flash security
+	  options.
+
+config MCXC_FLASH_CONFIG_FOPT
+	hex "Flash nonvolatile option byte (FOPT)"
+	range 0 0xff
+	default 0xff
+	help
+	  Configures the reset value of the FOPT register, which includes boot,
+	  NMI, and EzPort options.
+
+config MCXC_FLASH_CONFIG_FEPROT
+	hex "EEPROM protection byte (FEPROT)"
+	range 0 0xff
+	default 0xff
+	help
+	  Configures the reset value of the FEPROT register for FlexNVM
+	  devices. For program flash only devices, this byte is reserved.
+
+config MCXC_FLASH_CONFIG_FDPROT
+	hex "Data flash protection byte (FDPROT)"
+	range 0 0xff
+	default 0xff
+	help
+	  Configures the reset value of the FDPROT register for FlexNVM
+	  devices. For program flash only devices, this byte is reserved.
+
+endif # MCXC_FLASH_CONFIG
+
+config WDOG_ENABLE_AT_BOOT
+	bool "Keep watchdog timer enabled at boot"
+	help
+	  Leave SOC watchdog timer enabled at boot. The specific timeout
+	  and clock configuration of the watchdog at boot is SOC dependent.
+	  Note: if the watchdog timer is enabled at boot, the user will
+	  need to configure the watchdog using z_arm_watchdog_init, as
+	  the SOC requires watchdog configuration before initial expiration
+
+# Enable watchdog configuration function if watchdog is left enabled at boot
+config WDOG_INIT
+	bool
+	default WDOG_ENABLE_AT_BOOT
+
+endif # SOC_FAMILY_MCXC
