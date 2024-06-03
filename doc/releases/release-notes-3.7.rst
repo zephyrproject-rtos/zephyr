@@ -265,6 +265,8 @@ Drivers and Sensors
   * Updated the CAN timing functions to take the minimum supported bitrate into consideration when
     validating the bitrate.
   * Made the ``sample-point`` and ``sample-point-data`` devicetree properties optional.
+  * Renamed the ``bus_speed`` and ``bus_speed_data`` fields of :c:struct:`can_driver_config` to
+    ``bitrate`` and ``bitrate_data``.
 
 * Charger
 
