@@ -55,22 +55,30 @@
 #endif
 
 #ifdef CONFIG_INIT_ARM_PLL
-static const clock_arm_pll_config_t armPllConfig = {
-#if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1176_CM7)
-	/* resulting frequency: 24 * (166/(2* 2)) = 984MHz */
-	/* Post divider, 0 - DIV by 2, 1 - DIV by 4, 2 - DIV by 8, 3 - DIV by 1 */
-	.postDivider = kCLOCK_PllPostDiv2,
-	/* PLL Loop divider, Fout = Fin * ( loopDivider / ( 2 * postDivider ) ) */
-	.loopDivider = 166,
-#elif defined(CONFIG_SOC_MIMXRT1166_CM4) || defined(CONFIG_SOC_MIMXRT1166_CM7)
-	/* resulting frequency: 24 * (200/(2 * 4)) = 600MHz */
-	/* Post divider, 0 - DIV by 2, 1 - DIV by 4, 2 - DIV by 8, 3 - DIV by 1 */
-	.postDivider = kCLOCK_PllPostDiv4,
-	/* PLL Loop divider, Fout = Fin * ( loopDivider / ( 2 * postDivider ) ) */
-	.loopDivider = 200,
+
+#if defined(CONFIG_SOC_MIMXRT1176)
+#define DEFAULT_LOOPDIV 83
+#define DEFAULT_POSTDIV 2
+#elif defined(CONFIG_SOC_MIMXRT1166)
+#define DEFAULT_LOOPDIV 100
+#define DEFAULT_POSTDIV 4
 #else
-	#error "Unknown SOC, no pll configuration defined"
+/*
+ * Check that the ARM PLL has a multiplier and divider set
+ */
+BUILD_ASSERT(DT_NODE_HAS_PROP(DT_NODELABEL(arm_pll), clock_mult),
+			      "ARM PLL must have clock-mult property");
+BUILD_ASSERT(DT_NODE_HAS_PROP(DT_NODELABEL(arm_pll), clock_div),
+			      "ARM PLL must have clock-div property");
 #endif
+
+
+static const clock_arm_pll_config_t armPllConfig = {
+	.postDivider = CONCAT(kCLOCK_PllPostDiv,
+			      DT_PROP_OR(DT_NODELABEL(arm_pll), clock_div,
+			      DEFAULT_POSTDIV)),
+	.loopDivider = DT_PROP_OR(DT_NODELABEL(arm_pll), clock_mult,
+				  DEFAULT_LOOPDIV) * 2,
 };
 #endif
 
