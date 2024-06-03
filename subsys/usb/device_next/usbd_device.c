@@ -160,7 +160,7 @@ int usbd_wakeup_request(struct usbd_context *const uds_ctx)
 	}
 
 	if (!uds_ctx->status.rwup || !usbd_is_suspended(uds_ctx)) {
-		LOG_ERR("Remote wakeup feature not enabled or not suspended");
+		LOG_WRN("Remote wakeup feature not enabled or not suspended");
 		ret = -EACCES;
 		goto wakeup_request_error;
 	}
