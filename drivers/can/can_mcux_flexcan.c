@@ -1139,7 +1139,7 @@ static int mcux_flexcan_init(const struct device *dev)
 	k_sem_init(&data->tx_allocs_sem, MCUX_FLEXCAN_MAX_TX,
 		   MCUX_FLEXCAN_MAX_TX);
 
-	err = can_calc_timing(dev, &data->timing, config->common.bus_speed,
+	err = can_calc_timing(dev, &data->timing, config->common.bitrate,
 			      config->common.sample_point);
 	if (err == -EINVAL) {
 		LOG_ERR("Can't find timing for given param");
@@ -1160,7 +1160,7 @@ static int mcux_flexcan_init(const struct device *dev)
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 	if (config->flexcan_fd) {
 		err = can_calc_timing_data(dev, &data->timing_data,
-					   config->common.bus_speed_data,
+					   config->common.bitrate_data,
 					   config->common.sample_point_data);
 		if (err == -EINVAL) {
 			LOG_ERR("Can't find timing for given param");
