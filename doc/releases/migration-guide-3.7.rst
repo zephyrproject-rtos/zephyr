@@ -81,6 +81,8 @@ Boards
 * LiteX: Renamed the ``compatible`` of the LiteX VexRiscV interrupt controller node from
   ``vexriscv-intc0`` to :dtcompatible:`litex,vexriscv-intc0`. (:github:`73211`)
 
+* `lairdconnect` boards are now `ezurio` boards. Laird Connectivity has rebranded to `Ezurio <https://www.ezurio.com/laird-connectivity>`_.
+
 Modules
 *******
 
