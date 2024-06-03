@@ -1466,7 +1466,7 @@ int can_mcan_init(const struct device *dev)
 		return err;
 	}
 
-	err = can_calc_timing(dev, &timing, config->common.bus_speed,
+	err = can_calc_timing(dev, &timing, config->common.bitrate,
 			      config->common.sample_point);
 	if (err == -EINVAL) {
 		LOG_ERR("Can't find timing for given param");
@@ -1477,7 +1477,7 @@ int can_mcan_init(const struct device *dev)
 		timing.phase_seg2);
 	LOG_DBG("Sample-point err : %d", err);
 #ifdef CONFIG_CAN_FD_MODE
-	err = can_calc_timing_data(dev, &timing_data, config->common.bus_speed_data,
+	err = can_calc_timing_data(dev, &timing_data, config->common.bitrate_data,
 				   config->common.sample_point_data);
 	if (err == -EINVAL) {
 		LOG_ERR("Can't find timing for given dataphase param");
