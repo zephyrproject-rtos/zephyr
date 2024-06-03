@@ -43,6 +43,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, device, dev_id=None,
                  commander=DEFAULT_JLINK_EXE,
+                 jlinkscriptfile='',
                  dt_flash=True, erase=True, reset=False,
                  iface='swd', speed='auto',
                  loader=None,
@@ -60,6 +61,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.device = device
         self.dev_id = dev_id
         self.commander = commander
+        self.jlinkscriptfile = jlinkscriptfile
         self.dt_flash = dt_flash
         self.erase = erase
         self.reset = reset
@@ -126,6 +128,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             dest='reset', nargs=0,
                             action=ToggleAction,
                             help='obsolete synonym for --reset/--no-reset')
+        parser.add_argument('--jlinkscriptfile', default='',
+                            help='add jlink scipt file')
 
         parser.set_defaults(reset=False)
 
@@ -134,6 +138,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         return JLinkBinaryRunner(cfg, args.device,
                                  dev_id=args.dev_id,
                                  commander=args.commander,
+                                 jlinkscriptfile=args.jlinkscriptfile,
                                  dt_flash=args.dt_flash,
                                  erase=args.erase,
                                  reset=args.reset,
@@ -233,21 +238,35 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         rtos = self.thread_info_enabled and self.supports_thread_info
         plugin_dir = os.fspath(Path(self.commander).parent / 'GDBServer' /
                                'RTOSPlugin_Zephyr')
-
-        server_cmd = ([self.gdbserver] +
-                      ['-select',
-                                           ('ip' if is_ip(self.dev_id) else 'usb') +
-                                           (f'={self.dev_id}' if self.dev_id else ''),
-                       '-port', str(self.gdb_port),
-                       '-if', self.iface,
-                       '-speed', self.speed,
-                       '-device', self.device,
-                       '-silent',
-                       '-singlerun'] +
-                      (['-nogui'] if self.supports_nogui else []) +
-                      (['-rtos', plugin_dir] if rtos else []) +
-                      self.tool_opt)
-
+        if self.jlinkscriptfile:
+            server_cmd = ([self.gdbserver] +
+                        ['-select',
+                                            ('ip' if is_ip(self.dev_id) else 'usb') +
+                                            (f'={self.dev_id}' if self.dev_id else ''),
+                        '-port', str(self.gdb_port),
+                        '-if', self.iface,
+                        '-speed', self.speed,
+                        '-device', self.device,
+                        '-silent',
+                        '-jlinkscriptfile', self.jlinkscriptfile,
+                        '-singlerun'] +
+                        (['-nogui'] if self.supports_nogui else []) +
+                        (['-rtos', plugin_dir] if rtos else []) +
+                        self.tool_opt)
+        else:
+            server_cmd = ([self.gdbserver] +
+                        ['-select',
+                                            ('ip' if is_ip(self.dev_id) else 'usb') +
+                                            (f'={self.dev_id}' if self.dev_id else ''),
+                        '-port', str(self.gdb_port),
+                        '-if', self.iface,
+                        '-speed', self.speed,
+                        '-device', self.device,
+                        '-silent',
+                        '-singlerun'] +
+                        (['-nogui'] if self.supports_nogui else []) +
+                        (['-rtos', plugin_dir] if rtos else []) +
+                        self.tool_opt)
         if command == 'flash':
             self.flash(**kwargs)
         elif command == 'debugserver':
