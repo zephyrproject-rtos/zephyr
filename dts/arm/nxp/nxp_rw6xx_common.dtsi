@@ -485,6 +485,32 @@
 		interrupts = <90 2>, <82 2>;
 		interrupt-names = "hci_int", "wakeup_int";
 	};
+
+	enet: enet@138000 {
+		compatible = "nxp,enet";
+		reg = <0x138000 0x700>;
+		clocks = <&clkctl1 MCUX_ENET_CLK>;
+		enet_mac: ethernet {
+			compatible = "nxp,enet-mac";
+			interrupts = <115 0>;
+			interrupt-names = "COMMON";
+			nxp,mdio = <&enet_mdio>;
+			nxp,ptp-clock = <&enet_ptp_clock>;
+			status = "disabled";
+		};
+		enet_mdio: mdio {
+			compatible = "nxp,enet-mdio";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		enet_ptp_clock: ptp-clock {
+			compatible = "nxp,enet-ptp-clock";
+			interrupts = <116 0>;
+			status = "disabled";
+			clocks = <&clkctl1 MCUX_ENET_PLL>;
+		};
+	};
 };
 
 &flexspi {
