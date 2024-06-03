@@ -15,7 +15,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#define MY_PORT 5000
+#define MY_PORT          5000
 #define MAX_CLIENT_QUEUE 1
 
 static ssize_t sendall(int sock, const void *buf, size_t len)
@@ -78,10 +78,9 @@ int main(void)
 		return 0;
 	}
 
-	printk("Video device detected, format: %c%c%c%c %ux%u\n",
-	       (char)fmt.pixelformat, (char)(fmt.pixelformat >> 8),
-	       (char)(fmt.pixelformat >> 16), (char)(fmt.pixelformat >> 24),
-	       fmt.width, fmt.height);
+	printk("Video device detected, format: %c%c%c%c %ux%u\n", (char)fmt.pixelformat,
+	       (char)(fmt.pixelformat >> 8), (char)(fmt.pixelformat >> 16),
+	       (char)(fmt.pixelformat >> 24), fmt.width, fmt.height);
 
 	/* Alloc Buffers */
 	for (i = 0; i < ARRAY_SIZE(buffers); i++) {
@@ -96,8 +95,7 @@ int main(void)
 	do {
 		printk("TCP: Waiting for client...\n");
 
-		client = accept(sock, (struct sockaddr *)&client_addr,
-				&client_addr_len);
+		client = accept(sock, (struct sockaddr *)&client_addr, &client_addr_len);
 		if (client < 0) {
 			printk("Failed to accept: %d\n", errno);
 			return 0;
@@ -121,8 +119,7 @@ int main(void)
 		/* Capture loop */
 		i = 0;
 		do {
-			ret = video_dequeue(video, VIDEO_EP_OUT, &vbuf,
-					    K_FOREVER);
+			ret = video_dequeue(video, VIDEO_EP_OUT, &vbuf, K_FOREVER);
 			if (ret) {
 				LOG_ERR("Unable to dequeue video buf");
 				return 0;
@@ -149,8 +146,7 @@ int main(void)
 
 		/* Flush remaining buffers */
 		do {
-			ret = video_dequeue(video, VIDEO_EP_OUT,
-					    &vbuf, K_NO_WAIT);
+			ret = video_dequeue(video, VIDEO_EP_OUT, &vbuf, K_NO_WAIT);
 		} while (!ret);
 
 	} while (1);
