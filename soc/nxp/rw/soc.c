@@ -261,6 +261,11 @@ __ramfunc void clock_init(void)
 	CLOCK_EnableUsbhsPhyClock();
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
+	RESET_PeripheralReset(kENET_IPG_RST_SHIFT_RSTn);
+	RESET_PeripheralReset(kENET_IPG_S_RST_SHIFT_RSTn);
+#endif
+
 }
 
 /**
