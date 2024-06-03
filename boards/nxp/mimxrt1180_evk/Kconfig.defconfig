@@ -1,0 +1,8 @@
+# MIMXRT1180-EVK board
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMXRT1180_EVK
+
+endif # BOARD_MIMXRT1180_EVK
