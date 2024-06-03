@@ -869,7 +869,7 @@ static int can_xmc4xxx_init(const struct device *dev)
 	}
 #endif
 
-	ret = can_calc_timing(dev, &timing, dev_cfg->common.bus_speed,
+	ret = can_calc_timing(dev, &timing, dev_cfg->common.bitrate,
 			      dev_cfg->common.sample_point);
 	if (ret < 0) {
 		return ret;

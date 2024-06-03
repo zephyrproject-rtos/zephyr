@@ -931,7 +931,7 @@ static int can_nxp_s32_init(const struct device *dev)
 	IP_MC_RGM->PRST_0[0].PRST_0 &=
 		~(MC_RGM_PRST_0_PERIPH_16_RST_MASK | MC_RGM_PRST_0_PERIPH_24_RST_MASK);
 
-	err = can_calc_timing(dev, &data->timing, config->common.bus_speed,
+	err = can_calc_timing(dev, &data->timing, config->common.bitrate,
 			      config->common.sample_point);
 	if (err == -EINVAL) {
 		LOG_ERR("Can't find timing for given param");
@@ -942,11 +942,11 @@ static int can_nxp_s32_init(const struct device *dev)
 		LOG_WRN("Sample-point error : %d", err);
 	}
 
-	LOG_DBG("Setting CAN bitrate %d:", config->common.bus_speed);
+	LOG_DBG("Setting CAN bitrate %d:", config->common.bitrate);
 	nxp_s32_zcan_timing_to_canxl_timing(&data->timing, &config->can_cfg->bitrate);
 
 #ifdef CAN_NXP_S32_FD_MODE
-	err = can_calc_timing_data(dev, &data->timing_data, config->common.bus_speed_data,
+	err = can_calc_timing_data(dev, &data->timing_data, config->common.bitrate_data,
 				   config->common.sample_point_data);
 	if (err == -EINVAL) {
 		LOG_ERR("Can't find timing data for given param");
@@ -957,7 +957,7 @@ static int can_nxp_s32_init(const struct device *dev)
 		LOG_WRN("Sample-point-data err : %d", err);
 	}
 
-	LOG_DBG("Setting CAN FD bitrate %d:", config->common.bus_speed_data);
+	LOG_DBG("Setting CAN FD bitrate %d:", config->common.bitrate_data);
 	nxp_s32_zcan_timing_to_canxl_timing(&data->timing_data, &config->can_cfg->Fd_bitrate);
 #endif
 
