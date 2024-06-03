@@ -125,7 +125,7 @@ int main(void)
 				return 0;
 			}
 
-			printk("\rSending frame %d", i++);
+			printk("\rSending frame %d\n", i++);
 
 			/* Send video buffer to TCP client */
 			ret = sendall(client, vbuf->buffer, vbuf->bytesused);
