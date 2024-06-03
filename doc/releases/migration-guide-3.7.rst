@@ -59,6 +59,11 @@ Build System
 Kernel
 ******
 
+* All architectures are now required to define the new ``struct arch_esf``, which describes the members
+  of a stack frame. This new struct replaces the named struct ``z_arch_esf_t``. (:github:`73593`)
+
+* The named struct ``z_arch_esf_t`` is now deprecated. Use ``struct arch_esf`` instead. (:github:`73593`)
+
 Boards
 ******
 
