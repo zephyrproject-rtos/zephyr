@@ -161,12 +161,12 @@ SECTION_FUNC(PINNED_TEXT, _exception_enter)
 
 	/* ESP is still pointing to the ESF at this point */
 
-	testl	$0x200, __z_arch_esf_t_eflags_OFFSET(%esp)
+	testl	$0x200, __struct_arch_esf_eflags_OFFSET(%esp)
 	je	allDone
 	sti
 
 allDone:
-	pushl	%esp			/* push z_arch_esf_t * parameter */
+	pushl	%esp			/* push struct_arch_esf * parameter */
 	call	*%ecx			/* call exception handler */
 	addl	$0x4, %esp
 
