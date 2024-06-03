@@ -55,8 +55,6 @@
 /boards/arm/acn52832/                     @sven-hm
 /boards/arm/arduino_mkrzero/              @soburi
 /boards/arm/bbc_microbit_v2/              @LingaoM
-/boards/arm/bl5340_dvk/                   @lairdjm
-/boards/arm/bl65*/                        @lairdjm
 /boards/arm/blackpill_f401ce/             @coderkalyan
 /boards/arm/blackpill_f411ce/             @coderkalyan
 /boards/arm/bt*10/                        @greg-leach
@@ -77,7 +75,6 @@
 /boards/arm/ip_k66f/                      @parthitce @lmajewski
 /boards/arm/legend/                       @mbittan @simonguinot
 /boards/arm/lpcxpresso*/                  @mmahadevan108 @dleach02
-/boards/arm/mg100/                        @rerickson1
 /boards/arm/mimx8mm_evk/                  @Mani-Sadhasivam
 /boards/arm/mimx8mm_phyboard_polis        @pefech
 /boards/arm/mimxrt*/                      @mmahadevan108 @dleach02
@@ -88,7 +85,6 @@
 /boards/arm/nucleo*/                      @erwango @ABOSTM @FRASTM
 /boards/arm/nucleo_f401re/                @idlethread
 /boards/arm/nuvoton_pfm_m487/             @ssekar15
-/boards/arm/pinnacle_100_dvk/             @rerickson1
 /boards/arm/qemu_cortex_a9/               @ibirnbaum
 /boards/arm/qemu_cortex_r*/               @stephanosio
 /boards/arm/qemu_cortex_m*/               @ioannisg @stephanosio
@@ -114,6 +110,7 @@
 /boards/arm/ubx_bmd345eval_nrf52840/      @Navin-Sankar @brec-u-blox
 /boards/arm/nrf5340_audio_dk_nrf5340      @koffes @alexsven @erikrobstad @rick1082 @gWacey
 /boards/arm/stm32_min_dev/                @sidcha
+/boards/ezurio/*                          @rerickson1
 /boards/riscv/rv32m1_vega/                @dleach02
 /boards/riscv/adp_xc7k_ae350/             @cwshu @kevinwang821020 @jimmyzhe
 /boards/riscv/longan_nano/                @soburi
