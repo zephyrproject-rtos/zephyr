@@ -200,6 +200,12 @@ void power_gate_entry(uint32_t core_id)
 		 * from power gaiting.
 		 */
 		z_xt_ints_on(ALL_USED_INT_LEVELS_MASK);
+	} else {
+		/* Secondary cores are supposed to be started manually. Lets
+		 * them just be powered off.
+		 */
+		DSPCS.capctl[core_id].ctl &= ~DSPCS_CTL_SPA;
+		soc_cpu_power_down(core_id);
 	}
 
 	soc_cpus_active[core_id] = false;
