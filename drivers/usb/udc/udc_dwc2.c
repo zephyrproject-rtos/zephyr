@@ -1437,13 +1437,16 @@ static int udc_dwc2_set_address(const struct device *dev, const uint8_t addr)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	mem_addr_t dcfg_reg = (mem_addr_t)&base->dcfg;
+	uint32_t dcfg;
 
 	if (addr > (USB_DWC2_DCFG_DEVADDR_MASK >> USB_DWC2_DCFG_DEVADDR_POS)) {
 		return -EINVAL;
 	}
 
-	sys_clear_bits(dcfg_reg, USB_DWC2_DCFG_DEVADDR_MASK);
-	sys_set_bits(dcfg_reg, usb_dwc2_set_dcfg_devaddr(addr));
+	dcfg = sys_read32(dcfg_reg);
+	dcfg &= ~USB_DWC2_DCFG_DEVADDR_MASK;
+	dcfg |= usb_dwc2_set_dcfg_devaddr(addr);
+	sys_write32(dcfg, dcfg_reg);
 	LOG_DBG("Set new address %u for %p", addr, dev);
 
 	return 0;
@@ -1454,14 +1457,14 @@ static int udc_dwc2_test_mode(const struct device *dev,
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	mem_addr_t dctl_reg = (mem_addr_t)&base->dctl;
-	uint32_t tstctl;
+	uint32_t dctl;
 
 	if (mode == 0U || mode > USB_DWC2_DCTL_TSTCTL_TESTFE) {
 		return -EINVAL;
 	}
 
-	tstctl = usb_dwc2_get_dctl_tstctl(sys_read32(dctl_reg));
-	if (tstctl != USB_DWC2_DCTL_TSTCTL_DISABLED) {
+	dctl = sys_read32(dctl_reg);
+	if (usb_dwc2_get_dctl_tstctl(dctl) != USB_DWC2_DCTL_TSTCTL_DISABLED) {
 		return -EALREADY;
 	}
 
@@ -1470,7 +1473,8 @@ static int udc_dwc2_test_mode(const struct device *dev,
 		return 0;
 	}
 
-	sys_set_bits(dctl_reg, usb_dwc2_set_dctl_tstctl(mode));
+	dctl |= usb_dwc2_set_dctl_tstctl(mode);
+	sys_write32(dctl, dctl_reg);
 	LOG_DBG("Enable Test Mode %u", mode);
 
 	return 0;
@@ -1548,6 +1552,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	struct usb_dwc2_reg *const base = config->base;
 	mem_addr_t gusbcfg_reg = (mem_addr_t)&base->gusbcfg;
 	mem_addr_t dcfg_reg = (mem_addr_t)&base->dcfg;
+	uint32_t dcfg;
 	uint32_t gusbcfg;
 	uint32_t ghwcfg2;
 	uint32_t ghwcfg3;
@@ -1616,19 +1621,24 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	LOG_DBG("LPM mode is %s",
 		(ghwcfg3 & USB_DWC2_GHWCFG3_LPMMODE) ? "enabled" : "disabled");
 
+	dcfg = sys_read32(dcfg_reg);
+
 	/* Configure PHY and device speed */
+	dcfg &= ~USB_DWC2_DCFG_DEVSPD_MASK;
 	switch (usb_dwc2_get_ghwcfg2_hsphytype(ghwcfg2)) {
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_UTMIPLUSULPI:
 		__fallthrough;
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_ULPI:
 		gusbcfg |= USB_DWC2_GUSBCFG_PHYSEL_USB20 |
 			   USB_DWC2_GUSBCFG_ULPI_UTMI_SEL_ULPI;
-		sys_set_bits(dcfg_reg, USB_DWC2_DCFG_DEVSPD_USBHS20);
+		dcfg |= USB_DWC2_DCFG_DEVSPD_USBHS20
+			<< USB_DWC2_DCFG_DEVSPD_POS;
 		break;
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_UTMIPLUS:
 		gusbcfg |= USB_DWC2_GUSBCFG_PHYSEL_USB20 |
 			   USB_DWC2_GUSBCFG_ULPI_UTMI_SEL_UTMI;
-		sys_set_bits(dcfg_reg, USB_DWC2_DCFG_DEVSPD_USBHS20);
+		dcfg |= USB_DWC2_DCFG_DEVSPD_USBHS20
+			<< USB_DWC2_DCFG_DEVSPD_POS;
 		break;
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_NO_HS:
 		__fallthrough;
@@ -1638,7 +1648,8 @@ static int udc_dwc2_init_controller(const struct device *dev)
 			gusbcfg |= USB_DWC2_GUSBCFG_PHYSEL_USB11;
 		}
 
-		sys_set_bits(dcfg_reg, USB_DWC2_DCFG_DEVSPD_USBFS1148);
+		dcfg |= USB_DWC2_DCFG_DEVSPD_USBFS1148
+			<< USB_DWC2_DCFG_DEVSPD_POS;
 	}
 
 	if (usb_dwc2_get_ghwcfg4_phydatawidth(ghwcfg4)) {
@@ -1646,7 +1657,8 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	}
 
 	/* Update PHY configuration */
-	sys_set_bits(gusbcfg_reg, gusbcfg);
+	sys_write32(gusbcfg, gusbcfg_reg);
+	sys_write32(dcfg, dcfg_reg);
 
 	priv->outeps = 0U;
 	for (uint8_t i = 0U; i < priv->numdeveps; i++) {
