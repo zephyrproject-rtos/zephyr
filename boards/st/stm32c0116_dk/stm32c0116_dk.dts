@@ -53,7 +53,7 @@
 
 		select_key {
 			press-thresholds-mv = <0>;
-			zephyr,code = <INPUT_KEY_SELECT>;
+			zephyr,code = <INPUT_KEY_ENTER>;
 		};
 
 		left_key {
