@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+if BT_W91
+
+config BLE_HCI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS
+	int "Telink IPC dispatcher timeout while waiting from the endpoint response"
+	default 10
+	help
+	  This option sets Telink IPC dispatcher response driver timeout in mS.
+
+config BLE_HCI_TELINK_W91_IPC_SEND_RESPONSE_TIMEOUT_MS
+	int "Telink IPC dispatcher timeout while waiting from the endpoint response for sending data"
+	default 50
+	help
+	  This option sets Telink IPC send dispatcher response driver timeout for sending data in mS.
+
+endif # BT_W91

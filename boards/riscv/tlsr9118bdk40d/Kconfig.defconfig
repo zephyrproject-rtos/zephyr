@@ -13,6 +13,17 @@ config HEAP_MEM_POOL_SIZE
 
 if BOARD_TLSR9118BDK40D
 
+if BT
+
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+choice BT_HCI_BUS_TYPE
+	default BT_W91
+endchoice
+
+endif # BT
+
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
 

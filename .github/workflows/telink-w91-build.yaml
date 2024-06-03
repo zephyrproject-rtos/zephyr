@@ -68,6 +68,11 @@ jobs:
         cd ..
         west build -b tlsr9118bdk40d             -d build_blinky_dfu_w91                zephyr/samples/basic/blinky                              -- -DCONFIG_BOOTLOADER_MCUBOOT=y
 
+    - name: Build W91 bluetooth/peripheral_ht
+      run: |
+        cd ..
+        west build -b tlsr9118bdk40d             -d build_bt_peripheral_ht_w91          zephyr/samples/bluetooth/peripheral_ht
+
     - name: Build W91 sock_simple IPv4
       run: |
         cd ..
