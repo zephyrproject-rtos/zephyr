@@ -35,6 +35,11 @@ void NVIC_EnableIRQ(IRQn_Type IRQn)
 	hw_irq_ctrl_enable_irq(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn);
 }
 
+uint32_t NVIC_GetEnableIRQ(IRQn_Type IRQn)
+{
+	return hw_irq_ctrl_is_irq_enabled(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn);
+}
+
 void NVIC_SetPriority(IRQn_Type IRQn, uint32_t priority)
 {
 	hw_irq_ctrl_prio_set(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn, priority);
