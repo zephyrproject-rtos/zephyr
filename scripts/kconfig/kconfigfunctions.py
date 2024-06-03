@@ -29,6 +29,7 @@ if not doc_mode:
             edtlib = inspect.getmodule(edt)
     else:
         edt = None
+        edtlib = None
 
 
 def _warn(kconf, msg):
