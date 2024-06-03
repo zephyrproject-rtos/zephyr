@@ -119,3 +119,16 @@ config WIFI_MGMT_AP_MAX_NUM_STA
 	help
 	  Maximum number of stations allowed in station table. New stations will be
 	  rejected after the station table is full.
+
+config WIFI_MGMT_BSS_MAX_IDLE_TIME
+	int "BSS max idle timeout in seconds"
+	range 0 64000
+	default 300
+	help
+	  BSS max idle timeout is the period for which AP may keep a client
+	  in associated state while there is no traffic from that particular
+	  client. Set 0 to disable inclusion of BSS max idle time tag in
+	  association request. If a non-zero value is set, STA can suggest a
+	  timeout by including BSS max idle period in the association request.
+	  AP may choose to consider or ignore the STA's preferred value.
+	  Ref: Sec 11.21.13 of IEEE Std 802.11™-2020

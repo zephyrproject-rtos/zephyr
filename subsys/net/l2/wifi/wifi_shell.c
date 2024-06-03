@@ -2528,6 +2528,31 @@ static int cmd_wifi_pmksa_flush(const struct shell *sh, size_t argc, char *argv[
 	return 0;
 }
 
+static int cmd_wifi_set_bss_max_idle_period(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	unsigned short bss_max_idle_period = 0;
+	int idx = 1;
+	unsigned long val = 0;
+
+	if (!parse_number(sh, &val, argv[idx++], "bss_max_idle_period", 0, USHRT_MAX)) {
+		return -EINVAL;
+	}
+
+	bss_max_idle_period = (unsigned short)val;
+
+	if (net_mgmt(NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD, iface,
+		     &bss_max_idle_period, sizeof(bss_max_idle_period))) {
+		shell_fprintf(sh, SHELL_WARNING,
+			      "Setting BSS maximum idle period failed.\n");
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "BSS max idle period: %hu\n", bss_max_idle_period);
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 	SHELL_CMD_ARG(disable, NULL,
 		  "Disable Access Point mode.\n",
@@ -2783,6 +2808,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD_ARG(pmksa_flush, NULL,
 		     "Flush PMKSA cache entries.\n",
 		     cmd_wifi_pmksa_flush, 1, 0),
+	SHELL_CMD_ARG(bss_max_idle_period,
+		     NULL,
+		     "<bss_max_idle: timer(in TUs)>.\n",
+		     cmd_wifi_set_bss_max_idle_period,
+		     2,
+		     0),
 	SHELL_SUBCMD_SET_END
 );
 
