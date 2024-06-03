@@ -174,10 +174,9 @@ Segger IC.
 Software
 ********
 
-Pinnacle 100 Out-of-Box Demo Software
-=====================================
-The Pinnacle 100 development kit ships with an out of the box software demo.
-Check out the `Pinnacle 100 OOB Demo`_ source code and documentation.
+Canvas Software Suite
+==============================
+The Pinnacle 100 is a supported hardware platform for `Canvas Software Suite`_.
 
 Sample Applications
 ===================
@@ -205,16 +204,16 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/lairdconnect/pinnacle_100_dvk/pinnacle_100_dvk.dts`.
+:zephyr_file:`boards/ezurio/pinnacle_100_dvk/pinnacle_100_dvk.dts`.
 
 References
 **********
 
 .. target-notes::
 
-.. _Pinnacle 100 website: https://www.lairdconnect.com/wireless-modules/cellular-solutions/pinnacle-100-cellular-modem
+.. _Pinnacle 100 website: https://www.ezurio.com/wireless-modules/cellular-solutions/pinnacle-100-cellular-modem
 .. _nRF52840 Product Specification: https://infocenter.nordicsemi.com/pdf/nRF52840_PS_v1.1.pdf
 .. _Sierra Wireless HL7800: https://source.sierrawireless.com/devices/hl-series/hl7800/#sthash.641qTTwA.dpbs
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
-.. _Pinnacle 100 OOB Demo: https://github.com/LairdCP/Pinnacle_100_oob_demo
 .. _Pinnacle 100 Sample Applications: https://github.com/LairdCP/Pinnacle_100_Sample_Applications
+.. _Canvas Software Suite: https://www.ezurio.com/canvas/software-suite
