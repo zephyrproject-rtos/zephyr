@@ -130,6 +130,16 @@
 		};
 	};
 
+	i3c0: i3c@18000 {
+		compatible = "adi,max32-i3c";
+		reg = <0x18000 0x1000>;
+		#address-cells = <3>;
+		#size-cells = <0>;
+		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 13>;
+		interrupts = <10 0>;
+		status = "disabled";
+	};
+
 	uart0: serial@42000 {
 		compatible = "adi,max32-uart";
 		reg = <0x42000 0x1000>;
