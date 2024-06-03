@@ -44,25 +44,24 @@
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
-
 			boot_partition: partition@0 {
 				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(256)>;
+				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* Note slot 0 has one additional sector,
-			 * this is intended for use with the swap move algorithm
+			/* The MCUBoot swap-move algorithm uses the last 14 sectors
+			 * of the primary slot0 for swap status and move.
 			 */
-			slot0_partition: partition@40000 {
+			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00040000 (DT_SIZE_M(3) + DT_SIZE_K(4))>;
+				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(56))>;
 			};
-			slot1_partition: partition@341000 {
+			slot1_partition: partition@32E000 {
 				label = "image-1";
-				reg = <0x00341000 DT_SIZE_M(3)>;
+				reg = <0x0032E000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@641000 {
+			storage_partition: partition@62E000 {
 				label = "storage";
-				reg = <0x00641000 (DT_SIZE_M(57) + DT_SIZE_K(764))>;
+				reg = <0x0062E000 (DT_SIZE_M(58) - DT_SIZE_K(184))>;
 			};
 		};
 	};

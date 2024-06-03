@@ -437,6 +437,7 @@ Bluetooth Audio:
     - kruithofa
     - larsgk
     - pin-zephyr
+    - niym-ot
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
@@ -1022,7 +1023,7 @@ Release Notes:
   maintainers:
     - rriveramcrus
   collaborators:
-    - GRobertZieba
+    - RobertZ2011
   files:
     - drivers/charger/
     - dts/bindings/charger/

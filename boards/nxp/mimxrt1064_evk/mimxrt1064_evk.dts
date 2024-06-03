@@ -149,18 +149,6 @@ arduino_i2c: &lpi2c1 {};
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
 
-	mt9m114: mt9m114@48 {
-		compatible = "aptina,mt9m114";
-		reg = <0x48>;
-		status = "okay";
-
-		port {
-			mt9m114_ep_out: endpoint {
-				remote-endpoint = <&csi_ep_in>;
-			};
-		};
-	};
-
 	ft5336: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
@@ -202,22 +190,22 @@ arduino_i2c: &lpi2c1 {};
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 DT_SIZE_K(64)>;
+			reg = <0x00000000 DT_SIZE_K(128)>;
 		};
-		/* Note slot 0 has one additional sector,
-		 * this is intended for use with the swap move algorithm
+		/* The MCUBoot swap-move algorithm uses the last 2 sectors
+		 * of the primary slot0 for swap status and move.
 		 */
-		slot0_partition: partition@10000 {
+		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x00010000 DT_SIZE_K(2016)>;
+			reg = <0x00020000 (DT_SIZE_K(1980) + DT_SIZE_K(8))>;
 		};
-		slot1_partition: partition@208000 {
+		slot1_partition: partition@211000 {
 			label = "image-1";
-			reg = <0x00208000 DT_SIZE_K(2012)>;
+			reg = <0x00211000 DT_SIZE_K(1980)>;
 		};
+		/* The storage partition is located in is25wp064 */
 	};
 };
 
@@ -271,16 +259,8 @@ zephyr_udc0: &usb1 {
 };
 
 &csi {
-	status = "okay";
-	source = <&mt9m114>;
 	pinctrl-0 = <&pinmux_csi>;
 	pinctrl-names = "default";
-
-	port {
-		csi_ep_in: endpoint {
-			remote-endpoint = <&mt9m114_ep_out>;
-		};
-	};
 };
 
 &flexpwm2_pwm3 {
@@ -362,3 +342,7 @@ zephyr_udc0: &usb1 {
 	pinctrl-0 = <&pinmux_swo>;
 	pinctrl-names = "default";
 };
+
+dvp_fpc24_i2c: &lpi2c1 {};
+
+dvp_fpc24_interface: &csi {};
