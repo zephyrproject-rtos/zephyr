@@ -1,0 +1,47 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_IMXRT118X
+	select CPU_CORTEX_M_HAS_DWT
+	select PLATFORM_SPECIFIC_INIT
+	select ARM
+	select CLOCK_CONTROL
+	select HAS_MCUX_CACHE
+	select ARMV8_M_DSP if SOC_MIMXRT1189_CM33
+	select CPU_HAS_ARM_SAU if SOC_MIMXRT1189_CM33
+	select HAS_MCUX
+	select HAS_MCUX_CCM_REV2
+	select HAS_MCUX_LPUART
+	select CPU_HAS_ARM_MPU
+	select INIT_ARM_PLL
+	select ARM_TRUSTZONE_M if SOC_MIMXRT1189_CM33
+	select CPU_HAS_ICACHE if SOC_MIMXRT1189_CM7
+	select CPU_HAS_DCACHE if SOC_MIMXRT1189_CM7
+	select CPU_HAS_FPU
+	select CPU_HAS_FPU_DOUBLE_PRECISION if SOC_MIMXRT1189_CM7
+	select HAS_MCUX_IOMUXC
+	select HAS_SWO
+
+config SOC_MIMXRT1189_CM33
+	select CPU_CORTEX_M33
+
+config SOC_MIMXRT1189_CM7
+	select CPU_CORTEX_M7
+
+if SOC_SERIES_IMXRT118X
+
+config MCUX_CORE_SUFFIX
+	default "_cm7" if SOC_MIMXRT1189_CM7
+	default "_cm33" if SOC_MIMXRT1189_CM33
+
+config BYPASS_LDO_LPSR
+	bool "Bypass LDO lpsr"
+
+config ADJUST_LDO
+	bool "Adjust LDO setting"
+
+config ADJUST_DCDC
+	default y
+	bool "Adjust internal DCDC output"
+
+endif # SOC_SERIES_IMXRT118X

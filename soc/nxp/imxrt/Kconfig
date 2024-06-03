@@ -29,6 +29,7 @@ if FLASH_MCUX_FLEXSPI_XIP && MEMC_MCUX_FLEXSPI
 
 choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
 	prompt "FlexSPI drivers relocation target"
+	default FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM if SOC_MIMXRT1189_CM33 # RT118X_CM33 core lacks ITCM
 	default FLASH_MCUX_FLEXSPI_XIP_MEM_ITCM
 	help
 	  Select the location to run the FlexSPI drivers when using
@@ -96,6 +97,28 @@ config FLEXSPI_CONFIG_BLOCK_OFFSET
 	  sequence (optional), etc. The boot ROM expects FlexSPI configuration
 	  parameter to be presented in serial nor flash.
 
+config IMAGE_CONTAINER_OFFSET
+	hex "Image container"
+	default 0x1000
+	depends on SOC_SERIES_IMXRT118X
+	help
+	  Image container is a boot image format that is used by ROM. Container
+	  format consists container header, image arrary entry, signature block
+	  and user program images and data. The boot ROM expects container data
+	  to be saved in external memory.
+
+# Note- This config present the offest between container header and user
+# image. If ROM_START_OFFSET changed, you also need to change CONTAINER_USER_IMAGE_OFFSET
+# value. CONTAINER_USER_IMAGE_OFFSET = ROM_START_OFFSET - IMAGE_CONTAINER_OFFSET.
+config CONTAINER_USER_IMAGE_OFFSET
+	hex "The offset between container header and user image"
+	default 0xA000
+	depends on SOC_SERIES_IMXRT118X
+	help
+	  The offset between container and user image. IF change the user image
+	  start address, please don't forget to modify CONTAINER_USER_IMAGE_OFFSET
+	  value, this will make ROM could get the user image start address.
+
 config IMAGE_VECTOR_TABLE_OFFSET
 	hex "Image vector table offset"
 	default 0x1000 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
@@ -112,7 +135,6 @@ config DEVICE_CONFIGURATION_DATA
 	  the boot ROM to initialize components such as an SDRAM. This is
 	  useful if your application expects components like SDRAM to be
 	  initialized at boot time.
-
 
 config EXTERNAL_MEM_CONFIG_DATA
 	bool "External Memory Configuration Data"
@@ -171,12 +193,11 @@ config SECOND_CORE_MCUX
 	  generated header specifying the VMA and LMA of each memory section
 	  to load
 
-
 config FLEXSPI_CONFIG_BLOCK_OFFSET
 	hex
-	default 0x400 if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
+	default 0x400 if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 
-if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
+if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 
 config PM_MCUX_GPC
 	bool "MCUX general power controller driver"
@@ -206,6 +227,6 @@ config INIT_ENET_PLL
 config INIT_SYS_PLL
 	bool "Initialize System PLL"
 
-endif # SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
+endif # SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 
 endif # SOC_FAMILY_NXP_IMXRT
