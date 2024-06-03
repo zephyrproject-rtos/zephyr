@@ -715,7 +715,7 @@ struct z_device_mmio_rom {
 #define DEVICE_MMIO_TOPLEVEL_MAP(name, flags) \
 	device_map(&Z_TOPLEVEL_RAM_NAME(name), \
 		   Z_TOPLEVEL_ROM_NAME(name).phys_addr, \
-		   Z_TOPLEVEL_ROM_NAME(name).size, flags)
+		   Z_TOPLEVEL_ROM_NAME(name).size, (flags))
 #else
 #define DEVICE_MMIO_TOPLEVEL_MAP(name, flags) do { } while (false)
 #endif

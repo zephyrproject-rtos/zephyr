@@ -188,14 +188,14 @@ struct onoff_manager {
  * to an off state. Can be null.
  */
 #define ONOFF_TRANSITIONS_INITIALIZER(_start, _stop, _reset) { \
-		.start = _start,			       \
-		.stop = _stop,				       \
-		.reset = _reset,			       \
+		.start = (_start),			       \
+		.stop = (_stop),			       \
+		.reset = (_reset),			       \
 }
 
 /** @cond INTERNAL_HIDDEN */
 #define ONOFF_MANAGER_INITIALIZER(_transitions) { \
-		.transitions = _transitions,	  \
+		.transitions = (_transitions),	  \
 }
 /** @endcond */
 
