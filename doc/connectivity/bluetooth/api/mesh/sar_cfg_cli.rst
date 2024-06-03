@@ -37,5 +37,3 @@ API reference
 *************
 
 .. doxygengroup:: bt_mesh_sar_cfg_cli
-   :project: Zephyr
-   :members:

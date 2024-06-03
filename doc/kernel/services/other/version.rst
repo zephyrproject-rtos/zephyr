@@ -9,4 +9,3 @@ API Reference
 **************
 
 .. doxygengroup:: version_apis
-   :content-only:
