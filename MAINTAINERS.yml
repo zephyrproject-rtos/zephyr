@@ -2325,16 +2325,16 @@ Memory Management:
   tests:
     - mem_mgmt
 
-Laird Connectivity platforms:
+Ezurio platforms:
   status: maintained
   maintainers:
     - rerickson1
   collaborators:
     - greg-leach
   files:
-    - boards/lairdconnect/
+    - boards/ezurio/
   labels:
-    - "platform: Laird Connectivity"
+    - "platform: Ezurio"
 
 Linker Scripts:
   status: maintained
