@@ -1169,6 +1169,7 @@ def test_devicehandler_create_serial_connection(
     available_mock = mock.Mock()
     handler.make_device_available = available_mock
     handler.options = mock.Mock(timeout_multiplier=1)
+    twisterlib.handlers.terminate_process = mock.Mock()
 
     hardware_baud = 14400
     flash_timeout = 60
@@ -1191,7 +1192,7 @@ def test_devicehandler_create_serial_connection(
         missing_mock.assert_called_once_with('blocked', 'Serial Device Error')
 
     if terminate_ser_pty_process:
-        ser_pty_process.terminate.assert_called_once()
+        twisterlib.handlers.terminate_process.assert_called_once()
         ser_pty_process.communicate.assert_called_once()
 
     if make_available:
@@ -1252,7 +1253,8 @@ TESTDATA_17 = [
     (True, False, False, False, 0, True, False,
      None, None, ['Timed out while monitoring serial output on IPName']),
     (True, False, False, False, 0, False, True,
-     None, None, ['Process Serial PTY terminated outs:  errs ']),
+     None, None, ["Terminating serial-pty:'Serial PTY'",
+                  "Terminated serial-pty:'Serial PTY', stdout:'', stderr:''"]),
 ]
 
 @pytest.mark.parametrize(
@@ -1351,6 +1353,7 @@ def test_devicehandler_handle(
     handler._update_instance_info = mock.Mock()
     handler._final_handle_actions = mock.Mock()
     handler.make_device_available = mock.Mock()
+    twisterlib.handlers.terminate_process = mock.Mock()
     handler.instance.platform.name = 'IPName'
 
     harness = mock.Mock()
