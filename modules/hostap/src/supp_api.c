@@ -1831,6 +1831,19 @@ out:
 	return ret;
 }
 
+int supplicant_set_bss_max_idle_period(const struct device *dev,
+				       unsigned short bss_max_idle_period)
+{
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
+
+	if (!wifi_mgmt_api || !wifi_mgmt_api->set_bss_max_idle_period) {
+		wpa_printf(MSG_ERROR, "set_bss_max_idle_period is not supported");
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->set_bss_max_idle_period(dev, bss_max_idle_period);
+}
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 int supplicant_btm_query(const struct device *dev, uint8_t reason)
 {
