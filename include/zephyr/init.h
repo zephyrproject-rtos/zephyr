@@ -149,7 +149,7 @@ struct init_entry {
  * linker scripts to sort them according to the specified level and priority.
  */
 #define Z_INIT_ENTRY_SECTION(level, prio)                                      \
-	__attribute__((__section__(".z_init_" #level STRINGIFY(prio)"_")))
+	__attribute__((__section__(".z_init_" #level "_" STRINGIFY(prio)"_")))
 
 
 /* Designated initializers where added to C in C99. There were added to
