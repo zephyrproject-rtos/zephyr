@@ -155,7 +155,7 @@ struct init_entry {
  */
 #define Z_INIT_ENTRY_SECTION(node_id, level, prio, sub_prio)		\
 	__attribute__((__section__(                                     \
-	".z_init_" STRINGIFY(ZINIT_GET_LEVEL(node_id, level)) STRINGIFY(prio)"_")))
+	".z_init_" STRINGIFY(ZINIT_GET_LEVEL(node_id, level)) "_" STRINGIFY(prio)"_")))
 
 
 /* Designated initializers where added to C in C99. There were added to
