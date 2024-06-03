@@ -17,7 +17,7 @@ and network certifications and End Device carrier approvals.
 Develop your application directly on the integrated Cortex M4F microcontroller using Zephyr RTOS,
 enabling your application development with a secure, open source RTOS with more than just kernel
 services. Remotely debug your fleet of devices with the `Memfault Platform`_. Take advantage of the
-Zephyr community and Laird Connectivity’s multi featured Out of Box (OOB) sample source code
+Zephyr community and Ezurio’s `Canvas Software Suite`_ to accelerate your development.
 covering all aspects of the product's capabilities and hardware interfaces. The MG100 also delivers
 complete antenna flexibility with internal or external antenna options available, and the optional
 battery backup provides uninterrupted reporting of remote Bluetooth sensor data.
@@ -204,10 +204,9 @@ Segger IC.
 Software
 ********
 
-MG100 Out-of-Box Demo Software
+Canvas Software Suite
 ==============================
-The MG100 ships with an out of the box software demo.
-Check out the `BLE Gateway OOB Demo`_ source code and documentation.
+The MG100 is a supported hardware platform for `Canvas Software Suite`_.
 
 Testing Bluetooth on the MG100
 ==============================
@@ -231,19 +230,19 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/lairdconnect/mg100/mg100.dts`.
+:zephyr_file:`boards/ezurio/mg100/mg100.dts`.
 
 References
 **********
 
 .. target-notes::
 
-.. _MG100 website: https://www.lairdconnect.com/iot-devices/iot-gateways/sentrius-mg100-gateway-lte-mnb-iot-and-bluetooth-5
+.. _MG100 website: https://www.ezurio.com/iot-devices/iot-gateways/sentrius-mg100-gateway-lte-mnb-iot-and-bluetooth-5
 .. _nRF52840 Product Specification: https://infocenter.nordicsemi.com/pdf/nRF52840_PS_v1.1.pdf
 .. _Sierra Wireless HL7800: https://source.sierrawireless.com/devices/hl-series/hl7800/#sthash.641qTTwA.dpbs
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
-.. _BLE Gateway OOB Demo: https://github.com/LairdCP/Pinnacle-100-Firmware-Manifest
 .. _Macronix MX25R6435F datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/7913/MX25R6435F,%20Wide%20Range,%2064Mb,%20v1.5.pdf
-.. _Laird Connectivity USB-SWD Programming Kit: https://www.lairdconnect.com/wireless-modules/programming-kits/usb-swd-programming-kit
+.. _Ezurio USB-SWD Programming Kit: https://www.ezurio.com/wireless-modules/programming-kits/usb-swd-programming-kit
 .. _Memfault Platform: https://docs.memfault.com/docs/mcu/pinnacle-100-guide
 .. _nRF52840: https://www.nordicsemi.com/products/nrf52840
+.. _Canvas Software Suite: https://www.ezurio.com/canvas/software-suite
