@@ -182,7 +182,7 @@ static ALWAYS_INLINE void _restore_core_context(void)
 }
 
 void dsp_restore_vector(void);
-void mp_resume_entry(void);
+void z_mp_entry(void);
 
 void power_gate_entry(uint32_t core_id)
 {
@@ -222,13 +222,14 @@ void power_gate_entry(uint32_t core_id)
 
 static void __used power_gate_exit(void)
 {
-	cpu_early_init();
 	sys_cache_data_flush_and_invd_all();
-	_restore_core_context();
 
-	/* Secondary core is resumed by set_dx */
+	/* Secondary core is resumed manually and have a fresh start */
 	if (arch_proc_id()) {
-		mp_resume_entry();
+		z_mp_entry();
+	} else {
+		cpu_early_init();
+		_restore_core_context();
 	}
 }
 
