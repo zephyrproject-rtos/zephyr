@@ -689,11 +689,11 @@ static void rpa_timeout(struct k_work *work)
 	le_rpa_invalidate();
 
 	/* IF no roles using the RPA is running we can stop the RPA timer */
-	if (!(adv_enabled ||
-	      atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING) ||
-	      (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
-	       atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)))) {
-		return;
+	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+		if (!(adv_enabled || atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING) ||
+		      bt_le_scan_active_scanner_running())) {
+			return;
+		}
 	}
 
 	le_update_private_addr();
