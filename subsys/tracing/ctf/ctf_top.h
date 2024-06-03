@@ -102,7 +102,9 @@ typedef enum {
 	CTF_EVENT_TIMER_STOP = 0x30,
 	CTF_EVENT_TIMER_STATUS_SYNC_ENTER = 0x31,
 	CTF_EVENT_TIMER_STATUS_SYNC_BLOCKING = 0x32,
-	CTF_EVENT_TIMER_STATUS_SYNC_EXIT = 0x33
+	CTF_EVENT_TIMER_STATUS_SYNC_EXIT = 0x33,
+	CTF_EVENT_THREAD_USER_MODE_ENTER = 0x34,
+	CTF_EVENT_THREAD_WAKEUP = 0x35,
 
 } ctf_event_t;
 
@@ -186,6 +188,19 @@ static inline void ctf_top_thread_name_set(uint32_t thread_id,
 {
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_NAME_SET), thread_id,
 		  name);
+}
+
+
+static inline void ctf_top_thread_user_mode_enter(uint32_t thread_id, ctf_bounded_string_t name)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_USER_MODE_ENTER),
+		  thread_id, name);
+}
+
+static inline void ctf_top_thread_wakeup(uint32_t thread_id, ctf_bounded_string_t name)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_WAKEUP),
+		  thread_id, name);
 }
 
 static inline void ctf_top_isr_enter(void)
