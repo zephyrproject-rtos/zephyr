@@ -197,7 +197,8 @@ static bool smf_execute_all_exit_actions(struct smf_ctx *const ctx, const struct
 {
 	struct internal_ctx *const internal = (void *)&ctx->internal;
 
-	for (const struct smf_state *to_execute = ctx->current; to_execute != topmost;
+	for (const struct smf_state *to_execute = ctx->current;
+	     to_execute != NULL && to_execute != topmost;
 	     to_execute = to_execute->parent) {
 		if (to_execute->exit) {
 			to_execute->exit(ctx);
