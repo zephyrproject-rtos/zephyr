@@ -312,6 +312,50 @@ Controller Area Network (CAN)
 Display
 =======
 
+* GC9X01 based displays now use the MIPI DBI driver class. These displays
+  must now be declared within a MIPI DBI driver wrapper device, which will
+  manage interfacing with the display. (:github:`73686`)
+  For an example, see below:
+
+  .. code-block:: devicetree
+
+    /* Legacy GC9X01 display definition */
+    &spi0 {
+        gc9a01: gc9a01@0 {
+            status = "okay";
+            compatible = "galaxycore,gc9x01x";
+            reg = <0>;
+            spi-max-frequency = <100000000>;
+            cmd-data-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+            reset-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+            ...
+        };
+    };
+
+    /* New display definition with MIPI DBI device */
+
+    #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+    ...
+
+    mipi_dbi {
+        compatible = "zephyr,mipi-dbi-spi";
+        dc-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+        reset-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+        spi-dev = <&spi0>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        gc9a01: gc9a01@0 {
+            status = "okay";
+            compatible = "galaxycore,gc9x01x";
+            reg = <0>;
+            mipi-max-frequency = <100000000>;
+            ...
+        };
+    };
+
+
 * ST7735R based displays now use the MIPI DBI driver class. These displays
   must now be declared within a MIPI DBI driver wrapper device, which will
   manage interfacing with the display. Note that the `cmd-data-gpios` pin has
