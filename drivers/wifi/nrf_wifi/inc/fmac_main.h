@@ -91,6 +91,7 @@ struct nrf_wifi_vif_ctx_zep {
 	struct k_work_delayable nrf_wifi_rpu_recovery_bringup_work;
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 	int rts_threshold_value;
+	unsigned short bss_max_idle_period;
 };
 
 struct nrf_wifi_vif_ctx_map {
