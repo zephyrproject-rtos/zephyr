@@ -419,7 +419,7 @@ TESTDATA_4 = [
       f'--suppressions={ZEPHYR_BASE}/scripts/valgrind.supp',
       '--log-file=build_dir/valgrind.log', '--track-origins=yes',
       'generator']),
-    (False, True, False, 123, None, ['generator', 'run', '--seed=123']),
+    (False, True, False, 123, None, ['generator', '-C', 'build_dir', 'run', '--seed=123']),
     (False, False, False, None, ['ex1', 'ex2'], ['build_dir/zephyr/zephyr.exe', 'ex1', 'ex2']),
 ]
 
