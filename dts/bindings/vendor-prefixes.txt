@@ -224,6 +224,7 @@ evervision	Evervision Electronics Co. Ltd.
 exar	Exar Corporation
 excito	Excito
 ezchip	EZchip Semiconductor
+ezurio	Ezurio
 facebook	Facebook (deprecated, use meta)
 fairphone	Fairphone B.V.
 fanke	FANKE Technology Co., Ltd.
@@ -353,7 +354,6 @@ kvg	Kverneland Group
 kyo	Kyocera Corporation
 lacie	LaCie
 laird	Laird PLC
-lairdconnect	Laird Connectivity
 lamobo	Ketai Huajie Technology Co., Ltd.
 lantiq	Lantiq Semiconductor
 lattice	Lattice Semiconductor
