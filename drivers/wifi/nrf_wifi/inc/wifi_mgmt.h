@@ -77,4 +77,7 @@ int nrf_wifi_set_rts_threshold(const struct device *dev,
 
 int nrf_wifi_get_rts_threshold(const struct device *dev,
 			       unsigned int *rts_threshold);
+
+int nrf_wifi_set_bss_max_idle_period(const struct device *dev,
+				     unsigned short bss_max_idle_period);
 #endif /*  __ZEPHYR_WIFI_MGMT_H__ */

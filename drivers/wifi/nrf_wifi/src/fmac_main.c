@@ -858,6 +858,9 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 #endif /* CONFIG_NRF70_RADIO_TEST */
 
 	k_mutex_init(&rpu_drv_priv_zep.rpu_ctx_zep.rpu_lock);
+#ifndef CONFIG_NRF70_RADIO_TEST
+	vif_ctx_zep->bss_max_idle_period = USHRT_MAX;
+#endif /* !CONFIG_NRF70_RADIO_TEST */
 	return 0;
 #ifdef CONFIG_NRF70_RADIO_TEST
 fmac_deinit:
@@ -885,6 +888,7 @@ static const struct wifi_mgmt_ops nrf_wifi_mgmt_ops = {
 	.get_power_save_config = nrf_wifi_get_power_save_config,
 	.set_rts_threshold = nrf_wifi_set_rts_threshold,
 	.get_rts_threshold = nrf_wifi_get_rts_threshold,
+	.set_bss_max_idle_period = nrf_wifi_set_bss_max_idle_period,
 #endif
 #ifdef CONFIG_NRF70_SYSTEM_WITH_RAW_MODES
 	.mode = nrf_wifi_mode,
