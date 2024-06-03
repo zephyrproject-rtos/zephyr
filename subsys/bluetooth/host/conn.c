@@ -3034,20 +3034,6 @@ static void bt_conn_set_param_le(struct bt_conn *conn,
 	conn->le.timeout = param->timeout;
 }
 
-static bool create_param_validate(const struct bt_conn_le_create_param *param)
-{
-#if defined(CONFIG_BT_PRIVACY)
-	/* Initiation timeout cannot be greater than the RPA timeout */
-	const uint32_t timeout_max = (MSEC_PER_SEC / 10) * bt_dev.rpa_timeout;
-
-	if (param->timeout > timeout_max) {
-		return false;
-	}
-#endif
-
-	return true;
-}
-
 static void create_param_setup(const struct bt_conn_le_create_param *param)
 {
 	bt_dev.create_param = *param;
@@ -3227,10 +3213,6 @@ int bt_conn_le_create(const bt_addr_le_t *peer, const struct bt_conn_le_create_p
 	err = conn_le_create_common_checks(peer, conn_param);
 	if (err) {
 		return err;
-	}
-
-	if (!create_param_validate(create_param)) {
-		return -EINVAL;
 	}
 
 	conn = conn_le_create_helper(peer, conn_param);
