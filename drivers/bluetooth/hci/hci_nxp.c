@@ -312,7 +312,18 @@ static int bt_nxp_open(void)
 			LOG_ERR("HCI open failed");
 			break;
 		}
+	} while (false);
 
+	return ret;
+}
+
+int bt_nxp_setup(const struct bt_hci_setup_params *params)
+{
+	ARG_UNUSED(params);
+
+	int ret;
+
+	do {
 #if CONFIG_HCI_NXP_SET_CAL_DATA
 		ret = bt_nxp_set_calibration_data();
 		if (ret < 0) {
@@ -345,7 +356,7 @@ static int bt_nxp_open(void)
 			LOG_ERR("Failed to configure controller autosleep");
 			break;
 		}
-#endif
+#endif /* CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP */
 	} while (false);
 
 	return ret;
@@ -373,6 +384,7 @@ static int bt_nxp_close(void)
 static const struct bt_hci_driver drv = {
 	.name = "BT NXP",
 	.open = bt_nxp_open,
+	.setup = bt_nxp_setup,
 	.close = bt_nxp_close,
 	.send = bt_nxp_send,
 	.bus = BT_HCI_DRIVER_BUS_IPM,
