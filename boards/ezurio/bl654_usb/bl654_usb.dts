@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Laird Connectivity
+ * Copyright (c) 2024 Ezurio
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,8 +10,8 @@
 #include "bl654_usb-pinctrl.dtsi"
 
 / {
-	model = "Laird Connectivity BL654 USB adapter";
-	compatible = "lairdconnect,bl654_usb";
+	model = "Ezurio BL654 USB adapter";
+	compatible = "ezurio,bl654_usb";
 
 	chosen {
 		zephyr,sram = &sram0;

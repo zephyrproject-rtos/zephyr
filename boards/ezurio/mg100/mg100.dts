@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Laird Connectivity
+ * Copyright (c) 2024 Ezurio
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +12,7 @@
 
 / {
 	model = "MG100";
-	compatible = "lairdconnect,mg100";
+	compatible = "ezurio,mg100";
 
 	chosen {
 		zephyr,console = &uart0;

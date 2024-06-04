@@ -1,12 +1,12 @@
 .. _bl654_sensor_board:
 
-Laird Connectivity BL654 Sensor Board
-#####################################
+Ezurio BL654 Sensor Board
+#########################
 
 Overview
 ********
 
-The BL654 Sensor Board hardware provides support for the Laird Connectivity
+The BL654 Sensor Board hardware provides support for the Ezurio
 BL654 module which is powered by a Nordic Semiconductor nRF52840 ARM
 Cortex-M4F CPU.
 
@@ -132,7 +132,7 @@ Applications for the ``bl654_sensor_board`` board configuration can be built,
 flashed, and debugged in the usual way. See :ref:`build_an_application` and
 :ref:`application_run` for more details on building and running. An external
 debugger/programmer is required which can be connected to using a Tag-Connect
-TC2030-CTX cable, a Laird Connectivity USB-SWD Programmer board or Segger JLink
+TC2030-CTX cable, a Ezurio USB-SWD Programmer board or Segger JLink
 programmer can be used to program and debug the BL654 sensor board.
 
 Flashing
@@ -142,14 +142,14 @@ If using an external JLink, follow the instructions in the :ref:`nordic_segger`
 page to install and configure all the necessary software. Further information
 can be found in :ref:`nordic_segger_flashing`. Then build and flash applications
 as usual (see :ref:`build_an_application` and :ref:`application_run` for more
-details). If using a Laird Connectivity USB-SWD Programmer Board, see the
+details). If using a Ezurio USB-SWD Programmer Board, see the
 `pyOCD website`_ to find details about the software and how to install it.
 
 Here is an example for the :ref:`hello_world` application.
 
 First, run your favorite terminal program to listen for output - note that an
 external UART is required to be connected to the BL654 sensor board's UART, if
-using the Laird Connectivity USB-SWD Programmer Board, the BL654 sensor board
+using the Ezurio USB-SWD Programmer Board, the BL654 sensor board
 can be plugged in to the UART header. An FTDI cable can also be used - the
 voltage of the I/O lines and power line must be between 1.8v and 3.3v, do not
 connect an FTDI cable with a 5v power line to the BL654 sensor board.
@@ -181,7 +181,7 @@ can be found. For example, under Linux, :code:`/dev/ttyACM0`.
 
 The BL654 sensor board needs an external programmer to program it, any SWD
 programmer which has a 9-pin ARM debug port can be used with a Tag-Connect
-TC2030-CTX cable. If using the Laird Connectivity USB-SWD Programmer Board,
+TC2030-CTX cable. If using the Ezurio USB-SWD Programmer Board,
 connect the cable to P1 and ensure the board is set to supply power to the
 target at 3.3v.
 
@@ -214,7 +214,7 @@ Debugging
 =========
 
 Refer to the :ref:`nordic_segger` page to learn about debugging Nordic based
-boards if using an external JLink debugger. If using a Laird Connectivity
+boards if using an external JLink debugger. If using a Ezurio
 USB-SWD Programmer Board, pyOCD can be used for debugging.
 
 Testing Bluetooth on the BL654 Sensor Board
@@ -238,7 +238,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/lairdconnect/bl654_sensor_board/bl654_sensor_board.dts`.
+:zephyr_file:`boards/ezurio/bl654_sensor_board/bl654_sensor_board.dts`.
 
 
 References
@@ -247,6 +247,6 @@ References
 .. target-notes::
 
 .. _Bosch BME280 sensor website: https://www.bosch-sensortec.com/products/environmental-sensors/humidity-sensors-bme280/
-.. _BL654 website: https://connectivity.lairdtech.com/wireless-modules/bluetooth-modules/bluetooth-5-modules/bl654-series
+.. _BL654 website: https://ezurio.com/wireless-modules/bluetooth-modules/bluetooth-5-modules/bl654-series
 .. _pyOCD website: https://github.com/pyocd/pyOCD
-.. _USB-SWD Programmer website: https://www.lairdconnect.com/usb-swd-programmer
+.. _USB-SWD Programmer website: https://www.ezurio.com/usb-swd-programmer

@@ -1,7 +1,7 @@
 .. _mg100:
 
-Laird Connectivity Sentrius™ MG100 Gateway
-##########################################
+Ezurio Sentrius™ MG100 Gateway
+##############################
 
 Overview
 ********
@@ -162,7 +162,7 @@ Applications for the ``mg100`` board configuration can be
 built and flashed in the usual way. (see :ref:`build_an_application`
 and :ref:`application_run` for more details)
 
-The `Laird Connectivity USB-SWD Programming Kit`_ contains all the necessary
+The `Ezurio USB-SWD Programming Kit`_ contains all the necessary
 hardware to enable programming and debugging an MG100.
 
 Flashing
