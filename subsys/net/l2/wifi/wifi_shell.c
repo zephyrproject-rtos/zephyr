@@ -1833,10 +1833,10 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 			filter->filter |= WIFI_PACKET_FILTER_MGMT;
 			break;
 		case 'c':
-			filter->filter |= WIFI_PACKET_FILTER_DATA;
+			filter->filter |= WIFI_PACKET_FILTER_CTRL;
 			break;
 		case 'd':
-			filter->filter |= WIFI_PACKET_FILTER_CTRL;
+			filter->filter |= WIFI_PACKET_FILTER_DATA;
 			break;
 		case 'i':
 			filter->if_index = (uint8_t)atoi(state->optarg);
