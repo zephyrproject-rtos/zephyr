@@ -53,7 +53,7 @@ For each level the following set of macros are available:
 - ``LOG_INST_X`` for standard printf-like message associated with the
   particular instance, e.g. :c:macro:`LOG_INST_INF`.
 - ``LOG_INST_HEXDUMP_X`` for dumping data associated with the particular
-  instance, e.g. :c:macro:`LOG_HEXDUMP_INST_DBG`
+  instance, e.g. :c:macro:`LOG_INST_HEXDUMP_DBG`
 
 The warning level also exposes the following additional macro:
 
