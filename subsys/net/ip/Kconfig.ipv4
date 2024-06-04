@@ -98,6 +98,9 @@ config NET_IPV4_AUTO
 	depends on NET_ARP
 	select EXPERIMENTAL
 	select NET_IPV4_ACD
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
 	help
 	  Enables IPv4 auto IP address configuration (see RFC 3927)
 

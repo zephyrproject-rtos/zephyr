@@ -519,20 +519,8 @@ struct net_if_dhcpv4 {
 
 #if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
 struct net_if_ipv4_autoconf {
-	/** Used for timer lists */
-	sys_snode_t node;
-
 	/** Backpointer to correct network interface */
 	struct net_if *iface;
-
-	/** Timer start */
-	int64_t timer_start;
-
-	/** Time for INIT, DISCOVER, REQUESTING, RENEWAL */
-	uint32_t timer_timeout;
-
-	/** Current IP addr */
-	struct in_addr current_ip;
 
 	/** Requested IP addr */
 	struct in_addr requested_ip;
@@ -540,15 +528,6 @@ struct net_if_ipv4_autoconf {
 	/** IPV4 Autoconf state in the process of network address allocation.
 	 */
 	enum net_ipv4_autoconf_state state;
-
-	/** Number of sent probe requests */
-	uint8_t probe_cnt;
-
-	/** Number of sent announcements */
-	uint8_t announce_cnt;
-
-	/** Incoming conflict count */
-	uint8_t conflict_cnt;
 };
 #endif /* CONFIG_NET_IPV4_AUTO */
 

@@ -27,7 +27,6 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include "net_private.h"
 #include "ipv6.h"
 #include "ipv4.h"
-#include "ipv4_autoconf_internal.h"
 #include "bridge.h"
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
@@ -390,11 +389,6 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		NET_DBG("ARP packet from %s received",
 			net_sprint_ll_addr((uint8_t *)hdr->src.addr,
 					   sizeof(struct net_eth_addr)));
-
-		if (IS_ENABLED(CONFIG_NET_IPV4_AUTO) &&
-		    net_ipv4_autoconf_input(iface, pkt) == NET_DROP) {
-			return NET_DROP;
-		}
 
 		if (IS_ENABLED(CONFIG_NET_IPV4_ACD) &&
 		    net_ipv4_acd_input(iface, pkt) == NET_DROP) {
