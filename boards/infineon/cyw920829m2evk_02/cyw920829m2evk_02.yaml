@@ -18,5 +18,7 @@ supported:
   - clock_control
   - bluetooth
   - watchdog
+  - spi
+  - i2c
 
 vendor: infineon
