@@ -77,6 +77,9 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.ap_bandwidth = supplicant_ap_bandwidth,
 #endif
 #endif /* CONFIG_AP */
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
+	.dpp_dispatch = supplicant_dpp_dispatch,
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 };
 
 DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);
