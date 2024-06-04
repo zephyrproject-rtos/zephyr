@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/mm/demand_paging.h>
 #include <kernel_arch_func.h>
 #include <kernel_arch_interface.h>
 #include <kernel_internal.h>
@@ -1562,6 +1563,7 @@ bool z_arm64_do_demand_paging(uint64_t esr, uint64_t far)
 {
 	uintptr_t virt = far;
 	uint64_t *pte, desc;
+	uintptr_t phys;
 
 	/* filter relevant exceptions */
 	switch (GET_ESR_EC(esr)) {
@@ -1629,6 +1631,10 @@ bool z_arm64_do_demand_paging(uint64_t esr, uint64_t far)
 		*pte = desc;
 		sync_domains(virt, CONFIG_MMU_PAGE_SIZE, "accessed");
 		/* no TLB inval needed after setting AF */
+
+		/* tell the eviction algorithm about it */
+		phys = desc & PTE_PHYSADDR_MASK;
+		k_mem_paging_eviction_accessed(phys);
 		return true;
 	}
 
@@ -1640,6 +1646,10 @@ bool z_arm64_do_demand_paging(uint64_t esr, uint64_t far)
 		*pte = desc;
 		sync_domains(virt, CONFIG_MMU_PAGE_SIZE, "dirtied");
 		invalidate_tlb_page(virt);
+
+		/* this also counts as an access refresh */
+		phys = desc & PTE_PHYSADDR_MASK;
+		k_mem_paging_eviction_accessed(phys);
 		return true;
 	}
 
