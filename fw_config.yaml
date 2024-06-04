@@ -1,0 +1,40 @@
+# Copyright (c) 2024, Tomasz Bursztyka
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Default config file for scripts/fwconfig
+
+init:
+  uart_console_init:
+    level: POST_KERNEL
+    dependencies:
+      - zephyr,console
+    if:
+      CONFIG_EARLY_CONSOLE
+    then:
+      level: PRE_KERNEL_1
+
+  enable_shell_uart:
+    level: POST_KERNEL
+    dependencies:
+      - zephyr,shell-uart
+
+  posix_arch_console_init:
+    dependencies:
+      - uart_console_init
+
+  soc:
+    dependencies:
+      - arch_smp_init
+
+  net_init:
+    dependencies:
+      - k_sys_work_q_init
+
+  littlefs_init:
+    dependencies:
+      - zephyr,flash
+
+  gpio_hogs_init:
+    dependencies:
+      - zephyr,gpio-emul
