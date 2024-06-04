@@ -65,7 +65,7 @@ int z_impl_flash_flatten(const struct device *dev, off_t offset, size_t size)
 {
 	const struct flash_driver_api *api =
 		(const struct flash_driver_api *)dev->api;
-	const struct flash_parameters *params = api->get_parameters(dev);
+	__maybe_unused const struct flash_parameters *params = api->get_parameters(dev);
 
 #if IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
 	if ((flash_params_get_erase_cap(params) & FLASH_ERASE_C_EXPLICIT) &&
