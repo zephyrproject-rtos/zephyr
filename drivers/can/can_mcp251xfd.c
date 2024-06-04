@@ -1497,7 +1497,10 @@ static int mcp251xfd_reset(const struct device *dev)
 		return ret;
 	}
 
-	return spi_write_dt(&dev_cfg->bus, &tx);
+	ret = spi_write_dt(&dev_cfg->bus, &tx);
+	/* Adding delay after init to fix occasional init issue. Delay time found experimentally. */
+	k_sleep(K_USEC(MCP251XFD_RESET_DELAY_USEC));
+	return ret;
 }
 
 static int mcp251xfd_init(const struct device *dev)
