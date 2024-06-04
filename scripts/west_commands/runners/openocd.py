@@ -74,7 +74,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.openocd_cmd = [cfg.openocd or 'openocd'] + search_args
         # openocd doesn't cope with Windows path names, so convert
         # them to POSIX style just to be sure.
-        self.elf_name = Path(cfg.elf_file).as_posix()
+        self.elf_name = Path(cfg.elf_file).as_posix() if cfg.elf_file else None
         self.pre_init = pre_init or []
         self.reset_halt_cmd = reset_halt_cmd
         self.pre_load = pre_load or []
