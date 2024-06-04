@@ -165,4 +165,14 @@ int supplicant_ap_sta_disconnect(const struct device *dev,
 				 const uint8_t *mac_addr);
 
 #endif /* CONFIG_AP */
+
+/**
+ * @brief Dispatch DPP operations
+ *
+ * @param dev Wi-Fi interface name to use
+ * @param dpp_params DPP action enum and params in string
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_dpp_dispatch(const struct device *dev,
+			    struct wifi_dpp_params *params);
 #endif /* ZEPHYR_SUPP_MGMT_H */
