@@ -335,7 +335,10 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 				   NRFX_PPI_GROUPS_USED_BY_MPSL)
 
 /** @brief Bitmask that defines GPIOTE130 channels reserved for use outside of the nrfx library. */
-#define NRFX_GPIOTE130_CHANNELS_USED ~NRFX_CONFIG_MASK_DT(DT_NODELABEL(gpiote130), owned_channels)
+#define NRFX_GPIOTE130_CHANNELS_USED \
+	(~NRFX_CONFIG_MASK_DT(DT_NODELABEL(gpiote130), owned_channels) | \
+	 NRFX_CONFIG_MASK_DT(DT_NODELABEL(gpiote130), child_owned_channels))
+
 
 #if defined(CONFIG_BT_CTLR)
 /*
