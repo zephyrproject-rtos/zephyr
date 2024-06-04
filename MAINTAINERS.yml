@@ -2587,9 +2587,11 @@ Networking:
   files-exclude:
     - doc/connectivity/networking/api/gptp.rst
     - doc/connectivity/networking/api/ieee802154.rst
+    - doc/connectivity/networking/api/ptp.rst
     - doc/connectivity/networking/api/wifi.rst
     - include/zephyr/net/gptp.h
     - include/zephyr/net/ieee802154*.h
+    - include/zephyr/net/ptp.h
     - include/zephyr/net/wifi*.h
     - include/zephyr/net/buf.h
     - include/zephyr/net/dhcpv4*.h
@@ -2605,6 +2607,7 @@ Networking:
     - subsys/net/lib/coap/
     - subsys/net/lib/config/ieee802154*
     - subsys/net/lib/lwm2m/
+    - subsys/net/lib/ptp/
     - subsys/net/lib/tls_credentials/
     - subsys/net/lib/dhcpv4/
     - tests/net/dhcpv4/
@@ -2759,6 +2762,20 @@ Networking:
     - "area: Networking"
   tests:
     - net.mqtt_sn
+
+"Networking: PTP":
+  status: maintained
+  maintainers:
+    - awojasinski
+  files:
+    - doc/connectivity/networking/api/ptp.rst
+    - include/zephyr/net/ptp.h
+    - subsys/net/lib/ptp/
+    - samples/net/ptp/
+  labels:
+    - "area: Networking"
+  tests:
+    - sample.net.ptp
 
 "Networking: Native IEEE 802.15.4":
   status: maintained
