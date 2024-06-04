@@ -116,6 +116,9 @@ Deprecated in this release
  * SPI
 
   * Deprecated :c:func:`spi_is_ready` API function has been removed.
+  * Deprecated :c:func:`spi_transceive_async` API function has been removed.
+  * Deprecated :c:func:`spi_read_async` API function has been removed.
+  * Deprecated :c:func:`spi_write_async` API function has been removed.
 
 Architectures
 *************
