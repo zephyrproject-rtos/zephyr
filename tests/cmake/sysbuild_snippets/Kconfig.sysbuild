@@ -1,0 +1,22 @@
+# Copyright 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_FOO_VAL
+	int "Test value"
+	default 0
+	help
+	  This option's value should be overridden by the 'foo' snippet config overlay.
+
+config EXPECTED_SB_TEST_FOO_VAL
+	int "Expected sysbuild test value"
+	default 999999
+	help
+	  Expected sysbuild value for the test.
+
+config EXPECTED_APP_TEST_FOO_VAL
+	int "Expected application test value"
+	default 999999
+	help
+	  Expected application value for the test.
+
+source "${ZEPHYR_BASE}/share/sysbuild/Kconfig"
