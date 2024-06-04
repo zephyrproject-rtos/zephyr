@@ -4,7 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/devicetree.h>
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_lptmr)
 #define DT_DRV_COMPAT nxp_kinetis_lptmr
+#else
+#define DT_DRV_COMPAT nxp_lptmr
+#endif
 
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
