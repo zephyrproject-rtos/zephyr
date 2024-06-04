@@ -7,8 +7,6 @@
 #define DT_DRV_COMPAT sitronix_st7796s
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/mipi_dbi.h>
@@ -30,8 +28,6 @@ LOG_MODULE_REGISTER(display_st7796s, CONFIG_DISPLAY_LOG_LEVEL);
 struct st7796s_config {
 	const struct device *mipi_dbi;
 	const struct mipi_dbi_config dbi_config;
-	const struct gpio_dt_spec cmd_data_gpio;
-	const struct gpio_dt_spec reset_gpio;
 	uint16_t width;
 	uint16_t height;
 	bool inverted; /* Display color inversion */
