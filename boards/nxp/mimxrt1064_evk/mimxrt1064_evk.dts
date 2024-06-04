@@ -241,9 +241,9 @@ arduino_serial: &lpuart3 {
 		compatible = "microchip,ksz8081";
 		reg = <0>;
 		status = "okay";
-		mc,reset-gpio = <&gpio1 9 GPIO_ACTIVE_HIGH>;
-		mc,interrupt-gpio = <&gpio1 10 GPIO_ACTIVE_HIGH>;
-		mc,interface-type = "rmii";
+		reset-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+		microchip,interface-type = "rmii";
 	};
 };
 

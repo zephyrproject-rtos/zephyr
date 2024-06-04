@@ -272,7 +272,7 @@ zephyr_udc0: &usbotg {
 		compatible = "microchip,ksz8081";
 		reg = <0>;
 		status = "okay";
-		mc,interface-type = "rmii-25MHz";
+		microchip,interface-type = "rmii-25MHz";
 	};
 };
 
