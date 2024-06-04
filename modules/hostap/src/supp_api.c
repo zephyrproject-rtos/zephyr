@@ -1,5 +1,6 @@
 /**
  * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1012,3 +1013,269 @@ out:
 	return ret;
 }
 #endif /* CONFIG_AP */
+
+static const char *dpp_params_to_args_curve(int curve)
+{
+	switch (curve) {
+	case WIFI_DPP_CURVES_P_256:
+		return "P-256";
+	case WIFI_DPP_CURVES_P_384:
+		return "P-384";
+	case WIFI_DPP_CURVES_P_512:
+		return "P-521";
+	case WIFI_DPP_CURVES_BP_256:
+		return "BP-256";
+	case WIFI_DPP_CURVES_BP_384:
+		return "BP-384";
+	case WIFI_DPP_CURVES_BP_512:
+		return "BP-512";
+	default:
+		return "P-256";
+	}
+}
+
+static const char *dpp_params_to_args_conf(int conf)
+{
+	switch (conf) {
+	case WIFI_DPP_CONF_STA:
+		return "sta-dpp";
+	case WIFI_DPP_CONF_AP:
+		return "ap-dpp";
+	case WIFI_DPP_CONF_QUERY:
+		return "query";
+	default:
+		return "sta-dpp";
+	}
+}
+
+static const char *dpp_params_to_args_role(int role)
+{
+	switch (role) {
+	case WIFI_DPP_ROLE_CONFIGURATOR:
+		return "configurator";
+	case WIFI_DPP_ROLE_ENROLLEE:
+		return "enrollee";
+	case WIFI_DPP_ROLE_EITHER:
+		return "either";
+	default:
+		return "either";
+	}
+}
+
+static void dpp_ssid_bin2str(char *dst, uint8_t *src, int max_len)
+{
+	uint8_t *end = src + strlen(src);
+
+	/* do 4 bytes convert first */
+	for (; (src + 4) < end; src += 4) {
+		snprintf(dst, max_len, "%02x%02x%02x%02x",
+			 src[0], src[1], src[2], src[3]);
+		dst += 8;
+	}
+
+	/* then do 1 byte convert */
+	for (; src < end; src++) {
+		snprintf(dst, max_len, "%02x", src[0]);
+		dst += 2;
+	}
+}
+
+#define SUPPLICANT_DPP_CMD_BUF_SIZE 384
+#define STR_CUR_TO_END(cur) (cur) = (&(cur)[0] + strlen((cur)))
+
+int supplicant_dpp_dispatch(const struct device *dev,
+			    struct wifi_dpp_params *params)
+{
+	char *pos;
+	static char dpp_cmd_buf[SUPPLICANT_DPP_CMD_BUF_SIZE] = {0};
+	char *end = &dpp_cmd_buf[SUPPLICANT_DPP_CMD_BUF_SIZE - 2];
+
+	memset(dpp_cmd_buf, 0x0, SUPPLICANT_DPP_CMD_BUF_SIZE);
+
+	pos = &dpp_cmd_buf[0];
+
+	switch (params->action) {
+	case WIFI_DPP_CONFIGURATOR_ADD:
+		strncpy(pos, "DPP_CONFIGURATOR_ADD", end - pos);
+		STR_CUR_TO_END(pos);
+
+		if (params->configurator_add.curve) {
+			snprintf(pos, end - pos, " curve=%s",
+				 dpp_params_to_args_curve(params->configurator_add.curve));
+			STR_CUR_TO_END(pos);
+		}
+
+		if (params->configurator_add.net_access_key_curve) {
+			snprintf(pos, end - pos, " net_access_key_curve=%s",
+				 dpp_params_to_args_curve(
+				 params->configurator_add.net_access_key_curve));
+		}
+		break;
+	case WIFI_DPP_AUTH_INIT:
+		strncpy(pos, "DPP_AUTH_INIT", end - pos);
+		STR_CUR_TO_END(pos);
+
+		if (params->auth_init.peer) {
+			snprintf(pos, end - pos, " peer=%d", params->auth_init.peer);
+			STR_CUR_TO_END(pos);
+		}
+
+		if (params->auth_init.conf) {
+			snprintf(pos, end - pos, " conf=%s",
+				 dpp_params_to_args_conf(
+				 params->auth_init.conf));
+			STR_CUR_TO_END(pos);
+		}
+
+		if (params->auth_init.ssid[0]) {
+			strncpy(pos, " ssid=", end - pos);
+			STR_CUR_TO_END(pos);
+			dpp_ssid_bin2str(pos, params->auth_init.ssid,
+					 WIFI_SSID_MAX_LEN * 2);
+			STR_CUR_TO_END(pos);
+		}
+
+		if (params->auth_init.configurator) {
+			snprintf(pos, end - pos, " configurator=%d",
+				 params->auth_init.configurator);
+			STR_CUR_TO_END(pos);
+		}
+
+		if (params->auth_init.role) {
+			snprintf(pos, end - pos, " role=%s",
+				 dpp_params_to_args_role(
+				 params->auth_init.role));
+		}
+		break;
+	case WIFI_DPP_QR_CODE:
+		strncpy(pos, "DPP_QR_CODE", end - pos);
+		STR_CUR_TO_END(pos);
+
+		if (params->dpp_qr_code[0]) {
+			snprintf(pos, end - pos, " %s", params->dpp_qr_code);
+		}
+		break;
+	case WIFI_DPP_CHIRP:
+		strncpy(pos, "DPP_CHIRP", end - pos);
+		STR_CUR_TO_END(pos);
+
+		if (params->chirp.id) {
+			snprintf(pos, end - pos, " own=%d", params->chirp.id);
+			STR_CUR_TO_END(pos);
+		}
+
+		if (params->chirp.freq) {
+			snprintf(pos, end - pos, " listen=%d", params->chirp.freq);
+		}
+		break;
+	case WIFI_DPP_LISTEN:
+		strncpy(pos, "DPP_LISTEN", end - pos);
+		STR_CUR_TO_END(pos);
+
+		if (params->listen.freq) {
+			snprintf(pos, end - pos, " %d", params->listen.freq);
+			STR_CUR_TO_END(pos);
+		}
+
+		if (params->listen.role) {
+			snprintf(pos, end - pos, " role=%s",
+				 dpp_params_to_args_role(
+				 params->listen.role));
+		}
+		break;
+	case WIFI_DPP_BOOTSTRAP_GEN:
+		strncpy(pos, "DPP_BOOTSTRAP_GEN", end - pos);
+		STR_CUR_TO_END(pos);
+
+		if (params->bootstrap_gen.type) {
+			strncpy(pos, " type=qrcode", end - pos);
+			STR_CUR_TO_END(pos);
+		}
+
+		if (params->bootstrap_gen.op_class &&
+		    params->bootstrap_gen.chan) {
+			snprintf(pos, end - pos, " chan=%d/%d",
+				 params->bootstrap_gen.op_class,
+				 params->bootstrap_gen.chan);
+			STR_CUR_TO_END(pos);
+		}
+
+		/* mac is mandatory, even if it is zero mac address */
+		snprintf(pos, end - pos, " mac=%02x:%02x:%02x:%02x:%02x:%02x",
+			 params->bootstrap_gen.mac[0], params->bootstrap_gen.mac[1],
+			 params->bootstrap_gen.mac[2], params->bootstrap_gen.mac[3],
+			 params->bootstrap_gen.mac[4], params->bootstrap_gen.mac[5]);
+		STR_CUR_TO_END(pos);
+
+		if (params->bootstrap_gen.curve) {
+			snprintf(pos, end - pos, " curve=%s",
+				 dpp_params_to_args_curve(params->bootstrap_gen.curve));
+		}
+		break;
+	case WIFI_DPP_BOOTSTRAP_GET_URI:
+		snprintf(pos, end - pos, "DPP_BOOTSTRAP_GET_URI %d", params->id);
+		break;
+	case WIFI_DPP_SET_CONF_PARAM:
+		strncpy(pos, "SET dpp_configurator_params", end - pos);
+		STR_CUR_TO_END(pos);
+
+		if (params->configurator_set.peer) {
+			snprintf(pos, end - pos, " peer=%d", params->configurator_set.peer);
+			STR_CUR_TO_END(pos);
+		}
+
+		if (params->configurator_set.conf) {
+			snprintf(pos, end - pos, " conf=%s",
+				 dpp_params_to_args_conf(
+				 params->configurator_set.conf));
+			STR_CUR_TO_END(pos);
+		}
+
+		if (params->configurator_set.ssid[0]) {
+			strncpy(pos, " ssid=", end - pos);
+			STR_CUR_TO_END(pos);
+			dpp_ssid_bin2str(pos, params->configurator_set.ssid,
+					 WIFI_SSID_MAX_LEN * 2);
+			STR_CUR_TO_END(pos);
+		}
+
+		if (params->configurator_set.configurator) {
+			snprintf(pos, end - pos, " configurator=%d",
+				 params->configurator_set.configurator);
+			STR_CUR_TO_END(pos);
+		}
+
+		if (params->configurator_set.role) {
+			snprintf(pos, end - pos, " role=%s",
+				 dpp_params_to_args_role(
+				 params->configurator_set.role));
+			STR_CUR_TO_END(pos);
+		}
+
+		if (params->configurator_set.curve) {
+			snprintf(pos, end - pos, " curve=%s",
+				 dpp_params_to_args_curve(params->configurator_set.curve));
+			STR_CUR_TO_END(pos);
+		}
+
+		if (params->configurator_set.net_access_key_curve) {
+			snprintf(pos, end - pos, " net_access_key_curve=%s",
+				 dpp_params_to_args_curve(
+				 params->configurator_set.net_access_key_curve));
+		}
+		break;
+	case WIFI_DPP_SET_WAIT_RESP_TIME:
+		snprintf(pos, end - pos, "SET dpp_resp_wait_time %d",
+			 params->dpp_resp_wait_time);
+		break;
+	default:
+		wpa_printf(MSG_ERROR, "Unknown DPP action");
+		return -1;
+	}
+
+	wpa_printf(MSG_DEBUG, "%s", dpp_cmd_buf);
+	if (zephyr_wpa_cli_cmd_resp(dpp_cmd_buf, params->resp)) {
+		return -1;
+	}
+	return 0;
+}

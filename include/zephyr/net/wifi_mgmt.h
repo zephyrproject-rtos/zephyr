@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation.
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,6 +92,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_RTS_THRESHOLD,
 	/** Configure AP parameter */
 	NET_REQUEST_WIFI_CMD_AP_CONFIG_PARAM,
+	/** DPP actions */
+	NET_REQUEST_WIFI_CMD_DPP,
 /** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
@@ -197,6 +200,12 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_CONFIG_PARAM)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM);
+
+/** Request a Wi-Fi DPP operation */
+#define NET_REQUEST_WIFI_DPP			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_DPP)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP);
 
 /** @brief Wi-Fi management events */
 enum net_event_wifi_cmd {
@@ -768,6 +777,178 @@ struct wifi_ap_config_params {
 	uint32_t max_num_sta;
 };
 
+/** @brief Wi-Fi DPP configuration parameter */
+/** Wi-Fi DPP QR-CODE in string max len for SHA512 */
+#define WIFI_DPP_QRCODE_MAX_LEN 255
+
+/** Wi-Fi DPP operations */
+enum wifi_dpp_op {
+	/** Unset invalid operation */
+	WIFI_DPP_OP_INVALID = 0,
+	/** Add configurator */
+	WIFI_DPP_CONFIGURATOR_ADD,
+	/** Start DPP auth as configurator or enrollee */
+	WIFI_DPP_AUTH_INIT,
+	/** Scan qr_code as parameter */
+	WIFI_DPP_QR_CODE,
+	/** Start DPP chirp to send DPP announcement */
+	WIFI_DPP_CHIRP,
+	/** Listen on specific frequency */
+	WIFI_DPP_LISTEN,
+	/** Generate a bootstrap like qrcode */
+	WIFI_DPP_BOOTSTRAP_GEN,
+	/** Get a bootstrap uri for external device to scan */
+	WIFI_DPP_BOOTSTRAP_GET_URI,
+	/** Set configurator parameters */
+	WIFI_DPP_SET_CONF_PARAM,
+	/** Set DPP rx response wait timeout */
+	WIFI_DPP_SET_WAIT_RESP_TIME
+};
+
+/** Wi-Fi DPP crypto Elliptic Curves */
+enum wifi_dpp_curves {
+	/** Unset default use P-256 */
+	WIFI_DPP_CURVES_DEFAULT = 0,
+	/** prime256v1 */
+	WIFI_DPP_CURVES_P_256,
+	/** secp384r1 */
+	WIFI_DPP_CURVES_P_384,
+	/** secp521r1 */
+	WIFI_DPP_CURVES_P_512,
+	/** brainpoolP256r1 */
+	WIFI_DPP_CURVES_BP_256,
+	/** brainpoolP384r1 */
+	WIFI_DPP_CURVES_BP_384,
+	/** brainpoolP512r1 */
+	WIFI_DPP_CURVES_BP_512
+};
+
+/** Wi-Fi DPP role */
+enum wifi_dpp_role {
+	/** Unset role */
+	WIFI_DPP_ROLE_UNSET = 0,
+	/** Configurator passes AP config to enrollee */
+	WIFI_DPP_ROLE_CONFIGURATOR,
+	/** Enrollee gets AP config and connect to AP */
+	WIFI_DPP_ROLE_ENROLLEE,
+	/** Both configurator and enrollee might be chosen */
+	WIFI_DPP_ROLE_EITHER
+};
+
+/** Wi-Fi DPP security type
+ *
+ * current only support DPP only AKM
+ */
+enum wifi_dpp_conf {
+	/** Unset conf */
+	WIFI_DPP_CONF_UNSET = 0,
+	/** conf=sta-dpp, AKM DPP only for sta */
+	WIFI_DPP_CONF_STA,
+	/** conf=ap-dpp, AKM DPP only for ap */
+	WIFI_DPP_CONF_AP,
+	/** conf=query, query for AKM */
+	WIFI_DPP_CONF_QUERY
+};
+
+/** Wi-Fi DPP bootstrap type
+ *
+ * current default and only support QR-CODE
+ */
+enum wifi_dpp_bootstrap_type {
+	/** Unset type */
+	WIFI_DPP_BOOTSTRAP_TYPE_UNSET = 0,
+	/** qrcode */
+	WIFI_DPP_BOOTSTRAP_TYPE_QRCODE,
+	/** pkex */
+	WIFI_DPP_BOOTSTRAP_TYPE_PKEX,
+	/** nfc */
+	WIFI_DPP_BOOTSTRAP_TYPE_NFC_URI
+};
+
+/** Wi-Fi DPP params for various operations
+ */
+struct wifi_dpp_params {
+	/** Operation enum */
+	int action;
+	union {
+		/** Params to add DPP configurator */
+		struct wifi_dpp_configurator_add_params {
+			/** ECP curves for private key */
+			int curve;
+			/** ECP curves for net access key */
+			int net_access_key_curve;
+		} configurator_add;
+		/** Params to initiate a DPP auth procedure */
+		struct wifi_dpp_auth_init_params {
+			/** Peer bootstrap id */
+			int peer;
+			/** Configuration parameter id */
+			int configurator;
+			/** Role configurator or enrollee */
+			int role;
+			/** Security type */
+			int conf;
+			/** SSID in string */
+			char ssid[WIFI_SSID_MAX_LEN + 1];
+		} auth_init;
+		/** Params to do DPP chirp */
+		struct wifi_dpp_chirp_params {
+			/** Own bootstrap id */
+			int id;
+			/** Chirp on frequency */
+			int freq;
+		} chirp;
+		/** Params to do DPP listen */
+		struct wifi_dpp_listen_params {
+			/** Listen on frequency */
+			int freq;
+			/** Role configurator or enrollee */
+			int role;
+		} listen;
+		/** Params to generate a DPP bootstrap */
+		struct wifi_dpp_bootstrap_gen_params {
+			/** Bootstrap type */
+			int type;
+			/** Own operating class */
+			int op_class;
+			/** Own working channel */
+			int chan;
+			/** ECP curves */
+			int curve;
+			/** Own mac address */
+			uint8_t mac[WIFI_MAC_ADDR_LEN];
+		} bootstrap_gen;
+		/** Params to set specific DPP configurator */
+		struct wifi_dpp_configurator_set_params {
+			/** Peer bootstrap id */
+			int peer;
+			/** Configuration parameter id */
+			int configurator;
+			/** Role configurator or enrollee */
+			int role;
+			/** Security type */
+			int conf;
+			/** ECP curves for private key */
+			int curve;
+			/** ECP curves for net access key */
+			int net_access_key_curve;
+			/** Own mac address */
+			char ssid[WIFI_SSID_MAX_LEN + 1];
+		} configurator_set;
+		/** Bootstrap get uri id */
+		int id;
+		/** Timeout for DPP frame response rx */
+		int dpp_resp_wait_time;
+		/** DPP QR-CODE, max for SHA512 */
+		uint8_t dpp_qr_code[WIFI_DPP_QRCODE_MAX_LEN + 1];
+		/** Request response reusing request buffer.
+		 * So once a request is sent, buffer will be
+		 * fulfilled by response
+		 */
+		char resp[WIFI_DPP_QRCODE_MAX_LEN + 1];
+	};
+};
+
 #include <zephyr/net/net_if.h>
 
 /** Scan result callback
@@ -949,6 +1130,14 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*ap_config_params)(const struct device *dev, struct wifi_ap_config_params *params);
+	/** Dispatch DPP operations by action enum, with or without arguments in string format
+	 *
+	 * @param dev Pointer to the device structure for the driver instance
+	 * @param params DPP action enum and parameters in string
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*dpp_dispatch)(const struct device *dev, struct wifi_dpp_params *params);
 };
 
 /** Wi-Fi management offload API */

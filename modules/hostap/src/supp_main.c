@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Nordic Semiconductor ASA.
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,6 +65,7 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.ap_disable = supplicant_ap_disable,
 	.ap_sta_disconnect = supplicant_ap_sta_disconnect,
 #endif /* CONFIG_AP */
+	.dpp_dispatch = supplicant_dpp_dispatch,
 };
 
 DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);
