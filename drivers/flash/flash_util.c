@@ -48,7 +48,7 @@ int z_impl_flash_fill(const struct device *dev, uint8_t val, off_t offset,
 	memset(filler, val, sizeof(filler));
 
 	while (stored < size) {
-		size_t chunk = MIN(sizeof(filler), size);
+		size_t chunk = MIN(sizeof(filler), size - stored);
 
 		rc = api->write(dev, offset + stored, filler, chunk);
 		if (rc < 0) {
