@@ -4,7 +4,7 @@
 if SOC_SERIES_DA1469X
 
 config SMARTBOND_TIMER
-	default y if PM
+	default y if PM && !$(dt_nodelabel_enabled,timer2)
 
 config CORTEX_M_SYSTICK
 	default n if SMARTBOND_TIMER
