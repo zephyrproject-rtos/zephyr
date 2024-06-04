@@ -21,11 +21,15 @@
 #include <zephyr/settings/settings.h>
 
 #if defined(CONFIG_BT_GATT_CACHING)
+#if defined(CONFIG_BT_USE_PSA_API)
+#include "psa/crypto.h"
+#else /* CONFIG_BT_USE_PSA_API */
 #include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
 #include <tinycrypt/aes.h>
 #include <tinycrypt/cmac_mode.h>
 #include <tinycrypt/ccm_mode.h>
+#endif /* CONFIG_BT_USE_PSA_API */
 #endif /* CONFIG_BT_GATT_CACHING */
 
 #include <zephyr/bluetooth/hci.h>
@@ -693,10 +697,92 @@ static ssize_t cf_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
+#if defined(CONFIG_BT_USE_PSA_API)
 struct gen_hash_state {
-	struct tc_cmac_struct state;
+	psa_mac_operation_t operation;
+	psa_key_id_t key;
 	int err;
 };
+
+static int db_hash_setup(struct gen_hash_state *state, uint8_t *key)
+{
+	psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
+
+	psa_set_key_type(&key_attr, PSA_KEY_TYPE_AES);
+	psa_set_key_bits(&key_attr, 128);
+	psa_set_key_usage_flags(&key_attr, PSA_KEY_USAGE_SIGN_MESSAGE);
+	psa_set_key_algorithm(&key_attr, PSA_ALG_CMAC);
+
+	if (psa_import_key(&key_attr, key, 16, &(state->key)) != PSA_SUCCESS) {
+		LOG_ERR("Unable to import the key for AES CMAC");
+		return -EIO;
+	}
+	state->operation = psa_mac_operation_init();
+	if (psa_mac_sign_setup(&(state->operation), state->key,
+			       PSA_ALG_CMAC) != PSA_SUCCESS) {
+		LOG_ERR("CMAC operation init failed");
+		return -EIO;
+	}
+	return 0;
+}
+
+static int db_hash_update(struct gen_hash_state *state, uint8_t *data, size_t len)
+{
+	if (psa_mac_update(&(state->operation), data, len) != PSA_SUCCESS) {
+		LOG_ERR("CMAC update failed");
+		return -EIO;
+	}
+	return 0;
+}
+
+static int db_hash_finish(struct gen_hash_state *state)
+{
+	size_t mac_length;
+
+	if (psa_mac_sign_finish(&(state->operation), db_hash.hash, 16,
+				&mac_length) != PSA_SUCCESS) {
+		LOG_ERR("CMAC finish failed");
+		return -EIO;
+	}
+	return 0;
+}
+
+#else /* CONFIG_BT_USE_PSA_API */
+struct gen_hash_state {
+	struct tc_cmac_struct state;
+	struct tc_aes_key_sched_struct sched;
+	int err;
+};
+
+static int db_hash_setup(struct gen_hash_state *state, uint8_t *key)
+{
+	if (tc_cmac_setup(&(state->state), key, &(state->sched)) == TC_CRYPTO_FAIL) {
+		LOG_ERR("CMAC setup failed");
+		return -EIO;
+	}
+	return 0;
+}
+
+static int db_hash_update(struct gen_hash_state *state, uint8_t *data, size_t len)
+{
+	if (tc_cmac_update(&state->state, data, len) == TC_CRYPTO_FAIL) {
+		LOG_ERR("CMAC update failed");
+		return -EIO;
+	}
+	return 0;
+}
+
+static int db_hash_finish(struct gen_hash_state *state)
+{
+	if (tc_cmac_final(db_hash.hash, &(state->state)) == TC_CRYPTO_FAIL) {
+		LOG_ERR("CMAC finish failed");
+		return -EIO;
+	}
+	return 0;
+}
+
+
+#endif /* CONFIG_BT_USE_PSA_API */
 
 union hash_attr_value {
 	/* Bluetooth Core Specification Version 5.3 | Vol 3, Part G
@@ -755,15 +841,15 @@ static uint8_t gen_hash_m(const struct bt_gatt_attr *attr, uint16_t handle,
 	case BT_UUID_GATT_CHRC_VAL:
 	case BT_UUID_GATT_CEP_VAL:
 		value = sys_cpu_to_le16(handle);
-		if (tc_cmac_update(&state->state, (uint8_t *)&value,
-				   sizeof(handle)) == TC_CRYPTO_FAIL) {
+		if (db_hash_update(state, (uint8_t *)&value,
+				   sizeof(handle)) != 0) {
 			state->err = -EINVAL;
 			return BT_GATT_ITER_STOP;
 		}
 
 		value = sys_cpu_to_le16(u16->val);
-		if (tc_cmac_update(&state->state, (uint8_t *)&value,
-				   sizeof(u16->val)) == TC_CRYPTO_FAIL) {
+		if (db_hash_update(state, (uint8_t *)&value,
+				   sizeof(u16->val)) != 0) {
 			state->err = -EINVAL;
 			return BT_GATT_ITER_STOP;
 		}
@@ -774,8 +860,7 @@ static uint8_t gen_hash_m(const struct bt_gatt_attr *attr, uint16_t handle,
 			return BT_GATT_ITER_STOP;
 		}
 
-		if (tc_cmac_update(&state->state, data, len) ==
-		    TC_CRYPTO_FAIL) {
+		if (db_hash_update(state, data, len) != 0) {
 			state->err = -EINVAL;
 			return BT_GATT_ITER_STOP;
 		}
@@ -788,18 +873,19 @@ static uint8_t gen_hash_m(const struct bt_gatt_attr *attr, uint16_t handle,
 	case BT_UUID_GATT_CPF_VAL:
 	case BT_UUID_GATT_CAF_VAL:
 		value = sys_cpu_to_le16(handle);
-		if (tc_cmac_update(&state->state, (uint8_t *)&value,
-				   sizeof(handle)) == TC_CRYPTO_FAIL) {
+		if (db_hash_update(state, (uint8_t *)&value,
+				   sizeof(handle)) != 0) {
 			state->err = -EINVAL;
 			return BT_GATT_ITER_STOP;
 		}
 
 		value = sys_cpu_to_le16(u16->val);
-		if (tc_cmac_update(&state->state, (uint8_t *)&value,
-				   sizeof(u16->val)) == TC_CRYPTO_FAIL) {
+		if (db_hash_update(state, (uint8_t *)&value,
+				   sizeof(u16->val)) != 0) {
 			state->err = -EINVAL;
 			return BT_GATT_ITER_STOP;
 		}
+
 		break;
 	default:
 		return BT_GATT_ITER_CONTINUE;
@@ -825,18 +911,15 @@ static void db_hash_store(void)
 static void db_hash_gen(void)
 {
 	uint8_t key[16] = {};
-	struct tc_aes_key_sched_struct sched;
 	struct gen_hash_state state;
 
-	if (tc_cmac_setup(&state.state, key, &sched) == TC_CRYPTO_FAIL) {
-		LOG_ERR("Unable to setup AES CMAC");
+	if (db_hash_setup(&state, key) != 0) {
 		return;
 	}
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, gen_hash_m, &state);
 
-	if (tc_cmac_final(db_hash.hash, &state.state) == TC_CRYPTO_FAIL) {
-		LOG_ERR("Unable to calculate hash");
+	if (db_hash_finish(&state) != 0) {
 		return;
 	}
 
