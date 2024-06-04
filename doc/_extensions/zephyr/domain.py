@@ -310,7 +310,7 @@ class CustomDoxygenGroupDirective(DoxygenGroupDirective):
         nodes = super().run()
 
         if self.config.zephyr_breathe_insert_related_samples:
-            return [RelatedCodeSamplesNode(id=self.arguments[0]), *nodes]
+            return [*nodes, RelatedCodeSamplesNode(id=self.arguments[0])]
         else:
             return nodes
 
