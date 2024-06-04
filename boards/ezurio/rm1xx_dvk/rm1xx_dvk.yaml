@@ -14,4 +14,4 @@ supported:
 testing:
   ignore_tags:
     - net
-vendor: lairdconnect
+vendor: ezurio

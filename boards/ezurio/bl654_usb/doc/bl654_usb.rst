@@ -1,13 +1,13 @@
 .. _bl654_usb:
 
-Laird Connectivity BL654 USB (451-00004)
-########################################
+Ezurio BL654 USB (451-00004)
+############################
 
 Overview
 ********
 
-The BL654 USB adapter hardware (Laird Connectivity part 451-00004) provides
-support for the Laird Connectivity BL654 module powered by a Nordic
+The BL654 USB adapter hardware (Ezurio part 451-00004) provides
+support for the Ezurio BL654 module powered by a Nordic
 Semiconductor nRF52840 ARM Cortex-M4F CPU.
 
 This USB adapter has the following features:
@@ -105,14 +105,14 @@ Applications for the ``bl654_usb`` board configuration can be
 built in the usual way (see :ref:`build_an_application` for more details). The
 ``bl654_usb`` board cannot be used for debugging. The compatible BL654 DVK
 board can be used for development. Documentation can be found at the :ref:`bl654_dvk`
-site and :zephyr_file:`boards/lairdconnect/bl654_dvk/doc/bl654_dvk.rst`
+site and :zephyr_file:`boards/ezurio/bl654_dvk/doc/bl654_dvk.rst`
 
 Flashing
 ========
 
 The board supports programming using the built-in bootloader.
 
-The board is factory-programmed with a Laird Connectivity variation of Nordic's
+The board is factory-programmed with a Ezurio variation of Nordic's
 open bootloader from Nordic's nRF5x SDK. With this option, you'll use
 Nordic's `nrfutil`_ program to create firmware packages supported by this
 bootloader and flash them to the device. Make sure ``nrfutil`` is installed
@@ -175,7 +175,7 @@ the board is working properly with Zephyr:
 
 You can build and flash the example to make sure Zephyr is running correctly on
 your board. The LED definitions can be found in
-:zephyr_file:`boards/lairdconnect/bl654_usb/bl654_usb.dts`.
+:zephyr_file:`boards/ezurio/bl654_usb/bl654_usb.dts`.
 
 
 References
@@ -183,8 +183,8 @@ References
 
 .. target-notes::
 
-.. _BL654 USB Dongle Quick Start Guide: https://www.lairdconnect.com/documentation/user-guide-bl654-usb-nordic-sdk-zephyr
-.. _BL654 website: https://connectivity.lairdtech.com/wireless-modules/bluetooth-modules/bluetooth-5-modules/bl654-series
+.. _BL654 USB Dongle Quick Start Guide: https://www.ezurio.com/documentation/user-guide-bl654-usb-nordic-sdk-zephyr
+.. _BL654 website: https://ezurio.com/wireless-modules/bluetooth-modules/bluetooth-5-modules/bl654-series
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
-.. _Creating a secure bootloader image: https://www.lairdconnect.com/documentation/application-note-creating-secure-bootloader-image-bl654-usb
+.. _Creating a secure bootloader image: https://www.ezurio.com/documentation/application-note-creating-secure-bootloader-image-bl654-usb
 .. _nrfutil: https://github.com/NordicSemiconductor/pc-nrfutil

@@ -1,7 +1,7 @@
 .. _bt610:
 
-Laird Connectivity Sentrius BT610 Sensor
-########################################
+Ezurio Sentrius BT610 Sensor
+############################
 
 Overview
 ********
@@ -598,7 +598,7 @@ on the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly
 on your board. The button, LED and sensor device definitions can be found in
-:zephyr_file:`boards/lairdconnect/bt610/bt610.dts`.
+:zephyr_file:`boards/ezurio/bt610/bt610.dts`.
 
 
 References
@@ -606,10 +606,10 @@ References
 
 .. target-notes::
 
-.. _Sentrius BT610 website: https://www.lairdconnect.com/iot-devices/iot-sensors/sentrius-bt610-io-sensor
+.. _Sentrius BT610 website: https://www.ezurio.com/iot-devices/iot-sensors/sentrius-bt610-io-sensor
 .. _Honeywell SM351LT datasheet: https://sensing.honeywell.com/honeywell-sensing-nanopower-series-datasheet-50095501-c-en.pdf
 .. _MAX3232 datasheet: https://www.ti.com/lit/ds/symlink/max3232.pdf
 .. _TI TMUX1204 datasheet: https://www.ti.com/lit/gpn/TMUX1204
 .. _TI TCA9538 datasheet: https://www.ti.com/lit/gpn/TCA9538
 .. _Macronix MX25R6435FZNIL0 datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/7913/MX25R6435F,%20Wide%20Range,%2064Mb,%20v1.5.pdf
-.. _BT610 Zephyr Application Thermistor Calibration: https://www.lairdconnect.com/technology/bt610-thermistor-coefficient-calculator
+.. _BT610 Zephyr Application Thermistor Calibration: https://www.ezurio.com/technology/bt610-thermistor-coefficient-calculator

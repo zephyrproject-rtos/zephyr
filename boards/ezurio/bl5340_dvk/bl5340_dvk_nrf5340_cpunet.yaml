@@ -15,4 +15,4 @@ supported:
   - spi
   - uart
   - watchdog
-vendor: lairdconnect
+vendor: ezurio

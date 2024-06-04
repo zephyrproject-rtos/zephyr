@@ -19,4 +19,4 @@ supported:
   - usb_device
   - watchdog
   - netif:modem
-vendor: lairdconnect
+vendor: ezurio

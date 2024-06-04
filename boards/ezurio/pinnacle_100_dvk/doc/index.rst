@@ -1,7 +1,7 @@
 .. _pinnacle_100_dvk:
 
-Laird Connectivity Pinnacle 100 DVK
-###################################
+Ezurio Pinnacle 100 DVK
+#######################
 
 Overview
 ********
@@ -14,7 +14,7 @@ internal antennas.
 
 Develop your application directly on the M4F controller using Zephyr RTOS to
 cut BOM costs and power consumption. Take advantage of the Zephyr community,
-Laird Connectivity’s sample code (cellular, Bluetooth) and hardware interfaces,
+Ezurio’s sample code (cellular, Bluetooth) and hardware interfaces,
 or use our hosted mode AT commands set firmware.
 
 Extremely power conscious, the Pinnacle 100 is ideal for battery-powered

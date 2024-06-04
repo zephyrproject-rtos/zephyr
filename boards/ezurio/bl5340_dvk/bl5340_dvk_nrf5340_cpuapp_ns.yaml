@@ -17,4 +17,4 @@ supported:
   - uart
   - usb_device
   - watchdog
-vendor: lairdconnect
+vendor: ezurio

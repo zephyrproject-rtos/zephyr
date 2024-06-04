@@ -1,6 +1,6 @@
-.. _boards-lairdconnect:
+.. _boards-ezurio:
 
-Laird Connectivity
+Ezurio
 ##################
 
 .. toctree::

@@ -1,7 +1,7 @@
 .. _bt510:
 
-Laird Connectivity Sentrius BT510 Sensor
-########################################
+Ezurio Sentrius BT510 Sensor
+############################
 
 Overview
 ********
@@ -162,7 +162,7 @@ A non-standard layout is used to include access to the sensor debug UART.
 Connectivity to the programmer/debugger must be modified to match
 the pinout shown above.
 
-Laird Connectivity provide the USB-SWD programming board (750-03239) that supports
+Ezurio provide the USB-SWD programming board (750-03239) that supports
 this connector layout, refer to the `USB SWD Programmer product page`_
 .
 
@@ -244,7 +244,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button, LED and sensor device definitions can be found in
-:zephyr_file:`boards/lairdconnect/bt510/bt510.dts`.
+:zephyr_file:`boards/ezurio/bt510/bt510.dts`.
 
 
 References
@@ -252,9 +252,9 @@ References
 
 .. target-notes::
 
-.. _Sentrius BT510 website: https://www.lairdconnect.com/iot-devices/iot-sensors/bt510-bluetooth-5-long-range-ip67-multi-sensor
+.. _Sentrius BT510 website: https://www.ezurio.com/iot-devices/iot-sensors/bt510-bluetooth-5-long-range-ip67-multi-sensor
 .. _TagConnect TC2050 product page: https://www.tag-connect.com/product/tc2050-idc-050
-.. _USB SWD Programmer product page: https://www.lairdconnect.com/wireless-modules/programming-kits/usb-swd-programming-kit
+.. _USB SWD Programmer product page: https://www.ezurio.com/wireless-modules/programming-kits/usb-swd-programming-kit
 .. _MAX3232 datasheet: https://www.ti.com/lit/ds/symlink/max3232.pdf
 .. _Silabs 7055 datasheet: https://www.silabs.com/documents/public/data-sheets/Si7050-1-3-4-5-A20.pdf
 .. _ST Microelectronics LIS2DH datasheet: https://www.st.com/resource/en/datasheet/lis2dh.pdf
