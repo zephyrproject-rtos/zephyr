@@ -98,14 +98,14 @@ The CYW920829M2EVK-02 includes an onboard programmer/debugger (KitProg3) to prov
 
 On Windows:
 
-.. code-block:: console
+.. code-block:: shell
 
    west flash --openocd path/to/infineon/openocd/bin/openocd.exe
    west debug --openocd path/to/infineon/openocd/bin/openocd.exe
 
 On Linux:
 
-.. code-block:: console
+.. code-block:: shell
 
    west flash --openocd path/to/infineon/openocd/bin/openocd
    west debug --openocd path/to/infineon/openocd/bin/openocd
