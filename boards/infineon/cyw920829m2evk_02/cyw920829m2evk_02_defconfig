@@ -29,3 +29,6 @@ CONFIG_CLOCK_CONTROL=y
 
 # Main Stack Size
 CONFIG_MAIN_STACK_SIZE=2048
+
+# Enable code/data relocation to move SMIF driver into RAM
+CONFIG_CODE_DATA_RELOCATION=y
