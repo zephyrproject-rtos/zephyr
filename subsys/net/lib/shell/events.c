@@ -256,6 +256,18 @@ static char *get_l3_desc(struct event_msg *msg,
 		*desc = "DHCPv4";
 		*desc2 = "stop";
 		break;
+	case NET_EVENT_IPV4_ACD_SUCCEED:
+		*desc = "IPv4 ACD";
+		*desc2 = "ok";
+		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+				     extra_info_len);
+		break;
+	case NET_EVENT_IPV4_ACD_FAILED:
+		*desc = "IPv4 ACD";
+		*desc2 = "fail";
+		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+				     extra_info_len);
+		break;
 	}
 
 	return info;
