@@ -1,13 +1,13 @@
 .. _bl653_dvk:
 
-Laird Connectivity BL653 DVK
-############################
+Ezurio BL653 DVK
+################
 
 Overview
 ********
 
 The BL653 Development Kit (453-00039-K1, 453-00041-K1) hardware provides
-support for the Laird Connectivity BL653 module powered by a Nordic Semiconductor nRF52833 ARM Cortex-M4F CPU.
+support for the Ezurio BL653 module powered by a Nordic Semiconductor nRF52833 ARM Cortex-M4F CPU.
 
 This development kit has the following features:
 
@@ -167,7 +167,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/lairdconnect/bl653_dvk/bl653_dvk.dts`.
+:zephyr_file:`boards/ezurio/bl653_dvk/bl653_dvk.dts`.
 
 Using UART1
 ***********
@@ -225,5 +225,5 @@ References
 
 .. target-notes::
 
-.. _BL653 website: https://www.lairdconnect.com/wireless-modules/bluetooth-modules/bluetooth-5-modules/bl653-series-bluetooth-51-802154-nfc-module
+.. _BL653 website: https://www.ezurio.com/wireless-modules/bluetooth-modules/bluetooth-5-modules/bl653-series-bluetooth-51-802154-nfc-module
 .. _nRF52833 Product Specification: https://infocenter.nordicsemi.com/pdf/nRF52833_OPS_v0.7.pdf

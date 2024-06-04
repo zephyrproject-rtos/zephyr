@@ -1,12 +1,12 @@
 .. _rm1xx_dvk:
 
-Laird Connectivity RM1xx DVK
-############################
+Ezurio RM1xx DVK
+################
 
 Overview
 ********
 
-Laird Connectivity's RM1xx is a module which integrates both LoRa and
+Ezurio's RM1xx is a module which integrates both LoRa and
 BLE communications, powered by a Nordic Semiconductor nRF51822 ARM
 Cortex-M0 CPU and on-board Semtech SX1272 LoRa RF chip. This board
 supports the RM1xx on the RM1xx development board - RM191 for the
@@ -32,13 +32,13 @@ This development kit has the following features:
      :align: center
      :alt: RM1xx development kit (DVK)
 
-     RM1xx development kit (DVK) (Credit: Laird Connectivity)
+     RM1xx development kit (DVK) (Credit: Ezurio)
 
 .. figure:: img/RM186-SM.jpg
      :align: center
      :alt: RM1xx module
 
-     RM1xx module (Credit: Laird Connectivity)
+     RM1xx module (Credit: Ezurio)
 
 More information about the module can be found on the
 `RM1xx homepage`_.
@@ -172,7 +172,7 @@ References
 
 .. target-notes::
 
-.. _RM1xx homepage: https://www.lairdconnect.com/wireless-modules/lorawan-solutions/sentrius-rm1xx-lora-ble-module
+.. _RM1xx homepage: https://www.ezurio.com/wireless-modules/lorawan-solutions/sentrius-rm1xx-lora-ble-module
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
 .. _Adesto AT25DF041B datasheet: https://www.dialog-semiconductor.com/sites/default/files/ds-at25df041b_040.pdf
 .. _Semtech SX1272 datasheet: https://semtech.my.salesforce.com/sfc/p/#E0000000JelG/a/440000001NCE/v_VBhk1IolDgxwwnOpcS_vTFxPfSEPQbuneK3mWsXlU

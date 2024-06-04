@@ -1,5 +1,5 @@
 board:
   name: bl654_usb
-  vendor: lairdconnect
+  vendor: ezurio
   socs:
   - name: nrf52840

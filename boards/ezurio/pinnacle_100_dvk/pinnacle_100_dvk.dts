@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Laird Connectivity
+ * Copyright (c) 2024 Ezurio
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +12,7 @@
 
 / {
 	model = "Pinnacle 100 Dev Kit";
-	compatible = "lairdconnect,pinnacle-100-dvk";
+	compatible = "ezurio,pinnacle-100-dvk";
 
 	chosen {
 		zephyr,console = &uart0;

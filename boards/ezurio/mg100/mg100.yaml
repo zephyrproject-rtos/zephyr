@@ -18,4 +18,4 @@ supported:
   - spi
   - watchdog
   - netif:modem
-vendor: lairdconnect
+vendor: ezurio
