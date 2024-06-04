@@ -126,6 +126,7 @@ config BT_DA1469X
 
 config BT_NXP
 	bool "NXP HCI driver"
+	select BT_HCI_SETUP
 	help
 	  NXP HCI bluetooth interface
 
