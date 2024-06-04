@@ -288,8 +288,11 @@ class HardwareMap:
             def readlink(link):
                 return str((by_id / link).resolve())
 
-            persistent_map = {readlink(link): str(link)
-                              for link in by_id.iterdir()}
+            if by_id.exists():
+                persistent_map = {readlink(link): str(link)
+                                  for link in by_id.iterdir()}
+            else:
+                persistent_map = {}
         else:
             persistent_map = {}
 
