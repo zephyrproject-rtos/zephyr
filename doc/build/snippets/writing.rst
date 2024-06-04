@@ -31,6 +31,15 @@ this:
      EXTRA_DTC_OVERLAY_FILE: foo.overlay
      EXTRA_CONF_FILE: foo.conf
 
+In addition, snippets can also be applied to sysbuild configuration like so:
+
+.. code-block:: yaml
+
+   name: foo
+   append:
+     SB_EXTRA_CONF_FILE: sb.conf
+     EXTRA_CONF_FILE: app.conf
+
 Namespacing
 ***********
 
@@ -152,6 +161,20 @@ This :file:`snippet.yml` adds :file:`foo.conf` to the build:
    name: foo
    append:
      EXTRA_CONF_FILE: foo.conf
+
+The path to :file:`foo.conf` is relative to the directory containing
+:file:`snippet.yml`.
+
+Sysbuild ``.conf`` files
+************************
+
+This :file:`snippet.yml` adds :file:`foo.conf` to the sysbuild configuration:
+
+.. code-block:: yaml
+
+   name: foo
+   append:
+     SB_EXTRA_CONF_FILE: foo.conf
 
 The path to :file:`foo.conf` is relative to the directory containing
 :file:`snippet.yml`.
