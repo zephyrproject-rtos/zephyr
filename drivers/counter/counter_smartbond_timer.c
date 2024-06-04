@@ -105,6 +105,8 @@ static uint8_t counter_smartbond_pdc_trigger_get(const struct device *dev)
 		return MCU_PDC_TRIGGER_TIMER3;
 	case (uint32_t)TIMER4:
 		return MCU_PDC_TRIGGER_TIMER4;
+	default:
+		return 0;
 	}
 }
 
