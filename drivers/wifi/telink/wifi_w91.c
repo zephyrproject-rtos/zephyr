@@ -198,7 +198,6 @@ static void unpack_wifi_w91_init_if(void *unpack_data,
 
 	pack_data += sizeof(uint32_t);
 	IPC_DISPATCHER_UNPACK_FIELD(pack_data, p_init_resp->err);
-	IPC_DISPATCHER_UNPACK_FIELD(pack_data, p_init_resp->mac);
 	IPC_DISPATCHER_UNPACK_ARRAY(pack_data, p_init_resp->mac,
 		sizeof(p_init_resp->mac));
 }
