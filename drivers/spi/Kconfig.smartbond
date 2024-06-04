@@ -7,3 +7,13 @@ config SPI_SMARTBOND
 	depends on DT_HAS_RENESAS_SMARTBOND_SPI_ENABLED
 	help
 	  Enables SPI driver for Renesas SmartBond(tm) DA1469x series MCU.
+
+config SPI_SMARTBOND_DMA
+	bool "Renesas Smartbond(tm) SPI with DMA acceleration"
+	default y
+	depends on SPI_SMARTBOND
+	select DMA
+	help
+	  Enables using the DMA engine instead of interrupt-driven
+	  approach. This acceleration is available only for
+	  asynchronous transfers.
