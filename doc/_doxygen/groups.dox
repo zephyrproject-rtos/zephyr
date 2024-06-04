@@ -73,4 +73,9 @@
 @{
 @}
 
+@brief Memory Management APIs
+@defgroup mem_mgmt Memory Management APIs
+@{
+@}
+
 */
