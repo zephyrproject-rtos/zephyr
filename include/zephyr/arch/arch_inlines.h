@@ -12,7 +12,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_INLINES_H_
 #define ZEPHYR_INCLUDE_ARCH_INLINES_H_
 
-#if defined(CONFIG_X86) || defined(CONFIG_X86_64)
+#if defined(CONFIG_X86)
 #include <zephyr/arch/x86/arch_inlines.h>
 #elif defined(CONFIG_ARM)
 #include <zephyr/arch/arm/arch_inlines.h>

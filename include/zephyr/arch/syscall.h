@@ -9,12 +9,10 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_SYSCALL_H_
 #define ZEPHYR_INCLUDE_ARCH_SYSCALL_H_
 
-#if defined(CONFIG_X86)
 #if defined(CONFIG_X86_64)
 #include <zephyr/arch/x86/intel64/syscall.h>
-#else
+#elif defined(CONFIG_X86)
 #include <zephyr/arch/x86/ia32/syscall.h>
-#endif
 #elif defined(CONFIG_ARM64)
 #include <zephyr/arch/arm64/syscall.h>
 #elif defined(CONFIG_ARM)
