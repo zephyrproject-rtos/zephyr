@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/net/igmp.h>
+#include <zephyr/net/ipv4_autoconf.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/net_pkt.h>
@@ -30,7 +31,6 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include "net_private.h"
 #include "ipv4.h"
 #include "ipv6.h"
-#include "ipv4_autoconf_internal.h"
 
 #include "net_stats.h"
 
