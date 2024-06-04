@@ -27,7 +27,7 @@ the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 More information about the board can be found at the
-`nRF52833 DK website`_. The `Nordic Semiconductor Infocenter`_
+`nRF52833 DK website`_. `nRF52833 Product Specification`_
 contains the processor's information and the datasheet.
 
 
@@ -80,7 +80,7 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features have not been enabled yet for this board.
-See `nRF52833 DK website`_ and `Nordic Semiconductor Infocenter`_
+See `nRF52833 DK website`_ and `nRF52833 DK Hardware guide`_
 for a complete list of nRF52833 Development Kit board hardware features.
 
 Connections and IOs
@@ -212,9 +212,9 @@ References
 .. target-notes::
 
 .. _nRF52833 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52833-DK
-.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
+.. _nRF52833 Product Specification: https://docs.nordicsemi.com/bundle/ps_nrf52833/page/keyfeatures_html5.html
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
-.. _nRF52833 Product Specification: https://infocenter.nordicsemi.com/pdf/nRF52833_OPS_v0.7.pdf
+.. _nRF52833 DK Hardware guide: https://docs.nordicsemi.com/bundle/ug_nrf52833_dk/page/UG/dk/intro.html
 
 .. _nrf52833dk_nrf52820:
 

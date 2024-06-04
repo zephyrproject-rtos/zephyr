@@ -32,7 +32,7 @@ the following devices:
      nRF52 DK (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the
-`nRF52 DK website`_. The `Nordic Semiconductor Infocenter`_
+`nRF52 DK website`_. `nRF52832 Product Specification`_
 contains the processor's information and the datasheet.
 
 
@@ -82,7 +82,7 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features have not been enabled yet for this board.
-See `nRF52 DK website`_ and `Nordic Semiconductor Infocenter`_
+See `nRF52 DK website`_ and `nRF52832 Product Specification`_
 for a complete list of nRF52 Development Kit board hardware features.
 
 Connections and IOs
@@ -403,7 +403,7 @@ References
 .. target-notes::
 
 .. _nRF52 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52-DK
-.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
+.. _nRF52832 Product Specification: https://docs.nordicsemi.com/bundle/ps_nrf52832/page/nrf52832_ps.html
 
 .. _nrf52dk_nrf52805:
 

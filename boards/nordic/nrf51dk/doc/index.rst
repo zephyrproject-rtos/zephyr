@@ -29,7 +29,7 @@ Semiconductor nRF51822 ARM Cortex-M0 CPU and the following devices:
      nRF51 DK (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the
-`nRF51 DK website`_. The `Nordic Semiconductor Infocenter`_
+`nRF51 DK website`_. The `nRF51 Development Kit User Guide`_
 contains the processor's information and the datasheet.
 
 
@@ -75,7 +75,7 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features have not been enabled yet for this board.
-See `nRF51 DK website`_ and `Nordic Semiconductor Infocenter`_
+See `nRF51 DK website`_ and `nRF51 Development Kit User Guide`_
 for a complete list of nRF51 Development Kit board hardware features.
 
 Connections and IOs
@@ -156,4 +156,4 @@ References
 .. target-notes::
 
 .. _nRF51 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF51-DK
-.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
+.. _nRF51 Development Kit User Guide: https://docs.nordicsemi.com/bundle/nRF51-Series-DK/resource/nRF51_Development_Kit_User_Guide_v1.2.pdf

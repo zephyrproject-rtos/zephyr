@@ -35,7 +35,7 @@ The nRF5340 Audio DK comes with the following hardware features:
      :align: center
      :alt: nRF5340 DK
 
-More information about the board can be found at the `nRF5340 Audio DK website`_. The `Nordic Semiconductor Infocenter`_
+More information about the board can be found at the `nRF5340 Audio DK website`_. The `nRF5340 Audio DK hardware guide`_
 contains the processor's information and the datasheet.
 
 nRF5340 SoC
@@ -53,13 +53,13 @@ The ``nrf5340_audio_dk/nrf5340/cpuapp`` build target provides support for the ap
 core on the nRF5340 SoC. The ``nrf5340_audio_dk/nrf5340/cpunet`` build target provides
 support for the network core on the nRF5340 SoC.
 
-The `Nordic Semiconductor Infocenter`_ contains the processor's information and
+The `nRF5340 Audio DK hardware guide`_ contains the processor's information and
 the datasheet.
 
 Supported Features
 ==================
 
-See :ref:`nrf5340dk_nrf5340` and `Nordic Semiconductor Infocenter`_
+See :ref:`nrf5340dk_nrf5340` and `nRF5340 Audio DK hardware guide`_
 for a complete list of nRF5340 Audio DK board hardware features.
 
 
@@ -106,4 +106,4 @@ References
 
 .. _nRF5340 Audio DK website:
    https://www.nordicsemi.com/Products/Development-hardware/nrf5340-audio-dk
-.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
+.. _nRF5340 Audio DK hardware guide: https://docs.nordicsemi.com/bundle/ug_nrf5340_audio/page/UG/nrf5340_audio/intro.html

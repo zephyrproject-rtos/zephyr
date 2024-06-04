@@ -48,7 +48,7 @@ nRF5340 SoC provides support for the following devices:
 
 More information about the board can be found at the
 `nRF5340 DK website`_.
-The `Nordic Semiconductor Infocenter`_
+The `nRF5340 DK Product Specification`_
 contains the processor's information and the datasheet.
 
 
@@ -132,7 +132,7 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features have not been enabled yet for this board.
-See `Nordic Semiconductor Infocenter`_
+See `nRF5340 DK Product Specification`_
 for a complete list of nRF5340 DK board hardware features.
 
 Connections and IOs
@@ -326,5 +326,5 @@ References
    https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
 .. _nRF5340 DK website:
    https://www.nordicsemi.com/Software-and-tools/Development-Kits/nRF5340-DK
-.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
+.. _nRF5340 DK Product Specification: https://docs.nordicsemi.com/bundle/ps_nrf5340/page/keyfeatures_html5.html
 .. _Trusted Firmware M: https://www.trustedfirmware.org/projects/tf-m/

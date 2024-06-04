@@ -27,7 +27,7 @@ Cortex-M33F CPU with ARMv8-M Security Extension and the following devices:
 * :abbr:`IDAU (Implementation Defined Attribution Unit)`
 
 More information about the board can be found at the
-`nRF9161 DK website`_. The `Nordic Semiconductor Infocenter`_
+`nRF9161 DK website`_. `nRF9161 Product Specification`_
 contains the processor's information and the datasheet.
 
 
@@ -84,7 +84,7 @@ hardware features:
 .. _nrf9161dk_additional_hardware:
 
 Other hardware features have not been enabled yet for this board.
-See `nRF9161 DK website`_ and `Nordic Semiconductor Infocenter`_
+See `nRF9161 DK website`_ and `nRF9161 Product Specification`_
 for a complete list of nRF9161 DK board hardware features.
 
 Connections and IOs
@@ -199,5 +199,5 @@ References
 .. _IDAU:
    https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
 .. _nRF9161 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF9161-DK
-.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
+.. _nRF9161 Product Specification: https://docs.nordicsemi.com/bundle/ps_nrf9161/page/nRF9161_html5_keyfeatures.html
 .. _Trusted Firmware M: https://www.trustedfirmware.org/projects/tf-m/
