@@ -6,7 +6,7 @@ BME280 Humidity and Pressure Sensor
 Overview
 ********
 
-This sample shows how to use the Zephyr :ref:`sensor_api` API driver for the
+This sample shows how to use the Zephyr :ref:`sensor` API driver for the
 `Bosch BME280`_ environmental sensor.
 
 .. _Bosch BME280:
