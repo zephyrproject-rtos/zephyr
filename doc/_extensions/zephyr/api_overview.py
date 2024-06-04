@@ -141,6 +141,9 @@ def sync_contents(app: Sphinx) -> None:
     else:
         doxygen_out_dir = Path(app.outdir) / "_doxygen"
 
+    if not app.env.doxygen_input_changed:
+        return
+
     doxygen_xml_dir = doxygen_out_dir / "xml"
     groups = parse_xml_dir(doxygen_xml_dir)
 
