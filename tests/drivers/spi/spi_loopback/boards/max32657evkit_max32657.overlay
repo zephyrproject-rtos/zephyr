@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma1 {
+	status = "okay";
+};
+
+&spi0 {
+	dmas = <&dma1 1 MAX32_DMA_SLOT_SPI_TX>, <&dma1 2 MAX32_DMA_SLOT_SPI_RX>;
+	dma-names = "tx", "rx";
+
+	slow@1 {
+		compatible = "test-spi-loopback-slow";
+		reg = <1>;
+		spi-max-frequency = <128000>;
+	};
+	fast@1 {
+		compatible = "test-spi-loopback-fast";
+		reg = <1>;
+		spi-max-frequency = <500000>;
+	};
+};
