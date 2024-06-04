@@ -50,6 +50,7 @@ struct nsos_socket {
 	int fd;
 
 	k_timeout_t recv_timeout;
+	k_timeout_t send_timeout;
 
 	struct nsos_socket_poll poll;
 };
@@ -190,6 +191,7 @@ static int nsos_socket_create(int family, int type, int proto)
 
 	sock->fd = fd;
 	sock->recv_timeout = K_FOREVER;
+	sock->send_timeout = K_FOREVER;
 
 	sock->poll.mid.fd = nsos_adapt_socket(family_mid, type_mid, proto_mid);
 	if (sock->poll.mid.fd < 0) {
@@ -702,7 +704,7 @@ static ssize_t nsos_sendto(void *obj, const void *buf, size_t len, int flags,
 		goto return_ret;
 	}
 
-	ret = nsos_poll_if_blocking(sock, ZSOCK_POLLOUT, K_FOREVER, flags);
+	ret = nsos_poll_if_blocking(sock, ZSOCK_POLLOUT, sock->send_timeout, flags);
 	if (ret < 0) {
 		goto return_ret;
 	}
@@ -761,7 +763,7 @@ static ssize_t nsos_sendmsg(void *obj, const struct msghdr *msg, int flags)
 	msg_mid.msg_controllen = 0;
 	msg_mid.msg_flags = 0;
 
-	ret = nsos_poll_if_blocking(sock, ZSOCK_POLLOUT, K_FOREVER, flags);
+	ret = nsos_poll_if_blocking(sock, ZSOCK_POLLOUT, sock->send_timeout, flags);
 	if (ret < 0) {
 		goto free_msg_iov;
 	}
@@ -1149,6 +1151,35 @@ static int nsos_setsockopt(void *obj, int level, int optname,
 				sock->recv_timeout = K_FOREVER;
 			} else {
 				sock->recv_timeout = K_USEC(tv->tv_sec * 1000000LL + tv->tv_usec);
+			}
+
+			return 0;
+		}
+		case SO_SNDTIMEO: {
+			const struct zsock_timeval *tv = optval;
+			struct nsos_mid_timeval nsos_mid_tv;
+			int err;
+
+			if (optlen != sizeof(struct zsock_timeval)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			nsos_mid_tv.tv_sec = tv->tv_sec;
+			nsos_mid_tv.tv_usec = tv->tv_usec;
+
+			err = nsos_adapt_setsockopt(sock->poll.mid.fd, NSOS_MID_SOL_SOCKET,
+						    NSOS_MID_SO_SNDTIMEO, &nsos_mid_tv,
+						    sizeof(nsos_mid_tv));
+			if (err) {
+				errno = errno_from_nsos_mid(-err);
+				return -1;
+			}
+
+			if (tv->tv_sec == 0 && tv->tv_usec == 0) {
+				sock->send_timeout = K_FOREVER;
+			} else {
+				sock->send_timeout = K_USEC(tv->tv_sec * 1000000LL + tv->tv_usec);
 			}
 
 			return 0;
