@@ -29,7 +29,7 @@ Semiconductor nRF51822 ARM Cortex-M0 CPU and the following devices:
      nRF51 Dongle (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the
-`nRF51 Dongle website`_. The `Nordic Semiconductor Infocenter`_
+`nRF51 Dongle website`_. The `Nordic Semiconductor TechDocs`_
 contains the processor's information and the datasheet.
 
 
@@ -75,7 +75,7 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features have not been enabled yet for this board.
-See `nRF51 Dongle website`_ and `Nordic Semiconductor Infocenter`_
+See `nRF51 Dongle website`_ and `Nordic Semiconductor TechDocs`_
 for a complete list of nRF51 Dongle hardware features.
 
 Connections and IOs
@@ -141,4 +141,4 @@ References
 .. target-notes::
 
 .. _nRF51 Dongle website: http://www.nordicsemi.com/eng/Products/nRF51-Dongle
-.. _Nordic Semiconductor Infocenter: http://infocenter.nordicsemi.com/
+.. _Nordic Semiconductor TechDocs: https://docs.nordicsemi.com/
