@@ -515,6 +515,57 @@ struct bt_conn_le_tx_power_report {
 	int8_t delta;
 };
 
+/** @brief Path Loss zone that has been entered.
+ *
+ *  The path loss zone that has been entered in the most recent LE Path Loss Monitoring
+ *  Threshold Change event as documented in Core Spec. Version 5.4 Vol.4, Part E, 7.7.65.32.
+ *
+ *  @note BT_CONN_LE_PATH_LOSS_ZONE_UNAVAILABLE has been added to notify when path loss becomes
+ *        unavailable.
+ */
+enum bt_conn_le_path_loss_zone {
+	/** Low path loss zone entered. */
+	BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_LOW,
+	/** Middle path loss zone entered. */
+	BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_MIDDLE,
+	/** High path loss zone entered. */
+	BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_HIGH,
+	/** Path loss has become unavailable. */
+	BT_CONN_LE_PATH_LOSS_ZONE_UNAVAILABLE,
+};
+
+BUILD_ASSERT(BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_LOW == BT_HCI_LE_ZONE_ENTERED_LOW);
+BUILD_ASSERT(BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_MIDDLE == BT_HCI_LE_ZONE_ENTERED_MIDDLE);
+BUILD_ASSERT(BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_HIGH == BT_HCI_LE_ZONE_ENTERED_HIGH);
+
+/** @brief LE Path Loss Monitoring Threshold Change Report Structure. */
+struct bt_conn_le_path_loss_threshold_report {
+
+	/** Path Loss zone as documented in Core Spec. Version 5.4 Vol.4, Part E, 7.7.65.32. */
+	enum bt_conn_le_path_loss_zone zone;
+
+	/** Current path loss (dB). */
+	uint8_t path_loss;
+};
+
+/** @brief LE Path Loss Monitoring Parameters Structure as defined in Core Spec. Version 5.4
+ *         Vol.4, Part E, 7.8.119 LE Set Path Loss Reporting Parameters command.
+ */
+struct bt_conn_le_path_loss_reporting_param {
+	/** High threshold for the path loss (dB). */
+	uint8_t high_threshold;
+	/** Hysteresis value for the high threshold (dB). */
+	uint8_t high_hysteresis;
+	/** Low threshold for the path loss (dB). */
+	uint8_t low_threshold;
+	/** Hysteresis value for the low threshold (dB). */
+	uint8_t low_hysteresis;
+	/** Minimum time in number of connection events to be observed once the
+	 *  path loss crosses the threshold before an event is generated.
+	 */
+	uint16_t min_time_spent;
+};
+
 /** @brief Passkey Keypress Notification type
  *
  *  The numeric values are the same as in the Core specification for Pairing
@@ -600,6 +651,34 @@ int bt_conn_le_get_remote_tx_power_level(struct bt_conn *conn,
 int bt_conn_le_set_tx_power_report_enable(struct bt_conn *conn,
 					  bool local_enable,
 					  bool remote_enable);
+
+/** @brief Set Path Loss Monitoring Parameters.
+ *
+ *  Change the configuration for path loss threshold change events for a given conn handle.
+ *
+ *  @note To use this API @kconfig{CONFIG_BT_PATH_LOSS_MONITORING} must be set.
+ *
+ *  @param conn  Connection object.
+ *  @param param Path Loss Monitoring parameters
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_set_path_loss_mon_param(struct bt_conn *conn,
+				       const struct bt_conn_le_path_loss_reporting_param *param);
+
+/** @brief Enable or Disable Path Loss Monitoring.
+ *
+ * Enable or disable Path Loss Monitoring, which will decide whether Path Loss Threshold events
+ * are sent from the controller to the host.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_PATH_LOSS_MONITORING} must be set.
+ *
+ * @param conn   Connection Object.
+ * @param enable Enable/disable path loss reporting.
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_set_path_loss_mon_enable(struct bt_conn *conn, bool enable);
 
 /** @brief Update the connection parameters.
  *
@@ -1153,6 +1232,20 @@ struct bt_conn_cb {
 	void (*tx_power_report)(struct bt_conn *conn,
 				const struct bt_conn_le_tx_power_report *report);
 #endif /* CONFIG_BT_TRANSMIT_POWER_CONTROL */
+
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+	/** @brief LE Path Loss Threshold event.
+	 *
+	 *  This callback notifies the application that there has been a path loss threshold
+	 *  crossing or reporting the initial path loss threshold zone after using
+	 *  @ref bt_conn_le_set_path_loss_mon_enable.
+	 *
+	 *  @param conn Connection object.
+	 *  @param report Path loss threshold report.
+	 */
+	void (*path_loss_threshold_report)(struct bt_conn *conn,
+				const struct bt_conn_le_path_loss_threshold_report *report);
+#endif /* CONFIG_BT_PATH_LOSS_MONITORING */
 
 	struct bt_conn_cb *_next;
 };

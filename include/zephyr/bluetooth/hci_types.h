@@ -675,6 +675,26 @@ struct bt_hci_cp_le_set_tx_power_report_enable {
 	uint8_t  remote_enable;
 } __packed;
 
+struct bt_hci_cp_le_set_path_loss_reporting_parameters {
+	uint16_t handle;
+	uint8_t  high_threshold;
+	uint8_t  high_hysteresis;
+	uint8_t  low_threshold;
+	uint8_t  low_hysteresis;
+	uint16_t min_time_spent;
+} __packed;
+
+struct bt_hci_cp_le_set_path_loss_reporting_enable {
+	uint16_t handle;
+	uint8_t  enable;
+} __packed;
+
+#define BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_PARAMETERS BT_OP(BT_OGF_LE, 0x0078) /* 0x2078 */
+
+#define BT_HCI_LE_PATH_LOSS_REPORTING_DISABLE       0x00
+#define BT_HCI_LE_PATH_LOSS_REPORTING_ENABLE        0x01
+#define BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_ENABLE BT_OP(BT_OGF_LE, 0x0079) /* 0x2079 */
+
 #define BT_HCI_CTL_TO_HOST_FLOW_DISABLE         0x00
 #define BT_HCI_CTL_TO_HOST_FLOW_ENABLE          0x01
 #define BT_HCI_OP_SET_CTL_TO_HOST_FLOW          BT_OP(BT_OGF_BASEBAND, 0x0031) /* 0x0c31 */
@@ -3018,6 +3038,18 @@ struct bt_hci_evt_le_req_peer_sca_complete {
 	uint8_t  status;
 	uint16_t handle;
 	uint8_t  sca;
+} __packed;
+
+#define	BT_HCI_LE_ZONE_ENTERED_LOW      0x0
+#define	BT_HCI_LE_ZONE_ENTERED_MIDDLE   0x1
+#define	BT_HCI_LE_ZONE_ENTERED_HIGH     0x2
+#define	BT_HCI_LE_PATH_LOSS_UNAVAILABLE 0xFF
+
+#define BT_HCI_EVT_LE_PATH_LOSS_THRESHOLD                   0x20
+struct bt_hci_evt_le_path_loss_threshold {
+	uint16_t handle;
+	uint8_t  current_path_loss;
+	uint8_t  zone_entered;
 } __packed;
 
 /** Reason for Transmit power reporting.
