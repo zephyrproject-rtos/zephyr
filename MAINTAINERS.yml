@@ -3098,11 +3098,13 @@ State machine framework:
     - sambhurst
   collaborators:
     - keith-zephyr
+    - glenn-andrews
   files:
     - doc/services/smf/
     - include/zephyr/smf.h
     - lib/smf/
     - tests/lib/smf/
+    - samples/subsys/smf/
   labels:
     - "area: State Machine Framework"
   tests:
