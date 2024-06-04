@@ -22,6 +22,7 @@ enum {
 	IPC_DISPATCHER_FLASH_ERASE = IPC_DISPATCHER_FLASH,
 	IPC_DISPATCHER_FLASH_WRITE,
 	IPC_DISPATCHER_FLASH_READ,
+	IPC_DISPATCHER_FLASH_GET_ID,
 };
 
 struct flash_w91_config {
@@ -61,6 +62,13 @@ struct flash_w91_read_resp {
 
 #define FLASH_READ_MAX_SIZE_IN_PACK                                                        \
 ((CONFIG_IPC_SERVICE_ICMSG_CB_BUF_SIZE) - sizeof(uint32_t) - sizeof(int) - sizeof(uint32_t))
+
+#define FLASH_CHIP_MAX_ID_LEN (uint8_t)6
+struct flash_w91_get_id_resp {
+	int err;
+	uint8_t chip_id_len;
+	uint8_t chip_id[FLASH_CHIP_MAX_ID_LEN];
+};
 
 /* API implementation: driver initialization */
 static int flash_w91_init(const struct device *dev)
@@ -265,6 +273,48 @@ static int flash_w91_read(const struct device *dev, off_t offset, void *data, si
 
 	if (read_resp.err < 0) {
 		LOG_ERR("Flash read operation failed");
+	}
+
+	return read_resp.err;
+}
+
+/* APIs implementation: flash get ID */
+IPC_DISPATCHER_PACK_FUNC_WITHOUT_PARAM(flash_w91_get_id, IPC_DISPATCHER_FLASH_GET_ID);
+
+static void unpack_flash_w91_get_id(
+	void *unpack_data, const uint8_t *pack_data, size_t pack_data_len)
+{
+	struct flash_w91_get_id_resp *p_get_id_resp = unpack_data;
+
+	pack_data += sizeof(uint32_t);
+	IPC_DISPATCHER_UNPACK_FIELD(pack_data, p_get_id_resp->err);
+	IPC_DISPATCHER_UNPACK_FIELD(pack_data, p_get_id_resp->chip_id_len);
+
+	size_t expect_len = sizeof(uint32_t) + sizeof(p_get_id_resp->err) +
+			sizeof(p_get_id_resp->chip_id_len) + p_get_id_resp->chip_id_len;
+
+	if (expect_len == pack_data_len) {
+		IPC_DISPATCHER_UNPACK_ARRAY(pack_data, p_get_id_resp->chip_id,
+									p_get_id_resp->chip_id_len);
+	} else {
+		p_get_id_resp->err = -EINVAL;
+	}
+}
+
+int flash_w91_get_id(const struct device *dev, uint32_t *hw_id)
+{
+	struct ipc_based_driver *ipc_data = &((struct flash_w91_data *)dev->data)->ipc;
+	uint8_t inst = ((struct flash_w91_config *)dev->config)->instance_id;
+	struct flash_w91_get_id_resp read_resp;
+
+	IPC_DISPATCHER_HOST_SEND_DATA(ipc_data, inst,
+			flash_w91_get_id, NULL, &read_resp,
+			CONFIG_FLASH_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+
+	if (read_resp.err != 0) {
+		LOG_ERR("Flash get ID operation failed");
+	} else if (read_resp.chip_id_len == FLASH_CHIP_MAX_ID_LEN) {
+		memcpy(hw_id, read_resp.chip_id, read_resp.chip_id_len);
 	}
 
 	return read_resp.err;

@@ -150,6 +150,13 @@ config HWINFO_ANDES
 	help
 	  Enable Andes hwinfo driver
 
+config HWINFO_TELINK_W91
+	bool "Telink W91 device ID"
+	default y
+	depends on SOC_SERIES_RISCV_TELINK_W91
+	help
+	  Enable Telink B9x hwinfo driver.
+
 endif
 
 config HWINFO_TELINK_B9X
