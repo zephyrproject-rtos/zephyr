@@ -885,16 +885,24 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 	(void)duration;
 	own_addr_type = cp->adv_sr_data[cp->adv_data_len + cp->scan_rsp_len + sizeof(duration)];
 
-	for (i = 0, adv_len = 1U; i < cp->adv_data_len; adv_len++) {
+	for (i = 0, adv_len = 1U; i < cp->adv_data_len;) {
 		if (adv_len >= ARRAY_SIZE(ad)) {
 			LOG_ERR("ad[] Out of memory");
 			return BTP_STATUS_FAILED;
 		}
 
-		ad[adv_len].type = cp->adv_sr_data[i++];
-		ad[adv_len].data_len = cp->adv_sr_data[i++];
-		ad[adv_len].data = &cp->adv_sr_data[i];
-		i += ad[adv_len].data_len;
+		if (ad[0].type == cp->adv_sr_data[i]) {
+			ad[0].type = cp->adv_sr_data[i++];
+			ad[0].data_len = cp->adv_sr_data[i++];
+			ad[0].data = &cp->adv_sr_data[i];
+			i += ad[0].data_len;
+		} else {
+			ad[adv_len].type = cp->adv_sr_data[i++];
+			ad[adv_len].data_len = cp->adv_sr_data[i++];
+			ad[adv_len].data = &cp->adv_sr_data[i];
+			i += ad[adv_len].data_len;
+			adv_len++;
+		}
 	}
 
 	for (sd_len = 0U; i < cp->adv_data_len + cp->scan_rsp_len; sd_len++) {
