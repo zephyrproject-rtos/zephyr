@@ -457,9 +457,9 @@ Configuration
 
 Static configuration of Ztress contains:
 
- - :c:macro:`ZTRESS_MAX_THREADS` - number of supported threads.
- - :c:macro:`ZTRESS_STACK_SIZE` - Stack size of created threads.
- - :c:macro:`ZTRESS_REPORT_PROGRESS_MS` - Test progress report interval.
+ - :kconfig:option:`CONFIG_ZTRESS_MAX_THREADS` - number of supported threads.
+ - :kconfig:option:`CONFIG_ZTRESS_STACK_SIZE` - Stack size of created threads.
+ - :kconfig:option:`CONFIG_ZTRESS_REPORT_PROGRESS_MS` - Test progress report interval.
 
 API reference
 *************
