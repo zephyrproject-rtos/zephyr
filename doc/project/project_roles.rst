@@ -159,6 +159,7 @@ Assignees are set either automatically based on the code being changed or set
 by the other Maintainers, the Release Engineering team can set an assignee when
 the latter is not possible.
 
+* Responsibility to drive the pull request to a mergeable state
 * Right to dismiss stale and unrelated reviews or reviews not following
   :ref:`expectations <reviewer-expectations>` from reviewers and seek reviews
   from additional maintainers, developers and contributors
@@ -166,7 +167,6 @@ the latter is not possible.
   requested are addressed
 * Responsibility to re-assign a pull request if they are the original submitter
   of the code
-* Responsibility to drive the pull request to a mergeable state
 * Solicit approvals from maintainers of the subsystems affected
 * Responsibility to drive the :ref:`pr_technical_escalation` process
 
