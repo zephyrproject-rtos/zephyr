@@ -11,5 +11,7 @@ common:
 tests:
   crypto.secp256r1.mbedtls:
     extra_args: OVERLAY_CONFIG=mbedtls.conf
+  crypto.secp256r1.p256-m_raw:
+    extra_args: OVERLAY_CONFIG=p256-m_raw.conf
   crypto.secp256r1.tinycrypt:
     extra_args: OVERLAY_CONFIG=tinycrypt.conf
