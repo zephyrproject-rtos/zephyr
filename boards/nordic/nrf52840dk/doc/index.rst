@@ -32,7 +32,7 @@ Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
      nRF52840 DK (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the `nRF52840 DK website`_.
-The `Nordic Semiconductor Infocenter`_ contains the processor's information
+`nRF52840 Product Specification`_ contains the processor's information
 and the datasheet.
 
 
@@ -84,7 +84,7 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features have not been enabled yet for this board.
-See `nRF52840 DK website`_ and `Nordic Semiconductor Infocenter`_
+See `nRF52840 DK website`_ and `nRF52840 DK Hardware guide`_
 for a complete list of nRF52840 Development Kit board hardware features.
 
 Connections and IOs
@@ -244,7 +244,7 @@ References
 .. target-notes::
 
 .. _nRF52840 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK
-.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
+.. _nRF52840 Product Specification: https://docs.nordicsemi.com/bundle/ps_nrf52840/page/keyfeatures_html5.html
+.. _nRF52840 DK Hardware guide: https://docs.nordicsemi.com/bundle/ug_nrf52840_dk/page/UG/dk/intro.html
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
-.. _nRF52840 Product Specification: http://infocenter.nordicsemi.com/pdf/nRF52840_PS_v1.0.pdf
 .. _nRF52811 website: https://www.nordicsemi.com/Products/Low-power-short-range-wireless/nRF52811
