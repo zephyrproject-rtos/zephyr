@@ -16,15 +16,37 @@
 #include <zephyr/ztest.h>
 
 #if defined(CONFIG_MBEDTLS)
+#if defined(CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW)
+#include "p256-m.h"
+#else /* CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW */
 #include "psa/crypto.h"
-#else
+#endif /* CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW */
+#else /* CONFIG_MBEDTLS */
 #include "zephyr/random/random.h"
 #include "tinycrypt/constants.h"
 #include "tinycrypt/ecc.h"
 #include "tinycrypt/ecc_dh.h"
-#endif
+#endif /* CONFIG_MBEDTLS */
 
 #if defined(CONFIG_MBEDTLS)
+#if defined(CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW)
+ZTEST_USER(test_fn, test_mbedtls)
+{
+	int ret;
+	uint8_t public_key_1[64], public_key_2[64];
+	uint8_t private_key_1[32], private_key_2[32];
+	uint8_t secret[32];
+
+	ret = p256_gen_keypair(private_key_1, public_key_1);
+	zassert_equal(ret, P256_SUCCESS, "Unable to generate 1st EC key (%d)", ret);
+
+	ret = p256_gen_keypair(private_key_2, public_key_2);
+	zassert_equal(ret, P256_SUCCESS, "Unable to generate 2nd EC key (%d)", ret);
+
+	ret = p256_ecdh_shared_secret(secret, private_key_1, public_key_2);
+	zassert_equal(ret, P256_SUCCESS, "Unable to compute the shared secret (%d)", ret);
+}
+#else /* CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW */
 ZTEST_USER(test_fn, test_mbedtls)
 {
 	psa_status_t status;
@@ -55,7 +77,8 @@ ZTEST_USER(test_fn, test_mbedtls)
 					secret, sizeof(secret), &secret_len);
 	zassert_equal(status, PSA_SUCCESS, "Unable to compute shared secret (%d)", status);
 }
-#else /* CONFIG_TINYCRYPT */
+#endif /* CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW */
+#else /* CONFIG_MBEDTLS */
 ZTEST_USER(test_fn, test_tinycrypt)
 {
 	uint8_t public_key_1[64], public_key_2[64];
@@ -80,6 +103,6 @@ int default_CSPRNG(uint8_t *dst, unsigned int len)
 {
 	return (sys_csrand_get(dst, len) == 0);
 }
-#endif /* CONFIG_TINYCRYPT */
+#endif /* CONFIG_MBEDTLS */
 
 ZTEST_SUITE(test_fn, NULL, NULL, NULL, NULL, NULL);
