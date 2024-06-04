@@ -13,6 +13,9 @@
 #undef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(nsos_sockets);
+
 #include <soc.h>
 #include <string.h>
 #include <zephyr/net/ethernet.h>
@@ -585,12 +588,54 @@ return_ret:
 	return ret;
 }
 
+static int nsos_connect_blocking(struct nsos_socket *sock,
+				 struct nsos_mid_sockaddr *addr_mid,
+				 size_t addrlen_mid,
+				 int fcntl_flags)
+{
+	int clear_nonblock_ret;
+	int ret;
+
+	ret = nsos_adapt_fcntl_setfl(sock->poll.mid.fd, fcntl_flags | NSOS_MID_O_NONBLOCK);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = nsos_adapt_connect(sock->poll.mid.fd, addr_mid, addrlen_mid);
+	if (ret == -NSOS_MID_EINPROGRESS) {
+		int so_err;
+		size_t so_err_len = sizeof(so_err);
+
+		ret = nsos_wait_for_poll(sock, ZSOCK_POLLOUT, sock->send_timeout);
+		if (ret < 0) {
+			goto clear_nonblock;
+		}
+
+		ret = nsos_adapt_getsockopt(sock->poll.mid.fd, NSOS_MID_SOL_SOCKET,
+					    NSOS_MID_SO_ERROR, &so_err, &so_err_len);
+		if (ret < 0) {
+			goto clear_nonblock;
+		}
+
+		ret = so_err;
+	}
+
+clear_nonblock:
+	clear_nonblock_ret = nsos_adapt_fcntl_setfl(sock->poll.mid.fd, fcntl_flags);
+	if (clear_nonblock_ret < 0) {
+		LOG_ERR("Failed to clear O_NONBLOCK: %d", clear_nonblock_ret);
+	}
+
+	return ret;
+}
+
 static int nsos_connect(void *obj, const struct sockaddr *addr, socklen_t addrlen)
 {
 	struct nsos_socket *sock = obj;
 	struct nsos_mid_sockaddr_storage addr_storage_mid;
 	struct nsos_mid_sockaddr *addr_mid = (struct nsos_mid_sockaddr *)&addr_storage_mid;
 	size_t addrlen_mid;
+	int flags;
 	int ret;
 
 	ret = sockaddr_to_nsos_mid(addr, addrlen, &addr_mid, &addrlen_mid);
@@ -598,7 +643,13 @@ static int nsos_connect(void *obj, const struct sockaddr *addr, socklen_t addrle
 		goto return_ret;
 	}
 
-	ret = nsos_adapt_connect(sock->poll.mid.fd, addr_mid, addrlen_mid);
+	flags = nsos_adapt_fcntl_getfl(sock->poll.mid.fd);
+
+	if (flags & NSOS_MID_O_NONBLOCK) {
+		ret = nsos_adapt_connect(sock->poll.mid.fd, addr_mid, addrlen_mid);
+	} else {
+		ret = nsos_connect_blocking(sock, addr_mid, addrlen_mid, flags);
+	}
 
 return_ret:
 	if (ret < 0) {
