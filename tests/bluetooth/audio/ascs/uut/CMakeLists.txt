@@ -17,10 +17,13 @@ add_library(uut STATIC
   ${ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
   ${ZEPHYR_BASE}/subsys/logging/log_minimal.c
   ${ZEPHYR_BASE}/subsys/net/buf_simple.c
+  bap_unicast_client.c
+  bap_unicast_server.c
 )
 
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/audio/mocks mocks)
 
 target_link_libraries(uut PUBLIC test_interface mocks)
+target_include_directories(uut PRIVATE ${ZEPHYR_BASE}/tests/bluetooth/audio/ascs/include)
 
 target_compile_options(uut PRIVATE -std=c11 -include ztest.h)
