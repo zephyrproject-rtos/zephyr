@@ -3,7 +3,7 @@ name: ACE 3.0 Panther Lake Audio DSP
 type: mcu
 arch: xtensa
 toolchain:
-  - xcc-clang
+  - xt-clang
 testing:
   ignore_tags:
     - net
