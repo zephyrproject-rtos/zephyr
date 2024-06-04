@@ -78,14 +78,15 @@ Poll events can be initialized using either the runtime initializers
 :c:macro:`K_POLL_EVENT_INITIALIZER()` or :c:func:`k_poll_event_init`, or
 the static initializer :c:macro:`K_POLL_EVENT_STATIC_INITIALIZER()`. An object
 that matches the **type** specified must be passed to the initializers. The
-**mode** *must* be set to :c:macro:`K_POLL_MODE_NOTIFY_ONLY`. The state *must*
-be set to :c:macro:`K_POLL_STATE_NOT_READY` (the initializers take care of
-this). The user **tag** is optional and completely opaque to the API: it is
+**mode** *must* be set to :c:enumerator:`K_POLL_MODE_NOTIFY_ONLY`. The state
+*must* be set to :c:macro:`K_POLL_STATE_NOT_READY` (the initializers take care
+of this). The user **tag** is optional and completely opaque to the API: it is
 there to help a user to group similar events together. Being optional, it is
 passed to the static initializer, but not the runtime ones for performance
 reasons. If using runtime initializers, the user must set it separately in the
 :c:struct:`k_poll_event` data structure. If an event in the array is to be
-ignored, most likely temporarily, its type can be set to K_POLL_TYPE_IGNORE.
+ignored, most likely temporarily, its type can be set to
+:c:macro:`K_POLL_TYPE_IGNORE`.
 
 .. code-block:: c
 
