@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021-2023 Laird Connectivity
+ * Copyright (c) 2024 Ezurio
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +11,8 @@
 #include "bl5340_dvk_nrf5340_cpunet_common.dtsi"
 
 / {
-	model = "Laird Connectivity BL5340 (nRF5340) Network";
-	compatible = "lairdconnect,bl5340-dvk-cpunet";
+	model = "Ezurio BL5340 (nRF5340) Network";
+	compatible = "ezurio,bl5340-dvk-cpunet";
 
 	chosen {
 		zephyr,console = &uart0;

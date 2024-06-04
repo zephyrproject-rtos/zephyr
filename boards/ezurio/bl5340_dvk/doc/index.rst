@@ -1,11 +1,11 @@
 .. _bl5340_dvk:
 
-Laird Connectivity BL5340 DVK
-#############################
+Ezurio BL5340 DVK
+#################
 
 Overview
 ********
-The BL5340 Development Kit provides support for the Laird Connectivity
+The BL5340 Development Kit provides support for the Ezurio
 BL5340 module which is powered by a dual-core Nordic Semiconductor
 nRF5340 ARM Cortex-M33F CPU. The nRF5340 inside the BL5340 module is a
 dual-core SoC based on the Arm® Cortex®-M33 architecture, with:
@@ -47,7 +47,7 @@ This development kit has the following features:
      :align: center
      :alt: BL5340 DVK
 
-     BL5340 DVK (Credit: Laird Connectivity)
+     BL5340 DVK (Credit: Ezurio)
 
 More information about the module can be found on the
 `BL5340 homepage`_.
@@ -420,7 +420,7 @@ References
 
 .. _IDAU:
    https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
-.. _BL5340 homepage: https://www.lairdconnect.com/wireless-modules/bluetooth-modules/bluetooth-5-modules/bl5340-series-multi-core-bluetooth-52-802154-nfc-modules
+.. _BL5340 homepage: https://www.ezurio.com/wireless-modules/bluetooth-modules/bluetooth-5-modules/bl5340-series-multi-core-bluetooth-52-802154-nfc-modules
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
 .. _TI TCA9538 datasheet: https://www.ti.com/lit/gpn/TCA9538
 .. _Macronix MX25R6435FZNIL0 datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/8868/MX25R6435F,%20Wide%20Range,%2064Mb,%20v1.6.pdf
