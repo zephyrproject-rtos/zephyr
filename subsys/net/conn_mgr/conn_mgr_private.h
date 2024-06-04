@@ -49,7 +49,9 @@
 					 NET_EVENT_IPV6_DAD_FAILED)
 
 #define CONN_MGR_IPV4_EVENTS_MASK	(NET_EVENT_IPV4_ADDR_ADD	| \
-					 NET_EVENT_IPV4_ADDR_DEL)
+					 NET_EVENT_IPV4_ADDR_DEL	| \
+					 NET_EVENT_IPV4_ACD_SUCCEED	| \
+					 NET_EVENT_IPV4_ACD_FAILED)
 
 extern struct k_sem conn_mgr_mon_updated;
 extern struct k_mutex conn_mgr_mon_lock;
