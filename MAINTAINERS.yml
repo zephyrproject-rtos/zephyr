@@ -1843,7 +1843,7 @@ Release Notes:
     - dts/bindings/sensor/
     - include/zephyr/drivers/sensor/
     - include/zephyr/dt-bindings/sensor/
-    - doc/hardware/peripherals/sensor.rst
+    - doc/hardware/peripherals/sensor/
     - tests/drivers/build_all/sensor/
   labels:
     - "area: Sensors"
