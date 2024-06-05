@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/posix/stropts.h>
 #include <errno.h>
+#include <stdarg.h>
+
 #include <zephyr/kernel.h>
+#include <zephyr/posix/stropts.h>
 
 int putmsg(int fildes, const struct strbuf *ctlptr, const struct strbuf *dataptr, int flags)
 {
@@ -78,4 +80,18 @@ int isastream(int fildes)
 
 	errno = ENOSYS;
 	return -1;
+}
+
+extern int zvfs_ioctl(int fd, unsigned long request, va_list args);
+
+int ioctl(int fd, unsigned long request, ...)
+{
+	int ret;
+	va_list args;
+
+	va_start(args, request);
+	ret = zvfs_ioctl(fd, request, args);
+	va_end(args);
+
+	return ret;
 }
