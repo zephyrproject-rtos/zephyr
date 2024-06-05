@@ -3,6 +3,7 @@ sample:
   name: socket_http_get
 common:
   filter: CONFIG_FULL_LIBC_SUPPORTED
+  depends_on: netif
   min_ram: 32
   min_flash: 80
   tags:
