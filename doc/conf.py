@@ -80,6 +80,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.graphviz",
     "sphinxcontrib.jquery",
+    "sphinxcontrib.rsvgconverter",
     "zephyr.application",
     "zephyr.html_redirects",
     "zephyr.kconfig",
@@ -98,10 +99,6 @@ extensions = [
     "zephyr.domain",
     "zephyr.api_overview",
 ]
-
-# Only use SVG converter when it is really needed, e.g. LaTeX.
-if tags.has("svgconvert"):  # pylint: disable=undefined-variable
-    extensions.append("sphinxcontrib.rsvgconverter")
 
 templates_path = ["_templates"]
 
