@@ -48,6 +48,11 @@ extern "C" {
 
 #define BT_AUDIO_BROADCAST_CODE_SIZE             16
 
+/** The minimum size of a Broadcast Name as defined by Bluetooth Assigned Numbers */
+#define BT_AUDIO_BROADCAST_NAME_LEN_MIN          4
+/** The maximum size of a Broadcast Name as defined by Bluetooth Assigned Numbers */
+#define BT_AUDIO_BROADCAST_NAME_LEN_MAX          128
+
 /** Size of the stream language value, e.g. "eng" */
 #define BT_AUDIO_LANG_SIZE 3
 

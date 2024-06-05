@@ -259,15 +259,7 @@ int ead_update_ad(void);
 
 static bool bt_shell_ead_decrypt_scan;
 
-/**
- * @brief Compares two strings without case sensitivy
- *
- * @param substr The substring
- * @param str The string to find the substring in
- *
- * @return true if @substr is a substring of @p, else false
- */
-static bool is_substring(const char *substr, const char *str)
+bool is_substring(const char *substr, const char *str)
 {
 	const size_t str_len = strlen(str);
 	const size_t sub_str_len = strlen(substr);
