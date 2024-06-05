@@ -5,7 +5,9 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/mgmt/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/config.h>
+#include <zephyr/mgmt/hawkbit/autohandler.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/reboot.h>

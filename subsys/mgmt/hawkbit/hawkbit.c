@@ -17,7 +17,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
-#include <zephyr/mgmt/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/config.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/http/client.h>
 #include <zephyr/net/net_ip.h>

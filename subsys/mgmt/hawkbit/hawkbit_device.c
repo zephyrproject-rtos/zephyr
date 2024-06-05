@@ -5,7 +5,7 @@
  */
 #include "hawkbit_device.h"
 #include <string.h>
-#include <zephyr/mgmt/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/hawkbit.h>
 
 static bool hawkbit_get_device_identity_default(char *id, int id_max_len);
 
