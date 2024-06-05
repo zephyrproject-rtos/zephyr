@@ -98,12 +98,12 @@ static bool smf_execute_all_entry_actions(struct smf_ctx *const ctx,
 	for (const struct smf_state *to_execute = get_child_of(new_state, topmost);
 	     to_execute != NULL && to_execute != new_state;
 	     to_execute = get_child_of(new_state, to_execute)) {
+		/* Keep track of the executing entry action in case it calls
+		 * smf_set_state()
+		 */
+		ctx->executing = to_execute;
 		/* Execute every entry action EXCEPT that of the topmost state */
 		if (to_execute->entry) {
-			/* Keep track of the executing entry action in case it calls
-			 * smf_set_State()
-			 */
-			ctx->executing = to_execute;
 			to_execute->entry(ctx);
 
 			/* No need to continue if terminate was set */
@@ -114,6 +114,7 @@ static bool smf_execute_all_entry_actions(struct smf_ctx *const ctx,
 	}
 
 	/* and execute the new state entry action */
+	ctx->executing = new_state;
 	if (new_state->entry) {
 		new_state->entry(ctx);
 
