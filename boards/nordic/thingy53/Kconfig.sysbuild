@@ -7,6 +7,10 @@ choice BOOTLOADER
 	default BOOTLOADER_MCUBOOT
 endchoice
 
+choice MCUBOOT_MODE
+	default MCUBOOT_MODE_OVERWRITE_ONLY
+endchoice
+
 config SECURE_BOOT_NETCORE
 	default y
 
