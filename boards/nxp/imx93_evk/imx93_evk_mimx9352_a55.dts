@@ -159,8 +159,6 @@
 &flexcan2 {
 	pinctrl-0 = <&flexcan2_default>;
 	pinctrl-names = "default";
-	bus-speed = <125000>;
-	bus-speed-data = <1000000>;
 	phys = <&can_phy0>;
 	status = "okay";
 };
