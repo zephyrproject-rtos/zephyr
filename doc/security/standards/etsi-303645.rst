@@ -177,9 +177,13 @@ Provisions Assessment
     * - N/A
       - The provision is not applicable to Zephyr or it is product makers responsibility
 
+.. raw:: latex
+
+    \begin{landscape}
+
 .. list-table:: ETSI 303645 provisions assessment using table B.1
     :header-rows: 1
-    :widths: 17 63 17 63 63
+    :widths: 25 80 15 15 60
 
     * - Provision
       - Description
@@ -729,3 +733,7 @@ Provisions Assessment
       - M C
       - N/A
       -
+
+.. raw:: latex
+
+    \end{landscape}
