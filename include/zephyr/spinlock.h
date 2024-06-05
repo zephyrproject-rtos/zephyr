@@ -437,7 +437,7 @@ static ALWAYS_INLINE void z_spin_onexit(__maybe_unused k_spinlock_key_t *k)
  */
 #define K_SPINLOCK(lck)                                                                            \
 	for (k_spinlock_key_t __i K_SPINLOCK_ONEXIT = {}, __key = k_spin_lock(lck); !__i.key;      \
-	     k_spin_unlock(lck, __key), __i.key = 1)
+	     k_spin_unlock((lck), __key), __i.key = 1)
 
 /** @} */
 
