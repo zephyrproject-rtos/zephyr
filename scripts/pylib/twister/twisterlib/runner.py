@@ -335,7 +335,7 @@ class CMake:
             gen_defines_args = ""
 
         warning_command = 'CONFIG_COMPILER_WARNINGS_AS_ERRORS'
-        if self.testsuite.sysbuild:
+        if self.instance.sysbuild:
             warning_command = 'SB_' + warning_command
 
         logger.debug("Running cmake on %s for %s" % (self.source_dir, self.platform.name))
@@ -357,7 +357,7 @@ class CMake:
                 f'-P{canonical_zephyr_base}/cmake/package_helper.cmake',
             ]
 
-        if self.testsuite.sysbuild and not filter_stages:
+        if self.instance.sysbuild and not filter_stages:
             logger.debug("Building %s using sysbuild" % (self.source_dir))
             source_args = [
                 f'-S{canonical_zephyr_base}/share/sysbuild',
@@ -445,7 +445,7 @@ class FilterBuilder(CMake):
         if self.platform.name == "unit_testing":
             return {}
 
-        if self.testsuite.sysbuild and not filter_stages:
+        if self.instance.sysbuild and not filter_stages:
             # Load domain yaml to get default domain build directory
             domain_path = os.path.join(self.build_dir, "domains.yaml")
             domains = Domains.from_file(domain_path)
@@ -498,7 +498,7 @@ class FilterBuilder(CMake):
             filter_data.update(self.defconfig)
         filter_data.update(self.cmake_cache)
 
-        if self.testsuite.sysbuild and self.env.options.device_testing:
+        if self.instance.sysbuild and self.env.options.device_testing:
             # Verify that twister's arguments support sysbuild.
             # Twister sysbuild flashing currently only works with west, so
             # --west-flash must be passed.
@@ -806,7 +806,7 @@ class ProjectBuilder(FilterBuilder):
         files_to_keep = self._get_binaries()
         files_to_keep.append(os.path.join('zephyr', 'runners.yaml'))
 
-        if self.testsuite.sysbuild:
+        if self.instance.sysbuild:
             files_to_keep.append('domains.yaml')
             for domain in self.instance.domains.get_domains():
                 files_to_keep += self._get_artifact_allow_list_for_domain(domain.name)
@@ -846,7 +846,7 @@ class ProjectBuilder(FilterBuilder):
         # Get binaries for a single-domain build
         binaries += self._get_binaries_from_runners()
         # Get binaries in the case of a multiple-domain build
-        if self.testsuite.sysbuild:
+        if self.instance.sysbuild:
             for domain in self.instance.domains.get_domains():
                 binaries += self._get_binaries_from_runners(domain.name)
 
