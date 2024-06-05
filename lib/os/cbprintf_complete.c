@@ -1364,7 +1364,7 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
  */
 
 #define OUTS(_sp, _ep) do { \
-	int rc = outs(out, ctx, _sp, _ep); \
+	int rc = outs(out, ctx, (_sp), (_ep)); \
 	\
 	if (rc < 0) {	    \
 		return rc; \
