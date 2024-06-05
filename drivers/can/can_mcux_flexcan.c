@@ -305,6 +305,12 @@ static int mcux_flexcan_start(const struct device *dev)
 		timing.fphaseSeg2 = data->timing_data.phase_seg2 - 1U;
 		timing.fpropSeg = data->timing_data.prop_seg;
 		FLEXCAN_SetFDTimingConfig(config->base, &timing);
+
+		FLEXCAN_EnterFreezeMode(config->base);
+		config->base->FDCTRL &= ~(CAN_FDCTRL_TDCOFF_MASK);
+		config->base->FDCTRL |= FIELD_PREP(CAN_FDCTRL_TDCOFF_MASK,
+						   CAN_CALC_TDCO((&data->timing_data), 1U, 31U));
+		FLEXCAN_ExitFreezeMode(config->base);
 	}
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 
