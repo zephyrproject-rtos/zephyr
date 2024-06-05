@@ -1192,6 +1192,8 @@ int usb_dc_ep_enable(const uint8_t ep)
 		USB->USB_MAMSK_REG |= USB_USB_MAMSK_REG_USB_M_EP0_TX_Msk;
 	} else if (ep_state->ep_addr == EP0_OUT) {
 		USB->USB_MAMSK_REG |= USB_USB_MAMSK_REG_USB_M_EP0_RX_Msk;
+		/* Clear USB_IGN_SETUP and USB_IGN_OUT */
+		USB->USB_RXC0_REG = 0;
 		ep_state->last_packet_size = 0;
 		ep_state->transferred = 0;
 		ep_state->total_len = 0;
