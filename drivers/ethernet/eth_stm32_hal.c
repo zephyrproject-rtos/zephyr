@@ -1823,7 +1823,7 @@ static int ptp_stm32_init(const struct device *port)
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	/* Set PTP Configuration done */
-	heth->IsPtpConfigured = HAL_ETH_PTP_CONFIGURATED;
+	heth->IsPtpConfigured = ETH_STM32_PTP_CONFIGURED;
 #endif
 
 	return 0;
