@@ -382,7 +382,7 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 		spi_context_cs_control(ctx, true);
 	} else {
 		cfg->regs->ctrl0 =
-			(cfg->regs->ctrl0 & ~MXC_F_SPI_CTRL0_START) | MXC_F_SPI_CTRL0_SS_CTRL;
+			(cfg->regs->ctrl0 & ~MXC_F_SPI_CTRL0_START) | ADI_MAX32_SPI_CTRL0_SS_CTRL;
 	}
 
 #ifdef CONFIG_SPI_MAX32_INTERRUPT
@@ -412,7 +412,7 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 		if (!hw_cs_ctrl) {
 			spi_context_cs_control(ctx, false);
 		} else {
-			cfg->regs->ctrl0 &= ~(MXC_F_SPI_CTRL0_START | MXC_F_SPI_CTRL0_SS_CTRL |
+			cfg->regs->ctrl0 &= ~(MXC_F_SPI_CTRL0_START | ADI_MAX32_SPI_CTRL0_SS_CTRL |
 					      ADI_MAX32_SPI_CTRL_EN);
 			cfg->regs->ctrl0 |= ADI_MAX32_SPI_CTRL_EN;
 		}
@@ -571,7 +571,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 	if (!hw_cs_ctrl) {
 		spi_context_cs_control(ctx, true);
 	} else {
-		spi->ctrl0 = (spi->ctrl0 & ~MXC_F_SPI_CTRL0_START) | MXC_F_SPI_CTRL0_SS_CTRL;
+		spi->ctrl0 = (spi->ctrl0 & ~MXC_F_SPI_CTRL0_START) | ADI_MAX32_SPI_CTRL0_SS_CTRL;
 	}
 
 	MXC_SPI_SetSlave(cfg->regs, ctx->config->slave);
@@ -620,7 +620,7 @@ unlock:
 	if (!hw_cs_ctrl) {
 		spi_context_cs_control(ctx, false);
 	} else {
-		spi->ctrl0 &= ~(MXC_F_SPI_CTRL0_START | MXC_F_SPI_CTRL0_SS_CTRL |
+		spi->ctrl0 &= ~(MXC_F_SPI_CTRL0_START | ADI_MAX32_SPI_CTRL0_SS_CTRL |
 				ADI_MAX32_SPI_CTRL_EN);
 		spi->ctrl0 |= ADI_MAX32_SPI_CTRL_EN;
 	}
@@ -772,7 +772,7 @@ static void spi_max32_callback(mxc_spi_req_t *req, int error)
 		if (spi_cs_is_gpio(ctx->config)) {
 			spi_context_cs_control(ctx, false);
 		} else {
-			req->spi->ctrl0 &= ~(MXC_F_SPI_CTRL0_START | MXC_F_SPI_CTRL0_SS_CTRL |
+			req->spi->ctrl0 &= ~(MXC_F_SPI_CTRL0_START | ADI_MAX32_SPI_CTRL0_SS_CTRL |
 					     ADI_MAX32_SPI_CTRL_EN);
 			req->spi->ctrl0 |= ADI_MAX32_SPI_CTRL_EN;
 		}
