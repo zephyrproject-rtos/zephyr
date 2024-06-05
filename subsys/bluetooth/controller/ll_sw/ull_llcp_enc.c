@@ -382,19 +382,29 @@ static void lp_enc_store_s(struct ll_conn *conn, struct proc_ctx *ctx, struct pd
 
 static inline uint8_t reject_error_code(struct pdu_data *pdu)
 {
+	uint8_t error;
+
 	if (pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND) {
-		return pdu->llctrl.reject_ind.error_code;
+		error = pdu->llctrl.reject_ind.error_code;
 #if defined(CONFIG_BT_CTLR_EXT_REJ_IND)
 	} else if (pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND) {
-		return pdu->llctrl.reject_ext_ind.error_code;
+		error = pdu->llctrl.reject_ext_ind.error_code;
 #endif /* CONFIG_BT_CTLR_EXT_REJ_IND */
 	} else {
 		/* Called with an invalid PDU */
 		LL_ASSERT(0);
 
 		/* Keep compiler happy */
-		return BT_HCI_ERR_UNSPECIFIED;
+		error = BT_HCI_ERR_UNSPECIFIED;
 	}
+
+	/* Check expected error code from the peer */
+	if (error != BT_HCI_ERR_PIN_OR_KEY_MISSING &&
+	    error != BT_HCI_ERR_UNSUPP_REMOTE_FEATURE) {
+		error = BT_HCI_ERR_UNSPECIFIED;
+	}
+
+	return error;
 }
 
 static void lp_enc_st_wait_rx_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
