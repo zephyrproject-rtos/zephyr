@@ -379,22 +379,6 @@ off_t zvfs_lseek(int fd, off_t offset, int whence)
 				    whence);
 }
 
-int ioctl(int fd, unsigned long request, ...)
-{
-	va_list args;
-	int res;
-
-	if (_check_fd(fd) < 0) {
-		return -1;
-	}
-
-	va_start(args, request);
-	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, request, args);
-	va_end(args);
-
-	return res;
-}
-
 int zvfs_fcntl(int fd, int cmd, va_list args)
 {
 	int res;
@@ -433,6 +417,16 @@ int zvfs_ftruncate(int fd, off_t length)
 
 	return zvfs_ftruncate_wrap(fd, ZFD_IOCTL_TRUNCATE, length);
 }
+
+int zvfs_ioctl(int fd, unsigned long request, va_list args)
+{
+	if (_check_fd(fd) < 0) {
+		return -1;
+	}
+
+	return fdtable[fd].vtable->ioctl(fdtable[fd].obj, request, args);
+}
+
 
 #if defined(CONFIG_POSIX_DEVICE_IO)
 /*
