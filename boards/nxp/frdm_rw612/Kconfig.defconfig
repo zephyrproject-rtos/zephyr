@@ -1,0 +1,11 @@
+# FRDM_RW612 board
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FRDM_RW612
+
+config FLASH_LOAD_SIZE
+	default 0x400000 if !BOOTLOADER_MCUBOOT && !NXP_MONOLITHIC_BT
+
+endif # BOARD_FRDM_RW612
