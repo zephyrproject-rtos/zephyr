@@ -16,12 +16,12 @@
 
 #include "frag_encoder.h"
 
-#define FRAG_SIZE       CONFIG_LORAWAN_FRAG_TRANSPORT_MAX_FRAG_SIZE
-#define FIRMWARE_SIZE   (FRAG_SIZE * 100 + 1) /* not divisible by frag size to test padding */
-#define UNCODED_FRAGS   (DIV_ROUND_UP(FIRMWARE_SIZE, FRAG_SIZE))
-#define REDUNDANT_FRAGS \
+#define FRAG_SIZE     CONFIG_LORAWAN_FRAG_TRANSPORT_MAX_FRAG_SIZE
+#define FIRMWARE_SIZE (FRAG_SIZE * 100 + 1) /* not divisible by frag size to test padding */
+#define UNCODED_FRAGS (DIV_ROUND_UP(FIRMWARE_SIZE, FRAG_SIZE))
+#define REDUNDANT_FRAGS                                                                            \
 	(DIV_ROUND_UP(UNCODED_FRAGS * CONFIG_LORAWAN_FRAG_TRANSPORT_MAX_REDUNDANCY, 100))
-#define PADDING         (UNCODED_FRAGS * FRAG_SIZE - FIRMWARE_SIZE)
+#define PADDING (UNCODED_FRAGS * FRAG_SIZE - FIRMWARE_SIZE)
 
 #define CMD_FRAG_SESSION_SETUP (0x02)
 #define CMD_DATA_FRAGMENT      (0x08)
@@ -45,32 +45,57 @@ static void fuota_finished(void)
 	k_sem_give(&fuota_finished_sem);
 }
 
-ZTEST(frag_decoder, test_frag_transport)
+uint8_t frag_session_setup_req[] = {
+	CMD_FRAG_SESSION_SETUP,
+	0x1f,
+	UNCODED_FRAGS & 0xFF,
+	(UNCODED_FRAGS >> 8) & 0xFF,
+	FRAG_SIZE,
+	0x01,
+	PADDING,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+};
+
+static void run_test(size_t lost_packets, bool expected_success)
 {
 	uint8_t buf[256]; /* maximum size of one LoRaWAN message */
-	uint8_t frag_session_setup_req[] = {
-		CMD_FRAG_SESSION_SETUP,
-		0x1f,
-		UNCODED_FRAGS & 0xFF,
-		(UNCODED_FRAGS >> 8) & 0xFF,
-		FRAG_SIZE,
-		0x01,
-		PADDING,
-		0x00,
-		0x00,
-		0x00,
-		0x00,
-	};
 	int ret;
+	size_t num_packets = sizeof(fw_coded) / FRAG_SIZE;
+	size_t packets_to_lose[num_packets];
+	size_t tmp;
+	bool skip;
+
+	for (size_t i = 0; i < num_packets; i++) {
+		packets_to_lose[i] = i;
+	}
+	/* Shuffle array */
+	for (size_t i = num_packets - 1; i > 0; i--) {
+		int j = sys_rand32_get() % (i + 1);
+
+		if (i != j) {
+			tmp = packets_to_lose[j];
+			packets_to_lose[j] = packets_to_lose[i];
+			packets_to_lose[i] = tmp;
+		}
+	}
 
 	k_sem_reset(&fuota_finished_sem);
-
 	lorawan_emul_send_downlink(FRAG_TRANSPORT_PORT, false, 0, 0, sizeof(frag_session_setup_req),
 				   frag_session_setup_req);
 
-	for (int i = 0; i < sizeof(fw_coded) / FRAG_SIZE; i++) {
-		if (i % 10 == 9) {
-			/* loose every 10th packet */
+	for (size_t i = 0; i < num_packets; i++) {
+		skip = false;
+		for (int j = 0; j < lost_packets; j++) {
+			if (packets_to_lose[j] == i) {
+				skip = true;
+				break;
+			}
+		}
+		if (skip) {
+			/* lose packet */
 			continue;
 		}
 		buf[0] = CMD_DATA_FRAGMENT;
@@ -80,16 +105,40 @@ ZTEST(frag_decoder, test_frag_transport)
 		lorawan_emul_send_downlink(FRAG_TRANSPORT_PORT, false, 0, 0, FRAG_SIZE + 3, buf);
 	}
 
-	for (int i = 0; i < UNCODED_FRAGS; i++) {
-		size_t num_bytes = (i == UNCODED_FRAGS - 1) ? (FRAG_SIZE - PADDING) : FRAG_SIZE;
-
-		flash_area_read(fa, i * FRAG_SIZE, buf, num_bytes);
-		zassert_mem_equal(buf, fw_coded + i * FRAG_SIZE, num_bytes, "fragment %d invalid",
-				  i + 1);
-	}
-
 	ret = k_sem_take(&fuota_finished_sem, K_MSEC(100));
-	zassert_equal(ret, 0, "FUOTA finish timed out");
+	if (expected_success) {
+		zassert_equal(ret, 0, "FUOTA finish timed out");
+		for (int i = 0; i < UNCODED_FRAGS; i++) {
+			size_t num_bytes =
+				(i == UNCODED_FRAGS - 1) ? (FRAG_SIZE - PADDING) : FRAG_SIZE;
+
+			flash_area_read(fa, i * FRAG_SIZE, buf, num_bytes);
+			zassert_mem_equal(buf, fw_coded + i * FRAG_SIZE, num_bytes,
+					  "fragment %d invalid", i + 1);
+		}
+	} else {
+		zassert_not_equal(ret, 0, "FUOTA should have failed");
+	}
+}
+
+ZTEST(frag_decoder, test_frag_transport_lose_none)
+{
+	run_test(0, true);
+}
+
+ZTEST(frag_decoder, test_frag_transport_lose_one)
+{
+	run_test(1, true);
+}
+
+ZTEST(frag_decoder, test_frag_transport_lose_close_to_max_redundancy)
+{
+	run_test(REDUNDANT_FRAGS * 0.95, true);
+}
+
+ZTEST(frag_decoder, test_frag_transport_lose_more_than_max_redundancy)
+{
+	run_test(REDUNDANT_FRAGS + 1, false);
 }
 
 static void *frag_decoder_setup(void)
