@@ -561,7 +561,7 @@ static int map_anon_page(void *addr, uint32_t flags)
 	return 0;
 }
 
-void *k_mem_map_impl(uintptr_t phys, size_t size, uint32_t flags, bool is_anon)
+void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_anon)
 {
 	uint8_t *dst;
 	size_t total_size;
@@ -645,7 +645,7 @@ out:
 	return dst;
 }
 
-void k_mem_unmap_impl(void *addr, size_t size, bool is_anon)
+void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 {
 	uintptr_t phys;
 	uint8_t *pos;
