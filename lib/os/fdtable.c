@@ -31,6 +31,7 @@ struct fd_entry {
 	atomic_t refcount;
 	struct k_mutex lock;
 	struct k_condvar cond;
+	uint32_t mode;
 };
 
 #if defined(CONFIG_POSIX_DEVICE_IO)
@@ -254,7 +255,7 @@ int z_reserve_fd(void)
 	return fd;
 }
 
-void z_finalize_fd(int fd, void *obj, const struct fd_op_vtable *vtable)
+void z_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable, uint32_t mode)
 {
 	/* Assumes fd was already bounds-checked. */
 #ifdef CONFIG_USERSPACE
@@ -269,6 +270,7 @@ void z_finalize_fd(int fd, void *obj, const struct fd_op_vtable *vtable)
 #endif
 	fdtable[fd].obj = obj;
 	fdtable[fd].vtable = vtable;
+	fdtable[fd].mode = mode;
 
 	/* Let the object know about the lock just in case it needs it
 	 * for something. For BSD sockets, the lock is used with condition
