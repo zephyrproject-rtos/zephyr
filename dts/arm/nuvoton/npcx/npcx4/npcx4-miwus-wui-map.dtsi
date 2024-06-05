@@ -19,6 +19,14 @@
 			miwus = <&miwu0 7 7>; /* GPIOE7 */
 		};
 
+		/* MIWU group D */
+		wui_smb0: wui0-4-3 {
+			miwus = <&miwu0 3 3>; /* SMB0 */
+		};
+		wui_smb1: wui0-4-4 {
+			miwus = <&miwu0 3 4>; /* SMB1 */
+		};
+
 		/* MIWU table 1 */
 		/* MIWU group B */
 		wui_io13: wui1-2-3 {
@@ -82,7 +90,7 @@
 			miwus = <&miwu2 6 7>; /* I3C1_RSTW */
 		};
 
-		/* MIWU group G */
+		/* MIWU group H */
 		wui_i3c2_addrw: wui2-8-0 {
 			miwus = <&miwu2 7 0>; /* I3C2_ADDRW */
 		};
