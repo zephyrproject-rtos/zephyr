@@ -84,7 +84,7 @@
 #elif !defined(__cplusplus) && \
 	(((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6))) ||	\
 	 (__STDC_VERSION__) >= 201100)
-#define BUILD_ASSERT(EXPR, MSG...) _Static_assert(EXPR, "" MSG)
+#define BUILD_ASSERT(EXPR, MSG...) _Static_assert((EXPR), "" MSG)
 #else
 #define BUILD_ASSERT(EXPR, MSG...)
 #endif

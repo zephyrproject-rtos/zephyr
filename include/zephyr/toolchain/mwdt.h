@@ -99,7 +99,7 @@
 /* For cpp98 */
 #define BUILD_ASSERT(EXPR, MSG...)
 #else
-#define BUILD_ASSERT(EXPR, MSG...) _Static_assert(EXPR, "" MSG)
+#define BUILD_ASSERT(EXPR, MSG...) _Static_assert((EXPR), "" MSG)
 #endif
 
 #define __builtin_arc_nop()	_nop()
