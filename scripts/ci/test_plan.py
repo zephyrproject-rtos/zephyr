@@ -17,6 +17,11 @@ from pathlib import Path
 from git import Repo
 from west.manifest import Manifest
 
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
+
 if "ZEPHYR_BASE" not in os.environ:
     exit("$ZEPHYR_BASE environment variable undefined.")
 
@@ -26,12 +31,12 @@ zephyr_base = Path(os.environ['ZEPHYR_BASE'])
 repository_path = zephyr_base
 repo_to_scan = Repo(zephyr_base)
 args = None
-
-
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
+logging.getLogger("pykwalify.core").setLevel(50)
 
 sys.path.append(os.path.join(zephyr_base, 'scripts'))
 import list_boards
+
 
 def _get_match_fn(globs, regexes):
     # Constructs a single regex that tests for matches against the globs in
@@ -214,45 +219,50 @@ class Filters:
                 self.get_plan(_options, True)
 
     def find_boards(self):
-        boards = set()
-        all_boards = set()
-        resolved = []
+        changed_boards = set()
+        matched_boards = {}
+        resolved_files = []
 
-        for f in self.modified_files:
-            if f.endswith(".rst") or f.endswith(".png") or f.endswith(".jpg"):
+        for file in self.modified_files:
+            if file.endswith(".rst") or file.endswith(".png") or file.endswith(".jpg"):
                 continue
-            p = re.match(r"^boards\/[^/]+\/([^/]+)\/", f)
-            if p and p.groups():
-                boards.add(p.group(1))
-                resolved.append(f)
+            if file.startswith("boards/"):
+                changed_boards.add(file)
+                resolved_files.append(file)
 
         roots = [zephyr_base]
         if repository_path != zephyr_base:
             roots.append(repository_path)
 
         # Look for boards in monitored repositories
-        lb_args = argparse.Namespace(**{'arch_roots': roots, 'board_roots': roots, 'board': None,
+        lb_args = argparse.Namespace(**{'arch_roots': roots, 'board_roots': roots, 'board': None, 'soc_roots':roots,
                                         'board_dir': None})
-        known_boards = list_boards.find_boards(lb_args)
-        for b in boards:
-            name_re = re.compile(b)
-            for kb in known_boards:
-                if name_re.search(kb.name):
-                    all_boards.add(kb.name)
+        known_boards = list_boards.find_v2_boards(lb_args)
 
-        # If modified file is catched by "find_boards" workflow (change in "boards" dir AND board recognized)
+        for changed in changed_boards:
+            for board in known_boards:
+                c = (zephyr_base / changed).resolve()
+                if c.is_relative_to(board.dir.resolve()):
+                    for file in glob.glob(os.path.join(board.dir, f"{board.name}*.yaml")):
+                        with open(file, 'r') as f:
+                            b = yaml.load(f.read(), Loader=SafeLoader)
+                            matched_boards[b['identifier']] = board
+
+
+        logging.info(f"found boards: {','.join(matched_boards.keys())}")
+        # If modified file is caught by "find_boards" workflow (change in "boards" dir AND board recognized)
         # it means a proper testing scope for this file was found and this file can be removed
         # from further consideration
-        for board in all_boards:
-            self.resolved_files.extend(list(filter(lambda f: board in f, resolved)))
+        for _, board in matched_boards.items():
+            self.resolved_files.extend(list(filter(lambda f: str(board.dir.relative_to(zephyr_base)) in f, resolved_files)))
 
         _options = []
-        if len(all_boards) > 20:
-            logging.warning(f"{len(boards)} boards changed, this looks like a global change, skipping test handling, revert to default.")
+        if len(matched_boards) > 20:
+            logging.warning(f"{len(matched_boards)} boards changed, this looks like a global change, skipping test handling, revert to default.")
             self.full_twister = True
             return
 
-        for board in all_boards:
+        for board in matched_boards:
             _options.extend(["-p", board ])
 
         if _options:
