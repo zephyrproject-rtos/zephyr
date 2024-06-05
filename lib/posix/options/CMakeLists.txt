@@ -60,6 +60,7 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_MULTI_PROCESS
   multi_process.c
 )
 zephyr_library_sources_ifdef(CONFIG_POSIX_NETWORKING net.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_SHARED_MEMORY_OBJECTS shm.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_SIGNALS signal.c ${STRSIGNAL_TABLE_H})
 zephyr_library_sources_ifdef(CONFIG_POSIX_SINGLE_PROCESS
   confstr.c
