@@ -493,6 +493,9 @@ def fix_up_runner_config(test_case, runner_config, tmpdir):
         f.write(f'''
 CONFIG_SOC_SERIES_{test_case.family[:5]}X=y
 ''')
+        f.write('''
+CONFIG_GPIO_AS_PINRESET=y
+''')
     to_replace['build_dir'] = tmpdir
 
     if test_case.family != 'NRF53_FAMILY':
