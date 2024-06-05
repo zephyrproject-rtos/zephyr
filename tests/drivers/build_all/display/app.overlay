@@ -107,6 +107,24 @@
 				height = <122>;
 				busy-gpios = <&test_gpio 0 0>;
 			};
+
+			uc8176_waveshare_epaper_gdew042t2: uc8176@5 {
+				compatible = "ultrachip,uc8176";
+				mipi-max-frequency = <4000000>;
+				reg = <5>;
+				width = <400>;
+				height = <300>;
+				busy-gpios = <&test_gpio 0 0>;
+
+				/* Arbirary settings */
+				softstart = [17 17 17];
+
+				full {
+					pwr = [03 00 26 26 09];
+					cdi = <0xd7>;
+					tcon = <0x22>;
+				};
+			};
 		};
 
 
@@ -120,7 +138,7 @@
 
 			/* one entry for every devices at spi.dtsi */
 			cs-gpios = <&test_gpio 0 0 &test_gpio 0 1 &test_gpio 0 2
-				&test_gpio 0 3 &test_gpio 0 4>;
+				&test_gpio 0 3 &test_gpio 0 4 &test_gpio 0 5>;
 
 			test_spi_gc9x01x: gc9x01x@1 {
 				compatible = "galaxycore,gc9x01x";
