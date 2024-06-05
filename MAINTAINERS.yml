@@ -1250,6 +1250,7 @@ Release Notes:
   collaborators:
     - decsny
     - lmajewski
+    - pdgendt
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
