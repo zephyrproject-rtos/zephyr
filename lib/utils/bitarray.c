@@ -13,7 +13,7 @@
 #include <zephyr/sys/sys_io.h>
 
 /* Number of bits represented by one bundle */
-#define bundle_bitness(ba)	(sizeof(ba->bundles[0]) * 8)
+#define bundle_bitness(ba)	(sizeof((ba)->bundles[0]) * 8)
 
 struct bundle_data {
 	 /* Start and end index of bundles */
