@@ -259,6 +259,22 @@ void gcov_reset_counts(struct gcov_info *info)
 	}
 }
 
+void gcov_reset_all_counts(void)
+{
+	struct gcov_info *gcov_list = NULL;
+
+	k_sched_lock();
+
+	gcov_list = gcov_get_list_head();
+
+	while (gcov_list) {
+		gcov_reset_counts(gcov_list);
+		gcov_list = gcov_list->next;
+	}
+
+	k_sched_unlock();
+}
+
 void dump_on_console_start(const char *filename)
 {
 	printk("\n%c", FILE_START_INDICATOR);
