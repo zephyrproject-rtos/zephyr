@@ -1,0 +1,19 @@
+common:
+  filter: not CONFIG_NATIVE_LIBC
+  tags:
+    - posix
+    - shm
+  integration_platforms:
+    - qemu_x86
+    - qemu_x86_64
+    - qemu_cortex_a53
+    - qemu_riscv64
+  platform_exclude:
+    # linker_zephyr_pre0.cmd:140: syntax error (??)
+    - qemu_xtensa
+    # CONFIG_MMU=y but no arch_mem_map() or arch_mem_unmap()
+    - intel_ish_5_4_1
+    - intel_ish_5_6_0
+    - intel_ish_5_8_0
+tests:
+  portability.posix.shm: {}
