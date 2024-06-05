@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include "eth_stats.h"
 #include "net_private.h"
 #include "ipv6.h"
+#include "ipv4.h"
 #include "ipv4_autoconf_internal.h"
 #include "bridge.h"
 
@@ -395,6 +396,11 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 			return NET_DROP;
 		}
 
+		if (IS_ENABLED(CONFIG_NET_IPV4_ACD) &&
+		    net_ipv4_acd_input(iface, pkt) == NET_DROP) {
+			return NET_DROP;
+		}
+
 		return net_arp_input(pkt, hdr);
 	}
 
@@ -628,7 +634,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	    net_pkt_family(pkt) == AF_INET) {
 		struct net_pkt *tmp;
 
-		if (net_pkt_ipv4_auto(pkt)) {
+		if (net_pkt_ipv4_acd(pkt)) {
 			ptype = htons(NET_ETH_PTYPE_ARP);
 		} else {
 			tmp = ethernet_ll_prepare_on_ipv4(iface, pkt);

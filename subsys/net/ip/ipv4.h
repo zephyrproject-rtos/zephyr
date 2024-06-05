@@ -416,4 +416,53 @@ static inline void net_ipv4_setup_fragment_buffers(void)
 #define net_ipv4_init(...)
 #endif /* CONFIG_NET_NATIVE_IPV4 */
 
+/**
+ * @brief Starts address conflict detection for an IPv4 address.
+ *
+ * @param iface Network interface the address belongs to.
+ * @param ifaddr IPv4 address to probe.
+ *
+ * @return 0 on success, negative otherwise.
+ */
+int net_ipv4_acd_start(struct net_if *iface, struct net_if_addr *ifaddr);
+
+/**
+ * @brief Cancel address conflict detection for an IPv4 address.
+ *
+ * @param iface Network interface the address belongs to.
+ * @param ifaddr IPv4 address to probe.
+ */
+void net_ipv4_acd_cancel(struct net_if *iface, struct net_if_addr *ifaddr);
+
+/**
+ * @brief Notify no conflict was detected for an IPv4 address.
+ *
+ * @param iface Network interface the address belongs to.
+ * @param ifaddr IPv4 address.
+ */
+void net_if_ipv4_acd_succeeded(struct net_if *iface, struct net_if_addr *ifaddr);
+
+/**
+ * @brief Notify conflict for an IPv4 address.
+ *
+ * @param iface Network interface the address belongs to.
+ * @param ifaddr IPv4 address.
+ */
+void net_if_ipv4_acd_failed(struct net_if *iface, struct net_if_addr *ifaddr);
+
+/**
+ * @brief Initialize IPv4 address conflict detection module.
+ */
+void net_ipv4_acd_init(void);
+
+/**
+ * @brief Process ARP packet in terms of conflict detection.
+ *
+ * @param iface Network interface the packet was received on.
+ * @param pkt ARP packet to process.
+ *
+ * @return Return verdict about the packet.
+ */
+enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt);
+
 #endif /* __IPV4_H */
