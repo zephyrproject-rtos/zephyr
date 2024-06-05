@@ -208,7 +208,11 @@
 /* #define _XOPEN_REALTIME (-1L) */
 /* #define _XOPEN_REALTIME_THREADS (-1L) */
 /* #define _XOPEN_SHM (-1L) */
-#define _XOPEN_STREAMS COND_CODE_1(CONFIG_XOPEN_STREAMS, (_XOPEN_VERSION), (-1))
+
+#ifdef CONFIG_XOPEN_STREAMS
+#define _XOPEN_STREAMS _XOPEN_VERSION
+#endif
+
 /* #define _XOPEN_UNIX (-1L) */
 /* #define _XOPEN_UUCP (-1L) */
 
