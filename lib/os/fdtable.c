@@ -31,6 +31,7 @@ struct fd_entry {
 	atomic_t refcount;
 	struct k_mutex lock;
 	struct k_condvar cond;
+	size_t offset;
 	uint32_t mode;
 };
 
@@ -309,9 +310,19 @@ ssize_t zvfs_read(int fd, void *buf, size_t sz)
 	}
 
 	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
-
-	res = fdtable[fd].vtable->read(fdtable[fd].obj, buf, sz);
-
+	res = fdtable[fd].vtable->read_offs(fdtable[fd].obj, buf, sz, fdtable[fd].offset);
+	if (res > 0) {
+		switch (fdtable[fd].mode & ZVFS_MODE_IFMT) {
+		case ZVFS_MODE_IFDIR:
+		case ZVFS_MODE_IFBLK:
+		case ZVFS_MODE_IFSHM:
+		case ZVFS_MODE_IFREG:
+			fdtable[fd].offset += res;
+			break;
+		default:
+			break;
+		}
+	}
 	k_mutex_unlock(&fdtable[fd].lock);
 
 	return res;
@@ -326,9 +337,19 @@ ssize_t zvfs_write(int fd, const void *buf, size_t sz)
 	}
 
 	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
-
-	res = fdtable[fd].vtable->write(fdtable[fd].obj, buf, sz);
-
+	res = fdtable[fd].vtable->write_offs(fdtable[fd].obj, buf, sz, fdtable[fd].offset);
+	if (res > 0) {
+		switch (fdtable[fd].mode & ZVFS_MODE_IFMT) {
+		case ZVFS_MODE_IFDIR:
+		case ZVFS_MODE_IFBLK:
+		case ZVFS_MODE_IFSHM:
+		case ZVFS_MODE_IFREG:
+			fdtable[fd].offset += res;
+			break;
+		default:
+			break;
+		}
+	}
 	k_mutex_unlock(&fdtable[fd].lock);
 
 	return res;
@@ -371,14 +392,41 @@ int zvfs_fsync(int fd)
 	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_FSYNC);
 }
 
+static inline off_t zvfs_lseek_wrap(int fd, int cmd, ...)
+{
+	off_t res;
+	va_list args;
+
+	__ASSERT_NO_MSG(fd < ARRAY_SIZE(fdtable));
+
+	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
+	va_start(args, cmd);
+	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, cmd, args);
+	va_end(args);
+	if (res > 0) {
+		switch (fdtable[fd].mode & ZVFS_MODE_IFMT) {
+		case ZVFS_MODE_IFDIR:
+		case ZVFS_MODE_IFBLK:
+		case ZVFS_MODE_IFSHM:
+		case ZVFS_MODE_IFREG:
+			fdtable[fd].offset = res;
+			break;
+		default:
+			break;
+		}
+	}
+	k_mutex_unlock(&fdtable[fd].lock);
+
+	return res;
+}
+
 off_t zvfs_lseek(int fd, off_t offset, int whence)
 {
 	if (_check_fd(fd) < 0) {
 		return -1;
 	}
 
-	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_LSEEK, offset,
-				    whence);
+	return zvfs_lseek_wrap(fd, ZFD_IOCTL_LSEEK, offset, whence, fdtable[fd].offset);
 }
 
 int zvfs_fcntl(int fd, int cmd, va_list args)
