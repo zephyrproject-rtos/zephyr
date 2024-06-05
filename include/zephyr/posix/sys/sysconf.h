@@ -252,7 +252,7 @@ enum {
 #define __z_posix_sysconf_SC_XOPEN_REALTIME_THREADS       (-1L)
 #define __z_posix_sysconf_SC_XOPEN_SHM                    (-1L)
 #define __z_posix_sysconf_SC_XOPEN_STREAMS                                                         \
-	COND_CODE_1(CONFIG_XOPEN_STREAMS, (_POSIX_XOPEN_STREAMS), (-1))
+	COND_CODE_1(CONFIG_XOPEN_STREAMS, (_XOPEN_STREAMS), (-1))
 #define __z_posix_sysconf_SC_XOPEN_UNIX                   (-1L)
 #define __z_posix_sysconf_SC_XOPEN_UUCP                   (-1L)
 #define __z_posix_sysconf_SC_XOPEN_VERSION                _XOPEN_VERSION
