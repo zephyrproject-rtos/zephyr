@@ -170,7 +170,7 @@ size_t k_mem_free_get(void);
  */
 static inline void *k_mem_map(size_t size, uint32_t flags)
 {
-	return k_mem_map_impl((uintptr_t)NULL, size, flags, true);
+	return k_mem_map_phys_guard((uintptr_t)NULL, size, flags, true);
 }
 
 /**
@@ -214,7 +214,7 @@ static inline void *k_mem_map(size_t size, uint32_t flags)
  */
 static inline void *k_mem_phys_map(uintptr_t phys, size_t size, uint32_t flags)
 {
-	return k_mem_map_impl(phys, size, flags, false);
+	return k_mem_map_phys_guard(phys, size, flags, false);
 }
 
 /**
@@ -232,7 +232,7 @@ static inline void *k_mem_phys_map(uintptr_t phys, size_t size, uint32_t flags)
  */
 static inline void k_mem_unmap(void *addr, size_t size)
 {
-	k_mem_unmap_impl(addr, size, true);
+	k_mem_unmap_phys_guard(addr, size, true);
 }
 
 /**
@@ -255,7 +255,7 @@ static inline void k_mem_unmap(void *addr, size_t size)
  */
 static inline void k_mem_phys_unmap(void *addr, size_t size)
 {
-	k_mem_unmap_impl(addr, size, false);
+	k_mem_unmap_phys_guard(addr, size, false);
 }
 
 /**
