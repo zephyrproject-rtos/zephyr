@@ -8527,7 +8527,7 @@ static void encrypt_change(uint8_t err, uint16_t handle,
 	hci_evt_create(buf, BT_HCI_EVT_ENCRYPT_CHANGE, sizeof(*ep));
 	ep = net_buf_add(buf, sizeof(*ep));
 
-	ep->status = err;
+	ep->status = err ? err : (encryption_on ? err : BT_HCI_ERR_UNSPECIFIED);
 	ep->handle = sys_cpu_to_le16(handle);
 	ep->encrypt = encryption_on ? 1 : 0;
 }
