@@ -6,7 +6,9 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/mgmt/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/config.h>
+#include <zephyr/mgmt/hawkbit/autohandler.h>
 
 LOG_MODULE_DECLARE(hawkbit);
 

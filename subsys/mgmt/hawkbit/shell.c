@@ -9,7 +9,9 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/dfu/flash_img.h>
-#include <zephyr/mgmt/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/config.h>
+#include <zephyr/mgmt/hawkbit/autohandler.h>
 #include "hawkbit_firmware.h"
 #include "hawkbit_device.h"
 
