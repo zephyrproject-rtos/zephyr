@@ -47,7 +47,7 @@ requests or even be removed.
     However, if the Kconfig option
     :kconfig:option:`CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK` is enabled, then an
     application can register a callback handler for
-    :c:enum:`MGMT_EVT_OP_FS_MGMT_FILE_ACCESS` (see
+    :c:enumerator:`MGMT_EVT_OP_FS_MGMT_FILE_ACCESS` (see
     :ref:`MCUmgr callbacks <mcumgr_callbacks>`), which allows for allowing or
     declining access to reading/writing a particular file, or for rewriting the
     path supplied by the client.
@@ -185,7 +185,7 @@ change between requests or even be removed.
     However, if the Kconfig option
     :kconfig:option:`CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK` is enabled, then an
     application can register a callback handler for
-    :c:enum:`MGMT_EVT_OP_FS_MGMT_FILE_ACCESS` (see
+    :c:enumerator:`MGMT_EVT_OP_FS_MGMT_FILE_ACCESS` (see
     :ref:`MCUmgr callbacks <mcumgr_callbacks>`), which allows for allowing or
     declining access to reading/writing a particular file, or for rewriting the
     path supplied by the client.

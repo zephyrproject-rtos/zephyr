@@ -563,7 +563,7 @@ System reset request header fields:
     +--------+--------------+----------------+
 
 Normally the command sends an empty CBOR map as data, but if a previous reset
-attempt has responded with "rc" equal to :c:enum:`MGMT_ERR_EBUSY` then the
+attempt has responded with "rc" equal to :c:enumerator:`MGMT_ERR_EBUSY` then the
 following map may be sent to force a reset:
 
 .. code-block:: none
