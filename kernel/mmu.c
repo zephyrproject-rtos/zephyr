@@ -555,6 +555,11 @@ static int map_anon_page(void *addr, uint32_t flags)
 		k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_PINNED);
 	}
 	frame_mapped_set(pf, addr);
+#ifdef CONFIG_DEMAND_PAGING
+	if (!lock) {
+		k_mem_paging_eviction_add(pf);
+	}
+#endif
 
 	LOG_DBG("memory mapping anon page %p -> 0x%lx", addr, phys);
 
@@ -753,6 +758,11 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 			}
 
 			arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
+#ifdef CONFIG_DEMAND_PAGING
+			if (!k_mem_page_frame_is_pinned(pf)) {
+				k_mem_paging_eviction_remove(pf);
+			}
+#endif
 
 			/* Put the page frame back into free list */
 			page_frame_free_locked(pf);
@@ -974,6 +984,11 @@ static void mark_linker_section_pinned(void *start_addr, void *end_addr,
 			k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_PINNED);
 		} else {
 			k_mem_page_frame_clear(pf, K_MEM_PAGE_FRAME_PINNED);
+#ifdef CONFIG_DEMAND_PAGING
+			if (k_mem_page_frame_is_evictable(pf)) {
+				k_mem_paging_eviction_add(pf);
+			}
+#endif
 		}
 	}
 }
@@ -1048,6 +1063,12 @@ void z_mem_manage_init(void)
 #endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 	k_mem_paging_backing_store_init();
 	k_mem_paging_eviction_init();
+	/* start tracking evictable page installed above if any */
+	K_MEM_PAGE_FRAME_FOREACH(phys, pf) {
+		if (k_mem_page_frame_is_evictable(pf)) {
+			k_mem_paging_eviction_add(pf);
+		}
+	}
 #endif /* CONFIG_DEMAND_PAGING */
 #if __ASSERT_ON
 	page_frames_initialized = true;
@@ -1219,6 +1240,7 @@ static int page_frame_prepare_locked(struct k_mem_page_frame *pf, bool *dirty_pt
 			return -ENOMEM;
 		}
 		arch_mem_page_out(k_mem_page_frame_to_virt(pf), *location_ptr);
+		k_mem_paging_eviction_remove(pf);
 	} else {
 		/* Shouldn't happen unless this function is mis-used */
 		__ASSERT(!dirty, "un-mapped page determined to be dirty");
@@ -1521,7 +1543,10 @@ static bool do_page_fault(void *addr, bool pin)
 			uintptr_t phys = page_in_location;
 
 			pf = k_mem_phys_to_page_frame(phys);
-			k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_PINNED);
+			if (!k_mem_page_frame_is_pinned(pf)) {
+				k_mem_paging_eviction_remove(pf);
+				k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_PINNED);
+			}
 		}
 
 		/* This if-block is to pin the page if it is
@@ -1574,6 +1599,9 @@ static bool do_page_fault(void *addr, bool pin)
 
 	arch_mem_page_in(addr, k_mem_page_frame_to_phys(pf));
 	k_mem_paging_backing_store_page_finalize(pf, page_in_location);
+	if (!pin) {
+		k_mem_paging_eviction_add(pf);
+	}
 out:
 	irq_unlock(key);
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
@@ -1634,7 +1662,10 @@ static void do_mem_unpin(void *addr)
 		 "invalid data page at %p", addr);
 	if ((flags & ARCH_DATA_PAGE_LOADED) != 0) {
 		pf = k_mem_phys_to_page_frame(phys);
-		k_mem_page_frame_clear(pf, K_MEM_PAGE_FRAME_PINNED);
+		if (k_mem_page_frame_is_pinned(pf)) {
+			k_mem_page_frame_clear(pf, K_MEM_PAGE_FRAME_PINNED);
+			k_mem_paging_eviction_add(pf);
+		}
 	}
 	irq_unlock(key);
 }

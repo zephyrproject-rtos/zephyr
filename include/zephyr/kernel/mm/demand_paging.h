@@ -29,6 +29,8 @@
 #include <inttypes.h>
 #include <zephyr/sys/__assert.h>
 
+struct k_mem_page_frame;
+
 /**
  * Paging Statistics.
  */
@@ -216,10 +218,56 @@ __syscall void k_mem_paging_histogram_backing_store_page_out_get(
  */
 
 /**
+ * Submit a page frame for eviction candidate tracking
+ *
+ * The kernel will invoke this to tell the eviction algorithm the provided
+ * page frame may be considered as a potential eviction candidate.
+ *
+ * This function will never be called before the initial
+ * k_mem_paging_eviction_init().
+ *
+ * This function is invoked with interrupts locked.
+ *
+ * @param [in] pf The page frame to add
+ */
+void k_mem_paging_eviction_add(struct k_mem_page_frame *pf);
+
+/**
+ * Remove a page frame from potential eviction candidates
+ *
+ * The kernel will invoke this to tell the eviction algorithm the provided
+ * page frame may no longer be considered as a potential eviction candidate.
+ *
+ * This function will only be called with page frames that were submitted
+ * using k_mem_paging_eviction_add() beforehand.
+ *
+ * This function is invoked with interrupts locked.
+ *
+ * @param [in] pf The page frame to remove
+ */
+void k_mem_paging_eviction_remove(struct k_mem_page_frame *pf);
+
+/**
+ * Process a page frame as being newly accessed
+ *
+ * The architecture-specific memory fault handler will invoke this to tell the
+ * eviction algorithm the provided physical address belongs to a page frame
+ * being accessed and such page frame should become unlikely to be be
+ * considered as the next eviction candidate.
+ *
+ * This function is invoked with interrupts locked.
+ *
+ * @param [in] phys The physical address being accessed
+ */
+void k_mem_paging_eviction_accessed(uintptr_t phys);
+
+/**
  * Select a page frame for eviction
  *
  * The kernel will invoke this to choose a page frame to evict if there
- * are no free page frames.
+ * are no free page frames. It is not guaranteed that the returned page
+ * frame will actually be evicted. If it is then the kernel will call
+ * k_mem_paging_eviction_remove() with it.
  *
  * This function will never be called before the initial
  * k_mem_paging_eviction_init().
