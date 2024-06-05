@@ -125,6 +125,16 @@
 					tcon = <0x22>;
 				};
 			};
+
+			test_spi_gc9x01x: gc9x01x@6 {
+				compatible = "galaxycore,gc9x01x";
+				reg = <6>;
+				mipi-max-frequency = <100000000>;
+				pixel-format = <16>;
+
+				width = <240>;
+				height = <240>;
+			};
 		};
 
 
@@ -136,21 +146,12 @@
 			status = "okay";
 			clock-frequency = <2000000>;
 
-			/* one entry for every devices at spi.dtsi */
+			/* one entry for every device. Note that this must
+			 * include MIPI DBI devices as well.
+			 */
 			cs-gpios = <&test_gpio 0 0 &test_gpio 0 1 &test_gpio 0 2
-				&test_gpio 0 3 &test_gpio 0 4 &test_gpio 0 5>;
-
-			test_spi_gc9x01x: gc9x01x@1 {
-				compatible = "galaxycore,gc9x01x";
-				reg = <1>;
-				spi-max-frequency = <100000000>;
-				cmd-data-gpios = <&test_gpio 1 0>;
-				reset-gpios = <&test_gpio 2 0>;
-				pixel-format = <16>;
-
-				width = <240>;
-				height = <240>;
-			};
+				&test_gpio 0 3 &test_gpio 0 4 &test_gpio 0 5
+				&test_gpio 0 6>;
 
 			test_led_strip_0: lpd8806@2 {
 				compatible = "greeled,lpd8806";
