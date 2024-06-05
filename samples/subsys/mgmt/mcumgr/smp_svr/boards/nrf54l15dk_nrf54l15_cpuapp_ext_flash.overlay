@@ -13,7 +13,8 @@
 
 /delete-node/ &storage_partition;
 
-&rram0 {
+&cpuapp_rram {
+	reg = < 0x0 DT_SIZE_K(1524) >;
 	partitions {
 		boot_partition: partition@0 {
 			label = "mcuboot";
