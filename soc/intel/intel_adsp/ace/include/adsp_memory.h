@@ -75,10 +75,10 @@
 #define ADSP_L1_CACHE_PREFCTL_VALUE 0x1038
 
 /* L1 init */
-#define ADSP_L1CC_ADDR                       (0x3FE80080)
-#define ADSP_CxL1CCAP_ADDR                   (ADSP_L1CC_ADDR + 0x0000)
-#define ADSP_CxL1CCFG_ADDR                   (ADSP_L1CC_ADDR + 0x0004)
-#define ADSP_CxL1PCFG_ADDR                   (ADSP_L1CC_ADDR + 0x0008)
+#define ADSP_L1CC_ADDR                       (DT_REG_ADDR(DT_NODELABEL(l1ccap)))
+#define ADSP_CxL1CCAP_ADDR                   (DT_REG_ADDR(DT_NODELABEL(l1ccap)))
+#define ADSP_CxL1CCFG_ADDR                   (DT_REG_ADDR(DT_NODELABEL(l1ccfg)))
+#define ADSP_CxL1PCFG_ADDR                   (DT_REG_ADDR(DT_NODELABEL(l1pcfg)))
 
 #if (!defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__))
 
