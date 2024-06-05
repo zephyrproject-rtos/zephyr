@@ -38,6 +38,14 @@
 	pinctrl-names = "default";
 };
 
+&flexcomm0 {
+	compatible = "nxp,lpc-usart";
+	status = "disabled";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-names = "default";
+};
+
 &hsgpio0 {
 	status = "okay";
 };
@@ -54,4 +62,9 @@
 		write-block-size = <1>;
 		spi-max-frequency = <133000000>;
 	};
+};
+
+&hci {
+	status = "okay";
+	wakeup-source;
 };
