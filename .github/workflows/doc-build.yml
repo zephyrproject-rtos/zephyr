@@ -217,7 +217,7 @@ jobs:
     - name: install-pkgs
       run: |
         apt-get update
-        apt-get install -y python3-pip python3-venv ninja-build doxygen graphviz librsvg2-bin
+        apt-get install -y python3-pip python3-venv ninja-build doxygen graphviz librsvg2-bin imagemagick
 
     - name: cache-pip
       uses: actions/cache@v4
