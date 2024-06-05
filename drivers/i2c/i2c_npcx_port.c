@@ -171,7 +171,7 @@ static int i2c_npcx_target_unregister(const struct device *dev,
 		return -EIO;
 	}
 
-	return npcx_i2c_ctrl_target_unregister(config->i2c_ctrl, target_cfg);
+	return npcx_i2c_ctrl_target_unregister(config->i2c_ctrl, target_cfg, config->port);
 }
 #endif
 
