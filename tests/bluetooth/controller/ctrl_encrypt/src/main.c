@@ -976,6 +976,426 @@ ZTEST(encryption_start, test_encryption_start_central_loc_no_ltk_2)
  *    |                            | LL_ENC_REQ          |
  *    |                            |-------------------->|
  *    |                            |                     |
+ *    |                            |   LL_REJECT_EXT_IND |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |     Encryption Start Proc. |                     |
+ *    |                   Complete |                     |
+ *    |<---------------------------|                     |
+ *    |                            |                     |
+ */
+ZTEST(encryption_start, test_encryption_start_central_loc_reject_ext_success)
+{
+	uint8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	const uint8_t rand[] = { RAND };
+	const uint8_t ediv[] = { EDIV };
+	const uint8_t ltk[] = { LTK };
+
+	/* Prepare expected LL_ENC_REQ */
+	struct pdu_data_llctrl_enc_req exp_enc_req = {
+		.rand = { RAND },
+		.ediv = { EDIV },
+		.skdm = { SKDM },
+		.ivm = { IVM },
+	};
+
+	/* Prepare mocked call to lll_csrand_get */
+	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
+	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
+	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
+
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ,
+		.error_code = BT_HCI_ERR_SUCCESS
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
+	/* Initiate an Encryption Start Procedure */
+	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_ENC_REQ, &conn, &tx, &exp_enc_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Rx */
+	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
+	struct pdu_data_llctrl_reject_ind reject_ind_expected = {
+		.error_code = BT_HCI_ERR_UNSPECIFIED };
+
+	/* There should be one host notification */
+	ut_rx_pdu(LL_REJECT_IND, &ntf, &reject_ind_expected);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	release_ntf(ntf);
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
+/* +-----+                     +-------+              +-----+
+ * | UT  |                     | LL_A  |              | LT  |
+ * +-----+                     +-------+              +-----+
+ *    |                            |                     |
+ *    | Initiate                   |                     |
+ *    | Encryption Start Proc.     |                     |
+ *    |--------------------------->|                     |
+ *    |         -----------------\ |                     |
+ *    |         | Empty Tx queue |-|                     |
+ *    |         |----------------| |                     |
+ *    |                            |                     |
+ *    |                            | LL_ENC_REQ          |
+ *    |                            |-------------------->|
+ *    |                            |                     |
+ *    |                            |   LL_REJECT_IND     |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |     Encryption Start Proc. |                     |
+ *    |                   Complete |                     |
+ *    |<---------------------------|                     |
+ *    |                            |                     |
+ */
+ZTEST(encryption_start, test_encryption_start_central_loc_reject_success)
+{
+	uint8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	const uint8_t rand[] = { RAND };
+	const uint8_t ediv[] = { EDIV };
+	const uint8_t ltk[] = { LTK };
+
+	/* Prepare expected LL_ENC_REQ */
+	struct pdu_data_llctrl_enc_req exp_enc_req = {
+		.rand = { RAND },
+		.ediv = { EDIV },
+		.skdm = { SKDM },
+		.ivm = { IVM },
+	};
+
+	/* Prepare mocked call to lll_csrand_get */
+	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
+	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
+	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
+
+	struct pdu_data_llctrl_reject_ind reject_ind = { .error_code = BT_HCI_ERR_SUCCESS };
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
+	/* Initiate an Encryption Start Procedure */
+	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_ENC_REQ, &conn, &tx, &exp_enc_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Rx */
+	lt_tx(LL_REJECT_IND, &conn, &reject_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
+	struct pdu_data_llctrl_reject_ind reject_ind_expected = {
+		.error_code = BT_HCI_ERR_UNSPECIFIED };
+
+	/* There should be one host notification */
+	ut_rx_pdu(LL_REJECT_IND, &ntf, &reject_ind_expected);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	release_ntf(ntf);
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
+/* +-----+                     +-------+              +-----+
+ * | UT  |                     | LL_A  |              | LT  |
+ * +-----+                     +-------+              +-----+
+ *    |                            |                     |
+ *    | Initiate                   |                     |
+ *    | Encryption Start Proc.     |                     |
+ *    |--------------------------->|                     |
+ *    |         -----------------\ |                     |
+ *    |         | Empty Tx queue |-|                     |
+ *    |         |----------------| |                     |
+ *    |                            |                     |
+ *    |                            | LL_ENC_REQ          |
+ *    |                            |-------------------->|
+ *    |                            |                     |
+ *    |                            |          LL_ENC_RSP |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |                            |   LL_REJECT_EXT_IND |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |     Encryption Start Proc. |                     |
+ *    |                   Complete |                     |
+ *    |<---------------------------|                     |
+ *    |                            |                     |
+ */
+ZTEST(encryption_start, test_encryption_start_central_loc_no_ltk_reject_ext_success)
+{
+	uint8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	const uint8_t rand[] = { RAND };
+	const uint8_t ediv[] = { EDIV };
+	const uint8_t ltk[] = { LTK };
+
+	/* Prepare expected LL_ENC_REQ */
+	struct pdu_data_llctrl_enc_req exp_enc_req = {
+		.rand = { RAND },
+		.ediv = { EDIV },
+		.skdm = { SKDM },
+		.ivm = { IVM },
+	};
+
+	/* Prepare LL_ENC_RSP */
+	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
+
+	/* Prepare mocked call to lll_csrand_get */
+	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
+	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
+	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
+
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ,
+		.error_code = BT_HCI_ERR_SUCCESS
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
+	/* Initiate an Encryption Start Procedure */
+	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_ENC_REQ, &conn, &tx, &exp_enc_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Rx */
+	lt_tx(LL_ENC_RSP, &conn, &enc_rsp);
+
+	/* Rx */
+	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
+	struct pdu_data_llctrl_reject_ind reject_ind_expected = {
+		.error_code = BT_HCI_ERR_UNSPECIFIED };
+
+	/* There should be one host notification */
+	ut_rx_pdu(LL_REJECT_IND, &ntf, &reject_ind_expected);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	release_ntf(ntf);
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
+/* +-----+                     +-------+              +-----+
+ * | UT  |                     | LL_A  |              | LT  |
+ * +-----+                     +-------+              +-----+
+ *    |                            |                     |
+ *    | Initiate                   |                     |
+ *    | Encryption Start Proc.     |                     |
+ *    |--------------------------->|                     |
+ *    |         -----------------\ |                     |
+ *    |         | Empty Tx queue |-|                     |
+ *    |         |----------------| |                     |
+ *    |                            |                     |
+ *    |                            | LL_ENC_REQ          |
+ *    |                            |-------------------->|
+ *    |                            |                     |
+ *    |                            |          LL_ENC_RSP |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |                            |   LL_REJECT_IND     |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |     Encryption Start Proc. |                     |
+ *    |                   Complete |                     |
+ *    |<---------------------------|                     |
+ *    |                            |                     |
+ */
+ZTEST(encryption_start, test_encryption_start_central_loc_no_ltk_2_reject_success)
+{
+	uint8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	const uint8_t rand[] = { RAND };
+	const uint8_t ediv[] = { EDIV };
+	const uint8_t ltk[] = { LTK };
+
+	/* Prepare expected LL_ENC_REQ */
+	struct pdu_data_llctrl_enc_req exp_enc_req = {
+		.rand = { RAND },
+		.ediv = { EDIV },
+		.skdm = { SKDM },
+		.ivm = { IVM },
+	};
+
+	/* Prepare LL_ENC_RSP */
+	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
+
+	/* Prepare mocked call to lll_csrand_get */
+	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
+	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
+	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
+
+	struct pdu_data_llctrl_reject_ind reject_ind = { .error_code = BT_HCI_ERR_SUCCESS };
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
+	/* Initiate an Encryption Start Procedure */
+	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_ENC_REQ, &conn, &tx, &exp_enc_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Rx */
+	lt_tx(LL_ENC_RSP, &conn, &enc_rsp);
+
+	/* Rx */
+	lt_tx(LL_REJECT_IND, &conn, &reject_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
+	struct pdu_data_llctrl_reject_ind reject_ind_expected = {
+		.error_code = BT_HCI_ERR_UNSPECIFIED };
+
+	/* There should be one host notification */
+	ut_rx_pdu(LL_REJECT_IND, &ntf, &reject_ind_expected);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	release_ntf(ntf);
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
+/* +-----+                     +-------+              +-----+
+ * | UT  |                     | LL_A  |              | LT  |
+ * +-----+                     +-------+              +-----+
+ *    |                            |                     |
+ *    | Initiate                   |                     |
+ *    | Encryption Start Proc.     |                     |
+ *    |--------------------------->|                     |
+ *    |         -----------------\ |                     |
+ *    |         | Empty Tx queue |-|                     |
+ *    |         |----------------| |                     |
+ *    |                            |                     |
+ *    |                            | LL_ENC_REQ          |
+ *    |                            |-------------------->|
+ *    |                            |                     |
  *    |                            |          LL_ENC_RSP |
  *    |                            |<--------------------|
  *    |                            |                     |
@@ -2216,7 +2636,6 @@ ZTEST(encryption_pause, test_encryption_pause_periph_rem_invalid)
 	uint8_t err;
 
 	struct node_tx *tx;
-	struct node_rx_pdu *ntf;
 	struct ll_conn_iso_stream cis = { 0 };
 
 	const uint8_t rand[] = { RAND };
