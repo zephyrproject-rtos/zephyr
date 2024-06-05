@@ -386,6 +386,14 @@
 			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
 			status = "disabled";
 		};
+
+		wwdt: watchdog@40096000 {
+			compatible = "nuvoton,numaker-wwdt";
+			reg = <0x40096000 0x10>;
+			interrupts = <9 0>;
+			clocks = <&pcc NUMAKER_WWDT_MODULE NUMAKER_CLK_CLKSEL1_WWDTSEL_LIRC 0>;
+			status = "disabled";
+		};
 	};
 };
 
