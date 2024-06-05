@@ -16,8 +16,8 @@
 #include <errno.h>
 #include <string.h>
 
-#include <zephyr/kernel.h>
 #include <zephyr/posix/fcntl.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/speculation.h>
 #include <zephyr/internal/syscall_handler.h>
@@ -407,6 +407,31 @@ int zvfs_fcntl(int fd, int cmd, va_list args)
 	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, cmd, args);
 
 	return res;
+}
+
+static inline int zvfs_ftruncate_wrap(int fd, int cmd, ...)
+{
+	int res;
+	va_list args;
+
+	__ASSERT_NO_MSG(fd < ARRAY_SIZE(fdtable));
+
+	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
+	va_start(args, cmd);
+	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, cmd, args);
+	va_end(args);
+	k_mutex_unlock(&fdtable[fd].lock);
+
+	return res;
+}
+
+int zvfs_ftruncate(int fd, off_t length)
+{
+	if (_check_fd(fd) < 0) {
+		return -1;
+	}
+
+	return zvfs_ftruncate_wrap(fd, ZFD_IOCTL_TRUNCATE, length);
 }
 
 #if defined(CONFIG_POSIX_DEVICE_IO)

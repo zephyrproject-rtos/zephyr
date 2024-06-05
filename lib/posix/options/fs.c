@@ -154,7 +154,18 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		}
 		break;
 	}
+	case ZFD_IOCTL_TRUNCATE: {
+		off_t length;
 
+		length = va_arg(args, off_t);
+
+		rc = fs_truncate(&ptr->file, length);
+		if (rc < 0) {
+			errno = -rc;
+			return -1;
+		}
+		break;
+	}
 	default:
 		errno = EOPNOTSUPP;
 		return -1;
@@ -402,28 +413,6 @@ int mkdir(const char *path, mode_t mode)
 	ARG_UNUSED(mode);
 
 	rc = fs_mkdir(path);
-	if (rc < 0) {
-		errno = -rc;
-		return -1;
-	}
-
-	return 0;
-}
-
-/**
- * @brief Truncate file to specified length.
- *
- */
-int zvfs_ftruncate(int fd, off_t length)
-{
-	int rc;
-	struct posix_fs_desc *ptr = NULL;
-
-	ptr = z_get_fd_obj(fd, NULL, EBADF);
-	if (!ptr)
-		return -1;
-
-	rc = fs_truncate(&ptr->file, length);
 	if (rc < 0) {
 		errno = -rc;
 		return -1;
