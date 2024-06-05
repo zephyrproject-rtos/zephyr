@@ -148,7 +148,7 @@ int timeutil_sync_ref_from_local(const struct timeutil_sync_state *tsp,
 			rv = -ERANGE;
 		} else {
 			*refp = ref_abs;
-			rv = (int)(tsp->skew != 1.0f);
+			rv = (tsp->skew != 1.0f) ? 1 : 0;
 		}
 	}
 
@@ -175,7 +175,7 @@ int timeutil_sync_local_from_ref(const struct timeutil_sync_state *tsp,
 				    + (int64_t)local_delta;
 
 		*localp = local_abs;
-		rv = (int)(tsp->skew != 1.0f);
+		rv = (tsp->skew != 1.0f) ? 1 : 0;
 	}
 
 	return rv;
