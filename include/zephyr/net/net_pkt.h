@@ -167,8 +167,8 @@ struct net_pkt {
 
 	/* bitfield byte alignment boundary */
 
-#if defined(CONFIG_NET_IPV4_AUTO)
-	uint8_t ipv4_auto_arp_msg : 1; /* Is this pkt IPv4 autoconf ARP
+#if defined(CONFIG_NET_IPV4_ACD)
+	uint8_t ipv4_acd_arp_msg : 1;  /* Is this pkt IPv4 conflict detection ARP
 					* message.
 					* Note: family needs to be
 					* AF_INET.
@@ -1206,32 +1206,32 @@ static inline void net_pkt_set_ll_proto_type(struct net_pkt *pkt, uint16_t type)
 	pkt->ll_proto_type = type;
 }
 
-#if defined(CONFIG_NET_IPV4_AUTO)
-static inline bool net_pkt_ipv4_auto(struct net_pkt *pkt)
+#if defined(CONFIG_NET_IPV4_ACD)
+static inline bool net_pkt_ipv4_acd(struct net_pkt *pkt)
 {
-	return !!(pkt->ipv4_auto_arp_msg);
+	return !!(pkt->ipv4_acd_arp_msg);
 }
 
-static inline void net_pkt_set_ipv4_auto(struct net_pkt *pkt,
-					 bool is_auto_arp_msg)
+static inline void net_pkt_set_ipv4_acd(struct net_pkt *pkt,
+					bool is_acd_arp_msg)
 {
-	pkt->ipv4_auto_arp_msg = is_auto_arp_msg;
+	pkt->ipv4_acd_arp_msg = is_acd_arp_msg;
 }
-#else /* CONFIG_NET_IPV4_AUTO */
-static inline bool net_pkt_ipv4_auto(struct net_pkt *pkt)
+#else /* CONFIG_NET_IPV4_ACD */
+static inline bool net_pkt_ipv4_acd(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
 
 	return false;
 }
 
-static inline void net_pkt_set_ipv4_auto(struct net_pkt *pkt,
-					 bool is_auto_arp_msg)
+static inline void net_pkt_set_ipv4_acd(struct net_pkt *pkt,
+					bool is_acd_arp_msg)
 {
 	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_auto_arp_msg);
+	ARG_UNUSED(is_acd_arp_msg);
 }
-#endif /* CONFIG_NET_IPV4_AUTO */
+#endif /* CONFIG_NET_IPV4_ACD */
 
 #if defined(CONFIG_NET_LLDP)
 static inline bool net_pkt_is_lldp(struct net_pkt *pkt)

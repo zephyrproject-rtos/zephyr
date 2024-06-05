@@ -96,6 +96,9 @@ enum net_event_ipv4_cmd {
 	NET_EVENT_IPV4_CMD_DHCP_STOP,
 	NET_EVENT_IPV4_CMD_MCAST_JOIN,
 	NET_EVENT_IPV4_CMD_MCAST_LEAVE,
+	NET_EVENT_IPV4_CMD_ACD_SUCCEED,
+	NET_EVENT_IPV4_CMD_ACD_FAILED,
+	NET_EVENT_IPV4_CMD_ACD_CONFLICT,
 };
 
 /* L4 network events */
@@ -273,6 +276,21 @@ enum net_event_l4_cmd {
 /** Event emitted when an IPv4 multicast group is left. */
 #define NET_EVENT_IPV4_MCAST_LEAVE				\
 	(_NET_EVENT_IPV4_BASE |	NET_EVENT_IPV4_CMD_MCAST_LEAVE)
+
+/** Event emitted when an IPv4 address conflict detection succeeds. */
+#define NET_EVENT_IPV4_ACD_SUCCEED				\
+	(_NET_EVENT_IPV4_BASE | NET_EVENT_IPV4_CMD_ACD_SUCCEED)
+
+/** Event emitted when an IPv4 address conflict detection fails. */
+#define NET_EVENT_IPV4_ACD_FAILED				\
+	(_NET_EVENT_IPV4_BASE | NET_EVENT_IPV4_CMD_ACD_FAILED)
+
+/** Event emitted when an IPv4 address conflict was detected after the address
+ *  was confirmed as safe to use. It's up to the application to determine on
+ *  how to act in such case.
+ */
+#define NET_EVENT_IPV4_ACD_CONFLICT				\
+	(_NET_EVENT_IPV4_BASE | NET_EVENT_IPV4_CMD_ACD_CONFLICT)
 
 /** Event emitted when the system is considered to be connected.
  * The connected in this context means that the network interface is up,
