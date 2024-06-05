@@ -1,0 +1,7 @@
+[gpio_own_1]
+PIN_0 = "Own"
+PIN_2 = "Own"
+
+[gpio_secure_1]
+PIN_0 = "NonSecure"
+PIN_2 = "NonSecure"
