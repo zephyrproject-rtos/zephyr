@@ -371,7 +371,12 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
 
     def reset_target(self):
         if self.family == 'NRF52_FAMILY' and not self.softreset:
-            self.exec_op('pinreset-enable')
+            if self.build_conf.getboolean('CONFIG_GPIO_AS_PINRESET'):
+                self.exec_op('pinreset-enable')
+            else:
+                self.logger.warning('CONFIG_GPIO_AS_PINRESET is not enabled, '
+                                    'using softreset.')
+                self.softreset = True
 
         if self.softreset:
             self.exec_op('reset', option="RESET_SYSTEM")
