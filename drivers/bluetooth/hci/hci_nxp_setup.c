@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(bt_nxp_ctlr);
 
 #include "common/bt_str.h"
 
-#include "uart_nw61x_se.h"
+#include "bt_nxp_ctlr_fw.h"
 
 #define DT_DRV_COMPAT nxp_bt_hci_uart
 
