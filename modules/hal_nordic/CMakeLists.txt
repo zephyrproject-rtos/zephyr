@@ -11,8 +11,11 @@ add_subdirectory_ifdef(CONFIG_HAS_NRFS nrfs)
 if(CONFIG_NRF_REGTOOL_GENERATE_UICR)
   list(APPEND nrf_regtool_components GENERATE:UICR)
 endif()
+if(CONFIG_NRF_REGTOOL_GENERATE_BICR)
+  list(APPEND nrf_regtool_components GENERATE:BICR)
+endif()
 if(DEFINED nrf_regtool_components)
-  find_package(nrf-regtool 5.3.0 REQUIRED
+  find_package(nrf-regtool 5.3.2 REQUIRED
     COMPONENTS ${nrf_regtool_components}
     PATHS ${CMAKE_CURRENT_LIST_DIR}/nrf-regtool
     NO_CMAKE_PATH

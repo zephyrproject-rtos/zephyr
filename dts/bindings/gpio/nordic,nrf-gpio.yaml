@@ -5,7 +5,7 @@ description: NRF5 GPIO node
 
 compatible: "nordic,nrf-gpio"
 
-include: [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml, "nordic,nrf-port-configs.yaml"]
 
 properties:
   reg:
