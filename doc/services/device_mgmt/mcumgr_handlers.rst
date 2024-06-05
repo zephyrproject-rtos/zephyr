@@ -52,8 +52,8 @@ responses (which have unique error codes per group as opposed to the legacy SMP 
 responses that return a :c:enum:`mcumgr_err_t` - there should always be an OK error code with the
 value 0 and an unknown error code with the value 1. The above example then adds an error code of
 ``not wanted`` with value 2. In addition, the group ID is set to be
-:c:enum:`MGMT_GROUP_ID_PERUSER`, which is the start group ID for user-defined groups, note that
-group IDs need to be unique so other custom groups should use different values, a central index
+:c:enumerator:`MGMT_GROUP_ID_PERUSER`, which is the start group ID for user-defined groups, note
+that group IDs need to be unique so other custom groups should use different values, a central index
 header file (as upstream Zephyr has) can be used to distribute group IDs more easily.
 
 Initial header <grp_name>_mgmt_callbacks.h
@@ -70,7 +70,7 @@ file would look similar to:
 This sets up a single event which application (or module) code can register for to receive a
 callback when the function handler is executed, which allows the flow of the handler to be
 changed (i.e. to return an error instead of continuing). The event group ID is set to
-:c:enum:`MGMT_EVT_GRP_USER_CUSTOM_START`, which is the start event ID for user-defined groups,
+:c:enumerator:`MGMT_EVT_GRP_USER_CUSTOM_START`, which is the start event ID for user-defined groups,
 note that event IDs need to be unique so other custom groups should use different values, a
 central index header file (as upstream Zephyr has) can be used to distribute event IDs more
 easily.
