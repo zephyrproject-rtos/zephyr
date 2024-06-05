@@ -355,6 +355,11 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 		return NULL;
 	}
 
+	if (net_pkt_ipv4_acd(pkt)) {
+		return arp_prepare(net_pkt_iface(pkt), request_ip, NULL,
+				   pkt, current_ip);
+	}
+
 	if (IS_ENABLED(CONFIG_NET_IPV4_AUTO)) {
 		is_ipv4_ll_used = net_ipv4_is_ll_addr((struct in_addr *)
 						&NET_IPV4_HDR(pkt)->src) ||
@@ -406,8 +411,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 			 * in the pending list and if so, resend the request, otherwise just
 			 * append the packet to the request fifo list.
 			 */
-			if (!net_pkt_ipv4_acd(pkt) &&
-			    k_queue_unique_append(&entry->pending_queue._queue,
+			if (k_queue_unique_append(&entry->pending_queue._queue,
 						  net_pkt_ref(pkt))) {
 				NET_DBG("Pending ARP request for %s, queuing pkt %p",
 					net_sprint_ipv4_addr(addr), pkt);
