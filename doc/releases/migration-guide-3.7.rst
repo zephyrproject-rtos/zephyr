@@ -127,6 +127,14 @@ Trusted Firmware-M
 zcbor
 =====
 
+LVGL
+====
+
+* :kconfig:option:`CONFIG_LV_Z_POINTER_KSCAN` was removed, you need to convert your kscan based
+  driver to the input subsystem and use a :dtcompatible:`zephyr,lvgl-pointer-input` in your
+  devicetree instead. (:github:`73800`)
+
+
 Device Drivers and Devicetree
 *****************************
 
