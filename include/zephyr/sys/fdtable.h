@@ -35,8 +35,14 @@ extern "C" {
  * Currently all operations beyond read/write/close go thru ioctl method.
  */
 struct fd_op_vtable {
-	ssize_t (*read)(void *obj, void *buf, size_t sz);
-	ssize_t (*write)(void *obj, const void *buf, size_t sz);
+	union {
+		ssize_t (*read)(void *obj, void *buf, size_t sz);
+		ssize_t (*read_offs)(void *obj, void *buf, size_t sz, size_t offset);
+	};
+	union {
+		ssize_t (*write)(void *obj, const void *buf, size_t sz);
+		ssize_t (*write_offs)(void *obj, const void *buf, size_t sz, size_t offset);
+	};
 	int (*close)(void *obj);
 	int (*ioctl)(void *obj, unsigned int request, va_list args);
 };
