@@ -942,7 +942,7 @@ static int usb_init(void)
 	/* Both connect and disconnect needs to be handled */
 	CRG_TOP->VBUS_IRQ_MASK_REG = CRG_TOP_VBUS_IRQ_MASK_REG_VBUS_IRQ_EN_FALL_Msk |
 				     CRG_TOP_VBUS_IRQ_MASK_REG_VBUS_IRQ_EN_RISE_Msk;
-	irq_enable(USB_IRQn);
+	irq_enable(VBUS_IRQn);
 
 	IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI, usb_dc_smartbond_isr, 0, 0);
 	irq_enable(USB_IRQ);
