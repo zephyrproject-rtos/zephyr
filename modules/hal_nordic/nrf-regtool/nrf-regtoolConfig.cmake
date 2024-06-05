@@ -24,6 +24,10 @@ function(nrf_regtool_generate_hex_from_dts peripheral)
   )
   message(STATUS "Generated ${peripheral} hex file: ${generated_hex_file}")
 
+  if(NOT peripheral STREQUAL "UICR")
+    return()
+  endif()
+
   set(merged_hex_file ${PROJECT_BINARY_DIR}/${merged_hex_name})
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py

@@ -1,0 +1,35 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: LicenseRef-Nordic-4-Clause
+
+description: |
+  Nordic Port Configs
+
+  Hardware configurations that apply to IO ports.
+
+properties:
+  ioport-power-rails:
+    type: phandle-array
+    description: |
+      Power supply configurations for GPIO ports. The configuration is board-
+      specific and stored in BICR.
+      The property is encoded as <&phandle rail>, where:
+
+      - phandle is the phandle of the associated GPIO port
+      - rail is the 8-bit power rail configuration to apply to the port
+
+  ioport-drivectrls:
+    type: phandle-array
+    description: |
+      Drive control settings for GPIO ports. The configuration is board-specific
+      and stored in BICR.
+      The property is encoded as <&phandle resistance>, where:
+
+      - phandle is the phandle of the associated GPIO port
+      - resistance is the resistance in ohms to adjust in the port's drive
+      control, and can be one of the following: [33, 40, 50, 66, 100].
+
+ioport-power-rail-cells:
+  - rail
+
+ioport-drivectrl-cells:
+  - resistance

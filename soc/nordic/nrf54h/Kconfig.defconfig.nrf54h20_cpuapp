@@ -11,4 +11,7 @@ config NUM_IRQS
 config NRF_REGTOOL_GENERATE_UICR
 	default y
 
+config NRF_REGTOOL_GENERATE_BICR
+	default y
+
 endif # SOC_NRF54H20_CPUAPP

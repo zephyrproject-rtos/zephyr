@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+/ {
+	bicr: bicr@fff87b0 {
+		compatible = "nordic,nrf-bicr";
+		reg = <0xfff87b0 0x48>;
+
+		power-vddao5v0 = "external";
+		power-vddao1v8 = "internal";
+		power-vdd1v0 = "internal";
+		power-vddrf1v0 = "shorted";
+		power-vddao0v8 = "internal";
+		power-vddvs0v8 = "internal";
+
+		inductor-present;
+
+		ioport-power-rails = <&gpio1 2>, <&gpio2 2>, <&gpio6 2>, <&gpio7 2>, <&gpio9 4>;
+		ioport-drivectrls = <&gpio6 50>, <&gpio7 50>;
+
+		lfosc-mode = "crystal";
+		lfosc-loadcap = <14>;
+
+		lfrc-autocalibration = <20 40 3>;
+
+		hfxo-mode = "crystal";
+		hfxo-loadcap = <56>;
+	};
+};
+
+&gpio1 {
+	#ioport-power-rail-cells = <1>;
+};
+
+&gpio2 {
+	#ioport-power-rail-cells = <1>;
+};
+
+&gpio6 {
+	#ioport-power-rail-cells = <1>;
+	#ioport-drivectrl-cells = <1>;
+};
+
+&gpio7 {
+	#ioport-power-rail-cells = <1>;
+	#ioport-drivectrl-cells = <1>;
+};
+
+&gpio9 {
+	#ioport-power-rail-cells = <1>;
+};

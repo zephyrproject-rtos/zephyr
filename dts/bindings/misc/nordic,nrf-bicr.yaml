@@ -1,0 +1,117 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: LicenseRef-Nordic-4-Clause
+
+description: |
+  Nordic Board Information Configuration Registers (BICR)
+
+compatible: "nordic,nrf-bicr"
+
+include: [base.yaml, "nordic,nrf-port-configs.yaml"]
+
+properties:
+  power-vddao5v0:
+    type: string
+    description: VDD_AO_5V0 power rail configuration.
+    enum:
+      - "external"
+      - "shorted"
+
+  power-vddao1v8:
+    type: string
+    description: VDD_AO_1V8 power rail configuration.
+    enum:
+      - "internal"
+      - "external"
+
+  power-vdd1v0:
+    type: string
+    description: VDD_1V0 power rail configuration.
+    enum:
+      - "internal"
+      - "external"
+
+  power-vddrf1v0:
+    type: string
+    description: VDD_RF_1V0 power rail configuration.
+    enum:
+      - "external"
+      - "shorted"
+
+  power-vddao0v8:
+    type: string
+    description: VDD_AO_0V8 power rail configuration.
+    enum:
+      - "internal"
+      - "external"
+
+  power-vddvs0v8:
+    type: string
+    description: VDD_VS_0V8 power rail configuration.
+    enum:
+      - "internal"
+      - "external"
+
+  inductor-present:
+    type: boolean
+    description: DC/DC inductor present.
+
+  lfosc-accuracy:
+    type: int
+    description: LFXO crystal or external signal accuracy in ppm.
+    enum:
+      - 500
+      - 250
+      - 150
+      - 100
+      - 75
+      - 50
+      - 30
+      - 20
+
+  lfosc-mode:
+    type: string
+    description: |
+      LFXO operational mode.
+    enum:
+      - "crystal"
+      - "external-sine"
+      - "external-square"
+
+  lfosc-loadcap:
+    type: int
+    description: |
+      Built-in load capacitors selection in 1pF steps, up to 25pF max. If 0,
+      only external capacitors will be used.
+
+  lfosc-startup:
+    type: int
+    description: LFXO startup time in milliseconds.
+
+  lfrc-autocalibration:
+    type: array
+    description: |
+      A list of values pertaining to LFRC autocalibration settings. The prop
+      is encoded as <temp-interval temp-delta interval-max-count>, where:
+      - temp-interval is the temperature measurement interval in 0.25s steps
+      - temp-delta is the temperature delta that should trigger a calibration
+        in 0.25 degree steps
+      - interval-max-count are the max number of temp-interval periods in
+        between calibrations, independent of temperature changes.
+
+  hfxo-mode:
+    type: string
+    description: |
+      HFXO operational mode.
+    enum:
+      - "crystal"
+      - "external-square"
+
+  hfxo-loadcap:
+    type: int
+    description: |
+      Built-in load capacitors selection in 0.25 pF steps, up to 25.75 pF max.
+      If 0, only external capacitors will be used.
+
+  hfxo-startup:
+    type: int
+    description: HFXO startup time in milliseconds.

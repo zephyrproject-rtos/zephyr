@@ -11,6 +11,13 @@ config NRF_REGTOOL_GENERATE_UICR
 	  CPU domains that require UICR allocation aren't bootable without it
 	  being programmed alongside the firmware.
 
+config NRF_REGTOOL_GENERATE_BICR
+	bool "Generate BICR"
+	help
+	  Generate a BICR hex based on devicetree contents using nrf-regtool.
+	  If not already present, the BICR must be included alongside
+	  any firmware programmed to the board for the first time.
+
 config NRF_REGTOOL_VERBOSITY
 	int "Verbosity level of console output"
 	range 0 3
