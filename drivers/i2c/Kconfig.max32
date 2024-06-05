@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_MAX32
+	bool "Analog Devices MAX32 I2C driver"
+	default y
+	depends on DT_HAS_ADI_MAX32_I2C_ENABLED
+	help
+	  i2c driver for max32 family.
+
+if I2C_MAX32
+
+config I2C_MAX32_INTERRUPT
+	bool "Interrupt support for MAX32 I2C driver"
+	default y
+	help
+	  Enable interrupt support for MAX32 I2C controller mode
+	  transfers.
+
+endif # I2C_MAX32
