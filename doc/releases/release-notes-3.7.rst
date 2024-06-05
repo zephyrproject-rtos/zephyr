@@ -187,16 +187,24 @@ Bluetooth
     or speakers. The audio data is compressed in a proper format for efficient use of the limited
     bandwidth.
 
+* HCI Driver
+
+  * Added support for Ambiq Apollo3 Blue series.
+
 Boards & SoC Support
 ********************
 
 * Added support for these SoC series:
+
+  * Added support for Ambiq Apollo3 Blue and Apollo3 Blue Plus SoC series.
 
 * Made these changes in other SoC series:
 
   * ITE: Rename the Kconfig symbol for all ITE SoC variants.
 
 * Added support for these ARM boards:
+
+  * Added support for Ambiq Apollo3 boards: ``apollo3_evb``, ``apollo3p_evb``.
 
 * Added support for these Xtensa boards:
 
@@ -279,6 +287,8 @@ Drivers and Sensors
 
 * Counter
 
+  * Added support for Ambiq Apollo3 series.
+
 * Crypto
 
 * Display
@@ -301,11 +311,17 @@ Drivers and Sensors
 
 * Flash
 
+  * Added support for Ambiq Apollo3 series.
+
 * GNSS
 
 * GPIO
 
+  * Added support for Ambiq Apollo3 series.
+
 * I2C
+
+  * Added support for Ambiq Apollo3 series.
 
 * I2S
 
@@ -369,6 +385,9 @@ Drivers and Sensors
 
 * SPI
 
+  * Added support for Ambiq Apollo3 series general IOM based SPI.
+  * Added support for Ambiq Apollo3 BLEIF based SPI, which is specific for internal HCI.
+
 * USB
 
 * W1
@@ -377,6 +396,7 @@ Drivers and Sensors
 
   * Added :kconfig:option:`CONFIG_WDT_NPCX_WARNING_LEADING_TIME_MS` to set the leading warning time
     in milliseconds. Removed no longer used :kconfig:option:`CONFIG_WDT_NPCX_DELAY_CYCLES`.
+  * Added support for Ambiq Apollo3 series.
 
 * Wi-Fi
 
