@@ -20,11 +20,26 @@ extern "C" {
  * @return EBUSY                  Frequency change in progress.
  * @return EAGAIN                 DVFS init in progress.
  * @return ENXIO                  Not supported frequency settings.
+ * @return EEXIST                 Requested same frequency setting as current one.
  * @return NRFS_SUCCESS           Request sent successfully.
  * @return NRFS_ERR_INVALID_STATE Service is uninitialized.
  * @return NRFS_ERR_IPC           Backend returned error during request sending.
  */
 int32_t dvfs_service_handler_change_freq_setting(enum dvfs_frequency_setting freq_setting);
+
+/**
+ * @brief Type to use as callback function in dvfs service
+ *
+ * @param params *dvfs_frequency_setting current_freq_setting
+ */
+typedef void (*dvfs_service_handler_callback)(void *params);
+
+/**
+ * @brief Register callback function which will be called when new dvfs frequency is applied.
+ *
+ * @param clb dvfs_service_handler_callback to register
+ */
+void dvfs_service_handler_register_freq_setting_applied_callback(dvfs_service_handler_callback clb);
 
 #ifdef __cplusplus
 }
