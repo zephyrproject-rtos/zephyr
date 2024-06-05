@@ -23,4 +23,6 @@ if(CONFIG_HAS_MCUX OR CONFIG_HAS_IMX_HAL OR CONFIG_HAS_NXP_S32_HAL)
   if(CONFIG_NOCACHE_MEMORY)
     zephyr_compile_definitions_ifdef(CONFIG_USB_DEVICE_DRIVER DATA_SECTION_IS_CACHEABLE=1)
   endif()
+
+  add_subdirectory_ifdef(CONFIG_BT_H4_NXP_CTLR bt_controller)
 endif()
