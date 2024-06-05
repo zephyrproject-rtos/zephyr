@@ -83,6 +83,10 @@
  * replace &os_timer with &systick
  */
 &os_timer {
+	status = "disabled";
+};
+
+&systick {
 	status = "okay";
 };
 
