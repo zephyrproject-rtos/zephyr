@@ -232,7 +232,6 @@ zephyr_library_sources_ifdef(CONFIG_LV_Z_MEM_POOL_SYS_HEAP lvgl_mem.c)
 zephyr_library_sources_ifdef(CONFIG_LV_Z_SHELL      lvgl_shell.c)
 
 zephyr_library_sources(input/lvgl_common_input.c)
-zephyr_library_sources_ifdef(CONFIG_LV_Z_POINTER_KSCAN  input/lvgl_pointer_kscan.c)
 zephyr_library_sources_ifdef(CONFIG_LV_Z_POINTER_INPUT input/lvgl_pointer_input.c)
 zephyr_library_sources_ifdef(CONFIG_LV_Z_BUTTON_INPUT input/lvgl_button_input.c)
 zephyr_library_sources_ifdef(CONFIG_LV_Z_ENCODER_INPUT input/lvgl_encoder_input.c)
