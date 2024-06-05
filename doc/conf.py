@@ -99,9 +99,13 @@ extensions = [
     "zephyr.api_overview",
 ]
 
-# Only use SVG converter when it is really needed, e.g. LaTeX.
-if tags.has("svgconvert"):  # pylint: disable=undefined-variable
+# Only use image conversion when it is really needed, e.g. LaTeX build.
+# Ensure "sphinxcontrib.rsvgconverter" is added before "sphinx.ext.imgconverter"
+# as it's better at converting SVG with extended features (like the ones from
+# draw.io) to PDF format).
+if tags.has("convertimages"):  # pylint: disable=undefined-variable
     extensions.append("sphinxcontrib.rsvgconverter")
+    extensions.append("sphinx.ext.imgconverter")
 
 templates_path = ["_templates"]
 
