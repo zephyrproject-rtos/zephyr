@@ -24,6 +24,8 @@ class Platform:
 
         self.name = ""
         self.normalized_name = ""
+        # if sysbuild to be used by default on a given platform
+        self.sysbuild = False
         self.twister = True
         # if no RAM size is specified by the board, take a default of 128K
         self.ram = 128
@@ -56,6 +58,7 @@ class Platform:
 
         self.name = data['identifier']
         self.normalized_name = self.name.replace("/", "_")
+        self.sysbuild = data.get("sysbuild", False)
         self.twister = data.get("twister", True)
         # if no RAM size is specified by the board, take a default of 128K
         self.ram = data.get("ram", 128)

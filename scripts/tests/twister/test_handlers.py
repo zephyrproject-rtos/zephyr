@@ -445,7 +445,7 @@ def test_binaryhandler_create_command(
     handler.seed = seed
     handler.extra_test_args = extra_args
     handler.build_dir = 'build_dir'
-    handler.instance.testsuite.sysbuild = False
+    handler.instance.sysbuild = False
     handler.platform = SimpleNamespace()
     handler.platform.resc = "file.resc"
     handler.platform.uart = "uart"
@@ -1469,7 +1469,7 @@ def test_qemuhandler_get_default_domain_build_dir(
     from_file_mock = mock.Mock(return_value=domains_mock)
 
     handler = QEMUHandler(mocked_instance, 'build')
-    handler.instance.testsuite.sysbuild = self_sysbuild
+    handler.instance.sysbuild = self_sysbuild
     handler.build_dir = self_build_dir
 
     with mock.patch('domains.Domains.from_file', from_file_mock):

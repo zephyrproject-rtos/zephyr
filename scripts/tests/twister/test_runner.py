@@ -42,6 +42,7 @@ def mocked_instance(tmp_path):
     testsuite.source_dir: str = ''
     instance.testsuite = testsuite
     platform = mock.Mock()
+    platform.sysbuild = False
     platform.binaries: List[str] = []
     instance.platform = platform
     build_dir = tmp_path / 'build_dir'
@@ -131,7 +132,7 @@ def test_if_default_binaries_are_taken_properly(project_builder: ProjectBuilder)
         os.path.join('zephyr', 'zephyr.elf'),
         os.path.join('zephyr', 'zephyr.exe'),
     ]
-    project_builder.testsuite.sysbuild = False
+    project_builder.instance.sysbuild = False
     binaries = project_builder._get_binaries()
     assert sorted(binaries) == sorted(default_binaries)
 
@@ -139,7 +140,7 @@ def test_if_default_binaries_are_taken_properly(project_builder: ProjectBuilder)
 def test_if_binaries_from_platform_are_taken_properly(project_builder: ProjectBuilder):
     platform_binaries = ['spi_image.bin']
     project_builder.platform.binaries = platform_binaries
-    project_builder.testsuite.sysbuild = False
+    project_builder.instance.sysbuild = False
     platform_binaries_expected = [os.path.join('zephyr', bin) for bin in platform_binaries]
     binaries = project_builder._get_binaries()
     assert sorted(binaries) == sorted(platform_binaries_expected)
@@ -698,7 +699,6 @@ def test_filterbuilder_parse_generated(
         return mock.Mock()
 
     testsuite_mock = mock.Mock()
-    testsuite_mock.sysbuild = 'sysbuild' if sysbuild else None
     testsuite_mock.name = 'dummy.testsuite.name'
     testsuite_mock.filter = testsuite_filter
     platform_mock = mock.Mock()
@@ -710,6 +710,7 @@ def test_filterbuilder_parse_generated(
     fb = FilterBuilder(testsuite_mock, platform_mock, source_dir, build_dir,
                        mocked_jobserver)
     instance_mock = mock.Mock()
+    instance_mock.sysbuild = 'sysbuild' if sysbuild else None
     fb.instance = instance_mock
     fb.env = mock.Mock()
     fb.env.options = mock.Mock()
@@ -1675,7 +1676,7 @@ def test_projectbuilder_cleanup_device_testing_artifacts(
     bins = [os.path.join('zephyr', 'file.bin')]
 
     instance_mock = mock.Mock()
-    instance_mock.testsuite.sysbuild = False
+    instance_mock.sysbuild = False
     build_dir = os.path.join('build', 'dir')
     instance_mock.build_dir = build_dir
     env_mock = mock.Mock()
