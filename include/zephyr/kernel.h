@@ -2089,7 +2089,7 @@ __syscall int k_queue_is_empty(struct k_queue *queue);
 
 static inline int z_impl_k_queue_is_empty(struct k_queue *queue)
 {
-	return (int)sys_sflist_is_empty(&queue->data_q);
+	return sys_sflist_is_empty(&queue->data_q) ? 1 : 0;
 }
 
 /**
