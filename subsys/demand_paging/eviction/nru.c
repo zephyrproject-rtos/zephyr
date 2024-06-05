@@ -110,3 +110,22 @@ void k_mem_paging_eviction_init(void)
 	k_timer_start(&nru_timer, K_NO_WAIT,
 		      K_MSEC(CONFIG_EVICTION_NRU_PERIOD));
 }
+
+/*
+ * unused interfaces
+ */
+
+void k_mem_paging_eviction_add(struct k_mem_page_frame *pf)
+{
+	ARG_UNUSED(pf);
+}
+
+void k_mem_paging_eviction_remove(struct k_mem_page_frame *pf)
+{
+	ARG_UNUSED(pf);
+}
+
+void k_mem_paging_eviction_accessed(uintptr_t phys)
+{
+	ARG_UNUSED(phys);
+}
