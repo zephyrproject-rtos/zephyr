@@ -260,6 +260,29 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                 self.exec_op('erase', core='NRFDL_DEVICE_CORE_APPLICATION')
                 self.exec_op('erase', core='NRFDL_DEVICE_CORE_NETWORK')
 
+            # Manage SUIT artifacts.
+            # This logic should be executed only once per build.
+            # Use sysbuild board qualifiers to select the context, with which the artifacts will be programmed.
+            if self.build_conf.get('CONFIG_BOARD_QUALIFIERS') == self.sysbuild_conf.get('SB_CONFIG_BOARD_QUALIFIERS'):
+                hex_path = Path(self.hex_)
+
+                # Handle Manifest Provisioning Information
+                if self.build_conf.getboolean('CONFIG_SUIT_MPI_GENERATE'):
+                    app_mpi_hex_file = os.fspath(
+                        hex_path.parent / self.build_conf.get('CONFIG_SUIT_MPI_APP_AREA_PATH'))
+                    rad_mpi_hex_file = os.fspath(
+                        hex_path.parent / self.build_conf.get('CONFIG_SUIT_MPI_RAD_AREA_PATH'))
+                    self.op_program(app_mpi_hex_file, 'ERASE_NONE', None, defer=True, core='NRFDL_DEVICE_CORE_APPLICATION')
+                    self.op_program(rad_mpi_hex_file, 'ERASE_NONE', None, defer=True, core='NRFDL_DEVICE_CORE_NETWORK')
+
+                # Handle SUIT root manifest if application manifests are not used.
+                # If an application firmware is built, the root envelope is merged with other application manifests
+                # as well as the output HEX file.
+                if not self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUAPP') and self.sysbuild_conf.get('SB_CONFIG_SUIT_ENVELOPE'):
+                    app_root_envelope_hex_file = os.fspath(
+                        hex_path.parent / 'suit_installed_envelopes_application_merged.hex')
+                    self.op_program(app_root_envelope_hex_file, 'ERASE_NONE', None, defer=True, core='NRFDL_DEVICE_CORE_APPLICATION')
+
             if self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUAPP'):
                 if not self.erase and self.build_conf.getboolean('CONFIG_NRF_REGTOOL_GENERATE_UICR'):
                     self.exec_op('erase', core='NRFDL_DEVICE_CORE_APPLICATION',
