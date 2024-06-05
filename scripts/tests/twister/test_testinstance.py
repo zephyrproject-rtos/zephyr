@@ -597,7 +597,7 @@ def test_testinstance_get_elf_file(caplog, tmp_path, testinstance, sysbuild, exp
     sysbuild_elf2 = zephyr_dir / 'dummy2.elf'
     sysbuild_elf2.write_bytes(b'0')
 
-    testinstance.testsuite.sysbuild = sysbuild
+    testinstance.sysbuild = sysbuild
     testinstance.domains = mock.Mock(
         get_default_domain=mock.Mock(
             return_value=mock.Mock(
