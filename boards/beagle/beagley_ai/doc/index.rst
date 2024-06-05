@@ -9,8 +9,7 @@ targeted for automotive applications.
 Hardware
 ********
 BeagleY-AI is powered by TI AM67A (J722S) SoC, which has two domains (Main,
-MCU). This document gives overview of Zephyr running on Cortex R5 in the
-Main domain.
+MCU). This document gives overview of Zephyr running on both Cortex R5.
 
 L1 Memory System
 ----------------
@@ -81,6 +80,16 @@ Note that BeagleY-AI has 4GB of DDR.
 | DDR Shared Region | 0x00A2000000  | 0x00A2000000 | 16MB   |
 +-------------------+---------------+--------------+--------+
 
++-------------------+---------------+--------------+--------+
+| Region            | Addr from A53 | MCU R5F      | Size   |
++===================+===============+==============+========+
+| ATCM              | 0x0079000000  | 0x0000000000 | 32KB   |
++-------------------+---------------+--------------+--------+
+| BTCM              | 0x0079020000  | 0x0041010000 | 32KB   |
++-------------------+---------------+--------------+--------+
+| DDR Shared Region | 0x00A1000000  | 0x00A1000000 | 16MB   |
++-------------------+---------------+--------------+--------+
+
 Steps to run the image
 ----------------------
 Here is an example for the :zephyr:code-sample:`hello_world` application
@@ -91,19 +100,26 @@ targeting the MAIN domain Cortex R5F on BeagleY-AI:
    :board: beagley_ai/j722s/main_r5f0_0
    :goals: build
 
+For the MCU domain Cortex R5F on BeagleY-AI:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: beagley_ai/j722s/mcu_r5f0_0
+   :goals: build
+
 To load the image:
 
 | Copy Zephyr image to the /lib/firmware/ directory.
 | ``cp build/zephyr/zephyr.elf /lib/firmware/``
 |
 | Ensure the Core is not running.
-| ``echo stop > /dev/remoteproc/am67a-main-r5f0_0/state``
+| ``echo stop > /dev/remoteproc/am67a-{main,mcu}-r5f0_0/state``
 |
 | Configuring the image name to the remoteproc module.
-| ``echo zephyr.elf > /dev/remoteproc/am67a-main-r5f0_0/firmware``
+| ``echo zephyr.elf > /dev/remoteproc/am67a-{main,mcu}-r5f0_0/firmware``
 |
 | Once the image name is configured, send the start command.
-| ``echo start > /dev/remoteproc/am67a-main-r5f0_0/state``
+| ``echo start > /dev/remoteproc/am67a-{main,mcu}-r5f0_0/state``
 
 Console
 -------
