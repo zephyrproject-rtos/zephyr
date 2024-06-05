@@ -9,6 +9,7 @@ toolchain:
   - gnuarmemb
   - xtools
   - zephyr
+sysbuild: true
 ram: 256
 flash: 296
 supported:
