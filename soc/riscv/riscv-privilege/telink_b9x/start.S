@@ -62,6 +62,17 @@ start:
 	sb     t1, 0x501(t0)
 #endif
 
+	/* Disable vector mode */
+	csrci  0x7d0, 2
+	/* Disable vector feture enable address */
+#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
+	lui t0 ,0xe4000
+#elif CONFIG_SOC_RISCV_TELINK_B95
+	lui t0 ,0xc4000
+#endif
+	li  t1 ,0x00
+	sw  t1 ,0x0(t0)
+
 	/* Enable I/D-Cache */
 	csrr   t0, NDS_MCACHE_CTL
 	ori    t0, t0, 1                #/ I-Cache
