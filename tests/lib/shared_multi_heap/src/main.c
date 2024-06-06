@@ -46,7 +46,7 @@ static void smh_reg_map(struct shared_multi_heap_region *region)
 	mem_attr = (region->attr == SMH_REG_ATTR_CACHEABLE) ? K_MEM_CACHE_WB : K_MEM_CACHE_NONE;
 	mem_attr |= K_MEM_PERM_RW;
 
-	z_phys_map(&v_addr, region->addr, region->size, mem_attr);
+	k_mem_map_phys_bare(&v_addr, region->addr, region->size, mem_attr);
 
 	region->addr = (uintptr_t) v_addr;
 }
