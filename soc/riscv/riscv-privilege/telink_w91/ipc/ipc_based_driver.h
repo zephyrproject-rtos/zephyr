@@ -123,7 +123,7 @@ do {                                                                           \
 		&ctx, timeout_ms);                                                     \
                                                                                \
 	if (ipc_err) {                                                             \
-		assert(0);                                                             \
+		/* TODO: Add assert after IPv6 FreeRTOS implemented: assert(0); */     \
 	}                                                                          \
 } while (0)
 
