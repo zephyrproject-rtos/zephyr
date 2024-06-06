@@ -67,6 +67,9 @@ static int cmd_net_ipv4(const struct shell *sh, size_t argc, char *argv[])
 	PR("IPv4 fragmentation support                : %s\n",
 	   IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT) ? "enabled" :
 	   "disabled");
+	PR("IPv4 conflict detection support           : %s\n",
+	   IS_ENABLED(CONFIG_NET_IPV4_ACD) ? "enabled" :
+	   "disabled");
 	PR("Max number of IPv4 network interfaces "
 	   "in the system          : %d\n",
 	   CONFIG_NET_IF_MAX_IPV4_COUNT);
