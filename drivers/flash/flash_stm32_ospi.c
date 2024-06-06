@@ -1051,7 +1051,7 @@ static int stm32_ospi_set_memorymap(const struct device *dev)
 
 	ret = HAL_OSPI_Command(&dev_data->hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
 	if (ret != HAL_OK) {
-		LOG_ERR("%d: Failed to set memory map", ret);
+		LOG_ERR("%d: Failed to set memory map read cmd", ret);
 		return -EIO;
 	}
 
@@ -1106,7 +1106,7 @@ static int stm32_ospi_set_memorymap(const struct device *dev)
 
 	ret = HAL_OSPI_Command(&dev_data->hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
 	if (ret != HAL_OK) {
-		LOG_ERR("%d: Failed to set memory mapped", ret);
+		LOG_ERR("%d: Failed to set memory map write cmd", ret);
 		return -EIO;
 	}
 
@@ -1115,11 +1115,11 @@ static int stm32_ospi_set_memorymap(const struct device *dev)
 
 	ret = HAL_OSPI_MemoryMapped(&dev_data->hospi, &s_MemMappedCfg);
 	if (ret != HAL_OK) {
-		LOG_ERR("%d: Failed to set memory mapped", ret);
+		LOG_ERR("%d: Failed to enable memory map", ret);
 		return -EIO;
 	}
 
-	LOG_INF("MemoryMap mode enabled");
+	LOG_DBG("MemoryMap mode enabled");
 	return 0;
 }
 
