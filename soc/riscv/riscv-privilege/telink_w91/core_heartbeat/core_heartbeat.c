@@ -16,20 +16,14 @@ static struct k_thread heartbeat_thread_data;
 
 K_THREAD_STACK_DEFINE(heartbeat_thread_stack, CONFIG_TELINK_W91_CORE_HEARTBEAT_THREAD_STACK_SIZE);
 
-static size_t pack_heartbeat_w91(uint8_t inst, void *unpack_data, uint8_t *pack_data)
-{
-	size_t pack_data_len = sizeof(uint32_t);
+enum {
+	IPC_DISPATCHER_HEARTBEAT_INIT = IPC_DISPATCHER_HEARTBEAT,
+	IPC_DISPATCHER_HEARTBEAT_CHECK,
+};
 
-	if (pack_data != NULL) {
-		uint32_t id = IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_HEARTBEAT, inst);
+IPC_DISPATCHER_PACK_FUNC_WITHOUT_PARAM(heartbeat_w91_check, IPC_DISPATCHER_HEARTBEAT_CHECK);
 
-		IPC_DISPATCHER_PACK_FIELD(pack_data, id);
-	}
-
-	return pack_data_len;
-}
-
-IPC_DISPATCHER_UNPACK_FUNC_ONLY_WITH_ERROR_PARAM(heartbeat_w91);
+IPC_DISPATCHER_UNPACK_FUNC_ONLY_WITH_ERROR_PARAM(heartbeat_w91_check);
 
 static void heartbeat_w91_thread(void *p1, void *p2, void *p3)
 {
@@ -37,7 +31,7 @@ static void heartbeat_w91_thread(void *p1, void *p2, void *p3)
 		bool heartbeat_response_status = 0;
 
 		IPC_DISPATCHER_HOST_SEND_DATA(
-			&ipc_data, 0, heartbeat_w91, NULL, &heartbeat_response_status,
+			&ipc_data, 0, heartbeat_w91_check, NULL, &heartbeat_response_status,
 			CONFIG_CORE_HEARTBEAT_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
 
 		if (!heartbeat_response_status) {
@@ -46,6 +40,7 @@ static void heartbeat_w91_thread(void *p1, void *p2, void *p3)
 			k_msleep(100);
 #else
 			printk("[E] No response from core N22, rebooting...\n");
+			k_msleep(100);
 #endif
 			/* board reboots */
 			sys_reboot(0);
@@ -55,9 +50,23 @@ static void heartbeat_w91_thread(void *p1, void *p2, void *p3)
 	}
 }
 
+IPC_DISPATCHER_PACK_FUNC_WITHOUT_PARAM(heartbeat_w91_start, IPC_DISPATCHER_HEARTBEAT_INIT);
+
+IPC_DISPATCHER_UNPACK_FUNC_ONLY_WITH_ERROR_PARAM(heartbeat_w91_start);
+
 static int heartbeat_w91_init(void)
 {
+	int err = 0;
+
 	ipc_based_driver_init(&ipc_data);
+
+	IPC_DISPATCHER_HOST_SEND_DATA(
+		&ipc_data, 0, heartbeat_w91_start, NULL, &err,
+		CONFIG_CORE_HEARTBEAT_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+
+	if (err) {
+		return err;
+	}
 
 	k_thread_create(&heartbeat_thread_data, heartbeat_thread_stack,
 			K_THREAD_STACK_SIZEOF(heartbeat_thread_stack), heartbeat_w91_thread, NULL,
