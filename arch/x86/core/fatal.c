@@ -208,7 +208,7 @@ static inline uintptr_t get_cr3(const struct arch_esf *esf)
 
 static inline pentry_t *get_ptables(const struct arch_esf *esf)
 {
-	return z_mem_virt_addr(get_cr3(esf));
+	return k_mem_virt_addr(get_cr3(esf));
 }
 
 #ifdef CONFIG_X86_64

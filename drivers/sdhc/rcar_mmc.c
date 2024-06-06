@@ -566,7 +566,7 @@ static int rcar_mmc_dma_rx_tx_data(const struct device *dev, struct sdhc_data *d
 	reg |= RCAR_MMC_EXTMODE_DMA_EN;
 	rcar_mmc_write_reg32(dev, RCAR_MMC_EXTMODE, reg);
 
-	dma_addr = z_mem_phys_addr(data->data);
+	dma_addr = k_mem_phys_addr(data->data);
 
 	rcar_mmc_write_reg32(dev, RCAR_MMC_DMA_ADDR_L, dma_addr);
 	rcar_mmc_write_reg32(dev, RCAR_MMC_DMA_ADDR_H, 0);
@@ -830,7 +830,7 @@ static int rcar_mmc_rx_tx_data(const struct device *dev, struct sdhc_data *data,
 	int ret = 0;
 
 #ifdef CONFIG_RCAR_MMC_DMA_SUPPORT
-	if (!(z_mem_phys_addr(data->data) >> 32)) {
+	if (!(k_mem_phys_addr(data->data) >> 32)) {
 		ret = rcar_mmc_dma_rx_tx_data(dev, data, is_read);
 	} else
 #endif
