@@ -111,11 +111,6 @@ zephyr_library_named(zephyr)
 
 if(CONFIG_LEGACY_GENERATED_INCLUDE_PATH)
   zephyr_include_directories(${PROJECT_BINARY_DIR}/include/generated/zephyr)
-  message(WARNING "
-    Warning: CONFIG_LEGACY_GENERATED_INCLUDE_PATH is currently enabled by default
-    so that user applications can continue to use the legacy include paths for the
-    generated headers. This Kconfig will be deprecated and eventually removed in
-    the future releases.")
 endif()
 
 zephyr_include_directories(
