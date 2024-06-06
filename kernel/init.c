@@ -417,8 +417,8 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_MMU
 	/* Invoked here such that backing store or eviction algorithms may
 	 * initialize kernel objects, and that all POST_KERNEL and later tasks
-	 * may perform memory management tasks (except for z_phys_map() which
-	 * is allowed at any time)
+	 * may perform memory management tasks (except for
+	 * k_mem_map_phys_bare() which is allowed at any time)
 	 */
 	z_mem_manage_init();
 #endif /* CONFIG_MMU */

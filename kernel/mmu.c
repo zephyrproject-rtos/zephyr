@@ -215,7 +215,7 @@ static void virt_region_init(void)
 	size_t offset, num_bits;
 
 	/* There are regions where we should never map via
-	 * k_mem_map() and z_phys_map(). Mark them as
+	 * k_mem_map() and k_mem_map_phys_bare(). Mark them as
 	 * already allocated so they will never be used.
 	 */
 
@@ -791,7 +791,7 @@ __weak FUNC_ALIAS(virt_region_align, arch_virt_region_align, size_t);
  * Data will be copied and BSS zeroed, but this must not rely on any
  * initialization functions being called prior to work correctly.
  */
-void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
+void k_mem_map_phys_bare(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 {
 	uintptr_t aligned_phys, addr_offset;
 	size_t aligned_size, align_boundary;
@@ -878,7 +878,7 @@ fail:
 	k_panic();
 }
 
-void z_phys_unmap(uint8_t *virt, size_t size)
+void k_mem_unmap_phys_bare(uint8_t *virt, size_t size)
 {
 	uintptr_t aligned_virt, addr_offset;
 	size_t aligned_size;

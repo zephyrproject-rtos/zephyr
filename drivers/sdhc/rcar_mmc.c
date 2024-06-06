@@ -2167,7 +2167,7 @@ exit_disable_clk:
 
 exit_unmap:
 #if defined(DEVICE_MMIO_IS_IN_RAM) && defined(CONFIG_MMU)
-	z_phys_unmap((uint8_t *)DEVICE_MMIO_GET(dev), DEVICE_MMIO_ROM_PTR(dev)->size);
+	k_mem_unmap_phys_bare((uint8_t *)DEVICE_MMIO_GET(dev), DEVICE_MMIO_ROM_PTR(dev)->size);
 #endif
 	return ret;
 }
