@@ -302,8 +302,8 @@ Drivers and Sensors
 
 * eSPI
 
-  * Renamed eSPI virtual wire direction macros and enum values to match the new terminology in
-    eSPI 1.5 specification.
+  * Renamed eSPI virtual wire direction macros, enum values and KConfig to match the new
+    terminology in eSPI 1.5 specification.
 
 * Ethernet
 
