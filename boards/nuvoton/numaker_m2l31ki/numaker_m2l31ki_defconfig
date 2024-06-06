@@ -21,6 +21,3 @@ CONFIG_UART_CONSOLE=y
 
 # Enable RMC
 CONFIG_FLASH=y
-
-# m2l31x has 4 MPU regions and can't afford to enable CONFIG_USERSPACE
-CONFIG_USERSPACE=n
