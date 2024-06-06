@@ -68,6 +68,17 @@ static inline void pm_state_notify(bool entering_state)
 	k_spin_unlock(&pm_notifier_lock, pm_notifier_key);
 }
 
+static inline int32_t ticks_expiring_sooner(int32_t ticks1, int32_t ticks2)
+{
+	/*
+	 * Ticks are relative numbers that defines the number of ticks
+	 * until the next event.
+	 * Its maximum value is K_TICKS_FOREVER ((uint32_t)-1)
+	 * We need to find out which one is the closest
+	 */
+	return (ticks1 < ticks2) ? ticks1 : ticks2;
+}
+
 void pm_system_resume(void)
 {
 	uint8_t id = _current_cpu->id;
@@ -117,12 +128,24 @@ bool pm_state_force(uint8_t cpu, const struct pm_state_info *info)
 	return true;
 }
 
-bool pm_system_suspend(int32_t ticks)
+bool pm_system_suspend(int32_t kernel_ticks)
 {
 	uint8_t id = _current_cpu->id;
 	k_spinlock_key_t key;
+	int32_t ticks, low_latency_events_ticks;
 
-	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, ticks);
+	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, kernel_ticks);
+
+#ifdef CONFIG_PM_LOW_LATENCY_EVENTS
+	/*
+	 * In this case CPU needs to be fully wake up before the event is
+	 * triggered. We need to find out first the ticks to the next event
+	 */
+	low_latency_events_ticks = pm_policy_next_low_latency_event_ticks();
+	ticks = ticks_expiring_sooner(kernel_ticks, low_latency_events_ticks);
+#else
+	ticks = kernel_ticks;
+#endif
 
 	key = k_spin_lock(&pm_forced_state_lock);
 	if (z_cpus_pm_forced_state[id].state != PM_STATE_ACTIVE) {

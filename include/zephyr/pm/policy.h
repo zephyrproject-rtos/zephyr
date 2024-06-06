@@ -68,6 +68,9 @@ struct pm_policy_event {
 	/** @cond INTERNAL_HIDDEN */
 	sys_snode_t node;
 	uint32_t value_cyc;
+#ifdef CONFIG_PM_LOW_LATENCY_EVENTS
+	bool low_latency;
+#endif
 	/** @endcond */
 };
 
@@ -246,6 +249,49 @@ void pm_policy_device_power_lock_get(const struct device *dev);
  */
 void pm_policy_device_power_lock_put(const struct device *dev);
 
+#ifdef CONFIG_PM_LOW_LATENCY_EVENTS
+/**
+ * @brief Register a low latency event.
+ *
+ * This is same as pm_policy_event_register but adds a low latency property
+ * to the event. The system will make sure to be up when the event occurs.
+ * For more precision, it takes as argument the absolute time in cycles
+ *
+ * @note It is mandatory to unregister events once they have happened by using
+ * pm_policy_event_unregister(). Not doing so is an API contract violation,
+ * because the system would continue to consider them as valid events in the
+ * *far* future, that is, after the cycle counter rollover.
+ *
+ * @param evt Event.
+ * @param cycle When the event will occur, in absolute time.
+ *
+ * @see pm_policy_event_unregister
+ */
+void pm_policy_low_latency_event_register(struct pm_policy_event *evt,
+					  uint32_t cycle);
+
+/**
+ * @brief Update a low latency event.
+ *
+ * @param evt Event.
+ * @param cycle When the event will occur, in absolute time.
+ * @param low_latency Whether the event is still low latency or not
+ *
+ * @see pm_policy_event_register
+ */
+
+void pm_policy_low_latency_event_update(struct pm_policy_event *evt,
+					bool low_latency, uint32_t cycle);
+
+/**
+ * @brief Returns the ticks until the next low latency events
+ *
+ * If a low latency event is registred, it will return the number of ticks
+ * until the next low latency event, otherwise it returns -1
+ */
+int32_t pm_policy_next_low_latency_event_ticks(void);
+#endif /* CONFIG_PM_LOW_LATENCY_EVENTS */
+
 #else
 static inline void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 {
@@ -315,6 +361,26 @@ static inline void pm_policy_device_power_lock_put(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
+
+#ifndef CONFIG_PM_LOW_LATENCY_EVENTS
+static inline void pm_policy_low_latency_event_register(struct pm_policy_event *evt,
+							uint32_t cycle)
+{
+	ARG_UNUSED(evt);
+	ARG_UNUSED(cycle);
+}
+
+static inline void pm_policy_low_latency_event_update(struct pm_policy_event *evt,
+						      bool low_latency, uint32_t cycle);
+{
+	ARG_UNUSED(evt);
+	ARG_UNUSED(low_latency);
+	ARG_UNUSED(cycle);
+}
+
+static inline int32_t pm_policy_next_low_latency_event_ticks(void) {}
+
+#endif /* CONFIG_PM_LOW_LATENCY_EVENTS */
 
 #endif /* CONFIG_PM */
 
