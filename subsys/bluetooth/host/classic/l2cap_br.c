@@ -1075,6 +1075,9 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		/* Disconnect link when security rules were violated */
 		if (result == BT_L2CAP_BR_ERR_SEC_BLOCK) {
 			bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+		} else if (result == BT_L2CAP_BR_PENDING) {
+			/* Recover the ident when conn is pending */
+			br_chan->ident = ident;
 		}
 
 		return;
