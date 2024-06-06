@@ -4450,15 +4450,19 @@ West:
     - "platform: Raspberry Pi Pico"
 
 "West project: hal_silabs":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - jhedberg
   collaborators:
+    - jerome-pouiller
+    - asmellby
     - sateeshkotapati
     - yonsch
     - mnkp
   files:
     - modules/Kconfig.silabs
   labels:
-    - "platform: SiLabs"
+    - "platform: Silabs"
 
 "West project: hal_st":
   status: maintained
