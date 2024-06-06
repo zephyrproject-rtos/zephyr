@@ -2922,11 +2922,16 @@ next_state:
 			verdict = NET_OK;
 		} else {
 			conn->send_options.mss_found = true;
-			tcp_out(conn, SYN);
-			conn->send_options.mss_found = false;
-			conn_seq(conn, + 1);
-			next = TCP_SYN_SENT;
-			tcp_conn_ref(conn);
+			ret = tcp_out_ext(conn, SYN, NULL /* no data */, conn->seq);
+			if (ret < 0) {
+				do_close = true;
+				close_status = ret;
+			} else {
+				conn->send_options.mss_found = false;
+				conn_seq(conn, + 1);
+				next = TCP_SYN_SENT;
+				tcp_conn_ref(conn);
+			}
 		}
 		break;
 	case TCP_SYN_RECEIVED:
@@ -3918,8 +3923,11 @@ int net_tcp_connect(struct net_context *context,
 	(void)tcp_in(conn, NULL);
 
 	if (!IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)) {
-		if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) &&
-		    conn->state != TCP_ESTABLISHED) {
+		if (conn->state == TCP_UNUSED || conn->state == TCP_CLOSED) {
+			ret = -errno;
+			goto out;
+		} else if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) &&
+			   conn->state != TCP_ESTABLISHED) {
 			ret = -EINPROGRESS;
 			goto out;
 		} else if (k_sem_take(&conn->connect_sem, timeout) != 0 &&
