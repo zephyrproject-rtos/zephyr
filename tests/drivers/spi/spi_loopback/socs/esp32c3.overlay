@@ -35,6 +35,10 @@
 };
 
 &spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	dma-enabled;
 	pinctrl-0 = <&spim2_loopback>;
+	pinctrl-names = "default";
+	status = "okay";
 };
