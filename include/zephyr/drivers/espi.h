@@ -140,7 +140,7 @@ enum espi_bus_event {
 	 * eSPI drivers should convey the peripheral type.
 	 */
 	ESPI_BUS_PERIPHERAL_NOTIFICATION    = BIT(4),
-	ESPI_BUS_SAF_NOTIFICATION           = BIT(5),
+	ESPI_BUS_TAF_NOTIFICATION           = BIT(5),
 };
 
 
