@@ -38,5 +38,3 @@ void arch_sched_broadcast_ipi(void)
 {
 	z_loapic_ipi(0, LOAPIC_ICR_IPI_OTHERS, CONFIG_SCHED_IPI_VECTOR);
 }
-
-SYS_INIT(arch_smp_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
