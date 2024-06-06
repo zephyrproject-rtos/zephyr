@@ -25,7 +25,7 @@ config TELINK_W91_WIFI_EVENT_THREAD_STACK_SIZE
 
 config TELINK_W91_WIFI_EVENT_THREAD_PRIORITY
 	int "WIFI event thread priority"
-	default 20
+	default 10
 	help
 	  WIFI event thread priority.
 
