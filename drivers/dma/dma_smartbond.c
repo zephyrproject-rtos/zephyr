@@ -343,6 +343,7 @@ static bool dma_channel_update_dreq_mode(enum dma_channel_direction direction,
 		DMA_CTRL_REG_SET_FIELD(DREQ_MODE, *dma_ctrl_reg, DREQ_MODE_SW);
 		break;
 	case PERIPHERAL_TO_MEMORY:
+	case MEMORY_TO_PERIPHERAL:
 	case PERIPHERAL_TO_PERIPHERAL:
 		/* DMA channels starts by peripheral DMA req */
 		DMA_CTRL_REG_SET_FIELD(DREQ_MODE, *dma_ctrl_reg, DREQ_MODE_HW);
