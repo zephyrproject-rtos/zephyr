@@ -9,6 +9,7 @@ tests:
       - cy8cproto_063_ble
       - cy8cproto_062_4343w
       - nrf52840dk/nrf52840
+      - nrf54l15pdk/nrf54l15/cpuapp
     integration_platforms:
       - nrf52840dk/nrf52840
     harness: console
