@@ -355,10 +355,6 @@ int bt_ssp_start_security(struct bt_conn *conn)
 		return -EBUSY;
 	}
 
-	if (conn->required_sec_level > BT_SECURITY_L3) {
-		return -ENOTSUP;
-	}
-
 	if (get_io_capa() == BT_IO_NO_INPUT_OUTPUT &&
 	    conn->required_sec_level > BT_SECURITY_L2) {
 		return -EINVAL;
