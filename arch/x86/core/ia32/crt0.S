@@ -60,7 +60,7 @@
 	 * Until we enable these page tables, only physical memory addresses
 	 * work.
 	 */
-	movl	$Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %eax
+	movl	$K_MEM_PHYS_ADDR(z_x86_kernel_ptables), %eax
 	movl	%eax, %cr3
 
 #ifdef CONFIG_X86_PAE
@@ -126,7 +126,7 @@ SECTION_FUNC(BOOT_TEXT, __start)
 	 */
 #if CONFIG_SET_GDT
 	/* load 32-bit operand size GDT */
-	lgdt	Z_MEM_PHYS_ADDR(_gdt_rom)
+	lgdt	K_MEM_PHYS_ADDR(_gdt_rom)
 
 	/* If we set our own GDT, update the segment registers as well.
 	 */
@@ -138,7 +138,7 @@ SECTION_FUNC(BOOT_TEXT, __start)
 	movw	%ax, %fs	/* Zero FS */
 	movw	%ax, %gs	/* Zero GS */
 
-	ljmp	$CODE_SEG, $Z_MEM_PHYS_ADDR(__csSet)	/* set CS = 0x08 */
+	ljmp	$CODE_SEG, $K_MEM_PHYS_ADDR(__csSet)	/* set CS = 0x08 */
 
 __csSet:
 #endif /* CONFIG_SET_GDT */
@@ -180,7 +180,8 @@ __csSet:
 	andl	$~0x400, %eax		/* CR4[OSXMMEXCPT] = 0 */
 	movl	%eax, %cr4		/* move EAX to CR4 */
 
-	ldmxcsr Z_MEM_PHYS_ADDR(_sse_mxcsr_default_value)   /* initialize SSE control/status reg */
+	/* initialize SSE control/status reg */
+	ldmxcsr K_MEM_PHYS_ADDR(_sse_mxcsr_default_value)
 
   #endif /* CONFIG_X86_SSE */
 
@@ -199,7 +200,7 @@ __csSet:
 	 */
 #ifdef CONFIG_INIT_STACKS
 	movl $0xAAAAAAAA, %eax
-	leal Z_MEM_PHYS_ADDR(z_interrupt_stacks), %edi
+	leal K_MEM_PHYS_ADDR(z_interrupt_stacks), %edi
 #ifdef CONFIG_X86_STACK_PROTECTION
 	addl $4096, %edi
 #endif
@@ -208,7 +209,7 @@ __csSet:
 	rep  stosl
 #endif
 
-	movl	$Z_MEM_PHYS_ADDR(z_interrupt_stacks), %esp
+	movl	$K_MEM_PHYS_ADDR(z_interrupt_stacks), %esp
 #ifdef CONFIG_X86_STACK_PROTECTION
 	/* In this configuration, all stacks, including IRQ stack, are declared
 	 * with a 4K non-present guard page preceding the stack buffer
@@ -347,9 +348,9 @@ _gdt:
 	 * descriptor here */
 
 	/* Limit on GDT */
-	.word Z_MEM_PHYS_ADDR(_gdt_rom_end) - Z_MEM_PHYS_ADDR(_gdt_rom) - 1
+	.word K_MEM_PHYS_ADDR(_gdt_rom_end) - K_MEM_PHYS_ADDR(_gdt_rom) - 1
 	/* table address: _gdt_rom */
-	.long Z_MEM_PHYS_ADDR(_gdt_rom)
+	.long K_MEM_PHYS_ADDR(_gdt_rom)
 	.word   0x0000
 
 	/* Entry 1 (selector=0x0008): Code descriptor: DPL0 */

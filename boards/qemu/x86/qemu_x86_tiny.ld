@@ -245,7 +245,7 @@ MEMORY
 	*mpsc_pbuf.c.obj(.##lsect)					\
 	*mpsc_pbuf.c.obj(.##lsect.*)
 
-epoint = Z_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY);
+epoint = K_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY);
 ENTRY(epoint)
 
 /* SECTIONS definitions */

@@ -313,7 +313,7 @@ static inline uintptr_t get_entry_phys(pentry_t entry, int level)
 __pinned_func
 static inline pentry_t *next_table(pentry_t entry, int level)
 {
-	return z_mem_virt_addr(get_entry_phys(entry, level));
+	return k_mem_virt_addr(get_entry_phys(entry, level));
 }
 
 /* Number of table entries at this level */
@@ -416,12 +416,12 @@ void z_x86_tlb_ipi(const void *arg)
 	 * if KPTI is turned on
 	 */
 	ptables_phys = z_x86_cr3_get();
-	__ASSERT(ptables_phys == z_mem_phys_addr(&z_x86_kernel_ptables), "");
+	__ASSERT(ptables_phys == k_mem_phys_addr(&z_x86_kernel_ptables), "");
 #else
 	/* We might have been moved to another memory domain, so always invoke
 	 * z_x86_thread_page_tables_get() instead of using current CR3 value.
 	 */
-	ptables_phys = z_mem_phys_addr(z_x86_thread_page_tables_get(_current));
+	ptables_phys = k_mem_phys_addr(z_x86_thread_page_tables_get(_current));
 #endif
 	/*
 	 * In the future, we can consider making this smarter, such as
@@ -661,7 +661,7 @@ static void dump_ptables(pentry_t *table, uint8_t *base, int level)
 #endif
 
 	printk("%s at %p (0x%" PRIxPTR "): ", info->name, table,
-	       z_mem_phys_addr(table));
+	       k_mem_phys_addr(table));
 	if (level == 0) {
 		printk("entire address space\n");
 	} else {
@@ -826,7 +826,7 @@ static inline pentry_t pte_finalize_value(pentry_t val, bool user_table,
 {
 #ifdef CONFIG_X86_KPTI
 	static const uintptr_t shared_phys_addr =
-		Z_MEM_PHYS_ADDR(POINTER_TO_UINT(&z_shared_kernel_page_start));
+		K_MEM_PHYS_ADDR(POINTER_TO_UINT(&z_shared_kernel_page_start));
 
 	if (user_table && (val & MMU_US) == 0 && (val & MMU_P) != 0 &&
 	    get_entry_phys(val, level) != shared_phys_addr) {
@@ -1720,7 +1720,7 @@ static int copy_page_table(pentry_t *dst, pentry_t *src, int level)
 			 * cast needed for PAE case where sizeof(void *) and
 			 * sizeof(pentry_t) are not the same.
 			 */
-			dst[i] = ((pentry_t)z_mem_phys_addr(child_dst) |
+			dst[i] = ((pentry_t)k_mem_phys_addr(child_dst) |
 				  INT_FLAGS);
 
 			ret = copy_page_table(child_dst,
@@ -1924,11 +1924,11 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	 * z_x86_current_stack_perms()
 	 */
 	if (is_migration) {
-		old_ptables = z_mem_virt_addr(thread->arch.ptables);
+		old_ptables = k_mem_virt_addr(thread->arch.ptables);
 		set_stack_perms(thread, domain->arch.ptables);
 	}
 
-	thread->arch.ptables = z_mem_phys_addr(domain->arch.ptables);
+	thread->arch.ptables = k_mem_phys_addr(domain->arch.ptables);
 	LOG_DBG("set thread %p page tables to 0x%" PRIxPTR, thread,
 		thread->arch.ptables);
 
