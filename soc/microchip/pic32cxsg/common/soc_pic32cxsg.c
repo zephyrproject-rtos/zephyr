@@ -14,29 +14,29 @@
 #include <zephyr/kernel.h>
 #include <soc.h>
 
-#define SAM0_DFLL_FREQ_HZ			(48000000U)
-#define SAM0_DPLL_FREQ_MIN_HZ		(96000000U)
-#define SAM0_DPLL_FREQ_MAX_HZ		(200000000U)
+#define PIC32CXSG_DFLL_FREQ_HZ			(48000000U)
+#define PIC32CXSG_DPLL_FREQ_MIN_HZ		(96000000U)
+#define PIC32CXSG_DPLL_FREQ_MAX_HZ		(200000000U)
 
 #if CONFIG_SOC_MICROCHIP_PIC32CXSG_XOSC32K_AS_MAIN
 static void osc32k_init(void)
 {
-	OSC32KCTRL->XOSC32K.reg = OSC32KCTRL_XOSC32K_ENABLE | OSC32KCTRL_XOSC32K_XTALEN
-				| OSC32KCTRL_XOSC32K_EN32K | OSC32KCTRL_XOSC32K_RUNSTDBY
-				| OSC32KCTRL_XOSC32K_STARTUP(7);
+	OSC32KCTRL->XOSC32K.reg = OSC32KCTRL_XOSC32K_ENABLE(1) | OSC32KCTRL_XOSC32K_XTALEN(1)
+				| OSC32KCTRL_XOSC32K_EN32K(1) | OSC32KCTRL_XOSC32K_RUNSTDBY(1)
+				| OSC32KCTRL_XOSC32K_STARTUP(6); /* Microchip - was 7 which is a reserved value */
 
 	while (!OSC32KCTRL->STATUS.bit.XOSC32KRDY) {
 	}
 
 	GCLK->GENCTRL[1].reg = GCLK_GENCTRL_SRC(GCLK_SOURCE_XOSC32K)
-			     | GCLK_GENCTRL_RUNSTDBY | GCLK_GENCTRL_GENEN;
+			     | GCLK_GENCTRL_RUNSTDBY(1) | GCLK_GENCTRL_GENEN(1);
 
 }
 #elif CONFIG_SOC_MICROCHIP_PIC32CXSG_OSCULP32K_AS_MAIN
 static void osc32k_init(void)
 {
 	GCLK->GENCTRL[1].reg = GCLK_GENCTRL_SRC(GCLK_SOURCE_OSCULP32K)
-			     | GCLK_GENCTRL_RUNSTDBY | GCLK_GENCTRL_GENEN;
+			     | GCLK_GENCTRL_RUNSTDBY(1) | GCLK_GENCTRL_GENEN(1);
 }
 #else
 #error "No Clock Source selected."
@@ -45,7 +45,7 @@ static void osc32k_init(void)
 static void dpll_init(uint8_t n, uint32_t f_cpu)
 {
 	/* We source the DPLL from 32kHz GCLK1 */
-	const uint32_t LDR = ((f_cpu << 5) / SOC_ATMEL_SAM0_OSC32K_FREQ_HZ);
+	const uint32_t LDR = ((f_cpu << 5) / SOC_MICROCHIP_PIC32CXSG_OSC32K_FREQ_HZ);
 
 	/* disable the DPLL before changing the configuration */
 	OSCCTRL->Dpll[n].DPLLCTRLA.bit.ENABLE = 0;
@@ -62,10 +62,10 @@ static void dpll_init(uint8_t n, uint32_t f_cpu)
 
 	/* Without LBYPASS, startup takes very long, see errata section 2.13. */
 	OSCCTRL->Dpll[n].DPLLCTRLB.reg	= OSCCTRL_DPLLCTRLB_REFCLK_GCLK
-					| OSCCTRL_DPLLCTRLB_WUF
-					| OSCCTRL_DPLLCTRLB_LBYPASS;
+					| OSCCTRL_DPLLCTRLB_WUF(1)
+					| OSCCTRL_DPLLCTRLB_LBYPASS(1);
 
-	OSCCTRL->Dpll[n].DPLLCTRLA.reg = OSCCTRL_DPLLCTRLA_ENABLE;
+	OSCCTRL->Dpll[n].DPLLCTRLA.reg = OSCCTRL_DPLLCTRLA_ENABLE(1);
 
 	while (OSCCTRL->Dpll[n].DPLLSYNCBUSY.reg) {
 	}
@@ -77,14 +77,14 @@ static void dpll_init(uint8_t n, uint32_t f_cpu)
 
 static void dfll_init(void)
 {
-	uint32_t reg = OSCCTRL_DFLLCTRLB_QLDIS
+	uint32_t reg = OSCCTRL_DFLLCTRLB_QLDIS(1)
 #ifdef OSCCTRL_DFLLCTRLB_WAITLOCK
-		     | OSCCTRL_DFLLCTRLB_WAITLOCK
+		     | OSCCTRL_DFLLCTRLB_WAITLOCK(1)
 #endif
 	;
 
 	OSCCTRL->DFLLCTRLB.reg = reg;
-	OSCCTRL->DFLLCTRLA.reg = OSCCTRL_DFLLCTRLA_ENABLE;
+	OSCCTRL->DFLLCTRLA.reg = OSCCTRL_DFLLCTRLA_ENABLE(1);
 
 	while (!OSCCTRL->STATUS.bit.DFLLRDY) {
 	}
@@ -101,16 +101,16 @@ static void gclk_connect(uint8_t gclk, uint8_t src, uint8_t div)
 {
 	GCLK->GENCTRL[gclk].reg = GCLK_GENCTRL_SRC(src)
 				| GCLK_GENCTRL_DIV(div)
-				| GCLK_GENCTRL_GENEN;
+				| GCLK_GENCTRL_GENEN(1);
 }
 
 void z_arm_platform_init(void)
 {
 	uint8_t dfll_div;
 
-	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC < SAM0_DFLL_FREQ_HZ) {
+	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC < PIC32CXSG_DFLL_FREQ_HZ) {
 		dfll_div = 3;
-	} else if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC < SAM0_DPLL_FREQ_MIN_HZ) {
+	} else if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC < PIC32CXSG_DPLL_FREQ_MIN_HZ) {
 		dfll_div = 2;
 	} else {
 		dfll_div = 1;

@@ -107,7 +107,7 @@ child-binding:
         description: |
           An array of pins sharing the pic32cxsg group properties. The pins should
           be defined using pre-defined macros or, alternatively, using the
-          PIC32CXSG_PINMUX utility macros depending on the pinmux model used by the
+          SAM_PINMUX utility macros depending on the pinmux model used by the
           SoC series.
       drive-strength:
         enum:

@@ -165,7 +165,7 @@ PWM
 ===
 
 The PIC32CXSG61 MCU has 5 TCC based PWM units with up to 6 outputs each and a period
-of 24 bits or 16 bits.  If :code:`CONFIG_PWM_SAM0_TCC` is enabled then LED0 is
+of 24 bits or 16 bits.  If :code:`CONFIG_PWM_PIC32CXSG_TCC` is enabled then LED0 is
 driven by TCC0 instead of by GPIO.
 
 SPI Port
@@ -176,7 +176,7 @@ The PIC32CXSG61 MCU has 8 SERCOM based SPIs.
 I2C Port
 ========
 
-The PIC32CXSG61 MCU has 8 SERCOM based I2Cs. On the SAM Microchip PIC32CXSG61 Curiosity Ultra,
+The PIC32CXSG61 MCU has 8 SERCOM based I2Cs. On the Microchip PIC32CXSG61 Curiosity Ultra,
 SERCOM7 is connected to a AT24MAC402 EEPROM and SERCOM2 is connected to a TA100 Crypto
 Authentication device.
 

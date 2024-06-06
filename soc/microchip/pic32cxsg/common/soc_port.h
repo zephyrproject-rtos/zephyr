@@ -73,7 +73,7 @@
 #define SOC_PORT_FUNC_N                 (0xd << SOC_PORT_FUNC_POS)
 
 struct soc_port_pin {
-	port_group_registers_t *regs;   /** pointer to registers of the I/O Pin Controller */
+	PortGroup *regs;   /** pointer to registers of the I/O Pin Controller */
 	uint32_t pinum;    /** pin number */
 	uint32_t flags;    /** pin flags/attributes */
 };
@@ -83,7 +83,7 @@ struct soc_port_pin {
  *
  * Configure one pin muxing belonging to some PORT.
  *
- * @param pg   port_group_registers_t register
+ * @param pg   PortGroup register
  * @param pin  Pin number
  * @param func Pin Function
  */

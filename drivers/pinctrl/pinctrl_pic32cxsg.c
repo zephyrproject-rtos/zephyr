@@ -27,16 +27,16 @@ static void pinctrl_configure_pin(pinctrl_soc_pin_t pin)
 	struct soc_port_pin soc_pin;
 	uint8_t  port_idx, port_func;
 
-	port_idx = PIC32CXSG_PINMUX_PORT_GET(pin);
+	port_idx = SAM_PINMUX_PORT_GET(pin);
 	__ASSERT_NO_MSG(port_idx < ARRAY_SIZE(pic32cxsg_port_addrs));
-	port_func = PIC32CXSG_PINMUX_FUNC_GET(pin);
+	port_func = SAM_PINMUX_FUNC_GET(pin);
 
 	soc_pin.regs = (port_group_registers_t *) pic32cxsg_port_addrs[port_idx];
-	soc_pin.pinum = PIC32CXSG_PINMUX_PIN_GET(pin);
-	soc_pin.flags = PIC32CXSG_PINCTRL_FLAGS_GET(pin) << SOC_PORT_FLAGS_POS;
+	soc_pin.pinum = SAM_PINMUX_PIN_GET(pin);
+	soc_pin.flags = SAM_PINCTRL_FLAGS_GET(pin) << SOC_PORT_FLAGS_POS;
 
-	if (port_func == PIC32CXSG_PINMUX_FUNC_periph) {
-		soc_pin.flags |= (PIC32CXSG_PINMUX_PERIPH_GET(pin)
+	if (port_func == SAM_PINMUX_FUNC_periph) {
+		soc_pin.flags |= (SAM_PINMUX_PERIPH_GET(pin)
 				  << SOC_PORT_FUNC_POS)
 			      |  SOC_PORT_PMUXEN_ENABLE;
 	}

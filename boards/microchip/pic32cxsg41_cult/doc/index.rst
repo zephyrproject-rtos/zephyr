@@ -164,7 +164,7 @@ PWM
 ===
 
 The PIC32CXSG41 MCU has 5 TCC based PWM units with up to 6 outputs each and a period
-of 24 bits or 16 bits.  If :code:`CONFIG_PWM_SAM0_TCC` is enabled then LED0 is
+of 24 bits or 16 bits.  If :code:`CONFIG_PWM_PIC32CXSG_TCC` is enabled then LED0 is
 driven by TCC0 instead of by GPIO.
 
 SPI Port

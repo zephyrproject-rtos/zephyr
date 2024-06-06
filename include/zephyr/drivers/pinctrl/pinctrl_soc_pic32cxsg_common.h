@@ -25,7 +25,7 @@ extern "C" {
 /** @brief Type for PIC32CXSG pin.
  *
  * Bits:
- * -  0-15: PIC32CX pinmux bit field (@ref PIC32CXSG_PINMUX).
+ * -  0-15: PIC32CX pinmux bit field (@ref SAM_PINMUX).
  * - 16-21: Pin flags bit field (@ref PIC32CXSG_PINFLAGS).
  * - 22-31: Reserved.
  */
@@ -40,18 +40,18 @@ typedef uint32_t pinctrl_soc_pin_t;
  */
 #if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CXSG)
 #define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)				\
-	((DT_PROP_BY_IDX(node_id, prop, idx)   << PIC32CXSG_PINCTRL_PINMUX_POS)	\
-	 | (DT_PROP(node_id, bias_pull_up)     << PIC32CXSG_PINCTRL_PULLUP_POS)	\
-	 | (DT_PROP(node_id, bias_pull_down)   << PIC32CXSG_PINCTRL_PULLDOWN_POS)	\
-	 | (DT_PROP(node_id, drive_open_drain) << PIC32CXSG_PINCTRL_OPENDRAIN_POS)	\
+	((DT_PROP_BY_IDX(node_id, prop, idx)   << SAM_PINCTRL_PINMUX_POS)	\
+	 | (DT_PROP(node_id, bias_pull_up)     << SAM_PINCTRL_PULLUP_POS)	\
+	 | (DT_PROP(node_id, bias_pull_down)   << SAM_PINCTRL_PULLDOWN_POS)	\
+	 | (DT_PROP(node_id, drive_open_drain) << SAM_PINCTRL_OPENDRAIN_POS)	\
 	),
 #else /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CXSG */
 #define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)				  \
-	((DT_PROP_BY_IDX(node_id, prop, idx)     << PIC32CXSG_PINCTRL_PINMUX_POS)	  \
-	 | (DT_PROP(node_id, bias_pull_up)       << PIC32CXSG_PINCTRL_PULLUP_POS)	  \
-	 | (DT_PROP(node_id, bias_pull_down)     << PIC32CXSG_PINCTRL_PULLDOWN_POS)	  \
-	 | (DT_PROP(node_id, input_enable)       << PIC32CXSG_PINCTRL_INPUTENABLE_POS)  \
-	 | (DT_PROP(node_id, output_enable)      << PIC32CXSG_PINCTRL_OUTPUTENABLE_POS) \
+	((DT_PROP_BY_IDX(node_id, prop, idx)     << SAM_PINCTRL_PINMUX_POS)	  \
+	 | (DT_PROP(node_id, bias_pull_up)       << SAM_PINCTRL_PULLUP_POS)	  \
+	 | (DT_PROP(node_id, bias_pull_down)     << SAM_PINCTRL_PULLDOWN_POS)	  \
+	 | (DT_PROP(node_id, input_enable)       << SAM_PINCTRL_INPUTENABLE_POS)  \
+	 | (DT_PROP(node_id, output_enable)      << SAM_PINCTRL_OUTPUTENABLE_POS) \
 	 | (DT_ENUM_IDX(node_id, drive_strength) << PIC32CXV_PINCTRL_DRIVESTRENGTH_POS)\
 	),
 #endif
@@ -77,22 +77,22 @@ typedef uint32_t pinctrl_soc_pin_t;
  * @{
  */
 
-#define PIC32CXSG_PINCTRL_FLAGS_DEFAULT       (0U)
-#define PIC32CXSG_PINCTRL_FLAGS_POS           (0U)
-#define PIC32CXSG_PINCTRL_FLAGS_MASK          (0x3F << PIC32CXSG_PINCTRL_FLAGS_POS)
-#define PIC32CXSG_PINCTRL_FLAG_MASK           (1U)
-#define PIC32CXSG_PINCTRL_PULLUP_POS          (PIC32CXSG_PINCTRL_FLAGS_POS)
-#define PIC32CXSG_PINCTRL_PULLUP              (1U << PIC32CXSG_PINCTRL_PULLUP_POS)
-#define PIC32CXSG_PINCTRL_PULLDOWN_POS        (PIC32CXSG_PINCTRL_PULLUP_POS + 1U)
-#define PIC32CXSG_PINCTRL_PULLDOWN            (1U << PIC32CXSG_PINCTRL_PULLDOWN_POS)
-#define PIC32CXSG_PINCTRL_OPENDRAIN_POS       (PIC32CXSG_PINCTRL_PULLDOWN_POS + 1U)
-#define PIC32CXSG_PINCTRL_OPENDRAIN           (1U << PIC32CXSG_PINCTRL_OPENDRAIN_POS)
-#define PIC32CXSG_PINCTRL_INPUTENABLE_POS     (PIC32CXSG_PINCTRL_OPENDRAIN_POS + 1U)
-#define PIC32CXSG_PINCTRL_INPUTENABLE         (1U << PIC32CXSG_PINCTRL_INPUTENABLE_POS)
-#define PIC32CXSG_PINCTRL_OUTPUTENABLE_POS    (PIC32CXSG_PINCTRL_INPUTENABLE_POS + 1U)
-#define PIC32CXSG_PINCTRL_OUTPUTENABLE        (1U << PIC32CXSG_PINCTRL_OUTPUTENABLE_POS)
-#define PIC32CXSG_PINCTRL_DRIVESTRENGTH_POS   (PIC32CXSG_PINCTRL_OUTPUTENABLE_POS + 1U)
-#define PIC32CXSG_PINCTRL_DRIVESTRENGTH       (1U << PIC32CXSG_PINCTRL_DRIVESTRENGTH_POS)
+#define SAM_PINCTRL_FLAGS_DEFAULT       (0U)
+#define SAM_PINCTRL_FLAGS_POS           (0U)
+#define SAM_PINCTRL_FLAGS_MASK          (0x3F << SAM_PINCTRL_FLAGS_POS)
+#define SAM_PINCTRL_FLAG_MASK           (1U)
+#define SAM_PINCTRL_PULLUP_POS          (SAM_PINCTRL_FLAGS_POS)
+#define SAM_PINCTRL_PULLUP              (1U << SAM_PINCTRL_PULLUP_POS)
+#define SAM_PINCTRL_PULLDOWN_POS        (SAM_PINCTRL_PULLUP_POS + 1U)
+#define SAM_PINCTRL_PULLDOWN            (1U << SAM_PINCTRL_PULLDOWN_POS)
+#define SAM_PINCTRL_OPENDRAIN_POS       (SAM_PINCTRL_PULLDOWN_POS + 1U)
+#define SAM_PINCTRL_OPENDRAIN           (1U << SAM_PINCTRL_OPENDRAIN_POS)
+#define SAM_PINCTRL_INPUTENABLE_POS     (SAM_PINCTRL_OPENDRAIN_POS + 1U)
+#define SAM_PINCTRL_INPUTENABLE         (1U << SAM_PINCTRL_INPUTENABLE_POS)
+#define SAM_PINCTRL_OUTPUTENABLE_POS    (SAM_PINCTRL_INPUTENABLE_POS + 1U)
+#define SAM_PINCTRL_OUTPUTENABLE        (1U << SAM_PINCTRL_OUTPUTENABLE_POS)
+#define SAM_PINCTRL_DRIVESTRENGTH_POS   (SAM_PINCTRL_OUTPUTENABLE_POS + 1U)
+#define SAM_PINCTRL_DRIVESTRENGTH       (1U << SAM_PINCTRL_DRIVESTRENGTH_POS)
 
 /** @} */
 
@@ -102,11 +102,11 @@ typedef uint32_t pinctrl_soc_pin_t;
  * @param pincfg pinctrl_soc_pin_t bit field value.
  * @param pos    attribute/flags bit position (@ref PIC32CXSG_PINFLAGS).
  */
-#define PIC32CXSG_PINCTRL_FLAG_GET(pincfg, pos) \
-	(((pincfg) >> pos) & PIC32CXSG_PINCTRL_FLAG_MASK)
+#define SAM_PINCTRL_FLAG_GET(pincfg, pos) \
+	(((pincfg) >> pos) & SAM_PINCTRL_FLAG_MASK)
 
-#define PIC32CXSG_PINCTRL_FLAGS_GET(pincfg) \
-	(((pincfg) >> PIC32CXSG_PINCTRL_FLAGS_POS) & PIC32CXSG_PINCTRL_FLAGS_MASK)
+#define SAM_PINCTRL_FLAGS_GET(pincfg) \
+	(((pincfg) >> SAM_PINCTRL_FLAGS_POS) & SAM_PINCTRL_FLAGS_MASK)
 
 #ifdef __cplusplus
 }
