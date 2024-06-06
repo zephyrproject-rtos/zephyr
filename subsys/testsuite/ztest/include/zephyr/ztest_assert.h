@@ -390,6 +390,16 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
 	zassert(memcmp(buf, exp, size) == 0, #buf " not equal to " #exp, ##__VA_ARGS__)
 
 /**
+ * @brief Assert that 2 strings have the same contents
+ *
+ * @param s1 The first string
+ * @param s2 The second string
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zassert_str_equal(s1, s2, ...)                                                     \
+	zassert(strcmp(s1, s2) == 0, #s1 " not equal to " #s2, ##__VA_ARGS__)
+
+/**
  * @}
  */
 
@@ -558,6 +568,16 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
 	zassume(memcmp(buf, exp, size) == 0, #buf " not equal to " #exp, ##__VA_ARGS__)
 
 /**
+ * @brief Assumes that 2 strings have the same contents
+ *
+ * @param s1 The first string
+ * @param s2 The second string
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zassume_str_equal(s1, s2, ...)                                                     \
+	zassume(strcmp(s1, s2) == 0, #s1 " not equal to " #s2, ##__VA_ARGS__)
+
+/**
  * @}
  */
 
@@ -690,6 +710,17 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
  */
 #define zexpect_mem_equal(buf, exp, size, ...)                                                     \
 	zexpect(memcmp(buf, exp, size) == 0, #buf " not equal to " #exp, ##__VA_ARGS__)
+
+/**
+ * @brief Expect that 2 strings have the same contents, otherwise mark test as failed but
+ * continue its execution.
+ *
+ * @param s1 The first string
+ * @param s2 The second string
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zexpect_str_equal(s1, s2, ...)                                                     \
+	zexpect(strcmp(s1, s2) == 0, #s1 " not equal to " #s2, ##__VA_ARGS__)
 
 /**
  * @}
