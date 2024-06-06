@@ -995,7 +995,7 @@ static int stm32_ospi_set_memorymap(const struct device *dev)
 		(stm32_ospi_hal_address_size(dev) == HAL_OSPI_ADDRESS_24_BITS)) {
 		/* OPI mode and 3-bytes address size not supported by memory */
 		LOG_ERR("OSPI_SPI_MODE in 3Bytes addressing is not supported");
-		return -EIO;
+		return -ENOTSUP;
 	}
 
 	/* Initialize the read command */
