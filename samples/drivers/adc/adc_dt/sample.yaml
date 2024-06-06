@@ -15,6 +15,7 @@ tests:
       - stm32h735g_disco
       - nrf51dk/nrf51822
       - nrf52840dk/nrf52840
+      - nrf54l15pdk/nrf54l15/cpuapp
       - mec172xevb_assy6906
       - gd32f350r_eval
       - gd32f450i_eval
