@@ -89,18 +89,20 @@ struct llext_symtable {
  *
  * @param x Symbol to export to extensions
  */
-#ifdef CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID
+#if defined(CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
 #define EXPORT_SYMBOL(x)							\
 	static const char Z_GENERIC_SECTION("llext_exports_strtab") __used	\
 		x ## _sym_name[] = STRINGIFY(x);				\
 	static const STRUCT_SECTION_ITERABLE(llext_const_symbol, x ## _sym) = {	\
-		.name = x ## _sym_name, .addr = (const void *)&x,			\
+		.name = x ## _sym_name, .addr = (const void *)&x,		\
 	}
-#else
+#elif defined(CONFIG_LLEXT)
 #define EXPORT_SYMBOL(x)							\
 	static const STRUCT_SECTION_ITERABLE(llext_const_symbol, x ## _sym) = {	\
 		.name = STRINGIFY(x), .addr = (const void *)&x,			\
 	}
+#else
+#define EXPORT_SYMBOL(x)
 #endif
 
 /**
