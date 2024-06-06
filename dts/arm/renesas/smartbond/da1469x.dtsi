@@ -386,7 +386,7 @@
 			status = "disabled";
 			dma-channels = <8>;
 			block-count = <1>;
-			#dma-cells = <0>;
+			#dma-cells = <2>;
 		};
 
 		memc: qspic2@34000000 {
