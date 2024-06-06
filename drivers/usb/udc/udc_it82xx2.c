@@ -19,6 +19,8 @@ LOG_MODULE_REGISTER(udc_it82xx2, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
 #define IT8XXX2_IS_EXTEND_ENDPOINT(n) (USB_EP_GET_IDX(n) >= 4)
 
+#define IT82xx2_STATE_OUT_SHARED_FIFO_BUSY 0
+
 /* Shared FIFO number including FIFO_1/2/3 */
 #define SHARED_FIFO_NUM 3
 
@@ -110,8 +112,8 @@ struct it82xx2_data {
 	struct k_thread thread_data;
 	struct k_sem suspended_sem;
 
-	/* FIFO_1/2/3 ready status */
-	bool fifo_ready[SHARED_FIFO_NUM];
+	/* shared OUT FIFO state */
+	atomic_t out_fifo_state;
 
 	/* FIFO_1/2/3 semaphore */
 	struct k_sem fifo_sem[SHARED_FIFO_NUM];
@@ -385,7 +387,7 @@ static void it8xxx2_usb_dc_wuc_init(const struct device *dev)
  */
 static const uint8_t ep_fifo_res[SHARED_FIFO_NUM] = {3, 1, 2};
 
-static int it82xx2_usb_fifo_ctrl(const struct device *dev, uint8_t ep)
+static int it82xx2_usb_fifo_ctrl(const struct device *dev, const uint8_t ep, const bool reset)
 {
 	const uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	const struct usb_it82xx2_config *config = dev->config;
@@ -397,6 +399,12 @@ static int it82xx2_usb_fifo_ctrl(const struct device *dev, uint8_t ep)
 	if (ep_idx == 0) {
 		LOG_ERR("Invalid endpoint 0x%x", ep);
 		return -EINVAL;
+	}
+
+	if (reset) {
+		ep_fifo_ctrl[fifon_ctrl] = 0x0;
+		ep_fifo_ctrl[fifon_ctrl + 1] = 0x0;
+		return 0;
 	}
 
 	if (USB_EP_DIR_IS_IN(ep)) {
@@ -538,9 +546,11 @@ static int it82xx2_ep_enable(const struct device *dev, struct udc_ep_config *con
 	if (ep_idx != 0) {
 		if (USB_EP_DIR_IS_IN(cfg->addr)) {
 			it82xx2_usb_set_ep_ctrl(dev, ep_idx, EP_IN_DIRECTION_SET, true);
+			/* clear fifo control registers */
+			it82xx2_usb_fifo_ctrl(dev, cfg->addr, true);
 		} else {
 			it82xx2_usb_set_ep_ctrl(dev, ep_idx, EP_IN_DIRECTION_SET, false);
-			it82xx2_usb_fifo_ctrl(dev, cfg->addr);
+			it82xx2_usb_fifo_ctrl(dev, cfg->addr, false);
 		}
 
 		switch (cfg->attributes & USB_EP_TRANSFER_TYPE_MASK) {
@@ -678,9 +688,8 @@ void it82xx2_dc_reset(const struct device *dev)
 	usb_regs->dc_address = DC_ADDR_NULL;
 	usb_regs->dc_interrupt_status = DC_NAK_SENT_INT | DC_SOF_RECEIVED;
 
-	priv->fifo_ready[0] = false;
-	priv->fifo_ready[1] = false;
-	priv->fifo_ready[2] = false;
+	atomic_clear_bit(&priv->out_fifo_state, IT82xx2_STATE_OUT_SHARED_FIFO_BUSY);
+
 	k_sem_give(&priv->fifo_sem[0]);
 	k_sem_give(&priv->fifo_sem[1]);
 	k_sem_give(&priv->fifo_sem[2]);
@@ -702,7 +711,7 @@ static int it82xx2_xfer_in_data(const struct device *dev, uint8_t ep, struct net
 		ff_regs[ep_idx].ep_tx_fifo_ctrl = FIFO_FORCE_EMPTY;
 	} else {
 		k_sem_take(&priv->fifo_sem[fifo_idx - 1], K_FOREVER);
-		it82xx2_usb_fifo_ctrl(dev, ep);
+		it82xx2_usb_fifo_ctrl(dev, ep, false);
 	}
 
 	len = MIN(buf->len, udc_mps_ep_size(ep_cfg));
@@ -715,10 +724,6 @@ static int it82xx2_xfer_in_data(const struct device *dev, uint8_t ep, struct net
 		it82xx2_usb_extend_ep_ctrl(dev, ep_idx, EP_READY_ENABLE, true);
 	}
 	it82xx2_usb_set_ep_ctrl(dev, fifo_idx, EP_READY_ENABLE, true);
-
-	if (ep_idx != 0) {
-		priv->fifo_ready[fifo_idx - 1] = true;
-	}
 
 	LOG_DBG("Writed %d packets to endpoint%d tx fifo", buf->len, ep_idx);
 
@@ -756,22 +761,39 @@ static int it82xx2_xfer_out_data(const struct device *dev, uint8_t ep, struct ne
 	return 0;
 }
 
+static uint16_t get_fifo_ctrl(const struct device *dev, const uint8_t fifo_idx)
+{
+	const struct usb_it82xx2_config *config = dev->config;
+	struct usb_it82xx2_regs *const usb_regs = config->base;
+	volatile uint8_t *ep_fifo_ctrl = usb_regs->fifo_regs[EP_EXT_REGS_BX].fifo_ctrl.ep_fifo_ctrl;
+	uint8_t fifon_ctrl;
+
+	if (fifo_idx == 0) {
+		LOG_ERR("Invalid fifo_idx 0x%x", fifo_idx);
+		return 0;
+	}
+
+	fifon_ctrl = (fifo_idx - 1) * 2;
+
+	return (ep_fifo_ctrl[fifon_ctrl + 1] << 8 | ep_fifo_ctrl[fifon_ctrl]);
+}
+
 static int work_handler_xfer_continue(const struct device *dev, uint8_t ep, struct net_buf *buf)
 {
+	const uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	int ret = 0;
+	uint8_t fifo_idx;
 
+	fifo_idx = ep_idx > 0 ? ep_fifo_res[ep_idx % SHARED_FIFO_NUM] : 0;
 	if (USB_EP_DIR_IS_OUT(ep)) {
-		const uint8_t ep_idx = USB_EP_GET_IDX(ep);
-		struct it82xx2_data *priv = udc_get_private(dev);
-		uint8_t fifo_idx;
-
-		fifo_idx = ep_idx > 0 ? ep_fifo_res[ep_idx % SHARED_FIFO_NUM] : 0;
 		it82xx2_usb_set_ep_ctrl(dev, ep_idx, EP_READY_ENABLE, true);
 		if (IT8XXX2_IS_EXTEND_ENDPOINT(ep_idx)) {
 			it82xx2_usb_set_ep_ctrl(dev, fifo_idx, EP_READY_ENABLE, true);
 		}
 		if (ep_idx != 0) {
-			priv->fifo_ready[fifo_idx - 1] = true;
+			struct it82xx2_data *priv = udc_get_private(dev);
+
+			atomic_set_bit(&priv->out_fifo_state, IT82xx2_STATE_OUT_SHARED_FIFO_BUSY);
 		}
 	} else {
 		ret = it82xx2_xfer_in_data(dev, ep, buf);
@@ -812,40 +834,74 @@ static int it82xx2_ctrl_feed_dout(const struct device *dev, const size_t length)
 	return 0;
 }
 
-static bool it82xx2_fake_token(const struct device *dev, uint8_t ep, uint8_t token_type)
+static bool get_extend_enable_bit(const struct device *dev, const uint8_t ep_idx)
+{
+	union epn_extend_ctrl1_reg *epn_ext_ctrl1 = NULL;
+	bool enable;
+
+	epn_ext_ctrl1 = (union epn_extend_ctrl1_reg *)it82xx2_get_ext_ctrl(dev, ep_idx, EP_ENABLE);
+	if (((ep_idx - 4) / 3 == 0)) {
+		enable = (epn_ext_ctrl1->fields.epn0_enable_bit != 0);
+	} else if (((ep_idx - 4) / 3 == 1)) {
+		enable = (epn_ext_ctrl1->fields.epn3_enable_bit != 0);
+	} else if (((ep_idx - 4) / 3 == 2)) {
+		enable = (epn_ext_ctrl1->fields.epn6_enable_bit != 0);
+	} else {
+		enable = (epn_ext_ctrl1->fields.epn9_enable_bit != 0);
+	}
+	return enable;
+}
+
+static bool get_extend_ready_bit(const struct device *dev, const uint8_t ep_idx)
+{
+	const struct usb_it82xx2_config *config = dev->config;
+	struct usb_it82xx2_regs *const usb_regs = config->base;
+	struct epn_ext_ctrl_regs *ext_ctrl =
+		usb_regs->fifo_regs[EP_EXT_REGS_DX].ext_0_3.epn_ext_ctrl;
+	int idx = ((ep_idx - 4) % 3) + 1;
+
+	return ((ext_ctrl[idx].epn_ext_ctrl2 & BIT((ep_idx - 4) / 3)) != 0);
+}
+
+static bool it82xx2_fake_token(const struct device *dev, const uint8_t ep, const uint8_t token_type)
 {
 	struct it82xx2_data *priv = udc_get_private(dev);
 	const uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint8_t fifo_idx;
-	bool is_fake = true;
+	bool is_fake = false;
 
-	if (ep_idx == 0) {
-		switch (token_type) {
-		case DC_IN_TRANS:
+	fifo_idx = ep_idx > 0 ? ep_fifo_res[ep_idx % SHARED_FIFO_NUM] : 0;
+
+	switch (token_type) {
+	case DC_IN_TRANS:
+		if (ep_idx == 0) {
 			if (priv->stall_is_sent) {
 				return true;
 			}
 			is_fake = !udc_ctrl_stage_is_data_in(dev) &&
 				  !udc_ctrl_stage_is_status_in(dev) &&
 				  !udc_ctrl_stage_is_no_data(dev);
-			break;
-		case DC_OUTDATA_TRANS:
+		} else {
+			if (get_fifo_ctrl(dev, fifo_idx) != BIT(ep_idx)) {
+				is_fake = true;
+			}
+		}
+		break;
+	case DC_OUTDATA_TRANS:
+		if (ep_idx == 0) {
 			is_fake = !udc_ctrl_stage_is_data_out(dev) &&
 				  !udc_ctrl_stage_is_status_out(dev);
-			break;
-		default:
-			LOG_ERR("Invalid token type");
-			break;
-		}
-	} else {
-		fifo_idx = ep_fifo_res[ep_idx % SHARED_FIFO_NUM];
-
-		if (!priv->fifo_ready[fifo_idx - 1]) {
-			is_fake = true;
 		} else {
-			priv->fifo_ready[fifo_idx - 1] = false;
-			is_fake = false;
+			if (!atomic_test_bit(&priv->out_fifo_state,
+					     IT82xx2_STATE_OUT_SHARED_FIFO_BUSY)) {
+				is_fake = true;
+			}
 		}
+		break;
+	default:
+		LOG_ERR("Invalid token type(%d)", token_type);
+		is_fake = true;
+		break;
 	}
 
 	return is_fake;
@@ -865,6 +921,7 @@ static inline int work_handler_in(const struct device *dev, uint8_t ep)
 
 	if (ep != USB_CONTROL_EP_IN) {
 		fifo_idx = ep_fifo_res[USB_EP_GET_IDX(ep) % SHARED_FIFO_NUM];
+		it82xx2_usb_fifo_ctrl(dev, ep, true);
 		k_sem_give(&priv->fifo_sem[fifo_idx - 1]);
 	}
 
@@ -911,7 +968,7 @@ static inline int work_handler_in(const struct device *dev, uint8_t ep)
 			 * Feed control OUT buffer for status stage.
 			 */
 			net_buf_unref(buf);
-			return it82xx2_ctrl_feed_dout(dev, 0U);
+			err = it82xx2_ctrl_feed_dout(dev, 0U);
 		}
 		return err;
 	}
@@ -980,9 +1037,9 @@ static inline int work_handler_out(const struct device *dev, uint8_t ep)
 {
 	struct net_buf *buf;
 	int err = 0;
-
 	const uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	const struct usb_it82xx2_config *config = dev->config;
+	struct it82xx2_data *priv = udc_get_private(dev);
 	struct usb_it82xx2_regs *const usb_regs = config->base;
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
 	struct udc_ep_config *ep_cfg;
@@ -1037,6 +1094,7 @@ static inline int work_handler_out(const struct device *dev, uint8_t ep)
 			err = udc_ctrl_submit_s_out_status(dev, buf);
 		}
 	} else {
+		atomic_clear_bit(&priv->out_fifo_state, IT82xx2_STATE_OUT_SHARED_FIFO_BUSY);
 		err = udc_submit_ep_event(dev, buf, 0);
 	}
 
@@ -1120,14 +1178,11 @@ static void it82xx2_usb_xfer_done(const struct device *dev)
 		usb_regs->fifo_regs[EP_EXT_REGS_DX].ext_0_3.epn_ext_ctrl;
 
 	for (uint8_t fifo_idx = 0; fifo_idx < 4; fifo_idx++) {
+		bool enable_bit, ready_bit;
 		uint8_t ep, ep_idx, ep_ctrl, transtype;
 
 		ep_ctrl = ep_regs[fifo_idx].ep_ctrl.value;
 		transtype = ep_regs[fifo_idx].ep_transtype_sts & DC_ALL_TRANS;
-
-		if (!(ep_ctrl & ENDPOINT_EN) || (ep_ctrl & ENDPOINT_RDY)) {
-			continue;
-		}
 
 		if (fifo_idx == 0) {
 			ep_idx = 0;
@@ -1141,12 +1196,30 @@ static void it82xx2_usb_xfer_done(const struct device *dev)
 			}
 		}
 
+		if (IT8XXX2_IS_EXTEND_ENDPOINT(ep_idx)) {
+			enable_bit = get_extend_enable_bit(dev, ep_idx);
+			ready_bit = get_extend_ready_bit(dev, ep_idx);
+		} else {
+			enable_bit = (ep_regs[ep_idx].ep_ctrl.fields.enable_bit != 0);
+			ready_bit = (ep_regs[ep_idx].ep_ctrl.fields.ready_bit != 0);
+		}
+
+		/* The enable bit is set and the ready bit is cleared if the
+		 * transaction is completed.
+		 */
+		if (!enable_bit || ready_bit) {
+			continue;
+		}
+
+		if (ep_idx != 0) {
+			if (it82xx2_fake_token(dev, ep_idx, transtype)) {
+				continue;
+			}
+		}
+
 		switch (transtype) {
 		case DC_SETUP_TRANS:
 			/* SETUP transaction done */
-			if (ep_idx != 0) {
-				break;
-			}
 			it82xx2_event_submit(dev, ep_idx, IT82xx2_EVT_SETUP_TOKEN);
 			break;
 		case DC_IN_TRANS:
@@ -1248,10 +1321,7 @@ static int it82xx2_enable(const struct device *dev)
 	k_sem_init(&priv->suspended_sem, 0, 1);
 	k_work_init_delayable(&priv->suspended_work, suspended_handler);
 
-	/* Initialize FIFO ready status */
-	priv->fifo_ready[0] = false;
-	priv->fifo_ready[1] = false;
-	priv->fifo_ready[2] = false;
+	atomic_clear_bit(&priv->out_fifo_state, IT82xx2_STATE_OUT_SHARED_FIFO_BUSY);
 
 	/* Initialize FIFO semaphore */
 	k_sem_init(&priv->fifo_sem[0], 1, 1);
