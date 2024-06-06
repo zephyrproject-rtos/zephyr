@@ -212,6 +212,8 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 	main_stack = (K_THREAD_STACK_BUFFER(z_main_stack) +
 		      K_THREAD_STACK_SIZEOF(z_main_stack));
 
+	irq_unlock(MSTATUS_IEN);
+
 	__asm__ volatile (
 	"mv sp, %0; jalr ra, %1, 0"
 	:
