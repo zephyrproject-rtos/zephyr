@@ -15,27 +15,40 @@ LOG_MODULE_REGISTER(usbd_sample_config);
 
 #define ZEPHYR_PROJECT_USB_VID		0x2fe3
 
+/* doc device instantiation start */
+/*
+ * Instantiate a context named sample_usbd using the default USB device
+ * controller, the Zephyr project vendor ID, and the sample product ID.
+ * Zephyr project vendor ID must not be used outside of Zephyr samples.
+ */
 USBD_DEVICE_DEFINE(sample_usbd,
 		   DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
 		   ZEPHYR_PROJECT_USB_VID, CONFIG_SAMPLE_USBD_PID);
+/* doc device instantiation end */
 
+/* doc string instantiation start */
 USBD_DESC_LANG_DEFINE(sample_lang);
 USBD_DESC_MANUFACTURER_DEFINE(sample_mfr, CONFIG_SAMPLE_USBD_MANUFACTURER);
 USBD_DESC_PRODUCT_DEFINE(sample_product, CONFIG_SAMPLE_USBD_PRODUCT);
 USBD_DESC_SERIAL_NUMBER_DEFINE(sample_sn);
+/* doc string instantiation end */
 
+/* doc configuration instantiation start */
 static const uint8_t attributes = (IS_ENABLED(CONFIG_SAMPLE_USBD_SELF_POWERED) ?
 				   USB_SCD_SELF_POWERED : 0) |
 				  (IS_ENABLED(CONFIG_SAMPLE_USBD_REMOTE_WAKEUP) ?
 				   USB_SCD_REMOTE_WAKEUP : 0);
 
+/* Full speed configuration */
 USBD_CONFIGURATION_DEFINE(sample_fs_config,
 			  attributes,
 			  CONFIG_SAMPLE_USBD_MAX_POWER);
 
+/* High speed configuration */
 USBD_CONFIGURATION_DEFINE(sample_hs_config,
 			  attributes,
 			  CONFIG_SAMPLE_USBD_MAX_POWER);
+/* doc configuration instantiation end */
 
 /*
  * This does not yet provide valuable information, but rather serves as an
@@ -73,6 +86,7 @@ struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
 {
 	int err;
 
+	/* doc add string descriptor start */
 	err = usbd_add_descriptor(&sample_usbd, &sample_lang);
 	if (err) {
 		LOG_ERR("Failed to initialize language descriptor (%d)", err);
@@ -96,6 +110,7 @@ struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
 		LOG_ERR("Failed to initialize SN descriptor (%d)", err);
 		return NULL;
 	}
+	/* doc add string descriptor end */
 
 	if (usbd_caps_speed(&sample_usbd) == USBD_SPEED_HS) {
 		err = usbd_add_configuration(&sample_usbd, USBD_SPEED_HS,
@@ -114,21 +129,26 @@ struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
 		sample_fix_code_triple(&sample_usbd, USBD_SPEED_HS);
 	}
 
+	/* doc configuration register start */
 	err = usbd_add_configuration(&sample_usbd, USBD_SPEED_FS,
 				     &sample_fs_config);
 	if (err) {
 		LOG_ERR("Failed to add Full-Speed configuration");
 		return NULL;
 	}
+	/* doc configuration register end */
 
+	/* doc functions register start */
 	err = usbd_register_all_classes(&sample_usbd, USBD_SPEED_FS, 1);
 	if (err) {
 		LOG_ERR("Failed to add register classes");
 		return NULL;
 	}
+	/* doc functions register end */
 
 	sample_fix_code_triple(&sample_usbd, USBD_SPEED_FS);
 
+	/* doc message callback register start */
 	if (msg_cb != NULL) {
 		err = usbd_msg_register_cb(&sample_usbd, msg_cb);
 		if (err) {
@@ -136,6 +156,7 @@ struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
 			return NULL;
 		}
 	}
+	/* doc message callback register end */
 
 	if (IS_ENABLED(CONFIG_SAMPLE_USBD_20_EXTENSION_DESC)) {
 		(void)usbd_device_set_bcd(&sample_usbd, USBD_SPEED_FS, 0x0201);
@@ -148,11 +169,13 @@ struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
 		}
 	}
 
+	/* doc device init start */
 	err = usbd_init(&sample_usbd);
 	if (err) {
 		LOG_ERR("Failed to initialize device support");
 		return NULL;
 	}
+	/* doc device init end */
 
 	return &sample_usbd;
 }
