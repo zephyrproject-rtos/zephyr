@@ -389,7 +389,7 @@ POSIX_FILE_SYSTEM
     unlink(), yes
     utime(),
 
-.. _posix_option_mapped_files:
+.. _posix_option_group_mapped_files:
 
 POSIX_MAPPED_FILES
 ==================
@@ -776,8 +776,8 @@ _POSIX_SHARED_MEMORY_OBJECTS
 
     mmap(), yes
     munmap(), yes
-    shm_open(),
-    shm_unlink(),
+    shm_open(), yes
+    shm_unlink(), yes
 
 .. _posix_option_synchronized_io:
 
