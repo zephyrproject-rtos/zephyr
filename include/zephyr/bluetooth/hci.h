@@ -20,6 +20,20 @@
 extern "C" {
 #endif
 
+/** Converts a HCI error to string.
+ *
+ * The error codes are described in the Bluetooth Core specification,
+ * Vol 1, Part F, Section 2.
+ *
+ * The HCI documentation found in Vol 4, Part E,
+ * describes when the different error codes are used.
+ *
+ * See also the defined BT_HCI_ERR_* macros.
+ *
+ * @return The string representation of the HCI error code.
+ */
+const char *bt_hci_err_to_str(uint8_t hci_err);
+
 /** Allocate a HCI command buffer.
   *
   * This function allocates a new buffer for a HCI command. It is given
