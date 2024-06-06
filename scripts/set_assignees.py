@@ -11,6 +11,7 @@ import datetime
 from github import Github, GithubException
 from github.GithubException import UnknownObjectException
 from collections import defaultdict
+from collections import deque
 from west.manifest import Manifest
 from west.manifest import ManifestProject
 
@@ -62,7 +63,7 @@ def process_pr(gh, maintainer_file, number):
 
     log(f"working on https://github.com/{args.org}/{args.repo}/pull/{pr.number} : {pr.title}")
 
-    labels = set()
+    labels = deque()
     area_counter = defaultdict(int)
     found_maintainers = defaultdict(int)
 
@@ -75,7 +76,7 @@ def process_pr(gh, maintainer_file, number):
             break
 
     if pr.commits == 1 and (pr.additions <= 1 and pr.deletions <= 1):
-        labels = {'size: XS'}
+        labels.append('size: XS')
 
     if len(fn) > 500:
         log(f"Too many files changed ({len(fn)}), skipping....")
@@ -90,30 +91,116 @@ def process_pr(gh, maintainer_file, number):
             continue
 
         all_areas.update(areas)
-        is_instance = False
+        #
+        # DJL: Don't understand what "is_instance" is trying to record?
+        # It mucks with the weighting though.
+        #
+        #is_instance = False
         sorted_areas = sorted(areas, key=lambda x: 'Platform' in x.name, reverse=True)
         for area in sorted_areas:
-            c = 1 if not is_instance else 0
+            #c = 1 if not is_instance else 0
 
-            area_counter[area] += c
-            labels.update(area.labels)
+            area_counter[area] += 1
+
             # FIXME: Here we count the same file multiple times if it exists in
             # multiple areas with same maintainer
             for area_maintainer in area.maintainers:
-                found_maintainers[area_maintainer] += c
+                found_maintainers[area_maintainer] += 1
 
-            if 'Platform' in area.name:
-                is_instance = True
+            #if 'Platform' in area.name:
+            #    is_instance = True
 
     area_counter = dict(sorted(area_counter.items(), key=lambda item: item[1], reverse=True))
+
+    # selectively pick some of the most likely labels
+    for item in area_counter:
+        #
+        # Prioritize 'Release Notes' label to ensure it is automatically
+        # added since touching the release notes can potentially be a
+        # low percentage item in a large PR.
+        #
+        # I know this is hard coded but not sure how else to handle this.
+        #
+        if 'Release Notes' in item.labels:
+            labels.appendleft('Release Notes')
+
+        #
+        # Not sure what the right percentage is. When a PR has touched
+        # a lot of files it will create a giant list. So try to find
+        # just the top areas touched and hopefully it will get the right
+        # labels.
+        #
+        prop = (area_counter[item] / num_files) * 100
+        # log(f":::: label {item.labels} : count {area_counter[item]} : {prop:.2f}%")
+
+        if prop > 15:
+            for l in item.labels:
+                if l not in labels:
+                    labels.append(l)
+
     log(f"Area matches: {area_counter}")
     log(f"labels: {labels}")
 
     # Create a list of collaborators ordered by the area match
+    #
+    # There is a limit to how many reviewers can be assigned
+    # to the PR. The following allocation strategy attempts
+    # to more fairly distribute the assigned reviewers across
+    # the impacted areas.
+    #
+    # Bias walking through each touched area to pull in the
+    # maintainers from that area into the collab list
+    # first.
+    #
+    # Then process the collaborators by using a round-robin
+    # merging strategy by picking one collaborator at a time
+    # from each area impacted.
+    #
+    # Note the order of the names in each collaborator list
+    # will matter if there is a large array of areas being
+    # touched as it will be more likely to select someone
+    # from the top of the list. As such, it may be more
+    # prudent to put higher priority people at the top of
+    # the list... sort of a "promotion ladder".
+    #
+	# Exammple:
+    # Areas (by priority/impact order): A, B, C, D
+    #
+    # collab list would look like:
+    #
+    # maintainers [A, B, C, D] followed by
+    # collaborators [A1, B1, C1, D1, A2, B2, C2, D2, A3, ... ]
+    #
+	# If there is only 1 collaborator in area B then the array is:
+	#
+	# collaborators [A1, B1, C1, D1, A2, C2, D2, A3, ... ]
+    #
+    # An alternative is to just walk the collabs list taking them
+    # in groups by just doing the loop again:
+    #
+    #     for area in area_counter:
+    #         collab += maintainer_file.areas[area.name].maintainers
+    #
+    # collaborators [A1, A2, A3, B1, B2, C1, C2, D1, D2, ... ]
+    #
+    # Down side seem to be a strong bias to the top list, which
+    # may be better.
+    #
     collab = list()
     for area in area_counter:
         collab += maintainer_file.areas[area.name].maintainers
-        collab += maintainer_file.areas[area.name].collaborators
+
+    # Perform a round-robin merging of the maintainers from each area represented in the
+    # PR. Create an array of areas where each element is a deque collection of collaborators
+    # from each area.
+    area_collab_queues = [deque(maintainer_file.areas[area.name].collaborators) for area in area_counter]
+
+    while any(area_collab_queues):
+        for queue in area_collab_queues:
+            if queue:
+                collab.append(queue.popleft())
+
+    # remove duplicates from collab list while ensuring order
     collab = list(dict.fromkeys(collab))
     log(f"collab: {collab}")
 
@@ -129,6 +216,7 @@ def process_pr(gh, maintainer_file, number):
     # if the first area is an implementation, i.e. driver or platform, we
     # continue searching for any other areas involved
     for area, count in area_counter.items():
+        log(f"area: {area}, count: {count}, maintainers: {area.maintainers}")
         if count == 0:
             continue
         if len(area.maintainers) > 0:
@@ -151,15 +239,16 @@ def process_pr(gh, maintainer_file, number):
         log(f"Picked assignees: {assignees} ({prop:.2f}% ownership)")
         log("+++++++++++++++++++++++++")
 
-    # Set labels
+    # Set labels by applying the most important ones first
     if labels:
-        if len(labels) < 10:
-            for l in labels:
-                log(f"adding label {l}...")
+        for _ in range(10):
+            try:
+                tmp_label = labels.popleft()
+                log(f"adding label {tmp_label}")
                 if not args.dry_run:
-                    pr.add_to_labels(l)
-        else:
-            log(f"Too many labels to be applied")
+                    pr.add_to_labels(tmp_label)
+            except IndexError:
+                break
 
     if collab:
         reviewers = []
