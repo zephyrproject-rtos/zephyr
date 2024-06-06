@@ -8,3 +8,4 @@ New USB device support APIs
 
    udc.rst
    usbd.rst
+   usbd_hid_device.rst
