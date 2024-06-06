@@ -136,7 +136,6 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 		ret = -ENOMEM;
 		goto out;
 	}
-	memset(*ext, 0, sizeof(struct llext));
 
 	ret = do_llext_load(ldr, *ext, ldr_parm);
 	if (ret < 0) {
@@ -179,6 +178,7 @@ int llext_unload(struct llext **ext)
 	k_mutex_unlock(&llext_lock);
 
 	llext_free_sections(tmp);
+	llext_free(tmp->sym_tab.syms);
 	llext_free(tmp->exp_tab.syms);
 	llext_free(tmp);
 

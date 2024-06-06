@@ -18,6 +18,24 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 
 #include "llext_priv.h"
 
+/*
+ * NOTICE: Functions in this file do not clean up allocations in their error
+ * paths; instead, this is performed once and for all when leaving the parent
+ * `do_llext_load()` function. This approach consolidates memory management
+ * in a single place, simplifying error handling and reducing the risk of
+ * memory leaks.
+ *
+ * The following rationale applies:
+ *
+ * - The input `struct llext` and fields in `struct loader` are zero-filled
+ *   at the beginning of the do_llext_load function, so that every pointer is
+ *   set to NULL and every bool is false.
+ * - If some function called by do_llext_load allocates memory, it does so by
+ *   immediately writing the pointer in the `ext` and `ldr` structures.
+ * - do_llext_load() will clean up the memory allocated by the functions it
+ *   calls, taking into account if the load process was successful or not.
+ */
+
 static const char ELF_MAGIC[] = {0x7f, 'E', 'L', 'F'};
 
 elf_shdr_t *llext_section_by_name(struct llext_loader *ldr, const char *search_name)
@@ -550,6 +568,12 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 {
 	int ret;
 
+	/* Zero all memory that is affected by the loading process
+	 * (see the NOTICE at the top of this file).
+	 */
+	memset(ext, 0, sizeof(*ext));
+	ldr->sect_map = NULL;
+
 	LOG_DBG("Loading ELF data...");
 	ret = llext_load_elf_data(ldr, ext);
 	if (ret != 0) {
@@ -628,20 +652,39 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	}
 
 out:
+	/*
+	 * Free resources only used during loading. Note that this exploits
+	 * the fact that freeing a NULL pointer has no effect.
+	 */
+
 	llext_free(ldr->sect_map);
+	ldr->sect_map = NULL;
+
+	/* Until proper inter-llext linking is implemented, the symbol table is
+	 * not useful outside of the loading process; keep it only if debugging
+	 * is enabled and no error is detected.
+	 */
+	if (!(IS_ENABLED(CONFIG_LLEXT_LOG_LEVEL_DBG) && ret == 0)) {
+		llext_free(ext->sym_tab.syms);
+		ext->sym_tab.sym_cnt = 0;
+		ext->sym_tab.syms = NULL;
+	}
 
 	if (ret != 0) {
-		LOG_DBG("Failed to load extension, freeing memory...");
+		LOG_DBG("Failed to load extension: %d", ret);
+
+		/* Since the loading process failed, free the resources that
+		 * were allocated for the lifetime of the extension as well,
+		 * such as section data and exported symbols.
+		 */
 		llext_free_sections(ext);
 		llext_free(ext->exp_tab.syms);
+		ext->exp_tab.sym_cnt = 0;
+		ext->exp_tab.syms = NULL;
 	} else {
 		LOG_DBG("loaded module, .text at %p, .rodata at %p", ext->mem[LLEXT_MEM_TEXT],
 			ext->mem[LLEXT_MEM_RODATA]);
 	}
-
-	ext->sym_tab.sym_cnt = 0;
-	llext_free(ext->sym_tab.syms);
-	ext->sym_tab.syms = NULL;
 
 	return ret;
 }
