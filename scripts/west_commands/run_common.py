@@ -161,7 +161,7 @@ def add_parser_common(command, parser_adder=None, parser=None):
 
     return parser
 
-def do_run_common(command, user_args, user_runner_args, domains=None):
+def do_run_common(command, user_args, user_runner_args, domain_file=None):
     # This is the main routine for all the "west flash", "west debug",
     # etc. commands.
 
@@ -186,7 +186,7 @@ def do_run_common(command, user_args, user_runner_args, domains=None):
     if not user_args.skip_rebuild:
         rebuild(command, build_dir, user_args)
 
-    if domains is None:
+    if domain_file is None:
         if user_args.domain is None:
             # No domains are passed down and no domains specified by the user.
             # So default domain will be used.
@@ -195,6 +195,9 @@ def do_run_common(command, user_args, user_runner_args, domains=None):
             # No domains are passed down, but user has specified domains to use.
             # Get the user specified domains.
             domains = load_domains(build_dir).get_domains(user_args.domain)
+    else:
+        domains = load_domains(build_dir).get_domains(user_args.domain,
+                                                      default_flash_order=True)
 
     if len(domains) > 1:
         if len(user_runner_args) > 0:
