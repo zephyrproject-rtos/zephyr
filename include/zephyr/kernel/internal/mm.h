@@ -140,6 +140,9 @@ extern "C" {
  * linear address representing the base of where the physical region is mapped
  * in the virtual address space for the Zephyr kernel.
  *
+ * The memory mapped via this function must be unmapped using
+ * k_mem_unmap_phys_bare().
+ *
  * This function alters the active page tables in the area reserved
  * for the kernel. This function will choose the virtual address
  * and return it to the caller.
@@ -173,8 +176,8 @@ extern "C" {
  * @param[in]  size Size of the memory region
  * @param[in]  flags Caching mode and access flags, see K_MAP_* macros
  */
-void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size,
-		uint32_t flags);
+void k_mem_map_phys_bare(uint8_t **virt_ptr, uintptr_t phys, size_t size,
+			 uint32_t flags);
 
 /**
  * Unmap a virtual memory region from kernel's virtual address space.
@@ -188,7 +191,7 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size,
  *
  * This will align the input parameters to page boundaries so that
  * this can be used with the virtual address as returned by
- * z_phys_map().
+ * k_mem_map_phys_bare().
  *
  * This API is only available if CONFIG_MMU is enabled.
  *
@@ -203,7 +206,7 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size,
  * @param virt Starting address of the virtual address region to be unmapped.
  * @param size Size of the virtual address region
  */
-void z_phys_unmap(uint8_t *virt, size_t size);
+void k_mem_unmap_phys_bare(uint8_t *virt, size_t size);
 
 /**
  * Map memory into virtual address space with guard pages.
