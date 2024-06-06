@@ -112,6 +112,18 @@ struct ip_v4_data {
 	uint32_t gw;
 };
 
+struct ip_v6_data {
+	struct {
+		uint32_t ip[4];
+
+		__packed enum {
+			WIFI_W91_ADDR_TENTATIVE = 0,
+			WIFI_W91_ADDR_PREFERRED,
+			WIFI_W91_ADDR_DEPRECATED
+		} state;
+	} address[CONFIG_WIFI_TELINK_W91_IPV6_ADDR_CNT];
+};
+
 #if CONFIG_NET_IPV4
 /* APIs implementation: set ipv4 */
 static size_t pack_wifi_w91_set_ipv4(uint8_t inst, void *unpack_data, uint8_t *pack_data)
@@ -137,6 +149,7 @@ IPC_DISPATCHER_UNPACK_FUNC_ONLY_WITH_ERROR_PARAM(wifi_w91_set_ipv4);
 static int wifi_w91_set_ipv4(struct net_if *iface)
 {
 	struct wifi_w91_data *data = iface->if_dev->dev->data;
+	const struct wifi_w91_config *cfg = iface->if_dev->dev->config;
 	int err = 0;
 
 	if (data->base.state == WIFI_W91_STA_CONNECTED ||
@@ -149,14 +162,14 @@ static int wifi_w91_set_ipv4(struct net_if *iface)
 		};
 
 		err = -ETIMEDOUT;
-		IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, 0,
+		IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, cfg->instance_id,
 			wifi_w91_set_ipv4, &ipv4, &err,
 			CONFIG_WIFI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
 	}
 
 	if (data->base.state == WIFI_W91_STA_CONNECTED) {
 		if (err) {
-			LOG_INF("set ip error %d", err);
+			LOG_INF("set ip v4 error %d", err);
 		}
 		wifi_mgmt_raise_connect_result_event(data->base.iface, err);
 	}
@@ -164,6 +177,111 @@ static int wifi_w91_set_ipv4(struct net_if *iface)
 	return 0;
 }
 #endif /* CONFIG_NET_IPV4 */
+
+#if CONFIG_NET_IPV6
+/* APIs implementation: set ipv6 */
+static size_t pack_wifi_w91_set_ipv6(uint8_t inst, void *unpack_data, uint8_t *pack_data)
+{
+	struct ip_v6_data *p_ip_v6 = unpack_data;
+	size_t pack_data_len = sizeof(uint32_t);
+
+	for (size_t i = 0; i < CONFIG_WIFI_TELINK_W91_IPV6_ADDR_CNT; i++) {
+		pack_data_len += sizeof(p_ip_v6->address[i].ip);
+		pack_data_len += sizeof(p_ip_v6->address[i].state);
+	}
+
+	if (pack_data != NULL) {
+		uint32_t id = IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_WIFI_IPV6_ADDR, inst);
+
+		IPC_DISPATCHER_PACK_FIELD(pack_data, id);
+		for (size_t i = 0; i < CONFIG_WIFI_TELINK_W91_IPV6_ADDR_CNT; i++) {
+			IPC_DISPATCHER_PACK_ARRAY(pack_data, p_ip_v6->address[i].ip,
+				sizeof(p_ip_v6->address[i].ip));
+			IPC_DISPATCHER_PACK_FIELD(pack_data, p_ip_v6->address[i].state);
+		}
+	}
+
+	return pack_data_len;
+}
+
+IPC_DISPATCHER_UNPACK_FUNC_ONLY_WITH_ERROR_PARAM(wifi_w91_set_ipv6);
+
+static int wifi_w91_set_ipv6(struct net_if *iface)
+{
+	const struct wifi_w91_config *cfg = iface->if_dev->dev->config;
+	struct wifi_w91_data *data = iface->if_dev->dev->data;
+	int err = 0;
+
+	if (data->base.state == WIFI_W91_STA_CONNECTED ||
+		data->base.state == WIFI_W91_AP_STARTED) {
+
+		struct ip_v6_data ipv6 = {0};
+		struct net_if_addr *if_addr = iface->config.ip.ipv6->unicast;
+		size_t idx = 1;
+
+		for (size_t i = 0; i < CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT; i++) {
+			if (if_addr[i].is_used && if_addr[i].addr_state != NET_ADDR_ANY_STATE) {
+				if (if_addr[i].addr_type == NET_ADDR_AUTOCONF &&
+					!memcmp(ipv6.address[0].ip, &(uint32_t [4]) {0},
+						sizeof(ipv6.address[0].ip))) {
+					for (size_t j = 0; j < 4; j++) {
+						ipv6.address[0].ip[j] =
+							if_addr[i].address.in6_addr.s6_addr32[j];
+					}
+					switch (if_addr[i].addr_state) {
+					case NET_ADDR_TENTATIVE:
+						ipv6.address[0].state = WIFI_W91_ADDR_TENTATIVE;
+						break;
+					case NET_ADDR_PREFERRED:
+						ipv6.address[0].state = WIFI_W91_ADDR_PREFERRED;
+						break;
+					case NET_ADDR_DEPRECATED:
+						ipv6.address[0].state = WIFI_W91_ADDR_DEPRECATED;
+						break;
+					default:
+						break;
+					}
+				} else if (idx < CONFIG_WIFI_TELINK_W91_IPV6_ADDR_CNT) {
+					for (size_t j = 0; j < 4; j++) {
+						ipv6.address[idx].ip[j] =
+							if_addr[i].address.in6_addr.s6_addr32[j];
+					}
+					switch (if_addr[i].addr_state) {
+					case NET_ADDR_TENTATIVE:
+						ipv6.address[idx].state = WIFI_W91_ADDR_TENTATIVE;
+						break;
+					case NET_ADDR_PREFERRED:
+						ipv6.address[idx].state = WIFI_W91_ADDR_PREFERRED;
+						break;
+					case NET_ADDR_DEPRECATED:
+						ipv6.address[idx].state = WIFI_W91_ADDR_DEPRECATED;
+						break;
+					default:
+						break;
+					}
+					idx++;
+				}
+			}
+		}
+
+		err = -ETIMEDOUT;
+		IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, cfg->instance_id,
+			wifi_w91_set_ipv6, &ipv6, &err,
+			CONFIG_WIFI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
+	}
+
+	if (data->base.state == WIFI_W91_STA_CONNECTED) {
+		if (err) {
+			LOG_INF("set ip v6 error %d", err);
+		}
+#if !CONFIG_NET_IPV4
+		wifi_mgmt_raise_connect_result_event(data->base.iface, err);
+#endif /* !CONFIG_NET_IPV4 */
+	}
+
+	return 0;
+}
+#endif /* CONFIG_NET_IPV6 */
 
 #if CONFIG_NET_DHCPV4
 static void wifi_w91_got_dhcp_ip(struct net_mgmt_event_callback *cb,
@@ -175,11 +293,6 @@ static void wifi_w91_got_dhcp_ip(struct net_mgmt_event_callback *cb,
 	(void) wifi_w91_set_ipv4(iface);
 }
 #endif /* CONFIG_NET_DHCPV4 */
-
-static struct k_thread wifi_event_thread_data;
-K_THREAD_STACK_DEFINE(wifi_event_thread_stack, CONFIG_TELINK_W91_WIFI_EVENT_THREAD_STACK_SIZE);
-K_MSGQ_DEFINE(wifi_event_msgq, sizeof(struct wifi_w91_event),
-	CONFIG_TELINK_W91_WIFI_EVENT_MAX_MSG, sizeof(uint32_t));
 
 /* APIs implementation: wifi init */
 IPC_DISPATCHER_PACK_FUNC_WITHOUT_PARAM(wifi_w91_init_if, IPC_DISPATCHER_WIFI_INIT);
@@ -207,13 +320,14 @@ static void wifi_w91_init_if(struct net_if *iface)
 	LOG_INF("%s", __func__);
 
 	struct wifi_w91_init_resp init_resp;
+	const struct wifi_w91_config *cfg = iface->if_dev->dev->config;
 	struct wifi_w91_data *data = iface->if_dev->dev->data;
 
 	data->base.iface = iface;
 
 	net_if_carrier_off(data->base.iface);
 
-	IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, 0,
+	IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, cfg->instance_id,
 		wifi_w91_init_if, NULL, &init_resp,
 		CONFIG_WIFI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
 
@@ -223,6 +337,8 @@ static void wifi_w91_init_if(struct net_if *iface)
 	}
 
 	memcpy(data->base.mac, init_resp.mac, sizeof(data->base.mac));
+
+	LOG_HEXDUMP_INF(data->base.mac, sizeof(data->base.mac), "MAC");
 
 	/* Assign link local address. */
 	net_if_set_link_addr(data->base.iface, data->base.mac,
@@ -244,6 +360,7 @@ static int wifi_w91_scan(const struct device *dev, scan_result_cb_t cb)
 	LOG_INF("%s", __func__);
 
 	int err;
+	const struct wifi_w91_config *cfg = dev->config;
 	struct wifi_w91_data *data = dev->data;
 
 	if (data->base.scan_cb != NULL) {
@@ -253,7 +370,7 @@ static int wifi_w91_scan(const struct device *dev, scan_result_cb_t cb)
 
 	data->base.scan_cb = cb;
 
-	IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, 0,
+	IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, cfg->instance_id,
 		wifi_w91_scan, NULL, &err,
 		CONFIG_WIFI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
 
@@ -293,6 +410,7 @@ static int wifi_w91_connect(const struct device *dev, struct wifi_connect_req_pa
 	LOG_INF("%s", __func__);
 
 	int err;
+	const struct wifi_w91_config *cfg = dev->config;
 	struct wifi_w91_data *data = dev->data;
 	struct wifi_w91_connect_req connect_req = {
 		.ssid_len = params->ssid_length,
@@ -326,7 +444,7 @@ static int wifi_w91_connect(const struct device *dev, struct wifi_connect_req_pa
 		return -EIO;
 	}
 
-	IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, 0,
+	IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, cfg->instance_id,
 		wifi_w91_connect, &connect_req, &err,
 		CONFIG_WIFI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
 
@@ -343,9 +461,10 @@ static int wifi_w91_disconnect(const struct device *dev)
 	LOG_INF("%s", __func__);
 
 	int err;
+	const struct wifi_w91_config *cfg = dev->config;
 	struct wifi_w91_data *data = dev->data;
 
-	IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, 0,
+	IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, cfg->instance_id,
 		wifi_w91_disconnect, NULL, &err,
 		CONFIG_WIFI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
 
@@ -385,6 +504,7 @@ static int wifi_w91_ap_enable(const struct device *dev, struct wifi_connect_req_
 	LOG_INF("%s", __func__);
 
 	int err;
+	const struct wifi_w91_config *cfg = dev->config;
 	struct wifi_w91_data *data = dev->data;
 	struct wifi_w91_connect_req connect_req = {
 		.ssid_len = params->ssid_length,
@@ -404,7 +524,7 @@ static int wifi_w91_ap_enable(const struct device *dev, struct wifi_connect_req_
 		return -EIO;
 	}
 
-	IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, 0,
+	IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, cfg->instance_id,
 		wifi_w91_ap_enable, &connect_req, &err,
 		CONFIG_WIFI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
 
@@ -421,9 +541,10 @@ static int wifi_w91_ap_disable(const struct device *dev)
 	LOG_INF("%s", __func__);
 
 	int err;
+	const struct wifi_w91_config *cfg = dev->config;
 	struct wifi_w91_data *data = dev->data;
 
-	IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, 0,
+	IPC_DISPATCHER_HOST_SEND_DATA(&data->ipc, cfg->instance_id,
 		wifi_w91_ap_disable, NULL, &err,
 		CONFIG_WIFI_TELINK_W91_IPC_RESPONSE_TIMEOUT_MS);
 
@@ -509,6 +630,7 @@ static bool unpack_wifi_w91_event_cb(void *unpack_data,
 static void wifi_w91_event_cb(const void *data, size_t len, void *param)
 {
 	struct wifi_w91_event event;
+	const struct wifi_w91_config *cfg = ((struct device *)param)->config;
 
 	if (!unpack_wifi_w91_event_cb(&event, data, len)) {
 		return;
@@ -530,7 +652,7 @@ static void wifi_w91_event_cb(const void *data, size_t len, void *param)
 		break;
 	}
 
-	k_msgq_put(&wifi_event_msgq, &event, K_FOREVER);
+	k_msgq_put(cfg->thread_msgq, &event, K_FOREVER);
 }
 
 static void wifi_w91_even_scan_done_handler(struct wifi_w91_data *data,
@@ -585,10 +707,11 @@ static void wifi_w91_even_scan_done_handler(struct wifi_w91_data *data,
 static void wifi_w91_event_thread(void *p1, void *p2, void *p3)
 {
 	struct wifi_w91_data *data = ((struct device *)p1)->data;
+	const struct wifi_w91_config *cfg = ((struct device *)p1)->config;
 	struct wifi_w91_event event;
 
 	while (1) {
-		k_msgq_get(&wifi_event_msgq, &event, K_FOREVER);
+		k_msgq_get(cfg->thread_msgq, &event, K_FOREVER);
 
 		switch (event.id) {
 		case WIFI_W91_EVENT_STA_START:
@@ -602,9 +725,16 @@ static void wifi_w91_event_thread(void *p1, void *p2, void *p3)
 		case WIFI_W91_EVENT_STA_CONNECTED:
 			data->base.state = WIFI_W91_STA_CONNECTED;
 			LOG_INF("The WiFi STA connected");
-#if !CONFIG_NET_DHCPV4 && CONFIG_NET_IPV4
+#if CONFIG_NET_IPV6
+			(void) wifi_w91_set_ipv6(data->base.iface);
+#endif /* CONFIG_NET_IPV6 */
+#if CONFIG_NET_IPV4
+#if CONFIG_NET_DHCPV4
+			net_dhcpv4_restart(data->base.iface);
+#else
 			(void) wifi_w91_set_ipv4(data->base.iface);
-#endif /* !CONFIG_NET_DHCPV4 && CONFIG_NET_IPV4 */
+#endif /* CONFIG_NET_DHCPV4 */
+#endif /* CONFIG_NET_IPV4 */
 			break;
 		case WIFI_W91_EVENT_STA_DISCONNECTED:
 			LOG_INF("The WiFi STA disconnected");
@@ -651,18 +781,21 @@ static void wifi_w91_event_thread(void *p1, void *p2, void *p3)
 static int wifi_w91_init(const struct device *dev)
 {
 	struct wifi_w91_data *data = dev->data;
+	const struct wifi_w91_config *cfg = dev->config;
 
 	ipc_based_driver_init(&data->ipc);
 
-	k_thread_create(&wifi_event_thread_data,
-		wifi_event_thread_stack, K_THREAD_STACK_SIZEOF(wifi_event_thread_stack),
+	k_tid_t tid = k_thread_create(cfg->thread,
+		cfg->thread_stack, CONFIG_TELINK_W91_WIFI_EVENT_THREAD_STACK_SIZE,
 		wifi_w91_event_thread, (void *)dev, NULL, NULL,
 		CONFIG_TELINK_W91_WIFI_EVENT_THREAD_PRIORITY, 0, K_NO_WAIT);
 
+	k_thread_name_set(tid, "W91_WIFI_EV");
+
 	data->base.state = WIFI_W91_STA_STOPPED;
 
-	ipc_dispatcher_add(IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_WIFI_EVENT, 0),
-		wifi_w91_event_cb, NULL);
+	ipc_dispatcher_add(IPC_DISPATCHER_MK_ID(IPC_DISPATCHER_WIFI_EVENT, cfg->instance_id),
+		wifi_w91_event_cb, (void *)dev);
 
 	return 0;
 }
@@ -678,8 +811,19 @@ static const struct net_wifi_mgmt_offload wifi_w91_driver_api = {
 
 #define NET_W91_DEFINE(n)                                       \
                                                                 \
+	static struct k_thread wifi_event_thread_data_##n;          \
+	static K_THREAD_STACK_DEFINE(wifi_event_thread_stack_##n,   \
+		CONFIG_TELINK_W91_WIFI_EVENT_THREAD_STACK_SIZE);        \
+	K_MSGQ_DEFINE(wifi_event_msgq_##n,                          \
+		sizeof(struct wifi_w91_event),                          \
+		CONFIG_TELINK_W91_WIFI_EVENT_MAX_MSG,                   \
+		sizeof(uint32_t));                                      \
+                                                                \
 	static const struct wifi_w91_config wifi_config_##n = {     \
 		.instance_id = n,                                       \
+		.thread = &wifi_event_thread_data_##n,                  \
+		.thread_stack = wifi_event_thread_stack_##n,            \
+		.thread_msgq = &wifi_event_msgq_##n,                    \
 	};                                                          \
                                                                 \
 	static struct wifi_w91_data wifi_data_##n;                  \
