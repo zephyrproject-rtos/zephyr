@@ -16,11 +16,14 @@
  * @{
  */
 
-/*
+/**
+ * @def K_MEM_VIRT_OFFSET
+ * @brief Address offset of permanent virtual mapping from physical address.
+ *
  * This is the offset to subtract from a virtual address mapped in the
  * kernel's permanent mapping of RAM, to obtain its physical address.
  *
- *     virt_addr = phys_addr + Z_MEM_VM_OFFSET
+ *     virt_addr = phys_addr + K_MEM_VIRT_OFFSET
  *
  * This only works for virtual addresses within the interval
  * [CONFIG_KERNEL_VM_BASE, CONFIG_KERNEL_VM_BASE + (CONFIG_SRAM_SIZE * 1024)).
@@ -35,16 +38,16 @@
  * constraints defined.
  */
 #ifdef CONFIG_MMU
-#define Z_MEM_VM_OFFSET	((CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET) - \
-			 (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_OFFSET))
+#define K_MEM_VIRT_OFFSET	((CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET) - \
+				 (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_OFFSET))
 #else
-#define Z_MEM_VM_OFFSET	0
+#define K_MEM_VIRT_OFFSET	0
 #endif /* CONFIG_MMU */
 
-#define Z_MEM_PHYS_ADDR(virt)	((virt) - Z_MEM_VM_OFFSET)
-#define Z_MEM_VIRT_ADDR(phys)	((phys) + Z_MEM_VM_OFFSET)
+#define Z_MEM_PHYS_ADDR(virt)	((virt) - K_MEM_VIRT_OFFSET)
+#define Z_MEM_VIRT_ADDR(phys)	((phys) + K_MEM_VIRT_OFFSET)
 
-#if Z_MEM_VM_OFFSET != 0
+#if K_MEM_VIRT_OFFSET != 0
 #define Z_VM_KERNEL 1
 #ifdef CONFIG_XIP
 #error "XIP and a virtual memory kernel are not allowed"

@@ -593,7 +593,7 @@ static void print_entries(pentry_t entries_array[], uint8_t *base, int level,
 				if (phys == virt) {
 					/* Identity mappings */
 					COLOR(YELLOW);
-				} else if (phys + Z_MEM_VM_OFFSET == virt) {
+				} else if (phys + K_MEM_VIRT_OFFSET == virt) {
 					/* Permanent RAM mappings */
 					COLOR(GREEN);
 				} else {
