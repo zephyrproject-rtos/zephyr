@@ -1307,7 +1307,7 @@ void arch_mem_unmap(void *addr, size_t size)
 	ARG_UNUSED(ret);
 }
 
-#ifdef Z_VM_KERNEL
+#ifdef K_MEM_IS_VM_KERNEL
 __boot_func
 static void identity_map_remove(uint32_t level)
 {
@@ -1346,7 +1346,7 @@ static void identity_map_remove(uint32_t level)
 __boot_func
 void z_x86_mmu_init(void)
 {
-#ifdef Z_VM_KERNEL
+#ifdef K_MEM_IS_VM_KERNEL
 	/* We booted with physical address space being identity mapped.
 	 * As we are now executing in virtual address space,
 	 * the identity map is no longer needed. So remove them.

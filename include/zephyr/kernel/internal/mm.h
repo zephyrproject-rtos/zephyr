@@ -67,7 +67,10 @@
 #define K_MEM_VIRT_ADDR(phys)	((phys) + K_MEM_VIRT_OFFSET)
 
 #if K_MEM_VIRT_OFFSET != 0
-#define Z_VM_KERNEL 1
+/**
+ * @brief Kernel is mapped in virtual memory if defined.
+ */
+#define K_MEM_IS_VM_KERNEL 1
 #ifdef CONFIG_XIP
 #error "XIP and a virtual memory kernel are not allowed"
 #endif
