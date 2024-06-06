@@ -499,7 +499,7 @@ static void espi_taf_work(struct k_work *item)
 static void espi_taf_event_handler(const struct device *dev, struct espi_callback *cb,
 				   struct espi_event event)
 {
-	if ((event.evt_type != ESPI_BUS_SAF_NOTIFICATION) ||
+	if ((event.evt_type != ESPI_BUS_TAF_NOTIFICATION) ||
 	    (event.evt_details != ESPI_CHANNEL_FLASH)) {
 		return;
 	}
@@ -510,7 +510,7 @@ static void espi_taf_event_handler(const struct device *dev, struct espi_callbac
 
 int npcx_init_taf(const struct device *dev, sys_slist_t *callbacks)
 {
-	espi_init_callback(&espi_taf_cb, espi_taf_event_handler, ESPI_BUS_SAF_NOTIFICATION);
+	espi_init_callback(&espi_taf_cb, espi_taf_event_handler, ESPI_BUS_TAF_NOTIFICATION);
 	espi_add_callback(dev, &espi_taf_cb);
 
 	npcx_espi_taf_data.host_dev = dev;
