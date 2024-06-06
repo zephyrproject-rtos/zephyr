@@ -89,7 +89,7 @@
 	orl	$(CR0_PG | CR0_WP), %eax
 	movl	%eax, %cr0
 
-#ifdef Z_VM_KERNEL
+#ifdef K_MEM_IS_VM_KERNEL
 	/* Jump to a virtual address, which works because the identity and
 	 * virtual mappings both are to the same physical address.
 	 */
@@ -98,7 +98,7 @@ vm_enter:
 	/* We are now executing in virtual memory. We'll un-map the identity
 	 * mappings later once we are in the C domain
 	 */
-#endif /* Z_VM_KERNEL */
+#endif /* K_MEM_IS_VM_KERNEL */
 
 #endif /* CONFIG_X86_MMU */
 .endm
@@ -244,7 +244,7 @@ __csSet:
 	ltr %ax
 #endif
 
-#ifdef Z_VM_KERNEL
+#ifdef K_MEM_IS_VM_KERNEL
 	/* Need to reset the stack to virtual address after
 	 * page table is loaded.
 	 */
@@ -255,7 +255,7 @@ __csSet:
 #else
 	addl	$CONFIG_ISR_STACK_SIZE, %esp
 #endif
-#endif /* Z_VM_KERNEL */
+#endif /* K_MEM_IS_VM_KERNEL */
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	pushl %esp
