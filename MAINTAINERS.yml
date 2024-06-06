@@ -3240,8 +3240,13 @@ Raspberry Pi Pico Platforms:
   labels:
     - "platform: Raspberry Pi Pico"
 
-SiLabs Platforms:
-  status: odd fixes
+Silabs Platforms:
+  status: maintained
+  maintainers:
+    - jhedberg
+  collaborators:
+    - jerome-pouiller
+    - asmellby
   files:
     - soc/silabs/
     - boards/silabs/
@@ -3249,7 +3254,7 @@ SiLabs Platforms:
     - dts/bindings/*/silabs*
     - drivers/*/*_gecko*
   labels:
-    - "platform: SiLabs"
+    - "platform: Silabs"
 
 Intel Platforms (X86):
   status: maintained
