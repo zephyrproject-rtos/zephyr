@@ -540,6 +540,11 @@ ZTEST(devicetree_api, test_reg)
 	zassert_true(DT_REG_HAS_IDX(TEST_ABCD1234, 1), "");
 	zassert_false(DT_REG_HAS_IDX(TEST_ABCD1234, 2), "");
 
+	/* DT_REG_HAS_NAME */
+	zassert_true(DT_REG_HAS_NAME(TEST_ABCD1234, one), "");
+	zassert_true(DT_REG_HAS_NAME(TEST_ABCD1234, two), "");
+	zassert_false(DT_REG_HAS_NAME(TEST_ABCD1234, three), "");
+
 	/* DT_REG_ADDR_BY_IDX */
 	zassert_equal(DT_REG_ADDR_BY_IDX(TEST_ABCD1234, 0), 0xabcd1234, "");
 	zassert_equal(DT_REG_ADDR_BY_IDX(TEST_ABCD1234, 1), 0x98765432, "");
@@ -561,6 +566,11 @@ ZTEST(devicetree_api, test_reg)
 	zassert_equal(DT_REG_ADDR_BY_NAME(TEST_ABCD1234, one), 0xabcd1234, "");
 	zassert_equal(DT_REG_ADDR_BY_NAME(TEST_ABCD1234, two), 0x98765432, "");
 
+	/* DT_REG_ADDR_BY_NAME_OR */
+	zassert_equal(DT_REG_ADDR_BY_NAME_OR(TEST_ABCD1234, one, 0x10), 0xabcd1234, "");
+	zassert_equal(DT_REG_ADDR_BY_NAME_OR(TEST_ABCD1234, two, 0x11), 0x98765432, "");
+	zassert_equal(DT_REG_ADDR_BY_NAME_OR(TEST_ABCD1234, three, 0x12), 0x12, "");
+
 	/* DT_REG_ADDR_BY_NAME_U64 */
 	zassert_equal(DT_REG_ADDR_BY_NAME_U64(TEST_ABCD1234, one), 0xabcd1234, "");
 	zassert_equal(DT_REG_ADDR_BY_NAME_U64(TEST_ABCD1234, two), 0x98765432, "");
@@ -569,6 +579,11 @@ ZTEST(devicetree_api, test_reg)
 	zassert_equal(DT_REG_SIZE_BY_NAME(TEST_ABCD1234, one), 0x500, "");
 	zassert_equal(DT_REG_SIZE_BY_NAME(TEST_ABCD1234, two), 0xff, "");
 
+	/* DT_REG_SIZE_BY_NAME_OR */
+	zassert_equal(DT_REG_SIZE_BY_NAME_OR(TEST_ABCD1234, one, 0x10), 0x500, "");
+	zassert_equal(DT_REG_SIZE_BY_NAME_OR(TEST_ABCD1234, two, 0x11), 0xff, "");
+	zassert_equal(DT_REG_SIZE_BY_NAME_OR(TEST_ABCD1234, three, 0x12), 0x12, "");
+
 	/* DT_INST */
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
 
@@ -576,6 +591,11 @@ ZTEST(devicetree_api, test_reg)
 	zassert_true(DT_INST_REG_HAS_IDX(0, 0), "");
 	zassert_true(DT_INST_REG_HAS_IDX(0, 1), "");
 	zassert_false(DT_INST_REG_HAS_IDX(0, 2), "");
+
+	/* DT_INST_REG_HAS_NAME */
+	zassert_true(DT_INST_REG_HAS_NAME(0, first), "");
+	zassert_true(DT_INST_REG_HAS_NAME(0, second), "");
+	zassert_false(DT_INST_REG_HAS_NAME(0, third), "");
 
 	/* DT_INST_REG_ADDR_BY_IDX */
 	zassert_equal(DT_INST_REG_ADDR_BY_IDX(0, 0), 0x9999aaaa, "");
@@ -598,6 +618,11 @@ ZTEST(devicetree_api, test_reg)
 	zassert_equal(DT_INST_REG_ADDR_BY_NAME(0, first), 0x9999aaaa, "");
 	zassert_equal(DT_INST_REG_ADDR_BY_NAME(0, second), 0xbbbbcccc, "");
 
+	/* DT_INST_REG_ADDR_BY_NAME_OR */
+	zassert_equal(DT_INST_REG_ADDR_BY_NAME_OR(0, first, 0x10), 0x9999aaaa, "");
+	zassert_equal(DT_INST_REG_ADDR_BY_NAME_OR(0, second, 0x11), 0xbbbbcccc, "");
+	zassert_equal(DT_INST_REG_SIZE_BY_NAME_OR(0, third, 0x12), 0x12, "");
+
 	/* DT_INST_REG_ADDR_BY_NAME_U64 */
 	zassert_equal(DT_INST_REG_ADDR_BY_NAME_U64(0, first), 0x9999aaaa, "");
 	zassert_equal(DT_INST_REG_ADDR_BY_NAME_U64(0, second), 0xbbbbcccc, "");
@@ -605,6 +630,11 @@ ZTEST(devicetree_api, test_reg)
 	/* DT_INST_REG_SIZE_BY_NAME */
 	zassert_equal(DT_INST_REG_SIZE_BY_NAME(0, first), 0x1000, "");
 	zassert_equal(DT_INST_REG_SIZE_BY_NAME(0, second), 0x3f, "");
+
+	/* DT_REG_SIZE_BY_NAME_OR */
+	zassert_equal(DT_INST_REG_SIZE_BY_NAME_OR(0, first, 0x10), 0x1000, "");
+	zassert_equal(DT_INST_REG_SIZE_BY_NAME_OR(0, second, 0x11), 0x3f, "");
+	zassert_equal(DT_INST_REG_SIZE_BY_NAME_OR(0, third, 0x12), 0x12, "");
 }
 
 #undef DT_DRV_COMPAT
