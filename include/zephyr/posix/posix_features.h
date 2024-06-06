@@ -313,7 +313,7 @@
 #endif
 
 #ifndef PAGE_SIZE
-#define PAGE_SIZE BIT(CONFIG_POSIX_PAGE_SIZE_BITS)
+#define PAGE_SIZE CONFIG_POSIX_PAGE_SIZE
 #endif
 
 #ifndef PAGESIZE

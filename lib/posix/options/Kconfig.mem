@@ -4,15 +4,13 @@
 
 menu "POSIX memory"
 
-config POSIX_PAGE_SIZE_BITS
-	int "Number of bits to use for PAGE_SIZE"
-	range 6 16
-	default 12 if POSIX_BASE_DEFINITIONS
-	default 6
+config POSIX_PAGE_SIZE
+	hex
+	# TODO: something similar and arch-independent for MPUs
+	default MMU_PAGE_SIZE if MMU
+	default 0x40
 	help
-	  Define PAGE_SIZE as BIT(n), where n is the value configured here.
-	  PAGE_SIZE is supported in the range [64, 65536]
-	  If CONFIG_POSIX_API=y, PAGE_SIZE defaults to 4096, otherwise, it is 64 bytes.
+	  This option is not user-configurable.
 
 config POSIX_SHARED_MEMORY_OBJECTS
 	bool "POSIX shared memory objects [EXPERIMENTAL]"
