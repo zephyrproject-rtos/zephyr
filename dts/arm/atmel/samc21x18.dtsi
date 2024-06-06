@@ -15,7 +15,7 @@
 	soc {
 		nvmctrl: nvmctrl@41004000  {
 			flash0: flash@0 {
-				reg = <0 DT_SIZE_K(256)>;
+				reg = <0x4000 DT_SIZE_K(240)>;
 			};
 		};
 	};
