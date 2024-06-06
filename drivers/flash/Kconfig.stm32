@@ -6,6 +6,15 @@
 # Copyright (c) 2023 Google Inc
 # SPDX-License-Identifier: Apache-2.0
 
+config STM32_MEMMAP
+	bool "NOR Flash in MemoryMapped for XiP"
+	depends on XIP && \
+		    (DT_HAS_ST_STM32_OSPI_NOR_ENABLED || \
+		     DT_HAS_ST_STM32_QSPI_NOR_ENABLED)
+	help
+	  This option enables the XIP mode for the external NOR flash
+	  mounted on STM32 boards.
+
 config SOC_FLASH_STM32
 	bool "STM32 flash driver"
 	depends on DT_HAS_ST_STM32_FLASH_CONTROLLER_ENABLED
@@ -72,12 +81,5 @@ config FLASH_STM32_BLOCK_REGISTERS
 	  to option and control registers until reset. Disabling access to these
 	  registers improves system security, because flash content (or
 	  protection settings) can't be changed even when exploit was found.
-
-config STM32_MEMMAP
-	bool "NOR Flash in MemoryMapped for XiP"
-	depends on XIP
-	help
-	  This option enables the XIP mode for the external NOR flash
-	  mounted on STM32 boards.
 
 endif # SOC_FLASH_STM32
