@@ -35,7 +35,10 @@
 };
 
 &spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	dma-enabled;
-	pinctrl-0 = <&spim3_default>;
-
+	pinctrl-0 = <&spim3_loopback>;
+	pinctrl-names = "default";
+	status = "okay";
 };
