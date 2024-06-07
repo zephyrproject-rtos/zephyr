@@ -3553,6 +3553,9 @@ endfunction()
 #   alias at the beginning of a path interchangeably with the full
 #   path to the aliased node in these functions. The usage comments
 #   will make this clear in each case.
+#
+# - Each of these methods also has a sysbuild_dt_* counterpart.
+#   See share/sysbuild/cmake/modules/sysbuild_extensions.cmake.
 
 # Usage:
 #   dt_nodelabel(<var> NODELABEL <label>)
@@ -3579,6 +3582,10 @@ endfunction()
 # <var>              : Return variable where the node path will be stored
 # NODELABEL <label>  : Node label
 function(dt_nodelabel var)
+  if(NOT DEFINED DEVICETREE_TARGET OR NOT TARGET "${DEVICETREE_TARGET}")
+    message(FATAL_ERROR "dt_nodelabel(${ARGV0} ...) devicetree is not available.")
+  endif()
+
   set(req_single_args "NODELABEL")
   cmake_parse_arguments(DT_LABEL "" "${req_single_args}" "" ${ARGN})
 
@@ -3594,7 +3601,7 @@ function(dt_nodelabel var)
     endif()
   endforeach()
 
-  get_target_property(${var} devicetree_target "DT_NODELABEL|${DT_LABEL_NODELABEL}")
+  get_target_property(${var} "${DEVICETREE_TARGET}" "DT_NODELABEL|${DT_LABEL_NODELABEL}")
   if(${${var}} STREQUAL ${var}-NOTFOUND)
     set(${var})
   endif()
@@ -3622,6 +3629,10 @@ endfunction()
 # <var>           : Return variable where the node path will be stored
 # PROPERTY <prop> : The alias to check
 function(dt_alias var)
+  if(NOT DEFINED DEVICETREE_TARGET OR NOT TARGET "${DEVICETREE_TARGET}")
+    message(FATAL_ERROR "dt_alias(${ARGV0} ...) devicetree is not available.")
+  endif()
+
   set(req_single_args "PROPERTY")
   cmake_parse_arguments(DT_ALIAS "" "${req_single_args}" "" ${ARGN})
 
@@ -3637,7 +3648,7 @@ function(dt_alias var)
     endif()
   endforeach()
 
-  get_target_property(${var} devicetree_target "DT_ALIAS|${DT_ALIAS_PROPERTY}")
+  get_target_property(${var} "${DEVICETREE_TARGET}" "DT_ALIAS|${DT_ALIAS_PROPERTY}")
   if(${${var}} STREQUAL ${var}-NOTFOUND)
     set(${var})
   endif()
@@ -3662,6 +3673,10 @@ endfunction()
 # <var>       : Return variable where the check result will be returned
 # PATH <path> : Node path
 function(dt_node_exists var)
+  if(NOT DEFINED DEVICETREE_TARGET OR NOT TARGET "${DEVICETREE_TARGET}")
+    message(FATAL_ERROR "dt_node_exists(${ARGV0} ...) devicetree is not available.")
+  endif()
+
   set(req_single_args "PATH")
   cmake_parse_arguments(DT_NODE "" "${req_single_args}" "" ${ARGN})
 
@@ -3707,6 +3722,10 @@ endfunction()
 # PATH <path>     : Node path
 # STATUS <status> : Status to check
 function(dt_node_has_status var)
+  if(NOT DEFINED DEVICETREE_TARGET OR NOT TARGET "${DEVICETREE_TARGET}")
+    message(FATAL_ERROR "dt_node_has_status(${ARGV0} ...) devicetree is not available.")
+  endif()
+
   set(req_single_args "PATH;STATUS")
   cmake_parse_arguments(DT_NODE "" "${req_single_args}" "" ${ARGN})
 
@@ -3792,6 +3811,10 @@ endfunction()
 #                  appears in the DTS source
 # INDEX <idx>    : Optional index when retrieving a value in an array property
 function(dt_prop var)
+  if(NOT DEFINED DEVICETREE_TARGET OR NOT TARGET "${DEVICETREE_TARGET}")
+    message(FATAL_ERROR "dt_prop(${ARGV0} ...) devicetree is not available.")
+  endif()
+
   set(req_single_args "PATH;PROPERTY")
   set(single_args "INDEX")
   cmake_parse_arguments(DT_PROP "" "${req_single_args};${single_args}" "" ${ARGN})
@@ -3809,7 +3832,7 @@ function(dt_prop var)
   endforeach()
 
   dt_path_internal(canonical "${DT_PROP_PATH}")
-  get_property(exists TARGET devicetree_target
+  get_property(exists TARGET "${DEVICETREE_TARGET}"
       PROPERTY "DT_PROP|${canonical}|${DT_PROP_PROPERTY}"
       SET
   )
@@ -3819,7 +3842,7 @@ function(dt_prop var)
     return()
   endif()
 
-  get_target_property(val devicetree_target
+  get_target_property(val "${DEVICETREE_TARGET}"
       "DT_PROP|${canonical}|${DT_PROP_PROPERTY}"
   )
 
@@ -3848,6 +3871,10 @@ endfunction()
 # INDEX <idx>            : Optional index when retrieving a value in an array property
 
 function(dt_comp_path var)
+  if(NOT DEFINED DEVICETREE_TARGET OR NOT TARGET "${DEVICETREE_TARGET}")
+    message(FATAL_ERROR "dt_comp_path(${ARGV0} ...) devicetree is not available.")
+  endif()
+
   set(req_single_args "COMPATIBLE")
   set(single_args "INDEX")
   cmake_parse_arguments(DT_COMP "" "${req_single_args};${single_args}" "" ${ARGN})
@@ -3864,7 +3891,7 @@ function(dt_comp_path var)
     endif()
   endforeach()
 
-  get_property(exists TARGET devicetree_target
+  get_property(exists TARGET "${DEVICETREE_TARGET}"
       PROPERTY "DT_COMP|${DT_COMP_COMPATIBLE}"
       SET
   )
@@ -3874,7 +3901,7 @@ function(dt_comp_path var)
     return()
   endif()
 
-  get_target_property(val devicetree_target
+  get_target_property(val "${DEVICETREE_TARGET}"
       "DT_COMP|${DT_COMP_COMPATIBLE}"
   )
 
@@ -3903,6 +3930,10 @@ endfunction()
 # <var>          : Return variable where the property value will be stored
 # PATH <path>    : Node path
 function(dt_num_regs var)
+  if(NOT DEFINED DEVICETREE_TARGET OR NOT TARGET "${DEVICETREE_TARGET}")
+    message(FATAL_ERROR "dt_num_regs(${ARGV0} ...) devicetree is not available.")
+  endif()
+
   set(req_single_args "PATH")
   cmake_parse_arguments(DT_REG "" "${req_single_args}" "" ${ARGN})
 
@@ -3919,7 +3950,7 @@ function(dt_num_regs var)
   endforeach()
 
   dt_path_internal(canonical "${DT_REG_PATH}")
-  get_target_property(${var} devicetree_target "DT_REG|${canonical}|NUM")
+  get_target_property(${var} "${DEVICETREE_TARGET}" "DT_REG|${canonical}|NUM")
 
   set(${var} ${${var}} PARENT_SCOPE)
 endfunction()
@@ -3949,6 +3980,10 @@ endfunction()
 # INDEX <idx>    : Register block index number
 # NAME <name>    : Register block name
 function(dt_reg_addr var)
+  if(NOT DEFINED DEVICETREE_TARGET OR NOT TARGET "${DEVICETREE_TARGET}")
+    message(FATAL_ERROR "dt_reg_addr(${ARGV0} ...) devicetree is not available.")
+  endif()
+
   set(req_single_args "PATH")
   set(single_args "INDEX;NAME")
   cmake_parse_arguments(DT_REG "" "${req_single_args};${single_args}" "" ${ARGN})
@@ -3978,7 +4013,7 @@ function(dt_reg_addr var)
   endif()
 
   dt_path_internal(canonical "${DT_REG_PATH}")
-  get_target_property(${var}_list devicetree_target "DT_REG|${canonical}|ADDR")
+  get_target_property(${var}_list "${DEVICETREE_TARGET}" "DT_REG|${canonical}|ADDR")
 
   list(GET ${var}_list ${DT_REG_INDEX} ${var})
 
@@ -4009,6 +4044,10 @@ endfunction()
 # INDEX <idx>    : Register block index number
 # NAME <name>    : Register block name
 function(dt_reg_size var)
+  if(NOT DEFINED DEVICETREE_TARGET OR NOT TARGET "${DEVICETREE_TARGET}")
+    message(FATAL_ERROR "dt_reg_size(${ARGV0} ...) devicetree is not available.")
+  endif()
+
   set(req_single_args "PATH")
   set(single_args "INDEX;NAME")
   cmake_parse_arguments(DT_REG "" "${req_single_args};${single_args}" "" ${ARGN})
@@ -4038,7 +4077,7 @@ function(dt_reg_size var)
   endif()
 
   dt_path_internal(canonical "${DT_REG_PATH}")
-  get_target_property(${var}_list devicetree_target "DT_REG|${canonical}|SIZE")
+  get_target_property(${var}_list "${DEVICETREE_TARGET}" "DT_REG|${canonical}|SIZE")
 
   list(GET ${var}_list ${DT_REG_INDEX} ${var})
 
@@ -4086,6 +4125,10 @@ endfunction()
 # <var>           : Return variable
 # PROPERTY <prop> : Chosen property
 function(dt_has_chosen var)
+  if(NOT DEFINED DEVICETREE_TARGET OR NOT TARGET "${DEVICETREE_TARGET}")
+    message(FATAL_ERROR "dt_has_chosen(${ARGV0} ...) devicetree is not available.")
+  endif()
+
   set(req_single_args "PROPERTY")
   cmake_parse_arguments(DT_CHOSEN "" "${req_single_args}" "" ${ARGN})
 
@@ -4101,7 +4144,7 @@ function(dt_has_chosen var)
     endif()
   endforeach()
 
-  get_target_property(exists devicetree_target "DT_CHOSEN|${DT_CHOSEN_PROPERTY}")
+  get_target_property(exists "${DEVICETREE_TARGET}" "DT_CHOSEN|${DT_CHOSEN_PROPERTY}")
 
   if(${exists} STREQUAL exists-NOTFOUND)
     set(${var} FALSE PARENT_SCOPE)
@@ -4121,6 +4164,10 @@ endfunction()
 # <var>           : Return variable where the node path will be stored
 # PROPERTY <prop> : Chosen property
 function(dt_chosen var)
+  if(NOT DEFINED DEVICETREE_TARGET OR NOT TARGET "${DEVICETREE_TARGET}")
+    message(FATAL_ERROR "dt_chosen(${ARGV0} ...) devicetree is not available.")
+  endif()
+
   set(req_single_args "PROPERTY")
   cmake_parse_arguments(DT_CHOSEN "" "${req_single_args}" "" ${ARGN})
 
@@ -4136,7 +4183,7 @@ function(dt_chosen var)
     endif()
   endforeach()
 
-  get_target_property(${var} devicetree_target "DT_CHOSEN|${DT_CHOSEN_PROPERTY}")
+  get_target_property(${var} "${DEVICETREE_TARGET}" "DT_CHOSEN|${DT_CHOSEN_PROPERTY}")
 
   if(${${var}} STREQUAL ${var}-NOTFOUND)
     set(${var} PARENT_SCOPE)
@@ -4208,7 +4255,7 @@ endfunction()
 # to an existing node. Set it to FALSE otherwise. See
 # dt_path_internal for a definition and examples of 'canonical' paths.
 function(dt_path_internal_exists var path)
-  get_target_property(path_prop devicetree_target "DT_NODE|${path}")
+  get_target_property(path_prop "${DEVICETREE_TARGET}" "DT_NODE|${path}")
   if (path_prop)
     set(${var} TRUE PARENT_SCOPE)
   else()
