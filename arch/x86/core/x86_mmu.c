@@ -2112,7 +2112,7 @@ void arch_mem_page_in(void *addr, uintptr_t phys)
 __pinned_func
 void arch_mem_scratch(uintptr_t phys)
 {
-	page_map_set(z_x86_page_tables_get(), Z_SCRATCH_PAGE,
+	page_map_set(z_x86_page_tables_get(), K_MEM_SCRATCH_PAGE,
 		     phys | MMU_P | MMU_RW | MMU_XD, NULL, MASK_ALL,
 		     OPTION_FLUSH);
 }
