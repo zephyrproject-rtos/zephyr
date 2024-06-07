@@ -838,9 +838,8 @@ static void handle_ep0_nak(void)
 	} else {
 		if (REG_GET_BIT(USB_RXC0_REG, USB_RX_EN) == 0 &&
 		    GET_BIT(ep0_nak, USB_USB_EP0_NAK_REG_USB_EP0_OUTNAK)) {
-			/* NAK over EP0 was sent, transmit should conclude */
+			/* NAK over EP0 was sent, receive should conclude */
 			USB->USB_TXC0_REG = USB_USB_TXC0_REG_USB_FLUSH_Msk;
-			REG_SET_BIT(USB_RXC0_REG, USB_FLUSH);
 			REG_SET_BIT(USB_RXC0_REG, USB_RX_EN);
 			REG_CLR_BIT(USB_MAMSK_REG, USB_M_EP0_NAK);
 		}
