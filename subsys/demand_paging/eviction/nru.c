@@ -27,38 +27,39 @@
 static void nru_periodic_update(struct k_timer *timer)
 {
 	uintptr_t phys;
-	struct z_page_frame *pf;
+	struct k_mem_page_frame *pf;
 	unsigned int key = irq_lock();
 
-	Z_PAGE_FRAME_FOREACH(phys, pf) {
-		if (!z_page_frame_is_evictable(pf)) {
+	K_MEM_PAGE_FRAME_FOREACH(phys, pf) {
+		if (!k_mem_page_frame_is_evictable(pf)) {
 			continue;
 		}
 
 		/* Clear accessed bit in page tables */
-		(void)arch_page_info_get(z_page_frame_to_virt(pf), NULL, true);
+		(void)arch_page_info_get(k_mem_page_frame_to_virt(pf),
+					 NULL, true);
 	}
 
 	irq_unlock(key);
 }
 
-struct z_page_frame *k_mem_paging_eviction_select(bool *dirty_ptr)
+struct k_mem_page_frame *k_mem_paging_eviction_select(bool *dirty_ptr)
 {
 	unsigned int last_prec = 4U;
-	struct z_page_frame *last_pf = NULL, *pf;
+	struct k_mem_page_frame *last_pf = NULL, *pf;
 	bool accessed;
 	bool last_dirty = false;
 	bool dirty = false;
 	uintptr_t flags, phys;
 
-	Z_PAGE_FRAME_FOREACH(phys, pf) {
+	K_MEM_PAGE_FRAME_FOREACH(phys, pf) {
 		unsigned int prec;
 
-		if (!z_page_frame_is_evictable(pf)) {
+		if (!k_mem_page_frame_is_evictable(pf)) {
 			continue;
 		}
 
-		flags = arch_page_info_get(z_page_frame_to_virt(pf), NULL, false);
+		flags = arch_page_info_get(k_mem_page_frame_to_virt(pf), NULL, false);
 		accessed = (flags & ARCH_DATA_PAGE_ACCESSED) != 0UL;
 		dirty = (flags & ARCH_DATA_PAGE_DIRTY) != 0UL;
 

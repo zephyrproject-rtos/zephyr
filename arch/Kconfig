@@ -792,7 +792,7 @@ config ARCH_MAPS_ALL_RAM
 	  virtual addresses elsewhere, this is limited to only management of the
 	  virtual address space. The kernel's page frame ontology will not consider
 	  this mapping at all; non-kernel pages will be considered free (unless marked
-	  as reserved) and Z_PAGE_FRAME_MAPPED will not be set.
+	  as reserved) and K_MEM_PAGE_FRAME_MAPPED will not be set.
 
 config DCLS
 	bool "Processor is configured in DCLS mode"
