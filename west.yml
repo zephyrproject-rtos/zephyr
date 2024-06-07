@@ -127,7 +127,7 @@ manifest:
       revision: 0c8669d81381ccf3b1a01d699f3b68b50134a99f
       path: modules/lib/cmsis-nn
     - name: edtt
-      revision: 64e5105ad82390164fb73fc654be3f73a608209a
+      revision: 8d7b543d4d2f2be0f78481e4e1d8d73a88024803
       path: tools/edtt
       groups:
         - tools
