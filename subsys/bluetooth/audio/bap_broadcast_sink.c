@@ -622,6 +622,7 @@ static bool base_subgroup_bis_index_cb(const struct bt_bap_base_subgroup_bis *bi
 
 		memcpy(&sink_bis->codec_cfg.data[sink_bis->codec_cfg.data_len], bis->data,
 		       bis->data_len);
+		sink_bis->codec_cfg.data_len += bis->data_len;
 	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
