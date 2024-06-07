@@ -427,6 +427,8 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					       {"band", required_argument, 0, 'b'},
 					       {"channel", required_argument, 0, 'c'},
 					       {"timeout", required_argument, 0, 't'},
+					       {"aid", required_argument, 0, 'a'},
+					       {"key-passwd", required_argument, 0, 'K'},
 					       {"help", no_argument, 0, 'h'},
 					       {0, 0, 0, 0}};
 	int opt_index = 0;
@@ -447,7 +449,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->security = WIFI_SECURITY_TYPE_NONE;
 	params->mfp = WIFI_MFP_OPTIONAL;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:h",
+	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:h",
 		long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -554,6 +556,24 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					PR_ERROR("Invalid timeout: %s\n", optarg);
 					return -EINVAL;
 				}
+			}
+			break;
+		case 'a':
+			params->aid = optarg;
+			params->aid_length = strlen(params->aid);
+			if (params->aid_length > WIFI_IDENTITY_MAX_LEN) {
+				PR_WARNING("aid too long (max %d characters)\n",
+					    WIFI_IDENTITY_MAX_LEN);
+				return -EINVAL;
+			}
+			break;
+		case 'K':
+			params->key_passwd = optarg;
+			params->key_passwd_length = strlen(params->key_passwd);
+			if (params->key_passwd_length > WIFI_PSWD_MAX_LEN) {
+				PR_WARNING("key_passwd too long (max %d characters)\n",
+					    WIFI_PSWD_MAX_LEN);
+				return -EINVAL;
 			}
 			break;
 		case 'h':
@@ -1960,7 +1980,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  "-c --channel=<channel number>\n"
 		  "-p --passphrase=<PSK> (valid only for secure SSIDs)\n"
 		  "-k --key-mgmt=<Security type> (valid only for secure SSIDs)\n"
-		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP, 7: WPA-PSK\n"
+		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:WEP, 6: WPA-PSK\n"
+		  "7: WPA-Auto-Personal, 8: EAP-TLS\n"
 		  "-w --ieee-80211w=<MFP> (optional: needs security type to be specified)\n"
 		  "0:Disable, 1:Optional, 2:Required\n"
 		  "-b --band=<band> (2 -2.4GHz, 5 - 5Ghz, 6 - 6GHz)\n"
@@ -2033,13 +2054,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		  "[-b, --band] 0: any band (2:2.4GHz, 5:5GHz, 6:6GHz]\n"
 		  "[-p, --psk]: Passphrase (valid only for secure SSIDs)\n"
 		  "[-k, --key-mgmt]: Key Management type (valid only for secure SSIDs)\n"
-		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP,"
-		  " 7: WPA-PSK, 8: WPA-Auto-Personal\n"
+		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:WEP, 6: WPA-PSK\n"
+		  "7: WPA-Auto-Personal, 8: EAP-TLS\n"
 		  "[-e, --SAE-PWE]: SAE mechanism for PWE derivation (0/1/2)\n"
 		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n"
 		  "[-m, --bssid]: MAC address of the AP (BSSID).\n"
 		  "[-t, --timeout]: Timeout for the connection attempt (in seconds).\n"
+		  "[-a, --aid]: Anonymous identity for enterprise mode.\n"
+		  "[-K, --key-passwd]: Private key passwd for enterprise mode.\n"
 		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
 		  2, 7),
