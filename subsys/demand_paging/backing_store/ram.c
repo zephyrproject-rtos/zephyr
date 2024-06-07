@@ -112,13 +112,13 @@ void k_mem_paging_backing_store_location_free(uintptr_t location)
 
 void k_mem_paging_backing_store_page_out(uintptr_t location)
 {
-	(void)memcpy(location_to_slab(location), Z_SCRATCH_PAGE,
+	(void)memcpy(location_to_slab(location), K_MEM_SCRATCH_PAGE,
 		     CONFIG_MMU_PAGE_SIZE);
 }
 
 void k_mem_paging_backing_store_page_in(uintptr_t location)
 {
-	(void)memcpy(Z_SCRATCH_PAGE, location_to_slab(location),
+	(void)memcpy(K_MEM_SCRATCH_PAGE, location_to_slab(location),
 		     CONFIG_MMU_PAGE_SIZE);
 }
 

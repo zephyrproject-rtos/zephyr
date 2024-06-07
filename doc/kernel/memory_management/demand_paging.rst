@@ -72,10 +72,10 @@ Page Frame
   * ``Z_PAGE_FRAME_BACKED`` indicates a page frame has a clean copy
     in the backing store.
 
-Z_SCRATCH_PAGE
+K_MEM_SCRATCH_PAGE
   The virtual address of a special page provided to the backing store to:
-  * Copy a data page from ``Z_SCRATCH_PAGE`` to the specified location; or,
-  * Copy a data page from the provided location to ``Z_SCRATCH_PAGE``.
+  * Copy a data page from ``k_MEM_SCRATCH_PAGE`` to the specified location; or,
+  * Copy a data page from the provided location to ``K_MEM_SCRATCH_PAGE``.
   This is used as an intermediate page for page in/out operations. This
   scratch needs to be mapped read/write for backing store code to access.
   However the data page itself may only be mapped as read-only in virtual
@@ -163,10 +163,10 @@ which must be implemented:
 
 * :c:func:`k_mem_paging_backing_store_page_in()` copies a data page
   from the backing store location associated with the provided
-  ``location`` token to the page pointed by ``Z_SCRATCH_PAGE``.
+  ``location`` token to the page pointed by ``K_MEM_SCRATCH_PAGE``.
 
 * :c:func:`k_mem_paging_backing_store_page_out()` copies a data page
-  from ``Z_SCRATCH_PAGE`` to the backing store location associated
+  from ``K_MEM_SCRATCH_PAGE`` to the backing store location associated
   with the provided ``location`` token.
 
 * :c:func:`k_mem_paging_backing_store_page_finalize()` is invoked after

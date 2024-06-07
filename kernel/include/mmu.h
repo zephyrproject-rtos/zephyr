@@ -323,9 +323,12 @@ void z_page_frames_dump(void);
  */
 #define K_MEM_VM_RESERVED	CONFIG_MMU_PAGE_SIZE
 
-#define Z_SCRATCH_PAGE	((void *)((uintptr_t)CONFIG_KERNEL_VM_BASE + \
-				     (uintptr_t)CONFIG_KERNEL_VM_SIZE - \
-				     CONFIG_MMU_PAGE_SIZE))
+/**
+ * @brief Location of the scratch page used for demand paging.
+ */
+#define K_MEM_SCRATCH_PAGE	((void *)((uintptr_t)CONFIG_KERNEL_VM_BASE + \
+					  (uintptr_t)CONFIG_KERNEL_VM_SIZE - \
+					  CONFIG_MMU_PAGE_SIZE))
 #else
 #define K_MEM_VM_RESERVED	0
 #endif /* CONFIG_DEMAND_PAGING */
