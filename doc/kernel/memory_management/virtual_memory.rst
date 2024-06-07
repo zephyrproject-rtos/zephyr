@@ -75,7 +75,7 @@ below.
 
    +--------------+ <- K_MEM_VIRT_RAM_START
    | Undefined VM | <- architecture specific reserved area
-   +--------------+ <- Z_KERNEL_VIRT_START
+   +--------------+ <- K_MEM_KERNEL_VIRT_START
    | Mapping for  |
    | main kernel  |
    | image        |
@@ -108,11 +108,11 @@ below.
 
 * ``K_MEM_VIRT_RAM_END`` is simply (``K_MEM_VIRT_RAM_START`` + ``K_MEM_VIRT_RAM_SIZE``).
 
-* ``Z_KERNEL_VIRT_START`` is the same as ``z_mapped_start`` specified in the linker
+* ``K_MEM_KERNEL_VIRT_START`` is the same as ``z_mapped_start`` specified in the linker
   script. This is the virtual address of the beginning of the kernel image at
   boot time.
 
-* ``Z_KERNEL_VIRT_END`` is the same as ``z_mapped_end`` specified in the linker
+* ``K_MEM_KERNEL_VIRT_END`` is the same as ``z_mapped_end`` specified in the linker
   script. This is the virtual address of the end of the kernel image at boot time.
 
 * ``Z_FREE_VM_START`` is the beginning of the virtual address space where addresses
@@ -123,7 +123,7 @@ below.
     memory address space, and it is the same as
     (:kconfig:option:`CONFIG_SRAM_BASE_ADDRESS` + :kconfig:option:`CONFIG_SRAM_SIZE`).
 
-  * If it is disabled, ``Z_FREE_VM_START`` is the same ``Z_KERNEL_VIRT_END`` which
+  * If it is disabled, ``Z_FREE_VM_START`` is the same ``K_MEM_KERNEL_VIRT_END`` which
     is the end of the kernel image.
 
 * ``Z_VM_RESERVED`` is an area reserved to support kernel functions. For example,

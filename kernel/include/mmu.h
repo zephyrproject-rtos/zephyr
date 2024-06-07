@@ -46,10 +46,14 @@
 /** End address (exclusive) of virtual memory. */
 #define K_MEM_VIRT_RAM_END	(K_MEM_VIRT_RAM_START + K_MEM_VIRT_RAM_SIZE)
 
-/* Boot-time virtual location of the kernel image. */
-#define Z_KERNEL_VIRT_START	((uint8_t *)&z_mapped_start[0])
-#define Z_KERNEL_VIRT_END	((uint8_t *)&z_mapped_end[0])
-#define Z_KERNEL_VIRT_SIZE	(Z_KERNEL_VIRT_END - Z_KERNEL_VIRT_START)
+/** Boot-time virtual start address of the kernel image. */
+#define K_MEM_KERNEL_VIRT_START	((uint8_t *)&z_mapped_start[0])
+
+/** Boot-time virtual end address of the kernel image. */
+#define K_MEM_KERNEL_VIRT_END	((uint8_t *)&z_mapped_end[0])
+
+/** Boot-time virtual address space size of the kernel image. */
+#define K_MEM_KERNEL_VIRT_SIZE	(K_MEM_KERNEL_VIRT_END - K_MEM_KERNEL_VIRT_START)
 
 /**
  * @brief Offset for translating between static physical and virtual addresses.
@@ -89,7 +93,7 @@
 #ifdef CONFIG_ARCH_MAPS_ALL_RAM
 #define Z_FREE_VM_START	K_MEM_BOOT_PHYS_TO_VIRT(K_MEM_PHYS_RAM_END)
 #else
-#define Z_FREE_VM_START	Z_KERNEL_VIRT_END
+#define Z_FREE_VM_START	K_MEM_KERNEL_VIRT_END
 #endif /* CONFIG_ARCH_MAPS_ALL_RAM */
 
 /*
