@@ -407,7 +407,7 @@ ZTEST(mem_map_api, test_k_mem_map_exhaustion)
 	 *    virtual address (plus itself and guard page)
 	 *    to obtain the end address.
 	 * 2. Calculate how big this region is from
-	 *    Z_FREE_VM_START to end address.
+	 *    K_MEM_VM_FREE_START to end address.
 	 * 3. Calculate how many times we can call k_mem_map().
 	 *    Remember there are two guard pages for every
 	 *    mapping call (hence 1 + 2 == 3).
@@ -417,7 +417,7 @@ ZTEST(mem_map_api, test_k_mem_map_exhaustion)
 	k_mem_unmap(addr, CONFIG_MMU_PAGE_SIZE);
 
 	cnt = POINTER_TO_UINT(addr) + CONFIG_MMU_PAGE_SIZE * 2;
-	cnt -= POINTER_TO_UINT(Z_FREE_VM_START);
+	cnt -= POINTER_TO_UINT(K_MEM_VM_FREE_START);
 	cnt /= CONFIG_MMU_PAGE_SIZE * 3;
 
 	/* If we are limited by virtual address space... */
