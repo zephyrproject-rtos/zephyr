@@ -284,6 +284,18 @@ static const char *get_l4_desc(uint32_t event)
 	case NET_EVENT_L4_DISCONNECTED:
 		desc = "disconnected";
 		break;
+	case NET_EVENT_L4_IPV4_CONNECTED:
+		desc = "IPv4 connectivity available";
+		break;
+	case NET_EVENT_L4_IPV4_DISCONNECTED:
+		desc = "IPv4 connectivity lost";
+		break;
+	case NET_EVENT_L4_IPV6_CONNECTED:
+		desc = "IPv6 connectivity available";
+		break;
+	case NET_EVENT_L4_IPV6_DISCONNECTED:
+		desc = "IPv6 connectivity lost";
+		break;
 	case NET_EVENT_DNS_SERVER_ADD:
 		desc = "DNS server add";
 		break;
