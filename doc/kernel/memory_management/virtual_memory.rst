@@ -95,7 +95,7 @@ below.
    +--------------+
    | Mapping      |
    +--------------+ <- memory mappings start here
-   | Reserved     | <- special purpose virtual page(s) of size Z_VM_RESERVED
+   | Reserved     | <- special purpose virtual page(s) of size K_MEM_VM_RESERVED
    +--------------+ <- K_MEM_VIRT_RAM_END
 
 * ``K_MEM_VIRT_RAM_START`` is the beginning of the virtual memory address space.
@@ -126,7 +126,7 @@ below.
   * If it is disabled, ``K_MEM_VM_FREE_START`` is the same ``K_MEM_KERNEL_VIRT_END`` which
     is the end of the kernel image.
 
-* ``Z_VM_RESERVED`` is an area reserved to support kernel functions. For example,
+* ``K_MEM_VM_RESERVED`` is an area reserved to support kernel functions. For example,
   some addresses are reserved to support demand paging.
 
 
