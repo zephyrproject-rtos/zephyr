@@ -10,7 +10,8 @@ config STM32_MEMMAP
 	bool "NOR Flash in MemoryMapped for XiP"
 	depends on XIP && \
 		    (DT_HAS_ST_STM32_OSPI_NOR_ENABLED || \
-		     DT_HAS_ST_STM32_QSPI_NOR_ENABLED)
+		     DT_HAS_ST_STM32_QSPI_NOR_ENABLED || \
+		     DT_HAS_ST_STM32_XSPI_NOR_ENABLED)
 	help
 	  This option enables the XIP mode for the external NOR flash
 	  mounted on STM32 boards.
