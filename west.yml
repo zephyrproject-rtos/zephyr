@@ -34,7 +34,7 @@ manifest:
       path: modules/lib/acpica
     - name: bsim
       repo-path: babblesim-manifest
-      revision: 68f6282c6a7f54641b75f5f9fc953c85e272a983
+      revision: 9351ae1ad44864a49c351f9704f65f43046abeb0
       path: tools/bsim
       groups:
         - babblesim
@@ -56,7 +56,7 @@ manifest:
       remote: babblesim
       repo-path: ext_2G4_phy_v1
       path: tools/bsim/components/ext_2G4_phy_v1
-      revision: d8302b8d51409b9e717a1a0ba6b443d3b5552a6c
+      revision: 04eeb3c3794444122fbeeb3715f4233b0b50cfbb
       groups:
         - babblesim
     - name: babblesim_ext_2G4_channel_NtNcable
