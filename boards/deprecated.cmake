@@ -164,6 +164,24 @@ set(efr32_radio_brd4250b_DEPRECATED
 set(efr32_radio_brd4255a_DEPRECATED
     efr32_radio/efr32fg13p233f512gm48
 )
+set(efm32gg_sltb009a_DEPRECATED
+    sltb009a
+)
+set(efr32mg_sltb004a_DEPRECATED
+    sltb004a
+)
+set(efr32bg22_brd4184a_DEPRECATED
+    sltb010a@0
+)
+set(efr32bg22_brd4184b_DEPRECATED
+    sltb010a@2
+)
+set(efr32xg24_dk2601b_DEPRECATED
+    xg24_dk2601b
+)
+set(efr32bg27_brd2602a_DEPRECATED
+    xg27_dk2602a
+)
 set(em_starterkit_DEPRECATED
     em_starterkit/emsk_em9d
 )
