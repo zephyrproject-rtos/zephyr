@@ -936,7 +936,7 @@ static void mark_linker_section_pinned(void *start_addr, void *end_addr,
 
 	VIRT_FOREACH(UINT_TO_POINTER(pinned_start), pinned_size, addr)
 	{
-		pf = z_phys_to_page_frame(Z_BOOT_VIRT_TO_PHYS(addr));
+		pf = z_phys_to_page_frame(K_MEM_BOOT_VIRT_TO_PHYS(addr));
 		frame_mapped_set(pf, addr);
 
 		if (pin) {
@@ -972,7 +972,7 @@ void z_mem_manage_init(void)
 	 */
 	VIRT_FOREACH(Z_KERNEL_VIRT_START, Z_KERNEL_VIRT_SIZE, addr)
 	{
-		pf = z_phys_to_page_frame(Z_BOOT_VIRT_TO_PHYS(addr));
+		pf = z_phys_to_page_frame(K_MEM_BOOT_VIRT_TO_PHYS(addr));
 		frame_mapped_set(pf, addr);
 
 		/* TODO: for now we pin the whole Zephyr image. Demand paging
