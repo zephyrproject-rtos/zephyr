@@ -136,15 +136,17 @@ static int llext_find_tables(struct llext_loader *ldr)
 			return ret;
 		}
 
-		LOG_DBG("section %d at %zx: name %d, type %d, flags %zx, "
-			"ofs %zx, addr %zx, size %zd",
-			i, pos,
+		LOG_DBG("section %d at 0x%zx: name %d, type %d, flags 0x%zx, "
+			"addr 0x%zx, size %zd, link %d, info %d",
+			i,
+			(size_t)shdr.sh_offset,
 			shdr.sh_name,
 			shdr.sh_type,
 			(size_t)shdr.sh_flags,
-			(size_t)shdr.sh_offset,
 			(size_t)shdr.sh_addr,
-			(size_t)shdr.sh_size);
+			(size_t)shdr.sh_size,
+			shdr.sh_link,
+			shdr.sh_info);
 
 		switch (shdr.sh_type) {
 		case SHT_SYMTAB:
@@ -204,12 +206,6 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 			return ret;
 		}
 
-		if ((shdr.sh_type != SHT_PROGBITS && shdr.sh_type != SHT_NOBITS) ||
-		    !(shdr.sh_flags & SHF_ALLOC) ||
-		    shdr.sh_size == 0) {
-			continue;
-		}
-
 		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr.sh_name);
 
 		/* Identify the section type by its flags */
@@ -229,13 +225,20 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 			}
 			break;
 		default:
-			LOG_DBG("Not copied section %s", name);
-			continue;
+			mem_idx = LLEXT_MEM_COUNT;
+			break;
 		}
 
 		/* Special exception for .exported_sym */
 		if (strcmp(name, ".exported_sym") == 0) {
 			mem_idx = LLEXT_MEM_EXPORT;
+		}
+
+		if (mem_idx == LLEXT_MEM_COUNT ||
+		    !(shdr.sh_flags & SHF_ALLOC) ||
+		    shdr.sh_size == 0) {
+			LOG_DBG("section %d name %s skipped", i, name);
+			continue;
 		}
 
 		LOG_DBG("section %d name %s maps to idx %d", i, name, mem_idx);
