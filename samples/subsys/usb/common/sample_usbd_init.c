@@ -9,7 +9,6 @@
 #include <zephyr/device.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/bos.h>
-#include <zephyr/sys/iterable_sections.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_sample_config);
@@ -51,68 +50,9 @@ static const struct usb_bos_capability_lpm bos_cap_lpm = {
 
 USBD_DESC_BOS_DEFINE(sample_usbext, sizeof(bos_cap_lpm), &bos_cap_lpm);
 
-static int register_fs_classes(struct usbd_context *uds_ctx)
+static void sample_fix_code_triple(struct usbd_context *uds_ctx,
+				   const enum usbd_speed speed)
 {
-	int err = 0;
-
-	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_node, c_nd) {
-		/* Pull everything that is enabled in our configuration. */
-		err = usbd_register_class(uds_ctx, c_nd->c_data->name,
-					  USBD_SPEED_FS, 1);
-		if (err) {
-			LOG_ERR("Failed to register FS %s (%d)",
-				c_nd->c_data->name, err);
-			return err;
-		}
-
-		LOG_DBG("Register FS %s", c_nd->c_data->name);
-	}
-
-	return err;
-}
-
-static int register_hs_classes(struct usbd_context *uds_ctx)
-{
-	int err = 0;
-
-	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_node, c_nd) {
-		/* Pull everything that is enabled in our configuration. */
-		err = usbd_register_class(uds_ctx, c_nd->c_data->name,
-					  USBD_SPEED_HS, 1);
-		if (err) {
-			LOG_ERR("Failed to register HS %s (%d)",
-				c_nd->c_data->name, err);
-			return err;
-		}
-
-		LOG_DBG("Register HS %s", c_nd->c_data->name);
-	}
-
-	return err;
-}
-
-static int sample_add_configuration(struct usbd_context *uds_ctx,
-				    const enum usbd_speed speed,
-				    struct usbd_config_node *config)
-{
-	int err;
-
-	err = usbd_add_configuration(uds_ctx, speed, config);
-	if (err) {
-		LOG_ERR("Failed to add configuration (%d)", err);
-		return err;
-	}
-
-	if (speed == USBD_SPEED_FS) {
-		err = register_fs_classes(uds_ctx);
-	} else if (speed == USBD_SPEED_HS) {
-		err = register_hs_classes(uds_ctx);
-	}
-
-	if (err) {
-		return err;
-	}
-
 	/* Always use class code information from Interface Descriptors */
 	if (IS_ENABLED(CONFIG_USBD_CDC_ACM_CLASS) ||
 	    IS_ENABLED(CONFIG_USBD_CDC_ECM_CLASS) ||
@@ -127,8 +67,6 @@ static int sample_add_configuration(struct usbd_context *uds_ctx,
 	} else {
 		usbd_device_set_code_triple(uds_ctx, speed, 0, 0, 0);
 	}
-
-	return 0;
 }
 
 struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
@@ -160,20 +98,36 @@ struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
 	}
 
 	if (usbd_caps_speed(&sample_usbd) == USBD_SPEED_HS) {
-		err = sample_add_configuration(&sample_usbd, USBD_SPEED_HS,
-					       &sample_hs_config);
+		err = usbd_add_configuration(&sample_usbd, USBD_SPEED_HS,
+					     &sample_hs_config);
 		if (err) {
 			LOG_ERR("Failed to add High-Speed configuration");
 			return NULL;
 		}
+
+		err = usbd_register_all_classes(&sample_usbd, USBD_SPEED_HS, 1);
+		if (err) {
+			LOG_ERR("Failed to add register classes");
+			return NULL;
+		}
+
+		sample_fix_code_triple(&sample_usbd, USBD_SPEED_HS);
 	}
 
-	err = sample_add_configuration(&sample_usbd, USBD_SPEED_FS,
-				       &sample_fs_config);
+	err = usbd_add_configuration(&sample_usbd, USBD_SPEED_FS,
+				     &sample_fs_config);
 	if (err) {
 		LOG_ERR("Failed to add Full-Speed configuration");
 		return NULL;
 	}
+
+	err = usbd_register_all_classes(&sample_usbd, USBD_SPEED_FS, 1);
+	if (err) {
+		LOG_ERR("Failed to add register classes");
+		return NULL;
+	}
+
+	sample_fix_code_triple(&sample_usbd, USBD_SPEED_FS);
 
 	if (msg_cb != NULL) {
 		err = usbd_msg_register_cb(&sample_usbd, msg_cb);
