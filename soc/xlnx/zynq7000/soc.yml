@@ -4,7 +4,6 @@ family:
   - name: xc7zxxx
     socs:
     - name: xc7z010
-    - name: xc7z010
     - name: xc7z015
     - name: xc7z020
     - name: xc7z030
