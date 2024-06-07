@@ -3564,8 +3564,10 @@
  * @param status a status as one of the tokens okay or disabled, not a string
  * @return 1 if the node has the given status, 0 otherwise.
  */
+#ifndef ZTEST_UNITTEST /* If ZTEST_UNITTEST, a dummy version will be defined */
 #define DT_NODE_HAS_STATUS(node_id, status) \
 	DT_NODE_HAS_STATUS_INTERNAL(node_id, status)
+#endif /* ZTEST_UNITTEST */
 
 /**
  * @brief Does a node identifier refer to a node with a status `okay`?
