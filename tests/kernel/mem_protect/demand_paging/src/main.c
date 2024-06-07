@@ -93,7 +93,7 @@ ZTEST(demand_paging, test_map_anon_pages)
 	zassert_not_null(arena, "failed to map anonymous memory arena size %zu",
 			 arena_size);
 	printk("Anonymous memory arena %p size %zu\n", arena, arena_size);
-	z_page_frames_dump();
+	k_mem_page_frames_dump();
 }
 
 static void print_paging_stats(struct k_mem_paging_stats_t *stats, const char *scope)
