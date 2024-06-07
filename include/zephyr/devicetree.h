@@ -4557,10 +4557,6 @@
 #define DT_NODE_HAS_STATUS_INTERNAL(node_id, status) \
 	IS_ENABLED(DT_CAT3(node_id, _STATUS_, status))
 
-/** @brief Helper macro to OR multiple has property checks in a loop macro */
-#define DT_INST_NODE_HAS_PROP_AND_OR(inst, prop) \
-	DT_INST_NODE_HAS_PROP(inst, prop) ||
-
 /**
  * @def DT_U64_C
  * @brief Macro to add ULL postfix to the devicetree address constants
