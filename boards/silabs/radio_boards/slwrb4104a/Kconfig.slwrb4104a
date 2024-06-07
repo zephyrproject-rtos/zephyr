@@ -1,0 +1,8 @@
+# EFR32BG13 BRD4104A
+
+# Copyright (c) 2020 Piotr Mienkowski
+# Copyright (c) 2020 TriaGnoSys GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SLWRB4104A
+	select SOC_PART_NUMBER_EFR32BG13P632F512GM48

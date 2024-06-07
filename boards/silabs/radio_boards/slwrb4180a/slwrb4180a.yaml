@@ -1,0 +1,21 @@
+identifier: slwrb4180a
+name: EFR32xG21 2.4 GHz 20 dBm Radio Board (SLWRB4180A)
+type: mcu
+arch: arm
+ram: 96
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+  - gpio
+  - nvs
+  - uart
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: silabs

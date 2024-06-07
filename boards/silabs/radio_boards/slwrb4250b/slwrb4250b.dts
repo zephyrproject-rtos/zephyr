@@ -1,0 +1,88 @@
+/*
+ * Copyright (c) 2020 Piotr Mienkowski
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efr32fg1p133f256gm48.dtsi>
+#include <silabs/efr32xg1p-pinctrl.dtsi>
+#include "../common/efr32-series1-common.dtsi"
+
+/ {
+	model = "Silicon Labs BRD4250B (Flex Gecko 1 Radio Board)";
+	compatible = "silabs,slwrb4250b", "silabs,efr32fg1p";
+
+	pwmleds {
+		compatible = "pwm-leds";
+		status = "okay";
+		pwm_led0: pwm_led0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	aliases {
+		pwm-led0 = &pwm_led0;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <38400000>;
+};
+
+&timer0 {
+	status = "okay";
+
+	pwm0: pwm {
+		status = "okay";
+		pin-location = <GECKO_LOCATION(28) GECKO_PORT_F GECKO_PIN(4)>;
+		prescaler = <1024>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserve 32 kB for the bootloader */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0x00008000>;
+			read-only;
+		};
+
+		/* Reserve 94 kB for the application in slot 0 */
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 0x00017800>;
+		};
+
+		/* Reserve 94 kB for the application in slot 1 */
+		slot1_partition: partition@1f800 {
+			label = "image-1";
+			reg = <0x0001f800 0x00017800>;
+		};
+
+		/* Reserve 30 kB for the scratch partition */
+		scratch_partition: partition@37000 {
+			label = "image-scratch";
+			reg = <0x00037000 0x00007800>;
+		};
+
+		/* Set 6Kb of storage at the end of the 256Kb of flash */
+		storage_partition: partition@3e800 {
+			label = "storage";
+			reg = <0x0003e800 0x00001800>;
+		};
+
+	};
+};
+
+&usart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

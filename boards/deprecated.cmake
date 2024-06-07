@@ -143,26 +143,29 @@ set(efm32pg_stk3402a_DEPRECATED
 set(efm32pg_stk3402a_jg_DEPRECATED
     efm32pg_stk3402a/efm32jg12b500f1024gl125
 )
+set(efm32gg_slwstk6121a_DEPRECATED
+    slwrb4321a
+)
 set(efr32_radio_brd4104a_DEPRECATED
-    efr32_radio/efr32bg13p632f512gm48
+    slwrb4104a
 )
 set(efr32_radio_brd4161a_DEPRECATED
-    efr32_radio/efr32mg12p432f1024gl125
+    slwrb4161a
 )
 set(efr32_radio_brd4170a_DEPRECATED
-    efr32_radio/efr32mg12p433f1024gm68
+    slwrb4170a
 )
 set(efr32_radio_brd4180a_DEPRECATED
-    efr32_radio/efr32mg21a020f1024im32
+    slwrb4180a
 )
 set(efr32_radio_brd4187c_DEPRECATED
-    efr32_radio/efr32mg24b220f1536im48
+    xg24_rb4187c
 )
 set(efr32_radio_brd4250b_DEPRECATED
-    efr32_radio/efr32fg1p133f256gm48
+    slwrb4250b
 )
 set(efr32_radio_brd4255a_DEPRECATED
-    efr32_radio/efr32fg13p233f512gm48
+    slwrb4255a
 )
 set(efm32gg_sltb009a_DEPRECATED
     sltb009a
