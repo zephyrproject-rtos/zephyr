@@ -154,8 +154,8 @@ The current minimum required version for the main dependencies are:
 
          Therefore, we don't recommend using WSL when getting started.
 
-      These instructions must be run in a ``cmd.exe`` command prompt terminal window.
-      In modern version of Windows (10 and later) it is recommended to install the Windows Terminal
+      These instructions must be run in a ``cmd.exe`` Command Prompt window. In modern version
+      of Windows (10 and later) it is recommended to install the Windows Command Prompt
       application from the Microsoft Store. The required commands differ on PowerShell.
 
       These instructions rely on `Chocolatey`_. If Chocolatey isn't an option,
@@ -169,9 +169,9 @@ The current minimum required version for the main dependencies are:
 
       #. `Install chocolatey`_.
 
-      #. Open a ``cmd.exe`` terminal window as **Administrator**. To do so, press the Windows key,
-         type ``cmd.exe``, right-click the :guilabel:`Command Prompt` search result, and choose
-         :guilabel:`Run as Administrator`.
+      #. Open a ``cmd.exe`` Command Prompt window as **Administrator**. To do so, press the
+         Windows key, type ``cmd.exe``, right-click the :guilabel:`Command Prompt` search result,
+         and choose :guilabel:`Run as Administrator`.
 
       #. Disable global confirmation to avoid having to confirm the
          installation of individual programs:
@@ -192,7 +192,7 @@ The current minimum required version for the main dependencies are:
             As of November 2023, Python 3.12 is not recommended for Zephyr development on Windows,
             as some required Python dependencies may be difficult to install.
 
-      #. Close the terminal window.
+      #. Close the Command Prompt window.
 
 .. _Chocolatey: https://chocolatey.org/
 .. _Install chocolatey: https://chocolatey.org/install
@@ -233,7 +233,7 @@ additional Python dependencies in a `Python virtual environment`_.
 
             source ~/zephyrproject/.venv/bin/activate
 
-         Once activated your shell will be prefixed with ``(.venv)``. The
+         Once activated, your shell will be prefixed with ``(.venv)``. The
          virtual environment can be deactivated at any time by running
          ``deactivate``.
 
@@ -285,7 +285,7 @@ additional Python dependencies in a `Python virtual environment`_.
 
             source ~/zephyrproject/.venv/bin/activate
 
-         Once activated your shell will be prefixed with ``(.venv)``. The
+         Once activated, your shell will be prefixed with ``(.venv)``. The
          virtual environment can be deactivated at any time by running
          ``deactivate``.
 
@@ -325,7 +325,7 @@ additional Python dependencies in a `Python virtual environment`_.
 
    .. group-tab:: Windows
 
-      #. Open a ``cmd.exe`` terminal window **as a regular user**
+      #. Open a ``cmd.exe`` Command Prompt window **as a regular user**
 
       #. Create a new virtual environment:
 
@@ -340,7 +340,7 @@ additional Python dependencies in a `Python virtual environment`_.
 
             zephyrproject\.venv\Scripts\activate.bat
 
-         Once activated your shell will be prefixed with ``(.venv)``. The
+         Once activated, your Command Prompt will be prefixed with ``(.venv)``. The
          virtual environment can be deactivated at any time by running
          ``deactivate``.
 
