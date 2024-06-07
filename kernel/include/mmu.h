@@ -37,10 +37,14 @@
 
 #define Z_NUM_PAGE_FRAMES	(K_MEM_PHYS_RAM_SIZE / (size_t)CONFIG_MMU_PAGE_SIZE)
 
-/** End virtual address of virtual address space */
-#define Z_VIRT_RAM_START	((uint8_t *)CONFIG_KERNEL_VM_BASE)
-#define Z_VIRT_RAM_SIZE		((size_t)CONFIG_KERNEL_VM_SIZE)
-#define Z_VIRT_RAM_END		(Z_VIRT_RAM_START + Z_VIRT_RAM_SIZE)
+/** Start address of virtual memory. */
+#define K_MEM_VIRT_RAM_START	((uint8_t *)CONFIG_KERNEL_VM_BASE)
+
+/** Size of virtual memory. */
+#define K_MEM_VIRT_RAM_SIZE	((size_t)CONFIG_KERNEL_VM_SIZE)
+
+/** End address (exclusive) of virtual memory. */
+#define K_MEM_VIRT_RAM_END	(K_MEM_VIRT_RAM_START + K_MEM_VIRT_RAM_SIZE)
 
 /* Boot-time virtual location of the kernel image. */
 #define Z_KERNEL_VIRT_START	((uint8_t *)&z_mapped_start[0])
@@ -270,11 +274,11 @@ static inline void z_mem_assert_virtual_region(uint8_t *addr, size_t size)
 	__ASSERT(!Z_DETECT_POINTER_OVERFLOW(addr, size),
 		 "region %p size %zu zero or wraps around", addr, size);
 	__ASSERT(IN_RANGE((uintptr_t)addr,
-			  (uintptr_t)Z_VIRT_RAM_START,
-			  ((uintptr_t)Z_VIRT_RAM_END - 1)) &&
+			  (uintptr_t)K_MEM_VIRT_RAM_START,
+			  ((uintptr_t)K_MEM_VIRT_RAM_END - 1)) &&
 		 IN_RANGE(((uintptr_t)addr + size - 1),
-			  (uintptr_t)Z_VIRT_RAM_START,
-			  ((uintptr_t)Z_VIRT_RAM_END - 1)),
+			  (uintptr_t)K_MEM_VIRT_RAM_START,
+			  ((uintptr_t)K_MEM_VIRT_RAM_END - 1)),
 		 "invalid virtual address region %p (%zu)", addr, size);
 }
 
