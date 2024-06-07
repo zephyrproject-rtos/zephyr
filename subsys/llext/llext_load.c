@@ -40,23 +40,17 @@ static const char ELF_MAGIC[] = {0x7f, 'E', 'L', 'F'};
 
 elf_shdr_t *llext_section_by_name(struct llext_loader *ldr, const char *search_name)
 {
-	elf_shdr_t *shdr;
-	unsigned int i;
-	size_t pos;
+	int i;
 
-	for (i = 0, pos = ldr->hdr.e_shoff;
-	     i < ldr->hdr.e_shnum;
-	     i++, pos += ldr->hdr.e_shentsize) {
-		shdr = llext_peek(ldr, pos);
-		if (!shdr) {
-			/* The peek() method isn't supported */
-			return NULL;
-		}
-
+	for (i = 0; i < ldr->sect_cnt; ++i) {
+		elf_shdr_t *shdr = ldr->sect_hdrs + i;
 		const char *name = llext_peek(ldr,
 					      ldr->sects[LLEXT_MEM_SHSTRTAB].sh_offset +
 					      shdr->sh_name);
-
+		if (!name) {
+			/* The peek() method isn't supported */
+			return NULL;
+		}
 		if (!strcmp(name, search_name)) {
 			return shdr;
 		}
@@ -120,8 +114,6 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 
 	ldr->sect_cnt = ldr->hdr.e_shnum;
 
-	memset(ldr->sects, 0, sizeof(ldr->sects));
-
 	size_t sect_map_sz = ldr->sect_cnt * sizeof(ldr->sect_map[0]);
 
 	ldr->sect_map = llext_alloc(sect_map_sz);
@@ -165,58 +157,42 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
  */
 static int llext_find_tables(struct llext_loader *ldr)
 {
-	int sect_cnt, i, ret;
-	size_t pos;
-	elf_shdr_t shdr;
+	int sect_cnt, i;
 
-	ldr->sects[LLEXT_MEM_SHSTRTAB] =
-		ldr->sects[LLEXT_MEM_STRTAB] =
-		ldr->sects[LLEXT_MEM_SYMTAB] = (elf_shdr_t){0};
+	memset(ldr->sects, 0, sizeof(ldr->sects));
 
 	/* Find symbol and string tables */
-	for (i = 0, sect_cnt = 0, pos = ldr->hdr.e_shoff;
-	     i < ldr->hdr.e_shnum && sect_cnt < 3;
-	     i++, pos += ldr->hdr.e_shentsize) {
-		ret = llext_seek(ldr, pos);
-		if (ret != 0) {
-			LOG_ERR("failed seeking to position %zu\n", pos);
-			return ret;
-		}
-
-		ret = llext_read(ldr, &shdr, sizeof(elf_shdr_t));
-		if (ret != 0) {
-			LOG_ERR("failed reading section header at position %zu\n", pos);
-			return ret;
-		}
+	for (i = 0, sect_cnt = 0; i < ldr->sect_cnt; ++i) {
+		elf_shdr_t *shdr = ldr->sect_hdrs + i;
 
 		LOG_DBG("section %d at 0x%zx: name %d, type %d, flags 0x%zx, "
 			"addr 0x%zx, size %zd, link %d, info %d",
 			i,
-			(size_t)shdr.sh_offset,
-			shdr.sh_name,
-			shdr.sh_type,
-			(size_t)shdr.sh_flags,
-			(size_t)shdr.sh_addr,
-			(size_t)shdr.sh_size,
-			shdr.sh_link,
-			shdr.sh_info);
+			(size_t)shdr->sh_offset,
+			shdr->sh_name,
+			shdr->sh_type,
+			(size_t)shdr->sh_flags,
+			(size_t)shdr->sh_addr,
+			(size_t)shdr->sh_size,
+			shdr->sh_link,
+			shdr->sh_info);
 
-		switch (shdr.sh_type) {
+		switch (shdr->sh_type) {
 		case SHT_SYMTAB:
 		case SHT_DYNSYM:
 			LOG_DBG("symtab at %d", i);
-			ldr->sects[LLEXT_MEM_SYMTAB] = shdr;
+			ldr->sects[LLEXT_MEM_SYMTAB] = *shdr;
 			ldr->sect_map[i] = LLEXT_MEM_SYMTAB;
 			sect_cnt++;
 			break;
 		case SHT_STRTAB:
 			if (ldr->hdr.e_shstrndx == i) {
 				LOG_DBG("shstrtab at %d", i);
-				ldr->sects[LLEXT_MEM_SHSTRTAB] = shdr;
+				ldr->sects[LLEXT_MEM_SHSTRTAB] = *shdr;
 				ldr->sect_map[i] = LLEXT_MEM_SHSTRTAB;
 			} else {
 				LOG_DBG("strtab at %d", i);
-				ldr->sects[LLEXT_MEM_STRTAB] = shdr;
+				ldr->sects[LLEXT_MEM_STRTAB] = *shdr;
 				ldr->sect_map[i] = LLEXT_MEM_STRTAB;
 			}
 			sect_cnt++;
@@ -241,37 +217,25 @@ static int llext_find_tables(struct llext_loader *ldr)
  */
 static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 {
-	int i, j, ret;
-	size_t pos;
-	elf_shdr_t shdr;
+	int i, j;
 	const char *name;
 
-	for (i = 0, pos = ldr->hdr.e_shoff;
-	     i < ldr->hdr.e_shnum;
-	     i++, pos += ldr->hdr.e_shentsize) {
-		ret = llext_seek(ldr, pos);
-		if (ret != 0) {
-			return ret;
-		}
+	for (i = 0; i < ldr->sect_cnt; ++i) {
+		elf_shdr_t *shdr = ldr->sect_hdrs + i;
 
-		ret = llext_read(ldr, &shdr, sizeof(elf_shdr_t));
-		if (ret != 0) {
-			return ret;
-		}
-
-		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr.sh_name);
+		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name);
 
 		/* Identify the section type by its flags */
 		enum llext_mem mem_idx;
 
-		switch (shdr.sh_type) {
+		switch (shdr->sh_type) {
 		case SHT_NOBITS:
 			mem_idx = LLEXT_MEM_BSS;
 			break;
 		case SHT_PROGBITS:
-			if (shdr.sh_flags & SHF_EXECINSTR) {
+			if (shdr->sh_flags & SHF_EXECINSTR) {
 				mem_idx = LLEXT_MEM_TEXT;
-			} else if (shdr.sh_flags & SHF_WRITE) {
+			} else if (shdr->sh_flags & SHF_WRITE) {
 				mem_idx = LLEXT_MEM_DATA;
 			} else {
 				mem_idx = LLEXT_MEM_RODATA;
@@ -288,8 +252,8 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 		}
 
 		if (mem_idx == LLEXT_MEM_COUNT ||
-		    !(shdr.sh_flags & SHF_ALLOC) ||
-		    shdr.sh_size == 0) {
+		    !(shdr->sh_flags & SHF_ALLOC) ||
+		    shdr->sh_size == 0) {
 			LOG_DBG("section %d name %s skipped", i, name);
 			continue;
 		}
@@ -301,10 +265,10 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 
 		if (sect->sh_type == SHT_NULL) {
 			/* First section of this type, copy all info */
-			*sect = shdr;
+			memcpy(sect, shdr, sizeof(*sect));
 		} else {
 			/* Make sure the sections are compatible before merging */
-			if (shdr.sh_flags != sect->sh_flags) {
+			if (shdr->sh_flags != sect->sh_flags) {
 				LOG_ERR("Unsupported section flags for %s (mem %d)",
 					name, mem_idx);
 				return -ENOEXEC;
@@ -325,8 +289,8 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 				 * merging these sections, make sure the delta
 				 * in VMAs matches that of file offsets.
 				 */
-				if (shdr.sh_addr - sect->sh_addr !=
-				    shdr.sh_offset - sect->sh_offset) {
+				if (shdr->sh_addr - sect->sh_addr !=
+				    shdr->sh_offset - sect->sh_offset) {
 					LOG_ERR("Incompatible section addresses "
 						"for %s (mem %d)", name, mem_idx);
 					return -ENOEXEC;
@@ -337,10 +301,10 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 			 * Extend the current section to include the new one
 			 * (overlaps are detected later)
 			 */
-			size_t address = MIN(sect->sh_addr, shdr.sh_addr);
-			size_t bot_ofs = MIN(sect->sh_offset, shdr.sh_offset);
+			size_t address = MIN(sect->sh_addr, shdr->sh_addr);
+			size_t bot_ofs = MIN(sect->sh_offset, shdr->sh_offset);
 			size_t top_ofs = MAX(sect->sh_offset + sect->sh_size,
-					     shdr.sh_offset + shdr.sh_size);
+					     shdr->sh_offset + shdr->sh_size);
 
 			sect->sh_addr = address;
 			sect->sh_offset = bot_ofs;
@@ -552,30 +516,15 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 				base = ext->mem[ldr->sect_map[sect]];
 				section_addr = ldr->sects[ldr->sect_map[sect]].sh_addr;
 			} else {
-				/* Section header isn't stored, have to read it */
-				size_t shdr_pos = ldr->hdr.e_shoff + sect * ldr->hdr.e_shentsize;
-				elf_shdr_t shdr;
+				elf_shdr_t *shdr = ldr->sect_hdrs + sect;
 
-				ret = llext_seek(ldr, shdr_pos);
-				if (ret != 0) {
-					LOG_ERR("failed seeking to position %zu\n", shdr_pos);
-					return ret;
-				}
-
-				ret = llext_read(ldr, &shdr, sizeof(elf_shdr_t));
-				if (ret != 0) {
-					LOG_ERR("failed reading section header at position %zu\n",
-						shdr_pos);
-					return ret;
-				}
-
-				base = llext_peek(ldr, shdr.sh_offset);
+				base = llext_peek(ldr, shdr->sh_offset);
 				if (!base) {
 					LOG_ERR("cannot handle arbitrary sections without .peek\n");
 					return -EOPNOTSUPP;
 				}
 
-				section_addr = shdr.sh_addr;
+				section_addr = shdr->sh_addr;
 			}
 
 			if (pre_located) {

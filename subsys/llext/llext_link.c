@@ -163,35 +163,23 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 {
 	uintptr_t loc = 0;
-	elf_shdr_t shdr;
 	elf_rela_t rel;
 	elf_sym_t sym;
 	elf_word rel_cnt = 0;
 	const char *name;
 	int i, ret;
-	size_t pos;
 
-	for (i = 0, pos = ldr->hdr.e_shoff;
-	     i < ldr->hdr.e_shnum - 1;
-	     i++, pos += ldr->hdr.e_shentsize) {
-		ret = llext_seek(ldr, pos);
-		if (ret != 0) {
-			return ret;
-		}
-
-		ret = llext_read(ldr, &shdr, sizeof(elf_shdr_t));
-		if (ret != 0) {
-			return ret;
-		}
+	for (i = 0; i < ldr->sect_cnt; ++i) {
+		elf_shdr_t *shdr = ldr->sect_hdrs + i;
 
 		/* find relocation sections */
-		if (shdr.sh_type != SHT_REL && shdr.sh_type != SHT_RELA) {
+		if (shdr->sh_type != SHT_REL && shdr->sh_type != SHT_RELA) {
 			continue;
 		}
 
-		rel_cnt = shdr.sh_size / shdr.sh_entsize;
+		rel_cnt = shdr->sh_size / shdr->sh_entsize;
 
-		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr.sh_name);
+		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name);
 
 		if (strcmp(name, ".rel.text") == 0) {
 			loc = (uintptr_t)ext->mem[LLEXT_MEM_TEXT];
@@ -207,13 +195,13 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 			loc = (uintptr_t)ext->mem[LLEXT_MEM_EXPORT];
 		} else if (strcmp(name, ".rela.plt") == 0 ||
 			   strcmp(name, ".rela.dyn") == 0) {
-			llext_link_plt(ldr, ext, &shdr, do_local, NULL);
+			llext_link_plt(ldr, ext, shdr, do_local, NULL);
 			continue;
 		} else if (strncmp(name, ".rela", 5) == 0 && strlen(name) > 5) {
 			elf_shdr_t *tgt = llext_section_by_name(ldr, name + 5);
 
 			if (tgt)
-				llext_link_plt(ldr, ext, &shdr, do_local, tgt);
+				llext_link_plt(ldr, ext, shdr, do_local, tgt);
 			continue;
 		} else if (strcmp(name, ".rel.dyn") == 0) {
 			/* we assume that first load segment starts at MEM_TEXT */
@@ -221,16 +209,16 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 		}
 
 		LOG_DBG("relocation section %s (%d) linked to section %d has %zd relocations",
-			name, i, shdr.sh_link, (size_t)rel_cnt);
+			name, i, shdr->sh_link, (size_t)rel_cnt);
 
 		for (int j = 0; j < rel_cnt; j++) {
 			/* get each relocation entry */
-			ret = llext_seek(ldr, shdr.sh_offset + j * shdr.sh_entsize);
+			ret = llext_seek(ldr, shdr->sh_offset + j * shdr->sh_entsize);
 			if (ret != 0) {
 				return ret;
 			}
 
-			ret = llext_read(ldr, &rel, shdr.sh_entsize);
+			ret = llext_read(ldr, &rel, shdr->sh_entsize);
 			if (ret != 0) {
 				return ret;
 			}
@@ -271,7 +259,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 				if (link_addr == 0) {
 					LOG_ERR("Undefined symbol with no entry in "
 						"symbol table %s, offset %zd, link section %d",
-						name, (size_t)rel.r_offset, shdr.sh_link);
+						name, (size_t)rel.r_offset, shdr->sh_link);
 					return -ENODATA;
 				}
 
