@@ -145,7 +145,7 @@ corresponding devicetree overlay.
 
   .. zephyr-app-commands::
      :zephyr-app: samples/drivers/counter/maxim_ds3231
-     :board: efr32mg_sltb004a
+     :board: sltb004a
      :goals: build
      :compact:
 
