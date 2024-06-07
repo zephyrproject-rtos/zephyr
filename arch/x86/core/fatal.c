@@ -434,7 +434,7 @@ void z_x86_page_fault_handler(struct arch_esf *esf)
 		} else
 #else
 		{
-			was_valid_access = z_page_fault(virt);
+			was_valid_access = k_mem_page_fault(virt);
 		}
 #endif /* CONFIG_X86_KPTI */
 		if (was_valid_access) {

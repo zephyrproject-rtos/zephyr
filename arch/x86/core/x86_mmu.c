@@ -2231,7 +2231,7 @@ bool z_x86_kpti_is_access_ok(void *addr, pentry_t *ptables)
 
 	/* Might as well also check if it's un-mapped, normally we don't
 	 * fetch the PTE from the page tables until we are inside
-	 * z_page_fault() and call arch_page_fault_status_get()
+	 * k_mem_page_fault() and call arch_page_fault_status_get()
 	 */
 	if (level != PTE_LEVEL || pte == 0 || is_flipped_pte(pte)) {
 		return false;
