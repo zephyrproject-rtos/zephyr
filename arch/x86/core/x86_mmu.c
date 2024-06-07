@@ -2004,11 +2004,12 @@ static void mark_addr_page_reserved(uintptr_t addr, size_t len)
 	uintptr_t end = ROUND_UP(addr + len, CONFIG_MMU_PAGE_SIZE);
 
 	for (; pos < end; pos += CONFIG_MMU_PAGE_SIZE) {
-		if (!z_is_page_frame(pos)) {
+		if (!k_mem_is_page_frame(pos)) {
 			continue;
 		}
 
-		z_page_frame_set(z_phys_to_page_frame(pos), Z_PAGE_FRAME_RESERVED);
+		k_mem_page_frame_set(k_mem_phys_to_page_frame(pos),
+				     K_MEM_PAGE_FRAME_RESERVED);
 	}
 }
 

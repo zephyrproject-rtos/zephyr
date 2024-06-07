@@ -292,7 +292,7 @@ extern char lnkr_boot_noinit_size[];
 /* lnkr_pinned_start[] and lnkr_pinned_end[] must encapsulate
  * all the pinned sections as these are used by
  * the MMU code to mark the physical page frames with
- * Z_PAGE_FRAME_PINNED.
+ * K_MEM_PAGE_FRAME_PINNED.
  */
 extern char lnkr_pinned_start[];
 extern char lnkr_pinned_end[];

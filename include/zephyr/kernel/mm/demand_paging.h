@@ -229,7 +229,7 @@ __syscall void k_mem_paging_histogram_backing_store_page_out_get(
  * @param [out] dirty Whether the page to evict is dirty
  * @return The page frame to evict
  */
-struct z_page_frame *k_mem_paging_eviction_select(bool *dirty);
+struct k_mem_page_frame *k_mem_paging_eviction_select(bool *dirty);
 
 /**
  * Initialization function
@@ -258,16 +258,16 @@ void k_mem_paging_eviction_init(void);
  * contents for later retrieval. The location value must be page-aligned.
  *
  * This function may be called multiple times on the same data page. If its
- * page frame has its Z_PAGE_FRAME_BACKED bit set, it is expected to return
+ * page frame has its K_MEM_PAGE_FRAME_BACKED bit set, it is expected to return
  * the previous backing store location for the data page containing a cached
  * clean copy. This clean copy may be updated on page-out, or used to
  * discard clean pages without needing to write out their contents.
  *
  * If the backing store is full, some other backing store location which caches
  * a loaded data page may be selected, in which case its associated page frame
- * will have the Z_PAGE_FRAME_BACKED bit cleared (as it is no longer cached).
+ * will have the K_MEM_PAGE_FRAME_BACKED bit cleared (as it is no longer cached).
  *
- * z_page_frame_to_virt(pf) will indicate the virtual address the page is
+ * k_mem_page_frame_to_virt(pf) will indicate the virtual address the page is
  * currently mapped to. Large, sparse backing stores which can contain the
  * entire address space may simply generate location tokens purely as a
  * function of that virtual address with no other management necessary.
@@ -285,7 +285,7 @@ void k_mem_paging_eviction_init(void);
  * @return 0 Success
  * @return -ENOMEM Backing store is full
  */
-int k_mem_paging_backing_store_location_get(struct z_page_frame *pf,
+int k_mem_paging_backing_store_location_get(struct k_mem_page_frame *pf,
 					    uintptr_t *location,
 					    bool page_fault);
 
@@ -331,7 +331,7 @@ void k_mem_paging_backing_store_page_in(uintptr_t location);
  * Update internal accounting after a page-in
  *
  * This is invoked after k_mem_paging_backing_store_page_in() and interrupts
- * have been* re-locked, making it safe to access the z_page_frame data.
+ * have been* re-locked, making it safe to access the k_mem_page_frame data.
  * The location value will be the same passed to
  * k_mem_paging_backing_store_page_in().
  *
@@ -340,14 +340,14 @@ void k_mem_paging_backing_store_page_in(uintptr_t location);
  * if it is paged out again. This may be a no-op in some implementations.
  *
  * If the backing store caches paged-in data pages, this is the appropriate
- * time to set the Z_PAGE_FRAME_BACKED bit. The kernel only skips paging
+ * time to set the K_MEM_PAGE_FRAME_BACKED bit. The kernel only skips paging
  * out clean data pages if they are noted as clean in the page tables and the
- * Z_PAGE_FRAME_BACKED bit is set in their associated page frame.
+ * K_MEM_PAGE_FRAME_BACKED bit is set in their associated page frame.
  *
  * @param pf Page frame that was loaded in
  * @param location Location of where the loaded data page was retrieved
  */
-void k_mem_paging_backing_store_page_finalize(struct z_page_frame *pf,
+void k_mem_paging_backing_store_page_finalize(struct k_mem_page_frame *pf,
 					      uintptr_t location);
 
 /**
@@ -360,7 +360,7 @@ void k_mem_paging_backing_store_page_finalize(struct z_page_frame *pf,
  * - Initialize any internal data structures and accounting for the backing
  *   store.
  * - If the backing store already contains all or some loaded kernel data pages
- *   at boot time, Z_PAGE_FRAME_BACKED should be appropriately set for their
+ *   at boot time, K_MEM_PAGE_FRAME_BACKED should be appropriately set for their
  *   associated page frames, and any internal accounting set up appropriately.
  */
 void k_mem_paging_backing_store_init(void);
