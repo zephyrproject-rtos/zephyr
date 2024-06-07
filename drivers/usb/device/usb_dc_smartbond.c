@@ -124,6 +124,7 @@ struct smartbond_ep_state {
 	uint8_t data1 : 1;              /** DATA0/1 toggle bit 1 DATA1 is expected or transmitted */
 	uint8_t stall : 1;              /** Endpoint is stalled */
 	uint8_t iso : 1;                /** ISO endpoint */
+	uint8_t enabled : 1;            /** Endpoint is enabled */
 	uint8_t ep_addr;                /** EP address */
 	struct smartbond_ep_reg_set *regs;
 };
@@ -768,7 +769,7 @@ static void handle_alt_ev(void)
 			/* Re-enable reception of endpoint with pending transfer */
 			for (int ep_num = 1; ep_num < EP_MAX; ++ep_num) {
 				ep_state = usb_dc_get_ep_out_state(ep_num);
-				if (ep_state->total_len > ep_state->transferred) {
+				if (ep_state->enabled) {
 					start_rx_packet(ep_state);
 				}
 			}
@@ -1037,6 +1038,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 		return -EINVAL;
 	}
 
+	ep_state->enabled = 0;
 	if (ep_state->ep_addr == EP0_IN) {
 		REG_SET_BIT(USB_TXC0_REG, USB_IGN_IN);
 	} else if (ep_state->ep_addr == EP0_OUT) {
@@ -1288,6 +1290,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 		REG_SET_BIT(USB_MAMSK_REG, USB_M_TX_EV);
 		ep_state->regs->epc_in |= USB_USB_EPC2_REG_USB_EP_EN_Msk;
 	}
+	ep_state->enabled = 1;
 
 	return 0;
 }
