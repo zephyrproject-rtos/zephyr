@@ -3626,6 +3626,7 @@ STM32 Platforms:
     - FRASTM
     - gautierg-st
     - GeorgeCGV
+    - marwaiehm-st
   files:
     - boards/st/
     - drivers/*/*stm32*.c
@@ -4488,6 +4489,7 @@ West:
     - ABOSTM
     - gautierg-st
     - Desvauxm-st
+    - marwaiehm-st
   files:
     - modules/Kconfig.stm32
   labels:
