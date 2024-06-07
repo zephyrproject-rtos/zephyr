@@ -34,7 +34,7 @@ const char *wifi_security_txt(enum wifi_security_type security)
 		return "WPA3-SAE";
 	case WIFI_SECURITY_TYPE_WAPI:
 		return "WAPI";
-	case WIFI_SECURITY_TYPE_EAP:
+	case WIFI_SECURITY_TYPE_EAP_TLS:
 		return "EAP";
 	case WIFI_SECURITY_TYPE_UNKNOWN:
 	default:
