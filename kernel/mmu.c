@@ -147,8 +147,8 @@ void z_page_frames_dump(void)
  * Call all of these functions with z_mm_lock held.
  *
  * Overall virtual memory map: When the kernel starts, it resides in
- * virtual memory in the region Z_KERNEL_VIRT_START to
- * Z_KERNEL_VIRT_END. Unused virtual memory past this, up to the limit
+ * virtual memory in the region K_MEM_KERNEL_VIRT_START to
+ * K_MEM_KERNEL_VIRT_END. Unused virtual memory past this, up to the limit
  * noted by CONFIG_KERNEL_VM_SIZE may be used for runtime memory mappings.
  *
  * If CONFIG_ARCH_MAPS_ALL_RAM is set, we do not just map the kernel image,
@@ -159,7 +159,7 @@ void z_page_frames_dump(void)
  *
  * +--------------+ <- K_MEM_VIRT_RAM_START
  * | Undefined VM | <- May contain ancillary regions like x86_64's locore
- * +--------------+ <- Z_KERNEL_VIRT_START (often == K_MEM_VIRT_RAM_START)
+ * +--------------+ <- K_MEM_KERNEL_VIRT_START (often == K_MEM_VIRT_RAM_START)
  * | Mapping for  |
  * | main kernel  |
  * | image        |
@@ -321,7 +321,7 @@ static void *virt_region_alloc(size_t size, size_t align)
 		 *
 		 * +--------------+ <- K_MEM_VIRT_RAM_START
 		 * | Undefined VM |
-		 * +--------------+ <- Z_KERNEL_VIRT_START (often == K_MEM_VIRT_RAM_START)
+		 * +--------------+ <- K_MEM_KERNEL_VIRT_START (often == K_MEM_VIRT_RAM_START)
 		 * | Mapping for  |
 		 * | main kernel  |
 		 * | image        |
@@ -970,7 +970,7 @@ void z_mem_manage_init(void)
 	/* All pages composing the Zephyr image are mapped at boot in a
 	 * predictable way. This can change at runtime.
 	 */
-	VIRT_FOREACH(Z_KERNEL_VIRT_START, Z_KERNEL_VIRT_SIZE, addr)
+	VIRT_FOREACH(K_MEM_KERNEL_VIRT_START, K_MEM_KERNEL_VIRT_SIZE, addr)
 	{
 		pf = z_phys_to_page_frame(K_MEM_BOOT_VIRT_TO_PHYS(addr));
 		frame_mapped_set(pf, addr);
