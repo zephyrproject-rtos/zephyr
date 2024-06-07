@@ -21,19 +21,24 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
 #include <zephyr/drivers/clock_control.h>
-#ifndef CONFIG_SOC_SERIES_ESP32C3
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#else
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
+#else
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #endif
 
-#ifdef CONFIG_SOC_SERIES_ESP32C3
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
 #define ISR_HANDLER isr_handler_t
 #else
 #define ISR_HANDLER intr_handler_t
 #endif
 
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+#define DMA_MAX_CHANNEL SOC_GDMA_PAIRS_PER_GROUP_MAX
+#else
 #define DMA_MAX_CHANNEL SOC_GDMA_PAIRS_PER_GROUP
+#endif
+
 #define ESP_DMA_M2M_ON  0
 #define ESP_DMA_M2M_OFF 1
 
@@ -103,6 +108,7 @@ static void IRAM_ATTR dma_esp32_isr_handle_tx(const struct device *dev,
 	}
 }
 
+#if !defined(CONFIG_SOC_SERIES_ESP32C6)
 static void IRAM_ATTR dma_esp32_isr_handle(const struct device *dev, uint8_t rx_id, uint8_t tx_id)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
@@ -121,6 +127,7 @@ static void IRAM_ATTR dma_esp32_isr_handle(const struct device *dev, uint8_t rx_
 		dma_esp32_isr_handle_tx(dev, dma_channel_tx, intr_status);
 	}
 }
+#endif
 
 #if defined(CONFIG_SOC_SERIES_ESP32C3)
 static int dma_esp32_enable_interrupt(const struct device *dev,
@@ -137,6 +144,20 @@ static int dma_esp32_disable_interrupt(const struct device *dev,
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
 
 	return esp_intr_disable(config->irq_src[dma_channel->channel_id]);
+}
+#elif defined(CONFIG_SOC_SERIES_ESP32C6)
+static int dma_esp32_enable_interrupt(const struct device *dev, uint32_t channel)
+{
+	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
+
+	return esp_intr_enable(config->irq_src[channel]);
+}
+
+static int dma_esp32_disable_interrupt(const struct device *dev, uint32_t channel)
+{
+	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
+
+	return esp_intr_disable(config->irq_src[channel]);
 }
 #else
 static int dma_esp32_enable_interrupt(const struct device *dev,
@@ -338,7 +359,11 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+	if (dma_esp32_enable_interrupt(dev, channel)) {
+#else
 	if (dma_esp32_enable_interrupt(dev, dma_channel)) {
+#endif
 		return -EINVAL;
 	}
 
@@ -384,7 +409,11 @@ static int dma_esp32_stop(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+	if (dma_esp32_disable_interrupt(dev, channel)) {
+#else
 	if (dma_esp32_disable_interrupt(dev, dma_channel)) {
+#endif
 		return -EINVAL;
 	}
 
@@ -470,7 +499,7 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 	return 0;
 }
 
-#if defined(CONFIG_SOC_SERIES_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
 static int dma_esp32_configure_irq(const struct device *dev)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
@@ -559,6 +588,35 @@ static const struct dma_driver_api dma_esp32_api = {
 	.reload = dma_esp32_reload,
 };
 
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+
+#define DMA_ESP32_DEFINE_IRQ_HANDLER(channel)                                                      \
+	__attribute__((unused)) static void IRAM_ATTR dma_esp32_isr_##channel##_rx(                \
+		const struct device *dev)                                                          \
+	{                                                                                          \
+		struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;          \
+		struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;           \
+		uint32_t intr_status = gdma_ll_rx_get_interrupt_status(data->hal.dev, channel);    \
+		if (intr_status) {                                                                 \
+			dma_esp32_isr_handle_rx(dev, &config->dma_channel[channel * 2],            \
+						intr_status);                                      \
+		}                                                                                  \
+	}                                                                                          \
+                                                                                                   \
+	__attribute__((unused)) static void IRAM_ATTR dma_esp32_isr_##channel##_tx(                \
+		const struct device *dev)                                                          \
+	{                                                                                          \
+		struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;          \
+		struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;           \
+		uint32_t intr_status = gdma_ll_tx_get_interrupt_status(data->hal.dev, channel);    \
+		if (intr_status) {                                                                 \
+			dma_esp32_isr_handle_tx(dev, &config->dma_channel[channel * 2 + 1],        \
+						intr_status);                                      \
+		}                                                                                  \
+	}
+
+#else
+
 #define DMA_ESP32_DEFINE_IRQ_HANDLER(channel)                                                      \
 	__attribute__((unused)) static void IRAM_ATTR dma_esp32_isr_##channel(                     \
 		const struct device *dev)                                                          \
@@ -566,7 +624,13 @@ static const struct dma_driver_api dma_esp32_api = {
 		dma_esp32_isr_handle(dev, channel * 2, channel * 2 + 1);                           \
 	}
 
+#endif
+
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+#define ESP32_DMA_HANDLER(channel) dma_esp32_isr_##channel##_rx, dma_esp32_isr_##channel##_tx
+#else
 #define ESP32_DMA_HANDLER(channel) dma_esp32_isr_##channel
+#endif
 
 DMA_ESP32_DEFINE_IRQ_HANDLER(0)
 DMA_ESP32_DEFINE_IRQ_HANDLER(1)
