@@ -40,7 +40,6 @@ DEVICE_DT_DEFINE(TEST_I2C, dev_init, NULL,
 		 NULL, NULL, POST_KERNEL, 10, NULL);
 DEVICE_DT_DEFINE(TEST_DEVA, dev_init, NULL,
 		 NULL, NULL, POST_KERNEL, 20, NULL);
-/* NB: Intentional init devb before required gpiox */
 DEVICE_DT_DEFINE(TEST_DEVB, dev_init, NULL,
 		 NULL, NULL, POST_KERNEL, 30, NULL);
 DEVICE_DT_DEFINE(TEST_GPIOX, dev_init, NULL,
@@ -104,8 +103,8 @@ ZTEST(devicetree_devices, test_init_order)
 	zassert_equal(init_order[0], DEV_HDL(TEST_GPIO));
 	zassert_equal(init_order[1], DEV_HDL(TEST_I2C));
 	zassert_equal(init_order[2], DEV_HDL(TEST_DEVA));
-	zassert_equal(init_order[3], DEV_HDL(TEST_DEVB));
-	zassert_equal(init_order[4], DEV_HDL(TEST_GPIOX));
+	zassert_equal(init_order[3], DEV_HDL(TEST_GPIOX));
+	zassert_equal(init_order[4], DEV_HDL(TEST_DEVB));
 	zassert_equal(init_order[5], DEV_HDL(TEST_DEVC));
 	zassert_equal(init_order[6], DEV_HDL(TEST_PARTITION));
 	zassert_equal(init_order[7], DEV_HDL(TEST_GPIO_INJECTED));
