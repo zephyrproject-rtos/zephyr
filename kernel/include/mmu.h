@@ -356,7 +356,7 @@ void k_mem_page_frames_dump(void);
  *
  * @return Number of successful page faults
  */
-unsigned long z_num_pagefaults_get(void);
+unsigned long k_mem_num_pagefaults_get(void);
 
 /**
  * Free a page frame physical address by evicting its contents
