@@ -98,6 +98,15 @@
 				rgb-param = [40 02 14];
 				mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
 			};
+
+			test_mipi_dbi_ssd1680: ssd1680@4 {
+				compatible = "gooddisplay,gdey0213b74", "solomon,ssd1680";
+				mipi-max-frequency = <4000000>;
+				reg = <4>;
+				width = <250>;
+				height = <122>;
+				busy-gpios = <&test_gpio 0 0>;
+			};
 		};
 
 
@@ -111,7 +120,7 @@
 
 			/* one entry for every devices at spi.dtsi */
 			cs-gpios = <&test_gpio 0 0 &test_gpio 0 1 &test_gpio 0 2
-				&test_gpio 0 3>;
+				&test_gpio 0 3 &test_gpio 0 4>;
 
 			test_spi_gc9x01x: gc9x01x@1 {
 				compatible = "galaxycore,gc9x01x";
