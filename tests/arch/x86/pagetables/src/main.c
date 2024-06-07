@@ -87,12 +87,12 @@ ZTEST(x86_pagetables, test_ram_perms)
 	pentry_t entry, flags, expected;
 
 #ifdef CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
-	const uint8_t *mem_range_end = Z_KERNEL_VIRT_END;
+	const uint8_t *mem_range_end = K_MEM_KERNEL_VIRT_END;
 #else
 	const uint8_t *mem_range_end = (uint8_t *)lnkr_pinned_end;
 #endif /* CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 
-	for (pos = Z_KERNEL_VIRT_START; pos < mem_range_end;
+	for (pos = K_MEM_KERNEL_VIRT_START; pos < mem_range_end;
 	     pos += CONFIG_MMU_PAGE_SIZE) {
 		if (pos == NULL) {
 			/* We have another test specifically for NULL page */
