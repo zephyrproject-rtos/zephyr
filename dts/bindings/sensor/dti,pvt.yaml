@@ -1,0 +1,16 @@
+# Copyright (c) 2024, Rapid Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+description: Process, Voltage and Thermal Sensor Module
+
+compatible: "dti,pvt"
+
+include: [base.yaml]
+
+properties:
+
+  clock-frequency:
+    type: int
+    required: true
+    description:
+      Clock frequency of the PVT Module.

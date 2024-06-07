@@ -68,13 +68,13 @@
 		 };
  
 		 scu: scu@A0110000 {
-			 compatible = "syscon";
+			 compatible = "rapidsi,scu";
 			 reg = <0xA0110000 DT_SIZE_K(64)>;
-			 status = "okay";			 
+			 status = "disabled";			 
 		 };
 
-		 pvt: pvt@A0112000 {
-			compatible = "rapidsi,pvt", "riscv,pvt";
+		 pvt0: pvt@A0112000 {
+			compatible = "dti,pvt";
 			reg = <0xA0112000 0xFF>;
 			clock-frequency = <133333333>;
 			status = "disabled";

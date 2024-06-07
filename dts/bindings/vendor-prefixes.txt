@@ -181,6 +181,7 @@ dongwoon	Dongwoon Anatech
 dptechnics	DPTechnics
 dragino	Dragino Technology Co., Limited
 dserve	dServe Technology B.V.
+dti	Dolphin Technology
 dynaimage	Dyna-Image
 ea	Embedded Artists AB
 ebang	Zhejiang Ebang Communication Co., Ltd

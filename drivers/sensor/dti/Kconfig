@@ -1,0 +1,81 @@
+# Copyright (c) 2024 Rapid Silicon.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DTI_PVT
+    bool "DTI Process, Voltage and Thermal Sensor Configuration"
+    default n
+    depends on SENSOR
+    depends on DT_HAS_DTI_PVT_ENABLED
+
+    menu "PVT Timing Configuration Register Values"
+        depends on DTI_PVT
+
+        config DTI_PVT_RST_TREG_TIMEOUT
+            hex "Enter Timeout Value"
+            default 0x80
+                help
+                    This is the timeout value for process monitor
+
+        config DTI_PVT_RST_TREG_EN
+            hex "Enter the Enable Time value"
+            default 0x14
+                help
+                    Enable time before starting the monitor/sensor, RoundUp(100ns * CLK)
+
+        config DTI_PVT_RST_TREG_MSTEP
+            hex "Enter the measurement time value"
+            default 0x6
+                help
+                    Measuring time, RoundUp(30ns * CLK)
+              
+    endmenu
+
+    menu "PVT config register"        
+        depends on DTI_PVT
+
+        config DTI_PVT_RST_CONF_TRIM
+            hex "Enter the resistor adjustment value"
+            default 0x6
+                help
+                    Resistor value adjustment for post silicon to calibrate to simualtion results
+
+        config DTI_PVT_RST_CONF_VMRANGE
+            int "Enter to select VM Range"
+            range 0 1
+            default 0
+                help
+                    Voltage Monitor Range. Enter 1 for VM range to monitor
+                    the voltage between 0 - 2 volts. And Enter 0 for VM range
+                    of 0 - 1 volts.
+
+    endmenu
+
+    menu "VM and TS Process Corner Values"
+        depends on DTI_PVT
+
+        config DTI_PVT_VM_PROCESS_CORNER
+            int "Enter a value between 2,3 and 4"
+            default 4
+                help
+                  Voltage sensor LUT index based on process corner
+                    DTI_PVT_VM_FF_1_98 = 2
+                    DTI_PVT_VM_ss_1_62 = 3
+                    DTI_PVT_VM_TT_1_80 = 4      
+
+        config DTI_PVT_TS_PROCESS_CORNER
+            int "Enter a value between 1 to 6"
+            default 6
+                help
+                  Temperature sensor LUT index based on process corner
+                    DTI_PVT_TS_FF_1_62 = 1
+                    DTI_PVT_TS_FF_1_98 = 2
+                    DTI_PVT_TS_SS_1_62 = 3
+                    DTI_PVT_TS_SS_1_98 = 4
+                    DTI_PVT_TS_TT_1_62 = 5
+                    DTI_PVT_TS_TT_1_98 = 6       
+
+    endmenu
+
+module = DTI_PVT
+module-str = dti_pvt
+source "subsys/logging/Kconfig.template.log_config"
