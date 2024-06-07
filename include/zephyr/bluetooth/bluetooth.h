@@ -235,6 +235,11 @@ int bt_enable(bt_ready_cb_t cb);
  * stored with @kconfig{CONFIG_BT_SETTINGS}. These can be restored
  * with settings_load() before reenabling the stack.
  *
+ * This API does _not_ clear previously registered callbacks
+ * like @ref bt_le_scan_cb_register and @ref bt_conn_cb_register.
+ * That is, the application shall not re-register them when
+ * the Bluetooth subsystem is re-enabled later.
+ *
  * Close and release HCI resources. Result is architecture dependent.
  *
  * @return Zero on success or (negative) error code otherwise.
