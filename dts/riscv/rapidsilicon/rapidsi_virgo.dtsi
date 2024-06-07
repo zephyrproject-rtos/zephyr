@@ -85,18 +85,14 @@
 			reg = <0xA0111000 0xFF>;
 			npins = <16>;
 			#pin-cells = <4>;
-			pin-controller;
-			status = "disabled";
+			status = "okay";
 
 			ofe_default_pinmux: ofe_default_pinmux {
-				compatible = "rapidsi,rigel";
 				group1 { 
-					compatible = "rapidsi,rigel";
 					pins = <&pinctrl 0 PIN_FN_ALT PIN_PULL_STATUS_DIS PIN_PULL_DIR_DOWN>;
 					pin-names = "CONFIG_DONE";
 				};
 				group2 {
-					compatible = "rapidsi,rigel";
 					pins = <&pinctrl 1 PIN_FN_ALT PIN_PULL_STATUS_DIS PIN_PULL_DIR_DOWN>;
 					pin-names = "CONFIG_ERROR";
 				};
@@ -116,7 +112,7 @@
 			 interrupts = <22 8>;
 			 interrupt-parent = <&eclic>;
 			 clock-frequency = <266666667>;
-			 status = "okay";
+			 status = "disabled";
 		 };
  
 		 pit0: pit@A0520000 {
@@ -202,26 +198,27 @@
 			 #size-cells = <0>;
  
 			 ofe: ofe@A0710000 {
-				 compatible = "rapidsi,ofe", "rapidsi,rigel";
+				 compatible = "rapidsi,ofe";
 				 reg = <0xA0710000>;
 				 pinctrl-0 = <&ofe_default_pinmux>;
+				 pinctrl-names = "default";
 				 status = "disabled";
 			 };
  
 			 fcb: fcb@A0712000 {
-				 compatible = "rapidsi,fcb", "rapidsi,rigel";
+				 compatible = "rapidsi,fcb";
 				 reg = <0xA0712000>;
 				 status = "disabled";
 			 };
  
 			 icb: icb@A0716000 {
-				 compatible = "rapidsi,icb", "rapidsi,rigel";
+				 compatible = "rapidsi,icb";
 				 reg = <0xA0716000>;
 				 status = "disabled";
 			 };
  
 			 pcb: pcb@A0718000 {
-				 compatible = "rapidsi,pcb", "rapidsi,rigel";
+				 compatible = "rapidsi,pcb";
 				 reg = <0xA0718000>;
 				 status = "disabled";
 			 };
