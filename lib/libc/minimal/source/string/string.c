@@ -92,7 +92,7 @@ char *strrchr(const char *s, int c)
 		if (*s == (char)c) {
 			match = (char *)s;
 		}
-	} while (*s++);
+	} while (*s++ != '\0');
 
 	return match;
 }

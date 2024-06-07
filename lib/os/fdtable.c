@@ -224,7 +224,7 @@ void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
 	entry = &fdtable[fd];
 	*vtable = entry->vtable;
 
-	if (lock) {
+	if (lock != NULL) {
 		*lock = &entry->lock;
 	}
 
