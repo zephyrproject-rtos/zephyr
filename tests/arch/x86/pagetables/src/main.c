@@ -197,7 +197,8 @@ ZTEST(x86_pagetables, test_ram_perms)
 	/* All RAM page frame entries aside from 0x0 must have a mapping.
 	 * We currently identity-map on x86, no conversion necessary other than a cast
 	 */
-	for (pos = (uint8_t *)Z_PHYS_RAM_START; pos < (uint8_t *)Z_PHYS_RAM_END;
+	for (pos = (uint8_t *)K_MEM_PHYS_RAM_START;
+	     pos < (uint8_t *)K_MEM_PHYS_RAM_END;
 	     pos += CONFIG_MMU_PAGE_SIZE) {
 		if (pos == NULL) {
 			continue;

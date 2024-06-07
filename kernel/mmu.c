@@ -111,7 +111,7 @@ void z_page_frames_dump(void)
 
 	__ASSERT(page_frames_initialized, "%s called too early", __func__);
 	printk("Physical memory from 0x%lx to 0x%lx\n",
-	       Z_PHYS_RAM_START, Z_PHYS_RAM_END);
+	       K_MEM_PHYS_RAM_START, K_MEM_PHYS_RAM_END);
 
 	for (int i = 0; i < Z_NUM_PAGE_FRAMES; i++) {
 		struct z_page_frame *pf = &z_page_frames[i];
