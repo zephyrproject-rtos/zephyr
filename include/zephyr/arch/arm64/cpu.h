@@ -171,7 +171,7 @@
 #define SGIR_AFF1_SHIFT		(16)
 #define SGIR_AFF2_SHIFT		(32)
 #define SGIR_AFF3_SHIFT		(48)
-#define SGIR_AFF_MASK		(0xf)
+#define SGIR_AFF_MASK		(0xff)
 #define SGIR_INTID_SHIFT	(24)
 #define SGIR_INTID_MASK		(0xf)
 #define SGIR_IRM_SHIFT		(40)
