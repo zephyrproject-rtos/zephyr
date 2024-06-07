@@ -46,6 +46,9 @@ config OPENTHREAD_BLE_TCAT
 config OPENTHREAD_BORDER_AGENT
 	bool "Border Agent support"
 
+config OPENTHREAD_BORDER_AGENT_EPHEMERAL_KEY_ENABLE
+	bool "Border agent ephemeral PSKc"
+
 config OPENTHREAD_BORDER_ROUTER
 	bool "Border Router support"
 
@@ -64,6 +67,9 @@ config OPENTHREAD_CHANNEL_MONITOR
 config OPENTHREAD_CHANNEL_MANAGER
 	bool "Channel manager support"
 	depends on OPENTHREAD_CHANNEL_MONITOR
+
+config OPENTHREAD_CHANNEL_MANAGER_CSL
+	bool "Channel manager for CSL channel"
 
 config OPENTHREAD_COAP
 	bool "OpenThread CoAP support"
@@ -192,11 +198,17 @@ config OPENTHREAD_LINK_METRICS_MANAGER
 config OPENTHREAD_LINK_METRICS_SUBJECT
 	bool "Link Metrics subject"
 
+config OPENTHREAD_PLATFORM_LOG_CRASH_DUMP
+	bool "Platform log crash dump"
+
 config OPENTHREAD_LOG_LEVEL_DYNAMIC
 	bool "Dynamic log level control"
 
 config OPENTHREAD_MAC_FILTER
 	bool "MAC filter support"
+
+config OPENTHREAD_MULTICAST_DNS
+	bool "Multicast DNS (mDNS)"
 
 config OPENTHREAD_MESH_DIAG
 	bool "Mesh Diagnostics"
@@ -359,3 +371,6 @@ config OPENTHREAD_UDP_FORWARD
 config OPENTHREAD_UPTIME
 	bool "Openthread uptime counter"
 	default y if OPENTHREAD_FTD
+
+config OPENTHREAD_VERHOEFF_CHECKSUM
+	bool "Verhoeff checksum"
