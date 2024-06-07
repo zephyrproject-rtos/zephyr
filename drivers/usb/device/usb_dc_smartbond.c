@@ -135,6 +135,8 @@ struct usb_dc_state {
 	uint8_t nfsr;
 	usb_dc_status_callback status_cb;
 	struct smartbond_ep_state ep_state[2][4];
+	/** Bitmask of EP OUT endpoints that received data during interrupt */
+	uint8_t ep_out_data;
 	atomic_ptr_t dma_ep[2];         /** DMA used by channel */
 };
 
@@ -468,8 +470,7 @@ static void handle_ep0_rx(void)
 			read_rx_fifo(ep0_out_state, fifo_bytes);
 			if (rxs0 & USB_USB_RXS0_REG_USB_RX_LAST_Msk) {
 				ep0_out_state->data1 ^= 1;
-
-				ep0_out_state->cb(EP0_OUT, USB_DC_EP_DATA_OUT);
+				dev_state.ep_out_data |= 1;
 			}
 		}
 	}
@@ -581,8 +582,7 @@ static void handle_epx_rx_ev(uint8_t ep_idx)
 			} else {
 				ep_state->data1 ^= 1;
 				atomic_clear(&ep_state->busy);
-				ep_state->cb(ep_state->ep_addr,
-					     USB_DC_EP_DATA_OUT);
+				dev_state.ep_out_data |= BIT(ep_idx);
 			}
 		}
 	} while (fifo_bytes > FIFO_READ_THRESHOLD);
@@ -913,6 +913,16 @@ static void usb_dc_smartbond_isr(void)
 
 	if (GET_BIT(int_status, USB_USB_MAEV_REG_USB_ALT)) {
 		handle_alt_ev();
+	}
+
+	for (int i = 0; dev_state.ep_out_data && i < 4; ++i) {
+		uint8_t mask = BIT(i);
+
+		if (dev_state.ep_out_data & mask) {
+			dev_state.ep_out_data ^= mask;
+			dev_state.ep_state[0][i].cb(dev_state.ep_state[0][i].ep_addr,
+						    USB_DC_EP_DATA_OUT);
+		}
 	}
 }
 
