@@ -43,6 +43,8 @@
 #define CAN_NXP_S32_MAX_BITRATE	8000000
 #define CAN_NXP_S32_DATA_LENGTH 64
 
+#define CAN_NXP_S32_TDCO_MAX FIELD_GET(CANXL_SIC_BTDCC_FTDCOFF_MASK, CANXL_SIC_BTDCC_FTDCOFF_MASK)
+
 #ifdef CONFIG_CAN_NXP_S32_RX_FIFO
 /* RX FIFO depth is fixed to the maximum value */
 #define CAN_NXP_S32_RX_FIFO_DEPTH 32
@@ -706,6 +708,9 @@ static int can_nxp_s32_set_timing_data(const struct device *dev,
 	/* Set timing for CAN FD instance*/
 	CanXL_SetFDBaudRate(config->base_sic, &can_fd_time_segment);
 
+	Canexcel_Ip_SetTDCOffsetFD(config->instance, true, false,
+				CAN_CALC_TDCO((timing_data), 0U, CAN_NXP_S32_TDCO_MAX));
+
 	return 0;
 }
 #endif
@@ -963,6 +968,11 @@ static int can_nxp_s32_init(const struct device *dev)
 
 	/* Initialize CAN structure */
 	Canexcel_Ip_Init(config->instance, config->can_cfg, data->can_state);
+
+#ifdef CAN_NXP_S32_FD_MODE
+	Canexcel_Ip_SetTDCOffsetFD(config->instance, true, false,
+				CAN_CALC_TDCO((&data->timing_data), 0U, CAN_NXP_S32_TDCO_MAX));
+#endif
 
 	/* Configure time stamp */
 #ifdef CONFIG_CAN_RX_TIMESTAMP
