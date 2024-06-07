@@ -79,6 +79,62 @@ config MODBUS_FC08_DIAGNOSTIC
 	help
 	  Enable function code 08 Diagnostic support
 
+config MODBUS_FC01_COIL_RD
+	bool "FC01 single coil read support"
+	depends on MODBUS_SERVER
+	default y
+	help
+	  Enable function code 01 single coil read support
+
+config MODBUS_FC02_DI_RD
+	bool "FC02 single discrete input read support"
+	depends on MODBUS_SERVER
+	default y
+	help
+	  Enable function code 02 single discrete input read support
+
+config MODBUS_FC03_HOLDING_REG_RD
+	bool "FC03 multiple holding register read support"
+	depends on MODBUS_SERVER
+	default y
+	help
+	  Enable function code 03 multiple holding register read support
+
+config MODBUS_FC04_IN_REG_RD
+	bool "FC04 multiple input register read support"
+	depends on MODBUS_SERVER
+	default y
+	help
+	  Enable function code 04 multiple input register read support
+
+config MODBUS_FC05_COIL_WR
+	bool "FC05 single coil write support"
+	depends on MODBUS_SERVER
+	default y
+	help
+	  Enable function code 05 single coil write support
+
+config MODBUS_FC06_HOLDING_REG_WR
+	bool "FC06 single holding register write support"
+	depends on MODBUS_SERVER
+	default y
+	help
+	  Enable function code 06 single holding register write support
+
+config MODBUS_FC15_COILS_WR
+	bool "FC15 multiple coils write support"
+	depends on MODBUS_SERVER
+	default y
+	help
+	  Enable function code 15 multiple coils write support
+
+config MODBUS_FC16_HOLDING_REGS_WR
+	bool "FC16 multiple holding register write support"
+	depends on MODBUS_SERVER
+	default y
+	help
+	  Enable function code 16 multiple holding register write support
+
 module = MODBUS
 module-str = Modbus Support
 module-help = Sets log level for Modbus support
