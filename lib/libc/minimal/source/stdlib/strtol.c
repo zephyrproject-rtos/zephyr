@@ -117,7 +117,7 @@ long strtol(const char *nptr, char **endptr, register int base)
 	if (any < 0) {
 		acc = neg ? LONG_MIN : LONG_MAX;
 		errno = ERANGE;
-	} else if (neg) {
+	} else if (neg != 0) {
 		acc = -acc;
 	}
 
