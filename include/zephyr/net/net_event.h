@@ -312,19 +312,19 @@ enum net_event_l4_cmd {
 	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_DISCONNECTED)
 
 
-/** Event raised when IPv4 network connectivity becomes available. */
+/** Event raised when IPv4 network connectivity is available. */
 #define NET_EVENT_L4_IPV4_CONNECTED			\
 	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_IPV4_CONNECTED)
 
-/** Event emitted when IPv4 network connectivity becomes lost. */
+/** Event emitted when IPv4 network connectivity is lost. */
 #define NET_EVENT_L4_IPV4_DISCONNECTED			\
 	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_IPV4_DISCONNECTED)
 
-/** Event emitted when IPv6 network connectivity becomes available. */
+/** Event emitted when IPv6 network connectivity is available. */
 #define NET_EVENT_L4_IPV6_CONNECTED			\
 	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_IPV6_CONNECTED)
 
-/** Event emitted when IPv6 network connectivity becomes available. */
+/** Event emitted when IPv6 network connectivity is lost. */
 #define NET_EVENT_L4_IPV6_DISCONNECTED			\
 	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_IPV6_DISCONNECTED)
 
