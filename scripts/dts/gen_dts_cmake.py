@@ -11,12 +11,13 @@ That data can then be used in the rest of the build system.
 
 The generated CMake file looks like this:
 
-  add_custom_target(devicetree_target)
-  set_target_properties(devicetree_target PROPERTIES
+  add_custom_target(${DEVICETREE_TARGET})
+  set_target_properties(${DEVICETREE_TARGET} PROPERTIES
                         "DT_PROP|/soc|compatible" "vnd,soc;")
   ...
 
-It defines a special CMake target, and saves various values in the
+It takes an input variable - DEVICETREE_TARGET - and creates a special
+CMake target with this name, which will contain various values in the
 devicetree as CMake target properties.
 
 Be careful:
@@ -154,15 +155,13 @@ def main():
         cmake_comp = f'DT_COMP|{comp}'
         cmake_props.append(f'"{cmake_comp}" "{cmake_path}"')
 
+    cmake_props = map(
+        'set_target_properties(${{DEVICETREE_TARGET}} PROPERTIES {})'.format,
+        cmake_props
+    )
     with open(args.cmake_out, "w", encoding="utf-8") as cmake_file:
-        print('add_custom_target(devicetree_target)', file=cmake_file)
-        print(file=cmake_file)
-
-        for prop in cmake_props:
-            print(
-                f'set_target_properties(devicetree_target PROPERTIES {prop})',
-                file=cmake_file
-            )
+        print('add_custom_target(${DEVICETREE_TARGET})\n', *cmake_props,
+              sep='\n', file=cmake_file)
 
 
 if __name__ == "__main__":

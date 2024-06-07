@@ -117,6 +117,8 @@ set(GEN_DTS_CMAKE_SCRIPT        ${DT_SCRIPTS}/gen_dts_cmake.py)
 # The generated information itself, which we include() after
 # creating it.
 set(DTS_CMAKE                   ${PROJECT_BINARY_DIR}/dts.cmake)
+# The CMake target to be initialized by including ${DTS_CMAKE}.
+set(DEVICETREE_TARGET           devicetree_target)
 
 # The location of a file containing known vendor prefixes, relative to
 # each element of DTS_ROOT. Users can define their own in their own
