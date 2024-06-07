@@ -1,7 +1,0 @@
-# EFR32MG SLTB004A board
-
-# Copyright (c) 2018, Diego Sueiro
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_EFR32MG_SLTB004A
-	select SOC_PART_NUMBER_EFR32MG12P332F1024GL125

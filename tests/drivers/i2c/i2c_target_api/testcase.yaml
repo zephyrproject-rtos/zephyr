@@ -26,7 +26,7 @@ tests:
       - nucleo_l152re
       - nucleo_wb55rg
       - rpi_pico
-      - efr32bg22_brd4184a
+      - sltb010a@0
       - mr_canhubk3
     integration_platforms:
       - nucleo_f091rc
