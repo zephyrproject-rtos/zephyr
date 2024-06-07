@@ -51,7 +51,7 @@ struct kb_event {
 
 K_MSGQ_DEFINE(kb_msgq, sizeof(struct kb_event), 2, 1);
 
-static uint8_t __aligned(sizeof(void *)) report[KB_REPORT_COUNT];
+UDC_STATIC_BUF_DEFINE(report, KB_REPORT_COUNT);
 static uint32_t kb_duration;
 static bool kb_ready;
 
@@ -273,7 +273,7 @@ int main(void)
 			continue;
 		}
 
-		ret = hid_device_submit_report(hid_dev, sizeof(report), report);
+		ret = hid_device_submit_report(hid_dev, KB_REPORT_COUNT, report);
 		if (ret) {
 			LOG_ERR("HID submit report error, %d", ret);
 		}
