@@ -3289,7 +3289,7 @@
  * @param status okay or disabled as a token, not a string
  */
 #define DT_NODE_HAS_COMPAT_STATUS(node_id, compat, status) \
-	DT_NODE_HAS_COMPAT(node_id, compat) && DT_NODE_HAS_STATUS(node_id, status)
+	UTIL_AND(DT_NODE_HAS_COMPAT(node_id, compat), DT_NODE_HAS_STATUS(node_id, status))
 
 /**
  * @brief Does a devicetree node have a property?
