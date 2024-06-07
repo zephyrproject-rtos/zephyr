@@ -1,0 +1,58 @@
+# Copyright 2024 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xilinx AXI DMA LogiCORE IP controller
+
+include: dma-controller.yaml
+
+# multiple "compatible" properties match the same driver and options
+
+properties:
+  reg:
+    type: array
+    description: DMA Control registers
+    required: true
+
+  interrupts:
+    type: array
+    description: TX IRQ number followed by RX IRQ number
+    required: true
+
+  interrupt-parent:
+    type: phandle
+    description: Interrupt controller that the DMA is connected to
+
+  clocks:
+    type: phandle-array
+
+  clock-frequency:
+    type: int
+
+  xlnx,addrwidth:
+    type: int
+    required: true
+    description: DMA address width (64 or 32 bit)
+    enum:
+      - 32
+      - 64
+
+  axistream-connected:
+    type: phandle
+    description: |
+      Handle to connected node, e.g., AXI Ethernet controller.
+      The axistream-connected and axistream-control-connected properties can easily cause circular
+      dependencies, if they are provided at the second device as well.
+      In this case, the python device tree script fails to assign ordinals, causing build failure.
+      I suggest you do not provide them at the DMA.
+
+  axistream-control-connected:
+    type: phandle
+    description: Handle to connected control node, e.g., AXI Ethernet controller
+
+  xlnx,include-dre:
+    type: boolean
+    description: Data realignment engine activated. This enables unaligned DMA transfers.
+
+  xlnx,num-queues:
+    type: int
+    description: Number of queues per channel.
