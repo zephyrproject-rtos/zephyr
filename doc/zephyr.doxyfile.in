@@ -2153,7 +2153,7 @@ RTF_EXTENSIONS_FILE    =
 # classes and files.
 # The default value is: NO.
 
-GENERATE_MAN           = NO
+GENERATE_MAN           = @GENERATE_MAN_PAGES@
 
 # The MAN_OUTPUT tag is used to specify where the man pages will be put. If a
 # relative path is entered the value of OUTPUT_DIRECTORY will be put in front of
@@ -2187,7 +2187,7 @@ MAN_SUBDIR             =
 # The default value is: NO.
 # This tag requires that the tag GENERATE_MAN is set to YES.
 
-MAN_LINKS              = NO
+MAN_LINKS              = YES
 
 #---------------------------------------------------------------------------
 # Configuration options related to the XML output
