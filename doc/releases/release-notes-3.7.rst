@@ -488,6 +488,11 @@ Libraries / Subsystems
       registered to set the device attributes that are sent to the hawkBit server. Use the
       :c:func:`hawkbit_set_custom_data_cb` function to register the callback.
 
+  * MCUmgr
+
+    * Instructions for the deprecated mcumgr go tool have been removed, a list of alternative,
+      supported clients can be found on :ref:`mcumgr_tools_libraries`.
+
 * Logging
 
   * By enabling :kconfig:option:`CONFIG_LOG_BACKEND_NET_USE_DHCPV4_OPTION`, the IP address of the
