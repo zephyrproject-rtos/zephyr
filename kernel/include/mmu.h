@@ -90,10 +90,26 @@
  */
 #define K_MEM_BOOT_PHYS_TO_VIRT(phys) ((uint8_t *)(((uintptr_t)(phys)) + K_MEM_VM_OFFSET))
 
+/**
+ * @def K_MEM_VM_FREE_START
+ * @brief Start address of unused, available virtual addresses.
+ *
+ * This is the start address of the virtual memory region where
+ * addresses can be allocated for memory mapping. This depends on whether
+ * CONFIG_ARCH_MAPS_ALL_RAM is enabled:
+ *
+ * - If it is enabled, which means all physical memory are mapped in virtual
+ *   memory address space, and it is the same as
+ *   (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_SIZE).
+ *
+ * - If it is disabled, K_MEM_VM_FREE_START is the same K_MEM_KERNEL_VIRT_END which
+ *   is the end of the kernel image.
+ *
+ */
 #ifdef CONFIG_ARCH_MAPS_ALL_RAM
-#define Z_FREE_VM_START	K_MEM_BOOT_PHYS_TO_VIRT(K_MEM_PHYS_RAM_END)
+#define K_MEM_VM_FREE_START	K_MEM_BOOT_PHYS_TO_VIRT(K_MEM_PHYS_RAM_END)
 #else
-#define Z_FREE_VM_START	K_MEM_KERNEL_VIRT_END
+#define K_MEM_VM_FREE_START	K_MEM_KERNEL_VIRT_END
 #endif /* CONFIG_ARCH_MAPS_ALL_RAM */
 
 /*

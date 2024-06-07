@@ -165,7 +165,7 @@ void z_page_frames_dump(void)
  * | image        |
  * |		  |
  * |		  |
- * +--------------+ <- Z_FREE_VM_START
+ * +--------------+ <- K_MEM_VM_FREE_START
  * |              |
  * | Unused,      |
  * | Available VM |
@@ -195,7 +195,7 @@ SYS_BITARRAY_DEFINE_STATIC(virt_region_bitmap,
 
 static bool virt_region_inited;
 
-#define Z_VIRT_REGION_START_ADDR	Z_FREE_VM_START
+#define Z_VIRT_REGION_START_ADDR	K_MEM_VM_FREE_START
 #define Z_VIRT_REGION_END_ADDR		(K_MEM_VIRT_RAM_END - Z_VM_RESERVED)
 
 static inline uintptr_t virt_from_bitmap_offset(size_t offset, size_t size)
@@ -227,7 +227,7 @@ static void virt_region_init(void)
 	}
 
 	/* Mark all bits up to Z_FREE_VM_START as allocated */
-	num_bits = POINTER_TO_UINT(Z_FREE_VM_START)
+	num_bits = POINTER_TO_UINT(K_MEM_VM_FREE_START)
 		   - POINTER_TO_UINT(K_MEM_VIRT_RAM_START);
 	offset = virt_to_bitmap_offset(K_MEM_VIRT_RAM_START, num_bits);
 	num_bits /= CONFIG_MMU_PAGE_SIZE;
@@ -327,7 +327,7 @@ static void *virt_region_alloc(size_t size, size_t align)
 		 * | image        |
 		 * |		  |
 		 * |		  |
-		 * +--------------+ <- Z_FREE_VM_START
+		 * +--------------+ <- K_MEM_VM_FREE_START
 		 * | ...          |
 		 * +==============+ <- dest_addr
 		 * | Unused       |
