@@ -48,14 +48,14 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_SAE,
 	/** GB 15629.11-2003 WAPI security. */
 	WIFI_SECURITY_TYPE_WAPI,
-	/** EAP security - Enterprise. */
-	WIFI_SECURITY_TYPE_EAP,
 	/** WEP security. */
 	WIFI_SECURITY_TYPE_WEP,
 	/** WPA-PSK security. */
 	WIFI_SECURITY_TYPE_WPA_PSK,
 	/** WPA/WPA2/WPA3 PSK security. */
 	WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL,
+	/** EAP TLS security - Enterprise. */
+	WIFI_SECURITY_TYPE_EAP_TLS,
 
 /** @cond INTERNAL_HIDDEN */
 	__WIFI_SECURITY_TYPE_AFTER_LAST,
@@ -118,6 +118,8 @@ const char *wifi_band_txt(enum wifi_frequency_bands band);
 #define WIFI_SAE_PSWD_MAX_LEN 128
 /** MAC address length */
 #define WIFI_MAC_ADDR_LEN 6
+#define WIFI_IDENTITY_MAX_LEN 64
+#define WIFI_PSWD_MAX_LEN 128
 
 /** Minimum channel number */
 #define WIFI_CHANNEL_MIN 1

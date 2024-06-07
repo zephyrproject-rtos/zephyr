@@ -419,6 +419,14 @@ struct wifi_connect_req_params {
 	/** PWE derivation */
 	int sae_pwe;
 	bool pwe_configed;
+	/** anonymous identity */
+	const uint8_t *aid;
+	/** aid length */
+	uint8_t aid_length; /* Max 64 */
+	/** private key passwd */
+	const uint8_t *key_passwd;
+	/** key passwd length */
+	uint8_t key_passwd_length; /* Max 128 */
 };
 
 /** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
