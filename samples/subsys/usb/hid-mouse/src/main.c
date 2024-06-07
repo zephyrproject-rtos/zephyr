@@ -174,11 +174,11 @@ int main(void)
 	}
 
 	while (true) {
-		uint8_t __aligned(sizeof(void *)) report[MOUSE_REPORT_COUNT];
+		UDC_STATIC_BUF_DEFINE(report, MOUSE_REPORT_COUNT);
 
 		k_msgq_get(&mouse_msgq, &report, K_FOREVER);
 
-		ret = hid_int_ep_write(hid_dev, report, sizeof(report), NULL);
+		ret = hid_int_ep_write(hid_dev, report, MOUSE_REPORT_COUNT, NULL);
 		if (ret) {
 			LOG_ERR("HID write error, %d", ret);
 		} else {

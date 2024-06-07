@@ -40,7 +40,7 @@ LOG_MODULE_REGISTER(usbd_uac2, CONFIG_USBD_UAC2_LOG_LEVEL);
  * "wasted memory" here is likely to be smaller than the memory overhead for
  * more complex "only as much as needed" schemes (e.g. heap).
  */
-NET_BUF_POOL_DEFINE(uac2_pool, UAC2_NUM_ENDPOINTS, 6,
+UDC_BUF_POOL_DEFINE(uac2_pool, UAC2_NUM_ENDPOINTS, 6,
 		    sizeof(struct udc_buf_info), NULL);
 
 /* 5.2.2 Control Request Layout */
@@ -204,6 +204,8 @@ uac2_buf_alloc(const uint8_t ep, void *data, uint16_t size)
 {
 	struct net_buf *buf = NULL;
 	struct udc_buf_info *bi;
+
+	__ASSERT(IS_UDC_ALIGNED(data), "Application provided unaligned buffer");
 
 	buf = net_buf_alloc_with_data(&uac2_pool, data, size, K_NO_WAIT);
 	if (!buf) {
