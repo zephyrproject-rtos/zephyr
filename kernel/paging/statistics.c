@@ -76,7 +76,7 @@ k_mem_paging_backing_store_histogram_bounds[
 #endif /* CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS */
 #endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 
-unsigned long z_num_pagefaults_get(void)
+unsigned long k_mem_num_pagefaults_get(void)
 {
 	unsigned long ret;
 	unsigned int key;
