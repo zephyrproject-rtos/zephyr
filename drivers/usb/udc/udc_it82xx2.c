@@ -71,6 +71,14 @@ LOG_MODULE_REGISTER(udc_it82xx2, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define DC_FULL_SPEED_LINE_RATE     BIT(5)
 #define DC_CONNECT_TO_HOST          BIT(6) /* internal pull-up */
 
+/* ENDPOINT[3..0]_CONTROL_REG */
+#define ENDPOINT_ENABLE_BIT      BIT(0)
+#define ENDPOINT_READY_BIT       BIT(1)
+#define ENDPOINT_OUTDATA_SEQ_BIT BIT(2)
+#define ENDPOINT_SEND_STALL_BIT  BIT(3)
+#define ENDPOINT_ISO_ENABLE_BIT  BIT(4)
+#define ENDPOINT_DIRECTION_BIT   BIT(5)
+
 /* Bit [1:0] represents the TRANSACTION_TYPE as follows: */
 enum it82xx2_transaction_types {
 	DC_SETUP_TRANS = 0,
@@ -135,6 +143,7 @@ struct usb_it82xx2_config {
 
 enum it82xx2_ep_ctrl {
 	EP_IN_DIRECTION_SET,
+	EP_STALL_SEND,
 	EP_IOS_ENABLE,
 	EP_ENABLE,
 	EP_DATA_SEQ_1,
@@ -142,25 +151,10 @@ enum it82xx2_ep_ctrl {
 	EP_READY_ENABLE,
 };
 
-static inline void ep_set_halt(const struct device *dev, const uint8_t ep_idx, const bool enable)
-{
-	const struct usb_it82xx2_config *config = dev->config;
-	struct usb_it82xx2_regs *const usb_regs = config->base;
-	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
-	union epn0n1_extend_ctrl_reg *ext_ctrl;
-	uint8_t idx = (ep_idx - 4) / 2;
-
-	ext_ctrl = usb_regs->fifo_regs[EP_EXT_REGS_9X].ext_4_15.epn0n1_ext_ctrl;
-	if (IT8XXX2_IS_EXTEND_ENDPOINT(ep_idx)) {
-		if (ep_idx % 2) {
-			ext_ctrl[idx].fields.epn1_send_stall_bit = enable;
-		} else {
-			ext_ctrl[idx].fields.epn0_send_stall_bit = enable;
-		}
-	} else {
-		ep_regs[ep_idx].ep_ctrl.fields.send_stall_bit = enable;
-	}
-}
+/* The ep_fifo_res[ep_idx % SHARED_FIFO_NUM] where the SHARED_FIFO_NUM is 3 represents the
+ * EP mapping because when (ep_idx % SHARED_FIFO_NUM) is 3, it actually means the EP0.
+ */
+static const uint8_t ep_fifo_res[SHARED_FIFO_NUM] = {3, 1, 2};
 
 static volatile void *it82xx2_get_ext_ctrl(const struct device *dev, const uint8_t ep_idx,
 					   const enum it82xx2_ep_ctrl ctrl)
@@ -187,11 +181,13 @@ static int it82xx2_usb_extend_ep_ctrl(const struct device *dev, const uint8_t ep
 {
 	const struct usb_it82xx2_config *config = dev->config;
 	struct usb_it82xx2_regs *const usb_regs = config->base;
+	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 	struct epn_ext_ctrl_regs *ext_ctrl =
 		usb_regs->fifo_regs[EP_EXT_REGS_DX].ext_0_3.epn_ext_ctrl;
 	volatile union epn_extend_ctrl1_reg *epn_ext_ctrl1 = NULL;
 	volatile union epn0n1_extend_ctrl_reg *epn0n1_ext_ctrl = NULL;
 	const uint8_t ep_idx = USB_EP_GET_IDX(ep);
+	uint8_t fifo_idx = (ep_idx > 0) ? (ep_fifo_res[ep_idx % SHARED_FIFO_NUM]) : 0;
 
 	if (ctrl == EP_IN_DIRECTION_SET || ctrl == EP_ENABLE) {
 		epn_ext_ctrl1 = it82xx2_get_ext_ctrl(dev, ep_idx, ctrl);
@@ -200,6 +196,13 @@ static int it82xx2_usb_extend_ep_ctrl(const struct device *dev, const uint8_t ep
 	}
 
 	switch (ctrl) {
+	case EP_STALL_SEND:
+		if (ep_idx % 2) {
+			epn0n1_ext_ctrl->fields.epn1_send_stall_bit = enable;
+		} else {
+			epn0n1_ext_ctrl->fields.epn0_send_stall_bit = enable;
+		}
+		break;
 	case EP_IOS_ENABLE:
 		if (ep_idx % 2) {
 			epn0n1_ext_ctrl->fields.epn1_iso_enable_bit = enable;
@@ -265,6 +268,7 @@ static int it82xx2_usb_extend_ep_ctrl(const struct device *dev, const uint8_t ep
 
 		(enable) ? (ext_ctrl[idx].epn_ext_ctrl2 |= BIT((ep_idx - 4) / 3))
 			 : (ext_ctrl[idx].epn_ext_ctrl2 &= ~BIT((ep_idx - 4) / 3));
+		ep_regs[fifo_idx].ep_ctrl.fields.ready_bit = enable;
 		break;
 	default:
 		LOG_ERR("Unknown control type 0x%x", ctrl);
@@ -281,41 +285,69 @@ static int it82xx2_usb_ep_ctrl(const struct device *dev, uint8_t ep, enum it82xx
 	struct usb_it82xx2_regs *const usb_regs = config->base;
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 	const uint8_t ep_idx = USB_EP_GET_IDX(ep);
+	uint8_t ep_ctrl_value;
 
 	if (IT8XXX2_IS_EXTEND_ENDPOINT(ep_idx)) {
 		return -EINVAL;
 	}
 
+	ep_ctrl_value = ep_regs[ep_idx].ep_ctrl.value & ~ENDPOINT_READY_BIT;
+
 	switch (ctrl) {
+	case EP_STALL_SEND:
+		if (enable) {
+			ep_ctrl_value |= ENDPOINT_SEND_STALL_BIT;
+		} else {
+			ep_ctrl_value &= ~ENDPOINT_SEND_STALL_BIT;
+		}
+		break;
 	case EP_IN_DIRECTION_SET:
-		ep_regs[ep_idx].ep_ctrl.fields.direction_bit = enable;
+		if (enable) {
+			ep_ctrl_value |= ENDPOINT_DIRECTION_BIT;
+		} else {
+			ep_ctrl_value &= ~ENDPOINT_DIRECTION_BIT;
+		}
 		break;
 	case EP_IOS_ENABLE:
-		ep_regs[ep_idx].ep_ctrl.fields.iso_enable_bit = enable;
+		if (enable) {
+			ep_ctrl_value |= ENDPOINT_ISO_ENABLE_BIT;
+		} else {
+			ep_ctrl_value &= ~ENDPOINT_ISO_ENABLE_BIT;
+		}
 		break;
 	case EP_ENABLE:
-		ep_regs[ep_idx].ep_ctrl.fields.enable_bit = enable;
+		if (enable) {
+			ep_ctrl_value |= ENDPOINT_ENABLE_BIT;
+		} else {
+			ep_ctrl_value &= ~ENDPOINT_ENABLE_BIT;
+		}
 		break;
 	case EP_READY_ENABLE:
-		ep_regs[ep_idx].ep_ctrl.fields.ready_bit = enable;
+		if (enable) {
+			ep_ctrl_value |= ENDPOINT_READY_BIT;
+		} else {
+			ep_ctrl_value &= ~ENDPOINT_READY_BIT;
+		}
 		break;
 	case EP_DATA_SEQ_1:
-		ep_regs[ep_idx].ep_ctrl.fields.outdata_sequence_bit = enable;
+		if (enable) {
+			ep_ctrl_value |= ENDPOINT_OUTDATA_SEQ_BIT;
+		} else {
+			ep_ctrl_value &= ~ENDPOINT_OUTDATA_SEQ_BIT;
+		}
 		break;
 	case EP_DATA_SEQ_TOGGLE:
 		if (!enable) {
 			break;
 		}
-		if (ep_regs[ep_idx].ep_ctrl.fields.outdata_sequence_bit) {
-			ep_regs[ep_idx].ep_ctrl.fields.outdata_sequence_bit = 0;
-		} else {
-			ep_regs[ep_idx].ep_ctrl.fields.outdata_sequence_bit = 1;
-		}
+		ep_ctrl_value ^= ENDPOINT_OUTDATA_SEQ_BIT;
 		break;
 	default:
 		LOG_ERR("Unknown control type 0x%x", ctrl);
 		return -EINVAL;
 	}
+
+	ep_regs[ep_idx].ep_ctrl.value = ep_ctrl_value;
 	return 0;
 }
 
@@ -324,12 +356,15 @@ static int it82xx2_usb_set_ep_ctrl(const struct device *dev, uint8_t ep, enum it
 {
 	const uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	int ret = 0;
+	unsigned int key;
 
+	key = irq_lock();
 	if (IT8XXX2_IS_EXTEND_ENDPOINT(ep_idx)) {
 		ret = it82xx2_usb_extend_ep_ctrl(dev, ep, ctrl, enable);
 	} else {
 		ret = it82xx2_usb_ep_ctrl(dev, ep, ctrl, enable);
 	}
+	irq_unlock(key);
 	return ret;
 }
 
@@ -382,11 +417,6 @@ static void it8xxx2_usb_dc_wuc_init(const struct device *dev)
 	irq_connect_dynamic(config->wu_irq, 0, it82xx2_wu_isr, dev, 0);
 }
 
-/* The ep_fifo_res[ep_idx % SHARED_FIFO_NUM] where the SHARED_FIFO_NUM is 3 represents the
- * EP mapping because when (ep_idx % SHARED_FIFO_NUM) is 3, it actually means the EP0.
- */
-static const uint8_t ep_fifo_res[SHARED_FIFO_NUM] = {3, 1, 2};
-
 static int it82xx2_usb_fifo_ctrl(const struct device *dev, const uint8_t ep, const bool reset)
 {
 	const uint8_t ep_idx = USB_EP_GET_IDX(ep);
@@ -394,6 +424,7 @@ static int it82xx2_usb_fifo_ctrl(const struct device *dev, const uint8_t ep, con
 	struct usb_it82xx2_regs *const usb_regs = config->base;
 	volatile uint8_t *ep_fifo_ctrl = usb_regs->fifo_regs[EP_EXT_REGS_BX].fifo_ctrl.ep_fifo_ctrl;
 	uint8_t fifon_ctrl = (ep_fifo_res[ep_idx % SHARED_FIFO_NUM] - 1) * 2;
+	unsigned int key;
 	int ret = 0;
 
 	if (ep_idx == 0) {
@@ -401,9 +432,11 @@ static int it82xx2_usb_fifo_ctrl(const struct device *dev, const uint8_t ep, con
 		return -EINVAL;
 	}
 
+	key = irq_lock();
 	if (reset) {
 		ep_fifo_ctrl[fifon_ctrl] = 0x0;
 		ep_fifo_ctrl[fifon_ctrl + 1] = 0x0;
+		irq_unlock(key);
 		return 0;
 	}
 
@@ -425,6 +458,7 @@ static int it82xx2_usb_fifo_ctrl(const struct device *dev, const uint8_t ep, con
 		LOG_ERR("Failed to set fifo control register for ep 0x%x", ep);
 		ret = -EINVAL;
 	}
+	irq_unlock(key);
 
 	return ret;
 }
@@ -490,7 +524,7 @@ static inline void ctrl_ep_stall_workaround(const struct device *dev)
 
 	priv->stall_is_sent = true;
 	lock_key = irq_lock();
-	ep_set_halt(dev, 0, true);
+	it82xx2_usb_set_ep_ctrl(dev, 0, EP_STALL_SEND, true);
 	it82xx2_usb_set_ep_ctrl(dev, 0, EP_READY_ENABLE, true);
 
 	/* It82xx2 does not support clearing the STALL bit by hardware; instead, the STALL bit need
@@ -506,7 +540,7 @@ static inline void ctrl_ep_stall_workaround(const struct device *dev)
 	}
 
 	if (idx < 198) {
-		ep_set_halt(dev, 0, false);
+		it82xx2_usb_set_ep_ctrl(dev, 0, EP_STALL_SEND, false);
 	}
 	irq_unlock(lock_key);
 }
@@ -518,7 +552,7 @@ static int it82xx2_ep_set_halt(const struct device *dev, struct udc_ep_config *c
 	if (ep_idx == 0) {
 		ctrl_ep_stall_workaround(dev);
 	} else {
-		ep_set_halt(dev, ep_idx, true);
+		it82xx2_usb_set_ep_ctrl(dev, ep_idx, EP_STALL_SEND, true);
 		it82xx2_usb_set_ep_ctrl(dev, ep_idx, EP_READY_ENABLE, true);
 	}
 
@@ -531,7 +565,7 @@ static int it82xx2_ep_clear_halt(const struct device *dev, struct udc_ep_config 
 {
 	const uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
 
-	ep_set_halt(dev, ep_idx, false);
+	it82xx2_usb_set_ep_ctrl(dev, ep_idx, EP_STALL_SEND, false);
 
 	LOG_DBG("Endpoint 0x%x clear halted", cfg->addr);
 
@@ -703,6 +737,7 @@ static int it82xx2_xfer_in_data(const struct device *dev, uint8_t ep, struct net
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
 	struct it82xx2_data *priv = udc_get_private(dev);
 	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
+	unsigned int key;
 	uint8_t fifo_idx;
 	size_t len;
 
@@ -711,6 +746,7 @@ static int it82xx2_xfer_in_data(const struct device *dev, uint8_t ep, struct net
 		ff_regs[ep_idx].ep_tx_fifo_ctrl = FIFO_FORCE_EMPTY;
 	} else {
 		k_sem_take(&priv->fifo_sem[fifo_idx - 1], K_FOREVER);
+		key = irq_lock();
 		it82xx2_usb_fifo_ctrl(dev, ep, false);
 	}
 
@@ -720,10 +756,10 @@ static int it82xx2_xfer_in_data(const struct device *dev, uint8_t ep, struct net
 		ff_regs[fifo_idx].ep_tx_fifo_data = buf->data[i];
 	}
 
-	if (IT8XXX2_IS_EXTEND_ENDPOINT(ep_idx)) {
-		it82xx2_usb_extend_ep_ctrl(dev, ep_idx, EP_READY_ENABLE, true);
+	it82xx2_usb_set_ep_ctrl(dev, ep_idx, EP_READY_ENABLE, true);
+	if (ep_idx != 0) {
+		irq_unlock(key);
 	}
-	it82xx2_usb_set_ep_ctrl(dev, fifo_idx, EP_READY_ENABLE, true);
 
 	LOG_DBG("Writed %d packets to endpoint%d tx fifo", buf->len, ep_idx);
 
@@ -786,14 +822,17 @@ static int work_handler_xfer_continue(const struct device *dev, uint8_t ep, stru
 
 	fifo_idx = ep_idx > 0 ? ep_fifo_res[ep_idx % SHARED_FIFO_NUM] : 0;
 	if (USB_EP_DIR_IS_OUT(ep)) {
-		it82xx2_usb_set_ep_ctrl(dev, ep_idx, EP_READY_ENABLE, true);
-		if (IT8XXX2_IS_EXTEND_ENDPOINT(ep_idx)) {
-			it82xx2_usb_set_ep_ctrl(dev, fifo_idx, EP_READY_ENABLE, true);
-		}
+		unsigned int key;
+
 		if (ep_idx != 0) {
 			struct it82xx2_data *priv = udc_get_private(dev);
 
+			key = irq_lock();
 			atomic_set_bit(&priv->out_fifo_state, IT82xx2_STATE_OUT_SHARED_FIFO_BUSY);
+		}
+		it82xx2_usb_set_ep_ctrl(dev, ep_idx, EP_READY_ENABLE, true);
+		if (ep_idx != 0) {
+			irq_unlock(key);
 		}
 	} else {
 		ret = it82xx2_xfer_in_data(dev, ep, buf);
@@ -1153,7 +1192,7 @@ static inline bool it82xx2_check_ep0_stall(const struct device *dev, const uint8
 
 	/* Check if the stall bit is set */
 	if (ep_regs[ep_idx].ep_ctrl.fields.send_stall_bit) {
-		ep_set_halt(dev, ep_idx, false);
+		it82xx2_usb_set_ep_ctrl(dev, ep_idx, EP_STALL_SEND, false);
 		if (transtype == DC_SETUP_TRANS) {
 			ff_regs[ep_idx].ep_rx_fifo_ctrl = FIFO_FORCE_EMPTY;
 		}
