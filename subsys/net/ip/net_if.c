@@ -130,7 +130,7 @@ static sys_slist_t timestamp_callbacks;
 			net_pkt_iface(pkt));				\
 									\
 		NET_ASSERT(pkt->frags);					\
-	} while (0)
+	} while (false)
 #else
 #define debug_check_packet(...)
 #endif /* CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG */

@@ -258,7 +258,7 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 			net_sprint_ipv6_addr(dst),		\
 			net_sprint_ipv6_addr(naddr),	\
 			route->iface);					\
-	} } while (0)
+	} } while (false)
 
 /* Route was accessed, so place it in front of the routes list */
 static inline void update_route_access(struct net_route_entry *route)
