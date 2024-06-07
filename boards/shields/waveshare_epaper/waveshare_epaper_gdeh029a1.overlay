@@ -10,45 +10,50 @@
 	chosen {
 		zephyr,display = &ssd16xx_waveshare_epaper_gdeh029a1;
 	};
-};
 
-&arduino_spi {
-	ssd16xx_waveshare_epaper_gdeh029a1: ssd16xxfb@0 {
-		compatible = "gooddisplay,gdeh029a1", "solomon,ssd1608";
-		spi-max-frequency = <4000000>;
-		reg = <0>;
-		width = <296>;
-		height = <128>;
-		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
+	mipi_dbi_waveshare_epaper_gdeh029a1 {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&arduino_spi>;
+		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_HIGH>;	/* D9 */
 		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
-		busy-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;	/* D7 */
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-		softstart = [d7 d6 9d];
+		ssd16xx_waveshare_epaper_gdeh029a1: ssd16xxfb@0 {
+			compatible = "gooddisplay,gdeh029a1", "solomon,ssd1608";
+			mipi-max-frequency = <4000000>;
+			reg = <0>;
+			width = <296>;
+			height = <128>;
+			busy-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;	/* D7 */
 
-		full {
-			vcom = <0x9a>;
-			border-waveform = <0x33>;
-			dummy-line = <0x1a>;
-			gate-line-width = <0x08>;
-			lut = [
-				50 AA 55 AA 11 00 00 00
-				00 00 00 00 00 00 00 00
-				00 00 00 00 FF FF 1F 00
-				00 00 00 00 00 00
-			];
-		};
+			softstart = [d7 d6 9d];
 
-		partial {
-			vcom = <0xa8>;
-			border-waveform = <0x01>;
-			dummy-line = <0x1a>;
-			gate-line-width = <0x08>;
-			lut = [
-				10 18 18 08 18 18 08 00
-				00 00 00 00 00 00 00 00
-				00 00 00 00 13 14 44 12
-				00 00 00 00 00 00
-			];
+			full {
+				vcom = <0x9a>;
+				border-waveform = <0x33>;
+				dummy-line = <0x1a>;
+				gate-line-width = <0x08>;
+				lut = [
+					50 AA 55 AA 11 00 00 00
+					00 00 00 00 00 00 00 00
+					00 00 00 00 FF FF 1F 00
+					00 00 00 00 00 00
+				];
+			};
+
+			partial {
+				vcom = <0xa8>;
+				border-waveform = <0x01>;
+				dummy-line = <0x1a>;
+				gate-line-width = <0x08>;
+				lut = [
+					10 18 18 08 18 18 08 00
+					00 00 00 00 00 00 00 00
+					00 00 00 00 13 14 44 12
+					00 00 00 00 00 00
+				];
+			};
 		};
 	};
 };

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022 Andreas Sandberg
  * Copyright (c) 2018-2020 PHYTEC Messtechnik GmbH
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +15,7 @@ LOG_MODULE_REGISTER(ssd16xx);
 #include <zephyr/drivers/display.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/display/ssd16xx.h>
@@ -90,10 +91,9 @@ struct ssd16xx_profile {
 };
 
 struct ssd16xx_config {
-	struct spi_dt_spec bus;
-	struct gpio_dt_spec dc_gpio;
+	const struct device *mipi_dev;
+	const struct mipi_dbi_config dbi_config;
 	struct gpio_dt_spec busy_gpio;
-	struct gpio_dt_spec reset_gpio;
 
 	const struct ssd16xx_quirks *quirks;
 
@@ -126,39 +126,13 @@ static inline int ssd16xx_write_cmd(const struct device *dev, uint8_t cmd,
 				    const uint8_t *data, size_t len)
 {
 	const struct ssd16xx_config *config = dev->config;
-	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
-	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
-	int err = 0;
+	int err;
 
 	ssd16xx_busy_wait(dev);
 
-	err = gpio_pin_set_dt(&config->dc_gpio, 1);
-	if (err < 0) {
-		return err;
-	}
-
-	err = spi_write_dt(&config->bus, &buf_set);
-	if (err < 0) {
-		goto spi_out;
-	}
-
-	if (data != NULL) {
-		buf.buf = (void *)data;
-		buf.len = len;
-
-		err = gpio_pin_set_dt(&config->dc_gpio, 0);
-		if (err < 0) {
-			goto spi_out;
-		}
-
-		err = spi_write_dt(&config->bus, &buf_set);
-		if (err < 0) {
-			goto spi_out;
-		}
-	}
-
-spi_out:
-	spi_release_dt(&config->bus);
+	err = mipi_dbi_command_write(config->mipi_dev, &config->dbi_config,
+				      cmd, data, len);
+	mipi_dbi_release(config->mipi_dev, &config->dbi_config);
 	return err;
 }
 
@@ -173,9 +147,6 @@ static inline int ssd16xx_read_cmd(const struct device *dev, uint8_t cmd,
 {
 	const struct ssd16xx_config *config = dev->config;
 	const struct ssd16xx_data *dev_data = dev->data;
-	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
-	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
-	int err = 0;
 
 	if (!dev_data->read_supported) {
 		return -ENOTSUP;
@@ -183,34 +154,8 @@ static inline int ssd16xx_read_cmd(const struct device *dev, uint8_t cmd,
 
 	ssd16xx_busy_wait(dev);
 
-	err = gpio_pin_set_dt(&config->dc_gpio, 1);
-	if (err < 0) {
-		return err;
-	}
-
-	err = spi_write_dt(&config->bus, &buf_set);
-	if (err < 0) {
-		goto spi_out;
-	}
-
-	if (data != NULL) {
-		buf.buf = data;
-		buf.len = len;
-
-		err = gpio_pin_set_dt(&config->dc_gpio, 0);
-		if (err < 0) {
-			goto spi_out;
-		}
-
-		err = spi_read_dt(&config->bus, &buf_set);
-		if (err < 0) {
-			goto spi_out;
-		}
-	}
-
-spi_out:
-	spi_release_dt(&config->bus);
-	return err;
+	return mipi_dbi_command_read(config->mipi_dev, &config->dbi_config,
+				     &cmd, 1, data, len);
 }
 
 static inline size_t push_x_param(const struct device *dev,
@@ -911,13 +856,7 @@ static int ssd16xx_controller_init(const struct device *dev)
 	data->blanking_on = false;
 	data->profile = SSD16XX_PROFILE_INVALID;
 
-	err = gpio_pin_set_dt(&config->reset_gpio, 1);
-	if (err < 0) {
-		return err;
-	}
-
-	k_msleep(SSD16XX_RESET_DELAY);
-	err = gpio_pin_set_dt(&config->reset_gpio, 0);
+	err = mipi_dbi_reset(config->mipi_dev, SSD16XX_RESET_DELAY);
 	if (err < 0) {
 		return err;
 	}
@@ -970,35 +909,13 @@ static int ssd16xx_init(const struct device *dev)
 
 	LOG_DBG("");
 
-	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+	if (!device_is_ready(config->mipi_dev)) {
+		LOG_ERR("MIPI Device not ready");
 		return -ENODEV;
 	}
 
 	data->read_supported =
-		(config->bus.config.operation & SPI_HALF_DUPLEX) != 0;
-
-	if (!gpio_is_ready_dt(&config->reset_gpio)) {
-		LOG_ERR("Reset GPIO device not ready");
-		return -ENODEV;
-	}
-
-	err = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
-	if (err < 0) {
-		LOG_ERR("Failed to configure reset GPIO");
-		return err;
-	}
-
-	if (!gpio_is_ready_dt(&config->dc_gpio)) {
-		LOG_ERR("DC GPIO device not ready");
-		return -ENODEV;
-	}
-
-	err = gpio_pin_configure_dt(&config->dc_gpio, GPIO_OUTPUT_INACTIVE);
-	if (err < 0) {
-		LOG_ERR("Failed to configure DC GPIO");
-		return err;
-	}
+		(config->dbi_config.config.operation & SPI_HALF_DUPLEX) != 0;
 
 	if (!gpio_is_ready_dt(&config->busy_gpio)) {
 		LOG_ERR("Busy GPIO device not ready");
@@ -1134,12 +1051,13 @@ static struct ssd16xx_quirks quirks_solomon_ssd1681 = {
 	DT_FOREACH_CHILD(n, SSD16XX_PROFILE);				\
 									\
 	static const struct ssd16xx_config ssd16xx_cfg_ ## n = {	\
-		.bus = SPI_DT_SPEC_GET(n,				\
-			SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |		\
-			SPI_HOLD_ON_CS | SPI_LOCK_ON,			\
-			0),						\
-		.reset_gpio = GPIO_DT_SPEC_GET(n, reset_gpios),		\
-		.dc_gpio = GPIO_DT_SPEC_GET(n, dc_gpios),		\
+		.mipi_dev = DEVICE_DT_GET(DT_PARENT(n)),                \
+		.dbi_config = {                                         \
+			.mode = MIPI_DBI_MODE_SPI_4WIRE,                \
+			.config = MIPI_DBI_SPI_CONFIG_DT(n,             \
+				SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |  \
+				SPI_HOLD_ON_CS | SPI_LOCK_ON, 0),       \
+		},                                                      \
 		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),		\
 		.quirks = quirks_ptr,					\
 		.height = DT_PROP(n, height),				\

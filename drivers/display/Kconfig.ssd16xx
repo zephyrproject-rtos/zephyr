@@ -12,6 +12,6 @@ config SSD16XX
 		DT_HAS_SOLOMON_SSD1675A_ENABLED || \
 		DT_HAS_SOLOMON_SSD1680_ENABLED || \
 		DT_HAS_SOLOMON_SSD1681_ENABLED
-	select SPI
+	select MIPI_DBI
 	help
 	  Enable driver for SSD16XX compatible controller.
