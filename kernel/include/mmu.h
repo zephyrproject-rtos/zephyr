@@ -404,7 +404,8 @@ int k_mem_page_frame_evict(uintptr_t phys);
  * @retval false This page fault was from an un-mapped page, should
  *               be treated as an error, and not re-tried.
  */
-bool z_page_fault(void *addr);
+bool k_mem_page_fault(void *addr);
+
 #endif /* CONFIG_DEMAND_PAGING */
 #endif /* CONFIG_MMU */
 #endif /* KERNEL_INCLUDE_MMU_H */
