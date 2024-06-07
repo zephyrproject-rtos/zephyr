@@ -302,9 +302,9 @@ int k_mem_paging_backing_store_location_get(struct z_page_frame *pf,
 void k_mem_paging_backing_store_location_free(uintptr_t location);
 
 /**
- * Copy a data page from Z_SCRATCH_PAGE to the specified location
+ * Copy a data page from K_MEM_SCRATCH_PAGE to the specified location
  *
- * Immediately before this is called, Z_SCRATCH_PAGE will be mapped read-write
+ * Immediately before this is called, K_MEM_SCRATCH_PAGE will be mapped read-write
  * to the intended source page frame for the calling context.
  *
  * Calls to this and k_mem_paging_backing_store_page_in() will always be
@@ -315,9 +315,9 @@ void k_mem_paging_backing_store_location_free(uintptr_t location);
 void k_mem_paging_backing_store_page_out(uintptr_t location);
 
 /**
- * Copy a data page from the provided location to Z_SCRATCH_PAGE.
+ * Copy a data page from the provided location to K_MEM_SCRATCH_PAGE.
  *
- * Immediately before this is called, Z_SCRATCH_PAGE will be mapped read-write
+ * Immediately before this is called, K_MEM_SCRATCH_PAGE will be mapped read-write
  * to the intended destination page frame for the calling context.
  *
  * Calls to this and k_mem_paging_backing_store_page_out() will always be
