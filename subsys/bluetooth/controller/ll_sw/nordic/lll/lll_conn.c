@@ -85,7 +85,7 @@ static uint8_t force_md_cnt;
 			if (force_md_cnt) { \
 				force_md_cnt--; \
 			} \
-		} while (0)
+		} while (false)
 
 #define FORCE_MD_CNT_GET() force_md_cnt
 
@@ -95,7 +95,7 @@ static uint8_t force_md_cnt;
 			    (trx_cnt >= ((CONFIG_BT_BUF_ACL_TX_COUNT) - 1))) { \
 				force_md_cnt = BT_CTLR_FORCE_MD_COUNT; \
 			} \
-		} while (0)
+		} while (false)
 
 #else /* !CONFIG_BT_CTLR_FORCE_MD_COUNT */
 #define FORCE_MD_CNT_INIT()
