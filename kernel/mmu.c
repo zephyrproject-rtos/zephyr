@@ -1586,7 +1586,7 @@ void k_mem_pin(void *addr, size_t size)
 	virt_region_foreach(addr, size, do_mem_pin);
 }
 
-bool z_page_fault(void *addr)
+bool k_mem_page_fault(void *addr)
 {
 	return do_page_fault(addr, false);
 }
