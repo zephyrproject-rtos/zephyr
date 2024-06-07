@@ -313,16 +313,21 @@ void z_page_frames_dump(void);
 	     (_phys) < K_MEM_PHYS_RAM_END; \
 	     (_phys) += CONFIG_MMU_PAGE_SIZE, (_pageframe)++)
 
+/**
+ * @def K_MEM_VM_RESERVED
+ * @brief Reserve space at the end of virtual memory.
+ */
 #ifdef CONFIG_DEMAND_PAGING
 /* We reserve a virtual page as a scratch area for page-ins/outs at the end
  * of the address space
  */
-#define Z_VM_RESERVED	CONFIG_MMU_PAGE_SIZE
+#define K_MEM_VM_RESERVED	CONFIG_MMU_PAGE_SIZE
+
 #define Z_SCRATCH_PAGE	((void *)((uintptr_t)CONFIG_KERNEL_VM_BASE + \
 				     (uintptr_t)CONFIG_KERNEL_VM_SIZE - \
 				     CONFIG_MMU_PAGE_SIZE))
 #else
-#define Z_VM_RESERVED	0
+#define K_MEM_VM_RESERVED	0
 #endif /* CONFIG_DEMAND_PAGING */
 
 #ifdef CONFIG_DEMAND_PAGING
