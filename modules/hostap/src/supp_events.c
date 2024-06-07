@@ -269,6 +269,11 @@ static enum wifi_link_mode get_sta_link_mode(struct wpa_supplicant *wpa_s, struc
 		return WIFI_2;
 	} else if (wpa_s->assoc_freq > 2000) {
 		return WIFI_3;
+#else
+	} else if (iface->freq > 4000) {
+		return WIFI_2;
+	} else if (iface->freq > 2000) {
+		return WIFI_3;
 #endif
 	} else {
 		return WIFI_LINK_MODE_UNKNOWN;
