@@ -667,6 +667,9 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		frag = get_data_frag(buf, frag_len);
 	}
 
+	/* Caller is supposed to check we have all resources to send */
+	__ASSERT_NO_MSG(frag != NULL);
+
 	/* If the current buffer doesn't fit a controller buffer */
 	if (len > conn_mtu(conn)) {
 		flags = conn->next_is_frag ? FRAG_CONT : FRAG_START;
@@ -818,6 +821,25 @@ static bool cannot_send_to_controller(struct bt_conn *conn)
 	return k_sem_count_get(bt_conn_get_pkts(conn)) == 0;
 }
 
+static bool dont_have_viewbufs(void)
+{
+#if defined(CONFIG_BT_CONN_TX)
+	/* The LIFO only tracks buffers that have been destroyed at least once,
+	 * hence the uninit check beforehand.
+	 */
+	if (fragments.uninit_count > 0) {
+		/* If there are uninitialized bufs, we are guaranteed allocation. */
+		return false;
+	}
+
+	/* In practice k_fifo == k_lifo ABI. */
+	return k_fifo_is_empty(&fragments.free);
+
+#else  /* !CONFIG_BT_CONN_TX */
+	return false;
+#endif	/* CONFIG_BT_CONN_TX */
+}
+
 static bool dont_have_methods(struct bt_conn *conn)
 {
 	return (conn->tx_data_pull == NULL) ||
@@ -837,6 +859,14 @@ struct bt_conn *get_conn_ready(void)
 	}
 
 	struct bt_conn *conn = CONTAINER_OF(node, struct bt_conn, _conn_ready);
+
+	if (dont_have_viewbufs()) {
+		/* We will get scheduled again when the (view) buffers are freed. If you
+		 * hit this a lot, try increasing `CONFIG_BT_CONN_FRAG_COUNT`
+		 */
+		LOG_DBG("no view bufs");
+		return NULL;
+	}
 
 	if (cannot_send_to_controller(conn)) {
 		/* We will get scheduled again when the buffers are freed. */
