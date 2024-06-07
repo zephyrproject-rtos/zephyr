@@ -20,10 +20,11 @@
  */
 
 #include <string.h>
-#include <zephyr/sys/byteorder.h>
-#include <modbus_internal.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+
+#include <modbus_internal.h>
 LOG_MODULE_REGISTER(modbus_s, CONFIG_MODBUS_LOG_LEVEL);
 
 /*
@@ -337,8 +338,7 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 	/* Get number of bytes needed for response. */
 	num_bytes = (uint8_t)(reg_qty * sizeof(uint16_t));
 
-	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
-	    !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
+	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) || !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
 		/* Read integer register */
 		if (ctx->mbs_user_cb->holding_reg_rd == NULL) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
@@ -451,8 +451,7 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 	/* Get number of bytes needed for response. */
 	num_bytes = (uint8_t)(reg_qty * sizeof(uint16_t));
 
-	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
-	    !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
+	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) || !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
 		/* Read integer register */
 		if (ctx->mbs_user_cb->input_reg_rd == NULL) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
@@ -773,8 +772,7 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 	}
 
 	/* Be sure byte count is valid for quantity of coils. */
-	if (((((coil_qty - 1) / 8) + 1) !=  num_bytes) ||
-	    (ctx->rx_adu.length  != (num_bytes + 5))) {
+	if (((((coil_qty - 1) / 8) + 1) != num_bytes) || (ctx->rx_adu.length != (num_bytes + 5))) {
 		LOG_ERR("Mismatch in the number of coils");
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
@@ -796,8 +794,7 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 			coil_state = false;
 		}
 
-		err = ctx->mbs_user_cb->coil_wr(coil_addr + coil_cntr,
-						coil_state);
+		err = ctx->mbs_user_cb->coil_wr(coil_addr + coil_cntr, coil_state);
 
 		if (err != 0) {
 			LOG_INF("Coil address not supported");
@@ -868,8 +865,7 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 		return true;
 	}
 
-	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
-	    !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
+	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) || !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
 		/* Write integer register */
 		if (ctx->mbs_user_cb->holding_reg_wr == NULL) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
@@ -956,7 +952,7 @@ static bool mbs_try_user_fc(struct modbus_context *ctx, uint8_t fc)
 
 			p->excep_code = MODBUS_EXC_NONE;
 			rval = p->cb(iface, &ctx->rx_adu, &ctx->tx_adu, &p->excep_code,
-					p->user_data);
+				     p->user_data);
 
 			if (p->excep_code != MODBUS_EXC_NONE) {
 				LOG_INF("Custom handler failed with code %d", p->excep_code);
