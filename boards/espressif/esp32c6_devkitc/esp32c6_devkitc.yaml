@@ -9,6 +9,7 @@ supported:
   - gpio
   - watchdog
   - uart
+  - dma
   - spi
 testing:
   ignore_tags:
