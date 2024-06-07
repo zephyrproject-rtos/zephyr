@@ -40,8 +40,14 @@
 #define Z_KERNEL_VIRT_END	((uint8_t *)&z_mapped_end[0])
 #define Z_KERNEL_VIRT_SIZE	(Z_KERNEL_VIRT_END - Z_KERNEL_VIRT_START)
 
-#define Z_VM_OFFSET	 ((CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET) - \
-			  (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_OFFSET))
+/**
+ * @brief Offset for translating between static physical and virtual addresses.
+ *
+ * @note Do not use directly unless you know exactly what you are going.
+ */
+#define K_MEM_VM_OFFSET	\
+	((CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET) - \
+	 (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_OFFSET))
 
 /**
  * @brief Get physical address from virtual address for boot RAM mappings.
@@ -54,7 +60,7 @@
  *
  * @return Physical address.
  */
-#define K_MEM_BOOT_VIRT_TO_PHYS(virt) ((uintptr_t)(((uint8_t *)(virt)) - Z_VM_OFFSET))
+#define K_MEM_BOOT_VIRT_TO_PHYS(virt) ((uintptr_t)(((uint8_t *)(virt)) - K_MEM_VM_OFFSET))
 
 /**
  * @brief Get virtual address from physical address for boot RAM mappings.
@@ -67,7 +73,7 @@
  *
  * @return Virtual address.
  */
-#define K_MEM_BOOT_PHYS_TO_VIRT(phys) ((uint8_t *)(((uintptr_t)(phys)) + Z_VM_OFFSET))
+#define K_MEM_BOOT_PHYS_TO_VIRT(phys) ((uint8_t *)(((uintptr_t)(phys)) + K_MEM_VM_OFFSET))
 
 #ifdef CONFIG_ARCH_MAPS_ALL_RAM
 #define Z_FREE_VM_START	K_MEM_BOOT_PHYS_TO_VIRT(Z_PHYS_RAM_END)
