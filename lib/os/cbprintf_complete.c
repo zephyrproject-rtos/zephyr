@@ -979,7 +979,7 @@ static char *encode_float(double value,
 			/* Round only if the bit that would round is
 			 * set.
 			 */
-			if (fract & mask) {
+			if ((fract & mask) != 0ULL) {
 				fract += mask;
 			}
 		}
@@ -1160,7 +1160,7 @@ static char *encode_float(double value,
 
 	/* Round the value to the last digit being printed. */
 	uint64_t round = BIT64(59); /* 0.5 */
-	while (decimals--) {
+	while (decimals-- != 0) {
 		_ldiv10(&round);
 	}
 	fract += round;
@@ -1817,7 +1817,7 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
 
 			OUTS(cp, bpe);
 		} else {
-			if (conv->altform_0c | conv->altform_0) {
+			if ((conv->altform_0c | conv->altform_0) != 0) {
 				OUTC('0');
 			}
 

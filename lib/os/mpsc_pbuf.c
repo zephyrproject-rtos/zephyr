@@ -14,7 +14,7 @@
 			mpsc_state_print(buffer); \
 		} \
 	} \
-} while (0)
+} while (false)
 
 static inline void mpsc_state_print(struct mpsc_pbuf_buffer *buffer)
 {
