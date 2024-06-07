@@ -73,12 +73,13 @@ static int parse_helper(const struct shell *sh, size_t *argc,
 
 static int cmd_erase(const struct shell *sh, size_t argc, char *argv[])
 {
-	const struct device *flash_dev;
-	uint32_t page_addr;
 	int result = -ENOTSUP;
-	uint32_t size;
 
 #if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
+	const struct device *flash_dev;
+	uint32_t page_addr;
+	uint32_t size;
+
 	result = parse_helper(sh, &argc, &argv, &flash_dev, &page_addr);
 	if (result) {
 		return result;
