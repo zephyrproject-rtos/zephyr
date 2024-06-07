@@ -496,6 +496,8 @@ static struct net_buf *hid_buf_alloc_ext(struct hid_device_data *const ddata,
 	struct net_buf *buf = NULL;
 	struct udc_buf_info *bi;
 
+	__ASSERT(IS_UDC_ALIGNED(data), "Application provided unaligned buffer");
+
 	buf = net_buf_alloc_with_data(ddata->pool_in, data, size, K_NO_WAIT);
 	if (!buf) {
 		return NULL;
