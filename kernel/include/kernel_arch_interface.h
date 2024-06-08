@@ -583,7 +583,7 @@ static inline void arch_nop(void);
  *
  * @param esf Exception Stack Frame (arch-specific)
  */
-void arch_coredump_info_dump(const z_arch_esf_t *esf);
+void arch_coredump_info_dump(const struct arch_esf *esf);
 
 /**
  * @brief Get the target code specified by the architecture.

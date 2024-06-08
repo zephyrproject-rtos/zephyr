@@ -67,7 +67,6 @@
 		sw0 = &user_button;
 		eswifi0 = &wifi0;
 		watchdog0 = &iwdg;
-		spi-flash0 = &mx25r6435f;
 		accel0 = &lsm6dsl;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;

@@ -3,16 +3,22 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-#ifdef CONFIG_BT_VCP_VOL_CTLR
-
-#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/aics.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/bluetooth/audio/vocs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/sys/printk.h>
 
+#include "bstests.h"
 #include "common.h"
 
-
+#ifdef CONFIG_BT_VCP_VOL_CTLR
 #define VOCS_DESC_SIZE 64
 #define AICS_DESC_SIZE 64
 

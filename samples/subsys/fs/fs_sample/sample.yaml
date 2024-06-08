@@ -43,6 +43,9 @@ tests:
     extra_args:
       - OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_ram_disk.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_ram_disk_region.overlay
+  sample.filesystem.fat_fs.nrf54l15pdk:
+    build_only: true
+    platform_allow: nrf54l15pdk/nrf54l15/cpuapp
   sample.filesystem.fat_fs.nrf52840dk_nrf52840.qspi:
     build_only: true
     platform_allow: nrf52840dk/nrf52840

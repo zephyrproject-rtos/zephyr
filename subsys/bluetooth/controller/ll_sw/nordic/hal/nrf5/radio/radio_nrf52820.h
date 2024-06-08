@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Use the NRF_RTC instance for coarse radio event scheduling */
+#define NRF_RTC NRF_RTC0
+
+/* HAL abstraction of event timer prescaler value */
+#define HAL_EVENT_TIMER_PRESCALER_VALUE 4U
+
 /* NRF Radio HW timing constants
  * - provided in US and NS (for higher granularity)
  * - based on empirical measurements and sniffer logs
@@ -335,6 +341,14 @@
 	HAL_RADIO_NRF52820_RXEN_RXIDLE_RX_S8_DEFAULT_NO_HW_TIFS_NS
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 #endif /* !CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
+
+/* HAL abstraction of Radio bitfields */
+#define HAL_RADIO_INTENSET_DISABLED_Msk         RADIO_INTENSET_DISABLED_Msk
+#define HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk    RADIO_SHORTS_END_DISABLE_Msk
+#define HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk RADIO_SHORTS_PHYEND_DISABLE_Msk
+
+/* HAL abstraction of Radio IRQ number */
+#define HAL_RADIO_IRQn                          RADIO_IRQn
 
 /* SoC specific NRF_RADIO power-on reset value. Refer to Product Specification,
  * RADIO Registers section for the documented reset values.

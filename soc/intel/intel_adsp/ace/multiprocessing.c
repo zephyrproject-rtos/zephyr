@@ -6,6 +6,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/xtensa/arch.h>
@@ -20,16 +21,33 @@
 #include <adsp_interrupt.h>
 #include <zephyr/irq.h>
 #include <zephyr/cache.h>
+#include <ipi.h>
 
 #define CORE_POWER_CHECK_NUM 128
 
 #define CPU_POWERUP_TIMEOUT_USEC 10000
 
+#ifdef CONFIG_XTENSA_MMU
+#include <zephyr/arch/xtensa/xtensa_mmu.h>
+#endif /* CONFIG_XTENSA_MMU */
+
 #define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))
+
+#ifdef CONFIG_XTENSA_MMU
+#define IPI_TLB_FLUSH 0x01
+#endif
 
 static void ipc_isr(void *arg)
 {
 	uint32_t cpu_id = arch_proc_id();
+
+#if defined(CONFIG_XTENSA_MMU) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+	uint32_t msg = IDC[cpu_id].agents[0].ipc.tdr & ~INTEL_ADSP_IPC_BUSY;
+
+	if (msg == IPI_TLB_FLUSH) {
+		xtensa_mmu_tlb_shootdown();
+	}
+#endif
 
 	/*
 	 * Clearing the BUSY bits in both TDR and TDA are needed to
@@ -40,7 +58,7 @@ static void ipc_isr(void *arg)
 	 * On TDR, it is to write one to clear, while on TDA, it is
 	 * to write zero to clear.
 	 */
-	IDC[cpu_id].agents[0].ipc.tdr = BIT(31);
+	IDC[cpu_id].agents[0].ipc.tdr = INTEL_ADSP_IPC_BUSY;
 	IDC[cpu_id].agents[0].ipc.tda = 0;
 
 #ifdef CONFIG_SMP
@@ -166,6 +184,10 @@ void soc_start_core(int cpu_num)
 
 void soc_mp_startup(uint32_t cpu)
 {
+#ifdef CONFIG_XTENSA_MMU
+	xtensa_mmu_init();
+#endif /* CONFIG_XTENSA_MMU */
+
 	/* Must have this enabled always */
 	xtensa_irq_enable(ACE_INTC_IRQ);
 
@@ -178,7 +200,17 @@ void soc_mp_startup(uint32_t cpu)
 #endif /* CONFIG_ADSP_IDLE_CLOCK_GATING */
 }
 
-void arch_sched_ipi(void)
+/**
+ * @brief Send a IPI to other processors.
+ *
+ * @note: Leave the MSB clear when passing @param msg.
+ *
+ * @param msg Message to be sent (31-bit integer).
+ */
+#ifndef CONFIG_XTENSA_MMU
+ALWAYS_INLINE
+#endif
+static void send_ipi(uint32_t msg, uint32_t cpu_bitmap)
 {
 	uint32_t curr = arch_proc_id();
 
@@ -186,10 +218,28 @@ void arch_sched_ipi(void)
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int core = 0; core < num_cpus; core++) {
-		if (core != curr && soc_cpus_active[core]) {
-			IDC[core].agents[1].ipc.idr = INTEL_ADSP_IPC_BUSY;
+		if ((core != curr) && soc_cpus_active[core] &&
+		    ((cpu_bitmap & BIT(core)) != 0)) {
+			IDC[core].agents[1].ipc.idr = msg | INTEL_ADSP_IPC_BUSY;
 		}
 	}
+}
+
+#if defined(CONFIG_XTENSA_MMU) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+void xtensa_mmu_tlb_ipi(void)
+{
+	send_ipi(IPI_TLB_FLUSH, IPI_ALL_CPUS_MASK);
+}
+#endif
+
+void arch_sched_broadcast_ipi(void)
+{
+	send_ipi(0, IPI_ALL_CPUS_MASK);
+}
+
+void arch_sched_directed_ipi(uint32_t cpu_bitmap)
+{
+	send_ipi(0, cpu_bitmap);
 }
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1

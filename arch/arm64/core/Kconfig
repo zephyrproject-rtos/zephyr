@@ -154,6 +154,13 @@ config ARM64_ENABLE_FRAME_POINTER
 	  and OMIT_FRAME_POINTER. It is automatically enabled when the frame
 	  pointer unwinding is enabled.
 
+config ARM64_EXCEPTION_STACK_TRACE
+	bool
+	default y
+	depends on FRAME_POINTER
+	help
+	  Internal config to enable runtime stack traces on fatal exceptions.
+
 config ARM64_SAFE_EXCEPTION_STACK_SIZE
 	int "The stack size of the safe exception stack"
 	default 4096

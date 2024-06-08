@@ -1466,6 +1466,7 @@ static void le_rem_dev_from_fal(struct net_buf *buf, struct net_buf **evt)
 }
 #endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
+#if defined(CONFIG_BT_CTLR_CRYPTO)
 static void le_encrypt(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_encrypt *cmd = (void *)buf->data;
@@ -1479,6 +1480,7 @@ static void le_encrypt(struct net_buf *buf, struct net_buf **evt)
 	rp->status = 0x00;
 	memcpy(rp->enc_data, enc_data, 16);
 }
+#endif /* CONFIG_BT_CTLR_CRYPTO */
 
 static void le_rand(struct net_buf *buf, struct net_buf **evt)
 {
@@ -4338,9 +4340,11 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
+#if defined(CONFIG_BT_CTLR_CRYPTO)
 	case BT_OCF(BT_HCI_OP_LE_ENCRYPT):
 		le_encrypt(cmd, evt);
 		break;
+#endif /* CONFIG_BT_CTLR_CRYPTO */
 
 	case BT_OCF(BT_HCI_OP_LE_RAND):
 		le_rand(cmd, evt);
@@ -5001,7 +5005,7 @@ NET_BUF_POOL_FIXED_DEFINE(vs_err_tx_pool, 1, BT_BUF_EVT_RX_SIZE,
 typedef struct bt_hci_vs_fata_error_cpu_data_cortex_m bt_hci_vs_fatal_error_cpu_data;
 
 static void vs_err_fatal_cpu_data_fill(bt_hci_vs_fatal_error_cpu_data *cpu_data,
-				       const z_arch_esf_t *esf)
+				       const struct arch_esf *esf)
 {
 	cpu_data->a1 = sys_cpu_to_le32(esf->basic.a1);
 	cpu_data->a2 = sys_cpu_to_le32(esf->basic.a2);
@@ -5036,7 +5040,7 @@ static struct net_buf *vs_err_evt_create(uint8_t subevt, uint8_t len)
 	return buf;
 }
 
-struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const z_arch_esf_t *esf)
+struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const struct arch_esf *esf)
 {
 	/* Prepare vendor specific HCI Fatal Error event */
 	struct bt_hci_vs_fatal_error_stack_frame *sf;
@@ -8617,7 +8621,7 @@ static void le_ltk_request(struct pdu_data *pdu_data, uint16_t handle,
 }
 
 static void encrypt_change(uint8_t err, uint16_t handle,
-			   struct net_buf *buf)
+			   struct net_buf *buf, bool encryption_on)
 {
 	struct bt_hci_evt_encrypt_change *ep;
 
@@ -8628,9 +8632,9 @@ static void encrypt_change(uint8_t err, uint16_t handle,
 	hci_evt_create(buf, BT_HCI_EVT_ENCRYPT_CHANGE, sizeof(*ep));
 	ep = net_buf_add(buf, sizeof(*ep));
 
-	ep->status = err;
+	ep->status = err ? err : (encryption_on ? err : BT_HCI_ERR_UNSPECIFIED);
 	ep->handle = sys_cpu_to_le16(handle);
-	ep->encrypt = !err ? 1 : 0;
+	ep->encrypt = encryption_on ? 1 : 0;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
@@ -8772,7 +8776,7 @@ static void encode_data_ctrl(struct node_rx_pdu *node_rx,
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
-		encrypt_change(0x00, handle, buf);
+		encrypt_change(0x00, handle, buf, true);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
@@ -8789,7 +8793,7 @@ static void encode_data_ctrl(struct node_rx_pdu *node_rx,
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
 		encrypt_change(pdu_data->llctrl.reject_ind.error_code, handle,
-			       buf);
+			       buf, false);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 

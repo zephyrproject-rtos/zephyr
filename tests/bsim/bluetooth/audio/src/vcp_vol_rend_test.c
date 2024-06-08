@@ -4,12 +4,23 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-#ifdef CONFIG_BT_VCP_VOL_REND
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/aics.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/bluetooth/audio/vocs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+
+#include "bstests.h"
 #include "common.h"
 
+#ifdef CONFIG_BT_VCP_VOL_REND
 extern enum bst_result_t bst_result;
 
 #if defined(CONFIG_BT_VOCS)

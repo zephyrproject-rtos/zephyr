@@ -33,7 +33,7 @@ SECTION_FUNC(vectors, __start)
 	 *
 	 * CLIC vectored mode uses mtvec exclusively for exception handling and
 	 * mtvec.base must be aligned to 64 bytes (this is done using
-	 * CONFIG_ARCH_SW_ISR_TABLE_ALIGN)
+	 * CONFIG_RISCV_TRAP_HANDLER_ALIGNMENT)
 	 */
 	la t0, _isr_wrapper
 	addi t0, t0, 0x03 /* Enable CLIC vectored mode by setting LSB */

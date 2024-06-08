@@ -22,10 +22,6 @@ static inline struct loopback_disk_access *get_ctx(struct disk_info *info)
 	return CONTAINER_OF(info, struct loopback_disk_access, info);
 }
 
-static int loopback_disk_access_init(struct disk_info *disk)
-{
-	return 0;
-}
 static int loopback_disk_access_status(struct disk_info *disk)
 {
 	return DISK_STATUS_OK;
@@ -111,11 +107,18 @@ static int loopback_disk_access_ioctl(struct disk_info *disk, uint8_t cmd, void 
 		*(uint32_t *)buff = LOOPBACK_SECTOR_SIZE;
 		return 0;
 	}
+	case DISK_IOCTL_CTRL_DEINIT:
 	case DISK_IOCTL_CTRL_SYNC:
 		return fs_sync(&ctx->file);
+	case DISK_IOCTL_CTRL_INIT:
+		return 0;
 	default:
 		return -ENOTSUP;
 	}
+}
+static int loopback_disk_access_init(struct disk_info *disk)
+{
+	return loopback_disk_access_ioctl(disk, DISK_IOCTL_CTRL_INIT, NULL);
 }
 
 static const struct disk_operations loopback_disk_operations = {

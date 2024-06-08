@@ -4,6 +4,7 @@ sample:
 common:
   filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   harness: net
+  depends_on: netif
   min_ram: 32
   min_flash: 128
   tags:

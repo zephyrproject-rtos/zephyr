@@ -12,6 +12,7 @@
 #define ZEPHYR_INCLUDE_FATAL_H
 
 #include <zephyr/arch/cpu.h>
+#include <zephyr/arch/exception.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/fatal_types.h>
 
@@ -64,7 +65,7 @@ FUNC_NORETURN void k_fatal_halt(unsigned int reason);
  * @param esf Exception context, with details and partial or full register
  *            state when the error occurred. May in some cases be NULL.
  */
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf);
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf);
 
 /**
  * Called by architecture code upon a fatal error.
@@ -80,7 +81,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf);
  * @param esf Exception context, with details and partial or full register
  *            state when the error occurred. May in some cases be NULL.
  */
-void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+void z_fatal_error(unsigned int reason, const struct arch_esf *esf);
 
 /** @} */
 

@@ -38,6 +38,10 @@ SECTIONS
 {
   #include <zephyr/linker/rel-sections.ld>
 
+  #ifdef CONFIG_LLEXT
+  #include <zephyr/linker/llext-sections.ld>
+  #endif
+
    /* Send .iram0 code to iram */
   .iram0.vectors : ALIGN(4)
   {

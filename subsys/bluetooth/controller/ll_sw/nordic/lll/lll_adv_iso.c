@@ -351,7 +351,8 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	/* Radio packet configuration */
 	pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_BIS, phy,
 					 RADIO_PKT_CONF_CTE_DISABLED);
-	if (pdu->len && lll->enc) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    pdu->len && lll->enc) {
 		/* Encryption */
 		lll->ccm_tx.counter = payload_count;
 
@@ -698,7 +699,8 @@ static void isr_tx_common(void *param,
 	lll_chan_set(data_chan_use);
 
 	/* Encryption */
-	if (pdu->len && lll->enc) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    pdu->len && lll->enc) {
 		lll->ccm_tx.counter = payload_count;
 
 		(void)memcpy(lll->ccm_tx.iv, lll->giv, 4U);

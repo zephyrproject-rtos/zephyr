@@ -13,6 +13,10 @@
 	model = "The Infineon AIROC™ CYW20829 Bluetooth® LE evaluation kit (CYW92089M2EVK-02)";
 	compatible = "infineon,cyw920829m2evk_02", "infineon,CYW20829";
 
+	aliases {
+		watchdog0 = &watchdog0;
+	};
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &app_region;
@@ -68,6 +72,10 @@ uart2: &scb2 {
 };
 
 &clk_hf3 {
+	status = "okay";
+};
+
+&watchdog0 {
 	status = "okay";
 };
 

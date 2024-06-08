@@ -23,6 +23,10 @@ SECTIONS
 
 #include <zephyr/linker/rel-sections.ld>
 
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
+#endif
+
     __rom_region_start = .;
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)

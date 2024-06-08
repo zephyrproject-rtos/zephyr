@@ -7,8 +7,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/audio/csip.h>
+#include <stdint.h>
 
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
 
 #define BT_CSIP_SIRK_TYPE_ENCRYPTED             0x00
 #define BT_CSIP_SIRK_TYPE_PLAIN                 0x01
@@ -46,7 +49,5 @@ struct bt_csip_set_coordinator_svc_inst {
 	struct bt_csip_set_coordinator_set_info *set_info;
 };
 
-struct bt_csip_set_coordinator_csis_inst *bt_csip_set_coordinator_csis_inst_by_handle(
-	struct bt_conn *conn, uint16_t start_handle);
-struct bt_csip_set_coordinator_set_member *
-bt_csip_set_coordinator_csis_member_by_conn(struct bt_conn *conn);
+struct bt_csip_set_coordinator_csis_inst *
+bt_csip_set_coordinator_csis_inst_by_handle(struct bt_conn *conn, uint16_t start_handle);

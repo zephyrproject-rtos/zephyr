@@ -1,12 +1,13 @@
 /*
  * Copyright (c) 2018 Prevas A/S
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <nxp/nxp_k2x.dtsi>
+#include <nxp/nxp_k22fn512.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include "frdm_k22f-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>

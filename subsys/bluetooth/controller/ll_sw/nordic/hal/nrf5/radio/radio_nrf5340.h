@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Use the NRF_RTC instance for coarse radio event scheduling */
+#define NRF_RTC NRF_RTC0
+
 /* Override EVENT_TIMER_ID from 4 to 0, as nRF5340 does not have 4 timer
  * instances.
  */
@@ -18,6 +21,9 @@
 #undef SW_SWITCH_TIMER
 #define SW_SWITCH_TIMER EVENT_TIMER
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+/* HAL abstraction of event timer prescaler value */
+#define HAL_EVENT_TIMER_PRESCALER_VALUE 4U
 
 /* NRF Radio HW timing constants
  * - provided in US and NS (for higher granularity)
@@ -357,6 +363,14 @@
 #ifndef RADIO_TXPOWER_TXPOWER_Pos3dBm
 #define RADIO_TXPOWER_TXPOWER_Pos3dBm (0x03UL)
 #endif
+
+/* HAL abstraction of Radio bitfields */
+#define HAL_RADIO_INTENSET_DISABLED_Msk         RADIO_INTENSET_DISABLED_Msk
+#define HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk    RADIO_SHORTS_END_DISABLE_Msk
+#define HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk RADIO_SHORTS_PHYEND_DISABLE_Msk
+
+/* HAL abstraction of Radio IRQ number */
+#define HAL_RADIO_IRQn                          RADIO_IRQn
 
 /* SoC specific NRF_RADIO power-on reset value. Refer to Product Specification,
  * RADIO Registers section for the documented reset values.

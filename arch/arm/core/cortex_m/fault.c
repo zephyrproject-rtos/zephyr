@@ -146,7 +146,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  */
 
 #if (CONFIG_FAULT_DUMP == 1)
-static void fault_show(const z_arch_esf_t *esf, int fault)
+static void fault_show(const struct arch_esf *esf, int fault)
 {
 	PR_EXC("Fault! EXC #%d", fault);
 
@@ -165,7 +165,7 @@ static void fault_show(const z_arch_esf_t *esf, int fault)
  *
  * For Dump level 0, no information needs to be generated.
  */
-static void fault_show(const z_arch_esf_t *esf, int fault)
+static void fault_show(const struct arch_esf *esf, int fault)
 {
 	(void)esf;
 	(void)fault;
@@ -185,7 +185,7 @@ static const struct z_exc_handle exceptions[] = {
  *
  * @return true if error is recoverable, otherwise return false.
  */
-static bool memory_fault_recoverable(z_arch_esf_t *esf, bool synchronous)
+static bool memory_fault_recoverable(struct arch_esf *esf, bool synchronous)
 {
 #ifdef CONFIG_USERSPACE
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
@@ -228,7 +228,7 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr,
  *
  * @return error code to identify the fatal error reason
  */
-static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
+static uint32_t mem_manage_fault(struct arch_esf *esf, int from_hard_fault,
 			      bool *recoverable)
 {
 	uint32_t reason = K_ERR_ARM_MEM_GENERIC;
@@ -387,7 +387,7 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
  * @return error code to identify the fatal error reason.
  *
  */
-static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
+static int bus_fault(struct arch_esf *esf, int from_hard_fault, bool *recoverable)
 {
 	uint32_t reason = K_ERR_ARM_BUS_GENERIC;
 
@@ -549,7 +549,7 @@ static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
  *
  * @return error code to identify the fatal error reason
  */
-static uint32_t usage_fault(const z_arch_esf_t *esf)
+static uint32_t usage_fault(const struct arch_esf *esf)
 {
 	uint32_t reason = K_ERR_ARM_USAGE_GENERIC;
 
@@ -612,7 +612,7 @@ static uint32_t usage_fault(const z_arch_esf_t *esf)
  *
  * @return error code to identify the fatal error reason
  */
-static uint32_t secure_fault(const z_arch_esf_t *esf)
+static uint32_t secure_fault(const struct arch_esf *esf)
 {
 	uint32_t reason = K_ERR_ARM_SECURE_GENERIC;
 
@@ -661,7 +661,7 @@ static uint32_t secure_fault(const z_arch_esf_t *esf)
  * See z_arm_fault_dump() for example.
  *
  */
-static void debug_monitor(z_arch_esf_t *esf, bool *recoverable)
+static void debug_monitor(struct arch_esf *esf, bool *recoverable)
 {
 	*recoverable = false;
 
@@ -687,7 +687,7 @@ static void debug_monitor(z_arch_esf_t *esf, bool *recoverable)
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
-static inline bool z_arm_is_synchronous_svc(z_arch_esf_t *esf)
+static inline bool z_arm_is_synchronous_svc(struct arch_esf *esf)
 {
 	uint16_t *ret_addr = (uint16_t *)esf->basic.pc;
 	/* SVC is a 16-bit instruction. On a synchronous SVC
@@ -762,7 +762,7 @@ static inline bool z_arm_is_pc_valid(uintptr_t pc)
  *
  * @return error code to identify the fatal error reason
  */
-static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
+static uint32_t hard_fault(struct arch_esf *esf, bool *recoverable)
 {
 	uint32_t reason = K_ERR_CPU_EXCEPTION;
 
@@ -829,7 +829,7 @@ static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
  * See z_arm_fault_dump() for example.
  *
  */
-static void reserved_exception(const z_arch_esf_t *esf, int fault)
+static void reserved_exception(const struct arch_esf *esf, int fault)
 {
 	ARG_UNUSED(esf);
 
@@ -839,7 +839,7 @@ static void reserved_exception(const z_arch_esf_t *esf, int fault)
 }
 
 /* Handler function for ARM fault conditions. */
-static uint32_t fault_handle(z_arch_esf_t *esf, int fault, bool *recoverable)
+static uint32_t fault_handle(struct arch_esf *esf, int fault, bool *recoverable)
 {
 	uint32_t reason = K_ERR_CPU_EXCEPTION;
 
@@ -893,7 +893,7 @@ static uint32_t fault_handle(z_arch_esf_t *esf, int fault, bool *recoverable)
  *
  * @param secure_esf Pointer to the secure stack frame.
  */
-static void secure_stack_dump(const z_arch_esf_t *secure_esf)
+static void secure_stack_dump(const struct arch_esf *secure_esf)
 {
 	/*
 	 * In case a Non-Secure exception interrupted the Secure
@@ -918,7 +918,7 @@ static void secure_stack_dump(const z_arch_esf_t *secure_esf)
 		 * Non-Secure exception entry.
 		 */
 		top_of_sec_stack += ADDITIONAL_STATE_CONTEXT_WORDS;
-		secure_esf = (const z_arch_esf_t *)top_of_sec_stack;
+		secure_esf = (const struct arch_esf *)top_of_sec_stack;
 		sec_ret_addr = secure_esf->basic.pc;
 	} else {
 		/* Exception during Non-Secure function call.
@@ -947,11 +947,11 @@ static void secure_stack_dump(const z_arch_esf_t *secure_esf)
  *
  * @return ESF pointer on success, otherwise return NULL
  */
-static inline z_arch_esf_t *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_return,
+static inline struct arch_esf *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_return,
 	bool *nested_exc)
 {
 	bool alternative_state_exc = false;
-	z_arch_esf_t *ptr_esf = NULL;
+	struct arch_esf *ptr_esf = NULL;
 
 	*nested_exc = false;
 
@@ -979,14 +979,14 @@ static inline z_arch_esf_t *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_ret
 		alternative_state_exc = true;
 
 		/* Dump the Secure stack before handling the actual fault. */
-		z_arch_esf_t *secure_esf;
+		struct arch_esf *secure_esf;
 
 		if (exc_return & EXC_RETURN_SPSEL_PROCESS) {
 			/* Secure stack pointed by PSP */
-			secure_esf = (z_arch_esf_t *)psp;
+			secure_esf = (struct arch_esf *)psp;
 		} else {
 			/* Secure stack pointed by MSP */
-			secure_esf = (z_arch_esf_t *)msp;
+			secure_esf = (struct arch_esf *)msp;
 			*nested_exc = true;
 		}
 
@@ -997,9 +997,9 @@ static inline z_arch_esf_t *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_ret
 		 * and supply it to the fault handing function.
 		 */
 		if (exc_return & EXC_RETURN_MODE_THREAD) {
-			ptr_esf = (z_arch_esf_t *)__TZ_get_PSP_NS();
+			ptr_esf = (struct arch_esf *)__TZ_get_PSP_NS();
 		} else {
-			ptr_esf = (z_arch_esf_t *)__TZ_get_MSP_NS();
+			ptr_esf = (struct arch_esf *)__TZ_get_MSP_NS();
 		}
 	}
 #elif defined(CONFIG_ARM_NONSECURE_FIRMWARE)
@@ -1024,10 +1024,10 @@ static inline z_arch_esf_t *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_ret
 
 		if (exc_return & EXC_RETURN_SPSEL_PROCESS) {
 			/* Non-Secure stack frame on PSP */
-			ptr_esf = (z_arch_esf_t *)psp;
+			ptr_esf = (struct arch_esf *)psp;
 		} else {
 			/* Non-Secure stack frame on MSP */
-			ptr_esf = (z_arch_esf_t *)msp;
+			ptr_esf = (struct arch_esf *)msp;
 		}
 	} else {
 		/* Exception entry occurred in Non-Secure stack. */
@@ -1046,11 +1046,11 @@ static inline z_arch_esf_t *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_ret
 	if (!alternative_state_exc) {
 		if (exc_return & EXC_RETURN_MODE_THREAD) {
 			/* Returning to thread mode */
-			ptr_esf =  (z_arch_esf_t *)psp;
+			ptr_esf =  (struct arch_esf *)psp;
 
 		} else {
 			/* Returning to handler mode */
-			ptr_esf = (z_arch_esf_t *)msp;
+			ptr_esf = (struct arch_esf *)msp;
 			*nested_exc = true;
 		}
 	}
@@ -1095,12 +1095,12 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
 	uint32_t reason = K_ERR_CPU_EXCEPTION;
 	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
 	bool recoverable, nested_exc;
-	z_arch_esf_t *esf;
+	struct arch_esf *esf;
 
 	/* Create a stack-ed copy of the ESF to be used during
 	 * the fault handling process.
 	 */
-	z_arch_esf_t esf_copy;
+	struct arch_esf esf_copy;
 
 	/* Force unlock interrupts */
 	arch_irq_unlock(0);
@@ -1123,13 +1123,13 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
 
 	/* Copy ESF */
 #if !defined(CONFIG_EXTRA_EXCEPTION_INFO)
-	memcpy(&esf_copy, esf, sizeof(z_arch_esf_t));
+	memcpy(&esf_copy, esf, sizeof(struct arch_esf));
 	ARG_UNUSED(callee_regs);
 #else
 	/* the extra exception info is not present in the original esf
 	 * so we only copy the fields before those.
 	 */
-	memcpy(&esf_copy, esf, offsetof(z_arch_esf_t, extra_info));
+	memcpy(&esf_copy, esf, offsetof(struct arch_esf, extra_info));
 	esf_copy.extra_info = (struct __extra_esf_info) {
 		.callee = callee_regs,
 		.exc_return = exc_return,

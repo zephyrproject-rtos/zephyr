@@ -103,8 +103,6 @@ config NET_SOCKETS_SERVICE
 	bool "Socket service support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select EVENTFD
-	# We select here POSIX_API so that zephyr libc will be used for native_sim
-	select POSIX_API if BOARD_NATIVE_SIM
 	help
 	  The socket service can monitor multiple sockets and save memory
 	  by only having one thread listening socket data. If data is received
@@ -142,11 +140,6 @@ config NET_SOCKETS_SERVICE_STACK_SIZE
 	depends on NET_SOCKETS_SERVICE
 	help
 	  Set the internal stack size for the thread that polls sockets.
-
-config NET_SOCKETS_SERVICE_INIT_PRIO
-	int "Startup priority for the network socket service"
-	default 90
-	depends on NET_SOCKETS_SERVICE
 
 config NET_SOCKETS_SOCKOPT_TLS
 	bool "TCP TLS socket option support"

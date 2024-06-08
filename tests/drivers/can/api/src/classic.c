@@ -819,6 +819,33 @@ ZTEST(can_classic, test_send_receive_std_id)
 }
 
 /**
+ * @brief Test send/receive with standard (11-bit) CAN IDs without no data.
+ */
+ZTEST(can_classic, test_send_receive_std_id_no_data)
+{
+	const struct can_frame frame = {
+		.flags   = 0,
+		.id      = TEST_CAN_STD_ID_1,
+		.dlc     = 0,
+		.data    = { 0 }
+	};
+	struct can_frame frame_buffer;
+	int filter_id;
+	int err;
+
+	filter_id = add_rx_msgq(can_dev, &test_std_filter_1);
+	err = can_send(can_dev, &frame, TEST_SEND_TIMEOUT, NULL, NULL);
+	zassert_equal(err, 0, "failed to send frame without data (err %d)", err);
+
+	err = k_msgq_get(&can_msgq, &frame_buffer, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, 0, "receive timeout");
+
+	assert_frame_equal(&frame, &frame_buffer, 0);
+
+	can_remove_rx_filter(can_dev, filter_id);
+}
+
+/**
  * @brief Test send/receive with extended (29-bit) CAN IDs.
  */
 ZTEST(can_classic, test_send_receive_ext_id)

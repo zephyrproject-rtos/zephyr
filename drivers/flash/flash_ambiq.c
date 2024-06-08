@@ -48,6 +48,11 @@ static struct k_sem flash_ambiq_sem;
 static const struct flash_parameters flash_ambiq_parameters = {
 	.write_block_size = FLASH_WRITE_BLOCK_SIZE,
 	.erase_value = FLASH_ERASE_BYTE,
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
+	.caps = {
+		.no_explicit_erase = true,
+	},
+#endif
 };
 
 static bool flash_ambiq_valid_range(off_t offset, size_t len)

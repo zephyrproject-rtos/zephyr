@@ -2,21 +2,35 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-menu "sem_t support"
+menuconfig POSIX_SEMAPHORES
+	bool "POSIX semaphore support"
+	help
+	  Enable this option for POSIX semaphore support.
 
-config SEM_VALUE_MAX
-	int "Maximum semaphore limit"
+if POSIX_SEMAPHORES
+
+config POSIX_SEM_VALUE_MAX
+	int "Maximum semaphore value"
 	default 32767
 	range 1 32767
 	help
 	  Maximum semaphore count in POSIX compliant Application.
 
-config SEM_NAMELEN_MAX
-	int "Maximum name length"
+config POSIX_SEM_NSEMS_MAX
+	int "Maximum number of semaphores"
+	default 256
+	help
+	  Maximum number of semaphores in a POSIX application.
+
+	  Note: currently, in Zephyr, this only limits the number of named semaphores (i.e. those
+	  created via sem_open()).
+
+config POSIX_SEM_NAMELEN_MAX
+	int "Maximum semaphore name length"
 	default 16
 	range 2 255
 	help
 	  Maximum length of name for a named semaphore.
 	  The max value of 255 corresponds to {NAME_MAX}.
 
-endmenu # "sem_t support"
+endif # POSIX_SEMAPHORES

@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-struct __esf {
+struct arch_esf {
 	uint64_t x0;
 	uint64_t x1;
 	uint64_t x2;
@@ -54,8 +54,6 @@ struct __esf {
 	uint64_t sp;
 #endif
 } __aligned(16);
-
-typedef struct __esf z_arch_esf_t;
 
 #ifdef __cplusplus
 }

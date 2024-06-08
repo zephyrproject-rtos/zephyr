@@ -34,7 +34,7 @@ manifest:
       path: modules/lib/acpica
     - name: bsim
       repo-path: babblesim-manifest
-      revision: 68f6282c6a7f54641b75f5f9fc953c85e272a983
+      revision: 9351ae1ad44864a49c351f9704f65f43046abeb0
       path: tools/bsim
       groups:
         - babblesim
@@ -56,7 +56,7 @@ manifest:
       remote: babblesim
       repo-path: ext_2G4_phy_v1
       path: tools/bsim/components/ext_2G4_phy_v1
-      revision: d8302b8d51409b9e717a1a0ba6b443d3b5552a6c
+      revision: 04eeb3c3794444122fbeeb3715f4233b0b50cfbb
       groups:
         - babblesim
     - name: babblesim_ext_2G4_channel_NtNcable
@@ -127,7 +127,7 @@ manifest:
       revision: 0c8669d81381ccf3b1a01d699f3b68b50134a99f
       path: modules/lib/cmsis-nn
     - name: edtt
-      revision: 64e5105ad82390164fb73fc654be3f73a608209a
+      revision: 8d7b543d4d2f2be0f78481e4e1d8d73a88024803
       path: tools/edtt
       groups:
         - tools
@@ -137,7 +137,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: 674d10b0a1aad4cf4b7b90ca52dfd4a494ab9e52
+      revision: 2858da5ab4a7a01cde48a41818a1a6693529f68d
       path: modules/hal/adi
       groups:
         - hal
@@ -188,17 +188,17 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: fc02d66798f691b66bd6b0236e63082a9c498bbf
+      revision: ab5cb2e2faeb1edfad7a25286dcb513929ae55da
       path: modules/hal/nordic
       groups:
         - hal
     - name: hal_nuvoton
-      revision: ab342e6915bf7bff2203a20985754f6dbdb5343d
+      revision: 466c3eed9c98453fb23953bf0e0427fea01924be
       path: modules/hal/nuvoton
       groups:
         - hal
     - name: hal_nxp
-      revision: 5e84f1d2173e3c5057725d76f9dad6bfabad0b5f
+      revision: 88a7d079eed470ecc94010784931823a85ac3b39
       path: modules/hal/nxp
       groups:
         - hal
@@ -215,7 +215,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: b4fe8925d95bddc27e6d1666890f560d30cf9166
+      revision: a8cd5ed480a31982a86dab8952ac8baaf646c3cb
       groups:
         - hal
     - name: hal_rpi_pico
@@ -234,7 +234,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 366c5c909fbcecf94f32411887132024f61b0bcd
+      revision: 54724a815d23b7f518fa88eb5fb7e991109e191b
       path: modules/hal/stm32
       groups:
         - hal
@@ -300,7 +300,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 53635212495e4575955fc717369be4362126456a
+      revision: 6c389b9b5fa0a079cd4502e69d375da4c0c289b7
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
       revision: da78aea63159771956fe0c9263f2e6985b66e9d5

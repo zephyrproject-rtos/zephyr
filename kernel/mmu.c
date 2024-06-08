@@ -133,12 +133,12 @@ void z_page_frames_dump(void)
 /* LCOV_EXCL_STOP */
 
 #define VIRT_FOREACH(_base, _size, _pos) \
-	for (_pos = _base; \
-	     _pos < ((uint8_t *)_base + _size); _pos += CONFIG_MMU_PAGE_SIZE)
+	for ((_pos) = (_base); \
+	     (_pos) < ((uint8_t *)(_base) + (_size)); (_pos) += CONFIG_MMU_PAGE_SIZE)
 
 #define PHYS_FOREACH(_base, _size, _pos) \
-	for (_pos = _base; \
-	     _pos < ((uintptr_t)_base + _size); _pos += CONFIG_MMU_PAGE_SIZE)
+	for ((_pos) = (_base); \
+	     (_pos) < ((uintptr_t)(_base) + (_size)); (_pos) += CONFIG_MMU_PAGE_SIZE)
 
 
 /*

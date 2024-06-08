@@ -47,8 +47,8 @@
  * been remapped or paged out. Never use this unless you know exactly what you
  * are doing.
  */
-#define Z_BOOT_VIRT_TO_PHYS(virt) ((uintptr_t)(((uint8_t *)virt) - Z_VM_OFFSET))
-#define Z_BOOT_PHYS_TO_VIRT(phys) ((uint8_t *)(((uintptr_t)phys) + Z_VM_OFFSET))
+#define Z_BOOT_VIRT_TO_PHYS(virt) ((uintptr_t)(((uint8_t *)(virt)) - Z_VM_OFFSET))
+#define Z_BOOT_PHYS_TO_VIRT(phys) ((uint8_t *)(((uintptr_t)(phys)) + Z_VM_OFFSET))
 
 #ifdef CONFIG_ARCH_MAPS_ALL_RAM
 #define Z_FREE_VM_START	Z_BOOT_PHYS_TO_VIRT(Z_PHYS_RAM_END)
@@ -253,9 +253,9 @@ void z_page_frames_dump(void);
 
 /* Convenience macro for iterating over all page frames */
 #define Z_PAGE_FRAME_FOREACH(_phys, _pageframe) \
-	for (_phys = Z_PHYS_RAM_START, _pageframe = z_page_frames; \
-	     _phys < Z_PHYS_RAM_END; \
-	     _phys += CONFIG_MMU_PAGE_SIZE, _pageframe++)
+	for ((_phys) = Z_PHYS_RAM_START, (_pageframe) = z_page_frames; \
+	     (_phys) < Z_PHYS_RAM_END; \
+	     (_phys) += CONFIG_MMU_PAGE_SIZE, (_pageframe)++)
 
 #ifdef CONFIG_DEMAND_PAGING
 /* We reserve a virtual page as a scratch area for page-ins/outs at the end

@@ -19,12 +19,18 @@
  * @{
  */
 
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
-#include <zephyr/bluetooth/audio/csip.h>
-#include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/net/buf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -295,6 +301,16 @@ struct bt_cap_unicast_audio_stop_param {
  * @return 0 on success or negative error value on failure.
  */
 int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb);
+
+/**
+ * @brief Unregister Common Audio Profile Initiator callbacks
+ *
+ * @param cb   The callback structure that was previously registered.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p cb is NULL or @p cb was not registered
+ */
+int bt_cap_initiator_unregister_cb(const struct bt_cap_initiator_cb *cb);
 
 /**
  * @brief Setup and start unicast audio streams for a set of devices.

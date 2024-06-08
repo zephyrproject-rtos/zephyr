@@ -1,0 +1,11 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Configure ARM PLL to 600MHz */
+&arm_pll {
+	clock-mult = <100>;
+	clock-div = <4>;
+};

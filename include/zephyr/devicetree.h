@@ -3289,7 +3289,7 @@
  * @param status okay or disabled as a token, not a string
  */
 #define DT_NODE_HAS_COMPAT_STATUS(node_id, compat, status) \
-	DT_NODE_HAS_COMPAT(node_id, compat) && DT_NODE_HAS_STATUS(node_id, status)
+	UTIL_AND(DT_NODE_HAS_COMPAT(node_id, compat), DT_NODE_HAS_STATUS(node_id, status))
 
 /**
  * @brief Does a devicetree node have a property?
@@ -4556,10 +4556,6 @@
 /** @brief Helper for DT_NODE_HAS_STATUS */
 #define DT_NODE_HAS_STATUS_INTERNAL(node_id, status) \
 	IS_ENABLED(DT_CAT3(node_id, _STATUS_, status))
-
-/** @brief Helper macro to OR multiple has property checks in a loop macro */
-#define DT_INST_NODE_HAS_PROP_AND_OR(inst, prop) \
-	DT_INST_NODE_HAS_PROP(inst, prop) ||
 
 /**
  * @def DT_U64_C

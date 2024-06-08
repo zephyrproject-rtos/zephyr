@@ -111,11 +111,6 @@ zephyr_library_named(zephyr)
 
 if(CONFIG_LEGACY_GENERATED_INCLUDE_PATH)
   zephyr_include_directories(${PROJECT_BINARY_DIR}/include/generated/zephyr)
-  message(WARNING "
-    Warning: CONFIG_LEGACY_GENERATED_INCLUDE_PATH is currently enabled by default
-    so that user applications can continue to use the legacy include paths for the
-    generated headers. This Kconfig will be deprecated and eventually removed in
-    the future releases.")
 endif()
 
 zephyr_include_directories(
@@ -1886,6 +1881,21 @@ if(CONFIG_BUILD_OUTPUT_INFO_HEADER)
     post_build_byproducts
     ${PROJECT_BINARY_DIR}/include/public/zephyr_image_info.h
     )
+endif()
+
+if (CONFIG_LLEXT AND CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
+  #slidgen must be the first post-build command to be executed
+  #on the Zephyr ELF to ensure that all other commands, such as
+  #binary file generation, are operating on a preparated ELF.
+  list(PREPEND
+    post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/build/llext_prepare_exptab.py
+    --elf-file ${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}
+    --slid-listing ${PROJECT_BINARY_DIR}/slid_listing.txt
+    -vvv
+  )
+
 endif()
 
 if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")

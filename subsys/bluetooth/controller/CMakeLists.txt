@@ -173,10 +173,6 @@ zephyr_library_sources_ifdef(
 zephyr_library_include_directories(
   .
   include
-  )
-
-zephyr_library_include_directories_ifdef(
-  CONFIG_BT_CTLR_CRYPTO
   ../crypto
   )
 

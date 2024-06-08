@@ -55,22 +55,30 @@
 #endif
 
 #ifdef CONFIG_INIT_ARM_PLL
-static const clock_arm_pll_config_t armPllConfig = {
-#if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1176_CM7)
-	/* resulting frequency: 24 * (166/(2* 2)) = 984MHz */
-	/* Post divider, 0 - DIV by 2, 1 - DIV by 4, 2 - DIV by 8, 3 - DIV by 1 */
-	.postDivider = kCLOCK_PllPostDiv2,
-	/* PLL Loop divider, Fout = Fin * ( loopDivider / ( 2 * postDivider ) ) */
-	.loopDivider = 166,
-#elif defined(CONFIG_SOC_MIMXRT1166_CM4) || defined(CONFIG_SOC_MIMXRT1166_CM7)
-	/* resulting frequency: 24 * (200/(2 * 4)) = 600MHz */
-	/* Post divider, 0 - DIV by 2, 1 - DIV by 4, 2 - DIV by 8, 3 - DIV by 1 */
-	.postDivider = kCLOCK_PllPostDiv4,
-	/* PLL Loop divider, Fout = Fin * ( loopDivider / ( 2 * postDivider ) ) */
-	.loopDivider = 200,
+
+#if defined(CONFIG_SOC_MIMXRT1176)
+#define DEFAULT_LOOPDIV 83
+#define DEFAULT_POSTDIV 2
+#elif defined(CONFIG_SOC_MIMXRT1166)
+#define DEFAULT_LOOPDIV 100
+#define DEFAULT_POSTDIV 4
 #else
-	#error "Unknown SOC, no pll configuration defined"
+/*
+ * Check that the ARM PLL has a multiplier and divider set
+ */
+BUILD_ASSERT(DT_NODE_HAS_PROP(DT_NODELABEL(arm_pll), clock_mult),
+			      "ARM PLL must have clock-mult property");
+BUILD_ASSERT(DT_NODE_HAS_PROP(DT_NODELABEL(arm_pll), clock_div),
+			      "ARM PLL must have clock-div property");
 #endif
+
+
+static const clock_arm_pll_config_t armPllConfig = {
+	.postDivider = CONCAT(kCLOCK_PllPostDiv,
+			      DT_PROP_OR(DT_NODELABEL(arm_pll), clock_div,
+			      DEFAULT_POSTDIV)),
+	.loopDivider = DT_PROP_OR(DT_NODELABEL(arm_pll), clock_mult,
+				  DEFAULT_LOOPDIV) * 2,
 };
 #endif
 
@@ -423,11 +431,21 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet1g), okay)
+	rootCfg.mux = kCLOCK_ENET2_ClockRoot_MuxSysPll1Div2;
+#if DT_ENUM_HAS_VALUE(DT_CHILD(DT_NODELABEL(enet1g), ethernet), phy_connection_type, rgmii)
+	/* 125 MHz ENET1G clock */
+	rootCfg.div = 4;
+	CLOCK_SetRootClock(kCLOCK_Root_Enet2, &rootCfg);
+	/* Set ENET1G TX_CLK to be driven by ENET2_CLK_ROOT and output on TX_CLK_IO pad */
+	IOMUXC_GPR->GPR5 = (IOMUXC_GPR_GPR5_ENET1G_RGMII_EN(0x01U) |
+		(IOMUXC_GPR->GPR5 & ~IOMUXC_GPR_GPR5_ENET1G_TX_CLK_SEL(0x01U)));
+	/* Set ENET1G_REF_CLK as an input driven by PHY */
+	IOMUXC_GPR->GPR5 &= ~IOMUXC_GPR_GPR5_ENET1G_REF_CLK_DIR(0x01U);
+#else
 	/*
 	 * 50 MHz clock for 10/100Mbit RMII PHY -
 	 * operate ENET1G just like ENET peripheral
 	 */
-	rootCfg.mux = kCLOCK_ENET2_ClockRoot_MuxSysPll1Div2;
 	rootCfg.div = 10;
 	CLOCK_SetRootClock(kCLOCK_Root_Enet2, &rootCfg);
 #if CONFIG_ETH_MCUX_RMII_EXT_CLK
@@ -438,6 +456,7 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Set ENET1G_REF_CLK as an output driven by ENET2_CLK_ROOT */
 	IOMUXC_GPR->GPR5 |= (IOMUXC_GPR_GPR5_ENET1G_REF_CLK_DIR(0x01U) |
 		IOMUXC_GPR_GPR5_ENET1G_TX_CLK_SEL(0x1U));
+#endif
 #endif
 #endif
 #endif

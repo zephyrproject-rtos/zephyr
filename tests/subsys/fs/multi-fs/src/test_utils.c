@@ -31,6 +31,6 @@ void test_clear_flash(void)
 	rc = flash_area_open(TEST_PARTITION_ID, &fap);
 	zassert_equal(rc, 0, "Opening flash area for erase [%d]\n", rc);
 
-	rc = flash_area_erase(fap, 0, fap->fa_size);
+	rc = flash_area_flatten(fap, 0, fap->fa_size);
 	zassert_equal(rc, 0, "Erasing flash area [%d]\n", rc);
 }

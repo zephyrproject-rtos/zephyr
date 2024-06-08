@@ -29,6 +29,7 @@ if not doc_mode:
             edtlib = inspect.getmodule(edt)
     else:
         edt = None
+        edtlib = None
 
 
 def _warn(kconf, msg):
@@ -657,6 +658,32 @@ def dt_node_ph_array_prop(kconf, name, path, prop, index, cell, unit=None):
     if name == "dt_node_ph_array_prop_hex":
         return hex(_node_ph_array_prop(node, prop, index, cell, unit))
 
+def dt_node_ph_prop_path(kconf, name, path, prop):
+    """
+    This function takes a 'path' and a property name ('prop') and
+    looks for an EDT node at that path. If it finds an EDT node,
+    it will look to see if that node has a property called 'prop'
+    and if that 'prop' is an phandle type. Then it will return the
+    path to the pointed-to node, or an empty string if there is
+    no such node.
+    """
+    if doc_mode or edt is None:
+        return ""
+
+    try:
+        node = edt.get_node(path)
+    except edtlib.EDTError:
+        return ""
+
+    if prop not in node.props:
+        return ""
+    if node.props[prop].type != "phandle":
+        return ""
+
+    phandle = node.props[prop].val
+
+    return phandle.path if phandle else ""
+
 def dt_node_str_prop_equals(kconf, _, path, prop, val):
     """
     This function takes a 'path' and property name ('prop') looks for an EDT
@@ -722,6 +749,21 @@ def dt_compat_on_bus(kconf, _, compat, bus):
 
     return "n"
 
+def dt_compat_any_has_prop(kconf, _, compat, prop):
+    """
+    This function takes a 'compat' and a 'prop' and returns "y" if any
+    node with compatible 'compat' also has a valid property 'prop'.
+    It returns "n" otherwise.
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    if compat in edt.compat2okay:
+        for node in edt.compat2okay[compat]:
+            if prop in node.props:
+                return "y"
+
+    return "n"
 
 def dt_nodelabel_has_compat(kconf, _, label, compat):
     """
@@ -889,6 +931,7 @@ functions = {
         "dt_has_compat": (dt_has_compat, 1, 1),
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
         "dt_compat_on_bus": (dt_compat_on_bus, 2, 2),
+        "dt_compat_any_has_prop": (dt_compat_any_has_prop, 2, 2),
         "dt_chosen_label": (dt_chosen_label, 1, 1),
         "dt_chosen_enabled": (dt_chosen_enabled, 1, 1),
         "dt_chosen_path": (dt_chosen_path, 1, 1),
@@ -920,6 +963,7 @@ functions = {
         "dt_node_array_prop_hex": (dt_node_array_prop, 3, 4),
         "dt_node_ph_array_prop_int": (dt_node_ph_array_prop, 4, 5),
         "dt_node_ph_array_prop_hex": (dt_node_ph_array_prop, 4, 5),
+        "dt_node_ph_prop_path": (dt_node_ph_prop_path, 2, 2),
         "dt_node_str_prop_equals": (dt_node_str_prop_equals, 3, 3),
         "dt_nodelabel_has_compat": (dt_nodelabel_has_compat, 2, 2),
         "dt_node_has_compat": (dt_node_has_compat, 2, 2),

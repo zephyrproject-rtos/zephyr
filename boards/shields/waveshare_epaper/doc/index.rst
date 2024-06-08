@@ -65,6 +65,9 @@ Current supported displays
 | Good Display | WFT0420CZ15     | UC8176 /     | waveshare_epaper_gdew042t2   |
 | GDEW042T2    |                 | gd7965       | waveshare_epaper_gdew042t2-p |
 +--------------+-----------------+--------------+------------------------------+
+| Good Display | FPC-A002        | SSD1680 /    | waveshare_epaper_gdey0213b74 |
+| GDEY0213B74  |                 | ssd16xx      |                              |
++--------------+-----------------+--------------+------------------------------+
 
 
 Requirements

@@ -31,6 +31,11 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
+if (CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
+  message(FATAL_ERROR
+    "The LLEXT EDK is not compatible with CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID.")
+endif()
+
 set(llext_edk ${PROJECT_BINARY_DIR}/${llext_edk_name})
 set(llext_edk_inc ${llext_edk}/include)
 

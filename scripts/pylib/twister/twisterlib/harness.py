@@ -353,6 +353,10 @@ class Pytest(Harness):
         else:
             raise PytestHarnessException(f'Support for handler {handler.type_str} not implemented yet')
 
+        if handler.type_str != 'device':
+            for fixture in handler.options.fixture:
+                command.append(f'--twister-fixture={fixture}')
+
         if handler.options.pytest_args:
             command.extend(handler.options.pytest_args)
             if pytest_args_yaml:
@@ -409,6 +413,9 @@ class Pytest(Harness):
 
         if hardware.flash_before:
             command.append(f'--flash-before={hardware.flash_before}')
+
+        for fixture in hardware.fixtures:
+            command.append(f'--twister-fixture={fixture}')
 
         return command
 

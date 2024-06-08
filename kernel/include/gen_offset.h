@@ -84,7 +84,13 @@
 #define GEN_OFFSET_SYM(S, M) \
 	GEN_ABSOLUTE_SYM(__##S##_##M##_##OFFSET, offsetof(S, M))
 
+#define GEN_OFFSET_STRUCT(S, M) \
+	GEN_ABSOLUTE_SYM(__struct_##S##_##M##_##OFFSET, offsetof(struct S, M))
+
 #define GEN_NAMED_OFFSET_SYM(S, M, N) \
 	GEN_ABSOLUTE_SYM(__##S##_##N##_##OFFSET, offsetof(S, M))
+
+#define GEN_NAMED_OFFSET_STRUCT(S, M, N) \
+	GEN_ABSOLUTE_SYM(__struct_##S##_##N##_##OFFSET, offsetof(struct S, M))
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_GEN_OFFSET_H_ */

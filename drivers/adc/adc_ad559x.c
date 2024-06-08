@@ -130,9 +130,6 @@ static int adc_ad559x_read_channel(const struct device *dev, uint8_t channel, ui
 		if (ret < 0) {
 			return ret;
 		}
-
-		*result = sys_get_be16((uint8_t *)&val);
-
 	} else {
 		/*
 		 * Invalid data:
@@ -145,30 +142,30 @@ static int adc_ad559x_read_channel(const struct device *dev, uint8_t channel, ui
 		if (ret < 0) {
 			return ret;
 		}
-
-		val = sys_be16_to_cpu(val);
-
-		/*
-		 * Invalid data:
-		 * See "ADC section" in "Theory of operation" chapter.
-		 * Valid ADC result has MSB bit set to 0.
-		 */
-		if ((val & AD559X_ADC_RES_IND_BIT) != 0) {
-			return -EAGAIN;
-		}
-
-		/*
-		 * Invalid channel converted:
-		 * See "ADC section" in "Theory of operation" chapter.
-		 * Conversion result contains channel number which should match requested channel.
-		 */
-		conv_channel = FIELD_GET(AD559X_ADC_RES_CHAN_MASK, val);
-		if (conv_channel != channel) {
-			return -EIO;
-		}
-
-		*result = val & AD559X_ADC_RES_VAL_MASK;
 	}
+
+	val = sys_be16_to_cpu(val);
+
+	/*
+	 * Invalid data:
+	 * See AD5592 "ADC section" in "Theory of operation" chapter.
+	 * Valid ADC result has MSB bit set to 0.
+	 */
+	if ((val & AD559X_ADC_RES_IND_BIT) != 0) {
+		return -EAGAIN;
+	}
+
+	/*
+	 * Invalid channel converted:
+	 * See AD5592 "ADC section" in "Theory of operation" chapter.
+	 * Conversion result contains channel number which should match requested channel.
+	 */
+	conv_channel = FIELD_GET(AD559X_ADC_RES_CHAN_MASK, val);
+	if (conv_channel != channel) {
+		return -EIO;
+	}
+
+	*result = val & AD559X_ADC_RES_VAL_MASK;
 
 	return 0;
 }

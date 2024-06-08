@@ -1,0 +1,5 @@
+board:
+  name: bl653_dvk
+  vendor: ezurio
+  socs:
+  - name: nrf52833

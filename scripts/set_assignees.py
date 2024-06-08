@@ -70,15 +70,12 @@ def process_pr(gh, maintainer_file, number):
     all_areas = set()
     fn = list(pr.get_files())
 
-    manifest_change = False
     for changed_file in fn:
         if changed_file.filename in ['west.yml','submanifests/optional.yaml']:
-            manifest_change = True
             break
 
-    # one liner PRs should be trivial
-    if pr.commits == 1 and (pr.additions <= 1 and pr.deletions <= 1) and not manifest_change:
-        labels = {'Trivial'}
+    if pr.commits == 1 and (pr.additions <= 1 and pr.deletions <= 1):
+        labels = {'size: XS'}
 
     if len(fn) > 500:
         log(f"Too many files changed ({len(fn)}), skipping....")

@@ -1717,6 +1717,11 @@ This has been fixed in main for v3.7.0
 - `PR 69396 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/69396>`_
 
+CVE-2024-3332
+-------------
+
+Under embargo until 2024-07-01
+
 CVE-2024-4785
 -------------
 

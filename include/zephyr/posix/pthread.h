@@ -417,7 +417,7 @@ int pthread_attr_getscope(const pthread_attr_t *attr, int *contentionscope);
 int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope);
 int pthread_attr_getinheritsched(const pthread_attr_t *attr, int *inheritsched);
 int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched);
-#ifdef CONFIG_PTHREAD_IPC
+#ifdef CONFIG_POSIX_THREADS
 int pthread_once(pthread_once_t *once, void (*initFunc)(void));
 #endif
 FUNC_NORETURN void pthread_exit(void *retval);
@@ -502,7 +502,7 @@ int pthread_setname_np(pthread_t thread, const char *name);
  */
 int pthread_getname_np(pthread_t thread, char *name, size_t len);
 
-#ifdef CONFIG_PTHREAD_IPC
+#ifdef CONFIG_POSIX_THREADS
 
 /**
  * @brief Destroy a pthread_spinlock_t.

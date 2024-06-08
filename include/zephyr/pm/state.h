@@ -134,11 +134,21 @@ struct pm_state_info {
 	 *			substate-id = <2>;
 	 *			min-residency-us = <20000>;
 	 *			exit-latency-us = <200>;
+	 *			zephyr,pm-device-disabled;
 	 *		};
 	 *	};
 	 * @endcode
 	 */
 	uint8_t substate_id;
+
+	/**
+	 * Whether or not this state triggers device power management.
+	 *
+	 * When this property is false the power management subsystem
+	 * will suspend devices before entering this state and will
+	 * properly resume them when leaving it.
+	 */
+	bool pm_device_disabled;
 
 	/**
 	 * Minimum residency duration in microseconds. It is the minimum
@@ -154,6 +164,24 @@ struct pm_state_info {
 	 * @note 0 means that this property is not available for this state.
 	 */
 	uint32_t exit_latency_us;
+};
+
+/**
+ * Power state information needed to lock a power state.
+ */
+struct pm_state_constraint {
+	 /**
+	  * Power management state
+	  *
+	  * @see pm_state
+	  **/
+	enum pm_state state;
+	 /**
+	  * Power management sub-state
+	  *
+	  * @see pm_state
+	  **/
+	uint8_t substate_id;
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -209,6 +237,7 @@ struct pm_state_info {
 		.substate_id = DT_PROP_OR(node_id, substate_id, 0),	       \
 		.min_residency_us = DT_PROP_OR(node_id, min_residency_us, 0),  \
 		.exit_latency_us = DT_PROP_OR(node_id, exit_latency_us, 0),    \
+		.pm_device_disabled = DT_PROP(node_id, zephyr_pm_device_disabled),    \
 	}
 
 /**
@@ -260,6 +289,7 @@ struct pm_state_info {
  *				power-state-name = "suspend-to-ram";
  *				min-residency-us = <50000>;
  *				exit-latency-us = <500>;
+ *				zephyr,pm-device-disabled;
  *			};
  *		};
  *	};

@@ -52,7 +52,7 @@
 	owned-channels = <7>;
 };
 
-dut_spi: &spi130 {
+&spi130 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
 	pinctrl-0 = <&spi130_default_alt>;
@@ -63,6 +63,7 @@ dut_spi: &spi130 {
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
 		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
 	};
 };
 

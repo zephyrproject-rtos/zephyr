@@ -24,6 +24,7 @@ config ARC
 	imply XIP
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select ARCH_SUPPORTS_ROM_START
+	select ARCH_HAS_DIRECTED_IPIS
 	help
 	  ARC architecture
 
@@ -50,6 +51,7 @@ config ARM64
 	select USE_SWITCH_SUPPORTED
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select BARRIER_OPERATIONS_ARCH
+	select ARCH_HAS_DIRECTED_IPIS
 	help
 	  ARM64 (AArch64) architecture
 
@@ -115,6 +117,7 @@ config RISCV
 	select USE_SWITCH_SUPPORTED
 	select USE_SWITCH
 	select SCHED_IPI_SUPPORTED if SMP
+	select ARCH_HAS_DIRECTED_IPIS
 	select BARRIER_OPERATIONS_BUILTIN
 	imply XIP
 	help
@@ -129,6 +132,7 @@ config XTENSA
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
+	select ARCH_HAS_DIRECTED_IPIS
 	help
 	  Xtensa architecture
 
@@ -745,6 +749,13 @@ config ARCH_HAS_RESERVED_PAGE_FRAMES
 	  certain RAM page frames need to be marked as reserved and never used for
 	  memory mappings. The architecture will need to implement
 	  arch_reserved_pages_update().
+
+config ARCH_HAS_DIRECTED_IPIS
+	bool
+	help
+	  This hidden configuration should be selected by the architecture if
+	  it has an implementation for arch_sched_directed_ipi() which allows
+	  for IPIs to be directed to specific CPUs.
 
 config CPU_HAS_DCACHE
 	bool

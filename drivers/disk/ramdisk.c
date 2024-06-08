@@ -41,11 +41,6 @@ static int disk_ram_access_status(struct disk_info *disk)
 	return DISK_STATUS_OK;
 }
 
-static int disk_ram_access_init(struct disk_info *disk)
-{
-	return 0;
-}
-
 static int disk_ram_access_read(struct disk_info *disk, uint8_t *buff,
 				uint32_t sector, uint32_t count)
 {
@@ -98,11 +93,19 @@ static int disk_ram_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buff
 	case DISK_IOCTL_GET_ERASE_BLOCK_SZ:
 		*(uint32_t *)buff  = 1U;
 		break;
+	case DISK_IOCTL_CTRL_INIT:
+	case DISK_IOCTL_CTRL_DEINIT:
+		break;
 	default:
 		return -EINVAL;
 	}
 
 	return 0;
+}
+
+static int disk_ram_access_init(struct disk_info *disk)
+{
+	return disk_ram_access_ioctl(disk, DISK_IOCTL_CTRL_INIT, NULL);
 }
 
 static int disk_ram_init(const struct device *dev)

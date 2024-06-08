@@ -52,7 +52,6 @@ GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF,
 
 GEN_OFFSET_SYM(_callee_saved_t, esp);
 
-/* z_arch_esf_t structure member offsets */
-
-GEN_OFFSET_SYM(z_arch_esf_t, eflags);
+/* struct arch_esf structure member offsets */
+GEN_OFFSET_STRUCT(arch_esf, eflags);
 #endif /* _X86_OFFSETS_INC_ */

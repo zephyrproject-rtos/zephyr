@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2018 Friedt Professional Engineering Services, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -156,14 +157,43 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 	return 0;
 }
 
+/*
+ * Note: usleep() was removed in Issue 7.
+ *
+ * It is kept here for compatibility purposes.
+ *
+ * For more information, please see
+ * https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_xsh_chap01.html
+ * https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_xsh_chap03.html
+ */
+int usleep(useconds_t useconds)
+{
+	int32_t rem;
+
+	if (useconds >= USEC_PER_SEC) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	rem = k_usleep(useconds);
+	__ASSERT_NO_MSG(rem >= 0);
+	if (rem > 0) {
+		/* sleep was interrupted by a call to k_wakeup() */
+		errno = EINTR;
+		return -1;
+	}
+
+	return 0;
+}
+
 /**
  * @brief Suspend execution for a nanosecond interval, or
  * until some absolute time relative to the specified clock.
  *
  * See IEEE 1003.1
  */
-int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
-		    struct timespec *rmtp)
+static int __z_clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
+			       struct timespec *rmtp)
 {
 	uint64_t ns;
 	uint64_t us;
@@ -223,6 +253,17 @@ do_rmtp_update:
 	}
 
 	return 0;
+}
+
+int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
+{
+	return __z_clock_nanosleep(CLOCK_MONOTONIC, 0, rqtp, rmtp);
+}
+
+int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
+		    struct timespec *rmtp)
+{
+	return __z_clock_nanosleep(clock_id, flags, rqtp, rmtp);
 }
 
 /**

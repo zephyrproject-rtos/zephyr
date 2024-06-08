@@ -1,5 +1,0 @@
-board:
-  name: pinnacle_100_dvk
-  vendor: lairdconnect
-  socs:
-  - name: nrf52840

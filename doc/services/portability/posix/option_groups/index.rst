@@ -102,6 +102,20 @@ This table lists service support status in Zephyr:
     pthread_getconcurrency(),yes
     pthread_setconcurrency(),yes
 
+.. _posix_option_group_xsi_system_logging:
+
+XSI_SYSTEM_LOGGING
+==================
+
+.. csv-table:: XSI_SYSTEM_LOGGING
+   :header: API, Supported
+   :widths: 50,10
+
+    closelog(),yes
+    openlog(),yes
+    setlogmask(),yes
+    syslog(),yes
+
 .. _posix_option_group_c_lang_jump:
 
 POSIX_C_LANG_JUMP
@@ -150,6 +164,31 @@ Group.
 
 For more information on developing Zephyr applications in the C programming language, please refer
 to :ref:`details<language_support>`.
+
+.. _posix_option_group_c_lib_ext:
+
+POSIX_C_LIB_EXT
+===============
+
+.. csv-table:: POSIX_C_LIB_EXT
+   :header: API, Supported
+   :widths: 50,10
+
+    fnmatch(), yes
+    getopt(), yes
+    getsubopt(),
+    optarg, yes
+    opterr, yes
+    optind, yes
+    optopt, yes
+    stpcpy(),
+    stpncpy(),
+    strcasecmp(),
+    strdup(),
+    strfmon(),
+    strncasecmp(), yes
+    strndup(),
+    strnlen(), yes
 
 .. _posix_option_group_realtime_signals:
 
@@ -520,6 +559,40 @@ This table lists service support status in Zephyr for `POSIX_FD_MGMT`:
     putc_unlocked(),
     putchar_unlocked(),
 
+.. _posix_option_group_multi_process:
+
+POSIX_MULTI_PROCESS
+===================
+
+.. csv-table:: POSIX_MULTI_PROCESS
+   :header: API, Supported
+   :widths: 50,10
+
+    _Exit(), yes
+    _exit(), yes
+    assert(), yes
+    atexit(),:ref:`†<posix_undefined_behaviour>`
+    clock(),
+    execl(),:ref:`†<posix_undefined_behaviour>`
+    execle(),:ref:`†<posix_undefined_behaviour>`
+    execlp(),:ref:`†<posix_undefined_behaviour>`
+    execv(),:ref:`†<posix_undefined_behaviour>`
+    execve(),:ref:`†<posix_undefined_behaviour>`
+    execvp(),:ref:`†<posix_undefined_behaviour>`
+    exit(), yes
+    fork(),:ref:`†<posix_undefined_behaviour>`
+    getpgrp(),:ref:`†<posix_undefined_behaviour>`
+    getpgid(),:ref:`†<posix_undefined_behaviour>`
+    getpid(), yes :ref:`†<posix_undefined_behaviour>`
+    getppid(),:ref:`†<posix_undefined_behaviour>`
+    getsid(),:ref:`†<posix_undefined_behaviour>`
+    setsid(),:ref:`†<posix_undefined_behaviour>`
+    sleep(),yes
+    times(),
+    wait(),:ref:`†<posix_undefined_behaviour>`
+    waitid(),:ref:`†<posix_undefined_behaviour>`
+    waitpid(),:ref:`†<posix_undefined_behaviour>`
+
 .. _posix_options:
 
 Additional POSIX Options
@@ -543,6 +616,17 @@ _POSIX_ASYNCHRONOUS_IO
     aio_write(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     lio_listio(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
 
+.. _posix_option_cputime:
+
+_POSIX_CPUTIME
+++++++++++++++
+
+.. csv-table:: _POSIX_CPUTIME
+   :header: API, Supported
+   :widths: 50,10
+
+    CLOCK_PROCESS_CPUTIME_ID,yes
+
 .. _posix_option_fsync:
 
 _POSIX_FSYNC
@@ -553,6 +637,15 @@ _POSIX_FSYNC
    :widths: 50,10
 
     fsync(),yes
+
+.. _posix_option_ipv6:
+
+_POSIX_IPV6
++++++++++++
+
+Internet Protocol Version 6 is supported.
+
+For more information, please refer to :ref:`Networking <networking>`.
 
 .. _posix_option_memlock:
 
@@ -624,6 +717,15 @@ _POSIX_PRIORITY_SCHEDULING
     sched_setparam(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     sched_setscheduler(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     sched_yield(),yes
+
+.. _posix_option_raw_sockets:
+
+_POSIX_RAW_SOCKETS
+++++++++++++++++++
+
+Raw sockets are supported.
+
+For more information, please refer to :kconfig:option:`CONFIG_NET_SOCKETS_PACKET`.
 
 .. _posix_option_reader_writer_locks:
 
@@ -727,6 +829,34 @@ _POSIX_THREAD_PRIORITY_SCHEDULING
     pthread_getschedparam(),yes
     pthread_setschedparam(),yes
     pthread_setschedprio(),yes
+
+.. _posix_option_thread_prio_inherit:
+
+_POSIX_THREAD_PRIO_INHERIT
+++++++++++++++++++++++++++
+
+.. csv-table:: _POSIX_THREAD_PRIO_INHERIT
+   :header: API, Supported
+   :widths: 50,10
+
+    pthread_mutexattr_getprotocol(),yes
+    pthread_mutexattr_setprotocol(),yes
+
+.. _posix_option_thread_prio_protect:
+
+_POSIX_THREAD_PRIO_PROTECT
+++++++++++++++++++++++++++
+
+.. csv-table:: _POSIX_THREAD_PRIO_PROTECT
+   :header: API, Supported
+   :widths: 50,10
+
+    pthread_mutex_getprioceiling(),
+    pthread_mutex_setprioceiling(),
+    pthread_mutexattr_getprioceiling(),
+    pthread_mutexattr_getprotocol(),yes
+    pthread_mutexattr_setprioceiling(),
+    pthread_mutexattr_setprotocol(),yes
 
 .. _posix_thread_safe_functions:
 

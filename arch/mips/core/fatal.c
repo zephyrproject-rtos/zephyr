@@ -9,7 +9,7 @@
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 FUNC_NORETURN void z_mips_fatal_error(unsigned int reason,
-					  const z_arch_esf_t *esf)
+					  const struct arch_esf *esf)
 {
 #ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
@@ -84,7 +84,7 @@ static char *cause_str(unsigned long cause)
 	}
 }
 
-void _Fault(z_arch_esf_t *esf)
+void _Fault(struct arch_esf *esf)
 {
 	unsigned long cause;
 

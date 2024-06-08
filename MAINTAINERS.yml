@@ -446,6 +446,7 @@ Bluetooth Audio:
     - tests/bsim/bluetooth/audio_samples/
     - tests/bluetooth/shell/audio.conf
     - tests/bluetooth/tester/overlay-le-audio.conf
+    - tests/bluetooth/tester/src/audio/
     - doc/connectivity/bluetooth/api/audio/
     - samples/bluetooth/bap*/
     - samples/bluetooth/hap*/
@@ -1250,6 +1251,7 @@ Release Notes:
   collaborators:
     - decsny
     - lmajewski
+    - pdgendt
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
@@ -1843,7 +1845,7 @@ Release Notes:
     - dts/bindings/sensor/
     - include/zephyr/drivers/sensor/
     - include/zephyr/dt-bindings/sensor/
-    - doc/hardware/peripherals/sensor.rst
+    - doc/hardware/peripherals/sensor/
     - tests/drivers/build_all/sensor/
   labels:
     - "area: Sensors"
@@ -2325,16 +2327,16 @@ Memory Management:
   tests:
     - mem_mgmt
 
-Laird Connectivity platforms:
+Ezurio platforms:
   status: maintained
   maintainers:
     - rerickson1
   collaborators:
     - greg-leach
   files:
-    - boards/lairdconnect/
+    - boards/ezurio/
   labels:
-    - "platform: Laird Connectivity"
+    - "platform: Ezurio"
 
 Linker Scripts:
   status: maintained
@@ -2980,6 +2982,7 @@ Sensor Subsystem:
     - doc/services/sensing/
     - subsys/sensing/
     - samples/subsys/sensing/
+    - tests/subsys/sensing/
   labels:
     - "area: Sensor Subsystem"
   tests:
@@ -3096,11 +3099,13 @@ State machine framework:
     - sambhurst
   collaborators:
     - keith-zephyr
+    - glenn-andrews
   files:
     - doc/services/smf/
     - include/zephyr/smf.h
     - lib/smf/
     - tests/lib/smf/
+    - samples/subsys/smf/
   labels:
     - "area: State Machine Framework"
   tests:
@@ -3172,6 +3177,8 @@ Synopsys Platforms:
     - scripts/west_commands/tests/test_mdb.py
     - scripts/west_commands/runners/nsim.py
     - cmake/emu/nsim.cmake
+    - drivers/serial/uart_hostlink.c
+    - drivers/serial/Kconfig.hostlink
   labels:
     - "platform: Synopsys"
 
@@ -4601,7 +4608,7 @@ West:
     - nordicjm
   files:
     - modules/Kconfig.mcuboot
-    - tests/boot/test_mcuboot/
+    - tests/boot/
   labels:
     - "area: MCUBoot"
 

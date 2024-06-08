@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/rtio/rtio_mpsc.h>
 #include <zephyr/rtio/rtio.h>
+#include <zephyr/sys/mpsc_lockfree.h>
 #include <zephyr/kernel.h>
 
 #ifndef RTIO_IODEV_TEST_H_
@@ -17,7 +17,7 @@ struct rtio_iodev_test_data {
 	struct k_timer timer;
 
 	/* Queue of requests */
-	struct rtio_mpsc io_q;
+	struct mpsc io_q;
 
 	/* Currently executing transaction */
 	struct rtio_iodev_sqe *txn_head;
@@ -40,7 +40,7 @@ static void rtio_iodev_test_next(struct rtio_iodev_test_data *data, bool complet
 		goto out;
 	}
 
-	struct rtio_mpsc_node *next = rtio_mpsc_pop(&data->io_q);
+	struct mpsc_node *next = mpsc_pop(&data->io_q);
 
 	/* Nothing left to do, cleanup */
 	if (next == NULL) {
@@ -110,8 +110,8 @@ static void rtio_iodev_test_submit(struct rtio_iodev_sqe *iodev_sqe)
 
 	atomic_inc(&data->submit_count);
 
-	/* The only safe operation is enqueuing without a lock */
-	rtio_mpsc_push(&data->io_q, &iodev_sqe->q);
+	/* The only safe operation is enqueuing */
+	mpsc_push(&data->io_q, &iodev_sqe->q);
 
 	rtio_iodev_test_next(data, false);
 }
@@ -124,7 +124,7 @@ void rtio_iodev_test_init(struct rtio_iodev *test)
 {
 	struct rtio_iodev_test_data *data = test->data;
 
-	rtio_mpsc_init(&data->io_q);
+	mpsc_init(&data->io_q);
 	data->txn_head = NULL;
 	data->txn_curr = NULL;
 	k_timer_init(&data->timer, rtio_iodev_timer_fn, NULL);

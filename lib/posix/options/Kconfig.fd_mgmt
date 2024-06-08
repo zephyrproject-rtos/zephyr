@@ -1,0 +1,36 @@
+# Copyright (c) 2024 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig POSIX_FD_MGMT
+	bool "POSIX file descriptor management [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Select 'y' here and Zephyr will provide implementations for the POSIX_FD_MGMT Option Group.
+	  This includes support for dup(), dup2(), fcntl(), fseeko(), ftello(), ftruncate(),
+	  and lseek().
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
+
+if POSIX_FD_MGMT
+
+# These options are intended to be used for compatibility with external POSIX
+# implementations such as those in Newlib or Picolibc.
+
+config POSIX_FD_MGMT_ALIAS_FCNTL
+	bool
+	help
+	  Select 'y' here and Zephyr will provide an alias for fcntl() as _fcntl().
+
+config POSIX_FD_MGMT_ALIAS_FTRUNCATE
+	bool
+	help
+	  Select 'y' here and Zephyr will provide an alias for ftruncate() as _ftruncate().
+
+config POSIX_FD_MGMT_ALIAS_LSEEK
+	bool
+	help
+	  Select 'y' here and Zephyr will provide an alias for lseek() as _lseek().
+
+endif # POSIX_FD_MGMT

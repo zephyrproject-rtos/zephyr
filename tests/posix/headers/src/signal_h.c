@@ -130,7 +130,7 @@ ZTEST(posix_headers, test_signal_h)
 	/* zassert_not_equal(-1, SI_ASYNCIO); */ /* not implemented */
 	/* zassert_not_equal(-1, SI_MESGQ); */ /* not implemented */
 
-#ifdef CONFIG_POSIX_SIGNAL
+#ifdef CONFIG_POSIX_SIGNALS
 	zassert_true(SIGRTMIN >= 0);
 	zassert_true(SIGRTMAX >= SIGRTMIN);
 	zassert_not_equal(-1, SIGABRT);
@@ -166,7 +166,7 @@ ZTEST(posix_headers, test_signal_h)
 	zassert_not_null(strsignal);
 	zassert_not_null(sigprocmask);
 	zassert_not_null(pthread_sigmask);
-#endif /* CONFIG_POSIX_SIGNAL */
+#endif /* CONFIG_POSIX_SIGNALS */
 
 	if (IS_ENABLED(CONFIG_POSIX_API)) {
 		/* zassert_not_null(kill); */ /* not implemented */

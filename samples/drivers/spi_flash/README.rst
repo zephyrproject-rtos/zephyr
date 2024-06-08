@@ -15,8 +15,8 @@ savings is correctly implemented.
 Building and Running
 ********************
 
-The application will build only for a target that has a :ref:`devicetree <dt-guide>`
-``spi-flash0`` alias that refers to an entry with one of the following bindings as a compatible:
+The application will build only for a target that has a devicetree node with one of the
+following bindings as a compatible:
 
 * :dtcompatible:`jedec,spi-nor`,
 * :dtcompatible:`st,stm32-qspi-nor`,

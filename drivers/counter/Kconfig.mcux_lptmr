@@ -12,7 +12,7 @@ config COUNTER_MCUX_LPTMR
 	  Enable support for the MCUX Low Power Timer (LPTMR).
 
 config COUNTER_MCUX_KINETIS_LPTMR
-	bool "Deprecated DT compatible"
+	bool
 	default y
 	depends on DT_HAS_NXP_KINETIS_LPTMR_ENABLED
 	select DEPRECATED

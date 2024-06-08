@@ -73,6 +73,10 @@ extern "C" {
 #define CLOCK_PROCESS_CPUTIME_ID 2
 #endif
 
+#ifndef CLOCK_THREAD_CPUTIME_ID
+#define CLOCK_THREAD_CPUTIME_ID 3
+#endif
+
 #ifndef CLOCK_MONOTONIC
 #define CLOCK_MONOTONIC 4
 #endif
@@ -83,7 +87,7 @@ extern "C" {
 
 static inline int32_t _ts_to_ms(const struct timespec *to)
 {
-	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC);
+	return (int32_t)(to->tv_sec * MSEC_PER_SEC) + (int32_t)(to->tv_nsec / NSEC_PER_MSEC);
 }
 
 int clock_gettime(clockid_t clock_id, struct timespec *ts);

@@ -3,14 +3,25 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 
+#include "bstests.h"
 #include "common.h"
 #include "common/bt_str.h"
 
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util_macro.h>
 LOG_MODULE_REGISTER(pacs_notify_client_test, LOG_LEVEL_DBG);
 
 struct pacs_instance_t {

@@ -329,8 +329,20 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 
 	net_buf_put(&bt_dev.cmd_tx_queue, net_buf_ref(buf));
 
+	/* Wait for a response from the Bluetooth Controller.
+	 * The Controller may fail to respond if:
+	 *  - It was never programmed or connected.
+	 *  - There was a fatal error.
+	 *
+	 * See the `BT_HCI_OP_` macros in hci_types.h or
+	 * Core_v5.4, Vol 4, Part E, Section 5.4.1 and Section 7
+	 * to map the opcode to the HCI command documentation.
+	 * Example: 0x0c03 represents HCI_Reset command.
+	 */
 	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
-	BT_ASSERT_MSG(err == 0, "command opcode 0x%04x timeout with err %d", opcode, err);
+	BT_ASSERT_MSG(err == 0,
+		      "Controller unresponsive, command opcode 0x%04x timeout with err %d",
+		      opcode, err);
 
 	status = cmd(buf)->status;
 	if (status) {
@@ -2502,6 +2514,42 @@ void bt_hci_le_transmit_power_report(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_TRANSMIT_POWER_CONTROL */
 
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+void bt_hci_le_path_loss_threshold_event(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_path_loss_threshold *evt;
+	struct bt_conn_le_path_loss_threshold_report report;
+	struct bt_conn *conn;
+
+	evt = net_buf_pull_mem(buf, sizeof(*evt));
+
+	if (evt->zone_entered > BT_CONN_LE_PATH_LOSS_ZONE_ENTERED_HIGH) {
+		LOG_ERR("Invalid zone %u in bt_hci_evt_le_path_loss_threshold",
+			evt->zone_entered);
+		return;
+	}
+
+	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->handle), BT_CONN_TYPE_LE);
+	if (!conn) {
+		LOG_ERR("Unknown conn handle 0x%04X for path loss threshold report",
+		       sys_le16_to_cpu(evt->handle));
+		return;
+	}
+
+	if (evt->current_path_loss == BT_HCI_LE_PATH_LOSS_UNAVAILABLE) {
+		report.zone = BT_CONN_LE_PATH_LOSS_ZONE_UNAVAILABLE;
+		report.path_loss = BT_HCI_LE_PATH_LOSS_UNAVAILABLE;
+	} else {
+		report.zone = evt->zone_entered;
+		report.path_loss = evt->current_path_loss;
+	}
+
+	notify_path_loss_threshold_report(conn, report);
+
+	bt_conn_unref(conn);
+}
+#endif /* CONFIG_BT_PATH_LOSS_MONITORING */
+
 static const struct event_handler vs_events[] = {
 #if defined(CONFIG_BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES)
 	EVENT_HANDLER(BT_HCI_EVT_VS_LE_CONNECTIONLESS_IQ_REPORT,
@@ -2651,6 +2699,10 @@ static const struct event_handler meta_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_LE_TRANSMIT_POWER_REPORT, bt_hci_le_transmit_power_report,
 		      sizeof(struct bt_hci_evt_le_transmit_power_report)),
 #endif /* CONFIG_BT_TRANSMIT_POWER_CONTROL */
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+	EVENT_HANDLER(BT_HCI_EVT_LE_PATH_LOSS_THRESHOLD, bt_hci_le_path_loss_threshold_event,
+		      sizeof(struct bt_hci_evt_le_path_loss_threshold)),
+#endif /* CONFIG_BT_PATH_LOSS_MONITORING */
 #if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
 	EVENT_HANDLER(BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_V2, bt_hci_le_per_adv_report_v2,
 		      sizeof(struct bt_hci_evt_le_per_advertising_report_v2)),
@@ -3243,6 +3295,10 @@ static int le_set_event_mask(void)
 		}
 		if (IS_ENABLED(CONFIG_BT_TRANSMIT_POWER_CONTROL)) {
 			mask |= BT_EVT_MASK_LE_TRANSMIT_POWER_REPORTING;
+		}
+
+		if (IS_ENABLED(CONFIG_BT_PATH_LOSS_MONITORING)) {
+			mask |= BT_EVT_MASK_LE_PATH_LOSS_THRESHOLD;
 		}
 	}
 

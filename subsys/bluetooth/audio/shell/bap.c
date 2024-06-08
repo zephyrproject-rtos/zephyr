@@ -10,22 +10,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <zephyr/kernel.h>
-#include <zephyr/shell/shell.h>
-#include <zephyr/sys/printk.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/util.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <sys/types.h>
 
-#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/gmap.h>
+#include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel/thread_stack.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/time_units.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
 
 #include "shell/bt.h"
 #include "audio.h"
@@ -192,6 +212,8 @@ void bap_foreach_stream(void (*func)(struct shell_stream *sh_stream, void *data)
 }
 
 #if defined(CONFIG_LIBLC3)
+#include <lc3.h>
+
 static int get_lc3_chan_alloc_from_index(const struct shell_stream *sh_stream, uint8_t index,
 					 enum bt_audio_location *chan_alloc)
 {
@@ -1550,6 +1572,24 @@ static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+
+static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	if (default_stream == NULL) {
+		shell_error(sh, "No stream selected");
+		return -ENOEXEC;
+	}
+
+	err = bt_bap_stream_connect(default_stream);
+	if (err) {
+		shell_error(sh, "Unable to connect stream");
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
@@ -1631,7 +1671,13 @@ static void conn_list_eps(struct bt_conn *conn, void *data)
 		const struct bt_bap_ep *ep = snks[conn_index][i];
 
 		if (ep != NULL) {
-			shell_print(sh, "    #%u: ep %p", i, ep);
+			struct bt_bap_ep_info ep_info;
+			int err;
+
+			err = bt_bap_ep_get_info(ep, &ep_info);
+			if (err == 0) {
+				shell_print(sh, "    #%u: ep %p (state: %d)", i, ep, ep_info.state);
+			}
 		}
 	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
@@ -1643,7 +1689,13 @@ static void conn_list_eps(struct bt_conn *conn, void *data)
 		const struct bt_bap_ep *ep = srcs[conn_index][i];
 
 		if (ep != NULL) {
-			shell_print(sh, "    #%u: ep %p", i, ep);
+			struct bt_bap_ep_info ep_info;
+			int err;
+
+			err = bt_bap_ep_get_info(ep, &ep_info);
+			if (err == 0) {
+				shell_print(sh, "    #%u: ep %p (state: %d)", i, ep, ep_info.state);
+			}
 		}
 	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
@@ -3949,6 +4001,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_config, 3, 4),
 	SHELL_CMD_ARG(stream_qos, NULL, "interval [framing] [latency] [pd] [sdu] [phy] [rtn]",
 		      cmd_stream_qos, 2, 6),
+	SHELL_CMD_ARG(connect, NULL, "Connect the CIS of the stream", cmd_connect, 1, 0),
 	SHELL_CMD_ARG(qos, NULL, "Send QoS configure for Unicast Group", cmd_qos, 1, 0),
 	SHELL_CMD_ARG(enable, NULL, "[context]", cmd_enable, 1, 1),
 	SHELL_CMD_ARG(stop, NULL, NULL, cmd_stop, 1, 0),
@@ -4029,7 +4082,7 @@ static ssize_t connectable_ad_data_add(struct bt_data *data_array,
 		sys_put_le16(snk_context, &ad_bap_announcement[3]);
 
 		src_context = bt_pacs_get_available_contexts(BT_AUDIO_DIR_SOURCE);
-		sys_put_le16(snk_context, &ad_bap_announcement[5]);
+		sys_put_le16(src_context, &ad_bap_announcement[5]);
 
 		/* Metadata length */
 		ad_bap_announcement[7] = 0x00;

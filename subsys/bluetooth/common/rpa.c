@@ -23,20 +23,20 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_rpa);
 
-#if defined(CONFIG_BT_CTLR) && defined(CONFIG_BT_HOST_CRYPTO)
+#if defined(CONFIG_BT_CTLR_CRYPTO) && defined(CONFIG_BT_HOST_CRYPTO)
 #include "../controller/util/util.h"
 #include "../controller/hal/ecb.h"
-#endif /* defined(CONFIG_BT_CTLR) && defined(CONFIG_BT_HOST_CRYPTO) */
+#endif /* CONFIG_BT_CTLR_CRYPTO && CONFIG_BT_HOST_CRYPTO */
 
 #if defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_CTLR_PRIVACY)
 static int internal_rand(void *buf, size_t len)
 {
 /* Force using controller rand function. */
-#if defined(CONFIG_BT_CTLR) && defined(CONFIG_BT_HOST_CRYPTO)
+#if defined(CONFIG_BT_CTLR_CRYPTO) && defined(CONFIG_BT_HOST_CRYPTO)
 	return lll_csrand_get(buf, len);
-#else
+#else /* !CONFIG_BT_CTLR_CRYPTO || !CONFIG_BT_HOST_CRYPTO */
 	return bt_rand(buf, len);
-#endif
+#endif /* !CONFIG_BT_CTLR_CRYPTO || !CONFIG_BT_HOST_CRYPTO */
 }
 #endif /* defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_CTLR_PRIVACY) */
 
@@ -44,13 +44,12 @@ static int internal_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16
 			       uint8_t enc_data[16])
 {
 /* Force using controller encrypt function if supported. */
-#if defined(CONFIG_BT_CTLR) && defined(CONFIG_BT_HOST_CRYPTO) && \
-    defined(CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_CTLR_CRYPTO) && defined(CONFIG_BT_HOST_CRYPTO)
 	ecb_encrypt(key, plaintext, enc_data, NULL);
 	return 0;
-#else
+#else /* !CONFIG_BT_CTLR_CRYPTO || !CONFIG_BT_HOST_CRYPTO */
 	return bt_encrypt_le(key, plaintext, enc_data);
-#endif
+#endif /* !CONFIG_BT_CTLR_CRYPTO || !CONFIG_BT_HOST_CRYPTO */
 }
 
 static int ah(const uint8_t irk[16], const uint8_t r[3], uint8_t out[3])

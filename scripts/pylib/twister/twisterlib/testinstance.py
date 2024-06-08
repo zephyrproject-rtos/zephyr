@@ -180,7 +180,7 @@ class TestInstance:
             # command-line, then we need to run the test, not just build it.
             fixture = testsuite.harness_config.get('fixture')
             if fixture:
-                can_run = fixture in fixtures
+                can_run = fixture in map(lambda f: f.split(sep=':')[0], fixtures)
 
         return can_run
 

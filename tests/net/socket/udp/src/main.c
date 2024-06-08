@@ -2532,7 +2532,7 @@ static void after(void *arg)
 {
 	ARG_UNUSED(arg);
 
-	for (int i = 0; i < CONFIG_POSIX_MAX_FDS; ++i) {
+	for (int i = 0; i < CONFIG_ZVFS_OPEN_MAX; ++i) {
 		(void)zsock_close(i);
 	}
 }

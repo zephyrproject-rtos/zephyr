@@ -18,14 +18,21 @@
  * @{
  */
 
-#include <zephyr/sys/atomic.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/lc3.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/iso.h>
-#include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/audio/lc3.h>
-
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -711,60 +718,95 @@ enum {
 
 /** @brief Codec QoS structure. */
 struct bt_audio_codec_qos {
-	/** QoS PHY */
-	uint8_t  phy;
-
-	/** QoS Framing */
-	enum bt_audio_codec_qos_framing framing;
-
-	/** QoS Retransmission Number */
-	uint8_t rtn;
-
-	/** QoS SDU */
-	uint16_t sdu;
-
-#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST)
 	/**
-	 * @brief QoS Transport Latency
+	 * @brief Presentation Delay in microseconds
 	 *
-	 * Not used for the @kconfig{CONFIG_BT_BAP_BROADCAST_SINK} role.
-	 */
-	uint16_t latency;
-#endif /*  CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
-
-	/** QoS Frame Interval */
-	uint32_t interval;
-
-	/** @brief QoS Presentation Delay in microseconds
+	 * This value can be changed up and until bt_bap_stream_qos() has been called.
+	 * Once a stream has been QoS configured, modifying this field does not modify the value.
+	 * It is however possible to modify this field and call bt_bap_stream_qos() again to update
+	 * the value, assuming that the stream is in the correct state.
 	 *
-	 *  Value range 0 to @ref BT_AUDIO_PD_MAX.
+	 * Value range 0 to @ref BT_AUDIO_PD_MAX.
 	 */
 	uint32_t pd;
 
+	/**
+	 * @brief Connected Isochronous Group (CIG) parameters
+	 *
+	 * The fields in this struct affect the value sent to the controller via HCI
+	 * when creating the CIG. Once the group has been created with
+	 * bt_bap_unicast_group_create(), modifying these fields will not affect the group.
+	 */
+	struct {
+		/** QoS Framing */
+		enum bt_audio_codec_qos_framing framing;
+
+		/**
+		 * @brief PHY
+		 *
+		 * Allowed values are @ref BT_AUDIO_CODEC_QOS_1M, @ref BT_AUDIO_CODEC_QOS_2M and
+		 * @ref BT_AUDIO_CODEC_QOS_CODED.
+		 */
+		uint8_t phy;
+
+		/**
+		 * @brief Retransmission Number
+		 *
+		 * This a recommendation to the controller, and the actual retransmission number
+		 * may be different than this.
+		 */
+		uint8_t rtn;
+
+		/**
+		 * @brief Maximum SDU size
+		 *
+		 * Value range @ref BT_ISO_MIN_SDU to @ref BT_ISO_MAX_SDU.
+		 */
+		uint16_t sdu;
+
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST)
+		/**
+		 * @brief Maximum Transport Latency
+		 *
+		 * Not used for the @kconfig{CONFIG_BT_BAP_BROADCAST_SINK} role.
+		 */
+		uint16_t latency;
+#endif /*  CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
+
+		/**
+		 * @brief SDU Interval
+		 *
+		 * Value range @ref BT_ISO_SDU_INTERVAL_MIN to @ref BT_ISO_SDU_INTERVAL_MAX
+		 */
+		uint32_t interval;
+
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
-	/** @brief Maximum PDU size
-	 *
-	 *  Maximum size, in octets, of the payload from link layer to link
-	 *  layer.
-	 *
-	 *  Value range @ref BT_ISO_PDU_MIN to @ref BT_ISO_PDU_MAX.
-	 */
-	uint16_t max_pdu;
+		/**
+		 * @brief Maximum PDU size
+		 *
+		 * Maximum size, in octets, of the payload from link layer to link layer.
+		 *
+		 * Value range @ref BT_ISO_PDU_MIN to @ref BT_ISO_PDU_MAX.
+		 */
+		uint16_t max_pdu;
 
-	/** @brief Burst number
-	 *
-	 *  Value range @ref BT_ISO_BN_MIN to @ref BT_ISO_BN_MAX.
-	 */
-	uint8_t burst_number;
+		/**
+		 * @brief Burst number
+		 *
+		 * Value range @ref BT_ISO_BN_MIN to @ref BT_ISO_BN_MAX.
+		 */
+		uint8_t burst_number;
 
-	/** @brief Number of subevents
-	 *
-	 *  Maximum number of subevents in each CIS or BIS event.
-	 *
-	 *  Value range @ref BT_ISO_NSE_MIN to @ref BT_ISO_NSE_MAX.
-	 */
-	uint8_t num_subevents;
+		/**
+		 * @brief Number of subevents
+		 *
+		 * Maximum number of subevents in each CIS or BIS event.
+		 *
+		 * Value range @ref BT_ISO_NSE_MIN to @ref BT_ISO_NSE_MAX.
+		 */
+		uint8_t num_subevents;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
+	};
 };
 
 /**
@@ -976,7 +1018,7 @@ int bt_audio_codec_cfg_set_chan_allocation(struct bt_audio_codec_cfg *codec_cfg,
  *
  * The overall SDU size will be octets_per_frame * blocks_per_sdu.
  *
- *  The Bluetooth specificationa are not clear about this value - it does not state that
+ *  The Bluetooth specifications are not clear about this value - it does not state that
  *  the codec shall use this SDU size only. A codec like LC3 supports variable bit-rate
  *  (per SDU) hence it might be allowed for an encoder to reduce the frame size below this
  *  value.
@@ -1005,7 +1047,7 @@ int bt_audio_codec_cfg_get_octets_per_frame(const struct bt_audio_codec_cfg *cod
 int bt_audio_codec_cfg_set_octets_per_frame(struct bt_audio_codec_cfg *codec_cfg,
 					    uint16_t octets_per_frame);
 
-/** @brief Extract number of audio frame blockss in each SDU from BT codec config
+/** @brief Extract number of audio frame blocks in each SDU from BT codec config
  *
  *  The overall SDU size will be octets_per_frame * frame_blocks_per_sdu * number-of-channels.
  *

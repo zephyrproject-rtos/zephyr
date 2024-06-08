@@ -320,7 +320,7 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 #endif /* CONFIG_BT_CTLR_ASSERT_HANDLER */
 
 #if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
 {
 	/* Disable interrupts, this is unrecoverable */
 	(void)irq_lock();

@@ -37,11 +37,6 @@ static int disk_sdmmc_access_init(struct disk_info *disk)
 	struct sdmmc_data *data = dev->data;
 	int ret;
 
-	if (data->status == SD_OK) {
-		/* Called twice, don't reinit */
-		return 0;
-	}
-
 	if (!sd_is_card_present(cfg->host_controller)) {
 		return DISK_STATUS_NOMEDIA;
 	}
@@ -94,7 +89,21 @@ static int disk_sdmmc_access_ioctl(struct disk_info *disk, uint8_t cmd, void *bu
 	const struct device *dev = disk->dev;
 	struct sdmmc_data *data = dev->data;
 
-	return sdmmc_ioctl(&data->card, cmd, buf);
+	switch (cmd) {
+	case DISK_IOCTL_CTRL_INIT:
+		return disk_sdmmc_access_init(disk);
+	case DISK_IOCTL_CTRL_DEINIT:
+		sdmmc_ioctl(&data->card, DISK_IOCTL_CTRL_SYNC, NULL);
+		/* sd_init() will toggle power to SDMMC, so we can just mark
+		 * disk as uninitialized
+		 */
+		data->status = SD_UNINIT;
+		return 0;
+	default:
+		return sdmmc_ioctl(&data->card, cmd, buf);
+	}
+
+	return 0;
 }
 
 static const struct disk_operations sdmmc_disk_ops = {

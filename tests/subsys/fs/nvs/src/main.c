@@ -207,7 +207,18 @@ ZTEST_F(nvs, test_nvs_corrupted_write)
 		   &flash_max_write_calls);
 	stats_walk(fixture->sim_stats, flash_sim_write_calls_find, &flash_write_stat);
 
+#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
 	*flash_max_write_calls = *flash_write_stat - 1;
+#else
+	/* When there is no explicit erase, erase is done with write, which means
+	 * that there are more writes needed. The nvs_write here will cause erase
+	 * to be called, which in turn calls the flash_fill; flash_fill will
+	 * overwrite data using buffer of size CONFIG_FLASH_FILL_BUFFER_SIZE,
+	 * and then two additional real writes are allowed.
+	 */
+	*flash_max_write_calls = (fixture->fs.sector_size /
+				  CONFIG_FLASH_FILL_BUFFER_SIZE) + 2;
+#endif
 	*flash_write_stat = 0;
 
 	/* Flash simulator will lose part of the data at the end of this write.

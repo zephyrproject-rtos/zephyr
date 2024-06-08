@@ -265,10 +265,6 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 	struct stm32_sdmmc_priv *priv = dev->data;
 	int err;
 
-	if (priv->status == DISK_STATUS_OK) {
-		return 0;
-	}
-
 	if (priv->status == DISK_STATUS_NOMEDIA) {
 		return -ENODEV;
 	}
@@ -311,14 +307,18 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 	return 0;
 }
 
-#if !defined(CONFIG_SDMMC_STM32_EMMC)
-static void stm32_sdmmc_access_deinit(struct stm32_sdmmc_priv *priv)
+static int stm32_sdmmc_access_deinit(struct stm32_sdmmc_priv *priv)
 {
+#if defined(CONFIG_SDMMC_STM32_EMMC)
+	HAL_MMC_DeInit(&priv->hsd);
+#else
 	HAL_SD_DeInit(&priv->hsd);
 
 	stm32_sdmmc_clock_disable(priv);
-}
 #endif
+	priv->status = DISK_STATUS_UNINIT;
+	return 0;
+}
 
 static int stm32_sdmmc_access_status(struct disk_info *disk)
 {
@@ -485,6 +485,10 @@ static int stm32_sdmmc_access_ioctl(struct disk_info *disk, uint8_t cmd,
 	case DISK_IOCTL_CTRL_SYNC:
 		/* we use a blocking API, so nothing to do for sync */
 		break;
+	case DISK_IOCTL_CTRL_INIT:
+		return stm32_sdmmc_access_init(disk);
+	case DISK_IOCTL_CTRL_DEINIT:
+		return stm32_sdmmc_access_deinit(priv);
 	default:
 		return -EINVAL;
 	}

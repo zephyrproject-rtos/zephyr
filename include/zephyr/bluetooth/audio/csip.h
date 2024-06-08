@@ -19,7 +19,16 @@
  * @{
  */
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -313,6 +322,21 @@ typedef void (*bt_csip_set_coordinator_discover_cb)(
  * @return int Return 0 on success, or an errno value on error.
  */
 int bt_csip_set_coordinator_discover(struct bt_conn *conn);
+
+/**
+ * @brief Get the set member from a connection pointer
+ *
+ * Get the Coordinated Set Identification Profile Set Coordinator pointer from a connection pointer.
+ * Only Set Coordinators that have been initiated via bt_csip_set_coordinator_discover() can be
+ * retrieved.
+ *
+ * @param conn     Connection pointer.
+ *
+ * @retval Pointer to a Coordinated Set Identification Profile Set Coordinator instance
+ * @retval NULL if @p conn is NULL or if the connection has not done discovery yet
+ */
+struct bt_csip_set_coordinator_set_member *
+bt_csip_set_coordinator_set_member_by_conn(const struct bt_conn *conn);
 
 /**
  * @typedef bt_csip_set_coordinator_lock_set_cb

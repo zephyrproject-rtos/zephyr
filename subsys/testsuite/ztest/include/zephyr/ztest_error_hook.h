@@ -38,7 +38,7 @@ __syscall void ztest_set_fault_valid(bool valid);
  * By default, it will do nothing before leaving error handler.
  */
 void ztest_post_fatal_error_hook(unsigned int reason,
-		const z_arch_esf_t *pEsf);
+		const struct arch_esf *pEsf);
 
 #endif
 

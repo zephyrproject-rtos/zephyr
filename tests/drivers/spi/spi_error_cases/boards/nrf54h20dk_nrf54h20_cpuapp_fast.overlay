@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	spi121_default_alt: spi121_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 7, 2)>,
+				<NRF_PSEL(SPIM_MISO, 7, 0)>,
+				<NRF_PSEL(SPIM_MOSI, 7, 1)>;
+		};
+	};
+
+	spi121_sleep_alt: spi121_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 7, 2)>,
+				<NRF_PSEL(SPIM_MISO, 7, 0)>,
+				<NRF_PSEL(SPIM_MOSI, 7, 1)>;
+			low-power-enable;
+		};
+	};
+
+	spis131_default_alt: spis131_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIS_SCK, 1, 0)>,
+				<NRF_PSEL(SPIS_MISO, 1, 9)>,
+				<NRF_PSEL(SPIS_MOSI, 1, 5)>,
+				<NRF_PSEL(SPIS_CSN, 0, 11)>;
+		};
+	};
+
+	spis131_sleep_alt: spis131_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIS_SCK, 1, 0)>,
+				<NRF_PSEL(SPIS_MISO, 1, 9)>,
+				<NRF_PSEL(SPIS_MOSI, 1, 5)>,
+				<NRF_PSEL(SPIS_CSN, 0, 11)>;
+			low-power-enable;
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&spi121 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	pinctrl-0 = <&spi121_default_alt>;
+	pinctrl-1 = <&spi121_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+	overrun-character = <0x00>;
+	memory-regions = <&dma_fast_region>;
+	cs-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+	};
+};
+
+dut_spis: &spi131 {
+	compatible = "nordic,nrf-spis";
+	status = "okay";
+	def-char = <0x00>;
+	pinctrl-0 = <&spis131_default_alt>;
+	pinctrl-1 = <&spis131_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+	memory-regions = <&cpuapp_dma_region>;
+	/delete-property/rx-delay-supported;
+	/delete-property/rx-delay;
+};

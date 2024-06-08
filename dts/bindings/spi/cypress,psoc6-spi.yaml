@@ -5,7 +5,7 @@ description: Cypress SBC[SPI]
 
 compatible: "cypress,psoc6-spi"
 
-include: spi-controller.yaml
+include: [spi-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:

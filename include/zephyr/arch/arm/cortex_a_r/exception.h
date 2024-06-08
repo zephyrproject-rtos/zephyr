@@ -54,7 +54,7 @@ struct __extra_esf_info {
 };
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 
-struct __esf {
+struct arch_esf {
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	struct __extra_esf_info extra_info;
 #endif
@@ -74,8 +74,6 @@ struct __esf {
 };
 
 extern uint32_t z_arm_coredump_fault_sp;
-
-typedef struct __esf z_arch_esf_t;
 
 extern void z_arm_exc_exit(bool fatal);
 

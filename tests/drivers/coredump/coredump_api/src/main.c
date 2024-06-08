@@ -32,7 +32,7 @@ static struct coredump_mem_region_node dump_region0 = {
 	.size = sizeof(values_to_dump)
 };
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	ARG_UNUSED(pEsf);
 

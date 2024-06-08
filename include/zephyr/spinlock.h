@@ -316,7 +316,7 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 #ifdef CONFIG_SMP
 #ifdef CONFIG_TICKET_SPINLOCKS
 	/* Give the spinlock to the next CPU in a FIFO */
-	atomic_inc(&l->owner);
+	(void)atomic_inc(&l->owner);
 #else
 	/* Strictly we don't need atomic_clear() here (which is an
 	 * exchange operation that returns the old value).  We are always
@@ -325,7 +325,7 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 	 * a memory barrier when used like this, and we don't have a
 	 * Zephyr framework for that.
 	 */
-	atomic_clear(&l->locked);
+	(void)atomic_clear(&l->locked);
 #endif /* CONFIG_TICKET_SPINLOCKS */
 #endif /* CONFIG_SMP */
 	arch_irq_unlock(key.key);
@@ -364,9 +364,9 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 #endif
 #ifdef CONFIG_SMP
 #ifdef CONFIG_TICKET_SPINLOCKS
-	atomic_inc(&l->owner);
+	(void)atomic_inc(&l->owner);
 #else
-	atomic_clear(&l->locked);
+	(void)atomic_clear(&l->locked);
 #endif /* CONFIG_TICKET_SPINLOCKS */
 #endif /* CONFIG_SMP */
 }
@@ -437,7 +437,7 @@ static ALWAYS_INLINE void z_spin_onexit(__maybe_unused k_spinlock_key_t *k)
  */
 #define K_SPINLOCK(lck)                                                                            \
 	for (k_spinlock_key_t __i K_SPINLOCK_ONEXIT = {}, __key = k_spin_lock(lck); !__i.key;      \
-	     k_spin_unlock(lck, __key), __i.key = 1)
+	     k_spin_unlock((lck), __key), __i.key = 1)
 
 /** @} */
 

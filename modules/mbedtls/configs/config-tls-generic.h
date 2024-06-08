@@ -163,16 +163,8 @@
 #define MBEDTLS_DES_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_CIPHER_ARC4_ENABLED)
-#define MBEDTLS_ARC4_C
-#endif
-
 #if defined(CONFIG_MBEDTLS_CIPHER_CHACHA20_ENABLED)
 #define MBEDTLS_CHACHA20_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_CIPHER_BLOWFISH_ENABLED)
-#define MBEDTLS_BLOWFISH_C
 #endif
 
 #if defined(CONFIG_MBEDTLS_CIPHER_CCM_ENABLED)
@@ -272,10 +264,6 @@
 #endif
 
 /* Supported hash algorithms */
-
-#if defined(CONFIG_MBEDTLS_MD4)
-#define MBEDTLS_MD4_C
-#endif
 
 #if defined(CONFIG_MBEDTLS_MD5)
 #define MBEDTLS_MD5_C
@@ -495,6 +483,27 @@
 
 #if defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
 #define MBEDTLS_SSL_DTLS_CONNECTION_ID
+#endif
+
+#if defined(CONFIG_MBEDTLS_NIST_KW_C)
+#define MBEDTLS_NIST_KW_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_DHM_C)
+#define MBEDTLS_DHM_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_X509_CRL_PARSE_C)
+#define MBEDTLS_X509_CRL_PARSE_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_X509_CSR_WRITE_C)
+#define MBEDTLS_X509_CSR_WRITE_C
+#define MBEDTLS_X509_CREATE_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_X509_CSR_PARSE_C)
+#define MBEDTLS_X509_CSR_PARSE_C
 #endif
 
 #if defined(CONFIG_MBEDTLS_USER_CONFIG_FILE)

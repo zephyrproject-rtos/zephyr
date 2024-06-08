@@ -12,7 +12,7 @@ config SPI
 	default y if DISK_DRIVER_SDMMC
 
 config ESP_SPIRAM
-	default y
+	default y if !MCUBOOT
 
 choice SPIRAM_TYPE
 	default SPIRAM_TYPE_ESPPSRAM64

@@ -101,7 +101,7 @@ stopping the processing of CAN frames.
 .. note::
    The CAN controller mode and timing can only be changed while the CAN controller is stopped, which
    is the initial setting upon boot-up. The initial CAN controller mode is set to ``normal`` and the
-   initial timing is set according to the ``bus-speed``, ``sample-point``, ``bus-speed-data``, and
+   initial timing is set according to the ``bitrate``, ``sample-point``, ``bitrate-data``, and
    ``sample-point-data`` :ref:`devicetree` properties.
 
 Timing

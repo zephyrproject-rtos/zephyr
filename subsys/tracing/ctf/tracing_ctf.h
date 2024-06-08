@@ -25,7 +25,7 @@ extern "C" {
 	sys_trace_k_thread_create(new_thread, stack_size, prio)
 
 #define sys_port_trace_k_thread_user_mode_enter()                              \
-	sys_trace_k_thread_user_mode_enter(entry, p1, p2, p3)
+	sys_trace_k_thread_user_mode_enter()
 
 #define sys_port_trace_k_thread_heap_assign(thread, heap)
 #define sys_port_trace_k_thread_join_enter(thread, timeout)
@@ -372,8 +372,7 @@ void sys_trace_k_thread_foreach_unlocked_exit(k_thread_user_cb_t user_cb,
 					      void *user_data);
 void sys_trace_k_thread_create(struct k_thread *new_thread, size_t stack_size,
 			       int prio);
-void sys_trace_k_thread_user_mode_enter(k_thread_entry_t entry, void *p1,
-					void *p2, void *p3);
+void sys_trace_k_thread_user_mode_enter(void);
 void sys_trace_k_thread_heap_assign(struct k_thread *thread,
 				    struct k_heap *heap);
 void sys_trace_k_thread_join_blocking(struct k_thread *thread,
