@@ -145,7 +145,6 @@
 		};
 
 		longpress: longpress {
-			input = <&longpress>;
 			compatible = "zephyr,input-longpress";
 			input-codes = <0>;
 			short-codes = <0>;
