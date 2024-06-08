@@ -207,7 +207,8 @@ static int zsock_socket_internal(int family, int type, int proto)
 		net_context_ref(ctx);
 	}
 
-	z_finalize_fd(fd, ctx, (const struct fd_op_vtable *)&sock_fd_op_vtable);
+	z_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&sock_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	NET_DBG("socket: ctx=%p, fd=%d", ctx, fd);
 
@@ -710,7 +711,8 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 
 	NET_DBG("accept: ctx=%p, fd=%d", ctx, fd);
 
-	z_finalize_fd(fd, ctx, (const struct fd_op_vtable *)&sock_fd_op_vtable);
+	z_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&sock_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	return fd;
 }

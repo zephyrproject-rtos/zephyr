@@ -80,8 +80,8 @@ int znet_mgmt_socket(int family, int type, int proto)
 	mgmt->alloc_timeout = MSG_ALLOC_TIMEOUT;
 	mgmt->wait_timeout = K_FOREVER;
 
-	z_finalize_fd(fd, mgmt,
-		     (const struct fd_op_vtable *)&net_mgmt_sock_fd_op_vtable);
+	z_finalize_typed_fd(fd, mgmt, (const struct fd_op_vtable *)&net_mgmt_sock_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	return fd;
 }

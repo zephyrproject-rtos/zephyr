@@ -80,8 +80,8 @@ int zcan_socket(int family, int type, int proto)
 	 */
 	k_condvar_init(&ctx->cond.recv);
 
-	z_finalize_fd(fd, ctx,
-		      (const struct fd_op_vtable *)&can_sock_fd_op_vtable);
+	z_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&can_sock_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	return fd;
 }

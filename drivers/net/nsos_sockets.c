@@ -202,7 +202,7 @@ static int nsos_socket_create(int family, int type, int proto)
 		goto free_sock;
 	}
 
-	z_finalize_fd(fd, sock, &nsos_socket_fd_op_vtable.fd_vtable);
+	z_finalize_typed_fd(fd, sock, &nsos_socket_fd_op_vtable.fd_vtable, ZVFS_MODE_IFSOCK);
 
 	return fd;
 
@@ -718,7 +718,8 @@ static int nsos_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
 	conn_sock->fd = zephyr_fd;
 	conn_sock->poll.mid.fd = adapt_fd;
 
-	z_finalize_fd(zephyr_fd, conn_sock, &nsos_socket_fd_op_vtable.fd_vtable);
+	z_finalize_typed_fd(zephyr_fd, conn_sock, &nsos_socket_fd_op_vtable.fd_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	return zephyr_fd;
 

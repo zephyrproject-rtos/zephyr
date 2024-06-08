@@ -69,7 +69,7 @@ static int sock_dispatch_socket(struct dispatcher_context *ctx,
 
 	/* Reassing FD with new obj and entry. */
 	fd = ctx->fd;
-	z_finalize_fd(fd, obj, (const struct fd_op_vtable *)vtable);
+	z_finalize_typed_fd(fd, obj, (const struct fd_op_vtable *)vtable, ZVFS_MODE_IFSOCK);
 
 	/* Release FD that is no longer in use. */
 	z_free_fd(new_fd);
@@ -482,8 +482,8 @@ static int sock_dispatch_create(int family, int type, int proto)
 	entry->proto = proto;
 	entry->is_used = true;
 
-	z_finalize_fd(fd, entry,
-		      (const struct fd_op_vtable *)&sock_dispatch_fd_op_vtable);
+	z_finalize_typed_fd(fd, entry, (const struct fd_op_vtable *)&sock_dispatch_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 out:
 	k_mutex_unlock(&dispatcher_lock);
