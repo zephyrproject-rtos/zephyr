@@ -15,6 +15,8 @@
 #include <zephyr/posix/fcntl.h>
 #include <zephyr/fs/fs.h>
 
+int zvfs_fstat(int fd, struct stat *buf);
+
 BUILD_ASSERT(PATH_MAX >= MAX_FILE_NAME, "PATH_MAX is less than MAX_FILE_NAME");
 
 struct posix_fs_desc {
@@ -432,11 +434,7 @@ int zvfs_ftruncate(int fd, off_t length)
 
 int fstat(int fildes, struct stat *buf)
 {
-	ARG_UNUSED(fildes);
-	ARG_UNUSED(buf);
-
-	errno = ENOTSUP;
-	return -1;
+	return zvfs_fstat(fildes, buf);
 }
 #ifdef CONFIG_POSIX_FILE_SYSTEM_ALIAS_FSTAT
 FUNC_ALIAS(fstat, _fstat, int);
