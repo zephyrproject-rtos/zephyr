@@ -1,0 +1,25 @@
+# Copyright (c) 2024 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_RTC := zephyr,rtc
+
+config RTC_HWCLOCK
+	bool "Hardware clock"
+	default y
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_RTC))
+	depends on SYS_REALTIME
+	help
+	  The hardware clock is used to set the system
+	  real-time clock on boot.
+
+if RTC_HWCLOCK
+
+config RTC_HWCLOCK_INIT_PRIORITY
+	int "Initialization priority of hardware clock"
+	default 51
+	help
+	  The initialization priority of the hardware clock
+	  must be higher than the initialization priority of
+	  the chosen RTC device driver.
+
+endif # RTC_HWCLOCK
