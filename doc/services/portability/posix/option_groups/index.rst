@@ -909,18 +909,23 @@ _POSIX_TIMEOUTS
 _XOPEN_STREAMS
 ++++++++++++++
 
+With the exception of ``ioctl()``, functions in the ``_XOPEN_STREAMS`` option group are not
+implemented in Zephyr but are provided so that conformant applications can still link.
+Unimplemented functions in this option group will fail, setting ``errno`` to ``ENOSYS``
+:ref:`†<posix_undefined_behaviour>`.
+
 .. csv-table:: _XOPEN_STREAMS
    :header: API, Supported
    :widths: 50,10
 
-    fattach(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    fdetach(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    getmsg(),  yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    getpmsg(),  yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    ioctl(),yes
-    isastream(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    putmsg(), yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    putpmsg(),
+    fattach(), yes :ref:`†<posix_undefined_behaviour>`
+    fdetach(), yes :ref:`†<posix_undefined_behaviour>`
+    getmsg(), yes :ref:`†<posix_undefined_behaviour>`
+    getpmsg(), yes :ref:`†<posix_undefined_behaviour>`
+    ioctl(), yes
+    isastream(), yes :ref:`†<posix_undefined_behaviour>`
+    putmsg(), yes :ref:`†<posix_undefined_behaviour>`
+    putpmsg(), yes :ref:`†<posix_undefined_behaviour>`
 
 .. _Subprofiling Considerations:
     https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
