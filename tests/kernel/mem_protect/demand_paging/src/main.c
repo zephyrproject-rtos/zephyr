@@ -115,7 +115,7 @@ static void print_paging_stats(struct k_mem_paging_stats_t *stats, const char *s
 	       stats->eviction.dirty);
 }
 
-ZTEST(demand_paging, test_touch_anon_pages)
+static void touch_anon_pages(bool zig, bool zag)
 {
 	unsigned long faults;
 	struct k_mem_paging_stats_t stats;
@@ -125,7 +125,9 @@ ZTEST(demand_paging, test_touch_anon_pages)
 
 	printk("checking zeroes\n");
 	/* The mapped area should have started out zeroed. Check this. */
-	for (size_t i = 0; i < arena_size; i++) {
+	for (size_t j = 0; j < arena_size; j++) {
+		size_t i = zig ? (arena_size - 1 - j) : j;
+
 		zassert_equal(arena[i], '\x00',
 			      "page not zeroed got 0x%hhx at index %d",
 			      arena[i], i);
@@ -133,13 +135,17 @@ ZTEST(demand_paging, test_touch_anon_pages)
 
 	printk("writing data\n");
 	/* Write a pattern of data to the whole arena */
-	for (size_t i = 0; i < arena_size; i++) {
+	for (size_t j = 0; j < arena_size; j++) {
+		size_t i = zag ? (arena_size - 1 - j) : j;
+
 		arena[i] = nums[i % 10];
 	}
 
 	/* And ensure it can be read back */
 	printk("verify written data\n");
-	for (size_t i = 0; i < arena_size; i++) {
+	for (size_t j = 0; j < arena_size; j++) {
+		size_t i = zig ? (arena_size - 1 - j) : j;
+
 		zassert_equal(arena[i], nums[i % 10],
 			      "arena corrupted at index %d (%p): got 0x%hhx expected 0x%hhx",
 			      i, &arena[i], arena[i], nums[i % 10]);
@@ -164,7 +170,9 @@ ZTEST(demand_paging, test_touch_anon_pages)
 	 * since the arena is not modified.
 	 */
 	printk("reading unmodified data\n");
-	for (size_t i = 0; i < arena_size; i++) {
+	for (size_t j = 0; j < arena_size; j++) {
+		size_t i = zag ? (arena_size - 1 - j) : j;
+
 		zassert_equal(arena[i], nums[i % 10],
 			      "arena corrupted at index %d (%p): got 0x%hhx expected 0x%hhx",
 			      i, &arena[i], arena[i], nums[i % 10]);
@@ -190,6 +198,21 @@ ZTEST(demand_paging, test_touch_anon_pages)
 	for (size_t i = 0; i < arena_size; i++) {
 		arena[i] = 0;
 	}
+}
+
+ZTEST(demand_paging, test_touch_anon_pages)
+{
+	touch_anon_pages(false, false);
+}
+
+ZTEST(demand_paging, test_touch_anon_pages_zigzag1)
+{
+	touch_anon_pages(true, false);
+}
+
+ZTEST(demand_paging, test_touch_anon_pages_zigzag2)
+{
+	touch_anon_pages(false, true);
 }
 
 ZTEST(demand_paging, test_unmap_anon_pages)
