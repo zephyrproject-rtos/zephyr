@@ -159,7 +159,8 @@ enum {
 	COND_CODE_1(CONFIG_POSIX_MEMLOCK, (_POSIX_MEMLOCK), (-1L))
 #define __z_posix_sysconf_SC_MEMLOCK_RANGE                                                         \
 	COND_CODE_1(CONFIG_POSIX_MEMLOCK_RANGE, (_POSIX_MEMLOCK_RANGE), (-1L))
-#define __z_posix_sysconf_SC_MEMORY_PROTECTION (-1L)
+#define __z_posix_sysconf_SC_MEMORY_PROTECTION                                                     \
+	COND_CODE_1(CONFIG_POSIX_MEMORY_PROTECTION, (_POSIX_MEMORY_PROTECTION), (-1L))
 #define __z_posix_sysconf_SC_MESSAGE_PASSING                                                       \
 	COND_CODE_1(CONFIG_POSIX_MESSAGE_PASSING, (_POSIX_MESSAGE_PASSING), (-1L))
 #define __z_posix_sysconf_SC_MONOTONIC_CLOCK                                                       \
