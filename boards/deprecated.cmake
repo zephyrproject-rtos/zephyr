@@ -138,10 +138,19 @@ set(ebyte_e73_tbb_nrf52832_DEPRECATED
     ebyte_e73_tbb
 )
 set(efm32pg_stk3402a_DEPRECATED
-    efm32pg_stk3402a/efm32pg12b500f1024gl125
+    slstk3402a/efm32pg12b500f1024gl125
 )
 set(efm32pg_stk3402a_jg_DEPRECATED
-    efm32pg_stk3402a/efm32jg12b500f1024gl125
+    slstk3402a/efm32jg12b500f1024gl125
+)
+set(efm32hg_slstk3400a_DEPRECATED
+    slstk3400a
+)
+set(efm32pg_stk3401a_DEPRECATED
+    slstk3401a
+)
+set(efm32gg_stk3701a_DEPRECATED
+    slstk3701a
 )
 set(efm32gg_slwstk6121a_DEPRECATED
     slwrb4321a
