@@ -1,14 +1,15 @@
-identifier: efm32wg_stk3800
-name: EFM32 Wonder Gecko Starter Kit (EFM32WG-STK3800)
+identifier: slstk3402a/efm32jg12b500f1024gl125
+name: EFM32JG12 SLSTK3402A
 type: mcu
 arch: arm
-ram: 32
-flash: 256
+ram: 256
+flash: 1024
 toolchain:
   - zephyr
   - gnuarmemb
   - xtools
 supported:
+  - i2c
   - gpio
   - nvs
 testing:
