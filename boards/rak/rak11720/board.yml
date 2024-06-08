@@ -1,0 +1,5 @@
+board:
+  name: rak11720
+  vendor: rakwireless
+  socs:
+  - name: apollo3_blue
