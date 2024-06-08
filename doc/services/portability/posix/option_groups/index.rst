@@ -627,18 +627,22 @@ Additional POSIX Options
 _POSIX_ASYNCHRONOUS_IO
 ++++++++++++++++++++++
 
+Functions part of the ``_POSIX_ASYNCHRONOUS_IO`` Option are not implemented in Zephyr but are
+provided so that conformant applications can still link. These functions will fail, setting
+``errno`` to ``ENOSYS``:ref:`†<posix_undefined_behaviour>`.
+
 .. csv-table:: _POSIX_ASYNCHRONOUS_IO
    :header: API, Supported
    :widths: 50,10
 
-    aio_cancel(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    aio_error(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    aio_fsync(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    aio_read(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    aio_return(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    aio_suspend(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    aio_write(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
-    lio_listio(),yes (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
+    aio_cancel(),yes :ref:`†<posix_undefined_behaviour>`
+    aio_error(),yes :ref:`†<posix_undefined_behaviour>`
+    aio_fsync(),yes :ref:`†<posix_undefined_behaviour>`
+    aio_read(),yes :ref:`†<posix_undefined_behaviour>`
+    aio_return(),yes :ref:`†<posix_undefined_behaviour>`
+    aio_suspend(),yes :ref:`†<posix_undefined_behaviour>`
+    aio_write(),yes :ref:`†<posix_undefined_behaviour>`
+    lio_listio(),yes :ref:`†<posix_undefined_behaviour>`
 
 .. _posix_option_cputime:
 
