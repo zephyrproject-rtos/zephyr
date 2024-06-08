@@ -572,6 +572,17 @@ This table lists service support status in Zephyr for `POSIX_FD_MGMT`:
     putc_unlocked(),
     putchar_unlocked(),
 
+.. _posix_option_group_memory_protection:
+
+POSIX_MEMORY_PROTECTION
+=======================
+
+.. csv-table:: POSIX_MEMORY_PROTECTION
+   :header: API, Supported
+   :widths: 50,10
+
+    mprotect(), yes :ref:`†<posix_undefined_behaviour>`
+
 .. _posix_option_group_multi_process:
 
 POSIX_MULTI_PROCESS
