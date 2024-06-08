@@ -3,3 +3,28 @@
 
 menuconfig SYS_REALTIME
 	bool "System real-time library"
+
+if SYS_REALTIME
+
+choice SYS_REALTIME_CONVERT
+	prompt "System real-time conversion library"
+	default SYS_REALTIME_CONVERT_NATIVE
+
+config SYS_REALTIME_CONVERT_NATIVE
+	bool "Use native real-time conversion library"
+
+endchoice # SYS_REALTIME_CONVERT
+
+if SYS_REALTIME_CONVERT_NATIVE
+
+config SYS_REALTIME_CONVERT_NATIVE_MIN_YEAR
+	int "Minimum year to support for realtime conversions"
+	default 1600
+
+config SYS_REALTIME_CONVERT_NATIVE_MAX_YEAR
+	int "Maximum year to support for realtime  conversions"
+	default 2400
+
+endif # SYS_REALTIME_CONVERT_NATIVE
+
+endif # SYS_REALTIME
