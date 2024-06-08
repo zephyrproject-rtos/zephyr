@@ -77,8 +77,8 @@ static int zpacket_socket(int family, int type, int proto)
 
 	/* recv_q and accept_q are in union */
 	k_fifo_init(&ctx->recv_q);
-	z_finalize_fd(fd, ctx,
-		      (const struct fd_op_vtable *)&packet_sock_fd_op_vtable);
+	z_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&packet_sock_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	return fd;
 }
