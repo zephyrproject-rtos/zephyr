@@ -880,6 +880,6 @@ static struct clock_control_rpi_pico_data clock_control_rpi_pico_data = {
 	.rosc_ph_freq = CLOCK_FREQ(rosc_ph),
 };
 
-DEVICE_DT_INST_DEFINE(0, &clock_control_rpi_pico_init, NULL, &clock_control_rpi_pico_data,
+DEVICE_DT_INST_DEFINE(0, clock_control_rpi_pico_init, NULL, &clock_control_rpi_pico_data,
 		      &clock_control_rpi_pico_config, PRE_KERNEL_1,
 		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &clock_control_rpi_pico_api);

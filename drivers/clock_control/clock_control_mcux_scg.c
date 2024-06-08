@@ -151,7 +151,7 @@ static const struct clock_control_driver_api mcux_scg_driver_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		    &mcux_scg_init,
+		    mcux_scg_init,
 		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,

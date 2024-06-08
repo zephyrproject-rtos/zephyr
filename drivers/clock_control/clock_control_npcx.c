@@ -256,7 +256,7 @@ const struct npcx_pcc_config pcc_config = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		    &npcx_clock_control_init,
+		    npcx_clock_control_init,
 		    NULL,
 		    NULL, &pcc_config,
 		    PRE_KERNEL_1,

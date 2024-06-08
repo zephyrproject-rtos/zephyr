@@ -1090,7 +1090,7 @@ const struct xec_pcr_config pcr_xec_config = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		    &xec_clock_control_init,
+		    xec_clock_control_init,
 		    NULL,
 		    NULL, &pcr_xec_config,
 		    PRE_KERNEL_1,
