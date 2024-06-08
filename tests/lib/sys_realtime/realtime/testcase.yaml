@@ -1,0 +1,6 @@
+# Copyright (c) 2024 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  sys_realtime.realtime:
+    tags: sys_realtime
